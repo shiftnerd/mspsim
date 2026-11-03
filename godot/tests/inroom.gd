@@ -60,6 +60,7 @@ func _init() -> void:
 	_check(o.is_open and o.room_mode() and o.phase == "intro", "bowling opens in the alley")
 	o.press(KEY_ENTER)
 	_check(o.g.stage == "ready" and not game.ui_open, "you stay free until you step up")
+	_check(o.hint().begins_with("E = STEP UP") and o.blocks_interact(), "ready: the hint says E steps up")
 	var fx := current_scene.get_node("Fx/Lanes")
 	_check(
 		fx.kind == "bowl_lane" and not fx._bowl_game().is_empty(), "the lanes draw from the game"
@@ -71,9 +72,11 @@ func _init() -> void:
 		o.g.stage == "aim" and absf(player.global_position.x - (24.0 + 152.0)) < 1.0,
 		"E steps you up to the lane"
 	)
+	_check(o.hint().begins_with("E = STOP THE AIM") and o._caption.contains("STOP THE AIM"), "aim: clear prompt")
 	o.g.marker = 0.5
 	o.press(KEY_E)
 	_check(o.g.stage == "power", "E stops the aim")
+	_check(o.hint().begins_with("E = STOP THE POWER") and o._caption.contains("STOP THE POWER"), "power: clear prompt")
 	o.g.power = 0.85
 	o.press(KEY_E)
 	_check(o.g.stage == "roll", "E again throws")
@@ -97,6 +100,8 @@ func _init() -> void:
 		elif o.g.stage == "others":
 			saw_others = true
 			_check_others_once(o)
+			o.press(KEY_E)
+			_check(o.g.stage == "others" and o.hint().begins_with("WAIT"), "E is ignored on the crew's turn")
 		o.tick(0.4)
 		guard += 1
 	_check(saw_others, "after your frame Alan, Garrison and Dan bowl next door")
@@ -136,6 +141,9 @@ func _init() -> void:
 	current_scene.get_node("Fx/WallClock").play()
 	current_scene.get_node("Fx/Painting").play()
 	_check(o.g.found.size() == 3, "all three clues are in the room")
+	for zone in ["UseWallClock", "UsePainting", "UseBoard", "UseKeypad"]:
+		var shp: Shape2D = current_scene.get_node("Interactables/%s/Shape" % zone).shape
+		_check(shp.size.x >= 36.0, "%s zone is wide enough (%d px)" % [zone, int(shp.size.x)])
 	_check(o._caption.contains(str(code[2])), "the plaque says " + o._caption)
 	var hints_before: int = o.g.hints
 	var said: String = o.escape_nudge()

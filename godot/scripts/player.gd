@@ -439,7 +439,7 @@ func _physics_process(delta: float) -> void:
 	var locked: bool = Game.busy
 	var dir := 0.0 if locked else Input.get_axis("move_left", "move_right")
 	var running := Input.is_action_pressed("run")
-	var interact := (not locked) and Input.is_action_just_pressed("interact")
+	var interact := (not locked) and Input.is_action_just_pressed("interact") and not Outings.blocks_interact()
 	var jump := (not locked) and Input.is_action_just_pressed("jump")
 
 	if state in ["use", "emote"]:
