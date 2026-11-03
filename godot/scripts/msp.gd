@@ -568,7 +568,7 @@ func unread_texts() -> int:
 
 
 func send_text(from_name: String, body: String) -> void:
-	var m := {"from": from_name, "body": body, "unread": true}
+	var m := {"from": Roles.sender(from_name), "body": body, "unread": true}
 	texts.push_front(m)
 	text_received.emit(m)
 	changed.emit()

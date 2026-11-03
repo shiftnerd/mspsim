@@ -12,7 +12,8 @@ const SPECIALTY := {
 	"Garrison": "security",
 	"Dan": "networking",
 	"Vic": "people",
-	"Maya": "people"
+	"Maya": "people",
+	"Morgan": "people"
 }
 const LESSON_XP := 6
 const DEFAULT_GREETINGS := {
@@ -45,6 +46,12 @@ const DEFAULT_GREETINGS := {
 		"friend": "Hi! Want half a granola bar? I have been saving it for someone nice.",
 		"neutral": "Hey! Sorry, I have a user on hold. What is up?",
 		"cold": "Oh. Hi. I am just finishing something.",
+	},
+	"Morgan":
+	{
+		"friend": "Come in. Move the printouts, they are not load-bearing. What do you need?",
+		"neutral": "Yes? I have a budget call in five minutes. Go ahead.",
+		"cold": "Mm. Is this about the queue?",
 	},
 }
 var GREETINGS: Dictionary = DEFAULT_GREETINGS.duplicate(true)
@@ -88,6 +95,15 @@ const DEFAULT_SMALL := {
 		"Alan showed me how to read an event log. I felt like a detective. A tired one.",
 		"I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.",
 	],
+	"Morgan":
+	[
+		"Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.",
+		"Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet.",
+		"Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough.",
+		"I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part.",
+		"I put iOS 7 on my phone. It is very bright. I miss my buttons.",
+		"Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.",
+	],
 }
 var SMALL: Dictionary = DEFAULT_SMALL.duplicate(true)
 const DEFAULT_GOSSIP := [
@@ -129,6 +145,13 @@ const DEFAULT_TIPS_GENERIC := {
 		"Be kind to the user first. Half of the problem is that they are scared they broke something.",
 		"Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.",
 		"Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.",
+	],
+	"Morgan":
+	[
+		"A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time.",
+		"If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.",
+		"Close what you fix. Reopen what you break. Just be the person who tells me which one it is.",
+		"Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.",
 	],
 }
 var TIPS_GENERIC: Dictionary = DEFAULT_TIPS_GENERIC.duplicate(true)
@@ -306,6 +329,11 @@ func _state_tip() -> String:
 		"Garrison":
 			if Msp.breached > 0:
 				return "I walked the floor and saw the SLA misses on the board. Clients bring those up at the QBR. Fix the P1s first, always. The rest can wait ten minutes."
+		"Morgan":
+			if Msp.breached > 0:
+				return "We have missed an SLA today. It is not a disaster. Write down what happened so the next one does not."
+			if Msp.open_tickets().size() >= 4:
+				return "The queue is at %d tickets. Work the P1s first and tell me if you need me to move something." % Msp.open_tickets().size()
 		"Maya":
 			for t in Msp.open_tickets():
 				if float(t.sla_left) < 60.0 and not bool(t.breached):
@@ -342,6 +370,10 @@ func owner_idea() -> String:
 			text = "Good call on the backups. Next, get remote access off the open internet."
 			if not Owner.flags.get("backup_service", false):
 				text = "Every client without a managed backup is one bad day from calling a lawyer. We should sell the backup service."
+		"Morgan":
+			text = "Hire before you need to, not after. Hiring takes six weeks. Burnout takes three."
+			if Msp.open_tickets().size() >= 5:
+				text = "The queue is backed up and the crew is running hot. I would add a pair of hands before I added a tool."
 		"Dan":
 			text = "Label everything and write it down. The day Alan is on vacation you will be glad."
 			for c in Sales.active:

@@ -60,7 +60,7 @@ func _init() -> void:
 	for n in world.chars:
 		for leg in world.chars[n].legs:
 			legs += 1 if str(leg.get("kind", "")) == "meeting" else 0
-	_check(legs == 5, "everyone gets a meeting leg (%d of 5)" % legs)
+	_check(legs == 6, "everyone gets a meeting leg, Morgan hosts (%d of 6)" % legs)
 	# story events for the day fire as the clock jumps to 14:00; a decision card now freezes the day, so dismiss them
 	for i in 3200:
 		await process_frame

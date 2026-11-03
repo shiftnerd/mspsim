@@ -1094,7 +1094,9 @@ func populate(stage: Node) -> void:
 		return
 	var scene := stage.scene_file_path.get_file().get_basename()
 	if scene == "conference" and Campaign.active and Meeting.state in ["called", "done"]:
-		_boss(stage)
+		# Morgan is a real cast member now and hosts at the whiteboard herself; Marge still stands in for the owner campaign
+		if Campaign.mode == "owner" or not World.chars.has("Morgan"):
+			_boss(stage)
 		return
 	if not CROWD.has(scene):
 		return

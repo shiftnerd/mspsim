@@ -86,13 +86,13 @@ const ROOMS := {
 	"escape": "escape_room",
 	"dinner": "restaurant"
 }
-# where Alan, Garrison, Dan, Vic and Maya stand in each room (set-pixel x); a fifth spot keeps
-# Maya from wrapping onto Alan's
+# where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
+# not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
-	"bowling": [114, 186, 214, 250, 140],
-	"karaoke": [236, 262, 282, 130, 160],
-	"escape": [118, 175, 205, 305, 325],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
-	"dinner": [34, 62, 106, 140, 175],
+	"bowling": [114, 186, 214, 250, 140, 165],
+	"karaoke": [236, 262, 282, 130, 160, 100],
+	"escape": [118, 175, 205, 305, 325, 62],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
+	"dinner": [34, 62, 106, 140, 175, 205],
 }
 const TECH_DAYS := [5, 10, 15]
 const OWNER_WEEKS := [4, 9, 14, 19]
@@ -171,6 +171,26 @@ func invite_day() -> bool:
 # the day waits for the invitation (a trip may have brought you home after five)
 func invite_due() -> bool:
 	return enabled and not _offered and invite_day() and not Story.overtime and not Game.title_mode
+
+
+# who is in the building for an outing: the current cast (World.CAST order) minus the person you play as
+func roster() -> Array:
+	var out := []
+	for n in World.CAST:
+		if World.chars.has(n) and n != Campaign.player_as:
+			out.append(n)
+	return out
+
+
+# the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
+func diners() -> Array:
+	var here := roster()
+	return DINERS.filter(func(n: String) -> bool: return here.has(n))
+
+
+func bowlers() -> Array:
+	var here := roster()
+	return BOWL_SKILL.keys().filter(func(n: String) -> bool: return here.has(n))
 
 
 func maybe_invite() -> void:
@@ -464,6 +484,13 @@ func _all_up() -> Array:
 	return [true, true, true, true, true, true, true, true, true, true]
 
 
+func _bowl_totals() -> Dictionary:
+	var totals := {"You": 0}
+	for who in bowlers():
+		totals[who] = 0
+	return totals
+
+
 func _bowl_setup() -> void:
 	g = {
 		"frame": 1,
@@ -476,7 +503,7 @@ func _bowl_setup() -> void:
 		"wait": 0.0,
 		"ball": 0.0,
 		"msg": "",
-		"totals": {"You": 0, "Alan": 0, "Garrison": 0, "Dan": 0},
+		"totals": _bowl_totals(),
 		"knocked": 0,
 		"up": [_all_up(), _all_up()],
 		"fall": {},
@@ -582,7 +609,7 @@ func _bowl_resolve() -> void:
 	if room_mode():
 		_pins_fall(0, knocked)
 		_bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
-		for who in DINERS:
+		for who in diners():
 			if knocked >= 10:
 				_bubble(_actor(who), "heart", 1.2)
 
@@ -615,12 +642,12 @@ func _bowl_next() -> void:
 			caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
 		return
 	if room_mode():
-		g.queue = BOWL_SKILL.keys()
+		g.queue = bowlers()
 		g.opp = ""
 		g.stage = "others"
 		caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
 		return
-	for who in BOWL_SKILL:
+	for who in bowlers():
 		g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
 	_bowl_advance()
 
@@ -687,7 +714,7 @@ func _pins_fall(lane: int, count: int) -> void:
 
 func bowl_rank() -> int:
 	var rank := 0
-	for who in BOWL_SKILL:
+	for who in bowlers():
 		if int(g.totals[who]) > int(g.totals["You"]):
 			rank += 1
 	return rank
@@ -787,7 +814,7 @@ func _escape_setup() -> void:
 	var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 	Difficulty.shuffle(digits, "escape")
 	var friends := 0
-	for who in Social.PEOPLE:
+	for who in Social.people():
 		friends += 1 if Social.is_friendly(who) else 0
 	g = {
 		"code": [digits[0], digits[1], digits[2]],
@@ -859,6 +886,15 @@ func escape_try(guess: Array) -> void:
 		_finish(0)
 
 
+# the first friendly coworker (upper case) for hints; with nobody friendly, the first person in the room
+func _first_friend() -> String:
+	for who in Social.people():
+		if Social.is_friendly(who):
+			return who.to_upper()
+	var here := roster()
+	return str(here[0]).to_upper() if not here.is_empty() else "ALAN"
+
+
 func escape_hint() -> String:
 	if int(g.hints) <= 0:
 		return ""
@@ -873,11 +909,7 @@ func escape_hint() -> String:
 	g.hints = int(g.hints) - 1
 	g.hints_used = int(g.hints_used) + 1
 	g.cur[slot] = g.code[slot]
-	var friend := "ALAN"
-	for who in Social.PEOPLE:
-		if Social.is_friendly(who):
-			friend = who.to_upper()
-			break
+	var friend := _first_friend()
 	g.msg = "%s: SLOT %d IS A %d" % [friend, slot + 1, int(g.code[slot])]
 	return str(g.msg)
 
@@ -925,7 +957,7 @@ func dinner_talk(index: int) -> int:
 	var total := 0
 	g.react = {}
 	g.hidden = _dinner_hidden()
-	for who in DINERS:
+	for who in diners():
 		var mood := "meh"
 		var pts := 1
 		if LOVES[who].has(topic):
@@ -953,17 +985,25 @@ func dinner_talk(index: int) -> int:
 
 # harder tiers hide some faces for a round (the points still count)
 func _dinner_hidden() -> Array:
-	var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
+	var table := diners()
+	var hide_n := table.size() - clampi(Difficulty.i("dinner.reveal"), 0, table.size())
 	if hide_n <= 0:
 		return []
-	var order: Array = DINERS.duplicate()
+	var order: Array = table.duplicate()
 	Difficulty.shuffle(order, "dinner")
 	return order.slice(0, hide_n)
 
 
 func _dinner_end() -> void:
 	var score := int(g.score)
-	_finish(3 if score >= 24 else (2 if score >= 19 else (1 if score >= 14 else 0)))
+	var scale := float(diners().size()) / 3.0  # the targets are for a table of three; fewer faces, fewer points
+	_finish(
+		(
+			3
+			if score >= roundi(24.0 * scale)
+			else (2 if score >= roundi(19.0 * scale) else (1 if score >= roundi(14.0 * scale) else 0))
+		)
+	)
 
 
 # ---- in the room: the games are played in the scene itself ---------------------------------------
@@ -1110,7 +1150,12 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-	var who: String = Difficulty.pick(DINERS + ["Vic"], "karaoke")
+	var cheer: Array = diners()
+	if roster().has("Vic"):
+		cheer.append("Vic")
+	if cheer.is_empty():
+		return
+	var who: String = Difficulty.pick(cheer, "karaoke")
 	_bubble(_actor(who), "heart", 1.5)
 
 
@@ -1121,7 +1166,9 @@ func _streak_broken() -> void:
 		g.dance = false
 		_hold_player("talk", _x0() + MIC_X + 60.0)
 	if Difficulty.rng("karaoke").randf() < 0.3:
-		_bubble(_actor(Difficulty.pick(DINERS, "karaoke")), "?", 1.0)
+		var crowd := diners()
+		if not crowd.is_empty():
+			_bubble(_actor(Difficulty.pick(crowd, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
@@ -1189,11 +1236,7 @@ func escape_nudge() -> String:
 	if int(g.hints) <= 0:
 		caption("NOBODY HAS ANYTHING LEFT TO SAY.", 2.0)
 		return ""
-	var friend := "ALAN"
-	for who in Social.PEOPLE:
-		if Social.is_friendly(who):
-			friend = who.to_upper()
-			break
+	var friend := _first_friend()
 	var text := "YOU HAVE ALL THREE. TRY THE KEYPAD ON THE VAULT."
 	for i in 3:
 		if not g.found.has(i):
@@ -1229,7 +1272,7 @@ func _room_submit() -> void:
 # ---- dinner extras
 func _dinner_react() -> void:
 	var parts := []
-	for who in DINERS:
+	for who in diners():
 		var mood: String = g.react[who]
 		if g.get("hidden", []).has(who):
 			_bubble(_actor(who), "?", 1.3)
@@ -1439,15 +1482,9 @@ func _paint_result(b: Rect2) -> void:
 	if not g.is_empty():
 		match game:
 			"bowling":
-				detail = (
-					"YOU %d  ALAN %d  GARRISON %d  DAN %d"
-					% [
-						int(g.totals["You"]),
-						int(g.totals["Alan"]),
-						int(g.totals["Garrison"]),
-						int(g.totals["Dan"])
-					]
-				)
+				detail = "YOU %d" % int(g.totals["You"])
+				for who in bowlers():
+					detail += "  %s %d" % [who.to_upper(), int(g.totals[who])]
 			"karaoke":
 				detail = (
 					"PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
@@ -1464,7 +1501,7 @@ func _paint_result(b: Rect2) -> void:
 					]
 				)
 			"dinner":
-				detail = "TABLE SCORE %d OF 30" % int(g.score)
+				detail = "TABLE SCORE %d OF %d" % [int(g.score), 10 * diners().size()]
 	if detail != "":
 		_t(detail, b.position.x, y + 3.0, BLUE)
 
@@ -1473,8 +1510,8 @@ func _paint_bowling(b: Rect2) -> void:
 	var x := b.position.x
 	var y := b.position.y
 	_t("FRAME %d  ROLL %d" % [int(g.frame), int(g.roll)], x, y)
-	var names := ["You", "Alan", "Garrison", "Dan"]
-	for i in 4:
+	var names := ["You"] + bowlers()
+	for i in names.size():
 		_t(
 			"%s %d" % [names[i].to_upper(), int(g.totals[names[i]])],
 			x,
@@ -1613,8 +1650,9 @@ func _paint_dinner(b: Rect2) -> void:
 			_canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
 		_t(str(g.options[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
 	var rx := x + 92.0
-	for i in 3:
-		var who: String = DINERS[i]
+	var table := diners()
+	for i in table.size():
+		var who: String = table[i]
 		var ry := y + 9.0 + 14.0 * float(i)
 		_t(who.to_upper(), rx, ry, BLUE)
 		if g.react.has(who):

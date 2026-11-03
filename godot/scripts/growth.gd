@@ -179,7 +179,8 @@ func start_plan() -> void:
 func _pick_helper(skill: String) -> void:
 	var options := []
 	for who in ["Alan", "Garrison", "Dan"]:
-		options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
+		if Social.people().has(who):
+			options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
 	Cards.ask(
 		"Morgan (Manager)",
 		"Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.",

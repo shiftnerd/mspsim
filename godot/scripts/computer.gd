@@ -2309,7 +2309,7 @@ func _paint_stats() -> void:
 		y += 4
 	_text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
 	y += 8
-	for who in Social.PEOPLE:
+	for who in Social.people():
 		_text(who, Vector2(x, y), TXT)
 		_text(Social.mood(who), Vector2(x + 44, y), _mood_color(who))
 		var meter := Rect2(x + 92, y, 40, 5)

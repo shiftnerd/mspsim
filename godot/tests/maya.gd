@@ -33,7 +33,7 @@ func _process(_delta: float) -> bool:
 			"Maya is in the cast in the tech campaign"
 		)
 		_check(
-			social.PEOPLE.has("Maya") and social.DESK_OWNER[2] == "Maya",
+			social.people().has("Maya") and social.DESK_OWNER[2] == "Maya",
 			"and has an opinion of you and a desk"
 		)
 		_check(root.get_node("Lync").contacts().has("Maya"), "and is a contact on Lync")

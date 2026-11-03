@@ -2598,6 +2598,18 @@ Hey! Sorry, I have a user on hold. What is up?
 [Talk.GREETINGS.Maya.cold]
 Oh. Hi. I am just finishing something.
 
+# Talk > GREETINGS > Morgan > friend
+[Talk.GREETINGS.Morgan.friend]
+Come in. Move the printouts, they are not load-bearing. What do you need?
+
+# Talk > GREETINGS > Morgan > neutral
+[Talk.GREETINGS.Morgan.neutral]
+Yes? I have a budget call in five minutes. Go ahead.
+
+# Talk > GREETINGS > Morgan > cold
+[Talk.GREETINGS.Morgan.cold]
+Mm. Is this about the queue?
+
 
 # ======================= Talk > SMALL =======================
 # Talk > SMALL > Alan > 0
@@ -2696,6 +2708,30 @@ Alan showed me how to read an event log. I felt like a detective. A tired one.
 [Talk.SMALL.Maya.3]
 I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.
 
+# Talk > SMALL > Morgan > 0
+[Talk.SMALL.Morgan.0]
+Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.
+
+# Talk > SMALL > Morgan > 1
+[Talk.SMALL.Morgan.1]
+Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet.
+
+# Talk > SMALL > Morgan > 2
+[Talk.SMALL.Morgan.2]
+Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough.
+
+# Talk > SMALL > Morgan > 3
+[Talk.SMALL.Morgan.3]
+I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part.
+
+# Talk > SMALL > Morgan > 4
+[Talk.SMALL.Morgan.4]
+I put iOS 7 on my phone. It is very bright. I miss my buttons.
+
+# Talk > SMALL > Morgan > 5
+[Talk.SMALL.Morgan.5]
+Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.
+
 
 # ======================= Talk > GOSSIP =======================
 # Talk > GOSSIP > 0
@@ -2783,6 +2819,22 @@ Say what you are going to do before you do it. 'I am going to restart your print
 # Talk > TIPS_GENERIC > Maya > 2
 [Talk.TIPS_GENERIC.Maya.2]
 Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.
+
+# Talk > TIPS_GENERIC > Morgan > 0
+[Talk.TIPS_GENERIC.Morgan.0]
+A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time.
+
+# Talk > TIPS_GENERIC > Morgan > 1
+[Talk.TIPS_GENERIC.Morgan.1]
+If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.
+
+# Talk > TIPS_GENERIC > Morgan > 2
+[Talk.TIPS_GENERIC.Morgan.2]
+Close what you fix. Reopen what you break. Just be the person who tells me which one it is.
+
+# Talk > TIPS_GENERIC > Morgan > 3
+[Talk.TIPS_GENERIC.Morgan.3]
+Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.
 
 
 # ======================= Talk > OWNER_HOLD =======================
@@ -3055,6 +3107,70 @@ Thanks for covering the floor lately. The clients notice, and so do the books.
 # Lync > MESSAGES > thanks_Garrison > text
 [Lync.MESSAGES.thanks_Garrison.text]
 Thanks for being great with the clients. They keep mentioning you.
+
+# Lync > MESSAGES > lunch_Morgan > text
+[Lync.MESSAGES.lunch_Morgan.text]
+Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for.
+
+# Lync > MESSAGES > lunch_Morgan > options > 0 > label
+[Lync.MESSAGES.lunch_Morgan.options.0.label]
+SURE, I WILL BRING ONE
+
+# Lync > MESSAGES > lunch_Morgan > options > 0 > reply
+[Lync.MESSAGES.lunch_Morgan.options.0.reply]
+Turkey, no pickles. You are a good person.
+
+# Lync > MESSAGES > lunch_Morgan > options > 1 > label
+[Lync.MESSAGES.lunch_Morgan.options.1.label]
+CAN'T, SWAMPED
+
+# Lync > MESSAGES > lunch_Morgan > options > 1 > reply
+[Lync.MESSAGES.lunch_Morgan.options.1.reply]
+Understood. Close the P1s first.
+
+# Lync > MESSAGES > phones_Morgan > text
+[Lync.MESSAGES.phones_Morgan.text]
+I need ten quiet minutes with the owners' budget. Can you cover my phones?
+
+# Lync > MESSAGES > phones_Morgan > options > 0 > label
+[Lync.MESSAGES.phones_Morgan.options.0.label]
+SURE
+
+# Lync > MESSAGES > phones_Morgan > options > 0 > reply
+[Lync.MESSAGES.phones_Morgan.options.0.reply]
+Thank you. I owe you one. Do not tell anyone I said that.
+
+# Lync > MESSAGES > phones_Morgan > options > 1 > label
+[Lync.MESSAGES.phones_Morgan.options.1.label]
+SORRY, CAN'T
+
+# Lync > MESSAGES > phones_Morgan > options > 1 > reply
+[Lync.MESSAGES.phones_Morgan.options.1.reply]
+Fair. I will let it ring.
+
+# Lync > MESSAGES > help_Morgan > text
+[Lync.MESSAGES.help_Morgan.text]
+Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me?
+
+# Lync > MESSAGES > help_Morgan > options > 0 > label
+[Lync.MESSAGES.help_Morgan.options.0.label]
+PULL THE LIST
+
+# Lync > MESSAGES > help_Morgan > options > 0 > reply
+[Lync.MESSAGES.help_Morgan.options.0.reply]
+That is exactly what I needed. Thank you.
+
+# Lync > MESSAGES > help_Morgan > options > 1 > label
+[Lync.MESSAGES.help_Morgan.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > MESSAGES > help_Morgan > options > 1 > reply
+[Lync.MESSAGES.help_Morgan.options.1.reply]
+Sure. I will do it the slow way.
+
+# Lync > MESSAGES > thanks_Morgan > text
+[Lync.MESSAGES.thanks_Morgan.text]
+Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.
 
 
 # ======================= Review > QUOTES =======================

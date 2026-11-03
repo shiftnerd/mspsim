@@ -35,7 +35,7 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
 	if is_open or DayReport.is_open:
 		_queue.append([who, body, choices, on_pick])
 		return
-	speaker = who
+	speaker = Roles.speaker(who)  # a card that names you comes from somebody else
 	text = body
 	options = choices
 	var any_enabled := false

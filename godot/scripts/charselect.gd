@@ -5,8 +5,9 @@ extends Node2D
 # Esc goes back, mouse hover and click work like the title menu. Confirming applies the choice
 # (Player.current_character, Phone.os) and emits done(result); Esc on the first step emits
 # cancelled. In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at
-# their desks as NPCs, so only the people who are not in World.CAST are offered; Free Play
-# offers everyone.
+# their desks as NPCs, so the tech campaign offers only the people who are not in World.CAST; the
+# owner campaign offers Alan or Garrison (the other owner becomes your partner NPC); Free Play offers
+# everyone. Whoever you pick as a cast member leaves the cast and sits at their own desk (Campaign.player_as).
 
 signal done(result: Dictionary)
 signal cancelled
@@ -44,6 +45,13 @@ const PEOPLE := {
 		"name": "VIC",
 		"blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
 	},
+}
+# the owner campaign shows these instead of the Free Play blurbs
+const OWNER_BLURBS := {
+	"office_alan":
+	"THE TECHNICAL OWNER. SERVERS, BACKUPS AND THE STACK ARE YOURS; GARRISON KEEPS THE CLIENTS HAPPY.",
+	"casual_garrison":
+	"THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
 }
 const PHONES := [
 	{
@@ -83,8 +91,11 @@ func needs_phone() -> bool:
 	return mode == "tech"
 
 
-# who this mode offers: everyone in Free Play, only non-cast people in a campaign
+# who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
+# the tech campaign
 func choices(for_mode: String) -> Array:
+	if for_mode == "owner":
+		return ["office_alan", "casual_garrison"]
 	var cast: Array = []
 	for n in World.CAST:
 		cast.append(str(World.CAST[n].character))
@@ -122,7 +133,10 @@ func current_id() -> String:
 
 
 func info(id: String) -> Dictionary:
-	return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
+	var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
+	if mode == "owner" and OWNER_BLURBS.has(id):
+		entry["blurb"] = OWNER_BLURBS[id]
+	return entry
 
 
 func summary(with_tier := true) -> String:

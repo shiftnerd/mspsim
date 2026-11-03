@@ -21,7 +21,10 @@ const CAST := {
 	"Dan": {"character": "office_dan", "home": "main_floor", "seat": "Seat3"},
 	"Vic": {"character": "sales_vic", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
 	"Maya": {"character": "office_maya", "home": "main_floor", "seat": "Seat2"},
+	# the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
+	"Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
 }
+const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
 const FLOOR_Y := 118.0
 const SETTLE := 6.0  # after this long in a leg, someone you walk in on is already at the spot
@@ -190,6 +193,8 @@ func leg_exit(n: String) -> void:
 
 func node_left(n: String, held: String, sips: int) -> void:
 	# the scene changed under a living NPC: carry on off-screen from about halfway through the leg
+	if not chars.has(n):
+		return  # a copy of somebody who just left the cast
 	var st: Dictionary = chars[n]
 	st.node = null
 	st.held = held
@@ -268,16 +273,47 @@ func _make_char(n: String) -> Dictionary:
 	}
 
 
-# Maya works in the tech campaign and Free Play (not on your payroll in the owner campaign).
+# the cast members who are NOT in the building right now: the person you play as (Campaign.player_as, a campaign
+# or Free Play) and Maya in the owner campaign (not on your payroll). CAST itself never changes.
+func roster_gone() -> Array:
+	var gone := []
+	if Campaign.player_as != "" and CAST.has(Campaign.player_as):
+		gone.append(Campaign.player_as)
+	if Campaign.active and Campaign.mode == "owner" and not gone.has("Maya"):
+		gone.append("Maya")
+	return gone
+
+
+# the cast name of a character sheet ("office_dan" -> "Dan"), "" for someone who is not in CAST
+func cast_of(character: String) -> String:
+	for n in CAST:
+		if str(CAST[n].character) == character:
+			return n
+	return ""
+
+
+# where the person you play as sits at the start: {scene, seat} (empty when you are not a cast member)
+func player_desk() -> Dictionary:
+	var who := Campaign.player_as
+	if who == "" or not CAST.has(who):
+		return {}
+	return {"scene": CAST[who].home, "seat": CAST[who].seat}
+
+
+# remove whoever is gone from `chars` (their node too) and bring everyone else back, in CAST order
 func apply_roster() -> void:
-	var owner_mode := Campaign.active and Campaign.mode == "owner"
-	if owner_mode and chars.has("Maya"):
-		var st: Dictionary = chars["Maya"]
-		if st.node != null and is_instance_valid(st.node):
-			st.node.queue_free()
-		chars.erase("Maya")
-	elif not owner_mode and not chars.has("Maya"):
-		chars["Maya"] = _make_char("Maya")
+	var gone := roster_gone()
+	for n in gone:
+		if chars.has(n):
+			var st: Dictionary = chars[n]
+			if st.node != null and is_instance_valid(st.node):
+				st.node.queue_free()
+			chars.erase(n)
+	for n in CAST:
+		if not gone.has(n) and not chars.has(n):
+			chars[n] = _make_char(n)
+			if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
+				_spawn(n)  # you just stopped being them (Free Play): they are at their desk
 
 
 func _on_lights_changed(room: String) -> void:
@@ -411,8 +447,8 @@ func _finish_leg(n: String) -> void:
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
 func start_outing(room: String, spots: Array, seats := {}) -> void:
 	var x0 := float(DATA.SCENES[room].x0)
-	var i := 0
 	for n in chars:
+		var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
 		var st: Dictionary = chars[n]
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
@@ -436,7 +472,6 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
 			}
 		]
 		st.leg_t = FOREVER - 100.0  # already standing at their spot when the room appears
-		i += 1
 	set_lights(room, true)
 
 
@@ -535,10 +570,17 @@ func _plan(n: String) -> Array:
 	if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
 		st.lunched = true
 		# the account manager lunches with a client instead
-		return _visit_plan(n, 50.0) if CAST[n].get("role", "") == "sales" else _lunch_plan(n)
+		match str(CAST[n].get("role", "")):
+			"sales":
+				return _visit_plan(n, 50.0)
+			"manager":
+				return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open
+		return _lunch_plan(n)
 	var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
 	if CAST[n].get("role", "") == "sales":
 		kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
+	elif CAST[n].get("role", "") == "manager":
+		kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
 	return plan_for(n, kinds[randi() % kinds.size()])
 
 
@@ -553,6 +595,8 @@ func plan_for(n: String, kind: String) -> Array:
 			legs = _trip(n, "cubicle_area", _cooler_leg())
 		"closet":
 			legs = _trip(n, "network_closet", _closet_leg())
+		"floor":
+			legs = _trip(n, "main_floor", _floor_leg())
 		"bathroom":
 			legs = _trip(n, "bathroom", _bathroom_leg())
 		_:
@@ -822,6 +866,17 @@ func _closet_leg() -> Dictionary:
 	}
 
 
+# the manager walks the main floor: a word at each desk, then back
+func _floor_leg() -> Dictionary:
+	return {
+		"kind": "floor",
+		"dur": 36.0,
+		"target_x": 100.0,
+		"routine":
+		PackedStringArray(["walk:270", "wait:1", "talk:4", "walk:196", "wait:1", "talk:3", "walk:100", "wait:2"]),
+	}
+
+
 func _cooler_leg() -> Dictionary:
 	var u: Dictionary = _uses("cubicle_area")
 	return {
@@ -884,9 +939,15 @@ func _start_meeting() -> void:
 # the weekly all-hands: everyone goes to the conference room and sits (the last seats are yours)
 func start_all_hands() -> void:
 	var i := 1
-	for n in chars:
+	var owner_mode := Campaign.mode == "owner"
+	for n in CAST:
+		if not chars.has(n):
+			continue
 		if chars[n].following:
 			set_following(n, false)
+		if CAST[n].get("role", "") == "manager" and not owner_mode:
+			send_to_meeting(n, "", 90.0)  # Morgan hosts: standing at the whiteboard, no chair
+			continue
 		send_to_meeting(n, "Seat%d" % i, 90.0)
 		i += 1
 
@@ -894,10 +955,13 @@ func start_all_hands() -> void:
 func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
 	var st: Dictionary = chars[n]
 	var home: String = CAST[n].home
-	var x := float(DATA.SCENES["conference"].seats[seat])
-	var routine := ["walk:%d" % x, "sit:%s" % seat]
+	var hosting := seat == ""
+	var x := HOST_X if hosting else float(DATA.SCENES["conference"].seats[seat])
+	var routine := ["walk:%d" % x]
+	if not hosting:
+		routine.append("sit:%s" % seat)
 	for _i in int(secs / 6.0):
-		routine.append_array(["wait:3", "say:2"])
+		routine.append_array(["wait:3", "talk:3"] if hosting else ["wait:3", "say:2"])
 	var meeting := {
 		"kind": "meeting",
 		"scene": "conference",

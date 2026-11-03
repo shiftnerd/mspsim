@@ -50,6 +50,7 @@ func _ready() -> void:
 	Game.format_changed.connect(_apply_format)
 	_apply_format()
 	World.populate(self)
+	_seat_player()
 	Expo.populate(self)
 	Onsite.populate(self)
 	_room = scene_file_path.get_file().get_basename()
@@ -58,6 +59,19 @@ func _ready() -> void:
 	if Net.carrying != "" and _room != "network_closet":
 		Net.drop_carry()  # a cable end cannot leave the closet
 		_player.give("")
+
+
+# the first room of a run as a cast member: you are already sitting at your desk
+func _seat_player() -> void:
+	if not Game.vars.get("start_seated", false):
+		return
+	Game.vars.erase("start_seated")
+	var desk: Dictionary = World.player_desk()
+	if desk.is_empty() or str(desk.scene) != scene_file_path.get_file().get_basename():
+		return
+	var seat := get_node_or_null("Interactables/%s" % str(desk.seat))
+	if seat != null and _player.has_method("sit_now"):
+		_player.sit_now(seat)
 
 
 func _on_lights(room: String) -> void:
