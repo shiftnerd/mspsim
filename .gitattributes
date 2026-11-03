@@ -1,0 +1,10 @@
+# keep LF in the repository and the working tree (the project is edited on Windows by several tools)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.aseprite binary
+*.ase binary
+*.ctex binary
+*.zip binary
+*.exe binary
