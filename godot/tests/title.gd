@@ -27,7 +27,7 @@ func _process(_delta: float) -> bool:
 	frame += 1
 	var world := root.get_node("World")
 	var campaign := root.get_node("Campaign")
-	campaign.save_prefix = "user://test_"
+	campaign.save_prefix = "user://test_title_"  # no shared save: Continue would shift the menu
 	match frame:
 		30:
 			_check(current_scene.name == "Title" and world.time_scale == 0.0, "frozen on the title")
@@ -49,6 +49,9 @@ func _process(_delta: float) -> bool:
 				current_scene._items[current_scene._sel].id == "free",
 				"Down again reaches Free Play"
 			)
+			_press(KEY_ENTER)
+		80:
+			_check(current_scene._select != null, "Free Play opens the character select")
 			_press(KEY_ENTER)
 		150:
 			_check(

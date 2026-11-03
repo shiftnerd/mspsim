@@ -10,6 +10,7 @@ const LOGO := preload("res://assets/ui/mspsim_logo.png")
 const LOGO_SMALL := preload("res://assets/ui/mspsim_logo_s.png")
 const PROMPT := preload("res://assets/ui/press_start.png")
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const CharSelect := preload("res://scripts/charselect.gd")
 const FLOOR_Y := 118.0
 const SHOW_SECS := 9.0
 const VIGNETTES := ["lineup", "phones", "kitchen", "conference"]
@@ -34,6 +35,8 @@ var _menu_open := false
 var _sel := 0
 var _items: Array = []
 var _menu: Node2D
+var _front: CanvasLayer
+var _select: Node2D = null  # the character select screen while it is open
 
 
 func _ready() -> void:
@@ -54,6 +57,7 @@ func _ready() -> void:
 	var front := CanvasLayer.new()
 	front.layer = 20
 	add_child(front)
+	_front = front
 	_logo = Sprite2D.new()
 	_logo.centered = false
 	front.add_child(_logo)
@@ -245,7 +249,7 @@ func _rotate() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _started:
+	if _started or _select != null:
 		return
 	var go := false
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -327,6 +331,48 @@ func _hover(at: Vector2) -> bool:
 func _choose(i: int) -> void:
 	if i < 0 or i >= _items.size() or not _items[i].enabled:
 		return
+	var id := str(_items[i].id)
+	if id.ends_with("_continue"):
+		_start(id)  # a saved run keeps its character: no select screen
+	else:
+		_open_select(id)
+
+
+# new runs pick their character (and, in the tech campaign, their phone) first
+func _open_select(id: String) -> void:
+	if _select != null:
+		return
+	var mode := Campaign.FREE
+	if id == "tech_new":
+		mode = "tech"
+	elif id == "owner_new":
+		mode = "owner"
+	_select = CharSelect.new()
+	_select.setup(mode)
+	_select.done.connect(_on_select_done.bind(id))
+	_select.cancelled.connect(_close_select)
+	_front.add_child(_select)
+	_logo.visible = false
+	_menu.visible = false
+
+
+func _close_select() -> void:
+	if _select == null:
+		return
+	_select.queue_free()
+	_select = null
+	_logo.visible = true
+	_menu.visible = _menu_open
+	_menu.queue_redraw()
+
+
+func _on_select_done(result: Dictionary, id: String) -> void:
+	_select.queue_free()
+	_select = null
+	_start(id, str(result.summary))
+
+
+func _start(id: String, summary := "") -> void:
 	_started = true
 	World.time_scale = 1.0
 	World.hud_visible = _hud_was
@@ -335,7 +381,7 @@ func _choose(i: int) -> void:
 	Outings.enabled = true
 	Onsite.enabled = true
 	Outings.use_rooms = true
-	match str(_items[i].id):
+	match id:
 		"tech_new":
 			Campaign.new_game("tech")
 		"tech_continue":
@@ -347,6 +393,8 @@ func _choose(i: int) -> void:
 		_:
 			Campaign.new_game(Campaign.FREE)
 	Game.go("main_floor", "start")
+	if summary != "":
+		Hints.toast(summary, 4.0)
 
 
 func _draw_menu() -> void:

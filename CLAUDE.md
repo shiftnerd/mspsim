@@ -422,7 +422,17 @@ New characters start as a copy of an existing one, then change only what differs
   blinking PRESS START. **Enter / Space / E / click** starts (`Game.go("main_floor")`); **F9** still cycles formats. The office simulation
   is frozen while you are on the title (`World.time_scale = 0`, clock hidden) and starts when you press start.
   Tests: `tests/title.gd` (Enter starts the game), `tests/titleshots.gd` (screenshots of each format to `user://`).
-- Ideas left: a settings/credits screen, a character-select step before starting, music, and an animated logo (letters dropping in).
+- **Character select / first-day screen** (`scripts/charselect.gd`, a `Node2D` that `title.gd` adds to its front layer; no scene file): picking TECH CAMPAIGN, NEW OWNER CAMPAIGN or FREE PLAY on the title menu
+  opens it instead of starting at once (**Continue skips it** and restores the saved character). A row of the playable people (`Player.CHARACTERS`, the same 7 as the 1-7 keys) with a looping idle preview
+  (left half face right, right half face left, the chosen one faces the way you last moved), name and a short 2013-14 blurb (`PEOPLE`); in narrow portrait (`v`, under 250 px wide) it is a carousel with a 2x
+  preview, arrows and dots. **Left/Right (A/D)** move, **Enter / E / Space** confirm, **Esc / Backspace** go back (to the title menu), mouse hover selects and click confirms, F9 cycles formats.
+  The **tech campaign adds a second step: the phone** (IPHONE 5 / NEXUS 5, same saved preference as the phone's first-open picker via `Phone.set_os`; that picker stays as the fallback when no phone was chosen, e.g. owner / Free Play),
+  and a summary line ("TECH CAMPAIGN - ADULT - IPHONE 5") is shown at the bottom and as a toast when the run starts.
+  **Cast rule:** in the two campaigns the cast (`World.CAST`: Alan, Garrison, Dan, Vic, Maya) are real NPCs with desks, opinions and agendas, so only people who are NOT cast are offered (teen, adult, site Alan); Free Play offers all 7.
+  (Playing as a cast member in a campaign would need their NPC removed from `World.chars` like `apply_roster` does for Maya, plus Social / Lync / Talk / desk-ticket entries for the missing person: not done.)
+  The choice sets `Player.current_character`; `Campaign.save` stores it as `campaign/character` and `continue_game` restores it (old saves default to `office_adult`). Launching a scene directly (tests) never shows the screen.
+  Tests: `tests/charselect.gd` (choices per mode, move / back / confirm, phone step, summary, Continue skips it, old save default), `tests/charselect_shots.gd` (screenshots, renderer needed, `-- --format=wide|h|v`).
+- Ideas left: a settings/credits screen, music, and an animated logo (letters dropping in).
 
 ### Rotating title vignettes (`scripts/title.gd`, `Game.title_mode`)
 - The title rotates (every 9 s, with a 0.3 s fade) through four scenes behind the logo, each the REAL room scene instanced in title mode
@@ -483,7 +493,7 @@ New characters start as a copy of an existing one, then change only what differs
 - **P** opens it anywhere (not on the title screen); Esc / P closes. Same takeover + faded strip as the computer (`Game.ui_open`, `Game.ui_shift`).
   First open asks **iPhone 5** (slate, iOS 7 look: gradient wallpaper, rounded icons, home button, iOS header + back chevron) or **Nexus 5**
   (matte black, Android 4.4 look: dark status bar, Holo teal headers, on-screen back / home / recents bar); saved in `user://mspsim_phone.cfg`,
-  changeable in Settings. Left/Right/Enter also work in the picker. Screen scale doubles in tall formats.
+  changeable in Settings (the tech campaign's character select screen also asks and sets it, so the picker is only a fallback). Left/Right/Enter also work in the picker. Screen scale doubles in tall formats.
 - Apps: Mail (the same `Msp.emails`), Tickets (`Msp.open_tickets()`: view, TAKE, NOTE; CLOSE says to use a computer), Texts (`Msp.texts`),
   Settings. It runs on cellular so it works with the office network down. `Msp.send_text(from, body)` / `unread_texts()` / signal
   `text_received`: P1/P2 tickets text from "Dispatch", SLA breaches from "Boss". HUD adds `TXT n` when unread.
@@ -492,7 +502,7 @@ New characters start as a copy of an existing one, then change only what differs
 
 ### Campaigns + Free Play / Film Mode (`scripts/campaign.gd` autoload `Campaign`, `day_report.gd` autoload `DayReport`)
 - **Title menu** (Enter / Space / E / click on PRESS START opens it; Up/Down, Enter, mouse hover/click, Esc closes): `TECH CAMPAIGN` (or
-  `CONTINUE TECH - DAY n` + `NEW TECH CAMPAIGN` when a save exists), `OWNER CAMPAIGN - SOON` (locked), `FREE PLAY - FILM MODE`.
+  `CONTINUE TECH - DAY n` + `NEW TECH CAMPAIGN` when a save exists), `OWNER CAMPAIGN - SOON` (locked), `FREE PLAY - FILM MODE`. Choosing a new run opens the character select screen (see "Logo + title screen"); Continue goes straight in.
 - **Free Play / Film Mode** = the old sandbox: `Campaign.new_game("free")` leaves `Campaign.active` false, so no days, reports, scoring or
   random tickets (`Msp.enabled = false`, no spawns, SLA clocks, texts or desk-outage tickets); computer/phone still open and the endless
   day loop runs as before. Use this for filming. Launching any scene directly (tests) behaves the same as before (campaign inactive).
