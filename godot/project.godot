@@ -39,6 +39,7 @@ Projects="*res://scripts/projects.gd"
 Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
 PrinterGame="*res://scripts/printer_game.gd"
+Career="*res://scripts/career.gd"
 Strings="*res://scripts/strings.gd"
 
 [display]

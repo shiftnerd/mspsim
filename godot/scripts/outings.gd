@@ -431,6 +431,15 @@ func _finish(result: int) -> void:
 	else:
 		count += 1
 		best[game] = maxi(int(best.get(game, 0)), result)
+		Career.note_outing(
+			game,
+			result,
+			{
+				"perfects": int(g.get("perfect", 0)),
+				"secs": roundi(Difficulty.f("escape.time") - float(g.get("time", 0.0))),
+				"score": int(g.get("score", 0))
+			}
+		)
 		Social.change_all(1 + result)
 		if Campaign.active:
 			lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
@@ -568,6 +577,7 @@ func _bowl_resolve() -> void:
 	g.knocked = knocked
 	g.pins = left - knocked
 	g.totals["You"] = int(g.totals["You"]) + knocked
+	Career.note_bowl(knocked, int(g.roll))
 	if knocked == 10 and int(g.roll) == 1:
 		g.totals["You"] = int(g.totals["You"]) + 3
 		g.msg = "STRIKE!"

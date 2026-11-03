@@ -22,6 +22,7 @@ const ROOTS := {
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
 	"Hints": ["DAY1"],
+	"Career": ["MEDALS", "UNLOCKS"],
 	"Growth": ["STRETCH"],
 	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
 	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],

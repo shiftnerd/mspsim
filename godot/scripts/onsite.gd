@@ -1779,6 +1779,7 @@ func _pet(kind: String) -> void:
 	if lines.is_empty():
 		return
 	pets += 1
+	Career.add("pets")
 	Hints.toast(str(lines[randi() % lines.size()]), 3.0)
 	var p := get_tree().current_scene.get_node_or_null("Actors/Player")
 	if p != null and p.has_method("start_emote") and kind != "fish":

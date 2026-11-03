@@ -894,6 +894,7 @@ func _record() -> void:
 		streak += 1
 	else:
 		streak = 0
+	Career.note_printer(model, stars, prayed, streak)
 
 
 func to_dict() -> Dictionary:

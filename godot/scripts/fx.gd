@@ -577,6 +577,7 @@ var _duck_base := 0.0
 
 func _duck_press() -> void:
 	_duck_count += 1
+	Career.add("duck_squeaks")
 	_duck_t = 1.6
 	var roll := randf()
 	if _duck_count % 10 == 0:
