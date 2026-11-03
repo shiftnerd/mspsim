@@ -3,6 +3,21 @@
 A parking lot for things we have talked about but not built. Move an item to `CLAUDE.md` (as documentation) once it ships.
 Sections: the two campaigns, the shared systems, the world and the characters, presentation, tooling.
 Items marked **(real story)** came from the /r/msp research (see `docs/msp-research.md`).
+Open bugs and polish live in `docs/BACKLOG.md`; the long replayability write-up is `docs/replayability-ideas.md` (effort S/M/L and code hooks for every item).
+
+## Replayability and variety (approved, in roadmap order)
+All of it follows the same rules: data tables (patchable, in `strings.txt` style) not code, numbers in one `TIERS` table, every game reads a seeded `Difficulty.rng(stream)` so runs and tests are reproducible, parody names only, 2013-14 only, and never punish the player for family or health reasons.
+1. **Difficulty and seeds** (easy / normal / hard on the title menu, run seed shown and saved, saved settings): *building now.*
+2. **Printer variety**: 28+ error questions, models (laser, inkjet, plotter, multifunction, receipt, dot matrix), tier-scaled question count, escalating jam chains, a boss-level server-room line printer, parts bag, "no-prayer streak" medal, seeded practice.
+3. **Karaoke songs**: four invented-title songs (a 2013 pop hit, a country singalong, an 80s classic, a fast rap), tempo / hold notes / double notes by tier, crowd-mood meter, duets with a coworker, set lists, pager chime on on-call weeks (cosmetic, never a hidden penalty).
+4. **Escape room**: clue recipes (sum, roman numeral, letter-to-number), randomised clue spots, a 4-digit code on hard, red herrings, timer scaling, friend-specific hints; later themed rooms (server room, 1990s arcade, vault).
+5. **Who comes along**: an `Outings.roster()` and per-person tables so Maya and Vic join, bowling personalities (steady, streaky, wild, precise, show-off), dinner tastes that shift per save.
+6. **Dinner**: 16+ topics with tags, mood of the day, dietary quirks (affectionate), a client or prospect at the table, "the owner pays" budget, table events, post-dinner one-on-ones.
+7. **Career screen and medals** (GUTTER GURU, PRINTER WHISPERER, DUCK WHISPERER, NEVER RESTARTED...), cosmetic unlocks (outfit skins, desk toys, wallpapers), nerf-war scoring (most ducked, sniper, friendly fire).
+8. **Event deck (40 cards) and vignette deck (24)** using the existing vignette `fx` resolver.
+9. **Mutators** (Heartbleed week, XP end of life, flu season, printer apocalypse, tax season, hardware recall...) and **starting conditions** (inherit a messy MSP, the only tech, a rival wants your client).
+10. **Year 2 / New Game+** (new clients active, shifted story beats, harder SLAs) and a **daily seed**; a Free Play toolbox (pick any game, song, printer model, arena, seed) for filming.
+Later: bowling lane oil / spin / alleys / league night / handicaps, nerf modes (capture the monitor, VIP defence, scarce ammo, arenas), conference-trip randomisation, onsite job parameter variance and a dispatch roulette.
 
 ## Tech campaign
 - A real conference-room scene for the yearly review (Morgan, with the team visible behind).
