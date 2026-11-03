@@ -6770,7 +6770,7 @@ func _board_books(a: Rect2) -> void:
     var right := [
         ["WEEK", "%d OF %d" % [Campaign.day, Campaign.TOTAL_DAYS], TXT],
         ["A/R OWED", "$%d" % Owner.ar_total(), AMBER if Owner.ar_total() > 0 else TXT],
-        ["COMPANY VALUE", "$%d (%.1fX)" % [Owner.valuation(), Owner.multiple()], Color("6b421c")],
+        ["COMPANY VALUE", Owner.value_text(), Color("6b421c")],
         ["TEAM SPEED", "%.1f" % Owner.team_speed(), TXT],
         ["OWNER DRAW", "$%d/WK (%s)" % [Owner.draw_due() if Campaign.day >= Owner.DRAW_START else int(Owner.DRAW.get(Owner.draw_policy, 0)), Owner.draw_policy.to_upper()], TXT],
         ["GOAL", Owner.goal_row()[1], TXT],
@@ -8995,6 +8995,7 @@ func _ready() -> void:
 func show_report(data: Dictionary) -> void:
     report = data
     is_open = true
+    Cards.cover()
     _opened = Time.get_ticks_msec()
     _canvas.visible = true
     _mouse = get_viewport().get_mouse_position()
@@ -10294,7 +10295,7 @@ const DEFAULT_DECK := {
         "min_day": 3,
         "max_day": 20,
         "weight": 1.2,
-        "cooldown": 8,
+        "cooldown": 20,
         "requires": [],
         "speaker": "A client",
         "text": "I know this is not work, but can you just look at my home printer? It has been blinking at me since Sunday. I will buy you lunch.",
@@ -14325,6 +14326,7 @@ var _hits: Array = []
 var _mouse := Vector2.ZERO
 var _queue: Array = []
 var _opened := 0  # msec the card appeared: early confirms are ignored
+var _draining := false  # _show_next is handing out the next queued card (it may skip the line)
 
 
 func _ready() -> void:
@@ -14338,8 +14340,12 @@ func _ready() -> void:
 # `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
 # and on_pick gets "__none" so the asker can clean up
 func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()) -> void:
-    if is_open or DayReport.is_open:
+    # X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
+    # report covers the screen, or while older cards are still waiting joins the back of the queue.
+    if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
         _queue.append([who, body, choices, on_pick, valid])
+        if not is_open and not DayReport.is_open:
+            _show_next()
         return
     speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
     text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
@@ -14348,7 +14354,7 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
         var entry: Dictionary = choice
         if str(entry.get("label", "")).find("{") >= 0:
             entry = entry.duplicate()
-            entry["label"] = Roles.fill(str(entry.label))
+            entry["label"] = Roles.fill(str(entry.label)).to_upper()  # X9: the UI is all caps, names included
         options.append(entry)
     choices = options
     var any_enabled := false
@@ -14395,13 +14401,31 @@ func _show_next() -> void:
             if next[3].is_valid():
                 next[3].call("__none")
             continue
+        _draining = true
         ask(next[0], next[1], next[2], next[3], valid)
+        _draining = false
 
 
 # cards that were asked while the day report covered the screen
 func flush() -> void:
-    if not is_open and not DayReport.is_open:
+    if DayReport.is_open:
+        return
+    if is_open:
+        _canvas.visible = true  # a card that opened under the report comes back after it
+        _opened = Time.get_ticks_msec()
+        _canvas.queue_redraw()
+    else:
         _show_next()
+
+
+# the weekly report is about to cover the screen: a card that is open waits underneath (its keys are ignored)
+func cover() -> void:
+    _canvas.visible = false
+
+
+# how many cards wait to be shown (tests)
+func waiting() -> int:
+    return _queue.size()
 
 
 # Esc picks the option whose id is "leave" (conversations)
@@ -14421,7 +14445,7 @@ func _move(step: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
-    if not is_open:
+    if not is_open or DayReport.is_open:
         return
     if event is InputEventMouseMotion:
         _mouse = get_viewport().get_mouse_position()
@@ -14495,7 +14519,9 @@ func _paint() -> void:
         if not on and opt.has("hint"):
             label += " [%s]" % str(opt.hint)
         var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
-        var room := chars - 1 - (chip.length() + 1 if chip != "" else 0)
+        var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
+        var room := chars - 1 - (chip.length() + 1 if chip != "" else 0) - (tchip.length() + 1 if tchip != "" else 0)
+        var right_edge := r.end.x
         PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
         if chip != "":
             var tint := Color("2f7d46")
@@ -14507,6 +14533,14 @@ func _paint() -> void:
             var chip_rect := Rect2(r.end.x - cw - 1.0, r.position.y + 1.0, cw, 8.0)
             _canvas.draw_rect(chip_rect, tint)
             PixelFont.draw(_canvas, chip, chip_rect.position + Vector2(2, 1), WHITE)
+            right_edge = chip_rect.position.x - 1.0
+        if tchip != "":
+            var dir := int(opt.get("trust_dir", 0))
+            var ttint := Color("2f7d46") if dir > 0 else (Color("b02a2a") if dir < 0 else Color("6b7385"))
+            var tw := float(tchip.length()) * 4.0 + 3.0
+            var trect := Rect2(right_edge - tw - 1.0, r.position.y + 1.0, tw, 8.0)
+            _canvas.draw_rect(trect, ttint)
+            PixelFont.draw(_canvas, tchip, trect.position + Vector2(2, 1), WHITE)
         _hits.append({"r": r, "i": i})
         y += 11.0
     var m := _mouse.floor()
@@ -14961,7 +14995,7 @@ const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 const CARDS := {
     "welcome": {
         "speaker": "Marge (Bookkeeper)",
-        "text": "Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
+        "text": "Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
         "options": [
             {"label": "VOLUME PRICING (-15% FEES, VIC SELLS MORE)", "fx": {"price": -0.15, "vic": 0.15}},
             {"label": "STANDARD PRICING", "fx": {}},
@@ -15042,7 +15076,7 @@ const CARDS := {
         "speaker": "Dan (Network Tech)",
         "text": "{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
         "options": [
-            {"label": "GIVE THE RAISE", "fx": {"weekly": 100, "speed": 0.1}},
+            {"label": "GIVE THE RAISE", "fx": {"payroll": 100, "speed": 0.1}},
             {"label": "NOT NOW", "roll": [[0.7, {}, "Dan shrugs and keeps working."], [0.3, {"lose_tech": true, "rep": -2}, "Dan hands in his notice. The team is stretched thin."]]},
         ],
     },
@@ -15050,8 +15084,8 @@ const CARDS := {
         "speaker": "Vic Marlowe",
         "text": "Hoot and Holler is opening a branch and wants a network install. This is a big job.",
         "options": [
-            {"label": "BID LOW $2,500", "roll": [[0.9, {"cash": 2500, "cost": 0, "rep": 1}, "They accept. The crew grumbles about the margin."], [0.1, {}, "They go with someone else."]]},
-            {"label": "BID HIGH $4,500", "roll": [[0.45, {"cash": 4500, "rep": 2}, "They accept the premium bid."], [0.55, {}, "They balk and walk."]]},
+            {"label": "BID LOW $2,500", "risk": {"client": 3, "base": 0.0, "late": 0.08}, "roll": [[0.78, {"cash": 2500, "cost": 0, "rep": 1, "burnout": 3}, "They accept. The crew grumbles about the margin."], [0.12, {"cash": 1300, "burnout": 6}, "They accept, then the job runs long. After the overtime you clear $1,300."], [0.1, {}, "They go with someone else."]]},
+            {"label": "BID HIGH $4,500 (RISKY)", "risk": {"client": 3, "base": 0.03, "late": 0.14}, "roll": [[0.35, {"cash": 4500, "rep": 2}, "They accept the premium bid and pay in full."], [0.2, {"cash": 3000, "mood": {"3": -8}}, "They accept, then dispute the invoice after the work. You settle at $3,000 and the relationship is bruised."], [0.45, {"rep": -1}, "They balk, walk, and mention it to people they know."]]},
         ],
     },
     "poach": {
@@ -15254,11 +15288,11 @@ const DAYS := {
     10: [{"at": 10.0, "card": "rack"}, {"at": 10.8, "event": "profit_review"}, {"at": 14.0, "event": "vic_report"}, {"at": 12.0, "card": "flex_hours"}],
     11: [{"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"}, {"at": 15.5, "event": "peer_goal"}],
     12: [{"at": 9.5, "card": "migration"}, {"at": 10.5, "card": "after_hours"}, {"at": 11.5, "event": "growth_stretch"}],
-    13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}],
+    13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
     14: [{"at": 10.0, "event": "vendor_breach"}, {"at": 11.0, "event": "profit_review"}, {"at": 15.0, "card": "marketing"}],
-    15: [{"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}],
-    16: [{"at": 9.5, "card": "bid"}, {"at": 14.0, "event": "client_breach"}, {"at": 11.0, "event": "growth_stretch"}],
-    17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 10.0, "event": "partner", "card": "partner4"}, {"at": 15.5, "event": "peer_goal"}],
+    15: [{"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}, {"at": 13.0, "event": "credit_squeeze"}],
+    16: [{"at": 9.5, "card": "bid"}, {"at": 14.0, "event": "client_breach"}, {"at": 11.0, "event": "growth_stretch"}, {"at": 10.6, "event": "key_poach"}],
+    17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 10.0, "event": "partner", "card": "partner4"}, {"at": 15.5, "event": "peer_goal"}, {"at": 11.5, "event": "audit"}],
     18: [{"at": 9.5, "event": "poach_wave"}, {"at": 11.0, "event": "profit_review"}],
     19: [{"at": 11.0, "event": "qbr"}],
 }
@@ -15269,6 +15303,7 @@ var price := 1.0
 var speed := 1.0
 var vic_bonus := 0.0
 var weekly_extra := 0
+var payroll_extra := 0  # X9: raises and retention pay: W-2 payroll, not "other costs"
 var lost_techs := 0
 var draw_policy := "normal"  # the owners' weekly draw: none / small / normal / generous (card on week 2)
 var draw_paid := 0  # total drawn so far
@@ -15328,6 +15363,7 @@ func reset() -> void:
     speed = 1.0
     vic_bonus = 0.0
     weekly_extra = 0
+    payroll_extra = 0
     lost_techs = 0
     draw_policy = "normal"
     draw_paid = 0
@@ -15689,6 +15725,14 @@ func fire(ev: Dictionary) -> void:
             _ransom()
         "owner_goal":
             _goal_card()
+        "vendor_rise":
+            _vendor_rise()
+        "credit_squeeze":
+            _credit_squeeze()
+        "key_poach":
+            _key_poach()
+        "audit":
+            _audit()
         "growth_plan":
             Growth.owner_plan_card()
         "growth_stretch":
@@ -15726,7 +15770,11 @@ func show_card(id: String) -> void:
         if opt.has("unless") and flags.get(str(opt.unless), false):
             entry["enabled"] = false
             entry["hint"] = "OWNED"
-        var stance: String = Partner.stance(opt)  # the other owner's opinion (a chip on the option)
+        if Partner.active() and (opt.get("fx", {}) as Dictionary).has("trust"):
+            var d: int = Partner.trust_delta(opt)  # X9: the arrows: does this choice move the partnership?
+            entry["trust_chip"] = "TRUST " + Partner.trust_word_for(d)
+            entry["trust_dir"] = d
+        var stance: String = "" if bool(card.get("beat", false)) else Partner.stance(opt)  # the other owner's opinion (a chip on the option)
         if stance != "":
             entry["stance"] = stance
             entry["chip"] = Partner.chip(stance)
@@ -15734,7 +15782,27 @@ func show_card(id: String) -> void:
                 entry["enabled"] = false
                 entry["hint"] = "PARTNER HAS TO AGREE"
         options.append(entry)
-    Cards.ask(str(card.speaker), str(card.text), options, func(pick: String) -> void: _picked(id, int(pick)))
+    Cards.ask(str(card.speaker), fill_text(str(card.text)), options, func(pick: String) -> void: _picked(id, int(pick)))
+
+
+# X9: numbers a card quotes are read when it opens ({cash} = what is in the bank right now)
+func fill_text(body: String) -> String:
+    return body.replace("{cash}", money(cash))
+
+
+# X9: a possessive that copes with names ending in s ("Lindqvist and Moss Architects'", not "Architects's")
+func poss(name: String) -> String:
+    return name + ("'" if name.ends_with("s") or name.ends_with("S") else "'s")
+
+
+# $1,234 and -$23 (a minus sign goes in front of the dollar sign)
+func money(amount: int) -> String:
+    var digits := str(absi(amount))
+    var out := ""
+    while digits.length() > 3:
+        out = "," + digits.substr(digits.length() - 3) + out
+        digits = digits.substr(0, digits.length() - 3)
+    return "%s$%s%s" % ["-" if amount < 0 else "", digits, out]
 
 
 # a mentor shifts 10% of the odds from the worst outcome to the best
@@ -15759,8 +15827,16 @@ func _picked(id: String, index: int) -> void:
     if card_data(id).is_empty():
         return  # a card left over from an earlier run (the books were reset under it)
     var opt: Dictionary = card_data(id).options[index]
+    var partner_note := ""
     if not bool(card_data(id).get("beat", false)):
-        Partner.on_pick(Partner.stance(opt))  # follow their call, or override it
+        partner_note = Partner.on_pick(Partner.stance(opt))  # follow their call, or override it
+    elif Partner.active():
+        var delta: int = Partner.trust_delta(opt)
+        partner_note = (
+            "%s: TRUST SAME." % Partner.who().to_upper()
+            if delta == 0
+            else "%s: TRUST %s%d." % [Partner.who().to_upper(), "+" if delta > 0 else "", delta]
+        )
     var text := str(opt.get("text", ""))
     if opt.has("roll"):
         var roll := randf()
@@ -15768,7 +15844,7 @@ func _picked(id: String, index: int) -> void:
         var table: Array = opt.roll
         if opt.has("roll_scoped") and flags.get("scoped", false):
             table = opt.roll_scoped
-        for entry in tilted(table):
+        for entry in tilted(risk_adjust(opt, table)):
             acc += float(entry[0])
             if roll <= acc:
                 apply(entry[1])
@@ -15777,6 +15853,8 @@ func _picked(id: String, index: int) -> void:
     else:
         apply(opt.get("fx", {}))
     flags["card_" + id] = index
+    if partner_note != "" and (text != "" or partner_note.contains("OPPOSED") or bool(card_data(id).get("beat", false))):
+        text = (text + " " + partner_note).strip_edges()
     if text != "":
         Cards.ask(str(card_data(id).speaker), text, OPTIONS_OK, func(_p: String) -> void: pass)
 
@@ -15826,6 +15904,12 @@ func apply(fx: Dictionary) -> void:
         var told: String = Projects.fire_client(int(fx.fire.client), str(fx.fire.how))
         Msp.send_text("Marge", told)
         Hints.toast(told, 4.0)
+    if fx.has("squeeze"):
+        for c in fx.squeeze:
+            flags["squeeze_%d" % int(c)] = 2  # these clients pay this many weeks later from now on
+    if fx.has("discount_set"):
+        for d in fx.discount_set:
+            discount[int(d[0])] = {"mult": float(d[1]), "weeks": int(d[2])}
     if fx.has("change_order"):
         var result: String = Projects.change_order(int(fx.change_order))
         Msp.send_text("Marge", result)
@@ -15865,6 +15949,11 @@ func apply(fx: Dictionary) -> void:
     speed += float(fx.get("speed", 0.0))
     vic_bonus += float(fx.get("vic", 0.0))
     weekly_extra += int(fx.get("weekly", 0))
+    payroll_extra += int(fx.get("payroll", 0))
+    if fx.get("train", false):
+        speed += 0.25 if int(flags.get("trained_count", 0)) == 0 else 0.12  # the second course teaches less
+        flags["trained_week"] = Campaign.day
+        flags["trained_count"] = int(flags.get("trained_count", 0)) + 1
     if fx.has("hire"):
         var newbie: Dictionary = fx.hire.duplicate()
         newbie["age"] = 0
@@ -15905,6 +15994,10 @@ func apply(fx: Dictionary) -> void:
 
 
 # which advice card Dana opens: the relevant ones in priority order, never one shown in the last 3 weeks
+func training_open() -> bool:
+    return Campaign.day - int(flags.get("trained_week", -99)) >= 4 and int(flags.get("trained_count", 0)) < 2
+
+
 func advice_topic(open: int, est: Dictionary) -> String:
     var relevant := []
     if cash < 1500:
@@ -15917,7 +16010,9 @@ func advice_topic(open: int, est: Dictionary) -> String:
         relevant.append("queue")
     if relevant.is_empty():
         relevant.append("healthy")
-    relevant.append_array(["train", "lunch", "push"])
+    relevant.append_array(["lunch", "push"])
+    if training_open():
+        relevant.append("train")  # X9: never twice within four weeks, and only twice in a run
     var oldest := ""
     for topic in relevant:
         var since: int = Campaign.day - int(_advice_week.get(topic, -99))
@@ -15947,14 +16042,16 @@ func advice() -> void:
         options = [{"label": "CLIENT REVIEW LUNCHES ($300)", "need": 300, "fx": {"cash": -300, "mood_all": 8}}, {"label": "FOCUS THE TEAM ON SLAS", "fx": {"speed": 0.1}}]
     elif key == "queue":
         text = "Your queue is backing up (%d open). Either add hands or make the hands you have faster." % open
-        options = [{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}}, {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}}]
+        options = [{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}}, {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "train": true}}]
+        if not training_open():
+            options.pop_back()
     elif key == "healthy":
         text = "Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind Vic." % int(100.0 * float(est.margin))
         options = [{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}}, {"label": "KEEP DOING WHAT WORKS", "fx": {}}]
     elif key == "train":
         text = "Whatever else is going on, the crew is the product. A week of training pays back in faster tickets and fewer reopens."
         options = [
-            {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}},
+            {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "train": true}},
             {"label": "NOT NOW", "fx": {}}
         ]
     elif key == "lunch":
@@ -16114,6 +16211,7 @@ func _grumble() -> void:
 # ---- accounts receivable: some clients pay late -------------------------------------------------
 func pay_delay(client: int) -> int:
     var delay := int(SLOW_PAYERS.get(client, 0)) + int(Mutators.hook("pay_delay", 0))
+    delay += int(flags.get("squeeze_%d" % client, 0))
     if Sales.mood(client) < 35:
         delay += 1
     return delay
@@ -16210,12 +16308,14 @@ func _qbr() -> void:
         return
     _qbr_done[pick] = Campaign.day
     var key := str(pick)
-    var odds := clampf(Sales.vic_skill() + 0.25 + (0.1 if Sales.mood(pick) >= 70 else 0.0) + float(edge("qbr")), 0.2, 0.9)
+    var odds := clampf(Sales.vic_skill() + 0.15 + (0.1 if Sales.mood(pick) >= 70 else 0.0) + float(edge("qbr")) - pressure() * 0.15, 0.15, 0.65)
+    # X9: a full review also puts the numbers on the table: an unhappy client uses it to ask for a discount
+    var backfire := clampf(0.08 + pressure() * 0.12 + float(60 - Sales.mood(pick)) / 300.0, 0.05, 0.35)
     _dynamic["qbr"] = {
         "speaker": "Vic Marlowe",
         "text": "Business review time with %s (mood %d%%, they pay $%d a week). How much do we prepare?" % [Msp.CLIENTS[pick].name, Sales.mood(pick), client_fee(pick)],
         "options": [
-            {"label": "FULL REVIEW WITH VIC ($250)", "need": 250, "roll": [[odds, {"cash": -250, "mood": {key: 12}, "fee_boost": {"client": pick, "mult": 1.1}}, "A great review: they add premium support. Their fee goes up 10%."], [1.0 - odds, {"cash": -250, "mood": {key: 6}}, "A solid review. They feel heard."]]},
+            {"label": "FULL REVIEW WITH VIC ($250)", "need": 250, "roll": [[odds, {"cash": -250, "mood": {key: 12}, "fee_boost": {"client": pick, "mult": 1.1}}, "A great review: they add premium support. Their fee goes up 10%."], [maxf(0.0, 1.0 - odds - backfire), {"cash": -250, "mood": {key: 6}}, "A solid review. They feel heard."], [backfire, {"cash": -250, "mood": {key: -6}, "discount_set": [[pick, 0.9, 6]]}, "The review goes badly: the numbers show how many tickets they were unhappy about. They ask for 10% off for six weeks to stay."]]},
             {"label": "QUICK CHECK-IN (FREE)", "roll": [[0.6, {"mood": {key: 4}}, "A friendly check-in."], [0.4, {"mood": {key: 1}}, "They seem distracted."]]},
             {"label": "JUST SEND A REPORT", "fx": {"mood": {key: 1}}},
         ],
@@ -16283,7 +16383,7 @@ func _profit_review() -> void:
         "options": [
             {"label": "RAISE THEIR FEE 20%", "roll": [[0.55, {"fee_boost": {"client": pick, "mult": 1.2}, "mood": {key: -4}}, "They grumble and agree. The fee goes up 20%."], [0.2, {"fee_boost": {"client": pick, "mult": 1.1}, "mood": {key: -12}}, "They only accept 10% and resent it."], [0.25, {"drop_client": pick}, "They walk away rather than pay more."]]},
             {"label": "ENFORCE THE SCOPE (CHANGE ORDERS)", "roll": [[0.6, {"scope": pick, "mood": {key: -6}}, "They grumble, but the endless small requests stop."], [0.4, {"mood": {key: -12}}, "They push back hard and refuse to sign anything."]]},
-            {"label": "BILL A CHANGE ORDER ($%d FOR THE EXTRA HOURS)" % Projects.change_order_amount(pick), "fx": {"change_order": pick}},
+            {"label": "BILL A CHANGE ORDER ($%d, ABOUT %d%% AGREE)" % [Projects.change_order_amount(pick), int(Projects.change_order_odds(pick) * 100.0)], "fx": {"change_order": pick}},
             {"label": "OTHER: LET THEM GO, OR KEEP EATING IT", "fx": {"show": "profit_fire"}},
         ],
     }
@@ -16324,6 +16424,212 @@ func _burnout_week() -> void:
         Msp.send_text("Morgan", "One of the crew quit. Burned out.")
 
 
+# ---- X9: late-game pressure: risky upsells, a squeeze on the books, a poached key hire, an audit, a slow payer -----
+# how hard the company is squeezed: it grows from week 9 and with every client past six
+func pressure() -> float:
+    return clampf(float(Campaign.day - 8) / 10.0, 0.0, 1.0) + 0.05 * float(maxi(0, Sales.active.size() - 6))
+
+
+# an option with "risk": {client, base, late} moves odds from its best outcome to its worst: an unhappy client, a busy
+# late game and a partner with a weaker pricing edge make the gamble worse; a happy client makes it safer
+func risk_shift(opt: Dictionary) -> float:
+    if not opt.has("risk"):
+        return 0.0
+    var r: Dictionary = opt.risk
+    var client := int(r.get("client", -1))
+    var mood := Sales.average()
+    if client >= 0 and Sales.active.has(client):
+        mood = float(Sales.mood(client))
+    return (
+        float(r.get("base", 0.0))
+        + pressure() * float(r.get("late", 0.12))
+        + (60.0 - mood) / 250.0
+        - float(edge("fee_accept")) * 0.5
+    )
+
+
+func risk_adjust(opt: Dictionary, table: Array) -> Array:
+    var shift := risk_shift(opt)
+    if shift == 0.0 or table.size() < 2:
+        return table
+    var out := []
+    for entry in table:
+        out.append([float(entry[0]), entry[1], entry[2]])
+    var last := out.size() - 1
+    var moved := clampf(shift, -float(out[last][0]), float(out[0][0]) - 0.05)
+    out[0][0] -= moved
+    out[last][0] += moved
+    return out
+
+
+# week 13: both vendors reprice per seat. The more clients, the more it hurts.
+func _vendor_rise() -> void:
+    var amount := 20 + 14 * Sales.active.size()
+    var peer: bool = flags.get("peer_group", false)
+    var haggle := 0.75 if peer else 0.55
+    _dynamic["vendor_rise"] = {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        (
+            "Our RMM and PSA vendors both announced per-seat pricing. With %d clients that is about $%d more every week from now on. The other MSPs got the same letter."
+            % [Sales.active.size(), amount]
+        ),
+        "options":
+        [
+            {"label": "PAY IT AND MOVE ON", "fx": {"weekly": amount}},
+            {
+                "label": "NEGOTIATE A TWO-YEAR DEAL",
+                "roll":
+                [
+                    [haggle, {"weekly": amount / 2}, "They meet you halfway: the rise is $%d a week." % (amount / 2)],
+                    [1.0 - haggle, {"weekly": amount}, "They will not move. Full price, and a cooler call."]
+                ]
+            },
+            {
+                "label": "SWITCH VENDORS ($800 AND A ROUGH MONTH)",
+                "need": 800,
+                "fx": {"cash": -800, "burnout": 6, "mood_all": -2},
+                "text": "The migration eats a month of evenings. The new bill is flat, and nobody sends flowers."
+            },
+        ],
+    }
+    show_card("vendor_rise")
+
+
+# week 16: ByteBrothers makes one of your people an offer
+func _key_poach() -> void:
+    var names := crew_names()
+    for hire in extra_staff:
+        names.append(str(hire.name))
+    if names.is_empty():
+        return
+    var who: String = str(names[randi() % names.size()])
+    _dynamic["key_poach"] = {
+        "speaker": "Morgan (Operations Manager)",
+        "text":
+        (
+            "%s just told me %s offered them $120 more a week and a company van. They have not said no. What do we do?"
+            % [who, COMPETITOR]
+        ),
+        "options":
+        [
+            {
+                "label": "MATCH THE OFFER (+$120/WEEK)",
+                "roll":
+                [
+                    [0.85, {"payroll": 120, "burnout": -2}, "%s stays and says thanks twice." % who],
+                    [0.15, {"lose_tech": true, "burnout": 5}, "%s takes the raise as leverage and leaves anyway." % who]
+                ]
+            },
+            {
+                "label": "COUNTER WITH A TITLE AND TRAINING",
+                "roll":
+                [
+                    [0.45, {"speed": 0.02}, "%s likes the title. They stay." % who],
+                    [0.55, {"lose_tech": true, "burnout": 5, "rep": -1}, "%s leaves for the van. The queue gets longer." % who]
+                ]
+            },
+            {
+                "label": "WISH THEM LUCK",
+                "fx": {"lose_tech": true, "burnout": 6},
+                "text": "%s is gone by Friday. Everyone else counts how many tickets that is." % who
+            },
+        ],
+    }
+    show_card("key_poach")
+
+
+# week 17: an insurer wants proof, and a former client's lawyer hints it was your fault. Preparation counts.
+func _audit() -> void:
+    var calm := true
+    for c in Sales.active:
+        calm = calm and float(patch_debt.get(int(c), 0.0)) < 3.0
+    var posture := clampf(
+        (
+            0.25
+            + (0.25 if flags.get("backup_service", false) else 0.0)
+            + 0.07 * float(oml())
+            + (0.12 if calm else 0.0)
+            + (0.1 if flags.get("rdp_safe", false) else 0.0)
+        ),
+        0.2,
+        0.9
+    )
+    var prepared := minf(0.95, posture + 0.25)
+    _dynamic["audit"] = {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "A client's insurer wants proof of backups, patching and access control, and a lawyer for a client we lost has hinted the lost files were our fault. Somebody will read our paperwork next week. How do we meet it?",
+        "options":
+        [
+            {
+                "label": "HIRE A CONSULTANT TO PREPARE THE FILE ($900)",
+                "need": 900,
+                "roll":
+                [
+                    [prepared, {"cash": -900, "rep": 1}, "The file is spotless. The insurer sends a thank-you and the lawyer goes quiet."],
+                    [1.0 - prepared, {"cash": -2400, "rep": -1}, "The consultant finds gaps the day before. You fix them in a hurry and pay a fine."]
+                ]
+            },
+            {
+                "label": "HANDLE IT OURSELVES",
+                "roll":
+                [
+                    [posture, {"rep": 1}, "The paperwork holds up. Your logs and backups speak for you."],
+                    [1.0 - posture, {"cash": -3000, "rep": -3, "mood_all": -3}, "The gaps are real. A $3,000 settlement, a notice to every client, and a bad week."]
+                ]
+            },
+            {
+                "label": "SETTLE QUIETLY ($1,500)",
+                "need": 1500,
+                "fx": {"cash": -1500},
+                "text": "Marge writes the cheque. The lawyer never calls again; neither does the feeling that it was close."
+            },
+        ],
+    }
+    show_card("audit")
+
+
+# week 15: the two biggest payers move to slow terms
+func _credit_squeeze() -> void:
+    var order := []
+    for c in Sales.active:
+        order.append(int(c))
+    if order.size() < 2:
+        return
+    order.sort_custom(func(a: int, b: int) -> bool: return client_fee(a) > client_fee(b))
+    var a: int = order[0]
+    var b: int = order[1]
+    var moods := {str(a): -4, str(b): -4}
+    var harsh := {str(a): -10, str(b): -10}
+    _dynamic["credit_squeeze"] = {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        (
+            "%s and %s say accounting changed and they will pay on net-60 terms from now on. That is our two biggest invoices sitting out for two more weeks."
+            % [Msp.CLIENTS[a].name, Msp.CLIENTS[b].name]
+        ),
+        "options":
+        [
+            {"label": "ACCEPT THE NEW TERMS", "fx": {"squeeze": [a, b]}},
+            {
+                "label": "INSIST ON THE CONTRACT TERMS",
+                "roll":
+                [
+                    [0.55, {"mood": moods}, "They grumble and keep paying on time."],
+                    [0.45, {"mood": harsh, "squeeze": [a, b]}, "They dig in, resent the pressure, and pay late anyway."]
+                ]
+            },
+            {
+                "label": "OFFER 2% OFF FOR PAYING ON TIME",
+                "fx": {"discount_set": [[a, 0.98, 8], [b, 0.98, 8]]},
+                "text": "They take the discount and pay on time, for now."
+            },
+        ],
+    }
+    show_card("credit_squeeze")
+
+
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
 func _vendor_breach() -> void:
     var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
@@ -16353,7 +16659,7 @@ func _client_no() -> void:
     var key := str(pick)
     _dynamic["client_no"] = {
         "speaker": "{tech}",
-        "text": "%s's owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge." % Msp.CLIENTS[pick].name,
+        "text": "%s owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge." % poss(Msp.CLIENTS[pick].name),
         "options": [
             {"label": "GET A SIGNED RISK-ACCEPTANCE WAIVER", "fx": {"risk_choice": "waiver", "mood": {key: -2}}, "text": "Signed and filed. If anything happens, there is a paper trail."},
             {"label": "INSIST OR WE WALK AWAY", "roll": [[0.5, {"risk_choice": "insisted", "mood": {key: -6}}, "They give in and turn two-factor login on."], [0.5, {"drop_client": pick}, "They fire you instead."]]},
@@ -16419,20 +16725,32 @@ func _peer_goal() -> void:
     if not flags.get("peer_group", false):
         return
     if not goal.is_empty():
-        var met := _goal_met(str(goal.id))
-        Campaign.adjust_rep(2 if met else -1)
-        flags["practice_goal"] = true
-        var verdict := "You hit it. The group applauds." if met else "You missed it. The group is disappointed but supportive."
-        Msp.send_text("MSP Mastermind", "Goal check (%s): %s" % [str(GOALS[goal.id]).to_lower(), verdict])
-        goal = {}
-    if Campaign.day >= 17:
-        return
+        var verdict := goal_verdict()
+        Cards.ask("MSP Mastermind", verdict, OPTIONS_OK, func(_p: String) -> void: pass)
     var options := []
     for id in GOALS:
         options.append({"label": str(GOALS[id]), "fx": {"goal": str(id)}})
     options.append({"label": "NO GOAL THIS QUARTER", "fx": {}})
-    _dynamic["goal"] = {"speaker": "MSP Mastermind", "text": "Set a goal for next quarter. The group will check you on it at the next meeting.", "options": options}
+    var last_round := Campaign.day >= 17
+    _dynamic["goal"] = {
+        "speaker": "MSP Mastermind",
+        "text": "Set a goal for the final stretch. The group checks it at the board review: +2 reputation if you hit it, -1 if you miss." if last_round else "Set a goal for next quarter. The group checks it at the next meeting: +2 reputation if you hit it, -1 if you miss.",
+        "options": options
+    }
     show_card("goal")
+
+
+# X9: the group checks the goal you set: reputation moves, the result is said out loud and the goal is cleared
+func goal_verdict() -> String:
+    var id := str(goal.id)
+    var met := _goal_met(id)
+    Campaign.adjust_rep(2 if met else -1)
+    flags["practice_goal"] = true
+    flags["goal_last"] = "met" if met else "missed"
+    var text := "GOAL MET: %s. REPUTATION +2. THE GROUP APPLAUDS." % str(GOALS[id]) if met else "GOAL MISSED: %s. REPUTATION -1. THE GROUP IS DISAPPOINTED BUT SUPPORTIVE." % str(GOALS[id])
+    Msp.send_text("MSP Mastermind", text)
+    goal = {}
+    return text
 
 
 # ---- patching: the quiet work that keeps clients safe (and keeps competitors out) -------------------------
@@ -16486,19 +16804,23 @@ func _poach_week() -> void:
     if _poach_cool == 0 and Campaign.day >= 4 and not Sales.active.is_empty():
         var target := -1
         for c in Sales.active:
+            # X9: the rival does not call the same client twice within six weeks (it varies the target)
+            if Campaign.day - int(flags.get("poached_%d" % int(c), -99)) < 6:
+                continue
             if randf() < poach_risk(int(c)):
                 target = int(c)
                 break
         if target < 0 and randf() < 0.04:  # rarer: a lower price, even when you did everything right
             var clean := []
             for c in Sales.active:
-                if poach_gaps(int(c)).is_empty():
+                if poach_gaps(int(c)).is_empty() and Campaign.day - int(flags.get("poached_%d" % int(c), -99)) >= 6:
                     clean.append(int(c))
             if not clean.is_empty():
                 target = clean[randi() % clean.size()]
         if target >= 0:
             _poach_queue.append({"client": target, "kind": "gaps" if not poach_gaps(target).is_empty() else "price"})
-            _poach_cool = 2
+            flags["poached_%d" % target] = Campaign.day
+            _poach_cool = 4  # X9: was 2 weeks
     _poach_wave = maxi(0, _poach_wave - 1)
     _winback_week()
 
@@ -16527,7 +16849,7 @@ func _poach_card(item: Dictionary) -> void:
     var save := clampf(0.8 - 0.12 * float(gaps.size()) + (0.1 if Sales.mood(client) >= 60 else 0.0), 0.3, 0.9)
     _dynamic["poach_gaps"] = {
         "speaker": "Vic Marlowe",
-        "text": "%s's contact says %s walked in with a free 'IT assessment' that listed: %s. They are offering about 20%% less." % [name, COMPETITOR, ", ".join(gaps)],
+        "text": "%s contact says %s walked in with a free 'IT assessment' that listed: %s. They are offering about 20%% less." % [poss(name), COMPETITOR, ", ".join(gaps)],
         "options": [
             {"label": "FIX THE GAPS, PRESENT A PLAN ($400)", "need": 400, "roll": [[save, {"cash": -400, "remediate": client, "mood": {key: 15}}, "You fix everything within a week and present the plan. They stay."], [1.0 - save, {"cash": -400, "remediate": client, "drop_client": client, "left_for": "gaps"}, "You fixed it, but too late. They signed with the other MSP."]]},
             {"label": "MATCH THEIR PRICE (-15% FOR 8 WEEKS)", "roll": [[0.7, {"discount_one": {"client": client, "mult": 0.85, "weeks": 8}, "mood": {key: 6}}, "They stay at the lower price. The gaps are still there."], [0.3, {"drop_client": client, "left_for": "gaps"}, "They leave anyway. Price was never the real problem."]]},
@@ -16562,7 +16884,7 @@ func _winback_card(client: int) -> void:
     var info: Dictionary = gone[client]
     var name: String = Msp.CLIENTS[client].name
     var key := str(client)
-    var why := "%s's cheaper service fell apart: tickets sat for days and nobody knew their network." % COMPETITOR
+    var why := "%s cheaper service fell apart: tickets sat for days and nobody knew their network." % poss(COMPETITOR)
     if str(info.reason) != "price":
         why = "%s did not fix their problems either." % COMPETITOR
     var odds := 0.7 if int(info.mood) >= 60 else 0.5
@@ -16604,6 +16926,13 @@ func _ransom() -> void:
     Msp.rmm_action(str(t.endpoint), "restore")
     Msp.close_ticket(int(t.id))
     Msp.send_text("Alan", "Hoot and Holler got hit by CryptoLocker. We restored from backup. No data lost!")
+    # X9: the good outcome gets a card too, so the backup service visibly earns its keep
+    _dynamic["ransom_saved"] = {
+        "speaker": "{tech}",
+        "text": "{me}, CryptoLocker hit Hoot and Holler's server this morning. The ransom note had a countdown on it. We restored last night's backup %s and nothing was lost. They only noticed because we called." % ("from the backup service" if flags.get("backup_service", false) else "from the one we had checked"),
+        "options": [{"label": "GOOD. TELL THE CLIENT", "fx": {"rep": 1, "mood": {str(Story.RANSOM_CLIENT): 6}}}],
+    }
+    show_card("ransom_saved")
 
 
 func _ransom_finish(kind: String) -> void:
@@ -16673,7 +17002,7 @@ func client_fee(client: int) -> int:
 # ---- costs that grow with the company and the calendar (X1 balance) ----------------------------
 # the techs ask for a raise at week 12; a new hire works for 60% of the wage while they learn the ropes
 func wage_mult() -> float:
-    return 1.05 if Campaign.day >= 12 else 1.0
+    return 1.10 if Campaign.day >= 16 else (1.05 if Campaign.day >= 12 else 1.0)
 
 
 func tech_wage() -> int:
@@ -16693,7 +17022,11 @@ func overhead() -> int:
     var rent := RENT + (50 if Campaign.day >= 9 else 0) + (50 if Campaign.day >= 14 else 0)
     var insurance := 80 if Campaign.day >= 12 else 0
     var seats := maxi(0, Sales.active.size() - 5) * SEAT_COST
-    return rent + insurance + seats
+    # X9: service load: past six clients every extra desk needs after-hours cover and licences, and the audit year
+    # raises the insurance again at week 16
+    var service_load := maxi(0, Sales.active.size() - 6) * 30
+    var audit_year := 60 if Campaign.day >= 16 else 0
+    return rent + insurance + seats + service_load + audit_year
 
 
 func weekly_estimate() -> Dictionary:
@@ -16701,7 +17034,7 @@ func weekly_estimate() -> Dictionary:
     for c in Sales.active:
         revenue += client_fee(int(c))
     revenue = int(float(revenue) * (1.0 - leak)) + Projects.service_revenue()
-    var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week
+    var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week + payroll_extra
     for hire in extra_staff:
         payroll += hire_wage(hire)
     var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
@@ -16727,17 +17060,17 @@ func ebitda_weekly() -> float:
 # a buyer pays a multiple of annual EBITDA; recurring revenue quality, margin and the W-2 ratio move it
 func multiple() -> float:
     var est := weekly_estimate()
-    var m := 4.0
+    var m := 3.25  # X9: was 4.0 and up to 7.5x (now at most 5.5x); a small MSP sold for 3-5 times EBITDA in 2014
     if float(est.w2) <= W2_TARGET:
-        m += 1.0
+        m += 0.75
     if float(est.margin) >= PEER_MARGIN:
-        m += 1.0
+        m += 0.75
     if Sales.active.size() >= 6:
-        m += 0.5
+        m += 0.25
     if Campaign.rep >= 70:
-        m += 0.5
+        m += 0.25
     if oml() >= 4:
-        m += 0.5  # an optimizing, innovating company is worth more
+        m += 0.25  # an optimizing, innovating company is worth more
     # a buyer discounts unhappy clients, a poor name and slow collections
     if Sales.average() < 35.0:
         m -= 2.0
@@ -16846,9 +17179,13 @@ func settle() -> Dictionary:
     rows.append(hours_row)
     rows.append(partner_row())
     rows.append(goal_row())
+    if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():
+        var final_verdict := goal_verdict()  # X9: the goal set in week 17 is checked at the review
+        rows.append(["PEER GOAL", final_verdict.substr(0, final_verdict.find(".")), Color("8fe3a0") if flags.get("goal_last", "") == "met" else Color("ffd27a")])
     rows.append(["RECURRING + PROJECTS", "$%d/WK + $%d JOBS" % [int(est.revenue), Projects.week_income], Color("8fe3a0")])
-    rows.append(["VALUE (ESTIMATE)", "$%d, %s" % [valuation(), path_label()], Color("ffd27a")])
     history.append({"day": Campaign.day, "profit": profit, "ebitda": profit - Projects.take_week_income(), "cash": cash})
+    # X9: the estimate is written after this week joins the history, from the one valuation() everybody reads
+    rows.append(["VALUE (ESTIMATE)", "%s, %s" % [value_text(), path_label()], Color("ffd27a")])
     return {
         "rows": rows, "title": "WEEK %d OF %d COMPLETE" % [Campaign.day, Campaign.TOTAL_DAYS], "grade": grade,
         "profit": profit, "bankrupt": cash < BANKRUPT,
@@ -16877,11 +17214,18 @@ func at_risk_count() -> int:
 # ---- the board review at the end ----------------------------------------------------------
 # a buyer pays for the earnings AND the name: a poor reputation cuts the price (40% at worst)
 func quality() -> float:
-    return clampf(0.4 + float(Campaign.rep) / 150.0, 0.4, 1.0)
+    return clampf(0.3 + 0.7 * pow(float(Campaign.rep) / 100.0, 1.5), 0.3, 1.0)  # X9: a poor name costs more
 
 
 func valuation() -> int:
-    return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality()) + cash)
+    # X9: a buyer discounts a young book of business (half the price at the start, full from week 12)
+    var seasoning := clampf(0.5 + float(Campaign.day) / 24.0, 0.5, 1.0)
+    return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash)
+
+
+# X9: the one text for the company value (weekly report, Boardroom, board review)
+func value_text() -> String:
+    return "$%d (%.1fX)" % [valuation(), multiple()]
 
 
 # ---- the owners' draw, the partner and your personal goal (X4, X5) --------------------------------------------------
@@ -17061,7 +17405,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["EBITDA MARGIN %d%%   W-2 RATIO %d%%" % [int(100.0 * float(est.margin)), int(100.0 * float(est.w2))], ink])
             lines.append(["CLIENTS %d   CLIENT MOOD %d%%" % [Sales.active.size(), int(Sales.average())], ink])
             lines.append(["REPUTATION %d   STAFF %d" % [Campaign.rep, 4 + extra_staff.size() - lost_techs], ink])
-            lines.append(["COMPANY VALUE: $%d (%.1fX EBITDA)" % [valuation(), multiple()], good])
+            lines.append(["COMPANY VALUE: %s EBITDA" % value_text(), good])
             lines.append(["SALES: %d NEW CLIENTS, %d INSTALLS SOLD (%s)" % [Sales.deals, Sales.installs_sold, str(VIC_PLANS[vic_plan].label)], ink])
             lines.append(["STACK: %s, %s, %s" % [stack_option("psa").name, stack_option("rmm").name, stack_option("hardware").name], ink])
             lines.append(["A/R OWED $%d   MATURITY: %s" % [ar_total(), OML_NAMES[oml() - 1]], ink])
@@ -17071,6 +17415,15 @@ func review_lines(page: int, ending: String) -> Array:
             for who in Social.people():
                 lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
                 lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
+            # X9: the whole crew, not only the people with opinions: the employees and every hire
+            var crew := crew_names()
+            crew.append("MORGAN")
+            lines.append(["THE CREW: %s" % ", ".join(crew).to_upper(), blue])
+            if not extra_staff.is_empty() or hire_quits > 0:
+                var hired := []
+                for hire in extra_staff:
+                    hired.append("%s (%s)" % [str(hire.name), str(hire.get("trait", "steady")).replace("_", " ")])
+                lines.append(["HIRES: %s%s" % [", ".join(hired).to_upper() if not hired.is_empty() else "NONE LEFT", "   QUIT: %d" % hire_quits if hire_quits > 0 else ""], ink])
         2:
             lines.append(["PARTNERSHIP", blue])
             lines.append(["YOU AND %s OWN THIS PLACE." % Roles.partner().to_upper(), ink])
@@ -17100,7 +17453,7 @@ func review_lines(page: int, ending: String) -> Array:
 
 func to_dict() -> Dictionary:
     return {
-        "cash": cash, "flags": flags, "price": price, "speed": speed, "vic": vic_bonus, "weekly": weekly_extra,
+        "cash": cash, "flags": flags, "price": price, "speed": speed, "vic": vic_bonus, "weekly": weekly_extra, "payroll_extra": payroll_extra,
         "draw_policy": draw_policy, "draw_paid": draw_paid, "draw_warned": draw_warned, "hire_quits": hire_quits,
         "incidents": incidents, "outings_seen": _outings_seen, "partner": Partner.to_dict(),
         "lost": lost_techs, "staff": extra_staff, "discount": discount, "history": history, "leaving": _leaving,
@@ -17123,6 +17476,7 @@ func from_dict(data: Dictionary) -> void:
     speed = float(data.get("speed", 1.0))
     vic_bonus = float(data.get("vic", 0.0))
     weekly_extra = int(data.get("weekly", 0))
+    payroll_extra = int(data.get("payroll_extra", 0))
     lost_techs = int(data.get("lost", 0))
     draw_policy = str(data.get("draw_policy", "normal"))
     draw_paid = int(data.get("draw_paid", 0))
@@ -18919,7 +19273,7 @@ func _graduate_owner() -> void:
 
 func _raise(id: String, who: String) -> void:
     if id == "raise":
-        Owner.weekly_extra += 60
+        Owner.payroll_extra += 60
         Msp.send_text(Roles.tech(), "%s is staying. The raise helped." % who)
     elif randf() < 0.3:
         if Owner.lost_techs < Owner.MAX_LOST:
@@ -19767,6 +20121,9 @@ func cost_range() -> String:
     for id in GAMES:
         lo = mini(lo, int(GAMES[id].cost))
         hi = maxi(hi, int(GAMES[id].cost))
+    # X9: the owner's dinner can be the fancy one when it is played in the restaurant
+    if Campaign.mode == "owner" and use_rooms:
+        hi = maxi(hi, int(BUDGETS.fancy.cost))
     return "$%d to $%d" % [lo, hi]
 
 
@@ -22155,7 +22512,7 @@ func _state_tip() -> String:
         "Alan":
             for c in Sales.active:
                 if not Msp.backups[int(c)].ok:
-                    return "I was in the console before nine and %s's backup is red. Check it before it matters." % str(Msp.CLIENTS[int(c)].name)
+                    return "I was in the console before nine and %s backup is red. Check it before it matters." % Owner.poss(str(Msp.CLIENTS[int(c)].name))
         "Dan":
             for d in range(1, 9):
                 if Net.desk_state(d) != "ok":
@@ -23072,12 +23429,12 @@ const BEATS := {
             },
             {
                 "label": "RAISE THE CREW'S PAY ($60/WEEK)",
-                "fx": {"weekly": 60, "burnout": -6, "speed": 0.03, "trust": {"Alan": 0, "Garrison": 4}},
+                "fx": {"payroll": 60, "burnout": -6, "speed": 0.03, "trust": {"Alan": 0, "Garrison": 4}},
                 "text": "The crew gets a raise. Morgan says the break room mood improved by one whole donut."
             },
             {
                 "label": "SPLIT IT: SMALL RAISE, SMALL FEE RISE",
-                "fx": {"price": 0.04, "weekly": 30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 1}},
+                "fx": {"price": 0.04, "payroll": 30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 1}},
                 "text": "Everyone gets a little and everyone complains a little. {partner} calls it fair."
             },
         ],
@@ -23118,6 +23475,7 @@ var met: Array = []  # beats already held
 var overrides := 0  # cards where you did what they opposed
 var follows := 0
 var _pending_leave := false
+var sulk := 0  # weeks the partner holds back after you overrode them (no owner-hours help, slower hands)
 
 
 func reset() -> void:
@@ -23127,10 +23485,11 @@ func reset() -> void:
     overrides = 0
     follows = 0
     _pending_leave = false
+    sulk = 0
 
 
 func to_dict() -> Dictionary:
-    return {"trust": trust, "left": left, "met": met, "overrides": overrides, "follows": follows}
+    return {"trust": trust, "left": left, "met": met, "overrides": overrides, "follows": follows, "sulk": sulk}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -23140,6 +23499,7 @@ func from_dict(data: Dictionary) -> void:
     met = data.get("met", [])
     overrides = int(data.get("overrides", 0))
     follows = int(data.get("follows", 0))
+    sulk = int(data.get("sulk", 0))
 
 
 func who() -> String:
@@ -23179,12 +23539,13 @@ func trust_word() -> String:
 func hands() -> float:
     if left or who() == "":
         return 0.0
-    return 0.5 if trust >= BLOCK_TRUST else 0.35
+    var share := 0.5 if trust >= BLOCK_TRUST else 0.35
+    return share * (0.7 if sulk > 0 else 1.0)  # X9: a partner you overrode pulls fewer tickets for a while
 
 
 # owner hours the partner takes off you while they trust you
 func help_hours() -> float:
-    return 6.0 if active() and trust >= HELP_TRUST else 0.0
+    return 6.0 if active() and trust >= HELP_TRUST and sulk <= 0 else 0.0
 
 
 # ---- stance chips ----------------------------------------------------------------------------------------------
@@ -23194,7 +23555,7 @@ func _add(out: Dictionary, tag: String, amount: float) -> void:
 
 func _tag_fx(out: Dictionary, fx: Dictionary, w: float) -> void:
     var cash := float(fx.get("cash", 0))
-    var weekly := float(fx.get("weekly", 0))
+    var weekly := float(fx.get("weekly", 0)) + float(fx.get("payroll", 0))
     _add(out, "spend", (maxf(0.0, -cash) / 600.0 + maxf(0.0, weekly) / 100.0) * w)
     if fx.has("marketing") and int(fx.marketing) > 0:
         _add(out, "marketing", float(fx.marketing) / 900.0 * w)
@@ -23291,16 +23652,37 @@ func blocks(stance_id: String) -> bool:
 
 
 # the card was answered: following their stance earns trust, overriding costs it
-func on_pick(stance_id: String) -> void:
+func on_pick(stance_id: String) -> String:
     match stance_id:
         "agree":
             follows += 1
             change(2)
+            return "%s: TRUST +2." % who().to_upper()
         "warn":
             change(-1)
+            return "%s: TRUST -1." % who().to_upper()
         "oppose":
+            # X9: going against a partner's firm no is felt: more trust lost each time, and they sulk for two weeks
             overrides += 1
-            change(-3)
+            var cost := 5 + mini(overrides - 1, 3)
+            change(-cost)
+            sulk = 2
+            return "%s OPPOSED THIS: TRUST -%d, AND THEY HOLD BACK FOR TWO WEEKS." % [who().to_upper(), cost]
+    return ""
+
+
+# X9: what an option does to the trust of THIS partner: the arrows on a card ("UP", "DOWN", "SAME")
+func trust_delta(opt: Dictionary) -> int:
+    var fx: Dictionary = opt.get("fx", {})
+    if not fx.has("trust"):
+        return 0
+    return int((fx.trust as Dictionary).get(who(), 0))
+
+
+func trust_word_for(delta: int) -> String:
+    if delta > 0:
+        return "UP"
+    return "DOWN" if delta < 0 else "SAME"
 
 
 # ---- the weekly settle and the meetings --------------------------------------------------------------------------
@@ -23308,6 +23690,7 @@ func on_pick(stance_id: String) -> void:
 func week(profit: int) -> void:
     if not Campaign.cards_active() or left:
         return
+    sulk = maxi(0, sulk - 1)
     if profit > 0 and Owner.cash >= 2000 and Campaign.day % 2 == 0:
         change(1)
     elif Owner.cash < 0:
@@ -27022,8 +27405,8 @@ func drag() -> float:
 # ---- opportunities -----------------------------------------------------------------------------------
 func _pick_type(client: int) -> String:
     var pool := ["network", "server", "security"]
-    if Campaign.day >= 3 and Campaign.day <= 14:
-        pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8
+    if Campaign.day >= 3 and Campaign.day <= 8:
+        pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8; the wave ends with it (X9)
     if not has_service(client, "backup"):
         pool.append("backup_dr")
     if not Owner.flags.get("rdp_safe", false) and Campaign.day >= 7:
@@ -27082,8 +27465,11 @@ func _quote_card(item: Dictionary) -> void:
     var q := make_quote(client, str(item.type))
     var name: String = Msp.CLIENTS[client].name
     var t: Dictionary = TYPES[str(item.type)]
-    var text := "%s: %s. Project: %s. About %d hours and $%d of hardware over %d weeks. At $%d fixed that is about $%d profit if nothing creeps. How do we quote it?" % [
-        name, str(t.blurb), str(t.label).to_lower(), int(q.est), int(q.hw), int(q.weeks), int(q.price), quote_profit(q)]
+    var blurb := str(t.blurb)
+    if Campaign.day > 8:
+        blurb = blurb.replace(" before April 8", " that are out of warranty")  # X9: the XP deadline has passed
+    var text := "%s: %s. Project: %s. About %d hours and $%d of hardware over %d weeks. At $%d fixed that is about %s profit if nothing creeps. How do we quote it?" % [
+        name, blurb, str(t.label).to_lower(), int(q.est), int(q.hw), int(q.weeks), int(q.price), Owner.money(quote_profit(q))]
     Cards.ask("Vic Marlowe", text, [
         {"label": "FIXED PRICE ($%d)" % int(q.price), "id": "fixed"},
         {"label": "SCOPE IT FIRST ($%d DISCOVERY, SAFER)" % DISCOVERY_FEE, "id": "scope"},
@@ -27159,7 +27545,7 @@ func _creep_card(item: Dictionary) -> void:
     var client := int(p.client)
     var extra := int(float(p.price) * SCOPE_CREEP)
     var odds := 0.55 + (0.15 if Sales.mood(client) >= 70 else 0.0) + (0.1 if Owner.flags.get("practice_scope", false) else 0.0)
-    var text := "%s's project is creeping: they keep adding things (extra machines, one more site, 'while you are here'). The fixed price will not cover it: about %d more hours." % [str(Msp.CLIENTS[client].name), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
+    var text := "%s project is creeping: they keep adding things (extra machines, one more site, 'while you are here'). The fixed price will not cover it: about %d more hours." % [Owner.poss(str(Msp.CLIENTS[client].name)), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
     Cards.ask("Alan (Co-owner)", text, [
         {"label": "BILL A CHANGE ORDER ($%d, %d%% THEY AGREE)" % [extra, int(odds * 100.0)], "id": "co"},
         {"label": "HOLD THE ORIGINAL SCOPE (THEY ARE ANNOYED)", "id": "hold"},
@@ -27258,19 +27644,36 @@ func change_order_amount(client: int) -> int:
     return int(over_hours(client) * 4.0 * float(BILL_RATE))  # four weeks of the extra hours
 
 
+# X9: a change order is a gamble. A happy client, a pricing-minded owner and an early week help; a late-game squeeze hurts
+func change_order_odds(client: int) -> float:
+    return clampf(0.22 + float(Sales.mood(client) - 40) / 200.0 + float(Owner.edge("fee_accept")) - Owner.pressure() * 0.15, 0.1, 0.7)
+
+
 func change_order(client: int) -> String:
     var amount := change_order_amount(client)
-    var odds := 0.6 if Sales.mood(client) >= 60 else 0.35
-    if randf() < odds:
+    var odds := change_order_odds(client)
+    var roll := randf()
+    if roll < odds:
         Owner.cash += amount
         Owner.income_extra += amount
         week_income += amount
         Owner.scope_fixed[client] = true  # from now on requests beyond the plan are billable
-        Sales.adjust(client, -3)
+        Sales.adjust(client, -5)
         Owner.flags["practice_scope"] = true
         return "They pay $%d for the extra work and accept that requests beyond the plan are billable." % amount
-    Sales.adjust(client, -8)
-    return "They refuse the bill and say the work was always included. Things are tense."
+    if roll < odds + (1.0 - odds) * 0.35:
+        # a scope dispute: they pay half, want a discount to stay, and the relationship cools
+        var half := amount / 2
+        Owner.cash += half
+        Owner.income_extra += half
+        week_income += half
+        Owner.discount[client] = {"mult": 0.9, "weeks": 6}
+        Sales.adjust(client, -8)
+        return "A scope dispute: they pay half ($%d), ask for 10%% off for six weeks, and say the work was always included." % half
+    Sales.adjust(client, -12)
+    if randf() < 0.5:
+        Owner.discount[client] = {"mult": 0.9, "weeks": 4}
+    return "They refuse the bill outright and threaten to review their contract. Things are tense."
 
 
 # how = polite (30 days notice, a referral to another firm) or now
@@ -30767,7 +31170,9 @@ func _draw() -> void:
                     if String(rows[y])[x] == "X":
                         draw_rect(Rect2(origin + offset + Vector2(i * 4 + x, y), Vector2.ONE), color)
     if not Game.title_mode:
-        var counts := "TKT %d MAIL %d" % [Msp.open_tickets().size(), Msp.unread()]
+        var counts := "TKT %d MAIL %d" % [Msp.open_tickets().size(), mini(Msp.unread(), 99)]
+        if Campaign.active and Campaign.prop("hud", "day_rep") == "week_cash":
+            counts = "TKT %d" % Msp.open_tickets().size()  # X9: the owner's mail is not a counter to clear
         if Msp.unread_texts() > 0:
             counts += " TXT %d" % Msp.unread_texts()
         if Lync.unread_total() > 0:
@@ -31434,9 +31839,9 @@ const PEOPLE := {
 # the owner campaign shows these instead of the Free Play blurbs
 const OWNER_BLURBS := {
     "office_alan":
-    "THE TECHNICAL OWNER. SERVERS, BACKUPS AND THE STACK ARE YOURS; GARRISON KEEPS THE CLIENTS HAPPY.",
+    "TECH OWNER: SERVERS, BACKUPS, THE STACK. GARRISON KEEPS CLIENTS HAPPY.",
     "casual_garrison":
-    "THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
+    "SALES OWNER: CLIENTS, PRICING, MORALE. ALAN KEEPS THE SERVERS ALIVE.",
 }
 # the sales campaign offers Vic only
 const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."

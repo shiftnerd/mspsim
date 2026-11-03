@@ -561,7 +561,7 @@ func _graduate_owner() -> void:
 
 func _raise(id: String, who: String) -> void:
 	if id == "raise":
-		Owner.weekly_extra += 60
+		Owner.payroll_extra += 60
 		Msp.send_text(Roles.tech(), "%s is staying. The raise helped." % who)
 	elif randf() < 0.3:
 		if Owner.lost_techs < Owner.MAX_LOST:

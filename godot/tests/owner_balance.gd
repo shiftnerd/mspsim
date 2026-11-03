@@ -162,7 +162,7 @@ func _init() -> void:
 			last = day
 			if OS.get_environment("WEEKLY") != "" and not o.history.is_empty():
 				var hh: Dictionary = o.history[o.history.size() - 1]
-				print("  w%d cash %d rep %d ebitda %d clients %d oml %d val %d" % [day, o.cash, c.rep, int(hh.get("ebitda", 0)), sales.active.size(), o.oml(), o.valuation()])
+				print("  w%d cash %d rep %d trust %d ebitda %d clients %d mood %d oml %d val %d" % [day, o.cash, c.rep, root.get_node("Partner").trust, int(hh.get("ebitda", 0)), sales.active.size(), int(sales.average()), o.oml(), o.valuation()])
 			if report.report.get("final", false):
 				break
 			report.finish()

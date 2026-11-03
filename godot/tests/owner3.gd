@@ -173,9 +173,10 @@ func _init() -> void:
 	story.reset()
 	o._ransom()
 	_check(
-		not cards.is_open and story.flags.ransom == "saved",
-		"with a good backup it is handled quietly"
+		cards.is_open and cards.text.contains("nothing was lost") and story.flags.ransom == "saved",
+		"with a good backup it is handled, and a card says so"
 	)
+	_clear(cards)
 
 	# ---- RDP exposure (owner)
 	c.new_game("owner")

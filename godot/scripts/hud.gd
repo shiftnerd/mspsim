@@ -53,7 +53,9 @@ func _draw() -> void:
 							Rect2(origin + offset + Vector2(i * 4 + x, y), Vector2.ONE), color
 						)
 	if not Game.title_mode:
-		var counts := "TKT %d MAIL %d" % [Msp.open_tickets().size(), Msp.unread()]
+		var counts := "TKT %d MAIL %d" % [Msp.open_tickets().size(), mini(Msp.unread(), 99)]
+		if Campaign.active and Campaign.prop("hud", "day_rep") == "week_cash":
+			counts = "TKT %d" % Msp.open_tickets().size()  # X9: the owner's mail is not a counter to clear
 		if Msp.unread_texts() > 0:
 			counts += " TXT %d" % Msp.unread_texts()
 		if Lync.unread_total() > 0:

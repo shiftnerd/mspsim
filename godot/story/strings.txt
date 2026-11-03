@@ -3958,7 +3958,7 @@ Marge (Bookkeeper)
 
 # owner card: welcome
 [Owner.CARDS.welcome.text]
-Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?
+Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?
 
 # owner card: welcome
 [Owner.CARDS.welcome.options.0.label]
@@ -4274,19 +4274,27 @@ They accept. The crew grumbles about the margin.
 
 # owner card: bid
 [Owner.CARDS.bid.options.0.roll.1.2]
+They accept, then the job runs long. After the overtime you clear $1,300.
+
+# owner card: bid
+[Owner.CARDS.bid.options.0.roll.2.2]
 They go with someone else.
 
 # owner card: bid
 [Owner.CARDS.bid.options.1.label]
-BID HIGH $4,500
+BID HIGH $4,500 (RISKY)
 
 # owner card: bid
 [Owner.CARDS.bid.options.1.roll.0.2]
-They accept the premium bid.
+They accept the premium bid and pay in full.
 
 # owner card: bid
 [Owner.CARDS.bid.options.1.roll.1.2]
-They balk and walk.
+They accept, then dispute the invoice after the work. You settle at $3,000 and the relationship is bruised.
+
+# owner card: bid
+[Owner.CARDS.bid.options.1.roll.2.2]
+They balk, walk, and mention it to people they know.
 
 # owner card: poach
 [Owner.CARDS.poach.speaker]

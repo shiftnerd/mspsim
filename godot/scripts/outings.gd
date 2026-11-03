@@ -673,6 +673,9 @@ func cost_range() -> String:
 	for id in GAMES:
 		lo = mini(lo, int(GAMES[id].cost))
 		hi = maxi(hi, int(GAMES[id].cost))
+	# X9: the owner's dinner can be the fancy one when it is played in the restaurant
+	if Campaign.mode == "owner" and use_rooms:
+		hi = maxi(hi, int(BUDGETS.fancy.cost))
 	return "$%d to $%d" % [lo, hi]
 
 

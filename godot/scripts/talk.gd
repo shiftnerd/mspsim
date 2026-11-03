@@ -346,8 +346,8 @@ func _state_tip() -> String:
 			for c in Sales.active:
 				if not Msp.backups[int(c)].ok:
 					return (
-						"I was in the console before nine and %s's backup is red. Check it before it matters."
-						% str(Msp.CLIENTS[int(c)].name)
+						"I was in the console before nine and %s backup is red. Check it before it matters."
+						% Owner.poss(str(Msp.CLIENTS[int(c)].name))
 					)
 		"Dan":
 			for d in range(1, 9):
