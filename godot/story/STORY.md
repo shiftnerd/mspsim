@@ -17,7 +17,7 @@ or the owner (owner campaign, 20 weeks).
 ### Day 2
 
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Daily chore: verify backups* `[Story.DAYS.2.0.subject]`
-> Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds. - Morgan `[Story.DAYS.2.0.body]`
+> Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan `[Story.DAYS.2.0.body]`
 
 **10:30 VIGNETTE**. A scripted event (vignette).
 
@@ -127,7 +127,7 @@ or the owner (owner campaign, 20 weeks).
 ### Day 15
 
 **9:11 MAIL**, from Morgan Reyes - Manager. Subject: *Pager again* `[Story.DAYS.15.0.subject]`
-> You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan `[Story.DAYS.15.0.body]`
+> You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan `[Story.DAYS.15.0.body]`
 
 *Every day also has: a morning commute, random tickets, coworker chat. Today: team outing invitation at 16:00.*
 
@@ -288,7 +288,7 @@ or the owner (owner campaign, 20 weeks).
   - Result: It is stuck in recovery now. `[Playbook.BOOKS.email24.steps.0.choices.2.note]`
 
 **Step 2: CALL THE VENDOR** `[Playbook.BOOKS.email24.steps.1.title]`
-> The mail software vendor has a support line. It is 17:40 and the queue is long. `[Playbook.BOOKS.email24.steps.1.text]`
+> The mail software vendor has a support line. The queue is long. `[Playbook.BOOKS.email24.steps.1.text]`
 - **FOLLOW THE TIER 1 SCRIPT** `[Playbook.BOOKS.email24.steps.1.choices.0.label]` (5 points)
   - Result: Forty minutes on hold. They say: reboot it. `[Playbook.BOOKS.email24.steps.1.choices.0.note]`
 - **ASK FOR TIER 2** `[Playbook.BOOKS.email24.steps.1.choices.1.label]` (20 points)
@@ -372,7 +372,7 @@ or the owner (owner campaign, 20 weeks).
 ### Wire Request From The Boss
 
 - Ticket: *Odd request to wire $38,000 from the trust account* `[Playbook.PROBLEMS.ceofraud.0.summary]`
-  > Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - [name] `[Playbook.PROBLEMS.ceofraud.0.body]`
+  > Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - [name] `[Playbook.PROBLEMS.ceofraud.0.body]`
 
 **Step 1: THE EMAIL** `[Playbook.BOOKS.ceofraud.steps.0.title]`
 > A paralegal at Hoot and Holler forwards an email that looks like it is from Atty. Spence: wire $38,000 from the client trust account today, quietly, no calls. She thinks it is odd. What do you do first? `[Playbook.BOOKS.ceofraud.steps.0.text]`
@@ -1017,11 +1017,23 @@ or the owner (owner campaign, 20 weeks).
 - Late because of: A TRAIN SITTING ON THE CROSSING `[Shift.REASONS.2]`
 - Late because of: RAIN AND A FENDER BENDER `[Shift.REASONS.3]`
 - Late because of: ROAD WORK NOBODY WARNED YOU ABOUT `[Shift.REASONS.4]`
+- Late because of: A SCHOOL BUS BROKEN DOWN AT THE LIGHT `[Shift.REASONS.5]`
+- Late because of: A WATER MAIN BREAK AND A DETOUR THROUGH TOWN `[Shift.REASONS.6]`
+- Late because of: A DRAWBRIDGE STUCK OPEN `[Shift.REASONS.7]`
+- Late because of: A SLOW FUNERAL PROCESSION `[Shift.REASONS.8]`
+- Late because of: A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU `[Shift.REASONS.9]`
 - The pager at 2 AM: the file server is almost out of disk space `[Shift.PAGES.0]`
 - The pager at 2 AM: the nightly backup job failed `[Shift.PAGES.1]`
 - The pager at 2 AM: the VPN is down for the remote staff `[Shift.PAGES.2]`
 - The pager at 2 AM: the mail queue is stuck `[Shift.PAGES.3]`
 - The pager at 2 AM: the domain controller stopped answering pings `[Shift.PAGES.4]`
+- The pager at 2 AM: the RAID array says it is degraded `[Shift.PAGES.5]`
+- The pager at 2 AM: the firewall locked everybody out after the firmware update `[Shift.PAGES.6]`
+- The pager at 2 AM: the phone system lost its SIP trunk `[Shift.PAGES.7]`
+- The pager at 2 AM: the Exchange server is out of mailbox space `[Shift.PAGES.8]`
+- The pager at 2 AM: the antivirus server stopped pushing updates `[Shift.PAGES.9]`
+- The pager at 2 AM: the UPS is on battery and beeping `[Shift.PAGES.10]`
+- The pager at 2 AM: the print server queue is stuck again `[Shift.PAGES.11]`
 
 ### Day-1 control hints
 

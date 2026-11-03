@@ -1321,7 +1321,7 @@ func _ep_alert(ep: Dictionary) -> bool:
 	return false
 
 
-func _symptom(problem: String) -> String:
+func _symptom(problem: String, restore_failed := false) -> String:
 	var texts := {
 		"spooler": "PRINT SPOOLER SERVICE IS NOT RUNNING",
 		"password": "ACCOUNT LOCKED OUT - TOO MANY BAD PASSWORDS",
@@ -1332,6 +1332,8 @@ func _symptom(problem: String) -> String:
 		"adobe": "ADOBE READER PRINT DIALOG IS BROKEN. OTHER APPS PRINT FINE.",
 		"project": "NEW PC ARRIVED. SEE THE PROJECT TAB TO SET UP AND MIGRATE.",
 	}
+	if problem == "restore" and restore_failed:
+		return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
 	if problem.begins_with("onsite_"):
 		return str(Onsite.TEXT.symptom)
 	return str(texts.get(problem, "NO ISSUES FOUND. ALL SERVICES NORMAL."))
@@ -1351,7 +1353,9 @@ func _rmm_detail(r: Rect2, narrow: bool) -> void:
 	var alert: bool = ep.problem != ""
 	_fill(Rect2(r.position.x + 4, r.position.y + 36, r.size.x - 8, 9), RED if alert else GREEN)
 	_text("ALERT" if alert else "ONLINE - OK", r.position + Vector2(8, 38), WHITE)
-	var lines := _wrap(_symptom(ep.problem) if alert else "NO ISSUES FOUND.", chars)
+	var lines := _wrap(
+		_symptom(ep.problem, ep.get("restore_failed", false)) if alert else "NO ISSUES FOUND.", chars
+	)
 	for i in lines.size():
 		_text(lines[i], r.position + Vector2(4, 49 + i * 7), TXT)
 	_button(
@@ -1382,7 +1386,7 @@ func _paint_session(body: Rect2) -> void:
 	_fill(Rect2(dlg.position, Vector2(dlg.size.x, 6)), Color("1c3b63"))
 	var alert: bool = ep.problem != ""
 	_text("SYSTEM MESSAGE" if alert else "ALL CLEAR", dlg.position + Vector2(3, 1), WHITE)
-	var lines := _wrap(_symptom(ep.problem), int((dlg.size.x - 8) / 4.0))
+	var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)), int((dlg.size.x - 8) / 4.0))
 	for i in mini(lines.size(), 3):
 		_text(lines[i], dlg.position + Vector2(4, 9 + i * 6), RED if alert else GREEN)
 	_text(_clip(rmm_msg, int((body.size.x - 8) / 4.0)), body.position + Vector2(4, 42), WHITE)
@@ -1442,7 +1446,13 @@ func _paint_backups(body: Rect2) -> void:
 	if compact:
 		row_h = 11.0 if Sales.active.size() <= 5 else 8.0
 	_text(
-		"NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY
+		(
+			"NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU"
+			if Skills.backup_watch()
+			else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY"
+		),
+		body.position + Vector2(4, 3),
+		RMM_GREY
 	)
 	for idx in Sales.active.size():
 		var c: int = Sales.active[idx]

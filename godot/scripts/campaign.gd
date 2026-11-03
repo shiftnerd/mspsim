@@ -18,6 +18,7 @@ var player_as := ""  # the cast member you play as ("" = a character who is not 
 var mode := ""
 var day := 1
 var rep := START_REP
+var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -27,9 +28,43 @@ var _awaiting := false
 var _fired_out := false
 
 
+# gains get harder as the name grows: 100 is only for the end of a really good run
+func gain_scale() -> float:
+	if rep >= 85:
+		return 0.25
+	if rep >= 72:
+		return 0.3
+	return 0.6 if rep >= 60 else 1.0
+
+
+# the most the day report can add at this reputation
+func daily_cap() -> int:
+	for entry in [[72, 1], [58, 2], [50, 3]]:
+		if rep >= int(entry[0]):
+			return int(entry[1])
+	return 4
+
+
+func rep_cap() -> int:
+	return clampi(100 - scars, 40, 100)
+
+
+# a lasting cost: the ceiling drops now and recovers one point on each A or S day
+func add_scar(amount: int) -> void:
+	if not active:
+		return
+	scars = mini(scars + amount, 60)
+	rep = mini(rep, rep_cap())
+
+
 func adjust_rep(amount: int) -> void:
-	if active:
-		rep = clampi(rep + amount, 0, 100)
+	if not active:
+		return
+	var change := amount
+	if amount > 0:
+		change = maxi(1, roundi(float(amount) * gain_scale()))
+		change = mini(change, maxi(0, rep_cap() - rep))
+	rep = clampi(rep + change, 0, 100)
 
 
 func save_path(for_mode: String) -> String:
@@ -79,6 +114,7 @@ func new_game(for_mode: String) -> void:
 	Game.vars["start_seated"] = player_as != ""
 	day = 1
 	rep = START_REP
+	scars = 0
 	cash = 0
 	history = []
 	_awaiting = false
@@ -118,6 +154,7 @@ func continue_game(for_mode: String) -> bool:
 	active = true
 	day = int(cfg.get_value("campaign", "day", 1))
 	rep = int(cfg.get_value("campaign", "rep", START_REP))
+	scars = int(cfg.get_value("campaign", "scars", 0))
 	cash = int(cfg.get_value("campaign", "cash", 0))
 	history = cfg.get_value("campaign", "history", [])
 	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
@@ -161,6 +198,7 @@ func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("campaign", "day", day)
 	cfg.set_value("campaign", "rep", rep)
+	cfg.set_value("campaign", "scars", scars)
 	cfg.set_value("campaign", "cash", cash)
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
@@ -271,7 +309,7 @@ func _make_report() -> Dictionary:
 			+ Shift.rep_delta()
 		),
 		-10,
-		8
+		daily_cap()
 	)
 	var grade := "D"
 	if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
@@ -323,7 +361,13 @@ func _end_day() -> void:
 		r["bankrupt"] = books.bankrupt
 	else:
 		cash += int(r.pay)
-	rep = clampi(rep + int(r.rep_delta), 0, 100)
+	if mode == "tech":
+		if int(r.reopened) >= 3:
+			add_scar(2)  # a reopen storm: the clients stop trusting your closes
+		elif scars > 0 and r.grade in ["S", "A"]:
+			scars -= 1
+		r["rep_cap"] = rep_cap()
+	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
 	if r.get("bankrupt", false):
 		rep = 0
 	r["rep"] = rep

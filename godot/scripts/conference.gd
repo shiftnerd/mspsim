@@ -22,7 +22,7 @@ const DEFAULT_TEXT := {
 	"progress": "KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.",
 	"yes_subject": "Pack your bags: Rodent Nation",
 	"yes_body":
-	"You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
+	"You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
 	"no_subject": "Rodent Nation: not this year",
 	"no_body":
 	"You did not quite make the KPIs (%s), so Dan is going to Rodent Nation this year. He will bring back notes. Aim for it next year. - Morgan",
@@ -864,7 +864,11 @@ func _scene_name() -> String:
 func _trip_tick() -> void:
 	match _stage:
 		"keynote":
-			Hints.objective = "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
+			Hints.objective = (
+				"NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR)."
+				if badge
+				else "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
+			)
 		"round":
 			Hints.objective = "NEXT: PICK A SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
 		"raffle":

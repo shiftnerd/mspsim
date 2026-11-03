@@ -31,9 +31,13 @@ func _ready() -> void:
 	_canvas.draw.connect(_paint)
 
 
-func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+# `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
+# and on_pick gets "__none" so the asker can clean up
+func ask(
+	who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()
+) -> void:
 	if is_open or DayReport.is_open:
-		_queue.append([who, body, choices, on_pick])
+		_queue.append([who, body, choices, on_pick, valid])
 		return
 	speaker = Roles.speaker(who)  # a card that names you comes from somebody else
 	text = body
@@ -75,16 +79,25 @@ func pick(index: int) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
 	if id != "__none" and _callback.is_valid():
 		_callback.call(id)
-	if not _queue.is_empty():
+	_show_next()
+
+
+# the next queued card whose reason still holds (a Vic complaint for a ticket that closed meanwhile is dropped)
+func _show_next() -> void:
+	while not _queue.is_empty() and not is_open and not DayReport.is_open:
 		var next: Array = _queue.pop_front()
-		ask(next[0], next[1], next[2], next[3])
+		var valid: Callable = next[4] if next.size() > 4 else Callable()
+		if valid.is_valid() and not bool(valid.call()):
+			if next[3].is_valid():
+				next[3].call("__none")
+			continue
+		ask(next[0], next[1], next[2], next[3], valid)
 
 
 # cards that were asked while the day report covered the screen
 func flush() -> void:
-	if not is_open and not DayReport.is_open and not _queue.is_empty():
-		var next: Array = _queue.pop_front()
-		ask(next[0], next[1], next[2], next[3])
+	if not is_open and not DayReport.is_open:
+		_show_next()
 
 
 # Esc picks the option whose id is "leave" (conversations)

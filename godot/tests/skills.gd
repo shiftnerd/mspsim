@@ -116,6 +116,7 @@ func _init() -> void:
 	msp.tickets.clear()
 	for ep in msp.endpoints:
 		ep.problem = ""
+	story.flags.erase("ransom")
 	story.fire({"kind": "ransomware"})
 	rt = msp.ticket(story.flags.ransom_ticket)
 	rep0 = c.rep
@@ -123,12 +124,18 @@ func _init() -> void:
 	msg = msp.rmm_action(rt.endpoint, "restore")
 	_check(
 		(
-			msg.contains("NO BACKUP")
-			and c.rep == rep0 - 15
-			and msp.score == score0 - 30
-			and story.flags.ransom == "lost"
+			msg.contains("BACKUP FAILED")
+			and c.rep == rep0
+			and msp.score == score0
+			and not story.flags.has("ransom")
+			and msp.endpoint(rt.endpoint).problem == "restore"
 		),
-		"restore without a backup: " + msg
+		"restore without a backup fails but leaves the other options: " + msg
+	)
+	msg = msp.close_ticket(rt.id)
+	_check(
+		msg.contains("DATA LOST") and c.rep == rep0 - 15 and msp.score == score0 - 30 and story.flags.ransom == "lost",
+		"giving up on the files loses the data and the close earns nothing: " + msg
 	)
 
 	# the story day events fire by the clock (day 3: manager mail + the Adobe ticket)

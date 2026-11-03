@@ -36,6 +36,10 @@ func _best(pb: Node) -> int:
 func _work(msp: Node, pb: Node) -> void:
 	if msp.day_cap() > 50 and not seen.has("ticket"):
 		msp._random_ticket("test")  # the first days are capped
+	for client in msp.backups.size():
+		msp.backup_rerun(client)  # a good tech keeps the backups green
+	for t in msp.open_tickets():
+		seen[str(t.special) if t.special != "" else "ticket"] = true  # jobs close their tickets when they end
 	while pb.is_active():
 		pb.choose(_best(pb))
 	if not msp.project.is_empty() and not msp.project.done:

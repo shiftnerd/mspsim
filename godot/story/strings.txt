@@ -26,7 +26,7 @@ Daily chore: verify backups
 
 # Day 2, 9:05, MAIL: body
 [Story.DAYS.2.0.body]
-Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds. - Morgan
+Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan
 
 # Day 3, 9:05, MAIL: from
 [Story.DAYS.3.0.from]
@@ -122,7 +122,7 @@ Pager again
 
 # Day 15, 9:11, MAIL: body
 [Story.DAYS.15.0.body]
-You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan
+You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan
 
 # Day 16, 9:30, PLAYBOOK: text
 [Story.DAYS.16.0.text]
@@ -357,6 +357,14 @@ Alan (Co-owner)
 # Story > VIGNETTES > donuts > text
 [Story.VIGNETTES.donuts.text]
 I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?
+
+# Story > VIGNETTES > donuts > text_reset
+[Story.VIGNETTES.donuts.text_reset]
+I am back, and I brought donuts. Morgan says you covered for me while I was out, and I heard what happened to the firewall. I am not angry. Show me how it is set up now?
+
+# Story > VIGNETTES > donuts > text_plain
+[Story.VIGNETTES.donuts.text_plain]
+I am back, and I brought donuts. Morgan says you covered for me while I was out. Nobody wrote down how the firewall is set up, so would you show me what you did?
 
 # Story > VIGNETTES > donuts > options > 0 > label
 [Story.VIGNETTES.donuts.options.0.label]
@@ -2588,7 +2596,7 @@ CALL THE VENDOR
 
 # job: EMAIL OUTAGE, step 2
 [Playbook.BOOKS.email24.steps.1.text]
-The mail software vendor has a support line. It is 17:40 and the queue is long.
+The mail software vendor has a support line. The queue is long.
 
 # job: EMAIL OUTAGE, step 2
 [Playbook.BOOKS.email24.steps.1.choices.0.label]
@@ -3474,7 +3482,7 @@ Odd request to wire $38,000 from the trust account
 
 # Playbook > PROBLEMS > ceofraud > 0 > body
 [Playbook.PROBLEMS.ceofraud.0.body]
-Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s
+Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s
 
 # Playbook > PROBLEMS > no2fa > 0 > summary
 [Playbook.PROBLEMS.no2fa.0.summary]
@@ -5110,7 +5118,7 @@ THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.
 
 # Shift > WEEK_TRAFFIC > 3 > text
 [Shift.WEEK_TRAFFIC.3.text]
-FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.
+SPRING STORM SEASON. THE UNDERPASS FLOODS AND EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.
 
 
 # ======================= Shift > REASONS =======================
@@ -5134,6 +5142,26 @@ RAIN AND A FENDER BENDER
 [Shift.REASONS.4]
 ROAD WORK NOBODY WARNED YOU ABOUT
 
+# Shift > REASONS > 5
+[Shift.REASONS.5]
+A SCHOOL BUS BROKEN DOWN AT THE LIGHT
+
+# Shift > REASONS > 6
+[Shift.REASONS.6]
+A WATER MAIN BREAK AND A DETOUR THROUGH TOWN
+
+# Shift > REASONS > 7
+[Shift.REASONS.7]
+A DRAWBRIDGE STUCK OPEN
+
+# Shift > REASONS > 8
+[Shift.REASONS.8]
+A SLOW FUNERAL PROCESSION
+
+# Shift > REASONS > 9
+[Shift.REASONS.9]
+A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU
+
 
 # ======================= Shift > PAGES =======================
 # Shift > PAGES > 0
@@ -5155,6 +5183,34 @@ the mail queue is stuck
 # Shift > PAGES > 4
 [Shift.PAGES.4]
 the domain controller stopped answering pings
+
+# Shift > PAGES > 5
+[Shift.PAGES.5]
+the RAID array says it is degraded
+
+# Shift > PAGES > 6
+[Shift.PAGES.6]
+the firewall locked everybody out after the firmware update
+
+# Shift > PAGES > 7
+[Shift.PAGES.7]
+the phone system lost its SIP trunk
+
+# Shift > PAGES > 8
+[Shift.PAGES.8]
+the Exchange server is out of mailbox space
+
+# Shift > PAGES > 9
+[Shift.PAGES.9]
+the antivirus server stopped pushing updates
+
+# Shift > PAGES > 10
+[Shift.PAGES.10]
+the UPS is on battery and beeping
+
+# Shift > PAGES > 11
+[Shift.PAGES.11]
+the print server queue is stuck again
 
 
 # ======================= Hints > DAY1 =======================
@@ -5468,7 +5524,7 @@ Pack your bags: Rodent Nation
 
 # Expo > TEXT > yes_body
 [Expo.TEXT.yes_body]
-You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan
+You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan
 
 # Expo > TEXT > no_subject
 [Expo.TEXT.no_subject]
@@ -7782,7 +7838,7 @@ The coffee is for patients, but I will not tell if you have one.
 
 # Onsite > STAFF > law > 0
 [Onsite.STAFF.law.0]
-Please be quiet in the hall, Mr. Spence is on the phone with a judge.
+Please be quiet in the hall, Atty. Spence is on the phone with a judge.
 
 # Onsite > STAFF > law > 1
 [Onsite.STAFF.law.1]

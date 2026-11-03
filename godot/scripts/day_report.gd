@@ -25,6 +25,13 @@ const GRADE_COLORS := {
 	"D": Color("e0463c"),
 }
 
+const BIG_GRADES := {
+	"S": [".XXX", "X...", ".XX.", "...X", "XXX."],
+	"A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
+	"B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."],
+	"C": [".XXX", "X...", "X...", "X...", ".XXX"],
+	"D": ["XXX.", "X..X", "X..X", "X..X", "XXX."],
+}
 var is_open := false
 var report := {}
 
@@ -209,6 +216,15 @@ func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
 	return h - 1.0
 
 
+# the grade letter in a 4x5 hand-drawn set: the 3x5 font makes B and E look alike at this size
+func _big_grade(grade: String, x: float, y: float, color: Color) -> void:
+	var rows: Array = BIG_GRADES[grade]
+	for ry in rows.size():
+		for rx in 4:
+			if str(rows[ry])[rx] == "X":
+				_r(x + float(rx * 4), y + float(ry * 4), 4.0, 4.0, color)
+
+
 # the grade box, then the stat tiles (big) or rows (compact); returns its height
 func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
 	var grade := str(report.grade)
@@ -220,7 +236,10 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
 	if draw:
 		_r(x, y, gw, gh, gcol)
 		_r(x + 1.0, y + 1.0, gw - 2.0, gh - 2.0, Color("0e121c"))
-		_t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
+		if BIG_GRADES.has(grade):
+			_big_grade(grade, x + floorf((gw - 16.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol)
+		else:
+			_t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
 	if big:
 		var h := gh + 4.0
 		if draw:
