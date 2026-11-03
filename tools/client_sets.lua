@@ -50,37 +50,53 @@ return function(L, builders)
 
 
   function P.doorPlate(text)
-    return L.piece(34, 8, function(R)
-      R(0, 0, 34, 8, "#2A2D36"); R(1, 1, 32, 6, "#14566E"); centred(R, text, 17, 1, 1, "#FFFFFF")
+    local w = math.max(34, textW(text, 1) + 4)       -- a long word widens the plate
+    return L.piece(w, 8, function(R)
+      R(0, 0, w, 8, "#2A2D36"); R(1, 1, w - 2, 6, "#14566E"); centred(R, text, w // 2, 1, 1, "#FFFFFF")
     end)
   end
+  local function plateAt(s, text, x)              -- a plate centred on the 34 px wide door at x
+    s.put("Plate", P.doorPlate(text), x - (math.max(34, textW(text, 1) + 4) - 34) // 2, 9)
+  end
+
+  -- the plates say what is behind each door, per business (the first is the way out to the van)
+  local PLATES = {
+    dental  = {"ENTRY", "DENTIST", "SERVER"},
+    law     = {"LOBBY", "PARTNER", "SERVER"},
+    vet     = {"LOBBY", "DOCTOR", "SERVER"},
+    arch    = {"ENTRY", "PRINCIPAL", "SERVER"},
+    realty  = {"ENTRY", "BROKER", "SERVER"},
+    trailer = {"OFFICE", "FOREMAN", "SERVER"},
+  }
+  local EXAM_PLATES = {dental = {"CHAIR 1", "CHAIR 2"}, vet = {"EXAM 1", "EXAM 2"}}
 
   -- the entry door is on the left (spawn from_van), the door to the IT closet on the right
-  local function doorsMain(s, S)
+  local function doorsMain(s, S, kind)
+    local pl = PLATES[kind]
     s.put("Doors", P.slabDoor("#6A4A2E", "#523626", "#8A6A44", "lever"), 4, 18)
-    s.put("Plate", P.doorPlate("ENTRY"), 4, 9)
+    plateAt(s, pl[1], 4)
     s.put("Doors", P.slabDoor("#7B828F", "#646B77", "#97A0AD", "lever"), 284, 18)
-    s.put("Plate", P.doorPlate("SERVER"), 284, 9)
+    plateAt(s, pl[3], 284)
     s.put("Doors", P.slabDoor("#5A3A22", "#3E281A", "#7A5030", "lever"), 44, 18)
-    s.put("Plate", P.doorPlate("OWNER"), 44, 9)
+    plateAt(s, pl[2], 44)
   end
 
   -- ---------------------------------------------------------------- skins: same layout, other colours and name
   local SKINS = {
     dental = {
-      a = {id = "a", name = "ACME DENTAL", wall = "#CFE8EE", trim = "#B4D4DC", accent = "#2E9AB8", floor = "#D8D4C8", floor2 = "#C4BFB0", logo = "#2E9AB8"},
-      b = {id = "b", name = "BRIGHT SMILES", wall = "#F2E6EE", trim = "#E0CCDA", accent = "#B8508A", floor = "#E4DDD0", floor2 = "#CFC7B8", logo = "#B8508A"},
+      a = {id = "a", name = "ACME DENTAL GROUP", short = "ACME DENTAL", wall = "#CFE8EE", trim = "#B4D4DC", accent = "#2E9AB8", floor = "#D8D4C8", floor2 = "#C4BFB0", logo = "#2E9AB8"},
+      b = {id = "b", name = "BRIGHT SMILES DENTAL", short = "BRIGHT SMILES", wall = "#F2E6EE", trim = "#E0CCDA", accent = "#B8508A", floor = "#E4DDD0", floor2 = "#CFC7B8", logo = "#B8508A"},
     },
     law = {
-      a = {id = "a", name = "HOOT & HOLLER", wall = "#6A4A38", trim = "#523626", accent = "#C8A04A", floor = "#3A2A3E", floor2 = "#2E2032", logo = "#C8A04A"},
-      b = {id = "b", name = "SPENCE & ROE LLP", wall = "#3E4A5E", trim = "#2E384A", accent = "#D8D0B0", floor = "#4A3A30", floor2 = "#3C2E26", logo = "#D8D0B0"},
+      a = {id = "a", name = "HOOT AND HOLLER LAW", short = "HOOT & HOLLER", wall = "#6A4A38", trim = "#523626", accent = "#C8A04A", floor = "#3A2A3E", floor2 = "#2E2032", logo = "#C8A04A"},
+      b = {id = "b", name = "SPENCE AND ROE LLP", short = "SPENCE & ROE", wall = "#3E4A5E", trim = "#2E384A", accent = "#D8D0B0", floor = "#4A3A30", floor2 = "#3C2E26", logo = "#D8D0B0"},
     },
     vet = {
-      a = {id = "a", name = "PAWS AND CLAWS", wall = "#CDE6C8", trim = "#B2D0AC", accent = "#3E8E4A", floor = "#D8D2BC", floor2 = "#C4BEA6", logo = "#3E8E4A"},
+      a = {id = "a", name = "PAWS AND CLAWS VETERINARY", short = "PAWS AND CLAWS", wall = "#CDE6C8", trim = "#B2D0AC", accent = "#3E8E4A", floor = "#D8D2BC", floor2 = "#C4BEA6", logo = "#3E8E4A"},
       b = {id = "b", name = "HAPPY TAILS VET", wall = "#F6E2C0", trim = "#E4CA9E", accent = "#E07A2E", floor = "#CFE0E6", floor2 = "#B8CCD4", logo = "#E07A2E"},
     },
     arch = {
-      a = {id = "a", name = "LINDQVIST & MOSS", wall = "#E8E6E0", trim = "#D2CFC6", accent = "#2A2D36", floor = "#8A8F98", floor2 = "#767B84", logo = "#2A2D36"},
+      a = {id = "a", name = "LINDQVIST AND MOSS ARCHITECTS", short = "LINDQVIST & MOSS", wall = "#E8E6E0", trim = "#D2CFC6", accent = "#2A2D36", floor = "#8A8F98", floor2 = "#767B84", logo = "#2A2D36"},
       b = {id = "b", name = "NORTHLIGHT DESIGN", wall = "#DCE4D4", trim = "#C4D0B8", accent = "#B8503E", floor = "#A89478", floor2 = "#94805F", logo = "#B8503E"},
     },
     realty = {
@@ -88,7 +104,7 @@ return function(L, builders)
       b = {id = "b", name = "KEYSTONE HOMES", wall = "#DCE6F2", trim = "#C2D2E6", accent = "#2E5AA8", floor = "#8E6A48", floor2 = "#7A5838", logo = "#2E5AA8"},
     },
     trailer = {
-      a = {id = "a", name = "IRON MULE DEMO", wall = "#B8A27A", trim = "#9C8760", accent = "#E0A030", floor = "#7A7468", floor2 = "#68625A", logo = "#E0A030"},
+      a = {id = "a", name = "IRON MULE DEMOLITION", short = "IRON MULE DEMO", wall = "#B8A27A", trim = "#9C8760", accent = "#E0A030", floor = "#7A7468", floor2 = "#68625A", logo = "#E0A030"},
       b = {id = "b", name = "BLACKROCK WRECKING", wall = "#A8B0A0", trim = "#8E9686", accent = "#D2452E", floor = "#6E6A62", floor2 = "#5C5852", logo = "#D2452E"},
     },
   }
@@ -119,18 +135,19 @@ return function(L, builders)
 
   -- ---------------------------------------------------------------- shared pieces (skin aware)
   function P.siteSign(S, w)
+    w = math.max(w, textW(S.name, 1) + 8)
     return L.piece(w, 14, function(R)
       R(0, 0, w, 14, OUT); R(1, 1, w - 2, 12, S.accent); R(1, 1, w - 2, 1, "#FFFFFF")
       centred(R, S.name, w // 2, 4, 1, "#FFFFFF")
     end)
   end
 
-  function P.recepDesk(S, w, glass)
+  function P.recepDesk(S, w, glass, label)
     return L.piece(w, 36, function(R)
       L.box(R, 0, 0, w, 5, "#F2EFE6", "#FFFFFF", "#C9C3B2")
       R(0, 5, w, 31, S.accent); R(0, 5, w, 2, "#FFFFFF"); R(0, 33, w, 3, S.trim)
       R(4, 11, w - 8, 18, S.trim)
-      centred(R, S.name:sub(1, 14), w // 2, 17, 1, "#FFFFFF")
+      centred(R, label or (S.short or S.name):sub(1, 14), w // 2, 17, 1, "#FFFFFF")
       if glass then R(0, -22, w, 22, "#BFE4F0"); R(1, -21, w - 2, 20, "#E4F6FC"); R(0, -22, w, 2, "#8E939E"); R(w // 2, -21, 2, 20, "#8E939E") end
       L.box(R, w - 22, -7, 12, 7, "#2E3138", "#4A4F5A", "#1C1E24")
       R(6, -4, 7, 4, "#F2F2EA")
@@ -205,10 +222,10 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "tile", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 70), 90, 10)
-      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 208, 18); s.put("Plate", P.doorPlate("EXAM 1"), 208, 9)
-      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 246, 18); s.put("Plate", P.doorPlate("EXAM 2"), 246, 9)
+      doorsMain(s, S, "dental")
+      s.put("Sign", P.siteSign(S, 70), 90 - (math.max(70, textW(S.name, 1) + 8) - 70) // 2, 10)
+      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 208, 18); plateAt(s, EXAM_PLATES.dental[1], 208)
+      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 246, 18); plateAt(s, EXAM_PLATES.dental[2], 246)
       s.putS("Fish", P.fishTank(), 84, 52, 100, "fish_tank")
       s.putS("Reception", P.recepDesk(S, 80, true), 128, 72, 108, "recep_desk_dental_" .. S.id)
       s.putS("RecepPC", P.monitor(), 156, 56, 96, "monitor")
@@ -262,8 +279,8 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "carpet", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 96), 92, 8)
+      doorsMain(s, S, "law")
+      s.put("Sign", P.siteSign(S, 96), 92 - (math.max(96, textW(S.name, 1) + 8) - 96) // 2, 8)
       s.put("Frame", P.diploma(S), 196, 24); s.put("Frame", P.diploma(S), 220, 24); s.put("Frame", P.diploma(S), 244, 24)
       s.putS("Books", P.lawBooks(S), 88, 24, 100, "law_books")
       s.putS("Books2", P.lawBooks(S), 136, 24, 100, "law_books")
@@ -363,10 +380,10 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "vet", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 84), 90, 10)
-      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 208, 18); s.put("Plate", P.doorPlate("EXAM 1"), 208, 9)
-      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 246, 18); s.put("Plate", P.doorPlate("EXAM 2"), 246, 9)
+      doorsMain(s, S, "vet")
+      s.put("Sign", P.siteSign(S, 84), 90 - (math.max(84, textW(S.name, 1) + 8) - 84) // 2, 10)
+      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 208, 18); plateAt(s, EXAM_PLATES.vet[1], 208)
+      s.put("Door", P.slabDoor(S.accent, S.trim, "#FFFFFF", "lever"), 246, 18); plateAt(s, EXAM_PLATES.vet[2], 246)
       s.put("Poster", P.petPoster(S), 180, 24)
       s.putS("Reception", P.recepDesk(S, 90, false), 88, 72, 108, "recep_desk_vet_" .. S.id)
       s.putS("RecepPC", P.monitor(), 132, 56, 96, "monitor")
@@ -429,14 +446,14 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "carpet", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 90), 92, 8)
-      s.put("Window", P.bigWindowArch(), 190, 8)
+      doorsMain(s, S, "arch")
+      s.put("Sign", P.siteSign(S, 90), 82, 8)
+      s.put("Window", P.bigWindowArch(), 214, 8)
       s.putS("Rack", P.blueprintRack(), 88, 48, 104, "blueprint_rack")
       s.putS("Draft1", P.draftTable(S), 122, 62, 108, "draft_table")
       s.putS("Chair1", P.chair(), 132, 62, 96, "chair_office")
       s.putS("Plotter", P.plotter(S), 186, 72, 108, "plotter")
-      s.putS("Desk", P.desk(46), 238, 83, 108, "desk_cubicle_46")
+      s.putS("Reception", P.recepDesk(S, 52, false, "LINDQVIST"), 234, 77, 108.5, "recep_desk_arch_" .. S.id)   -- the front desk (was a plain desk)
       s.putS("Mon", P.monitor(), 246, 62, 96, "monitor")
       s.putS("Chair2", P.chair(), 234, 66, 95, "chair_office")
       if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
@@ -467,12 +484,30 @@ return function(L, builders)
     end)
   end
 
-  function P.coffeeBar(S)
-    return L.piece(54, 40, function(R)
-      L.box(R, 0, 14, 54, 5, "#C9955A", "#E0B47A", "#A57445")
-      R(0, 19, 54, 21, S.trim); R(2, 21, 50, 17, S.wall)
-      R(6, 2, 14, 12, "#2E3138"); R(7, 3, 12, 6, "#6A6F7A"); R(10, 10, 6, 4, "#F2F2EA")
-      R(26, 8, 5, 6, "#F2F2EA"); R(34, 8, 5, 6, "#E04E4E"); R(42, 6, 7, 8, "#8AB4D8")
+  function P.coffeeBar(S)                      -- a 30 px coffee counter: machine, pot, mugs, a tip jar
+    return L.piece(30, 40, function(R)
+      L.box(R, 0, 14, 30, 5, "#C9955A", "#E0B47A", "#A57445")
+      R(0, 19, 30, 21, S.trim); R(2, 21, 26, 17, S.wall)
+      R(2, 2, 12, 12, "#2E3138"); R(3, 3, 10, 5, "#6A6F7A"); R(5, 10, 6, 4, "#F2F2EA"); R(3, 9, 1, 1, "#E04E4E")
+      R(17, 7, 4, 7, "#F2F2EA"); R(22, 8, 4, 6, "#E04E4E"); R(17, 5, 3, 2, "#8E939E")
+    end)
+  end
+
+  function P.signInSheet(S)                    -- the visitor sign-in clipboard on the wall, with a card over it
+    return L.piece(30, 28, function(R)
+      R(0, 0, 30, 8, OUT); R(1, 1, 28, 6, S.accent); centred(R, "SIGN IN", 15, 2, 1, "#FFFFFF")
+      R(8, 9, 14, 19, OUT); R(9, 10, 12, 17, "#8A6A44")
+      R(11, 12, 8, 14, "#F4F2EA"); R(12, 8, 6, 3, "#8E939E")
+      for y = 14, 24, 3 do R(12, y, 6, 1, "#9AA0AC") end
+      R(12, 24, 3, 1, "#2E5AA8")                -- the last signature
+      R(22, 18, 1, 9, "#C9955A")                -- the pen on its string
+    end)
+  end
+
+  function P.soldPlaque(S)                     -- the SOLD sign, hung on the wall
+    return L.piece(30, 22, function(R)
+      R(0, 0, 30, 22, OUT); R(1, 1, 28, 12, S.accent); centred(R, "SOLD", 15, 4, 1, "#FFFFFF")
+      R(1, 13, 28, 8, "#D2452E"); R(1, 13, 28, 1, "#F4F2EA"); centred(R, "SALE", 15, 15, 1, "#FFFFFF")
     end)
   end
 
@@ -480,10 +515,12 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "carpet", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 100), 92, 8)
-      s.put("Board", P.listingBoard(S), 140, 14)
-      s.putS("Sold", P.soldSign(S), 84, 62, 100, "sold_sign")
+      doorsMain(s, S, "realty")
+      s.put("Sign", P.siteSign(S, 100), 80, 8)
+      s.put("Board", P.listingBoard(S), 186, 14)
+      s.put("Sold", P.soldPlaque(S), 80, 30)                                        -- the yard sign moved up to the wall
+      s.put("SignIn", P.signInSheet(S), 110, 30)
+      s.putS("CoffeeBar", P.coffeeBar(S), 82, 62, 102, "coffee_bar_" .. S.id)
       for i, x in ipairs({112, 186}) do
         s.putS("Chair" .. i, P.chair(), x + 1, 66, 95, "chair_office")
         s.putS("Desk" .. i, P.desk(74), x + 3, 83, 108, "desk_cubicle_74")
@@ -551,8 +588,8 @@ return function(L, builders)
     return {W = 320, H = 128, fn = function(s)
       s.layer("Ceiling")
       wallAndFloor(s, S, "trailer", 320)
-      doorsMain(s, S)
-      s.put("Sign", P.siteSign(S, 90), 92, 8)
+      doorsMain(s, S, "trailer")
+      s.put("Sign", P.siteSign(S, 90), 92 - (math.max(90, textW(S.name, 1) + 8) - 90) // 2, 8)
       s.put("Window", P.trailerWindow(S), 124, 20)
       s.put("Hats", P.hardHats(S), 84, 40)
       s.put("Map", P.siteMap(S), 176, 18)

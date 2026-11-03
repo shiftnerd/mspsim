@@ -3881,6 +3881,162 @@ SET TRAY 1 TO PLAIN PAPER
 THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.
 
 
+# ======================= PrinterGame > PLOTTER_TEXT =======================
+# PrinterGame > PLOTTER_TEXT > title
+[PrinterGame.PLOTTER_TEXT.title]
+PLOTTER REPAIR
+
+# PrinterGame > PLOTTER_TEXT > intro1
+[PrinterGame.PLOTTER_TEXT.intro1]
+THE FORTY-INCH PLOTTER CHEWS ITS ROLL AND THE
+
+# PrinterGame > PLOTTER_TEXT > intro2
+[PrinterGame.PLOTTER_TEXT.intro2]
+DISPLAY SAYS MEDIA JAM. A PRINT DUE AT NOON.
+
+# PrinterGame > PLOTTER_TEXT > jam_help
+[PrinterGame.PLOTTER_TEXT.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
+
+# PrinterGame > PLOTTER_TEXT > jam_clean
+[PrinterGame.PLOTTER_TEXT.jam_clean]
+A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.
+
+# PrinterGame > PLOTTER_TEXT > jam_hold
+[PrinterGame.PLOTTER_TEXT.jam_hold]
+THE ROLL HOLDS. NOT QUITE: TRY AGAIN.
+
+# PrinterGame > PLOTTER_TEXT > jam_tear
+[PrinterGame.PLOTTER_TEXT.jam_tear]
+RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
+
+# PrinterGame > PLOTTER_TEXT > toner_help
+[PrinterGame.PLOTTER_TEXT.toner_help]
+LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
+
+# PrinterGame > PLOTTER_TEXT > toner_ok
+[PrinterGame.PLOTTER_TEXT.toner_ok]
+CLICK. THE INK TANK SEATS.
+
+# PrinterGame > PLOTTER_TEXT > toner_bad
+[PrinterGame.PLOTTER_TEXT.toner_bad]
+WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
+
+# PrinterGame > PLOTTER_TEXT > shake_help
+[PrinterGame.PLOTTER_TEXT.shake_help]
+ROCK THE INK TANK: A D A D A D
+
+# PrinterGame > PLOTTER_TEXT > shake_late
+[PrinterGame.PLOTTER_TEXT.shake_late]
+TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.
+
+# PrinterGame > PLOTTER_TEXT > hit
+[PrinterGame.PLOTTER_TEXT.hit]
+YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.
+
+# PrinterGame > PLOTTER_TEXT > stars3
+[PrinterGame.PLOTTER_TEXT.stars3]
+PERFECT. A CRISP FORTY-INCH SITE PLAN.
+
+# PrinterGame > PLOTTER_TEXT > stars2
+[PrinterGame.PLOTTER_TEXT.stars2]
+GOOD ENOUGH. A FEW BANDING LINES.
+
+# PrinterGame > PLOTTER_TEXT > stars1
+[PrinterGame.PLOTTER_TEXT.stars1]
+IT PLOTS. THE SCALE BAR IS A LITTLE OFF.
+
+# PrinterGame > PLOTTER_TEXT > stars0
+[PrinterGame.PLOTTER_TEXT.stars0]
+YOU GIVE UP. THE PLOTTER WINS.
+
+# PrinterGame > PLOTTER_TEXT > tray_help
+[PrinterGame.PLOTTER_TEXT.tray_help]
+MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+
+# PrinterGame > PLOTTER_TEXT > tray_ok
+[PrinterGame.PLOTTER_TEXT.tray_ok]
+24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.
+
+# PrinterGame > PLOTTER_TEXT > tray_bad
+[PrinterGame.PLOTTER_TEXT.tray_bad]
+WRONG ROLL. THE PLOTTER CUTS IT SHORT.
+
+# PrinterGame > PLOTTER_TEXT > tray_hit
+[PrinterGame.PLOTTER_TEXT.tray_hit]
+YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
+
+# PrinterGame > PLOTTER_TEXT > pray_help
+[PrinterGame.PLOTTER_TEXT.pray_help]
+P: PRAY TO THE PLOTTER GODS
+
+
+# ======================= PrinterGame > PLOTTER_QUESTIONS =======================
+# PrinterGame > PLOTTER_QUESTIONS > 0 > error
+[PrinterGame.PLOTTER_QUESTIONS.0.error]
+MEDIA JAM ROLL 1
+
+# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 0
+[PrinterGame.PLOTTER_QUESTIONS.0.options.0]
+PULL THE ROLL OUT HARD
+
+# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 1
+[PrinterGame.PLOTTER_QUESTIONS.0.options.1]
+OPEN THE COVER AND FEED IT STRAIGHT
+
+# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 2
+[PrinterGame.PLOTTER_QUESTIONS.0.options.2]
+ORDER A NEW ROLL
+
+# PrinterGame > PLOTTER_QUESTIONS > 0 > why
+[PrinterGame.PLOTTER_QUESTIONS.0.why]
+A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.
+
+# PrinterGame > PLOTTER_QUESTIONS > 1 > error
+[PrinterGame.PLOTTER_QUESTIONS.1.error]
+REPLACE PRINTHEAD
+
+# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 0
+[PrinterGame.PLOTTER_QUESTIONS.1.options.0]
+ALIGN THE PRINTHEAD
+
+# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 1
+[PrinterGame.PLOTTER_QUESTIONS.1.options.1]
+SWAP THE PRINTHEAD AND ALIGN IT
+
+# PrinterGame > PLOTTER_QUESTIONS > 1 > why
+[PrinterGame.PLOTTER_QUESTIONS.1.why]
+BANDING THAT NEVER CLEARS MEANS A DEAD NOZZLE. SWAP IT, THEN ALIGN.
+
+# PrinterGame > PLOTTER_QUESTIONS > 2 > options > 0
+[PrinterGame.PLOTTER_QUESTIONS.2.options.0]
+ADD MEMORY OR PRINT THE SHEET AS A PDF
+
+# PrinterGame > PLOTTER_QUESTIONS > 2 > why
+[PrinterGame.PLOTTER_QUESTIONS.2.why]
+A BIG DRAWING WITH A HEAVY HATCH CHOKES THE PLOTTER. SEND A FLATTENED PDF.
+
+# PrinterGame > PLOTTER_QUESTIONS > 3 > error
+[PrinterGame.PLOTTER_QUESTIONS.3.error]
+PAPER SIZE MISMATCH
+
+# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 0
+[PrinterGame.PLOTTER_QUESTIONS.3.options.0]
+SET THE DRIVER TO ARCH D
+
+# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 1
+[PrinterGame.PLOTTER_QUESTIONS.3.options.1]
+BLAME THE INTERN
+
+# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 2
+[PrinterGame.PLOTTER_QUESTIONS.3.options.2]
+CUT THE ROLL BY HAND
+
+# PrinterGame > PLOTTER_QUESTIONS > 3 > why
+[PrinterGame.PLOTTER_QUESTIONS.3.why]
+THE DRAWING SAYS 24 BY 36 BUT THE DRIVER SAYS LETTER. FIX THE PAPER SIZE.
+
+
 # ======================= Onsite > TEXT =======================
 # Onsite > TEXT > fine
 [Onsite.TEXT.fine]

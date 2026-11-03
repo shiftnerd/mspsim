@@ -1759,7 +1759,7 @@ func _chose(id: String) -> void:
 		if str(o.id) == id:
 			opt = o
 	if str(opt.get("game", "")) == "printer":
-		PrinterGame.start(func(stars: int) -> void: _printer_done(stars))
+		PrinterGame.start(func(stars: int) -> void: _printer_done(stars), _printer_kind())
 		return
 	_away(float(opt.hours), ticket_id)
 	var ok := randf() < float(opt.chance)
@@ -1791,6 +1791,11 @@ func _printer_done(stars: int) -> void:
 	)
 
 
+# the architects' printer is a plotter: the mini-game wears the PLOTTER_* texts there
+func _printer_kind() -> String:
+	return "plotter" if site_type(client) == "arch" else ""
+
+
 func _printer_practice() -> void:
 	var options := [{"label": "OPEN IT UP AND FIGHT IT", "id": "go"}]
 	if active:
@@ -1811,7 +1816,8 @@ func _practice_answer(pick: String) -> void:
 		PrinterGame.start(
 			func(stars: int) -> void:
 				if stars >= 0:  # -1 = backed out on the intro page
-					Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0)
+					Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0),
+			_printer_kind()
 		)
 
 

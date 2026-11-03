@@ -178,7 +178,7 @@ PATCHABLE = {
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
     "scripts/review.gd": ["QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"],
-    "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
 
 
@@ -14604,7 +14604,7 @@ const ROOTS := {
     "Hints": ["DAY1"],
     "Growth": ["STRETCH"],
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
-    "PrinterGame": ["TEXT", "QUESTIONS"],
+    "PrinterGame": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
@@ -17069,7 +17069,7 @@ func _chose(id: String) -> void:
         if str(o.id) == id:
             opt = o
     if str(opt.get("game", "")) == "printer":
-        PrinterGame.start(func(stars: int) -> void: _printer_done(stars))
+        PrinterGame.start(func(stars: int) -> void: _printer_done(stars), _printer_kind())
         return
     _away(float(opt.hours), ticket_id)
     var ok := randf() < float(opt.chance)
@@ -17096,6 +17096,11 @@ func _printer_done(stars: int) -> void:
     Cards.ask("Onsite", str(TEXT.get("printer_stars%d" % stars, "")), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _after(ok))
 
 
+# the architects' printer is a plotter: the mini-game wears the PLOTTER_* texts there
+func _printer_kind() -> String:
+    return "plotter" if site_type(client) == "arch" else ""
+
+
 func _printer_practice() -> void:
     var options := [{"label": "OPEN IT UP AND FIGHT IT", "id": "go"}]
     if active:
@@ -17111,7 +17116,8 @@ func _practice_answer(pick: String) -> void:
         PrinterGame.start(
             func(stars: int) -> void:
                 if stars >= 0:  # -1 = backed out on the intro page
-                    Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0)
+                    Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0),
+            _printer_kind()
         )
 
 
@@ -17243,7 +17249,7 @@ write("scripts/printer_game.gd", '''extends CanvasLayer
 #   4. TEST PAGE: two error messages on the little display; pick the right way to deal with each (1 / 2 / 3).
 # P prays to the sysadmin gods (3 prayers): good luck blesses you (the next mistake is forgiven, the green zone widens), bad luck costs you.
 # Fewer mistakes = more stars (0-3). Esc gives up. Used by Onsite (printer jobs, and practice in Free Play):
-#   PrinterGame.start(func(stars: int) -> void: ...)
+#   PrinterGame.start(func(stars: int) -> void: ..., "plotter")  # optional second argument
 # The questions and texts are in QUESTIONS / TEXT so reviewers can edit them in story/strings.txt.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
@@ -17328,8 +17334,64 @@ const QUESTIONS := [
         "why": "THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.",
     },
 ]
+const PLOTTER_TEXT := {
+    "title": "PLOTTER REPAIR",
+    "intro1": "THE FORTY-INCH PLOTTER CHEWS ITS ROLL AND THE",
+    "intro2": "DISPLAY SAYS MEDIA JAM. A PRINT DUE AT NOON.",
+    "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
+    "jam_clean": "A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.",
+    "jam_hold": "THE ROLL HOLDS. NOT QUITE: TRY AGAIN.",
+    "jam_tear": "RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.",
+    "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL",
+    "toner_ok": "CLICK. THE INK TANK SEATS.",
+    "toner_bad": "WRONG INK TANK. THE PLOTTER BEEPS AT YOU.",
+    "shake_help": "ROCK THE INK TANK: A D A D A D",
+    "shake_late": "TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.",
+    "hit": "YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.",
+    "stars3": "PERFECT. A CRISP FORTY-INCH SITE PLAN.",
+    "stars2": "GOOD ENOUGH. A FEW BANDING LINES.",
+    "stars1": "IT PLOTS. THE SCALE BAR IS A LITTLE OFF.",
+    "stars0": "YOU GIVE UP. THE PLOTTER WINS.",
+    "tray_help": "MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
+    "tray_ok": "24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.",
+    "tray_bad": "WRONG ROLL. THE PLOTTER CUTS IT SHORT.",
+    "tray_hit": "YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.",
+    "pray_help": "P: PRAY TO THE PLOTTER GODS",
+}
+const PLOTTER_TRAY := ["24 IN BOND", "36 IN BOND", "MYLAR", "HIT IT"]
+const PLOTTER_QUESTIONS := [
+    {
+        "error": "MEDIA JAM ROLL 1",
+        "options": ["PULL THE ROLL OUT HARD", "OPEN THE COVER AND FEED IT STRAIGHT", "ORDER A NEW ROLL"],
+        "correct": 1,
+        "hit": -1,
+        "why": "A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.",
+    },
+    {
+        "error": "REPLACE PRINTHEAD",
+        "options": ["ALIGN THE PRINTHEAD", "SWAP THE PRINTHEAD AND ALIGN IT", "IGNORE IT"],
+        "correct": 1,
+        "hit": -1,
+        "why": "BANDING THAT NEVER CLEARS MEANS A DEAD NOZZLE. SWAP IT, THEN ALIGN.",
+    },
+    {
+        "error": "OUT OF MEMORY",
+        "options": ["ADD MEMORY OR PRINT THE SHEET AS A PDF", "REINSTALL CAD", "PRINT IT AGAIN"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A BIG DRAWING WITH A HEAVY HATCH CHOKES THE PLOTTER. SEND A FLATTENED PDF.",
+    },
+    {
+        "error": "PAPER SIZE MISMATCH",
+        "options": ["SET THE DRIVER TO ARCH D", "BLAME THE INTERN", "CUT THE ROLL BY HAND"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE DRAWING SAYS 24 BY 36 BUT THE DRIVER SAYS LETTER. FIX THE PAPER SIZE.",
+    },
+]
 
 var is_open := false
+var kind := ""  # "" = an ordinary printer, "plotter" = the architects' plotter
 var phase := ""
 var mistakes := 0
 var stars := 0
@@ -17366,8 +17428,9 @@ func _ready() -> void:
     _canvas.draw.connect(_paint)
 
 
-func start(callback: Callable) -> void:
+func start(callback: Callable, flavour: String = "") -> void:
     _callback = callback
+    kind = flavour
     is_open = true
     Game.ui_open = true
     _canvas.visible = true
@@ -17412,7 +17475,7 @@ func _begin_jam() -> void:
     phase = "jam"
     spot = 0
     _new_zone()
-    msg = str(TEXT.jam_help)
+    msg = _tx("jam_help")
 
 
 func _new_zone() -> void:
@@ -17424,7 +17487,7 @@ func _new_zone() -> void:
 func _begin_tray() -> void:
     phase = "tray"
     tray_sel = 0
-    msg = str(TEXT.tray_help)
+    msg = _tx("tray_help")
 
 
 func _mistake() -> void:
@@ -17437,7 +17500,7 @@ func _mistake() -> void:
 
 func _pray() -> void:
     if faith <= 0:
-        msg = str(TEXT.pray_none)
+        msg = _tx("pray_none")
         return
     faith -= 1
     var roll := randf()
@@ -17460,7 +17523,7 @@ func _begin_toner() -> void:
     order.shuffle()
     step = 0
     sel = 0
-    msg = str(TEXT.toner_help)
+    msg = _tx("toner_help")
 
 
 func _begin_shake() -> void:
@@ -17468,24 +17531,39 @@ func _begin_shake() -> void:
     shakes = 0
     _shake_t = 5.0
     _last_shake = ""
-    msg = str(TEXT.shake_help)
+    msg = _tx("shake_help")
+
+
+# plotter flavour (the architects): the same rounds with the PLOTTER_* texts laid over the defaults
+func _tx(key: String) -> String:
+    if kind == "plotter" and PLOTTER_TEXT.has(key):
+        return str(PLOTTER_TEXT[key])
+    return str(TEXT.get(key, ""))
+
+
+func _qs() -> Array:
+    return PLOTTER_QUESTIONS if kind == "plotter" else QUESTIONS
+
+
+func _tray() -> Array:
+    return PLOTTER_TRAY if kind == "plotter" else TRAY
 
 
 func _begin_test() -> void:
     phase = "test"
-    var pool := range(QUESTIONS.size())
+    var pool := range(_qs().size())
     pool.shuffle()
     asked = [pool[0], pool[1]]
     qi = 0
     _answered = false
-    msg = str(TEXT.test_help)
+    msg = _tx("test_help")
 
 
 func _end() -> void:
     stars = _score()
     phase = "result"
     _result_t = 0.0
-    msg = str(TEXT.get("stars%d" % stars, ""))
+    msg = _tx("stars%d" % stars)
 
 
 # ---- input
@@ -17527,7 +17605,7 @@ func press(key: String) -> void:
         stars = 0
         phase = "result"
         _result_t = 0.0
-        msg = str(TEXT.stars0)
+        msg = _tx("stars0")
         _canvas.queue_redraw()
         return
     if key == "pray":
@@ -17541,9 +17619,9 @@ func press(key: String) -> void:
                 _begin_jam()
         "tray":
             if key in ["left", "a"]:
-                tray_sel = posmod(tray_sel - 1, TRAY.size())
+                tray_sel = posmod(tray_sel - 1, _tray().size())
             elif key in ["right", "d"]:
-                tray_sel = posmod(tray_sel + 1, TRAY.size())
+                tray_sel = posmod(tray_sel + 1, _tray().size())
             elif key == "confirm":
                 _load_paper()
         "jam":
@@ -17578,13 +17656,13 @@ func press(key: String) -> void:
 
 func _load_paper() -> void:
     if tray_sel == 0:
-        msg = str(TEXT.tray_ok)
+        msg = _tx("tray_ok")
         _begin_toner_after_tray()
     elif tray_sel == 3 and randf() < 0.05:
-        msg = str(TEXT.tray_hit)
+        msg = _tx("tray_hit")
         _begin_toner_after_tray()
     else:
-        msg = str(TEXT.tray_bad)
+        msg = _tx("tray_bad")
         _mistake()
 
 
@@ -17598,14 +17676,14 @@ func _pull() -> void:
     var d := absf(marker - zone)
     if d <= 0.07 + 0.03 * float(mini(blessed, 2)):
         spot += 1
-        msg = str(TEXT.jam_clean)
+        msg = _tx("jam_clean")
         _new_zone()
         if spot >= 3:
             _begin_tray()
     elif d <= 0.16 + 0.04 * float(mini(blessed, 2)):
-        msg = str(TEXT.jam_hold)
+        msg = _tx("jam_hold")
     else:
-        msg = str(TEXT.jam_tear)
+        msg = _tx("jam_tear")
         _mistake()
         _new_zone()
 
@@ -17613,23 +17691,23 @@ func _pull() -> void:
 func _install() -> void:
     if sel == int(order[step]):
         step += 1
-        msg = str(TEXT.toner_ok)
+        msg = _tx("toner_ok")
         if step >= 4:
             _begin_shake()
     else:
-        msg = str(TEXT.toner_bad)
+        msg = _tx("toner_bad")
         _mistake()
 
 
 func _answer(choice: int) -> void:
-    var q: Dictionary = QUESTIONS[int(asked[qi])]
+    var q: Dictionary = _qs()[int(asked[qi])]
     _answered = true
     if choice == int(q.correct):
-        msg = str(TEXT.right) + " " + str(q.why)
+        msg = _tx("right") + " " + str(q.why)
     elif choice == int(q.hit) and randf() < 0.05:
-        msg = str(TEXT.hit)
+        msg = _tx("hit")
     else:
-        msg = str(TEXT.wrong) + " " + str(q.why)
+        msg = _tx("wrong") + " " + str(q.why)
         _mistake()
 
 
@@ -17639,7 +17717,7 @@ func _next_question() -> void:
     if qi >= asked.size():
         _end()
     else:
-        msg = str(TEXT.test_help)
+        msg = _tx("test_help")
 
 
 func _process(delta: float) -> void:
@@ -17658,7 +17736,7 @@ func _process(delta: float) -> void:
     elif phase == "shake":
         _shake_t -= delta
         if _shake_t <= 0.0:
-            msg = str(TEXT.shake_late)
+            msg = _tx("shake_late")
             _mistake()
             _begin_test()
     _canvas.queue_redraw()
@@ -17697,7 +17775,7 @@ func _paint() -> void:
     _r(-1, -1, PW + 2, PH + 2, INK)
     _r(0, 0, PW, PH, BODY)
     _r(0, 0, PW, 9, Color("4a5a78"))
-    _txt(str(TEXT.title), 3, 2, Color.WHITE)
+    _txt(_tx("title"), 3, 2, Color.WHITE)
     var mis := "MISTAKES %d" % mistakes
     _txt(mis, PW - PixelFont.width(mis) - 3, 2, Color("ffd6d0"))
     if phase != "result":
@@ -17735,7 +17813,7 @@ func _printer(y: float) -> void:
 
 func _paint_intro() -> void:
     _printer(16)
-    var lines := [str(TEXT.intro1), str(TEXT.intro2), "", str(TEXT.intro3)]
+    var lines := [_tx("intro1"), _tx("intro2"), "", _tx("intro3")]
     for i in lines.size():
         _txt(str(lines[i]), 6, 62.0 + float(i) * 7.0)
 
@@ -17762,14 +17840,14 @@ func _paint_tray() -> void:
     _r(12, 16, 152, 16, Color("3a6a42"))
     _txt("PC LOAD LETTER", 16, 21, Color("d8f8d8"), 1)
     _txt("TRAY 2", 130, 21, Color("d8f8d8"), 1)
-    for i in TRAY.size():
+    for i in _tray().size():
         var x := 12.0 + 38.0 * float(i)
         _r(x, 40, 34, 28, INK)
         _r(x + 1, 41, 32, 26, PAPER if i < 3 else Color("c9cdd6"))
         if i < 3:
             for k in 3:
                 _r(x + 5, 46.0 + float(k) * 5.0, 24.0 - float(i) * 2.0, 1, Color("8a8f9a"))
-        _txt(str(TRAY[i]), x + 3, 58, INK)
+        _txt(str(_tray()[i]), x + 3, 58, INK)
         if i == tray_sel:
             _r(x - 2, 38, 38, 2, Color("ff6a3a"))
             _r(x - 2, 68, 38, 2, Color("ff6a3a"))
@@ -17802,7 +17880,7 @@ func _paint_shake() -> void:
 
 
 func _paint_test() -> void:
-    var q: Dictionary = QUESTIONS[int(asked[qi])]
+    var q: Dictionary = _qs()[int(asked[qi])]
     _r(10, 14, 156, 22, Color("14301c"))
     _r(12, 16, 152, 18, Color("3a6a42"))
     _txt(str(q.error), 16, 22, Color("d8f8d8"), 1)
@@ -17815,7 +17893,7 @@ func _paint_result() -> void:
         var col := Color("f2c94c") if i < stars else Color("8a8f9a")
         _r(46.0 + 30.0 * float(i), 28, 20, 20, INK)
         _r(48.0 + 30.0 * float(i), 30, 16, 16, col)
-    _txt(str(TEXT.done), 10, 60)
+    _txt(_tx("done"), 10, 60)
 ''')
 
 write("scripts/hud.gd", '''extends Node2D

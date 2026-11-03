@@ -192,6 +192,19 @@ func _init() -> void:
 		"with no ticket you can practise on the printer"
 	)
 	cards.pick(1)
+	# the architects' printer is a plotter: its own texts and questions, the ordinary printer keeps the defaults
+	pg.start(func(_s: int) -> void: pass, "plotter")
+	_check(pg._tx("title") == "PLOTTER REPAIR" and pg._tx("done") == pg.TEXT.done, "plotter texts overlay the defaults")
+	pg.press("confirm")
+	_check(pg._tray()[0] == "24 IN BOND", "the plotter loads rolls, not paper")
+	pg._begin_test()
+	_check(pg._qs() == pg.PLOTTER_QUESTIONS, "the plotter asks plotter questions")
+	pg.press("escape")
+	pg.start(func(_s: int) -> void: pass)
+	_check(pg._tx("title") == "PRINTER REPAIR" and pg._qs() == pg.QUESTIONS, "an ordinary printer keeps the defaults")
+	pg.press("escape")
+	on.client = 9
+	_check(on._printer_kind() == "plotter", "Onsite passes the plotter kind at the architects")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)
 

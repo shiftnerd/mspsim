@@ -24,7 +24,7 @@ const ROOTS := {
 	"Hints": ["DAY1"],
 	"Growth": ["STRETCH"],
 	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
-	"PrinterGame": ["TEXT", "QUESTIONS"],
+	"PrinterGame": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
