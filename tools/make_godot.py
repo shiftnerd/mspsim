@@ -784,6 +784,7 @@ var _handed := false
 var _ring_until := 0.0
 var _next_ring := 0.0
 var _ring_snd := 0.0
+var _coffee_stage := 0  # which part of the coffee machine sound has played (pump, pour, groan)
 var _handset: Texture2D
 var _room := ""
 
@@ -857,6 +858,7 @@ func play() -> void:
         Sfx.play_near("headset", self)
     if kind == "coffee":
         Sfx.play_near("coffee", self)
+        _coffee_stage = 0
     if kind == "switch":
         World.toggle_lights(_room)
     if kind == "tv":
@@ -902,6 +904,12 @@ func _process(delta: float) -> void:
     if kind == "coffee":
         if busy:
             _level = minf(1.0, (_time - _start) / 5.5)
+            if _coffee_stage == 0 and _time - _start >= 1.6:
+                _coffee_stage = 1
+                Sfx.play_near("coffee_pour", self)
+            elif _coffee_stage == 1 and _time - _start >= 4.9:
+                _coffee_stage = 2
+                Sfx.play_near("coffee_done", self)
         else:
             _level = maxf(0.0, _level - delta / 40.0)
     _acc += delta
@@ -19772,10 +19780,30 @@ const SOUNDS := {
         {"w": "sine", "f": 2349.0, "t": 0.7, "v": 0.18, "k": 5.0},
         {"w": "sine", "f": 3520.0, "t": 0.45, "v": 0.1, "k": 6.0}
     ],
+    # the coffee machine in three parts (fx.gd plays them 0 / 1.6 / 4.9 s into the brew): the pump drone that swells like a
+    # foghorn as the water moves, the pour with its bubbling, then the groan, sputter and a ready ding
     "coffee":
     [
-        {"w": "noise", "f": 1500.0, "t": 1.7, "v": 0.2, "k": 0.0, "am": 9.0, "lp": 0.35},
-        {"w": "tri", "f": 1568.0, "t": 0.1, "v": 0.26, "at": 1.75}
+        {"w": "saw", "f": 82.0, "f2": 124.0, "t": 1.7, "v": 0.17, "k": 0.0, "am": 4.0},
+        {"w": "sine", "f": 41.0, "f2": 62.0, "t": 1.7, "v": 0.2, "k": 0.0},
+        {"w": "tri", "f": 164.0, "f2": 248.0, "t": 1.7, "v": 0.08, "k": 0.0},
+        {"w": "saw", "f": 124.0, "f2": 98.0, "t": 1.5, "v": 0.15, "k": 0.0, "am": 6.0, "at": 1.7},
+        {"w": "sine", "f": 62.0, "f2": 49.0, "t": 1.5, "v": 0.18, "k": 0.0, "at": 1.7},
+        {"w": "noise", "f": 220.0, "t": 3.2, "v": 0.13, "k": 0.0, "am": 7.0, "lp": 0.06}
+    ],
+    "coffee_pour":
+    [
+        {"w": "noise", "f": 2400.0, "t": 3.2, "v": 0.17, "k": 0.0, "am": 19.0, "lp": 0.3},
+        {"w": "noise", "f": 900.0, "t": 3.2, "v": 0.15, "k": 0.0, "am": 5.0, "lp": 0.14},
+        {"w": "tri", "seq": [60, 64, 58, 66, 62, 59, 65, 61], "step": 0.09, "rep": 4, "t": 0.06, "v": 0.07, "k": 4.0, "at": 0.3}
+    ],
+    "coffee_done":
+    [
+        {"w": "saw", "f": 150.0, "f2": 60.0, "t": 1.2, "v": 0.18, "k": 0.4, "am": 12.0},
+        {"w": "sine", "f": 75.0, "f2": 40.0, "t": 1.2, "v": 0.18, "k": 0.4},
+        {"w": "noise", "f": 700.0, "t": 0.7, "v": 0.2, "k": 1.0, "am": 22.0, "lp": 0.2, "at": 0.15},
+        {"w": "noise", "f": 1800.0, "t": 0.35, "v": 0.15, "k": 3.0, "lp": 0.4, "at": 0.9},
+        {"w": "tri", "f": 1568.0, "t": 0.1, "v": 0.22, "at": 1.75}
     ],
     "printer_jam":
     [

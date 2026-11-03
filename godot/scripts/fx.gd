@@ -70,6 +70,7 @@ var _handed := false
 var _ring_until := 0.0
 var _next_ring := 0.0
 var _ring_snd := 0.0
+var _coffee_stage := 0  # which part of the coffee machine sound has played (pump, pour, groan)
 var _handset: Texture2D
 var _room := ""
 
@@ -161,6 +162,7 @@ func play() -> void:
 		Sfx.play_near("headset", self)
 	if kind == "coffee":
 		Sfx.play_near("coffee", self)
+		_coffee_stage = 0
 	if kind == "switch":
 		World.toggle_lights(_room)
 	if kind == "tv":
@@ -206,6 +208,12 @@ func _process(delta: float) -> void:
 	if kind == "coffee":
 		if busy:
 			_level = minf(1.0, (_time - _start) / 5.5)
+			if _coffee_stage == 0 and _time - _start >= 1.6:
+				_coffee_stage = 1
+				Sfx.play_near("coffee_pour", self)
+			elif _coffee_stage == 1 and _time - _start >= 4.9:
+				_coffee_stage = 2
+				Sfx.play_near("coffee_done", self)
 		else:
 			_level = maxf(0.0, _level - delta / 40.0)
 	_acc += delta
