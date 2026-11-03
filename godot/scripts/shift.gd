@@ -301,9 +301,11 @@ func _arrive(reason: String) -> int:
 		for i in late_min / 12:
 			Sales.adjust(Sales.pick_client(), -2)
 		if late_min >= 20:
-			var who: String = ["Alan", "Garrison", "Dan"][randi() % 3]
-			Social.change(who, -1)
-			Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
+			var pool: Array = ["Alan", "Garrison", "Dan"].filter(func(n: String) -> bool: return Social.people().has(n))
+			if not pool.is_empty():
+				var who: String = pool[randi() % pool.size()]
+				Social.change(who, -1)
+				Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
 		if late_min >= 30:
 			Msp.send_text("Boss", "Where are you? Clients are asking for you.")
 	elif reason != "":

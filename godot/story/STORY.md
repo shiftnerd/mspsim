@@ -641,14 +641,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 6
 
-**9:30 Card: prospect** — Vic Marlowe `[Owner.CARDS.prospect.speaker]`
-> Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account. `[Owner.CARDS.prospect.text]`
-- **OFFER THE DISCOUNT** `[Owner.CARDS.prospect.options.0.label]`
-  - Signed! Vic is thrilled. Their tickets start tomorrow. `[Owner.CARDS.prospect.options.0.text]`
-- **HOLD THE PRICE** `[Owner.CARDS.prospect.options.1.label]`
-  - 50%: They sign at full price. Vic looks smug. `[Owner.CARDS.prospect.options.1.roll.0.2]`
-  - 50%: They pass. Vic sulks. `[Owner.CARDS.prospect.options.1.roll.1.2]`
-- **PASS** `[Owner.CARDS.prospect.options.2.label]`
+**9:30** Event: prospect (handled in code, it opens its own cards)
 
 **10:30** Event: profit_review (handled in code, it opens its own cards)
 
@@ -927,6 +920,22 @@ or the owner (owner campaign, 20 weeks).
 - Tip: Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared. `[Talk.TIPS_GENERIC.Maya.1]`
 - Tip: Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you. `[Talk.TIPS_GENERIC.Maya.2]`
 
+### Morgan
+
+- Greeting (friend): Come in. Move the printouts, they are not load-bearing. What do you need? `[Talk.GREETINGS.Morgan.friend]`
+- Greeting (neutral): Yes? I have a budget call in five minutes. Go ahead. `[Talk.GREETINGS.Morgan.neutral]`
+- Greeting (cold): Mm. Is this about the queue? `[Talk.GREETINGS.Morgan.cold]`
+- Small talk: Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles. `[Talk.SMALL.Morgan.0]`
+- Small talk: Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet. `[Talk.SMALL.Morgan.1]`
+- Small talk: Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough. `[Talk.SMALL.Morgan.2]`
+- Small talk: I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part. `[Talk.SMALL.Morgan.3]`
+- Small talk: I put iOS 7 on my phone. It is very bright. I miss my buttons. `[Talk.SMALL.Morgan.4]`
+- Small talk: Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once. `[Talk.SMALL.Morgan.5]`
+- Tip: A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time. `[Talk.TIPS_GENERIC.Morgan.0]`
+- Tip: If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about. `[Talk.TIPS_GENERIC.Morgan.1]`
+- Tip: Close what you fix. Reopen what you break. Just be the person who tells me which one it is. `[Talk.TIPS_GENERIC.Morgan.2]`
+- Tip: Study between tickets. Nobody has ever been promoted for how fast they picked up the phone. `[Talk.TIPS_GENERIC.Morgan.3]`
+
 ### Gossip (anyone, now and then)
 
 - Between us: Morgan has been in the owners' office since nine. Never a good sign. `[Talk.GOSSIP.0]`
@@ -990,6 +999,16 @@ or the owner (owner campaign, 20 weeks).
   - You say: TOO BUSY RIGHT NOW -> they reply: Sure. No problem. I will fake the technical parts.
 - **thanks_Alan**: Thanks for covering the floor lately. The clients notice, and so do the books. `[Lync.MESSAGES.thanks_Alan.text]`
 - **thanks_Garrison**: Thanks for being great with the clients. They keep mentioning you. `[Lync.MESSAGES.thanks_Garrison.text]`
+- **lunch_Morgan**: Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for. `[Lync.MESSAGES.lunch_Morgan.text]`
+  - You say: SURE, I WILL BRING ONE -> they reply: Turkey, no pickles. You are a good person.
+  - You say: CAN'T, SWAMPED -> they reply: Understood. Close the P1s first.
+- **phones_Morgan**: I need ten quiet minutes with the owners' budget. Can you cover my phones? `[Lync.MESSAGES.phones_Morgan.text]`
+  - You say: SURE -> they reply: Thank you. I owe you one. Do not tell anyone I said that.
+  - You say: SORRY, CAN'T -> they reply: Fair. I will let it ring.
+- **help_Morgan**: Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me? `[Lync.MESSAGES.help_Morgan.text]`
+  - You say: PULL THE LIST -> they reply: That is exactly what I needed. Thank you.
+  - You say: TOO BUSY RIGHT NOW -> they reply: Sure. I will do it the slow way.
+- **thanks_Morgan**: Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter. `[Lync.MESSAGES.thanks_Morgan.text]`
 
 ### Commute and on-call
 

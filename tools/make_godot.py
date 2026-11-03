@@ -349,6 +349,7 @@ Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
 PrinterGame="*res://scripts/printer_game.gd"
 Strings="*res://scripts/strings.gd"
+Roles="*res://scripts/roles.gd"
 
 [display]
 
@@ -941,8 +942,16 @@ func _draw_bowl_score() -> void:
         PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
         return
     var t: Dictionary = game.totals
-    PixelFont.draw(self, "YOU %02d ALN %02d" % [int(t["You"]), int(t["Alan"])], Vector2(2, 1), green, 1)
-    PixelFont.draw(self, "GAR %02d DAN %02d" % [int(t["Garrison"]), int(t["Dan"])], Vector2(2, 8), green, 1)
+    var line1 := "YOU %02d" % int(t["You"])
+    if t.has("Alan"):
+        line1 += " ALN %02d" % int(t["Alan"])
+    var line2 := ""
+    if t.has("Garrison"):
+        line2 += "GAR %02d " % int(t["Garrison"])
+    if t.has("Dan"):
+        line2 += "DAN %02d" % int(t["Dan"])
+    PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
+    PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:
@@ -1734,7 +1743,7 @@ const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
 const GLYPHS := ["dots", "!", "?", "heart", "dots"]
 const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
-const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2}
+const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5}
 
 @export var character := "office_dan"
 @export var facing := "right"
@@ -2655,7 +2664,10 @@ const CAST := {
     "Dan": {"character": "office_dan", "home": "main_floor", "seat": "Seat3"},
     "Vic": {"character": "sales_vic", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
     "Maya": {"character": "office_maya", "home": "main_floor", "seat": "Seat2"},
+    # the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
+    "Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
 }
+const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
 const FLOOR_Y := 118.0
 const SETTLE := 6.0  # after this long in a leg, someone you walk in on is already at the spot
@@ -2824,6 +2836,8 @@ func leg_exit(n: String) -> void:
 
 func node_left(n: String, held: String, sips: int) -> void:
     # the scene changed under a living NPC: carry on off-screen from about halfway through the leg
+    if not chars.has(n):
+        return  # a copy of somebody who just left the cast
     var st: Dictionary = chars[n]
     st.node = null
     st.held = held
@@ -2902,16 +2916,47 @@ func _make_char(n: String) -> Dictionary:
     }
 
 
-# Maya works in the tech campaign and Free Play (not on your payroll in the owner campaign).
+# the cast members who are NOT in the building right now: the person you play as (Campaign.player_as, a campaign
+# or Free Play) and Maya in the owner campaign (not on your payroll). CAST itself never changes.
+func roster_gone() -> Array:
+    var gone := []
+    if Campaign.player_as != "" and CAST.has(Campaign.player_as):
+        gone.append(Campaign.player_as)
+    if Campaign.active and Campaign.mode == "owner" and not gone.has("Maya"):
+        gone.append("Maya")
+    return gone
+
+
+# the cast name of a character sheet ("office_dan" -> "Dan"), "" for someone who is not in CAST
+func cast_of(character: String) -> String:
+    for n in CAST:
+        if str(CAST[n].character) == character:
+            return n
+    return ""
+
+
+# where the person you play as sits at the start: {scene, seat} (empty when you are not a cast member)
+func player_desk() -> Dictionary:
+    var who := Campaign.player_as
+    if who == "" or not CAST.has(who):
+        return {}
+    return {"scene": CAST[who].home, "seat": CAST[who].seat}
+
+
+# remove whoever is gone from `chars` (their node too) and bring everyone else back, in CAST order
 func apply_roster() -> void:
-    var owner_mode := Campaign.active and Campaign.mode == "owner"
-    if owner_mode and chars.has("Maya"):
-        var st: Dictionary = chars["Maya"]
-        if st.node != null and is_instance_valid(st.node):
-            st.node.queue_free()
-        chars.erase("Maya")
-    elif not owner_mode and not chars.has("Maya"):
-        chars["Maya"] = _make_char("Maya")
+    var gone := roster_gone()
+    for n in gone:
+        if chars.has(n):
+            var st: Dictionary = chars[n]
+            if st.node != null and is_instance_valid(st.node):
+                st.node.queue_free()
+            chars.erase(n)
+    for n in CAST:
+        if not gone.has(n) and not chars.has(n):
+            chars[n] = _make_char(n)
+            if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
+                _spawn(n)  # you just stopped being them (Free Play): they are at their desk
 
 
 func _on_lights_changed(room: String) -> void:
@@ -3028,8 +3073,8 @@ func _finish_leg(n: String) -> void:
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
 func start_outing(room: String, spots: Array, seats := {}) -> void:
     var x0 := float(DATA.SCENES[room].x0)
-    var i := 0
     for n in chars:
+        var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
         var st: Dictionary = chars[n]
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
@@ -3047,7 +3092,6 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
             "routine": PackedStringArray(["wait:100000"]),
         }]
         st.leg_t = FOREVER - 100.0  # already standing at their spot when the room appears
-        i += 1
     set_lights(room, true)
 
 
@@ -3140,10 +3184,17 @@ func _plan(n: String) -> Array:
     if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
         st.lunched = true
         # the account manager lunches with a client instead
-        return _visit_plan(n, 50.0) if CAST[n].get("role", "") == "sales" else _lunch_plan(n)
+        match str(CAST[n].get("role", "")):
+            "sales":
+                return _visit_plan(n, 50.0)
+            "manager":
+                return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open
+        return _lunch_plan(n)
     var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
     if CAST[n].get("role", "") == "sales":
         kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
+    elif CAST[n].get("role", "") == "manager":
+        kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
     return plan_for(n, kinds[randi() % kinds.size()])
 
 
@@ -3158,6 +3209,8 @@ func plan_for(n: String, kind: String) -> Array:
             legs = _trip(n, "cubicle_area", _cooler_leg())
         "closet":
             legs = _trip(n, "network_closet", _closet_leg())
+        "floor":
+            legs = _trip(n, "main_floor", _floor_leg())
         "bathroom":
             legs = _trip(n, "bathroom", _bathroom_leg())
         _:
@@ -3362,6 +3415,17 @@ func _closet_leg() -> Dictionary:
     }
 
 
+# the manager walks the main floor: a word at each desk, then back
+func _floor_leg() -> Dictionary:
+    return {
+        "kind": "floor",
+        "dur": 36.0,
+        "target_x": 100.0,
+        "routine":
+        PackedStringArray(["walk:270", "wait:1", "talk:4", "walk:196", "wait:1", "talk:3", "walk:100", "wait:2"]),
+    }
+
+
 func _cooler_leg() -> Dictionary:
     var u: Dictionary = _uses("cubicle_area")
     return {
@@ -3412,9 +3476,15 @@ func _start_meeting() -> void:
 # the weekly all-hands: everyone goes to the conference room and sits (the last seats are yours)
 func start_all_hands() -> void:
     var i := 1
-    for n in chars:
+    var owner_mode := Campaign.mode == "owner"
+    for n in CAST:
+        if not chars.has(n):
+            continue
         if chars[n].following:
             set_following(n, false)
+        if CAST[n].get("role", "") == "manager" and not owner_mode:
+            send_to_meeting(n, "", 90.0)  # Morgan hosts: standing at the whiteboard, no chair
+            continue
         send_to_meeting(n, "Seat%d" % i, 90.0)
         i += 1
 
@@ -3422,10 +3492,13 @@ func start_all_hands() -> void:
 func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
     var st: Dictionary = chars[n]
     var home: String = CAST[n].home
-    var x := float(DATA.SCENES["conference"].seats[seat])
-    var routine := ["walk:%d" % x, "sit:%s" % seat]
+    var hosting := seat == ""
+    var x := HOST_X if hosting else float(DATA.SCENES["conference"].seats[seat])
+    var routine := ["walk:%d" % x]
+    if not hosting:
+        routine.append("sit:%s" % seat)
     for _i in int(secs / 6.0):
-        routine.append_array(["wait:3", "say:2"])
+        routine.append_array(["wait:3", "talk:3"] if hosting else ["wait:3", "say:2"])
     var meeting := {
         "kind": "meeting", "scene": "conference", "target_x": x, "dur": secs,
         "routine": PackedStringArray(routine),
@@ -3939,7 +4012,7 @@ func unread_texts() -> int:
 
 
 func send_text(from_name: String, body: String) -> void:
-    var m := {"from": from_name, "body": body, "unread": true}
+    var m := {"from": Roles.sender(from_name), "body": body, "unread": true}
     texts.push_front(m)
     text_received.emit(m)
     changed.emit()
@@ -6419,7 +6492,7 @@ func _paint_stats() -> void:
         y += 4
     _text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
     y += 8
-    for who in Social.PEOPLE:
+    for who in Social.people():
         _text(who, Vector2(x, y), TXT)
         _text(Social.mood(who), Vector2(x + 44, y), _mood_color(who))
         var meter := Rect2(x + 92, y, 40, 5)
@@ -7158,6 +7231,7 @@ const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
 const START_REP := 50
 
 var active := false  # a real campaign (not free play) is running
+var player_as := ""  # the cast member you play as ("" = a character who is not in World.CAST); saved
 var mode := ""
 var day := 1
 var rep := START_REP
@@ -7190,9 +7264,36 @@ func saved_day(for_mode: String) -> int:
     return int(cfg.get_value("campaign", "day", 1))
 
 
+# who you play as in this mode, from the chosen character: the tech campaign never plays a cast member, the owner
+# campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
+func derive_player_as(for_mode: String) -> String:
+    var who: String = World.cast_of(PLAYER.current_character)
+    if who == "":
+        return ""
+    if for_mode == "owner":
+        return who if Roles.OWNERS.has(who) else ""
+    return who if for_mode == FREE else ""
+
+
+# the room a new run starts in: your own desk when you play a cast member
+func start_scene() -> String:
+    var desk: Dictionary = World.player_desk()
+    return str(desk.scene) if not desk.is_empty() else "main_floor"
+
+
+# Free Play: the number keys swap the character you play, so the cast follows (the old one returns to their desk)
+func refresh_free() -> void:
+    if active or mode != FREE:
+        return
+    player_as = derive_player_as(FREE)
+    World.apply_roster()
+
+
 func new_game(for_mode: String) -> void:
     mode = for_mode
     active = MODES.has(for_mode)
+    player_as = derive_player_as(for_mode)
+    Game.vars["start_seated"] = player_as != ""
     day = 1
     rep = START_REP
     cash = 0
@@ -7220,6 +7321,8 @@ func new_game(for_mode: String) -> void:
     if active:
         World.begin_next_day(1)
         _begin_day()
+    else:
+        World.apply_roster()
 
 
 func continue_game(for_mode: String) -> bool:
@@ -7234,6 +7337,9 @@ func continue_game(for_mode: String) -> bool:
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
+    var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
+    player_as = saved_as if World.CAST.has(saved_as) else ""
+    Game.vars["start_seated"] = player_as != ""
     _awaiting = false
     Msp.reset()
     Skills.from_dict(cfg.get_value("campaign", "skills", {}))
@@ -7271,6 +7377,7 @@ func save() -> void:
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
+    cfg.set_value("campaign", "player_as", player_as)
     cfg.set_value("campaign", "skills", Skills.to_dict())
     cfg.set_value("campaign", "story", Story.flags)
     cfg.set_value("campaign", "social", Social.to_dict())
@@ -7304,6 +7411,8 @@ func quit_to_title() -> void:
     World.day_len = 600.0
     active = false
     mode = ""
+    player_as = ""
+    World.apply_roster()
     Msp.enabled = true
     World.time_scale = 1.0
     Game.ui_open = false
@@ -8385,7 +8494,7 @@ write("scripts/social.gd", '''extends Node
 
 signal changed
 
-const PEOPLE := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+const ALL := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
 # Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
 const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
@@ -8393,9 +8502,10 @@ const ROLES := {
     "Garrison": "CO-OWNER",
     "Dan": "NETWORK TECH",
     "Vic": "ACCOUNT MANAGER",
-    "Maya": "TIER 1"
+    "Maya": "TIER 1",
+    "Morgan": "MANAGER"
 }
-const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya"}
+const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const THANKS := [
     "thanks for grabbing the phones earlier!", "you are a lifesaver on the phones", "hey, appreciate the phone coverage",
@@ -8416,6 +8526,22 @@ func is_owner(who: String) -> bool:
     return OWNERS.has(who)
 
 
+# Morgan runs the desk: she does not take tickets and is not one of the techs
+func is_manager(who: String) -> bool:
+    return who == "Morgan"
+
+
+# the coworkers you actually have: everyone in the building except the person you play as (and Maya, who is not on
+# your payroll in the owner campaign). Morgan is a coworker in every mode.
+func people() -> Array:
+    var gone: Array = World.roster_gone()
+    var out: Array = []
+    for who in ALL:
+        if not gone.has(who):
+            out.append(who)
+    return out
+
+
 func role(who: String) -> String:
     return str(ROLES.get(who, ""))
 
@@ -8426,7 +8552,7 @@ func _ready() -> void:
 
 func reset() -> void:
     rel = {}
-    for who in PEOPLE:
+    for who in ALL:
         rel[who] = 0
     calls_answered = 0
     day_delta = 0
@@ -8440,7 +8566,7 @@ func value(who: String) -> int:
 
 
 func change(who: String, amount: int) -> void:
-    if not Campaign.active or not rel.has(who):
+    if not Campaign.active or not rel.has(who) or not people().has(who):
         return
     var before := value(who)
     rel[who] = clampi(before + amount, -100, 100)
@@ -8449,7 +8575,7 @@ func change(who: String, amount: int) -> void:
 
 
 func change_all(amount: int) -> void:
-    for who in PEOPLE:
+    for who in people():
         change(who, amount)
 
 
@@ -8487,9 +8613,10 @@ func glyph(who: String) -> String:
 
 func average() -> float:
     var total := 0
-    for who in PEOPLE:
+    var all := people()
+    for who in all:
         total += value(who)
-    return float(total) / float(PEOPLE.size())
+    return float(total) / float(maxi(1, all.size()))
 
 
 # a small nudge to the end-of-day reputation change
@@ -8510,7 +8637,8 @@ func note_call_answered() -> void:
     calls_answered += 1
     if Campaign.active and calls_answered % 3 == 0:
         change_all(1)
-        Msp.send_text(PEOPLE[randi() % PEOPLE.size()], THANKS[randi() % THANKS.size()])
+        var pool := people()
+        Msp.send_text(pool[randi() % pool.size()], THANKS[randi() % THANKS.size()])
 
 
 func note_ticket_closed(ticket: Dictionary) -> void:
@@ -9309,7 +9437,7 @@ func page_lines() -> Array:
                 lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK)])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
-            for who in Social.PEOPLE:
+            for who in Social.people():
                 var quotes: Dictionary = OWNER_QUOTES if Social.is_owner(who) else QUOTES
                 var tag := ", CO-OWNER" if Social.is_owner(who) else ""
                 lines.append(["%s%s (%s):" % [who.to_upper(), tag, Social.mood(who)], BLUE])
@@ -9423,7 +9551,7 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
     if is_open or DayReport.is_open:
         _queue.append([who, body, choices, on_pick])
         return
-    speaker = who
+    speaker = Roles.speaker(who)  # a card that names you comes from somebody else
     text = body
     options = choices
     var any_enabled := false
@@ -11636,7 +11764,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["RANSOMWARE: %s" % {"saved": "SAVED BY BACKUP", "lost": "NO BACKUP!", "paid": "PAID THE RANSOM", "partial": "PARTIAL RECOVERY"}.get(str(Story.flags.get("ransom", "")), "-"), ink])
         1:
             lines.append(["WHAT YOUR TEAM SAYS", blue])
-            for who in Social.PEOPLE:
+            for who in Social.people():
                 lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
                 lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
         2:
@@ -11856,6 +11984,38 @@ const MESSAGES := {
         "text": "Thanks for being great with the clients. They keep mentioning you.",
         "options": [],
     },
+    "lunch_Morgan":
+    {
+        "text": "Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for.",
+        "options":
+        [
+            {"label": "SURE, I WILL BRING ONE", "social": 2, "reply": "Turkey, no pickles. You are a good person."},
+            {"label": "CAN'T, SWAMPED", "social": 0, "reply": "Understood. Close the P1s first."},
+        ],
+    },
+    "phones_Morgan":
+    {
+        "text": "I need ten quiet minutes with the owners' budget. Can you cover my phones?",
+        "options":
+        [
+            {"label": "SURE", "social": 2, "reply": "Thank you. I owe you one. Do not tell anyone I said that."},
+            {"label": "SORRY, CAN'T", "social": -1, "reply": "Fair. I will let it ring."},
+        ],
+    },
+    "help_Morgan":
+    {
+        "text": "Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me?",
+        "options":
+        [
+            {"label": "PULL THE LIST", "social": 2, "xp": 2, "reply": "That is exactly what I needed. Thank you."},
+            {"label": "TOO BUSY RIGHT NOW", "social": -1, "reply": "Sure. I will do it the slow way."},
+        ],
+    },
+    "thanks_Morgan":
+    {
+        "text": "Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.",
+        "options": [],
+    },
 }
 
 var chats := {}  # who -> [[from, text], ...]
@@ -11899,14 +12059,15 @@ func boss() -> String:
 
 
 func contacts() -> Array:
-    var out: Array = Social.PEOPLE.duplicate()
-    out.append(boss())
+    var out: Array = Social.people()
+    if not out.has(boss()):
+        out.append(boss())  # Marge in the owner campaign (Morgan is already a cast member)
     return out
 
 
 # [status text, colour name] from what the cast is doing right now
 func presence(who: String) -> Array:
-    if who == boss():
+    if who == boss() and not World.chars.has(who):
         return ["AVAILABLE", "green"]
     if not World.chars.has(who):
         return ["OFFLINE", "grey"]
@@ -11962,7 +12123,7 @@ func _process(delta: float) -> void:
 # a coworker messages you
 func incoming(forced_kind := "") -> void:
     var pool := []
-    for who in Social.PEOPLE:
+    for who in Social.people():
         if presence(who)[0] == "AVAILABLE" and not pending.has(who):
             pool.append(who)
     if pool.is_empty() or pending.size() >= 2:
@@ -12033,6 +12194,9 @@ func send_action(who: String, kind: String) -> String:
 
 
 func _lend_a_hand(who: String) -> void:
+    if Social.is_manager(who):
+        _push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
+        return
     var willing: bool = Social.value(who) >= 0 or randf() < 0.4
     var ticket := _helpable_ticket()
     var owner_voice := Social.is_owner(who)
@@ -12082,7 +12246,7 @@ func friend_warning() -> void:
     for t in Msp.open_tickets():
         if t.internal or _warned.has(int(t.id)) or t.breached or float(t.sla_left) > 40.0:
             continue
-        for who in Social.PEOPLE:
+        for who in Social.people():
             if Social.is_friendly(who) and presence(who)[0] == "AVAILABLE":
                 _warned[int(t.id)] = true
                 _push(who, who, "Heads up: #%d (%s) is about to breach its SLA." % [int(t.id), str(t.summary)])
@@ -12766,9 +12930,11 @@ func _arrive(reason: String) -> int:
         for i in late_min / 12:
             Sales.adjust(Sales.pick_client(), -2)
         if late_min >= 20:
-            var who: String = ["Alan", "Garrison", "Dan"][randi() % 3]
-            Social.change(who, -1)
-            Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
+            var pool: Array = ["Alan", "Garrison", "Dan"].filter(func(n: String) -> bool: return Social.people().has(n))
+            if not pool.is_empty():
+                var who: String = pool[randi() % pool.size()]
+                Social.change(who, -1)
+                Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
         if late_min >= 30:
             Msp.send_text("Boss", "Where are you? Clients are asking for you.")
     elif reason != "":
@@ -13030,7 +13196,8 @@ func start_plan() -> void:
 func _pick_helper(skill: String) -> void:
     var options := []
     for who in ["Alan", "Garrison", "Dan"]:
-        options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
+        if Social.people().has(who):
+            options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
     Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
 
 
@@ -13505,12 +13672,12 @@ const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 const ESCAPE_TIME := 120.0
 const ROOMS := {"bowling": "bowling_alley", "karaoke": "karaoke_bar", "escape": "escape_room", "dinner": "restaurant"}
-# where Alan, Garrison, Dan, Vic and Maya stand in each room (set-pixel x); a fifth spot keeps
-# Maya from wrapping onto Alan's
+# where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
+# not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
-    "bowling": [114, 186, 214, 250, 140], "karaoke": [236, 262, 282, 130, 160],
-    "escape": [118, 175, 205, 305, 325],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
-    "dinner": [34, 62, 106, 140, 175],
+    "bowling": [114, 186, 214, 250, 140, 165], "karaoke": [236, 262, 282, 130, 160, 100],
+    "escape": [118, 175, 205, 305, 325, 62],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
+    "dinner": [34, 62, 106, 140, 175, 205],
 }
 const TECH_DAYS := [5, 10, 15]
 const OWNER_WEEKS := [4, 9, 14, 19]
@@ -13589,6 +13756,26 @@ func invite_day() -> bool:
 # the day waits for the invitation (a trip may have brought you home after five)
 func invite_due() -> bool:
     return enabled and not _offered and invite_day() and not Story.overtime and not Game.title_mode
+
+
+# who is in the building for an outing: the current cast (World.CAST order) minus the person you play as
+func roster() -> Array:
+    var out := []
+    for n in World.CAST:
+        if World.chars.has(n) and n != Campaign.player_as:
+            out.append(n)
+    return out
+
+
+# the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
+func diners() -> Array:
+    var here := roster()
+    return DINERS.filter(func(n: String) -> bool: return here.has(n))
+
+
+func bowlers() -> Array:
+    var here := roster()
+    return BOWL_SKILL.keys().filter(func(n: String) -> bool: return here.has(n))
 
 
 func maybe_invite() -> void:
@@ -13848,10 +14035,17 @@ func _all_up() -> Array:
     return [true, true, true, true, true, true, true, true, true, true]
 
 
+func _bowl_totals() -> Dictionary:
+    var totals := {"You": 0}
+    for who in bowlers():
+        totals[who] = 0
+    return totals
+
+
 func _bowl_setup() -> void:
     g = {
         "frame": 1, "roll": 1, "pins": 10, "stage": "aim", "marker": 0.0, "power": 0.0, "dir": 1.0, "wait": 0.0,
-        "ball": 0.0, "msg": "", "totals": {"You": 0, "Alan": 0, "Garrison": 0, "Dan": 0}, "knocked": 0,
+        "ball": 0.0, "msg": "", "totals": _bowl_totals(), "knocked": 0,
         "up": [_all_up(), _all_up()], "fall": {}, "queue": [], "opp": "", "opp_t": 0.0, "opp_ball": 0.0,
         "opp_off": 0.5, "opp_total": 0, "opp_knock": 0, "opp_phase": 0,
     }
@@ -13944,7 +14138,7 @@ func _bowl_resolve() -> void:
     if room_mode():
         _pins_fall(0, knocked)
         _bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
-        for who in DINERS:
+        for who in diners():
             if knocked >= 10:
                 _bubble(_actor(who), "heart", 1.2)
 
@@ -13975,12 +14169,12 @@ func _bowl_next() -> void:
             caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
         return
     if room_mode():
-        g.queue = BOWL_SKILL.keys()
+        g.queue = bowlers()
         g.opp = ""
         g.stage = "others"
         caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
         return
-    for who in BOWL_SKILL:
+    for who in bowlers():
         g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
     _bowl_advance()
 
@@ -14047,7 +14241,7 @@ func _pins_fall(lane: int, count: int) -> void:
 
 func bowl_rank() -> int:
     var rank := 0
-    for who in BOWL_SKILL:
+    for who in bowlers():
         if int(g.totals[who]) > int(g.totals["You"]):
             rank += 1
     return rank
@@ -14136,7 +14330,7 @@ func _escape_setup() -> void:
     var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     Difficulty.shuffle(digits, "escape")
     var friends := 0
-    for who in Social.PEOPLE:
+    for who in Social.people():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
         "code": [digits[0], digits[1], digits[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
@@ -14201,6 +14395,15 @@ func escape_try(guess: Array) -> void:
         _finish(0)
 
 
+# the first friendly coworker (upper case) for hints; with nobody friendly, the first person in the room
+func _first_friend() -> String:
+    for who in Social.people():
+        if Social.is_friendly(who):
+            return who.to_upper()
+    var here := roster()
+    return str(here[0]).to_upper() if not here.is_empty() else "ALAN"
+
+
 func escape_hint() -> String:
     if int(g.hints) <= 0:
         return ""
@@ -14215,11 +14418,7 @@ func escape_hint() -> String:
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
     g.cur[slot] = g.code[slot]
-    var friend := "ALAN"
-    for who in Social.PEOPLE:
-        if Social.is_friendly(who):
-            friend = who.to_upper()
-            break
+    var friend := _first_friend()
     g.msg = "%s: SLOT %d IS A %d" % [friend, slot + 1, int(g.code[slot])]
     return str(g.msg)
 
@@ -14267,7 +14466,7 @@ func dinner_talk(index: int) -> int:
     var total := 0
     g.react = {}
     g.hidden = _dinner_hidden()
-    for who in DINERS:
+    for who in diners():
         var mood := "meh"
         var pts := 1
         if LOVES[who].has(topic):
@@ -14295,17 +14494,25 @@ func dinner_talk(index: int) -> int:
 
 # harder tiers hide some faces for a round (the points still count)
 func _dinner_hidden() -> Array:
-    var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
+    var table := diners()
+    var hide_n := table.size() - clampi(Difficulty.i("dinner.reveal"), 0, table.size())
     if hide_n <= 0:
         return []
-    var order: Array = DINERS.duplicate()
+    var order: Array = table.duplicate()
     Difficulty.shuffle(order, "dinner")
     return order.slice(0, hide_n)
 
 
 func _dinner_end() -> void:
     var score := int(g.score)
-    _finish(3 if score >= 24 else (2 if score >= 19 else (1 if score >= 14 else 0)))
+    var scale := float(diners().size()) / 3.0  # the targets are for a table of three; fewer faces, fewer points
+    _finish(
+        (
+            3
+            if score >= roundi(24.0 * scale)
+            else (2 if score >= roundi(19.0 * scale) else (1 if score >= roundi(14.0 * scale) else 0))
+        )
+    )
 
 
 # ---- in the room: the games are played in the scene itself ---------------------------------------
@@ -14449,7 +14656,12 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-    var who: String = Difficulty.pick(DINERS + ["Vic"], "karaoke")
+    var cheer: Array = diners()
+    if roster().has("Vic"):
+        cheer.append("Vic")
+    if cheer.is_empty():
+        return
+    var who: String = Difficulty.pick(cheer, "karaoke")
     _bubble(_actor(who), "heart", 1.5)
 
 
@@ -14460,7 +14672,9 @@ func _streak_broken() -> void:
         g.dance = false
         _hold_player("talk", _x0() + MIC_X + 60.0)
     if Difficulty.rng("karaoke").randf() < 0.3:
-        _bubble(_actor(Difficulty.pick(DINERS, "karaoke")), "?", 1.0)
+        var crowd := diners()
+        if not crowd.is_empty():
+            _bubble(_actor(Difficulty.pick(crowd, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
@@ -14504,11 +14718,7 @@ func escape_nudge() -> String:
     if int(g.hints) <= 0:
         caption("NOBODY HAS ANYTHING LEFT TO SAY.", 2.0)
         return ""
-    var friend := "ALAN"
-    for who in Social.PEOPLE:
-        if Social.is_friendly(who):
-            friend = who.to_upper()
-            break
+    var friend := _first_friend()
     var text := "YOU HAVE ALL THREE. TRY THE KEYPAD ON THE VAULT."
     for i in 3:
         if not g.found.has(i):
@@ -14542,7 +14752,7 @@ func _room_submit() -> void:
 # ---- dinner extras
 func _dinner_react() -> void:
     var parts := []
-    for who in DINERS:
+    for who in diners():
         var mood: String = g.react[who]
         if g.get("hidden", []).has(who):
             _bubble(_actor(who), "?", 1.3)
@@ -14730,15 +14940,9 @@ func _paint_result(b: Rect2) -> void:
     if not g.is_empty():
         match game:
             "bowling":
-                detail = (
-                    "YOU %d  ALAN %d  GARRISON %d  DAN %d"
-                    % [
-                        int(g.totals["You"]),
-                        int(g.totals["Alan"]),
-                        int(g.totals["Garrison"]),
-                        int(g.totals["Dan"])
-                    ]
-                )
+                detail = "YOU %d" % int(g.totals["You"])
+                for who in bowlers():
+                    detail += "  %s %d" % [who.to_upper(), int(g.totals[who])]
             "karaoke":
                 detail = "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
             "escape":
@@ -14753,7 +14957,7 @@ func _paint_result(b: Rect2) -> void:
                     ]
                 )
             "dinner":
-                detail = "TABLE SCORE %d OF 30" % int(g.score)
+                detail = "TABLE SCORE %d OF %d" % [int(g.score), 10 * diners().size()]
     if detail != "":
         _t(detail, b.position.x, y + 3.0, BLUE)
 
@@ -14762,8 +14966,8 @@ func _paint_bowling(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
     _t("FRAME %d  ROLL %d" % [int(g.frame), int(g.roll)], x, y)
-    var names := ["You", "Alan", "Garrison", "Dan"]
-    for i in 4:
+    var names := ["You"] + bowlers()
+    for i in names.size():
         _t("%s %d" % [names[i].to_upper(), int(g.totals[names[i]])], x, y + 10.0 + 8.0 * float(i), BLUE if i == 0 else INK)
     var lane := Rect2(x + 78.0, y, minf(b.size.x - 82.0, 90.0), b.size.y - 18.0)
     _canvas.draw_rect(lane, Color("d9b26b"))
@@ -14860,8 +15064,9 @@ func _paint_dinner(b: Rect2) -> void:
             _canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
         _t(str(g.options[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
     var rx := x + 92.0
-    for i in 3:
-        var who: String = DINERS[i]
+    var table := diners()
+    for i in table.size():
+        var who: String = table[i]
         var ry := y + 9.0 + 14.0 * float(i)
         _t(who.to_upper(), rx, ry, BLUE)
         if g.react.has(who):
@@ -14952,7 +15157,7 @@ write("scripts/talk.gd", '''extends Node
 # Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
-const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people"}
+const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people", "Morgan": "people"}
 const LESSON_XP := 6
 const GREETINGS := {
     "Alan": {
@@ -14979,6 +15184,12 @@ const GREETINGS := {
         "friend": "Hi! Want half a granola bar? I have been saving it for someone nice.",
         "neutral": "Hey! Sorry, I have a user on hold. What is up?",
         "cold": "Oh. Hi. I am just finishing something.",
+    },
+    "Morgan":
+    {
+        "friend": "Come in. Move the printouts, they are not load-bearing. What do you need?",
+        "neutral": "Yes? I have a budget call in five minutes. Go ahead.",
+        "cold": "Mm. Is this about the queue?",
     },
 }
 const SMALL := {
@@ -15017,6 +15228,15 @@ const SMALL := {
         "Alan showed me how to read an event log. I felt like a detective. A tired one.",
         "I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.",
     ],
+    "Morgan":
+    [
+        "Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.",
+        "Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet.",
+        "Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough.",
+        "I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part.",
+        "I put iOS 7 on my phone. It is very bright. I miss my buttons.",
+        "Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.",
+    ],
 }
 const GOSSIP := [
     "Between us: Morgan has been in the owners' office since nine. Never a good sign.",
@@ -15052,6 +15272,13 @@ const TIPS_GENERIC := {
         "Be kind to the user first. Half of the problem is that they are scared they broke something.",
         "Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.",
         "Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.",
+    ],
+    "Morgan":
+    [
+        "A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time.",
+        "If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.",
+        "Close what you fix. Reopen what you break. Just be the person who tells me which one it is.",
+        "Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.",
     ],
 }
 const OWNER_HOLD := {
@@ -15208,6 +15435,11 @@ func _state_tip() -> String:
         "Garrison":
             if Msp.breached > 0:
                 return "I walked the floor and saw the SLA misses on the board. Clients bring those up at the QBR. Fix the P1s first, always. The rest can wait ten minutes."
+        "Morgan":
+            if Msp.breached > 0:
+                return "We have missed an SLA today. It is not a disaster. Write down what happened so the next one does not."
+            if Msp.open_tickets().size() >= 4:
+                return "The queue is at %d tickets. Work the P1s first and tell me if you need me to move something." % Msp.open_tickets().size()
         "Maya":
             for t in Msp.open_tickets():
                 if float(t.sla_left) < 60.0 and not bool(t.breached):
@@ -15241,6 +15473,10 @@ func owner_idea() -> String:
             text = "Good call on the backups. Next, get remote access off the open internet."
             if not Owner.flags.get("backup_service", false):
                 text = "Every client without a managed backup is one bad day from calling a lawyer. We should sell the backup service."
+        "Morgan":
+            text = "Hire before you need to, not after. Hiring takes six weeks. Burnout takes three."
+            if Msp.open_tickets().size() >= 5:
+                text = "The queue is backed up and the crew is running hot. I would add a pair of hands before I added a tool."
         "Dan":
             text = "Label everything and write it down. The day Alan is on vacation you will be glad."
             for c in Sales.active:
@@ -15451,6 +15687,13 @@ const REACT := {
     "Alan": {"base": -1, "friendly": "heart", "line": "Alan: Not at my desk, please.", "mood": "!"},
     "Garrison": {"base": 1, "friendly": "heart", "line": "Garrison: Oh, it is ON.", "mood": "!"},
     "Maya": {"base": 1, "friendly": "heart", "line": "Maya: Hey! My granola bar!", "mood": "!"},
+    "Morgan":
+    {
+        "base": 0,
+        "friendly": "heart",
+        "line": "Morgan: I am going to pretend I did not see that. Once.",
+        "mood": "dots"
+    },
     "Dan": {"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
     "Vic": {"base": 1, "friendly": "heart", "line": "Vic: Careful, I have a client call at two!", "mood": "!"},
 }
@@ -15904,6 +16147,85 @@ func _draw() -> void:
         elif i % 2 == 0:
             draw_rect(Rect2(_dots[i] - Vector2(3, 3), Vector2(6, 6)), Color("17121f"))
             draw_rect(Rect2(_dots[i] - Vector2(2, 2), Vector2(4, 4)), Color("ffe08a"))
+''')
+
+write("scripts/roles.gd", '''extends Node
+# Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
+# "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
+# the other owner in the owner campaign, otherwise the manager. `speaker()` and `sender()` do that remap; Cards.ask and
+# Msp.send_text call them, so no card has to know. X4 (the owner campaign rework) will give the cards real owner voices.
+
+const OWNERS := ["Alan", "Garrison"]
+const LABELS := {
+    "Alan": "Alan (Co-owner)",
+    "Garrison": "Garrison (Co-owner)",
+    "Dan": "Dan (Network Tech)",
+    "Vic": "Vic (Account Manager)",
+    "Maya": "Maya (Tier 1)",
+    "Morgan": "Morgan (Manager)",
+}
+# job -> the person who normally does it
+const JOBS := {
+    "tech owner": "Alan",
+    "sales owner": "Garrison",
+    "manager": "Morgan",
+    "network": "Dan",
+    "accounts": "Vic",
+    "tier1": "Maya",
+}
+
+
+func player() -> String:
+    return Campaign.player_as
+
+
+# the owner who is NOT you (owner campaign), "" otherwise
+func partner() -> String:
+    var me := Campaign.player_as
+    if Campaign.mode != "owner" or not OWNERS.has(me):
+        return ""
+    return "Garrison" if me == "Alan" else "Alan"
+
+
+# somebody who can say what `name` would have said
+func stand_in(who_name: String) -> String:
+    if who_name == "" or who_name != Campaign.player_as:
+        return who_name
+    var other := partner()
+    return other if other != "" else "Morgan"
+
+
+# the person doing a job right now ("tech owner" is Alan, unless you are Alan)
+func who(job: String) -> String:
+    return stand_in(str(JOBS.get(job, "Morgan")))
+
+
+func label(who_name: String) -> String:
+    return str(LABELS.get(who_name, who_name))
+
+
+# "Alan (Co-owner)" / "Alan" -> the name part when it is a known cast member, else ""
+func base_name(text: String) -> String:
+    for n in LABELS:
+        if text == n or text.begins_with(n + " ("):
+            return n
+    return ""
+
+
+# a card speaker: the same text unless it names you
+func speaker(text: String) -> String:
+    var n := base_name(text)
+    if n == "" or n != Campaign.player_as:
+        return text
+    return label(stand_in(n))
+
+
+# a phone text sender
+func sender(text: String) -> String:
+    var n := base_name(text)
+    if n == "" or n != Campaign.player_as:
+        return text
+    return stand_in(n)
 ''')
 
 write("scripts/strings.gd", '''extends Node
@@ -17288,7 +17610,9 @@ func populate(stage: Node) -> void:
         return
     var scene := stage.scene_file_path.get_file().get_basename()
     if scene == "conference" and Campaign.active and Meeting.state in ["called", "done"]:
-        _boss(stage)
+        # Morgan is a real cast member now and hosts at the whiteboard herself; Marge still stands in for the owner campaign
+        if Campaign.mode == "owner" or not World.chars.has("Morgan"):
+            _boss(stage)
         return
     if not CROWD.has(scene):
         return
@@ -19409,8 +19733,9 @@ write("scripts/charselect.gd", '''extends Node2D
 # Esc goes back, mouse hover and click work like the title menu. Confirming applies the choice
 # (Player.current_character, Phone.os) and emits done(result); Esc on the first step emits
 # cancelled. In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at
-# their desks as NPCs, so only the people who are not in World.CAST are offered; Free Play
-# offers everyone.
+# their desks as NPCs, so the tech campaign offers only the people who are not in World.CAST; the
+# owner campaign offers Alan or Garrison (the other owner becomes your partner NPC); Free Play offers
+# everyone. Whoever you pick as a cast member leaves the cast and sits at their own desk (Campaign.player_as).
 
 signal done(result: Dictionary)
 signal cancelled
@@ -19448,6 +19773,13 @@ const PEOPLE := {
         "name": "VIC",
         "blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
     },
+}
+# the owner campaign shows these instead of the Free Play blurbs
+const OWNER_BLURBS := {
+    "office_alan":
+    "THE TECHNICAL OWNER. SERVERS, BACKUPS AND THE STACK ARE YOURS; GARRISON KEEPS THE CLIENTS HAPPY.",
+    "casual_garrison":
+    "THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
 }
 const PHONES := [
     {
@@ -19487,8 +19819,11 @@ func needs_phone() -> bool:
     return mode == "tech"
 
 
-# who this mode offers: everyone in Free Play, only non-cast people in a campaign
+# who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
+# the tech campaign
 func choices(for_mode: String) -> Array:
+    if for_mode == "owner":
+        return ["office_alan", "casual_garrison"]
     var cast: Array = []
     for n in World.CAST:
         cast.append(str(World.CAST[n].character))
@@ -19526,7 +19861,10 @@ func current_id() -> String:
 
 
 func info(id: String) -> Dictionary:
-    return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
+    var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
+    if mode == "owner" and OWNER_BLURBS.has(id):
+        entry["blurb"] = OWNER_BLURBS[id]
+    return entry
 
 
 func summary(with_tier := true) -> String:
@@ -20227,7 +20565,7 @@ func _start(id: String, summary := "") -> void:
             Campaign.continue_game("owner")
         _:
             Campaign.new_game(Campaign.FREE)
-    Game.go("main_floor", "start")
+    Game.go(Campaign.start_scene(), "start")
     if summary != "":
         var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
         Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
@@ -20530,6 +20868,7 @@ func _ready() -> void:
     Game.format_changed.connect(_apply_format)
     _apply_format()
     World.populate(self)
+    _seat_player()
     Expo.populate(self)
     Onsite.populate(self)
     _room = scene_file_path.get_file().get_basename()
@@ -20538,6 +20877,19 @@ func _ready() -> void:
     if Net.carrying != "" and _room != "network_closet":
         Net.drop_carry()  # a cable end cannot leave the closet
         _player.give("")
+
+
+# the first room of a run as a cast member: you are already sitting at your desk
+func _seat_player() -> void:
+    if not Game.vars.get("start_seated", false):
+        return
+    Game.vars.erase("start_seated")
+    var desk: Dictionary = World.player_desk()
+    if desk.is_empty() or str(desk.scene) != scene_file_path.get_file().get_basename():
+        return
+    var seat := get_node_or_null("Interactables/%s" % str(desk.seat))
+    if seat != null and _player.has_method("sit_now"):
+        _player.sit_now(seat)
 
 
 func _on_lights(room: String) -> void:
@@ -20807,6 +21159,7 @@ func _unhandled_input(event: InputEvent) -> void:
         var i: int = event.keycode - KEY_1
         if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
             _switch_character(CHARACTERS[i])
+            Campaign.refresh_free()
 
 
 func _play(action: String) -> void:
@@ -20936,6 +21289,18 @@ func sit(s: Node) -> void:
     global_position = s.global_position
     facing = s.facing
     _play("sitdown")
+
+
+# the first frame of a run as a cast member: already at your desk
+func sit_now(s: Node) -> void:
+    seat = s
+    state = "sitting"
+    velocity = Vector2.ZERO
+    body_shape.set_deferred("disabled", true)
+    global_position = s.global_position
+    facing = s.facing
+    _play("type" if s.typing else "sit")
+    _stash()
 
 
 func _stand_up() -> void:

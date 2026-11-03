@@ -14,6 +14,7 @@ const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
 const START_REP := 50
 
 var active := false  # a real campaign (not free play) is running
+var player_as := ""  # the cast member you play as ("" = a character who is not in World.CAST); saved
 var mode := ""
 var day := 1
 var rep := START_REP
@@ -46,9 +47,36 @@ func saved_day(for_mode: String) -> int:
 	return int(cfg.get_value("campaign", "day", 1))
 
 
+# who you play as in this mode, from the chosen character: the tech campaign never plays a cast member, the owner
+# campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
+func derive_player_as(for_mode: String) -> String:
+	var who: String = World.cast_of(PLAYER.current_character)
+	if who == "":
+		return ""
+	if for_mode == "owner":
+		return who if Roles.OWNERS.has(who) else ""
+	return who if for_mode == FREE else ""
+
+
+# the room a new run starts in: your own desk when you play a cast member
+func start_scene() -> String:
+	var desk: Dictionary = World.player_desk()
+	return str(desk.scene) if not desk.is_empty() else "main_floor"
+
+
+# Free Play: the number keys swap the character you play, so the cast follows (the old one returns to their desk)
+func refresh_free() -> void:
+	if active or mode != FREE:
+		return
+	player_as = derive_player_as(FREE)
+	World.apply_roster()
+
+
 func new_game(for_mode: String) -> void:
 	mode = for_mode
 	active = MODES.has(for_mode)
+	player_as = derive_player_as(for_mode)
+	Game.vars["start_seated"] = player_as != ""
 	day = 1
 	rep = START_REP
 	cash = 0
@@ -76,6 +104,8 @@ func new_game(for_mode: String) -> void:
 	if active:
 		World.begin_next_day(1)
 		_begin_day()
+	else:
+		World.apply_roster()
 
 
 func continue_game(for_mode: String) -> bool:
@@ -90,6 +120,9 @@ func continue_game(for_mode: String) -> bool:
 	history = cfg.get_value("campaign", "history", [])
 	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
 	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
+	var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
+	player_as = saved_as if World.CAST.has(saved_as) else ""
+	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
 	Msp.reset()
 	Skills.from_dict(cfg.get_value("campaign", "skills", {}))
@@ -127,6 +160,7 @@ func save() -> void:
 	cfg.set_value("campaign", "cash", cash)
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
+	cfg.set_value("campaign", "player_as", player_as)
 	cfg.set_value("campaign", "skills", Skills.to_dict())
 	cfg.set_value("campaign", "story", Story.flags)
 	cfg.set_value("campaign", "social", Social.to_dict())
@@ -160,6 +194,8 @@ func quit_to_title() -> void:
 	World.day_len = 600.0
 	active = false
 	mode = ""
+	player_as = ""
+	World.apply_roster()
 	Msp.enabled = true
 	World.time_scale = 1.0
 	Game.ui_open = false

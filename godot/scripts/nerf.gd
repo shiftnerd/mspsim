@@ -19,6 +19,13 @@ const REACT := {
 	"Alan": {"base": -1, "friendly": "heart", "line": "Alan: Not at my desk, please.", "mood": "!"},
 	"Garrison": {"base": 1, "friendly": "heart", "line": "Garrison: Oh, it is ON.", "mood": "!"},
 	"Maya": {"base": 1, "friendly": "heart", "line": "Maya: Hey! My granola bar!", "mood": "!"},
+	"Morgan":
+	{
+		"base": 0,
+		"friendly": "heart",
+		"line": "Morgan: I am going to pretend I did not see that. Once.",
+		"mood": "dots"
+	},
 	"Dan":
 	{"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
 	"Vic":

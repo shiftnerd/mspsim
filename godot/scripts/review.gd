@@ -299,7 +299,7 @@ func page_lines() -> Array:
 				)
 		1:
 			lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
-			for who in Social.PEOPLE:
+			for who in Social.people():
 				var quotes: Dictionary = OWNER_QUOTES if Social.is_owner(who) else QUOTES
 				var tag := ", CO-OWNER" if Social.is_owner(who) else ""
 				lines.append(["%s%s (%s):" % [who.to_upper(), tag, Social.mood(who)], BLUE])

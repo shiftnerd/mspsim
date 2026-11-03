@@ -3039,7 +3039,7 @@ func review_lines(page: int, ending: String) -> Array:
 			)
 		1:
 			lines.append(["WHAT YOUR TEAM SAYS", blue])
-			for who in Social.PEOPLE:
+			for who in Social.people():
 				lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
 				lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
 		2:

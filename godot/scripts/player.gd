@@ -174,6 +174,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var i: int = event.keycode - KEY_1
 		if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
 			_switch_character(CHARACTERS[i])
+			Campaign.refresh_free()
 
 
 func _play(action: String) -> void:
@@ -303,6 +304,18 @@ func sit(s: Node) -> void:
 	global_position = s.global_position
 	facing = s.facing
 	_play("sitdown")
+
+
+# the first frame of a run as a cast member: already at your desk
+func sit_now(s: Node) -> void:
+	seat = s
+	state = "sitting"
+	velocity = Vector2.ZERO
+	body_shape.set_deferred("disabled", true)
+	global_position = s.global_position
+	facing = s.facing
+	_play("type" if s.typing else "sit")
+	_stash()
 
 
 func _stand_up() -> void:

@@ -113,7 +113,7 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 
 	# ---- escape room
-	for who in social.PEOPLE:
+	for who in social.people():
 		social.rel[who] = 0
 	social.rel["Alan"] = 60
 	social.rel["Dan"] = 40
