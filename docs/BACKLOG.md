@@ -27,15 +27,14 @@ Status is as of the commit that last touched this file; move items to `CLAUDE.md
 Not covered by the playtest: days 6-20, the overtime-night card flow, the review, the conference trip, mouse clicks in a hidden window.
 
 ## Needs a decision from you
-- **Who plays the service manager** now that Garrison is an owner (canon: Alan and Garrison own the company). Morgan Reyes is the natural pick; Dan or Maya are alternatives. `docs/campaign-paths.md` still assumes Garrison.
-- **Owner campaign as Alan or Garrison** (play one of the two partners, the other is your co-owner NPC): adopt it?
+- **Decided**: the service manager is played as **Dan**; the owner campaign is played as **Alan or Garrison** (the other is the co-owner NPC); in the tech campaign the owners are busy but jump in as a last resort to answer phones and clients. `docs/campaign-paths.md` is being revised for this.
 - **Era mentions**: decided. The two game names are parodied (Sugar Smash, Floppy Bat). Apple, Windows, Exchange and PowerShell stay as era context, and so does the old PC's "OUTLOOK 2003 PROFILE + PST" file name.
 - **Playing as a cast member in a campaign**: now wanted. Two new campaign paths need it: service manager (as Garrison) and sales (as Vic), see `IDEAS.md` "New campaign paths" and `docs/campaign-paths.md` (design in progress). Character select offers only teen, adult and site Alan in campaigns until this lands.
 - **Dialogue Manager addon**: research said skip for now (revisit only for long branching NPC conversations; a half-day spike would confirm its condition syntax). Alternative: conditional lines in the existing `Talk` tables.
 - **Gitot** (in-editor git panel): optional; the repo is set up and the CLI / GitHub Desktop work fine.
 
 ## Known gaps
-- **Canon pass for Alan and Garrison as owners**: GAME_BIBLE roles are updated, but story and dialogue text still cast them as techs: `Talk` greetings / small talk / tips (specialities servers and security), vignettes ("Alan returns with donuts"), Lynk messages, the review quotes, `World.CAST` roles, the all-hands (owners attend), who texts on SLA breaches ("Dispatch" / "Boss"), the Boardroom / owner-campaign copy (Marge reads you the numbers, but who is the owner?). Needs a read-through and a small code pass; decide first whether in the tech campaign they still work tickets (as hands-on owners) or only supervise.
+- **Canon pass for Alan and Garrison as owners**: GAME_BIBLE roles are updated, but story and dialogue text still cast them as techs: `Talk` greetings / small talk / tips (specialities servers and security), vignettes ("Alan returns with donuts"), Lynk messages, the review quotes, `World.CAST` roles, the all-hands (owners attend), who texts on SLA breaches ("Dispatch" / "Boss"), the Boardroom / owner-campaign copy (Marge reads you the numbers, but who is the owner?). Needs a read-through and a small code pass. Decided: in the tech campaign they are busy owners who jump in as a last resort (phones, clients), so the 'help' lifeline and tips need new owner-style wording and a last-resort trigger.
 - No audio at all (music, UI sounds, ring tones).
 - Thin replay value: no year 2 (see roadmap items 9-10).
 - Maya is not in the outing mini-games' logic yet (she has a standing spot only): roadmap item 5.
