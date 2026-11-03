@@ -75,6 +75,7 @@ func _ready() -> void:
 	front.add_child(_menu)
 	_menu.draw.connect(_draw_menu)
 	Game.format_changed.connect(_on_format)
+	Difficulty.load_settings()
 	show_vignette(0)
 
 
@@ -394,7 +395,8 @@ func _start(id: String, summary := "") -> void:
 			Campaign.new_game(Campaign.FREE)
 	Game.go("main_floor", "start")
 	if summary != "":
-		Hints.toast(summary, 4.0)
+		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
+		Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
 func _draw_menu() -> void:

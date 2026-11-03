@@ -168,7 +168,9 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
 		return
 	var dart := DART.new()
 	dart.shooter = shooter
-	dart.vel = launch_velocity(dir, power) + Vector2(0.0, randf_range(-3.0, 3.0))
+	dart.vel = (
+		launch_velocity(dir, power) + Vector2(0.0, Difficulty.rng("nerf").randf_range(-3.0, 3.0))
+	)
 	dart.position = pos
 	scene.get_node("Actors").add_child(dart)
 
@@ -303,7 +305,7 @@ func start_war() -> void:
 	for npc in get_tree().get_nodes_in_group("npcs"):
 		if npc.get("_hidden") != true:
 			npc.give_item("nerf")  # everybody in the room, sitting or standing
-		_shot_t[str(npc.cast_name)] = randf_range(1.5, 3.5)
+		_shot_t[str(npc.cast_name)] = Difficulty.rng("nerf").randf_range(1.5, 3.5)
 	Hints.toast("NERF WAR! THEY ARE FIRING BACK.", 3.0)
 
 
@@ -333,7 +335,7 @@ func _process(delta: float) -> void:
 			continue
 		_shot_t[who] = float(_shot_t[who]) - delta
 		if float(_shot_t[who]) <= 0.0:
-			_shot_t[who] = randf_range(2.0, 4.5)
+			_shot_t[who] = Difficulty.rng("nerf").randf_range(2.0, 4.5) * Difficulty.f("nerf.gap")
 			_npc_shoots(npc)
 
 
@@ -347,7 +349,7 @@ func _npc_shoots(npc: Node) -> void:
 			targets.append(other)
 	if targets.is_empty():
 		return
-	var target: Node = targets[randi() % targets.size()]
+	var target: Node = Difficulty.pick(targets, "nerf")
 	var dx: float = target.global_position.x - npc.global_position.x
 	var dir := 1.0 if dx >= 0.0 else -1.0
 	if npc.seat == null:
