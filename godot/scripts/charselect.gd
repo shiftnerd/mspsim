@@ -22,7 +22,7 @@ const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
 const FREE_MODE := "free"
 const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
-const CREATE_ROWS := ["name", "skin", "hair", "shirt", "pants", "shoes", "random"]
+const CREATE_ROWS := ["name", "style", "skin", "hair", "shirt", "pants", "shoes", "random"]
 const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
 	"office_teen":
@@ -180,7 +180,7 @@ func setup(for_mode: String, year2 := false) -> void:
 	_sprites.clear()
 	for id in ids:
 		var spr := AnimatedSprite2D.new()
-		spr.sprite_frames = load("res://characters/%s.tres" % (Look.BASE if id == CUSTOM else id))
+		spr.sprite_frames = Look.frames_for(Look.BASE if id == CUSTOM else id, id == CUSTOM)
 		Look.apply(spr, Look.BASE, id == CUSTOM)
 		spr.play("idle_right")
 		add_child(spr)
@@ -437,6 +437,8 @@ func _create_change(delta: int) -> void:
 	var role: String = CREATE_ROWS[create_row]
 	if role == "name":
 		Look.cycle_name(delta)
+	elif role == "style":
+		Look.cycle_style(delta)
 	elif role == "random":
 		roll_look()
 	else:
@@ -481,6 +483,11 @@ func _refresh_look() -> void:
 	for i in ids.size():
 		if ids[i] == CUSTOM:
 			Look.apply(_sprites[i], Look.BASE, true)
+			var fr := Look.frames_for(Look.BASE, true)
+			if _sprites[i].sprite_frames != fr:  # another hairstyle is another sheet: keep the animation running
+				var anim: StringName = _sprites[i].animation
+				_sprites[i].sprite_frames = fr
+				_sprites[i].play(anim)
 	queue_redraw()
 
 
@@ -500,8 +507,8 @@ func _hover(at: Vector2) -> void:
 		if step == "build":
 			_panel.hover(kind, int(r[2]))
 			queue_redraw()
-	elif step == "create" and kind in ["sw", "row", "name_prev", "name_next", "random"]:
-		var row := floori(float(r[2]) / 100.0) if kind == "sw" else (int(r[2]) if kind == "row" else (6 if kind == "random" else 0))
+	elif step == "create" and kind in ["sw", "row", "name_prev", "name_next", "style_prev", "style_next", "random"]:
+		var row := _create_row_of(r)
 		if row != create_row:
 			create_row = row
 			queue_redraw()
@@ -511,6 +518,20 @@ func _hover(at: Vector2) -> void:
 	elif kind == "phone" and phone_sel != int(r[2]):
 		phone_sel = int(r[2])
 		queue_redraw()
+
+
+# the create row a mouse rect belongs to
+func _create_row_of(r: Array) -> int:
+	match str(r[1]):
+		"sw":
+			return floori(float(r[2]) / 100.0)
+		"row":
+			return int(r[2])
+		"random":
+			return CREATE_ROWS.size() - 1
+		"style_prev", "style_next":
+			return CREATE_ROWS.find("style")
+	return 0
 
 
 func _click(at: Vector2) -> void:
@@ -533,6 +554,10 @@ func _click(at: Vector2) -> void:
 		"name_prev", "name_next":
 			create_row = 0
 			Look.cycle_name(-1 if str(r[1]) == "name_prev" else 1)
+			_refresh_look()
+		"style_prev", "style_next":
+			create_row = CREATE_ROWS.find("style")
+			Look.cycle_style(-1 if str(r[1]) == "style_prev" else 1)
 			_refresh_look()
 		"random":
 			create_row = CREATE_ROWS.size() - 1
@@ -898,6 +923,17 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 			_txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
 			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "name_prev", 0])
 			_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "name_next", 0])
+		elif role == "style":
+			_txt("STYLE", Vector2(x0, ty), GOLD if hot else DIM)
+			var sbox := Rect2(sx + 8.0, sy, 49.0, sw)
+			draw_rect(sbox, INK)
+			draw_rect(sbox, GOLD if hot else DIM, false, 1.0)
+			var st := str(Look.look.get("hair_style", Look.HAIR_STYLES[0])).to_upper()
+			_txt(st, Vector2(floorf(sbox.position.x + (sbox.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
+			_txt("<", Vector2(sx, ty), GOLD)
+			_txt(">", Vector2(sbox.end.x + 3.0, ty), GOLD)
+			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "style_prev", 0])
+			_rects.append([Rect2(sbox.end.x + 1.0, y, 9.0, pitch), "style_next", 0])
 		elif role == "random":
 			var rr := Rect2(x0, sy - 1.0, 44.0, 9.0)
 			draw_rect(rr, PANEL)

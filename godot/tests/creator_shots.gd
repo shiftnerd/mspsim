@@ -34,6 +34,7 @@ func _process(_delta: float) -> bool:
 			current_scene._select.sel = 0
 			look.look = {
 				"name": "JORDAN",
+				"hair_style": "curly",
 				"skin": "8d5524",
 				"hair": "e05a9a",
 				"shirt": "2f6b3a",
@@ -44,7 +45,7 @@ func _process(_delta: float) -> bool:
 		100:
 			_shot("card")
 			current_scene._select.confirm()
-			current_scene._select.create_row = 3
+			current_scene._select.create_row = 1
 			current_scene._select.queue_redraw()
 		130:
 			_shot("create")
@@ -53,6 +54,7 @@ func _process(_delta: float) -> bool:
 			current_scene._select.confirm()
 			look.look = {
 				"name": "ZOE",
+				"hair_style": "receding",
 				"skin": "fbd7bc",
 				"hair": "2a1c14",
 				"shirt": "f4f2ea",

@@ -16,11 +16,20 @@ extends Node
 # The shader and map_color() are one algorithm (nearest source colour inside a tolerance); tests/creator.gd runs map_color()
 # over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
 # new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
+#
+# LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the teen with
+# another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the teen's own hair
+# (office_teen itself), the others are custom_teen_<style>. sheet_for() maps a look to that character name and every place
+# that shows the custom person loads characters/<sheet>.tres. All styles use only the teen's hair colours (9a5124, c47a38,
+# the outline), so the palette shader above works on every sheet unchanged. A new style is data only: build its stills and
+# sheets, add custom_teen_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
 
 const PLAYER := preload("res://scripts/player.gd")
 const BASE := "office_teen"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
+const HAIR_STYLES := ["side", "short", "receding", "curly"]  # the shipped styles, in the order of the STYLE row
+const HAIR_PLANNED := ["long", "bob", "ponytail", "bun", "bald", "spiky"]  # a later art pass; tests and the UI skip them
 const FLASH := 0.7  # the hurt frames mix every colour this far to white
 const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
 const FLASH_TOL := 0.01
@@ -101,6 +110,7 @@ var _shader: Shader = null
 func default_look() -> Dictionary:
 	return {
 		"name": NAMES[0],
+		"hair_style": HAIR_STYLES[0],
 		"skin": "f3b488",
 		"hair": "9a5124",
 		"shirt": "4f7fd0",
@@ -245,8 +255,23 @@ func display_name() -> String:
 
 # put the palette-swap material on a sprite showing `character` when it is the custom person (the player's sprite, the
 # select screen's preview card, an NPC copy), otherwise none
-func apply(sprite: CanvasItem, character: String, custom: bool) -> void:
-	sprite.material = make_material(look) if custom and character == BASE else null
+# (look_dict: the look to wear, empty = the player's own; an NPC copy carries its own)
+func apply(sprite: CanvasItem, character: String, custom: bool, look_dict: Dictionary = {}) -> void:
+	var lk := look_dict if not look_dict.is_empty() else look
+	sprite.material = make_material(lk) if custom and character == BASE else null
+
+
+# the character (sheet) name that shows `character`: the plain name, or for the custom person the sheet of the hairstyle
+func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> String:
+	if not custom or character != BASE:
+		return character
+	var lk := look_dict if not look_dict.is_empty() else look
+	var style := str(lk.get("hair_style", HAIR_STYLES[0]))
+	return BASE if style == HAIR_STYLES[0] else "custom_teen_" + style
+
+
+func frames_for(character: String, custom: bool, look_dict: Dictionary = {}) -> SpriteFrames:
+	return load("res://characters/%s.tres" % sheet_for(character, custom, look_dict))
 
 
 # ---- editing --------------------------------------------------------------------------
@@ -283,8 +308,16 @@ func cycle_name(step: int) -> void:
 	look["name"] = NAMES[(maxi(i, 0) + step + NAMES.size()) % NAMES.size()]
 
 
+# one hairstyle forward or back (the STYLE row)
+func cycle_style(step: int) -> void:
+	var i := HAIR_STYLES.find(str(look.get("hair_style", HAIR_STYLES[0])))
+	look["hair_style"] = HAIR_STYLES[(maxi(i, 0) + step + HAIR_STYLES.size()) % HAIR_STYLES.size()]
+
+
 func sanitize(d: Dictionary) -> Dictionary:
 	var out := default_look()
+	if str(d.get("hair_style", "")) in HAIR_STYLES:
+		out["hair_style"] = str(d.get("hair_style"))
 	for role in ROLES:
 		var hex := str(d.get(role, out[role])).to_lower().trim_prefix("#")
 		if hex.length() == 6 and hex.is_valid_hex_number():
@@ -311,6 +344,7 @@ func randomize_look() -> void:
 		var list: Array = SWATCHES[role]
 		look[role] = list[r.randi() % list.size()]
 	look["name"] = NAMES[r.randi() % NAMES.size()]
+	look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
 
 
 # ---- save, load, settings ------------------------------------------------------------
