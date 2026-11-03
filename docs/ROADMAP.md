@@ -51,7 +51,7 @@ Nothing running. The owner playthrough fixes (round 1) and the canon text pass a
 | R5 | Who comes along: `Outings.roster()`, bowling personalities, dinner tastes; Maya and Vic join in logic | M | pairs with X2 |
 | R6 | Dinner: 16+ topics, mood of the day, dietary quirks, a client at the table, owner pays | S-M | |
 | R7 | Career screen and medals, cosmetic unlocks, nerf-war scoring | M | |
-| R8 | Event deck (40 cards) and vignette deck (24) | M | |
+| R8 | Event deck (40 cards) and vignette deck (24) | M | DONE (`Events` autoload, 41 cards + 17 drawn vignettes, see CLAUDE.md "Event deck and vignette deck"); left: seasonal tags beyond day windows, a Career counter, mutator hooks (R9) |
 | R9 | Mutators (Heartbleed week, XP end of life, flu season...) and starting conditions | M | |
 | R10 | Year 2 / New Game+, daily seed, Free Play toolbox | L | after R8, R9 |
 | R11 | Bowling oil / spin / alleys / league; nerf modes and arenas; conference-trip randomisation; onsite job variance and dispatch roulette | M each | later |

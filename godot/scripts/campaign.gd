@@ -72,6 +72,7 @@ func new_game(for_mode: String) -> void:
 	Projects.reset()
 	Expo.reset()
 	Onsite.reset()
+	Events.reset()
 	World.day_len = 240.0 if for_mode == "owner" else 600.0
 	Msp.enabled = active
 	if active:
@@ -108,6 +109,7 @@ func continue_game(for_mode: String) -> bool:
 	Projects.from_dict(cfg.get_value("campaign", "projects", {}))
 	Expo.from_dict(cfg.get_value("campaign", "conference", {}))
 	Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
+	Events.from_dict(cfg.get_value("campaign", "events", {}))
 	Lync.reset()
 	World.day_len = 240.0 if for_mode == "owner" else 600.0
 	Story.flags = cfg.get_value("campaign", "story", {})
@@ -144,6 +146,7 @@ func save() -> void:
 	cfg.set_value("campaign", "projects", Projects.to_dict())
 	cfg.set_value("campaign", "conference", Expo.to_dict())
 	cfg.set_value("campaign", "onsite", Onsite.to_dict())
+	cfg.set_value("campaign", "events", Events.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
 	cfg.save(save_path(mode))
 
@@ -184,6 +187,7 @@ func _begin_day() -> void:
 		Owner.begin_day(day)
 	else:
 		Shift.begin_day(day)
+	Events.begin_day(day)
 	day_started.emit(day)
 
 
