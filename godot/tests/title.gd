@@ -34,25 +34,25 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		50:
 			_check(
-				current_scene._menu_open and current_scene._items.size() >= 3,
+				current_scene._menu_open and current_scene._items.size() == 6,
 				"Enter opens the menu"
 			)
 			_press(KEY_DOWN)
 		55:
 			_check(
-				current_scene._items[current_scene._sel].id == "owner_new",
+				current_scene._items[current_scene._sel].id == "owner",
 				"Down goes to the owner campaign"
 			)
 			_press(KEY_DOWN)
 		57:
 			_check(
-				current_scene._items[current_scene._sel].id == "service_new",
+				current_scene._items[current_scene._sel].id == "service",
 				"Down goes to the service manager campaign"
 			)
 			_press(KEY_DOWN)
 		60:
 			_check(
-				current_scene._items[current_scene._sel].id == "sales_new",
+				current_scene._items[current_scene._sel].id == "sales",
 				"Down again goes to the sales campaign"
 			)
 			_press(KEY_DOWN)
