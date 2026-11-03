@@ -384,6 +384,8 @@ func _everyone_outside() -> bool:
 
 # campaign: send the whole cast home and start the morning of `number`
 func begin_next_day(number: int) -> void:
+	if Campaign.active:
+		Campaign.apply_day_length()  # the DAY LENGTH chosen in the pause menu starts this morning
 	Mutators.prepare_day(number)
 	apply_roster()
 	for n in chars:

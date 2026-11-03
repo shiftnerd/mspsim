@@ -53,6 +53,8 @@ func _init() -> void:
 					var r: Dictionary = await bots.play(mode, tier, strat, 11 + k)
 					rows[key].append(r)
 					print(bots.line(r))
+					if tier == "easy":  # R16: easy is cozy, nobody is ever fired there
+						_check(not bool(r.fired), "%s easy %s seed %d: never fired" % [mode, strat, 11 + k])
 		_check(_avg(mode, "easy", "careful", "rep") >= _avg(mode, "normal", "careful", "rep") - 0.5, "%s careful: easy >= normal (rep)" % mode)
 		_check(_avg(mode, "normal", "careful", "rep") >= _avg(mode, "hard", "careful", "rep") - 0.5, "%s careful: normal >= hard (rep)" % mode)
 		_check(_good(mode, "easy", "careful") >= _good(mode, "normal", "careful") and _good(mode, "normal", "careful") >= _good(mode, "hard", "careful"), "%s careful: good endings easy >= normal >= hard" % mode)

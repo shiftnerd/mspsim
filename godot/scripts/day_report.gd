@@ -108,6 +108,29 @@ func _books() -> bool:
 
 
 func _groups() -> Array:
+	var all := _groups_raw()
+	return _soft(all) if bool(report.get("cozy", false)) else all
+
+
+# cozy Easy: the report keeps its good news and its honest counts but shows no red and no penalty lines
+# (SLA MISSED, REOPENED and a negative COWORKERS row are left out; STILL OPEN reads "carried over")
+func _soft(groups: Array) -> Array:
+	var out := []
+	for g in groups:
+		var rows := []
+		for row in g[1]:
+			var label := str(row[0])
+			var value := str(row[1])
+			if label in ["SLA MISSED", "REOPENED", "REOPENS"] or (label == "COWORKERS" and value.begins_with("-")):
+				continue
+			if label == "STILL OPEN":
+				label = Difficulty.ct("open_row")
+			rows.append([label, value, WARN if row[2] == BAD else row[2]])
+		out.append([g[0], rows])
+	return out
+
+
+func _groups_raw() -> Array:
 	if report.has("groups"):
 		var all: Array = report.groups.duplicate()
 		if str(report.get("mutator", "")) != "":
@@ -185,6 +208,14 @@ func _hero() -> Array:
 	if not _books():
 		var cash := int(r.cash)
 		tiles.append(["CASH", "CASH", "%s$%d" % ["-" if cash < 0 else "", absi(cash)], GOOD if cash >= 0 else BAD])
+	if bool(r.get("cozy", false)):  # no red, no minus signs on the day score or the reputation move
+		for tile in tiles:
+			if tile[3] == BAD:
+				tile[3] = WARN
+		if not _books() and int(r.points) < 0:
+			tiles[0][2] = "0"
+		if delta < 0:
+			tiles[tiles.size() - (1 if _books() else 2)][2] = str(int(r.rep))
 	return tiles
 
 
@@ -315,6 +346,12 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 		groups = groups + left
 		y += _hero_block(4.0, y, inner, big, draw) + 3.0
 		y += _list(4.0, y, inner, groups, draw)
+	for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
+		y += 3.0
+		for line in _wrap(str(note), int(inner / 4.0)):
+			if draw:
+				_t(line, 4.0, y, HEAD)
+			y += _row_h
 	var ending := str(report.get("ending", ""))
 	if ending != "":
 		y += 4.0

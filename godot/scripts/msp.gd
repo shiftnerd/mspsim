@@ -733,8 +733,8 @@ func create_internal(desk: int, summary: String, body: String) -> void:
 		"pri": 2,
 		"body": body,
 		"status": "New",
-		"sla_left": SLA_SECS[2],
-		"sla_total": SLA_SECS[2],
+		"sla_left": SLA_SECS[2] * Difficulty.sla_scale(),
+		"sla_total": SLA_SECS[2] * Difficulty.sla_scale(),
 		"endpoint": "",
 		"fix": "network",
 		"fix_done": false,
@@ -788,18 +788,19 @@ func close_ticket(id: int) -> String:
 	if not t.fix_done:
 		t.status = "In Progress"
 		t.sla_left = maxf(t.sla_left, t.sla_total * 0.4)
-		t.notes.append("Client reopened the ticket: still broken!")
+		t.notes.append(Difficulty.ct("reopen_note") if Difficulty.cozy_on() else "Client reopened the ticket: still broken!")
 		score -= 3
 		reopened += 1
 		Growth.note_escalation(t)
-		Social.note_reopen()
+		if not Difficulty.cozy_on():
+			Social.note_reopen()
 		if not t.internal:
-			Sales.adjust(int(t.client), -6)
+			Sales.adjust(int(t.client), int(Difficulty.cz("reopen_mood", -6.0)))
 		if not t.internal:
 			_mail(
 				CLIENTS[t.client].contact + " <" + CLIENTS[t.client].mail + ">",
 				"RE: " + t.summary,
-				"It is STILL not fixed. Why did you close this? Please try again.",
+				Difficulty.ct("reopen_mail") if Difficulty.cozy_on() else "It is STILL not fixed. Why did you close this? Please try again.",
 				t.id
 			)
 		changed.emit()
@@ -1359,15 +1360,16 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 	var contact: String = CLIENTS[ep.client].contact
 	_ransom_close(ep, note)
 	score -= 30
-	Campaign.adjust_rep(-15)
-	Campaign.add_scar(15)
+	Campaign.adjust_rep(int(Difficulty.cz("ransom_rep", -15.0)))
+	if not Difficulty.cozy_on():
+		Campaign.add_scar(15)
 	_mail(
 		CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">",
 		"RE: " + RANSOM.summary,
-		"Years of files are gone and nothing worked. We are reviewing our contract. - " + contact,
+		(Difficulty.ct("ransom_mail") % contact) if Difficulty.cozy_on() else "Years of files are gone and nothing worked. We are reviewing our contract. - " + contact,
 		0
 	)
-	send_text("Boss", "The files are gone and the backup was not there. We need to talk.")
+	send_text("Boss", Difficulty.ct("ransom_text") if Difficulty.cozy_on() else "The files are gone and the backup was not there. We need to talk.")
 	Story.flags["ransom"] = "lost"
 	changed.emit()
 	return "NOTHING WORKED. DATA LOST."
@@ -1510,6 +1512,12 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 	return 1.0
 
 
+# seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
+func next_spawn_gap() -> float:
+	var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload())
+	return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
+
+
 # ---- clock -------------------------------------------------------------------
 func _process(delta: float) -> void:
 	if Game.title_mode or not enabled:
@@ -1519,7 +1527,7 @@ func _process(delta: float) -> void:
 		return
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
-		_spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
+		_spawn_t = next_spawn_gap()
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
 			# Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
@@ -1543,18 +1551,18 @@ func _process(delta: float) -> void:
 				breached += 1
 				Sfx.play("sla_breach")
 				score -= 5
-				if int(t.pri) == 1:
-					Campaign.add_scar(2)  # an unworked P1 is remembered
+				if int(t.pri) == 1 and not Difficulty.cozy_on():
+					Campaign.add_scar(2)  # an unworked P1 is remembered (not on cozy Easy)
 				Growth.note_escalation(t)
 				if not t.internal:
-					Sales.adjust(int(t.client), -8)
+					Sales.adjust(int(t.client), int(Difficulty.cz("sla_mood", -8.0)))
 				_mail(
 					"Pixel IT Partners - Manager",
-					"SLA breached on #%d" % t.id,
-					"Ticket #%d (%s) blew its SLA. Please look at it." % [t.id, t.summary],
+					(Difficulty.ct("sla_subject") if Difficulty.cozy_on() else "SLA breached on #%d") % t.id,
+					(Difficulty.ct("sla_mail") if Difficulty.cozy_on() else "Ticket #%d (%s) blew its SLA. Please look at it.") % [t.id, t.summary],
 					t.id
 				)
-				send_text("Boss", "#%d blew its SLA: -5 score, client mood -8. Why?" % t.id)
+				send_text("Boss", (Difficulty.ct("sla_text") if Difficulty.cozy_on() else "#%d blew its SLA: -5 score, client mood -8. Why?") % t.id)
 	_watch_desks(dt)
 
 

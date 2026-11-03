@@ -179,6 +179,7 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
 	meta.set_value(mode, "year", maxi(1, Campaign.year))
 	meta.set_value(mode, "rep", Campaign.rep)
 	meta.set_value(mode, "tier", Difficulty.tier)
+	meta.set_value(mode, "cozy", Difficulty.cozy_on())  # R16: a cozy run is tagged; it still unlocks Year 2
 	meta.set_value(mode, "seed", Difficulty.run_seed)
 	meta.set_value(mode, "clients", Sales.active.size())
 	var levels := {}

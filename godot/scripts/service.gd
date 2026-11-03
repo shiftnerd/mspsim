@@ -1625,7 +1625,7 @@ func close_day(r: Dictionary) -> void:
 	elif grade == "D":
 		add_trust("Alan", -1)
 		add_trust("Garrison", -1)
-	var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST
+	var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST and not Difficulty.cozy_on()
 	if both_low:
 		delta = -Campaign.rep
 		r["fired_text"] = str(ServiceArc.TEXT.fired_owners)
@@ -2228,7 +2228,7 @@ func _ret_fx(who: String, fx: Dictionary) -> void:
 				assign(int(t.id), "", false)
 	if fx.has("off_day"):
 		Crew.set_busy(who, 8.0)
-	if fx.has("quit") and not leaving.has(who):
+	if fx.has("quit") and not leaving.has(who) and not Difficulty.cozy_on():
 		leaving.append(who)
 
 

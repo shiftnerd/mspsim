@@ -3,7 +3,7 @@ extends SceneTree
 # the final day with an ending, a firing, and an owner week. Use -- --format=h|v|wide.
 
 var frame := 0
-var variants := ["tech", "ending", "fired", "owner"]
+var variants := ["tech", "ending", "fired", "owner", "cozy"]
 
 
 func _initialize() -> void:
@@ -41,6 +41,18 @@ func _report(kind: String) -> Dictionary:
 		"ending": "",
 	}
 	match kind:
+		"cozy":  # cozy Easy (R16): a bad day with no red, no minus lines, a probation note
+			r["cozy"] = true
+			r["missed"] = 3
+			r["reopened"] = 2
+			r["open_left"] = 4
+			r["points"] = -9
+			r["social"] = -2
+			r["pay"] = 100
+			r["rep_delta"] = -3
+			r["rep"] = 15
+			r["grade"] = "D"
+			r["notes"] = [root.get_node("Difficulty").ct("probation_note")]
 		"ending":
 			r["day"] = 20
 			r["final"] = true
