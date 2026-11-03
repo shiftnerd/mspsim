@@ -84,7 +84,7 @@ func _init() -> void:
 	o.show_card("welcome")
 	cards.pick(2)  # premium pricing: Alan opposes
 	_clear(cards)
-	_check(partner.trust == t0 - 3 and partner.overrides == 1, "overriding them: trust -3")
+	_check(partner.trust == t0 - 5 and partner.overrides == 1 and partner.sulk == 2, "overriding them: trust -5 and they sulk")
 	t0 = partner.trust
 	o.show_card("welcome")
 	cards.pick(1)
@@ -98,6 +98,7 @@ func _init() -> void:
 	_check(bool(cards.options[1].get("enabled", true)), "other options stay open")
 	_clear(cards, 1)
 	partner.trust = 70
+	partner.sulk = 0
 	_check(partner.help_hours() == 6.0 and root.get_node("Growth").owner_free() > 0.0, "from trust 60 the partner takes owner hours off you")
 	partner.trust = 40
 	_check(partner.help_hours() == 0.0, "and not below")

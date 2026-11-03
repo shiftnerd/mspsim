@@ -29,7 +29,7 @@ const PATHS := {
 	"tech": {"selectable": true, "stats": ["powershell", "networking", "servers", "security", "people"]},
 	"owner": {"selectable": true, "stats": ["technical", "finance", "sales", "culture", "clients"]},
 	"service": {"selectable": true, "stats": ["dispatch", "process", "people", "escalation", "relations"]},
-	"sales": {"selectable": false, "stats": ["pitch", "discovery", "negotiation", "relationships", "honesty"]},
+	"sales": {"selectable": true, "stats": ["pitch", "discovery", "negotiation", "relationships", "honesty"]},
 }
 # free floors and creation caps per cast member; "skills" are floors on the five tech Skills the service campaign applies itself
 const BIAS := {
@@ -45,6 +45,15 @@ const OWNER_FX := {
 	"sales": {"marketing": 0.08},
 	"culture": {"morale": 1.0, "outing_relief": 0.1},
 	"clients": {"qbr": 0.03, "new_mood": 1.0, "poach": -0.004},
+}
+# sales stat -> what one level above Vic's free floor adds (C3). win: win chance; gap: promise gap points (negative = fewer promises
+# to keep); price: weekly fee multiplier; renew: renewal chance; churn: weekly churn-meter change after a sale; lead: lead quality
+const SALES_FX := {
+	"pitch": {"win": 0.02},
+	"discovery": {"gap": -0.15, "pain": 2.0},
+	"negotiation": {"win": 0.01, "price": 0.012},
+	"relationships": {"renew": 0.03, "lead": 1.5},
+	"honesty": {"gap": -0.15, "churn": -0.8, "win": -0.01},
 }
 const CASH_PER_FINANCE := 250  # starting cash per FINANCE level above the floor
 const TRUST_PER_CULTURE := 3  # starting partner trust per CULTURE level above the floor
@@ -62,7 +71,7 @@ const DEFAULT_QUIRKS := {
 	"early": {"name": "EARLY BIRD", "pts": -2, "paths": ["tech"], "fx": {"energy": 10.0, "rest": 4.0}, "text": "START AT 90 ENERGY AND WAKE UP A LITTLE MORE RESTED EVERY MORNING."},
 	"stubborn": {"name": "STUBBORN", "pts": 2, "paths": ["owner"], "fx": {"trust": -10.0}, "text": "YOUR PARTNER STARTS WITH 10 LESS TRUST. YOU DO NOT BACK DOWN."},
 	"listener": {"name": "GOOD LISTENER", "pts": -2, "paths": ["owner"], "fx": {"trust": 10.0}, "text": "YOUR PARTNER STARTS WITH 10 MORE TRUST. YOU HEAR THEM OUT."},
-	"overpromise": {"name": "OVER-PROMISER", "pts": 2, "paths": ["sales"], "fx": {}, "text": "YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP."},
+	"overpromise": {"name": "OVER-PROMISER", "pts": 2, "paths": ["sales"], "fx": {"win": 0.04, "gap": 0.3}, "text": "YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP."},
 	"quiet": {"name": "QUIET TYPE", "pts": 2, "paths": ["service"], "fx": {"oto": -0.15}, "text": "YOU PREFER A CLOSED DOOR AND A SHORT MEETING. ONE ON ONES GAIN 15 PERCENT LESS."},
 }
 var QUIRKS: Dictionary = DEFAULT_QUIRKS.duplicate(true)
@@ -465,6 +474,29 @@ func _owner_up(stat: String) -> int:
 	if is_flat(b) or Campaign.mode != "owner":
 		return 0
 	return level_of(b, stat, Campaign.player_as) - floor_of(stat, Campaign.player_as)
+
+
+# levels of one sales stat above Vic's free floor (0 for a flat build and outside the sales campaign)
+func sales_up(stat: String) -> int:
+	if Campaign.mode != "sales":
+		return 0
+	var b := cur()
+	if is_flat(b):
+		return 0
+	return level_of(b, stat, "Vic") - floor_of(stat, "Vic")
+
+
+# the sum of one sales effect key: every stat's levels above the floor plus the quirks (0.0 for the flat build, so old runs are unchanged)
+func sales_fx(key: String) -> float:
+	if Campaign.mode != "sales":
+		return 0.0
+	var b := cur()
+	if is_flat(b):
+		return 0.0
+	var n := fx(key)
+	for stat in SALES_FX:
+		n += float(SALES_FX[stat].get(key, 0.0)) * float(sales_up(str(stat)))
+	return n
 
 
 func cash_bonus() -> int:

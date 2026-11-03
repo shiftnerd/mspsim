@@ -261,7 +261,7 @@ func _init() -> void:
 	g.focus = "servers"
 	g.progress = 95.0
 	g.graduated = false
-	var extra0: int = owner.weekly_extra
+	var extra0: int = owner.payroll_extra
 	var speed0: float = owner.speed
 	g.owner_week()
 	_check(g.graduated and g.tier2 == 1 and owner.speed > speed0, "week 100%: Dan is Tier 2")
@@ -269,7 +269,7 @@ func _init() -> void:
 	cards.pick(0)
 	_check(
 		(
-			owner.weekly_extra == extra0 + 60
+			owner.payroll_extra == extra0 + 60
 			and g.learner == ""
 			and owner.flags.get("growth_done", false)
 		),

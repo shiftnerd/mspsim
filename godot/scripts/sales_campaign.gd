@@ -1,4 +1,5 @@
 extends Node
+# gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # The sales campaign as Vic (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
 # April to August 2014, 4 real minutes a week. The company runs on autopilot behind you (the crew works the queue, light books);
@@ -9,6 +10,8 @@ extends Node
 # and complains later). A won deal lets you ring the sales bell on the main floor wall. Quota is new MRR per quarter, commission
 # per deal; week 20 ends in a verdict (sales director / stay / leave / let go).
 # Garrison sets the quota and approves big discounts, Alan sets the margin floor (decision cards).
+# C3: the story beats of weeks 2-19 (sales_beats.gd, text in BEAT_TEXT below), the endings wired to their flags, the business review at the
+# client's office, the team night and the dinner with a prospect, the point-buy stats (Build.sales_fx) and the cash cap.
 
 signal changed
 
@@ -16,6 +19,9 @@ const Deals := preload("res://scripts/deals.gd")
 const Retention := preload("res://scripts/retention.gd")
 const Handover := preload("res://scripts/handover.gd")
 const QuoteBuilder := preload("res://scripts/quote_builder.gd")
+const SalesBeats := preload("res://scripts/sales_beats.gd")
+const CASH_CAP := 30000  # the owners draw what the company holds above this: the sales campaign is not about a bank balance
+const QBR_TYPE := {2: "realty", 4: "law"}  # book clients with no site of their own meet you in a b skin office of this kind
 const SLOTS := 8
 const MAX_OPEN := 9  # open leads in the pipeline
 const COLD_WEEKS := 4  # a lead nobody touched this long goes cold
@@ -30,9 +36,9 @@ const QUARTERS := [{"label": "Q2", "from": 1, "to": 12}, {"label": "Q3", "from":
 const Q3_SHARE := 0.8  # the second quota is this share of the first (8 weeks, not 12)
 const DEFAULT_QUOTA := "standard"
 const QUOTAS := {
-	"safe": {"label": "SAFE: $5,000 NEW MRR BY JUNE 30", "target": 5000, "words": "A number we will hit."},
-	"standard": {"label": "STANDARD: $6,500 NEW MRR BY JUNE 30", "target": 6500, "words": "What the plan needs."},
-	"stretch": {"label": "STRETCH: $8,000 NEW MRR BY JUNE 30", "target": 8000, "words": "Hit it and I will fight for your raise."},
+	"safe": {"label": "SAFE: $6,500 NEW MRR BY JUNE 30", "target": 6500, "words": "A number we will hit."},
+	"standard": {"label": "STANDARD: $9,000 NEW MRR BY JUNE 30", "target": 9000, "words": "What the plan needs."},
+	"stretch": {"label": "STRETCH: $12,000 NEW MRR BY JUNE 30", "target": 12000, "words": "Hit it and I will fight for your raise."},
 }
 # the pay plan reuses the owner campaign's wages (Owner.VIC_PLANS); `rate` = weeks of the new fee paid as commission
 const PLAN_RATE := {"salary": 1.0, "balanced": 2.0, "commission": 3.0}
@@ -107,6 +113,244 @@ const TYPES := {
 	},
 }
 
+const DEFAULT_BEAT_TEXT := {
+	"chamber": {
+		"lynk": {"from": "Garrison", "text": "Chamber of Commerce lunch on Thursday. Rubber chicken, two hundred business cards and exactly one person who needs us. Go find them."},
+		"invite": {
+			"speaker": "{sales_owner}",
+			"text": "The Chamber lunch is Thursday at noon. It takes two hours, the chicken is dry and every owner in the county will be there. Wear the good tie. Someone at table six has an IT guy who is somebody's nephew.",
+			"options": [{"id": "go", "label": "GO TO THE LUNCH (2 HOURS)"}, {"id": "skip", "label": "SKIP IT"}],
+		},
+		"room": {
+			"speaker": "Mr. Kestrel",
+			"text": "Kestrel Hill Realty, sixteen agents. Our whole office went down on Tuesday and the nephew was at a wedding. Can you guarantee that someone answers within the hour? Any time, any problem?",
+			"options": [
+				{"id": "moon", "label": "ONE HOUR, ANY TIME, ANY PROBLEM"},
+				{"id": "honest", "label": "FOUR HOURS, IN WRITING"},
+				{"id": "card", "label": "TAKE HIS CARD, PROMISE TO CALL"},
+			],
+		},
+		"res_moon": {"speaker": "Mr. Kestrel", "text": "That is exactly what I wanted to hear. Call me Monday with a number. (He writes 'one hour' on the back of your card and underlines it twice.)"},
+		"res_honest": {"speaker": "Mr. Kestrel", "text": "Four hours, in writing. Most of you people promise me the moon. Send me a proposal. Morgan will be glad you did it that way."},
+		"res_card": {"speaker": "Mr. Kestrel", "text": "Fine. I have eleven cards from this lunch and one nephew. Call me and make it quick."},
+	},
+	"paws": {
+		"lynk": {"from": "Garrison", "text": "Dr. Brandt from Paws and Claws sat next to me at the lunch and asked for you by name. Their server beeps every ten minutes and nobody knows why."},
+		"offer": {
+			"speaker": "{sales_owner}",
+			"text": "Paws and Claws Veterinary wants someone to look at their office. Dr. Brandt is a talker and it is a real visit, fifty minutes each way. Use the front door, the van is out front, and keep your eyes open in the closet. Take the lead?",
+			"options": [{"id": "take", "label": "TAKE THE LEAD"}, {"id": "pass", "label": "PASS"}],
+		},
+		"found": {
+			"speaker": "You notice something",
+			"text": "%s What do you do with it?",
+			"options": [
+				{"id": "ticket", "label": "LOG A TICKET: FREE FIX"},
+				{"id": "project", "label": "SELL IT AS A PROJECT ($500)"},
+				{"id": "note", "label": "KEEP IT FOR THE QUOTE"},
+			],
+		},
+		"res_ticket": {"speaker": "Dr. Brandt", "text": "You logged a ticket before you even had a contract? Dan will look at it this week. I will tell everyone at the clinic association about you."},
+		"res_project": {"speaker": "Dr. Brandt", "text": "A project quote, the same day? That is the kind of salesman I like. Put it on the pile with the managed service."},
+		"res_note": {"speaker": "Dr. Brandt", "text": "You wrote it down and said nothing? Sneaky. I like it. Send me a number that covers all of it."},
+	},
+	"xpwave": {
+		"lynk": {"from": "Garrison", "text": "The XP news is finally reaching the people with beige towers. Three of them phoned this morning. Quote what we can deliver; Dan has a list as long as his arm."},
+		"info": {"speaker": "{sales_owner}", "text": "Windows XP stops getting patches on April 8 and every owner with a beige tower just discovered it. Three desktop shops called this week. Price against what Alan will sign and what Dan can install, in that order.", "ok": "SEND THEM OVER"},
+	},
+	"undercut": {
+		"lynk": {"from": "Alan", "text": "ByteBrothers was seen in the parking lot of your last quote. Do not do anything stupid with the price."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "ByteBrothers undercut your quote at %s. Twenty percent under ours, and I hear their rep has a nicer tie than you. Match it, sell them on the value, or let it go?",
+			"options": [
+				{"id": "match", "label": "MATCH THEIR PRICE (20% OFF)"},
+				{"id": "value", "label": "SELL THE VALUE (1 HOUR)"},
+				{"id": "walk", "label": "WALK AWAY"},
+			],
+		},
+		"res_match": {"speaker": "{tech_owner}", "text": "You matched them. Twenty percent off. I hope somebody enjoys the logo, because the margin is gone."},
+		"res_value_win": {"speaker": "{sales_owner}", "text": "You walked them through the backups and the response numbers and they signed at the full fee. That is the Vic I hired."},
+		"res_value_lose": {"speaker": "{sales_owner}", "text": "They like you, but the price won. ByteBrothers took %s. It happens."},
+		"res_walk": {"speaker": "{tech_owner}", "text": "Good. A deal that loses money is worse than a deal we lose. Next one."},
+	},
+	"sla_p1": {
+		"card": {
+			"speaker": "{ops}",
+			"text": "%s has a P1: the server is down and their contract says one hour, any time. Dan is on site elsewhere and the queue is full. They are not calling the desk, they are calling you.",
+			"options": [
+				{"id": "own", "label": "OWN IT: CALL AND STAY ON THE LINE"},
+				{"id": "blame", "label": "TELL THEM DAN IS ON IT"},
+				{"id": "dan", "label": "ASK DAN TO DROP EVERYTHING"},
+			],
+		},
+		"res_own": {"speaker": "{ops}", "text": "You stayed on the phone with %s for forty minutes. They did not get a fix any faster, but they know where the buck stops. Keep it up."},
+		"res_blame": {"speaker": "{ops}", "text": "You told %s the queue is busy. They know it is busy, they saw the van. The next time you promise an hour, check with me first."},
+		"res_dan": {"speaker": "Dan", "text": "Fine, I dropped the printer job and drove over. %s is fixed. I am putting one hour response in the planning notes with your name next to it."},
+	},
+	"qbr": {
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "%s is your best account and they are %d%% happy. A business review is where renewals are won, and where I would sell them the backup service. Do it at their office if you can.",
+			"options": [
+				{"id": "onsite", "label": "GO TO THEIR OFFICE (%d MIN EACH WAY)"},
+				{"id": "phone", "label": "RUN IT BY PHONE (1 HOUR)"},
+				{"id": "report", "label": "SEND THE REPORT, SKIP THE MEETING"},
+			],
+		},
+	},
+	"crypto": {
+		"card": {
+			"speaker": "Atty. Spence",
+			"text": "It hit us at nine this morning. Every file on the paralegal's PC is locked and there is a countdown on the screen. I called you first, before my wife. Please tell me you are going to fix this.",
+			"options": [
+				{"id": "comfort", "label": "I AM ON MY WAY. DO NOT PAY ANYONE"},
+				{"id": "renew", "label": "LET'S SECURE YOU FOR ANOTHER YEAR"},
+				{"id": "backup", "label": "THAT IS WHAT MANAGED BACKUP IS FOR"},
+			],
+		},
+		"res_comfort": {"speaker": "Atty. Spence", "text": "Thank you. I do not know what I would do without you people. I will not forget that you picked up the phone."},
+		"res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let us do it now, before I change my mind."},
+	},
+	"slip": {
+		"card": {
+			"speaker": "%s",
+			"text": "My partners want to sign %s, but not before July 1. The budget year starts then. Can you hold the price?",
+			"options": [
+				{"id": "discount", "label": "SIGN BY FRIDAY: 10% OFF"},
+				{"id": "wait", "label": "FINE, JULY IT IS"},
+				{"id": "bluff", "label": "THE PRICE GOES UP ON JULY 1"},
+			],
+		},
+		"res_discount": {"speaker": "%s", "text": "Ten percent off and a signature by Friday? Done. Send the paperwork."},
+		"res_wait": {"speaker": "%s", "text": "Thank you for understanding. Call me on the second of July."},
+		"res_bluff_win": {"speaker": "%s", "text": "I did not know prices go up on the first. All right, we sign today."},
+		"res_bluff_lose": {"speaker": "%s", "text": "We talked to ByteBrothers and their price does not go up on the first. We are going with them. No hard feelings."},
+	},
+	"rise": {
+		"lynk": {"from": "Alan", "text": "Our prices have not moved in two years. Our costs have. Tell Garrison I said so, nicely."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "Renewal season. The price rise letter has to go out 60 days before the contract date, so anyone renewing from week 15 on is covered by what you pick now. Raise everybody eight percent, raise only the clients who love us, or hold the line? Alan wants the margin. I want the logos.",
+			"options": [
+				{"id": "all", "label": "RAISE EVERYONE 8%"},
+				{"id": "happy", "label": "RAISE ONLY THE HAPPY ONES (70%+)"},
+				{"id": "none", "label": "HOLD THE PRICES"},
+			],
+		},
+		"res_all": {"speaker": "{tech_owner}", "text": "Everyone. Good. Some will complain and some will leave, and the ones who leave were the ones who cost us money."},
+		"res_happy": {"speaker": "{sales_owner}", "text": "Only the ones who love us. I like that. We keep the logos and Alan keeps the margin. Everybody is a little bit happy."},
+		"res_none": {"speaker": "{sales_owner}", "text": "Holding the line. Good for the renewals, I will take that. Alan will say something about costs, let him."},
+	},
+	"hipaa": {
+		"card": {
+			"speaker": "%s",
+			"text": "The HIPAA omnibus rule has been law since last September and our attorney says we must have a risk assessment on file. %s is in the paperwork. Are we compliant with you? Yes or no?",
+			"options": [
+				{"id": "sell", "label": "SELL A SECURITY REVIEW (OURS)"},
+				{"id": "moon", "label": "YES, FULLY COMPLIANT. NO WORRIES."},
+				{"id": "refer", "label": "WE DO THE TECH PART, NOT THE POLICY"},
+			],
+		},
+		"res_sell": {"speaker": "%s", "text": "A security review with encryption on the laptops? I can show that to the auditor. Send me a price for it."},
+		"res_moon": {"speaker": "%s", "text": "Fully compliant. That is a relief; I will tell the attorney. (Morgan reads the email and looks at the ceiling for a while.)"},
+		"res_refer": {"speaker": "%s", "text": "Fair enough. I appreciate you telling me what is yours and what is not. Most vendors would have said yes."},
+	},
+	"logo": {
+		"lynk": {"from": "Garrison", "text": "Harborview Dental Partners has eleven offices and wants one provider. That is the biggest logo we have ever seen. Please do not mess this up."},
+		"lynk_alan": {"from": "Alan", "text": "I saw the Harborview numbers. I do not sign deals that lose money on the first invoice."},
+		"garrison": {"speaker": "{sales_owner}", "text": "Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, Vic. A logo opens doors.", "ok": "WHAT DOES ALAN SAY?"},
+		"alan": {"speaker": "{tech_owner}", "text": "Thirty percent off puts that account at %d percent margin. My floor is %d. I will not sign a deal that costs us money to deliver. It is a logo, not a living.", "ok": "I HEAR YOU BOTH"},
+		"pick": {
+			"speaker": "Vic Marlowe",
+			"text": "Two owners, one account, and a prospect who wants an answer by Friday. Whose side are you on?",
+			"options": [
+				{"id": "garrison", "label": "GARRISON: TAKE THE LOGO AT 30% OFF"},
+				{"id": "alan", "label": "ALAN: 10% OFF, LET THEM WALK"},
+				{"id": "broker", "label": "BROKER A SCOPED 15% (2 HOURS)"},
+			],
+		},
+		"res_garrison": {"speaker": "{tech_owner}", "text": "Thirty percent off. Fine. I said what I said, I will remember who wanted the logo when payroll is short."},
+		"res_alan_win": {"speaker": "{sales_owner}", "text": "You held at ten percent and they still signed? I did not think you had it in you. Alan is smiling, I think."},
+		"res_alan_lose": {"speaker": "{sales_owner}", "text": "They went to ByteBrothers. At twenty-five percent off. I told you that logo was ours. Alan, do not say anything."},
+		"res_broker_win": {"speaker": "{sales_owner}", "text": "You put both of us in a room, scoped it first and they signed. Alan gave up three points and I gave up three. That is how it is done."},
+		"res_broker_lose": {"speaker": "{sales_owner}", "text": "Two owners and no answer by Friday. They signed a deal with somebody who could say yes. We lost the logo and the afternoon."},
+	},
+	"refund": {
+		"card": {
+			"speaker": "%s",
+			"text": "%s: your handover promised us a one hour response and we have waited two days. We want a refund of the last month, $%d, or we walk. I am not angry. I am done.",
+			"options": [
+				{"id": "refund", "label": "REFUND THE MONTH (-$%d)"},
+				{"id": "credit", "label": "OFFER HALF A MONTH AND A RESET"},
+				{"id": "refuse", "label": "REFUSE: THE CONTRACT SAYS SO"},
+			],
+		},
+		"res_refund": {"speaker": "%s", "text": "A refund and an apology. That is more than I expected from a salesman. We will give you another chance."},
+		"res_credit_win": {"speaker": "%s", "text": "Half a month and a meeting where Dan and Morgan explain what went wrong? That I can accept."},
+		"res_credit_lose": {"speaker": "%s", "text": "A credit is not a refund. We will think about whether we renew. You have not heard the last of this."},
+		"res_refuse": {"speaker": "%s", "text": "The contract says no refunds. It also says one hour response. Interesting. We will be calling our attorney."},
+	},
+	"recruit": {
+		"card": {
+			"speaker": "Trent Dagmar",
+			"text": "Vic. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
+			"options": [
+				{"id": "leave", "label": "GIVE NOTICE: I AM TAKING THE JOB"},
+				{"id": "counter", "label": "TELL GARRISON, ASK FOR A RAISE"},
+				{"id": "both", "label": "KEEP BOTH DOORS OPEN, SAY NOTHING"},
+				{"id": "decline", "label": "NO THANKS. I AM LOYAL TO PIXEL."},
+			],
+		},
+		"res_leave": {"speaker": "{sales_owner}", "text": "I am sorry to hear it. Finish the quarter strong. And I will expect your clients to stay with us, not follow you down the road."},
+		"res_counter_yes": {"speaker": "{sales_owner}", "text": "ByteBrothers called you? Of course they did. You have been the best thing to happen to this company in a year. I can do one hundred more a week and a title. Stay."},
+		"res_counter_no": {"speaker": "{sales_owner}", "text": "I would love to match them. I cannot, not this quarter. I hope you understand. The door is not locked."},
+		"res_both_caught": {"speaker": "{sales_owner}", "text": "Trent Dagmar mentioned at the Chamber breakfast that you were on his shortlist. He thought I knew. I did not know. We will talk about trust."},
+		"res_decline": {"speaker": "{sales_owner}", "text": "You said no to ByteBrothers? To their face? Vic, I will not forget that. Neither will Alan, though he will never say so."},
+	},
+	"diligence": {
+		"lynk": {"from": "Garrison", "text": "Summit Managed Holdings is looking at buying us. Their auditor comes Thursday. Be charming and be accurate, in that order if you must."},
+		"card": {
+			"speaker": "Ms. Pell",
+			"text": "Mr. Marlowe, I am auditing the book you sold for Summit Managed Holdings. Three questions: how many clients left in the first 90 days, how many commissions were clawed back, and how many promises in the handover binders were not kept? I have the paperwork. I would like your version.",
+			"options": [
+				{"id": "disclose", "label": "TELL HER ALL (%d LEFT, %d CLAWED)"},
+				{"id": "shade", "label": "SAY THE NUMBERS ARE FINE"},
+				{"id": "refer", "label": "SEND HER TO MORGAN AND ALAN"},
+			],
+		},
+		"res_disclose_clean": {"speaker": "Ms. Pell", "text": "That matches the binders to the dollar. A clean book is rare. Summit pays an earn-out on retention and yours looks good."},
+		"res_disclose": {"speaker": "Ms. Pell", "text": "You told me the bad numbers before I found them. I note that. The earn-out will be tied to retention, so the clients you still have matter a great deal."},
+		"res_shade_clean": {"speaker": "Ms. Pell", "text": "The numbers are fine, you say, and they are. I had expected more drama from a salesman."},
+		"res_shade_caught": {"speaker": "Ms. Pell", "text": "Mr. Marlowe, your binders and your answers do not agree. I have noted it in the file and Summit will take that into account. So will Mr. Alan."},
+		"res_shade_away": {"speaker": "Ms. Pell", "text": "Fine, the numbers are fine. I will take your word for it. (Morgan does not.)"},
+		"res_refer": {"speaker": "Ms. Pell", "text": "You send me to the delivery side. Honest, in its way. I will see what Morgan says about the promises."},
+	},
+	"outing": {
+		"team": {"text": "You closed the quarter and the crew carried the load. A team night would be noticed. Come out with us?"},
+		"client": {"text": "%s has been on the fence. Dinner with the owner and the crew at the grill might tip it. Bring your good tie and no shop talk."},
+		"team_done": "THE CREW FEELS SEEN: DELIVERY HAS A LITTLE ROOM FOR THE NEXT TWO WEEKS.",
+		"client_done": "THE OWNER OF %s ENJOYED THE EVENING: THE LEAD WARMS BY %d.",
+		"client_bad": "THE DINNER WAS AWKWARD. THE OWNER OF %s IS NOT SOLD.",
+	},
+	"crunch2": {
+		"speaker": "{sales_owner}",
+		"text": "Two weeks to the end of the year's last quarter. You are at %d%% of quota. Do you want my sign-off for 20%% discounts until the end of August, or hold the price?",
+		"options": [{"id": "yes", "label": "YES, APPROVE 20% OFF FOR THE CRUNCH"}, {"id": "no", "label": "NO, HOLD THE PRICE"}],
+	},
+	"sandbag": {"label": "COUNT EXTRA DEALS NEXT QUARTER", "hint": "NEEDS 60% OF QUOTA FIRST"},
+	"endings": {
+		"director": "YOU TAKE THE SALES DIRECTOR JOB. A TEAM OF ONE REP, A BIGGER QUOTA AND GARRISON'S OLD CLIENT LIST. THE BELL IS YOURS NOW.",
+		"stay": "YOU STAY ON AS ACCOUNT MANAGER. THE BOOK YOU BUILT IS YOURS TO KEEP SAFE, AND NEXT YEAR'S QUOTA IS ALREADY ON YOUR DESK.",
+		"leave": "YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS GET A PHONE CALL FROM YOU ON MONDAY. SOME OF THEM ANSWER.",
+		"leave_followed": "YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS YOU LOOKED AFTER FOLLOW YOU, ONE PHONE CALL AT A TIME. GARRISON SENDS A BOTTLE OF SOMETHING AND A LAWYER'S LETTER.",
+		"leave_alone": "YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS GET A PHONE CALL FROM YOU ON MONDAY. NOBODY ANSWERS. YOU HAD PROMISED THEM A LOT.",
+		"rollup": "SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LEAD WITH AN EARN-OUT OF $%d TIED TO HOW MANY OF YOUR CLIENTS STAY. KEEP THE PROMISES YOU MADE.",
+		"let_go": "YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.",
+	},
+}
+var BEAT_TEXT: Dictionary = DEFAULT_BEAT_TEXT.duplicate(true)
+
 var leads: Array = []  # {id, name, type, who, users, pain, quality, fee, site, week, stage, called, visited, moon, why}
 var book: Array = []  # won deals: {id, name, type, mrr, margin, week, promise, gap, mood, complain, resolved}
 var next_id := 1
@@ -156,6 +400,15 @@ var renewals_won := 0
 var renewals_lost := 0
 var upsells := 0
 var handovers := 0
+# C3
+var flags: Dictionary = {}  # what the story beats decided (chamber, paws, undercut, p1, qbr, crypto, slip, rise, hipaa, logo, refund, bb, summit, dd ...)
+var raise_wage := 0  # weekly raise Garrison gave you against the ByteBrothers offer
+var sandbag := false  # Garrison let you count deals signed after the quota is met in the next quarter
+var team_until := 0  # a good team night buys delivery capacity until this week
+var distributed := 0  # cash above CASH_CAP the owners took out
+var week_distrib := 0
+var visit_entry: Dictionary = {}  # the book entry a business review visit is for
+var qbr_renewal := false
 var _poll := 0.0
 
 
@@ -212,6 +465,14 @@ func reset() -> void:
 	renewals_lost = 0
 	upsells = 0
 	handovers = 0
+	flags = {}
+	raise_wage = 0
+	sandbag = false
+	team_until = 0
+	distributed = 0
+	week_distrib = 0
+	visit_entry = {}
+	qbr_renewal = false
 	if Hints.objective.begins_with("RING THE SALES BELL") or Hints.objective.begins_with("HANDOVER"):
 		Hints.objective = ""
 
@@ -231,9 +492,8 @@ func in_mode() -> bool:
 	return Campaign.active and Campaign.mode == "sales"
 
 
-# a new run or a continued one starts here (Campaign.new_game / continue_game): outings return with the chamber lunch in S3
+# a new run or a continued one starts here (Campaign.new_game / continue_game); outings follow the title menu's setting (C3: team night, dinner with a prospect)
 func begin_run() -> void:
-	Outings.enabled = false
 	Owner.vic_plan = plan
 
 
@@ -344,7 +604,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 	var pick: String = pool[r.randi() % pool.size()]
 	used_names.append(pick)
 	var users := 6 + r.randi() % 30
-	var quality := 20 + r.randi() % 46
+	var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead")))
 	var pain: String = info.pains[r.randi() % info.pains.size()]
 	var who: String = info.who[r.randi() % info.who.size()]
 	var lead := {
@@ -473,8 +733,11 @@ func _beat_cards(day: int) -> void:
 		_crunch_card()
 	elif day == 13 and warned:
 		_warning_card()
+	elif day == 18 and not quota_met():
+		_crunch_card(true)
 	elif day >= 2:
 		_review_card(day)
+	SalesBeats.week(day)
 
 
 func _review_card(day: int) -> void:
@@ -497,7 +760,7 @@ func _quota_card() -> void:
 		options,
 		func(id: String) -> void:
 			quota_level = id
-			Cards.ask(
+			Cards.ask_first(
 				"{sales_owner}",
 				"%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee. If a client leaves inside 90 days the commission comes back: half on salary, all of it on the other two plans." % str(QUOTAS[id].words),
 				[
@@ -524,15 +787,26 @@ func _floor_card() -> void:
 	)
 
 
-func _crunch_card() -> void:
+func _crunch_card(second := false) -> void:
+	if second:
+		var row: Dictionary = BEAT_TEXT.crunch2
+		var opts := []
+		for o in row.options:
+			opts.append({"label": str(o.label), "id": str(o.id)})
+		Cards.ask(str(row.speaker), str(row.text) % quota_pct(1), opts, func(id: String) -> void: crunch = id == "yes")
+		return
+	var sb: Dictionary = BEAT_TEXT.sandbag
 	Cards.ask(
 		"{sales_owner}",
 		"Two weeks to the quarter. You are at %d%% of quota. Do you want my sign-off for 20%% discounts on every deal until June 30, or hold the price?" % quota_pct(),
 		[
 			{"label": "YES, APPROVE 20% OFF FOR THE CRUNCH", "id": "yes"},
 			{"label": "NO, HOLD THE PRICE", "id": "no"},
+			{"label": str(sb.label), "id": "sandbag", "enabled": quota_pct() >= 60, "hint": str(sb.hint)},
 		],
-		func(id: String) -> void: crunch = id == "yes"
+		func(id: String) -> void:
+			crunch = id == "yes"
+			sandbag = id == "sandbag"
 	)
 
 
@@ -575,6 +849,8 @@ func capacity() -> float:
 			recent += 1
 	var open := Msp.open_tickets().size()
 	var cap := 3.0 - 0.15 * maxf(0.0, float(open) - 3.0) - 0.5 * float(recent) - 0.05 * float(book.size()) + 0.4 * float(Owner.extra_staff.size())
+	if Campaign.day <= team_until:
+		cap += 0.3  # a good team night
 	return clampf(cap, 0.5, 3.5)
 
 
@@ -673,6 +949,8 @@ func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
 	var gap := promise_gap(l, q)
 	var com := commission_for(mrr)
 	var qi := quarter_index()
+	if sandbag and qi == 0 and int(q_signed[0]) >= quota_target(0):
+		qi = 1  # the quota is met: Garrison lets the extra deals count in the next quarter
 	q_signed[qi] = int(q_signed[qi]) + mrr
 	week_new += mrr
 	week_deals += 1
@@ -693,6 +971,7 @@ func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
 		"signed_mrr": mrr,
 		"margin": float(q.margin),
 		"week": Campaign.day,
+		"qi": qi,
 		"promise": str(q.promise),
 		"gap": gap,
 		"mood": 72,
@@ -884,15 +1163,19 @@ func _go(l: Dictionary, key: int) -> void:
 		Computer.close()
 	visit_lead = int(l.id)
 	week_visits += 1
-	Onsite.start_visit(key, "pitch")
+	Onsite.start_visit(key, "discovery" if str(l.get("story", "")) == "paws" else "pitch")
 
 
 func visit_name(default_name: String) -> String:
+	if not visit_entry.is_empty():
+		return str(visit_entry.get("name", default_name))
 	var l := lead_by_id(visit_lead)
 	return default_name if l.is_empty() else str(l.name)
 
 
 func visit_owner() -> String:
+	if not visit_entry.is_empty():
+		return str(visit_entry.get("who", ""))
 	var l := lead_by_id(visit_lead)
 	return "" if l.is_empty() else str(l.who)
 
@@ -909,7 +1192,7 @@ func pitch_answer(id: String, text: String) -> void:
 		"report":
 			l.quality = mini(100, int(l.quality) + 6)
 		"pain":
-			l.quality = mini(100, int(l.quality) + 10)
+			l.quality = mini(100, int(l.quality) + 10 + int(round(Build.sales_fx("pain"))))
 		_:
 			l.quality = mini(100, int(l.quality) + 14)
 			l.moon = true
@@ -922,8 +1205,154 @@ func pitch_answer(id: String, text: String) -> void:
 func visit_end() -> void:
 	var l := lead_by_id(visit_lead)
 	visit_lead = 0
+	visit_entry = {}
+	qbr_renewal = false
 	if not l.is_empty() and bool(l.visited):
 		Hints.toast("BACK AT THE OFFICE. QUOTE %s IN SALESHOUND." % str(l.name).to_upper(), 4.0)
+
+
+# ---- the business review at the client's office (C3) -----------------------------------------------------------
+# a book client has no site of its own: the review happens in the client's own office when the client index has a site (Acme Dental,
+# Hoot and Holler ...), else in the b skin office of its kind (a stand-in), and counts like the card version
+func qbr_site(e: Dictionary) -> Dictionary:
+	var c := int(e.get("client", -1))
+	if c >= 0 and Onsite.has_site(c):
+		return {"key": c, "stand": false}
+	var type := str(e.get("type", QBR_TYPE.get(c, "dental")))
+	return {"key": site_key(type), "stand": true}
+
+
+func qbr_minutes(e: Dictionary) -> int:
+	return Onsite.estimate_minutes(int(qbr_site(e).key))
+
+
+func qbr_hours(e: Dictionary) -> int:
+	return int(ceil(float(qbr_minutes(e) * 2) / 60.0 + 1.0))
+
+
+func can_qbr_visit(e: Dictionary) -> String:
+	if Onsite.active or Onsite.busy:
+		return "YOU ARE ALREADY OUT"
+	if slots_left() < qbr_hours(e):
+		return "NEEDS %d HOURS" % qbr_hours(e)
+	return ""
+
+
+func qbr_visit(e: Dictionary, renewal := true) -> void:
+	if can_qbr_visit(e) != "":
+		return
+	var site := qbr_site(e)
+	visit_entry = e
+	visit_lead = int(e.id) if int(e.id) > 0 else 0
+	qbr_renewal = renewal
+	week_visits += 1
+	if Computer.is_open:
+		Computer.close()
+	Onsite.start_visit(int(site.key), "qbr", bool(site.stand))
+
+
+# the owner's answer at the review (Onsite._meeting_answer): the text card first, then the effects
+func qbr_answer(id: String, text: String) -> void:
+	var e := visit_entry
+	if e.is_empty():
+		return
+	World.clock = minf(23.0, World.clock + 1.0)
+	e["qbr_week"] = Campaign.day
+	var renewal := qbr_renewal
+	Cards.ask(str(e.get("who", "The owner")), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: qbr_apply(e, id, renewal, true))
+
+
+# the phone version: the same three talks as a card
+func qbr_card(e: Dictionary, renewal: bool) -> void:
+	var mt: Dictionary = Onsite.MEETINGS.get("qbr", {})
+	var options := []
+	for o in mt.get("options", []):
+		options.append({"label": str(o.label), "id": str(o.id)})
+	Cards.ask(str(e.get("who", "The owner")), str(mt.get("text", "It is review time.")), options, func(id: String) -> void: qbr_apply(e, id, renewal, false))
+
+
+func qbr_apply(e: Dictionary, id: String, renewal: bool, in_person: bool) -> void:
+	Career.add("qbrs")
+	var bonus := 0.0
+	match id:
+		"numbers":
+			Retention.adjust_mood(e, 6)
+			bonus = 0.08
+		"listen":
+			Retention.adjust_mood(e, 10)
+			bonus = 0.12
+		_:
+			Retention.adjust_mood(e, 3)
+			bonus = 0.05
+	if in_person:
+		bonus += 0.04
+	var finish := func() -> void:
+		if renewal:
+			Retention.renew_roll(e, bonus, false)
+		else:
+			e["qbr_bonus"] = float(e.get("qbr_bonus", 0.0)) + bonus * 0.5
+		changed.emit()
+	if id == "service":
+		Retention.upsell_card(e, finish)
+	else:
+		finish.call()
+
+
+# the finding at the Paws and Claws discovery visit (Onsite._found)
+func discovery_found(f: Dictionary) -> void:
+	SalesBeats.discovery_found(f)
+
+
+# ---- outings: a team night and the dinner with a prospect (C3) ----------------------------------------------------
+func outing_kind() -> String:
+	if not in_mode():
+		return ""
+	var day := Campaign.day
+	if SalesBeats.TEAM_WEEKS.has(day):
+		return "team"
+	if SalesBeats.DINNER_WEEKS.has(day) and not dinner_lead().is_empty():
+		return "client"
+	return ""
+
+
+# the lead you would take to dinner: the best open one
+func dinner_lead() -> Dictionary:
+	var best := {}
+	for l in open_leads():
+		if best.is_empty() or int(l.quality) > int(best.quality):
+			best = l
+	return best
+
+
+func outing_text() -> String:
+	if outing_kind() == "client":
+		var l := dinner_lead()
+		flags["dinner_lead"] = int(l.id)
+		return str(BEAT_TEXT.outing.client.text) % str(l.name)
+	return str(BEAT_TEXT.outing.team.text)
+
+
+# the outing is over: what it did for the book (the lines go on the result page)
+func outing_done(game: String, stars: int) -> Array:
+	var out := []
+	if outing_kind() == "client" and game == "dinner" and flags.has("dinner_lead"):
+		var l := lead_by_id(int(flags.dinner_lead))
+		if not l.is_empty():
+			var gain: int = [-4, 6, 11, 16][clampi(stars, 0, 3)] if stars >= 0 else -6
+			l["quality"] = clampi(int(l.quality) + gain, 0, 100)
+			Deals.touch(l, "DINNER, %d STARS" % maxi(stars, 0))
+			if stars >= 2 and str(l.stage) == "QUOTED":
+				l["follow"] = int(l.get("follow", 0)) + 1
+			out.append((str(BEAT_TEXT.outing.client_done) % [str(l.name).to_upper(), gain]) if gain > 0 else (str(BEAT_TEXT.outing.client_bad) % str(l.name).to_upper()))
+			flags["dinners"] = int(flags.get("dinners", 0)) + 1
+	elif outing_kind() == "team":
+		flags["team_nights"] = int(flags.get("team_nights", 0)) + 1
+		Social.change("Dan", 1)
+		Social.change("Morgan", 1)
+		if stars >= 2:
+			team_until = Campaign.day + 2
+			out.append(str(BEAT_TEXT.outing.team_done))
+	return out
 
 
 # ---- the sales bell ----------------------------------------------------------------------------------
@@ -999,8 +1428,13 @@ func settle() -> Dictionary:
 	for d in book:
 		serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
 	var revenue := int(est.revenue) + book_mrr() - lost_base + expansion_base
-	var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost + week_clawback
+	var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost + week_clawback - raise_wage
 	Owner.cash += profit
+	week_distrib = 0
+	if Owner.cash > CASH_CAP:
+		week_distrib = Owner.cash - CASH_CAP
+		distributed += week_distrib
+		Owner.cash = CASH_CAP  # the owners take the rest out as a distribution
 	Owner.history.append({"day": day, "profit": profit, "ebitda": profit, "cash": Owner.cash})
 	var qi := quarter_index(day)
 	var q: Dictionary = QUARTERS[qi]
@@ -1040,7 +1474,7 @@ func settle() -> Dictionary:
 		["CLIENT MOOD", "%d%% (%d NEW)" % [int(mood), book.size()], green if mood >= 70.0 else (red if mood < 50.0 else warn)],
 		["SELLING HOURS", "%d CALLS, %d VISITS, %d QUOTES" % [week_calls, week_visits, week_quotes], Color.WHITE],
 		["NEW BOOK", "$%d/WK, %d CLIENT%s, %d AT RISK" % [book_mrr(), book.size(), "" if book.size() == 1 else "S", at_risk()], Color.WHITE],
-		["COMPANY", "EBITDA %s, CASH %s" % [_money(profit), _money(Owner.cash)], green if profit >= 0 else red],
+		["COMPANY", "EBITDA %s, CASH %s%s" % [_money(profit), _money(Owner.cash), (" (CAP)" if week_distrib > 0 else "")], green if profit >= 0 else red],
 		["VERDICT", verdict, red if grade in ["C", "D"] or (closing and q_result[qi] == "MISS") else green],
 	]
 	if warned and q_result[0] == "MISS" and day > int(QUARTERS[0].to):
@@ -1084,28 +1518,36 @@ func director_ok() -> bool:
 		and (q_result[0] == "HIT" or float(total) >= 0.9 * float(total_target))
 		and client_mood() >= 60.0
 		and Campaign.rep >= 55
+		and SalesBeats.churn_low()
 	)
 
 
 func offers() -> Array:
 	var out := []
+	var leave := {"id": "leave", "label": "TAKE YOUR BOOK TO BYTEBROTHERS", "desc": "THEY OFFER MORE MONEY. THE CLIENTS WILL FOLLOW YOU, OR NOT."}
+	if SalesBeats.bb_signed():
+		return [leave]  # you gave notice at week 18: the promotion is off the table
 	if pip_failed():
 		out.append({"id": "let_go", "label": "CLEAN OUT YOUR DESK", "desc": "TWO MISSED QUARTERS. GARRISON WALKS YOU TO THE FRONT DOOR."})
 	else:
 		if director_ok():
 			out.append({"id": "director", "label": "BECOME SALES DIRECTOR", "desc": "GARRISON GIVES YOU THE TEAM AND THE TERRITORY. ALAN SIGNS OFF ON THE MARGIN."})
 		out.append({"id": "stay", "label": "STAY ON AS ACCOUNT MANAGER", "desc": "SAME DESK, A BIGGER BOOK AND A QUOTA FOR NEXT YEAR."})
-	if wins >= 3:
-		out.append({"id": "leave", "label": "TAKE YOUR BOOK TO BYTEBROTHERS", "desc": "THEY OFFER MORE MONEY. THE CLIENTS WILL FOLLOW YOU, OR NOT."})
+		if SalesBeats.rollup_ok():
+			out.append({"id": "rollup", "label": "JOIN THE ROLL-UP (SUMMIT)", "desc": "SUMMIT MANAGED HOLDINGS BUYS THE COMPANY. YOUR EARN-OUT IS $%d AND DEPENDS ON RETENTION (%d%%)." % [SalesBeats.earn_out(), SalesBeats.retention_pct()]})
+	if SalesBeats.bb_open():
+		out.append(leave)
 	return out
 
 
-const EPILOGUES := {
-	"director": "YOU TAKE THE SALES DIRECTOR JOB. A TEAM OF ONE REP, A BIGGER QUOTA AND GARRISON'S OLD CLIENT LIST. THE BELL IS YOURS NOW.",
-	"stay": "YOU STAY ON AS ACCOUNT MANAGER. THE BOOK YOU BUILT IS YOURS TO KEEP SAFE, AND NEXT YEAR'S QUOTA IS ALREADY ON YOUR DESK.",
-	"leave": "YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS GET A PHONE CALL FROM YOU ON MONDAY. SOME OF THEM ANSWER.",
-	"let_go": "YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.",
-}
+# the epilogue of an ending (the text is BEAT_TEXT.endings); ByteBrothers and the roll-up read the book
+func epilogue(ending: String) -> String:
+	var t: Dictionary = BEAT_TEXT.endings
+	if ending == "leave":
+		return str(t.leave_followed if (client_mood() >= 65.0 and clawbacks == 0) else (t.leave_alone if client_mood() < 50.0 else t.leave))
+	if ending == "rollup":
+		return str(t.rollup) % SalesBeats.earn_out()
+	return str(t.get(ending, ""))
 const DEFAULT_QUOTE := "DOES THE JOB. HARD TO READ."
 
 
@@ -1130,6 +1572,9 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["DEALS WON %d  QUOTES LOST %d  COMMISSION $%d" % [wins, losses, commission_total], ink])
 			lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
 			lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
+			lines.append(["STORY: " + story_summary(), ink])
+			if not Build.is_flat(Build.cur()):
+				lines.append([Build.describe(Build.cur(), "sales", "Vic"), ink])
 			lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
 		1:
 			lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])
@@ -1141,12 +1586,28 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["YOUR OPTIONS", blue])
 		_:
 			lines.append(["THE END", blue])
-			lines.append([str(EPILOGUES.get(ending, "")), ink])
+			lines.append([epilogue(ending), ink])
 	return lines
+
+
+# one line for the review: what you did at the beats
+func story_summary() -> String:
+	var parts := []
+	if str(flags.get("bb", "")) != "":
+		parts.append("BB " + str(flags.bb).to_upper())
+	if str(flags.get("dd", "")) != "":
+		parts.append("AUDIT " + str(flags.dd).to_upper())
+	parts.append("KEPT %d%%" % SalesBeats.retention_pct())
+	return ", ".join(parts)
 
 
 func to_dict() -> Dictionary:
 	return {
+		"flags": flags,
+		"raise_wage": raise_wage,
+		"sandbag": sandbag,
+		"team_until": team_until,
+		"distributed": distributed,
 		"leads": leads,
 		"book": book,
 		"next_id": next_id,
@@ -1185,6 +1646,11 @@ func to_dict() -> Dictionary:
 
 func from_dict(data: Dictionary) -> void:
 	reset()
+	flags = data.get("flags", {})
+	raise_wage = int(data.get("raise_wage", 0))
+	sandbag = bool(data.get("sandbag", false))
+	team_until = int(data.get("team_until", 0))
+	distributed = int(data.get("distributed", 0))
 	leads = data.get("leads", [])
 	book = data.get("book", [])
 	next_id = int(data.get("next_id", 1))

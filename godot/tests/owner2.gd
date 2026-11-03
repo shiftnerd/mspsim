@@ -204,9 +204,10 @@ func _init() -> void:
 	c.day = 17
 	o._peer_goal()
 	_check(
-		c.rep == rep0 + 2 and not cards.is_open,
-		"hit the goal: reputation up, and no new goal after the last meeting"
+		c.rep == rep0 + 2 and cards.is_open and cards.text.contains("GOAL MET"),
+		"hit the goal: reputation up and a card says so (a last goal is asked at week 17)"
 	)
+	_clear(cards)
 
 	# ---- the maturity badge
 	c.new_game("owner")

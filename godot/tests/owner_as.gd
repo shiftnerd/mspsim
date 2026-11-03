@@ -117,7 +117,7 @@ func _init() -> void:
 	var labels := ""
 	for opt in cards.options:
 		labels += str(opt.label) + "|"
-	_check(labels.contains("SEND Alan NOW") and not labels.contains("{"), "no raw tokens on a card: " + labels.substr(0, 60))
+	_check(labels.contains("SEND ALAN NOW") and not labels.contains("{"), "no raw tokens on a card: " + labels.substr(0, 60))
 	_clear(cards, 2)
 	var banned := ["senior tech", "the techs", "Boss,", "three techs"]
 	var hits := []

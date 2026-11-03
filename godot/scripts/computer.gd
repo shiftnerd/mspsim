@@ -2144,7 +2144,7 @@ func _board_books(a: Rect2) -> void:
 	var right := [
 		["WEEK", "%d OF %d" % [Campaign.day, Campaign.TOTAL_DAYS], TXT],
 		["A/R OWED", "$%d" % Owner.ar_total(), AMBER if Owner.ar_total() > 0 else TXT],
-		["COMPANY VALUE", "$%d (%.1fX)" % [Owner.valuation(), Owner.multiple()], Color("6b421c")],
+		["COMPANY VALUE", Owner.value_text(), Color("6b421c")],
 		["TEAM SPEED", "%.1f" % Owner.team_speed(), TXT],
 		["OWNER DRAW", "$%d/WK (%s)" % [Owner.draw_due() if Campaign.day >= Owner.DRAW_START else int(Owner.DRAW.get(Owner.draw_policy, 0)), Owner.draw_policy.to_upper()], TXT],
 		["GOAL", Owner.goal_row()[1], TXT],

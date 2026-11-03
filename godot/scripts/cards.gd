@@ -21,6 +21,7 @@ var _hits: Array = []
 var _mouse := Vector2.ZERO
 var _queue: Array = []
 var _opened := 0  # msec the card appeared: early confirms are ignored
+var _draining := false  # _show_next is handing out the next queued card (it may skip the line)
 
 
 func _ready() -> void:
@@ -36,8 +37,12 @@ func _ready() -> void:
 func ask(
 	who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()
 ) -> void:
-	if is_open or DayReport.is_open:
+	# X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
+	# report covers the screen, or while older cards are still waiting joins the back of the queue.
+	if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
 		_queue.append([who, body, choices, on_pick, valid])
+		if not is_open and not DayReport.is_open:
+			_show_next()
 		return
 	speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
 	text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
@@ -46,7 +51,7 @@ func ask(
 		var entry: Dictionary = choice
 		if str(entry.get("label", "")).find("{") >= 0:
 			entry = entry.duplicate()
-			entry["label"] = Roles.fill(str(entry.label))
+			entry["label"] = Roles.fill(str(entry.label)).to_upper()  # X9: the UI is all caps, names included
 		options.append(entry)
 	choices = options
 	var any_enabled := false
@@ -69,6 +74,13 @@ func ask(
 	_mouse = get_viewport().get_mouse_position()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	_canvas.queue_redraw()
+
+
+# a follow-up to the card that was just picked: it goes in front of cards that were already waiting
+func ask_first(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+	_queue.push_front([who, body, choices, on_pick, Callable()])
+	if not is_open and not DayReport.is_open:
+		_show_next()
 
 
 func pick(index: int) -> void:
@@ -98,13 +110,31 @@ func _show_next() -> void:
 			if next[3].is_valid():
 				next[3].call("__none")
 			continue
+		_draining = true
 		ask(next[0], next[1], next[2], next[3], valid)
+		_draining = false
 
 
 # cards that were asked while the day report covered the screen
 func flush() -> void:
-	if not is_open and not DayReport.is_open:
+	if DayReport.is_open:
+		return
+	if is_open:
+		_canvas.visible = true  # a card that opened under the report comes back after it
+		_opened = Time.get_ticks_msec()
+		_canvas.queue_redraw()
+	else:
 		_show_next()
+
+
+# the weekly report is about to cover the screen: a card that is open waits underneath (its keys are ignored)
+func cover() -> void:
+	_canvas.visible = false
+
+
+# how many cards wait to be shown (tests)
+func waiting() -> int:
+	return _queue.size()
 
 
 # Esc picks the option whose id is "leave" (conversations)
@@ -124,7 +154,7 @@ func _move(step: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not is_open:
+	if not is_open or DayReport.is_open:
 		return
 	if event is InputEventMouseMotion:
 		_mouse = get_viewport().get_mouse_position()
@@ -204,7 +234,9 @@ func _paint() -> void:
 		if not on and opt.has("hint"):
 			label += " [%s]" % str(opt.hint)
 		var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
-		var room := chars - 1 - (chip.length() + 1 if chip != "" else 0)
+		var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
+		var room := chars - 1 - (chip.length() + 1 if chip != "" else 0) - (tchip.length() + 1 if tchip != "" else 0)
+		var right_edge := r.end.x
 		PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
 		if chip != "":
 			var tint := Color("2f7d46")
@@ -216,6 +248,14 @@ func _paint() -> void:
 			var chip_rect := Rect2(r.end.x - cw - 1.0, r.position.y + 1.0, cw, 8.0)
 			_canvas.draw_rect(chip_rect, tint)
 			PixelFont.draw(_canvas, chip, chip_rect.position + Vector2(2, 1), WHITE)
+			right_edge = chip_rect.position.x - 1.0
+		if tchip != "":
+			var dir := int(opt.get("trust_dir", 0))
+			var ttint := Color("2f7d46") if dir > 0 else (Color("b02a2a") if dir < 0 else Color("6b7385"))
+			var tw := float(tchip.length()) * 4.0 + 3.0
+			var trect := Rect2(right_edge - tw - 1.0, r.position.y + 1.0, tw, 8.0)
+			_canvas.draw_rect(trect, ttint)
+			PixelFont.draw(_canvas, tchip, trect.position + Vector2(2, 1), WHITE)
 		_hits.append({"r": r, "i": i})
 		y += 11.0
 	var m := _mouse.floor()

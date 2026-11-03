@@ -108,12 +108,12 @@ const BEATS := {
 			},
 			{
 				"label": "RAISE THE CREW'S PAY ($60/WEEK)",
-				"fx": {"weekly": 60, "burnout": -6, "speed": 0.03, "trust": {"Alan": 0, "Garrison": 4}},
+				"fx": {"payroll": 60, "burnout": -6, "speed": 0.03, "trust": {"Alan": 0, "Garrison": 4}},
 				"text": "The crew gets a raise. Morgan says the break room mood improved by one whole donut."
 			},
 			{
 				"label": "SPLIT IT: SMALL RAISE, SMALL FEE RISE",
-				"fx": {"price": 0.04, "weekly": 30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 1}},
+				"fx": {"price": 0.04, "payroll": 30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 1}},
 				"text": "Everyone gets a little and everyone complains a little. {partner} calls it fair."
 			},
 		],
@@ -154,6 +154,7 @@ var met: Array = []  # beats already held
 var overrides := 0  # cards where you did what they opposed
 var follows := 0
 var _pending_leave := false
+var sulk := 0  # weeks the partner holds back after you overrode them (no owner-hours help, slower hands)
 
 
 func reset() -> void:
@@ -163,10 +164,11 @@ func reset() -> void:
 	overrides = 0
 	follows = 0
 	_pending_leave = false
+	sulk = 0
 
 
 func to_dict() -> Dictionary:
-	return {"trust": trust, "left": left, "met": met, "overrides": overrides, "follows": follows}
+	return {"trust": trust, "left": left, "met": met, "overrides": overrides, "follows": follows, "sulk": sulk}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -176,6 +178,7 @@ func from_dict(data: Dictionary) -> void:
 	met = data.get("met", [])
 	overrides = int(data.get("overrides", 0))
 	follows = int(data.get("follows", 0))
+	sulk = int(data.get("sulk", 0))
 
 
 func who() -> String:
@@ -215,12 +218,13 @@ func trust_word() -> String:
 func hands() -> float:
 	if left or who() == "":
 		return 0.0
-	return 0.5 if trust >= BLOCK_TRUST else 0.35
+	var share := 0.5 if trust >= BLOCK_TRUST else 0.35
+	return share * (0.7 if sulk > 0 else 1.0)  # X9: a partner you overrode pulls fewer tickets for a while
 
 
 # owner hours the partner takes off you while they trust you
 func help_hours() -> float:
-	return 6.0 if active() and trust >= HELP_TRUST else 0.0
+	return 6.0 if active() and trust >= HELP_TRUST and sulk <= 0 else 0.0
 
 
 # ---- stance chips ----------------------------------------------------------------------------------------------
@@ -230,7 +234,7 @@ func _add(out: Dictionary, tag: String, amount: float) -> void:
 
 func _tag_fx(out: Dictionary, fx: Dictionary, w: float) -> void:
 	var cash := float(fx.get("cash", 0))
-	var weekly := float(fx.get("weekly", 0))
+	var weekly := float(fx.get("weekly", 0)) + float(fx.get("payroll", 0))
 	_add(out, "spend", (maxf(0.0, -cash) / 600.0 + maxf(0.0, weekly) / 100.0) * w)
 	if fx.has("marketing") and int(fx.marketing) > 0:
 		_add(out, "marketing", float(fx.marketing) / 900.0 * w)
@@ -327,16 +331,37 @@ func blocks(stance_id: String) -> bool:
 
 
 # the card was answered: following their stance earns trust, overriding costs it
-func on_pick(stance_id: String) -> void:
+func on_pick(stance_id: String) -> String:
 	match stance_id:
 		"agree":
 			follows += 1
 			change(2)
+			return "%s: TRUST +2." % who().to_upper()
 		"warn":
 			change(-1)
+			return "%s: TRUST -1." % who().to_upper()
 		"oppose":
+			# X9: going against a partner's firm no is felt: more trust lost each time, and they sulk for two weeks
 			overrides += 1
-			change(-3)
+			var cost := 5 + mini(overrides - 1, 3)
+			change(-cost)
+			sulk = 2
+			return "%s OPPOSED THIS: TRUST -%d, AND THEY HOLD BACK FOR TWO WEEKS." % [who().to_upper(), cost]
+	return ""
+
+
+# X9: what an option does to the trust of THIS partner: the arrows on a card ("UP", "DOWN", "SAME")
+func trust_delta(opt: Dictionary) -> int:
+	var fx: Dictionary = opt.get("fx", {})
+	if not fx.has("trust"):
+		return 0
+	return int((fx.trust as Dictionary).get(who(), 0))
+
+
+func trust_word_for(delta: int) -> String:
+	if delta > 0:
+		return "UP"
+	return "DOWN" if delta < 0 else "SAME"
 
 
 # ---- the weekly settle and the meetings --------------------------------------------------------------------------
@@ -344,6 +369,7 @@ func on_pick(stance_id: String) -> void:
 func week(profit: int) -> void:
 	if not Campaign.cards_active() or left:
 		return
+	sulk = maxi(0, sulk - 1)
 	if profit > 0 and Owner.cash >= 2000 and Campaign.day % 2 == 0:
 		change(1)
 	elif Owner.cash < 0:
