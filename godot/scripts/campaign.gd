@@ -527,6 +527,7 @@ func _end_day() -> void:
 		elif scars > 0 and r.grade in ["S", "A"]:
 			scars -= 1
 		r["rep_cap"] = rep_cap()
+	r["rep_delta"] = _tier_rep(int(r.rep_delta))
 	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
 	if r.get("bankrupt", false):
 		rep = 0
@@ -540,6 +541,15 @@ func _end_day() -> void:
 	history.append({"day": day, "grade": r.grade, "points": r.points})
 	Game.ui_open = true
 	DayReport.show_report(r)
+
+
+# Q6: the tier's say in the daily reputation move: on hard gains shrink and losses grow, on easy the other way round
+func _tier_rep(delta: int) -> int:
+	if delta == 0:
+		return 0
+	var pre := "tech." if mode == "tech" else "rep."
+	var m := Difficulty.f(pre + ("gain" if delta > 0 else "loss"))
+	return (1 if delta > 0 else -1) * maxi(1, roundi(absf(float(delta)) * m))
 
 
 func _ending(r: Dictionary) -> String:

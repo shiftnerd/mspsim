@@ -3990,6 +3990,10 @@ const FIXES := {
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
+# Q6: a workaround that comes back costs the client's patience (mood) and closing the rework earns little and does not count
+# as a closed ticket for the day's reputation, so a quick fix used on everything is net negative over a campaign
+const RETURN_MOOD := -3
+const REPEAT_POINTS := 2
 # other valid fixes. kind: quick (fast, little XP, may come back 1-2 days later), heavy (slow, always
 # works, costs the client something), clever (needs a skill level: faster, more XP).
 # for = the problems it clears (server = a server only); mult = time vs the proper fix;
@@ -4514,8 +4518,11 @@ func close_ticket(id: int) -> String:
     var points := 10 if not t.breached else 4
     if str(t.get("outcome", "")) in ["paid", "partial"]:
         points = 4
+    if bool(t.get("repeat", false)):
+        points = REPEAT_POINTS
     score += points
-    closed_ok += 1
+    if not bool(t.get("repeat", false)):
+        closed_ok += 1
     Career.note_ticket(str(t.fix))
     Skills.add_xp("networking" if t.internal else "people", 2)
     Social.note_ticket_closed(t)
@@ -4622,7 +4629,7 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
     ep.unsaved = false
     ep.asked = false
     var roll := alt_roll if alt_roll >= 0.0 else Difficulty.rng("msp.fix").randf()
-    if roll < float(d.get("ret", 0.0)) and not tk.is_empty():
+    if roll < float(d.get("ret", 0.0)) * Difficulty.cf("tech.alt_ret") and not tk.is_empty():
         _queue_return(tk, d, prob)
     changed.emit()
     return text
@@ -4681,6 +4688,8 @@ func spawn_return(item: Dictionary) -> void:
     }
     var t := create_problem(int(item.client), prob, "email")
     if not t.is_empty() and bool(item.get("esc", false)):
+        t["repeat"] = true  # Q6: a workaround that came back is rework, not a new success
+        Sales.adjust(int(item.client), RETURN_MOOD)
         Growth.note_escalation(t)
 
 
@@ -5079,7 +5088,7 @@ func _process(delta: float) -> void:
         return
     _spawn_t -= dt
     if _spawn_t <= 0.0:
-        _spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
+        _spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
         if open_tickets().size() < 6 and World.clock < World.DAY_END:
             _random_ticket("email")
     for i in range(_later.size() - 1, -1, -1):
@@ -8351,6 +8360,7 @@ func _end_day() -> void:
         elif scars > 0 and r.grade in ["S", "A"]:
             scars -= 1
         r["rep_cap"] = rep_cap()
+    r["rep_delta"] = _tier_rep(int(r.rep_delta))
     rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
     if r.get("bankrupt", false):
         rep = 0
@@ -8364,6 +8374,15 @@ func _end_day() -> void:
     history.append({"day": day, "grade": r.grade, "points": r.points})
     Game.ui_open = true
     DayReport.show_report(r)
+
+
+# Q6: the tier's say in the daily reputation move: on hard gains shrink and losses grow, on easy the other way round
+func _tier_rep(delta: int) -> int:
+    if delta == 0:
+        return 0
+    var pre := "tech." if mode == "tech" else "rep."
+    var m := Difficulty.f(pre + ("gain" if delta > 0 else "loss"))
+    return (1 if delta > 0 else -1) * maxi(1, roundi(absf(float(delta)) * m))
 
 
 func _ending(r: Dictionary) -> String:
@@ -17238,7 +17257,7 @@ func weekly_estimate() -> Dictionary:
     var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week + payroll_extra
     for hire in extra_staff:
         payroll += hire_wage(hire)
-    var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
+    var fixed := int(float(overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()) * Difficulty.cf("owner.cost"))
     var ebitda := revenue - payroll - fixed - marketing
     var rev := float(maxi(1, revenue))
     return {
@@ -18558,6 +18577,22 @@ const TABLE := {
     "printer.chain": [3, 3, 5],
     # nerf war: how long the coworkers wait between shots, x
     "nerf.gap": [1.35, 1.0, 0.7],
+    # Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
+    # SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
+    # (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).
+    # owner.cost: weekly overhead x. sales.lead: added to a new lead's quality. service.trust: x on the trust an owner LOSES.
+    "crew.pace": [1.1, 1.0, 0.9],
+    "crew.sla": [1.15, 1.0, 0.85],
+    "tech.pace": [1.25, 1.0, 0.45],
+    "tech.sla": [1.3, 1.0, 0.5],
+    "tech.alt_ret": [0.8, 1.0, 1.3],
+    "tech.gain": [1.25, 1.0, 0.4],
+    "tech.loss": [0.75, 1.0, 1.8],
+    "rep.gain": [1.2, 1.0, 0.8],
+    "rep.loss": [0.75, 1.0, 1.3],
+    "owner.cost": [0.95, 1.0, 1.03],
+    "sales.lead": [5, 0, -5],
+    "service.trust": [0.7, 1.0, 1.6],
 }
 
 var tier := "normal"
@@ -18609,6 +18644,16 @@ func f(key: String) -> float:
 
 func i(key: String) -> int:
     return int(at(key, tier))
+
+
+# a campaign dial (Q6): the tier's number while a campaign runs, the normal one otherwise (Free Play and the old tests are unchanged)
+func cf(key: String) -> float:
+    return f(key) if Campaign.active else float(at(key, "normal"))
+
+
+# the ticket dials of the running mode: the tech campaign reads tech.pace / tech.sla, the crew campaigns (owner, sales, service) crew.pace / crew.sla
+func cm(base: String) -> float:
+    return cf(("tech." if Campaign.mode == "tech" else "crew.") + base)
 
 
 func at(key: String, for_tier: String) -> Variant:
@@ -26263,7 +26308,10 @@ func trust_of(owner_name: String) -> int:
 
 func add_trust(owner_name: String, amount: int) -> void:
     if trust.has(owner_name):
-        trust[owner_name] = clampi(trust_of(owner_name) + amount, 0, 100)
+        var change := amount
+        if amount < 0:
+            change = -maxi(1, roundi(float(-amount) * Difficulty.cf("service.trust")))  # Q6: a harder tier forgives less
+        trust[owner_name] = clampi(trust_of(owner_name) + change, 0, 100)
 
 
 func trust_word(v: int) -> String:
@@ -40008,7 +40056,7 @@ func boost(card_id: String) -> float:
 
 
 func sla(secs: float) -> float:
-    return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult()
+    return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult() * Difficulty.cm("sla")
 
 
 # the ticket kind of the next random ticket: {} = the usual uniform pick (nothing is active, no random number used)
@@ -42730,7 +42778,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
     var pick: String = pool[r.randi() % pool.size()]
     used_names.append(pick)
     var users := 6 + r.randi() % 30
-    var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead")))
+    var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead"))) + int(Difficulty.cf("sales.lead"))
     var pain: String = info.pains[r.randi() % info.pains.size()]
     var who: String = info.who[r.randi() % info.who.size()]
     var lead := {

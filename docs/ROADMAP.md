@@ -61,7 +61,7 @@ Running in worktrees: R10a (typed seed, today's seed, resumable streams, Free Pl
 | Q3 | **Screenshot and audit sweep DONE** (see `docs/BACKLOG.md` "Visual QA sweep"; the live-window part is still open). Original: a live-window visual check of changes only seen in screenshots or tests: the CLOSE confirmation strip and wider mail list, the new day report, the difficulty chip on character select, the dinner list at h, all 12 site offices, hard-tier feel for each mini-game | S-M |
 | Q4 | **DONE** (`Game.click_at`, `tests/click_harness.gd`, see BACKLOG). Original: fix the test harness gap: mouse clicks map off-screen in a hidden window, so agents drive the UI through `run_script`; find a way to click for real | S-M |
 | Q5 | DONE (X2): the ghost kept its seat, meetings and Social weight; Free Play now removes the cast member like a campaign. | S |
-| Q6 | Balance by playthrough: alt-fix return chances and time multipliers, difficulty tiers, the early and late owner game (see X1) | M |
+| Q6 | Balance by playthrough: alt-fix return chances and time multipliers, difficulty tiers, the early and late owner game (see X1) | M (**done in a first pass**: bot driver `tests/bot_lib.gd`, tier dials in `Difficulty.TABLE`, rework rule for returned workarounds, results in `docs/balance-notes.md`; open: more seeds per cell, owner hard, tech hard still wins with a careful bot) |
 | Q7 | **Realism review by a real MSP owner** of card text and the numbers (W-2 target 55%, EBITDA peer margin 15%, valuation multiples, late-fee and leakage figures, turnover statistics) before any player-facing release | S (external) |
 | Q8 | Test the worktree hooks through the real Agent tool (`isolation: "worktree"`) once `/hooks` has been opened | S |
 

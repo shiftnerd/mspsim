@@ -730,7 +730,10 @@ func trust_of(owner_name: String) -> int:
 
 func add_trust(owner_name: String, amount: int) -> void:
 	if trust.has(owner_name):
-		trust[owner_name] = clampi(trust_of(owner_name) + amount, 0, 100)
+		var change := amount
+		if amount < 0:
+			change = -maxi(1, roundi(float(-amount) * Difficulty.cf("service.trust")))  # Q6: a harder tier forgives less
+		trust[owner_name] = clampi(trust_of(owner_name) + change, 0, 100)
 
 
 func trust_word(v: int) -> String:

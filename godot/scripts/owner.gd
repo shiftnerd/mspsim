@@ -3331,7 +3331,7 @@ func weekly_estimate() -> Dictionary:
 	var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week + payroll_extra
 	for hire in extra_staff:
 		payroll += hire_wage(hire)
-	var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
+	var fixed := int(float(overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()) * Difficulty.cf("owner.cost"))
 	var ebitda := revenue - payroll - fixed - marketing
 	var rev := float(maxi(1, revenue))
 	return {
