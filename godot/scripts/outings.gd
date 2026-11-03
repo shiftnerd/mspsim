@@ -13,6 +13,7 @@ signal finished(game: String, stars: int)
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
+const ChairRace := preload("res://scripts/chair_race.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -52,6 +53,14 @@ const GAMES := {
 		"blurb":
 		"FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.",
 		"keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"
+	},
+	"chair":
+	{
+		"label": "CHAIR RACE",
+		"cost": 120,
+		"blurb":
+		"RACE THE CREW ON ROLLING OFFICE CHAIRS. STEER WITH LEFT AND RIGHT, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. WALLS AND CONES COST TIME.",
+		"keys": "ARROWS = STEER  Z X = PUSH  ESC = LEAVE"
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
@@ -439,6 +448,7 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
+var chair_best := {}  # chair race: best time in seconds per difficulty tier
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
@@ -475,6 +485,7 @@ func reset() -> void:
 	known = {}
 	tastes = {}
 	song_best = {}
+	chair_best = {}
 	league = BowlVariety.new_league()
 	_offered = false
 
@@ -493,6 +504,7 @@ func to_dict() -> Dictionary:
 		"tastes": tastes,
 		"songs": song_best,
 		"league": league,
+		"chair": chair_best,
 	}
 
 
@@ -503,6 +515,7 @@ func from_dict(data: Dictionary) -> void:
 	best = data.get("best", {})
 	known = data.get("known", {})
 	song_best = data.get("songs", {})
+	chair_best = data.get("chair", {})
 	league = BowlVariety.new_league()
 	for key in data.get("league", {}):
 		league[key] = data.league[key]
@@ -726,7 +739,7 @@ func pick_game(from_invite: bool) -> void:
 		options.append(entry)
 	Cards.ask(
 		_host(),
-		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
+		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork, dinner needs good conversation and the chair race needs a steady rhythm.",
 		options,
 		func(id: String) -> void: start(id, from_invite, _game_options(id))
 	)
@@ -810,6 +823,8 @@ func begin_play(pick := "") -> void:
 			_escape_setup()
 			if room_mode():
 				_escape_room_setup()
+		"chair":
+			_chair_setup()
 		_:
 			_dinner_setup()
 	if room_mode():
@@ -866,6 +881,8 @@ func tick(dt: float) -> void:
 			_kara_tick(dt)
 		"escape":
 			_escape_tick(dt)
+		"chair":
+			_chair_tick(dt)
 		_:
 			_dinner_tick(dt)
 
@@ -930,6 +947,8 @@ func _press_game(key: int) -> void:
 			_kara_press(key)
 		"escape":
 			_escape_press(key)
+		"chair":
+			_chair_press(key)
 		_:
 			_dinner_press(key)
 
@@ -955,6 +974,8 @@ func _finish(result: int) -> void:
 			}
 		)
 		Social.change_all(1 + result)
+		if game == "chair":
+			lines.append_array(_chair_lines())
 		if Campaign.mode == "sales":
 			lines.append_array(SalesCampaign.outing_done(game, result))
 		if Campaign.active:
@@ -2136,7 +2157,7 @@ func hint() -> String:
 	elif phase == "result":
 		text = "ENTER = CONTINUE"
 	elif not room_mode():
-		text = str(GAMES[game].keys)
+		text = _chair_hint() if game == "chair" else str(GAMES[game].keys)
 	else:
 		text = _room_hint()
 	return text
@@ -2565,6 +2586,85 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
 
 
 # ---- drawing ------------------------------------------------------------------------------------
+# ---- chair race (R12): the rules, the course and the drawing are in chair_race.gd ----------------------------
+# who races: the party (or the whole roster when nobody was invited), those with a personality in ChairRace.RACERS
+func racers() -> Array:
+	var pool := present() if opts.has("party") else roster()
+	return ChairRace.ORDER.filter(func(n: String) -> bool: return pool.has(n))
+
+
+func _chair_params() -> Dictionary:
+	return {
+		"crash": Difficulty.f("chair.crash"),
+		"stamina": Difficulty.f("chair.stamina"),
+		"slick": Difficulty.f("chair.slick"),
+		"par": Difficulty.f("chair.par"),
+		"skill": Difficulty.f("chair.skill"),
+	}
+
+
+func _chair_setup() -> void:
+	var race := ChairRace.new()
+	race.setup(_chair_params(), racers(), Difficulty.rng("chair"))
+	g = {"race": race, "place": 0, "new_best": false}
+
+
+func _chair_tick(dt: float) -> void:
+	var race: RefCounted = g.race
+	var steer := 0.0
+	if Input.is_key_pressed(KEY_LEFT):
+		steer -= 1.0
+	if Input.is_key_pressed(KEY_RIGHT):
+		steer += 1.0
+	race.step(dt, float(g.get("steer", steer)))
+	if race.phase == "done" and race.end_t >= 1.2:
+		_chair_end()
+
+
+func _chair_press(key: int) -> void:
+	var race: RefCounted = g.race
+	if key == KEY_Z:
+		race.push(0)
+	elif key == KEY_X:
+		race.push(1)
+
+
+func _chair_hint() -> String:
+	if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
+		return "GET READY  ESC = LEAVE"
+	return str(GAMES.chair.keys)
+
+
+# the race is over: the best time of this tier, the stars from the time, then the usual result page
+func _chair_end() -> void:
+	var race: RefCounted = g.race
+	var t: float = race.total()
+	g.place = race.place()
+	g.new_best = not race.dnf and (not chair_best.has(Difficulty.tier) or t < float(chair_best[Difficulty.tier]))
+	if g.new_best:
+		chair_best[Difficulty.tier] = snappedf(t, 0.01)
+	_finish(race.stars())
+
+
+func _chair_lines() -> Array:
+	var race: RefCounted = g.race
+	var out := []
+	if race.dnf:
+		out.append("THE CHAIR NEVER MADE IT PAST THE LAST TURN. (80 SECOND LIMIT.)")
+	else:
+		out.append(race.comment())
+	if g.new_best:
+		out.append("A NEW BEST TIME FOR %s: %.1f SECONDS." % [Difficulty.label(), race.total()])
+	return out
+
+
+func _paint_chair(b: Rect2) -> void:
+	var race: RefCounted = g.race
+	var board := Rect2(b.position, Vector2(b.size.x, b.size.y - 12.0))
+	race.paint(_canvas, board)
+	race.paint_strip(_canvas, Rect2(b.position.x, board.end.y + 1.0, b.size.x, 11.0))
+
+
 func _t(s: String, x: float, y: float, color := INK) -> void:
 	PixelFont.draw(_canvas, s, Vector2(x, y), color, 1)
 
@@ -2612,6 +2712,8 @@ func _paint() -> void:
 		Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
 	)
 	var panel := UiStyle.panel_rect(size, 250.0, 112.0)
+	if game == "chair" and phase == "play":
+		panel = ChairRace.panel_rect(size)
 	var title := str(GAMES[game].label) + ("  TEAM OUTING" if phase != "result" else "  RESULT")
 	var body := UiStyle.panel(_canvas, panel, title, "", 0.88 if _traveled else 1.0)
 	match phase:
@@ -2627,6 +2729,8 @@ func _paint() -> void:
 					_paint_karaoke(body)
 				"escape":
 					_paint_escape(body)
+				"chair":
+					_paint_chair(body)
 				_:
 					_paint_dinner(body)
 	UiStyle.footer(_canvas, panel, hint())
@@ -2646,6 +2750,15 @@ func _paint_intro(b: Rect2) -> void:
 		y += 7.0
 	if game == "bowling":
 		y = _paint_bowl_intro(b, y)
+	if game == "chair":
+		var names := racers()
+		var who := "RIVALS: " + join_names(names, true) if not names.is_empty() else "NO RIVALS TONIGHT: A TIME TRIAL."
+		for part in _wrap(who, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y)
+			y += 7.0
+		if chair_best.has(Difficulty.tier):
+			_t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[Difficulty.tier])], b.position.x, y, GREEN)
+			y += 7.0
 	if best.has(game):
 		_t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
 
@@ -2682,6 +2795,9 @@ func _paint_result(b: Rect2) -> void:
 				)
 			"dinner":
 				detail = "TABLE SCORE %d (3 STARS AT %d)" % [int(g.score), int(dinner_targets()[0])]
+			"chair":
+				var race: RefCounted = g.race
+				detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
 	if detail != "":
 		_t(detail, b.position.x, y + 3.0, BLUE)
 
