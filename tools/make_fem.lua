@@ -3,6 +3,7 @@
 -- Run:  dofile("D:/creative/pixelproject/tools/make_fem.lua")  via run_lua_script.
 -- Set the global ONLY = {"office_maya"} before dofile to build a subset.
 local R = "D:/creative/pixelproject/"
+local SP = dofile(R .. "tools/sprite_path.lua")  -- character files live in sprites/<group>/
 local OUT = "#17121F"
 local W, H = 40, 64
 
@@ -174,7 +175,7 @@ local function layer(spr, name)
 end
 
 local function build(name, c)
-  local spr = Sprite{fromFile = R .. "site_alan_right.aseprite"}
+  local spr = Sprite{fromFile = SP(R, "site_alan_right")}
   local map = {}
   for i = 1, 3 do
     map[hex(base.shirt[i])] = hex(c.shirt[i]); map[hex(base.hair[i])] = hex(c.hair[i]); map[hex(base.pants[i])] = hex(c.pants[i])
@@ -249,16 +250,16 @@ local function build(name, c)
 
   -- glasses (copied from Dan's file: same canvas)
   if c.glasses then
-    local dan = Sprite{fromFile = R .. "office_dan_right.aseprite"}
+    local dan = Sprite{fromFile = SP(R, "office_dan_right")}
     local gl = layer(dan, "Glasses")
     local gnew = spr:newLayer(); gnew.name = "Glasses"
     spr:newCel(gnew, 1, gl:cel(1).image:clone(), Point(0, 0))
     dan:close()
   end
-  spr:saveAs(R .. name .. "_right.aseprite")
+  spr:saveAs(SP(R, name .. "_right"))
 
   -- the left-facing file is the mirror: flip every cel, move it to the mirrored position
-  local left = Sprite{fromFile = R .. name .. "_right.aseprite"}
+  local left = Sprite{fromFile = SP(R, name .. "_right")}
   for _, l in ipairs(left.layers) do
     local cel = l:cel(1)
     if cel then
@@ -269,7 +270,7 @@ local function build(name, c)
       cel.position = Point(W - oldx - im.width, cel.position.y)
     end
   end
-  left:saveAs(R .. name .. "_left.aseprite")
+  left:saveAs(SP(R, name .. "_left"))
   left:close()
   spr:close()
   print("built", name)

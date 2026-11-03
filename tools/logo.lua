@@ -211,7 +211,7 @@ local function build_poster()
   local cast = new(W, H)
   local people = {{"casual_garrison_left", 118}, {"office_alan_right", 158}, {"office_dan_left", 246}, {"office_adult_right", 286}}
   for _, p in ipairs(people) do
-    cast:drawImage(flatFrame(ROOT .. p[1] .. "_anim.aseprite"), Point(p[2] - 32, 158 - 79))
+    cast:drawImage(flatFrame(dofile(ROOT .. "tools/sprite_path.lua")(ROOT, p[1] .. "_anim")), Point(p[2] - 32, 158 - 79))
   end
   local lc = spr:newLayer(); lc.name = "Cast"
   spr:newCel(lc, 1, cast, Point(0, 0))

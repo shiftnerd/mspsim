@@ -217,7 +217,8 @@ New characters start as a copy of an existing one, then change only what differs
 - `archive/teenme.png` is the original reference photo.
 - `archive/` holds earlier, superseded attempts (`teen_blocky*`, `teen_cartoon*`,
   the SkillsUSA layered version) and old preview PNGs. Do not edit these. Keep only
-  the current `office_teen_*` files in the project root.
+  the current character files in `sprites/`.
+- **`sprites/` holds every character file** (stills `<name>_<facing>.aseprite` and animations `<name>_<facing>_anim.aseprite`), grouped in subfolders: `sprites/staff/` (the cast and the player people: `office_*`, `site_*`, `casual_*`, `sales_*`), `sprites/clients/` (`client_*`), `sprites/expo/` (`expo_*`) and `sprites/custom/` (`custom_teen_*`, the character creator hairstyles). The Lua tools find a file through `tools/sprite_path.lua` (`SP(root, "office_teen_right_anim")` returns the full path from the name prefix), so a new character needs no path edits: `client_`, `expo_` and `custom_` names go to their folder and anything else to `staff/`. Sets, pieces and the logo stay under `office/`; Godot PNGs under `godot/assets/`. Anywhere older notes say a character file is 'in the project root', read `sprites/<group>/`.
 
 ## Tool gotchas (aseprite MCP)
 - Layers must exist (`add_layer`) before drawing on them. `create_canvas` makes

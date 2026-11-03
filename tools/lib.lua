@@ -903,7 +903,7 @@ dofile("D:/creative/pixelproject/tools/side_views.lua")(L, P)
 
 -- flattened character: returns an Image (no padding)
 function L.char(name)
-  local cs = Sprite{fromFile = "D:/creative/pixelproject/" .. name .. ".aseprite"}
+  local cs = Sprite{fromFile = dofile("D:/creative/pixelproject/tools/sprite_path.lua")("D:/creative/pixelproject/", name)}
   local img = Image(cs.width, cs.height, ColorMode.RGB)
   img:drawSprite(cs, 1)
   cs:close()

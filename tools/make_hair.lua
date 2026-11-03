@@ -8,6 +8,7 @@
 -- Run:  dofile("D:/creative/pixelproject/tools/make_hair.lua")   (via run_lua_script)
 -- Set the global ONLY = {short = true} before dofile to build a subset; ROOT = "..." to work in another checkout.
 local R = ROOT or "D:/creative/pixelproject/"
+local SP = dofile(R .. "tools/sprite_path.lua")  -- character files live in sprites/<group>/
 local BASE_HEX, HI_HEX = "9a5124", "c47a38"
 
 -- style -> the donor character and its two hair colours (base, highlight)
@@ -88,7 +89,7 @@ local function drawnRight(c)
     end end end
     for y, list in pairs(c.hl) do for _, s in ipairs(list) do for x = s[1], s[2] do full:putPixel(x, y, hi) end end end
   else
-    local donor = Sprite{fromFile = R .. c.src .. "_right.aseprite"}
+    local donor = Sprite{fromFile = SP(R, c.src .. "_right")}
     local dl = hairLayer(donor)
     full:drawImage(dl:cel(1).image, dl:cel(1).position)
     local b0, h0 = rgb(c.base), rgb(c.hi)
@@ -115,18 +116,18 @@ local function build(style, c)
     local right = drawnRight(c)
     for _, side in ipairs({"right", "left"}) do
       local full = side == "right" and right or mirror(right)
-      local spr = Sprite{fromFile = R .. "office_teen_" .. side .. ".aseprite"}
+      local spr = Sprite{fromFile = SP(R, "office_teen_" .. side)}
       local l = hairLayer(spr)
       spr:deleteCel(l:cel(1))
       spr:newCel(l, 1, full, Point(0, 0))
-      spr:saveAs(R .. "custom_teen_" .. style .. "_" .. side .. ".aseprite")
+      spr:saveAs(SP(R, "custom_teen_" .. style .. "_" .. side))
       spr:close()
     end
     print("built", style)
     return
   end
   for _, side in ipairs({"right", "left"}) do
-    local donor = Sprite{fromFile = R .. c.src .. "_" .. side .. ".aseprite"}
+    local donor = Sprite{fromFile = SP(R, c.src .. "_" .. side)}
     local dl = hairLayer(donor)
     local full = Image(donor.width, donor.height, ColorMode.RGB)
     full:drawImage(dl:cel(1).image, dl:cel(1).position)
@@ -137,11 +138,11 @@ local function build(style, c)
       elseif p == hi then full:putPixel(x, y, rgb(HI_HEX)) end
     end end
     donor:close()
-    local spr = Sprite{fromFile = R .. "office_teen_" .. side .. ".aseprite"}
+    local spr = Sprite{fromFile = SP(R, "office_teen_" .. side)}
     local l = hairLayer(spr)
     spr:deleteCel(l:cel(1))
     spr:newCel(l, 1, full, Point(0, 0))
-    spr:saveAs(R .. "custom_teen_" .. style .. "_" .. side .. ".aseprite")
+    spr:saveAs(SP(R, "custom_teen_" .. style .. "_" .. side))
     spr:close()
   end
   print("built", style)

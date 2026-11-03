@@ -5,6 +5,7 @@
 local R = ROOT or "D:/creative/pixelproject/"
 local T = R .. "tools/"
 local OUT = R .. "godot/assets/characters/"
+local SP = dofile(T .. "sprite_path.lua")  -- character files live in sprites/<group>/
 local E = dofile(T .. "anim.lua")
 local poses, tags = dofile(T .. "poses.lua")
 -- set the global ONLY = {"name"} before dofile to rebuild just one character
@@ -14,9 +15,9 @@ local ghost = GHOST or {}
 local names = ONLY or {"office_teen", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"}
 for _, n in ipairs(names) do
   for _, side in ipairs({"right", "left"}) do
-    local inP = R .. n .. "_" .. side .. ".aseprite"
-    local outP = R .. n .. "_" .. side .. "_anim.aseprite"
-    local hands = E.build(inP, outP, poses, tags, ghost[n] and (R .. ghost[n] .. "_" .. side .. ".aseprite") or nil)
+    local inP = SP(R, n .. "_" .. side)
+    local outP = SP(R, n .. "_" .. side .. "_anim")
+    local hands = E.build(inP, outP, poses, tags, ghost[n] and SP(R, ghost[n] .. "_" .. side) or nil)
     local spr = Sprite{fromFile = outP}
     local W, H = spr.width, spr.height
     local sheet = Image(W * #spr.frames, H, ColorMode.RGB)
