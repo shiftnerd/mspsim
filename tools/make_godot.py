@@ -24,7 +24,8 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
                     "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj",
                     # the custom person's hairstyles (tools/make_hair.lua): the teen with another Hair layer, one character per style
-                    "custom_teen_short", "custom_teen_receding", "custom_teen_curly"]
+                    "custom_teen_short", "custom_teen_receding", "custom_teen_curly",
+                    "custom_teen_long", "custom_teen_bob", "custom_teen_ponytail", "custom_teen_bun", "custom_teen_bald", "custom_teen_spiky"]
 
 # frame durations (ms), 42 frames, matching tools/poses.lua
 DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 90, 110] + [80, 120, 110]
@@ -49271,8 +49272,8 @@ const PLAYER := preload("res://scripts/player.gd")
 const BASE := "office_teen"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
-const HAIR_STYLES := ["side", "short", "receding", "curly"]  # the shipped styles, in the order of the STYLE row
-const HAIR_PLANNED := ["long", "bob", "ponytail", "bun", "bald", "spiky"]  # a later art pass; tests and the UI skip them
+const HAIR_STYLES := ["side", "short", "receding", "curly", "long", "bob", "ponytail", "bun", "bald", "spiky"]  # the shipped styles, in the order of the STYLE row
+const HAIR_PLANNED: Array = []  # styles not drawn yet; tests and the UI skip them (all ten are shipped)
 const FLASH := 0.7  # the hurt frames mix every colour this far to white
 const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
 const FLASH_TOL := 0.01

@@ -37,6 +37,9 @@ Read-only scoping pass (Nov 2026) from the code and assets, not play-tested. Ite
 
 Risks: scalp and outline gaps on bald, left-facing asymmetry, hair over the headset (acceptable, the item draws on top), wide-format row space, a first-use hitch on low-end builds.
 
+## Status (Nov 2026)
+Hair is complete with the prebake: ten styles (side, short, receding, curly, long, bob, ponytail, bun, bald, spiky), all drawn by `tools/make_hair.lua` (rows from `make_fem.lua` over Alan's cap for long, bob, ponytail and bun, a drawn spiky crop, bald = empty Hair layer because the Body layer already carries a full skull outline). The open decisions below were settled: bald is in, and the prebake replaced approach C.
+
 ## Later parts, same mechanism
 - Glasses and beard are as easy as hair (rigid with the head); they need a beard colour role and a glasses KEEP colour.
 - Shoes are straightforward (the engine rotates them per leg and keeps the shared boundary column).

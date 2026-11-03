@@ -343,7 +343,17 @@ function E.render(an, pose, f)
     local BX, BY, BW, BH = 64, 24, CW * 3, CH + 60   -- big working canvas so nothing is clipped
     local rot = {}
     local x0, y0, x1, y1 = 1e9, 1e9, -1, -1
-    for i, O in ipairs(out) do
+    -- an.ghost (a Hair image of another character) is rotated and measured but never drawn: a style with less hair than the
+    -- reference (bald) then lands where the reference does, because the shift below is taken from the union of the boxes
+    local nOut = #out
+    local srcs = {}
+    for i, O in ipairs(out) do srcs[i] = O end
+    if an.ghost then
+      local G = Image(CW, CH, ColorMode.RGB)
+      headBlit(G, an.ghost)
+      srcs[#srcs + 1] = G
+    end
+    for i, O in ipairs(srcs) do
       local N = Image(BW, BH, ColorMode.RGB)
       for Y2 = 0, BH - 1 do for X2 = 0, BW - 1 do
         local X, Y = X2 - BX, Y2 - BY
@@ -375,9 +385,11 @@ function E.render(an, pose, f)
     sy = sy + (pose.ry2 or 0)
     out = {}
     for i, N in ipairs(rot) do
-      local M = Image(CW, CH, ColorMode.RGB)
-      M:drawImage(N, Point(sx - BX, sy - BY))
-      out[i] = M
+      if i <= nOut then
+        local M = Image(CW, CH, ColorMode.RGB)
+        M:drawImage(N, Point(sx - BX, sy - BY))
+        out[i] = M
+      end
     end
   end
   if pose.flash then for _, O in ipairs(out) do flash(O, pose.flash) end end
@@ -386,8 +398,9 @@ function E.render(an, pose, f)
 end
 
 -- build the animation file --------------------------------------------------
-function E.build(inPath, outPath, poses, tags)
+function E.build(inPath, outPath, poses, tags, ghostPath)
   local an = E.load(inPath)
+  if ghostPath then an.ghost = E.load(ghostPath).by["Hair"].S end
   local f = 1
   if inPath:find("_left") then f = -1 end
   local spr = Sprite(CW, CH, ColorMode.RGB)
