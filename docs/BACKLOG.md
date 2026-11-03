@@ -4,10 +4,8 @@ Where open bugs and gaps are tracked. The ordered plan for everything is `docs/R
 Status is as of the commit that last touched this file; move items to `CLAUDE.md` once they ship.
 
 ## In progress
-- **Owner playthrough bug fixes**: findings 1-6 and the pitch name mismatch are fixed on branch `ownerfix` (test `tests/ownerfix.gd`); findings 7, 8 and the rest of 9 are kept here for a later decision.
-- **Canon text pass** (Alan and Garrison as owners), **play-as-cast-member** and the **new campaign paths**: designed in `docs/campaign-paths.md`, not started. Build order: player-as-cast-member, owner as Alan or Garrison, tech-campaign owner changes, Sales (Vic), Service (Dan).
-- **Replayability roadmap items 2-10** (`IDEAS.md`): item 1 (difficulty and seeds) is built and merged.
-- Merged and done: polish round 2, tech playtest bug fixes, difficulty and seeds, day report / brand names, ticket alternatives, outing UI, site polish, character select.
+- Nothing is running. Next up in `docs/ROADMAP.md`: X1 (owner balance, smaller items and UX), then X2 (play as a cast member) and the owner campaign as Alan or Garrison.
+- Merged and done: owner playthrough fixes 1-6 and the pitch name mismatch, the canon text pass (Alan and Garrison as owners), polish round 2, tech playtest bug fixes, difficulty and seeds, day report and brand names, ticket alternatives, outing UI, site polish, character select.
 
 ## Owner playthrough findings (weeks 1-20, live play)
 High
