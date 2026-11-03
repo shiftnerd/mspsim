@@ -101,6 +101,8 @@ func _groups() -> Array:
 		for row in report.rows:
 			if str(row[0]) != "":
 				books.append(row)
+		if str(report.get("mutator", "")) != "":
+			books.append(["THIS WEEK", str(report.mutator), WARN])
 		return [["", books]]
 	var r := report
 	var mood := int(r.clients)
@@ -127,6 +129,8 @@ func _groups() -> Array:
 			]
 		],
 	]
+	if str(r.get("mutator", "")) != "":
+		groups.append(["THIS WEEK", [["EVENT", str(r.mutator), WARN]]])
 	var energy := []
 	if int(r.get("energy", -1)) >= 0:
 		var e := int(r.energy)

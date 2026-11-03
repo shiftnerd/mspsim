@@ -600,7 +600,8 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
 			eps.append(ep)
 	if eps.is_empty():
 		return {}
-	var picked: Dictionary = eps[randi() % eps.size()]
+	var picked: Dictionary = Mutators.pick_endpoint(eps)
+	var pri: int = Mutators.priority(int(prob.pri), picked)
 	picked.problem = prob.fix
 	picked["unsaved"] = randf() < 0.65  # somebody is working on it: documents are open
 	picked["asked"] = false
@@ -609,11 +610,11 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
 		"client": client,
 		"contact": contact,
 		"summary": prob.summary,
-		"pri": prob.pri,
+		"pri": pri,
 		"body": prob.body % contact.split(" ")[0],
 		"status": "New",
-		"sla_left": SLA_SECS[prob.pri],
-		"sla_total": SLA_SECS[prob.pri],
+		"sla_left": Mutators.sla(SLA_SECS[pri]),
+		"sla_total": Mutators.sla(SLA_SECS[pri]),
 		"endpoint": picked.name,
 		"fix": prob.fix,
 		"fix_done": false,
@@ -644,7 +645,12 @@ func _random_ticket(source: String) -> Dictionary:
 	if spawned_today >= day_cap():
 		return {}
 	for tries in 6:
-		var t := create_ticket(Sales.pick_client(), randi() % PROBLEMS.size(), source)
+		var pick: Dictionary = Mutators.pick_problem()
+		var t: Dictionary
+		if pick.is_empty():
+			t = create_ticket(Sales.pick_client(), randi() % PROBLEMS.size(), source)
+		else:
+			t = create_problem(Sales.pick_client(), pick, source)
 		if not t.is_empty():
 			spawned_today += 1
 			return t
@@ -1305,7 +1311,7 @@ func _process(delta: float) -> void:
 		return
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
-		_spawn_t = randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult()
+		_spawn_t = randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
 	for i in range(_later.size() - 1, -1, -1):

@@ -115,6 +115,7 @@ func setup(for_mode: String) -> void:
 	if not PLAYER.current_character in ids:
 		sel = maxi(0, ids.find("office_adult"))
 	phone_sel = 1 if Phone.os == "android" else 0
+	Mutators.pending_start = Mutators.STANDARD
 	facing = "right"
 	for spr in _sprites:
 		spr.queue_free()
@@ -146,7 +147,19 @@ func summary(with_tier := true) -> String:
 		s += " - " + str(PHONES[phone_sel].name)
 	if with_tier:
 		s += " - " + Difficulty.label()
+		if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
+			s += " - " + str(Mutators.STARTS.get(Mutators.pending_start, {}).get("short", ""))
 	return s
+
+
+# Tab / Shift+Tab (or a click on the START chip arrows) pick the starting condition of the new run
+func change_start(step: int) -> void:
+	if not is_campaign():
+		return
+	var list: Array = Mutators.starts_for(mode)
+	var i := maxi(0, list.find(Mutators.pending_start))
+	Mutators.pending_start = str(list[(i + step + list.size()) % list.size()])
+	queue_redraw()
 
 
 # Up / Down (or a click on the arrows) change the difficulty; it is remembered in the settings file
@@ -208,6 +221,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				change_tier(1)
 			KEY_DOWN, KEY_S:
 				change_tier(-1)
+			KEY_TAB:
+				change_start(-1 if event.shift_pressed else 1)
 			KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
 				confirm()
 			KEY_ESCAPE, KEY_BACKSPACE:
@@ -261,6 +276,10 @@ func _click(at: Vector2) -> void:
 			change_tier(-1)
 		"tier_up":
 			change_tier(1)
+		"start_down":
+			change_start(-1)
+		"start_up":
+			change_start(1)
 		_:
 			_hover(at)
 			confirm()
@@ -313,6 +332,8 @@ func _draw() -> void:
 	_txt("< ESC", back_r.position + Vector2(2, 2), DIM)
 	_rects.append([back_r, "back", 0])
 	_draw_tier(size, narrow)
+	if is_campaign() and step == "char":
+		_draw_start(size, narrow)
 	if step == "char":
 		_draw_chars(size, narrow)
 	else:
@@ -323,7 +344,7 @@ func _draw() -> void:
 		size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)),
 		Color.WHITE
 	)
-	var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   ENTER PICK   ESC BACK"
+	var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   TAB START   ENTER PICK   ESC BACK"
 	if narrow:
 		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
 		_ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
@@ -346,6 +367,27 @@ func _draw_tier(size: Vector2, narrow: bool) -> void:
 	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
 	_rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
 	_rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
+
+
+# the starting condition chip: START < MESSY MSP > (left of the heading, under the level chip at 320 wide, top right in portrait)
+func _draw_start(size: Vector2, narrow: bool) -> void:
+	var s: Dictionary = Mutators.STARTS.get(Mutators.pending_start, {})
+	var text := "START  %s" % str(s.get("short", "STANDARD"))
+	var w := float(PixelFont.width("START  FAMILY BIZ")) + 16.0
+	var pos := Vector2(34.0, 3.0)
+	if narrow:
+		pos = Vector2(size.x - w - 3.0, 3.0)
+	elif size.x < 340.0:
+		pos = Vector2(size.x - w - 3.0, 14.0)
+	var r := Rect2(pos, Vector2(w, 9.0))
+	draw_rect(r, PANEL)
+	draw_rect(r, GOLD if Mutators.pending_start != Mutators.STANDARD else DIM, false, 1.0)
+	_txt("<", r.position + Vector2(3, 2), GOLD)
+	_txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+	var tw := float(PixelFont.width(text))
+	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+	_rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "start_down", 0])
+	_rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "start_up", 0])
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
@@ -402,6 +444,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 	var end_y := _para(str(data.blurb), by, Color.WHITE, 4 if narrow else 2)
 	if is_campaign():
 		var note := "THE REST OF THE TEAM IS ALREADY AT THEIR DESKS"
+		if Mutators.pending_start != Mutators.STANDARD:
+			note = str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", note)).to_upper()
 		if end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
 			_para(note, end_y + 2.0, DIM, 2)
 

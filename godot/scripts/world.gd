@@ -303,6 +303,9 @@ func player_desk() -> Dictionary:
 # remove whoever is gone from `chars` (their node too) and bring everyone else back, in CAST order
 func apply_roster() -> void:
 	var gone := roster_gone()
+	for n in Mutators.absent():
+		if not gone.has(n):
+			gone.append(n)
 	for n in gone:
 		if chars.has(n):
 			var st: Dictionary = chars[n]
@@ -352,6 +355,7 @@ func _everyone_outside() -> bool:
 
 # campaign: send the whole cast home and start the morning of `number`
 func begin_next_day(number: int) -> void:
+	Mutators.prepare_day(number)
 	apply_roster()
 	for n in chars:
 		var st: Dictionary = chars[n]

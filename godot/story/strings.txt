@@ -2241,6 +2241,238 @@ START LOOKING AT OTHER OFFICES
 You see three offices and one of them has a creaky floor.
 
 
+# ======================= Mutators > MUTATORS =======================
+# Mutators > MUTATORS > heartbleed > name
+[Mutators.MUTATORS.heartbleed.name]
+HEARTBLEED WEEK
+
+# Mutators > MUTATORS > heartbleed > text
+[Mutators.MUTATORS.heartbleed.text]
+Everybody has read the news about Heartbleed, the bug in the encryption library half the web uses. Clients want their certificates checked and their passwords changed, and the vendors are slow to answer.
+
+# Mutators > MUTATORS > heartbleed > extra_problems > 0 > summary
+[Mutators.MUTATORS.heartbleed.extra_problems.0.summary]
+Server certificate check after the Heartbleed news
+
+# Mutators > MUTATORS > heartbleed > extra_problems > 0 > body
+[Mutators.MUTATORS.heartbleed.extra_problems.0.body]
+The news says our website and mail server might be affected. Please check the certificate and restart the services after the patch. A customer already asked me about it. - %s
+
+# Mutators > MUTATORS > heartbleed > extra_problems > 1 > summary
+[Mutators.MUTATORS.heartbleed.extra_problems.1.summary]
+Asked to change every password
+
+# Mutators > MUTATORS > heartbleed > extra_problems > 1 > body
+[Mutators.MUTATORS.heartbleed.extra_problems.1.body]
+A website told us to change all our passwords because of that bug in the news. I changed one and now I am locked out of everything else. Can you reset mine? - %s
+
+# Mutators > MUTATORS > heartbleed > texts > 0 > from
+[Mutators.MUTATORS.heartbleed.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > heartbleed > texts > 0 > body
+[Mutators.MUTATORS.heartbleed.texts.0.body]
+Heartbleed week: expect certificate checks and password resets. Be calm and write down what you checked.
+
+# Mutators > MUTATORS > xp_eol > text
+[Mutators.MUTATORS.xp_eol.text]
+Support for Windows XP ends on April 8 and every client suddenly remembers the old PC in the back office. Any ticket on an XP machine is urgent this week, and the owners smell a project.
+
+# Mutators > MUTATORS > xp_eol > offer > speaker
+[Mutators.MUTATORS.xp_eol.offer.speaker]
+Vic Marlowe
+
+# Mutators > MUTATORS > xp_eol > offer > text
+[Mutators.MUTATORS.xp_eol.offer.text]
+Three of our clients still have XP desktops. Want me to send them a replacement quote? It is a real project, but the deadline helps us.
+
+# Mutators > MUTATORS > xp_eol > offer > options > 0 > label
+[Mutators.MUTATORS.xp_eol.offer.options.0.label]
+YES, SEND THE UPGRADE QUOTES
+
+# Mutators > MUTATORS > xp_eol > offer > options > 0 > text
+[Mutators.MUTATORS.xp_eol.offer.options.0.text]
+Vic sends tidy quotes with a date on them. Two clients say yes to a few new PCs.
+
+# Mutators > MUTATORS > xp_eol > offer > options > 1 > label
+[Mutators.MUTATORS.xp_eol.offer.options.1.label]
+LATER, WE ARE BUSY
+
+# Mutators > MUTATORS > xp_eol > offer > options > 1 > text
+[Mutators.MUTATORS.xp_eol.offer.options.1.text]
+Vic shrugs. The deadline will not move, so he will ask again.
+
+# Mutators > MUTATORS > flu_season > text
+[Mutators.MUTATORS.flu_season.text]
+The flu is going around. A couple of coworkers are out for a day or two. Nothing changes for you: no extra work to prove anything, and the team covers.
+
+# Mutators > MUTATORS > flu_season > texts > 0 > from
+[Mutators.MUTATORS.flu_season.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > flu_season > texts > 0 > body
+[Mutators.MUTATORS.flu_season.texts.0.body]
+{names} are out with the flu. Rest up, everyone, and wash your hands. Nothing is expected of you beyond the usual.
+
+# Mutators > MUTATORS > printer_apocalypse > name
+[Mutators.MUTATORS.printer_apocalypse.name]
+PRINTER APOCALYPSE
+
+# Mutators > MUTATORS > printer_apocalypse > text
+[Mutators.MUTATORS.printer_apocalypse.text]
+Every printer in the county decided to jam this week. Print queue tickets come in three times as often, the toner supplier is late, and the boss left notes on the machines.
+
+# Mutators > MUTATORS > printer_apocalypse > texts > 0 > from
+[Mutators.MUTATORS.printer_apocalypse.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > printer_apocalypse > texts > 0 > body
+[Mutators.MUTATORS.printer_apocalypse.texts.0.body]
+Printer week. Restart the print spooler first. A reboot works too, but the user loses whatever they had open.
+
+# Mutators > MUTATORS > tax_season > text
+[Mutators.MUTATORS.tax_season.text]
+It is tax season. Every bookkeeper and accountant is on the phone twice as often, deadlines are real, and nobody has time for a sales meeting. New leads dry up for a while.
+
+# Mutators > MUTATORS > slow_payers > text
+[Mutators.MUTATORS.slow_payers.text]
+Money is tight all over town. Clients are paying their invoices a week late, and the bank balance is the thing to watch until it passes.
+
+# Mutators > MUTATORS > slow_payers > texts > 0 > from
+[Mutators.MUTATORS.slow_payers.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > slow_payers > texts > 0 > body
+[Mutators.MUTATORS.slow_payers.texts.0.body]
+Several clients are paying late this month. Mind the cash, and keep the invoices going out on time.
+
+# Mutators > MUTATORS > hardware_recall > name
+[Mutators.MUTATORS.hardware_recall.name]
+HARDWARE RECALL
+
+# Mutators > MUTATORS > hardware_recall > text
+[Mutators.MUTATORS.hardware_recall.text]
+A drive maker recalled a whole batch of disks and three clients have them. Machines start clicking and freezing, and there is a notice in your inbox.
+
+# Mutators > MUTATORS > hardware_recall > batch > problem > summary
+[Mutators.MUTATORS.hardware_recall.batch.problem.summary]
+Computer clicking and freezing: drive on the recall list
+
+# Mutators > MUTATORS > hardware_recall > batch > problem > body
+[Mutators.MUTATORS.hardware_recall.batch.problem.body]
+The computer makes a clicking sound and freezes every few minutes. The vendor sent us a recall letter about the drive. Can you look at it today? - %s
+
+# Mutators > MUTATORS > hardware_recall > mails > 0 > from
+[Mutators.MUTATORS.hardware_recall.mails.0.from]
+Parts Desk <parts@example.com>
+
+# Mutators > MUTATORS > hardware_recall > mails > 0 > subject
+[Mutators.MUTATORS.hardware_recall.mails.0.subject]
+Recall notice: hard drive batch
+
+# Mutators > MUTATORS > hardware_recall > mails > 0 > body
+[Mutators.MUTATORS.hardware_recall.mails.0.body]
+A batch of drives sold in the last year may fail early. Check clients for clicking or freezing PCs, and back them up first.
+
+# Mutators > MUTATORS > hurricane_drill > name
+[Mutators.MUTATORS.hurricane_drill.name]
+HURRICANE DRILL
+
+# Mutators > MUTATORS > hurricane_drill > text
+[Mutators.MUTATORS.hurricane_drill.text]
+After the storm season the owners want proof that a restore really works. A disaster-recovery drill is on: check every client's backups today, one of them failed overnight.
+
+# Mutators > MUTATORS > hurricane_drill > texts > 0 > from
+[Mutators.MUTATORS.hurricane_drill.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > hurricane_drill > texts > 0 > body
+[Mutators.MUTATORS.hurricane_drill.texts.0.body]
+Disaster-recovery drill today. Open the RMM, check each client's backups and re-run the one that failed.
+
+# Mutators > MUTATORS > new_psa > text
+[Mutators.MUTATORS.new_psa.text]
+The company moved to a new ticket system over the weekend. Nothing is where it was, customers cannot log in to the new portal, and every second call starts with 'where did my ticket go'.
+
+# Mutators > MUTATORS > new_psa > extra_problems > 0 > summary
+[Mutators.MUTATORS.new_psa.extra_problems.0.summary]
+New ticket portal will not let me log in
+
+# Mutators > MUTATORS > new_psa > extra_problems > 0 > body
+[Mutators.MUTATORS.new_psa.extra_problems.0.body]
+The new portal sent me a password and it does not work. I tried it six times. Please reset it so I can see my tickets. - %s
+
+# Mutators > MUTATORS > new_psa > extra_problems > 1 > summary
+[Mutators.MUTATORS.new_psa.extra_problems.1.summary]
+New ticket portal page is stuck
+
+# Mutators > MUTATORS > new_psa > extra_problems > 1 > body
+[Mutators.MUTATORS.new_psa.extra_problems.1.body]
+The portal page just spins. Last time you told me to clear something out of the browser. Can you do it for me again? - %s
+
+# Mutators > MUTATORS > new_psa > mails > 0 > from
+[Mutators.MUTATORS.new_psa.mails.0.from]
+Morgan Reyes - Manager
+
+# Mutators > MUTATORS > new_psa > mails > 0 > subject
+[Mutators.MUTATORS.new_psa.mails.0.subject]
+Migration day
+
+# Mutators > MUTATORS > new_psa > mails > 0 > body
+[Mutators.MUTATORS.new_psa.mails.0.body]
+The new PSA is live. The old one is read-only. If you cannot find something, ask me before you panic. - Morgan
+
+# Mutators > MUTATORS > heat_wave > text
+[Mutators.MUTATORS.heat_wave.text]
+A heat wave. The air conditioning cannot keep up, the server closets run hot and everyone is slower by the afternoon.
+
+# Mutators > MUTATORS > cold_snap > text
+[Mutators.MUTATORS.cold_snap.text]
+A cold snap. The roads are icy, fewer people call and the office heater clicks all day. Everything takes a little longer.
+
+
+# ======================= Mutators > STARTS =======================
+# Mutators > STARTS > standard > text
+[Mutators.STARTS.standard.text]
+A normal first day at Pixel IT Partners.
+
+# Mutators > STARTS > messy > name
+[Mutators.STARTS.messy.name]
+INHERIT A MESSY MSP
+
+# Mutators > STARTS > messy > text
+[Mutators.STARTS.messy.text]
+The last tech left a mess: two accounts are already angry, patches are months behind and the first weeks bring more tickets.
+
+# Mutators > STARTS > only_tech > text
+[Mutators.STARTS.only_tech.text]
+The team is thin at first: Maya joins on day 3 and Dan on day 5. Until then the desk is yours.
+
+# Mutators > STARTS > rival > name
+[Mutators.STARTS.rival.name]
+A RIVAL WANTS YOUR CLIENT
+
+# Mutators > STARTS > rival > text
+[Mutators.STARTS.rival.text]
+A competitor is already calling your clients. Keep them happy from the first day, or they walk.
+
+# Mutators > STARTS > rival > texts > 0 > from
+[Mutators.STARTS.rival.texts.0.from]
+Vic
+
+# Mutators > STARTS > rival > texts > 0 > body
+[Mutators.STARTS.rival.texts.0.body]
+Heads up: a rival shop is handing out flyers to our clients. Keep them happy this month.
+
+# Mutators > STARTS > family > name
+[Mutators.STARTS.family.name]
+FAMILY BUSINESS
+
+# Mutators > STARTS > family > text
+[Mutators.STARTS.family.text]
+Your father-in-law built this company and does not like change. Every card that changes the stack costs $250 more in 'conversations'.
+
+
 # ======================= Playbook > BOOKS =======================
 # job: RACK RECOVERY
 [Playbook.BOOKS.rack.title]

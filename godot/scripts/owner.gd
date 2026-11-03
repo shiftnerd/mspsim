@@ -1466,6 +1466,7 @@ func apply(fx: Dictionary) -> void:
 		goal = {"id": str(fx.goal), "week": Campaign.day}
 	if fx.has("stack"):
 		for category in fx.stack:
+			cash -= Mutators.stack_fee(str(category), str(fx.stack[category]))
 			stack[str(category)] = str(fx.stack[category])
 	if fx.has("vic_plan"):
 		vic_plan = str(fx.vic_plan)
@@ -1646,6 +1647,8 @@ func _prospect_card() -> void:
 
 # marketing brought in a prospect: you can take the meeting or hand it to Vic
 func _inbound_lead() -> void:
+	if not Mutators.chance("lead_mult"):
+		return
 	var pool := []
 	for c in Msp.CLIENTS.size():
 		if not Sales.active.has(c):
@@ -1829,7 +1832,7 @@ func _grumble() -> void:
 
 # ---- accounts receivable: some clients pay late -------------------------------------------------
 func pay_delay(client: int) -> int:
-	var delay := int(SLOW_PAYERS.get(client, 0))
+	var delay := int(SLOW_PAYERS.get(client, 0)) + int(Mutators.hook("pay_delay", 0))
 	if Sales.mood(client) < 35:
 		delay += 1
 	return delay
@@ -2420,6 +2423,7 @@ func poach_risk(client: int) -> float:
 		r += 0.05
 	if price >= 1.15:
 		r += 0.03
+	r += float(Mutators.hook("price_pressure", 0.0))
 	if _poach_wave > 0:
 		r *= 2.0
 	return minf(r, 0.6)

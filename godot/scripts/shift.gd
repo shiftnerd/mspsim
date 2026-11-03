@@ -124,9 +124,10 @@ func slow_mult() -> float:
 func fail_add() -> float:
 	if not active():
 		return 0.0
+	var extra := float(Mutators.hook("fail_add", 0.0))
 	if energy >= 85.0:
-		return -0.03
-	return clampf((45.0 - energy) / 45.0, 0.0, 1.0) * 0.18
+		return -0.03 + extra
+	return clampf((45.0 - energy) / 45.0, 0.0, 1.0) * 0.18 + extra
 
 
 func add_energy(amount: float) -> void:
@@ -318,7 +319,7 @@ func _process(delta: float) -> void:
 	if not active() or World.time_scale <= 0.0 or Cards.is_open:
 		return
 	var dt := delta * World.time_scale
-	energy = maxf(0.0, energy - DAY_DRAIN * dt / maxf(60.0, World.day_len))
+	energy = maxf(0.0, energy - DAY_DRAIN * float(Mutators.hook("energy_drain", 1.0)) * dt / maxf(60.0, World.day_len))
 	if _warned < 1 and energy < 55.0:
 		_warned = 1
 		Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
