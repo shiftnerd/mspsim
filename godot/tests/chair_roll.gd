@@ -42,6 +42,11 @@ func _init() -> void:
 	for who in ["Alan", "Dan"]:
 		world.chars[who].scene = "main_floor"
 		world.force_activity(who, "work")
+	# Maya owns Seat2 and Vic, Garrison have desks nearby: keep them at work elsewhere so nobody takes the chair mid-test
+	for who in ["Maya", "Garrison", "Vic"]:
+		if world.chars.has(who):
+			world.chars[who].scene = "office_two"
+			world.force_activity(who, "work")
 	change_scene_to_file("res://scenes/main_floor.tscn")
 	await _wait(40)
 	var scene := current_scene
@@ -118,6 +123,8 @@ func _init() -> void:
 	social.rel["Dan"] = 0
 	alan.global_position.x = cx + 8.0
 	dan.global_position.x = cx - 8.0
+	alan.global_position.y = seat.global_position.y  # a walking coworker may be off the desk row
+	dan.global_position.y = seat.global_position.y
 	roll._gap = 0.0
 	roll.vel = 40.0
 	roll.update(p, 0.001)
@@ -162,12 +169,15 @@ func _init() -> void:
 	await _hold(true, true, 240)
 	var off_now: float = roll.off
 	var chair_node: Node2D = roll.chair
+	# a ringing desk phone would be answered with E (it is in reach from the desk spot); this check is about standing up
+	for zone in get_nodes_in_group("phones"):
+		zone.remove_from_group("phones")
 	Input.action_press("interact")
 	await _wait(2)
 	Input.action_release("interact")
 	await _wait(60)
 	_check(p.state == "idle" and p.seat == null, "E stands you up while rolled away (%s)" % p.state)
-	_check(absf(p.global_position.x - seat.global_position.x) < 2.0, "you stand at the chair")
+	_check(absf(p.global_position.x - seat.global_position.x) < 2.0, "you stand at the chair (player %.1f, seat %.1f, state %s)" % [p.global_position.x, seat.global_position.x, p.state])
 	p.global_position.x = 40.0
 	await _wait(120)
 	_check(absf(chair_node.position.x - 198.0) < 0.6, "the empty chair rolled back to its desk (%.1f)" % chair_node.position.x)
