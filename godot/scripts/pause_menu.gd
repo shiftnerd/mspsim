@@ -45,6 +45,7 @@ func can_open(strict := true) -> bool:
 func open() -> void:
 	if is_open:
 		return
+	Campaign.snapshot()  # the mid-day resume point (R16); refused at an unsafe moment
 	is_open = true
 	_sel = 0
 	_confirm = false
@@ -62,6 +63,21 @@ func close() -> void:
 	visible = false
 	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	get_tree().paused = false
+
+
+# the Android back button (Resume.go_back): the same as ESC in the menu
+func back() -> void:
+	if not is_open:
+		return
+	if _page >= 0:
+		_page = -1
+		_sel = 1
+	elif _confirm:
+		_confirm = false
+		_sel = 3
+	else:
+		close()
+	_canvas.queue_redraw()
 
 
 func _labels() -> Array:

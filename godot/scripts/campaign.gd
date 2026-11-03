@@ -75,6 +75,9 @@ var save_prefix := "user://mspsim_"  # tests point this somewhere else
 
 var _base := {}
 var _awaiting := false
+var _last_hour := 0  # the hour of World.clock last seen (the hourly resume point, R16)
+var _snap_due := false  # an hour passed and the resume point is not written yet (a card was open)
+var _resume_scene := ""  # the room a resumed run opens in (start_scene hands it out once)
 var _fired_out := false
 
 
@@ -191,6 +194,10 @@ func derive_player_as(for_mode: String) -> String:
 
 # the room a new run starts in: your own desk when you play a cast member
 func start_scene() -> String:
+	if _resume_scene != "":
+		var room := _resume_scene
+		_resume_scene = ""
+		return room
 	var desk: Dictionary = World.player_desk()
 	return str(desk.scene) if not desk.is_empty() else "main_floor"
 
@@ -208,6 +215,8 @@ func new_game(for_mode: String) -> void:
 		push_warning("Campaign: mode '%s' is registered but not selectable yet" % for_mode)
 		return
 	mode = for_mode
+	clear_resume(for_mode)  # a new run never offers the old mid-day point
+	_resume_scene = ""
 	active = is_selectable(for_mode)
 	player_as = derive_player_as(for_mode)
 	if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
@@ -263,12 +272,21 @@ func new_game(for_mode: String) -> void:
 		World.apply_roster()
 
 
-func continue_game(for_mode: String) -> bool:
+# from_resume = true loads the mid-day resume point (snapshot) when there is a good one for today; otherwise (and by
+# default) the end-of-day save: the morning of that day
+func continue_game(for_mode: String, from_resume := false) -> bool:
 	if is_planned(for_mode):
 		return false
 	var cfg := ConfigFile.new()
-	if cfg.load(save_path(for_mode)) != OK:
+	var resumed := false
+	if from_resume:
+		var snap := load_resume(for_mode)
+		if snap != null:
+			cfg = snap
+			resumed = true
+	if not resumed and cfg.load(save_path(for_mode)) != OK:
 		return false
+	_resume_scene = ""
 	mode = for_mode
 	active = true
 	day = int(cfg.get_value("campaign", "day", 1))
@@ -294,9 +312,14 @@ func continue_game(for_mode: String) -> bool:
 	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
 	build = Build.from_dict(cfg.get_value("campaign", "build", {}))  # an old save has none: the flat default
-	Msp.reset()
+	if resumed:
+		Msp.from_dict(cfg.get_value("msp", "state", {}))
+	else:
+		Msp.reset()
 	Skills.from_dict(cfg.get_value("campaign", "skills", {}))
 	Story.reset()
+	if resumed:
+		Story.restore(cfg.get_value("story_day", "state", {}))
 	Social.from_dict(cfg.get_value("campaign", "social", {}))
 	Sales.from_dict(cfg.get_value("campaign", "sales", {}))
 	Owner.from_dict(cfg.get_value("campaign", "owner", {}))
@@ -324,6 +347,15 @@ func continue_game(for_mode: String) -> bool:
 	if saved_backups.size() == Msp.backups.size():
 		Msp.backups = saved_backups
 	Msp.enabled = true
+	if resumed:
+		# the day is already under way: no Msp.reset, Story.reset or World.begin_next_day, and none of the day-begin
+		# hooks (Mutators, Events, Yeartwo, Story, Shift cards, the day_started listeners) may run a second time
+		Resume.apply(cfg)
+		Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
+		_last_hour = int(World.clock)
+		_snap_due = false
+		Sfx.play_music("day")
+		return true
 	World.begin_next_day(day)
 	_begin_day()
 	return true
@@ -333,6 +365,12 @@ func save() -> void:
 	if not active or not is_selectable(mode):
 		return
 	var cfg := ConfigFile.new()
+	_write_sections(cfg)
+	cfg.save(save_path(mode))
+
+
+# every section the end-of-day save holds; the mid-day resume point (snapshot) writes the same ones
+func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "day", day)
 	cfg.set_value("campaign", "rep", rep)
 	cfg.set_value("campaign", "scars", scars)
@@ -364,12 +402,92 @@ func save() -> void:
 	cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
 	cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
-	cfg.save(save_path(mode))
+
+
+# ---- the mid-day resume point (R16, docs/scope-cozy-and-resume.md B) -------------------------------------------
+# A coarse snapshot at safe moments, in <prefix><mode>_resume.cfg (the end-of-day save is never touched). It is
+# written hourly, when the pause menu opens and when the app is paused, loses focus or is closed (resume.gd).
+# Lost on resume: cast mid-walk positions, RMM jobs in progress, open UI and cards, mini-games, onsite visits,
+# nerf wars, conversations, the exact x position. Free Play is never saved.
+func resume_path(for_mode: String) -> String:
+	return save_prefix + for_mode + "_resume.cfg"
+
+
+# the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
+func can_snapshot() -> bool:
+	if not active or mode != "tech" or Game.title_mode or Game.busy or _awaiting:
+		return false
+	if World.clock < World.DAY_START or World.clock >= World.DAY_END:
+		return false
+	if Story.overtime or Playbook.is_active() or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
+		return false
+	return not _something_open()
+
+
+# a card, a screen, a mini-game or a visit has the player
+func _something_open() -> bool:
+	if Game.ui_open or Cards.is_open or Cards.waiting() > 0 or Computer.is_open or Phone.is_open:
+		return true
+	if DayReport.is_open or Review.is_open or Toolbox.is_open:
+		return true
+	return Outings.busy() or Outings.is_open or PrinterGame.is_open or Onsite.busy or Onsite.active
+
+
+# writes the resume point now; false (and the last good one stays) when it is not a safe moment or the write fails
+func snapshot() -> bool:
+	if not can_snapshot():
+		return false
+	var cfg := ConfigFile.new()
+	_write_sections(cfg)
+	Resume.capture(cfg)
+	return Resume.write(cfg, resume_path(mode))
+
+
+# the newest good resume point of this mode (the file, else its .bak), or null: corrupt, truncated, another version
+# or not from the day the end-of-day save is on
+func load_resume(for_mode: String) -> ConfigFile:
+	for suffix in ["", ".bak"]:
+		var cfg := ConfigFile.new()
+		if cfg.load(resume_path(for_mode) + suffix) == OK and _resume_ok(cfg, for_mode):
+			return cfg
+	return null
+
+
+func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
+	var head: Variant = cfg.get_value("resume", "head", {})
+	if not (head is Dictionary):
+		return false
+	if int(head.get("version", 0)) != Resume.VERSION or str(head.get("mode", "")) != for_mode:
+		return false
+	var want := saved_day(for_mode) if has_save(for_mode) else 1  # day 1 has no end-of-day save yet
+	if int(head.get("day", -1)) != want:
+		return false
+	for section in ["campaign", "msp", "story_day", "world", "net", "day"]:
+		if not cfg.has_section(section):
+			return false
+	return true
+
+
+# {day, clock, text} of the good resume point for the title menu, {} when there is none
+func resume_info(for_mode: String) -> Dictionary:
+	var cfg := load_resume(for_mode)
+	if cfg == null:
+		return {}
+	var head: Dictionary = cfg.get_value("resume", "head", {})
+	var clock := float(head.get("clock", 9.0))
+	return {"day": int(head.day), "clock": clock, "text": "%d:%02d" % [int(clock), int((clock - floorf(clock)) * 60.0)]}
+
+
+func clear_resume(for_mode: String) -> void:
+	for suffix in ["", ".bak", ".tmp"]:
+		if FileAccess.file_exists(resume_path(for_mode) + suffix):
+			DirAccess.remove_absolute(resume_path(for_mode) + suffix)
 
 
 # the review is over: remember how the year ended and go back to the title
 func finish_campaign(ending: String) -> void:
 	Mutators.note_finish()
+	clear_resume(mode)
 	var meta := ConfigFile.new()
 	meta.load(save_prefix + "meta.cfg")
 	meta.set_value(mode, "ending", ending)
@@ -416,12 +534,20 @@ func _begin_day() -> void:
 	Events.begin_day(day)
 	Mutators.begin_day(day)
 	Yeartwo.begin_day(day)
+	_last_hour = int(World.clock)
+	_snap_due = false
 	day_started.emit(day)
 
 
 func _process(_delta: float) -> void:
 	if not active or _awaiting or Game.title_mode or Onsite.busy:
 		return
+	var hour := int(World.clock)
+	if hour > _last_hour:
+		_snap_due = true  # the hourly resume point: tried every frame until a safe moment
+	_last_hour = hour
+	if _snap_due and snapshot():
+		_snap_due = false
 	if Cards.is_open or Outings.busy():
 		return  # the week report waits until every card and outing is finished
 	var late: bool = World.clock >= 23.5
@@ -575,6 +701,7 @@ func report_continue(final: bool) -> void:
 	if final and str(prop("review", "")) != "" and not _fired_out:
 		Review.start()
 		return
+	clear_resume(mode)  # the day is over: its mid-day point is stale
 	if final:
 		if has_save(mode):
 			DirAccess.remove_absolute(save_path(mode))

@@ -6,6 +6,7 @@ config_version=5
 config/name="MSPSim"
 run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+config/quit_on_go_back=false
 
 [autoload]
 
@@ -52,6 +53,7 @@ Crew="*res://scripts/crew.gd"
 ServiceArc="*res://scripts/service_arc.gd"
 Service="*res://scripts/service.gd"
 PauseMenu="*res://scripts/pause_menu.gd"
+Resume="*res://scripts/resume.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
 Owners="*res://scripts/owners.gd"

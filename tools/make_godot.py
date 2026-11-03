@@ -332,6 +332,7 @@ config_version=5
 config/name="MSPSim"
 run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+config/quit_on_go_back=false
 
 [autoload]
 
@@ -378,6 +379,7 @@ Crew="*res://scripts/crew.gd"
 ServiceArc="*res://scripts/service_arc.gd"
 Service="*res://scripts/service.gd"
 PauseMenu="*res://scripts/pause_menu.gd"
+Resume="*res://scripts/resume.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
 Owners="*res://scripts/owners.gd"
@@ -4371,6 +4373,69 @@ func reset() -> void:
     send_text("Dispatch", "Welcome! Press P for your phone. I will text you about urgent tickets.")
 
 
+# the resume point (Campaign.snapshot, R16): the whole service desk, so a mid-day continue puts every ticket,
+# email, text, endpoint and SLA clock back. Plain data only (a save file holds no objects).
+func to_dict() -> Dictionary:
+    return {
+        "version": 1,
+        "tickets": tickets.duplicate(true),
+        "emails": emails.duplicate(true),
+        "texts": texts.duplicate(true),
+        "endpoints": endpoints.duplicate(true),
+        "backups": backups.duplicate(true),
+        "project": project.duplicate(true),
+        "later": _later.duplicate(true),
+        "score": score,
+        "closed_ok": closed_ok,
+        "breached": breached,
+        "reopened": reopened,
+        "pace": pace,
+        "spawned_today": spawned_today,
+        "next_id": _next_id,
+        "next_mail": _next_mail,
+        "spawn_t": _spawn_t,
+        "down": _down.duplicate(true),
+        "up": _up.duplicate(true),
+        "internal": _internal.duplicate(true),
+        "owner_noted": _owner_noted.duplicate(true),
+    }
+
+
+func from_dict(data: Dictionary) -> void:
+    tickets = _saved_array(data, "tickets")
+    emails = _saved_array(data, "emails")
+    texts = _saved_array(data, "texts")
+    endpoints = _saved_array(data, "endpoints")
+    backups = _saved_array(data, "backups")
+    _later = _saved_array(data, "later")
+    var saved_project: Variant = data.get("project", {})
+    project = (saved_project as Dictionary).duplicate(true) if saved_project is Dictionary else {}
+    score = int(data.get("score", 0))
+    closed_ok = int(data.get("closed_ok", 0))
+    breached = int(data.get("breached", 0))
+    reopened = int(data.get("reopened", 0))
+    pace = float(data.get("pace", 1.0))
+    spawned_today = int(data.get("spawned_today", 0))
+    _next_id = int(data.get("next_id", 10421))
+    _next_mail = int(data.get("next_mail", 1))
+    _spawn_t = float(data.get("spawn_t", 20.0))
+    _down = _saved_dict(data, "down")
+    _up = _saved_dict(data, "up")
+    _internal = _saved_dict(data, "internal")
+    _owner_noted = _saved_dict(data, "owner_noted")
+    changed.emit()
+
+
+func _saved_array(data: Dictionary, key: String) -> Array:
+    var v: Variant = data.get(key, [])
+    return (v as Array).duplicate(true) if v is Array else []
+
+
+func _saved_dict(data: Dictionary, key: String) -> Dictionary:
+    var v: Variant = data.get(key, {})
+    return (v as Dictionary).duplicate(true) if v is Dictionary else {}
+
+
 func _endpoint(client: int, suffix: String, os_name: String) -> Dictionary:
     return {
         "name": "%s-%s" % [CLIENTS[client].short, suffix], "client": client,
@@ -8136,6 +8201,9 @@ var save_prefix := "user://mspsim_"  # tests point this somewhere else
 
 var _base := {}
 var _awaiting := false
+var _last_hour := 0  # the hour of World.clock last seen (the hourly resume point, R16)
+var _snap_due := false  # an hour passed and the resume point is not written yet (a card was open)
+var _resume_scene := ""  # the room a resumed run opens in (start_scene hands it out once)
 var _fired_out := false
 
 
@@ -8252,6 +8320,10 @@ func derive_player_as(for_mode: String) -> String:
 
 # the room a new run starts in: your own desk when you play a cast member
 func start_scene() -> String:
+    if _resume_scene != "":
+        var room := _resume_scene
+        _resume_scene = ""
+        return room
     var desk: Dictionary = World.player_desk()
     return str(desk.scene) if not desk.is_empty() else "main_floor"
 
@@ -8269,6 +8341,8 @@ func new_game(for_mode: String) -> void:
         push_warning("Campaign: mode '%s' is registered but not selectable yet" % for_mode)
         return
     mode = for_mode
+    clear_resume(for_mode)  # a new run never offers the old mid-day point
+    _resume_scene = ""
     active = is_selectable(for_mode)
     player_as = derive_player_as(for_mode)
     if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
@@ -8324,12 +8398,21 @@ func new_game(for_mode: String) -> void:
         World.apply_roster()
 
 
-func continue_game(for_mode: String) -> bool:
+# from_resume = true loads the mid-day resume point (snapshot) when there is a good one for today; otherwise (and by
+# default) the end-of-day save: the morning of that day
+func continue_game(for_mode: String, from_resume := false) -> bool:
     if is_planned(for_mode):
         return false
     var cfg := ConfigFile.new()
-    if cfg.load(save_path(for_mode)) != OK:
+    var resumed := false
+    if from_resume:
+        var snap := load_resume(for_mode)
+        if snap != null:
+            cfg = snap
+            resumed = true
+    if not resumed and cfg.load(save_path(for_mode)) != OK:
         return false
+    _resume_scene = ""
     mode = for_mode
     active = true
     day = int(cfg.get_value("campaign", "day", 1))
@@ -8355,9 +8438,14 @@ func continue_game(for_mode: String) -> bool:
     Game.vars["start_seated"] = player_as != ""
     _awaiting = false
     build = Build.from_dict(cfg.get_value("campaign", "build", {}))  # an old save has none: the flat default
-    Msp.reset()
+    if resumed:
+        Msp.from_dict(cfg.get_value("msp", "state", {}))
+    else:
+        Msp.reset()
     Skills.from_dict(cfg.get_value("campaign", "skills", {}))
     Story.reset()
+    if resumed:
+        Story.restore(cfg.get_value("story_day", "state", {}))
     Social.from_dict(cfg.get_value("campaign", "social", {}))
     Sales.from_dict(cfg.get_value("campaign", "sales", {}))
     Owner.from_dict(cfg.get_value("campaign", "owner", {}))
@@ -8385,6 +8473,15 @@ func continue_game(for_mode: String) -> bool:
     if saved_backups.size() == Msp.backups.size():
         Msp.backups = saved_backups
     Msp.enabled = true
+    if resumed:
+        # the day is already under way: no Msp.reset, Story.reset or World.begin_next_day, and none of the day-begin
+        # hooks (Mutators, Events, Yeartwo, Story, Shift cards, the day_started listeners) may run a second time
+        Resume.apply(cfg)
+        Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
+        _last_hour = int(World.clock)
+        _snap_due = false
+        Sfx.play_music("day")
+        return true
     World.begin_next_day(day)
     _begin_day()
     return true
@@ -8394,6 +8491,12 @@ func save() -> void:
     if not active or not is_selectable(mode):
         return
     var cfg := ConfigFile.new()
+    _write_sections(cfg)
+    cfg.save(save_path(mode))
+
+
+# every section the end-of-day save holds; the mid-day resume point (snapshot) writes the same ones
+func _write_sections(cfg: ConfigFile) -> void:
     cfg.set_value("campaign", "day", day)
     cfg.set_value("campaign", "rep", rep)
     cfg.set_value("campaign", "scars", scars)
@@ -8425,12 +8528,92 @@ func save() -> void:
     cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
     cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
     cfg.set_value("campaign", "backups", Msp.backups)
-    cfg.save(save_path(mode))
+
+
+# ---- the mid-day resume point (R16, docs/scope-cozy-and-resume.md B) -------------------------------------------
+# A coarse snapshot at safe moments, in <prefix><mode>_resume.cfg (the end-of-day save is never touched). It is
+# written hourly, when the pause menu opens and when the app is paused, loses focus or is closed (resume.gd).
+# Lost on resume: cast mid-walk positions, RMM jobs in progress, open UI and cards, mini-games, onsite visits,
+# nerf wars, conversations, the exact x position. Free Play is never saved.
+func resume_path(for_mode: String) -> String:
+    return save_prefix + for_mode + "_resume.cfg"
+
+
+# the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
+func can_snapshot() -> bool:
+    if not active or mode != "tech" or Game.title_mode or Game.busy or _awaiting:
+        return false
+    if World.clock < World.DAY_START or World.clock >= World.DAY_END:
+        return false
+    if Story.overtime or Playbook.is_active() or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
+        return false
+    return not _something_open()
+
+
+# a card, a screen, a mini-game or a visit has the player
+func _something_open() -> bool:
+    if Game.ui_open or Cards.is_open or Cards.waiting() > 0 or Computer.is_open or Phone.is_open:
+        return true
+    if DayReport.is_open or Review.is_open or Toolbox.is_open:
+        return true
+    return Outings.busy() or Outings.is_open or PrinterGame.is_open or Onsite.busy or Onsite.active
+
+
+# writes the resume point now; false (and the last good one stays) when it is not a safe moment or the write fails
+func snapshot() -> bool:
+    if not can_snapshot():
+        return false
+    var cfg := ConfigFile.new()
+    _write_sections(cfg)
+    Resume.capture(cfg)
+    return Resume.write(cfg, resume_path(mode))
+
+
+# the newest good resume point of this mode (the file, else its .bak), or null: corrupt, truncated, another version
+# or not from the day the end-of-day save is on
+func load_resume(for_mode: String) -> ConfigFile:
+    for suffix in ["", ".bak"]:
+        var cfg := ConfigFile.new()
+        if cfg.load(resume_path(for_mode) + suffix) == OK and _resume_ok(cfg, for_mode):
+            return cfg
+    return null
+
+
+func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
+    var head: Variant = cfg.get_value("resume", "head", {})
+    if not (head is Dictionary):
+        return false
+    if int(head.get("version", 0)) != Resume.VERSION or str(head.get("mode", "")) != for_mode:
+        return false
+    var want := saved_day(for_mode) if has_save(for_mode) else 1  # day 1 has no end-of-day save yet
+    if int(head.get("day", -1)) != want:
+        return false
+    for section in ["campaign", "msp", "story_day", "world", "net", "day"]:
+        if not cfg.has_section(section):
+            return false
+    return true
+
+
+# {day, clock, text} of the good resume point for the title menu, {} when there is none
+func resume_info(for_mode: String) -> Dictionary:
+    var cfg := load_resume(for_mode)
+    if cfg == null:
+        return {}
+    var head: Dictionary = cfg.get_value("resume", "head", {})
+    var clock := float(head.get("clock", 9.0))
+    return {"day": int(head.day), "clock": clock, "text": "%d:%02d" % [int(clock), int((clock - floorf(clock)) * 60.0)]}
+
+
+func clear_resume(for_mode: String) -> void:
+    for suffix in ["", ".bak", ".tmp"]:
+        if FileAccess.file_exists(resume_path(for_mode) + suffix):
+            DirAccess.remove_absolute(resume_path(for_mode) + suffix)
 
 
 # the review is over: remember how the year ended and go back to the title
 func finish_campaign(ending: String) -> void:
     Mutators.note_finish()
+    clear_resume(mode)
     var meta := ConfigFile.new()
     meta.load(save_prefix + "meta.cfg")
     meta.set_value(mode, "ending", ending)
@@ -8474,12 +8657,20 @@ func _begin_day() -> void:
     Events.begin_day(day)
     Mutators.begin_day(day)
     Yeartwo.begin_day(day)
+    _last_hour = int(World.clock)
+    _snap_due = false
     day_started.emit(day)
 
 
 func _process(_delta: float) -> void:
     if not active or _awaiting or Game.title_mode or Onsite.busy:
         return
+    var hour := int(World.clock)
+    if hour > _last_hour:
+        _snap_due = true  # the hourly resume point: tried every frame until a safe moment
+    _last_hour = hour
+    if _snap_due and snapshot():
+        _snap_due = false
     if Cards.is_open or Outings.busy():
         return  # the week report waits until every card and outing is finished
     var late: bool = World.clock >= 23.5
@@ -8603,6 +8794,7 @@ func report_continue(final: bool) -> void:
     if final and str(prop("review", "")) != "" and not _fired_out:
         Review.start()
         return
+    clear_resume(mode)  # the day is over: its mid-day point is stale
     if final:
         if has_save(mode):
             DirAccess.remove_absolute(save_path(mode))
@@ -13394,6 +13586,22 @@ func reset() -> void:
     ot_hours = 0.0
     _followed = false
     Playbook.reset()
+
+
+# the resume point (R16): which of today's events already fired, so a mid-day continue does not repeat them
+func snapshot() -> Dictionary:
+    return {"fired": _fired.duplicate(), "followed": _followed, "overtime": overtime, "ot_hours": ot_hours}
+
+
+func restore(data: Dictionary) -> void:
+    _fired = {}
+    var fired: Variant = data.get("fired", {})
+    if fired is Dictionary:
+        for k in fired:
+            _fired[int(k)] = true
+    _followed = bool(data.get("followed", false))
+    overtime = bool(data.get("overtime", false))
+    ot_hours = float(data.get("ot_hours", 0.0))
 
 
 # the scripted events of a day; Year 2 moves some of them by a day or two (Yeartwo.story_shuffle)
@@ -40613,6 +40821,10 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
 
 func _open_menu() -> void:
     _items = []
+    var snap: Dictionary = Campaign.resume_info("tech")  # a mid-day resume point (R16)
+    if not snap.is_empty():
+        var snap_label := "CONTINUE TECH - DAY %d  %s" % [int(snap.day), str(snap.text)] + Yeartwo.saved_tag("tech")
+        _items.append({"label": snap_label, "id": "tech_resume", "enabled": true})
     if Campaign.has_save("tech"):
         var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech") + Yeartwo.saved_tag("tech")
         _items.append({"label": label, "id": "tech_continue", "enabled": true})
@@ -40672,7 +40884,7 @@ func _choose(i: int) -> void:
     if id == "career":
         _open_career()
         return
-    if id.ends_with("_continue"):
+    if id.ends_with("_continue") or id.ends_with("_resume"):
         _start(id)  # a saved run keeps its character: no select screen
     else:
         _open_select(id)
@@ -40749,6 +40961,8 @@ func _start(id: String, summary := "") -> void:
             Campaign.new_game("tech")
         "tech_continue":
             Campaign.continue_game("tech")
+        "tech_resume":
+            Campaign.continue_game("tech", true)
         "owner_new":
             Campaign.new_game("owner")
         "owner_continue":
@@ -40843,6 +41057,28 @@ func reset() -> void:
     battery = 1.0
     for key in _boot:
         _boot[key] = 99.0
+
+
+# the resume point (R16): where every cable end is and what is powered
+func to_dict() -> Dictionary:
+    return {"cables": cables.duplicate(true), "ups_on": ups_on, "nas_on": nas_on, "battery": battery, "boot": _boot.duplicate()}
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    var saved: Variant = data.get("cables", {})
+    if saved is Dictionary:
+        for id in saved:
+            var c: Variant = saved[id]
+            if cables.has(id) and c is Dictionary and c.has("kind") and c.has("end"):
+                cables[id] = {"kind": str(c.kind), "end": str(c.end)}
+    ups_on = bool(data.get("ups_on", true))
+    nas_on = bool(data.get("nas_on", true))
+    battery = float(data.get("battery", 1.0))
+    var boot: Variant = data.get("boot", {})
+    if boot is Dictionary:
+        for key in _boot:
+            _boot[key] = float(boot.get(key, 99.0))
 
 
 func cable_color(id: String) -> Color:
@@ -41092,6 +41328,14 @@ func _ready() -> void:
 
 # the first room of a run as a cast member: you are already sitting at your desk
 func _seat_player() -> void:
+    var resume_seat := str(Game.vars.get("resume_seat", ""))
+    if Game.vars.has("resume_seat"):  # a resumed run (Resume.apply_player): back in the chair they were in
+        Game.vars.erase("resume_seat")
+        Game.vars.erase("start_seated")
+        var chair := get_node_or_null("Interactables/%s" % resume_seat) if resume_seat != "" else null
+        if chair != null and _player.has_method("sit_now"):
+            _player.sit_now(chair)
+        return
     if not Game.vars.get("start_seated", false):
         return
     Game.vars.erase("start_seated")
@@ -49275,6 +49519,207 @@ func _stick_push(event: InputEventJoypadMotion) -> bool:
     return _stick_result
 ''')
 
+write("scripts/resume.gd", '''extends Node
+# Autoload: the mid-day resume point (roadmap R16; the rules live in Campaign: can_snapshot, snapshot, load_resume).
+# This node does the parts that need a tree that is always processing and the world's innards:
+#  - the lifecycle: the app is paused (Android home), the window loses focus or is closed -> write the resume point
+#    now (Campaign.snapshot refuses at an unsafe moment and the last good one stays); the Android back button opens the
+#    pause menu (and closes it again), it never quits by itself (project setting quit_on_go_back is off)
+#  - capture(cfg) / apply(cfg): the clock, the cast (trimmed), lights, the player's room, held item and seat, the cable
+#    ends and the per-day odds and ends of Shift, Social, Events, Onsite, Outings and Meeting
+#  - write(): temp file, check it reads back, keep the old one as .bak, rename into place
+
+const VERSION := 1
+
+
+func _ready() -> void:
+    process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+func _notification(what: int) -> void:
+    match what:
+        NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_WM_CLOSE_REQUEST:
+            Campaign.snapshot()
+        NOTIFICATION_WM_GO_BACK_REQUEST:
+            go_back()
+
+
+# the Android back button: the pause menu opens, and the next press closes its page or the menu
+func go_back() -> void:
+    if PauseMenu.is_open:
+        PauseMenu.back()
+    elif PauseMenu.can_open(false):
+        PauseMenu.open()
+
+
+# ---- the file ----------------------------------------------------------------------------------
+func write(cfg: ConfigFile, path: String) -> bool:
+    var tmp := path + ".tmp"
+    if cfg.save(tmp) != OK:
+        return false
+    var check := ConfigFile.new()
+    if check.load(tmp) != OK or not check.has_section("resume"):
+        DirAccess.remove_absolute(tmp)
+        return false
+    if FileAccess.file_exists(path):
+        DirAccess.rename_absolute(path, path + ".bak")  # replaces an older .bak
+    return DirAccess.rename_absolute(tmp, path) == OK
+
+
+# ---- what the snapshot holds beyond the end-of-day sections ------------------------------------------
+func capture(cfg: ConfigFile) -> void:
+    cfg.set_value("msp", "state", Msp.to_dict())
+    cfg.set_value("net", "state", Net.to_dict())
+    cfg.set_value("story_day", "state", Story.snapshot())
+    cfg.set_value("world", "state", world_dict())
+    cfg.set_value("player", "state", player_dict())
+    cfg.set_value("day", "state", day_dict())
+    # last: a file cut short never has this section, so it never counts as a resume point
+    var head := {"version": VERSION, "mode": Campaign.mode, "day": Campaign.day, "clock": World.clock}
+    cfg.set_value("resume", "head", head)
+
+
+func world_dict() -> Dictionary:
+    var cast := {}
+    for n in World.chars:
+        var st: Dictionary = World.chars[n]
+        var held := str(st.held)
+        var sips := int(st.sips)
+        var node: Variant = st.node
+        if node != null and is_instance_valid(node):  # standing in the room: the live person knows
+            held = str(node.held)
+            sips = int(node.sips)
+        cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched, "ret": st.ret}
+    return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "cast": cast}
+
+
+func player_dict() -> Dictionary:
+    var scene := get_tree().current_scene
+    var p: Node = scene.get_node_or_null("Actors/Player") if scene != null else null
+    if p == null:
+        return {}
+    var seat := ""
+    if p.state == "sitting" and p.seat != null and is_instance_valid(p.seat):
+        seat = str(p.seat.name)
+    return {"room": scene.scene_file_path.get_file().get_basename(), "held": str(p.held), "sips": int(p.sips), "seat": seat}
+
+
+# the per-day state that the day-begin hooks set up and the end-of-day sections do not carry
+func day_dict() -> Dictionary:
+    return {
+        "base": Campaign._base.duplicate(),
+        "shift": {
+            "late_min": Shift.late_min,
+            "stay_hours": Shift.stay_hours,
+            "asked": Shift._asked,
+            "stay_until": Shift._stay_until,
+            "warned": Shift._warned,
+            "oncall_pay": Shift._oncall_pay,
+            "note": Shift.last_note,
+        },
+        "social": {"day_delta": Social.day_delta, "reopen_loss": Social._reopen_loss, "closed": Social._closed},
+        "events": Events.pending.duplicate(true),
+        "onsite": {"spawn_at": Onsite._spawn_at, "pet_energy": Onsite._pet_energy},
+        "outings": {"offered": Outings._offered},
+        "meeting": Meeting.state,
+    }
+
+
+# ---- the way back ------------------------------------------------------------------------------
+func apply(cfg: ConfigFile) -> void:
+    Net.from_dict(cfg.get_value("net", "state", {}))
+    apply_day(cfg.get_value("day", "state", {}))
+    apply_world(cfg.get_value("world", "state", {}))
+    apply_player(cfg.get_value("player", "state", {}))
+
+
+func apply_day(d: Dictionary) -> void:
+    var base: Variant = d.get("base", {})
+    if base is Dictionary and not (base as Dictionary).is_empty():
+        Campaign._base = (base as Dictionary).duplicate()
+    else:
+        Campaign._base = {"score": Msp.score, "closed": Msp.closed_ok, "missed": Msp.breached, "reopened": Msp.reopened}
+    var sh: Dictionary = d.get("shift", {})
+    Shift.late_min = int(sh.get("late_min", 0))
+    Shift.stay_hours = float(sh.get("stay_hours", 0.0))
+    Shift._asked = bool(sh.get("asked", false))
+    Shift._stay_until = float(sh.get("stay_until", 0.0))
+    Shift._warned = int(sh.get("warned", 0))
+    Shift._oncall_pay = int(sh.get("oncall_pay", 0))
+    Shift.last_note = str(sh.get("note", ""))
+    var so: Dictionary = d.get("social", {})
+    Social.day_delta = int(so.get("day_delta", 0))
+    Social._reopen_loss = int(so.get("reopen_loss", 0))
+    Social._closed = int(so.get("closed", 0))
+    var ev: Variant = d.get("events", {})
+    Events.pending = (ev as Dictionary).duplicate(true) if ev is Dictionary else {}
+    var on: Dictionary = d.get("onsite", {})
+    Onsite._spawn_at = float(on.get("spawn_at", -1.0))
+    Onsite._pet_energy = int(on.get("pet_energy", 0))
+    Outings._offered = bool(d.get("outings", {}).get("offered", false))
+    Meeting.state = str(d.get("meeting", ""))
+
+
+# the clock and lights come back exactly; the cast is trimmed: everybody is at their desk (or still outside, coming
+# in) with their held item, sips and lunch flag, and plans their next leg from there
+func apply_world(d: Dictionary) -> void:
+    World.day = int(d.get("day", Campaign.day))
+    World.clock = float(d.get("clock", World.DAY_START))
+    World.lights.clear()
+    var lights: Variant = d.get("lights", {})
+    if lights is Dictionary:
+        for room in lights:
+            World.lights[str(room)] = bool(lights[room])
+    Mutators.prepare_day(World.day)  # who is out sick today (flu season), the same pick as this morning
+    World.apply_roster()
+    var cast: Dictionary = d.get("cast", {})
+    for n in World.chars:
+        var st: Dictionary = World.chars[n]
+        var node: Variant = st.node
+        if node != null and is_instance_valid(node):
+            node._leaving = true
+        st.node = null
+        var saved: Dictionary = cast.get(n, {})
+        st.held = str(saved.get("held", ""))
+        st.sips = int(saved.get("sips", 0))
+        st.lunched = bool(saved.get("lunched", false))
+        st.ret = str(saved.get("ret", ""))
+        st.following = false
+        st.follow_t = 0.0
+        st.fresh = false
+        st.arriving = false
+        st.arrive = ""
+        if str(saved.get("scene", "")) == World.OUTSIDE:
+            var wait_s := randf_range(5.0, 25.0)
+            st.scene = World.OUTSIDE
+            st.legs = [
+                {
+                    "kind": "away",
+                    "scene": World.OUTSIDE,
+                    "routine": PackedStringArray(),
+                    "dur": wait_s,
+                    "target_x": -1.0,
+                    "to_scene": "main_floor",
+                    "to_spawn": "from_outside",
+                }
+            ]
+        else:
+            st.scene = World.row(n).home
+            st.legs = [World._work_leg(n, true, randf_range(20.0, 50.0))]
+        st.leg_t = st.legs[0].dur
+
+
+# the room, the held cup and the seat travel through Game.vars; the stage seats the player (Stage._seat_player)
+func apply_player(d: Dictionary) -> void:
+    var room := str(d.get("room", ""))
+    if room != "" and ResourceLoader.exists("res://scenes/%s.tscn" % room):
+        Campaign._resume_scene = room
+        Game.vars["resume_seat"] = str(d.get("seat", ""))
+    Game.vars["held"] = str(d.get("held", ""))
+    Game.vars["sips"] = int(d.get("sips", 0))
+''')
+
+
 write("scripts/pause_menu.gd", '''extends CanvasLayer
 # Autoload: the pause menu. ESC (or the Pause key) while you are walking around a room stops everything: the clock,
 # the cast, the tickets, the SLA timers (the whole scene tree is paused; this node alone keeps running).
@@ -49322,6 +49767,7 @@ func can_open(strict := true) -> bool:
 func open() -> void:
     if is_open:
         return
+    Campaign.snapshot()  # the mid-day resume point (R16); refused at an unsafe moment
     is_open = true
     _sel = 0
     _confirm = false
@@ -49339,6 +49785,21 @@ func close() -> void:
     visible = false
     _canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
     get_tree().paused = false
+
+
+# the Android back button (Resume.go_back): the same as ESC in the menu
+func back() -> void:
+    if not is_open:
+        return
+    if _page >= 0:
+        _page = -1
+        _sel = 1
+    elif _confirm:
+        _confirm = false
+        _sel = 3
+    else:
+        close()
+    _canvas.queue_redraw()
 
 
 func _labels() -> Array:

@@ -64,6 +64,14 @@ func _ready() -> void:
 
 # the first room of a run as a cast member: you are already sitting at your desk
 func _seat_player() -> void:
+	var resume_seat := str(Game.vars.get("resume_seat", ""))
+	if Game.vars.has("resume_seat"):  # a resumed run (Resume.apply_player): back in the chair they were in
+		Game.vars.erase("resume_seat")
+		Game.vars.erase("start_seated")
+		var chair := get_node_or_null("Interactables/%s" % resume_seat) if resume_seat != "" else null
+		if chair != null and _player.has_method("sit_now"):
+			_player.sit_now(chair)
+		return
 	if not Game.vars.get("start_seated", false):
 		return
 	Game.vars.erase("start_seated")
