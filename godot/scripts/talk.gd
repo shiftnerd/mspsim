@@ -212,7 +212,7 @@ func _menu(text: String) -> void:
 		text,
 		[
 			{"label": "SMALL TALK", "id": "small"},
-			{"label": "HOW ARE YOU HOLDING UP?" if owner_mode else "ASK FOR HELP", "id": "ask"},
+			{"label": "HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP"), "id": "ask"},
 			{"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
 			{"label": "LEAVE (ESC)", "id": "leave"},
 		],

@@ -45,6 +45,7 @@ Mutators="*res://scripts/mutators.gd"
 Career="*res://scripts/career.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
+Owners="*res://scripts/owners.gd"
 
 [display]
 

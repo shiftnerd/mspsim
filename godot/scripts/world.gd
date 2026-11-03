@@ -827,6 +827,33 @@ func _uses(scene: String) -> Dictionary:
 	return DATA.SCENES[scene].uses
 
 
+# Owners.step_in: the owner walks to a ringing phone on the stage, answers it with a headset and goes back to work
+func send_owner_cover(n: String, x: float) -> bool:
+	if not chars.has(n) or _scene == "" or not DATA.SCENES.has(_scene):
+		return false
+	var st: Dictionary = chars[n]
+	var from_x := _hint_x(n)
+	var legs := _travel(st.scene, _scene, from_x)
+	if st.scene != _scene and legs.is_empty():
+		return false
+	legs.append(
+		{
+			"kind": "cover",
+			"scene": _scene,
+			"target_x": x,
+			"routine": PackedStringArray(["stand", "walk:%d" % int(x), "answer"]),
+			"dur": absf(x - from_x) / SPEED + 10.0,
+		}
+	)
+	legs.append_array(_travel(_scene, CAST[n].home, x))
+	legs.append(_work_leg(n, false, 30.0))
+	st.legs = legs
+	st.leg_t = legs[0].dur
+	if st.node != null and is_instance_valid(st.node):
+		st.node.set_routine(legs[0].routine)
+	return true
+
+
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:
 	var seat: String = CAST[n].seat
 	var x := float(DATA.SCENES[CAST[n].home].seats[seat])

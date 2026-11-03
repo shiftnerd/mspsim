@@ -478,6 +478,7 @@ var _spawn_t := 20.0
 var _down := {}  # desk -> seconds without network
 var _up := {}  # desk -> seconds with network
 var _internal := {}  # desk -> ticket id of the open internal ticket
+var _owner_noted := {}  # owner desk -> true while an outage there has been reported (no ticket for owners)
 
 
 func _ready() -> void:
@@ -501,6 +502,7 @@ func reset() -> void:
 	_down.clear()
 	_up.clear()
 	_internal.clear()
+	_owner_noted.clear()
 	_later.clear()
 	backups.clear()
 	project = {}
@@ -866,8 +868,12 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
 			t.fix_done = true
 			t["method"] = str(d.kind)
 			t.notes.append(str(d.note) + (" The user lost unsaved work." if lost else ""))
-	if int(d.get("mood", 0)) != 0:
-		Sales.adjust(client, int(d.mood))
+	var mood_hit := int(d.get("mood", 0))
+	if mood_hit < 0 and Owners.take_approval():
+		mood_hit = 0  # Alan signed off on the heavy fix: no client hit
+		tk_note_approved(tk)
+	if mood_hit != 0:
+		Sales.adjust(client, mood_hit)
 	score += int(d.get("score", 0))
 	Skills.add_xp(str(Skills.FIX_XP.get(prob, "servers")), int(d.xp))
 	ep.problem = ""
@@ -882,6 +888,11 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
 		_queue_return(tk, d, prob)
 	changed.emit()
 	return text
+
+
+func tk_note_approved(tk: Dictionary) -> void:
+	if not tk.is_empty():
+		tk.notes.append("Alan approved the heavy fix: no client impact.")
 
 
 # a restart that cost somebody their unsaved work
@@ -1407,7 +1418,10 @@ func _watch_desks(dt: float) -> void:
 		if state != "ok":
 			_down[d] = float(_down.get(d, 0.0)) + dt
 			_up[d] = 0.0
-			if _down[d] >= 8.0 and not _internal.has(d):
+			if _down[d] >= 8.0 and _owner_desk(d):
+				if not _owner_noted.has(d):
+					_owner_outage(d)
+			elif _down[d] >= 8.0 and not _internal.has(d):
 				var what := "no network cable" if state == "no_link" else "no internet"
 				create_internal(
 					d,
@@ -1421,6 +1435,9 @@ func _watch_desks(dt: float) -> void:
 		else:
 			_down[d] = 0.0
 			_up[d] = float(_up.get(d, 0.0)) + dt
+			if _owner_noted.has(d) and _up[d] >= 3.0:
+				_owner_noted.erase(d)
+				Social.note_outage_fixed(d)
 			if _internal.has(d) and _up[d] >= 3.0:
 				var t := ticket(_internal[d])
 				if not t.is_empty() and not t.fix_done and t.status != "Closed":
@@ -1429,6 +1446,25 @@ func _watch_desks(dt: float) -> void:
 					t.notes.append("Network restored.")
 					Social.note_outage_fixed(d)
 					changed.emit()
+
+
+# the owners' offices (desks 6 and 7) have no ticket stream of their own: an outage there is a text from the owner,
+# the opinion loss / gain still applies (Social.note_outage / note_outage_fixed)
+func _owner_desk(desk: int) -> bool:
+	var who := str(Social.DESK_OWNER.get(desk, ""))
+	return Social.is_owner(who) and Social.people().has(who)
+
+
+const OWNER_OUTAGE := {
+	6: "My office has no network. I have payroll to run and a vendor on hold. When you get a minute, the closet.",
+	7: "My internet died in the middle of a client call. Closet, please. No rush. Okay, a little rush.",
+}
+
+
+func _owner_outage(desk: int) -> void:
+	_owner_noted[desk] = true
+	Social.note_outage(desk)
+	send_text(str(Social.DESK_OWNER[desk]), str(OWNER_OUTAGE[desk]))
 
 
 func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> void:

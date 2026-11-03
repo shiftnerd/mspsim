@@ -57,6 +57,7 @@ var _net_t := 0.0
 var _grumble_t := 0.0
 var _call_stage := ""  # "", "tap_on", "talking", "tap_off"
 var _call_t := 0.0
+var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -497,14 +498,14 @@ func _update_call(delta: float) -> bool:
 			_call_t -= delta
 			if _call_t <= 0.0:
 				_call_stage = "talking"
-				_call_t = 9.0
+				_call_t = _call_len
 				_head_item.item = "headset"
 				_refresh()
 		"talking":
 			_call_t -= delta
 			if state != "say" and state != "talk":
 				_bubble.glyph = "dots"
-				_bubble.visible = (int((9.0 - _call_t) / 1.3) + get_index()) % 2 == 1
+				_bubble.visible = (int((_call_len - _call_t) / 1.3) + get_index()) % 2 == 1
 			if _call_t <= 0.0 and _hold <= 0.0:
 				_call_stage = "tap_off"
 				_call_t = 0.7
@@ -516,9 +517,39 @@ func _update_call(delta: float) -> bool:
 			_call_t -= delta
 			if _call_t <= 0.0:
 				_call_stage = ""
+				_call_len = 9.0
 				_head_item.item = ""
 				_refresh()
 	return pause
+
+
+# Owners.step_in: a seated owner takes a headset call at the desk (no phone has to be ringing)
+func desk_call() -> void:
+	if seat != null and state == "wait" and _hold <= 0.0 and _call_stage == "":
+		_call_stage = "tap_on"
+		_call_t = 0.7
+		_call_len = 5.0
+		_play("sitcall")
+
+
+# the "answer" routine step: a standing owner picks up a ringing phone next to them and talks with a headset
+func _answer_phone() -> void:
+	state = "wait"
+	_timer = 7.5
+	var best: Node = null
+	for zone in get_tree().get_nodes_in_group("phones"):
+		var fx: Node = zone.get_node(zone.target)
+		if fx.ringing and not fx.busy and absf(zone.global_position.x - global_position.x) < 40.0:
+			best = zone
+	if best == null:
+		_play("talk")
+		return
+	_face(best.global_position.x)
+	best.get_node(best.target).play()
+	_call_stage = "tap_on"
+	_call_t = 0.7
+	_call_len = 5.0
+	_play("call")
 
 
 func _ringing_phone() -> Node:
@@ -670,6 +701,10 @@ func _start(parts: PackedStringArray) -> bool:
 				_timer = 3.0
 				_play("talk")
 				Sales.deliver.call_deferred()
+		"answer":
+			started = cast_name != ""
+			if started:
+				_answer_phone()
 		"exit":
 			started = cast_name != ""
 			if started:
