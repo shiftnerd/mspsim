@@ -99,12 +99,12 @@ func _process(_delta: float) -> bool:
 			var cs: Node = title._select
 			_check(cs.step == "phone" and title._select != null, "tech asks for the phone next")
 			_check(
-				"IPHONE 5" in cs.summary() and "SITE" in cs.summary(), "the summary line names both"
+				"IFONE 5" in cs.summary() and "SITE" in cs.summary(), "the summary line names both"
 			)
 			_press(KEY_RIGHT)
 		7:
 			var cs: Node = title._select
-			_check(cs.phone_sel == 1 and "NEXUS 5" in cs.summary(), "the phone can be changed")
+			_check(cs.phone_sel == 1 and "NEXXUS 5" in cs.summary(), "the phone can be changed")
 			_press(KEY_ESCAPE)
 		8:
 			var cs: Node = title._select
@@ -129,7 +129,7 @@ func _process(_delta: float) -> bool:
 				player_script.current_character == "office_teen",
 				"the chosen character is the player"
 			)
-			_check(phone.os == "android", "the phone preference is set (Nexus 5)")
+			_check(phone.os == "android", "the phone preference is set (Nexxus 5)")
 			var world := root.get_node("World")
 			_check(
 				world.chars.has("Alan") and world.chars.has("Dan"),

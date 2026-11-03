@@ -3790,6 +3790,10 @@ IT PRINTS. MOSTLY.
 [PrinterGame.TEXT.stars0]
 YOU GIVE UP. THE PRINTER WINS.
 
+# PrinterGame > TEXT > done
+[PrinterGame.TEXT.done]
+SPACE = CONTINUE
+
 # PrinterGame > TEXT > tray_help
 [PrinterGame.TEXT.tray_help]
 PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE

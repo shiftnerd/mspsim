@@ -18794,12 +18794,12 @@ const PEOPLE := {
 const PHONES := [
     {
         "id": "ios",
-        "name": "IPHONE 5",
+        "name": "IFONE 5",
         "blurb": "SLATE, IOS 7, ONE HOME BUTTON. EVERYONE ELSE'S SCREEN IS CRACKED."
     },
     {
         "id": "android",
-        "name": "NEXUS 5",
+        "name": "NEXXUS 5",
         "blurb": "MATTE BLACK, ANDROID 4.4 KITKAT. THE $349 PHONE WITH THE GOOD SCREEN."
     },
 ]

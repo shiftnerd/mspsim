@@ -47,7 +47,7 @@ Items marked **(real story)** came from the /r/msp research (see `docs/msp-resea
 - Test isolation: every test that uses `user://test_*` saves shares them; give each test its own prefix so they can run in parallel.
 
 ## Setting: 2013-14 (keep every idea period-correct)
-The game is set in 2013-14: Outlookish 2013, an iPhone 5 or a Nexus 5, Windows 7 / 8.1 / XP, a ConnectWise- and LabTech-era PSA and RMM, hosted Exchange and early Office 365. Ideas and card text have to fit.
+The game is set in 2013-14: Outlookish 2013, an iFone 5 or a Nexxus 5, Windows 7 / 8.1 / XP, a ConnectWise- and LabTech-era PSA and RMM, hosted Exchange and early Office 365. Ideas and card text have to fit.
 
 - **Not in this world:** AI helpdesks or assistants, TikTok / Discord / Slack-first workplaces, Microsoft Teams, Microsoft 365 as a brand, Microsoft CSP / NCE billing, EDR / SOC-as-a-service marketing, GDPR, Windows 10 / 11, "zero trust" language,
   WannaCry / NotPetya (2017), the 2021 Kaseya attack, remote-work-everywhere, MFA as an SMB norm (say *two-factor login*, and it is rare).

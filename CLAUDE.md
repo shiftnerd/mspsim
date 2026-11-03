@@ -426,8 +426,8 @@ New characters start as a copy of an existing one, then change only what differs
   opens it instead of starting at once (**Continue skips it** and restores the saved character). A row of the playable people (`Player.CHARACTERS`, the same 7 as the 1-7 keys) with a looping idle preview
   (left half face right, right half face left, the chosen one faces the way you last moved), name and a short 2013-14 blurb (`PEOPLE`); in narrow portrait (`v`, under 250 px wide) it is a carousel with a 2x
   preview, arrows and dots. **Left/Right (A/D)** move, **Enter / E / Space** confirm, **Esc / Backspace** go back (to the title menu), mouse hover selects and click confirms, F9 cycles formats.
-  The **tech campaign adds a second step: the phone** (IPHONE 5 / NEXUS 5, same saved preference as the phone's first-open picker via `Phone.set_os`; that picker stays as the fallback when no phone was chosen, e.g. owner / Free Play),
-  and a summary line ("TECH CAMPAIGN - ADULT - IPHONE 5") is shown at the bottom and as a toast when the run starts.
+  The **tech campaign adds a second step: the phone** (IFONE 5 / NEXXUS 5, same saved preference as the phone's first-open picker via `Phone.set_os`; that picker stays as the fallback when no phone was chosen, e.g. owner / Free Play),
+  and a summary line ("TECH CAMPAIGN - ADULT - IFONE 5") is shown at the bottom and as a toast when the run starts.
   **Cast rule:** in the two campaigns the cast (`World.CAST`: Alan, Garrison, Dan, Vic, Maya) are real NPCs with desks, opinions and agendas, so only people who are NOT cast are offered (teen, adult, site Alan); Free Play offers all 7.
   (Playing as a cast member in a campaign would need their NPC removed from `World.chars` like `apply_roster` does for Maya, plus Social / Lync / Talk / desk-ticket entries for the missing person: not done.)
   The choice sets `Player.current_character`; `Campaign.save` stores it as `campaign/character` and `continue_game` restores it (old saves default to `office_adult`). Launching a scene directly (tests) never shows the screen.
