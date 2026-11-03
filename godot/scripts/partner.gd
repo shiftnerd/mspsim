@@ -184,12 +184,12 @@ func who() -> String:
 
 # there is a partner to deal with (owner campaign, they have not left)
 func active() -> bool:
-	return Owner.active() and who() != "" and not left
+	return Campaign.cards_active() and who() != "" and not left
 
 
 # ---- trust ---------------------------------------------------------------------------------------------------
 func change(amount: int) -> void:
-	if not Owner.active() or left or amount == 0:
+	if not Campaign.cards_active() or left or amount == 0:
 		return
 	trust = clampi(trust + amount, 0, 100)
 	if trust <= 0 and Campaign.day >= 3:
@@ -305,7 +305,7 @@ func score(opt: Dictionary, partner := "") -> float:
 
 # "agree", "warn", "oppose" or "" (no opinion)
 func stance(opt: Dictionary, partner := "") -> String:
-	if not Owner.active() or (partner == "" and not active()):
+	if not Campaign.cards_active() or (partner == "" and not active()):
 		return ""
 	var s := score(opt, partner)
 	if s >= 1.5:
@@ -342,7 +342,7 @@ func on_pick(stance_id: String) -> void:
 # ---- the weekly settle and the meetings --------------------------------------------------------------------------
 # called from Owner.settle: the quiet drift of the partnership, and the walk-out at zero
 func week(profit: int) -> void:
-	if not Owner.active() or left:
+	if not Campaign.cards_active() or left:
 		return
 	if profit > 0 and Owner.cash >= 2000 and Campaign.day % 2 == 0:
 		change(1)
@@ -380,7 +380,7 @@ func beat_for_week(week_no: int) -> String:
 
 # opens the partner meeting of this week (as an Owner dynamic card so it uses the usual card machinery)
 func hold_beat(id: String) -> void:
-	if not Owner.active() or left or met.has(id) or not BEATS.has(id):
+	if not Campaign.cards_active() or left or met.has(id) or not BEATS.has(id):
 		return
 	met.append(id)
 	var beat: Dictionary = BEATS[id]

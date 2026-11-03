@@ -139,7 +139,7 @@ func best_client() -> String:
 
 
 func make_offers() -> Array:
-	if Campaign.mode == "owner":
+	if Campaign.prop("review", "") == "board":
 		return Owner.offers()
 	var out := []
 	if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
@@ -195,7 +195,7 @@ func choose(index: int) -> void:
 
 # the owner review has a PARTNERSHIP page (X5), so its offers and its end come one page later
 func _opt_page() -> int:
-	return 3 if Campaign.mode == "owner" else 2
+	return int(Campaign.prop("review_pages", 2))
 
 
 func _end_page() -> int:
@@ -282,7 +282,7 @@ func _job_line(key: String, label: String) -> Array:
 
 
 func page_lines() -> Array:
-	if Campaign.mode == "owner":
+	if Campaign.prop("review", "") == "board":
 		return Owner.review_lines(page, ending)
 	var lines := []
 	match page:
@@ -400,7 +400,7 @@ func _paint() -> void:
 	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
 	_canvas.draw_rect(panel, Color("e9ecf1"))
 	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9.0 * u)), BLUE)
-	var heading := "BOARD REVIEW" if Campaign.mode == "owner" else "YEARLY REVIEW"
+	var heading := str(Campaign.prop("review_heading", "YEARLY REVIEW"))
 	PixelFont.draw(_canvas, heading, panel.position + Vector2(3.0 * u, 2.0 * u), WHITE, sc)
 	var y := panel.position.y + 12.0 * u
 	for row in rows:

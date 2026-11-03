@@ -60,13 +60,13 @@ func _draw() -> void:
 			counts += " IM %d" % Lync.unread_total()
 		var lines := [counts]
 		if Campaign.active:
-			if Campaign.mode == "owner":
+			if Campaign.prop("hud", "day_rep") == "week_cash":
 				lines.append(
-					"WEEK %d/%d CASH $%d" % [Campaign.day, Campaign.TOTAL_DAYS, Owner.cash]
+					"%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash]
 				)
 			else:
 				var day_line := (
-					"DAY %d/%d REP %d" % [Campaign.day, Campaign.TOTAL_DAYS, Campaign.rep]
+					"%s %d/%d REP %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.rep]
 				)
 				if Shift.active():
 					day_line += (

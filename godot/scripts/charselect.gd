@@ -94,6 +94,8 @@ func needs_phone() -> bool:
 # who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
 # the tech campaign
 func choices(for_mode: String) -> Array:
+	if Campaign.is_planned(for_mode):
+		return []  # registered but not playable yet (X8): it cannot be chosen
 	if for_mode == "owner":
 		return ["office_alan", "casual_garrison"]
 	var cast: Array = []

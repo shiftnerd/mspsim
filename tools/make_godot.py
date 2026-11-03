@@ -5582,7 +5582,7 @@ func _paint_taskbar() -> void:
             ["app:mail", "OUTLOOKISH"], ["app:psa", "CONNECTWHY"], ["app:rmm", "LABRAT"], ["app:learn", "POWERSHELL"],
             ["app:stats", "PROFILE"], ["app:lync", "LYNK"], ["app:nerds", "NERDS"], ["logoff", "LOG OFF"],
         ]
-        if Owner.active():
+        if Campaign.books_active():
             items.insert(4, ["app:boardroom", "BOARDROOM"])
         for i in items.size():
             _button(items[i][0], Rect2(1, y - (items.size() - i) * 9, 54, 9), items[i][1], true, Color("e9ecf1"))
@@ -5757,7 +5757,7 @@ func _paint_desktop() -> void:
         ["learn", "POWERSHELL", 0], ["stats", "PROFILE", 0],
         ["lync", "LYNK", Lync.unread_total()], ["nerds", "NERDS", 0],
     ]
-    if Owner.active():
+    if Campaign.books_active():
         icons.append(["boardroom", "BOARDROOM", 0])
     var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
     for i in icons.size():
@@ -7458,7 +7458,54 @@ signal day_started(day_number: int)
 const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
+# the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
 const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
+# MODE REGISTRY (X8, "P0b"): one row per campaign mode. The three GATES say which machinery a mode runs:
+#   crew   the team works the ticket queue by itself (Owner.team_speed, _work_queue, ticket volume, premature closes)
+#   books  cash, P&L, payroll, weekly settle, valuation, the Boardroom app, projects, deal income
+#   cards  the weekly decision flow (Owner.CARDS / DAYS, the week structure, partner, player-profile edges)
+# The rest are the per-mode properties the code used to hard-code with `mode == "owner"`. A new mode (service, sales) is a
+# row here plus its content tables; "selectable" stays false until its slice is playable. See docs/campaign-paths.md 8.1.
+const MODE_DEFS := {
+    "tech": {
+        "label": "TECH CAMPAIGN", "selectable": true,
+        "crew": false, "books": false, "cards": false, "books_lite": false,
+        "day_len": 600.0, "total_days": 20, "unit": "DAY",
+        "hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+        "pace": 1.0, "shift": true, "scars": true, "maya_in_events": true,
+        "ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+        "ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+    },
+    "owner": {
+        "label": "OWNER CAMPAIGN", "selectable": true,
+        "crew": true, "books": true, "cards": true, "books_lite": false,
+        "day_len": 240.0, "total_days": 20, "unit": "WEEK",
+        "hud": "week_cash", "report": "pnl", "review": "board", "review_heading": "BOARD REVIEW", "review_pages": 3,
+        "pace": 0.6, "shift": false, "scars": false, "maya_in_events": false,
+        "ending_fired": "YOUR NAME IS MUD. THE COMPANY CLOSES.",
+        "ending_final": "YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT.",
+    },
+    # planned (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day
+    "service": {
+        "label": "SERVICE CAMPAIGN", "selectable": false,
+        "crew": true, "books": false, "cards": true, "books_lite": false,
+        "day_len": 360.0, "total_days": 20, "unit": "DAY",
+        "hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+        "pace": 0.8, "shift": false, "scars": false, "maya_in_events": true,
+        "ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+        "ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+    },
+    # planned (campaign-paths 5): Vic sells; the crew delivers, a light set of books (commission, MRR), a card each week
+    "sales": {
+        "label": "SALES CAMPAIGN", "selectable": false,
+        "crew": true, "books": true, "cards": true, "books_lite": true,
+        "day_len": 240.0, "total_days": 20, "unit": "WEEK",
+        "hud": "week_cash", "report": "pnl", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+        "pace": 0.6, "shift": false, "scars": false, "maya_in_events": true,
+        "ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+        "ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+    },
+}
 const START_REP := 50
 
 var active := false  # a real campaign (not free play) is running
@@ -7515,6 +7562,48 @@ func adjust_rep(amount: int) -> void:
     rep = clampi(rep + change, 0, 100)
 
 
+# ---- the mode registry -------------------------------------------------------------------------
+# a registry row ({} for Free Play, no mode, or an unknown name)
+func mode_def(for_mode := "") -> Dictionary:
+    return MODE_DEFS.get(mode if for_mode == "" else for_mode, {})
+
+
+# can the player start (and save) this mode? Only registered rows with selectable = true
+func is_selectable(for_mode: String) -> bool:
+    return bool(MODE_DEFS.get(for_mode, {}).get("selectable", false))
+
+
+# a registered row that is not playable yet (planned modes): new_game / continue_game / save refuse it
+func is_planned(for_mode: String) -> bool:
+    return MODE_DEFS.has(for_mode) and not is_selectable(for_mode)
+
+
+# a property of the current mode (or of for_mode), with a default for Free Play
+func prop(key: String, fallback: Variant, for_mode := "") -> Variant:
+    return mode_def(for_mode).get(key, fallback)
+
+
+# the three gates; false outside a running campaign
+func crew_active() -> bool:
+    return active and bool(mode_def().get("crew", false))
+
+
+func books_active() -> bool:
+    return active and bool(mode_def().get("books", false))
+
+
+func cards_active() -> bool:
+    return active and bool(mode_def().get("cards", false))
+
+
+func day_len_for(for_mode: String) -> float:
+    return float(MODE_DEFS.get(for_mode, {}).get("day_len", 600.0))
+
+
+func total_days() -> int:
+    return int(prop("total_days", TOTAL_DAYS))
+
+
 func save_path(for_mode: String) -> String:
     return save_prefix + for_mode + ".cfg"
 
@@ -7556,8 +7645,11 @@ func refresh_free() -> void:
 
 
 func new_game(for_mode: String) -> void:
+    if is_planned(for_mode):
+        push_warning("Campaign: mode '%s' is registered but not selectable yet" % for_mode)
+        return
     mode = for_mode
-    active = MODES.has(for_mode)
+    active = is_selectable(for_mode)
     player_as = derive_player_as(for_mode)
     if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
         PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
@@ -7590,7 +7682,7 @@ func new_game(for_mode: String) -> void:
     Events.reset()
     Mutators.start(for_mode)
     Mutators.apply_start()
-    World.day_len = 240.0 if for_mode == "owner" else 600.0
+    World.day_len = day_len_for(for_mode)
     Msp.enabled = active
     if active:
         World.begin_next_day(1)
@@ -7600,6 +7692,8 @@ func new_game(for_mode: String) -> void:
 
 
 func continue_game(for_mode: String) -> bool:
+    if is_planned(for_mode):
+        return false
     var cfg := ConfigFile.new()
     if cfg.load(save_path(for_mode)) != OK:
         return false
@@ -7638,7 +7732,7 @@ func continue_game(for_mode: String) -> bool:
     Events.from_dict(cfg.get_value("campaign", "events", {}))
     Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
     Lync.reset()
-    World.day_len = 240.0 if for_mode == "owner" else 600.0
+    World.day_len = day_len_for(for_mode)
     Story.flags = cfg.get_value("campaign", "story", {})
     var saved_backups: Array = cfg.get_value("campaign", "backups", [])
     if saved_backups.size() == Msp.backups.size():
@@ -7650,7 +7744,7 @@ func continue_game(for_mode: String) -> bool:
 
 
 func save() -> void:
-    if not active:
+    if not active or not is_selectable(mode):
         return
     var cfg := ConfigFile.new()
     cfg.set_value("campaign", "day", day)
@@ -7709,13 +7803,13 @@ func _begin_day() -> void:
     _base = {
         "score": Msp.score, "closed": Msp.closed_ok, "missed": Msp.breached, "reopened": Msp.reopened,
     }
-    # owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate
-    Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * (0.6 if mode == "owner" else 1.0)
+    # owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate (registry "pace")
+    Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
     Social.begin_day()
     Story.begin_day(day)
-    if mode == "owner":
+    if cards_active():
         Owner.begin_day(day)
-    else:
+    if bool(prop("shift", false)):
         Shift.begin_day(day)
     Events.begin_day(day)
     Mutators.begin_day(day)
@@ -7778,7 +7872,7 @@ func _end_day() -> void:
     if Phone.is_open:
         Phone.close()
     var r := make_report()
-    if mode == "owner":
+    if books_active() and str(prop("report", "day")) == "pnl":
         var books := Owner.settle()
         r["rows"] = books.rows
         r["title"] = books.title
@@ -7791,21 +7885,21 @@ func _end_day() -> void:
         r["bankrupt"] = books.bankrupt
     else:
         cash += int(r.pay)
-    if mode == "tech":
+    if bool(prop("scars", false)):
         if int(r.reopened) >= 3:
             add_scar(2)  # a reopen storm: the clients stop trusting your closes
         elif scars > 0 and r.grade in ["S", "A"]:
             scars -= 1
         r["rep_cap"] = rep_cap()
-    rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
+    rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
     if r.get("bankrupt", false):
         rep = 0
     r["rep"] = rep
     r["cash"] = cash
-    r["total_days"] = TOTAL_DAYS
+    r["total_days"] = total_days()
     r["fired"] = rep <= 0
     _fired_out = rep <= 0
-    r["final"] = day >= TOTAL_DAYS or rep <= 0
+    r["final"] = day >= total_days() or rep <= 0
     r["ending"] = _ending(r)
     history.append({"day": day, "grade": r.grade, "points": r.points})
     Game.ui_open = true
@@ -7814,12 +7908,12 @@ func _end_day() -> void:
 
 func _ending(r: Dictionary) -> String:
     if r.fired:
-        if mode == "owner":
-            return "THE COMPANY IS BANKRUPT." if bool(r.get("bankrupt", false)) else "YOUR NAME IS MUD. THE COMPANY CLOSES."
-        return "REPUTATION GONE. YOU ARE FIRED."
-    if day < TOTAL_DAYS:
+        if bool(r.get("bankrupt", false)):
+            return "THE COMPANY IS BANKRUPT."
+        return str(prop("ending_fired", "REPUTATION GONE. YOU ARE FIRED."))
+    if day < total_days():
         return ""
-    return "YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT." if mode == "owner" else "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT."
+    return str(prop("ending_final", "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT."))
 
 
 # the report screen's button
@@ -7828,7 +7922,7 @@ func report_continue(final: bool) -> void:
         _awaiting = true  # the last day settles once: the clock is still at closing time
     else:
         _awaiting = false
-    if final and (mode == "tech" or mode == "owner") and not _fired_out:
+    if final and str(prop("review", "")) != "" and not _fired_out:
         Review.start()
         return
     if final:
@@ -10527,7 +10621,7 @@ func roster() -> Array:
     for who in World.CAST:
         if OWNERS.has(who):
             continue
-        if who == "Maya" and Campaign.mode == "owner":
+        if who == "Maya" and not bool(Campaign.prop("maya_in_events", true)):
             continue  # she is not on the owner's payroll
         out.append(str(who))
     return out
@@ -12950,7 +13044,7 @@ func best_client() -> String:
 
 
 func make_offers() -> Array:
-    if Campaign.mode == "owner":
+    if Campaign.prop("review", "") == "board":
         return Owner.offers()
     var out := []
     if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
@@ -12978,7 +13072,7 @@ func choose(index: int) -> void:
 
 # the owner review has a PARTNERSHIP page (X5), so its offers and its end come one page later
 func _opt_page() -> int:
-    return 3 if Campaign.mode == "owner" else 2
+    return int(Campaign.prop("review_pages", 2))
 
 
 func _end_page() -> int:
@@ -13047,7 +13141,7 @@ func _job_line(key: String, label: String) -> Array:
 
 
 func page_lines() -> Array:
-    if Campaign.mode == "owner":
+    if Campaign.prop("review", "") == "board":
         return Owner.review_lines(page, ending)
     var lines := []
     match page:
@@ -13131,7 +13225,7 @@ func _paint() -> void:
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
     _canvas.draw_rect(panel, Color("e9ecf1"))
     _canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9.0 * u)), BLUE)
-    var heading := "BOARD REVIEW" if Campaign.mode == "owner" else "YEARLY REVIEW"
+    var heading := str(Campaign.prop("review_heading", "YEARLY REVIEW"))
     PixelFont.draw(_canvas, heading, panel.position + Vector2(3.0 * u, 2.0 * u), WHITE, sc)
     var y := panel.position.y + 12.0 * u
     for row in rows:
@@ -13534,7 +13628,7 @@ func sign_client(wanted := -1) -> int:
         client = wanted
     active.append(client)
     signed_day[client] = Campaign.day
-    satisfaction[client] = Owner.new_client_mood() if Owner.active() else 75
+    satisfaction[client] = Owner.new_client_mood() if Campaign.cards_active() else 75
     deals += 1
     Owner.on_deal("client", client)
     Msp.send_text("Vic", SIGN_TEXT % Msp.CLIENTS[client].name)
@@ -13548,7 +13642,7 @@ func sign_client(wanted := -1) -> int:
 
 
 func sell_install() -> int:
-    if Owner.active():
+    if Campaign.books_active():
         # the owner campaign has no desk project for the team to work: the sale is a one-off job
         # (the crew does the setup between tickets), so it can never block the next sale
         var who := pick_client()
@@ -13582,7 +13676,7 @@ func sell_install() -> int:
 # the client with a late open ticket and low satisfaction complains to Vic
 func complaint_cooling(client: int) -> bool:
     return (
-        Owner.active()
+        Campaign.cards_active()
         and Campaign.day - int(complained_day.get(client, -99)) < CLIENT_COMPLAINT_WEEKS
     )
 
@@ -14169,10 +14263,7 @@ var _poach_wave := 0  # weeks the competitor is running a campaign (double the r
 var _ransom_ticket := 0
 
 
-func active() -> bool:
-    return Campaign.active and Campaign.mode == "owner"
-
-
+# X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
 func reset() -> void:
     cash = START_CASH
     flags = {}
@@ -14285,7 +14376,7 @@ func edges_for(owner_name: String) -> Dictionary:
 
 
 func edge(key: String) -> float:
-    return float(edges_for(Campaign.player_as)[key]) if active() else float(DEFAULT_EDGE[key])
+    return float(edges_for(Campaign.player_as)[key]) if Campaign.cards_active() else float(DEFAULT_EDGE[key])
 
 
 func stack_option(category: String) -> Dictionary:
@@ -14305,7 +14396,7 @@ func stack_cost() -> int:
 
 # ticket volume multiplier: unreliable hardware and a weak RMM mean more calls
 func issue_mult() -> float:
-    if not active():
+    if not Campaign.crew_active():
         return 1.0
     var m := float(edge("issues"))
     for category in STACK:
@@ -14322,7 +14413,7 @@ func security_risk() -> float:
 
 # scope creep: a few clients generate far more requests until you enforce the contract
 func client_weight(client: int) -> float:
-    if not active():
+    if not Campaign.crew_active():
         return 1.0
     return 1.0 if scope_fixed.get(client, false) else float(HEAVY.get(client, 1.0))
 
@@ -14359,7 +14450,7 @@ func oml() -> int:
 
 # everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
 func vic_extra() -> float:
-    if not active():
+    if not Campaign.books_active():
         return 0.0
     return vic_bonus + marketing_bonus() + float(VIC_PLANS[vic_plan].skill) + stack_sum("sales") - Growth.vic_penalty() - Projects.vic_penalty()
 
@@ -14374,7 +14465,7 @@ func new_client_mood() -> int:
 
 # Vic closed something: pay his commission, bank the hardware resale margin
 func on_deal(kind: String, client: int) -> void:
-    if not active():
+    if not Campaign.books_active():
         return
     vic_deals += 1
     vic_signed.append(client)
@@ -14389,14 +14480,19 @@ func on_deal(kind: String, client: int) -> void:
 
 
 func _process(delta: float) -> void:
-    if not active() or Game.title_mode or World.time_scale <= 0.0 or not Msp.enabled:
+    var crew := Campaign.crew_active()
+    var cards := Campaign.cards_active()
+    if not (crew or cards) or Game.title_mode or World.time_scale <= 0.0 or not Msp.enabled:
         return
     var dt := delta * World.time_scale
-    _tick += dt
-    if _tick >= 3.0:
-        var slice := _tick
-        _tick = 0.0
-        _work_queue(slice)
+    if crew:
+        _tick += dt
+        if _tick >= 3.0:
+            var slice := _tick
+            _tick = 0.0
+            _work_queue(slice)
+    if not cards:
+        return
     var events: Array = DAYS.get(Campaign.day, [])
     for i in events.size():
         var ev: Dictionary = events[i]
@@ -21675,12 +21771,12 @@ func who() -> String:
 
 # there is a partner to deal with (owner campaign, they have not left)
 func active() -> bool:
-    return Owner.active() and who() != "" and not left
+    return Campaign.cards_active() and who() != "" and not left
 
 
 # ---- trust ---------------------------------------------------------------------------------------------------
 func change(amount: int) -> void:
-    if not Owner.active() or left or amount == 0:
+    if not Campaign.cards_active() or left or amount == 0:
         return
     trust = clampi(trust + amount, 0, 100)
     if trust <= 0 and Campaign.day >= 3:
@@ -21796,7 +21892,7 @@ func score(opt: Dictionary, partner := "") -> float:
 
 # "agree", "warn", "oppose" or "" (no opinion)
 func stance(opt: Dictionary, partner := "") -> String:
-    if not Owner.active() or (partner == "" and not active()):
+    if not Campaign.cards_active() or (partner == "" and not active()):
         return ""
     var s := score(opt, partner)
     if s >= 1.5:
@@ -21833,7 +21929,7 @@ func on_pick(stance_id: String) -> void:
 # ---- the weekly settle and the meetings --------------------------------------------------------------------------
 # called from Owner.settle: the quiet drift of the partnership, and the walk-out at zero
 func week(profit: int) -> void:
-    if not Owner.active() or left:
+    if not Campaign.cards_active() or left:
         return
     if profit > 0 and Owner.cash >= 2000 and Campaign.day % 2 == 0:
         change(1)
@@ -21871,7 +21967,7 @@ func beat_for_week(week_no: int) -> String:
 
 # opens the partner meeting of this week (as an Owner dynamic card so it uses the usual card machinery)
 func hold_beat(id: String) -> void:
-    if not Owner.active() or left or met.has(id) or not BEATS.has(id):
+    if not Campaign.cards_active() or left or met.has(id) or not BEATS.has(id):
         return
     met.append(id)
     var beat: Dictionary = BEATS[id]
@@ -22348,7 +22444,7 @@ func reset() -> void:
 
 
 func active() -> bool:
-    return Campaign.active and Campaign.mode == "owner"
+    return Campaign.books_active()
 
 
 # ---- hours and profitability ------------------------------------------------------------------------
@@ -24406,7 +24502,7 @@ func inspect(obj: String) -> void:
 
 func _found(f: Dictionary) -> void:
     var options := [{"label": "LOG A TICKET", "id": "ticket"}]
-    if Owner.active() and str(f.get("project", "")) != "":
+    if Campaign.books_active() and str(f.get("project", "")) != "":
         options.append({"label": "SELL IT AS A PROJECT", "id": "project"})
     if visit_prospect:
         options = [{"label": "TELL THEM ABOUT IT (BUILDS YOUR PITCH)", "id": "tell"}]
@@ -26198,10 +26294,10 @@ func _draw() -> void:
             counts += " IM %d" % Lync.unread_total()
         var lines := [counts]
         if Campaign.active:
-            if Campaign.mode == "owner":
-                lines.append("WEEK %d/%d CASH $%d" % [Campaign.day, Campaign.TOTAL_DAYS, Owner.cash])
+            if Campaign.prop("hud", "day_rep") == "week_cash":
+                lines.append("%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash])
             else:
-                var day_line := "DAY %d/%d REP %d" % [Campaign.day, Campaign.TOTAL_DAYS, Campaign.rep]
+                var day_line := "%s %d/%d REP %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.rep]
                 if Shift.active():
                     day_line += " NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
                 lines.append(day_line)
@@ -26898,6 +26994,8 @@ func needs_phone() -> bool:
 # who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
 # the tech campaign
 func choices(for_mode: String) -> Array:
+    if Campaign.is_planned(for_mode):
+        return []  # registered but not playable yet (X8): it cannot be chosen
     if for_mode == "owner":
         return ["office_alan", "casual_garrison"]
     var cast: Array = []

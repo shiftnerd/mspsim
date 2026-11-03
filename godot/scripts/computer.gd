@@ -737,7 +737,7 @@ func _paint_taskbar() -> void:
 			["app:nerds", "NERDS"],
 			["logoff", "LOG OFF"],
 		]
-		if Owner.active():
+		if Campaign.books_active():
 			items.insert(4, ["app:boardroom", "BOARDROOM"])
 		for i in items.size():
 			_button(
@@ -968,7 +968,7 @@ func _paint_desktop() -> void:
 		["lync", "LYNK", Lync.unread_total()],
 		["nerds", "NERDS", 0],
 	]
-	if Owner.active():
+	if Campaign.books_active():
 		icons.append(["boardroom", "BOARDROOM", 0])
 	var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
 	for i in icons.size():
