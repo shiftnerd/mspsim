@@ -414,6 +414,8 @@ write("scripts/game.gd", '''extends Node
 
 signal format_changed
 
+const PixelFont := preload("res://scripts/pixelfont.gd")
+
 # size = logical pixels; zoom = camera zoom; cam_y = world y the camera centres on;
 # scale = default window pixel scale without --resolution (6x of h = 1920x1080, 6x of v = 1080x1920)
 const FORMATS := {
@@ -438,7 +440,16 @@ var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the 
 var _fade: ColorRect
 
 
+func _process(_delta: float) -> void:
+	# Layout audit: with env LAYOUT_AUDIT=1 any test run prints text that leaves the viewport or overlaps other text.
+	if PixelFont.audit != null and OS.get_environment("LAYOUT_AUDIT") == "1":
+		for line in PixelFont.audit_report(format, true):
+			print(line)
+
+
 func _ready() -> void:
+	if OS.get_environment("LAYOUT_AUDIT") == "1":
+		PixelFont.audit = []
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	add_child(layer)
@@ -467,6 +478,34 @@ func set_format(name: String) -> void:
 
 func cycle_format() -> void:
 	set_format(ORDER[(ORDER.find(format) + 1) % ORDER.size()])
+
+
+# Test helper (Q4): a real mouse click at a LOGICAL UI point (0..size of the current format), sent through
+# Input.parse_input_event. parse_input_event wants window pixels, so the point goes through the window's final
+# (content scale) transform; that makes it independent of the window size, which differs in a hidden, headless or
+# --resolution window. The UI scripts read event.position (logical), not the OS cursor, so the click lands.
+func ui_to_window(ui_point: Vector2) -> Vector2:
+    return get_window().get_final_transform() * ui_point
+
+
+func hover_at(ui_point: Vector2) -> void:
+    Input.use_accumulated_input = false
+    var motion := InputEventMouseMotion.new()
+    motion.position = ui_to_window(ui_point)
+    motion.global_position = motion.position
+    Input.parse_input_event(motion)
+
+
+func click_at(ui_point: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
+    hover_at(ui_point)
+    for pressed in [true, false]:
+        var ev := InputEventMouseButton.new()
+        ev.position = ui_to_window(ui_point)
+        ev.global_position = ev.position
+        ev.button_index = button
+        ev.pressed = pressed
+        ev.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+        Input.parse_input_event(ev)
 
 
 func go_title() -> void:
@@ -3804,7 +3843,66 @@ static func width(text: String, scale := 1) -> int:
     return maxi(0, text.length() * 4 * scale - scale)
 
 
+# Layout audit hook (tests/layout_audit.gd, Game._process with env LAYOUT_AUDIT=1): while non-null, every draw call
+# is logged with its rect in viewport pixels. audit_report() returns the problems and clears the log.
+static var audit = null
+static var _audit_seen := {}
+
+
+static func audit_report(fmt := "", overlaps := false) -> Array:
+    var out := []
+    var all: Array = audit
+    audit = []
+    var latest := {}  # per canvas only its newest redraw counts: older frames belong to a screen that was replaced
+    for rec in all:
+        latest[rec.cid] = maxi(int(latest.get(rec.cid, 0)), int(rec.frame))
+    var recs := all.filter(func(rec: Dictionary) -> bool: return rec.frame == latest[rec.cid])
+    for rec in recs:
+        var r: Rect2 = rec.rect
+        var vp: Rect2 = rec.vp
+        if vp.grow_individual(0.01, 0.01, 0.01, 0.01).encloses(r):
+            continue
+        var line := "OFFSCREEN %s %s '%s' rect=%s vp=%s" % [fmt, rec.canvas, rec.text, r, vp.size]
+        if not _audit_seen.has(line):
+            _audit_seen[line] = true
+            out.append(line)
+    if overlaps:
+        var by_canvas := {}
+        for rec in recs:
+            if not by_canvas.has(rec.cid):
+                by_canvas[rec.cid] = []
+            by_canvas[rec.cid].append(rec)
+        for key in by_canvas:
+            var list: Array = by_canvas[key]
+            for i in list.size():
+                for j in range(i + 1, list.size()):
+                    var a: Rect2 = list[i].rect
+                    var b: Rect2 = list[j].rect
+                    if list[i].text == list[j].text or a.position.is_equal_approx(b.position):
+                        continue
+                    var hit := a.intersection(b)
+                    if hit.size.x >= 3.0 and hit.size.y >= 3.0:
+                        var line := "OVERLAP %s %s '%s' x '%s' at %s" % [fmt, list[i].canvas, list[i].text, list[j].text, hit]
+                        if not _audit_seen.has(line):
+                            _audit_seen[line] = true
+                            out.append(line)
+    return out
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    # only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
+    if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
+        var tf := canvas.get_global_transform_with_canvas()
+        var sz := Vector2(width(text.strip_edges(), scale), 5 * scale)
+        var lead := float(text.length() - text.lstrip(" ").length()) * 4.0 * scale
+        audit.append({
+            "canvas": "%s/%s" % [canvas.get_class(), canvas.name],
+            "cid": canvas.get_instance_id(),
+            "frame": Engine.get_frames_drawn(),
+            "text": text.strip_edges(),
+            "rect": tf * Rect2(pos + Vector2(lead, 0), sz),
+            "vp": canvas.get_viewport().get_visible_rect(),
+        })
     var x := pos.x
     for ch in text.to_upper().replace('"', "'"):
         var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
@@ -5223,18 +5321,18 @@ func _input(event: InputEvent) -> void:
     if not is_open:
         return
     if event is InputEventMouseMotion:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         if app == "dispatch":
             dispatch.mouse_move(_mouse)
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         if app == "dispatch" and dispatch.mouse_down(_mouse):
             _canvas.queue_redraw()
         else:
             click(_mouse)
     elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT and app == "dispatch":
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         dispatch.mouse_up(_mouse)
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
@@ -6388,7 +6486,10 @@ func _paint_backups(body: Rect2) -> void:
     var row_h := 14.0
     if compact:
         row_h = 11.0 if Sales.active.size() <= 5 else 8.0
-    _text("NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU" if Skills.backup_watch() else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY)
+    var head_note := "NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU" if Skills.backup_watch() else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY"
+    if body.size.x < 200.0:  # the narrow portrait screen: the short wording
+        head_note = "BACKUP JOBS - WATCH CHECKS THEM" if Skills.backup_watch() else "BACKUP JOBS - VERIFY EACH EVERY DAY"
+    _text(head_note, body.position + Vector2(4, 3), RMM_GREY)
     for idx in Sales.active.size():
         var c: int = Sales.active[idx]
         var b: Dictionary = Msp.backups[c]
@@ -6712,7 +6813,11 @@ func _paint_nerds() -> void:
         _button("nerds:read:%d" % i, Rect2(rr.end.x - 32, rr.position.y + 1, 14, 9), "R", not th.read)
         _button("nerds:answer:%d" % i, Rect2(rr.end.x - 16, rr.position.y + 1, 14, 9), "A", not th.answered)
         y += 12
-    _text("R = READ (A LITTLE XP)   A = ANSWER (NEEDS THE SKILL: MORE XP + KARMA)", Vector2(area.position.x + 4, y + 2), Color("7d8595"))
+    if area.size.x < 290.0:  # two short lines on the narrow screens
+        _text("R = READ (A LITTLE XP)", Vector2(area.position.x + 4, y + 2), Color("7d8595"))
+        _text("A = ANSWER (NEEDS THE SKILL: XP + KARMA)", Vector2(area.position.x + 4, y + 9), Color("7d8595"))
+    else:
+        _text("R = READ (A LITTLE XP)   A = ANSWER (NEEDS THE SKILL: MORE XP + KARMA)", Vector2(area.position.x + 4, y + 2), Color("7d8595"))
 
 
 func _paint_irc(area: Rect2) -> void:
@@ -6786,7 +6891,15 @@ func _paint_boardroom() -> void:
 func _board_rows(rows: Array, x: float, y: float, value_x: float, limit: int) -> float:
     for row in rows:
         _text(str(row[0]), Vector2(x, y), Color("46506a"))
-        _text(_clip(str(row[1]), limit), Vector2(x + value_x, y), row[2])
+        var line := ""
+        for word in str(row[1]).split(" "):  # long values wrap under themselves instead of ending in ".."
+            if line != "" and line.length() + 1 + word.length() > limit:
+                _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
+                y += 7
+                line = word
+            else:
+                line = word if line == "" else line + " " + word
+        _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
         y += 7
     return y
 
@@ -7026,6 +7139,8 @@ func _paint_stats() -> void:
     if Campaign.active and Skills.next_perk() != "":
         lines.append(Skills.next_perk())
     for line in lines:
+        if y + 5.0 > body.end.y - 1.0:  # the short wide screen cannot hold every line: the least important come last
+            break
         _text(_clip(line, int((body.end.x - x - 4) / 4.0)), Vector2(x, y), Color("46506a"))
         y += 7
 ''')
@@ -7143,10 +7258,10 @@ func _input(event: InputEvent) -> void:
     if not is_open:
         return
     if event is InputEventMouseMotion:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         click(_mouse)
     elif event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
@@ -9015,7 +9130,8 @@ const HEAD := Color("7fb6ff")
 const GOOD := Color("8fe3a0")
 const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
-const ROW := 7.0  # row height in virtual pixels (one font pixel at scale 1)
+var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
+var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
 const BIG_GRADES := {
     "S": [".XXX", "X...", ".XX.", "...X", "XXX."], "A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
     "B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."], "C": [".XXX", "X...", "X...", "X...", ".XXX"],
@@ -9077,10 +9193,10 @@ func _input(event: InputEvent) -> void:
     if not is_open:
         return
     if event is InputEventMouseMotion:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         if _button.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 600:
             finish()
     elif event is InputEventKey and event.pressed and not event.echo:
@@ -9195,12 +9311,12 @@ func _row(x: float, y: float, w: float, row: Array, stripe: bool, draw: bool) ->
     var label := str(row[0])
     var value := str(row[1])
     var two := _tw(label) + _tw(value) + 8.0 > w
-    var h := ROW * (2.0 if two else 1.0)
+    var h := _row_h * (2.0 if two else 1.0)
     if draw:
         if stripe:
             _r(x, y, w, h, STRIPE)
-        _t(label, x + 2.0, y + 1.0, LABEL)
-        _t(value, x + w - 2.0 - _tw(value), y + 1.0 + (ROW if two else 0.0), row[2])
+        _t(label, x + 2.0, y + _pad, LABEL)
+        _t(value, x + w - 2.0 - _tw(value), y + _pad + (_row_h if two else 0.0), row[2])
     return h
 
 
@@ -9210,9 +9326,9 @@ func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
         var name := str(g[0])
         if name != "":
             if draw:
-                _t(name, x + 2.0, y + h + 1.0, HEAD)
-                _r(x + _tw(name) + 5.0, y + h + 3.0, w - _tw(name) - 5.0, 1.0, LINE)
-            h += ROW
+                _t(name, x + 2.0, y + h + _pad, HEAD)
+                _r(x + _tw(name) + 5.0, y + h + _pad + 2.0, w - _tw(name) - 5.0, 1.0, LINE)
+            h += _row_h
         var i := 0
         for row in g[1]:
             h += _row(x, y + h, w, row, i % 2 == 1, draw)
@@ -9310,7 +9426,7 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
         for line in _wrap(ending, int(inner / 4.0)):
             if draw:
                 _t(line, 4.0, y, col)
-            y += ROW
+            y += _row_h
     y += 2.0
     if draw:
         _r(4.0, y, inner, 1.0, LINE)
@@ -9334,9 +9450,15 @@ func _paint() -> void:
         return
     var size := get_viewport().get_visible_rect().size
     var sc := 2 if size.x < 220.0 else 1
+    _row_h = 7.0
+    _pad = 1.0
     var h := _stack(sc, size, false)
     if sc == 2 and h * 2.0 > size.y - 4.0:
         sc = 1
+        h = _stack(sc, size, false)
+    if sc == 1 and h > size.y - 2.0:  # the short wide screen: tighter rows (the 5 pixel font still has a 1 pixel gap)
+        _row_h = 6.0
+        _pad = 0.0
         h = _stack(sc, size, false)
     var u := float(sc)
     var pw := _panel_w(sc, size)
@@ -14204,10 +14326,10 @@ func _input(event: InputEvent) -> void:
     if not is_open:
         return
     if event is InputEventMouseMotion:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         for i in range(_hits.size() - 1, -1, -1):
             if _hits[i].r.has_point(_mouse):
                 if str(_hits[i].id) == "next":
@@ -14515,13 +14637,13 @@ func _input(event: InputEvent) -> void:
     if not is_open or DayReport.is_open:
         return
     if event is InputEventMouseMotion:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         for h in _hits:
             if h.r.has_point(_mouse):
                 sel = int(h.i)
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _mouse = get_viewport().get_mouse_position()
+        _mouse = event.position
         for h in _hits:
             if h.r.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 450:
                 pick(int(h.i))
@@ -14566,7 +14688,19 @@ func _paint() -> void:
     var lines := []
     for para in text.split("\\n"):
         lines.append_array(_wrap(para, chars))
-    var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + float(options.size()) * 11.0 + 4.0
+    # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
+    var opt_lines := []
+    var opts_h := 0.0
+    for opt in options:
+        var chip_w := (str(opt.get("chip", "")).length() + 1 if str(opt.get("chip", "")) != "" else 0)
+        chip_w += (str(opt.get("trust_chip", "")).length() + 1 if str(opt.get("trust_chip", "")) != "" else 0)
+        var full := "%d. %s" % [opt_lines.size() + 1, str(opt.label)]
+        if not bool(opt.get("enabled", true)) and opt.has("hint"):
+            full += " [%s]" % str(opt.hint)
+        var rows: Array = _wrap(full, chars - 1 - chip_w)
+        opt_lines.append(rows)
+        opts_h += 3.0 + 7.0 * float(rows.size()) + 1.0
+    var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
     var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
@@ -14581,17 +14715,15 @@ func _paint() -> void:
     for i in options.size():
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
-        var r := Rect2(panel.position.x + 4, y, pw - 8, 10)
+        var rows: Array = opt_lines[i]
+        var r := Rect2(panel.position.x + 4, y, pw - 8, 3.0 + 7.0 * float(rows.size()))
         var col := Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
         _canvas.draw_rect(r, col)
-        var label := "%d. %s" % [i + 1, str(opt.label)]
-        if not on and opt.has("hint"):
-            label += " [%s]" % str(opt.hint)
         var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
         var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
-        var room := chars - 1 - (chip.length() + 1 if chip != "" else 0) - (tchip.length() + 1 if tchip != "" else 0)
         var right_edge := r.end.x
-        PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
+        for k in rows.size():
+            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, 2 + 7 * k), INK if on else Color("8b93a1"))
         if chip != "":
             var tint := Color("2f7d46")
             if str(opt.get("stance", "")) == "warn":
@@ -14611,7 +14743,7 @@ func _paint() -> void:
             _canvas.draw_rect(trect, ttint)
             PixelFont.draw(_canvas, tchip, trect.position + Vector2(2, 1), WHITE)
         _hits.append({"r": r, "i": i})
-        y += 11.0
+        y += r.size.y + 1.0
     var m := _mouse.floor()
     for i in 6:
         _canvas.draw_rect(Rect2(m.x, m.y + i, 1 + mini(i, 3), 1), INK)
@@ -22308,7 +22440,7 @@ func _paint_escape(b: Rect2) -> void:
             GREEN if g.revealed.has(i) else INK,
             2
         )
-    _t("U/D CHANGE   L/R MOVE", bx - 6.0, y + 40.0, Color("46506a"))
+    _t("U/D CHANGE   L/R MOVE", minf(bx - 6.0, b.end.x - 87.0), y + 40.0, Color("46506a"))
     if str(g.msg) != "":
         for part in _wrap(str(g.msg), 18):
             _t(part, bx - 6.0, y + 50.0, BLUE)
@@ -29904,7 +30036,7 @@ func _capacity(a: Rect2, narrow: bool) -> void:
     y += 7.0
     var rh := 13.0 if not narrow else 22.0
     if not narrow:  # up to six techs now (C6): squeeze the rows to fit above the totals
-        rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 22.0) / float(maxi(1, names.size()))), 8.0, 13.0)
+        rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 18.0) / float(maxi(1, names.size()))), 7.0, 13.0)
     for i in names.size():
         var who := str(names[i])
         var r := Rect2(a.position.x, y, a.size.x, rh - 1)
@@ -35465,9 +35597,9 @@ func _input(event: InputEvent) -> void:
     if event is InputEventKey and event.pressed and not event.echo:
         _key(event)
     elif event is InputEventMouseMotion:
-        _hover(get_viewport().get_mouse_position())
+        _hover(event.position)
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-        _click(get_viewport().get_mouse_position())
+        _click(event.position)
     get_viewport().set_input_as_handled()
 
 
@@ -35979,12 +36111,12 @@ func _unhandled_input(event: InputEvent) -> void:
             _:
                 return
     elif event is InputEventMouseMotion:
-        _hover(get_viewport().get_mouse_position())
+        _hover(event.position)
         return
     elif (
         event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
     ):
-        _click(get_viewport().get_mouse_position())
+        _click(event.position)
     else:
         return
     get_viewport().set_input_as_handled()
@@ -36099,6 +36231,18 @@ func _wrap(s: String, chars: int, max_lines := 4) -> Array:
     return lines.slice(0, max_lines)
 
 
+# wide (368x128) has room for one blurb line above the summary: keep the whole sentences that fit on it
+func _one_line(s: String, chars: int) -> String:
+    var out := ""
+    for sentence in s.split(". "):
+        var piece: String = sentence if sentence.ends_with(".") else sentence + "."
+        var next := piece if out == "" else out + " " + piece
+        if next.length() > chars:
+            break
+        out = next
+    return out if out != "" else s
+
+
 func _para(s: String, y: float, c: Color, max_lines := 4) -> float:
     var chars := int((_size().x - 20.0) / 4.0)
     for line in _wrap(s, chars, max_lines):
@@ -36137,14 +36281,17 @@ func _draw() -> void:
     if step == "build":
         if narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("P PRESET  X SEED  ENTER GO  ESC", size.y - 12.0, DIM)
+            _ctxt("P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 12.0, DIM)
         else:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 9.0, DIM)
         return
     var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
+    if float(PixelFont.width(hint)) > size.x - 4.0:  # NEW GAME PLUS adds M MUT B BAN: too long for 320
+        hint = hint.replace("LEFT RIGHT CHOOSE", "LEFT RIGHT")
     if narrow:
-        _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
-        _ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
+        _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 27.0, DIM)
+        _ctxt("%s  X SEED" % extra, size.y - 19.0, DIM)
+        _ctxt("ENTER PICK  ESC BACK", size.y - 11.0, DIM)
     else:
         _ctxt(hint, size.y - 9.0, DIM)
 
@@ -36304,7 +36451,10 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     var name_y := feet + (12.0 if narrow else 10.0)
     _ctxt(str(data.name), name_y, GOLD)
     var by := name_y + (20.0 if narrow else 9.0)
-    var end_y := _para(str(data.blurb), by, Color.WHITE, 4 if narrow else 2)
+    var blurb := str(data.blurb)
+    if size.y <= 130.0 and not narrow:
+        blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
+    var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
     if is_campaign():
         var note := "THE REST OF THE TEAM IS ALREADY AT THEIR DESKS"
         if Mutators.pending_start != Mutators.STANDARD:
@@ -36618,14 +36768,14 @@ func _unhandled_input(event: InputEvent) -> void:
             _menu_key(event.keycode, go)
             return
     elif event is InputEventMouseMotion and _menu_open:
-        _hover(get_viewport().get_mouse_position())
+        _hover(event.position)
         return
     elif (
         event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
     ):
         go = true
         if _menu_open:
-            if _hover(get_viewport().get_mouse_position()):
+            if _hover(event.position):
                 _choose(_sel)
             return
     if go:
@@ -36807,12 +36957,19 @@ func _draw_menu() -> void:
     var size := _size()
     var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
     # a long menu (continue + new for three campaigns) squeezes its rows to stay on screen
-    var pitch := clampf(floorf((size.y - 1.0 - y) / float(maxi(1, _items.size()))), 8.0, 10.0)
+    var avail := size.y - 1.0 - y
+    var pitch := clampf(floorf(avail / float(maxi(1, _items.size()))), 8.0, 10.0)
+    # still too tall at the minimum row height (the short wide format with every campaign saved): two columns
+    var cols := 2 if float(_items.size()) * pitch > avail and size.x >= 300.0 else 1
+    var per_col := int(ceil(float(_items.size()) / float(cols)))
+    if cols == 2:
+        pitch = clampf(floorf(avail / float(per_col)), 8.0, 10.0)
     for i in _items.size():
         var item: Dictionary = _items[i]
         var label: String = item.label
         var w := float(PixelFont.width(label)) + 12.0
-        var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, pitch - 1.0)
+        var col_cx := size.x * (0.5 if cols == 1 else (0.25 if i < per_col else 0.75))
+        var r := Rect2(floorf(col_cx - w * 0.5), y + float(i % per_col) * pitch, w, pitch - 1.0)
         item["rect"] = r
         var chosen: bool = i == _sel and item.enabled
         var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)
@@ -40516,7 +40673,7 @@ func _input(event: InputEvent) -> void:
             _:
                 pass
     elif event is InputEventMouseMotion:
-        var h := _hit(get_viewport().get_mouse_position())
+        var h := _hit(event.position)
         if h != _hover:
             _hover = h
             queue_redraw()
@@ -40527,7 +40684,7 @@ func _input(event: InputEvent) -> void:
         elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
             go(1)
         elif event.button_index == MOUSE_BUTTON_LEFT:
-            click(get_viewport().get_mouse_position())
+            click(event.position)
     else:
         return
     get_viewport().set_input_as_handled()
@@ -44492,7 +44649,13 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
     else:
         cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
     cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
-    cp._text(cp._clip("C CALL V VISIT Q QUOTE F CHASE D DROP U UPSELL I INFO", chars), Vector2(x, r.end.y - 7.0), MUTED)
+    var keys := ""
+    for item in ["C CALL", "V VISIT", "Q QUOTE", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+        if (keys + "  " + item).strip_edges().length() <= chars:
+            keys = (keys + "  " + item).strip_edges()
+        else:
+            break
+    cp._text(keys, Vector2(x, r.end.y - 7.0), MUTED)
 
 
 static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:

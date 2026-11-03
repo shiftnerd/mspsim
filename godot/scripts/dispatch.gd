@@ -670,7 +670,7 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 	y += 7.0
 	var rh := 13.0 if not narrow else 22.0
 	if not narrow:  # up to six techs now (C6): squeeze the rows to fit above the totals
-		rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 22.0) / float(maxi(1, names.size()))), 8.0, 13.0)
+		rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 18.0) / float(maxi(1, names.size()))), 7.0, 13.0)
 	for i in names.size():
 		var who := str(names[i])
 		var r := Rect2(a.position.x, y, a.size.x, rh - 1)

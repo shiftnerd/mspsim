@@ -327,12 +327,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			_:
 				return
 	elif event is InputEventMouseMotion:
-		_hover(get_viewport().get_mouse_position())
+		_hover(event.position)
 		return
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_click(get_viewport().get_mouse_position())
+		_click(event.position)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -447,6 +447,18 @@ func _wrap(s: String, chars: int, max_lines := 4) -> Array:
 	return lines.slice(0, max_lines)
 
 
+# wide (368x128) has room for one blurb line above the summary: keep the whole sentences that fit on it
+func _one_line(s: String, chars: int) -> String:
+	var out := ""
+	for sentence in s.split(". "):
+		var piece: String = sentence if sentence.ends_with(".") else sentence + "."
+		var next := piece if out == "" else out + " " + piece
+		if next.length() > chars:
+			break
+		out = next
+	return out if out != "" else s
+
+
 func _para(s: String, y: float, c: Color, max_lines := 4) -> float:
 	var chars := int((_size().x - 20.0) / 4.0)
 	for line in _wrap(s, chars, max_lines):
@@ -485,14 +497,17 @@ func _draw() -> void:
 	if step == "build":
 		if narrow:
 			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("P PRESET  X SEED  ENTER GO  ESC", size.y - 12.0, DIM)
+			_ctxt("P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 12.0, DIM)
 		else:
 			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 9.0, DIM)
 		return
 	var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
+	if float(PixelFont.width(hint)) > size.x - 4.0:  # NEW GAME PLUS adds M MUT B BAN: too long for 320
+		hint = hint.replace("LEFT RIGHT CHOOSE", "LEFT RIGHT")
 	if narrow:
-		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
-		_ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
+		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 27.0, DIM)
+		_ctxt("%s  X SEED" % extra, size.y - 19.0, DIM)
+		_ctxt("ENTER PICK  ESC BACK", size.y - 11.0, DIM)
 	else:
 		_ctxt(hint, size.y - 9.0, DIM)
 
@@ -654,7 +669,10 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 	var name_y := feet + (12.0 if narrow else 10.0)
 	_ctxt(str(data.name), name_y, GOLD)
 	var by := name_y + (20.0 if narrow else 9.0)
-	var end_y := _para(str(data.blurb), by, Color.WHITE, 4 if narrow else 2)
+	var blurb := str(data.blurb)
+	if size.y <= 130.0 and not narrow:
+		blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
+	var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
 	if is_campaign():
 		var note := "THE REST OF THE TEAM IS ALREADY AT THEIR DESKS"
 		if Mutators.pending_start != Mutators.STANDARD:

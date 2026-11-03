@@ -263,14 +263,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_menu_key(event.keycode, go)
 			return
 	elif event is InputEventMouseMotion and _menu_open:
-		_hover(get_viewport().get_mouse_position())
+		_hover(event.position)
 		return
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
 		go = true
 		if _menu_open:
-			if _hover(get_viewport().get_mouse_position()):
+			if _hover(event.position):
 				_choose(_sel)
 			return
 	if go:
@@ -452,12 +452,19 @@ func _draw_menu() -> void:
 	var size := _size()
 	var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
 	# a long menu (continue + new for three campaigns) squeezes its rows to stay on screen
-	var pitch := clampf(floorf((size.y - 1.0 - y) / float(maxi(1, _items.size()))), 8.0, 10.0)
+	var avail := size.y - 1.0 - y
+	var pitch := clampf(floorf(avail / float(maxi(1, _items.size()))), 8.0, 10.0)
+	# still too tall at the minimum row height (the short wide format with every campaign saved): two columns
+	var cols := 2 if float(_items.size()) * pitch > avail and size.x >= 300.0 else 1
+	var per_col := int(ceil(float(_items.size()) / float(cols)))
+	if cols == 2:
+		pitch = clampf(floorf(avail / float(per_col)), 8.0, 10.0)
 	for i in _items.size():
 		var item: Dictionary = _items[i]
 		var label: String = item.label
 		var w := float(PixelFont.width(label)) + 12.0
-		var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, pitch - 1.0)
+		var col_cx := size.x * (0.5 if cols == 1 else (0.25 if i < per_col else 0.75))
+		var r := Rect2(floorf(col_cx - w * 0.5), y + float(i % per_col) * pitch, w, pitch - 1.0)
 		item["rect"] = r
 		var chosen: bool = i == _sel and item.enabled
 		var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)

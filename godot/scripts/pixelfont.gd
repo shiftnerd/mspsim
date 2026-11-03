@@ -73,7 +73,66 @@ static func width(text: String, scale := 1) -> int:
 	return maxi(0, text.length() * 4 * scale - scale)
 
 
+# Layout audit hook (tests/layout_audit.gd, Game._process with env LAYOUT_AUDIT=1): while non-null, every draw call
+# is logged with its rect in viewport pixels. audit_report() returns the problems and clears the log.
+static var audit = null
+static var _audit_seen := {}
+
+
+static func audit_report(fmt := "", overlaps := false) -> Array:
+	var out := []
+	var all: Array = audit
+	audit = []
+	var latest := {}  # per canvas only its newest redraw counts: older frames belong to a screen that was replaced
+	for rec in all:
+		latest[rec.cid] = maxi(int(latest.get(rec.cid, 0)), int(rec.frame))
+	var recs := all.filter(func(rec: Dictionary) -> bool: return rec.frame == latest[rec.cid])
+	for rec in recs:
+		var r: Rect2 = rec.rect
+		var vp: Rect2 = rec.vp
+		if vp.grow_individual(0.01, 0.01, 0.01, 0.01).encloses(r):
+			continue
+		var line := "OFFSCREEN %s %s '%s' rect=%s vp=%s" % [fmt, rec.canvas, rec.text, r, vp.size]
+		if not _audit_seen.has(line):
+			_audit_seen[line] = true
+			out.append(line)
+	if overlaps:
+		var by_canvas := {}
+		for rec in recs:
+			if not by_canvas.has(rec.cid):
+				by_canvas[rec.cid] = []
+			by_canvas[rec.cid].append(rec)
+		for key in by_canvas:
+			var list: Array = by_canvas[key]
+			for i in list.size():
+				for j in range(i + 1, list.size()):
+					var a: Rect2 = list[i].rect
+					var b: Rect2 = list[j].rect
+					if list[i].text == list[j].text or a.position.is_equal_approx(b.position):
+						continue
+					var hit := a.intersection(b)
+					if hit.size.x >= 3.0 and hit.size.y >= 3.0:
+						var line := "OVERLAP %s %s '%s' x '%s' at %s" % [fmt, list[i].canvas, list[i].text, list[j].text, hit]
+						if not _audit_seen.has(line):
+							_audit_seen[line] = true
+							out.append(line)
+	return out
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+	# only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
+	if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
+		var tf := canvas.get_global_transform_with_canvas()
+		var sz := Vector2(width(text.strip_edges(), scale), 5 * scale)
+		var lead := float(text.length() - text.lstrip(" ").length()) * 4.0 * scale
+		audit.append({
+			"canvas": "%s/%s" % [canvas.get_class(), canvas.name],
+			"cid": canvas.get_instance_id(),
+			"frame": Engine.get_frames_drawn(),
+			"text": text.strip_edges(),
+			"rect": tf * Rect2(pos + Vector2(lead, 0), sz),
+			"vp": canvas.get_viewport().get_visible_rect(),
+		})
 	var x := pos.x
 	for ch in text.to_upper().replace('"', "'"):
 		var rows: Array = GLYPHS.get(ch, GLYPHS["?"])

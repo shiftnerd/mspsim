@@ -16,7 +16,8 @@ const HEAD := Color("7fb6ff")
 const GOOD := Color("8fe3a0")
 const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
-const ROW := 7.0  # row height in virtual pixels (one font pixel at scale 1)
+var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
+var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
 const GRADE_COLORS := {
 	"S": Color("f5d442"),
 	"A": Color("5fd068"),
@@ -84,12 +85,12 @@ func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseMotion:
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		if _button.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 600:
 			finish()
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -207,12 +208,12 @@ func _row(x: float, y: float, w: float, row: Array, stripe: bool, draw: bool) ->
 	var label := str(row[0])
 	var value := str(row[1])
 	var two := _tw(label) + _tw(value) + 8.0 > w
-	var h := ROW * (2.0 if two else 1.0)
+	var h := _row_h * (2.0 if two else 1.0)
 	if draw:
 		if stripe:
 			_r(x, y, w, h, STRIPE)
-		_t(label, x + 2.0, y + 1.0, LABEL)
-		_t(value, x + w - 2.0 - _tw(value), y + 1.0 + (ROW if two else 0.0), row[2])
+		_t(label, x + 2.0, y + _pad, LABEL)
+		_t(value, x + w - 2.0 - _tw(value), y + _pad + (_row_h if two else 0.0), row[2])
 	return h
 
 
@@ -222,9 +223,9 @@ func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
 		var name := str(g[0])
 		if name != "":
 			if draw:
-				_t(name, x + 2.0, y + h + 1.0, HEAD)
-				_r(x + _tw(name) + 5.0, y + h + 3.0, w - _tw(name) - 5.0, 1.0, LINE)
-			h += ROW
+				_t(name, x + 2.0, y + h + _pad, HEAD)
+				_r(x + _tw(name) + 5.0, y + h + _pad + 2.0, w - _tw(name) - 5.0, 1.0, LINE)
+			h += _row_h
 		var i := 0
 		for row in g[1]:
 			h += _row(x, y + h, w, row, i % 2 == 1, draw)
@@ -322,7 +323,7 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 		for line in _wrap(ending, int(inner / 4.0)):
 			if draw:
 				_t(line, 4.0, y, col)
-			y += ROW
+			y += _row_h
 	y += 2.0
 	if draw:
 		_r(4.0, y, inner, 1.0, LINE)
@@ -346,9 +347,15 @@ func _paint() -> void:
 		return
 	var size := get_viewport().get_visible_rect().size
 	var sc := 2 if size.x < 220.0 else 1
+	_row_h = 7.0
+	_pad = 1.0
 	var h := _stack(sc, size, false)
 	if sc == 2 and h * 2.0 > size.y - 4.0:
 		sc = 1
+		h = _stack(sc, size, false)
+	if sc == 1 and h > size.y - 2.0:  # the short wide screen: tighter rows (the 5 pixel font still has a 1 pixel gap)
+		_row_h = 6.0
+		_pad = 0.0
 		h = _stack(sc, size, false)
 	var u := float(sc)
 	var pw := _panel_w(sc, size)

@@ -162,14 +162,14 @@ func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseMotion:
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		if app == "dispatch":
 			dispatch.mouse_move(_mouse)
 		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		if app == "dispatch" and dispatch.mouse_down(_mouse):
 			_canvas.queue_redraw()
 		else:
@@ -180,7 +180,7 @@ func _input(event: InputEvent) -> void:
 		and event.button_index == MOUSE_BUTTON_LEFT
 		and app == "dispatch"
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		dispatch.mouse_up(_mouse)
 		_canvas.queue_redraw()
 	elif (
@@ -1523,12 +1523,15 @@ func _paint_backups(body: Rect2) -> void:
 	var row_h := 14.0
 	if compact:
 		row_h = 11.0 if Sales.active.size() <= 5 else 8.0
+	var head_note := (
+		"NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU"
+		if Skills.backup_watch()
+		else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY"
+	)
+	if body.size.x < 200.0:  # the narrow portrait screen: the short wording
+		head_note = "BACKUP JOBS - WATCH CHECKS THEM" if Skills.backup_watch() else "BACKUP JOBS - VERIFY EACH EVERY DAY"
 	_text(
-		(
-			"NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU"
-			if Skills.backup_watch()
-			else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY"
-		),
+		head_note,
 		body.position + Vector2(4, 3),
 		RMM_GREY
 	)
@@ -1987,11 +1990,15 @@ func _paint_nerds() -> void:
 			not th.answered
 		)
 		y += 12
-	_text(
-		"R = READ (A LITTLE XP)   A = ANSWER (NEEDS THE SKILL: MORE XP + KARMA)",
-		Vector2(area.position.x + 4, y + 2),
-		Color("7d8595")
-	)
+	if area.size.x < 290.0:  # two short lines on the narrow screens
+		_text("R = READ (A LITTLE XP)", Vector2(area.position.x + 4, y + 2), Color("7d8595"))
+		_text("A = ANSWER (NEEDS THE SKILL: XP + KARMA)", Vector2(area.position.x + 4, y + 9), Color("7d8595"))
+	else:
+		_text(
+			"R = READ (A LITTLE XP)   A = ANSWER (NEEDS THE SKILL: MORE XP + KARMA)",
+			Vector2(area.position.x + 4, y + 2),
+			Color("7d8595")
+		)
 
 
 func _paint_irc(area: Rect2) -> void:
@@ -2101,7 +2108,15 @@ func _paint_boardroom() -> void:
 func _board_rows(rows: Array, x: float, y: float, value_x: float, limit: int) -> float:
 	for row in rows:
 		_text(str(row[0]), Vector2(x, y), Color("46506a"))
-		_text(_clip(str(row[1]), limit), Vector2(x + value_x, y), row[2])
+		var line := ""
+		for word in str(row[1]).split(" "):  # long values wrap under themselves instead of ending in ".."
+			if line != "" and line.length() + 1 + word.length() > limit:
+				_text(_clip(line, limit), Vector2(x + value_x, y), row[2])
+				y += 7
+				line = word
+			else:
+				line = word if line == "" else line + " " + word
+		_text(_clip(line, limit), Vector2(x + value_x, y), row[2])
 		y += 7
 	return y
 
@@ -2502,5 +2517,7 @@ func _paint_stats() -> void:
 	if Campaign.active and Skills.next_perk() != "":
 		lines.append(Skills.next_perk())
 	for line in lines:
+		if y + 5.0 > body.end.y - 1.0:  # the short wide screen cannot hold every line: the least important come last
+			break
 		_text(_clip(line, int((body.end.x - x - 4) / 4.0)), Vector2(x, y), Color("46506a"))
 		y += 7

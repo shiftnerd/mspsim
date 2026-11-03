@@ -231,12 +231,12 @@ func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseMotion:
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		for i in range(_hits.size() - 1, -1, -1):
 			if _hits[i].r.has_point(_mouse):
 				if str(_hits[i].id) == "next":

@@ -7,6 +7,8 @@ extends Node
 
 signal format_changed
 
+const PixelFont := preload("res://scripts/pixelfont.gd")
+
 # size = logical pixels; zoom = camera zoom; cam_y = world y the camera centres on;
 # scale = default window pixel scale without --resolution (6x of h = 1920x1080, 6x of v = 1080x1920)
 const FORMATS := {
@@ -31,7 +33,16 @@ var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the 
 var _fade: ColorRect
 
 
+func _process(_delta: float) -> void:
+	# Layout audit: with env LAYOUT_AUDIT=1 any test run prints text that leaves the viewport or overlaps other text.
+	if PixelFont.audit != null and OS.get_environment("LAYOUT_AUDIT") == "1":
+		for line in PixelFont.audit_report(format, true):
+			print(line)
+
+
 func _ready() -> void:
+	if OS.get_environment("LAYOUT_AUDIT") == "1":
+		PixelFont.audit = []
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	add_child(layer)
@@ -60,6 +71,34 @@ func set_format(name: String) -> void:
 
 func cycle_format() -> void:
 	set_format(ORDER[(ORDER.find(format) + 1) % ORDER.size()])
+
+
+# Test helper (Q4): a real mouse click at a LOGICAL UI point (0..size of the current format), sent through
+# Input.parse_input_event. parse_input_event wants window pixels, so the point goes through the window's final
+# (content scale) transform; that makes it independent of the window size, which differs in a hidden, headless or
+# --resolution window. The UI scripts read event.position (logical), not the OS cursor, so the click lands.
+func ui_to_window(ui_point: Vector2) -> Vector2:
+	return get_window().get_final_transform() * ui_point
+
+
+func hover_at(ui_point: Vector2) -> void:
+	Input.use_accumulated_input = false
+	var motion := InputEventMouseMotion.new()
+	motion.position = ui_to_window(ui_point)
+	motion.global_position = motion.position
+	Input.parse_input_event(motion)
+
+
+func click_at(ui_point: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
+	hover_at(ui_point)
+	for pressed in [true, false]:
+		var ev := InputEventMouseButton.new()
+		ev.position = ui_to_window(ui_point)
+		ev.global_position = ev.position
+		ev.button_index = button
+		ev.pressed = pressed
+		ev.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+		Input.parse_input_event(ev)
 
 
 func go_title() -> void:

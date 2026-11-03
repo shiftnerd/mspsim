@@ -373,9 +373,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		_key(event)
 	elif event is InputEventMouseMotion:
-		_hover(get_viewport().get_mouse_position())
+		_hover(event.position)
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_click(get_viewport().get_mouse_position())
+		_click(event.position)
 	get_viewport().set_input_as_handled()
 
 
