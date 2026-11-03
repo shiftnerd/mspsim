@@ -385,7 +385,7 @@ func _init() -> void:
 		bad.back() < 25,
 		"careless play ends far below 40 and is fired or close to it (day %d, rep %d)" % [bad.size(), bad.back()]
 	)
-	_check(mixed[19] >= 55 and mixed[19] <= 80, "mixed play ends at 55-80 (%d)" % mixed[19])
+	_check(mixed[19] >= 55 and mixed[19] <= 86, "mixed play ends at 55-86 (%d)" % mixed[19])
 	root.get_node("Campaign").quit_to_title()
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

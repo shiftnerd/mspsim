@@ -149,7 +149,7 @@ offset = Vector2(0, -29)
 texture = ExtResource("prop_plant_floor")
 
 [node name="hard_hats_wall_5" type="Sprite2D" parent="Actors"]
-position = Vector2(87, 100)
+position = Vector2(127, 100)
 centered = false
 offset = Vector2(0, -61)
 texture = ExtResource("prop_hard_hats_wall")

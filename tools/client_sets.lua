@@ -678,7 +678,9 @@ return function(L, builders)
       s.layer("Ceiling")
       wallAndFloor(s, S, "carpet", 240)
       s.put("Doors", P.slabDoor("#5A3A22", "#3E281A", "#7A5030", "lever"), 4, 18); s.put("Plate", P.doorPlate("OFFICE"), 4, 9)
-      s.put("Frame", P.diploma(S), 56, 24); s.put("Frame", P.diploma(S), 80, 24)
+      -- the door takes x 4-38; the trailer office hangs one diploma and the hard-hat board on the free wall before the window
+      if kind == "trailer" then s.put("Frame", P.diploma(S), 42, 24)
+      else s.put("Frame", P.diploma(S), 56, 24); s.put("Frame", P.diploma(S), 80, 24) end
       s.put("Trophy", P.trophyShelf(S), 160, 34)
       if kind == "trailer" then s.put("Window", P.trailerWindow(S), 110, 22) else s.put("Window", P.bigWindowArch(), 96, 8) end
       s.putS("Sofa", P.officeSofa(S), 176, 80, 108, "office_sofa_" .. S.id)
@@ -690,7 +692,7 @@ return function(L, builders)
         s.putS("Dog", P.dog(S), 150, 94, 112, "dog_tan")
         s.putS("Cat", P.cat(S, "black"), 200, 64, 109, "cat_black")
       end
-      if kind == "trailer" then s.putS("Hats", P.hardHats(S), 24, 40, 100, "hard_hats_wall") end
+      if kind == "trailer" then s.putS("Hats", P.hardHats(S), 64, 40, 100, "hard_hats_wall") end
       if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 120, 56) end
     end}
   end
