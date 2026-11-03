@@ -22,10 +22,13 @@ var THANKS: Array = DEFAULT_THANKS.duplicate(true)
 
 var rel := {}
 var calls_answered := 0
+const MAX_REOPEN_LOSS := 3
+
 var day_delta := 0
 
 var _last_chat := {}
 var _closed := 0
+var _reopen_loss := 0  # coworker opinion lost to reopens today (capped)
 
 
 func _ready() -> void:
@@ -40,6 +43,7 @@ func reset() -> void:
 	day_delta = 0
 	_last_chat = {}
 	_closed = 0
+	_reopen_loss = 0
 
 
 func value(who: String) -> int:
@@ -130,6 +134,10 @@ func note_ticket_closed(ticket: Dictionary) -> void:
 
 
 func note_reopen() -> void:
+	# at most 3 points a day, so a bad habit hurts but one rough day does not wreck the row
+	if _reopen_loss >= MAX_REOPEN_LOSS:
+		return
+	_reopen_loss += 1
 	change_all(-1)
 
 
@@ -143,6 +151,7 @@ func note_outage_fixed(desk: int) -> void:
 
 func begin_day() -> void:
 	day_delta = 0
+	_reopen_loss = 0
 
 
 func to_dict() -> Dictionary:

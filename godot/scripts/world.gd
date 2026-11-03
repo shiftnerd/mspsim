@@ -671,8 +671,10 @@ func send_vic_to_player() -> void:
 		return
 	var st: Dictionary = chars["Vic"]
 	if st.scene == OUTSIDE or st.following:
-		Msp.send_text("Vic", Sales.complaint_text())
-		Sales.adjust(int(Sales.pending.get("client", 0)), -2)
+		var said := Sales.complaint_text()
+		if said != "":
+			Msp.send_text("Vic", said)
+			Sales.adjust(int(Sales.pending.get("client", 0)), -2)
 		Sales.pending = {}
 		return
 	var px := 150.0

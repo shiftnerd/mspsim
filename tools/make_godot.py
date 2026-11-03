@@ -3246,8 +3246,10 @@ func send_vic_to_player() -> void:
         return
     var st: Dictionary = chars["Vic"]
     if st.scene == OUTSIDE or st.following:
-        Msp.send_text("Vic", Sales.complaint_text())
-        Sales.adjust(int(Sales.pending.get("client", 0)), -2)
+        var said := Sales.complaint_text()
+        if said != "":
+            Msp.send_text("Vic", said)
+            Sales.adjust(int(Sales.pending.get("client", 0)), -2)
         Sales.pending = {}
         return
     var px := 150.0
@@ -4663,9 +4665,11 @@ var is_open := false
 var desk := 0
 var app := "desktop"
 var mail_sel := -1
+var mail_top := 0  # first mail shown in the list (it scrolls with the selection)
 var mail_view := false
 var psa_sel := 0
 var psa_detail := false
+var close_ask := false  # CLOSE pressed on an unfixed ticket: waiting for YES / NO
 var rmm_open := {}
 var rmm_scroll := 0  # pixels the endpoint tree is scrolled
 var site_info := {}  # a client's computer (onsite): their desktop, not yours
@@ -4720,6 +4724,7 @@ func open(from_desk: int) -> void:
     app = "desktop"
     mail_view = false
     psa_detail = false
+    close_ask = false
     rmm_detail = false
     rmm_session = false
     _menu = false
@@ -4755,7 +4760,16 @@ func _refresh() -> void:
 
 func _process(delta: float) -> void:
     if not is_open:
-        _job = {}
+        # an RMM fix keeps running with the computer closed (the result shows when you come back);
+        # anything else (playbook step, install project) is dropped
+        if _job.is_empty():
+            return
+        if not str(_job.kind) in ["fix", "script", "scriptall"]:
+            _job = {}
+            return
+        _job.left -= delta
+        if _job.left <= 0.0:
+            _finish_job()
         return
     _tick += delta
     _toast_t = maxf(0.0, _toast_t - delta)
@@ -4814,11 +4828,14 @@ func back() -> void:
     elif app == "mail" and mail_view:
         mail_view = false
     elif app == "psa" and psa_detail:
-        psa_detail = false
+        if close_ask:
+            close_ask = false
+        else:
+            psa_detail = false
     elif app == "rmm" and (rmm_session or rmm_detail):
         rmm_session = false
         rmm_detail = false
-        _job = {}
+        _cancel_job()
     elif app == "learn" and learn_lesson >= 0:
         learn_lesson = -1
         learn_done = false
@@ -4837,6 +4854,8 @@ func move(step: int) -> void:
     match app:
         "mail":
             mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
+            if mail_sel < Msp.emails.size() and _area.size.x >= 250.0:
+                Msp.emails[mail_sel].unread = false  # the reading pane shows it: it counts as read
         "psa":
             var list := Msp.open_tickets()
             if not list.is_empty():
@@ -4862,8 +4881,11 @@ func _psa_index() -> int:
 
 
 func enter() -> void:
-    if app == "mail" and mail_sel >= 0:
-        activate("mail:%d" % mail_sel)
+    if app == "mail":
+        if mail_sel < 0 and not Msp.emails.is_empty():
+            mail_sel = 0  # Enter works from the first press: it opens the first mail
+        if mail_sel >= 0:
+            activate("mail:%d" % mail_sel)
     elif app == "psa" and not psa_detail and not Msp.open_tickets().is_empty():
         activate("tk:%d" % psa_sel)
 
@@ -4893,7 +4915,7 @@ func activate(id: String) -> void:
             mail_view = false
         "reply", "delete":
             _mail_action(parts[0])
-        "back", "tk", "take", "prog", "wait", "note", "close", "onsite":
+        "back", "tk", "take", "prog", "wait", "note", "close", "closeyes", "closeno", "onsite":
             _psa_action(parts)
         "rmm", "connect", "disc", "fix", "client", "rback", "script", "scriptall":
             _rmm_action(parts)
@@ -4934,6 +4956,8 @@ func _mail_action(kind: String) -> void:
 
 
 func _psa_action(parts: PackedStringArray) -> void:
+    var was_asking := close_ask
+    close_ask = false
     match parts[0]:
         "back":
             psa_detail = false
@@ -4949,9 +4973,18 @@ func _psa_action(parts: PackedStringArray) -> void:
         "onsite":
             Onsite.offer(psa_sel)
         "close":
+            var tk := Msp.ticket(psa_sel)
+            if not tk.is_empty() and tk.status != "Closed" and not tk.fix_done and not was_asking:
+                close_ask = true  # not fixed yet: closing it reopens it and costs mood
+                return
             _say(Msp.close_ticket(psa_sel))
             if Msp.ticket(psa_sel).status == "Closed":
                 psa_detail = false
+        "closeyes":
+            if was_asking:
+                _say(Msp.close_ticket(psa_sel))
+                if Msp.ticket(psa_sel).status == "Closed":
+                    psa_detail = false
 
 
 func _rmm_action(parts: PackedStringArray) -> void:
@@ -4967,7 +5000,7 @@ func _rmm_action(parts: PackedStringArray) -> void:
             rmm_msg = "CONNECTED TO " + rmm_sel
         "disc":
             rmm_session = false
-            _job = {}
+            _cancel_job()
         "fix", "script", "scriptall":
             _start_job(parts[0], parts[1] if parts.size() > 1 else "")
         "rback":
@@ -4980,6 +5013,12 @@ func _rmm_action(parts: PackedStringArray) -> void:
         "bkrerun":
             Msp.backup_rerun(int(parts[1]))
             _say("BACKUP RERUN OK")
+
+
+func _cancel_job() -> void:
+    if not _job.is_empty():
+        _say("JOB CANCELLED")
+    _job = {}
 
 
 func _start_job(kind: String, action: String) -> void:
@@ -5141,7 +5180,7 @@ func _tw(s: String, scale := 1) -> float:
 
 
 func _clip(s: String, chars: int) -> String:
-    return s if s.length() <= chars else s.substr(0, maxi(1, chars - 1)) + "."
+    return s if s.length() <= chars else s.substr(0, maxi(1, chars - 2)) + ".."
 
 
 func _wrap(s: String, chars: int) -> Array:
@@ -5472,7 +5511,7 @@ func _paint_mail() -> void:
     if _offline("OUTLOOKISH CANNOT CONNECT TO THE MAIL SERVER.", body):
         return
     var narrow := body.size.x < 250.0
-    var list_w := body.size.x if (narrow and not mail_view) else (0.0 if narrow else 112.0)
+    var list_w := body.size.x if (narrow and not mail_view) else (0.0 if narrow else clampf(floorf(body.size.x * 0.48), 112.0, 150.0))
     if not narrow:
         _fill(Rect2(body.position, Vector2(40, body.size.y)), Color("dfe5ef"))
         _text("INBOX", body.position + Vector2(4, 4), OUTLOOK)
@@ -5491,9 +5530,12 @@ func _paint_mail() -> void:
 
 func _mail_list(r: Rect2) -> void:
     var rows := int(r.size.y / 14.0)
-    for i in mini(rows, Msp.emails.size()):
+    if mail_sel >= 0:  # keep the selected mail on screen
+        mail_top = clampi(mail_top, mail_sel - rows + 1, mail_sel)
+    mail_top = clampi(mail_top, 0, maxi(0, Msp.emails.size() - rows))
+    for i in range(mail_top, mini(mail_top + rows, Msp.emails.size())):
         var m: Dictionary = Msp.emails[i]
-        var rr := Rect2(r.position.x, r.position.y + i * 14.0, r.size.x, 14)
+        var rr := Rect2(r.position.x, r.position.y + (i - mail_top) * 14.0, r.size.x, 14)
         _row(rr, i == mail_sel, i % 2 == 1)
         var col := OUTLOOK if m.unread else Color("5a6372")
         _text(_clip(m.from, int(r.size.x / 4.0) - 2), rr.position + Vector2(3, 2), col)
@@ -5608,8 +5650,20 @@ func _paint_ticket(body: Rect2) -> void:
 
 
 func _ticket_buttons(body: Rect2) -> void:
-    var items := [["back", "BACK"], ["take", "TAKE"], ["prog", "PROGRESS"], ["wait", "WAIT"], ["note", "NOTE"], ["close", "CLOSE"]]
     var tk := Msp.ticket(psa_sel)
+    if close_ask:
+        var warn := Rect2(body.position.x + 3, body.end.y - 33, body.size.x - 6, 20)
+        _fill(warn, Color("f6d7d2"))
+        var wchars := int((warn.size.x - 6.0) / 4.0)
+        var wl := _wrap("NOT FIXED YET. CLOSING REOPENS IT: ANGRY CLIENT, COWORKERS -1.", wchars)
+        for i in mini(2, wl.size()):
+            _text(wl[i], warn.position + Vector2(3, 3 + i * 7), RED)
+        var half := floorf((body.size.x - 6.0) * 0.5)
+        _button("closeyes", Rect2(body.position.x + 3, body.end.y - 11, half - 2, 9), "CLOSE ANYWAY", true, Color("e8b0a8"))
+        _button("closeno", Rect2(body.position.x + 3 + half, body.end.y - 11, half - 2, 9), "KEEP WORKING", true, Color("9bd6a8"))
+        return
+    # CLOSE sits at the far end, away from NOTE
+    var items := [["back", "BACK"], ["take", "TAKE"], ["prog", "PROGRESS"], ["note", "NOTE"], ["wait", "WAIT"], ["close", "CLOSE"]]
     if not tk.is_empty() and Onsite.is_onsite(tk):
         items[2] = ["onsite", "GO ONSITE"]
     var wide := body.size.x >= 250.0
@@ -5667,7 +5721,7 @@ func _rmm_list(r: Rect2) -> void:
     for c in Sales.active:
         var alert := false
         for ep in Msp.endpoints:
-            if ep.client == c and ep.problem != "":
+            if ep.client == c and _ep_alert(ep):
                 alert = true
         if y >= r.position.y and y + 9 <= r.end.y:
             var hr := Rect2(r.position.x, y, r.size.x - 4, 9)
@@ -5684,7 +5738,7 @@ func _rmm_list(r: Rect2) -> void:
                 if y >= r.position.y and y + 8 <= r.end.y:
                     var er := Rect2(r.position.x, y, r.size.x - 4, 8)
                     _row(er, ep.name == rmm_sel, false)
-                    _fill(Rect2(er.position.x + 5, y + 2, 4, 4), RED if ep.problem != "" else GREEN)
+                    _fill(Rect2(er.position.x + 5, y + 2, 4, 4), RED if _ep_alert(ep) else GREEN)
                     _text(ep.name, er.position + Vector2(12, 1), TXT)
                     _region("rmm:" + ep.name, er)
                 y += 8
@@ -5694,6 +5748,16 @@ func _rmm_list(r: Rect2) -> void:
         var bar_h := maxf(8.0, r.size.y * r.size.y / float(total))
         var bar_y := r.position.y + (r.size.y - bar_h) * float(rmm_scroll) / float(max_scroll)
         _fill(Rect2(track.position.x, bar_y, 2, bar_h), Color("6b7280"))
+
+
+# an endpoint shows an alert when something is broken on it or an open, unfixed ticket points at it
+func _ep_alert(ep: Dictionary) -> bool:
+    if str(ep.problem) != "":
+        return true
+    for t in Msp.tickets:
+        if t.status != "Closed" and not t.fix_done and str(t.endpoint) == str(ep.name):
+            return true
+    return false
 
 
 func _symptom(problem: String) -> String:
@@ -5804,7 +5868,8 @@ func _paint_backups(body: Rect2) -> void:
             status = "OK - LAST GOOD: TODAY"
             color = GREEN
         elif checked:
-            status = "FAILED! LAST GOOD: %d DAYS AGO" % maxi(1, Campaign.day - int(b.good_day))
+            var ago := maxi(1, Campaign.day - int(b.good_day))
+            status = "FAILED! LAST GOOD: %d DAY%s AGO" % [ago, "" if ago == 1 else "S"]
             color = RED
         var at := rr.position + (Vector2(100, 2) if compact else Vector2(3, 8))
         _text(_clip(status, int((body.end.x - at.x - 34) / 4.0)), at, color)
@@ -5941,7 +6006,8 @@ func _paint_learn() -> void:
 func _paint_quiz(body: Rect2) -> void:
     var lesson: Dictionary = Skills.LESSONS[learn_lesson]
     var chars := int((body.size.x - 8) / 4.0)
-    _text(_clip("%s - QUESTION %d OF 3" % [lesson.title, mini(learn_q + 1, 3)], chars), body.position + Vector2(4, 3), Color("012456"))
+    var head := "%s - RESULT" % lesson.title if learn_done else "%s - QUESTION %d OF 3" % [lesson.title, mini(learn_q + 1, 3)]
+    _text(_clip(head, chars), body.position + Vector2(4, 3), Color("012456"))
     if learn_done:
         var passed := learn_right >= 2
         _text("%d OF 3 RIGHT" % learn_right, body.position + Vector2(4, 16), TXT)
@@ -8283,10 +8349,13 @@ const THANKS := [
 
 var rel := {}
 var calls_answered := 0
+const MAX_REOPEN_LOSS := 3
+
 var day_delta := 0
 
 var _last_chat := {}
 var _closed := 0
+var _reopen_loss := 0  # coworker opinion lost to reopens today (capped)
 
 
 func _ready() -> void:
@@ -8301,6 +8370,7 @@ func reset() -> void:
     day_delta = 0
     _last_chat = {}
     _closed = 0
+    _reopen_loss = 0
 
 
 func value(who: String) -> int:
@@ -8391,6 +8461,10 @@ func note_ticket_closed(ticket: Dictionary) -> void:
 
 
 func note_reopen() -> void:
+    # at most 3 points a day, so a bad habit hurts but one rough day does not wreck the row
+    if _reopen_loss >= MAX_REOPEN_LOSS:
+        return
+    _reopen_loss += 1
     change_all(-1)
 
 
@@ -8404,6 +8478,7 @@ func note_outage_fixed(desk: int) -> void:
 
 func begin_day() -> void:
     day_delta = 0
+    _reopen_loss = 0
 
 
 func to_dict() -> Dictionary:
@@ -9430,6 +9505,7 @@ var deals := 0
 var last_deal := 'VIC CLOSED A DEAL!'  # what the sales bell says
 var installs_sold := 0
 var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
+var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
 
 var _cool := 40.0
 
@@ -9446,6 +9522,7 @@ func reset() -> void:
     deals = 0
     installs_sold = 0
     pending = {}
+    signed_day = {}
     _cool = 40.0
 
 
@@ -9453,16 +9530,29 @@ func is_active(client: int) -> bool:
     return active.has(client)
 
 
+# a client signed today only starts sending tickets tomorrow (the sign-up mail says so)
+func takes_tickets(client: int) -> bool:
+    if not active.has(client):
+        return false
+    return not (Campaign.active and int(signed_day.get(client, -1)) == Campaign.day)
+
+
 func pick_client() -> int:
-    var total := 0.0
+    var ready: Array = []
     for c in active:
+        if takes_tickets(int(c)):
+            ready.append(c)
+    if ready.is_empty():
+        ready = active
+    var total := 0.0
+    for c in ready:
         total += Owner.client_weight(int(c))
     var roll := randf() * total
-    for c in active:
+    for c in ready:
         roll -= Owner.client_weight(int(c))
         if roll <= 0.0:
             return int(c)
-    return int(active[0])
+    return int(ready[0])
 
 
 func mood(client: int) -> int:
@@ -9538,6 +9628,7 @@ func sign_client(wanted := -1) -> int:
     if wanted >= 0 and pool.has(wanted):
         client = wanted
     active.append(client)
+    signed_day[client] = Campaign.day
     satisfaction[client] = Owner.new_client_mood() if Owner.active() else 75
     deals += 1
     Owner.on_deal("client", client)
@@ -9601,7 +9692,7 @@ func _process(delta: float) -> void:
 
 func complaint_text() -> String:
     var t := Msp.ticket(int(pending.get("ticket", 0)))
-    if t.is_empty():
+    if t.is_empty() or str(t.status) == "Closed":
         return ""
     var contact: String = Msp.CLIENTS[int(t.client)].contact
     var late := "is past its SLA" if t.breached else "has %s left" % Msp.mmss(float(t.sla_left))
@@ -9631,7 +9722,7 @@ func resolve(choice: String) -> void:
     var t := Msp.ticket(int(pending.get("ticket", 0)))
     var client := int(pending.get("client", 0))
     pending = {}
-    if t.is_empty():
+    if t.is_empty() or str(t.status) == "Closed":
         return
     match choice:
         "prio":
@@ -12217,18 +12308,34 @@ func commute(choice: String) -> void:
     add_energy(float(c.energy))
     if late_min >= 10:
         late_total += 1
-    _arrive(reason)
+    var waiting := _arrive(reason)
     World.time_scale = 1.0
+    Hints.toast(_arrival_text(delay, waiting), 6.0)
     changed.emit()
 
 
-func _arrive(reason: String) -> void:
+# the line shown right after the commute card: how it went
+func _arrival_text(delay: int, waiting: int) -> String:
+    if late_min >= 10:
+        return (
+            "YOU ARRIVE %d MIN LATE. %d TICKET%s WAITING."
+            % [late_min, waiting, "" if waiting == 1 else "S"]
+        )
+    if delay < 0:
+        return "YOU ARRIVE %d MIN EARLY. COFFEE FIRST." % -delay
+    return "YOU ARRIVE ON TIME."
+
+
+# returns how many tickets were already waiting when you got in
+func _arrive(reason: String) -> int:
+    var waiting := 0
     if late_min >= 10:
         var sorry := "You arrive %d minutes late" % late_min
         Msp.send_text("Commute", sorry + (": " + reason.capitalize() + "." if reason != "" else "."))
         for i in clampi(late_min / 15, 1, 3):
             var t: Dictionary = Msp._random_ticket("email")
             if not t.is_empty():
+                waiting += 1
                 t.sla_left = maxf(float(t.sla_total) * 0.5, float(t.sla_left) - float(late_min) * 1.25)
         for i in late_min / 12:
             Sales.adjust(Sales.pick_client(), -2)
@@ -12240,6 +12347,7 @@ func _arrive(reason: String) -> void:
             Msp.send_text("Boss", "Where are you? Clients are asking for you.")
     elif reason != "":
         Msp.send_text("Commute", "Traffic: %s. You left early enough. Phew." % reason.capitalize())
+    return waiting
 
 
 # ---- the day ---------------------------------------------------------------------------------
@@ -17274,7 +17382,7 @@ func _process(_delta: float) -> void:
 func create_job(client_index := -1, job_id := "") -> Dictionary:
     var options := []
     for c in Sales.active:
-        if SITES.has(int(c)):
+        if SITES.has(int(c)) and Sales.takes_tickets(int(c)):
             options.append(int(c))
     if client_index < 0:
         if options.is_empty():
@@ -17293,7 +17401,15 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
         "summary": str(pick.summary), "fix": "onsite_" + str(pick.id), "pri": int(pick.pri), "body": str(pick.body),
         "server": str(pick.object) == "server",
     }
-    return Msp.create_problem(client_index, prob, "phone")
+    var made := Msp.create_problem(client_index, prob, "phone")
+    if not made.is_empty() and Campaign.active:
+        # the clock is paused on the road, but the client still expects a visit to be possible:
+        # add the round trip (plus some work) to the SLA, in the same units as `_away`
+        var extra := float(drive_minutes(client_index) * 2 + 30) / 60.0 * 60.0
+        extra *= World.day_len / 600.0
+        made.sla_total = float(made.sla_total) + extra
+        made.sla_left = float(made.sla_left) + extra
+    return made
 
 
 func is_onsite(t: Dictionary) -> bool:
@@ -17338,18 +17454,18 @@ func traffic_label(hour := -1.0) -> String:
 
 # what the trip should take right now (shown on the cards)
 # how many open tickets would run out of time during a trip of this many minutes (there and back, plus some work)
-func at_risk(minutes: int) -> int:
+func at_risk(minutes: int, except_id := 0) -> int:
     var hours := float(minutes * 2 + 30) / 60.0
     var n := 0
     var scale := World.day_len / 600.0
     for t in Msp.tickets:
-        if t.status != "Closed" and float(t.sla_left) - hours * SLA_PER_HOUR * scale <= float(t.sla_total) * 0.4:
+        if t.status != "Closed" and int(t.id) != except_id and float(t.sla_left) - hours * SLA_PER_HOUR * scale <= float(t.sla_total) * 0.4:
             n += 1
     return n
 
 
-func _risk_text(c: int) -> String:
-    var n := at_risk(estimate_minutes(c)) if Campaign.active else 0
+func _risk_text(c: int, except_id := 0) -> String:
+    var n := at_risk(estimate_minutes(c), except_id) if Campaign.active else 0
     return "" if n == 0 else " %d of your open tickets will be close to breaching by the time you are back." % n
 
 
@@ -17500,7 +17616,7 @@ func offer(id: int) -> void:
     if not has_site(int(t.client)):
         Hints.toast("NO SITE FOR THIS CLIENT YET.", 2.5)
         return
-    Cards.ask("Dispatch", str(TEXT.offer) % [str(Msp.CLIENTS[int(t.client)].name), estimate_minutes(int(t.client))] + _risk_text(int(t.client)), [
+    Cards.ask("Dispatch", str(TEXT.offer) % [str(Msp.CLIENTS[int(t.client)].name), estimate_minutes(int(t.client))] + _risk_text(int(t.client), id), [
         {"label": str(TEXT.go), "id": "go"},
         {"label": str(TEXT.later), "id": "later"},
     ], func(pick: String) -> void: _offer_answer(pick, id))
@@ -17861,11 +17977,26 @@ func _after(ok: bool) -> void:
         _maybe_event()
 
 
+# a mishap only happens where its text makes sense: the dog and the showing need a PC job,
+# the breaker and the closet call need the closet, the plotter needs the printer
+func event_fits(ev: Dictionary) -> bool:
+    var groups := {
+        "pc": ["pc", "exam", "vip", "xray"],
+        "cabinet": ["cabinet", "server"],
+        "server": ["cabinet", "server"],
+        "printer": ["printer"],
+    }
+    var want := str(ev.get("object", ""))
+    if want == "" or job.is_empty() or not groups.has(want):
+        return true
+    return (groups[want] as Array).has(str(job.get("object", "")))
+
+
 # a random mishap at this kind of site (once per visit, 55%)
 func _maybe_event() -> void:
     _event_done = true
     var ev: Dictionary = EVENTS.get(site_type(client), {})
-    if ev.is_empty() or randf() > 0.55:
+    if ev.is_empty() or not event_fits(ev) or randf() > 0.55:
         return
     var options := []
     for o in ev.options:
@@ -18673,7 +18804,8 @@ var _acc := 0.0
 
 
 func _process(delta: float) -> void:
-    visible = World.hud_visible and not DayReport.is_open
+    # the card header sits over the HUD text, so hide it while a card is up
+    visible = World.hud_visible and not DayReport.is_open and not Cards.is_open
     _acc += delta
     if _acc > 0.25:
         _acc = 0.0
