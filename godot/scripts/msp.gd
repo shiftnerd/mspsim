@@ -1396,6 +1396,13 @@ func _process(delta: float) -> void:
 		_spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
+			# Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
+			var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0
+			if pair > 0.0 and Difficulty.rng("msp.pair").randf() < pair:
+				for ot in open_tickets():
+					if int(ot.pri) <= 2:
+						_random_ticket("email")
+						break
 	for i in range(_later.size() - 1, -1, -1):
 		_later[i].left -= dt
 		if _later[i].left <= 0.0:

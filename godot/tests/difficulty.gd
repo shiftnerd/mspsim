@@ -117,6 +117,8 @@ func _init() -> void:
 		"tech.pace": 1.0,
 		"tech.sla": 1.0,
 		"tech.alt_ret": 1.0,
+		"tech.drain": 1.0,
+		"tech.pair": 0.0,
 		"tech.gain": 1.0,
 		"tech.loss": 1.0,
 		"rep.gain": 1.0,

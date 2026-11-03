@@ -18,10 +18,12 @@ The tech bot spends 28 s of overhead on every ticket (reading, switching windows
 | Key | Easy | Normal | Hard | Where |
 |---|---|---|---|---|
 | `tech.pace` (random-ticket interval x, tech campaign) | 1.25 | 1.0 | 0.45 | `Msp._process` |
-| `tech.sla` (SLA window x, tech) | 1.3 | 1.0 | 0.5 | `Mutators.sla` |
-| `tech.gain` / `tech.loss` (day report reputation move x, tech) | 1.25 / 0.75 | 1 / 1 | 0.4 / 1.8 | `Campaign._tier_rep` |
+| `tech.sla` (SLA window x, tech) | 1.3 | 1.0 | 0.4 | `Mutators.sla` |
+| `tech.gain` / `tech.loss` (day report reputation move x, tech) | 1.25 / 0.75 | 1 / 1 | 0.4 / 2.2 | `Campaign._tier_rep` |
 | `crew.pace`, `crew.sla` (owner, sales, service) | 1.1, 1.15 | 1, 1 | 0.8, 0.85 | same places |
 | `rep.gain` / `rep.loss` (owner, sales, service) | 1.2 / 0.75 | 1 / 1 | 0.8 / 1.3 | `Campaign._tier_rep` |
+| `tech.drain` (energy drain x, tech) | 0.9 | 1.0 | 2.0 | `Shift._process` |
+| `tech.pair` (chance a second ticket lands when a P1/P2 is open at a spawn, tech) | 0 | 0 | 0.7 | `Msp._process` |
 | `tech.alt_ret` (x the chance a quick workaround comes back) | 0.8 | 1.0 | 1.3 | `Msp._alt_fix` |
 | `owner.cost` (weekly overhead x) | 0.95 | 1.0 | 1.03 | `Owner.weekly_estimate` |
 | `sales.lead` (added to a new lead's quality; the quota x0.8 / 1.0 / 1.2 and rival price x already existed) | +5 | 0 | -5 | `SalesCampaign` lead roll |
@@ -34,18 +36,18 @@ Final table of the last runs of each cell. See "Open" for the cells with fewer s
 
 | Mode | Strategy | Easy | Normal | Hard |
 |---|---|---|---|---|
-| Tech (n=4) | careful | 4 good, rep 100 | 4 good, rep 100 | 4 good, rep 88 |
+| Tech (n=4; hard n=8) | careful | 4 good, rep 100 | 4 good, rep 100 | 4 good 2 mid 2 fired of 8, rep 44 avg (was 4 of 4 good, rep 88) |
 | | lazy | 2 good 1 mid 1 bad, rep 57 | 4 bad (fired or near), rep 3 | 4 bad, fired |
 | | chaotic | 3 bad, fired | 4 bad, fired | 4 bad, fired |
-| Owner (n=2-3, ts=4) | careful | 2 good, rep 93 | 2 good, rep 86 | 1 good (rep 78) |
+| Owner (n=2-3, hard n=5, ts=4) | careful | 2 good, rep 93 | 2 good, rep 86 | 4 good 1 mid of 5, rep 72 (58-83) |
 | | lazy | 1 good 1 mid, rep 62 | 1 mid 1 bad (fired week 9), rep 28 | fired week 16 |
-| | chaotic | - | 1 mid 1 bad, rep 39 (rich but unloved) | - |
+| | chaotic | 2 mid, rep 58 (rich, moody) | 1 mid 1 bad, rep 39 (rich but unloved) | 1 fired week 12, 1 bad rep 11 |
 | Sales (n=4) | careful | 4 good, rep 100 | 3 good 1 mid, rep 90 | 2 good 2 bad, rep 76 |
 | | lazy | 4 bad (let go), rep 35, nobody fired | 4 bad, rep 24 | 4 bad, rep 5 |
 | | chaotic | 4 bad, fired | 4 bad, fired | 4 bad, fired |
 | Service (n=3) | careful | 3 good, rep 100 | 3 good, rep 96 | 3 good, rep 74 |
 | | lazy | 2 good 1 bad, rep 61 | 2 mid 1 bad, rep 45 | 3 bad, rep 25 |
-| | chaotic | - | 4 bad, rep 11 (n=4) | 4 bad, fired (n=4, earlier tier values) |
+| | chaotic | 1 good 2 mid, rep 57 | 4 bad, rep 11 (n=4) | 4 bad, fired (n=4, earlier tier values) |
 
 Against the targets: normal careful reaches a good ending in 11 of 12 seeds (one sales mid); normal lazy ends mid or bad everywhere (tech and sales all bad); chaotic fails everywhere except the owner greed run, which makes money and loses the name (mid/bad). Easy careful is 100% good and easy lazy survives (one tech seed and one service seed still reached a good ending, one service seed was a bad one). Hard careful wins in tech (4 of 4, rep 88), service (3 of 3, rep 74), about half of sales (2 of 4) and the one owner seed after softening; hard lazy fails in all four modes. The smoke test (`tiers_balance.gd`, seeds 11-12) passes: rep easy >= normal >= hard for careful in sales, tech and service, careful > lazy on every tier.
 
@@ -60,10 +62,24 @@ Against the targets: normal careful reaches a good ending in 11 of 12 seeds (one
 
 Before the change below the shortcut bot scored MORE than the careful one (2420 against 1722): every returned workaround came back as a fresh ticket worth +10 points and +2 reputation when closed, so overusing the quick fix farmed both. Now a returned ticket is rework: `Msp.spawn_return` flags it `repeat`, drops the client's mood by `RETURN_MOOD` (3) and closing it earns `REPEAT_POINTS` (2) and does not count as a closed ticket for the day's reputation. Result: the quick fix stays the fastest (0.3-0.6x the time, `mult`) so it is still tempting when the queue is long, but used on everything it costs about 10-15% of the score, a dozen SLA misses and a few points of reputation. The `ret` chances (35-60%) and `mult` values in `Msp.ALT_DEFS` were left alone: with the rework rule they are in a good place. On hard the return chance is x1.3 (`tech.alt_ret`).
 
+## Tech hard pressure (Q6b)
+Tech hard was too easy (careful bot: team lead offer on every seed, rep 88) because shrinking gains only lowers the top. Added two tech-only dials, both normal-neutral: `tech.drain` (energy drains 2x on hard, so fixes slow and fail more late in a day) and `tech.pair` (0.7: when a random ticket spawns and a P1 or P2 is already open, a second ticket lands at once; uses its own `msp.pair` stream and only draws on hard, so normal seeds are unchanged). Also `tech.sla` 0.5 -> 0.4 and `tech.loss` 1.8 -> 2.2. Careful bot at hard, ts=60, seeds 1-8:
+
+| Setting | Good (team lead) | Mid | Fired / bad | Rep |
+|---|---|---|---|---|
+| before (pace 0.45, sla 0.5, loss 1.8) | 4 of 4 | 0 | 0 | 88 |
+| pair 0.35, drain 1.5 | 5 of 6 | 0 | 0 | 71-91 |
+| pair 0.7, drain 2, sla 0.45, loss 1.8 | 6 of 6 | 0 | 0 | 63-83 |
+| loss 2.4, gain 0.35, sla 0.4 | 2 of 6 | 0 | 4 | cliff: fired by day 8 |
+| loss 2.0, gain 0.4, sla 0.4 | 7 of 8 | 0 | 1 | 27-77 |
+| **final: loss 2.2** | **4 of 8** | 2 | 2 fired | 0-75 |
+
+The outcome is bimodal: a bad opening week (rep under 30) snowballs because every missed SLA costs 2.2x. Lazy and chaotic were already failing at hard and only get worse. `tiers_balance.gd` now asserts tech careful hard rep < normal rep.
+
 ## Open
-- Tech hard is still easy for the careful bot (reputation 88, every seed a team lead offer): the bot is steady and never tired, and the reputation climb has a daily cap, so shrinking gains and SLA windows only lowers the top. To make hard a coin flip for a good human, add a tech-only pressure (two big incidents on the same day, energy drain) rather than more rep multipliers.
-- Owner hard: with `owner.cost` 1.06 and ticket pace 0.8 both careful seeds went bankrupt (weeks 14 and 16); the dials were softened to 1.03 and 0.9 and one seed since reached rep 78 (value $204k). Needs 5+ seeds. Owner at easy gives a lower value than normal in one seed pair ($301k against $443k and $178k): the noise between seeds is larger than the tier effect on value, judge owner by reputation.
-- Owner lazy and greedy runs on normal were 2 seeds each; owner chaotic on easy and hard and service chaotic on easy were not run.
+- Tech hard: the careful bot (28 s overhead per ticket) is a bit slower than a good human, so a human should land at or above the bot's half. If hard feels brutal, lower `tech.loss` toward 2.0 (7 of 8 good).
+- Owner hard (5 seeds, careful): `owner.cost` 1.03 and pace 0.9 give 4 good (rep 72-83) and 1 mid (rep 58, goal missed). That matches "most seeds, not all", so no retune. Value per seed varies a lot ($69k-$462k): judge owner by reputation.
+- Owner lazy and greedy runs on normal were 2 seeds each; owner chaotic easy/hard (2 seeds each) and service chaotic easy (3 seeds) are now run (table above).
 - The tech lazy bot is a calibration, not a measurement: its idle gap (55 s) decides whether normal lazy drifts (gap 25-40 s gave good endings in half the seeds, 55 s gives fired or rep under 15). Change `TECH_IDLE` in `bot_lib.gd` and the normal-lazy cell moves a lot; the careful bot's 28 s overhead matters the same way.
 - Time compression: the tech bot runs at ts=60 (one frame is one game second); at ts=30 the numbers were the same within noise. Owner at ts=8 is not valid (see above).
 - The machine was shared: a full matrix (4 modes x 3 tiers x 3 strategies x 4 seeds, about 2 hours of CPU) took many hours of wall time. Run cells as separate processes.

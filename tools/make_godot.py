@@ -5106,6 +5106,13 @@ func _process(delta: float) -> void:
         _spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
         if open_tickets().size() < 6 and World.clock < World.DAY_END:
             _random_ticket("email")
+            # Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
+            var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0
+            if pair > 0.0 and Difficulty.rng("msp.pair").randf() < pair:
+                for ot in open_tickets():
+                    if int(ot.pri) <= 2:
+                        _random_ticket("email")
+                        break
     for i in range(_later.size() - 1, -1, -1):
         _later[i].left -= dt
         if _later[i].left <= 0.0:
@@ -18569,10 +18576,12 @@ const TABLE := {
     "crew.pace": [1.1, 1.0, 0.9],
     "crew.sla": [1.15, 1.0, 0.85],
     "tech.pace": [1.25, 1.0, 0.45],
-    "tech.sla": [1.3, 1.0, 0.5],
+    "tech.sla": [1.3, 1.0, 0.4],
     "tech.alt_ret": [0.8, 1.0, 1.3],
+    "tech.drain": [0.9, 1.0, 2.0],
+    "tech.pair": [0.0, 0.0, 0.7],
     "tech.gain": [1.25, 1.0, 0.4],
-    "tech.loss": [0.75, 1.0, 1.8],
+    "tech.loss": [0.75, 1.0, 2.2],
     "rep.gain": [1.2, 1.0, 0.8],
     "rep.loss": [0.75, 1.0, 1.3],
     "owner.cost": [0.95, 1.0, 1.03],
@@ -19119,7 +19128,7 @@ func _process(delta: float) -> void:
     if not active() or World.time_scale <= 0.0 or Cards.is_open:
         return
     var dt := delta * World.time_scale
-    energy = maxf(0.0, energy - DAY_DRAIN * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
+    energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
     if _warned < 1 and energy < 55.0:
         _warned = 1
         Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
