@@ -11,7 +11,8 @@ extends Node
 const SEC_PER_HOUR := 15.0  # one tech-hour = 15 tech-seconds of the simulation (a tech-second costs Owner.COST_PER_SEC)
 const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
-const SCOPE_CREEP := 0.25  # extra hours when a fixed-price job creeps
+# extra hours when a fixed-price job creeps
+const SCOPE_CREEP := 0.25
 const TYPES := {
 	"desktops":
 	{
@@ -39,6 +40,25 @@ const TYPES := {
 		"hours": 44,
 		"weeks": 4,
 		"blurb": "the file server is out of warranty and out of disk"
+	},
+	"voip":
+	{
+		"label": "PHONE SYSTEM UPGRADE (HOSTED VOIP)",
+		"price": [2200, 3200],
+		"hw": 0.5,
+		"hours": 20,
+		"weeks": 3,
+		"blurb":
+		"the phones are a tangle of analog lines and a box in the closet that nobody dares touch"
+	},
+	"email_move":
+	{
+		"label": "EMAIL MIGRATION (HOSTED MAIL)",
+		"price": [1500, 2400],
+		"hw": 0.1,
+		"hours": 22,
+		"weeks": 2,
+		"blurb": "the mailboxes are full and the old mail server hums like a refrigerator"
 	},
 	"backup_dr":
 	{
@@ -219,6 +239,10 @@ func _pick_type(client: int) -> String:
 		pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8; the wave ends with it (X9)
 	if not has_service(client, "backup"):
 		pool.append("backup_dr")
+	if Campaign.day >= 5:
+		pool.append("voip")  # P5: hosted phones, once the first weeks of fires are out of the way
+	if Campaign.day >= 4:
+		pool.append("email_move")
 	if not Owner.flags.get("rdp_safe", false) and Campaign.day >= 7:
 		pool.append("security")
 	return pool[randi() % pool.size()]

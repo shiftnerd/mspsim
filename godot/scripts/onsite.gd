@@ -168,6 +168,14 @@ const DEFAULT_FINDINGS := {
 			"body": "%s here: we think the antivirus on one of our PCs has expired. Please check.",
 			"project": "security"
 		},
+		{
+			"text": "The mailbox is at 4.9 of 5 gigabytes. The user keeps a folder called OLD OLD STUFF and says he needs every message in it.",
+			"summary": "Mailbox almost full on a front desk PC",
+			"fix": "onsite_mailbox",
+			"pri": 3,
+			"body": "%s here: email keeps bouncing back to people. Can you look at it?",
+			"project": "email_move"
+		},
 	],
 	"exam":
 	[
@@ -216,6 +224,14 @@ const DEFAULT_FINDINGS := {
 			"body":
 			"%s here: we would like the network to be more reliable. Could you look at the equipment in the closet?",
 			"project": "network"
+		},
+		{
+			"text": "Four different phone lines come into the closet through a gadget that was installed by someone who has since retired. It buzzes.",
+			"summary": "Old phone lines and the box that runs them",
+			"fix": "onsite_phones",
+			"pri": 3,
+			"body": "%s here: the phones crackle and the receptionist cannot transfer calls. Could you look at the closet?",
+			"project": "voip"
 		},
 	],
 	"server":
@@ -713,6 +729,39 @@ const DEFAULT_MORE_JOBS := [
 				"xp": 0,
 				"text": "He is not pleased: the owner notices when a visit ends with a promise."
 			},
+		],
+	},
+	{
+		"id": "phones", "object": "cabinet", "pri": 2,
+		"summary": "The desk phones went dead after the power blip",
+		"body": "Every desk phone is dead since the lights flickered this morning. People are using their cell phones and the clients can tell. - %s",
+		"intro": "The phone gateway in the closet is dark. The little power brick is warm and the lights on the box never come back on.",
+		"options": [
+			{"id": "brick", "label": "REPLACE THE POWER BRICK FROM THE VAN", "hours": 0.4, "chance": 0.9, "skill": "networking", "xp": 6, "text": "A new brick, a long blink and a dial tone. The receptionist cheers and transfers a call at once. (+6 networking XP)"},
+			{"id": "reset", "label": "FACTORY RESET THE GATEWAY", "hours": 0.5, "chance": 0.4, "skill": "networking", "xp": 3, "text": "It boots with the factory settings and no lines. You spend the next hour finding the old configuration on a sticky note."},
+			{"id": "carrier", "label": "CALL THE PHONE COMPANY", "hours": 0.3, "chance": 0.0, "skill": "", "xp": 0, "text": "A recorded voice puts you on hold for twenty minutes. The phones are still dead."},
+		],
+	},
+	{
+		"id": "wifi", "object": "cabinet", "pri": 3,
+		"summary": "The wireless keeps dropping all afternoon",
+		"body": "The wifi drops every few minutes, mostly in the back office and the waiting room. Customers are asking for the password again and again. - %s",
+		"intro": "One consumer-grade wireless router sits on a shelf in the closet, next to a microwave on the other side of the wall. Eleven networks are fighting for channel 6.",
+		"options": [
+			{"id": "channel", "label": "MOVE THE WIRELESS TO A QUIET CHANNEL", "hours": 0.3, "chance": 0.75, "skill": "networking", "xp": 5, "text": "Channel 1, a firmware update and a long walk with a laptop. The signal stays steady. (+5 networking XP)"},
+			{"id": "ap", "label": "ADD AN ACCESS POINT IN THE BACK OFFICE", "hours": 0.9, "chance": 0.95, "skill": "networking", "xp": 8, "text": "A second access point on a ceiling tile covers the dead corner. Nobody asks for the password again. (+8 networking XP)"},
+			{"id": "tell", "label": "TELL THEM TO MOVE THE MICROWAVE", "hours": 0.1, "chance": 0.0, "skill": "people", "xp": 1, "text": "They look at the microwave, then at you. The wifi drops while you are still standing there."},
+		],
+	},
+	{
+		"id": "mailbox", "object": "pc", "pri": 3,
+		"summary": "Email bounces: the mailbox is full",
+		"body": "Customers are getting a message that my mailbox is full. I deleted a bunch and it still says full. Please fix it, I am missing orders. - %s",
+		"intro": "The mailbox is at its limit. Outlook says there are 40,000 messages, half of them in a folder called OLD OLD STUFF, and the data file is almost 4 gigabytes.",
+		"options": [
+			{"id": "archive", "label": "ARCHIVE OLD MAIL TO A DATA FILE", "hours": 0.6, "chance": 0.9, "skill": "servers", "xp": 6, "text": "The old mail moves to a data file on the shared drive, the mailbox shrinks and the bounces stop. He keeps every message. (+6 servers XP)"},
+			{"id": "empty", "label": "EMPTY THE DELETED ITEMS", "hours": 0.15, "chance": 0.35, "skill": "servers", "xp": 2, "text": "Eleven megabytes freed. It helps for about an hour."},
+			{"id": "quota", "label": "RAISE THE MAILBOX QUOTA", "hours": 0.2, "chance": 0.6, "skill": "servers", "xp": 3, "text": "Another gigabyte of room. It works for now, and the server will notice later."},
 		],
 	},
 ]
