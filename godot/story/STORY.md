@@ -959,6 +959,28 @@ or the owner (owner campaign, 20 weeks).
 - Tip: Close what you fix. Reopen what you break. Just be the person who tells me which one it is. `[Talk.TIPS_GENERIC.Morgan.2]`
 - Tip: Study between tickets. Nobody has ever been promoted for how fast they picked up the phone. `[Talk.TIPS_GENERIC.Morgan.3]`
 
+### Sam
+
+- Greeting (friend): Hey Dan! I closed three resets before ten. Want to see my queue? `[Talk.GREETINGS.Sam.friend]`
+- Greeting (neutral): Hi. I am on a ticket. Sorry, one sec. `[Talk.GREETINGS.Sam.neutral]`
+- Greeting (cold): Yeah. Okay. `[Talk.GREETINGS.Sam.cold]`
+- Small talk: I asked a user to turn it off and on again and it worked. I felt like a wizard. `[Talk.SMALL.Sam.0]`
+- Small talk: My sister says IT is boring. Then she calls me when her printer jams. `[Talk.SMALL.Sam.1]`
+- Small talk: I am saving for a Galaxy S4. Maya says wait for the next one. There is always a next one. `[Talk.SMALL.Sam.2]`
+- Tip: If a ticket is above your level, say so early. Waiting does not make it easier. `[Talk.TIPS_GENERIC.Sam.0]`
+- Tip: Restart the print spooler before you reboot anything. People lose work when you reboot. `[Talk.TIPS_GENERIC.Sam.1]`
+
+### Terry
+
+- Greeting (friend): Dan! Come in. The war room has the best chairs and the worst Wi-Fi. `[Talk.GREETINGS.Terry.friend]`
+- Greeting (neutral): Hey. I have a client on the phone in a minute. `[Talk.GREETINGS.Terry.neutral]`
+- Greeting (cold): Not now, please. `[Talk.GREETINGS.Terry.cold]`
+- Small talk: I work from the conference table with my laptop. Hot-desking, they call it. I call it a very long meeting with myself. `[Talk.SMALL.Terry.0]`
+- Small talk: My last job had a server under somebody's desk. Somebody's actual desk. With their feet on it. `[Talk.SMALL.Terry.1]`
+- Small talk: I like the phones. People call when something is broken, and then I fix it, and they are nice for a second. `[Talk.SMALL.Terry.2]`
+- Tip: Check the password policy before you reset anything. The same user will be back next week otherwise. `[Talk.TIPS_GENERIC.Terry.0]`
+- Tip: Write down every fix. The next person at three in the morning might be you. `[Talk.TIPS_GENERIC.Terry.1]`
+
 ### Gossip (anyone, now and then)
 
 - Between us: Morgan has been in the owners' office since nine. Never a good sign. `[Talk.GOSSIP.0]`

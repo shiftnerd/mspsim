@@ -17,7 +17,7 @@ const ROOTS := {
 	"Yeartwo": ["CARRY", "YEAR2", "TEXT"],
 	"Playbook": ["BOOKS", "PROBLEMS"],
 	"Owner": ["CARDS"],
-	"Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "DAYS", "REVIEW"],
+	"Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW"],
 	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
 	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
 	"Nerds": ["JOKES", "THREADS"],

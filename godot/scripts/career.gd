@@ -106,6 +106,7 @@ const COUNTERS := [
 	["", "ANIMALS PETTED", "pets", "n"],
 	["", "COMPLAINTS HEARD", "vic_calls", "n"],
 	["", "DUCK CHATS", "duck_squeaks", "n"],
+	["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
 ]
 const FLUSH_SECS := 3.0
 
