@@ -8268,6 +8268,7 @@ const MODE_DEFS := {
     },
 }
 const START_REP := 50
+const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
 var active := false  # a real campaign (not free play) is running
 var player_as := ""  # the cast member you play as ("" = a character who is not in World.CAST); saved
@@ -8280,6 +8281,7 @@ var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b)
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
+var slot := 1  # the active save slot 1..SLOTS (R19): save, continue, resume and delete use it; the title sets it
 
 var _base := {}
 var _awaiting := false
@@ -8376,19 +8378,69 @@ func total_days() -> int:
     return int(prop("total_days", TOTAL_DAYS))
 
 
-func save_path(for_mode: String) -> String:
-    return save_prefix + for_mode + ".cfg"
+# for_slot 0 = the active slot; slot 1 keeps the old file name, so every earlier save loads as slot 1 untouched
+func slot_part(for_slot := 0) -> String:
+    var n := slot if for_slot <= 0 else for_slot
+    return "" if n <= 1 else "_s%d" % clampi(n, 2, SLOTS)
 
 
-func has_save(for_mode: String) -> bool:
-    return FileAccess.file_exists(save_path(for_mode))
+func save_path(for_mode: String, for_slot := 0) -> String:
+    return save_prefix + for_mode + slot_part(for_slot) + ".cfg"
 
 
-func saved_day(for_mode: String) -> int:
+func has_save(for_mode: String, for_slot := 0) -> bool:
+    return FileAccess.file_exists(save_path(for_mode, for_slot))
+
+
+func saved_day(for_mode: String, for_slot := 0) -> int:
     var cfg := ConfigFile.new()
-    if cfg.load(save_path(for_mode)) != OK:
+    if cfg.load(save_path(for_mode, for_slot)) != OK:
         return 0
     return int(cfg.get_value("campaign", "day", 1))
+
+
+# what the title shows for one slot: {exists, has_save, has_resume, day, text (clock of the resume point), tag, character_name}
+func slot_info(for_mode: String, for_slot: int) -> Dictionary:
+    var out := {"exists": false, "has_save": false, "has_resume": false, "day": 0, "text": "", "tag": "", "character_name": ""}
+    var snap := resume_info(for_mode, for_slot)
+    var cfg := ConfigFile.new()
+    if cfg.load(save_path(for_mode, for_slot)) == OK:
+        out["has_save"] = true
+        out["day"] = int(cfg.get_value("campaign", "day", 1))
+    elif not snap.is_empty():
+        cfg = load_resume(for_mode, for_slot)  # day 1 of the tech campaign: only the resume point exists yet
+    else:
+        return out
+    out["exists"] = true
+    if not snap.is_empty():
+        out["has_resume"] = true
+        out["text"] = str(snap.text)
+        if not bool(out.has_save):
+            out["day"] = int(snap.day)
+    out["tag"] = " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= Yeartwo.YEAR else ""
+    var look: Variant = cfg.get_value("campaign", "look", {})
+    var who := str(cfg.get_value("campaign", "player_as", ""))
+    if look is Dictionary and bool(look.get("active", false)) and str(look.get("name", "")) != "":
+        who = str(look.name)
+    elif who == "":
+        who = str(cfg.get_value("campaign", "character", "office_adult")).get_slice("_", 1)
+    out["character_name"] = who.to_upper()
+    return out
+
+
+# the lowest slot with nothing in it (no end-of-day save and no resume point), 0 when all are full
+func first_empty_slot(for_mode: String) -> int:
+    for n in range(1, SLOTS + 1):
+        if not bool(slot_info(for_mode, n).exists):
+            return n
+    return 0
+
+
+# erase one slot: its end-of-day save and its resume point; the meta (medals, Year 2) is untouched
+func delete_slot(for_mode: String, for_slot: int) -> void:
+    clear_resume(for_mode, for_slot)
+    if has_save(for_mode, for_slot):
+        DirAccess.remove_absolute(save_path(for_mode, for_slot))
 
 
 # who you play as in this mode, from the chosen character: the tech campaign never plays a cast member, the owner
@@ -8624,8 +8676,8 @@ func _write_sections(cfg: ConfigFile) -> void:
 # written hourly, when the pause menu opens and when the app is paused, loses focus or is closed (resume.gd).
 # Lost on resume: cast mid-walk positions, RMM jobs in progress, open UI and cards, mini-games, onsite visits,
 # nerf wars, conversations, the exact x position. Free Play is never saved.
-func resume_path(for_mode: String) -> String:
-    return save_prefix + for_mode + "_resume.cfg"
+func resume_path(for_mode: String, for_slot := 0) -> String:
+    return save_prefix + for_mode + slot_part(for_slot) + "_resume.cfg"
 
 
 # the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
@@ -8660,21 +8712,21 @@ func snapshot() -> bool:
 
 # the newest good resume point of this mode (the file, else its .bak), or null: corrupt, truncated, another version
 # or not from the day the end-of-day save is on
-func load_resume(for_mode: String) -> ConfigFile:
+func load_resume(for_mode: String, for_slot := 0) -> ConfigFile:
     for suffix in ["", ".bak"]:
         var cfg := ConfigFile.new()
-        if cfg.load(resume_path(for_mode) + suffix) == OK and _resume_ok(cfg, for_mode):
+        if cfg.load(resume_path(for_mode, for_slot) + suffix) == OK and _resume_ok(cfg, for_mode, for_slot):
             return cfg
     return null
 
 
-func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
+func _resume_ok(cfg: ConfigFile, for_mode: String, for_slot: int) -> bool:
     var head: Variant = cfg.get_value("resume", "head", {})
     if not (head is Dictionary):
         return false
     if int(head.get("version", 0)) != Resume.VERSION or str(head.get("mode", "")) != for_mode:
         return false
-    var want := saved_day(for_mode) if has_save(for_mode) else 1  # day 1 has no end-of-day save yet
+    var want := saved_day(for_mode, for_slot) if has_save(for_mode, for_slot) else 1  # day 1 has no end-of-day save yet
     if int(head.get("day", -1)) != want:
         return false
     for section in ["campaign", "msp", "story_day", "world", "net", "day"]:
@@ -8684,8 +8736,8 @@ func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
 
 
 # {day, clock, text} of the good resume point for the title menu, {} when there is none
-func resume_info(for_mode: String) -> Dictionary:
-    var cfg := load_resume(for_mode)
+func resume_info(for_mode: String, for_slot := 0) -> Dictionary:
+    var cfg := load_resume(for_mode, for_slot)
     if cfg == null:
         return {}
     var head: Dictionary = cfg.get_value("resume", "head", {})
@@ -8693,10 +8745,10 @@ func resume_info(for_mode: String) -> Dictionary:
     return {"day": int(head.day), "clock": clock, "text": "%d:%02d" % [int(clock), int((clock - floorf(clock)) * 60.0)]}
 
 
-func clear_resume(for_mode: String) -> void:
+func clear_resume(for_mode: String, for_slot := 0) -> void:
     for suffix in ["", ".bak", ".tmp"]:
-        if FileAccess.file_exists(resume_path(for_mode) + suffix):
-            DirAccess.remove_absolute(resume_path(for_mode) + suffix)
+        if FileAccess.file_exists(resume_path(for_mode, for_slot) + suffix):
+            DirAccess.remove_absolute(resume_path(for_mode, for_slot) + suffix)
 
 
 # the review is over: remember how the year ended and go back to the title
@@ -9147,9 +9199,9 @@ func menu_items() -> Array:
 
 
 # the " - YEAR 2" mark of a saved run for the CONTINUE entries
-func saved_tag(mode: String) -> String:
+func saved_tag(mode: String, for_slot := 0) -> String:
     var cfg := ConfigFile.new()
-    if cfg.load(Campaign.save_path(mode)) != OK:
+    if cfg.load(Campaign.save_path(mode, for_slot)) != OK:
         return ""
     return " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= YEAR else ""
 
@@ -40933,9 +40985,13 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
-var _level := "top"  # "top" or "sub" (a campaign's submenu)
+var _level := "top"  # "top", "sub" (a campaign's submenu), "slot" (CONTINUE / FROM THE START of one slot) or "over" (which slot to overwrite)
 var _sub_mode := ""
 var _top_sel := 0  # the top-menu cursor to come back to
+var _sub_sel := 0  # the submenu cursor to come back to
+var _slot := 1  # the save slot the next start uses (R19)
+var _overwrite := false  # the next new run replaces a full slot (its save is deleted when the run starts)
+var _over_id := ""  # the new-run row (tech_new / tech_y2) waiting for the slot to overwrite
 var _heading := ""
 var _menu: Node2D
 var _front: CanvasLayer
@@ -41195,9 +41251,12 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
         _back()
 
 
-# Esc / back / pad B: a campaign submenu returns to the top menu (cursor kept), the top menu closes
+# Esc / back / pad B: the slot and overwrite lists return to the submenu, a submenu returns to the top menu (cursor
+# kept), the top menu closes
 func _back() -> void:
-    if _level == "sub":
+    if _level == "slot" or _level == "over":
+        _show_sub(_sub_mode, _sub_sel)
+    elif _level == "sub":
         _show_top(_top_sel)
     else:
         _menu_open = false
@@ -41226,38 +41285,107 @@ func _show_top(sel: int) -> void:
     _menu.queue_redraw()
 
 
-# the rows of a campaign submenu: CONTINUE (mid-day resume point and / or the day-start save), START YEAR 2
-# (that mode's Year 1 is finished), NEW CAMPAIGN
+func _unit(mode: String) -> String:
+    return "WEEK" if mode == "owner" or mode == "sales" else "DAY"
+
+
+# "SLOT 2 - DAY 7  12:30 (YEAR 2) - JAMIE": the character name goes first when the line is too wide for the format
+func slot_label(mode: String, n: int, info: Dictionary, lead := "SLOT") -> String:
+    var label := "%s %d - %s %d" % [lead, n, _unit(mode), int(info.day)]
+    if str(info.text) != "":
+        label += "  " + str(info.text)
+    label += str(info.tag)
+    var named := label + " - " + str(info.character_name)
+    if str(info.character_name) != "" and float(PixelFont.width(named)) + 14.0 <= _size().x:
+        return named
+    return label
+
+
+# the rows of a campaign submenu: one row per existing save slot, START YEAR 2 (that mode's Year 1 is finished),
+# NEW CAMPAIGN (the lowest empty slot, or a question which full slot to overwrite)
 func sub_items(mode: String) -> Array:
     var out := []
-    var unit := "WEEK" if mode == "owner" or mode == "sales" else "DAY"
-    var tag := Yeartwo.saved_tag(mode)
-    var snap: Dictionary = Campaign.resume_info(mode) if mode == "tech" else {}  # a mid-day resume point (R16)
-    if not snap.is_empty():
-        var snap_label := "CONTINUE - %s %d  %s" % [unit, int(snap.day), str(snap.text)] + tag
-        out.append({"label": snap_label, "id": mode + "_resume", "enabled": true})
-    if Campaign.has_save(mode):
-        var label := "CONTINUE - %s %d" % [unit, Campaign.saved_day(mode)] + tag
-        if not snap.is_empty():
-            label = "%s %d FROM THE START" % [unit, Campaign.saved_day(mode)] + tag
-        out.append({"label": label, "id": mode + "_continue", "enabled": true})
+    for n in range(1, Campaign.SLOTS + 1):
+        var info: Dictionary = Campaign.slot_info(mode, n)
+        if bool(info.exists):
+            out.append({"label": slot_label(mode, n, info), "id": "%s_slot%d" % [mode, n], "enabled": true})
     if Yeartwo.available(mode):
         out.append({"label": "START YEAR 2", "id": mode + "_y2", "enabled": true})
     out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
     return out
 
 
-# a campaign line: its submenu, or straight to the new-run flow when NEW CAMPAIGN is all it could offer
-func _enter_mode(mode: String) -> void:
-    var rows := sub_items(mode)
-    if rows.size() == 1:
-        _open_select(mode + "_new")
-        return
-    _top_sel = _sel
+# the rows after picking a slot that holds both a mid-day resume point and a day-start save
+func slot_items(mode: String, n: int) -> Array:
+    var info: Dictionary = Campaign.slot_info(mode, n)
+    var unit := _unit(mode)
+    return [
+        {"label": "CONTINUE - %s %d  %s" % [unit, int(info.day), str(info.text)] + str(info.tag), "id": mode + "_resume", "enabled": true},
+        {"label": "%s %d FROM THE START" % [unit, int(info.day)] + str(info.tag), "id": mode + "_continue", "enabled": true},
+    ]
+
+
+# every slot is full: which one does the new run replace? (the row itself is the confirmation; CANCEL keeps all three)
+func over_items(mode: String) -> Array:
+    var out := []
+    for n in range(1, Campaign.SLOTS + 1):
+        var info: Dictionary = Campaign.slot_info(mode, n)
+        out.append({"label": slot_label(mode, n, info, "OVERWRITE SLOT"), "id": "%s_over%d" % [mode, n], "enabled": true})
+    out.append({"label": "CANCEL", "id": "cancel", "enabled": true})
+    return out
+
+
+func _show_sub(mode: String, sel: int) -> void:
     _level = "sub"
     _sub_mode = mode
     _heading = str(MODE_NAMES[mode])
-    _items = rows
+    _items = sub_items(mode)
+    _sel = clampi(sel, 0, _items.size() - 1)
+    _menu.queue_redraw()
+
+
+# a campaign line: its submenu, or straight to the new-run flow when NEW CAMPAIGN is all it could offer (slot 1)
+func _enter_mode(mode: String) -> void:
+    var rows := sub_items(mode)
+    if rows.size() == 1:
+        _slot = 1
+        _overwrite = false
+        _open_select(mode + "_new")
+        return
+    _top_sel = _sel
+    _show_sub(mode, 0)
+
+
+# a saved slot was picked: CONTINUE / FROM THE START when it has both kinds of save, else straight in
+func _enter_slot(mode: String, n: int) -> void:
+    var info: Dictionary = Campaign.slot_info(mode, n)
+    _slot = n
+    _overwrite = false
+    if bool(info.has_resume) and bool(info.has_save):
+        _sub_sel = _sel
+        _level = "slot"
+        _heading = "SLOT %d" % n
+        _items = slot_items(mode, n)
+        _sel = 0
+        _menu.queue_redraw()
+    else:
+        _start(mode + ("_resume" if bool(info.has_resume) else "_continue"))
+
+
+# NEW CAMPAIGN / START YEAR 2: the lowest empty slot at once, or the overwrite question when all are full
+func _begin_new(id: String) -> void:
+    var mode := id.get_slice("_", 0)
+    var n := Campaign.first_empty_slot(mode)
+    if n > 0:
+        _slot = n
+        _overwrite = false
+        _open_select(id)
+        return
+    _sub_sel = _sel
+    _over_id = id
+    _level = "over"
+    _heading = "OVERWRITE WHICH SLOT?"
+    _items = over_items(mode)
     _sel = 0
     _menu.queue_redraw()
 
@@ -41291,7 +41419,17 @@ func _choose(i: int) -> void:
     if MODE_NAMES.has(id):
         _enter_mode(id)
         return
-    if id.ends_with("_continue") or id.ends_with("_resume"):
+    if id == "cancel":
+        _back()
+    elif "_slot" in id:
+        _enter_slot(id.get_slice("_", 0), int(id.get_slice("_slot", 1)))
+    elif "_over" in id:
+        _slot = int(id.get_slice("_over", 1))
+        _overwrite = true
+        _open_select(_over_id)
+    elif id.ends_with("_new") or id.ends_with("_y2"):
+        _begin_new(id)
+    elif id.ends_with("_continue") or id.ends_with("_resume"):
         _start(id)  # a saved run keeps its character: no select screen
     else:
         _open_select(id)
@@ -41363,6 +41501,11 @@ func _start(id: String, summary := "") -> void:
     Outings.enabled = true
     Onsite.enabled = true
     Outings.use_rooms = true
+    var run_mode := id.get_slice("_", 0)
+    Campaign.slot = _slot if Campaign.MODES.has(run_mode) else 1
+    if _overwrite and id.ends_with("_new"):
+        Campaign.delete_slot(run_mode, _slot)  # the chosen full slot is replaced now, not when the first day ends
+    _overwrite = false
     match id:
         "tech_new":
             Campaign.new_game("tech")

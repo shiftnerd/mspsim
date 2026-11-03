@@ -60,6 +60,7 @@ const MODE_DEFS := {
 	},
 }
 const START_REP := 50
+const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
 var active := false  # a real campaign (not free play) is running
 var player_as := ""  # the cast member you play as ("" = a character who is not in World.CAST); saved
@@ -72,6 +73,7 @@ var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b)
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
+var slot := 1  # the active save slot 1..SLOTS (R19): save, continue, resume and delete use it; the title sets it
 
 var _base := {}
 var _awaiting := false
@@ -168,19 +170,69 @@ func total_days() -> int:
 	return int(prop("total_days", TOTAL_DAYS))
 
 
-func save_path(for_mode: String) -> String:
-	return save_prefix + for_mode + ".cfg"
+# for_slot 0 = the active slot; slot 1 keeps the old file name, so every earlier save loads as slot 1 untouched
+func slot_part(for_slot := 0) -> String:
+	var n := slot if for_slot <= 0 else for_slot
+	return "" if n <= 1 else "_s%d" % clampi(n, 2, SLOTS)
 
 
-func has_save(for_mode: String) -> bool:
-	return FileAccess.file_exists(save_path(for_mode))
+func save_path(for_mode: String, for_slot := 0) -> String:
+	return save_prefix + for_mode + slot_part(for_slot) + ".cfg"
 
 
-func saved_day(for_mode: String) -> int:
+func has_save(for_mode: String, for_slot := 0) -> bool:
+	return FileAccess.file_exists(save_path(for_mode, for_slot))
+
+
+func saved_day(for_mode: String, for_slot := 0) -> int:
 	var cfg := ConfigFile.new()
-	if cfg.load(save_path(for_mode)) != OK:
+	if cfg.load(save_path(for_mode, for_slot)) != OK:
 		return 0
 	return int(cfg.get_value("campaign", "day", 1))
+
+
+# what the title shows for one slot: {exists, has_save, has_resume, day, text (clock of the resume point), tag, character_name}
+func slot_info(for_mode: String, for_slot: int) -> Dictionary:
+	var out := {"exists": false, "has_save": false, "has_resume": false, "day": 0, "text": "", "tag": "", "character_name": ""}
+	var snap := resume_info(for_mode, for_slot)
+	var cfg := ConfigFile.new()
+	if cfg.load(save_path(for_mode, for_slot)) == OK:
+		out["has_save"] = true
+		out["day"] = int(cfg.get_value("campaign", "day", 1))
+	elif not snap.is_empty():
+		cfg = load_resume(for_mode, for_slot)  # day 1 of the tech campaign: only the resume point exists yet
+	else:
+		return out
+	out["exists"] = true
+	if not snap.is_empty():
+		out["has_resume"] = true
+		out["text"] = str(snap.text)
+		if not bool(out.has_save):
+			out["day"] = int(snap.day)
+	out["tag"] = " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= Yeartwo.YEAR else ""
+	var look: Variant = cfg.get_value("campaign", "look", {})
+	var who := str(cfg.get_value("campaign", "player_as", ""))
+	if look is Dictionary and bool(look.get("active", false)) and str(look.get("name", "")) != "":
+		who = str(look.name)
+	elif who == "":
+		who = str(cfg.get_value("campaign", "character", "office_adult")).get_slice("_", 1)
+	out["character_name"] = who.to_upper()
+	return out
+
+
+# the lowest slot with nothing in it (no end-of-day save and no resume point), 0 when all are full
+func first_empty_slot(for_mode: String) -> int:
+	for n in range(1, SLOTS + 1):
+		if not bool(slot_info(for_mode, n).exists):
+			return n
+	return 0
+
+
+# erase one slot: its end-of-day save and its resume point; the meta (medals, Year 2) is untouched
+func delete_slot(for_mode: String, for_slot: int) -> void:
+	clear_resume(for_mode, for_slot)
+	if has_save(for_mode, for_slot):
+		DirAccess.remove_absolute(save_path(for_mode, for_slot))
 
 
 # who you play as in this mode, from the chosen character: the tech campaign never plays a cast member, the owner
@@ -416,8 +468,8 @@ func _write_sections(cfg: ConfigFile) -> void:
 # written hourly, when the pause menu opens and when the app is paused, loses focus or is closed (resume.gd).
 # Lost on resume: cast mid-walk positions, RMM jobs in progress, open UI and cards, mini-games, onsite visits,
 # nerf wars, conversations, the exact x position. Free Play is never saved.
-func resume_path(for_mode: String) -> String:
-	return save_prefix + for_mode + "_resume.cfg"
+func resume_path(for_mode: String, for_slot := 0) -> String:
+	return save_prefix + for_mode + slot_part(for_slot) + "_resume.cfg"
 
 
 # the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
@@ -452,21 +504,21 @@ func snapshot() -> bool:
 
 # the newest good resume point of this mode (the file, else its .bak), or null: corrupt, truncated, another version
 # or not from the day the end-of-day save is on
-func load_resume(for_mode: String) -> ConfigFile:
+func load_resume(for_mode: String, for_slot := 0) -> ConfigFile:
 	for suffix in ["", ".bak"]:
 		var cfg := ConfigFile.new()
-		if cfg.load(resume_path(for_mode) + suffix) == OK and _resume_ok(cfg, for_mode):
+		if cfg.load(resume_path(for_mode, for_slot) + suffix) == OK and _resume_ok(cfg, for_mode, for_slot):
 			return cfg
 	return null
 
 
-func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
+func _resume_ok(cfg: ConfigFile, for_mode: String, for_slot: int) -> bool:
 	var head: Variant = cfg.get_value("resume", "head", {})
 	if not (head is Dictionary):
 		return false
 	if int(head.get("version", 0)) != Resume.VERSION or str(head.get("mode", "")) != for_mode:
 		return false
-	var want := saved_day(for_mode) if has_save(for_mode) else 1  # day 1 has no end-of-day save yet
+	var want := saved_day(for_mode, for_slot) if has_save(for_mode, for_slot) else 1  # day 1 has no end-of-day save yet
 	if int(head.get("day", -1)) != want:
 		return false
 	for section in ["campaign", "msp", "story_day", "world", "net", "day"]:
@@ -476,8 +528,8 @@ func _resume_ok(cfg: ConfigFile, for_mode: String) -> bool:
 
 
 # {day, clock, text} of the good resume point for the title menu, {} when there is none
-func resume_info(for_mode: String) -> Dictionary:
-	var cfg := load_resume(for_mode)
+func resume_info(for_mode: String, for_slot := 0) -> Dictionary:
+	var cfg := load_resume(for_mode, for_slot)
 	if cfg == null:
 		return {}
 	var head: Dictionary = cfg.get_value("resume", "head", {})
@@ -485,10 +537,10 @@ func resume_info(for_mode: String) -> Dictionary:
 	return {"day": int(head.day), "clock": clock, "text": "%d:%02d" % [int(clock), int((clock - floorf(clock)) * 60.0)]}
 
 
-func clear_resume(for_mode: String) -> void:
+func clear_resume(for_mode: String, for_slot := 0) -> void:
 	for suffix in ["", ".bak", ".tmp"]:
-		if FileAccess.file_exists(resume_path(for_mode) + suffix):
-			DirAccess.remove_absolute(resume_path(for_mode) + suffix)
+		if FileAccess.file_exists(resume_path(for_mode, for_slot) + suffix):
+			DirAccess.remove_absolute(resume_path(for_mode, for_slot) + suffix)
 
 
 # the review is over: remember how the year ended and go back to the title

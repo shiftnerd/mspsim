@@ -212,9 +212,9 @@ func menu_items() -> Array:
 
 
 # the " - YEAR 2" mark of a saved run for the CONTINUE entries
-func saved_tag(mode: String) -> String:
+func saved_tag(mode: String, for_slot := 0) -> String:
 	var cfg := ConfigFile.new()
-	if cfg.load(Campaign.save_path(mode)) != OK:
+	if cfg.load(Campaign.save_path(mode, for_slot)) != OK:
 		return ""
 	return " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= YEAR else ""
 
