@@ -24,7 +24,7 @@ const ROOTS := {
 	"Hints": ["DAY1"],
 	"Growth": ["STRETCH"],
 	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
-	"PrinterGame": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"],
+	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
@@ -42,6 +42,7 @@ const TEXT_KEYS := [
 	"reply",
 	"desc",
 	"line",
+	"error",
 	"situation",
 	"result"
 ]
