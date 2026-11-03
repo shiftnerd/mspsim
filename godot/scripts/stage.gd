@@ -20,6 +20,7 @@ var _cam: Camera2D
 var _player: Node2D
 var _room := ""
 var _dark_a := 0.0  # 0 = lit, 1 = lights out
+var _long := false  # a room wider than the screen (the warehouse) follows the player even in the wide format
 
 
 func _ready() -> void:
@@ -44,6 +45,7 @@ func _ready() -> void:
 	add_child(_cam)
 	var bg: Sprite2D = get_node("Background")
 	var tex := bg.texture.get_size()
+	_long = tex.x > 420.0
 	_cam.limit_left = int(bg.position.x)
 	_cam.limit_right = int(bg.position.x + tex.x)
 	_cam.limit_top = int(bg.position.y)
@@ -105,7 +107,7 @@ func _apply_format() -> void:
 	var f: Dictionary = Game.FORMATS[Game.format]
 	_cam.zoom = Vector2.ONE * float(f.zoom)
 	_cam.enabled = true
-	if not f.follow:
+	if not f.follow and not _long:
 		# classic 368x128 view: no camera movement, the room sits centred like before
 		_cam.limit_left = -10000000
 		_cam.limit_right = 10000000
@@ -121,7 +123,7 @@ func _apply_format() -> void:
 		_cam.limit_top = int(bg.position.y)
 		_cam.limit_bottom = int(bg.position.y + tex.y)
 		_cam.position_smoothing_enabled = true
-		_cam.global_position = Vector2(_player.global_position.x, float(f.cam_y))
+		_cam.global_position = Vector2(_player.global_position.x, float(f.cam_y) if f.follow else 64.0)
 		_cam.reset_smoothing()
 
 
@@ -129,10 +131,10 @@ func _process(_delta: float) -> void:
 	if Game.title_mode or _player == null or _cam == null:
 		return
 	var f: Dictionary = Game.FORMATS[Game.format]
-	if f.follow or Game.ui_shift > 0.0:
+	if f.follow or _long or Game.ui_shift > 0.0:
 		var base_y: float = float(f.cam_y) if f.follow else 64.0
 		_cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
-		if not f.follow:
+		if not f.follow and not _long:
 			_cam.global_position.x = 184.0
 
 
@@ -163,6 +165,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if not OS.is_debug_build():
 			return  # the F-key room jumps below are for development builds only
+		if event.keycode == KEY_F11 and event.alt_pressed:
+			Game.go("warehouse", "start")
+			return
 		if event.keycode == KEY_F11 and event.ctrl_pressed:
 			var sites := []
 			for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:

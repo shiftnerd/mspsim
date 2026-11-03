@@ -1,5 +1,5 @@
 extends Node2D
-# gdlint:disable=class-definitions-order
+# gdlint:disable=class-definitions-order,max-returns
 # Procedural ambient motion and one-shot "use" animations, drawn over the art.
 # Coordinates are art-local: (0, 0) is the top-left of the piece/background art this node sits on.
 
@@ -37,6 +37,24 @@ const DURATIONS := {
 }
 # seconds into the effect when the item is handed over (default: at the end)
 const HAND_AT := {"fridge": 1.5}
+const DART_LINES := [
+	"BULLSEYE... NEARLY.",
+	"TWENTY. NOT BAD.",
+	"THREE DARTS. ONE IN THE WOOD.",
+	"SOMEONE KEEPS SCORE ON THE SHEET.",
+]
+const TREE_BULBS := [
+	Vector2(17, 10),
+	Vector2(12, 18),
+	Vector2(22, 20),
+	Vector2(9, 28),
+	Vector2(25, 30),
+	Vector2(14, 36),
+	Vector2(20, 38),
+	Vector2(6, 44),
+	Vector2(28, 46),
+	Vector2(17, 48),
+]
 
 @export var kind := "monitor"
 @export var seed_offset := 0
@@ -56,6 +74,7 @@ var _handset: Texture2D
 var _room := ""
 
 var _hit_until := 0.0
+var _dart_n := 0
 var _time := 0.0
 var _acc := 0.0
 var _scroll := 0.0
@@ -87,7 +106,9 @@ func _ready() -> void:
 				"ledtimer",
 				"redlight",
 				"sports_tv",
-				"bowl_score"
+				"bowl_score",
+				"bench_screen",
+				"tree_lights"
 			]
 		)
 		or kind.begins_with("neon")
@@ -117,6 +138,10 @@ func play() -> void:
 		return
 	if kind == "rubber_duck":
 		_duck_press()
+		return
+	if kind == "dart_board":
+		_dart_n += 1
+		Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
 		return
 	if kind.begins_with("booth_"):
 		Expo.booth(kind.substr(6))
@@ -255,6 +280,12 @@ func _draw() -> void:
 			_draw_bell()
 		"rubber_duck":
 			_draw_duck()
+		"flicker_lamp":
+			_draw_flicker_lamp()
+		"bench_screen":
+			_draw_bench_screen()
+		"tree_lights":
+			_draw_tree_lights()
 
 
 func _outing_escape() -> Dictionary:
@@ -702,6 +733,38 @@ func _draw_session_sign() -> void:
 func _draw_lamp() -> void:
 	draw_circle(Vector2(6, 4), 26.0, Color(1.0, 0.85, 0.4, 0.07 + 0.015 * sin(_time * 3.0)))
 	draw_circle(Vector2(6, 4), 14.0, Color(1.0, 0.9, 0.5, 0.09))
+
+
+# the warehouse's dying high-bay light: mostly on, now and then a burst of flicker (the node sits on the bulb)
+func _draw_flicker_lamp() -> void:
+	var slot := int(_time * 9.0)
+	var burst := _h(floori(slot / 14.0)) % 3 == 0
+	if burst and _h(slot) % 3 == 0:
+		return
+	_r(-6, 0, 13, 2, Color("fff3c0"))
+	draw_circle(Vector2(0, 10), 18.0, Color(1.0, 0.95, 0.7, 0.09))
+	draw_circle(Vector2(0, 40), 46.0, Color(1.0, 0.95, 0.7, 0.04))
+
+
+# the bench PC being imaged: a blue screen with a progress bar that fills over and over
+func _draw_bench_screen() -> void:
+	var p := fmod(_time * 6.0, 100.0)
+	_r(0, 0, 18, 12, Color("1f5fa8"))
+	_r(1, 1, 16, 1, Color("8fc0f0"))
+	PixelFont.draw(self, "IMG", Vector2(2, 3), Color("ffffff"), 1)
+	_r(2, 8, 14, 2, Color("0d3a70"))
+	_r(2, 8, floorf(14.0 * p / 100.0), 2, Color("4ec46a"))
+
+
+# the long-forgotten string of lights on the old tree: a few bulbs still work, and they flicker
+func _draw_tree_lights() -> void:
+	var cols := [Color("e04e4e"), Color("f2c94c"), Color("4ec46a"), Color("4a8fe0")]
+	for i in TREE_BULBS.size():
+		if i % 4 == 3 or (i % 3 == 1 and _h(int(_time * 4.0) + i) % 4 == 0):
+			continue
+		var b: Vector2 = TREE_BULBS[i]
+		_r(b.x, b.y, 2, 2, cols[i % 4])
+		draw_circle(b + Vector2(1, 1), 3.0, Color(cols[i % 4], 0.12))
 
 
 func _h(n: int) -> int:

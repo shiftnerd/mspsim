@@ -85,9 +85,15 @@ SETS = {
         exits=[("ToMain", "left", "main_floor", "from_cubicles"), ("ToConference", "right", "conference", "from_cubicles")],
         seats=[(35, 101, True), (119, 101, True)]),
     "network_closet": dict(node="NetworkCloset", W=144,
-        spawns={"start": (70, "right"), "from_cubicles": (60, "right")},
+        spawns={"start": (70, "right"), "from_cubicles": (60, "right"), "from_warehouse": (118, "left")},
         doors=[("ToCubicles", 21, "cubicle_area", "from_closet", "")],
-        exits=[], seats=[]),
+        exits=[("ToWarehouse", "right", "warehouse", "from_closet")], seats=[]),
+    # the WAREHOUSE (chair race phase 1): 1480 px wide, linked to the main floor through the network closet: walk off the closet's right
+    # end (or E on the steel door at the warehouse's left end) and you are in the staging room; its left end returns to the closet.
+    "warehouse": dict(node="Warehouse", W=1480,
+        spawns={"start": (60, "right"), "from_main": (60, "right"), "from_closet": (60, "right")},
+        doors=[("ToCloset", 21, "network_closet", "from_warehouse", "")],
+        exits=[("ToCloset", "left", "network_closet", "from_warehouse")], seats=[]),
     "bowling_alley": dict(node="BowlingAlley", W=320,
         spawns={"start": (60, "right"), "from_outing": (40, "right")},
         doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")],
@@ -722,7 +728,7 @@ func use(body: Node) -> void:
 ''')
 
 write("scripts/fx.gd", '''extends Node2D
-# gdlint:disable=class-definitions-order
+# gdlint:disable=class-definitions-order,max-returns
 # Procedural ambient motion and one-shot "use" animations, drawn over the art.
 # Coordinates are art-local: (0, 0) is the top-left of the piece/background art this node sits on.
 
@@ -745,6 +751,24 @@ const DURATIONS := {
 }
 # seconds into the effect when the item is handed over (default: at the end)
 const HAND_AT := {"fridge": 1.5}
+const DART_LINES := [
+    "BULLSEYE... NEARLY.",
+    "TWENTY. NOT BAD.",
+    "THREE DARTS. ONE IN THE WOOD.",
+    "SOMEONE KEEPS SCORE ON THE SHEET.",
+]
+const TREE_BULBS := [
+    Vector2(17, 10),
+    Vector2(12, 18),
+    Vector2(22, 20),
+    Vector2(9, 28),
+    Vector2(25, 30),
+    Vector2(14, 36),
+    Vector2(20, 38),
+    Vector2(6, 44),
+    Vector2(28, 46),
+    Vector2(17, 48),
+]
 
 @export var kind := "monitor"
 @export var seed_offset := 0
@@ -764,6 +788,7 @@ var _handset: Texture2D
 var _room := ""
 
 var _hit_until := 0.0
+var _dart_n := 0
 var _time := 0.0
 var _acc := 0.0
 var _scroll := 0.0
@@ -783,7 +808,7 @@ func _ready() -> void:
     _room = owner.scene_file_path.get_file().get_basename() if owner != null else ""
     if kind == "monitor":
         style = "computer"
-    if kind in ["monitor", "tv", "fridge", "lyrics", "keypad", "ledtimer", "redlight", "sports_tv", "bowl_score"] or kind.begins_with("neon"):
+    if kind in ["monitor", "tv", "fridge", "lyrics", "keypad", "ledtimer", "redlight", "sports_tv", "bowl_score", "bench_screen", "tree_lights"] or kind.begins_with("neon"):
         add_to_group("emissive")  # screens and the open fridge keep glowing when the lights are out
     if kind == "bell":
         add_to_group("bells")
@@ -809,6 +834,10 @@ func play() -> void:
         return
     if kind == "rubber_duck":
         _duck_press()
+        return
+    if kind == "dart_board":
+        _dart_n += 1
+        Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
         return
     if kind.begins_with("booth_"):
         Expo.booth(kind.substr(6))
@@ -947,6 +976,12 @@ func _draw() -> void:
             _draw_bell()
         "rubber_duck":
             _draw_duck()
+        "flicker_lamp":
+            _draw_flicker_lamp()
+        "bench_screen":
+            _draw_bench_screen()
+        "tree_lights":
+            _draw_tree_lights()
 
 
 func _outing_escape() -> Dictionary:
@@ -1367,6 +1402,38 @@ func _draw_session_sign() -> void:
 func _draw_lamp() -> void:
     draw_circle(Vector2(6, 4), 26.0, Color(1.0, 0.85, 0.4, 0.07 + 0.015 * sin(_time * 3.0)))
     draw_circle(Vector2(6, 4), 14.0, Color(1.0, 0.9, 0.5, 0.09))
+
+
+# the warehouse's dying high-bay light: mostly on, now and then a burst of flicker (the node sits on the bulb)
+func _draw_flicker_lamp() -> void:
+    var slot := int(_time * 9.0)
+    var burst := _h(floori(slot / 14.0)) % 3 == 0
+    if burst and _h(slot) % 3 == 0:
+        return
+    _r(-6, 0, 13, 2, Color("fff3c0"))
+    draw_circle(Vector2(0, 10), 18.0, Color(1.0, 0.95, 0.7, 0.09))
+    draw_circle(Vector2(0, 40), 46.0, Color(1.0, 0.95, 0.7, 0.04))
+
+
+# the bench PC being imaged: a blue screen with a progress bar that fills over and over
+func _draw_bench_screen() -> void:
+    var p := fmod(_time * 6.0, 100.0)
+    _r(0, 0, 18, 12, Color("1f5fa8"))
+    _r(1, 1, 16, 1, Color("8fc0f0"))
+    PixelFont.draw(self, "IMG", Vector2(2, 3), Color("ffffff"), 1)
+    _r(2, 8, 14, 2, Color("0d3a70"))
+    _r(2, 8, floorf(14.0 * p / 100.0), 2, Color("4ec46a"))
+
+
+# the long-forgotten string of lights on the old tree: a few bulbs still work, and they flicker
+func _draw_tree_lights() -> void:
+    var cols := [Color("e04e4e"), Color("f2c94c"), Color("4ec46a"), Color("4a8fe0")]
+    for i in TREE_BULBS.size():
+        if i % 4 == 3 or (i % 3 == 1 and _h(int(_time * 4.0) + i) % 4 == 0):
+            continue
+        var b: Vector2 = TREE_BULBS[i]
+        _r(b.x, b.y, 2, 2, cols[i % 4])
+        draw_circle(b + Vector2(1, 1), 3.0, Color(cols[i % 4], 0.12))
 
 
 func _h(n: int) -> int:
@@ -41624,6 +41691,7 @@ var _cam: Camera2D
 var _player: Node2D
 var _room := ""
 var _dark_a := 0.0  # 0 = lit, 1 = lights out
+var _long := false  # a room wider than the screen (the warehouse) follows the player even in the wide format
 
 
 func _ready() -> void:
@@ -41648,6 +41716,7 @@ func _ready() -> void:
     add_child(_cam)
     var bg: Sprite2D = get_node("Background")
     var tex := bg.texture.get_size()
+    _long = tex.x > 420.0
     _cam.limit_left = int(bg.position.x)
     _cam.limit_right = int(bg.position.x + tex.x)
     _cam.limit_top = int(bg.position.y)
@@ -41709,7 +41778,7 @@ func _apply_format() -> void:
     var f: Dictionary = Game.FORMATS[Game.format]
     _cam.zoom = Vector2.ONE * float(f.zoom)
     _cam.enabled = true
-    if not f.follow:
+    if not f.follow and not _long:
         # classic 368x128 view: no camera movement, the room sits centred like before
         _cam.limit_left = -10000000
         _cam.limit_right = 10000000
@@ -41725,7 +41794,7 @@ func _apply_format() -> void:
         _cam.limit_top = int(bg.position.y)
         _cam.limit_bottom = int(bg.position.y + tex.y)
         _cam.position_smoothing_enabled = true
-        _cam.global_position = Vector2(_player.global_position.x, float(f.cam_y))
+        _cam.global_position = Vector2(_player.global_position.x, float(f.cam_y) if f.follow else 64.0)
         _cam.reset_smoothing()
 
 
@@ -41733,10 +41802,10 @@ func _process(_delta: float) -> void:
     if Game.title_mode or _player == null or _cam == null:
         return
     var f: Dictionary = Game.FORMATS[Game.format]
-    if f.follow or Game.ui_shift > 0.0:
+    if f.follow or _long or Game.ui_shift > 0.0:
         var base_y: float = float(f.cam_y) if f.follow else 64.0
         _cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
-        if not f.follow:
+        if not f.follow and not _long:
             _cam.global_position.x = 184.0
 
 
@@ -41767,6 +41836,9 @@ func _unhandled_input(event: InputEvent) -> void:
             return
         if not OS.is_debug_build():
             return  # the F-key room jumps below are for development builds only
+        if event.keycode == KEY_F11 and event.alt_pressed:
+            Game.go("warehouse", "start")
+            return
         if event.keycode == KEY_F11 and event.ctrl_pressed:
             var sites := []
             for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:
@@ -42386,6 +42458,9 @@ AMBIENT = {
                    ("PendantA", "lamp", 28, 2), ("PendantB", "lamp", 100, 2)],
     "escape_room": [("Timer", "ledtimer", 140, 4), ("RedLight", "redlight", 226, 4),
                     ("LampGlow", "lamp", 124, 68)],
+    # the dying high-bay light over the doorway, the bench PC being imaged, the forgotten lights on the old tree
+    "warehouse": [("FlickerLamp", "flicker_lamp", 860, -19), ("BenchScreen", "bench_screen", 953, 78),
+                  ("TreeLights", "tree_lights", 1446, 54)],
 }
 BGFX = {
     "main_floor": [("TV", "tv", 261, 25, 280), ("Switch", "switch", 148, 54, 150), ("SalesBell", "bell", 124, 36, 132)],
@@ -42404,6 +42479,7 @@ BGFX = {
                     ("Painting", "clue_painting", 112, 10, 125),
                     ("Shelf", "clue_shelf", 14, 26, 28)],
     "restaurant": [("Switch", "switch", 8, 54, 10)],
+    "warehouse": [("Switch", "switch", 46, 54, 48), ("DartBoard", "dart_board", 1047, 66, 1047)],
     "vendor_hall": [("BoothSwag", "booth_swag", 40, 36, 71), ("BoothBackup", "booth_vendor", 128, 36, 159),
                     ("BoothForum", "booth_nerds", 216, 36, 247)],
 }
@@ -42525,7 +42601,7 @@ for fname, cfg in SETS.items():
     ext += [('Texture2D', f'res://assets/props/{p}.png', f'prop_{p}') for p in pieces]
     lines = [f'[ext_resource type="{t}" path="{path}" id="{i}"]' for t, path, i in ext]
     lines.append("")
-    shapes = {"floor": (VIEW_W + 400, 20), "wall": (8, 300), "door": (30, 96), "exit": (12, 200), "seat": (26, 60), "fx": (24, 96), "rack": (100, 60)}
+    shapes = {"floor": (max(VIEW_W, W) + 400, 20), "wall": (8, 300), "door": (30, 96), "exit": (12, 200), "seat": (26, 60), "fx": (24, 96), "rack": (100, 60)}
     if fname == "escape_room":
         shapes["clue"] = (36, 96)  # the clue zones are wider so they are easy to hit
     for k, (w, h) in shapes.items():
@@ -42537,7 +42613,7 @@ for fname, cfg in SETS.items():
     def body(name, pos, shape):
         return [f'[node name="{name}" type="StaticBody2D" parent="."]', f'position = Vector2({pos[0]}, {pos[1]})', "",
                 f'[node name="Shape" type="CollisionShape2D" parent="{name}"]', f'shape = SubResource("shape_{shape}")', ""]
-    lines += body("Ground", (VIEW_W // 2, FLOOR_Y + 10), "floor")
+    lines += body("Ground", (VIEW_W // 2 if W <= VIEW_W else x0 + W // 2, FLOOR_Y + 10), "floor")   # a room wider than the screen: the floor runs under all of it
     lines += body("WallLeft", (x0 - 4, 0), "wall")
     lines += body("WallRight", (x0 + W + 4, 0), "wall")
     # spawns
@@ -42587,7 +42663,7 @@ for fname, cfg in SETS.items():
     for name, kind, ax, ay, ix, *opt in bgfx:
         lines += [f'[node name="Use{name}" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + ix}, 70)',
                   'script = ExtResource("interact")', f'target = NodePath("../../Fx/{name}")',
-                  *(['low_priority = true'] if kind in ("bell", "onsite_recep", "onsite_signin") else []),
+                  *(['low_priority = true'] if kind in ("bell", "onsite_recep", "onsite_signin", "dart_board") else []),
                   *([f'look_x = {x0 + opt[0]}.0', f'arrow_offset = Vector2({opt[0] - ix}, {opt[1]})'] if len(opt) > 1 else []),
                   "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Use{name}"]',
@@ -42620,7 +42696,7 @@ for fname, cfg in SETS.items():
         # Godot 2D sorts by the node's own y, so put the node origin ON the sort line and shift the art
         # up with `offset` (centered = false: the texture's top-left lands at position + offset).
         sort_y = int(math.floor(p["sort"] + 0.5))
-        lines += [f'[node name="{p["piece"]}_{i}" type="Sprite2D" parent="Actors"]',
+        lines += [f'[node name="{p["piece"]}_{i}" type="Sprite2D" parent="Actors"' + (' groups=["race_prop"]' if p["piece"].startswith("race_") else "") + ']',
                   f'position = Vector2({x0 + p["x"]}, {sort_y})', 'centered = false',
                   f'offset = Vector2(0, {p["y"] - sort_y})',
                   f'texture = ExtResource("prop_{p["piece"]}")', ""]
