@@ -162,9 +162,15 @@ func _title_phase() -> void:
 		root.get_node("Look").look["name"] = "WWWWWWWWWW"
 		await _end("creator " + mode)
 		_begin()
-		cs.create_row = 6
+		cs.create_row = cs.CREATE_ROWS.size() - 1
 		cs.queue_redraw()
 		await _end("creator random row " + mode)
+		_begin()
+		root.get_node("Look").look["hair_style"] = "receding"  # the longest style name
+		cs.create_row = 1
+		cs.queue_redraw()
+		await _end("creator style row " + mode)
+		root.get_node("Look").look["hair_style"] = "side"
 	t._close_select()
 	await _wait(3)
 	# career screen

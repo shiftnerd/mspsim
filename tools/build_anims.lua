@@ -1,8 +1,9 @@
 -- Rebuilds every character's *_anim.aseprite from the stills + tools/poses.lua, exports the Godot sprite sheets
 -- (godot/assets/characters/<name>_<facing>.png) and the near-hand positions (<name>_<facing>_hands.json).
 -- Run:  dofile("D:/creative/pixelproject/tools/build_anims.lua")   (via run_lua_script)
-local T = "D:/creative/pixelproject/tools/"
-local R = "D:/creative/pixelproject/"
+-- set the global ROOT = "D:/other/checkout/" before dofile to work in another checkout (a worktree)
+local R = ROOT or "D:/creative/pixelproject/"
+local T = R .. "tools/"
 local OUT = R .. "godot/assets/characters/"
 local E = dofile(T .. "anim.lua")
 local poses, tags = dofile(T .. "poses.lua")

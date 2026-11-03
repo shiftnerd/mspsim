@@ -124,7 +124,7 @@ func _add_inputs() -> void:
 
 func _load_character(name: String) -> void:
 	current_character = name
-	sprite.sprite_frames = load("res://characters/%s.tres" % name)
+	sprite.sprite_frames = Look.frames_for(name, Look.is_custom())  # the custom person: the sheet of their hairstyle
 	Look.apply(sprite, name, Look.is_custom())  # the custom person is the teen sheet in the player's colours (R15)
 
 

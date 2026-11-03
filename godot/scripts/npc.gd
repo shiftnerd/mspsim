@@ -17,6 +17,7 @@ const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan
 
 @export var character := "office_dan"
 var custom := false  # a copy of the player's custom person (Look): the teen sheet in their colours
+var custom_look: Dictionary = {}  # the look that copy wears (empty = the player's own, Look.look)
 @export var facing := "right"
 @export var routine: PackedStringArray = []
 @export var start_seat := ""
@@ -69,8 +70,8 @@ var _t := 0.0
 
 
 func _ready() -> void:
-	sprite.sprite_frames = load("res://characters/%s.tres" % character)
-	Look.apply(sprite, character, custom)
+	sprite.sprite_frames = Look.frames_for(character, custom, custom_look)
+	Look.apply(sprite, character, custom, custom_look)
 	add_to_group("npcs")
 	sprite.animation_finished.connect(_on_animation_finished)
 	body_entered.connect(_on_body_entered)
