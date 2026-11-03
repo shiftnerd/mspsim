@@ -153,6 +153,8 @@ func _init() -> void:
 	var r: Dictionary = c.make_report()
 	_check(r.grade == "A" and r.pay == 150 and r.rep_delta >= 2, "the trip day pays a per diem")
 	_check(cf.went and cf.picks.size() == 3, "the picks are recorded")
+	# the day report would open at closing and queue every later card behind it: keep the day open
+	world.clock = 12.0
 
 	# vendors pitch, attendees chat, the crowd is in the room
 	game.go("vendor_hall", "from_hall")

@@ -23,6 +23,14 @@ func _best(pb: Node) -> int:
 	return best
 
 
+# a decision card now freezes the day: dismiss whatever the story events opened
+func _drain(cards: Node) -> void:
+	var guard := 0
+	while cards.is_open and guard < 20:
+		cards.pick(cards.options.size() - 1)
+		guard += 1
+
+
 func _init() -> void:
 	await process_frame
 	var c := root.get_node("Campaign")
@@ -185,9 +193,12 @@ func _init() -> void:
 		story.begin_day(entry[0])
 		world.clock = 8.6
 		await process_frame
+		_drain(root.get_node("Cards"))
 		world.clock = 15.6
 		await process_frame
+		_drain(root.get_node("Cards"))
 		await process_frame
+		_drain(root.get_node("Cards"))
 		_check(
 			pb.active.get("id", "") == entry[1] and pb.is_active(),
 			"day %d starts the %s job" % [entry[0], entry[1]]
