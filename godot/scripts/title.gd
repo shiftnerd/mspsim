@@ -295,6 +295,10 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
 
 func _open_menu() -> void:
 	_items = []
+	var snap: Dictionary = Campaign.resume_info("tech")  # a mid-day resume point (R16)
+	if not snap.is_empty():
+		var snap_label := "CONTINUE TECH - DAY %d  %s" % [int(snap.day), str(snap.text)] + Yeartwo.saved_tag("tech")
+		_items.append({"label": snap_label, "id": "tech_resume", "enabled": true})
 	if Campaign.has_save("tech"):
 		var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech") + Yeartwo.saved_tag("tech")
 		_items.append({"label": label, "id": "tech_continue", "enabled": true})
@@ -354,7 +358,7 @@ func _choose(i: int) -> void:
 	if id == "career":
 		_open_career()
 		return
-	if id.ends_with("_continue"):
+	if id.ends_with("_continue") or id.ends_with("_resume"):
 		_start(id)  # a saved run keeps its character: no select screen
 	else:
 		_open_select(id)
@@ -431,6 +435,8 @@ func _start(id: String, summary := "") -> void:
 			Campaign.new_game("tech")
 		"tech_continue":
 			Campaign.continue_game("tech")
+		"tech_resume":
+			Campaign.continue_game("tech", true)
 		"owner_new":
 			Campaign.new_game("owner")
 		"owner_continue":

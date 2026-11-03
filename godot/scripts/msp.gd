@@ -559,6 +559,69 @@ func reset() -> void:
 	send_text("Dispatch", "Welcome! Press P for your phone. I will text you about urgent tickets.")
 
 
+# the resume point (Campaign.snapshot, R16): the whole service desk, so a mid-day continue puts every ticket,
+# email, text, endpoint and SLA clock back. Plain data only (a save file holds no objects).
+func to_dict() -> Dictionary:
+	return {
+		"version": 1,
+		"tickets": tickets.duplicate(true),
+		"emails": emails.duplicate(true),
+		"texts": texts.duplicate(true),
+		"endpoints": endpoints.duplicate(true),
+		"backups": backups.duplicate(true),
+		"project": project.duplicate(true),
+		"later": _later.duplicate(true),
+		"score": score,
+		"closed_ok": closed_ok,
+		"breached": breached,
+		"reopened": reopened,
+		"pace": pace,
+		"spawned_today": spawned_today,
+		"next_id": _next_id,
+		"next_mail": _next_mail,
+		"spawn_t": _spawn_t,
+		"down": _down.duplicate(true),
+		"up": _up.duplicate(true),
+		"internal": _internal.duplicate(true),
+		"owner_noted": _owner_noted.duplicate(true),
+	}
+
+
+func from_dict(data: Dictionary) -> void:
+	tickets = _saved_array(data, "tickets")
+	emails = _saved_array(data, "emails")
+	texts = _saved_array(data, "texts")
+	endpoints = _saved_array(data, "endpoints")
+	backups = _saved_array(data, "backups")
+	_later = _saved_array(data, "later")
+	var saved_project: Variant = data.get("project", {})
+	project = (saved_project as Dictionary).duplicate(true) if saved_project is Dictionary else {}
+	score = int(data.get("score", 0))
+	closed_ok = int(data.get("closed_ok", 0))
+	breached = int(data.get("breached", 0))
+	reopened = int(data.get("reopened", 0))
+	pace = float(data.get("pace", 1.0))
+	spawned_today = int(data.get("spawned_today", 0))
+	_next_id = int(data.get("next_id", 10421))
+	_next_mail = int(data.get("next_mail", 1))
+	_spawn_t = float(data.get("spawn_t", 20.0))
+	_down = _saved_dict(data, "down")
+	_up = _saved_dict(data, "up")
+	_internal = _saved_dict(data, "internal")
+	_owner_noted = _saved_dict(data, "owner_noted")
+	changed.emit()
+
+
+func _saved_array(data: Dictionary, key: String) -> Array:
+	var v: Variant = data.get(key, [])
+	return (v as Array).duplicate(true) if v is Array else []
+
+
+func _saved_dict(data: Dictionary, key: String) -> Dictionary:
+	var v: Variant = data.get(key, {})
+	return (v as Dictionary).duplicate(true) if v is Dictionary else {}
+
+
 func _endpoint(client: int, suffix: String, os_name: String) -> Dictionary:
 	return {
 		"name": "%s-%s" % [CLIENTS[client].short, suffix],

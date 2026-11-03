@@ -57,6 +57,28 @@ func reset() -> void:
 		_boot[key] = 99.0
 
 
+# the resume point (R16): where every cable end is and what is powered
+func to_dict() -> Dictionary:
+	return {"cables": cables.duplicate(true), "ups_on": ups_on, "nas_on": nas_on, "battery": battery, "boot": _boot.duplicate()}
+
+
+func from_dict(data: Dictionary) -> void:
+	reset()
+	var saved: Variant = data.get("cables", {})
+	if saved is Dictionary:
+		for id in saved:
+			var c: Variant = saved[id]
+			if cables.has(id) and c is Dictionary and c.has("kind") and c.has("end"):
+				cables[id] = {"kind": str(c.kind), "end": str(c.end)}
+	ups_on = bool(data.get("ups_on", true))
+	nas_on = bool(data.get("nas_on", true))
+	battery = float(data.get("battery", 1.0))
+	var boot: Variant = data.get("boot", {})
+	if boot is Dictionary:
+		for key in _boot:
+			_boot[key] = float(boot.get(key, 99.0))
+
+
 func cable_color(id: String) -> Color:
 	if id.begins_with("p"):
 		return Color(PATCH_COLORS[(int(id.substr(1)) - 1) % PATCH_COLORS.size()])

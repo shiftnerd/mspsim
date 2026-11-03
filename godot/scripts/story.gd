@@ -1253,6 +1253,22 @@ func reset() -> void:
 	Playbook.reset()
 
 
+# the resume point (R16): which of today's events already fired, so a mid-day continue does not repeat them
+func snapshot() -> Dictionary:
+	return {"fired": _fired.duplicate(), "followed": _followed, "overtime": overtime, "ot_hours": ot_hours}
+
+
+func restore(data: Dictionary) -> void:
+	_fired = {}
+	var fired: Variant = data.get("fired", {})
+	if fired is Dictionary:
+		for k in fired:
+			_fired[int(k)] = true
+	_followed = bool(data.get("followed", false))
+	overtime = bool(data.get("overtime", false))
+	ot_hours = float(data.get("ot_hours", 0.0))
+
+
 # the scripted events of a day; Year 2 moves some of them by a day or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
 	return Yeartwo.events_on("tech", day, DAYS)
