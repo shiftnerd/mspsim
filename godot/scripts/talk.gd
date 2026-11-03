@@ -13,7 +13,9 @@ const SPECIALTY := {
 	"Dan": "networking",
 	"Vic": "people",
 	"Maya": "people",
-	"Morgan": "people"
+	"Morgan": "people",
+	"Sam": "servers",
+	"Terry": "security"
 }
 const LESSON_XP := 6
 const DEFAULT_GREETINGS := {
@@ -52,6 +54,18 @@ const DEFAULT_GREETINGS := {
 		"friend": "Come in. Move the printouts, they are not load-bearing. What do you need?",
 		"neutral": "Yes? I have a budget call in five minutes. Go ahead.",
 		"cold": "Mm. Is this about the queue?",
+	},
+	"Sam":
+	{
+		"friend": "Hey Dan! I closed three resets before ten. Want to see my queue?",
+		"neutral": "Hi. I am on a ticket. Sorry, one sec.",
+		"cold": "Yeah. Okay.",
+	},
+	"Terry":
+	{
+		"friend": "Dan! Come in. The war room has the best chairs and the worst Wi-Fi.",
+		"neutral": "Hey. I have a client on the phone in a minute.",
+		"cold": "Not now, please.",
 	},
 }
 var GREETINGS: Dictionary = DEFAULT_GREETINGS.duplicate(true)
@@ -104,6 +118,18 @@ const DEFAULT_SMALL := {
 		"I put iOS 7 on my phone. It is very bright. I miss my buttons.",
 		"Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.",
 	],
+	"Sam":
+	[
+		"I asked a user to turn it off and on again and it worked. I felt like a wizard.",
+		"My sister says IT is boring. Then she calls me when her printer jams.",
+		"I am saving for a Galaxy S4. Maya says wait for the next one. There is always a next one.",
+	],
+	"Terry":
+	[
+		"I work from the conference table with my laptop. Hot-desking, they call it. I call it a very long meeting with myself.",
+		"My last job had a server under somebody's desk. Somebody's actual desk. With their feet on it.",
+		"I like the phones. People call when something is broken, and then I fix it, and they are nice for a second.",
+	],
 }
 var SMALL: Dictionary = DEFAULT_SMALL.duplicate(true)
 const DEFAULT_GOSSIP := [
@@ -152,6 +178,16 @@ const DEFAULT_TIPS_GENERIC := {
 		"If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.",
 		"Close what you fix. Reopen what you break. Just be the person who tells me which one it is.",
 		"Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.",
+	],
+	"Sam":
+	[
+		"If a ticket is above your level, say so early. Waiting does not make it easier.",
+		"Restart the print spooler before you reboot anything. People lose work when you reboot.",
+	],
+	"Terry":
+	[
+		"Check the password policy before you reset anything. The same user will be back next week otherwise.",
+		"Write down every fix. The next person at three in the morning might be you.",
 	],
 }
 var TIPS_GENERIC: Dictionary = DEFAULT_TIPS_GENERIC.duplicate(true)

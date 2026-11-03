@@ -12,7 +12,7 @@ const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
 const GLYPHS := ["dots", "!", "?", "heart", "dots"]
 const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
-const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5}
+const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
 
 @export var character := "office_dan"
 @export var facing := "right"
@@ -22,6 +22,8 @@ const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan
 @export var role := ""  # Rodent Nation crowd: checkin / vendor:<id> / att:<n> (see expo.gd)
 
 var cast_name := ""
+var _flagged := false
+var flag_glyph := ""  # "?" stuck / "!" overloaded (service campaign), shown over the head
 var following := false
 var state := "wait"
 var seat: Node = null
@@ -125,6 +127,12 @@ func use(body: Node) -> void:
 
 # a seated worker whose network is down stops typing and grumbles now and then
 func _update_reactions(delta: float) -> void:
+	if flag_glyph != "" and _hold <= 0.0 and _grumble_t <= 0.0:
+		_bubble.glyph = flag_glyph
+		_bubble.visible = true
+	elif flag_glyph == "" and _flagged:
+		_bubble.visible = false
+	_flagged = flag_glyph != ""
 	if _grumble_t > 0.0:
 		_grumble_t -= delta
 		if _grumble_t <= 0.0 and state == "wait" and _hold <= 0.0:

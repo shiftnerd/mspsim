@@ -5529,6 +5529,68 @@ We talked this morning, Dan. I am fine. Thanks.
 %s stops by your desk.
 
 
+# ======================= Service > CREW_TEXT =======================
+# Service > CREW_TEXT > msg > not_desk
+[Service.CREW_TEXT.msg.not_desk]
+NOT A DESK TICKET
+
+# Service > CREW_TEXT > msg > busy
+[Service.CREW_TEXT.msg.busy]
+%s IS BUSY TODAY
+
+# Service > CREW_TEXT > stuck > text
+[Service.CREW_TEXT.stuck.text]
+Ticket #%d is above my level (%s). Can you look when you have a minute?
+
+# Service > CREW_TEXT > stuck > toast
+[Service.CREW_TEXT.stuck.toast]
+%s IS STUCK. REASSIGN IT.
+
+# Service > CREW_TEXT > stuck > thanks
+[Service.CREW_TEXT.stuck.thanks]
+%s: THANKS FOR THE HELP.
+
+# Service > CREW_TEXT > stuck > called
+[Service.CREW_TEXT.stuck.called]
+%s CALLED %s FOR HELP.
+
+# Service > CREW_TEXT > stuck > alone
+[Service.CREW_TEXT.stuck.alone]
+Never mind, I will figure it out. It will take a while.
+
+# Service > CREW_TEXT > neglect
+[Service.CREW_TEXT.neglect]
+P1 #%d HAS WAITED ON THE BOARD. GARRISON NOTICED.
+
+# Service > CREW_TEXT > farewell > text
+[Service.CREW_TEXT.farewell.text]
+Dan, I handed in my notice to Morgan this morning. It is not you. It was a lot, and I need a break. Thank you for the chance, %s.
+
+# Service > CREW_TEXT > farewell > options > 0 > label
+[Service.CREW_TEXT.farewell.options.0.label]
+WISH THEM WELL
+
+# Service > CREW_TEXT > farewell > options > 0 > reply
+[Service.CREW_TEXT.farewell.options.0.reply]
+Good luck. I mean it. The door is open.
+
+# Service > CREW_TEXT > farewell > options > 1 > label
+[Service.CREW_TEXT.farewell.options.1.label]
+ASK WHAT WENT WRONG
+
+# Service > CREW_TEXT > farewell > options > 1 > reply
+[Service.CREW_TEXT.farewell.options.1.reply]
+The queue was never empty and nobody asked. Please write that down.
+
+# Service > CREW_TEXT > farewell > options > 2 > label
+[Service.CREW_TEXT.farewell.options.2.label]
+ASK FOR TWO WEEKS
+
+# Service > CREW_TEXT > farewell > options > 2 > reply
+[Service.CREW_TEXT.farewell.options.2.reply]
+I will stay until Friday, but my head is already out of here.
+
+
 # ======================= Service > DAYS =======================
 # Service > DAYS > 1 > 1 > from
 [Service.DAYS.1.1.from]
@@ -5810,6 +5872,26 @@ Yes? I have a budget call in five minutes. Go ahead.
 [Talk.GREETINGS.Morgan.cold]
 Mm. Is this about the queue?
 
+# Talk > GREETINGS > Sam > friend
+[Talk.GREETINGS.Sam.friend]
+Hey Dan! I closed three resets before ten. Want to see my queue?
+
+# Talk > GREETINGS > Sam > neutral
+[Talk.GREETINGS.Sam.neutral]
+Hi. I am on a ticket. Sorry, one sec.
+
+# Talk > GREETINGS > Terry > friend
+[Talk.GREETINGS.Terry.friend]
+Dan! Come in. The war room has the best chairs and the worst Wi-Fi.
+
+# Talk > GREETINGS > Terry > neutral
+[Talk.GREETINGS.Terry.neutral]
+Hey. I have a client on the phone in a minute.
+
+# Talk > GREETINGS > Terry > cold
+[Talk.GREETINGS.Terry.cold]
+Not now, please.
+
 
 # ======================= Talk > SMALL =======================
 # Talk > SMALL > Alan > 0
@@ -5932,6 +6014,30 @@ I put iOS 7 on my phone. It is very bright. I miss my buttons.
 [Talk.SMALL.Morgan.5]
 Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.
 
+# Talk > SMALL > Sam > 0
+[Talk.SMALL.Sam.0]
+I asked a user to turn it off and on again and it worked. I felt like a wizard.
+
+# Talk > SMALL > Sam > 1
+[Talk.SMALL.Sam.1]
+My sister says IT is boring. Then she calls me when her printer jams.
+
+# Talk > SMALL > Sam > 2
+[Talk.SMALL.Sam.2]
+I am saving for a Galaxy S4. Maya says wait for the next one. There is always a next one.
+
+# Talk > SMALL > Terry > 0
+[Talk.SMALL.Terry.0]
+I work from the conference table with my laptop. Hot-desking, they call it. I call it a very long meeting with myself.
+
+# Talk > SMALL > Terry > 1
+[Talk.SMALL.Terry.1]
+My last job had a server under somebody's desk. Somebody's actual desk. With their feet on it.
+
+# Talk > SMALL > Terry > 2
+[Talk.SMALL.Terry.2]
+I like the phones. People call when something is broken, and then I fix it, and they are nice for a second.
+
 
 # ======================= Talk > GOSSIP =======================
 # Talk > GOSSIP > 0
@@ -6035,6 +6141,22 @@ Close what you fix. Reopen what you break. Just be the person who tells me which
 # Talk > TIPS_GENERIC > Morgan > 3
 [Talk.TIPS_GENERIC.Morgan.3]
 Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.
+
+# Talk > TIPS_GENERIC > Sam > 0
+[Talk.TIPS_GENERIC.Sam.0]
+If a ticket is above your level, say so early. Waiting does not make it easier.
+
+# Talk > TIPS_GENERIC > Sam > 1
+[Talk.TIPS_GENERIC.Sam.1]
+Restart the print spooler before you reboot anything. People lose work when you reboot.
+
+# Talk > TIPS_GENERIC > Terry > 0
+[Talk.TIPS_GENERIC.Terry.0]
+Check the password policy before you reset anything. The same user will be back next week otherwise.
+
+# Talk > TIPS_GENERIC > Terry > 1
+[Talk.TIPS_GENERIC.Terry.1]
+Write down every fix. The next person at three in the morning might be you.
 
 
 # ======================= Talk > OWNER_HOLD =======================

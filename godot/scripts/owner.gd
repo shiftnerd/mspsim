@@ -1372,6 +1372,9 @@ func _process(delta: float) -> void:
 
 
 func _work_queue(seconds: float) -> void:
+	if Campaign.mode == "service":
+		Service.work_queue(seconds)  # every tech works what is on his desk (C5)
+		return
 	var capacity := team_speed() * seconds
 	for t in Msp.open_tickets():
 		if t.fix == "project" or t.fix == "network" or t.internal:

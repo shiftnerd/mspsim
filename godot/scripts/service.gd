@@ -333,6 +333,38 @@ const DEFAULT_ONE_TEXT := {
 }
 var ONE_TEXT: Dictionary = DEFAULT_ONE_TEXT.duplicate(true)
 
+# C5: the dispatch numbers and the crew's words
+const OWNER_AREAS := {"servers": "Alan", "networking": "Alan", "powershell": "Alan", "security": "Garrison", "people": "Garrison"}
+const POLICIES := ["all", "low", "off"]
+const OWNER_RATE := 1.6  # ticket-seconds an owner works per second
+const OWNER_DAY_CAP := 2  # escalations an owner takes a day
+const OWNER_COST := 2  # owner trust it costs
+const HANDOVER_COST := 6.0  # ticket-seconds lost when a ticket changes desks
+const ASSIST := 0.5  # share of an idle tech's time that helps the busy ones
+const NEGLECT_AFTER := 90.0  # seconds a P1 may wait on the board before an owner notices
+const DEFAULT_CREW_TEXT := {
+	"msg": {"none": "NO SUCH TICKET", "not_desk": "NOT A DESK TICKET", "same": "ALREADY THERE", "busy": "%s IS BUSY TODAY", "gone": "HE LEFT", "assigned": "#%d TO %s"},
+	"lanes": {"none": "UNASSIGNED", "esc": "OWNERS"},
+	"stuck": {
+		"text": "Ticket #%d is above my level (%s). Can you look when you have a minute?",
+		"toast": "%s IS STUCK. REASSIGN IT.",
+		"thanks": "%s: THANKS FOR THE HELP.",
+		"called": "%s CALLED %s FOR HELP.",
+		"alone": "Never mind, I will figure it out. It will take a while.",
+	},
+	"neglect": "P1 #%d HAS WAITED ON THE BOARD. GARRISON NOTICED.",
+	"farewell": {
+		"text": "Dan, I handed in my notice to Morgan this morning. It is not you. It was a lot, and I need a break. Thank you for the chance, %s.",
+		"options":
+		[
+			{"id": "w", "label": "WISH THEM WELL", "reply": "Good luck. I mean it. The door is open.", "fx": {"morale": 1}},
+			{"id": "a", "label": "ASK WHAT WENT WRONG", "reply": "The queue was never empty and nobody asked. Please write that down.", "fx": {"morale": 2, "retain_all": 1}},
+			{"id": "o", "label": "ASK FOR TWO WEEKS", "reply": "I will stay until Friday, but my head is already out of here.", "fx": {"morale": -1}},
+		],
+	},
+}
+var CREW_TEXT: Dictionary = DEFAULT_CREW_TEXT.duplicate(true)
+
 # the days' scripted events: at (clock), kind mail / memo / beat / incident / friday
 const DEFAULT_DAYS := {
 	1: [{"at": 9.4, "kind": "beat", "id": "handover"}, {"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "The desk is yours", "body": "Dan, welcome to the chair. Each morning there is a huddle: pick the focus for the day. Talk to your people with E, they notice. Alan and Garrison will send memos that disagree with each other. Do not try to please both every time. - Morgan"}],
@@ -391,6 +423,12 @@ var _stuck_t := 0.0
 var _outings_seen := 0
 var _day_util := 0.0
 var _walked := false
+var auto := "all"  # who the crew picks up on its own: "all", "low" (P3 / P4 only) or "off" (you assign everything)
+var owner_used := {"Alan": 0, "Garrison": 0}  # escalations to each owner today
+var dispatched := 0  # assignments you made by hand this run
+var escalated := 0  # tickets that went to an owner this run
+var _flag_t := 0.0
+var _hand_day := 0
 
 
 func _ready() -> void:
@@ -422,6 +460,12 @@ func reset() -> void:
 	_outings_seen = 0
 	_day_util = 0.0
 	_walked = false
+	auto = "all"
+	owner_used = {"Alan": 0, "Garrison": 0}
+	dispatched = 0
+	escalated = 0
+	_flag_t = 0.0
+	_hand_day = 0
 	Crew.reset()
 
 
@@ -532,6 +576,8 @@ func apply_fx(fx: Dictionary, scale := 1.0) -> void:
 		var m := str(fx.graduate)
 		if Crew.has(m):
 			Crew.members[m]["skill"] = minf(Crew.MAYA_CAP + 0.1, Crew.value(m, "skill") + 0.15)
+			for a in Crew.AREAS:
+				Crew.train(m, a, 0.5)
 			Crew.add_morale(m, 10)
 			Crew.add_retain(m, 3)
 			flags["graduated"] = m
@@ -541,7 +587,7 @@ func apply_fx(fx: Dictionary, scale := 1.0) -> void:
 
 func _skill_fx(who: String, fx: Dictionary) -> void:
 	if fx.has("skill") and Crew.has(who):
-		Crew.members[who]["skill"] = minf(Crew.MAYA_CAP, Crew.value(who, "skill") + float(fx.skill))
+		Crew.skill_gain(who, float(fx.skill))
 	if fx.has("stress"):
 		Crew.add_stress(who, int(fx.stress))
 
@@ -555,6 +601,8 @@ func begin_day(day: int) -> void:
 	_frt_n = 0
 	_walked = false
 	_pick_t = 0.0
+	owner_used = {"Alan": 0, "Garrison": 0}
+	_hand_day = 0
 	Crew.stuck = {}
 	var keep: Array = []
 	for b in buffs:
@@ -567,6 +615,7 @@ func begin_day(day: int) -> void:
 		Crew.add_all(6)
 		_outings_seen = Outings.count
 	_sync()
+	_farewells()
 	huddle()
 
 
@@ -627,6 +676,12 @@ func _process(delta: float) -> void:
 			_pick_t = 0.0
 			_pickup()
 		_stuck_tick(dt)
+		Crew.tick(dt)
+		_aging(dt)
+		_flag_t += dt
+		if _flag_t >= 0.5:
+			_flag_t = 0.0
+			_flag_nodes()
 	if not _walked and World.clock >= 14.0 and Campaign.day >= 2:
 		_walked = true
 		_walk_up()
@@ -652,16 +707,20 @@ func _crew_ticket(t: Dictionary) -> bool:
 
 
 func _load_of(who: String) -> int:
-	var n := 0
-	for t in Msp.tickets:
-		if t.status == "In Progress" and str(t.get("assignee", "")) == who:
-			n += 1
-	return n
+	return Crew.load_of(who)
+
+
+func _auto_takes(t: Dictionary) -> bool:
+	match auto:
+		"all":
+			return true
+		"low":
+			return int(t.pri) >= 3
+	return false
 
 
 func _pickup() -> void:
-	var names := Crew.names()
-	if names.is_empty():
+	if Crew.names().is_empty():
 		return
 	var picked := 0
 	for t in Msp.open_tickets():
@@ -673,22 +732,14 @@ func _pickup() -> void:
 		if str(t.status) != "New":
 			_note_response(t, "Dan")  # you got there first
 			continue
+		if not _auto_takes(t):
+			continue
 		if picked >= 2:
 			break
-		var best := ""
-		for who in names:
-			if _load_of(str(who)) < 2 and (best == "" or _load_of(str(who)) < _load_of(best)):
-				best = str(who)
+		var best := Crew.best_for(t, 2)
 		if best == "":
 			break  # the crew is full: it waits
-		t["assignee"] = best
-		Msp.set_status(id, "In Progress")
-		Msp.add_note(id, "Picked up by %s." % best)
-		var mult := 1.0
-		if int(t.pri) <= 2:
-			mult = float(FOCUS[focus].head)
-		Owner._work[id] = float(Owner.WORK[int(t.pri)]) * mult
-		_note_response(t, best)
+		assign(id, best, false)
 		picked += 1
 
 
@@ -698,39 +749,293 @@ func _note_response(t: Dictionary, _who: String) -> void:
 	_frt_n += 1
 
 
-func _stuck_tick(dt: float) -> void:
-	if not Crew.stuck.is_empty():
-		var t := Msp.ticket(int(Crew.stuck.ticket))
-		var who := str(Crew.stuck.who)
-		if t.is_empty() or t.status == "Closed" or bool(t.fix_done):
-			Crew.add_morale(who, 4)
-			Social.change("Maya" if who == "Maya" else "Morgan", 1)
-			Hints.toast("%s: THANKS FOR THE HELP." % who.to_upper(), 2.5)
-			Crew.stuck = {}
-			return
-		Crew.stuck["left"] = float(Crew.stuck.left) - dt
-		if float(Crew.stuck.left) <= 0.0:
-			Crew.add_morale(who, -2)
-			Msp.send_text(who, "Never mind, I found it myself.")
-			Crew.stuck = {}
+# ---- dispatch: who works what (C5) --------------------------------------------------------------------------------
+# lane ids: "" = unassigned, a tech's name, "Dan" (you take it yourself), "ESC" = the owners' escalation lane
+func lane_ids() -> Array:
+	return [""] + Crew.names() + ["Dan", "ESC"]
+
+
+# who in the escalation lane should take it: Alan for the technical areas, Garrison for security and people
+func owner_for(t: Dictionary) -> String:
+	var pick: String = str(OWNER_AREAS.get(Crew.area_of(t), "Alan"))
+	if int(owner_used[pick]) >= OWNER_DAY_CAP:
+		pick = "Garrison" if pick == "Alan" else "Alan"
+	return pick
+
+
+func owner_free(who: String) -> bool:
+	return int(owner_used.get(who, 99)) < OWNER_DAY_CAP
+
+
+# move a ticket to a lane. Returns {ok, msg}. by_hand = you did it on the board (counts toward the career number)
+func assign(id: int, who: String, by_hand := true) -> Dictionary:
+	var t := Msp.ticket(id)
+	if t.is_empty() or str(t.status) == "Closed":
+		return {"ok": false, "msg": str(CREW_TEXT.msg.none)}
+	if not _crew_ticket(t):
+		return {"ok": false, "msg": str(CREW_TEXT.msg.not_desk)}
+	if who == "ESC":
+		who = owner_for(t)
+	var from := Crew.assignee_of(t)
+	if who == from:
+		return {"ok": true, "msg": str(CREW_TEXT.msg.same), "same": true}
+	if who in OWNERS:
+		if not owner_free(who):
+			return {"ok": false, "msg": str(CREW_TEXT.msg.busy) % who.to_upper()}
+	elif who != "" and who != "Dan" and (not Crew.has(who) or Crew.is_gone(who)):
+		return {"ok": false, "msg": str(CREW_TEXT.msg.gone)}
+	if Crew.stuck.has(from) and int(Crew.stuck[from].ticket) == id:
+		Crew.free_stuck(from, "moved")
+	t["assignee"] = who
+	t["struggle"] = 0.0
+	t.erase("pushed")
+	if who == "":
+		Msp.set_status(id, "New")
+		Msp.add_note(id, "Back on the board, unassigned.")
+	else:
+		if str(t.status) != "In Progress":
+			Msp.set_status(id, "In Progress")
+		Msp.add_note(id, "Assigned to %s." % who)
+		if not Owner._work.has(id):
+			var mult := float(FOCUS[focus].head) if int(t.pri) <= 2 else 1.0
+			Owner._work[id] = float(Owner.WORK[int(t.pri)]) * mult
+		elif from != "" and from != who:
+			Owner._work[id] = float(Owner._work[id]) + HANDOVER_COST
+		if not _seen.has(id):
+			_note_response(t, who)
+	if who in OWNERS:
+		owner_used[who] = int(owner_used[who]) + 1
+		add_trust(who, -OWNER_COST)
+		escalated += 1
+	if by_hand:
+		dispatched += 1
+		_hand_day += 1
+		Career.add("dispatched")
+	return {"ok": true, "msg": str(CREW_TEXT.msg.assigned) % [id, lane_name(who)], "same": false}
+
+
+func lane_name(who: String) -> String:
+	if who == "":
+		return str(CREW_TEXT.lanes.none)
+	if who == "ESC":
+		return str(CREW_TEXT.lanes.esc)
+	return who.to_upper()
+
+
+# a tech quit: his tickets go back on the board
+func release_all(who: String) -> void:
+	for t in Msp.tickets:
+		if str(t.status) != "Closed" and Crew.assignee_of(t) == who:
+			t["assignee"] = ""
+			t["struggle"] = 0.0
+			t.status = "New"
+			t.notes.append("Back on the board: %s left." % who)
+	Msp.changed.emit()
+
+
+func cycle_auto() -> String:
+	auto = POLICIES[(POLICIES.find(auto) + 1) % POLICIES.size()]
+	return auto
+
+
+# the crew gate in this mode (Owner._work_queue calls it): every tech works only what is on his desk
+func work_queue(seconds: float) -> void:
+	if seconds <= 0.0:
 		return
-	_stuck_t += dt
-	if _stuck_t < 6.0 or World.clock < 9.6 or World.clock > 16.0:
-		return
-	_stuck_t = 0.0
-	var names := Crew.names()
-	if names.is_empty():
-		return
-	var chance := 0.012 * (1.0 + float(Crew.value(Crew.lowest(), "stress")) / 80.0)
-	if Difficulty.rng("service.stuck").randf() >= chance:
-		return
-	var who: String = names[Difficulty.rng("service.stuck").randi() % names.size()]
 	for t in Msp.open_tickets():
-		if _crew_ticket(t) and str(t.get("assignee", "")) == who and not bool(t.fix_done):
-			Crew.stuck = {"who": who, "ticket": int(t.id), "left": 45.0}
-			Msp.send_text(who, "#%d is beyond me. Can you look when you have a minute?" % int(t.id))
-			Crew.add_stress(who, 3)
+		if _crew_ticket(t) and bool(t.fix_done):
+			Msp.close_ticket(int(t.id))
+	var names := Crew.names()
+	var total := Crew.skill()
+	var team := Owner.team_speed() * seconds
+	var mine := {}
+	var cap := {}
+	var idle_pool := 0.0
+	var busy_speed := 0.0
+	for who in names:
+		var list := _desk_of(str(who))
+		mine[who] = list
+		var sp := Crew.worker_speed(str(who))
+		cap[who] = team * sp / total if total > 0.0 else 0.0
+		if list.is_empty():
+			idle_pool += float(cap[who])
+		else:
+			busy_speed += sp
+	for who in names:
+		if not mine[who].is_empty() and busy_speed > 0.0:
+			cap[who] = float(cap[who]) + idle_pool * ASSIST * Crew.worker_speed(str(who)) / busy_speed
+		_work_tech(str(who), mine[who], float(cap[who]), seconds)
+	for o in OWNERS:
+		_work_owner(o, _desk_of(o), seconds)
+
+
+func _desk_of(who: String) -> Array:
+	var out := []
+	for t in Msp.open_tickets():
+		if _crew_ticket(t) and Crew.assignee_of(t) == who and not bool(t.fix_done):
+			out.append(t)
+	return out
+
+
+func _work_tech(who: String, list: Array, cap_units: float, seconds: float) -> void:
+	if list.is_empty() or cap_units <= 0.0:
+		return
+	var time_left := seconds
+	var base := cap_units / seconds
+	for t in list:
+		if time_left <= 0.001:
+			break
+		var id := int(t.id)
+		var q := Crew.match_mult(who, t) * (0.6 if t.get("pushed", false) else 1.0)
+		var rate := base * q
+		var need := float(Owner._work.get(id, Owner.WORK[int(t.pri)]))
+		var dt := minf(time_left, need / rate)
+		var progress := dt * rate
+		Owner.client_work[int(t.client)] = float(Owner.client_work.get(int(t.client), 0.0)) + progress
+		need -= progress
+		time_left -= dt
+		Owner._work[id] = need
+		if Crew.gap_of(who, t) >= 1 and not t.get("pushed", false):
+			t["struggle"] = float(t.get("struggle", 0.0)) + dt
+			if float(t.struggle) >= Crew.STUCK_AFTER and need > 0.0:
+				_stall(who, t)
+				return
+		if need <= 0.0:
+			_finish(who, t)
+
+
+func _work_owner(who: String, list: Array, seconds: float) -> void:
+	var left := OWNER_RATE * seconds
+	for t in list:
+		if left <= 0.0:
+			break
+		var id := int(t.id)
+		var need := float(Owner._work.get(id, Owner.WORK[int(t.pri)]))
+		var take := minf(need, left)
+		left -= take
+		need -= take
+		Owner._work[id] = need
+		if need <= 0.0:
+			_finish(who, t)
+
+
+func _finish(who: String, t: Dictionary) -> void:
+	var id := int(t.id)
+	Owner._work.erase(id)
+	var miss := float(Owner.edge("close_miss"))
+	if Crew.has(who):
+		Crew.note_done(who, t)
+		miss += Crew.reopen_add(who, t) + (0.15 if t.get("pushed", false) else 0.0)
+	else:
+		miss = 0.02
+	t.erase("struggle")
+	t.erase("pushed")
+	if Difficulty.rng("service.work").randf() < clampf(miss, 0.0, 0.6):
+		Msp.close_ticket(id)  # closed too early: it comes back to the same desk
+		return
+	Growth.owner_escalation(t)
+	Msp.set_status(id, "In Progress")
+	Msp.rmm_action(str(t.endpoint), str(t.fix))
+	Msp.close_ticket(id)
+
+
+func _stall(who: String, t: Dictionary) -> void:
+	if Crew.stuck.has(who):
+		return
+	Crew.stuck[who] = {"ticket": int(t.id), "left": Crew.STUCK_GIVE_UP, "asked": false}
+	Crew.members[who]["stalls"] = int(Crew.members[who].stalls) + 1
+	Crew.add_stress(who, 3)
+	Msp.send_text(who, str(CREW_TEXT.stuck.text) % [int(t.id), Crew.tag_of(t)])
+	Hints.toast(str(CREW_TEXT.stuck.toast) % who.to_upper(), 2.5)
+
+
+# a stuck tech waits for you; after a while he calls an owner (unless the policy is OFF), and in the end he pushes through alone
+func _stuck_tick(dt: float) -> void:
+	for who in Crew.stuck.keys():
+		var s: Dictionary = Crew.stuck[who]
+		var t := Msp.ticket(int(s.ticket))
+		if t.is_empty() or str(t.status) == "Closed" or bool(t.fix_done):
+			Crew.free_stuck(str(who), "closed")
+			Social.change("Maya" if who == "Maya" else "Morgan", 1)
+			Hints.toast(str(CREW_TEXT.stuck.thanks) % str(who).to_upper(), 2.5)
+			continue
+		if Crew.assignee_of(t) != who:
+			Crew.free_stuck(str(who), "moved")
+			continue
+		s["left"] = float(s.left) - dt
+		if not s.asked and Crew.STUCK_GIVE_UP - float(s.left) >= Crew.STUCK_ASK and auto != "off":
+			s["asked"] = true
+			var res := assign(int(t.id), "ESC", false)
+			if res.ok:
+				var o := Crew.assignee_of(Msp.ticket(int(t.id)))
+				Hints.toast(str(CREW_TEXT.stuck.called) % [str(who).to_upper(), o.to_upper()], 3.0)
+				_visit_owner(str(who), o)
+				continue
+		if float(s.left) <= 0.0:
+			t["pushed"] = true
+			t["struggle"] = 0.0
+			Crew.stuck.erase(who)
+			Crew.add_morale(str(who), -2)
+			Crew.add_stress(str(who), 2)
+			Msp.send_text(str(who), str(CREW_TEXT.stuck.alone))
+
+
+func _visit_owner(who: String, owner_name: String) -> void:
+	if World.chars.has(who) and str(World.chars[who].scene) == str(World.row(who).home):
+		World.force_activity(who, "owner_" + owner_name.to_lower())
+
+
+# unassigned P1 / P2 tickets age faster, and Garrison notices a P1 nobody took
+func _aging(dt: float) -> void:
+	for t in Msp.open_tickets():
+		if not _crew_ticket(t) or Crew.assignee_of(t) != "" or int(t.pri) > 2:
+			continue
+		t.sla_left = float(t.sla_left) - 0.5 * dt
+		t["waited"] = float(t.get("waited", 0.0)) + dt
+		if int(t.pri) == 1 and float(t.waited) >= NEGLECT_AFTER and not t.get("noticed", false):
+			t["noticed"] = true
+			add_trust("Garrison", -1)
+			Hints.toast(str(CREW_TEXT.neglect) % int(t.id), 3.0)
+
+
+# bubbles over the heads of people who are stuck or buried
+func _flag_nodes() -> void:
+	for who in Crew.names(true):
+		if not World.chars.has(who):
+			continue
+		var node = World.chars[who].node
+		if node != null and is_instance_valid(node):
+			node.flag_glyph = "" if Crew.is_gone(who) else Crew.glyph_of(who)
+
+
+func _farewells() -> void:
+	for who in Crew.farewells:
+		var card: Dictionary = CREW_TEXT.farewell
+		var opts := []
+		for o in card.options:
+			opts.append({"label": str(o.label), "id": str(o.id)})
+		var name: String = who
+		Cards.ask("%s (Tier 1)" % name, str(card.text) % name, opts, func(pick: String) -> void: _answer_farewell(name, pick))
+	Crew.farewells = []
+
+
+func _answer_farewell(who: String, pick: String) -> void:
+	for o in CREW_TEXT.farewell.options:
+		if str(o.id) == pick:
+			apply_fx(o.fx.duplicate(true))
+			Cards.ask("%s (Tier 1)" % who, str(o.reply), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
 			return
+
+
+# today's numbers so far (the Dispatch SCORE tab; close_day uses the same formulas)
+func today() -> Dictionary:
+	var base: Dictionary = Campaign._base
+	var closed := Msp.closed_ok - int(base.get("closed", 0))
+	var missed := Msp.breached - int(base.get("missed", 0))
+	var reopened := Msp.reopened - int(base.get("reopened", 0))
+	var sla := 100 if closed + missed == 0 else int(round(100.0 * float(closed) / float(closed + missed)))
+	var frac := _frt_sum / float(_frt_n) if _frt_n > 0 else 0.1
+	return {"closed": closed, "missed": missed, "reopened": reopened, "sla": sla, "frt": frac * 200.0, "util": utilisation(), "open": Msp.open_tickets().size()}
 
 
 # ---- cards ------------------------------------------------------------------------------------------------------
@@ -1036,6 +1341,7 @@ func close_day(r: Dictionary) -> void:
 		["TECH MORALE", "%d%%" % morale, morale_col],
 		["CLIENT MOOD", "%d%%" % mood, mood_col],
 		["FOCUS", str(HUDDLE.options[focus].label), DayReport.WHITE],
+		["DISPATCHED", "%d BY HAND, %d TO OWNERS" % [_hand_day, int(owner_used.Alan) + int(owner_used.Garrison)], DayReport.WHITE],
 	]
 	var owners := [
 		["ALAN TRUST", "%d  %s" % [trust_of("Alan"), trust_word(trust_of("Alan"))], _trust_col(trust_of("Alan"))],
@@ -1122,6 +1428,7 @@ func to_dict() -> Dictionary:
 		"trust": trust.duplicate(), "focus": focus, "buffs": buffs.duplicate(true), "flags": flags.duplicate(true),
 		"oto_seen": oto_seen.duplicate(), "oto_day": oto_day.duplicate(), "grades": grades.duplicate(true),
 		"project_days": project_days, "memos": memos_done.duplicate(), "crew": Crew.to_dict(), "outings": _outings_seen,
+		"auto": auto, "dispatched": dispatched, "escalated": escalated,
 	}
 
 
@@ -1143,4 +1450,9 @@ func from_dict(data: Dictionary) -> void:
 	project_days = int(data.get("project_days", 0))
 	memos_done = data.get("memos", {}).duplicate()
 	_outings_seen = int(data.get("outings", 0))
+	auto = str(data.get("auto", "all"))
+	if not POLICIES.has(auto):
+		auto = "all"
+	dispatched = int(data.get("dispatched", 0))
+	escalated = int(data.get("escalated", 0))
 	Crew.from_dict(data.get("crew", {}))

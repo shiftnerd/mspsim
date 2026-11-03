@@ -24,6 +24,12 @@ const CAST := {
 	# the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
 	"Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
 }
+# the service desk techs (C5): real NPCs only in the service campaign (Crew decides who is here). Sam has the free main-floor
+# desk 1; there is no desk left for Terry, so he hot-desks at the conference table with his laptop (Seat6, which nobody else uses).
+const CREW_CAST := {
+	"Sam": {"character": "office_teen", "home": "main_floor", "seat": "Seat1", "role": "crew"},
+	"Terry": {"character": "office_adult", "home": "conference", "seat": "Seat6", "role": "crew"},
+}
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
 const FLOOR_Y := 118.0
@@ -127,7 +133,7 @@ func _spawn(n: String) -> void:
 	var npc: Node = NPC_SCENE.instantiate()
 	npc.name = n
 	npc.cast_name = n
-	npc.character = CAST[n].character
+	npc.character = row(n).character
 	npc.start_item = st.held
 	npc.sips = st.sips
 	npc.following = st.following
@@ -142,9 +148,9 @@ func _spawn(n: String) -> void:
 		routine = PackedStringArray(["wait:100000"])
 		x = float(info.seats[leg.seat])
 	elif leg.get("seated", false) and (leg.get("start_seated", false) or elapsed > SETTLE):
-		npc.start_seat = CAST[n].seat
+		npc.start_seat = row(n).seat
 		routine = PackedStringArray(["wait:%d" % maxi(2, int(st.leg_t))])
-		x = float(info.seats[CAST[n].seat])
+		x = float(info.seats[row(n).seat])
 	elif elapsed > SETTLE and leg.target_x >= 0.0 and leg.kind != "follow":
 		x = leg.target_x
 	elif dark_arrival and leg.kind != "follow":
@@ -247,17 +253,22 @@ func _watch_outage(delta: float) -> void:
 			continue
 		var st: Dictionary = chars[who]
 		var kind := str(st.legs[0].kind) if not st.legs.is_empty() else ""
-		if st.following or st.scene != CAST[who].home or kind != "work":
+		if st.following or st.scene != row(who).home or kind != "work":
 			continue  # busy elsewhere right now: the next free person goes
 		_closet_sent = true  # somebody is on the way; try again only after the network comes back
 		force_activity(who, "closet")
 		return
 
 
+# the cast row of anybody in the building (CAST, or a service desk tech)
+func row(n: String) -> Dictionary:
+	return CAST[n] if CAST.has(n) else CREW_CAST[n]
+
+
 func _make_char(n: String) -> Dictionary:
 	var leg := _work_leg(n, true, Difficulty.rng("world").randf_range(20.0, 50.0))
 	return {
-		"scene": CAST[n].home,
+		"scene": row(n).home,
 		"arrive": "",
 		"legs": [leg],
 		"leg_t": leg.dur,
@@ -282,6 +293,10 @@ func roster_gone() -> Array:
 	# a tech who quit the service desk is gone (C4)
 	if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
 		gone.append("Maya")
+	# the service techs are only here in the service campaign, and only while they work for you (C5)
+	for n in CREW_CAST:
+		if not (Campaign.active and Campaign.mode == "service" and Crew.has(n) and not Crew.is_gone(n)):
+			gone.append(n)
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
 	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
 		gone.append(Roles.partner())
@@ -291,7 +306,7 @@ func roster_gone() -> Array:
 # the cast name of a character sheet ("office_dan" -> "Dan"), "" for someone who is not in CAST
 func cast_of(character: String) -> String:
 	for n in CAST:
-		if str(CAST[n].character) == character:
+		if str(row(n).character) == character:
 			return n
 	return ""
 
@@ -301,7 +316,7 @@ func player_desk() -> Dictionary:
 	var who := Campaign.player_as
 	if who == "" or not CAST.has(who):
 		return {}
-	return {"scene": CAST[who].home, "seat": CAST[who].seat}
+	return {"scene": row(who).home, "seat": row(who).seat}
 
 
 # remove whoever is gone from `chars` (their node too) and bring everyone else back, in CAST order
@@ -316,7 +331,7 @@ func apply_roster() -> void:
 			if st.node != null and is_instance_valid(st.node):
 				st.node.queue_free()
 			chars.erase(n)
-	for n in CAST:
+	for n in CAST.keys() + CREW_CAST.keys():
 		if not gone.has(n) and not chars.has(n):
 			chars[n] = _make_char(n)
 			if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
@@ -457,6 +472,10 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
 	var x0 := float(DATA.SCENES[room].x0)
 	for n in chars:
 		var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
+		var shift := 0.0
+		if i < 0:
+			i = 2  # a service tech takes the spot of Dan (who is the player), side by side
+			shift = 12.0 * float(CREW_CAST.keys().find(n))
 		var st: Dictionary = chars[n]
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
@@ -476,7 +495,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
 		st.following = false
 		st.held = ""
 		st.sips = 0
-		var x := x0 + float(spots[i % spots.size()])
+		var x := x0 + float(spots[i % spots.size()]) + shift
 		st.legs = [
 			{
 				"kind": "outing",
@@ -578,24 +597,26 @@ func _plan(n: String) -> Array:
 	var origin_x := _hint_x(n)
 	if clock >= DAY_END:
 		return _leave_plan(n, origin_x)
-	if st.scene != CAST[n].home or st.arriving:
+	if st.scene != row(n).home or st.arriving:
 		st.arriving = false
-		var legs := _travel(st.scene, CAST[n].home, origin_x)
+		var legs := _travel(st.scene, row(n).home, origin_x)
 		legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 50.0)))
 		return legs
 	if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
 		st.lunched = true
 		# the account manager lunches with a client instead
-		match str(CAST[n].get("role", "")):
+		match str(row(n).get("role", "")):
 			"sales":
 				return _visit_plan(n, 50.0)
 			"manager":
 				return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open
 		return _lunch_plan(n)
 	var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
-	if CAST[n].get("role", "") == "sales":
+	if Campaign.active and Campaign.mode == "service" and Crew.has(n):
+		kinds = Crew.plan_kinds(n)  # busy techs stay at the desk, idle ones wander (C5)
+	elif row(n).get("role", "") == "sales":
 		kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
-	elif CAST[n].get("role", "") == "manager":
+	elif row(n).get("role", "") == "manager":
 		kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
 	return plan_for(n, kinds[Difficulty.rng("world").randi() % kinds.size()])
 
@@ -611,6 +632,10 @@ func plan_for(n: String, kind: String) -> Array:
 			legs = _trip(n, "cubicle_area", _cooler_leg())
 		"closet":
 			legs = _trip(n, "network_closet", _closet_leg())
+		"owner_alan":
+			legs = _trip(n, "office_one", _owner_leg("office_one"))
+		"owner_garrison":
+			legs = _trip(n, "office_two", _owner_leg("office_two"))
 		"floor":
 			legs = _trip(n, "main_floor", _floor_leg())
 		"bathroom":
@@ -623,8 +648,8 @@ func plan_for(n: String, kind: String) -> Array:
 
 # there and back: travel legs, the activity leg, travel legs home
 func _trip(n: String, scene: String, activity: Dictionary) -> Array:
-	var home: String = CAST[n].home
-	var x := float(DATA.SCENES[home].seats[CAST[n].seat])
+	var home: String = row(n).home
+	var x := float(DATA.SCENES[home].seats[row(n).seat])
 	var legs := _travel(home, scene, x)
 	activity.scene = scene
 	legs.append(activity)
@@ -634,7 +659,9 @@ func _trip(n: String, scene: String, activity: Dictionary) -> Array:
 
 # lunch: bring a drink, then eat together at the conference table
 func _lunch_plan(n: String) -> Array:
-	var home: String = CAST[n].home
+	var home: String = row(n).home
+	if CAST.keys().find(n) < 0:
+		return [_work_leg(n, true, 56.0)]  # the techs eat at their desks
 	var seat := "Seat%d" % (CAST.keys().find(n) + 1)
 	var x := float(DATA.SCENES["conference"].seats[seat])
 	var st: Dictionary = chars[n]
@@ -856,7 +883,7 @@ func send_owner_cover(n: String, x: float) -> bool:
 			"dur": absf(x - from_x) / SPEED + 10.0,
 		}
 	)
-	legs.append_array(_travel(_scene, CAST[n].home, x))
+	legs.append_array(_travel(_scene, row(n).home, x))
 	legs.append(_work_leg(n, false, 30.0))
 	st.legs = legs
 	st.leg_t = legs[0].dur
@@ -866,12 +893,12 @@ func send_owner_cover(n: String, x: float) -> bool:
 
 
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:
-	var seat: String = CAST[n].seat
-	var x := float(DATA.SCENES[CAST[n].home].seats[seat])
+	var seat: String = row(n).seat
+	var x := float(DATA.SCENES[row(n).home].seats[seat])
 	var half := int(secs * 0.5)
 	return {
 		"kind": "work",
-		"scene": CAST[n].home,
+		"scene": row(n).home,
 		"seated": true,
 		"start_seated": start_seated,
 		"routine":
@@ -906,6 +933,17 @@ func _closet_leg() -> Dictionary:
 		"dur": 22.0,
 		"target_x": x,
 		"routine": PackedStringArray(["walk:%d" % int(x), "wait:3", "talk:5", "wait:6"]),
+	}
+
+
+# a stuck tech walks into an owner's office and asks for help (service campaign)
+func _owner_leg(scene: String) -> Dictionary:
+	var x := float(DATA.SCENES[scene].seats["Seat1"]) - 34.0
+	return {
+		"kind": "owner",
+		"dur": 18.0,
+		"target_x": x,
+		"routine": PackedStringArray(["walk:%d" % int(x), "wait:2", "talk:6", "wait:5"]),
 	}
 
 
@@ -969,7 +1007,7 @@ func _start_meeting() -> void:
 	var ready_names := []
 	for n in chars:
 		var st: Dictionary = chars[n]
-		var at_desk: bool = st.scene == CAST[n].home and st.legs.size() == 1
+		var at_desk: bool = st.scene == row(n).home and st.legs.size() == 1
 		if at_desk and st.legs[0].kind == "work" and not st.following:
 			ready_names.append(n)
 	if ready_names.size() < 2:
@@ -988,16 +1026,20 @@ func start_all_hands() -> void:
 			continue
 		if chars[n].following:
 			set_following(n, false)
-		if CAST[n].get("role", "") == "manager" and not owner_mode:
+		if row(n).get("role", "") == "manager" and not owner_mode:
 			send_to_meeting(n, "", 90.0)  # Morgan hosts: standing at the whiteboard, no chair
 			continue
 		send_to_meeting(n, "Seat%d" % i, 90.0)
 		i += 1
+	for n in CREW_CAST:  # the service techs take the next chairs (C5)
+		if chars.has(n) and i <= 6:
+			send_to_meeting(n, "Seat%d" % i, 90.0)
+			i += 1
 
 
 func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
 	var st: Dictionary = chars[n]
-	var home: String = CAST[n].home
+	var home: String = row(n).home
 	var hosting := seat == ""
 	var x := HOST_X if hosting else float(DATA.SCENES["conference"].seats[seat])
 	var routine := ["walk:%d" % x]

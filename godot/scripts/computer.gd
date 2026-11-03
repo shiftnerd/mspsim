@@ -8,6 +8,7 @@ extends CanvasLayer
 # clickable regions are collected while drawing (_hits).
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const DISPATCH := preload("res://scripts/dispatch.gd")
 const TB := 11.0  # taskbar height
 const TXT := Color("20242c")
 const WHITE := Color("ffffff")
@@ -59,6 +60,7 @@ var learn_right := 0
 var learn_pick := -1
 var learn_done := false
 var learn_opts: Array = []
+var dispatch = DISPATCH.new()  # the Dispatch app state (service campaign)
 
 var _canvas: Node2D
 var _hits: Array = []
@@ -99,6 +101,7 @@ func open(from_desk: int) -> void:
 	rmm_detail = false
 	rmm_session = false
 	_menu = false
+	dispatch.cancel()
 	_toast = ""  # the toast timer only runs while open, so drop one left from the last session
 	_toast_t = 0.0
 	is_open = true
@@ -159,12 +162,26 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion:
 		_mouse = get_viewport().get_mouse_position()
+		if app == "dispatch":
+			dispatch.mouse_move(_mouse)
 		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
 		_mouse = get_viewport().get_mouse_position()
-		click(_mouse)
+		if app == "dispatch" and dispatch.mouse_down(_mouse):
+			_canvas.queue_redraw()
+		else:
+			click(_mouse)
+	elif (
+		event is InputEventMouseButton
+		and not event.pressed
+		and event.button_index == MOUSE_BUTTON_LEFT
+		and app == "dispatch"
+	):
+		_mouse = get_viewport().get_mouse_position()
+		dispatch.mouse_up(_mouse)
+		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton
 		and event.pressed
@@ -172,6 +189,10 @@ func _input(event: InputEvent) -> void:
 	):
 		scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 	elif event is InputEventKey and event.pressed and not event.echo:
+		if app == "dispatch" and _dispatch_key(event):
+			_canvas.queue_redraw()
+			get_viewport().set_input_as_handled()
+			return
 		match event.keycode:
 			KEY_ESCAPE:
 				escape()
@@ -207,6 +228,7 @@ func escape() -> void:
 		or (app == "rmm" and (rmm_session or rmm_detail))
 		or (app == "learn" and learn_lesson >= 0)
 		or (app == "lync" and lync_sel != "")
+		or (app == "dispatch" and dispatch.nested())
 		or (app == "site" and site_view != "desktop")
 	)
 	if nested:
@@ -231,6 +253,8 @@ func back() -> void:
 		rmm_session = false
 		rmm_detail = false
 		_cancel_job()
+	elif app == "dispatch" and dispatch.nested():
+		dispatch.back()
 	elif app == "learn" and learn_lesson >= 0:
 		learn_lesson = -1
 		learn_done = false
@@ -324,6 +348,8 @@ func activate(id: String) -> void:
 			_start_pb_job(int(parts[1]))
 		"lesson", "ans", "qnext", "lback":
 			_learn_action(parts)
+		"dsp":
+			dispatch.act(parts)
 		"btab":
 			board_tab = parts[1]
 		"lync":
@@ -681,6 +707,8 @@ func _paint() -> void:
 			_paint_rmm()
 		"boardroom":
 			_paint_boardroom()
+		"dispatch":
+			_paint_dispatch()
 		"lync":
 			_paint_lync()
 		"nerds":
@@ -739,6 +767,8 @@ func _paint_taskbar() -> void:
 		]
 		if Campaign.books_active():
 			items.insert(4, ["app:boardroom", "BOARDROOM"])
+		if Campaign.mode == "service":
+			items.insert(4, ["app:dispatch", "DISPATCH"])
 		for i in items.size():
 			_button(
 				items[i][0],
@@ -793,6 +823,12 @@ func _icon(kind: String, p: Vector2) -> void:
 			_fill(Rect2(p + Vector2(1, 3), Vector2(14, 9)), Color("8a5a2b"))
 			_fill(Rect2(p + Vector2(5, 0), Vector2(6, 4)), Color("6b421c"))
 			_fill(Rect2(p + Vector2(7, 6), Vector2(2, 3)), Color("f5d442"))
+		"dispatch":
+			_fill(Rect2(p, Vector2(16, 12)), Color("e8ecf2"))
+			_fill(Rect2(p, Vector2(16, 3)), Color("8a3d12"))
+			for i in 3:
+				_fill(Rect2(p.x + 1 + i * 5, p.y + 4, 4, 3), PSA_BLUE)
+				_fill(Rect2(p.x + 1 + i * 5, p.y + 8, 4, 3), AMBER if i == 1 else GREEN)
 		"stats":
 			_fill(Rect2(p, Vector2(15, 12)), Color("e8ecf2"))
 			_fill(Rect2(p.x + 2, p.y + 6, 3, 5), GREEN)
@@ -970,6 +1006,8 @@ func _paint_desktop() -> void:
 	]
 	if Campaign.books_active():
 		icons.append(["boardroom", "BOARDROOM", 0])
+	if Campaign.mode == "service":
+		icons.append(["dispatch", "DISPATCH", dispatch.tickets_in("").size()])
 	var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
 	for i in icons.size():
 		var p := Vector2(
@@ -1705,6 +1743,27 @@ func _paint_quiz(body: Rect2) -> void:
 
 # ---- profile / stats -----------------------------------------------------------
 # ---- Lynk 2013 ------------------------------------------------------------
+# ---- ConnectWhy Dispatch (service manager campaign, C5: the board itself is scripts/dispatch.gd) ------------------
+func _paint_dispatch() -> void:
+	var body := _window("CONNECTWHY DISPATCH - SERVICE BOARD", Color("8a3d12"))
+	if _offline("CONNECTWHY DISPATCH - SERVER NOT AVAILABLE.", body):
+		return
+	dispatch.paint(self, body)
+
+
+func _dispatch_key(event: InputEventKey) -> bool:
+	var names := {
+		KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
+		KEY_KP_ENTER: "enter", KEY_A: "a", KEY_T: "t", KEY_E: "e", KEY_U: "u", KEY_C: "c", KEY_B: "b", KEY_S: "s", KEY_F: "f",
+	}
+	if not names.has(event.keycode):
+		return false
+	var key_name: String = names[event.keycode]
+	if key_name == "tab" and event.shift_pressed:
+		key_name = "shift_tab"
+	return dispatch.key(key_name)
+
+
 func _paint_lync() -> void:
 	var body := _window("LYNK 2013", Color("0a6ab8"))
 	_fill(body, WHITE)
