@@ -29,6 +29,9 @@ const TABLE := {
 	# escape room: seconds on the clock, seconds a wrong code takes off (in the room)
 	"escape.time": [150.0, 120.0, 105.0],
 	"escape.wrong_penalty": [5.0, 10.0, 15.0],
+	# digits in the code (a fourth clue appears on hard) and whether the dial lock tells you bulls and cows (1 = yes)
+	"escape.digits": [3, 3, 4],
+	"escape.dial": [1, 1, 0],
 	# dinner: how many of the three faces show their reaction (the others stay hidden for that round)
 	"dinner.reveal": [3, 3, 2],
 	# printer: marker speed x, green zone width x, number of test-page questions

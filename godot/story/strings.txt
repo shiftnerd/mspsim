@@ -8575,3 +8575,307 @@ PROMISE THE MOON
 # Onsite > MEETINGS > pitch > options > 2 > text
 [Onsite.MEETINGS.pitch.options.2.text]
 You promise a ten minute response time, everything fixed by noon and free hardware. You are persuasive and you also know it is a lie.
+
+
+# ======================= Outings > SONGS =======================
+# Outings > SONGS > 0 > title
+[Outings.SONGS.0.title]
+WOBBLE WOBBLE POP
+
+# Outings > SONGS > 0 > lines > 0
+[Outings.SONGS.0.lines.0]
+WOBBLE WOBBLE POP POP
+
+# Outings > SONGS > 0 > lines > 1
+[Outings.SONGS.0.lines.1]
+SHAKE IT FOR THE CAM
+
+# Outings > SONGS > 0 > lines > 2
+[Outings.SONGS.0.lines.2]
+BASS DROP IN MY HEAD
+
+# Outings > SONGS > 0 > lines > 3
+[Outings.SONGS.0.lines.3]
+SELFIE ON THE STAIRS
+
+# Outings > SONGS > 0 > lines > 4
+[Outings.SONGS.0.lines.4]
+NOBODY KNOWS MY MOVES
+
+# Outings > SONGS > 0 > lines > 5
+[Outings.SONGS.0.lines.5]
+ONE MORE DROP TONIGHT
+
+# Outings > SONGS > 1 > title
+[Outings.SONGS.1.title]
+DIRT ROAD FRIDAY
+
+# Outings > SONGS > 1 > artist
+[Outings.SONGS.1.artist]
+THE CREEKBED TWINS
+
+# Outings > SONGS > 1 > genre
+[Outings.SONGS.1.genre]
+COUNTRY SINGALONG
+
+# Outings > SONGS > 1 > lines > 0
+[Outings.SONGS.1.lines.0]
+DIRT ROAD ON FRIDAY
+
+# Outings > SONGS > 1 > lines > 1
+[Outings.SONGS.1.lines.1]
+TAILGATE DOWN AND LOW
+
+# Outings > SONGS > 1 > lines > 2
+[Outings.SONGS.1.lines.2]
+PORCH LIGHT STILL ON
+
+# Outings > SONGS > 1 > lines > 3
+[Outings.SONGS.1.lines.3]
+HOME BY THE RIVER
+
+# Outings > SONGS > 1 > lines > 4
+[Outings.SONGS.1.lines.4]
+SING IT TO THE CORN
+
+# Outings > SONGS > 1 > lines > 5
+[Outings.SONGS.1.lines.5]
+NOBODY IS IN A RUSH
+
+# Outings > SONGS > 1 > lines > 6
+[Outings.SONGS.1.lines.6]
+ONE MORE MILE OF GOLD
+
+# Outings > SONGS > 2 > title
+[Outings.SONGS.2.title]
+NEON GYM CLASS
+
+# Outings > SONGS > 2 > artist
+[Outings.SONGS.2.artist]
+THE SYNTH SCOUTS
+
+# Outings > SONGS > 2 > lines > 0
+[Outings.SONGS.2.lines.0]
+NEON LIGHTS AND SWEAT
+
+# Outings > SONGS > 2 > lines > 1
+[Outings.SONGS.2.lines.1]
+LEG WARMERS ON FIRE
+
+# Outings > SONGS > 2 > lines > 2
+[Outings.SONGS.2.lines.2]
+GYM CLASS AT MIDNIGHT
+
+# Outings > SONGS > 2 > lines > 3
+[Outings.SONGS.2.lines.3]
+ROLL THE TAPE BACK
+
+# Outings > SONGS > 2 > lines > 4
+[Outings.SONGS.2.lines.4]
+JUMP ROPE IN THE RAIN
+
+# Outings > SONGS > 2 > lines > 5
+[Outings.SONGS.2.lines.5]
+FEEL THE SYNTH GLOW
+
+# Outings > SONGS > 2 > lines > 6
+[Outings.SONGS.2.lines.6]
+NEON GYM CLASS, YEAH
+
+# Outings > SONGS > 3 > title
+[Outings.SONGS.3.title]
+FAST RAP HOT MESS
+
+# Outings > SONGS > 3 > lines > 0
+[Outings.SONGS.3.lines.0]
+FAST WORDS HOT MESS
+
+# Outings > SONGS > 3 > lines > 1
+[Outings.SONGS.3.lines.1]
+COFFEE ON MY SHIRT
+
+# Outings > SONGS > 3 > lines > 2
+[Outings.SONGS.3.lines.2]
+RHYMES IN THE QUEUE
+
+# Outings > SONGS > 3 > lines > 3
+[Outings.SONGS.3.lines.3]
+TICKET AFTER TICKET
+
+# Outings > SONGS > 3 > lines > 4
+[Outings.SONGS.3.lines.4]
+TWO TIMES TOO FAST
+
+# Outings > SONGS > 3 > lines > 5
+[Outings.SONGS.3.lines.5]
+BREATHE IN THE BRIDGE
+
+# Outings > SONGS > 3 > lines > 6
+[Outings.SONGS.3.lines.6]
+HOT MESS HOT MESS
+
+# Outings > SONGS > 3 > lines > 7
+[Outings.SONGS.3.lines.7]
+MIC DROP, MIC PICK UP
+
+
+# ======================= Outings > FRIEND_HINTS =======================
+# Outings > FRIEND_HINTS > Alan > board
+[Outings.FRIEND_HINTS.Alan.board]
+THAT CHALKBOARD IS MY KIND OF PROBLEM. DO THE MATH.
+
+# Outings > FRIEND_HINTS > Alan > clock
+[Outings.FRIEND_HINTS.Alan.clock]
+THAT OLD WALL CLOCK STOPPED FOR A REASON.
+
+# Outings > FRIEND_HINTS > Alan > plaque
+[Outings.FRIEND_HINTS.Alan.plaque]
+I THINK THERE IS A PLAQUE UNDER THE PAINTING.
+
+# Outings > FRIEND_HINTS > Alan > shelf
+[Outings.FRIEND_HINTS.Alan.shelf]
+ONE BOOK ON THAT SHELF IS STICKING OUT. LOOK CLOSER.
+
+# Outings > FRIEND_HINTS > Alan > keypad
+[Outings.FRIEND_HINTS.Alan.keypad]
+YOU HAVE THEM ALL. TRY THE KEYPAD ON THE VAULT.
+
+# Outings > FRIEND_HINTS > Garrison > board
+[Outings.FRIEND_HINTS.Garrison.board]
+SOMEBODY WROTE ON THAT CHALKBOARD. IT IS A CLUE, TRUST ME.
+
+# Outings > FRIEND_HINTS > Garrison > clock
+[Outings.FRIEND_HINTS.Garrison.clock]
+THE CLOCK IS STUCK AT A STRANGE TIME. WE SHOULD LOOK.
+
+# Outings > FRIEND_HINTS > Garrison > plaque
+[Outings.FRIEND_HINTS.Garrison.plaque]
+A PLAQUE UNDER THE PAINTING! NOBODY HANGS A PAINTING FOR FREE.
+
+# Outings > FRIEND_HINTS > Garrison > shelf
+[Outings.FRIEND_HINTS.Garrison.shelf]
+THAT BOOKSHELF HAS SOMETHING IN IT THAT DOES NOT BELONG.
+
+# Outings > FRIEND_HINTS > Garrison > keypad
+[Outings.FRIEND_HINTS.Garrison.keypad]
+THAT IS ALL OF THEM. THE LOCK ON THE VAULT IS WAITING FOR YOU.
+
+# Outings > FRIEND_HINTS > Dan > board
+[Outings.FRIEND_HINTS.Dan.board]
+THE CHALKBOARD LIGHT IS WIRED BADLY. LOOK AT THE BOARD.
+
+# Outings > FRIEND_HINTS > Dan > clock
+[Outings.FRIEND_HINTS.Dan.clock]
+THAT CLOCK IS NOT WIRED TO ANYTHING, SO SOMEONE STOPPED IT ON PURPOSE.
+
+# Outings > FRIEND_HINTS > Dan > plaque
+[Outings.FRIEND_HINTS.Dan.plaque]
+THERE IS A CABLE RUN UNDER THE PAINTING. AND A PLAQUE.
+
+# Outings > FRIEND_HINTS > Dan > shelf
+[Outings.FRIEND_HINTS.Dan.shelf]
+THE BOOKSHELF IS BOLTED TO THE WALL. SOMETHING ON IT IS NOT A BOOK.
+
+# Outings > FRIEND_HINTS > Dan > keypad
+[Outings.FRIEND_HINTS.Dan.keypad]
+THE KEYPAD IS WIRED TO THE VAULT. ENTER WHAT YOU FOUND.
+
+# Outings > FRIEND_HINTS > Maya > board
+[Outings.FRIEND_HINTS.Maya.board]
+THE CHALKBOARD LOOKS LIKE HOMEWORK. HOMEWORK IS A CLUE.
+
+# Outings > FRIEND_HINTS > Maya > clock
+[Outings.FRIEND_HINTS.Maya.clock]
+THE WALL CLOCK IS WRONG. NOBODY LEAVES A CLOCK WRONG.
+
+# Outings > FRIEND_HINTS > Maya > plaque
+[Outings.FRIEND_HINTS.Maya.plaque]
+THAT PLAQUE UNDER THE PAINTING IS EASY TO MISS. READ IT.
+
+# Outings > FRIEND_HINTS > Maya > shelf
+[Outings.FRIEND_HINTS.Maya.shelf]
+THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.
+
+# Outings > FRIEND_HINTS > Maya > keypad
+[Outings.FRIEND_HINTS.Maya.keypad]
+THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.
+
+# Outings > FRIEND_HINTS > Vic > board
+[Outings.FRIEND_HINTS.Vic.board]
+THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.
+
+# Outings > FRIEND_HINTS > Vic > clock
+[Outings.FRIEND_HINTS.Vic.clock]
+THE CLOCK, TRUST ME, THE CLOCK.
+
+# Outings > FRIEND_HINTS > Vic > plaque
+[Outings.FRIEND_HINTS.Vic.plaque]
+I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.
+
+# Outings > FRIEND_HINTS > Vic > shelf
+[Outings.FRIEND_HINTS.Vic.shelf]
+THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.
+
+# Outings > FRIEND_HINTS > Vic > keypad
+[Outings.FRIEND_HINTS.Vic.keypad]
+YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.
+
+
+# ======================= Outings > HERRINGS =======================
+# Outings > HERRINGS > 0
+[Outings.HERRINGS.0]
+A BOOKSHELF FULL OF OLD MANUALS. NO NUMBERS HERE THAT MATTER.
+
+# Outings > HERRINGS > 1
+[Outings.HERRINGS.1]
+A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.
+
+# Outings > HERRINGS > 2
+[Outings.HERRINGS.2]
+ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.
+
+
+# ======================= Outings > RECIPE_TIPS =======================
+# Outings > RECIPE_TIPS > sum
+[Outings.RECIPE_TIPS.sum]
+ADD THE TWO NUMBERS.
+
+# Outings > RECIPE_TIPS > missing
+[Outings.RECIPE_TIPS.missing]
+WHICH DIGIT IS NOT IN THE LIST?
+
+# Outings > RECIPE_TIPS > hour
+[Outings.RECIPE_TIPS.hour]
+THE HOUR IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > double
+[Outings.RECIPE_TIPS.double]
+THE DIGIT IS TWICE THE HOUR.
+
+# Outings > RECIPE_TIPS > number
+[Outings.RECIPE_TIPS.number]
+THE NUMBER IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > roman
+[Outings.RECIPE_TIPS.roman]
+READ THE ROMAN NUMERAL.
+
+# Outings > RECIPE_TIPS > letter
+[Outings.RECIPE_TIPS.letter]
+COUNT THE LETTER IN THE ALPHABET.
+
+# Outings > RECIPE_TIPS > spine
+[Outings.RECIPE_TIPS.spine]
+THE VOLUME NUMBER IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > ribbons
+[Outings.RECIPE_TIPS.ribbons]
+COUNT THE BOOKMARK RIBBONS.
+
+# Outings > RECIPE_TIPS > dial
+[Outings.RECIPE_TIPS.dial]
+THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.
+
+# Outings > RECIPE_TIPS > nodial
+[Outings.RECIPE_TIPS.nodial]
+THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.

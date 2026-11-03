@@ -228,6 +228,8 @@ func _draw() -> void:
 			_draw_clue_clock()
 		"clue_painting":
 			_draw_clue_painting()
+		"clue_shelf":
+			_draw_clue_shelf()
 		"lyrics":
 			_draw_lyrics()
 		"discoball":
@@ -359,36 +361,66 @@ func _escape_game() -> Dictionary:
 		Outings.is_open
 		and Outings.game == "escape"
 		and Outings.phase == "play"
-		and Outings.g.has("eq")
+		and Outings.g.has("clues")
 	):
 		return Outings.g
 	return {}
 
 
-func _draw_clue_board() -> void:
+# the clue a zone shows: Outings.g.clues[index] (the shape of each recipe is in Outings.make_clue)
+func _clue(index: int) -> Dictionary:
 	var game := _escape_game()
-	var text := "2+2=?"
-	if not game.is_empty():
-		text = "%d+%d=?" % [int(game.eq[0]), int(game.eq[1])]
-	PixelFont.draw(self, text, Vector2(8, 10), Color("e8e8e0"), 2)
+	if game.is_empty() or index >= game.clues.size():
+		return {}
+	return game.clues[index]
+
+
+func _draw_clue_board() -> void:
+	var clue := _clue(0)
+	var text := "2+2=?" if clue.is_empty() else str(clue.show)
+	var lines := text.split("|")
+	var y := 8.0 if lines.size() == 1 else 5.0
+	for line in lines:
+		var scale := 2 if PixelFont.width(line, 2) <= 44 else 1
+		var yy := y + (3.0 if scale == 1 and lines.size() == 1 else 0.0)
+		PixelFont.draw(self, line, Vector2(8, yy), Color("e8e8e0"), scale)
+		y += 12.0 if scale == 2 else 8.0
 
 
 func _draw_clue_clock() -> void:
-	var game := _escape_game()
-	var hour := 10 if game.is_empty() else int(game.code[1])
+	var clue := _clue(1)
+	var hour := 10 if clue.is_empty() else int(clue.args.hour)
 	var c := Vector2(9, 9)
 	var a := float(hour % 12) / 12.0 * TAU - PI * 0.5
 	draw_line(c, c + Vector2(cos(a), sin(a)) * 4.0, Color("17121f"), 1.0)
 	draw_line(c, c + Vector2(0, -6), Color("17121f"), 1.0)
 	_r(c.x - 1.0, c.y - 1.0, 2, 2, Color("c0392b"))
+	if not clue.is_empty() and str(clue.recipe) == "double":
+		PixelFont.draw(self, "X2", Vector2(5, 14), Color("17121f"), 1)
 
 
 func _draw_clue_painting() -> void:
-	var game := _escape_game()
-	var digit := "?" if game.is_empty() else str(int(game.code[2]))
-	_r(7, 33, 12, 7, Color("c99a3c"))
-	_r(7, 33, 12, 1, Color("e8c45a"))
-	PixelFont.draw(self, digit, Vector2(12, 34), Color("17121f"), 1)
+	var clue := _clue(2)
+	var text := "?" if clue.is_empty() else str(clue.show)
+	var w := maxi(12, PixelFont.width(text, 1) + 4)
+	_r(13 - w / 2, 33, w, 7, Color("c99a3c"))
+	_r(13 - w / 2, 33, w, 1, Color("e8c45a"))
+	PixelFont.draw(self, text, Vector2(15 - w / 2, 34), Color("17121f"), 1)
+
+
+# the bookshelf (a clue only on a 4 digit game): a book label, or bookmark ribbons
+func _draw_clue_shelf() -> void:
+	var clue := _clue(3)
+	if clue.is_empty():
+		return
+	if str(clue.recipe) == "ribbons":
+		for i in int(clue.args.n):
+			_r(3 + i * 2, 30, 1, 5, Color("b8292f") if i % 2 == 0 else Color("e8c45a"))
+		return
+	var w := PixelFont.width(str(clue.show), 1) + 4
+	_r(14 - w / 2, 28, w, 7, Color("e8dcb0"))
+	_r(14 - w / 2, 28, w, 1, Color("c9b878"))
+	PixelFont.draw(self, str(clue.show), Vector2(16 - w / 2, 29), Color("17121f"), 1)
 
 
 func _draw_sports() -> void:
@@ -420,10 +452,24 @@ func _draw_lyrics() -> void:
 	_r(0, 0, w, h, Color("161a44"))
 	for i in 6:
 		_r(0, float(i) * 6.0, w, 3.0, Color(0.35, 0.2, 0.55, 0.12))
+	var lines: Array = LYRICS
+	var title := "TOTALLY LEGAL HIT"
 	var line_secs := 4.5
-	var idx := int(_time / line_secs) % LYRICS.size()
-	var frac := fmod(_time, line_secs) / line_secs
-	var line: String = LYRICS[idx]
+	var idx := 0
+	var frac := 0.0
+	var game := _karaoke_game()
+	if game.is_empty():
+		idx = int(_time / line_secs) % lines.size()
+		frac = fmod(_time, line_secs) / line_secs
+	else:
+		# the lyrics follow the song: each line gets an equal share of its length
+		lines = game.song.lines
+		title = str(game.song.title)
+		line_secs = maxf(1.0, (float(game.span) - 1.5) / float(lines.size()))
+		var pos := maxf(0.0, float(game.t) - 1.5) / line_secs
+		idx = mini(int(pos), lines.size() - 1)
+		frac = clampf(pos - float(idx), 0.0, 1.0)
+	var line: String = lines[idx]
 	var words := line.split(" ")
 	var total := PixelFont.width(line, 1)
 	var x := floorf((w - float(total)) * 0.5)
@@ -443,7 +489,7 @@ func _draw_lyrics() -> void:
 			pos += 1
 		x += 4.0
 		pos += 1
-	var next: String = LYRICS[(idx + 1) % LYRICS.size()]
+	var next: String = lines[(idx + 1) % lines.size()]
 	PixelFont.draw(
 		self,
 		next.substr(0, 21),
@@ -451,8 +497,19 @@ func _draw_lyrics() -> void:
 		Color("7a82b8"),
 		1
 	)
-	PixelFont.draw(self, "TOTALLY LEGAL HIT", Vector2(4, 3), Color("e04ecb"), 1)
+	PixelFont.draw(self, title.substr(0, 21), Vector2(4, 3), Color("e04ecb"), 1)
 	_r(ball_x + 1.0, 9.0 - absf(sin(_time * 7.0)) * 4.0, 3.0, 3.0, Color("ffffff"))
+
+
+func _karaoke_game() -> Dictionary:
+	if (
+		Outings.is_open
+		and Outings.game == "karaoke"
+		and Outings.phase == "play"
+		and Outings.g.has("song")
+	):
+		return Outings.g
+	return {}
 
 
 func _draw_disco() -> void:
@@ -472,9 +529,14 @@ func _draw_keypad() -> void:
 	var digits := [0, 0, 0]
 	if not game.is_empty():
 		digits = game.cur
-	for i in 3:
+	var pitch := 5.0 if digits.size() <= 3 else 4.0
+	for i in digits.size():
 		PixelFont.draw(
-			self, str(int(digits[i])), Vector2(4.0 + float(i) * 5.0, 4.0), Color("4cff7a"), 1
+			self,
+			str(int(digits[i])),
+			Vector2(3.0 + float(i) * pitch + (1.0 if digits.size() <= 3 else 0.0), 4.0),
+			Color("4cff7a"),
+			1
 		)
 	var solved := (
 		Outings.is_open

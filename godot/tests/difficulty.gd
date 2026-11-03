@@ -103,6 +103,8 @@ func _init() -> void:
 		"escape.time": o.ESCAPE_TIME,
 		"escape.wrong_penalty": 10.0,
 		"dinner.reveal": 3.0,
+		"escape.digits": 3.0,
+		"escape.dial": 1.0,
 		"printer.speed": 1.0,
 		"printer.zone": 1.0,
 		"printer.questions": 2.0,
