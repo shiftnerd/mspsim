@@ -6383,6 +6383,354 @@ Honestly? Tired. The queue never really empties.
 I am burning out. I am not going to lie to you.
 
 
+# ======================= Talk > VIC_GREETINGS =======================
+# Talk > VIC_GREETINGS > Alan > friend
+[Talk.VIC_GREETINGS.Alan.friend]
+Vic. Sit. Give me the number first and the story after.
+
+# Talk > VIC_GREETINGS > Alan > neutral
+[Talk.VIC_GREETINGS.Alan.neutral]
+Pipeline. Go. I have the books open.
+
+# Talk > VIC_GREETINGS > Alan > cold
+[Talk.VIC_GREETINGS.Alan.cold]
+...What did you promise this time?
+
+# Talk > VIC_GREETINGS > Garrison > friend
+[Talk.VIC_GREETINGS.Garrison.friend]
+There he is, my favourite closer! Tell me something good. Actually, tell me the number. Then something good.
+
+# Talk > VIC_GREETINGS > Garrison > neutral
+[Talk.VIC_GREETINGS.Garrison.neutral]
+Vic! Quick one, I have a client in five. How is the pipeline?
+
+# Talk > VIC_GREETINGS > Garrison > cold
+[Talk.VIC_GREETINGS.Garrison.cold]
+Mm. Is this about a quote or about a discount?
+
+# Talk > VIC_GREETINGS > Dan > friend
+[Talk.VIC_GREETINGS.Dan.friend]
+Hey Vic. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.
+
+# Talk > VIC_GREETINGS > Dan > neutral
+[Talk.VIC_GREETINGS.Dan.neutral]
+Hey. Is this about a new client? Because I have {open} tickets open.
+
+# Talk > VIC_GREETINGS > Dan > cold
+[Talk.VIC_GREETINGS.Dan.cold]
+If it is a new client, I am not taking it.
+
+# Talk > VIC_GREETINGS > Morgan > friend
+[Talk.VIC_GREETINGS.Morgan.friend]
+Come in, Vic. I read your handover binder last night. It was almost accurate.
+
+# Talk > VIC_GREETINGS > Morgan > neutral
+[Talk.VIC_GREETINGS.Morgan.neutral]
+Yes? I have a budget call in five minutes. Is this a promise or a question?
+
+# Talk > VIC_GREETINGS > Morgan > cold
+[Talk.VIC_GREETINGS.Morgan.cold]
+Mm. Are we talking about what you sold, or what we can do?
+
+# Talk > VIC_GREETINGS > Maya > friend
+[Talk.VIC_GREETINGS.Maya.friend]
+Hi Vic! Your clients are so nice. Well, most of them. Want half a granola bar?
+
+# Talk > VIC_GREETINGS > Maya > neutral
+[Talk.VIC_GREETINGS.Maya.neutral]
+Hey! Sorry, I have someone on hold. What is up?
+
+# Talk > VIC_GREETINGS > Maya > cold
+[Talk.VIC_GREETINGS.Maya.cold]
+Oh. Hi. I am just finishing a ticket for one of your clients.
+
+
+# ======================= Talk > VIC_SMALL =======================
+# Talk > VIC_SMALL > Alan > 0
+[Talk.VIC_SMALL.Alan.0]
+The XP deadline passed and half our prospects still run it. Every one of them thinks it is somebody else's problem.
+
+# Talk > VIC_SMALL > Alan > 1
+[Talk.VIC_SMALL.Alan.1]
+Do you know what a one hour response costs us? Neither does Garrison.
+
+# Talk > VIC_SMALL > Alan > 2
+[Talk.VIC_SMALL.Alan.2]
+The van needs brakes. The books say we can afford brakes. Barely. Your commission is not helping.
+
+# Talk > VIC_SMALL > Alan > 3
+[Talk.VIC_SMALL.Alan.3]
+I looked at the ByteBrothers website. Their server is on a residential cable line. I am not saying a word.
+
+# Talk > VIC_SMALL > Alan > 4
+[Talk.VIC_SMALL.Alan.4]
+My kid asked what you do. I said you talk people into buying what I build. She said that sounds easy. I said try it.
+
+# Talk > VIC_SMALL > Garrison > 0
+[Talk.VIC_SMALL.Garrison.0]
+I have golf on Friday with the Chamber president. Business is done on the fifth hole.
+
+# Talk > VIC_SMALL > Garrison > 1
+[Talk.VIC_SMALL.Garrison.1]
+Everybody is changing their passwords after the Target breach. I call it peace of mind. Alan calls it a required step.
+
+# Talk > VIC_SMALL > Garrison > 2
+[Talk.VIC_SMALL.Garrison.2]
+I closed my first deal in a parking lot. The contract was on a napkin. Do not do that.
+
+# Talk > VIC_SMALL > Garrison > 3
+[Talk.VIC_SMALL.Garrison.3]
+I finally beat level 90 on Sugar Smash. Do not ask what I spent.
+
+# Talk > VIC_SMALL > Garrison > 4
+[Talk.VIC_SMALL.Garrison.4]
+The best salesman I ever met never said yes on the first call. He said let me check with my team. Then he checked with his team.
+
+# Talk > VIC_SMALL > Dan > 0
+[Talk.VIC_SMALL.Dan.0]
+Every time you sign a client I learn a new printer model.
+
+# Talk > VIC_SMALL > Dan > 1
+[Talk.VIC_SMALL.Dan.1]
+I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work.
+
+# Talk > VIC_SMALL > Dan > 2
+[Talk.VIC_SMALL.Dan.2]
+I do not mind new clients. I mind new clients who were promised a one hour response.
+
+# Talk > VIC_SMALL > Dan > 3
+[Talk.VIC_SMALL.Dan.3]
+The aquarium at the vet clinic has better network infrastructure than we do. I looked.
+
+# Talk > VIC_SMALL > Morgan > 0
+[Talk.VIC_SMALL.Morgan.0]
+Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.
+
+# Talk > VIC_SMALL > Morgan > 1
+[Talk.VIC_SMALL.Morgan.1]
+I was a tech for six years before anybody let me near a budget. The desk is not the hard part.
+
+# Talk > VIC_SMALL > Morgan > 2
+[Talk.VIC_SMALL.Morgan.2]
+Windows XP ended in April and I still have eleven clients on it. Sell them the migration, not the miracle.
+
+# Talk > VIC_SMALL > Morgan > 3
+[Talk.VIC_SMALL.Morgan.3]
+I read every handover binder. The ones that say standard SLA make me happy. The ones with highlighter make me nervous.
+
+# Talk > VIC_SMALL > Maya > 0
+[Talk.VIC_SMALL.Maya.0]
+Today I walked a lady through plugging in her monitor. It was not plugged in. She felt great and told her husband you were wonderful.
+
+# Talk > VIC_SMALL > Maya > 1
+[Talk.VIC_SMALL.Maya.1]
+Your Piedmont people call me by name now. I feel famous.
+
+# Talk > VIC_SMALL > Maya > 2
+[Talk.VIC_SMALL.Maya.2]
+A client sent me a fruit basket. I do not know whom to credit, but I ate the pineapple.
+
+# Talk > VIC_SMALL > Maya > 3
+[Talk.VIC_SMALL.Maya.3]
+I am trying to learn PowerShell on my lunch break. It is a lot like selling, except it does what you tell it.
+
+
+# ======================= Talk > VIC_GOSSIP =======================
+# Talk > VIC_GOSSIP > 0
+[Talk.VIC_GOSSIP.0]
+Between us: Alan and Garrison argued about discounts again this morning. The door was closed and I could still hear the word logo.
+
+# Talk > VIC_GOSSIP > 1
+[Talk.VIC_GOSSIP.1]
+I heard ByteBrothers is hiring salesmen. The word on the street is they pay on the quote, not on the retention.
+
+# Talk > VIC_GOSSIP > 2
+[Talk.VIC_GOSSIP.2]
+Somebody microwaved fish in the kitchenette again. We are not saying who.
+
+# Talk > VIC_GOSSIP > 3
+[Talk.VIC_GOSSIP.3]
+I heard Morgan keeps a list of promises. Mostly yours. It is not a long list. Yet.
+
+
+# ======================= Talk > VIC_TIPS =======================
+# Talk > VIC_TIPS > Alan > 0
+[Talk.VIC_TIPS.Alan.0]
+Do not quote under the margin floor. A client who costs us money is not a client, he is a hobby.
+
+# Talk > VIC_TIPS > Alan > 1
+[Talk.VIC_TIPS.Alan.1]
+Ask what is plugged in before you promise anything. Half of these offices have a server under somebody's desk.
+
+# Talk > VIC_TIPS > Alan > 2
+[Talk.VIC_TIPS.Alan.2]
+If you cannot explain the price in one sentence, the price is wrong.
+
+# Talk > VIC_TIPS > Alan > 3
+[Talk.VIC_TIPS.Alan.3]
+Put it in writing. A promise in an email is a contract. A promise on a golf course is a story.
+
+# Talk > VIC_TIPS > Garrison > 0
+[Talk.VIC_TIPS.Garrison.0]
+Call before they call you. A short call keeps the contract; a long silence loses it.
+
+# Talk > VIC_TIPS > Garrison > 1
+[Talk.VIC_TIPS.Garrison.1]
+The logo is a door, not a house. Get through the door and then charge for the house.
+
+# Talk > VIC_TIPS > Garrison > 2
+[Talk.VIC_TIPS.Garrison.2]
+People buy from the guy who remembers their kid's name. Write it down. I do.
+
+# Talk > VIC_TIPS > Garrison > 3
+[Talk.VIC_TIPS.Garrison.3]
+ByteBrothers always quotes twenty percent under and delivers twenty percent less. Make them say what they cut.
+
+# Talk > VIC_TIPS > Dan > 0
+[Talk.VIC_TIPS.Dan.0]
+Before you promise a response time, look at my queue. Walk over, I will show it to you.
+
+# Talk > VIC_TIPS > Dan > 1
+[Talk.VIC_TIPS.Dan.1]
+Four hours is easy. One hour at any time means I sleep in the van.
+
+# Talk > VIC_TIPS > Dan > 2
+[Talk.VIC_TIPS.Dan.2]
+Onboarding takes me two weeks per client. If you rush it I will do it, but something else slips.
+
+# Talk > VIC_TIPS > Dan > 3
+[Talk.VIC_TIPS.Dan.3]
+A new client is three PCs, one printer and a wireless password nobody remembers. Tell me which printer.
+
+# Talk > VIC_TIPS > Morgan > 0
+[Talk.VIC_TIPS.Morgan.0]
+Every promise you make goes in the binder. If it is not in the binder it did not happen, and I will say so in front of the client.
+
+# Talk > VIC_TIPS > Morgan > 1
+[Talk.VIC_TIPS.Morgan.1]
+If you must promise something fast, promise it to me first. I can move things around. I cannot move things I do not know about.
+
+# Talk > VIC_TIPS > Morgan > 2
+[Talk.VIC_TIPS.Morgan.2]
+Disclose the gap at the handover. It costs you a minute. Hiding it costs you the client in ninety days, and your commission with it.
+
+# Talk > VIC_TIPS > Morgan > 3
+[Talk.VIC_TIPS.Morgan.3]
+Renewals are won in the first thirty days. After that, it is just paperwork.
+
+# Talk > VIC_TIPS > Maya > 0
+[Talk.VIC_TIPS.Maya.0]
+Be kind to the owner first. Half the problem is that they are scared they bought the wrong thing.
+
+# Talk > VIC_TIPS > Maya > 1
+[Talk.VIC_TIPS.Maya.1]
+Clients tell me things they never tell you: who is mad, who is leaving, who just had a baby. Ask me.
+
+# Talk > VIC_TIPS > Maya > 2
+[Talk.VIC_TIPS.Maya.2]
+When a client goes quiet, that is the dangerous kind. The loud ones stay forever.
+
+# Talk > VIC_TIPS > Maya > 3
+[Talk.VIC_TIPS.Maya.3]
+Call the angry ones on a Monday. By Friday they have told three friends.
+
+
+# ======================= Talk > VIC_STATE =======================
+# Talk > VIC_STATE > Dan > tight
+[Talk.VIC_STATE.Dan.tight]
+Capacity is {cap} of 3 right now with {open} tickets open. Whatever you sell this week lands on top of that. Promise four hours, not one.
+
+# Talk > VIC_STATE > Morgan > gap
+[Talk.VIC_STATE.Morgan.gap]
+{deal} has a promise gap I can see from here. Come to the conference room and tell them the real SLA before they find it out in week three.
+
+# Talk > VIC_STATE > Maya > mood
+[Talk.VIC_STATE.Maya.mood]
+{client} sounded annoyed when I called. They are {mood} percent happy and the number is going the wrong way. Call them before they start shopping around.
+
+# Talk > VIC_STATE > Garrison > behind
+[Talk.VIC_STATE.Garrison.behind]
+You are at {pct} percent of quota with {weeks} weeks left in the quarter. The number is the number. Get me two more logos.
+
+# Talk > VIC_STATE > Garrison > ahead
+[Talk.VIC_STATE.Garrison.ahead]
+{pct} percent with {weeks} weeks to go? Vic, I may cry. Keep the margin where Alan can see it.
+
+# Talk > VIC_STATE > Alan > claw
+[Talk.VIC_STATE.Alan.claw]
+You have lost {claw} in clawbacks. Go and find out why before you sell the next one.
+
+# Talk > VIC_STATE > Alan > floor
+[Talk.VIC_STATE.Alan.floor]
+The floor is {floor} percent. Anything under it comes to me first and I say no.
+
+
+# ======================= Talk > VIC_ASK =======================
+# Talk > VIC_ASK > Dan > label
+[Talk.VIC_ASK.Dan.label]
+CAN YOUR CREW TAKE ANOTHER CLIENT?
+
+# Talk > VIC_ASK > Dan > good
+[Talk.VIC_ASK.Dan.good]
+We can take one. Capacity is {cap} of 3 and the queue is {open}. Do not promise one hour. Promise four and we will beat it.
+
+# Talk > VIC_ASK > Dan > tight
+[Talk.VIC_ASK.Dan.tight]
+Maybe. Capacity is {cap} of 3 and there are {open} tickets open. One small client, standard SLA, slow onboarding. Not two.
+
+# Talk > VIC_ASK > Dan > over
+[Talk.VIC_ASK.Dan.over]
+Not this week. Capacity is {cap} of 3 and there are {open} tickets open. If you sign another one I will do the onboarding in the van.
+
+# Talk > VIC_ASK > Morgan > label
+[Talk.VIC_ASK.Morgan.label]
+HOW ARE MY HANDOVERS GOING?
+
+# Talk > VIC_ASK > Morgan > clean
+[Talk.VIC_ASK.Morgan.clean]
+Clean so far. The binder matches what the crew can do. Keep it that way and the renewals will look after themselves.
+
+# Talk > VIC_ASK > Morgan > gaps
+[Talk.VIC_ASK.Morgan.gaps]
+Not clean. {deal} still has a promise gap. The client has noticed and so have I. Fix it with a call before it becomes a complaint.
+
+# Talk > VIC_ASK > Maya > label
+[Talk.VIC_ASK.Maya.label]
+HOW ARE MY CLIENTS DOING?
+
+# Talk > VIC_ASK > Maya > fine
+[Talk.VIC_ASK.Maya.fine]
+They are doing great. The unhappiest one is {client} at {mood} percent, and that is a printer, not a person.
+
+# Talk > VIC_ASK > Maya > worry
+[Talk.VIC_ASK.Maya.worry]
+{client} is at {mood} percent. They have not said they are leaving, but they have started saying 'we'll see'. That is how it starts.
+
+# Talk > VIC_ASK > Alan > label
+[Talk.VIC_ASK.Alan.label]
+PIPELINE UPDATE
+
+# Talk > VIC_ASK > Alan > ahead
+[Talk.VIC_ASK.Alan.ahead]
+{pct} percent of quota, {leads} open leads. Fine. Do not touch the floor to hit a number.
+
+# Talk > VIC_ASK > Alan > behind
+[Talk.VIC_ASK.Alan.behind]
+{pct} percent with {weeks} weeks left and {leads} leads. Close what you can deliver. Do not buy the quarter with discounts.
+
+# Talk > VIC_ASK > Garrison > label
+[Talk.VIC_ASK.Garrison.label]
+PIPELINE UPDATE
+
+# Talk > VIC_ASK > Garrison > ahead
+[Talk.VIC_ASK.Garrison.ahead]
+{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.
+
+# Talk > VIC_ASK > Garrison > behind
+[Talk.VIC_ASK.Garrison.behind]
+{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let us talk about the hot ones.
+
+
 # ======================= Nerds > JOKES =======================
 # Nerds > JOKES > 0
 [Nerds.JOKES.0]
@@ -6703,6 +7051,266 @@ Sure. I will do it the slow way.
 # Lync > MESSAGES > thanks_Morgan > text
 [Lync.MESSAGES.thanks_Morgan.text]
 Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.
+
+
+# ======================= Lync > VIC_MESSAGES =======================
+# Lync > VIC_MESSAGES > lunch > text
+[Lync.VIC_MESSAGES.lunch.text]
+Lunch? A few of us are grabbing sandwiches. No shop talk. Okay, a little shop talk.
+
+# Lync > VIC_MESSAGES > lunch > options > 0 > label
+[Lync.VIC_MESSAGES.lunch.options.0.label]
+SURE, LET'S GO
+
+# Lync > VIC_MESSAGES > lunch > options > 0 > reply
+[Lync.VIC_MESSAGES.lunch.options.0.reply]
+Great, see you there!
+
+# Lync > VIC_MESSAGES > lunch > options > 1 > label
+[Lync.VIC_MESSAGES.lunch.options.1.label]
+CAN'T, I HAVE A CALL
+
+# Lync > VIC_MESSAGES > lunch > options > 1 > reply
+[Lync.VIC_MESSAGES.lunch.options.1.reply]
+No worries, next time.
+
+# Lync > VIC_MESSAGES > phones > text
+[Lync.VIC_MESSAGES.phones.text]
+One of your new clients keeps calling my desk because someone gave them my number. Can you call them back and say who to ring?
+
+# Lync > VIC_MESSAGES > phones > options > 0 > label
+[Lync.VIC_MESSAGES.phones.options.0.label]
+SURE, SORRY ABOUT THAT
+
+# Lync > VIC_MESSAGES > phones > options > 0 > reply
+[Lync.VIC_MESSAGES.phones.options.0.reply]
+Thanks, you are the best.
+
+# Lync > VIC_MESSAGES > phones > options > 1 > label
+[Lync.VIC_MESSAGES.phones.options.1.label]
+THEY LIKE YOU, KEEP THEM HAPPY
+
+# Lync > VIC_MESSAGES > phones > options > 1 > reply
+[Lync.VIC_MESSAGES.phones.options.1.reply]
+Okay... I will give them the number of the desk.
+
+# Lync > VIC_MESSAGES > help > text
+[Lync.VIC_MESSAGES.help.text]
+Sanity check before you quote: can we really promise a one hour response to a twenty seat shop this month?
+
+# Lync > VIC_MESSAGES > help > options > 0 > label
+[Lync.VIC_MESSAGES.help.options.0.label]
+NO. I WILL QUOTE FOUR HOURS
+
+# Lync > VIC_MESSAGES > help > options > 0 > reply
+[Lync.VIC_MESSAGES.help.options.0.reply]
+Thank you. That is what the crew can honestly do.
+
+# Lync > VIC_MESSAGES > help > options > 1 > label
+[Lync.VIC_MESSAGES.help.options.1.label]
+SURE, WE WILL MANAGE
+
+# Lync > VIC_MESSAGES > help > options > 1 > reply
+[Lync.VIC_MESSAGES.help.options.1.reply]
+Sure. Sure. Put it in writing for Morgan.
+
+# Lync > VIC_MESSAGES > thanks > text
+[Lync.VIC_MESSAGES.thanks.text]
+Hey, thanks for putting the real SLA in the handover. It makes a difference.
+
+# Lync > VIC_MESSAGES > lunch_Garrison > text
+[Lync.VIC_MESSAGES.lunch_Garrison.text]
+Lunch with a prospect? I am taking someone to the grill and I want you across from them. Company card, I promise.
+
+# Lync > VIC_MESSAGES > lunch_Garrison > options > 0 > label
+[Lync.VIC_MESSAGES.lunch_Garrison.options.0.label]
+SURE, LET'S GO
+
+# Lync > VIC_MESSAGES > lunch_Garrison > options > 0 > reply
+[Lync.VIC_MESSAGES.lunch_Garrison.options.0.reply]
+Great, bring the good tie.
+
+# Lync > VIC_MESSAGES > lunch_Garrison > options > 1 > label
+[Lync.VIC_MESSAGES.lunch_Garrison.options.1.label]
+CAN'T, I HAVE A QUOTE DUE
+
+# Lync > VIC_MESSAGES > lunch_Garrison > options > 1 > reply
+[Lync.VIC_MESSAGES.lunch_Garrison.options.1.reply]
+No worries. I will tell them you said hi.
+
+# Lync > VIC_MESSAGES > phones_Garrison > text
+[Lync.VIC_MESSAGES.phones_Garrison.text]
+A prospect wants a call back and I am stuck in a meeting. Say we are on it and give them a number that sounds like a price.
+
+# Lync > VIC_MESSAGES > phones_Garrison > options > 0 > label
+[Lync.VIC_MESSAGES.phones_Garrison.options.0.label]
+SURE
+
+# Lync > VIC_MESSAGES > phones_Garrison > options > 0 > reply
+[Lync.VIC_MESSAGES.phones_Garrison.options.0.reply]
+Thanks, you are the best.
+
+# Lync > VIC_MESSAGES > phones_Garrison > options > 1 > label
+[Lync.VIC_MESSAGES.phones_Garrison.options.1.label]
+I DON'T QUOTE UNTIL I KNOW THE SCOPE
+
+# Lync > VIC_MESSAGES > phones_Garrison > options > 1 > reply
+[Lync.VIC_MESSAGES.phones_Garrison.options.1.reply]
+Fair, Vic. Fair. I will step out.
+
+# Lync > VIC_MESSAGES > help_Garrison > text
+[Lync.VIC_MESSAGES.help_Garrison.text]
+ByteBrothers just posted a price list. Can you look at it and tell me where they are lying?
+
+# Lync > VIC_MESSAGES > help_Garrison > options > 0 > label
+[Lync.VIC_MESSAGES.help_Garrison.options.0.label]
+TAKE A LOOK AT IT
+
+# Lync > VIC_MESSAGES > help_Garrison > options > 0 > reply
+[Lync.VIC_MESSAGES.help_Garrison.options.0.reply]
+Perfect. That is why I pay you.
+
+# Lync > VIC_MESSAGES > help_Garrison > options > 1 > label
+[Lync.VIC_MESSAGES.help_Garrison.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > VIC_MESSAGES > help_Garrison > options > 1 > reply
+[Lync.VIC_MESSAGES.help_Garrison.options.1.reply]
+Sure. No problem. I will ask Alan. He will tell me everything wrong.
+
+# Lync > VIC_MESSAGES > lunch_Alan > text
+[Lync.VIC_MESSAGES.lunch_Alan.text]
+Lunch? I am ordering sandwiches. We need to talk about the discounts. Briefly. With pickles.
+
+# Lync > VIC_MESSAGES > lunch_Alan > options > 0 > label
+[Lync.VIC_MESSAGES.lunch_Alan.options.0.label]
+SURE, LET'S GO
+
+# Lync > VIC_MESSAGES > lunch_Alan > options > 0 > reply
+[Lync.VIC_MESSAGES.lunch_Alan.options.0.reply]
+Good. I ordered extra pickles.
+
+# Lync > VIC_MESSAGES > lunch_Alan > options > 1 > label
+[Lync.VIC_MESSAGES.lunch_Alan.options.1.label]
+CAN'T, I AM WITH A CLIENT
+
+# Lync > VIC_MESSAGES > lunch_Alan > options > 1 > reply
+[Lync.VIC_MESSAGES.lunch_Alan.options.1.reply]
+Fine. I will leave one in the fridge.
+
+# Lync > VIC_MESSAGES > phones_Alan > text
+[Lync.VIC_MESSAGES.phones_Alan.text]
+I do not call clients. You call clients. Acme's office manager wants a quote on a printer. Go.
+
+# Lync > VIC_MESSAGES > phones_Alan > options > 0 > label
+[Lync.VIC_MESSAGES.phones_Alan.options.0.label]
+SURE
+
+# Lync > VIC_MESSAGES > phones_Alan > options > 0 > reply
+[Lync.VIC_MESSAGES.phones_Alan.options.0.reply]
+Thanks. That saves me twenty minutes.
+
+# Lync > VIC_MESSAGES > phones_Alan > options > 1 > label
+[Lync.VIC_MESSAGES.phones_Alan.options.1.label]
+SORRY, CAN'T
+
+# Lync > VIC_MESSAGES > phones_Alan > options > 1 > reply
+[Lync.VIC_MESSAGES.phones_Alan.options.1.reply]
+Okay... I will do it after the invoices.
+
+# Lync > VIC_MESSAGES > help_Alan > text
+[Lync.VIC_MESSAGES.help_Alan.text]
+Question: what is the margin on the quote you sent yesterday? Not what you told Garrison. What is it?
+
+# Lync > VIC_MESSAGES > help_Alan > options > 0 > label
+[Lync.VIC_MESSAGES.help_Alan.options.0.label]
+I'LL SEND YOU THE NUMBERS
+
+# Lync > VIC_MESSAGES > help_Alan > options > 0 > reply
+[Lync.VIC_MESSAGES.help_Alan.options.0.reply]
+Good. That is all I wanted.
+
+# Lync > VIC_MESSAGES > help_Alan > options > 1 > label
+[Lync.VIC_MESSAGES.help_Alan.options.1.label]
+IT IS FINE, ALAN
+
+# Lync > VIC_MESSAGES > help_Alan > options > 1 > reply
+[Lync.VIC_MESSAGES.help_Alan.options.1.reply]
+'Fine' is not a number. I will look it up myself.
+
+# Lync > VIC_MESSAGES > help_Dan > text
+[Lync.VIC_MESSAGES.help_Dan.text]
+Quick one: the new client says they want 'everything monitored'. What does that mean in dollars? I need to size it.
+
+# Lync > VIC_MESSAGES > help_Dan > options > 0 > label
+[Lync.VIC_MESSAGES.help_Dan.options.0.label]
+I WILL FIND OUT BEFORE I QUOTE
+
+# Lync > VIC_MESSAGES > help_Dan > options > 0 > reply
+[Lync.VIC_MESSAGES.help_Dan.options.0.reply]
+Thanks. Ask them how many servers, not how many dreams.
+
+# Lync > VIC_MESSAGES > help_Dan > options > 1 > label
+[Lync.VIC_MESSAGES.help_Dan.options.1.label]
+JUST SAY YES, WE'LL FIGURE IT OUT
+
+# Lync > VIC_MESSAGES > help_Dan > options > 1 > reply
+[Lync.VIC_MESSAGES.help_Dan.options.1.reply]
+Sure. I will add that to the list of things we figure out.
+
+# Lync > VIC_MESSAGES > help_Morgan > text
+[Lync.VIC_MESSAGES.help_Morgan.text]
+I am reading the binder for the last deal. The SLA line and the email you sent do not agree. Which one is true?
+
+# Lync > VIC_MESSAGES > help_Morgan > options > 0 > label
+[Lync.VIC_MESSAGES.help_Morgan.options.0.label]
+THE BINDER. I WILL CORRECT THE EMAIL
+
+# Lync > VIC_MESSAGES > help_Morgan > options > 0 > reply
+[Lync.VIC_MESSAGES.help_Morgan.options.0.reply]
+Thank you. I will note that you were honest about it.
+
+# Lync > VIC_MESSAGES > help_Morgan > options > 1 > label
+[Lync.VIC_MESSAGES.help_Morgan.options.1.label]
+THE EMAIL. THE CLIENT WAS EXPECTING IT
+
+# Lync > VIC_MESSAGES > help_Morgan > options > 1 > reply
+[Lync.VIC_MESSAGES.help_Morgan.options.1.reply]
+Then we need to change what we can do. Come see me.
+
+# Lync > VIC_MESSAGES > help_Maya > text
+[Lync.VIC_MESSAGES.help_Maya.text]
+The owner of one of your clients cried on the phone today. She is fine, it was the printer. Do you want me to send flowers? From you.
+
+# Lync > VIC_MESSAGES > help_Maya > options > 0 > label
+[Lync.VIC_MESSAGES.help_Maya.options.0.label]
+YES, PLEASE. THANK YOU
+
+# Lync > VIC_MESSAGES > help_Maya > options > 0 > reply
+[Lync.VIC_MESSAGES.help_Maya.options.0.reply]
+Done. I used the company card, do not tell Alan.
+
+# Lync > VIC_MESSAGES > help_Maya > options > 1 > label
+[Lync.VIC_MESSAGES.help_Maya.options.1.label]
+NO, I WILL CALL HER
+
+# Lync > VIC_MESSAGES > help_Maya > options > 1 > reply
+[Lync.VIC_MESSAGES.help_Maya.options.1.reply]
+That is even better. Call her before lunch.
+
+# Lync > VIC_MESSAGES > warn > text
+[Lync.VIC_MESSAGES.warn.text]
+Heads up: #%d (%s) is about to breach its SLA. That client has your number, Vic.
+
+
+# ======================= Lync > VIC_PRESENCE =======================
+# Lync > VIC_PRESENCE > meeting > 0
+[Lync.VIC_PRESENCE.meeting.0]
+IN A CLIENT CALL
+
+# Lync > VIC_PRESENCE > handover > 0
+[Lync.VIC_PRESENCE.handover.0]
+WAITING: HANDOVER
 
 
 # ======================= Review > QUOTES =======================
@@ -10719,3 +11327,829 @@ RENEWALS AND REFERRALS COME EASIER.
 # Build > INFO > sales > honesty > text
 [Build.INFO.sales.honesty.text]
 FEWER PROMISES TO KEEP AND LESS RISK OF A CLAWBACK.
+
+
+# ======================= SalesCampaign > BEAT_TEXT =======================
+# SalesCampaign > BEAT_TEXT > chamber > lynk > from
+[SalesCampaign.BEAT_TEXT.chamber.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > chamber > lynk > text
+[SalesCampaign.BEAT_TEXT.chamber.lynk.text]
+Chamber of Commerce lunch on Thursday. Rubber chicken, two hundred business cards and exactly one person who needs us. Go find them.
+
+# SalesCampaign > BEAT_TEXT > chamber > invite > speaker
+[SalesCampaign.BEAT_TEXT.chamber.invite.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > chamber > invite > text
+[SalesCampaign.BEAT_TEXT.chamber.invite.text]
+The Chamber lunch is Thursday at noon. It takes two hours, the chicken is dry and every owner in the county will be there. Wear the good tie. Someone at table six has an IT guy who is somebody's nephew.
+
+# SalesCampaign > BEAT_TEXT > chamber > invite > options > 0 > label
+[SalesCampaign.BEAT_TEXT.chamber.invite.options.0.label]
+GO TO THE LUNCH (2 HOURS)
+
+# SalesCampaign > BEAT_TEXT > chamber > invite > options > 1 > label
+[SalesCampaign.BEAT_TEXT.chamber.invite.options.1.label]
+SKIP IT
+
+# SalesCampaign > BEAT_TEXT > chamber > room > speaker
+[SalesCampaign.BEAT_TEXT.chamber.room.speaker]
+Mr. Kestrel
+
+# SalesCampaign > BEAT_TEXT > chamber > room > text
+[SalesCampaign.BEAT_TEXT.chamber.room.text]
+Kestrel Hill Realty, sixteen agents. Our whole office went down on Tuesday and the nephew was at a wedding. Can you guarantee that someone answers within the hour? Any time, any problem?
+
+# SalesCampaign > BEAT_TEXT > chamber > room > options > 0 > label
+[SalesCampaign.BEAT_TEXT.chamber.room.options.0.label]
+ONE HOUR, ANY TIME, ANY PROBLEM
+
+# SalesCampaign > BEAT_TEXT > chamber > room > options > 1 > label
+[SalesCampaign.BEAT_TEXT.chamber.room.options.1.label]
+FOUR HOURS, IN WRITING
+
+# SalesCampaign > BEAT_TEXT > chamber > room > options > 2 > label
+[SalesCampaign.BEAT_TEXT.chamber.room.options.2.label]
+TAKE HIS CARD, PROMISE TO CALL
+
+# SalesCampaign > BEAT_TEXT > chamber > res_moon > speaker
+[SalesCampaign.BEAT_TEXT.chamber.res_moon.speaker]
+Mr. Kestrel
+
+# SalesCampaign > BEAT_TEXT > chamber > res_moon > text
+[SalesCampaign.BEAT_TEXT.chamber.res_moon.text]
+That is exactly what I wanted to hear. Call me Monday with a number. (He writes 'one hour' on the back of your card and underlines it twice.)
+
+# SalesCampaign > BEAT_TEXT > chamber > res_honest > speaker
+[SalesCampaign.BEAT_TEXT.chamber.res_honest.speaker]
+Mr. Kestrel
+
+# SalesCampaign > BEAT_TEXT > chamber > res_honest > text
+[SalesCampaign.BEAT_TEXT.chamber.res_honest.text]
+Four hours, in writing. Most of you people promise me the moon. Send me a proposal. Morgan will be glad you did it that way.
+
+# SalesCampaign > BEAT_TEXT > chamber > res_card > speaker
+[SalesCampaign.BEAT_TEXT.chamber.res_card.speaker]
+Mr. Kestrel
+
+# SalesCampaign > BEAT_TEXT > chamber > res_card > text
+[SalesCampaign.BEAT_TEXT.chamber.res_card.text]
+Fine. I have eleven cards from this lunch and one nephew. Call me and make it quick.
+
+# SalesCampaign > BEAT_TEXT > paws > lynk > from
+[SalesCampaign.BEAT_TEXT.paws.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > paws > lynk > text
+[SalesCampaign.BEAT_TEXT.paws.lynk.text]
+Dr. Brandt from Paws and Claws sat next to me at the lunch and asked for you by name. Their server beeps every ten minutes and nobody knows why.
+
+# SalesCampaign > BEAT_TEXT > paws > offer > speaker
+[SalesCampaign.BEAT_TEXT.paws.offer.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > paws > offer > text
+[SalesCampaign.BEAT_TEXT.paws.offer.text]
+Paws and Claws Veterinary wants someone to look at their office. Dr. Brandt is a talker and it is a real visit, fifty minutes each way. Use the front door, the van is out front, and keep your eyes open in the closet. Take the lead?
+
+# SalesCampaign > BEAT_TEXT > paws > offer > options > 0 > label
+[SalesCampaign.BEAT_TEXT.paws.offer.options.0.label]
+TAKE THE LEAD
+
+# SalesCampaign > BEAT_TEXT > paws > offer > options > 1 > label
+[SalesCampaign.BEAT_TEXT.paws.offer.options.1.label]
+PASS
+
+# SalesCampaign > BEAT_TEXT > paws > found > speaker
+[SalesCampaign.BEAT_TEXT.paws.found.speaker]
+You notice something
+
+# SalesCampaign > BEAT_TEXT > paws > found > text
+[SalesCampaign.BEAT_TEXT.paws.found.text]
+%s What do you do with it?
+
+# SalesCampaign > BEAT_TEXT > paws > found > options > 0 > label
+[SalesCampaign.BEAT_TEXT.paws.found.options.0.label]
+LOG A TICKET: FREE FIX
+
+# SalesCampaign > BEAT_TEXT > paws > found > options > 1 > label
+[SalesCampaign.BEAT_TEXT.paws.found.options.1.label]
+SELL IT AS A PROJECT ($500)
+
+# SalesCampaign > BEAT_TEXT > paws > found > options > 2 > label
+[SalesCampaign.BEAT_TEXT.paws.found.options.2.label]
+KEEP IT FOR THE QUOTE
+
+# SalesCampaign > BEAT_TEXT > paws > res_ticket > speaker
+[SalesCampaign.BEAT_TEXT.paws.res_ticket.speaker]
+Dr. Brandt
+
+# SalesCampaign > BEAT_TEXT > paws > res_ticket > text
+[SalesCampaign.BEAT_TEXT.paws.res_ticket.text]
+You logged a ticket before you even had a contract? Dan will look at it this week. I will tell everyone at the clinic association about you.
+
+# SalesCampaign > BEAT_TEXT > paws > res_project > speaker
+[SalesCampaign.BEAT_TEXT.paws.res_project.speaker]
+Dr. Brandt
+
+# SalesCampaign > BEAT_TEXT > paws > res_project > text
+[SalesCampaign.BEAT_TEXT.paws.res_project.text]
+A project quote, the same day? That is the kind of salesman I like. Put it on the pile with the managed service.
+
+# SalesCampaign > BEAT_TEXT > paws > res_note > speaker
+[SalesCampaign.BEAT_TEXT.paws.res_note.speaker]
+Dr. Brandt
+
+# SalesCampaign > BEAT_TEXT > paws > res_note > text
+[SalesCampaign.BEAT_TEXT.paws.res_note.text]
+You wrote it down and said nothing? Sneaky. I like it. Send me a number that covers all of it.
+
+# SalesCampaign > BEAT_TEXT > xpwave > lynk > from
+[SalesCampaign.BEAT_TEXT.xpwave.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > xpwave > lynk > text
+[SalesCampaign.BEAT_TEXT.xpwave.lynk.text]
+The XP news is finally reaching the people with beige towers. Three of them phoned this morning. Quote what we can deliver; Dan has a list as long as his arm.
+
+# SalesCampaign > BEAT_TEXT > xpwave > info > speaker
+[SalesCampaign.BEAT_TEXT.xpwave.info.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > xpwave > info > text
+[SalesCampaign.BEAT_TEXT.xpwave.info.text]
+Windows XP stops getting patches on April 8 and every owner with a beige tower just discovered it. Three desktop shops called this week. Price against what Alan will sign and what Dan can install, in that order.
+
+# SalesCampaign > BEAT_TEXT > undercut > lynk > from
+[SalesCampaign.BEAT_TEXT.undercut.lynk.from]
+Alan
+
+# SalesCampaign > BEAT_TEXT > undercut > lynk > text
+[SalesCampaign.BEAT_TEXT.undercut.lynk.text]
+ByteBrothers was seen in the parking lot of your last quote. Do not do anything stupid with the price.
+
+# SalesCampaign > BEAT_TEXT > undercut > card > speaker
+[SalesCampaign.BEAT_TEXT.undercut.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > undercut > card > text
+[SalesCampaign.BEAT_TEXT.undercut.card.text]
+ByteBrothers undercut your quote at %s. Twenty percent under ours, and I hear their rep has a nicer tie than you. Match it, sell them on the value, or let it go?
+
+# SalesCampaign > BEAT_TEXT > undercut > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.undercut.card.options.0.label]
+MATCH THEIR PRICE (20% OFF)
+
+# SalesCampaign > BEAT_TEXT > undercut > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.undercut.card.options.1.label]
+SELL THE VALUE (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > undercut > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.undercut.card.options.2.label]
+WALK AWAY
+
+# SalesCampaign > BEAT_TEXT > undercut > res_match > speaker
+[SalesCampaign.BEAT_TEXT.undercut.res_match.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > undercut > res_match > text
+[SalesCampaign.BEAT_TEXT.undercut.res_match.text]
+You matched them. Twenty percent off. I hope somebody enjoys the logo, because the margin is gone.
+
+# SalesCampaign > BEAT_TEXT > undercut > res_value_win > speaker
+[SalesCampaign.BEAT_TEXT.undercut.res_value_win.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > undercut > res_value_win > text
+[SalesCampaign.BEAT_TEXT.undercut.res_value_win.text]
+You walked them through the backups and the response numbers and they signed at the full fee. That is the Vic I hired.
+
+# SalesCampaign > BEAT_TEXT > undercut > res_value_lose > speaker
+[SalesCampaign.BEAT_TEXT.undercut.res_value_lose.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > undercut > res_value_lose > text
+[SalesCampaign.BEAT_TEXT.undercut.res_value_lose.text]
+They like you, but the price won. ByteBrothers took %s. It happens.
+
+# SalesCampaign > BEAT_TEXT > undercut > res_walk > speaker
+[SalesCampaign.BEAT_TEXT.undercut.res_walk.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > undercut > res_walk > text
+[SalesCampaign.BEAT_TEXT.undercut.res_walk.text]
+Good. A deal that loses money is worse than a deal we lose. Next one.
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > card > speaker
+[SalesCampaign.BEAT_TEXT.sla_p1.card.speaker]
+{ops}
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > card > text
+[SalesCampaign.BEAT_TEXT.sla_p1.card.text]
+%s has a P1: the server is down and their contract says one hour, any time. Dan is on site elsewhere and the queue is full. They are not calling the desk, they are calling you.
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.sla_p1.card.options.0.label]
+OWN IT: CALL AND STAY ON THE LINE
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.sla_p1.card.options.1.label]
+TELL THEM DAN IS ON IT
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.sla_p1.card.options.2.label]
+ASK DAN TO DROP EVERYTHING
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_own > speaker
+[SalesCampaign.BEAT_TEXT.sla_p1.res_own.speaker]
+{ops}
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_own > text
+[SalesCampaign.BEAT_TEXT.sla_p1.res_own.text]
+You stayed on the phone with %s for forty minutes. They did not get a fix any faster, but they know where the buck stops. Keep it up.
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_blame > speaker
+[SalesCampaign.BEAT_TEXT.sla_p1.res_blame.speaker]
+{ops}
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_blame > text
+[SalesCampaign.BEAT_TEXT.sla_p1.res_blame.text]
+You told %s the queue is busy. They know it is busy, they saw the van. The next time you promise an hour, check with me first.
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_dan > speaker
+[SalesCampaign.BEAT_TEXT.sla_p1.res_dan.speaker]
+Dan
+
+# SalesCampaign > BEAT_TEXT > sla_p1 > res_dan > text
+[SalesCampaign.BEAT_TEXT.sla_p1.res_dan.text]
+Fine, I dropped the printer job and drove over. %s is fixed. I am putting one hour response in the planning notes with your name next to it.
+
+# SalesCampaign > BEAT_TEXT > qbr > card > speaker
+[SalesCampaign.BEAT_TEXT.qbr.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > qbr > card > text
+[SalesCampaign.BEAT_TEXT.qbr.card.text]
+%s is your best account and they are %d%% happy. A business review is where renewals are won, and where I would sell them the backup service. Do it at their office if you can.
+
+# SalesCampaign > BEAT_TEXT > qbr > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.qbr.card.options.0.label]
+GO TO THEIR OFFICE (%d MIN EACH WAY)
+
+# SalesCampaign > BEAT_TEXT > qbr > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.qbr.card.options.1.label]
+RUN IT BY PHONE (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > qbr > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.qbr.card.options.2.label]
+SEND THE REPORT, SKIP THE MEETING
+
+# SalesCampaign > BEAT_TEXT > crypto > card > speaker
+[SalesCampaign.BEAT_TEXT.crypto.card.speaker]
+Atty. Spence
+
+# SalesCampaign > BEAT_TEXT > crypto > card > text
+[SalesCampaign.BEAT_TEXT.crypto.card.text]
+It hit us at nine this morning. Every file on the paralegal's PC is locked and there is a countdown on the screen. I called you first, before my wife. Please tell me you are going to fix this.
+
+# SalesCampaign > BEAT_TEXT > crypto > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.crypto.card.options.0.label]
+I AM ON MY WAY. DO NOT PAY ANYONE
+
+# SalesCampaign > BEAT_TEXT > crypto > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.crypto.card.options.1.label]
+LET'S SECURE YOU FOR ANOTHER YEAR
+
+# SalesCampaign > BEAT_TEXT > crypto > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.crypto.card.options.2.label]
+THAT IS WHAT MANAGED BACKUP IS FOR
+
+# SalesCampaign > BEAT_TEXT > crypto > res_comfort > speaker
+[SalesCampaign.BEAT_TEXT.crypto.res_comfort.speaker]
+Atty. Spence
+
+# SalesCampaign > BEAT_TEXT > crypto > res_comfort > text
+[SalesCampaign.BEAT_TEXT.crypto.res_comfort.text]
+Thank you. I do not know what I would do without you people. I will not forget that you picked up the phone.
+
+# SalesCampaign > BEAT_TEXT > crypto > res_renew > speaker
+[SalesCampaign.BEAT_TEXT.crypto.res_renew.speaker]
+Atty. Spence
+
+# SalesCampaign > BEAT_TEXT > crypto > res_renew > text
+[SalesCampaign.BEAT_TEXT.crypto.res_renew.text]
+You want to talk renewal while my files are locked? ...Actually, yes. Let us do it now, before I change my mind.
+
+# SalesCampaign > BEAT_TEXT > slip > card > speaker
+[SalesCampaign.BEAT_TEXT.slip.card.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > slip > card > text
+[SalesCampaign.BEAT_TEXT.slip.card.text]
+My partners want to sign %s, but not before July 1. The budget year starts then. Can you hold the price?
+
+# SalesCampaign > BEAT_TEXT > slip > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.slip.card.options.0.label]
+SIGN BY FRIDAY: 10% OFF
+
+# SalesCampaign > BEAT_TEXT > slip > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.slip.card.options.1.label]
+FINE, JULY IT IS
+
+# SalesCampaign > BEAT_TEXT > slip > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.slip.card.options.2.label]
+THE PRICE GOES UP ON JULY 1
+
+# SalesCampaign > BEAT_TEXT > slip > res_discount > speaker
+[SalesCampaign.BEAT_TEXT.slip.res_discount.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > slip > res_discount > text
+[SalesCampaign.BEAT_TEXT.slip.res_discount.text]
+Ten percent off and a signature by Friday? Done. Send the paperwork.
+
+# SalesCampaign > BEAT_TEXT > slip > res_wait > speaker
+[SalesCampaign.BEAT_TEXT.slip.res_wait.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > slip > res_wait > text
+[SalesCampaign.BEAT_TEXT.slip.res_wait.text]
+Thank you for understanding. Call me on the second of July.
+
+# SalesCampaign > BEAT_TEXT > slip > res_bluff_win > speaker
+[SalesCampaign.BEAT_TEXT.slip.res_bluff_win.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > slip > res_bluff_win > text
+[SalesCampaign.BEAT_TEXT.slip.res_bluff_win.text]
+I did not know prices go up on the first. All right, we sign today.
+
+# SalesCampaign > BEAT_TEXT > slip > res_bluff_lose > speaker
+[SalesCampaign.BEAT_TEXT.slip.res_bluff_lose.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > slip > res_bluff_lose > text
+[SalesCampaign.BEAT_TEXT.slip.res_bluff_lose.text]
+We talked to ByteBrothers and their price does not go up on the first. We are going with them. No hard feelings.
+
+# SalesCampaign > BEAT_TEXT > rise > lynk > from
+[SalesCampaign.BEAT_TEXT.rise.lynk.from]
+Alan
+
+# SalesCampaign > BEAT_TEXT > rise > lynk > text
+[SalesCampaign.BEAT_TEXT.rise.lynk.text]
+Our prices have not moved in two years. Our costs have. Tell Garrison I said so, nicely.
+
+# SalesCampaign > BEAT_TEXT > rise > card > speaker
+[SalesCampaign.BEAT_TEXT.rise.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > rise > card > text
+[SalesCampaign.BEAT_TEXT.rise.card.text]
+Renewal season. The price rise letter has to go out 60 days before the contract date, so anyone renewing from week 15 on is covered by what you pick now. Raise everybody eight percent, raise only the clients who love us, or hold the line? Alan wants the margin. I want the logos.
+
+# SalesCampaign > BEAT_TEXT > rise > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.rise.card.options.0.label]
+RAISE EVERYONE 8%
+
+# SalesCampaign > BEAT_TEXT > rise > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.rise.card.options.1.label]
+RAISE ONLY THE HAPPY ONES (70%+)
+
+# SalesCampaign > BEAT_TEXT > rise > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.rise.card.options.2.label]
+HOLD THE PRICES
+
+# SalesCampaign > BEAT_TEXT > rise > res_all > speaker
+[SalesCampaign.BEAT_TEXT.rise.res_all.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > rise > res_all > text
+[SalesCampaign.BEAT_TEXT.rise.res_all.text]
+Everyone. Good. Some will complain and some will leave, and the ones who leave were the ones who cost us money.
+
+# SalesCampaign > BEAT_TEXT > rise > res_happy > speaker
+[SalesCampaign.BEAT_TEXT.rise.res_happy.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > rise > res_happy > text
+[SalesCampaign.BEAT_TEXT.rise.res_happy.text]
+Only the ones who love us. I like that. We keep the logos and Alan keeps the margin. Everybody is a little bit happy.
+
+# SalesCampaign > BEAT_TEXT > rise > res_none > speaker
+[SalesCampaign.BEAT_TEXT.rise.res_none.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > rise > res_none > text
+[SalesCampaign.BEAT_TEXT.rise.res_none.text]
+Holding the line. Good for the renewals, I will take that. Alan will say something about costs, let him.
+
+# SalesCampaign > BEAT_TEXT > hipaa > card > speaker
+[SalesCampaign.BEAT_TEXT.hipaa.card.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > hipaa > card > text
+[SalesCampaign.BEAT_TEXT.hipaa.card.text]
+The HIPAA omnibus rule has been law since last September and our attorney says we must have a risk assessment on file. %s is in the paperwork. Are we compliant with you? Yes or no?
+
+# SalesCampaign > BEAT_TEXT > hipaa > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.hipaa.card.options.0.label]
+SELL A SECURITY REVIEW (OURS)
+
+# SalesCampaign > BEAT_TEXT > hipaa > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.hipaa.card.options.1.label]
+YES, FULLY COMPLIANT. NO WORRIES.
+
+# SalesCampaign > BEAT_TEXT > hipaa > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.hipaa.card.options.2.label]
+WE DO THE TECH PART, NOT THE POLICY
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_sell > speaker
+[SalesCampaign.BEAT_TEXT.hipaa.res_sell.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_sell > text
+[SalesCampaign.BEAT_TEXT.hipaa.res_sell.text]
+A security review with encryption on the laptops? I can show that to the auditor. Send me a price for it.
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_moon > speaker
+[SalesCampaign.BEAT_TEXT.hipaa.res_moon.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_moon > text
+[SalesCampaign.BEAT_TEXT.hipaa.res_moon.text]
+Fully compliant. That is a relief; I will tell the attorney. (Morgan reads the email and looks at the ceiling for a while.)
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_refer > speaker
+[SalesCampaign.BEAT_TEXT.hipaa.res_refer.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > hipaa > res_refer > text
+[SalesCampaign.BEAT_TEXT.hipaa.res_refer.text]
+Fair enough. I appreciate you telling me what is yours and what is not. Most vendors would have said yes.
+
+# SalesCampaign > BEAT_TEXT > logo > lynk > from
+[SalesCampaign.BEAT_TEXT.logo.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > logo > lynk > text
+[SalesCampaign.BEAT_TEXT.logo.lynk.text]
+Harborview Dental Partners has eleven offices and wants one provider. That is the biggest logo we have ever seen. Please do not mess this up.
+
+# SalesCampaign > BEAT_TEXT > logo > lynk_alan > from
+[SalesCampaign.BEAT_TEXT.logo.lynk_alan.from]
+Alan
+
+# SalesCampaign > BEAT_TEXT > logo > lynk_alan > text
+[SalesCampaign.BEAT_TEXT.logo.lynk_alan.text]
+I saw the Harborview numbers. I do not sign deals that lose money on the first invoice.
+
+# SalesCampaign > BEAT_TEXT > logo > garrison > speaker
+[SalesCampaign.BEAT_TEXT.logo.garrison.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > garrison > text
+[SalesCampaign.BEAT_TEXT.logo.garrison.text]
+Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, Vic. A logo opens doors.
+
+# SalesCampaign > BEAT_TEXT > logo > garrison > ok
+[SalesCampaign.BEAT_TEXT.logo.garrison.ok]
+WHAT DOES ALAN SAY?
+
+# SalesCampaign > BEAT_TEXT > logo > alan > speaker
+[SalesCampaign.BEAT_TEXT.logo.alan.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > alan > text
+[SalesCampaign.BEAT_TEXT.logo.alan.text]
+Thirty percent off puts that account at %d percent margin. My floor is %d. I will not sign a deal that costs us money to deliver. It is a logo, not a living.
+
+# SalesCampaign > BEAT_TEXT > logo > alan > ok
+[SalesCampaign.BEAT_TEXT.logo.alan.ok]
+I HEAR YOU BOTH
+
+# SalesCampaign > BEAT_TEXT > logo > pick > speaker
+[SalesCampaign.BEAT_TEXT.logo.pick.speaker]
+Vic Marlowe
+
+# SalesCampaign > BEAT_TEXT > logo > pick > text
+[SalesCampaign.BEAT_TEXT.logo.pick.text]
+Two owners, one account, and a prospect who wants an answer by Friday. Whose side are you on?
+
+# SalesCampaign > BEAT_TEXT > logo > pick > options > 0 > label
+[SalesCampaign.BEAT_TEXT.logo.pick.options.0.label]
+GARRISON: TAKE THE LOGO AT 30% OFF
+
+# SalesCampaign > BEAT_TEXT > logo > pick > options > 1 > label
+[SalesCampaign.BEAT_TEXT.logo.pick.options.1.label]
+ALAN: 10% OFF, LET THEM WALK
+
+# SalesCampaign > BEAT_TEXT > logo > pick > options > 2 > label
+[SalesCampaign.BEAT_TEXT.logo.pick.options.2.label]
+BROKER A SCOPED 15% (2 HOURS)
+
+# SalesCampaign > BEAT_TEXT > logo > res_garrison > speaker
+[SalesCampaign.BEAT_TEXT.logo.res_garrison.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > res_garrison > text
+[SalesCampaign.BEAT_TEXT.logo.res_garrison.text]
+Thirty percent off. Fine. I said what I said, I will remember who wanted the logo when payroll is short.
+
+# SalesCampaign > BEAT_TEXT > logo > res_alan_win > speaker
+[SalesCampaign.BEAT_TEXT.logo.res_alan_win.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > res_alan_win > text
+[SalesCampaign.BEAT_TEXT.logo.res_alan_win.text]
+You held at ten percent and they still signed? I did not think you had it in you. Alan is smiling, I think.
+
+# SalesCampaign > BEAT_TEXT > logo > res_alan_lose > speaker
+[SalesCampaign.BEAT_TEXT.logo.res_alan_lose.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > res_alan_lose > text
+[SalesCampaign.BEAT_TEXT.logo.res_alan_lose.text]
+They went to ByteBrothers. At twenty-five percent off. I told you that logo was ours. Alan, do not say anything.
+
+# SalesCampaign > BEAT_TEXT > logo > res_broker_win > speaker
+[SalesCampaign.BEAT_TEXT.logo.res_broker_win.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > res_broker_win > text
+[SalesCampaign.BEAT_TEXT.logo.res_broker_win.text]
+You put both of us in a room, scoped it first and they signed. Alan gave up three points and I gave up three. That is how it is done.
+
+# SalesCampaign > BEAT_TEXT > logo > res_broker_lose > speaker
+[SalesCampaign.BEAT_TEXT.logo.res_broker_lose.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > logo > res_broker_lose > text
+[SalesCampaign.BEAT_TEXT.logo.res_broker_lose.text]
+Two owners and no answer by Friday. They signed a deal with somebody who could say yes. We lost the logo and the afternoon.
+
+# SalesCampaign > BEAT_TEXT > refund > card > speaker
+[SalesCampaign.BEAT_TEXT.refund.card.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > refund > card > text
+[SalesCampaign.BEAT_TEXT.refund.card.text]
+%s: your handover promised us a one hour response and we have waited two days. We want a refund of the last month, $%d, or we walk. I am not angry. I am done.
+
+# SalesCampaign > BEAT_TEXT > refund > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.refund.card.options.0.label]
+REFUND THE MONTH (-$%d)
+
+# SalesCampaign > BEAT_TEXT > refund > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.refund.card.options.1.label]
+OFFER HALF A MONTH AND A RESET
+
+# SalesCampaign > BEAT_TEXT > refund > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.refund.card.options.2.label]
+REFUSE: THE CONTRACT SAYS SO
+
+# SalesCampaign > BEAT_TEXT > refund > res_refund > speaker
+[SalesCampaign.BEAT_TEXT.refund.res_refund.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > refund > res_refund > text
+[SalesCampaign.BEAT_TEXT.refund.res_refund.text]
+A refund and an apology. That is more than I expected from a salesman. We will give you another chance.
+
+# SalesCampaign > BEAT_TEXT > refund > res_credit_win > speaker
+[SalesCampaign.BEAT_TEXT.refund.res_credit_win.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > refund > res_credit_win > text
+[SalesCampaign.BEAT_TEXT.refund.res_credit_win.text]
+Half a month and a meeting where Dan and Morgan explain what went wrong? That I can accept.
+
+# SalesCampaign > BEAT_TEXT > refund > res_credit_lose > speaker
+[SalesCampaign.BEAT_TEXT.refund.res_credit_lose.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > refund > res_credit_lose > text
+[SalesCampaign.BEAT_TEXT.refund.res_credit_lose.text]
+A credit is not a refund. We will think about whether we renew. You have not heard the last of this.
+
+# SalesCampaign > BEAT_TEXT > refund > res_refuse > speaker
+[SalesCampaign.BEAT_TEXT.refund.res_refuse.speaker]
+%s
+
+# SalesCampaign > BEAT_TEXT > refund > res_refuse > text
+[SalesCampaign.BEAT_TEXT.refund.res_refuse.text]
+The contract says no refunds. It also says one hour response. Interesting. We will be calling our attorney.
+
+# SalesCampaign > BEAT_TEXT > recruit > card > speaker
+[SalesCampaign.BEAT_TEXT.recruit.card.speaker]
+Trent Dagmar
+
+# SalesCampaign > BEAT_TEXT > recruit > card > text
+[SalesCampaign.BEAT_TEXT.recruit.card.text]
+Vic. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.
+
+# SalesCampaign > BEAT_TEXT > recruit > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.recruit.card.options.0.label]
+GIVE NOTICE: I AM TAKING THE JOB
+
+# SalesCampaign > BEAT_TEXT > recruit > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.recruit.card.options.1.label]
+TELL GARRISON, ASK FOR A RAISE
+
+# SalesCampaign > BEAT_TEXT > recruit > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.recruit.card.options.2.label]
+KEEP BOTH DOORS OPEN, SAY NOTHING
+
+# SalesCampaign > BEAT_TEXT > recruit > card > options > 3 > label
+[SalesCampaign.BEAT_TEXT.recruit.card.options.3.label]
+NO THANKS. I AM LOYAL TO PIXEL.
+
+# SalesCampaign > BEAT_TEXT > recruit > res_leave > speaker
+[SalesCampaign.BEAT_TEXT.recruit.res_leave.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > recruit > res_leave > text
+[SalesCampaign.BEAT_TEXT.recruit.res_leave.text]
+I am sorry to hear it. Finish the quarter strong. And I will expect your clients to stay with us, not follow you down the road.
+
+# SalesCampaign > BEAT_TEXT > recruit > res_counter_yes > speaker
+[SalesCampaign.BEAT_TEXT.recruit.res_counter_yes.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > recruit > res_counter_yes > text
+[SalesCampaign.BEAT_TEXT.recruit.res_counter_yes.text]
+ByteBrothers called you? Of course they did. You have been the best thing to happen to this company in a year. I can do one hundred more a week and a title. Stay.
+
+# SalesCampaign > BEAT_TEXT > recruit > res_counter_no > speaker
+[SalesCampaign.BEAT_TEXT.recruit.res_counter_no.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > recruit > res_counter_no > text
+[SalesCampaign.BEAT_TEXT.recruit.res_counter_no.text]
+I would love to match them. I cannot, not this quarter. I hope you understand. The door is not locked.
+
+# SalesCampaign > BEAT_TEXT > recruit > res_both_caught > speaker
+[SalesCampaign.BEAT_TEXT.recruit.res_both_caught.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > recruit > res_both_caught > text
+[SalesCampaign.BEAT_TEXT.recruit.res_both_caught.text]
+Trent Dagmar mentioned at the Chamber breakfast that you were on his shortlist. He thought I knew. I did not know. We will talk about trust.
+
+# SalesCampaign > BEAT_TEXT > recruit > res_decline > speaker
+[SalesCampaign.BEAT_TEXT.recruit.res_decline.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > recruit > res_decline > text
+[SalesCampaign.BEAT_TEXT.recruit.res_decline.text]
+You said no to ByteBrothers? To their face? Vic, I will not forget that. Neither will Alan, though he will never say so.
+
+# SalesCampaign > BEAT_TEXT > diligence > lynk > from
+[SalesCampaign.BEAT_TEXT.diligence.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > diligence > lynk > text
+[SalesCampaign.BEAT_TEXT.diligence.lynk.text]
+Summit Managed Holdings is looking at buying us. Their auditor comes Thursday. Be charming and be accurate, in that order if you must.
+
+# SalesCampaign > BEAT_TEXT > diligence > card > speaker
+[SalesCampaign.BEAT_TEXT.diligence.card.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > card > text
+[SalesCampaign.BEAT_TEXT.diligence.card.text]
+Mr. Marlowe, I am auditing the book you sold for Summit Managed Holdings. Three questions: how many clients left in the first 90 days, how many commissions were clawed back, and how many promises in the handover binders were not kept? I have the paperwork. I would like your version.
+
+# SalesCampaign > BEAT_TEXT > diligence > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.diligence.card.options.0.label]
+TELL HER ALL (%d LEFT, %d CLAWED)
+
+# SalesCampaign > BEAT_TEXT > diligence > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.diligence.card.options.1.label]
+SAY THE NUMBERS ARE FINE
+
+# SalesCampaign > BEAT_TEXT > diligence > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.diligence.card.options.2.label]
+SEND HER TO MORGAN AND ALAN
+
+# SalesCampaign > BEAT_TEXT > diligence > res_disclose_clean > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_disclose_clean.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_disclose_clean > text
+[SalesCampaign.BEAT_TEXT.diligence.res_disclose_clean.text]
+That matches the binders to the dollar. A clean book is rare. Summit pays an earn-out on retention and yours looks good.
+
+# SalesCampaign > BEAT_TEXT > diligence > res_disclose > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_disclose.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_disclose > text
+[SalesCampaign.BEAT_TEXT.diligence.res_disclose.text]
+You told me the bad numbers before I found them. I note that. The earn-out will be tied to retention, so the clients you still have matter a great deal.
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_clean > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_clean.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_clean > text
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_clean.text]
+The numbers are fine, you say, and they are. I had expected more drama from a salesman.
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_caught > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_caught.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_caught > text
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_caught.text]
+Mr. Marlowe, your binders and your answers do not agree. I have noted it in the file and Summit will take that into account. So will Mr. Alan.
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_away > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_away.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_shade_away > text
+[SalesCampaign.BEAT_TEXT.diligence.res_shade_away.text]
+Fine, the numbers are fine. I will take your word for it. (Morgan does not.)
+
+# SalesCampaign > BEAT_TEXT > diligence > res_refer > speaker
+[SalesCampaign.BEAT_TEXT.diligence.res_refer.speaker]
+Ms. Pell
+
+# SalesCampaign > BEAT_TEXT > diligence > res_refer > text
+[SalesCampaign.BEAT_TEXT.diligence.res_refer.text]
+You send me to the delivery side. Honest, in its way. I will see what Morgan says about the promises.
+
+# SalesCampaign > BEAT_TEXT > outing > team > text
+[SalesCampaign.BEAT_TEXT.outing.team.text]
+You closed the quarter and the crew carried the load. A team night would be noticed. Come out with us?
+
+# SalesCampaign > BEAT_TEXT > outing > client > text
+[SalesCampaign.BEAT_TEXT.outing.client.text]
+%s has been on the fence. Dinner with the owner and the crew at the grill might tip it. Bring your good tie and no shop talk.
+
+# SalesCampaign > BEAT_TEXT > outing > team_done
+[SalesCampaign.BEAT_TEXT.outing.team_done]
+THE CREW FEELS SEEN: DELIVERY HAS A LITTLE ROOM FOR THE NEXT TWO WEEKS.
+
+# SalesCampaign > BEAT_TEXT > outing > client_done
+[SalesCampaign.BEAT_TEXT.outing.client_done]
+THE OWNER OF %s ENJOYED THE EVENING: THE LEAD WARMS BY %d.
+
+# SalesCampaign > BEAT_TEXT > outing > client_bad
+[SalesCampaign.BEAT_TEXT.outing.client_bad]
+THE DINNER WAS AWKWARD. THE OWNER OF %s IS NOT SOLD.
+
+# SalesCampaign > BEAT_TEXT > crunch2 > speaker
+[SalesCampaign.BEAT_TEXT.crunch2.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > crunch2 > text
+[SalesCampaign.BEAT_TEXT.crunch2.text]
+Two weeks to the end of the year's last quarter. You are at %d%% of quota. Do you want my sign-off for 20%% discounts until the end of August, or hold the price?
+
+# SalesCampaign > BEAT_TEXT > crunch2 > options > 0 > label
+[SalesCampaign.BEAT_TEXT.crunch2.options.0.label]
+YES, APPROVE 20% OFF FOR THE CRUNCH
+
+# SalesCampaign > BEAT_TEXT > crunch2 > options > 1 > label
+[SalesCampaign.BEAT_TEXT.crunch2.options.1.label]
+NO, HOLD THE PRICE
+
+# SalesCampaign > BEAT_TEXT > sandbag > label
+[SalesCampaign.BEAT_TEXT.sandbag.label]
+COUNT EXTRA DEALS NEXT QUARTER
+
+# SalesCampaign > BEAT_TEXT > sandbag > hint
+[SalesCampaign.BEAT_TEXT.sandbag.hint]
+NEEDS 60% OF QUOTA FIRST
+
+# SalesCampaign > BEAT_TEXT > endings > director
+[SalesCampaign.BEAT_TEXT.endings.director]
+YOU TAKE THE SALES DIRECTOR JOB. A TEAM OF ONE REP, A BIGGER QUOTA AND GARRISON'S OLD CLIENT LIST. THE BELL IS YOURS NOW.
+
+# SalesCampaign > BEAT_TEXT > endings > stay
+[SalesCampaign.BEAT_TEXT.endings.stay]
+YOU STAY ON AS ACCOUNT MANAGER. THE BOOK YOU BUILT IS YOURS TO KEEP SAFE, AND NEXT YEAR'S QUOTA IS ALREADY ON YOUR DESK.
+
+# SalesCampaign > BEAT_TEXT > endings > leave
+[SalesCampaign.BEAT_TEXT.endings.leave]
+YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS GET A PHONE CALL FROM YOU ON MONDAY. SOME OF THEM ANSWER.
+
+# SalesCampaign > BEAT_TEXT > endings > leave_followed
+[SalesCampaign.BEAT_TEXT.endings.leave_followed]
+YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS YOU LOOKED AFTER FOLLOW YOU, ONE PHONE CALL AT A TIME. GARRISON SENDS A BOTTLE OF SOMETHING AND A LAWYER'S LETTER.
+
+# SalesCampaign > BEAT_TEXT > endings > leave_alone
+[SalesCampaign.BEAT_TEXT.endings.leave_alone]
+YOU TAKE YOUR CARD FILE AND YOUR COFFEE MUG TO BYTEBROTHERS. THE CLIENTS GET A PHONE CALL FROM YOU ON MONDAY. NOBODY ANSWERS. YOU HAD PROMISED THEM A LOT.
+
+# SalesCampaign > BEAT_TEXT > endings > rollup
+[SalesCampaign.BEAT_TEXT.endings.rollup]
+SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LEAD WITH AN EARN-OUT OF $%d TIED TO HOW MANY OF YOUR CLIENTS STAY. KEEP THE PROMISES YOU MADE.
+
+# SalesCampaign > BEAT_TEXT > endings > let_go
+[SalesCampaign.BEAT_TEXT.endings.let_go]
+YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.

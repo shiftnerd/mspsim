@@ -1397,12 +1397,17 @@ func _free_visit(pick: String, c: int) -> void:
 
 
 # a business review (qbr) or a pitch to a prospect, at their own office
-func start_visit(c: int, kind: String) -> void:
+func start_visit(c: int, kind: String, stand_in := false) -> void:
 	if active or not has_site(c):
 		return
 	visit_kind = kind
-	visit_prospect = kind == "pitch"
+	visit_prospect = kind == "pitch" or stand_in  # stand_in: a book client with no site of its own meets you in a b skin office
 	_free_visit("go", c)
+
+
+# the owner meeting of this visit: a discovery visit (the sales campaign's Paws and Claws) talks like a pitch
+func _meeting_row() -> Dictionary:
+	return MEETINGS.get("pitch" if visit_kind == "discovery" else visit_kind, {})
 
 
 # freeze the office while you are away, remembering how it was (Free Play keeps its own settings)
@@ -1563,7 +1568,7 @@ func _host_prefix(c: int, _skin: String) -> String:
 
 
 func _owner_name(c: int) -> String:
-	if Campaign.mode == "sales" and visit_prospect and SalesCampaign.visit_owner() != "":
+	if Campaign.mode == "sales" and (visit_prospect or visit_kind == "qbr") and SalesCampaign.visit_owner() != "":
 		return SalesCampaign.visit_owner()  # the lead's own owner, not the client of that site type
 	return str(Msp.CLIENTS[c].contact)
 
@@ -1632,6 +1637,9 @@ func inspect(obj: String) -> void:
 
 
 func _found(f: Dictionary) -> void:
+	if Campaign.mode == "sales" and visit_kind == "discovery":
+		SalesCampaign.discovery_found(f)  # a prospect's problem: log it, sell it or keep it for the quote
+		return
 	var options := [{"label": "LOG A TICKET", "id": "ticket"}]
 	if Campaign.books_active() and str(f.get("project", "")) != "":
 		options.append({"label": "SELL IT AS A PROJECT", "id": "project"})
@@ -1694,7 +1702,7 @@ func _missed_follow_up() -> void:
 
 # ---- the meeting with the owner (a business review or a pitch)
 func _meeting() -> void:
-	var mt: Dictionary = MEETINGS.get(visit_kind, {})
+	var mt: Dictionary = _meeting_row()
 	if mt.is_empty():
 		return
 	var options := []
@@ -1710,12 +1718,15 @@ func _meeting() -> void:
 
 func _meeting_answer(id: String) -> void:
 	var c := _site_client()
-	var mt: Dictionary = MEETINGS.get(visit_kind, {})
+	var mt: Dictionary = _meeting_row()
 	var text := ""
 	for o in mt.get("options", []):
 		if str(o.id) == id:
 			text = str(o.text)
 	_met = true
+	if visit_kind == "qbr" and Campaign.mode == "sales":
+		SalesCampaign.qbr_answer(id, text)  # the sales campaign scores the review of a book client itself
+		return
 	if visit_kind == "qbr":
 		match id:
 			"numbers":
@@ -1743,7 +1754,7 @@ func _meeting_answer(id: String) -> void:
 						"id": "patching" if Projects.has_service(c, "backup") else "backup"
 					}
 				)
-	elif visit_kind == "pitch":
+	elif visit_kind == "pitch" or visit_kind == "discovery":
 		if Campaign.mode == "sales":
 			SalesCampaign.pitch_answer(id, text)  # the sales campaign scores the pitch itself
 			return

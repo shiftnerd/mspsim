@@ -198,6 +198,105 @@ func _ready() -> void:
 	reset()
 
 
+# ---- Vic's Lynk (sales campaign, C3): the coworkers write to the account manager --------------------------------
+const DEFAULT_VIC_MESSAGES := {
+	"lunch": {
+		"text": "Lunch? A few of us are grabbing sandwiches. No shop talk. Okay, a little shop talk.",
+		"options": [
+			{"label": "SURE, LET'S GO", "social": 2, "reply": "Great, see you there!"},
+			{"label": "CAN'T, I HAVE A CALL", "social": 0, "reply": "No worries, next time."},
+		],
+	},
+	"phones": {
+		"text": "One of your new clients keeps calling my desk because someone gave them my number. Can you call them back and say who to ring?",
+		"options": [
+			{"label": "SURE, SORRY ABOUT THAT", "social": 2, "reply": "Thanks, you are the best."},
+			{"label": "THEY LIKE YOU, KEEP THEM HAPPY", "social": -1, "reply": "Okay... I will give them the number of the desk."},
+		],
+	},
+	"help": {
+		"text": "Sanity check before you quote: can we really promise a one hour response to a twenty seat shop this month?",
+		"options": [
+			{"label": "NO. I WILL QUOTE FOUR HOURS", "social": 2, "reply": "Thank you. That is what the crew can honestly do."},
+			{"label": "SURE, WE WILL MANAGE", "social": -1, "reply": "Sure. Sure. Put it in writing for Morgan."},
+		],
+	},
+	"thanks": {"text": "Hey, thanks for putting the real SLA in the handover. It makes a difference.", "options": []},
+	"lunch_Garrison": {
+		"text": "Lunch with a prospect? I am taking someone to the grill and I want you across from them. Company card, I promise.",
+		"options": [
+			{"label": "SURE, LET'S GO", "social": 2, "reply": "Great, bring the good tie."},
+			{"label": "CAN'T, I HAVE A QUOTE DUE", "social": 0, "reply": "No worries. I will tell them you said hi."},
+		],
+	},
+	"phones_Garrison": {
+		"text": "A prospect wants a call back and I am stuck in a meeting. Say we are on it and give them a number that sounds like a price.",
+		"options": [
+			{"label": "SURE", "social": 2, "reply": "Thanks, you are the best."},
+			{"label": "I DON'T QUOTE UNTIL I KNOW THE SCOPE", "social": -1, "reply": "Fair, Vic. Fair. I will step out."},
+		],
+	},
+	"help_Garrison": {
+		"text": "ByteBrothers just posted a price list. Can you look at it and tell me where they are lying?",
+		"options": [
+			{"label": "TAKE A LOOK AT IT", "social": 2, "reply": "Perfect. That is why I pay you."},
+			{"label": "TOO BUSY RIGHT NOW", "social": -1, "reply": "Sure. No problem. I will ask Alan. He will tell me everything wrong."},
+		],
+	},
+	"lunch_Alan": {
+		"text": "Lunch? I am ordering sandwiches. We need to talk about the discounts. Briefly. With pickles.",
+		"options": [
+			{"label": "SURE, LET'S GO", "social": 2, "reply": "Good. I ordered extra pickles."},
+			{"label": "CAN'T, I AM WITH A CLIENT", "social": 0, "reply": "Fine. I will leave one in the fridge."},
+		],
+	},
+	"phones_Alan": {
+		"text": "I do not call clients. You call clients. Acme's office manager wants a quote on a printer. Go.",
+		"options": [
+			{"label": "SURE", "social": 2, "reply": "Thanks. That saves me twenty minutes."},
+			{"label": "SORRY, CAN'T", "social": -1, "reply": "Okay... I will do it after the invoices."},
+		],
+	},
+	"help_Alan": {
+		"text": "Question: what is the margin on the quote you sent yesterday? Not what you told Garrison. What is it?",
+		"options": [
+			{"label": "I'LL SEND YOU THE NUMBERS", "social": 2, "reply": "Good. That is all I wanted."},
+			{"label": "IT IS FINE, ALAN", "social": -1, "reply": "'Fine' is not a number. I will look it up myself."},
+		],
+	},
+	"help_Dan": {
+		"text": "Quick one: the new client says they want 'everything monitored'. What does that mean in dollars? I need to size it.",
+		"options": [
+			{"label": "I WILL FIND OUT BEFORE I QUOTE", "social": 2, "reply": "Thanks. Ask them how many servers, not how many dreams."},
+			{"label": "JUST SAY YES, WE'LL FIGURE IT OUT", "social": -1, "reply": "Sure. I will add that to the list of things we figure out."},
+		],
+	},
+	"help_Morgan": {
+		"text": "I am reading the binder for the last deal. The SLA line and the email you sent do not agree. Which one is true?",
+		"options": [
+			{"label": "THE BINDER. I WILL CORRECT THE EMAIL", "social": 2, "reply": "Thank you. I will note that you were honest about it."},
+			{"label": "THE EMAIL. THE CLIENT WAS EXPECTING IT", "social": -1, "reply": "Then we need to change what we can do. Come see me."},
+		],
+	},
+	"help_Maya": {
+		"text": "The owner of one of your clients cried on the phone today. She is fine, it was the printer. Do you want me to send flowers? From you.",
+		"options": [
+			{"label": "YES, PLEASE. THANK YOU", "social": 2, "reply": "Done. I used the company card, do not tell Alan."},
+			{"label": "NO, I WILL CALL HER", "social": 1, "reply": "That is even better. Call her before lunch."},
+		],
+	},
+	"warn": {"text": "Heads up: #%d (%s) is about to breach its SLA. That client has your number, Vic."},
+}
+var VIC_MESSAGES: Dictionary = DEFAULT_VIC_MESSAGES.duplicate(true)
+const DEFAULT_VIC_PRESENCE := {
+	"meeting": ["IN A CLIENT CALL", "red"],
+	"handover": ["WAITING: HANDOVER", "amber"],
+	"dan_busy": ["QUEUE IS FULL", "red"],
+	"news": ["ON THE PHONE", "red"],
+}
+var VIC_PRESENCE: Dictionary = DEFAULT_VIC_PRESENCE.duplicate(true)
+
+
 func reset() -> void:
 	chats = {}
 	unread = {}
@@ -238,7 +337,22 @@ func presence(who: String) -> Array:
 			else ["OFFLINE", "grey"]
 		)
 	var kind := str(st.legs[0].kind) if not st.legs.is_empty() else "work"
+	if Campaign.mode == "sales":
+		var vp := _vic_presence(who, kind)
+		if not vp.is_empty():
+			return vp
 	return KIND_PRESENCE.get(kind, ["AVAILABLE", "green"])
+
+
+# the sales campaign's presence lines: who is waiting for you, who is swamped (C3)
+func _vic_presence(who: String, kind: String) -> Array:
+	if (who == "Morgan" or who == "Dan") and SalesCampaign.pending_handover != 0 and kind in ["meeting", "work"]:
+		return VIC_PRESENCE.handover
+	if who == "Dan" and kind == "work" and Msp.open_tickets().size() >= 5:
+		return VIC_PRESENCE.dan_busy
+	if kind in ["meeting", "news"]:
+		return VIC_PRESENCE[kind]
+	return []
 
 
 func unread_total() -> int:
@@ -305,9 +419,10 @@ func incoming(forced_kind := "") -> void:
 			kind = "help"
 		else:
 			kind = "thanks"
-	var msg: Dictionary = MESSAGES[kind]
-	if MESSAGES.has(kind + "_" + who):
-		msg = MESSAGES[kind + "_" + who]
+	var table: Dictionary = VIC_MESSAGES if Campaign.mode == "sales" else MESSAGES
+	var msg: Dictionary = table.get(kind, MESSAGES[kind])
+	if table.has(kind + "_" + who):
+		msg = table[kind + "_" + who]
 	if kind == "thanks" and Social.value(who) < 25 and forced_kind == "":
 		return
 	_push(who, who, str(msg.text))
@@ -364,6 +479,9 @@ func send_action(who: String, kind: String) -> String:
 
 
 func _lend_a_hand(who: String) -> void:
+	if Campaign.mode == "sales":
+		_push(who, who, Talk.sales_answer(who))  # a coworker's view of delivery, not a ticket fix
+		return
 	if Social.is_manager(who):
 		_push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
 		return
@@ -401,6 +519,10 @@ func _helpable_ticket() -> Dictionary:
 
 
 func _boss_reply(who: String) -> String:
+	if Campaign.mode == "sales":
+		_push(who, "me", "Anything I should know about delivery?")
+		_push(who, who, Talk.sales_answer(who))
+		return "boss"
 	_push(who, "me", "Any advice?" if who == "Morgan" else "How are we doing?")
 	var text := "You are doing fine."
 	if who == "Marge":
@@ -434,6 +556,6 @@ func friend_warning() -> void:
 				_push(
 					who,
 					who,
-					"Heads up: #%d (%s) is about to breach its SLA." % [int(t.id), str(t.summary)]
+					(str(VIC_MESSAGES.warn.text) if Campaign.mode == "sales" else "Heads up: #%d (%s) is about to breach its SLA.") % [int(t.id), str(t.summary)]
 				)
 				return

@@ -517,6 +517,8 @@ func invite_day() -> bool:
 		return false
 	if Campaign.mode == "owner":
 		return OWNER_WEEKS.has(Campaign.day)
+	if Campaign.mode == "sales":
+		return SalesCampaign.outing_kind() != ""  # a team night or a dinner with a prospect (sales_campaign.gd)
 	return TECH_DAYS.has(Campaign.day)
 
 
@@ -654,6 +656,8 @@ func maybe_invite() -> void:
 			"The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game."
 			% cost_range()
 		)
+	if Campaign.mode == "sales":
+		text = SalesCampaign.outing_text()
 	text += " " + coming_text()
 	Cards.ask(
 		_host(),
@@ -683,6 +687,9 @@ func _host() -> String:
 
 func _invite_answer(id: String) -> void:
 	if id == "yes":
+		if Campaign.mode == "sales" and SalesCampaign.outing_kind() == "client":
+			start("dinner", true, {"party": party.duplicate()})  # the client dinner: the restaurant, a prospect at the table
+			return
 		pick_game(true)
 		return
 	skipped += 1
@@ -938,6 +945,8 @@ func _finish(result: int) -> void:
 			}
 		)
 		Social.change_all(1 + result)
+		if Campaign.mode == "sales":
+			lines.append_array(SalesCampaign.outing_done(game, result))
 		if Campaign.active:
 			lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
 		else:
@@ -950,7 +959,7 @@ func _finish(result: int) -> void:
 			if game == "escape" and result >= 2:
 				Owner.speed += 0.02
 				lines.append("THEY WORK BETTER TOGETHER NOW: TEAM SPEED UP.")
-		elif Campaign.active:
+		elif Campaign.active and Campaign.mode != "sales":
 			var gain := 4.0 + 2.0 * float(result)
 			Shift.add_energy(gain)
 			lines.append("ENERGY +%d. A NIGHT OUT HELPS." % int(gain))

@@ -82,7 +82,7 @@ static func margin(q: Dictionary, lead: Dictionary = {}) -> float:
 
 static func price(lead: Dictionary, q: Dictionary) -> int:
 	var n := norm(q)
-	return int(round((float(lead.fee) + float(extras_fee(n))) * price_mult(n) * float(SalesCampaign.METHODS[str(n.method)].mrr)))
+	return int(round((float(lead.fee) + float(extras_fee(n))) * price_mult(n) * float(SalesCampaign.METHODS[str(n.method)].mrr) * (1.0 + Build.sales_fx("price"))))
 
 
 static func pain_match(lead: Dictionary, extra: String) -> bool:
@@ -107,6 +107,7 @@ static func win(lead: Dictionary, q: Dictionary) -> float:
 	for e in n.extras:
 		p += 0.04 if pain_match(lead, str(e)) else -0.015
 	p += float(ONBOARD[str(n.onboard)].win)
+	p += Build.sales_fx("win")
 	return clampf(p, 0.05, 0.92)
 
 
@@ -120,7 +121,7 @@ static func gap_parts(lead: Dictionary, q: Dictionary) -> Dictionary:
 	for e in n.extras:
 		extras += float(EXTRAS[str(e)].pts)
 	var onboard: float = float(ONBOARD[str(n.onboard)].pts)
-	var total: float = maxf(0.0, sla + extras + onboard)
+	var total: float = maxf(0.0, sla + extras + onboard + Build.sales_fx("gap"))
 	return {"sla": sla, "extras": extras, "onboard": onboard, "total": snappedf(total, 0.1)}
 
 

@@ -198,7 +198,7 @@ func _init() -> void:
 	c.day = int(first.renew_at)
 	sc.week_commission = 0
 	ret.renewal_card(first)
-	_check(cards.is_open and str(cards.speaker) == "Renewal" and cards.options.size() == 3 and "RENEW" in str(cards.options[0].label) and "REVIEW" in str(cards.options[1].label) and "RAISE" in str(cards.options[2].label), "the renewal card: renew / business review / raise the price")
+	_check(cards.is_open and str(cards.speaker) == "Renewal" and cards.options.size() == 4 and "RENEW" in str(cards.options[0].label) and "REVIEW" in str(cards.options[1].label) and "RAISE" in str(cards.options[2].label), "the renewal card: renew / business review / raise the price")
 	var hours: int = sc.slots_left()
 	cards.pick(1)
 	_check(sc.slots_left() == hours - 1 and cards.is_open and cards.options.size() == 3 and "WALK THROUGH THE NUMBERS" in str(cards.options[0].label), "the review costs an hour and reuses the owner campaign's QBR talks")

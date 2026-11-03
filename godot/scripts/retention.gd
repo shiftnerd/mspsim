@@ -7,6 +7,7 @@ extends RefCounted
 # Deals.WINDOW_WEEKS = 13 weeks and the first 30 days are Deals.NEW_CLIENT_WEEKS = 4 weeks.
 
 const Deals := preload("res://scripts/deals.gd")
+const SalesBeats := preload("res://scripts/sales_beats.gd")
 const RENEW_AFTER := 14  # weeks from signing to the first renewal (a twelve month contract, compressed)
 const CLAW := {"salary": 0.5, "balanced": 1.0, "commission": 1.0}  # the share of the commission taken back on a churn inside the window
 const CLAW_WORDS := {"salary": "HALF", "balanced": "ALL", "commission": "ALL"}
@@ -74,6 +75,7 @@ static func renew_chance(e: Dictionary, bonus := 0.0, raise_price := false) -> f
 	var p: float = 0.40 + float(entry_mood(e)) / 250.0 + 0.04 * float(kept_count(e)) - 0.06 * float(broken_count(e)) + bonus
 	if raise_price:
 		p -= 0.15
+	p += Build.sales_fx("renew") + SalesBeats.rise_penalty(e, raise_price) + float(e.get("qbr_bonus", 0.0))
 	return clampf(p, 0.10, 0.95)
 
 
@@ -116,6 +118,7 @@ static func week_tick(day: int) -> void:
 				delta += 5.0
 				Deals.note(SalesCampaign.lead_by_id(int(d.id)), "ONBOARDING SLIPPED")
 		delta -= 1.5 * float(kept_count(d))
+		delta += Build.sales_fx("churn")
 		d["churn"] = clampi(int(round(float(d.get("churn", 10)) + delta)), 0, 100)
 		var in_window: bool = day - int(d.week) <= Deals.WINDOW_WEEKS
 		if in_window:
@@ -149,7 +152,7 @@ static func leave(d: Dictionary, why: String) -> void:
 	SalesCampaign.week_clawback += claw
 	SalesCampaign.clawbacks += 1
 	SalesCampaign.clawed_total += claw
-	var qi: int = SalesCampaign.quarter_index(int(d.week))
+	var qi: int = int(d.get("qi", SalesCampaign.quarter_index(int(d.week))))
 	if str(SalesCampaign.q_result[qi]) == "":
 		SalesCampaign.q_signed[qi] = maxi(0, int(SalesCampaign.q_signed[qi]) - int(d.get("signed_mrr", d.mrr)))
 	SalesCampaign.book.erase(d)
@@ -193,6 +196,7 @@ static func new_client_for(_client: int, tid: int) -> String:
 static func renewal_card(e: Dictionary) -> void:
 	var mood: int = entry_mood(e)
 	var text := "%s: the contract is up for renewal. $%d a week, they are %d%% happy, %d promises kept, %d broken." % [str(e.name), int(e.mrr), mood, kept_count(e), broken_count(e)]
+	var visit_why: String = SalesCampaign.can_qbr_visit(e)
 	Cards.ask(
 		"Renewal",
 		text,
@@ -200,6 +204,7 @@ static func renewal_card(e: Dictionary) -> void:
 			{"label": "RENEW AS IT IS (%d%%)" % int(round(100.0 * renew_chance(e))), "id": "same"},
 			{"label": "RUN A BUSINESS REVIEW FIRST (1 HOUR)", "id": "qbr", "enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"},
 			{"label": "RAISE THE PRICE 10%% (%d%%)" % int(round(100.0 * renew_chance(e, 0.0, true))), "id": "raise"},
+			{"label": "GO TO THEIR OFFICE FOR THE REVIEW", "id": "onsite", "enabled": visit_why == "", "hint": visit_why},
 		],
 		func(id: String) -> void: renewal_pick(e, id)
 	)
@@ -211,6 +216,8 @@ static func renewal_pick(e: Dictionary, id: String) -> void:
 			if not SalesCampaign.spend(1):
 				return renewal_card(e)
 			_qbr_card(e)
+		"onsite":
+			SalesCampaign.qbr_visit(e)
 		"raise":
 			renew_roll(e, 0.0, true)
 		_:
@@ -246,6 +253,7 @@ static func renew_roll(e: Dictionary, bonus: float, raise_price: bool) -> void:
 	var r: RandomNumberGenerator = Difficulty.rng_for("renew", absi(int(e.id)) * 100 + Campaign.day)
 	var p: float = renew_chance(e, bonus, raise_price)
 	var ok: bool = r.randf() < p
+	var policy: bool = SalesBeats.rise_applies(e) and not raise_price
 	var base: bool = int(e.id) < 0
 	if ok:
 		e["renew_at"] = Campaign.day + RENEW_AFTER
@@ -260,6 +268,13 @@ static func renew_roll(e: Dictionary, bonus: float, raise_price: bool) -> void:
 			e["mrr"] = int(e.mrr) + more
 			_expand(e, more)
 			extra = " The new fee is $%d a week." % int(e.mrr)
+		elif policy:
+			var more: int = int(round(float(e.mrr) * SalesBeats.RISE_PCT))
+			e["mrr"] = int(e.mrr) + more
+			_expand(e, more)
+			if base:
+				SalesCampaign.expansion_base += more
+			extra = " The price letter takes effect: $%d a week." % int(e.mrr)
 		Social.change("Garrison", 1)
 		Cards.ask(str(e.get("who", "The owner")), "We will stay another year. Thank you for sitting down with us.%s Your renewal commission is $%d." % [extra, com], [{"label": "THANK YOU", "id": "ok"}], func(_id: String) -> void: pass)
 		if not base:

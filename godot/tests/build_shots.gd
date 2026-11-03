@@ -62,6 +62,18 @@ func _process(_delta: float) -> bool:
 			cs.queue_redraw()
 		160:
 			_shot("garrison")
+			cs.setup("sales")
+			cs.confirm()  # build (the sales campaign's stat set, C3)
+			cs._panel.row = 1
+			cs._panel.set_level("negotiation", 2)
+			cs.queue_redraw()
+		180:
+			_shot("sales")
+			cs._panel.row = 5
+			cs._panel.cycle_quirk(0, 1)
+			cs.queue_redraw()
+		190:
+			_shot("sales_quirk")
 			print("DONE")
 			quit(0)
 	return false
