@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=comparison-with-itself,max-line-length
 # C5 / V2: the Dispatch board and the crew as people. Assignment by fit, stuck / overload / quit, the escalation lane,
 # capacity numbers, the board's key flow through its public functions, the narrow one-lane-at-a-time layout, save /
 # continue, an old (C4) service save, and 20 days through the real day loop with every card dismissed. Headless.

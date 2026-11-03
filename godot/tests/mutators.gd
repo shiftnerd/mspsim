@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-definitions-order
 # Mutators (roadmap R9): schema validator, neutral when none is active, every hook on the function it
 # changes, flu season never touches the player's score, the schedule (same seed = same plan, tiers, slots),
 # Free Play, saves and old saves, the brand deny-list.

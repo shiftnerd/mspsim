@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # T2: tech campaign fixes. `-- curve` prints only the reputation-by-day curves.
 
 var failures := 0

@@ -296,7 +296,7 @@ static func renew_roll(e: Dictionary, bonus: float, raise_price: bool) -> void:
 
 
 # new MRR from a price rise or an upsell counts toward the quarter
-static func _expand(e: Dictionary, more: int) -> void:
+static func _expand(_e: Dictionary, more: int) -> void:
 	var qi: int = SalesCampaign.quarter_index()
 	SalesCampaign.q_signed[qi] = int(SalesCampaign.q_signed[qi]) + more
 	SalesCampaign.week_new += more

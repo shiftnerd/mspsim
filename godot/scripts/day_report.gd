@@ -1,4 +1,5 @@
 extends CanvasLayer
+# gdlint:disable=class-definitions-order
 # The end-of-day report for the campaigns: a dimmed screen with a dark panel: a big grade and the
 # score / paycheck / reputation / cash on one side (or on top in narrow formats), the details
 # grouped under TICKETS / PEOPLE / ENERGY (the owner's books as one group), then the ending text

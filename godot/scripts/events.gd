@@ -1,5 +1,5 @@
 extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns,class-definitions-order,class-variable-name
 # The event deck (roadmap R8). One small card per quiet day, drawn in the morning with the seeded
 # `events` stream (Difficulty.rng) and shown at a random time between 10:00 and 13:30. Cards use the
 # vignette format (speaker, text, options with fx) and the vignette resolver (Story._vignette_fx);

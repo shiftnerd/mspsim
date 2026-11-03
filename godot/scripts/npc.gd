@@ -1,4 +1,5 @@
 extends Area2D
+# gdlint:disable=class-definitions-order
 # A background character that runs a routine of steps (strings). Cast members (cast_name set,
 # see world.gd) run one leg of their agenda and then ask the World for the next; others loop:
 #   walk:X (screen x)  wait:S  say:S  talk:S  use:prop  sit:Seat  stand  sip  exit:Name  sync:key:n

@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Screenshots of the career screen, the title menu with CAREER, the phone Settings and the desktop wallpaper chip
 # (needs a renderer): user://career_FORMAT_NAME.png
 #   Godot --path godot --fixed-fps 60 -s res://tests/career_shots.gd -- --format=wide|h|v

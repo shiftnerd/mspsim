@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=expression-not-assigned,max-line-length
 # C7 / V4: the rest of the service story. Each beat fires on its day with the right effects and flags, the owner-conflict arc
 # (sides and compromises), the XP wave, Heartbleed, resets and the promotion, the Iron Mule onboarding job, the cost cut, the
 # pager and the rota, the PSA cut over, the client escalation, the Summit audit and roll-up, the endings by flags and meters,

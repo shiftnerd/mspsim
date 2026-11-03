@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # C6 / V3: retention events. The crew's life events (a counter-offer, a training request, burnout, a promotion request, a quiet
 # resignation) fire from morale and workload, once per cooldown, deterministically for a seed; each is a card whose options change
 # morale, retention, wages, owner trust and quitting. Plus the weekly training budget and the end-of-day quit. Headless.

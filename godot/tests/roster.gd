@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=expression-not-assigned
 # R5 who comes along: the invitation draws a party from the roster (seeded, friends first, Morgan rarely), the
 # games read it (up to 4 bowlers, up to 5 diners, the karaoke crowd, the escape-room hint giver), every roster
 # member has a bowling row, a taste row and hints, and the invitation card names who is coming.

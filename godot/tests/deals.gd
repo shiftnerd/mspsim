@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Deals as records (C2): stage transitions and decay (a touched lead stays warm, an untouched one cools and goes cold), the quoted
 # deal ByteBrothers can steal (a seeded roll that rises with every week you leave it alone and falls with follow-ups, the same seed
 # gives the same steals), the promises list a quote makes, the risk meter and the 90 day clock that starts on a win.

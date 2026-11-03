@@ -1,5 +1,5 @@
 extends Node
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # The service manager campaign, C7 (V4): the rest of the 20 day story (docs/campaign-paths.md section 4.7), the owner conflict arc,
 # the Summit roll-up audit, the endings, and the Service-mode voices of Talk and Lynk. Every beat names the engine it uses:
 #   cards      a Cards decision with options (SCHEDULE + ARC: day, clock time, text with {day} style tokens, options with `fx`)
@@ -732,8 +732,8 @@ func apply(fx: Dictionary, id := "") -> void:
 	Service.apply_fx(rest, Service._people_scale())
 
 
-func randi_in(range_: Array, id: String) -> int:
-	return _rng(id + "n").randi_range(int(range_[0]), int(range_[1]))
+func randi_in(bounds: Array, id: String) -> int:
+	return _rng(id + "n").randi_range(int(bounds[0]), int(bounds[1]))
 
 
 # ---- sides: the owner conflict arc -------------------------------------------------------------------------------
@@ -1043,14 +1043,14 @@ func _pager(day: int) -> void:
 	Crew.add_morale(who, -2 if cost == 0 else 0)
 	var client := int(Sales.active[r.randi() % Sales.active.size()]) if not Sales.active.is_empty() else 0
 	spawn(client, "pager_issue", "after hours")
-	var P: Dictionary = TEXT.pager
+	var pg: Dictionary = TEXT.pager
 	var fair := fairness()
-	var line := str(P.fair) if fair >= 0.5 else str(P.unfair).replace("{who}", _heaviest())
+	var line := str(pg.fair) if fair >= 0.5 else str(pg.unfair).replace("{who}", _heaviest())
 	if fair < 0.5 and str(oncall.policy) == "volunteer":
 		Crew.add_retain(_heaviest(), -1)
-	var text := str(P.text).replace("{who}", who).replace("{client}", str(Msp.CLIENTS[client].name)).replace("{issue}", str(P.issues[r.randi() % P.issues.size()])).replace("{line}", line)
+	var text := str(pg.text).replace("{who}", who).replace("{client}", str(Msp.CLIENTS[client].name)).replace("{issue}", str(pg.issues[r.randi() % pg.issues.size()])).replace("{line}", line)
 	Msp.send_text("Pager", "%s was paged after hours." % who)
-	var opts := [{"label": str(P.options.home), "id": "home"}, {"label": str(P.options.keep), "id": "keep"}, {"label": str(P.options.cover), "id": "cover"}]
+	var opts := [{"label": str(pg.options.home), "id": "home"}, {"label": str(pg.options.keep), "id": "keep"}, {"label": str(pg.options.cover), "id": "cover"}]
 	Cards.ask("Dispatch (Pager)", text, opts, func(pick: String) -> void: _pager_answer(who, pick))
 
 

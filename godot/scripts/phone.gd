@@ -1,4 +1,5 @@
 extends CanvasLayer
+# gdlint:disable=class-definitions-order
 # The cell phone (2013): press P. The first time you pick iFone 5 (slate phone, iOS-style look) or Nexxus 5
 # (Android-style look); the choice is saved and can be changed in Settings. Like the computer it
 # takes over the screen (the office stays visible in a faded strip at the top). Apps: Mail (the

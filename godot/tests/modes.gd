@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-definitions-order
 # The mode registry (X8, "P0b"): Campaign.MODE_DEFS rows, the three gates crew / books / cards, identical behaviour for
 # tech, owner and sales (C1), the planned service mode present but not selectable, and no call site left on the old
 # Owner.active() gate. Headless; saves in user://test_*.

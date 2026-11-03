@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-variable-name
 # Starting conditions (roadmap R9): STANDARD changes nothing, each other condition changes exactly what it
 # should, the chip on the character select screen, saves and old saves.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/startcond.gd

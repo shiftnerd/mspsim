@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-definitions-order,expression-not-assigned,max-line-length,max-returns
 # Dev tool (not a test): plays the service manager campaign for twenty days with one fixed strategy, several seeds, in compressed time.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/service_balance.gd -- careful|lazy|chaotic [seeds=5] [ts=15] [first=1]
 # careful: assigns by fit (rescues stuck techs), documents every day, interviews and hires for fit, one on ones, brokers the owners.

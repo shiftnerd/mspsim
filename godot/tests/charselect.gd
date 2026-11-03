@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=duplicated-load
 # The character select screen: choices per mode, moving, going back, confirming (Player character,
 # Phone.os, Campaign state), the cast rule in campaigns, and Continue skipping the screen.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/charselect.gd

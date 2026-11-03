@@ -1,5 +1,5 @@
 extends SceneTree
-# gdlint:disable=max-line-length
+# gdlint:disable=class-variable-name,expression-not-assigned,max-line-length
 # Onsite variety (R11): new job variants per site type, the seeded dispatch roulette (client, job, road event),
 # the one-open-job rule, saving and the career counters.
 

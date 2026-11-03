@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Dev tool (not a test): plays the owner campaign in natural time with one fixed strategy.
 # ends. One strategy per process:
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/owner_balance.gd -- smart [alan|garrison]

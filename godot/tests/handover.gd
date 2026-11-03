@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # The handover scene (C2): a win queues a meeting in the conference room (Morgan and Dan are sent there, the objective line says so),
 # the promise list is walked one card at a time (keep / renegotiate / drop), the gap that is left becomes the client's starting mood
 # and the service risk (the churn meter), Dan and Morgan react, and a handover nobody attends turns into "just the paperwork".

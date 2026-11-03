@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-variable-name
 # Screenshots of the sales story beats (C3; renderer needed, `-- --format=wide|h|v`): the logo decision (Garrison, Alan, your pick),
 # the ByteBrothers offer, the audit card, the business review in the stand-in client office, and the review page with the roll-up
 # ending. PNGs land in user://beats_FORMAT_NAME.png.

@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Screenshots (needs a renderer; `-- --format=wide|h|v`): Alan at a ringing phone with a headset
 # (user://owners_phone.png) and the day report with its OWNERS STEPPED IN row (user://owners_report.png).
 

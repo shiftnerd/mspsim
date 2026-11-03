@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Screenshots of the sales campaign (renderer needed, `-- --format=wide|h|v`): the weekly report (a mid-quarter week and the
 # quarter-closing week with a warning), the SalesHound CRM (all leads, a lead with a quote won, a finished lead), the
 # lead card and the quote builder. PNGs land in user://sales_FORMAT_NAME.png.

@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # The quote builder screen (C2): the gauge maths (win chance, margin, promise gap against the crew's capacity and the queue, cash over
 # four weeks), the steppers by keyboard and mouse, Alan's margin floor and Garrison's 20% sign-off as inline blocks with the owner's
 # line, the selling-hours block, sending a quote, and the layout: both halves on a wide screen, paged (fields, then gauges) in

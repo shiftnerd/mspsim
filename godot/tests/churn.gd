@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=duplicated-load,max-line-length
 # The 90 day window, clawback, renewals and the new-client SLA priority (C2): a won client has a churn-risk meter fed by the promise
 # gap, tickets that breach, mood and slow onboarding; leaving inside 13 weeks (90 days) claws the commission back by the pay plan;
 # kept promises raise the renewal chance; renewals come up on a schedule with a business review and upsells; a premium promise

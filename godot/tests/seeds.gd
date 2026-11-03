@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=unused-argument
 # Seeds (roadmap R1 leftovers + R10a): typed seed parsing, same seed = same streams, resuming from a saved stream
 # state equals an unbroken run, the daily seed of a fixed date, old-save defaults, and the same first tickets / fleet /
 # mutator plan for a pinned seed through Campaign.new_game.

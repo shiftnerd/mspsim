@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Vic's voices in the sales campaign (C3): Talk (greeting, small talk, tips and the "ask" question of each coworker as seen by a salesman)
 # and Lynk (messages from the coworkers, presence lines, NEED A HAND). Headless; saves in user://test_*.
 

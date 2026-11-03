@@ -1,5 +1,5 @@
 extends RefCounted
-# gdlint:disable=max-line-length,class-definitions-order,max-returns
+# gdlint:disable=class-definitions-order,duplicated-load,max-line-length,max-returns,unused-argument
 # Q6: the shared bot driver. One class plays any campaign (tech / owner / sales / service) at any difficulty tier with a
 # strategy (careful / lazy / chaotic, plus tech-only "shortcut") for one seed, in compressed time, and returns one row:
 #   {mode, tier, strategy, seed, rep, score, ending, cls ("good" / "mid" / "bad"), fired, info}

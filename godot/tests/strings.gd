@@ -49,9 +49,7 @@ func _init() -> void:
 	_check(ev.DECK.size() >= 40, "the deck has 40 or more cards (%d)" % ev.DECK.size())
 	var ev_text: String = ev.DECK.toner_late.text
 	var ev_temp := "user://test_strings_%d_ev.txt" % OS.get_process_id()
-	_write(ev_temp, "[Events.DECK.toner_late.text]
-The toner is late again.
-")
+	_write(ev_temp, "[Events.DECK.toner_late.text]\nThe toner is late again.\n")
 	strings.load_file(ev_temp)
 	_check(ev.DECK.toner_late.text == "The toner is late again." and ev.DEFAULT_DECK.toner_late.text == ev_text, "an edited event card is used, the default is kept")
 	ev.DECK.toner_late.text = ev_text

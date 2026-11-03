@@ -1,5 +1,5 @@
 extends RefCounted
-# gdlint: ignore=max-line-length
+# gdlint:disable=max-line-length,class-definitions-order
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
 

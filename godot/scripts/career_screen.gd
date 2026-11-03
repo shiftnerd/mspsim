@@ -168,7 +168,7 @@ func _button(id: String, label: String, rc: Rect2) -> void:
 	UiStyle.center(self, label, rc.position.x + rc.size.x * 0.5, rc.position.y + 2.0, UiStyle.INK)
 
 
-func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+func _draw_counters(items: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
 	var per_col := int(body.size.y / ROW_H)
 	for i in items.size():
 		var it: Dictionary = items[i]
@@ -183,7 +183,7 @@ func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: floa
 		UiStyle.right(self, _fmt(v, str(it.fmt)), cx + colw, cy, UiStyle.GOLD.darkened(0.35) if v > 0 else UiStyle.MUTED)
 
 
-func _draw_medals(list: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
 	var per_col := maxi(1, int(body.size.y / MEDAL_H))
 	var chars := int((colw - 9.0) / 4.0)
 	for i in list.size():

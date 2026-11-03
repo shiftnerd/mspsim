@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-variable-name,function-variable-name,max-line-length
 # The sales campaign story beats (C3; scripts/sales_beats.gd, text in SalesCampaign.BEAT_TEXT): each beat fires at its week with the
 # right cards, flags and effects, the endings follow the flags, the business review happens at the client's office, outings are back
 # (team night, dinner with a prospect) and the point-buy stats move the numbers. Headless; saves in user://test_*.

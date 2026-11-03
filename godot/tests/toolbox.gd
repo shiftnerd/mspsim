@@ -1,5 +1,5 @@
 extends SceneTree
-# gdlint:disable=max-line-length
+# gdlint:disable=class-definitions-order,max-line-length
 # The Free Play toolbox: every entry launches the right game with the chosen parameters (headless, overlay games),
 # fixed take (same notes every take, no mutator, no forced events), the seed page keys, row navigation and the
 # open / close rules.

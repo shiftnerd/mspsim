@@ -1235,7 +1235,7 @@ func _remember(c: int, job_id: String) -> void:
 
 
 # the road to a site: sometimes something happens (campaign only; a free trip takes no time)
-func _roll_road(c: int) -> Dictionary:
+func _roll_road(_c: int) -> Dictionary:
 	if not Campaign.active:
 		return {}
 	var ev := Variety.road_event(Difficulty.rng_for("onsite.road", Campaign.day * 100 + visits))

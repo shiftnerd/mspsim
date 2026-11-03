@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=unused-argument
 # Plays 200 dinners headless through the real dinner_talk path, once with the best topic every
 # round and once with random picks, and checks the star distributions: best play reaches 2 stars
 # in 95%+ of seeds (and 3 stars often), careless play rarely gets 3 (it mostly lands on 2:

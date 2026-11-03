@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # C5 / V2: the crew as people. Sam and Terry are real NPCs in the service campaign only (and only while they work for you),
 # the five skill areas, tickets that need a level, focus and learning, plan kinds, the bubble flag, Talk, and the other modes
 # staying exactly as they were. Headless.

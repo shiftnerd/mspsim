@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # C4 / V1: the service manager campaign played as Dan. Select + new game + save / continue, the huddle focus, the crew
 # autopilot, the scorecard rows, 1:1s, owner memos (trust moves), incidents (take / send / ask), the review endings and a
 # 20-day run through the real day loop with every card dismissed. Headless; saves in user://test_*.

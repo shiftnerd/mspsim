@@ -1,5 +1,5 @@
 extends SceneTree
-# gdlint:disable=max-line-length
+# gdlint:disable=class-definitions-order,max-line-length
 # The Career autoload: counter hooks fired by real game calls, every medal rule at and just under its
 # threshold, the save file outside the campaign slot, old / missing file defaults, cosmetic unlocks, the nerf war
 # score card (the starter hit counts) and a brand deny-list over the medal and unlock tables.

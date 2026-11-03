@@ -1,4 +1,5 @@
 extends Node
+# gdlint:disable=max-returns
 # Autoload: the persistent cast. Alan, Garrison and Dan each live in exactly one place at a
 # time and keep living when you are elsewhere. A workday clock (9:00 to 17:00, `day_len` real
 # seconds long) drives their agenda: work at the desk, coffee, the copier and cooler, the

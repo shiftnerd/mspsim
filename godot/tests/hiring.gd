@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # C6 / V3: hiring for fit. Candidate generation (a ringer, a good fit, a middle one; skill, wage, trait and three fit axes), the
 # interview mini-step that reveals them, the hiring cards, hires becoming real crew NPCs (new names from a pool, a seat at the
 # conference table), the cap of six, onboarding (shadow or structured: time to first solo ticket, reopens), fit effects on

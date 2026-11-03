@@ -1,4 +1,5 @@
 extends Node
+# gdlint:disable=max-returns
 # Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
 # "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
 # the other owner in the owner campaign, otherwise the manager. `speaker()` and `sender()` do that remap; Cards.ask and

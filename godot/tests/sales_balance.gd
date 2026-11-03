@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length,unused-argument
 # Dev tool (not a test): plays the 20 weeks of the sales campaign with a scripted strategy, several seeds, and prints the numbers
 # (quota %, commission, clawbacks, churn, renewals, rep, cash and the verdict). One strategy per process:
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/sales_balance.gd -- careful 11 12 13

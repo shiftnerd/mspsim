@@ -1,6 +1,6 @@
 extends Node
 # gdlint:disable=class-definitions-order,class-variable-name
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.

@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # C6 / V3: the desk design card (TIERED / SWARM / PODS, with or without a dispatcher): each design's assignment rules, speed and
 # reopen numbers, the board lanes (Dispatch), the owners' reaction, the dispatcher's hours, the one allowed revisit and its cost,
 # saving and an old save. Headless.

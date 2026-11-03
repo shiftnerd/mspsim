@@ -1,5 +1,5 @@
 extends RefCounted
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # ConnectWhy Dispatch (service manager campaign, C5): the dispatcher's board, drawn by Computer like the PSA and RMM.
 # Three tabs: BOARD (a lane for every tech plus DAN (you), an ESCALATION lane for Alan and Garrison and an UNASSIGNED
 # column; ticket chips with a priority stripe, skill tag and SLA bar), CAPACITY (each tech's queued hours against the hours

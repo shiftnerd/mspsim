@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=comparison-with-itself
 # Bowling variety (R11): oil patterns, the hook, three alleys, bowling styles, league night and the tiers.
 # Headless; the game is driven through Outings.start / press / tick like tests/outings.gd.
 

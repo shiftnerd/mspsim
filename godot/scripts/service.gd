@@ -1,5 +1,5 @@
 extends Node
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # The service manager campaign (C4 / V1, mode "service"): you are Dan, promoted to run the desk. The crew (Crew) works the
 # queue by itself through the crew gate (Owner.team_speed / _work_queue); you set a focus in the MORNING HUDDLE, talk to your
 # people in 1:1s, answer the owners' MEMOS (Alan wants quality and the stack, Garrison wants yes to the client and a happy
@@ -1882,14 +1882,14 @@ func assist_rate() -> float:
 	return ASSIST
 
 
-func _best_in(t: Dictionary, lane_name_: String, max_load: int) -> String:
+func _best_in(t: Dictionary, lane_filter: String, max_load: int) -> String:
 	var best := ""
 	var best_fit := -1.0
 	for who in Crew.names():
 		var w := str(who)
 		if Crew.stuck.has(w) or Crew.is_shadowing(w) or Crew.load_of(w) >= max_load:
 			continue
-		if lane_name_ != "" and lane_of(w) != lane_name_:
+		if lane_filter != "" and lane_of(w) != lane_filter:
 			continue
 		var f := Crew.fit(w, t)
 		if f > best_fit + 0.0001:

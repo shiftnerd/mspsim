@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-definitions-order,expression-not-assigned,max-line-length
 # The sales campaign as Vic (C1, slice S1): the registry row, character select, a new game and continue, seeded leads, selling
 # slots, the quote maths (win chance, margin, floor, discount approval), a visit to a prospect, the handover gap and the
 # complaint it queues, the player ringing the bell, quota verdicts and commission, and a full 20-week run through the real

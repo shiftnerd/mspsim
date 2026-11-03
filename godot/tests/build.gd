@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=comparison-with-itself,max-line-length
 # X7: the point-buy character build (Build, BuildPanel). Costs, the budget per tier, the caps and guards, presets for every
 # path and tier, quirk points and effects, the owner bias floors and caps, the flat default (= today's behaviour: old
 # saves, direct new_game, Free Play), saving, and what a build does on day 1 (starting XP, perks, owner edges, energy).

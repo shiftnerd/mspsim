@@ -1,5 +1,5 @@
 extends SceneTree
-# gdlint:disable=max-line-length
+# gdlint:disable=class-variable-name,max-line-length
 # Rodent Nation variety (R11): seeded session menus, vendor booths, attendee conversations and raffle odds per run,
 # with the KPIs and the XP per session untouched.
 

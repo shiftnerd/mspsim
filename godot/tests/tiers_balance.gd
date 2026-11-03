@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Q6 smoke test: three campaigns (sales, tech, service) with a careful and a lazy bot at easy / normal / hard, one or two seeds,
 # time compressed (about 4 minutes in all). Asserts the ordering the tiers must keep:
 #   careful: easy >= normal >= hard (by reputation, and by the share of good endings)

@@ -339,7 +339,7 @@ func apply_pick(plan: Array, mode: String) -> Array:
 
 # ---- carrying over ---------------------------------------------------------------------------------------------
 # the rules applied to a meta record: pure, so tests can feed it any record
-func carry_for(mode: String, rec: Dictionary) -> Dictionary:
+func carry_for(_mode: String, rec: Dictionary) -> Dictionary:
 	var out := {"rep": Campaign.START_REP, "skills": {}, "ps": 0, "cash": 0, "trust": -1}
 	if rec.is_empty():
 		return out
@@ -515,7 +515,7 @@ func _kind_of(key: String) -> String:
 
 
 # one day's load: how many playbooks, vignettes and which keys are there after the moves so far
-func _load(mode: String, base: Dictionary, placed: Array, day: int) -> Dictionary:
+func _load(_mode: String, base: Dictionary, placed: Array, day: int) -> Dictionary:
 	var out := {"books": 0, "vigs": 0, "n": 0, "keys": {}}
 	var moved_away := []
 	for p in placed:
@@ -532,13 +532,13 @@ func _load(mode: String, base: Dictionary, placed: Array, day: int) -> Dictionar
 	return out
 
 
-func _count(load_: Dictionary, key: String) -> void:
-	load_.n += 1
-	load_.keys[key] = true
+func _count(loaded: Dictionary, key: String) -> void:
+	loaded.n += 1
+	loaded.keys[key] = true
 	if key.begins_with("book:"):
-		load_.books += 1
+		loaded.books += 1
 	elif key.begins_with("vig:"):
-		load_.vigs += 1
+		loaded.vigs += 1
 
 
 # Where can the beats of a group go? Deterministic for a seed (Difficulty.rng("year2")), by at most `max_shift`
@@ -571,15 +571,15 @@ func story_shuffle(mode: String, rng: RandomNumberGenerator = null) -> Array:
 			var trial: Array = placed.duplicate()
 			for m in g.members:
 				var t := int(m.from) + int(d)
-				var load_ := _load(mode, base, trial, t)
+				var loaded := _load(mode, base, trial, t)
 				var kind := _kind_of(str(m.key))
 				if t < mini(lo, int(m.from)) or t > hi or blocked.has(t):
 					ok = false
-				elif kind == "book" and int(load_.books) > 0:
+				elif kind == "book" and int(loaded.books) > 0:
 					ok = false
-				elif kind == "vig" and int(load_.vigs) > 0:
+				elif kind == "vig" and int(loaded.vigs) > 0:
 					ok = false
-				elif kind == "ev" and (load_.keys.has(str(m.key)) or int(load_.n) >= 4):
+				elif kind == "ev" and (loaded.keys.has(str(m.key)) or int(loaded.n) >= 4):
 					ok = false
 				if not ok:
 					break

@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=class-definitions-order,max-line-length
 # The event deck (roadmap R8): schema and balance guard, seeded draws, cooldowns, quiet days only, saves,
 # showing and resolving the cards, and the 17 extra vignettes that share the draw.
 

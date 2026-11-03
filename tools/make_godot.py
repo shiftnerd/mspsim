@@ -1881,6 +1881,7 @@ func _draw() -> void:
 ''')
 
 write("scripts/npc.gd", '''extends Area2D
+# gdlint:disable=class-definitions-order
 # A background character that runs a routine of steps (strings). Cast members (cast_name set,
 # see world.gd) run one leg of their agenda and then ask the World for the next; others loop:
 #   walk:X (screen x)  wait:S  say:S  talk:S  use:prop  sit:Seat  stand  sip  exit:Name  sync:key:n
@@ -2836,6 +2837,7 @@ func _draw() -> void:
 ''')
 
 write("scripts/world.gd", '''extends Node
+# gdlint:disable=max-returns
 # Autoload: the persistent cast. Alan, Garrison and Dan each live in exactly one place at a
 # time and keep living when you are elsewhere. A workday clock (9:00 to 17:00, `day_len` real
 # seconds long) drives their agenda: work at the desk, coffee, the copier and cooler, the
@@ -3815,7 +3817,7 @@ func force_activity(n: String, kind: String) -> void:
 
 
 write("scripts/pixelfont.gd", '''extends RefCounted
-# gdlint: ignore=max-line-length
+# gdlint:disable=max-line-length,class-definitions-order
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
 
@@ -7177,6 +7179,7 @@ func _paint_stats() -> void:
 ''')
 
 write("scripts/phone.gd", '''extends CanvasLayer
+# gdlint:disable=class-definitions-order
 # The cell phone (2013): press P. The first time you pick iFone 5 (slate phone, iOS-style look) or Nexxus 5
 # (Android-style look); the choice is saved and can be changed in Settings. Like the computer it
 # takes over the screen (the office stays visible in a faded strip at the top). Apps: Mail (the
@@ -8779,7 +8782,7 @@ func apply_pick(plan: Array, mode: String) -> Array:
 
 # ---- carrying over ---------------------------------------------------------------------------------------------
 # the rules applied to a meta record: pure, so tests can feed it any record
-func carry_for(mode: String, rec: Dictionary) -> Dictionary:
+func carry_for(_mode: String, rec: Dictionary) -> Dictionary:
     var out := {"rep": Campaign.START_REP, "skills": {}, "ps": 0, "cash": 0, "trust": -1}
     if rec.is_empty():
         return out
@@ -8955,7 +8958,7 @@ func _kind_of(key: String) -> String:
 
 
 # one day's load: how many playbooks, vignettes and which keys are there after the moves so far
-func _load(mode: String, base: Dictionary, placed: Array, day: int) -> Dictionary:
+func _load(_mode: String, base: Dictionary, placed: Array, day: int) -> Dictionary:
     var out := {"books": 0, "vigs": 0, "n": 0, "keys": {}}
     var moved_away := []
     for p in placed:
@@ -8972,13 +8975,13 @@ func _load(mode: String, base: Dictionary, placed: Array, day: int) -> Dictionar
     return out
 
 
-func _count(load_: Dictionary, key: String) -> void:
-    load_.n += 1
-    load_.keys[key] = true
+func _count(loaded: Dictionary, key: String) -> void:
+    loaded.n += 1
+    loaded.keys[key] = true
     if key.begins_with("book:"):
-        load_.books += 1
+        loaded.books += 1
     elif key.begins_with("vig:"):
-        load_.vigs += 1
+        loaded.vigs += 1
 
 
 # Where can the beats of a group go? Deterministic for a seed (Difficulty.rng("year2")), by at most `max_shift`
@@ -9011,15 +9014,15 @@ func story_shuffle(mode: String, rng: RandomNumberGenerator = null) -> Array:
             var trial: Array = placed.duplicate()
             for m in g.members:
                 var t := int(m.from) + int(d)
-                var load_ := _load(mode, base, trial, t)
+                var loaded := _load(mode, base, trial, t)
                 var kind := _kind_of(str(m.key))
                 if t < mini(lo, int(m.from)) or t > hi or blocked.has(t):
                     ok = false
-                elif kind == "book" and int(load_.books) > 0:
+                elif kind == "book" and int(loaded.books) > 0:
                     ok = false
-                elif kind == "vig" and int(load_.vigs) > 0:
+                elif kind == "vig" and int(loaded.vigs) > 0:
                     ok = false
-                elif kind == "ev" and (load_.keys.has(str(m.key)) or int(load_.n) >= 4):
+                elif kind == "ev" and (loaded.keys.has(str(m.key)) or int(loaded.n) >= 4):
                     ok = false
                 if not ok:
                     break
@@ -9154,6 +9157,7 @@ func from_dict(data: Dictionary) -> void:
 
 
 write("scripts/day_report.gd", '''extends CanvasLayer
+# gdlint:disable=class-definitions-order
 # The end-of-day report for the campaigns: a dimmed screen with a dark panel: a big grade and the
 # score / paycheck / reputation / cash on one side (or on top in narrow formats), the details
 # grouped under TICKETS / PEOPLE / ENERGY (the owner's books as one group), then the ending text
@@ -9749,7 +9753,7 @@ func from_dict(data: Dictionary) -> void:
 ''')
 
 write("scripts/events.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns,class-definitions-order,class-variable-name
 # The event deck (roadmap R8). One small card per quiet day, drawn in the morning with the seeded
 # `events` stream (Difficulty.rng) and shown at a random time between 10:00 and 13:30. Cards use the
 # vignette format (speaker, text, options with fx) and the vignette resolver (Story._vignette_fx);
@@ -22949,7 +22953,7 @@ func _process(delta: float) -> void:
 ''')
 
 write("scripts/talk.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.
@@ -25445,6 +25449,7 @@ func take_approval() -> bool:
 ''')
 
 write("scripts/roles.gd", '''extends Node
+# gdlint:disable=max-returns
 # Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
 # "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
 # the other owner in the owner campaign, otherwise the manager. `speaker()` and `sender()` do that remap; Cards.ask and
@@ -25569,7 +25574,7 @@ func fill(text: String) -> String:
 ''')
 
 write("scripts/service.gd", '''extends Node
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # The service manager campaign (C4 / V1, mode "service"): you are Dan, promoted to run the desk. The crew (Crew) works the
 # queue by itself through the crew gate (Owner.team_speed / _work_queue); you set a focus in the MORNING HUDDLE, talk to your
 # people in 1:1s, answer the owners' MEMOS (Alan wants quality and the stack, Garrison wants yes to the client and a happy
@@ -27452,14 +27457,14 @@ func assist_rate() -> float:
     return ASSIST
 
 
-func _best_in(t: Dictionary, lane_name_: String, max_load: int) -> String:
+func _best_in(t: Dictionary, lane_filter: String, max_load: int) -> String:
     var best := ""
     var best_fit := -1.0
     for who in Crew.names():
         var w := str(who)
         if Crew.stuck.has(w) or Crew.is_shadowing(w) or Crew.load_of(w) >= max_load:
             continue
-        if lane_name_ != "" and lane_of(w) != lane_name_:
+        if lane_filter != "" and lane_of(w) != lane_filter:
             continue
         var f := Crew.fit(w, t)
         if f > best_fit + 0.0001:
@@ -27915,7 +27920,7 @@ func from_dict(data: Dictionary) -> void:
 ''')
 
 write("scripts/service_arc.gd", '''extends Node
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # The service manager campaign, C7 (V4): the rest of the 20 day story (docs/campaign-paths.md section 4.7), the owner conflict arc,
 # the Summit roll-up audit, the endings, and the Service-mode voices of Talk and Lynk. Every beat names the engine it uses:
 #   cards      a Cards decision with options (SCHEDULE + ARC: day, clock time, text with {day} style tokens, options with `fx`)
@@ -28648,8 +28653,8 @@ func apply(fx: Dictionary, id := "") -> void:
     Service.apply_fx(rest, Service._people_scale())
 
 
-func randi_in(range_: Array, id: String) -> int:
-    return _rng(id + "n").randi_range(int(range_[0]), int(range_[1]))
+func randi_in(bounds: Array, id: String) -> int:
+    return _rng(id + "n").randi_range(int(bounds[0]), int(bounds[1]))
 
 
 # ---- sides: the owner conflict arc -------------------------------------------------------------------------------
@@ -28959,14 +28964,14 @@ func _pager(day: int) -> void:
     Crew.add_morale(who, -2 if cost == 0 else 0)
     var client := int(Sales.active[r.randi() % Sales.active.size()]) if not Sales.active.is_empty() else 0
     spawn(client, "pager_issue", "after hours")
-    var P: Dictionary = TEXT.pager
+    var pg: Dictionary = TEXT.pager
     var fair := fairness()
-    var line := str(P.fair) if fair >= 0.5 else str(P.unfair).replace("{who}", _heaviest())
+    var line := str(pg.fair) if fair >= 0.5 else str(pg.unfair).replace("{who}", _heaviest())
     if fair < 0.5 and str(oncall.policy) == "volunteer":
         Crew.add_retain(_heaviest(), -1)
-    var text := str(P.text).replace("{who}", who).replace("{client}", str(Msp.CLIENTS[client].name)).replace("{issue}", str(P.issues[r.randi() % P.issues.size()])).replace("{line}", line)
+    var text := str(pg.text).replace("{who}", who).replace("{client}", str(Msp.CLIENTS[client].name)).replace("{issue}", str(pg.issues[r.randi() % pg.issues.size()])).replace("{line}", line)
     Msp.send_text("Pager", "%s was paged after hours." % who)
-    var opts := [{"label": str(P.options.home), "id": "home"}, {"label": str(P.options.keep), "id": "keep"}, {"label": str(P.options.cover), "id": "cover"}]
+    var opts := [{"label": str(pg.options.home), "id": "home"}, {"label": str(pg.options.keep), "id": "keep"}, {"label": str(pg.options.cover), "id": "cover"}]
     Cards.ask("Dispatch (Pager)", text, opts, func(pick: String) -> void: _pager_answer(who, pick))
 
 
@@ -30125,7 +30130,7 @@ func from_dict(data: Dictionary) -> void:
 ''')
 
 write("scripts/dispatch.gd", '''extends RefCounted
-# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,max-returns
 # ConnectWhy Dispatch (service manager campaign, C5): the dispatcher's board, drawn by Computer like the PSA and RMM.
 # Three tabs: BOARD (a lane for every tech plus DAN (you), an ESCALATION lane for Alan and Garrison and an UNASSIGNED
 # column; ticket chips with a priority stripe, skill tag and SLA bar), CAPACITY (each tech's queued hours against the hours
@@ -34275,7 +34280,7 @@ func _remember(c: int, job_id: String) -> void:
 
 
 # the road to a site: sometimes something happens (campaign only; a free trip takes no time)
-func _roll_road(c: int) -> Dictionary:
+func _roll_road(_c: int) -> Dictionary:
     if not Campaign.active:
         return {}
     var ev := Variety.road_event(Difficulty.rng_for("onsite.road", Campaign.day * 100 + visits))
@@ -42120,7 +42125,7 @@ func _button(id: String, label: String, rc: Rect2) -> void:
     UiStyle.center(self, label, rc.position.x + rc.size.x * 0.5, rc.position.y + 2.0, UiStyle.INK)
 
 
-func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+func _draw_counters(items: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
     var per_col := int(body.size.y / ROW_H)
     for i in items.size():
         var it: Dictionary = items[i]
@@ -42135,7 +42140,7 @@ func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: floa
         UiStyle.right(self, _fmt(v, str(it.fmt)), cx + colw, cy, UiStyle.GOLD.darkened(0.35) if v > 0 else UiStyle.MUTED)
 
 
-func _draw_medals(list: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
     var per_col := maxi(1, int(body.size.y / MEDAL_H))
     var chars := int((colw - 9.0) / 4.0)
     for i in list.size():
@@ -45221,7 +45226,7 @@ static func renew_roll(e: Dictionary, bonus: float, raise_price: bool) -> void:
 
 
 # new MRR from a price rise or an upsell counts toward the quarter
-static func _expand(e: Dictionary, more: int) -> void:
+static func _expand(_e: Dictionary, more: int) -> void:
     var qi: int = SalesCampaign.quarter_index()
     SalesCampaign.q_signed[qi] = int(SalesCampaign.q_signed[qi]) + more
     SalesCampaign.week_new += more

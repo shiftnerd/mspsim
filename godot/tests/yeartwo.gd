@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Year 2 / New Game Plus (roadmap R10b, scripts/yeartwo.gd). Unlock after a finished campaign, the carry-over caps, the Year 2
 # tables read by the right functions, the story shuffle (never collides, deterministic per seed), the three newer clients,
 # the Year 2 endings, the mutator pick / ban, save / continue and the old-save default, then a whole Year 2 of the tech and
