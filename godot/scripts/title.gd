@@ -41,9 +41,13 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
-var _level := "top"  # "top" or "sub" (a campaign's submenu)
+var _level := "top"  # "top", "sub" (a campaign's submenu), "slot" (CONTINUE / FROM THE START of one slot) or "over" (which slot to overwrite)
 var _sub_mode := ""
 var _top_sel := 0  # the top-menu cursor to come back to
+var _sub_sel := 0  # the submenu cursor to come back to
+var _slot := 1  # the save slot the next start uses (R19)
+var _overwrite := false  # the next new run replaces a full slot (its save is deleted when the run starts)
+var _over_id := ""  # the new-run row (tech_new / tech_y2) waiting for the slot to overwrite
 var _heading := ""
 var _menu: Node2D
 var _front: CanvasLayer
@@ -303,9 +307,12 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
 		_back()
 
 
-# Esc / back / pad B: a campaign submenu returns to the top menu (cursor kept), the top menu closes
+# Esc / back / pad B: the slot and overwrite lists return to the submenu, a submenu returns to the top menu (cursor
+# kept), the top menu closes
 func _back() -> void:
-	if _level == "sub":
+	if _level == "slot" or _level == "over":
+		_show_sub(_sub_mode, _sub_sel)
+	elif _level == "sub":
 		_show_top(_top_sel)
 	else:
 		_menu_open = false
@@ -334,38 +341,107 @@ func _show_top(sel: int) -> void:
 	_menu.queue_redraw()
 
 
-# the rows of a campaign submenu: CONTINUE (mid-day resume point and / or the day-start save), START YEAR 2
-# (that mode's Year 1 is finished), NEW CAMPAIGN
+func _unit(mode: String) -> String:
+	return "WEEK" if mode == "owner" or mode == "sales" else "DAY"
+
+
+# "SLOT 2 - DAY 7  12:30 (YEAR 2) - JAMIE": the character name goes first when the line is too wide for the format
+func slot_label(mode: String, n: int, info: Dictionary, lead := "SLOT") -> String:
+	var label := "%s %d - %s %d" % [lead, n, _unit(mode), int(info.day)]
+	if str(info.text) != "":
+		label += "  " + str(info.text)
+	label += str(info.tag)
+	var named := label + " - " + str(info.character_name)
+	if str(info.character_name) != "" and float(PixelFont.width(named)) + 14.0 <= _size().x:
+		return named
+	return label
+
+
+# the rows of a campaign submenu: one row per existing save slot, START YEAR 2 (that mode's Year 1 is finished),
+# NEW CAMPAIGN (the lowest empty slot, or a question which full slot to overwrite)
 func sub_items(mode: String) -> Array:
 	var out := []
-	var unit := "WEEK" if mode == "owner" or mode == "sales" else "DAY"
-	var tag := Yeartwo.saved_tag(mode)
-	var snap: Dictionary = Campaign.resume_info(mode) if mode == "tech" else {}  # a mid-day resume point (R16)
-	if not snap.is_empty():
-		var snap_label := "CONTINUE - %s %d  %s" % [unit, int(snap.day), str(snap.text)] + tag
-		out.append({"label": snap_label, "id": mode + "_resume", "enabled": true})
-	if Campaign.has_save(mode):
-		var label := "CONTINUE - %s %d" % [unit, Campaign.saved_day(mode)] + tag
-		if not snap.is_empty():
-			label = "%s %d FROM THE START" % [unit, Campaign.saved_day(mode)] + tag
-		out.append({"label": label, "id": mode + "_continue", "enabled": true})
+	for n in range(1, Campaign.SLOTS + 1):
+		var info: Dictionary = Campaign.slot_info(mode, n)
+		if bool(info.exists):
+			out.append({"label": slot_label(mode, n, info), "id": "%s_slot%d" % [mode, n], "enabled": true})
 	if Yeartwo.available(mode):
 		out.append({"label": "START YEAR 2", "id": mode + "_y2", "enabled": true})
 	out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
 	return out
 
 
-# a campaign line: its submenu, or straight to the new-run flow when NEW CAMPAIGN is all it could offer
-func _enter_mode(mode: String) -> void:
-	var rows := sub_items(mode)
-	if rows.size() == 1:
-		_open_select(mode + "_new")
-		return
-	_top_sel = _sel
+# the rows after picking a slot that holds both a mid-day resume point and a day-start save
+func slot_items(mode: String, n: int) -> Array:
+	var info: Dictionary = Campaign.slot_info(mode, n)
+	var unit := _unit(mode)
+	return [
+		{"label": "CONTINUE - %s %d  %s" % [unit, int(info.day), str(info.text)] + str(info.tag), "id": mode + "_resume", "enabled": true},
+		{"label": "%s %d FROM THE START" % [unit, int(info.day)] + str(info.tag), "id": mode + "_continue", "enabled": true},
+	]
+
+
+# every slot is full: which one does the new run replace? (the row itself is the confirmation; CANCEL keeps all three)
+func over_items(mode: String) -> Array:
+	var out := []
+	for n in range(1, Campaign.SLOTS + 1):
+		var info: Dictionary = Campaign.slot_info(mode, n)
+		out.append({"label": slot_label(mode, n, info, "OVERWRITE SLOT"), "id": "%s_over%d" % [mode, n], "enabled": true})
+	out.append({"label": "CANCEL", "id": "cancel", "enabled": true})
+	return out
+
+
+func _show_sub(mode: String, sel: int) -> void:
 	_level = "sub"
 	_sub_mode = mode
 	_heading = str(MODE_NAMES[mode])
-	_items = rows
+	_items = sub_items(mode)
+	_sel = clampi(sel, 0, _items.size() - 1)
+	_menu.queue_redraw()
+
+
+# a campaign line: its submenu, or straight to the new-run flow when NEW CAMPAIGN is all it could offer (slot 1)
+func _enter_mode(mode: String) -> void:
+	var rows := sub_items(mode)
+	if rows.size() == 1:
+		_slot = 1
+		_overwrite = false
+		_open_select(mode + "_new")
+		return
+	_top_sel = _sel
+	_show_sub(mode, 0)
+
+
+# a saved slot was picked: CONTINUE / FROM THE START when it has both kinds of save, else straight in
+func _enter_slot(mode: String, n: int) -> void:
+	var info: Dictionary = Campaign.slot_info(mode, n)
+	_slot = n
+	_overwrite = false
+	if bool(info.has_resume) and bool(info.has_save):
+		_sub_sel = _sel
+		_level = "slot"
+		_heading = "SLOT %d" % n
+		_items = slot_items(mode, n)
+		_sel = 0
+		_menu.queue_redraw()
+	else:
+		_start(mode + ("_resume" if bool(info.has_resume) else "_continue"))
+
+
+# NEW CAMPAIGN / START YEAR 2: the lowest empty slot at once, or the overwrite question when all are full
+func _begin_new(id: String) -> void:
+	var mode := id.get_slice("_", 0)
+	var n := Campaign.first_empty_slot(mode)
+	if n > 0:
+		_slot = n
+		_overwrite = false
+		_open_select(id)
+		return
+	_sub_sel = _sel
+	_over_id = id
+	_level = "over"
+	_heading = "OVERWRITE WHICH SLOT?"
+	_items = over_items(mode)
 	_sel = 0
 	_menu.queue_redraw()
 
@@ -399,7 +475,17 @@ func _choose(i: int) -> void:
 	if MODE_NAMES.has(id):
 		_enter_mode(id)
 		return
-	if id.ends_with("_continue") or id.ends_with("_resume"):
+	if id == "cancel":
+		_back()
+	elif "_slot" in id:
+		_enter_slot(id.get_slice("_", 0), int(id.get_slice("_slot", 1)))
+	elif "_over" in id:
+		_slot = int(id.get_slice("_over", 1))
+		_overwrite = true
+		_open_select(_over_id)
+	elif id.ends_with("_new") or id.ends_with("_y2"):
+		_begin_new(id)
+	elif id.ends_with("_continue") or id.ends_with("_resume"):
 		_start(id)  # a saved run keeps its character: no select screen
 	else:
 		_open_select(id)
@@ -471,6 +557,11 @@ func _start(id: String, summary := "") -> void:
 	Outings.enabled = true
 	Onsite.enabled = true
 	Outings.use_rooms = true
+	var run_mode := id.get_slice("_", 0)
+	Campaign.slot = _slot if Campaign.MODES.has(run_mode) else 1
+	if _overwrite and id.ends_with("_new"):
+		Campaign.delete_slot(run_mode, _slot)  # the chosen full slot is replaced now, not when the first day ends
+	_overwrite = false
 	match id:
 		"tech_new":
 			Campaign.new_game("tech")
