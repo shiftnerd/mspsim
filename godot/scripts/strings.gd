@@ -19,9 +19,9 @@ const ROOTS := {
 	"Owner": ["CARDS"],
 	"Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
 	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
-	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
+	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
 	"Nerds": ["JOKES", "THREADS"],
-	"Lync": ["MESSAGES"],
+	"Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
 	"Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
@@ -34,6 +34,7 @@ const ROOTS := {
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
+	"SalesCampaign": ["BEAT_TEXT"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [

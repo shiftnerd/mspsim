@@ -103,7 +103,7 @@ func _init() -> void:
 	_check(not world.chars.has("Vic"), "Vic's NPC copy is gone (World.roster_gone)")
 	_check(world.chars.has("Dan") and world.chars.has("Maya") and world.chars.has("Morgan") and world.chars.has("Alan") and world.chars.has("Garrison"), "everyone else is in the building")
 	_check(player_script.current_character == "sales_vic" and not social.people().has("Vic"), "you are Vic and Vic is not your coworker")
-	_check(not root.get_node("Outings").enabled, "outings are off in the sales campaign for now")
+	_check(not root.get_node("Outings").enabled, "outings follow the title menu (off in a direct start)")
 	_check(owner_node.vic_plan == sc.plan, "the pay plan is the company's Vic wage")
 	_check(not cards.is_open and sc.open_leads().size() >= 2 and sc.open_leads().size() <= 3, "week 1 brings 2-3 leads (%d)" % sc.open_leads().size())
 
@@ -123,12 +123,12 @@ func _init() -> void:
 	var passed: int = sc.open_leads().size()
 	_clear(cards)
 	_check(sc.open_leads().size() >= 1 and sc.open_leads().size() >= passed, "worked leads join the pipeline")
-	_check(sc.quota_target(0) == 8000 and sc.quota_target(1) == 6400, "stretch quota: 8000 then 80%% for Q3 (%d)" % sc.quota_target(1))
+	_check(sc.quota_target(0) == 12000 and sc.quota_target(1) == 9600, "stretch quota: 12000 then 80%% for Q3 (%d)" % sc.quota_target(1))
 	var tier_before: String = diff.tier
 	diff.tier = "easy"
-	_check(sc.quota_target(0) == 6400, "easy tier scales the quota (%d)" % sc.quota_target(0))
+	_check(sc.quota_target(0) == 9600, "easy tier scales the quota (%d)" % sc.quota_target(0))
 	diff.tier = "hard"
-	_check(sc.quota_target(0) == 9600, "hard tier scales the quota (%d)" % sc.quota_target(0))
+	_check(sc.quota_target(0) == 14400, "hard tier scales the quota (%d)" % sc.quota_target(0))
 	diff.tier = tier_before
 
 	# ---- leads are deterministic with a seed
@@ -487,7 +487,7 @@ func _init() -> void:
 	for o5 in sc.offers():
 		ids.append(str(o5.id))
 	_check(ids == ["let_go"], "and with no book to take there is only one way out")
-	_check(sc.EPILOGUES.has("director") and sc.EPILOGUES.has("stay") and sc.EPILOGUES.has("leave") and sc.EPILOGUES.has("let_go"), "every ending has an epilogue")
+	_check(sc.BEAT_TEXT.endings.has("director") and sc.BEAT_TEXT.endings.has("stay") and sc.BEAT_TEXT.endings.has("leave") and sc.BEAT_TEXT.endings.has("let_go") and sc.BEAT_TEXT.endings.has("rollup"), "every ending has an epilogue")
 
 	# ---- save and continue
 	_start(21)
@@ -513,7 +513,7 @@ func _init() -> void:
 	_check(sc.quota_level == "safe" and sc.plan == "salary" and absf(sc.margin_floor - 0.47) < 0.0001 and sc.commission_total >= 1234 and sc.wins == 3, "continue keeps quota, plan, floor, commission and wins (a renewal due that week may add to it)")
 	_check(sc.q_signed[0] == 900 and sc.bell_ready, "and the quarter's MRR and the waiting bell")
 	_check(names_now.all(func(n: String) -> bool: return _lead_names(sc).has(n)), "and the pipeline")
-	_check(owner_node.vic_plan == "salary" and not root.get_node("Outings").enabled, "the plan is back on the payroll and outings stay off")
+	_check(owner_node.vic_plan == "salary" and not root.get_node("Outings").enabled, "the plan is back on the payroll")
 	c.finish_campaign("test")
 	_check(not c.has_save("sales"), "finishing deletes the save")
 	await _wait(0.5)
@@ -557,6 +557,10 @@ func _init() -> void:
 			await process_frame
 			await process_frame
 			_clear(cards, 0)
+			if onsite.active:  # the week 8 review offered a trip to the client's office: take it and come straight back
+				onsite._go_home(false)
+				await _wait(0.3)
+				_clear(cards, 0)
 			if hour > 10.0 and sc.pending_handover != 0 and not sc.Handover.pending().is_empty():
 				sc.Handover.start(sc.Handover.pending())  # you walk into the conference room
 				_clear(cards, day % 3)  # keep / renegotiate / drop, a different way each week

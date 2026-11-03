@@ -198,6 +198,153 @@ const DEFAULT_OWNER_HOLD := {
 }
 var OWNER_HOLD: Dictionary = DEFAULT_OWNER_HOLD.duplicate(true)
 
+# ---- Vic's talk (sales campaign, C3): what the coworkers say to the account manager ------------------------------
+# tokens: {cap} crew capacity, {open} open tickets, {pct} quota %, {weeks} weeks left in the quarter, {leads} open leads,
+# {client} / {mood} the unhappiest client, {deal} a deal with a promise gap, {floor} margin floor %, {claw} clawbacks
+const DEFAULT_VIC_GREETINGS := {
+	"Alan": {
+		"friend": "Vic. Sit. Give me the number first and the story after.",
+		"neutral": "Pipeline. Go. I have the books open.",
+		"cold": "...What did you promise this time?",
+	},
+	"Garrison": {
+		"friend": "There he is, my favourite closer! Tell me something good. Actually, tell me the number. Then something good.",
+		"neutral": "Vic! Quick one, I have a client in five. How is the pipeline?",
+		"cold": "Mm. Is this about a quote or about a discount?",
+	},
+	"Dan": {
+		"friend": "Hey Vic. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.",
+		"neutral": "Hey. Is this about a new client? Because I have {open} tickets open.",
+		"cold": "If it is a new client, I am not taking it.",
+	},
+	"Morgan": {
+		"friend": "Come in, Vic. I read your handover binder last night. It was almost accurate.",
+		"neutral": "Yes? I have a budget call in five minutes. Is this a promise or a question?",
+		"cold": "Mm. Are we talking about what you sold, or what we can do?",
+	},
+	"Maya": {
+		"friend": "Hi Vic! Your clients are so nice. Well, most of them. Want half a granola bar?",
+		"neutral": "Hey! Sorry, I have someone on hold. What is up?",
+		"cold": "Oh. Hi. I am just finishing a ticket for one of your clients.",
+	},
+}
+var VIC_GREETINGS: Dictionary = DEFAULT_VIC_GREETINGS.duplicate(true)
+const DEFAULT_VIC_SMALL := {
+	"Alan": [
+		"The XP deadline passed and half our prospects still run it. Every one of them thinks it is somebody else's problem.",
+		"Do you know what a one hour response costs us? Neither does Garrison.",
+		"The van needs brakes. The books say we can afford brakes. Barely. Your commission is not helping.",
+		"I looked at the ByteBrothers website. Their server is on a residential cable line. I am not saying a word.",
+		"My kid asked what you do. I said you talk people into buying what I build. She said that sounds easy. I said try it.",
+	],
+	"Garrison": [
+		"I have golf on Friday with the Chamber president. Business is done on the fifth hole.",
+		"Everybody is changing their passwords after the Target breach. I call it peace of mind. Alan calls it a required step.",
+		"I closed my first deal in a parking lot. The contract was on a napkin. Do not do that.",
+		"I finally beat level 90 on Sugar Smash. Do not ask what I spent.",
+		"The best salesman I ever met never said yes on the first call. He said let me check with my team. Then he checked with his team.",
+	],
+	"Dan": [
+		"Every time you sign a client I learn a new printer model.",
+		"I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work.",
+		"I do not mind new clients. I mind new clients who were promised a one hour response.",
+		"The aquarium at the vet clinic has better network infrastructure than we do. I looked.",
+	],
+	"Morgan": [
+		"Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.",
+		"I was a tech for six years before anybody let me near a budget. The desk is not the hard part.",
+		"Windows XP ended in April and I still have eleven clients on it. Sell them the migration, not the miracle.",
+		"I read every handover binder. The ones that say standard SLA make me happy. The ones with highlighter make me nervous.",
+	],
+	"Maya": [
+		"Today I walked a lady through plugging in her monitor. It was not plugged in. She felt great and told her husband you were wonderful.",
+		"Your Piedmont people call me by name now. I feel famous.",
+		"A client sent me a fruit basket. I do not know whom to credit, but I ate the pineapple.",
+		"I am trying to learn PowerShell on my lunch break. It is a lot like selling, except it does what you tell it.",
+	],
+}
+var VIC_SMALL: Dictionary = DEFAULT_VIC_SMALL.duplicate(true)
+const DEFAULT_VIC_GOSSIP := [
+	"Between us: Alan and Garrison argued about discounts again this morning. The door was closed and I could still hear the word logo.",
+	"I heard ByteBrothers is hiring salesmen. The word on the street is they pay on the quote, not on the retention.",
+	"Somebody microwaved fish in the kitchenette again. We are not saying who.",
+	"I heard Morgan keeps a list of promises. Mostly yours. It is not a long list. Yet.",
+]
+var VIC_GOSSIP: Array = DEFAULT_VIC_GOSSIP.duplicate(true)
+const DEFAULT_VIC_TIPS := {
+	"Alan": [
+		"Do not quote under the margin floor. A client who costs us money is not a client, he is a hobby.",
+		"Ask what is plugged in before you promise anything. Half of these offices have a server under somebody's desk.",
+		"If you cannot explain the price in one sentence, the price is wrong.",
+		"Put it in writing. A promise in an email is a contract. A promise on a golf course is a story.",
+	],
+	"Garrison": [
+		"Call before they call you. A short call keeps the contract; a long silence loses it.",
+		"The logo is a door, not a house. Get through the door and then charge for the house.",
+		"People buy from the guy who remembers their kid's name. Write it down. I do.",
+		"ByteBrothers always quotes twenty percent under and delivers twenty percent less. Make them say what they cut.",
+	],
+	"Dan": [
+		"Before you promise a response time, look at my queue. Walk over, I will show it to you.",
+		"Four hours is easy. One hour at any time means I sleep in the van.",
+		"Onboarding takes me two weeks per client. If you rush it I will do it, but something else slips.",
+		"A new client is three PCs, one printer and a wireless password nobody remembers. Tell me which printer.",
+	],
+	"Morgan": [
+		"Every promise you make goes in the binder. If it is not in the binder it did not happen, and I will say so in front of the client.",
+		"If you must promise something fast, promise it to me first. I can move things around. I cannot move things I do not know about.",
+		"Disclose the gap at the handover. It costs you a minute. Hiding it costs you the client in ninety days, and your commission with it.",
+		"Renewals are won in the first thirty days. After that, it is just paperwork.",
+	],
+	"Maya": [
+		"Be kind to the owner first. Half the problem is that they are scared they bought the wrong thing.",
+		"Clients tell me things they never tell you: who is mad, who is leaving, who just had a baby. Ask me.",
+		"When a client goes quiet, that is the dangerous kind. The loud ones stay forever.",
+		"Call the angry ones on a Monday. By Friday they have told three friends.",
+	],
+}
+var VIC_TIPS: Dictionary = DEFAULT_VIC_TIPS.duplicate(true)
+const DEFAULT_VIC_STATE := {
+	"Dan": {"tight": "Capacity is {cap} of 3 right now with {open} tickets open. Whatever you sell this week lands on top of that. Promise four hours, not one."},
+	"Morgan": {"gap": "{deal} has a promise gap I can see from here. Come to the conference room and tell them the real SLA before they find it out in week three."},
+	"Maya": {"mood": "{client} sounded annoyed when I called. They are {mood} percent happy and the number is going the wrong way. Call them before they start shopping around."},
+	"Garrison": {
+		"behind": "You are at {pct} percent of quota with {weeks} weeks left in the quarter. The number is the number. Get me two more logos.",
+		"ahead": "{pct} percent with {weeks} weeks to go? Vic, I may cry. Keep the margin where Alan can see it.",
+	},
+	"Alan": {"claw": "You have lost {claw} in clawbacks. Go and find out why before you sell the next one.", "floor": "The floor is {floor} percent. Anything under it comes to me first and I say no."},
+}
+var VIC_STATE: Dictionary = DEFAULT_VIC_STATE.duplicate(true)
+const DEFAULT_VIC_ASK := {
+	"Dan": {
+		"label": "CAN YOUR CREW TAKE ANOTHER CLIENT?",
+		"good": "We can take one. Capacity is {cap} of 3 and the queue is {open}. Do not promise one hour. Promise four and we will beat it.",
+		"tight": "Maybe. Capacity is {cap} of 3 and there are {open} tickets open. One small client, standard SLA, slow onboarding. Not two.",
+		"over": "Not this week. Capacity is {cap} of 3 and there are {open} tickets open. If you sign another one I will do the onboarding in the van.",
+	},
+	"Morgan": {
+		"label": "HOW ARE MY HANDOVERS GOING?",
+		"clean": "Clean so far. The binder matches what the crew can do. Keep it that way and the renewals will look after themselves.",
+		"gaps": "Not clean. {deal} still has a promise gap. The client has noticed and so have I. Fix it with a call before it becomes a complaint.",
+	},
+	"Maya": {
+		"label": "HOW ARE MY CLIENTS DOING?",
+		"fine": "They are doing great. The unhappiest one is {client} at {mood} percent, and that is a printer, not a person.",
+		"worry": "{client} is at {mood} percent. They have not said they are leaving, but they have started saying 'we'll see'. That is how it starts.",
+	},
+	"Alan": {
+		"label": "PIPELINE UPDATE",
+		"ahead": "{pct} percent of quota, {leads} open leads. Fine. Do not touch the floor to hit a number.",
+		"behind": "{pct} percent with {weeks} weeks left and {leads} leads. Close what you can deliver. Do not buy the quarter with discounts.",
+	},
+	"Garrison": {
+		"label": "PIPELINE UPDATE",
+		"ahead": "{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.",
+		"behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let us talk about the hot ones.",
+	},
+}
+var VIC_ASK: Dictionary = DEFAULT_VIC_ASK.duplicate(true)
+
 var _who := ""
 var _npc: Node = null
 var _taught := {}  # who -> day they last taught you something
@@ -242,7 +389,7 @@ func start(who: String, npc: Node) -> void:
 	var p := _player()
 	if p != null:
 		p.start_emote("talk", 100000.0, npc.global_position.x)
-	_menu(str(GREETINGS[voice(who)][tier(who)]))
+	_menu(_greeting(who))
 
 
 func _player() -> Node:
@@ -257,6 +404,9 @@ func _bubble(glyph: String) -> void:
 
 
 func _menu(text: String) -> void:
+	if Campaign.mode == "sales":
+		_sales_menu(text)
+		return
 	var owner_mode := Campaign.mode == "owner"
 	var service_mode := Campaign.mode == "service" and Service.has_one_on_one(_who)
 	Cards.ask(
@@ -273,6 +423,9 @@ func _menu(text: String) -> void:
 
 
 func _pick(id: String) -> void:
+	if Campaign.mode == "sales" and (id == "ask" or id == "tip"):
+		_reply(sales_answer(_who) if id == "ask" else sales_tip())
+		return
 	match id:
 		"small":
 			_reply(small_talk())
@@ -316,13 +469,14 @@ func _leave() -> void:
 # ---- the topics --------------------------------------------------------------------------------
 func small_talk() -> String:
 	Social.note_chat(_who)
-	var lines: Array = SMALL[voice(_who)]
+	var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[voice(_who)]
 	var text: String = lines[randi() % lines.size()]
 	_bubble(Social.glyph(_who))
 	if tier(_who) == "cold":
 		return "Mm. " + text.split(".")[0] + "."
 	if randf() < 0.25:
-		text += " " + str(GOSSIP[randi() % GOSSIP.size()])
+		var gossip: Array = VIC_GOSSIP if Campaign.mode == "sales" else GOSSIP
+		text += " " + str(gossip[randi() % gossip.size()])
 	return text
 
 
@@ -396,6 +550,120 @@ func _state_tip() -> String:
 						"Ticket #%d is almost out of time. I would hate for that to be a miss. Want a hand?"
 						% int(t.id)
 					)
+	return ""
+
+
+# ---- sales campaign (C3): you are Vic ------------------------------------------------------------
+func _greeting(who: String) -> String:
+	if Campaign.mode == "sales" and VIC_GREETINGS.has(who):
+		return _fill(str(VIC_GREETINGS[who][tier(who)]))
+	return str(GREETINGS[voice(who)][tier(who)])
+
+
+func _sales_menu(text: String) -> void:
+	var row: Dictionary = VIC_ASK.get(_who, {})
+	Cards.ask(
+		_who,
+		text,
+		[
+			{"label": "SMALL TALK", "id": "small"},
+			{"label": str(row.get("label", "HOW ARE THINGS?")), "id": "ask"},
+			{"label": "ANY TIPS?", "id": "tip"},
+			{"label": "LEAVE (ESC)", "id": "leave"},
+		],
+		func(id: String) -> void: _pick(id)
+	)
+
+
+# the unhappiest client you look after: {name, mood}
+func _worst_client() -> Dictionary:
+	var worst := {"name": "nobody", "mood": 100}
+	for d in SalesCampaign.book:
+		if int(d.mood) < int(worst.mood):
+			worst = {"name": str(d.name), "mood": int(d.mood)}
+	for c in Sales.active:
+		if Sales.mood(int(c)) < int(worst.mood):
+			worst = {"name": str(Msp.CLIENTS[int(c)].name), "mood": Sales.mood(int(c))}
+	return worst
+
+
+# a won deal whose promise gap is still open
+func _gap_deal() -> String:
+	for d in SalesCampaign.book:
+		if float(d.gap) >= 0.5 and not bool(d.resolved):
+			return str(d.name)
+	return ""
+
+
+func _fill(t: String) -> String:
+	var q := SalesCampaign.quarter_index()
+	var worst := _worst_client()
+	var deal := _gap_deal()
+	return (
+		t
+		. replace("{cap}", "%.1f" % SalesCampaign.capacity())
+		. replace("{open}", str(Msp.open_tickets().size()))
+		. replace("{pct}", str(SalesCampaign.quota_pct()))
+		. replace("{weeks}", str(int(SalesCampaign.QUARTERS[q].to) - Campaign.day + 1))
+		. replace("{leads}", str(SalesCampaign.open_leads().size()))
+		. replace("{client}", str(worst.name))
+		. replace("{mood}", str(worst.mood))
+		. replace("{deal}", deal if deal != "" else "your last deal")
+		. replace("{floor}", str(int(round(SalesCampaign.margin_floor * 100.0))))
+		. replace("{claw}", str(SalesCampaign.clawbacks))
+	)
+
+
+# what a coworker answers to the question on their button (also used by Lynk's NEED A HAND)
+func sales_answer(who: String) -> String:
+	var row: Dictionary = VIC_ASK.get(who, {})
+	var key := "good"
+	match who:
+		"Dan":
+			var cap := SalesCampaign.capacity()
+			key = "good" if cap >= 2.2 else ("tight" if cap >= 1.2 else "over")
+		"Morgan":
+			key = "gaps" if _gap_deal() != "" else "clean"
+		"Maya":
+			key = "worry" if int(_worst_client().mood) < 60 else "fine"
+		_:
+			key = "behind" if SalesCampaign.behind_pace() else "ahead"
+	Social.note_chat(who)
+	if _npc != null and is_instance_valid(_npc) and who == _who:
+		_bubble("!")
+	return _fill(str(row.get(key, row.get("good", "Not now."))))
+
+
+func sales_tip() -> String:
+	Social.note_chat(_who)
+	_bubble("!")
+	var text := _sales_state_tip()
+	if text == "":
+		var pool: Array = VIC_TIPS.get(_who, [])
+		text = str(pool[randi() % pool.size()]) if not pool.is_empty() else "Sell what we can deliver."
+	if tier(_who) == "cold":
+		return text.split(".")[0] + ". That is all you are getting."
+	return text
+
+
+# advice from the live book: Dan warns about capacity, Morgan about promises, Maya about client moods, the owners about the number
+func _sales_state_tip() -> String:
+	var st: Dictionary = VIC_STATE.get(_who, {})
+	match _who:
+		"Dan":
+			if SalesCampaign.capacity() < 1.8:
+				return _fill(str(st.tight))
+		"Morgan":
+			if _gap_deal() != "":
+				return _fill(str(st.gap))
+		"Maya":
+			if int(_worst_client().mood) < 65:
+				return _fill(str(st.mood))
+		"Garrison":
+			return _fill(str(st.behind if SalesCampaign.behind_pace() else st.ahead))
+		"Alan":
+			if SalesCampaign.clawbacks > 0:
+				return _fill(str(st.claw))
 	return ""
 
 
