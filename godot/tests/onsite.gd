@@ -364,6 +364,8 @@ func _init() -> void:
 	qa_vis += 1
 
 	# the door menu pages wrap around
+	root.get_node("DayReport").is_open = false  # an earlier step left the report up: it would hold cards back
+	cards.flush()
 	_drain(cards)
 	game.ui_open = false
 	var list: Array = on.door_clients()

@@ -1553,15 +1553,13 @@ func _site_client() -> int:
 	return 0
 
 
-func _host_prefix(c: int, skin: String) -> String:
-	if skin == "b":
-		return str(SITE_PROSPECT.get(site_type(c), "PROSPECT")).replace(" ", "").left(4)
+# the prospect's office (the b skin) is the lead's own company: the sign, the PC and the owner use
+# the client's real name and contact, so the lead card, the sign and the speaker all agree
+func _host_prefix(c: int, _skin: String) -> String:
 	return str(Msp.CLIENTS[c].short)
 
 
 func _owner_name(c: int) -> String:
-	if _scene_name().ends_with("_b"):
-		return str(OWNER_B.get(site_type(c), "The owner"))
 	return str(Msp.CLIENTS[c].contact)
 
 
@@ -1581,7 +1579,7 @@ func _open_pc(obj: String) -> void:
 		mails.append(mail)
 	var info := {
 		"name":
-		str(Msp.CLIENTS[c].name).to_upper() if skin == "a" else SITE_PROSPECT.get(type, "PROSPECT"),
+		str(Msp.CLIENTS[c].name).to_upper(),
 		"type": type,
 		"obj": obj,
 		"wall": cols[0],

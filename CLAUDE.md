@@ -902,3 +902,14 @@ New characters start as a copy of an existing one, then change only what differs
 - **Commute** ends with a toast (`Shift._arrival_text`: N MIN LATE, K TICKETS WAITING / EARLY / ON TIME). **Mail**: Enter works from the first press, moving the selection (wide layout) or opening marks mail read, the list scrolls and is wider, long text clips with `..`.
 - **Timed story events** (vignettes) fire when `World.clock` passes `at` and the clock is running; they can show up late only while the clock is paused or jumped (morning cards, an onsite trip moves the clock 1.5+ hours) or when the Cards queue is busy. This is intended: Heartbleed at 10:30 appears on return from a trip.
 - **Fix failure rate**: one roll per finished fix (`Computer._finish_job`): `Skills.FAIL[ps_level]` (25/18/10/4/0/0 %) + `Shift.fail_add()` (up to +18% under 45 energy, -3% rested) + `Growth.fail_adjust`; wrong fixes and retries roll too. No double roll, so 25-45% is normal for a tired level 0-1 tech.
+
+### Owner play-through fixes (items 1-6 and the lead name; test `tests/ownerfix.gd`)
+- **Cards and outings freeze the day**: `World.time_scale` reads 0 while a campaign has a `Cards` decision or an `Outings` game open. `Campaign._process` does not end the day while a card is open or an outing is open or being travelled to (`Outings.busy()`); `Cards.ask` queues behind the weekly report (`DayReport.is_open`) and `Cards.flush()` shows the queue after it. A card with no affordable option gets a NOT NOW option (`__none`, Esc picks it, the callback is not called) so it can never trap the week.
+- **Week 20 settles once**: `report_continue(final)` keeps `_awaiting` true (the clock is still at closing time).
+- **Valuation history**: `Owner.settle()` runs `Projects.week()` (payouts) before adding up the profit, so `history.profit` and `ebitda` (profit minus project money) agree.
+- **Vic's sold install** in the owner campaign is a one-off job (`Sales.INSTALL_JOB` $150 plus the hardware margin), not a desk ticket, so it cannot sit unworked or block `Msp.project_busy()`.
+- **Week 6 prospect** is a named client who is not signed yet (`Owner._prospect_card`, template `CARDS.prospect` with `%s`); the signed client is that one, and OFFER THE DISCOUNT applies 20% for 6 weeks (`fx.discount_new`).
+- **Phone**: TEXTS lists newest first and always shows the newest message (cut to fit); the home screen has keyboard selection (arrows, Enter opens, Esc closes; `Phone.home_sel`).
+- **Pitch site names**: the prospect's office (b skin) PC, owner and host prefix use the lead's real client name and contact (the lead card, the PC and the owner agree; `SITE_PROSPECT` / `OWNER_B` are no longer used).
+- Not done (kept in `docs/BACKLOG.md`): balance tuning, Vic complaint spread, Dana repeating advice, the 60% meeting upside, billing leak vs cash, REVIEW DUE in week 1, Esc in the Computer, invite cost text, the desk PC stealing E.
+

@@ -69,6 +69,7 @@ func finish() -> void:
 	_canvas.visible = false
 	_fade = 0.0
 	Campaign.report_continue(bool(report.get("final", false)))
+	Cards.flush()
 
 
 func _input(event: InputEvent) -> void:

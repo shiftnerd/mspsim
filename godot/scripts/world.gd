@@ -33,7 +33,12 @@ const CHAT_COOLDOWN := 60.0
 const FOREVER := 1.0e9
 
 var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ret, ...}
-var time_scale := 1.0
+var time_scale := 1.0:
+	get:
+		# the day clock waits while a decision card or an outing is open
+		if Campaign.active and (Cards.is_open or Outings.is_open):
+			return 0.0
+		return time_scale
 var meeting_gap := Vector2(120.0, 190.0)
 var day_len := 600.0  # real seconds for the 8 working hours
 var clock := DAY_START

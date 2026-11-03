@@ -155,6 +155,11 @@ func from_dict(data: Dictionary) -> void:
 
 
 # ---- invitations ------------------------------------------------------------------------------
+# a game is open, or we are on the way to its room
+func busy() -> bool:
+	return is_open or _wait_id != ""
+
+
 func invite_day() -> bool:
 	if not Campaign.active:
 		return false
