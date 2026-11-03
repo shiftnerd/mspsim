@@ -297,17 +297,21 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 	var big := size.x / float(sc) >= 140.0
 	var pw := _panel_w(sc, size)
 	var groups := _groups()
+	var left: Array = report.get("left_groups", [])  # extra groups: under the grade box when wide, after the others when narrow
 	var y := 11.0
 	var inner := pw - 8.0
 	var hero_w := 112.0
 	if wide:
 		var hh := _hero_block(4.0, y, hero_w, true, draw)
 		var lx := 4.0 + hero_w + 6.0
-		if draw:
-			_r(4.0 + hero_w + 2.0, y, 1.0, hh, LINE)
 		var lh := _list(lx, y, pw - lx - 4.0, groups, draw)
+		if not left.is_empty():
+			hh += 3.0 + _list(4.0, y + hh + 3.0, hero_w, left, draw)
+		if draw:
+			_r(4.0 + hero_w + 2.0, y, 1.0, maxf(hh, lh), LINE)
 		y += maxf(hh, lh)
 	else:
+		groups = groups + left
 		y += _hero_block(4.0, y, inner, big, draw) + 3.0
 		y += _list(4.0, y, inner, groups, draw)
 	var ending := str(report.get("ending", ""))

@@ -262,7 +262,16 @@ func _watch_outage(delta: float) -> void:
 
 # the cast row of anybody in the building (CAST, or a service desk tech)
 func row(n: String) -> Dictionary:
-	return CAST[n] if CAST.has(n) else CREW_CAST[n]
+	if CAST.has(n):
+		return CAST[n]
+	if CREW_CAST.has(n):
+		return CREW_CAST[n]
+	return Crew.hire_row(n)  # a tech you hired (C6): hot-desks at the conference table
+
+
+# every name that can be a service tech: Sam and Terry, then the pool the hires are drawn from
+func crew_names() -> Array:
+	return CREW_CAST.keys() + Crew.HIRE_SHEETS.keys()
 
 
 func _make_char(n: String) -> Dictionary:
@@ -294,7 +303,7 @@ func roster_gone() -> Array:
 	if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
 		gone.append("Maya")
 	# the service techs are only here in the service campaign, and only while they work for you (C5)
-	for n in CREW_CAST:
+	for n in crew_names():
 		if not (Campaign.active and Campaign.mode == "service" and Crew.has(n) and not Crew.is_gone(n)):
 			gone.append(n)
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
@@ -331,7 +340,7 @@ func apply_roster() -> void:
 			if st.node != null and is_instance_valid(st.node):
 				st.node.queue_free()
 			chars.erase(n)
-	for n in CAST.keys() + CREW_CAST.keys():
+	for n in CAST.keys() + crew_names():
 		if not gone.has(n) and not chars.has(n):
 			chars[n] = _make_char(n)
 			if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
@@ -475,7 +484,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
 		var shift := 0.0
 		if i < 0:
 			i = 2  # a service tech takes the spot of Dan (who is the player), side by side
-			shift = 12.0 * float(CREW_CAST.keys().find(n))
+			shift = 12.0 * float(mini(crew_names().find(n), 6))
 		var st: Dictionary = chars[n]
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
@@ -1031,7 +1040,7 @@ func start_all_hands() -> void:
 			continue
 		send_to_meeting(n, "Seat%d" % i, 90.0)
 		i += 1
-	for n in CREW_CAST:  # the service techs take the next chairs (C5)
+	for n in crew_names():  # the service techs take the next chairs (C5)
 		if chars.has(n) and i <= 6:
 			send_to_meeting(n, "Seat%d" % i, 90.0)
 			i += 1

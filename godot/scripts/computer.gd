@@ -194,6 +194,10 @@ func _input(event: InputEvent) -> void:
 			_canvas.queue_redraw()
 			get_viewport().set_input_as_handled()
 			return
+		if app == "knowledge" and _knowledge_key(event):
+			_canvas.queue_redraw()
+			get_viewport().set_input_as_handled()
+			return
 		match event.keycode:
 			KEY_ESCAPE:
 				escape()
@@ -361,6 +365,8 @@ func activate(id: String) -> void:
 			_learn_action(parts)
 		"dsp":
 			dispatch.act(parts)
+		"kb":
+			Service.kb.act(parts)
 		"btab":
 			board_tab = parts[1]
 		"crm":
@@ -724,6 +730,8 @@ func _paint() -> void:
 			Crm.paint(self)
 		"dispatch":
 			_paint_dispatch()
+		"knowledge":
+			_paint_knowledge()
 		"lync":
 			_paint_lync()
 		"nerds":
@@ -786,6 +794,7 @@ func _paint_taskbar() -> void:
 			items.insert(4, ["app:boardroom", "BOARDROOM"])
 		if Campaign.mode == "service":
 			items.insert(4, ["app:dispatch", "DISPATCH"])
+			items.insert(5, ["app:knowledge", "KNOWLEDGE"])
 		for i in items.size():
 			_button(
 				items[i][0],
@@ -852,6 +861,11 @@ func _icon(kind: String, p: Vector2) -> void:
 			for i in 3:
 				_fill(Rect2(p.x + 1 + i * 5, p.y + 4, 4, 3), PSA_BLUE)
 				_fill(Rect2(p.x + 1 + i * 5, p.y + 8, 4, 3), AMBER if i == 1 else GREEN)
+		"knowledge":
+			_fill(Rect2(p + Vector2(1, 0), Vector2(14, 12)), Color("e8f3ec"))
+			_fill(Rect2(p + Vector2(1, 0), Vector2(3, 12)), Color("2f6e5a"))
+			for i in 4:
+				_fill(Rect2(p.x + 6, p.y + 2 + i * 3, 8, 1), Color("5aa07a") if i != 2 else AMBER)
 		"stats":
 			_fill(Rect2(p, Vector2(15, 12)), Color("e8ecf2"))
 			_fill(Rect2(p.x + 2, p.y + 6, 3, 5), GREEN)
@@ -1033,6 +1047,7 @@ func _paint_desktop() -> void:
 		icons.append(["boardroom", "BOARDROOM", 0])
 	if Campaign.mode == "service":
 		icons.append(["dispatch", "DISPATCH", dispatch.tickets_in("").size()])
+		icons.append(["knowledge", "KNOWLEDGE", 0])
 	var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
 	for i in icons.size():
 		var p := Vector2(
@@ -1787,6 +1802,25 @@ func _dispatch_key(event: InputEventKey) -> bool:
 	if key_name == "tab" and event.shift_pressed:
 		key_name = "shift_tab"
 	return dispatch.key(key_name)
+
+
+# ---- ConnectWhy Knowledge (service manager campaign, C6: the runbooks; the app itself is scripts/knowledge.gd) --------
+func _paint_knowledge() -> void:
+	var body := _window("CONNECTWHY KNOWLEDGE - RUNBOOKS", Color("2f6e5a"))
+	if _offline("CONNECTWHY KNOWLEDGE - SERVER NOT AVAILABLE.", body):
+		return
+	Service.kb.paint(self, body)
+
+
+func _knowledge_key(event: InputEventKey) -> bool:
+	var names := {
+		KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
+		KEY_KP_ENTER: "enter", KEY_W: "w", KEY_H: "h", KEY_T: "t", KEY_R: "r", KEY_D: "d", KEY_C: "c",
+		KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_BRACKETLEFT: "pgup", KEY_BRACKETRIGHT: "pgdn",
+	}
+	if not names.has(event.keycode):
+		return false
+	return Service.kb.key(str(names[event.keycode]))
 
 
 func _paint_lync() -> void:

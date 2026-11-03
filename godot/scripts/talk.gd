@@ -212,7 +212,22 @@ func reset() -> void:
 
 
 func available(who: String) -> bool:
-	return Campaign.active and SPECIALTY.has(who) and not Cards.is_open
+	return Campaign.active and (SPECIALTY.has(who) or Crew.is_hire(who)) and not Cards.is_open
+
+
+# a tech you hired (C6) has no lines of their own: they borrow Sam's voice and a specialty from their strongest area
+func voice(who: String) -> String:
+	return who if GREETINGS.has(who) else "Sam"
+
+
+func specialty(who: String) -> String:
+	if SPECIALTY.has(who):
+		return str(SPECIALTY[who])
+	var best := "networking"
+	for a in ["powershell", "networking", "servers", "security"]:
+		if Crew.area_level(who, a) > Crew.area_level(who, best):
+			best = a
+	return best if Skills.NAMES.has(best) else "servers"
 
 
 func tier(who: String) -> String:
@@ -227,7 +242,7 @@ func start(who: String, npc: Node) -> void:
 	var p := _player()
 	if p != null:
 		p.start_emote("talk", 100000.0, npc.global_position.x)
-	_menu(str(GREETINGS[who][tier(who)]))
+	_menu(str(GREETINGS[voice(who)][tier(who)]))
 
 
 func _player() -> Node:
@@ -301,7 +316,7 @@ func _leave() -> void:
 # ---- the topics --------------------------------------------------------------------------------
 func small_talk() -> String:
 	Social.note_chat(_who)
-	var lines: Array = SMALL[_who]
+	var lines: Array = SMALL[voice(_who)]
 	var text: String = lines[randi() % lines.size()]
 	_bubble(Social.glyph(_who))
 	if tier(_who) == "cold":
@@ -325,11 +340,11 @@ func tip() -> String:
 	_bubble("!")
 	var text := _state_tip()
 	if text == "":
-		var pool: Array = TIPS_GENERIC[_who]
+		var pool: Array = TIPS_GENERIC[voice(_who)]
 		text = pool[randi() % pool.size()]
 	if tier(_who) == "cold":
 		return text.split(".")[0] + ". That is all you are getting."
-	var skill := str(SPECIALTY[_who])
+	var skill := specialty(_who)
 	if Social.is_friendly(_who) and int(_taught.get(_who, -1)) != Campaign.day:
 		_taught[_who] = Campaign.day
 		Skills.add_xp(skill, LESSON_XP)
