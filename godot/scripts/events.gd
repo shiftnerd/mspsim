@@ -2112,7 +2112,7 @@ func roster() -> Array:
 	for who in World.CAST:
 		if OWNERS.has(who):
 			continue
-		if who == "Maya" and Campaign.mode == "owner":
+		if who == "Maya" and not bool(Campaign.prop("maya_in_events", true)):
 			continue  # she is not on the owner's payroll
 		out.append(str(who))
 	return out

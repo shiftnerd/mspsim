@@ -147,7 +147,7 @@ func sign_client(wanted := -1) -> int:
 		client = wanted
 	active.append(client)
 	signed_day[client] = Campaign.day
-	satisfaction[client] = Owner.new_client_mood() if Owner.active() else 75
+	satisfaction[client] = Owner.new_client_mood() if Campaign.cards_active() else 75
 	deals += 1
 	Owner.on_deal("client", client)
 	Msp.send_text("Vic", SIGN_TEXT % Msp.CLIENTS[client].name)
@@ -165,7 +165,7 @@ func sign_client(wanted := -1) -> int:
 
 
 func sell_install() -> int:
-	if Owner.active():
+	if Campaign.books_active():
 		# the owner campaign has no desk project for the team to work: the sale is a one-off job
 		# (the crew does the setup between tickets), so it can never block the next sale
 		var who := pick_client()
@@ -199,7 +199,7 @@ func sell_install() -> int:
 # the client with a late open ticket and low satisfaction complains to Vic
 func complaint_cooling(client: int) -> bool:
 	return (
-		Owner.active()
+		Campaign.cards_active()
 		and Campaign.day - int(complained_day.get(client, -99)) < CLIENT_COMPLAINT_WEEKS
 	)
 

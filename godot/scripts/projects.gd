@@ -108,7 +108,7 @@ func reset() -> void:
 
 
 func active() -> bool:
-	return Campaign.active and Campaign.mode == "owner"
+	return Campaign.books_active()
 
 
 # ---- hours and profitability ------------------------------------------------------------------------

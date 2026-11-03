@@ -1628,7 +1628,7 @@ func inspect(obj: String) -> void:
 
 func _found(f: Dictionary) -> void:
 	var options := [{"label": "LOG A TICKET", "id": "ticket"}]
-	if Owner.active() and str(f.get("project", "")) != "":
+	if Campaign.books_active() and str(f.get("project", "")) != "":
 		options.append({"label": "SELL IT AS A PROJECT", "id": "project"})
 	if visit_prospect:
 		options = [{"label": "TELL THEM ABOUT IT (BUILDS YOUR PITCH)", "id": "tell"}]

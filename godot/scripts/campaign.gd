@@ -10,7 +10,54 @@ signal day_started(day_number: int)
 const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
+# the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
 const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
+# MODE REGISTRY (X8, "P0b"): one row per campaign mode. The three GATES say which machinery a mode runs:
+#   crew   the team works the ticket queue by itself (Owner.team_speed, _work_queue, ticket volume, premature closes)
+#   books  cash, P&L, payroll, weekly settle, valuation, the Boardroom app, projects, deal income
+#   cards  the weekly decision flow (Owner.CARDS / DAYS, the week structure, partner, player-profile edges)
+# The rest are the per-mode properties the code used to hard-code with `mode == "owner"`. A new mode (service, sales) is a
+# row here plus its content tables; "selectable" stays false until its slice is playable. See docs/campaign-paths.md 8.1.
+const MODE_DEFS := {
+	"tech": {
+		"label": "TECH CAMPAIGN", "selectable": true,
+		"crew": false, "books": false, "cards": false, "books_lite": false,
+		"day_len": 600.0, "total_days": 20, "unit": "DAY",
+		"hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+		"pace": 1.0, "shift": true, "scars": true, "maya_in_events": true,
+		"ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+	},
+	"owner": {
+		"label": "OWNER CAMPAIGN", "selectable": true,
+		"crew": true, "books": true, "cards": true, "books_lite": false,
+		"day_len": 240.0, "total_days": 20, "unit": "WEEK",
+		"hud": "week_cash", "report": "pnl", "review": "board", "review_heading": "BOARD REVIEW", "review_pages": 3,
+		"pace": 0.6, "shift": false, "scars": false, "maya_in_events": false,
+		"ending_fired": "YOUR NAME IS MUD. THE COMPANY CLOSES.",
+		"ending_final": "YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT.",
+	},
+	# planned (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day
+	"service": {
+		"label": "SERVICE CAMPAIGN", "selectable": false,
+		"crew": true, "books": false, "cards": true, "books_lite": false,
+		"day_len": 360.0, "total_days": 20, "unit": "DAY",
+		"hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+		"pace": 0.8, "shift": false, "scars": false, "maya_in_events": true,
+		"ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+	},
+	# planned (campaign-paths 5): Vic sells; the crew delivers, a light set of books (commission, MRR), a card each week
+	"sales": {
+		"label": "SALES CAMPAIGN", "selectable": false,
+		"crew": true, "books": true, "cards": true, "books_lite": true,
+		"day_len": 240.0, "total_days": 20, "unit": "WEEK",
+		"hud": "week_cash", "report": "pnl", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+		"pace": 0.6, "shift": false, "scars": false, "maya_in_events": true,
+		"ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
+		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+	},
+}
 const START_REP := 50
 
 var active := false  # a real campaign (not free play) is running
@@ -67,6 +114,48 @@ func adjust_rep(amount: int) -> void:
 	rep = clampi(rep + change, 0, 100)
 
 
+# ---- the mode registry -------------------------------------------------------------------------
+# a registry row ({} for Free Play, no mode, or an unknown name)
+func mode_def(for_mode := "") -> Dictionary:
+	return MODE_DEFS.get(mode if for_mode == "" else for_mode, {})
+
+
+# can the player start (and save) this mode? Only registered rows with selectable = true
+func is_selectable(for_mode: String) -> bool:
+	return bool(MODE_DEFS.get(for_mode, {}).get("selectable", false))
+
+
+# a registered row that is not playable yet (planned modes): new_game / continue_game / save refuse it
+func is_planned(for_mode: String) -> bool:
+	return MODE_DEFS.has(for_mode) and not is_selectable(for_mode)
+
+
+# a property of the current mode (or of for_mode), with a default for Free Play
+func prop(key: String, fallback: Variant, for_mode := "") -> Variant:
+	return mode_def(for_mode).get(key, fallback)
+
+
+# the three gates; false outside a running campaign
+func crew_active() -> bool:
+	return active and bool(mode_def().get("crew", false))
+
+
+func books_active() -> bool:
+	return active and bool(mode_def().get("books", false))
+
+
+func cards_active() -> bool:
+	return active and bool(mode_def().get("cards", false))
+
+
+func day_len_for(for_mode: String) -> float:
+	return float(MODE_DEFS.get(for_mode, {}).get("day_len", 600.0))
+
+
+func total_days() -> int:
+	return int(prop("total_days", TOTAL_DAYS))
+
+
 func save_path(for_mode: String) -> String:
 	return save_prefix + for_mode + ".cfg"
 
@@ -108,8 +197,11 @@ func refresh_free() -> void:
 
 
 func new_game(for_mode: String) -> void:
+	if is_planned(for_mode):
+		push_warning("Campaign: mode '%s' is registered but not selectable yet" % for_mode)
+		return
 	mode = for_mode
-	active = MODES.has(for_mode)
+	active = is_selectable(for_mode)
 	player_as = derive_player_as(for_mode)
 	if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
 		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
@@ -141,7 +233,7 @@ func new_game(for_mode: String) -> void:
 	Events.reset()
 	Mutators.start(for_mode)
 	Mutators.apply_start()
-	World.day_len = 240.0 if for_mode == "owner" else 600.0
+	World.day_len = day_len_for(for_mode)
 	Msp.enabled = active
 	if active:
 		World.begin_next_day(1)
@@ -151,6 +243,8 @@ func new_game(for_mode: String) -> void:
 
 
 func continue_game(for_mode: String) -> bool:
+	if is_planned(for_mode):
+		return false
 	var cfg := ConfigFile.new()
 	if cfg.load(save_path(for_mode)) != OK:
 		return false
@@ -189,7 +283,7 @@ func continue_game(for_mode: String) -> bool:
 	Events.from_dict(cfg.get_value("campaign", "events", {}))
 	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
 	Lync.reset()
-	World.day_len = 240.0 if for_mode == "owner" else 600.0
+	World.day_len = day_len_for(for_mode)
 	Story.flags = cfg.get_value("campaign", "story", {})
 	var saved_backups: Array = cfg.get_value("campaign", "backups", [])
 	if saved_backups.size() == Msp.backups.size():
@@ -201,7 +295,7 @@ func continue_game(for_mode: String) -> bool:
 
 
 func save() -> void:
-	if not active:
+	if not active or not is_selectable(mode):
 		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("campaign", "day", day)
@@ -263,13 +357,13 @@ func _begin_day() -> void:
 		"missed": Msp.breached,
 		"reopened": Msp.reopened,
 	}
-	# owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate
-	Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * (0.6 if mode == "owner" else 1.0)
+	# owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate (registry "pace")
+	Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
 	Social.begin_day()
 	Story.begin_day(day)
-	if mode == "owner":
+	if cards_active():
 		Owner.begin_day(day)
-	else:
+	if bool(prop("shift", false)):
 		Shift.begin_day(day)
 	Events.begin_day(day)
 	Mutators.begin_day(day)
@@ -362,7 +456,7 @@ func _end_day() -> void:
 	if Phone.is_open:
 		Phone.close()
 	var r := make_report()
-	if mode == "owner":
+	if books_active() and str(prop("report", "day")) == "pnl":
 		var books := Owner.settle()
 		r["rows"] = books.rows
 		r["title"] = books.title
@@ -375,21 +469,21 @@ func _end_day() -> void:
 		r["bankrupt"] = books.bankrupt
 	else:
 		cash += int(r.pay)
-	if mode == "tech":
+	if bool(prop("scars", false)):
 		if int(r.reopened) >= 3:
 			add_scar(2)  # a reopen storm: the clients stop trusting your closes
 		elif scars > 0 and r.grade in ["S", "A"]:
 			scars -= 1
 		r["rep_cap"] = rep_cap()
-	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
+	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
 	if r.get("bankrupt", false):
 		rep = 0
 	r["rep"] = rep
 	r["cash"] = cash
-	r["total_days"] = TOTAL_DAYS
+	r["total_days"] = total_days()
 	r["fired"] = rep <= 0
 	_fired_out = rep <= 0
-	r["final"] = day >= TOTAL_DAYS or rep <= 0
+	r["final"] = day >= total_days() or rep <= 0
 	r["ending"] = _ending(r)
 	history.append({"day": day, "grade": r.grade, "points": r.points})
 	Game.ui_open = true
@@ -398,20 +492,12 @@ func _end_day() -> void:
 
 func _ending(r: Dictionary) -> String:
 	if r.fired:
-		if mode == "owner":
-			return (
-				"THE COMPANY IS BANKRUPT."
-				if bool(r.get("bankrupt", false))
-				else "YOUR NAME IS MUD. THE COMPANY CLOSES."
-			)
-		return "REPUTATION GONE. YOU ARE FIRED."
-	if day < TOTAL_DAYS:
+		if bool(r.get("bankrupt", false)):
+			return "THE COMPANY IS BANKRUPT."
+		return str(prop("ending_fired", "REPUTATION GONE. YOU ARE FIRED."))
+	if day < total_days():
 		return ""
-	return (
-		"YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT."
-		if mode == "owner"
-		else "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT."
-	)
+	return str(prop("ending_final", "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT."))
 
 
 # the report screen's button
@@ -420,7 +506,7 @@ func report_continue(final: bool) -> void:
 		_awaiting = true  # the last day settles once: the clock is still at closing time
 	else:
 		_awaiting = false
-	if final and (mode == "tech" or mode == "owner") and not _fired_out:
+	if final and str(prop("review", "")) != "" and not _fired_out:
 		Review.start()
 		return
 	if final:

@@ -1094,10 +1094,7 @@ var _poach_wave := 0  # weeks the competitor is running a campaign (double the r
 var _ransom_ticket := 0
 
 
-func active() -> bool:
-	return Campaign.active and Campaign.mode == "owner"
-
-
+# X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
 func reset() -> void:
 	cash = START_CASH
 	flags = {}
@@ -1219,7 +1216,7 @@ func edges_for(owner_name: String) -> Dictionary:
 
 
 func edge(key: String) -> float:
-	return float(edges_for(Campaign.player_as)[key]) if active() else float(DEFAULT_EDGE[key])
+	return float(edges_for(Campaign.player_as)[key]) if Campaign.cards_active() else float(DEFAULT_EDGE[key])
 
 
 func stack_option(category: String) -> Dictionary:
@@ -1239,7 +1236,7 @@ func stack_cost() -> int:
 
 # ticket volume multiplier: unreliable hardware and a weak RMM mean more calls
 func issue_mult() -> float:
-	if not active():
+	if not Campaign.crew_active():
 		return 1.0
 	var m := float(edge("issues"))
 	for category in STACK:
@@ -1256,7 +1253,7 @@ func security_risk() -> float:
 
 # scope creep: a few clients generate far more requests until you enforce the contract
 func client_weight(client: int) -> float:
-	if not active():
+	if not Campaign.crew_active():
 		return 1.0
 	return 1.0 if scope_fixed.get(client, false) else float(HEAVY.get(client, 1.0))
 
@@ -1299,7 +1296,7 @@ func oml() -> int:
 
 # everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
 func vic_extra() -> float:
-	if not active():
+	if not Campaign.books_active():
 		return 0.0
 	return (
 		vic_bonus
@@ -1321,7 +1318,7 @@ func new_client_mood() -> int:
 
 # Vic closed something: pay his commission, bank the hardware resale margin
 func on_deal(kind: String, client: int) -> void:
-	if not active():
+	if not Campaign.books_active():
 		return
 	vic_deals += 1
 	vic_signed.append(client)
@@ -1336,14 +1333,19 @@ func on_deal(kind: String, client: int) -> void:
 
 
 func _process(delta: float) -> void:
-	if not active() or Game.title_mode or World.time_scale <= 0.0 or not Msp.enabled:
+	var crew := Campaign.crew_active()
+	var cards := Campaign.cards_active()
+	if not (crew or cards) or Game.title_mode or World.time_scale <= 0.0 or not Msp.enabled:
 		return
 	var dt := delta * World.time_scale
-	_tick += dt
-	if _tick >= 3.0:
-		var slice := _tick
-		_tick = 0.0
-		_work_queue(slice)
+	if crew:
+		_tick += dt
+		if _tick >= 3.0:
+			var slice := _tick
+			_tick = 0.0
+			_work_queue(slice)
+	if not cards:
+		return
 	var events: Array = DAYS.get(Campaign.day, [])
 	for i in events.size():
 		var ev: Dictionary = events[i]
