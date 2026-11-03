@@ -19258,6 +19258,10 @@ var _pinned := false  # seed_run() was called: the next new_run() keeps that see
 
 
 func _ready() -> void:
+    # tests and headless runs get their own settings file, so playing the game (tier, look) never changes a test
+    var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+    if is_test and settings_path == "user://mspsim_settings.cfg":  # a test that already chose its own path keeps it
+        settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
     if run_seed == 0:
         run_seed = _random_seed()
 
@@ -19785,6 +19789,10 @@ var _last := {}
 
 func _ready() -> void:
     silent = DisplayServer.get_name() == "headless"
+    # tests and headless runs get their own settings file, so playing the game (tier, look) never changes a test
+    var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+    if is_test and settings_path == "user://mspsim_settings.cfg":  # a test that already chose its own path keeps it
+        settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
     load_settings()
     Msp.ticket_added.connect(func(_t: Dictionary) -> void: play("ticket"))
     Msp.text_received.connect(func(_m: Dictionary) -> void: play("text"))
