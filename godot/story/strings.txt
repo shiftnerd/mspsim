@@ -5372,6 +5372,18 @@ Brightside's old server is out of support. Today is the cutover. It has to be ca
 [Service.INCIDENTS.migration.title]
 THE SERVER MIGRATION
 
+# Service > INCIDENTS > onboard > speaker
+[Service.INCIDENTS.onboard.speaker]
+Garrison (Co-owner)
+
+# Service > INCIDENTS > onboard > text
+[Service.INCIDENTS.onboard.text]
+Iron Mule Demolition signs today and they have no documentation. Who takes the onboarding?
+
+# Service > INCIDENTS > onboard > title
+[Service.INCIDENTS.onboard.title]
+IRON MULE ONBOARDING
+
 
 # ======================= Service > INCIDENT_OPTIONS =======================
 # Service > INCIDENT_OPTIONS > take
@@ -5923,6 +5935,30 @@ A CLIENT OFFERS YOU THEIR ONLY IT JOB: ONE NETWORK, CALM HOURS.
 # Service > REVIEW > endings > leave > text
 [Service.REVIEW.endings.leave.text]
 YOU TURN IN YOUR BADGE. ONE OFFICE, ONE NETWORK, NO PAGER. YOU LABEL THEIR PATCH PANEL ON YOUR FIRST DAY.
+
+# Service > REVIEW > endings > rollup_yes > label
+[Service.REVIEW.endings.rollup_yes.label]
+ACCEPT SUMMIT'S ROLL-UP
+
+# Service > REVIEW > endings > rollup_yes > desc
+[Service.REVIEW.endings.rollup_yes.desc]
+THE OWNERS SELL. YOU STAY ON AS SUMMIT'S SERVICE DIRECTOR.
+
+# Service > REVIEW > endings > rollup_yes > text
+[Service.REVIEW.endings.rollup_yes.text]
+THE OWNERS SIGN WITH SUMMIT MANAGED HOLDINGS AND YOU BECOME THEIR SERVICE DIRECTOR FOR THE REGION. THE SCORECARD TRAVELS WITH YOU. EVERY NEW PATCH PANEL YOU MEET GETS A LABEL.
+
+# Service > REVIEW > endings > rollup_no > label
+[Service.REVIEW.endings.rollup_no.label]
+DECLINE THE ROLL-UP
+
+# Service > REVIEW > endings > rollup_no > desc
+[Service.REVIEW.endings.rollup_no.desc]
+YOU ADVISE THE OWNERS TO STAY INDEPENDENT.
+
+# Service > REVIEW > endings > rollup_no > text
+[Service.REVIEW.endings.rollup_no.text]
+THE OWNERS TURN SUMMIT DOWN AND KEEP THE COMPANY. THE DESK STAYS YOURS, WITH A BETTER SCORECARD AND A LONGER LIST OF THINGS TO DOCUMENT.
 
 # Service > REVIEW > endings > stay > label
 [Service.REVIEW.endings.stay.label]
@@ -6729,6 +6765,1508 @@ Thank you. It is not about you.
 # Service > ROWS > cost
 [Service.ROWS.cost]
 COST PER TICKET
+
+
+# ======================= ServiceArc > ARC =======================
+# ServiceArc > ARC > heartbleed > speaker
+[ServiceArc.ARC.heartbleed.speaker]
+Garrison (Co-owner)
+
+# ServiceArc > ARC > heartbleed > text
+[ServiceArc.ARC.heartbleed.text]
+Heartbleed is all over the news. {n} clients have called to ask if they are safe and {m} certificate checks are on the board. I want an email to every client within the hour, so nobody reads about it before they hear it from us. Alan is standing behind me with a different idea.
+
+# ServiceArc > ARC > heartbleed > options > 0 > label
+[ServiceArc.ARC.heartbleed.options.0.label]
+PATCH FIRST, EMAIL AFTER
+
+# ServiceArc > ARC > heartbleed > options > 0 > text
+[ServiceArc.ARC.heartbleed.options.0.text]
+Servers first. The email goes out when the patch list is green. Garrison asked how long that is. I said the afternoon.
+
+# ServiceArc > ARC > heartbleed > options > 1 > label
+[ServiceArc.ARC.heartbleed.options.1.label]
+EMAIL THE CLIENTS NOW
+
+# ServiceArc > ARC > heartbleed > options > 1 > text
+[ServiceArc.ARC.heartbleed.options.1.text]
+The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to Vic.
+
+# ServiceArc > ARC > heartbleed > options > 2 > label
+[ServiceArc.ARC.heartbleed.options.2.label]
+HOLDING EMAIL AND ORDER
+
+# ServiceArc > ARC > heartbleed > options > 2 > text
+[ServiceArc.ARC.heartbleed.options.2.text]
+Two lines to the clients: we are checking, you will hear from us by five. And a patch order for Alan: servers, then websites, then desktops. It took an hour. Both of them initialled it.
+
+# ServiceArc > ARC > heartbleed2 > speaker
+[ServiceArc.ARC.heartbleed2.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > heartbleed2 > text > hb_patch
+[ServiceArc.ARC.heartbleed2.text.hb_patch]
+Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. Vic is apologising on the phone. Garrison would like you to know he said so.
+
+# ServiceArc > ARC > heartbleed2 > text > hb_email
+[ServiceArc.ARC.heartbleed2.text.hb_email]
+After the email, {n} clients called to ask whether we had patched yet. The honest answer was: not yet. Alan has been quiet about the email, which is worse than loud.
+
+# ServiceArc > ARC > heartbleed2 > text > hb_both
+[ServiceArc.ARC.heartbleed2.text.hb_both]
+The holding email worked. The clients got the patch report at five and two of them said thank you. Alan and Garrison both asked for a copy of the template.
+
+# ServiceArc > ARC > heartbleed2 > text > none
+[ServiceArc.ARC.heartbleed2.text.none]
+Heartbleed week is a long one. The certificate checks are still coming in. Keep writing down what you checked.
+
+# ServiceArc > ARC > heartbleed2 > options > 0 > label
+[ServiceArc.ARC.heartbleed2.options.0.label]
+NOTED
+
+# ServiceArc > ARC > heartbleed2 > options > 0 > text
+[ServiceArc.ARC.heartbleed2.options.0.text]
+
+
+# ServiceArc > ARC > wave_adjust > speaker
+[ServiceArc.ARC.wave_adjust.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > wave_adjust > text
+[ServiceArc.ARC.wave_adjust.text]
+XP wave check: {done} of {total} machines are done, {left} left, and the deadline is the end of day {deadline}. {strain} How do you want to spend the rest of the week?
+
+# ServiceArc > ARC > wave_adjust > options > 0 > label
+[ServiceArc.ARC.wave_adjust.options.0.label]
+PUT {junior} ON THE WAVE
+
+# ServiceArc > ARC > wave_adjust > options > 0 > text
+[ServiceArc.ARC.wave_adjust.options.0.text]
+{junior} takes the wave full time. The phones go to whoever is free, and I will watch the first response times.
+
+# ServiceArc > ARC > wave_adjust > options > 1 > label
+[ServiceArc.ARC.wave_adjust.options.1.label]
+A SATURDAY SESSION, VOLUNTEERS
+
+# ServiceArc > ARC > wave_adjust > options > 1 > text
+[ServiceArc.ARC.wave_adjust.options.1.text]
+A Saturday morning session, volunteers only, pizza at noon. Four machines done. Nobody was told they had to come.
+
+# ServiceArc > ARC > wave_adjust > options > 2 > label
+[ServiceArc.ARC.wave_adjust.options.2.label]
+KEEP THE PACE
+
+# ServiceArc > ARC > wave_adjust > options > 2 > text
+[ServiceArc.ARC.wave_adjust.options.2.text]
+We keep the pace. I wrote down the machines that are left and who owns each one.
+
+# ServiceArc > ARC > resets > speaker
+[ServiceArc.ARC.resets.speaker]
+Alan (Co-owner)
+
+# ServiceArc > ARC > resets > text
+[ServiceArc.ARC.resets.text]
+{senior} has spent the morning on password resets: {n} of them, with me covering tier one calls between server jobs. A senior on a reset is a waste of both of us. Garrison says a reset takes thirty seconds and clients love a human voice.
+
+# ServiceArc > ARC > resets > text_live
+[ServiceArc.ARC.resets.text_live]
+The reset runbook is working. I went back to my servers at nine and {junior} took {n} resets from the notes. Thank you for writing it down.
+
+# ServiceArc > ARC > resets > options > 0 > label
+[ServiceArc.ARC.resets.options.0.label]
+TIER IT: RESETS GO TO {junior}
+
+# ServiceArc > ARC > resets > options > 0 > text
+[ServiceArc.ARC.resets.options.0.text]
+Resets go to {junior}. {senior} takes the harder tickets and nobody calls Alan for a password again.
+
+# ServiceArc > ARC > resets > options > 1 > label
+[ServiceArc.ARC.resets.options.1.label]
+WRITE THE RUNBOOK NOW
+
+# ServiceArc > ARC > resets > options > 1 > text
+[ServiceArc.ARC.resets.options.1.text]
+One page: verify the caller, reset, force a change, log it. {junior} can follow it without asking anyone. It took an hour.
+
+# ServiceArc > ARC > resets > options > 2 > label
+[ServiceArc.ARC.resets.options.2.label]
+ALAN KEEPS COVERING THE PHONES
+
+# ServiceArc > ARC > resets > options > 2 > text
+[ServiceArc.ARC.resets.options.2.text]
+Alan keeps the phones for now. He did not argue. He wrote the number of server jobs he postponed on the whiteboard.
+
+# ServiceArc > ARC > resets > options_live > 0 > label
+[ServiceArc.ARC.resets.options_live.0.label]
+GLAD IT HELPS
+
+# ServiceArc > ARC > resets > options_live > 0 > text
+[ServiceArc.ARC.resets.options_live.0.text]
+
+
+# ServiceArc > ARC > promo > speaker
+[ServiceArc.ARC.promo.speaker]
+{junior} (Tier 1)
+
+# ServiceArc > ARC > promo > text
+[ServiceArc.ARC.promo.text]
+Dan, do you have a minute? I have closed {done} tickets this week and I would like the Tier 2 title and the pay that goes with it. I am not asking for a speech. I am asking for an answer.
+
+# ServiceArc > ARC > promo > options > 0 > label
+[ServiceArc.ARC.promo.options.0.label]
+PROMOTE ($80 A WEEK)
+
+# ServiceArc > ARC > promo > options > 0 > text
+[ServiceArc.ARC.promo.options.0.text]
+Thank you, Dan. I will not let the board down. Can I take the next server ticket?
+
+# ServiceArc > ARC > promo > options > 1 > label
+[ServiceArc.ARC.promo.options.1.label]
+YES, WITH A PLAN
+
+# ServiceArc > ARC > promo > options > 1 > text
+[ServiceArc.ARC.promo.options.1.text]
+A plan is fair. Write down what I have to show, and the date.
+
+# ServiceArc > ARC > promo > options > 2 > label
+[ServiceArc.ARC.promo.options.2.label]
+ASK MORGAN FOR THE BUDGET
+
+# ServiceArc > ARC > promo > options > 2 > text
+[ServiceArc.ARC.promo.options.2.text]
+Fine. Morgan has until Friday. I would rather hear no than hear nothing.
+
+# ServiceArc > ARC > promo > options > 3 > label
+[ServiceArc.ARC.promo.options.3.label]
+NOT YET
+
+# ServiceArc > ARC > promo > options > 3 > text
+[ServiceArc.ARC.promo.options.3.text]
+Okay. I hoped for a different answer. I will keep closing tickets.
+
+# ServiceArc > ARC > wave_check > speaker
+[ServiceArc.ARC.wave_check.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > wave_check > text > done
+[ServiceArc.ARC.wave_check.text.done]
+The XP wave is finished: {done} of {total} machines migrated before the deadline. Alan checked the list twice and found nothing. He said it was well done, which from Alan is a parade.
+
+# ServiceArc > ARC > wave_check > text > most
+[ServiceArc.ARC.wave_check.text.most]
+The XP wave reached {pct} percent. {left} machines are still on XP, mostly at clients who said the old PC was fine. Alan has asked who is going to explain that to their insurance company.
+
+# ServiceArc > ARC > wave_check > text > low
+[ServiceArc.ARC.wave_check.text.low]
+The XP wave stopped at {pct} percent. {left} machines are still running XP after the deadline and one of them has already caught something. Alan has the list. Garrison has the phone calls.
+
+# ServiceArc > ARC > wave_check > options > 0 > label
+[ServiceArc.ARC.wave_check.options.0.label]
+I WILL OWN IT
+
+# ServiceArc > ARC > wave_check > options > 0 > text
+[ServiceArc.ARC.wave_check.options.0.text]
+
+
+# ServiceArc > ARC > margin > speaker
+[ServiceArc.ARC.margin.speaker]
+Alan (Co-owner)
+
+# ServiceArc > ARC > margin > text
+[ServiceArc.ARC.margin.text]
+Garrison signed {client} at {pct} percent under list for the logo, with a two hour response. Our cost per ticket is {cpt} and the deal does not clear it. Garrison says a name like that opens doors. Someone has to tell the desk what the SLA is.
+
+# ServiceArc > ARC > margin > options > 0 > label
+[ServiceArc.ARC.margin.options.0.label]
+HONOUR IT: FULL SERVICE
+
+# ServiceArc > ARC > margin > options > 0 > text
+[ServiceArc.ARC.margin.options.0.text]
+Two hours, full service, the logo goes on the wall. I added their tickets to the board and I will report the hours every Friday.
+
+# ServiceArc > ARC > margin > options > 1 > label
+[ServiceArc.ARC.margin.options.1.label]
+STANDARD SLA, STANDARD RULES
+
+# ServiceArc > ARC > margin > options > 1 > text
+[ServiceArc.ARC.margin.options.1.text]
+Standard response, standard rules. The discount buys the logo, not the queue. Vic will tell them kindly.
+
+# ServiceArc > ARC > margin > options > 2 > label
+[ServiceArc.ARC.margin.options.2.label]
+BROKER A TWO YEAR DEAL
+
+# ServiceArc > ARC > margin > options > 2 > text
+[ServiceArc.ARC.margin.options.2.text]
+The discount stands if they sign two years and a scope page. Garrison keeps the logo, Alan keeps the margin. Both of them asked me to write it down.
+
+# ServiceArc > ARC > cutcost > speaker
+[ServiceArc.ARC.cutcost.speaker]
+Alan (Co-owner)
+
+# ServiceArc > ARC > cutcost > text
+[ServiceArc.ARC.cutcost.text]
+The numbers came back. The desk costs {cost} a week and Morgan has asked for a cut of ten percent. I have a list: the training budget, the extra hours and the pod stipends. Garrison says people are the company and the answer is revenue, not cuts.
+
+# ServiceArc > ARC > cutcost > options > 0 > label
+[ServiceArc.ARC.cutcost.options.0.label]
+CUT TRAINING AND EXTRA HOURS
+
+# ServiceArc > ARC > cutcost > options > 0 > text
+[ServiceArc.ARC.cutcost.options.0.text]
+Training stops and the extra hours are by approval only. I told the crew myself, before the rumour.
+
+# ServiceArc > ARC > cutcost > options > 1 > label
+[ServiceArc.ARC.cutcost.options.1.label]
+NO CUTS: BRING THE REVENUE
+
+# ServiceArc > ARC > cutcost > options > 1 > text
+[ServiceArc.ARC.cutcost.options.1.text]
+No cuts this month. Vic and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.
+
+# ServiceArc > ARC > cutcost > options > 2 > label
+[ServiceArc.ARC.cutcost.options.2.label]
+A SMALLER, FAIR CUT
+
+# ServiceArc > ARC > cutcost > options > 2 > text
+[ServiceArc.ARC.cutcost.options.2.text]
+Training drops to light, the pod stipends stay, and I attached the cost per ticket to the proposal. Alan and Garrison each lost something.
+
+# ServiceArc > ARC > stipend > speaker
+[ServiceArc.ARC.stipend.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > stipend > text
+[ServiceArc.ARC.stipend.text]
+The after-hours policy is decided, so what does a night call pay? Last night's email outage cost {who} a night of sleep. Fair is a number everyone can see on the board.
+
+# ServiceArc > ARC > stipend > options > 0 > label
+[ServiceArc.ARC.stipend.options.0.label]
+NOTHING: IT IS IN THE JOB
+
+# ServiceArc > ARC > stipend > options > 0 > text
+[ServiceArc.ARC.stipend.options.0.text]
+No stipend. I wrote the rota on the board and I will cover the first page myself.
+
+# ServiceArc > ARC > stipend > options > 1 > label
+[ServiceArc.ARC.stipend.options.1.label]
+$40 A NIGHT, ON THE BOARD
+
+# ServiceArc > ARC > stipend > options > 1 > text
+[ServiceArc.ARC.stipend.options.1.text]
+$40 a night, posted in the kitchen with the rota. Anyone can read the arithmetic.
+
+# ServiceArc > ARC > stipend > options > 2 > label
+[ServiceArc.ARC.stipend.options.2.label]
+$80 A NIGHT PLUS A MORNING OFF
+
+# ServiceArc > ARC > stipend > options > 2 > text
+[ServiceArc.ARC.stipend.options.2.text]
+$80 and a late start after a page. Garrison liked it. Marge asked me for the arithmetic.
+
+# ServiceArc > ARC > psa > speaker
+[ServiceArc.ARC.psa.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > psa > text
+[ServiceArc.ARC.psa.text]
+The ServiceBeacon PSA goes live today. The vendor says migration takes the morning, every ticket field is mapped differently and the old board goes read-only at noon. How do we cut over?
+
+# ServiceArc > ARC > psa > options > 0 > label
+[ServiceArc.ARC.psa.options.0.label]
+CUT OVER AT ONCE
+
+# ServiceArc > ARC > psa > options > 0 > text
+[ServiceArc.ARC.psa.options.0.text]
+We cut over at nine. Tickets lost their assignees in the move and the portal rejected a few logins. I am rebuilding the board by hand.
+
+# ServiceArc > ARC > psa > options > 1 > label
+[ServiceArc.ARC.psa.options.1.label]
+RUN BOTH BOARDS A DAY
+
+# ServiceArc > ARC > psa > options > 1 > text
+[ServiceArc.ARC.psa.options.1.text]
+Both boards run today and we compare the counts at five. It is slower and nothing falls through.
+
+# ServiceArc > ARC > psa > options > 2 > label
+[ServiceArc.ARC.psa.options.2.label]
+TRAIN, THEN CUT OVER
+
+# ServiceArc > ARC > psa > options > 2 > text
+[ServiceArc.ARC.psa.options.2.text]
+A two hour walkthrough, then the cut over at four. The training doubled as a runbook review: a stale page got fixed on the way.
+
+# ServiceArc > ARC > escalation > speaker
+[ServiceArc.ARC.escalation.speaker]
+Garrison (Co-owner)
+
+# ServiceArc > ARC > escalation > text
+[ServiceArc.ARC.escalation.text]
+{client} has gone over your head. Their owner called us both: they want a dedicated senior for a month and a credit on this invoice, or they take the contract elsewhere. Alan says the contract says what it says. I say the client is always right until they are not. You have to answer them before five.
+
+# ServiceArc > ARC > escalation > options > 0 > label
+[ServiceArc.ARC.escalation.options.0.label]
+CREDIT AND A DEDICATED SENIOR
+
+# ServiceArc > ARC > escalation > options > 0 > text
+[ServiceArc.ARC.escalation.options.0.text]
+A credit on the invoice and a named senior for a month. The client was glad. Alan did not say anything, loudly.
+
+# ServiceArc > ARC > escalation > options > 1 > label
+[ServiceArc.ARC.escalation.options.1.label]
+HOLD THE LINE: THE CONTRACT SAYS
+
+# ServiceArc > ARC > escalation > options > 1 > text
+[ServiceArc.ARC.escalation.options.1.text]
+I sent the scope section, the response times and the hours they used. Alan was pleased. The client said they would think about it.
+
+# ServiceArc > ARC > escalation > options > 2 > label
+[ServiceArc.ARC.escalation.options.2.label]
+BROKER A COMPROMISE
+
+# ServiceArc > ARC > escalation > options > 2 > text
+[ServiceArc.ARC.escalation.options.2.text]
+A one-time credit, a Friday check-in and a scope review in thirty days. Neither owner got what they asked for. The client agreed.
+
+# ServiceArc > ARC > rollup > speaker
+[ServiceArc.ARC.rollup.speaker]
+Morgan Reyes (Manager)
+
+# ServiceArc > ARC > rollup > text
+[ServiceArc.ARC.rollup.text]
+Summit Managed Holdings' integration lead, {auditor}, has finished with the desk. Documentation {doc_pts} of 25, retention {ret_pts}, SLA {sla_pts}, clawbacks {claw_pts}: {total} of 100. {offer} Garrison wants to sell and Alan wants to stay independent. What do you tell them?
+
+# ServiceArc > ARC > rollup > options > 0 > label
+[ServiceArc.ARC.rollup.options.0.label]
+RECOMMEND SELLING TO SUMMIT
+
+# ServiceArc > ARC > rollup > options > 0 > text
+[ServiceArc.ARC.rollup.options.0.text]
+I told the owners the desk is worth what Summit is paying and the team would be looked after. Garrison thanked me. Alan asked for the audit sheet.
+
+# ServiceArc > ARC > rollup > options > 1 > label
+[ServiceArc.ARC.rollup.options.1.label]
+RECOMMEND STAYING INDEPENDENT
+
+# ServiceArc > ARC > rollup > options > 1 > text
+[ServiceArc.ARC.rollup.options.1.text]
+I told them the desk is better as it is than as a line in somebody else's spreadsheet. Alan nodded once. Garrison stared at the table.
+
+# ServiceArc > ARC > rollup > options > 2 > label
+[ServiceArc.ARC.rollup.options.2.label]
+GIVE THEM THE SHEET, NO ADVICE
+
+# ServiceArc > ARC > rollup > options > 2 > text
+[ServiceArc.ARC.rollup.options.2.text]
+I handed both of them the same page and left. It is their company. Morgan said it was the most honest thing she had seen from the desk.
+
+# ServiceArc > ARC > audit_extra > speaker
+[ServiceArc.ARC.audit_extra.speaker]
+Summit audit
+
+# ServiceArc > ARC > audit_extra > text
+[ServiceArc.ARC.audit_extra.text]
+Summit's integration lead, {auditor}, will read the scorecard: documentation {doc_pts} of 25, retention {ret_pts}, SLA {sla_pts}, clawbacks {claw_pts}. {total} of 100 as it stands today.
+
+
+# ======================= ServiceArc > JOB_BOOKS =======================
+# ServiceArc > JOB_BOOKS > onboard > title
+[ServiceArc.JOB_BOOKS.onboard.title]
+IRON MULE ONBOARDING
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.0.title]
+DISCOVERY
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.0.text]
+Iron Mule Demolition has two trailers, nine users and no documentation at all. Vic promised them they would be live in a day. Where do you start?
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.0.label]
+WALK THE SITE WITH THE FOREMAN
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.0.note]
+Two trailers, a hub under a desk and a printer nobody owns. Everything is on your clipboard.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.1.label]
+SEND A DISCOVERY QUESTIONNAIRE
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.1.note]
+Half the answers come back blank. The other half say 'ask Ray'.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.2.label]
+SKIP IT: THEY SAID IT IS SIMPLE
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.0.choices.2.note]
+You go in blind. Nobody knows what is plugged into what.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.1.title]
+CREDENTIALS
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.1.text]
+The only passwords are on a yellow sticky note and in Ray's head. The admin account is shared by the whole office.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.0.label]
+COLLECT EVERY CREDENTIAL INTO THE VAULT
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.0.note]
+Every login is in the vault, tagged by owner. The sticky note is in the shredder.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.1.label]
+USE THE SHARED ADMIN ACCOUNT FOR NOW
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.1.note]
+It works. Anyone in the office can still do the same.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.2.label]
+ASK EVERYONE TO EMAIL THEIR PASSWORD
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 1 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.1.choices.2.note]
+Nine passwords arrive by email. One of them is 'password1'.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.2.title]
+BACKUPS
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.2.text]
+A green checkmark says the nightly backup works. Nobody has ever restored from it.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.0.label]
+TEST A RESTORE BEFORE ANYTHING ELSE
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.0.note]
+The restore worked on the second try. The first try found a missing folder.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.1.label]
+START A NEW BACKUP RIGHT AWAY
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.1.note]
+A fresh backup is running. You will know in the morning if it works.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.2.label]
+TRUST THE GREEN CHECKMARK
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 2 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.2.choices.2.note]
+It looks fine. Looking is all anyone has done.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.3.title]
+THE UNLABELLED SERVER
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.3.text]
+A tower server hums under a desk with no label, no owner and a post-it that says DO NOT TURN OFF. Nobody knows what it does.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.0.label]
+TRACE THE CABLES AND LABEL IT
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.0.note]
+It is the file server and the badge reader. It is labelled now, in your handwriting.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.1.label]
+LEAVE IT ALONE AND WRITE IT DOWN
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.1.note]
+Logged as 'unknown server, do not touch', with the date and the post-it.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.2.label]
+SHUT IT DOWN TO SEE WHAT BREAKS
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 3 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.3.choices.2.note]
+The badge reader and the label printer stopped. So did Ray's mood.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.4.title]
+THE SHARED ADMIN PASSWORD
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.4.text]
+Everyone in the office logs in as the same administrator. A former dispatcher still knows the password.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.0.label]
+NAMED ACCOUNTS AND A SEALED ENVELOPE
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.0.note]
+Everyone has their own login. The admin password lives in a sealed envelope in Ray's safe.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.1.label]
+ONE NEW SHARED PASSWORD
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.1.note]
+A new password, the same shared account. The dispatcher no longer knows it. Everyone else does.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.2.label]
+LEAVE IT UNTIL NEXT WEEK
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 4 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.4.choices.2.note]
+It is on next week's list. It will be on the list next week too.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > title
+[ServiceArc.JOB_BOOKS.onboard.steps.5.title]
+HAND IT OVER
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > text
+[ServiceArc.JOB_BOOKS.onboard.steps.5.text]
+Time to leave. Sam will be the one answering when they call.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 0 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.0.label]
+A ONE PAGE DOC AND A WALKTHROUGH FOR SAM
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 0 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.0.note]
+One page: where everything is, who owns it, what to call. Sam read it twice.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 1 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.1.label]
+EMAIL THE NOTES TO THE TEAM
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 1 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.1.note]
+The notes are in everybody's inbox and nowhere else.
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 2 > label
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.2.label]
+NOTHING: IT IS ALL IN YOUR HEAD
+
+# ServiceArc > JOB_BOOKS > onboard > steps > 5 > choices > 2 > note
+[ServiceArc.JOB_BOOKS.onboard.steps.5.choices.2.note]
+You are now the only person who knows how Iron Mule works. You have been here before.
+
+
+# ======================= ServiceArc > JOB_PROBLEMS =======================
+# ServiceArc > JOB_PROBLEMS > onboard > 0 > summary
+[ServiceArc.JOB_PROBLEMS.onboard.0.summary]
+NEW CLIENT: Iron Mule Demolition onboarding
+
+# ServiceArc > JOB_PROBLEMS > onboard > 0 > body
+[ServiceArc.JOB_PROBLEMS.onboard.0.body]
+We start with you today and there is nothing written down. Ray says he is the only one who knows the network. Please come and meet him. - %s
+
+# ServiceArc > JOB_PROBLEMS > onboard > 1 > summary
+[ServiceArc.JOB_PROBLEMS.onboard.1.summary]
+Iron Mule: main PC will not join the network
+
+# ServiceArc > JOB_PROBLEMS > onboard > 1 > body
+[ServiceArc.JOB_PROBLEMS.onboard.1.body]
+Ray's PC in the trailer cannot reach the shared folder. He says it worked last week. - %s
+
+
+# ======================= ServiceArc > PROBS =======================
+# ServiceArc > PROBS > hb_cert > summary
+[ServiceArc.PROBS.hb_cert.summary]
+Heartbleed: check the server certificate
+
+# ServiceArc > PROBS > hb_cert > body
+[ServiceArc.PROBS.hb_cert.body]
+The news says our website and mail server might be affected. Please check the certificate and restart the services after the patch. A customer already asked me about it. - %s
+
+# ServiceArc > PROBS > hb_called > summary
+[ServiceArc.PROBS.hb_called.summary]
+Did you patch yet? (Heartbleed)
+
+# ServiceArc > PROBS > hb_called > body
+[ServiceArc.PROBS.hb_called.body]
+You emailed us this morning that you were checking. We changed our passwords because of the news and now one of us is locked out. Can you reset hers? And did you patch? - %s
+
+# ServiceArc > PROBS > xp_hit > summary
+[ServiceArc.PROBS.xp_hit.summary]
+Old XP machine is acting strange
+
+# ServiceArc > PROBS > xp_hit > body
+[ServiceArc.PROBS.xp_hit.body]
+The old PC in the back office, the one that was supposed to be replaced, is popping up windows I have never seen. I did not click anything. Probably. - %s
+
+# ServiceArc > PROBS > onb_leak > summary
+[ServiceArc.PROBS.onb_leak.summary]
+Iron Mule: someone logged in as admin last night
+
+# ServiceArc > PROBS > onb_leak > body
+[ServiceArc.PROBS.onb_leak.body]
+Ray says the administrator login was used at eleven last night and none of us were here. Can you look at this? - %s
+
+# ServiceArc > PROBS > onb_broke > summary
+[ServiceArc.PROBS.onb_broke.summary]
+Iron Mule: badge reader and label printer are dead
+
+# ServiceArc > PROBS > onb_broke > body
+[ServiceArc.PROBS.onb_broke.body]
+Since yesterday nobody can badge in and nothing prints labels. Ray thinks it is your server thing. - %s
+
+# ServiceArc > PROBS > psa_lost > summary
+[ServiceArc.PROBS.psa_lost.summary]
+My ticket disappeared after the new system
+
+# ServiceArc > PROBS > psa_lost > body
+[ServiceArc.PROBS.psa_lost.body]
+The new portal sent me a password that does not work and my open ticket is gone. Can you reset it and find the old one? - %s
+
+# ServiceArc > PROBS > pager_issue > summary
+[ServiceArc.PROBS.pager_issue.summary]
+After hours: server alert
+
+# ServiceArc > PROBS > pager_issue > body
+[ServiceArc.PROBS.pager_issue.body]
+Our alert went off overnight and your on-call person looked at it. Please make sure it is really fixed. - %s
+
+
+# ======================= ServiceArc > HOOKS =======================
+# ServiceArc > HOOKS > xp_eol > subject
+[ServiceArc.HOOKS.xp_eol.subject]
+XP end of support
+
+# ServiceArc > HOOKS > xp_eol > body
+[ServiceArc.HOOKS.xp_eol.body]
+XP is out of support and the replacement machines are Windows 7. Every fix we wrote for the old boxes behaves differently.
+
+# ServiceArc > HOOKS > heartbleed > subject
+[ServiceArc.HOOKS.heartbleed.subject]
+Heartbleed
+
+# ServiceArc > HOOKS > heartbleed > body
+[ServiceArc.HOOKS.heartbleed.body]
+Every certificate and password policy changed this week. The pages that told the crew what to say to clients are out of date.
+
+# ServiceArc > HOOKS > new_psa > subject
+[ServiceArc.HOOKS.new_psa.subject]
+The new PSA
+
+# ServiceArc > HOOKS > new_psa > body
+[ServiceArc.HOOKS.new_psa.body]
+The ticket system changed. The screenshots and field names in the runbooks do not match the new board.
+
+
+# ======================= ServiceArc > EVENT_HOOKS =======================
+# ServiceArc > EVENT_HOOKS > xp_panic > subject
+[ServiceArc.EVENT_HOOKS.xp_panic.subject]
+More XP machines
+
+# ServiceArc > EVENT_HOOKS > xp_panic > body
+[ServiceArc.EVENT_HOOKS.xp_panic.body]
+A client replaced its XP machines on its own, with different settings.
+
+# ServiceArc > EVENT_HOOKS > copier_lease > subject
+[ServiceArc.EVENT_HOOKS.copier_lease.subject]
+A new copier lease
+
+# ServiceArc > EVENT_HOOKS > copier_lease > body
+[ServiceArc.EVENT_HOOKS.copier_lease.body]
+A client leased new copiers. The drivers and the scan-to-email set-up changed.
+
+# ServiceArc > EVENT_HOOKS > office_move > subject
+[ServiceArc.EVENT_HOOKS.office_move.subject]
+A client moved offices
+
+# ServiceArc > EVENT_HOOKS > office_move > body
+[ServiceArc.EVENT_HOOKS.office_move.body]
+A client moved offices. The network and the printers are not where the notes say.
+
+# ServiceArc > EVENT_HOOKS > licence_audit > subject
+[ServiceArc.EVENT_HOOKS.licence_audit.subject]
+A licence audit
+
+# ServiceArc > EVENT_HOOKS > licence_audit > body
+[ServiceArc.EVENT_HOOKS.licence_audit.body]
+A licence audit replaced the antivirus on a few machines.
+
+# ServiceArc > EVENT_HOOKS > first_chromebook > subject
+[ServiceArc.EVENT_HOOKS.first_chromebook.subject]
+Chromebooks
+
+# ServiceArc > EVENT_HOOKS > first_chromebook > body
+[ServiceArc.EVENT_HOOKS.first_chromebook.body]
+A client bought Chromebooks. Resets work differently for them.
+
+# ServiceArc > EVENT_HOOKS > dropbox_it > subject
+[ServiceArc.EVENT_HOOKS.dropbox_it.subject]
+Files in the cloud
+
+# ServiceArc > EVENT_HOOKS > dropbox_it > body
+[ServiceArc.EVENT_HOOKS.dropbox_it.body]
+A client moved its files into a sync service. Restoring a folder is no longer what the notes say.
+
+
+# ======================= ServiceArc > QUESTIONS =======================
+# ServiceArc > QUESTIONS > Alan > 0 > text
+[ServiceArc.QUESTIONS.Alan.0.text]
+Quick one. How much of the desk is written down, and which pages have gone stale? I would rather hear it from you than find it at two in the morning.
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 0 > label
+[ServiceArc.QUESTIONS.Alan.0.options.0.label]
+{doc} PERCENT, STALE ONES LISTED
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 0 > reply
+[ServiceArc.QUESTIONS.Alan.0.options.0.reply]
+Good. Send me the list of stale pages tonight. I will read them on the train.
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 1 > label
+[ServiceArc.QUESTIONS.Alan.0.options.1.label]
+I WILL HAVE IT BY FRIDAY
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 1 > reply
+[ServiceArc.QUESTIONS.Alan.0.options.1.reply]
+Friday. Written down, please.
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 2 > label
+[ServiceArc.QUESTIONS.Alan.0.options.2.label]
+THE CLIENTS COME FIRST THIS WEEK
+
+# ServiceArc > QUESTIONS > Alan > 0 > options > 2 > reply
+[ServiceArc.QUESTIONS.Alan.0.options.2.reply]
+They always do. Until the page is missing.
+
+# ServiceArc > QUESTIONS > Alan > 1 > text
+[ServiceArc.QUESTIONS.Alan.1.text]
+Reopens. I count them every night. Which tickets keep coming back, and what are you doing about them?
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 0 > label
+[ServiceArc.QUESTIONS.Alan.1.options.0.label]
+THREE CLASSES: RUNBOOKS NEXT
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 0 > reply
+[ServiceArc.QUESTIONS.Alan.1.options.0.reply]
+Three classes, three runbooks. That is a plan.
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 1 > label
+[ServiceArc.QUESTIONS.Alan.1.options.1.label]
+ONE TECH CLOSES TOO EARLY
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 1 > reply
+[ServiceArc.QUESTIONS.Alan.1.options.1.reply]
+Then slow them down. A closed ticket that reopens is two tickets.
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 2 > label
+[ServiceArc.QUESTIONS.Alan.1.options.2.label]
+WE ARE BUSY
+
+# ServiceArc > QUESTIONS > Alan > 1 > options > 2 > reply
+[ServiceArc.QUESTIONS.Alan.1.options.2.reply]
+Busy is not a number.
+
+# ServiceArc > QUESTIONS > Alan > 2 > text
+[ServiceArc.QUESTIONS.Alan.2.text]
+If I put another senior on the desk tomorrow, would the process hold, or would they just do whatever they remember?
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 0 > label
+[ServiceArc.QUESTIONS.Alan.2.options.0.label]
+THEY WOULD READ THE RUNBOOKS
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 0 > reply
+[ServiceArc.QUESTIONS.Alan.2.options.0.reply]
+That is exactly what I wanted to hear.
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 1 > label
+[ServiceArc.QUESTIONS.Alan.2.options.1.label]
+THEY WOULD ASK TERRY
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 1 > reply
+[ServiceArc.QUESTIONS.Alan.2.options.1.reply]
+So Terry is the process. That is a risk.
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 2 > label
+[ServiceArc.QUESTIONS.Alan.2.options.2.label]
+THEY WOULD NEED A WEEK
+
+# ServiceArc > QUESTIONS > Alan > 2 > options > 2 > reply
+[ServiceArc.QUESTIONS.Alan.2.options.2.reply]
+A week is fair. Make it five days.
+
+# ServiceArc > QUESTIONS > Garrison > 0 > text
+[ServiceArc.QUESTIONS.Garrison.0.text]
+How are our clients feeling this week? Not the dashboard. The real answer. Mood is {mood} on the sheet and I know it is not the same thing.
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 0 > label
+[ServiceArc.QUESTIONS.Garrison.0.options.0.label]
+BIG THREE HAPPY, ONE WATCHING
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 0 > reply
+[ServiceArc.QUESTIONS.Garrison.0.options.0.reply]
+Which one is watching? I will take them to lunch.
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 1 > label
+[ServiceArc.QUESTIONS.Garrison.0.options.1.label]
+THEY WANT FASTER ANSWERS
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 1 > reply
+[ServiceArc.QUESTIONS.Garrison.0.options.1.reply]
+Faster is a feeling. I can sell a feeling.
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 2 > label
+[ServiceArc.QUESTIONS.Garrison.0.options.2.label]
+THE NUMBERS ARE FINE
+
+# ServiceArc > QUESTIONS > Garrison > 0 > options > 2 > reply
+[ServiceArc.QUESTIONS.Garrison.0.options.2.reply]
+The numbers are always fine. Then someone leaves.
+
+# ServiceArc > QUESTIONS > Garrison > 1 > text
+[ServiceArc.QUESTIONS.Garrison.1.text]
+If Vic brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 0 > label
+[ServiceArc.QUESTIONS.Garrison.1.options.0.label]
+ONE MORE CLIENT, NOT TWO
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 0 > reply
+[ServiceArc.QUESTIONS.Garrison.1.options.0.reply]
+One. I will pick the good one.
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 1 > label
+[ServiceArc.QUESTIONS.Garrison.1.options.1.label]
+ASK ME FIRST, ALWAYS
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 1 > reply
+[ServiceArc.QUESTIONS.Garrison.1.options.1.reply]
+Ask first. Fine. I will try.
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 2 > label
+[ServiceArc.QUESTIONS.Garrison.1.options.2.label]
+YES, AND WE FIND THE HOURS
+
+# ServiceArc > QUESTIONS > Garrison > 1 > options > 2 > reply
+[ServiceArc.QUESTIONS.Garrison.1.options.2.reply]
+That is what I like about you, Dan. Mostly.
+
+# ServiceArc > QUESTIONS > Garrison > 2 > text
+[ServiceArc.QUESTIONS.Garrison.2.text]
+The team is the company. Are they happy? When did you last do a one on one?
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 0 > label
+[ServiceArc.QUESTIONS.Garrison.2.options.0.label]
+THIS WEEK, WITH EVERYONE
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 0 > reply
+[ServiceArc.QUESTIONS.Garrison.2.options.0.reply]
+Good. Keep it up. People remember being asked.
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 1 > label
+[ServiceArc.QUESTIONS.Garrison.2.options.1.label]
+MAYA YES, THE REST NOT YET
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 1 > reply
+[ServiceArc.QUESTIONS.Garrison.2.options.1.reply]
+Do the rest. Today if you can.
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 2 > label
+[ServiceArc.QUESTIONS.Garrison.2.options.2.label]
+THE BOARD TAKES MY DAY
+
+# ServiceArc > QUESTIONS > Garrison > 2 > options > 2 > reply
+[ServiceArc.QUESTIONS.Garrison.2.options.2.reply]
+The board will still be there tomorrow. People will not always be.
+
+# ServiceArc > QUESTIONS > Morgan > 0 > text
+[ServiceArc.QUESTIONS.Morgan.0.text]
+Your scorecard grade yesterday was {grade}. SLA {sla} percent. If I took that to the owners this afternoon, what would you want me to add?
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 0 > label
+[ServiceArc.QUESTIONS.Morgan.0.options.0.label]
+THE CAUSE OF MISSES, IN WRITING
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 0 > reply
+[ServiceArc.QUESTIONS.Morgan.0.options.0.reply]
+Send it before four. I will attach it.
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 1 > label
+[ServiceArc.QUESTIONS.Morgan.0.options.1.label]
+THE GOOD DAYS COUNT TOO
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 1 > reply
+[ServiceArc.QUESTIONS.Morgan.0.options.1.reply]
+They do. Bring me the trend, not a single day.
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 2 > label
+[ServiceArc.QUESTIONS.Morgan.0.options.2.label]
+NOTHING, IT SPEAKS FOR ITSELF
+
+# ServiceArc > QUESTIONS > Morgan > 0 > options > 2 > reply
+[ServiceArc.QUESTIONS.Morgan.0.options.2.reply]
+Scorecards do not speak. People do. Learn that.
+
+# ServiceArc > QUESTIONS > Morgan > 1 > text
+[ServiceArc.QUESTIONS.Morgan.1.text]
+Cost per ticket is {cpt} and Marge is asking. What is the one thing that would lower it without hurting the team?
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 0 > label
+[ServiceArc.QUESTIONS.Morgan.1.options.0.label]
+MORE RUNBOOKS, FEWER ESCALATIONS
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 0 > reply
+[ServiceArc.QUESTIONS.Morgan.1.options.0.reply]
+That is the first answer that did not involve firing someone.
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 1 > label
+[ServiceArc.QUESTIONS.Morgan.1.options.1.label]
+A BETTER SENIOR AND JUNIOR MIX
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 1 > reply
+[ServiceArc.QUESTIONS.Morgan.1.options.1.reply]
+Show me the mix. I will bring it to the owners.
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 2 > label
+[ServiceArc.QUESTIONS.Morgan.1.options.2.label]
+I NEED TO CHECK THE NUMBERS
+
+# ServiceArc > QUESTIONS > Morgan > 1 > options > 2 > reply
+[ServiceArc.QUESTIONS.Morgan.1.options.2.reply]
+Then check them. I will ask again on Friday.
+
+# ServiceArc > QUESTIONS > Morgan > 2 > text
+[ServiceArc.QUESTIONS.Morgan.2.text]
+Alan and Garrison both asked me to ask you the same thing in different words. Who do you work for?
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 0 > label
+[ServiceArc.QUESTIONS.Morgan.2.options.0.label]
+THE DESK AND THE CLIENTS
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 0 > reply
+[ServiceArc.QUESTIONS.Morgan.2.options.0.reply]
+Say that to both of them. Separately. Same words.
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 1 > label
+[ServiceArc.QUESTIONS.Morgan.2.options.1.label]
+WHOEVER IS RIGHT THAT DAY
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 1 > reply
+[ServiceArc.QUESTIONS.Morgan.2.options.1.reply]
+That is how you end up working for nobody.
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 2 > label
+[ServiceArc.QUESTIONS.Morgan.2.options.2.label]
+YOU, MORGAN
+
+# ServiceArc > QUESTIONS > Morgan > 2 > options > 2 > reply
+[ServiceArc.QUESTIONS.Morgan.2.options.2.reply]
+Flattering. Not an answer.
+
+
+# ======================= ServiceArc > VOICES =======================
+# ServiceArc > VOICES > small > Maya > 0
+[ServiceArc.VOICES.small.Maya.0]
+I labelled my monitor cables. Terry noticed. He said nothing, but he nodded.
+
+# ServiceArc > VOICES > small > Maya > 1
+[ServiceArc.VOICES.small.Maya.1]
+Did you see the XP boxes at Acme? One of them has a sticker from 2006.
+
+# ServiceArc > VOICES > small > Maya > 2
+[ServiceArc.VOICES.small.Maya.2]
+Can I ask you something later? It is about the Tier 2 stuff. Not urgent. A little urgent.
+
+# ServiceArc > VOICES > small > Maya > 3
+[ServiceArc.VOICES.small.Maya.3]
+Sam is great on the phones. I just wish he would write his notes down.
+
+# ServiceArc > VOICES > small > Sam > 0
+[ServiceArc.VOICES.small.Sam.0]
+The password resets are fine. It is when they call twice that I get nervous.
+
+# ServiceArc > VOICES > small > Sam > 1
+[ServiceArc.VOICES.small.Sam.1]
+I read the runbook for spooler problems on the train. I did not know you could do that.
+
+# ServiceArc > VOICES > small > Sam > 2
+[ServiceArc.VOICES.small.Sam.2]
+Terry lent me his good headset. Now I have to be good.
+
+# ServiceArc > VOICES > small > Sam > 3
+[ServiceArc.VOICES.small.Sam.3]
+Do you think I could do tier two one day? Not now. One day.
+
+# ServiceArc > VOICES > small > Terry > 0
+[ServiceArc.VOICES.small.Terry.0]
+I have been doing this for eleven years. I have never had a manager who asked what I thought.
+
+# ServiceArc > VOICES > small > Terry > 1
+[ServiceArc.VOICES.small.Terry.1]
+The pager is not the problem. It is the not knowing when.
+
+# ServiceArc > VOICES > small > Terry > 2
+[ServiceArc.VOICES.small.Terry.2]
+Somebody should label that rack at Gnarly. I would. If anyone asked me.
+
+# ServiceArc > VOICES > small > Terry > 3
+[ServiceArc.VOICES.small.Terry.3]
+Quiet day. I do not trust quiet days.
+
+# ServiceArc > VOICES > small > hire > 0
+[ServiceArc.VOICES.small.hire.0]
+Is it always this busy? I am not complaining. I am just taking notes.
+
+# ServiceArc > VOICES > small > hire > 1
+[ServiceArc.VOICES.small.hire.1]
+The runbooks are good. At my last job we had a binder. Nobody knew where it was.
+
+# ServiceArc > VOICES > small > hire > 2
+[ServiceArc.VOICES.small.hire.2]
+I do not want to be the new guy twice. Can I take a ticket on my own today?
+
+# ServiceArc > VOICES > small > hire > 3
+[ServiceArc.VOICES.small.hire.3]
+Everyone here says please. It is unsettling.
+
+# ServiceArc > VOICES > small > Vic > 0
+[ServiceArc.VOICES.small.Vic.0]
+Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?
+
+# ServiceArc > VOICES > small > Vic > 1
+[ServiceArc.VOICES.small.Vic.1]
+I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.
+
+# ServiceArc > VOICES > small > Vic > 2
+[ServiceArc.VOICES.small.Vic.2]
+Between us: I promise what I think you can deliver. Mostly.
+
+# ServiceArc > VOICES > small > Vic > 3
+[ServiceArc.VOICES.small.Vic.3]
+If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it.
+
+# ServiceArc > VOICES > small > Morgan > 0
+[ServiceArc.VOICES.small.Morgan.0]
+Alan and Garrison were in my office again. They wanted me to settle something. I told them to ask you.
+
+# ServiceArc > VOICES > small > Morgan > 1
+[ServiceArc.VOICES.small.Morgan.1]
+Your scorecard is the first one I read in the morning. Do not let that go to your head.
+
+# ServiceArc > VOICES > small > Morgan > 2
+[ServiceArc.VOICES.small.Morgan.2]
+If you need something, ask on Friday. If it is on fire, ask now.
+
+# ServiceArc > VOICES > small > Morgan > 3
+[ServiceArc.VOICES.small.Morgan.3]
+I was a tech once. I miss the part where nobody asked me about budgets.
+
+# ServiceArc > VOICES > small > Alan > 0
+[ServiceArc.VOICES.small.Alan.0]
+I had a client ask if we were 'doing the Heartbleed thing'. I said no. We were doing the whole thing.
+
+# ServiceArc > VOICES > small > Alan > 1
+[ServiceArc.VOICES.small.Alan.1]
+Documentation is the only part of this job that is still there on Monday.
+
+# ServiceArc > VOICES > small > Alan > 2
+[ServiceArc.VOICES.small.Alan.2]
+When this desk is quiet I know it is working. Do not tell Garrison.
+
+# ServiceArc > VOICES > small > Alan > 3
+[ServiceArc.VOICES.small.Alan.3]
+A good process is boring. I am trying to get everything boring.
+
+# ServiceArc > VOICES > small > Garrison > 0
+[ServiceArc.VOICES.small.Garrison.0]
+I brought donuts to Brightside this morning. They asked about the SLA. Then they ate the donuts.
+
+# ServiceArc > VOICES > small > Garrison > 1
+[ServiceArc.VOICES.small.Garrison.1]
+People remember how fast you answered, not how right you were. I am half joking.
+
+# ServiceArc > VOICES > small > Garrison > 2
+[ServiceArc.VOICES.small.Garrison.2]
+Alan thinks I only care about logos. I care about clients. The logo is just where they put their name.
+
+# ServiceArc > VOICES > small > Garrison > 3
+[ServiceArc.VOICES.small.Garrison.3]
+If you ever want a bigger desk, bring me a number and a plan.
+
+# ServiceArc > VOICES > tips > Maya > 0
+[ServiceArc.VOICES.tips.Maya.0]
+Sam gets stuck on security tickets. If you put the antivirus ones on my side he will stop avoiding the board.
+
+# ServiceArc > VOICES > tips > Maya > 1
+[ServiceArc.VOICES.tips.Maya.1]
+The ticket you keep reopening has the same cause every time. Write it down once and the next person will not have to ask me.
+
+# ServiceArc > VOICES > tips > Sam > 0
+[ServiceArc.VOICES.tips.Sam.0]
+I wait too long before I tell you I am stuck. Ask me at noon, not at four.
+
+# ServiceArc > VOICES > tips > Sam > 1
+[ServiceArc.VOICES.tips.Sam.1]
+Terry is stuck on the pager more than anyone says. He will not tell you. You have to ask.
+
+# ServiceArc > VOICES > tips > Terry > 0
+[ServiceArc.VOICES.tips.Terry.0]
+Never assign Sam a server ticket on a Monday. He doubts himself. Give him a password reset first.
+
+# ServiceArc > VOICES > tips > Terry > 1
+[ServiceArc.VOICES.tips.Terry.1]
+The best runbooks are the ones the author did not want to write. Ask who hated a ticket.
+
+# ServiceArc > VOICES > tips > hire > 0
+[ServiceArc.VOICES.tips.hire.0]
+The first week I was afraid to ask. A runbook is somebody saying it is okay to not know.
+
+# ServiceArc > VOICES > tips > hire > 1
+[ServiceArc.VOICES.tips.hire.1]
+I do my best work when I know who to ask. Tell me who to ask.
+
+# ServiceArc > VOICES > tips > Vic > 0
+[ServiceArc.VOICES.tips.Vic.0]
+Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.
+
+# ServiceArc > VOICES > tips > Vic > 1
+[ServiceArc.VOICES.tips.Vic.1]
+Tell me what the desk can really take. I would rather lose a deal than lie to a client.
+
+# ServiceArc > VOICES > tips > Morgan > 0
+[ServiceArc.VOICES.tips.Morgan.0]
+Both owners trust you when you tell them no with a number. Neither trusts you when you say yes with a feeling.
+
+# ServiceArc > VOICES > tips > Morgan > 1
+[ServiceArc.VOICES.tips.Morgan.1]
+Bring me a plan on Friday, not a problem.
+
+# ServiceArc > VOICES > tips > Alan > 0
+[ServiceArc.VOICES.tips.Alan.0]
+If a page in the knowledge base is more than a month old, assume it is wrong. Systems change.
+
+# ServiceArc > VOICES > tips > Alan > 1
+[ServiceArc.VOICES.tips.Alan.1]
+A tech who is stuck does not need rescue. They need a page.
+
+# ServiceArc > VOICES > tips > Garrison > 0
+[ServiceArc.VOICES.tips.Garrison.0]
+Clients like to hear a name. Give them one tech who knows them.
+
+# ServiceArc > VOICES > tips > Garrison > 1
+[ServiceArc.VOICES.tips.Garrison.1]
+Do something nice for the crew this week. It always shows in the numbers a month later.
+
+# ServiceArc > VOICES > lync > Maya > 0 > text
+[ServiceArc.VOICES.lync.Maya.0.text]
+Dan, can I take the next server ticket? I have been reading about it.
+
+# ServiceArc > VOICES > lync > Maya > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Maya.0.options.0.label]
+YES, I WILL WATCH
+
+# ServiceArc > VOICES > lync > Maya > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Maya.0.options.0.reply]
+Thanks! I will write down what I did.
+
+# ServiceArc > VOICES > lync > Maya > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Maya.0.options.1.label]
+NOT TODAY, THE QUEUE IS HOT
+
+# ServiceArc > VOICES > lync > Maya > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Maya.0.options.1.reply]
+Okay. Tomorrow?
+
+# ServiceArc > VOICES > lync > Maya > 1 > text
+[ServiceArc.VOICES.lync.Maya.1.text]
+The reset runbook is out of date. The new rules say twelve characters. Do you want me to fix it?
+
+# ServiceArc > VOICES > lync > Maya > 1 > options > 0 > label
+[ServiceArc.VOICES.lync.Maya.1.options.0.label]
+YES, PLEASE
+
+# ServiceArc > VOICES > lync > Maya > 1 > options > 0 > reply
+[ServiceArc.VOICES.lync.Maya.1.options.0.reply]
+On it. I will tag you for the review.
+
+# ServiceArc > VOICES > lync > Maya > 1 > options > 1 > label
+[ServiceArc.VOICES.lync.Maya.1.options.1.label]
+LET ME DO IT TONIGHT
+
+# ServiceArc > VOICES > lync > Maya > 1 > options > 1 > reply
+[ServiceArc.VOICES.lync.Maya.1.options.1.reply]
+Okay, I will leave it.
+
+# ServiceArc > VOICES > lync > Vic > 0 > text
+[ServiceArc.VOICES.lync.Vic.0.text]
+Garrison wants me to promise the prospect a two hour response. Can the desk do two hours?
+
+# ServiceArc > VOICES > lync > Vic > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Vic.0.options.0.label]
+FOUR HOURS, TWO FOR URGENT
+
+# ServiceArc > VOICES > lync > Vic > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Vic.0.options.0.reply]
+Four and two. I will make it sound like a feature.
+
+# ServiceArc > VOICES > lync > Vic > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Vic.0.options.1.label]
+ASK ME AFTER THE AUDIT
+
+# ServiceArc > VOICES > lync > Vic > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Vic.0.options.1.reply]
+After the audit. Noted.
+
+# ServiceArc > VOICES > lync > Vic > 1 > text
+[ServiceArc.VOICES.lync.Vic.1.text]
+Heads up: a client is unhappy and has my number on speed dial. I am sending them to you.
+
+# ServiceArc > VOICES > lync > Vic > 1 > options > 0 > label
+[ServiceArc.VOICES.lync.Vic.1.options.0.label]
+SEND THEM, I WILL CALL BACK
+
+# ServiceArc > VOICES > lync > Vic > 1 > options > 0 > reply
+[ServiceArc.VOICES.lync.Vic.1.options.0.reply]
+You are a good man, Dan.
+
+# ServiceArc > VOICES > lync > Vic > 1 > options > 1 > label
+[ServiceArc.VOICES.lync.Vic.1.options.1.label]
+WRITE IT DOWN, I WILL CHECK
+
+# ServiceArc > VOICES > lync > Vic > 1 > options > 1 > reply
+[ServiceArc.VOICES.lync.Vic.1.options.1.reply]
+I wrote it on a napkin. It is fine.
+
+# ServiceArc > VOICES > lync > Morgan > 0 > text
+[ServiceArc.VOICES.lync.Morgan.0.text]
+Friday: bring your scorecard and one thing you will fix. One.
+
+# ServiceArc > VOICES > lync > Morgan > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Morgan.0.options.0.label]
+THE STALE RUNBOOKS
+
+# ServiceArc > VOICES > lync > Morgan > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Morgan.0.options.0.reply]
+Good. Specific.
+
+# ServiceArc > VOICES > lync > Morgan > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Morgan.0.options.1.label]
+THE ESCALATIONS
+
+# ServiceArc > VOICES > lync > Morgan > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Morgan.0.options.1.reply]
+Fine. Show me the count.
+
+# ServiceArc > VOICES > lync > Alan > 0 > text
+[ServiceArc.VOICES.lync.Alan.0.text]
+I saw a ticket close with no note. Who closed it?
+
+# ServiceArc > VOICES > lync > Alan > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Alan.0.options.0.label]
+I WILL ASK AND FIX IT
+
+# ServiceArc > VOICES > lync > Alan > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Alan.0.options.0.reply]
+Thank you. A closed ticket with no note is a future ticket.
+
+# ServiceArc > VOICES > lync > Alan > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Alan.0.options.1.label]
+THE CREW IS DOING THEIR BEST
+
+# ServiceArc > VOICES > lync > Alan > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Alan.0.options.1.reply]
+Their best needs a template.
+
+# ServiceArc > VOICES > lync > Garrison > 0 > text
+[ServiceArc.VOICES.lync.Garrison.0.text]
+Who is our happiest client right now? I want to ask them for a reference.
+
+# ServiceArc > VOICES > lync > Garrison > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Garrison.0.options.0.label]
+ACME. ASK THEM
+
+# ServiceArc > VOICES > lync > Garrison > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Garrison.0.options.0.reply]
+Perfect. I will bring pastries.
+
+# ServiceArc > VOICES > lync > Garrison > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Garrison.0.options.1.label]
+ASK ME AFTER THE REVIEW
+
+# ServiceArc > VOICES > lync > Garrison > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Garrison.0.options.1.reply]
+Sure. Soon, though.
+
+# ServiceArc > VOICES > lync > Sam > 0 > text
+[ServiceArc.VOICES.lync.Sam.0.text]
+Dan? I am stuck on the VPN ticket. I did not want to ask in front of everyone.
+
+# ServiceArc > VOICES > lync > Sam > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Sam.0.options.0.label]
+COME OVER, WE DO IT TOGETHER
+
+# ServiceArc > VOICES > lync > Sam > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Sam.0.options.0.reply]
+Thank you. I will write it down.
+
+# ServiceArc > VOICES > lync > Sam > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Sam.0.options.1.label]
+READ THE RUNBOOK FIRST
+
+# ServiceArc > VOICES > lync > Sam > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Sam.0.options.1.reply]
+Okay. I will try.
+
+# ServiceArc > VOICES > lync > Terry > 0 > text
+[ServiceArc.VOICES.lync.Terry.0.text]
+The pager went off twice last night. I fixed it. I just wanted somebody to know.
+
+# ServiceArc > VOICES > lync > Terry > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.Terry.0.options.0.label]
+THANK YOU. TAKE A SLOW MORNING
+
+# ServiceArc > VOICES > lync > Terry > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.Terry.0.options.0.reply]
+I will. Thanks.
+
+# ServiceArc > VOICES > lync > Terry > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.Terry.0.options.1.label]
+WRITE IT UP FOR THE RUNBOOK
+
+# ServiceArc > VOICES > lync > Terry > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.Terry.0.options.1.reply]
+Okay. I will write it up.
+
+
+# ======================= ServiceArc > TEXT =======================
+# ServiceArc > TEXT > offers > 3
+[ServiceArc.TEXT.offers.3]
+Summit would like to buy the company on good terms, keep the desk intact and make you their regional service director.
+
+# ServiceArc > TEXT > offers > 2
+[ServiceArc.TEXT.offers.2]
+Summit is interested at a fair price and wants the desk to stay as it is for a year.
+
+# ServiceArc > TEXT > offers > 1
+[ServiceArc.TEXT.offers.1]
+Summit would buy, but the offer is low and it comes with a list of 'integration findings'.
+
+# ServiceArc > TEXT > offers > 0
+[ServiceArc.TEXT.offers.0]
+Summit has withdrawn. The findings were too long to fix.
+
+# ServiceArc > TEXT > strain > ok
+[ServiceArc.TEXT.strain.ok]
+The crew can hold this pace.
+
+# ServiceArc > TEXT > strain > tight
+[ServiceArc.TEXT.strain.tight]
+The crew is already tight.
+
+# ServiceArc > TEXT > strain > bad
+[ServiceArc.TEXT.strain.bad]
+The crew is stretched thin.
+
+# ServiceArc > TEXT > pager > text
+[ServiceArc.TEXT.pager.text]
+Last night {who} was paged for {client}: {issue}. They fixed it from the kitchen table. {line}
+
+# ServiceArc > TEXT > pager > issues > 0
+[ServiceArc.TEXT.pager.issues.0]
+a server that stopped answering
+
+# ServiceArc > TEXT > pager > issues > 1
+[ServiceArc.TEXT.pager.issues.1]
+a failed backup alarm
+
+# ServiceArc > TEXT > pager > issues > 2
+[ServiceArc.TEXT.pager.issues.2]
+a locked-out owner
+
+# ServiceArc > TEXT > pager > issues > 3
+[ServiceArc.TEXT.pager.issues.3]
+a mail queue that would not drain
+
+# ServiceArc > TEXT > pager > fair
+[ServiceArc.TEXT.pager.fair]
+The rota is even.
+
+# ServiceArc > TEXT > pager > unfair
+[ServiceArc.TEXT.pager.unfair]
+{who} has taken more nights than anyone else.
+
+# ServiceArc > TEXT > pager > options > home
+[ServiceArc.TEXT.pager.options.home]
+SEND THEM HOME FOR THE MORNING
+
+# ServiceArc > TEXT > pager > options > keep
+[ServiceArc.TEXT.pager.options.keep]
+THANK THEM, KEEP THE DAY
+
+# ServiceArc > TEXT > pager > options > cover
+[ServiceArc.TEXT.pager.options.cover]
+TAKE THE NEXT PAGE MYSELF
+
+# ServiceArc > TEXT > pager > replies > home
+[ServiceArc.TEXT.pager.replies.home]
+Thanks, Dan. I will be in at noon.
+
+# ServiceArc > TEXT > pager > replies > keep
+[ServiceArc.TEXT.pager.replies.keep]
+Thanks. I will have extra coffee.
+
+# ServiceArc > TEXT > pager > replies > cover
+[ServiceArc.TEXT.pager.replies.cover]
+Really? Thank you. Text me if it is a bad one.
+
+# ServiceArc > TEXT > friday > subject
+[ServiceArc.TEXT.friday.subject]
+Friday: the desk
+
+# ServiceArc > TEXT > friday > low
+[ServiceArc.TEXT.friday.low]
+Morgan here. The knowledge base is nearly empty (%d percent documented) or somebody left (retention %d percent). I will not write that down for the owners yet, but I will on the next Friday.
+
+# ServiceArc > TEXT > friday > flat
+[ServiceArc.TEXT.friday.flat]
+Morgan here. The desk is documented %d percent and retention is %d percent. Fine. Not a story.
+
+# ServiceArc > TEXT > friday > good
+[ServiceArc.TEXT.friday.good]
+Morgan here. The desk is documented %d percent and retention is %d percent. That is what a buyer reads first. Thank you.
+
+# ServiceArc > TEXT > fired_owners
+[ServiceArc.TEXT.fired_owners]
+BOTH OWNERS HAVE LOST TRUST IN YOU. THE DESK GOES TO SOMEONE ELSE.
+
+# ServiceArc > TEXT > onboard_mails > vault
+[ServiceArc.TEXT.onboard_mails.vault]
+Every credential is in the vault, tagged by owner. I can open a ticket for anything without asking Ray. - Sam
+
+# ServiceArc > TEXT > onboard_mails > shared
+[ServiceArc.TEXT.onboard_mails.shared]
+The shared admin login is still active. Please do not share it more than it already is. - Sam
+
+# ServiceArc > TEXT > audit_page
+[ServiceArc.TEXT.audit_page]
+SUMMIT AUDIT: DOC %d  RETENTION %d  SLA %d  CLAWBACKS %d  TOTAL %d / 100
+
+# ServiceArc > TEXT > waves > title
+[ServiceArc.TEXT.waves.title]
+XP WAVE
+
+# ServiceArc > TEXT > waves > done
+[ServiceArc.TEXT.waves.done]
+%d OF %d MACHINES
 
 
 # ======================= Msp > PROBLEMS =======================
@@ -11356,7 +12894,7 @@ YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP.
 
 # Build > QUIRKS > quiet > text
 [Build.QUIRKS.quiet.text]
-YOU PREFER A CLOSED DOOR AND A SHORT MEETING.
+YOU PREFER A CLOSED DOOR AND A SHORT MEETING. ONE ON ONES GAIN 15 PERCENT LESS.
 
 
 # ======================= Build > PRESETS =======================
@@ -11476,23 +13014,23 @@ BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED.
 
 # Build > INFO > service > dispatch > text
 [Build.INFO.service.dispatch.text]
-THE BOARD IS LESS FUZZY: YOU SEE WHO IS BUSY AND WHAT IS STUCK.
+THE BOARD IS LESS FUZZY (LEVEL 3): EXACT SLA TIMES, FIT AND LOAD.
 
 # Build > INFO > service > process > text
 [Build.INFO.service.process.text]
-RUNBOOKS ARE CHEAP TO WRITE AND THE CREW FOLLOWS THEM.
+RUNBOOKS COST LESS TO WRITE AND THE CREW FOLLOWS THEM BETTER.
 
 # Build > INFO > service > people > text
 [Build.INFO.service.people.text]
-ONE ON ONES GAIN MORE AND LYNK REPLIES ARE WARMER.
+ONE ON ONES GAIN MORE, THE CREW STAYS LONGER AND LYNK REPLIES ARE WARMER.
 
 # Build > INFO > service > escalation > text
 [Build.INFO.service.escalation.text]
-YOU KNOW WHEN A TICKET SHOULD GO UP AND WHEN IT SHOULD NOT.
+SENDING A TICKET TO AN OWNER COSTS LESS TRUST. YOU KNOW WHEN IT SHOULD GO UP.
 
 # Build > INFO > service > relations > text
 [Build.INFO.service.relations.text]
-CLIENTS CALL YOU FIRST AND FORGIVE MORE.
+OWNER AND CLIENT TRUST GROWS FASTER AND FALLS SLOWER.
 
 # Build > INFO > sales > pitch > text
 [Build.INFO.sales.pitch.text]

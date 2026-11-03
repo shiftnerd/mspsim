@@ -762,6 +762,7 @@ func announce(id: String) -> void:
 	var m: Dictionary = MUTATORS[id]
 	announced = id
 	cards_shown += 1
+	ServiceArc.on_mutator(id)  # C7: a systems change makes the Service runbooks stale
 	var options := [{"label": "OK", "id": "ok"}]
 	var body := "%s. %s" % [str(m.name), str(m.text)]
 	var pick: Callable = func(_id: String) -> void: pass

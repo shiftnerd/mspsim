@@ -259,12 +259,13 @@ func _bubble(glyph: String) -> void:
 func _menu(text: String) -> void:
 	var owner_mode := Campaign.mode == "owner"
 	var service_mode := Campaign.mode == "service" and Service.has_one_on_one(_who)
+	var q_mode := ServiceArc.has_question(_who)
 	Cards.ask(
 		_who,
 		text,
 		[
 			{"label": "SMALL TALK", "id": "small"},
-			{"label": "ONE ON ONE" if service_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP")), "id": "ask"},
+			{"label": "ONE ON ONE" if service_mode else ("THEIR QUESTION" if q_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP"))), "id": "ask"},
 			{"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
 			{"label": "LEAVE (ESC)", "id": "leave"},
 		],
@@ -279,6 +280,9 @@ func _pick(id: String) -> void:
 		"ask":
 			if Campaign.mode == "service" and Service.has_one_on_one(_who):
 				Service.one_on_one(_who, func() -> void: _menu("Anything else?"))
+				return
+			if ServiceArc.has_question(_who):
+				ServiceArc.question(_who, func() -> void: _menu("Anything else?"))
 				return
 			_reply(holding_up() if Campaign.mode == "owner" else ask_help())
 		"tip":
@@ -316,6 +320,10 @@ func _leave() -> void:
 # ---- the topics --------------------------------------------------------------------------------
 func small_talk() -> String:
 	Social.note_chat(_who)
+	if Campaign.mode == "service" and ServiceArc.small_talk(_who) != "":
+		var svc_line := ServiceArc.small_talk(_who)
+		_bubble(Social.glyph(_who))
+		return svc_line if tier(_who) != "cold" else "Mm. " + svc_line.split(".")[0] + "."
 	var lines: Array = SMALL[voice(_who)]
 	var text: String = lines[randi() % lines.size()]
 	_bubble(Social.glyph(_who))
@@ -339,6 +347,8 @@ func tip() -> String:
 	Social.note_chat(_who)
 	_bubble("!")
 	var text := _state_tip()
+	if Campaign.mode == "service" and ServiceArc.tip(_who) != "":
+		text = ServiceArc.tip(_who)
 	if text == "":
 		var pool: Array = TIPS_GENERIC[voice(_who)]
 		text = pool[randi() % pool.size()]

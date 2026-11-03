@@ -194,6 +194,7 @@ const DEFAULT_INCIDENTS := {
 	"rack": {"speaker": "Morgan Reyes (Manager)", "text": "The network rack at Gnarly Gnomes came off the wall. Three tickets, everything down. Who takes it?", "owner": "Alan", "title": "THE FALLEN RACK"},
 	"email24": {"speaker": "Garrison (Co-owner)", "text": "Soggy Bottom Brewing runs around the clock and their email is down. This may run into the night. Who takes it?", "owner": "Alan", "title": "THE EMAIL NIGHT"},
 	"migration": {"speaker": "Alan (Co-owner)", "text": "Brightside's old server is out of support. Today is the cutover. It has to be careful. Who takes it?", "owner": "Alan", "title": "THE SERVER MIGRATION"},
+	"onboard": {"speaker": "Garrison (Co-owner)", "text": "Iron Mule Demolition signs today and they have no documentation. Who takes the onboarding?", "owner": "Garrison", "title": "IRON MULE ONBOARDING"},
 }
 var INCIDENTS: Dictionary = DEFAULT_INCIDENTS.duplicate(true)
 const DEFAULT_INCIDENT_OPTIONS := {
@@ -399,6 +400,8 @@ const DEFAULT_REVIEW := {
 		"alan": {"label": "SIDE WITH ALAN: TECHNICAL DIRECTOR", "desc": "ALAN WANTS YOU RUNNING THE STACK AND THE PROCESS.", "text": "YOU TAKE ALAN'S OFFER: TECHNICAL DIRECTOR. MORE SERVERS, FEWER CLIENT DINNERS, EVERYTHING DOCUMENTED. GARRISON SHAKES YOUR HAND AND STAYS POLITE."},
 		"garrison": {"label": "SIDE WITH GARRISON: GROWTH MANAGER", "desc": "GARRISON WANTS YOU BUILDING A BIGGER, FASTER SERVICE DESK.", "text": "YOU TAKE GARRISON'S OFFER: GROWTH MANAGER. BIGGER SLAS, MORE CLIENTS, A TEAM DINNER EVERY MONTH. ALAN WRITES YOU A VERY LONG MEMO."},
 		"leave": {"label": "LEAVE FOR AN IN-HOUSE IT JOB", "desc": "A CLIENT OFFERS YOU THEIR ONLY IT JOB: ONE NETWORK, CALM HOURS.", "text": "YOU TURN IN YOUR BADGE. ONE OFFICE, ONE NETWORK, NO PAGER. YOU LABEL THEIR PATCH PANEL ON YOUR FIRST DAY."},
+		"rollup_yes": {"label": "ACCEPT SUMMIT'S ROLL-UP", "desc": "THE OWNERS SELL. YOU STAY ON AS SUMMIT'S SERVICE DIRECTOR.", "text": "THE OWNERS SIGN WITH SUMMIT MANAGED HOLDINGS AND YOU BECOME THEIR SERVICE DIRECTOR FOR THE REGION. THE SCORECARD TRAVELS WITH YOU. EVERY NEW PATCH PANEL YOU MEET GETS A LABEL."},
+		"rollup_no": {"label": "DECLINE THE ROLL-UP", "desc": "YOU ADVISE THE OWNERS TO STAY INDEPENDENT.", "text": "THE OWNERS TURN SUMMIT DOWN AND KEEP THE COMPANY. THE DESK STAYS YOURS, WITH A BETTER SCORECARD AND A LONGER LIST OF THINGS TO DOCUMENT."},
 		"stay": {"label": "STAY ON PROBATION", "desc": "KEEP THE DESK, WITH A THIRTY-DAY PLAN FROM MORGAN.", "text": "YOU KEEP THE DESK WITH A WRITTEN PLAN. MORGAN WILL CHECK IT EVERY FRIDAY. YOU START BY LABELLING THE PLAN."},
 	},
 }
@@ -709,6 +712,7 @@ func reset() -> void:
 	interviewed = {}
 	kb.reset()
 	Crew.reset()
+	ServiceArc.reset()
 
 
 # a new run: Dan arrives with good networking, Morgan's confidence starts at 55
@@ -716,6 +720,7 @@ func begin_run() -> void:
 	Campaign.rep = START_CONFIDENCE
 	var need: int = Skills.XP_AT[2]
 	Skills.xp["networking"] = maxi(int(Skills.xp.get("networking", 0)), need)
+	ServiceArc.begin_run()
 
 
 # ---- numbers other scripts read ---------------------------------------------------------------------------------
@@ -781,13 +786,27 @@ func crew_mood_word() -> String:
 
 
 # ---- effects ----------------------------------------------------------------------------------------------------
+# 1:1 gains: your CUSTOMER skill, the PEOPLE stat of the build (0.1 a level) and the QUIET TYPE quirk
 func _people_scale() -> float:
-	return minf(1.5, 1.0 + 0.1 * float(Skills.level("people")))
+	var s := 1.0 + 0.1 * float(Skills.level("people")) + 0.1 * float(Build.level("people"))
+	return clampf(s * (1.0 + Build.fx("oto")), 0.6, 1.8)
+
+
+# CLIENT RELATIONS: what you gain with an owner or a client counts for more, what you lose for less
+func _rel_scale(v: int) -> float:
+	var lv := float(Build.level("relations"))
+	return 1.0 + 0.1 * lv if v > 0 else maxf(0.5, 1.0 - 0.08 * lv)
+
+
+# ESCALATION: a better judge of when a ticket should go up costs the owner's trust less
+func owner_cost() -> int:
+	return clampi(OWNER_COST - Build.level("escalation") / 2, 0, OWNER_COST)
 
 
 func apply_fx(fx: Dictionary, scale := 1.0) -> void:
 	for who in fx.get("trust", {}):
-		add_trust(str(who), int(fx.trust[who]))
+		var dv := int(fx.trust[who])
+		add_trust(str(who), int(round(float(dv) * _rel_scale(dv))))
 	if fx.has("morale"):
 		var n := int(round(float(fx.morale) * (scale if int(fx.morale) > 0 else 1.0)))
 		Crew.add_all(n)
@@ -795,13 +814,15 @@ func apply_fx(fx: Dictionary, scale := 1.0) -> void:
 		var v := int(fx.morale_who[who])
 		Crew.add_morale(str(who), int(round(float(v) * (scale if v > 0 else 1.0))))
 	for who in fx.get("retain", {}):
-		Crew.add_retain(str(who), int(fx.retain[who]))
+		var rv := int(fx.retain[who])
+		Crew.add_retain(str(who), rv + (1 if rv > 0 and Build.level("people") >= 2 else 0))
 	if fx.has("retain_all"):
 		for who in Crew.names():
 			Crew.add_retain(str(who), int(fx.retain_all))
 	if fx.has("mood"):
+		var mv := int(fx.mood)
 		for c in Sales.active:
-			Sales.adjust(int(c), int(fx.mood))
+			Sales.adjust(int(c), int(round(float(mv) * _rel_scale(mv))))
 	if fx.has("conf"):
 		Campaign.adjust_rep(int(fx.conf))
 	for who in fx.get("social", {}):
@@ -867,6 +888,7 @@ func begin_day(day: int) -> void:
 	_farewells()
 	huddle()
 	retention_event()
+	ServiceArc.begin_day(day)
 
 
 func _client_work() -> float:
@@ -1062,7 +1084,7 @@ func assign(id: int, who: String, by_hand := true) -> Dictionary:
 			_note_response(t, who)
 	if who in OWNERS:
 		owner_used[who] = int(owner_used[who]) + 1
-		add_trust(who, -OWNER_COST)
+		add_trust(who, -owner_cost())
 		escalated += 1
 	if by_hand:
 		dispatched += 1
@@ -1320,6 +1342,7 @@ func answer_memo(id: String, pick: String) -> void:
 	var m: Dictionary = MEMOS[id]
 	for o in m.options:
 		if str(o.id) == pick:
+			ServiceArc.note(id, pick)
 			apply_fx(o.fx, _people_scale())
 			Cards.ask(str(m.speaker), str(o.text), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
 			return
@@ -1336,13 +1359,14 @@ func beat(id: String) -> void:
 			entry["enabled"] = false
 			entry["hint"] = "NEEDS MENTORING"
 		options.append(entry)
-	Cards.ask(str(b.speaker), str(b.text), options, func(pick: String) -> void: answer_beat(id, pick))
+	Cards.ask(str(b.speaker), ServiceArc.beat_text(id, str(b.text)), options, func(pick: String) -> void: answer_beat(id, pick))
 
 
 func answer_beat(id: String, pick: String) -> void:
 	var b: Dictionary = BEATS[id]
 	for o in b.options:
 		if str(o.id) == pick:
+			ServiceArc.note(id, pick)
 			apply_fx(o.fx, _people_scale())
 			Cards.ask(str(b.speaker), str(o.text), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
 			return
@@ -1438,6 +1462,7 @@ func delegate(book: String, quality: float, who: String) -> Dictionary:
 	var res: Dictionary = Playbook.active.get("result", {})
 	flags["job_" + book] = str(res.get("grade", "C"))
 	Msp.send_text("Morgan", "%s finished the job: grade %s." % [who, str(res.get("grade", "C"))])
+	ServiceArc.job_done_check()
 	return res
 
 
@@ -1563,11 +1588,12 @@ func close_day(r: Dictionary) -> void:
 		if score >= float(entry[0]):
 			grade = str(entry[1])
 			break
-	var delta: int = {"S": 3, "A": 2, "B": 1, "C": -1, "D": -3}[grade]
+	var delta: int = {"S": 2, "A": 1, "B": 0, "C": -2, "D": -4}[grade]
 	if grade in ["S", "A"] and trust_of("Alan") >= 60 and trust_of("Garrison") >= 60:
 		delta += 1
 	if trust_of("Alan") < 25 or trust_of("Garrison") < 25:
 		delta -= 1
+	delta += ServiceArc.friday_delta()
 	var out_notes: Array = []
 	# end-of-day bookkeeping: the day's focus, the crew's mood, quits, the owners' drift
 	if focus == "mentor":
@@ -1575,6 +1601,7 @@ func close_day(r: Dictionary) -> void:
 	if focus == "project":
 		project_days += 1
 	_training_day()
+	ServiceArc.silence()
 	var gone: Array = Crew.end_day(util, grade)
 	for who in gone:
 		out_notes.append("%s QUIT" % str(who).to_upper())
@@ -1589,7 +1616,7 @@ func close_day(r: Dictionary) -> void:
 		out_notes.append("%s JOINS" % str(who).to_upper())
 	crew_changed()
 	_owner_day()
-	if grade in ["S", "A"]:
+	if grade == "S":
 		add_trust("Alan", 1)
 		add_trust("Garrison", 1)
 	elif grade == "D":
@@ -1598,6 +1625,7 @@ func close_day(r: Dictionary) -> void:
 	var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST
 	if both_low:
 		delta = -Campaign.rep
+		r["fired_text"] = str(ServiceArc.TEXT.fired_owners)
 	grades.append({"day": Campaign.day, "grade": grade, "score": int(round(score)), "util": int(round(util * 100.0)), "sla": sla})
 	var mood_col := DayReport.GOOD if mood >= 70 else (DayReport.BAD if mood < 40 else DayReport.WARN)
 	var morale_col := DayReport.GOOD if morale >= 65 else (DayReport.BAD if morale < 40 else DayReport.WARN)
@@ -1620,6 +1648,8 @@ func close_day(r: Dictionary) -> void:
 		["ALAN TRUST", "%d  %s" % [trust_of("Alan"), trust_word(trust_of("Alan"))], _trust_col(trust_of("Alan"))],
 		["GARRISON TRUST", "%d  %s" % [trust_of("Garrison"), trust_word(trust_of("Garrison"))], _trust_col(trust_of("Garrison"))],
 	]
+	for row in ServiceArc.report_rows():
+		owners.append(row)
 	if not out_notes.is_empty():
 		people.append(["CREW", " ".join(out_notes), DayReport.BAD])
 	r["groups"] = [["SCORECARD", scorecard], ["TEAM", people], ["OWNERS", owners]]
@@ -1646,12 +1676,13 @@ func review_offers() -> Array:
 	var tg := trust_of("Garrison")
 	if ta >= 55 and tg >= 55 and Campaign.rep >= 60:
 		out.append({"id": "ops", "label": str(REVIEW.endings.ops.label), "desc": str(REVIEW.endings.ops.desc)})
-	if ta >= 55 and ta >= tg:
+	if ta >= 55 and ta >= tg and Campaign.rep >= 60:
 		out.append({"id": "alan", "label": str(REVIEW.endings.alan.label), "desc": str(REVIEW.endings.alan.desc)})
-	if tg >= 55 and tg >= ta:
+	if tg >= 55 and tg >= ta and Campaign.rep >= 60:
 		out.append({"id": "garrison", "label": str(REVIEW.endings.garrison.label), "desc": str(REVIEW.endings.garrison.desc)})
 	if Campaign.rep >= 45:
 		out.append({"id": "leave", "label": str(REVIEW.endings.leave.label), "desc": str(REVIEW.endings.leave.desc)})
+		out.append_array(ServiceArc.extra_offers())
 	out.append({"id": "stay", "label": str(REVIEW.endings.stay.label), "desc": str(REVIEW.endings.stay.desc)})
 	return out
 
@@ -1677,7 +1708,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["DAYS: S %d  A %d  B %d  C %d  D %d" % [count.S, count.A, count.B, count.C, count.D], ink])
 			lines.append(["TRUST: ALAN %d (%s)  GARRISON %d (%s)" % [trust_of("Alan"), trust_word(trust_of("Alan")), trust_of("Garrison"), trust_word(trust_of("Garrison"))], ink])
 			lines.append(["DESK: %s   DOCUMENTED %d%%   RETENTION %d%%" % [design_label(), kb.doc_pct(), Crew.retention_pct()], ink])
-			for key in ["rdp", "ransom", "rack", "email24", "migration"]:
+			for key in ["rdp", "ransom", "rack", "email24", "migration", "onboard"]:
 				var grade := str(flags.get("job_" + key, Story.flags.get(key, "")))
 				if grade != "":
 					lines.append(["%s: %s" % [str(INCIDENTS[key].title), grade.to_upper()], Review.BAD if grade in ["D", "lost"] else ink, "job"])
@@ -1689,6 +1720,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["'%s'" % _quote("Garrison", trust_of("Garrison")), ink])
 			lines.append(["YOUR TEAM:", blue])
 			lines.append(["'%s'" % _quote("crew", Crew.morale_avg()), ink])
+			lines.append_array(ServiceArc.audit_lines(blue, ink))
 		2:
 			lines.append(["YOUR OPTIONS", blue])
 		_:
@@ -1707,6 +1739,7 @@ func weekly_cost() -> int:
 	if dispatcher:
 		total += DISPATCHER_WAGE
 	total += int(TRAINING[training].cost)
+	total += ServiceArc.oncall_cost()
 	if design == "pods":
 		total += POD_STIPEND * Crew.size()
 	return total
@@ -2214,6 +2247,7 @@ func _training_day() -> void:
 
 # ---- owners react to the documentation, the bus factor and a team that stays ------------------------------------------
 func _owner_day() -> void:
+	ServiceArc.owner_drift()
 	var pct: int = kb.doc_pct()
 	if pct >= 50 and not flags.get("doc50", false):
 		flags["doc50"] = true
@@ -2255,7 +2289,7 @@ func to_dict() -> Dictionary:
 		"design": design, "dispatcher": dispatcher, "design_day": design_day, "design_changes": design_changes,
 		"pods": pods.duplicate(), "pod_days": pod_days.duplicate(), "misallocated": misallocated, "training": training,
 		"spent_total": spent_total, "last_event_day": last_event_day, "event_days": event_days.duplicate(),
-		"events_fired": events_fired.duplicate(), "kb": kb.to_dict(),
+		"events_fired": events_fired.duplicate(), "kb": kb.to_dict(), "arc": ServiceArc.to_dict(),
 	}
 
 
@@ -2304,3 +2338,4 @@ func from_dict(data: Dictionary) -> void:
 	event_days = data.get("event_days", {}).duplicate()
 	events_fired = data.get("events_fired", []).duplicate()
 	kb.from_dict(data.get("kb", {}))
+	ServiceArc.from_dict(data.get("arc", {}))

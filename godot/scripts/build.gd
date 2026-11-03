@@ -28,7 +28,7 @@ const MAX_POS := 1  # quirks that cost points
 const PATHS := {
 	"tech": {"selectable": true, "stats": ["powershell", "networking", "servers", "security", "people"]},
 	"owner": {"selectable": true, "stats": ["technical", "finance", "sales", "culture", "clients"]},
-	"service": {"selectable": false, "stats": ["dispatch", "process", "people", "escalation", "relations"]},
+	"service": {"selectable": true, "stats": ["dispatch", "process", "people", "escalation", "relations"]},
 	"sales": {"selectable": false, "stats": ["pitch", "discovery", "negotiation", "relationships", "honesty"]},
 }
 # free floors and creation caps per cast member; "skills" are floors on the five tech Skills the service campaign applies itself
@@ -63,7 +63,7 @@ const DEFAULT_QUIRKS := {
 	"stubborn": {"name": "STUBBORN", "pts": 2, "paths": ["owner"], "fx": {"trust": -10.0}, "text": "YOUR PARTNER STARTS WITH 10 LESS TRUST. YOU DO NOT BACK DOWN."},
 	"listener": {"name": "GOOD LISTENER", "pts": -2, "paths": ["owner"], "fx": {"trust": 10.0}, "text": "YOUR PARTNER STARTS WITH 10 MORE TRUST. YOU HEAR THEM OUT."},
 	"overpromise": {"name": "OVER-PROMISER", "pts": 2, "paths": ["sales"], "fx": {}, "text": "YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP."},
-	"quiet": {"name": "QUIET TYPE", "pts": 2, "paths": ["service"], "fx": {}, "text": "YOU PREFER A CLOSED DOOR AND A SHORT MEETING."},
+	"quiet": {"name": "QUIET TYPE", "pts": 2, "paths": ["service"], "fx": {"oto": -0.15}, "text": "YOU PREFER A CLOSED DOOR AND A SHORT MEETING. ONE ON ONES GAIN 15 PERCENT LESS."},
 }
 var QUIRKS: Dictionary = DEFAULT_QUIRKS.duplicate(true)
 # what each stat does, one line for the build screen
@@ -83,11 +83,11 @@ const DEFAULT_INFO := {
 		"clients": {"name": "CLIENTS", "text": "BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED."},
 	},
 	"service": {
-		"dispatch": {"name": "DISPATCH", "text": "THE BOARD IS LESS FUZZY: YOU SEE WHO IS BUSY AND WHAT IS STUCK."},
-		"process": {"name": "PROCESS", "text": "RUNBOOKS ARE CHEAP TO WRITE AND THE CREW FOLLOWS THEM."},
-		"people": {"name": "PEOPLE", "text": "ONE ON ONES GAIN MORE AND LYNK REPLIES ARE WARMER."},
-		"escalation": {"name": "ESCALATION", "text": "YOU KNOW WHEN A TICKET SHOULD GO UP AND WHEN IT SHOULD NOT."},
-		"relations": {"name": "CLIENT REL", "text": "CLIENTS CALL YOU FIRST AND FORGIVE MORE."},
+		"dispatch": {"name": "DISPATCH", "text": "THE BOARD IS LESS FUZZY (LEVEL 3): EXACT SLA TIMES, FIT AND LOAD."},
+		"process": {"name": "PROCESS", "text": "RUNBOOKS COST LESS TO WRITE AND THE CREW FOLLOWS THEM BETTER."},
+		"people": {"name": "PEOPLE", "text": "ONE ON ONES GAIN MORE, THE CREW STAYS LONGER AND LYNK REPLIES ARE WARMER."},
+		"escalation": {"name": "ESCALATION", "text": "SENDING A TICKET TO AN OWNER COSTS LESS TRUST. YOU KNOW WHEN IT SHOULD GO UP."},
+		"relations": {"name": "CLIENT REL", "text": "OWNER AND CLIENT TRUST GROWS FASTER AND FALLS SLOWER."},
 	},
 	"sales": {
 		"pitch": {"name": "PITCH", "text": "MORE LEADS BECOME MEETINGS AND MORE MEETINGS BECOME QUOTES."},

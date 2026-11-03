@@ -700,7 +700,7 @@ func quit_chance(who: String) -> float:
 	if morale(who) >= QUIT_BELOW and worn <= 0.0 and fitrisk <= 0.0:
 		return 0.0
 	var base := float(QUIT_BELOW - morale(who)) / 40.0 if morale(who) < QUIT_BELOW else 0.0
-	return clampf(base + worn + fitrisk - 0.03 * value(who, "retain"), 0.0, 0.8)
+	return clampf(base + worn + fitrisk - 0.03 * value(who, "retain") - 0.015 * float(Build.level("people")), 0.0, 0.8)
 
 
 func quit(who: String) -> void:

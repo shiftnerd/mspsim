@@ -275,6 +275,15 @@ func _init() -> void:
 	_check(played >= 3, "played %d days" % played)
 	if ended and not report.report.get("fired", false):
 		_check(played == 20, "all 20 days played")
+		var arc := root.get_node("ServiceArc")
+		_check(arc.fired.size() == arc.SCHEDULE.size(), "C7: every story beat fired on its own day (%d of %d)" % [arc.fired.size(), arc.SCHEDULE.size()])
+		_check(sv.memos_done.size() == 6 and arc.picks.has("m1") and arc.picks.has("m6"), "C7: six memos answered, the sides noted (%s)" % str(arc.sides))
+		_check(arc.audit.has("total"), "C7: the audit was computed (%s of 100)" % str(arc.audit.get("total", "?")))
+		var ending_ids := []
+		for o in sv.review_offers():
+			ending_ids.append(str(o.id))
+			_check(sv.review_lines(3, str(o.id)).size() >= 2 and str(sv.review_lines(3, str(o.id))[1][0]).length() > 20, "C7: ending %s has its page" % str(o.id))
+		_check(ending_ids.has("stay"), "C7: probation is always on the list: " + str(ending_ids))
 		report.finish()
 		await process_frame
 		_check(review.is_open and review.offers.size() >= 2, "the review offers %d endings" % review.offers.size())

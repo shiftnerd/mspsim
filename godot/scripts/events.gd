@@ -2294,6 +2294,8 @@ func _valid(id: String, card: Dictionary, vignette: bool) -> bool:
 # ---- which days draw ----------------------------------------------------------------------------------
 # a quiet day: no story card, no outing, no trip, not the first days or the last
 func quiet_day(day: int, mode: String) -> bool:
+	if mode == "service":
+		return ServiceArc.quiet(day)  # C7: the deck draws on the service desk's quiet days
 	if day < (3 if mode == "tech" else 2) or day >= Campaign.TOTAL_DAYS:
 		return false
 	if mode == "tech":
@@ -2342,7 +2344,7 @@ func pool(day: int, mode: String) -> Array:
 	for id in DECK:
 		var card: Dictionary = DECK[id]
 		var kinds: Array = card.get("kinds", [])
-		if not (kinds.has(mode) or kinds.has("both")):
+		if not (kinds.has("tech" if mode == "service" else mode) or kinds.has("both")):
 			continue
 		if day < int(card.min_day) or day > int(card.max_day):
 			continue
@@ -2421,6 +2423,7 @@ func _process(_delta: float) -> void:
 func show_draw(draw: Dictionary) -> void:
 	last_shown = str(draw.id)
 	shown += 1
+	ServiceArc.on_event(str(draw.id))  # C7: a systems change makes the Service runbooks stale
 	if str(draw.deck) == "vignette":
 		Story.fire({"kind": "vignette", "id": str(draw.id)})
 		return

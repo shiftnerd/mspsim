@@ -119,12 +119,17 @@ func speed(t: Dictionary) -> float:
 		return 1.0
 	match state(id):
 		TRAINED:
-			return 1.22
+			return 1.22 * follow()
 		DOCUMENTED:
-			return 1.0 if bool(rb(id).stale) else 1.12
+			return 1.0 if bool(rb(id).stale) else 1.12 * follow()
 		DRAFT:
 			return 1.03
 	return 1.0
+
+
+# C7: a high PROCESS stat makes the crew follow the runbooks (3 percent a level above the free 2)
+func follow() -> float:
+	return clampf(1.0 + 0.03 * float(Build.level("process") - 2), 0.94, 1.09)
 
 
 func safety(t: Dictionary) -> float:

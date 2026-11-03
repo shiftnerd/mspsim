@@ -101,7 +101,7 @@ func _init() -> void:
 	_check(b.presets_for("tech", "").map(func(p): return p.name) == ["GENERALIST", "SCRIPTER", "NETWORK NERD", "PEOPLE PERSON"], "the four tech presets")
 	var sc: Dictionary = b.apply_preset("tech", "", "normal", "scripter")
 	_check(b.level_of(sc, "powershell", "") == 4 and b.level_of(sc, "people", "") <= 1, "SCRIPTER is PowerShell 4, low CUSTOMER")
-	_check(not b.selectable("service") and not b.selectable("sales") and b.selectable("tech") and b.selectable("owner"), "service and sales are data rows, not selectable yet")
+	_check(b.selectable("service") and not b.selectable("sales") and b.selectable("tech") and b.selectable("owner"), "service is selectable since C7, sales is still a data row")
 
 	# ---- bias floors and caps (owner, service, sales)
 	var alan: Dictionary = b.new_build("normal")

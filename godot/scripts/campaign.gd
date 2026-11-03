@@ -43,7 +43,7 @@ const MODE_DEFS := {
 		"crew": true, "books": false, "cards": true, "books_lite": false,
 		"day_len": 360.0, "total_days": 20, "unit": "DAY",
 		"hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
-		"pace": 0.8, "shift": false, "scars": false, "maya_in_events": true,
+		"pace": 0.62, "shift": false, "scars": false, "maya_in_events": true,
 		"ending_fired": "MORGAN HAS LOST CONFIDENCE. THE DESK GOES TO SOMEONE ELSE.",
 		"ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
 		"rep_label": "CONF",
@@ -546,6 +546,8 @@ func _ending(r: Dictionary) -> String:
 	if r.fired:
 		if bool(r.get("bankrupt", false)):
 			return "THE COMPANY IS BANKRUPT."
+		if r.has("fired_text"):
+			return str(r.fired_text)
 		return str(prop("ending_fired", "REPUTATION GONE. YOU ARE FIRED."))
 	if day < total_days():
 		return ""

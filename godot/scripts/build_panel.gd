@@ -32,7 +32,7 @@ func setup(for_mode: String, for_character: String) -> void:
 	mode = for_mode
 	character = for_character
 	path = Build.path_of(for_mode)
-	who = World.cast_of(for_character) if for_mode == "owner" else ""
+	who = World.cast_of(for_character) if for_mode == "owner" or for_mode == "service" else ""
 	rows = Build.stats_of(path).duplicate()
 	rows.append_array(["q1", "q2", "preset"])
 	row = 0

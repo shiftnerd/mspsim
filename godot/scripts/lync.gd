@@ -220,6 +220,10 @@ func contacts() -> Array:
 	var out: Array = Social.people()
 	if not out.has(boss()):
 		out.append(boss())  # Marge in the owner campaign (Morgan is already a cast member)
+	if Campaign.mode == "service":
+		for n in Crew.names():
+			if not out.has(str(n)):
+				out.append(str(n))  # C7: the crew you run are contacts too
 	return out
 
 
@@ -231,7 +235,7 @@ func presence(who: String) -> Array:
 		return ["OFFLINE", "grey"]
 	var st: Dictionary = World.chars[who]
 	if st.scene == World.OUTSIDE:
-		var sales: bool = World.CAST[who].get("role", "") == "sales"
+		var sales: bool = World.row(who).get("role", "") == "sales"
 		return (
 			["WITH A CLIENT", "amber"]
 			if (sales and World.clock < World.DAY_END)
@@ -284,6 +288,9 @@ func _process(delta: float) -> void:
 
 # a coworker messages you
 func incoming(forced_kind := "") -> void:
+	if Campaign.mode == "service" and forced_kind == "":
+		ServiceArc.lynk_incoming()  # C7: the service cast has its own voices
+		return
 	var pool := []
 	for who in Social.people():
 		if presence(who)[0] == "AVAILABLE" and not pending.has(who):
@@ -325,6 +332,8 @@ func reply(who: String, index: int) -> void:
 	Social.change(who, int(opt.social))
 	if opt.has("xp"):
 		Skills.add_xp("people", int(opt.xp))
+	if Campaign.mode == "service":
+		ServiceArc.lynk_reply(who, opt)
 	_push(who, who, str(opt.reply))
 
 
@@ -403,13 +412,15 @@ func _helpable_ticket() -> Dictionary:
 func _boss_reply(who: String) -> String:
 	_push(who, "me", "Any advice?" if who == "Morgan" else "How are we doing?")
 	var text := "You are doing fine."
+	if Campaign.mode == "service":
+		text = ServiceArc.boss_line()
 	if who == "Marge":
 		var est: Dictionary = Owner.weekly_estimate()
 		text = (
 			"Cash is $%d. We make about $%d a week before one-offs. Receivables are $%d."
 			% [Owner.cash, int(est.ebitda), Owner.ar_total()]
 		)
-	else:
+	elif Campaign.mode != "service":
 		var unchecked := false
 		for c in Sales.active:
 			unchecked = unchecked or int(Msp.backups[int(c)].checked_day) != Campaign.day
