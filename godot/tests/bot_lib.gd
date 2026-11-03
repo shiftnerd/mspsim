@@ -936,6 +936,9 @@ const OW_POLICIES := {
 }
 
 
+const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
+
+
 func ow_answer(cards: Node, ids: Dictionary) -> void:
 	var n := 0
 	while cards.is_open and n < 20:
@@ -944,11 +947,18 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			for id in ids:
 				if cards.text.contains(str(ids[id])) and str(ids[id]).length() > 8:
 					pick = mini(int(policy.get(id, 0)), cards.options.size() - 1)
+					if id == "rn_invite" and strategy == "careful" and root.get_node("Owner").cash < OW_TRIP_CASH:
+						pick = 2  # Q6d: STAY HOME: a trip is not worth it out of a thin bank
+		if strategy == "careful" and cards.text.begins_with("We drew $") and cards.options.size() > 1:
+			pick = 1  # Q6d: the bank is thin and the draw is a choice: a careful owner skips the draw (the bot only cut it to SMALL)
 		if not bool(cards.options[pick].get("enabled", true)):  # greyed out (cash, or the partner vetoes): take an open option
 			for i in cards.options.size():
 				if bool(cards.options[i].get("enabled", true)):
 					pick = i
 					break
+		if OS.get_environment("BOT_TRACE") != "":  # dev: BOT_TRACE=1 prints every card, the pick and the cash before it
+			var shown: String = cards.text.substr(0, 70).replace("\n", " ")
+			print("TRACE card cash %d: %s -> %d (%s)" % [root.get_node("Owner").cash, shown, pick, str(cards.options[pick].get("text", cards.options[pick])).substr(0, 60)])
 		cards.pick(pick)
 		n += 1
 
@@ -1025,6 +1035,10 @@ func ow_run(seed_n: int) -> Dictionary:
 			ow_answer(cards, ids)
 		frames_total += frames
 		last = day
+		if OS.get_environment("BOT_TRACE") != "":
+			var est: Dictionary = o.weekly_estimate()
+			print("TRACE week %d cash %d rep %d" % [day, o.cash, c.rep])
+			print("TRACE est week %d clients %d revenue %d payroll %d fixed %d mkt %d ebitda %d draw %d ar %d extra %d" % [day, sales.active.size(), est.revenue, est.payroll, est.fixed, est.marketing, est.ebitda, est.draw, o.ar_total(), o.income_extra])
 		if report.report.get("final", false):
 			break
 		report.finish()
