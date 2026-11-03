@@ -16,6 +16,7 @@ const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
 const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
 
 @export var character := "office_dan"
+var custom := false  # a copy of the player's custom person (Look): the teen sheet in their colours
 @export var facing := "right"
 @export var routine: PackedStringArray = []
 @export var start_seat := ""
@@ -69,6 +70,7 @@ var _t := 0.0
 
 func _ready() -> void:
 	sprite.sprite_frames = load("res://characters/%s.tres" % character)
+	Look.apply(sprite, character, custom)
 	add_to_group("npcs")
 	sprite.animation_finished.connect(_on_animation_finished)
 	body_entered.connect(_on_body_entered)

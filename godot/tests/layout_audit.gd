@@ -152,6 +152,19 @@ func _title_phase() -> void:
 	root.get_node("Yeartwo").begin_select("tech", true)
 	cs.queue_redraw()
 	await _end("charselect year2 chip")
+	root.get_node("Yeartwo").pending = false
+	for mode in ["tech", "free"]:
+		cs.setup(mode)
+		cs.sel = 0
+		await _wait(3)
+		_begin()
+		cs.confirm()  # MAKE YOUR OWN: the create step
+		root.get_node("Look").look["name"] = "WWWWWWWWWW"
+		await _end("creator " + mode)
+		_begin()
+		cs.create_row = 6
+		cs.queue_redraw()
+		await _end("creator random row " + mode)
 	t._close_select()
 	await _wait(3)
 	# career screen

@@ -1,0 +1,349 @@
+extends Node
+# gdlint:disable=max-line-length
+# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the TEEN sheet (Look.BASE) drawn through a
+# palette-swap shader (canvas_item) that replaces each flat colour of that sheet with the player's choice. There is no new
+# art: every animation, seat, hand and ear position keeps working, and anything keyed by character name (Player.CHARACTERS,
+# hands json, Social, Lync, Talk) sees plain "office_teen".
+#
+#   look        {name, skin, hair, shirt, pants, shoes}: five colours as 6 digit hex text, plus a name (up to 10 characters)
+#   SOURCES     the flat colours of office_teen_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
+#               base colour of the role, 1 and 2 are the shades (or the highlight) computed from the chosen base, so the
+#               figure stays consistent (shade_of). The outline #17121F, the eyes, brows, mouth, belt, buckle and watch are
+#               KEEPS: listed so the nearest-colour match never takes them for a neighbouring shade.
+#   Hurt flash  frames 25 and 28 of the sheet are every colour mixed 70% to white; the shader and map_color() match those too
+#   active      the current person IS the custom one (is_custom(): active and the player's sheet is BASE)
+#
+# The shader and map_color() are one algorithm (nearest source colour inside a tolerance); tests/creator.gd runs map_color()
+# over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
+# new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
+
+const PLAYER := preload("res://scripts/player.gd")
+const BASE := "office_teen"
+const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
+const MAX_NAME := 10
+const FLASH := 0.7  # the hurt frames mix every colour this far to white
+const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
+const FLASH_TOL := 0.01
+const MIN_STEP := 0.045  # the least a shade differs from its base in value
+const SOURCES := [
+	["f3b488", "skin", 0],
+	["d88a62", "skin", 1],
+	["b8663f", "skin", 2],
+	["9a5124", "hair", 0],
+	["c47a38", "hair", 1],
+	["4f7fd0", "shirt", 0],
+	["3a62a8", "shirt", 1],
+	["bbd0f5", "shirt", 2],
+	["3a3f66", "pants", 0],
+	["2f3354", "pants", 1],
+	["272b48", "pants", 2],
+	["5a3522", "shoes", 0],
+	["4a2c1c", "shoes", 1],
+]
+# never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
+const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33"]
+const SWATCHES := {
+	"skin": ["fbd7bc", "f3b488", "e3a272", "c68642", "a8683a", "8d5524", "6b3e22", "4a2a18"],
+	"hair":
+	[
+		"9a5124",
+		"2a1c14",
+		"4a3222",
+		"74492a",
+		"c9a25b",
+		"e8d090",
+		"b8421f",
+		"8a8f9a",
+		"e8e8ec",
+		"3a5fb0",
+		"8e3fa8",
+		"e05a9a"
+	],
+	"shirt":
+	[
+		"4f7fd0",
+		"8c2b40",
+		"b8292f",
+		"4f9c8e",
+		"3c55c0",
+		"2f6b3a",
+		"e0a030",
+		"f4f2ea",
+		"2a2f3a",
+		"7a4fb0",
+		"d0602a",
+		"e08aa8"
+	],
+	"pants": ["3a3f66", "2b3550", "3f5e8e", "8a6a42", "2a2a33", "6a6f7a", "5a4a3a", "7a3030"],
+	"shoes": ["5a3522", "2a2a33", "8a8f9a", "cfc8b5", "3a3a44", "7a2020", "2f4a73", "6e7a68"],
+}
+# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, Vic, Maya, Morgan) or the crew (Sam, Terry)
+const NAMES := [
+	"JAMIE",
+	"CASEY",
+	"RILEY",
+	"TAYLOR",
+	"JORDAN",
+	"QUINN",
+	"AVERY",
+	"DREW",
+	"KELLY",
+	"CHRIS",
+	"PAT",
+	"LEE"
+]
+
+var active := false
+var look: Dictionary = default_look()
+var _shader: Shader = null
+
+
+func default_look() -> Dictionary:
+	return {
+		"name": NAMES[0],
+		"skin": "f3b488",
+		"hair": "9a5124",
+		"shirt": "4f7fd0",
+		"pants": "3a3f66",
+		"shoes": "5a3522"
+	}
+
+
+# ---- the colour maths ------------------------------------------------------------------
+# the shade (level 1), deeper shade or highlight (level 2) of a base colour for a role: the same hue shift and
+# saturation / value ratios as the original sheet's base -> shade pair (skin f3b488 -> d88a62 -> b8663f, hair 9a5124 ->
+# highlight c47a38, shirt 4f7fd0 -> 3a62a8 and the button tint bbd0f5, pants 3a3f66 -> 2f3354 -> 272b48, shoes 5a3522 ->
+# 4a2c1c), so the original base gives back exactly the original shades and every other base keeps the same look.
+# Very dark or very light bases still get a step of at least MIN_STEP in value.
+func shade_of(base: Color, role: String, level: int) -> Color:
+	if level == 0:
+		return base
+	var from_c := Color.WHITE
+	var to_c := Color.WHITE
+	for row in SOURCES:
+		if row[1] == role and int(row[2]) == 0:
+			from_c = Color.html(str(row[0]))
+		elif row[1] == role and int(row[2]) == level:
+			to_c = Color.html(str(row[0]))
+	var hue := fposmod(base.h + (to_c.h - from_c.h), 1.0)
+	var sat := clampf(base.s * to_c.s / maxf(from_c.s, 0.01), 0.0, 1.0)
+	var val := clampf(base.v * to_c.v / from_c.v, 0.0, 1.0)
+	if to_c.v < from_c.v and base.v - val < MIN_STEP:
+		val = maxf(base.v - MIN_STEP, 0.0)
+	elif to_c.v > from_c.v and val - base.v < MIN_STEP:
+		val = minf(base.v + MIN_STEP, 1.0)
+	return Color.from_hsv(hue, sat, val)
+
+
+func _color_of(look_dict: Dictionary, role: String) -> Color:
+	return Color.html(str(look_dict.get(role, "ffffff")))
+
+
+# the recoloured value of every SOURCES row followed by the KEEPS (themselves), for this look
+func palette(look_dict: Dictionary) -> PackedColorArray:
+	var out := PackedColorArray()
+	for row in SOURCES:
+		out.append(shade_of(_color_of(look_dict, str(row[1])), str(row[1]), int(row[2])))
+	for hex in KEEPS:
+		out.append(Color.html(str(hex)))
+	return out
+
+
+func sources() -> PackedColorArray:
+	var out := PackedColorArray()
+	for row in SOURCES:
+		out.append(Color.html(str(row[0])))
+	for hex in KEEPS:
+		out.append(Color.html(str(hex)))
+	return out
+
+
+func _dist(a: Color, b: Color) -> float:
+	return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length()
+
+
+# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the TEEN sheet
+# turns into for this look (an unknown colour comes back unchanged)
+func map_color(c: Color, look_dict: Dictionary) -> Color:
+	var src := sources()
+	var dst := palette(look_dict)
+	var best := -1
+	var best_d := 1000.0
+	var best_flash := false
+	for i in src.size():
+		var d := _dist(c, src[i])
+		if d < TOL and d < best_d:
+			best = i
+			best_d = d
+			best_flash = false
+		var f := _dist(c, src[i].lerp(Color.WHITE, FLASH))
+		if f < FLASH_TOL and f < best_d:
+			best = i
+			best_d = f
+			best_flash = true
+	if best < 0:
+		return c
+	var out: Color = dst[best].lerp(Color.WHITE, FLASH) if best_flash else dst[best]
+	return Color(out.r, out.g, out.b, c.a)
+
+
+func shader() -> Shader:
+	if _shader == null:
+		var n := SOURCES.size() + KEEPS.size()
+		_shader = Shader.new()
+		_shader.code = (
+			"""shader_type canvas_item;
+uniform vec4 src[%d];
+uniform vec4 dst[%d];
+varying vec4 vcol;
+void vertex() {
+  vcol = COLOR;
+}
+void fragment() {
+  vec4 c = texture(TEXTURE, UV);
+  int best = -1;
+  float best_d = 1000.0;
+  bool best_flash = false;
+  vec3 o = c.rgb;
+  if (c.a > 0.0) {
+    for (int i = 0; i < %d; i++) {
+      float d = distance(c.rgb, src[i].rgb);
+      if (d < %f && d < best_d) { best = i; best_d = d; best_flash = false; }
+      float f = distance(c.rgb, mix(src[i].rgb, vec3(1.0), %f));
+      if (f < %f && f < best_d) { best = i; best_d = f; best_flash = true; }
+    }
+  }
+  if (best >= 0) {
+    o = dst[best].rgb;
+    if (best_flash) { o = mix(o, vec3(1.0), %f); }
+  }
+  COLOR = vec4(o, c.a) * vcol;
+}
+"""
+			% [n, n, n, TOL, FLASH, FLASH_TOL, FLASH]
+		)
+	return _shader
+
+
+func make_material(look_dict: Dictionary) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = shader()
+	m.set_shader_parameter("src", sources())
+	m.set_shader_parameter("dst", palette(look_dict))
+	return m
+
+
+# ---- who is custom ------------------------------------------------------------------
+func is_custom() -> bool:
+	return active and PLAYER.current_character == BASE
+
+
+# the custom name ("" while the player is a stock character)
+func display_name() -> String:
+	return str(look.name) if is_custom() else ""
+
+
+# put the palette-swap material on a sprite showing `character` when it is the custom person (the player's sprite, the
+# select screen's preview card, an NPC copy), otherwise none
+func apply(sprite: CanvasItem, character: String, custom: bool) -> void:
+	sprite.material = make_material(look) if custom and character == BASE else null
+
+
+# ---- editing --------------------------------------------------------------------------
+func clean_name(text: String) -> String:
+	var out := ""
+	for ch in text.to_upper():
+		if (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == " " or ch == "-":
+			out += ch
+	return out.strip_edges().left(MAX_NAME)
+
+
+# the name as the game uses it: cleaned, never empty
+func final_name() -> String:
+	var nm := clean_name(str(look.get("name", "")))
+	return nm if nm != "" else NAMES[0]
+
+
+func name_char_ok(ch: String) -> bool:
+	return (
+		ch.length() == 1
+		and (
+			(ch >= "A" and ch <= "Z")
+			or (ch >= "a" and ch <= "z")
+			or (ch >= "0" and ch <= "9")
+			or ch == " "
+			or ch == "-"
+		)
+	)
+
+
+# the suggested names, one step forward or back from the current name
+func cycle_name(step: int) -> void:
+	var i := NAMES.find(final_name())
+	look["name"] = NAMES[(maxi(i, 0) + step + NAMES.size()) % NAMES.size()]
+
+
+func sanitize(d: Dictionary) -> Dictionary:
+	var out := default_look()
+	for role in ROLES:
+		var hex := str(d.get(role, out[role])).to_lower().trim_prefix("#")
+		if hex.length() == 6 and hex.is_valid_hex_number():
+			out[role] = hex
+	var nm := clean_name(str(d.get("name", "")))
+	out["name"] = nm if nm != "" else NAMES[0]
+	return out
+
+
+func swatch_index(role: String) -> int:
+	var list: Array = SWATCHES[role]
+	return list.find(str(look[role]))
+
+
+func set_swatch(role: String, index: int) -> void:
+	var list: Array = SWATCHES[role]
+	look[role] = list[(index % list.size() + list.size()) % list.size()]
+
+
+# a random person from the seeded "creator" stream: the same run seed gives the same sequence of people
+func randomize_look() -> void:
+	var r := Difficulty.rng("creator")
+	for role in ROLES:
+		var list: Array = SWATCHES[role]
+		look[role] = list[r.randi() % list.size()]
+	look["name"] = NAMES[r.randi() % NAMES.size()]
+
+
+# ---- save, load, settings ------------------------------------------------------------
+func to_dict() -> Dictionary:
+	var out := look.duplicate()
+	out["active"] = is_custom()
+	return out
+
+
+func from_dict(d: Dictionary) -> void:
+	if d.is_empty():
+		active = false  # an old save, or a stock character
+		return
+	look = sanitize(d)
+	active = bool(d.get("active", false))
+
+
+func load_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(Difficulty.settings_path) != OK or not cfg.has_section("look"):
+		return
+	var d := {}
+	for key in cfg.get_section_keys("look"):
+		d[key] = cfg.get_value("look", key)
+	look = sanitize(d)
+	active = bool(d.get("custom", false))
+
+
+# remember the look and whether the last new run used it (the select screen opens on the MAKE YOUR OWN card again)
+func save_settings(custom_run: bool) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(Difficulty.settings_path)
+	for key in look:
+		cfg.set_value("look", key, look[key])
+	cfg.set_value("look", "custom", custom_run)
+	cfg.save(Difficulty.settings_path)

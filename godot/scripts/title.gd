@@ -77,6 +77,7 @@ func _ready() -> void:
 	_menu.draw.connect(_draw_menu)
 	Game.format_changed.connect(_on_format)
 	Difficulty.load_settings()
+	Look.load_settings()
 	Sfx.settings_changed.connect(_menu.queue_redraw)
 	Sfx.play_music("title")
 	show_vignette(0)
