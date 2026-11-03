@@ -12,7 +12,7 @@ manager and reports to both. **Marge** is the bookkeeper, **Vic** the account ma
 
 | Path | Played as | Reports to | Cast removed from `World.chars` |
 |---|---|---|---|
-| Tech (exists) | non-cast (teen/adult/site Alan) | Morgan; owners are the distant top | none (owners get a text/role pass, section 6) |
+| Tech (exists) | non-cast (intern/adult/site Alan) | Morgan; owners are the distant top | none (owners get a text/role pass, section 6) |
 | **Owner (new pick)** | **Alan or Garrison** | Marge/Morgan advise; the other owner is the partner NPC | the chosen owner |
 | **Service Manager** | **Dan** | Morgan, ultimately Alan and Garrison | Dan |
 | **Sales** | **Vic** | Garrison (quota/pricing), Alan (margin/delivery), Morgan (delivery gate) | Vic |

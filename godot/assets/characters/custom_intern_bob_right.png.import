@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bryhutneu0wp0"
-path="res://.godot/imported/custom_teen_ponytail_right.png-134b4ebaaf0eef26b4ece2956033c78e.ctex"
+uid="uid://cue4u4t52mtq5"
+path="res://.godot/imported/custom_intern_bob_right.png-3d646d018e7f8bad4add71671997b49c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/custom_teen_ponytail_right.png"
-dest_files=["res://.godot/imported/custom_teen_ponytail_right.png-134b4ebaaf0eef26b4ece2956033c78e.ctex"]
+source_file="res://assets/characters/custom_intern_bob_right.png"
+dest_files=["res://.godot/imported/custom_intern_bob_right.png-3d646d018e7f8bad4add71671997b49c.ctex"]
 
 [params]
 

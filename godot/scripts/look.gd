@@ -1,12 +1,12 @@
 extends Node
 # gdlint:disable=max-line-length
-# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the TEEN sheet (Look.BASE) drawn through a
+# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the INTERN sheet (Look.BASE) drawn through a
 # palette-swap shader (canvas_item) that replaces each flat colour of that sheet with the player's choice. There is no new
 # art: every animation, seat, hand and ear position keeps working, and anything keyed by character name (Player.CHARACTERS,
-# hands json, Social, Lync, Talk) sees plain "office_teen".
+# hands json, Social, Lync, Talk) sees plain "office_intern".
 #
 #   look        {name, skin, hair, shirt, pants, shoes}: five colours as 6 digit hex text, plus a name (up to 10 characters)
-#   SOURCES     the flat colours of office_teen_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
+#   SOURCES     the flat colours of office_intern_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
 #               base colour of the role, 1 and 2 are the shades (or the highlight) computed from the chosen base, so the
 #               figure stays consistent (shade_of). The outline #17121F, the eyes, brows, mouth, belt, buckle and watch are
 #               KEEPS: listed so the nearest-colour match never takes them for a neighbouring shade.
@@ -17,15 +17,15 @@ extends Node
 # over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
 # new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
 #
-# LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the teen with
-# another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the teen's own hair
-# (office_teen itself), the others are custom_teen_<style>. sheet_for() maps a look to that character name and every place
-# that shows the custom person loads characters/<sheet>.tres. All styles use only the teen's hair colours (9a5124, c47a38,
+# LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the intern with
+# another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the intern's own hair
+# (office_intern itself), the others are custom_intern_<style>. sheet_for() maps a look to that character name and every place
+# that shows the custom person loads characters/<sheet>.tres. All styles use only the intern's hair colours (9a5124, c47a38,
 # the outline), so the palette shader above works on every sheet unchanged. A new style is data only: build its stills and
-# sheets, add custom_teen_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
+# sheets, add custom_intern_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
 
 const PLAYER := preload("res://scripts/player.gd")
-const BASE := "office_teen"
+const BASE := "office_intern"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
 const HAIR_STYLES := ["side", "short", "receding", "curly", "long", "bob", "ponytail", "bun", "bald", "spiky"]  # the shipped styles, in the order of the STYLE row
@@ -172,7 +172,7 @@ func _dist(a: Color, b: Color) -> float:
 	return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length()
 
 
-# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the TEEN sheet
+# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the INTERN sheet
 # turns into for this look (an unknown colour comes back unchanged)
 func map_color(c: Color, look_dict: Dictionary) -> Color:
 	var src := sources()
@@ -267,7 +267,7 @@ func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> S
 		return character
 	var lk := look_dict if not look_dict.is_empty() else look
 	var style := str(lk.get("hair_style", HAIR_STYLES[0]))
-	return BASE if style == HAIR_STYLES[0] else "custom_teen_" + style
+	return BASE if style == HAIR_STYLES[0] else "custom_intern_" + style
 
 
 func frames_for(character: String, custom: bool, look_dict: Dictionary = {}) -> SpriteFrames:

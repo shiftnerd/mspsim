@@ -1,9 +1,9 @@
 -- Builds the custom person's hairstyle variants (roadmap R15, character creator level 2): for each style, a copy of the
--- teen's stills (office_teen_right / _left.aseprite) whose Hair layer is another character's Hair layer recoloured to the
--- teen hair colours (base 9a5124, highlight c47a38, outline untouched). Output: custom_teen_<style>_{right,left}.aseprite.
--- The style `side` is the teen's own hair: it needs no file (it is office_teen itself).
+-- intern's stills (office_intern_right / _left.aseprite) whose Hair layer is another character's Hair layer recoloured to the
+-- intern hair colours (base 9a5124, highlight c47a38, outline untouched). Output: custom_intern_<style>_{right,left}.aseprite.
+-- The style `side` is the intern's own hair: it needs no file (it is office_intern itself).
 -- Then build the animations and sheets like any other character:
---   ONLY = {"custom_teen_short"}; dofile("D:/creative/pixelproject/tools/build_anims.lua")
+--   ONLY = {"custom_intern_short"}; dofile("D:/creative/pixelproject/tools/build_anims.lua")
 -- add the names to EXTRA_CHARACTERS in make_godot.py (rerun it) and the style id to Look.HAIR_STYLES.
 -- Run:  dofile("D:/creative/pixelproject/tools/make_hair.lua")   (via run_lua_script)
 -- Set the global ONLY = {short = true} before dofile to build a subset; ROOT = "..." to work in another checkout.
@@ -116,11 +116,11 @@ local function build(style, c)
     local right = drawnRight(c)
     for _, side in ipairs({"right", "left"}) do
       local full = side == "right" and right or mirror(right)
-      local spr = Sprite{fromFile = SP(R, "office_teen_" .. side)}
+      local spr = Sprite{fromFile = SP(R, "office_intern_" .. side)}
       local l = hairLayer(spr)
       spr:deleteCel(l:cel(1))
       spr:newCel(l, 1, full, Point(0, 0))
-      spr:saveAs(SP(R, "custom_teen_" .. style .. "_" .. side))
+      spr:saveAs(SP(R, "custom_intern_" .. style .. "_" .. side))
       spr:close()
     end
     print("built", style)
@@ -138,11 +138,11 @@ local function build(style, c)
       elseif p == hi then full:putPixel(x, y, rgb(HI_HEX)) end
     end end
     donor:close()
-    local spr = Sprite{fromFile = SP(R, "office_teen_" .. side)}
+    local spr = Sprite{fromFile = SP(R, "office_intern_" .. side)}
     local l = hairLayer(spr)
     spr:deleteCel(l:cel(1))
     spr:newCel(l, 1, full, Point(0, 0))
-    spr:saveAs(SP(R, "custom_teen_" .. style .. "_" .. side))
+    spr:saveAs(SP(R, "custom_intern_" .. style .. "_" .. side))
     spr:close()
   end
   print("built", style)

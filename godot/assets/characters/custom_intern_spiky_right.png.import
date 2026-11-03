@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://up6w3vi8ooj2"
-path="res://.godot/imported/custom_teen_long_right.png-c69c9e543f582ae5e0e4f5c0bf4e9095.ctex"
+uid="uid://b15crwcdmnepq"
+path="res://.godot/imported/custom_intern_spiky_right.png-673c471deef06bab4a6c813d264d35e1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/custom_teen_long_right.png"
-dest_files=["res://.godot/imported/custom_teen_long_right.png-c69c9e543f582ae5e0e4f5c0bf4e9095.ctex"]
+source_file="res://assets/characters/custom_intern_spiky_right.png"
+dest_files=["res://.godot/imported/custom_intern_spiky_right.png-673c471deef06bab4a6c813d264d35e1.ctex"]
 
 [params]
 

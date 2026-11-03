@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://duteqh35kg7vl"
-path="res://.godot/imported/office_teen_left.png-b2b7c05cc2a8e04681da19d5c53bed47.ctex"
+uid="uid://wf01nftd7pf0"
+path="res://.godot/imported/custom_intern_receding_left.png-10b92c4d66317fcc1a30e0f0e6059c7e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/office_teen_left.png"
-dest_files=["res://.godot/imported/office_teen_left.png-b2b7c05cc2a8e04681da19d5c53bed47.ctex"]
+source_file="res://assets/characters/custom_intern_receding_left.png"
+dest_files=["res://.godot/imported/custom_intern_receding_left.png-10b92c4d66317fcc1a30e0f0e6059c7e.ctex"]
 
 [params]
 

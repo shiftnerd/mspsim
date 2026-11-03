@@ -9,7 +9,7 @@ const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
 const CHARACTERS := [
-	"office_teen",
+	"office_intern",
 	"office_adult",
 	"office_dan",
 	"office_alan",
@@ -125,7 +125,7 @@ func _add_inputs() -> void:
 func _load_character(name: String) -> void:
 	current_character = name
 	sprite.sprite_frames = Look.frames_for(name, Look.is_custom())  # the custom person: the sheet of their hairstyle
-	Look.apply(sprite, name, Look.is_custom())  # the custom person is the teen sheet in the player's colours (R15)
+	Look.apply(sprite, name, Look.is_custom())  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /

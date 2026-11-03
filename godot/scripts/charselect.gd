@@ -25,9 +25,9 @@ const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the p
 const CREATE_ROWS := ["name", "style", "skin", "hair", "shirt", "pants", "shoes", "random"]
 const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
-	"office_teen":
+	"office_intern":
 	{
-		"name": "TEEN",
+		"name": "INTERN",
 		"blurb": "FRESH HIRE WITH LONG HAIR AND BIG PLANS. LEARNS FAST, SPILLS COFFEE."
 	},
 	"office_adult":

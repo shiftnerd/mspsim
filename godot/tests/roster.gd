@@ -92,7 +92,7 @@ func _run() -> void:
 			o.opts = {}
 
 	# ---- caps with the full cast, and the classic trio when there is no invitation
-	player_script.current_character = "office_teen"
+	player_script.current_character = "office_intern"
 	c.new_game("free")
 	_check(o.roster().size() == 6, "a non-cast character takes six out")
 	var all6: Array = o.roster().duplicate()

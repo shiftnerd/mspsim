@@ -286,7 +286,7 @@ func _floor_phase() -> void:
 	# ---- tech campaign: cards, day report, computer apps, phone
 	root.get_node("Game").title_mode = false
 	await _scene("res://scenes/main_floor.tscn")
-	await _new_game("tech", "office_teen")
+	await _new_game("tech", "office_intern")
 	world.clock = 11.0
 	_begin()
 	cards.ask("MORGAN (MANAGER)", "TWO OWNERS, ONE ACCOUNT, AND A PROSPECT WHO WANTS AN ANSWER BY FRIDAY. WHOSE SIDE ARE YOU ON? I NEED THIS DECISION BEFORE THE END OF THE DAY.", [

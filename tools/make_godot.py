@@ -13,7 +13,7 @@ MIN_W = 320      # rooms narrower than this get an off-stage margin on each side
 SET_TOP = 100   # ceiling band above the old 128px art: backgrounds are 100 + 128 + 92 tall and sit at y = -100
 FW, FH = 64, 80
 
-CHARACTERS = ["office_teen", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"]
+CHARACTERS = ["office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"]
 # background crowd (recolours of site Alan: attendees and vendors at Rodent Nation); they are never playable
 EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo_attb", "expo_attc",
                     # women (tools/make_fem.lua): the manager, the bookkeeper, a Tier 1 tech, client staff, vendors and attendees
@@ -23,9 +23,9 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
                     "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj",
-                    # the custom person's hairstyles (tools/make_hair.lua): the teen with another Hair layer, one character per style
-                    "custom_teen_short", "custom_teen_receding", "custom_teen_curly",
-                    "custom_teen_long", "custom_teen_bob", "custom_teen_ponytail", "custom_teen_bun", "custom_teen_bald", "custom_teen_spiky"]
+                    # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
+                    "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
+                    "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky"]
 
 # frame durations (ms), 42 frames, matching tools/poses.lua
 DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 90, 110] + [80, 120, 110]
@@ -1916,7 +1916,7 @@ const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
 const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
 
 @export var character := "office_dan"
-var custom := false  # a copy of the player's custom person (Look): the teen sheet in their colours
+var custom := false  # a copy of the player's custom person (Look): the intern sheet in their colours
 var custom_look: Dictionary = {}  # the look that copy wears (empty = the player's own, Look.look)
 @export var facing := "right"
 @export var routine: PackedStringArray = []
@@ -2887,7 +2887,7 @@ const CAST := {
 # the service desk techs (C5): real NPCs only in the service campaign (Crew decides who is here). Sam has the free main-floor
 # desk 1; there is no desk left for Terry, so he hot-desks at the conference table with his laptop (Seat6, which nobody else uses).
 const CREW_CAST := {
-    "Sam": {"character": "office_teen", "home": "main_floor", "seat": "Seat1", "role": "crew"},
+    "Sam": {"character": "office_intern", "home": "main_floor", "seat": "Seat1", "role": "crew"},
     "Terry": {"character": "office_adult", "home": "conference", "seat": "Seat6", "role": "crew"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
@@ -8442,7 +8442,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
     cash = int(cfg.get_value("campaign", "cash", 0))
     year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
     history = cfg.get_value("campaign", "history", [])
-    var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
+    var saved_char := str(cfg.get_value("campaign", "character", "office_adult")).replace("office_teen", "office_intern")  # saves from before the rename
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
     Look.from_dict(cfg.get_value("campaign", "look", {}))  # an old save has none: a stock character
     var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
@@ -8525,7 +8525,7 @@ func _write_sections(cfg: ConfigFile) -> void:
     cfg.set_value("campaign", "year", year)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
-    cfg.set_value("campaign", "look", Look.to_dict())  # R15: the colours of a custom person (character is office_teen then)
+    cfg.set_value("campaign", "look", Look.to_dict())  # R15: the colours of a custom person (character is office_intern then)
     cfg.set_value("campaign", "player_as", player_as)
     cfg.set_value("campaign", "build", build)
     cfg.set_value("campaign", "skills", Skills.to_dict())
@@ -32032,7 +32032,7 @@ func is_hire(n: String) -> bool:
 
 # the World cast row of a hire: they hot-desk at the conference table
 func hire_row(n: String) -> Dictionary:
-    return {"character": str(HIRE_SHEETS.get(n, "office_teen")), "home": "conference", "seat": seat_of(n), "role": "crew"}
+    return {"character": str(HIRE_SHEETS.get(n, "office_intern")), "home": "conference", "seat": seat_of(n), "role": "crew"}
 
 
 func seat_of(n: String) -> String:
@@ -32151,7 +32151,7 @@ func onboard_pending(day: int) -> Array:
         m["start_day"] = day + 1
         m["shadow"] = 2 if str(p.path) == "shadow" else 0
         m["seat"] = str(p.seat) if str(p.seat) != "" else str(HIRE_SEATS[0])
-        m["sheet"] = str(HIRE_SHEETS.get(n, "office_teen"))
+        m["sheet"] = str(HIRE_SHEETS.get(n, "office_intern"))
         m["lane"] = "L2" if float(cand.skill) >= 0.95 and float(cand.areas.get(str(cand.area), 1.0)) >= 2.0 else "L1"
         m["morale"] = START_MORALE + (3 if str(p.path) == "shadow" else 0)
         members[n] = m
@@ -39851,9 +39851,9 @@ const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the p
 const CREATE_ROWS := ["name", "style", "skin", "hair", "shirt", "pants", "shoes", "random"]
 const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
-    "office_teen":
+    "office_intern":
     {
-        "name": "TEEN",
+        "name": "INTERN",
         "blurb": "FRESH HIRE WITH LONG HAIR AND BIG PLANS. LEARNS FAST, SPILLS COFFEE."
     },
     "office_adult":
@@ -41802,7 +41802,7 @@ const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
 const CHARACTERS := [
-    "office_teen", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"
+    "office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"
 ]
 
 static var current_character := "office_adult"
@@ -41912,7 +41912,7 @@ func _add_inputs() -> void:
 func _load_character(name: String) -> void:
     current_character = name
     sprite.sprite_frames = Look.frames_for(name, Look.is_custom())  # the custom person: the sheet of their hairstyle
-    Look.apply(sprite, name, Look.is_custom())  # the custom person is the teen sheet in the player's colours (R15)
+    Look.apply(sprite, name, Look.is_custom())  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
@@ -49286,13 +49286,13 @@ static func action(cp, parts: PackedStringArray) -> void:
 
 write("scripts/look.gd", '''extends Node
 # gdlint:disable=max-line-length
-# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the TEEN sheet (Look.BASE) drawn through a
+# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the INTERN sheet (Look.BASE) drawn through a
 # palette-swap shader (canvas_item) that replaces each flat colour of that sheet with the player's choice. There is no new
 # art: every animation, seat, hand and ear position keeps working, and anything keyed by character name (Player.CHARACTERS,
-# hands json, Social, Lync, Talk) sees plain "office_teen".
+# hands json, Social, Lync, Talk) sees plain "office_intern".
 #
 #   look        {name, skin, hair, shirt, pants, shoes}: five colours as 6 digit hex text, plus a name (up to 10 characters)
-#   SOURCES     the flat colours of office_teen_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
+#   SOURCES     the flat colours of office_intern_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
 #               base colour of the role, 1 and 2 are the shades (or the highlight) computed from the chosen base, so the
 #               figure stays consistent (shade_of). The outline #17121F, the eyes, brows, mouth, belt, buckle and watch are
 #               KEEPS: listed so the nearest-colour match never takes them for a neighbouring shade.
@@ -49303,15 +49303,15 @@ write("scripts/look.gd", '''extends Node
 # over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
 # new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
 #
-# LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the teen with
-# another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the teen's own hair
-# (office_teen itself), the others are custom_teen_<style>. sheet_for() maps a look to that character name and every place
-# that shows the custom person loads characters/<sheet>.tres. All styles use only the teen's hair colours (9a5124, c47a38,
+# LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the intern with
+# another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the intern's own hair
+# (office_intern itself), the others are custom_intern_<style>. sheet_for() maps a look to that character name and every place
+# that shows the custom person loads characters/<sheet>.tres. All styles use only the intern's hair colours (9a5124, c47a38,
 # the outline), so the palette shader above works on every sheet unchanged. A new style is data only: build its stills and
-# sheets, add custom_teen_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
+# sheets, add custom_intern_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
 
 const PLAYER := preload("res://scripts/player.gd")
-const BASE := "office_teen"
+const BASE := "office_intern"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
 const HAIR_STYLES := ["side", "short", "receding", "curly", "long", "bob", "ponytail", "bun", "bald", "spiky"]  # the shipped styles, in the order of the STYLE row
@@ -49458,7 +49458,7 @@ func _dist(a: Color, b: Color) -> float:
     return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length()
 
 
-# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the TEEN sheet
+# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the INTERN sheet
 # turns into for this look (an unknown colour comes back unchanged)
 func map_color(c: Color, look_dict: Dictionary) -> Color:
     var src := sources()
@@ -49553,7 +49553,7 @@ func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> S
         return character
     var lk := look_dict if not look_dict.is_empty() else look
     var style := str(lk.get("hair_style", HAIR_STYLES[0]))
-    return BASE if style == HAIR_STYLES[0] else "custom_teen_" + style
+    return BASE if style == HAIR_STYLES[0] else "custom_intern_" + style
 
 
 func frames_for(character: String, custom: bool, look_dict: Dictionary = {}) -> SpriteFrames:

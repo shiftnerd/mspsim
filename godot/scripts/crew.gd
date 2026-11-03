@@ -144,7 +144,7 @@ func is_hire(n: String) -> bool:
 
 # the World cast row of a hire: they hot-desk at the conference table
 func hire_row(n: String) -> Dictionary:
-	return {"character": str(HIRE_SHEETS.get(n, "office_teen")), "home": "conference", "seat": seat_of(n), "role": "crew"}
+	return {"character": str(HIRE_SHEETS.get(n, "office_intern")), "home": "conference", "seat": seat_of(n), "role": "crew"}
 
 
 func seat_of(n: String) -> String:
@@ -263,7 +263,7 @@ func onboard_pending(day: int) -> Array:
 		m["start_day"] = day + 1
 		m["shadow"] = 2 if str(p.path) == "shadow" else 0
 		m["seat"] = str(p.seat) if str(p.seat) != "" else str(HIRE_SEATS[0])
-		m["sheet"] = str(HIRE_SHEETS.get(n, "office_teen"))
+		m["sheet"] = str(HIRE_SHEETS.get(n, "office_intern"))
 		m["lane"] = "L2" if float(cand.skill) >= 0.95 and float(cand.areas.get(str(cand.area), 1.0)) >= 2.0 else "L1"
 		m["morale"] = START_MORALE + (3 if str(p.path) == "shadow" else 0)
 		members[n] = m

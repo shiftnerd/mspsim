@@ -9,10 +9,10 @@ local SP = dofile(T .. "sprite_path.lua")  -- character files live in sprites/<g
 local E = dofile(T .. "anim.lua")
 local poses, tags = dofile(T .. "poses.lua")
 -- set the global ONLY = {"name"} before dofile to rebuild just one character
--- GHOST = {name = "office_teen"}: measure the death frames' shift with that character's Hair layer too (the drawn hairstyles,
--- so every style lands exactly where the teen does; see anim.lua an.ghost)
+-- GHOST = {name = "office_intern"}: measure the death frames' shift with that character's Hair layer too (the drawn hairstyles,
+-- so every style lands exactly where the intern does; see anim.lua an.ghost)
 local ghost = GHOST or {}
-local names = ONLY or {"office_teen", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"}
+local names = ONLY or {"office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"}
 for _, n in ipairs(names) do
   for _, side in ipairs({"right", "left"}) do
     local inP = SP(R, n .. "_" .. side)

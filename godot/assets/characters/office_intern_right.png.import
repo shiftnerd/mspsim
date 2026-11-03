@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bchu8a5u6fjhd"
-path="res://.godot/imported/custom_teen_bun_left.png-aa2859947a64c5e3bf1c9fac8411339a.ctex"
+uid="uid://dgmvuwkhtd6db"
+path="res://.godot/imported/office_intern_right.png-93964b2260f67b314095b71b888f0318.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/custom_teen_bun_left.png"
-dest_files=["res://.godot/imported/custom_teen_bun_left.png-aa2859947a64c5e3bf1c9fac8411339a.ctex"]
+source_file="res://assets/characters/office_intern_right.png"
+dest_files=["res://.godot/imported/office_intern_right.png-93964b2260f67b314095b71b888f0318.ctex"]
 
 [params]
 

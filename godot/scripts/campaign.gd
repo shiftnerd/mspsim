@@ -301,7 +301,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 	cash = int(cfg.get_value("campaign", "cash", 0))
 	year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
 	history = cfg.get_value("campaign", "history", [])
-	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
+	var saved_char := str(cfg.get_value("campaign", "character", "office_adult")).replace("office_teen", "office_intern")  # saves from before the rename
 	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
 	Look.from_dict(cfg.get_value("campaign", "look", {}))  # an old save has none: a stock character
 	var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
@@ -384,7 +384,7 @@ func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "year", year)
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
-	cfg.set_value("campaign", "look", Look.to_dict())  # R15: the colours of a custom person (character is office_teen then)
+	cfg.set_value("campaign", "look", Look.to_dict())  # R15: the colours of a custom person (character is office_intern then)
 	cfg.set_value("campaign", "player_as", player_as)
 	cfg.set_value("campaign", "build", build)
 	cfg.set_value("campaign", "skills", Skills.to_dict())

@@ -28,7 +28,7 @@ const CAST := {
 # the service desk techs (C5): real NPCs only in the service campaign (Crew decides who is here). Sam has the free main-floor
 # desk 1; there is no desk left for Terry, so he hot-desks at the conference table with his laptop (Seat6, which nobody else uses).
 const CREW_CAST := {
-	"Sam": {"character": "office_teen", "home": "main_floor", "seat": "Seat1", "role": "crew"},
+	"Sam": {"character": "office_intern", "home": "main_floor", "seat": "Seat1", "role": "crew"},
 	"Terry": {"character": "office_adult", "home": "conference", "seat": "Seat6", "role": "crew"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands

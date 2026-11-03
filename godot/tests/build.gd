@@ -222,7 +222,7 @@ func _init() -> void:
 	b.pending = {}
 	c.new_game("tech")
 	_check(b.is_flat(c.build) and sk.ps_level == 0, "a new flat run follows")
-	player_script.current_character = "office_teen"
+	player_script.current_character = "office_intern"
 	_check(c.continue_game("tech"), "continue loads the saved run")
 	_check(c.build.preset == made.preset and c.build.stats == made.stats and c.build.quirks == made.quirks and c.build.spent == made.spent and c.build.tier == made.tier and c.build.seed == made.seed, "the build survives the save: %s" % str(c.build.stats))
 	_check(sk.ps_level == 4, "and the skills came back from the save")

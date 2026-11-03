@@ -1,10 +1,10 @@
 extends SceneTree
 # gdlint:disable=max-line-length
 # Character creator, level 1 (R15, Look + the create step of charselect.gd): the palette table maps every colour of the
-# teen sheet and leaves the outline alone, a look is saved and restored with the campaign (an old save loads as before),
+# intern sheet and leaves the outline alone, a look is saved and restored with the campaign (an old save loads as before),
 # the MAKE YOUR OWN step is reachable by keys, pad and mouse, and RANDOM is deterministic from the run seed.
-# Level 2 (hairstyles, prebaked sheets custom_teen_<style>): every shipped style plays all 85 frames in both facings, differs
-# from the teen sheet only around the head, never covers the eyes, is saved and restored, and an old save wears `side`.
+# Level 2 (hairstyles, prebaked sheets custom_intern_<style>): every shipped style plays all 85 frames in both facings, differs
+# from the intern sheet only around the head, never covers the eyes, is saved and restored, and an old save wears `side`.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/creator.gd
 
 const SHEET_W := 64
@@ -52,9 +52,9 @@ func _near(a: Color, b: Color, tol: float) -> bool:
 	return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length() < tol
 
 
-# the sheet of the custom person in a hairstyle (office_teen itself for `side`)
+# the sheet of the custom person in a hairstyle (office_intern itself for `side`)
 func _sheet(look: Node, style: String) -> String:
-	return look.sheet_for("office_teen", true, {"hair_style": style})
+	return look.sheet_for("office_intern", true, {"hair_style": style})
 
 
 # every distinct opaque colour of the sheets of every shipped hairstyle, both facings
@@ -91,12 +91,12 @@ func _in(data: PackedByteArray, i: int, cols: Array) -> bool:
 	return false
 
 
-# the sheet of a hairstyle against the teen's: only the head region differs, the eyes stay, the same frames play
+# the sheet of a hairstyle against the intern's: only the head region differs, the eyes stay, the same frames play
 func _check_style(look: Node, style: String) -> void:
 	var sheet := _sheet(look, style)
-	var frames: SpriteFrames = look.frames_for("office_teen", true, {"hair_style": style})
-	var base_frames: SpriteFrames = load("res://characters/office_teen.tres")
-	_check(frames != null and frames.get_animation_names() == base_frames.get_animation_names(), "%s: the same animations as the teen" % style)
+	var frames: SpriteFrames = look.frames_for("office_intern", true, {"hair_style": style})
+	var base_frames: SpriteFrames = load("res://characters/office_intern.tres")
+	_check(frames != null and frames.get_animation_names() == base_frames.get_animation_names(), "%s: the same animations as the intern" % style)
 	var same_timing := true
 	for anim in base_frames.get_animation_names():
 		same_timing = (
@@ -117,7 +117,7 @@ func _check_style(look: Node, style: String) -> void:
 					used[int(tex.region.position.x) / SHEET_W] = true
 					_check_texture_of(tex, sheet, facing)
 		_check(used.size() == NFRAMES, "%s %s: all %d frames are played (%d)" % [style, facing, NFRAMES, used.size()])
-		var a := _rgba("office_teen_" + facing)
+		var a := _rgba("office_intern_" + facing)
 		var b := _rgba("%s_%s" % [sheet, facing])
 		_check(
 			b.get_width() == NFRAMES * SHEET_W and b.get_height() == SHEET_H,
@@ -155,13 +155,13 @@ func _check_style(look: Node, style: String) -> void:
 					outside += 1
 				if dbox.size.x > limit or dbox.size.y > limit:
 					big += 1
-		_check(style == "side" or changed > 100, "%s %s: the hair differs from the teen's (%d pixels)" % [style, facing, changed])
+		_check(style == "side" or changed > 100, "%s %s: the hair differs from the intern's (%d pixels)" % [style, facing, changed])
 		_check(outside == 0, "%s %s: the hair stays inside the head box in every frame (%d frames outside)" % [style, facing, outside])
 		_check(big == 0, "%s %s: the head box is at most %dx%d px" % [style, facing, limit, limit])
 		_check(eyes == 0, "%s %s: the hair never covers the eyes (%d pixels)" % [style, facing, eyes])
-		var ha := FileAccess.get_file_as_string("res://assets/characters/office_teen_%s_hands.json" % facing)
+		var ha := FileAccess.get_file_as_string("res://assets/characters/office_intern_%s_hands.json" % facing)
 		var hb := FileAccess.get_file_as_string("res://assets/characters/%s_%s_hands.json" % [sheet, facing])
-		_check(ha.strip_edges() == hb.strip_edges(), "%s %s: the hand and ear table is the teen's" % [style, facing])
+		_check(ha.strip_edges() == hb.strip_edges(), "%s %s: the hand and ear table is the intern's" % [style, facing])
 
 
 func _check_texture_of(tex: AtlasTexture, sheet: String, facing: String) -> void:
@@ -330,7 +330,7 @@ func _init() -> void:
 	_check(look.sanitize({"hair_style": "curly"}).hair_style == "curly", "a shipped hairstyle is kept")
 	for bad in ["", "mohawk", "nonsense", 5]:
 		_check(look.sanitize({"hair_style": bad}).hair_style == "side", "hairstyle %s is not shipped: side" % str(bad))
-	_check(look.default_look().hair_style == "side", "the default look wears the teen's own hair")
+	_check(look.default_look().hair_style == "side", "the default look wears the intern's own hair")
 	for planned in look.HAIR_PLANNED:
 		_check(not planned in look.HAIR_STYLES, "%s is planned, not shipped" % planned)
 	_check(
@@ -344,12 +344,12 @@ func _init() -> void:
 		_check(back.hair_style == style, "%s survives a save and load" % style)
 
 	# ---- the hairstyle sheets
-	_check(_sheet(look, "side") == "office_teen", "side is the teen's own sheet (no duplicate files)")
+	_check(_sheet(look, "side") == "office_intern", "side is the intern's own sheet (no duplicate files)")
 	_check(
 		look.sheet_for("office_adult", true, {"hair_style": "curly"}) == "office_adult",
 		"a stock character ignores the hairstyle"
 	)
-	_check(look.sheet_for("office_teen", false, {"hair_style": "curly"}) == "office_teen", "a non-custom teen is plain")
+	_check(look.sheet_for("office_intern", false, {"hair_style": "curly"}) == "office_intern", "a non-custom intern is plain")
 	for style in look.HAIR_STYLES:
 		_check_style(look, style)
 
@@ -376,7 +376,7 @@ func _init() -> void:
 		"the default selection is unchanged"
 	)
 	cs.sel = 0
-	_check(cs.is_custom() and cs.current_id() == "office_teen", "the custom card is the teen sheet")
+	_check(cs.is_custom() and cs.current_id() == "office_intern", "the custom card is the intern sheet")
 	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "create", "Enter on MAKE YOUR OWN opens the create step")
 	_check(cs.create_row == 0, "it starts on the NAME row")
@@ -393,10 +393,10 @@ func _init() -> void:
 	# keys: the STYLE row
 	cs._unhandled_input(_key(KEY_DOWN))
 	_check(cs.create_row == 1 and cs.CREATE_ROWS[1] == "style", "Down moves to STYLE")
-	_check(look.look.hair_style == "side", "the card starts with the teen's own hair")
+	_check(look.look.hair_style == "side", "the card starts with the intern's own hair")
 	cs._unhandled_input(_key(KEY_RIGHT))
 	_check(
-		look.look.hair_style == "short" and cs._sprites[0].sprite_frames == look.frames_for("office_teen", true),
+		look.look.hair_style == "short" and cs._sprites[0].sprite_frames == look.frames_for("office_intern", true),
 		"Right picks the next hairstyle and the preview wears it"
 	)
 	_check(cs._sprites[0].is_playing() and cs._sprites[0].material != null, "the preview keeps animating in the palette")
@@ -482,7 +482,7 @@ func _init() -> void:
 	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "phone", "the tech campaign asks for the phone after the create step")
 	_check(
-		"ZOE" in cs.summary() and not "TEEN" in cs.summary(),
+		"ZOE" in cs.summary() and not "INTERN" in cs.summary(),
 		"the summary uses the custom name: %s" % cs.summary()
 	)
 	cs._unhandled_input(_key(KEY_ESCAPE))
@@ -495,16 +495,16 @@ func _init() -> void:
 	if result.is_empty():
 		cs.confirm()
 	_check(
-		not result.is_empty() and result.character == "office_teen" and result.look.name == "ZOE",
-		"confirming returns the teen sheet and the look"
+		not result.is_empty() and result.character == "office_intern" and result.look.name == "ZOE",
+		"confirming returns the intern sheet and the look"
 	)
 	_check(result.look.hair_style == "receding", "the chosen hairstyle comes back with the look")
 	_check(
-		player.current_character == "office_teen" and look.sheet_for("office_teen", true) == "custom_teen_receding",
-		"the player is still the teen by name and wears the receding sheet"
+		player.current_character == "office_intern" and look.sheet_for("office_intern", true) == "custom_intern_receding",
+		"the player is still the intern by name and wears the receding sheet"
 	)
 	_check(
-		look.active and look.is_custom() and player.current_character == "office_teen",
+		look.active and look.is_custom() and player.current_character == "office_intern",
 		"the player is now the custom person"
 	)
 	var cfg := ConfigFile.new()
@@ -534,7 +534,7 @@ func _init() -> void:
 	look.look = look.default_look()
 	look.look["hair_style"] = "curly"
 	look.load_settings()
-	_check(look.look.hair_style == "side" and look.look.skin == "8d5524", "old settings load as the teen's own hair")
+	_check(look.look.hair_style == "side" and look.look.skin == "8d5524", "old settings load as the intern's own hair")
 	player.current_character = "office_adult"
 	cs.setup("free")
 	_check(cs.is_custom(), "the select screen opens on MAKE YOUR OWN after a custom run")
@@ -546,7 +546,7 @@ func _init() -> void:
 	# ---- the campaign save
 	look.look = bright.duplicate()
 	look.active = true
-	player.current_character = "office_teen"
+	player.current_character = "office_intern"
 	c.new_game("tech")
 	_check(look.is_custom(), "a tech run starts as the custom person")
 	c.save()
@@ -559,7 +559,7 @@ func _init() -> void:
 		"Continue restores the custom person"
 	)
 	_check(
-		look.look.hair_style == "curly" and look.sheet_for("office_teen", true) == "custom_teen_curly",
+		look.look.hair_style == "curly" and look.sheet_for("office_intern", true) == "custom_intern_curly",
 		"Continue restores the hairstyle"
 	)
 	# a save from before hairstyles: a look dictionary without the key
@@ -574,14 +574,14 @@ func _init() -> void:
 	ok = c.continue_game("tech")
 	_check(ok and look.is_custom() and look.look.hair_style == "side", "an old save without a hairstyle loads as side")
 	_check(
-		player.current_character == "office_teen",
+		player.current_character == "office_intern",
 		"campaign/character is still a plain character name"
 	)
 	cfg = ConfigFile.new()
 	cfg.load(c.save_path("tech"))
 	_check(
 		(
-			str(cfg.get_value("campaign", "character", "")) == "office_teen"
+			str(cfg.get_value("campaign", "character", "")) == "office_intern"
 			and cfg.has_section_key("campaign", "look")
 		),
 		"the save keeps the name and has a look section"
@@ -597,7 +597,7 @@ func _init() -> void:
 	)
 	# an old save has no look at all
 	look.active = true
-	player.current_character = "office_teen"
+	player.current_character = "office_intern"
 	c.new_game("tech")
 	c.save()
 	cfg.load(c.save_path("tech"))
@@ -607,8 +607,8 @@ func _init() -> void:
 	look.active = true
 	ok = c.continue_game("tech")
 	_check(
-		ok and not look.is_custom() and player.current_character == "office_teen",
-		"an old save loads as the plain teen"
+		ok and not look.is_custom() and player.current_character == "office_intern",
+		"an old save loads as the plain intern"
 	)
 	DirAccess.remove_absolute(c.save_path("tech"))
 	DirAccess.remove_absolute(d.settings_path)
@@ -619,14 +619,14 @@ func _init() -> void:
 	npc_look["hair_style"] = "curly"
 	npc_look["hair"] = "3a5fb0"
 	var spr := AnimatedSprite2D.new()
-	look.apply(spr, "office_teen", true, npc_look)
-	spr.sprite_frames = look.frames_for("office_teen", true, npc_look)
+	look.apply(spr, "office_intern", true, npc_look)
+	spr.sprite_frames = look.frames_for("office_intern", true, npc_look)
 	_check(
-		spr.sprite_frames == load("res://characters/custom_teen_curly.tres") and spr.material != null,
+		spr.sprite_frames == load("res://characters/custom_intern_curly.tres") and spr.material != null,
 		"an NPC copy takes the sheet and palette of its own look dictionary"
 	)
 	_check(
-		look.sheet_for("office_teen", true) == "office_teen",
+		look.sheet_for("office_intern", true) == "office_intern",
 		"the global look is unchanged by the copy (side)"
 	)
 	spr.free()

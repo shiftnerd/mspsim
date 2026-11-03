@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://2t5mjrbfjp07"
-path="res://.godot/imported/custom_teen_long_left.png-42fcc4522832b7477f9ba5a1010f3623.ctex"
+uid="uid://co5cpyctwdk4g"
+path="res://.godot/imported/custom_intern_bald_right.png-c6e0612454e661a1b91e0666a47f88f1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/custom_teen_long_left.png"
-dest_files=["res://.godot/imported/custom_teen_long_left.png-42fcc4522832b7477f9ba5a1010f3623.ctex"]
+source_file="res://assets/characters/custom_intern_bald_right.png"
+dest_files=["res://.godot/imported/custom_intern_bald_right.png-c6e0612454e661a1b91e0666a47f88f1.ctex"]
 
 [params]
 

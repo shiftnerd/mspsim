@@ -72,7 +72,7 @@ func _run() -> void:
 	var tech: Array = cs.choices("tech")
 	var owner_ids: Array = cs.choices("owner")
 	var free: Array = cs.choices("free")
-	_check(tech == ["office_teen", "office_adult", "site_alan"], "tech campaign: the non-cast characters")
+	_check(tech == ["office_intern", "office_adult", "site_alan"], "tech campaign: the non-cast characters")
 	_check(owner_ids == ["office_alan", "casual_garrison"], "owner campaign: Alan or Garrison")
 	_check(free.size() == 7, "Free Play: all seven")
 	cs.setup("owner")
@@ -174,7 +174,7 @@ func _run() -> void:
 	c.refresh_free()
 	_check(world.chars.has("Dan") and not world.chars.has("Vic"), "switching character brings Dan back and removes Vic")
 	_check(world.chars.has("Maya"), "and Maya is still there")
-	player_script.current_character = "office_teen"
+	player_script.current_character = "office_intern"
 	c.refresh_free()
 	_check(world.chars.size() == 6 and c.player_as == "", "a non-cast character removes nobody")
 

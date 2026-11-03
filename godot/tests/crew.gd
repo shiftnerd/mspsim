@@ -52,7 +52,7 @@ func _init() -> void:
 	c.new_game("service")
 	_clear(cards)
 	_check(world.chars.has("Sam") and world.chars.has("Terry") and world.chars.has("Maya") and not world.chars.has("Dan"), "service campaign: Maya, Sam and Terry are NPCs, Dan is you")
-	_check(world.row("Sam").character == "office_teen" and world.row("Terry").character == "office_adult", "Sam and Terry reuse the teen and adult sheets")
+	_check(world.row("Sam").character == "office_intern" and world.row("Terry").character == "office_adult", "Sam and Terry reuse the intern and adult sheets")
 	_check(world.row("Sam").home == "main_floor" and world.row("Sam").seat == "Seat1", "Sam has the free main floor desk")
 	_check(world.row("Terry").home == "conference" and world.row("Terry").seat == "Seat6", "Terry hot-desks at the conference table")
 	_check(world.chars.size() == 7, "seven people in the building (%d)" % world.chars.size())

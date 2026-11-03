@@ -15,7 +15,7 @@ func _player() -> Node:
 
 
 func _initialize() -> void:
-	var names := ["office_teen", "office_adult", "office_dan", "office_alan", "site_alan"]
+	var names := ["office_intern", "office_adult", "office_dan", "office_alan", "site_alan"]
 	names.append("casual_garrison")
 	for ch in names:
 		var sf: SpriteFrames = load("res://characters/%s.tres" % ch)
