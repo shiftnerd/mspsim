@@ -30,7 +30,7 @@ func _init() -> void:
 	var story := root.get_node("Story")
 	var report := root.get_node("DayReport")
 	var review := root.get_node("Review")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 
 	c.new_game("owner")

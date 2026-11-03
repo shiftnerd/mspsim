@@ -22,7 +22,7 @@ func _process(_delta: float) -> bool:
 		return false
 	match frame:
 		5:
-			root.get_node("Campaign").save_prefix = "user://test_csshots_"  # no saves: no Continue
+			root.get_node("Campaign").save_prefix = "user://test_csshots_%d_" % OS.get_process_id()  # no saves: no Continue
 		40:
 			current_scene._open_menu()
 			current_scene._choose(0)  # TECH CAMPAIGN

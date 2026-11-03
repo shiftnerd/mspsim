@@ -26,7 +26,7 @@ func _process(_delta: float) -> bool:
 	var pr := root.get_node("Projects")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("owner")
 			sales.active = [0, 1, 2, 3, 4, 5]
 			o.client_work[2] = 700.0

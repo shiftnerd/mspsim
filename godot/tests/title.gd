@@ -27,7 +27,7 @@ func _process(_delta: float) -> bool:
 	frame += 1
 	var world := root.get_node("World")
 	var campaign := root.get_node("Campaign")
-	campaign.save_prefix = "user://test_title_"  # no shared save: Continue would shift the menu
+	campaign.save_prefix = "user://test_title_%d_" % OS.get_process_id()  # no shared save: Continue would shift the menu
 	match frame:
 		30:
 			_check(current_scene.name == "Title" and world.time_scale == 0.0, "frozen on the title")

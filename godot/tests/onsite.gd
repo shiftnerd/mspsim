@@ -36,7 +36,7 @@ func _init() -> void:
 	var world := root.get_node("World")
 	var game := root.get_node("Game")
 	var sales := root.get_node("Sales")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	game.title_mode = false
 	c.new_game("tech")
 	while cards.is_open:

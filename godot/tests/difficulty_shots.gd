@@ -24,7 +24,7 @@ func _process(_delta: float) -> bool:
 	var d := root.get_node("Difficulty")
 	match frame:
 		5:
-			root.get_node("Campaign").save_prefix = "user://test_dshots_"
+			root.get_node("Campaign").save_prefix = "user://test_dshots_%d_" % OS.get_process_id()
 			d.set_tier("normal")
 		40:
 			current_scene._open_menu()

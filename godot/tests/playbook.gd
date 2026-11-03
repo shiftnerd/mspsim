@@ -31,7 +31,7 @@ func _init() -> void:
 	var sk := root.get_node("Skills")
 	var story := root.get_node("Story")
 	var world := root.get_node("World")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	c.new_game("tech")
 
 	# the rack: every playbook has a reachable best score, flags drive the follow-ups

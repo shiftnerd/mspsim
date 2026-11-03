@@ -15,7 +15,7 @@ func _init() -> void:
 	var c := root.get_node("Campaign")
 	var story := root.get_node("Story")
 	var cards := root.get_node("Cards")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	c.new_game("tech")
 	var scheduled := {}
 	for d in story.DAYS:

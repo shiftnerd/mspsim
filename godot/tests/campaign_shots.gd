@@ -23,7 +23,7 @@ func _process(_delta: float) -> bool:
 		60:
 			_shot("menu")
 			var c := root.get_node("Campaign")
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			root.get_node("Game").title_mode = false
 			c.new_game("tech")
 			var msp := root.get_node("Msp")

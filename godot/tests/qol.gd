@@ -27,7 +27,7 @@ func _init() -> void:
 	var msp := root.get_node("Msp")
 	var shift := root.get_node("Shift")
 	var skills := root.get_node("Skills")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	c.new_game("tech")
 

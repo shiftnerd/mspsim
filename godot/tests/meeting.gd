@@ -37,7 +37,7 @@ func _init() -> void:
 	var owner := root.get_node("Owner")
 	var data = world.DATA.SCENES["conference"]
 	_check(data.W == 320 and data.seats.size() == 6, "the conference room has 320 px and six seats")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	c.new_game("tech")
 	c.day = 6
@@ -61,7 +61,10 @@ func _init() -> void:
 		for leg in world.chars[n].legs:
 			legs += 1 if str(leg.get("kind", "")) == "meeting" else 0
 	_check(legs == 5, "everyone gets a meeting leg (%d of 5)" % legs)
-	await _wait(3200)
+	# story events for the day fire as the clock jumps to 14:00; a decision card now freezes the day, so dismiss them
+	for i in 3200:
+		await process_frame
+		_drain(cards)
 	var seated := 0
 	for n in ["Alan", "Garrison", "Dan", "Vic", "Maya"]:
 		var npc := current_scene.get_node_or_null("Actors/" + n)
@@ -74,6 +77,7 @@ func _init() -> void:
 	_check(free >= 1, "and there is a seat for you (%d free)" % free)
 
 	# ---- attend: a briefing and a question
+	var attended0: int = meeting.attended  # the day-6 meeting may already have counted while the cast sat down
 	c.day = 11
 	meeting.state = ""
 	meeting.done_day = -1
@@ -85,7 +89,7 @@ func _init() -> void:
 	meeting.state = "called"
 	meeting._process(0.1)
 	_check(
-		meeting.attended == 1 and cards.is_open and cards.speaker.contains("Morgan"),
+		meeting.attended == attended0 + 1 and cards.is_open and cards.speaker.contains("Morgan"),
 		"you are in the room: Morgan briefs everyone"
 	)
 	_check(

@@ -19,7 +19,7 @@ func _init() -> void:
 	var story := root.get_node("Story")
 	var world := root.get_node("World")
 	var comp := root.get_node("Computer")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 
 	# outside a campaign nothing changes: instant, reliable fixes and no experience
 	c.new_game("free")

@@ -23,7 +23,7 @@ func _process(_delta: float) -> bool:
 	var cards := root.get_node("Cards")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			shift.enabled = true
 			c.new_game("tech")
 			c.day = 7

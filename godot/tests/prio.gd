@@ -32,7 +32,7 @@ func _nearest(x: float) -> String:
 func _init() -> void:
 	await process_frame
 	var game := root.get_node("Game")
-	root.get_node("Campaign").save_prefix = "user://test_"
+	root.get_node("Campaign").save_prefix = "user://test_%d_" % OS.get_process_id()
 	game.title_mode = false
 
 	# the dental closet: each piece of equipment is the target at its own spot

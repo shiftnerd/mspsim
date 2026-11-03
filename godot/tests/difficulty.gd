@@ -58,7 +58,7 @@ func _init() -> void:
 	var pg := root.get_node("PrinterGame")
 	var c := root.get_node("Campaign")
 	d.settings_path = "user://test_settings.cfg"
-	c.save_prefix = "user://test_diff_"
+	c.save_prefix = "user://test_diff_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 
 	# ---- streams

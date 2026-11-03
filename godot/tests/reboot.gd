@@ -26,7 +26,7 @@ func _init() -> void:
 	var c := root.get_node("Campaign")
 	var msp := root.get_node("Msp")
 	var sales := root.get_node("Sales")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	c.new_game("tech")
 

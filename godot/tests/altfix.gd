@@ -36,7 +36,7 @@ func _init() -> void:
 	var sk := root.get_node("Skills")
 	var story := root.get_node("Story")
 	var growth := root.get_node("Growth")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 
 	# outside a campaign a workaround comes back on a timer; clever fixes need a campaign

@@ -17,7 +17,7 @@ func _init() -> void:
 	var msp := root.get_node("Msp")
 	var world := root.get_node("World")
 	var report := root.get_node("DayReport")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	DirAccess.remove_absolute(c.save_path("tech"))
 	_check(not c.has_save("tech"), "no save yet")
 

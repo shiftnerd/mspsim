@@ -24,7 +24,7 @@ func _process(_delta: float) -> bool:
 	var so := root.get_node("Social")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("tech")
 			var t: Dictionary = msp.create_problem(0, msp.INSTALL, "email")
 			msp.start_project(t.id)

@@ -16,7 +16,7 @@ func _init() -> void:
 	var so := root.get_node("Social")
 	var msp := root.get_node("Msp")
 	var world := root.get_node("World")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 
 	c.new_game("free")
 	so.note_call_answered()

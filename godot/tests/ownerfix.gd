@@ -32,7 +32,7 @@ func _init() -> void:
 	var phone := root.get_node("Phone")
 	var game := root.get_node("Game")
 	game.title_mode = false
-	c.save_prefix = "user://test_ownerfix_"
+	c.save_prefix = "user://test_ownerfix_%d_" % OS.get_process_id()
 
 	# 1. a card freezes the day clock and the report waits for it
 	c.new_game("owner")

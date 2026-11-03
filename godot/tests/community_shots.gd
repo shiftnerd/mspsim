@@ -25,7 +25,7 @@ func _process(_delta: float) -> bool:
 	var msp := root.get_node("Msp")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("tech")
 			for n in ["Alan", "Garrison", "Dan", "Vic"]:
 				root.get_node("World").chars[n].scene = root.get_node("World").CAST[n].home

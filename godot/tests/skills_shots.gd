@@ -25,7 +25,7 @@ func _process(_delta: float) -> bool:
 	var sk := root.get_node("Skills")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("tech")
 			sk.ps_level = 4
 			sk.xp["servers"] = 45

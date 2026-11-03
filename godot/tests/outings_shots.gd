@@ -21,7 +21,7 @@ func _process(_delta: float) -> bool:
 	var o := root.get_node("Outings")
 	match frame:
 		10:
-			root.get_node("Campaign").save_prefix = "user://test_"
+			root.get_node("Campaign").save_prefix = "user://test_%d_" % OS.get_process_id()
 			root.get_node("Campaign").new_game("owner")
 			o.start("bowling")
 		20:

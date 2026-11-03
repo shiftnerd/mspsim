@@ -24,7 +24,7 @@ func _model() -> void:
 	var msp := root.get_node("Msp")
 	var cards := root.get_node("Cards")
 	var social := root.get_node("Social")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	c.new_game("tech")
 	_check(sales.active.size() == 5 and sales.workload() == 1.0, "five clients to start")
 	var new_client: int = sales.sign_client()

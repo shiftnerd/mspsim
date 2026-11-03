@@ -25,7 +25,7 @@ func _process(_delta: float) -> bool:
 	var talk := root.get_node("Talk")
 	var social := root.get_node("Social")
 	if phase == 0:
-		c.save_prefix = "user://test_"
+		c.save_prefix = "user://test_%d_" % OS.get_process_id()
 		c.new_game("tech")
 		root.get_node("Game").title_mode = false
 		_check(

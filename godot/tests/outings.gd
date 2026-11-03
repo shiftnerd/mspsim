@@ -28,7 +28,7 @@ func _init() -> void:
 	var owner := root.get_node("Owner")
 	var shift := root.get_node("Shift")
 	var game := root.get_node("Game")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	game.title_mode = false
 	o.enabled = true
 	c.new_game("tech")

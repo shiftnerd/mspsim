@@ -47,7 +47,7 @@ func _process(_delta: float) -> bool:
 	var title := current_scene
 	match step:
 		0:
-			campaign.save_prefix = "user://test_cs_"
+			campaign.save_prefix = "user://test_cs_%d_" % OS.get_process_id()
 			for m in ["tech", "owner"]:
 				if campaign.has_save(m):
 					DirAccess.remove_absolute(campaign.save_path(m))

@@ -25,7 +25,7 @@ func _process(_delta: float) -> bool:
 	var so := root.get_node("Social")
 	match frame:
 		10:
-			c.save_prefix = "user://test_"
+			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("tech")
 			pb.start("rack")
 			pb.choose(1)

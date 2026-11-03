@@ -17,7 +17,7 @@ func _init() -> void:
 	var story := root.get_node("Story")
 	var world := root.get_node("World")
 	var comp := root.get_node("Computer")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	c.new_game("tech")
 
 	# the story event on day 4 creates the ticket and the project

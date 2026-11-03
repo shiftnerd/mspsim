@@ -36,7 +36,7 @@ func _init() -> void:
 	var pb := root.get_node("Playbook")
 	var story := root.get_node("Story")
 	var sales := root.get_node("Sales")
-	c.save_prefix = "user://test_"
+	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	c.new_game("tech")
 	root.get_node("Skills").xp["people"] = 60  # so CUSTOMER-locked choices are open
 

@@ -21,7 +21,7 @@ func _init() -> void:
 	var onsite: Node = root.get_node("Onsite")
 	var shift: Node = root.get_node("Shift")
 	var skills: Node = root.get_node("Skills")
-	camp.save_prefix = "user://test_"
+	camp.save_prefix = "user://test_%d_" % OS.get_process_id()
 	camp.new_game("tech")
 	msp.reset()
 
