@@ -260,8 +260,6 @@ func _init() -> void:
 			"%d = %s" % [digit, str(o.PRODUCTS[digit])]
 		)
 	for who in social.people():
-		if who == "Morgan":  # the manager does not come to outings; the code falls back to Alan's hints
-			continue
 		_check(o.FRIEND_HINTS.has(who), "%s has hints" % who)
 	for who in o.FRIEND_HINTS:
 		for zone in zones + ["keypad"]:
@@ -339,6 +337,21 @@ func _init() -> void:
 			_check(not o.PROTECTED_TOPICS.has(t), "%s does not dread %s" % [who, t])
 	for who in o.DINERS:
 		_check(o.PEOPLE.has(who), "%s (at the table) has a personality" % who)
+	# R5: everybody in the cast has a bowling row, an invitation row, a taste row and lines in their own voice
+	for who in ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]:
+		_check(o.PEOPLE.has(who) and o.BOWLERS.has(who) and o.GUESTS.has(who), "%s: taste, bowling and invitation rows" % who)
+		for kind in ["cheer", "groan", "talk", "sing"]:
+			for line in o.CREW_LINES[who][kind]:
+				all_text.append(line)
+				_check(str(line).length() <= 40 and _drawable(str(line)), "%s %s: '%s'" % [who, kind, line])
+		_check(_drawable(str(o.GUESTS[who].line).to_upper()) and str(o.GUESTS[who].line).length() <= 60, "%s: excuse fits" % who)
+		var b: Dictionary = o.BOWLERS[who]
+		_check(float(b.skill) >= 0.4 and float(b.skill) <= 0.75 and float(b.noise) <= 0.45, "%s: bowling numbers in range" % who)
+		var moods: Array = o.PEOPLE[who].get("moods", o.DINNER_MOODS.keys())
+		_check(moods.all(func(m): return o.DINNER_MOODS.has(m)), "%s: quirk moods exist" % who)
+	_check(o.TABLE_MAX == 5 and o.LANE_MAX == 4, "five faces, four opponents")
+	for seat in o.SEATS.dinner.values():
+		_check(seat != o.PLAYER_SEAT, "no one sits in your seat")
 	# the shuffled tastes keep those rules for any seed
 	var shuffled_ok := true
 	for s in 50:

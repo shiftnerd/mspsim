@@ -30,7 +30,7 @@ const ROOTS := {
 	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [

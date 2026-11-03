@@ -343,17 +343,14 @@ func _draw_bowl_score() -> void:
 	if str(game.stage) == "pause" and str(game.msg) != "" and int(_time * 4.0) % 2 == 0:
 		PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
 		return
+	# up to five names on two lines: 14 characters of two letters and two digits fit the 60 px screen
 	var t: Dictionary = game.totals
-	var line1 := "YOU %02d" % int(t["You"])
-	if t.has("Alan"):
-		line1 += " ALN %02d" % int(t["Alan"])
-	var line2 := ""
-	if t.has("Garrison"):
-		line2 += "GAR %02d " % int(t["Garrison"])
-	if t.has("Dan"):
-		line2 += "DAN %02d" % int(t["Dan"])
-	PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
-	PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
+	var cells := ["YO%02d" % int(t["You"])]
+	for who in Outings.bowlers():
+		cells.append("%s%02d" % [str(Outings.GUESTS[who].code), int(t.get(who, 0))])
+	PixelFont.draw(self, " ".join(cells.slice(0, 3)), Vector2(2, 1), green, 1)
+	if cells.size() > 3:
+		PixelFont.draw(self, " ".join(cells.slice(3, 6)), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:

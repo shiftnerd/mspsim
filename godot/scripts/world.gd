@@ -450,7 +450,7 @@ func _finish_leg(n: String) -> void:
 
 
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
-func start_outing(room: String, spots: Array, seats := {}) -> void:
+func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void:
 	var x0 := float(DATA.SCENES[room].x0)
 	for n in chars:
 		var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
@@ -458,6 +458,14 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
 		st.node = null
+		if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+			st.scene = OUTSIDE
+			st.following = false
+			st.held = ""
+			st.sips = 0
+			st.legs = [_away_leg()]
+			st.leg_t = FOREVER
+			continue
 		st.scene = room
 		st.arrive = "from_outing"
 		st.fresh = false
