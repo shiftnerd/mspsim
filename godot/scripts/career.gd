@@ -105,6 +105,10 @@ const COUNTERS := [
 	["", "LONGEST HIT", "nerf_longest", "px"],
 	["", "ANIMALS PETTED", "pets", "n"],
 	["", "COMPLAINTS HEARD", "vic_calls", "n"],
+	["SALES", "DEALS WON", "deals_won", "n"],
+	["", "CLAWBACKS", "clawbacks", "n"],
+	["", "RENEWALS WON", "renewals", "n"],
+	["", "UPSELLS SOLD", "upsells", "n"],
 	["", "DUCK CHATS", "duck_squeaks", "n"],
 ]
 const FLUSH_SECS := 3.0

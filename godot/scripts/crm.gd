@@ -3,10 +3,13 @@ extends RefCounted
 # The SalesHound CRM (sales campaign, slice S1): a desktop app for Vic that lists the pipeline and lets you work a lead. It is a
 # simple read-and-move list: the tabs filter by stage (LEAD / MEETING / QUOTED / WON / LOST), Up / Down pick a lead, and the
 # buttons (or C / V / Q / D) call, visit, quote or drop it. A call and a quote cost one selling hour each (SalesCampaign.spend),
-# a visit drives you to their office. The full CRM (deal stages with promises, gauges, renewals) is slice S2.
+# a visit drives you to their office. C2 adds: F (CHASE) follows a deal up, U (UPSELL) sells a service to a won client, I (INFO) flips
+# the detail pane to the deal record (risk meter, promises, notes, the 90 day clock) and Q opens the quote builder screen
+# (quote_builder.gd) in place of the list while you build a quote (SalesCampaign.crm_view).
 # All state lives in SalesCampaign (crm_sel, crm_tab, leads); this script only paints and routes input for the Computer.
 # `cp` is the Computer autoload: its drawing helpers (_fill, _text, _button, _row, _region, _window, _clip, _wrap) do the work.
 
+const Deals := preload("res://scripts/deals.gd")
 const TABS := [["ALL", "ALL"], ["LEAD", "LEAD"], ["MEETING", "MEET"], ["QUOTED", "QUOTE"], ["WON", "WON"], ["LOST", "LOST"]]
 const STAGE_SHORT := {"LEAD": "LEAD", "MEETING": "MEET", "QUOTED": "QUOTE", "WON": "WON", "LOST": "LOST"}
 const STAGE_TINT := {
@@ -51,6 +54,10 @@ static func selected() -> Dictionary:
 
 
 static func paint(cp) -> void:
+	if SalesCampaign.crm_view == "build":
+		var bb: Rect2 = cp._window("SALESHOUND CRM - QUOTE BUILDER", Color("b8602b"))
+		SalesCampaign.QuoteBuilder.paint(cp, bb)
+		return
 	var body: Rect2 = cp._window("SALESHOUND CRM - PIPELINE", Color("b8602b"))
 	cp._fill(body, Color("f3f6fb"))
 	var sel := selected()
@@ -116,8 +123,39 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
 	var chars: int = int((r.size.x - 8.0) / 4.0)
 	var x: float = r.position.x + 4.0
 	var y: float = r.position.y + 2.0
-	cp._text(cp._clip(str(l.name).to_upper(), chars), Vector2(x, y), STAGE_TINT[str(l.stage)])
+	cp._text(cp._clip(str(l.name).to_upper(), chars - 4), Vector2(x, y), STAGE_TINT[str(l.stage)])
+	cp._text("%d/2" % (SalesCampaign.crm_page + 1), Vector2(r.end.x - 16, y), MUTED)
 	y += 7.0
+	if SalesCampaign.crm_page == 1:
+		_paint_record(cp, r, l, x, y, chars)
+	else:
+		_paint_summary(cp, r, l, x, y, chars)
+	# the buttons
+	var stage: String = str(l.stage)
+	var open: bool = ["LEAD", "MEETING"].has(stage)
+	var live: bool = open or stage == "QUOTED"
+	var n := 6
+	var bw: float = (r.size.x - 6.0) / float(n)
+	var by: float = r.end.y - 18.0
+	var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
+	var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
+	var can_quote: bool = open and SalesCampaign.slots_left() >= 1
+	var can_chase: bool = live and SalesCampaign.slots_left() >= 1
+	var can_up: bool = stage == "WON" and SalesCampaign.slots_left() >= 1 and not Deals.book_deal(int(l.id)).is_empty()
+	cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
+	cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
+	cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
+	cp._button("crm:follow", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "CHASE", can_chase)
+	if stage == "WON":
+		cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
+	else:
+		cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
+	cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
+	cp._text(cp._clip("C CALL V VISIT Q QUOTE F CHASE D DROP U UPSELL I INFO", chars), Vector2(x, r.end.y - 7.0), MUTED)
+
+
+static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:
+	var y: float = y0
 	var info := "%s  %d USERS  $%d/WK" % [str(SalesCampaign.TYPES[str(l.type)].label), int(l.users), int(l.fee)]
 	cp._text(cp._clip(info, chars), Vector2(x, y), INK)
 	y += 7.0
@@ -130,27 +168,78 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
 	status += "  VISITED" if bool(l.visited) else ""
 	cp._text(cp._clip(status, chars), Vector2(x, y), MUTED)
 	y += 7.0
-	if str(l.stage) == "LOST" and str(l.get("why", "")) != "":
+	var stage: String = str(l.stage)
+	if stage == "LOST" and str(l.get("why", "")) != "":
 		cp._text(cp._clip("LOST: " + str(l.why), chars), Vector2(x, y), STAGE_TINT["LOST"])
-	elif str(l.stage) == "WON":
-		cp._text("WON. THE HANDOVER IS DONE.", Vector2(x, y), STAGE_TINT["WON"])
+	elif stage == "WON":
+		var d: Dictionary = Deals.book_deal(int(l.id))
+		var txt := "WON. THE HANDOVER IS DONE."
+		if not d.is_empty():
+			txt = "HANDOVER WAITS IN THE CONFERENCE ROOM" if str(d.get("state", "")) == "handover" else "90 DAYS: WEEK %d OF %d" % [mini(Campaign.day - int(d.week), Deals.WINDOW_WEEKS), Deals.WINDOW_WEEKS]
+		cp._text(cp._clip(txt, chars), Vector2(x, y), STAGE_TINT["WON"])
+	elif stage == "QUOTED":
+		cp._text(cp._clip("QUOTED. BYTEBROTHERS MAY STEAL IT", chars), Vector2(x, y), STAGE_TINT["QUOTED"])
 	elif not bool(l.site):
 		cp._text("PHONE ONLY, NO SITE VISIT", Vector2(x, y), MUTED)
-	# the buttons
-	var open: bool = ["LEAD", "MEETING"].has(str(l.stage))
-	var bw: float = (r.size.x - 6.0) / 4.0
-	var by: float = r.end.y - 18.0
-	var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
-	var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
-	var can_quote: bool = open and SalesCampaign.slots_left() >= 1
-	cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
-	cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
-	cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
-	cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "DROP", open, Color("e9b1a8"))
-	cp._text(cp._clip("C CALL  V VISIT  Q QUOTE  D DROP", chars), Vector2(x, r.end.y - 7.0), MUTED)
 
 
-static func move(_cp, step: int) -> void:
+# the deal record: risk meter, the promises made, the last note
+static func _paint_record(cp, r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:
+	var y: float = y0
+	var stage: String = str(l.stage)
+	var risk: int = Deals.risk(l)
+	var label := "GOING COLD"
+	if stage == "QUOTED":
+		label = "STOLEN BY BYTEBROTHERS"
+	elif stage == "WON":
+		label = "CHURN RISK"
+	elif stage == "LOST":
+		label = "FINISHED"
+	cp._text(cp._clip("%s %d%%" % [label, risk], chars), Vector2(x, y), INK)
+	y += 6.0
+	var bar_w: float = r.size.x - 10.0
+	cp._fill(Rect2(x, y, bar_w, 3), Color("c9d2e0"))
+	var tint: Color = Color("2f7d46") if risk < 35 else (Color("b8791a") if risk < 65 else Color("c0392b"))
+	cp._fill(Rect2(x, y, floorf(bar_w * float(risk) / 100.0), 3), tint)
+	y += 5.0
+	var line2 := "TOUCHED WK %d  CHASED %d" % [int(l.get("touch", l.week)), int(l.get("follow", 0))]
+	if stage == "WON":
+		var d: Dictionary = Deals.book_deal(int(l.id))
+		if not d.is_empty():
+			line2 = "GAP %.1f MOOD %d KEPT %d BROKEN %d" % [float(d.gap), int(d.mood), SalesCampaign.Retention.kept_count(d), SalesCampaign.Retention.broken_count(d)]
+	cp._text(cp._clip(line2, chars), Vector2(x, y), MUTED)
+	y += 7.0
+	var promises: Array = l.get("promises", [])
+	if promises.is_empty():
+		cp._text(cp._clip("NO PROMISES YET. THEY COME WITH THE QUOTE.", chars), Vector2(x, y), MUTED)
+		y += 7.0
+	var room: int = int((r.end.y - 19.0 - y) / 7.0)
+	var notes: Array = l.get("notes", [])
+	var show_note: bool = not notes.is_empty() and room >= promises.size() + 1
+	if show_note:
+		room -= 1
+	var shown := 0
+	var fit: int = room if promises.size() <= room else maxi(1, room - 1)
+	for p in promises:
+		if shown >= fit:
+			break
+		var st: String = str(p.state)
+		var tag: String = {"open": "-", "kept": "K", "renegotiated": "R", "dropped": "D"}.get(st, "-")
+		var col: Color = {"open": INK, "kept": Color("2f7d46"), "renegotiated": Color("b8791a"), "dropped": Color("c0392b")}.get(st, INK)
+		cp._text(cp._clip("%s %s" % [tag, str(p.label)], chars), Vector2(x, y), col)
+		y += 7.0
+		shown += 1
+	if promises.size() > shown:
+		cp._text("+%d MORE PROMISES" % (promises.size() - shown), Vector2(x, y), MUTED)
+		y += 7.0
+	if show_note:
+		cp._text(cp._clip(str(notes.back()), chars), Vector2(x, y), MUTED)
+
+
+static func move(cp, step: int) -> void:
+	if SalesCampaign.crm_view == "build":
+		SalesCampaign.QuoteBuilder.move(cp, step)
+		return
 	var list := rows()
 	if list.is_empty():
 		return
@@ -163,6 +252,10 @@ static func move(_cp, step: int) -> void:
 
 # Enter does the next sensible thing: call a fresh lead, quote one you have talked to
 static func enter(cp) -> void:
+	if SalesCampaign.crm_view == "build":
+		SalesCampaign.QuoteBuilder.enter(cp)
+		cp._canvas.queue_redraw()
+		return
 	var l := selected()
 	if l.is_empty():
 		return
@@ -173,6 +266,9 @@ static func enter(cp) -> void:
 
 
 static func key(cp, code: int) -> void:
+	if SalesCampaign.crm_view == "build":
+		SalesCampaign.QuoteBuilder.key(cp, code)
+		return
 	match code:
 		KEY_C:
 			action(cp, ["crm", "call"])
@@ -182,6 +278,12 @@ static func key(cp, code: int) -> void:
 			action(cp, ["crm", "quote"])
 		KEY_D:
 			action(cp, ["crm", "drop"])
+		KEY_F:
+			action(cp, ["crm", "follow"])
+		KEY_U:
+			action(cp, ["crm", "upsell"])
+		KEY_I:
+			action(cp, ["crm", "more"])
 		KEY_LEFT, KEY_RIGHT:
 			var at := 0
 			for i in TABS.size():
@@ -192,8 +294,26 @@ static func key(cp, code: int) -> void:
 
 
 static func action(cp, parts: PackedStringArray) -> void:
+	if parts[1] == "qb":
+		SalesCampaign.QuoteBuilder.action(cp, parts)
+		return
 	var l := selected()
 	match parts[1]:
+		"more":
+			SalesCampaign.crm_page = 1 - SalesCampaign.crm_page
+		"follow":
+			if not l.is_empty():
+				cp._say(SalesCampaign.follow_up(int(l.id)))
+		"upsell":
+			var d: Dictionary = Deals.book_deal(int(l.get("id", 0))) if not l.is_empty() else {}
+			if d.is_empty() or str(l.stage) != "WON":
+				cp._say("NO CLIENT TO UPSELL.")
+			elif SalesCampaign.slots_left() < 1:
+				cp._say("NO SELLING HOURS LEFT.")
+			elif SalesCampaign.Retention.upsell_options(d).is_empty():
+				cp._say("THEY HAVE EVERY SERVICE WE SELL.")
+			elif SalesCampaign.spend(1):
+				SalesCampaign.Retention.upsell_card(d)
 		"tab":
 			SalesCampaign.crm_tab = parts[2]
 		"sel":

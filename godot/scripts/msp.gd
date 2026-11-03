@@ -621,6 +621,9 @@ func create_problem(
 		return {}
 	var picked: Dictionary = Mutators.pick_endpoint(eps)
 	var pri: int = Mutators.priority(int(prob.pri), picked)
+	var newclient: String = SalesCampaign.Retention.new_client_for(client, _next_id)  # C2: a new premium-SLA client's ticket goes first
+	if newclient != "":
+		pri = maxi(1, pri - 1)
 	picked.problem = prob.fix
 	picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
 	picked["asked"] = false
@@ -645,6 +648,7 @@ func create_problem(
 		"desk": 0,
 		"source": source,
 		"breached": false,
+		"newclient": newclient,
 	}
 	_next_id += 1
 	tickets.append(t)

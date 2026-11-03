@@ -115,14 +115,19 @@ func _init() -> void:
 	_key(comp, KEY_C)
 	_check(comp.app == "crm" and sc.slots_left() == hours - 1, "a second call is refused and costs nothing")
 
-	# ---- quote opens the builder; Enter on a called lead does the same
+	# ---- quote opens the builder screen; Enter on a called lead does the same; Esc comes back
 	comp.enter()
-	_check(cards.is_open and str(cards.speaker) == "Quote builder", "Enter on a lead you called opens the quote builder")
-	_clear(cards, 3)
-	_check(not cards.is_open and str(l.stage) == "MEETING", "backing out sends nothing")
+	_check(sc.crm_view == "build" and not sc.qb.is_empty() and int(sc.qb.id) == int(l.id) and not cards.is_open, "Enter on a lead you called opens the quote builder screen")
+	await process_frame
+	await process_frame
+	ids = _hit_ids(comp)
+	_check("crm:qb:send" in ids and "crm:qb:back" in ids and "crm:qb:chg:promise:1" in ids, "the builder paints its steppers and buttons")
+	comp.escape()
+	_check(sc.crm_view == "list" and comp.app == "crm" and str(l.stage) == "MEETING", "Esc backs out of the builder to the list and sends nothing")
 	_key(comp, KEY_Q)
-	_check(cards.is_open, "Q opens the quote builder too")
-	_clear(cards, 3)
+	_check(sc.crm_view == "build", "Q opens the quote builder too")
+	comp.back()
+	_check(sc.crm_view == "list", "back() leaves it")
 
 	# ---- visit: phone-only leads cannot be driven to; a site lead can
 	var phone_only := {}

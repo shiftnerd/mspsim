@@ -12,6 +12,10 @@ extends Node
 
 signal changed
 
+const Deals := preload("res://scripts/deals.gd")
+const Retention := preload("res://scripts/retention.gd")
+const Handover := preload("res://scripts/handover.gd")
+const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SLOTS := 8
 const MAX_OPEN := 9  # open leads in the pipeline
 const COLD_WEEKS := 4  # a lead nobody touched this long goes cold
@@ -132,6 +136,27 @@ var crm_sel := 0
 var crm_tab := "ALL"
 var visit_lead := 0  # the lead you are visiting (Onsite hooks read it)
 var last_report := ""
+# C2: the deeper loop
+var crm_view := "list"  # the CRM shows the pipeline ("list") or the quote builder ("build")
+var crm_page := 0  # the detail pane: 0 summary, 1 promises and risk
+var qb: Dictionary = {}  # the quote being built: {id, q, row, page}
+var pending_handover := 0  # id of the won deal waiting for the conference room
+var handover_queue: Array = []  # more wins waiting behind it
+var rival_wins := 0  # quoted deals ByteBrothers took
+var clawbacks := 0
+var clawed_total := 0
+var week_clawback := 0
+var churned: Array = []  # clients that left: {name, week, left, mrr, claw, why}
+var base_book: Array = []  # the clients you inherited, up for renewal on a schedule
+var base_ready := false
+var lost_base := 0  # weekly fee lost with base clients that did not renew
+var expansion_base := 0  # weekly fee added to base clients by upsells
+var expansion_total := 0  # new MRR from upsells and price rises
+var renewals_won := 0
+var renewals_lost := 0
+var upsells := 0
+var handovers := 0
+var _poll := 0.0
 
 
 func _ready() -> void:
@@ -168,8 +193,37 @@ func reset() -> void:
 	crm_tab = "ALL"
 	visit_lead = 0
 	last_report = ""
-	if Hints.objective.begins_with("RING THE SALES BELL"):
+	crm_view = "list"
+	crm_page = 0
+	qb = {}
+	pending_handover = 0
+	handover_queue = []
+	rival_wins = 0
+	clawbacks = 0
+	clawed_total = 0
+	week_clawback = 0
+	churned = []
+	base_book = []
+	base_ready = false
+	lost_base = 0
+	expansion_base = 0
+	expansion_total = 0
+	renewals_won = 0
+	renewals_lost = 0
+	upsells = 0
+	handovers = 0
+	if Hints.objective.begins_with("RING THE SALES BELL") or Hints.objective.begins_with("HANDOVER"):
 		Hints.objective = ""
+
+
+# the handover waits for you in the conference room: check twice a second
+func _process(delta: float) -> void:
+	if pending_handover == 0:
+		return
+	_poll += delta
+	if _poll >= 0.4:
+		_poll = 0.0
+		Handover.tick()
 
 
 # the sales campaign is the running mode
@@ -309,6 +363,9 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 		"visited": false,
 		"moon": false,
 		"why": "",
+		"touch": Campaign.day,
+		"notes": [],
+		"follow": 0,
 	}
 	next_id += 1
 	return lead
@@ -330,6 +387,7 @@ func lead_text(l: Dictionary) -> String:
 
 
 func accept_lead(l: Dictionary) -> void:
+	Deals.touch(l, "ON THE PIPELINE")
 	leads.append(l)
 	changed.emit()
 
@@ -344,20 +402,7 @@ func drop_lead(id: int, why := "DROPPED") -> void:
 
 
 func _age_leads(day: int) -> void:
-	for l in leads.duplicate():
-		var age := day - int(l.week)
-		match str(l.stage):
-			"LEAD", "MEETING":
-				if age >= COLD_WEEKS:
-					l.stage = "LOST"
-					l.why = "WENT COLD"
-			"QUOTED":
-				if age >= COLD_WEEKS + QUOTE_WEEKS:
-					l.stage = "LOST"
-					l.why = "NO ANSWER"
-			_:
-				if age >= 3 + COLD_WEEKS:
-					leads.erase(l)
+	Deals.age(day)
 
 
 # ---- the week --------------------------------------------------------------------------------------------
@@ -371,6 +416,13 @@ func begin_week(day: int) -> void:
 	week_calls = 0
 	week_visits = 0
 	week_quotes = 0
+	week_clawback = 0
+	if not base_ready:
+		base_ready = true
+		if base_book.is_empty():
+			Retention.schedule_base()
+	Handover.paperwork_all()
+	Deals.resolve_pending(day)
 	_age_leads(day)
 	_beat_cards(day)
 	var fresh := draw_week(Difficulty.rng("leads"))
@@ -386,6 +438,8 @@ func begin_week(day: int) -> void:
 		if bool(d.get("complain", false)) and not bool(d.get("resolved", false)) and day >= int(d.week) + 2 and not bool(d.get("asked", false)):
 			d["asked"] = true
 			_complaint_card(d)
+	for e in Retention.due(day):
+		Retention.renewal_card(e)
 	changed.emit()
 
 
@@ -445,7 +499,7 @@ func _quota_card() -> void:
 			quota_level = id
 			Cards.ask(
 				"{sales_owner}",
-				"%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee." % str(QUOTAS[id].words),
+				"%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee. If a client leaves inside 90 days the commission comes back: half on salary, all of it on the other two plans." % str(QUOTAS[id].words),
 				[
 					{"label": "SALARY: $750 + 1 WEEK OF THE FEE", "id": "salary"},
 					{"label": "BALANCED: $550 + 2 WEEKS OF THE FEE", "id": "balanced"},
@@ -501,25 +555,16 @@ func discount_ok(lead: Dictionary) -> bool:
 	return crunch or behind_pace() or int(lead.users) >= 25
 
 
-func margin_pct(q: Dictionary) -> float:
-	var base := float(METHODS[str(q.method)].base)
-	return 1.0 - (1.0 - base) / float(PRICES[str(q.price)].mult)
+func margin_pct(q: Dictionary, lead: Dictionary = {}) -> float:
+	return Deals.margin(q, lead)
 
 
 func quote_price(lead: Dictionary, q: Dictionary) -> int:
-	return int(round(float(lead.fee) * float(PRICES[str(q.price)].mult) * float(METHODS[str(q.method)].mrr)))
+	return Deals.price(lead, q)
 
 
 func win_chance(lead: Dictionary, q: Dictionary) -> float:
-	var p := float(lead.quality) / 100.0 * 0.8
-	if bool(lead.get("visited", false)):
-		p += 0.10
-	if bool(lead.get("called", false)):
-		p += 0.04
-	if bool(lead.get("moon", false)):
-		p += 0.05
-	p += float(METHODS[str(q.method)].win) + float(PROMISES[str(q.promise)].win) + float(PRICES[str(q.price)].win)
-	return clampf(p, 0.05, 0.92)
+	return Deals.win(lead, q)
 
 
 # what the crew can honestly take on right now (points; a 1-hour response promise is 4)
@@ -534,10 +579,7 @@ func capacity() -> float:
 
 
 func promise_gap(lead: Dictionary, q: Dictionary) -> float:
-	var gap := float(PROMISES[str(q.promise)].pts) - capacity() + float(METHODS[str(q.method)].gap)
-	if bool(lead.get("moon", false)):
-		gap += 1.5
-	return snappedf(maxf(0.0, gap), 0.1)
+	return Deals.gap(lead, q)
 
 
 func commission_for(mrr: int) -> int:
@@ -547,6 +589,7 @@ func commission_for(mrr: int) -> int:
 	return int(round(c))
 
 
+# the quote builder is a screen inside the CRM (see quote_builder.gd); the cards that used to ask method, promise and price are gone
 func start_quote(id: int) -> void:
 	var l := lead_by_id(id)
 	if l.is_empty() or not ["LEAD", "MEETING"].has(str(l.stage)):
@@ -555,100 +598,30 @@ func start_quote(id: int) -> void:
 	if slots_left() < 1:
 		Hints.toast("NO SELLING HOURS LEFT THIS WEEK.", 2.5)
 		return
-	_ask_method(l, {})
+	QuoteBuilder.begin(l)
+	changed.emit()
 
 
-func _ask_method(l: Dictionary, q: Dictionary) -> void:
-	var options := []
-	for k in ["fixed", "scope", "tm"]:
-		var enabled := slots_left() >= int(METHODS[k].hours)
-		options.append({"label": str(METHODS[k].label), "id": k, "enabled": enabled, "hint": "NEEDS %d HOURS" % int(METHODS[k].hours)})
-	options.append({"label": "NOT NOW", "id": "leave"})
-	Cards.ask(
-		"Quote builder",
-		"%s, %d users. %s. How do you want to sell it?" % [str(l.name), int(l.users), str(l.pain).capitalize()],
-		options,
-		func(id: String) -> void:
-			if id == "leave":
-				return
-			q["method"] = id
-			_ask_promise(l, q)
-	)
+# a follow-up call keeps a deal warm: an hour, the last touch resets and a quoted deal is harder for ByteBrothers to take
+func follow_up(id: int) -> String:
+	var l := lead_by_id(id)
+	if l.is_empty() or not is_open(l):
+		return "NOTHING TO FOLLOW UP."
+	if int(l.get("follow", 0)) >= Deals.MAX_FOLLOW and str(l.stage) == "QUOTED":
+		return "YOU HAVE CHASED THIS ONE ENOUGH."
+	if not spend(1):
+		return "NO SELLING HOURS LEFT."
+	l["follow"] = int(l.get("follow", 0)) + 1
+	l["quality"] = mini(100, int(l.quality) + 2)
+	Deals.touch(l, "FOLLOWED UP")
+	changed.emit()
+	return "FOLLOWED UP WITH %s" % str(l.who).to_upper()
 
 
-func _ask_promise(l: Dictionary, q: Dictionary) -> void:
-	var options := []
-	for k in ["low", "std", "high"]:
-		options.append({"label": "%s (+%d%%)" % [str(PROMISES[k].label), int(round(100.0 * float(PROMISES[k].win)))], "id": k})
-	options.append({"label": "BACK", "id": "leave"})
-	Cards.ask(
-		"Quote builder",
-		"What do you promise on service? Dan and Morgan will have to deliver it. Capacity today is about %.1f; a 1 hour response needs 4." % capacity(),
-		options,
-		func(id: String) -> void:
-			if id == "leave":
-				_ask_method(l, q)
-				return
-			q["promise"] = id
-			_ask_price(l, q, false)
-	)
-
-
-func _ask_price(l: Dictionary, q: Dictionary, no_20: bool) -> void:
-	var options := []
-	for k in ["premium", "list", "d10", "d20"]:
-		var t := {"method": q.method, "promise": q.promise, "price": k}
-		var m := margin_pct(t)
-		var ok := m >= margin_floor - 0.0001
-		var hint := "ALAN: UNDER THE MARGIN FLOOR"
-		if k == "d20" and no_20:
-			ok = false
-			hint = "GARRISON SAID NO"
-		options.append(
-			{
-				"label": "$%d/WK  WIN %d%%  MARGIN %d%%  %s" % [quote_price(l, t), int(round(100.0 * win_chance(l, t))), int(round(100.0 * m)), str(PRICES[k].label).get_slice(":", 0).get_slice(" (", 0)],
-				"id": k,
-				"enabled": ok,
-				"hint": hint,
-			}
-		)
-	options.append({"label": "BACK", "id": "leave"})
-	Cards.ask(
-		"Quote builder",
-		"Pick the price for %s. The margin floor is %d%%; the promise gap if you win would be %.1f." % [str(l.name), int(round(100.0 * margin_floor)), promise_gap(l, q)],
-		options,
-		func(id: String) -> void:
-			if id == "leave":
-				_ask_promise(l, q)
-				return
-			q["price"] = id
-			if id == "d20":
-				_approve_discount(l, q)
-			else:
-				send_quote(l, q)
-	)
-
-
-func _approve_discount(l: Dictionary, q: Dictionary) -> void:
-	var yes := discount_ok(l)
-	Cards.ask(
-		"{sales_owner}",
-		(
-			"Twenty percent for %s? %s Fine, but get it signed." % [str(l.name), "We need the logo." if int(l.users) >= 25 else "You are behind on the quarter."]
-			if yes
-			else "Twenty percent for a small account? No. Ten, tops. Find me the money somewhere else."
-		),
-		[{"label": "OK", "id": "ok"}],
-		func(_id: String) -> void:
-			if yes:
-				send_quote(l, q)
-			else:
-				_ask_price(l, q, true)
-	)
-
-
-# the quote goes out: hours and discovery fee are spent, the dice decide (a seeded stream), the result lands at once
-func send_quote(l: Dictionary, q: Dictionary) -> void:
+# the quote goes out: hours and discovery fee are spent, one seeded roll decides: a yes on the spot, "we will think about it" (the
+# deal stays QUOTED and ByteBrothers may take it before they answer) or a no
+func send_quote(l: Dictionary, q_in: Dictionary) -> void:
+	var q := Deals.norm(q_in)
 	var hours := int(METHODS[str(q.method)].hours)
 	if not spend(hours):
 		return
@@ -658,12 +631,27 @@ func send_quote(l: Dictionary, q: Dictionary) -> void:
 	quotes_sent += 1
 	q["win"] = win_chance(l, q)
 	q["price_week"] = quote_price(l, q)
-	q["margin"] = margin_pct(q)
-	l["quote"] = q.duplicate()
-	var won := Difficulty.rng("deals").randf() < float(q.win)
-	if won:
+	q["margin"] = margin_pct(q, l)
+	l["quote"] = q.duplicate(true)
+	l["margin"] = q.margin
+	l["discount"] = q.discount
+	l["promises"] = Deals.promise_list(l, q)
+	Deals.touch(l, "QUOTE $%d/WK, WIN %d%%" % [int(q.price_week), int(round(100.0 * float(q.win)))])
+	var roll := Difficulty.rng("deals").randf()
+	var p := float(q.win)
+	if roll < p:
 		l.stage = "QUOTED"
 		close_deal(l, q)
+	elif roll < p + (1.0 - p) * Deals.HOLD:
+		l.stage = "QUOTED"
+		l["quoted_day"] = Campaign.day
+		l["follow"] = 0
+		Cards.ask(
+			str(l.who),
+			"Thank you for the proposal. We like it. Give us a few days to talk it over. (We are also talking to ByteBrothers.)",
+			[{"label": "I WILL CALL YOU IN A FEW DAYS", "id": "ok"}],
+			func(_id: String) -> void: pass
+		)
 	else:
 		l.stage = "LOST"
 		l.why = "WENT ELSEWHERE"
@@ -677,8 +665,11 @@ func send_quote(l: Dictionary, q: Dictionary) -> void:
 	changed.emit()
 
 
-func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
-	var mrr := int(q.price_week)
+func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
+	var q := Deals.norm(q_in)
+	var mrr := int(q.price_week) if q.has("price_week") else quote_price(l, q)
+	if not q.has("margin"):
+		q["margin"] = margin_pct(q, l)
 	var gap := promise_gap(l, q)
 	var com := commission_for(mrr)
 	var qi := quarter_index()
@@ -687,12 +678,19 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
 	week_deals += 1
 	week_commission += com
 	commission_total += com
+	week_cost += int(Deals.ONBOARD[str(q.onboard)].cost)
 	wins += 1
+	Career.add("deals_won")
+	var promises: Array = l.get("promises", [])
+	if promises.is_empty():
+		promises = Deals.promise_list(l, q)
 	var deal := {
 		"id": int(l.id),
 		"name": str(l.name),
 		"type": str(l.type),
+		"who": str(l.who),
 		"mrr": mrr,
+		"signed_mrr": mrr,
 		"margin": float(q.margin),
 		"week": Campaign.day,
 		"promise": str(q.promise),
@@ -701,9 +699,23 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
 		"complain": false,
 		"resolved": false,
 		"asked": false,
+		"discount": int(q.discount),
+		"extras": q.extras.duplicate(),
+		"onboard": str(q.onboard),
+		"promises": promises,
+		"commission": com,
+		"churn": 10,
+		"state": "handover",
+		"breaches": 0,
+		"onboarded": false,
+		"onboard_due": Campaign.day + int(Deals.ONBOARD[str(q.onboard)].weeks),
+		"kept": 0,
+		"broken": 0,
 	}
 	book.append(deal)
 	l.stage = "WON"
+	l["promises"] = promises
+	Deals.touch(l, "WON $%d/WK" % mrr)
 	Sales.deals += 1
 	Sales.last_deal = "YOU CLOSED %s!" % str(l.name).to_upper()
 	bell_ready = true
@@ -713,14 +725,19 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
 		str(l.who),
 		"We are in. Send the paperwork. Weekly fee $%d, signed for twelve months. Your commission is $%d." % [mrr, com],
 		[{"label": "THANK YOU", "id": "ok"}],
-		func(_id: String) -> void: _handover_card(deal)
+		func(_id: String) -> void: Handover.queue(deal)
 	)
 	changed.emit()
 	return deal
 
 
-# the handover to Morgan and Dan: the promise against what they can carry
+# the old three-answer handover maps onto the promise list: tell the real SLA = renegotiate everything, brief them = keep everything,
+# send the paperwork = drop everything. A deal without a promise list (an old save) uses the original arithmetic.
 func handover(deal: Dictionary, how: String) -> void:
+	if not deal.get("promises", []).is_empty():
+		Handover.decide_all(deal, {"honest": "renegotiated", "brief": "kept"}.get(how, "dropped"))
+		Handover.finish(deal, false)
+		return
 	var gap: float = float(deal.gap)
 	match how:
 		"honest":
@@ -735,29 +752,10 @@ func handover(deal: Dictionary, how: String) -> void:
 			if gap >= 0.5:
 				Social.change("Dan", -1)
 	var g: float = float(deal.gap)
-	# an honest SLA conversation costs a little goodwill up front; a gap costs a lot of it
 	deal["mood"] = clampi(72 - int(round(g * 8.0)) - (2 if how == "honest" and gap >= 0.5 else 0), 25, 85)
 	deal["complain"] = g >= 0.5
+	deal["state"] = "active"
 	changed.emit()
-
-
-func _handover_card(deal: Dictionary) -> void:
-	var g := float(deal.gap)
-	var gap_text := (
-		"You promised more than we can carry today: a gap of %.1f." % g
-		if g >= 0.5
-		else "What you promised fits what we can do."
-	)
-	Cards.ask(
-		"{ops}",
-		"Handover for %s with Dan and me. $%d a week, %s. %s" % [str(deal.name), int(deal.mrr), str(PROMISES[str(deal.promise)].label).to_lower(), gap_text],
-		[
-			{"label": "TELL THEM THE REAL SLA, BRIEF DAN AND MORGAN", "id": "honest"},
-			{"label": "BRIEF DAN AND MORGAN ON THE PROMISE", "id": "brief"},
-			{"label": "JUST SEND THE SIGNED PAPERWORK OVER", "id": "gloss"},
-		],
-		func(id: String) -> void: handover(deal, id)
-	)
 
 
 func _complaint_card(deal: Dictionary) -> void:
@@ -801,6 +799,7 @@ func call_lead(id: int) -> String:
 	l.called = true
 	l.stage = "MEETING"
 	l.quality = mini(100, int(l.quality) + 5)
+	Deals.touch(l, "CALLED")
 	week_calls += 1
 	changed.emit()
 	return "CALLED %s: %s" % [str(l.who).to_upper(), str(l.pain).to_upper()]
@@ -905,6 +904,7 @@ func pitch_answer(id: String, text: String) -> void:
 		return
 	l.visited = true
 	l.stage = "MEETING"
+	Deals.touch(l, "VISITED THE OFFICE")
 	match id:
 		"report":
 			l.quality = mini(100, int(l.quality) + 6)
@@ -936,6 +936,8 @@ func ring_bell(fx: Node) -> bool:
 	bell_ready = false
 	bell_rings += 1
 	Hints.objective = ""
+	if pending_handover != 0:
+		Handover._objective()
 	fx.ring("player")
 	Social.change_all(1)
 	Campaign.adjust_rep(1)
@@ -969,18 +971,19 @@ func _grade(ratio: float) -> String:
 	return "D"
 
 
+# clients of the new book whose churn meter is in the red
+func at_risk() -> int:
+	var n := 0
+	for d in book:
+		if int(d.get("churn", 0)) >= 60:
+			n += 1
+	return n
+
+
 func settle() -> Dictionary:
 	var day := Campaign.day
 	_hire_for_book()
-	var est: Dictionary = Owner.weekly_estimate()
-	var serve := 0
-	for d in book:
-		serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
-	var revenue := int(est.revenue) + book_mrr()
-	var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost
-	Owner.cash += profit
-	Owner.history.append({"day": day, "profit": profit, "ebitda": profit, "cash": Owner.cash})
-	# the book: new clients settle in, unkept promises wear them down
+	# the book: new clients settle in, unkept promises wear them down, then the 90 day clock ticks (a client may leave)
 	for d in book:
 		if int(d.week) == day:
 			continue
@@ -990,6 +993,15 @@ func settle() -> Dictionary:
 		if Sales.average() < 55.0:
 			drift -= 1
 		d["mood"] = clampi(int(d.mood) + drift, 0, 100)
+	Retention.week_tick(day)
+	var est: Dictionary = Owner.weekly_estimate()
+	var serve := 0
+	for d in book:
+		serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
+	var revenue := int(est.revenue) + book_mrr() - lost_base + expansion_base
+	var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost + week_clawback
+	Owner.cash += profit
+	Owner.history.append({"day": day, "profit": profit, "ebitda": profit, "cash": Owner.cash})
 	var qi := quarter_index(day)
 	var q: Dictionary = QUARTERS[qi]
 	var pct := quota_pct(qi)
@@ -1024,10 +1036,10 @@ func settle() -> Dictionary:
 		["NEW MRR SIGNED", "$%d/WK (%d DEAL%s)" % [week_new, week_deals, "" if week_deals == 1 else "S"], green if week_new > 0 else warn],
 		["PIPELINE VALUE", "$%d/WK, %d LEADS" % [pipeline_value(), open_leads().size()], Color.WHITE],
 		["QUOTA %s" % str(q.label), "%d%% ($%d/$%d)" % [pct, int(q_signed[qi]), quota_target(qi)], green if pct >= 100 else (warn if ratio >= 0.75 else red)],
-		["COMMISSION EARNED", "$%d ($%d TOTAL)" % [week_commission, commission_total], green if week_commission > 0 else Color.WHITE],
+		["COMMISSION EARNED", "$%d ($%d TOTAL)%s" % [week_commission, commission_total, (", -$%d CLAWED BACK" % week_clawback) if week_clawback > 0 else ""], red if week_clawback > 0 else (green if week_commission > 0 else Color.WHITE)],
 		["CLIENT MOOD", "%d%% (%d NEW)" % [int(mood), book.size()], green if mood >= 70.0 else (red if mood < 50.0 else warn)],
 		["SELLING HOURS", "%d CALLS, %d VISITS, %d QUOTES" % [week_calls, week_visits, week_quotes], Color.WHITE],
-		["NEW BOOK", "$%d/WK, %d CLIENT%s" % [book_mrr(), book.size(), "" if book.size() == 1 else "S"], Color.WHITE],
+		["NEW BOOK", "$%d/WK, %d CLIENT%s, %d AT RISK" % [book_mrr(), book.size(), "" if book.size() == 1 else "S", at_risk()], Color.WHITE],
 		["COMPANY", "EBITDA %s, CASH %s" % [_money(profit), _money(Owner.cash)], green if profit >= 0 else red],
 		["VERDICT", verdict, red if grade in ["C", "D"] or (closing and q_result[qi] == "MISS") else green],
 	]
@@ -1118,6 +1130,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["DEALS WON %d  QUOTES LOST %d  COMMISSION $%d" % [wins, losses, commission_total], ink])
 			lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
 			lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
+			lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
 		1:
 			lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])
 			for who in Social.people():
@@ -1152,6 +1165,21 @@ func to_dict() -> Dictionary:
 		"complaints": complaints,
 		"bell": bell_ready,
 		"rings": bell_rings,
+		"rival_wins": rival_wins,
+		"clawbacks": clawbacks,
+		"clawed": clawed_total,
+		"churned": churned,
+		"base_book": base_book,
+		"base_ready": base_ready,
+		"lost_base": lost_base,
+		"exp_base": expansion_base,
+		"expansion": expansion_total,
+		"renewals_won": renewals_won,
+		"renewals_lost": renewals_lost,
+		"upsells": upsells,
+		"handovers": handovers,
+		"pending": pending_handover,
+		"hqueue": handover_queue,
 	}
 
 
@@ -1175,3 +1203,18 @@ func from_dict(data: Dictionary) -> void:
 	complaints = int(data.get("complaints", 0))
 	bell_ready = bool(data.get("bell", false))
 	bell_rings = int(data.get("rings", 0))
+	rival_wins = int(data.get("rival_wins", 0))
+	clawbacks = int(data.get("clawbacks", 0))
+	clawed_total = int(data.get("clawed", 0))
+	churned = data.get("churned", [])
+	base_book = data.get("base_book", [])
+	base_ready = bool(data.get("base_ready", false))
+	lost_base = int(data.get("lost_base", 0))
+	expansion_base = int(data.get("exp_base", 0))
+	expansion_total = int(data.get("expansion", 0))
+	renewals_won = int(data.get("renewals_won", 0))
+	renewals_lost = int(data.get("renewals_lost", 0))
+	upsells = int(data.get("upsells", 0))
+	handovers = int(data.get("handovers", 0))
+	pending_handover = int(data.get("pending", 0))
+	handover_queue = data.get("hqueue", [])
