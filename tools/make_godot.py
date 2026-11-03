@@ -8509,7 +8509,8 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
     cash = int(cfg.get_value("campaign", "cash", 0))
     year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
     history = cfg.get_value("campaign", "history", [])
-    var saved_char := str(cfg.get_value("campaign", "character", "office_adult")).replace("office_teen", "office_intern")  # saves from before the rename
+    # a save from before the rename (the old name is split so a rename script cannot touch it)
+    var saved_char := str(cfg.get_value("campaign", "character", "office_adult")).replace("office_te" + "en", "office_intern")
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
     Look.from_dict(cfg.get_value("campaign", "look", {}))  # an old save has none: a stock character
     var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
