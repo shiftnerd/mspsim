@@ -48,7 +48,7 @@ Running in worktrees: R3 / R4 / R6 (karaoke songs, escape-room recipes, dinner v
 | R4 | Escape room: clue recipes, random clue spots, 4-digit hard code, red herrings, friend hints; later themed rooms | M | |
 | R5 | Who comes along: `Outings.roster()`, bowling personalities, dinner tastes; Maya and Vic join in logic | M | pairs with X2 |
 | R6 | Dinner: 16+ topics, mood of the day, dietary quirks, a client at the table, owner pays | S-M | |
-| R7 | Career screen and medals, cosmetic unlocks, nerf-war scoring | M | |
+| R7 | Career screen and medals, cosmetic unlocks, nerf-war scoring | M | DONE (see CLAUDE.md "Career, medals and nerf scoring"). Left: more medals tied to R3-R6 and R8-R10 content (songs, clue recipes, events, mutators, Year 2), a duck / desk-toy art for the data-only unlocks, a real ringtone sound, a medal detail view, Free Play hotkey for the screen (today: phone Settings) |
 | R8 | Event deck (40 cards) and vignette deck (24) | M | DONE (`Events` autoload, 41 cards + 17 drawn vignettes, see CLAUDE.md "Event deck and vignette deck"); left: seasonal tags beyond day windows, a Career counter, mutator hooks (R9) |
 | R9 | Mutators (Heartbleed week, XP end of life, flu season...) and starting conditions | M | |
 | R10 | Year 2 / New Game+, daily seed, Free Play toolbox | L | after R8, R9 |

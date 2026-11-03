@@ -5179,6 +5179,258 @@ P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLO
 TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA.
 
 
+# ======================= Career > MEDALS =======================
+# Career > MEDALS > 0 > title
+[Career.MEDALS.0.title]
+TICKET MACHINE
+
+# Career > MEDALS > 0 > desc
+[Career.MEDALS.0.desc]
+CLOSE 50 TICKETS
+
+# Career > MEDALS > 1 > title
+[Career.MEDALS.1.title]
+HELP DESK HERO
+
+# Career > MEDALS > 1 > desc
+[Career.MEDALS.1.desc]
+CLOSE 250 TICKETS
+
+# Career > MEDALS > 2 > title
+[Career.MEDALS.2.title]
+STICKY NOTES SAVIOR
+
+# Career > MEDALS > 2 > desc
+[Career.MEDALS.2.desc]
+CLOSE 10 PASSWORD TICKETS
+
+# Career > MEDALS > 3 > title
+[Career.MEDALS.3.title]
+PRINTER WHISPERER
+
+# Career > MEDALS > 3 > desc
+[Career.MEDALS.3.desc]
+WIN WITH EVERY PRINTER MODEL
+
+# Career > MEDALS > 4 > title
+[Career.MEDALS.4.title]
+NEVER RESTARTED
+
+# Career > MEDALS > 4 > desc
+[Career.MEDALS.4.desc]
+5 PRINTER WINS, NO PRAYERS
+
+# Career > MEDALS > 5 > title
+[Career.MEDALS.5.title]
+TONER WRANGLER
+
+# Career > MEDALS > 5 > desc
+[Career.MEDALS.5.desc]
+WIN 20 PRINTER GAMES
+
+# Career > MEDALS > 6 > title
+[Career.MEDALS.6.title]
+MEETING SURVIVOR
+
+# Career > MEDALS > 6 > desc
+[Career.MEDALS.6.desc]
+ATTEND 5 ALL-HANDS
+
+# Career > MEDALS > 7 > title
+[Career.MEDALS.7.title]
+DUCK WHISPERER
+
+# Career > MEDALS > 7 > desc
+[Career.MEDALS.7.desc]
+TALK TO THE DUCK 50 TIMES
+
+# Career > MEDALS > 8 > title
+[Career.MEDALS.8.title]
+PEOPLE PERSON
+
+# Career > MEDALS > 8 > desc
+[Career.MEDALS.8.desc]
+PLAY 3 TEAM OUTINGS
+
+# Career > MEDALS > 9 > title
+[Career.MEDALS.9.title]
+FULL HOUSE
+
+# Career > MEDALS > 9 > desc
+[Career.MEDALS.9.desc]
+3 STARS IN ALL FOUR GAMES
+
+# Career > MEDALS > 10 > title
+[Career.MEDALS.10.title]
+GUTTER GURU
+
+# Career > MEDALS > 10 > desc
+[Career.MEDALS.10.desc]
+ROLL 10 GUTTER BALLS
+
+# Career > MEDALS > 11 > title
+[Career.MEDALS.11.title]
+STRIKE ZONE
+
+# Career > MEDALS > 11 > desc
+[Career.MEDALS.11.desc]
+ROLL 10 STRIKES
+
+# Career > MEDALS > 12 > title
+[Career.MEDALS.12.title]
+CROWD PLEASER
+
+# Career > MEDALS > 12 > desc
+[Career.MEDALS.12.desc]
+HIT 20 PERFECT KARAOKE NOTES
+
+# Career > MEDALS > 13 > title
+[Career.MEDALS.13.title]
+VAULT CRACKER
+
+# Career > MEDALS > 13 > desc
+[Career.MEDALS.13.desc]
+OPEN THE VAULT IN 50 SECONDS
+
+# Career > MEDALS > 14 > title
+[Career.MEDALS.14.title]
+DINNER DIPLOMAT
+
+# Career > MEDALS > 14 > desc
+[Career.MEDALS.14.desc]
+SCORE 24 AT THE TEAM DINNER
+
+# Career > MEDALS > 15 > title
+[Career.MEDALS.15.title]
+FRIDAY WARRIOR
+
+# Career > MEDALS > 15 > desc
+[Career.MEDALS.15.desc]
+SURVIVE 5 NERF WARS
+
+# Career > MEDALS > 16 > title
+[Career.MEDALS.16.title]
+DEAD EYE
+
+# Career > MEDALS > 16 > desc
+[Career.MEDALS.16.desc]
+HIT COWORKERS 30 TIMES
+
+# Career > MEDALS > 17 > title
+[Career.MEDALS.17.title]
+LONG SHOT
+
+# Career > MEDALS > 17 > desc
+[Career.MEDALS.17.desc]
+HIT SOMEONE FROM 150 PX AWAY
+
+# Career > MEDALS > 18 > title
+[Career.MEDALS.18.title]
+LIMBO LEGEND
+
+# Career > MEDALS > 18 > desc
+[Career.MEDALS.18.desc]
+DUCK 25 DARTS
+
+# Career > MEDALS > 19 > title
+[Career.MEDALS.19.title]
+CAT PERSON
+
+# Career > MEDALS > 19 > desc
+[Career.MEDALS.19.desc]
+PET 10 OFFICE ANIMALS
+
+# Career > MEDALS > 20 > title
+[Career.MEDALS.20.title]
+ON HOLD, PLEASE
+
+# Career > MEDALS > 20 > desc
+[Career.MEDALS.20.desc]
+HEAR OUT 5 CLIENT COMPLAINTS
+
+# Career > MEDALS > 21 > title
+[Career.MEDALS.21.title]
+YEAR ONE
+
+# Career > MEDALS > 21 > desc
+[Career.MEDALS.21.desc]
+FINISH A CAMPAIGN YEAR
+
+# Career > MEDALS > 22 > title
+[Career.MEDALS.22.title]
+REGULAR
+
+# Career > MEDALS > 22 > desc
+[Career.MEDALS.22.desc]
+PLAY 20 DAYS OR WEEKS
+
+# Career > MEDALS > 23 > title
+[Career.MEDALS.23.title]
+CORNER OFFICE
+
+# Career > MEDALS > 23 > desc
+[Career.MEDALS.23.desc]
+RUN 10 OWNER WEEKS
+
+
+# ======================= Career > UNLOCKS =======================
+# Career > UNLOCKS > 0 > title
+[Career.UNLOCKS.0.title]
+STANDARD BLUE
+
+# Career > UNLOCKS > 1 > title
+[Career.UNLOCKS.1.title]
+SUNSET ORANGE
+
+# Career > UNLOCKS > 2 > title
+[Career.UNLOCKS.2.title]
+GRAPHITE
+
+# Career > UNLOCKS > 3 > title
+[Career.UNLOCKS.3.title]
+MINT
+
+# Career > UNLOCKS > 4 > title
+[Career.UNLOCKS.4.title]
+PLUM
+
+# Career > UNLOCKS > 5 > title
+[Career.UNLOCKS.5.title]
+RING RING
+
+# Career > UNLOCKS > 6 > title
+[Career.UNLOCKS.6.title]
+OLD DIAL TONE
+
+# Career > UNLOCKS > 7 > title
+[Career.UNLOCKS.7.title]
+WIND CHIME
+
+# Career > UNLOCKS > 8 > title
+[Career.UNLOCKS.8.title]
+MARIMBA
+
+# Career > UNLOCKS > 9 > title
+[Career.UNLOCKS.9.title]
+QUACK QUACK
+
+# Career > UNLOCKS > 10 > title
+[Career.UNLOCKS.10.title]
+GOLD RUBBER DUCK
+
+# Career > UNLOCKS > 11 > title
+[Career.UNLOCKS.11.title]
+PIRATE RUBBER DUCK
+
+# Career > UNLOCKS > 12 > title
+[Career.UNLOCKS.12.title]
+STRESS BALL
+
+# Career > UNLOCKS > 13 > title
+[Career.UNLOCKS.13.title]
+DESK PENDULUM
+
+
 # ======================= Growth > STRETCH =======================
 # Growth > STRETCH > servers
 [Growth.STRETCH.servers]

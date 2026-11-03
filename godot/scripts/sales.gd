@@ -257,6 +257,7 @@ func deliver() -> void:
 	if text == "":
 		pending = {}
 		return
+	Career.add("vic_calls")
 	var vic_friend := Social.is_friendly("Vic")
 	var options := [
 		{"label": "I WILL PRIORITIZE IT", "id": "prio"},

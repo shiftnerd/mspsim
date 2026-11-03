@@ -741,6 +741,7 @@ func close_ticket(id: int) -> String:
 	var points := 10 if not t.breached else 4
 	score += points
 	closed_ok += 1
+	Career.note_ticket(str(t.fix))
 	Skills.add_xp("networking" if t.internal else "people", 2)
 	Social.note_ticket_closed(t)
 	if not t.internal:

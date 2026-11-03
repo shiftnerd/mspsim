@@ -291,6 +291,8 @@ func activate(id: String) -> void:
 	match parts[0]:
 		"app":
 			app = parts[1]
+		"wall":
+			Career.cycle_pick("wallpaper")
 		"close_app":
 			if app == "site":
 				site_view = "desktop"
@@ -941,9 +943,10 @@ func _paint_site_window(accent: Color) -> void:
 
 func _paint_desktop() -> void:
 	var a := _area
-	_fill(a, Color("2d6ca8"))
+	var wall := Career.wallpaper_color()
+	_fill(a, wall)
 	for i in 8:
-		_fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), Color("3a79b8"))
+		_fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), wall.lightened(0.1))
 	var title := "PIXEL IT PARTNERS"
 	var scale := 2 if a.size.x >= 220.0 else 1
 	var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
@@ -982,6 +985,12 @@ func _paint_desktop() -> void:
 			_fill(Rect2(p.x + 22, p.y - 3, 9, 7), RED)
 			_text(str(icons[i][2]), Vector2(p.x + 25, p.y - 2), WHITE)
 		_region("app:" + icons[i][0], hit)
+	if Career.unlocked_of("wallpaper").size() > 1:  # a medal unlocked another wallpaper: click the chip to change
+		var chip := "WALLPAPER: " + str(Career.pick_of("wallpaper").title)
+		var cr := Rect2(a.end.x - _tw(chip) - 10, a.position.y + 3, _tw(chip) + 8, 9)
+		_fill(cr, Color(0, 0, 0, 0.35) if not cr.has_point(_mouse) else Color(0, 0, 0, 0.6))
+		_text(chip, cr.position + Vector2(4, 2), WHITE)
+		_region("wall:next", cr)
 	var net := Net.desk_state(desk)
 	if net != "ok":
 		var note := "NETWORK CABLE UNPLUGGED" if net == "no_link" else "NO INTERNET ACCESS"

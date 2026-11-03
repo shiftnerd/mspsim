@@ -220,8 +220,8 @@ func _process(_delta: float) -> bool:
 		20:
 			_press(KEY_ENTER)
 		21:
-			title._sel = title._items.size() - 1
-			_check(title._items[title._sel].id == "free", "FREE PLAY is the last item")
+			title._sel = title._items.size() - 2  # CAREER is the last entry
+			_check(title._items[title._sel].id == "free", "FREE PLAY is the item before CAREER")
 			_press(KEY_ENTER)
 		22:
 			var cs: Node = title._select

@@ -177,7 +177,7 @@ PATCHABLE = {
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
-    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"],
+    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/events.gd": ["DECK"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
 
@@ -349,6 +349,7 @@ Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
 Events="*res://scripts/events.gd"
 PrinterGame="*res://scripts/printer_game.gd"
+Career="*res://scripts/career.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
 
@@ -1149,6 +1150,7 @@ var _duck_base := 0.0
 
 func _duck_press() -> void:
     _duck_count += 1
+    Career.add("duck_squeaks")
     _duck_t = 1.6
     var roll := randf()
     if _duck_count % 10 == 0:
@@ -4147,6 +4149,7 @@ func close_ticket(id: int) -> String:
     var points := 10 if not t.breached else 4
     score += points
     closed_ok += 1
+    Career.note_ticket(str(t.fix))
     Skills.add_xp("networking" if t.internal else "people", 2)
     Social.note_ticket_closed(t)
     if not t.internal:
@@ -4994,6 +4997,8 @@ func activate(id: String) -> void:
     match parts[0]:
         "app":
             app = parts[1]
+        "wall":
+            Career.cycle_pick("wallpaper")
         "close_app":
             if app == "site":
                 site_view = "desktop"
@@ -5565,9 +5570,10 @@ func _paint_site_window(accent: Color) -> void:
 
 func _paint_desktop() -> void:
     var a := _area
-    _fill(a, Color("2d6ca8"))
+    var wall := Career.wallpaper_color()
+    _fill(a, wall)
     for i in 8:
-        _fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), Color("3a79b8"))
+        _fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), wall.lightened(0.1))
     var title := "PIXEL IT PARTNERS"
     var scale := 2 if a.size.x >= 220.0 else 1
     var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
@@ -5595,6 +5601,12 @@ func _paint_desktop() -> void:
             _fill(Rect2(p.x + 22, p.y - 3, 9, 7), RED)
             _text(str(icons[i][2]), Vector2(p.x + 25, p.y - 2), WHITE)
         _region("app:" + icons[i][0], hit)
+    if Career.unlocked_of("wallpaper").size() > 1:  # a medal unlocked another wallpaper: click the chip to change
+        var chip := "WALLPAPER: " + str(Career.pick_of("wallpaper").title)
+        var cr := Rect2(a.end.x - _tw(chip) - 10, a.position.y + 3, _tw(chip) + 8, 9)
+        _fill(cr, Color(0, 0, 0, 0.35) if not cr.has_point(_mouse) else Color(0, 0, 0, 0.6))
+        _text(chip, cr.position + Vector2(4, 2), WHITE)
+        _region("wall:next", cr)
     var net := Net.desk_state(desk)
     if net != "ok":
         var note := "NETWORK CABLE UNPLUGGED" if net == "no_link" else "NO INTERNET ACCESS"
@@ -6679,6 +6691,8 @@ func _input(event: InputEvent) -> void:
                     activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
                 elif app == "home":
                     home_move(1 if event.keycode == KEY_RIGHT else -1)
+                elif app == "settings":
+                    activate("ring")
             KEY_ENTER, KEY_KP_ENTER:
                 enter()
     else:
@@ -6736,6 +6750,8 @@ func enter() -> void:
         activate("os:ios")
     elif app == "home":
         activate("app:" + str(HOME_APPS[home_sel]))
+    elif app == "settings":
+        activate("career")
     elif app == "mail" and mail_sel >= 0:
         activate("mail:%d" % mail_sel)
 
@@ -6757,6 +6773,11 @@ func activate(id: String) -> void:
                     m.unread = false
         "home":
             app = "home"
+        "ring":
+            Career.cycle_pick("ringtone")
+        "career":
+            close()
+            Career.open_screen()
         "back":
             back()
         "mail":
@@ -7227,11 +7248,24 @@ func _paint_settings(a: Rect2) -> void:
             _text("*", Vector2(r.end.x - 6, r.position.y + 2 * _sc), Color("2b79f0"))
         _region("os:" + ("ios" if ios else "android"), r)
     y += 25 * _sc
-    _text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
-    _text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
+    # the TONE and CAREER rows take the bottom of the screen: the network block only shows when it fits above them
+    var room := y + 16 * _sc <= body.end.y - 22 * _sc
+    if room:
+        _text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
+        _text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
     var note := _wrap("WORKS WITHOUT THE OFFICE NETWORK", _chars(body.size.x - 6))
+    if not room or y + (17 + 7 * note.size()) * _sc > body.end.y - 22 * _sc:
+        note = []
     for i in note.size():
         _text(str(note[i]), Vector2(body.position.x + 3, y + (17 + 7 * i) * _sc), Color("7d8595"))
+    var ring := Rect2(body.position.x + 2, body.end.y - 21 * _sc, body.size.x - 4, 9 * _sc)
+    _fill(ring, WHITE)
+    _text("TONE: " + _clip(Career.ringtone_name(), _chars(body.size.x - 10) - 6), ring.position + Vector2(3, 2 * _sc), INK)
+    _region("ring", ring)
+    var cr := Rect2(body.position.x + 2, body.end.y - 10 * _sc, body.size.x - 4, 9 * _sc)
+    _fill(cr, Color("dce8fa"))
+    _text("CAREER", cr.position + Vector2(3, 2 * _sc), INK)
+    _region("career", cr)
 ''')
 
 write("scripts/campaign.gd", '''extends Node
@@ -12649,6 +12683,7 @@ func finish() -> void:
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     _canvas.visible = false
     _fade = 0.0
+    Career.add("endings")
     Campaign.finish_campaign(ending)
 
 
@@ -13243,6 +13278,7 @@ func deliver() -> void:
     if text == "":
         pending = {}
         return
+    Career.add("vic_calls")
     var vic_friend := Social.is_friendly("Vic")
     var options := [
         {"label": "I WILL PRIORITIZE IT", "id": "prio"},
@@ -17406,6 +17442,15 @@ func _finish(result: int) -> void:
     else:
         count += 1
         best[game] = maxi(int(best.get(game, 0)), result)
+        Career.note_outing(
+            game,
+            result,
+            {
+                "perfects": int(g.get("perfect", 0)),
+                "secs": roundi(Difficulty.f("escape.time") - float(g.get("time", 0.0))),
+                "score": int(g.get("score", 0))
+            }
+        )
         Social.change_all(1 + result)
         if Campaign.active:
             lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
@@ -17528,6 +17573,7 @@ func _bowl_resolve() -> void:
     g.knocked = knocked
     g.pins = left - knocked
     g.totals["You"] = int(g.totals["You"]) + knocked
+    Career.note_bowl(knocked, int(g.roll))
     if knocked == 10 and int(g.roll) == 1:
         g.totals["You"] = int(g.totals["You"]) + 3
         g.msg = "STRIKE!"
@@ -18970,6 +19016,7 @@ func hold() -> void:
     done_day = Campaign.day
     if in_conference():
         attended += 1
+        Career.add("meetings")
         Social.change_all(1)
         Skills.add_xp("people", 3)
         if Campaign.mode == "owner":
@@ -19109,6 +19156,13 @@ var war_t := 0.0
 var war_hits := 0
 var war_taken := 0
 var dodges := 0  # darts people ducked under
+# the score of the war in progress (see war_result)
+var war_dodged := 0  # darts you ducked
+var war_missed := 0  # your darts they ducked
+var war_ff := 0  # coworkers hit by coworkers
+var war_assists := 0  # ... within 2.5 s of your own hit on the same person
+var war_longest := 0  # longest hit of yours, px
+var last_result := {}
 
 var charge := 0.0
 var charging := false
@@ -19119,6 +19173,7 @@ var _energy_today := 0
 var _energy_day := -1
 var _shot_t := {}  # name -> seconds until the next war shot
 var _dodge_ms := 0
+var _hit_ms := {}  # name -> when you last hit them
 
 
 func _ready() -> void:
@@ -19132,7 +19187,17 @@ func reset() -> void:
     war_t = 0.0
     war_hits = 0
     war_taken = 0
+    _reset_score()
     _energy_today = 0
+
+
+func _reset_score() -> void:
+    war_dodged = 0
+    war_missed = 0
+    war_ff = 0
+    war_assists = 0
+    war_longest = 0
+    _hit_ms = {}
 
 
 func _scene() -> Node:
@@ -19242,6 +19307,7 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
     dart.shooter = shooter
     dart.vel = launch_velocity(dir, power) + Vector2(0.0, Difficulty.rng("nerf").randf_range(-3.0, 3.0))
     dart.position = pos
+    dart.set_meta("x0", pos.x)
     scene.get_node("Actors").add_child(dart)
 
 
@@ -19276,6 +19342,12 @@ func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
 
 func _dodged(who: Node, shooter: String) -> void:
     dodges += 1
+    if who.get("cast_name") == null:
+        Career.add("nerf_dodges")
+        if war_t > 0.0:
+            war_dodged += 1
+    elif shooter == "Player" and war_t > 0.0:
+        war_missed += 1
     if who.get("cast_name") == null and Time.get_ticks_msec() - _dodge_ms > 3000:
         _dodge_ms = Time.get_ticks_msec()
         Hints.toast("DUCKED!", 1.2)
@@ -19316,15 +19388,22 @@ func dart_hit(dart: Node, victim: Node) -> void:
     if victim.has_method("sit") and victim.get("cast_name") == null:
         _hit_player(victim, str(dart.shooter))
     else:
-        _hit_npc(victim, str(dart.shooter))
+        _hit_npc(victim, str(dart.shooter), dart)
 
 
-func _hit_npc(npc: Node, shooter: String) -> void:
+func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
     var who := str(npc.cast_name)
     var react: Dictionary = REACT.get(who, REACT["Dan"])
     if shooter == "Player":
         hits += 1
-        war_hits += 1 if war_t > 0.0 else 0
+        var reach := 0.0
+        if dart != null:
+            reach = absf(dart.position.x - float(dart.get_meta("x0", dart.position.x)))
+        Career.note_nerf_hit(reach)
+        _hit_ms[who] = Time.get_ticks_msec()
+        if war_t > 0.0:
+            war_hits += 1
+            war_longest = maxi(war_longest, roundi(reach))
         var delta: int = int(react.base)
         var friendly := Social.is_friendly(who)
         if friendly:
@@ -19339,9 +19418,15 @@ func _hit_npc(npc: Node, shooter: String) -> void:
             # a coworker who takes it well fires back at once (from the desk if they are sitting)
             if war_t <= 0.0:
                 start_war()
+                war_hits = 1  # the hit that started the war counts
+                war_longest = roundi(reach)
             _shot_t[who] = 0.8
     else:
         npc.react_hit("!")
+        if war_t > 0.0:
+            war_ff += 1
+            if Time.get_ticks_msec() - int(_hit_ms.get(who, -99999)) < 2500:
+                war_assists += 1
 
 
 func _hit_player(p: Node, shooter: String) -> void:
@@ -19368,6 +19453,7 @@ func start_war() -> void:
     war_t = WAR_SECS
     war_hits = 0
     war_taken = 0
+    _reset_score()
     _shot_t = {}
     for npc in get_tree().get_nodes_in_group("npcs"):
         if npc.get("_hidden") != true:
@@ -19381,9 +19467,45 @@ func _end_war() -> void:
     for npc in get_tree().get_nodes_in_group("npcs"):
         if is_instance_valid(npc) and str(npc.held) == "nerf":
             npc.give_item("")
-    Hints.toast("NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken], 4.0)
+    var s := war_result()
+    last_result = s
+    Career.add("nerf_wars")
+    var msg := "NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken]
+    if not s.titles.is_empty():
+        msg += ". " + ", ".join(PackedStringArray(s.titles))
+    Hints.toast(msg, 5.0)
     if Campaign.active:
         Social.change_all(1)
+
+
+# the score card of a war: hits, taken, dodged (you), missed (they), friendly fire, assists, longest hit (px), titles
+func war_result() -> Dictionary:
+    var s := {
+        "hits": war_hits,
+        "taken": war_taken,
+        "dodged": war_dodged,
+        "missed": war_missed,
+        "ff": war_ff,
+        "assists": war_assists,
+        "longest": war_longest,
+    }
+    s["titles"] = war_titles(s)
+    return s
+
+
+func war_titles(s: Dictionary) -> Array:
+    var out := []
+    if int(s.dodged) >= 3:
+        out.append("MOST DUCKED")
+    if int(s.longest) >= 150:
+        out.append("SNIPER")
+    if int(s.ff) >= 3:
+        out.append("FRIENDLY FIRE")
+    if int(s.assists) >= 2:
+        out.append("TEAM PLAYER")
+    if int(s.hits) >= 5 and int(s.taken) == 0:
+        out.append("UNTOUCHABLE")
+    return out
 
 
 func _process(delta: float) -> void:
@@ -19657,6 +19779,7 @@ const ROOTS := {
     "Social": ["THANKS"],
     "Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
     "Hints": ["DAY1"],
+    "Career": ["MEDALS", "UNLOCKS"],
     "Growth": ["STRETCH"],
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
@@ -22141,6 +22264,7 @@ func _pet(kind: String) -> void:
     if lines.is_empty():
         return
     pets += 1
+    Career.add("pets")
     Hints.toast(str(lines[randi() % lines.size()]), 3.0)
     var p := get_tree().current_scene.get_node_or_null("Actors/Player")
     if p != null and p.has_method("start_emote") and kind != "fish":
@@ -23273,6 +23397,7 @@ func _record() -> void:
         streak += 1
     else:
         streak = 0
+    Career.note_printer(model, stars, prayed, streak)
 
 
 func to_dict() -> Dictionary:
@@ -24323,6 +24448,7 @@ var _items: Array = []
 var _menu: Node2D
 var _front: CanvasLayer
 var _select: Node2D = null  # the character select screen while it is open
+var _career: Node = null  # the career screen while it is open
 
 
 func _ready() -> void:
@@ -24536,7 +24662,7 @@ func _rotate() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if _started or _select != null:
+    if _started or _select != null or _career != null:
         return
     var go := false
     if event is InputEventKey and event.pressed and not event.echo:
@@ -24589,6 +24715,7 @@ func _open_menu() -> void:
     else:
         _items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
     _items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
+    _items.append({"label": "CAREER", "id": "career", "enabled": true})
     _sel = 0
     _menu_open = true
     _prompt.visible = false
@@ -24619,10 +24746,28 @@ func _choose(i: int) -> void:
     if i < 0 or i >= _items.size() or not _items[i].enabled:
         return
     var id := str(_items[i].id)
+    if id == "career":
+        _open_career()
+        return
     if id.ends_with("_continue"):
         _start(id)  # a saved run keeps its character: no select screen
     else:
         _open_select(id)
+
+
+func _open_career() -> void:
+    if _career != null:
+        return
+    _logo.visible = false
+    _menu.visible = false
+    _career = Career.open_screen(_close_career)
+
+
+func _close_career() -> void:
+    _career = null
+    _logo.visible = true
+    _menu.visible = _menu_open
+    _menu.queue_redraw()
 
 
 # new runs pick their character (and, in the tech campaign, their phone) first
@@ -25951,6 +26096,624 @@ for fname, cfg in SETS.items():
               f'position = Vector2({x0 + 60}, {FLOOR_Y})', ""]
     text = f'[gd_scene load_steps={len(ext) + len(shapes) + 1} format=3]\n\n' + "\n".join(lines)
     write(f"scenes/{fname}.tscn", text)
+
+write("scripts/career.gd", '''extends Node
+# gdlint:disable=max-line-length
+# The Career: lifetime counters and medals that belong to YOU, not to one campaign slot. They are saved in
+# user://mspsim_career.cfg (Campaign.save_prefix + "career.cfg"), so New Game, a deleted campaign and the end of a
+# year do not reset them. The game feeds them through small hooks (Career.add / best / fastest and the note_*
+# helpers); every change re-checks the MEDALS table and toasts a new medal.
+#
+#   Career.value("tickets")          a counter ("tk.<fix>", "pr.<printer model>", "stars.<game>", "days.<mode>" ...)
+#   Career.unlocked("wall_sunset")   a cosmetic unlock (UNLOCKS): true once its medal is earned
+#   Career.wallpaper_color()         the Computer desktop tint you picked
+#   Career.ringtone_name()           the phone ringtone you picked
+#
+# MEDALS rules are lists of [counter, op, number] that must all hold; op is ">=" or "<=" (a "<=" counter must be
+# set, 0 means never done). Derived counters: printer_models, stars3, days_total, tk_other.
+# MEDALS and UNLOCKS are patchable text tables (story/strings.txt): title and desc are the text. Keep a desc under
+# 31 characters so it fits one line on the career screen.
+
+const SCREEN := preload("res://scripts/career_screen.gd")
+const VERSION := 1
+const GAMES := ["bowling", "karaoke", "escape", "dinner"]
+const KNOWN_FIXES := ["password", "spooler", "clear_temp", "reboot", "av", "restore", "adobe", "network", "project"]
+const MEDALS := [
+    {"id": "ticket_machine", "title": "TICKET MACHINE", "desc": "CLOSE 50 TICKETS", "rules": [["tickets", ">=", 50]]},
+    {"id": "help_desk_hero", "title": "HELP DESK HERO", "desc": "CLOSE 250 TICKETS", "rules": [["tickets", ">=", 250]]},
+    {"id": "sticky_savior", "title": "STICKY NOTES SAVIOR", "desc": "CLOSE 10 PASSWORD TICKETS", "rules": [["tk.password", ">=", 10]]},
+    {"id": "printer_whisperer", "title": "PRINTER WHISPERER", "desc": "WIN WITH EVERY PRINTER MODEL", "rules": [["printer_models", ">=", 6]]},
+    {"id": "never_restarted", "title": "NEVER RESTARTED", "desc": "5 PRINTER WINS, NO PRAYERS", "rules": [["pr_streak", ">=", 5]]},
+    {"id": "toner_wrangler", "title": "TONER WRANGLER", "desc": "WIN 20 PRINTER GAMES", "rules": [["printer_wins", ">=", 20]]},
+    {"id": "meeting_survivor", "title": "MEETING SURVIVOR", "desc": "ATTEND 5 ALL-HANDS", "rules": [["meetings", ">=", 5]]},
+    {"id": "duck_whisperer", "title": "DUCK WHISPERER", "desc": "TALK TO THE DUCK 50 TIMES", "rules": [["duck_squeaks", ">=", 50]]},
+    {"id": "people_person", "title": "PEOPLE PERSON", "desc": "PLAY 3 TEAM OUTINGS", "rules": [["outings", ">=", 3]]},
+    {"id": "full_house", "title": "FULL HOUSE", "desc": "3 STARS IN ALL FOUR GAMES", "rules": [["stars3", ">=", 4]]},
+    {"id": "gutter_guru", "title": "GUTTER GURU", "desc": "ROLL 10 GUTTER BALLS", "rules": [["bowl_gutters", ">=", 10]]},
+    {"id": "strike_zone", "title": "STRIKE ZONE", "desc": "ROLL 10 STRIKES", "rules": [["bowl_strikes", ">=", 10]]},
+    {"id": "crowd_pleaser", "title": "CROWD PLEASER", "desc": "HIT 20 PERFECT KARAOKE NOTES", "rules": [["kara_perfects", ">=", 20]]},
+    {"id": "vault_cracker", "title": "VAULT CRACKER", "desc": "OPEN THE VAULT IN 50 SECONDS", "rules": [["escape_best", "<=", 50]]},
+    {"id": "dinner_diplomat", "title": "DINNER DIPLOMAT", "desc": "SCORE 24 AT THE TEAM DINNER", "rules": [["dinner_best", ">=", 24]]},
+    {"id": "friday_warrior", "title": "FRIDAY WARRIOR", "desc": "SURVIVE 5 NERF WARS", "rules": [["nerf_wars", ">=", 5]]},
+    {"id": "dead_eye", "title": "DEAD EYE", "desc": "HIT COWORKERS 30 TIMES", "rules": [["nerf_hits", ">=", 30]]},
+    {"id": "long_shot", "title": "LONG SHOT", "desc": "HIT SOMEONE FROM 150 PX AWAY", "rules": [["nerf_longest", ">=", 150]]},
+    {"id": "limbo_legend", "title": "LIMBO LEGEND", "desc": "DUCK 25 DARTS", "rules": [["nerf_dodges", ">=", 25]]},
+    {"id": "cat_person", "title": "CAT PERSON", "desc": "PET 10 OFFICE ANIMALS", "rules": [["pets", ">=", 10]]},
+    {"id": "on_hold", "title": "ON HOLD, PLEASE", "desc": "HEAR OUT 5 CLIENT COMPLAINTS", "rules": [["vic_calls", ">=", 5]]},
+    {"id": "year_one", "title": "YEAR ONE", "desc": "FINISH A CAMPAIGN YEAR", "rules": [["endings", ">=", 1]]},
+    {"id": "regular", "title": "REGULAR", "desc": "PLAY 20 DAYS OR WEEKS", "rules": [["days_total", ">=", 20]]},
+    {"id": "corner_office", "title": "CORNER OFFICE", "desc": "RUN 10 OWNER WEEKS", "rules": [["days.owner", ">=", 10]]},
+]
+# cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
+# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
+# medal "" = always available; the first entry of a kind is its default.
+const UNLOCKS := [
+    {"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
+    {"id": "wall_sunset", "kind": "wallpaper", "title": "SUNSET ORANGE", "medal": "ticket_machine", "value": "b8683a"},
+    {"id": "wall_graphite", "kind": "wallpaper", "title": "GRAPHITE", "medal": "help_desk_hero", "value": "454b58"},
+    {"id": "wall_mint", "kind": "wallpaper", "title": "MINT", "medal": "printer_whisperer", "value": "3a9a84"},
+    {"id": "wall_plum", "kind": "wallpaper", "title": "PLUM", "medal": "friday_warrior", "value": "6a4690"},
+    {"id": "ring_classic", "kind": "ringtone", "title": "RING RING", "medal": "", "value": ""},
+    {"id": "ring_dial", "kind": "ringtone", "title": "OLD DIAL TONE", "medal": "never_restarted", "value": ""},
+    {"id": "ring_chime", "kind": "ringtone", "title": "WIND CHIME", "medal": "people_person", "value": ""},
+    {"id": "ring_marimba", "kind": "ringtone", "title": "MARIMBA", "medal": "crowd_pleaser", "value": ""},
+    {"id": "ring_quack", "kind": "ringtone", "title": "QUACK QUACK", "medal": "duck_whisperer", "value": ""},
+    {"id": "duck_gold", "kind": "duck", "title": "GOLD RUBBER DUCK", "medal": "duck_whisperer", "value": ""},
+    {"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
+    {"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
+    {"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
+]
+# what the career screen lists: [section, label, counter, format]
+const COUNTERS := [
+    ["DESK", "TICKETS CLOSED", "tickets", "n"],
+    ["", "  PASSWORDS", "tk.password", "n"],
+    ["", "  PRINTERS", "tk.spooler", "n"],
+    ["", "  CLEAN-UPS", "tk.clear_temp", "n"],
+    ["", "  REBOOTS", "tk.reboot", "n"],
+    ["", "  VIRUSES", "tk.av", "n"],
+    ["", "  RESTORES", "tk.restore", "n"],
+    ["", "  OTHER", "tk_other", "n"],
+    ["", "TECH DAYS WORKED", "days.tech", "n"],
+    ["", "OWNER WEEKS RUN", "days.owner", "n"],
+    ["", "YEARS FINISHED", "endings", "n"],
+    ["", "ALL-HANDS ATTENDED", "meetings", "n"],
+    ["OUTINGS", "OUTINGS PLAYED", "outings", "n"],
+    ["", "BOWLING BEST", "stars.bowling", "stars"],
+    ["", "KARAOKE BEST", "stars.karaoke", "stars"],
+    ["", "ESCAPE ROOM BEST", "stars.escape", "stars"],
+    ["", "DINNER BEST", "stars.dinner", "stars"],
+    ["", "STRIKES", "bowl_strikes", "n"],
+    ["", "GUTTER BALLS", "bowl_gutters", "n"],
+    ["", "PERFECT NOTES", "kara_perfects", "n"],
+    ["", "FASTEST ESCAPE", "escape_best", "secs"],
+    ["", "BEST DINNER SCORE", "dinner_best", "n"],
+    ["PRINTER", "PRINTER WINS", "printer_wins", "n"],
+    ["", "  LASER", "pr.laser", "n"],
+    ["", "  INKJET", "pr.inkjet", "n"],
+    ["", "  PLOTTER", "pr.plotter", "n"],
+    ["", "  COPIER", "pr.mfp", "n"],
+    ["", "  RECEIPT", "pr.receipt", "n"],
+    ["", "  DOT MATRIX", "pr.dot", "n"],
+    ["", "BEST NO-PRAYER RUN", "pr_streak", "n"],
+    ["NERF AND OFFICE", "NERF HITS", "nerf_hits", "n"],
+    ["", "DARTS DUCKED", "nerf_dodges", "n"],
+    ["", "NERF WARS", "nerf_wars", "n"],
+    ["", "LONGEST HIT", "nerf_longest", "px"],
+    ["", "ANIMALS PETTED", "pets", "n"],
+    ["", "COMPLAINTS HEARD", "vic_calls", "n"],
+    ["", "DUCK CHATS", "duck_squeaks", "n"],
+]
+const FLUSH_SECS := 3.0
+
+var counters := {}
+var earned := {}  # medal id -> true
+var prefs := {"wallpaper": "", "ringtone": ""}
+var toasts := true  # tests switch the medal toast off
+var last_medal := ""
+
+var _dirty := false
+var _flush_t := 0.0
+
+
+func _ready() -> void:
+    load_file()
+    Campaign.day_started.connect(_on_day)
+
+
+func path() -> String:
+    return Campaign.save_prefix + "career.cfg"
+
+
+# ---- save / load ------------------------------------------------------------------------------------
+func load_file() -> void:
+    counters = {}
+    earned = {}
+    prefs = {"wallpaper": "", "ringtone": ""}
+    var cfg := ConfigFile.new()
+    if cfg.load(path()) != OK:
+        return  # no file yet (or an old build): everything starts at zero
+    if cfg.has_section("counters"):
+        for k in cfg.get_section_keys("counters"):
+            counters[k] = int(cfg.get_value("counters", k, 0))
+    if cfg.has_section("medals"):
+        for k in cfg.get_section_keys("medals"):
+            if bool(cfg.get_value("medals", k, false)):
+                earned[k] = true
+    for k in prefs:
+        prefs[k] = str(cfg.get_value("prefs", k, ""))
+
+
+func save_file() -> void:
+    var cfg := ConfigFile.new()
+    cfg.set_value("career", "version", VERSION)
+    for k in counters:
+        cfg.set_value("counters", k, int(counters[k]))
+    for k in earned:
+        cfg.set_value("medals", k, true)
+    for k in prefs:
+        cfg.set_value("prefs", k, str(prefs[k]))
+    cfg.save(path())
+    _dirty = false
+
+
+func reset_all() -> void:
+    counters = {}
+    earned = {}
+    prefs = {"wallpaper": "", "ringtone": ""}
+    _dirty = true
+
+
+func _process(delta: float) -> void:
+    if _dirty:
+        _flush_t += delta
+        if _flush_t >= FLUSH_SECS:
+            _flush_t = 0.0
+            save_file()
+
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST and _dirty:
+        save_file()
+
+
+# ---- counters ---------------------------------------------------------------------------------------
+func value(key: String) -> int:
+    match key:
+        "printer_models":
+            var n := 0
+            for m in PrinterGame.MODELS:
+                if int(counters.get("pr." + str(m), 0)) > 0:
+                    n += 1
+            return n
+        "stars3":
+            var n := 0
+            for g in GAMES:
+                if int(counters.get("stars." + g, 0)) >= 3:
+                    n += 1
+            return n
+        "days_total":
+            return int(counters.get("days.tech", 0)) + int(counters.get("days.owner", 0)) + int(counters.get("days.free", 0))
+        "tk_other":
+            var sum := 0
+            for f in ["password", "spooler", "clear_temp", "reboot", "av", "restore"]:
+                sum += int(counters.get("tk." + f, 0))
+            return maxi(0, int(counters.get("tickets", 0)) - sum)
+    return int(counters.get(key, 0))
+
+
+func add(key: String, n := 1) -> void:
+    counters[key] = int(counters.get(key, 0)) + n
+    _changed()
+
+
+func best(key: String, v: int) -> void:
+    if v > int(counters.get(key, 0)):
+        counters[key] = v
+        _changed()
+
+
+func fastest(key: String, v: int) -> void:
+    var cur := int(counters.get(key, 0))
+    if v > 0 and (cur == 0 or v < cur):
+        counters[key] = v
+        _changed()
+
+
+func _changed() -> void:
+    _dirty = true
+    check_medals()
+
+
+# ---- the hooks the game calls --------------------------------------------------------------------------
+func note_ticket(fix: String) -> void:
+    counters["tickets"] = int(counters.get("tickets", 0)) + 1
+    counters["tk." + fix] = int(counters.get("tk." + fix, 0)) + 1
+    _changed()
+
+
+# a finished outing (result 0-3, or -1 for leaving early); info: strikes, gutters, perfects, escape_secs, dinner_score
+func note_outing(game: String, result: int, info := {}) -> void:
+    if result < 0:
+        return
+    add("outings")
+    best("stars." + game, result)
+    match game:
+        "karaoke":
+            add("kara_perfects", int(info.get("perfects", 0)))
+        "escape":
+            if result >= 1:
+                fastest("escape_best", int(info.get("secs", 0)))
+        "dinner":
+            best("dinner_best", int(info.get("score", 0)))
+
+
+func note_bowl(knocked: int, roll: int) -> void:
+    if knocked >= 10 and roll == 1:
+        add("bowl_strikes")
+    elif knocked == 0:
+        add("bowl_gutters")
+
+
+func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
+    if stars >= 1:
+        add("printer_wins")
+        add("pr." + model)
+    best("pr_streak", streak if not prayed else 0)
+
+
+func note_nerf_hit(reach: float) -> void:
+    add("nerf_hits")
+    best("nerf_longest", roundi(reach))
+
+
+func _on_day(_d: int) -> void:
+    add("days." + (Campaign.mode if Campaign.mode != "" else "free"))
+
+
+# ---- medals -----------------------------------------------------------------------------------------
+func rule_ok(r: Array) -> bool:
+    var v := value(str(r[0]))
+    var n := int(r[2])
+    if str(r[1]) == "<=":
+        return v > 0 and v <= n
+    return v >= n
+
+
+func met(m: Dictionary) -> bool:
+    for r in m.rules:
+        if not rule_ok(r):
+            return false
+    return true
+
+
+func has_medal(id: String) -> bool:
+    return earned.has(id)
+
+
+func medal(id: String) -> Dictionary:
+    for m in MEDALS:
+        if str(m.id) == id:
+            return m
+    return {}
+
+
+# award every medal whose rule now holds; returns the ids that are new
+func check_medals() -> Array:
+    var fresh := []
+    for m in MEDALS:
+        var id := str(m.id)
+        if not earned.has(id) and met(m):
+            earned[id] = true
+            fresh.append(id)
+    if not fresh.is_empty():
+        last_medal = str(fresh[fresh.size() - 1])
+        if toasts:
+            Hints.toast("MEDAL EARNED: " + str(medal(last_medal).title), 4.0)
+        save_file()
+    return fresh
+
+
+# progress text for a locked single-rule medal: "3/10" (empty when it has no count)
+func progress(m: Dictionary) -> String:
+    if m.rules.size() != 1 or str(m.rules[0][1]) != ">=":
+        return ""
+    return "%d/%d" % [mini(value(str(m.rules[0][0])), int(m.rules[0][2])), int(m.rules[0][2])]
+
+
+func earned_count() -> int:
+    var n := 0
+    for m in MEDALS:
+        if earned.has(str(m.id)):
+            n += 1
+    return n
+
+
+# ---- cosmetic unlocks -------------------------------------------------------------------------------
+func unlock_entry(id: String) -> Dictionary:
+    for u in UNLOCKS:
+        if str(u.id) == id:
+            return u
+    return {}
+
+
+func unlocked(id: String) -> bool:
+    var u := unlock_entry(id)
+    if u.is_empty():
+        return false
+    return str(u.medal) == "" or earned.has(str(u.medal))
+
+
+func unlocked_of(kind: String) -> Array:
+    var out := []
+    for u in UNLOCKS:
+        if str(u.kind) == kind and unlocked(str(u.id)):
+            out.append(u)
+    return out
+
+
+# the id picked for a kind (falls back to the default when the pick is not unlocked)
+func pick_of(kind: String) -> Dictionary:
+    var list := unlocked_of(kind)
+    if list.is_empty():
+        return {}
+    for u in list:
+        if str(u.id) == str(prefs.get(kind, "")):
+            return u
+    return list[0]
+
+
+func cycle_pick(kind: String, step := 1) -> Dictionary:
+    var list := unlocked_of(kind)
+    if list.is_empty():
+        return {}
+    var cur := str(pick_of(kind).id)
+    var at := 0
+    for i in list.size():
+        if str(list[i].id) == cur:
+            at = i
+    var nxt: Dictionary = list[posmod(at + step, list.size())]
+    prefs[kind] = str(nxt.id)
+    _dirty = true
+    save_file()
+    return nxt
+
+
+func wallpaper_color() -> Color:
+    var u := pick_of("wallpaper")
+    return Color(str(u.value)) if not u.is_empty() and str(u.value) != "" else Color("2d6ca8")
+
+
+func ringtone_name() -> String:
+    var u := pick_of("ringtone")
+    return str(u.title) if not u.is_empty() else "RING RING"
+
+
+# ---- the screen -------------------------------------------------------------------------------------
+# open the career screen on a CanvasLayer under the scene tree root; closing frees it. Returns the screen.
+func open_screen(on_close := Callable()) -> Node:
+    var layer := CanvasLayer.new()
+    layer.layer = 70
+    var screen: Node2D = SCREEN.new()
+    layer.add_child(screen)
+    get_tree().root.add_child(layer)
+    var was_ui := Game.ui_open
+    Game.ui_open = true
+    screen.closed.connect(
+        func() -> void:
+            Game.ui_open = was_ui
+            layer.queue_free()
+            if on_close.is_valid():
+                on_close.call()
+    )
+    return screen
+''')
+
+write("scripts/career_screen.gd", '''extends Node2D
+# gdlint:disable=max-line-length
+# The CAREER screen: lifetime counters (pages of rows) and the medal board (earned / locked with the rule hint),
+# drawn with the 3x5 font in the shared UiStyle panel. Opened by Career.open_screen() from the title menu and the
+# phone Settings. Left / Right (A / D) change page, Esc / Backspace go back, F9 cycles the format; the mouse can
+# click the < > buttons (or the wheel) and X. Two columns when the panel is wide (368x128, 320x180), one in portrait.
+
+signal closed
+
+const UiStyle := preload("res://scripts/ui_style.gd")
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const MEDAL_H := 16.0
+const ROW_H := 7.0
+const HEAD_ROW_H := 9.0
+
+var page := 0
+var pages: Array = []
+var _built_for := Vector2.ZERO
+var _btns: Array = []  # [Rect2, id]
+var _hover := ""
+var _born := -1
+
+
+func _ready() -> void:
+    _born = Engine.get_process_frames()
+    Game.format_changed.connect(queue_redraw)
+    queue_redraw()
+
+
+func page_count() -> int:
+    return pages.size()
+
+
+func go(step: int) -> void:
+    if pages.is_empty():
+        return
+    page = posmod(page + step, pages.size())
+    queue_redraw()
+
+
+func close() -> void:
+    closed.emit()
+
+
+func _input(event: InputEvent) -> void:
+    if Engine.get_process_frames() == _born:
+        return
+    if event is InputEventKey and event.pressed and not event.echo:
+        match event.keycode:
+            KEY_F9:
+                Game.cycle_format()
+            KEY_LEFT, KEY_A:
+                go(-1)
+            KEY_RIGHT, KEY_D:
+                go(1)
+            KEY_ESCAPE, KEY_BACKSPACE:
+                close()
+            _:
+                pass
+    elif event is InputEventMouseMotion:
+        var h := _hit(get_viewport().get_mouse_position())
+        if h != _hover:
+            _hover = h
+            queue_redraw()
+        return
+    elif event is InputEventMouseButton and event.pressed:
+        if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+            go(-1)
+        elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+            go(1)
+        elif event.button_index == MOUSE_BUTTON_LEFT:
+            click(get_viewport().get_mouse_position())
+    else:
+        return
+    get_viewport().set_input_as_handled()
+
+
+func _hit(at: Vector2) -> String:
+    for b in _btns:
+        if b[0].has_point(at):
+            return str(b[1])
+    return ""
+
+
+func click(at: Vector2) -> void:
+    match _hit(at):
+        "prev":
+            go(-1)
+        "next":
+            go(1)
+        "back":
+            close()
+
+
+# ---- layout -----------------------------------------------------------------------------------------
+func _body_rect(size: Vector2) -> Rect2:
+    var r := UiStyle.panel_rect(size, 360.0, 124.0 if size.y < 150.0 else 400.0)
+    return Rect2(r.position.x + 4.0, r.position.y + 12.0, r.size.x - 8.0, r.size.y - 21.0)
+
+
+func columns(body_w: float) -> int:
+    return 2 if body_w >= 290.0 else 1
+
+
+# split the counter rows and the medals into pages that fit the body
+func build(size: Vector2) -> void:
+    var body := _body_rect(size)
+    var cols := columns(body.size.x)
+    pages = []
+    var cap_c := int(body.size.y / ROW_H) * cols
+    var items: Array = []
+    for row in Career.COUNTERS:
+        if str(row[0]) != "":
+            items.append({"head": str(row[0])})
+        items.append({"label": str(row[1]), "key": str(row[2]), "fmt": str(row[3])})
+    var i := 0
+    while i < items.size():
+        var chunk: Array = items.slice(i, i + cap_c)
+        # do not leave a section title alone at the bottom of a page
+        if chunk.size() == cap_c and chunk.back().has("head"):
+            chunk.pop_back()
+        i += chunk.size()
+        pages.append({"title": "CAREER - TOTALS", "items": chunk})
+    var cap_m := maxi(1, int(body.size.y / MEDAL_H)) * cols
+    var n_pages := int(ceil(float(Career.MEDALS.size()) / float(cap_m)))
+    for p in n_pages:
+        pages.append({"title": "CAREER - MEDALS %d/%d" % [Career.earned_count(), Career.MEDALS.size()], "medals": Career.MEDALS.slice(p * cap_m, (p + 1) * cap_m)})
+    page = clampi(page, 0, maxi(0, pages.size() - 1))
+    _built_for = size
+
+
+func _fmt(v: int, fmt: String) -> String:
+    match fmt:
+        "stars":
+            return "-" if v <= 0 else "%d/3" % v
+        "secs":
+            return "-" if v <= 0 else "%d SEC" % v
+        "px":
+            return "-" if v <= 0 else "%d PX" % v
+    return str(v)
+
+
+func _draw() -> void:
+    var size := get_viewport_rect().size
+    draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.8))
+    if size != _built_for or pages.is_empty():
+        build(size)
+    _btns.clear()
+    var pg: Dictionary = pages[page]
+    var r := UiStyle.panel_rect(size, 360.0, 124.0 if size.y < 150.0 else 400.0)
+    var body := UiStyle.panel(self, r, str(pg.title), "%d/%d" % [page + 1, pages.size()])
+    var cols := columns(body.size.x)
+    var gap := 6.0
+    var colw := (body.size.x - gap * float(cols - 1)) / float(cols)
+    if pg.has("items"):
+        _draw_counters(pg.items, body, cols, colw, gap)
+    else:
+        _draw_medals(pg.medals, body, cols, colw, gap)
+    UiStyle.footer(self, r, "ARROWS PAGE  ESC BACK")
+    _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
+    _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
+    _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
+
+
+func _button(id: String, label: String, rc: Rect2) -> void:
+    _btns.append([rc, id])
+    draw_rect(rc, UiStyle.GOLD if _hover == id else UiStyle.SOFT)
+    UiStyle.center(self, label, rc.position.x + rc.size.x * 0.5, rc.position.y + 2.0, UiStyle.INK)
+
+
+func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+    var per_col := int(body.size.y / ROW_H)
+    for i in items.size():
+        var it: Dictionary = items[i]
+        var cx := body.position.x + float(i / per_col) * (colw + gap)
+        var cy := body.position.y + float(i % per_col) * ROW_H
+        if it.has("head"):
+            UiStyle.text(self, str(it.head), cx, cy, UiStyle.HEAD)
+            draw_rect(Rect2(cx, cy + 6.0, colw, 1.0), UiStyle.SOFT)
+            continue
+        var v := Career.value(str(it.key))
+        UiStyle.text(self, str(it.label), cx, cy, UiStyle.INK)
+        UiStyle.right(self, _fmt(v, str(it.fmt)), cx + colw, cy, UiStyle.GOLD.darkened(0.35) if v > 0 else UiStyle.MUTED)
+
+
+func _draw_medals(list: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+    var per_col := maxi(1, int(body.size.y / MEDAL_H))
+    var chars := int((colw - 9.0) / 4.0)
+    for i in list.size():
+        var m: Dictionary = list[i]
+        var x := body.position.x + float(i / per_col) * (colw + gap)
+        var y := body.position.y + float(i % per_col) * MEDAL_H
+        var got := Career.has_medal(str(m.id))
+        if got:
+            UiStyle.star(self, Vector2(x + 3.5, y + 3.0), 4.0, UiStyle.GOLD)
+        else:
+            draw_rect(Rect2(x, y, 7.0, 7.0), UiStyle.SOFT)
+            draw_rect(Rect2(x + 1.0, y + 1.0, 5.0, 5.0), UiStyle.PANEL)
+            draw_rect(Rect2(x + 2.0, y + 3.0, 3.0, 3.0), UiStyle.MUTED)
+        var prog := "" if got else Career.progress(m)
+        var name_chars := chars - (prog.length() + 1 if prog != "" else 0)
+        UiStyle.text(self, str(m.title).substr(0, name_chars), x + 9.0, y, UiStyle.INK if got else UiStyle.MUTED)
+        if prog != "":
+            UiStyle.right(self, prog, x + colw, y, UiStyle.MUTED)
+        UiStyle.text(self, str(m.desc).substr(0, chars), x + 9.0, y + 7.0, UiStyle.HEAD if got else UiStyle.MUTED.lightened(0.25))
+''')
 
 # format the generated scripts if gdtoolkit is installed (pip install gdtoolkit)
 import shutil

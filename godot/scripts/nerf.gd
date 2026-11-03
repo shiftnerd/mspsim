@@ -44,6 +44,13 @@ var war_t := 0.0
 var war_hits := 0
 var war_taken := 0
 var dodges := 0  # darts people ducked under
+# the score of the war in progress (see war_result)
+var war_dodged := 0  # darts you ducked
+var war_missed := 0  # your darts they ducked
+var war_ff := 0  # coworkers hit by coworkers
+var war_assists := 0  # ... within 2.5 s of your own hit on the same person
+var war_longest := 0  # longest hit of yours, px
+var last_result := {}
 
 var charge := 0.0
 var charging := false
@@ -54,6 +61,7 @@ var _energy_today := 0
 var _energy_day := -1
 var _shot_t := {}  # name -> seconds until the next war shot
 var _dodge_ms := 0
+var _hit_ms := {}  # name -> when you last hit them
 
 
 func _ready() -> void:
@@ -67,7 +75,17 @@ func reset() -> void:
 	war_t = 0.0
 	war_hits = 0
 	war_taken = 0
+	_reset_score()
 	_energy_today = 0
+
+
+func _reset_score() -> void:
+	war_dodged = 0
+	war_missed = 0
+	war_ff = 0
+	war_assists = 0
+	war_longest = 0
+	_hit_ms = {}
 
 
 func _scene() -> Node:
@@ -179,6 +197,7 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
 		launch_velocity(dir, power) + Vector2(0.0, Difficulty.rng("nerf").randf_range(-3.0, 3.0))
 	)
 	dart.position = pos
+	dart.set_meta("x0", pos.x)
 	scene.get_node("Actors").add_child(dart)
 
 
@@ -213,6 +232,12 @@ func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
 
 func _dodged(who: Node, shooter: String) -> void:
 	dodges += 1
+	if who.get("cast_name") == null:
+		Career.add("nerf_dodges")
+		if war_t > 0.0:
+			war_dodged += 1
+	elif shooter == "Player" and war_t > 0.0:
+		war_missed += 1
 	if who.get("cast_name") == null and Time.get_ticks_msec() - _dodge_ms > 3000:
 		_dodge_ms = Time.get_ticks_msec()
 		Hints.toast("DUCKED!", 1.2)
@@ -256,15 +281,22 @@ func dart_hit(dart: Node, victim: Node) -> void:
 	if victim.has_method("sit") and victim.get("cast_name") == null:
 		_hit_player(victim, str(dart.shooter))
 	else:
-		_hit_npc(victim, str(dart.shooter))
+		_hit_npc(victim, str(dart.shooter), dart)
 
 
-func _hit_npc(npc: Node, shooter: String) -> void:
+func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
 	var who := str(npc.cast_name)
 	var react: Dictionary = REACT.get(who, REACT["Dan"])
 	if shooter == "Player":
 		hits += 1
-		war_hits += 1 if war_t > 0.0 else 0
+		var reach := 0.0
+		if dart != null:
+			reach = absf(dart.position.x - float(dart.get_meta("x0", dart.position.x)))
+		Career.note_nerf_hit(reach)
+		_hit_ms[who] = Time.get_ticks_msec()
+		if war_t > 0.0:
+			war_hits += 1
+			war_longest = maxi(war_longest, roundi(reach))
 		var delta: int = int(react.base)
 		var friendly := Social.is_friendly(who)
 		if friendly:
@@ -279,9 +311,15 @@ func _hit_npc(npc: Node, shooter: String) -> void:
 			# a coworker who takes it well fires back at once (from the desk if they are sitting)
 			if war_t <= 0.0:
 				start_war()
+				war_hits = 1  # the hit that started the war counts
+				war_longest = roundi(reach)
 			_shot_t[who] = 0.8
 	else:
 		npc.react_hit("!")
+		if war_t > 0.0:
+			war_ff += 1
+			if Time.get_ticks_msec() - int(_hit_ms.get(who, -99999)) < 2500:
+				war_assists += 1
 
 
 func _hit_player(p: Node, shooter: String) -> void:
@@ -308,6 +346,7 @@ func start_war() -> void:
 	war_t = WAR_SECS
 	war_hits = 0
 	war_taken = 0
+	_reset_score()
 	_shot_t = {}
 	for npc in get_tree().get_nodes_in_group("npcs"):
 		if npc.get("_hidden") != true:
@@ -321,9 +360,45 @@ func _end_war() -> void:
 	for npc in get_tree().get_nodes_in_group("npcs"):
 		if is_instance_valid(npc) and str(npc.held) == "nerf":
 			npc.give_item("")
-	Hints.toast("NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken], 4.0)
+	var s := war_result()
+	last_result = s
+	Career.add("nerf_wars")
+	var msg := "NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken]
+	if not s.titles.is_empty():
+		msg += ". " + ", ".join(PackedStringArray(s.titles))
+	Hints.toast(msg, 5.0)
 	if Campaign.active:
 		Social.change_all(1)
+
+
+# the score card of a war: hits, taken, dodged (you), missed (they), friendly fire, assists, longest hit (px), titles
+func war_result() -> Dictionary:
+	var s := {
+		"hits": war_hits,
+		"taken": war_taken,
+		"dodged": war_dodged,
+		"missed": war_missed,
+		"ff": war_ff,
+		"assists": war_assists,
+		"longest": war_longest,
+	}
+	s["titles"] = war_titles(s)
+	return s
+
+
+func war_titles(s: Dictionary) -> Array:
+	var out := []
+	if int(s.dodged) >= 3:
+		out.append("MOST DUCKED")
+	if int(s.longest) >= 150:
+		out.append("SNIPER")
+	if int(s.ff) >= 3:
+		out.append("FRIENDLY FIRE")
+	if int(s.assists) >= 2:
+		out.append("TEAM PLAYER")
+	if int(s.hits) >= 5 and int(s.taken) == 0:
+		out.append("UNTOUCHABLE")
+	return out
 
 
 func _process(delta: float) -> void:
