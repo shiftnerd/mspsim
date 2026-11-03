@@ -55,6 +55,8 @@ func _init() -> void:
 		_check(_avg(mode, "easy", "careful", "rep") >= _avg(mode, "normal", "careful", "rep") - 0.5, "%s careful: easy >= normal (rep)" % mode)
 		_check(_avg(mode, "normal", "careful", "rep") >= _avg(mode, "hard", "careful", "rep") - 0.5, "%s careful: normal >= hard (rep)" % mode)
 		_check(_good(mode, "easy", "careful") >= _good(mode, "normal", "careful") and _good(mode, "normal", "careful") >= _good(mode, "hard", "careful"), "%s careful: good endings easy >= normal >= hard" % mode)
+		if mode == "tech":  # Q6b: tech hard has its own pressure (paired incidents, faster drain), so it must now cost the careful bot
+			_check(_avg("tech", "hard", "careful", "rep") < _avg("tech", "normal", "careful", "rep"), "tech careful: hard rep < normal rep (%.0f vs %.0f)" % [_avg("tech", "hard", "careful", "rep"), _avg("tech", "normal", "careful", "rep")])
 		for tier in ["easy", "normal", "hard"]:
 			_check(_avg(mode, tier, "careful", "rep") > _avg(mode, tier, "lazy", "rep"), "%s %s: careful beats lazy (%.0f vs %.0f)" % [mode, tier, _avg(mode, tier, "careful", "rep"), _avg(mode, tier, "lazy", "rep")])
 	root.get_node("Campaign").quit_to_title()

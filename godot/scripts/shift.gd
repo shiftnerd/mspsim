@@ -345,7 +345,7 @@ func _process(delta: float) -> void:
 	if not active() or World.time_scale <= 0.0 or Cards.is_open:
 		return
 	var dt := delta * World.time_scale
-	energy = maxf(0.0, energy - DAY_DRAIN * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
+	energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
 	if _warned < 1 and energy < 55.0:
 		_warned = 1
 		Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
