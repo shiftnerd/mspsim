@@ -31,7 +31,7 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 
 - **Year:** 2013 into spring 2014. **Windows XP support ends April 8, 2014** and everyone is panicking about it. CryptoLocker is the new scary thing.
   RDP is open to the internet at half of all small businesses, and most attacks are just password guessing. Target's breach is in the news.
-  Flappy Bird, Candy Crush, Lynk, the iFone 5 and Nexxus 5, LabRat and ConnectWhy are the furniture of daily life.
+  Floppy Bat, Sugar Smash, Lynk, the iFone 5 and Nexxus 5, LabRat and ConnectWhy are the furniture of daily life.
 - **Hard rule:** nothing from after 2014. No AI, no Teams or Slack, no Windows 10/11, no "MFA" (say *two-factor login*), no TikTok or Discord.
   Reviewers: please flag any slip.
 - **Voice:** warm, dry, a little absurd, never mean. Jargon is used correctly and explained by context. Every character has a way of speaking
@@ -55,7 +55,7 @@ solve an escape room or eat at the restaurant.
 | **You** | Tech (or owner) | The new hire | |
 | **Alan** | Senior tech | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups |
 | **Garrison** | Security-minded tech | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password |
-| **Dan** | Network tech | Quiet, labels everything, plays Flappy Bird | Networking; notices when a desk has no link |
+| **Dan** | Network tech | Quiet, labels everything, plays Floppy Bat | Networking; notices when a desk has no link |
 | **Vic Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
 | **Morgan Reyes** | Your manager | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
 | **Marge** | Bookkeeper (owner mode) | Practical | Reads you the numbers |

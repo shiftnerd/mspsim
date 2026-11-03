@@ -58,14 +58,14 @@ const DEFAULT_SMALL := {
 	"Garrison":
 	[
 		"Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013.",
-		"I finally beat level 90 on Candy Crush. Do not tell the boss how many lives I spent.",
+		"I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent.",
 		"I keep telling clients: not every email from your bank is from your bank.",
 		"Did you try that new LabRat script? It saved me an hour on Tuesday.",
 	],
 	"Dan":
 	[
 		"I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work.",
-		"Flappy Bird got pulled and I am stuck at 31. I am taking it personally.",
+		"Floppy Bat got pulled and I am stuck at 31. I am taking it personally.",
 		"The best network is the one nobody talks about. The worst one is every one of our clients.",
 		"I have been reading about Heartbleed. It is going to be a long April.",
 	],

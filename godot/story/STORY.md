@@ -875,7 +875,7 @@ or the owner (owner campaign, 20 weeks).
 - Greeting (neutral): Hi. What do you need? `[Talk.GREETINGS.Garrison.neutral]`
 - Greeting (cold): Mm. What? `[Talk.GREETINGS.Garrison.cold]`
 - Small talk: Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013. `[Talk.SMALL.Garrison.0]`
-- Small talk: I finally beat level 90 on Candy Crush. Do not tell the boss how many lives I spent. `[Talk.SMALL.Garrison.1]`
+- Small talk: I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent. `[Talk.SMALL.Garrison.1]`
 - Small talk: I keep telling clients: not every email from your bank is from your bank. `[Talk.SMALL.Garrison.2]`
 - Small talk: Did you try that new LabRat script? It saved me an hour on Tuesday. `[Talk.SMALL.Garrison.3]`
 - Tip: Never use a default or seasonal password on a remote login. That is how they get in. `[Talk.TIPS_GENERIC.Garrison.0]`
@@ -888,7 +888,7 @@ or the owner (owner campaign, 20 weeks).
 - Greeting (neutral): Hey. Need something? `[Talk.GREETINGS.Dan.neutral]`
 - Greeting (cold): I am kind of in the middle of something. `[Talk.GREETINGS.Dan.cold]`
 - Small talk: I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work. `[Talk.SMALL.Dan.0]`
-- Small talk: Flappy Bird got pulled and I am stuck at 31. I am taking it personally. `[Talk.SMALL.Dan.1]`
+- Small talk: Floppy Bat got pulled and I am stuck at 31. I am taking it personally. `[Talk.SMALL.Dan.1]`
 - Small talk: The best network is the one nobody talks about. The worst one is every one of our clients. `[Talk.SMALL.Dan.2]`
 - Small talk: I have been reading about Heartbleed. It is going to be a long April. `[Talk.SMALL.Dan.3]`
 - Tip: Label both ends of every cable. Future you will buy present you a coffee. `[Talk.TIPS_GENERIC.Dan.0]`

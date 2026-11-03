@@ -228,7 +228,7 @@ The hygienist (Acme Dental)
 
 # Story > VIGNETTES > candy > text
 [Story.VIGNETTES.candy.text]
-I put Candy Crush on the front desk computer so the waiting room kids can play. Is that okay? It is very popular.
+I put Sugar Smash on the front desk computer so the waiting room kids can play. Is that okay? It is very popular.
 
 # Story > VIGNETTES > candy > options > 0 > label
 [Story.VIGNETTES.candy.options.0.label]
@@ -2622,7 +2622,7 @@ Everybody is changing their passwords after that Target thing. I would love it i
 
 # Talk > SMALL > Garrison > 1
 [Talk.SMALL.Garrison.1]
-I finally beat level 90 on Candy Crush. Do not tell the boss how many lives I spent.
+I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent.
 
 # Talk > SMALL > Garrison > 2
 [Talk.SMALL.Garrison.2]
@@ -2638,7 +2638,7 @@ I labeled every patch panel port last weekend. Nobody noticed. That is how you k
 
 # Talk > SMALL > Dan > 1
 [Talk.SMALL.Dan.1]
-Flappy Bird got pulled and I am stuck at 31. I am taking it personally.
+Floppy Bat got pulled and I am stuck at 31. I am taking it personally.
 
 # Talk > SMALL > Dan > 2
 [Talk.SMALL.Dan.2]

@@ -73,7 +73,7 @@ const DEFAULT_VIGNETTES := {
 	{
 		"speaker": "The hygienist (Acme Dental)",
 		"text":
-		"I put Candy Crush on the front desk computer so the waiting room kids can play. Is that okay? It is very popular.",
+		"I put Sugar Smash on the front desk computer so the waiting room kids can play. Is that okay? It is very popular.",
 		"options":
 		[
 			{

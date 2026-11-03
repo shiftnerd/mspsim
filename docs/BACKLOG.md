@@ -26,7 +26,7 @@ Status is as of the commit that last touched this file; move items to `CLAUDE.md
 Not covered by the playtest: days 6-20, the overtime-night card flow, the review, the conference trip, mouse clicks in a hidden window.
 
 ## Needs a decision from you
-- **Era mentions left as context**: Candy Crush, Flappy Bird, Apple, Windows / Exchange / PowerShell in dialogue; the old PC's "OUTLOOK 2003 PROFILE + PST" file name. Parody them too, or keep as era context?
+- **Era mentions**: decided. The two game names are parodied (Sugar Smash, Floppy Bat). Apple, Windows, Exchange and PowerShell stay as era context, and so does the old PC's "OUTLOOK 2003 PROFILE + PST" file name.
 - **Playing as a cast member in a campaign** (Alan, Garrison, Dan, Vic): character select offers only teen, adult and site Alan there, because the cast member's NPC copy would have to be removed and their Social / Lync / Talk / desk entries handled. Worth doing?
 - **Dialogue Manager addon**: research said skip for now (revisit only for long branching NPC conversations; a half-day spike would confirm its condition syntax). Alternative: conditional lines in the existing `Talk` tables.
 - **Gitot** (in-editor git panel): optional; the repo is set up and the CLI / GitHub Desktop work fine.
