@@ -175,18 +175,19 @@ func _input(event: InputEvent) -> void:
 			if h.r.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 450:
 				pick(int(h.i))
 				break
-	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_UP:
+	elif Controls.pressed(event):
+		var dir := Controls.nav(event, false)
+		if dir == "up":
 			_move(-1)
-		elif event.keycode == KEY_DOWN:
+		elif dir == "down":
 			_move(1)
-		elif event.keycode == KEY_ESCAPE:
+		elif Controls.back(event, false):
 			_pick_leave()
 		elif Time.get_ticks_msec() - _opened < 450:
 			pass  # too soon: the card just appeared
-		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		elif Controls.confirm(event, false, false):
 			pick(sel)
-		elif event.keycode >= KEY_1 and event.keycode <= KEY_4:
+		elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
 			pick(event.keycode - KEY_1)
 	else:
 		return

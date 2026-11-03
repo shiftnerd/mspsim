@@ -245,13 +245,14 @@ func _input(event: InputEvent) -> void:
 					sel = int(_hits[i].id)
 					choose(sel)
 				break
-	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+	elif Controls.pressed(event):
+		var dir := Controls.nav(event, false)
+		if Controls.confirm(event, false):
 			advance()
-		elif event.keycode == KEY_UP and page == _opt_page():
+		elif dir == "up" and page == _opt_page():
 			sel = maxi(0, sel - 1)
 			_canvas.queue_redraw()
-		elif event.keycode == KEY_DOWN and page == _opt_page():
+		elif dir == "down" and page == _opt_page():
 			sel = mini(offers.size() - 1, sel + 1)
 			_canvas.queue_redraw()
 	else:

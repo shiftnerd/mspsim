@@ -95,11 +95,8 @@ func _input(event: InputEvent) -> void:
 		_mouse = event.position
 		if _button.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 600:
 			finish()
-	elif event is InputEventKey and event.pressed and not event.echo:
-		if (
-			event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
-			and Time.get_ticks_msec() - _opened >= 600
-		):
+	elif Controls.pressed(event):
+		if Controls.confirm(event, false) and Time.get_ticks_msec() - _opened >= 600:
 			finish()
 	else:
 		return

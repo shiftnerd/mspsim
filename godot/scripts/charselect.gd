@@ -295,37 +295,43 @@ func back() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.get_process_frames() == _born or Toolbox.is_open:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if step == "build" and _build_key(event.keycode):
+	if Controls.pressed(event):
+		var dir := Controls.nav(event)
+		if step == "build" and _build_key(event, dir):
 			get_viewport().set_input_as_handled()
 			return
-		match event.keycode:
-			KEY_X:
-				open_seed()
-			KEY_T:
-				open_tools()
-			KEY_F9:
-				Game.cycle_format()
-			KEY_LEFT, KEY_A:
-				move(-1)
-			KEY_RIGHT, KEY_D:
-				move(1)
-			KEY_UP, KEY_W:
-				change_tier(1)
-			KEY_DOWN, KEY_S:
-				change_tier(-1)
-			KEY_TAB:
-				change_start(-1 if event.shift_pressed else 1)
-			KEY_M:
-				change_mut(-1 if event.shift_pressed else 1)
-			KEY_B:
-				toggle_mut_mode()
-			KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
-				confirm()
-			KEY_ESCAPE, KEY_BACKSPACE:
-				back()
-			_:
-				return
+		if dir == "left":
+			move(-1)
+		elif dir == "right":
+			move(1)
+		elif dir == "up":
+			change_tier(1)
+		elif dir == "down":
+			change_tier(-1)
+		elif Controls.confirm(event):
+			confirm()
+		elif Controls.back(event):
+			back()
+		elif Controls.matches(event, "pick_prev"):
+			change_start(-1)
+		elif Controls.matches(event, "pick_next"):
+			change_start(1)
+		elif event is InputEventKey:
+			match event.keycode:
+				KEY_X:
+					open_seed()
+				KEY_T:
+					open_tools()
+				KEY_F9:
+					Game.cycle_format()
+				KEY_M:
+					change_mut(-1 if event.shift_pressed else 1)
+				KEY_B:
+					toggle_mut_mode()
+				_:
+					return
+		else:
+			return
 	elif event is InputEventMouseMotion:
 		_hover(event.position)
 		return
@@ -339,20 +345,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # the build step's own keys: Up / Down rows, Left / Right change, P preset (the rest is shared with the other steps)
-func _build_key(code: Key) -> bool:
-	match code:
-		KEY_UP, KEY_W:
-			_panel.move_row(-1)
-		KEY_DOWN, KEY_S:
-			_panel.move_row(1)
-		KEY_LEFT, KEY_A:
-			_panel.change(-1)
-		KEY_RIGHT, KEY_D:
-			_panel.change(1)
-		KEY_P:
-			_panel.cycle_preset(1)
-		_:
-			return false
+func _build_key(event: InputEvent, dir: String) -> bool:
+	if dir == "up":
+		_panel.move_row(-1)
+	elif dir == "down":
+		_panel.move_row(1)
+	elif dir == "left":
+		_panel.change(-1)
+	elif dir == "right":
+		_panel.change(1)
+	elif event is InputEventKey and event.keycode == KEY_P:
+		_panel.cycle_preset(1)
+	else:
+		return false
 	queue_redraw()
 	return true
 

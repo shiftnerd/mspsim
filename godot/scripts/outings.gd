@@ -167,6 +167,7 @@ const ROOM_INTRO := {
 	"WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
+const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 # karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
 # HARD scale it by Difficulty karaoke.gap); rhythm = gap multipliers cycled over the notes; pattern =
@@ -888,14 +889,40 @@ func tick(dt: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not is_open or not (event is InputEventKey) or not event.pressed or event.echo:
+	if not is_open or not Controls.pressed(event):
+		return
+	var key := _event_key(event)
+	if key == KEY_NONE:
 		return
 	if Cards.is_open:
 		return  # a card (song, budget) has the keys
-	if room_mode() and phase == "play" and not _room_wants(event.keycode):
+	if room_mode() and phase == "play" and not _room_wants(key):
 		return  # in the room you keep walking around
-	press(event.keycode)
+	press(key)
 	get_viewport().set_input_as_handled()
+
+
+# the key code the game logic works on: a key is itself, a pad button or action is the key it stands for
+# (D-pad or stick = the arrows, A = Enter, X = E, B = Esc; in the chair race A and B are the two pushes, Z and X)
+func _event_key(event: InputEvent) -> int:
+	if event is InputEventKey:
+		return event.keycode
+	var racing: bool = game == "chair" and phase == "play"
+	var dir := Controls.nav(event, false)
+	var key := KEY_NONE
+	if racing and Controls.matches(event, "push_a"):
+		key = KEY_Z
+	elif racing and Controls.matches(event, "push_b"):
+		key = KEY_X
+	elif dir != "":
+		key = PAD_ARROWS[dir]
+	elif Controls.back(event):
+		key = KEY_ESCAPE
+	elif Controls.matches(event, "interact"):
+		key = KEY_E
+	elif Controls.confirm(event):
+		key = KEY_ENTER
+	return key
 
 
 func press(key: int) -> void:

@@ -371,7 +371,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
+	if Controls.pressed(event):
 		_key(event)
 	elif event is InputEventMouseMotion:
 		_hover(event.position)
@@ -380,26 +380,48 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-func _key(event: InputEventKey) -> void:
-	if event.keycode == KEY_F9:
+func _key(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_F9:
 		Game.cycle_format()
 		return
 	if mode == "seed":
-		_seed_key(event)
+		if event is InputEventKey:
+			_seed_key(event)
+		else:
+			_seed_pad(event)
 		return
-	match event.keycode:
-		KEY_UP, KEY_W:
-			move_row(-1)
-		KEY_DOWN, KEY_S:
-			move_row(1)
-		KEY_LEFT, KEY_A:
-			change(-1)
-		KEY_RIGHT, KEY_D:
-			change(1)
-		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-			activate()
-		KEY_ESCAPE, KEY_BACKSPACE:
-			close(false)
+	var dir := Controls.nav(event)
+	if dir == "up":
+		move_row(-1)
+	elif dir == "down":
+		move_row(1)
+	elif dir == "left":
+		change(-1)
+	elif dir == "right":
+		change(1)
+	elif Controls.confirm(event):
+		activate()
+	elif Controls.back(event):
+		close(false)
+
+
+# the seed entry from a pad: Up / Down move the focus, A presses the focused button, B closes (typing is keyboard only)
+func _seed_pad(event: InputEvent) -> void:
+	var dir := Controls.nav(event)
+	if dir == "down":
+		seed_focus = (seed_focus + 1) % 3
+	elif dir == "up":
+		seed_focus = (seed_focus + 2) % 3
+	elif dir == "left" and seed_focus > 0:
+		seed_focus = 1
+	elif dir == "right" and seed_focus > 0:
+		seed_focus = 2
+	elif Controls.confirm(event):
+		_seed_act(seed_focus)
+	elif Controls.back(event):
+		close(false)
+		return
+	_canvas.queue_redraw()
 
 
 func _seed_key(event: InputEventKey) -> void:

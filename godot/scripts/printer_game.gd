@@ -911,31 +911,29 @@ func reset() -> void:
 
 # ---- input
 func _input(event: InputEvent) -> void:
-	if not is_open or not (event is InputEventKey and event.pressed and not event.echo):
+	if not is_open or not Controls.pressed(event):
 		return
-	match event.keycode:
-		KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E:
-			press("confirm")
-		KEY_LEFT:
-			press("left")
-		KEY_RIGHT:
-			press("right")
-		KEY_UP:
-			press("up")
-		KEY_DOWN:
-			press("down")
-		KEY_A:
-			press("a")
-		KEY_D:
-			press("d")
-		KEY_1, KEY_2, KEY_3:
-			press(str(event.keycode - KEY_0))
-		KEY_P:
-			press("pray")
-		KEY_ESCAPE:
-			press("escape")
-		_:
-			return
+	var dir := Controls.nav(event, false)
+	if dir != "":
+		press(dir)
+	elif Controls.confirm(event):
+		press("confirm")
+	elif Controls.back(event, false):
+		press("escape")
+	elif event is InputEventKey:
+		match event.keycode:
+			KEY_A:
+				press("a")
+			KEY_D:
+				press("d")
+			KEY_1, KEY_2, KEY_3:
+				press(str(event.keycode - KEY_0))
+			KEY_P:
+				press("pray")
+			_:
+				return
+	else:
+		return
 	get_viewport().set_input_as_handled()
 
 
