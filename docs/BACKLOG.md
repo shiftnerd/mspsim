@@ -8,7 +8,7 @@ Status is as of the commit that last touched this file; move items to `CLAUDE.md
 - **Polish round 2** [`polish`]: look at the rebuilt dental / law / vet / trailer main offices, architect reception chair covering the desk label, interact zones for the realty coffee bar / sign-in sheet / arch reception, dinner topic list overlapping Vic at h format, printer pages at h, onsite staff stealing E from doors and equipment.
 - **Tech playtest bugs** [`bugfix`]: the 13 findings from the live tech-campaign playthrough (below).
 - **Owner campaign live playthrough** (main build): findings will be added here when it reports.
-- **Campaign paths design** (`docs/campaign-paths.md`): service manager (Garrison) and sales (Vic) campaigns plus the play-as-a-cast-member prerequisite; read-only design agent.
+- **Campaign paths design** (`docs/campaign-paths.md`): service manager (Garrison) and sales (Vic) campaigns plus the play-as-a-cast-member prerequisite; read-only design agent. Also scoping point-buy stats at character select (third step, difficulty-scaled budget, presets, saved build).
 
 ## Tech playtest findings (days 1-5; all assigned to the `bugfix` branch)
 1. Complaints and calls about tickets that are already closed (`sales.gd` complaint text / deliver only check the ticket exists).
