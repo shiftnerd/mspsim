@@ -68,6 +68,10 @@ metadata/facing = "right"
 position = Vector2(172, 118)
 metadata/facing = "right"
 
+[node name="from_warehouse" type="Marker2D" parent="Spawns"]
+position = Vector2(230, 118)
+metadata/facing = "left"
+
 [node name="Interactables" type="Node2D" parent="."]
 
 [node name="DoorToCubicles" type="Area2D" parent="Interactables"]
@@ -78,6 +82,16 @@ target_spawn = "from_closet"
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToCubicles"]
 shape = SubResource("shape_door")
+
+[node name="ExitToWarehouse" type="Area2D" parent="Interactables"]
+position = Vector2(252, 60)
+script = ExtResource("door")
+target_scene = "warehouse"
+target_spawn = "from_closet"
+auto = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToWarehouse"]
+shape = SubResource("shape_exit")
 
 [node name="UseSwitch" type="Area2D" parent="Interactables"]
 position = Vector2(154, 70)

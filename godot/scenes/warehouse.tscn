@@ -1,0 +1,242 @@
+[gd_scene load_steps=32 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/warehouse.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+[ext_resource type="Texture2D" path="res://assets/props/bbq_grill.png" id="prop_bbq_grill"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_rack.png" id="prop_chair_rack"]
+[ext_resource type="Texture2D" path="res://assets/props/dart_panel.png" id="prop_dart_panel"]
+[ext_resource type="Texture2D" path="res://assets/props/floor_fan.png" id="prop_floor_fan"]
+[ext_resource type="Texture2D" path="res://assets/props/overhead_door.png" id="prop_overhead_door"]
+[ext_resource type="Texture2D" path="res://assets/props/pallet_jack.png" id="prop_pallet_jack"]
+[ext_resource type="Texture2D" path="res://assets/props/pallet_stack.png" id="prop_pallet_stack"]
+[ext_resource type="Texture2D" path="res://assets/props/race_box_stack.png" id="prop_race_box_stack"]
+[ext_resource type="Texture2D" path="res://assets/props/race_cone.png" id="prop_race_cone"]
+[ext_resource type="Texture2D" path="res://assets/props/race_oil_puddle.png" id="prop_race_oil_puddle"]
+[ext_resource type="Texture2D" path="res://assets/props/race_pallet_small.png" id="prop_race_pallet_small"]
+[ext_resource type="Texture2D" path="res://assets/props/race_trash_can.png" id="prop_race_trash_can"]
+[ext_resource type="Texture2D" path="res://assets/props/race_wet_sign.png" id="prop_race_wet_sign"]
+[ext_resource type="Texture2D" path="res://assets/props/vending_machine.png" id="prop_vending_machine"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(1880, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="Warehouse" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(-556, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(-560, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(928, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(-496, 118)
+metadata/facing = "right"
+
+[node name="from_main" type="Marker2D" parent="Spawns"]
+position = Vector2(-496, 118)
+metadata/facing = "right"
+
+[node name="from_closet" type="Marker2D" parent="Spawns"]
+position = Vector2(-496, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="DoorToCloset" type="Area2D" parent="Interactables"]
+position = Vector2(-535, 70)
+script = ExtResource("door")
+target_scene = "network_closet"
+target_spawn = "from_warehouse"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToCloset"]
+shape = SubResource("shape_door")
+
+[node name="ExitToCloset" type="Area2D" parent="Interactables"]
+position = Vector2(-552, 60)
+script = ExtResource("door")
+target_scene = "network_closet"
+target_spawn = "from_warehouse"
+auto = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToCloset"]
+shape = SubResource("shape_exit")
+
+[node name="UseSwitch" type="Area2D" parent="Interactables"]
+position = Vector2(-508, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Switch")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseSwitch"]
+shape = SubResource("shape_fx")
+
+[node name="UseDartBoard" type="Area2D" parent="Interactables"]
+position = Vector2(491, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/DartBoard")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseDartBoard"]
+shape = SubResource("shape_fx")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="Switch" type="Node2D" parent="Fx"]
+position = Vector2(-510, 54)
+script = ExtResource("fx")
+kind = "switch"
+
+[node name="DartBoard" type="Node2D" parent="Fx"]
+position = Vector2(491, 66)
+script = ExtResource("fx")
+kind = "dart_board"
+
+[node name="FlickerLamp" type="Node2D" parent="Fx"]
+position = Vector2(304, -19)
+script = ExtResource("fx")
+kind = "flicker_lamp"
+
+[node name="BenchScreen" type="Node2D" parent="Fx"]
+position = Vector2(397, 78)
+script = ExtResource("fx")
+kind = "bench_screen"
+
+[node name="TreeLights" type="Node2D" parent="Fx"]
+position = Vector2(890, 54)
+script = ExtResource("fx")
+kind = "tree_lights"
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="overhead_door_0" type="Sprite2D" parent="Actors"]
+position = Vector2(730, 92)
+centered = false
+offset = Vector2(0, -81)
+texture = ExtResource("prop_overhead_door")
+
+[node name="chair_rack_1" type="Sprite2D" parent="Actors"]
+position = Vector2(-425, 108)
+centered = false
+offset = Vector2(0, -55)
+texture = ExtResource("prop_chair_rack")
+
+[node name="vending_machine_2" type="Sprite2D" parent="Actors"]
+position = Vector2(-291, 108)
+centered = false
+offset = Vector2(0, -45)
+texture = ExtResource("prop_vending_machine")
+
+[node name="pallet_stack_3" type="Sprite2D" parent="Actors"]
+position = Vector2(-243, 108)
+centered = false
+offset = Vector2(0, -27)
+texture = ExtResource("prop_pallet_stack")
+
+[node name="floor_fan_4" type="Sprite2D" parent="Actors"]
+position = Vector2(-203, 108)
+centered = false
+offset = Vector2(0, -35)
+texture = ExtResource("prop_floor_fan")
+
+[node name="pallet_jack_5" type="Sprite2D" parent="Actors"]
+position = Vector2(169, 108)
+centered = false
+offset = Vector2(0, -19)
+texture = ExtResource("prop_pallet_jack")
+
+[node name="dart_panel_6" type="Sprite2D" parent="Actors"]
+position = Vector2(443, 108)
+centered = false
+offset = Vector2(0, -67)
+texture = ExtResource("prop_dart_panel")
+
+[node name="bbq_grill_7" type="Sprite2D" parent="Actors"]
+position = Vector2(753, 109)
+centered = false
+offset = Vector2(0, -38)
+texture = ExtResource("prop_bbq_grill")
+
+[node name="race_cone_8" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(-303, 108)
+centered = false
+offset = Vector2(0, -17)
+texture = ExtResource("prop_race_cone")
+
+[node name="race_trash_can_9" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(-263, 108)
+centered = false
+offset = Vector2(0, -23)
+texture = ExtResource("prop_race_trash_can")
+
+[node name="race_wet_sign_10" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(153, 108)
+centered = false
+offset = Vector2(0, -21)
+texture = ExtResource("prop_race_wet_sign")
+
+[node name="race_pallet_small_11" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(217, 108)
+centered = false
+offset = Vector2(0, -10)
+texture = ExtResource("prop_race_pallet_small")
+
+[node name="race_oil_puddle_12" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(249, 103)
+centered = false
+offset = Vector2(0, -5)
+texture = ExtResource("prop_race_oil_puddle")
+
+[node name="race_box_stack_13" type="Sprite2D" parent="Actors" groups=["race_prop"]]
+position = Vector2(305, 108)
+centered = false
+offset = Vector2(0, -29)
+texture = ExtResource("prop_race_box_stack")
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(-496, 118)

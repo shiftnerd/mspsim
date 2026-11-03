@@ -120,10 +120,30 @@ const SCENES := {
 	{
 		"x0": 112,
 		"W": 144,
-		"spawns": {"start": [182, "right"], "from_cubicles": [172, "right"]},
-		"links": [{"name": "ToCubicles", "x": 133, "to": "cubicle_area", "spawn": "from_closet"}],
+		"spawns":
+		{"start": [182, "right"], "from_cubicles": [172, "right"], "from_warehouse": [230, "left"]},
+		"links":
+		[
+			{"name": "ToCubicles", "x": 133, "to": "cubicle_area", "spawn": "from_closet"},
+			{"name": "ToWarehouse", "x": 252, "to": "warehouse", "spawn": "from_closet"}
+		],
 		"seats": {},
 		"uses": {"switch": 154},
+		"outside_x": -1
+	},
+	"warehouse":
+	{
+		"x0": -556,
+		"W": 1480,
+		"spawns":
+		{"start": [-496, "right"], "from_main": [-496, "right"], "from_closet": [-496, "right"]},
+		"links":
+		[
+			{"name": "ToCloset", "x": -535, "to": "network_closet", "spawn": "from_warehouse"},
+			{"name": "ToCloset", "x": -552, "to": "network_closet", "spawn": "from_warehouse"}
+		],
+		"seats": {},
+		"uses": {"switch": -508, "dart_board": 491},
 		"outside_x": -1
 	},
 	"bowling_alley":
