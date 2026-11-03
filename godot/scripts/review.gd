@@ -160,8 +160,17 @@ func make_offers() -> Array:
 
 func choose(index: int) -> void:
 	ending = str(offers[clampi(index, 0, offers.size() - 1)].id)
-	page = 3
+	page = _end_page()
 	_canvas.queue_redraw()
+
+
+# the owner review has a PARTNERSHIP page (X5), so its offers and its end come one page later
+func _opt_page() -> int:
+	return 3 if Campaign.mode == "owner" else 2
+
+
+func _end_page() -> int:
+	return _opt_page() + 1
 
 
 func finish() -> void:
@@ -175,9 +184,9 @@ func finish() -> void:
 
 
 func advance() -> void:
-	if page == 2:
+	if page == _opt_page():
 		choose(sel)
-	elif page == 3:
+	elif page == _end_page():
 		finish()
 	else:
 		page += 1
@@ -205,10 +214,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 			advance()
-		elif event.keycode == KEY_UP and page == 2:
+		elif event.keycode == KEY_UP and page == _opt_page():
 			sel = maxi(0, sel - 1)
 			_canvas.queue_redraw()
-		elif event.keycode == KEY_DOWN and page == 2:
+		elif event.keycode == KEY_DOWN and page == _opt_page():
 			sel = mini(offers.size() - 1, sel + 1)
 			_canvas.queue_redraw()
 	else:
@@ -338,7 +347,7 @@ func _paint() -> void:
 		for wrapped in _wrap(str(entry[0]), chars):
 			rows.append([wrapped, entry[1]])
 	var extra := 0.0
-	if page == 2:
+	if page == _opt_page():
 		extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
 	var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
 	ph = minf(ph, size.y - 4.0)
@@ -351,7 +360,7 @@ func _paint() -> void:
 	for row in rows:
 		PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
 		y += 7.0 * u
-	if page == 2:
+	if page == _opt_page():
 		y += 3.0 * u
 		for i in offers.size():
 			var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
@@ -369,7 +378,7 @@ func _paint() -> void:
 			)
 			y += 7.0 * u
 	else:
-		var label := "FINISH" if page == 3 else "NEXT"
+		var label := "FINISH" if page == _end_page() else "NEXT"
 		var bw := float(PixelFont.width(label, sc)) + 12.0 * u
 		var b := Rect2(panel.end.x - bw - 4.0 * u, panel.end.y - 12.0 * u, bw, 9.0 * u)
 		_canvas.draw_rect(b, Color("5aa0e8") if b.has_point(_mouse) else Color("3a7bd5"))

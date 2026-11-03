@@ -274,13 +274,14 @@ func _make_char(n: String) -> Dictionary:
 
 
 # the cast members who are NOT in the building right now: the person you play as (Campaign.player_as, a campaign
-# or Free Play) and Maya in the owner campaign (not on your payroll). CAST itself never changes.
+# or Free Play) and a partner who left (owner campaign). CAST itself never changes.
 func roster_gone() -> Array:
 	var gone := []
 	if Campaign.player_as != "" and CAST.has(Campaign.player_as):
 		gone.append(Campaign.player_as)
-	if Campaign.active and Campaign.mode == "owner" and not gone.has("Maya"):
-		gone.append("Maya")
+	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
+	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
+		gone.append(Roles.partner())
 	return gone
 
 

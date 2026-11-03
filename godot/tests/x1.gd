@@ -135,7 +135,7 @@ func _init() -> void:
 	o.settle()
 	var delta: int = o.cash - cash0 + o.ar_total()
 	_check(
-		absi(delta - int(est.ebitda)) <= sales.active.size(),
+		absi(delta - int(est.cashflow)) <= sales.active.size(),
 		"cash change plus new receivables equals EBITDA with a leak and services (%d vs %d)" % [delta, int(est.ebitda)]
 	)
 	c.new_game("owner")
@@ -150,7 +150,7 @@ func _init() -> void:
 	cash0 = o.cash
 	o.settle()
 	_check(
-		absi(o.cash - cash0 + o.ar_total() - int(est6.ebitda)) <= sales.active.size(),
+		absi(o.cash - cash0 + o.ar_total() - int(est6.cashflow)) <= sales.active.size(),
 		"and the same amount is missing from cash"
 	)
 	projects.services = {}

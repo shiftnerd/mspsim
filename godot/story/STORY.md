@@ -545,17 +545,30 @@ or the owner (owner campaign, 20 weeks).
 ### Week 1
 
 **9:05 Card: welcome** — Marge (Bookkeeper) `[Owner.CARDS.welcome.speaker]`
-> Welcome, boss. Five clients, three techs, Vic in sales and $5,000 in the bank. Payroll and rent come out every week. How do you want to price our service? `[Owner.CARDS.welcome.text]`
+> Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
 - **VOLUME PRICING (-15% FEES, VIC SELLS MORE)** `[Owner.CARDS.welcome.options.0.label]`
 - **STANDARD PRICING** `[Owner.CARDS.welcome.options.1.label]`
 - **PREMIUM PRICING (+20% FEES, HARDER SELL)** `[Owner.CARDS.welcome.options.2.label]`
 
+**9:35** Event: owner_goal (handled in code, it opens its own cards)
+
 ### Week 2
 
-**9:05 Card: backup** — Alan (Co-owner) `[Owner.CARDS.backup.speaker]`
-> Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week. `[Owner.CARDS.backup.text]`
+**9:05 Card: backup** — {tech} `[Owner.CARDS.backup.speaker]`
+> {me}, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week. `[Owner.CARDS.backup.text]`
 - **BUY THE BACKUP SERVICE ($600 + $100/WEEK)** `[Owner.CARDS.backup.options.0.label]`
 - **NO, WE WILL CHECK THEM BY HAND** `[Owner.CARDS.backup.options.1.label]`
+
+**10:00 Card: draw_policy** — Marge (Bookkeeper) `[Owner.CARDS.draw_policy.speaker]`
+> The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take? `[Owner.CARDS.draw_policy.text]`
+- **NORMAL DRAW ($600/WEEK, BOTH OF YOU)** `[Owner.CARDS.draw_policy.options.0.label]`
+  - Marge writes it in the ledger. The draw starts in week 3. `[Owner.CARDS.draw_policy.options.0.text]`
+- **SMALL DRAW ($300/WEEK)** `[Owner.CARDS.draw_policy.options.1.label]`
+  - A small draw. Marge looks relieved and {partner} nods. The bank stays fat. `[Owner.CARDS.draw_policy.options.1.text]`
+- **GENEROUS DRAW ($1,000/WEEK)** `[Owner.CARDS.draw_policy.options.2.label]`
+  - A generous draw. Marge says nothing, which is how she says a lot. `[Owner.CARDS.draw_policy.options.2.text]`
+- **NO DRAW (WE LIVE ON NOODLES)** `[Owner.CARDS.draw_policy.options.3.label]`
+  - No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger. `[Owner.CARDS.draw_policy.options.3.text]`
 
 **15:00 Card: peer_invite** — Marge (Bookkeeper) `[Owner.CARDS.peer_invite.speaker]`
 > You were invited to the MSP Mastermind: a dozen non-competing MSP owners who meet regularly, compare their numbers (EBITDA, W-2 ratio) and warn each other about what is coming. Dues are $500 to join and $75 a week. `[Owner.CARDS.peer_invite.text]`
@@ -594,22 +607,22 @@ or the owner (owner campaign, 20 weeks).
   - 40%: He accepts the premium quote! `[Owner.CARDS.desktop.options.2.roll.0.2]`
   - 60%: He is insulted and says so. `[Owner.CARDS.desktop.options.2.roll.1.2]`
 
-**12:00 Card: oncall_policy** — Alan (Co-owner) `[Owner.CARDS.oncall_policy.speaker]`
+**12:00 Card: oncall_policy** — {ops} `[Owner.CARDS.oncall_policy.speaker]`
 > Clients are starting to call after hours. Somebody has to carry the pager. How do we run it? `[Owner.CARDS.oncall_policy.text]`
 - **ROTATE EVERYONE, $100/WEEK POOL** `[Owner.CARDS.oncall_policy.options.0.label]`
   - A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn. `[Owner.CARDS.oncall_policy.options.0.text]`
-- **ALAN TAKES IT EVERY WEEK (+$150)** `[Owner.CARDS.oncall_policy.options.1.label]`
-  - Alan says fine. For now. The same person every week is how people quit. `[Owner.CARDS.oncall_policy.options.1.text]`
+- **DAN TAKES IT EVERY WEEK (+$150)** `[Owner.CARDS.oncall_policy.options.1.label]`
+  - Dan says fine. For now. The same person every week is how people quit. `[Owner.CARDS.oncall_policy.options.1.text]`
 - **YOU CARRY THE PAGER YOURSELF** `[Owner.CARDS.oncall_policy.options.2.label]`
   - The crew is thrilled. Your nights will be less so, and it eats your owner hours every week. `[Owner.CARDS.oncall_policy.options.2.text]`
 
-**14:00 Card: stack_psa** — Alan (Co-owner) `[Owner.CARDS.stack_psa.speaker]`
+**14:00 Card: stack_psa** — {tech} `[Owner.CARDS.stack_psa.speaker]`
 > Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run. `[Owner.CARDS.stack_psa.text]`
 - **KEEP CONNECTWHY PSA** `[Owner.CARDS.stack_psa.options.0.label]`
 - **TICKETO LITE ($15/WK, $300 TO MIGRATE)** `[Owner.CARDS.stack_psa.options.1.label]`
   - Migrated. The crew is not thrilled. `[Owner.CARDS.stack_psa.options.1.text]`
 - **OPSFORGE PRO ($140/WK, $300 TO MIGRATE)** `[Owner.CARDS.stack_psa.options.2.label]`
-  - The techs love the automation. `[Owner.CARDS.stack_psa.options.2.text]`
+  - The crew loves the automation. `[Owner.CARDS.stack_psa.options.2.text]`
 
 ### Week 5
 
@@ -657,8 +670,8 @@ or the owner (owner campaign, 20 weeks).
 
 **11:00** Event: qbr (handled in code, it opens its own cards)
 
-**12:30 Card: rdp_exposed** — Alan (Co-owner) `[Owner.CARDS.rdp_exposed.speaker]`
-> Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes. `[Owner.CARDS.rdp_exposed.text]`
+**12:30 Card: rdp_exposed** — {tech} `[Owner.CARDS.rdp_exposed.speaker]`
+> {me}, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes. `[Owner.CARDS.rdp_exposed.text]`
 - **AUTO-BLOCKING FIREWALLS ($600 + $40/WEEK)** `[Owner.CARDS.rdp_exposed.options.0.label]`
   - Repeated failed logins now get an address blocked automatically. The guessing stops. `[Owner.CARDS.rdp_exposed.options.0.text]`
 - **PUT REMOTE ACCESS BEHIND A VPN ($1,200)** `[Owner.CARDS.rdp_exposed.options.1.label]`
@@ -667,7 +680,7 @@ or the owner (owner campaign, 20 weeks).
   - It slows them down. It does not stop them. `[Owner.CARDS.rdp_exposed.options.2.text]`
 - **LEAVE IT** `[Owner.CARDS.rdp_exposed.options.3.label]`
 
-**14:00 Card: stack_rmm** — Alan (Co-owner) `[Owner.CARDS.stack_rmm.speaker]`
+**14:00 Card: stack_rmm** — {tech} `[Owner.CARDS.stack_rmm.speaker]`
 > The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call. `[Owner.CARDS.stack_rmm.text]`
 - **KEEP LABRAT RMM** `[Owner.CARDS.stack_rmm.options.0.label]`
 - **SNOUTECH BASIC ($25/WK, $300 TO MIGRATE)** `[Owner.CARDS.stack_rmm.options.1.label]`
@@ -677,7 +690,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 8
 
-**9:30 Card: license** — Alan (Co-owner) `[Owner.CARDS.license.speaker]`
+**9:30 Card: license** — {tech} `[Owner.CARDS.license.speaker]`
 > Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone. `[Owner.CARDS.license.text]`
 - **PAY THE HIKE ($500)** `[Owner.CARDS.license.options.0.label]`
 - **SWITCH ($300, SOME PAIN)** `[Owner.CARDS.license.options.1.label]`
@@ -693,7 +706,7 @@ or the owner (owner campaign, 20 weeks).
 **15:00 Card: peer2** — MSP Mastermind `[Owner.CARDS.peer2.speaker]`
 > A member got hit by ransomware last month because their backups had quietly died and nobody had checked in weeks. The group's advice: have your team check every client's backup today. `[Owner.CARDS.peer2.text]`
 - **HAVE THE TEAM CHECK EVERY BACKUP** `[Owner.CARDS.peer2.options.0.label]`
-  - Alan checks them all. Any failing job is rerun. `[Owner.CARDS.peer2.options.0.text]`
+  - The crew checks them all. Any failing job is rerun. `[Owner.CARDS.peer2.options.0.text]`
 - **WE ARE FINE** `[Owner.CARDS.peer2.options.1.label]`
 
 **11:00** Event: growth_stretch (handled in code, it opens its own cards)
@@ -715,10 +728,10 @@ or the owner (owner campaign, 20 weeks).
 
 **10:00 Card: rack** — Vic Marlowe `[Owner.CARDS.rack.speaker]`
 > Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send? `[Owner.CARDS.rack.text]`
-- **SEND ALAN NOW ($300)** `[Owner.CARDS.rack.options.0.label]`
-  - 85%: Alan rebuilds it properly. Bob buys him lunch. `[Owner.CARDS.rack.options.0.roll.0.2]`
+- **SEND {tech} NOW ($300)** `[Owner.CARDS.rack.options.0.label]`
+  - 85%: {tech} rebuilds it properly. Bob buys them lunch. `[Owner.CARDS.rack.options.0.roll.0.2]`
   - 15%: Fixed, but it took all night. `[Owner.CARDS.rack.options.0.roll.1.2]`
-- **SEND THE JUNIOR OR DAN ($100)** `[Owner.CARDS.rack.options.1.label]`
+- **SEND MAYA OR A NEW HIRE ($100)** `[Owner.CARDS.rack.options.1.label]`
   - 50%: Back up by evening. `[Owner.CARDS.rack.options.1.roll.0.2]`
   - 50%: Cables were plugged into the wrong ports. Bob is furious. `[Owner.CARDS.rack.options.1.roll.1.2]`
 - **TELL THEM IT IS THEIR WALL** `[Owner.CARDS.rack.options.2.label]`
@@ -729,7 +742,7 @@ or the owner (owner campaign, 20 weeks).
 
 **14:00** Event: vic_report (handled in code, it opens its own cards)
 
-**12:00 Card: flex_hours** — Alan (Co-owner) `[Owner.CARDS.flex_hours.speaker]`
+**12:00 Card: flex_hours** — {ops} `[Owner.CARDS.flex_hours.speaker]`
 > Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy? `[Owner.CARDS.flex_hours.text]`
 - **FLEXIBLE START TIMES (CORE 10 TO 4)** `[Owner.CARDS.flex_hours.options.0.label]`
   - Morale lifts. The phones are a little thin first thing. `[Owner.CARDS.flex_hours.options.0.text]`
@@ -751,6 +764,16 @@ or the owner (owner campaign, 20 weeks).
 
 **15:11** Event: leak_hint (handled in code, it opens its own cards)
 
+**9:35 Card: draw_review** — Marge (Bookkeeper) `[Owner.CARDS.draw_review.speaker]`
+> Quarterly look at the owners' draw. Same as before, more, less, or nothing for now? `[Owner.CARDS.draw_review.text]`
+- **KEEP THE DRAW AS IT IS** `[Owner.CARDS.draw_review.options.0.label]`
+- **TAKE LESS (SMALL DRAW)** `[Owner.CARDS.draw_review.options.1.label]`
+  - A smaller draw. The bank breathes easier. `[Owner.CARDS.draw_review.options.1.text]`
+- **TAKE MORE (GENEROUS DRAW)** `[Owner.CARDS.draw_review.options.2.label]`
+  - A bigger draw. It is a good quarter, you tell yourself. `[Owner.CARDS.draw_review.options.2.text]`
+- **SKIP THE DRAW FOR NOW** `[Owner.CARDS.draw_review.options.3.label]`
+  - No draw this quarter. Marge pins a gold star on the ledger. `[Owner.CARDS.draw_review.options.3.text]`
+
 **15:30** Event: peer_goal (handled in code, it opens its own cards)
 
 ### Week 12
@@ -763,7 +786,7 @@ or the owner (owner campaign, 20 weeks).
 - **TIME AND MATERIALS (~$2,200)** `[Owner.CARDS.migration.options.1.label]`
   - Brightside grumbles about the open-ended bill but pays. `[Owner.CARDS.migration.options.1.text]`
 
-**10:30 Card: after_hours** — Alan (Co-owner) `[Owner.CARDS.after_hours.speaker]`
+**10:30 Card: after_hours** — {ops} `[Owner.CARDS.after_hours.speaker]`
 > After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend. `[Owner.CARDS.after_hours.text]`
 - **ADOPT A $250/HOUR AFTER-HOURS FEE** `[Owner.CARDS.after_hours.options.0.label]`
   - Most non-critical after-hours calls stop. A few clients grumble. `[Owner.CARDS.after_hours.options.0.text]`
@@ -775,8 +798,8 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 13
 
-**15:30 Card: email24** — Alan (Co-owner) `[Owner.CARDS.email24.speaker]`
-> Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime. `[Owner.CARDS.email24.text]`
+**15:30 Card: email24** — {tech} `[Owner.CARDS.email24.speaker]`
+> Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. I will stay late if you approve overtime. `[Owner.CARDS.email24.text]`
 - **PREMIUM VENDOR + OVERTIME ($800)** `[Owner.CARDS.email24.options.0.label]`
   - 90%: Fixed by 9pm. The brewery owner sends beer. `[Owner.CARDS.email24.options.0.roll.0.2]`
   - 10%: Fixed, but after midnight. `[Owner.CARDS.email24.options.0.roll.1.2]`
@@ -784,7 +807,7 @@ or the owner (owner campaign, 20 weeks).
   - 40%: Fixed overnight, barely. `[Owner.CARDS.email24.options.1.roll.0.2]`
   - 60%: Down until morning. A batch is lost. Lucy is livid. `[Owner.CARDS.email24.options.1.roll.1.2]`
 - **GO IN YOURSELF** `[Owner.CARDS.email24.options.2.label]`
-  - 60%: You muddle through and fix it. Alan is impressed. `[Owner.CARDS.email24.options.2.roll.0.2]`
+  - 60%: You muddle through and fix it. {tech} is impressed. `[Owner.CARDS.email24.options.2.roll.0.2]`
   - 40%: You make it worse before you make it better. `[Owner.CARDS.email24.options.2.roll.1.2]`
 
 ### Week 14
@@ -802,12 +825,12 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 15
 
-**9:30 Card: raise** — Alan (Co-owner) `[Owner.CARDS.raise.speaker]`
-> Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise. `[Owner.CARDS.raise.text]`
+**9:30 Card: raise** — Dan (Network Tech) `[Owner.CARDS.raise.speaker]`
+> {me}, I have taken on the hardest jobs all year. I would like a $100 a week raise. `[Owner.CARDS.raise.text]`
 - **GIVE THE RAISE** `[Owner.CARDS.raise.options.0.label]`
 - **NOT NOW** `[Owner.CARDS.raise.options.1.label]`
-  - 70%: Alan shrugs and keeps working. `[Owner.CARDS.raise.options.1.roll.0.2]`
-  - 30%: Alan hands in his notice. The team is stretched thin. `[Owner.CARDS.raise.options.1.roll.1.2]`
+  - 70%: Dan shrugs and keeps working. `[Owner.CARDS.raise.options.1.roll.0.2]`
+  - 30%: Dan hands in his notice. The team is stretched thin. `[Owner.CARDS.raise.options.1.roll.1.2]`
 
 **10:30** Event: grumble (handled in code, it opens its own cards)
 

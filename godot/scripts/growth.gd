@@ -362,7 +362,7 @@ func _graduate_tech() -> void:
 # ---- owner: the only Tier 3 ---------------------------------------------------------------------
 func owner_free() -> float:
 	var used := owner_used + (8.0 if Owner.flags.get("owner_oncall", false) else 0.0)
-	return maxf(0.0, OWNER_HOURS - ADMIN_HOURS - used)
+	return maxf(0.0, OWNER_HOURS - ADMIN_HOURS + Partner.help_hours() - used)
 
 
 # the owner buried in escalations has less time for sales
@@ -409,7 +409,7 @@ func owner_week() -> Array:
 			if not _skip_note:
 				_skip_note = true
 				Msp.send_text(
-					"Alan",
+					Roles.tech(),
 					"The queue ate the training time again. That is how people end up burned out."
 				)
 		else:
@@ -424,7 +424,7 @@ func _bottleneck_card() -> void:
 	if learner == "":
 		options.push_front({"label": "START A GROWTH PLAN FOR THE TEAM", "id": "plan"})
 	Cards.ask(
-		"Alan (Co-owner)",
+		"{tech}",
 		"Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.",
 		options,
 		func(id: String) -> void: _bottleneck_pick(id)
@@ -439,14 +439,17 @@ func _bottleneck_pick(id: String) -> void:
 func owner_plan_card() -> void:
 	if Campaign.mode != "owner" or learner != "":
 		return
-	var names := ["Garrison", "Dan"]
+	var names := []
+	for crew_name in Owner.crew_names():
+		if crew_name != Roles.tech():
+			names.append(crew_name)
 	for hire in Owner.extra_staff:
 		names.append(str(hire.name))
 	var options := []
 	for who in names:
 		options.append({"label": who.to_upper(), "id": who})
 	Cards.ask(
-		"Alan (Co-owner)",
+		"{tech}",
 		"Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.",
 		options,
 		func(who: String) -> void: _owner_skill(who)
@@ -467,7 +470,7 @@ func _owner_skill(who: String) -> void:
 			}
 		)
 	Cards.ask(
-		"Alan (Co-owner)",
+		"{tech}",
 		"Which skill? Pick the one the shop keeps escalating.",
 		options,
 		func(skill: String) -> void: _owner_plan_set(who, skill)
@@ -481,7 +484,7 @@ func _owner_plan_set(who: String, skill: String) -> void:
 	graduated = false
 	_skip_note = false
 	Msp.send_text(
-		"Alan",
+		Roles.tech(),
 		(
 			"%s will learn %s. Thirty protected minutes a week, and I will catch them."
 			% [who, str(Skills.NAMES[skill])]
@@ -495,7 +498,7 @@ func owner_stretch() -> void:
 		return
 	var chance := clampf(0.40 + progress / 250.0, 0.2, 0.85)
 	Cards.ask(
-		"Alan (Co-owner)",
+		"{tech}",
 		(
 			"A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk."
 			% [str(STRETCH[focus]).to_lower(), learner]
@@ -515,19 +518,19 @@ func owner_stretch_result(id: String, chance: float) -> void:
 			if randf() < chance:
 				stretch_ok += 1
 				Sales.adjust(Sales.pick_client(), 3)
-				Msp.send_text("Alan", "%s nailed it. I barely had to say a word." % learner)
+				Msp.send_text(Roles.tech(), "%s nailed it. I barely had to say a word." % learner)
 				_add_progress(30.0, 0)
 			elif randf() < 0.6:
 				stretch_caught += 1
 				Msp.send_text(
-					"Alan", "I caught it before the client saw. %s learned something." % learner
+					Roles.tech(), "I caught it before the client saw. %s learned something." % learner
 				)
 				_add_progress(14.0, 0)
 			else:
 				stretch_slipped += 1
 				Sales.adjust(Sales.pick_client(), -6)
 				Campaign.adjust_rep(-1)
-				Msp.send_text("Alan", "%s broke something visible. The client noticed." % learner)
+				Msp.send_text(Roles.tech(), "%s broke something visible. The client noticed." % learner)
 				_add_progress(10.0, 0)
 		"senior":
 			_add_progress(8.0, 0)
@@ -542,7 +545,7 @@ func _graduate_owner() -> void:
 	Owner.flags["growth_done"] = true
 	var who := learner
 	Cards.ask(
-		"Alan (Co-owner)",
+		"{tech}",
 		(
 			"%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market."
 			% [who, focus_name()]
@@ -558,12 +561,12 @@ func _graduate_owner() -> void:
 func _raise(id: String, who: String) -> void:
 	if id == "raise":
 		Owner.weekly_extra += 60
-		Msp.send_text("Alan", "%s is staying. The raise helped." % who)
+		Msp.send_text(Roles.tech(), "%s is staying. The raise helped." % who)
 	elif randf() < 0.3:
-		if Owner.lost_techs < 2:
+		if Owner.lost_techs < Owner.MAX_LOST:
 			Owner.lost_techs += 1
 		Msp.send_text(
-			"Alan",
+			Roles.tech(),
 			"%s took a job elsewhere. Trained staff leave when the pay does not follow." % who
 		)
 	learner = ""

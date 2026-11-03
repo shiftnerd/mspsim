@@ -1,7 +1,7 @@
 extends SceneTree
 # Dev tool (not a test): plays the owner campaign in natural time with one fixed strategy.
 # ends. One strategy per process:
-#   Godot --headless --fixed-fps 60 --path godot -s res://tests/owner_balance.gd -- smart
+#   Godot --headless --fixed-fps 60 --path godot -s res://tests/owner_balance.gd -- smart [alan|garrison]
 
 const POLICIES := {
 	"smart":
@@ -29,6 +29,7 @@ const POLICIES := {
 		"stack_rmm": 0,
 		"stack_hw": 0,
 		"vic_plan": 1,
+		"draw": 0,
 	},
 	"cheap":
 	{
@@ -55,6 +56,7 @@ const POLICIES := {
 		"stack_rmm": 1,
 		"stack_hw": 2,
 		"vic_plan": 2,
+		"draw": 1,
 	},
 	"greedy":
 	{
@@ -81,6 +83,7 @@ const POLICIES := {
 		"stack_rmm": 1,
 		"stack_hw": 2,
 		"vic_plan": 2,
+		"draw": 2,
 	},
 }
 
@@ -93,8 +96,13 @@ func _answer(cards: Node, ids: Dictionary) -> void:
 		var pick := 0
 		if cards.options.size() > 1:
 			for id in ids:
-				if cards.text.begins_with(str(ids[id])):
+				if cards.text.contains(str(ids[id])) and str(ids[id]).length() > 8:
 					pick = mini(int(policy.get(id, 0)), cards.options.size() - 1)
+		if not bool(cards.options[pick].get("enabled", true)):  # greyed out (cash, or the partner vetoes): take an open option
+			for i in cards.options.size():
+				if bool(cards.options[i].get("enabled", true)):
+					pick = i
+					break
 		cards.pick(pick)
 		n += 1
 
@@ -109,7 +117,12 @@ func _init() -> void:
 	var ids := {}
 	for key in o.CARDS:
 		var card_text := str(o.CARDS[key].text)
+		if card_text.begins_with("{"):  # a name token opens the text ("{me}, backup jobs..."): match what follows it
+			card_text = card_text.substr(card_text.find("}") + 1)
 		var cut := card_text.find("%s")  # templated cards (the named prospect) match up to the name
+		var brace := card_text.find("{")  # name tokens ({partner}) are filled in when the card opens
+		if brace >= 0 and (cut < 0 or brace < cut):
+			cut = brace
 		ids[key] = card_text.substr(0, 40 if cut < 0 else mini(40, cut))
 	c.save_prefix = (
 		"user://bal_%s_"
@@ -123,6 +136,13 @@ func _init() -> void:
 	if OS.get_environment("NOPROJ") != "":
 		root.get_node("Projects").enabled = false  # A/B: the campaign without projects and services
 	var wanted := OS.get_cmdline_user_args()
+	# X4: play as `alan` or `garrison` (default alan); everything else names a strategy
+	var as_who := "alan"
+	for arg in wanted.duplicate():
+		if arg in ["alan", "garrison"]:
+			as_who = arg
+			wanted.erase(arg)
+	load("res://scripts/player.gd").current_character = "office_alan" if as_who == "alan" else "casual_garrison"
 	for policy_name in POLICIES:
 		if not wanted.is_empty() and not wanted.has(policy_name):
 			continue
@@ -149,8 +169,8 @@ func _init() -> void:
 			await create_timer(0.7).timeout
 			root.get_node("Game").busy = false
 		var line := (
-			"%s: week %d cash $%d clients %d mood %d rep %d"
-			% [policy_name, last, o.cash, sales.active.size(), int(sales.average()), c.rep]
+			"%s as %s: week %d cash $%d clients %d mood %d rep %d trust %d draw $%d goal %s"
+			% [policy_name, c.player_as, last, o.cash, sales.active.size(), int(sales.average()), c.rep, root.get_node("Partner").trust, o.draw_paid, str(o.goal_met())]
 		)
 		print(
 			line,

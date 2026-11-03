@@ -2007,6 +2007,8 @@ func _board_books(a: Rect2) -> void:
 		["A/R OWED", "$%d" % Owner.ar_total(), AMBER if Owner.ar_total() > 0 else TXT],
 		["COMPANY VALUE", "$%d (%.1fX)" % [Owner.valuation(), Owner.multiple()], Color("6b421c")],
 		["TEAM SPEED", "%.1f" % Owner.team_speed(), TXT],
+		["OWNER DRAW", "$%d/WK (%s)" % [Owner.draw_due() if Campaign.day >= Owner.DRAW_START else int(Owner.DRAW.get(Owner.draw_policy, 0)), Owner.draw_policy.to_upper()], TXT],
+		["GOAL", Owner.goal_row()[1], TXT],
 		["ON BOARD", ", ".join(advisers) if not advisers.is_empty() else "NOBODY YET", TXT],
 		["MATURITY", "%d %s" % [Owner.oml(), Owner.OML_NAMES[Owner.oml() - 1]], Color("6b421c")],
 	]
@@ -2181,10 +2183,14 @@ func _board_team(a: Rect2) -> void:
 	var x := a.position.x + 4
 	var y := a.position.y + 3
 	var limit := int((a.size.x - 8.0) / 4.0)
-	var names := ["ALAN", "GARRISON", "DAN"]
 	var rows := []
-	for i in maxi(0, 3 - Owner.lost_techs):
-		rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.tech_wage()], TXT])
+	for i in Owner.crew_size():
+		var member: Dictionary = Owner.CREW[i]
+		var wage := int(round(float(member.wage) * Owner.wage_mult()))
+		rows.append(["%s  SKILL %.1f  $%d/WK" % [str(member.name).to_upper(), float(member.skill), wage], TXT])
+	rows.append(["MORGAN  MANAGER  $%d/WK" % int(round(float(Owner.MORGAN_WAGE) * Owner.wage_mult())), TXT])
+	if Roles.partner() != "":
+		rows.append(["%s  CO-OWNER  HANDS-ON %.1f  TRUST %d" % [Roles.partner().to_upper(), Partner.hands(), Partner.trust], Color("6b421c")])
 	for hire in Owner.extra_staff:
 		var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
 		rows.append(
