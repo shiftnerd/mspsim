@@ -1023,6 +1023,29 @@ const DEFAULT_PETS := {
 		"You tap the glass. The fish pretends not to know you.",
 		"The orange fish swims to the glass, looks at you and leaves."
 	],
+	"coffeebar":
+	[
+		"You pour a cup from the glass pot. It has been on the burner since the spring open house, but it is free.",
+		"You fill a mug that says #1 IN SALES (2009). The coffee is hot and tastes like the pot.",
+		"You help yourself to the open house coffee. The tip jar says 'for the intern'. You leave a quarter."
+	],
+	"coffeebar_full":
+	[
+		"You already have a cup. Greed is a sin, even in real estate.",
+		"Your hands are full of coffee. The pot will wait."
+	],
+	"signin":
+	[
+		"You sign in. Reason for visit: 'IT'. Under it a previous visitor wrote 'Dave - plumbing - yes'.",
+		"The pen is on a string and the string is shorter than your arm. You sign sideways.",
+		"NAME / COMPANY / TIME IN / REASON. The last line says 'Karen - Karen - 9:02 - I am the owner'."
+	],
+	"recep":
+	[
+		"The receptionist: 'Are you here about the plotter? Please say you are here about the plotter.'",
+		"The receptionist: 'The principals are in a charrette until five. Can I get you a coffee?'",
+		"A roll of drawings on the desk has a sticky note: DO NOT TOUCH. NOT EVEN YOU, STEVE."
+	],
 }
 var PETS: Dictionary = DEFAULT_PETS.duplicate(true)
 
@@ -1472,6 +1495,9 @@ func interact(obj: String) -> void:
 	if obj in ["dog", "cat", "fish"]:
 		_pet(obj)
 		return
+	if obj in ["coffeebar", "signin", "recep"]:
+		_site_line(obj)
+		return
 	if obj == "owner" and visit_kind != "" and not _met:
 		_meeting()
 		return
@@ -1730,6 +1756,25 @@ func _meeting_answer(id: String) -> void:
 	Cards.ask(_owner_name(c), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 
 
+# the realty coffee bar (a cup of coffee), the sign-in clipboard and the architects' reception desk (a line, no game effect)
+func _site_line(kind: String) -> void:
+	var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+	var key := kind
+	if kind == "coffeebar" and p != null and str(p.held) == "coffee":
+		key = "coffeebar_full"
+	var lines: Array = PETS.get(key, [])
+	if lines.is_empty():
+		return
+	Hints.toast(str(lines[randi() % lines.size()]), 3.0)
+	if key == "coffeebar":
+		get_tree().create_timer(1.0).timeout.connect(_pour.bind(p))
+
+
+func _pour(p: Node) -> void:
+	if is_instance_valid(p) and p.has_method("give"):
+		p.give("coffee")
+
+
 # you can always pet the animals (the rules)
 func _pet(kind: String) -> void:
 	var lines: Array = PETS.get(kind, [])
@@ -1977,4 +2022,7 @@ func populate(stage: Node) -> void:
 			["wait:7", "say:2"] if str(entry[2]) == "staff" else ["wait:7", "talk:3"]
 		)
 		npc.position = Vector2(x0 + float(entry[1]), 118.0)
+		var zone := RectangleShape2D.new()  # a narrower talk zone than the cast has, so doors and equipment next to them stay easy to hit
+		zone.size = Vector2(30, 56)
+		npc.get_node("Shape").shape = zone
 		stage.get_node("Actors").add_child(npc)

@@ -14359,7 +14359,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
         _t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
         return
     _t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
-    var w := minf(size.x - 8.0, 112.0)
+    var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
     var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
     UiStyle.box(_canvas, box)
     for i in 4:
@@ -17476,6 +17476,10 @@ const PETS := {
     "dog": ["You scratch behind the dog's ears. Her tail thumps the floor.", "The dog leans against your leg and sighs happily.", "A very good dog. She licks your hand."],
     "cat": ["The cat purrs and head-butts your hand.", "You pet the cat. She tolerates it. Mostly.", "The cat stretches out and shows you her belly. It is a trap, but you pet her anyway."],
     "fish": ["You tap the glass. The fish pretends not to know you.", "The orange fish swims to the glass, looks at you and leaves."],
+    "coffeebar": ["You pour a cup from the glass pot. It has been on the burner since the spring open house, but it is free.", "You fill a mug that says #1 IN SALES (2009). The coffee is hot and tastes like the pot.", "You help yourself to the open house coffee. The tip jar says 'for the intern'. You leave a quarter."],
+    "coffeebar_full": ["You already have a cup. Greed is a sin, even in real estate.", "Your hands are full of coffee. The pot will wait."],
+    "signin": ["You sign in. Reason for visit: 'IT'. Under it a previous visitor wrote 'Dave - plumbing - yes'.", "The pen is on a string and the string is shorter than your arm. You sign sideways.", "NAME / COMPANY / TIME IN / REASON. The last line says 'Karen - Karen - 9:02 - I am the owner'."],
+    "recep": ["The receptionist: 'Are you here about the plotter? Please say you are here about the plotter.'", "The receptionist: 'The principals are in a charrette until five. Can I get you a coffee?'", "A roll of drawings on the desk has a sticky note: DO NOT TOUCH. NOT EVEN YOU, STEVE."],
 }
 
 var enabled := false  # set by the title menu, so older tests are not disturbed by onsite tickets
@@ -17886,6 +17890,9 @@ func interact(obj: String) -> void:
     if obj in ["dog", "cat", "fish"]:
         _pet(obj)
         return
+    if obj in ["coffeebar", "signin", "recep"]:
+        _site_line(obj)
+        return
     if obj == "owner" and visit_kind != "" and not _met:
         _meeting()
         return
@@ -18096,6 +18103,25 @@ func _meeting_answer(id: String) -> void:
         else:
             text += " " + str(TEXT.pitch_think)
     Cards.ask(_owner_name(c), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+# the realty coffee bar (a cup of coffee), the sign-in clipboard and the architects' reception desk (a line, no game effect)
+func _site_line(kind: String) -> void:
+    var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+    var key := kind
+    if kind == "coffeebar" and p != null and str(p.held) == "coffee":
+        key = "coffeebar_full"
+    var lines: Array = PETS.get(key, [])
+    if lines.is_empty():
+        return
+    Hints.toast(str(lines[randi() % lines.size()]), 3.0)
+    if key == "coffeebar":
+        get_tree().create_timer(1.0).timeout.connect(_pour.bind(p))
+
+
+func _pour(p: Node) -> void:
+    if is_instance_valid(p) and p.has_method("give"):
+        p.give("coffee")
 
 
 # you can always pet the animals (the rules)
@@ -18311,6 +18337,9 @@ func populate(stage: Node) -> void:
         npc.role = "site:" + str(entry[2])
         npc.routine = PackedStringArray(["wait:7", "say:2"] if str(entry[2]) == "staff" else ["wait:7", "talk:3"])
         npc.position = Vector2(x0 + float(entry[1]), 118.0)
+        var zone := RectangleShape2D.new()  # a narrower talk zone than the cast has, so doors and equipment next to them stay easy to hit
+        zone.size = Vector2(30, 56)
+        npc.get_node("Shape").shape = zone
         stage.get_node("Actors").add_child(npc)
 ''')
 
@@ -20410,6 +20439,8 @@ func nearest() -> Node:
         d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
         if n.get("low_priority") == true:
             d += 14.0
+        elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
+            d += 20.0  # doors and equipment beat small talk with the client staff (Tab still selects them)
         if d < best_d:
             best_d = d
             best = n
@@ -20942,6 +20973,10 @@ for _t in SITE_TYPES:
         BGFX["site_%s_office_%s" % (_t, _s)] = [("ObjVip", "onsite_vip", 96, 54, 108)]
         if _t == "dental":
             BGFX["site_%s_%s" % (_t, _s)].append(("ObjFish", "onsite_fish", 84, 52, 104))
+        if _t == "realty":   # the coffee bar and the sign-in clipboard (E: a coffee, a line)
+            BGFX["site_%s_%s" % (_t, _s)] += [("ObjCoffee", "onsite_coffeebar", 82, 62, 97), ("ObjSignin", "onsite_signin", 114, 30, 129)]
+        if _t == "arch":     # the reception desk (low priority: the PC beside it wins)
+            BGFX["site_%s_%s" % (_t, _s)].append(("ObjRecep", "onsite_recep", 234, 77, 241))
         if _t == "vet":
             BGFX["site_%s_%s" % (_t, _s)] += [("ObjDog", "onsite_dog", 184, 94, 196), ("ObjCat", "onsite_cat", 106, 58, 114)]
             BGFX["site_%s_office_%s" % (_t, _s)] += [("ObjDog", "onsite_dog", 150, 94, 162), ("ObjCat", "onsite_cat", 200, 64, 208)]
@@ -21108,7 +21143,7 @@ for fname, cfg in SETS.items():
     for name, kind, ax, ay, ix, *opt in bgfx:
         lines += [f'[node name="Use{name}" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + ix}, 70)',
                   'script = ExtResource("interact")', f'target = NodePath("../../Fx/{name}")',
-                  *(['low_priority = true'] if kind == "bell" else []),
+                  *(['low_priority = true'] if kind in ("bell", "onsite_recep", "onsite_signin") else []),
                   *([f'look_x = {x0 + opt[0]}.0', f'arrow_offset = Vector2({opt[0] - ix}, {opt[1]})'] if len(opt) > 1 else []),
                   "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Use{name}"]',
