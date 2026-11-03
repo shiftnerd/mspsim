@@ -206,6 +206,788 @@ const DEFAULT_VIGNETTES := {
 			},
 		],
 	},
+	"tape_swap":
+	{
+		"speaker": "The office manager (Gnarly Gnomes)",
+		"text": "Nobody has changed the backup tape since Monday. We keep forgetting. Could we just leave it in forever?",
+		"min_day": 3,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "label",
+				"label": "PUT A COLORED LABEL ON EACH DAY'S TAPE",
+				"text": "She buys a roll of stickers. The tapes look like a rainbow.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"mood": [
+						2,
+						3
+					]
+				}
+			},
+			{
+				"id": "auto",
+				"label": "SWITCH THEM TO DISK-BASED BACKUPS",
+				"text": "A small project for a rainy day.",
+				"fx": {
+					"xp": [
+						"servers",
+						3
+					],
+					"hours": 0.5
+				}
+			},
+			{
+				"id": "remind",
+				"label": "SEND A DAILY REMINDER EMAIL",
+				"text": "It works for two days.",
+				"fx": {
+					"mood": [
+						2,
+						1
+					]
+				}
+			}
+		]
+	},
+	"toolbar":
+	{
+		"speaker": "A realtor at Brightside",
+		"text": "My browser has a toolbar I did not ask for, and another one, and now a third. The page is the size of a postage stamp.",
+		"min_day": 3,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "remove",
+				"label": "REMOVE THEM ALL AND EXPLAIN THE 'NEXT' BUTTON",
+				"text": "She will never press 'Next' again without reading.",
+				"fx": {
+					"xp": [
+						"security",
+						3
+					],
+					"mood": [
+						1,
+						3
+					],
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "reset",
+				"label": "RESET THE BROWSER",
+				"text": "Clean and fast. She stops cursing.",
+				"fx": {
+					"xp": [
+						"security",
+						1
+					],
+					"mood": [
+						1,
+						2
+					]
+				}
+			},
+			{
+				"id": "shrug",
+				"label": "TELL HER TO CLOSE SOME TABS",
+				"text": "Not the answer she wanted.",
+				"fx": {
+					"mood": [
+						1,
+						-3
+					]
+				}
+			}
+		]
+	},
+	"fax_black":
+	{
+		"speaker": "The paralegal (Hoot and Holler)",
+		"text": "The fax machine is printing black pages. Every page. The partners are waiting on a signed document and it is only coming out black.",
+		"min_day": 4,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "clean",
+				"label": "CLEAN THE SCANNER GLASS AND THE ROLLER",
+				"text": "A smudge the size of a dime. The fax prints beautifully.",
+				"fx": {
+					"xp": [
+						"networking",
+						3
+					],
+					"mood": [
+						3,
+						3
+					],
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "scan",
+				"label": "SCAN AND EMAIL THE DOCUMENT INSTEAD",
+				"text": "No fax needed. She looks at you as if you had invented email.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"mood": [
+						3,
+						4
+					]
+				}
+			},
+			{
+				"id": "order",
+				"label": "ORDER A NEW FAX MACHINE",
+				"text": "A new machine is fine, but the document is still stuck.",
+				"fx": {
+					"mood": [
+						3,
+						-2
+					]
+				}
+			}
+		]
+	},
+	"sticky_dan":
+	{
+		"speaker": "Dan (Network tech)",
+		"text": "I found the main router password on a sticky note in three different offices. It is 'admin' in all three. Do you want me to fix it or yell?",
+		"min_day": 4,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "fix",
+				"label": "TELL HIM TO FIX IT AND YOU WILL WRITE THE NOTE",
+				"text": "He changes it. You write a short, friendly note. Dan nods.",
+				"fx": {
+					"xp": [
+						"security",
+						2
+					],
+					"social": {
+						"Dan": 2
+					}
+				}
+			},
+			{
+				"id": "yell",
+				"label": "BOTH",
+				"text": "You say it together and feel better.",
+				"fx": {
+					"social": {
+						"Dan": 1
+					},
+					"energy": 1
+				}
+			},
+			{
+				"id": "later",
+				"label": "SAY IT CAN WAIT",
+				"text": "Dan raises an eyebrow, a very small one.",
+				"fx": {
+					"social": {
+						"Dan": -1
+					}
+				}
+			}
+		]
+	},
+	"captcha":
+	{
+		"speaker": "A realtor at Brightside",
+		"text": "The website keeps asking me to type distorted letters and I cannot read them. I have tried eleven times. Is the site broken?",
+		"min_day": 5,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "teach",
+				"label": "SIT WITH HER AND SOLVE A FEW",
+				"text": "She likes the one that reads 'banana'.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"mood": [
+						1,
+						3
+					],
+					"hours": 0.2
+				}
+			},
+			{
+				"id": "audio",
+				"label": "SHOW HER THE AUDIO OPTION",
+				"text": "It sounds like a ghost reading numbers, but it works.",
+				"fx": {
+					"mood": [
+						1,
+						2
+					]
+				}
+			},
+			{
+				"id": "email",
+				"label": "TELL HER TO EMAIL THEM",
+				"text": "She does. They respond in a week.",
+				"fx": {
+					"mood": [
+						1,
+						-1
+					]
+				}
+			}
+		]
+	},
+	"cable_mess":
+	{
+		"speaker": "The owner (Gnarly Gnomes)",
+		"text": "Behind the desk there is a nest of cables. My assistant says it is a fire hazard. Can you make it nice? It is not nice.",
+		"min_day": 5,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "tidy",
+				"label": "LABEL, BUNDLE AND ROUTE EVERYTHING",
+				"text": "Twenty velcro ties and forty minutes. It looks like a catalog photo.",
+				"fx": {
+					"xp": [
+						"networking",
+						4
+					],
+					"mood": [
+						2,
+						4
+					],
+					"hours": 0.7
+				}
+			},
+			{
+				"id": "some",
+				"label": "TIDY THE WORST HALF",
+				"text": "It is better. She says it is a start.",
+				"fx": {
+					"xp": [
+						"networking",
+						2
+					],
+					"mood": [
+						2,
+						2
+					],
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "point",
+				"label": "TELL HER IT IS NOT A HAZARD",
+				"text": "It is slightly a hazard.",
+				"fx": {
+					"mood": [
+						2,
+						-2
+					]
+				}
+			}
+		]
+	},
+	"kid_laptop":
+	{
+		"speaker": "A client's teenager",
+		"text": "I need help. My mom said you set up her computer, and my school laptop will not connect to anything. Mom says I can ask you, but I have to say please.",
+		"min_day": 6,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "fix",
+				"label": "TAKE A LOOK, IT IS A FIVE MINUTE JOB",
+				"text": "A wrong setting. She thanks you in a very serious voice.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"mood": [
+						4,
+						3
+					],
+					"hours": 0.2
+				}
+			},
+			{
+				"id": "teach",
+				"label": "SHOW HER HOW TO CHECK IT HERSELF",
+				"text": "She writes it down in a notebook. She will be running IT someday.",
+				"fx": {
+					"xp": [
+						"people",
+						3
+					],
+					"mood": [
+						4,
+						2
+					],
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "no",
+				"label": "SAY YOU CAN ONLY HELP THE COMPANY",
+				"text": "She understands. Probably.",
+				"fx": {
+					"mood": [
+						4,
+						-1
+					]
+				}
+			}
+		]
+	},
+	"voip_pitch":
+	{
+		"speaker": "A salesman from a phone company",
+		"text": "Hi! Hosted phones are the next big thing. No more desk phone boxes in the closet. I would love to show you a quick demo with a headset.",
+		"min_day": 6,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "demo",
+				"label": "TRY THE DEMO",
+				"text": "The call is clear, the portal is clean, and the price is not.",
+				"fx": {
+					"xp": [
+						"networking",
+						3
+					],
+					"hours": 0.4
+				}
+			},
+			{
+				"id": "card",
+				"label": "TAKE HIS CARD AND PASS IT TO THE OWNERS",
+				"text": "Garrison files it with the other ideas. Alan nods slowly.",
+				"fx": {
+					"social_all": 1
+				}
+			},
+			{
+				"id": "no",
+				"label": "SAY WE ARE HAPPY WITH WHAT WE HAVE",
+				"text": "He leaves a pen with a logo on it.",
+				"fx": {}
+			}
+		]
+	},
+	"spam_folder":
+	{
+		"speaker": "The office manager (Acme Dental)",
+		"text": "The newsletter we send every month is landing in everybody's spam folder. Even mine. It looks fine to me!",
+		"min_day": 7,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "dns",
+				"label": "CHECK THE MAIL SETTINGS AND FIX THE SENDER RECORD",
+				"text": "One missing record. The mail lands in inboxes again.",
+				"fx": {
+					"xp": [
+						"servers",
+						4
+					],
+					"mood": [
+						0,
+						4
+					],
+					"hours": 0.6
+				}
+			},
+			{
+				"id": "tips",
+				"label": "SUGGEST A BETTER SUBJECT LINE",
+				"text": "'FREE TEETH!!!' becomes 'Your spring checkup'. It helps.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"mood": [
+						0,
+						2
+					]
+				}
+			},
+			{
+				"id": "whitelist",
+				"label": "TELL EVERYONE TO MARK IT AS SAFE",
+				"text": "Half of them do. The other half do not read it.",
+				"fx": {
+					"mood": [
+						0,
+						1
+					]
+				}
+			}
+		]
+	},
+	"charger_drawer":
+	{
+		"speaker": "Dan (Network tech)",
+		"text": "There is a drawer full of chargers and nobody knows what goes with what. I made a chart. It has color coding. Do you want a copy?",
+		"min_day": 8,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "copy",
+				"label": "YES, AND PUT IT ON THE WALL",
+				"text": "The drawer becomes the most organized place in the office.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"social": {
+						"Dan": 2
+					}
+				}
+			},
+			{
+				"id": "help",
+				"label": "HELP HIM LABEL THEM",
+				"text": "You find a charger for a phone nobody remembers. It is a good morning.",
+				"fx": {
+					"social": {
+						"Dan": 2
+					},
+					"energy": 1,
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "laugh",
+				"label": "LAUGH AT THE CHART",
+				"text": "Dan does not speak to you for twenty minutes.",
+				"fx": {
+					"social": {
+						"Dan": -2
+					}
+				}
+			}
+		]
+	},
+	"tv_monitor":
+	{
+		"speaker": "A realtor at Brightside",
+		"text": "I bought a 50 inch TV for my desk. It was on sale! It looks great, but my eyes hurt and the text is blurry. Can you fix it?",
+		"min_day": 8,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "set",
+				"label": "SET THE RIGHT RESOLUTION AND TEXT SIZE",
+				"text": "A tiny tweak. She says it is like new glasses.",
+				"fx": {
+					"xp": [
+						"people",
+						3
+					],
+					"mood": [
+						1,
+						4
+					],
+					"hours": 0.3
+				}
+			},
+			{
+				"id": "mount",
+				"label": "SUGGEST MOVING IT BACK A FEW FEET",
+				"text": "She tries it. A TV across the room is a TV.",
+				"fx": {
+					"mood": [
+						1,
+						2
+					]
+				}
+			},
+			{
+				"id": "return",
+				"label": "SAY THAT A TV IS NOT A MONITOR",
+				"text": "She says it is a monitor now.",
+				"fx": {
+					"mood": [
+						1,
+						-2
+					]
+				}
+			}
+		]
+	},
+	"scan_to_mail":
+	{
+		"speaker": "The paralegal (Hoot and Holler)",
+		"text": "The new copier says it can 'scan to email', but it asks for a server name I do not have. Can you do whatever it is that I should do?",
+		"min_day": 9,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "setup",
+				"label": "SET UP THE SCAN-TO-EMAIL PROPERLY",
+				"text": "A mail relay and a small password. The partners can scan from the copier.",
+				"fx": {
+					"xp": [
+						"servers",
+						4
+					],
+					"mood": [
+						3,
+						4
+					],
+					"hours": 0.6
+				}
+			},
+			{
+				"id": "folder",
+				"label": "SET UP SCAN TO A SHARED FOLDER",
+				"text": "Simpler and safer. She approves.",
+				"fx": {
+					"xp": [
+						"networking",
+						3
+					],
+					"mood": [
+						3,
+						3
+					],
+					"hours": 0.4
+				}
+			},
+			{
+				"id": "later",
+				"label": "TELL HER YOU WILL LOOK AT IT NEXT WEEK",
+				"text": "She keeps using the fax. Which is black.",
+				"fx": {
+					"mood": [
+						3,
+						-2
+					]
+				}
+			}
+		]
+	},
+	"old_server_larry":
+	{
+		"speaker": "Alan (Co-owner)",
+		"text": "There is a server in the back that Larry set up in 2006. Nobody knows what it does and nobody will turn it off. Can you find out what is on it?",
+		"min_day": 10,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "find",
+				"label": "TRACE WHAT TALKS TO IT AND WRITE IT DOWN",
+				"text": "It runs a label printer and one database for the front desk. You document both.",
+				"fx": {
+					"xp": [
+						"servers",
+						4
+					],
+					"social": {
+						"Alan": 2
+					},
+					"hours": 0.6
+				}
+			},
+			{
+				"id": "ask",
+				"label": "ASK EVERYONE IN THE OFFICE",
+				"text": "Someone remembers a login that works. Alan chuckles.",
+				"fx": {
+					"xp": [
+						"people",
+						2
+					],
+					"social": {
+						"Alan": 1
+					}
+				}
+			},
+			{
+				"id": "leave",
+				"label": "LEAVE IT ALONE, LARRY KNOWS BEST",
+				"text": "Larry left in 2009.",
+				"fx": {
+					"social": {
+						"Alan": -1
+					}
+				}
+			}
+		]
+	},
+	"win81_update":
+	{
+		"speaker": "A realtor at Brightside",
+		"text": "The computer says there is a free update to Windows 8.1 and she wants to know if it brings the Start button back. I have been told it does. Is that true?",
+		"min_day": 11,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "yes",
+				"label": "TELL HER YES, AND INSTALL IT AFTER LUNCH",
+				"text": "A shiny button comes back, and she is pleased.",
+				"fx": {
+					"xp": [
+						"people",
+						3
+					],
+					"mood": [
+						1,
+						3
+					],
+					"hours": 0.5
+				}
+			},
+			{
+				"id": "careful",
+				"label": "BACK UP FIRST, THEN INSTALL",
+				"text": "It takes longer. It also does not fail.",
+				"fx": {
+					"xp": [
+						"security",
+						2
+					],
+					"mood": [
+						1,
+						2
+					],
+					"hours": 0.7
+				}
+			},
+			{
+				"id": "skip",
+				"label": "TELL HER TO WAIT",
+				"text": "She installs it herself and tells you about it.",
+				"fx": {
+					"mood": [
+						1,
+						-2
+					]
+				}
+			}
+		]
+	},
+	"thank_you_card":
+	{
+		"speaker": "A card from Soggy Bottom Brewing",
+		"text": "A hand-written card arrives. 'Thank you for all your help this year. The beer is on us. Come by any Friday.' There is a drawing of a pint glass.",
+		"min_day": 15,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "frame",
+				"label": "PIN IT TO THE WALL",
+				"text": "Everyone reads it. It is a good morning.",
+				"fx": {
+					"social_all": 1
+				}
+			},
+			{
+				"id": "share",
+				"label": "READ IT TO THE TEAM",
+				"text": "A little applause. A little embarrassment.",
+				"fx": {
+					"rep": 1
+				}
+			},
+			{
+				"id": "keep",
+				"label": "PUT IT IN YOUR DRAWER",
+				"text": "A private small win.",
+				"fx": {
+					"energy": 2
+				}
+			}
+		]
+	},
+	"alan_sandwich":
+	{
+		"speaker": "Alan (Co-owner)",
+		"text": "I made two sandwiches this morning, one too many. Roast beef. You can have it if you tell me which of the three printers has been misbehaving the most.",
+		"min_day": 17,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "honest",
+				"label": "TELL HIM THE TRUTH ABOUT THE PRINTERS",
+				"text": "The sandwich is excellent. The answer is the one at Hoot and Holler.",
+				"fx": {
+					"energy": 5,
+					"social": {
+						"Alan": 2
+					}
+				}
+			},
+			{
+				"id": "diplomatic",
+				"label": "TAKE THE SANDWICH AND CHANGE THE SUBJECT",
+				"text": "Alan raises an eyebrow, but the sandwich stays.",
+				"fx": {
+					"energy": 3,
+					"social": {
+						"Alan": 1
+					}
+				}
+			},
+			{
+				"id": "no",
+				"label": "SAY YOU ALREADY ATE",
+				"text": "He eats both. He does not blame you.",
+				"fx": {}
+			}
+		]
+	},
+	"first_week_note":
+	{
+		"speaker": "Morgan (Manager)",
+		"text": "The year is almost over. Is there something you wish somebody had told you on your first day? I am writing a note for the next new hire.",
+		"min_day": 18,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "tips",
+				"label": "WRITE DOWN THREE TIPS",
+				"text": "Morgan reads them aloud and says, 'Perfect.'",
+				"fx": {
+					"xp": [
+						"people",
+						3
+					],
+					"rep": 1
+				}
+			},
+			{
+				"id": "short",
+				"label": "SAY 'ASK QUESTIONS EARLY'",
+				"text": "Morgan writes that down and underlines it.",
+				"fx": {
+					"xp": [
+						"people",
+						1
+					]
+				}
+			},
+			{
+				"id": "none",
+				"label": "SAY 'NOTHING, REALLY'",
+				"text": "Morgan thinks you are being modest.",
+				"fx": {}
+			}
+		]
+	},
 }
 var VIGNETTES: Dictionary = DEFAULT_VIGNETTES.duplicate(true)
 const DEFAULT_DAYS := {
