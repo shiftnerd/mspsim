@@ -177,7 +177,9 @@ func _paint() -> void:
 	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
 	var pw := minf(size.x - 8.0, 250.0)
 	var chars := int((pw - 10.0) / 4.0)
-	var lines := _wrap(text, chars)
+	var lines := []
+	for para in text.split("\n"):
+		lines.append_array(_wrap(para, chars))
 	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + float(options.size()) * 11.0 + 4.0
 	# short screens (16:9, wide) keep the people visible by putting the card at the top
 	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0

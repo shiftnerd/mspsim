@@ -81,7 +81,13 @@ func lane_title(id: String, chars: int) -> String:
 		"Dan":
 			return "DAN (YOU)" if chars >= 9 else "DAN"
 		"ESC":
+			if Service.design == "tiered":
+				return "L3 OWNERS" if chars >= 9 else "L3 OWN"
 			return "OWNERS" if chars >= 6 else "OWN"
+	if Service.design == "tiered" and Crew.has(id):  # L1 SAM, L2 MAYA (C6 desk design); a narrow head keeps "1 SAM"
+		if chars >= 9:
+			return "%s %s" % [Service.lane_tag(id), id.to_upper()]
+		return "%s %s" % [Service.lane_tag(id).substr(1), id.to_upper().substr(0, maxi(3, chars - 2))]
 	return id.to_upper()
 
 
@@ -472,6 +478,14 @@ func _lane_color(id: String) -> Color:
 			return Color("2f8a4f")
 		"ESC":
 			return Color("c8681a")
+	if Crew.has(id):  # the desk design tints the lane heads (C6)
+		match Service.design:
+			"tiered":
+				return Color("173a6b") if Service.lane_of(id) == "L2" else HEAD
+			"pods":
+				return Color("1f6e68")
+			"swarm":
+				return Color("5a3d8a")
 	return HEAD
 
 
@@ -556,6 +570,10 @@ func _board_narrow(a: Rect2) -> void:
 	var sub := ""
 	if Crew.has(id):
 		sub = "%s  MORALE %d  LOAD %d" % [Crew.status(id), Crew.morale(id), Crew.load_of(id)]
+		if Service.design == "pods" and Service.pod_text(id) != "":
+			sub = "POD " + Service.pod_text(id)
+		elif Service.design == "tiered":
+			sub = "%s  %s  LOAD %d" % [Service.lane_tag(id), Crew.status(id), Crew.load_of(id)]
 	elif id == "Dan":
 		sub = "YOU TAKE THESE YOURSELF"
 	elif id == "ESC":
@@ -651,27 +669,30 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 	c._text("HOURS LEFT TODAY %.1f   BAR = QUEUED HOURS" % Crew.hours_left() if not narrow else "HOURS LEFT %.1f" % Crew.hours_left(), Vector2(a.position.x + 2, y), MUTED)
 	y += 7.0
 	var rh := 13.0 if not narrow else 22.0
+	if not narrow:  # up to six techs now (C6): squeeze the rows to fit above the totals
+		rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 22.0) / float(maxi(1, names.size()))), 8.0, 13.0)
 	for i in names.size():
 		var who := str(names[i])
 		var r := Rect2(a.position.x, y, a.size.x, rh - 1)
 		c._fill(r, Color("c7dcf5") if i == cap_sel else (c.WHITE if i % 2 == 0 else Color("eef3f9")))
 		c._region("dsp:cap:%d" % i, r)
+		var ry := y + (minf(0.0, floorf((rh - 13.0) * 0.5)) if not narrow else 0.0)
 		var u := Crew.utilisation(who)
 		var hours := Crew.load_hours(who)
 		var st := Crew.status(who)
 		var st_col: Color = c.RED if st in ["STUCK", "OVERLOAD"] else (c.GREEN if st == "WORKING" else MUTED)
 		var bx := a.position.x + 32.0
 		var bw := floorf(a.size.x * 0.34)
-		var ty := y + 3.0
+		var ty := ry + 3.0
 		if narrow:
 			bx = a.position.x + 3.0
 			bw = a.size.x - 8.0
-		c._text(who.to_upper(), Vector2(a.position.x + 3, y + 3), INK)
+		c._text(who.to_upper(), Vector2(a.position.x + 3, ry + 3), INK)
 		if narrow:
-			c._text(st, Vector2(a.position.x + 28, y + 3), st_col)
-			c._text(util_text(u), Vector2(a.end.x - 22, y + 3), _util_color(u))
-			_pips(Vector2(a.end.x - 48, y + 4), Crew.morale(who))
-			ty = y + 12.0
+			c._text(st, Vector2(a.position.x + 28, ry + 3), st_col)
+			c._text(util_text(u), Vector2(a.end.x - 22, ry + 3), _util_color(u))
+			_pips(Vector2(a.end.x - 48, ry + 4), Crew.morale(who))
+			ty = ry + 12.0
 		# the bar: 100% of the hours left is at two thirds
 		c._fill(Rect2(bx, ty, bw, 5), Color("c5ccd8"))
 		var scale := avail * 1.5
@@ -680,17 +701,17 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 		c._fill(Rect2(bx + floorf(bw / 1.5), ty - 1, 1, 7), INK)
 		if not narrow:
 			var x := bx + bw + 4.0
-			c._text(util_text(u), Vector2(x, y + 3), _util_color(u))
+			c._text(util_text(u), Vector2(x, ry + 3), _util_color(u))
 			x += 22.0
-			_pips(Vector2(x, y + 4), Crew.morale(who))
+			_pips(Vector2(x, ry + 4), Crew.morale(who))
 			x += 24.0
-			c._text(st, Vector2(x, y + 3), st_col)
+			c._text(st, Vector2(x, ry + 3), st_col)
 			x += 36.0
 			var foc := Crew.focus_of(who)
-			c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, y + 3), Color("1f4e8c"))
+			c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, ry + 3), Color("1f4e8c"))
 			if st == "OVERLOAD" or st == "STUCK":
-				c._fill(Rect2(a.end.x - 9, y + 2, 7, 8), c.RED)
-				c._text("!", Vector2(a.end.x - 6, y + 3), c.WHITE)
+				c._fill(Rect2(a.end.x - 9, ry + 2, 7, 8), c.RED)
+				c._text("!", Vector2(a.end.x - 6, ry + 3), c.WHITE)
 		y += rh
 	if names.is_empty():
 		c._text("NOBODY LEFT ON THE CREW.", Vector2(a.position.x + 4, y + 4), c.RED)

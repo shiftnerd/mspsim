@@ -5937,6 +5937,800 @@ KEEP THE DESK, WITH A THIRTY-DAY PLAN FROM MORGAN.
 YOU KEEP THE DESK WITH A WRITTEN PLAN. MORGAN WILL CHECK IT EVERY FRIDAY. YOU START BY LABELLING THE PLAN.
 
 
+# ======================= Service > RUNBOOKS =======================
+# Service > RUNBOOKS > spooler > label
+[Service.RUNBOOKS.spooler.label]
+PRINT SPOOLER
+
+# Service > RUNBOOKS > spooler > quiz > q
+[Service.RUNBOOKS.spooler.quiz.q]
+A printer shows queued jobs that never print. What do you do first?
+
+# Service > RUNBOOKS > spooler > quiz > options > 0
+[Service.RUNBOOKS.spooler.quiz.options.0]
+RESTART THE PRINT SPOOLER AND TEST A PAGE
+
+# Service > RUNBOOKS > spooler > quiz > options > 2
+[Service.RUNBOOKS.spooler.quiz.options.2]
+REBOOT THE SERVER
+
+# Service > RUNBOOKS > password > label
+[Service.RUNBOOKS.password.label]
+PASSWORD RESET
+
+# Service > RUNBOOKS > password > quiz > q
+[Service.RUNBOOKS.password.quiz.q]
+Somebody emails to say they are locked out. What comes first?
+
+# Service > RUNBOOKS > password > quiz > options > 0
+[Service.RUNBOOKS.password.quiz.options.0]
+CONFIRM IT IS REALLY THEM, THEN RESET
+
+# Service > RUNBOOKS > password > quiz > options > 1
+[Service.RUNBOOKS.password.quiz.options.1]
+RESET IT FOR ANYONE WHO ASKS
+
+# Service > RUNBOOKS > password > quiz > options > 2
+[Service.RUNBOOKS.password.quiz.options.2]
+SEND THE ADMIN PASSWORD
+
+# Service > RUNBOOKS > clear_temp > label
+[Service.RUNBOOKS.clear_temp.label]
+SLOW PC CLEANUP
+
+# Service > RUNBOOKS > clear_temp > quiz > q
+[Service.RUNBOOKS.clear_temp.quiz.q]
+A PC crawls and the disk is full. What is the safe order?
+
+# Service > RUNBOOKS > clear_temp > quiz > options > 0
+[Service.RUNBOOKS.clear_temp.quiz.options.0]
+CLEAR TEMP FILES, THEN CHECK THE DISK
+
+# Service > RUNBOOKS > clear_temp > quiz > options > 1
+[Service.RUNBOOKS.clear_temp.quiz.options.1]
+DELETE THE USER PROFILE
+
+# Service > RUNBOOKS > clear_temp > quiz > options > 2
+[Service.RUNBOOKS.clear_temp.quiz.options.2]
+FORMAT AND START OVER
+
+# Service > RUNBOOKS > reboot > label
+[Service.RUNBOOKS.reboot.label]
+BLUE SCREEN / REBOOT
+
+# Service > RUNBOOKS > reboot > quiz > q
+[Service.RUNBOOKS.reboot.quiz.q]
+A frozen PC needs a restart. What do you do before you press the button?
+
+# Service > RUNBOOKS > reboot > quiz > options > 0
+[Service.RUNBOOKS.reboot.quiz.options.0]
+ASK THE USER TO SAVE THEIR WORK
+
+# Service > RUNBOOKS > reboot > quiz > options > 1
+[Service.RUNBOOKS.reboot.quiz.options.1]
+RESTART AT ONCE
+
+# Service > RUNBOOKS > reboot > quiz > options > 2
+[Service.RUNBOOKS.reboot.quiz.options.2]
+UNPLUG IT FROM THE WALL
+
+# Service > RUNBOOKS > av > label
+[Service.RUNBOOKS.av.label]
+POP-UPS / VIRUS
+
+# Service > RUNBOOKS > av > quiz > q
+[Service.RUNBOOKS.av.quiz.q]
+A PC is full of pop-ups and ads. What is the first move?
+
+# Service > RUNBOOKS > av > quiz > options > 0
+[Service.RUNBOOKS.av.quiz.options.0]
+TAKE IT OFF THE NETWORK, THEN SCAN
+
+# Service > RUNBOOKS > av > quiz > options > 1
+[Service.RUNBOOKS.av.quiz.options.1]
+CLOSE THE POP-UPS AND MOVE ON
+
+# Service > RUNBOOKS > av > quiz > options > 2
+[Service.RUNBOOKS.av.quiz.options.2]
+INSTALL A SECOND ANTIVIRUS
+
+# Service > RUNBOOKS > restore > label
+[Service.RUNBOOKS.restore.label]
+RESTORE FROM BACKUP
+
+# Service > RUNBOOKS > restore > quiz > q
+[Service.RUNBOOKS.restore.quiz.q]
+Files are encrypted and the client wants them back. What first?
+
+# Service > RUNBOOKS > restore > quiz > options > 0
+[Service.RUNBOOKS.restore.quiz.options.0]
+CHECK THE BACKUP IS GOOD, THEN RESTORE
+
+# Service > RUNBOOKS > restore > quiz > options > 1
+[Service.RUNBOOKS.restore.quiz.options.1]
+PAY BEFORE LOOKING AT ANYTHING
+
+# Service > RUNBOOKS > restore > quiz > options > 2
+[Service.RUNBOOKS.restore.quiz.options.2]
+DELETE THE ENCRYPTED FILES
+
+# Service > RUNBOOKS > adobe > label
+[Service.RUNBOOKS.adobe.label]
+PDF READER WON'T PRINT
+
+# Service > RUNBOOKS > adobe > quiz > q
+[Service.RUNBOOKS.adobe.quiz.q]
+The reader opens but will not print anything. Safest first fix?
+
+# Service > RUNBOOKS > adobe > quiz > options > 0
+[Service.RUNBOOKS.adobe.quiz.options.0]
+REPAIR THE READER AND PRINT A TEST
+
+# Service > RUNBOOKS > adobe > quiz > options > 1
+[Service.RUNBOOKS.adobe.quiz.options.1]
+REINSTALL WINDOWS
+
+# Service > RUNBOOKS > adobe > quiz > options > 2
+[Service.RUNBOOKS.adobe.quiz.options.2]
+TELL THEM TO USE THE FAX
+
+# Service > RUNBOOKS > rdp > label
+[Service.RUNBOOKS.rdp.label]
+RDP EXPOSED (JOB)
+
+# Service > RUNBOOKS > rdp > quiz > q
+[Service.RUNBOOKS.rdp.quiz.q]
+Remote Desktop is open to the internet. What closes the door?
+
+# Service > RUNBOOKS > rdp > quiz > options > 0
+[Service.RUNBOOKS.rdp.quiz.options.0]
+A VPN OR A FIREWALL THAT BLOCKS GUESSING
+
+# Service > RUNBOOKS > rdp > quiz > options > 1
+[Service.RUNBOOKS.rdp.quiz.options.1]
+CHANGING THE PORT NUMBER ONLY
+
+# Service > RUNBOOKS > rdp > quiz > options > 2
+[Service.RUNBOOKS.rdp.quiz.options.2]
+A LONGER PASSWORD AND HOPE
+
+# Service > RUNBOOKS > ransom > label
+[Service.RUNBOOKS.ransom.label]
+RANSOMWARE (JOB)
+
+# Service > RUNBOOKS > ransom > quiz > q
+[Service.RUNBOOKS.ransom.quiz.q]
+CryptoLocker is on a file server. What do you do first?
+
+# Service > RUNBOOKS > ransom > quiz > options > 0
+[Service.RUNBOOKS.ransom.quiz.options.0]
+ISOLATE IT, THEN RESTORE FROM BACKUP
+
+# Service > RUNBOOKS > ransom > quiz > options > 1
+[Service.RUNBOOKS.ransom.quiz.options.1]
+LEAVE IT RUNNING TO SEE WHAT HAPPENS
+
+# Service > RUNBOOKS > ransom > quiz > options > 2
+[Service.RUNBOOKS.ransom.quiz.options.2]
+PAY IT BEFORE ANYONE ASKS
+
+# Service > RUNBOOKS > rack > label
+[Service.RUNBOOKS.rack.label]
+RACK DOWN (JOB)
+
+# Service > RUNBOOKS > rack > quiz > q
+[Service.RUNBOOKS.rack.quiz.q]
+The network rack came off the wall. Before you touch a cable?
+
+# Service > RUNBOOKS > rack > quiz > options > 0
+[Service.RUNBOOKS.rack.quiz.options.0]
+PHOTOGRAPH AND LABEL EVERY CABLE
+
+# Service > RUNBOOKS > rack > quiz > options > 1
+[Service.RUNBOOKS.rack.quiz.options.1]
+PULL THEM ALL AND SORT IT OUT LATER
+
+# Service > RUNBOOKS > rack > quiz > options > 2
+[Service.RUNBOOKS.rack.quiz.options.2]
+REBOOT THE SWITCH
+
+# Service > RUNBOOKS > email24 > label
+[Service.RUNBOOKS.email24.label]
+EMAIL OUTAGE NIGHT (JOB)
+
+# Service > RUNBOOKS > email24 > quiz > q
+[Service.RUNBOOKS.email24.quiz.q]
+The mail server is down at night and the client runs 24x7. First?
+
+# Service > RUNBOOKS > email24 > quiz > options > 0
+[Service.RUNBOOKS.email24.quiz.options.0]
+OPEN A PRIORITY CASE WITH THE VENDOR
+
+# Service > RUNBOOKS > email24 > quiz > options > 1
+[Service.RUNBOOKS.email24.quiz.options.1]
+WAIT UNTIL MORNING
+
+# Service > RUNBOOKS > email24 > quiz > options > 2
+[Service.RUNBOOKS.email24.quiz.options.2]
+REBUILD EVERY MAILBOX
+
+# Service > RUNBOOKS > migration > label
+[Service.RUNBOOKS.migration.label]
+SERVER MIGRATION (JOB)
+
+# Service > RUNBOOKS > migration > quiz > q
+[Service.RUNBOOKS.migration.quiz.q]
+The cutover is tonight. What must be true before you start?
+
+# Service > RUNBOOKS > migration > quiz > options > 0
+[Service.RUNBOOKS.migration.quiz.options.0]
+THE BACKUP IS VERIFIED AND A ROLLBACK EXISTS
+
+# Service > RUNBOOKS > migration > quiz > options > 1
+[Service.RUNBOOKS.migration.quiz.options.1]
+NOBODY HAS EMAILED YOU
+
+# Service > RUNBOOKS > migration > quiz > options > 2
+[Service.RUNBOOKS.migration.quiz.options.2]
+THE OLD SERVER IS ALREADY OFF
+
+
+# ======================= Service > DESIGNS =======================
+# Service > DESIGNS > card > speaker
+[Service.DESIGNS.card.speaker]
+Morgan Reyes - Manager
+
+# Service > DESIGNS > card > text
+[Service.DESIGNS.card.text]
+Dan, the desk needs a shape. Alan wants tiers: easy tickets to L1, hard ones to L2, the owners as L3. Garrison wants everyone to live with their own clients. You can also let everybody take everything. Change your mind later and it costs two hours and a confused morning, once.
+
+# Service > DESIGNS > card > revisit
+[Service.DESIGNS.card.revisit]
+You want to reshape the desk. It costs two manager hours, a morning of confusion and a little trust with both owners, and you only get this one change. Which design?
+
+# Service > DESIGNS > card > keep
+[Service.DESIGNS.card.keep]
+KEEP IT AS IT IS
+
+# Service > DESIGNS > card > dispatcher
+[Service.DESIGNS.card.dispatcher]
+Who dispatches? You are the dispatcher by default: every ticket goes through your hands and your manager hours stay thin. A dispatcher costs money every week but gives you hours back and picks tickets up faster.
+
+# Service > DESIGNS > card > you
+[Service.DESIGNS.card.you]
+I DISPATCH MYSELF
+
+# Service > DESIGNS > card > hire
+[Service.DESIGNS.card.hire]
+HIRE A DISPATCHER ($520 A WEEK)
+
+# Service > DESIGNS > card > done
+[Service.DESIGNS.card.done]
+The desk is %s. %s
+
+# Service > DESIGNS > card > changed
+[Service.DESIGNS.card.changed]
+THE DESK IS %s NOW.
+
+# Service > DESIGNS > card > no_hours
+[Service.DESIGNS.card.no_hours]
+NEEDS 2 MANAGER HOURS
+
+# Service > DESIGNS > card > used
+[Service.DESIGNS.card.used]
+ALREADY CHANGED ONCE
+
+# Service > DESIGNS > tiered > label
+[Service.DESIGNS.tiered.label]
+TIERED DESK
+
+# Service > DESIGNS > tiered > option
+[Service.DESIGNS.tiered.option]
+TIERED: L1, L2 AND L3 LANES
+
+# Service > DESIGNS > tiered > text
+[Service.DESIGNS.tiered.text]
+Easy tickets go to L1, harder ones to L2, the owners are L3. Clean handoffs and fewer reopens. The cost: seniors wait for work while juniors wait for seniors, and hot tickets cross lanes only when their own is full. It suits a desk that has a dispatcher.
+
+# Service > DESIGNS > tiered > note
+[Service.DESIGNS.tiered.note]
+L1 AND L2 LANES. FEWER REOPENS, SLOWER TO FLEX.
+
+# Service > DESIGNS > tiered > mail > Alan > 0
+[Service.DESIGNS.tiered.mail.Alan.0]
+Alan (Co-owner)
+
+# Service > DESIGNS > tiered > mail > Alan > 2
+[Service.DESIGNS.tiered.mail.Alan.2]
+Good. Levels, handoffs, escalation paths. That is how a desk grows up. Write it down. - Alan
+
+# Service > DESIGNS > tiered > mail > Garrison > 0
+[Service.DESIGNS.tiered.mail.Garrison.0]
+Garrison (Co-owner)
+
+# Service > DESIGNS > tiered > mail > Garrison > 2
+[Service.DESIGNS.tiered.mail.Garrison.2]
+I hope the clients do not feel the queue. Tell me if an L1 ticket waits while an L2 tech sits idle. - Garrison
+
+# Service > DESIGNS > swarm > label
+[Service.DESIGNS.swarm.label]
+SWARM DESK
+
+# Service > DESIGNS > swarm > option
+[Service.DESIGNS.swarm.option]
+SWARM: EVERYONE TAKES EVERYTHING
+
+# Service > DESIGNS > swarm > text
+[Service.DESIGNS.swarm.text]
+Nobody owns a lane. Whoever is free picks up whatever is next. Fast and flexible, and the board is a lively place. The cost: tickets go to the wrong person now and then, the SLA clock suffers when a hot one lands on the wrong desk, and more of them come back.
+
+# Service > DESIGNS > swarm > note
+[Service.DESIGNS.swarm.note]
+ANYONE, ANYTHING. FASTER, BUT MIS-ALLOCATION AND REOPENS.
+
+# Service > DESIGNS > swarm > mail > Alan > 0
+[Service.DESIGNS.swarm.mail.Alan.0]
+Alan (Co-owner)
+
+# Service > DESIGNS > swarm > mail > Alan > 2
+[Service.DESIGNS.swarm.mail.Alan.2]
+I will not argue with a free-for-all that closes tickets. I will argue when a password reset lands on the person who is rebuilding the firewall. - Alan
+
+# Service > DESIGNS > swarm > mail > Garrison > 0
+[Service.DESIGNS.swarm.mail.Garrison.0]
+Garrison (Co-owner)
+
+# Service > DESIGNS > swarm > mail > Garrison > 2
+[Service.DESIGNS.swarm.mail.Garrison.2]
+Love it. Everyone helps everyone, clients get answers faster. Keep it moving. - Garrison
+
+# Service > DESIGNS > pods > label
+[Service.DESIGNS.pods.label]
+CLIENT PODS
+
+# Service > DESIGNS > pods > option
+[Service.DESIGNS.pods.option]
+PODS: A TECH FOR EACH CLIENT GROUP
+
+# Service > DESIGNS > pods > text
+[Service.DESIGNS.pods.text]
+Each tech owns a few clients and learns them. Deep knowledge builds day by day and clients feel looked after. The cost: pods do not help each other much, a pod tech who is out or leaves leaves a hole, and pod leads cost more every week.
+
+# Service > DESIGNS > pods > note
+[Service.DESIGNS.pods.note]
+ONE TECH PER CLIENT GROUP. DEEP KNOWLEDGE, DEARER, BRITTLE.
+
+# Service > DESIGNS > pods > mail > Alan > 0
+[Service.DESIGNS.pods.mail.Alan.0]
+Alan (Co-owner)
+
+# Service > DESIGNS > pods > mail > Alan > 2
+[Service.DESIGNS.pods.mail.Alan.2]
+Pods are fine if the knowledge leaves the pod. Make them write it down. - Alan
+
+# Service > DESIGNS > pods > mail > Garrison > 0
+[Service.DESIGNS.pods.mail.Garrison.0]
+Garrison (Co-owner)
+
+# Service > DESIGNS > pods > mail > Garrison > 2
+[Service.DESIGNS.pods.mail.Garrison.2]
+A face for every client. That is a story I can sell. - Garrison
+
+# Service > DESIGNS > dispatcher > you > text
+[Service.DESIGNS.dispatcher.you.text]
+You keep the board yourself.
+
+# Service > DESIGNS > dispatcher > hire > text
+[Service.DESIGNS.dispatcher.hire.text]
+A dispatcher starts Monday. You have two hours back every day.
+
+
+# ======================= Service > KB_TEXT =======================
+# Service > KB_TEXT > msg > need
+[Service.KB_TEXT.msg.need]
+NEED %.1f H, %.1f H LEFT
+
+# Service > KB_TEXT > msg > draft
+[Service.KB_TEXT.msg.draft]
+DRAFT STARTED: %s
+
+# Service > KB_TEXT > msg > live
+[Service.KB_TEXT.msg.live]
+RUNBOOK LIVE: %s
+
+# Service > KB_TEXT > msg > stale
+[Service.KB_TEXT.msg.stale]
+%s RUNBOOK IS OUT OF DATE
+
+# Service > KB_TEXT > msg > trained
+[Service.KB_TEXT.msg.trained]
+%s IS TRAINED. IT STAYS.
+
+# Service > KB_TEXT > msg > already
+[Service.KB_TEXT.msg.already]
+ALREADY TRAINED
+
+# Service > KB_TEXT > msg > nobody
+[Service.KB_TEXT.msg.nobody]
+NOBODY TO DO IT
+
+# Service > KB_TEXT > msg > shadow
+[Service.KB_TEXT.msg.shadow]
+%s IS SHADOWING
+
+# Service > KB_TEXT > msg > none
+[Service.KB_TEXT.msg.none]
+NO SUCH RUNBOOK
+
+# Service > KB_TEXT > msg > signoff
+[Service.KB_TEXT.msg.signoff]
+SIGN-OFF %d MORE
+
+# Service > KB_TEXT > lesson > text
+[Service.KB_TEXT.lesson.text]
+%s recorded the %s fix and walked the trainee through it. Before you sign it off, check the lesson: %s
+
+# Service > KB_TEXT > lesson > good
+[Service.KB_TEXT.lesson.good]
+The lesson holds up. %s will sign it off on the next live tickets. Once they have, it stays trained.
+
+# Service > KB_TEXT > lesson > fail
+[Service.KB_TEXT.lesson.fail]
+That was not the safest step. The recording needs another take and the hour is gone. Try the lesson again.
+
+# Service > KB_TEXT > bus > mail_from
+[Service.KB_TEXT.bus.mail_from]
+Morgan Reyes - Manager
+
+# Service > KB_TEXT > bus > subject
+[Service.KB_TEXT.bus.subject]
+Who knew how to do that?
+
+# Service > KB_TEXT > bus > body
+[Service.KB_TEXT.bus.body]
+%s was the only one who knew %s and nothing was written down. Until somebody learns it or it is documented, everyone will stall on it. - Morgan
+
+# Service > KB_TEXT > bus > alan
+[Service.KB_TEXT.bus.alan]
+Alan (Co-owner)
+
+# Service > KB_TEXT > stale > from
+[Service.KB_TEXT.stale.from]
+Alan (Co-owner)
+
+# Service > KB_TEXT > stale > subject
+[Service.KB_TEXT.stale.subject]
+Runbooks out of date
+
+
+# ======================= Service > CHANGES =======================
+# Service > CHANGES > 8 > subject
+[Service.CHANGES.8.subject]
+New copiers Monday
+
+# Service > CHANGES > 8 > body
+[Service.CHANGES.8.body]
+Garrison signed for new copiers at three clients. The print drivers and the PDF reader set-up change this week. Anything written down about printing is out of date.
+
+# Service > CHANGES > 12 > subject
+[Service.CHANGES.12.subject]
+New antivirus and password rules
+
+# Service > CHANGES > 12 > body
+[Service.CHANGES.12.body]
+The RMM now pushes a different antivirus and the password rules change on Monday. Whatever the crew wrote down for that is wrong now.
+
+# Service > CHANGES > 15 > subject
+[Service.CHANGES.15.subject]
+Windows updates this weekend
+
+# Service > CHANGES > 15 > body
+[Service.CHANGES.15.body]
+A round of Windows updates went to every workstation. The usual fixes behave differently. The notes need another look.
+
+
+# ======================= Service > HIRE_TEXT =======================
+# Service > HIRE_TEXT > intro
+[Service.HIRE_TEXT.intro]
+Three people came through the door for the open desk. An interview costs one of your hours and shows real skill and fit. Hours left today: %.1f.
+
+# Service > HIRE_TEXT > line
+[Service.HIRE_TEXT.line]
+%s - %s - $%d - %s
+
+# Service > HIRE_TEXT > revealed
+[Service.HIRE_TEXT.revealed]
+: SKILL %.2f, FIT %d/%d/%d
+
+# Service > HIRE_TEXT > fit_key
+[Service.HIRE_TEXT.fit_key]
+FIT = CULTURE / COMMUNICATION / CURIOSITY, 1 TO 5.
+
+# Service > HIRE_TEXT > interview
+[Service.HIRE_TEXT.interview]
+INTERVIEW %s (1H)
+
+# Service > HIRE_TEXT > decide_text
+[Service.HIRE_TEXT.decide_text]
+Who gets the desk? Morgan signs whatever you decide.
+
+# Service > HIRE_TEXT > none
+[Service.HIRE_TEXT.none]
+NO ONE RIGHT NOW
+
+# Service > HIRE_TEXT > full
+[Service.HIRE_TEXT.full]
+The crew is full: six people is all the seats and desks you have.
+
+# Service > HIRE_TEXT > tech_q > powershell
+[Service.HIRE_TEXT.tech_q.powershell]
+How would you find every user whose password is older than ninety days?
+
+# Service > HIRE_TEXT > tech_q > networking
+[Service.HIRE_TEXT.tech_q.networking]
+A switch port drops every few minutes. What do you check first?
+
+# Service > HIRE_TEXT > tech_q > servers
+[Service.HIRE_TEXT.tech_q.servers]
+Users cannot open the file share but ping works. Where do you start?
+
+# Service > HIRE_TEXT > tech_q > security
+[Service.HIRE_TEXT.tech_q.security]
+A user clicked a link in a fake invoice email. What do you do in the first ten minutes?
+
+# Service > HIRE_TEXT > tech_a > strong
+[Service.HIRE_TEXT.tech_a.strong]
+%s answers at once, then adds a second check nobody asked for.
+
+# Service > HIRE_TEXT > tech_a > ok
+[Service.HIRE_TEXT.tech_a.ok]
+%s gets there with a nudge and says so honestly.
+
+# Service > HIRE_TEXT > tech_a > weak
+[Service.HIRE_TEXT.tech_a.weak]
+%s talks around it and glances at the door.
+
+# Service > HIRE_TEXT > behave_q
+[Service.HIRE_TEXT.behave_q]
+Tell me about a time a client was angry and you were in the wrong.
+
+# Service > HIRE_TEXT > behave_a > high
+[Service.HIRE_TEXT.behave_a.high]
+%s calls the client back the same day, then writes it up so nobody else repeats it.
+
+# Service > HIRE_TEXT > behave_a > mid
+[Service.HIRE_TEXT.behave_a.mid]
+%s apologised and fixed it, and says the follow-up could have been better.
+
+# Service > HIRE_TEXT > behave_a > low
+[Service.HIRE_TEXT.behave_a.low]
+%s blames the ticketing system and the last manager.
+
+# Service > HIRE_TEXT > summary
+[Service.HIRE_TEXT.summary]
+NOTE IT
+
+# Service > HIRE_TEXT > onboard > text
+[Service.HIRE_TEXT.onboard.text]
+%s starts tomorrow. How do you start them? Shadowing Maya for two days is gentle and costs no hours. A structured start with a written plan costs you two hours today and gets them on tickets sooner.
+
+# Service > HIRE_TEXT > onboard > shadow
+[Service.HIRE_TEXT.onboard.shadow]
+SHADOW MAYA FOR TWO DAYS
+
+# Service > HIRE_TEXT > onboard > structured
+[Service.HIRE_TEXT.onboard.structured]
+STRUCTURED START (2H)
+
+# Service > HIRE_TEXT > onboard > hint
+[Service.HIRE_TEXT.onboard.hint]
+NEEDS 2 MANAGER HOURS
+
+# Service > HIRE_TEXT > onboard > shadow_done
+[Service.HIRE_TEXT.onboard.shadow_done]
+%s will shadow for two days.
+
+# Service > HIRE_TEXT > onboard > structured_done
+[Service.HIRE_TEXT.onboard.structured_done]
+%s has a plan and starts on tickets tomorrow.
+
+# Service > HIRE_TEXT > welcome > from
+[Service.HIRE_TEXT.welcome.from]
+Morgan Reyes - Manager
+
+# Service > HIRE_TEXT > welcome > subject
+[Service.HIRE_TEXT.welcome.subject]
+New hire: %s
+
+# Service > HIRE_TEXT > welcome > body
+[Service.HIRE_TEXT.welcome.body]
+%s starts today and has a seat at the conference table. Tell me how the first weeks go. - Morgan
+
+# Service > HIRE_TEXT > react > ringer > text
+[Service.HIRE_TEXT.react.ringer.text]
+Alan likes the hire. Garrison asks whether they will fit in.
+
+# Service > HIRE_TEXT > react > fit > text
+[Service.HIRE_TEXT.react.fit.text]
+Garrison likes the hire. Alan asks whether they can do the hard tickets.
+
+# Service > HIRE_TEXT > react > mid > text
+[Service.HIRE_TEXT.react.mid.text]
+Both owners nod.
+
+# Service > HIRE_TEXT > react > none > text
+[Service.HIRE_TEXT.react.none.text]
+Both owners wonder why the seat is still empty.
+
+
+# ======================= Service > RETENTION =======================
+# Service > RETENTION > counter > speaker
+[Service.RETENTION.counter.speaker]
+%s (Tier 1)
+
+# Service > RETENTION > counter > text
+[Service.RETENTION.counter.text]
+A competitor, ByteBrothers, has offered %s a title and $80 a week more. Nobody has said anything. You know because the recruiter emailed the wrong person.
+
+# Service > RETENTION > counter > options > 0 > label
+[Service.RETENTION.counter.options.0.label]
+MATCH IT ($80 A WEEK)
+
+# Service > RETENTION > counter > options > 0 > reply
+[Service.RETENTION.counter.options.0.reply]
+I did not expect that. I will stay, and thank you for asking before I had to.
+
+# Service > RETENTION > counter > options > 1 > label
+[Service.RETENTION.counter.options.1.label]
+TALK ABOUT THE PLAN
+
+# Service > RETENTION > counter > options > 1 > reply
+[Service.RETENTION.counter.options.1.reply]
+A growth plan is worth something. Show me it is real and I will think about it.
+
+# Service > RETENTION > counter > options > 2 > label
+[Service.RETENTION.counter.options.2.label]
+WISH THEM WELL
+
+# Service > RETENTION > counter > options > 2 > reply
+[Service.RETENTION.counter.options.2.reply]
+Understood. I will give you my two weeks, and I will write the handover down.
+
+# Service > RETENTION > training > speaker
+[Service.RETENTION.training.speaker]
+%s (Tier 1)
+
+# Service > RETENTION > training > text
+[Service.RETENTION.training.text]
+%s asks for a course budget: a vendor certification class, about $400, and two Fridays for the exam. It would help the whole desk.
+
+# Service > RETENTION > training > options > 0 > label
+[Service.RETENTION.training.options.0.label]
+APPROVE THE COURSE ($400)
+
+# Service > RETENTION > training > options > 0 > reply
+[Service.RETENTION.training.options.0.reply]
+Thank you. I will share what I learn on Friday.
+
+# Service > RETENTION > training > options > 1 > label
+[Service.RETENTION.training.options.1.label]
+HALF: STUDY ON FRIDAYS
+
+# Service > RETENTION > training > options > 1 > reply
+[Service.RETENTION.training.options.1.reply]
+That works. I will take the book home.
+
+# Service > RETENTION > training > options > 2 > label
+[Service.RETENTION.training.options.2.label]
+NOT THIS QUARTER
+
+# Service > RETENTION > training > options > 2 > reply
+[Service.RETENTION.training.options.2.reply]
+Okay. I will ask again in the new year.
+
+# Service > RETENTION > burnout > speaker
+[Service.RETENTION.burnout.speaker]
+%s (Tier 1)
+
+# Service > RETENTION > burnout > text
+[Service.RETENTION.burnout.text]
+%s has carried a full board for days and has stopped joking at lunch. Tickets are slower and the replies are short.
+
+# Service > RETENTION > burnout > options > 0 > label
+[Service.RETENTION.burnout.options.0.label]
+TAKE TICKETS OFF THEIR DESK
+
+# Service > RETENTION > burnout > options > 0 > reply
+[Service.RETENTION.burnout.options.0.reply]
+Thank you. I can see over the top of the pile again.
+
+# Service > RETENTION > burnout > options > 1 > label
+[Service.RETENTION.burnout.options.1.label]
+A QUIET HALF DAY
+
+# Service > RETENTION > burnout > options > 1 > reply
+[Service.RETENTION.burnout.options.1.reply]
+I will go for a walk and come back with a clear head.
+
+# Service > RETENTION > burnout > options > 2 > label
+[Service.RETENTION.burnout.options.2.label]
+TOUGH IT OUT, BUSY WEEK
+
+# Service > RETENTION > burnout > options > 2 > reply
+[Service.RETENTION.burnout.options.2.reply]
+Sure. Whatever you need.
+
+# Service > RETENTION > promotion > speaker
+[Service.RETENTION.promotion.speaker]
+%s (Tier 1)
+
+# Service > RETENTION > promotion > text
+[Service.RETENTION.promotion.text]
+%s asks to move up to Tier 2. They have been taking the harder tickets and want the title and the pay that goes with it.
+
+# Service > RETENTION > promotion > options > 0 > label
+[Service.RETENTION.promotion.options.0.label]
+PROMOTE ($80 A WEEK)
+
+# Service > RETENTION > promotion > options > 0 > reply
+[Service.RETENTION.promotion.options.0.reply]
+Thank you, Dan. I will not let the board down.
+
+# Service > RETENTION > promotion > options > 1 > label
+[Service.RETENTION.promotion.options.1.label]
+YES, WITH A PLAN
+
+# Service > RETENTION > promotion > options > 1 > reply
+[Service.RETENTION.promotion.options.1.reply]
+A plan is fair. Tell me what I have to show.
+
+# Service > RETENTION > promotion > options > 2 > label
+[Service.RETENTION.promotion.options.2.label]
+NOT YET
+
+# Service > RETENTION > promotion > options > 2 > reply
+[Service.RETENTION.promotion.options.2.reply]
+Okay. I hoped for a different answer.
+
+# Service > RETENTION > resign > speaker
+[Service.RETENTION.resign.speaker]
+%s (Tier 1)
+
+# Service > RETENTION > resign > text
+[Service.RETENTION.resign.text]
+%s left a polite letter on your desk. No complaint, just a thank you and a last day. Morgan does not know yet.
+
+# Service > RETENTION > resign > options > 0 > label
+[Service.RETENTION.resign.options.0.label]
+ASK WHAT WOULD CHANGE
+
+# Service > RETENTION > resign > options > 0 > reply
+[Service.RETENTION.resign.options.0.reply]
+Thank you for asking. If the board stays this calm, I will stay.
+
+# Service > RETENTION > resign > options > 1 > label
+[Service.RETENTION.resign.options.1.label]
+COUNTER WITH A RAISE ($60 A WEEK)
+
+# Service > RETENTION > resign > options > 1 > reply
+[Service.RETENTION.resign.options.1.reply]
+That is generous. I will tear up the letter.
+
+# Service > RETENTION > resign > options > 2 > label
+[Service.RETENTION.resign.options.2.label]
+ACCEPT IT GRACEFULLY
+
+# Service > RETENTION > resign > options > 2 > reply
+[Service.RETENTION.resign.options.2.reply]
+Thank you. It is not about you.
+
+
+# ======================= Service > ROWS =======================
+# Service > ROWS > cost
+[Service.ROWS.cost]
+COST PER TICKET
+
+
 # ======================= Msp > PROBLEMS =======================
 # Msp > PROBLEMS > 0 > summary
 [Msp.PROBLEMS.0.summary]
