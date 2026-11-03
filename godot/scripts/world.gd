@@ -279,6 +279,9 @@ func roster_gone() -> Array:
 	var gone := []
 	if Campaign.player_as != "" and CAST.has(Campaign.player_as):
 		gone.append(Campaign.player_as)
+	# a tech who quit the service desk is gone (C4)
+	if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
+		gone.append("Maya")
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
 	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
 		gone.append(Roles.partner())
@@ -450,7 +453,7 @@ func _finish_leg(n: String) -> void:
 
 
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
-func start_outing(room: String, spots: Array, seats := {}) -> void:
+func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void:
 	var x0 := float(DATA.SCENES[room].x0)
 	for n in chars:
 		var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
@@ -458,6 +461,14 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
 		st.node = null
+		if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+			st.scene = OUTSIDE
+			st.following = false
+			st.held = ""
+			st.sips = 0
+			st.legs = [_away_leg()]
+			st.leg_t = FOREVER
+			continue
 		st.scene = room
 		st.arrive = "from_outing"
 		st.fresh = false
@@ -825,6 +836,33 @@ func _route(a: String, b: String) -> Array:
 
 func _uses(scene: String) -> Dictionary:
 	return DATA.SCENES[scene].uses
+
+
+# Owners.step_in: the owner walks to a ringing phone on the stage, answers it with a headset and goes back to work
+func send_owner_cover(n: String, x: float) -> bool:
+	if not chars.has(n) or _scene == "" or not DATA.SCENES.has(_scene):
+		return false
+	var st: Dictionary = chars[n]
+	var from_x := _hint_x(n)
+	var legs := _travel(st.scene, _scene, from_x)
+	if st.scene != _scene and legs.is_empty():
+		return false
+	legs.append(
+		{
+			"kind": "cover",
+			"scene": _scene,
+			"target_x": x,
+			"routine": PackedStringArray(["stand", "walk:%d" % int(x), "answer"]),
+			"dur": absf(x - from_x) / SPEED + 10.0,
+		}
+	)
+	legs.append_array(_travel(_scene, CAST[n].home, x))
+	legs.append(_work_leg(n, false, 30.0))
+	st.legs = legs
+	st.leg_t = legs[0].dur
+	if st.node != null and is_instance_valid(st.node):
+		st.node.set_routine(legs[0].routine)
+	return true
 
 
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:

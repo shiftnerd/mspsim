@@ -60,6 +60,28 @@ func _work(msp: Node, pb: Node) -> void:
 			msp.close_ticket(int(t.id))
 
 
+# the build variants of the extremes: nothing, the worst quirks on hard, one maxed stat, a preset
+func _pick_build(variant: String) -> void:
+	var build := root.get_node("Build")
+	var diff := root.get_node("Difficulty")
+	var tier := "hard" if variant == "worst" else "normal"
+	diff.set_tier(tier)
+	var b: Dictionary = build.new_build(tier)
+	match variant:
+		"zero":
+			b = build.flat()
+		"worst":
+			b.preset = "custom"
+			b.quirks = ["caffeine", "slow"]
+		"ps4", "net4", "people4":
+			var stat := {"ps4": "powershell", "net4": "networking", "people4": "people"}[variant] as String
+			b.preset = "custom"
+			build.try_set(b, stat, 4, "tech", "")
+		"scripter":
+			b = build.apply_preset("tech", "", tier, "scripter")
+	build.pending = build.finalize(b, "tech", "") if variant != "zero" else b
+
+
 func _init() -> void:
 	await process_frame
 	var c := root.get_node("Campaign")
@@ -73,10 +95,21 @@ func _init() -> void:
 	var cards := root.get_node("Cards")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
+	# `-- --build=zero|worst|ps4|net4|people4|scripter` plays the same 20 days with a point-buy build instead of the
+	# maxed skills (X7: the build extremes must still pass the story)
+	var variant := ""
+	for arg in OS.get_cmdline_user_args():
+		if str(arg).begins_with("--build="):
+			variant = str(arg).substr(8)
+	if variant != "":
+		_pick_build(variant)
 	c.new_game("tech")
-	sk.ps_level = 5
-	for key in ["networking", "servers", "security", "people"]:
-		sk.xp[key] = 200
+	if variant == "":
+		sk.ps_level = 5
+		for key in ["networking", "servers", "security", "people"]:
+			sk.xp[key] = 200
+	else:
+		print("build: ", root.get_node("Build").describe(c.build, "tech", ""), " tier ", root.get_node("Difficulty").tier)
 	var reports := 0
 	for day in range(1, 21):
 		_check(c.day == day and c.active, "day %d starts" % day)

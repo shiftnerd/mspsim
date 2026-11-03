@@ -337,6 +337,8 @@ func send_action(who: String, kind: String) -> String:
 		"help": "Got a minute? I could use a hand.",
 		"thanks": "Thanks for the help earlier!"
 	}
+	if kind == "help" and Owners.asks_owner(who):
+		labels["help"] = "Do you have a minute? I could use your help."
 	_push(who, "me", str(labels.get(kind, "Hi")))
 	var status := str(presence(who)[0])
 	if status != "AVAILABLE":
@@ -364,6 +366,9 @@ func send_action(who: String, kind: String) -> String:
 func _lend_a_hand(who: String) -> void:
 	if Social.is_manager(who):
 		_push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
+		return
+	if Owners.asks_owner(who):
+		_push(who, who, Owners.ask(who))  # ASK THE OWNER (tech campaign): an approval, a tip or a call to the client
 		return
 	var willing: bool = Social.value(who) >= 0 or randf() < 0.4
 	var ticket := _helpable_ticket()

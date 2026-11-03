@@ -68,7 +68,7 @@ func _draw() -> void:
 				)
 			else:
 				var day_line := (
-					"%s %d/%d REP %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.rep]
+					"%s %d/%d %s %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.prop("rep_label", "REP"), Campaign.rep]
 				)
 				if Shift.active():
 					day_line += (

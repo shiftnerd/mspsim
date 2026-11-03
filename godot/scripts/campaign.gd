@@ -11,7 +11,7 @@ const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
 # the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
-const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "sales": "SALES CAMPAIGN"}
+const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "SERVICE CAMPAIGN", "sales": "SALES CAMPAIGN"}
 # MODE REGISTRY (X8, "P0b"): one row per campaign mode. The three GATES say which machinery a mode runs:
 #   crew   the team works the ticket queue by itself (Owner.team_speed, _work_queue, ticket volume, premature closes)
 #   books  cash, P&L, payroll, weekly settle, valuation, the Boardroom app, projects, deal income
@@ -37,15 +37,16 @@ const MODE_DEFS := {
 		"ending_fired": "YOUR NAME IS MUD. THE COMPANY CLOSES.",
 		"ending_final": "YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT.",
 	},
-	# planned (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day
+	# C4 / V1 (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day. rep = Morgan's confidence
 	"service": {
-		"label": "SERVICE CAMPAIGN", "selectable": false,
+		"label": "SERVICE CAMPAIGN", "selectable": true,
 		"crew": true, "books": false, "cards": true, "books_lite": false,
 		"day_len": 360.0, "total_days": 20, "unit": "DAY",
-		"hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+		"hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
 		"pace": 0.8, "shift": false, "scars": false, "maya_in_events": true,
-		"ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
-		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+		"ending_fired": "MORGAN HAS LOST CONFIDENCE. THE DESK GOES TO SOMEONE ELSE.",
+		"ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
+		"rep_label": "CONF",
 	},
 	# campaign-paths 5 (C1, slice S1): Vic sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
 	"sales": {
@@ -67,6 +68,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
+var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
 
@@ -179,6 +181,8 @@ func derive_player_as(for_mode: String) -> String:
 		return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
 	if for_mode == "sales":
 		return "Vic"  # the sales campaign is always played as Vic (C1)
+	if for_mode == "service":
+		return "Dan"  # the service manager campaign is always played as Dan (C4)
 	if who == "":
 		return ""
 	return who if for_mode == FREE else ""
@@ -207,6 +211,8 @@ func new_game(for_mode: String) -> void:
 	player_as = derive_player_as(for_mode)
 	if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
 		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or Vic (sales)
+	if for_mode == "service":
+		PLAYER.current_character = str(World.CAST["Dan"].character)
 	Game.vars["start_seated"] = player_as != ""
 	day = 1
 	rep = START_REP
@@ -215,6 +221,7 @@ func new_game(for_mode: String) -> void:
 	history = []
 	_awaiting = false
 	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+	build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
 	Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
 	Msp.reset()
 	Skills.reset()
@@ -234,9 +241,13 @@ func new_game(for_mode: String) -> void:
 	Expo.reset()
 	Onsite.reset()
 	Events.reset()
+	Service.reset()
 	SalesCampaign.reset()
 	Mutators.start(for_mode)
 	Mutators.apply_start()
+	Build.apply_start()
+	if for_mode == "service":
+		Service.begin_run()
 	World.day_len = day_len_for(for_mode)
 	Msp.enabled = active
 	if for_mode == "sales":
@@ -271,8 +282,12 @@ func continue_game(for_mode: String) -> bool:
 	if for_mode == "sales":
 		player_as = "Vic"
 		PLAYER.current_character = "sales_vic"
+	if for_mode == "service":
+		player_as = "Dan"
+		PLAYER.current_character = str(World.CAST["Dan"].character)
 	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
+	build = Build.from_dict(cfg.get_value("campaign", "build", {}))  # an old save has none: the flat default
 	Msp.reset()
 	Skills.from_dict(cfg.get_value("campaign", "skills", {}))
 	Story.reset()
@@ -290,6 +305,7 @@ func continue_game(for_mode: String) -> bool:
 	Expo.from_dict(cfg.get_value("campaign", "conference", {}))
 	Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
 	Events.from_dict(cfg.get_value("campaign", "events", {}))
+	Service.from_dict(cfg.get_value("campaign", "service", {}))
 	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
 	SalesCampaign.from_dict(cfg.get_value("campaign", "sales_campaign", {}))
 	if for_mode == "sales":
@@ -317,6 +333,7 @@ func save() -> void:
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
 	cfg.set_value("campaign", "player_as", player_as)
+	cfg.set_value("campaign", "build", build)
 	cfg.set_value("campaign", "skills", Skills.to_dict())
 	cfg.set_value("campaign", "story", Story.flags)
 	cfg.set_value("campaign", "social", Social.to_dict())
@@ -333,6 +350,7 @@ func save() -> void:
 	cfg.set_value("campaign", "conference", Expo.to_dict())
 	cfg.set_value("campaign", "onsite", Onsite.to_dict())
 	cfg.set_value("campaign", "events", Events.to_dict())
+	cfg.set_value("campaign", "service", Service.to_dict())
 	cfg.set_value("campaign", "mutators", Mutators.to_dict())
 	cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
@@ -356,6 +374,7 @@ func quit_to_title() -> void:
 	active = false
 	mode = ""
 	player_as = ""
+	build = {}
 	World.apply_roster()
 	Msp.enabled = true
 	World.time_scale = 1.0
@@ -378,6 +397,8 @@ func _begin_day() -> void:
 		Owner.begin_day(day)
 	if mode == "sales":
 		SalesCampaign.begin_week(day)
+	if mode == "service":
+		Service.begin_day(day)
 	if bool(prop("shift", false)):
 		Shift.begin_day(day)
 	Events.begin_day(day)
@@ -471,6 +492,8 @@ func _end_day() -> void:
 	if Phone.is_open:
 		Phone.close()
 	var r := make_report()
+	if mode == "service":
+		Service.close_day(r)  # the scorecard: groups, grade and Morgan's confidence change replace the ticket report
 	if books_active() and str(prop("report", "day")) == "pnl":
 		var books: Dictionary = SalesCampaign.settle() if str(prop("settle", "owner")) == "sales" else Owner.settle()
 		r["rows"] = books.rows

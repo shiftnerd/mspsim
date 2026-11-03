@@ -59,8 +59,8 @@ func _init() -> void:
 	_check(cards.is_open and cards.options.size() == 3, "Morgan offers the top three gaps")
 	var chosen: String = str(cards.options[0].id)
 	cards.pick(0)
-	_check(cards.is_open and cards.options.size() == 3, "then a helper")
-	cards.pick(1)
+	_check(cards.is_open and cards.options.size() == 5, "then a helper")
+	cards.pick(4)
 	_check(
 		g.focus == chosen and g.helper == "Garrison" and g.progress == 0.0,
 		"plan set: %s with Garrison" % chosen

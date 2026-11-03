@@ -178,12 +178,13 @@ func start_plan() -> void:
 
 func _pick_helper(skill: String) -> void:
 	var options := []
-	for who in ["Alan", "Garrison", "Dan"]:
+	for who in ["Dan", "Maya", "Morgan", "Alan", "Garrison"]:
 		if Social.people().has(who):
-			options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
+			var busy := " - BUSY" if Social.is_owner(who) else ""
+			options.append({"label": "%s (%s%s)" % [who.to_upper(), Social.mood(who), busy], "id": who})
 	Cards.ask(
 		"Morgan (Manager)",
-		"Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.",
+		"Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight, so they catch fewer mistakes. Someone you get along with will say it kindly.",
 		options,
 		func(who: String) -> void: _plan_set(skill, who)
 	)
@@ -298,7 +299,7 @@ func stretch_result(id: String) -> void:
 				Msp.score += 8
 				Msp.send_text(helper, "Nice. I would not have thought of that. Solid.")
 				_add_progress(30.0, 20)
-			elif randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95):
+			elif randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95) * (0.6 if Social.is_owner(helper) else 1.0):
 				stretch_caught += 1
 				Social.change(helper, 1)
 				Msp.send_text(
@@ -342,7 +343,7 @@ func _graduate_tech() -> void:
 	if focus == "powershell":
 		Skills.ps_level = mini(5, Skills.ps_level + 1)
 	elif lv < 5:
-		Skills.xp[focus] = maxi(int(Skills.xp[focus]), int(Skills.XP_AT[lv]))
+		Skills.xp[focus] = maxi(int(Skills.xp[focus]), Skills.need(lv))
 	Campaign.adjust_rep(3)
 	Social.change(helper, 3)
 	(

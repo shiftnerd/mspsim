@@ -101,14 +101,25 @@ func reset() -> void:
 		xp[key] = 0
 	ps_level = 0
 	lesson_day = -1
+	var start: Dictionary = Build.tech_levels()  # a point-buy build (X7) starts at its levels: the perks are live from day 1
+	for key in start:
+		if key == "powershell":
+			ps_level = mini(int(start[key]), LESSONS.size())
+		else:
+			xp[key] = need(int(start[key]) - 1)
+
+
+# the experience a level needs (index 0 = level 1); SLOW STARTER / QUICK STUDY scale it
+func need(index: int) -> int:
+	return roundi(float(XP_AT[index]) * Build.xp_mult())
 
 
 func level(skill: String) -> int:
 	if skill == "powershell":
 		return ps_level
 	var n := 0
-	for need in XP_AT:
-		if int(xp.get(skill, 0)) >= int(need):
+	for i in XP_AT.size():
+		if int(xp.get(skill, 0)) >= need(i):
 			n += 1
 	return n
 
@@ -120,8 +131,8 @@ func progress(skill: String) -> float:
 		return float(lv) / 5.0
 	if lv >= XP_AT.size():
 		return 1.0
-	var low := 0 if lv == 0 else int(XP_AT[lv - 1])
-	return clampf(float(int(xp.get(skill, 0)) - low) / float(int(XP_AT[lv]) - low), 0.0, 1.0)
+	var low := 0 if lv == 0 else need(lv - 1)
+	return clampf(float(int(xp.get(skill, 0)) - low) / float(need(lv) - low), 0.0, 1.0)
 
 
 func add_xp(skill: String, amount: int) -> void:
@@ -157,7 +168,7 @@ func fix_secs() -> float:
 
 
 func fail_chance() -> float:
-	return maxf(0.0, float(FAIL[ps_level]) + Shift.fail_add()) if Campaign.active else 0.0
+	return maxf(0.0, float(FAIL[ps_level]) + Shift.fail_add() + Build.fx("fail")) if Campaign.active else 0.0
 
 
 # CUSTOMER level 2: you read the room and can tell whether the person at the machine has work open

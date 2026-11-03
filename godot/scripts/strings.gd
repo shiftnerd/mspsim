@@ -16,6 +16,7 @@ const ROOTS := {
 	"Mutators": ["MUTATORS", "STARTS"],
 	"Playbook": ["BOOKS", "PROBLEMS"],
 	"Owner": ["CARDS"],
+	"Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "DAYS", "REVIEW"],
 	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
 	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
 	"Nerds": ["JOKES", "THREADS"],
@@ -30,7 +31,8 @@ const ROOTS := {
 	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
+	"Build": ["QUIRKS", "PRESETS", "INFO"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [

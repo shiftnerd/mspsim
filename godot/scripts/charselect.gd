@@ -14,6 +14,7 @@ signal cancelled
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
+const BuildPanel := preload("res://scripts/build_panel.gd")
 const GOLD := Color("f5d442")
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
@@ -55,6 +56,10 @@ const OWNER_BLURBS := {
 }
 # the sales campaign offers Vic only
 const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
+# the service manager campaign offers Dan only
+const SERVICE_BLURBS := {
+	"office_dan": "THE QUIET NETWORK TECH WHO LABELS EVERYTHING, PROMOTED TO RUN THE DESK. LABEL THE PEOPLE NOW.",
+}
 const PHONES := [
 	{
 		"id": "ios",
@@ -69,7 +74,7 @@ const PHONES := [
 ]
 
 var mode := "free"
-var step := "char"  # "char" then (tech campaign only) "phone"
+var step := "char"  # "char", then (tech campaign only) "phone", then (tech and owner) "build" (X7, build_panel.gd)
 var ids: Array = []
 var sel := 0
 var phone_sel := 0
@@ -77,6 +82,8 @@ var facing := "right"
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
+var _panel: RefCounted = null  # the build step's working build
+var _confirmed := false
 
 
 func _ready() -> void:
@@ -93,6 +100,19 @@ func needs_phone() -> bool:
 	return mode == "tech"
 
 
+# the point-buy step (X7): the campaigns that have a stat set; Free Play has none
+func needs_build() -> bool:
+	return Build.selectable(mode)
+
+
+func _open_build() -> void:
+	step = "build"
+	if _panel == null or _panel.character != current_id():
+		_panel = BuildPanel.new()
+		_panel.setup(mode, current_id())
+	queue_redraw()
+
+
 # who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
 # the tech campaign
 func choices(for_mode: String) -> Array:
@@ -102,6 +122,8 @@ func choices(for_mode: String) -> Array:
 		return ["office_alan", "casual_garrison"]
 	if for_mode == "sales":
 		return ["sales_vic"]
+	if for_mode == "service":
+		return ["office_dan"]
 	var cast: Array = []
 	for n in World.CAST:
 		cast.append(str(World.CAST[n].character))
@@ -121,6 +143,8 @@ func setup(for_mode: String) -> void:
 	if not PLAYER.current_character in ids:
 		sel = maxi(0, ids.find("office_adult"))
 	phone_sel = 1 if Phone.os == "android" else 0
+	_panel = null
+	_confirmed = false
 	Mutators.pending_start = Mutators.STANDARD
 	Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
 	facing = "right"
@@ -146,6 +170,8 @@ func info(id: String) -> Dictionary:
 		entry["blurb"] = OWNER_BLURBS[id]
 	if mode == "sales":
 		entry["blurb"] = SALES_BLURB
+	if mode == "service" and SERVICE_BLURBS.has(id):
+		entry["blurb"] = SERVICE_BLURBS[id]
 	return entry
 
 
@@ -154,6 +180,8 @@ func summary(with_tier := true) -> String:
 	var s := "%s - %s" % [label, str(info(current_id()).name)]
 	if needs_phone():
 		s += " - " + str(PHONES[phone_sel].name)
+	if _panel != null and (step == "build" or _confirmed):
+		s += " - " + str(_panel.name_text())
 	if with_tier:
 		s += " - " + Difficulty.label()
 		if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
@@ -175,6 +203,8 @@ func change_start(step: int) -> void:
 func change_tier(delta_tier: int) -> void:
 	Difficulty.cycle_tier(delta_tier)
 	Difficulty.save_settings()
+	if _panel != null:
+		_panel.refit()
 	queue_redraw()
 
 
@@ -212,12 +242,22 @@ func confirm() -> void:
 		step = "phone"
 		queue_redraw()
 		return
+	if step != "build" and needs_build():
+		_open_build()
+		return
+	if step == "build" and not _panel.valid():
+		queue_redraw()
+		Hints.toast(str(_panel.errors()[0]), 2.0)
+		return
+	_confirmed = step == "build"
+	Build.pending = _panel.build_out() if _confirmed else {}
 	var result := {
 		"mode": mode,
 		"character": current_id(),
 		"phone": str(PHONES[phone_sel].id) if needs_phone() else "",
 		"summary": summary(),
 		"tier": Difficulty.tier,
+		"build": Build.pending,
 	}
 	PLAYER.current_character = current_id()
 	if needs_phone():
@@ -226,7 +266,10 @@ func confirm() -> void:
 
 
 func back() -> void:
-	if step == "phone":
+	if step == "build":
+		step = "phone" if needs_phone() else "char"
+		queue_redraw()
+	elif step == "phone":
 		step = "char"
 		queue_redraw()
 	else:
@@ -237,6 +280,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Engine.get_process_frames() == _born or Toolbox.is_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		if step == "build" and _build_key(event.keycode):
+			get_viewport().set_input_as_handled()
+			return
 		match event.keycode:
 			KEY_X:
 				open_seed()
@@ -272,6 +318,25 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+# the build step's own keys: Up / Down rows, Left / Right change, P preset (the rest is shared with the other steps)
+func _build_key(code: Key) -> bool:
+	match code:
+		KEY_UP, KEY_W:
+			_panel.move_row(-1)
+		KEY_DOWN, KEY_S:
+			_panel.move_row(1)
+		KEY_LEFT, KEY_A:
+			_panel.change(-1)
+		KEY_RIGHT, KEY_D:
+			_panel.change(1)
+		KEY_P:
+			_panel.cycle_preset(1)
+		_:
+			return false
+	queue_redraw()
+	return true
+
+
 func _hit(at: Vector2) -> Array:
 	for r in _rects:
 		if r[0].has_point(at):
@@ -284,7 +349,11 @@ func _hover(at: Vector2) -> void:
 	if r.is_empty():
 		return
 	var kind: String = r[1]
-	if kind == "item" and step == "char" and sel != int(r[2]):
+	if kind.begins_with("b_"):
+		if step == "build":
+			_panel.hover(kind, int(r[2]))
+			queue_redraw()
+	elif kind == "item" and step == "char" and sel != int(r[2]):
 		sel = int(r[2])
 		queue_redraw()
 	elif kind == "phone" and phone_sel != int(r[2]):
@@ -295,6 +364,11 @@ func _hover(at: Vector2) -> void:
 func _click(at: Vector2) -> void:
 	var r := _hit(at)
 	if r.is_empty():
+		return
+	if str(r[1]).begins_with("b_"):
+		if step == "build":
+			_panel.click(str(r[1]), int(r[2]))
+			queue_redraw()
 		return
 	match str(r[1]):
 		"back":
@@ -360,7 +434,7 @@ func _draw() -> void:
 	var narrow := size.x < 250.0
 	_rects.clear()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
-	var heading := "CHOOSE YOUR CHARACTER" if step == "char" else "PICK YOUR PHONE"
+	var heading := "CHOOSE YOUR CHARACTER" if step == "char" else ("PICK YOUR PHONE" if step == "phone" else "BUILD YOUR CHARACTER")
 	_ctxt(heading, 22.0 if narrow else 6.0, GOLD)
 	var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
 	draw_rect(back_r, PANEL)
@@ -372,21 +446,46 @@ func _draw() -> void:
 		_draw_start(size, narrow)
 	if step == "char":
 		_draw_chars(size, narrow)
+	elif step == "build":
+		_place_sprites(size, narrow)
+		_panel.draw(self, size, narrow, _rects)
 	else:
 		_place_sprites(size, narrow)
 		_draw_phones(size, narrow)
-	_ctxt(
-		summary(false),
-		size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)),
-		Color.WHITE
-	)
+	_draw_summary(size, narrow)
 	var extra := "T TOOLS" if mode == "free" else "TAB START"
+	if step == "build":
+		if narrow:
+			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
+			_ctxt("P PRESET  X SEED  ENTER GO  ESC", size.y - 12.0, DIM)
+		else:
+			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+		return
 	var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
 	if narrow:
 		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
 		_ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
 	else:
 		_ctxt(hint, size.y - 9.0, DIM)
+
+
+# the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
+func _draw_summary(size: Vector2, narrow: bool) -> void:
+	var base := size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0))
+	var text := summary(false)
+	if float(PixelFont.width(text)) <= size.x - 8.0:
+		_ctxt(text, base, Color.WHITE)
+		return
+	var parts := text.split(" - ")
+	var first := ""
+	for i in parts.size():
+		var next: String = parts[i] if first == "" else first + " - " + parts[i]
+		if first != "" and float(PixelFont.width(next)) > size.x - 8.0:
+			_ctxt(first, base - 8.0, Color.WHITE)
+			_ctxt(" - ".join(parts.slice(i)), base, Color.WHITE)
+			return
+		first = next
+	_ctxt(text, base, Color.WHITE)
 
 
 # the difficulty chip: LEVEL < NORMAL > (top right, or under the heading in narrow portrait)

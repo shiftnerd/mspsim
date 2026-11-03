@@ -4639,6 +4639,1032 @@ The case is dismissed, but it cost you sleep.
 You lose. It costs $6,000 and your name.
 
 
+# ======================= Service > HUDDLE =======================
+# Service > HUDDLE > speaker
+[Service.HUDDLE.speaker]
+Morning huddle
+
+# Service > HUDDLE > text
+[Service.HUDDLE.text]
+Morning. %d tickets open, %d of them P1 or P2. Crew mood is %s. What is today's focus?
+
+# Service > HUDDLE > options > p1 > label
+[Service.HUDDLE.options.p1.label]
+P1 FIRST
+
+# Service > HUDDLE > options > p1 > note
+[Service.HUDDLE.options.p1.note]
+P1 and P2 tickets get a head start. The rest wait a little longer.
+
+# Service > HUDDLE > options > queue > label
+[Service.HUDDLE.options.queue.label]
+CLEAR THE QUEUE
+
+# Service > HUDDLE > options > queue > note
+[Service.HUDDLE.options.queue.note]
+Everyone works faster today. A few more will come back.
+
+# Service > HUDDLE > options > mentor > label
+[Service.HUDDLE.options.mentor.label]
+MENTOR MAYA
+
+# Service > HUDDLE > options > mentor > note
+[Service.HUDDLE.options.mentor.note]
+You sit with Maya today. The queue slows down, she gets better.
+
+# Service > HUDDLE > options > project > label
+[Service.HUDDLE.options.project.label]
+PROJECT DAY
+
+# Service > HUDDLE > options > project > note
+[Service.HUDDLE.options.project.note]
+Documentation and cleanup. Slower today, fewer tickets later.
+
+
+# ======================= Service > MEMOS =======================
+# Service > MEMOS > m1 > speaker
+[Service.MEMOS.m1.speaker]
+Alan (Co-owner)
+
+# Service > MEMOS > m1 > text
+[Service.MEMOS.m1.text]
+Memo: patch every workstation and the switch firmware this week. Quality first. Garrison replied-all: Dr. Patel's Wi-Fi has to work before his lunch.
+
+# Service > MEMOS > m1 > options > 0 > label
+[Service.MEMOS.m1.options.0.label]
+PATCH FIRST
+
+# Service > MEMOS > m1 > options > 0 > text
+[Service.MEMOS.m1.options.0.text]
+I will put the patch run on the board. Dr. Patel waits for the window.
+
+# Service > MEMOS > m1 > options > 1 > label
+[Service.MEMOS.m1.options.1.label]
+DR. PATEL FIRST
+
+# Service > MEMOS > m1 > options > 1 > text
+[Service.MEMOS.m1.options.1.text]
+Understood. Patel's Wi-Fi first. The patches move to next week.
+
+# Service > MEMOS > m1 > options > 2 > label
+[Service.MEMOS.m1.options.2.label]
+BOTH, EXTRA HOURS
+
+# Service > MEMOS > m1 > options > 2 > text
+[Service.MEMOS.m1.options.2.text]
+Both are on the board. It costs the crew an evening.
+
+# Service > MEMOS > m2 > speaker
+[Service.MEMOS.m2.speaker]
+Garrison (Co-owner)
+
+# Service > MEMOS > m2 > text
+[Service.MEMOS.m2.text]
+Memo: a prospect wants onboarding in a day. Say yes, we need the win. Alan replied: survey the network first, or it goes badly.
+
+# Service > MEMOS > m2 > options > 0 > label
+[Service.MEMOS.m2.options.0.label]
+SAY YES TO ONE DAY
+
+# Service > MEMOS > m2 > options > 0 > text
+[Service.MEMOS.m2.options.0.text]
+One day it is. I will tell the crew it is a sprint.
+
+# Service > MEMOS > m2 > options > 1 > label
+[Service.MEMOS.m2.options.1.label]
+SURVEY FIRST
+
+# Service > MEMOS > m2 > options > 1 > text
+[Service.MEMOS.m2.options.1.text]
+Three days with a survey. I wrote down why.
+
+# Service > MEMOS > m2 > options > 2 > label
+[Service.MEMOS.m2.options.2.label]
+A DAY, THEN A SURVEY
+
+# Service > MEMOS > m2 > options > 2 > text
+[Service.MEMOS.m2.options.2.text]
+We start in a day and survey as we go. Tight, but written down.
+
+# Service > MEMOS > m3 > speaker
+[Service.MEMOS.m3.speaker]
+Alan (Co-owner)
+
+# Service > MEMOS > m3 > text
+[Service.MEMOS.m3.text]
+Memo: tier the desk. Seniors on hard tickets, juniors on resets, no exceptions. Garrison replied: account pods, so each client sees the same faces.
+
+# Service > MEMOS > m3 > options > 0 > label
+[Service.MEMOS.m3.options.0.label]
+TIER THE DESK
+
+# Service > MEMOS > m3 > options > 0 > text
+[Service.MEMOS.m3.options.0.text]
+Tiers it is. I will label the queues.
+
+# Service > MEMOS > m3 > options > 1 > label
+[Service.MEMOS.m3.options.1.label]
+ACCOUNT PODS
+
+# Service > MEMOS > m3 > options > 1 > text
+[Service.MEMOS.m3.options.1.text]
+Pods. Each client gets a name on the ticket.
+
+# Service > MEMOS > m3 > options > 2 > label
+[Service.MEMOS.m3.options.2.label]
+TIERS FOR THE TOP 3
+
+# Service > MEMOS > m3 > options > 2 > text
+[Service.MEMOS.m3.options.2.text]
+Tiers for the big three clients and pods for the rest. More work for me.
+
+# Service > MEMOS > m4 > speaker
+[Service.MEMOS.m4.speaker]
+Garrison (Co-owner)
+
+# Service > MEMOS > m4 > text
+[Service.MEMOS.m4.text]
+Memo: the crew has earned a long Friday. Pizza at three and everyone leaves early. Alan replied: documentation week, nothing is written down.
+
+# Service > MEMOS > m4 > options > 0 > label
+[Service.MEMOS.m4.options.0.label]
+PIZZA AND AN EARLY FRIDAY
+
+# Service > MEMOS > m4 > options > 0 > text
+[Service.MEMOS.m4.options.0.text]
+Friday at three. I will cover the phones.
+
+# Service > MEMOS > m4 > options > 1 > label
+[Service.MEMOS.m4.options.1.label]
+DOCUMENTATION WEEK
+
+# Service > MEMOS > m4 > options > 1 > text
+[Service.MEMOS.m4.options.1.text]
+Documentation week. I will schedule the hours.
+
+# Service > MEMOS > m4 > options > 2 > label
+[Service.MEMOS.m4.options.2.label]
+PIZZA AT LUNCH, THEN DOCS
+
+# Service > MEMOS > m4 > options > 2 > text
+[Service.MEMOS.m4.options.2.text]
+Pizza at noon, documents in the afternoon. Nobody leaves early.
+
+# Service > MEMOS > m5 > speaker
+[Service.MEMOS.m5.speaker]
+Alan (Co-owner)
+
+# Service > MEMOS > m5 > text
+[Service.MEMOS.m5.text]
+Memo: set an after-hours rota, one tech a week, fixed. Garrison replied: pay a bonus and let people volunteer.
+
+# Service > MEMOS > m5 > options > 0 > label
+[Service.MEMOS.m5.options.0.label]
+A FIXED ROTA
+
+# Service > MEMOS > m5 > options > 0 > text
+[Service.MEMOS.m5.options.0.text]
+A rota, posted in the kitchen. Fair and predictable.
+
+# Service > MEMOS > m5 > options > 1 > label
+[Service.MEMOS.m5.options.1.label]
+BONUS FOR VOLUNTEERS
+
+# Service > MEMOS > m5 > options > 1 > text
+[Service.MEMOS.m5.options.1.text]
+A bonus for volunteers. Maya says she will take the first week.
+
+# Service > MEMOS > m5 > options > 2 > label
+[Service.MEMOS.m5.options.2.label]
+ROTA PLUS A SMALL BONUS
+
+# Service > MEMOS > m5 > options > 2 > text
+[Service.MEMOS.m5.options.2.text]
+A rota with a small bonus. Both of you get half of what you asked for.
+
+# Service > MEMOS > m6 > speaker
+[Service.MEMOS.m6.speaker]
+Garrison (Co-owner)
+
+# Service > MEMOS > m6 > text
+[Service.MEMOS.m6.text]
+Memo: Iron Mule wants unlimited changes for the same fee. Say yes and keep them happy. Alan replied: enforce the contract or it never ends.
+
+# Service > MEMOS > m6 > options > 0 > label
+[Service.MEMOS.m6.options.0.label]
+SAY YES TO THEM
+
+# Service > MEMOS > m6 > options > 0 > text
+[Service.MEMOS.m6.options.0.text]
+I told Iron Mule yes. I will watch the hours they take.
+
+# Service > MEMOS > m6 > options > 1 > label
+[Service.MEMOS.m6.options.1.label]
+ENFORCE THE CONTRACT
+
+# Service > MEMOS > m6 > options > 1 > text
+[Service.MEMOS.m6.options.1.text]
+I sent them the scope section, politely. It is written down now.
+
+# Service > MEMOS > m6 > options > 2 > label
+[Service.MEMOS.m6.options.2.label]
+A CHANGE ORDER
+
+# Service > MEMOS > m6 > options > 2 > text
+[Service.MEMOS.m6.options.2.text]
+A change order for the extras. They can say yes or no.
+
+
+# ======================= Service > BEATS =======================
+# Service > BEATS > handover > speaker
+[Service.BEATS.handover.speaker]
+Morgan Reyes (Manager)
+
+# Service > BEATS > handover > text
+[Service.BEATS.handover.text]
+Alan and Garrison have asked me to give you the desk. Dan, you run the process now. Alan wants quality. Garrison wants speed. What comes first?
+
+# Service > BEATS > handover > options > 0 > label
+[Service.BEATS.handover.options.0.label]
+QUALITY FIRST
+
+# Service > BEATS > handover > options > 0 > text
+[Service.BEATS.handover.options.0.text]
+Quality first. I will label every queue and write the rules down.
+
+# Service > BEATS > handover > options > 1 > label
+[Service.BEATS.handover.options.1.label]
+SPEED FIRST
+
+# Service > BEATS > handover > options > 1 > text
+[Service.BEATS.handover.options.1.text]
+Speed first. Fast answers, then we tidy up.
+
+# Service > BEATS > handover > options > 2 > label
+[Service.BEATS.handover.options.2.label]
+BOTH, SLOWLY
+
+# Service > BEATS > handover > options > 2 > text
+[Service.BEATS.handover.options.2.text]
+Both. I will start with the queue. It will take a week.
+
+# Service > BEATS > xp > speaker
+[Service.BEATS.xp.speaker]
+Morgan Reyes (Manager)
+
+# Service > BEATS > xp > text
+[Service.BEATS.xp.text]
+Windows XP stops getting patches on April 8. Every XP box is a liability and the clients keep asking. How do we run the migrations?
+
+# Service > BEATS > xp > options > 0 > label
+[Service.BEATS.xp.options.0.label]
+DURING THE DAY
+
+# Service > BEATS > xp > options > 0 > text
+[Service.BEATS.xp.options.0.text]
+Daytime migrations. The queue will feel it.
+
+# Service > BEATS > xp > options > 1 > label
+[Service.BEATS.xp.options.1.label]
+AFTER HOURS, BATCHED
+
+# Service > BEATS > xp > options > 1 > text
+[Service.BEATS.xp.options.1.text]
+Batches after hours, with a note to each client. The crew gets time back.
+
+# Service > BEATS > xp > options > 2 > label
+[Service.BEATS.xp.options.2.label]
+GIVE THEM TO MAYA
+
+# Service > BEATS > xp > options > 2 > text
+[Service.BEATS.xp.options.2.text]
+Maya takes the XP list. I will check her notes at the end of the day.
+
+# Service > BEATS > vic > speaker
+[Service.BEATS.vic.speaker]
+Vic (Account Manager)
+
+# Service > BEATS > vic > text
+[Service.BEATS.vic.text]
+I promised Brightside a two hour response on everything. They loved it. Your crew can do that, right?
+
+# Service > BEATS > vic > options > 0 > label
+[Service.BEATS.vic.options.0.label]
+HOLD VIC TO IT
+
+# Service > BEATS > vic > options > 0 > text
+[Service.BEATS.vic.options.0.text]
+We can do it if the P3s wait. I wrote the exceptions on the board.
+
+# Service > BEATS > vic > options > 1 > label
+[Service.BEATS.vic.options.1.label]
+RE-QUOTE IT WITH VIC
+
+# Service > BEATS > vic > options > 1 > text
+[Service.BEATS.vic.options.1.text]
+Four hours, with two hours for urgent. Vic will call them. He did not enjoy it.
+
+# Service > BEATS > vic > options > 2 > label
+[Service.BEATS.vic.options.2.label]
+ASK GARRISON
+
+# Service > BEATS > vic > options > 2 > text
+[Service.BEATS.vic.options.2.text]
+Garrison says to do it and we sort the staffing later. I am not sure that is a plan.
+
+# Service > BEATS > nosale > speaker
+[Service.BEATS.nosale.speaker]
+Vic (Account Manager)
+
+# Service > BEATS > nosale > text
+[Service.BEATS.nosale.text]
+A new prospect wants fifty seats at half our price, with a four-hour response. Garrison likes the logo. The numbers look thin to me. Do we take them?
+
+# Service > BEATS > nosale > options > 0 > label
+[Service.BEATS.nosale.options.0.label]
+TAKE THEM
+
+# Service > BEATS > nosale > options > 0 > text
+[Service.BEATS.nosale.options.0.text]
+We take them. I will plan the capacity before they start.
+
+# Service > BEATS > nosale > options > 1 > label
+[Service.BEATS.nosale.options.1.label]
+SAY NO, POLITELY
+
+# Service > BEATS > nosale > options > 1 > text
+[Service.BEATS.nosale.options.1.text]
+No. I wrote down why: price, scope and response time do not fit. Vic will say it nicely.
+
+# Service > BEATS > nosale > options > 2 > label
+[Service.BEATS.nosale.options.2.label]
+COUNTER-OFFER
+
+# Service > BEATS > nosale > options > 2 > text
+[Service.BEATS.nosale.options.2.text]
+Counter-offer: full price, a longer response time, a signed scope. They may walk.
+
+# Service > BEATS > grow > speaker
+[Service.BEATS.grow.speaker]
+Maya (Tier 1)
+
+# Service > BEATS > grow > text
+[Service.BEATS.grow.text]
+Dan, can I talk to you? I think I am ready to take the harder tickets. Tier 2. Would you coach me?
+
+# Service > BEATS > grow > options > 0 > label
+[Service.BEATS.grow.options.0.label]
+YES, I WILL COACH YOU
+
+# Service > BEATS > grow > options > 0 > text
+[Service.BEATS.grow.options.0.text]
+Yes. We start tomorrow: you take the next server ticket and I watch. I will write the checklist.
+
+# Service > BEATS > grow > options > 1 > label
+[Service.BEATS.grow.options.1.label]
+NOT YET, HERE IS WHY
+
+# Service > BEATS > grow > options > 1 > text
+[Service.BEATS.grow.options.1.text]
+Not yet. Here are three skills to work on. Ask me again in a month.
+
+# Service > BEATS > grow > options > 2 > label
+[Service.BEATS.grow.options.2.label]
+I WILL SPEAK TO MORGAN
+
+# Service > BEATS > grow > options > 2 > text
+[Service.BEATS.grow.options.2.text]
+I will talk to Morgan about the budget. I will tell you what she says on Monday.
+
+# Service > BEATS > audit > speaker
+[Service.BEATS.audit.speaker]
+Morgan Reyes (Manager)
+
+# Service > BEATS > audit > text
+[Service.BEATS.audit.text]
+Summit Managed Holdings is looking at us. They want to audit the desk, and Alan and Garrison disagree about selling. What do you tell the owners about the numbers?
+
+# Service > BEATS > audit > options > 0 > label
+[Service.BEATS.audit.options.0.label]
+THE NUMBERS, AS THEY ARE
+
+# Service > BEATS > audit > options > 0 > text
+[Service.BEATS.audit.options.0.text]
+I gave both of them the same sheet. Nothing rounded.
+
+# Service > BEATS > audit > options > 1 > label
+[Service.BEATS.audit.options.1.label]
+ALAN: A CLEAN, DOCUMENTED DESK
+
+# Service > BEATS > audit > options > 1 > text
+[Service.BEATS.audit.options.1.text]
+I told Alan the desk is documented and the process is ready for an audit.
+
+# Service > BEATS > audit > options > 2 > label
+[Service.BEATS.audit.options.2.label]
+GARRISON: HAPPY CLIENTS
+
+# Service > BEATS > audit > options > 2 > text
+[Service.BEATS.audit.options.2.text]
+I told Garrison our clients are happy and the team stays. That is what a buyer pays for.
+
+# Service > BEATS > friday > speaker
+[Service.BEATS.friday.speaker]
+Morgan Reyes (Manager)
+
+# Service > BEATS > friday > text
+[Service.BEATS.friday.text]
+Friday numbers. Your confidence rating with me is %d and the week averaged a %s. Anything you need from me?
+
+# Service > BEATS > friday > options > 0 > label
+[Service.BEATS.friday.options.0.label]
+ANOTHER TECH, PLEASE
+
+# Service > BEATS > friday > options > 0 > text
+[Service.BEATS.friday.options.0.text]
+I asked for another tech. Morgan will bring it to the owners. I attached the utilisation numbers.
+
+# Service > BEATS > friday > options > 1 > label
+[Service.BEATS.friday.options.1.label]
+I WILL FIX THE NUMBERS
+
+# Service > BEATS > friday > options > 1 > text
+[Service.BEATS.friday.options.1.text]
+I will fix the numbers. Monday you will see the changes on the board.
+
+# Service > BEATS > friday > options > 2 > label
+[Service.BEATS.friday.options.2.label]
+NOTHING TO ADD
+
+# Service > BEATS > friday > options > 2 > text
+[Service.BEATS.friday.options.2.text]
+Nothing to add. Everything is written down.
+
+
+# ======================= Service > INCIDENTS =======================
+# Service > INCIDENTS > rdp > speaker
+[Service.INCIDENTS.rdp.speaker]
+Alan (Co-owner)
+
+# Service > INCIDENTS > rdp > text
+[Service.INCIDENTS.rdp.text]
+Brightside's server is crawling and the log shows logins we do not know. Who takes it?
+
+# Service > INCIDENTS > rdp > title
+[Service.INCIDENTS.rdp.title]
+RDP BREAK-IN
+
+# Service > INCIDENTS > ransom > speaker
+[Service.INCIDENTS.ransom.speaker]
+Garrison (Co-owner)
+
+# Service > INCIDENTS > ransom > text
+[Service.INCIDENTS.ransom.text]
+Hoot and Holler has a ransom note on their server. Their partners are calling me. Who takes it?
+
+# Service > INCIDENTS > ransom > title
+[Service.INCIDENTS.ransom.title]
+THE RANSOMWARE
+
+# Service > INCIDENTS > rack > speaker
+[Service.INCIDENTS.rack.speaker]
+Morgan Reyes (Manager)
+
+# Service > INCIDENTS > rack > text
+[Service.INCIDENTS.rack.text]
+The network rack at Gnarly Gnomes came off the wall. Three tickets, everything down. Who takes it?
+
+# Service > INCIDENTS > rack > title
+[Service.INCIDENTS.rack.title]
+THE FALLEN RACK
+
+# Service > INCIDENTS > email24 > speaker
+[Service.INCIDENTS.email24.speaker]
+Garrison (Co-owner)
+
+# Service > INCIDENTS > email24 > text
+[Service.INCIDENTS.email24.text]
+Soggy Bottom Brewing runs around the clock and their email is down. This may run into the night. Who takes it?
+
+# Service > INCIDENTS > email24 > title
+[Service.INCIDENTS.email24.title]
+THE EMAIL NIGHT
+
+# Service > INCIDENTS > migration > speaker
+[Service.INCIDENTS.migration.speaker]
+Alan (Co-owner)
+
+# Service > INCIDENTS > migration > text
+[Service.INCIDENTS.migration.text]
+Brightside's old server is out of support. Today is the cutover. It has to be careful. Who takes it?
+
+# Service > INCIDENTS > migration > title
+[Service.INCIDENTS.migration.title]
+THE SERVER MIGRATION
+
+
+# ======================= Service > INCIDENT_OPTIONS =======================
+# Service > INCIDENT_OPTIONS > take
+[Service.INCIDENT_OPTIONS.take]
+I TAKE IT MYSELF
+
+# Service > INCIDENT_OPTIONS > took
+[Service.INCIDENT_OPTIONS.took]
+I am on it. The board is Maya's until I am back.
+
+# Service > INCIDENT_OPTIONS > sent
+[Service.INCIDENT_OPTIONS.sent]
+Maya has it, with the checklist. I will review the result.
+
+# Service > INCIDENT_OPTIONS > asked
+[Service.INCIDENT_OPTIONS.asked]
+I asked the owner to step in. It cost them an afternoon.
+
+
+# ======================= Service > ONE_ON_ONES =======================
+# Service > ONE_ON_ONES > Maya > 0 > text
+[Service.ONE_ON_ONES.Maya.0.text]
+I closed eleven tickets yesterday and nobody said anything. Is that good?
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.0.options.0.label]
+TELL HER EXACTLY WHAT WAS GOOD
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.0.options.0.reply]
+Eleven is good. The Acme spooler notes were the best. I mean it.
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.0.options.1.label]
+SAY THANKS
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.0.options.1.reply]
+Thanks. Keep going.
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.0.options.2.label]
+ASK ABOUT THE REOPENS
+
+# Service > ONE_ON_ONES > Maya > 0 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.0.options.2.reply]
+Two came back. Let us look at those together.
+
+# Service > ONE_ON_ONES > Maya > 1 > text
+[Service.ONE_ON_ONES.Maya.1.text]
+I do not like calling clients when I do not know the answer. It makes me freeze.
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.1.options.0.label]
+GIVE HER A SCRIPT
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.1.options.0.reply]
+Here is a card: say what you know, say what you will check, say when you will call back. I wrote it.
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.1.options.1.label]
+SIT IN ON THE NEXT CALL
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.1.options.1.reply]
+I will sit next to you on the next one. You talk. I stay quiet.
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.1.options.2.label]
+TELL HER TO PUSH THROUGH
+
+# Service > ONE_ON_ONES > Maya > 1 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.1.options.2.reply]
+It gets easier. Just do it.
+
+# Service > ONE_ON_ONES > Maya > 2 > text
+[Service.ONE_ON_ONES.Maya.2.text]
+Sam gets the easy tickets and I get the weird ones. Is that on purpose?
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.2.options.0.label]
+EXPLAIN THE TIERS
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.2.options.0.reply]
+Yes. You are ready for the harder ones. It is not a punishment. I should have said so.
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.2.options.1.label]
+SWAP FOR A WEEK
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.2.options.1.reply]
+We swap for a week and compare the times. I will keep a table.
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.2.options.2.label]
+SAY IT IS HOW IT IS
+
+# Service > ONE_ON_ONES > Maya > 2 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.2.options.2.reply]
+It is how the queue falls.
+
+# Service > ONE_ON_ONES > Maya > 3 > text
+[Service.ONE_ON_ONES.Maya.3.text]
+My cousin works at the bank across the street. They are hiring a tech. I am not leaving. I just wanted you to know.
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.3.options.0.label]
+ASK WHAT WOULD MAKE HER STAY
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.3.options.0.reply]
+Thank you for telling me. What would make this a better job? I will write it down.
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.3.options.1.label]
+PROMISE A RAISE REVIEW
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.3.options.1.reply]
+I will take it to Morgan this month. I will not promise a number.
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.3.options.2.label]
+WISH HER LUCK
+
+# Service > ONE_ON_ONES > Maya > 3 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.3.options.2.reply]
+Okay. Good luck either way.
+
+# Service > ONE_ON_ONES > Tech > 0 > text
+[Service.ONE_ON_ONES.Tech.0.text]
+{name} says: I got stuck on a printer yesterday and did not ask. I did not want to bother you.
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.0.options.0.label]
+ASK HIM TO ASK, ALWAYS
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.0.options.0.reply]
+Asking is part of the job. Five minutes is the rule: stuck for five, ask. I wrote it on the board.
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.0.options.1.label]
+WALK THROUGH THE FIX
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.0.options.1.reply]
+Let us do it now. I will show you where the queue lives.
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.0.options.2.label]
+TELL HIM TO TRY HARDER
+
+# Service > ONE_ON_ONES > Tech > 0 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.0.options.2.reply]
+Try harder.
+
+# Service > ONE_ON_ONES > Tech > 1 > text
+[Service.ONE_ON_ONES.Tech.1.text]
+{name} says: The phones are loud and I cannot think. I am making mistakes.
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.1.options.0.label]
+SWAP THE PHONE SHIFT
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.1.options.0.reply]
+I moved you to ticket work until noon. I will take the phones.
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.1.options.1.label]
+A BREAK AND A CHECKLIST
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.1.options.1.reply]
+Ten minutes away from the desk, then use the checklist. I laminated it.
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.1.options.2.label]
+TELL HIM IT IS BUSY
+
+# Service > ONE_ON_ONES > Tech > 1 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.1.options.2.reply]
+It is busy for everyone.
+
+# Service > ONE_ON_ONES > Tech > 2 > text
+[Service.ONE_ON_ONES.Tech.2.text]
+{name} says: I want to learn servers. Is there a path?
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.2.options.0.label]
+MAKE A SHORT PLAN
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.2.options.0.reply]
+Three steps, one a month, and you shadow me on the next server ticket. I will write it.
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.2.options.1.label]
+POINT TO THE ACADEMY
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.2.options.1.reply]
+Start with the PowerShell lessons. Ask me after the first one.
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.2.options.2.label]
+SAY NOT YET
+
+# Service > ONE_ON_ONES > Tech > 2 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.2.options.2.reply]
+Not yet. First the basics.
+
+# Service > ONE_ON_ONES > Tech > 3 > text
+[Service.ONE_ON_ONES.Tech.3.text]
+{name} says: Yesterday a client yelled at me. I am okay. I just wanted to say it.
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.3.options.0.label]
+TAKE THE CLIENT YOURSELF
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.3.options.0.reply]
+I will call them back. You did nothing wrong. Write down what they said, I will use it.
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.3.options.1.label]
+ASK WHAT HAPPENED
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.3.options.1.reply]
+Tell me what happened, in order. We will make a script for next time.
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.3.options.2.label]
+SAY CLIENTS ARE LIKE THAT
+
+# Service > ONE_ON_ONES > Tech > 3 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.3.options.2.reply]
+That happens.
+
+# Service > ONE_ON_ONES > Vic > 0 > text
+[Service.ONE_ON_ONES.Vic.0.text]
+I have a prospect who wants a handshake deal. No contract until next month. Come on, Dan.
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 0 > label
+[Service.ONE_ON_ONES.Vic.0.options.0.label]
+ASK FOR A ONE-PAGE SCOPE
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 0 > reply
+[Service.ONE_ON_ONES.Vic.0.options.0.reply]
+One page. What we do, what we do not, how fast. You can say it is for the crew.
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 1 > label
+[Service.ONE_ON_ONES.Vic.0.options.1.label]
+LET HIM HAVE THE HANDSHAKE
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 1 > reply
+[Service.ONE_ON_ONES.Vic.0.options.1.reply]
+Fine. But I log every hour they use.
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 2 > label
+[Service.ONE_ON_ONES.Vic.0.options.2.label]
+REFUSE UNTIL SIGNED
+
+# Service > ONE_ON_ONES > Vic > 0 > options > 2 > reply
+[Service.ONE_ON_ONES.Vic.0.options.2.reply]
+No work without a signature.
+
+# Service > ONE_ON_ONES > Vic > 1 > text
+[Service.ONE_ON_ONES.Vic.1.text]
+My clients say tickets take forever. I tell them you are working on it. Are you?
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 0 > label
+[Service.ONE_ON_ONES.Vic.1.options.0.label]
+SHOW HIM THE BOARD
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 0 > reply
+[Service.ONE_ON_ONES.Vic.1.options.0.reply]
+Here is the queue, by age. Tell them the real number. Honest is better.
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 1 > label
+[Service.ONE_ON_ONES.Vic.1.options.1.label]
+GIVE HIM A PHONE NUMBER
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 1 > reply
+[Service.ONE_ON_ONES.Vic.1.options.1.reply]
+Give them my desk line for P1s. I will pick up.
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 2 > label
+[Service.ONE_ON_ONES.Vic.1.options.2.label]
+TELL HIM TO BE PATIENT
+
+# Service > ONE_ON_ONES > Vic > 1 > options > 2 > reply
+[Service.ONE_ON_ONES.Vic.1.options.2.reply]
+We are working on it.
+
+# Service > ONE_ON_ONES > Vic > 2 > text
+[Service.ONE_ON_ONES.Vic.2.text]
+Garrison wants a client dinner on Thursday. Can the crew cover the phones?
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 0 > label
+[Service.ONE_ON_ONES.Vic.2.options.0.label]
+COVER IT MYSELF
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 0 > reply
+[Service.ONE_ON_ONES.Vic.2.options.0.reply]
+I cover the phones. Go. Bring the client back happy.
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 1 > label
+[Service.ONE_ON_ONES.Vic.2.options.1.label]
+ASK MAYA FIRST
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 1 > reply
+[Service.ONE_ON_ONES.Vic.2.options.1.reply]
+I will ask Maya. If she says yes, there is a bonus.
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 2 > label
+[Service.ONE_ON_ONES.Vic.2.options.2.label]
+SAY NO
+
+# Service > ONE_ON_ONES > Vic > 2 > options > 2 > reply
+[Service.ONE_ON_ONES.Vic.2.options.2.reply]
+Not Thursday. The queue is too long.
+
+# Service > ONE_ON_ONES > Vic > 3 > text
+[Service.ONE_ON_ONES.Vic.3.text]
+I know I over-promise. Garrison says it is how we win. You say it is how we lose. Who is right?
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 0 > label
+[Service.ONE_ON_ONES.Vic.3.options.0.label]
+SPLIT IT: PROMISE LESS, SELL BETTER
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 0 > reply
+[Service.ONE_ON_ONES.Vic.3.options.0.reply]
+Both. Promise what we can do and sell why it matters. I will help you write the lines.
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 1 > label
+[Service.ONE_ON_ONES.Vic.3.options.1.label]
+TELL HIM HE IS RIGHT
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 1 > reply
+[Service.ONE_ON_ONES.Vic.3.options.1.reply]
+Garrison is right about the win. I will find a way to do the work.
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 2 > label
+[Service.ONE_ON_ONES.Vic.3.options.2.label]
+TELL HIM HE IS WRONG
+
+# Service > ONE_ON_ONES > Vic > 3 > options > 2 > reply
+[Service.ONE_ON_ONES.Vic.3.options.2.reply]
+You are the one the clients blame.
+
+
+# ======================= Service > ONE_TEXT =======================
+# Service > ONE_TEXT > already
+[Service.ONE_TEXT.already]
+We talked this morning, Dan. I am fine. Thanks.
+
+# Service > ONE_TEXT > walkup
+[Service.ONE_TEXT.walkup]
+%s stops by your desk.
+
+
+# ======================= Service > DAYS =======================
+# Service > DAYS > 1 > 1 > from
+[Service.DAYS.1.1.from]
+Morgan Reyes - Manager
+
+# Service > DAYS > 1 > 1 > subject
+[Service.DAYS.1.1.subject]
+The desk is yours
+
+# Service > DAYS > 1 > 1 > body
+[Service.DAYS.1.1.body]
+Dan, welcome to the chair. Each morning there is a huddle: pick the focus for the day. Talk to your people with E, they notice. Alan and Garrison will send memos that disagree with each other. Do not try to please both every time. - Morgan
+
+# Service > DAYS > 3 > 0 > from
+[Service.DAYS.3.0.from]
+Morgan Reyes - Manager
+
+# Service > DAYS > 3 > 0 > subject
+[Service.DAYS.3.0.subject]
+Your own queue
+
+# Service > DAYS > 3 > 0 > body
+[Service.DAYS.3.0.body]
+You can still pick up tickets with your own PSA and RMM when the crew is stuck. Just remember every minute at the keyboard is a minute nobody is looking at the board. - Morgan
+
+# Service > DAYS > 20 > 0 > from
+[Service.DAYS.20.0.from]
+Morgan Reyes - Manager
+
+# Service > DAYS > 20 > 0 > subject
+[Service.DAYS.20.0.subject]
+Review at the end of the day
+
+# Service > DAYS > 20 > 0 > body
+[Service.DAYS.20.0.body]
+After close, you, me, Alan and Garrison sit down for your review. Bring the scorecard. - Morgan
+
+
+# ======================= Service > REVIEW =======================
+# Service > REVIEW > quotes > Alan > high
+[Service.REVIEW.quotes.Alan.high]
+THE DESK IS DOCUMENTED AND THE NUMBERS ARE HONEST. THAT IS ALL I EVER ASKED.
+
+# Service > REVIEW > quotes > Alan > mid
+[Service.REVIEW.quotes.Alan.mid]
+SOLID WORK. I WOULD LIKE MORE TIME ON THE STACK.
+
+# Service > REVIEW > quotes > Alan > low
+[Service.REVIEW.quotes.Alan.low]
+TOO MANY CORNERS CUT. I HAD TO FIX THEM.
+
+# Service > REVIEW > quotes > Garrison > high
+[Service.REVIEW.quotes.Garrison.high]
+THE CLIENTS LIKE YOU AND THE TEAM STAYS. YOU GET IT.
+
+# Service > REVIEW > quotes > Garrison > mid
+[Service.REVIEW.quotes.Garrison.mid]
+GOOD, BUT YOU SAY NO TOO OFTEN.
+
+# Service > REVIEW > quotes > Garrison > low
+[Service.REVIEW.quotes.Garrison.low]
+THE CLIENTS NEEDED A YES AND GOT A MEMO.
+
+# Service > REVIEW > quotes > crew > high
+[Service.REVIEW.quotes.crew.high]
+DAN LABELS EVERYTHING AND LISTENS. WE WOULD FOLLOW HIM.
+
+# Service > REVIEW > quotes > crew > mid
+[Service.REVIEW.quotes.crew.mid]
+QUIET, FAIR, A BIT HARD TO READ.
+
+# Service > REVIEW > quotes > crew > low
+[Service.REVIEW.quotes.crew.low]
+WE DO NOT KNOW WHERE WE STAND.
+
+# Service > REVIEW > endings > ops > label
+[Service.REVIEW.endings.ops.label]
+OPERATIONS MANAGER
+
+# Service > REVIEW > endings > ops > desc
+[Service.REVIEW.endings.ops.desc]
+BOTH OWNERS BACK YOU. A RAISE, A BIGGER DESK AND A HIRE.
+
+# Service > REVIEW > endings > ops > text
+[Service.REVIEW.endings.ops.text]
+YOU BECOME OPERATIONS MANAGER. A RAISE, A SECOND TECH AND A STANDING SEAT AT THE OWNERS' TABLE. THE PATCH PANEL IS STILL LABELLED.
+
+# Service > REVIEW > endings > alan > label
+[Service.REVIEW.endings.alan.label]
+SIDE WITH ALAN: TECHNICAL DIRECTOR
+
+# Service > REVIEW > endings > alan > desc
+[Service.REVIEW.endings.alan.desc]
+ALAN WANTS YOU RUNNING THE STACK AND THE PROCESS.
+
+# Service > REVIEW > endings > alan > text
+[Service.REVIEW.endings.alan.text]
+YOU TAKE ALAN'S OFFER: TECHNICAL DIRECTOR. MORE SERVERS, FEWER CLIENT DINNERS, EVERYTHING DOCUMENTED. GARRISON SHAKES YOUR HAND AND STAYS POLITE.
+
+# Service > REVIEW > endings > garrison > label
+[Service.REVIEW.endings.garrison.label]
+SIDE WITH GARRISON: GROWTH MANAGER
+
+# Service > REVIEW > endings > garrison > desc
+[Service.REVIEW.endings.garrison.desc]
+GARRISON WANTS YOU BUILDING A BIGGER, FASTER SERVICE DESK.
+
+# Service > REVIEW > endings > garrison > text
+[Service.REVIEW.endings.garrison.text]
+YOU TAKE GARRISON'S OFFER: GROWTH MANAGER. BIGGER SLAS, MORE CLIENTS, A TEAM DINNER EVERY MONTH. ALAN WRITES YOU A VERY LONG MEMO.
+
+# Service > REVIEW > endings > leave > label
+[Service.REVIEW.endings.leave.label]
+LEAVE FOR AN IN-HOUSE IT JOB
+
+# Service > REVIEW > endings > leave > desc
+[Service.REVIEW.endings.leave.desc]
+A CLIENT OFFERS YOU THEIR ONLY IT JOB: ONE NETWORK, CALM HOURS.
+
+# Service > REVIEW > endings > leave > text
+[Service.REVIEW.endings.leave.text]
+YOU TURN IN YOUR BADGE. ONE OFFICE, ONE NETWORK, NO PAGER. YOU LABEL THEIR PATCH PANEL ON YOUR FIRST DAY.
+
+# Service > REVIEW > endings > stay > label
+[Service.REVIEW.endings.stay.label]
+STAY ON PROBATION
+
+# Service > REVIEW > endings > stay > desc
+[Service.REVIEW.endings.stay.desc]
+KEEP THE DESK, WITH A THIRTY-DAY PLAN FROM MORGAN.
+
+# Service > REVIEW > endings > stay > text
+[Service.REVIEW.endings.stay.text]
+YOU KEEP THE DESK WITH A WRITTEN PLAN. MORGAN WILL CHECK IT EVERY FRIDAY. YOU START BY LABELLING THE PLAN.
+
+
 # ======================= Msp > PROBLEMS =======================
 # Msp > PROBLEMS > 0 > summary
 [Msp.PROBLEMS.0.summary]
@@ -8858,11 +9884,11 @@ THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.
 
 # Outings > FRIEND_HINTS > Vic > board
 [Outings.FRIEND_HINTS.Vic.board]
-THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.
+I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.
 
 # Outings > FRIEND_HINTS > Vic > clock
 [Outings.FRIEND_HINTS.Vic.clock]
-THE CLOCK, TRUST ME, THE CLOCK.
+I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.
 
 # Outings > FRIEND_HINTS > Vic > plaque
 [Outings.FRIEND_HINTS.Vic.plaque]
@@ -8875,6 +9901,26 @@ THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.
 # Outings > FRIEND_HINTS > Vic > keypad
 [Outings.FRIEND_HINTS.Vic.keypad]
 YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.
+
+# Outings > FRIEND_HINTS > Morgan > board
+[Outings.FRIEND_HINTS.Morgan.board]
+THERE IS MATH ON THE BOARD. I WILL LET YOU HAVE THAT ONE.
+
+# Outings > FRIEND_HINTS > Morgan > clock
+[Outings.FRIEND_HINTS.Morgan.clock]
+THE CLOCK IS STOPPED. THAT IS NOT A METAPHOR. LOOK AT IT.
+
+# Outings > FRIEND_HINTS > Morgan > plaque
+[Outings.FRIEND_HINTS.Morgan.plaque]
+UNDER THE PAINTING. SOMEONE PUT A PLAQUE THERE ON PURPOSE.
+
+# Outings > FRIEND_HINTS > Morgan > shelf
+[Outings.FRIEND_HINTS.Morgan.shelf]
+THE SHELF IS DOING MORE WORK THAN IT LOOKS. READ IT.
+
+# Outings > FRIEND_HINTS > Morgan > keypad
+[Outings.FRIEND_HINTS.Morgan.keypad]
+YOU HAVE EVERYTHING. THE KEYPAD IS ON THE VAULT. GO.
 
 
 # ======================= Outings > HERRINGS =======================
@@ -8935,3 +9981,409 @@ THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.
 # Outings > RECIPE_TIPS > nodial
 [Outings.RECIPE_TIPS.nodial]
 THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.
+
+
+# ======================= Outings > GUESTS =======================
+# Outings > GUESTS > Alan > line
+[Outings.GUESTS.Alan.line]
+Alan has a thing tonight.
+
+# Outings > GUESTS > Garrison > line
+[Outings.GUESTS.Garrison.line]
+Garrison is sitting this one out.
+
+# Outings > GUESTS > Dan > line
+[Outings.GUESTS.Dan.line]
+Dan has a thing tonight.
+
+# Outings > GUESTS > Vic > line
+[Outings.GUESTS.Vic.line]
+Vic is on a call with a client.
+
+# Outings > GUESTS > Maya > line
+[Outings.GUESTS.Maya.line]
+Maya has plans tonight.
+
+# Outings > GUESTS > Morgan > line
+[Outings.GUESTS.Morgan.line]
+Morgan is staying behind to catch up.
+
+
+# ======================= Outings > CREW_LINES =======================
+# Outings > CREW_LINES > Alan > cheer > 0
+[Outings.CREW_LINES.Alan.cheer.0]
+NICE ROLL. STEADY.
+
+# Outings > CREW_LINES > Alan > cheer > 1
+[Outings.CREW_LINES.Alan.cheer.1]
+THAT IS HOW IT IS DONE.
+
+# Outings > CREW_LINES > Alan > groan > 0
+[Outings.CREW_LINES.Alan.groan.0]
+IT HAPPENS. ROLL AGAIN.
+
+# Outings > CREW_LINES > Alan > groan > 1
+[Outings.CREW_LINES.Alan.groan.1]
+THE LANE IS SLICK TONIGHT.
+
+# Outings > CREW_LINES > Alan > talk > 0
+[Outings.CREW_LINES.Alan.talk.0]
+I WILL TAKE THE SPARE.
+
+# Outings > CREW_LINES > Alan > talk > 1
+[Outings.CREW_LINES.Alan.talk.1]
+SLOW AND STEADY.
+
+# Outings > CREW_LINES > Alan > sing > 0
+[Outings.CREW_LINES.Alan.sing.0]
+HA! KEEP GOING!
+
+# Outings > CREW_LINES > Alan > sing > 1
+[Outings.CREW_LINES.Alan.sing.1]
+THAT IS A REAL VOICE.
+
+# Outings > CREW_LINES > Garrison > cheer > 0
+[Outings.CREW_LINES.Garrison.cheer.0]
+YES! DID YOU SEE THAT?
+
+# Outings > CREW_LINES > Garrison > cheer > 1
+[Outings.CREW_LINES.Garrison.cheer.1]
+THIS IS THE BEST NIGHT.
+
+# Outings > CREW_LINES > Garrison > groan > 0
+[Outings.CREW_LINES.Garrison.groan.0]
+OH NO. OH NO NO.
+
+# Outings > CREW_LINES > Garrison > groan > 1
+[Outings.CREW_LINES.Garrison.groan.1]
+I BLAME THE SHOES.
+
+# Outings > CREW_LINES > Garrison > talk > 0
+[Outings.CREW_LINES.Garrison.talk.0]
+I AM ON FIRE. OR NOT.
+
+# Outings > CREW_LINES > Garrison > talk > 1
+[Outings.CREW_LINES.Garrison.talk.1]
+THE NEXT ONE IS MINE.
+
+# Outings > CREW_LINES > Garrison > sing > 1
+[Outings.CREW_LINES.Garrison.sing.1]
+ENCORE! ENCORE!
+
+# Outings > CREW_LINES > Dan > cheer > 0
+[Outings.CREW_LINES.Dan.cheer.0]
+THAT PIN HAD IT COMING.
+
+# Outings > CREW_LINES > Dan > cheer > 1
+[Outings.CREW_LINES.Dan.cheer.1]
+WHOA. DID I DO THAT?
+
+# Outings > CREW_LINES > Dan > groan > 0
+[Outings.CREW_LINES.Dan.groan.0]
+THE BALL HAS A MIND OF ITS OWN.
+
+# Outings > CREW_LINES > Dan > groan > 1
+[Outings.CREW_LINES.Dan.groan.1]
+THAT WAS A BAD CABLE RUN.
+
+# Outings > CREW_LINES > Dan > talk > 0
+[Outings.CREW_LINES.Dan.talk.0]
+WATCH THIS ONE.
+
+# Outings > CREW_LINES > Dan > talk > 1
+[Outings.CREW_LINES.Dan.talk.1]
+I MIGHT GET A TURKEY.
+
+# Outings > CREW_LINES > Dan > sing > 0
+[Outings.CREW_LINES.Dan.sing.0]
+NOT BAD AT ALL.
+
+# Outings > CREW_LINES > Dan > sing > 1
+[Outings.CREW_LINES.Dan.sing.1]
+I WOULD NOT TRY THAT.
+
+# Outings > CREW_LINES > Vic > cheer > 0
+[Outings.CREW_LINES.Vic.cheer.0]
+I TOLD YOU. I TOLD EVERYONE.
+
+# Outings > CREW_LINES > Vic > cheer > 1
+[Outings.CREW_LINES.Vic.cheer.1]
+THAT IS A WINNING ROLL.
+
+# Outings > CREW_LINES > Vic > groan > 0
+[Outings.CREW_LINES.Vic.groan.0]
+THE PINS WERE LOOSE.
+
+# Outings > CREW_LINES > Vic > groan > 1
+[Outings.CREW_LINES.Vic.groan.1]
+THAT DOES NOT COUNT, RIGHT?
+
+# Outings > CREW_LINES > Vic > talk > 0
+[Outings.CREW_LINES.Vic.talk.0]
+WATCH AND LEARN.
+
+# Outings > CREW_LINES > Vic > talk > 1
+[Outings.CREW_LINES.Vic.talk.1]
+I HAVE A GUY AT THIS ALLEY.
+
+# Outings > CREW_LINES > Vic > sing > 0
+[Outings.CREW_LINES.Vic.sing.0]
+I KNEW YOU HAD IT!
+
+# Outings > CREW_LINES > Vic > sing > 1
+[Outings.CREW_LINES.Vic.sing.1]
+I HAVE A GUY FOR RECORDING.
+
+# Outings > CREW_LINES > Maya > cheer > 1
+[Outings.CREW_LINES.Maya.cheer.1]
+RIGHT ON THE HEAD PIN.
+
+# Outings > CREW_LINES > Maya > groan > 0
+[Outings.CREW_LINES.Maya.groan.0]
+ONE PIN. REALLY.
+
+# Outings > CREW_LINES > Maya > groan > 1
+[Outings.CREW_LINES.Maya.groan.1]
+I WAS A BIT LEFT.
+
+# Outings > CREW_LINES > Maya > talk > 0
+[Outings.CREW_LINES.Maya.talk.0]
+I HAVE A PLAN FOR THIS ONE.
+
+# Outings > CREW_LINES > Maya > talk > 1
+[Outings.CREW_LINES.Maya.talk.1]
+AIM, THEN BREATHE.
+
+# Outings > CREW_LINES > Maya > sing > 0
+[Outings.CREW_LINES.Maya.sing.0]
+THAT NOTE WAS PERFECT.
+
+# Outings > CREW_LINES > Maya > sing > 1
+[Outings.CREW_LINES.Maya.sing.1]
+OK, THAT WAS GOOD.
+
+# Outings > CREW_LINES > Morgan > cheer > 0
+[Outings.CREW_LINES.Morgan.cheer.0]
+NOT BAD. DO NOT TELL HR.
+
+# Outings > CREW_LINES > Morgan > groan > 0
+[Outings.CREW_LINES.Morgan.groan.0]
+WELL. THAT HAPPENED.
+
+# Outings > CREW_LINES > Morgan > groan > 1
+[Outings.CREW_LINES.Morgan.groan.1]
+I AM ONLY HERE FOR THE SHOES.
+
+# Outings > CREW_LINES > Morgan > talk > 0
+[Outings.CREW_LINES.Morgan.talk.0]
+I DO NOT BOWL. I JUST WIN.
+
+# Outings > CREW_LINES > Morgan > talk > 1
+[Outings.CREW_LINES.Morgan.talk.1]
+ONE FRAME BEHIND IS FINE.
+
+# Outings > CREW_LINES > Morgan > sing > 0
+[Outings.CREW_LINES.Morgan.sing.0]
+THAT WAS FINE. GOOD, EVEN.
+
+# Outings > CREW_LINES > Morgan > sing > 1
+[Outings.CREW_LINES.Morgan.sing.1]
+I WILL ALLOW IT.
+
+
+# ======================= Build > QUIRKS =======================
+# Build > QUIRKS > caffeine > name
+[Build.QUIRKS.caffeine.name]
+CAFFEINE DEPENDENT
+
+# Build > QUIRKS > caffeine > text
+[Build.QUIRKS.caffeine.text]
+START AT 65 ENERGY AND TIRE A QUARTER FASTER. THE COFFEE MACHINE IS YOUR FRIEND.
+
+# Build > QUIRKS > slow > text
+[Build.QUIRKS.slow.text]
+EVERY SKILL NEEDS 20 PERCENT MORE EXPERIENCE TO LEVEL UP.
+
+# Build > QUIRKS > butter > text
+[Build.QUIRKS.butter.text]
+REMOTE FIXES FAIL 4 PERCENT MORE OFTEN. CHECK YOUR TYPING TWICE.
+
+# Build > QUIRKS > quick > text
+[Build.QUIRKS.quick.text]
+EVERY SKILL NEEDS 15 PERCENT LESS EXPERIENCE TO LEVEL UP.
+
+# Build > QUIRKS > early > text
+[Build.QUIRKS.early.text]
+START AT 90 ENERGY AND WAKE UP A LITTLE MORE RESTED EVERY MORNING.
+
+# Build > QUIRKS > stubborn > text
+[Build.QUIRKS.stubborn.text]
+YOUR PARTNER STARTS WITH 10 LESS TRUST. YOU DO NOT BACK DOWN.
+
+# Build > QUIRKS > listener > text
+[Build.QUIRKS.listener.text]
+YOUR PARTNER STARTS WITH 10 MORE TRUST. YOU HEAR THEM OUT.
+
+# Build > QUIRKS > overpromise > text
+[Build.QUIRKS.overpromise.text]
+YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP.
+
+# Build > QUIRKS > quiet > text
+[Build.QUIRKS.quiet.text]
+YOU PREFER A CLOSED DOOR AND A SHORT MEETING.
+
+
+# ======================= Build > PRESETS =======================
+# Build > PRESETS > tech > 0 > text
+[Build.PRESETS.tech.0.text]
+A BIT OF EVERYTHING. NO BAD DAYS, NO BIG WINS.
+
+# Build > PRESETS > tech > 1 > text
+[Build.PRESETS.tech.1.text]
+FIXES RUN FASTER AND SCRIPTS WORK ON DAY ONE. NOBODY LIKES YOU YET.
+
+# Build > PRESETS > tech > 2 > text
+[Build.PRESETS.tech.2.text]
+THE CLOSET IS YOUR HAPPY PLACE. PRINTERS AND OUTAGES FEAR YOU.
+
+# Build > PRESETS > tech > 3 > text
+[Build.PRESETS.tech.3.text]
+CLIENTS WAIT LONGER AND THE TEAM LIKES YOU. THE SERVERS NOT SO MUCH.
+
+# Build > PRESETS > owner_alan > 0 > text
+[Build.PRESETS.owner_alan.0.text]
+A CLEAN STACK AND QUIET SERVERS. THE BOOKS ARE ALMOST AS TIDY.
+
+# Build > PRESETS > owner_alan > 1 > text
+[Build.PRESETS.owner_alan.1.text]
+EVERY DOLLAR HAS A JOB. CLIENTS ACCEPT FEE RISES AND THE BANK STARTS FATTER.
+
+# Build > PRESETS > owner_alan > 2 > text
+[Build.PRESETS.owner_alan.2.text]
+YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS.
+
+# Build > PRESETS > owner_garrison > 0 > text
+[Build.PRESETS.owner_garrison.0.text]
+MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE.
+
+# Build > PRESETS > owner_garrison > 1 > text
+[Build.PRESETS.owner_garrison.1.text]
+A HAPPY CREW AND A TRUSTING PARTNER. THE NUMBERS FOLLOW, MAYBE.
+
+# Build > PRESETS > owner_garrison > 2 > text
+[Build.PRESETS.owner_garrison.2.text]
+REVIEWS GO WELL, FEES GO UP, NEW CLIENTS START HAPPY.
+
+# Build > PRESETS > service > 0 > text
+[Build.PRESETS.service.0.text]
+EVERYTHING HAS A RUNBOOK AND A LABEL.
+
+# Build > PRESETS > service > 1 > text
+[Build.PRESETS.service.1.text]
+ONE ON ONES THAT WORK. THE BOARD LOOKS A LITTLE MESSY.
+
+# Build > PRESETS > service > 2 > text
+[Build.PRESETS.service.2.text]
+YOU SEE THE FIRE BEFORE IT STARTS.
+
+# Build > PRESETS > service > 3 > text
+[Build.PRESETS.service.3.text]
+CLIENTS CALL YOU FIRST. YOUR CREW KNOWS WHY.
+
+# Build > PRESETS > sales > 0 > text
+[Build.PRESETS.sales.0.text]
+NEW LEADS EVERY WEEK. RENEWALS ARE SOMEBODY ELSE'S PROBLEM.
+
+# Build > PRESETS > sales > 1 > text
+[Build.PRESETS.sales.1.text]
+RENEWALS AND REFERRALS. NOBODY EVER LEAVES.
+
+# Build > PRESETS > sales > 2 > text
+[Build.PRESETS.sales.2.text]
+YOU FIND THE REAL PROBLEM AND QUOTE THE REAL FIX.
+
+# Build > PRESETS > sales > 3 > text
+[Build.PRESETS.sales.3.text]
+YOU CLOSE ANYTHING. KEEP THE PROMISES YOU MAKE.
+
+
+# ======================= Build > INFO =======================
+# Build > INFO > tech > powershell > text
+[Build.INFO.tech.powershell.text]
+FASTER AND SAFER RMM FIXES. LEVEL 2 SCRIPTS A WHOLE CLIENT, LEVEL 4 EVERY CLIENT.
+
+# Build > INFO > tech > networking > text
+[Build.INFO.tech.networking.text]
+FASTER NETWORK AND PRINTER FIXES. LEVEL 2 NAMES THE PATCH PANEL PORT.
+
+# Build > INFO > tech > servers > text
+[Build.INFO.tech.servers.text]
+SERVER AND WORKSTATION FIXES ARE 6 PERCENT FASTER PER LEVEL.
+
+# Build > INFO > tech > security > text
+[Build.INFO.tech.security.text]
+FASTER SECURITY FIXES. LEVEL 3 MAKES BACKUPS CHECK THEMSELVES.
+
+# Build > INFO > tech > people > text
+[Build.INFO.tech.people.text]
+LEVEL 2 SHOWS WHO HAS WORK OPEN. LEVEL 3 AND UP SLOWS THE SLA CLOCKS. THE TEAM LIKES YOU MORE.
+
+# Build > INFO > owner > technical > text
+[Build.INFO.owner.technical.text]
+FEWER REOPENED TICKETS AND BREAK-INS. FAILING BACKUPS GET NOTICED SOONER.
+
+# Build > INFO > owner > finance > text
+[Build.INFO.owner.finance.text]
+FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER.
+
+# Build > INFO > owner > sales > text
+[Build.INFO.owner.sales.text]
+MARKETING WORKS BETTER AND VIC CLOSES MORE.
+
+# Build > INFO > owner > culture > text
+[Build.INFO.owner.culture.text]
+A HAPPIER CREW, BIGGER RELIEF FROM OUTINGS AND MORE TRUST FROM YOUR PARTNER.
+
+# Build > INFO > owner > clients > text
+[Build.INFO.owner.clients.text]
+BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED.
+
+# Build > INFO > service > dispatch > text
+[Build.INFO.service.dispatch.text]
+THE BOARD IS LESS FUZZY: YOU SEE WHO IS BUSY AND WHAT IS STUCK.
+
+# Build > INFO > service > process > text
+[Build.INFO.service.process.text]
+RUNBOOKS ARE CHEAP TO WRITE AND THE CREW FOLLOWS THEM.
+
+# Build > INFO > service > people > text
+[Build.INFO.service.people.text]
+ONE ON ONES GAIN MORE AND LYNK REPLIES ARE WARMER.
+
+# Build > INFO > service > escalation > text
+[Build.INFO.service.escalation.text]
+YOU KNOW WHEN A TICKET SHOULD GO UP AND WHEN IT SHOULD NOT.
+
+# Build > INFO > service > relations > text
+[Build.INFO.service.relations.text]
+CLIENTS CALL YOU FIRST AND FORGIVE MORE.
+
+# Build > INFO > sales > pitch > text
+[Build.INFO.sales.pitch.text]
+MORE LEADS BECOME MEETINGS AND MORE MEETINGS BECOME QUOTES.
+
+# Build > INFO > sales > discovery > text
+[Build.INFO.sales.discovery.text]
+YOU FIND THE REAL PROBLEM BEFORE YOU QUOTE.
+
+# Build > INFO > sales > negotiation > text
+[Build.INFO.sales.negotiation.text]
+DISCOUNT ASKS COST LESS AND DEALS CLOSE AT A BETTER PRICE.
+
+# Build > INFO > sales > relationships > text
+[Build.INFO.sales.relationships.text]
+RENEWALS AND REFERRALS COME EASIER.
+
+# Build > INFO > sales > honesty > text
+[Build.INFO.sales.honesty.text]
+FEWER PROMISES TO KEEP AND LESS RISK OF A CLAWBACK.

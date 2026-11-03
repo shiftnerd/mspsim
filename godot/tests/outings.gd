@@ -481,7 +481,7 @@ func _init() -> void:
 	var table_n: int = o.diners().size()
 	var first: String = o.diners()[0]
 	_check(
-		o.diner_shift(first) == 1 and o.dinner_targets()[0] == roundi((22 + 3 * table_n) * float(table_n) / 3.0),
+		o.diner_shift(first) == 1 and o.dinner_targets()[0] == 5 * table_n + int(o.TABLE_BARS[table_n][0]) + 3 * table_n,
 		"a fancy table lifts everyone's mood (and the bar)"
 	)
 	o.set_budget("cheap")

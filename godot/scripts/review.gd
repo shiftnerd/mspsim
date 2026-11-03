@@ -143,6 +143,8 @@ func make_offers() -> Array:
 		return Owner.offers()
 	if Campaign.prop("review", "") == "sales":
 		return SalesCampaign.offers()
+	if Campaign.prop("review", "") == "service":
+		return Service.review_offers()
 	var out := []
 	if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
 		(
@@ -288,6 +290,8 @@ func page_lines() -> Array:
 		return Owner.review_lines(page, ending)
 	if Campaign.prop("review", "") == "sales":
 		return SalesCampaign.review_lines(page, ending)
+	if Campaign.prop("review", "") == "service":
+		return Service.review_lines(page, ending)
 	var lines := []
 	match page:
 		0:

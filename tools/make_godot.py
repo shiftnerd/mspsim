@@ -178,8 +178,8 @@ PATCHABLE = {
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
-    "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 }
 
 
@@ -325,6 +325,7 @@ Net="*res://scripts/net.gd"
 Msp="*res://scripts/msp.gd"
 Computer="*res://scripts/computer.gd"
 Phone="*res://scripts/phone.gd"
+Build="*res://scripts/build.gd"
 Campaign="*res://scripts/campaign.gd"
 DayReport="*res://scripts/day_report.gd"
 Skills="*res://scripts/skills.gd"
@@ -354,8 +355,11 @@ Mutators="*res://scripts/mutators.gd"
 PrinterGame="*res://scripts/printer_game.gd"
 Career="*res://scripts/career.gd"
 Toolbox="*res://scripts/toolbox.gd"
+Crew="*res://scripts/crew.gd"
+Service="*res://scripts/service.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
+Owners="*res://scripts/owners.gd"
 SalesCampaign="*res://scripts/sales_campaign.gd"
 
 [display]
@@ -950,17 +954,14 @@ func _draw_bowl_score() -> void:
     if str(game.stage) == "pause" and str(game.msg) != "" and int(_time * 4.0) % 2 == 0:
         PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
         return
+    # up to five names on two lines: 14 characters of two letters and two digits fit the 60 px screen
     var t: Dictionary = game.totals
-    var line1 := "YOU %02d" % int(t["You"])
-    if t.has("Alan"):
-        line1 += " ALN %02d" % int(t["Alan"])
-    var line2 := ""
-    if t.has("Garrison"):
-        line2 += "GAR %02d " % int(t["Garrison"])
-    if t.has("Dan"):
-        line2 += "DAN %02d" % int(t["Dan"])
-    PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
-    PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
+    var cells := ["YO%02d" % int(t["You"])]
+    for who in Outings.bowlers():
+        cells.append("%s%02d" % [str(Outings.GUESTS[who].code), int(t.get(who, 0))])
+    PixelFont.draw(self, " ".join(cells.slice(0, 3)), Vector2(2, 1), green, 1)
+    if cells.size() > 3:
+        PixelFont.draw(self, " ".join(cells.slice(3, 6)), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:
@@ -1881,6 +1882,7 @@ var _net_t := 0.0
 var _grumble_t := 0.0
 var _call_stage := ""  # "", "tap_on", "talking", "tap_off"
 var _call_t := 0.0
+var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -2321,14 +2323,14 @@ func _update_call(delta: float) -> bool:
             _call_t -= delta
             if _call_t <= 0.0:
                 _call_stage = "talking"
-                _call_t = 9.0
+                _call_t = _call_len
                 _head_item.item = "headset"
                 _refresh()
         "talking":
             _call_t -= delta
             if state != "say" and state != "talk":
                 _bubble.glyph = "dots"
-                _bubble.visible = (int((9.0 - _call_t) / 1.3) + get_index()) % 2 == 1
+                _bubble.visible = (int((_call_len - _call_t) / 1.3) + get_index()) % 2 == 1
             if _call_t <= 0.0 and _hold <= 0.0:
                 _call_stage = "tap_off"
                 _call_t = 0.7
@@ -2340,9 +2342,39 @@ func _update_call(delta: float) -> bool:
             _call_t -= delta
             if _call_t <= 0.0:
                 _call_stage = ""
+                _call_len = 9.0
                 _head_item.item = ""
                 _refresh()
     return pause
+
+
+# Owners.step_in: a seated owner takes a headset call at the desk (no phone has to be ringing)
+func desk_call() -> void:
+    if seat != null and state == "wait" and _hold <= 0.0 and _call_stage == "":
+        _call_stage = "tap_on"
+        _call_t = 0.7
+        _call_len = 5.0
+        _play("sitcall")
+
+
+# the "answer" routine step: a standing owner picks up a ringing phone next to them and talks with a headset
+func _answer_phone() -> void:
+    state = "wait"
+    _timer = 7.5
+    var best: Node = null
+    for zone in get_tree().get_nodes_in_group("phones"):
+        var fx: Node = zone.get_node(zone.target)
+        if fx.ringing and not fx.busy and absf(zone.global_position.x - global_position.x) < 40.0:
+            best = zone
+    if best == null:
+        _play("talk")
+        return
+    _face(best.global_position.x)
+    best.get_node(best.target).play()
+    _call_stage = "tap_on"
+    _call_t = 0.7
+    _call_len = 5.0
+    _play("call")
 
 
 func _ringing_phone() -> Node:
@@ -2494,6 +2526,10 @@ func _start(parts: PackedStringArray) -> bool:
                 _timer = 3.0
                 _play("talk")
                 Sales.deliver.call_deferred()
+        "answer":
+            started = cast_name != ""
+            if started:
+                _answer_phone()
         "exit":
             started = cast_name != ""
             if started:
@@ -3015,6 +3051,9 @@ func roster_gone() -> Array:
     var gone := []
     if Campaign.player_as != "" and CAST.has(Campaign.player_as):
         gone.append(Campaign.player_as)
+    # a tech who quit the service desk is gone (C4)
+    if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
+        gone.append("Maya")
     # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
     if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
         gone.append(Roles.partner())
@@ -3169,7 +3208,7 @@ func _finish_leg(n: String) -> void:
 
 
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
-func start_outing(room: String, spots: Array, seats := {}) -> void:
+func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void:
     var x0 := float(DATA.SCENES[room].x0)
     for n in chars:
         var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
@@ -3177,6 +3216,14 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
         st.node = null
+        if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+            st.scene = OUTSIDE
+            st.following = false
+            st.held = ""
+            st.sips = 0
+            st.legs = [_away_leg()]
+            st.leg_t = FOREVER
+            continue
         st.scene = room
         st.arrive = "from_outing"
         st.fresh = false
@@ -3479,6 +3526,33 @@ func _route(a: String, b: String) -> Array:
 
 func _uses(scene: String) -> Dictionary:
     return DATA.SCENES[scene].uses
+
+
+# Owners.step_in: the owner walks to a ringing phone on the stage, answers it with a headset and goes back to work
+func send_owner_cover(n: String, x: float) -> bool:
+    if not chars.has(n) or _scene == "" or not DATA.SCENES.has(_scene):
+        return false
+    var st: Dictionary = chars[n]
+    var from_x := _hint_x(n)
+    var legs := _travel(st.scene, _scene, from_x)
+    if st.scene != _scene and legs.is_empty():
+        return false
+    legs.append(
+        {
+            "kind": "cover",
+            "scene": _scene,
+            "target_x": x,
+            "routine": PackedStringArray(["stand", "walk:%d" % int(x), "answer"]),
+            "dur": absf(x - from_x) / SPEED + 10.0,
+        }
+    )
+    legs.append_array(_travel(_scene, CAST[n].home, x))
+    legs.append(_work_leg(n, false, 30.0))
+    st.legs = legs
+    st.leg_t = legs[0].dur
+    if st.node != null and is_instance_valid(st.node):
+        st.node.set_routine(legs[0].routine)
+    return true
 
 
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:
@@ -4031,6 +4105,7 @@ var _spawn_t := 20.0
 var _down := {}  # desk -> seconds without network
 var _up := {}  # desk -> seconds with network
 var _internal := {}  # desk -> ticket id of the open internal ticket
+var _owner_noted := {}  # owner desk -> true while an outage there has been reported (no ticket for owners)
 
 
 func _ready() -> void:
@@ -4054,6 +4129,7 @@ func reset() -> void:
     _down.clear()
     _up.clear()
     _internal.clear()
+    _owner_noted.clear()
     _later.clear()
     backups.clear()
     project = {}
@@ -4367,8 +4443,12 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
             t.fix_done = true
             t["method"] = str(d.kind)
             t.notes.append(str(d.note) + (" The user lost unsaved work." if lost else ""))
-    if int(d.get("mood", 0)) != 0:
-        Sales.adjust(client, int(d.mood))
+    var mood_hit := int(d.get("mood", 0))
+    if mood_hit < 0 and Owners.take_approval():
+        mood_hit = 0  # Alan signed off on the heavy fix: no client hit
+        tk_note_approved(tk)
+    if mood_hit != 0:
+        Sales.adjust(client, mood_hit)
     score += int(d.get("score", 0))
     Skills.add_xp(str(Skills.FIX_XP.get(prob, "servers")), int(d.xp))
     ep.problem = ""
@@ -4383,6 +4463,11 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
         _queue_return(tk, d, prob)
     changed.emit()
     return text
+
+
+func tk_note_approved(tk: Dictionary) -> void:
+    if not tk.is_empty():
+        tk.notes.append("Alan approved the heavy fix: no client impact.")
 
 
 # a restart that cost somebody their unsaved work
@@ -4864,12 +4949,18 @@ func _watch_desks(dt: float) -> void:
         if state != "ok":
             _down[d] = float(_down.get(d, 0.0)) + dt
             _up[d] = 0.0
-            if _down[d] >= 8.0 and not _internal.has(d):
+            if _down[d] >= 8.0 and _owner_desk(d):
+                if not _owner_noted.has(d):
+                    _owner_outage(d)
+            elif _down[d] >= 8.0 and not _internal.has(d):
                 var what := "no network cable" if state == "no_link" else "no internet"
                 create_internal(d, "%s: %s" % [DESK_NAMES[d], what], "Help! The computer here has " + what + ". Nothing loads. Can someone check the closet? - Staff")
         else:
             _down[d] = 0.0
             _up[d] = float(_up.get(d, 0.0)) + dt
+            if _owner_noted.has(d) and _up[d] >= 3.0:
+                _owner_noted.erase(d)
+                Social.note_outage_fixed(d)
             if _internal.has(d) and _up[d] >= 3.0:
                 var t := ticket(_internal[d])
                 if not t.is_empty() and not t.fix_done and t.status != "Closed":
@@ -4878,6 +4969,25 @@ func _watch_desks(dt: float) -> void:
                     t.notes.append("Network restored.")
                     Social.note_outage_fixed(d)
                     changed.emit()
+
+
+# the owners' offices (desks 6 and 7) have no ticket stream of their own: an outage there is a text from the owner,
+# the opinion loss / gain still applies (Social.note_outage / note_outage_fixed)
+func _owner_desk(desk: int) -> bool:
+    var who := str(Social.DESK_OWNER.get(desk, ""))
+    return Social.is_owner(who) and Social.people().has(who)
+
+
+const OWNER_OUTAGE := {
+    6: "My office has no network. I have payroll to run and a vendor on hold. When you get a minute, the closet.",
+    7: "My internet died in the middle of a client call. Closet, please. No rush. Okay, a little rush.",
+}
+
+
+func _owner_outage(desk: int) -> void:
+    _owner_noted[desk] = true
+    Social.note_outage(desk)
+    send_text(str(Social.DESK_OWNER[desk]), str(OWNER_OUTAGE[desk]))
 
 
 func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> void:
@@ -6395,6 +6505,8 @@ func _paint_lync() -> void:
             _button("lync:reply:%d" % i, Rect2(x + 3 + float(i) * bw, by, bw - 2, 9), _clip(str(opts[i].label), int((bw - 6) / 4.0)))
         return
     var acts := [["lunch", "LUNCH?"], ["help", "NEED A HAND"], ["thanks", "THANKS!"]]
+    if Owners.asks_owner(lync_sel):
+        acts[1] = ["help", "ASK THE OWNER"]
     if lync_sel == Lync.boss():
         acts = [["boss", "ANY ADVICE?" if lync_sel == "Morgan" else "HOW ARE WE DOING?"]]
     var aw := floorf((w - 6) / float(acts.size()))
@@ -7485,7 +7597,7 @@ const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
 # the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
-const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "sales": "SALES CAMPAIGN"}
+const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "SERVICE CAMPAIGN", "sales": "SALES CAMPAIGN"}
 # MODE REGISTRY (X8, "P0b"): one row per campaign mode. The three GATES say which machinery a mode runs:
 #   crew   the team works the ticket queue by itself (Owner.team_speed, _work_queue, ticket volume, premature closes)
 #   books  cash, P&L, payroll, weekly settle, valuation, the Boardroom app, projects, deal income
@@ -7511,15 +7623,16 @@ const MODE_DEFS := {
         "ending_fired": "YOUR NAME IS MUD. THE COMPANY CLOSES.",
         "ending_final": "YEAR COMPLETE. YOUR BOARD REVIEW IS NEXT.",
     },
-    # planned (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day
+    # C4 / V1 (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day. rep = Morgan's confidence
     "service": {
-        "label": "SERVICE CAMPAIGN", "selectable": false,
+        "label": "SERVICE CAMPAIGN", "selectable": true,
         "crew": true, "books": false, "cards": true, "books_lite": false,
         "day_len": 360.0, "total_days": 20, "unit": "DAY",
-        "hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
+        "hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
         "pace": 0.8, "shift": false, "scars": false, "maya_in_events": true,
-        "ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
-        "ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+        "ending_fired": "MORGAN HAS LOST CONFIDENCE. THE DESK GOES TO SOMEONE ELSE.",
+        "ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
+        "rep_label": "CONF",
     },
     # campaign-paths 5 (C1, slice S1): Vic sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
     "sales": {
@@ -7541,6 +7654,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
+var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
 
@@ -7653,6 +7767,8 @@ func derive_player_as(for_mode: String) -> String:
         return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
     if for_mode == "sales":
         return "Vic"  # the sales campaign is always played as Vic (C1)
+    if for_mode == "service":
+        return "Dan"  # the service manager campaign is always played as Dan (C4)
     if who == "":
         return ""
     return who if for_mode == FREE else ""
@@ -7681,6 +7797,8 @@ func new_game(for_mode: String) -> void:
     player_as = derive_player_as(for_mode)
     if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
         PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or Vic (sales)
+    if for_mode == "service":
+        PLAYER.current_character = str(World.CAST["Dan"].character)
     Game.vars["start_seated"] = player_as != ""
     day = 1
     rep = START_REP
@@ -7689,6 +7807,7 @@ func new_game(for_mode: String) -> void:
     history = []
     _awaiting = false
     Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+    build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
     Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
     Msp.reset()
     Skills.reset()
@@ -7709,8 +7828,12 @@ func new_game(for_mode: String) -> void:
     Onsite.reset()
     Events.reset()
     SalesCampaign.reset()
+    Service.reset()
     Mutators.start(for_mode)
     Mutators.apply_start()
+    Build.apply_start()
+    if for_mode == "service":
+        Service.begin_run()
     World.day_len = day_len_for(for_mode)
     Msp.enabled = active
     if for_mode == "sales":
@@ -7745,8 +7868,12 @@ func continue_game(for_mode: String) -> bool:
     if for_mode == "sales":
         player_as = "Vic"
         PLAYER.current_character = "sales_vic"
+    if for_mode == "service":
+        player_as = "Dan"
+        PLAYER.current_character = str(World.CAST["Dan"].character)
     Game.vars["start_seated"] = player_as != ""
     _awaiting = false
+    build = Build.from_dict(cfg.get_value("campaign", "build", {}))  # an old save has none: the flat default
     Msp.reset()
     Skills.from_dict(cfg.get_value("campaign", "skills", {}))
     Story.reset()
@@ -7764,6 +7891,7 @@ func continue_game(for_mode: String) -> bool:
     Expo.from_dict(cfg.get_value("campaign", "conference", {}))
     Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
     Events.from_dict(cfg.get_value("campaign", "events", {}))
+    Service.from_dict(cfg.get_value("campaign", "service", {}))
     Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
     SalesCampaign.from_dict(cfg.get_value("campaign", "sales_campaign", {}))
     if for_mode == "sales":
@@ -7791,6 +7919,7 @@ func save() -> void:
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
     cfg.set_value("campaign", "player_as", player_as)
+    cfg.set_value("campaign", "build", build)
     cfg.set_value("campaign", "skills", Skills.to_dict())
     cfg.set_value("campaign", "story", Story.flags)
     cfg.set_value("campaign", "social", Social.to_dict())
@@ -7807,6 +7936,7 @@ func save() -> void:
     cfg.set_value("campaign", "conference", Expo.to_dict())
     cfg.set_value("campaign", "onsite", Onsite.to_dict())
     cfg.set_value("campaign", "events", Events.to_dict())
+    cfg.set_value("campaign", "service", Service.to_dict())
     cfg.set_value("campaign", "mutators", Mutators.to_dict())
     cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
     cfg.set_value("campaign", "backups", Msp.backups)
@@ -7830,6 +7960,7 @@ func quit_to_title() -> void:
     active = false
     mode = ""
     player_as = ""
+    build = {}
     World.apply_roster()
     Msp.enabled = true
     World.time_scale = 1.0
@@ -7849,6 +7980,8 @@ func _begin_day() -> void:
         Owner.begin_day(day)
     if mode == "sales":
         SalesCampaign.begin_week(day)
+    if mode == "service":
+        Service.begin_day(day)
     if bool(prop("shift", false)):
         Shift.begin_day(day)
     Events.begin_day(day)
@@ -7912,6 +8045,8 @@ func _end_day() -> void:
     if Phone.is_open:
         Phone.close()
     var r := make_report()
+    if mode == "service":
+        Service.close_day(r)  # the scorecard: groups, grade and Morgan's confidence change replace the ticket report
     if books_active() and str(prop("report", "day")) == "pnl":
         var books: Dictionary = SalesCampaign.settle() if str(prop("settle", "owner")) == "sales" else Owner.settle()
         r["rows"] = books.rows
@@ -8074,7 +8209,16 @@ func _input(event: InputEvent) -> void:
     get_viewport().set_input_as_handled()
 
 
+func _books() -> bool:
+    return report.has("rows") or report.has("groups")
+
+
 func _groups() -> Array:
+    if report.has("groups"):
+        var all: Array = report.groups.duplicate()
+        if str(report.get("mutator", "")) != "":
+            all.append(["THIS WEEK", [["EVENT", str(report.mutator), WARN]]])
+        return all
     if report.has("rows"):
         var books := []
         for row in report.rows:
@@ -8110,6 +8254,9 @@ func _groups() -> Array:
     ]
     if str(r.get("mutator", "")) != "":
         groups.append(["THIS WEEK", [["EVENT", str(r.mutator), WARN]]])
+    var stepped := int(r.get("owners", Owners.stepped))
+    if stepped > 0:
+        groups[1][1].append(["OWNERS STEPPED IN", str(stepped), GOOD])
     var energy := []
     if int(r.get("energy", -1)) >= 0:
         var e := int(r.energy)
@@ -8133,15 +8280,15 @@ func _hero() -> Array:
     var r := report
     var delta := int(r.get("rep_delta", 0))
     var tiles := []
-    if not report.has("rows"):
+    if not _books():
         var pts := int(r.points)
         var pcol := GOOD if pts >= 10 else (BAD if pts < 0 else WHITE)
         tiles.append(["DAY SCORE", "SCORE", str(pts), pcol])
         tiles.append(["PAYCHECK", "PAY", "$%d" % int(r.pay), GOOD if int(r.pay) > 0 else WHITE])
     var rep_text := "%d (%+d)" % [int(r.rep), delta] if delta != 0 else str(int(r.rep))
     var rcol := GOOD if delta > 0 else (BAD if delta < 0 else WHITE)
-    tiles.append(["REPUTATION", "REP", rep_text, rcol])
-    if not report.has("rows"):
+    tiles.append([str(report.get("rep_name", "REPUTATION")), str(report.get("rep_short", "REP")), rep_text, rcol])
+    if not _books():
         var cash := int(r.cash)
         tiles.append(["CASH", "CASH", "%s$%d" % ["-" if cash < 0 else "", absi(cash)], GOOD if cash >= 0 else BAD])
     return tiles
@@ -8206,7 +8353,7 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
     var grade := str(report.grade)
     var gcol: Color = GRADE_COLORS.get(grade, WHITE)
     var tiles := _hero()
-    var owner_books := report.has("rows")
+    var owner_books := _books()
     var gh := 28.0 if big else 26.0
     var gw := 30.0 if big else 22.0
     if draw:
@@ -8411,14 +8558,25 @@ func reset() -> void:
         xp[key] = 0
     ps_level = 0
     lesson_day = -1
+    var start: Dictionary = Build.tech_levels()  # a point-buy build (X7) starts at its levels: the perks are live from day 1
+    for key in start:
+        if key == "powershell":
+            ps_level = mini(int(start[key]), LESSONS.size())
+        else:
+            xp[key] = need(int(start[key]) - 1)
+
+
+# the experience a level needs (index 0 = level 1); SLOW STARTER / QUICK STUDY scale it
+func need(index: int) -> int:
+    return roundi(float(XP_AT[index]) * Build.xp_mult())
 
 
 func level(skill: String) -> int:
     if skill == "powershell":
         return ps_level
     var n := 0
-    for need in XP_AT:
-        if int(xp.get(skill, 0)) >= int(need):
+    for i in XP_AT.size():
+        if int(xp.get(skill, 0)) >= need(i):
             n += 1
     return n
 
@@ -8430,8 +8588,8 @@ func progress(skill: String) -> float:
         return float(lv) / 5.0
     if lv >= XP_AT.size():
         return 1.0
-    var low := 0 if lv == 0 else int(XP_AT[lv - 1])
-    return clampf(float(int(xp.get(skill, 0)) - low) / float(int(XP_AT[lv]) - low), 0.0, 1.0)
+    var low := 0 if lv == 0 else need(lv - 1)
+    return clampf(float(int(xp.get(skill, 0)) - low) / float(need(lv) - low), 0.0, 1.0)
 
 
 func add_xp(skill: String, amount: int) -> void:
@@ -8467,7 +8625,7 @@ func fix_secs() -> float:
 
 
 func fail_chance() -> float:
-    return maxf(0.0, float(FAIL[ps_level]) + Shift.fail_add()) if Campaign.active else 0.0
+    return maxf(0.0, float(FAIL[ps_level]) + Shift.fail_add() + Build.fx("fail")) if Campaign.active else 0.0
 
 
 # CUSTOMER level 2: you read the room and can tell whether the person at the machine has work open
@@ -13090,6 +13248,8 @@ func make_offers() -> Array:
         return Owner.offers()
     if Campaign.prop("review", "") == "sales":
         return SalesCampaign.offers()
+    if Campaign.prop("review", "") == "service":
+        return Service.review_offers()
     var out := []
     if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
         out.append({
@@ -13189,6 +13349,8 @@ func page_lines() -> Array:
         return Owner.review_lines(page, ending)
     if Campaign.prop("review", "") == "sales":
         return SalesCampaign.review_lines(page, ending)
+    if Campaign.prop("review", "") == "service":
+        return Service.review_lines(page, ending)
     var lines := []
     match page:
         0:
@@ -14320,7 +14482,7 @@ var _ransom_ticket := 0
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
 func reset() -> void:
-    cash = START_CASH
+    cash = START_CASH + Build.cash_bonus()
     flags = {}
     price = 1.0
     speed = 1.0
@@ -14402,6 +14564,8 @@ func crew_names() -> Array:
 
 # the ticket-working skill of the employees you started with (hires are added by team_speed)
 func crew_skill() -> float:
+    if Campaign.mode == "service":
+        return Crew.skill()  # Maya and the two techs, scaled by morale (C4)
     var total := 0.0
     for i in crew_size():
         total += float(CREW[i].skill)
@@ -14427,10 +14591,16 @@ func edges_for(owner_name: String) -> Dictionary:
     var mine: Dictionary = OWNER_EDGES.get(owner_name, {})
     for key in mine:
         out[key] = mine[key]
+    var plus: Dictionary = Build.edge_deltas(owner_name)  # point-buy (X7): the stats above the free floors
+    for key in plus:
+        if out.has(key):
+            out[key] = Build.clamp_edge(str(key), float(out[key]) + float(plus[key]))
     return out
 
 
 func edge(key: String) -> float:
+    if Campaign.mode == "service":
+        return Service.edge(key)  # the huddle focus and the memo effects (C4)
     return float(edges_for(Campaign.player_as)[key]) if Campaign.cards_active() else float(DEFAULT_EDGE[key])
 
 
@@ -14548,7 +14718,7 @@ func _process(delta: float) -> void:
             _work_queue(slice)
     if not cards or Campaign.mode == "sales":
         return  # the sales campaign has its own weekly cards (SalesCampaign)
-    var events: Array = DAYS.get(Campaign.day, [])
+    var events: Array = DAYS.get(Campaign.day, []) if Campaign.mode == "owner" else []
     for i in events.size():
         var ev: Dictionary = events[i]
         if not _fired.has(i) and World.clock >= float(ev.at):
@@ -14564,6 +14734,8 @@ func _work_queue(seconds: float) -> void:
     for t in Msp.open_tickets():
         if t.fix == "project" or t.fix == "network" or t.internal:
             continue
+        if Campaign.mode == "service" and str(t.special) != "":
+            continue  # incidents are yours or your delegate's (Service.incident)
         if t.fix_done:
             Msp.close_ticket(int(t.id))
             continue
@@ -14592,6 +14764,8 @@ func _finish_ticket(t: Dictionary) -> void:
 
 # ---- a new week ------------------------------------------------------------------------------
 func begin_day(day: int) -> void:
+    if Campaign.mode == "service":
+        return  # the service campaign has its own mornings (Service.begin_day)
     _fired = {}
     _advised = false
     income_extra = 0
@@ -16472,6 +16646,8 @@ func send_action(who: String, kind: String) -> String:
     if who == boss():
         return _boss_reply(who)
     var labels := {"lunch": "Lunch?", "help": "Got a minute? I could use a hand.", "thanks": "Thanks for the help earlier!"}
+    if kind == "help" and Owners.asks_owner(who):
+        labels["help"] = "Do you have a minute? I could use your help."
     _push(who, "me", str(labels.get(kind, "Hi")))
     var status := str(presence(who)[0])
     if status != "AVAILABLE":
@@ -16497,6 +16673,9 @@ func send_action(who: String, kind: String) -> String:
 func _lend_a_hand(who: String) -> void:
     if Social.is_manager(who):
         _push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
+        return
+    if Owners.asks_owner(who):
+        _push(who, who, Owners.ask(who))  # ASK THE OWNER (tech campaign): an approval, a tip or a call to the client
         return
     var willing: bool = Social.value(who) >= 0 or randf() < 0.4
     var ticket := _helpable_ticket()
@@ -17149,7 +17328,7 @@ func _ready() -> void:
 
 
 func reset() -> void:
-    energy = float(START_ENERGY)
+    energy = clampf(float(START_ENERGY) + Build.fx("energy"), 0.0, 100.0)  # CAFFEINE DEPENDENT / EARLY BIRD (X7)
     late_min = 0
     late_total = 0
     stays = 0
@@ -17230,7 +17409,7 @@ func begin_day(day: int) -> void:
     if not active():
         return
     if day > 1:
-        energy = minf(100.0, energy + float(REST))
+        energy = minf(100.0, energy + float(REST) + Build.fx("rest"))
     if day <= 1:
         return
     if Expo.is_trip_day(day):
@@ -17379,7 +17558,7 @@ func _process(delta: float) -> void:
     if not active() or World.time_scale <= 0.0 or Cards.is_open:
         return
     var dt := delta * World.time_scale
-    energy = maxf(0.0, energy - DAY_DRAIN * float(Mutators.hook("energy_drain", 1.0)) * dt / maxf(60.0, World.day_len))
+    energy = maxf(0.0, energy - DAY_DRAIN * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
     if _warned < 1 and energy < 55.0:
         _warned = 1
         Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
@@ -17636,10 +17815,11 @@ func start_plan() -> void:
 
 func _pick_helper(skill: String) -> void:
     var options := []
-    for who in ["Alan", "Garrison", "Dan"]:
+    for who in ["Dan", "Maya", "Morgan", "Alan", "Garrison"]:
         if Social.people().has(who):
-            options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
-    Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
+            var busy := " - BUSY" if Social.is_owner(who) else ""
+            options.append({"label": "%s (%s%s)" % [who.to_upper(), Social.mood(who), busy], "id": who})
+    Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight, so they catch fewer mistakes. Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
 
 
 func _plan_set(skill: String, who: String) -> void:
@@ -17710,7 +17890,7 @@ func stretch_result(id: String) -> void:
                 Msp.score += 8
                 Msp.send_text(helper, "Nice. I would not have thought of that. Solid.")
                 _add_progress(30.0, 20)
-            elif randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95):
+            elif randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95) * (0.6 if Social.is_owner(helper) else 1.0):
                 stretch_caught += 1
                 Social.change(helper, 1)
                 Msp.send_text(helper, "Stop, stop. That would have been a bad day. Do it like this.")
@@ -17736,7 +17916,7 @@ func _graduate_tech() -> void:
     if focus == "powershell":
         Skills.ps_level = mini(5, Skills.ps_level + 1)
     elif lv < 5:
-        Skills.xp[focus] = maxi(int(Skills.xp[focus]), int(Skills.XP_AT[lv]))
+        Skills.xp[focus] = maxi(int(Skills.xp[focus]), Skills.need(lv))
     Campaign.adjust_rep(3)
     Social.change(helper, 3)
     Msp.mail(Story.MANAGER, "Congratulations: Tier 2", "You can now handle %s tickets without a safety net, and the escalations show it. I am putting that in your file. - Morgan" % focus_name())
@@ -18156,8 +18336,24 @@ const PEOPLE := {
     "Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
     "Dan":
     {"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
-    "Vic": {"loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"], "hates": ["VENDOR STORIES"]},
-    "Maya": {"loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"], "hates": ["COMMUTE"]},
+    "Vic":
+    {
+        "loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"],
+        "hates": ["VENDOR STORIES"],
+        "moods": ["chatty", "chatty", "relaxed", "distracted"],
+    },
+    "Maya":
+    {
+        "loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"],
+        "hates": ["COMMUTE"],
+        "moods": ["relaxed", "easygoing", "chatty", "tired"],
+    },
+    "Morgan":
+    {
+        "loves": ["ROAD TRIP", "FANTASY FOOTBALL", "FOOD"],
+        "hates": ["BOSS GOSSIP", "RAISES AND BONUSES"],
+        "moods": ["tired", "easygoing", "easygoing", "distracted", "relaxed"],
+    },
 }
 # the mood of the day shifts a diner's points for the whole dinner (+1 / 0 / -1)
 const DINNER_MOODS := {
@@ -18173,8 +18369,29 @@ const BUDGETS := {
     "normal": {"label": "NORMAL: THE USUAL GRILL ORDER", "cost": 300, "mood": 0},
     "fancy": {"label": "FANCY: STEAKS AND A TOAST", "cost": 520, "mood": 1},
 }
-const BOWL_SKILL := {"Alan": 0.62, "Garrison": 0.55, "Dan": 0.48}
-const SEATS := {"dinner": {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5"}}
+# bowling personalities (R5, B1): skill = how many pins the average roll takes, noise = how far a roll swings from it,
+# streak = hot / cold swing on alternating frames (Garrison), turkey = chance of a strike on a frame (Dan is wild),
+# show = bonus when there is an audience of three or more (Vic), gutter = chance of a gutter ball, late = frames sat out
+# at the start (Morgan joins the game late). A person without a row does not bowl.
+const BOWLERS := {
+    "Alan": {"skill": 0.62, "noise": 0.15, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Garrison": {"skill": 0.55, "noise": 0.2, "streak": 0.14, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Dan": {"skill": 0.48, "noise": 0.4, "streak": 0.0, "turkey": 0.1, "show": 0.0, "gutter": 0.06, "late": 0},
+    "Vic": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
+    "Maya": {"skill": 0.6, "noise": 0.1, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Morgan": {"skill": 0.66, "noise": 0.12, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 1},
+}
+# dinner star bars by table size: 3 stars at neutral + a, 2 stars at neutral + b, 1 star at neutral - c (a table of
+# three is the classic 22 / 15 / 10); tuned with tests/dinner_sim.gd so best play reaches 3 stars about half the time
+const TABLE_BARS := {1: [3, 0, 3], 2: [6, 0, 4], 3: [7, 0, 5], 4: [9, 0, 6], 5: [11, 0, 7]}
+const LANE_MAX := 4  # opponents on the scoreboard
+const TABLE_MAX := 5  # faces at the table
+# who comes along (R5): the classic trio is what a game started without an invitation uses (tests, the toolbox)
+const CORE := ["Alan", "Garrison", "Dan"]
+const SEATS := {
+    "dinner":
+    {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
+}
 const PLAYER_SEAT := "Seat2"
 const LANE_NEAR := [152.0, 252.0]
 const LANE_FAR := [160.0, 244.0]
@@ -18187,7 +18404,7 @@ const ROOM_INTRO := {
     "escape":
     "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
     "dinner":
-    "WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
+    "WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
@@ -18361,11 +18578,19 @@ const FRIEND_HINTS := {
     },
     "Vic":
     {
-        "board": "THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.",
-        "clock": "THE CLOCK, TRUST ME, THE CLOCK.",
+        "board": "I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.",
+        "clock": "I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.",
         "plaque": "I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.",
         "shelf": "THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.",
         "keypad": "YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.",
+    },
+    "Morgan":
+    {
+        "board": "THERE IS MATH ON THE BOARD. I WILL LET YOU HAVE THAT ONE.",
+        "clock": "THE CLOCK IS STOPPED. THAT IS NOT A METAPHOR. LOOK AT IT.",
+        "plaque": "UNDER THE PAINTING. SOMEONE PUT A PLAQUE THERE ON PURPOSE.",
+        "shelf": "THE SHELF IS DOING MORE WORK THAN IT LOOKS. READ IT.",
+        "keypad": "YOU HAVE EVERYTHING. THE KEYPAD IS ON THE VAULT. GO.",
     },
 }
 const HERRINGS := [
@@ -18373,6 +18598,58 @@ const HERRINGS := [
     "A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
     "ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
 ]
+const GUESTS := {
+    "Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
+    "Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
+    "Dan": {"comes": 0.8, "code": "DA", "line": "Dan has a thing tonight."},
+    "Vic": {"comes": 0.65, "code": "VI", "line": "Vic is on a call with a client."},
+    "Maya": {"comes": 0.7, "code": "MA", "line": "Maya has plans tonight."},
+    "Morgan": {"comes": 0.25, "code": "MO", "line": "Morgan is staying behind to catch up."},
+}
+const CREW_LINES := {
+    "Alan":
+    {
+        "cheer": ["NICE ROLL. STEADY.", "THAT IS HOW IT IS DONE."],
+        "groan": ["IT HAPPENS. ROLL AGAIN.", "THE LANE IS SLICK TONIGHT."],
+        "talk": ["I WILL TAKE THE SPARE.", "SLOW AND STEADY."],
+        "sing": ["HA! KEEP GOING!", "THAT IS A REAL VOICE."],
+    },
+    "Garrison":
+    {
+        "cheer": ["YES! DID YOU SEE THAT?", "THIS IS THE BEST NIGHT."],
+        "groan": ["OH NO. OH NO NO.", "I BLAME THE SHOES."],
+        "talk": ["I AM ON FIRE. OR NOT.", "THE NEXT ONE IS MINE."],
+        "sing": ["WOO! SING IT!", "ENCORE! ENCORE!"],
+    },
+    "Dan":
+    {
+        "cheer": ["THAT PIN HAD IT COMING.", "WHOA. DID I DO THAT?"],
+        "groan": ["THE BALL HAS A MIND OF ITS OWN.", "THAT WAS A BAD CABLE RUN."],
+        "talk": ["WATCH THIS ONE.", "I MIGHT GET A TURKEY."],
+        "sing": ["NOT BAD AT ALL.", "I WOULD NOT TRY THAT."],
+    },
+    "Vic":
+    {
+        "cheer": ["I TOLD YOU. I TOLD EVERYONE.", "THAT IS A WINNING ROLL."],
+        "groan": ["THE PINS WERE LOOSE.", "THAT DOES NOT COUNT, RIGHT?"],
+        "talk": ["WATCH AND LEARN.", "I HAVE A GUY AT THIS ALLEY."],
+        "sing": ["I KNEW YOU HAD IT!", "I HAVE A GUY FOR RECORDING."],
+    },
+    "Maya":
+    {
+        "cheer": ["CLEAN HIT.", "RIGHT ON THE HEAD PIN."],
+        "groan": ["ONE PIN. REALLY.", "I WAS A BIT LEFT."],
+        "talk": ["I HAVE A PLAN FOR THIS ONE.", "AIM, THEN BREATHE."],
+        "sing": ["THAT NOTE WAS PERFECT.", "OK, THAT WAS GOOD."],
+    },
+    "Morgan":
+    {
+        "cheer": ["NOT BAD. DO NOT TELL HR.", "ACCEPTABLE."],
+        "groan": ["WELL. THAT HAPPENED.", "I AM ONLY HERE FOR THE SHOES."],
+        "talk": ["I DO NOT BOWL. I JUST WIN.", "ONE FRAME BEHIND IS FINE."],
+        "sing": ["THAT WAS FINE. GOOD, EVEN.", "I WILL ALLOW IT."],
+    },
+}
 const ROOMS := {
     "bowling": "bowling_alley",
     "karaoke": "karaoke_bar",
@@ -18405,6 +18682,9 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
+var party: Array = []  # who was invited tonight, in priority order (draw_party)
+var stayed: Array = []  # roster members who did not come
+var party_set := false
 
 var _canvas: Node2D
 var _prev_scale := 1.0
@@ -18498,16 +18778,110 @@ func roster() -> Array:
     return out
 
 
-# the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
+# ---- who comes along (R5) ---------------------------------------------------------------------
+# Not everybody comes every time. The invitation draws a party from the roster (draw_party: a seeded roll per
+# person, friends more likely, the cold ones decline, at least two come); the games get it as options.party.
+# A game started without a party (tests, the toolbox) keeps the classic trio at the table and on the lanes.
+func draw_party() -> Array:
+    var here := roster()
+    var r := Difficulty.rng("outings")
+    var ranked := []
+    var away := []
+    for n in here:
+        var row: Dictionary = GUESTS.get(n, {"comes": 0.8})
+        var p := float(row.comes)
+        if Social.is_hostile(n):
+            p = 0.05
+        elif Social.is_cold(n):
+            p = minf(p, 0.3)
+        elif Social.is_friendly(n):
+            p = minf(0.97, p + 0.1)
+        var roll := r.randf()
+        var tie := r.randf()  # two draws per person whatever happens, so one seed keeps one stream
+        if roll < p:
+            ranked.append({"n": n, "key": (1.0 if Social.is_friendly(n) else 0.0) + tie})
+        else:
+            away.append(n)
+    while ranked.size() < mini(2, here.size()) and not away.is_empty():
+        var best := 0
+        for i in away.size():
+            if float(GUESTS.get(away[i], {"comes": 0.0}).comes) > float(GUESTS.get(away[best], {"comes": 0.0}).comes):
+                best = i
+        ranked.append({"n": away[best], "key": 0.0})
+        away.remove_at(best)
+    ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.key) > float(b.key))
+    party = ranked.map(func(e: Dictionary) -> String: return str(e.n))
+    stayed = away
+    party_set = true
+    return party
+
+
+# "Coming: Alan, Dan and Vic. Garrison is sitting this one out." (the invitation card)
+func coming_text() -> String:
+    if not party_set:
+        draw_party()
+    var text := "Coming: %s." % join_names(_by_cast(party), false)
+    if not stayed.is_empty():
+        text += " " + str(GUESTS.get(stayed[0], {}).get("line", "%s cannot make it." % stayed[0]))
+    return text
+
+
+func join_names(list: Array, caps: bool) -> String:
+    var names := list.map(func(n: String) -> String: return n.to_upper() if caps else n)
+    if names.size() <= 1:
+        return "".join(names)
+    return "%s %s %s" % [", ".join(names.slice(0, names.size() - 1)), "AND" if caps else "and", names[names.size() - 1]]
+
+
+func _by_cast(list: Array) -> Array:
+    return World.CAST.keys().filter(func(n: String) -> bool: return list.has(n))
+
+
+# everybody who is out tonight (this game's party, or the whole roster when the game had no invitation)
+func present() -> Array:
+    var here := roster()
+    if opts.has("party"):
+        return opts.party.filter(func(n: String) -> bool: return here.has(n))
+    return here
+
+
+# the people the games have a personality for: the party, or the classic trio when there was no invitation
+func crew() -> Array:
+    if opts.has("party"):
+        return present()
+    var here := roster()
+    return CORE.filter(func(n: String) -> bool: return here.has(n))
+
+
+# up to five faces at the table (the toolbox can narrow it to some of them)
 func diners() -> Array:
-    var here := roster()
     var table: Array = opts.get("table", [])
-    return DINERS.filter(func(n: String) -> bool: return here.has(n) and (table.is_empty() or table.has(n)))
+    var seated := crew().filter(
+        func(n: String) -> bool: return PEOPLE.has(n) and (table.is_empty() or table.has(n))
+    )
+    return _by_cast(seated.slice(0, TABLE_MAX))
 
 
+# up to four opponents on the lanes (the party is in priority order: friends first)
 func bowlers() -> Array:
-    var here := roster()
-    return BOWL_SKILL.keys().filter(func(n: String) -> bool: return here.has(n))
+    return _by_cast(crew().filter(func(n: String) -> bool: return BOWLERS.has(n)).slice(0, LANE_MAX))
+
+
+# the karaoke audience: the party, or (no invitation) the table plus Vic as before
+func crowd() -> Array:
+    if opts.has("party"):
+        return present()
+    var out := diners()
+    if roster().has("Vic"):
+        out.append("Vic")
+    return out
+
+
+# a line in somebody's voice: kind = cheer, groan, talk or sing ("" when they have none)
+func crew_line(who: String, kind: String) -> String:
+    var row: Dictionary = CREW_LINES.get(who, {})
+    var list: Array = row.get(kind, [])
+    return "" if list.is_empty() else str(list[randi() % list.size()])
 
 
 func maybe_invite() -> void:
@@ -18516,12 +18890,15 @@ func maybe_invite() -> void:
     if World.time_scale <= 0.0 or World.clock < 16.0 or Story.overtime:
         return
     _offered = true
+    party_set = false
+    draw_party()
     var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
     if Campaign.mode == "owner":
         text = (
             "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game."
             % cost_range()
         )
+    text += " " + coming_text()
     Cards.ask(
         _host(),
         text,
@@ -18560,6 +18937,8 @@ func _invite_answer(id: String) -> void:
 
 
 func pick_game(from_invite: bool) -> void:
+    if not party_set:
+        draw_party()
     var options := []
     for id in GAMES:
         var cost := int(GAMES[id].cost)
@@ -18576,7 +18955,7 @@ func pick_game(from_invite: bool) -> void:
         _host(),
         "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
         options,
-        func(id: String) -> void: start(id, from_invite)
+        func(id: String) -> void: start(id, from_invite, {"party": party.duplicate()})
     )
 
 
@@ -18584,9 +18963,11 @@ func _unhandled_input(event: InputEvent) -> void:
     if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
         return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
+        party_set = false
+        draw_party()
         Cards.ask(
             "Team outing",
-            "Take the team out? (Free Play: nothing is scored.)",
+            "Take the team out? (Free Play: nothing is scored.) " + coming_text(),
             [
                 {"label": "LET US GO", "id": "yes"},
                 {"label": "NEVER MIND", "id": "no"},
@@ -18618,7 +18999,10 @@ func start(id: String, from_invite := false, options := {}) -> void:
         _traveled = true
         _wait_id = id
         _from_invite = from_invite
-        World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}))
+        var away := []
+        if opts.has("party"):  # whoever did not come stays out of the building
+            away = roster().filter(func(n: String) -> bool: return not opts.party.has(n))
+        World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}), away)
         Game.go(str(ROOMS[id]), "from_outing")
         return
     _traveled = false
@@ -18860,6 +19244,7 @@ func _bowl_setup() -> void:
         "opp_off": 0.5,
         "opp_total": 0,
         "opp_knock": 0,
+        "opp_first": 0,
         "opp_phase": 0,
     }
     if room_mode():
@@ -18956,26 +19341,57 @@ func _bowl_resolve() -> void:
     if room_mode():
         _pins_fall(0, knocked)
         _bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
-        for who in diners():
+        for who in bowlers():
             if knocked >= 10:
                 _bubble(_actor(who), "heart", 1.2)
+        _crew_reacts(knocked)
 
 
+# one frame of a crew member, from their BOWLERS row: skill and noise, a hot / cold swing on alternating frames,
+# a show-off bonus with an audience (3+ opponents, or you just hit 8+), a turkey or a gutter ball now and then
 func _bowl_roll_opp(who: String) -> Dictionary:
-    var skill := float(BOWL_SKILL[who]) + Difficulty.f("bowl.opp_skill")
+    var row: Dictionary = BOWLERS[who]
+    var skill := float(row.skill) + Difficulty.f("bowl.opp_skill")
     var r := Difficulty.rng("bowl")
-    var first := clampi(roundi(10.0 * (skill + r.randf_range(-0.28, 0.28))), 0, 10)
+    if float(row.streak) > 0.0:
+        skill += float(row.streak) * (1.0 if int(g.get("frame", 1)) % 2 == 0 else -1.0)
+    if float(row.show) > 0.0 and (bowlers().size() >= 3 or int(g.get("knocked", 0)) >= 8):
+        skill += float(row.show)
+    var noise := float(row.noise)
+    var first := clampi(roundi(10.0 * (skill + r.randf_range(-noise, noise))), 0, 10)
+    if float(row.turkey) > 0.0 and r.randf() < float(row.turkey):
+        first = 10
+    if float(row.gutter) > 0.0 and r.randf() < float(row.gutter):
+        first = 0
     var total := first
     var knock := first
     if first == 10:
         total += 3
     else:
         var second := clampi(
-            roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first
+            roundi(float(10 - first) * (skill + r.randf_range(-noise, noise))), 0, 10 - first
         )
         total += second
         knock += second
-    return {"total": total, "knock": knock}
+    return {"total": total, "knock": knock, "first": first}
+
+
+# Morgan sits out the first frame (BOWLERS.late) and joins in after
+func bowls_in_frame(who: String, frame: int) -> bool:
+    return frame > int(BOWLERS[who].late)
+
+
+# somebody on the bench says something in their own voice (a caption, never a penalty)
+func _crew_reacts(knocked: int) -> void:
+    var kind := "cheer" if knocked >= 8 else ("groan" if knocked <= 1 else "")
+    if kind == "" or randf() > 0.6:
+        return
+    var who: String = bowlers().pick_random() if not bowlers().is_empty() else ""
+    if who == "":
+        return
+    var line := crew_line(who, kind)
+    if line != "":
+        caption("%s: %s" % [who.to_upper(), line], 2.2)
 
 
 func _bowl_next() -> void:
@@ -18988,13 +19404,15 @@ func _bowl_next() -> void:
         if room_mode():
             caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
         return
+    var frame := int(g.frame)
+    var turn := bowlers().filter(func(n: String) -> bool: return bowls_in_frame(n, frame))
     if room_mode():
-        g.queue = bowlers()
+        g.queue = turn
         g.opp = ""
         g.stage = "others"
         caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
         return
-    for who in bowlers():
+    for who in turn:
         g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
     _bowl_advance()
 
@@ -19026,13 +19444,17 @@ func _bowl_others(dt: float) -> void:
         var res := _bowl_roll_opp(str(g.opp))
         g.opp_total = int(res.total)
         g.opp_knock = int(res.knock)
+        g.opp_first = int(res.first)
         var wobble := Difficulty.rng("bowl").randf_range(-0.5, 0.5)
         g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * wobble, 0.0, 1.0)
         g.opp_ball = 0.0
         g.opp_t = 0.0
         g.opp_phase = 0
         g.up[1] = _all_up()
-        caption("WAIT. %s STEPS UP." % str(g.opp).to_upper(), 1.5)
+        if int(BOWLERS[str(g.opp)].late) > 0 and int(g.frame) == int(BOWLERS[str(g.opp)].late) + 1:
+            caption("%s JOINS THE GAME. RELUCTANTLY." % str(g.opp).to_upper(), 1.5)
+        else:
+            caption("WAIT. %s STEPS UP." % str(g.opp).to_upper(), 1.5)
         return
     if int(g.opp_phase) == 0:
         g.opp_ball = minf(1.0, float(g.opp_t) / 0.6)
@@ -19040,7 +19462,12 @@ func _bowl_others(dt: float) -> void:
             g.opp_phase = 1
             _pins_fall(1, int(g.opp_knock))
             _bubble(_actor(str(g.opp)), "!" if int(g.opp_knock) >= 8 else "dots", 1.2)
-            caption("%s KNOCKS DOWN %d" % [str(g.opp).to_upper(), int(g.opp_knock)], 1.5)
+            var kind := "cheer" if int(g.opp_first) == 10 else ("groan" if int(g.opp_knock) <= 2 else "talk")
+            var line := crew_line(str(g.opp), kind) if kind != "talk" or randf() < 0.5 else ""
+            if line != "":
+                caption("%s (%d): %s" % [str(g.opp).to_upper(), int(g.opp_knock), line], 2.0)
+            else:
+                caption("%s KNOCKS DOWN %d" % [str(g.opp).to_upper(), int(g.opp_knock)], 1.5)
     elif float(g.opp_t) >= 1.7:
         g.totals[g.opp] = int(g.totals[g.opp]) + int(g.opp_total)
         g.opp = ""
@@ -19068,7 +19495,7 @@ func bowl_rank() -> int:
 
 
 func _bowl_end() -> void:
-    _finish([3, 2, 1, 1][bowl_rank()])
+    _finish([3, 2, 1, 1, 1][mini(bowl_rank(), 4)])
 
 
 # ---- the song table
@@ -19303,7 +19730,7 @@ func _escape_setup() -> void:
     Difficulty.shuffle(digits, "escape")
     var n := escape_digits()
     var friends := 0
-    for who in Social.people():
+    for who in present():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
         "code": digits.slice(0, n),
@@ -19383,11 +19810,11 @@ func escape_try(guess: Array) -> void:
 
 # the first friend you get on with (the hints are in their voice); never yourself, and with nobody friendly the first person in the room
 func _friend() -> String:
+    var out := present()
     for who in Social.people():
-        if Social.is_friendly(who):
+        if Social.is_friendly(who) and out.has(who):
             return who
-    var here := roster()
-    return str(here[0]) if not here.is_empty() else "Alan"
+    return str(out[0]) if not out.is_empty() else "Alan"
 
 
 func _first_friend() -> String:
@@ -19516,7 +19943,8 @@ func _dinner_setup() -> void:
     var ids: Array = DINNER_MOODS.keys()
     var r := Difficulty.rng("dinner")
     for who in diners():
-        g.moods[who] = ids[r.randi_range(0, ids.size() - 1)]
+        var pool: Array = PEOPLE.get(who, {}).get("moods", ids)  # a quirk: some moods come up more often
+        g.moods[who] = pool[r.randi_range(0, pool.size() - 1)]
     _dinner_deal()
 
 
@@ -19663,11 +20091,13 @@ func dinner_targets() -> Array:
     var shifts := 0
     for who in diners():
         shifts += diner_shift(who)
-    var scale := float(diners().size()) / 3.0  # the bars are for a table of three
+    var n := diners().size()
+    var row: Array = TABLE_BARS[clampi(n, 1, TABLE_MAX)]
+    var neutral := 5 * n  # five rounds of an indifferent answer from everyone
     return [
-        roundi((22 + 3 * shifts) * scale),
-        roundi((15 + 3 * shifts) * scale),
-        roundi((10 + 3 * shifts) * scale)
+        roundi(neutral + int(row[0]) + 3 * shifts),
+        roundi(neutral + int(row[1]) + 3 * shifts),
+        roundi(neutral - int(row[2]) + 3 * shifts)
     ]
 
 
@@ -19739,7 +20169,7 @@ func _room_begin() -> void:
             caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
         "dinner":
             g.stage = "sit"
-            caption("SIT AT THE BOOTH WITH ALAN (PRESS E ON THE SEAT)", 99.0)
+            caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
 
 
 func _room_process(delta: float) -> void:
@@ -19821,13 +20251,14 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-    var cheer: Array = diners()
-    if roster().has("Vic"):
-        cheer.append("Vic")
+    var cheer: Array = crowd()
     if cheer.is_empty():
         return
     var who: String = Difficulty.pick(cheer, "karaoke")
     _bubble(_actor(who), "heart", 1.5)
+    var line := crew_line(who, "sing")  # the crowd cheers by name
+    if line != "":
+        caption("%s: %s" % [who.to_upper(), line], 1.8)
 
 
 func _streak_broken() -> void:
@@ -19837,9 +20268,9 @@ func _streak_broken() -> void:
         g.dance = false
         _hold_player("talk", _x0() + MIC_X + 60.0)
     if Difficulty.rng("karaoke").randf() < 0.3:
-        var crowd := diners()
-        if not crowd.is_empty():
-            _bubble(_actor(Difficulty.pick(crowd, "karaoke")), "?", 1.0)
+        var listeners := crowd()
+        if not listeners.is_empty():
+            _bubble(_actor(Difficulty.pick(listeners, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
@@ -20098,7 +20529,8 @@ func _dinner_react() -> void:
 func _paint_hud(size: Vector2) -> void:
     UiStyle.hint_bar(_canvas, size, hint())
     var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
-    var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, 164.0), UiStyle.STRIP_H)
+    var strip_w := 176.0 if game == "dinner" else 164.0  # five faces need the room
+    var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
     match game:
         "bowling":
             _hud_bowling(strip)
@@ -20185,16 +20617,20 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
     if str(g.get("stage", "")) != "talk":
         _t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
         return
-    _t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
-    # the mood of the day, one face per diner (A = Alan ...)
-    var fx_x := s.position.x + 92.0
-    for who in diners():
+    _t("ROUND %d/5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+    # the mood of the day, one face per diner (A = Alan ...; two letters when two names start alike)
+    var fx_x := s.position.x + 88.0
+    var table := diners()
+    var firsts := table.map(func(n: String) -> String: return n.substr(0, 1))
+    for who in table:
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
         var face := str(DINNER_MOODS[md].face)
-        _t(who.substr(0, 1), fx_x, o.y, UiStyle.SOFT)
-        _t(face, fx_x + 4.0, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
-        fx_x += 4.0 + 4.0 * float(face.length()) + 3.0
+        var tag: String = who.substr(0, 2 if firsts.count(who.substr(0, 1)) > 1 else 1).to_upper()
+        _t(tag, fx_x, o.y, UiStyle.SOFT)
+        fx_x += 4.0 * float(tag.length())
+        _t(face, fx_x, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
+        fx_x += 4.0 * float(face.length()) + 3.0
     var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
     var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
     UiStyle.box(_canvas, box)
@@ -20277,6 +20713,8 @@ func _paint() -> void:
 func _paint_intro(b: Rect2) -> void:
     var y := b.position.y + 2.0
     var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
+    if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
+        blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
     for line in _wrap(blurb, int(b.size.x / 4.0)):
         _t(line, b.position.x, y)
         y += 7.0
@@ -20479,7 +20917,7 @@ func _paint_dinner(b: Rect2) -> void:
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
         _t(
-            "%s %s" % [str(DINNER_MOODS[md].face), md.to_upper()],
+            str(DINNER_MOODS[md].face) + (" " + md.to_upper() if b.size.x >= 200.0 else ""),  # the word needs room
             rx + 60.0,
             ry,
             GREEN if shift > 0 else (RED if shift < 0 else UiStyle.MUTED)
@@ -20747,9 +21185,10 @@ func _bubble(glyph: String) -> void:
 
 func _menu(text: String) -> void:
     var owner_mode := Campaign.mode == "owner"
+    var service_mode := Campaign.mode == "service" and Service.has_one_on_one(_who)
     Cards.ask(_who, text, [
         {"label": "SMALL TALK", "id": "small"},
-        {"label": "HOW ARE YOU HOLDING UP?" if owner_mode else "ASK FOR HELP", "id": "ask"},
+        {"label": "ONE ON ONE" if service_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP")), "id": "ask"},
         {"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
         {"label": "LEAVE (ESC)", "id": "leave"},
     ], func(id: String) -> void: _pick(id))
@@ -20760,6 +21199,9 @@ func _pick(id: String) -> void:
         "small":
             _reply(small_talk())
         "ask":
+            if Campaign.mode == "service" and Service.has_one_on_one(_who):
+                Service.one_on_one(_who, func() -> void: _menu("Anything else?"))
+                return
             _reply(holding_up() if Campaign.mode == "owner" else ask_help())
         "tip":
             _reply(owner_idea() if Campaign.mode == "owner" else tip())
@@ -21801,7 +22243,7 @@ var _pending_leave := false
 
 
 func reset() -> void:
-    trust = START_TRUST
+    trust = clampi(START_TRUST + Build.trust_bonus(), 0, 100)  # CULTURE and the quirks (X7)
     left = false
     met = []
     overrides = 0
@@ -22053,6 +22495,309 @@ func status_lines() -> Array:
     return lines
 ''')
 
+write("scripts/owners.gd", '''extends Node
+# gdlint:disable=class-definitions-order,class-variable-name
+# gdlint:disable=max-line-length
+# The owners as last-resort help (tech campaign only; roadmap X6). Alan and Garrison are busy owners: they do not
+# work tickets day to day. When the day goes badly wrong, one of them who is in the building and free steps in:
+#   phones    two or more desk phones ringing unanswered: the owner walks to one, puts on a headset and takes the call
+#             (the call is handled, a client is a little happier)
+#   sla       a P1 / P2 about to breach: +45 seconds on its clock
+#   backlog   six or more open tickets: the soonest one to breach gets +45 seconds
+#   complaint Vic's complaint has waited too long (Sales.pending): Garrison calms the client (mood +4)
+# Stepping in is FREE: no reputation, no opinion loss, no grade effect. It only shows a toast in the owner's own voice
+# and a row in the day report (OWNERS STEPPED IN). Limits: not on days 1-2, a per-day limit for each owner, a cooldown
+# in game minutes, and the Difficulty tier (easy a bit more help, hard none). Random choices come from the `owners`
+# stream, so the same seed repeats. Free Play and the owner campaign never use it.
+# ASK THE OWNER (Talk and Lynk) is the lifeline version: you ask, a friendly owner helps once a day (`ask`).
+
+signal stepped_in(who: String, reason: String)
+
+const OWNERS := ["Alan", "Garrison"]
+# legs an owner can be pulled out of (not lunch, a meeting, an errand outside, a trip, following you)
+const FREE_KINDS := ["work", "coffee", "cooler", "bathroom", "floor", "closet"]
+# [easy, normal, hard]
+const PER_DAY := [3, 2, 0]  # uses a day for each owner
+const COOL_MIN := [3.0, 4.0, 4.0]  # game minutes between two uses (either owner)
+const BACKLOG := [5, 6, 99]  # open client tickets that count as a backlog
+const FIRST_DAY := 3  # gentle first days
+const SLA_BONUS := 45.0
+const SLA_WARN := 30.0  # a P1 / P2 under this many seconds counts as about to breach
+const COMPLAINT_WAIT := 40.0  # game seconds a complaint may wait for you before Garrison takes it
+const CHECK_GAP := 2.0
+const LINES := {
+    "Alan": ["I will take this one.", "Give me that phone. Keep working.", "I have got it. Back to your queue."],
+    "Garrison": ["Hi, this is Garrison, how can I help?", "Garrison here, let me see what I can do.", "I will handle this one, you carry on."],
+}
+const ASK_LINES := {
+    "cold": {
+        "Alan": "I like you fine, but I have payroll to run. Ask me again once we have worked together a bit more.",
+        "Garrison": "Love the energy, but I am slammed. Let us get to know each other first, yeah?",
+    },
+    "used": {
+        "Alan": "I already did what I could for you today. Tomorrow.",
+        "Garrison": "I already made your call today. Ask me tomorrow, okay?",
+    },
+    "approve": "Fine. Take the longer fix if you need to, buy the part, I will sign for it. Your next heavy fix will not cost you with the client.",
+    "tip": "Nothing is on fire, so here is a tip: label both ends of every cable and keep a spare power brick. It saves a Saturday.",
+    "call": "Give me the number. I will call %s myself and smooth it over.",
+    "nobody": "Nothing in your queue needs a call from me right now. Keep it that way.",
+}
+
+var used := {"Alan": 0, "Garrison": 0}  # last-resort uses today
+var stepped := 0  # today's total (the day report row)
+var log: Array = []  # [{who, reason, clock}] today
+var last_clock := -99.0
+var approved_heavy := false  # Alan signed off on the next heavy alternative fix (no client mood hit)
+var fake_rings := 0  # tests: phones that count as ringing
+var _asked := {}  # owner -> day of the last ASK THE OWNER
+var _t := 0.0
+var _pending_age := 0.0
+
+
+func _ready() -> void:
+    Campaign.day_started.connect(func(_d: int) -> void: begin_day())
+
+
+func begin_day() -> void:
+    used = {"Alan": 0, "Garrison": 0}
+    stepped = 0
+    log = []
+    last_clock = -99.0
+    approved_heavy = false
+    fake_rings = 0
+    _t = 0.0
+    _pending_age = 0.0
+
+
+# the tech campaign only (Free Play and the owner campaign never call the owners in)
+func active() -> bool:
+    return Campaign.active and Campaign.mode == "tech" and Msp.enabled and not Game.title_mode
+
+
+func per_day() -> int:
+    return int(PER_DAY[Difficulty.tier_index()])
+
+
+func cooldown_hours() -> float:
+    return float(COOL_MIN[Difficulty.tier_index()]) / 60.0
+
+
+func backlog_size() -> int:
+    return int(BACKLOG[Difficulty.tier_index()])
+
+
+# is the ASK THE OWNER lifeline in play for this person?
+func asks_owner(who: String) -> bool:
+    return Campaign.active and Campaign.mode == "tech" and OWNERS.has(who)
+
+
+func _process(delta: float) -> void:
+    if not active() or Onsite.busy:
+        return
+    var dt := delta * World.time_scale
+    if dt <= 0.0:
+        return
+    _pending_age = _pending_age + dt if not Sales.pending.is_empty() else 0.0
+    _t += dt
+    if _t < CHECK_GAP:
+        return
+    _t = 0.0
+    var d := check()
+    if not d.is_empty():
+        step_in(str(d.who), str(d.reason), d)
+
+
+# ---- the rule -----------------------------------------------------------------------------------------------
+func allowed_now() -> bool:
+    if not active() or Campaign.day < FIRST_DAY or per_day() <= 0:
+        return false
+    if World.clock >= World.DAY_END - 0.25:
+        return false
+    return World.clock - last_clock >= cooldown_hours() or last_clock < 0.0
+
+
+# {who, reason, ...} or {} when nobody steps in right now
+func check() -> Dictionary:
+    if not allowed_now():
+        return {}
+    var trig := trigger()
+    if trig.is_empty():
+        return {}
+    var who := pick_owner(str(trig.reason))
+    if who == "":
+        return {}
+    trig["who"] = who
+    return trig
+
+
+func trigger() -> Dictionary:
+    if not Sales.pending.is_empty() and _pending_age >= COMPLAINT_WAIT:
+        var ct := Msp.ticket(int(Sales.pending.get("ticket", 0)))
+        if not ct.is_empty() and str(ct.status) != "Closed":
+            return {"reason": "complaint", "client": int(Sales.pending.get("client", 0)), "ticket": int(ct.id)}
+    var open := 0
+    var soonest := {}
+    for t in Msp.open_tickets():
+        if t.internal or str(t.status) == "Waiting":
+            continue
+        open += 1
+        if t.fix_done or t.breached or bool(t.get("owner_helped", false)):
+            continue
+        if int(t.pri) <= 2 and float(t.sla_left) < SLA_WARN:
+            return {"reason": "sla", "ticket": int(t.id)}
+        if soonest.is_empty() or float(t.sla_left) < float(soonest.sla_left):
+            soonest = t
+    var zones := ringing_phones()
+    if zones.size() + fake_rings >= 2:
+        return {"reason": "phones", "zone": zones[0] if not zones.is_empty() else null}
+    if open >= backlog_size() and not soonest.is_empty():
+        return {"reason": "backlog", "ticket": int(soonest.id)}
+    return {}
+
+
+func ringing_phones() -> Array:
+    var out := []
+    var tree := get_tree()
+    if tree == null:
+        return out
+    for zone in tree.get_nodes_in_group("phones"):
+        var fx: Node = zone.get_node_or_null(zone.target)
+        if fx != null and bool(fx.get("ringing")) and not bool(fx.get("busy")):
+            out.append(zone)
+    return out
+
+
+# who answers: Garrison takes the clients, Alan the technical trouble, either takes the phones
+func pick_owner(reason: String) -> String:
+    var prefs := ["Alan", "Garrison"]
+    if reason == "complaint":
+        prefs = ["Garrison", "Alan"]
+    elif reason == "phones" and Difficulty.rng("owners").randf() < 0.5:
+        prefs = ["Garrison", "Alan"]
+    for who in prefs:
+        if int(used[who]) < per_day() and is_free(who):
+            return who
+    return ""
+
+
+# in the building and not busy: not out, at lunch, in a meeting, on a trip, following you or talking to you
+func is_free(who: String) -> bool:
+    if not Social.people().has(who):
+        return false
+    if not World.chars.has(who):
+        return true  # no world running (tests): in the building
+    var st: Dictionary = World.chars[who]
+    if str(st.get("scene", "")) == World.OUTSIDE or bool(st.get("following", false)):
+        return false
+    var legs: Array = st.get("legs", [])
+    var kind := str(legs[0].get("kind", "work")) if not legs.is_empty() else "work"
+    return FREE_KINDS.has(kind) and Talk._who != who
+
+
+# ---- the effect ---------------------------------------------------------------------------------------------
+func step_in(who: String, reason: String, info := {}) -> void:
+    match reason:
+        "complaint":
+            var client := int(info.get("client", Sales.pending.get("client", 0)))
+            Sales.adjust(client, 4)
+            _help_ticket(int(info.get("ticket", 0)), who, 30.0, "%s called the client back." % who)
+            Sales.pending = {}
+        "phones":
+            _answer_phone(who, info)
+        _:
+            _help_ticket(int(info.get("ticket", 0)), who, SLA_BONUS, "%s stepped in: +45 s on the clock." % who)
+    used[who] = int(used[who]) + 1
+    stepped += 1
+    last_clock = World.clock
+    log.append({"who": who, "reason": reason, "clock": World.clock})
+    if reason != "phones":
+        var node: Node = World.chars[who].get("node") if World.chars.has(who) else null
+        if node != null and is_instance_valid(node) and node.has_method("desk_call"):
+            node.desk_call()
+    var line := _line(who, reason)
+    Hints.toast("%s: %s" % [who.to_upper(), line.to_upper()], 3.2)
+    Msp.changed.emit()
+    stepped_in.emit(who, reason)
+
+
+func _line(who: String, reason: String) -> String:
+    var lines: Array = LINES[who]
+    if reason == "phones" or reason == "complaint":
+        return str(lines[0])
+    return str(lines[Difficulty.rng("owners").randi_range(0, lines.size() - 1)])
+
+
+func _help_ticket(id: int, who: String, secs: float, note: String) -> void:
+    var t := Msp.ticket(id)
+    if t.is_empty():
+        return
+    t.sla_left = float(t.sla_left) + secs
+    t["owner_helped"] = true
+    t.notes.append(note)
+    if who == "":
+        return
+
+
+func _answer_phone(who: String, info: Dictionary) -> void:
+    if not Sales.active.is_empty():
+        var rng := Difficulty.rng("owners")
+        Sales.adjust(int(Sales.active[rng.randi_range(0, Sales.active.size() - 1)]), 2)
+    var zone: Node = info.get("zone", null)
+    if zone == null or not is_instance_valid(zone):
+        return
+    var fx: Node = zone.get_node_or_null(zone.target)
+    if fx == null:
+        return
+    if World.send_owner_cover(who, zone.global_position.x - 10.0):
+        fx._ring_until = fx._time + 20.0  # keep ringing until the owner gets there
+    else:
+        fx.play()  # nobody to walk: the call is simply picked up
+
+
+# ---- ASK THE OWNER ------------------------------------------------------------------------------------------
+# Lync "need a hand" and Talk "ask the owner" land here. Needs a friendly owner, once a day each. Alan approves a
+# heavier fix (the next heavy alternative fix costs no client mood) or, with nothing open, passes on a tip; Garrison
+# calls the client of your oldest open ticket (mood +6, SLA +60 s). No reputation, no opinion cost.
+func ask(who: String) -> String:
+    if not Social.is_friendly(who):
+        return str(ASK_LINES.cold[who])
+    if int(_asked.get(who, -1)) == Campaign.day:
+        return str(ASK_LINES.used[who])
+    if who == "Alan":
+        var work := false
+        for t in Msp.open_tickets():
+            work = work or (not t.internal and not t.fix_done)
+        _asked[who] = Campaign.day
+        if work:
+            approved_heavy = true
+            return str(ASK_LINES.approve)
+        Skills.add_xp("servers", 6)
+        return str(ASK_LINES.tip) + " (+6 SERVERS XP)"
+    var oldest := {}
+    for t in Msp.open_tickets():
+        if t.internal or t.fix_done:
+            continue
+        if oldest.is_empty() or int(t.id) < int(oldest.id):
+            oldest = t
+    if oldest.is_empty():
+        return str(ASK_LINES.nobody)  # not used up: ask again when there is something to call about
+    _asked[who] = Campaign.day
+    Sales.adjust(int(oldest.client), 6)
+    oldest.sla_left = float(oldest.sla_left) + 60.0
+    oldest.notes.append("Garrison called the client: +60 s.")
+    Msp.changed.emit()
+    return str(ASK_LINES.call) % str(Msp.CLIENTS[int(oldest.client)].name)
+
+
+# Msp._alt_fix: a heavy fix (one that normally costs client mood) after Alan's approval is free, once
+func take_approval() -> bool:
+    if not approved_heavy:
+        return false
+    approved_heavy = false
+    return true
+''')
+
 write("scripts/roles.gd", '''extends Node
 # Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
 # "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
@@ -22177,6 +22922,1346 @@ func fill(text: String) -> String:
     return text
 ''')
 
+write("scripts/service.gd", '''extends Node
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# The service manager campaign (C4 / V1, mode "service"): you are Dan, promoted to run the desk. The crew (Crew) works the
+# queue by itself through the crew gate (Owner.team_speed / _work_queue); you set a focus in the MORNING HUDDLE, talk to your
+# people in 1:1s, answer the owners' MEMOS (Alan wants quality and the stack, Garrison wants yes to the client and a happy
+# team; each choice moves the two trust meters and has a real effect), decide who takes the big incidents (the Playbook jobs,
+# played by you or run by the crew) and read the SCORECARD at the end of the day. Morgan's confidence is Campaign.rep (fired at
+# 0, or when both owners' trust is under 20). Hands-on still works: your desk's PSA / RMM are the normal computer apps.
+# V1 uses Cards and the PSA ticket list; the Dispatch board, Capacity view, runbooks and hiring are C5 / C6.
+
+const START_CONFIDENCE := 55
+const OWNERS := ["Alan", "Garrison"]
+const TRUST_START := 50
+const FAIL_TRUST := 20
+const FOCUS := {
+    "p1": {"speed": 0.95, "head": 0.7, "miss": 0.0},
+    "queue": {"speed": 1.12, "head": 1.0, "miss": 0.05},
+    "mentor": {"speed": 0.92, "head": 1.0, "miss": 0.0},
+    "project": {"speed": 0.85, "head": 1.0, "miss": 0.0},
+}
+const FOCUS_ORDER := ["p1", "queue", "mentor", "project"]
+const RANK := {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1}
+
+const DEFAULT_HUDDLE := {
+    "speaker": "Morning huddle",
+    "text": "Morning. %d tickets open, %d of them P1 or P2. Crew mood is %s. What is today's focus?",
+    "options": {
+        "p1": {"label": "P1 FIRST", "note": "P1 and P2 tickets get a head start. The rest wait a little longer."},
+        "queue": {"label": "CLEAR THE QUEUE", "note": "Everyone works faster today. A few more will come back."},
+        "mentor": {"label": "MENTOR MAYA", "note": "You sit with Maya today. The queue slows down, she gets better."},
+        "project": {"label": "PROJECT DAY", "note": "Documentation and cleanup. Slower today, fewer tickets later."},
+    },
+    "moods": {"good": "good", "ok": "so-so", "low": "low"},
+}
+var HUDDLE: Dictionary = DEFAULT_HUDDLE.duplicate(true)
+
+# owner memos: both owners pull in opposite directions. Option a is the sender's ask, b is the other owner's reply, c does both.
+const DEFAULT_MEMOS := {
+    "m1":
+    {
+        "day": 2, "at": 10.0, "speaker": "Alan (Co-owner)",
+        "text": "Memo: patch every workstation and the switch firmware this week. Quality first. Garrison replied-all: Dr. Patel's Wi-Fi has to work before his lunch.",
+        "options":
+        [
+            {"id": "a", "label": "PATCH FIRST", "text": "I will put the patch run on the board. Dr. Patel waits for the window.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "buff": ["issues", 0.93, 4], "mood": -2}},
+            {"id": "b", "label": "DR. PATEL FIRST", "text": "Understood. Patel's Wi-Fi first. The patches move to next week.", "fx": {"trust": {"Alan": -5, "Garrison": 6}, "mood": 4}},
+            {"id": "c", "label": "BOTH, EXTRA HOURS", "text": "Both are on the board. It costs the crew an evening.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "morale": -4, "mood": 2, "buff": ["issues", 0.96, 3]}},
+        ],
+    },
+    "m2":
+    {
+        "day": 5, "at": 10.0, "speaker": "Garrison (Co-owner)",
+        "text": "Memo: a prospect wants onboarding in a day. Say yes, we need the win. Alan replied: survey the network first, or it goes badly.",
+        "options":
+        [
+            {"id": "a", "label": "SAY YES TO ONE DAY", "text": "One day it is. I will tell the crew it is a sprint.", "fx": {"trust": {"Alan": -4, "Garrison": 6}, "mood": 5, "morale": -3}},
+            {"id": "b", "label": "SURVEY FIRST", "text": "Three days with a survey. I wrote down why.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "buff": ["miss", -0.02, 4]}},
+            {"id": "c", "label": "A DAY, THEN A SURVEY", "text": "We start in a day and survey as we go. Tight, but written down.", "fx": {"trust": {"Alan": 1, "Garrison": 2}, "morale": -2, "mood": 2}},
+        ],
+    },
+    "m3":
+    {
+        "day": 8, "at": 10.0, "speaker": "Alan (Co-owner)",
+        "text": "Memo: tier the desk. Seniors on hard tickets, juniors on resets, no exceptions. Garrison replied: account pods, so each client sees the same faces.",
+        "options":
+        [
+            {"id": "a", "label": "TIER THE DESK", "text": "Tiers it is. I will label the queues.", "fx": {"trust": {"Alan": 6, "Garrison": -4}, "buff": ["speed", 1.06, 5]}},
+            {"id": "b", "label": "ACCOUNT PODS", "text": "Pods. Each client gets a name on the ticket.", "fx": {"trust": {"Alan": -4, "Garrison": 6}, "mood": 4, "morale": 3}},
+            {"id": "c", "label": "TIERS FOR THE TOP 3", "text": "Tiers for the big three clients and pods for the rest. More work for me.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "buff": ["speed", 1.03, 5], "mood": 1}},
+        ],
+    },
+    "m4":
+    {
+        "day": 11, "at": 9.8, "speaker": "Garrison (Co-owner)",
+        "text": "Memo: the crew has earned a long Friday. Pizza at three and everyone leaves early. Alan replied: documentation week, nothing is written down.",
+        "options":
+        [
+            {"id": "a", "label": "PIZZA AND AN EARLY FRIDAY", "text": "Friday at three. I will cover the phones.", "fx": {"trust": {"Alan": -4, "Garrison": 6}, "morale": 8, "retain_all": 1}},
+            {"id": "b", "label": "DOCUMENTATION WEEK", "text": "Documentation week. I will schedule the hours.", "fx": {"trust": {"Alan": 6, "Garrison": -4}, "buff": ["issues", 0.94, 5], "morale": -2}},
+            {"id": "c", "label": "PIZZA AT LUNCH, THEN DOCS", "text": "Pizza at noon, documents in the afternoon. Nobody leaves early.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "morale": 3, "buff": ["issues", 0.97, 3]}},
+        ],
+    },
+    "m5":
+    {
+        "day": 14, "at": 10.0, "speaker": "Alan (Co-owner)",
+        "text": "Memo: set an after-hours rota, one tech a week, fixed. Garrison replied: pay a bonus and let people volunteer.",
+        "options":
+        [
+            {"id": "a", "label": "A FIXED ROTA", "text": "A rota, posted in the kitchen. Fair and predictable.", "fx": {"trust": {"Alan": 5, "Garrison": -3}, "morale": -3, "buff": ["miss", -0.015, 5]}},
+            {"id": "b", "label": "BONUS FOR VOLUNTEERS", "text": "A bonus for volunteers. Maya says she will take the first week.", "fx": {"trust": {"Alan": -3, "Garrison": 5}, "morale": 4}},
+            {"id": "c", "label": "ROTA PLUS A SMALL BONUS", "text": "A rota with a small bonus. Both of you get half of what you asked for.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "morale": 1}},
+        ],
+    },
+    "m6":
+    {
+        "day": 17, "at": 10.0, "speaker": "Garrison (Co-owner)",
+        "text": "Memo: Iron Mule wants unlimited changes for the same fee. Say yes and keep them happy. Alan replied: enforce the contract or it never ends.",
+        "options":
+        [
+            {"id": "a", "label": "SAY YES TO THEM", "text": "I told Iron Mule yes. I will watch the hours they take.", "fx": {"trust": {"Alan": -4, "Garrison": 6}, "mood": 6, "buff": ["issues", 1.08, 5]}},
+            {"id": "b", "label": "ENFORCE THE CONTRACT", "text": "I sent them the scope section, politely. It is written down now.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "mood": -4, "buff": ["issues", 0.95, 5]}},
+            {"id": "c", "label": "A CHANGE ORDER", "text": "A change order for the extras. They can say yes or no.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "mood": 1}},
+        ],
+    },
+}
+var MEMOS: Dictionary = DEFAULT_MEMOS.duplicate(true)
+
+# one-off story cards of the 20 days (the incidents are INCIDENTS)
+const DEFAULT_BEATS := {
+    "handover":
+    {
+        "speaker": "Morgan Reyes (Manager)",
+        "text": "Alan and Garrison have asked me to give you the desk. Dan, you run the process now. Alan wants quality. Garrison wants speed. What comes first?",
+        "options":
+        [
+            {"id": "q", "label": "QUALITY FIRST", "text": "Quality first. I will label every queue and write the rules down.", "fx": {"trust": {"Alan": 5, "Garrison": -2}, "buff": ["miss", -0.02, 5]}},
+            {"id": "s", "label": "SPEED FIRST", "text": "Speed first. Fast answers, then we tidy up.", "fx": {"trust": {"Alan": -2, "Garrison": 5}, "buff": ["speed", 1.05, 5]}},
+            {"id": "b", "label": "BOTH, SLOWLY", "text": "Both. I will start with the queue. It will take a week.", "fx": {"trust": {"Alan": 2, "Garrison": 2}}},
+        ],
+    },
+    "xp":
+    {
+        "speaker": "Morgan Reyes (Manager)",
+        "text": "Windows XP stops getting patches on April 8. Every XP box is a liability and the clients keep asking. How do we run the migrations?",
+        "options":
+        [
+            {"id": "d", "label": "DURING THE DAY", "text": "Daytime migrations. The queue will feel it.", "fx": {"buff": ["speed", 0.94, 3], "mood": 3}},
+            {"id": "n", "label": "AFTER HOURS, BATCHED", "text": "Batches after hours, with a note to each client. The crew gets time back.", "fx": {"morale": -3, "trust": {"Alan": 3, "Garrison": 0}, "buff": ["issues", 0.97, 4]}},
+            {"id": "m", "label": "GIVE THEM TO MAYA", "text": "Maya takes the XP list. I will check her notes at the end of the day.", "fx": {"morale_who": {"Maya": 5}, "mentor": "Maya"}},
+        ],
+    },
+    "vic":
+    {
+        "speaker": "Vic (Account Manager)",
+        "text": "I promised Brightside a two hour response on everything. They loved it. Your crew can do that, right?",
+        "options":
+        [
+            {"id": "h", "label": "HOLD VIC TO IT", "text": "We can do it if the P3s wait. I wrote the exceptions on the board.", "fx": {"social": {"Vic": 2}, "trust": {"Alan": 0, "Garrison": 3}, "morale": -2}},
+            {"id": "r", "label": "RE-QUOTE IT WITH VIC", "text": "Four hours, with two hours for urgent. Vic will call them. He did not enjoy it.", "fx": {"social": {"Vic": -2}, "trust": {"Alan": 3, "Garrison": -2}}},
+            {"id": "t", "label": "ASK GARRISON", "text": "Garrison says to do it and we sort the staffing later. I am not sure that is a plan.", "fx": {"trust": {"Alan": -2, "Garrison": 4}, "morale": -3, "mood": 3}},
+        ],
+    },
+    "nosale":
+    {
+        "speaker": "Vic (Account Manager)",
+        "text": "A new prospect wants fifty seats at half our price, with a four-hour response. Garrison likes the logo. The numbers look thin to me. Do we take them?",
+        "options":
+        [
+            {"id": "y", "label": "TAKE THEM", "text": "We take them. I will plan the capacity before they start.", "fx": {"trust": {"Alan": -3, "Garrison": 5}, "morale": -3, "buff": ["issues", 1.06, 4]}},
+            {"id": "n", "label": "SAY NO, POLITELY", "text": "No. I wrote down why: price, scope and response time do not fit. Vic will say it nicely.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "social": {"Vic": -1}}},
+            {"id": "c", "label": "COUNTER-OFFER", "text": "Counter-offer: full price, a longer response time, a signed scope. They may walk.", "fx": {"trust": {"Alan": 2, "Garrison": 1}}},
+        ],
+    },
+    "grow":
+    {
+        "speaker": "Maya (Tier 1)",
+        "text": "Dan, can I talk to you? I think I am ready to take the harder tickets. Tier 2. Would you coach me?",
+        "options":
+        [
+            {"id": "y", "label": "YES, I WILL COACH YOU", "text": "Yes. We start tomorrow: you take the next server ticket and I watch. I will write the checklist.", "fx": {"graduate": "Maya", "trust": {"Alan": 3, "Garrison": 2}}, "needs_mentored": 2},
+            {"id": "l", "label": "NOT YET, HERE IS WHY", "text": "Not yet. Here are three skills to work on. Ask me again in a month.", "fx": {"morale_who": {"Maya": -4}, "retain": {"Maya": 0}}},
+            {"id": "w", "label": "I WILL SPEAK TO MORGAN", "text": "I will talk to Morgan about the budget. I will tell you what she says on Monday.", "fx": {"morale_who": {"Maya": 1}}},
+        ],
+    },
+    "audit":
+    {
+        "speaker": "Morgan Reyes (Manager)",
+        "text": "Summit Managed Holdings is looking at us. They want to audit the desk, and Alan and Garrison disagree about selling. What do you tell the owners about the numbers?",
+        "options":
+        [
+            {"id": "t", "label": "THE NUMBERS, AS THEY ARE", "text": "I gave both of them the same sheet. Nothing rounded.", "fx": {"audit": 0}},
+            {"id": "a", "label": "ALAN: A CLEAN, DOCUMENTED DESK", "text": "I told Alan the desk is documented and the process is ready for an audit.", "fx": {"trust": {"Alan": 5, "Garrison": -3}}},
+            {"id": "g", "label": "GARRISON: HAPPY CLIENTS", "text": "I told Garrison our clients are happy and the team stays. That is what a buyer pays for.", "fx": {"trust": {"Alan": -3, "Garrison": 5}}},
+        ],
+    },
+    "friday":
+    {
+        "speaker": "Morgan Reyes (Manager)",
+        "text": "Friday numbers. Your confidence rating with me is %d and the week averaged a %s. Anything you need from me?",
+        "options":
+        [
+            {"id": "t", "label": "ANOTHER TECH, PLEASE", "text": "I asked for another tech. Morgan will bring it to the owners. I attached the utilisation numbers.", "fx": {"flag": "headcount", "trust": {"Alan": 1, "Garrison": -1}}},
+            {"id": "f", "label": "I WILL FIX THE NUMBERS", "text": "I will fix the numbers. Monday you will see the changes on the board.", "fx": {"conf": 1}},
+            {"id": "n", "label": "NOTHING TO ADD", "text": "Nothing to add. Everything is written down.", "fx": {}},
+        ],
+    },
+}
+var BEATS: Dictionary = DEFAULT_BEATS.duplicate(true)
+
+# the big incidents: you take the Playbook job yourself, send Maya, or ask the owner whose area it is
+const DEFAULT_INCIDENTS := {
+    "rdp": {"speaker": "Alan (Co-owner)", "text": "Brightside's server is crawling and the log shows logins we do not know. Who takes it?", "owner": "Alan", "title": "RDP BREAK-IN"},
+    "ransom": {"speaker": "Garrison (Co-owner)", "text": "Hoot and Holler has a ransom note on their server. Their partners are calling me. Who takes it?", "owner": "Alan", "title": "THE RANSOMWARE"},
+    "rack": {"speaker": "Morgan Reyes (Manager)", "text": "The network rack at Gnarly Gnomes came off the wall. Three tickets, everything down. Who takes it?", "owner": "Alan", "title": "THE FALLEN RACK"},
+    "email24": {"speaker": "Garrison (Co-owner)", "text": "Soggy Bottom Brewing runs around the clock and their email is down. This may run into the night. Who takes it?", "owner": "Alan", "title": "THE EMAIL NIGHT"},
+    "migration": {"speaker": "Alan (Co-owner)", "text": "Brightside's old server is out of support. Today is the cutover. It has to be careful. Who takes it?", "owner": "Alan", "title": "THE SERVER MIGRATION"},
+}
+var INCIDENTS: Dictionary = DEFAULT_INCIDENTS.duplicate(true)
+const DEFAULT_INCIDENT_OPTIONS := {
+    "take": "I TAKE IT MYSELF",
+    "send": "SEND MAYA",
+    "ask": "ASK THE OWNER",
+    "took": "I am on it. The board is Maya's until I am back.",
+    "sent": "Maya has it, with the checklist. I will review the result.",
+    "asked": "I asked the owner to step in. It cost them an afternoon.",
+}
+var INCIDENT_OPTIONS: Dictionary = DEFAULT_INCIDENT_OPTIONS.duplicate(true)
+
+# 1:1 cards. Decks: Maya, Tech ({name} is Sam or Terry), Vic. Each option: label, reply, fx (morale / retain / social / trust).
+const DEFAULT_ONE_ON_ONES := {
+    "Maya":
+    [
+        {
+            "text": "I closed eleven tickets yesterday and nobody said anything. Is that good?",
+            "options":
+            [
+                {"label": "TELL HER EXACTLY WHAT WAS GOOD", "reply": "Eleven is good. The Acme spooler notes were the best. I mean it.", "fx": {"morale": 6, "retain": 1}},
+                {"label": "SAY THANKS", "reply": "Thanks. Keep going.", "fx": {"morale": 2}},
+                {"label": "ASK ABOUT THE REOPENS", "reply": "Two came back. Let us look at those together.", "fx": {"morale": -2, "skill": 0.02}},
+            ],
+        },
+        {
+            "text": "I do not like calling clients when I do not know the answer. It makes me freeze.",
+            "options":
+            [
+                {"label": "GIVE HER A SCRIPT", "reply": "Here is a card: say what you know, say what you will check, say when you will call back. I wrote it.", "fx": {"morale": 4, "retain": 1, "skill": 0.02}},
+                {"label": "SIT IN ON THE NEXT CALL", "reply": "I will sit next to you on the next one. You talk. I stay quiet.", "fx": {"morale": 5, "stress": -4}},
+                {"label": "TELL HER TO PUSH THROUGH", "reply": "It gets easier. Just do it.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "Sam gets the easy tickets and I get the weird ones. Is that on purpose?",
+            "options":
+            [
+                {"label": "EXPLAIN THE TIERS", "reply": "Yes. You are ready for the harder ones. It is not a punishment. I should have said so.", "fx": {"morale": 5, "retain": 1}},
+                {"label": "SWAP FOR A WEEK", "reply": "We swap for a week and compare the times. I will keep a table.", "fx": {"morale": 3, "speed": -0.02}},
+                {"label": "SAY IT IS HOW IT IS", "reply": "It is how the queue falls.", "fx": {"morale": -5}},
+            ],
+        },
+        {
+            "text": "My cousin works at the bank across the street. They are hiring a tech. I am not leaving. I just wanted you to know.",
+            "options":
+            [
+                {"label": "ASK WHAT WOULD MAKE HER STAY", "reply": "Thank you for telling me. What would make this a better job? I will write it down.", "fx": {"morale": 4, "retain": 3}},
+                {"label": "PROMISE A RAISE REVIEW", "reply": "I will take it to Morgan this month. I will not promise a number.", "fx": {"morale": 3, "retain": 2, "trust": {"Garrison": -1}}},
+                {"label": "WISH HER LUCK", "reply": "Okay. Good luck either way.", "fx": {"morale": -3, "retain": -2}},
+            ],
+        },
+    ],
+    "Tech":
+    [
+        {
+            "text": "{name} says: I got stuck on a printer yesterday and did not ask. I did not want to bother you.",
+            "options":
+            [
+                {"label": "ASK HIM TO ASK, ALWAYS", "reply": "Asking is part of the job. Five minutes is the rule: stuck for five, ask. I wrote it on the board.", "fx": {"morale": 4, "retain": 1}},
+                {"label": "WALK THROUGH THE FIX", "reply": "Let us do it now. I will show you where the queue lives.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "TELL HIM TO TRY HARDER", "reply": "Try harder.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "{name} says: The phones are loud and I cannot think. I am making mistakes.",
+            "options":
+            [
+                {"label": "SWAP THE PHONE SHIFT", "reply": "I moved you to ticket work until noon. I will take the phones.", "fx": {"morale": 5, "stress": -6}},
+                {"label": "A BREAK AND A CHECKLIST", "reply": "Ten minutes away from the desk, then use the checklist. I laminated it.", "fx": {"morale": 3, "stress": -3}},
+                {"label": "TELL HIM IT IS BUSY", "reply": "It is busy for everyone.", "fx": {"morale": -3, "stress": 4}},
+            ],
+        },
+        {
+            "text": "{name} says: I want to learn servers. Is there a path?",
+            "options":
+            [
+                {"label": "MAKE A SHORT PLAN", "reply": "Three steps, one a month, and you shadow me on the next server ticket. I will write it.", "fx": {"morale": 6, "retain": 2, "skill": 0.03}},
+                {"label": "POINT TO THE ACADEMY", "reply": "Start with the PowerShell lessons. Ask me after the first one.", "fx": {"morale": 2, "skill": 0.01}},
+                {"label": "SAY NOT YET", "reply": "Not yet. First the basics.", "fx": {"morale": -3, "retain": -1}},
+            ],
+        },
+        {
+            "text": "{name} says: Yesterday a client yelled at me. I am okay. I just wanted to say it.",
+            "options":
+            [
+                {"label": "TAKE THE CLIENT YOURSELF", "reply": "I will call them back. You did nothing wrong. Write down what they said, I will use it.", "fx": {"morale": 6, "retain": 1, "mood": 1}},
+                {"label": "ASK WHAT HAPPENED", "reply": "Tell me what happened, in order. We will make a script for next time.", "fx": {"morale": 4, "stress": -3}},
+                {"label": "SAY CLIENTS ARE LIKE THAT", "reply": "That happens.", "fx": {"morale": -3}},
+            ],
+        },
+    ],
+    "Vic":
+    [
+        {
+            "text": "I have a prospect who wants a handshake deal. No contract until next month. Come on, Dan.",
+            "options":
+            [
+                {"label": "ASK FOR A ONE-PAGE SCOPE", "reply": "One page. What we do, what we do not, how fast. You can say it is for the crew.", "fx": {"social": {"Vic": 1}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "LET HIM HAVE THE HANDSHAKE", "reply": "Fine. But I log every hour they use.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": -1, "Garrison": 2}, "mood": 1}},
+                {"label": "REFUSE UNTIL SIGNED", "reply": "No work without a signature.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
+            ],
+        },
+        {
+            "text": "My clients say tickets take forever. I tell them you are working on it. Are you?",
+            "options":
+            [
+                {"label": "SHOW HIM THE BOARD", "reply": "Here is the queue, by age. Tell them the real number. Honest is better.", "fx": {"social": {"Vic": 2}, "mood": 1}},
+                {"label": "GIVE HIM A PHONE NUMBER", "reply": "Give them my desk line for P1s. I will pick up.", "fx": {"social": {"Vic": 3}, "morale": -2}},
+                {"label": "TELL HIM TO BE PATIENT", "reply": "We are working on it.", "fx": {"social": {"Vic": -2}}},
+            ],
+        },
+        {
+            "text": "Garrison wants a client dinner on Thursday. Can the crew cover the phones?",
+            "options":
+            [
+                {"label": "COVER IT MYSELF", "reply": "I cover the phones. Go. Bring the client back happy.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 0, "Garrison": 2}, "morale": 1}},
+                {"label": "ASK MAYA FIRST", "reply": "I will ask Maya. If she says yes, there is a bonus.", "fx": {"social": {"Vic": 1}, "morale_who": {"Maya": 2}}},
+                {"label": "SAY NO", "reply": "Not Thursday. The queue is too long.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
+            ],
+        },
+        {
+            "text": "I know I over-promise. Garrison says it is how we win. You say it is how we lose. Who is right?",
+            "options":
+            [
+                {"label": "SPLIT IT: PROMISE LESS, SELL BETTER", "reply": "Both. Promise what we can do and sell why it matters. I will help you write the lines.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 1, "Garrison": 1}}},
+                {"label": "TELL HIM HE IS RIGHT", "reply": "Garrison is right about the win. I will find a way to do the work.", "fx": {"social": {"Vic": 4}, "trust": {"Alan": -1, "Garrison": 2}, "morale": -2}},
+                {"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"Vic": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
+            ],
+        },
+    ],
+}
+var ONE_ON_ONES: Dictionary = DEFAULT_ONE_ON_ONES.duplicate(true)
+const DEFAULT_ONE_TEXT := {
+    "already": "We talked this morning, Dan. I am fine. Thanks.",
+    "walkup": "%s stops by your desk.",
+}
+var ONE_TEXT: Dictionary = DEFAULT_ONE_TEXT.duplicate(true)
+
+# the days' scripted events: at (clock), kind mail / memo / beat / incident / friday
+const DEFAULT_DAYS := {
+    1: [{"at": 9.4, "kind": "beat", "id": "handover"}, {"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "The desk is yours", "body": "Dan, welcome to the chair. Each morning there is a huddle: pick the focus for the day. Talk to your people with E, they notice. Alan and Garrison will send memos that disagree with each other. Do not try to please both every time. - Morgan"}],
+    3: [{"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "Your own queue", "body": "You can still pick up tickets with your own PSA and RMM when the crew is stuck. Just remember every minute at the keyboard is a minute nobody is looking at the board. - Morgan"}],
+    4: [{"at": 10.5, "kind": "beat", "id": "xp"}],
+    6: [{"at": 10.5, "kind": "beat", "id": "vic"}],
+    7: [{"at": 10.2, "kind": "incident", "id": "rdp", "book": "rdp"}],
+    9: [{"at": 10.2, "kind": "incident", "id": "ransom", "book": "ransom"}],
+    10: [{"at": 16.0, "kind": "friday"}],
+    11: [{"at": 10.2, "kind": "incident", "id": "rack", "book": "rack"}],
+    13: [{"at": 10.2, "kind": "incident", "id": "email24", "book": "email24"}],
+    15: [{"at": 10.2, "kind": "incident", "id": "migration", "book": "migration"}, {"at": 16.0, "kind": "friday"}],
+    16: [{"at": 10.5, "kind": "beat", "id": "nosale"}],
+    18: [{"at": 10.5, "kind": "beat", "id": "grow"}],
+    19: [{"at": 10.5, "kind": "beat", "id": "audit"}],
+    20: [{"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "Review at the end of the day", "body": "After close, you, me, Alan and Garrison sit down for your review. Bring the scorecard. - Morgan"}],
+}
+var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
+
+const DEFAULT_REVIEW := {
+    "heading": "ANNUAL REVIEW",
+    "quotes":
+    {
+        "Alan": {"high": "THE DESK IS DOCUMENTED AND THE NUMBERS ARE HONEST. THAT IS ALL I EVER ASKED.", "mid": "SOLID WORK. I WOULD LIKE MORE TIME ON THE STACK.", "low": "TOO MANY CORNERS CUT. I HAD TO FIX THEM."},
+        "Garrison": {"high": "THE CLIENTS LIKE YOU AND THE TEAM STAYS. YOU GET IT.", "mid": "GOOD, BUT YOU SAY NO TOO OFTEN.", "low": "THE CLIENTS NEEDED A YES AND GOT A MEMO."},
+        "crew": {"high": "DAN LABELS EVERYTHING AND LISTENS. WE WOULD FOLLOW HIM.", "mid": "QUIET, FAIR, A BIT HARD TO READ.", "low": "WE DO NOT KNOW WHERE WE STAND."},
+    },
+    "endings":
+    {
+        "ops": {"label": "OPERATIONS MANAGER", "desc": "BOTH OWNERS BACK YOU. A RAISE, A BIGGER DESK AND A HIRE.", "text": "YOU BECOME OPERATIONS MANAGER. A RAISE, A SECOND TECH AND A STANDING SEAT AT THE OWNERS' TABLE. THE PATCH PANEL IS STILL LABELLED."},
+        "alan": {"label": "SIDE WITH ALAN: TECHNICAL DIRECTOR", "desc": "ALAN WANTS YOU RUNNING THE STACK AND THE PROCESS.", "text": "YOU TAKE ALAN'S OFFER: TECHNICAL DIRECTOR. MORE SERVERS, FEWER CLIENT DINNERS, EVERYTHING DOCUMENTED. GARRISON SHAKES YOUR HAND AND STAYS POLITE."},
+        "garrison": {"label": "SIDE WITH GARRISON: GROWTH MANAGER", "desc": "GARRISON WANTS YOU BUILDING A BIGGER, FASTER SERVICE DESK.", "text": "YOU TAKE GARRISON'S OFFER: GROWTH MANAGER. BIGGER SLAS, MORE CLIENTS, A TEAM DINNER EVERY MONTH. ALAN WRITES YOU A VERY LONG MEMO."},
+        "leave": {"label": "LEAVE FOR AN IN-HOUSE IT JOB", "desc": "A CLIENT OFFERS YOU THEIR ONLY IT JOB: ONE NETWORK, CALM HOURS.", "text": "YOU TURN IN YOUR BADGE. ONE OFFICE, ONE NETWORK, NO PAGER. YOU LABEL THEIR PATCH PANEL ON YOUR FIRST DAY."},
+        "stay": {"label": "STAY ON PROBATION", "desc": "KEEP THE DESK, WITH A THIRTY-DAY PLAN FROM MORGAN.", "text": "YOU KEEP THE DESK WITH A WRITTEN PLAN. MORGAN WILL CHECK IT EVERY FRIDAY. YOU START BY LABELLING THE PLAN."},
+    },
+}
+var REVIEW: Dictionary = DEFAULT_REVIEW.duplicate(true)
+
+var trust := {"Alan": TRUST_START, "Garrison": TRUST_START}
+var focus := "p1"
+var buffs: Array = []  # {key, val, left}
+var flags := {}
+var oto_seen := {}  # deck -> cards used
+var oto_day := {}  # who -> the day you last had a 1:1
+var grades: Array = []  # [{day, grade, score, util, sla}]
+var project_days := 0
+var memos_done := {}
+var _fired := {}
+var _cap := 0.0
+var _work_base := 0.0
+var _frt_sum := 0.0
+var _frt_n := 0
+var _seen := {}
+var _pick_t := 0.0
+var _stuck_t := 0.0
+var _outings_seen := 0
+var _day_util := 0.0
+var _walked := false
+
+
+func _ready() -> void:
+    reset()
+
+
+func active() -> bool:
+    return Campaign.active and Campaign.mode == "service"
+
+
+func reset() -> void:
+    trust = {"Alan": TRUST_START, "Garrison": TRUST_START}
+    focus = "p1"
+    buffs = []
+    flags = {}
+    oto_seen = {}
+    oto_day = {}
+    grades = []
+    project_days = 0
+    memos_done = {}
+    _fired = {}
+    _cap = 0.0
+    _work_base = 0.0
+    _frt_sum = 0.0
+    _frt_n = 0
+    _seen = {}
+    _pick_t = 0.0
+    _stuck_t = 0.0
+    _outings_seen = 0
+    _day_util = 0.0
+    _walked = false
+    Crew.reset()
+
+
+# a new run: Dan arrives with good networking, Morgan's confidence starts at 55
+func begin_run() -> void:
+    Campaign.rep = START_CONFIDENCE
+    var need: int = Skills.XP_AT[2]
+    Skills.xp["networking"] = maxi(int(Skills.xp.get("networking", 0)), need)
+
+
+# ---- numbers other scripts read ---------------------------------------------------------------------------------
+func trust_of(owner_name: String) -> int:
+    return int(trust.get(owner_name, TRUST_START))
+
+
+func add_trust(owner_name: String, amount: int) -> void:
+    if trust.has(owner_name):
+        trust[owner_name] = clampi(trust_of(owner_name) + amount, 0, 100)
+
+
+func trust_word(v: int) -> String:
+    if v >= 70:
+        return "BACKS YOU"
+    if v >= 50:
+        return "TRUSTS YOU"
+    return "WATCHING" if v >= 30 else "DOUBTS YOU"
+
+
+# the crew's speed multiplier from the focus and the memo effects (written into Owner.speed)
+func speed_mult() -> float:
+    var m := float(FOCUS[focus].speed)
+    for b in buffs:
+        if str(b.key) == "speed":
+            m *= float(b.val)
+    return m
+
+
+func _buff_mult(key: String) -> float:
+    var m := 1.0
+    for b in buffs:
+        if str(b.key) == key:
+            m *= float(b.val)
+    return m
+
+
+func _buff_add(key: String) -> float:
+    var a := 0.0
+    for b in buffs:
+        if str(b.key) == key:
+            a += float(b.val)
+    return a
+
+
+# Owner.edge() in this mode: the neutral edge changed by the focus, the buffs and the cleanup days you did
+func edge(key: String) -> float:
+    var base := float(Owner.DEFAULT_EDGE[key])
+    if key == "close_miss":
+        return clampf(base + float(FOCUS[focus].miss) + _buff_add("miss"), 0.01, 0.4)
+    if key == "issues":
+        return base * maxf(0.82, 1.0 - 0.03 * float(project_days)) * _buff_mult("issues")
+    return base
+
+
+func _sync() -> void:
+    Owner.speed = speed_mult()
+
+
+func crew_mood_word() -> String:
+    var m := Crew.morale_avg()
+    return str(HUDDLE.moods.good) if m >= 65 else (str(HUDDLE.moods.ok) if m >= 45 else str(HUDDLE.moods.low))
+
+
+# ---- effects ----------------------------------------------------------------------------------------------------
+func _people_scale() -> float:
+    return minf(1.5, 1.0 + 0.1 * float(Skills.level("people")))
+
+
+func apply_fx(fx: Dictionary, scale := 1.0) -> void:
+    for who in fx.get("trust", {}):
+        add_trust(str(who), int(fx.trust[who]))
+    if fx.has("morale"):
+        var n := int(round(float(fx.morale) * (scale if int(fx.morale) > 0 else 1.0)))
+        Crew.add_all(n)
+    for who in fx.get("morale_who", {}):
+        var v := int(fx.morale_who[who])
+        Crew.add_morale(str(who), int(round(float(v) * (scale if v > 0 else 1.0))))
+    for who in fx.get("retain", {}):
+        Crew.add_retain(str(who), int(fx.retain[who]))
+    if fx.has("retain_all"):
+        for who in Crew.names():
+            Crew.add_retain(str(who), int(fx.retain_all))
+    if fx.has("mood"):
+        for c in Sales.active:
+            Sales.adjust(int(c), int(fx.mood))
+    if fx.has("conf"):
+        Campaign.adjust_rep(int(fx.conf))
+    for who in fx.get("social", {}):
+        Social.change(str(who), int(fx.social[who]))
+    if fx.has("buff"):
+        var b: Array = fx.buff
+        buffs.append({"key": str(b[0]), "val": float(b[1]), "left": int(b[2])})
+        _sync()
+    if fx.has("flag"):
+        flags[str(fx.flag)] = true
+    if fx.has("mentor"):
+        Crew.mentor(str(fx.mentor))
+    if fx.has("graduate"):
+        var m := str(fx.graduate)
+        if Crew.has(m):
+            Crew.members[m]["skill"] = minf(Crew.MAYA_CAP + 0.1, Crew.value(m, "skill") + 0.15)
+            Crew.add_morale(m, 10)
+            Crew.add_retain(m, 3)
+            flags["graduated"] = m
+    if fx.has("audit"):
+        flags["audited"] = true
+
+
+func _skill_fx(who: String, fx: Dictionary) -> void:
+    if fx.has("skill") and Crew.has(who):
+        Crew.members[who]["skill"] = minf(Crew.MAYA_CAP, Crew.value(who, "skill") + float(fx.skill))
+    if fx.has("stress"):
+        Crew.add_stress(who, int(fx.stress))
+
+
+# ---- the day -----------------------------------------------------------------------------------------------------
+func begin_day(day: int) -> void:
+    _fired = {}
+    _cap = 0.0
+    _work_base = _client_work()
+    _frt_sum = 0.0
+    _frt_n = 0
+    _walked = false
+    _pick_t = 0.0
+    Crew.stuck = {}
+    var keep: Array = []
+    for b in buffs:
+        b["left"] = int(b.left) - 1
+        if int(b.left) > 0:
+            keep.append(b)
+    buffs = keep
+    # an outing since yesterday lifts the crew
+    if Outings.count > _outings_seen:
+        Crew.add_all(6)
+        _outings_seen = Outings.count
+    _sync()
+    huddle()
+
+
+func _client_work() -> float:
+    var total := 0.0
+    for c in Owner.client_work:
+        total += float(Owner.client_work[c])
+    return total
+
+
+func open_counts() -> Array:
+    var open := Msp.open_tickets()
+    var hot := 0
+    for t in open:
+        if int(t.pri) <= 2:
+            hot += 1
+    return [open.size(), hot]
+
+
+func huddle() -> void:
+    var counts := open_counts()
+    var opts := []
+    for id in FOCUS_ORDER:
+        opts.append({"label": str(HUDDLE.options[id].label), "id": id})
+    Cards.ask(
+        str(HUDDLE.speaker),
+        str(HUDDLE.text) % [int(counts[0]), int(counts[1]), crew_mood_word().to_upper()],
+        opts,
+        func(id: String) -> void: set_focus(id)
+    )
+
+
+func set_focus(id: String) -> void:
+    if not FOCUS.has(id):
+        return
+    focus = id
+    _sync()
+    Hints.toast(str(HUDDLE.options[id].note), 3.5)
+
+
+func _process(delta: float) -> void:
+    if not active() or Game.title_mode or World.time_scale <= 0.0 or not Msp.enabled:
+        return
+    var dt := delta * World.time_scale
+    var events: Array = DAYS.get(Campaign.day, [])
+    for i in events.size():
+        var ev: Dictionary = events[i]
+        if not _fired.has(i) and World.clock >= float(ev.at):
+            _fired[i] = true
+            fire(ev)
+    for id in MEMOS:
+        if int(MEMOS[id].day) == Campaign.day and not memos_done.has(id) and World.clock >= float(MEMOS[id].at):
+            memo(str(id))
+    if World.clock < World.DAY_END:
+        _cap += Owner.team_speed() * dt
+        _pick_t += dt
+        if _pick_t >= 3.0:
+            _pick_t = 0.0
+            _pickup()
+        _stuck_tick(dt)
+    if not _walked and World.clock >= 14.0 and Campaign.day >= 2:
+        _walked = true
+        _walk_up()
+
+
+func fire(ev: Dictionary) -> void:
+    match str(ev.kind):
+        "mail":
+            Msp.mail(str(ev.from), str(ev.subject), str(ev.body))
+        "memo":
+            memo(str(ev.id))
+        "beat":
+            beat(str(ev.id))
+        "incident":
+            incident(str(ev.id), str(ev.book))
+        "friday":
+            friday()
+
+
+# ---- crew pick-up, first response, stuck -------------------------------------------------------------------------
+func _crew_ticket(t: Dictionary) -> bool:
+    return not (t.internal or str(t.special) != "" or str(t.fix) in ["project", "network"])
+
+
+func _load_of(who: String) -> int:
+    var n := 0
+    for t in Msp.tickets:
+        if t.status == "In Progress" and str(t.get("assignee", "")) == who:
+            n += 1
+    return n
+
+
+func _pickup() -> void:
+    var names := Crew.names()
+    if names.is_empty():
+        return
+    var picked := 0
+    for t in Msp.open_tickets():
+        if not _crew_ticket(t):
+            continue
+        var id := int(t.id)
+        if _seen.has(id):
+            continue
+        if str(t.status) != "New":
+            _note_response(t, "Dan")  # you got there first
+            continue
+        if picked >= 2:
+            break
+        var best := ""
+        for who in names:
+            if _load_of(str(who)) < 2 and (best == "" or _load_of(str(who)) < _load_of(best)):
+                best = str(who)
+        if best == "":
+            break  # the crew is full: it waits
+        t["assignee"] = best
+        Msp.set_status(id, "In Progress")
+        Msp.add_note(id, "Picked up by %s." % best)
+        var mult := 1.0
+        if int(t.pri) <= 2:
+            mult = float(FOCUS[focus].head)
+        Owner._work[id] = float(Owner.WORK[int(t.pri)]) * mult
+        _note_response(t, best)
+        picked += 1
+
+
+func _note_response(t: Dictionary, _who: String) -> void:
+    _seen[int(t.id)] = true
+    _frt_sum += clampf((float(t.sla_total) - float(t.sla_left)) / maxf(1.0, float(t.sla_total)), 0.0, 1.0)
+    _frt_n += 1
+
+
+func _stuck_tick(dt: float) -> void:
+    if not Crew.stuck.is_empty():
+        var t := Msp.ticket(int(Crew.stuck.ticket))
+        var who := str(Crew.stuck.who)
+        if t.is_empty() or t.status == "Closed" or bool(t.fix_done):
+            Crew.add_morale(who, 4)
+            Social.change("Maya" if who == "Maya" else "Morgan", 1)
+            Hints.toast("%s: THANKS FOR THE HELP." % who.to_upper(), 2.5)
+            Crew.stuck = {}
+            return
+        Crew.stuck["left"] = float(Crew.stuck.left) - dt
+        if float(Crew.stuck.left) <= 0.0:
+            Crew.add_morale(who, -2)
+            Msp.send_text(who, "Never mind, I found it myself.")
+            Crew.stuck = {}
+        return
+    _stuck_t += dt
+    if _stuck_t < 6.0 or World.clock < 9.6 or World.clock > 16.0:
+        return
+    _stuck_t = 0.0
+    var names := Crew.names()
+    if names.is_empty():
+        return
+    var chance := 0.012 * (1.0 + float(Crew.value(Crew.lowest(), "stress")) / 80.0)
+    if Difficulty.rng("service.stuck").randf() >= chance:
+        return
+    var who: String = names[Difficulty.rng("service.stuck").randi() % names.size()]
+    for t in Msp.open_tickets():
+        if _crew_ticket(t) and str(t.get("assignee", "")) == who and not bool(t.fix_done):
+            Crew.stuck = {"who": who, "ticket": int(t.id), "left": 45.0}
+            Msp.send_text(who, "#%d is beyond me. Can you look when you have a minute?" % int(t.id))
+            Crew.add_stress(who, 3)
+            return
+
+
+# ---- cards ------------------------------------------------------------------------------------------------------
+func _opts(list: Array) -> Array:
+    var out := []
+    for o in list:
+        var entry: Dictionary = {"label": str(o.label), "id": str(o.id)}
+        out.append(entry)
+    return out
+
+
+func memo(id: String) -> void:
+    if not MEMOS.has(id) or memos_done.has(id):
+        return
+    memos_done[id] = true
+    var m: Dictionary = MEMOS[id]
+    Cards.ask(str(m.speaker), str(m.text), _opts(m.options), func(pick: String) -> void: answer_memo(id, pick))
+
+
+func answer_memo(id: String, pick: String) -> void:
+    var m: Dictionary = MEMOS[id]
+    for o in m.options:
+        if str(o.id) == pick:
+            apply_fx(o.fx, _people_scale())
+            Cards.ask(str(m.speaker), str(o.text), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
+            return
+
+
+func beat(id: String) -> void:
+    if not BEATS.has(id):
+        return
+    var b: Dictionary = BEATS[id]
+    var options := []
+    for o in b.options:
+        var entry := {"label": str(o.label), "id": str(o.id)}
+        if o.has("needs_mentored") and Crew.value("Maya", "mentored") < float(o.needs_mentored):
+            entry["enabled"] = false
+            entry["hint"] = "NEEDS MENTORING"
+        options.append(entry)
+    Cards.ask(str(b.speaker), str(b.text), options, func(pick: String) -> void: answer_beat(id, pick))
+
+
+func answer_beat(id: String, pick: String) -> void:
+    var b: Dictionary = BEATS[id]
+    for o in b.options:
+        if str(o.id) == pick:
+            apply_fx(o.fx, _people_scale())
+            Cards.ask(str(b.speaker), str(o.text), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
+            return
+
+
+func friday() -> void:
+    var b: Dictionary = BEATS.friday
+    var avg := "C"
+    if not grades.is_empty():
+        var total := 0
+        var n := 0
+        for g in grades.slice(maxi(0, grades.size() - 5)):
+            total += int(RANK[str(g.grade)])
+            n += 1
+        var r := int(round(float(total) / float(maxi(1, n))))
+        for k in RANK:
+            if int(RANK[k]) == r:
+                avg = str(k)
+    var options := []
+    for o in b.options:
+        options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(str(b.speaker), str(b.text) % [Campaign.rep, avg], options, func(pick: String) -> void: answer_beat("friday", pick))
+
+
+# ---- incidents: take the Playbook job yourself, send Maya, or ask the owner -------------------------------------------
+func incident(id: String, book: String) -> void:
+    var inc: Dictionary = INCIDENTS[id]
+    if Playbook.is_active():
+        return
+    var options := [
+        {"label": str(INCIDENT_OPTIONS.take), "id": "take"},
+        {"label": str(INCIDENT_OPTIONS.send), "id": "send"},
+        {"label": "%s (%s)" % [str(INCIDENT_OPTIONS.ask), str(inc.owner).to_upper()], "id": "ask"},
+    ]
+    Cards.ask(str(inc.speaker), str(inc.text), options, func(pick: String) -> void: run_incident(book, pick))
+
+
+func run_incident(book: String, pick: String) -> void:
+    var owner_name := str(INCIDENTS[book].owner) if INCIDENTS.has(book) else "Alan"
+    match pick:
+        "take":
+            if book == "ransom":
+                Story._ransomware()
+            else:
+                Playbook.start(book)
+                Msp.send_text("Morgan", "A big job just came in. It is in your RMM, on the PROJECT tab.")
+            flags["hands_" + book] = true
+        "send":
+            delegate(book, _maya_quality(), "Maya")
+            Crew.add_morale("Maya", 2)
+        "ask":
+            delegate(book, 0.9, owner_name)
+            add_trust(owner_name, 3)
+            add_trust("Garrison" if owner_name == "Alan" else "Alan", -2)
+
+
+func _maya_quality() -> float:
+    return clampf(0.3 + 0.004 * float(Crew.morale("Maya")) + 0.04 * Crew.value("Maya", "mentored") + (Crew.value("Maya", "skill") - 1.0), 0.3, 0.85)
+
+
+# run a Playbook job without you: each step takes the best unlocked choice with chance `quality`, else another one
+func delegate(book: String, quality: float, who: String) -> Dictionary:
+    if book == "ransom":
+        return _delegate_ransom(quality, who)
+    var clock: float = World.clock
+    var rng: RandomNumberGenerator = Difficulty.rng("service.jobs")
+    Playbook.start(book)
+    var guard := 0
+    while Playbook.is_active() and guard < 12:
+        guard += 1
+        var step: Dictionary = Playbook.current_step()
+        var open: Array = []
+        var best := -1
+        var best_pts := -1
+        for i in step.choices.size():
+            var ch: Dictionary = step.choices[i]
+            if Playbook.lock_reason(ch) != "":
+                continue
+            open.append(i)
+            if int(ch.pts) > best_pts:
+                best_pts = int(ch.pts)
+                best = i
+        if open.is_empty():
+            break
+        var idx: int = best
+        if rng.randf() >= quality and open.size() > 1:
+            var others: Array = open.duplicate()
+            others.erase(best)
+            idx = others[rng.randi() % others.size()]
+        Playbook.choose(idx)
+    World.clock = clock
+    var res: Dictionary = Playbook.active.get("result", {})
+    flags["job_" + book] = str(res.get("grade", "C"))
+    Msp.send_text("Morgan", "%s finished the job: grade %s." % [who, str(res.get("grade", "C"))])
+    return res
+
+
+func _delegate_ransom(quality: float, who: String) -> Dictionary:
+    Story._ransomware()
+    var tid := int(Story.flags.get("ransom_ticket", 0))
+    var t: Dictionary = Msp.ticket(tid)
+    if t.is_empty():
+        return {}
+    var ep: Dictionary = Msp.endpoint(str(t.endpoint))
+    var rng: RandomNumberGenerator = Difficulty.rng("service.jobs")
+    if bool(Msp.backups[Story.RANSOM_CLIENT].ok):
+        Msp.rmm_action(str(t.endpoint), "restore")
+    else:
+        Msp._restore(ep)  # records the failed restore, like a first try
+        if rng.randf() < 0.4 + 0.3 * quality:
+            Msp._ransom_shadow(ep)
+        if str(Story.flags.get("ransom", "")) not in ["partial", "paid", "lost"]:
+            Msp._ransom_shadow(ep)
+        if str(Story.flags.get("ransom", "")) not in ["partial", "paid", "lost"]:
+            if rng.randf() < 0.5:
+                Msp._ransom_pay(ep)
+            else:
+                Msp._ransom_lost(ep, "Gave up on the files. Data lost.")
+    t.fix_done = true
+    Msp.close_ticket(tid)
+    flags["job_ransom"] = str(Story.flags.get("ransom", ""))
+    Msp.send_text("Morgan", "%s handled Hoot and Holler: %s." % [who, str(Story.flags.get("ransom", "")).to_upper()])
+    return {"grade": str(Story.flags.get("ransom", ""))}
+
+
+# ---- 1:1s ------------------------------------------------------------------------------------------------------
+func has_one_on_one(who: String) -> bool:
+    return Campaign.mode == "service" and (who == "Maya" or who == "Vic" or Crew.has(who))
+
+
+func _deck_of(who: String) -> String:
+    return who if who == "Maya" or who == "Vic" else "Tech"
+
+
+func one_on_one(who: String, after := Callable()) -> void:
+    var label := Roles.label(who) if who == "Maya" or who == "Vic" else "%s (Tier 1)" % who
+    if int(oto_day.get(who, -1)) == Campaign.day:
+        Cards.ask(label, str(ONE_TEXT.already), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
+        return
+    oto_day[who] = Campaign.day
+    if Crew.has(who):
+        Crew.members[who]["last_oto"] = Campaign.day
+    var deck_id := _deck_of(who)
+    var deck: Array = ONE_ON_ONES[deck_id]
+    var used := int(oto_seen.get(deck_id, 0))
+    oto_seen[deck_id] = used + 1
+    var card: Dictionary = deck[used % deck.size()]
+    var options := []
+    for i in card.options.size():
+        options.append({"label": str(card.options[i].label), "id": str(i)})
+    Cards.ask(label, str(card.text).replace("{name}", who), options, func(pick: String) -> void: _answer_oto(who, label, card, int(pick), after))
+
+
+func _answer_oto(who: String, label: String, card: Dictionary, pick: int, after: Callable) -> void:
+    var o: Dictionary = card.options[pick]
+    var fx: Dictionary = o.fx.duplicate(true)
+    # a one-name morale / retain effect goes to the person you are talking to
+    if Crew.has(who):
+        if fx.has("morale"):
+            fx["morale_who"] = {who: int(fx.morale)}
+            fx.erase("morale")
+        if fx.has("retain"):
+            fx["retain"] = {who: int(fx.retain)}
+        _skill_fx(who, fx)
+    elif fx.has("morale"):
+        Crew.add_all(int(fx.morale))
+        fx.erase("morale")
+    apply_fx(fx, _people_scale())
+    Cards.ask(label, str(o.reply), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
+
+
+func _call(cb: Callable) -> void:
+    if cb.is_valid():
+        cb.call()
+
+
+# somebody walks up to your desk in the afternoon: the tech who has not had a 1:1 for the longest
+func _walk_up() -> void:
+    var who := ""
+    for n in Crew.names():
+        if n == "Maya":
+            continue
+        var last := int(Crew.value(str(n), "last_oto"))
+        if Campaign.day - last >= 3 and (who == "" or last < int(Crew.value(who, "last_oto"))):
+            who = str(n)
+    if who == "":
+        return
+    Hints.toast(str(ONE_TEXT.walkup) % who.to_upper(), 3.0)
+    one_on_one(who)
+
+
+# ---- the scorecard ----------------------------------------------------------------------------------------------
+func utilisation() -> float:
+    if _cap <= 0.0:
+        return 0.0
+    return clampf((_client_work() - _work_base) / _cap, 0.0, 1.0)
+
+
+func close_day(r: Dictionary) -> void:
+    var closed := int(r.closed)
+    var missed := int(r.missed)
+    var reopened := int(r.reopened)
+    var open_left := int(r.open_left)
+    var sla := 100 if closed + missed == 0 else int(round(100.0 * float(closed) / float(closed + missed)))
+    var fcr := 100 if closed + reopened == 0 else int(round(100.0 * (1.0 - float(reopened) / float(closed + reopened))))
+    var frac := _frt_sum / float(_frt_n) if _frt_n > 0 else 0.1
+    var frt_secs := frac * 200.0
+    var util := utilisation()
+    var morale := Crew.morale_avg()
+    var mood := int(r.clients)
+    var backlog := 10 if open_left == 0 else (7 if open_left <= 2 else (4 if open_left <= 4 else 0))
+    var band := 10 if util >= 0.6 and util <= 0.9 else (6 if util >= 0.45 and util <= 1.0 else 2)
+    var score := 35.0 * float(sla) / 100.0 + 20.0 * float(fcr) / 100.0
+    score += 15.0 * (1.0 - clampf((frac - 0.1) / 0.4, 0.0, 1.0)) + float(backlog) + float(band) + float(morale) / 10.0
+    var grade := "D"
+    for entry in [[90.0, "S"], [78.0, "A"], [62.0, "B"], [45.0, "C"]]:
+        if score >= float(entry[0]):
+            grade = str(entry[1])
+            break
+    var delta: int = {"S": 3, "A": 2, "B": 1, "C": -1, "D": -3}[grade]
+    if grade in ["S", "A"] and trust_of("Alan") >= 60 and trust_of("Garrison") >= 60:
+        delta += 1
+    if trust_of("Alan") < 25 or trust_of("Garrison") < 25:
+        delta -= 1
+    var out_notes: Array = []
+    # end-of-day bookkeeping: the day's focus, the crew's mood, quits, the owners' drift
+    if focus == "mentor":
+        Crew.mentor("Maya")
+    if focus == "project":
+        project_days += 1
+    var gone: Array = Crew.end_day(util, grade)
+    for who in gone:
+        out_notes.append("%s QUIT" % str(who).to_upper())
+        Msp.mail("Pixel IT Partners - Manager", "%s resigned" % who, "%s handed in a notice this evening. - Morgan" % who)
+    if grade in ["S", "A"]:
+        add_trust("Alan", 1)
+        add_trust("Garrison", 1)
+    elif grade == "D":
+        add_trust("Alan", -1)
+        add_trust("Garrison", -1)
+    var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST
+    if both_low:
+        delta = -Campaign.rep
+    grades.append({"day": Campaign.day, "grade": grade, "score": int(round(score)), "util": int(round(util * 100.0)), "sla": sla})
+    var mood_col := DayReport.GOOD if mood >= 70 else (DayReport.BAD if mood < 40 else DayReport.WARN)
+    var morale_col := DayReport.GOOD if morale >= 65 else (DayReport.BAD if morale < 40 else DayReport.WARN)
+    var sla_col := DayReport.GOOD if sla >= 90 else (DayReport.BAD if sla < 70 else DayReport.WARN)
+    var util_col := DayReport.GOOD if band >= 10 else (DayReport.WARN if band >= 6 else DayReport.BAD)
+    var scorecard := [
+        ["FIRST RESPONSE", Msp.mmss(frt_secs), DayReport.GOOD if frac < 0.2 else (DayReport.BAD if frac > 0.45 else DayReport.WARN)],
+        ["SLA KEPT", "%d%%" % sla, sla_col],
+        ["TICKETS CLOSED", str(closed), DayReport.GOOD if closed > 0 else DayReport.WHITE],
+        ["REOPENS", str(reopened), DayReport.BAD if reopened > 0 else DayReport.GOOD],
+        ["UTILISATION", "%d%%" % int(round(util * 100.0)), util_col],
+    ]
+    var people := [
+        ["TECH MORALE", "%d%%" % morale, morale_col],
+        ["CLIENT MOOD", "%d%%" % mood, mood_col],
+        ["FOCUS", str(HUDDLE.options[focus].label), DayReport.WHITE],
+    ]
+    var owners := [
+        ["ALAN TRUST", "%d  %s" % [trust_of("Alan"), trust_word(trust_of("Alan"))], _trust_col(trust_of("Alan"))],
+        ["GARRISON TRUST", "%d  %s" % [trust_of("Garrison"), trust_word(trust_of("Garrison"))], _trust_col(trust_of("Garrison"))],
+    ]
+    if not out_notes.is_empty():
+        people.append(["CREW", " ".join(out_notes), DayReport.BAD])
+    r["groups"] = [["SCORECARD", scorecard], ["TEAM", people], ["OWNERS", owners]]
+    r["title"] = "DAY %d SCORECARD" % Campaign.day
+    r["grade"] = grade
+    r["points"] = int(round(score))
+    r["pay"] = 0
+    r["rep_delta"] = delta
+    r["rep_name"] = "CONFIDENCE"
+    r["rep_short"] = "CONF"
+    r["score_detail"] = {"sla": sla, "fcr": fcr, "frt": frt_secs, "util": util, "morale": morale, "backlog": backlog}
+    r["trust"] = trust.duplicate()
+
+
+func _trust_col(v: int) -> Color:
+    return DayReport.GOOD if v >= 60 else (DayReport.BAD if v < 30 else DayReport.WARN)
+
+
+# ---- endings (Review) -------------------------------------------------------------------------------------------
+func review_offers() -> Array:
+    var out := []
+    var ta := trust_of("Alan")
+    var tg := trust_of("Garrison")
+    if ta >= 55 and tg >= 55 and Campaign.rep >= 60:
+        out.append({"id": "ops", "label": str(REVIEW.endings.ops.label), "desc": str(REVIEW.endings.ops.desc)})
+    if ta >= 55 and ta >= tg:
+        out.append({"id": "alan", "label": str(REVIEW.endings.alan.label), "desc": str(REVIEW.endings.alan.desc)})
+    if tg >= 55 and tg >= ta:
+        out.append({"id": "garrison", "label": str(REVIEW.endings.garrison.label), "desc": str(REVIEW.endings.garrison.desc)})
+    if Campaign.rep >= 45:
+        out.append({"id": "leave", "label": str(REVIEW.endings.leave.label), "desc": str(REVIEW.endings.leave.desc)})
+    out.append({"id": "stay", "label": str(REVIEW.endings.stay.label), "desc": str(REVIEW.endings.stay.desc)})
+    return out
+
+
+func _quote(key: String, v: int) -> String:
+    var q: Dictionary = REVIEW.quotes[key]
+    return str(q.high if v >= 60 else (q.mid if v >= 35 else q.low))
+
+
+func review_lines(page: int, ending: String) -> Array:
+    var blue: Color = Review.BLUE
+    var ink: Color = Review.INK
+    var lines := []
+    match page:
+        0:
+            lines.append(["MORGAN REYES - MANAGER", blue])
+            lines.append(["TWENTY DAYS AT THE DESK. LET US LOOK AT THE NUMBERS.", ink])
+            lines.append(["CONFIDENCE %d   CREW MORALE %d   CLIENT MOOD %d" % [Campaign.rep, Crew.morale_avg(), int(Sales.average())], ink])
+            lines.append(["CLOSED %d   SLA MISSED %d   REOPENED %d" % [Msp.closed_ok, Msp.breached, Msp.reopened], ink])
+            var count := {"S": 0, "A": 0, "B": 0, "C": 0, "D": 0}
+            for g in grades:
+                count[str(g.grade)] = int(count[str(g.grade)]) + 1
+            lines.append(["DAYS: S %d  A %d  B %d  C %d  D %d" % [count.S, count.A, count.B, count.C, count.D], ink])
+            lines.append(["TRUST: ALAN %d (%s)  GARRISON %d (%s)" % [trust_of("Alan"), trust_word(trust_of("Alan")), trust_of("Garrison"), trust_word(trust_of("Garrison"))], ink])
+            for key in ["rdp", "ransom", "rack", "email24", "migration"]:
+                var grade := str(flags.get("job_" + key, Story.flags.get(key, "")))
+                if grade != "":
+                    lines.append(["%s: %s" % [str(INCIDENTS[key].title), grade.to_upper()], Review.BAD if grade in ["D", "lost"] else ink, "job"])
+        1:
+            lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])
+            lines.append(["ALAN, CO-OWNER (%s):" % trust_word(trust_of("Alan")), blue])
+            lines.append(["'%s'" % _quote("Alan", trust_of("Alan")), ink])
+            lines.append(["GARRISON, CO-OWNER (%s):" % trust_word(trust_of("Garrison")), blue])
+            lines.append(["'%s'" % _quote("Garrison", trust_of("Garrison")), ink])
+            lines.append(["YOUR TEAM:", blue])
+            lines.append(["'%s'" % _quote("crew", Crew.morale_avg()), ink])
+        2:
+            lines.append(["YOUR OPTIONS", blue])
+        _:
+            lines.append(["THE END", blue])
+            lines.append([str(REVIEW.endings[ending].text) if REVIEW.endings.has(ending) else "", ink])
+    return lines
+
+
+# ---- saving -----------------------------------------------------------------------------------------------------
+func to_dict() -> Dictionary:
+    return {
+        "trust": trust.duplicate(), "focus": focus, "buffs": buffs.duplicate(true), "flags": flags.duplicate(true),
+        "oto_seen": oto_seen.duplicate(), "oto_day": oto_day.duplicate(), "grades": grades.duplicate(true),
+        "project_days": project_days, "memos": memos_done.duplicate(), "crew": Crew.to_dict(), "outings": _outings_seen,
+    }
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    if data.is_empty():
+        return
+    var t: Dictionary = data.get("trust", {})
+    for who in OWNERS:
+        trust[who] = int(t.get(who, TRUST_START))
+    focus = str(data.get("focus", "p1"))
+    if not FOCUS.has(focus):
+        focus = "p1"
+    buffs = data.get("buffs", []).duplicate(true)
+    flags = data.get("flags", {}).duplicate(true)
+    oto_seen = data.get("oto_seen", {}).duplicate()
+    oto_day = data.get("oto_day", {}).duplicate()
+    grades = data.get("grades", []).duplicate(true)
+    project_days = int(data.get("project_days", 0))
+    memos_done = data.get("memos", {}).duplicate()
+    _outings_seen = int(data.get("outings", 0))
+    Crew.from_dict(data.get("crew", {}))
+''')
+
+write("scripts/crew.gd", '''extends Node
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# The service desk crew (service manager campaign, C4 / V1). You are Dan and these are the people who report to you:
+# Maya (a real NPC on the main floor) and two techs who work the phones in the back (Sam and Terry, numbers only).
+# Each has a skill, a morale (0-100), a stress number, a "retention" bonus you earn in 1:1s and a mentoring count.
+# The crew works the ticket queue by itself through the crew gate (Owner.team_speed / _work_queue); skill() is what
+# Owner.crew_skill() returns in this mode. Morale drifts at the end of each day (Service.close_day), a tech with very low
+# morale can quit, and a tech who is "stuck" contributes nothing until you help or the time runs out. V1 keeps all of
+# that as simple numbers; the Dispatch board, capacity view and real NPC techs are C5.
+
+const ROSTER := [
+    {"name": "Maya", "skill": 1.0, "title": "TIER 1"},
+    {"name": "Sam", "skill": 0.7, "title": "TIER 1"},
+    {"name": "Terry", "skill": 0.9, "title": "TIER 1"},
+]
+const START_MORALE := 65
+const QUIT_BELOW := 22  # morale under this can make a tech quit at the end of the day
+const MAYA_CAP := 1.3  # mentoring raises Maya's skill up to here
+
+var members := {}  # name -> {skill, morale, stress, retain, mentored, gone, last_oto}
+var stuck := {}  # {who, ticket, left} while somebody waits for your help (empty = nobody)
+var quits: Array = []  # names that left during the run
+
+
+func _ready() -> void:
+    reset()
+
+
+func reset() -> void:
+    members = {}
+    for row in ROSTER:
+        members[str(row.name)] = {
+            "skill": float(row.skill),
+            "morale": START_MORALE,
+            "stress": 20,
+            "retain": 0,
+            "mentored": 0,
+            "gone": false,
+            "last_oto": -9,
+        }
+    stuck = {}
+    quits = []
+
+
+func names(include_gone := false) -> Array:
+    var out := []
+    for row in ROSTER:
+        var n := str(row.name)
+        if include_gone or not is_gone(n):
+            out.append(n)
+    return out
+
+
+func has(who: String) -> bool:
+    return members.has(who)
+
+
+func is_gone(who: String) -> bool:
+    return bool(members.get(who, {}).get("gone", false))
+
+
+func value(who: String, key: String) -> float:
+    return float(members.get(who, {}).get(key, 0))
+
+
+func morale(who: String) -> int:
+    return int(value(who, "morale"))
+
+
+# the average morale of everyone still here (0 when nobody is left)
+func morale_avg() -> int:
+    var total := 0
+    var n := 0
+    for who in names():
+        total += morale(who)
+        n += 1
+    return int(round(float(total) / float(n))) if n > 0 else 0
+
+
+func lowest() -> String:
+    var worst := ""
+    for who in names():
+        if worst == "" or morale(who) < morale(worst):
+            worst = who
+    return worst
+
+
+# a worker's speed: skill scaled by morale (low morale 0.75x, high 1.25x); somebody who is stuck adds nothing
+func worker_speed(who: String) -> float:
+    if is_gone(who) or str(stuck.get("who", "")) == who:
+        return 0.0
+    return value(who, "skill") * (0.75 + 0.5 * float(morale(who)) / 100.0)
+
+
+# the crew's ticket-working skill (Owner.crew_skill in the service campaign)
+func skill() -> float:
+    var total := 0.0
+    for who in names():
+        total += worker_speed(who)
+    return total
+
+
+func size() -> int:
+    return names().size()
+
+
+func add_morale(who: String, amount: int) -> void:
+    if not members.has(who) or is_gone(who):
+        return
+    members[who]["morale"] = clampi(morale(who) + amount, 0, 100)
+
+
+func add_all(amount: int) -> void:
+    for who in names():
+        add_morale(who, amount)
+
+
+func add_retain(who: String, amount: int) -> void:
+    if members.has(who):
+        members[who]["retain"] = clampi(int(value(who, "retain")) + amount, 0, 10)
+
+
+func add_stress(who: String, amount: int) -> void:
+    if members.has(who):
+        members[who]["stress"] = clampi(int(value(who, "stress")) + amount, 0, 100)
+
+
+# a day of coaching for Maya: faster, a little happier
+func mentor(who: String) -> void:
+    if not members.has(who) or is_gone(who):
+        return
+    members[who]["mentored"] = int(value(who, "mentored")) + 1
+    members[who]["skill"] = minf(MAYA_CAP, value(who, "skill") + 0.03)
+    add_morale(who, 2)
+
+
+# the chance a tech with this morale walks out tonight (0 above QUIT_BELOW)
+func quit_chance(who: String) -> float:
+    if is_gone(who) or morale(who) >= QUIT_BELOW:
+        return 0.0
+    return clampf(float(QUIT_BELOW - morale(who)) / 40.0 - 0.03 * value(who, "retain"), 0.0, 0.8)
+
+
+func quit(who: String) -> void:
+    if not members.has(who) or is_gone(who):
+        return
+    members[who]["gone"] = true
+    quits.append(who)
+    if str(stuck.get("who", "")) == who:
+        stuck = {}
+
+
+# end of day: overload wears people down, a good day lifts them, a bad one sinks them. Returns the names who quit.
+func end_day(util: float, grade: String) -> Array:
+    var left := []
+    for who in names():
+        var dm := 0
+        if util > 0.95:
+            dm -= 3
+            add_stress(who, 6)
+        elif util < 0.45:
+            dm -= 1
+            add_stress(who, -4)
+        else:
+            add_stress(who, -3)
+        dm += {"S": 2, "A": 1, "B": 0, "C": -1, "D": -3}.get(grade, 0)
+        if value(who, "stress") >= 70.0:
+            dm -= 1
+        add_morale(who, dm)
+    for who in names():
+        var chance := quit_chance(who)
+        if chance > 0.0 and Difficulty.rng("service.crew").randf() < chance:
+            quit(who)
+            left.append(who)
+    return left
+
+
+func to_dict() -> Dictionary:
+    return {"members": members.duplicate(true), "stuck": stuck.duplicate(), "quits": quits.duplicate()}
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    var saved: Dictionary = data.get("members", {})
+    for who in saved:
+        if members.has(who):
+            for key in saved[who]:
+                members[who][key] = saved[who][key]
+    stuck = {}
+    quits = data.get("quits", []).duplicate()
+''')
+
 write("scripts/strings.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Story text you can edit without touching code. The game's mails, texts, jobs, cards, dialogue, forum threads and
@@ -22195,6 +24280,7 @@ const ROOTS := {
     "Mutators": ["MUTATORS", "STARTS"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
+    "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "DAYS", "REVIEW"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
     "Nerds": ["JOKES", "THREADS"],
@@ -22208,7 +24294,8 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
+    "Build": ["QUIRKS", "PRESETS", "INFO"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
@@ -26369,7 +28456,7 @@ func _draw() -> void:
             elif Campaign.prop("hud", "day_rep") == "week_cash":
                 lines.append("%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash])
             else:
-                var day_line := "%s %d/%d REP %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.rep]
+                var day_line := "%s %d/%d %s %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.prop("rep_label", "REP"), Campaign.rep]
                 if Shift.active():
                     day_line += " NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
                 lines.append(day_line)
@@ -26986,6 +29073,7 @@ signal cancelled
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
+const BuildPanel := preload("res://scripts/build_panel.gd")
 const GOLD := Color("f5d442")
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
@@ -27027,6 +29115,10 @@ const OWNER_BLURBS := {
 }
 # the sales campaign offers Vic only
 const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
+# the service manager campaign offers Dan only
+const SERVICE_BLURBS := {
+    "office_dan": "THE QUIET NETWORK TECH WHO LABELS EVERYTHING, PROMOTED TO RUN THE DESK. LABEL THE PEOPLE NOW.",
+}
 const PHONES := [
     {
         "id": "ios",
@@ -27041,7 +29133,7 @@ const PHONES := [
 ]
 
 var mode := "free"
-var step := "char"  # "char" then (tech campaign only) "phone"
+var step := "char"  # "char", then (tech campaign only) "phone", then (tech and owner) "build" (X7, build_panel.gd)
 var ids: Array = []
 var sel := 0
 var phone_sel := 0
@@ -27049,6 +29141,8 @@ var facing := "right"
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
+var _panel: RefCounted = null  # the build step's working build
+var _confirmed := false
 
 
 func _ready() -> void:
@@ -27065,6 +29159,19 @@ func needs_phone() -> bool:
     return mode == "tech"
 
 
+# the point-buy step (X7): the campaigns that have a stat set; Free Play has none
+func needs_build() -> bool:
+    return Build.selectable(mode)
+
+
+func _open_build() -> void:
+    step = "build"
+    if _panel == null or _panel.character != current_id():
+        _panel = BuildPanel.new()
+        _panel.setup(mode, current_id())
+    queue_redraw()
+
+
 # who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
 # the tech campaign
 func choices(for_mode: String) -> Array:
@@ -27074,6 +29181,8 @@ func choices(for_mode: String) -> Array:
         return ["office_alan", "casual_garrison"]
     if for_mode == "sales":
         return ["sales_vic"]
+    if for_mode == "service":
+        return ["office_dan"]
     var cast: Array = []
     for n in World.CAST:
         cast.append(str(World.CAST[n].character))
@@ -27093,6 +29202,8 @@ func setup(for_mode: String) -> void:
     if not PLAYER.current_character in ids:
         sel = maxi(0, ids.find("office_adult"))
     phone_sel = 1 if Phone.os == "android" else 0
+    _panel = null
+    _confirmed = false
     Mutators.pending_start = Mutators.STANDARD
     Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
     facing = "right"
@@ -27118,6 +29229,8 @@ func info(id: String) -> Dictionary:
         entry["blurb"] = OWNER_BLURBS[id]
     if mode == "sales":
         entry["blurb"] = SALES_BLURB
+    if mode == "service" and SERVICE_BLURBS.has(id):
+        entry["blurb"] = SERVICE_BLURBS[id]
     return entry
 
 
@@ -27126,6 +29239,8 @@ func summary(with_tier := true) -> String:
     var s := "%s - %s" % [label, str(info(current_id()).name)]
     if needs_phone():
         s += " - " + str(PHONES[phone_sel].name)
+    if _panel != null and (step == "build" or _confirmed):
+        s += " - " + str(_panel.name_text())
     if with_tier:
         s += " - " + Difficulty.label()
         if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
@@ -27147,6 +29262,8 @@ func change_start(step: int) -> void:
 func change_tier(delta_tier: int) -> void:
     Difficulty.cycle_tier(delta_tier)
     Difficulty.save_settings()
+    if _panel != null:
+        _panel.refit()
     queue_redraw()
 
 
@@ -27184,12 +29301,22 @@ func confirm() -> void:
         step = "phone"
         queue_redraw()
         return
+    if step != "build" and needs_build():
+        _open_build()
+        return
+    if step == "build" and not _panel.valid():
+        queue_redraw()
+        Hints.toast(str(_panel.errors()[0]), 2.0)
+        return
+    _confirmed = step == "build"
+    Build.pending = _panel.build_out() if _confirmed else {}
     var result := {
         "mode": mode,
         "character": current_id(),
         "phone": str(PHONES[phone_sel].id) if needs_phone() else "",
         "summary": summary(),
         "tier": Difficulty.tier,
+        "build": Build.pending,
     }
     PLAYER.current_character = current_id()
     if needs_phone():
@@ -27198,7 +29325,10 @@ func confirm() -> void:
 
 
 func back() -> void:
-    if step == "phone":
+    if step == "build":
+        step = "phone" if needs_phone() else "char"
+        queue_redraw()
+    elif step == "phone":
         step = "char"
         queue_redraw()
     else:
@@ -27209,6 +29339,9 @@ func _unhandled_input(event: InputEvent) -> void:
     if Engine.get_process_frames() == _born or Toolbox.is_open:
         return
     if event is InputEventKey and event.pressed and not event.echo:
+        if step == "build" and _build_key(event.keycode):
+            get_viewport().set_input_as_handled()
+            return
         match event.keycode:
             KEY_X:
                 open_seed()
@@ -27244,6 +29377,25 @@ func _unhandled_input(event: InputEvent) -> void:
     get_viewport().set_input_as_handled()
 
 
+# the build step's own keys: Up / Down rows, Left / Right change, P preset (the rest is shared with the other steps)
+func _build_key(code: Key) -> bool:
+    match code:
+        KEY_UP, KEY_W:
+            _panel.move_row(-1)
+        KEY_DOWN, KEY_S:
+            _panel.move_row(1)
+        KEY_LEFT, KEY_A:
+            _panel.change(-1)
+        KEY_RIGHT, KEY_D:
+            _panel.change(1)
+        KEY_P:
+            _panel.cycle_preset(1)
+        _:
+            return false
+    queue_redraw()
+    return true
+
+
 func _hit(at: Vector2) -> Array:
     for r in _rects:
         if r[0].has_point(at):
@@ -27256,7 +29408,11 @@ func _hover(at: Vector2) -> void:
     if r.is_empty():
         return
     var kind: String = r[1]
-    if kind == "item" and step == "char" and sel != int(r[2]):
+    if kind.begins_with("b_"):
+        if step == "build":
+            _panel.hover(kind, int(r[2]))
+            queue_redraw()
+    elif kind == "item" and step == "char" and sel != int(r[2]):
         sel = int(r[2])
         queue_redraw()
     elif kind == "phone" and phone_sel != int(r[2]):
@@ -27267,6 +29423,11 @@ func _hover(at: Vector2) -> void:
 func _click(at: Vector2) -> void:
     var r := _hit(at)
     if r.is_empty():
+        return
+    if str(r[1]).begins_with("b_"):
+        if step == "build":
+            _panel.click(str(r[1]), int(r[2]))
+            queue_redraw()
         return
     match str(r[1]):
         "back":
@@ -27332,7 +29493,7 @@ func _draw() -> void:
     var narrow := size.x < 250.0
     _rects.clear()
     draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
-    var heading := "CHOOSE YOUR CHARACTER" if step == "char" else "PICK YOUR PHONE"
+    var heading := "CHOOSE YOUR CHARACTER" if step == "char" else ("PICK YOUR PHONE" if step == "phone" else "BUILD YOUR CHARACTER")
     _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
     var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
     draw_rect(back_r, PANEL)
@@ -27344,19 +29505,46 @@ func _draw() -> void:
         _draw_start(size, narrow)
     if step == "char":
         _draw_chars(size, narrow)
+    elif step == "build":
+        _place_sprites(size, narrow)
+        _panel.draw(self, size, narrow, _rects)
     else:
         _place_sprites(size, narrow)
         _draw_phones(size, narrow)
-    _ctxt(
-        summary(false), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
-    )
+    _draw_summary(size, narrow)
     var extra := "T TOOLS" if mode == "free" else "TAB START"
+    if step == "build":
+        if narrow:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
+            _ctxt("P PRESET  X SEED  ENTER GO  ESC", size.y - 12.0, DIM)
+        else:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+        return
     var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
     if narrow:
         _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
         _ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
     else:
         _ctxt(hint, size.y - 9.0, DIM)
+
+
+# the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
+func _draw_summary(size: Vector2, narrow: bool) -> void:
+    var base := size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0))
+    var text := summary(false)
+    if float(PixelFont.width(text)) <= size.x - 8.0:
+        _ctxt(text, base, Color.WHITE)
+        return
+    var parts := text.split(" - ")
+    var first := ""
+    for i in parts.size():
+        var next: String = parts[i] if first == "" else first + " - " + parts[i]
+        if first != "" and float(PixelFont.width(next)) > size.x - 8.0:
+            _ctxt(first, base - 8.0, Color.WHITE)
+            _ctxt(" - ".join(parts.slice(i)), base, Color.WHITE)
+            return
+        first = next
+    _ctxt(text, base, Color.WHITE)
 
 
 # the difficulty chip: LEVEL < NORMAL > (top right, or under the heading in narrow portrait)
@@ -27827,6 +30015,12 @@ func _open_menu() -> void:
         _items.append({"label": "NEW OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
     else:
         _items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
+    if Campaign.has_save("service"):
+        var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service")
+        _items.append({"label": service_label, "id": "service_continue", "enabled": true})
+        _items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
+    else:
+        _items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
     if Campaign.has_save("sales"):
         _items.append({"label": "CONTINUE SALES - WEEK %d" % Campaign.saved_day("sales"), "id": "sales_continue", "enabled": true})
         _items.append({"label": "NEW SALES CAMPAIGN", "id": "sales_new", "enabled": true})
@@ -27899,6 +30093,8 @@ func _open_select(id: String) -> void:
         mode = "owner"
     elif id == "sales_new":
         mode = "sales"
+    elif id == "service_new":
+        mode = "service"
     _select = CharSelect.new()
     _select.setup(mode)
     _select.done.connect(_on_select_done.bind(id))
@@ -27946,6 +30142,10 @@ func _start(id: String, summary := "") -> void:
             Campaign.new_game("sales")
         "sales_continue":
             Campaign.continue_game("sales")
+        "service_new":
+            Campaign.new_game("service")
+        "service_continue":
+            Campaign.continue_game("service")
         _:
             Campaign.new_game(Campaign.FREE)
     Game.go(Campaign.start_scene(), "start")
@@ -30277,6 +32477,878 @@ func validate_all() -> Array:
     if not STARTS.has(STANDARD) or STARTS[STANDARD].size() > 4:
         out.append("standard must exist and change nothing")
     return out
+''')
+
+write("scripts/build.gd", '''extends Node
+# gdlint:disable=max-line-length
+# POINT-BUY CHARACTER BUILD (roadmap X7, docs/campaign-paths.md section 13). A build is a small Dictionary
+#   {version, preset, stats {stat: level}, quirks [ids], spent, tier, seed}
+# chosen on the third step of the character select screen and saved with the campaign (`Campaign.build`).
+# `Build.from_dict({})` is the FLAT build (every stat at its free bias floor, no quirks, nothing spent): it behaves
+# exactly like the game did before point-buy, so old saves, direct `Campaign.new_game` calls in tests and Free Play
+# are unchanged. Every stat is a 0-5 level read through `Build.level(stat)`.
+#
+#   Stat sets   PATHS: tech (the five Skills), owner (TECHNICAL FINANCE SALES CULTURE CLIENTS, read through
+#               Owner.edges_for), service (Dan) and sales (Vic) as data rows (not selectable yet).
+#   Bias        BIAS[cast name]: free floors and creation caps that cost no points, so a cast member stays himself.
+#   Budget      BUDGET by Difficulty tier (12 normal, 15 easy, 9 hard), cumulative COST 1/2/4/7/11 per level, at most 4
+#               at creation and only one stat at 4, MAX_TOTAL levels in all. Quirks give or cost points.
+#   Guards      validate() lists the errors that block the confirm button, warnings() the soft ones.
+#   Feeding     Skills.reset (starting XP from the level), Skills.need (SLOW STARTER), Shift (energy quirks),
+#               Social (CUSTOMER), Owner.edges_for / cash and Partner trust (owner stats), Career counters.
+# QUIRKS, PRESETS and INFO are patchable text tables (story/strings.txt).
+
+const VERSION := 1
+const COST := [0, 1, 2, 4, 7, 11]  # cumulative points for level 0..5
+const BUDGET := {"easy": 15, "normal": 12, "hard": 9}
+const MAX_START := 4  # the most any stat can be at creation (5 is earned)
+const MAX_TOTAL := 14  # the most levels in all, however many quirk points there are
+const MAX_NEG := 2  # quirks that give points
+const MAX_POS := 1  # quirks that cost points
+const PATHS := {
+    "tech": {"selectable": true, "stats": ["powershell", "networking", "servers", "security", "people"]},
+    "owner": {"selectable": true, "stats": ["technical", "finance", "sales", "culture", "clients"]},
+    "service": {"selectable": false, "stats": ["dispatch", "process", "people", "escalation", "relations"]},
+    "sales": {"selectable": false, "stats": ["pitch", "discovery", "negotiation", "relationships", "honesty"]},
+}
+# free floors and creation caps per cast member; "skills" are floors on the five tech Skills the service campaign applies itself
+const BIAS := {
+    "Alan": {"floor": {"technical": 2}, "cap": {"sales": 2, "culture": 2}},
+    "Garrison": {"floor": {"sales": 2, "culture": 2}, "cap": {"technical": 2}},
+    "Dan": {"floor": {"process": 2, "dispatch": 1}, "cap": {"people": 2, "relations": 2}, "skills": {"networking": 3, "servers": 1}},
+    "Vic": {"floor": {"pitch": 2}, "cap": {}},
+}
+# owner stat -> what one level above the free floor adds to Owner.edges_for (see the key list in owner.gd)
+const OWNER_FX := {
+    "technical": {"close_miss": -0.006, "rdp": -0.04, "stack_risk": -0.03, "issues": -0.01, "backup_check": 0.03},
+    "finance": {"fee_accept": 0.02},
+    "sales": {"marketing": 0.08},
+    "culture": {"morale": 1.0, "outing_relief": 0.1},
+    "clients": {"qbr": 0.03, "new_mood": 1.0, "poach": -0.004},
+}
+const CASH_PER_FINANCE := 250  # starting cash per FINANCE level above the floor
+const TRUST_PER_CULTURE := 3  # starting partner trust per CULTURE level above the floor
+const SOCIAL_PER_PEOPLE := 2.5  # starting opinion with the team per CUSTOMER level
+const EDGE_LIMITS := {"close_miss": [0.01, 0.2], "rdp": [0.4, 1.6], "stack_risk": [0.5, 1.6], "issues": [0.8, 1.2], "backup_check": [0.0, 0.6], "marketing": [0.4, 1.8], "fee_accept": [-0.2, 0.2], "qbr": [-0.2, 0.25], "new_mood": [0.0, 10.0], "poach": [-0.05, 0.1], "morale": [-5.0, 8.0], "outing_relief": [0.5, 2.0]}
+
+# quirks: pts > 0 gives points (a negative quirk), pts < 0 costs points (a positive one). fx keys: energy (start energy), drain
+# (extra energy drain per day, a fraction), rest (extra morning rest), xp (extra XP needed, a fraction), fail (extra remote fix failure), trust
+# (starting partner trust). "excl" lists quirks it cannot be taken with. Never tied to family or health.
+const QUIRKS := {
+    "caffeine": {"name": "CAFFEINE DEPENDENT", "pts": 2, "paths": ["tech"], "fx": {"energy": -15.0, "drain": 0.25}, "text": "START AT 65 ENERGY AND TIRE A QUARTER FASTER. THE COFFEE MACHINE IS YOUR FRIEND."},
+    "slow": {"name": "SLOW STARTER", "pts": 2, "paths": ["tech"], "excl": ["quick"], "fx": {"xp": 0.2}, "text": "EVERY SKILL NEEDS 20 PERCENT MORE EXPERIENCE TO LEVEL UP."},
+    "butter": {"name": "BUTTERFINGERS", "pts": 2, "paths": ["tech"], "fx": {"fail": 0.04}, "text": "REMOTE FIXES FAIL 4 PERCENT MORE OFTEN. CHECK YOUR TYPING TWICE."},
+    "quick": {"name": "QUICK STUDY", "pts": -2, "paths": ["tech"], "excl": ["slow"], "fx": {"xp": -0.15}, "text": "EVERY SKILL NEEDS 15 PERCENT LESS EXPERIENCE TO LEVEL UP."},
+    "early": {"name": "EARLY BIRD", "pts": -2, "paths": ["tech"], "fx": {"energy": 10.0, "rest": 4.0}, "text": "START AT 90 ENERGY AND WAKE UP A LITTLE MORE RESTED EVERY MORNING."},
+    "stubborn": {"name": "STUBBORN", "pts": 2, "paths": ["owner"], "fx": {"trust": -10.0}, "text": "YOUR PARTNER STARTS WITH 10 LESS TRUST. YOU DO NOT BACK DOWN."},
+    "listener": {"name": "GOOD LISTENER", "pts": -2, "paths": ["owner"], "fx": {"trust": 10.0}, "text": "YOUR PARTNER STARTS WITH 10 MORE TRUST. YOU HEAR THEM OUT."},
+    "overpromise": {"name": "OVER-PROMISER", "pts": 2, "paths": ["sales"], "fx": {}, "text": "YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP."},
+    "quiet": {"name": "QUIET TYPE", "pts": 2, "paths": ["service"], "fx": {}, "text": "YOU PREFER A CLOSED DOOR AND A SHORT MEETING."},
+}
+# what each stat does, one line for the build screen
+const INFO := {
+    "tech": {
+        "powershell": {"name": "POWERSHELL", "text": "FASTER AND SAFER RMM FIXES. LEVEL 2 SCRIPTS A WHOLE CLIENT, LEVEL 4 EVERY CLIENT."},
+        "networking": {"name": "NETWORKING", "text": "FASTER NETWORK AND PRINTER FIXES. LEVEL 2 NAMES THE PATCH PANEL PORT."},
+        "servers": {"name": "SERVERS", "text": "SERVER AND WORKSTATION FIXES ARE 6 PERCENT FASTER PER LEVEL."},
+        "security": {"name": "SECURITY", "text": "FASTER SECURITY FIXES. LEVEL 3 MAKES BACKUPS CHECK THEMSELVES."},
+        "people": {"name": "CUSTOMER", "text": "LEVEL 2 SHOWS WHO HAS WORK OPEN. LEVEL 3 AND UP SLOWS THE SLA CLOCKS. THE TEAM LIKES YOU MORE."},
+    },
+    "owner": {
+        "technical": {"name": "TECHNICAL", "text": "FEWER REOPENED TICKETS AND BREAK-INS. FAILING BACKUPS GET NOTICED SOONER."},
+        "finance": {"name": "FINANCE", "text": "FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER."},
+        "sales": {"name": "SALES", "text": "MARKETING WORKS BETTER AND VIC CLOSES MORE."},
+        "culture": {"name": "CULTURE", "text": "A HAPPIER CREW, BIGGER RELIEF FROM OUTINGS AND MORE TRUST FROM YOUR PARTNER."},
+        "clients": {"name": "CLIENTS", "text": "BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED."},
+    },
+    "service": {
+        "dispatch": {"name": "DISPATCH", "text": "THE BOARD IS LESS FUZZY: YOU SEE WHO IS BUSY AND WHAT IS STUCK."},
+        "process": {"name": "PROCESS", "text": "RUNBOOKS ARE CHEAP TO WRITE AND THE CREW FOLLOWS THEM."},
+        "people": {"name": "PEOPLE", "text": "ONE ON ONES GAIN MORE AND LYNK REPLIES ARE WARMER."},
+        "escalation": {"name": "ESCALATION", "text": "YOU KNOW WHEN A TICKET SHOULD GO UP AND WHEN IT SHOULD NOT."},
+        "relations": {"name": "CLIENT REL", "text": "CLIENTS CALL YOU FIRST AND FORGIVE MORE."},
+    },
+    "sales": {
+        "pitch": {"name": "PITCH", "text": "MORE LEADS BECOME MEETINGS AND MORE MEETINGS BECOME QUOTES."},
+        "discovery": {"name": "DISCOVERY", "text": "YOU FIND THE REAL PROBLEM BEFORE YOU QUOTE."},
+        "negotiation": {"name": "NEGOTIATION", "text": "DISCOUNT ASKS COST LESS AND DEALS CLOSE AT A BETTER PRICE."},
+        "relationships": {"name": "RELATIONSHIPS", "text": "RENEWALS AND REFERRALS COME EASIER."},
+        "honesty": {"name": "HONESTY", "text": "FEWER PROMISES TO KEEP AND LESS RISK OF A CLAWBACK."},
+    },
+}
+# presets: steps raise a stat one level each, in order, while the budget and the guards allow it (so a preset fits every tier)
+const PRESETS := {
+    "tech": [
+        {"id": "generalist", "name": "GENERALIST", "quirks": [], "steps": ["powershell", "networking", "servers", "security", "people", "powershell", "networking", "servers", "security", "people", "powershell", "networking", "servers", "security", "people"], "text": "A BIT OF EVERYTHING. NO BAD DAYS, NO BIG WINS."},
+        {"id": "scripter", "name": "SCRIPTER", "quirks": [], "steps": ["powershell", "powershell", "powershell", "powershell", "security", "servers", "people", "networking", "security", "servers", "people", "networking"], "text": "FIXES RUN FASTER AND SCRIPTS WORK ON DAY ONE. NOBODY LIKES YOU YET."},
+        {"id": "network", "name": "NETWORK NERD", "quirks": [], "steps": ["networking", "networking", "networking", "networking", "servers", "security", "powershell", "people", "servers", "security", "powershell", "people"], "text": "THE CLOSET IS YOUR HAPPY PLACE. PRINTERS AND OUTAGES FEAR YOU."},
+        {"id": "people", "name": "PEOPLE PERSON", "quirks": [], "steps": ["people", "people", "people", "people", "powershell", "security", "networking", "servers", "powershell", "security", "networking", "servers"], "text": "CLIENTS WAIT LONGER AND THE TEAM LIKES YOU. THE SERVERS NOT SO MUCH."},
+    ],
+    "owner_alan": [
+        {"id": "architect", "name": "ARCHITECT", "quirks": [], "steps": ["technical", "technical", "technical", "finance", "clients", "finance", "clients", "technical", "finance", "clients"], "text": "A CLEAN STACK AND QUIET SERVERS. THE BOOKS ARE ALMOST AS TIDY."},
+        {"id": "cutter", "name": "COST CUTTER", "quirks": [], "steps": ["finance", "finance", "finance", "finance", "technical", "clients", "technical", "clients", "finance"], "text": "EVERY DOLLAR HAS A JOB. CLIENTS ACCEPT FEE RISES AND THE BANK STARTS FATTER."},
+        {"id": "hirer", "name": "HIRER", "quirks": [], "steps": ["clients", "clients", "culture", "culture", "technical", "technical", "clients", "finance", "technical", "finance"], "text": "YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS."},
+    ],
+    "owner_garrison": [
+        {"id": "brand", "name": "BRAND BUILDER", "quirks": [], "steps": ["sales", "sales", "sales", "clients", "clients", "finance", "technical", "finance", "clients", "technical"], "text": "MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE."},
+        {"id": "people_first", "name": "PEOPLE FIRST", "quirks": [], "steps": ["culture", "culture", "culture", "clients", "clients", "finance", "technical", "clients", "finance", "technical"], "text": "A HAPPY CREW AND A TRUSTING PARTNER. THE NUMBERS FOLLOW, MAYBE."},
+        {"id": "closer", "name": "CLOSER", "quirks": [], "steps": ["clients", "clients", "clients", "finance", "finance", "sales", "sales", "technical", "finance", "clients"], "text": "REVIEWS GO WELL, FEES GO UP, NEW CLIENTS START HAPPY."},
+    ],
+    "service": [
+        {"id": "label_maker", "name": "LABEL MAKER", "quirks": [], "steps": ["process", "process", "process", "process", "escalation", "dispatch", "people", "relations"], "text": "EVERYTHING HAS A RUNBOOK AND A LABEL."},
+        {"id": "coach", "name": "COACH", "quirks": [], "steps": ["people", "people", "people", "relations", "relations", "escalation", "process", "dispatch"], "text": "ONE ON ONES THAT WORK. THE BOARD LOOKS A LITTLE MESSY."},
+        {"id": "firefighter", "name": "FIREFIGHTER", "quirks": [], "steps": ["dispatch", "dispatch", "escalation", "escalation", "dispatch", "process", "people", "relations"], "text": "YOU SEE THE FIRE BEFORE IT STARTS."},
+        {"id": "diplomat", "name": "DIPLOMAT", "quirks": [], "steps": ["relations", "relations", "people", "people", "escalation", "process", "dispatch"], "text": "CLIENTS CALL YOU FIRST. YOUR CREW KNOWS WHY."},
+    ],
+    "sales": [
+        {"id": "hunter", "name": "HUNTER", "quirks": [], "steps": ["pitch", "pitch", "pitch", "pitch", "discovery", "negotiation", "relationships", "honesty"], "text": "NEW LEADS EVERY WEEK. RENEWALS ARE SOMEBODY ELSE'S PROBLEM."},
+        {"id": "farmer", "name": "FARMER", "quirks": [], "steps": ["relationships", "relationships", "relationships", "honesty", "honesty", "discovery", "pitch", "negotiation"], "text": "RENEWALS AND REFERRALS. NOBODY EVER LEAVES."},
+        {"id": "consultant", "name": "CONSULTANT", "quirks": [], "steps": ["discovery", "discovery", "discovery", "honesty", "honesty", "pitch", "relationships", "negotiation"], "text": "YOU FIND THE REAL PROBLEM AND QUOTE THE REAL FIX."},
+        {"id": "smooth", "name": "SMOOTH TALKER", "quirks": [], "steps": ["negotiation", "negotiation", "pitch", "pitch", "relationships", "discovery", "honesty"], "text": "YOU CLOSE ANYTHING. KEEP THE PROMISES YOU MAKE."},
+    ],
+}
+
+var pending := {}  # the build chosen on the select screen, taken by Campaign.new_game
+
+
+# ---- the flat default and (de)serialising -----------------------------------------------------------------------
+func flat() -> Dictionary:
+    return {"version": VERSION, "preset": "flat", "stats": {}, "quirks": [], "spent": 0, "tier": "normal", "seed": 0}
+
+
+func from_dict(data: Dictionary) -> Dictionary:
+    var out := flat()
+    if data.is_empty():
+        return out
+    out["preset"] = str(data.get("preset", "flat"))
+    var saved: Dictionary = data.get("stats", {})
+    for key in saved:
+        out.stats[str(key)] = clampi(int(saved[key]), 0, 5)
+    for q in data.get("quirks", []):
+        if QUIRKS.has(str(q)) and not out.quirks.has(str(q)):
+            out.quirks.append(str(q))
+    out["spent"] = int(data.get("spent", 0))
+    out["tier"] = str(data.get("tier", "normal"))
+    out["seed"] = int(data.get("seed", 0))
+    return out
+
+
+# the build the running campaign has (flat when none)
+func cur() -> Dictionary:
+    var campaign := get_node_or_null("/root/Campaign")
+    if campaign == null or typeof(campaign.get("build")) != TYPE_DICTIONARY or campaign.build.is_empty():
+        return flat()
+    return campaign.build
+
+
+func is_flat(b: Dictionary) -> bool:
+    return b.get("quirks", []).is_empty() and int(b.get("spent", 0)) == 0 and str(b.get("preset", "flat")) != "max"
+
+
+func take_pending(for_mode: String) -> Dictionary:
+    var b: Dictionary = from_dict(pending)
+    pending = {}
+    if for_mode == "free" and str(b.preset) != "max":
+        return flat()  # Free Play has no build screen; only the MAX preset for filming
+    if is_flat(b):
+        return flat()
+    b["seed"] = Difficulty.run_seed
+    return b
+
+
+# ---- paths, stats, bias ---------------------------------------------------------------------------------------------
+func path_of(for_mode: String) -> String:
+    return for_mode if PATHS.has(for_mode) else "tech"  # Free Play and tests: the tech stat set
+
+
+func selectable(for_mode: String) -> bool:
+    return bool(PATHS.get(for_mode, {}).get("selectable", false)) and Campaign.is_selectable(for_mode)
+
+
+func stats_of(path: String) -> Array:
+    return PATHS.get(path, PATHS.tech).stats
+
+
+func stat_name(path: String, stat: String) -> String:
+    return str(INFO.get(path, {}).get(stat, {}).get("name", stat.to_upper()))
+
+
+func stat_text(path: String, stat: String) -> String:
+    return str(INFO.get(path, {}).get(stat, {}).get("text", ""))
+
+
+func floor_of(stat: String, who: String) -> int:
+    return int(BIAS.get(who, {}).get("floor", {}).get(stat, 0))
+
+
+func cap_of(stat: String, who: String) -> int:
+    return int(BIAS.get(who, {}).get("cap", {}).get(stat, MAX_START))
+
+
+func level_of(b: Dictionary, stat: String, who: String) -> int:
+    return clampi(maxi(floor_of(stat, who), int(b.get("stats", {}).get(stat, 0))), 0, 5)
+
+
+# the level of a stat in the running campaign
+func level(stat: String) -> int:
+    return level_of(cur(), stat, Campaign.player_as)
+
+
+func total_levels(b: Dictionary, path: String, who: String) -> int:
+    var n := 0
+    for s in stats_of(path):
+        n += level_of(b, str(s), who)
+    return n
+
+
+# ---- budget and cost -------------------------------------------------------------------------------------------
+func budget(tier: String) -> int:
+    return int(BUDGET.get(tier, BUDGET.normal))
+
+
+func quirk_points(b: Dictionary) -> int:
+    var n := 0
+    for q in b.get("quirks", []):
+        n += int(QUIRKS.get(str(q), {}).get("pts", 0))
+    return n
+
+
+func cost_of(b: Dictionary, path: String, who: String) -> int:
+    var n := 0
+    for s in stats_of(path):
+        var lv := level_of(b, str(s), who)
+        var fl := floor_of(str(s), who)
+        if lv > fl:
+            n += int(COST[lv]) - int(COST[fl])
+    return n
+
+
+func points_left(b: Dictionary, path: String, who: String) -> int:
+    return budget(str(b.get("tier", "normal"))) + quirk_points(b) - cost_of(b, path, who)
+
+
+# ---- guards ------------------------------------------------------------------------------------------------------
+func quirks_ok(list: Array, path: String) -> bool:
+    var neg := 0
+    var pos := 0
+    for q in list:
+        var row: Dictionary = QUIRKS.get(str(q), {})
+        if row.is_empty() or not (path in row.paths):
+            return false
+        if int(row.pts) > 0:
+            neg += 1
+        else:
+            pos += 1
+        for other in row.get("excl", []):
+            if list.has(other):
+                return false
+    return neg <= MAX_NEG and pos <= MAX_POS and list.size() == _unique(list).size()
+
+
+func _unique(list: Array) -> Array:
+    var out := []
+    for x in list:
+        if not out.has(x):
+            out.append(x)
+    return out
+
+
+# the errors that block the confirm button (empty = fine). The flat build and the MAX filming preset are always fine.
+func validate(b: Dictionary, path: String, who: String) -> Array:
+    var out := []
+    if str(b.get("preset", "flat")) == "max":
+        return out
+    var fours := 0
+    for s in stats_of(path):
+        var lv := level_of(b, str(s), who)
+        if lv > MAX_START:
+            out.append("MAX LEVEL AT START IS %d" % MAX_START)
+        if lv > cap_of(str(s), who) and lv > floor_of(str(s), who):
+            out.append("%s IS CAPPED AT %d" % [stat_name(path, str(s)), cap_of(str(s), who)])
+        if lv == MAX_START:
+            fours += 1
+    if fours > 1:
+        out.append("ONLY ONE STAT CAN START AT 4")
+    if total_levels(b, path, who) > MAX_TOTAL:
+        out.append("AT MOST %d LEVELS IN ALL" % MAX_TOTAL)
+    if points_left(b, path, who) < 0:
+        out.append("OVER BUDGET BY %d" % -points_left(b, path, who))
+    if not quirks_ok(b.get("quirks", []), path):
+        out.append("THOSE QUIRKS DO NOT GO TOGETHER")
+    return out
+
+
+# soft warnings shown under the stats (they do not block)
+func warnings(b: Dictionary, path: String, who: String) -> Array:
+    var out := []
+    if path == "tech":
+        if total_levels(b, path, who) < 4:
+            out.append("FEW LEVELS: THE FIRST DAYS WILL BE SLOW")
+        if level_of(b, "people", who) == 0 and level_of(b, "security", who) == 0:
+            out.append("NO CUSTOMER AND NO SECURITY: RISKY")
+    return out
+
+
+# set one stat to a level when the guards allow it (lowering always works unless it leaves the floor)
+func try_set(b: Dictionary, stat: String, lv: int, path: String, who: String) -> bool:
+    if lv < floor_of(stat, who) or lv < 0 or lv > MAX_START:
+        return false
+    var before := level_of(b, stat, who)
+    if lv == before:
+        return false
+    var copy: Dictionary = b.duplicate(true)
+    copy.stats[stat] = lv
+    if lv > before and not validate(copy, path, who).is_empty():
+        return false
+    b.stats[stat] = lv
+    b["spent"] = cost_of(b, path, who)
+    return true
+
+
+# ---- presets ----------------------------------------------------------------------------------------------------
+func preset_key(path: String, who: String) -> String:
+    return "owner_" + who.to_lower() if path == "owner" else path
+
+
+func presets_for(path: String, who: String) -> Array:
+    return PRESETS.get(preset_key(path, who), [])
+
+
+func preset_row(path: String, who: String, id: String) -> Dictionary:
+    for row in presets_for(path, who):
+        if str(row.id) == id:
+            return row
+    return {}
+
+
+func preset_name(b: Dictionary, path: String, who: String) -> String:
+    var id := str(b.get("preset", "flat"))
+    if id == "custom":
+        return "CUSTOM"
+    if id == "max":
+        return "MAX"
+    if id == "flat":
+        return "DEFAULT"
+    return str(preset_row(path, who, id).get("name", id.to_upper()))
+
+
+func new_build(tier: String) -> Dictionary:
+    var b := flat()
+    b["tier"] = tier
+    b["seed"] = Difficulty.run_seed
+    return b
+
+
+# a preset fitted to the tier's budget
+func apply_preset(path: String, who: String, tier: String, id: String) -> Dictionary:
+    var b := new_build(tier)
+    var row := preset_row(path, who, id)
+    if row.is_empty():
+        b["preset"] = "custom"
+        return b
+    b["preset"] = id
+    b["quirks"] = row.get("quirks", []).duplicate()
+    for step in row.steps:
+        try_set(b, str(step), level_of(b, str(step), who) + 1, path, who)
+    for _pass in 6:  # then spend what is left on the same priorities, so a preset fits every tier
+        for step in row.steps:
+            try_set(b, str(step), level_of(b, str(step), who) + 1, path, who)
+    b["spent"] = cost_of(b, path, who)
+    return b
+
+
+# every stat at 5: Free Play's optional filming preset (no guards)
+func max_build(path := "tech") -> Dictionary:
+    var b := new_build("normal")
+    b["preset"] = "max"
+    for s in stats_of(path):
+        b.stats[str(s)] = 5
+    return b
+
+
+func finalize(b: Dictionary, path: String, who: String) -> Dictionary:
+    var out: Dictionary = b.duplicate(true)
+    for s in stats_of(path):
+        out.stats[str(s)] = level_of(out, str(s), who)
+    out["spent"] = cost_of(out, path, who)
+    out["seed"] = Difficulty.run_seed
+    return out
+
+
+# ---- what the build does in the game ----------------------------------------------------------------------------
+# the sum of one quirk effect key over the running build's quirks
+func fx(key: String) -> float:
+    var n := 0.0
+    for q in cur().get("quirks", []):
+        n += float(QUIRKS.get(str(q), {}).get("fx", {}).get(key, 0.0))
+    return n
+
+
+func xp_mult() -> float:
+    return maxf(0.5, 1.0 + fx("xp"))
+
+
+# the tech Skills levels a non-flat build starts with (empty for the flat build and outside the tech stat set)
+func tech_levels() -> Dictionary:
+    var out := {}
+    var b := cur()
+    if is_flat(b):
+        return out
+    var campaign := get_node_or_null("/root/Campaign")
+    var for_mode := str(campaign.mode) if campaign != null else ""
+    if path_of(for_mode) != "tech":
+        return out
+    for s in stats_of("tech"):
+        var lv := level_of(b, str(s), "")
+        if lv > 0:
+            out[str(s)] = lv
+    return out
+
+
+# the top stat of the running build ("" when flat); a hook for dialogue tone
+func top_stat() -> String:
+    var best := ""
+    var best_lv := 0
+    var tl := tech_levels()
+    for s in tl:
+        if int(tl[s]) > best_lv:
+            best = str(s)
+            best_lv = int(tl[s])
+    return best
+
+
+# owner edges: the deltas of one owner's stats above their free floors, added to Owner.edges_for (clamped)
+func edge_deltas(owner_name: String) -> Dictionary:
+    var out := {}
+    var b := cur()
+    if is_flat(b) or owner_name != Campaign.player_as or Campaign.mode != "owner":
+        return out
+    for stat in OWNER_FX:
+        var up := level_of(b, str(stat), owner_name) - floor_of(str(stat), owner_name)
+        if up == 0:
+            continue
+        for key in OWNER_FX[stat]:
+            out[key] = float(out.get(key, 0.0)) + float(OWNER_FX[stat][key]) * float(up)
+    return out
+
+
+func clamp_edge(key: String, value: float) -> float:
+    var lim: Array = EDGE_LIMITS.get(key, [-1000.0, 1000.0])
+    return clampf(value, float(lim[0]), float(lim[1]))
+
+
+func _owner_up(stat: String) -> int:
+    var b := cur()
+    if is_flat(b) or Campaign.mode != "owner":
+        return 0
+    return level_of(b, stat, Campaign.player_as) - floor_of(stat, Campaign.player_as)
+
+
+func cash_bonus() -> int:
+    return CASH_PER_FINANCE * _owner_up("finance")
+
+
+func trust_bonus() -> int:
+    if Campaign.mode != "owner":
+        return 0
+    return TRUST_PER_CULTURE * _owner_up("culture") + int(fx("trust"))
+
+
+# called at the end of Campaign.new_game: the parts of a build that are not a plain number elsewhere
+func apply_start() -> void:
+    var b := cur()
+    if not Campaign.active or is_flat(b):
+        return
+    var tl := tech_levels()
+    if tl.has("people"):
+        for who in Social.rel:
+            Social.rel[who] = int(Social.rel[who]) + roundi(float(tl.people) * SOCIAL_PER_PEOPLE)
+    Career.add("builds")
+    Career.add("build." + str(b.preset))
+
+
+# the line the review and the profile quote
+func describe(b: Dictionary, path: String, who: String) -> String:
+    var parts := []
+    for s in stats_of(path):
+        var lv := level_of(b, str(s), who)
+        if lv > 0:
+            parts.append("%s %d" % [stat_name(path, str(s)), lv])
+    return "%s: %s" % [preset_name(b, path, who), ", ".join(parts) if not parts.is_empty() else "ALL ZERO"]
+''')
+
+write("scripts/build_panel.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# The third step of the character select screen (X7): stat rows with pips, points left, a preset chip (P cycles), two
+# quirk chips and a few lines of effect text. The screen (charselect.gd) owns the keys and the _rects list; this class owns the
+# working build and draws itself on the screen's canvas. Rows: the path's five stats, "q1", "q2", "preset". Layout: two
+# columns at 368x128 and 320x180 (stats left, the rest right), one column at 180x320. Kinds it adds to the rect list:
+# b_row (index = row), b_pip (index = stat * 10 + level), b_prev / b_next (index = row of a chip).
+# The panel never changes the game by itself: confirm() on the screen puts build_out() into Build.pending.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const GOLD := Color("f5d442")
+const DIM := Color("9aa8c0")
+const PANEL := Color(0.05, 0.07, 0.12, 0.85)
+const SEL := Color(0.1, 0.13, 0.2, 0.9)
+const PIP := Color("6fb3ff")
+const EMPTY := Color("46506a")
+const LOCKED := Color("1f2433")
+const RED := Color("ff7a6a")
+
+var mode := ""
+var character := ""
+var path := "tech"
+var who := ""
+var b: Dictionary = {}
+var row := 0
+var rows: Array = []
+var slots: Array = ["", ""]
+var note := ""
+
+
+func setup(for_mode: String, for_character: String) -> void:
+    mode = for_mode
+    character = for_character
+    path = Build.path_of(for_mode)
+    who = World.cast_of(for_character) if for_mode == "owner" else ""
+    rows = Build.stats_of(path).duplicate()
+    rows.append_array(["q1", "q2", "preset"])
+    row = 0
+    note = ""
+    var presets := Build.presets_for(path, who)
+    b = Build.apply_preset(path, who, Difficulty.tier, str(presets[0].id)) if not presets.is_empty() else Build.new_build(Difficulty.tier)
+    _load_slots()
+
+
+func _load_slots() -> void:
+    slots = ["", ""]
+    var list: Array = b.get("quirks", [])
+    for i in mini(2, list.size()):
+        slots[i] = str(list[i])
+
+
+func _compose() -> void:
+    var list := []
+    for q in slots:
+        if str(q) != "":
+            list.append(str(q))
+    b["quirks"] = list
+
+
+func _touch() -> void:
+    b["preset"] = "custom"
+    b["spent"] = Build.cost_of(b, path, who)
+    note = ""
+
+
+# the tier changed while this step was open: fit the build to the new budget
+func refit() -> void:
+    var id := str(b.preset)
+    b["tier"] = Difficulty.tier
+    if id != "custom" and not Build.preset_row(path, who, id).is_empty():
+        b = Build.apply_preset(path, who, Difficulty.tier, id)
+        _load_slots()
+    elif not Build.validate(b, path, who).is_empty():
+        var presets := Build.presets_for(path, who)
+        if not presets.is_empty():
+            b = Build.apply_preset(path, who, Difficulty.tier, str(presets[0].id))
+            _load_slots()
+
+
+func points_left() -> int:
+    return Build.points_left(b, path, who)
+
+
+func errors() -> Array:
+    return Build.validate(b, path, who)
+
+
+func valid() -> bool:
+    return errors().is_empty()
+
+
+func name_text() -> String:
+    return Build.preset_name(b, path, who)
+
+
+# the build to hand to the game
+func build_out() -> Dictionary:
+    b["tier"] = Difficulty.tier
+    return Build.finalize(b, path, who)
+
+
+func level(stat: String) -> int:
+    return Build.level_of(b, stat, who)
+
+
+# ---- changing things --------------------------------------------------------------------------------------------
+func move_row(d: int) -> void:
+    row = (row + d + rows.size()) % rows.size()
+    note = ""
+
+
+func set_level(stat: String, lv: int) -> void:
+    var before := level(stat)
+    if lv == before:
+        return
+    if Build.try_set(b, stat, lv, path, who):
+        _touch()
+        return
+    if lv > before:
+        var test: Dictionary = b.duplicate(true)
+        test.stats[stat] = lv
+        var errs := Build.validate(test, path, who)
+        note = str(errs[0]) if not errs.is_empty() else ""
+    else:
+        note = "%s IS FREE UP TO LEVEL %d" % [Build.stat_name(path, stat), Build.floor_of(stat, who)]
+
+
+func quirk_at(slot: int) -> String:
+    return str(slots[slot])
+
+
+func quirk_options(slot: int) -> Array:
+    var out := [""]
+    var other := quirk_at(1 - slot)
+    for id in Build.QUIRKS:
+        if str(id) == other:
+            continue
+        var test := []
+        if other != "":
+            test.append(other)
+        test.append(str(id))
+        if Build.quirks_ok(test, path):
+            out.append(str(id))
+    return out
+
+
+func cycle_quirk(slot: int, d: int) -> void:
+    var opts := quirk_options(slot)
+    var i := maxi(0, opts.find(quirk_at(slot)))
+    slots[slot] = opts[(i + d + opts.size()) % opts.size()]
+    _compose()
+    _touch()
+
+
+func preset_ids() -> Array:
+    var out := []
+    for p in Build.presets_for(path, who):
+        out.append(str(p.id))
+    out.append("custom")
+    return out
+
+
+func cycle_preset(d: int) -> void:
+    var ids := preset_ids()
+    var i := ids.find(str(b.preset))
+    if i < 0:
+        i = ids.size() - 1
+    var id := str(ids[(i + d + ids.size()) % ids.size()])
+    note = ""
+    if id == "custom":
+        b["preset"] = "custom"
+        return
+    b = Build.apply_preset(path, who, Difficulty.tier, id)
+    _load_slots()
+
+
+# Left / Right on the selected row
+func change(d: int) -> void:
+    var r := str(rows[row])
+    if r == "q1":
+        cycle_quirk(0, d)
+    elif r == "q2":
+        cycle_quirk(1, d)
+    elif r == "preset":
+        cycle_preset(d)
+    else:
+        set_level(r, level(r) + d)
+
+
+func click(kind: String, idx: int) -> void:
+    match kind:
+        "b_row":
+            row = clampi(idx, 0, rows.size() - 1)
+        "b_pip":
+            var stat := str(rows[clampi(idx / 10, 0, rows.size() - 1)])
+            row = idx / 10
+            var lv := idx % 10
+            set_level(stat, lv - 1 if lv == level(stat) else lv)
+        "b_prev", "b_next":
+            row = clampi(idx, 0, rows.size() - 1)
+            change(-1 if kind == "b_prev" else 1)
+
+
+func hover(kind: String, idx: int) -> void:
+    if kind == "b_row" or kind == "b_prev" or kind == "b_next":
+        row = clampi(idx, 0, rows.size() - 1)
+    elif kind == "b_pip":
+        row = clampi(idx / 10, 0, rows.size() - 1)
+
+
+# ---- text ----------------------------------------------------------------------------------------------------------
+func quirk_label(id: String) -> String:
+    if id == "":
+        return "NONE"
+    var q: Dictionary = Build.QUIRKS.get(id, {})
+    return "%s %s%d" % [str(q.get("name", id.to_upper())), "+" if int(q.get("pts", 0)) > 0 else "", int(q.get("pts", 0))]
+
+
+func effect_text() -> String:
+    var r := str(rows[row])
+    if r == "q1" or r == "q2":
+        var id := quirk_at(0 if r == "q1" else 1)
+        if id == "":
+            return "A QUIRK GIVES YOU EXTRA POINTS AT A SMALL COST. A GOOD ONE COSTS POINTS."
+        return str(Build.QUIRKS.get(id, {}).get("text", ""))
+    if r == "preset":
+        var p := Build.preset_row(path, who, str(b.preset))
+        return str(p.get("text", "YOUR OWN MIX. CHANGE ANY STAT.")) if not p.is_empty() else "YOUR OWN MIX. CHANGE ANY STAT."
+    var lv := level(r)
+    return "%s %d: %s" % [Build.stat_name(path, r), lv, Build.stat_text(path, r)]
+
+
+func message() -> Array:
+    var errs := errors()
+    if not errs.is_empty():
+        return [str(errs[0]), RED]
+    if note != "":
+        return [note, RED]
+    var warns := Build.warnings(b, path, who)
+    if not warns.is_empty():
+        return [str(warns[0]), GOLD]
+    return ["", GOLD]
+
+
+func _wrap(s: String, chars: int, max_lines: int) -> Array:
+    var lines: Array = []
+    var line := ""
+    for word in s.split(" "):
+        if line != "" and line.length() + 1 + word.length() > chars:
+            lines.append(line)
+            line = word
+        else:
+            line = word if line == "" else line + " " + word
+    if line != "":
+        lines.append(line)
+    return lines.slice(0, max_lines)
+
+
+# ---- drawing -------------------------------------------------------------------------------------------------------
+func draw(c: CanvasItem, size: Vector2, narrow: bool, rects: Array) -> void:
+    var two := size.x > 250.0
+    var tall := size.y > 150.0
+    var lx := 8.0
+    var points_y := 15.0
+    var sy := 25.0
+    var step := 10.0
+    var col_w := 178.0
+    var rx := 196.0
+    var ry := 25.0
+    var rstep := 11.0
+    var rw := size.x - rx - 6.0
+    var effect_y := 60.0
+    var effect_lines := 4
+    if two and tall:
+        points_y = 28.0
+        sy = 39.0
+        step = 12.0
+        col_w = 152.0
+        rx = 170.0
+        ry = 39.0
+        rstep = 12.0
+        rw = size.x - rx - 6.0
+        effect_y = 79.0
+        effect_lines = 5
+    elif narrow:
+        points_y = 46.0
+        sy = 58.0
+        step = 13.0
+        col_w = size.x - 12.0
+        rx = 6.0
+        rw = size.x - 12.0
+        ry = sy + step * float(rows.size() - 3) + 2.0
+        rstep = 12.0
+        effect_y = ry + rstep * 3.0 + 4.0
+        effect_lines = 6
+    # points left
+    var left := points_left()
+    var budget_text := "POINTS LEFT %d OF %d" % [left, Build.budget(Difficulty.tier) + Build.quirk_points(b)]
+    if narrow:
+        var tw := float(PixelFont.width(budget_text))
+        PixelFont.draw(c, budget_text, Vector2(floorf((size.x - tw) * 0.5), points_y), GOLD if left >= 0 else RED)
+    else:
+        PixelFont.draw(c, budget_text, Vector2(lx, points_y), GOLD if left >= 0 else RED)
+    # stat rows
+    var stats := Build.stats_of(path)
+    for i in stats.size():
+        _draw_stat(c, rects, i, str(stats[i]), Vector2(lx, sy + step * float(i)), col_w, step - 1.0)
+    # chips: preset first in two columns (the quirks follow), quirks then preset in one column
+    var qi := stats.size()
+    var order := [qi + 2, qi, qi + 1] if two else [qi, qi + 1, qi + 2]
+    for k in 3:
+        var ri: int = order[k]
+        _draw_chip(c, rects, ri, Rect2(rx, ry + rstep * float(k), rw, 9.0))
+    # effect text and the message
+    var chars := int((rw - 2.0) / 4.0)
+    var y := effect_y
+    for line in _wrap(effect_text(), chars, effect_lines):
+        PixelFont.draw(c, str(line), Vector2(rx, y), Color.WHITE)
+        y += 8.0
+    var msg := message()
+    if str(msg[0]) != "":
+        var lines := _wrap(str(msg[0]), chars, 2)
+        var my := maxf(y + 3.0, effect_y + 8.0 * float(effect_lines) + 3.0) if two else y + 3.0
+        for line in lines:
+            PixelFont.draw(c, str(line), Vector2(rx, my), msg[1])
+            my += 8.0
+
+
+func _draw_stat(c: CanvasItem, rects: Array, i: int, stat: String, pos: Vector2, w: float, h: float) -> void:
+    var r := Rect2(pos.x - 3.0, pos.y - 1.0, w, h + 1.0)
+    var sel := row == i
+    c.draw_rect(r, SEL if sel else PANEL)
+    if sel:
+        c.draw_rect(r, GOLD, false, 1.0)
+    rects.append([r, "b_row", i])
+    var ty := pos.y + floorf((h - 5.0) * 0.5)
+    var lv := level(stat)
+    var fl := Build.floor_of(stat, who)
+    var cap := mini(Build.MAX_START, Build.cap_of(stat, who))
+    PixelFont.draw(c, Build.stat_name(path, stat), Vector2(pos.x, ty), Color.WHITE if sel else DIM)
+    for k in range(1, 6):
+        var pr := Rect2(pos.x + 62.0 + float(k - 1) * 6.0, pos.y + floorf((h - 4.0) * 0.5), 4.0, 4.0)
+        var col := EMPTY
+        if k <= fl:
+            col = GOLD
+        elif k <= lv:
+            col = PIP
+        elif k > cap:
+            col = LOCKED
+        c.draw_rect(pr, col)
+        rects.append([Rect2(pr.position - Vector2(1, 2), Vector2(6, h)), "b_pip", i * 10 + k])
+    PixelFont.draw(c, "L%d" % lv, Vector2(pos.x + 96.0, ty), GOLD if lv > fl else Color.WHITE)
+    var cost := int(Build.COST[lv]) - int(Build.COST[fl]) if lv > fl else 0
+    if cost > 0 and w > 130.0:
+        PixelFont.draw(c, "-%d" % cost, Vector2(pos.x + 112.0, ty), DIM)
+
+
+func _draw_chip(c: CanvasItem, rects: Array, ri: int, r: Rect2) -> void:
+    var kind := str(rows[ri])
+    var text := ""
+    if kind == "preset":
+        text = "PRESET  " + name_text()
+    else:
+        text = "QUIRK  " + quirk_label(quirk_at(0 if kind == "q1" else 1))
+    c.draw_rect(r, SEL if row == ri else PANEL)
+    c.draw_rect(r, GOLD if row == ri else DIM, false, 1.0)
+    PixelFont.draw(c, "<", r.position + Vector2(3, 2), GOLD)
+    PixelFont.draw(c, ">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+    var tw := float(PixelFont.width(text))
+    PixelFont.draw(c, text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+    rects.append([Rect2(r.position, Vector2(r.size.x * 0.5, r.size.y)), "b_prev", ri])
+    rects.append([Rect2(r.position + Vector2(r.size.x * 0.5, 0.0), Vector2(r.size.x * 0.5, r.size.y)), "b_next", ri])
 ''')
 
 write("scripts/career.gd", '''extends Node

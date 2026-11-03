@@ -1805,6 +1805,8 @@ func _paint_lync() -> void:
 			)
 		return
 	var acts := [["lunch", "LUNCH?"], ["help", "NEED A HAND"], ["thanks", "THANKS!"]]
+	if Owners.asks_owner(lync_sel):
+		acts[1] = ["help", "ASK THE OWNER"]
 	if lync_sel == Lync.boss():
 		acts = [["boss", "ANY ADVICE?" if lync_sel == "Morgan" else "HOW ARE WE DOING?"]]
 	var aw := floorf((w - 6) / float(acts.size()))

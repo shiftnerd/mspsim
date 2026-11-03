@@ -76,8 +76,8 @@ func _init() -> void:
 	)
 	_check(
 		defs.sales.hud == "week_quota" and defs.sales.report == "pnl" and defs.sales.settle == "sales" and defs.sales.review == "sales"
-		and defs.sales.review_pages == 2 and defs.sales.selectable and not defs.service.selectable,
-		"sales: HUD, report, settle and review types; service still planned"
+		and defs.sales.review_pages == 2 and defs.sales.selectable and defs.service.selectable,
+		"sales: HUD, report, settle and review types (service is selectable too)"
 	)
 	_check(
 		defs.owner.pace == 0.6 and defs.tech.pace == 1.0 and not defs.owner.maya_in_events and defs.tech.maya_in_events
@@ -121,7 +121,9 @@ func _init() -> void:
 	var was_mode: String = c.mode
 	c.active = false
 	c.mode = ""
-	for m in ["service"]:
+	for m in c.MODE_DEFS:
+		if c.is_selectable(m):
+			continue  # service became playable in C4 (tests/service_campaign.gd)
 		c.new_game(m)
 		_check(not c.active and c.mode == "", "%s: new_game refuses a planned mode" % m)
 		_check(not c.continue_game(m), "%s: continue_game refuses a planned mode" % m)
@@ -135,8 +137,6 @@ func _init() -> void:
 	c.active = true
 	c.mode = "service"
 	var gates_service := _gates(c)
-	c.save()
-	_check(not c.has_save("service"), "a planned mode is never saved")
 	c.mode = "sales"
 	var gates_sales := _gates(c)  # sales became selectable in C1 (tests/sales_campaign.gd covers its saves)
 	c.active = false

@@ -303,6 +303,12 @@ func _open_menu() -> void:
 		_items.append({"label": "NEW OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
 	else:
 		_items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
+	if Campaign.has_save("service"):
+		var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service")
+		_items.append({"label": service_label, "id": "service_continue", "enabled": true})
+		_items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
+	else:
+		_items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
 	if Campaign.has_save("sales"):
 		_items.append({"label": "CONTINUE SALES - WEEK %d" % Campaign.saved_day("sales"), "id": "sales_continue", "enabled": true})
 		_items.append({"label": "NEW SALES CAMPAIGN", "id": "sales_new", "enabled": true})
@@ -373,6 +379,8 @@ func _open_select(id: String) -> void:
 		mode = "tech"
 	elif id == "owner_new":
 		mode = "owner"
+	elif id == "service_new":
+		mode = "service"
 	elif id == "sales_new":
 		mode = "sales"
 	_select = CharSelect.new()
@@ -418,6 +426,10 @@ func _start(id: String, summary := "") -> void:
 			Campaign.new_game("owner")
 		"owner_continue":
 			Campaign.continue_game("owner")
+		"service_new":
+			Campaign.new_game("service")
+		"service_continue":
+			Campaign.continue_game("service")
 		"sales_new":
 			Campaign.new_game("sales")
 		"sales_continue":
