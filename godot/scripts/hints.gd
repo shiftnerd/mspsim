@@ -22,6 +22,10 @@ const DEFAULT_DAY1 := [
 		"at": 90.0,
 		"text": "TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA."
 	},
+	{
+		"at": 112.0,
+		"text": "SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP."
+	},
 ]
 var DAY1: Array = DEFAULT_DAY1.duplicate(true)
 

@@ -3,6 +3,7 @@ extends CharacterBody2D
 # E use/sit/chat, Q wave, X dance, C follow me, F sip, H/K/R hurt/die/revive, 1-6 character.
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
+const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
 const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
 const GRAVITY := 900.0
@@ -40,6 +41,7 @@ var _bubble: Node2D = null
 var _pick: Node = null  # the target chosen with Tab (until you walk away from it)
 var _pick_x := 0.0
 var _near: Array[Node] = []  # doors / seats whose area we are inside
+var _roll: Node  # rolls the desk chair you sit in (Shift + A / D, see chair_roll.gd)
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var body_shape: CollisionShape2D = $Collision
@@ -55,6 +57,8 @@ func _ready() -> void:
 	_head_item = HELD_ITEM.new()
 	_head_item.mode = "ear"
 	add_child(_head_item)
+	_roll = CHAIR_ROLL.new()
+	add_child(_roll)
 	add_to_group("player")
 	_load_character(current_character)
 	sprite.animation_finished.connect(_on_animation_finished)
@@ -456,6 +460,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 	_call_tick(delta)
+	_roll.update(self, delta)
 	var locked: bool = Game.busy
 	var dir := 0.0 if locked else Input.get_axis("move_left", "move_right")
 	var running := Input.is_action_pressed("run")
@@ -481,7 +486,9 @@ func _physics_process(delta: float) -> void:
 
 	if state in ["sitdown", "sitting", "standup"]:
 		velocity = Vector2.ZERO
-		if state == "sitting" and interact and _ringing_phone() != null:
+		if state == "sitting" and running and dir != 0.0 and _roll.drive(self, dir, delta):
+			pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
+		elif state == "sitting" and interact and _ringing_phone() != null:
 			_ringing_phone().use(self)
 		elif state == "sitting" and interact and _seat_computer() != null:
 			_seat_computer().use(self)

@@ -98,6 +98,7 @@ Bowling, karaoke, an escape room, dinner. A way for the team to be people, not j
   *dinner* (the most expensive, best for one-on-one talks with a struggling hire or the team lead), *a team off-site / holiday party* (once a year, a larger bill).
 - **Hooks:** `Social` (opinions), `Owner` burnout / morale, the `Cards` UI (invitation and choices), a new "outing" Set or two (bowling alley, karaoke bar) built with the existing set tooling, the coworker invite lines already on the list ("lunch?").
 - **Free Play / film mode:** the outing sets and scenes are useful as extra locations for filming even without the game loop.
+- **Chair race and rolling chairs, follow-ups (R12 shipped the first pass):** a second course (the kitchenette loop, the conference room table), a real in-room version that races through `main_floor` and `cubicle_area` with the cast sprites on chairs, shoving someone else's chair or a coworker's chair as a prank (with the Nerf opinion rules), chair joust, a "boss walks in" slowdown, medals (CLEAN LAP, SPEED DEMON), a tiny time-trial ghost of your best run, a seeded course layout per day, and spinning with a tap (a chair is allowed to spin).
 - **Keep it optional and kind:** nobody should be punished for family or health reasons; "can't make it" should be a graceful option with a mild, honest consequence, not a hidden penalty.
 
 ## LabRat Nerds: the community forum and IRC channel (2013 culture)

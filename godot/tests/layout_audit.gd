@@ -378,4 +378,32 @@ func _floor_phase() -> void:
 	sv.hire_card()
 	await _end("hiring card")
 	_clear(cards)
+	# ---- the chair race: intro page, countdown, the race under way, result page
+	var out := root.get_node("Outings")
+	out.enabled = true
+	out.use_rooms = false
+	_begin()
+	out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+	await _end("chair race intro")
+	out.press(KEY_ENTER)
+	_begin()
+	out.tick(0.5)
+	await _end("chair race countdown")
+	out.tick(2.6)
+	out.g.race.pos = Vector2(300.0, 88.0)
+	out.g.race.seg = 3
+	out.g.race.speed = 30.0
+	out.g.race._say("CHECKPOINT 1 OF 4", 5.0)
+	out.tick(0.5)
+	_begin()
+	await _end("chair race racing")
+	out.g.race.finish_t = 21.5
+	out.g.race.penalty = 3.5
+	out.g.race.phase = "done"
+	out.g.race.end_t = 2.0
+	out.tick(0.1)
+	_begin()
+	await _end("chair race result")
+	out.close()
+	out.enabled = false
 	print("floor phase done for ", fmt, " (crew ", crew.members.size(), ")")

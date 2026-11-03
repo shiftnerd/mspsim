@@ -51,6 +51,13 @@ const TABLE := {
 	"printer.chain": [3, 3, 5],
 	# nerf war: how long the coworkers wait between shots, x
 	"nerf.gap": [1.35, 1.0, 0.7],
+	# chair race (R12): seconds a wall or a trash can costs, x on the stamina a push costs, x on the size of the wet puddle,
+	# x on the 3 and 2 star times, added to the rivals' skill (0.46 to 0.56 today)
+	"chair.crash": [0.7, 1.0, 1.5],
+	"chair.stamina": [0.9, 1.0, 1.1],
+	"chair.slick": [0.8, 1.0, 1.3],
+	"chair.par": [1.2, 1.0, 0.9],
+	"chair.skill": [-0.08, 0.0, 0.08],
 	# Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
 	# SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
 	# (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).
