@@ -10,13 +10,14 @@ extends CanvasLayer
 signal finished(game: String, stars: int)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const INK := Color("17121f")
-const WHITE := Color("ffffff")
-const PANEL := Color("e9ecf1")
-const BLUE := Color("1f4e8c")
-const GREEN := Color("2f9e4f")
-const RED := Color("c0392b")
-const AMBER := Color("e0a030")
+const UiStyle := preload("res://scripts/ui_style.gd")
+const INK := UiStyle.INK
+const WHITE := UiStyle.WHITE
+const PANEL := UiStyle.PANEL
+const BLUE := UiStyle.HEAD
+const GREEN := UiStyle.GREEN
+const RED := UiStyle.RED
+const AMBER := UiStyle.GOLD
 const GAMES := {
 	"bowling":
 	{
@@ -24,7 +25,7 @@ const GAMES := {
 		"cost": 120,
 		"blurb":
 		"FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
-		"keys": "SPACE = AIM/POWER  ESC = LEAVE"
+		"keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"
 	},
 	"karaoke":
 	{
@@ -32,7 +33,7 @@ const GAMES := {
 		"cost": 180,
 		"blurb":
 		"HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.",
-		"keys": "ARROW KEYS   ESC = LEAVE"
+		"keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"
 	},
 	"escape":
 	{
@@ -40,7 +41,7 @@ const GAMES := {
 		"cost": 240,
 		"blurb":
 		"CRACK THE 3 DIGIT CODE IN TWO MINUTES. BULLS = RIGHT DIGIT, RIGHT PLACE. COWS = RIGHT DIGIT, WRONG PLACE. FRIENDS GIVE HINTS.",
-		"keys": "ARROWS  ENTER = TRY  H = HINT"
+		"keys": "ARROWS  ENTER = TRY  H = HINT  ESC = LEAVE"
 	},
 	"dinner":
 	{
@@ -48,7 +49,7 @@ const GAMES := {
 		"cost": 300,
 		"blurb":
 		"FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.",
-		"keys": "UP/DOWN  ENTER = TALK"
+		"keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
@@ -74,12 +75,6 @@ const ROOM_INTRO := {
 	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK AND THE PAINTING (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. TWO MINUTES.",
 	"dinner":
 	"WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE AND WATCH THEIR FACES.",
-}
-const ROOM_KEYS := {
-	"bowling": "E = STEP UP / AIM / POWER",
-	"karaoke": "ARROW KEYS",
-	"escape": "E = USE   N = HINT",
-	"dinner": "UP / DOWN   ENTER",
 }
 const SONG_LEN := 24
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
@@ -476,7 +471,7 @@ func _bowl_setup() -> void:
 	}
 	if room_mode():
 		g.stage = "ready"
-		caption("YOUR TURN: PRESS E TO BOWL", 99.0)
+		caption("YOUR TURN. PRESS E TO STEP UP.", 99.0)
 
 
 func _bowl_tick(dt: float) -> void:
@@ -510,22 +505,25 @@ func _bowl_tick(dt: float) -> void:
 func _bowl_press(key: int) -> void:
 	if key not in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E]:
 		return
+	if room_mode() and g.stage not in ["ready", "aim", "power"]:
+		caption("WAIT. E DOES NOTHING UNTIL IT IS YOUR TURN.", 1.5)
+		return
 	if g.stage == "ready":
 		_place_player(_x0() + float(LANE_NEAR[0]))
 		_hold_player("idle")
 		g.stage = "aim"
 		g.marker = 0.0
 		g.dir = 1.0
-		caption("E STOPS THE AIM", 3.0)
+		caption("PRESS E TO STOP THE AIM (STOP IN THE GREEN).", 99.0)
 	elif g.stage == "aim":
 		g.stage = "power"
 		g.power = 0.0
 		g.dir = 1.0
-		caption("E AGAIN FOR POWER (STOP IN THE GREEN)", 3.0)
+		caption("PRESS E TO STOP THE POWER (STOP IN THE GREEN).", 99.0)
 	elif g.stage == "power":
 		g.stage = "roll"
 		g.ball = 0.0
-		_caption_t = 0.0
+		caption("WAIT. THE BALL IS ROLLING.", 3.0)
 		var p := _actor("Player")
 		if p != null:
 			p.start_emote("reach", 0.8)
@@ -590,11 +588,14 @@ func _bowl_next() -> void:
 		g.stage = "aim"
 		g.marker = 0.0
 		g.dir = 1.0
+		if room_mode():
+			caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
 		return
 	if room_mode():
 		g.queue = BOWL_SKILL.keys()
 		g.opp = ""
 		g.stage = "others"
+		caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
 		return
 	for who in BOWL_SKILL:
 		g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
@@ -614,7 +615,7 @@ func _bowl_advance() -> void:
 	g.msg = ""
 	g.up = [_all_up(), _all_up()]
 	if room_mode():
-		caption("FRAME %d: PRESS E TO BOWL" % int(g.frame), 99.0)
+		caption("FRAME %d. YOUR TURN: PRESS E TO STEP UP." % int(g.frame), 99.0)
 
 
 # the crew takes its turn on the next lane, one at a time
@@ -633,7 +634,7 @@ func _bowl_others(dt: float) -> void:
 		g.opp_t = 0.0
 		g.opp_phase = 0
 		g.up[1] = _all_up()
-		caption("%s STEPS UP" % str(g.opp).to_upper(), 1.5)
+		caption("WAIT. %s STEPS UP." % str(g.opp).to_upper(), 1.5)
 		return
 	if int(g.opp_phase) == 0:
 		g.opp_ball = minf(1.0, float(g.opp_t) / 0.6)
@@ -1023,6 +1024,40 @@ func _room_press(key: int) -> bool:
 	return false
 
 
+# E belongs to the bowling game while it runs (the crew should not answer it)
+func blocks_interact() -> bool:
+	return is_open and room_mode() and phase == "play" and game == "bowling"
+
+
+# the one control hint line: pages show it as their footer, rooms in the bar at the bottom
+func hint() -> String:
+	if phase == "intro":
+		return "ENTER = START  ESC = SKIP  TAB = LOOK" if _traveled else "ENTER = START  ESC = SKIP"
+	if phase == "result":
+		return "ENTER = CONTINUE"
+	if not room_mode():
+		return str(GAMES[game].keys)
+	match game:
+		"bowling":
+			match str(g.get("stage", "")):
+				"ready":
+					return "E = STEP UP  ESC = LEAVE"
+				"aim":
+					return "E = STOP THE AIM  ESC = LEAVE"
+				"power":
+					return "E = STOP THE POWER  ESC = LEAVE"
+			return "WAIT FOR YOUR TURN  ESC = LEAVE"
+		"karaoke":
+			return "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+		"escape":
+			if g.get("entry", false):
+				return "ARROWS  ENTER = TRY  ESC = BACK"
+			return "E = LOOK / USE  N = HINT  ESC = LEAVE"
+	if str(g.get("stage", "")) == "talk":
+		return "UP / DOWN  ENTER = TALK  ESC = LEAVE"
+	return "E = SIT DOWN  ESC = LEAVE"
+
+
 # ---- karaoke extras
 func _cheer() -> void:
 	var who: String = (DINERS + ["Vic"])[randi() % 4]
@@ -1162,82 +1197,88 @@ func _dinner_react() -> void:
 
 # ---- the in-room display (replaces the panel while you play)
 func _paint_hud(size: Vector2) -> void:
+	UiStyle.hint_bar(_canvas, size, hint())
+	var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
+	var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, 164.0), UiStyle.STRIP_H)
 	match game:
 		"bowling":
-			_hud_bowling(size)
+			_hud_bowling(strip)
 		"karaoke":
-			_hud_karaoke(size)
+			_hud_karaoke(strip)
 		"escape":
-			_hud_escape(size)
+			_hud_escape(strip)
 		_:
-			_hud_dinner(size)
-	if _caption_t > 0.0 and _caption != "":
-		var chars := int((size.x - 16.0) / 4.0)
-		var wrapped := _wrap(_caption, chars)
-		var h := float(wrapped.size()) * 7.0 + 4.0
-		_canvas.draw_rect(
-			Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.82)
-		)
-		for i in wrapped.size():
-			_t(str(wrapped[i]), 8.0, size.y - h + 0.0 + float(i) * 7.0, WHITE)
+			_hud_dinner(strip, size)
 
 
-func _hud_bowling(size: Vector2) -> void:
-	var x := floorf(size.x * 0.5 - 40.0)
-	var y := size.y - 30.0
+func _hud_bowling(s: Rect2) -> void:
+	var o := UiStyle.strip(_canvas, s)
+	_t("FRAME %d OF 5" % int(g.frame), o.x, o.y, WHITE)
 	var stage := str(g.stage)
-	if stage not in ["aim", "power"]:
-		return
-	_canvas.draw_rect(Rect2(x - 4.0, y - 10.0, 88.0, 22.0), Color(0.04, 0.03, 0.08, 0.82))
-	var bar := Rect2(x, y, 80.0, 5.0)
-	_canvas.draw_rect(bar, Color("c9d2e0"))
-	if stage == "aim":
-		_canvas.draw_rect(Rect2(x + 32.0, y, 16.0, 5.0), GREEN)
-		_canvas.draw_rect(Rect2(x + 79.0 * float(g.marker), y - 2.0, 2.0, 9.0), WHITE)
-		_t("AIM", x, y - 8.0, WHITE)
+	var x := s.position.x + 58.0
+	if stage == "aim" or stage == "power":
+		var bar := Rect2(s.position.x + 82.0, s.position.y + 3.0, 80.0, 5.0)
+		_canvas.draw_rect(bar, UiStyle.SOFT)
+		if stage == "aim":
+			_canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
+			_canvas.draw_rect(Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0), WHITE)
+			_t("AIM", x, o.y, WHITE)
+		else:
+			_canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
+			_canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER)
+			_t("POWER", x, o.y, WHITE)
 	else:
-		_canvas.draw_rect(Rect2(x + 58.0, y, 14.0, 5.0), GREEN)
-		_canvas.draw_rect(Rect2(x, y, 80.0 * float(g.power), 5.0), AMBER)
-		_t("POWER", x, y - 8.0, WHITE)
-	_t("FRAME %d OF 5" % int(g.frame), x + 38.0, y - 8.0, Color("c9d2e0"))
+		var status := "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+		_t(status, x, o.y, UiStyle.SOFT)
 
 
-func _hud_karaoke(size: Vector2) -> void:
-	var b := Rect2(6.0, size.y - 84.0, 100.0, 78.0)
-	_canvas.draw_rect(b, Color(0.04, 0.03, 0.08, 0.7))
-	_paint_karaoke(Rect2(b.position.x + 2.0, b.position.y + 2.0, b.size.x - 4.0, b.size.y - 4.0))
+func _hud_karaoke(s: Rect2) -> void:
+	var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
+	UiStyle.box(_canvas, lanes)
+	_paint_karaoke(Rect2(lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0), true)
+	var o := UiStyle.strip(_canvas, s)
+	_t("SCORE %d  STREAK %d" % [int(g.score), int(g.streak)], o.x, o.y, WHITE)
+	if float(g.flash_t) > 0.0:
+		_t(str(g.flash), s.position.x + 88.0, o.y, GREEN if g.flash != "MISS" else RED)
 
 
-func _hud_escape(size: Vector2) -> void:
-	_canvas.draw_rect(Rect2(4.0, 22.0, 130.0, 15.0), Color(0.04, 0.03, 0.08, 0.7))
-	_t("CLUES %d OF 3   HINTS %d" % [g.found.size(), int(g.hints)], 8.0, 25.0, WHITE)
-	_t("N = HINT   E = LOOK / USE", 8.0, 31.0, Color("c9d2e0"))
-	if g.get("entry", false):
-		var cx := size.x * 0.5
-		var y := size.y - 58.0
-		_canvas.draw_rect(Rect2(cx - 40.0, y, 80.0, 28.0), Color(0.04, 0.03, 0.08, 0.85))
-		for i in 3:
-			var r := Rect2(cx - 30.0 + 22.0 * float(i), y + 4.0, 16.0, 20.0)
-			_canvas.draw_rect(r, WHITE)
-			_canvas.draw_rect(
-				Rect2(r.position.x, r.end.y - 2.0, 16.0, 2.0),
-				BLUE if int(g.cursor) == i else Color("c9d2e0")
-			)
-			PixelFont.draw(_canvas, str(int(g.cur[i])), r.position + Vector2(5.0, 5.0), INK, 2)
-
-
-func _hud_dinner(size: Vector2) -> void:
-	if str(g.get("stage", "")) != "talk":
+func _hud_escape(s: Rect2) -> void:
+	var o := UiStyle.strip(_canvas, s)
+	if not g.get("entry", false):
+		_t("CLUES %d OF 3  HINTS %d" % [g.found.size(), int(g.hints)], o.x, o.y, WHITE)
 		return
-	var x := floorf(size.x * 0.5 - 56.0)
-	var y := size.y - 66.0
-	_canvas.draw_rect(Rect2(x - 4.0, y - 4.0, 120.0, 52.0), Color(0.04, 0.03, 0.08, 0.82))
-	_t("ROUND %d OF 5   SCORE %d" % [int(g.round), int(g.score)], x, y, Color("c9d2e0"))
+	_t("CODE", o.x, o.y, WHITE)
+	for i in 3:
+		var r := Rect2(s.position.x + 32.0 + 12.0 * float(i), s.position.y + 1.0, 10.0, 9.0)
+		_canvas.draw_rect(r, WHITE)
+		_canvas.draw_rect(
+			Rect2(r.position.x, r.end.y - 1.0, 10.0, 1.0),
+			BLUE if int(g.cursor) == i else UiStyle.SOFT
+		)
+		PixelFont.draw(
+			_canvas,
+			str(int(g.cur[i])),
+			r.position + Vector2(3.0, 2.0),
+			GREEN if g.revealed.has(i) else INK,
+			1
+		)
+
+
+func _hud_dinner(s: Rect2, size: Vector2) -> void:
+	var o := UiStyle.strip(_canvas, s)
+	if str(g.get("stage", "")) != "talk":
+		_t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
+		return
+	_t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+	var w := minf(size.x - 8.0, 112.0)
+	var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
+	UiStyle.box(_canvas, box)
 	for i in 4:
 		var on: bool = int(g.sel) == i and g.react.is_empty()
+		var ry := box.position.y + 4.0 + 9.0 * float(i)
 		if on:
-			_canvas.draw_rect(Rect2(x - 1.0, y + 8.0 + 9.0 * float(i), 112.0, 8.0), Color("ffe08a"))
-		_t(str(g.options[i]), x + 2.0, y + 10.0 + 9.0 * float(i), INK if on else WHITE)
+			_canvas.draw_rect(Rect2(box.position.x + 2.0, ry - 1.0, w - 4.0, 8.0), Color("ffe08a"))
+		_t(str(g.options[i]), box.position.x + 4.0, ry, INK if on else WHITE)
 
 
 # ---- drawing ------------------------------------------------------------------------------------
@@ -1250,25 +1291,11 @@ func _tc(s: String, cx: float, y: float, color := INK) -> void:
 
 
 func _wrap(s: String, chars: int) -> Array:
-	var out := []
-	var line := ""
-	for word in s.split(" "):
-		if line != "" and line.length() + 1 + word.length() > chars:
-			out.append(line)
-			line = word
-		else:
-			line = word if line == "" else line + " " + word
-	out.append(line)
-	return out
+	return UiStyle.wrap_text(s, chars)
 
 
 func _star(c: Vector2, r: float, color: Color) -> void:
-	var pts := PackedVector2Array()
-	for i in 10:
-		var ang := -PI * 0.5 + PI * float(i) / 5.0
-		var rr := r if i % 2 == 0 else r * 0.45
-		pts.append(c + Vector2(cos(ang), sin(ang)) * rr)
-	_canvas.draw_colored_polygon(pts, color)
+	UiStyle.star(_canvas, c, r, color)
 
 
 func _arrow(lane: int, c: Vector2, size: float, color: Color) -> void:
@@ -1294,25 +1321,14 @@ func _paint() -> void:
 		_paint_hud(size)
 		return
 	if _traveled and _peek:
-		_t("TAB = BACK TO THE GAME", 4.0, size.y - 9.0, WHITE)
+		UiStyle.hint_bar(_canvas, size, "TAB = BACK TO THE GAME")
 		return
 	_canvas.draw_rect(
 		Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
 	)
-	var pw := minf(size.x - 8.0, 250.0)
-	var ph := minf(size.y - 26.0, 112.0)
-	var panel := Rect2(
-		floorf((size.x - pw) * 0.5), 18.0 + floorf((size.y - 18.0 - ph) * 0.5), pw, ph
-	)
-	_canvas.draw_rect(panel, Color(PANEL, 0.88 if _traveled else 1.0))
-	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9.0)), BLUE)
-	_t(
-		str(GAMES[game].label) + ("  TEAM OUTING" if phase != "result" else "  RESULT"),
-		panel.position.x + 3.0,
-		panel.position.y + 2.0,
-		WHITE
-	)
-	var body := Rect2(panel.position.x + 4.0, panel.position.y + 12.0, pw - 8.0, ph - 12.0 - 9.0)
+	var panel := UiStyle.panel_rect(size, 250.0, 112.0)
+	var title := str(GAMES[game].label) + ("  TEAM OUTING" if phase != "result" else "  RESULT")
+	var body := UiStyle.panel(_canvas, panel, title, "", 0.88 if _traveled else 1.0)
 	match phase:
 		"intro":
 			_paint_intro(body)
@@ -1328,16 +1344,7 @@ func _paint() -> void:
 					_paint_escape(body)
 				_:
 					_paint_dinner(body)
-	var foot := (
-		"ENTER = START   ESC = SKIP   TAB = LOOK"
-		if phase == "intro" and _traveled
-		else (
-			"ENTER = START   ESC = SKIP"
-			if phase == "intro"
-			else ("ENTER = CONTINUE" if phase == "result" else str(GAMES[game].keys))
-		)
-	)
-	_t(foot, panel.position.x + 3.0, panel.end.y - 7.0, Color("46506a"))
+	UiStyle.footer(_canvas, panel, hint())
 
 
 func _paint_intro(b: Rect2) -> void:
@@ -1355,64 +1362,48 @@ func _paint_intro(b: Rect2) -> void:
 
 
 func _paint_result(b: Rect2) -> void:
-	var cx := b.position.x + b.size.x * 0.5
-	for i in 3:
-		_star(
-			Vector2(cx - 24.0 + 24.0 * float(i), b.position.y + 10.0),
-			9.0,
-			AMBER if i < stars else Color("c9d2e0")
-		)
+	UiStyle.stars(_canvas, b.position.x + b.size.x * 0.5, b.position.y, stars)
 	var y := b.position.y + 24.0
 	for line in lines:
 		for part in _wrap(str(line), int(b.size.x / 4.0)):
 			_t(part, b.position.x, y)
 			y += 7.0
-	if game == "bowling" and not g.is_empty():
-		_t(
-			(
-				"YOU %d  ALAN %d  GARRISON %d  DAN %d"
-				% [
-					int(g.totals["You"]),
-					int(g.totals["Alan"]),
-					int(g.totals["Garrison"]),
-					int(g.totals["Dan"])
-				]
-			),
-			b.position.x,
-			y + 3.0,
-			BLUE
-		)
-	if game == "karaoke" and not g.is_empty():
-		_t(
-			"PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)],
-			b.position.x,
-			y + 3.0,
-			BLUE
-		)
-	if game == "escape" and not g.is_empty():
-		_t(
-			(
-				"CODE %d%d%d  TRIES %d  HINTS %d"
-				% [
-					int(g.code[0]),
-					int(g.code[1]),
-					int(g.code[2]),
-					maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
-					int(g.hints_used)
-				]
-			),
-			b.position.x,
-			y + 3.0,
-			BLUE
-		)
-	if game == "dinner" and not g.is_empty():
-		_t("TABLE SCORE %d OF 30" % int(g.score), b.position.x, y + 3.0, BLUE)
+	var detail := ""
+	if not g.is_empty():
+		match game:
+			"bowling":
+				detail = (
+					"YOU %d  ALAN %d  GARRISON %d  DAN %d"
+					% [
+						int(g.totals["You"]),
+						int(g.totals["Alan"]),
+						int(g.totals["Garrison"]),
+						int(g.totals["Dan"])
+					]
+				)
+			"karaoke":
+				detail = "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
+			"escape":
+				detail = (
+					"CODE %d%d%d  TRIES %d  HINTS %d"
+					% [
+						int(g.code[0]),
+						int(g.code[1]),
+						int(g.code[2]),
+						maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
+						int(g.hints_used)
+					]
+				)
+			"dinner":
+				detail = "TABLE SCORE %d OF 30" % int(g.score)
+	if detail != "":
+		_t(detail, b.position.x, y + 3.0, BLUE)
 
 
 func _paint_bowling(b: Rect2) -> void:
 	var x := b.position.x
 	var y := b.position.y
-	_t("FRAME %d OF 5   ROLL %d" % [int(g.frame), int(g.roll)], x, y)
+	_t("FRAME %d  ROLL %d" % [int(g.frame), int(g.roll)], x, y)
 	var names := ["You", "Alan", "Garrison", "Dan"]
 	for i in 4:
 		_t(
@@ -1458,20 +1449,22 @@ func _paint_bowling(b: Rect2) -> void:
 		_t(str(g.msg), x, bar_y - 8.0, RED if "GUTTER" in str(g.msg) else GREEN)
 
 
-func _paint_karaoke(b: Rect2) -> void:
+func _paint_karaoke(b: Rect2, hud := false) -> void:
 	var x := b.position.x
 	var y := b.position.y
-	_t("TOTALLY LEGAL HIT (2013)", x, y, BLUE)
-	_t("SCORE %d   STREAK %d" % [int(g.score), int(g.streak)], x, y + 8.0)
+	var top := y + (2.0 if hud else 18.0)
+	if not hud:
+		_t("TOTALLY LEGAL HIT (2013)", x, y, BLUE)
+		_t("SCORE %d   STREAK %d" % [int(g.score), int(g.streak)], x, y + 8.0)
 	var line_y := b.end.y - 12.0
 	var left := b.position.x + b.size.x * 0.5 - 40.0
 	for lane in 4:
 		var cx := left + 20.0 * float(lane) + 10.0
-		_canvas.draw_rect(Rect2(cx - 9.0, y + 18.0, 18.0, line_y - y - 12.0), Color("dde3ee"))
+		_canvas.draw_rect(Rect2(cx - 9.0, top, 18.0, line_y + 6.0 - top), Color("dde3ee"))
 		_arrow(lane, Vector2(cx, line_y), 5.0, Color(LANE_COLORS[lane], 0.45))
 	for n in g.notes:
 		var dy: float = (float(n.time) - float(g.t)) * 45.0
-		if dy < -14.0 or dy > line_y - y - 14.0:
+		if dy < -14.0 or dy > line_y - top + 4.0:
 			continue
 		var col: Color = LANE_COLORS[int(n.lane)]
 		if n.state == "miss":
@@ -1479,10 +1472,10 @@ func _paint_karaoke(b: Rect2) -> void:
 		elif n.state != "":
 			col = Color(col, 0.35)
 		_arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
-	if float(g.flash_t) > 0.0:
+	if float(g.flash_t) > 0.0 and not hud:
 		_tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
 	var song := minf(1.0, float(g.t) / (1.5 + 0.75 * float(SONG_LEN)))
-	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), Color("c9d2e0"))
+	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), UiStyle.SOFT)
 	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x * song, 3.0), BLUE)
 
 

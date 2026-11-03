@@ -3732,7 +3732,7 @@ PAPER JAM 13.20.00. THEY ALWAYS SAY THAT.
 
 # PrinterGame > TEXT > intro3
 [PrinterGame.TEXT.intro3]
-SPACE TO BEGIN, ESC TO GIVE UP
+SPACE = START  ESC = SKIP
 
 # PrinterGame > TEXT > jam_help
 [PrinterGame.TEXT.jam_help]

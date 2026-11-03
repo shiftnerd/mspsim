@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sets/escape_room.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
@@ -36,6 +36,9 @@ size = Vector2(26, 60)
 
 [sub_resource type="RectangleShape2D" id="shape_fx"]
 size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_clue"]
+size = Vector2(36, 96)
 
 [sub_resource type="RectangleShape2D" id="shape_rack"]
 size = Vector2(100, 60)
@@ -102,7 +105,7 @@ script = ExtResource("interact")
 target = NodePath("../../Fx/Keypad")
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseKeypad"]
-shape = SubResource("shape_fx")
+shape = SubResource("shape_clue")
 
 [node name="UseBoard" type="Area2D" parent="Interactables"]
 position = Vector2(238, 70)
@@ -110,7 +113,7 @@ script = ExtResource("interact")
 target = NodePath("../../Fx/Board")
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseBoard"]
-shape = SubResource("shape_fx")
+shape = SubResource("shape_clue")
 
 [node name="UseWallClock" type="Area2D" parent="Interactables"]
 position = Vector2(86, 70)
@@ -118,7 +121,7 @@ script = ExtResource("interact")
 target = NodePath("../../Fx/WallClock")
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseWallClock"]
-shape = SubResource("shape_fx")
+shape = SubResource("shape_clue")
 
 [node name="UsePainting" type="Area2D" parent="Interactables"]
 position = Vector2(149, 70)
@@ -126,7 +129,7 @@ script = ExtResource("interact")
 target = NodePath("../../Fx/Painting")
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UsePainting"]
-shape = SubResource("shape_fx")
+shape = SubResource("shape_clue")
 
 [node name="Fx" type="Node2D" parent="."]
 

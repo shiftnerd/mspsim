@@ -13,6 +13,7 @@ extends CanvasLayer
 # The questions and texts are in QUESTIONS / TEXT so reviewers can edit them in story/strings.txt.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
 const PW := 176.0
 const PH := 112.0
 const INK := Color("17121f")
@@ -24,7 +25,7 @@ const DEFAULT_TEXT := {
 	"title": "PRINTER REPAIR",
 	"intro1": "THE COPIER GRINDS AND THE DISPLAY SAYS",
 	"intro2": "PAPER JAM 13.20.00. THEY ALWAYS SAY THAT.",
-	"intro3": "SPACE TO BEGIN, ESC TO GIVE UP",
+	"intro3": "SPACE = START  ESC = SKIP",
 	"jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN",
 	"jam_clean": "A CLEAN PULL. THE SHEET COMES OUT WHOLE.",
 	"jam_hold": "IT HOLDS. NOT QUITE: TRY AGAIN.",
@@ -42,7 +43,7 @@ const DEFAULT_TEXT := {
 	"stars2": "GOOD ENOUGH. A FEW STREAKS.",
 	"stars1": "IT PRINTS. MOSTLY.",
 	"stars0": "YOU GIVE UP. THE PRINTER WINS.",
-	"done": "SPACE TO CLOSE",
+	"done": "SPACE = CONTINUE",
 	"tray_help": "PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
 	"tray_ok": "LETTER PAPER IN TRAY 2. PC LOAD LETTER IS SOLVED. YOU ARE A HERO.",
 	"tray_bad": "WRONG PAPER. THE PRINTER JAMS ON PRINCIPLE.",
@@ -442,6 +443,7 @@ func _process(delta: float) -> void:
 
 # ---- drawing
 var _o := Vector2.ZERO
+var _pw := PW
 
 
 func _r(x: float, y: float, w: float, h: float, c: Color) -> void:
@@ -469,16 +471,15 @@ func _wrap(s: String, chars: int) -> Array:
 func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.7))
-	_o = ((size - Vector2(PW, PH)) * 0.5).floor()
-	_r(-1, -1, PW + 2, PH + 2, INK)
-	_r(0, 0, PW, PH, BODY)
-	_r(0, 0, PW, 9, Color("4a5a78"))
-	_txt(str(TEXT.title), 3, 2, Color.WHITE)
-	var mis := "MISTAKES %d" % mistakes
-	_txt(mis, PW - PixelFont.width(mis) - 3, 2, Color("ffd6d0"))
+	var panel := UiStyle.panel_rect(size, PW, PH)
+	_o = panel.position
+	_pw = panel.size.x
+	var note := "MISTAKES %d" % mistakes
 	if phase != "result":
-		var faith_line := "P PRAY %d" % faith + ("  BLESSED %d" % blessed if blessed > 0 else "")
-		_txt(faith_line, 4, PH - 6.0, Color("8a5a2b") if blessed == 0 else Color("2e7a3a"))
+		note += "  PRAY %d" % faith
+	UiStyle.panel(_canvas, panel, str(TEXT.title), note)
+	if blessed > 0 and phase != "result":
+		_txt(str(TEXT.blessed_tag), 64, 2, Color("9cf0b0"))
 	match phase:
 		"intro":
 			_paint_intro()
@@ -494,9 +495,29 @@ func _paint() -> void:
 			_paint_test()
 		"result":
 			_paint_result()
-	var lines := _wrap(msg, int((PW - 8.0) / 4.0))
-	for i in mini(lines.size(), 3):
-		_txt(str(lines[i]), 4, PH - 13.0 - float(mini(lines.size(), 3) - i) * 7.0, Color("46506a"))
+	if phase != "result":
+		var lines := _wrap(msg, int((panel.size.x - 8.0) / 4.0))
+		for i in mini(lines.size(), 3):
+			_txt(str(lines[i]), 4, panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0, UiStyle.MUTED)
+	UiStyle.footer(_canvas, panel, _hint())
+
+
+# the same KEY = ACTION hint line the outing pages use
+func _hint() -> String:
+	match phase:
+		"intro":
+			return str(TEXT.intro3)
+		"jam":
+			return "SPACE = PULL  P = PRAY  ESC = GIVE UP"
+		"tray":
+			return "LEFT / RIGHT  SPACE = LOAD  P = PRAY"
+		"toner":
+			return "LEFT / RIGHT  SPACE = FIT  P = PRAY"
+		"shake":
+			return "A / D = SHAKE  P = PRAY  ESC = GIVE UP"
+		"test":
+			return "SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+	return str(TEXT.done)
 
 
 func _printer(y: float) -> void:
@@ -511,7 +532,7 @@ func _printer(y: float) -> void:
 
 func _paint_intro() -> void:
 	_printer(16)
-	var lines := [str(TEXT.intro1), str(TEXT.intro2), "", str(TEXT.intro3)]
+	var lines := [str(TEXT.intro1), str(TEXT.intro2)]
 	for i in lines.size():
 		_txt(str(lines[i]), 6, 62.0 + float(i) * 7.0)
 
@@ -599,8 +620,9 @@ func _paint_test() -> void:
 
 
 func _paint_result() -> void:
-	for i in 3:
-		var col := Color("f2c94c") if i < stars else Color("8a8f9a")
-		_r(46.0 + 30.0 * float(i), 28, 20, 20, INK)
-		_r(48.0 + 30.0 * float(i), 30, 16, 16, col)
-	_txt(str(TEXT.done), 10, 60)
+	UiStyle.stars(_canvas, _o.x + _pw * 0.5, _o.y + 12.0, stars)
+	var y := 36.0
+	for part in _wrap(msg, int((PW - 8.0) / 4.0)):
+		_txt(str(part), 4, y)
+		y += 7.0
+	_txt("MISTAKES %d" % mistakes, 4, y + 3.0, UiStyle.HEAD)
