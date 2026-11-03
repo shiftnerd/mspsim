@@ -37,7 +37,7 @@ func reset() -> void:
 
 
 func is_meeting_day(day: int) -> bool:
-	return Campaign.active and MEETING_DAYS.has(day)
+	return Campaign.active and Campaign.mode != "sales" and MEETING_DAYS.has(day)
 
 
 func to_dict() -> Dictionary:

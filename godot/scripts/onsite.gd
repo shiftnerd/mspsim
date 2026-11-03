@@ -1308,6 +1308,9 @@ func door_clients() -> Array:
 func offer_door() -> void:
 	if active or Cards.is_open or Game.ui_open:
 		return
+	if Campaign.mode == "sales":
+		SalesCampaign.offer_door()  # the account manager's meetings are his leads
+		return
 	_door_page(door_clients(), 0)
 
 
@@ -1387,7 +1390,7 @@ func _free_visit(pick: String, c: int) -> void:
 	Hints.toast(
 		(
 			str(TEXT.arrive_visit if visit_kind != "" else TEXT.arrive)
-			% [str(Msp.CLIENTS[client].name), mins]
+			% [SalesCampaign.visit_name(str(Msp.CLIENTS[client].name)), mins]
 		),
 		5.0
 	)
@@ -1560,6 +1563,8 @@ func _host_prefix(c: int, _skin: String) -> String:
 
 
 func _owner_name(c: int) -> String:
+	if Campaign.mode == "sales" and visit_prospect and SalesCampaign.visit_owner() != "":
+		return SalesCampaign.visit_owner()  # the lead's own owner, not the client of that site type
 	return str(Msp.CLIENTS[c].contact)
 
 
@@ -1739,6 +1744,9 @@ func _meeting_answer(id: String) -> void:
 					}
 				)
 	elif visit_kind == "pitch":
+		if Campaign.mode == "sales":
+			SalesCampaign.pitch_answer(id, text)  # the sales campaign scores the pitch itself
+			return
 		var odds := 0.55
 		if id == "pain":
 			odds = 0.8 if visit_findings > 0 else 0.5
@@ -2014,6 +2022,7 @@ func _go_home(dropped: bool) -> void:
 	Msp.enabled = _prev_msp
 	World.time_scale = _prev_scale
 	Game.go("main_floor", "from_outside")
+	SalesCampaign.visit_end()
 	if Campaign.active:
 		Hints.toast(str(TEXT.home) % _back_min, 4.0)
 	else:  # free play has no queue to grow

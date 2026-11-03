@@ -60,7 +60,9 @@ func _draw() -> void:
 			counts += " IM %d" % Lync.unread_total()
 		var lines := [counts]
 		if Campaign.active:
-			if Campaign.prop("hud", "day_rep") == "week_cash":
+			if Campaign.prop("hud", "day_rep") == "week_quota":
+				lines.append("WEEK %d/%d %s %d%% HRS %d" % [Campaign.day, Campaign.total_days(), SalesCampaign.quarter_label(), SalesCampaign.quota_pct(), SalesCampaign.slots_left()])
+			elif Campaign.prop("hud", "day_rep") == "week_cash":
 				lines.append(
 					"%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash]
 				)

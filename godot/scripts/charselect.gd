@@ -53,6 +53,8 @@ const OWNER_BLURBS := {
 	"casual_garrison":
 	"THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
 }
+# the sales campaign offers Vic only
+const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
 const PHONES := [
 	{
 		"id": "ios",
@@ -98,6 +100,8 @@ func choices(for_mode: String) -> Array:
 		return []  # registered but not playable yet (X8): it cannot be chosen
 	if for_mode == "owner":
 		return ["office_alan", "casual_garrison"]
+	if for_mode == "sales":
+		return ["sales_vic"]
 	var cast: Array = []
 	for n in World.CAST:
 		cast.append(str(World.CAST[n].character))
@@ -140,6 +144,8 @@ func info(id: String) -> Dictionary:
 	var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
 	if mode == "owner" and OWNER_BLURBS.has(id):
 		entry["blurb"] = OWNER_BLURBS[id]
+	if mode == "sales":
+		entry["blurb"] = SALES_BLURB
 	return entry
 
 

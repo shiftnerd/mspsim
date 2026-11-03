@@ -43,7 +43,7 @@ func _process(_delta: float) -> void:
 		and _player.nearest() == self
 		and _player.state != "sitting"
 		and not fx.busy
-		and fx.kind != "bell"
+		and (fx.kind != "bell" or SalesCampaign.bell_ready)
 	)
 
 
@@ -55,6 +55,9 @@ func _hand_over(body: Node, fx: Node) -> void:
 func use(body: Node) -> void:
 	var fx := get_node(target)
 	if fx.kind == "bell":
+		if SalesCampaign.ring_bell(fx):  # Vic can reach his own bell (sales campaign only)
+			body.reach(global_position.x)
+			return
 		Hints.toast("TOO HIGH TO REACH. MAYBE A FOAM DART?", 2.5)
 		return
 	if fx.style == "computer":
