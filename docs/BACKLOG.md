@@ -41,22 +41,13 @@ Not found: anachronisms, script errors, bankruptcy (cash stayed above $4,000). W
 Not covered by the playtest: days 6-20, the overtime-night card flow, the review, the conference trip, mouse clicks in a hidden window.
 
 ## Needs a decision from you
-- **Decided**: the service manager is played as **Dan**; the owner campaign as **Alan or Garrison** (owners take a weekly draw from the bank balance); Morgan is a real cast member; in the tech campaign owners are busy but jump in as a last resort (phones, clients) at no reputation cost. The canon text pass is undecided (parked). See `docs/ROADMAP.md`.
-- **Era mentions**: decided. The two game names are parodied (Sugar Smash, Floppy Bat). Apple, Windows, Exchange and PowerShell stay as era context, and so does the old PC's "OUTLOOK 2003 PROFILE + PST" file name.
-- **Playing as a cast member in a campaign**: now wanted. Two new campaign paths need it: service manager (as Garrison) and sales (as Vic), see `IDEAS.md` "New campaign paths" and `docs/campaign-paths.md` (design in progress). Character select offers only teen, adult and site Alan in campaigns until this lands.
-- **Dialogue Manager addon**: research said skip for now (revisit only for long branching NPC conversations; a half-day spike would confirm its condition syntax). Alternative: conditional lines in the existing `Talk` tables.
-- **Gitot** (in-editor git panel): optional; the repo is set up and the CLI / GitHub Desktop work fine.
+Decisions already made are in `docs/ROADMAP.md`. Still open:
+- Answer the open questions in `docs/campaign-paths.md` section 14 (owner crew size, day lengths, hire names, placeholder parody names, tech-campaign Growth helper, a walk-in scene for sales prospects, Morgan's desk and routine).
+- Whether the difficulty tier should be its own step on character select rather than the chip.
+- Dialogue Manager (skip for now), Gitot (optional): parked in the roadmap.
 
 ## Known gaps
-- **Canon pass for Alan and Garrison as owners**: GAME_BIBLE roles are updated, but story and dialogue text still cast them as techs: `Talk` greetings / small talk / tips (specialities servers and security), vignettes ("Alan returns with donuts"), Lynk messages, the review quotes, `World.CAST` roles, the all-hands (owners attend), who texts on SLA breaches ("Dispatch" / "Boss"), the Boardroom / owner-campaign copy (Marge reads you the numbers, but who is the owner?). Needs a read-through and a small code pass. Decided: in the tech campaign they are busy owners who jump in as a last resort (phones, clients), so the 'help' lifeline and tips need new owner-style wording and a last-resort trigger.
-- No audio at all (music, UI sounds, ring tones).
-- Thin replay value: no year 2 (see roadmap items 9-10).
-- Maya is not in the outing mini-games' logic yet (she has a standing spot only): roadmap item 5.
-- Heavy ticket fixes never require an onsite visit; ransomware has no new alternative fixes; clever fixes are locked in Free Play because skill levels exist only in campaigns.
-- Alt-fix balance (return chances, time multipliers) is covered by unit tests only, not by a playthrough.
-- Site art: the coffee bar, sign-in sheet and arch reception are art only until the `polish` branch lands.
-- Owner campaign: Maya as the first hire, an owner-campaign Rodent Nation, sitting in conference sessions, more onsite jobs and projects (see `CLAUDE.md` "still open" lines).
-- Many ideas for both campaigns are listed in `IDEAS.md`.
+All tracked as items in `docs/ROADMAP.md`: audio, year 2, Maya in the outing logic, heavy fixes and onsite, ransomware alternatives, owner campaign leftovers, balance by playthrough. Details of the old reviewer findings and playthrough results are above and in `CLAUDE.md`.
 
 ## Housekeeping
 - `tools/make_godot.py` was edited by hand in lockstep with the generated scripts in several rounds and never re-run. Run it once in a scratch copy and diff against `godot/` to confirm it reproduces the checked-in output, then fix whatever differs.

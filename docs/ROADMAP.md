@@ -25,9 +25,9 @@ Nothing running. The owner playthrough fixes (round 1) and the canon text pass a
 | X1 | **Owner playthrough fixes, round 2** (the strategy runs after round 1: smart reputation 71-84 > cheap 41 > greedy 16, but value does not separate smart from cheap): balance (survivable weeks 1-5, pressure after week 12, maturity gating; strategy ordering smart > cheap/greedy kept), smaller items (Vic complaint spread, Dana advice repeats, "take the meeting yourself" upside, billing-leak cash vs revenue), UX (REVIEW DUE week 1, Esc closes Computer in one press, outing cost shown on the invite, owner PC stealing E at sites) | M | N1 | BACKLOG, owner findings 7-9 |
 | X2 | **Player-as-cast-member** (P0): `Campaign.player_as`, roster swap like Maya's, `Social.people()`, `Outings.roster()`, charselect entries, seated start, save / continue | M | N1 | campaign-paths 1 |
 | X3 | **Morgan Reyes as a cast member**: desk, routine, Social / Lync / Talk entries, host of the all-hands | M | X2 | campaign-paths 14 |
-| X4 | **Owner campaign as Alan or Garrison** (O1): speaker / text pass on `Owner.CARDS`, crew re-base, partner NPC, personal goals, owner edges, **weekly owner draw from the bank balance** | M | X2, X3 | campaign-paths 3 |
+| X4 | **Owner campaign as Alan or Garrison** (O1): speaker / text pass on `Owner.CARDS` (the 15 advisor cards from "Alan" and their "techs" wording, the "relative to a senior tech" hire-card line), replace the owner character select that wrongly offers "ALAN - ON SITE" with Alan or Garrison, crew re-base, partner NPC, personal goals, owner edges, **weekly owner draw from the bank balance** | M | X2, X3 | campaign-paths 3 |
 | X5 | **Partner model** (O2): stance chips on cards, four partner-meeting beats, buyout / sell-together endings | M | X4 | campaign-paths 3.4 |
-| X6 | **Tech campaign owners** (T1): last-resort rule (phones, clients; free, report row only), ASK THE OWNER lifeline, owner-style Talk / Lynk lines, Garrison as outing inviter | S-M | X2 | campaign-paths 6 |
+| X6 | **Tech campaign owners** (T1): last-resort rule (phones, clients; free, report row only), ASK THE OWNER lifeline (today owners still fix your oldest simple ticket when asked), `DESK_OWNER` / desk-ticket plumbing for desks 6 and 7, owner-style Talk / Lynk lines, Garrison as outing inviter | S-M | X2 | campaign-paths 6 |
 | X7 | **Point-buy character build** (B0): third step on character select, budget by difficulty tier, presets, guards, saved build with a flat default for old saves; per-path stat sets | M + S per path | X2, Difficulty | campaign-paths 13 |
 | X8 | **Split `Owner.active()` / mode registry** (P0b): crew, books and cards gates separate so autopilot crew can run in other campaigns | M | X4 | campaign-paths 10 |
 
@@ -45,7 +45,7 @@ Nothing running. The owner playthrough fixes (round 1) and the canon text pass a
 ## 5. Planned: replayability (`docs/replayability-ideas.md`, `IDEAS.md`)
 | # | Item | Size | Notes |
 |---|---|---|---|
-| R1 | Difficulty and seeds | S | DONE (see section 1); still to do: a seed field you can type, saved stream positions, seeded `Msp` / `Owner` / `World` / `Onsite` randomness |
+| R1 | Difficulty and seeds | S | DONE (see section 1); still to do: a seed field you can type, saved stream positions, seeded `Msp` / `Owner` / `World` / `Onsite` randomness, hard-tier numbers checked by play, whether the tier deserves its own step instead of the chip on the select screen, drop the unused `ESCAPE_TIME` constant |
 | R2 | Printer variety: 28+ questions, models (laser, inkjet, plotter, MFP, receipt, dot matrix), escalating jams, parts bag, boss line printer | S-M | |
 | R3 | Karaoke songs: four invented-title songs, hold and double notes, crowd-mood meter, duets, set lists | M | |
 | R4 | Escape room: clue recipes, random clue spots, 4-digit hard code, red herrings, friend hints; later themed rooms | M | |
@@ -57,8 +57,21 @@ Nothing running. The owner playthrough fixes (round 1) and the canon text pass a
 | R10 | Year 2 / New Game+, daily seed, Free Play toolbox | L | after R8, R9 |
 | R11 | Bowling oil / spin / alleys / league; nerf modes and arenas; conference-trip randomisation; onsite job variance and dispatch roulette | M each | later |
 
+## 5b. Planned: testing and quality
+| # | Item | Size |
+|---|---|---|
+| Q1 | Live playthrough of the **tech campaign days 6-20** (only days 1-5 were played): the day-9 ransomware, overtime night, review, Rodent Nation trip, outings on days 10 and 15 | M |
+| Q2 | Hand-play **owner weeks 12-20** (the last playthrough auto-picked them) and re-run after X1 / X4 | M |
+| Q3 | A live-window visual check of changes only seen in screenshots or tests: the CLOSE confirmation strip and wider mail list, the new day report, the difficulty chip on character select, the dinner list at h, all 12 site offices, hard-tier feel for each mini-game | S-M |
+| Q4 | Fix the test harness gap: mouse clicks map off-screen in a hidden window, so agents drive the UI through `run_script`; find a way to click for real | S-M |
+| Q5 | Verify the Free Play "ghost" cast member (hidden NPC copy may keep its seat, meetings and `Social` weight) before it is relied on by X2 | S |
+| Q6 | Balance by playthrough: alt-fix return chances and time multipliers, difficulty tiers, the early and late owner game (see X1) | M |
+| Q7 | **Realism review by a real MSP owner** of card text and the numbers (W-2 target 55%, EBITDA peer margin 15%, valuation multiples, late-fee and leakage figures, turnover statistics) before any player-facing release | S (external) |
+| Q8 | Test the worktree hooks through the real Agent tool (`isolation: "worktree"`) once `/hooks` has been opened | S |
+
 ## 6. Planned: content and systems from `IDEAS.md`
-Not scheduled; pick as the campaigns above land. Highlights: yearly review in a real conference-room scene; more quiet-day story beats (days 6, 8, 11, 14, 17, 19); phone dialer, banner, lock screen, camera; cable tracing and a spare laptop in the closet; coworkers inviting you to things; settings and credits, music and an animated logo; owner-campaign candidate interviews, collections calls, hardware refresh and warranty, security-stack upsells, contracts and insurance, a second-office phase; client onboarding as a project; time tracking; documentation and bus factor; reputation breakdown screen; seasonal events; an in-game glossary; a nightly balance harness.
+Not scheduled; pick as the campaigns above land. Highlights: yearly review in a real conference-room scene; more quiet-day story beats (days 6, 8, 11, 14, 17, 19); phone dialer, banner, lock screen, camera; cable tracing and a spare laptop in the closet; coworkers inviting you to things; settings and credits, music and an animated logo; owner-campaign candidate interviews, collections calls, hardware refresh and warranty, security-stack upsells, contracts and insurance, a second-office phase; client onboarding as a project; time tracking; documentation and bus factor; reputation breakdown screen; seasonal events; an in-game glossary; a nightly balance harness; side views of pieces exported to Godot (a per-prop `angle` setting).
+MSP-research items still unbuilt (see `IDEAS.md` "From the MSP research"): documentation and bus factor, business email compromise / wire fraud in the owner campaign, revenue mix and managed security as a line, post-incident reviews, service desk design and pricing models as owner decisions, more stack categories, the peer-group overhaul (assembled groups, quarterly meetings, hot seat, micro board, go-giver favours), and the training / hiring / operator items from the Dean and Empath notes (certification programs, onboarding without a runbook, hire for fit, operationalizing no, outsourced desk, shadow versus structured onboarding).
 
 ## 7. Parked (decision or dependency needed)
 | # | Item | Waiting on |
@@ -67,7 +80,7 @@ Not scheduled; pick as the campaigns above land. Highlights: yearly review in a 
 | P3 | Gitot in-editor git panel | optional |
 | P4 | Audio: music, UI sounds, ring tones | design and assets |
 | P5 | Owner campaign leftovers: Maya as the first hire, an owner Rodent Nation, sitting in conference sessions, more onsite jobs and projects | after X4 |
-| P6 | Alt-fix balance by playthrough, onsite requirement for heavy fixes, ransomware alternatives, clever fixes in Free Play | a balance pass |
+| P6 | Onsite requirement for heavy ticket fixes, ransomware alternatives, clever fixes in Free Play (alt-fix balance itself is Q6) | a design call |
 
 ## 8. Housekeeping
 | # | Item | Size |
