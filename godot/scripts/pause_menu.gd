@@ -1,19 +1,20 @@
 extends CanvasLayer
 # Autoload: the pause menu. ESC (or the Pause key) while you are walking around a room stops everything: the clock,
 # the cast, the tickets, the SLA timers (the whole scene tree is paused; this node alone keeps running).
-# Rows: RESUME, SHAPE (the output format, same as F9), QUIT TO TITLE (asks first; a campaign keeps its last end-of-day save).
+# Rows: RESUME, CONTROLS (the key list, 3 pages, Left / Right turn them), SHAPE (the output format, same as F9),
+# QUIT TO TITLE (asks first; a campaign keeps its last end-of-day save). The key list lives in Controls.HELP.
 # ESC does nothing here while a computer, phone, card, outing, report or other screen is open: those use ESC themselves.
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
 
-const ROWS := ["RESUME", "SHAPE", "QUIT TO TITLE"]
 const ROW_H := 12.0
 
 var is_open := false
 
 var _sel := 0
 var _confirm := false
+var _page := -1  # -1 = the menu, 0.. = a page of the controls list
 var _canvas: Control
 
 
@@ -47,6 +48,7 @@ func open() -> void:
 	is_open = true
 	_sel = 0
 	_confirm = false
+	_page = -1
 	visible = true
 	_canvas.mouse_filter = Control.MOUSE_FILTER_STOP
 	get_tree().paused = true
@@ -65,7 +67,7 @@ func close() -> void:
 func _labels() -> Array:
 	if _confirm:
 		return ["NO, KEEP PLAYING", "YES, QUIT"]
-	return [ROWS[0], "SHAPE: %s" % Game.format.to_upper(), ROWS[2]]
+	return ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "QUIT TO TITLE"]
 
 
 func _activate() -> void:
@@ -75,15 +77,17 @@ func _activate() -> void:
 			Game.go_title()
 		else:
 			_confirm = false
-			_sel = 2
+			_sel = 3
 		_canvas.queue_redraw()
 		return
 	match _sel:
 		0:
 			close()
 		1:
-			Game.cycle_format()
+			_page = 0
 		2:
+			Game.cycle_format()
+		3:
 			_confirm = true
 			_sel = 0
 	_canvas.queue_redraw()
@@ -91,7 +95,12 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
-	return UiStyle.panel_rect(size, 150.0, 76.0 if not _confirm else 88.0)
+	var h := 76.0
+	if _page >= 0:
+		h = 108.0
+	elif _confirm:
+		h = 64.0
+	return UiStyle.panel_rect(size, 172.0, h)
 
 
 func _row_rect(i: int) -> Rect2:
@@ -99,49 +108,73 @@ func _row_rect(i: int) -> Rect2:
 	return Rect2(body.x, body.y + ROW_H * float(i), _panel().size.x - 8.0, ROW_H - 1.0)
 
 
+func _turn_page(step: int) -> void:
+	_page = posmod(_page + step, Controls.HELP.size())
+	_canvas.queue_redraw()
+
+
 func _input(event: InputEvent) -> void:
 	if not is_open:
 		if event is InputEventKey and event.pressed and not event.echo:
 			var esc: bool = event.keycode == KEY_ESCAPE and can_open(true)
-			var brk: bool = event.keycode == KEY_PAUSE and can_open(false)
+			var brk: bool = Controls.matches(event, "pause") and can_open(false)
 			if esc or brk:
 				open()
 				get_viewport().set_input_as_handled()
+		elif event is InputEventJoypadButton and event.pressed and Controls.matches(event, "pause") and can_open(false):
+			open()
+			get_viewport().set_input_as_handled()
 		return
 	get_viewport().set_input_as_handled()
-	if event is InputEventKey and event.pressed and not event.echo:
-		var n := _labels().size()
-		match event.keycode:
-			KEY_ESCAPE, KEY_PAUSE:
-				if _confirm:
-					_confirm = false
-					_sel = 2
-					_canvas.queue_redraw()
-				else:
-					close()
-			KEY_UP, KEY_W:
-				_sel = (_sel + n - 1) % n
-				_canvas.queue_redraw()
-			KEY_DOWN, KEY_S:
-				_sel = (_sel + 1) % n
-				_canvas.queue_redraw()
-			KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D:
-				if not _confirm and _sel == 1:
-					Game.cycle_format()
-					_canvas.queue_redraw()
-			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-				_activate()
-	elif event is InputEventMouseMotion:
+	if event is InputEventKey and event.pressed and not event.echo or event is InputEventJoypadButton and event.pressed:
+		_key(event)
+	elif event is InputEventMouseMotion and _page < 0:
 		for i in _labels().size():
 			if _row_rect(i).has_point(event.position) and _sel != i:
 				_sel = i
 				_canvas.queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _page >= 0:
+			_turn_page(1)
+			return
 		for i in _labels().size():
 			if _row_rect(i).has_point(event.position):
 				_sel = i
 				_activate()
 				return
+
+
+func _key(event: InputEvent) -> void:
+	var n := _labels().size()
+	var left: bool = event.is_action("ui_left") or (event is InputEventKey and event.keycode in [KEY_LEFT, KEY_A])
+	var right: bool = event.is_action("ui_right") or (event is InputEventKey and event.keycode in [KEY_RIGHT, KEY_D])
+	var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
+	var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+	if Controls.matches(event, "pause") or Controls.back(event):
+		if _page >= 0:
+			_page = -1
+			_sel = 1
+		elif _confirm:
+			_confirm = false
+			_sel = 3
+		else:
+			close()
+	elif _page >= 0:
+		if left or up:
+			_turn_page(-1)
+		elif right or down or Controls.confirm(event):
+			_turn_page(1)
+	elif up:
+		_sel = (_sel + n - 1) % n
+	elif down:
+		_sel = (_sel + 1) % n
+	elif left or right:
+		if not _confirm and _sel == 2:
+			Game.cycle_format()
+	elif Controls.confirm(event):
+		_activate()
+		return
+	_canvas.queue_redraw()
 
 
 func _paint() -> void:
@@ -151,6 +184,9 @@ func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	c.draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.55))
 	var r := _panel()
+	if _page >= 0:
+		_paint_help(c, r)
+		return
 	var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else "")
 	if _confirm:
 		var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
@@ -162,3 +198,15 @@ func _paint() -> void:
 			c.draw_rect(rr, UiStyle.HEAD)
 		UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
 	UiStyle.footer(c, r, "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME")
+
+
+# one page of the key list: what you do on the left, the key on the right
+func _paint_help(c: CanvasItem, r: Rect2) -> void:
+	var page: Array = Controls.HELP[_page]
+	var body := UiStyle.panel(c, r, str(page[0]), "%d / %d" % [_page + 1, Controls.HELP.size()])
+	var y := body.position.y + 2.0
+	for row in page[1]:
+		UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
+		UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
+		y += 9.0
+	UiStyle.footer(c, r, "LEFT RIGHT = PAGE  ESC = BACK")

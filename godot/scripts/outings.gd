@@ -2616,10 +2616,7 @@ func _chair_setup() -> void:
 func _chair_tick(dt: float) -> void:
 	var race: RefCounted = g.race
 	var steer := 0.0
-	if Input.is_key_pressed(KEY_LEFT):
-		steer -= 1.0
-	if Input.is_key_pressed(KEY_RIGHT):
-		steer += 1.0
+	steer = Input.get_axis("move_left", "move_right")
 	race.step(dt, float(g.get("steer", steer)))
 	if race.phase == "done" and race.end_t >= 1.2:
 		_chair_end()

@@ -1,4 +1,5 @@
 extends Node2D
+# gdlint:disable=max-returns
 # Put the player on the spawn point chosen by the door they came through, and run the follow
 # camera for the current output format (Game.format). F1-F7 jump between sets, F9 cycles format.
 
@@ -152,6 +153,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_F9:
 			Game.cycle_format()
 			return
+		if not OS.is_debug_build():
+			return  # the F-key room jumps below are for development builds only
 		if event.keycode == KEY_F11 and event.ctrl_pressed:
 			var sites := []
 			for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:

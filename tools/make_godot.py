@@ -336,6 +336,7 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 
 Game="*res://scripts/game.gd"
+Controls="*res://scripts/controls.gd"
 World="*res://scripts/world.gd"
 Net="*res://scripts/net.gd"
 Msp="*res://scripts/msp.gd"
@@ -7440,7 +7441,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
     if not is_open and event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_P:
+        if Controls.matches(event, "phone"):
             open()
             get_viewport().set_input_as_handled()
 
@@ -19488,7 +19489,7 @@ func _unhandled_input(event: InputEvent) -> void:
         event is InputEventKey
         and event.pressed
         and not event.echo
-        and event.keycode == KEY_M
+        and Controls.matches(event, "mute")
         and not event.ctrl_pressed
     ):
         toggle_mute()
@@ -24554,10 +24555,7 @@ func _chair_setup() -> void:
 func _chair_tick(dt: float) -> void:
     var race: RefCounted = g.race
     var steer := 0.0
-    if Input.is_key_pressed(KEY_LEFT):
-        steer -= 1.0
-    if Input.is_key_pressed(KEY_RIGHT):
-        steer += 1.0
+    steer = Input.get_axis("move_left", "move_right")
     race.step(dt, float(g.get("steer", steer)))
     if race.phase == "done" and race.end_t >= 1.2:
         _chair_end()
@@ -40710,6 +40708,7 @@ func _on_exit(body: Node) -> void:
 ''')
 
 write("scripts/stage.gd", '''extends Node2D
+# gdlint:disable=max-returns
 # Put the player on the spawn point chosen by the door they came through, and run the follow
 # camera for the current output format (Game.format). F1-F7 jump between sets, F9 cycles format.
 
@@ -40857,6 +40856,8 @@ func _unhandled_input(event: InputEvent) -> void:
         if event.keycode == KEY_F9:
             Game.cycle_format()
             return
+        if not OS.is_debug_build():
+            return  # the F-key room jumps below are for development builds only
         if event.keycode == KEY_F11 and event.ctrl_pressed:
             var sites := []
             for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:
@@ -40996,23 +40997,7 @@ func face(side: String) -> void:
 
 
 func _add_inputs() -> void:
-    var keys := {
-        "move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
-        "jump": [KEY_SPACE, KEY_W, KEY_UP], "run": [KEY_SHIFT], "interact": [KEY_E],
-        "hurt": [KEY_H], "die": [KEY_K], "revive": [KEY_R],
-        "wave": [KEY_Q],
-        "drink": [KEY_F],
-        "dance": [KEY_X],
-        "follow": [KEY_C],
-        "duck": [KEY_S, KEY_DOWN],
-    }
-    for action in keys:
-        if not InputMap.has_action(action):
-            InputMap.add_action(action)
-            for code in keys[action]:
-                var ev := InputEventKey.new()
-                ev.physical_keycode = code
-                InputMap.action_add_event(action, ev)
+    Controls.ensure()
 
 
 func _load_character(name: String) -> void:
@@ -41036,20 +41021,20 @@ func _switch_character(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.keycode == KEY_Z and not event.pressed:
+    if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
         Nerf.charge_release(self)
         return
     if event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_TAB:
-            cycle_pick(-1 if event.shift_pressed else 1)
+        if Controls.matches(event, "pick_prev") or Controls.matches(event, "pick_next"):
+            cycle_pick(-1 if Controls.matches(event, "pick_prev") else 1)
             return
-        if event.keycode == KEY_Z:
+        if Controls.matches(event, "aim"):
             Nerf.charge_start(self)
             return
-        if event.keycode == KEY_V and held == "nerf":
+        if Controls.matches(event, "offer_war") and held == "nerf":
             Nerf.offer_war()
             return
-        if event.keycode == KEY_G and held == "nerf":
+        if Controls.matches(event, "give_item") and held == "nerf":
             give("")
             return
         var i: int = event.keycode - KEY_1
@@ -48388,22 +48373,158 @@ if shutil.which("gdformat"):
     subprocess.run(["gdformat", os.path.join(ROOT, "scripts")], check=False)
     print("formatted scripts with gdformat")
 # Godot only re-imports changed PNGs in the editor or an import pass; a stale import makes new sheet frames blank
+write("scripts/controls.gd", '''extends Node
+# gdlint:disable=max-line-length
+# Autoload: the one place that says which key (and which gamepad button) does what (roadmap R14, portability).
+# Every control is a named InputMap action registered here at startup; scripts ask for the action instead of a raw
+# key, so a controller or a touch layer can be added later without touching the game scripts.
+#   Controls.matches(event, "push_a")   true when a key event is one of the action's keys, or the action itself
+#                                       (tests send plain key events, a gamepad sends the action)
+#   Controls.confirm(event) / back(event)  Enter, Space or E / Esc or Backspace, or the ui_accept / ui_cancel actions
+# Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
+# still read the keyboard; the player's movement actions and the pause menu already work with a pad.
+
+# action: [keys, pad buttons, pad axes as [axis, value]]
+const ACTIONS := {
+    "move_left": [[KEY_A, KEY_LEFT], [JOY_BUTTON_DPAD_LEFT], [[JOY_AXIS_LEFT_X, -1.0]]],
+    "move_right": [[KEY_D, KEY_RIGHT], [JOY_BUTTON_DPAD_RIGHT], [[JOY_AXIS_LEFT_X, 1.0]]],
+    "jump": [[KEY_SPACE, KEY_W, KEY_UP], [JOY_BUTTON_A, JOY_BUTTON_DPAD_UP], []],
+    "run": [[KEY_SHIFT], [JOY_BUTTON_B], []],
+    "interact": [[KEY_E], [JOY_BUTTON_X], []],
+    "hurt": [[KEY_H], [], []],
+    "die": [[KEY_K], [], []],
+    "revive": [[KEY_R], [], []],
+    "wave": [[KEY_Q], [JOY_BUTTON_Y], []],
+    "drink": [[KEY_F], [JOY_BUTTON_LEFT_SHOULDER], []],
+    "dance": [[KEY_X], [], []],
+    "follow": [[KEY_C], [], []],
+    "duck": [[KEY_S, KEY_DOWN], [JOY_BUTTON_DPAD_DOWN], [[JOY_AXIS_LEFT_Y, 1.0]]],
+    "aim": [[KEY_Z], [], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]],
+    "push_a": [[KEY_Z], [JOY_BUTTON_A], []],
+    "push_b": [[KEY_X], [JOY_BUTTON_B], []],
+    "pick_next": [[KEY_TAB], [JOY_BUTTON_RIGHT_SHOULDER], []],
+    "pick_prev": [[], [JOY_BUTTON_LEFT_SHOULDER], []],
+    "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
+    "give_item": [[KEY_G], [], []],
+    "phone": [[KEY_P], [JOY_BUTTON_BACK], []],
+    "mute": [[KEY_M], [], []],
+    "pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
+}
+
+# the help page of the pause menu: pages of [what, keys]
+const HELP := [
+    [
+        "MOVING AND USING",
+        [
+            ["MOVE", "A D OR ARROWS"],
+            ["JUMP", "SPACE OR W"],
+            ["RUN", "HOLD SHIFT"],
+            ["DUCK", "S OR DOWN"],
+            ["USE, SIT, DOORS", "E"],
+            ["PICK A TARGET", "TAB, SHIFT TAB"],
+            ["CELL PHONE", "P"],
+            ["PAUSE, HELP", "ESC OR PAUSE"],
+        ],
+    ],
+    [
+        "PEOPLE AND SEATS",
+        [
+            ["ROLL YOUR CHAIR", "SHIFT + A D (SEATED)"],
+            ["STAND UP", "ANY MOVE KEY OR E"],
+            ["WAVE", "Q"],
+            ["SIP YOUR DRINK", "F"],
+            ["DANCE", "X (FREE PLAY ENDS IT)"],
+            ["FOLLOW ME", "C, NEXT TO A COWORKER"],
+            ["TALK", "E, NEXT TO A COWORKER"],
+            ["MUTE SOUND", "M"],
+        ],
+    ],
+    [
+        "GAMES AND EXTRAS",
+        [
+            ["FIRE A DART", "TAP Z"],
+            ["LONG SHOT", "HOLD Z, RELEASE"],
+            ["START A WAR, GIVE", "V, G"],
+            ["CHAIR RACE PUSH", "Z X IN TURN"],
+            ["CHAIR RACE STEER", "ARROWS"],
+            ["BOWLING AND ESCAPE", "E"],
+            ["KARAOKE LANES", "ARROWS"],
+            ["SCREEN SHAPE", "F9"],
+        ],
+    ],
+]
+
+
+func _ready() -> void:
+    ensure()
+
+
+# register every action that is missing (the player and the tests may also call this; it is safe to repeat)
+func ensure() -> void:
+    for action in ACTIONS:
+        if InputMap.has_action(action):
+            continue
+        InputMap.add_action(action, 0.5)
+        var spec: Array = ACTIONS[action]
+        for code in spec[0]:
+            var ev := InputEventKey.new()
+            ev.physical_keycode = code
+            InputMap.action_add_event(action, ev)
+        for button in spec[1]:
+            var pad := InputEventJoypadButton.new()
+            pad.button_index = button
+            InputMap.action_add_event(action, pad)
+        for ax in spec[2]:
+            var motion := InputEventJoypadMotion.new()
+            motion.axis = ax[0]
+            motion.axis_value = ax[1]
+            InputMap.action_add_event(action, motion)
+
+
+# is this event the action? Plain key events (from tests, or keys with no physical code) are compared by key code
+func matches(event: InputEvent, action: String) -> bool:
+    if not ACTIONS.has(action):
+        return false
+    if event.is_action(action):
+        return true
+    if event is InputEventKey:
+        if action == "pick_prev":
+            return event.keycode == KEY_TAB and event.shift_pressed
+        if action == "pick_next" and event.shift_pressed:
+            return false
+        return event.keycode in ACTIONS[action][0]
+    return false
+
+
+func confirm(event: InputEvent) -> bool:
+    if event is InputEventKey:
+        return event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E] or event.is_action("ui_accept")
+    return event.is_action("ui_accept")
+
+
+func back(event: InputEvent) -> bool:
+    if event is InputEventKey:
+        return event.keycode in [KEY_ESCAPE, KEY_BACKSPACE] or event.is_action("ui_cancel")
+    return event.is_action("ui_cancel")
+''')
+
 write("scripts/pause_menu.gd", '''extends CanvasLayer
 # Autoload: the pause menu. ESC (or the Pause key) while you are walking around a room stops everything: the clock,
 # the cast, the tickets, the SLA timers (the whole scene tree is paused; this node alone keeps running).
-# Rows: RESUME, SHAPE (the output format, same as F9), QUIT TO TITLE (asks first; a campaign keeps its last end-of-day save).
+# Rows: RESUME, CONTROLS (the key list, 3 pages, Left / Right turn them), SHAPE (the output format, same as F9),
+# QUIT TO TITLE (asks first; a campaign keeps its last end-of-day save). The key list lives in Controls.HELP.
 # ESC does nothing here while a computer, phone, card, outing, report or other screen is open: those use ESC themselves.
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
 
-const ROWS := ["RESUME", "SHAPE", "QUIT TO TITLE"]
 const ROW_H := 12.0
 
 var is_open := false
 
 var _sel := 0
 var _confirm := false
+var _page := -1  # -1 = the menu, 0.. = a page of the controls list
 var _canvas: Control
 
 
@@ -48437,6 +48558,7 @@ func open() -> void:
     is_open = true
     _sel = 0
     _confirm = false
+    _page = -1
     visible = true
     _canvas.mouse_filter = Control.MOUSE_FILTER_STOP
     get_tree().paused = true
@@ -48455,7 +48577,7 @@ func close() -> void:
 func _labels() -> Array:
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
-    return [ROWS[0], "SHAPE: %s" % Game.format.to_upper(), ROWS[2]]
+    return ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "QUIT TO TITLE"]
 
 
 func _activate() -> void:
@@ -48465,15 +48587,17 @@ func _activate() -> void:
             Game.go_title()
         else:
             _confirm = false
-            _sel = 2
+            _sel = 3
         _canvas.queue_redraw()
         return
     match _sel:
         0:
             close()
         1:
-            Game.cycle_format()
+            _page = 0
         2:
+            Game.cycle_format()
+        3:
             _confirm = true
             _sel = 0
     _canvas.queue_redraw()
@@ -48481,7 +48605,12 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    return UiStyle.panel_rect(size, 150.0, 76.0 if not _confirm else 88.0)
+    var h := 76.0
+    if _page >= 0:
+        h = 108.0
+    elif _confirm:
+        h = 64.0
+    return UiStyle.panel_rect(size, 172.0, h)
 
 
 func _row_rect(i: int) -> Rect2:
@@ -48489,49 +48618,73 @@ func _row_rect(i: int) -> Rect2:
     return Rect2(body.x, body.y + ROW_H * float(i), _panel().size.x - 8.0, ROW_H - 1.0)
 
 
+func _turn_page(step: int) -> void:
+    _page = posmod(_page + step, Controls.HELP.size())
+    _canvas.queue_redraw()
+
+
 func _input(event: InputEvent) -> void:
     if not is_open:
         if event is InputEventKey and event.pressed and not event.echo:
             var esc: bool = event.keycode == KEY_ESCAPE and can_open(true)
-            var brk: bool = event.keycode == KEY_PAUSE and can_open(false)
+            var brk: bool = Controls.matches(event, "pause") and can_open(false)
             if esc or brk:
                 open()
                 get_viewport().set_input_as_handled()
+        elif event is InputEventJoypadButton and event.pressed and Controls.matches(event, "pause") and can_open(false):
+            open()
+            get_viewport().set_input_as_handled()
         return
     get_viewport().set_input_as_handled()
-    if event is InputEventKey and event.pressed and not event.echo:
-        var n := _labels().size()
-        match event.keycode:
-            KEY_ESCAPE, KEY_PAUSE:
-                if _confirm:
-                    _confirm = false
-                    _sel = 2
-                    _canvas.queue_redraw()
-                else:
-                    close()
-            KEY_UP, KEY_W:
-                _sel = (_sel + n - 1) % n
-                _canvas.queue_redraw()
-            KEY_DOWN, KEY_S:
-                _sel = (_sel + 1) % n
-                _canvas.queue_redraw()
-            KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D:
-                if not _confirm and _sel == 1:
-                    Game.cycle_format()
-                    _canvas.queue_redraw()
-            KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-                _activate()
-    elif event is InputEventMouseMotion:
+    if event is InputEventKey and event.pressed and not event.echo or event is InputEventJoypadButton and event.pressed:
+        _key(event)
+    elif event is InputEventMouseMotion and _page < 0:
         for i in _labels().size():
             if _row_rect(i).has_point(event.position) and _sel != i:
                 _sel = i
                 _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        if _page >= 0:
+            _turn_page(1)
+            return
         for i in _labels().size():
             if _row_rect(i).has_point(event.position):
                 _sel = i
                 _activate()
                 return
+
+
+func _key(event: InputEvent) -> void:
+    var n := _labels().size()
+    var left: bool = event.is_action("ui_left") or (event is InputEventKey and event.keycode in [KEY_LEFT, KEY_A])
+    var right: bool = event.is_action("ui_right") or (event is InputEventKey and event.keycode in [KEY_RIGHT, KEY_D])
+    var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
+    var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+    if Controls.matches(event, "pause") or Controls.back(event):
+        if _page >= 0:
+            _page = -1
+            _sel = 1
+        elif _confirm:
+            _confirm = false
+            _sel = 3
+        else:
+            close()
+    elif _page >= 0:
+        if left or up:
+            _turn_page(-1)
+        elif right or down or Controls.confirm(event):
+            _turn_page(1)
+    elif up:
+        _sel = (_sel + n - 1) % n
+    elif down:
+        _sel = (_sel + 1) % n
+    elif left or right:
+        if not _confirm and _sel == 2:
+            Game.cycle_format()
+    elif Controls.confirm(event):
+        _activate()
+        return
+    _canvas.queue_redraw()
 
 
 func _paint() -> void:
@@ -48541,6 +48694,9 @@ func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     c.draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.55))
     var r := _panel()
+    if _page >= 0:
+        _paint_help(c, r)
+        return
     var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else "")
     if _confirm:
         var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
@@ -48552,6 +48708,18 @@ func _paint() -> void:
             c.draw_rect(rr, UiStyle.HEAD)
         UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
     UiStyle.footer(c, r, "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME")
+
+
+# one page of the key list: what you do on the left, the key on the right
+func _paint_help(c: CanvasItem, r: Rect2) -> void:
+    var page: Array = Controls.HELP[_page]
+    var body := UiStyle.panel(c, r, str(page[0]), "%d / %d" % [_page + 1, Controls.HELP.size()])
+    var y := body.position.y + 2.0
+    for row in page[1]:
+        UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
+        UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
+        y += 9.0
+    UiStyle.footer(c, r, "LEFT RIGHT = PAGE  ESC = BACK")
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

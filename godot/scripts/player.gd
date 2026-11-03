@@ -119,28 +119,7 @@ func face(side: String) -> void:
 
 
 func _add_inputs() -> void:
-	var keys := {
-		"move_left": [KEY_A, KEY_LEFT],
-		"move_right": [KEY_D, KEY_RIGHT],
-		"jump": [KEY_SPACE, KEY_W, KEY_UP],
-		"run": [KEY_SHIFT],
-		"interact": [KEY_E],
-		"hurt": [KEY_H],
-		"die": [KEY_K],
-		"revive": [KEY_R],
-		"wave": [KEY_Q],
-		"drink": [KEY_F],
-		"dance": [KEY_X],
-		"follow": [KEY_C],
-		"duck": [KEY_S, KEY_DOWN],
-	}
-	for action in keys:
-		if not InputMap.has_action(action):
-			InputMap.add_action(action)
-			for code in keys[action]:
-				var ev := InputEventKey.new()
-				ev.physical_keycode = code
-				InputMap.action_add_event(action, ev)
+	Controls.ensure()
 
 
 func _load_character(name: String) -> void:
@@ -164,20 +143,20 @@ func _switch_character(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.keycode == KEY_Z and not event.pressed:
+	if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
 		Nerf.charge_release(self)
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_TAB:
-			cycle_pick(-1 if event.shift_pressed else 1)
+		if Controls.matches(event, "pick_prev") or Controls.matches(event, "pick_next"):
+			cycle_pick(-1 if Controls.matches(event, "pick_prev") else 1)
 			return
-		if event.keycode == KEY_Z:
+		if Controls.matches(event, "aim"):
 			Nerf.charge_start(self)
 			return
-		if event.keycode == KEY_V and held == "nerf":
+		if Controls.matches(event, "offer_war") and held == "nerf":
 			Nerf.offer_war()
 			return
-		if event.keycode == KEY_G and held == "nerf":
+		if Controls.matches(event, "give_item") and held == "nerf":
 			give("")
 			return
 		var i: int = event.keycode - KEY_1

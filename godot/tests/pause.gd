@@ -48,9 +48,16 @@ func _init() -> void:
 	_check(is_equal_approx(world.clock, clock), "the workday clock stands still while paused")
 	await _key(KEY_DOWN)
 	await _key(KEY_ENTER)
-	var shape: String = game.format
-	_check(true, "SHAPE row pressed (format now %s)" % shape)
-	await _key(KEY_UP)
+	_check(pm._page == 0, "CONTROLS opens the key list")
+	await _key(KEY_RIGHT)
+	_check(pm._page == 1, "Right turns the page")
+	await _key(KEY_ESCAPE)
+	_check(pm.is_open and pm._page == -1, "Esc goes back to the menu, still paused")
+	await _key(KEY_DOWN)
+	var before: String = game.format
+	await _key(KEY_ENTER)
+	_check(game.format != before, "SHAPE changes the format (%s to %s)" % [before, game.format])
+	game.set_format(before)
 	await _key(KEY_ESCAPE)
 	_check(not pm.is_open and not paused, "Esc resumes")
 	await _wait(60)
@@ -70,12 +77,13 @@ func _init() -> void:
 	await _key(KEY_ESCAPE)
 	await _key(KEY_DOWN)
 	await _key(KEY_DOWN)
+	await _key(KEY_DOWN)
 	await _key(KEY_ENTER)
 	_check(pm.is_open, "QUIT TO TITLE asks first")
 	await _key(KEY_ESCAPE)
 	_check(pm.is_open, "Esc backs out of the question, the menu stays")
-	await _key(KEY_ENTER)  # selects QUIT TO TITLE again
-	await _key(KEY_DOWN)
+	await _key(KEY_ENTER)  # the cursor is back on QUIT TO TITLE: ask again
+	await _key(KEY_DOWN)  # NO is first, move to YES
 	await _key(KEY_ENTER)
 	await _wait(60)
 	_check(not pm.is_open and not paused, "YES closes the menu")
@@ -83,5 +91,16 @@ func _init() -> void:
 
 	await _key(KEY_ESCAPE)
 	_check(not pm.is_open, "the title screen never opens the pause menu")
+	# Controls: the actions exist and a plain key event matches its action
+	var ctl := root.get_node("Controls")
+	for a in ["move_left", "jump", "aim", "push_a", "push_b", "pick_next", "pick_prev", "phone", "mute", "pause"]:
+		_check(InputMap.has_action(a), "action %s is registered" % a)
+	var tab := InputEventKey.new()
+	tab.keycode = KEY_TAB
+	tab.shift_pressed = true
+	_check(ctl.matches(tab, "pick_prev") and not ctl.matches(tab, "pick_next"), "Shift Tab is pick_prev only")
+	var zkey := InputEventKey.new()
+	zkey.keycode = KEY_Z
+	_check(ctl.matches(zkey, "aim") and ctl.matches(zkey, "push_a") and not ctl.matches(zkey, "push_b"), "Z is aim and push_a")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

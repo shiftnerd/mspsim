@@ -10,6 +10,7 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 
 Game="*res://scripts/game.gd"
+Controls="*res://scripts/controls.gd"
 World="*res://scripts/world.gd"
 Net="*res://scripts/net.gd"
 Msp="*res://scripts/msp.gd"

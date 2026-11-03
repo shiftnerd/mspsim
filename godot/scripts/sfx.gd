@@ -382,7 +382,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		event is InputEventKey
 		and event.pressed
 		and not event.echo
-		and event.keycode == KEY_M
+		and Controls.matches(event, "mute")
 		and not event.ctrl_pressed
 	):
 		toggle_mute()

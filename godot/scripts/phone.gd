@@ -104,7 +104,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_open and event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_P:
+		if Controls.matches(event, "phone"):
 			open()
 			get_viewport().set_input_as_handled()
 
