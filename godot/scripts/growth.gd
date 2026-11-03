@@ -342,7 +342,7 @@ func _graduate_tech() -> void:
 	if focus == "powershell":
 		Skills.ps_level = mini(5, Skills.ps_level + 1)
 	elif lv < 5:
-		Skills.xp[focus] = maxi(int(Skills.xp[focus]), int(Skills.XP_AT[lv]))
+		Skills.xp[focus] = maxi(int(Skills.xp[focus]), Skills.need(lv))
 	Campaign.adjust_rep(3)
 	Social.change(helper, 3)
 	(

@@ -157,7 +157,7 @@ var _pending_leave := false
 
 
 func reset() -> void:
-	trust = START_TRUST
+	trust = clampi(START_TRUST + Build.trust_bonus(), 0, 100)  # CULTURE and the quirks (X7)
 	left = false
 	met = []
 	overrides = 0

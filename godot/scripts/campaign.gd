@@ -67,6 +67,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
+var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
 
@@ -213,6 +214,7 @@ func new_game(for_mode: String) -> void:
 	history = []
 	_awaiting = false
 	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+	build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
 	Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
 	Msp.reset()
 	Skills.reset()
@@ -234,6 +236,7 @@ func new_game(for_mode: String) -> void:
 	Events.reset()
 	Mutators.start(for_mode)
 	Mutators.apply_start()
+	Build.apply_start()
 	World.day_len = day_len_for(for_mode)
 	Msp.enabled = active
 	if active:
@@ -265,6 +268,7 @@ func continue_game(for_mode: String) -> bool:
 		PLAYER.current_character = "office_alan"
 	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
+	build = Build.from_dict(cfg.get_value("campaign", "build", {}))  # an old save has none: the flat default
 	Msp.reset()
 	Skills.from_dict(cfg.get_value("campaign", "skills", {}))
 	Story.reset()
@@ -306,6 +310,7 @@ func save() -> void:
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
 	cfg.set_value("campaign", "player_as", player_as)
+	cfg.set_value("campaign", "build", build)
 	cfg.set_value("campaign", "skills", Skills.to_dict())
 	cfg.set_value("campaign", "story", Story.flags)
 	cfg.set_value("campaign", "social", Social.to_dict())
@@ -344,6 +349,7 @@ func quit_to_title() -> void:
 	active = false
 	mode = ""
 	player_as = ""
+	build = {}
 	World.apply_roster()
 	Msp.enabled = true
 	World.time_scale = 1.0

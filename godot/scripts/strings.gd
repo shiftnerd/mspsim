@@ -31,6 +31,7 @@ const ROOTS := {
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+	"Build": ["QUIRKS", "PRESETS", "INFO"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [
