@@ -179,6 +179,7 @@ PATCHABLE = {
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
 }
 
 
@@ -334,6 +335,7 @@ Review="*res://scripts/review.gd"
 Cards="*res://scripts/cards.gd"
 Sales="*res://scripts/sales.gd"
 Owner="*res://scripts/owner.gd"
+Partner="*res://scripts/partner.gd"
 Lync="*res://scripts/lync.gd"
 Nerds="*res://scripts/nerds.gd"
 Shift="*res://scripts/shift.gd"
@@ -846,6 +848,8 @@ func _draw() -> void:
             _draw_clue_clock()
         "clue_painting":
             _draw_clue_painting()
+        "clue_shelf":
+            _draw_clue_shelf()
         "lyrics":
             _draw_lyrics()
         "discoball":
@@ -959,35 +963,70 @@ func _draw_bowl_score() -> void:
 
 
 func _escape_game() -> Dictionary:
-    if Outings.is_open and Outings.game == "escape" and Outings.phase == "play" and Outings.g.has("eq"):
+    if (
+        Outings.is_open
+        and Outings.game == "escape"
+        and Outings.phase == "play"
+        and Outings.g.has("clues")
+    ):
         return Outings.g
     return {}
 
 
-func _draw_clue_board() -> void:
+# the clue a zone shows: Outings.g.clues[index] (the shape of each recipe is in Outings.make_clue)
+func _clue(index: int) -> Dictionary:
     var game := _escape_game()
-    var text := "2+2=?"
-    if not game.is_empty():
-        text = "%d+%d=?" % [int(game.eq[0]), int(game.eq[1])]
-    PixelFont.draw(self, text, Vector2(8, 10), Color("e8e8e0"), 2)
+    if game.is_empty() or index >= game.clues.size():
+        return {}
+    return game.clues[index]
+
+
+func _draw_clue_board() -> void:
+    var clue := _clue(0)
+    var text := "2+2=?" if clue.is_empty() else str(clue.show)
+    var lines := text.split("|")
+    var y := 8.0 if lines.size() == 1 else 5.0
+    for line in lines:
+        var scale := 2 if PixelFont.width(line, 2) <= 44 else 1
+        var yy := y + (3.0 if scale == 1 and lines.size() == 1 else 0.0)
+        PixelFont.draw(self, line, Vector2(8, yy), Color("e8e8e0"), scale)
+        y += 12.0 if scale == 2 else 8.0
 
 
 func _draw_clue_clock() -> void:
-    var game := _escape_game()
-    var hour := 10 if game.is_empty() else int(game.code[1])
+    var clue := _clue(1)
+    var hour := 10 if clue.is_empty() else int(clue.args.hour)
     var c := Vector2(9, 9)
     var a := float(hour % 12) / 12.0 * TAU - PI * 0.5
     draw_line(c, c + Vector2(cos(a), sin(a)) * 4.0, Color("17121f"), 1.0)
     draw_line(c, c + Vector2(0, -6), Color("17121f"), 1.0)
     _r(c.x - 1.0, c.y - 1.0, 2, 2, Color("c0392b"))
+    if not clue.is_empty() and str(clue.recipe) == "double":
+        PixelFont.draw(self, "X2", Vector2(5, 14), Color("17121f"), 1)
 
 
 func _draw_clue_painting() -> void:
-    var game := _escape_game()
-    var digit := "?" if game.is_empty() else str(int(game.code[2]))
-    _r(7, 33, 12, 7, Color("c99a3c"))
-    _r(7, 33, 12, 1, Color("e8c45a"))
-    PixelFont.draw(self, digit, Vector2(12, 34), Color("17121f"), 1)
+    var clue := _clue(2)
+    var text := "?" if clue.is_empty() else str(clue.show)
+    var w := maxi(12, PixelFont.width(text, 1) + 4)
+    _r(13 - w / 2, 33, w, 7, Color("c99a3c"))
+    _r(13 - w / 2, 33, w, 1, Color("e8c45a"))
+    PixelFont.draw(self, text, Vector2(15 - w / 2, 34), Color("17121f"), 1)
+
+
+# the bookshelf (a clue only on a 4 digit game): a book label, or bookmark ribbons
+func _draw_clue_shelf() -> void:
+    var clue := _clue(3)
+    if clue.is_empty():
+        return
+    if str(clue.recipe) == "ribbons":
+        for i in int(clue.args.n):
+            _r(3 + i * 2, 30, 1, 5, Color("b8292f") if i % 2 == 0 else Color("e8c45a"))
+        return
+    var w := PixelFont.width(str(clue.show), 1) + 4
+    _r(14 - w / 2, 28, w, 7, Color("e8dcb0"))
+    _r(14 - w / 2, 28, w, 1, Color("c9b878"))
+    PixelFont.draw(self, str(clue.show), Vector2(16 - w / 2, 29), Color("17121f"), 1)
 
 
 func _draw_sports() -> void:
@@ -1017,10 +1056,24 @@ func _draw_lyrics() -> void:
     _r(0, 0, w, h, Color("161a44"))
     for i in 6:
         _r(0, float(i) * 6.0, w, 3.0, Color(0.35, 0.2, 0.55, 0.12))
+    var lines: Array = LYRICS
+    var title := "TOTALLY LEGAL HIT"
     var line_secs := 4.5
-    var idx := int(_time / line_secs) % LYRICS.size()
-    var frac := fmod(_time, line_secs) / line_secs
-    var line: String = LYRICS[idx]
+    var idx := 0
+    var frac := 0.0
+    var game := _karaoke_game()
+    if game.is_empty():
+        idx = int(_time / line_secs) % lines.size()
+        frac = fmod(_time, line_secs) / line_secs
+    else:
+        # the lyrics follow the song: each line gets an equal share of its length
+        lines = game.song.lines
+        title = str(game.song.title)
+        line_secs = maxf(1.0, (float(game.span) - 1.5) / float(lines.size()))
+        var pos := maxf(0.0, float(game.t) - 1.5) / line_secs
+        idx = mini(int(pos), lines.size() - 1)
+        frac = clampf(pos - float(idx), 0.0, 1.0)
+    var line: String = lines[idx]
     var words := line.split(" ")
     var total := PixelFont.width(line, 1)
     var x := floorf((w - float(total)) * 0.5)
@@ -1031,17 +1084,36 @@ func _draw_lyrics() -> void:
     for word in words:
         for ch in word:
             var done := float(pos) < shown
-            PixelFont.draw(self, str(ch), Vector2(x, y), Color("ffe36b") if done else Color("e8e8f4"), 1)
+            PixelFont.draw(
+                self, str(ch), Vector2(x, y), Color("ffe36b") if done else Color("e8e8f4"), 1
+            )
             if done:
                 ball_x = x
             x += 4.0
             pos += 1
         x += 4.0
         pos += 1
-    var next: String = LYRICS[(idx + 1) % LYRICS.size()]
-    PixelFont.draw(self, next.substr(0, 21), Vector2(floorf((w - float(PixelFont.width(next.substr(0, 21), 1))) * 0.5), 25.0), Color("7a82b8"), 1)
-    PixelFont.draw(self, "TOTALLY LEGAL HIT", Vector2(4, 3), Color("e04ecb"), 1)
+    var next: String = lines[(idx + 1) % lines.size()]
+    PixelFont.draw(
+        self,
+        next.substr(0, 21),
+        Vector2(floorf((w - float(PixelFont.width(next.substr(0, 21), 1))) * 0.5), 25.0),
+        Color("7a82b8"),
+        1
+    )
+    PixelFont.draw(self, title.substr(0, 21), Vector2(4, 3), Color("e04ecb"), 1)
     _r(ball_x + 1.0, 9.0 - absf(sin(_time * 7.0)) * 4.0, 3.0, 3.0, Color("ffffff"))
+
+
+func _karaoke_game() -> Dictionary:
+    if (
+        Outings.is_open
+        and Outings.game == "karaoke"
+        and Outings.phase == "play"
+        and Outings.g.has("song")
+    ):
+        return Outings.g
+    return {}
 
 
 func _draw_disco() -> void:
@@ -1061,9 +1133,21 @@ func _draw_keypad() -> void:
     var digits := [0, 0, 0]
     if not game.is_empty():
         digits = game.cur
-    for i in 3:
-        PixelFont.draw(self, str(int(digits[i])), Vector2(4.0 + float(i) * 5.0, 4.0), Color("4cff7a"), 1)
-    var solved := Outings.is_open and Outings.game == "escape" and Outings.phase == "result" and Outings.stars > 0
+    var pitch := 5.0 if digits.size() <= 3 else 4.0
+    for i in digits.size():
+        PixelFont.draw(
+            self,
+            str(int(digits[i])),
+            Vector2(3.0 + float(i) * pitch + (1.0 if digits.size() <= 3 else 0.0), 4.0),
+            Color("4cff7a"),
+            1
+        )
+    var solved := (
+        Outings.is_open
+        and Outings.game == "escape"
+        and Outings.phase == "result"
+        and Outings.stars > 0
+    )
     var lit := solved or (int(_time * 2.0) % 2 == 0 and not game.is_empty())
     _r(18, 12, 2, 2, Color("4cff7a") if solved else (Color("ff3b30") if lit else Color("5a1812")))
 
@@ -2922,13 +3006,14 @@ func _make_char(n: String) -> Dictionary:
 
 
 # the cast members who are NOT in the building right now: the person you play as (Campaign.player_as, a campaign
-# or Free Play) and Maya in the owner campaign (not on your payroll). CAST itself never changes.
+# or Free Play) and a partner who left (owner campaign). CAST itself never changes.
 func roster_gone() -> Array:
     var gone := []
     if Campaign.player_as != "" and CAST.has(Campaign.player_as):
         gone.append(Campaign.player_as)
-    if Campaign.active and Campaign.mode == "owner" and not gone.has("Maya"):
-        gone.append("Maya")
+    # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
+    if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
+        gone.append(Roles.partner())
     return gone
 
 
@@ -3605,6 +3690,7 @@ signal ticket_added(ticket: Dictionary)
 signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
+const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
     {"name": "Acme Dental Group", "short": "ACME", "contact": "Dr. Patel", "mail": "patel@acmedental.example"},
     {"name": "Brightside Realty", "short": "BRSD", "contact": "Karen Whitfield", "mail": "karen@brightside.example"},
@@ -3662,7 +3748,7 @@ const INSTALL_ITEMS := [
 const FIXES := {
     "spooler": "RESTART PRINT SPOOLER", "password": "RESET PASSWORD", "clear_temp": "CLEAR TEMP FILES",
     "reboot": "REBOOT", "av": "RUN AV SCAN", "restore": "RESTORE BACKUP", "adobe": "REPAIR ADOBE READER",
-    "shadow": "RECOVER SHADOW COPIES", "pay": "PAY THE RANSOM (BITCOIN)", "save": "ASK USER TO SAVE",
+    "shadow": "SHADOW COPIES", "pay": "PAY THE RANSOM", "save": "ASK USER TO SAVE",
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
@@ -4044,13 +4130,27 @@ func create_ticket(client: int, problem: int, source: String) -> Dictionary:
     return create_problem(client, PROBLEMS[problem], source)
 
 
-func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary:
+# force: a story job must always get its ticket, even when every machine of the client is already broken
+func create_problem(client: int, prob: Dictionary, source: String, force := false) -> Dictionary:
     var contact: String = CLIENTS[client].contact
     var eps := []
     for ep in endpoints:
         var is_server: bool = ep.name.contains("SRV")
         if ep.client == client and ep.problem == "" and is_server == prob.get("server", false):
             eps.append(ep)
+    if eps.is_empty() and force:
+        if prob.get("server", false):
+            for ep in endpoints:
+                if ep.client == client and ep.name.contains("SRV"):
+                    eps.append(ep)  # the one server: the bigger job takes it over
+        else:
+            var count := 0
+            for ep in endpoints:
+                if ep.client == client and not ep.name.contains("SRV"):
+                    count += 1
+            var extra := _endpoint(client, "PC-%02d" % (count + 1), "Windows 7 Pro")
+            endpoints.append(extra)
+            eps.append(extra)
     if eps.is_empty():
         return {}
     var picked: Dictionary = Mutators.pick_endpoint(eps)
@@ -4058,6 +4158,8 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
     picked.problem = prob.fix
     picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
     picked["asked"] = false
+    picked.erase("restore_failed")
+    picked.erase("shadow_tried")
     var t := {
         "id": _next_id, "client": client, "contact": contact, "summary": prob.summary, "pri": pri,
         "body": prob.body % contact.split(" ")[0], "status": "New", "sla_left": Mutators.sla(SLA_SECS[pri]),
@@ -4140,6 +4242,10 @@ func close_ticket(id: int) -> String:
     var t := ticket(id)
     if t.is_empty() or t.status == "Closed":
         return ""
+    if not t.fix_done and t.fix == "restore":
+        var ransomed := endpoint(str(t.endpoint))
+        if not ransomed.is_empty() and ransomed.get("restore_failed", false):
+            _ransom_lost(ransomed, "Gave up on the files. Data lost.")  # closing it is giving up
     if not t.fix_done:
         t.status = "In Progress"
         t.sla_left = maxf(t.sla_left, t.sla_total * 0.4)
@@ -4158,7 +4264,13 @@ func close_ticket(id: int) -> String:
     t.notes.append("Ticket closed.")
     if t.internal:
         _internal.erase(t.desk)
+    if str(t.get("outcome", "")) == "lost":
+        t.notes.append("Ticket closed. The data is gone.")
+        changed.emit()
+        return "CLOSED - DATA LOST"  # no points, and it does not count as a good close
     var points := 10 if not t.breached else 4
+    if str(t.get("outcome", "")) in ["paid", "partial"]:
+        points = 4
     score += points
     closed_ok += 1
     Career.note_ticket(str(t.fix))
@@ -4416,6 +4528,9 @@ func backup_check(client: int) -> Dictionary:
 
 func backup_rerun(client: int) -> void:
     var b: Dictionary = backups[client]
+    for ep in endpoints:
+        if ep.client == client and ep.problem == "restore":
+            return  # the job would only copy the encrypted files
     if not b.ok:
         b.ok = true
         b.good_day = Campaign.day
@@ -4433,6 +4548,19 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
+    # a desktop sitting in its box: Vic reminds you where the job is, for a few days
+    if Campaign.active and project_busy() and int(project.get("since", day)) < day:
+        if int(project.get("nagged", 0)) < 3:
+            project["nagged"] = int(project.get("nagged", 0)) + 1
+            var waiting := ticket(int(project.ticket))
+            if not waiting.is_empty() and waiting.status != "Closed":
+                send_text(
+                    "Vic",
+                    (
+                        "%s is still waiting on the new desktop. Ticket #%d, RMM PROJECT tab on %s."
+                        % [CLIENTS[int(project.client)].contact, int(waiting.id), waiting.endpoint]
+                    )
+                )
     if Campaign.active and Campaign.mode == "tech" and day == 1:
         _spawn_t = 75.0  # time to look around before the first ticket
     for c in backups.size():
@@ -4459,7 +4587,7 @@ func project_busy() -> bool:
 func start_project(ticket_id: int) -> void:
     project = {
         "ticket": ticket_id, "client": int(ticket(ticket_id).get("client", 0)), "found": {}, "selected": {}, "migrated": {}, "backup": false, "verified": false,
-        "done": false, "result": {},
+        "done": false, "result": {}, "since": Campaign.day, "nagged": 0,
     }
     for it in INSTALL_ITEMS:
         project.found[it.id] = it.hidden == ""
@@ -4560,6 +4688,8 @@ func project_handover() -> Dictionary:
         rep_delta -= 3 if project.backup else 8
     score += int((pts - 50) / 2.5) - (0 if outcome != "lost" else 15)
     Campaign.adjust_rep(rep_delta)
+    if outcome != "ok":
+        Campaign.add_scar(8 if outcome == "lost" else 2)
     Skills.add_xp("servers", 10)
     project.done = true
     project.result = {"pts": pts, "grade": grade, "lost": lost, "outcome": outcome}
@@ -4570,6 +4700,12 @@ func project_handover() -> Dictionary:
         var endpoint_state := endpoint(str(t.endpoint))
         if not endpoint_state.is_empty():
             endpoint_state.problem = ""
+        # the handover is the work: the ticket closes with it instead of sitting open for days
+        if t.status != "Closed":
+            t.status = "Closed"
+            t.notes.append("Ticket closed with the handover.")
+            if grade in ["S", "A", "B"] and outcome != "lost":
+                closed_ok += 1
     var who: String = CLIENTS[int(project.client)].contact
     var address: String = who + " <" + CLIENTS[int(project.client)].mail + ">"
     var text := "Everything is just where I left it. Great job! - " + who
@@ -4589,39 +4725,53 @@ func mail(from_name: String, subject: String, body: String) -> void:
     changed.emit()
 
 
-# ransomware: with a good backup it is a save, without one the data is gone
+# ransomware: with a good backup it is a save; without one the restore fails and the other options stay open
 func _restore(ep: Dictionary) -> String:
     var contact: String = CLIENTS[ep.client].contact
     var address: String = contact + " <" + CLIENTS[ep.client].mail + ">"
-    ep.problem = ""
     var good: bool = backups[ep.client].ok
+    if not good:
+        var first: bool = not ep.get("restore_failed", false)
+        ep["restore_failed"] = true
+        for t in tickets:
+            if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore" and first:
+                t.notes.append(
+                    (
+                        "Backup restore FAILED: the last good copy is from day %d and unusable. "
+                        + "Options left: shadow copies, pay the ransom, or give up the files."
+                    )
+                    % int(backups[ep.client].good_day)
+                )
+        if first:
+            send_text("Boss", "The backup will not restore?! Try the shadow copies. Do not pay yet.")
+        changed.emit()
+        return "BACKUP FAILED. TRY SHADOW COPIES OR PAY."
+    ep.problem = ""
     for t in tickets:
         if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
             t.fix_done = true
-            t.notes.append("Restored from backup. No data lost." if good else "NO USABLE BACKUP. Data lost.")
-    if good:
-        score += 15
-        Campaign.adjust_rep(5)
-        Skills.add_xp("security", 15)
-        _mail(address, "RE: " + RANSOM.summary, "Everything is back. You saved the whole firm. Thank you!!! - " + contact, 0)
-        Story.flags["ransom"] = "saved"
-    else:
-        score -= 30
-        Campaign.adjust_rep(-15)
-        _mail(address, "RE: " + RANSOM.summary, "You are saying there is NO BACKUP? Years of case files are gone. "
-            + "We are reviewing our contract. - " + contact, 0)
-        send_text("Boss", "No backup?! We need to talk about backups. Tomorrow. My office.")
-        Story.flags["ransom"] = "lost"
+            t.notes.append("Restored from backup. No data lost.")
+    score += 15
+    Campaign.adjust_rep(5)
+    Skills.add_xp("security", 15)
+    _mail(
+        address,
+        "RE: " + RANSOM.summary,
+        "Everything is back. You saved the whole firm. Thank you!!! - " + contact,
+        0
+    )
+    Story.flags["ransom"] = "saved"
     changed.emit()
-    return "RESTORED. NO DATA LOST." if good else "NO BACKUP FOUND. DATA LOST."
+    return "RESTORED. NO DATA LOST."
 
 
 # CryptoLocker (2013): with no backup you still have options, none of them good
-func _ransom_close(ep: Dictionary, note: String) -> void:
+func _ransom_close(ep: Dictionary, note: String, outcome := "lost") -> void:
     ep.problem = ""
     for t in tickets:
         if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
             t.fix_done = true
+            t.outcome = outcome  # a lost recovery earns nothing when it is closed
             t.notes.append(note)
 
 
@@ -4630,6 +4780,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
     _ransom_close(ep, note)
     score -= 30
     Campaign.adjust_rep(-15)
+    Campaign.add_scar(15)
     _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, "Years of files are gone and nothing worked. We are reviewing our contract. - " + contact, 0)
     send_text("Boss", "The files are gone and the backup was not there. We need to talk.")
     Story.flags["ransom"] = "lost"
@@ -4640,7 +4791,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 func _ransom_pay(ep: Dictionary) -> String:
     var contact: String = CLIENTS[ep.client].contact
     if Difficulty.rng("msp.fix").randf() < 0.7:
-        _ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.")
+        _ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.", "paid")
         score -= 5
         Campaign.adjust_rep(-2)
         Story.flags["ransom"] = "paid"
@@ -4652,15 +4803,18 @@ func _ransom_pay(ep: Dictionary) -> String:
 
 
 func _ransom_shadow(ep: Dictionary) -> String:
+    if ep.get("shadow_tried", false):
+        return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
     if Difficulty.rng("msp.fix").randf() < 0.4:
         var contact: String = CLIENTS[ep.client].contact
-        _ransom_close(ep, "Recovered most files from shadow copies. Some are gone.")
+        _ransom_close(ep, "Recovered most files from shadow copies. Some are gone.", "partial")
         score -= 8
         Campaign.adjust_rep(-3)
         Story.flags["ransom"] = "partial"
         _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, "Most of our files are back, a few are gone for good. Thank you for trying. - " + contact, 0)
         changed.emit()
         return "SHADOW COPIES RECOVERED MOST FILES."
+    ep["shadow_tried"] = true
     return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
 
 
@@ -4689,6 +4843,8 @@ func _process(delta: float) -> void:
                 t.breached = true
                 breached += 1
                 score -= 5
+                if int(t.pri) == 1:
+                    Campaign.add_scar(2)  # an unworked P1 is remembered
                 Growth.note_escalation(t)
                 if not t.internal:
                     Sales.adjust(int(t.client), -8)
@@ -4721,6 +4877,8 @@ func _watch_desks(dt: float) -> void:
 
 
 func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> void:
+    if from_name.begins_with("Morgan"):
+        from_name = MORGAN_FROM  # one sender format for the manager, whichever way the story wrote it
     emails.push_front({"id": _next_mail, "from": from_name, "subject": subject, "body": body, "unread": true, "ticket": ticket_id})
     _next_mail += 1
 ''')
@@ -5882,7 +6040,7 @@ func _ep_alert(ep: Dictionary) -> bool:
     return false
 
 
-func _symptom(problem: String) -> String:
+func _symptom(problem: String, restore_failed := false) -> String:
     var texts := {
         "spooler": "PRINT SPOOLER SERVICE IS NOT RUNNING", "password": "ACCOUNT LOCKED OUT - TOO MANY BAD PASSWORDS",
         "clear_temp": "LOW DISK SPACE - DRIVE C IS 99% FULL", "reboot": "STOP ERROR 0X7B - SYSTEM HALTED",
@@ -5891,6 +6049,8 @@ func _symptom(problem: String) -> String:
         "adobe": "ADOBE READER PRINT DIALOG IS BROKEN. OTHER APPS PRINT FINE.",
         "project": "NEW PC ARRIVED. SEE THE PROJECT TAB TO SET UP AND MIGRATE.",
     }
+    if problem == "restore" and restore_failed:
+        return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
     if problem.begins_with("onsite_"):
         return str(Onsite.TEXT.symptom)
     return str(texts.get(problem, "NO ISSUES FOUND. ALL SERVICES NORMAL."))
@@ -5910,7 +6070,7 @@ func _rmm_detail(r: Rect2, narrow: bool) -> void:
     var alert: bool = ep.problem != ""
     _fill(Rect2(r.position.x + 4, r.position.y + 36, r.size.x - 8, 9), RED if alert else GREEN)
     _text("ALERT" if alert else "ONLINE - OK", r.position + Vector2(8, 38), WHITE)
-    var lines := _wrap(_symptom(ep.problem) if alert else "NO ISSUES FOUND.", chars)
+    var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)) if alert else "NO ISSUES FOUND.", chars)
     for i in lines.size():
         _text(lines[i], r.position + Vector2(4, 49 + i * 7), TXT)
     _button("connect", Rect2(r.position.x + 4, r.end.y - 12, 44, 10), "CONNECT", true, Color("f0b27a"))
@@ -5929,7 +6089,7 @@ func _paint_session(body: Rect2) -> void:
     _fill(Rect2(dlg.position, Vector2(dlg.size.x, 6)), Color("1c3b63"))
     var alert: bool = ep.problem != ""
     _text("SYSTEM MESSAGE" if alert else "ALL CLEAR", dlg.position + Vector2(3, 1), WHITE)
-    var lines := _wrap(_symptom(ep.problem), int((dlg.size.x - 8) / 4.0))
+    var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)), int((dlg.size.x - 8) / 4.0))
     for i in mini(lines.size(), 3):
         _text(lines[i], dlg.position + Vector2(4, 9 + i * 6), RED if alert else GREEN)
     _text(_clip(rmm_msg, int((body.size.x - 8) / 4.0)), body.position + Vector2(4, 42), WHITE)
@@ -5976,7 +6136,7 @@ func _paint_backups(body: Rect2) -> void:
     var row_h := 14.0
     if compact:
         row_h = 11.0 if Sales.active.size() <= 5 else 8.0
-    _text("NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY)
+    _text("NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU" if Skills.backup_watch() else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY)
     for idx in Sales.active.size():
         var c: int = Sales.active[idx]
         var b: Dictionary = Msp.backups[c]
@@ -6369,6 +6529,8 @@ func _board_books(a: Rect2) -> void:
         ["A/R OWED", "$%d" % Owner.ar_total(), AMBER if Owner.ar_total() > 0 else TXT],
         ["COMPANY VALUE", "$%d (%.1fX)" % [Owner.valuation(), Owner.multiple()], Color("6b421c")],
         ["TEAM SPEED", "%.1f" % Owner.team_speed(), TXT],
+        ["OWNER DRAW", "$%d/WK (%s)" % [Owner.draw_due() if Campaign.day >= Owner.DRAW_START else int(Owner.DRAW.get(Owner.draw_policy, 0)), Owner.draw_policy.to_upper()], TXT],
+        ["GOAL", Owner.goal_row()[1], TXT],
         ["ON BOARD", ", ".join(advisers) if not advisers.is_empty() else "NOBODY YET", TXT],
         ["MATURITY", "%d %s" % [Owner.oml(), Owner.OML_NAMES[Owner.oml() - 1]], Color("6b421c")],
     ]
@@ -6459,10 +6621,14 @@ func _board_team(a: Rect2) -> void:
     var x := a.position.x + 4
     var y := a.position.y + 3
     var limit := int((a.size.x - 8.0) / 4.0)
-    var names := ["ALAN", "GARRISON", "DAN"]
     var rows := []
-    for i in maxi(0, 3 - Owner.lost_techs):
-        rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.tech_wage()], TXT])
+    for i in Owner.crew_size():
+        var member: Dictionary = Owner.CREW[i]
+        var wage := int(round(float(member.wage) * Owner.wage_mult()))
+        rows.append(["%s  SKILL %.1f  $%d/WK" % [str(member.name).to_upper(), float(member.skill), wage], TXT])
+    rows.append(["MORGAN  MANAGER  $%d/WK" % int(round(float(Owner.MORGAN_WAGE) * Owner.wage_mult())), TXT])
+    if Roles.partner() != "":
+        rows.append(["%s  CO-OWNER  HANDS-ON %.1f  TRUST %d" % [Roles.partner().to_upper(), Partner.hands(), Partner.trust], Color("6b421c")])
     for hire in Owner.extra_staff:
         var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
         rows.append(["%s  %.2f  $%d/WK  %s" % [str(hire.name).to_upper(), float(hire.skill), Owner.hire_wage(hire), tag], TXT])
@@ -7300,6 +7466,7 @@ var player_as := ""  # the cast member you play as ("" = a character who is not 
 var mode := ""
 var day := 1
 var rep := START_REP
+var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -7309,9 +7476,43 @@ var _awaiting := false
 var _fired_out := false
 
 
+# gains get harder as the name grows: 100 is only for the end of a really good run
+func gain_scale() -> float:
+    if rep >= 85:
+        return 0.25
+    if rep >= 72:
+        return 0.3
+    return 0.6 if rep >= 60 else 1.0
+
+
+# the most the day report can add at this reputation
+func daily_cap() -> int:
+    for entry in [[72, 1], [58, 2], [50, 3]]:
+        if rep >= int(entry[0]):
+            return int(entry[1])
+    return 4
+
+
+func rep_cap() -> int:
+    return clampi(100 - scars, 40, 100)
+
+
+# a lasting cost: the ceiling drops now and recovers one point on each A or S day
+func add_scar(amount: int) -> void:
+    if not active:
+        return
+    scars = mini(scars + amount, 60)
+    rep = mini(rep, rep_cap())
+
+
 func adjust_rep(amount: int) -> void:
-    if active:
-        rep = clampi(rep + amount, 0, 100)
+    if not active:
+        return
+    var change := amount
+    if amount > 0:
+        change = maxi(1, roundi(float(amount) * gain_scale()))
+        change = mini(change, maxi(0, rep_cap() - rep))
+    rep = clampi(rep + change, 0, 100)
 
 
 func save_path(for_mode: String) -> String:
@@ -7333,10 +7534,10 @@ func saved_day(for_mode: String) -> int:
 # campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
 func derive_player_as(for_mode: String) -> String:
     var who: String = World.cast_of(PLAYER.current_character)
+    if for_mode == "owner":
+        return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
     if who == "":
         return ""
-    if for_mode == "owner":
-        return who if Roles.OWNERS.has(who) else ""
     return who if for_mode == FREE else ""
 
 
@@ -7358,9 +7559,12 @@ func new_game(for_mode: String) -> void:
     mode = for_mode
     active = MODES.has(for_mode)
     player_as = derive_player_as(for_mode)
+    if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
+        PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
     Game.vars["start_seated"] = player_as != ""
     day = 1
     rep = START_REP
+    scars = 0
     cash = 0
     history = []
     _awaiting = false
@@ -7403,12 +7607,16 @@ func continue_game(for_mode: String) -> bool:
     active = true
     day = int(cfg.get_value("campaign", "day", 1))
     rep = int(cfg.get_value("campaign", "rep", START_REP))
+    scars = int(cfg.get_value("campaign", "scars", 0))
     cash = int(cfg.get_value("campaign", "cash", 0))
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
     var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
     player_as = saved_as if World.CAST.has(saved_as) else ""
+    if for_mode == "owner" and not Roles.OWNERS.has(player_as):
+        player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
+        PLAYER.current_character = "office_alan"
     Game.vars["start_seated"] = player_as != ""
     _awaiting = false
     Msp.reset()
@@ -7447,6 +7655,7 @@ func save() -> void:
     var cfg := ConfigFile.new()
     cfg.set_value("campaign", "day", day)
     cfg.set_value("campaign", "rep", rep)
+    cfg.set_value("campaign", "scars", scars)
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
@@ -7542,7 +7751,7 @@ func _make_report() -> Dictionary:
     var points: int = Msp.score - int(_base.score)
     var overtime: float = Story.ot_hours
     var pay := maxi(0, 100 + closed * 20 - missed * 25 - reopened * 10 + int(overtime * 30.0) + Shift.pay_extra())
-    var rep_delta := clampi(closed * 2 - missed * 3 - reopened * 2 - open_left + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, 8)
+    var rep_delta := clampi(closed * 2 - missed * 3 - reopened * 2 - open_left + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, daily_cap())
     var grade := "D"
     if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
         grade = "S"
@@ -7582,7 +7791,13 @@ func _end_day() -> void:
         r["bankrupt"] = books.bankrupt
     else:
         cash += int(r.pay)
-    rep = clampi(rep + int(r.rep_delta), 0, 100)
+    if mode == "tech":
+        if int(r.reopened) >= 3:
+            add_scar(2)  # a reopen storm: the clients stop trusting your closes
+        elif scars > 0 and r.grade in ["S", "A"]:
+            scars -= 1
+        r["rep_cap"] = rep_cap()
+    rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
     if r.get("bankrupt", false):
         rep = 0
     r["rep"] = rep
@@ -7649,6 +7864,11 @@ const GOOD := Color("8fe3a0")
 const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 const ROW := 7.0  # row height in virtual pixels (one font pixel at scale 1)
+const BIG_GRADES := {
+    "S": [".XXX", "X...", ".XX.", "...X", "XXX."], "A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
+    "B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."], "C": [".XXX", "X...", "X...", "X...", ".XXX"],
+    "D": ["XXX.", "X..X", "X..X", "X..X", "XXX."],
+}
 const GRADE_COLORS := {
     "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
 }
@@ -7836,6 +8056,15 @@ func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
     return h - 1.0
 
 
+# the grade letter in a 4x5 hand-drawn set: the 3x5 font makes B and E look alike at this size
+func _big_grade(grade: String, x: float, y: float, color: Color) -> void:
+    var rows: Array = BIG_GRADES[grade]
+    for ry in rows.size():
+        for rx in 4:
+            if str(rows[ry])[rx] == "X":
+                _r(x + float(rx * 4), y + float(ry * 4), 4.0, 4.0, color)
+
+
 # the grade box, then the stat tiles (big) or rows (compact); returns its height
 func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
     var grade := str(report.grade)
@@ -7847,7 +8076,10 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
     if draw:
         _r(x, y, gw, gh, gcol)
         _r(x + 1.0, y + 1.0, gw - 2.0, gh - 2.0, Color("0e121c"))
-        _t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
+        if BIG_GRADES.has(grade):
+            _big_grade(grade, x + floorf((gw - 16.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol)
+        else:
+            _t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
     if big:
         var h := gh + 4.0
         if draw:
@@ -10729,6 +10961,8 @@ const VIGNETTES := {
     "donuts": {
         "speaker": "Alan (Co-owner)",
         "text": "I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?",
+        "text_reset": "I am back, and I brought donuts. Morgan says you covered for me while I was out, and I heard what happened to the firewall. I am not angry. Show me how it is set up now?",
+        "text_plain": "I am back, and I brought donuts. Morgan says you covered for me while I was out. Nobody wrote down how the firewall is set up, so would you show me what you did?",
         "options": [
             {"id": "show", "label": "SHOW HIM, HE IS PROUD", "text": "Alan nods slowly. 'That is better than what I had.' (+3 servers XP)", "fx": {"xp": ["servers", 3], "social": {"Alan": 3}}},
             {"id": "nothing", "label": "SAY IT WAS NOTHING", "text": "He insists you are being modest and gives you the last donut.", "fx": {"social": {"Alan": 1}, "energy": 1}},
@@ -11529,7 +11763,7 @@ const DAYS := {
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Daily chore: verify backups",
          "body": "Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs "
          + "can fail silently and nobody notices until the day it really matters. It takes thirty "
-         + "seconds. - Morgan"},
+         + "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"},
         {"at": 10.5, "kind": "vignette", "id": "iphone"},
     ],
     3: [
@@ -11602,7 +11836,7 @@ const DAYS := {
     ],
     15: [
         {"at": 9.2, "kind": "mail", "from": MANAGER, "subject": "Pager again",
-         "body": "You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan"},
+         "body": "You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"},
     ],
     16: [
         {"at": 9.5, "kind": "playbook", "book": "netinstall",
@@ -11735,7 +11969,14 @@ func _vignette(id: String) -> void:
     var options := []
     for o in v.options:
         options.append({"label": str(o.label), "id": str(o.id)})
-    Cards.ask(str(v.speaker), str(v.text), options, func(pick: String) -> void: _vignette_answer(id, pick))
+    Cards.ask(str(v.speaker), _vignette_text(id, v), options, func(pick: String) -> void: _vignette_answer(id, pick))
+
+
+# Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
+func _vignette_text(id: String, v: Dictionary) -> String:
+    if id == "donuts" and not bool(flags.get("bus_doc", false)):
+        return str(v.get("text_reset" if bool(flags.get("bus_reset", false)) else "text_plain", v.text))
+    return str(v.text)
 
 
 func _vignette_answer(id: String, pick: String) -> void:
@@ -11830,7 +12071,7 @@ func _ransomware() -> void:
         t = Msp.create_problem(RANSOM_CLIENT, Msp.RANSOM, "monitoring")
     flags["ransom_ticket"] = int(t.get("id", 0))
     var warning := "Hoot and Holler has a ransom note on their server. "
-    warning += "Do NOT pay and do NOT reboot. Restore from backup!"
+    warning += "Do NOT pay and do NOT reboot. Restore from backup! (If it fails: shadow copies.)"
     Msp.send_text("Boss", warning)
 ''')
 
@@ -12123,7 +12364,7 @@ const BOOKS := {
                 {"label": "ASK THE STAFF WHAT THEY SEE", "secs": 5.0, "pts": 10, "hours": 0.3, "note": "Staff just says: it is broken."},
                 {"label": "REBOOT THE MAIL SERVER", "secs": 8.0, "pts": 0, "hours": 0.5, "flag": "rebooted", "note": "It is stuck in recovery now."},
             ]},
-            {"title": "CALL THE VENDOR", "text": "The mail software vendor has a support line. It is 17:40 and the queue is long.",
+            {"title": "CALL THE VENDOR", "text": "The mail software vendor has a support line. The queue is long.",
              "choices": [
                 {"label": "FOLLOW THE TIER 1 SCRIPT", "secs": 20.0, "pts": 5, "hours": 1.0, "note": "Forty minutes on hold. They say: reboot it."},
                 {"label": "ASK FOR TIER 2", "secs": 14.0, "pts": 20, "hours": 0.7, "note": "Tier 2 agrees it is the log drive."},
@@ -12327,7 +12568,7 @@ const PROBLEMS := {
     ],
     "ceofraud": [
         {"summary": "Odd request to wire $38,000 from the trust account", "fix": "project", "pri": 1, "special": "ceofraud",
-         "body": "Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"},
+         "body": "Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"},
     ],
     "no2fa": [
         {"summary": "Security review: stronger logins for Soggy Bottom", "fix": "project", "pri": 3, "special": "no2fa",
@@ -12375,7 +12616,7 @@ func max_points(id: String) -> int:
 func start(id: String, source := "email") -> int:
     var ids := []
     for prob in PROBLEMS[id]:
-        var t := Msp.create_problem(int(BOOKS[id].client), prob, source)
+        var t := Msp.create_problem(int(BOOKS[id].client), prob, source, true)
         if not t.is_empty():
             ids.append(int(t.id))
     active = {
@@ -12467,6 +12708,11 @@ func finish() -> void:
             var ep := Msp.endpoint(str(t.endpoint))
             if not ep.is_empty() and ep.problem == "project":
                 ep.problem = ""
+            # the job is the work: its tickets close with it instead of sitting open until they breach
+            t.status = "Closed"
+            t.notes.append("Ticket closed with the job.")
+            if grade in ["S", "A", "B"]:
+                Msp.closed_ok += 1
     Msp.mail(address, "RE: " + str(PROBLEMS[id][0].summary), str(extra.mail))
     if id == "email24":
         Story.overtime = false
@@ -12476,6 +12722,9 @@ func finish() -> void:
     active.done = true
     active.result = {"pts": percent, "grade": grade, "text": str(extra.mail)}
     Story.flags[id] = grade
+    if id == "bus":
+        Story.flags["bus_reset"] = bool(flags.get("reset", false))
+        Story.flags["bus_doc"] = bool(flags.get("documented", false))
     changed.emit()
 
 
@@ -12529,7 +12778,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
                 out.score = -5
                 out.follow.append({"client": client, "summary": "Our email is being blocked as spam", "body": "Customers say our messages bounce as spam. Is our server sending junk? - %s", "pri": 2})
         "ceofraud":
-            out.mail = "Thank you. The money is safe and Mr. Spence says he would like you to explain the whole thing to the partners."
+            out.mail = "Thank you. The money is safe and Atty. Spence says he would like you to explain the whole thing to the partners."
             if flags.get("wired", false):
                 out.rep = -10
                 out.score = -25
@@ -12544,7 +12793,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
                 if flags.get("deleted", false):
                     out.follow.append({"client": client, "summary": "The bank wants the original email", "body": "The bank asked for the original fraud email and it was deleted. Can you recover it? - %s", "pri": 3})
                 if flags.get("partial", false) or flags.get("reset", false):
-                    out.follow.append({"client": client, "summary": "Another strange email from the boss", "body": "We just got another odd email that looks like Mr. Spence wrote it. - %s", "pri": 1})
+                    out.follow.append({"client": client, "summary": "Another strange email from the boss", "body": "We just got another odd email that looks like Atty. Spence wrote it. - %s", "pri": 1})
                 if flags.get("quiet", false):
                     out.follow.append({"client": client, "summary": "The same request again", "body": "Somebody emailed asking for a wire again. Is this normal? - %s", "pri": 2})
                 if flags.get("trained", false):
@@ -12602,11 +12851,13 @@ const BLUE := Color("1f4e8c")
 const GRADE_NAMES := {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1}
 const JOBS := [
     ["install", "NEW DESKTOP"], ["ransom", "RANSOMWARE"], ["rack", "RACK FELL OFF"], ["migration", "SERVER MIGRATION"],
-    ["email24", "EMAIL OUTAGE"], ["netinstall", "NETWORK INSTALL"],
+    ["email24", "EMAIL OUTAGE"], ["netinstall", "NETWORK INSTALL"], ["rdp", "RDP BREAK-IN"],
+    ["ceofraud", "WIRE FRAUD EMAIL"], ["no2fa", "TWO-STEP LOGINS"], ["bus", "THE ONE WHO KNEW"],
 ]
 const CLIENT_OF := {
     "rack": "Gnarly Gnomes", "migration": "Brightside Realty", "email24": "Soggy Bottom Brewing",
-    "netinstall": "Hoot and Holler",
+    "netinstall": "Hoot and Holler", "rdp": "Brightside Realty", "ceofraud": "Hoot and Holler",
+    "no2fa": "Soggy Bottom Brewing", "bus": "Acme Dental",
 }
 const QUOTES := {
     "FRIEND": "WORKING WITH YOU IS THE BEST PART OF MY DAY.", "FRIENDLY": "SOLID TEAMMATE. I WOULD WORK WITH YOU AGAIN.",
@@ -12666,14 +12917,35 @@ func _set_fade(value: float) -> void:
     _canvas.modulate.a = value
 
 
+# clients you cost their data (a lost ransomware recovery, a wiped desktop) never offer you a job
+func burned_clients() -> Array:
+    var out := []
+    if str(Story.flags.get("ransom", "")) == "lost":
+        out.append(str(Msp.CLIENTS[Story.RANSOM_CLIENT].name))
+    if str(Story.flags.get("install", "")) == "lost" and not Msp.project.is_empty():
+        out.append(str(Msp.CLIENTS[int(Msp.project.client)].name))
+    return out
+
+
+func _is_burned(short_name: String) -> bool:
+    for full in burned_clients():
+        if str(full).begins_with(short_name):
+            return true
+    return false
+
+
 func best_client() -> String:
-    var best := "Acme Dental"
+    var best := ""
     var best_rank := 0
     for key in CLIENT_OF:
         var rank := int(GRADE_NAMES.get(str(Story.flags.get(key, "")), 0))
-        if rank > best_rank:
+        if rank > best_rank and not _is_burned(str(CLIENT_OF[key])):
             best_rank = rank
             best = str(CLIENT_OF[key])
+    if best == "":
+        for name in ["Acme Dental", "Piedmont Pediatrics", "Zen Garden Yoga"]:
+            if not _is_burned(name):
+                return name
     return best
 
 
@@ -12700,8 +12972,17 @@ func make_offers() -> Array:
 
 func choose(index: int) -> void:
     ending = str(offers[clampi(index, 0, offers.size() - 1)].id)
-    page = 3
+    page = _end_page()
     _canvas.queue_redraw()
+
+
+# the owner review has a PARTNERSHIP page (X5), so its offers and its end come one page later
+func _opt_page() -> int:
+    return 3 if Campaign.mode == "owner" else 2
+
+
+func _end_page() -> int:
+    return _opt_page() + 1
 
 
 func finish() -> void:
@@ -12716,9 +12997,9 @@ func finish() -> void:
 
 
 func advance() -> void:
-    if page == 2:
+    if page == _opt_page():
         choose(sel)
-    elif page == 3:
+    elif page == _end_page():
         finish()
     else:
         page += 1
@@ -12744,10 +13025,10 @@ func _input(event: InputEvent) -> void:
     elif event is InputEventKey and event.pressed and not event.echo:
         if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
             advance()
-        elif event.keycode == KEY_UP and page == 2:
+        elif event.keycode == KEY_UP and page == _opt_page():
             sel = maxi(0, sel - 1)
             _canvas.queue_redraw()
-        elif event.keycode == KEY_DOWN and page == 2:
+        elif event.keycode == KEY_DOWN and page == _opt_page():
             sel = mini(offers.size() - 1, sel + 1)
             _canvas.queue_redraw()
     else:
@@ -12786,7 +13067,7 @@ func page_lines() -> Array:
                 lines.append([Growth.status_line(), GOOD if Growth.graduated else INK])
             for job in JOBS:
                 var row := _job_line(job[0], job[1])
-                lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK)])
+                lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK), "job"])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
             for who in Social.people():
@@ -12799,6 +13080,8 @@ func page_lines() -> Array:
         _:
             lines.append(["THE END", BLUE])
             lines.append([str(EPILOGUES.get(ending, "")), INK])
+            if ending == "internal":
+                lines.append(["YOUR NEW DESK IS AT %s." % best_client().to_upper(), INK])
     return lines
 
 
@@ -12824,11 +13107,24 @@ func _paint() -> void:
     var pw := minf(size.x - 8.0, 250.0 * u)
     var chars := int((pw - 10.0 * u) / (4.0 * u))
     var rows := []
+    var held: Array = []  # job lines sit two to a row when the panel is wide enough
     for entry in page_lines():
+        if entry.size() > 2 and chars >= 58:
+            if held.is_empty():
+                held = entry
+                continue
+            rows.append([held[0], held[1], entry[0], entry[1]])
+            held = []
+            continue
+        if not held.is_empty():
+            rows.append([held[0], held[1]])
+            held = []
         for wrapped in _wrap(str(entry[0]), chars):
             rows.append([wrapped, entry[1]])
+    if not held.is_empty():
+        rows.append([held[0], held[1]])
     var extra := 0.0
-    if page == 2:
+    if page == _opt_page():
         extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
     var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
     ph = minf(ph, size.y - 4.0)
@@ -12840,8 +13136,11 @@ func _paint() -> void:
     var y := panel.position.y + 12.0 * u
     for row in rows:
         PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
+        if row.size() > 2:
+            var col_x: float = panel.position.x + (5.0 + 4.0 * 30.0) * u
+            PixelFont.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc)
         y += 7.0 * u
-    if page == 2:
+    if page == _opt_page():
         y += 3.0 * u
         for i in offers.size():
             var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
@@ -12855,7 +13154,7 @@ func _paint() -> void:
             PixelFont.draw(_canvas, wrapped, Vector2(panel.position.x + 5.0 * u, y), Color("46506a"), sc)
             y += 7.0 * u
     else:
-        var label := "FINISH" if page == 3 else "NEXT"
+        var label := "FINISH" if page == _end_page() else "NEXT"
         var bw := float(PixelFont.width(label, sc)) + 12.0 * u
         var b := Rect2(panel.end.x - bw - 4.0 * u, panel.end.y - 12.0 * u, bw, 9.0 * u)
         _canvas.draw_rect(b, Color("5aa0e8") if b.has_point(_mouse) else Color("3a7bd5"))
@@ -12899,13 +13198,22 @@ func _ready() -> void:
     _canvas.draw.connect(_paint)
 
 
-func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+# `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
+# and on_pick gets "__none" so the asker can clean up
+func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()) -> void:
     if is_open or DayReport.is_open:
-        _queue.append([who, body, choices, on_pick])
+        _queue.append([who, body, choices, on_pick, valid])
         return
-    speaker = Roles.speaker(who)  # a card that names you comes from somebody else
-    text = body
-    options = choices
+    speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
+    text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
+    options = []
+    for choice in choices:
+        var entry: Dictionary = choice
+        if str(entry.get("label", "")).find("{") >= 0:
+            entry = entry.duplicate()
+            entry["label"] = Roles.fill(str(entry.label))
+        options.append(entry)
+    choices = options
     var any_enabled := false
     for opt in choices:
         any_enabled = any_enabled or bool(opt.get("enabled", true))
@@ -12938,16 +13246,25 @@ func pick(index: int) -> void:
     Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
     if id != "__none" and _callback.is_valid():
         _callback.call(id)
-    if not _queue.is_empty():
+    _show_next()
+
+
+# the next queued card whose reason still holds (a Vic complaint for a ticket that closed meanwhile is dropped)
+func _show_next() -> void:
+    while not _queue.is_empty() and not is_open and not DayReport.is_open:
         var next: Array = _queue.pop_front()
-        ask(next[0], next[1], next[2], next[3])
+        var valid: Callable = next[4] if next.size() > 4 else Callable()
+        if valid.is_valid() and not bool(valid.call()):
+            if next[3].is_valid():
+                next[3].call("__none")
+            continue
+        ask(next[0], next[1], next[2], next[3], valid)
 
 
 # cards that were asked while the day report covered the screen
 func flush() -> void:
-    if not is_open and not DayReport.is_open and not _queue.is_empty():
-        var next: Array = _queue.pop_front()
-        ask(next[0], next[1], next[2], next[3])
+    if not is_open and not DayReport.is_open:
+        _show_next()
 
 
 # Esc picks the option whose id is "leave" (conversations)
@@ -13040,7 +13357,19 @@ func _paint() -> void:
         var label := "%d. %s" % [i + 1, str(opt.label)]
         if not on and opt.has("hint"):
             label += " [%s]" % str(opt.hint)
-        PixelFont.draw(_canvas, label.substr(0, chars - 1), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
+        var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
+        var room := chars - 1 - (chip.length() + 1 if chip != "" else 0)
+        PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
+        if chip != "":
+            var tint := Color("2f7d46")
+            if str(opt.get("stance", "")) == "warn":
+                tint = Color("b9791a")
+            elif str(opt.get("stance", "")) == "oppose":
+                tint = Color("b02a2a")
+            var cw := float(chip.length()) * 4.0 + 3.0
+            var chip_rect := Rect2(r.end.x - cw - 1.0, r.position.y + 1.0, cw, 8.0)
+            _canvas.draw_rect(chip_rect, tint)
+            PixelFont.draw(_canvas, chip, chip_rect.position + Vector2(2, 1), WHITE)
         _hits.append({"r": r, "i": i})
         y += 11.0
     var m := _mouse.floor()
@@ -13315,7 +13644,14 @@ func deliver() -> void:
     ]
     if vic_friend:
         options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
-    Cards.ask("Vic Marlowe", text, options, resolve)
+    var ticket_id := int(pending.get("ticket", 0))
+    Cards.ask(
+        "Vic Marlowe",
+        text,
+        options,
+        resolve,
+        func() -> bool: return str(Msp.ticket(ticket_id).get("status", "Closed")) != "Closed"
+    )
 
 
 func resolve(choice: String) -> void:
@@ -13362,8 +13698,8 @@ func from_dict(data: Dictionary) -> void:
 
 write("scripts/owner.gd", '''extends Node
 # gdlint:disable=max-line-length
-# The owner campaign: you run Pixel IT Partners. Each campaign "day" is a week of the business. Your techs (Alan,
-# Garrison, Dan, plus anyone you hire) work the ticket queue on their own at a speed set by the team; you make the
+# The owner campaign: you run Pixel IT Partners as one of its two owners (Alan or Garrison). Each campaign "day" is a week of the business. Your crew (Dan, Maya,
+# plus anyone you hire; Morgan manages the desk and your partner helps at half speed) works the ticket queue on their own at a speed set by the team; you make the
 # business decisions as Cards (pricing, backups, hiring, quotes, vendors, crises) and watch cash, clients and
 # reputation. Each week ends with a P&L report; week 20 is the board review (sell, expand or stay independent).
 # Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
@@ -13425,6 +13761,47 @@ const GOALS := {
 }
 const WORK := {1: 180.0, 2: 140.0, 3: 100.0, 4: 72.0}  # tech-seconds a ticket needs, by priority
 const JUNIOR := {"name": "Sam", "skill": 0.7, "wage": 450}
+# X4: you are one of the two owners. The crew you manage is Dan, Maya and the hires, with Morgan as the manager (she does not
+# work tickets but keeps the desk moving) and your partner helping at roughly half speed. The owners take a draw, not a wage.
+const CREW := [{"name": "Dan", "skill": 1.2, "wage": 650}, {"name": "Maya", "skill": 1.0, "wage": 550}]
+const MORGAN_WAGE := 750
+const MANAGER_BOOST := 1.1  # a manager who runs the desk makes the same crew about 10% faster
+const MAX_LOST := 1  # of the two employees at most one quits (hires can leave too)
+const DRAW := {"none": 0, "small": 300, "normal": 600, "generous": 1000}  # weekly, for both owners together
+const DRAW_START := 3  # the first week a draw is paid
+const DRAW_FLOOR := 2000  # a draw that leaves less cash than this upsets Marge and the partner
+const OUTING_BURN := 3.0  # extra burnout relief an outing gives the owner whose edge is culture
+# what each owner is good and bad at (X4). Every number is read by an existing function through Owner.edge(key):
+#   close_miss  chance a finished ticket comes back (was 7%)      rdp / stack_risk  break-in and vendor-breach odds multipliers
+#   issues      ticket volume multiplier (stack choices)           backup_check      weekly chance a failed backup is noticed
+#   marketing   marketing effect multiplier                        fee_accept        chance a fee rise is accepted (added)
+#   qbr         business review success (added)                    new_mood          mood new clients start with (added)
+#   poach       competitor poach risk (added)                      patch             patch debt grows this fast
+#   morale      added to the crew's tool morale (%)                outing_relief     multiplier on burnout relief from outings
+const OWNER_EDGES := {
+    "Alan":
+    {
+        "close_miss": 0.04, "rdp": 0.8, "stack_risk": 0.85, "issues": 0.95, "backup_check": 0.35,
+        "marketing": 0.7, "fee_accept": -0.08, "qbr": -0.08, "new_mood": 0, "poach": 0.0,
+        "patch": 1.0, "morale": 0.0, "outing_relief": 1.0
+    },
+    "Garrison":
+    {
+        "close_miss": 0.09, "rdp": 1.2, "stack_risk": 1.1, "issues": 1.0, "backup_check": 0.12,
+        "marketing": 1.25, "fee_accept": 0.08, "qbr": 0.1, "new_mood": 4, "poach": -0.02,
+        "patch": 1.35, "morale": 3.0, "outing_relief": 1.5
+    },
+}
+const DEFAULT_EDGE := {
+    "close_miss": 0.07, "rdp": 1.0, "stack_risk": 1.0, "issues": 1.0, "backup_check": 0.2,
+    "marketing": 1.0, "fee_accept": 0.0, "qbr": 0.0, "new_mood": 0, "poach": 0.0,
+    "patch": 1.0, "morale": 0.0, "outing_relief": 1.0
+}
+# personal goals (shown in the weekly report, scored at the review)
+const OWNER_GOALS := {
+    "Alan": {"title": "A CLEAN YEAR", "parts": ["NO RANSOMWARE LOSS", "NO BREAK-INS", "A DOCUMENTED STACK (MATURITY 3)"]},
+    "Garrison": {"title": "THE SHOP CLIENTS LOVE", "parts": ["CLIENT MOOD 75+", "THE TEAM STAYS"]},
+}
 const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 
 # Card options: {label, need (cash), fx} or {label, need, roll: [[chance, fx, result text], ...]} plus optional text.
@@ -13433,7 +13810,7 @@ const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 const CARDS := {
     "welcome": {
         "speaker": "Marge (Bookkeeper)",
-        "text": "Welcome, boss. Five clients, three techs, Vic in sales and $5,000 in the bank. Payroll and rent come out every week. How do you want to price our service?",
+        "text": "Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
         "options": [
             {"label": "VOLUME PRICING (-15% FEES, VIC SELLS MORE)", "fx": {"price": -0.15, "vic": 0.15}},
             {"label": "STANDARD PRICING", "fx": {}},
@@ -13441,8 +13818,8 @@ const CARDS := {
         ],
     },
     "backup": {
-        "speaker": "Alan (Co-owner)",
-        "text": "Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
+        "speaker": "{tech}",
+        "text": "{me}, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
         "options": [
             {"label": "BUY THE BACKUP SERVICE ($600 + $100/WEEK)", "need": 600, "fx": {"cash": -600, "weekly": 100, "flag": "backup_service"}},
             {"label": "NO, WE WILL CHECK THEM BY HAND", "fx": {"flag": "no_backup_service"}},
@@ -13476,7 +13853,7 @@ const CARDS := {
         ],
     },
     "license": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone.",
         "options": [
             {"label": "PAY THE HIKE ($500)", "need": 500, "fx": {"cash": -500}},
@@ -13487,8 +13864,8 @@ const CARDS := {
         "speaker": "Vic Marlowe",
         "text": "Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send?",
         "options": [
-            {"label": "SEND ALAN NOW ($300)", "need": 300, "roll": [[0.85, {"cash": -300, "mood": {"2": 10}, "rep": 2}, "Alan rebuilds it properly. Bob buys him lunch."], [0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]]},
-            {"label": "SEND THE JUNIOR OR DAN ($100)", "need": 100, "roll": [[0.5, {"cash": -100, "mood": {"2": 5}}, "Back up by evening."], [0.5, {"cash": -100, "mood": {"2": -12}, "rep": -2}, "Cables were plugged into the wrong ports. Bob is furious."]]},
+            {"label": "SEND {tech} NOW ($300)", "need": 300, "roll": [[0.85, {"cash": -300, "mood": {"2": 10}, "rep": 2}, "{tech} rebuilds it properly. Bob buys them lunch."], [0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]]},
+            {"label": "SEND MAYA OR A NEW HIRE ($100)", "need": 100, "roll": [[0.5, {"cash": -100, "mood": {"2": 5}}, "Back up by evening."], [0.5, {"cash": -100, "mood": {"2": -12}, "rep": -2}, "Cables were plugged into the wrong ports. Bob is furious."]]},
             {"label": "TELL THEM IT IS THEIR WALL", "roll": [[0.7, {"mood": {"2": -20}}, "They fix it themselves. They are not happy."], [0.3, {"mood": {"2": -20}, "drop": true}, "Gnarly Gnomes cancels the contract."]]},
         ],
     },
@@ -13502,20 +13879,20 @@ const CARDS := {
         ],
     },
     "email24": {
-        "speaker": "Alan (Co-owner)",
-        "text": "Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.",
+        "speaker": "{tech}",
+        "text": "Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. I will stay late if you approve overtime.",
         "options": [
             {"label": "PREMIUM VENDOR + OVERTIME ($800)", "need": 800, "roll": [[0.9, {"cash": -800, "mood": {"4": 12}, "rep": 3}, "Fixed by 9pm. The brewery owner sends beer."], [0.1, {"cash": -800, "mood": {"4": 4}}, "Fixed, but after midnight."]]},
             {"label": "STANDARD VENDOR SUPPORT", "roll": [[0.4, {"mood": {"4": 3}}, "Fixed overnight, barely."], [0.6, {"mood": {"4": -20}, "rep": -3}, "Down until morning. A batch is lost. Lucy is livid."]]},
-            {"label": "GO IN YOURSELF", "roll": [[0.6, {"rep": 1, "mood": {"4": 6}}, "You muddle through and fix it. Alan is impressed."], [0.4, {"mood": {"4": -8}}, "You make it worse before you make it better."]]},
+            {"label": "GO IN YOURSELF", "roll": [[0.6, {"rep": 1, "mood": {"4": 6}}, "You muddle through and fix it. {tech} is impressed."], [0.4, {"mood": {"4": -8}}, "You make it worse before you make it better."]]},
         ],
     },
     "raise": {
-        "speaker": "Alan (Co-owner)",
-        "text": "Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
+        "speaker": "Dan (Network Tech)",
+        "text": "{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
         "options": [
             {"label": "GIVE THE RAISE", "fx": {"weekly": 100, "speed": 0.1}},
-            {"label": "NOT NOW", "roll": [[0.7, {}, "Alan shrugs and keeps working."], [0.3, {"lose_tech": true, "rep": -2}, "Alan hands in his notice. The team is stretched thin."]]},
+            {"label": "NOT NOW", "roll": [[0.7, {}, "Dan shrugs and keeps working."], [0.3, {"lose_tech": true, "rep": -2}, "Dan hands in his notice. The team is stretched thin."]]},
         ],
     },
     "bid": {
@@ -13564,7 +13941,7 @@ const CARDS := {
         "speaker": "MSP Mastermind",
         "text": "A member got hit by ransomware last month because their backups had quietly died and nobody had checked in weeks. The group's advice: have your team check every client's backup today.",
         "options": [
-            {"label": "HAVE THE TEAM CHECK EVERY BACKUP", "fx": {"check_backups": true}, "text": "Alan checks them all. Any failing job is rerun."},
+            {"label": "HAVE THE TEAM CHECK EVERY BACKUP", "fx": {"check_backups": true}, "text": "The crew checks them all. Any failing job is rerun."},
             {"label": "WE ARE FINE", "fx": {}},
         ],
     },
@@ -13594,17 +13971,37 @@ const CARDS := {
             {"label": "AGGRESSIVE ($900/WEEK)", "fx": {"marketing": 900}},
         ],
     },
+    "draw_policy": {
+        "speaker": "Marge (Bookkeeper)",
+        "text": "The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take?",
+        "options": [
+            {"label": "NORMAL DRAW ($600/WEEK, BOTH OF YOU)", "fx": {"draw": "normal"}, "text": "Marge writes it in the ledger. The draw starts in week 3."},
+            {"label": "SMALL DRAW ($300/WEEK)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A small draw. Marge looks relieved and {partner} nods. The bank stays fat."},
+            {"label": "GENEROUS DRAW ($1,000/WEEK)", "fx": {"draw": "generous"}, "text": "A generous draw. Marge says nothing, which is how she says a lot."},
+            {"label": "NO DRAW (WE LIVE ON NOODLES)", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger."},
+        ],
+    },
+    "draw_review": {
+        "speaker": "Marge (Bookkeeper)",
+        "text": "Quarterly look at the owners' draw. Same as before, more, less, or nothing for now?",
+        "options": [
+            {"label": "KEEP THE DRAW AS IT IS", "fx": {}},
+            {"label": "TAKE LESS (SMALL DRAW)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A smaller draw. The bank breathes easier."},
+            {"label": "TAKE MORE (GENEROUS DRAW)", "fx": {"draw": "generous"}, "text": "A bigger draw. It is a good quarter, you tell yourself."},
+            {"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw this quarter. Marge pins a gold star on the ledger."},
+        ],
+    },
     "stack_psa": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run.",
         "options": [
             {"label": "KEEP CONNECTWHY PSA", "fx": {}},
             {"label": "TICKETO LITE ($15/WK, $300 TO MIGRATE)", "need": 300, "fx": {"cash": -300, "stack": {"psa": "ticketo"}}, "text": "Migrated. The crew is not thrilled."},
-            {"label": "OPSFORGE PRO ($140/WK, $300 TO MIGRATE)", "need": 300, "fx": {"cash": -300, "stack": {"psa": "opsforge"}}, "text": "The techs love the automation."},
+            {"label": "OPSFORGE PRO ($140/WK, $300 TO MIGRATE)", "need": 300, "fx": {"cash": -300, "stack": {"psa": "opsforge"}}, "text": "The crew loves the automation."},
         ],
     },
     "stack_rmm": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call.",
         "options": [
             {"label": "KEEP LABRAT RMM", "fx": {}},
@@ -13639,7 +14036,7 @@ const CARDS := {
         ],
     },
     "after_hours": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{ops}",
         "text": "After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend.",
         "options": [
             {"label": "ADOPT A $250/HOUR AFTER-HOURS FEE", "fx": {"flag": "after_hours_fee", "mood_all": -3}, "text": "Most non-critical after-hours calls stop. A few clients grumble."},
@@ -13648,16 +14045,16 @@ const CARDS := {
         ],
     },
     "oncall_policy": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{ops}",
         "text": "Clients are starting to call after hours. Somebody has to carry the pager. How do we run it?",
         "options": [
             {"label": "ROTATE EVERYONE, $100/WEEK POOL", "fx": {"weekly": 100, "flag": "oncall_stipend", "burnout": -4}, "text": "A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn."},
-            {"label": "ALAN TAKES IT EVERY WEEK (+$150)", "fx": {"weekly": 150, "flag": "oncall_one"}, "text": "Alan says fine. For now. The same person every week is how people quit."},
+            {"label": "DAN TAKES IT EVERY WEEK (+$150)", "fx": {"weekly": 150, "flag": "oncall_one"}, "text": "Dan says fine. For now. The same person every week is how people quit."},
             {"label": "YOU CARRY THE PAGER YOURSELF", "fx": {"flag": "owner_oncall", "burnout": -6}, "text": "The crew is thrilled. Your nights will be less so, and it eats your owner hours every week."},
         ],
     },
     "flex_hours": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{ops}",
         "text": "Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy?",
         "options": [
             {"label": "FLEXIBLE START TIMES (CORE 10 TO 4)", "fx": {"flag": "flex_hours", "burnout": -6, "speed": -0.02}, "text": "Morale lifts. The phones are a little thin first thing."},
@@ -13666,8 +14063,8 @@ const CARDS := {
         ],
     },
     "rdp_exposed": {
-        "speaker": "Alan (Co-owner)",
-        "text": "Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
+        "speaker": "{tech}",
+        "text": "{me}, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
         "options": [
             {"label": "AUTO-BLOCKING FIREWALLS ($600 + $40/WEEK)", "need": 600, "fx": {"cash": -600, "weekly": 40, "flag": "rdp_safe"}, "text": "Repeated failed logins now get an address blocked automatically. The guessing stops."},
             {"label": "PUT REMOTE ACCESS BEHIND A VPN ($1,200)", "need": 1200, "fx": {"cash": -1200, "flag": "rdp_safe", "mood_all": -2}, "text": "Remote access needs the VPN first. Users complain a little, attackers get nothing."},
@@ -13676,7 +14073,7 @@ const CARDS := {
         ],
     },
     "ransom_options": {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "Hoot and Holler's server is encrypted by CryptoLocker. There is a countdown and a ransom demand in Bitcoin. The backup was not working. What now?",
         "options": [
             {"label": "PAY THE RANSOM ($500)", "need": 500, "roll": [[0.7, {"cash": -500, "ransom_end": "paid", "rep": -1}, "The key arrives and the files unlock. Nobody feels good about it."], [0.3, {"cash": -500, "ransom_end": "lost"}, "They took the money and the key never came."]]},
@@ -13694,23 +14091,23 @@ const CARDS := {
     },
 }
 const DAYS := {
-    1: [{"at": 9.1, "card": "welcome"}],
-    2: [{"at": 9.1, "card": "backup"}, {"at": 15.0, "card": "peer_invite"}],
+    1: [{"at": 9.1, "card": "welcome"}, {"at": 9.6, "event": "owner_goal"}],
+    2: [{"at": 9.1, "card": "backup"}, {"at": 10.0, "card": "draw_policy"}, {"at": 15.0, "card": "peer_invite"}],
     3: [{"at": 9.1, "card": "queue"}, {"at": 9.3, "event": "leak_start"}, {"at": 15.0, "card": "marketing"}],
     4: [{"at": 9.5, "card": "desktop"}, {"at": 12.0, "card": "oncall_policy"}, {"at": 14.0, "card": "stack_psa"}],
-    5: [{"at": 8.6, "event": "break_backup"}, {"at": 11.0, "card": "stack_hw"}, {"at": 14.0, "card": "billing_audit"}, {"at": 15.0, "event": "peer", "card": "peer1"}, {"at": 15.5, "event": "peer_goal"}, {"at": 12.0, "event": "growth_plan"}],
+    5: [{"at": 8.6, "event": "break_backup"}, {"at": 11.0, "card": "stack_hw"}, {"at": 14.0, "card": "billing_audit"}, {"at": 15.0, "event": "peer", "card": "peer1"}, {"at": 15.5, "event": "peer_goal"}, {"at": 12.0, "event": "growth_plan"}, {"at": 10.2, "event": "partner", "card": "partner1"}],
     6: [{"at": 9.5, "event": "prospect"}, {"at": 10.5, "event": "profit_review"}, {"at": 12.0, "event": "client_no"}, {"at": 15.0, "card": "mentor_offer"}],
     7: [{"at": 11.0, "event": "qbr"}, {"at": 12.5, "card": "rdp_exposed"}, {"at": 14.0, "card": "stack_rmm"}],
     8: [{"at": 9.5, "card": "license"}, {"at": 13.0, "card": "vic_plan"}, {"at": 15.0, "event": "peer", "card": "peer2"}, {"at": 11.0, "event": "growth_stretch"}],
-    9: [{"at": 9.8, "event": "grumble"}, {"at": 10.5, "event": "ransomware"}, {"at": 14.5, "card": "marketing"}],
+    9: [{"at": 9.8, "event": "grumble"}, {"at": 10.5, "event": "ransomware"}, {"at": 14.5, "card": "marketing"}, {"at": 13.0, "event": "partner", "card": "partner2"}],
     10: [{"at": 10.0, "card": "rack"}, {"at": 10.8, "event": "profit_review"}, {"at": 14.0, "event": "vic_report"}, {"at": 12.0, "card": "flex_hours"}],
-    11: [{"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 15.5, "event": "peer_goal"}],
+    11: [{"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"}, {"at": 15.5, "event": "peer_goal"}],
     12: [{"at": 9.5, "card": "migration"}, {"at": 10.5, "card": "after_hours"}, {"at": 11.5, "event": "growth_stretch"}],
-    13: [{"at": 15.5, "card": "email24"}],
+    13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}],
     14: [{"at": 10.0, "event": "vendor_breach"}, {"at": 11.0, "event": "profit_review"}, {"at": 15.0, "card": "marketing"}],
     15: [{"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}],
     16: [{"at": 9.5, "card": "bid"}, {"at": 14.0, "event": "client_breach"}, {"at": 11.0, "event": "growth_stretch"}],
-    17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 15.5, "event": "peer_goal"}],
+    17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 10.0, "event": "partner", "card": "partner4"}, {"at": 15.5, "event": "peer_goal"}],
     18: [{"at": 9.5, "event": "poach_wave"}, {"at": 11.0, "event": "profit_review"}],
     19: [{"at": 11.0, "event": "qbr"}],
 }
@@ -13722,6 +14119,12 @@ var speed := 1.0
 var vic_bonus := 0.0
 var weekly_extra := 0
 var lost_techs := 0
+var draw_policy := "normal"  # the owners' weekly draw: none / small / normal / generous (card on week 2)
+var draw_paid := 0  # total drawn so far
+var draw_warned := -9  # the week Marge last complained about an oversized draw
+var hire_quits := 0  # hires who left (for the Garrison goal: a team that stays)
+var incidents := 0  # break-ins through remote desktop (for the Alan goal: a clean year)
+var _outings_seen := 0
 var extra_staff: Array = []
 var marketing := 0  # weekly marketing budget
 var stack := DEFAULT_STACK.duplicate()
@@ -13778,6 +14181,13 @@ func reset() -> void:
     vic_bonus = 0.0
     weekly_extra = 0
     lost_techs = 0
+    draw_policy = "normal"
+    draw_paid = 0
+    draw_warned = -9
+    hire_quits = 0
+    incidents = 0
+    _outings_seen = 0
+    Partner.reset()
     extra_staff = []
     marketing = 0
     stack = DEFAULT_STACK.duplicate()
@@ -13823,14 +14233,61 @@ func reset() -> void:
 
 # ---- the team works the queue ----------------------------------------------------------------
 func team_speed() -> float:
-    var total := float(maxi(0, 3 - lost_techs))
+    var total := crew_skill() + Partner.hands()
     for hire in extra_staff:
         total += float(hire.skill) + (0.1 if hire.get("trait", "") == "wizard" else 0.0)
-    var morale := (0.9 + clampf(Social.average() / 400.0, -0.1, 0.2)) * (1.0 + stack_sum("morale") / 100.0)
-    return total * (speed + stack_sum("speed")) * morale * (1.0 - burnout / 300.0) * (1.0 - Growth.capacity_loss()) * (1.0 - Projects.drag())
+    var morale := (0.9 + clampf(Social.average() / 400.0, -0.1, 0.2)) * (1.0 + (stack_sum("morale") + edge("morale")) / 100.0)
+    return total * (speed + stack_sum("speed")) * morale * MANAGER_BOOST
+        * (1.0 - burnout / 300.0) * (1.0 - Growth.capacity_loss()) * (1.0 - Projects.drag())
 
 
 # ---- the stack you run and sell ----------------------------------------------------------------
+# ---- who is on the team (X4): Dan, Maya, the hires, Morgan as the manager and the partner at half speed ----------------
+func crew_size() -> int:
+    return maxi(0, CREW.size() - lost_techs)
+
+
+func crew_names() -> Array:
+    var out := []
+    for i in crew_size():
+        out.append(str(CREW[i].name))
+    return out
+
+
+# the ticket-working skill of the employees you started with (hires are added by team_speed)
+func crew_skill() -> float:
+    var total := 0.0
+    for i in crew_size():
+        total += float(CREW[i].skill)
+    return total
+
+
+# everyone who works the queue, in people (the project capacity model counts heads, not skill)
+func crew_heads() -> float:
+    return float(crew_size()) + float(extra_staff.size()) + Partner.hands()
+
+
+func crew_wages() -> int:
+    var total := 0
+    for i in crew_size():
+        total += int(round(float(CREW[i].wage) * wage_mult()))
+    return total + int(round(float(MORGAN_WAGE) * wage_mult()))
+
+
+# ---- your edges (X4): Alan is the technical owner, Garrison the sales-and-culture one. Point-buy (X7) will add its bias
+# floors in edges_for(), nothing else needs to change.
+func edges_for(owner_name: String) -> Dictionary:
+    var out: Dictionary = DEFAULT_EDGE.duplicate()
+    var mine: Dictionary = OWNER_EDGES.get(owner_name, {})
+    for key in mine:
+        out[key] = mine[key]
+    return out
+
+
+func edge(key: String) -> float:
+    return float(edges_for(Campaign.player_as)[key]) if active() else float(DEFAULT_EDGE[key])
+
+
 func stack_option(category: String) -> Dictionary:
     return STACK[category].options[stack[category]]
 
@@ -13850,7 +14307,7 @@ func stack_cost() -> int:
 func issue_mult() -> float:
     if not active():
         return 1.0
-    var m := 1.0
+    var m := float(edge("issues"))
     for category in STACK:
         m *= float(stack_option(str(category)).get("issues", 1.0))
     if flags.get("after_hours_fee", false):
@@ -13860,7 +14317,7 @@ func issue_mult() -> float:
 
 # how exposed you are to a vendor compromise: the RMM you chose
 func security_risk() -> float:
-    return float(stack_option("rmm").get("risk", 1.0))
+    return float(stack_option("rmm").get("risk", 1.0)) * float(edge("stack_risk"))
 
 
 # scope creep: a few clients generate far more requests until you enforce the contract
@@ -13912,7 +14369,7 @@ func hardware_margin() -> int:
 
 
 func new_client_mood() -> int:
-    return int(VIC_PLANS[vic_plan].start_mood)
+    return int(VIC_PLANS[vic_plan].start_mood) + int(edge("new_mood"))
 
 
 # Vic closed something: pay his commission, bank the hardware resale margin
@@ -13973,7 +14430,7 @@ func _work_queue(seconds: float) -> void:
 
 func _finish_ticket(t: Dictionary) -> void:
     _work.erase(int(t.id))
-    if randf() < 0.07:
+    if randf() < float(edge("close_miss")):
         Msp.close_ticket(int(t.id))  # closed too early: it comes back
         return
     Growth.owner_escalation(t)
@@ -13993,7 +14450,7 @@ func begin_day(day: int) -> void:
             Msp.backups[c].good_day = day
     else:
         for c in Sales.active:
-            if not Msp.backups[int(c)].ok and randf() < 0.2:
+            if not Msp.backups[int(c)].ok and randf() < float(edge("backup_check")):
                 Msp.backup_rerun(int(c))  # a tech happened to check it
     if not _late.is_empty():
         var late_client: int = _late.pop_front()
@@ -14014,6 +14471,9 @@ func begin_day(day: int) -> void:
 
 
 func fire(ev: Dictionary) -> void:
+    if ev.get("event", "") == "partner":
+        Partner.hold_beat(str(ev.card))  # a partner meeting (weeks 5, 9, 13, 17)
+        return
     if ev.get("event", "") == "peer":
         if flags.get("peer_group", false):
             show_card(str(ev.card))
@@ -14052,10 +14512,27 @@ func fire(ev: Dictionary) -> void:
             Msp.break_backup(Story.RANSOM_CLIENT)
         "ransomware":
             _ransom()
+        "owner_goal":
+            _goal_card()
         "growth_plan":
             Growth.owner_plan_card()
         "growth_stretch":
             Growth.owner_stretch()
+
+
+# week 1: Marge tells you what you are here for (your personal goal, scored at the review)
+func _goal_card() -> void:
+    var alan: bool = Campaign.player_as == "Alan"
+    _dynamic["owner_goal"] = {
+        "speaker": "Marge (Bookkeeper)",
+        "text": (
+            "Every owner wants something out of this place. Yours is a clean year: no ransomware loss, no break-ins, and a stack documented well enough to hand to a stranger (maturity 3). It goes on the weekly report."
+            if alan
+            else "Every owner wants something out of this place. Yours is the shop clients love: client mood of 75 or better, and a team that stays. It goes on the weekly report."
+        ),
+        "options": [{"label": "GOOD. LET US GO.", "fx": {}}],
+    }
+    show_card("owner_goal")
 
 
 func card_data(id: String) -> Dictionary:
@@ -14074,6 +14551,13 @@ func show_card(id: String) -> void:
         if opt.has("unless") and flags.get(str(opt.unless), false):
             entry["enabled"] = false
             entry["hint"] = "OWNED"
+        var stance: String = Partner.stance(opt)  # the other owner's opinion (a chip on the option)
+        if stance != "":
+            entry["stance"] = stance
+            entry["chip"] = Partner.chip(stance)
+            if Partner.blocks(stance):
+                entry["enabled"] = false
+                entry["hint"] = "PARTNER HAS TO AGREE"
         options.append(entry)
     Cards.ask(str(card.speaker), str(card.text), options, func(pick: String) -> void: _picked(id, int(pick)))
 
@@ -14087,11 +14571,21 @@ func tilted(table: Array) -> Array:
         var shift := minf(0.1, float(out[out.size() - 1][0]))
         out[0][0] += shift
         out[out.size() - 1][0] -= shift
+    # a pricing talk: Garrison sells a fee rise better than Alan does (edge fee_accept)
+    var accept := float(edge("fee_accept"))
+    if accept != 0.0 and out.size() >= 2 and (out[0][1] as Dictionary).has("fee_boost"):
+        var moved := clampf(accept, 0.05 - float(out[0][0]), float(out[out.size() - 1][0]))
+        out[0][0] += moved
+        out[out.size() - 1][0] -= moved
     return out
 
 
 func _picked(id: String, index: int) -> void:
+    if card_data(id).is_empty():
+        return  # a card left over from an earlier run (the books were reset under it)
     var opt: Dictionary = card_data(id).options[index]
+    if not bool(card_data(id).get("beat", false)):
+        Partner.on_pick(Partner.stance(opt))  # follow their call, or override it
     var text := str(opt.get("text", ""))
     if opt.has("roll"):
         var roll := randf()
@@ -14201,7 +14695,15 @@ func apply(fx: Dictionary) -> void:
         newbie["age"] = 0
         extra_staff.append(newbie)
     if fx.get("lose_tech", false):
-        lost_techs += 1
+        if lost_techs < MAX_LOST:
+            lost_techs += 1
+        elif not extra_staff.is_empty():
+            extra_staff.pop_back()
+            hire_quits += 1
+    if fx.has("draw"):
+        draw_policy = str(fx.draw)
+    if fx.has("trust"):
+        Partner.change(int((fx.trust as Dictionary).get(Roles.partner(), 0)))
     if fx.get("sign", false):
         var signed: int = Sales.sign_client(int(fx.get("client", -1)))
         if signed >= 0 and fx.has("sign_bonus"):
@@ -14353,7 +14855,7 @@ func _inbound_lead() -> void:
 
 func marketing_bonus() -> float:
     var spend := float(marketing)
-    return spend / (spend + 1500.0) * 0.4 * Growth.marketing_factor()
+    return spend / (spend + 1500.0) * 0.4 * Growth.marketing_factor() * float(edge("marketing"))
 
 
 # ---- hiring: three named candidates with skills and quirks ----------------------------
@@ -14378,7 +14880,7 @@ func _hire_card() -> void:
     options.append({"label": "NO ONE RIGHT NOW", "fx": {}})
     _dynamic["hire"] = {
         "speaker": "Marge (Bookkeeper)",
-        "text": "Three candidates came through the door. Skill is relative to a senior tech at 1.0; wages are weekly and count toward your W-2 ratio.",
+        "text": "Three candidates came through the door. Skill is relative to a solid, experienced tech at 1.0; wages are weekly and count toward your W-2 ratio.",
         "options": options,
     }
     show_card("hire")
@@ -14397,14 +14899,15 @@ func _staff_week() -> void:
         var quit_chance := float(trait_data.get("quit", 0.0)) + (0.08 if stack_sum("morale") <= -8.0 else 0.0)
         if randf() < quit_chance:
             extra_staff.erase(hire)
+            hire_quits += 1
             Msp.send_text("Marge", "%s quit." % hire.name)
-    if stack_sum("morale") <= -8.0 and lost_techs < 2 and randf() < 0.08:
+    if stack_sum("morale") <= -8.0 and lost_techs < MAX_LOST and randf() < 0.08:
         lost_techs += 1
-        Msp.send_text("Alan", "One of the techs just quit over the tooling.")
-    if flags.get("oncall_one", false) and lost_techs < 2 and randf() < 0.05:
+        Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
+    if flags.get("oncall_one", false) and lost_techs < MAX_LOST and randf() < 0.05:
         lost_techs += 1
         flags["oncall_one"] = false
-        Msp.send_text("Alan", "I am done carrying the pager every week. I quit.")
+        Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
 
 
 # ---- the crew complains about bad tools ---------------------------------------------------------------
@@ -14422,12 +14925,12 @@ func _grumble() -> void:
         return
     var fallback: Dictionary = {worst_cat: DEFAULT_STACK[worst_cat]}
     _dynamic["grumble"] = {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{ops}",
         "text": "The crew hates %s. Morale is sinking and people are updating their resumes." % str(stack_option(worst_cat).name),
         "options": [
             {"label": "SWITCH BACK TO THE STANDARD ($300)", "need": 300, "fx": {"cash": -300, "stack": fallback}, "text": "Cheers all round."},
             {"label": "PAY A TOOL BONUS ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.1}, "text": "A bonus buys goodwill, for a while."},
-            {"label": "TELL THEM TO DEAL WITH IT", "roll": [[0.6, {}, "They grumble and carry on."], [0.4, {"lose_tech": true, "rep": -1}, "One of the techs resigns over the tooling."]]},
+            {"label": "TELL THEM TO DEAL WITH IT", "roll": [[0.6, {}, "They grumble and carry on."], [0.4, {"lose_tech": true, "rep": -1}, "One of the crew resigns over the tooling."]]},
         ],
     }
     show_card("grumble")
@@ -14532,7 +15035,7 @@ func _qbr() -> void:
         return
     _qbr_done[pick] = Campaign.day
     var key := str(pick)
-    var odds := clampf(Sales.vic_skill() + 0.25 + (0.1 if Sales.mood(pick) >= 70 else 0.0), 0.2, 0.9)
+    var odds := clampf(Sales.vic_skill() + 0.25 + (0.1 if Sales.mood(pick) >= 70 else 0.0) + float(edge("qbr")), 0.2, 0.9)
     _dynamic["qbr"] = {
         "speaker": "Vic Marlowe",
         "text": "Business review time with %s (mood %d%%, they pay $%d a week). How much do we prepare?" % [Msp.CLIENTS[pick].name, Sales.mood(pick), client_fee(pick)],
@@ -14631,8 +15134,8 @@ func _burnout_week() -> void:
     if burnout >= 50.0 and not _burn_warned:
         _burn_warned = true
         _dynamic["burnout"] = {
-            "speaker": "Alan (Co-owner)",
-            "text": "Boss, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
+            "speaker": "{ops}",
+            "text": "{me}, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
             "options": [
                 {"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}},
                 {"label": "TALK ABOUT AFTER-HOURS PAY", "fx": {"show": "after_hours"}},
@@ -14640,10 +15143,10 @@ func _burnout_week() -> void:
             ],
         }
         show_card("burnout")
-    if burnout >= 70.0 and lost_techs < 2 and randf() < 0.18:
+    if burnout >= 70.0 and lost_techs < MAX_LOST and randf() < 0.18:
         lost_techs += 1
         burnout = maxf(0.0, burnout - 20.0)
-        Msp.send_text("Alan", "One of the techs quit. Burned out.")
+        Msp.send_text("Morgan", "One of the crew quit. Burned out.")
 
 
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
@@ -14651,7 +15154,7 @@ func _vendor_breach() -> void:
     var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
     var vendor: String = str(stack_option("rmm").name)
     _dynamic["vendor_breach"] = {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "%s just announced a breach: attackers pushed malicious code through their update channel. Every shop that uses it is exposed, including us. How fast do we move?" % vendor,
         "options": [
             {"label": "NOTIFY CLIENTS + ROTATE CREDENTIALS ($600)", "need": 600, "fx": {"cash": -600, "mood_all": -3, "rep": 2}, "text": "You got ahead of it. Clients respected the honesty."},
@@ -14674,7 +15177,7 @@ func _client_no() -> void:
     risk_choice = ""
     var key := str(pick)
     _dynamic["client_no"] = {
-        "speaker": "Alan (Co-owner)",
+        "speaker": "{tech}",
         "text": "%s's owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge." % Msp.CLIENTS[pick].name,
         "options": [
             {"label": "GET A SIGNED RISK-ACCEPTANCE WAIVER", "fx": {"risk_choice": "waiver", "mood": {key: -2}}, "text": "Signed and filed. If anything happens, there is a paper trail."},
@@ -14761,7 +15264,7 @@ func _peer_goal() -> void:
 func _patching(spare: float) -> void:
     var order := []
     for c in Sales.active:
-        patch_debt[int(c)] = minf(10.0, float(patch_debt.get(int(c), 0.0)) + 1.0)
+        patch_debt[int(c)] = minf(10.0, float(patch_debt.get(int(c), 0.0)) + float(edge("patch")))
         order.append(int(c))
     order.sort_custom(func(x: int, y: int) -> bool: return float(patch_debt[x]) > float(patch_debt[y]))
     var jobs := int(spare / 60.0) + int(stack_sum("patching"))
@@ -14782,7 +15285,7 @@ func poach_gaps(client: int) -> Array:
 
 
 func poach_risk(client: int) -> float:
-    var r := 0.02
+    var r := maxf(0.0, 0.02 + float(edge("poach")))
     var mood := Sales.mood(client)
     if mood < 35:
         r += 0.12
@@ -14950,11 +15453,12 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
     if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
         return
-    var chance := 0.04 if flags.get("rdp_weak", false) else 0.10
+    var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp"))
     if randf() >= chance:
         return
     var victim: int = Sales.active[randi() % Sales.active.size()]
     var cost := 1200 if flags.get("backup_service", false) else 2500
+    incidents += 1
     apply({"cash": -cost, "mood": {str(victim): -12}, "rep": -3})
     Cards.ask(
         "Marge (Bookkeeper)",
@@ -15022,7 +15526,7 @@ func weekly_estimate() -> Dictionary:
     for c in Sales.active:
         revenue += client_fee(int(c))
     revenue = int(float(revenue) * (1.0 - leak)) + Projects.service_revenue()
-    var payroll := tech_wage() * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
+    var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week
     for hire in extra_staff:
         payroll += hire_wage(hire)
     var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
@@ -15030,7 +15534,7 @@ func weekly_estimate() -> Dictionary:
     var rev := float(maxi(1, revenue))
     return {
         "revenue": revenue, "payroll": payroll, "fixed": fixed, "marketing": marketing, "ebitda": ebitda,
-        "profit": ebitda, "margin": float(ebitda) / rev, "w2": float(payroll) / rev,
+        "profit": ebitda, "draw": draw_due(), "cashflow": ebitda - draw_due(), "margin": float(ebitda) / rev, "w2": float(payroll) / rev,
     }
 
 
@@ -15099,6 +15603,11 @@ func settle() -> Dictionary:
             _asked[who] = Campaign.day
     # the commission was already paid when the deals closed
     cash += collected - (int(est.payroll) - _commission_week) - int(est.fixed) - int(est.marketing)
+    # the owners' draw (X4): cash out of the bank, never part of EBITDA
+    var draw := draw_due()
+    cash -= draw
+    draw_paid += draw
+    _draw_check(draw)
     _commission_week = 0
     # what each client really cost you this week
     for c in Sales.active:
@@ -15118,6 +15627,7 @@ func settle() -> Dictionary:
     _rdp_week()
     _poach_week()
     _staff_week()
+    _owner_week(profit)
     var hours_row: Array = Growth.owner_week()
     if randf() < 0.12 + float(marketing) / 2500.0:
         _leads += 1
@@ -15150,7 +15660,17 @@ func settle() -> Dictionary:
         ["CASH", "$%d" % cash, green if cash >= 0 else red],
         ["CLIENTS, A/R OWED", "%d (%d%%), $%d" % [Sales.active.size(), int(Sales.average()), ar_total()], Color("ffd27a") if ar_total() > 0 else Color.WHITE],
     ]
+    rows.insert(
+        7,
+        [
+            "OWNER DRAW",
+            "-$%d (%s), NOT IN EBITDA" % [draw, draw_policy.to_upper()],
+            Color.WHITE if draw <= 0 or cash >= DRAW_FLOOR else red
+        ]
+    )
     rows.append(hours_row)
+    rows.append(partner_row())
+    rows.append(goal_row())
     rows.append(["RECURRING + PROJECTS", "$%d/WK + $%d JOBS" % [int(est.revenue), Projects.week_income], Color("8fe3a0")])
     rows.append(["VALUE (ESTIMATE)", "$%d, %s" % [valuation(), path_label()], Color("ffd27a")])
     history.append({"day": Campaign.day, "profit": profit, "ebitda": profit - Projects.take_week_income(), "cash": cash})
@@ -15189,7 +15709,140 @@ func valuation() -> int:
     return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality()) + cash)
 
 
+# ---- the owners' draw, the partner and your personal goal (X4, X5) --------------------------------------------------
+func draw_due() -> int:
+    return int(DRAW.get(draw_policy, 0)) if Campaign.day >= DRAW_START else 0
+
+
+# a draw that leaves the bank thin upsets the partner and Marge (at most once every three weeks)
+func _draw_check(draw: int) -> void:
+    if draw <= 0 or cash >= DRAW_FLOOR or Campaign.day - draw_warned < 3:
+        return
+    draw_warned = Campaign.day
+    Partner.change(-3)
+    Social.change(Roles.partner(), -2)
+    _dynamic["draw_warn"] = {
+        "speaker": "Marge (Bookkeeper)",
+        "text": "We drew $%d this week and the bank is down to $%d. {partner} noticed too. Payroll comes out on Friday. Can the draw wait?" % [draw, cash],
+        "options":
+        [
+            {"label": "CUT THE DRAW TO SMALL", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "Marge writes it down in pen. {partner} exhales."},
+            {"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "Noodles for everybody. Marge looks almost cheerful."},
+            {"label": "KEEP IT AS IT IS", "fx": {}},
+        ],
+    }
+    show_card("draw_warn")
+
+
+func partner_row() -> Array:
+    if Partner.left:
+        return ["PARTNER", "%s HAS LEFT" % Roles.partner().to_upper(), Color("ff8a80")]
+    var good: bool = Partner.trust >= 55
+    return [
+        "PARTNER TRUST",
+        "%s %d (%s)" % [Roles.partner().to_upper(), Partner.trust, Partner.trust_word()],
+        Color("8fe3a0") if good else (Color("ffd27a") if Partner.trust >= Partner.BLOCK_TRUST else Color("ff8a80"))
+    ]
+
+
+# your personal goal, part by part: [{label, ok}]. `final` judges the maturity part strictly (the review).
+func goal_parts(final := false) -> Array:
+    var out := []
+    if Campaign.player_as == "Alan":
+        var ransom := str(Story.flags.get("ransom", ""))
+        out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom == "" or ransom == "saved"})
+        out.append({"label": "NO BREAK-INS", "ok": incidents == 0})
+        out.append({"label": "A DOCUMENTED STACK (MATURITY 3)", "ok": oml() >= 3 or (not final and Campaign.day < 12)})
+    else:
+        out.append({"label": "CLIENT MOOD 75+", "ok": Sales.average() >= 75.0 or (not final and Campaign.day < 6)})
+        out.append({"label": "THE TEAM STAYS", "ok": lost_techs == 0 and hire_quits == 0})
+    return out
+
+
+func goal_title() -> String:
+    return str(OWNER_GOALS.get(Campaign.player_as, OWNER_GOALS["Alan"]).title)
+
+
+func goal_met() -> bool:
+    for part in goal_parts(true):
+        if not bool(part.ok):
+            return false
+    return true
+
+
+func goal_row() -> Array:
+    var parts := goal_parts()
+    var ok := 0
+    for part in parts:
+        ok += 1 if bool(part.ok) else 0
+    return [
+        "PERSONAL GOAL",
+        "%s: %d/%d%s" % [goal_title(), ok, parts.size(), " ON TRACK" if ok == parts.size() else ""],
+        Color("8fe3a0") if ok == parts.size() else Color("ffd27a")
+    ]
+
+
+# end-of-week upkeep of the partnership: outings, then the quiet drift of trust
+func _owner_week(profit: int) -> void:
+    var outs := int(flags.get("outings", 0))
+    if outs > _outings_seen:
+        var n := outs - _outings_seen
+        _outings_seen = outs
+        var extra := OUTING_BURN * (float(edge("outing_relief")) - 1.0) * 2.0 * float(n)
+        burnout = clampf(burnout - extra, 0.0, 100.0)
+        Partner.change(n)  # a night out with your partner
+    Partner.week(profit)
+
+
 func offers() -> Array:
+    var out: Array = _base_offers()
+    var p := Roles.partner()
+    if p == "":
+        return out
+    var shown := []
+    for offer in out:
+        match str(offer.id):
+            "sell":
+                offer["label"] = "SELL THE COMPANY WITH %s FOR $%d" % [p.to_upper(), valuation()]
+                offer["desc"] = (
+                    "BOTH SIGNATURES: A BIGGER MSP OFFERS $%d FOR THE CLIENT LIST, THE TEAM AND THE NAME. %s"
+                    % [valuation(), "%s SIGNS, SULKING." % p.to_upper() if Partner.rift() else "%s IS IN." % p.to_upper()]
+                )
+            "expand":
+                if Partner.rift():
+                    continue  # a partner who is leaving does not co-sign a second office
+            "stay":
+                if Partner.left:
+                    offer["id"] = "left"
+                    offer["label"] = "CARRY ON WITHOUT %s" % p.to_upper()
+                    offer["desc"] = "%s WALKED OUT. YOUR NAME STAYS ON THE DOOR, ALONE." % p.to_upper()
+                elif Partner.rift():
+                    offer["label"] = "STAY INDEPENDENT, UNEASILY"
+                    offer["desc"] = "NAME ON THE DOOR, BUT YOU AND %s BARELY TALK." % p.to_upper()
+                else:
+                    offer["label"] = "STAY AND GROW TOGETHER"
+                    offer["desc"] = "YOUR NAME AND %s'S STAY ON THE DOOR. ONE MORE YEAR OF TICKETS." % p.to_upper()
+        shown.append(offer)
+    if Partner.rift() and cash >= Partner.BUYOUT_COST:
+        shown.append(
+            {
+                "id": "buyout",
+                "label": "BUY OUT %s ($%d)" % [p.to_upper(), Partner.BUYOUT_COST],
+                "desc": "YOU PAY $%d FOR THEIR HALF. THE COMPANY IS YOURS ALONE." % Partner.BUYOUT_COST,
+            }
+        )
+    if Partner.rift():
+        shown.append(
+            {
+                "id": "sellout",
+                "label": "SELL YOUR HALF TO %s ($%d)" % [p.to_upper(), valuation() / 2],
+                "desc": "%s BUYS YOU OUT. YOU WALK AWAY WITH HALF THE VALUE AND NO ALARM CLOCK." % p.to_upper(),
+            }
+        )
+    return shown
+
+
+func _base_offers() -> Array:
     var out := [{
         "id": "sell", "label": "SELL THE COMPANY FOR $%d" % valuation(),
         "desc": "A BIGGER MSP OFFERS $%d FOR THE CLIENT LIST, THE TEAM AND THE NAME." % valuation(),
@@ -15201,6 +15854,20 @@ func offers() -> Array:
         "desc": "YOUR NAME STAYS ON THE DOOR." if cash >= 0 else "THE BANK IS NERVOUS BUT THE DOORS STAY OPEN.",
     })
     return out
+
+
+func _ending_text(ending: String) -> String:
+    var p := Roles.partner().to_upper()
+    match ending:
+        "buyout":
+            return "YOU BUY OUT %s FOR $%d. THE DOOR SAYS ONLY YOUR NAME NOW. MARGE FRAMES THE CHEQUE." % [p, Partner.BUYOUT_COST]
+        "sellout":
+            return "YOU SELL YOUR HALF TO %s FOR $%d. YOU TAKE A LONG TRIP; THEY PROMISE NOT TO CHANGE THE COFFEE." % [p, valuation() / 2]
+        "left":
+            return "%s IS GONE. YOU RUN THE PLACE WITH MORGAN, MARGE AND TOO MANY SPREADSHEETS. THE PHONES KEEP RINGING." % p
+    if Partner.trust >= 55:
+        return "YOU AND %s KEEP YOUR NAMES ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS, AND A PARTNER YOU TRUST." % p
+    return "YOU KEEP YOUR NAME ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS. YOU AND %s DO NOT TALK ABOUT THE REVIEW." % p
 
 
 func review_lines(page: int, ending: String) -> Array:
@@ -15228,6 +15895,17 @@ func review_lines(page: int, ending: String) -> Array:
                 lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
                 lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
         2:
+            lines.append(["PARTNERSHIP", blue])
+            lines.append(["YOU AND %s OWN THIS PLACE." % Roles.partner().to_upper(), ink])
+            for line in Partner.status_lines():
+                lines.append(line)
+            lines.append(["YOUR GOAL: %s" % goal_title(), blue])
+            for part in goal_parts(true):
+                lines.append(["  %s: %s" % [str(part.label), "MET" if bool(part.ok) else "MISSED"], good if bool(part.ok) else Color("a02828")])
+            lines.append(["TOOK $%d IN DRAW (%s)." % [draw_paid, draw_policy.to_upper()], ink])
+            var plan := "NO PLAN" if not (flags.get("plan_sell", false) or flags.get("plan_grow", false) or flags.get("plan_split", false)) else ("SELL" if flags.get("plan_sell", false) else ("GROW" if flags.get("plan_grow", false) else "DISAGREE"))
+            lines.append(["PARTNER MEETINGS HELD: %d OF 4. PLAN: %s" % [Partner.met.size(), plan], ink])
+        3:
             lines.append(["YOUR OPTIONS", blue])
         _:
             lines.append(["THE END", blue])
@@ -15237,7 +15915,8 @@ func review_lines(page: int, ending: String) -> Array:
                 "expand":
                     lines.append(["THE SECOND OFFICE OPENS NEXT MONTH. NEW CLIENTS, NEW TECHS, NEW FIRES. YOU WOULD NOT HAVE IT ANY OTHER WAY.", ink])
                 _:
-                    lines.append(["YOU KEEP YOUR NAME ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS.", ink])
+                    lines.append([_ending_text(ending), ink])
+            lines.append(["YOUR GOAL, %s: %s." % [goal_title(), "MET" if goal_met() else "MISSED"], good if goal_met() else ink])
             lines.append(["TECH CAMPAIGN: PLAY IT FROM THE FLOOR.", good])
     return lines
 
@@ -15245,6 +15924,8 @@ func review_lines(page: int, ending: String) -> Array:
 func to_dict() -> Dictionary:
     return {
         "cash": cash, "flags": flags, "price": price, "speed": speed, "vic": vic_bonus, "weekly": weekly_extra,
+        "draw_policy": draw_policy, "draw_paid": draw_paid, "draw_warned": draw_warned, "hire_quits": hire_quits,
+        "incidents": incidents, "outings_seen": _outings_seen, "partner": Partner.to_dict(),
         "lost": lost_techs, "staff": extra_staff, "discount": discount, "history": history, "leaving": _leaving,
         "marketing": marketing, "leads": _leads, "stack": stack, "ar": ar, "fee_boost": fee_boost,
         "vic_plan": vic_plan, "vic_deals": vic_deals, "vic_signed": vic_signed, "late": _late, "asked": _asked,
@@ -15266,6 +15947,13 @@ func from_dict(data: Dictionary) -> void:
     vic_bonus = float(data.get("vic", 0.0))
     weekly_extra = int(data.get("weekly", 0))
     lost_techs = int(data.get("lost", 0))
+    draw_policy = str(data.get("draw_policy", "normal"))
+    draw_paid = int(data.get("draw_paid", 0))
+    draw_warned = int(data.get("draw_warned", -9))
+    hire_quits = int(data.get("hire_quits", 0))
+    incidents = int(data.get("incidents", 0))
+    _outings_seen = int(data.get("outings_seen", 0))
+    Partner.from_dict(data.get("partner", {}))
     extra_staff = data.get("staff", [])
     var saved: Dictionary = data.get("discount", {})
     for key in saved:
@@ -15986,6 +16674,9 @@ const TABLE := {
     # escape room: seconds on the clock, seconds a wrong code takes off (in the room)
     "escape.time": [150.0, 120.0, 105.0],
     "escape.wrong_penalty": [5.0, 10.0, 15.0],
+    # digits in the code (a fourth clue appears on hard) and whether the dial lock tells you bulls and cows (1 = yes)
+    "escape.digits": [3, 3, 4],
+    "escape.dial": [1, 1, 0],
     # dinner: how many of the three faces show their reaction (the others stay hidden for that round)
     "dinner.reveal": [3, 3, 2],
     # printer: marker speed x, green zone width x, number of test-page questions
@@ -16257,15 +16948,20 @@ const COMMUTES := {
 }
 const WEEK_TRAFFIC := {
     1: {"text": "THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.", "extra": 0.15},
-    3: {"text": "FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.", "extra": 0.20},
+    3: {"text": "SPRING STORM SEASON. THE UNDERPASS FLOODS AND EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.", "extra": 0.20},
 }
 const REASONS := [
     "AN ACCIDENT ON THE HIGHWAY", "A STALLED TRUCK IN THE LEFT LANE", "A TRAIN SITTING ON THE CROSSING",
-    "RAIN AND A FENDER BENDER", "ROAD WORK NOBODY WARNED YOU ABOUT",
+    "RAIN AND A FENDER BENDER", "ROAD WORK NOBODY WARNED YOU ABOUT", "A SCHOOL BUS BROKEN DOWN AT THE LIGHT",
+    "A WATER MAIN BREAK AND A DETOUR THROUGH TOWN", "A DRAWBRIDGE STUCK OPEN", "A SLOW FUNERAL PROCESSION",
+    "A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU",
 ]
 const PAGES := [
     "the file server is almost out of disk space", "the nightly backup job failed", "the VPN is down for the remote staff",
-    "the mail queue is stuck", "the domain controller stopped answering pings",
+    "the mail queue is stuck", "the domain controller stopped answering pings", "the RAID array says it is degraded",
+    "the firewall locked everybody out after the firmware update", "the phone system lost its SIP trunk",
+    "the Exchange server is out of mailbox space", "the antivirus server stopped pushing updates",
+    "the UPS is on battery and beeping", "the print server queue is stuck again",
 ]
 
 var enabled := false
@@ -16280,6 +16976,8 @@ var pages_ignored := 0
 var last_note := ""
 
 var _asked := false
+var _last_page := ""
+var _last_reason := ""
 var _stay_until := 0.0
 var _warned := 0
 var _oncall_pay := 0
@@ -16391,9 +17089,20 @@ func begin_day(day: int) -> void:
         commute_card()
 
 
+# a random line that is not the one used last time
+func _fresh(list: Array, last: String) -> String:
+    if list.size() < 2:
+        return str(list[0]) if not list.is_empty() else ""
+    var pick: String = str(list[randi() % list.size()])
+    while pick == last:
+        pick = str(list[randi() % list.size()])
+    return pick
+
+
 func _page_card() -> void:
     var client := Sales.pick_client()
-    var what: String = PAGES[randi() % PAGES.size()]
+    var what: String = _fresh(PAGES, _last_page)
+    _last_page = what
     pages += 1
     var text := "2:10 AM. THE PAGER GOES OFF. %s: %s." % [str(Msp.CLIENTS[client].name).to_upper(), what.to_upper()]
     Cards.ask("PAGER", text, [
@@ -16461,7 +17170,8 @@ func commute(choice: String) -> void:
     var reason := ""
     if traffic:
         delay += randi_range(15, 60)
-        reason = REASONS[randi() % REASONS.size()]
+        reason = _fresh(REASONS, _last_reason)
+        _last_reason = reason
         add_energy(-3.0)
     late_min = maxi(0, delay)
     add_energy(float(c.energy))
@@ -16528,17 +17238,26 @@ func _process(delta: float) -> void:
         Msp.send_text("Boss", "You look rough. Go home when you can.")
 
 
+# the real time of day for card titles, 12 hour style
+func clock_label() -> String:
+    var h := int(World.clock)
+    var m := int((World.clock - float(h)) * 60.0)
+    return "%d:%02d %s" % [(h + 11) % 12 + 1, m, "PM" if h % 24 >= 12 else "AM"]
+
+
 # Campaign asks this before ending the day. With tickets still open at closing it offers to stay late.
 func can_end_day() -> bool:
     if not active():
         return true
     if Cards.is_open:
         return false
+    if not _asked and Story.ot_hours > 0.0 and World.clock >= World.DAY_END + 0.25:
+        _asked = true  # an overtime job already took the evening: staying later is not on offer
     if not _asked:
         _asked = true
         var open := Msp.open_tickets().size()
         if open > 0:
-            Cards.ask("5:00 PM", "%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?" % open, [
+            Cards.ask(clock_label(), "%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?" % open, [
                 {"label": "GO HOME", "id": "home"},
                 {"label": "STAY 1 HOUR (+$%d, -%d ENERGY)" % [STAY_PAY, STAY_COST], "id": "1"},
                 {"label": "STAY 2 HOURS (+$%d, -%d ENERGY)" % [STAY_PAY * 2, STAY_COST * 2], "id": "2"},
@@ -16874,7 +17593,7 @@ func _graduate_tech() -> void:
 # ---- owner: the only Tier 3 ---------------------------------------------------------------------
 func owner_free() -> float:
     var used := owner_used + (8.0 if Owner.flags.get("owner_oncall", false) else 0.0)
-    return maxf(0.0, OWNER_HOURS - ADMIN_HOURS - used)
+    return maxf(0.0, OWNER_HOURS - ADMIN_HOURS + Partner.help_hours() - used)
 
 
 # the owner buried in escalations has less time for sales
@@ -16916,7 +17635,7 @@ func owner_week() -> Array:
             _add_progress(4.0, 0)
             if not _skip_note:
                 _skip_note = true
-                Msp.send_text("Alan", "The queue ate the training time again. That is how people end up burned out.")
+                Msp.send_text(Roles.tech(), "The queue ate the training time again. That is how people end up burned out.")
         else:
             blocks_taken += 1
             _add_progress(18.0, 0)
@@ -16928,7 +17647,7 @@ func _bottleneck_card() -> void:
     var options := [{"label": "KEEP DOING IT MYSELF", "id": "keep"}]
     if learner == "":
         options.push_front({"label": "START A GROWTH PLAN FOR THE TEAM", "id": "plan"})
-    Cards.ask("Alan (Co-owner)", "Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.", options, func(id: String) -> void: _bottleneck_pick(id))
+    Cards.ask("{tech}", "Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.", options, func(id: String) -> void: _bottleneck_pick(id))
 
 
 func _bottleneck_pick(id: String) -> void:
@@ -16939,20 +17658,23 @@ func _bottleneck_pick(id: String) -> void:
 func owner_plan_card() -> void:
     if Campaign.mode != "owner" or learner != "":
         return
-    var names := ["Garrison", "Dan"]
+    var names := []
+    for crew_name in Owner.crew_names():
+        if crew_name != Roles.tech():
+            names.append(crew_name)
     for hire in Owner.extra_staff:
         names.append(str(hire.name))
     var options := []
     for who in names:
         options.append({"label": who.to_upper(), "id": who})
-    Cards.ask("Alan (Co-owner)", "Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.", options, func(who: String) -> void: _owner_skill(who))
+    Cards.ask("{tech}", "Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.", options, func(who: String) -> void: _owner_skill(who))
 
 
 func _owner_skill(who: String) -> void:
     var options := []
     for skill in ["servers", "security", "networking"]:
         options.append({"label": "%s (%d ESCALATIONS SO FAR)" % [str(Skills.NAMES[skill]), int(esc_skill.get(skill, 0))], "id": skill})
-    Cards.ask("Alan (Co-owner)", "Which skill? Pick the one the shop keeps escalating.", options, func(skill: String) -> void: _owner_plan_set(who, skill))
+    Cards.ask("{tech}", "Which skill? Pick the one the shop keeps escalating.", options, func(skill: String) -> void: _owner_plan_set(who, skill))
 
 
 func _owner_plan_set(who: String, skill: String) -> void:
@@ -16961,7 +17683,7 @@ func _owner_plan_set(who: String, skill: String) -> void:
     progress = 0.0
     graduated = false
     _skip_note = false
-    Msp.send_text("Alan", "%s will learn %s. Thirty protected minutes a week, and I will catch them." % [who, str(Skills.NAMES[skill])])
+    Msp.send_text(Roles.tech(), "%s will learn %s. Thirty protected minutes a week, and I will catch them." % [who, str(Skills.NAMES[skill])])
     Msp.changed.emit()
 
 
@@ -16969,7 +17691,7 @@ func owner_stretch() -> void:
     if Campaign.mode != "owner" or learner == "" or graduated:
         return
     var chance := clampf(0.40 + progress / 250.0, 0.2, 0.85)
-    Cards.ask("Alan (Co-owner)", "A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk." % [str(STRETCH[focus]).to_lower(), learner], [
+    Cards.ask("{tech}", "A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk." % [str(STRETCH[focus]).to_lower(), learner], [
         {"label": "STRETCH ASSIGNMENT (%d%%)" % int(chance * 100.0), "id": "stretch"},
         {"label": "THE SENIOR TAKES IT", "id": "senior"},
         {"label": "I WILL HANDLE IT (4 OWNER HOURS)", "id": "owner"},
@@ -16982,17 +17704,17 @@ func owner_stretch_result(id: String, chance: float) -> void:
             if randf() < chance:
                 stretch_ok += 1
                 Sales.adjust(Sales.pick_client(), 3)
-                Msp.send_text("Alan", "%s nailed it. I barely had to say a word." % learner)
+                Msp.send_text(Roles.tech(), "%s nailed it. I barely had to say a word." % learner)
                 _add_progress(30.0, 0)
             elif randf() < 0.6:
                 stretch_caught += 1
-                Msp.send_text("Alan", "I caught it before the client saw. %s learned something." % learner)
+                Msp.send_text(Roles.tech(), "I caught it before the client saw. %s learned something." % learner)
                 _add_progress(14.0, 0)
             else:
                 stretch_slipped += 1
                 Sales.adjust(Sales.pick_client(), -6)
                 Campaign.adjust_rep(-1)
-                Msp.send_text("Alan", "%s broke something visible. The client noticed." % learner)
+                Msp.send_text(Roles.tech(), "%s broke something visible. The client noticed." % learner)
                 _add_progress(10.0, 0)
         "senior":
             _add_progress(8.0, 0)
@@ -17006,7 +17728,7 @@ func _graduate_owner() -> void:
     Owner.speed += 0.05
     Owner.flags["growth_done"] = true
     var who := learner
-    Cards.ask("Alan (Co-owner)", "%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market." % [who, focus_name()], [
+    Cards.ask("{tech}", "%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market." % [who, focus_name()], [
         {"label": "GIVE A RAISE ($60/WEEK)", "id": "raise"},
         {"label": "NOT NOW", "id": "no"},
     ], func(id: String) -> void: _raise(id, who))
@@ -17015,11 +17737,11 @@ func _graduate_owner() -> void:
 func _raise(id: String, who: String) -> void:
     if id == "raise":
         Owner.weekly_extra += 60
-        Msp.send_text("Alan", "%s is staying. The raise helped." % who)
+        Msp.send_text(Roles.tech(), "%s is staying. The raise helped." % who)
     elif randf() < 0.3:
-        if Owner.lost_techs < 2:
+        if Owner.lost_techs < Owner.MAX_LOST:
             Owner.lost_techs += 1
-        Msp.send_text("Alan", "%s took a job elsewhere. Trained staff leave when the pay does not follow." % who)
+        Msp.send_text(Roles.tech(), "%s took a job elsewhere. Trained staff leave when the pay does not follow." % who)
     learner = ""
     focus = ""
     progress = 0.0
@@ -17215,15 +17937,89 @@ const GREEN := UiStyle.GREEN
 const RED := UiStyle.RED
 const AMBER := UiStyle.GOLD
 const GAMES := {
-    "bowling": {"label": "BOWLING", "cost": 120, "blurb": "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.", "keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"},
-    "karaoke": {"label": "KARAOKE", "cost": 180, "blurb": "HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.", "keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"},
-    "escape": {"label": "ESCAPE ROOM", "cost": 240, "blurb": "CRACK THE 3 DIGIT CODE IN TWO MINUTES. BULLS = RIGHT DIGIT, RIGHT PLACE. COWS = RIGHT DIGIT, WRONG PLACE. FRIENDS GIVE HINTS.", "keys": "ARROWS  ENTER = TRY  H = HINT  ESC = LEAVE"},
-    "dinner": {"label": "DINNER", "cost": 300, "blurb": "FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.", "keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"},
+    "bowling":
+    {
+        "label": "BOWLING",
+        "cost": 120,
+        "blurb":
+        "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
+        "keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"
+    },
+    "karaoke":
+    {
+        "label": "KARAOKE",
+        "cost": 180,
+        "blurb":
+        "HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.",
+        "keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+    },
+    "escape":
+    {
+        "label": "ESCAPE ROOM",
+        "cost": 240,
+        "blurb":
+        "CRACK THE 3 DIGIT CODE IN TWO MINUTES. BULLS = RIGHT DIGIT, RIGHT PLACE. COWS = RIGHT DIGIT, WRONG PLACE. FRIENDS GIVE HINTS.",
+        "keys": "ARROWS  ENTER = TRY  H = HINT  ESC = LEAVE"
+    },
+    "dinner":
+    {
+        "label": "DINNER",
+        "cost": 300,
+        "blurb":
+        "FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.",
+        "keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"
+    },
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
-const LOVES := {"Alan": ["SPORTS", "FOOD"], "Garrison": ["MOVIES", "WEEKEND PLANS"], "Dan": ["KIDS AND PETS", "FOOD"]}
-const HATES := {"Alan": "WORK DRAMA", "Garrison": "SPORTS", "Dan": "MOVIES"}
-const TOPICS := ["WORK DRAMA", "SPORTS", "MOVIES", "FOOD", "KIDS AND PETS", "WEEKEND PLANS"]
+# dinner: 18 topics with a tag (light, deep, touchy); the diners' tastes are in PEOPLE
+const TOPICS := [
+    {"id": "WORK DRAMA", "tag": "touchy"},
+    {"id": "SPORTS", "tag": "light"},
+    {"id": "MOVIES", "tag": "light"},
+    {"id": "FOOD", "tag": "light"},
+    {"id": "KIDS AND PETS", "tag": "deep"},
+    {"id": "WEEKEND PLANS", "tag": "light"},
+    {"id": "FANTASY FOOTBALL", "tag": "light"},
+    {"id": "A NEW PHONE", "tag": "light"},
+    {"id": "COMMUTE", "tag": "touchy"},
+    {"id": "ROAD TRIP", "tag": "light"},
+    {"id": "HOME BREWING", "tag": "light"},
+    {"id": "A NEW BABY", "tag": "deep"},
+    {"id": "GARDENS", "tag": "light"},
+    {"id": "THE BIG GAME", "tag": "light"},
+    {"id": "A TV SHOW BINGE", "tag": "light"},
+    {"id": "KARAOKE", "tag": "light"},
+    {"id": "RAISES AND BONUSES", "tag": "touchy"},
+    {"id": "VENDOR STORIES", "tag": "light"},
+    {"id": "BOSS GOSSIP", "tag": "touchy"},
+    {"id": "MOVING HOUSE", "tag": "deep"},
+]
+# nobody ever dreads these (family is never a trap)
+const PROTECTED_TOPICS := ["KIDS AND PETS", "A NEW BABY", "MOVING HOUSE"]
+# loves (3) and dislikes (2); the first two loves and the first dislike are the classic tastes
+# that old saves keep. A new save swaps one or two of them (see _roll_tastes).
+const PEOPLE := {
+    "Alan": {"loves": ["SPORTS", "FOOD", "HOME BREWING"], "hates": ["WORK DRAMA", "BOSS GOSSIP"]},
+    "Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
+    "Dan":
+    {"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
+    "Vic": {"loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"], "hates": ["VENDOR STORIES"]},
+    "Maya": {"loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"], "hates": ["COMMUTE"]},
+}
+# the mood of the day shifts a diner's points for the whole dinner (+1 / 0 / -1)
+const DINNER_MOODS := {
+    "chatty": {"shift": 1, "face": ":D"},
+    "relaxed": {"shift": 1, "face": ":)"},
+    "easygoing": {"shift": 0, "face": ":|"},
+    "tired": {"shift": -1, "face": "-_-"},
+    "distracted": {"shift": -1, "face": "O_O"},
+}
+# owner campaign: who pays and how much (cost replaces the $300 of GAMES.dinner)
+const BUDGETS := {
+    "cheap": {"label": "CHEAP: PIZZA AND TAP WATER", "cost": 150, "mood": -1},
+    "normal": {"label": "NORMAL: THE USUAL GRILL ORDER", "cost": 300, "mood": 0},
+    "fancy": {"label": "FANCY: STEAKS AND A TOAST", "cost": 520, "mood": 1},
+}
 const BOWL_SKILL := {"Alan": 0.62, "Garrison": 0.55, "Dan": 0.48}
 const SEATS := {"dinner": {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5"}}
 const PLAYER_SEAT := "Seat2"
@@ -17231,20 +18027,211 @@ const LANE_NEAR := [152.0, 252.0]
 const LANE_FAR := [160.0, 244.0]
 const MIC_X := 238.0
 const ROOM_INTRO := {
-    "bowling": "TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
-    "karaoke": "YOU ARE ON THE MIC. HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT) WHILE THE ROOM WATCHES. STRING PERFECT HITS TOGETHER.",
-    "escape": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK AND THE PAINTING (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. TWO MINUTES.",
-    "dinner": "WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE AND WATCH THEIR FACES.",
+    "bowling":
+    "TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
+    "karaoke":
+    "YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
+    "escape":
+    "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
+    "dinner":
+    "WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
-const SONG_LEN := 24
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
-const ROOMS := {"bowling": "bowling_alley", "karaoke": "karaoke_bar", "escape": "escape_room", "dinner": "restaurant"}
+# karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
+# HARD scale it by Difficulty karaoke.gap); rhythm = gap multipliers cycled over the notes; pattern =
+# how the lanes are picked (mix, sweep, sync, burst); doubles = chance of a second note on the same beat
+# per tier [easy, normal, hard]; win = x the hit windows; cuts = share of the points for 1 / 2 / 3 stars
+# ([3 stars, 2 stars, 1 star]); speed = pixels per second; unlock = stars
+# you must have earned on any song first; lines = the lyrics screen (21 letters at most per line).
+const SONGS := [
+    {
+        "id": "wobble",
+        "title": "WOBBLE WOBBLE POP",
+        "artist": "DJ BEANBAG",
+        "genre": "2013 POP",
+        "len": 24,
+        "gap": 0.75,
+        "rhythm": [1.0],
+        "pattern": "mix",
+        "doubles": [0.0, 0.0, 0.0],
+        "win": 1.0,
+        "cuts": [0.75, 0.5, 0.25],
+        "speed": 45.0,
+        "unlock": 0,
+        "lines":
+        [
+            "WOBBLE WOBBLE POP POP",
+            "SHAKE IT FOR THE CAM",
+            "BASS DROP IN MY HEAD",
+            "SELFIE ON THE STAIRS",
+            "NOBODY KNOWS MY MOVES",
+            "ONE MORE DROP TONIGHT",
+        ],
+    },
+    {
+        "id": "dirt",
+        "title": "DIRT ROAD FRIDAY",
+        "artist": "THE CREEKBED TWINS",
+        "genre": "COUNTRY SINGALONG",
+        "len": 20,
+        "gap": 0.95,
+        "rhythm": [1.0],
+        "pattern": "sweep",
+        "doubles": [0.0, 0.0, 0.1],
+        "win": 1.1,
+        "cuts": [0.7, 0.45, 0.2],
+        "speed": 45.0,
+        "unlock": 0,
+        "lines":
+        [
+            "DIRT ROAD ON FRIDAY",
+            "TAILGATE DOWN AND LOW",
+            "PORCH LIGHT STILL ON",
+            "HOME BY THE RIVER",
+            "SING IT TO THE CORN",
+            "NOBODY IS IN A RUSH",
+            "ONE MORE MILE OF GOLD",
+        ],
+    },
+    {
+        "id": "neon",
+        "title": "NEON GYM CLASS",
+        "artist": "THE SYNTH SCOUTS",
+        "genre": "80S CLASSIC",
+        "len": 26,
+        "gap": 0.7,
+        "rhythm": [1.2, 0.8, 1.2, 0.8],
+        "pattern": "sync",
+        "doubles": [0.0, 0.0, 0.12],
+        "win": 1.0,
+        "cuts": [0.7, 0.5, 0.3],
+        "speed": 48.0,
+        "unlock": 0,
+        "lines":
+        [
+            "NEON LIGHTS AND SWEAT",
+            "LEG WARMERS ON FIRE",
+            "GYM CLASS AT MIDNIGHT",
+            "ROLL THE TAPE BACK",
+            "JUMP ROPE IN THE RAIN",
+            "FEEL THE SYNTH GLOW",
+            "NEON GYM CLASS, YEAH",
+        ],
+    },
+    {
+        "id": "rap",
+        "title": "FAST RAP HOT MESS",
+        "artist": "MC SPREADSHEET",
+        "genre": "FAST RAP",
+        "len": 32,
+        "gap": 0.62,
+        "rhythm": [0.75, 0.75, 0.75, 1.5],
+        "pattern": "burst",
+        "doubles": [0.0, 0.12, 0.25],
+        "win": 0.85,
+        "cuts": [0.7, 0.45, 0.2],
+        "speed": 55.0,
+        "unlock": 3,
+        "lines":
+        [
+            "FAST WORDS HOT MESS",
+            "COFFEE ON MY SHIRT",
+            "RHYMES IN THE QUEUE",
+            "TICKET AFTER TICKET",
+            "TWO TIMES TOO FAST",
+            "BREATHE IN THE BRIDGE",
+            "HOT MESS HOT MESS",
+            "MIC DROP, MIC PICK UP",
+        ],
+    },
+]
+# the escape room: which clue recipes each zone can show (zone n holds digit n of the code)
+const CLUE_ZONES := ["board", "clock", "plaque", "shelf"]
+const CLUE_KINDS := ["clue_board", "clue_clock", "clue_painting", "clue_shelf"]
+const RECIPES := {
+    "board": ["sum", "product", "missing"],
+    "clock": ["hour", "double"],
+    "plaque": ["number", "roman", "letter"],
+    "shelf": ["spine", "ribbons"],
+}
+const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+const PRODUCTS := {4: [2, 2], 6: [2, 3], 8: [2, 4], 9: [3, 3]}
+# what a friend says about each zone (the one in SPECIALTY gets the recipe tip as well)
+const SPECIALTY := {"Alan": "board", "Dan": "clock", "Garrison": "keypad", "Maya": "plaque"}
+const RECIPE_TIPS := {
+    "sum": "ADD THE TWO NUMBERS.",
+    "product": "MULTIPLY THEM.",
+    "missing": "WHICH DIGIT IS NOT IN THE LIST?",
+    "hour": "THE HOUR IS THE DIGIT.",
+    "double": "THE DIGIT IS TWICE THE HOUR.",
+    "number": "THE NUMBER IS THE DIGIT.",
+    "roman": "READ THE ROMAN NUMERAL.",
+    "letter": "COUNT THE LETTER IN THE ALPHABET.",
+    "spine": "THE VOLUME NUMBER IS THE DIGIT.",
+    "ribbons": "COUNT THE BOOKMARK RIBBONS.",
+    "dial": "THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.",
+    "nodial": "THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.",
+}
+const FRIEND_HINTS := {
+    "Alan":
+    {
+        "board": "THAT CHALKBOARD IS MY KIND OF PROBLEM. DO THE MATH.",
+        "clock": "THAT OLD WALL CLOCK STOPPED FOR A REASON.",
+        "plaque": "I THINK THERE IS A PLAQUE UNDER THE PAINTING.",
+        "shelf": "ONE BOOK ON THAT SHELF IS STICKING OUT. LOOK CLOSER.",
+        "keypad": "YOU HAVE THEM ALL. TRY THE KEYPAD ON THE VAULT.",
+    },
+    "Garrison":
+    {
+        "board": "SOMEBODY WROTE ON THAT CHALKBOARD. IT IS A CLUE, TRUST ME.",
+        "clock": "THE CLOCK IS STUCK AT A STRANGE TIME. WE SHOULD LOOK.",
+        "plaque": "A PLAQUE UNDER THE PAINTING! NOBODY HANGS A PAINTING FOR FREE.",
+        "shelf": "THAT BOOKSHELF HAS SOMETHING IN IT THAT DOES NOT BELONG.",
+        "keypad": "THAT IS ALL OF THEM. THE LOCK ON THE VAULT IS WAITING FOR YOU.",
+    },
+    "Dan":
+    {
+        "board": "THE CHALKBOARD LIGHT IS WIRED BADLY. LOOK AT THE BOARD.",
+        "clock": "THAT CLOCK IS NOT WIRED TO ANYTHING, SO SOMEONE STOPPED IT ON PURPOSE.",
+        "plaque": "THERE IS A CABLE RUN UNDER THE PAINTING. AND A PLAQUE.",
+        "shelf": "THE BOOKSHELF IS BOLTED TO THE WALL. SOMETHING ON IT IS NOT A BOOK.",
+        "keypad": "THE KEYPAD IS WIRED TO THE VAULT. ENTER WHAT YOU FOUND.",
+    },
+    "Maya":
+    {
+        "board": "THE CHALKBOARD LOOKS LIKE HOMEWORK. HOMEWORK IS A CLUE.",
+        "clock": "THE WALL CLOCK IS WRONG. NOBODY LEAVES A CLOCK WRONG.",
+        "plaque": "THAT PLAQUE UNDER THE PAINTING IS EASY TO MISS. READ IT.",
+        "shelf": "THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.",
+        "keypad": "THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.",
+    },
+    "Vic":
+    {
+        "board": "THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.",
+        "clock": "THE CLOCK, TRUST ME, THE CLOCK.",
+        "plaque": "I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.",
+        "shelf": "THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.",
+        "keypad": "YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.",
+    },
+}
+const HERRINGS := [
+    "A BOOKSHELF FULL OF OLD MANUALS. NO NUMBERS HERE THAT MATTER.",
+    "A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
+    "ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
+]
+const ROOMS := {
+    "bowling": "bowling_alley",
+    "karaoke": "karaoke_bar",
+    "escape": "escape_room",
+    "dinner": "restaurant"
+}
 # where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
-    "bowling": [114, 186, 214, 250, 140, 165], "karaoke": [236, 262, 282, 130, 160, 100],
-    "escape": [118, 175, 205, 305, 325, 62],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
+    "bowling": [114, 186, 214, 250, 140, 165],
+    "karaoke": [236, 262, 282, 130, 160, 100],
+    "escape": [118, 175, 205, 305, 325, 14],  # clear of the clue zones (shelf 52, clock 86, painting 149, board 238, keypad 276)
     "dinner": [34, 62, 106, 140, 175, 205],
 }
 const TECH_DAYS := [5, 10, 15]
@@ -17256,13 +18243,15 @@ var is_open := false
 var game := ""
 var phase := "intro"  # intro, play, result
 var g := {}
-var opts := {}  # Free Play toolbox parameters of this game: chart, set, code_len, table, panel (empty = as usual)
+var opts := {}  # Free Play toolbox parameters of this game: song, digits, recipes, table, panel (empty = as usual)
 var stars := 0
 var lines: Array = []  # the result page
 var count := 0
 var skipped := 0
 var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
+var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
+var song_best := {}  # karaoke: best stars per song id
 
 var _canvas: Node2D
 var _prev_scale := 1.0
@@ -17293,11 +18282,25 @@ func reset() -> void:
     skipped = 0
     best = {}
     known = {}
+    tastes = {}
+    song_best = {}
     _offered = false
 
 
+# version 2 saves the dinner tastes and the best star count per song; an older save has neither
+# (it keeps the classic tastes, so what it already knows stays true)
 func to_dict() -> Dictionary:
-    return {"count": count, "skipped": skipped, "best": best, "known": known}
+    for who in PEOPLE:
+        taste(who)
+    return {
+        "version": 2,
+        "count": count,
+        "skipped": skipped,
+        "best": best,
+        "known": known,
+        "tastes": tastes,
+        "songs": song_best,
+    }
 
 
 func from_dict(data: Dictionary) -> void:
@@ -17306,6 +18309,12 @@ func from_dict(data: Dictionary) -> void:
     skipped = int(data.get("skipped", 0))
     best = data.get("best", {})
     known = data.get("known", {})
+    song_best = data.get("songs", {})
+    if int(data.get("version", 1)) >= 2:
+        tastes = data.get("tastes", {})
+    else:
+        for who in PEOPLE:
+            tastes[who] = classic_taste(who)
 
 
 # ---- invitations ------------------------------------------------------------------------------
@@ -17356,11 +18365,19 @@ func maybe_invite() -> void:
     _offered = true
     var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
     if Campaign.mode == "owner":
-        text = "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game." % cost_range()
-    Cards.ask(_host(), text, [
-        {"label": "YES, LET US GO", "id": "yes"},
-        {"label": "NOT TONIGHT", "id": "no"},
-    ], func(id: String) -> void: _invite_answer(id))
+        text = (
+            "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game."
+            % cost_range()
+        )
+    Cards.ask(
+        _host(),
+        text,
+        [
+            {"label": "YES, LET US GO", "id": "yes"},
+            {"label": "NOT TONIGHT", "id": "no"},
+        ],
+        func(id: String) -> void: _invite_answer(id)
+    )
 
 
 # the owner pays for the night: "$120 TO $300" (shown on the invitation before the game pick)
@@ -17393,21 +18410,36 @@ func pick_game(from_invite: bool) -> void:
     var options := []
     for id in GAMES:
         var cost := int(GAMES[id].cost)
-        var entry := {"label": "%s%s" % [str(GAMES[id].label), " ($%d)" % cost if Campaign.mode == "owner" else ""], "id": id}
+        var entry := {
+            "label":
+            "%s%s" % [str(GAMES[id].label), " ($%d)" % cost if Campaign.mode == "owner" else ""],
+            "id": id
+        }
         if Campaign.mode == "owner" and Owner.cash < cost:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % cost
         options.append(entry)
-    Cards.ask(_host(), "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.", options, func(id: String) -> void: start(id, from_invite))
+    Cards.ask(
+        _host(),
+        "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
+        options,
+        func(id: String) -> void: start(id, from_invite)
+    )
 
 
 func _unhandled_input(event: InputEvent) -> void:
     if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
         return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
-        Cards.ask("Team outing", "Take the team out? (Free Play: nothing is scored.)", [
-            {"label": "LET US GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"},
-        ], func(id: String) -> void: _free_answer(id))
+        Cards.ask(
+            "Team outing",
+            "Take the team out? (Free Play: nothing is scored.)",
+            [
+                {"label": "LET US GO", "id": "yes"},
+                {"label": "NEVER MIND", "id": "no"},
+            ],
+            func(id: String) -> void: _free_answer(id)
+        )
 
 
 func _free_answer(id: String) -> void:
@@ -17416,9 +18448,10 @@ func _free_answer(id: String) -> void:
 
 
 # ---- running an outing ------------------------------------------------------------------------
-# options (Free Play toolbox, all optional): "chart" 1-4 = a fixed karaoke chart, "set" 1-9 = a fixed escape
-# code, "code_len" 3 or 4 (the overlay escape room), "table" = the dinner guests, "panel" = the overlay
-# version instead of the room. Without options every draw comes from the run's streams as before.
+# options (Free Play toolbox, all optional): "song" = a SONGS id (any, locked or not, no card at the mic),
+# "digits" 3 or 4 = the escape code length, "recipes" = {zone: recipe} fixed clue recipes (a digit that fits is
+# dealt), "table" = the dinner guests, "panel" = the overlay version instead of the room. Without options every
+# draw comes from the run's streams (Difficulty.rng) as before.
 func start(id: String, from_invite := false, options := {}) -> void:
     opts = options.duplicate()
     if Difficulty.fixed_take:
@@ -17456,13 +18489,13 @@ func _open(id: String, from_invite: bool) -> void:
     _canvas.queue_redraw()
 
 
-func begin_play() -> void:
+func begin_play(pick := "") -> void:
     phase = "play"
     match game:
         "bowling":
             _bowl_setup()
         "karaoke":
-            _kara_setup()
+            _kara_setup(pick)
         "escape":
             _escape_setup()
             if room_mode():
@@ -17495,7 +18528,11 @@ func close() -> void:
 func _process(delta: float) -> void:
     if _wait_id != "":
         var here := get_tree().current_scene
-        if not Game.busy and here != null and here.scene_file_path.get_file().get_basename() == str(ROOMS[_wait_id]):
+        if (
+            not Game.busy
+            and here != null
+            and here.scene_file_path.get_file().get_basename() == str(ROOMS[_wait_id])
+        ):
             var id := _wait_id
             _wait_id = ""
             _open(id, _from_invite)
@@ -17526,6 +18563,8 @@ func tick(dt: float) -> void:
 func _input(event: InputEvent) -> void:
     if not is_open or not (event is InputEventKey) or not event.pressed or event.echo:
         return
+    if Cards.is_open:
+        return  # a card (song, budget) has the keys
     if room_mode() and phase == "play" and not _room_wants(event.keycode):
         return  # in the room you keep walking around
     press(event.keycode)
@@ -17551,7 +18590,14 @@ func _press_page(key: int) -> void:
         if key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_ESCAPE]:
             close()
     elif key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
-        begin_play()
+        if Cards.is_open:
+            return
+        if use_rooms and game == "karaoke" and not opts.has("song"):
+            ask_song()  # the card at the mic picks the song, then the game begins
+        elif use_rooms and game == "dinner" and Campaign.mode == "owner":
+            ask_budget()
+        else:
+            begin_play()
     elif key == KEY_ESCAPE:
         if Campaign.mode == "owner":
             Owner.cash += int(GAMES[game].cost)
@@ -17640,10 +18686,28 @@ func _bowl_totals() -> Dictionary:
 
 func _bowl_setup() -> void:
     g = {
-        "frame": 1, "roll": 1, "pins": 10, "stage": "aim", "marker": 0.0, "power": 0.0, "dir": 1.0, "wait": 0.0,
-        "ball": 0.0, "msg": "", "totals": _bowl_totals(), "knocked": 0,
-        "up": [_all_up(), _all_up()], "fall": {}, "queue": [], "opp": "", "opp_t": 0.0, "opp_ball": 0.0,
-        "opp_off": 0.5, "opp_total": 0, "opp_knock": 0, "opp_phase": 0,
+        "frame": 1,
+        "roll": 1,
+        "pins": 10,
+        "stage": "aim",
+        "marker": 0.0,
+        "power": 0.0,
+        "dir": 1.0,
+        "wait": 0.0,
+        "ball": 0.0,
+        "msg": "",
+        "totals": _bowl_totals(),
+        "knocked": 0,
+        "up": [_all_up(), _all_up()],
+        "fall": {},
+        "queue": [],
+        "opp": "",
+        "opp_t": 0.0,
+        "opp_ball": 0.0,
+        "opp_off": 0.5,
+        "opp_total": 0,
+        "opp_knock": 0,
+        "opp_phase": 0,
     }
     if room_mode():
         g.stage = "ready"
@@ -17716,7 +18780,11 @@ func bowl_strength() -> float:
 func _bowl_resolve() -> void:
     var strength := bowl_strength()
     var left := int(g.pins)
-    var knocked := left if strength > 0.92 else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
+    var knocked := (
+        left
+        if strength > 0.92
+        else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
+    )
     g.knocked = knocked
     g.pins = left - knocked
     g.totals["You"] = int(g.totals["You"]) + knocked
@@ -17749,7 +18817,9 @@ func _bowl_roll_opp(who: String) -> Dictionary:
     if first == 10:
         total += 3
     else:
-        var second := clampi(roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first)
+        var second := clampi(
+            roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first
+        )
         total += second
         knock += second
     return {"total": total, "knock": knock}
@@ -17848,16 +18918,131 @@ func _bowl_end() -> void:
     _finish([3, 2, 1, 1][bowl_rank()])
 
 
+# ---- the song table
+func song_by_id(id: String) -> Dictionary:
+    for song in SONGS:
+        if str(song.id) == id:
+            return song
+    return SONGS[0]
+
+
+# a song is open when you have earned its stars on any song (the rap needs a 3 star night)
+func song_unlocked(id: String) -> bool:
+    var need := int(song_by_id(id).get("unlock", 0))
+    if need <= 0:
+        return true
+    for key in song_best:
+        if int(song_best[key]) >= need:
+            return true
+    return int(best.get("karaoke", 0)) >= need
+
+
+# the song the card offers first: in a campaign the first open one you have not three-starred yet
+func default_song() -> String:
+    if Campaign.active:
+        for song in SONGS:
+            if song_unlocked(str(song.id)) and int(song_best.get(str(song.id), 0)) < 3:
+                return str(song.id)
+    return str(SONGS[0].id)
+
+
+# the song card at the mic: the default first, a locked song last (greyed out)
+func song_options() -> Array:
+    var first := default_song()
+    var order := [first]
+    for song in SONGS:
+        if str(song.id) != first:
+            order.append(str(song.id))
+    var open := []
+    var shut := []
+    for id in order:
+        var song := song_by_id(str(id))
+        var stars_text := ""
+        if song_best.has(id):
+            var n := int(song_best[id])
+            stars_text = "  %d STAR%s" % [n, "" if n == 1 else "S"]
+        var entry := {"label": "%s%s" % [str(song.title), stars_text], "id": id}
+        if song_unlocked(str(id)):
+            open.append(entry)
+        else:
+            entry["enabled"] = false
+            entry["hint"] = "EARN %d STARS ON ANY SONG" % int(song.get("unlock", 0))
+            shut.append(entry)
+    return open + shut
+
+
+func ask_song() -> void:
+    Cards.ask(
+        "Karaoke host",
+        "Step up to the mic. Which song?",
+        song_options(),
+        func(id: String) -> void: begin_play(id)
+    )
+
+
 # ---- karaoke ------------------------------------------------------------------------------------
-func _kara_setup() -> void:
+# the chart of one song at one tier: {notes, gap, span, speed}. Pure given the generator, so tests can
+# build the same chart twice. Doubles put a second arrow in another lane on the same beat.
+func kara_chart(song: Dictionary, tier: String, r: RandomNumberGenerator) -> Dictionary:
+    var gap := float(song.gap) * float(Difficulty.at("karaoke.gap", tier)) / 0.75
+    var rhythm: Array = song.rhythm
+    var chance := float(song.doubles[maxi(0, Difficulty.TIERS.find(tier))])
     var notes := []
-    var gap := Difficulty.f("karaoke.gap")
-    var chart := int(opts.get("chart", 0))
-    var r := Difficulty.rng_for("karaoke.chart", chart) if chart > 0 else Difficulty.rng("karaoke")
-    for i in SONG_LEN:
-        notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
-    g = {"t": 0.0, "notes": notes, "score": 0, "perfect": 0, "good": 0, "miss": 0, "streak": 0, "flash": "", "flash_t": 0.0,
-        "gap": gap, "perfect_win": Difficulty.f("karaoke.perfect"), "good_win": Difficulty.f("karaoke.good"),
+    var t := 1.5
+    var lane := r.randi_range(0, 3)
+    var dir := 1
+    for i in int(song.len):
+        match str(song.pattern):
+            "sweep":
+                if r.randf() < 0.15:
+                    lane = r.randi_range(0, 3)
+                else:
+                    if lane + dir < 0 or lane + dir > 3:
+                        dir = -dir
+                    lane += dir
+            "sync":
+                if i % 2 == 0:
+                    lane = (lane + r.randi_range(1, 3)) % 4
+            "burst":
+                if i % 4 == 0:
+                    lane = r.randi_range(0, 3)
+                else:
+                    lane = (lane + 1) % 4
+            _:
+                lane = r.randi_range(0, 3)
+        notes.append({"lane": lane, "time": t, "state": ""})
+        if chance > 0.0 and r.randf() < chance:
+            notes.append({"lane": (lane + r.randi_range(1, 3)) % 4, "time": t, "state": ""})
+        t += gap * float(rhythm[i % rhythm.size()])
+    return {"notes": notes, "gap": gap, "span": t, "speed": float(song.speed)}
+
+
+func _kara_setup(song_id := "") -> void:
+    var id := song_id if song_id != "" else str(opts.get("song", default_song()))
+    if not song_unlocked(id) and not opts.has("song"):  # the toolbox may pick any song
+        id = str(SONGS[0].id)
+    var song := song_by_id(id)
+    var chart := kara_chart(song, Difficulty.tier, Difficulty.rng("karaoke"))
+    g = {
+        "t": 0.0,
+        "song": song,
+        "notes": chart.notes,
+        "len": int(song.len),
+        "gap": float(chart.gap),
+        "span": float(chart.span),
+        "speed": float(chart.speed),
+        "cuts": song.cuts,
+        "score": 0,
+        "perfect": 0,
+        "good": 0,
+        "miss": 0,
+        "streak": 0,
+        "flash": "",
+        "flash_t": 0.0,
+        "mood": 50.0,
+        "chorus": false,
+        "perfect_win": Difficulty.f("karaoke.perfect") * float(song.win),
+        "good_win": Difficulty.f("karaoke.good") * float(song.win),
     }
 
 
@@ -17870,9 +19055,13 @@ func _kara_tick(dt: float) -> void:
             g.miss = int(g.miss) + 1
             g.streak = 0
             _streak_broken()
+            _mood_add(-6.0)
             g.flash = "MISS"
             g.flash_t = 0.5
-    if float(g.t) > _song_secs() + 0.6:
+    if float(g.mood) <= 0.0:
+        g.msg = "THE ROOM LAUGHS AND HEADS BACK TO THE BAR. GOOD TRY!"
+        _kara_end()
+    elif float(g.t) > _song_secs() + 0.6:
         _kara_end()
 
 
@@ -17881,7 +19070,21 @@ func _good_win() -> float:
 
 
 func _song_secs() -> float:
-    return 1.5 + float(g.get("gap", 0.75)) * float(SONG_LEN)
+    if g.has("span"):
+        return float(g.span)
+    return 1.5 + float(g.get("gap", 0.75)) * float(g.get("len", 24))
+
+
+# how the crowd feels, 0 to 100 (perfects lift it, misses sink it; a full room joins the last chorus)
+func _mood_add(amount: float) -> void:
+    g.mood = clampf(float(g.get("mood", 50.0)) + amount, 0.0, 100.0)
+    if float(g.mood) >= 100.0 and not g.get("chorus", false):
+        g.chorus = true
+        g.flash = "THE ROOM SINGS!"
+        g.flash_t = 1.2
+        if room_mode():
+            _cheer()
+            caption("THE WHOLE ROOM JOINS THE CHORUS!", 3.0)
 
 
 func _kara_press(key: int) -> void:
@@ -17901,6 +19104,7 @@ func kara_hit(lane: int) -> String:
     if pick.is_empty() or gap > _good_win():
         g.streak = 0
         _streak_broken()
+        _mood_add(-2.0)
         return ""
     var perfect := gap <= float(g.get("perfect_win", 0.12))
     pick.state = "perfect" if perfect else "good"
@@ -17910,6 +19114,7 @@ func kara_hit(lane: int) -> String:
     g.streak = int(g.streak) + 1
     g.flash = "PERFECT!" if perfect else "GOOD"
     g.flash_t = 0.5
+    _mood_add((3.0 if perfect else 1.5) + minf(2.0, floorf(float(g.streak) / 4.0)))
     if room_mode() and int(g.streak) % 4 == 0:
         _cheer()
     if room_mode() and int(g.streak) >= 8 and not g.get("dance", false):
@@ -17919,28 +19124,50 @@ func kara_hit(lane: int) -> String:
 
 
 func _kara_end() -> void:
-    var share := float(g.score) / float(SONG_LEN * 2)
-    _finish(3 if share >= 0.75 else (2 if share >= 0.5 else (1 if share >= 0.25 else 0)))
+    var share := float(g.score) / float(maxi(1, g.notes.size() * 2))
+    var cuts: Array = g.get("cuts", [0.75, 0.5, 0.25])
+    var result := (
+        3 if share >= cuts[0] else (2 if share >= cuts[1] else (1 if share >= cuts[2] else 0))
+    )
+    if g.get("chorus", false) and share >= 0.5 and result < 3:
+        result += 1  # the room sang the last chorus with you
+    if g.has("song"):
+        var id := str(g.song.id)
+        song_best[id] = maxi(int(song_best.get(id, 0)), result)
+    _finish(result)
 
 
 # ---- escape room --------------------------------------------------------------------------------
+func _zeros(n: int) -> Array:
+    var out := []
+    out.resize(n)
+    out.fill(0)
+    return out
+
+
 func _escape_setup() -> void:
     var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    Difficulty.shuffle_with(digits, _escape_rng())
-    var n_digits := clampi(int(opts.get("code_len", 3)), 3, 4)
+    Difficulty.shuffle(digits, "escape")
+    var n := escape_digits()
     var friends := 0
     for who in Social.people():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
-        "code": digits.slice(0, n_digits), "cur": [0, 0, 0, 0].slice(0, n_digits), "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
-        "hints": clampi(maxi(1, friends), 1, 3), "hints_used": 0, "revealed": [], "msg": "",
+        "code": digits.slice(0, n),
+        "cur": _zeros(n),
+        "cursor": 0,
+        "guesses": [],
+        "time": Difficulty.f("escape.time"),
+        "hints": clampi(maxi(1, friends), 1, 3),
+        "hints_used": 0,
+        "revealed": [],
+        "msg": "",
     }
 
 
-# the generator of one escape code: a fixed set from the toolbox repeats every take, otherwise the run's stream
-func _escape_rng() -> RandomNumberGenerator:
-    var set_n := int(opts.get("set", 0))
-    return Difficulty.rng_for("escape.set", set_n) if set_n > 0 else Difficulty.rng("escape")
+# the code length: the tier's, or the toolbox's choice (3 or 4)
+func escape_digits() -> int:
+    return clampi(int(opts.get("digits", Difficulty.i("escape.digits"))), 3, 4)
 
 
 func _escape_tick(dt: float) -> void:
@@ -17952,11 +19179,12 @@ func _escape_tick(dt: float) -> void:
 
 func _escape_press(key: int) -> void:
     var cur: Array = g.cur
+    var n: int = cur.size()
     match key:
         KEY_LEFT:
-            g.cursor = (int(g.cursor) + cur.size() - 1) % cur.size()
+            g.cursor = (int(g.cursor) + n - 1) % n
         KEY_RIGHT:
-            g.cursor = (int(g.cursor) + 1) % cur.size()
+            g.cursor = (int(g.cursor) + 1) % n
         KEY_UP:
             cur[int(g.cursor)] = (int(cur[int(g.cursor)]) + 1) % 10
         KEY_DOWN:
@@ -18000,13 +19228,17 @@ func escape_try(guess: Array) -> void:
         _finish(0)
 
 
-# the first friendly coworker (upper case) for hints; with nobody friendly, the first person in the room
-func _first_friend() -> String:
+# the first friend you get on with (the hints are in their voice); never yourself, and with nobody friendly the first person in the room
+func _friend() -> String:
     for who in Social.people():
         if Social.is_friendly(who):
-            return who.to_upper()
+            return who
     var here := roster()
-    return str(here[0]).to_upper() if not here.is_empty() else "ALAN"
+    return str(here[0]) if not here.is_empty() else "Alan"
+
+
+func _first_friend() -> String:
+    return _friend().to_upper()
 
 
 func escape_hint() -> String:
@@ -18023,21 +19255,158 @@ func escape_hint() -> String:
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
     g.cur[slot] = g.code[slot]
-    var friend := _first_friend()
-    g.msg = "%s: SLOT %d IS A %d" % [friend, slot + 1, int(g.code[slot])]
+    g.msg = "%s: SLOT %d IS A %d" % [_friend().to_upper(), slot + 1, int(g.code[slot])]
     return str(g.msg)
 
 
 # ---- dinner -------------------------------------------------------------------------------------
+func topic_ids() -> Array:
+    var out := []
+    for t in TOPICS:
+        out.append(str(t.id))
+    return out
+
+
+func topic_tag(id: String) -> String:
+    for t in TOPICS:
+        if str(t.id) == id:
+            return str(t.tag)
+    return "light"
+
+
+# the tastes an old save (and the first versions of the game) always had
+func classic_taste(who: String) -> Dictionary:
+    var row: Dictionary = PEOPLE.get(who, {"loves": [], "hates": []})
+    return {"loves": row.loves.slice(0, 2), "hates": row.hates.slice(0, 1)}
+
+
+# what a person really loves and dreads in THIS save: the PEOPLE row with one or two tastes swapped
+func taste(who: String) -> Dictionary:
+    if not tastes.has(who):
+        tastes[who] = _roll_tastes(who)
+    return tastes[who]
+
+
+func _roll_tastes(who: String) -> Dictionary:
+    var row: Dictionary = PEOPLE.get(who, {"loves": [], "hates": []})
+    var loves: Array = row.loves.duplicate()
+    var hates: Array = row.hates.duplicate()
+    var r := Difficulty.rng_for("tastes", hash(who) & 0xFFFF)
+    for _swap in r.randi_range(1, 2):
+        var pool := []
+        for id in topic_ids():
+            if not loves.has(id) and not hates.has(id):
+                pool.append(id)
+        if hates.is_empty() or (not loves.is_empty() and r.randf() < 0.5):
+            if not loves.is_empty():
+                loves[r.randi_range(0, loves.size() - 1)] = pool[r.randi_range(0, pool.size() - 1)]
+        else:
+            var kind := []
+            for id in pool:
+                if not PROTECTED_TOPICS.has(id):
+                    kind.append(id)
+            hates[r.randi_range(0, hates.size() - 1)] = kind[r.randi_range(0, kind.size() - 1)]
+    return {"loves": loves, "hates": hates}
+
+
+# 2 for something they love, 0 for something they dread, 1 otherwise (before mood)
+func taste_pts(who: String, topic: String) -> int:
+    var t := taste(who)
+    if t.loves.has(topic):
+        return 2
+    if t.hates.has(topic):
+        return 0
+    return 1
+
+
+# the mood of the day (and the owner's budget) lifts or sinks every answer by up to two points
+func diner_shift(who: String) -> int:
+    var shift := 0
+    if g.has("moods"):
+        shift += int(DINNER_MOODS[str(g.moods.get(who, "easygoing"))].shift)
+    shift += int(BUDGETS[str(g.get("budget", "normal"))].mood)
+    return clampi(shift, -2, 2)
+
+
+func diner_points(who: String, topic: String) -> int:
+    return clampi(taste_pts(who, topic) + diner_shift(who), 0, 3)
+
+
+# a trap: somebody at the table dreads it
+func is_trap(topic: String) -> bool:
+    for who in diners():
+        if taste(who).hates.has(topic):
+            return true
+    return false
+
+
+func dinner_mood_text() -> String:
+    var parts := []
+    for who in diners():
+        parts.append("%s IS %s" % [who.to_upper(), str(g.moods.get(who, "easygoing")).to_upper()])
+    return ", ".join(parts)
+
+
 func _dinner_setup() -> void:
-    g = {"round": 1, "options": [], "sel": 0, "react": {}, "wait": 0.0, "score": 0, "last": ""}
+    g = {
+        "round": 1,
+        "options": [],
+        "sel": 0,
+        "react": {},
+        "wait": 0.0,
+        "score": 0,
+        "last": "",
+        "budget": "normal",
+        "moods": {},
+        "picked": [],
+    }
+    var ids: Array = DINNER_MOODS.keys()
+    var r := Difficulty.rng("dinner")
+    for who in diners():
+        g.moods[who] = ids[r.randi_range(0, ids.size() - 1)]
     _dinner_deal()
 
 
+# four topics a round: at least one safe (nobody dreads it) and one trap, never one you already used
 func _dinner_deal() -> void:
-    var pool: Array = TOPICS.duplicate()
-    Difficulty.shuffle(pool, "dinner")
-    g.options = pool.slice(0, 4)
+    var safe := []
+    var trap := []
+    for id in topic_ids():
+        if g.get("picked", []).has(id):
+            continue
+        if is_trap(id):
+            trap.append(id)
+        else:
+            safe.append(id)
+    if safe.is_empty() or trap.is_empty():
+        safe = []
+        trap = []
+        for id in topic_ids():
+            if is_trap(id):
+                trap.append(id)
+            else:
+                safe.append(id)
+    Difficulty.shuffle(safe, "dinner")
+    Difficulty.shuffle(trap, "dinner")
+    # a treat: somebody loves it and nobody dreads it, so a good round is always on the table
+    var treats := safe.filter(
+        func(id: String) -> bool:
+            for who in diners():
+                if taste(who).loves.has(id):
+                    return true
+            return false
+    )
+    var chosen := []
+    if not treats.is_empty():
+        chosen.append(treats[0])
+        safe.erase(treats[0])
+    chosen.append(safe.pop_back())
+    chosen.append(trap.pop_back())
+    var rest := safe + trap
+    Difficulty.shuffle(rest, "dinner")
+    chosen.append_array(rest.slice(0, 4 - chosen.size()))
+    Difficulty.shuffle(chosen, "dinner")
+    g.options = chosen
     g.sel = 0
     g.react = {}
     g.wait = 0.0
@@ -18070,17 +19439,12 @@ func dinner_talk(index: int) -> int:
     var topic: String = g.options[index]
     var total := 0
     g.react = {}
+    g.picked.append(topic)
     g.hidden = _dinner_hidden()
     for who in diners():
-        var mood := "meh"
-        var pts := 1
-        if LOVES[who].has(topic):
-            mood = "love"
-            pts = 2
-        elif HATES[who] == topic:
-            mood = "hate"
-            pts = 0
-        total += pts
+        var base := taste_pts(who, topic)
+        var mood := "love" if base == 2 else ("hate" if base == 0 else "meh")
+        total += diner_points(who, topic)
         g.react[who] = mood
         if g.hidden.has(who):
             continue  # a face you could not read teaches you nothing
@@ -18097,6 +19461,39 @@ func dinner_talk(index: int) -> int:
     return total
 
 
+# the owner pays: cheap, normal or fancy (the cost replaces the $300 charged on arrival)
+func budget_options() -> Array:
+    var spare := int(Owner.cash) + int(GAMES.dinner.cost)
+    var out := []
+    for id in ["normal", "cheap", "fancy"]:
+        var b: Dictionary = BUDGETS[id]
+        var entry := {"label": "%s ($%d)" % [str(b.label), int(b.cost)], "id": id}
+        if spare < int(b.cost):
+            entry["enabled"] = false
+            entry["hint"] = "NEED $%d" % int(b.cost)
+        out.append(entry)
+    return out
+
+
+func ask_budget() -> void:
+    Cards.ask(
+        "Restaurant host",
+        "Who picks up the check? A fancy table lifts the mood all night.",
+        budget_options(),
+        func(id: String) -> void:
+            begin_play()
+            set_budget(id)
+    )
+
+
+func set_budget(id: String) -> void:
+    if game != "dinner" or g.is_empty() or not BUDGETS.has(id):
+        return
+    if Campaign.mode == "owner":
+        Owner.cash += int(BUDGETS[str(g.budget)].cost) - int(BUDGETS[id].cost)
+    g.budget = id
+
+
 # harder tiers hide some faces for a round (the points still count)
 func _dinner_hidden() -> Array:
     var table := diners()
@@ -18108,16 +19505,23 @@ func _dinner_hidden() -> Array:
     return order.slice(0, hide_n)
 
 
+# the score for 3 / 2 / 1 stars: a good mood at the table lifts the bar, a tired one lowers it
+func dinner_targets() -> Array:
+    var shifts := 0
+    for who in diners():
+        shifts += diner_shift(who)
+    var scale := float(diners().size()) / 3.0  # the bars are for a table of three
+    return [
+        roundi((22 + 3 * shifts) * scale),
+        roundi((15 + 3 * shifts) * scale),
+        roundi((10 + 3 * shifts) * scale)
+    ]
+
+
 func _dinner_end() -> void:
     var score := int(g.score)
-    var scale := float(diners().size()) / 3.0  # the targets are for a table of three; fewer faces, fewer points
-    _finish(
-        (
-            3
-            if score >= roundi(24.0 * scale)
-            else (2 if score >= roundi(19.0 * scale) else (1 if score >= roundi(14.0 * scale) else 0))
-        )
-    )
+    var cut := dinner_targets()
+    _finish(3 if score >= cut[0] else (2 if score >= cut[1] else (1 if score >= cut[2] else 0)))
 
 
 # ---- in the room: the games are played in the scene itself ---------------------------------------
@@ -18177,7 +19581,7 @@ func _room_begin() -> void:
             var mic := _x0() + MIC_X
             _place_player(mic)
             _hold_player("talk", mic + 60.0)
-            caption("ARROW KEYS AT THE LINE. SING!", 4.0)
+            caption("%s. ARROW KEYS AT THE LINE. SING!" % str(g.song.title), 4.0)
         "escape":
             caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
         "dinner":
@@ -18198,7 +19602,7 @@ func _room_process(delta: float) -> void:
         if p != null and p.state == "sitting":
             g.stage = "talk"
             Game.ui_open = true
-            caption("PICK A TOPIC (UP / DOWN, ENTER). WATCH THEIR FACES.", 5.0)
+            caption("%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text(), 6.0)
 
 
 # keys the in-room game wants (the rest still move you around)
@@ -18215,7 +19619,10 @@ func _room_wants(key: int) -> bool:
                 return key in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER]
             return key == KEY_N
         _:
-            return str(g.get("stage", "")) == "talk" and key in [KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+            return (
+                str(g.get("stage", "")) == "talk"
+                and key in [KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+            )
 
 
 func _room_press(key: int) -> bool:
@@ -18283,43 +19690,175 @@ func _streak_broken() -> void:
 
 
 # ---- escape room extras
-func _code_text(code: Array, sep: String) -> String:
-    var parts := []
-    for d in code:
-        parts.append(str(int(d)))
-    return sep.join(PackedStringArray(parts))
+# can this recipe show this digit? (a product needs a pair that multiplies to it, a double needs an even digit)
+func recipe_fits(recipe: String, digit: int) -> bool:
+    match recipe:
+        "product":
+            return PRODUCTS.has(digit)
+        "double":
+            return digit % 2 == 0
+    return true
+
+
+# one clue: what the zone shows ("show"), what the caption says ("say") and the digit it hides
+func make_clue(zone: String, recipe: String, digit: int, r: RandomNumberGenerator) -> Dictionary:
+    var clue := {"zone": zone, "recipe": recipe, "digit": digit, "args": {}, "show": "", "say": ""}
+    match recipe:
+        "sum":
+            var a := r.randi_range(0, digit)
+            clue.args = {"a": a, "b": digit - a}
+            clue.show = "%d+%d=?" % [a, digit - a]
+            clue.say = "THE CHALKBOARD: %d + %d = ?" % [a, digit - a]
+        "product":
+            var pair: Array = PRODUCTS[digit]
+            clue.args = {"a": pair[0], "b": pair[1]}
+            clue.show = "%dX%d=?" % pair
+            clue.say = "THE CHALKBOARD: %d X %d = ?" % pair
+        "missing":
+            var list := [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            list.erase(digit)
+            for k in range(list.size() - 1, 0, -1):
+                var j := r.randi_range(0, k)
+                var tmp = list[k]
+                list[k] = list[j]
+                list[j] = tmp
+            clue.args = {"list": list}
+            clue.show = "%s|MISSING?" % "".join(PackedStringArray(list.map(func(v): return str(v))))
+            clue.say = (
+                "THE CHALKBOARD LISTS 1 TO 9 WITH ONE LEFT OUT: %s. WHICH ONE?"
+                % " ".join(PackedStringArray(list.map(func(v): return str(v))))
+            )
+        "hour":
+            clue.args = {"hour": digit}
+            clue.show = str(digit)
+            clue.say = "THE CLOCK HAS STOPPED AT %d O'CLOCK." % digit
+        "double":
+            var half := int(digit / 2.0)
+            clue.args = {"hour": half}
+            clue.show = str(half)
+            clue.say = (
+                "THE CLOCK HAS STOPPED AT %d O'CLOCK. A NOTE ON THE FACE: TWICE THE HOUR." % half
+            )
+        "number":
+            clue.args = {"n": digit}
+            clue.show = str(digit)
+            clue.say = "A BRASS PLAQUE UNDER THE PAINTING: NO. %d." % digit
+        "roman":
+            clue.args = {"numeral": ROMAN[digit]}
+            clue.show = ROMAN[digit]
+            clue.say = "THE PLAQUE UNDER THE PAINTING READS %s. A ROMAN NUMERAL." % ROMAN[digit]
+        "letter":
+            var letter := char(64 + digit)
+            clue.args = {"letter": letter}
+            clue.show = letter
+            clue.say = (
+                "THE PLAQUE UNDER THE PAINTING SHOWS THE LETTER %s. WHERE IS IT IN THE ALPHABET?"
+                % letter
+            )
+        "spine":
+            clue.args = {"n": digit}
+            clue.show = "VOL %d" % digit
+            clue.say = "ONE BOOK ON THE SHELF STICKS OUT: VOLUME %d." % digit
+        "ribbons":
+            clue.args = {"n": digit}
+            clue.show = str(digit)
+            clue.say = "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: %d." % digit
+    return clue
+
+
+# the digit a clue stands for, worked out from what it shows (tests check it against the code)
+func clue_answer(clue: Dictionary) -> int:
+    var a: Dictionary = clue.args
+    var out := int(a.get("n", 0))
+    match str(clue.recipe):
+        "sum":
+            out = int(a.a) + int(a.b)
+        "product":
+            out = int(a.a) * int(a.b)
+        "missing":
+            out = 45
+            for v in a.list:
+                out -= int(v)
+        "hour":
+            out = int(a.hour)
+        "double":
+            out = int(a.hour) * 2
+        "roman":
+            out = ROMAN.find(str(a.numeral))
+        "letter":
+            out = str(a.letter).unicode_at(0) - 64
+    return out
 
 
 func _escape_room_setup() -> void:
     var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    var rng := _escape_rng()
-    Difficulty.shuffle_with(pool, rng)
-    var a: int = pool[0]
-    var first := rng.randi_range(0, a)
+    Difficulty.shuffle(pool, "escape")
+    var n := escape_digits()
+    var r := Difficulty.rng("escape")
+    var wanted: Dictionary = opts.get("recipes", {})  # toolbox: a fixed recipe per clue zone
+    var clues := []
+    for i in n:
+        var zone: String = CLUE_ZONES[i]
+        var want := str(wanted.get(zone, ""))
+        if want != "" and RECIPES[zone].has(want) and not recipe_fits(want, int(pool[i])):
+            for j in range(i + 1, pool.size()):  # bring a digit this recipe can show
+                if recipe_fits(want, int(pool[j])):
+                    var tmp = pool[i]
+                    pool[i] = pool[j]
+                    pool[j] = tmp
+                    break
+        var fits := []
+        for recipe in RECIPES[zone]:
+            if recipe_fits(str(recipe), int(pool[i])) and (want == "" or str(recipe) == want):
+                fits.append(recipe)
+        if fits.is_empty():
+            fits = RECIPES[zone].filter(func(rc) -> bool: return recipe_fits(str(rc), int(pool[i])))
+        clues.append(make_clue(zone, str(fits[r.randi_range(0, fits.size() - 1)]), int(pool[i]), r))
+    var eq := [clues[0].args.get("a", 0), clues[0].args.get("b", 0)]
     g = {
-        "code": [a, pool[1], pool[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
-        "hints": 3, "hints_used": 0, "revealed": [], "msg": "", "found": [], "entry": false, "wrong": 0,
-        "eq": [first, a - first],
+        "code": pool.slice(0, n),
+        "cur": _zeros(n),
+        "cursor": 0,
+        "guesses": [],
+        "time": Difficulty.f("escape.time"),
+        "hints": 3,
+        "hints_used": 0,
+        "revealed": [],
+        "msg": "",
+        "found": [],
+        "entry": false,
+        "wrong": 0,
+        "clues": clues,
+        "dial": Difficulty.i("escape.dial") > 0,
+        "eq": eq,
     }
 
 
 func interact(kind: String) -> void:
     if not room_mode() or game != "escape" or phase != "play" or g.is_empty():
         return
-    match kind:
-        "clue_board":
-            _found(0)
-            caption("THE CHALKBOARD: %d + %d = ?   THE ANSWER IS THE FIRST DIGIT." % [int(g.eq[0]), int(g.eq[1])], 5.0)
-        "clue_clock":
-            _found(1)
-            caption("THE CLOCK HAS STOPPED AT %d O'CLOCK. THAT IS THE SECOND DIGIT." % int(g.code[1]), 5.0)
-        "clue_painting":
-            _found(2)
-            caption("A BRASS PLAQUE UNDER THE PAINTING: NO. %d. THE THIRD DIGIT." % int(g.code[2]), 5.0)
-        "keypad":
-            g.entry = true
-            Game.ui_open = true
-            caption("ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF", 6.0)
+    var index := CLUE_KINDS.find(kind)
+    if index >= 0:
+        if index < g.clues.size():
+            _found(index)
+            caption(
+                (
+                    "%s  THAT IS DIGIT %d OF %d IN THE CODE."
+                    % [str(g.clues[index].say), index + 1, g.code.size()]
+                ),
+                6.0
+            )
+        else:
+            caption(
+                str(HERRINGS[Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)]), 4.0
+            )
+    elif kind == "keypad":
+        g.entry = true
+        Game.ui_open = true
+        caption(
+            "ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF",
+            6.0
+        )
 
 
 func _found(index: int) -> void:
@@ -18331,17 +19870,26 @@ func escape_nudge() -> String:
     if int(g.hints) <= 0:
         caption("NOBODY HAS ANYTHING LEFT TO SAY.", 2.0)
         return ""
-    var friend := _first_friend()
-    var text := "YOU HAVE ALL THREE. TRY THE KEYPAD ON THE VAULT."
-    for i in 3:
+    var friend := _friend()
+    var zone := "keypad"
+    var recipe := ""
+    for i in g.clues.size():
         if not g.found.has(i):
-            text = ["TRY THE CHALKBOARD.", "THAT WALL CLOCK LOOKS WRONG.", "WHAT IS UNDER THE PAINTING?"][i]
+            zone = CLUE_ZONES[i]
+            recipe = str(g.clues[i].recipe)
             break
+    var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])
+    var text := str(table.get(zone, ""))
+    if str(SPECIALTY.get(friend, "")) == zone:
+        if zone == "keypad":
+            text += " " + str(RECIPE_TIPS["dial" if g.get("dial", false) else "nodial"])
+        else:
+            text += " " + str(RECIPE_TIPS.get(recipe, ""))
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
-    text = "%s: %s" % [friend, text]
-    caption(text, 4.0)
-    _bubble(_actor(friend.capitalize()), "!", 1.5)
+    text = "%s: %s" % [friend.to_upper(), text]
+    caption(text, 5.0)
+    _bubble(_actor(friend), "!", 1.5)
     return text
 
 
@@ -18349,7 +19897,8 @@ func _room_submit() -> void:
     var cur: Array = g.cur
     if cur == g.code:
         var left := float(g.time)
-        var result := 3 if left >= 70.0 else (2 if left >= 35.0 else 1)
+        var big := 70.0 if g.code.size() <= 3 else 55.0
+        var result := 3 if left >= big else (2 if left >= big / 2.0 else 1)
         if int(g.hints_used) >= 2:
             result = maxi(1, result - 1)
         g.entry = false
@@ -18359,7 +19908,13 @@ func _room_submit() -> void:
     g.wrong = int(g.wrong) + 1
     var penalty := Difficulty.f("escape.wrong_penalty")
     g.time = float(g.time) - penalty
-    caption("WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty), 3.0)
+    var text := "WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty)
+    if g.get("dial", false):
+        # the dial lock is a second route: it tells you which digits fit (bulls and cows)
+        var score := escape_score(cur)
+        g.guesses.append([cur.duplicate(), score[0], score[1]])
+        text += "  THE DIAL CLICKS: %d IN PLACE, %d OUT OF PLACE." % [int(score[0]), int(score[1])]
+    caption(text, 4.0)
 
 
 # ---- dinner extras
@@ -18371,8 +19926,18 @@ func _dinner_react() -> void:
             _bubble(_actor(who), "?", 1.3)
             parts.append("%s IS HARD TO READ" % who.to_upper())
             continue
-        _bubble(_actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3)
-        parts.append("%s %s" % [who.to_upper(), {"love": "LOVES IT", "hate": "DREADS IT", "meh": "IS FINE"}[mood]])
+        _bubble(
+            _actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3
+        )
+        parts.append(
+            (
+                "%s %s"
+                % [
+                    who.to_upper(),
+                    {"love": "LOVES IT", "hate": "DREADS IT", "meh": "IS FINE"}[mood]
+                ]
+            )
+        )
     caption(", ".join(parts), 2.0)
 
 
@@ -18402,21 +19967,33 @@ func _hud_bowling(s: Rect2) -> void:
         _canvas.draw_rect(bar, UiStyle.SOFT)
         if stage == "aim":
             _canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
-            _canvas.draw_rect(Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0), WHITE)
+            _canvas.draw_rect(
+                Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0),
+                WHITE
+            )
             _t("AIM", x, o.y, WHITE)
         else:
             _canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
-            _canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER)
+            _canvas.draw_rect(
+                Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER
+            )
             _t("POWER", x, o.y, WHITE)
     else:
-        var status := "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+        var status := (
+            "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+        )
         _t(status, x, o.y, UiStyle.SOFT)
 
 
 func _hud_karaoke(s: Rect2) -> void:
     var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
     UiStyle.box(_canvas, lanes)
-    _paint_karaoke(Rect2(lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0), true)
+    _paint_karaoke(
+        Rect2(
+            lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0
+        ),
+        true
+    )
     var o := UiStyle.strip(_canvas, s)
     _t("SCORE %d  STREAK %d" % [int(g.score), int(g.streak)], o.x, o.y, WHITE)
     if float(g.flash_t) > 0.0:
@@ -18426,10 +20003,15 @@ func _hud_karaoke(s: Rect2) -> void:
 func _hud_escape(s: Rect2) -> void:
     var o := UiStyle.strip(_canvas, s)
     if not g.get("entry", false):
-        _t("CLUES %d OF 3  HINTS %d" % [g.found.size(), int(g.hints)], o.x, o.y, WHITE)
+        _t(
+            "CLUES %d OF %d  HINTS %d" % [g.found.size(), g.code.size(), int(g.hints)],
+            o.x,
+            o.y,
+            WHITE
+        )
         return
     _t("CODE", o.x, o.y, WHITE)
-    for i in 3:
+    for i in g.code.size():
         var r := Rect2(s.position.x + 32.0 + 12.0 * float(i), s.position.y + 1.0, 10.0, 9.0)
         _canvas.draw_rect(r, WHITE)
         _canvas.draw_rect(
@@ -18451,6 +20033,15 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
         _t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
         return
     _t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+    # the mood of the day, one face per diner (A = Alan ...)
+    var fx_x := s.position.x + 92.0
+    for who in diners():
+        var md: String = str(g.get("moods", {}).get(who, "easygoing"))
+        var shift := int(DINNER_MOODS[md].shift)
+        var face := str(DINNER_MOODS[md].face)
+        _t(who.substr(0, 1), fx_x, o.y, UiStyle.SOFT)
+        _t(face, fx_x + 4.0, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
+        fx_x += 4.0 + 4.0 * float(face.length()) + 3.0
     var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
     var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
     UiStyle.box(_canvas, box)
@@ -18501,6 +20092,8 @@ func _paint() -> void:
     if room_mode() and phase == "play":
         _paint_hud(size)
         return
+    if Cards.is_open:
+        return  # the song / budget card has the screen (the page comes back after it)
     if _traveled and _peek:
         UiStyle.hint_bar(_canvas, size, "TAB = BACK TO THE GAME")
         return
@@ -18557,18 +20150,23 @@ func _paint_result(b: Rect2) -> void:
                 for who in bowlers():
                     detail += "  %s %d" % [who.to_upper(), int(g.totals[who])]
             "karaoke":
-                detail = "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
+                detail = (
+                    "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
+                )
             "escape":
+                var digits := ""
+                for d in g.code:
+                    digits += str(int(d))
                 detail = (
                     "CODE %s  TRIES %d  HINTS %d"
                     % [
-                        _code_text(g.code, ""),
+                        digits,
                         maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
                         int(g.hints_used)
                     ]
                 )
             "dinner":
-                detail = "TABLE SCORE %d OF %d" % [int(g.score), 10 * diners().size()]
+                detail = "TABLE SCORE %d (3 STARS AT %d)" % [int(g.score), int(dinner_targets()[0])]
     if detail != "":
         _t(detail, b.position.x, y + 3.0, BLUE)
 
@@ -18579,7 +20177,12 @@ func _paint_bowling(b: Rect2) -> void:
     _t("FRAME %d  ROLL %d" % [int(g.frame), int(g.roll)], x, y)
     var names := ["You"] + bowlers()
     for i in names.size():
-        _t("%s %d" % [names[i].to_upper(), int(g.totals[names[i]])], x, y + 10.0 + 8.0 * float(i), BLUE if i == 0 else INK)
+        _t(
+            "%s %d" % [names[i].to_upper(), int(g.totals[names[i]])],
+            x,
+            y + 10.0 + 8.0 * float(i),
+            BLUE if i == 0 else INK
+        )
     var lane := Rect2(x + 78.0, y, minf(b.size.x - 82.0, 90.0), b.size.y - 18.0)
     _canvas.draw_rect(lane, Color("d9b26b"))
     _canvas.draw_rect(Rect2(lane.position.x, lane.position.y, 3.0, lane.size.y), Color("5a3a22"))
@@ -18589,8 +20192,12 @@ func _paint_bowling(b: Rect2) -> void:
     for row in 4:
         for k in row + 1:
             var standing: bool = idx < int(g.pins)
-            var pos := Vector2(px + (float(k) - float(row) * 0.5) * 8.0, lane.position.y + 6.0 + float(row) * 7.0)
-            _canvas.draw_rect(Rect2(pos - Vector2(2, 2), Vector2(4, 4)), WHITE if standing else Color("b8975a"))
+            var pos := Vector2(
+                px + (float(k) - float(row) * 0.5) * 8.0, lane.position.y + 6.0 + float(row) * 7.0
+            )
+            _canvas.draw_rect(
+                Rect2(pos - Vector2(2, 2), Vector2(4, 4)), WHITE if standing else Color("b8975a")
+            )
             idx += 1
     if g.stage == "roll":
         var by := lane.end.y - 4.0 - (lane.size.y - 14.0) * float(g.ball)
@@ -18601,7 +20208,9 @@ func _paint_bowling(b: Rect2) -> void:
     _canvas.draw_rect(bar, Color("c9d2e0"))
     if g.stage == "aim":
         _canvas.draw_rect(Rect2(bar.position.x + 28.0, bar_y, 14.0, 5.0), GREEN)
-        _canvas.draw_rect(Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK)
+        _canvas.draw_rect(
+            Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK
+        )
         _t("AIM", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
     elif g.stage == "power":
         _canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
@@ -18616,8 +20225,9 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
     var y := b.position.y
     var top := y + (2.0 if hud else 18.0)
     if not hud:
-        _t("TOTALLY LEGAL HIT (2013)", x, y, BLUE)
+        _t(("%s (%s)" % [str(g.song.title), str(g.song.genre)]).substr(0, 40), x, y, BLUE)
         _t("SCORE %d   STREAK %d" % [int(g.score), int(g.streak)], x, y + 8.0)
+        _t("CROWD", b.end.x - 24.0, y + 8.0, UiStyle.MUTED)
     var line_y := b.end.y - 12.0
     var left := b.position.x + b.size.x * 0.5 - 40.0
     for lane in 4:
@@ -18625,7 +20235,7 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
         _canvas.draw_rect(Rect2(cx - 9.0, top, 18.0, line_y + 6.0 - top), Color("dde3ee"))
         _arrow(lane, Vector2(cx, line_y), 5.0, Color(LANE_COLORS[lane], 0.45))
     for n in g.notes:
-        var dy: float = (float(n.time) - float(g.t)) * 45.0
+        var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0))
         if dy < -14.0 or dy > line_y - top + 4.0:
             continue
         var col: Color = LANE_COLORS[int(n.lane)]
@@ -18636,6 +20246,14 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
         _arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
     if float(g.flash_t) > 0.0 and not hud:
         _tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
+    # the crowd: a bar that fills as they warm up (green when the whole room is singing)
+    var bar := Rect2(b.end.x - 6.0, top, 4.0, line_y + 6.0 - top)
+    var level := float(g.get("mood", 50.0)) / 100.0
+    _canvas.draw_rect(bar, UiStyle.SOFT)
+    _canvas.draw_rect(
+        Rect2(bar.position.x, bar.end.y - bar.size.y * level, 4.0, bar.size.y * level),
+        GREEN if level >= 0.6 else (AMBER if level >= 0.3 else RED)
+    )
     var song := minf(1.0, float(g.t) / _song_secs())
     _canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), UiStyle.SOFT)
     _canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x * song, 3.0), BLUE)
@@ -18644,24 +20262,48 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 func _paint_escape(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
-    _t("TIME %d   HINTS LEFT %d   TRIES %d OF 8" % [int(float(g.time)), int(g.hints), g.guesses.size()], x, y, RED if float(g.time) < 20.0 else INK)
+    var n: int = g.code.size()
+    _t(
+        (
+            "TIME %d   HINTS LEFT %d   TRIES %d OF 8"
+            % [int(float(g.time)), int(g.hints), g.guesses.size()]
+        ),
+        x,
+        y,
+        RED if float(g.time) < 20.0 else INK
+    )
     var row := 0
     for entry in g.guesses:
         if row >= 8:
             break
-        _t("%s  B%d C%d" % [_code_text(entry[0], " "), int(entry[1]), int(entry[2])], x, y + 10.0 + 7.0 * float(row), INK)
+        var digits := []
+        for d in entry[0]:
+            digits.append(str(int(d)))
+        _t(
+            "%s  B%d C%d" % [" ".join(PackedStringArray(digits)), int(entry[1]), int(entry[2])],
+            x,
+            y + 10.0 + 7.0 * float(row),
+            INK
+        )
         row += 1
-    var digits_n: int = g.cur.size()
-    var bx := x + b.size.x - 74.0 - 20.0 * float(digits_n - 3)
-    for i in digits_n:
+    var bx := x + b.size.x - 20.0 * float(n) - 2.0
+    for i in n:
         var r := Rect2(bx + 20.0 * float(i), y + 12.0, 16.0, 22.0)
         _canvas.draw_rect(r, WHITE)
-        _canvas.draw_rect(Rect2(r.position.x, r.end.y - 2.0, 16.0, 2.0), BLUE if int(g.cursor) == i else Color("c9d2e0"))
-        PixelFont.draw(_canvas, str(int(g.cur[i])), r.position + Vector2(5.0, 6.0), GREEN if g.revealed.has(i) else INK, 2)
+        _canvas.draw_rect(
+            Rect2(r.position.x, r.end.y - 2.0, 16.0, 2.0),
+            BLUE if int(g.cursor) == i else Color("c9d2e0")
+        )
+        PixelFont.draw(
+            _canvas,
+            str(int(g.cur[i])),
+            r.position + Vector2(5.0, 6.0),
+            GREEN if g.revealed.has(i) else INK,
+            2
+        )
     _t("U/D CHANGE   L/R MOVE", bx - 6.0, y + 40.0, Color("46506a"))
     if str(g.msg) != "":
         for part in _wrap(str(g.msg), 18):
-            y += 0.0
             _t(part, bx - 6.0, y + 50.0, BLUE)
             y += 7.0
 
@@ -18681,6 +20323,14 @@ func _paint_dinner(b: Rect2) -> void:
         var who: String = table[i]
         var ry := y + 9.0 + 14.0 * float(i)
         _t(who.to_upper(), rx, ry, BLUE)
+        var md: String = str(g.get("moods", {}).get(who, "easygoing"))
+        var shift := int(DINNER_MOODS[md].shift)
+        _t(
+            "%s %s" % [str(DINNER_MOODS[md].face), md.to_upper()],
+            rx + 60.0,
+            ry,
+            GREEN if shift > 0 else (RED if shift < 0 else UiStyle.MUTED)
+        )
         if g.react.has(who):
             var mood: String = g.react[who]
             var face := "<3" if mood == "love" else (":(" if mood == "hate" else "OK")
@@ -19247,6 +20897,8 @@ func _preview() -> String:
                 names.append("a desktop install")
             elif kind == "ransomware":
                 names.append("trouble at the law firm")
+        if d == Expo.TRIP_DAY and Expo.qualified:
+            names.append("the Rodent Nation trip (you are going)")
     if names.is_empty():
         return "Nothing scary on the calendar this week. Use the quiet to study."
     return "Coming up this week: %s. Be ready." % ", ".join(names)
@@ -19837,6 +21489,417 @@ func _draw() -> void:
             draw_rect(Rect2(_dots[i] - Vector2(2, 2), Vector2(4, 4)), Color("ffe08a"))
 ''')
 
+write("scripts/partner.gd", '''extends Node
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# The other owner (X5, owner campaign). You are one of the two owners of Pixel IT Partners; the other one is the
+# partner NPC (Roles.partner()). Trust runs 0-100: it moves when you follow or override the partner's stance on a card,
+# at four partner meetings, with the owners' draw and with joint outings. Trust opens or closes doors: help with the
+# owner hours, a veto on cards the partner opposes, a partner who walks out, and the ending offers (buy-out, sell together).
+# Stances are DERIVED from the effect tags of a card's option and the partner's priorities (Alan: technical, careful with
+# money and prices; Garrison: sales, people and culture), so no card needs a stance table of its own.
+
+signal changed
+
+const MEETING_WEEKS := [5, 9, 13, 17]
+const START_TRUST := 55  # help (owner hours) has to be earned: it starts at HELP_TRUST 60
+const HELP_TRUST := 60  # from here the partner takes owner hours off you
+const BLOCK_TRUST := 30  # below this the partner vetoes what they oppose
+const RIFT_TRUST := 40  # below this the ending offers a buy-out
+const BUYOUT_COST := 15000
+const PRIORITIES := {
+    "Alan":
+    {
+        "tech": 2.0, "security": 1.5, "people": 1.0, "culture": 0.3, "sales": -0.4, "marketing": -1.0,
+        "premium": -1.6, "volume": 0.4, "spend": -0.5, "cheap_tools": -2.0, "draw": -1.5
+    },
+    "Garrison":
+    {
+        "tech": -0.2, "security": 0.4, "people": 1.5, "culture": 2.0, "sales": 1.6, "marketing": 1.5,
+        "premium": -1.2, "volume": 0.8, "spend": -0.5, "cheap_tools": -0.5, "draw": 0.4
+    },
+}
+const SECURITY_FLAGS := ["backup_service", "rdp_safe"]
+const CULTURE_FLAGS := ["flex_hours", "four_day", "oncall_stipend", "after_hours_fee"]
+const WORDS := {"agree": "AGREES", "warn": "WARNS", "oppose": "OPPOSES"}
+
+# the four partner meetings: Marge brings the numbers, the partner brings an opinion. Texts differ per partner (their voice);
+# options carry real effects plus a trust change for each partner.
+const BEATS := {
+    "partner1":
+    {
+        "week": 5,
+        "speaker": "{partner}",
+        "text":
+        {
+            "Alan": "Marge printed the quarter. We have some money. I want it in the rack and the tools, not in a banner. Where does it go?",
+            "Garrison": "Marge printed the quarter and I have IDEAS. A client lunch! A banner on the van! A bigger sign! Where does the money go?"
+        },
+        "options":
+        [
+            {
+                "label": "INVEST IN THE STACK AND THE RACK ($400)", "need": 400,
+                "fx": {"cash": -400, "speed": 0.04, "trust": {"Alan": 4, "Garrison": -1}},
+                "text": "The money goes into the rack. {partner} and Marge agree on exactly one thing today: the invoice is correct."
+            },
+            {
+                "label": "INVEST IN THE CLIENTS: A THANK-YOU LUNCH ($300)", "need": 300,
+                "fx": {"cash": -300, "mood_all": 5, "trust": {"Alan": -1, "Garrison": 4}},
+                "text": "The clients get lunch. Dr. Patel asks if there is a dessert plan. There is now."
+            },
+            {
+                "label": "KEEP IT IN THE BANK",
+                "fx": {"trust": {"Alan": 1, "Garrison": 1}},
+                "text": "Marge approves. Nobody else gets excited, but nobody gets upset either."
+            },
+        ],
+    },
+    "partner2":
+    {
+        "week": 9,
+        "speaker": "{partner}",
+        "text":
+        {
+            "Alan": "That ransomware mess. The staff are asking who dropped it. I would like to know too. How do we handle it?",
+            "Garrison": "The ransomware! Everyone is whispering! Somebody is going to get blamed and I hate that. What do we say to the team?"
+        },
+        "options":
+        [
+            {
+                "label": "WRITE UP A REVIEW TOGETHER, NO BLAME",
+                "fx": {"rep": 1, "mood_all": 1, "trust": {"Alan": 4, "Garrison": 4}},
+                "text": "One page: what happened, what changes. {partner} reads it twice and pins it up. The whispering stops."
+            },
+            {
+                "label": "POINT AT THEIR SIDE OF THE BUSINESS",
+                "fx": {"burnout": 3, "trust": {"Alan": -8, "Garrison": -8}},
+                "text": "{partner} goes very quiet. The staff notice the quiet, and the coffee machine hears everything."
+            },
+            {
+                "label": "TAKE THE BLAME YOURSELF",
+                "fx": {"rep": -1, "trust": {"Alan": 6, "Garrison": 6}},
+                "text": "You say it was on you. {partner} did not expect that, and respects it."
+            },
+        ],
+    },
+    "partner3":
+    {
+        "week": 13,
+        "speaker": "{partner}",
+        "text":
+        {
+            "Alan": "Costs are up and the crew wants more money. The books say one of two things has to give. Fees or wages. Pick.",
+            "Garrison": "Okay, big one. The crew deserves a raise and the clients deserve a fee freeze, and the books say we cannot have both. Help!"
+        },
+        "options":
+        [
+            {
+                "label": "RAISE FEES 8%",
+                "fx": {"price": 0.08, "mood_all": -3, "trust": {"Alan": 2, "Garrison": -4}},
+                "text": "A polite letter goes out. Most clients shrug. A few write back with long emails."
+            },
+            {
+                "label": "RAISE THE CREW'S PAY ($60/WEEK)",
+                "fx": {"weekly": 60, "burnout": -6, "speed": 0.03, "trust": {"Alan": 0, "Garrison": 4}},
+                "text": "The crew gets a raise. Morgan says the break room mood improved by one whole donut."
+            },
+            {
+                "label": "SPLIT IT: SMALL RAISE, SMALL FEE RISE",
+                "fx": {"price": 0.04, "weekly": 30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "Everyone gets a little and everyone complains a little. {partner} calls it fair."
+            },
+        ],
+    },
+    "partner4":
+    {
+        "week": 17,
+        "speaker": "{partner}",
+        "text":
+        {
+            "Alan": "Marge says the valuation people are circling. Do we sell, or do we keep going? I want one answer from both of us.",
+            "Garrison": "Sell or stay! The review is almost here and I am excited and terrified. Are we selling? Or are we building?"
+        },
+        "options":
+        [
+            {
+                "label": "AIM TO SELL: TRIM COSTS, POLISH THE BOOKS",
+                "fx": {"marketing": 0, "flag": "plan_sell", "trust": {"Alan": 2, "Garrison": -3}},
+                "text": "The marketing budget goes to zero and the books get a polish. {partner} nods, a little sadly."
+            },
+            {
+                "label": "STAY AND GROW: KEEP INVESTING",
+                "fx": {"vic": 0.03, "flag": "plan_grow", "trust": {"Alan": 1, "Garrison": 3}},
+                "text": "Neither of you says it, but the sign out front stays. {partner} grins."
+            },
+            {
+                "label": "WE DISAGREE: SORT IT OUT AT THE REVIEW",
+                "fx": {"flag": "plan_split", "trust": {"Alan": -6, "Garrison": -6}},
+                "text": "The meeting ends with two coffees going cold and a long hallway."
+            },
+        ],
+    },
+}
+
+var trust := START_TRUST
+var left := false  # the partner walked out of the company (trust hit 0)
+var met: Array = []  # beats already held
+var overrides := 0  # cards where you did what they opposed
+var follows := 0
+var _pending_leave := false
+
+
+func reset() -> void:
+    trust = START_TRUST
+    left = false
+    met = []
+    overrides = 0
+    follows = 0
+    _pending_leave = false
+
+
+func to_dict() -> Dictionary:
+    return {"trust": trust, "left": left, "met": met, "overrides": overrides, "follows": follows}
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    trust = int(data.get("trust", START_TRUST))
+    left = bool(data.get("left", false))
+    met = data.get("met", [])
+    overrides = int(data.get("overrides", 0))
+    follows = int(data.get("follows", 0))
+
+
+func who() -> String:
+    return Roles.partner()
+
+
+# there is a partner to deal with (owner campaign, they have not left)
+func active() -> bool:
+    return Owner.active() and who() != "" and not left
+
+
+# ---- trust ---------------------------------------------------------------------------------------------------
+func change(amount: int) -> void:
+    if not Owner.active() or left or amount == 0:
+        return
+    trust = clampi(trust + amount, 0, 100)
+    if trust <= 0 and Campaign.day >= 3:
+        _pending_leave = true
+    changed.emit()
+
+
+func trust_word() -> String:
+    if left:
+        return "GONE"
+    if trust >= 75:
+        return "CLOSE"
+    if trust >= 55:
+        return "SOLID"
+    if trust >= BLOCK_TRUST:
+        return "STRAINED"
+    if trust >= 10:
+        return "ON THE OUTS"
+    return "BROKEN"
+
+
+# the partner's hands-on share of the ticket queue (they also run the other half of the company)
+func hands() -> float:
+    if left or who() == "":
+        return 0.0
+    return 0.5 if trust >= BLOCK_TRUST else 0.35
+
+
+# owner hours the partner takes off you while they trust you
+func help_hours() -> float:
+    return 6.0 if active() and trust >= HELP_TRUST else 0.0
+
+
+# ---- stance chips ----------------------------------------------------------------------------------------------
+func _add(out: Dictionary, tag: String, amount: float) -> void:
+    out[tag] = float(out.get(tag, 0.0)) + amount
+
+
+func _tag_fx(out: Dictionary, fx: Dictionary, w: float) -> void:
+    var cash := float(fx.get("cash", 0))
+    var weekly := float(fx.get("weekly", 0))
+    _add(out, "spend", (maxf(0.0, -cash) / 600.0 + maxf(0.0, weekly) / 100.0) * w)
+    if fx.has("marketing") and int(fx.marketing) > 0:
+        _add(out, "marketing", float(fx.marketing) / 900.0 * w)
+        _add(out, "sales", float(fx.marketing) / 900.0 * w)
+    var price := float(fx.get("price", 0.0))
+    if price > 0.0:
+        _add(out, "premium", price / 0.2 * w)
+    elif price < 0.0:
+        _add(out, "volume", -price / 0.15 * w)
+        _add(out, "sales", -price / 0.15 * w)
+    if float(fx.get("vic", 0.0)) > 0.0:
+        _add(out, "sales", 0.5 * w)
+    if fx.has("stack"):
+        for category in fx.stack:
+            var opt: Dictionary = Owner.STACK[str(category)].options.get(str(fx.stack[category]), {})
+            if float(opt.get("morale", 0)) < 0.0 or float(opt.get("issues", 1.0)) > 1.1:
+                _add(out, "cheap_tools", w)
+            elif float(opt.get("speed", 0)) > 0.0 or float(opt.get("morale", 0)) > 0.0:
+                _add(out, "tech", w)
+    var flag := str(fx.get("flag", ""))
+    if SECURITY_FLAGS.has(flag):
+        _add(out, "security", w)
+        _add(out, "tech", 0.5 * w)
+    elif flag == "rdp_weak":
+        _add(out, "security", 0.3 * w)
+    elif CULTURE_FLAGS.has(flag):
+        _add(out, "culture", w)
+    if fx.get("check_backups", false) or fx.get("health_check", false) or fx.has("remediate"):
+        _add(out, "tech", w)
+        _add(out, "security", 0.5 * w)
+    var burn := float(fx.get("burnout", 0.0))
+    if burn != 0.0:
+        _add(out, "culture", -burn / 6.0 * w)
+    var mood := float(fx.get("mood_all", 0.0))
+    if mood != 0.0:
+        _add(out, "culture", mood / 6.0 * w)
+        _add(out, "sales", mood / 6.0 * w)
+    if fx.has("candidates") or fx.has("hire"):
+        _add(out, "people", w)
+    if fx.get("lose_tech", false):
+        _add(out, "people", -w)
+    if float(fx.get("speed", 0.0)) > 0.0:
+        _add(out, "tech", 0.3 * w)
+    if str(fx.get("draw", "")) == "generous":
+        _add(out, "draw", w)
+
+
+# the weighted effect tags of an option (a roll counts as the average of its outcomes)
+func tags(opt: Dictionary) -> Dictionary:
+    var out := {}
+    var fxs: Array = []
+    if opt.has("fx"):
+        fxs.append(opt.fx)
+    if opt.has("roll"):
+        for entry in opt.roll:
+            fxs.append(entry[1])
+    for fx in fxs:
+        _tag_fx(out, fx, 1.0 / float(maxi(1, fxs.size())))
+    return out
+
+
+# the partner's score for an option (positive = they like it)
+func score(opt: Dictionary, partner := "") -> float:
+    var p := partner if partner != "" else who()
+    var weights: Dictionary = PRIORITIES.get(p, {})
+    var total := 0.0
+    var t := tags(opt)
+    for tag in t:
+        total += float(t[tag]) * float(weights.get(tag, 0.0))
+    return total
+
+
+# "agree", "warn", "oppose" or "" (no opinion)
+func stance(opt: Dictionary, partner := "") -> String:
+    if not Owner.active() or (partner == "" and not active()):
+        return ""
+    var s := score(opt, partner)
+    if s >= 1.5:
+        return "agree"
+    if s <= -1.5:
+        return "oppose"
+    if s <= -0.75:
+        return "warn"
+    return ""
+
+
+func chip(stance_id: String) -> String:
+    return "%s %s" % [who().substr(0, 1), str(WORDS.get(stance_id, ""))] if stance_id != "" else ""
+
+
+# a partner who is fed up vetoes what they oppose
+func blocks(stance_id: String) -> bool:
+    return active() and trust < BLOCK_TRUST and stance_id == "oppose"
+
+
+# the card was answered: following their stance earns trust, overriding costs it
+func on_pick(stance_id: String) -> void:
+    match stance_id:
+        "agree":
+            follows += 1
+            change(2)
+        "warn":
+            change(-1)
+        "oppose":
+            overrides += 1
+            change(-3)
+
+
+# ---- the weekly settle and the meetings --------------------------------------------------------------------------
+# called from Owner.settle: the quiet drift of the partnership, and the walk-out at zero
+func week(profit: int) -> void:
+    if not Owner.active() or left:
+        return
+    if profit > 0 and Owner.cash >= 2000 and Campaign.day % 2 == 0:
+        change(1)
+    elif Owner.cash < 0:
+        change(-1)
+    if _pending_leave:
+        leave()
+
+
+func leave() -> void:
+    if left:
+        return
+    left = true
+    _pending_leave = false
+    var pname := who()
+    Owner.burnout = clampf(Owner.burnout + 4.0, 0.0, 100.0)
+    for c in Sales.active:
+        Sales.adjust(int(c), -2)
+    World.apply_roster()
+    changed.emit()
+    Cards.ask(
+        "Marge (Bookkeeper)",
+        "%s cleared out their desk this morning. They are leaving the company. We will sort out the share at the board review. Until then the work and the draw are all yours." % pname,
+        [{"label": "OK", "id": "ok"}],
+        func(_p: String) -> void: pass
+    )
+
+
+func beat_for_week(week_no: int) -> String:
+    for id in BEATS:
+        if int(BEATS[id].week) == week_no:
+            return str(id)
+    return ""
+
+
+# opens the partner meeting of this week (as an Owner dynamic card so it uses the usual card machinery)
+func hold_beat(id: String) -> void:
+    if not Owner.active() or left or met.has(id) or not BEATS.has(id):
+        return
+    met.append(id)
+    var beat: Dictionary = BEATS[id]
+    var card := {"speaker": str(beat.speaker), "beat": true, "options": beat.options.duplicate(true)}
+    card["text"] = str(beat.text.get(who(), beat.text.values()[0]))
+    Owner._dynamic[id] = card
+    Owner.show_card(id)
+
+
+# ---- the endings ------------------------------------------------------------------------------------------------
+# a rift: the partnership is not going to survive the review (a buy-out becomes possible)
+func rift() -> bool:
+    return left or trust < RIFT_TRUST
+
+
+func status_lines() -> Array:
+    var pname := who().to_upper()
+    var lines := []
+    if left:
+        lines.append(["%s LEFT THE COMPANY." % pname, Color("a02828")])
+    else:
+        lines.append(["TRUST WITH %s: %d (%s)" % [pname, trust, trust_word()], Color("17121f")])
+        lines.append(
+            ["YOU FOLLOWED %d OF THEIR CALLS AND OVERRODE %d." % [follows, overrides], Color("17121f")]
+        )
+    return lines
+''')
+
 write("scripts/roles.gd", '''extends Node
 # Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
 # "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
@@ -19914,6 +21977,47 @@ func sender(text: String) -> String:
     if n == "" or n != Campaign.player_as:
         return text
     return stand_in(n)
+
+
+# ---- names for the owner campaign's cards (X4): {tech} {ops} {partner} {me} --------------------------------------
+# the colleague who gives you technical advice: Dan when you are Alan (the technical owner yourself), otherwise Alan
+func tech() -> String:
+    return "Dan" if Campaign.player_as == "Alan" else "Alan"
+
+
+# the colleague who runs the desk day to day
+func ops() -> String:
+    return "Morgan"
+
+
+# your own first name ("boss" when you are nobody in particular)
+func me() -> String:
+    return Campaign.player_as if Campaign.player_as != "" else "boss"
+
+
+func _token(key: String) -> String:
+    match key:
+        "tech":
+            return tech()
+        "ops":
+            return ops()
+        "partner":
+            return partner() if partner() != "" else "Morgan"
+        "me":
+            return me()
+    return ""
+
+
+# {tech} -> a name, or "Dan (Network Tech)" when the whole text is the token (a speaker line)
+func fill(text: String) -> String:
+    if text.find("{") < 0:
+        return text
+    for key in ["tech", "ops", "partner", "me"]:
+        var tok: String = "{" + str(key) + "}"
+        if text == tok:
+            return label(_token(key))
+        text = text.replace(tok, _token(key))
+    return text
 ''')
 
 write("scripts/strings.gd", '''extends Node
@@ -19947,6 +22051,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
@@ -20328,7 +22433,7 @@ func _services_week() -> void:
 
 # ---- capacity: projects use the same technicians as the tickets ---------------------------------------
 func crew_hours() -> float:
-    var crew := float(maxi(0, 3 - Owner.lost_techs)) + float(Owner.extra_staff.size())
+    var crew := Owner.crew_heads()
     return crew * 240.0 / SEC_PER_HOUR
 
 
@@ -20722,7 +22827,7 @@ const TEXT := {
     "invite_body": "LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan",
     "progress": "KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.",
     "yes_subject": "Pack your bags: Rodent Nation",
-    "yes_body": "You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
+    "yes_body": "You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
     "no_subject": "Rodent Nation: not this year",
     "no_body": "You did not quite make the KPIs (%s), so Dan is going to Rodent Nation this year. He will bring back notes. Aim for it next year. - Morgan",
     "arrive": "RODENT NATION 2014. Orlando, a resort the size of a small town: palm trees in the lobby, carpet with swirls, a ballroom that fits a thousand MSP nerds, and breakout rooms down every hallway. Your badge says TECH and has a little rat on it.",
@@ -21106,7 +23211,7 @@ func _scene_name() -> String:
 func _trip_tick() -> void:
     match _stage:
         "keynote":
-            Hints.objective = "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
+            Hints.objective = "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR)." if badge else "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
         "round":
             Hints.objective = "NEXT: PICK A SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
         "raffle":
@@ -21734,7 +23839,7 @@ const EVENTS := {
 }
 const STAFF := {
     "dental": ["Dr. Patel is with a patient. The x-ray machine is that grey box by the chair.", "We have a patient in the chair, so please keep the vacuum noises to a minimum.", "The coffee is for patients, but I will not tell if you have one."],
-    "law": ["Please be quiet in the hall, Mr. Spence is on the phone with a judge.", "Everything here is confidential. Do not read anything on the desks.", "The copier is cranky. We name it after the opposing counsel."],
+    "law": ["Please be quiet in the hall, Atty. Spence is on the phone with a judge.", "Everything here is confidential. Do not read anything on the desks.", "The copier is cranky. We name it after the opposing counsel."],
     "vet": ["Do not mind the dog. She likes computers. Too much.", "If you hear a howl from the back, it is just Otis getting his nails done.", "We have a cat in the closet. She is not lost. She is hiding from the beagle."],
     "arch": ["The plotter has opinions today. Good luck.", "Mind the model on the table, it took three weeks. And a lot of glue.", "If you move my pencil I will know."],
     "realty": ["I have a showing at one, so please be quick. Do you want coffee?", "Every house has a story. Most of them involve the plumbing.", "Do not mind the lockbox on the desk. It is very important."],
@@ -24055,9 +26160,16 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 var _acc := 0.0
 
 
+# a panel with its own title bar is up: the strip would sit over its heading
+func modal_open() -> bool:
+    if DayReport.is_open or Cards.is_open or Review.is_open or PrinterGame.is_open:
+        return true
+    return Outings.is_open and not (Outings.room_mode() and Outings.phase == "play")
+
+
 func _process(delta: float) -> void:
-    # the card header sits over the HUD text, so hide it while a card is up
-    visible = World.hud_visible and not DayReport.is_open and not Cards.is_open
+    # the card header sits over the HUD text, so hide it while a card or any panel is up
+    visible = World.hud_visible and not modal_open()
     _acc += delta
     if _acc > 0.25:
         _acc = 0.0
@@ -24142,8 +26254,9 @@ write("scripts/toolbox.gd", '''extends CanvasLayer
 # Play and launches the game once the room is up) and in Free Play with Shift+F10. It only calls the public functions
 # of the games: Outings.start(id, false, options), PrinterGame.start(callback, model, options), Nerf.start_war() and
 # Mutators.set_forced(). Rows by game:
-#   KARAOKE  SONG      RANDOM or fixed chart 1-4 (the same notes every take)
-#   ESCAPE   CLUE SET  RANDOM or fixed code 1-9;  CODE LENGTH 3 or 4 (4 digits is the overlay version);  VIEW ROOM or PANEL
+#   KARAOKE  SONG      the tier's pick (the card at the mic) or one of Outings.SONGS by title (even a locked one)
+#   ESCAPE   DIGITS    the tier's code length, 3 or 4;  BOARD / CLOCK / PLAQUE / SHELF  ANY or one of that zone's
+#            recipes (Outings.RECIPES: a digit the recipe can show is dealt); the rest of the deal comes from the seed
 #   DINNER   TABLE     all three, or two of Alan, Garrison and Dan
 #   PRINTER  MODEL     the six printer models (a fixed take plays the practice set of the seed, so the questions repeat)
 # FIXED TAKE (Difficulty.fixed_take): every launch restarts all random streams (and the global generator) from the
@@ -24174,10 +26287,9 @@ var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
 var game_i := 0
-var chart := 0  # 0 = random
-var clue_set := 0  # 0 = random
-var code_len := 3
-var panel_view := false
+var song_i := 0  # 0 = the usual pick, else index + 1 into Outings.SONGS
+var digits := 0  # 0 = the tier's, else 3 or 4
+var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
 var model_i := 0
 var mutator := ""
@@ -24216,15 +26328,18 @@ func outing_options() -> Dictionary:
     var out := {}
     match game_id():
         "karaoke":
-            if chart > 0:
-                out["chart"] = chart
+            if song_i > 0:
+                out["song"] = str(Outings.SONGS[song_i - 1].id)
         "escape":
-            if clue_set > 0:
-                out["set"] = clue_set
-            if code_len == 4:
-                out["code_len"] = 4
-            if panel_view or code_len == 4:
-                out["panel"] = true
+            if digits > 0:
+                out["digits"] = digits
+            var recipes := {}
+            for zone in Outings.CLUE_ZONES:
+                var at := int(recipe_i.get(zone, 0))
+                if at > 0:
+                    recipes[zone] = str(Outings.RECIPES[zone][at - 1])
+            if not recipes.is_empty():
+                out["recipes"] = recipes
         "dinner":
             if table_i > 0:
                 out["table"] = TABLES[table_i].duplicate()
@@ -24399,11 +26514,13 @@ func rows() -> Array:
     var out := [{"id": "game", "label": "GAME", "value": str(GAME_LABELS[game_id()])}]
     match game_id():
         "karaoke":
-            out.append({"id": "chart", "label": "SONG", "value": "RANDOM" if chart == 0 else "CHART %d" % chart})
+            var title := "CARD AT MIC" if song_i == 0 else str(Outings.SONGS[song_i - 1].title)
+            out.append({"id": "song", "label": "SONG", "value": title})
         "escape":
-            out.append({"id": "set", "label": "CLUE SET", "value": "RANDOM" if clue_set == 0 else "SET %d" % clue_set})
-            out.append({"id": "len", "label": "CODE DIGITS", "value": str(code_len)})
-            out.append({"id": "view", "label": "VIEW", "value": "PANEL" if (panel_view or code_len == 4) else "ROOM"})
+            out.append({"id": "digits", "label": "CODE DIGITS", "value": "TIER" if digits == 0 else str(digits)})
+            for zone in Outings.CLUE_ZONES.slice(0, digits if digits > 0 else maxi(3, Difficulty.i("escape.digits"))):
+                var at := int(recipe_i.get(zone, 0))
+                out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
         "dinner":
             out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
         "printer":
@@ -24438,22 +26555,20 @@ func change(step: int) -> void:
         "game":
             game_i = (game_i + step + GAMES.size()) % GAMES.size()
             sel = 0
-        "chart":
-            chart = (chart + step + CHARTS + 1) % (CHARTS + 1)
-        "set":
-            clue_set = (clue_set + step + SETS + 1) % (SETS + 1)
-        "len":
-            code_len = 4 if code_len == 3 else 3
-        "view":
-            panel_view = not panel_view
-            if code_len == 4:
-                code_len = 3
+        "song":
+            song_i = (song_i + step + Outings.SONGS.size() + 1) % (Outings.SONGS.size() + 1)
+        "digits":
+            digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":
             table_i = (table_i + step + TABLES.size()) % TABLES.size()
         "model":
             model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
         "take":
             set_fixed_take(not Difficulty.fixed_take)
+        _ when str(current_row().id).begins_with("rec_"):
+            var zone := str(current_row().id).substr(4)
+            var n: int = Outings.RECIPES[zone].size() + 1
+            recipe_i[zone] = (int(recipe_i[zone]) + step + n) % n
         "mutator":
             var ids: Array = [""]
             ids.append_array(Mutators.ids_for("tech"))
@@ -24484,7 +26599,7 @@ func activate() -> void:
             else:
                 close(false)
                 launch()
-        "take", "mutator", "game", "chart", "set", "len", "view", "table", "model":
+        _:
             change(1)
 
 
@@ -26689,7 +28804,8 @@ BGFX = {
     "karaoke_bar": [("Switch", "switch", 8, 54, 10)],
     "escape_room": [("Switch", "switch", 8, 54, 10), ("Keypad", "keypad", 244, 40, 252),
                     ("Board", "clue_board", 192, 14, 214), ("WallClock", "clue_clock", 54, 20, 62),
-                    ("Painting", "clue_painting", 112, 10, 125)],
+                    ("Painting", "clue_painting", 112, 10, 125),
+                    ("Shelf", "clue_shelf", 14, 26, 28)],
     "restaurant": [("Switch", "switch", 8, 54, 10)],
     "vendor_hall": [("BoothSwag", "booth_swag", 40, 36, 71), ("BoothBackup", "booth_vendor", 128, 36, 159),
                     ("BoothForum", "booth_nerds", 216, 36, 247)],

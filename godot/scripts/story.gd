@@ -184,6 +184,10 @@ const DEFAULT_VIGNETTES := {
 		"speaker": "Alan (Co-owner)",
 		"text":
 		"I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?",
+		"text_reset":
+		"I am back, and I brought donuts. Morgan says you covered for me while I was out, and I heard what happened to the firewall. I am not angry. Show me how it is set up now?",
+		"text_plain":
+		"I am back, and I brought donuts. Morgan says you covered for me while I was out. Nobody wrote down how the firewall is set up, so would you show me what you did?",
 		"options":
 		[
 			{
@@ -1017,7 +1021,7 @@ const DEFAULT_DAYS := {
 			(
 				"Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs "
 				+ "can fail silently and nobody notices until the day it really matters. It takes thirty "
-				+ "seconds. - Morgan"
+				+ "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"
 			)
 		},
 		{"at": 10.5, "kind": "vignette", "id": "iphone"},
@@ -1177,7 +1181,7 @@ const DEFAULT_DAYS := {
 			"from": MANAGER,
 			"subject": "Pager again",
 			"body":
-			"You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan"
+			"You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"
 		},
 	],
 	16:
@@ -1350,8 +1354,18 @@ func _vignette(id: String) -> void:
 	for o in v.options:
 		options.append({"label": str(o.label), "id": str(o.id)})
 	Cards.ask(
-		str(v.speaker), str(v.text), options, func(pick: String) -> void: _vignette_answer(id, pick)
+		str(v.speaker),
+		_vignette_text(id, v),
+		options,
+		func(pick: String) -> void: _vignette_answer(id, pick)
 	)
+
+
+# Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
+func _vignette_text(id: String, v: Dictionary) -> String:
+	if id == "donuts" and not bool(flags.get("bus_doc", false)):
+		return str(v.get("text_reset" if bool(flags.get("bus_reset", false)) else "text_plain", v.text))
+	return str(v.text)
 
 
 func _vignette_answer(id: String, pick: String) -> void:
@@ -1523,5 +1537,5 @@ func _ransomware() -> void:
 		t = Msp.create_problem(RANSOM_CLIENT, Msp.RANSOM, "monitoring")
 	flags["ransom_ticket"] = int(t.get("id", 0))
 	var warning := "Hoot and Holler has a ransom note on their server. "
-	warning += "Do NOT pay and do NOT reboot. Restore from backup!"
+	warning += "Do NOT pay and do NOT reboot. Restore from backup! (If it fails: shadow copies.)"
 	Msp.send_text("Boss", warning)

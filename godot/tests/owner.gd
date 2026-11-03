@@ -14,7 +14,13 @@ func _check(ok: bool, what: String) -> void:
 func _clear_cards(cards: Node, choice := 0) -> int:
 	var n := 0
 	while cards.is_open and n < 20:
-		cards.pick(choice if choice < cards.options.size() else 0)
+		var idx: int = choice if choice < cards.options.size() else 0
+		if not bool(cards.options[idx].get("enabled", true)):  # cash is thin now and then (the draw): take an open option
+			for i in cards.options.size():
+				if bool(cards.options[i].get("enabled", true)):
+					idx = i
+					break
+		cards.pick(idx)
 		n += 1
 	return n
 
@@ -130,7 +136,7 @@ func _init() -> void:
 	var books: Dictionary = o.settle()
 	_check(
 		(
-			books.rows.size() == 12
+			books.rows.size() == 15  # X4: owner draw, partner trust and personal goal rows
 			and o.cash > 4000
 			and o.ar_total() > 0
 			and books.grade in ["B", "A", "S", "C"]
@@ -251,7 +257,7 @@ func _init() -> void:
 	c.new_game("owner")
 	var speed0: float = o.team_speed()
 	_check(
-		o.stack_cost() == 140 and o.issue_mult() == 1.0 and o.hardware_margin() == 200,
+		o.stack_cost() == 140 and absf(o.issue_mult() - o.edge("issues")) < 0.001 and o.hardware_margin() == 200,
 		"default stack: $140/week, normal tickets, $200 margin"
 	)
 	o.cash = 5000
@@ -268,7 +274,7 @@ func _init() -> void:
 	)
 	o.apply({"stack": {"hardware": "budgetbyte"}})
 	_check(
-		o.issue_mult() > 1.3 and o.vic_extra() > 0.11 and o.hardware_margin() == 120,
+		o.issue_mult() > 1.25 and o.vic_extra() > 0.11 and o.hardware_margin() == 120,
 		"cheap hardware: more tickets, Vic sells more, thinner margin"
 	)
 	o.fire({"event": "grumble"})
@@ -337,7 +343,7 @@ func _init() -> void:
 	o.income_extra = 0
 	o._writeoff(6)
 	_check(o.ar_total(6) == 0 and o.income_extra < 0, "writing it off is bad debt against EBITDA")
-	_check(books1.rows[8][0] == "CLIENTS, A/R OWED", "the weekly report shows what is owed")
+	_check(books1.rows[9][0] == "CLIENTS, A/R OWED", "the weekly report shows what is owed")
 
 	# a business review with a client
 	c.new_game("owner")

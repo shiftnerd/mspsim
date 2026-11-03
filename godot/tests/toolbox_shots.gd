@@ -50,7 +50,7 @@ func _process(_delta: float) -> bool:
 			tb.close()
 			current_scene._select.open_tools()
 			tb.game_i = tb.GAMES.find("escape")
-			tb.code_len = 4
+			tb.digits = 4
 			tb._canvas.queue_redraw()
 		115:
 			_shot("tools_escape")

@@ -128,6 +128,37 @@ func _initialize() -> void:
 	campaign.new_game("tech")
 	var other: Array = _tickets(msp, sales, 6)
 	_check(other != runs[0].tickets, "another seed, other tickets")
+	# song chart, clue set and dinner deal come from the saved streams
+	var out := root.get_node("Outings")
+	var deal := func() -> Dictionary:
+		out.game = "karaoke"
+		out._kara_setup("")
+		var lanes := []
+		for n in out.g.notes:
+			lanes.append([n.lane, n.time])
+		out.game = "escape"
+		out._escape_room_setup()
+		var clues := []
+		for c in out.g.clues:
+			clues.append([c.recipe, c.digit, c.show])
+		var code: Array = out.g.code.duplicate()
+		out.game = "dinner"
+		out._dinner_setup()
+		return {"chart": lanes, "clues": clues, "code": code, "topics": out.g.options.duplicate()}
+	d.seed_run(0x5EED01)
+	var first: Dictionary = deal.call()
+	d.seed_run(0x5EED01)
+	var second: Dictionary = deal.call()
+	_check(first == second and not first.chart.is_empty() and not first.clues.is_empty() and not first.topics.is_empty(), "same seed: same song chart, clue set and dinner deal")
+	d.seed_run(0x5EED02)
+	_check(deal.call() != first, "another seed: another deal")
+	d.seed_run(0x5EED01)
+	deal.call()
+	var kept: Dictionary = d.to_dict()
+	_check(kept.streams.has("karaoke") and kept.streams.has("escape") and kept.streams.has("dinner"), "the saved states include the karaoke, escape and dinner streams")
+	var next_deal: Dictionary = deal.call()
+	d.from_dict(kept)
+	_check(deal.call() == next_deal, "a resumed run deals the next song, clues and dinner as an unbroken run would")
 	# the onsite job roll and the world meeting gap are seeded too
 	d.seed_run(9)
 	var o1: int = root.get_node("Onsite")._trip_minutes(0)

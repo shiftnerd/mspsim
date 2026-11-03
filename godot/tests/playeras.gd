@@ -71,10 +71,10 @@ func _run() -> void:
 	_check(world.CAST.has("Alan"), "World.CAST is untouched")
 	_check(not world.chars.has("Alan"), "Alan is removed from World.chars")
 	_check(world.chars.has("Garrison"), "Garrison is the partner NPC")
-	_check(not world.chars.has("Maya"), "Maya is still out of the owner campaign (unchanged)")
+	_check(world.chars.has("Maya"), "Maya is on your payroll in the owner campaign (X4)")
 	_check(world.chars.has("Morgan"), "Morgan stays in the building")
 	_check(not social.people().has("Alan") and social.people().has("Garrison"), "Social.people() has no Alan")
-	_check(not social.people().has("Maya"), "and no Maya in the owner campaign (no longer counted at 0)")
+	_check(social.people().has("Maya"), "and she is one of your coworkers")
 	_check(not outings.roster().has("Alan") and outings.roster().has("Garrison"), "Outings.roster() has no Alan")
 	_check(not lync.contacts().has("Alan") and lync.contacts().has("Marge"), "Lync contacts: no Alan, Marge is the boss")
 	var desk: Dictionary = world.player_desk()
@@ -128,7 +128,7 @@ func _run() -> void:
 	cfg.load(c.save_path("owner"))
 	cfg.erase_section_key("campaign", "player_as")
 	cfg.save(c.save_path("owner"))
-	_check(c.continue_game("owner") and c.player_as == "" and world.chars.has("Alan"), "an old save defaults to no cast member")
+	_check(c.continue_game("owner") and c.player_as == "Alan" and not world.chars.has("Alan"), "an old owner save plays as Alan (X4: the owner campaign is always an owner)")
 	DirAccess.remove_absolute(c.save_path("owner"))
 
 	# ---- Garrison
@@ -140,7 +140,7 @@ func _run() -> void:
 	# ---- a non-cast character in the owner campaign (old behaviour), and the tech campaign
 	player_script.current_character = "office_adult"
 	c.new_game("owner")
-	_check(c.player_as == "" and world.chars.has("Alan") and world.chars.has("Garrison"), "a non-cast owner pick removes nobody")
+	_check(c.player_as == "Alan" and not world.chars.has("Alan") and world.chars.has("Garrison"), "a non-owner pick in the owner campaign plays as Alan (X4)")
 	player_script.current_character = "office_dan"
 	c.new_game("tech")
 	_check(c.player_as == "" and world.chars.has("Dan") and world.chars.has("Maya"), "the tech campaign never removes a cast member")
@@ -172,7 +172,7 @@ func _run() -> void:
 	outings.start("dinner")
 	outings.press(KEY_ENTER)
 	var total: int = outings.dinner_talk(0)
-	_check(total >= 0 and total <= 4 and outings.diners() == ["Alan", "Garrison"], "dinner: two faces at the table")
+	_check(total >= 0 and total <= 6 and outings.diners() == ["Alan", "Garrison"], "dinner: two faces at the table")  # 2 points a face plus a mood point
 	outings.is_open = false
 	outings.start("escape")
 	outings.press(KEY_ENTER)

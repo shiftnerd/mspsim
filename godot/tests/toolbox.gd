@@ -60,48 +60,59 @@ func _run() -> void:
 	_check(not tb.launch(), "no game chosen launches nothing")
 	_check(tb.rows().size() >= 4 and str(tb.rows()[0].id) == "game", "rows start with GAME")
 	# ---- each game
-	tb.chart = 0
 	_check(_go(tb, "bowling") and o.is_open and o.game == "bowling", "BOWLING launches bowling")
 	o.begin_play()
-	_check(o.g.has("totals") or o.g.has("frame") or not o.g.is_empty(), "bowling set up")
+	_check(not o.g.is_empty(), "bowling set up")
 	o.close()
-	tb.chart = 2
-	_check(_go(tb, "karaoke") and o.game == "karaoke" and o.opts.get("chart", 0) == 2, "KARAOKE chart 2 passes the chart option")
+	# karaoke: a song by id (title shown in the row), even a locked one, no card at the mic
+	var last_song: int = o.SONGS.size()
+	tb.song_i = last_song
+	_check(_go(tb, "karaoke") and o.game == "karaoke" and o.opts.get("song", "") == str(o.SONGS[last_song - 1].id), "KARAOKE passes the chosen song id")
+	tb.sel = tb.rows().find_custom(func(r: Dictionary) -> bool: return str(r.id) == "song")
+	_check(str(tb.current_row().value) == str(o.SONGS[last_song - 1].title), "the row shows the song title")
 	o.begin_play()
+	_check(str(o.g.song.id) == str(o.SONGS[last_song - 1].id), "the karaoke setup uses that song")
 	var c2: Array = _notes(o)
 	o.close()
+	d.seed_run(77)
 	_go(tb, "karaoke")
 	o.begin_play()
-	_check(_notes(o) == c2, "a fixed chart repeats")
+	var c3: Array = _notes(o)
 	o.close()
-	tb.chart = 3
+	d.seed_run(77)
 	_go(tb, "karaoke")
 	o.begin_play()
-	_check(_notes(o) != c2, "another chart differs")
+	_check(_notes(o) == c3 and not c3.is_empty(), "the same seed and song give the same chart")
 	o.close()
-	tb.chart = 0
-	tb.clue_set = 4
-	tb.code_len = 4
-	_check(_go(tb, "escape") and o.game == "escape" and o.opts.get("code_len", 0) == 4 and o.opts.get("panel", false), "ESCAPE with 4 digits uses the overlay")
+	tb.song_i = 1
+	_go(tb, "karaoke")
+	o.begin_play()
+	_check(str(o.g.song.id) == str(o.SONGS[0].id), "song 1 is the first of Outings.SONGS")
+	o.close()
+	tb.song_i = 0
+	# escape: digits and fixed recipes
+	tb.digits = 4
+	tb.recipe_i["board"] = o.RECIPES["board"].find("product") + 1
+	tb.recipe_i["clock"] = o.RECIPES["clock"].find("double") + 1
+	_check(_go(tb, "escape") and o.game == "escape" and int(o.opts.get("digits", 0)) == 4 and o.opts.recipes.board == "product", "ESCAPE passes digits and recipes")
 	o.begin_play()
 	_check(o.g.code.size() == 4 and o.g.cur.size() == 4, "4 digit code and entry")
+	o._escape_room_setup()  # the in-room deal (the overlay game has no clues)
+	_check(o.g.clues.size() == 4 and str(o.g.clues[0].recipe) == "product" and str(o.g.clues[1].recipe) == "double", "the chosen recipes are the clues")
+	_check(o.clue_answer(o.g.clues[0]) == int(o.g.code[0]) and o.clue_answer(o.g.clues[1]) == int(o.g.code[1]), "each clue works out to its code digit")
 	var code4: Array = o.g.code.duplicate()
 	var sc: Array = o.escape_score(code4)
 	_check(int(sc[0]) == 4 and int(sc[1]) == 0, "a 4 digit guess scores 4 bulls")
 	o.escape_try(code4.duplicate())
 	_check(o.phase == "result" and o.stars >= 1, "cracking it ends the game")
 	o.close()
+	tb.digits = 3
+	tb.recipe_i = {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}
 	_go(tb, "escape")
 	o.begin_play()
-	_check(o.g.code == code4, "a fixed clue set repeats the code")
+	_check(o.g.code.size() == 3, "3 digits when chosen")
 	o.close()
-	tb.code_len = 3
-	tb.clue_set = 5
-	_go(tb, "escape")
-	o.begin_play()
-	_check(o.g.code.size() == 3 and o.g.code != code4.slice(0, 3), "set 5 with 3 digits is another code")
-	o.close()
-	tb.clue_set = 0
+	tb.digits = 0
 	tb.table_i = 1
 	_check(_go(tb, "dinner") and o.game == "dinner" and o.opts.get("table", []) == ["Alan", "Garrison"], "DINNER passes the table")
 	_check(o.diners() == ["Alan", "Garrison"], "only the chosen guests are at the table")
@@ -127,7 +138,7 @@ func _run() -> void:
 		rows_ids.append(str(r.id))
 	_check(not rows_ids.has("mutator"), "the mutator row is hidden in fixed take")
 	d.seed_run(0x1234AB)
-	tb.chart = 0
+	tb.song_i = 0
 	_go(tb, "karaoke")
 	o.begin_play()
 	var t1: Array = _notes(o)
@@ -137,7 +148,7 @@ func _run() -> void:
 	d.rng("escape").randi()
 	_go(tb, "karaoke")
 	o.begin_play()
-	_check(_notes(o) == t1, "fixed take: a retake gives the same notes without a chart number")
+	_check(_notes(o) == t1, "fixed take: a retake gives the same notes without a chosen song")
 	o.close()
 	_go(tb, "printer")
 	_check(pg.practice and pg.practice_seed == 1 + d.run_seed % 99, "fixed take: the printer plays the practice set of the seed")

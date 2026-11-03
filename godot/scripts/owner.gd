@@ -1,8 +1,8 @@
 extends Node
 # gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=max-line-length
-# The owner campaign: you run Pixel IT Partners. Each campaign "day" is a week of the business. Your techs (Alan,
-# Garrison, Dan, plus anyone you hire) work the ticket queue on their own at a speed set by the team; you make the
+# The owner campaign: you run Pixel IT Partners as one of its two owners (Alan or Garrison). Each campaign "day" is a week of the business. Your crew (Dan, Maya,
+# plus anyone you hire; Morgan manages the desk and your partner helps at half speed) works the ticket queue on their own at a speed set by the team; you make the
 # business decisions as Cards (pricing, backups, hiring, quotes, vendors, crises) and watch cash, clients and
 # reputation. Each week ends with a P&L report; week 20 is the board review (sell, expand or stay independent).
 # Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
@@ -171,6 +171,47 @@ const GOALS := {
 }
 const WORK := {1: 180.0, 2: 140.0, 3: 100.0, 4: 72.0}  # tech-seconds a ticket needs, by priority
 const JUNIOR := {"name": "Sam", "skill": 0.7, "wage": 450}
+# X4: you are one of the two owners. The crew you manage is Dan, Maya and the hires, with Morgan as the manager (she does not
+# work tickets but keeps the desk moving) and your partner helping at roughly half speed. The owners take a draw, not a wage.
+const CREW := [{"name": "Dan", "skill": 1.2, "wage": 650}, {"name": "Maya", "skill": 1.0, "wage": 550}]
+const MORGAN_WAGE := 750
+const MANAGER_BOOST := 1.1  # a manager who runs the desk makes the same crew about 10% faster
+const MAX_LOST := 1  # of the two employees at most one quits (hires can leave too)
+const DRAW := {"none": 0, "small": 300, "normal": 600, "generous": 1000}  # weekly, for both owners together
+const DRAW_START := 3  # the first week a draw is paid
+const DRAW_FLOOR := 2000  # a draw that leaves less cash than this upsets Marge and the partner
+const OUTING_BURN := 3.0  # extra burnout relief an outing gives the owner whose edge is culture
+# what each owner is good and bad at (X4). Every number is read by an existing function through Owner.edge(key):
+#   close_miss  chance a finished ticket comes back (was 7%)      rdp / stack_risk  break-in and vendor-breach odds multipliers
+#   issues      ticket volume multiplier (stack choices)           backup_check      weekly chance a failed backup is noticed
+#   marketing   marketing effect multiplier                        fee_accept        chance a fee rise is accepted (added)
+#   qbr         business review success (added)                    new_mood          mood new clients start with (added)
+#   poach       competitor poach risk (added)                      patch             patch debt grows this fast
+#   morale      added to the crew's tool morale (%)                outing_relief     multiplier on burnout relief from outings
+const OWNER_EDGES := {
+	"Alan":
+	{
+		"close_miss": 0.04, "rdp": 0.8, "stack_risk": 0.85, "issues": 0.95, "backup_check": 0.35,
+		"marketing": 0.7, "fee_accept": -0.08, "qbr": -0.08, "new_mood": 0, "poach": 0.0,
+		"patch": 1.0, "morale": 0.0, "outing_relief": 1.0
+	},
+	"Garrison":
+	{
+		"close_miss": 0.09, "rdp": 1.2, "stack_risk": 1.1, "issues": 1.0, "backup_check": 0.12,
+		"marketing": 1.25, "fee_accept": 0.08, "qbr": 0.1, "new_mood": 4, "poach": -0.02,
+		"patch": 1.35, "morale": 3.0, "outing_relief": 1.5
+	},
+}
+const DEFAULT_EDGE := {
+	"close_miss": 0.07, "rdp": 1.0, "stack_risk": 1.0, "issues": 1.0, "backup_check": 0.2,
+	"marketing": 1.0, "fee_accept": 0.0, "qbr": 0.0, "new_mood": 0, "poach": 0.0,
+	"patch": 1.0, "morale": 0.0, "outing_relief": 1.0
+}
+# personal goals (shown in the weekly report, scored at the review)
+const OWNER_GOALS := {
+	"Alan": {"title": "A CLEAN YEAR", "parts": ["NO RANSOMWARE LOSS", "NO BREAK-INS", "A DOCUMENTED STACK (MATURITY 3)"]},
+	"Garrison": {"title": "THE SHOP CLIENTS LOVE", "parts": ["CLIENT MOOD 75+", "THE TEAM STAYS"]},
+}
 const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 
 # Card options: {label, need (cash), fx} or {label, need, roll: [[chance, fx, result text], ...]} plus optional text.
@@ -181,7 +222,7 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "Marge (Bookkeeper)",
 		"text":
-		"Welcome, boss. Five clients, three techs, Vic in sales and $5,000 in the bank. Payroll and rent come out every week. How do you want to price our service?",
+		"Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
 		"options":
 		[
 			{
@@ -197,9 +238,9 @@ const DEFAULT_CARDS := {
 	},
 	"backup":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
-		"Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
+		"{me}, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
 		"options":
 		[
 			{
@@ -296,7 +337,7 @@ const DEFAULT_CARDS := {
 	},
 	"license":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		"Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone.",
 		"options":
@@ -329,20 +370,20 @@ const DEFAULT_CARDS := {
 		"options":
 		[
 			{
-				"label": "SEND ALAN NOW ($300)",
+				"label": "SEND {tech} NOW ($300)",
 				"need": 300,
 				"roll":
 				[
 					[
 						0.85,
 						{"cash": -300, "mood": {"2": 10}, "rep": 2},
-						"Alan rebuilds it properly. Bob buys him lunch."
+						"{tech} rebuilds it properly. Bob buys them lunch."
 					],
 					[0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]
 				]
 			},
 			{
-				"label": "SEND THE JUNIOR OR DAN ($100)",
+				"label": "SEND MAYA OR A NEW HIRE ($100)",
 				"need": 100,
 				"roll":
 				[
@@ -393,9 +434,9 @@ const DEFAULT_CARDS := {
 	},
 	"email24":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
-		"Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.",
+		"Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. I will stay late if you approve overtime.",
 		"options":
 		[
 			{
@@ -430,7 +471,7 @@ const DEFAULT_CARDS := {
 					[
 						0.6,
 						{"rep": 1, "mood": {"4": 6}},
-						"You muddle through and fix it. Alan is impressed."
+						"You muddle through and fix it. {tech} is impressed."
 					],
 					[0.4, {"mood": {"4": -8}}, "You make it worse before you make it better."]
 				]
@@ -439,9 +480,9 @@ const DEFAULT_CARDS := {
 	},
 	"raise":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "Dan (Network Tech)",
 		"text":
-		"Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
+		"{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
 		"options":
 		[
 			{"label": "GIVE THE RAISE", "fx": {"weekly": 100, "speed": 0.1}},
@@ -449,11 +490,11 @@ const DEFAULT_CARDS := {
 				"label": "NOT NOW",
 				"roll":
 				[
-					[0.7, {}, "Alan shrugs and keeps working."],
+					[0.7, {}, "Dan shrugs and keeps working."],
 					[
 						0.3,
 						{"lose_tech": true, "rep": -2},
-						"Alan hands in his notice. The team is stretched thin."
+						"Dan hands in his notice. The team is stretched thin."
 					]
 				]
 			},
@@ -574,7 +615,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "HAVE THE TEAM CHECK EVERY BACKUP",
 				"fx": {"check_backups": true},
-				"text": "Alan checks them all. Any failing job is rerun."
+				"text": "The crew checks them all. Any failing job is rerun."
 			},
 			{"label": "WE ARE FINE", "fx": {}},
 		],
@@ -619,9 +660,29 @@ const DEFAULT_CARDS := {
 			{"label": "AGGRESSIVE ($900/WEEK)", "fx": {"marketing": 900}},
 		],
 	},
+	"draw_policy": {
+		"speaker": "Marge (Bookkeeper)",
+		"text": "The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take?",
+		"options": [
+			{"label": "NORMAL DRAW ($600/WEEK, BOTH OF YOU)", "fx": {"draw": "normal"}, "text": "Marge writes it in the ledger. The draw starts in week 3."},
+			{"label": "SMALL DRAW ($300/WEEK)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A small draw. Marge looks relieved and {partner} nods. The bank stays fat."},
+			{"label": "GENEROUS DRAW ($1,000/WEEK)", "fx": {"draw": "generous"}, "text": "A generous draw. Marge says nothing, which is how she says a lot."},
+			{"label": "NO DRAW (WE LIVE ON NOODLES)", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger."},
+		],
+	},
+	"draw_review": {
+		"speaker": "Marge (Bookkeeper)",
+		"text": "Quarterly look at the owners' draw. Same as before, more, less, or nothing for now?",
+		"options": [
+			{"label": "KEEP THE DRAW AS IT IS", "fx": {}},
+			{"label": "TAKE LESS (SMALL DRAW)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A smaller draw. The bank breathes easier."},
+			{"label": "TAKE MORE (GENEROUS DRAW)", "fx": {"draw": "generous"}, "text": "A bigger draw. It is a good quarter, you tell yourself."},
+			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw this quarter. Marge pins a gold star on the ledger."},
+		],
+	},
 	"stack_psa":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		"Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run.",
 		"options":
@@ -637,13 +698,13 @@ const DEFAULT_CARDS := {
 				"label": "OPSFORGE PRO ($140/WK, $300 TO MIGRATE)",
 				"need": 300,
 				"fx": {"cash": -300, "stack": {"psa": "opsforge"}},
-				"text": "The techs love the automation."
+				"text": "The crew loves the automation."
 			},
 		],
 	},
 	"stack_rmm":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		"The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call.",
 		"options":
@@ -714,7 +775,7 @@ const DEFAULT_CARDS := {
 	},
 	"after_hours":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{ops}",
 		"text":
 		"After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend.",
 		"options":
@@ -734,7 +795,7 @@ const DEFAULT_CARDS := {
 	},
 	"oncall_policy":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{ops}",
 		"text":
 		"Clients are starting to call after hours. Somebody has to carry the pager. How do we run it?",
 		"options":
@@ -746,9 +807,9 @@ const DEFAULT_CARDS := {
 				"A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn."
 			},
 			{
-				"label": "ALAN TAKES IT EVERY WEEK (+$150)",
+				"label": "DAN TAKES IT EVERY WEEK (+$150)",
 				"fx": {"weekly": 150, "flag": "oncall_one"},
-				"text": "Alan says fine. For now. The same person every week is how people quit."
+				"text": "Dan says fine. For now. The same person every week is how people quit."
 			},
 			{
 				"label": "YOU CARRY THE PAGER YOURSELF",
@@ -760,7 +821,7 @@ const DEFAULT_CARDS := {
 	},
 	"flex_hours":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{ops}",
 		"text":
 		"Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy?",
 		"options":
@@ -795,9 +856,9 @@ const DEFAULT_CARDS := {
 	},
 	"rdp_exposed":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
-		"Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
+		"{me}, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
 		"options":
 		[
 			{
@@ -825,7 +886,7 @@ const DEFAULT_CARDS := {
 	},
 	"ransom_options":
 	{
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		"Hoot and Holler's server is encrypted by CryptoLocker. There is a countdown and a ransom demand in Bitcoin. The backup was not working. What now?",
 		"options":
@@ -887,8 +948,8 @@ const DEFAULT_CARDS := {
 }
 var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 const DAYS := {
-	1: [{"at": 9.1, "card": "welcome"}],
-	2: [{"at": 9.1, "card": "backup"}, {"at": 15.0, "card": "peer_invite"}],
+	1: [{"at": 9.1, "card": "welcome"}, {"at": 9.6, "event": "owner_goal"}],
+	2: [{"at": 9.1, "card": "backup"}, {"at": 10.0, "card": "draw_policy"}, {"at": 15.0, "card": "peer_invite"}],
 	3:
 	[
 		{"at": 9.1, "card": "queue"},
@@ -908,7 +969,7 @@ const DAYS := {
 		{"at": 14.0, "card": "billing_audit"},
 		{"at": 15.0, "event": "peer", "card": "peer1"},
 		{"at": 15.5, "event": "peer_goal"},
-		{"at": 12.0, "event": "growth_plan"}
+		{"at": 12.0, "event": "growth_plan"}, {"at": 10.2, "event": "partner", "card": "partner1"}
 	],
 	6:
 	[
@@ -934,7 +995,7 @@ const DAYS := {
 	[
 		{"at": 9.8, "event": "grumble"},
 		{"at": 10.5, "event": "ransomware"},
-		{"at": 14.5, "card": "marketing"}
+		{"at": 14.5, "card": "marketing"}, {"at": 13.0, "event": "partner", "card": "partner2"}
 	],
 	10:
 	[
@@ -947,7 +1008,7 @@ const DAYS := {
 	[
 		{"at": 11.0, "event": "qbr"},
 		{"at": 15.0, "event": "peer", "card": "peer3"},
-		{"at": 15.2, "event": "leak_hint"},
+		{"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"},
 		{"at": 15.5, "event": "peer_goal"}
 	],
 	12:
@@ -956,7 +1017,7 @@ const DAYS := {
 		{"at": 10.5, "card": "after_hours"},
 		{"at": 11.5, "event": "growth_stretch"}
 	],
-	13: [{"at": 15.5, "card": "email24"}],
+	13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}],
 	14:
 	[
 		{"at": 10.0, "event": "vendor_breach"},
@@ -971,7 +1032,7 @@ const DAYS := {
 		{"at": 14.0, "event": "client_breach"},
 		{"at": 11.0, "event": "growth_stretch"}
 	],
-	17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 15.5, "event": "peer_goal"}],
+	17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 10.0, "event": "partner", "card": "partner4"}, {"at": 15.5, "event": "peer_goal"}],
 	18: [{"at": 9.5, "event": "poach_wave"}, {"at": 11.0, "event": "profit_review"}],
 	19: [{"at": 11.0, "event": "qbr"}],
 }
@@ -983,6 +1044,12 @@ var speed := 1.0
 var vic_bonus := 0.0
 var weekly_extra := 0
 var lost_techs := 0
+var draw_policy := "normal"  # the owners' weekly draw: none / small / normal / generous (card on week 2)
+var draw_paid := 0  # total drawn so far
+var draw_warned := -9  # the week Marge last complained about an oversized draw
+var hire_quits := 0  # hires who left (for the Garrison goal: a team that stays)
+var incidents := 0  # break-ins through remote desktop (for the Alan goal: a clean year)
+var _outings_seen := 0
 var extra_staff: Array = []
 var marketing := 0  # weekly marketing budget
 var stack := DEFAULT_STACK.duplicate()
@@ -1039,6 +1106,13 @@ func reset() -> void:
 	vic_bonus = 0.0
 	weekly_extra = 0
 	lost_techs = 0
+	draw_policy = "normal"
+	draw_paid = 0
+	draw_warned = -9
+	hire_quits = 0
+	incidents = 0
+	_outings_seen = 0
+	Partner.reset()
 	extra_staff = []
 	marketing = 0
 	stack = DEFAULT_STACK.duplicate()
@@ -1084,16 +1158,17 @@ func reset() -> void:
 
 # ---- the team works the queue ----------------------------------------------------------------
 func team_speed() -> float:
-	var total := float(maxi(0, 3 - lost_techs))
+	var total := crew_skill() + Partner.hands()
 	for hire in extra_staff:
 		total += float(hire.skill) + (0.1 if hire.get("trait", "") == "wizard" else 0.0)
 	var morale := (
-		(0.9 + clampf(Social.average() / 400.0, -0.1, 0.2)) * (1.0 + stack_sum("morale") / 100.0)
+		(0.9 + clampf(Social.average() / 400.0, -0.1, 0.2)) * (1.0 + (stack_sum("morale") + edge("morale")) / 100.0)
 	)
 	return (
 		total
 		* (speed + stack_sum("speed"))
 		* morale
+		* MANAGER_BOOST
 		* (1.0 - burnout / 300.0)
 		* (1.0 - Growth.capacity_loss())
 		* (1.0 - Projects.drag())
@@ -1101,6 +1176,52 @@ func team_speed() -> float:
 
 
 # ---- the stack you run and sell ----------------------------------------------------------------
+# ---- who is on the team (X4): Dan, Maya, the hires, Morgan as the manager and the partner at half speed ----------------
+func crew_size() -> int:
+	return maxi(0, CREW.size() - lost_techs)
+
+
+func crew_names() -> Array:
+	var out := []
+	for i in crew_size():
+		out.append(str(CREW[i].name))
+	return out
+
+
+# the ticket-working skill of the employees you started with (hires are added by team_speed)
+func crew_skill() -> float:
+	var total := 0.0
+	for i in crew_size():
+		total += float(CREW[i].skill)
+	return total
+
+
+# everyone who works the queue, in people (the project capacity model counts heads, not skill)
+func crew_heads() -> float:
+	return float(crew_size()) + float(extra_staff.size()) + Partner.hands()
+
+
+func crew_wages() -> int:
+	var total := 0
+	for i in crew_size():
+		total += int(round(float(CREW[i].wage) * wage_mult()))
+	return total + int(round(float(MORGAN_WAGE) * wage_mult()))
+
+
+# ---- your edges (X4): Alan is the technical owner, Garrison the sales-and-culture one. Point-buy (X7) will add its bias
+# floors in edges_for(), nothing else needs to change.
+func edges_for(owner_name: String) -> Dictionary:
+	var out: Dictionary = DEFAULT_EDGE.duplicate()
+	var mine: Dictionary = OWNER_EDGES.get(owner_name, {})
+	for key in mine:
+		out[key] = mine[key]
+	return out
+
+
+func edge(key: String) -> float:
+	return float(edges_for(Campaign.player_as)[key]) if active() else float(DEFAULT_EDGE[key])
+
+
 func stack_option(category: String) -> Dictionary:
 	return STACK[category].options[stack[category]]
 
@@ -1120,7 +1241,7 @@ func stack_cost() -> int:
 func issue_mult() -> float:
 	if not active():
 		return 1.0
-	var m := 1.0
+	var m := float(edge("issues"))
 	for category in STACK:
 		m *= float(stack_option(str(category)).get("issues", 1.0))
 	if flags.get("after_hours_fee", false):
@@ -1130,7 +1251,7 @@ func issue_mult() -> float:
 
 # how exposed you are to a vendor compromise: the RMM you chose
 func security_risk() -> float:
-	return float(stack_option("rmm").get("risk", 1.0))
+	return float(stack_option("rmm").get("risk", 1.0)) * float(edge("stack_risk"))
 
 
 # scope creep: a few clients generate far more requests until you enforce the contract
@@ -1195,7 +1316,7 @@ func hardware_margin() -> int:
 
 
 func new_client_mood() -> int:
-	return int(VIC_PLANS[vic_plan].start_mood)
+	return int(VIC_PLANS[vic_plan].start_mood) + int(edge("new_mood"))
 
 
 # Vic closed something: pay his commission, bank the hardware resale margin
@@ -1262,7 +1383,7 @@ func _work_queue(seconds: float) -> void:
 
 func _finish_ticket(t: Dictionary) -> void:
 	_work.erase(int(t.id))
-	if randf() < 0.07:
+	if randf() < float(edge("close_miss")):
 		Msp.close_ticket(int(t.id))  # closed too early: it comes back
 		return
 	Growth.owner_escalation(t)
@@ -1282,7 +1403,7 @@ func begin_day(day: int) -> void:
 			Msp.backups[c].good_day = day
 	else:
 		for c in Sales.active:
-			if not Msp.backups[int(c)].ok and randf() < 0.2:
+			if not Msp.backups[int(c)].ok and randf() < float(edge("backup_check")):
 				Msp.backup_rerun(int(c))  # a tech happened to check it
 	if not _late.is_empty():
 		var late_client: int = _late.pop_front()
@@ -1303,6 +1424,9 @@ func begin_day(day: int) -> void:
 
 
 func fire(ev: Dictionary) -> void:
+	if ev.get("event", "") == "partner":
+		Partner.hold_beat(str(ev.card))  # a partner meeting (weeks 5, 9, 13, 17)
+		return
 	if ev.get("event", "") == "peer":
 		if flags.get("peer_group", false):
 			show_card(str(ev.card))
@@ -1341,10 +1465,27 @@ func fire(ev: Dictionary) -> void:
 			Msp.break_backup(Story.RANSOM_CLIENT)
 		"ransomware":
 			_ransom()
+		"owner_goal":
+			_goal_card()
 		"growth_plan":
 			Growth.owner_plan_card()
 		"growth_stretch":
 			Growth.owner_stretch()
+
+
+# week 1: Marge tells you what you are here for (your personal goal, scored at the review)
+func _goal_card() -> void:
+	var alan: bool = Campaign.player_as == "Alan"
+	_dynamic["owner_goal"] = {
+		"speaker": "Marge (Bookkeeper)",
+		"text": (
+			"Every owner wants something out of this place. Yours is a clean year: no ransomware loss, no break-ins, and a stack documented well enough to hand to a stranger (maturity 3). It goes on the weekly report."
+			if alan
+			else "Every owner wants something out of this place. Yours is the shop clients love: client mood of 75 or better, and a team that stays. It goes on the weekly report."
+		),
+		"options": [{"label": "GOOD. LET US GO.", "fx": {}}],
+	}
+	show_card("owner_goal")
 
 
 func card_data(id: String) -> Dictionary:
@@ -1363,6 +1504,13 @@ func show_card(id: String) -> void:
 		if opt.has("unless") and flags.get(str(opt.unless), false):
 			entry["enabled"] = false
 			entry["hint"] = "OWNED"
+		var stance: String = Partner.stance(opt)  # the other owner's opinion (a chip on the option)
+		if stance != "":
+			entry["stance"] = stance
+			entry["chip"] = Partner.chip(stance)
+			if Partner.blocks(stance):
+				entry["enabled"] = false
+				entry["hint"] = "PARTNER HAS TO AGREE"
 		options.append(entry)
 	Cards.ask(
 		str(card.speaker),
@@ -1381,11 +1529,21 @@ func tilted(table: Array) -> Array:
 		var shift := minf(0.1, float(out[out.size() - 1][0]))
 		out[0][0] += shift
 		out[out.size() - 1][0] -= shift
+	# a pricing talk: Garrison sells a fee rise better than Alan does (edge fee_accept)
+	var accept := float(edge("fee_accept"))
+	if accept != 0.0 and out.size() >= 2 and (out[0][1] as Dictionary).has("fee_boost"):
+		var moved := clampf(accept, 0.05 - float(out[0][0]), float(out[out.size() - 1][0]))
+		out[0][0] += moved
+		out[out.size() - 1][0] -= moved
 	return out
 
 
 func _picked(id: String, index: int) -> void:
+	if card_data(id).is_empty():
+		return  # a card left over from an earlier run (the books were reset under it)
 	var opt: Dictionary = card_data(id).options[index]
+	if not bool(card_data(id).get("beat", false)):
+		Partner.on_pick(Partner.stance(opt))  # follow their call, or override it
 	var text := str(opt.get("text", ""))
 	if opt.has("roll"):
 		var roll := randf()
@@ -1495,7 +1653,15 @@ func apply(fx: Dictionary) -> void:
 		newbie["age"] = 0
 		extra_staff.append(newbie)
 	if fx.get("lose_tech", false):
-		lost_techs += 1
+		if lost_techs < MAX_LOST:
+			lost_techs += 1
+		elif not extra_staff.is_empty():
+			extra_staff.pop_back()
+			hire_quits += 1
+	if fx.has("draw"):
+		draw_policy = str(fx.draw)
+	if fx.has("trust"):
+		Partner.change(int((fx.trust as Dictionary).get(Roles.partner(), 0)))
 	if fx.get("sign", false):
 		var signed: int = Sales.sign_client(int(fx.get("client", -1)))
 		if signed >= 0 and fx.has("sign_bonus"):
@@ -1709,7 +1875,7 @@ func _inbound_lead() -> void:
 
 func marketing_bonus() -> float:
 	var spend := float(marketing)
-	return spend / (spend + 1500.0) * 0.4 * Growth.marketing_factor()
+	return spend / (spend + 1500.0) * 0.4 * Growth.marketing_factor() * float(edge("marketing"))
 
 
 # ---- hiring: three named candidates with skills and quirks ----------------------------
@@ -1747,7 +1913,7 @@ func _hire_card() -> void:
 	_dynamic["hire"] = {
 		"speaker": "Marge (Bookkeeper)",
 		"text":
-		"Three candidates came through the door. Skill is relative to a senior tech at 1.0; wages are weekly and count toward your W-2 ratio.",
+		"Three candidates came through the door. Skill is relative to a solid, experienced tech at 1.0; wages are weekly and count toward your W-2 ratio.",
 		"options": options,
 	}
 	show_card("hire")
@@ -1768,14 +1934,15 @@ func _staff_week() -> void:
 		)
 		if randf() < quit_chance:
 			extra_staff.erase(hire)
+			hire_quits += 1
 			Msp.send_text("Marge", "%s quit." % hire.name)
-	if stack_sum("morale") <= -8.0 and lost_techs < 2 and randf() < 0.08:
+	if stack_sum("morale") <= -8.0 and lost_techs < MAX_LOST and randf() < 0.08:
 		lost_techs += 1
-		Msp.send_text("Alan", "One of the techs just quit over the tooling.")
-	if flags.get("oncall_one", false) and lost_techs < 2 and randf() < 0.05:
+		Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
+	if flags.get("oncall_one", false) and lost_techs < MAX_LOST and randf() < 0.05:
 		lost_techs += 1
 		flags["oncall_one"] = false
-		Msp.send_text("Alan", "I am done carrying the pager every week. I quit.")
+		Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
 
 
 # ---- the crew complains about bad tools ---------------------------------------------------------------
@@ -1793,7 +1960,7 @@ func _grumble() -> void:
 		return
 	var fallback: Dictionary = {worst_cat: DEFAULT_STACK[worst_cat]}
 	_dynamic["grumble"] = {
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{ops}",
 		"text":
 		(
 			"The crew hates %s. Morale is sinking and people are updating their resumes."
@@ -1821,7 +1988,7 @@ func _grumble() -> void:
 					[
 						0.4,
 						{"lose_tech": true, "rep": -1},
-						"One of the techs resigns over the tooling."
+						"One of the crew resigns over the tooling."
 					]
 				]
 			},
@@ -1961,7 +2128,7 @@ func _qbr() -> void:
 	_qbr_done[pick] = Campaign.day
 	var key := str(pick)
 	var odds := clampf(
-		Sales.vic_skill() + 0.25 + (0.1 if Sales.mood(pick) >= 70 else 0.0), 0.2, 0.9
+		Sales.vic_skill() + 0.25 + (0.1 if Sales.mood(pick) >= 70 else 0.0) + float(edge("qbr")), 0.2, 0.9
 	)
 	_dynamic["qbr"] = {
 		"speaker": "Vic Marlowe",
@@ -2171,9 +2338,9 @@ func _burnout_week() -> void:
 	if burnout >= 50.0 and not _burn_warned:
 		_burn_warned = true
 		_dynamic["burnout"] = {
-			"speaker": "Alan (Co-owner)",
+			"speaker": "{ops}",
 			"text":
-			"Boss, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
+			"{me}, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
 			"options":
 			[
 				{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}},
@@ -2182,10 +2349,10 @@ func _burnout_week() -> void:
 			],
 		}
 		show_card("burnout")
-	if burnout >= 70.0 and lost_techs < 2 and randf() < 0.18:
+	if burnout >= 70.0 and lost_techs < MAX_LOST and randf() < 0.18:
 		lost_techs += 1
 		burnout = maxf(0.0, burnout - 20.0)
-		Msp.send_text("Alan", "One of the techs quit. Burned out.")
+		Msp.send_text("Morgan", "One of the crew quit. Burned out.")
 
 
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
@@ -2193,7 +2360,7 @@ func _vendor_breach() -> void:
 	var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
 	var vendor: String = str(stack_option("rmm").name)
 	_dynamic["vendor_breach"] = {
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		(
 			"%s just announced a breach: attackers pushed malicious code through their update channel. Every shop that uses it is exposed, including us. How fast do we move?"
@@ -2242,7 +2409,7 @@ func _client_no() -> void:
 	risk_choice = ""
 	var key := str(pick)
 	_dynamic["client_no"] = {
-		"speaker": "Alan (Co-owner)",
+		"speaker": "{tech}",
 		"text":
 		(
 			"%s's owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge."
@@ -2385,7 +2552,7 @@ func _peer_goal() -> void:
 func _patching(spare: float) -> void:
 	var order := []
 	for c in Sales.active:
-		patch_debt[int(c)] = minf(10.0, float(patch_debt.get(int(c), 0.0)) + 1.0)
+		patch_debt[int(c)] = minf(10.0, float(patch_debt.get(int(c), 0.0)) + float(edge("patch")))
 		order.append(int(c))
 	order.sort_custom(
 		func(x: int, y: int) -> bool: return float(patch_debt[x]) > float(patch_debt[y])
@@ -2408,7 +2575,7 @@ func poach_gaps(client: int) -> Array:
 
 
 func poach_risk(client: int) -> float:
-	var r := 0.02
+	var r := maxf(0.0, 0.02 + float(edge("poach")))
 	var mood := Sales.mood(client)
 	if mood < 35:
 		r += 0.12
@@ -2729,11 +2896,12 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
 	if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
 		return
-	var chance := 0.04 if flags.get("rdp_weak", false) else 0.10
+	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp"))
 	if randf() >= chance:
 		return
 	var victim: int = Sales.active[randi() % Sales.active.size()]
 	var cost := 1200 if flags.get("backup_service", false) else 2500
+	incidents += 1
 	apply({"cash": -cost, "mood": {str(victim): -12}, "rep": -3})
 	Cards.ask(
 		"Marge (Bookkeeper)",
@@ -2808,7 +2976,7 @@ func weekly_estimate() -> Dictionary:
 	for c in Sales.active:
 		revenue += client_fee(int(c))
 	revenue = int(float(revenue) * (1.0 - leak)) + Projects.service_revenue()
-	var payroll := tech_wage() * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
+	var payroll := crew_wages() + int(VIC_PLANS[vic_plan].wage) + _commission_week
 	for hire in extra_staff:
 		payroll += hire_wage(hire)
 	var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
@@ -2821,6 +2989,8 @@ func weekly_estimate() -> Dictionary:
 		"marketing": marketing,
 		"ebitda": ebitda,
 		"profit": ebitda,
+		"draw": draw_due(),
+		"cashflow": ebitda - draw_due(),
 		"margin": float(ebitda) / rev,
 		"w2": float(payroll) / rev,
 	}
@@ -2896,6 +3066,11 @@ func settle() -> Dictionary:
 			_asked[who] = Campaign.day
 	# the commission was already paid when the deals closed
 	cash += collected - (int(est.payroll) - _commission_week) - int(est.fixed) - int(est.marketing)
+	# the owners' draw (X4): cash out of the bank, never part of EBITDA
+	var draw := draw_due()
+	cash -= draw
+	draw_paid += draw
+	_draw_check(draw)
 	_commission_week = 0
 	# what each client really cost you this week
 	for c in Sales.active:
@@ -2915,6 +3090,7 @@ func settle() -> Dictionary:
 	_rdp_week()
 	_poach_week()
 	_staff_week()
+	_owner_week(profit)
 	var hours_row: Array = Growth.owner_week()
 	if randf() < 0.12 + float(marketing) / 2500.0:
 		_leads += 1
@@ -2967,7 +3143,17 @@ func settle() -> Dictionary:
 			Color("ffd27a") if ar_total() > 0 else Color.WHITE
 		],
 	]
+	rows.insert(
+		7,
+		[
+			"OWNER DRAW",
+			"-$%d (%s), NOT IN EBITDA" % [draw, draw_policy.to_upper()],
+			Color.WHITE if draw <= 0 or cash >= DRAW_FLOOR else red
+		]
+	)
 	rows.append(hours_row)
+	rows.append(partner_row())
+	rows.append(goal_row())
 	rows.append(
 		[
 			"RECURRING + PROJECTS",
@@ -3026,7 +3212,140 @@ func valuation() -> int:
 	return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality()) + cash)
 
 
+# ---- the owners' draw, the partner and your personal goal (X4, X5) --------------------------------------------------
+func draw_due() -> int:
+	return int(DRAW.get(draw_policy, 0)) if Campaign.day >= DRAW_START else 0
+
+
+# a draw that leaves the bank thin upsets the partner and Marge (at most once every three weeks)
+func _draw_check(draw: int) -> void:
+	if draw <= 0 or cash >= DRAW_FLOOR or Campaign.day - draw_warned < 3:
+		return
+	draw_warned = Campaign.day
+	Partner.change(-3)
+	Social.change(Roles.partner(), -2)
+	_dynamic["draw_warn"] = {
+		"speaker": "Marge (Bookkeeper)",
+		"text": "We drew $%d this week and the bank is down to $%d. {partner} noticed too. Payroll comes out on Friday. Can the draw wait?" % [draw, cash],
+		"options":
+		[
+			{"label": "CUT THE DRAW TO SMALL", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "Marge writes it down in pen. {partner} exhales."},
+			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "Noodles for everybody. Marge looks almost cheerful."},
+			{"label": "KEEP IT AS IT IS", "fx": {}},
+		],
+	}
+	show_card("draw_warn")
+
+
+func partner_row() -> Array:
+	if Partner.left:
+		return ["PARTNER", "%s HAS LEFT" % Roles.partner().to_upper(), Color("ff8a80")]
+	var good: bool = Partner.trust >= 55
+	return [
+		"PARTNER TRUST",
+		"%s %d (%s)" % [Roles.partner().to_upper(), Partner.trust, Partner.trust_word()],
+		Color("8fe3a0") if good else (Color("ffd27a") if Partner.trust >= Partner.BLOCK_TRUST else Color("ff8a80"))
+	]
+
+
+# your personal goal, part by part: [{label, ok}]. `final` judges the maturity part strictly (the review).
+func goal_parts(final := false) -> Array:
+	var out := []
+	if Campaign.player_as == "Alan":
+		var ransom := str(Story.flags.get("ransom", ""))
+		out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom == "" or ransom == "saved"})
+		out.append({"label": "NO BREAK-INS", "ok": incidents == 0})
+		out.append({"label": "A DOCUMENTED STACK (MATURITY 3)", "ok": oml() >= 3 or (not final and Campaign.day < 12)})
+	else:
+		out.append({"label": "CLIENT MOOD 75+", "ok": Sales.average() >= 75.0 or (not final and Campaign.day < 6)})
+		out.append({"label": "THE TEAM STAYS", "ok": lost_techs == 0 and hire_quits == 0})
+	return out
+
+
+func goal_title() -> String:
+	return str(OWNER_GOALS.get(Campaign.player_as, OWNER_GOALS["Alan"]).title)
+
+
+func goal_met() -> bool:
+	for part in goal_parts(true):
+		if not bool(part.ok):
+			return false
+	return true
+
+
+func goal_row() -> Array:
+	var parts := goal_parts()
+	var ok := 0
+	for part in parts:
+		ok += 1 if bool(part.ok) else 0
+	return [
+		"PERSONAL GOAL",
+		"%s: %d/%d%s" % [goal_title(), ok, parts.size(), " ON TRACK" if ok == parts.size() else ""],
+		Color("8fe3a0") if ok == parts.size() else Color("ffd27a")
+	]
+
+
+# end-of-week upkeep of the partnership: outings, then the quiet drift of trust
+func _owner_week(profit: int) -> void:
+	var outs := int(flags.get("outings", 0))
+	if outs > _outings_seen:
+		var n := outs - _outings_seen
+		_outings_seen = outs
+		var extra := OUTING_BURN * (float(edge("outing_relief")) - 1.0) * 2.0 * float(n)
+		burnout = clampf(burnout - extra, 0.0, 100.0)
+		Partner.change(n)  # a night out with your partner
+	Partner.week(profit)
+
+
 func offers() -> Array:
+	var out: Array = _base_offers()
+	var p := Roles.partner()
+	if p == "":
+		return out
+	var shown := []
+	for offer in out:
+		match str(offer.id):
+			"sell":
+				offer["label"] = "SELL THE COMPANY WITH %s FOR $%d" % [p.to_upper(), valuation()]
+				offer["desc"] = (
+					"BOTH SIGNATURES: A BIGGER MSP OFFERS $%d FOR THE CLIENT LIST, THE TEAM AND THE NAME. %s"
+					% [valuation(), "%s SIGNS, SULKING." % p.to_upper() if Partner.rift() else "%s IS IN." % p.to_upper()]
+				)
+			"expand":
+				if Partner.rift():
+					continue  # a partner who is leaving does not co-sign a second office
+			"stay":
+				if Partner.left:
+					offer["id"] = "left"
+					offer["label"] = "CARRY ON WITHOUT %s" % p.to_upper()
+					offer["desc"] = "%s WALKED OUT. YOUR NAME STAYS ON THE DOOR, ALONE." % p.to_upper()
+				elif Partner.rift():
+					offer["label"] = "STAY INDEPENDENT, UNEASILY"
+					offer["desc"] = "NAME ON THE DOOR, BUT YOU AND %s BARELY TALK." % p.to_upper()
+				else:
+					offer["label"] = "STAY AND GROW TOGETHER"
+					offer["desc"] = "YOUR NAME AND %s'S STAY ON THE DOOR. ONE MORE YEAR OF TICKETS." % p.to_upper()
+		shown.append(offer)
+	if Partner.rift() and cash >= Partner.BUYOUT_COST:
+		shown.append(
+			{
+				"id": "buyout",
+				"label": "BUY OUT %s ($%d)" % [p.to_upper(), Partner.BUYOUT_COST],
+				"desc": "YOU PAY $%d FOR THEIR HALF. THE COMPANY IS YOURS ALONE." % Partner.BUYOUT_COST,
+			}
+		)
+	if Partner.rift():
+		shown.append(
+			{
+				"id": "sellout",
+				"label": "SELL YOUR HALF TO %s ($%d)" % [p.to_upper(), valuation() / 2],
+				"desc": "%s BUYS YOU OUT. YOU WALK AWAY WITH HALF THE VALUE AND NO ALARM CLOCK." % p.to_upper(),
+			}
+		)
+	return shown
+
+
+func _base_offers() -> Array:
 	var out := [
 		{
 			"id": "sell",
@@ -3060,6 +3379,20 @@ func offers() -> Array:
 		)
 	)
 	return out
+
+
+func _ending_text(ending: String) -> String:
+	var p := Roles.partner().to_upper()
+	match ending:
+		"buyout":
+			return "YOU BUY OUT %s FOR $%d. THE DOOR SAYS ONLY YOUR NAME NOW. MARGE FRAMES THE CHEQUE." % [p, Partner.BUYOUT_COST]
+		"sellout":
+			return "YOU SELL YOUR HALF TO %s FOR $%d. YOU TAKE A LONG TRIP; THEY PROMISE NOT TO CHANGE THE COFFEE." % [p, valuation() / 2]
+		"left":
+			return "%s IS GONE. YOU RUN THE PLACE WITH MORGAN, MARGE AND TOO MANY SPREADSHEETS. THE PHONES KEEP RINGING." % p
+	if Partner.trust >= 55:
+		return "YOU AND %s KEEP YOUR NAMES ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS, AND A PARTNER YOU TRUST." % p
+	return "YOU KEEP YOUR NAME ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS. YOU AND %s DO NOT TALK ABOUT THE REVIEW." % p
 
 
 func review_lines(page: int, ending: String) -> Array:
@@ -3141,6 +3474,17 @@ func review_lines(page: int, ending: String) -> Array:
 				lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
 				lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
 		2:
+			lines.append(["PARTNERSHIP", blue])
+			lines.append(["YOU AND %s OWN THIS PLACE." % Roles.partner().to_upper(), ink])
+			for line in Partner.status_lines():
+				lines.append(line)
+			lines.append(["YOUR GOAL: %s" % goal_title(), blue])
+			for part in goal_parts(true):
+				lines.append(["  %s: %s" % [str(part.label), "MET" if bool(part.ok) else "MISSED"], good if bool(part.ok) else Color("a02828")])
+			lines.append(["TOOK $%d IN DRAW (%s)." % [draw_paid, draw_policy.to_upper()], ink])
+			var plan := "NO PLAN" if not (flags.get("plan_sell", false) or flags.get("plan_grow", false) or flags.get("plan_split", false)) else ("SELL" if flags.get("plan_sell", false) else ("GROW" if flags.get("plan_grow", false) else "DISAGREE"))
+			lines.append(["PARTNER MEETINGS HELD: %d OF 4. PLAN: %s" % [Partner.met.size(), plan], ink])
+		3:
 			lines.append(["YOUR OPTIONS", blue])
 		_:
 			lines.append(["THE END", blue])
@@ -3173,11 +3517,12 @@ func review_lines(page: int, ending: String) -> Array:
 						lines
 						. append(
 							[
-								"YOU KEEP YOUR NAME ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS.",
+								_ending_text(ending),
 								ink
 							]
 						)
 					)
+			lines.append(["YOUR GOAL, %s: %s." % [goal_title(), "MET" if goal_met() else "MISSED"], good if goal_met() else ink])
 			lines.append(["TECH CAMPAIGN: PLAY IT FROM THE FLOOR.", good])
 	return lines
 
@@ -3191,6 +3536,13 @@ func to_dict() -> Dictionary:
 		"vic": vic_bonus,
 		"weekly": weekly_extra,
 		"lost": lost_techs,
+		"draw_policy": draw_policy,
+		"draw_paid": draw_paid,
+		"draw_warned": draw_warned,
+		"hire_quits": hire_quits,
+		"incidents": incidents,
+		"outings_seen": _outings_seen,
+		"partner": Partner.to_dict(),
 		"staff": extra_staff,
 		"discount": discount,
 		"history": history,
@@ -3236,6 +3588,13 @@ func from_dict(data: Dictionary) -> void:
 	vic_bonus = float(data.get("vic", 0.0))
 	weekly_extra = int(data.get("weekly", 0))
 	lost_techs = int(data.get("lost", 0))
+	draw_policy = str(data.get("draw_policy", "normal"))
+	draw_paid = int(data.get("draw_paid", 0))
+	draw_warned = int(data.get("draw_warned", -9))
+	hire_quits = int(data.get("hire_quits", 0))
+	incidents = int(data.get("incidents", 0))
+	_outings_seen = int(data.get("outings_seen", 0))
+	Partner.from_dict(data.get("partner", {}))
 	extra_staff = data.get("staff", [])
 	var saved: Dictionary = data.get("discount", {})
 	for key in saved:

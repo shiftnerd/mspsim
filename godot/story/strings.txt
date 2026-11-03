@@ -26,7 +26,7 @@ Daily chore: verify backups
 
 # Day 2, 9:05, MAIL: body
 [Story.DAYS.2.0.body]
-Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds. - Morgan
+Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan
 
 # Day 3, 9:05, MAIL: from
 [Story.DAYS.3.0.from]
@@ -122,7 +122,7 @@ Pager again
 
 # Day 15, 9:11, MAIL: body
 [Story.DAYS.15.0.body]
-You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan
+You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan
 
 # Day 16, 9:30, PLAYBOOK: text
 [Story.DAYS.16.0.text]
@@ -357,6 +357,14 @@ Alan (Co-owner)
 # Story > VIGNETTES > donuts > text
 [Story.VIGNETTES.donuts.text]
 I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?
+
+# Story > VIGNETTES > donuts > text_reset
+[Story.VIGNETTES.donuts.text_reset]
+I am back, and I brought donuts. Morgan says you covered for me while I was out, and I heard what happened to the firewall. I am not angry. Show me how it is set up now?
+
+# Story > VIGNETTES > donuts > text_plain
+[Story.VIGNETTES.donuts.text_plain]
+I am back, and I brought donuts. Morgan says you covered for me while I was out. Nobody wrote down how the firewall is set up, so would you show me what you did?
 
 # Story > VIGNETTES > donuts > options > 0 > label
 [Story.VIGNETTES.donuts.options.0.label]
@@ -2820,7 +2828,7 @@ CALL THE VENDOR
 
 # job: EMAIL OUTAGE, step 2
 [Playbook.BOOKS.email24.steps.1.text]
-The mail software vendor has a support line. It is 17:40 and the queue is long.
+The mail software vendor has a support line. The queue is long.
 
 # job: EMAIL OUTAGE, step 2
 [Playbook.BOOKS.email24.steps.1.choices.0.label]
@@ -3706,7 +3714,7 @@ Odd request to wire $38,000 from the trust account
 
 # Playbook > PROBLEMS > ceofraud > 0 > body
 [Playbook.PROBLEMS.ceofraud.0.body]
-Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s
+Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s
 
 # Playbook > PROBLEMS > no2fa > 0 > summary
 [Playbook.PROBLEMS.no2fa.0.summary]
@@ -3740,7 +3748,7 @@ Marge (Bookkeeper)
 
 # owner card: welcome
 [Owner.CARDS.welcome.text]
-Welcome, boss. Five clients, three techs, Vic in sales and $5,000 in the bank. Payroll and rent come out every week. How do you want to price our service?
+Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?
 
 # owner card: welcome
 [Owner.CARDS.welcome.options.0.label]
@@ -3756,11 +3764,11 @@ PREMIUM PRICING (+20% FEES, HARDER SELL)
 
 # owner card: backup
 [Owner.CARDS.backup.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: backup
 [Owner.CARDS.backup.text]
-Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.
+{me}, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.
 
 # owner card: backup
 [Owner.CARDS.backup.options.0.label]
@@ -3868,7 +3876,7 @@ PASS
 
 # owner card: license
 [Owner.CARDS.license.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: license
 [Owner.CARDS.license.text]
@@ -3900,11 +3908,11 @@ Gnarly Gnomes' network rack fell off their plywood wall. Everything there is dow
 
 # owner card: rack
 [Owner.CARDS.rack.options.0.label]
-SEND ALAN NOW ($300)
+SEND {tech} NOW ($300)
 
 # owner card: rack
 [Owner.CARDS.rack.options.0.roll.0.2]
-Alan rebuilds it properly. Bob buys him lunch.
+{tech} rebuilds it properly. Bob buys them lunch.
 
 # owner card: rack
 [Owner.CARDS.rack.options.0.roll.1.2]
@@ -3912,7 +3920,7 @@ Fixed, but it took all night.
 
 # owner card: rack
 [Owner.CARDS.rack.options.1.label]
-SEND THE JUNIOR OR DAN ($100)
+SEND MAYA OR A NEW HIRE ($100)
 
 # owner card: rack
 [Owner.CARDS.rack.options.1.roll.0.2]
@@ -3972,11 +3980,11 @@ Brightside grumbles about the open-ended bill but pays.
 
 # owner card: email24
 [Owner.CARDS.email24.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: email24
 [Owner.CARDS.email24.text]
-Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.
+Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. I will stay late if you approve overtime.
 
 # owner card: email24
 [Owner.CARDS.email24.options.0.label]
@@ -4008,7 +4016,7 @@ GO IN YOURSELF
 
 # owner card: email24
 [Owner.CARDS.email24.options.2.roll.0.2]
-You muddle through and fix it. Alan is impressed.
+You muddle through and fix it. {tech} is impressed.
 
 # owner card: email24
 [Owner.CARDS.email24.options.2.roll.1.2]
@@ -4016,11 +4024,11 @@ You make it worse before you make it better.
 
 # owner card: raise
 [Owner.CARDS.raise.speaker]
-Alan (Co-owner)
+Dan (Network Tech)
 
 # owner card: raise
 [Owner.CARDS.raise.text]
-Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.
+{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.
 
 # owner card: raise
 [Owner.CARDS.raise.options.0.label]
@@ -4032,11 +4040,11 @@ NOT NOW
 
 # owner card: raise
 [Owner.CARDS.raise.options.1.roll.0.2]
-Alan shrugs and keeps working.
+Dan shrugs and keeps working.
 
 # owner card: raise
 [Owner.CARDS.raise.options.1.roll.1.2]
-Alan hands in his notice. The team is stretched thin.
+Dan hands in his notice. The team is stretched thin.
 
 # owner card: bid
 [Owner.CARDS.bid.speaker]
@@ -4172,7 +4180,7 @@ HAVE THE TEAM CHECK EVERY BACKUP
 
 # owner card: peer2
 [Owner.CARDS.peer2.options.0.text]
-Alan checks them all. Any failing job is rerun.
+The crew checks them all. Any failing job is rerun.
 
 # owner card: peer2
 [Owner.CARDS.peer2.options.1.label]
@@ -4238,9 +4246,85 @@ STANDARD ($400/WEEK)
 [Owner.CARDS.marketing.options.3.label]
 AGGRESSIVE ($900/WEEK)
 
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.speaker]
+Marge (Bookkeeper)
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.text]
+The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take?
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.0.label]
+NORMAL DRAW ($600/WEEK, BOTH OF YOU)
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.0.text]
+Marge writes it in the ledger. The draw starts in week 3.
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.1.label]
+SMALL DRAW ($300/WEEK)
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.1.text]
+A small draw. Marge looks relieved and {partner} nods. The bank stays fat.
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.2.label]
+GENEROUS DRAW ($1,000/WEEK)
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.2.text]
+A generous draw. Marge says nothing, which is how she says a lot.
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.3.label]
+NO DRAW (WE LIVE ON NOODLES)
+
+# owner card: draw_policy
+[Owner.CARDS.draw_policy.options.3.text]
+No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger.
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.speaker]
+Marge (Bookkeeper)
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.text]
+Quarterly look at the owners' draw. Same as before, more, less, or nothing for now?
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.0.label]
+KEEP THE DRAW AS IT IS
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.1.label]
+TAKE LESS (SMALL DRAW)
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.1.text]
+A smaller draw. The bank breathes easier.
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.2.label]
+TAKE MORE (GENEROUS DRAW)
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.2.text]
+A bigger draw. It is a good quarter, you tell yourself.
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.3.label]
+SKIP THE DRAW FOR NOW
+
+# owner card: draw_review
+[Owner.CARDS.draw_review.options.3.text]
+No draw this quarter. Marge pins a gold star on the ledger.
+
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.text]
@@ -4264,11 +4348,11 @@ OPSFORGE PRO ($140/WK, $300 TO MIGRATE)
 
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.options.2.text]
-The techs love the automation.
+The crew loves the automation.
 
 # owner card: stack_rmm
 [Owner.CARDS.stack_rmm.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: stack_rmm
 [Owner.CARDS.stack_rmm.text]
@@ -4364,7 +4448,7 @@ SKIP IT
 
 # owner card: after_hours
 [Owner.CARDS.after_hours.speaker]
-Alan (Co-owner)
+{ops}
 
 # owner card: after_hours
 [Owner.CARDS.after_hours.text]
@@ -4392,7 +4476,7 @@ NEITHER, WE WILL COPE
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.speaker]
-Alan (Co-owner)
+{ops}
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.text]
@@ -4408,11 +4492,11 @@ A fair rota with a little money behind it. Nobody loves the pager, but everybody
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.options.1.label]
-ALAN TAKES IT EVERY WEEK (+$150)
+DAN TAKES IT EVERY WEEK (+$150)
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.options.1.text]
-Alan says fine. For now. The same person every week is how people quit.
+Dan says fine. For now. The same person every week is how people quit.
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.options.2.label]
@@ -4424,7 +4508,7 @@ The crew is thrilled. Your nights will be less so, and it eats your owner hours 
 
 # owner card: flex_hours
 [Owner.CARDS.flex_hours.speaker]
-Alan (Co-owner)
+{ops}
 
 # owner card: flex_hours
 [Owner.CARDS.flex_hours.text]
@@ -4460,11 +4544,11 @@ Clients notice the quiet Fridays. Some are not happy.
 
 # owner card: rdp_exposed
 [Owner.CARDS.rdp_exposed.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: rdp_exposed
 [Owner.CARDS.rdp_exposed.text]
-Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.
+{me}, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.
 
 # owner card: rdp_exposed
 [Owner.CARDS.rdp_exposed.options.0.label]
@@ -4496,7 +4580,7 @@ LEAVE IT
 
 # owner card: ransom_options
 [Owner.CARDS.ransom_options.speaker]
-Alan (Co-owner)
+{tech}
 
 # owner card: ransom_options
 [Owner.CARDS.ransom_options.text]
@@ -5342,7 +5426,7 @@ THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.
 
 # Shift > WEEK_TRAFFIC > 3 > text
 [Shift.WEEK_TRAFFIC.3.text]
-FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.
+SPRING STORM SEASON. THE UNDERPASS FLOODS AND EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.
 
 
 # ======================= Shift > REASONS =======================
@@ -5366,6 +5450,26 @@ RAIN AND A FENDER BENDER
 [Shift.REASONS.4]
 ROAD WORK NOBODY WARNED YOU ABOUT
 
+# Shift > REASONS > 5
+[Shift.REASONS.5]
+A SCHOOL BUS BROKEN DOWN AT THE LIGHT
+
+# Shift > REASONS > 6
+[Shift.REASONS.6]
+A WATER MAIN BREAK AND A DETOUR THROUGH TOWN
+
+# Shift > REASONS > 7
+[Shift.REASONS.7]
+A DRAWBRIDGE STUCK OPEN
+
+# Shift > REASONS > 8
+[Shift.REASONS.8]
+A SLOW FUNERAL PROCESSION
+
+# Shift > REASONS > 9
+[Shift.REASONS.9]
+A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU
+
 
 # ======================= Shift > PAGES =======================
 # Shift > PAGES > 0
@@ -5387,6 +5491,34 @@ the mail queue is stuck
 # Shift > PAGES > 4
 [Shift.PAGES.4]
 the domain controller stopped answering pings
+
+# Shift > PAGES > 5
+[Shift.PAGES.5]
+the RAID array says it is degraded
+
+# Shift > PAGES > 6
+[Shift.PAGES.6]
+the firewall locked everybody out after the firmware update
+
+# Shift > PAGES > 7
+[Shift.PAGES.7]
+the phone system lost its SIP trunk
+
+# Shift > PAGES > 8
+[Shift.PAGES.8]
+the Exchange server is out of mailbox space
+
+# Shift > PAGES > 9
+[Shift.PAGES.9]
+the antivirus server stopped pushing updates
+
+# Shift > PAGES > 10
+[Shift.PAGES.10]
+the UPS is on battery and beeping
+
+# Shift > PAGES > 11
+[Shift.PAGES.11]
+the print server queue is stuck again
 
 
 # ======================= Hints > DAY1 =======================
@@ -5700,7 +5832,7 @@ Pack your bags: Rodent Nation
 
 # Expo > TEXT > yes_body
 [Expo.TEXT.yes_body]
-You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan
+You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan
 
 # Expo > TEXT > no_subject
 [Expo.TEXT.no_subject]
@@ -8014,7 +8146,7 @@ The coffee is for patients, but I will not tell if you have one.
 
 # Onsite > STAFF > law > 0
 [Onsite.STAFF.law.0]
-Please be quiet in the hall, Mr. Spence is on the phone with a judge.
+Please be quiet in the hall, Atty. Spence is on the phone with a judge.
 
 # Onsite > STAFF > law > 1
 [Onsite.STAFF.law.1]
@@ -8499,3 +8631,307 @@ PROMISE THE MOON
 # Onsite > MEETINGS > pitch > options > 2 > text
 [Onsite.MEETINGS.pitch.options.2.text]
 You promise a ten minute response time, everything fixed by noon and free hardware. You are persuasive and you also know it is a lie.
+
+
+# ======================= Outings > SONGS =======================
+# Outings > SONGS > 0 > title
+[Outings.SONGS.0.title]
+WOBBLE WOBBLE POP
+
+# Outings > SONGS > 0 > lines > 0
+[Outings.SONGS.0.lines.0]
+WOBBLE WOBBLE POP POP
+
+# Outings > SONGS > 0 > lines > 1
+[Outings.SONGS.0.lines.1]
+SHAKE IT FOR THE CAM
+
+# Outings > SONGS > 0 > lines > 2
+[Outings.SONGS.0.lines.2]
+BASS DROP IN MY HEAD
+
+# Outings > SONGS > 0 > lines > 3
+[Outings.SONGS.0.lines.3]
+SELFIE ON THE STAIRS
+
+# Outings > SONGS > 0 > lines > 4
+[Outings.SONGS.0.lines.4]
+NOBODY KNOWS MY MOVES
+
+# Outings > SONGS > 0 > lines > 5
+[Outings.SONGS.0.lines.5]
+ONE MORE DROP TONIGHT
+
+# Outings > SONGS > 1 > title
+[Outings.SONGS.1.title]
+DIRT ROAD FRIDAY
+
+# Outings > SONGS > 1 > artist
+[Outings.SONGS.1.artist]
+THE CREEKBED TWINS
+
+# Outings > SONGS > 1 > genre
+[Outings.SONGS.1.genre]
+COUNTRY SINGALONG
+
+# Outings > SONGS > 1 > lines > 0
+[Outings.SONGS.1.lines.0]
+DIRT ROAD ON FRIDAY
+
+# Outings > SONGS > 1 > lines > 1
+[Outings.SONGS.1.lines.1]
+TAILGATE DOWN AND LOW
+
+# Outings > SONGS > 1 > lines > 2
+[Outings.SONGS.1.lines.2]
+PORCH LIGHT STILL ON
+
+# Outings > SONGS > 1 > lines > 3
+[Outings.SONGS.1.lines.3]
+HOME BY THE RIVER
+
+# Outings > SONGS > 1 > lines > 4
+[Outings.SONGS.1.lines.4]
+SING IT TO THE CORN
+
+# Outings > SONGS > 1 > lines > 5
+[Outings.SONGS.1.lines.5]
+NOBODY IS IN A RUSH
+
+# Outings > SONGS > 1 > lines > 6
+[Outings.SONGS.1.lines.6]
+ONE MORE MILE OF GOLD
+
+# Outings > SONGS > 2 > title
+[Outings.SONGS.2.title]
+NEON GYM CLASS
+
+# Outings > SONGS > 2 > artist
+[Outings.SONGS.2.artist]
+THE SYNTH SCOUTS
+
+# Outings > SONGS > 2 > lines > 0
+[Outings.SONGS.2.lines.0]
+NEON LIGHTS AND SWEAT
+
+# Outings > SONGS > 2 > lines > 1
+[Outings.SONGS.2.lines.1]
+LEG WARMERS ON FIRE
+
+# Outings > SONGS > 2 > lines > 2
+[Outings.SONGS.2.lines.2]
+GYM CLASS AT MIDNIGHT
+
+# Outings > SONGS > 2 > lines > 3
+[Outings.SONGS.2.lines.3]
+ROLL THE TAPE BACK
+
+# Outings > SONGS > 2 > lines > 4
+[Outings.SONGS.2.lines.4]
+JUMP ROPE IN THE RAIN
+
+# Outings > SONGS > 2 > lines > 5
+[Outings.SONGS.2.lines.5]
+FEEL THE SYNTH GLOW
+
+# Outings > SONGS > 2 > lines > 6
+[Outings.SONGS.2.lines.6]
+NEON GYM CLASS, YEAH
+
+# Outings > SONGS > 3 > title
+[Outings.SONGS.3.title]
+FAST RAP HOT MESS
+
+# Outings > SONGS > 3 > lines > 0
+[Outings.SONGS.3.lines.0]
+FAST WORDS HOT MESS
+
+# Outings > SONGS > 3 > lines > 1
+[Outings.SONGS.3.lines.1]
+COFFEE ON MY SHIRT
+
+# Outings > SONGS > 3 > lines > 2
+[Outings.SONGS.3.lines.2]
+RHYMES IN THE QUEUE
+
+# Outings > SONGS > 3 > lines > 3
+[Outings.SONGS.3.lines.3]
+TICKET AFTER TICKET
+
+# Outings > SONGS > 3 > lines > 4
+[Outings.SONGS.3.lines.4]
+TWO TIMES TOO FAST
+
+# Outings > SONGS > 3 > lines > 5
+[Outings.SONGS.3.lines.5]
+BREATHE IN THE BRIDGE
+
+# Outings > SONGS > 3 > lines > 6
+[Outings.SONGS.3.lines.6]
+HOT MESS HOT MESS
+
+# Outings > SONGS > 3 > lines > 7
+[Outings.SONGS.3.lines.7]
+MIC DROP, MIC PICK UP
+
+
+# ======================= Outings > FRIEND_HINTS =======================
+# Outings > FRIEND_HINTS > Alan > board
+[Outings.FRIEND_HINTS.Alan.board]
+THAT CHALKBOARD IS MY KIND OF PROBLEM. DO THE MATH.
+
+# Outings > FRIEND_HINTS > Alan > clock
+[Outings.FRIEND_HINTS.Alan.clock]
+THAT OLD WALL CLOCK STOPPED FOR A REASON.
+
+# Outings > FRIEND_HINTS > Alan > plaque
+[Outings.FRIEND_HINTS.Alan.plaque]
+I THINK THERE IS A PLAQUE UNDER THE PAINTING.
+
+# Outings > FRIEND_HINTS > Alan > shelf
+[Outings.FRIEND_HINTS.Alan.shelf]
+ONE BOOK ON THAT SHELF IS STICKING OUT. LOOK CLOSER.
+
+# Outings > FRIEND_HINTS > Alan > keypad
+[Outings.FRIEND_HINTS.Alan.keypad]
+YOU HAVE THEM ALL. TRY THE KEYPAD ON THE VAULT.
+
+# Outings > FRIEND_HINTS > Garrison > board
+[Outings.FRIEND_HINTS.Garrison.board]
+SOMEBODY WROTE ON THAT CHALKBOARD. IT IS A CLUE, TRUST ME.
+
+# Outings > FRIEND_HINTS > Garrison > clock
+[Outings.FRIEND_HINTS.Garrison.clock]
+THE CLOCK IS STUCK AT A STRANGE TIME. WE SHOULD LOOK.
+
+# Outings > FRIEND_HINTS > Garrison > plaque
+[Outings.FRIEND_HINTS.Garrison.plaque]
+A PLAQUE UNDER THE PAINTING! NOBODY HANGS A PAINTING FOR FREE.
+
+# Outings > FRIEND_HINTS > Garrison > shelf
+[Outings.FRIEND_HINTS.Garrison.shelf]
+THAT BOOKSHELF HAS SOMETHING IN IT THAT DOES NOT BELONG.
+
+# Outings > FRIEND_HINTS > Garrison > keypad
+[Outings.FRIEND_HINTS.Garrison.keypad]
+THAT IS ALL OF THEM. THE LOCK ON THE VAULT IS WAITING FOR YOU.
+
+# Outings > FRIEND_HINTS > Dan > board
+[Outings.FRIEND_HINTS.Dan.board]
+THE CHALKBOARD LIGHT IS WIRED BADLY. LOOK AT THE BOARD.
+
+# Outings > FRIEND_HINTS > Dan > clock
+[Outings.FRIEND_HINTS.Dan.clock]
+THAT CLOCK IS NOT WIRED TO ANYTHING, SO SOMEONE STOPPED IT ON PURPOSE.
+
+# Outings > FRIEND_HINTS > Dan > plaque
+[Outings.FRIEND_HINTS.Dan.plaque]
+THERE IS A CABLE RUN UNDER THE PAINTING. AND A PLAQUE.
+
+# Outings > FRIEND_HINTS > Dan > shelf
+[Outings.FRIEND_HINTS.Dan.shelf]
+THE BOOKSHELF IS BOLTED TO THE WALL. SOMETHING ON IT IS NOT A BOOK.
+
+# Outings > FRIEND_HINTS > Dan > keypad
+[Outings.FRIEND_HINTS.Dan.keypad]
+THE KEYPAD IS WIRED TO THE VAULT. ENTER WHAT YOU FOUND.
+
+# Outings > FRIEND_HINTS > Maya > board
+[Outings.FRIEND_HINTS.Maya.board]
+THE CHALKBOARD LOOKS LIKE HOMEWORK. HOMEWORK IS A CLUE.
+
+# Outings > FRIEND_HINTS > Maya > clock
+[Outings.FRIEND_HINTS.Maya.clock]
+THE WALL CLOCK IS WRONG. NOBODY LEAVES A CLOCK WRONG.
+
+# Outings > FRIEND_HINTS > Maya > plaque
+[Outings.FRIEND_HINTS.Maya.plaque]
+THAT PLAQUE UNDER THE PAINTING IS EASY TO MISS. READ IT.
+
+# Outings > FRIEND_HINTS > Maya > shelf
+[Outings.FRIEND_HINTS.Maya.shelf]
+THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.
+
+# Outings > FRIEND_HINTS > Maya > keypad
+[Outings.FRIEND_HINTS.Maya.keypad]
+THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.
+
+# Outings > FRIEND_HINTS > Vic > board
+[Outings.FRIEND_HINTS.Vic.board]
+THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.
+
+# Outings > FRIEND_HINTS > Vic > clock
+[Outings.FRIEND_HINTS.Vic.clock]
+THE CLOCK, TRUST ME, THE CLOCK.
+
+# Outings > FRIEND_HINTS > Vic > plaque
+[Outings.FRIEND_HINTS.Vic.plaque]
+I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.
+
+# Outings > FRIEND_HINTS > Vic > shelf
+[Outings.FRIEND_HINTS.Vic.shelf]
+THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.
+
+# Outings > FRIEND_HINTS > Vic > keypad
+[Outings.FRIEND_HINTS.Vic.keypad]
+YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.
+
+
+# ======================= Outings > HERRINGS =======================
+# Outings > HERRINGS > 0
+[Outings.HERRINGS.0]
+A BOOKSHELF FULL OF OLD MANUALS. NO NUMBERS HERE THAT MATTER.
+
+# Outings > HERRINGS > 1
+[Outings.HERRINGS.1]
+A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.
+
+# Outings > HERRINGS > 2
+[Outings.HERRINGS.2]
+ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.
+
+
+# ======================= Outings > RECIPE_TIPS =======================
+# Outings > RECIPE_TIPS > sum
+[Outings.RECIPE_TIPS.sum]
+ADD THE TWO NUMBERS.
+
+# Outings > RECIPE_TIPS > missing
+[Outings.RECIPE_TIPS.missing]
+WHICH DIGIT IS NOT IN THE LIST?
+
+# Outings > RECIPE_TIPS > hour
+[Outings.RECIPE_TIPS.hour]
+THE HOUR IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > double
+[Outings.RECIPE_TIPS.double]
+THE DIGIT IS TWICE THE HOUR.
+
+# Outings > RECIPE_TIPS > number
+[Outings.RECIPE_TIPS.number]
+THE NUMBER IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > roman
+[Outings.RECIPE_TIPS.roman]
+READ THE ROMAN NUMERAL.
+
+# Outings > RECIPE_TIPS > letter
+[Outings.RECIPE_TIPS.letter]
+COUNT THE LETTER IN THE ALPHABET.
+
+# Outings > RECIPE_TIPS > spine
+[Outings.RECIPE_TIPS.spine]
+THE VOLUME NUMBER IS THE DIGIT.
+
+# Outings > RECIPE_TIPS > ribbons
+[Outings.RECIPE_TIPS.ribbons]
+COUNT THE BOOKMARK RIBBONS.
+
+# Outings > RECIPE_TIPS > dial
+[Outings.RECIPE_TIPS.dial]
+THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.
+
+# Outings > RECIPE_TIPS > nodial
+[Outings.RECIPE_TIPS.nodial]
+THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.

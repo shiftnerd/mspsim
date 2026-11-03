@@ -38,6 +38,7 @@ func _process(_delta: float) -> bool:
 		if o.is_open:
 			o.press(KEY_ENTER)
 			if games[i] == "karaoke":
+				root.get_node("Cards").pick(0)  # the song card at the mic
 				o.g.t = 5.0
 	elif t == 230:
 		_shot(rooms[i])

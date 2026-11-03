@@ -75,3 +75,44 @@ func sender(text: String) -> String:
 	if n == "" or n != Campaign.player_as:
 		return text
 	return stand_in(n)
+
+
+# ---- names for the owner campaign's cards (X4): {tech} {ops} {partner} {me} --------------------------------------
+# the colleague who gives you technical advice: Dan when you are Alan (the technical owner yourself), otherwise Alan
+func tech() -> String:
+	return "Dan" if Campaign.player_as == "Alan" else "Alan"
+
+
+# the colleague who runs the desk day to day
+func ops() -> String:
+	return "Morgan"
+
+
+# your own first name ("boss" when you are nobody in particular)
+func me() -> String:
+	return Campaign.player_as if Campaign.player_as != "" else "boss"
+
+
+func _token(key: String) -> String:
+	match key:
+		"tech":
+			return tech()
+		"ops":
+			return ops()
+		"partner":
+			return partner() if partner() != "" else "Morgan"
+		"me":
+			return me()
+	return ""
+
+
+# {tech} -> a name, or "Dan (Network Tech)" when the whole text is the token (a speaker line)
+func fill(text: String) -> String:
+	if text.find("{") < 0:
+		return text
+	for key in ["tech", "ops", "partner", "me"]:
+		var tok: String = "{" + str(key) + "}"
+		if text == tok:
+			return label(_token(key))
+		text = text.replace(tok, _token(key))
+	return text

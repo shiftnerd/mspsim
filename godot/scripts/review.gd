@@ -19,12 +19,20 @@ const JOBS := [
 	["migration", "SERVER MIGRATION"],
 	["email24", "EMAIL OUTAGE"],
 	["netinstall", "NETWORK INSTALL"],
+	["rdp", "RDP BREAK-IN"],
+	["ceofraud", "WIRE FRAUD EMAIL"],
+	["no2fa", "TWO-STEP LOGINS"],
+	["bus", "THE ONE WHO KNEW"],
 ]
 const CLIENT_OF := {
 	"rack": "Gnarly Gnomes",
 	"migration": "Brightside Realty",
 	"email24": "Soggy Bottom Brewing",
 	"netinstall": "Hoot and Holler",
+	"rdp": "Brightside Realty",
+	"ceofraud": "Hoot and Holler",
+	"no2fa": "Soggy Bottom Brewing",
+	"bus": "Acme Dental",
 }
 const DEFAULT_QUOTES := {
 	"FRIEND": "WORKING WITH YOU IS THE BEST PART OF MY DAY.",
@@ -98,14 +106,35 @@ func _set_fade(value: float) -> void:
 	_canvas.modulate.a = value
 
 
+# clients you cost their data (a lost ransomware recovery, a wiped desktop) never offer you a job
+func burned_clients() -> Array:
+	var out := []
+	if str(Story.flags.get("ransom", "")) == "lost":
+		out.append(str(Msp.CLIENTS[Story.RANSOM_CLIENT].name))
+	if str(Story.flags.get("install", "")) == "lost" and not Msp.project.is_empty():
+		out.append(str(Msp.CLIENTS[int(Msp.project.client)].name))
+	return out
+
+
+func _is_burned(short_name: String) -> bool:
+	for full in burned_clients():
+		if str(full).begins_with(short_name):
+			return true
+	return false
+
+
 func best_client() -> String:
-	var best := "Acme Dental"
+	var best := ""
 	var best_rank := 0
 	for key in CLIENT_OF:
 		var rank := int(GRADE_NAMES.get(str(Story.flags.get(key, "")), 0))
-		if rank > best_rank:
+		if rank > best_rank and not _is_burned(str(CLIENT_OF[key])):
 			best_rank = rank
 			best = str(CLIENT_OF[key])
+	if best == "":
+		for name in ["Acme Dental", "Piedmont Pediatrics", "Zen Garden Yoga"]:
+			if not _is_burned(name):
+				return name
 	return best
 
 
@@ -160,8 +189,17 @@ func make_offers() -> Array:
 
 func choose(index: int) -> void:
 	ending = str(offers[clampi(index, 0, offers.size() - 1)].id)
-	page = 3
+	page = _end_page()
 	_canvas.queue_redraw()
+
+
+# the owner review has a PARTNERSHIP page (X5), so its offers and its end come one page later
+func _opt_page() -> int:
+	return 3 if Campaign.mode == "owner" else 2
+
+
+func _end_page() -> int:
+	return _opt_page() + 1
 
 
 func finish() -> void:
@@ -176,9 +214,9 @@ func finish() -> void:
 
 
 func advance() -> void:
-	if page == 2:
+	if page == _opt_page():
 		choose(sel)
-	elif page == 3:
+	elif page == _end_page():
 		finish()
 	else:
 		page += 1
@@ -206,10 +244,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 			advance()
-		elif event.keycode == KEY_UP and page == 2:
+		elif event.keycode == KEY_UP and page == _opt_page():
 			sel = maxi(0, sel - 1)
 			_canvas.queue_redraw()
-		elif event.keycode == KEY_DOWN and page == 2:
+		elif event.keycode == KEY_DOWN and page == _opt_page():
 			sel = mini(offers.size() - 1, sel + 1)
 			_canvas.queue_redraw()
 	else:
@@ -295,7 +333,8 @@ func page_lines() -> Array:
 				lines.append(
 					[
 						"%s: %s" % [row[0], row[1]],
-						BAD if row[2] else (GOOD if row[1] != "-" else INK)
+						BAD if row[2] else (GOOD if row[1] != "-" else INK),
+						"job"
 					]
 				)
 		1:
@@ -310,6 +349,8 @@ func page_lines() -> Array:
 		_:
 			lines.append(["THE END", BLUE])
 			lines.append([str(EPILOGUES.get(ending, "")), INK])
+			if ending == "internal":
+				lines.append(["YOUR NEW DESK IS AT %s." % best_client().to_upper(), INK])
 	return lines
 
 
@@ -335,11 +376,24 @@ func _paint() -> void:
 	var pw := minf(size.x - 8.0, 250.0 * u)
 	var chars := int((pw - 10.0 * u) / (4.0 * u))
 	var rows := []
+	var held: Array = []  # job lines sit two to a row when the panel is wide enough
 	for entry in page_lines():
+		if entry.size() > 2 and chars >= 58:
+			if held.is_empty():
+				held = entry
+				continue
+			rows.append([held[0], held[1], entry[0], entry[1]])
+			held = []
+			continue
+		if not held.is_empty():
+			rows.append([held[0], held[1]])
+			held = []
 		for wrapped in _wrap(str(entry[0]), chars):
 			rows.append([wrapped, entry[1]])
+	if not held.is_empty():
+		rows.append([held[0], held[1]])
 	var extra := 0.0
-	if page == 2:
+	if page == _opt_page():
 		extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
 	var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
 	ph = minf(ph, size.y - 4.0)
@@ -351,8 +405,11 @@ func _paint() -> void:
 	var y := panel.position.y + 12.0 * u
 	for row in rows:
 		PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
+		if row.size() > 2:
+			var col_x: float = panel.position.x + (5.0 + 4.0 * 30.0) * u
+			PixelFont.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc)
 		y += 7.0 * u
-	if page == 2:
+	if page == _opt_page():
 		y += 3.0 * u
 		for i in offers.size():
 			var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
@@ -370,7 +427,7 @@ func _paint() -> void:
 			)
 			y += 7.0 * u
 	else:
-		var label := "FINISH" if page == 3 else "NEXT"
+		var label := "FINISH" if page == _end_page() else "NEXT"
 		var bw := float(PixelFont.width(label, sc)) + 12.0 * u
 		var b := Rect2(panel.end.x - bw - 4.0 * u, panel.end.y - 12.0 * u, bw, 9.0 * u)
 		_canvas.draw_rect(b, Color("5aa0e8") if b.has_point(_mouse) else Color("3a7bd5"))

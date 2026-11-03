@@ -18,6 +18,7 @@ var player_as := ""  # the cast member you play as ("" = a character who is not 
 var mode := ""
 var day := 1
 var rep := START_REP
+var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -27,9 +28,43 @@ var _awaiting := false
 var _fired_out := false
 
 
+# gains get harder as the name grows: 100 is only for the end of a really good run
+func gain_scale() -> float:
+	if rep >= 85:
+		return 0.25
+	if rep >= 72:
+		return 0.3
+	return 0.6 if rep >= 60 else 1.0
+
+
+# the most the day report can add at this reputation
+func daily_cap() -> int:
+	for entry in [[72, 1], [58, 2], [50, 3]]:
+		if rep >= int(entry[0]):
+			return int(entry[1])
+	return 4
+
+
+func rep_cap() -> int:
+	return clampi(100 - scars, 40, 100)
+
+
+# a lasting cost: the ceiling drops now and recovers one point on each A or S day
+func add_scar(amount: int) -> void:
+	if not active:
+		return
+	scars = mini(scars + amount, 60)
+	rep = mini(rep, rep_cap())
+
+
 func adjust_rep(amount: int) -> void:
-	if active:
-		rep = clampi(rep + amount, 0, 100)
+	if not active:
+		return
+	var change := amount
+	if amount > 0:
+		change = maxi(1, roundi(float(amount) * gain_scale()))
+		change = mini(change, maxi(0, rep_cap() - rep))
+	rep = clampi(rep + change, 0, 100)
 
 
 func save_path(for_mode: String) -> String:
@@ -51,10 +86,10 @@ func saved_day(for_mode: String) -> int:
 # campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
 func derive_player_as(for_mode: String) -> String:
 	var who: String = World.cast_of(PLAYER.current_character)
+	if for_mode == "owner":
+		return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
 	if who == "":
 		return ""
-	if for_mode == "owner":
-		return who if Roles.OWNERS.has(who) else ""
 	return who if for_mode == FREE else ""
 
 
@@ -76,9 +111,12 @@ func new_game(for_mode: String) -> void:
 	mode = for_mode
 	active = MODES.has(for_mode)
 	player_as = derive_player_as(for_mode)
+	if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
+		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
 	Game.vars["start_seated"] = player_as != ""
 	day = 1
 	rep = START_REP
+	scars = 0
 	cash = 0
 	history = []
 	_awaiting = false
@@ -121,12 +159,16 @@ func continue_game(for_mode: String) -> bool:
 	active = true
 	day = int(cfg.get_value("campaign", "day", 1))
 	rep = int(cfg.get_value("campaign", "rep", START_REP))
+	scars = int(cfg.get_value("campaign", "scars", 0))
 	cash = int(cfg.get_value("campaign", "cash", 0))
 	history = cfg.get_value("campaign", "history", [])
 	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
 	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
 	var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
 	player_as = saved_as if World.CAST.has(saved_as) else ""
+	if for_mode == "owner" and not Roles.OWNERS.has(player_as):
+		player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
+		PLAYER.current_character = "office_alan"
 	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
 	Msp.reset()
@@ -165,6 +207,7 @@ func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("campaign", "day", day)
 	cfg.set_value("campaign", "rep", rep)
+	cfg.set_value("campaign", "scars", scars)
 	cfg.set_value("campaign", "cash", cash)
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
@@ -281,7 +324,7 @@ func _make_report() -> Dictionary:
 			+ Shift.rep_delta()
 		),
 		-10,
-		8
+		daily_cap()
 	)
 	var grade := "D"
 	if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
@@ -333,7 +376,13 @@ func _end_day() -> void:
 		r["bankrupt"] = books.bankrupt
 	else:
 		cash += int(r.pay)
-	rep = clampi(rep + int(r.rep_delta), 0, 100)
+	if mode == "tech":
+		if int(r.reopened) >= 3:
+			add_scar(2)  # a reopen storm: the clients stop trusting your closes
+		elif scars > 0 and r.grade in ["S", "A"]:
+			scars -= 1
+		r["rep_cap"] = rep_cap()
+	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
 	if r.get("bankrupt", false):
 		rep = 0
 	r["rep"] = rep

@@ -10,8 +10,9 @@ extends CanvasLayer
 # Play and launches the game once the room is up) and in Free Play with Shift+F10. It only calls the public functions
 # of the games: Outings.start(id, false, options), PrinterGame.start(callback, model, options), Nerf.start_war() and
 # Mutators.set_forced(). Rows by game:
-#   KARAOKE  SONG      RANDOM or fixed chart 1-4 (the same notes every take)
-#   ESCAPE   CLUE SET  RANDOM or fixed code 1-9;  CODE LENGTH 3 or 4 (4 digits is the overlay version);  VIEW ROOM or PANEL
+#   KARAOKE  SONG      the tier's pick (the card at the mic) or one of Outings.SONGS by title (even a locked one)
+#   ESCAPE   DIGITS    the tier's code length, 3 or 4;  BOARD / CLOCK / PLAQUE / SHELF  ANY or one of that zone's
+#            recipes (Outings.RECIPES: a digit the recipe can show is dealt); the rest of the deal comes from the seed
 #   DINNER   TABLE     all three, or two of Alan, Garrison and Dan
 #   PRINTER  MODEL     the six printer models (a fixed take plays the practice set of the seed, so the questions repeat)
 # FIXED TAKE (Difficulty.fixed_take): every launch restarts all random streams (and the global generator) from the
@@ -42,10 +43,9 @@ var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
 var game_i := 0
-var chart := 0  # 0 = random
-var clue_set := 0  # 0 = random
-var code_len := 3
-var panel_view := false
+var song_i := 0  # 0 = the usual pick, else index + 1 into Outings.SONGS
+var digits := 0  # 0 = the tier's, else 3 or 4
+var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
 var model_i := 0
 var mutator := ""
@@ -84,15 +84,18 @@ func outing_options() -> Dictionary:
 	var out := {}
 	match game_id():
 		"karaoke":
-			if chart > 0:
-				out["chart"] = chart
+			if song_i > 0:
+				out["song"] = str(Outings.SONGS[song_i - 1].id)
 		"escape":
-			if clue_set > 0:
-				out["set"] = clue_set
-			if code_len == 4:
-				out["code_len"] = 4
-			if panel_view or code_len == 4:
-				out["panel"] = true
+			if digits > 0:
+				out["digits"] = digits
+			var recipes := {}
+			for zone in Outings.CLUE_ZONES:
+				var at := int(recipe_i.get(zone, 0))
+				if at > 0:
+					recipes[zone] = str(Outings.RECIPES[zone][at - 1])
+			if not recipes.is_empty():
+				out["recipes"] = recipes
 		"dinner":
 			if table_i > 0:
 				out["table"] = TABLES[table_i].duplicate()
@@ -267,11 +270,13 @@ func rows() -> Array:
 	var out := [{"id": "game", "label": "GAME", "value": str(GAME_LABELS[game_id()])}]
 	match game_id():
 		"karaoke":
-			out.append({"id": "chart", "label": "SONG", "value": "RANDOM" if chart == 0 else "CHART %d" % chart})
+			var title := "CARD AT MIC" if song_i == 0 else str(Outings.SONGS[song_i - 1].title)
+			out.append({"id": "song", "label": "SONG", "value": title})
 		"escape":
-			out.append({"id": "set", "label": "CLUE SET", "value": "RANDOM" if clue_set == 0 else "SET %d" % clue_set})
-			out.append({"id": "len", "label": "CODE DIGITS", "value": str(code_len)})
-			out.append({"id": "view", "label": "VIEW", "value": "PANEL" if (panel_view or code_len == 4) else "ROOM"})
+			out.append({"id": "digits", "label": "CODE DIGITS", "value": "TIER" if digits == 0 else str(digits)})
+			for zone in Outings.CLUE_ZONES.slice(0, digits if digits > 0 else maxi(3, Difficulty.i("escape.digits"))):
+				var at := int(recipe_i.get(zone, 0))
+				out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
 		"dinner":
 			out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
 		"printer":
@@ -306,22 +311,20 @@ func change(step: int) -> void:
 		"game":
 			game_i = (game_i + step + GAMES.size()) % GAMES.size()
 			sel = 0
-		"chart":
-			chart = (chart + step + CHARTS + 1) % (CHARTS + 1)
-		"set":
-			clue_set = (clue_set + step + SETS + 1) % (SETS + 1)
-		"len":
-			code_len = 4 if code_len == 3 else 3
-		"view":
-			panel_view = not panel_view
-			if code_len == 4:
-				code_len = 3
+		"song":
+			song_i = (song_i + step + Outings.SONGS.size() + 1) % (Outings.SONGS.size() + 1)
+		"digits":
+			digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
 		"table":
 			table_i = (table_i + step + TABLES.size()) % TABLES.size()
 		"model":
 			model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
 		"take":
 			set_fixed_take(not Difficulty.fixed_take)
+		_ when str(current_row().id).begins_with("rec_"):
+			var zone := str(current_row().id).substr(4)
+			var n: int = Outings.RECIPES[zone].size() + 1
+			recipe_i[zone] = (int(recipe_i[zone]) + step + n) % n
 		"mutator":
 			var ids: Array = [""]
 			ids.append_array(Mutators.ids_for("tech"))
@@ -352,7 +355,7 @@ func activate() -> void:
 			else:
 				close(false)
 				launch()
-		"take", "mutator", "game", "chart", "set", "len", "view", "table", "model":
+		_:
 			change(1)
 
 

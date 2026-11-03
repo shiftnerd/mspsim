@@ -13,6 +13,7 @@ signal ticket_added(ticket: Dictionary)
 signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
+const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
 	{
 		"name": "Acme Dental Group",
@@ -187,8 +188,8 @@ const FIXES := {
 	"av": "RUN AV SCAN",
 	"restore": "RESTORE BACKUP",
 	"adobe": "REPAIR ADOBE READER",
-	"shadow": "RECOVER SHADOW COPIES",
-	"pay": "PAY THE RANSOM (BITCOIN)",
+	"shadow": "SHADOW COPIES",
+	"pay": "PAY THE RANSOM",
 	"save": "ASK USER TO SAVE",
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
@@ -591,13 +592,29 @@ func create_ticket(client: int, problem: int, source: String) -> Dictionary:
 	return create_problem(client, PROBLEMS[problem], source)
 
 
-func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary:
+# force: a story job must always get its ticket, even when every machine of the client is already broken
+func create_problem(
+	client: int, prob: Dictionary, source: String, force := false
+) -> Dictionary:
 	var contact: String = CLIENTS[client].contact
 	var eps := []
 	for ep in endpoints:
 		var is_server: bool = ep.name.contains("SRV")
 		if ep.client == client and ep.problem == "" and is_server == prob.get("server", false):
 			eps.append(ep)
+	if eps.is_empty() and force:
+		if prob.get("server", false):
+			for ep in endpoints:
+				if ep.client == client and ep.name.contains("SRV"):
+					eps.append(ep)  # the one server: the bigger job takes it over
+		else:
+			var count := 0
+			for ep in endpoints:
+				if ep.client == client and not ep.name.contains("SRV"):
+					count += 1
+			var extra := _endpoint(client, "PC-%02d" % (count + 1), "Windows 7 Pro")
+			endpoints.append(extra)
+			eps.append(extra)
 	if eps.is_empty():
 		return {}
 	var picked: Dictionary = Mutators.pick_endpoint(eps)
@@ -605,6 +622,8 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
 	picked.problem = prob.fix
 	picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
 	picked["asked"] = false
+	picked.erase("restore_failed")
+	picked.erase("shadow_tried")
 	var t := {
 		"id": _next_id,
 		"client": client,
@@ -721,6 +740,10 @@ func close_ticket(id: int) -> String:
 	var t := ticket(id)
 	if t.is_empty() or t.status == "Closed":
 		return ""
+	if not t.fix_done and t.fix == "restore":
+		var ransomed := endpoint(str(t.endpoint))
+		if not ransomed.is_empty() and ransomed.get("restore_failed", false):
+			_ransom_lost(ransomed, "Gave up on the files. Data lost.")  # closing it is giving up
 	if not t.fix_done:
 		t.status = "In Progress"
 		t.sla_left = maxf(t.sla_left, t.sla_total * 0.4)
@@ -744,7 +767,13 @@ func close_ticket(id: int) -> String:
 	t.notes.append("Ticket closed.")
 	if t.internal:
 		_internal.erase(t.desk)
+	if str(t.get("outcome", "")) == "lost":
+		t.notes.append("Ticket closed. The data is gone.")
+		changed.emit()
+		return "CLOSED - DATA LOST"  # no points, and it does not count as a good close
 	var points := 10 if not t.breached else 4
+	if str(t.get("outcome", "")) in ["paid", "partial"]:
+		points = 4
 	score += points
 	closed_ok += 1
 	Career.note_ticket(str(t.fix))
@@ -1008,6 +1037,9 @@ func backup_check(client: int) -> Dictionary:
 
 func backup_rerun(client: int) -> void:
 	var b: Dictionary = backups[client]
+	for ep in endpoints:
+		if ep.client == client and ep.problem == "restore":
+			return  # the job would only copy the encrypted files
 	if not b.ok:
 		b.ok = true
 		b.good_day = Campaign.day
@@ -1025,6 +1057,19 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
 	spawned_today = 0
+	# a desktop sitting in its box: Vic reminds you where the job is, for a few days
+	if Campaign.active and project_busy() and int(project.get("since", day)) < day:
+		if int(project.get("nagged", 0)) < 3:
+			project["nagged"] = int(project.get("nagged", 0)) + 1
+			var waiting := ticket(int(project.ticket))
+			if not waiting.is_empty() and waiting.status != "Closed":
+				send_text(
+					"Vic",
+					(
+						"%s is still waiting on the new desktop. Ticket #%d, RMM PROJECT tab on %s."
+						% [CLIENTS[int(project.client)].contact, int(waiting.id), waiting.endpoint]
+					)
+				)
 	if Campaign.active and Campaign.mode == "tech" and day == 1:
 		_spawn_t = 75.0  # time to look around before the first ticket
 	for c in backups.size():
@@ -1059,6 +1104,8 @@ func start_project(ticket_id: int) -> void:
 		"verified": false,
 		"done": false,
 		"result": {},
+		"since": Campaign.day,
+		"nagged": 0,
 	}
 	for it in INSTALL_ITEMS:
 		project.found[it.id] = it.hidden == ""
@@ -1159,6 +1206,8 @@ func project_handover() -> Dictionary:
 		rep_delta -= 3 if project.backup else 8
 	score += int((pts - 50) / 2.5) - (0 if outcome != "lost" else 15)
 	Campaign.adjust_rep(rep_delta)
+	if outcome != "ok":
+		Campaign.add_scar(8 if outcome == "lost" else 2)
 	Skills.add_xp("servers", 10)
 	project.done = true
 	project.result = {"pts": pts, "grade": grade, "lost": lost, "outcome": outcome}
@@ -1169,6 +1218,12 @@ func project_handover() -> Dictionary:
 		var endpoint_state := endpoint(str(t.endpoint))
 		if not endpoint_state.is_empty():
 			endpoint_state.problem = ""
+		# the handover is the work: the ticket closes with it instead of sitting open for days
+		if t.status != "Closed":
+			t.status = "Closed"
+			t.notes.append("Ticket closed with the handover.")
+			if grade in ["S", "A", "B"] and outcome != "lost":
+				closed_ok += 1
 	var who: String = CLIENTS[int(project.client)].contact
 	var address: String = who + " <" + CLIENTS[int(project.client)].mail + ">"
 	var text := "Everything is just where I left it. Great job! - " + who
@@ -1191,54 +1246,53 @@ func mail(from_name: String, subject: String, body: String) -> void:
 	changed.emit()
 
 
-# ransomware: with a good backup it is a save, without one the data is gone
+# ransomware: with a good backup it is a save; without one the restore fails and the other options stay open
 func _restore(ep: Dictionary) -> String:
 	var contact: String = CLIENTS[ep.client].contact
 	var address: String = contact + " <" + CLIENTS[ep.client].mail + ">"
-	ep.problem = ""
 	var good: bool = backups[ep.client].ok
+	if not good:
+		var first: bool = not ep.get("restore_failed", false)
+		ep["restore_failed"] = true
+		for t in tickets:
+			if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore" and first:
+				t.notes.append(
+					(
+						"Backup restore FAILED: the last good copy is from day %d and unusable. "
+						+ "Options left: shadow copies, pay the ransom, or give up the files."
+					)
+					% int(backups[ep.client].good_day)
+				)
+		if first:
+			send_text("Boss", "The backup will not restore?! Try the shadow copies. Do not pay yet.")
+		changed.emit()
+		return "BACKUP FAILED. TRY SHADOW COPIES OR PAY."
+	ep.problem = ""
 	for t in tickets:
 		if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
 			t.fix_done = true
-			t.notes.append(
-				"Restored from backup. No data lost." if good else "NO USABLE BACKUP. Data lost."
-			)
-	if good:
-		score += 15
-		Campaign.adjust_rep(5)
-		Skills.add_xp("security", 15)
-		_mail(
-			address,
-			"RE: " + RANSOM.summary,
-			"Everything is back. You saved the whole firm. Thank you!!! - " + contact,
-			0
-		)
-		Story.flags["ransom"] = "saved"
-	else:
-		score -= 30
-		Campaign.adjust_rep(-15)
-		_mail(
-			address,
-			"RE: " + RANSOM.summary,
-			(
-				"You are saying there is NO BACKUP? Years of case files are gone. "
-				+ "We are reviewing our contract. - "
-				+ contact
-			),
-			0
-		)
-		send_text("Boss", "No backup?! We need to talk about backups. Tomorrow. My office.")
-		Story.flags["ransom"] = "lost"
+			t.notes.append("Restored from backup. No data lost.")
+	score += 15
+	Campaign.adjust_rep(5)
+	Skills.add_xp("security", 15)
+	_mail(
+		address,
+		"RE: " + RANSOM.summary,
+		"Everything is back. You saved the whole firm. Thank you!!! - " + contact,
+		0
+	)
+	Story.flags["ransom"] = "saved"
 	changed.emit()
-	return "RESTORED. NO DATA LOST." if good else "NO BACKUP FOUND. DATA LOST."
+	return "RESTORED. NO DATA LOST."
 
 
 # CryptoLocker (2013): with no backup you still have options, none of them good
-func _ransom_close(ep: Dictionary, note: String) -> void:
+func _ransom_close(ep: Dictionary, note: String, outcome := "lost") -> void:
 	ep.problem = ""
 	for t in tickets:
 		if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
 			t.fix_done = true
+			t.outcome = outcome  # a lost recovery earns nothing when it is closed
 			t.notes.append(note)
 
 
@@ -1247,6 +1301,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 	_ransom_close(ep, note)
 	score -= 30
 	Campaign.adjust_rep(-15)
+	Campaign.add_scar(15)
 	_mail(
 		CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">",
 		"RE: " + RANSOM.summary,
@@ -1262,7 +1317,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 func _ransom_pay(ep: Dictionary) -> String:
 	var contact: String = CLIENTS[ep.client].contact
 	if Difficulty.rng("msp.fix").randf() < 0.7:
-		_ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.")
+		_ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.", "paid")
 		score -= 5
 		Campaign.adjust_rep(-2)
 		Story.flags["ransom"] = "paid"
@@ -1282,9 +1337,11 @@ func _ransom_pay(ep: Dictionary) -> String:
 
 
 func _ransom_shadow(ep: Dictionary) -> String:
+	if ep.get("shadow_tried", false):
+		return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
 	if Difficulty.rng("msp.fix").randf() < 0.4:
 		var contact: String = CLIENTS[ep.client].contact
-		_ransom_close(ep, "Recovered most files from shadow copies. Some are gone.")
+		_ransom_close(ep, "Recovered most files from shadow copies. Some are gone.", "partial")
 		score -= 8
 		Campaign.adjust_rep(-3)
 		Story.flags["ransom"] = "partial"
@@ -1299,6 +1356,7 @@ func _ransom_shadow(ep: Dictionary) -> String:
 		)
 		changed.emit()
 		return "SHADOW COPIES RECOVERED MOST FILES."
+	ep["shadow_tried"] = true
 	return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
 
 
@@ -1327,6 +1385,8 @@ func _process(delta: float) -> void:
 				t.breached = true
 				breached += 1
 				score -= 5
+				if int(t.pri) == 1:
+					Campaign.add_scar(2)  # an unworked P1 is remembered
 				Growth.note_escalation(t)
 				if not t.internal:
 					Sales.adjust(int(t.client), -8)
@@ -1372,6 +1432,8 @@ func _watch_desks(dt: float) -> void:
 
 
 func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> void:
+	if from_name.begins_with("Morgan"):
+		from_name = MORGAN_FROM  # one sender format for the manager, whichever way the story wrote it
 	emails.push_front(
 		{
 			"id": _next_mail,

@@ -217,11 +217,11 @@ func _init() -> void:
 		"the weekly row, and Alan says you are the bottleneck"
 	)
 	cards.pick(0)
-	_check(cards.is_open and cards.options.size() >= 2, "the learner card")
-	cards.pick(1)
+	_check(cards.is_open and cards.options.size() >= 1, "the learner card (the helper is not on the list)")
+	cards.pick(0)
 	_check(cards.is_open, "then the skill")
 	cards.pick(0)
-	_check(g.learner == "Dan" and g.focus != "" and not cards.is_open, "plan set for Dan")
+	_check(g.learner == "Maya" and g.focus != "" and not cards.is_open, "plan set for Maya (X4: Dan is the helper)")
 	_check(g.board_lines().size() >= 2, "the Boardroom TEAM tab shows hours and the plan")
 
 	msp.reset()

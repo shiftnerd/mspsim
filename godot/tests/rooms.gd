@@ -88,6 +88,7 @@ func _init() -> void:
 		seen += 1 if current_scene.get_node_or_null("Actors/" + who) != null else 0
 	_check(seen == 4, "and they are standing in the room (%d of 4)" % seen)
 	o.press(KEY_ENTER)
+	root.get_node("Cards").pick(0)  # the song card at the mic
 	var lyrics := current_scene.get_node("Fx/Lyrics")
 	_check(lyrics.kind == "lyrics", "the lyrics screen is playing")
 	o._finish(1)
