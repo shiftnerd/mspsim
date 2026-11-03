@@ -40,7 +40,6 @@ Onsite="*res://scripts/onsite.gd"
 PrinterGame="*res://scripts/printer_game.gd"
 Strings="*res://scripts/strings.gd"
 
-McpBridge="*res://.mcp/godot-runtime/bridge/mcp_bridge.gd"
 [display]
 
 window/size/viewport_width=368
