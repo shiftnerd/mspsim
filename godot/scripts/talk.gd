@@ -359,7 +359,22 @@ func reset() -> void:
 
 
 func available(who: String) -> bool:
-	return Campaign.active and SPECIALTY.has(who) and not Cards.is_open
+	return Campaign.active and (SPECIALTY.has(who) or Crew.is_hire(who)) and not Cards.is_open
+
+
+# a tech you hired (C6) has no lines of their own: they borrow Sam's voice and a specialty from their strongest area
+func voice(who: String) -> String:
+	return who if GREETINGS.has(who) else "Sam"
+
+
+func specialty(who: String) -> String:
+	if SPECIALTY.has(who):
+		return str(SPECIALTY[who])
+	var best := "networking"
+	for a in ["powershell", "networking", "servers", "security"]:
+		if Crew.area_level(who, a) > Crew.area_level(who, best):
+			best = a
+	return best if Skills.NAMES.has(best) else "servers"
 
 
 func tier(who: String) -> String:
@@ -454,7 +469,7 @@ func _leave() -> void:
 # ---- the topics --------------------------------------------------------------------------------
 func small_talk() -> String:
 	Social.note_chat(_who)
-	var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[_who]
+	var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[voice(_who)]
 	var text: String = lines[randi() % lines.size()]
 	_bubble(Social.glyph(_who))
 	if tier(_who) == "cold":
@@ -479,11 +494,11 @@ func tip() -> String:
 	_bubble("!")
 	var text := _state_tip()
 	if text == "":
-		var pool: Array = TIPS_GENERIC[_who]
+		var pool: Array = TIPS_GENERIC[voice(_who)]
 		text = pool[randi() % pool.size()]
 	if tier(_who) == "cold":
 		return text.split(".")[0] + ". That is all you are getting."
-	var skill := str(SPECIALTY[_who])
+	var skill := specialty(_who)
 	if Social.is_friendly(_who) and int(_taught.get(_who, -1)) != Campaign.day:
 		_taught[_who] = Campaign.day
 		Skills.add_xp(skill, LESSON_XP)
@@ -542,7 +557,7 @@ func _state_tip() -> String:
 func _greeting(who: String) -> String:
 	if Campaign.mode == "sales" and VIC_GREETINGS.has(who):
 		return _fill(str(VIC_GREETINGS[who][tier(who)]))
-	return str(GREETINGS[who][tier(who)])
+	return str(GREETINGS[voice(who)][tier(who)])
 
 
 func _sales_menu(text: String) -> void:

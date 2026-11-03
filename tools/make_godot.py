@@ -3044,7 +3044,16 @@ func _watch_outage(delta: float) -> void:
 
 # the cast row of anybody in the building (CAST, or a service desk tech)
 func row(n: String) -> Dictionary:
-    return CAST[n] if CAST.has(n) else CREW_CAST[n]
+    if CAST.has(n):
+        return CAST[n]
+    if CREW_CAST.has(n):
+        return CREW_CAST[n]
+    return Crew.hire_row(n)  # a tech you hired (C6): hot-desks at the conference table
+
+
+# every name that can be a service tech: Sam and Terry, then the pool the hires are drawn from
+func crew_names() -> Array:
+    return CREW_CAST.keys() + Crew.HIRE_SHEETS.keys()
 
 
 func _make_char(n: String) -> Dictionary:
@@ -3076,7 +3085,7 @@ func roster_gone() -> Array:
     if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
         gone.append("Maya")
     # the service techs are only here in the service campaign, and only while they work for you (C5)
-    for n in CREW_CAST:
+    for n in crew_names():
         if not (Campaign.active and Campaign.mode == "service" and Crew.has(n) and not Crew.is_gone(n)):
             gone.append(n)
     # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
@@ -3113,7 +3122,7 @@ func apply_roster() -> void:
             if st.node != null and is_instance_valid(st.node):
                 st.node.queue_free()
             chars.erase(n)
-    for n in CAST.keys() + CREW_CAST.keys():
+    for n in CAST.keys() + crew_names():
         if not gone.has(n) and not chars.has(n):
             chars[n] = _make_char(n)
             if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
@@ -3240,7 +3249,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
         var shift := 0.0
         if i < 0:
             i = 2  # a service tech takes the spot of Dan (who is the player), side by side
-            shift = 12.0 * float(CREW_CAST.keys().find(n))
+            shift = 12.0 * float(mini(crew_names().find(n), 6))
         var st: Dictionary = chars[n]
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
@@ -3707,7 +3716,7 @@ func start_all_hands() -> void:
             continue
         send_to_meeting(n, "Seat%d" % i, 90.0)
         i += 1
-    for n in CREW_CAST:  # the service techs take the next chairs (C5)
+    for n in crew_names():  # the service techs take the next chairs (C5)
         if chars.has(n) and i <= 6:
             send_to_meeting(n, "Seat%d" % i, 90.0)
             i += 1
@@ -5234,6 +5243,10 @@ func _input(event: InputEvent) -> void:
             _canvas.queue_redraw()
             get_viewport().set_input_as_handled()
             return
+        if app == "knowledge" and _knowledge_key(event):
+            _canvas.queue_redraw()
+            get_viewport().set_input_as_handled()
+            return
         match event.keycode:
             KEY_ESCAPE:
                 escape()
@@ -5401,6 +5414,8 @@ func activate(id: String) -> void:
             _learn_action(parts)
         "dsp":
             dispatch.act(parts)
+        "kb":
+            Service.kb.act(parts)
         "btab":
             board_tab = parts[1]
         "crm":
@@ -5745,6 +5760,8 @@ func _paint() -> void:
             Crm.paint(self)
         "dispatch":
             _paint_dispatch()
+        "knowledge":
+            _paint_knowledge()
         "lync":
             _paint_lync()
         "nerds":
@@ -5795,6 +5812,7 @@ func _paint_taskbar() -> void:
             items.insert(4, ["app:boardroom", "BOARDROOM"])
         if Campaign.mode == "service":
             items.insert(4, ["app:dispatch", "DISPATCH"])
+            items.insert(5, ["app:knowledge", "KNOWLEDGE"])
         for i in items.size():
             _button(items[i][0], Rect2(1, y - (items.size() - i) * 9, 54, 9), items[i][1], true, Color("e9ecf1"))
     var net := "ok" if app == "site" else Net.desk_state(desk)
@@ -5853,6 +5871,11 @@ func _icon(kind: String, p: Vector2) -> void:
             for i in 3:
                 _fill(Rect2(p.x + 1 + i * 5, p.y + 4, 4, 3), PSA_BLUE)
                 _fill(Rect2(p.x + 1 + i * 5, p.y + 8, 4, 3), AMBER if i == 1 else GREEN)
+        "knowledge":
+            _fill(Rect2(p + Vector2(1, 0), Vector2(14, 12)), Color("e8f3ec"))
+            _fill(Rect2(p + Vector2(1, 0), Vector2(3, 12)), Color("2f6e5a"))
+            for i in 4:
+                _fill(Rect2(p.x + 6, p.y + 2 + i * 3, 8, 1), Color("5aa07a") if i != 2 else AMBER)
         "stats":
             _fill(Rect2(p, Vector2(15, 12)), Color("e8ecf2"))
             _fill(Rect2(p.x + 2, p.y + 6, 3, 5), GREEN)
@@ -5986,6 +6009,7 @@ func _paint_desktop() -> void:
         icons.append(["boardroom", "BOARDROOM", 0])
     if Campaign.mode == "service":
         icons.append(["dispatch", "DISPATCH", dispatch.tickets_in("").size()])
+        icons.append(["knowledge", "KNOWLEDGE", 0])
     var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
     for i in icons.size():
         var p := Vector2(a.position.x + 8 + float(i / per_col) * 52.0, a.position.y + 5 + float(i % per_col) * 27.0)
@@ -6561,6 +6585,25 @@ func _dispatch_key(event: InputEventKey) -> bool:
     if key_name == "tab" and event.shift_pressed:
         key_name = "shift_tab"
     return dispatch.key(key_name)
+
+
+# ---- ConnectWhy Knowledge (service manager campaign, C6: the runbooks; the app itself is scripts/knowledge.gd) --------
+func _paint_knowledge() -> void:
+    var body := _window("CONNECTWHY KNOWLEDGE - RUNBOOKS", Color("2f6e5a"))
+    if _offline("CONNECTWHY KNOWLEDGE - SERVER NOT AVAILABLE.", body):
+        return
+    Service.kb.paint(self, body)
+
+
+func _knowledge_key(event: InputEventKey) -> bool:
+    var names := {
+        KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
+        KEY_KP_ENTER: "enter", KEY_W: "w", KEY_H: "h", KEY_T: "t", KEY_R: "r", KEY_D: "d", KEY_C: "c",
+        KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_BRACKETLEFT: "pgup", KEY_BRACKETRIGHT: "pgdn",
+    }
+    if not names.has(event.keycode):
+        return false
+    return Service.kb.key(str(names[event.keycode]))
 
 
 func _paint_lync() -> void:
@@ -9239,17 +9282,21 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
     var big := size.x / float(sc) >= 140.0
     var pw := _panel_w(sc, size)
     var groups := _groups()
+    var left: Array = report.get("left_groups", [])  # extra groups: under the grade box when wide, after the others when narrow
     var y := 11.0
     var inner := pw - 8.0
     var hero_w := 112.0
     if wide:
         var hh := _hero_block(4.0, y, hero_w, true, draw)
         var lx := 4.0 + hero_w + 6.0
-        if draw:
-            _r(4.0 + hero_w + 2.0, y, 1.0, hh, LINE)
         var lh := _list(lx, y, pw - lx - 4.0, groups, draw)
+        if not left.is_empty():
+            hh += 3.0 + _list(4.0, y + hh + 3.0, hero_w, left, draw)
+        if draw:
+            _r(4.0 + hero_w + 2.0, y, 1.0, maxf(hh, lh), LINE)
         y += maxf(hh, lh)
     else:
+        groups = groups + left
         y += _hero_block(4.0, y, inner, big, draw) + 3.0
         y += _list(4.0, y, inner, groups, draw)
     var ending := str(report.get("ending", ""))
@@ -14479,7 +14526,9 @@ func _paint() -> void:
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
     var pw := minf(size.x - 8.0, 250.0)
     var chars := int((pw - 10.0) / 4.0)
-    var lines := _wrap(text, chars)
+    var lines := []
+    for para in text.split("\\n"):
+        lines.append_array(_wrap(para, chars))
     var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + float(options.size()) * 11.0 + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
     var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
@@ -22309,7 +22358,22 @@ func reset() -> void:
 
 
 func available(who: String) -> bool:
-    return Campaign.active and SPECIALTY.has(who) and not Cards.is_open
+    return Campaign.active and (SPECIALTY.has(who) or Crew.is_hire(who)) and not Cards.is_open
+
+
+# a tech you hired (C6) has no lines of their own: they borrow Sam's voice and a specialty from their strongest area
+func voice(who: String) -> String:
+    return who if GREETINGS.has(who) else "Sam"
+
+
+func specialty(who: String) -> String:
+    if SPECIALTY.has(who):
+        return str(SPECIALTY[who])
+    var best := "networking"
+    for a in ["powershell", "networking", "servers", "security"]:
+        if Crew.area_level(who, a) > Crew.area_level(who, best):
+            best = a
+    return best if Skills.NAMES.has(best) else "servers"
 
 
 func tier(who: String) -> String:
@@ -22394,7 +22458,7 @@ func _leave() -> void:
 # ---- the topics --------------------------------------------------------------------------------
 func small_talk() -> String:
     Social.note_chat(_who)
-    var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[_who]
+    var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[voice(_who)]
     var text: String = lines[randi() % lines.size()]
     _bubble(Social.glyph(_who))
     if tier(_who) == "cold":
@@ -22419,11 +22483,11 @@ func tip() -> String:
     _bubble("!")
     var text := _state_tip()
     if text == "":
-        var pool: Array = TIPS_GENERIC[_who]
+        var pool: Array = TIPS_GENERIC[voice(_who)]
         text = pool[randi() % pool.size()]
     if tier(_who) == "cold":
         return text.split(".")[0] + ". That is all you are getting."
-    var skill := str(SPECIALTY[_who])
+    var skill := specialty(_who)
     if Social.is_friendly(_who) and int(_taught.get(_who, -1)) != Campaign.day:
         _taught[_who] = Campaign.day
         Skills.add_xp(skill, LESSON_XP)
@@ -22470,7 +22534,7 @@ func _state_tip() -> String:
 func _greeting(who: String) -> String:
     if Campaign.mode == "sales" and VIC_GREETINGS.has(who):
         return _fill(str(VIC_GREETINGS[who][tier(who)]))
-    return str(GREETINGS[who][tier(who)])
+    return str(GREETINGS[voice(who)][tier(who)])
 
 
 func _sales_menu(text: String) -> void:
@@ -24568,13 +24632,14 @@ var CREW_TEXT: Dictionary = DEFAULT_CREW_TEXT.duplicate(true)
 # the days' scripted events: at (clock), kind mail / memo / beat / incident / friday
 const DEFAULT_DAYS := {
     1: [{"at": 9.4, "kind": "beat", "id": "handover"}, {"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "The desk is yours", "body": "Dan, welcome to the chair. Each morning there is a huddle: pick the focus for the day. Talk to your people with E, they notice. Alan and Garrison will send memos that disagree with each other. Do not try to please both every time. - Morgan"}],
-    3: [{"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "Your own queue", "body": "You can still pick up tickets with your own PSA and RMM when the crew is stuck. Just remember every minute at the keyboard is a minute nobody is looking at the board. - Morgan"}],
+    3: [{"at": 9.1, "kind": "mail", "from": "Morgan Reyes - Manager", "subject": "Your own queue", "body": "You can still pick up tickets with your own PSA and RMM when the crew is stuck. Just remember every minute at the keyboard is a minute nobody is looking at the board. - Morgan"}, {"at": 9.8, "kind": "design"}],
     4: [{"at": 10.5, "kind": "beat", "id": "xp"}],
-    6: [{"at": 10.5, "kind": "beat", "id": "vic"}],
+    6: [{"at": 10.5, "kind": "beat", "id": "vic"}, {"at": 11.6, "kind": "hire"}],
     7: [{"at": 10.2, "kind": "incident", "id": "rdp", "book": "rdp"}],
     9: [{"at": 10.2, "kind": "incident", "id": "ransom", "book": "ransom"}],
     10: [{"at": 16.0, "kind": "friday"}],
     11: [{"at": 10.2, "kind": "incident", "id": "rack", "book": "rack"}],
+    12: [{"at": 11.0, "kind": "hire"}],
     13: [{"at": 10.2, "kind": "incident", "id": "email24", "book": "email24"}],
     15: [{"at": 10.2, "kind": "incident", "id": "migration", "book": "migration"}, {"at": 16.0, "kind": "friday"}],
     16: [{"at": 10.5, "kind": "beat", "id": "nosale"}],
@@ -24603,6 +24668,213 @@ const DEFAULT_REVIEW := {
 }
 var REVIEW: Dictionary = DEFAULT_REVIEW.duplicate(true)
 
+const KNOWLEDGE := preload("res://scripts/knowledge.gd")
+# ---- C6 (V3): runbooks, desk design, hiring for fit, onboarding, retention events. All patchable text lives in these tables. ----
+const KB_ORDER := ["spooler", "password", "clear_temp", "reboot", "av", "restore", "adobe", "rdp", "ransom", "rack", "email24", "migration"]
+const DEFAULT_RUNBOOKS := {
+    "spooler": {"label": "PRINT SPOOLER", "kind": "ticket", "quiz": {"q": "A printer shows queued jobs that never print. What do you do first?", "options": ["RESTART THE PRINT SPOOLER AND TEST A PAGE", "REIMAGE THE PC", "REBOOT THE SERVER"], "answer": 0}},
+    "password": {"label": "PASSWORD RESET", "kind": "ticket", "quiz": {"q": "Somebody emails to say they are locked out. What comes first?", "options": ["CONFIRM IT IS REALLY THEM, THEN RESET", "RESET IT FOR ANYONE WHO ASKS", "SEND THE ADMIN PASSWORD"], "answer": 0}},
+    "clear_temp": {"label": "SLOW PC CLEANUP", "kind": "ticket", "quiz": {"q": "A PC crawls and the disk is full. What is the safe order?", "options": ["CLEAR TEMP FILES, THEN CHECK THE DISK", "DELETE THE USER PROFILE", "FORMAT AND START OVER"], "answer": 0}},
+    "reboot": {"label": "BLUE SCREEN / REBOOT", "kind": "ticket", "quiz": {"q": "A frozen PC needs a restart. What do you do before you press the button?", "options": ["ASK THE USER TO SAVE THEIR WORK", "RESTART AT ONCE", "UNPLUG IT FROM THE WALL"], "answer": 0}},
+    "av": {"label": "POP-UPS / VIRUS", "kind": "ticket", "quiz": {"q": "A PC is full of pop-ups and ads. What is the first move?", "options": ["TAKE IT OFF THE NETWORK, THEN SCAN", "CLOSE THE POP-UPS AND MOVE ON", "INSTALL A SECOND ANTIVIRUS"], "answer": 0}},
+    "restore": {"label": "RESTORE FROM BACKUP", "kind": "ticket", "quiz": {"q": "Files are encrypted and the client wants them back. What first?", "options": ["CHECK THE BACKUP IS GOOD, THEN RESTORE", "PAY BEFORE LOOKING AT ANYTHING", "DELETE THE ENCRYPTED FILES"], "answer": 0}},
+    "adobe": {"label": "PDF READER WON'T PRINT", "kind": "ticket", "quiz": {"q": "The reader opens but will not print anything. Safest first fix?", "options": ["REPAIR THE READER AND PRINT A TEST", "REINSTALL WINDOWS", "TELL THEM TO USE THE FAX"], "answer": 0}},
+    "rdp": {"label": "RDP EXPOSED (JOB)", "kind": "job", "area": "security", "need": 2, "quiz": {"q": "Remote Desktop is open to the internet. What closes the door?", "options": ["A VPN OR A FIREWALL THAT BLOCKS GUESSING", "CHANGING THE PORT NUMBER ONLY", "A LONGER PASSWORD AND HOPE"], "answer": 0}},
+    "ransom": {"label": "RANSOMWARE (JOB)", "kind": "job", "area": "security", "need": 2, "quiz": {"q": "CryptoLocker is on a file server. What do you do first?", "options": ["ISOLATE IT, THEN RESTORE FROM BACKUP", "LEAVE IT RUNNING TO SEE WHAT HAPPENS", "PAY IT BEFORE ANYONE ASKS"], "answer": 0}},
+    "rack": {"label": "RACK DOWN (JOB)", "kind": "job", "area": "networking", "need": 2, "quiz": {"q": "The network rack came off the wall. Before you touch a cable?", "options": ["PHOTOGRAPH AND LABEL EVERY CABLE", "PULL THEM ALL AND SORT IT OUT LATER", "REBOOT THE SWITCH"], "answer": 0}},
+    "email24": {"label": "EMAIL OUTAGE NIGHT (JOB)", "kind": "job", "area": "servers", "need": 2, "quiz": {"q": "The mail server is down at night and the client runs 24x7. First?", "options": ["OPEN A PRIORITY CASE WITH THE VENDOR", "WAIT UNTIL MORNING", "REBUILD EVERY MAILBOX"], "answer": 0}},
+    "migration": {"label": "SERVER MIGRATION (JOB)", "kind": "job", "area": "servers", "need": 2, "quiz": {"q": "The cutover is tonight. What must be true before you start?", "options": ["THE BACKUP IS VERIFIED AND A ROLLBACK EXISTS", "NOBODY HAS EMAILED YOU", "THE OLD SERVER IS ALREADY OFF"], "answer": 0}},
+}
+var RUNBOOKS: Dictionary = DEFAULT_RUNBOOKS.duplicate(true)
+
+const DESIGN_ORDER := ["tiered", "swarm", "pods"]
+const DISPATCHER_WAGE := 520  # dollars a week for a dispatcher
+const POD_STIPEND := 40  # dollars a week per tech for pod leads
+const DEFAULT_DESIGNS := {
+    "card": {
+        "speaker": "Morgan Reyes - Manager",
+        "text": "Dan, the desk needs a shape. Alan wants tiers: easy tickets to L1, hard ones to L2, the owners as L3. Garrison wants everyone to live with their own clients. You can also let everybody take everything. Change your mind later and it costs two hours and a confused morning, once.",
+        "revisit": "You want to reshape the desk. It costs two manager hours, a morning of confusion and a little trust with both owners, and you only get this one change. Which design?",
+        "keep": "KEEP IT AS IT IS",
+        "dispatcher": "Who dispatches? You are the dispatcher by default: every ticket goes through your hands and your manager hours stay thin. A dispatcher costs money every week but gives you hours back and picks tickets up faster.",
+        "you": "I DISPATCH MYSELF",
+        "hire": "HIRE A DISPATCHER ($520 A WEEK)",
+        "done": "The desk is %s. %s",
+        "changed": "THE DESK IS %s NOW.",
+        "no_hours": "NEEDS 2 MANAGER HOURS",
+        "used": "ALREADY CHANGED ONCE",
+    },
+    "tiered": {
+        "label": "TIERED DESK", "short": "TIERED", "option": "TIERED: L1, L2 AND L3 LANES",
+        "text": "Easy tickets go to L1, harder ones to L2, the owners are L3. Clean handoffs and fewer reopens. The cost: seniors wait for work while juniors wait for seniors, and hot tickets cross lanes only when their own is full. It suits a desk that has a dispatcher.",
+        "note": "L1 AND L2 LANES. FEWER REOPENS, SLOWER TO FLEX.",
+        "trust": {"Alan": 4, "Garrison": -2},
+        "mail": {"Alan": ["Alan (Co-owner)", "Tiers", "Good. Levels, handoffs, escalation paths. That is how a desk grows up. Write it down. - Alan"], "Garrison": ["Garrison (Co-owner)", "Tiers", "I hope the clients do not feel the queue. Tell me if an L1 ticket waits while an L2 tech sits idle. - Garrison"]},
+    },
+    "swarm": {
+        "label": "SWARM DESK", "short": "SWARM", "option": "SWARM: EVERYONE TAKES EVERYTHING",
+        "text": "Nobody owns a lane. Whoever is free picks up whatever is next. Fast and flexible, and the board is a lively place. The cost: tickets go to the wrong person now and then, the SLA clock suffers when a hot one lands on the wrong desk, and more of them come back.",
+        "note": "ANYONE, ANYTHING. FASTER, BUT MIS-ALLOCATION AND REOPENS.",
+        "trust": {"Alan": -3, "Garrison": 3},
+        "mail": {"Alan": ["Alan (Co-owner)", "Swarm", "I will not argue with a free-for-all that closes tickets. I will argue when a password reset lands on the person who is rebuilding the firewall. - Alan"], "Garrison": ["Garrison (Co-owner)", "Swarm", "Love it. Everyone helps everyone, clients get answers faster. Keep it moving. - Garrison"]},
+    },
+    "pods": {
+        "label": "CLIENT PODS", "short": "PODS", "option": "PODS: A TECH FOR EACH CLIENT GROUP",
+        "text": "Each tech owns a few clients and learns them. Deep knowledge builds day by day and clients feel looked after. The cost: pods do not help each other much, a pod tech who is out or leaves leaves a hole, and pod leads cost more every week.",
+        "note": "ONE TECH PER CLIENT GROUP. DEEP KNOWLEDGE, DEARER, BRITTLE.",
+        "trust": {"Alan": -1, "Garrison": 4},
+        "mail": {"Alan": ["Alan (Co-owner)", "Pods", "Pods are fine if the knowledge leaves the pod. Make them write it down. - Alan"], "Garrison": ["Garrison (Co-owner)", "Pods", "A face for every client. That is a story I can sell. - Garrison"]},
+    },
+    "dispatcher": {
+        "you": {"trust": {}, "text": "You keep the board yourself."},
+        "hire": {"trust": {"Alan": 2, "Garrison": -1}, "text": "A dispatcher starts Monday. You have two hours back every day."},
+    },
+}
+var DESIGNS: Dictionary = DEFAULT_DESIGNS.duplicate(true)
+
+const DEFAULT_KB_TEXT := {
+    "msg": {"need": "NEED %.1f H, %.1f H LEFT", "draft": "DRAFT STARTED: %s", "live": "RUNBOOK LIVE: %s", "refresh": "REFRESHED: %s", "stale": "%s RUNBOOK IS OUT OF DATE", "trained": "%s IS TRAINED. IT STAYS.", "already": "ALREADY TRAINED", "nobody": "NOBODY TO DO IT", "shadow": "%s IS SHADOWING", "none": "NO SUCH RUNBOOK", "signoff": "SIGN-OFF %d MORE"},
+    "lesson": {
+        "text": "%s recorded the %s fix and walked the trainee through it. Before you sign it off, check the lesson: %s",
+        "good": "The lesson holds up. %s will sign it off on the next live tickets. Once they have, it stays trained.",
+        "fail": "That was not the safest step. The recording needs another take and the hour is gone. Try the lesson again.",
+        "ok": "OK",
+    },
+    "bus": {
+        "mail_from": "Morgan Reyes - Manager",
+        "subject": "Who knew how to do that?",
+        "body": "%s was the only one who knew %s and nothing was written down. Until somebody learns it or it is documented, everyone will stall on it. - Morgan",
+        "alan": "Alan (Co-owner)",
+    },
+    "stale": {"from": "Alan (Co-owner)", "subject": "Runbooks out of date"},
+}
+var KB_TEXT: Dictionary = DEFAULT_KB_TEXT.duplicate(true)
+
+# systems change: a runbook on one of these goes stale on that day (CHANGES[day].pick of them, seeded). Trained runbooks never do.
+const DEFAULT_CHANGES := {
+    "8": {"classes": ["spooler", "adobe"], "pick": 1, "subject": "New copiers Monday", "body": "Garrison signed for new copiers at three clients. The print drivers and the PDF reader set-up change this week. Anything written down about printing is out of date."},
+    "12": {"classes": ["av", "password"], "pick": 1, "subject": "New antivirus and password rules", "body": "The RMM now pushes a different antivirus and the password rules change on Monday. Whatever the crew wrote down for that is wrong now."},
+    "15": {"classes": ["reboot", "clear_temp"], "pick": 1, "subject": "Windows updates this weekend", "body": "A round of Windows updates went to every workstation. The usual fixes behave differently. The notes need another look."},
+}
+var CHANGES: Dictionary = DEFAULT_CHANGES.duplicate(true)
+
+const TRAINING_ORDER := ["none", "light", "full"]
+const TRAINING := {
+    "none": {"label": "OFF", "cost": 0, "area": 0.0, "morale": 0},
+    "light": {"label": "LIGHT ($150 A WEEK)", "cost": 150, "area": 0.01, "morale": 0},
+    "full": {"label": "FULL ($400 A WEEK)", "cost": 400, "area": 0.03, "morale": 1},
+}
+
+const DEFAULT_HIRE_TEXT := {
+    "intro": "Three people came through the door for the open desk. An interview costs one of your hours and shows real skill and fit. Hours left today: %.1f.",
+    "line": "%s - %s - $%d - %s",
+    "revealed": ": SKILL %.2f, FIT %d/%d/%d",
+    "hidden": ": ?",
+    "fit_key": "FIT = CULTURE / COMMUNICATION / CURIOSITY, 1 TO 5.",
+    "trait_short": {"wizard": "WIZARD", "people": "CLIENT PRO", "green": "EAGER", "flight": "FLIGHT RISK", "steady": "STEADY"},
+    "interview": "INTERVIEW %s (1H)",
+    "decide": "DECIDE NOW",
+    "no_hours": "NO HOURS LEFT",
+    "decide_text": "Who gets the desk? Morgan signs whatever you decide.",
+    "hire": "HIRE %s",
+    "none": "NO ONE RIGHT NOW",
+    "full": "The crew is full: six people is all the seats and desks you have.",
+    "tech_q": {
+        "powershell": "How would you find every user whose password is older than ninety days?",
+        "networking": "A switch port drops every few minutes. What do you check first?",
+        "servers": "Users cannot open the file share but ping works. Where do you start?",
+        "security": "A user clicked a link in a fake invoice email. What do you do in the first ten minutes?",
+    },
+    "tech_a": {
+        "strong": "%s answers at once, then adds a second check nobody asked for.",
+        "ok": "%s gets there with a nudge and says so honestly.",
+        "weak": "%s talks around it and glances at the door.",
+    },
+    "tech_next": "NEXT QUESTION",
+    "behave_q": "Tell me about a time a client was angry and you were in the wrong.",
+    "behave_a": {
+        "high": "%s calls the client back the same day, then writes it up so nobody else repeats it.",
+        "mid": "%s apologised and fixed it, and says the follow-up could have been better.",
+        "low": "%s blames the ticketing system and the last manager.",
+    },
+    "summary": "NOTE IT",
+    "onboard": {
+        "text": "%s starts tomorrow. How do you start them? Shadowing Maya for two days is gentle and costs no hours. A structured start with a written plan costs you two hours today and gets them on tickets sooner.",
+        "shadow": "SHADOW MAYA FOR TWO DAYS",
+        "structured": "STRUCTURED START (2H)",
+        "hint": "NEEDS 2 MANAGER HOURS",
+        "shadow_done": "%s will shadow for two days.",
+        "structured_done": "%s has a plan and starts on tickets tomorrow.",
+    },
+    "welcome": {"from": "Morgan Reyes - Manager", "subject": "New hire: %s", "body": "%s starts today and has a seat at the conference table. Tell me how the first weeks go. - Morgan"},
+    "react": {
+        "ringer": {"trust": {"Alan": 3, "Garrison": -2}, "text": "Alan likes the hire. Garrison asks whether they will fit in."},
+        "fit": {"trust": {"Alan": -1, "Garrison": 3}, "text": "Garrison likes the hire. Alan asks whether they can do the hard tickets."},
+        "mid": {"trust": {"Alan": 1, "Garrison": 1}, "text": "Both owners nod."},
+        "none": {"trust": {"Alan": -1, "Garrison": -1}, "text": "Both owners wonder why the seat is still empty."},
+    },
+}
+var HIRE_TEXT: Dictionary = DEFAULT_HIRE_TEXT.duplicate(true)
+
+# crew life events, fed by morale and workload. who: skilled / curious / loaded / senior / low. Evaluated each morning from day 4.
+const RETENTION_ORDER := ["resign", "burnout", "counter", "promotion", "training"]
+const DEFAULT_RETENTION := {
+    "counter": {
+        "min_day": 5, "cool": 9, "speaker": "%s (Tier 1)",
+        "text": "A competitor, ByteBrothers, has offered %s a title and $80 a week more. Nobody has said anything. You know because the recruiter emailed the wrong person.",
+        "options":
+        [
+            {"id": "m", "label": "MATCH IT ($80 A WEEK)", "reply": "I did not expect that. I will stay, and thank you for asking before I had to.", "fx": {"wage": 80, "retain": 3, "morale": 5, "trust": {"Alan": -1, "Garrison": 1}}},
+            {"id": "t", "label": "TALK ABOUT THE PLAN", "reply": "A growth plan is worth something. Show me it is real and I will think about it.", "fx": {"roll": {"p": 0.5, "win": {"retain": 2, "morale": 4, "focus_area": true}, "lose": {"morale": -2, "retain": -1}}}},
+            {"id": "w", "label": "WISH THEM WELL", "reply": "Understood. I will give you my two weeks, and I will write the handover down.", "fx": {"quit": true, "trust": {"Garrison": -1}}},
+        ],
+    },
+    "training": {
+        "min_day": 4, "cool": 10, "speaker": "%s (Tier 1)",
+        "text": "%s asks for a course budget: a vendor certification class, about $400, and two Fridays for the exam. It would help the whole desk.",
+        "options":
+        [
+            {"id": "a", "label": "APPROVE THE COURSE ($400)", "reply": "Thank you. I will share what I learn on Friday.", "fx": {"cost": 400, "area": 0.5, "skill": 0.02, "morale": 6, "retain": 2, "trust": {"Alan": 2}}},
+            {"id": "h", "label": "HALF: STUDY ON FRIDAYS", "reply": "That works. I will take the book home.", "fx": {"area": 0.25, "morale": 2, "trust": {"Alan": 1}}},
+            {"id": "n", "label": "NOT THIS QUARTER", "reply": "Okay. I will ask again in the new year.", "fx": {"morale": -4, "retain": -1, "trust": {"Alan": -1}}},
+        ],
+    },
+    "burnout": {
+        "min_day": 4, "cool": 7, "speaker": "%s (Tier 1)",
+        "text": "%s has carried a full board for days and has stopped joking at lunch. Tickets are slower and the replies are short.",
+        "options":
+        [
+            {"id": "u", "label": "TAKE TICKETS OFF THEIR DESK", "reply": "Thank you. I can see over the top of the pile again.", "fx": {"unload": true, "morale": 5, "stress": -15}},
+            {"id": "d", "label": "A QUIET HALF DAY", "reply": "I will go for a walk and come back with a clear head.", "fx": {"off_day": true, "morale": 8, "stress": -25}},
+            {"id": "t", "label": "TOUGH IT OUT, BUSY WEEK", "reply": "Sure. Whatever you need.", "fx": {"morale": -6, "stress": 5, "trust": {"Alan": 1}}},
+        ],
+    },
+    "promotion": {
+        "min_day": 9, "cool": 12, "speaker": "%s (Tier 1)",
+        "text": "%s asks to move up to Tier 2. They have been taking the harder tickets and want the title and the pay that goes with it.",
+        "options":
+        [
+            {"id": "p", "label": "PROMOTE ($80 A WEEK)", "reply": "Thank you, Dan. I will not let the board down.", "fx": {"promote": true, "wage": 80, "morale": 8, "retain": 3, "trust": {"Alan": 1, "Garrison": -1}}},
+            {"id": "l", "label": "YES, WITH A PLAN", "reply": "A plan is fair. Tell me what I have to show.", "fx": {"focus_area": true, "morale": 2, "retain": 1}},
+            {"id": "n", "label": "NOT YET", "reply": "Okay. I hoped for a different answer.", "fx": {"morale": -4, "retain": -1}},
+        ],
+    },
+    "resign": {
+        "min_day": 6, "cool": 8, "speaker": "%s (Tier 1)",
+        "text": "%s left a polite letter on your desk. No complaint, just a thank you and a last day. Morgan does not know yet.",
+        "options":
+        [
+            {"id": "a", "label": "ASK WHAT WOULD CHANGE", "reply": "Thank you for asking. If the board stays this calm, I will stay.", "fx": {"roll": {"p": 0.55, "win": {"retain": 3, "morale": 6}, "lose": {"quit": true}}}},
+            {"id": "r", "label": "COUNTER WITH A RAISE ($60 A WEEK)", "reply": "That is generous. I will tear up the letter.", "fx": {"wage": 60, "morale": 5, "retain": 2, "trust": {"Garrison": -1}}},
+            {"id": "g", "label": "ACCEPT IT GRACEFULLY", "reply": "Thank you. It is not about you.", "fx": {"quit": true, "morale_all": -2}},
+        ],
+    },
+}
+var RETENTION: Dictionary = DEFAULT_RETENTION.duplicate(true)
+const RET_COOLDOWN := 3  # days between any two life events
+const DEFAULT_ROWS := {"documented": "DOCUMENTED", "retention": "RETENTION", "solo": "FIRST SOLO", "cost": "COST PER TICKET", "design": "DESK", "none": "NO DESIGN YET", "solo_wait": "NOT YET", "solo_none": "NO HIRES", "days": "%.1f DAYS", "bus": "BUS FACTOR"}
+var ROWS: Dictionary = DEFAULT_ROWS.duplicate(true)
+
 var trust := {"Alan": TRUST_START, "Garrison": TRUST_START}
 var focus := "p1"
 var buffs: Array = []  # {key, val, left}
@@ -24629,6 +24901,23 @@ var dispatched := 0  # assignments you made by hand this run
 var escalated := 0  # tickets that went to an owner this run
 var _flag_t := 0.0
 var _hand_day := 0
+var kb = KNOWLEDGE.new()  # the runbooks (C6): the Knowledge app's model
+var design := ""  # "" (not chosen yet: the autopilot picks by fit), "tiered", "swarm" or "pods"
+var dispatcher := false  # a hired dispatcher (otherwise you dispatch yourself)
+var design_day := 0
+var design_changes := 0  # the desk can be reshaped once
+var pods := {}  # client index -> the tech who owns that client
+var pod_days := {}  # client index -> days the same tech has had it (deep client knowledge)
+var misallocated := 0  # swarm tickets that went to the wrong desk
+var training := "none"  # the weekly training budget: none, light or full
+var spent_today := 0.0  # one-off spending today (courses)
+var spent_total := 0
+var last_event_day := -99
+var event_days := {}  # retention event id -> the day it last fired
+var events_fired: Array = []  # "id:who:day"
+var leaving: Array = []  # techs who walk out tonight (a life-event choice)
+var cands: Array = []  # the candidates on the hiring card
+var interviewed := {}
 
 
 func _ready() -> void:
@@ -24666,6 +24955,23 @@ func reset() -> void:
     escalated = 0
     _flag_t = 0.0
     _hand_day = 0
+    design = ""
+    dispatcher = false
+    design_day = 0
+    design_changes = 0
+    pods = {}
+    pod_days = {}
+    misallocated = 0
+    training = "none"
+    spent_today = 0.0
+    spent_total = 0
+    last_event_day = -99
+    event_days = {}
+    events_fired = []
+    leaving = []
+    cands = []
+    interviewed = {}
+    kb.reset()
     Crew.reset()
 
 
@@ -24815,8 +25121,16 @@ func begin_day(day: int) -> void:
         Crew.add_all(6)
         _outings_seen = Outings.count
     _sync()
+    spent_today = 0.0
+    leaving = []
+    kb.begin_day(day)
+    if design == "pods":
+        for c in pods:
+            pod_days[c] = int(pod_days.get(c, 0)) + 1
+        rebuild_pods()
     _farewells()
     huddle()
+    retention_event()
 
 
 func _client_work() -> float:
@@ -24899,6 +25213,11 @@ func fire(ev: Dictionary) -> void:
             incident(str(ev.id), str(ev.book))
         "friday":
             friday()
+        "design":
+            if design == "":
+                design_card()
+        "hire":
+            hire_card()
 
 
 # ---- crew pick-up, first response, stuck -------------------------------------------------------------------------
@@ -24934,11 +25253,11 @@ func _pickup() -> void:
             continue
         if not _auto_takes(t):
             continue
-        if picked >= 2:
+        if picked >= pickup_cap():
             break
-        var best := Crew.best_for(t, 2)
+        var best := route_for(t)
         if best == "":
-            break  # the crew is full: it waits
+            continue  # nobody can take it now: it waits
         assign(id, best, false)
         picked += 1
 
@@ -24952,7 +25271,7 @@ func _note_response(t: Dictionary, _who: String) -> void:
 # ---- dispatch: who works what (C5) --------------------------------------------------------------------------------
 # lane ids: "" = unassigned, a tech's name, "Dan" (you take it yourself), "ESC" = the owners' escalation lane
 func lane_ids() -> Array:
-    return [""] + Crew.names() + ["Dan", "ESC"]
+    return [""] + board_techs() + ["Dan", "ESC"]
 
 
 # who in the escalation lane should take it: Alan for the technical areas, Garrison for security and people
@@ -24984,6 +25303,8 @@ func assign(id: int, who: String, by_hand := true) -> Dictionary:
             return {"ok": false, "msg": str(CREW_TEXT.msg.busy) % who.to_upper()}
     elif who != "" and who != "Dan" and (not Crew.has(who) or Crew.is_gone(who)):
         return {"ok": false, "msg": str(CREW_TEXT.msg.gone)}
+    elif Crew.is_shadowing(who):
+        return {"ok": false, "msg": str(KB_TEXT.msg.shadow) % who.to_upper()}
     if Crew.stuck.has(from) and int(Crew.stuck[from].ticket) == id:
         Crew.free_stuck(from, "moved")
     t["assignee"] = who
@@ -25063,7 +25384,7 @@ func work_queue(seconds: float) -> void:
             busy_speed += sp
     for who in names:
         if not mine[who].is_empty() and busy_speed > 0.0:
-            cap[who] = float(cap[who]) + idle_pool * ASSIST * Crew.worker_speed(str(who)) / busy_speed
+            cap[who] = float(cap[who]) + idle_pool * assist_rate() * Crew.worker_speed(str(who)) / busy_speed
         _work_tech(str(who), mine[who], float(cap[who]), seconds)
     for o in OWNERS:
         _work_owner(o, _desk_of(o), seconds)
@@ -25131,8 +25452,12 @@ func _finish(who: String, t: Dictionary) -> void:
     t.erase("struggle")
     t.erase("pushed")
     if Difficulty.rng("service.work").randf() < clampf(miss, 0.0, 0.6):
+        if Crew.has(who):
+            Crew.note_reopen(who)
         Msp.close_ticket(id)  # closed too early: it comes back to the same desk
         return
+    if Crew.has(who):
+        kb.note_closed(who, t)
     Growth.owner_escalation(t)
     Msp.set_status(id, "In Progress")
     Msp.rmm_action(str(t.endpoint), str(t.fix))
@@ -25344,6 +25669,7 @@ func _maya_quality() -> float:
 
 # run a Playbook job without you: each step takes the best unlocked choice with chance `quality`, else another one
 func delegate(book: String, quality: float, who: String) -> Dictionary:
+    quality = clampf(quality + kb.job_bonus(book), 0.0, 0.97)  # a runbook for the job helps whoever runs it
     if book == "ransom":
         return _delegate_ransom(quality, who)
     var clock: float = World.clock
@@ -25512,10 +25838,21 @@ func close_day(r: Dictionary) -> void:
         Crew.mentor("Maya")
     if focus == "project":
         project_days += 1
+    _training_day()
     var gone: Array = Crew.end_day(util, grade)
     for who in gone:
         out_notes.append("%s QUIT" % str(who).to_upper())
         Msp.mail("Pixel IT Partners - Manager", "%s resigned" % who, "%s handed in a notice this evening. - Morgan" % who)
+    for who in leaving:
+        if Crew.has(who) and not Crew.is_gone(who):
+            Crew.quit(who)
+            Crew.farewells.append(who)
+            out_notes.append("%s QUIT" % str(who).to_upper())
+    leaving = []
+    for who in Crew.onboard_pending(Campaign.day):
+        out_notes.append("%s JOINS" % str(who).to_upper())
+    crew_changed()
+    _owner_day()
     if grade in ["S", "A"]:
         add_trust("Alan", 1)
         add_trust("Garrison", 1)
@@ -25550,6 +25887,7 @@ func close_day(r: Dictionary) -> void:
     if not out_notes.is_empty():
         people.append(["CREW", " ".join(out_notes), DayReport.BAD])
     r["groups"] = [["SCORECARD", scorecard], ["TEAM", people], ["OWNERS", owners]]
+    r["left_groups"] = [["DESK", _desk_rows()]]
     r["title"] = "DAY %d SCORECARD" % Campaign.day
     r["grade"] = grade
     r["points"] = int(round(score))
@@ -25602,6 +25940,7 @@ func review_lines(page: int, ending: String) -> Array:
                 count[str(g.grade)] = int(count[str(g.grade)]) + 1
             lines.append(["DAYS: S %d  A %d  B %d  C %d  D %d" % [count.S, count.A, count.B, count.C, count.D], ink])
             lines.append(["TRUST: ALAN %d (%s)  GARRISON %d (%s)" % [trust_of("Alan"), trust_word(trust_of("Alan")), trust_of("Garrison"), trust_word(trust_of("Garrison"))], ink])
+            lines.append(["DESK: %s   DOCUMENTED %d%%   RETENTION %d%%" % [design_label(), kb.doc_pct(), Crew.retention_pct()], ink])
             for key in ["rdp", "ransom", "rack", "email24", "migration"]:
                 var grade := str(flags.get("job_" + key, Story.flags.get(key, "")))
                 if grade != "":
@@ -25622,6 +25961,554 @@ func review_lines(page: int, ending: String) -> Array:
     return lines
 
 
+# ---- C6 (V3): desk design, hiring for fit, onboarding, retention events, owner reactions --------------------------------
+func manager_hours_total() -> float:
+    return 3.0 + (2.0 if dispatcher else 0.0)
+
+
+func weekly_cost() -> int:
+    var total := Crew.payroll_week()
+    if dispatcher:
+        total += DISPATCHER_WAGE
+    total += int(TRAINING[training].cost)
+    if design == "pods":
+        total += POD_STIPEND * Crew.size()
+    return total
+
+
+# dollars a ticket: a day of the payroll, the training and any one-off spend, over the tickets closed today
+func cost_per_ticket() -> int:
+    var closed: int = Msp.closed_ok - int(Campaign._base.get("closed", 0))
+    if closed <= 0:
+        return -1  # nothing closed yet today
+    return int(round((float(weekly_cost()) / 5.0 + spent_today) / float(closed)))
+
+
+func design_label() -> String:
+    return str(DESIGNS[design].label) if DESIGNS.has(design) else str(ROWS.none)
+
+
+func lane_of(who: String) -> String:
+    return str(Crew.members.get(who, {}).get("lane", "L1"))
+
+
+# the small tag on a board lane head: L1 / L2 on a tiered desk, L3 for the owners, POD / ALL on the others
+func lane_tag(id: String) -> String:
+    match design:
+        "tiered":
+            if id == "ESC":
+                return "L3"
+            return lane_of(id) if Crew.has(id) else ""
+        "swarm":
+            return "ALL" if Crew.has(id) else ""
+        "pods":
+            return "POD" if Crew.has(id) else ""
+    return ""
+
+
+# the clients in a tech's pod, as short names
+func pod_of(who: String) -> Array:
+    var out := []
+    for c in pods:
+        if str(pods[c]) == who:
+            out.append(int(c))
+    out.sort()
+    return out
+
+
+func pod_text(who: String) -> String:
+    var parts := []
+    for c in pod_of(who):
+        parts.append(str(Msp.CLIENTS[int(c)].short))
+    return " ".join(parts)
+
+
+# sort the techs so a tiered board reads L1 then L2
+func board_techs() -> Array:
+    var techs: Array = Crew.names()
+    if design == "tiered":
+        techs.sort_custom(func(a, b) -> bool: return lane_of(str(a)) < lane_of(str(b)))
+    return techs
+
+
+func rebuild_pods() -> void:
+    var techs := []
+    for n in Crew.names():
+        if not Crew.is_shadowing(str(n)):
+            techs.append(str(n))
+    var clients: Array = Sales.active.duplicate()
+    clients.sort()
+    var keep := {}
+    for c in clients:
+        var owner_name := str(pods.get(int(c), ""))
+        if techs.has(owner_name):
+            keep[int(c)] = owner_name
+    var count := {}
+    for t in techs:
+        count[t] = 0
+    for c in keep:
+        count[keep[c]] = int(count[keep[c]]) + 1
+    for c in clients:
+        if keep.has(int(c)) or techs.is_empty():
+            continue
+        var best := str(techs[0])
+        for t in techs:
+            if int(count[t]) < int(count[best]):
+                best = str(t)
+        keep[int(c)] = best
+        count[best] = int(count[best]) + 1
+        pod_days[int(c)] = 0  # a new face: the deep knowledge starts again
+    pods = keep
+
+
+# a tech quit, was hired or changed lane: the pods follow
+func crew_changed() -> void:
+    if design == "pods":
+        rebuild_pods()
+
+
+func pickup_cap() -> int:
+    return 2 if (design == "" or dispatcher) else 1
+
+
+func _in_lane(who: String, t: Dictionary) -> bool:
+    return lane_of(who) == ("L1" if Crew.need_of(t) <= 1 else "L2")
+
+
+func design_speed(who: String, t: Dictionary) -> float:
+    match design:
+        "tiered":
+            return (1.04 if _in_lane(who, t) else 0.92) * (1.04 if dispatcher else 1.0)
+        "swarm":
+            return 1.06
+        "pods":
+            if str(pods.get(int(t.client), "")) == who:
+                return 1.0 + minf(0.12, 0.03 * float(pod_days.get(int(t.client), 0)))
+            return 0.95
+    return 1.0
+
+
+func design_reopen(who: String, t: Dictionary) -> float:
+    match design:
+        "tiered":
+            return -0.02 if _in_lane(who, t) else 0.02
+        "swarm":
+            return 0.03
+        "pods":
+            return -0.03 if str(pods.get(int(t.client), "")) == who else 0.01
+    return 0.0
+
+
+func assist_rate() -> float:
+    match design:
+        "tiered":
+            return ASSIST * 0.8
+        "swarm":
+            return ASSIST * 1.2
+        "pods":
+            return ASSIST * 0.5
+    return ASSIST
+
+
+func _best_in(t: Dictionary, lane_name_: String, max_load: int) -> String:
+    var best := ""
+    var best_fit := -1.0
+    for who in Crew.names():
+        var w := str(who)
+        if Crew.stuck.has(w) or Crew.is_shadowing(w) or Crew.load_of(w) >= max_load:
+            continue
+        if lane_name_ != "" and lane_of(w) != lane_name_:
+            continue
+        var f := Crew.fit(w, t)
+        if f > best_fit + 0.0001:
+            best_fit = f
+            best = w
+    return best
+
+
+# who the autopilot gives a ticket to under the chosen design ("" = nobody can take it now)
+func route_for(t: Dictionary) -> String:
+    match design:
+        "tiered":
+            var want := "L1" if Crew.need_of(t) <= 1 else "L2"
+            var best := _best_in(t, want, 2)
+            if best == "" and int(t.pri) <= 2:
+                best = _best_in(t, "L2" if want == "L1" else "L1", 1)  # a hot ticket may cross lanes into an idle desk
+            return best
+        "swarm":
+            var base := _best_in(t, "", 3)
+            var odds := 0.08 if dispatcher else 0.16
+            if base != "" and Difficulty.rng("service.swarm").randf() < odds:
+                var open := []
+                for who in Crew.names():
+                    if not Crew.stuck.has(who) and not Crew.is_shadowing(str(who)) and Crew.load_of(str(who)) < 3 and who != base:
+                        open.append(str(who))
+                if not open.is_empty():
+                    misallocated += 1
+                    return str(open[Difficulty.rng("service.swarm").randi() % open.size()])
+            return base
+        "pods":
+            var owner_name := str(pods.get(int(t.client), ""))
+            if Crew.has(owner_name) and not Crew.is_gone(owner_name) and not Crew.stuck.has(owner_name) and not Crew.is_shadowing(owner_name) and Crew.load_of(owner_name) < 3:
+                return owner_name
+            return ""
+    return Crew.best_for(t, 2)
+
+
+func can_change_design() -> bool:
+    return design != "" and design_changes < 1 and kb.hours_left() >= 2.0
+
+
+# choose (or change) the desk design. Returns {ok, msg}. `revisit` costs 2 manager hours, crew morale and a little trust, once.
+func apply_design(kind: String, with_dispatcher: bool, revisit := false) -> Dictionary:
+    if not DESIGNS.has(kind) or not kind in DESIGN_ORDER:
+        return {"ok": false, "msg": ""}
+    if revisit:
+        if design_changes >= 1:
+            return {"ok": false, "msg": str(DESIGNS.card.used)}
+        if not kb.spend(2.0):
+            return {"ok": false, "msg": str(DESIGNS.card.no_hours)}
+        design_changes += 1
+        Crew.add_all(-3)
+        add_trust("Alan", -1)
+        add_trust("Garrison", -1)
+        buffs.append({"key": "speed", "val": 0.9, "left": 1})
+    var was_dispatcher := dispatcher
+    design = kind
+    dispatcher = with_dispatcher
+    design_day = Campaign.day
+    if with_dispatcher != was_dispatcher or not revisit:
+        for who in DESIGNS.dispatcher["hire" if with_dispatcher else "you"].trust:
+            add_trust(str(who), int(DESIGNS.dispatcher["hire" if with_dispatcher else "you"].trust[who]))
+    var d: Dictionary = DESIGNS[kind]
+    for who in d.trust:
+        add_trust(str(who), int(d.trust[who]))
+    for who in d.mail:
+        var m: Array = d.mail[who]
+        Msp.mail(str(m[0]), str(m[1]), str(m[2]))
+    pods = {}
+    pod_days = {}
+    if kind == "pods":
+        rebuild_pods()
+    for n in Crew.names():  # a tiered desk sorts the crew into lanes by skill
+        if kind == "tiered" and not Crew.is_hire(str(n)):
+            Crew.members[n]["lane"] = str(Crew.START_LANE.get(str(n), "L1"))
+    _sync()
+    Hints.toast(str(DESIGNS.card.changed) % str(d.label), 3.0)
+    return {"ok": true, "msg": str(DESIGNS.card.changed) % str(d.label)}
+
+
+func design_card(revisit := false) -> void:
+    if revisit and not can_change_design():
+        return
+    var tx: Dictionary = DESIGNS.card
+    var opts := []
+    for id in DESIGN_ORDER:
+        var o := {"label": str(DESIGNS[id].option), "id": id}
+        if revisit and id == design:
+            o["enabled"] = false
+            o["hint"] = "CURRENT"
+        opts.append(o)
+    if revisit:
+        opts.append({"label": str(tx.keep), "id": "keep"})
+    Cards.ask(str(tx.speaker), str(tx.revisit) if revisit else str(tx.text), opts, func(pick: String) -> void: _design_picked(pick, revisit))
+
+
+func _design_picked(pick: String, revisit: bool) -> void:
+    if pick == "keep" or not pick in DESIGN_ORDER:
+        return
+    var tx: Dictionary = DESIGNS.card
+    var opts := [{"label": str(tx.you), "id": "you"}, {"label": str(tx.hire), "id": "hire"}]
+    Cards.ask(str(tx.speaker), str(tx.dispatcher), opts, func(p: String) -> void: _finish_design(pick, p == "hire", revisit))
+
+
+func _finish_design(kind: String, with_dispatcher: bool, revisit: bool) -> void:
+    var res := apply_design(kind, with_dispatcher, revisit)
+    if not res.ok:
+        Hints.toast(str(res.msg), 3.0)
+        return
+    var d: Dictionary = DESIGNS[kind]
+    Cards.ask(str(DESIGNS.card.speaker), str(DESIGNS.card.done) % [str(d.label), str(d.note)], [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
+
+
+# ---- hiring: three candidates, an interview mini-step, a choice, an onboarding path ------------------------------------
+func hire_card() -> void:
+    if not Crew.can_hire():
+        Hints.toast(str(HIRE_TEXT.full), 3.0)
+        return
+    cands = Crew.make_candidates(3)
+    interviewed = {}
+    _hire_list()
+
+
+func _cand_line(c: Dictionary) -> String:
+    var s := str(HIRE_TEXT.line) % [str(c.name).to_upper(), str(c.area).to_upper(), int(c.wage), str(HIRE_TEXT.trait_short.get(str(c.trait), "STEADY"))]
+    if interviewed.has(str(c.name)):
+        var f: Dictionary = c.fit
+        s += str(HIRE_TEXT.revealed) % [float(c.skill), int(f.culture), int(f.comm), int(f.curiosity)]
+    else:
+        s += str(HIRE_TEXT.hidden)
+    return s
+
+
+func _hire_list() -> void:
+    var lines := [str(HIRE_TEXT.intro) % kb.hours_left(), str(HIRE_TEXT.fit_key)]
+    for c in cands:
+        lines.append(_cand_line(c))
+    var opts := []
+    for i in cands.size():
+        if interviewed.has(str(cands[i].name)):
+            continue
+        var o := {"label": str(HIRE_TEXT.interview) % str(cands[i].name).to_upper(), "id": "i%d" % i}
+        if kb.hours_left() < 1.0:
+            o["enabled"] = false
+            o["hint"] = str(HIRE_TEXT.no_hours)
+        opts.append(o)
+    opts.append({"label": str(HIRE_TEXT.decide), "id": "decide"})
+    Cards.ask("Morgan Reyes - Manager", "\\n".join(lines), opts, func(pick: String) -> void: _hire_pick(pick))
+
+
+func _hire_pick(pick: String) -> void:
+    if pick.begins_with("i"):
+        interview(int(pick.substr(1)))
+    else:
+        _hire_decide()
+
+
+# the interview: a technical question then a behavioural one; they reveal skill and fit. Costs an hour.
+func interview(i: int) -> bool:
+    if i < 0 or i >= cands.size() or interviewed.has(str(cands[i].name)):
+        return false
+    if not kb.spend(1.0):
+        Hints.toast(str(KB_TEXT.msg.need) % [1.0, kb.hours_left()], 3.0)
+        return false
+    var c: Dictionary = cands[i]
+    interviewed[str(c.name)] = true
+    var band := "strong" if float(c.skill) >= 1.0 else ("ok" if float(c.skill) >= 0.75 else "weak")
+    var q := str(HIRE_TEXT.tech_q[str(c.area)]) if HIRE_TEXT.tech_q.has(str(c.area)) else str(HIRE_TEXT.tech_q.servers)
+    var ans := str(HIRE_TEXT.tech_a[band]) % str(c.name)
+    Cards.ask(str(c.name), "%s\\n%s" % [q, ans], [{"label": str(HIRE_TEXT.tech_next), "id": "n"}], func(_x: String) -> void: _interview_b(c))
+    return true
+
+
+func _interview_b(c: Dictionary) -> void:
+    var cul := int(c.fit.culture)
+    var band := "high" if cul >= 4 else ("mid" if cul == 3 else "low")
+    var ans := str(HIRE_TEXT.behave_a[band]) % str(c.name)
+    Cards.ask(str(c.name), "%s\\n%s" % [str(HIRE_TEXT.behave_q), ans], [{"label": str(HIRE_TEXT.summary), "id": "n"}], func(_x: String) -> void: _hire_list())
+
+
+func _hire_decide() -> void:
+    var lines := [str(HIRE_TEXT.decide_text)]
+    var opts := []
+    for i in cands.size():
+        lines.append(_cand_line(cands[i]))
+        opts.append({"label": str(HIRE_TEXT.hire) % str(cands[i].name).to_upper(), "id": "h%d" % i})
+    opts.append({"label": str(HIRE_TEXT.none), "id": "none"})
+    Cards.ask("Morgan Reyes - Manager", "\\n".join(lines), opts, func(pick: String) -> void: _hire_chosen(pick))
+
+
+func _hire_chosen(pick: String) -> void:
+    if pick == "none" or not pick.begins_with("h"):
+        _owner_react("none")
+        return
+    var c: Dictionary = cands[int(pick.substr(1))]
+    var opts := [
+        {"label": str(HIRE_TEXT.onboard.shadow), "id": "shadow"},
+        {"label": str(HIRE_TEXT.onboard.structured), "id": "structured"},
+    ]
+    if kb.hours_left() < 2.0:
+        opts[1]["enabled"] = false
+        opts[1]["hint"] = str(HIRE_TEXT.onboard.hint)
+    Cards.ask("Morgan Reyes - Manager", str(HIRE_TEXT.onboard.text) % str(c.name), opts, func(path: String) -> void: finish_hire(c, path))
+
+
+# the hire is made: starts tomorrow, the owners react, the onboarding path is set. Public for tests.
+func finish_hire(c: Dictionary, path: String) -> bool:
+    if not Crew.can_hire():
+        return false
+    if path == "structured" and not kb.spend(2.0):
+        path = "shadow"
+    Crew.hire(c, path)
+    Msp.mail(str(HIRE_TEXT.welcome.from), str(HIRE_TEXT.welcome.subject) % str(c.name), str(HIRE_TEXT.welcome.body) % str(c.name))
+    Hints.toast(str(HIRE_TEXT.onboard[path + "_done"]) % str(c.name), 3.0)
+    _owner_react(str(c.kind))
+    return true
+
+
+func _owner_react(kind: String) -> void:
+    var r: Dictionary = HIRE_TEXT.react[kind]
+    for who in r.trust:
+        add_trust(str(who), int(r.trust[who]))
+    flags["hire_" + kind] = true
+    Hints.toast(str(r.text), 3.5)
+
+
+# ---- retention: crew life events fed by morale and workload ------------------------------------------------------------
+func _ret_who(id: String) -> String:
+    var best := ""
+    var best_v := -1.0
+    for n in Crew.names():
+        var w := str(n)
+        if Crew.is_shadowing(w):
+            continue
+        var v := -1.0
+        match id:
+            "counter":
+                if Crew.morale(w) < 62 and Crew.value(w, "skill") >= 0.85:
+                    v = Crew.value(w, "skill")
+            "training":
+                if training == "none" and (Crew.fit_avg(w) >= 3.5 or Campaign.day >= 8):
+                    v = float(Crew.members[w].get("fit", {}).get("curiosity", 3)) + 0.01 * float(Crew.value(w, "done"))
+            "burnout":
+                if int(Crew.value(w, "over_days")) >= 2 or Crew.value(w, "stress") >= 70.0:
+                    v = Crew.value(w, "stress") + 10.0 * Crew.value(w, "over_days")
+            "promotion":
+                if Crew.value(w, "done") >= 6 and Crew.value(w, "skill") >= 0.95 and lane_of(w) == "L1" and Crew.morale(w) >= 50:
+                    v = Crew.value(w, "skill")
+                elif flags.get("graduated", "") == w and not flags.get("promoted_" + w, false):
+                    v = 5.0
+            "resign":
+                if Crew.morale(w) <= 38 and Campaign.day - int(Crew.value(w, "last_oto")) >= 4:
+                    v = 100.0 - float(Crew.morale(w))
+        if v > best_v:
+            best_v = v
+            best = w
+    return best if best_v >= 0.0 else ""
+
+
+# the life event due this morning ({id, who}), or {} if none. Deterministic from the state.
+func retention_due() -> Dictionary:
+    if Campaign.day < 4 or Campaign.day - last_event_day < RET_COOLDOWN:
+        return {}
+    for id in RETENTION_ORDER:
+        var ev: Dictionary = RETENTION[id]
+        if Campaign.day < int(ev.min_day) or Campaign.day - int(event_days.get(id, -99)) < int(ev.cool):
+            continue
+        var who := _ret_who(id)
+        if who != "":
+            return {"id": id, "who": who}
+    return {}
+
+
+func retention_event() -> bool:
+    var due := retention_due()
+    if due.is_empty():
+        return false
+    fire_retention(str(due.id), str(due.who))
+    return true
+
+
+func fire_retention(id: String, who: String) -> void:
+    var ev: Dictionary = RETENTION[id]
+    last_event_day = Campaign.day
+    event_days[id] = Campaign.day
+    events_fired.append("%s:%s:%d" % [id, who, Campaign.day])
+    var opts := []
+    for o in ev.options:
+        opts.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(str(ev.speaker) % who, str(ev.text) % who, opts, func(pick: String) -> void: answer_retention(id, who, pick))
+
+
+func answer_retention(id: String, who: String, pick: String) -> void:
+    for o in RETENTION[id].options:
+        if str(o.id) == pick:
+            _ret_fx(who, o.fx.duplicate(true))
+            Cards.ask("%s (Tier 1)" % who, str(o.reply), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: pass)
+            return
+
+
+func _ret_fx(who: String, fx: Dictionary) -> void:
+    if not Crew.has(who):
+        return
+    if fx.has("roll"):
+        var r: Dictionary = fx.roll
+        var p := minf(0.9, float(r.p) * _people_scale() / 1.2)
+        _ret_fx(who, (r.win if Difficulty.rng("service.retention").randf() < p else r.lose).duplicate(true))
+    var scale := _people_scale()
+    if fx.has("morale"):
+        Crew.add_morale(who, int(round(float(fx.morale) * (scale if int(fx.morale) > 0 else 1.0))))
+    if fx.has("morale_all"):
+        Crew.add_all(int(fx.morale_all))
+    if fx.has("retain"):
+        Crew.add_retain(who, int(fx.retain))
+    if fx.has("stress"):
+        Crew.add_stress(who, int(fx.stress))
+    if fx.has("skill"):
+        Crew.skill_gain(who, float(fx.skill))
+    if fx.has("area"):
+        Crew.train(who, Crew.focus_of(who) if Crew.focus_of(who) != "" else Crew.weakest_area(who), float(fx.area))
+    if fx.has("focus_area") and Crew.focus_of(who) == "":
+        Crew.set_focus(who, Crew.weakest_area(who))
+    if fx.has("wage"):
+        Crew.members[who]["wage"] = int(Crew.value(who, "wage")) + int(fx.wage)
+    if fx.has("cost"):
+        spent_today += float(fx.cost)
+        spent_total += int(fx.cost)
+    for o in fx.get("trust", {}):
+        add_trust(str(o), int(fx.trust[o]))
+    if fx.has("promote"):
+        Crew.members[who]["lane"] = "L2"
+        flags["promoted_" + who] = true
+    if fx.has("unload"):
+        for t in Msp.open_tickets():
+            if Crew.assignee_of(t) == who and Crew.load_of(who) > 1:
+                assign(int(t.id), "", false)
+    if fx.has("off_day"):
+        Crew.set_busy(who, 8.0)
+    if fx.has("quit") and not leaving.has(who):
+        leaving.append(who)
+
+
+# ---- training budget (a weekly choice: OFF / LIGHT / FULL) --------------------------------------------------------------
+func cycle_training() -> String:
+    training = TRAINING_ORDER[(TRAINING_ORDER.find(training) + 1) % TRAINING_ORDER.size()]
+    return training
+
+
+func _training_day() -> void:
+    var t: Dictionary = TRAINING[training]
+    if float(t.area) <= 0.0:
+        return
+    for n in Crew.names():
+        Crew.train(str(n), Crew.focus_of(str(n)) if Crew.focus_of(str(n)) != "" else Crew.weakest_area(str(n)), float(t.area))
+        if int(t.morale) != 0:
+            Crew.add_morale(str(n), int(t.morale))
+
+
+# ---- owners react to the documentation, the bus factor and a team that stays ------------------------------------------
+func _owner_day() -> void:
+    var pct: int = kb.doc_pct()
+    if pct >= 50 and not flags.get("doc50", false):
+        flags["doc50"] = true
+        add_trust("Alan", 3)
+        Msp.mail("Alan (Co-owner)", "The runbooks", "Half the desk is written down. I can send a new hire to the knowledge base and not to you. Keep going. - Alan")
+    if pct >= 80 and not flags.get("doc80", false):
+        flags["doc80"] = true
+        add_trust("Alan", 3)
+        add_trust("Garrison", 1)
+    if Campaign.day >= 10 and Crew.retention_pct() == 100 and Crew.morale_avg() >= 65 and not flags.get("stay", false):
+        flags["stay"] = true
+        add_trust("Garrison", 3)
+        Msp.mail("Garrison (Co-owner)", "The team", "Nobody has left and everybody is smiling. That is worth more than a spreadsheet. - Garrison")
+
+
+func _desk_rows() -> Array:
+    var pct: int = kb.doc_pct()
+    var solo := Crew.solo_mean_hours()
+    var solo_text := str(ROWS.solo_none)
+    if not Crew.hire_order.is_empty():
+        solo_text = str(ROWS.days) % (solo / 8.0) if solo >= 0.0 else str(ROWS.solo_wait)
+    var ret := Crew.retention_pct()
+    return [
+        [str(ROWS.design), (str(DESIGNS[design].short) if DESIGNS.has(design) else str(ROWS.none)) + (" + DISP" if dispatcher else ""), DayReport.WHITE],
+        [str(ROWS.documented), "%d%%" % pct, DayReport.GOOD if pct >= 60 else (DayReport.WARN if pct >= 25 else DayReport.BAD)],
+        [str(ROWS.retention), "%d%%" % ret, DayReport.GOOD if ret >= 100 else (DayReport.WARN if ret >= 66 else DayReport.BAD)],
+        [str(ROWS.solo), solo_text, DayReport.WHITE],
+        [str(ROWS.cost), "$%d" % cost_per_ticket() if cost_per_ticket() >= 0 else "-", DayReport.WHITE],
+    ]
+
+
 # ---- saving -----------------------------------------------------------------------------------------------------
 func to_dict() -> Dictionary:
     return {
@@ -25629,6 +26516,10 @@ func to_dict() -> Dictionary:
         "oto_seen": oto_seen.duplicate(), "oto_day": oto_day.duplicate(), "grades": grades.duplicate(true),
         "project_days": project_days, "memos": memos_done.duplicate(), "crew": Crew.to_dict(), "outings": _outings_seen,
         "auto": auto, "dispatched": dispatched, "escalated": escalated,
+        "design": design, "dispatcher": dispatcher, "design_day": design_day, "design_changes": design_changes,
+        "pods": pods.duplicate(), "pod_days": pod_days.duplicate(), "misallocated": misallocated, "training": training,
+        "spent_total": spent_total, "last_event_day": last_event_day, "event_days": event_days.duplicate(),
+        "events_fired": events_fired.duplicate(), "kb": kb.to_dict(),
     }
 
 
@@ -25656,6 +26547,27 @@ func from_dict(data: Dictionary) -> void:
     dispatched = int(data.get("dispatched", 0))
     escalated = int(data.get("escalated", 0))
     Crew.from_dict(data.get("crew", {}))
+    design = str(data.get("design", ""))
+    if not design in DESIGN_ORDER:
+        design = ""
+    dispatcher = bool(data.get("dispatcher", false))
+    design_day = int(data.get("design_day", 0))
+    design_changes = int(data.get("design_changes", 0))
+    pods = {}
+    for c in data.get("pods", {}):
+        pods[int(c)] = str(data.pods[c])
+    pod_days = {}
+    for c in data.get("pod_days", {}):
+        pod_days[int(c)] = int(data.pod_days[c])
+    misallocated = int(data.get("misallocated", 0))
+    training = str(data.get("training", "none"))
+    if not TRAINING.has(training):
+        training = "none"
+    spent_total = int(data.get("spent_total", 0))
+    last_event_day = int(data.get("last_event_day", -99))
+    event_days = data.get("event_days", {}).duplicate()
+    events_fired = data.get("events_fired", []).duplicate()
+    kb.from_dict(data.get("kb", {}))
 ''')
 
 write("scripts/crew.gd", '''extends Node
@@ -25695,6 +26607,19 @@ const ROSTER := [
         "areas": {"powershell": 1.0, "networking": 1.0, "servers": 2.0, "security": 2.0, "people": 1.0},
     },
 ]
+const WAGES := {"Maya": 700, "Sam": 450, "Terry": 550}  # dollars a week (the hires bring their own)
+const START_LANE := {"Maya": "L2", "Sam": "L1", "Terry": "L2"}  # tiered desk: who works which lane
+# C6: the crew is capped at 6 (three starting techs and three hires). The seating you have: Maya (main floor desk 2) and Sam (desk 1)
+# have desks, Terry and the hires hot-desk at the conference table (Seat6, then Seat4, Seat5 and Seat3 for hires one to three).
+const MAX_CREW := 6
+const HIRE_SEATS := ["Seat4", "Seat5", "Seat3"]
+const HIRE_SHEETS := {
+    "Priya": "client_agent_b", "Marcus": "expo_atta", "Jules": "expo_attb", "Tomas": "expo_attc", "Wendy": "client_vettech_b",
+    "Dev": "expo_attd", "Rosa": "client_dentasst", "Kofi": "expo_atte", "Ingrid": "client_vetrec_b", "Sal": "expo_attf",
+    "Mei": "client_designer_b", "Otis": "expo_vendh",
+}
+const FIT_AXES := ["culture", "comm", "curiosity"]
+const FIT_LABEL := {"culture": "CULTURE", "comm": "COMMUNICATION", "curiosity": "CURIOSITY"}
 const START_MORALE := 65
 const QUIT_BELOW := 22  # morale under this can make a tech quit at the end of the day
 const MAYA_CAP := 1.3  # mentoring raises Maya's skill up to here
@@ -25708,43 +26633,266 @@ var members := {}  # name -> {skill, morale, stress, retain, mentored, gone, las
 var stuck := {}  # name -> {ticket, left, asked} while somebody waits for you or an owner
 var quits: Array = []  # names that left during the run
 var farewells: Array = []  # names that left and still owe you a goodbye card
+var hire_order: Array = []  # names of the techs you hired, in order (they extend the ROSTER)
+var pending: Array = []  # hires that start tomorrow: {cand, path, seat}
+var hired_total := 0  # everybody ever hired (the retention number's denominator)
 
 
 func _ready() -> void:
     reset()
 
 
+func _blank(skill: float, areas: Dictionary) -> Dictionary:
+    return {
+        "skill": skill,
+        "morale": START_MORALE,
+        "stress": 20,
+        "retain": 0,
+        "mentored": 0,
+        "gone": false,
+        "last_oto": -9,
+        "areas": areas.duplicate(),
+        "focus": "",
+        "over_t": 0.0,
+        "work_t": 0.0,
+        "over_days": 0,
+        "done": 0,
+        "stalls": 0,
+        "wage": 500,
+        "lane": "L1",
+        "busy_until": 0.0,
+        "shadow": 0,
+        "hire": false,
+        "fit": {},
+        "trait": "steady",
+        "path": "",
+        "start_day": 0,
+        "solo_h": -1.0,
+        "reopens": 0,
+        "seat": "",
+        "sheet": "",
+    }
+
+
 func reset() -> void:
     members = {}
     for row in ROSTER:
-        members[str(row.name)] = {
-            "skill": float(row.skill),
-            "morale": START_MORALE,
-            "stress": 20,
-            "retain": 0,
-            "mentored": 0,
-            "gone": false,
-            "last_oto": -9,
-            "areas": row.areas.duplicate(),
-            "focus": "",
-            "over_t": 0.0,
-            "work_t": 0.0,
-            "over_days": 0,
-            "done": 0,
-            "stalls": 0,
-        }
+        var m := _blank(float(row.skill), row.areas)
+        m["wage"] = int(WAGES.get(str(row.name), 500))
+        m["lane"] = str(START_LANE.get(str(row.name), "L1"))
+        members[str(row.name)] = m
     stuck = {}
     quits = []
     farewells = []
+    hire_order = []
+    pending = []
+    hired_total = 0
+
+
+func roster_names() -> Array:
+    var out := []
+    for row in ROSTER:
+        out.append(str(row.name))
+    out.append_array(hire_order)
+    return out
 
 
 func names(include_gone := false) -> Array:
     var out := []
-    for row in ROSTER:
-        var n := str(row.name)
-        if include_gone or not is_gone(n):
+    for n in roster_names():
+        if include_gone or not is_gone(str(n)):
+            out.append(str(n))
+    return out
+
+
+# ---- hiring (C6): the world rows, seats and the candidate generator ----------------------------------------------------
+func is_pool_name(n: String) -> bool:
+    return HIRE_SHEETS.has(n)
+
+
+func is_hire(n: String) -> bool:
+    return hire_order.has(n)
+
+
+# the World cast row of a hire: they hot-desk at the conference table
+func hire_row(n: String) -> Dictionary:
+    return {"character": str(HIRE_SHEETS.get(n, "office_teen")), "home": "conference", "seat": seat_of(n), "role": "crew"}
+
+
+func seat_of(n: String) -> String:
+    var s := str(members.get(n, {}).get("seat", ""))
+    return s if s != "" else str(HIRE_SEATS[0])
+
+
+func free_seat() -> String:
+    var used := []
+    for n in hire_order:
+        if not is_gone(str(n)):
+            used.append(seat_of(str(n)))
+    for p in pending:
+        used.append(str(p.get("seat", "")))
+    for s in HIRE_SEATS:
+        if not used.has(s):
+            return str(s)
+    return ""
+
+
+func open_seats() -> int:
+    return maxi(0, MAX_CREW - names().size() - pending.size())
+
+
+func can_hire() -> bool:
+    return open_seats() > 0 and free_seat() != ""
+
+
+func _name_pool() -> Array:
+    var taken := roster_names()
+    for p in pending:
+        taken.append(str(p.cand.name))
+    var out := []
+    for n in Owner.NAMES:
+        if not taken.has(n) and HIRE_SHEETS.has(n):
             out.append(n)
     return out
+
+
+# three named candidates: a ringer (high skill, poor fit, dear), a good fit with less skill who grows, and a middle one.
+# Fit has three axes 1-5: culture (team mood), communication (clients), curiosity (how fast they learn). Seeded.
+func make_candidates(count := 3) -> Array:
+    var rng := Difficulty.rng("service.hire")
+    var pool := _name_pool()
+    for i in range(pool.size() - 1, 0, -1):  # a seeded shuffle
+        var j := rng.randi() % (i + 1)
+        var tmp = pool[i]
+        pool[i] = pool[j]
+        pool[j] = tmp
+    var kinds := ["ringer", "fit", "mid"]
+    for i in range(kinds.size() - 1, 0, -1):
+        var j := rng.randi() % (i + 1)
+        var tmp2 = kinds[i]
+        kinds[i] = kinds[j]
+        kinds[j] = tmp2
+    var out := []
+    var tech_areas := ["powershell", "networking", "servers", "security"]
+    for i in mini(count, pool.size()):
+        var kind: String = kinds[i % kinds.size()]
+        var skill := 1.0
+        var fit := {}
+        var trait_ids := ["steady"]
+        match kind:
+            "ringer":
+                skill = snappedf(rng.randf_range(1.1, 1.3), 0.05)
+                fit = {"culture": 1 + rng.randi() % 2, "comm": 2 + rng.randi() % 2, "curiosity": 2 + rng.randi() % 2}
+                trait_ids = ["wizard", "flight"]
+            "fit":
+                skill = snappedf(rng.randf_range(0.55, 0.8), 0.05)
+                fit = {"culture": 4 + rng.randi() % 2, "comm": 3 + rng.randi() % 3, "curiosity": 4 + rng.randi() % 2}
+                trait_ids = ["green", "people", "steady"]
+            _:
+                skill = snappedf(rng.randf_range(0.8, 1.05), 0.05)
+                fit = {"culture": 3 + rng.randi() % 2, "comm": 3 + rng.randi() % 2, "curiosity": 3 + rng.randi() % 2}
+                trait_ids = ["steady", "people", "wizard"]
+        var trait_id: String = trait_ids[rng.randi() % trait_ids.size()]
+        var strong: String = tech_areas[rng.randi() % tech_areas.size()]
+        var areas := {"powershell": 1.0, "networking": 1.0, "servers": 1.0, "security": 1.0, "people": 1.0 + (1.0 if int(fit.comm) >= 4 else 0.0)}
+        areas[strong] = 3.0 if kind == "ringer" else (2.0 if skill >= 0.8 else 1.5)
+        var wage := int(round((280.0 + 250.0 * skill) / 10.0)) * 10 + int(Owner.TRAITS[trait_id].get("wage", 0))
+        if kind == "ringer":
+            wage = int(round(float(wage) * 1.25 / 10.0)) * 10  # the ringer knows what he is worth
+        out.append({"name": str(pool[i]), "skill": skill, "wage": wage, "trait": trait_id, "fit": fit, "area": strong, "areas": areas, "kind": kind})
+    return out
+
+
+func fit_avg(who: String) -> float:
+    var f: Dictionary = members.get(who, {}).get("fit", {})
+    if f.is_empty():
+        return 3.0
+    var total := 0.0
+    for a in FIT_AXES:
+        total += float(f.get(a, 3))
+    return total / float(FIT_AXES.size())
+
+
+# the hire starts tomorrow: path "shadow" (sits with the team for two days, no tickets of his own) or "structured"
+func hire(cand: Dictionary, path: String) -> void:
+    var seat := free_seat()
+    pending.append({"cand": cand.duplicate(true), "path": path, "seat": seat})
+    hired_total += 1
+
+
+# called at the end of the day: the people hired today become crew members for tomorrow. Returns their names.
+func onboard_pending(day: int) -> Array:
+    var out := []
+    for p in pending:
+        var cand: Dictionary = p.cand
+        var n := str(cand.name)
+        var m := _blank(float(cand.skill), cand.areas)
+        m["wage"] = int(cand.wage)
+        m["hire"] = true
+        m["fit"] = cand.fit.duplicate()
+        m["trait"] = str(cand.trait)
+        m["path"] = str(p.path)
+        m["start_day"] = day + 1
+        m["shadow"] = 2 if str(p.path) == "shadow" else 0
+        m["seat"] = str(p.seat) if str(p.seat) != "" else str(HIRE_SEATS[0])
+        m["sheet"] = str(HIRE_SHEETS.get(n, "office_teen"))
+        m["lane"] = "L2" if float(cand.skill) >= 0.95 and float(cand.areas.get(str(cand.area), 1.0)) >= 2.0 else "L1"
+        m["morale"] = START_MORALE + (3 if str(p.path) == "shadow" else 0)
+        members[n] = m
+        hire_order.append(n)
+        out.append(n)
+    pending = []
+    return out
+
+
+func is_shadowing(who: String) -> bool:
+    return int(members.get(who, {}).get("shadow", 0)) > 0 and not is_gone(who)
+
+
+func busy(who: String) -> bool:
+    return World.clock < float(members.get(who, {}).get("busy_until", 0.0)) and not is_gone(who)
+
+
+# somebody is away from the queue for `hours` of the working day (writing a runbook, a lesson, a day off)
+func set_busy(who: String, hours: float) -> void:
+    if members.has(who):
+        members[who]["busy_until"] = maxf(float(members[who].get("busy_until", 0.0)), World.clock + hours)
+
+
+func payroll_week() -> int:
+    var total := 0
+    for n in names():
+        total += int(value(str(n), "wage"))
+    return total
+
+
+# techs still here against everyone who ever worked for you on the desk (the three you started with, plus the hires)
+func retention_pct() -> int:
+    var ever := ROSTER.size() + hired_total - pending.size()
+    if ever <= 0:
+        return 100
+    return int(round(100.0 * float(names().size()) / float(ever)))
+
+
+func newest_hire() -> String:
+    return str(hire_order[-1]) if not hire_order.is_empty() else ""
+
+
+# mean hours of working time from the first morning to the first ticket closed on their own (-1 = nobody has yet)
+func solo_mean_hours() -> float:
+    var total := 0.0
+    var n := 0
+    for h in hire_order:
+        var v := value(str(h), "solo_h")
+        if v >= 0.0:
+            total += v
+            n += 1
+    return total / float(n) if n > 0 else -1.0
+
+
+func note_reopen(who: String) -> void:
+    if members.has(who):
+        members[who]["reopens"] = int(members[who].get("reopens", 0)) + 1
 
 
 func has(who: String) -> bool:
@@ -25793,9 +26941,10 @@ func worker_speed(who: String) -> float:
 
 
 func raw_speed(who: String) -> float:
-    if is_gone(who):
+    if is_gone(who) or is_shadowing(who) or busy(who):
         return 0.0
-    return value(who, "skill") * (0.75 + 0.5 * float(morale(who)) / 100.0)
+    var ramp := 0.8 if (is_hire(who) and str(members[who].get("path", "")) == "structured" and Campaign.day - int(members[who].get("start_day", 0)) < 2) else 1.0
+    return value(who, "skill") * (0.75 + 0.5 * float(morale(who)) / 100.0) * ramp
 
 
 # the crew's ticket-working skill (Owner.crew_skill in the service campaign)
@@ -25897,29 +27046,38 @@ func tag_of(t: Dictionary) -> String:
 
 # whole levels between what the ticket needs and what he has (1 or more = the ticket is above his head)
 func gap_of(who: String, t: Dictionary) -> int:
-    return need_of(t) - level(who, area_of(t))
+    return need_of(t) - level(who, area_of(t)) - int(Service.kb.relief(t))
 
 
 func gap_f(who: String, t: Dictionary) -> float:
-    return float(need_of(t)) - area_level(who, area_of(t))
+    return float(need_of(t)) - area_level(who, area_of(t)) - float(Service.kb.relief(t))
 
 
 # how fast he works this ticket compared with a perfect match
 func match_mult(who: String, t: Dictionary) -> float:
     var g := gap_f(who, t)
-    if g <= 0.0:
-        return minf(1.12, 1.0 - 0.06 * g)
-    return clampf(1.0 - 0.4 * g, 0.2, 1.0)
+    var m := minf(1.12, 1.0 - 0.06 * g) if g <= 0.0 else clampf(1.0 - 0.4 * g, 0.2, 1.0)
+    return m * float(Service.kb.speed(t)) * float(Service.design_speed(who, t))
 
 
 # extra odds that the ticket comes back (a fit is a little safer than neutral)
 func reopen_add(who: String, t: Dictionary) -> float:
     var g := gap_f(who, t)
+    var add := 0.0
     if g <= -1.0:
-        return -0.03
-    if g <= 0.0:
+        add = -0.03
+    elif g > 0.0:
+        add = minf(0.3, 0.12 * g)
+    return add + float(Service.kb.safety(t)) + float(Service.design_reopen(who, t)) + onboarding_reopen(who)
+
+
+# the first ten days of a hire: shadowing leaves habits (a few more reopens), a structured start with runbooks a few fewer
+func onboarding_reopen(who: String) -> float:
+    if not is_hire(who) or Campaign.day - int(members[who].get("start_day", 0)) >= 10:
         return 0.0
-    return minf(0.3, 0.12 * g)
+    if str(members[who].get("path", "")) == "shadow":
+        return 0.04
+    return -0.02 if Service.kb.documented_count() >= 3 else 0.0
 
 
 func assignee_of(t: Dictionary) -> String:
@@ -25936,7 +27094,7 @@ func load_of(who: String) -> int:
 
 # skill match x load x mood (+ the focus bonus): 0 to about 1.2. `t` may already be on his desk (it does not count as load)
 func fit(who: String, t: Dictionary) -> float:
-    if is_gone(who):
+    if is_gone(who) or is_shadowing(who):
         return 0.0
     var base := clampf(1.0 - 0.45 * gap_f(who, t), 0.1, 1.1)
     var load := load_of(who) - (1 if assignee_of(t) == who else 0)
@@ -25953,7 +27111,7 @@ func best_for(t: Dictionary, max_load := 2) -> String:
     var best := ""
     var best_fit := -1.0
     for who in names():
-        if stuck.has(who) or load_of(str(who)) >= max_load:
+        if stuck.has(who) or is_shadowing(str(who)) or load_of(str(who)) >= max_load:
             continue
         var f := fit(str(who), t)
         if f > best_fit + 0.0001:
@@ -25968,6 +27126,10 @@ func status(who: String) -> String:
         return "GONE"
     if stuck.has(who):
         return "STUCK"
+    if is_shadowing(who):
+        return "SHADOW"
+    if busy(who):
+        return "WRITING"
     var n := load_of(who)
     if n >= OVERLOAD_AT:
         return "OVERLOAD"
@@ -26046,6 +27208,8 @@ func note_done(who: String, t: Dictionary) -> void:
         return
     members[who]["done"] = int(members[who].done) + 1
     train(who, area_of(t), 0.008 + (0.02 if gap_of(who, t) >= 1 else 0.0))
+    if is_hire(who) and float(members[who].get("solo_h", -1.0)) < 0.0:
+        members[who]["solo_h"] = maxf(0.5, float(Campaign.day - int(members[who].get("start_day", Campaign.day))) * 8.0 + (World.clock - World.DAY_START))
 
 
 # the tech is helped: his stuck ticket was moved or closed
@@ -26098,10 +27262,17 @@ func quit_chance(who: String) -> float:
     var worn := 0.0
     if morale(who) < 40 and int(members[who].get("over_days", 0)) >= 3:
         worn = 0.08 * float(int(members[who].over_days) - 2)  # three bad days of overload in a row wear anybody down
-    if morale(who) >= QUIT_BELOW and worn <= 0.0:
+    # a poor fit (or a flight risk) with a sinking mood is the one who walks (C6)
+    var fitrisk := 0.0
+    if is_hire(who) and morale(who) < 45:
+        if fit_avg(who) < 3.0:
+            fitrisk += 0.04 * (3.0 - fit_avg(who))
+        if str(members[who].get("trait", "")) == "flight":
+            fitrisk += 0.05
+    if morale(who) >= QUIT_BELOW and worn <= 0.0 and fitrisk <= 0.0:
         return 0.0
     var base := float(QUIT_BELOW - morale(who)) / 40.0 if morale(who) < QUIT_BELOW else 0.0
-    return clampf(base + worn - 0.03 * value(who, "retain"), 0.0, 0.8)
+    return clampf(base + worn + fitrisk - 0.03 * value(who, "retain"), 0.0, 0.8)
 
 
 func quit(who: String) -> void:
@@ -26110,6 +27281,8 @@ func quit(who: String) -> void:
     members[who]["gone"] = true
     quits.append(who)
     stuck.erase(who)
+    Service.kb.on_quit(who)
+    Service.crew_changed()
     Service.release_all(who)
 
 
@@ -26143,6 +27316,11 @@ func end_day(util: float, grade: String) -> Array:
         if area != "":
             train(who, area, 0.02)  # the hour a day they spend on it
         add_morale(who, dm)
+        m["busy_until"] = 0.0
+        if int(m.get("shadow", 0)) > 0:
+            m["shadow"] = int(m.shadow) - 1
+        if bool(m.get("hire", false)):
+            _hire_day(str(who), m)
     for who in names():
         var chance := quit_chance(who)
         if chance > 0.0 and Difficulty.rng("service.crew").randf() < chance:
@@ -26152,14 +27330,42 @@ func end_day(util: float, grade: String) -> Array:
     return left
 
 
+# a hire's day: curiosity teaches, a good fit settles in, a poor fit (the ringer who does not belong) drags the others down
+func _hire_day(who: String, m: Dictionary) -> void:
+    var f: Dictionary = m.get("fit", {})
+    if f.is_empty():
+        return
+    var cur := float(f.get("curiosity", 3))
+    train(who, focus_of(who) if focus_of(who) != "" else weakest_area(who), 0.004 * cur)
+    if str(m.get("trait", "")) == "green":
+        m["skill"] = minf(MAYA_CAP, float(m.skill) + 0.012)
+    if cur >= 4.0:
+        m["skill"] = minf(MAYA_CAP, float(m.skill) + 0.008)
+    if float(f.get("culture", 3)) >= 4.0:
+        add_morale(who, 1)
+    elif float(f.get("culture", 3)) <= 2.0:
+        for other in names():
+            if other != who:
+                add_morale(str(other), -1)
+
+
 func to_dict() -> Dictionary:
-    return {"members": members.duplicate(true), "quits": quits.duplicate(), "farewells": farewells.duplicate()}
+    return {
+        "members": members.duplicate(true), "quits": quits.duplicate(), "farewells": farewells.duplicate(),
+        "hire_order": hire_order.duplicate(), "pending": pending.duplicate(true), "hired_total": hired_total,
+    }
 
 
 # old saves (C4) only know skill, morale, stress and so on: the areas and the focus start from the roster
 func from_dict(data: Dictionary) -> void:
     reset()
     var saved: Dictionary = data.get("members", {})
+    hire_order = data.get("hire_order", []).duplicate()
+    pending = data.get("pending", []).duplicate(true)
+    hired_total = int(data.get("hired_total", hire_order.size()))
+    for h in hire_order:
+        if saved.has(h):
+            members[str(h)] = _blank(float(saved[h].get("skill", 1.0)), saved[h].get("areas", {}))
     for who in saved:
         if members.has(who):
             for key in saved[who]:
@@ -26256,7 +27462,13 @@ func lane_title(id: String, chars: int) -> String:
         "Dan":
             return "DAN (YOU)" if chars >= 9 else "DAN"
         "ESC":
+            if Service.design == "tiered":
+                return "L3 OWNERS" if chars >= 9 else "L3 OWN"
             return "OWNERS" if chars >= 6 else "OWN"
+    if Service.design == "tiered" and Crew.has(id):  # L1 SAM, L2 MAYA (C6 desk design); a narrow head keeps "1 SAM"
+        if chars >= 9:
+            return "%s %s" % [Service.lane_tag(id), id.to_upper()]
+        return "%s %s" % [Service.lane_tag(id).substr(1), id.to_upper().substr(0, maxi(3, chars - 2))]
     return id.to_upper()
 
 
@@ -26647,6 +27859,14 @@ func _lane_color(id: String) -> Color:
             return Color("2f8a4f")
         "ESC":
             return Color("c8681a")
+    if Crew.has(id):  # the desk design tints the lane heads (C6)
+        match Service.design:
+            "tiered":
+                return Color("173a6b") if Service.lane_of(id) == "L2" else HEAD
+            "pods":
+                return Color("1f6e68")
+            "swarm":
+                return Color("5a3d8a")
     return HEAD
 
 
@@ -26731,6 +27951,10 @@ func _board_narrow(a: Rect2) -> void:
     var sub := ""
     if Crew.has(id):
         sub = "%s  MORALE %d  LOAD %d" % [Crew.status(id), Crew.morale(id), Crew.load_of(id)]
+        if Service.design == "pods" and Service.pod_text(id) != "":
+            sub = "POD " + Service.pod_text(id)
+        elif Service.design == "tiered":
+            sub = "%s  %s  LOAD %d" % [Service.lane_tag(id), Crew.status(id), Crew.load_of(id)]
     elif id == "Dan":
         sub = "YOU TAKE THESE YOURSELF"
     elif id == "ESC":
@@ -26826,27 +28050,30 @@ func _capacity(a: Rect2, narrow: bool) -> void:
     c._text("HOURS LEFT TODAY %.1f   BAR = QUEUED HOURS" % Crew.hours_left() if not narrow else "HOURS LEFT %.1f" % Crew.hours_left(), Vector2(a.position.x + 2, y), MUTED)
     y += 7.0
     var rh := 13.0 if not narrow else 22.0
+    if not narrow:  # up to six techs now (C6): squeeze the rows to fit above the totals
+        rh = clampf(floorf((a.size.y - 7.0 - 10.0 - 22.0) / float(maxi(1, names.size()))), 8.0, 13.0)
     for i in names.size():
         var who := str(names[i])
         var r := Rect2(a.position.x, y, a.size.x, rh - 1)
         c._fill(r, Color("c7dcf5") if i == cap_sel else (c.WHITE if i % 2 == 0 else Color("eef3f9")))
         c._region("dsp:cap:%d" % i, r)
+        var ry := y + (minf(0.0, floorf((rh - 13.0) * 0.5)) if not narrow else 0.0)
         var u := Crew.utilisation(who)
         var hours := Crew.load_hours(who)
         var st := Crew.status(who)
         var st_col: Color = c.RED if st in ["STUCK", "OVERLOAD"] else (c.GREEN if st == "WORKING" else MUTED)
         var bx := a.position.x + 32.0
         var bw := floorf(a.size.x * 0.34)
-        var ty := y + 3.0
+        var ty := ry + 3.0
         if narrow:
             bx = a.position.x + 3.0
             bw = a.size.x - 8.0
-        c._text(who.to_upper(), Vector2(a.position.x + 3, y + 3), INK)
+        c._text(who.to_upper(), Vector2(a.position.x + 3, ry + 3), INK)
         if narrow:
-            c._text(st, Vector2(a.position.x + 28, y + 3), st_col)
-            c._text(util_text(u), Vector2(a.end.x - 22, y + 3), _util_color(u))
-            _pips(Vector2(a.end.x - 48, y + 4), Crew.morale(who))
-            ty = y + 12.0
+            c._text(st, Vector2(a.position.x + 28, ry + 3), st_col)
+            c._text(util_text(u), Vector2(a.end.x - 22, ry + 3), _util_color(u))
+            _pips(Vector2(a.end.x - 48, ry + 4), Crew.morale(who))
+            ty = ry + 12.0
         # the bar: 100% of the hours left is at two thirds
         c._fill(Rect2(bx, ty, bw, 5), Color("c5ccd8"))
         var scale := avail * 1.5
@@ -26855,17 +28082,17 @@ func _capacity(a: Rect2, narrow: bool) -> void:
         c._fill(Rect2(bx + floorf(bw / 1.5), ty - 1, 1, 7), INK)
         if not narrow:
             var x := bx + bw + 4.0
-            c._text(util_text(u), Vector2(x, y + 3), _util_color(u))
+            c._text(util_text(u), Vector2(x, ry + 3), _util_color(u))
             x += 22.0
-            _pips(Vector2(x, y + 4), Crew.morale(who))
+            _pips(Vector2(x, ry + 4), Crew.morale(who))
             x += 24.0
-            c._text(st, Vector2(x, y + 3), st_col)
+            c._text(st, Vector2(x, ry + 3), st_col)
             x += 36.0
             var foc := Crew.focus_of(who)
-            c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, y + 3), Color("1f4e8c"))
+            c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, ry + 3), Color("1f4e8c"))
             if st == "OVERLOAD" or st == "STUCK":
-                c._fill(Rect2(a.end.x - 9, y + 2, 7, 8), c.RED)
-                c._text("!", Vector2(a.end.x - 6, y + 3), c.WHITE)
+                c._fill(Rect2(a.end.x - 9, ry + 2, 7, 8), c.RED)
+                c._text("!", Vector2(a.end.x - 6, ry + 3), c.WHITE)
         y += rh
     if names.is_empty():
         c._text("NOBODY LEFT ON THE CREW.", Vector2(a.position.x + 4, y + 4), c.RED)
@@ -26982,6 +28209,756 @@ func _line(a: Vector2, b: Vector2, col: Color) -> void:
         c._fill(Rect2(floorf(p.x), floorf(p.y), 1, 1), col)
 ''')
 
+write("scripts/knowledge.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# ConnectWhy Knowledge (service manager campaign, C6 / V3): the runbooks of the desk and the app that shows them.
+# MODEL: one runbook per ticket class (the seven Msp ticket kinds) and per playbook job (rdp, ransom, rack, email24, migration).
+# A runbook is NONE, DRAFT, DOCUMENTED or TRAINED. Writing costs your manager hours (Service.kb.hours_left, 3 a day, 5 with a
+# dispatcher; a high PROCESS stat makes it cheaper and networking classes are cheaper still: Dan labels everything) and a tech's
+# time (the author is away from the queue for an hour). A live DOCUMENTED runbook makes the whole crew faster and safer on that
+# class and takes one level off the gap, so lower-level techs are not stuck any more. DOCUMENTED goes STALE when systems change
+# (Service.CHANGES, or kb.system_change from anything else) and a refresh puts it right. TRAINED is a lesson (the senior's
+# recording, a quiz you check, then sign-off on live tickets) and is permanent: it never goes stale. The bus factor: if the
+# only tech who knew a class quits and it was not live, every tech is one level further from it (stuck for everyone) until
+# someone learns it or it is documented. The documentation score (doc_pct) feeds the scorecard and Alan's trust.
+# APP: tabs RUNBOOKS (paged list, one action button), DESK (the design and the dispatcher) and CREW (people, payroll, hiring,
+# the training budget). Keys: Left / Right change tab, Up / Down pick, Enter does the next step, [ / ] page, H hires, T cycles
+# the training budget. Everything is a public function so the tests can drive it; paint() only draws.
+
+const NONE := 0
+const DRAFT := 1
+const DOCUMENTED := 2
+const TRAINED := 3
+const STATE_NAME := ["NONE", "DRAFT", "DOCUMENTED", "TRAINED"]
+const SHORT_NAME := ["NONE", "DRAFT", "LIVE", "TRAINED"]
+const BG := Color("eef1f6")
+const HEAD := Color("2f6e5a")
+const INK := Color("20242c")
+const MUTED := Color("5a6372")
+const TABS := [["books", "RUNBOOKS"], ["desk", "DESK"], ["crew", "CREW"]]
+
+var runbooks := {}  # id -> {state, stale, signoff, senior, author, day, uses}
+var hours_used := 0.0
+var bus := {}  # class id -> the tech whose knowledge left
+var view := "books"
+var sel := 0
+var msg := ""
+var msg_at := -99999
+var c: Node = null
+var lesson_who := ""
+var _crew_sel := 0
+
+
+func _blank() -> Dictionary:
+    return {"state": NONE, "stale": false, "signoff": 0, "senior": "", "author": "", "day": 0, "uses": 0}
+
+
+func reset() -> void:
+    runbooks = {}
+    for id in ids():
+        runbooks[id] = _blank()
+    hours_used = 0.0
+    bus = {}
+    view = "books"
+    sel = 0
+    msg = ""
+    lesson_who = ""
+    _crew_sel = 0
+
+
+func ids() -> Array:
+    return Service.KB_ORDER
+
+
+func rb(id: String) -> Dictionary:
+    if not runbooks.has(id):
+        runbooks[id] = _blank()
+    return runbooks[id]
+
+
+func state(id: String) -> int:
+    return int(rb(id).state)
+
+
+func is_live(id: String) -> bool:
+    var s := state(id)
+    return s == TRAINED or (s == DOCUMENTED and not bool(rb(id).stale))
+
+
+func label(id: String) -> String:
+    return str(Service.RUNBOOKS[id].label) if Service.RUNBOOKS.has(id) else id.to_upper()
+
+
+func area_of(id: String) -> String:
+    if Service.RUNBOOKS.has(id) and str(Service.RUNBOOKS[id].kind) == "job":
+        return str(Service.RUNBOOKS[id].area)
+    return str(Crew.FIX_AREA.get(id, "servers"))
+
+
+func need_of(id: String) -> int:
+    if Service.RUNBOOKS.has(id) and str(Service.RUNBOOKS[id].kind) == "job":
+        return int(Service.RUNBOOKS[id].need)
+    return int(Crew.FIX_NEED.get(id, 1))
+
+
+func tag_of(id: String) -> String:
+    return "%s%d" % [str(Crew.AREA_TAG[area_of(id)]), need_of(id)]
+
+
+# the runbook class of a ticket ("" when it has none: incidents and projects)
+func class_of(t: Dictionary) -> String:
+    var fix := str(t.get("fix", ""))
+    if Service.RUNBOOKS.has(fix) and str(Service.RUNBOOKS[fix].kind) == "ticket":
+        return fix
+    return ""
+
+
+# ---- what a runbook does for the crew -----------------------------------------------------------------------------------
+# levels taken off the ticket's gap (a live runbook: 1; the bus factor: -1, one more level out of reach for everybody)
+func relief(t: Dictionary) -> float:
+    var id := class_of(t)
+    if id == "":
+        return 0.0
+    if is_live(id):
+        return 1.0
+    return -1.0 if bus.has(id) else 0.0
+
+
+func speed(t: Dictionary) -> float:
+    var id := class_of(t)
+    if id == "":
+        return 1.0
+    match state(id):
+        TRAINED:
+            return 1.22
+        DOCUMENTED:
+            return 1.0 if bool(rb(id).stale) else 1.12
+        DRAFT:
+            return 1.03
+    return 1.0
+
+
+func safety(t: Dictionary) -> float:
+    var id := class_of(t)
+    if id == "":
+        return 0.0
+    match state(id):
+        TRAINED:
+            return -0.07
+        DOCUMENTED:
+            return 0.0 if bool(rb(id).stale) else -0.04
+    return 0.0
+
+
+# a runbook for a Playbook job helps whoever runs it without you (Service.delegate)
+func job_bonus(book: String) -> float:
+    if not runbooks.has(book):
+        return 0.0
+    match state(book):
+        TRAINED:
+            return 0.15
+        DOCUMENTED:
+            return 0.0 if bool(rb(book).stale) else 0.08
+    return 0.0
+
+
+func documented_count() -> int:
+    var n := 0
+    for id in ids():
+        if is_live(str(id)):
+            n += 1
+    return n
+
+
+# the documentation score: the share of classes with a live (not stale) runbook
+func doc_pct() -> int:
+    var total := ids().size()
+    return int(round(100.0 * float(documented_count()) / float(maxi(1, total))))
+
+
+# ---- hours --------------------------------------------------------------------------------------------------------------
+func hours_total() -> float:
+    return Service.manager_hours_total()
+
+
+func hours_left() -> float:
+    return maxf(0.0, hours_total() - hours_used)
+
+
+func spend(h: float) -> bool:
+    if h > hours_left() + 0.001:
+        return false
+    hours_used += h
+    return true
+
+
+# a high PROCESS makes runbooks cheap (Dan starts at 2)
+func process_mult() -> float:
+    return clampf(1.0 - 0.1 * float(Build.level("process") - 2), 0.7, 1.1)
+
+
+# what the next step costs: {act, verb, dan, tech}. Dan's networking classes are half price: he labels everything.
+func cost_of(id: String) -> Dictionary:
+    var r := rb(id)
+    var m := process_mult() * (0.5 if area_of(id) == "networking" else 1.0)
+    var out := {"act": "none", "verb": "TRAINED", "dan": 0.0, "tech": 0.0}
+    match state(id):
+        NONE:
+            out = {"act": "draft", "verb": "WRITE A DRAFT", "dan": 1.0 * m, "tech": 1.0}
+        DRAFT:
+            out = {"act": "publish", "verb": "PUBLISH IT", "dan": 1.0 * m, "tech": 0.0}
+        DOCUMENTED:
+            if bool(r.stale):
+                out = {"act": "refresh", "verb": "REFRESH IT", "dan": 0.5 * m, "tech": 0.0}
+            elif int(r.signoff) > 0:
+                out = {"act": "wait", "verb": "SIGN-OFF %d MORE" % int(r.signoff), "dan": 0.0, "tech": 0.0}
+            else:
+                out = {"act": "train", "verb": "TRAIN THE CREW", "dan": 1.0 * m, "tech": 1.0}
+    out["dan"] = snappedf(maxf(0.3, float(out.dan)), 0.1) if float(out.dan) > 0.0 else 0.0
+    return out
+
+
+# the tech who knows the class best and is free (the author of a draft, or the senior in a lesson); "" = nobody, Dan does it
+func senior_for(id: String) -> String:
+    var best := ""
+    var best_v := -1.0
+    for n in Crew.names():
+        var w := str(n)
+        if Crew.stuck.has(w) or Crew.is_shadowing(w) or Crew.busy(w):
+            continue
+        var v := Crew.area_level(w, area_of(id)) + 0.001 * Crew.value(w, "skill")
+        if v > best_v:
+            best_v = v
+            best = w
+    return best
+
+
+func advance(id: String) -> Dictionary:
+    if not runbooks.has(id):
+        return {"ok": false, "msg": str(Service.KB_TEXT.msg.none)}
+    var cost := cost_of(id)
+    var act := str(cost.act)
+    if act == "none":
+        return {"ok": false, "msg": str(Service.KB_TEXT.msg.already)}
+    if act == "wait":
+        return {"ok": false, "msg": str(Service.KB_TEXT.msg.signoff) % int(rb(id).signoff)}
+    if float(cost.dan) > hours_left() + 0.001:
+        return {"ok": false, "msg": str(Service.KB_TEXT.msg.need) % [float(cost.dan), hours_left()]}
+    var who := ""
+    if float(cost.tech) > 0.0:
+        who = senior_for(id)
+    spend(float(cost.dan))
+    if who != "":
+        Crew.set_busy(who, float(cost.tech))
+    var r := rb(id)
+    var text := ""
+    match act:
+        "draft":
+            r["state"] = DRAFT
+            r["author"] = who if who != "" else "Dan"
+            r["day"] = Campaign.day
+            text = str(Service.KB_TEXT.msg.draft) % label(id)
+        "publish":
+            r["state"] = DOCUMENTED
+            r["stale"] = false
+            r["day"] = Campaign.day
+            text = str(Service.KB_TEXT.msg.live) % label(id)
+            if bus.has(id):
+                bus.erase(id)
+        "refresh":
+            r["stale"] = false
+            text = str(Service.KB_TEXT.msg.refresh) % label(id)
+        "train":
+            _lesson(id, who if who != "" else "Maya")
+            text = str(Service.KB_TEXT.msg.signoff) % 2
+    if act != "train":
+        Hints.toast(text, 2.5)
+    return {"ok": true, "msg": text, "act": act, "who": who}
+
+
+# the lesson: the senior's recording, then a check you make before the trainee is signed off on live tickets
+func _lesson(id: String, who: String) -> void:
+    lesson_who = who
+    var q: Dictionary = Service.RUNBOOKS[id].quiz
+    var order := [0, 1, 2]
+    var rng: RandomNumberGenerator = Difficulty.rng("service.kb")
+    for i in range(order.size() - 1, 0, -1):
+        var j := rng.randi() % (i + 1)
+        var tmp = order[i]
+        order[i] = order[j]
+        order[j] = tmp
+    var opts := []
+    for k in order:
+        opts.append({"label": str(q.options[int(k)]), "id": str(k)})
+    var text := str(Service.KB_TEXT.lesson.text) % [who, label(id), str(q.q)]
+    Cards.ask("%s (Tier 1)" % who, text, opts, func(pick: String) -> void: quiz_pick(id, int(pick)))
+
+
+# public so the tests can answer the quiz. Returns true when the lesson held up.
+func quiz_pick(id: String, pick: int) -> bool:
+    var q: Dictionary = Service.RUNBOOKS[id].quiz
+    var ok := pick == int(q.answer)
+    var who := lesson_who if lesson_who != "" else "Maya"
+    if ok:
+        rb(id)["signoff"] = 2
+        rb(id)["senior"] = who
+    var text := str(Service.KB_TEXT.lesson.good) % who if ok else str(Service.KB_TEXT.lesson.fail)
+    Cards.ask("%s (Tier 1)" % who, text, [{"label": str(Service.KB_TEXT.lesson.ok), "id": "ok"}], func(_x: String) -> void: pass)
+    return ok
+
+
+# a live ticket of the class was closed properly: the sign-off counts, and the third makes it permanent
+func note_closed(who: String, t: Dictionary) -> void:
+    var id := class_of(t)
+    if id == "" or not runbooks.has(id):
+        return
+    var r := rb(id)
+    r["uses"] = int(r.uses) + 1
+    if state(id) == DOCUMENTED and int(r.signoff) > 0 and who != str(r.senior):
+        r["signoff"] = int(r.signoff) - 1
+        if int(r.signoff) == 0:
+            r["state"] = TRAINED
+            r["stale"] = false
+            Hints.toast(str(Service.KB_TEXT.msg.trained) % label(id), 3.0)
+
+
+# ---- systems change, the bus factor -----------------------------------------------------------------------------------
+# documented (not trained) runbooks on these classes go stale. Returns the ids that did.
+func system_change(classes: Array, subject := "", body := "") -> Array:
+    var hit := []
+    for id in classes:
+        var r := rb(str(id))
+        if state(str(id)) == DOCUMENTED and not bool(r.stale):
+            r["stale"] = true
+            hit.append(str(id))
+    if not hit.is_empty():
+        var names := []
+        for id in hit:
+            names.append(label(str(id)))
+        Msp.mail(str(Service.KB_TEXT.stale.from), subject if subject != "" else str(Service.KB_TEXT.stale.subject), "%s (%s) - Alan" % [body if body != "" else "Systems changed.", ", ".join(names)])
+        Hints.toast(str(Service.KB_TEXT.msg.stale) % str(names[0]), 3.0)
+    return hit
+
+
+func capable(id: String) -> Array:
+    var out := []
+    for n in Crew.names():
+        if Crew.level(str(n), area_of(id)) >= need_of(id):
+            out.append(str(n))
+    return out
+
+
+# classes only one tech can do and nothing documents: the knowledge hotspots
+func single_points() -> Array:
+    var out := []
+    for id in ids():
+        if not is_live(str(id)) and capable(str(id)).size() <= 1:
+            out.append(str(id))
+    return out
+
+
+# a tech quit (his flag is already gone): classes only he could do, with no live runbook, are now stuck for everybody
+func on_quit(who: String) -> Array:
+    var hit := []
+    for id in ids():
+        var s := str(id)
+        if is_live(s) or not capable(s).is_empty():
+            continue
+        if Crew.level(who, area_of(s)) >= need_of(s):
+            bus[s] = who
+            hit.append(s)
+    if not hit.is_empty():
+        var names := []
+        for s in hit:
+            names.append(label(str(s)))
+        Msp.mail(str(Service.KB_TEXT.bus.mail_from), str(Service.KB_TEXT.bus.subject), str(Service.KB_TEXT.bus.body) % [who, ", ".join(names)])
+        Service.add_trust("Alan", -2)
+        Hints.toast("%s: %s" % [str(Service.ROWS.bus), str(names[0])], 3.0)
+    return hit
+
+
+func begin_day(day: int) -> void:
+    hours_used = 0.0
+    for id in bus.keys():
+        if is_live(str(id)) or not capable(str(id)).is_empty():
+            bus.erase(id)
+    var ch: Dictionary = Service.CHANGES.get(str(day), {})
+    if not ch.is_empty():
+        var live := []
+        for id in ch.classes:
+            if state(str(id)) == DOCUMENTED and not bool(rb(str(id)).stale):
+                live.append(str(id))
+        var rng: RandomNumberGenerator = Difficulty.rng("service.kb")
+        var picks := []
+        while not live.is_empty() and picks.size() < int(ch.get("pick", 1)):
+            var i := rng.randi() % live.size()
+            picks.append(live[i])
+            live.remove_at(i)
+        system_change(picks, str(ch.subject), str(ch.body))
+
+
+# ---- saving -----------------------------------------------------------------------------------------------------------
+func to_dict() -> Dictionary:
+    return {"rb": runbooks.duplicate(true), "hours": hours_used, "bus": bus.duplicate()}
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    var saved: Dictionary = data.get("rb", {})
+    for id in saved:
+        if runbooks.has(id):
+            for k in saved[id]:
+                runbooks[id][k] = saved[id][k]
+    hours_used = float(data.get("hours", 0.0))
+    bus = data.get("bus", {}).duplicate()
+
+
+# ---- the app: input ---------------------------------------------------------------------------------------------------
+func say(text: String) -> void:
+    msg = text
+    msg_at = Time.get_ticks_msec()
+
+
+func sel_id() -> String:
+    var l := ids()
+    return str(l[clampi(sel, 0, l.size() - 1)])
+
+
+func set_view(v: String) -> void:
+    view = v
+
+
+func cycle_view(step: int) -> void:
+    var order := ["books", "desk", "crew"]
+    view = order[(order.find(view) + step + order.size()) % order.size()]
+
+
+func do_advance() -> Dictionary:
+    var res := advance(sel_id())
+    say(str(res.msg))
+    return res
+
+
+func key(name: String) -> bool:
+    match name:
+        "left":
+            cycle_view(-1)
+        "right":
+            cycle_view(1)
+        "tab":
+            cycle_view(1)
+        "up":
+            _move(-1)
+        "down":
+            _move(1)
+        "pgup":
+            _move(-per_page)
+        "pgdn":
+            _move(per_page)
+        "enter", "w":
+            if view == "books":
+                do_advance()
+            elif view == "desk":
+                desk_action()
+            else:
+                hire_action()
+        "h":
+            hire_action()
+        "t":
+            say("TRAINING: " + str(Service.TRAINING[Service.cycle_training()].label))
+        "r":
+            view = "books"
+        "d":
+            view = "desk"
+        "c":
+            view = "crew"
+        _:
+            return false
+    return true
+
+
+var per_page := 6
+
+
+func _move(step: int) -> void:
+    if view == "books":
+        sel = clampi(sel + step, 0, ids().size() - 1)
+    elif view == "crew":
+        _crew_sel = clampi(_crew_sel + step, 0, maxi(0, Crew.names().size() - 1))
+
+
+func desk_action() -> void:
+    if Service.design == "":
+        Service.design_card(false)
+    elif Service.can_change_design():
+        Service.design_card(true)
+    else:
+        say(str(Service.DESIGNS.card.used) if Service.design_changes >= 1 else str(Service.DESIGNS.card.no_hours))
+
+
+func hire_action() -> void:
+    if not Crew.can_hire():
+        say(str(Service.HIRE_TEXT.full))
+        return
+    Service.hire_card()
+
+
+func act(parts: PackedStringArray) -> void:
+    match parts[1]:
+        "view":
+            view = parts[2]
+        "row":
+            sel = int(parts[2])
+        "go":
+            do_advance()
+        "page":
+            _move(int(parts[2]) * per_page)
+        "desk":
+            desk_action()
+        "hire":
+            hire_action()
+        "train":
+            say("TRAINING: " + str(Service.TRAINING[Service.cycle_training()].label))
+        "crew":
+            _crew_sel = int(parts[2])
+
+
+func back() -> bool:
+    return false
+
+
+func nested() -> bool:
+    return false
+
+
+# ---- the app: drawing -------------------------------------------------------------------------------------------------
+func _state_color(id: String) -> Color:
+    var s := state(id)
+    if bus.has(id) and not is_live(id):
+        return Color("d23c3c")
+    if s == DOCUMENTED and bool(rb(id).stale):
+        return Color("e0a030")
+    return [Color("b4bcc9"), Color("e0a030"), Color("2fa84f"), Color("2b579a")][s]
+
+
+func paint(computer: Node, body: Rect2) -> void:
+    c = computer
+    c._fill(body, BG)
+    var narrow := body.size.x < 280.0
+    var bar := Rect2(body.position, Vector2(body.size.x, 9))
+    c._fill(bar, Color("cfe0d8"))
+    var tw := 38.0 if not narrow else 28.0
+    for i in TABS.size():
+        var label_text: String = str(TABS[i][1])
+        if narrow and i == 0:
+            label_text = "BOOKS"
+        var w := tw + (8.0 if i == 0 and not narrow else 0.0)
+        var x := body.position.x + 2.0 + float(i) * (tw + 2.0) + (8.0 if i > 0 and not narrow else 0.0)
+        c._button("kb:view:" + str(TABS[i][0]), Rect2(x, body.position.y + 1, w, 8), label_text, true, c.BTN_HI if view == TABS[i][0] else c.BTN)
+    var hours_text := "HOURS %.1f/%.1f" % [hours_left(), hours_total()]
+    if narrow:
+        hours_text = "H %.1f/%.1f" % [hours_left(), hours_total()]
+    c._text(hours_text, Vector2(body.end.x - c._tw(hours_text) - 3, body.position.y + 2), INK if hours_left() >= 1.0 else c.RED)
+    var area := Rect2(body.position + Vector2(0, 9), body.size - Vector2(0, 9))
+    match view:
+        "desk":
+            _desk(area, narrow)
+        "crew":
+            _crew(area, narrow)
+        _:
+            _books(area, narrow)
+
+
+func _footer(a: Rect2, h: float, text: String, chars: int) -> Rect2:
+    var r := Rect2(a.position.x, a.end.y - h, a.size.x, h)
+    c._fill(r, Color("cfe0d8"))
+    var lines: Array = c._wrap(text, chars)
+    for i in mini(int((h - 11.0) / 7.0), lines.size()):
+        c._text(str(lines[i]), r.position + Vector2(2, 1 + i * 7), INK)
+    return r
+
+
+func info_for(id: String) -> String:
+    var cost := cost_of(id)
+    var parts := ["%s %s." % [tag_of(id), STATE_NAME[state(id)]]]
+    if bool(rb(id).stale) and state(id) == DOCUMENTED:
+        parts.append("OUT OF DATE.")
+    if bus.has(id) and not is_live(id):
+        parts.append("%s LEFT: STUCK FOR ALL." % str(bus[id]).to_upper())
+    elif id in single_points():
+        var who: Array = capable(id)
+        parts.append("ONLY %s CAN DO IT." % (str(who[0]).to_upper() if not who.is_empty() else "NOBODY"))
+    if str(cost.act) in ["draft", "publish", "refresh", "train"]:
+        parts.append("%s: %.1fH OF YOURS%s." % [str(cost.verb), float(cost.dan), " AND 1H OF A TECH" if float(cost.tech) > 0.0 else ""])
+    return " ".join(parts)
+
+
+func _books(a: Rect2, narrow: bool) -> void:
+    var list := ids()
+    var row_h := 8.0 if not narrow else 10.0
+    var foot_h := 19.0 if not narrow else 40.0
+    var list_top := a.position.y + 8.0
+    var list_h := a.size.y - 8.0 - foot_h
+    per_page = maxi(1, int(list_h / row_h))
+    sel = clampi(sel, 0, list.size() - 1)
+    var page_n := sel / per_page
+    var pages := int(ceil(float(list.size()) / float(per_page)))
+    c._text("CLASS", Vector2(a.position.x + 9, a.position.y + 1), MUTED)
+    if not narrow:
+        c._text("LEVEL", Vector2(a.position.x + a.size.x * 0.42, a.position.y + 1), MUTED)
+        c._text("STATE", Vector2(a.position.x + a.size.x * 0.55, a.position.y + 1), MUTED)
+    var score := "DOC %d%%" % doc_pct()
+    c._text(score, Vector2(a.position.x + (a.size.x * 0.76 if not narrow else 52.0), a.position.y + 1), INK)
+    if pages > 1:
+        c._button("kb:page:-1", Rect2(a.end.x - 30, a.position.y, 9, 8), "<", page_n > 0)
+        c._text("%d/%d" % [page_n + 1, pages], Vector2(a.end.x - 20, a.position.y + 1), MUTED)
+        c._button("kb:page:1", Rect2(a.end.x - 9, a.position.y, 8, 8), ">", page_n < pages - 1)
+    var first := page_n * per_page
+    for k in range(first, mini(list.size(), first + per_page)):
+        var id := str(list[k])
+        var r := Rect2(a.position.x, list_top + float(k - first) * row_h, a.size.x, row_h - 1)
+        c._fill(r, Color("c7e3d5") if k == sel else (c.WHITE if k % 2 == 0 else Color("eef3f9")))
+        c._region("kb:row:%d" % k, r)
+        c._fill(Rect2(r.position.x + 2, r.position.y + 1, 4, r.size.y - 2), _state_color(id))
+        var name_chars := int((a.size.x * 0.4) / 4.0) if not narrow else int((a.size.x - 60.0) / 4.0)
+        c._text(c._clip(label(id), name_chars), r.position + Vector2(9, 1 if not narrow else 2), INK)
+        var st: String = SHORT_NAME[state(id)]
+        var flag := ""
+        if bus.has(id) and not is_live(id):
+            flag = "STUCK"
+        elif state(id) == DOCUMENTED and bool(rb(id).stale):
+            flag = "STALE"
+        elif state(id) == DOCUMENTED and int(rb(id).signoff) > 0:
+            flag = "SIGN %d" % int(rb(id).signoff)
+        elif id in single_points():
+            flag = "RISK"
+        if narrow:
+            c._text(flag if flag != "" else st, Vector2(r.end.x - 4 * (flag if flag != "" else st).length() - 3, r.position.y + 2), c.RED if flag in ["STUCK", "RISK"] else (c.AMBER if flag != "" else INK))
+        else:
+            c._text(tag_of(id), Vector2(a.position.x + a.size.x * 0.42, r.position.y + 1), Color("1f4e8c"))
+            c._text(st, Vector2(a.position.x + a.size.x * 0.55, r.position.y + 1), INK)
+            if flag != "":
+                c._text(flag, Vector2(a.position.x + a.size.x * 0.76, r.position.y + 1), c.RED if flag in ["STUCK", "RISK"] else c.AMBER)
+    var chars := int((a.size.x - 4.0) / 4.0)
+    var foot := _footer(a, foot_h, info_for(sel_id()), chars)
+    var cost := cost_of(sel_id())
+    var go_label := "%s (ENTER)" % str(cost.verb)
+    if narrow:
+        go_label = str(cost.verb)
+    var can := str(cost.act) in ["draft", "publish", "refresh", "train"]
+    c._button("kb:go", Rect2(foot.position.x + 2, foot.end.y - 10, minf(foot.size.x - 4.0, c._tw(go_label) + 10.0), 9), go_label, can, Color("b8e0c8") if can else c.BTN)
+    if Time.get_ticks_msec() - msg_at < 3500 and msg != "":
+        var note: String = c._clip(msg, int((foot.size.x - c._tw(go_label) - 20.0) / 4.0))
+        c._text(note, Vector2(foot.position.x + c._tw(go_label) + 14.0, foot.end.y - 8), INK)
+
+
+func _desk(a: Rect2, narrow: bool) -> void:
+    var chars := int((a.size.x - 6.0) / 4.0)
+    var y := a.position.y + 2.0
+    var d: Dictionary = Service.DESIGNS.get(Service.design, {})
+    var title := "DESK: " + (str(d.label) if not d.is_empty() else str(Service.ROWS.none))
+    c._text(title, Vector2(a.position.x + 3, y), HEAD)
+    y += 8.0
+    var disp := "DISPATCHER: " + ("HIRED ($%d A WEEK)" % Service.DISPATCHER_WAGE if Service.dispatcher else "YOU (MANAGER HOURS %.1f)" % hours_total())
+    c._text(c._clip(disp, chars), Vector2(a.position.x + 3, y), INK)
+    y += 9.0
+    var text := str(d.text) if not d.is_empty() else str(Service.DESIGNS.card.text)
+    var lines: Array = c._wrap(text, chars)
+    var max_lines := int((a.end.y - y - 24.0) / 7.0)
+    for i in mini(max_lines, lines.size()):
+        c._text(str(lines[i]), Vector2(a.position.x + 3, y + float(i) * 7.0), INK)
+    y += float(mini(max_lines, lines.size())) * 7.0 + 2.0
+    var extra := ""
+    match Service.design:
+        "swarm":
+            extra = "MIS-ALLOCATED %d" % Service.misallocated
+        "pods":
+            extra = "PODS: " + "  ".join(PackedStringArray(_pod_lines()))
+        "tiered":
+            extra = "LANES: " + "  ".join(PackedStringArray(_lane_lines()))
+    if extra != "" and y < a.end.y - 22.0:
+        c._text(c._clip(extra, chars), Vector2(a.position.x + 3, y), MUTED)
+    var bottom := Rect2(a.position.x, a.end.y - 12, a.size.x, 12)
+    c._fill(bottom, Color("cfe0d8"))
+    var label_text := "CHOOSE THE DESK"
+    var can := true
+    if Service.design != "":
+        label_text = "CHANGE THE DESK (2H, ONCE)"
+        can = Service.can_change_design()
+    if narrow:
+        label_text = label_text.replace(" (2H, ONCE)", "")
+    c._button("kb:desk", Rect2(bottom.position.x + 2, bottom.position.y + 1, c._tw(label_text) + 10.0, 10), label_text, can, Color("b8e0c8") if can else c.BTN)
+    if Time.get_ticks_msec() - msg_at < 3500 and msg != "":
+        c._text(c._clip(msg, int((a.size.x - c._tw(label_text) - 20.0) / 4.0)), Vector2(bottom.position.x + c._tw(label_text) + 14.0, bottom.position.y + 4), INK)
+
+
+func _lane_lines() -> Array:
+    var out := []
+    for tag in ["L1", "L2"]:
+        var names := []
+        for n in Crew.names():
+            if Service.lane_of(str(n)) == tag:
+                names.append(str(n).to_upper())
+        out.append("%s %s" % [tag, " ".join(PackedStringArray(names))])
+    return out
+
+
+func _pod_lines() -> Array:
+    var out := []
+    for n in Crew.names():
+        var p := Service.pod_text(str(n))
+        if p != "":
+            out.append("%s %s" % [str(n).to_upper(), p])
+    return out
+
+
+func _crew(a: Rect2, narrow: bool) -> void:
+    var names := Crew.names()
+    _crew_sel = clampi(_crew_sel, 0, maxi(0, names.size() - 1))
+    var y := a.position.y + 1.0
+    var head := "NAME   LANE  WAGE  MORALE  STATE" if not narrow else "NAME  LANE  WAGE  MOOD"
+    c._text(head, Vector2(a.position.x + 3, y), MUTED)
+    y += 7.0
+    var rh := 8.0 if not narrow else 10.0
+    for i in names.size():
+        var who := str(names[i])
+        var r := Rect2(a.position.x, y, a.size.x, rh - 1)
+        c._fill(r, Color("c7e3d5") if i == _crew_sel else (c.WHITE if i % 2 == 0 else Color("eef3f9")))
+        c._region("kb:crew:%d" % i, r)
+        c._text(who.to_upper(), r.position + Vector2(3, 1 if not narrow else 2), INK)
+        var x := a.position.x + (36.0 if not narrow else 34.0)
+        c._text(Service.lane_of(who) if Service.design == "tiered" else "-", Vector2(x, r.position.y + (1 if not narrow else 2)), Color("1f4e8c"))
+        x += 18.0
+        c._text("$%d" % int(Crew.value(who, "wage")), Vector2(x, r.position.y + (1 if not narrow else 2)), INK)
+        x += 26.0
+        c._text("%d" % Crew.morale(who), Vector2(x, r.position.y + (1 if not narrow else 2)), c.GREEN if Crew.morale(who) >= 60 else (c.RED if Crew.morale(who) < 40 else c.AMBER))
+        x += 20.0
+        var st := Crew.status(who)
+        if not narrow:
+            c._text(st, Vector2(x, r.position.y + 1), c.RED if st in ["STUCK", "OVERLOAD"] else INK)
+            if Crew.is_hire(who):
+                var f: Dictionary = Crew.members[who].fit
+                c._text("FIT %d/%d/%d" % [int(f.get("culture", 3)), int(f.get("comm", 3)), int(f.get("curiosity", 3))], Vector2(x + 44, r.position.y + 1), MUTED)
+        y += rh
+    var sums := "PAYROLL $%d A WEEK  SEATS %d/%d" % [Service.weekly_cost(), names.size(), Crew.MAX_CREW]
+    if narrow:
+        c._text(c._clip("PAYROLL $%d/WK" % Service.weekly_cost(), 40), Vector2(a.position.x + 3, y + 2), INK)
+        c._text("SEATS %d/%d  COST %s/TICKET" % [names.size(), Crew.MAX_CREW, ("$%d" % Service.cost_per_ticket()) if Service.cost_per_ticket() >= 0 else "-"], Vector2(a.position.x + 3, y + 9), INK)
+    else:
+        c._text(sums, Vector2(a.position.x + 3, y + 2), INK)
+        c._text(("$%d A TICKET" % Service.cost_per_ticket()) if Service.cost_per_ticket() >= 0 else "NO TICKETS CLOSED", Vector2(a.position.x + a.size.x * 0.62, y + 2), INK)
+    var bottom := Rect2(a.position.x, a.end.y - 12, a.size.x, 12)
+    c._fill(bottom, Color("cfe0d8"))
+    var hire_label := "HIRE (H)" if Crew.can_hire() else "FULL"
+    c._button("kb:hire", Rect2(bottom.position.x + 2, bottom.position.y + 1, 40, 10), hire_label, Crew.can_hire(), Color("b8e0c8") if Crew.can_hire() else c.BTN)
+    var tl := "TRAINING: " + str(Service.TRAINING[Service.training].label)
+    if narrow:
+        tl = "TRAIN: " + str(Service.TRAINING[Service.training].label).split(" ")[0]
+    c._button("kb:train", Rect2(bottom.position.x + 46, bottom.position.y + 1, minf(bottom.size.x - 48.0, c._tw(tl) + 8.0), 10), c._clip(tl, int((bottom.size.x - 56.0) / 4.0)), true)
+    if Time.get_ticks_msec() - msg_at < 3500 and msg != "" and not narrow:
+        pass
+''')
+
 write("scripts/strings.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Story text you can edit without touching code. The game's mails, texts, jobs, cards, dialogue, forum threads and
@@ -27001,7 +28978,7 @@ const ROOTS := {
     "Yeartwo": ["CARRY", "YEAR2", "TEXT"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
-    "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW"],
+    "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
     "Nerds": ["JOKES", "THREADS"],

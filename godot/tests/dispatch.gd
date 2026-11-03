@@ -412,5 +412,66 @@ func _init() -> void:
 		report.finish()
 		await create_timer(0.5).timeout
 		_clear(cards)
+	# ---- C6: another 20 days with the new systems in use (design card, runbooks, hiring, life events), every card dismissed
+	_start()
+	_clear(cards)
+	sv.kb.hours_used = 0.0
+	var played2 := 0
+	var ended2 := false
+	var kb_steps := 0
+	var designs_seen := {}
+	for day in range(1, 21):
+		world.clock = 8.6
+		var hour2 := 8.6
+		var guard3 := 0
+		while not report.is_open and hour2 < 23.9 and guard3 < 200:
+			guard3 += 1
+			hour2 += 0.15
+			world.clock = hour2
+			await process_frame
+			await process_frame
+			_clear(cards, (day + guard3) % 3)
+			if sv.design != "":
+				designs_seen[sv.design] = true
+			if guard3 == 4:
+				var ids: Array = sv.kb.ids()
+				if sv.kb.advance(str(ids[(day * 5) % ids.size()])).ok:
+					kb_steps += 1
+				_clear(cards, 1)
+			if guard3 == 8 and day in [7, 13] and root.get_node("Crew").can_hire() and sv.cands.is_empty():
+				sv.hire_card()
+				_clear(cards, 3)
+			if guard3 % 6 == 0:
+				for t in msp.open_tickets():
+					if crew.assignee_of(t) == "" and sv._crew_ticket(t) and crew.names().size() > 0:
+						var who: String = sv.route_for(t)
+						if who != "":
+							sv.assign(int(t.id), who, true)
+						break
+				computer.dispatch.key("tab")
+			owner._work_queue(25.0)
+		_check(report.is_open, "(C6) day %d ends with the scorecard" % day)
+		played2 += 1
+		if report.report.get("final", false):
+			ended2 = true
+			break
+		var groups: Array = report.report.get("left_groups", [])
+		if day == 5:
+			var has_desk := false
+			for g in groups:
+				if str(g[0]) == "DESK":
+					has_desk = true
+			_check(has_desk, "(C6) the scorecard shows the DESK group")
+		report.finish()
+		await create_timer(0.7).timeout
+		root.get_node("Game").busy = false
+		_clear(cards)
+	_check(played2 >= 3, "(C6) played %d days with runbooks, a desk design and hiring (%d runbook steps, designs %s, crew %d)" % [played2, kb_steps, str(designs_seen.keys()), crew.size()])
+	_check(kb_steps >= 1 and sv.design != "" and crew.size() >= 2, "(C6) the new systems were used in the loop")
+	if ended2 and not report.report.get("fired", false):
+		_check(played2 == 20, "(C6) all 20 days played")
+		report.finish()
+		await create_timer(0.5).timeout
+		_clear(cards)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

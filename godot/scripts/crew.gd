@@ -35,6 +35,19 @@ const ROSTER := [
 		"areas": {"powershell": 1.0, "networking": 1.0, "servers": 2.0, "security": 2.0, "people": 1.0},
 	},
 ]
+const WAGES := {"Maya": 700, "Sam": 450, "Terry": 550}  # dollars a week (the hires bring their own)
+const START_LANE := {"Maya": "L2", "Sam": "L1", "Terry": "L2"}  # tiered desk: who works which lane
+# C6: the crew is capped at 6 (three starting techs and three hires). The seating you have: Maya (main floor desk 2) and Sam (desk 1)
+# have desks, Terry and the hires hot-desk at the conference table (Seat6, then Seat4, Seat5 and Seat3 for hires one to three).
+const MAX_CREW := 6
+const HIRE_SEATS := ["Seat4", "Seat5", "Seat3"]
+const HIRE_SHEETS := {
+	"Priya": "client_agent_b", "Marcus": "expo_atta", "Jules": "expo_attb", "Tomas": "expo_attc", "Wendy": "client_vettech_b",
+	"Dev": "expo_attd", "Rosa": "client_dentasst", "Kofi": "expo_atte", "Ingrid": "client_vetrec_b", "Sal": "expo_attf",
+	"Mei": "client_designer_b", "Otis": "expo_vendh",
+}
+const FIT_AXES := ["culture", "comm", "curiosity"]
+const FIT_LABEL := {"culture": "CULTURE", "comm": "COMMUNICATION", "curiosity": "CURIOSITY"}
 const START_MORALE := 65
 const QUIT_BELOW := 22  # morale under this can make a tech quit at the end of the day
 const MAYA_CAP := 1.3  # mentoring raises Maya's skill up to here
@@ -48,43 +61,266 @@ var members := {}  # name -> {skill, morale, stress, retain, mentored, gone, las
 var stuck := {}  # name -> {ticket, left, asked} while somebody waits for you or an owner
 var quits: Array = []  # names that left during the run
 var farewells: Array = []  # names that left and still owe you a goodbye card
+var hire_order: Array = []  # names of the techs you hired, in order (they extend the ROSTER)
+var pending: Array = []  # hires that start tomorrow: {cand, path, seat}
+var hired_total := 0  # everybody ever hired (the retention number's denominator)
 
 
 func _ready() -> void:
 	reset()
 
 
+func _blank(skill: float, areas: Dictionary) -> Dictionary:
+	return {
+		"skill": skill,
+		"morale": START_MORALE,
+		"stress": 20,
+		"retain": 0,
+		"mentored": 0,
+		"gone": false,
+		"last_oto": -9,
+		"areas": areas.duplicate(),
+		"focus": "",
+		"over_t": 0.0,
+		"work_t": 0.0,
+		"over_days": 0,
+		"done": 0,
+		"stalls": 0,
+		"wage": 500,
+		"lane": "L1",
+		"busy_until": 0.0,
+		"shadow": 0,
+		"hire": false,
+		"fit": {},
+		"trait": "steady",
+		"path": "",
+		"start_day": 0,
+		"solo_h": -1.0,
+		"reopens": 0,
+		"seat": "",
+		"sheet": "",
+	}
+
+
 func reset() -> void:
 	members = {}
 	for row in ROSTER:
-		members[str(row.name)] = {
-			"skill": float(row.skill),
-			"morale": START_MORALE,
-			"stress": 20,
-			"retain": 0,
-			"mentored": 0,
-			"gone": false,
-			"last_oto": -9,
-			"areas": row.areas.duplicate(),
-			"focus": "",
-			"over_t": 0.0,
-			"work_t": 0.0,
-			"over_days": 0,
-			"done": 0,
-			"stalls": 0,
-		}
+		var m := _blank(float(row.skill), row.areas)
+		m["wage"] = int(WAGES.get(str(row.name), 500))
+		m["lane"] = str(START_LANE.get(str(row.name), "L1"))
+		members[str(row.name)] = m
 	stuck = {}
 	quits = []
 	farewells = []
+	hire_order = []
+	pending = []
+	hired_total = 0
+
+
+func roster_names() -> Array:
+	var out := []
+	for row in ROSTER:
+		out.append(str(row.name))
+	out.append_array(hire_order)
+	return out
 
 
 func names(include_gone := false) -> Array:
 	var out := []
-	for row in ROSTER:
-		var n := str(row.name)
-		if include_gone or not is_gone(n):
+	for n in roster_names():
+		if include_gone or not is_gone(str(n)):
+			out.append(str(n))
+	return out
+
+
+# ---- hiring (C6): the world rows, seats and the candidate generator ----------------------------------------------------
+func is_pool_name(n: String) -> bool:
+	return HIRE_SHEETS.has(n)
+
+
+func is_hire(n: String) -> bool:
+	return hire_order.has(n)
+
+
+# the World cast row of a hire: they hot-desk at the conference table
+func hire_row(n: String) -> Dictionary:
+	return {"character": str(HIRE_SHEETS.get(n, "office_teen")), "home": "conference", "seat": seat_of(n), "role": "crew"}
+
+
+func seat_of(n: String) -> String:
+	var s := str(members.get(n, {}).get("seat", ""))
+	return s if s != "" else str(HIRE_SEATS[0])
+
+
+func free_seat() -> String:
+	var used := []
+	for n in hire_order:
+		if not is_gone(str(n)):
+			used.append(seat_of(str(n)))
+	for p in pending:
+		used.append(str(p.get("seat", "")))
+	for s in HIRE_SEATS:
+		if not used.has(s):
+			return str(s)
+	return ""
+
+
+func open_seats() -> int:
+	return maxi(0, MAX_CREW - names().size() - pending.size())
+
+
+func can_hire() -> bool:
+	return open_seats() > 0 and free_seat() != ""
+
+
+func _name_pool() -> Array:
+	var taken := roster_names()
+	for p in pending:
+		taken.append(str(p.cand.name))
+	var out := []
+	for n in Owner.NAMES:
+		if not taken.has(n) and HIRE_SHEETS.has(n):
 			out.append(n)
 	return out
+
+
+# three named candidates: a ringer (high skill, poor fit, dear), a good fit with less skill who grows, and a middle one.
+# Fit has three axes 1-5: culture (team mood), communication (clients), curiosity (how fast they learn). Seeded.
+func make_candidates(count := 3) -> Array:
+	var rng := Difficulty.rng("service.hire")
+	var pool := _name_pool()
+	for i in range(pool.size() - 1, 0, -1):  # a seeded shuffle
+		var j := rng.randi() % (i + 1)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	var kinds := ["ringer", "fit", "mid"]
+	for i in range(kinds.size() - 1, 0, -1):
+		var j := rng.randi() % (i + 1)
+		var tmp2 = kinds[i]
+		kinds[i] = kinds[j]
+		kinds[j] = tmp2
+	var out := []
+	var tech_areas := ["powershell", "networking", "servers", "security"]
+	for i in mini(count, pool.size()):
+		var kind: String = kinds[i % kinds.size()]
+		var skill := 1.0
+		var fit := {}
+		var trait_ids := ["steady"]
+		match kind:
+			"ringer":
+				skill = snappedf(rng.randf_range(1.1, 1.3), 0.05)
+				fit = {"culture": 1 + rng.randi() % 2, "comm": 2 + rng.randi() % 2, "curiosity": 2 + rng.randi() % 2}
+				trait_ids = ["wizard", "flight"]
+			"fit":
+				skill = snappedf(rng.randf_range(0.55, 0.8), 0.05)
+				fit = {"culture": 4 + rng.randi() % 2, "comm": 3 + rng.randi() % 3, "curiosity": 4 + rng.randi() % 2}
+				trait_ids = ["green", "people", "steady"]
+			_:
+				skill = snappedf(rng.randf_range(0.8, 1.05), 0.05)
+				fit = {"culture": 3 + rng.randi() % 2, "comm": 3 + rng.randi() % 2, "curiosity": 3 + rng.randi() % 2}
+				trait_ids = ["steady", "people", "wizard"]
+		var trait_id: String = trait_ids[rng.randi() % trait_ids.size()]
+		var strong: String = tech_areas[rng.randi() % tech_areas.size()]
+		var areas := {"powershell": 1.0, "networking": 1.0, "servers": 1.0, "security": 1.0, "people": 1.0 + (1.0 if int(fit.comm) >= 4 else 0.0)}
+		areas[strong] = 3.0 if kind == "ringer" else (2.0 if skill >= 0.8 else 1.5)
+		var wage := int(round((280.0 + 250.0 * skill) / 10.0)) * 10 + int(Owner.TRAITS[trait_id].get("wage", 0))
+		if kind == "ringer":
+			wage = int(round(float(wage) * 1.25 / 10.0)) * 10  # the ringer knows what he is worth
+		out.append({"name": str(pool[i]), "skill": skill, "wage": wage, "trait": trait_id, "fit": fit, "area": strong, "areas": areas, "kind": kind})
+	return out
+
+
+func fit_avg(who: String) -> float:
+	var f: Dictionary = members.get(who, {}).get("fit", {})
+	if f.is_empty():
+		return 3.0
+	var total := 0.0
+	for a in FIT_AXES:
+		total += float(f.get(a, 3))
+	return total / float(FIT_AXES.size())
+
+
+# the hire starts tomorrow: path "shadow" (sits with the team for two days, no tickets of his own) or "structured"
+func hire(cand: Dictionary, path: String) -> void:
+	var seat := free_seat()
+	pending.append({"cand": cand.duplicate(true), "path": path, "seat": seat})
+	hired_total += 1
+
+
+# called at the end of the day: the people hired today become crew members for tomorrow. Returns their names.
+func onboard_pending(day: int) -> Array:
+	var out := []
+	for p in pending:
+		var cand: Dictionary = p.cand
+		var n := str(cand.name)
+		var m := _blank(float(cand.skill), cand.areas)
+		m["wage"] = int(cand.wage)
+		m["hire"] = true
+		m["fit"] = cand.fit.duplicate()
+		m["trait"] = str(cand.trait)
+		m["path"] = str(p.path)
+		m["start_day"] = day + 1
+		m["shadow"] = 2 if str(p.path) == "shadow" else 0
+		m["seat"] = str(p.seat) if str(p.seat) != "" else str(HIRE_SEATS[0])
+		m["sheet"] = str(HIRE_SHEETS.get(n, "office_teen"))
+		m["lane"] = "L2" if float(cand.skill) >= 0.95 and float(cand.areas.get(str(cand.area), 1.0)) >= 2.0 else "L1"
+		m["morale"] = START_MORALE + (3 if str(p.path) == "shadow" else 0)
+		members[n] = m
+		hire_order.append(n)
+		out.append(n)
+	pending = []
+	return out
+
+
+func is_shadowing(who: String) -> bool:
+	return int(members.get(who, {}).get("shadow", 0)) > 0 and not is_gone(who)
+
+
+func busy(who: String) -> bool:
+	return World.clock < float(members.get(who, {}).get("busy_until", 0.0)) and not is_gone(who)
+
+
+# somebody is away from the queue for `hours` of the working day (writing a runbook, a lesson, a day off)
+func set_busy(who: String, hours: float) -> void:
+	if members.has(who):
+		members[who]["busy_until"] = maxf(float(members[who].get("busy_until", 0.0)), World.clock + hours)
+
+
+func payroll_week() -> int:
+	var total := 0
+	for n in names():
+		total += int(value(str(n), "wage"))
+	return total
+
+
+# techs still here against everyone who ever worked for you on the desk (the three you started with, plus the hires)
+func retention_pct() -> int:
+	var ever := ROSTER.size() + hired_total - pending.size()
+	if ever <= 0:
+		return 100
+	return int(round(100.0 * float(names().size()) / float(ever)))
+
+
+func newest_hire() -> String:
+	return str(hire_order[-1]) if not hire_order.is_empty() else ""
+
+
+# mean hours of working time from the first morning to the first ticket closed on their own (-1 = nobody has yet)
+func solo_mean_hours() -> float:
+	var total := 0.0
+	var n := 0
+	for h in hire_order:
+		var v := value(str(h), "solo_h")
+		if v >= 0.0:
+			total += v
+			n += 1
+	return total / float(n) if n > 0 else -1.0
+
+
+func note_reopen(who: String) -> void:
+	if members.has(who):
+		members[who]["reopens"] = int(members[who].get("reopens", 0)) + 1
 
 
 func has(who: String) -> bool:
@@ -133,9 +369,10 @@ func worker_speed(who: String) -> float:
 
 
 func raw_speed(who: String) -> float:
-	if is_gone(who):
+	if is_gone(who) or is_shadowing(who) or busy(who):
 		return 0.0
-	return value(who, "skill") * (0.75 + 0.5 * float(morale(who)) / 100.0)
+	var ramp := 0.8 if (is_hire(who) and str(members[who].get("path", "")) == "structured" and Campaign.day - int(members[who].get("start_day", 0)) < 2) else 1.0
+	return value(who, "skill") * (0.75 + 0.5 * float(morale(who)) / 100.0) * ramp
 
 
 # the crew's ticket-working skill (Owner.crew_skill in the service campaign)
@@ -237,29 +474,38 @@ func tag_of(t: Dictionary) -> String:
 
 # whole levels between what the ticket needs and what he has (1 or more = the ticket is above his head)
 func gap_of(who: String, t: Dictionary) -> int:
-	return need_of(t) - level(who, area_of(t))
+	return need_of(t) - level(who, area_of(t)) - int(Service.kb.relief(t))
 
 
 func gap_f(who: String, t: Dictionary) -> float:
-	return float(need_of(t)) - area_level(who, area_of(t))
+	return float(need_of(t)) - area_level(who, area_of(t)) - float(Service.kb.relief(t))
 
 
 # how fast he works this ticket compared with a perfect match
 func match_mult(who: String, t: Dictionary) -> float:
 	var g := gap_f(who, t)
-	if g <= 0.0:
-		return minf(1.12, 1.0 - 0.06 * g)
-	return clampf(1.0 - 0.4 * g, 0.2, 1.0)
+	var m := minf(1.12, 1.0 - 0.06 * g) if g <= 0.0 else clampf(1.0 - 0.4 * g, 0.2, 1.0)
+	return m * float(Service.kb.speed(t)) * float(Service.design_speed(who, t))
 
 
 # extra odds that the ticket comes back (a fit is a little safer than neutral)
 func reopen_add(who: String, t: Dictionary) -> float:
 	var g := gap_f(who, t)
+	var add := 0.0
 	if g <= -1.0:
-		return -0.03
-	if g <= 0.0:
+		add = -0.03
+	elif g > 0.0:
+		add = minf(0.3, 0.12 * g)
+	return add + float(Service.kb.safety(t)) + float(Service.design_reopen(who, t)) + onboarding_reopen(who)
+
+
+# the first ten days of a hire: shadowing leaves habits (a few more reopens), a structured start with runbooks a few fewer
+func onboarding_reopen(who: String) -> float:
+	if not is_hire(who) or Campaign.day - int(members[who].get("start_day", 0)) >= 10:
 		return 0.0
-	return minf(0.3, 0.12 * g)
+	if str(members[who].get("path", "")) == "shadow":
+		return 0.04
+	return -0.02 if Service.kb.documented_count() >= 3 else 0.0
 
 
 func assignee_of(t: Dictionary) -> String:
@@ -276,7 +522,7 @@ func load_of(who: String) -> int:
 
 # skill match x load x mood (+ the focus bonus): 0 to about 1.2. `t` may already be on his desk (it does not count as load)
 func fit(who: String, t: Dictionary) -> float:
-	if is_gone(who):
+	if is_gone(who) or is_shadowing(who):
 		return 0.0
 	var base := clampf(1.0 - 0.45 * gap_f(who, t), 0.1, 1.1)
 	var load := load_of(who) - (1 if assignee_of(t) == who else 0)
@@ -293,7 +539,7 @@ func best_for(t: Dictionary, max_load := 2) -> String:
 	var best := ""
 	var best_fit := -1.0
 	for who in names():
-		if stuck.has(who) or load_of(str(who)) >= max_load:
+		if stuck.has(who) or is_shadowing(str(who)) or load_of(str(who)) >= max_load:
 			continue
 		var f := fit(str(who), t)
 		if f > best_fit + 0.0001:
@@ -308,6 +554,10 @@ func status(who: String) -> String:
 		return "GONE"
 	if stuck.has(who):
 		return "STUCK"
+	if is_shadowing(who):
+		return "SHADOW"
+	if busy(who):
+		return "WRITING"
 	var n := load_of(who)
 	if n >= OVERLOAD_AT:
 		return "OVERLOAD"
@@ -386,6 +636,8 @@ func note_done(who: String, t: Dictionary) -> void:
 		return
 	members[who]["done"] = int(members[who].done) + 1
 	train(who, area_of(t), 0.008 + (0.02 if gap_of(who, t) >= 1 else 0.0))
+	if is_hire(who) and float(members[who].get("solo_h", -1.0)) < 0.0:
+		members[who]["solo_h"] = maxf(0.5, float(Campaign.day - int(members[who].get("start_day", Campaign.day))) * 8.0 + (World.clock - World.DAY_START))
 
 
 # the tech is helped: his stuck ticket was moved or closed
@@ -438,10 +690,17 @@ func quit_chance(who: String) -> float:
 	var worn := 0.0
 	if morale(who) < 40 and int(members[who].get("over_days", 0)) >= 3:
 		worn = 0.08 * float(int(members[who].over_days) - 2)  # three bad days of overload in a row wear anybody down
-	if morale(who) >= QUIT_BELOW and worn <= 0.0:
+	# a poor fit (or a flight risk) with a sinking mood is the one who walks (C6)
+	var fitrisk := 0.0
+	if is_hire(who) and morale(who) < 45:
+		if fit_avg(who) < 3.0:
+			fitrisk += 0.04 * (3.0 - fit_avg(who))
+		if str(members[who].get("trait", "")) == "flight":
+			fitrisk += 0.05
+	if morale(who) >= QUIT_BELOW and worn <= 0.0 and fitrisk <= 0.0:
 		return 0.0
 	var base := float(QUIT_BELOW - morale(who)) / 40.0 if morale(who) < QUIT_BELOW else 0.0
-	return clampf(base + worn - 0.03 * value(who, "retain"), 0.0, 0.8)
+	return clampf(base + worn + fitrisk - 0.03 * value(who, "retain"), 0.0, 0.8)
 
 
 func quit(who: String) -> void:
@@ -450,6 +709,8 @@ func quit(who: String) -> void:
 	members[who]["gone"] = true
 	quits.append(who)
 	stuck.erase(who)
+	Service.kb.on_quit(who)
+	Service.crew_changed()
 	Service.release_all(who)
 
 
@@ -483,6 +744,11 @@ func end_day(util: float, grade: String) -> Array:
 		if area != "":
 			train(who, area, 0.02)  # the hour a day they spend on it
 		add_morale(who, dm)
+		m["busy_until"] = 0.0
+		if int(m.get("shadow", 0)) > 0:
+			m["shadow"] = int(m.shadow) - 1
+		if bool(m.get("hire", false)):
+			_hire_day(str(who), m)
 	for who in names():
 		var chance := quit_chance(who)
 		if chance > 0.0 and Difficulty.rng("service.crew").randf() < chance:
@@ -492,14 +758,42 @@ func end_day(util: float, grade: String) -> Array:
 	return left
 
 
+# a hire's day: curiosity teaches, a good fit settles in, a poor fit (the ringer who does not belong) drags the others down
+func _hire_day(who: String, m: Dictionary) -> void:
+	var f: Dictionary = m.get("fit", {})
+	if f.is_empty():
+		return
+	var cur := float(f.get("curiosity", 3))
+	train(who, focus_of(who) if focus_of(who) != "" else weakest_area(who), 0.004 * cur)
+	if str(m.get("trait", "")) == "green":
+		m["skill"] = minf(MAYA_CAP, float(m.skill) + 0.012)
+	if cur >= 4.0:
+		m["skill"] = minf(MAYA_CAP, float(m.skill) + 0.008)
+	if float(f.get("culture", 3)) >= 4.0:
+		add_morale(who, 1)
+	elif float(f.get("culture", 3)) <= 2.0:
+		for other in names():
+			if other != who:
+				add_morale(str(other), -1)
+
+
 func to_dict() -> Dictionary:
-	return {"members": members.duplicate(true), "quits": quits.duplicate(), "farewells": farewells.duplicate()}
+	return {
+		"members": members.duplicate(true), "quits": quits.duplicate(), "farewells": farewells.duplicate(),
+		"hire_order": hire_order.duplicate(), "pending": pending.duplicate(true), "hired_total": hired_total,
+	}
 
 
 # old saves (C4) only know skill, morale, stress and so on: the areas and the focus start from the roster
 func from_dict(data: Dictionary) -> void:
 	reset()
 	var saved: Dictionary = data.get("members", {})
+	hire_order = data.get("hire_order", []).duplicate()
+	pending = data.get("pending", []).duplicate(true)
+	hired_total = int(data.get("hired_total", hire_order.size()))
+	for h in hire_order:
+		if saved.has(h):
+			members[str(h)] = _blank(float(saved[h].get("skill", 1.0)), saved[h].get("areas", {}))
 	for who in saved:
 		if members.has(who):
 			for key in saved[who]:
