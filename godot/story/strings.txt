@@ -8858,11 +8858,11 @@ THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.
 
 # Outings > FRIEND_HINTS > Vic > board
 [Outings.FRIEND_HINTS.Vic.board]
-THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.
+I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.
 
 # Outings > FRIEND_HINTS > Vic > clock
 [Outings.FRIEND_HINTS.Vic.clock]
-THE CLOCK, TRUST ME, THE CLOCK.
+I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.
 
 # Outings > FRIEND_HINTS > Vic > plaque
 [Outings.FRIEND_HINTS.Vic.plaque]
@@ -8875,6 +8875,26 @@ THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.
 # Outings > FRIEND_HINTS > Vic > keypad
 [Outings.FRIEND_HINTS.Vic.keypad]
 YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.
+
+# Outings > FRIEND_HINTS > Morgan > board
+[Outings.FRIEND_HINTS.Morgan.board]
+THERE IS MATH ON THE BOARD. I WILL LET YOU HAVE THAT ONE.
+
+# Outings > FRIEND_HINTS > Morgan > clock
+[Outings.FRIEND_HINTS.Morgan.clock]
+THE CLOCK IS STOPPED. THAT IS NOT A METAPHOR. LOOK AT IT.
+
+# Outings > FRIEND_HINTS > Morgan > plaque
+[Outings.FRIEND_HINTS.Morgan.plaque]
+UNDER THE PAINTING. SOMEONE PUT A PLAQUE THERE ON PURPOSE.
+
+# Outings > FRIEND_HINTS > Morgan > shelf
+[Outings.FRIEND_HINTS.Morgan.shelf]
+THE SHELF IS DOING MORE WORK THAN IT LOOKS. READ IT.
+
+# Outings > FRIEND_HINTS > Morgan > keypad
+[Outings.FRIEND_HINTS.Morgan.keypad]
+YOU HAVE EVERYTHING. THE KEYPAD IS ON THE VAULT. GO.
 
 
 # ======================= Outings > HERRINGS =======================
@@ -8935,3 +8955,211 @@ THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.
 # Outings > RECIPE_TIPS > nodial
 [Outings.RECIPE_TIPS.nodial]
 THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.
+
+
+# ======================= Outings > GUESTS =======================
+# Outings > GUESTS > Alan > line
+[Outings.GUESTS.Alan.line]
+Alan has a thing tonight.
+
+# Outings > GUESTS > Garrison > line
+[Outings.GUESTS.Garrison.line]
+Garrison is sitting this one out.
+
+# Outings > GUESTS > Dan > line
+[Outings.GUESTS.Dan.line]
+Dan has a thing tonight.
+
+# Outings > GUESTS > Vic > line
+[Outings.GUESTS.Vic.line]
+Vic is on a call with a client.
+
+# Outings > GUESTS > Maya > line
+[Outings.GUESTS.Maya.line]
+Maya has plans tonight.
+
+# Outings > GUESTS > Morgan > line
+[Outings.GUESTS.Morgan.line]
+Morgan is staying behind to catch up.
+
+
+# ======================= Outings > CREW_LINES =======================
+# Outings > CREW_LINES > Alan > cheer > 0
+[Outings.CREW_LINES.Alan.cheer.0]
+NICE ROLL. STEADY.
+
+# Outings > CREW_LINES > Alan > cheer > 1
+[Outings.CREW_LINES.Alan.cheer.1]
+THAT IS HOW IT IS DONE.
+
+# Outings > CREW_LINES > Alan > groan > 0
+[Outings.CREW_LINES.Alan.groan.0]
+IT HAPPENS. ROLL AGAIN.
+
+# Outings > CREW_LINES > Alan > groan > 1
+[Outings.CREW_LINES.Alan.groan.1]
+THE LANE IS SLICK TONIGHT.
+
+# Outings > CREW_LINES > Alan > talk > 0
+[Outings.CREW_LINES.Alan.talk.0]
+I WILL TAKE THE SPARE.
+
+# Outings > CREW_LINES > Alan > talk > 1
+[Outings.CREW_LINES.Alan.talk.1]
+SLOW AND STEADY.
+
+# Outings > CREW_LINES > Alan > sing > 0
+[Outings.CREW_LINES.Alan.sing.0]
+HA! KEEP GOING!
+
+# Outings > CREW_LINES > Alan > sing > 1
+[Outings.CREW_LINES.Alan.sing.1]
+THAT IS A REAL VOICE.
+
+# Outings > CREW_LINES > Garrison > cheer > 0
+[Outings.CREW_LINES.Garrison.cheer.0]
+YES! DID YOU SEE THAT?
+
+# Outings > CREW_LINES > Garrison > cheer > 1
+[Outings.CREW_LINES.Garrison.cheer.1]
+THIS IS THE BEST NIGHT.
+
+# Outings > CREW_LINES > Garrison > groan > 0
+[Outings.CREW_LINES.Garrison.groan.0]
+OH NO. OH NO NO.
+
+# Outings > CREW_LINES > Garrison > groan > 1
+[Outings.CREW_LINES.Garrison.groan.1]
+I BLAME THE SHOES.
+
+# Outings > CREW_LINES > Garrison > talk > 0
+[Outings.CREW_LINES.Garrison.talk.0]
+I AM ON FIRE. OR NOT.
+
+# Outings > CREW_LINES > Garrison > talk > 1
+[Outings.CREW_LINES.Garrison.talk.1]
+THE NEXT ONE IS MINE.
+
+# Outings > CREW_LINES > Garrison > sing > 1
+[Outings.CREW_LINES.Garrison.sing.1]
+ENCORE! ENCORE!
+
+# Outings > CREW_LINES > Dan > cheer > 0
+[Outings.CREW_LINES.Dan.cheer.0]
+THAT PIN HAD IT COMING.
+
+# Outings > CREW_LINES > Dan > cheer > 1
+[Outings.CREW_LINES.Dan.cheer.1]
+WHOA. DID I DO THAT?
+
+# Outings > CREW_LINES > Dan > groan > 0
+[Outings.CREW_LINES.Dan.groan.0]
+THE BALL HAS A MIND OF ITS OWN.
+
+# Outings > CREW_LINES > Dan > groan > 1
+[Outings.CREW_LINES.Dan.groan.1]
+THAT WAS A BAD CABLE RUN.
+
+# Outings > CREW_LINES > Dan > talk > 0
+[Outings.CREW_LINES.Dan.talk.0]
+WATCH THIS ONE.
+
+# Outings > CREW_LINES > Dan > talk > 1
+[Outings.CREW_LINES.Dan.talk.1]
+I MIGHT GET A TURKEY.
+
+# Outings > CREW_LINES > Dan > sing > 0
+[Outings.CREW_LINES.Dan.sing.0]
+NOT BAD AT ALL.
+
+# Outings > CREW_LINES > Dan > sing > 1
+[Outings.CREW_LINES.Dan.sing.1]
+I WOULD NOT TRY THAT.
+
+# Outings > CREW_LINES > Vic > cheer > 0
+[Outings.CREW_LINES.Vic.cheer.0]
+I TOLD YOU. I TOLD EVERYONE.
+
+# Outings > CREW_LINES > Vic > cheer > 1
+[Outings.CREW_LINES.Vic.cheer.1]
+THAT IS A WINNING ROLL.
+
+# Outings > CREW_LINES > Vic > groan > 0
+[Outings.CREW_LINES.Vic.groan.0]
+THE PINS WERE LOOSE.
+
+# Outings > CREW_LINES > Vic > groan > 1
+[Outings.CREW_LINES.Vic.groan.1]
+THAT DOES NOT COUNT, RIGHT?
+
+# Outings > CREW_LINES > Vic > talk > 0
+[Outings.CREW_LINES.Vic.talk.0]
+WATCH AND LEARN.
+
+# Outings > CREW_LINES > Vic > talk > 1
+[Outings.CREW_LINES.Vic.talk.1]
+I HAVE A GUY AT THIS ALLEY.
+
+# Outings > CREW_LINES > Vic > sing > 0
+[Outings.CREW_LINES.Vic.sing.0]
+I KNEW YOU HAD IT!
+
+# Outings > CREW_LINES > Vic > sing > 1
+[Outings.CREW_LINES.Vic.sing.1]
+I HAVE A GUY FOR RECORDING.
+
+# Outings > CREW_LINES > Maya > cheer > 1
+[Outings.CREW_LINES.Maya.cheer.1]
+RIGHT ON THE HEAD PIN.
+
+# Outings > CREW_LINES > Maya > groan > 0
+[Outings.CREW_LINES.Maya.groan.0]
+ONE PIN. REALLY.
+
+# Outings > CREW_LINES > Maya > groan > 1
+[Outings.CREW_LINES.Maya.groan.1]
+I WAS A BIT LEFT.
+
+# Outings > CREW_LINES > Maya > talk > 0
+[Outings.CREW_LINES.Maya.talk.0]
+I HAVE A PLAN FOR THIS ONE.
+
+# Outings > CREW_LINES > Maya > talk > 1
+[Outings.CREW_LINES.Maya.talk.1]
+AIM, THEN BREATHE.
+
+# Outings > CREW_LINES > Maya > sing > 0
+[Outings.CREW_LINES.Maya.sing.0]
+THAT NOTE WAS PERFECT.
+
+# Outings > CREW_LINES > Maya > sing > 1
+[Outings.CREW_LINES.Maya.sing.1]
+OK, THAT WAS GOOD.
+
+# Outings > CREW_LINES > Morgan > cheer > 0
+[Outings.CREW_LINES.Morgan.cheer.0]
+NOT BAD. DO NOT TELL HR.
+
+# Outings > CREW_LINES > Morgan > groan > 0
+[Outings.CREW_LINES.Morgan.groan.0]
+WELL. THAT HAPPENED.
+
+# Outings > CREW_LINES > Morgan > groan > 1
+[Outings.CREW_LINES.Morgan.groan.1]
+I AM ONLY HERE FOR THE SHOES.
+
+# Outings > CREW_LINES > Morgan > talk > 0
+[Outings.CREW_LINES.Morgan.talk.0]
+I DO NOT BOWL. I JUST WIN.
+
+# Outings > CREW_LINES > Morgan > talk > 1
+[Outings.CREW_LINES.Morgan.talk.1]
+ONE FRAME BEHIND IS FINE.
+
+# Outings > CREW_LINES > Morgan > sing > 0
+[Outings.CREW_LINES.Morgan.sing.0]
+THAT WAS FINE. GOOD, EVEN.
+
+# Outings > CREW_LINES > Morgan > sing > 1
+[Outings.CREW_LINES.Morgan.sing.1]
+I WILL ALLOW IT.

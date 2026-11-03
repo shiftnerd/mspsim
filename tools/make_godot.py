@@ -179,7 +179,7 @@ PATCHABLE = {
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 }
 
 
@@ -950,17 +950,14 @@ func _draw_bowl_score() -> void:
     if str(game.stage) == "pause" and str(game.msg) != "" and int(_time * 4.0) % 2 == 0:
         PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
         return
+    # up to five names on two lines: 14 characters of two letters and two digits fit the 60 px screen
     var t: Dictionary = game.totals
-    var line1 := "YOU %02d" % int(t["You"])
-    if t.has("Alan"):
-        line1 += " ALN %02d" % int(t["Alan"])
-    var line2 := ""
-    if t.has("Garrison"):
-        line2 += "GAR %02d " % int(t["Garrison"])
-    if t.has("Dan"):
-        line2 += "DAN %02d" % int(t["Dan"])
-    PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
-    PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
+    var cells := ["YO%02d" % int(t["You"])]
+    for who in Outings.bowlers():
+        cells.append("%s%02d" % [str(Outings.GUESTS[who].code), int(t.get(who, 0))])
+    PixelFont.draw(self, " ".join(cells.slice(0, 3)), Vector2(2, 1), green, 1)
+    if cells.size() > 3:
+        PixelFont.draw(self, " ".join(cells.slice(3, 6)), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:
@@ -3201,7 +3198,7 @@ func _finish_leg(n: String) -> void:
 
 
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
-func start_outing(room: String, spots: Array, seats := {}) -> void:
+func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void:
     var x0 := float(DATA.SCENES[room].x0)
     for n in chars:
         var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
@@ -3209,6 +3206,14 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
         st.node = null
+        if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+            st.scene = OUTSIDE
+            st.following = false
+            st.held = ""
+            st.sips = 0
+            st.legs = [_away_leg()]
+            st.leg_t = FOREVER
+            continue
         st.scene = room
         st.arrive = "from_outing"
         st.fresh = false
@@ -18209,8 +18214,24 @@ const PEOPLE := {
     "Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
     "Dan":
     {"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
-    "Vic": {"loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"], "hates": ["VENDOR STORIES"]},
-    "Maya": {"loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"], "hates": ["COMMUTE"]},
+    "Vic":
+    {
+        "loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"],
+        "hates": ["VENDOR STORIES"],
+        "moods": ["chatty", "chatty", "relaxed", "distracted"],
+    },
+    "Maya":
+    {
+        "loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"],
+        "hates": ["COMMUTE"],
+        "moods": ["relaxed", "easygoing", "chatty", "tired"],
+    },
+    "Morgan":
+    {
+        "loves": ["ROAD TRIP", "FANTASY FOOTBALL", "FOOD"],
+        "hates": ["BOSS GOSSIP", "RAISES AND BONUSES"],
+        "moods": ["tired", "easygoing", "easygoing", "distracted", "relaxed"],
+    },
 }
 # the mood of the day shifts a diner's points for the whole dinner (+1 / 0 / -1)
 const DINNER_MOODS := {
@@ -18226,8 +18247,29 @@ const BUDGETS := {
     "normal": {"label": "NORMAL: THE USUAL GRILL ORDER", "cost": 300, "mood": 0},
     "fancy": {"label": "FANCY: STEAKS AND A TOAST", "cost": 520, "mood": 1},
 }
-const BOWL_SKILL := {"Alan": 0.62, "Garrison": 0.55, "Dan": 0.48}
-const SEATS := {"dinner": {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5"}}
+# bowling personalities (R5, B1): skill = how many pins the average roll takes, noise = how far a roll swings from it,
+# streak = hot / cold swing on alternating frames (Garrison), turkey = chance of a strike on a frame (Dan is wild),
+# show = bonus when there is an audience of three or more (Vic), gutter = chance of a gutter ball, late = frames sat out
+# at the start (Morgan joins the game late). A person without a row does not bowl.
+const BOWLERS := {
+    "Alan": {"skill": 0.62, "noise": 0.15, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Garrison": {"skill": 0.55, "noise": 0.2, "streak": 0.14, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Dan": {"skill": 0.48, "noise": 0.4, "streak": 0.0, "turkey": 0.1, "show": 0.0, "gutter": 0.06, "late": 0},
+    "Vic": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
+    "Maya": {"skill": 0.6, "noise": 0.1, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
+    "Morgan": {"skill": 0.66, "noise": 0.12, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 1},
+}
+# dinner star bars by table size: 3 stars at neutral + a, 2 stars at neutral + b, 1 star at neutral - c (a table of
+# three is the classic 22 / 15 / 10); tuned with tests/dinner_sim.gd so best play reaches 3 stars about half the time
+const TABLE_BARS := {1: [3, 0, 3], 2: [6, 0, 4], 3: [7, 0, 5], 4: [9, 0, 6], 5: [11, 0, 7]}
+const LANE_MAX := 4  # opponents on the scoreboard
+const TABLE_MAX := 5  # faces at the table
+# who comes along (R5): the classic trio is what a game started without an invitation uses (tests, the toolbox)
+const CORE := ["Alan", "Garrison", "Dan"]
+const SEATS := {
+    "dinner":
+    {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
+}
 const PLAYER_SEAT := "Seat2"
 const LANE_NEAR := [152.0, 252.0]
 const LANE_FAR := [160.0, 244.0]
@@ -18240,7 +18282,7 @@ const ROOM_INTRO := {
     "escape":
     "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
     "dinner":
-    "WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
+    "WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
@@ -18414,11 +18456,19 @@ const FRIEND_HINTS := {
     },
     "Vic":
     {
-        "board": "THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.",
-        "clock": "THE CLOCK, TRUST ME, THE CLOCK.",
+        "board": "I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.",
+        "clock": "I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.",
         "plaque": "I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.",
         "shelf": "THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.",
         "keypad": "YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.",
+    },
+    "Morgan":
+    {
+        "board": "THERE IS MATH ON THE BOARD. I WILL LET YOU HAVE THAT ONE.",
+        "clock": "THE CLOCK IS STOPPED. THAT IS NOT A METAPHOR. LOOK AT IT.",
+        "plaque": "UNDER THE PAINTING. SOMEONE PUT A PLAQUE THERE ON PURPOSE.",
+        "shelf": "THE SHELF IS DOING MORE WORK THAN IT LOOKS. READ IT.",
+        "keypad": "YOU HAVE EVERYTHING. THE KEYPAD IS ON THE VAULT. GO.",
     },
 }
 const HERRINGS := [
@@ -18426,6 +18476,58 @@ const HERRINGS := [
     "A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
     "ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
 ]
+const GUESTS := {
+    "Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
+    "Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
+    "Dan": {"comes": 0.8, "code": "DA", "line": "Dan has a thing tonight."},
+    "Vic": {"comes": 0.65, "code": "VI", "line": "Vic is on a call with a client."},
+    "Maya": {"comes": 0.7, "code": "MA", "line": "Maya has plans tonight."},
+    "Morgan": {"comes": 0.25, "code": "MO", "line": "Morgan is staying behind to catch up."},
+}
+const CREW_LINES := {
+    "Alan":
+    {
+        "cheer": ["NICE ROLL. STEADY.", "THAT IS HOW IT IS DONE."],
+        "groan": ["IT HAPPENS. ROLL AGAIN.", "THE LANE IS SLICK TONIGHT."],
+        "talk": ["I WILL TAKE THE SPARE.", "SLOW AND STEADY."],
+        "sing": ["HA! KEEP GOING!", "THAT IS A REAL VOICE."],
+    },
+    "Garrison":
+    {
+        "cheer": ["YES! DID YOU SEE THAT?", "THIS IS THE BEST NIGHT."],
+        "groan": ["OH NO. OH NO NO.", "I BLAME THE SHOES."],
+        "talk": ["I AM ON FIRE. OR NOT.", "THE NEXT ONE IS MINE."],
+        "sing": ["WOO! SING IT!", "ENCORE! ENCORE!"],
+    },
+    "Dan":
+    {
+        "cheer": ["THAT PIN HAD IT COMING.", "WHOA. DID I DO THAT?"],
+        "groan": ["THE BALL HAS A MIND OF ITS OWN.", "THAT WAS A BAD CABLE RUN."],
+        "talk": ["WATCH THIS ONE.", "I MIGHT GET A TURKEY."],
+        "sing": ["NOT BAD AT ALL.", "I WOULD NOT TRY THAT."],
+    },
+    "Vic":
+    {
+        "cheer": ["I TOLD YOU. I TOLD EVERYONE.", "THAT IS A WINNING ROLL."],
+        "groan": ["THE PINS WERE LOOSE.", "THAT DOES NOT COUNT, RIGHT?"],
+        "talk": ["WATCH AND LEARN.", "I HAVE A GUY AT THIS ALLEY."],
+        "sing": ["I KNEW YOU HAD IT!", "I HAVE A GUY FOR RECORDING."],
+    },
+    "Maya":
+    {
+        "cheer": ["CLEAN HIT.", "RIGHT ON THE HEAD PIN."],
+        "groan": ["ONE PIN. REALLY.", "I WAS A BIT LEFT."],
+        "talk": ["I HAVE A PLAN FOR THIS ONE.", "AIM, THEN BREATHE."],
+        "sing": ["THAT NOTE WAS PERFECT.", "OK, THAT WAS GOOD."],
+    },
+    "Morgan":
+    {
+        "cheer": ["NOT BAD. DO NOT TELL HR.", "ACCEPTABLE."],
+        "groan": ["WELL. THAT HAPPENED.", "I AM ONLY HERE FOR THE SHOES."],
+        "talk": ["I DO NOT BOWL. I JUST WIN.", "ONE FRAME BEHIND IS FINE."],
+        "sing": ["THAT WAS FINE. GOOD, EVEN.", "I WILL ALLOW IT."],
+    },
+}
 const ROOMS := {
     "bowling": "bowling_alley",
     "karaoke": "karaoke_bar",
@@ -18458,6 +18560,9 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
+var party: Array = []  # who was invited tonight, in priority order (draw_party)
+var stayed: Array = []  # roster members who did not come
+var party_set := false
 
 var _canvas: Node2D
 var _prev_scale := 1.0
@@ -18551,16 +18656,110 @@ func roster() -> Array:
     return out
 
 
-# the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
+# ---- who comes along (R5) ---------------------------------------------------------------------
+# Not everybody comes every time. The invitation draws a party from the roster (draw_party: a seeded roll per
+# person, friends more likely, the cold ones decline, at least two come); the games get it as options.party.
+# A game started without a party (tests, the toolbox) keeps the classic trio at the table and on the lanes.
+func draw_party() -> Array:
+    var here := roster()
+    var r := Difficulty.rng("outings")
+    var ranked := []
+    var away := []
+    for n in here:
+        var row: Dictionary = GUESTS.get(n, {"comes": 0.8})
+        var p := float(row.comes)
+        if Social.is_hostile(n):
+            p = 0.05
+        elif Social.is_cold(n):
+            p = minf(p, 0.3)
+        elif Social.is_friendly(n):
+            p = minf(0.97, p + 0.1)
+        var roll := r.randf()
+        var tie := r.randf()  # two draws per person whatever happens, so one seed keeps one stream
+        if roll < p:
+            ranked.append({"n": n, "key": (1.0 if Social.is_friendly(n) else 0.0) + tie})
+        else:
+            away.append(n)
+    while ranked.size() < mini(2, here.size()) and not away.is_empty():
+        var best := 0
+        for i in away.size():
+            if float(GUESTS.get(away[i], {"comes": 0.0}).comes) > float(GUESTS.get(away[best], {"comes": 0.0}).comes):
+                best = i
+        ranked.append({"n": away[best], "key": 0.0})
+        away.remove_at(best)
+    ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.key) > float(b.key))
+    party = ranked.map(func(e: Dictionary) -> String: return str(e.n))
+    stayed = away
+    party_set = true
+    return party
+
+
+# "Coming: Alan, Dan and Vic. Garrison is sitting this one out." (the invitation card)
+func coming_text() -> String:
+    if not party_set:
+        draw_party()
+    var text := "Coming: %s." % join_names(_by_cast(party), false)
+    if not stayed.is_empty():
+        text += " " + str(GUESTS.get(stayed[0], {}).get("line", "%s cannot make it." % stayed[0]))
+    return text
+
+
+func join_names(list: Array, caps: bool) -> String:
+    var names := list.map(func(n: String) -> String: return n.to_upper() if caps else n)
+    if names.size() <= 1:
+        return "".join(names)
+    return "%s %s %s" % [", ".join(names.slice(0, names.size() - 1)), "AND" if caps else "and", names[names.size() - 1]]
+
+
+func _by_cast(list: Array) -> Array:
+    return World.CAST.keys().filter(func(n: String) -> bool: return list.has(n))
+
+
+# everybody who is out tonight (this game's party, or the whole roster when the game had no invitation)
+func present() -> Array:
+    var here := roster()
+    if opts.has("party"):
+        return opts.party.filter(func(n: String) -> bool: return here.has(n))
+    return here
+
+
+# the people the games have a personality for: the party, or the classic trio when there was no invitation
+func crew() -> Array:
+    if opts.has("party"):
+        return present()
+    var here := roster()
+    return CORE.filter(func(n: String) -> bool: return here.has(n))
+
+
+# up to five faces at the table (the toolbox can narrow it to some of them)
 func diners() -> Array:
-    var here := roster()
     var table: Array = opts.get("table", [])
-    return DINERS.filter(func(n: String) -> bool: return here.has(n) and (table.is_empty() or table.has(n)))
+    var seated := crew().filter(
+        func(n: String) -> bool: return PEOPLE.has(n) and (table.is_empty() or table.has(n))
+    )
+    return _by_cast(seated.slice(0, TABLE_MAX))
 
 
+# up to four opponents on the lanes (the party is in priority order: friends first)
 func bowlers() -> Array:
-    var here := roster()
-    return BOWL_SKILL.keys().filter(func(n: String) -> bool: return here.has(n))
+    return _by_cast(crew().filter(func(n: String) -> bool: return BOWLERS.has(n)).slice(0, LANE_MAX))
+
+
+# the karaoke audience: the party, or (no invitation) the table plus Vic as before
+func crowd() -> Array:
+    if opts.has("party"):
+        return present()
+    var out := diners()
+    if roster().has("Vic"):
+        out.append("Vic")
+    return out
+
+
+# a line in somebody's voice: kind = cheer, groan, talk or sing ("" when they have none)
+func crew_line(who: String, kind: String) -> String:
+    var row: Dictionary = CREW_LINES.get(who, {})
+    var list: Array = row.get(kind, [])
+    return "" if list.is_empty() else str(list[randi() % list.size()])
 
 
 func maybe_invite() -> void:
@@ -18569,12 +18768,15 @@ func maybe_invite() -> void:
     if World.time_scale <= 0.0 or World.clock < 16.0 or Story.overtime:
         return
     _offered = true
+    party_set = false
+    draw_party()
     var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
     if Campaign.mode == "owner":
         text = (
             "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game."
             % cost_range()
         )
+    text += " " + coming_text()
     Cards.ask(
         _host(),
         text,
@@ -18613,6 +18815,8 @@ func _invite_answer(id: String) -> void:
 
 
 func pick_game(from_invite: bool) -> void:
+    if not party_set:
+        draw_party()
     var options := []
     for id in GAMES:
         var cost := int(GAMES[id].cost)
@@ -18629,7 +18833,7 @@ func pick_game(from_invite: bool) -> void:
         _host(),
         "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
         options,
-        func(id: String) -> void: start(id, from_invite)
+        func(id: String) -> void: start(id, from_invite, {"party": party.duplicate()})
     )
 
 
@@ -18637,9 +18841,11 @@ func _unhandled_input(event: InputEvent) -> void:
     if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
         return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
+        party_set = false
+        draw_party()
         Cards.ask(
             "Team outing",
-            "Take the team out? (Free Play: nothing is scored.)",
+            "Take the team out? (Free Play: nothing is scored.) " + coming_text(),
             [
                 {"label": "LET US GO", "id": "yes"},
                 {"label": "NEVER MIND", "id": "no"},
@@ -18671,7 +18877,10 @@ func start(id: String, from_invite := false, options := {}) -> void:
         _traveled = true
         _wait_id = id
         _from_invite = from_invite
-        World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}))
+        var away := []
+        if opts.has("party"):  # whoever did not come stays out of the building
+            away = roster().filter(func(n: String) -> bool: return not opts.party.has(n))
+        World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}), away)
         Game.go(str(ROOMS[id]), "from_outing")
         return
     _traveled = false
@@ -18913,6 +19122,7 @@ func _bowl_setup() -> void:
         "opp_off": 0.5,
         "opp_total": 0,
         "opp_knock": 0,
+        "opp_first": 0,
         "opp_phase": 0,
     }
     if room_mode():
@@ -19009,26 +19219,57 @@ func _bowl_resolve() -> void:
     if room_mode():
         _pins_fall(0, knocked)
         _bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
-        for who in diners():
+        for who in bowlers():
             if knocked >= 10:
                 _bubble(_actor(who), "heart", 1.2)
+        _crew_reacts(knocked)
 
 
+# one frame of a crew member, from their BOWLERS row: skill and noise, a hot / cold swing on alternating frames,
+# a show-off bonus with an audience (3+ opponents, or you just hit 8+), a turkey or a gutter ball now and then
 func _bowl_roll_opp(who: String) -> Dictionary:
-    var skill := float(BOWL_SKILL[who]) + Difficulty.f("bowl.opp_skill")
+    var row: Dictionary = BOWLERS[who]
+    var skill := float(row.skill) + Difficulty.f("bowl.opp_skill")
     var r := Difficulty.rng("bowl")
-    var first := clampi(roundi(10.0 * (skill + r.randf_range(-0.28, 0.28))), 0, 10)
+    if float(row.streak) > 0.0:
+        skill += float(row.streak) * (1.0 if int(g.get("frame", 1)) % 2 == 0 else -1.0)
+    if float(row.show) > 0.0 and (bowlers().size() >= 3 or int(g.get("knocked", 0)) >= 8):
+        skill += float(row.show)
+    var noise := float(row.noise)
+    var first := clampi(roundi(10.0 * (skill + r.randf_range(-noise, noise))), 0, 10)
+    if float(row.turkey) > 0.0 and r.randf() < float(row.turkey):
+        first = 10
+    if float(row.gutter) > 0.0 and r.randf() < float(row.gutter):
+        first = 0
     var total := first
     var knock := first
     if first == 10:
         total += 3
     else:
         var second := clampi(
-            roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first
+            roundi(float(10 - first) * (skill + r.randf_range(-noise, noise))), 0, 10 - first
         )
         total += second
         knock += second
-    return {"total": total, "knock": knock}
+    return {"total": total, "knock": knock, "first": first}
+
+
+# Morgan sits out the first frame (BOWLERS.late) and joins in after
+func bowls_in_frame(who: String, frame: int) -> bool:
+    return frame > int(BOWLERS[who].late)
+
+
+# somebody on the bench says something in their own voice (a caption, never a penalty)
+func _crew_reacts(knocked: int) -> void:
+    var kind := "cheer" if knocked >= 8 else ("groan" if knocked <= 1 else "")
+    if kind == "" or randf() > 0.6:
+        return
+    var who: String = bowlers().pick_random() if not bowlers().is_empty() else ""
+    if who == "":
+        return
+    var line := crew_line(who, kind)
+    if line != "":
+        caption("%s: %s" % [who.to_upper(), line], 2.2)
 
 
 func _bowl_next() -> void:
@@ -19041,13 +19282,15 @@ func _bowl_next() -> void:
         if room_mode():
             caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
         return
+    var frame := int(g.frame)
+    var turn := bowlers().filter(func(n: String) -> bool: return bowls_in_frame(n, frame))
     if room_mode():
-        g.queue = bowlers()
+        g.queue = turn
         g.opp = ""
         g.stage = "others"
         caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
         return
-    for who in bowlers():
+    for who in turn:
         g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
     _bowl_advance()
 
@@ -19079,13 +19322,17 @@ func _bowl_others(dt: float) -> void:
         var res := _bowl_roll_opp(str(g.opp))
         g.opp_total = int(res.total)
         g.opp_knock = int(res.knock)
+        g.opp_first = int(res.first)
         var wobble := Difficulty.rng("bowl").randf_range(-0.5, 0.5)
         g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * wobble, 0.0, 1.0)
         g.opp_ball = 0.0
         g.opp_t = 0.0
         g.opp_phase = 0
         g.up[1] = _all_up()
-        caption("WAIT. %s STEPS UP." % str(g.opp).to_upper(), 1.5)
+        if int(BOWLERS[str(g.opp)].late) > 0 and int(g.frame) == int(BOWLERS[str(g.opp)].late) + 1:
+            caption("%s JOINS THE GAME. RELUCTANTLY." % str(g.opp).to_upper(), 1.5)
+        else:
+            caption("WAIT. %s STEPS UP." % str(g.opp).to_upper(), 1.5)
         return
     if int(g.opp_phase) == 0:
         g.opp_ball = minf(1.0, float(g.opp_t) / 0.6)
@@ -19093,7 +19340,12 @@ func _bowl_others(dt: float) -> void:
             g.opp_phase = 1
             _pins_fall(1, int(g.opp_knock))
             _bubble(_actor(str(g.opp)), "!" if int(g.opp_knock) >= 8 else "dots", 1.2)
-            caption("%s KNOCKS DOWN %d" % [str(g.opp).to_upper(), int(g.opp_knock)], 1.5)
+            var kind := "cheer" if int(g.opp_first) == 10 else ("groan" if int(g.opp_knock) <= 2 else "talk")
+            var line := crew_line(str(g.opp), kind) if kind != "talk" or randf() < 0.5 else ""
+            if line != "":
+                caption("%s (%d): %s" % [str(g.opp).to_upper(), int(g.opp_knock), line], 2.0)
+            else:
+                caption("%s KNOCKS DOWN %d" % [str(g.opp).to_upper(), int(g.opp_knock)], 1.5)
     elif float(g.opp_t) >= 1.7:
         g.totals[g.opp] = int(g.totals[g.opp]) + int(g.opp_total)
         g.opp = ""
@@ -19121,7 +19373,7 @@ func bowl_rank() -> int:
 
 
 func _bowl_end() -> void:
-    _finish([3, 2, 1, 1][bowl_rank()])
+    _finish([3, 2, 1, 1, 1][mini(bowl_rank(), 4)])
 
 
 # ---- the song table
@@ -19356,7 +19608,7 @@ func _escape_setup() -> void:
     Difficulty.shuffle(digits, "escape")
     var n := escape_digits()
     var friends := 0
-    for who in Social.people():
+    for who in present():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
         "code": digits.slice(0, n),
@@ -19436,11 +19688,11 @@ func escape_try(guess: Array) -> void:
 
 # the first friend you get on with (the hints are in their voice); never yourself, and with nobody friendly the first person in the room
 func _friend() -> String:
+    var out := present()
     for who in Social.people():
-        if Social.is_friendly(who):
+        if Social.is_friendly(who) and out.has(who):
             return who
-    var here := roster()
-    return str(here[0]) if not here.is_empty() else "Alan"
+    return str(out[0]) if not out.is_empty() else "Alan"
 
 
 func _first_friend() -> String:
@@ -19569,7 +19821,8 @@ func _dinner_setup() -> void:
     var ids: Array = DINNER_MOODS.keys()
     var r := Difficulty.rng("dinner")
     for who in diners():
-        g.moods[who] = ids[r.randi_range(0, ids.size() - 1)]
+        var pool: Array = PEOPLE.get(who, {}).get("moods", ids)  # a quirk: some moods come up more often
+        g.moods[who] = pool[r.randi_range(0, pool.size() - 1)]
     _dinner_deal()
 
 
@@ -19716,11 +19969,13 @@ func dinner_targets() -> Array:
     var shifts := 0
     for who in diners():
         shifts += diner_shift(who)
-    var scale := float(diners().size()) / 3.0  # the bars are for a table of three
+    var n := diners().size()
+    var row: Array = TABLE_BARS[clampi(n, 1, TABLE_MAX)]
+    var neutral := 5 * n  # five rounds of an indifferent answer from everyone
     return [
-        roundi((22 + 3 * shifts) * scale),
-        roundi((15 + 3 * shifts) * scale),
-        roundi((10 + 3 * shifts) * scale)
+        roundi(neutral + int(row[0]) + 3 * shifts),
+        roundi(neutral + int(row[1]) + 3 * shifts),
+        roundi(neutral - int(row[2]) + 3 * shifts)
     ]
 
 
@@ -19792,7 +20047,7 @@ func _room_begin() -> void:
             caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
         "dinner":
             g.stage = "sit"
-            caption("SIT AT THE BOOTH WITH ALAN (PRESS E ON THE SEAT)", 99.0)
+            caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
 
 
 func _room_process(delta: float) -> void:
@@ -19874,13 +20129,14 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-    var cheer: Array = diners()
-    if roster().has("Vic"):
-        cheer.append("Vic")
+    var cheer: Array = crowd()
     if cheer.is_empty():
         return
     var who: String = Difficulty.pick(cheer, "karaoke")
     _bubble(_actor(who), "heart", 1.5)
+    var line := crew_line(who, "sing")  # the crowd cheers by name
+    if line != "":
+        caption("%s: %s" % [who.to_upper(), line], 1.8)
 
 
 func _streak_broken() -> void:
@@ -19890,9 +20146,9 @@ func _streak_broken() -> void:
         g.dance = false
         _hold_player("talk", _x0() + MIC_X + 60.0)
     if Difficulty.rng("karaoke").randf() < 0.3:
-        var crowd := diners()
-        if not crowd.is_empty():
-            _bubble(_actor(Difficulty.pick(crowd, "karaoke")), "?", 1.0)
+        var listeners := crowd()
+        if not listeners.is_empty():
+            _bubble(_actor(Difficulty.pick(listeners, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
@@ -20151,7 +20407,8 @@ func _dinner_react() -> void:
 func _paint_hud(size: Vector2) -> void:
     UiStyle.hint_bar(_canvas, size, hint())
     var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
-    var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, 164.0), UiStyle.STRIP_H)
+    var strip_w := 176.0 if game == "dinner" else 164.0  # five faces need the room
+    var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
     match game:
         "bowling":
             _hud_bowling(strip)
@@ -20238,16 +20495,20 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
     if str(g.get("stage", "")) != "talk":
         _t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
         return
-    _t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
-    # the mood of the day, one face per diner (A = Alan ...)
-    var fx_x := s.position.x + 92.0
-    for who in diners():
+    _t("ROUND %d/5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+    # the mood of the day, one face per diner (A = Alan ...; two letters when two names start alike)
+    var fx_x := s.position.x + 88.0
+    var table := diners()
+    var firsts := table.map(func(n: String) -> String: return n.substr(0, 1))
+    for who in table:
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
         var face := str(DINNER_MOODS[md].face)
-        _t(who.substr(0, 1), fx_x, o.y, UiStyle.SOFT)
-        _t(face, fx_x + 4.0, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
-        fx_x += 4.0 + 4.0 * float(face.length()) + 3.0
+        var tag: String = who.substr(0, 2 if firsts.count(who.substr(0, 1)) > 1 else 1).to_upper()
+        _t(tag, fx_x, o.y, UiStyle.SOFT)
+        fx_x += 4.0 * float(tag.length())
+        _t(face, fx_x, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
+        fx_x += 4.0 * float(face.length()) + 3.0
     var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
     var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
     UiStyle.box(_canvas, box)
@@ -20330,6 +20591,8 @@ func _paint() -> void:
 func _paint_intro(b: Rect2) -> void:
     var y := b.position.y + 2.0
     var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
+    if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
+        blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
     for line in _wrap(blurb, int(b.size.x / 4.0)):
         _t(line, b.position.x, y)
         y += 7.0
@@ -20532,7 +20795,7 @@ func _paint_dinner(b: Rect2) -> void:
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
         _t(
-            "%s %s" % [str(DINNER_MOODS[md].face), md.to_upper()],
+            str(DINNER_MOODS[md].face) + (" " + md.to_upper() if b.size.x >= 200.0 else ""),  # the word needs room
             rx + 60.0,
             ry,
             GREEN if shift > 0 else (RED if shift < 0 else UiStyle.MUTED)
@@ -22560,7 +22823,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
