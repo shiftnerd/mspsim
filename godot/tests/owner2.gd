@@ -80,8 +80,8 @@ func _init() -> void:
 	_check(o.team_speed() < speed0, "burnout slows the team")
 	cards.pick(1)
 	_check(
-		cards.is_open and cards.speaker.begins_with("Alan") and cards.text.contains("After-hours"),
-		"Alan raises the after-hours question"
+		cards.is_open and cards.speaker.begins_with("Morgan") and cards.text.contains("After-hours"),
+		"Morgan raises the after-hours question"
 	)
 	var mult0: float = o.issue_mult()
 	cards.pick(0)
@@ -99,9 +99,9 @@ func _init() -> void:
 
 	# ---- vendor breach: the RMM you chose is the risk
 	c.new_game("owner")
-	_check(o.security_risk() == 1.0, "the standard RMM: normal risk")
+	_check(absf(o.security_risk() - o.edge("stack_risk")) < 0.001, "the standard RMM: normal risk (times your edge)")
 	o.apply({"stack": {"rmm": "snoutech"}})
-	_check(o.security_risk() == 1.5, "the cheap RMM is riskier")
+	_check(absf(o.security_risk() - 1.5 * o.edge("stack_risk")) < 0.001, "the cheap RMM is riskier")
 	o.fire({"event": "vendor_breach"})
 	_check(
 		cards.is_open and cards.options.size() == 3 and cards.text.contains("SnoutTech"),

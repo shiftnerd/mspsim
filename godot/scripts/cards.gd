@@ -35,9 +35,16 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
 	if is_open or DayReport.is_open:
 		_queue.append([who, body, choices, on_pick])
 		return
-	speaker = Roles.speaker(who)  # a card that names you comes from somebody else
-	text = body
-	options = choices
+	speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
+	text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
+	options = []
+	for choice in choices:
+		var entry: Dictionary = choice
+		if str(entry.get("label", "")).find("{") >= 0:
+			entry = entry.duplicate()
+			entry["label"] = Roles.fill(str(entry.label))
+		options.append(entry)
+	choices = options
 	var any_enabled := false
 	for opt in choices:
 		any_enabled = any_enabled or bool(opt.get("enabled", true))
@@ -181,12 +188,19 @@ func _paint() -> void:
 		var label := "%d. %s" % [i + 1, str(opt.label)]
 		if not on and opt.has("hint"):
 			label += " [%s]" % str(opt.hint)
-		PixelFont.draw(
-			_canvas,
-			label.substr(0, chars - 1),
-			r.position + Vector2(3, 2),
-			INK if on else Color("8b93a1")
-		)
+		var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
+		var room := chars - 1 - (chip.length() + 1 if chip != "" else 0)
+		PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
+		if chip != "":
+			var tint := Color("2f7d46")
+			if str(opt.get("stance", "")) == "warn":
+				tint = Color("b9791a")
+			elif str(opt.get("stance", "")) == "oppose":
+				tint = Color("b02a2a")
+			var cw := float(chip.length()) * 4.0 + 3.0
+			var chip_rect := Rect2(r.end.x - cw - 1.0, r.position.y + 1.0, cw, 8.0)
+			_canvas.draw_rect(chip_rect, tint)
+			PixelFont.draw(_canvas, chip, chip_rect.position + Vector2(2, 1), WHITE)
 		_hits.append({"r": r, "i": i})
 		y += 11.0
 	var m := _mouse.floor()

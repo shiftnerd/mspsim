@@ -193,7 +193,7 @@ func _services_week() -> void:
 
 # ---- capacity: projects use the same technicians as the tickets ---------------------------------------
 func crew_hours() -> float:
-	var crew := float(maxi(0, 3 - Owner.lost_techs)) + float(Owner.extra_staff.size())
+	var crew := Owner.crew_heads()
 	return crew * 240.0 / SEC_PER_HOUR
 
 

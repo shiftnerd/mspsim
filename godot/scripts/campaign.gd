@@ -51,10 +51,10 @@ func saved_day(for_mode: String) -> int:
 # campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
 func derive_player_as(for_mode: String) -> String:
 	var who: String = World.cast_of(PLAYER.current_character)
+	if for_mode == "owner":
+		return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
 	if who == "":
 		return ""
-	if for_mode == "owner":
-		return who if Roles.OWNERS.has(who) else ""
 	return who if for_mode == FREE else ""
 
 
@@ -76,6 +76,8 @@ func new_game(for_mode: String) -> void:
 	mode = for_mode
 	active = MODES.has(for_mode)
 	player_as = derive_player_as(for_mode)
+	if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
+		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
 	Game.vars["start_seated"] = player_as != ""
 	day = 1
 	rep = START_REP
@@ -126,6 +128,9 @@ func continue_game(for_mode: String) -> bool:
 	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
 	var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
 	player_as = saved_as if World.CAST.has(saved_as) else ""
+	if for_mode == "owner" and not Roles.OWNERS.has(player_as):
+		player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
+		PLAYER.current_character = "office_alan"
 	Game.vars["start_seated"] = player_as != ""
 	_awaiting = false
 	Msp.reset()

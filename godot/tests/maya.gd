@@ -63,9 +63,9 @@ func _process(_delta: float) -> bool:
 			"almost out of time" in str(talk._state_tip()),
 			"she warns you about a ticket about to breach"
 		)
-		# the owner campaign: she is not on your payroll
+		# the owner campaign: she is on your payroll now (X4)
 		c.new_game("owner")
-		_check(not world.chars.has("Maya"), "in the owner campaign Maya is not in the building")
+		_check(world.chars.has("Maya"), "in the owner campaign Maya is on your payroll (X4)")
 		c.new_game("tech")
 		_check(world.chars.has("Maya"), "and she is back when you start a tech campaign")
 		print("failures=", failures)
