@@ -279,6 +279,9 @@ func roster_gone() -> Array:
 	var gone := []
 	if Campaign.player_as != "" and CAST.has(Campaign.player_as):
 		gone.append(Campaign.player_as)
+	# a tech who quit the service desk is gone (C4)
+	if Campaign.active and Campaign.mode == "service" and Crew.is_gone("Maya") and not gone.has("Maya"):
+		gone.append("Maya")
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
 	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
 		gone.append(Roles.partner())

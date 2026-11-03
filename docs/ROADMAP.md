@@ -32,7 +32,7 @@ Running in worktrees: R10a (typed seed, today's seed, resumable streams, Free Pl
 | C1 | **Sales campaign as Vic** slice 1 (S1): 20-week skeleton, weekly report, leads as cards, visits, quote card | M | X8 done |
 | C2 | Sales: SalesHound CRM app, deals with promises, quote builder gauges, handover scene, 90-day churn, clawback (S2) | L | |
 | C3 | Sales: beats 1-20, rival, renewals, approvals, endings (S3) | M | |
-| C4 | **Service manager campaign as Dan** slice 1 (V1): Dan at his desk, huddle card, scorecard, autopilot crew, hands-on, 1:1 deck, owner memos | M | X8 done |
+| C4 | **Service manager campaign as Dan** slice 1 (V1): DONE (Dan at his desk, morning huddle, scorecard, autopilot crew through the crew gate, hands-on, 1:1 deck, owner memos, incidents played or delegated, review endings; see CLAUDE.md "Service manager campaign (Dan): slice 1", test `tests/service_campaign.gd`). Left for C5-C7: Dispatch board, Capacity, real NPC techs (C5); runbooks, desk design, hiring for fit, onboarding, retention events (C6); beats 1-20 in full, Summit roll-up, owner-conflict arc, Dan point-buy (C7) | M | X8 done |
 | C5 | Service: `Crew` model, Dispatch board, Capacity view, NPC stuck / overload / quit (V2) | L | |
 | C6 | Service: runbooks, desk design, hiring for fit, onboarding playbook, retention events (V3) | L | |
 | C7 | Service: beats 1-20, owner-conflict memos, endings (V4) | M | |

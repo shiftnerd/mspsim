@@ -102,7 +102,16 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+func _books() -> bool:
+	return report.has("rows") or report.has("groups")
+
+
 func _groups() -> Array:
+	if report.has("groups"):
+		var all: Array = report.groups.duplicate()
+		if str(report.get("mutator", "")) != "":
+			all.append(["THIS WEEK", [["EVENT", str(report.mutator), WARN]]])
+		return all
 	if report.has("rows"):
 		var books := []
 		for row in report.rows:
@@ -164,15 +173,15 @@ func _hero() -> Array:
 	var r := report
 	var delta := int(r.get("rep_delta", 0))
 	var tiles := []
-	if not report.has("rows"):
+	if not _books():
 		var pts := int(r.points)
 		var pcol := GOOD if pts >= 10 else (BAD if pts < 0 else WHITE)
 		tiles.append(["DAY SCORE", "SCORE", str(pts), pcol])
 		tiles.append(["PAYCHECK", "PAY", "$%d" % int(r.pay), GOOD if int(r.pay) > 0 else WHITE])
 	var rep_text := "%d (%+d)" % [int(r.rep), delta] if delta != 0 else str(int(r.rep))
 	var rcol := GOOD if delta > 0 else (BAD if delta < 0 else WHITE)
-	tiles.append(["REPUTATION", "REP", rep_text, rcol])
-	if not report.has("rows"):
+	tiles.append([str(report.get("rep_name", "REPUTATION")), str(report.get("rep_short", "REP")), rep_text, rcol])
+	if not _books():
 		var cash := int(r.cash)
 		tiles.append(["CASH", "CASH", "%s$%d" % ["-" if cash < 0 else "", absi(cash)], GOOD if cash >= 0 else BAD])
 	return tiles
@@ -237,7 +246,7 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
 	var grade := str(report.grade)
 	var gcol: Color = GRADE_COLORS.get(grade, WHITE)
 	var tiles := _hero()
-	var owner_books := report.has("rows")
+	var owner_books := _books()
 	var gh := 28.0 if big else 26.0
 	var gw := 30.0 if big else 22.0
 	if draw:

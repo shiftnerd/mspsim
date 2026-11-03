@@ -207,12 +207,13 @@ func _bubble(glyph: String) -> void:
 
 func _menu(text: String) -> void:
 	var owner_mode := Campaign.mode == "owner"
+	var service_mode := Campaign.mode == "service" and Service.has_one_on_one(_who)
 	Cards.ask(
 		_who,
 		text,
 		[
 			{"label": "SMALL TALK", "id": "small"},
-			{"label": "HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP"), "id": "ask"},
+			{"label": "ONE ON ONE" if service_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP")), "id": "ask"},
 			{"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
 			{"label": "LEAVE (ESC)", "id": "leave"},
 		],
@@ -225,6 +226,9 @@ func _pick(id: String) -> void:
 		"small":
 			_reply(small_talk())
 		"ask":
+			if Campaign.mode == "service" and Service.has_one_on_one(_who):
+				Service.one_on_one(_who, func() -> void: _menu("Anything else?"))
+				return
 			_reply(holding_up() if Campaign.mode == "owner" else ask_help())
 		"tip":
 			_reply(owner_idea() if Campaign.mode == "owner" else tip())
