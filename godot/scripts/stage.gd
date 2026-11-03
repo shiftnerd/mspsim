@@ -117,7 +117,7 @@ func _apply_format() -> void:
 
 
 func _process(_delta: float) -> void:
-	if Game.title_mode:
+	if Game.title_mode or _player == null or _cam == null:
 		return
 	var f: Dictionary = Game.FORMATS[Game.format]
 	if f.follow or Game.ui_shift > 0.0:
