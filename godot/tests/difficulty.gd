@@ -110,6 +110,18 @@ func _init() -> void:
 		"printer.questions": 2.0,
 		"printer.chain": 3.0,
 		"nerf.gap": 1.0,
+		"crew.pace": 1.0,
+		"crew.sla": 1.0,
+		"tech.pace": 1.0,
+		"tech.sla": 1.0,
+		"tech.alt_ret": 1.0,
+		"tech.gain": 1.0,
+		"tech.loss": 1.0,
+		"rep.gain": 1.0,
+		"rep.loss": 1.0,
+		"owner.cost": 1.0,
+		"sales.lead": 0.0,
+		"service.trust": 1.0,
 	}
 	var same: bool = legacy.size() == d.TABLE.size()
 	for key in legacy:

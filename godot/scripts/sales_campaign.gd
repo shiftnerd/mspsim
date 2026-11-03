@@ -604,7 +604,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 	var pick: String = pool[r.randi() % pool.size()]
 	used_names.append(pick)
 	var users := 6 + r.randi() % 30
-	var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead")))
+	var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead"))) + int(Difficulty.cf("sales.lead"))
 	var pain: String = info.pains[r.randi() % info.pains.size()]
 	var who: String = info.who[r.randi() % info.who.size()]
 	var lead := {

@@ -48,6 +48,22 @@ const TABLE := {
 	"printer.chain": [3, 3, 5],
 	# nerf war: how long the coworkers wait between shots, x
 	"nerf.gap": [1.35, 1.0, 0.7],
+	# Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
+	# SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
+	# (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).
+	# owner.cost: weekly overhead x. sales.lead: added to a new lead's quality. service.trust: x on the trust an owner LOSES.
+	"crew.pace": [1.1, 1.0, 0.9],
+	"crew.sla": [1.15, 1.0, 0.85],
+	"tech.pace": [1.25, 1.0, 0.45],
+	"tech.sla": [1.3, 1.0, 0.5],
+	"tech.alt_ret": [0.8, 1.0, 1.3],
+	"tech.gain": [1.25, 1.0, 0.4],
+	"tech.loss": [0.75, 1.0, 1.8],
+	"rep.gain": [1.2, 1.0, 0.8],
+	"rep.loss": [0.75, 1.0, 1.3],
+	"owner.cost": [0.95, 1.0, 1.03],
+	"sales.lead": [5, 0, -5],
+	"service.trust": [0.7, 1.0, 1.6],
 }
 
 var tier := "normal"
@@ -99,6 +115,16 @@ func f(key: String) -> float:
 
 func i(key: String) -> int:
 	return int(at(key, tier))
+
+
+# a campaign dial (Q6): the tier's number while a campaign runs, the normal one otherwise (Free Play and the old tests are unchanged)
+func cf(key: String) -> float:
+	return f(key) if Campaign.active else float(at(key, "normal"))
+
+
+# the ticket dials of the running mode: the tech campaign reads tech.pace / tech.sla, the crew campaigns (owner, sales, service) crew.pace / crew.sla
+func cm(base: String) -> float:
+	return cf(("tech." if Campaign.mode == "tech" else "crew.") + base)
 
 
 func at(key: String, for_tier: String) -> Variant:

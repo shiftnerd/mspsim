@@ -194,6 +194,10 @@ const FIXES := {
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
+# Q6: a workaround that comes back costs the client's patience (mood) and closing the rework earns little and does not count
+# as a closed ticket for the day's reputation, so a quick fix used on everything is net negative over a campaign
+const RETURN_MOOD := -3
+const REPEAT_POINTS := 2
 # other valid fixes. kind: quick (fast, little XP, may come back 1-2 days later), heavy (slow, always
 # works, costs the client something), clever (needs a skill level: faster, more XP).
 # for = the problems it clears (server = a server only); mult = time vs the proper fix;
@@ -780,8 +784,11 @@ func close_ticket(id: int) -> String:
 	var points := 10 if not t.breached else 4
 	if str(t.get("outcome", "")) in ["paid", "partial"]:
 		points = 4
+	if bool(t.get("repeat", false)):
+		points = REPEAT_POINTS
 	score += points
-	closed_ok += 1
+	if not bool(t.get("repeat", false)):
+		closed_ok += 1
 	Career.note_ticket(str(t.fix))
 	Skills.add_xp("networking" if t.internal else "people", 2)
 	Social.note_ticket_closed(t)
@@ -888,7 +895,7 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
 	ep.unsaved = false
 	ep.asked = false
 	var roll := alt_roll if alt_roll >= 0.0 else Difficulty.rng("msp.fix").randf()
-	if roll < float(d.get("ret", 0.0)) and not tk.is_empty():
+	if roll < float(d.get("ret", 0.0)) * Difficulty.cf("tech.alt_ret") and not tk.is_empty():
 		_queue_return(tk, d, prob)
 	changed.emit()
 	return text
@@ -947,6 +954,8 @@ func spawn_return(item: Dictionary) -> void:
 	}
 	var t := create_problem(int(item.client), prob, "email")
 	if not t.is_empty() and bool(item.get("esc", false)):
+		t["repeat"] = true  # Q6: a workaround that came back is rework, not a new success
+		Sales.adjust(int(item.client), RETURN_MOOD)
 		Growth.note_escalation(t)
 
 
@@ -1384,7 +1393,7 @@ func _process(delta: float) -> void:
 		return
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
-		_spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
+		_spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
 	for i in range(_later.size() - 1, -1, -1):
