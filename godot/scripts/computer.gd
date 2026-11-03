@@ -106,6 +106,7 @@ func open(from_desk: int) -> void:
 	_toast = ""  # the toast timer only runs while open, so drop one left from the last session
 	_toast_t = 0.0
 	is_open = true
+	Sfx.play("ui_open")
 	Game.ui_open = true
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()
@@ -190,6 +191,7 @@ func _input(event: InputEvent) -> void:
 	):
 		scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 	elif event is InputEventKey and event.pressed and not event.echo:
+		Sfx.play("ui_tick")
 		if app == "dispatch" and _dispatch_key(event):
 			_canvas.queue_redraw()
 			get_viewport().set_input_as_handled()

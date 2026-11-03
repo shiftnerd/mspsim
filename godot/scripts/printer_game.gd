@@ -1043,6 +1043,7 @@ func _pull() -> void:
 		msg = _tx("jam_hold")
 	else:
 		msg = _tx("jam_tear")
+		Sfx.play("printer_jam")
 		combo = 0
 		if jam_len < 6:
 			jam_len += 1

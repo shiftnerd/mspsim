@@ -178,6 +178,7 @@ func drive(p: Node, dir: float, delta: float) -> bool:
 	if absf(vel) < 5.0 and _squeak <= 0.0:
 		_squeak = 2.5
 		Hints.toast("SQUEAK!", 0.9)
+		Sfx.play("squeak")
 		if sticky != 0:
 			_tell()
 	vel = clampf(vel + dir * ACCEL * delta, -cap, cap)
@@ -198,6 +199,7 @@ func _move(step: float) -> void:
 	if clamped != target:
 		if absf(vel) > 20.0:
 			Hints.toast("CLUNK.", 0.8)
+			Sfx.play("clunk")
 			vel = -vel * 0.25
 		else:
 			vel = 0.0
@@ -252,6 +254,7 @@ func _bump(p: Node) -> void:
 		vel = -vel * 0.3
 		_gap = BUMP_GAP
 		bumps += 1
+		Sfx.play("clunk")
 		var change := 0
 		var glyph := "!"
 		var react: Dictionary = REACT.get(who, {"base": 0, "line": "%s: WATCH IT!" % who.to_upper()})

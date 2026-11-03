@@ -826,6 +826,7 @@ func close_ticket(id: int) -> String:
 	if not t.internal:
 		Sales.adjust(int(t.client), 3 if t.breached else 5)
 	changed.emit()
+	Sfx.play("ticket_closed")
 	return "CLOSED +%d" % points
 
 
@@ -1540,6 +1541,7 @@ func _process(delta: float) -> void:
 			if t.sla_left <= 0.0 and not t.breached:
 				t.breached = true
 				breached += 1
+				Sfx.play("sla_breach")
 				score -= 5
 				if int(t.pri) == 1:
 					Campaign.add_scar(2)  # an unworked P1 is remembered
@@ -1626,3 +1628,5 @@ func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> 
 		}
 	)
 	_next_mail += 1
+	if ticket_id == 0:
+		Sfx.play("mail")

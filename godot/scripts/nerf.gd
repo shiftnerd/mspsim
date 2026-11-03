@@ -131,6 +131,7 @@ func fire_player(p: Node, power := 0.0) -> bool:
 	if str(p.held) != "nerf" or ammo <= 0 or _cool > 0.0 or Game.ui_open or Game.busy:
 		if str(p.held) == "nerf" and ammo <= 0:
 			Hints.toast("OUT OF DARTS. PICK THEM UP OR RELOAD AT THE RACK (E).", 2.5)
+			Sfx.play("ui_error")
 		return false
 	if p.state not in ["idle", "walk", "run", "sitting", "emote"]:
 		return false
@@ -210,6 +211,7 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
 	var scene := _scene()
 	if scene == null:
 		return
+	Sfx.play("dart_fire")
 	var dart := DART.new()
 	dart.shooter = shooter
 	dart.vel = (
@@ -297,6 +299,7 @@ func stick_target(pos: Vector2) -> Node:
 
 
 func dart_hit(dart: Node, victim: Node) -> void:
+	Sfx.play("dart_hit")
 	if victim.has_method("sit") and victim.get("cast_name") == null:
 		_hit_player(victim, str(dart.shooter))
 	else:

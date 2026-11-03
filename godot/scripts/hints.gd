@@ -26,6 +26,7 @@ const DEFAULT_DAY1 := [
 		"at": 112.0,
 		"text": "SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP."
 	},
+	{"at": 134.0, "text": "M MUTES OR RESTORES THE SOUND."},
 ]
 var DAY1: Array = DEFAULT_DAY1.duplicate(true)
 

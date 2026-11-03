@@ -77,6 +77,8 @@ func _ready() -> void:
 	_menu.draw.connect(_draw_menu)
 	Game.format_changed.connect(_on_format)
 	Difficulty.load_settings()
+	Sfx.settings_changed.connect(_menu.queue_redraw)
+	Sfx.play_music("title")
 	show_vignette(0)
 
 
@@ -471,3 +473,5 @@ func _draw_menu() -> void:
 		var ink := Color("17121f") if chosen else (Color.WHITE if item.enabled else Color("7d8595"))
 		_menu.draw_rect(r, back)
 		PixelFont.draw(_menu, label, r.position + Vector2(6, 2), ink)
+	var sound := Sfx.status_text() + "  M"
+	PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))

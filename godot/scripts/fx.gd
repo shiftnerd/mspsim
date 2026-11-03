@@ -51,6 +51,7 @@ var call_secs := 9.0  # time on the headset (plus 0.7 s to put it on and take it
 var _handed := false
 var _ring_until := 0.0
 var _next_ring := 0.0
+var _ring_snd := 0.0
 var _handset: Texture2D
 var _room := ""
 
@@ -132,6 +133,9 @@ func play() -> void:
 		item = ["soda", "bottle"][randi() % 2]
 	if kind == "desk_phone":
 		ringing = false
+		Sfx.play_near("headset", self)
+	if kind == "coffee":
+		Sfx.play_near("coffee", self)
 	if kind == "switch":
 		World.toggle_lights(_room)
 	if kind == "tv":
@@ -169,6 +173,9 @@ func _process(delta: float) -> void:
 		elif not ringing and _time >= _next_ring:
 			ringing = true
 			_ring_until = _time + 12.0
+		if ringing and _time >= _ring_snd:
+			_ring_snd = _time + 3.5
+			Sfx.play_near("phone_ring", self)
 	if kind == "monitor":
 		_scroll += delta * (3.0 if _typing_nearby() else 0.7)
 	if kind == "coffee":
@@ -571,6 +578,7 @@ func ring(cause := "vic") -> void:
 		return
 	_bell_t = 2.6
 	_bell_msg = "DING!"
+	Sfx.play_near("bell", self)
 	if cause == "dart":
 		Hints.toast("DING! A DART HIT THE SALES BELL.", 2.5)
 		if int(Game.vars.get("bell_day", -1)) != World.day:

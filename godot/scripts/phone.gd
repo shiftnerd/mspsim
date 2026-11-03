@@ -66,6 +66,7 @@ func open() -> void:
 	tk_sel = -1
 	txt_open = false
 	is_open = true
+	Sfx.play("ui_open")
 	Game.ui_open = true
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()

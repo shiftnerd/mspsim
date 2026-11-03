@@ -1114,6 +1114,7 @@ func _bowl_press(key: int) -> void:
 	elif g.stage == "power":
 		g.stage = "roll"
 		g.ball = 0.0
+		Sfx.play("bowl_roll")
 		caption("WAIT. THE BALL IS ROLLING.", 3.0)
 		var p := _actor("Player")
 		if p != null:
@@ -1147,6 +1148,7 @@ func _bowl_resolve() -> void:
 	if knocked == 10 and int(g.roll) == 1:
 		g.totals["You"] = int(g.totals["You"]) + 3
 		g.msg = "STRIKE!"
+		Sfx.play("bowl_strike")
 	elif int(g.pins) == 0:
 		g.msg = "SPARE!"
 	elif knocked == 0:
@@ -1613,10 +1615,12 @@ func kara_hit(lane: int) -> String:
 	if pick.is_empty() or gap > _good_win():
 		g.streak = 0
 		_streak_broken()
+		Sfx.play("ui_error")
 		_mood_add(-2.0)
 		return ""
 	var perfect := gap <= float(g.get("perfect_win", 0.12))
 	pick.state = "perfect" if perfect else "good"
+	Sfx.play("kara_perfect" if perfect else "kara_good")
 	g.score = int(g.score) + (2 if perfect else 1)
 	g.perfect = int(g.perfect) + (1 if perfect else 0)
 	g.good = int(g.good) + (0 if perfect else 1)
