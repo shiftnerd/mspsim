@@ -85,12 +85,13 @@ func _draw() -> void:
 			if Nerf.charging:
 				lines.append("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0))
 			else:
-				lines.append(
-					(
-						"DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s"
-						% [Nerf.ammo, (("  WAR %d" % int(Nerf.war_t)) + Nerf.hud_extra()) if Nerf.war_t > 0.0 else ""]
-					)
-				)
+				var war := ("WAR %d%s" % [int(Nerf.war_t), Nerf.hud_extra()]) if Nerf.war_t > 0.0 else ""
+				if get_viewport_rect().size.x < 260.0:  # narrow formats: the war status gets its own line
+					lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY" % Nerf.ammo)
+					if war != "":
+						lines.append(war)
+				else:
+					lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, ("  " + war) if war != "" else ""])
 		for i in lines.size():
 			PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
 			PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
