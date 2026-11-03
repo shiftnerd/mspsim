@@ -1,4 +1,5 @@
 extends Node
+# gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=max-line-length
 # One dial for the repeatable activities (printer, karaoke, bowling, escape room, dinner, nerf war):
 # a tier (easy / normal / hard), a run seed, and a seeded random stream per system.
@@ -9,7 +10,13 @@ extends Node
 #
 # TABLE is the only place the numbers live: [easy, normal, hard]. Normal is exactly today's behaviour.
 # Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
-# run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input.
+# run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input of the tiers'
+# numbers; the one exception is cozy Easy (below), which softens the energy effects on purpose.
+#
+# COZY EASY (roadmap R16): the Easy tier inside a campaign is also the cozy mode. Every cozy behaviour hangs on ONE
+# function, Difficulty.cozy_on() (true only while a campaign runs on the easy tier), so it can be split off into its
+# own toggle later without touching the callers. Numbers are in COZY, texts in COZY_TEXT (story/strings.txt).
+# Normal and Hard never read any of it. The DAY LENGTH option (5 / 10 / 15 minutes) lives here too: day_scale.
 # The tier is remembered in user://mspsim_settings.cfg (title menu); the tier and run seed are saved in
 # the campaign file (`difficulty` section; old saves load as normal with a fresh seed). The state of every
 # stream that was used is saved too (`streams`), so a continued run resumes each stream where it stopped;
@@ -23,6 +30,51 @@ extends Node
 const TIERS := ["easy", "normal", "hard"]
 const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
 const SEED_MASK := 0xFFFFFF
+const COZY_TIER := "easy"
+const DAY_SCALES := [0.5, 1.0, 1.5]  # the DAY LENGTH option: x on the mode's World.day_len (tech 300 / 600 / 900 s)
+# cozy numbers (read through cz(): the cozy value inside a cozy run, the normal one otherwise)
+const COZY := {
+	"rep_floor": 15,  # reputation never goes below this: PROBATION instead of fired
+	"bailout": 2000,  # the one-time rescue when the books go under (owner, sales)
+	"sla_window": 1.6,  # x on every SLA window
+	"sla_mood": -2,  # client mood for a missed SLA (8 normally)
+	"reopen_mood": -1,  # client mood for a reopened ticket (6 normally)
+	"ransom_rep": -5,  # reputation lost when ransomware files are gone (15 normally)
+	"drain": 0.5,  # x on the energy drain
+	"poach": 0.5,  # x on the rival's poaching risk
+}
+const DEFAULT_COZY_TEXT := {
+	"probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
+	"probation_service": "Nobody is going anywhere. The owners are a little worried, so call it a friendly probation. Same desk tomorrow, same coffee. - Morgan",
+	"probation_owner": "The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge",
+	"probation_sales": "Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - Vic",
+	"probation_note": "ON PROBATION, THE FRIENDLY KIND. SEE YOU TOMORROW.",
+	"bailout_title": "THE BANK",
+	"bailout_owner": "I got on the phone with the bank myself. They will cover $%d so we can make payroll, but they only do this the one time. Please spend it wisely.",
+	"bailout_sales": "I know a woman at the bank. She will cover $%d so the company can keep going while you get the pipeline moving. It is a one-time favor, so do not waste it.",
+	"bailout_label": "THANK THEM AND TAKE THE MONEY",
+	"bailout_note": "THE BANK STEPPED IN WITH $%d. IT ONLY HAPPENS ONCE.",
+	"bailout_again": "THE BANK IS BEING PATIENT. PLEASE WATCH THE CASH.",
+	"sla_subject": "A note on #%d",
+	"sla_mail": "Ticket #%d (%s) ran past its SLA. Nothing to worry about, please have a look when you can.",
+	"sla_text": "Ticket #%d ran past its SLA. It happens. The client is fine, just keep an eye on the clock.",
+	"reopen_note": "Client asked for another look: not quite right yet.",
+	"reopen_mail": "Hi there, it looks like this one is still acting up. No rush, whenever you get a chance to take another look. Thanks!",
+	"ransom_mail": "The files are gone and that hurts, but we know you tried everything. Let us talk about backups. - %s",
+	"ransom_text": "The files are gone. It happens. Let us talk about backups when you have a minute.",
+	"tired_text": "You are getting tired. A cup of coffee from the kitchenette would not hurt.",
+	"commute_late": "SLEEP IN. LEAVE AT 8:30 (YOU WILL STILL MAKE IT)",
+	"pager_ignore": "LET THE BACKUP PHONE TAKE IT",
+	"pager_ignored": "THE BACKUP PHONE TOOK THE PAGE.",
+	"stay_one": "STAY 1 HOUR (+$%d)",
+	"stay_two": "STAY 2 HOURS (+$%d)",
+	"coach_row": "COACHING NOTE",
+	"coach_text": "GARRISON WANTS TO WALK THROUGH THE PIPELINE WITH YOU. NO PRESSURE.",
+	"coach_first": ": A WORD WITH GARRISON",
+	"coach_second": ": ANOTHER LOOK",
+	"open_row": "STILL OPEN, CARRIED OVER",
+}
+var COZY_TEXT: Dictionary = DEFAULT_COZY_TEXT.duplicate(true)
 const TABLE := {
 	# karaoke: seconds between notes, perfect / good hit windows (a miss is a note older than the good window)
 	"karaoke.gap": [0.95, 0.75, 0.55],
@@ -88,6 +140,8 @@ const TABLE := {
 
 var tier := "normal"
 var run_seed := 0
+var day_scale := 1.0  # the DAY LENGTH in use today (x on the mode's day_len); changes at the next morning
+var day_scale_next := 1.0  # the one chosen in the pause menu; saved with the campaign
 var settings_path := "user://mspsim_settings.cfg"
 
 var daily := ""  # "YYYYMMDD" while the run seed is the daily seed of that date
@@ -152,6 +206,70 @@ func at(key: String, for_tier: String) -> Variant:
 		push_error("Difficulty: unknown key " + key)
 		return 0.0
 	return TABLE[key][maxi(0, TIERS.find(for_tier))]
+
+
+# ---- cozy Easy and the day length -------------------------------------------------------------------
+# the tier that makes a run cozy (the one place that says so); the character select shows it before the run exists
+func cozy_chosen() -> bool:
+	return tier == COZY_TIER
+
+
+# true inside a running campaign on the cozy tier. Every cozy behaviour asks this and nothing else.
+func cozy_on() -> bool:
+	return Campaign.active and cozy_chosen()
+
+
+# a cozy number from COZY, or `normal` when cozy is off
+func cz(key: String, normal: float) -> float:
+	return float(COZY.get(key, normal)) if cozy_on() else normal
+
+
+# a cozy text (COZY_TEXT, patchable in story/strings.txt)
+func ct(key: String) -> String:
+	return str(COZY_TEXT.get(key, ""))
+
+
+# " COZY" for the seed chip and the start toast (empty when the run is not cozy)
+func cozy_tag() -> String:
+	return "COZY" if cozy_chosen() else ""
+
+
+# the day length option: x on the mode's day_len. Ticket pace and SLA windows use it so a longer day is not a busier one.
+func day_factor() -> float:
+	return day_scale if Campaign.active else 1.0
+
+
+# the factor on every new SLA window: the day length and, when cozy, the wider window
+func sla_scale() -> float:
+	return day_factor() * cz("sla_window", 1.0)
+
+
+func set_day_scale(value: float) -> void:
+	var best := 1.0
+	for s in DAY_SCALES:
+		if absf(float(s) - value) < absf(best - value):
+			best = float(s)
+	day_scale_next = best
+
+
+func cycle_day_scale(step: int) -> float:
+	var k := 1
+	for n in DAY_SCALES.size():
+		if is_equal_approx(float(DAY_SCALES[n]), day_scale_next):
+			k = n
+	day_scale_next = float(DAY_SCALES[(k + step + DAY_SCALES.size()) % DAY_SCALES.size()])
+	return day_scale_next
+
+
+# the morning comes: the chosen length takes over
+func apply_day_scale() -> void:
+	day_scale = day_scale_next
+
+
+# "10 MIN" for the pause menu: the real length of the chosen day in this mode
+func day_label() -> String:
+	var secs := Campaign.day_len_for(Campaign.mode) * day_scale_next
+	return "%d MIN" % roundi(secs / 60.0)
 
 
 # ---- seed and random streams -----------------------------------------------------------------------
@@ -221,6 +339,8 @@ func use_daily(date: Dictionary = {}) -> int:
 
 # a fresh run (New Game): a new random seed unless seed_run() fixed one first
 func new_run() -> void:
+	day_scale = 1.0
+	day_scale_next = 1.0
 	if _pinned:
 		_pinned = false
 		_forget_streams()
@@ -295,7 +415,7 @@ func to_dict() -> Dictionary:
 		states[name] = str(_saved[name])
 	for name in _streams:
 		states[name] = str(_streams[name].state)
-	return {"version": 2, "tier": tier, "seed": run_seed, "streams": states, "daily": daily}
+	return {"version": 2, "tier": tier, "seed": run_seed, "streams": states, "daily": daily, "day_scale": day_scale_next}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -306,6 +426,8 @@ func from_dict(data: Dictionary) -> void:
 	run_seed = saved if saved > 0 else _random_seed()
 	daily = str(data.get("daily", ""))
 	fixed_take = false
+	set_day_scale(float(data.get("day_scale", 1.0)))  # an old save has none: the normal day
+	day_scale = day_scale_next
 	var states: Variant = data.get("streams", {})
 	if saved > 0 and states is Dictionary:  # an old save has none: the streams restart from the seed
 		for name in states:

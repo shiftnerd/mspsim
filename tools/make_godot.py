@@ -181,6 +181,7 @@ PATCHABLE = {
     "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
+    "scripts/difficulty.gd": ["COZY_TEXT"],
 }
 
 
@@ -3232,6 +3233,8 @@ func _everyone_outside() -> bool:
 
 # campaign: send the whole cast home and start the morning of `number`
 func begin_next_day(number: int) -> void:
+    if Campaign.active:
+        Campaign.apply_day_length()  # the DAY LENGTH chosen in the pause menu starts this morning
     Mutators.prepare_day(number)
     apply_roster()
     for n in chars:
@@ -4580,7 +4583,7 @@ func phone_call(_desk: int) -> void:
 func create_internal(desk: int, summary: String, body: String) -> void:
     var t := {
         "id": _next_id, "client": -1, "contact": DESK_NAMES.get(desk, "Staff"), "summary": summary, "pri": 2, "body": body,
-        "status": "New", "sla_left": SLA_SECS[2], "sla_total": SLA_SECS[2], "endpoint": "", "fix": "network",
+        "status": "New", "sla_left": SLA_SECS[2] * Difficulty.sla_scale(), "sla_total": SLA_SECS[2] * Difficulty.sla_scale(), "endpoint": "", "fix": "network",
         "fix_done": false, "internal": true, "desk": desk, "source": "monitoring",
         "notes": ["Detected automatically."] + (["Tip: check patch panel port %d in the closet." % desk] if Campaign.active and Skills.level("networking") >= 2 else []),
         "breached": false,
@@ -4621,15 +4624,16 @@ func close_ticket(id: int) -> String:
     if not t.fix_done:
         t.status = "In Progress"
         t.sla_left = maxf(t.sla_left, t.sla_total * 0.4)
-        t.notes.append("Client reopened the ticket: still broken!")
+        t.notes.append(Difficulty.ct("reopen_note") if Difficulty.cozy_on() else "Client reopened the ticket: still broken!")
         score -= 3
         reopened += 1
         Growth.note_escalation(t)
-        Social.note_reopen()
+        if not Difficulty.cozy_on():
+            Social.note_reopen()
         if not t.internal:
-            Sales.adjust(int(t.client), -6)
+            Sales.adjust(int(t.client), int(Difficulty.cz("reopen_mood", -6.0)))
         if not t.internal:
-            _mail(CLIENTS[t.client].contact + " <" + CLIENTS[t.client].mail + ">", "RE: " + t.summary, "It is STILL not fixed. Why did you close this? Please try again.", t.id)
+            _mail(CLIENTS[t.client].contact + " <" + CLIENTS[t.client].mail + ">", "RE: " + t.summary, Difficulty.ct("reopen_mail") if Difficulty.cozy_on() else "It is STILL not fixed. Why did you close this? Please try again.", t.id)
         changed.emit()
         return "REOPENED - NOT FIXED YET"
     t.status = "Closed"
@@ -5169,10 +5173,11 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
     var contact: String = CLIENTS[ep.client].contact
     _ransom_close(ep, note)
     score -= 30
-    Campaign.adjust_rep(-15)
-    Campaign.add_scar(15)
-    _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, "Years of files are gone and nothing worked. We are reviewing our contract. - " + contact, 0)
-    send_text("Boss", "The files are gone and the backup was not there. We need to talk.")
+    Campaign.adjust_rep(int(Difficulty.cz("ransom_rep", -15.0)))
+    if not Difficulty.cozy_on():
+        Campaign.add_scar(15)
+    _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, (Difficulty.ct("ransom_mail") % contact) if Difficulty.cozy_on() else "Years of files are gone and nothing worked. We are reviewing our contract. - " + contact, 0)
+    send_text("Boss", Difficulty.ct("ransom_text") if Difficulty.cozy_on() else "The files are gone and the backup was not there. We need to talk.")
     Story.flags["ransom"] = "lost"
     changed.emit()
     return "NOTHING WORKED. DATA LOST."
@@ -5299,6 +5304,12 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
     return 1.0
 
 
+# seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
+func next_spawn_gap() -> float:
+    var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload())
+    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
+
+
 # ---- clock -------------------------------------------------------------------
 func _process(delta: float) -> void:
     if Game.title_mode or not enabled:
@@ -5308,7 +5319,7 @@ func _process(delta: float) -> void:
         return
     _spawn_t -= dt
     if _spawn_t <= 0.0:
-        _spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace")
+        _spawn_t = next_spawn_gap()
         if open_tickets().size() < 6 and World.clock < World.DAY_END:
             _random_ticket("email")
             # Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
@@ -5332,13 +5343,13 @@ func _process(delta: float) -> void:
                 breached += 1
                 Sfx.play("sla_breach")
                 score -= 5
-                if int(t.pri) == 1:
-                    Campaign.add_scar(2)  # an unworked P1 is remembered
+                if int(t.pri) == 1 and not Difficulty.cozy_on():
+                    Campaign.add_scar(2)  # an unworked P1 is remembered (not on cozy Easy)
                 Growth.note_escalation(t)
                 if not t.internal:
-                    Sales.adjust(int(t.client), -8)
-                _mail("Pixel IT Partners - Manager", "SLA breached on #%d" % t.id, "Ticket #%d (%s) blew its SLA. Please look at it." % [t.id, t.summary], t.id)
-                send_text("Boss", "#%d blew its SLA: -5 score, client mood -8. Why?" % t.id)
+                    Sales.adjust(int(t.client), int(Difficulty.cz("sla_mood", -8.0)))
+                _mail("Pixel IT Partners - Manager", (Difficulty.ct("sla_subject") if Difficulty.cozy_on() else "SLA breached on #%d") % t.id, (Difficulty.ct("sla_mail") if Difficulty.cozy_on() else "Ticket #%d (%s) blew its SLA. Please look at it.") % [t.id, t.summary], t.id)
+                send_text("Boss", (Difficulty.ct("sla_text") if Difficulty.cozy_on() else "#%d blew its SLA: -5 score, client mood -8. Why?") % t.id)
     _watch_desks(dt)
 
 
@@ -8230,7 +8241,7 @@ func rep_cap() -> int:
 
 # a lasting cost: the ceiling drops now and recovers one point on each A or S day
 func add_scar(amount: int) -> void:
-    if not active:
+    if not active or Difficulty.cozy_on():  # cozy Easy: nothing leaves a lasting mark
         return
     scars = mini(scars + amount, 60)
     rep = mini(rep, rep_cap())
@@ -8282,6 +8293,12 @@ func cards_active() -> bool:
 
 func day_len_for(for_mode: String) -> float:
     return float(MODE_DEFS.get(for_mode, {}).get("day_len", 600.0))
+
+
+# the DAY LENGTH option (pause menu) takes over when the next morning begins (World.begin_next_day)
+func apply_day_length() -> void:
+    Difficulty.apply_day_scale()
+    World.day_len = day_len_for(mode) * Difficulty.day_scale
 
 
 func total_days() -> int:
@@ -8697,8 +8714,9 @@ func _make_report() -> Dictionary:
     var open_left: int = Msp.open_tickets().size()
     var points: int = Msp.score - int(_base.score)
     var overtime: float = Story.ot_hours
-    var pay := maxi(0, 100 + closed * 20 - missed * 25 - reopened * 10 + int(overtime * 30.0) + Shift.pay_extra())
-    var rep_delta := clampi(closed * 2 - missed * 3 - reopened * 2 - open_left + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, daily_cap())
+    var cozy := Difficulty.cozy_on()  # cozy Easy: misses, reopens and open tickets cost no pay and no reputation
+    var pay := maxi(0, (100 + closed * 20 - (0 if cozy else missed * 25 + reopened * 10) + int(overtime * 30.0) + Shift.pay_extra()))
+    var rep_delta := clampi(closed * 2 - (0 if cozy else missed * 3 + reopened * 2 + open_left) + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, daily_cap())
     var grade := "D"
     if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
         grade = "S"
@@ -8750,7 +8768,9 @@ func _end_day() -> void:
         r["rep_cap"] = rep_cap()
     r["rep_delta"] = _tier_rep(int(r.rep_delta))
     rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
-    if r.get("bankrupt", false):
+    if Difficulty.cozy_on():
+        _cozy_close(r)  # cozy Easy: nobody is fired, the books get one rescue
+    elif r.get("bankrupt", false):
         rep = 0
     r["rep"] = rep
     r["cash"] = cash
@@ -8762,6 +8782,42 @@ func _end_day() -> void:
     history.append({"day": day, "grade": r.grade, "points": r.points})
     Game.ui_open = true
     DayReport.show_report(r)
+
+
+# cozy Easy (roadmap R16): the reputation never drops below the floor (a PROBATION line instead of "fired") and
+# the first time the books go under the bank steps in with a bailout. The report gets soft `notes` lines.
+func _cozy_close(r: Dictionary) -> void:
+    r["cozy"] = true
+    var notes: Array = []
+    if bool(r.get("bankrupt", false)):
+        r["bankrupt"] = false
+        if Owner.bailout == 0:
+            var amount := int(Difficulty.cz("bailout", 0.0))
+            Owner.bailout = amount
+            Owner.cash += amount
+            cash = Owner.cash
+            notes.append(Difficulty.ct("bailout_note") % amount)
+            _bailout_card(amount)
+        else:
+            notes.append(Difficulty.ct("bailout_again"))
+    var floor_rep := int(Difficulty.cz("rep_floor", 0.0))
+    if rep < floor_rep:
+        rep = floor_rep
+        notes.append(Difficulty.ct("probation_note"))
+        var sender := {"owner": "Marge", "sales": "Vic"}.get(mode, "Morgan") as String
+        Msp.send_text(sender, Difficulty.ct("probation_" + mode))
+    if not notes.is_empty():
+        r["notes"] = notes
+
+
+func _bailout_card(amount: int) -> void:
+    var owner_mode := mode == "owner"
+    Cards.ask(
+        "Marge (Bookkeeper)" if owner_mode else "Dana Whitfield (Consultant)",
+        Difficulty.ct("bailout_owner" if owner_mode else "bailout_sales") % amount,
+        [{"label": Difficulty.ct("bailout_label"), "id": "ok"}],
+        func(_id: String) -> void: pass
+    )
 
 
 # Q6: the tier's say in the daily reputation move: on hard gains shrink and losses grow, on easy the other way round
@@ -8986,6 +9042,7 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
     meta.set_value(mode, "year", maxi(1, Campaign.year))
     meta.set_value(mode, "rep", Campaign.rep)
     meta.set_value(mode, "tier", Difficulty.tier)
+    meta.set_value(mode, "cozy", Difficulty.cozy_on())  # R16: a cozy run is tagged; it still unlocks Year 2
     meta.set_value(mode, "seed", Difficulty.run_seed)
     meta.set_value(mode, "clients", Sales.active.size())
     var levels := {}
@@ -9622,6 +9679,29 @@ func _books() -> bool:
 
 
 func _groups() -> Array:
+    var all := _groups_raw()
+    return _soft(all) if bool(report.get("cozy", false)) else all
+
+
+# cozy Easy: the report keeps its good news and its honest counts but shows no red and no penalty lines
+# (SLA MISSED, REOPENED and a negative COWORKERS row are left out; STILL OPEN reads "carried over")
+func _soft(groups: Array) -> Array:
+    var out := []
+    for g in groups:
+        var rows := []
+        for row in g[1]:
+            var label := str(row[0])
+            var value := str(row[1])
+            if label in ["SLA MISSED", "REOPENED", "REOPENS"] or (label == "COWORKERS" and value.begins_with("-")):
+                continue
+            if label == "STILL OPEN":
+                label = Difficulty.ct("open_row")
+            rows.append([label, value, WARN if row[2] == BAD else row[2]])
+        out.append([g[0], rows])
+    return out
+
+
+func _groups_raw() -> Array:
     if report.has("groups"):
         var all: Array = report.groups.duplicate()
         if str(report.get("mutator", "")) != "":
@@ -9699,6 +9779,14 @@ func _hero() -> Array:
     if not _books():
         var cash := int(r.cash)
         tiles.append(["CASH", "CASH", "%s$%d" % ["-" if cash < 0 else "", absi(cash)], GOOD if cash >= 0 else BAD])
+    if bool(r.get("cozy", false)):  # no red, no minus signs on the day score or the reputation move
+        for tile in tiles:
+            if tile[3] == BAD:
+                tile[3] = WARN
+        if not _books() and int(r.points) < 0:
+            tiles[0][2] = "0"
+        if delta < 0:
+            tiles[tiles.size() - (1 if _books() else 2)][2] = str(int(r.rep))
     return tiles
 
 
@@ -9829,6 +9917,12 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
         groups = groups + left
         y += _hero_block(4.0, y, inner, big, draw) + 3.0
         y += _list(4.0, y, inner, groups, draw)
+    for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
+        y += 3.0
+        for line in _wrap(str(note), int(inner / 4.0)):
+            if draw:
+                _t(line, 4.0, y, HEAD)
+            y += _row_h
     var ending := str(report.get("ending", ""))
     if ending != "":
         y += 4.0
@@ -14735,7 +14829,7 @@ func finish() -> void:
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     _canvas.visible = false
     _fade = 0.0
-    Career.add("endings")
+    Career.note_ending()
     Campaign.finish_campaign(ending)
 
 
@@ -16032,6 +16126,7 @@ var client_work := {}  # client -> tech-seconds spent this week
 var profit_hist := {}  # client -> their last weekly profits
 var scope_fixed := {}  # client -> true once you enforced the scope
 var burnout := 0.0  # the crew's exhaustion 0-100
+var bailout := 0  # cozy Easy: the one-time bank rescue (Campaign._cozy_close); the valuation does not count it
 var leak := 0.0  # share of revenue silently lost to unbilled work and vendor increases
 var leak_found := false
 var risk_client := -1  # the client that refused your security recommendation
@@ -16097,6 +16192,7 @@ func reset() -> void:
     profit_hist = {}
     scope_fixed = {}
     burnout = 0.0
+    bailout = 0
     leak = 0.0
     leak_found = false
     risk_client = -1
@@ -16674,7 +16770,7 @@ func apply(fx: Dictionary) -> void:
         var newbie: Dictionary = fx.hire.duplicate()
         newbie["age"] = 0
         extra_staff.append(newbie)
-    if fx.get("lose_tech", false):
+    if fx.get("lose_tech", false) and not Difficulty.cozy_on():
         if lost_techs < MAX_LOST:
             lost_techs += 1
         elif not extra_staff.is_empty():
@@ -16885,14 +16981,14 @@ func _staff_week() -> void:
             for c in Sales.active:
                 Sales.adjust(int(c), int(trait_data.mood))
         var quit_chance := float(trait_data.get("quit", 0.0)) + (0.08 if stack_sum("morale") <= -8.0 else 0.0)
-        if randf() < quit_chance:
+        if not Difficulty.cozy_on() and randf() < quit_chance:
             extra_staff.erase(hire)
             hire_quits += 1
             Msp.send_text("Marge", "%s quit." % hire.name)
-    if stack_sum("morale") <= -8.0 and lost_techs < MAX_LOST and randf() < 0.08:
+    if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.08:
         lost_techs += 1
         Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
-    if flags.get("oncall_one", false) and lost_techs < MAX_LOST and randf() < 0.05:
+    if flags.get("oncall_one", false) and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.05:
         lost_techs += 1
         flags["oncall_one"] = false
         Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
@@ -17134,7 +17230,7 @@ func _burnout_week() -> void:
             ],
         }
         show_card("burnout")
-    if burnout >= 70.0 and lost_techs < MAX_LOST and randf() < 0.18:
+    if burnout >= 70.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.18:
         lost_techs += 1
         burnout = maxf(0.0, burnout - 20.0)
         Msp.send_text("Morgan", "One of the crew quit. Burned out.")
@@ -17512,7 +17608,7 @@ func poach_risk(client: int) -> float:
     r += float(Mutators.hook("price_pressure", 0.0))
     if _poach_wave > 0:
         r *= 2.0
-    return minf(r, 0.6)
+    return minf(r, 0.6) * Difficulty.cz("poach", 1.0)  # cozy Easy: the rival calls half as often
 
 
 func _poach_week() -> void:
@@ -17936,7 +18032,7 @@ func quality() -> float:
 func valuation() -> int:
     # X9: a buyer discounts a young book of business (half the price at the start, full from week 12)
     var seasoning := clampf(0.5 + float(Campaign.day) / 24.0, 0.5, 1.0)
-    return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash)
+    return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash - bailout)
 
 
 # X9: the one text for the company value (weekly report, Boardroom, board review)
@@ -18175,7 +18271,7 @@ func to_dict() -> Dictionary:
         "staff": extra_staff, "discount": discount, "history": history, "leaving": _leaving,
         "marketing": marketing, "leads": _leads, "stack": stack, "ar": ar, "fee_boost": fee_boost,
         "vic_plan": vic_plan, "vic_deals": vic_deals, "vic_signed": vic_signed, "late": _late, "asked": _asked,
-        "qbr": _qbr_done, "profit_hist": profit_hist, "scope_fixed": scope_fixed, "burnout": burnout, "leak": leak,
+        "qbr": _qbr_done, "profit_hist": profit_hist, "scope_fixed": scope_fixed, "burnout": burnout, "bailout": bailout, "leak": leak,
         "leak_found": leak_found, "risk_client": risk_client, "risk_choice": risk_choice, "goal": goal,
         "handover": _handover, "burn_warned": _burn_warned, "patch_debt": patch_debt, "gone": gone,
         "poach_queue": _poach_queue, "winback": _winback_queue, "poach_cool": _poach_cool, "poach_wave": _poach_wave,
@@ -18231,6 +18327,7 @@ func from_dict(data: Dictionary) -> void:
     for key in fixed_scopes:
         scope_fixed[int(key)] = true
     burnout = float(data.get("burnout", 0.0))
+    bailout = int(data.get("bailout", 0))
     leak = float(data.get("leak", 0.0))
     leak_found = bool(data.get("leak_found", false))
     risk_client = int(data.get("risk_client", -1))
@@ -19015,7 +19112,13 @@ write("scripts/difficulty.gd", '''extends Node
 #
 # TABLE is the only place the numbers live: [easy, normal, hard]. Normal is exactly today's behaviour.
 # Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
-# run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input.
+# run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input of the tiers'
+# numbers; the one exception is cozy Easy (below), which softens the energy effects on purpose.
+#
+# COZY EASY (roadmap R16): the Easy tier inside a campaign is also the cozy mode. Every cozy behaviour hangs on ONE
+# function, Difficulty.cozy_on() (true only while a campaign runs on the easy tier), so it can be split off into its
+# own toggle later without touching the callers. Numbers are in COZY, texts in COZY_TEXT (story/strings.txt).
+# Normal and Hard never read any of it. The DAY LENGTH option (5 / 10 / 15 minutes) lives here too: day_scale.
 # The tier is remembered in user://mspsim_settings.cfg (title menu); the tier and run seed are saved in
 # the campaign file (`difficulty` section; old saves load as normal with a fresh seed). The state of every
 # stream that was used is saved too (`streams`), so a continued run resumes each stream where it stopped;
@@ -19029,6 +19132,50 @@ write("scripts/difficulty.gd", '''extends Node
 const TIERS := ["easy", "normal", "hard"]
 const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
 const SEED_MASK := 0xFFFFFF
+const COZY_TIER := "easy"
+const DAY_SCALES := [0.5, 1.0, 1.5]  # the DAY LENGTH option: x on the mode's World.day_len (tech 300 / 600 / 900 s)
+# cozy numbers (read through cz(): the cozy value inside a cozy run, the normal one otherwise)
+const COZY := {
+    "rep_floor": 15,  # reputation never goes below this: PROBATION instead of fired
+    "bailout": 2000,  # the one-time rescue when the books go under (owner, sales)
+    "sla_window": 1.6,  # x on every SLA window
+    "sla_mood": -2,  # client mood for a missed SLA (8 normally)
+    "reopen_mood": -1,  # client mood for a reopened ticket (6 normally)
+    "ransom_rep": -5,  # reputation lost when ransomware files are gone (15 normally)
+    "drain": 0.5,  # x on the energy drain
+    "poach": 0.5,  # x on the rival's poaching risk
+}
+const COZY_TEXT := {
+    "probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
+    "probation_service": "Nobody is going anywhere. The owners are a little worried, so call it a friendly probation. Same desk tomorrow, same coffee. - Morgan",
+    "probation_owner": "The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge",
+    "probation_sales": "Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - Vic",
+    "probation_note": "ON PROBATION, THE FRIENDLY KIND. SEE YOU TOMORROW.",
+    "bailout_title": "THE BANK",
+    "bailout_owner": "I got on the phone with the bank myself. They will cover $%d so we can make payroll, but they only do this the one time. Please spend it wisely.",
+    "bailout_sales": "I know a woman at the bank. She will cover $%d so the company can keep going while you get the pipeline moving. It is a one-time favor, so do not waste it.",
+    "bailout_label": "THANK THEM AND TAKE THE MONEY",
+    "bailout_note": "THE BANK STEPPED IN WITH $%d. IT ONLY HAPPENS ONCE.",
+    "bailout_again": "THE BANK IS BEING PATIENT. PLEASE WATCH THE CASH.",
+    "sla_subject": "A note on #%d",
+    "sla_mail": "Ticket #%d (%s) ran past its SLA. Nothing to worry about, please have a look when you can.",
+    "sla_text": "Ticket #%d ran past its SLA. It happens. The client is fine, just keep an eye on the clock.",
+    "reopen_note": "Client asked for another look: not quite right yet.",
+    "reopen_mail": "Hi there, it looks like this one is still acting up. No rush, whenever you get a chance to take another look. Thanks!",
+    "ransom_mail": "The files are gone and that hurts, but we know you tried everything. Let us talk about backups. - %s",
+    "ransom_text": "The files are gone. It happens. Let us talk about backups when you have a minute.",
+    "tired_text": "You are getting tired. A cup of coffee from the kitchenette would not hurt.",
+    "commute_late": "SLEEP IN. LEAVE AT 8:30 (YOU WILL STILL MAKE IT)",
+    "pager_ignore": "LET THE BACKUP PHONE TAKE IT",
+    "pager_ignored": "THE BACKUP PHONE TOOK THE PAGE.",
+    "stay_one": "STAY 1 HOUR (+$%d)",
+    "stay_two": "STAY 2 HOURS (+$%d)",
+    "coach_row": "COACHING NOTE",
+    "coach_text": "GARRISON WANTS TO WALK THROUGH THE PIPELINE WITH YOU. NO PRESSURE.",
+    "coach_first": ": A WORD WITH GARRISON",
+    "coach_second": ": ANOTHER LOOK",
+    "open_row": "STILL OPEN, CARRIED OVER",
+}
 const TABLE := {
     # karaoke: seconds between notes, perfect / good hit windows (a miss is a note older than the good window)
     "karaoke.gap": [0.95, 0.75, 0.55],
@@ -19094,6 +19241,8 @@ const TABLE := {
 
 var tier := "normal"
 var run_seed := 0
+var day_scale := 1.0  # the DAY LENGTH in use today (x on the mode's day_len); changes at the next morning
+var day_scale_next := 1.0  # the one chosen in the pause menu; saved with the campaign
 var settings_path := "user://mspsim_settings.cfg"
 
 var daily := ""  # "YYYYMMDD" while the run seed is the daily seed of that date
@@ -19158,6 +19307,70 @@ func at(key: String, for_tier: String) -> Variant:
         push_error("Difficulty: unknown key " + key)
         return 0.0
     return TABLE[key][maxi(0, TIERS.find(for_tier))]
+
+
+# ---- cozy Easy and the day length -------------------------------------------------------------------
+# the tier that makes a run cozy (the one place that says so); the character select shows it before the run exists
+func cozy_chosen() -> bool:
+    return tier == COZY_TIER
+
+
+# true inside a running campaign on the cozy tier. Every cozy behaviour asks this and nothing else.
+func cozy_on() -> bool:
+    return Campaign.active and cozy_chosen()
+
+
+# a cozy number from COZY, or `normal` when cozy is off
+func cz(key: String, normal: float) -> float:
+    return float(COZY.get(key, normal)) if cozy_on() else normal
+
+
+# a cozy text (COZY_TEXT, patchable in story/strings.txt)
+func ct(key: String) -> String:
+    return str(COZY_TEXT.get(key, ""))
+
+
+# " COZY" for the seed chip and the start toast (empty when the run is not cozy)
+func cozy_tag() -> String:
+    return "COZY" if cozy_chosen() else ""
+
+
+# the day length option: x on the mode's day_len. Ticket pace and SLA windows use it so a longer day is not a busier one.
+func day_factor() -> float:
+    return day_scale if Campaign.active else 1.0
+
+
+# the factor on every new SLA window: the day length and, when cozy, the wider window
+func sla_scale() -> float:
+    return day_factor() * cz("sla_window", 1.0)
+
+
+func set_day_scale(value: float) -> void:
+    var best := 1.0
+    for s in DAY_SCALES:
+        if absf(float(s) - value) < absf(best - value):
+            best = float(s)
+    day_scale_next = best
+
+
+func cycle_day_scale(step: int) -> float:
+    var k := 1
+    for n in DAY_SCALES.size():
+        if is_equal_approx(float(DAY_SCALES[n]), day_scale_next):
+            k = n
+    day_scale_next = float(DAY_SCALES[(k + step + DAY_SCALES.size()) % DAY_SCALES.size()])
+    return day_scale_next
+
+
+# the morning comes: the chosen length takes over
+func apply_day_scale() -> void:
+    day_scale = day_scale_next
+
+
+# "10 MIN" for the pause menu: the real length of the chosen day in this mode
+func day_label() -> String:
+    var secs := Campaign.day_len_for(Campaign.mode) * day_scale_next
+    return "%d MIN" % roundi(secs / 60.0)
 
 
 # ---- seed and random streams -----------------------------------------------------------------------
@@ -19227,6 +19440,8 @@ func use_daily(date: Dictionary = {}) -> int:
 
 # a fresh run (New Game): a new random seed unless seed_run() fixed one first
 func new_run() -> void:
+    day_scale = 1.0
+    day_scale_next = 1.0
     if _pinned:
         _pinned = false
         _forget_streams()
@@ -19301,7 +19516,7 @@ func to_dict() -> Dictionary:
         states[name] = str(_saved[name])
     for name in _streams:
         states[name] = str(_streams[name].state)
-    return {"version": 2, "tier": tier, "seed": run_seed, "streams": states, "daily": daily}
+    return {"version": 2, "tier": tier, "seed": run_seed, "streams": states, "daily": daily, "day_scale": day_scale_next}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -19312,6 +19527,8 @@ func from_dict(data: Dictionary) -> void:
     run_seed = saved if saved > 0 else _random_seed()
     daily = str(data.get("daily", ""))
     fixed_take = false
+    set_day_scale(float(data.get("day_scale", 1.0)))  # an old save has none: the normal day
+    day_scale = day_scale_next
     var states: Variant = data.get("streams", {})
     if saved > 0 and states is Dictionary:  # an old save has none: the streams restart from the seed
         for name in states:
@@ -20017,7 +20234,7 @@ func traffic_text(day: int) -> String:
 
 
 func is_tired() -> bool:
-    return active() and energy < 30.0
+    return active() and energy < 30.0 and not Difficulty.cozy_on()
 
 
 func slow_mult() -> float:
@@ -20025,6 +20242,8 @@ func slow_mult() -> float:
         return 1.0
     if energy >= 85.0:
         return 0.9
+    if Difficulty.cozy_on():
+        return 1.0  # cozy Easy: being tired does not slow the work
     return 1.0 + clampf((55.0 - energy) / 55.0, 0.0, 1.0) * 0.5
 
 
@@ -20034,6 +20253,8 @@ func fail_add() -> float:
     var extra := float(Mutators.hook("fail_add", 0.0))
     if energy >= 85.0:
         return -0.03 + extra
+    if Difficulty.cozy_on():
+        return extra  # cozy Easy: being tired does not make fixes fail
     return clampf((45.0 - energy) / 45.0, 0.0, 1.0) * 0.18 + extra
 
 
@@ -20093,7 +20314,7 @@ func _page_card() -> void:
     Cards.ask("PAGER", text, [
         {"label": "GET UP AND FIX IT REMOTELY", "id": "fix"},
         {"label": "CHECK THE ALERT, THEN DECIDE", "id": "triage"},
-        {"label": "IGNORE IT, GO BACK TO SLEEP", "id": "ignore"},
+        {"label": Difficulty.ct("pager_ignore") if Difficulty.cozy_on() else "IGNORE IT, GO BACK TO SLEEP", "id": "ignore"},
     ], func(id: String) -> void: _page_result(id, client, what))
 
 
@@ -20125,7 +20346,9 @@ func _page_result(id: String, client: int, what: String) -> void:
                 last_note = "REAL, AND YOU FIXED IT."
         _:
             pages_ignored += 1
-            if randf() < 0.55:
+            if Difficulty.cozy_on():
+                last_note = Difficulty.ct("pager_ignored")  # cozy Easy: opt in, and nothing happens if you do not
+            elif randf() < 0.55:
                 Sales.adjust(client, -6)
                 Campaign.adjust_rep(-2)
                 last_note = "THE PAGE WAS REAL. THEY CALLED THE BOSS."
@@ -20143,7 +20366,7 @@ func commute_card() -> void:
     Cards.ask("MORNING", text, [
         {"label": "LEAVE AT 7:30. EARLY AND TIRED", "id": "early"},
         {"label": "LEAVE AT 8:00. A GAMBLE", "id": "ontime"},
-        {"label": "SLEEP IN. LEAVE AT 8:30 (LATE, TICKETS WAIT)", "id": "late"},
+        {"label": Difficulty.ct("commute_late") if Difficulty.cozy_on() else "SLEEP IN. LEAVE AT 8:30 (LATE, TICKETS WAIT)", "id": "late"},
     ], func(id: String) -> void: commute(id))
 
 
@@ -20152,6 +20375,9 @@ func commute(choice: String) -> void:
     var extra: float = float(WEEK_TRAFFIC.get(week_of(Campaign.day), {}).get("extra", 0.0))
     var traffic := randf() < float(c.p) + extra
     var delay := int(c.base)
+    if Difficulty.cozy_on():  # cozy Easy: the road is clear and nobody is ever late
+        traffic = false
+        delay = mini(delay, 0)
     var reason := ""
     if traffic:
         delay += randi_range(15, 60)
@@ -20211,7 +20437,12 @@ func _process(delta: float) -> void:
     if not active() or World.time_scale <= 0.0 or Cards.is_open:
         return
     var dt := delta * World.time_scale
-    energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
+    energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
+    if Difficulty.cozy_on():
+        if _warned < 1 and energy < 35.0:
+            _warned = 3
+            Msp.send_text("You", Difficulty.ct("tired_text"))
+        return
     if _warned < 1 and energy < 55.0:
         _warned = 1
         Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
@@ -20244,11 +20475,18 @@ func can_end_day() -> bool:
         if open > 0:
             Cards.ask(clock_label(), "%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?" % open, [
                 {"label": "GO HOME", "id": "home"},
-                {"label": "STAY 1 HOUR (+$%d, -%d ENERGY)" % [STAY_PAY, STAY_COST], "id": "1"},
-                {"label": "STAY 2 HOURS (+$%d, -%d ENERGY)" % [STAY_PAY * 2, STAY_COST * 2], "id": "2"},
+                {"label": stay_label(1), "id": "1"},
+                {"label": stay_label(2), "id": "2"},
             ], func(id: String) -> void: stay(id))
             return false
     return World.clock >= _stay_until
+
+
+# the card line for staying `hours` more: cozy Easy leaves the energy cost out (it costs none)
+func stay_label(hours: int) -> String:
+    if Difficulty.cozy_on():
+        return Difficulty.ct("stay_one" if hours == 1 else "stay_two") % (STAY_PAY * hours)
+    return "STAY %d HOUR%s (+$%d, -%d ENERGY)" % [hours, "" if hours == 1 else "S", STAY_PAY * hours, STAY_COST * hours]
 
 
 # an outing took the evening: no offer to stay late
@@ -20263,7 +20501,8 @@ func stay(id: String) -> void:
     stay_hours = hours
     stays += 1
     _stay_until = World.DAY_END + hours
-    add_energy(-float(STAY_COST) * hours)
+    if not Difficulty.cozy_on():
+        add_energy(-float(STAY_COST) * hours)
 
 
 # ---- the report -------------------------------------------------------------------------------
@@ -20281,7 +20520,7 @@ func rep_delta() -> int:
 
 # called as the day is closed: exhaustion makes you short with your coworkers
 func close_day() -> void:
-    if active() and energy < 25.0:
+    if active() and energy < 25.0 and not Difficulty.cozy_on():
         Social.change_all(-1)
 
 
@@ -29515,7 +29754,7 @@ func close_day(r: Dictionary) -> void:
     elif grade == "D":
         add_trust("Alan", -1)
         add_trust("Garrison", -1)
-    var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST
+    var both_low := trust_of("Alan") < FAIL_TRUST and trust_of("Garrison") < FAIL_TRUST and not Difficulty.cozy_on()
     if both_low:
         delta = -Campaign.rep
         r["fired_text"] = str(ServiceArc.TEXT.fired_owners)
@@ -30118,7 +30357,7 @@ func _ret_fx(who: String, fx: Dictionary) -> void:
                 assign(int(t.id), "", false)
     if fx.has("off_day"):
         Crew.set_busy(who, 8.0)
-    if fx.has("quit") and not leaving.has(who):
+    if fx.has("quit") and not leaving.has(who) and not Difficulty.cozy_on():
         leaving.append(who)
 
 
@@ -32322,7 +32561,7 @@ func mentor(who: String) -> void:
 
 # the chance a tech with this morale walks out tonight (0 above QUIT_BELOW)
 func quit_chance(who: String) -> float:
-    if is_gone(who):
+    if is_gone(who) or Difficulty.cozy_on():  # cozy Easy: nobody quits
         return 0.0
     var worn := 0.0
     if morale(who) < 40 and int(members[who].get("over_days", 0)) >= 3:
@@ -34057,6 +34296,7 @@ const ROOTS := {
     "Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
     "Social": ["THANKS"],
     "Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
+    "Difficulty": ["COZY_TEXT"],
     "Hints": ["DAY1"],
     "Career": ["MEDALS", "UNLOCKS"],
     "Growth": ["STRETCH"],
@@ -40295,6 +40535,16 @@ func _draw_seed(size: Vector2, narrow: bool) -> void:
     var tw := float(PixelFont.width(text))
     _txt(text, r.position + Vector2(floorf((w - tw) * 0.5), 2), Color.WHITE)
     _rects.append([r, "seed", 0])
+    if is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode; tag it beside the seed
+        var tag_w := float(PixelFont.width("COZY")) + 8.0
+        var tag := Rect2(r.position + Vector2(0.0, 10.0), Vector2(tag_w, 8.0))  # under the seed chip (portrait)
+        if wide:
+            tag = Rect2(Vector2(size.x - tag_w - 3.0, 13.0), Vector2(tag_w, 8.0))  # under the level chip, clear of the heading
+        elif not narrow:
+            tag = Rect2(r.position + Vector2(w + 3.0, 0.0), Vector2(tag_w, 9.0))  # beside it (the h format has room)
+        draw_rect(tag, PANEL)
+        draw_rect(tag, GOLD, false, 1.0)
+        _txt("COZY", tag.position + Vector2(4, tag.size.y * 0.5 - 3.0), GOLD)
     if mode == "free" and step == "char":
         var tools := Rect2(pos + Vector2(w + 3.0, 0.0), Vector2(float(PixelFont.width("TOOLS")) + 8.0, 9.0))
         if not wide:
@@ -40981,7 +41231,7 @@ func _start(id: String, summary := "") -> void:
     Toolbox.after_start()
     if summary != "":
         var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
-        Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
+        Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
 func _draw_menu() -> void:
@@ -42800,7 +43050,7 @@ func boost(card_id: String) -> float:
 
 
 func sla(secs: float) -> float:
-    return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult() * Difficulty.cm("sla")
+    return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult() * Difficulty.cm("sla") * Difficulty.sla_scale()
 
 
 # the ticket kind of the next random ticket: {} = the usual uniform pick (nothing is active, no random number used)
@@ -44566,6 +44816,12 @@ func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
 func note_nerf_hit(reach: float) -> void:
     add("nerf_hits")
     best("nerf_longest", roundi(reach))
+
+
+# a campaign year was finished. Cozy runs (the Easy tier) are counted apart: reputation, value and ending medals
+# count only for non-cozy runs, every other medal counts everywhere (R16).
+func note_ending() -> void:
+    add("endings.cozy" if Difficulty.cozy_on() else "endings")
 
 
 func _on_day(_d: int) -> void:
@@ -46371,9 +46627,9 @@ func settle() -> Dictionary:
         verdict = "%s %s AT %d%%" % [str(q.label), "HIT" if pct >= 100 else "MISSED", pct]
         if q_result[qi] == "MISS" and qi == 0:
             warned = true
-            verdict += ": WARNING"
+            verdict += Difficulty.ct("coach_first") if Difficulty.cozy_on() else ": WARNING"
         elif q_result[qi] == "MISS":
-            verdict += ": SECOND MISS"
+            verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else ": SECOND MISS"
         _lynk("Garrison", "Quarter closed at %d%%. %s" % [pct, "Good work." if pct >= 100 else "We need to talk."])
     var mood := client_mood()
     var grade_rep: Dictionary = {"S": 2, "A": 1, "B": 0, "C": -1, "D": -2}
@@ -46393,7 +46649,10 @@ func settle() -> Dictionary:
         ["VERDICT", verdict, red if grade in ["C", "D"] or (closing and q_result[qi] == "MISS") else green],
     ]
     if warned and q_result[0] == "MISS" and day > int(QUARTERS[0].to):
-        rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
+        if Difficulty.cozy_on():
+            rows.append([Difficulty.ct("coach_row"), Difficulty.ct("coach_text"), warn])
+        else:
+            rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
     last_report = verdict
     return {
         "rows": rows,
@@ -49805,7 +50064,11 @@ func back() -> void:
 func _labels() -> Array:
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
-    return ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "QUIT TO TITLE"]
+    var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
+    if Campaign.active:
+        rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+    rows.append("QUIT TO TITLE")
+    return rows
 
 
 func _activate() -> void:
@@ -49815,7 +50078,16 @@ func _activate() -> void:
             Game.go_title()
         else:
             _confirm = false
-            _sel = 3
+            _sel = _labels().size() - 1
+        _canvas.queue_redraw()
+        return
+    if Campaign.active and _sel == 3:
+        Difficulty.cycle_day_scale(1)
+        _canvas.queue_redraw()
+        return
+    if _sel == _labels().size() - 1:
+        _confirm = true
+        _sel = 0
         _canvas.queue_redraw()
         return
     match _sel:
@@ -49825,15 +50097,12 @@ func _activate() -> void:
             _page = 0
         2:
             Game.cycle_format()
-        3:
-            _confirm = true
-            _sel = 0
     _canvas.queue_redraw()
 
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    var h := 76.0
+    var h := 76.0 + (12.0 if Campaign.active else 0.0)
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -49894,7 +50163,7 @@ func _key(event: InputEvent) -> void:
             _sel = 1
         elif _confirm:
             _confirm = false
-            _sel = 3
+            _sel = _labels().size() - 1
         else:
             close()
     elif _page >= 0:
@@ -49909,6 +50178,8 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
+        elif not _confirm and _sel == 3 and Campaign.active:
+            Difficulty.cycle_day_scale(1 if right else -1)
     elif Controls.confirm(event):
         _activate()
         return
@@ -49925,7 +50196,7 @@ func _paint() -> void:
     if _page >= 0:
         _paint_help(c, r)
         return
-    var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else "")
+    var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else ("COZY" if Difficulty.cozy_on() else ""))
     if _confirm:
         var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
         UiStyle.text(c, line, body.position.x, r.position.y + 14.0, UiStyle.MUTED)
@@ -49935,7 +50206,10 @@ func _paint() -> void:
         if i == _sel:
             c.draw_rect(rr, UiStyle.HEAD)
         UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
-    UiStyle.footer(c, r, "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME")
+    var foot := "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME"
+    if not _confirm and Campaign.active and _sel == 3:
+        foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
+    UiStyle.footer(c, r, foot)
 
 
 # one page of the key list: what you do on the left, the key on the right

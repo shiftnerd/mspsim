@@ -9995,6 +9995,108 @@ the UPS is on battery and beeping
 the print server queue is stuck again
 
 
+# ======================= Difficulty > COZY_TEXT =======================
+# Difficulty > COZY_TEXT > probation_tech
+[Difficulty.COZY_TEXT.probation_tech]
+Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan
+
+# Difficulty > COZY_TEXT > probation_service
+[Difficulty.COZY_TEXT.probation_service]
+Nobody is going anywhere. The owners are a little worried, so call it a friendly probation. Same desk tomorrow, same coffee. - Morgan
+
+# Difficulty > COZY_TEXT > probation_owner
+[Difficulty.COZY_TEXT.probation_owner]
+The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge
+
+# Difficulty > COZY_TEXT > probation_sales
+[Difficulty.COZY_TEXT.probation_sales]
+Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - Vic
+
+# Difficulty > COZY_TEXT > probation_note
+[Difficulty.COZY_TEXT.probation_note]
+ON PROBATION, THE FRIENDLY KIND. SEE YOU TOMORROW.
+
+# Difficulty > COZY_TEXT > bailout_owner
+[Difficulty.COZY_TEXT.bailout_owner]
+I got on the phone with the bank myself. They will cover $%d so we can make payroll, but they only do this the one time. Please spend it wisely.
+
+# Difficulty > COZY_TEXT > bailout_sales
+[Difficulty.COZY_TEXT.bailout_sales]
+I know a woman at the bank. She will cover $%d so the company can keep going while you get the pipeline moving. It is a one-time favor, so do not waste it.
+
+# Difficulty > COZY_TEXT > bailout_label
+[Difficulty.COZY_TEXT.bailout_label]
+THANK THEM AND TAKE THE MONEY
+
+# Difficulty > COZY_TEXT > bailout_note
+[Difficulty.COZY_TEXT.bailout_note]
+THE BANK STEPPED IN WITH $%d. IT ONLY HAPPENS ONCE.
+
+# Difficulty > COZY_TEXT > bailout_again
+[Difficulty.COZY_TEXT.bailout_again]
+THE BANK IS BEING PATIENT. PLEASE WATCH THE CASH.
+
+# Difficulty > COZY_TEXT > sla_mail
+[Difficulty.COZY_TEXT.sla_mail]
+Ticket #%d (%s) ran past its SLA. Nothing to worry about, please have a look when you can.
+
+# Difficulty > COZY_TEXT > sla_text
+[Difficulty.COZY_TEXT.sla_text]
+Ticket #%d ran past its SLA. It happens. The client is fine, just keep an eye on the clock.
+
+# Difficulty > COZY_TEXT > reopen_note
+[Difficulty.COZY_TEXT.reopen_note]
+Client asked for another look: not quite right yet.
+
+# Difficulty > COZY_TEXT > reopen_mail
+[Difficulty.COZY_TEXT.reopen_mail]
+Hi there, it looks like this one is still acting up. No rush, whenever you get a chance to take another look. Thanks!
+
+# Difficulty > COZY_TEXT > ransom_mail
+[Difficulty.COZY_TEXT.ransom_mail]
+The files are gone and that hurts, but we know you tried everything. Let us talk about backups. - %s
+
+# Difficulty > COZY_TEXT > ransom_text
+[Difficulty.COZY_TEXT.ransom_text]
+The files are gone. It happens. Let us talk about backups when you have a minute.
+
+# Difficulty > COZY_TEXT > tired_text
+[Difficulty.COZY_TEXT.tired_text]
+You are getting tired. A cup of coffee from the kitchenette would not hurt.
+
+# Difficulty > COZY_TEXT > commute_late
+[Difficulty.COZY_TEXT.commute_late]
+SLEEP IN. LEAVE AT 8:30 (YOU WILL STILL MAKE IT)
+
+# Difficulty > COZY_TEXT > pager_ignore
+[Difficulty.COZY_TEXT.pager_ignore]
+LET THE BACKUP PHONE TAKE IT
+
+# Difficulty > COZY_TEXT > pager_ignored
+[Difficulty.COZY_TEXT.pager_ignored]
+THE BACKUP PHONE TOOK THE PAGE.
+
+# Difficulty > COZY_TEXT > stay_one
+[Difficulty.COZY_TEXT.stay_one]
+STAY 1 HOUR (+$%d)
+
+# Difficulty > COZY_TEXT > stay_two
+[Difficulty.COZY_TEXT.stay_two]
+STAY 2 HOURS (+$%d)
+
+# Difficulty > COZY_TEXT > coach_text
+[Difficulty.COZY_TEXT.coach_text]
+GARRISON WANTS TO WALK THROUGH THE PIPELINE WITH YOU. NO PRESSURE.
+
+# Difficulty > COZY_TEXT > coach_first
+[Difficulty.COZY_TEXT.coach_first]
+: A WORD WITH GARRISON
+
+# Difficulty > COZY_TEXT > open_row
+[Difficulty.COZY_TEXT.open_row]
+STILL OPEN, CARRIED OVER
+
+
 # ======================= Hints > DAY1 =======================
 # Hints > DAY1 > 0 > text
 [Hints.DAY1.0.text]

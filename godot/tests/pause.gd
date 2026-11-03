@@ -78,6 +78,7 @@ func _init() -> void:
 	await _key(KEY_DOWN)
 	await _key(KEY_DOWN)
 	await _key(KEY_DOWN)
+	await _key(KEY_DOWN)  # a campaign has the DAY LENGTH row (R16) before QUIT TO TITLE
 	await _key(KEY_ENTER)
 	_check(pm.is_open, "QUIT TO TITLE asks first")
 	await _key(KEY_ESCAPE)

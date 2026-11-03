@@ -104,7 +104,7 @@ func rep_cap() -> int:
 
 # a lasting cost: the ceiling drops now and recovers one point on each A or S day
 func add_scar(amount: int) -> void:
-	if not active:
+	if not active or Difficulty.cozy_on():  # cozy Easy: nothing leaves a lasting mark
 		return
 	scars = mini(scars + amount, 60)
 	rep = mini(rep, rep_cap())
@@ -156,6 +156,12 @@ func cards_active() -> bool:
 
 func day_len_for(for_mode: String) -> float:
 	return float(MODE_DEFS.get(for_mode, {}).get("day_len", 600.0))
+
+
+# the DAY LENGTH option (pause menu) takes over when the next morning begins (World.begin_next_day)
+func apply_day_length() -> void:
+	Difficulty.apply_day_scale()
+	World.day_len = day_len_for(mode) * Difficulty.day_scale
 
 
 func total_days() -> int:
@@ -578,16 +584,21 @@ func _make_report() -> Dictionary:
 	var open_left: int = Msp.open_tickets().size()
 	var points: int = Msp.score - int(_base.score)
 	var overtime: float = Story.ot_hours
+	var cozy := Difficulty.cozy_on()  # cozy Easy: misses, reopens and open tickets cost no pay and no reputation
 	var pay := maxi(
 		0,
-		100 + closed * 20 - missed * 25 - reopened * 10 + int(overtime * 30.0) + Shift.pay_extra()
+		(
+			100
+			+ closed * 20
+			- (0 if cozy else missed * 25 + reopened * 10)
+			+ int(overtime * 30.0)
+			+ Shift.pay_extra()
+		)
 	)
 	var rep_delta := clampi(
 		(
 			closed * 2
-			- missed * 3
-			- reopened * 2
-			- open_left
+			- (0 if cozy else missed * 3 + reopened * 2 + open_left)
 			+ Social.rep_bonus()
 			+ Sales.rep_effect()
 			+ Shift.rep_delta()
@@ -657,7 +668,9 @@ func _end_day() -> void:
 		r["rep_cap"] = rep_cap()
 	r["rep_delta"] = _tier_rep(int(r.rep_delta))
 	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
-	if r.get("bankrupt", false):
+	if Difficulty.cozy_on():
+		_cozy_close(r)  # cozy Easy: nobody is fired, the books get one rescue
+	elif r.get("bankrupt", false):
 		rep = 0
 	r["rep"] = rep
 	r["cash"] = cash
@@ -669,6 +682,42 @@ func _end_day() -> void:
 	history.append({"day": day, "grade": r.grade, "points": r.points})
 	Game.ui_open = true
 	DayReport.show_report(r)
+
+
+# cozy Easy (roadmap R16): the reputation never drops below the floor (a PROBATION line instead of "fired") and
+# the first time the books go under the bank steps in with a bailout. The report gets soft `notes` lines.
+func _cozy_close(r: Dictionary) -> void:
+	r["cozy"] = true
+	var notes: Array = []
+	if bool(r.get("bankrupt", false)):
+		r["bankrupt"] = false
+		if Owner.bailout == 0:
+			var amount := int(Difficulty.cz("bailout", 0.0))
+			Owner.bailout = amount
+			Owner.cash += amount
+			cash = Owner.cash
+			notes.append(Difficulty.ct("bailout_note") % amount)
+			_bailout_card(amount)
+		else:
+			notes.append(Difficulty.ct("bailout_again"))
+	var floor_rep := int(Difficulty.cz("rep_floor", 0.0))
+	if rep < floor_rep:
+		rep = floor_rep
+		notes.append(Difficulty.ct("probation_note"))
+		var sender := {"owner": "Marge", "sales": "Vic"}.get(mode, "Morgan") as String
+		Msp.send_text(sender, Difficulty.ct("probation_" + mode))
+	if not notes.is_empty():
+		r["notes"] = notes
+
+
+func _bailout_card(amount: int) -> void:
+	var owner_mode := mode == "owner"
+	Cards.ask(
+		"Marge (Bookkeeper)" if owner_mode else "Dana Whitfield (Consultant)",
+		Difficulty.ct("bailout_owner" if owner_mode else "bailout_sales") % amount,
+		[{"label": Difficulty.ct("bailout_label"), "id": "ok"}],
+		func(_id: String) -> void: pass
+	)
 
 
 # Q6: the tier's say in the daily reputation move: on hard gains shrink and losses grow, on easy the other way round

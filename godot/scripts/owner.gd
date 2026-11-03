@@ -1159,6 +1159,7 @@ var client_work := {}  # client -> tech-seconds spent this week
 var profit_hist := {}  # client -> their last weekly profits
 var scope_fixed := {}  # client -> true once you enforced the scope
 var burnout := 0.0  # the crew's exhaustion 0-100
+var bailout := 0  # cozy Easy: the one-time bank rescue (Campaign._cozy_close); the valuation does not count it
 var leak := 0.0  # share of revenue silently lost to unbilled work and vendor increases
 var leak_found := false
 var risk_client := -1  # the client that refused your security recommendation
@@ -1224,6 +1225,7 @@ func reset() -> void:
 	profit_hist = {}
 	scope_fixed = {}
 	burnout = 0.0
+	bailout = 0
 	leak = 0.0
 	leak_found = false
 	risk_client = -1
@@ -1832,7 +1834,7 @@ func apply(fx: Dictionary) -> void:
 		var newbie: Dictionary = fx.hire.duplicate()
 		newbie["age"] = 0
 		extra_staff.append(newbie)
-	if fx.get("lose_tech", false):
+	if fx.get("lose_tech", false) and not Difficulty.cozy_on():
 		if lost_techs < MAX_LOST:
 			lost_techs += 1
 		elif not extra_staff.is_empty():
@@ -2120,14 +2122,14 @@ func _staff_week() -> void:
 		var quit_chance := (
 			float(trait_data.get("quit", 0.0)) + (0.08 if stack_sum("morale") <= -8.0 else 0.0)
 		)
-		if randf() < quit_chance:
+		if not Difficulty.cozy_on() and randf() < quit_chance:
 			extra_staff.erase(hire)
 			hire_quits += 1
 			Msp.send_text("Marge", "%s quit." % hire.name)
-	if stack_sum("morale") <= -8.0 and lost_techs < MAX_LOST and randf() < 0.08:
+	if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.08:
 		lost_techs += 1
 		Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
-	if flags.get("oncall_one", false) and lost_techs < MAX_LOST and randf() < 0.05:
+	if flags.get("oncall_one", false) and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.05:
 		lost_techs += 1
 		flags["oncall_one"] = false
 		Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
@@ -2553,7 +2555,7 @@ func _burnout_week() -> void:
 			],
 		}
 		show_card("burnout")
-	if burnout >= 70.0 and lost_techs < MAX_LOST and randf() < 0.18:
+	if burnout >= 70.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.18:
 		lost_techs += 1
 		burnout = maxf(0.0, burnout - 20.0)
 		Msp.send_text("Morgan", "One of the crew quit. Burned out.")
@@ -3014,7 +3016,7 @@ func poach_risk(client: int) -> float:
 	r += float(Mutators.hook("price_pressure", 0.0))
 	if _poach_wave > 0:
 		r *= 2.0
-	return minf(r, 0.6)
+	return minf(r, 0.6) * Difficulty.cz("poach", 1.0)  # cozy Easy: the rival calls half as often
 
 
 func _poach_week() -> void:
@@ -3645,7 +3647,7 @@ func quality() -> float:
 func valuation() -> int:
 	# X9: a buyer discounts a young book of business (half the price at the start, full from week 12)
 	var seasoning := clampf(0.5 + float(Campaign.day) / 24.0, 0.5, 1.0)
-	return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash)
+	return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash - bailout)
 
 
 # X9: the one text for the company value (weekly report, Boardroom, board review)
@@ -4003,6 +4005,7 @@ func to_dict() -> Dictionary:
 		"profit_hist": profit_hist,
 		"scope_fixed": scope_fixed,
 		"burnout": burnout,
+		"bailout": bailout,
 		"leak": leak,
 		"leak_found": leak_found,
 		"risk_client": risk_client,
@@ -4068,6 +4071,7 @@ func from_dict(data: Dictionary) -> void:
 	for key in fixed_scopes:
 		scope_fixed[int(key)] = true
 	burnout = float(data.get("burnout", 0.0))
+	bailout = int(data.get("bailout", 0))
 	leak = float(data.get("leak", 0.0))
 	leak_found = bool(data.get("leak_found", false))
 	risk_client = int(data.get("risk_client", -1))

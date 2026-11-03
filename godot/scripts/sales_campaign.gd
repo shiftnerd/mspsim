@@ -1456,9 +1456,9 @@ func settle() -> Dictionary:
 		verdict = "%s %s AT %d%%" % [str(q.label), "HIT" if pct >= 100 else "MISSED", pct]
 		if q_result[qi] == "MISS" and qi == 0:
 			warned = true
-			verdict += ": WARNING"
+			verdict += Difficulty.ct("coach_first") if Difficulty.cozy_on() else ": WARNING"
 		elif q_result[qi] == "MISS":
-			verdict += ": SECOND MISS"
+			verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else ": SECOND MISS"
 		_lynk("Garrison", "Quarter closed at %d%%. %s" % [pct, "Good work." if pct >= 100 else "We need to talk."])
 	var mood := client_mood()
 	var grade_rep: Dictionary = {"S": 2, "A": 1, "B": 0, "C": -1, "D": -2}
@@ -1478,7 +1478,10 @@ func settle() -> Dictionary:
 		["VERDICT", verdict, red if grade in ["C", "D"] or (closing and q_result[qi] == "MISS") else green],
 	]
 	if warned and q_result[0] == "MISS" and day > int(QUARTERS[0].to):
-		rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
+		if Difficulty.cozy_on():
+			rows.append([Difficulty.ct("coach_row"), Difficulty.ct("coach_text"), warn])
+		else:
+			rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
 	last_report = verdict
 	return {
 		"rows": rows,

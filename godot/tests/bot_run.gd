@@ -29,6 +29,7 @@ func _init() -> void:
 				tiers = Array(parts)
 			else:
 				strats = Array(parts)
+	var failed := false
 	await process_frame
 	var bots: RefCounted = load("res://tests/bot_lib.gd").new(self)
 	bots.ts = ts
@@ -45,12 +46,17 @@ func _init() -> void:
 				var bad := 0
 				var rep := 0.0
 				var score := 0.0
+				var fired := 0
 				for r in rows:
 					good += 1 if r.cls == "good" else 0
 					mid += 1 if r.cls == "mid" else 0
 					bad += 1 if r.cls == "bad" else 0
 					rep += float(r.rep)
 					score += float(r.score)
+					fired += 1 if bool(r.fired) else 0
 				var n := float(rows.size())
-				print("CELL %s %s %s: n=%d good %d mid %d bad %d  rep %.1f score %.1f" % [mode, tier, strat, rows.size(), good, mid, bad, rep / n, score / n])
-	quit(0)
+				print("CELL %s %s %s: n=%d good %d mid %d bad %d  rep %.1f score %.1f  fired %d" % [mode, tier, strat, rows.size(), good, mid, bad, rep / n, score / n, fired])
+				if str(tier) == "easy" and fired > 0:  # R16: easy is cozy, nobody is ever fired there
+					print("FAIL cozy: %s easy %s was fired %d time(s)" % [mode, strat, fired])
+					failed = true
+	quit(1 if failed else 0)

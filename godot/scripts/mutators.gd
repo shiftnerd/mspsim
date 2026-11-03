@@ -508,7 +508,7 @@ func boost(card_id: String) -> float:
 
 
 func sla(secs: float) -> float:
-	return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult() * Difficulty.cm("sla")
+	return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult() * Difficulty.cm("sla") * Difficulty.sla_scale()
 
 
 # the ticket kind of the next random ticket: {} = the usual uniform pick (nothing is active, no random number used)

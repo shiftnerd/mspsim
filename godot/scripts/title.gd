@@ -455,7 +455,7 @@ func _start(id: String, summary := "") -> void:
 	Toolbox.after_start()
 	if summary != "":
 		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
-		Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
+		Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
 func _draw_menu() -> void:

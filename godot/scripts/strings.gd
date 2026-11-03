@@ -26,6 +26,7 @@ const ROOTS := {
 	"Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
+	"Difficulty": ["COZY_TEXT"],
 	"Hints": ["DAY1"],
 	"Career": ["MEDALS", "UNLOCKS"],
 	"Growth": ["STRETCH"],

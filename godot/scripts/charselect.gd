@@ -723,6 +723,16 @@ func _draw_seed(size: Vector2, narrow: bool) -> void:
 	var tw := float(PixelFont.width(text))
 	_txt(text, r.position + Vector2(floorf((w - tw) * 0.5), 2), Color.WHITE)
 	_rects.append([r, "seed", 0])
+	if is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode; tag it beside the seed
+		var tag_w := float(PixelFont.width("COZY")) + 8.0
+		var tag := Rect2(r.position + Vector2(0.0, 10.0), Vector2(tag_w, 8.0))  # under the seed chip (portrait)
+		if wide:
+			tag = Rect2(Vector2(size.x - tag_w - 3.0, 13.0), Vector2(tag_w, 8.0))  # under the level chip, clear of the heading
+		elif not narrow:
+			tag = Rect2(r.position + Vector2(w + 3.0, 0.0), Vector2(tag_w, 9.0))  # beside it (the h format has room)
+		draw_rect(tag, PANEL)
+		draw_rect(tag, GOLD, false, 1.0)
+		_txt("COZY", tag.position + Vector2(4, tag.size.y * 0.5 - 3.0), GOLD)
 	if mode == "free" and step == "char":
 		var tools := Rect2(pos + Vector2(w + 3.0, 0.0), Vector2(float(PixelFont.width("TOOLS")) + 8.0, 9.0))
 		if not wide:

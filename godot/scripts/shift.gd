@@ -124,7 +124,7 @@ func traffic_text(day: int) -> String:
 
 
 func is_tired() -> bool:
-	return active() and energy < 30.0
+	return active() and energy < 30.0 and not Difficulty.cozy_on()
 
 
 func slow_mult() -> float:
@@ -132,6 +132,8 @@ func slow_mult() -> float:
 		return 1.0
 	if energy >= 85.0:
 		return 0.9
+	if Difficulty.cozy_on():
+		return 1.0  # cozy Easy: being tired does not slow the work
 	return 1.0 + clampf((55.0 - energy) / 55.0, 0.0, 1.0) * 0.5
 
 
@@ -141,6 +143,8 @@ func fail_add() -> float:
 	var extra := float(Mutators.hook("fail_add", 0.0))
 	if energy >= 85.0:
 		return -0.03 + extra
+	if Difficulty.cozy_on():
+		return extra  # cozy Easy: being tired does not make fixes fail
 	return clampf((45.0 - energy) / 45.0, 0.0, 1.0) * 0.18 + extra
 
 
@@ -206,7 +210,7 @@ func _page_card() -> void:
 		[
 			{"label": "GET UP AND FIX IT REMOTELY", "id": "fix"},
 			{"label": "CHECK THE ALERT, THEN DECIDE", "id": "triage"},
-			{"label": "IGNORE IT, GO BACK TO SLEEP", "id": "ignore"},
+			{"label": Difficulty.ct("pager_ignore") if Difficulty.cozy_on() else "IGNORE IT, GO BACK TO SLEEP", "id": "ignore"},
 		],
 		func(id: String) -> void: _page_result(id, client, what)
 	)
@@ -242,7 +246,9 @@ func _page_result(id: String, client: int, what: String) -> void:
 				last_note = "REAL, AND YOU FIXED IT."
 		_:
 			pages_ignored += 1
-			if randf() < 0.55:
+			if Difficulty.cozy_on():
+				last_note = Difficulty.ct("pager_ignored")  # cozy Easy: opt in, and nothing happens if you do not
+			elif randf() < 0.55:
 				Sales.adjust(client, -6)
 				Campaign.adjust_rep(-2)
 				last_note = "THE PAGE WAS REAL. THEY CALLED THE BOSS."
@@ -271,7 +277,7 @@ func commute_card() -> void:
 		[
 			{"label": "LEAVE AT 7:30. EARLY AND TIRED", "id": "early"},
 			{"label": "LEAVE AT 8:00. A GAMBLE", "id": "ontime"},
-			{"label": "SLEEP IN. LEAVE AT 8:30 (LATE, TICKETS WAIT)", "id": "late"},
+			{"label": Difficulty.ct("commute_late") if Difficulty.cozy_on() else "SLEEP IN. LEAVE AT 8:30 (LATE, TICKETS WAIT)", "id": "late"},
 		],
 		func(id: String) -> void: commute(id)
 	)
@@ -282,6 +288,9 @@ func commute(choice: String) -> void:
 	var extra: float = float(WEEK_TRAFFIC.get(week_of(Campaign.day), {}).get("extra", 0.0))
 	var traffic := randf() < float(c.p) + extra
 	var delay := int(c.base)
+	if Difficulty.cozy_on():  # cozy Easy: the road is clear and nobody is ever late
+		traffic = false
+		delay = mini(delay, 0)
 	var reason := ""
 	if traffic:
 		delay += randi_range(15, 60)
@@ -345,7 +354,12 @@ func _process(delta: float) -> void:
 	if not active() or World.time_scale <= 0.0 or Cards.is_open:
 		return
 	var dt := delta * World.time_scale
-	energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * dt / maxf(60.0, World.day_len))
+	energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
+	if Difficulty.cozy_on():
+		if _warned < 1 and energy < 35.0:
+			_warned = 3
+			Msp.send_text("You", Difficulty.ct("tired_text"))
+		return
 	if _warned < 1 and energy < 55.0:
 		_warned = 1
 		Msp.send_text("You", "You are getting tired. Fixes will start taking longer.")
@@ -384,9 +398,9 @@ func can_end_day() -> bool:
 				),
 				[
 					{"label": "GO HOME", "id": "home"},
-					{"label": "STAY 1 HOUR (+$%d, -%d ENERGY)" % [STAY_PAY, STAY_COST], "id": "1"},
+					{"label": stay_label(1), "id": "1"},
 					{
-						"label": "STAY 2 HOURS (+$%d, -%d ENERGY)" % [STAY_PAY * 2, STAY_COST * 2],
+						"label": stay_label(2),
 						"id": "2"
 					},
 				],
@@ -394,6 +408,13 @@ func can_end_day() -> bool:
 			)
 			return false
 	return World.clock >= _stay_until
+
+
+# the card line for staying `hours` more: cozy Easy leaves the energy cost out (it costs none)
+func stay_label(hours: int) -> String:
+	if Difficulty.cozy_on():
+		return Difficulty.ct("stay_one" if hours == 1 else "stay_two") % (STAY_PAY * hours)
+	return "STAY %d HOUR%s (+$%d, -%d ENERGY)" % [hours, "" if hours == 1 else "S", STAY_PAY * hours, STAY_COST * hours]
 
 
 # an outing took the evening: no offer to stay late
@@ -408,7 +429,8 @@ func stay(id: String) -> void:
 	stay_hours = hours
 	stays += 1
 	_stay_until = World.DAY_END + hours
-	add_energy(-float(STAY_COST) * hours)
+	if not Difficulty.cozy_on():
+		add_energy(-float(STAY_COST) * hours)
 
 
 # ---- the report -------------------------------------------------------------------------------
@@ -426,7 +448,7 @@ func rep_delta() -> int:
 
 # called as the day is closed: exhaustion makes you short with your coworkers
 func close_day() -> void:
-	if active() and energy < 25.0:
+	if active() and energy < 25.0 and not Difficulty.cozy_on():
 		Social.change_all(-1)
 
 

@@ -685,7 +685,7 @@ func mentor(who: String) -> void:
 
 # the chance a tech with this morale walks out tonight (0 above QUIT_BELOW)
 func quit_chance(who: String) -> float:
-	if is_gone(who):
+	if is_gone(who) or Difficulty.cozy_on():  # cozy Easy: nobody quits
 		return 0.0
 	var worn := 0.0
 	if morale(who) < 40 and int(members[who].get("over_days", 0)) >= 3:

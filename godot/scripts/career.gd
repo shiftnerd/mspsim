@@ -312,6 +312,12 @@ func note_nerf_hit(reach: float) -> void:
 	best("nerf_longest", roundi(reach))
 
 
+# a campaign year was finished. Cozy runs (the Easy tier) are counted apart: reputation, value and ending medals
+# count only for non-cozy runs, every other medal counts everywhere (R16).
+func note_ending() -> void:
+	add("endings.cozy" if Difficulty.cozy_on() else "endings")
+
+
 func _on_day(_d: int) -> void:
 	add("days." + (Campaign.mode if Campaign.mode != "" else "free"))
 

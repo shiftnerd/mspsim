@@ -83,7 +83,11 @@ func back() -> void:
 func _labels() -> Array:
 	if _confirm:
 		return ["NO, KEEP PLAYING", "YES, QUIT"]
-	return ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "QUIT TO TITLE"]
+	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
+	if Campaign.active:
+		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+	rows.append("QUIT TO TITLE")
+	return rows
 
 
 func _activate() -> void:
@@ -93,7 +97,16 @@ func _activate() -> void:
 			Game.go_title()
 		else:
 			_confirm = false
-			_sel = 3
+			_sel = _labels().size() - 1
+		_canvas.queue_redraw()
+		return
+	if Campaign.active and _sel == 3:
+		Difficulty.cycle_day_scale(1)
+		_canvas.queue_redraw()
+		return
+	if _sel == _labels().size() - 1:
+		_confirm = true
+		_sel = 0
 		_canvas.queue_redraw()
 		return
 	match _sel:
@@ -103,15 +116,12 @@ func _activate() -> void:
 			_page = 0
 		2:
 			Game.cycle_format()
-		3:
-			_confirm = true
-			_sel = 0
 	_canvas.queue_redraw()
 
 
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
-	var h := 76.0
+	var h := 76.0 + (12.0 if Campaign.active else 0.0)
 	if _page >= 0:
 		h = 108.0
 	elif _confirm:
@@ -172,7 +182,7 @@ func _key(event: InputEvent) -> void:
 			_sel = 1
 		elif _confirm:
 			_confirm = false
-			_sel = 3
+			_sel = _labels().size() - 1
 		else:
 			close()
 	elif _page >= 0:
@@ -187,6 +197,8 @@ func _key(event: InputEvent) -> void:
 	elif left or right:
 		if not _confirm and _sel == 2:
 			Game.cycle_format()
+		elif not _confirm and _sel == 3 and Campaign.active:
+			Difficulty.cycle_day_scale(1 if right else -1)
 	elif Controls.confirm(event):
 		_activate()
 		return
@@ -203,7 +215,7 @@ func _paint() -> void:
 	if _page >= 0:
 		_paint_help(c, r)
 		return
-	var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else "")
+	var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else ("COZY" if Difficulty.cozy_on() else ""))
 	if _confirm:
 		var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
 		UiStyle.text(c, line, body.position.x, r.position.y + 14.0, UiStyle.MUTED)
@@ -213,7 +225,10 @@ func _paint() -> void:
 		if i == _sel:
 			c.draw_rect(rr, UiStyle.HEAD)
 		UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
-	UiStyle.footer(c, r, "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME")
+	var foot := "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME"
+	if not _confirm and Campaign.active and _sel == 3:
+		foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
+	UiStyle.footer(c, r, foot)
 
 
 # one page of the key list: what you do on the left, the key on the right
