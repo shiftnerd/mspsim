@@ -46,6 +46,7 @@ func _init() -> void:
 
 	# the quarterly review offers to go to their office
 	o._qbr_done = {}
+	c.day = 7
 	o._qbr()
 	_check(
 		cards.is_open and cards.options.size() == 4 and "GO ONSITE" in str(cards.options[3].label),

@@ -181,7 +181,7 @@ func maybe_invite() -> void:
 	_offered = true
 	var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
 	if Campaign.mode == "owner":
-		text = "The crew has been grinding for weeks. A team night would be noticed. It costs money, though."
+		text = "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game." % cost_range()
 	Cards.ask(
 		_host(),
 		text,
@@ -191,6 +191,16 @@ func maybe_invite() -> void:
 		],
 		func(id: String) -> void: _invite_answer(id)
 	)
+
+
+# the owner pays for the night: "$120 TO $300" (shown on the invitation before the game pick)
+func cost_range() -> String:
+	var lo := 100000
+	var hi := 0
+	for id in GAMES:
+		lo = mini(lo, int(GAMES[id].cost))
+		hi = maxi(hi, int(GAMES[id].cost))
+	return "$%d to $%d" % [lo, hi]
 
 
 # who asks: Garrison (culture owner) in the tech campaign; in the owner campaign the card comes from Alan
