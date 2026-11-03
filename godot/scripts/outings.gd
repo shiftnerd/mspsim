@@ -1,4 +1,5 @@
 extends CanvasLayer
+# gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=max-line-length
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
@@ -53,13 +54,55 @@ const GAMES := {
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
-const LOVES := {
-	"Alan": ["SPORTS", "FOOD"],
-	"Garrison": ["MOVIES", "WEEKEND PLANS"],
-	"Dan": ["KIDS AND PETS", "FOOD"]
+# dinner: 18 topics with a tag (light, deep, touchy); the diners' tastes are in PEOPLE
+const TOPICS := [
+	{"id": "WORK DRAMA", "tag": "touchy"},
+	{"id": "SPORTS", "tag": "light"},
+	{"id": "MOVIES", "tag": "light"},
+	{"id": "FOOD", "tag": "light"},
+	{"id": "KIDS AND PETS", "tag": "deep"},
+	{"id": "WEEKEND PLANS", "tag": "light"},
+	{"id": "FANTASY FOOTBALL", "tag": "light"},
+	{"id": "A NEW PHONE", "tag": "light"},
+	{"id": "COMMUTE", "tag": "touchy"},
+	{"id": "ROAD TRIP", "tag": "light"},
+	{"id": "HOME BREWING", "tag": "light"},
+	{"id": "A NEW BABY", "tag": "deep"},
+	{"id": "GARDENS", "tag": "light"},
+	{"id": "THE BIG GAME", "tag": "light"},
+	{"id": "A TV SHOW BINGE", "tag": "light"},
+	{"id": "KARAOKE", "tag": "light"},
+	{"id": "RAISES AND BONUSES", "tag": "touchy"},
+	{"id": "VENDOR STORIES", "tag": "light"},
+	{"id": "BOSS GOSSIP", "tag": "touchy"},
+	{"id": "MOVING HOUSE", "tag": "deep"},
+]
+# nobody ever dreads these (family is never a trap)
+const PROTECTED_TOPICS := ["KIDS AND PETS", "A NEW BABY", "MOVING HOUSE"]
+# loves (3) and dislikes (2); the first two loves and the first dislike are the classic tastes
+# that old saves keep. A new save swaps one or two of them (see _roll_tastes).
+const PEOPLE := {
+	"Alan": {"loves": ["SPORTS", "FOOD", "HOME BREWING"], "hates": ["WORK DRAMA", "BOSS GOSSIP"]},
+	"Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
+	"Dan":
+	{"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
+	"Vic": {"loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"], "hates": ["VENDOR STORIES"]},
+	"Maya": {"loves": ["A TV SHOW BINGE", "GARDENS", "KARAOKE"], "hates": ["COMMUTE"]},
 }
-const HATES := {"Alan": "WORK DRAMA", "Garrison": "SPORTS", "Dan": "MOVIES"}
-const TOPICS := ["WORK DRAMA", "SPORTS", "MOVIES", "FOOD", "KIDS AND PETS", "WEEKEND PLANS"]
+# the mood of the day shifts a diner's points for the whole dinner (+1 / 0 / -1)
+const DINNER_MOODS := {
+	"chatty": {"shift": 1, "face": ":D"},
+	"relaxed": {"shift": 1, "face": ":)"},
+	"easygoing": {"shift": 0, "face": ":|"},
+	"tired": {"shift": -1, "face": "-_-"},
+	"distracted": {"shift": -1, "face": "O_O"},
+}
+# owner campaign: who pays and how much (cost replaces the $300 of GAMES.dinner)
+const BUDGETS := {
+	"cheap": {"label": "CHEAP: PIZZA AND TAP WATER", "cost": 150, "mood": -1},
+	"normal": {"label": "NORMAL: THE USUAL GRILL ORDER", "cost": 300, "mood": 0},
+	"fancy": {"label": "FANCY: STEAKS AND A TOAST", "cost": 520, "mood": 1},
+}
 const BOWL_SKILL := {"Alan": 0.62, "Garrison": 0.55, "Dan": 0.48}
 const SEATS := {"dinner": {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5"}}
 const PLAYER_SEAT := "Seat2"
@@ -70,16 +113,201 @@ const ROOM_INTRO := {
 	"bowling":
 	"TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
 	"karaoke":
-	"YOU ARE ON THE MIC. HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT) WHILE THE ROOM WATCHES. STRING PERFECT HITS TOGETHER.",
+	"YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
 	"escape":
-	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK AND THE PAINTING (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. TWO MINUTES.",
+	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
 	"dinner":
-	"WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE AND WATCH THEIR FACES.",
+	"WALK TO THE BOOTH AND SIT NEXT TO ALAN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
-const SONG_LEN := 24
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 const ESCAPE_TIME := 120.0
+# karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
+# HARD scale it by Difficulty karaoke.gap); rhythm = gap multipliers cycled over the notes; pattern =
+# how the lanes are picked (mix, sweep, sync, burst); doubles = chance of a second note on the same beat
+# per tier [easy, normal, hard]; win = x the hit windows; cuts = share of the points for 1 / 2 / 3 stars
+# ([3 stars, 2 stars, 1 star]); speed = pixels per second; unlock = stars
+# you must have earned on any song first; lines = the lyrics screen (21 letters at most per line).
+const DEFAULT_SONGS := [
+	{
+		"id": "wobble",
+		"title": "WOBBLE WOBBLE POP",
+		"artist": "DJ BEANBAG",
+		"genre": "2013 POP",
+		"len": 24,
+		"gap": 0.75,
+		"rhythm": [1.0],
+		"pattern": "mix",
+		"doubles": [0.0, 0.0, 0.0],
+		"win": 1.0,
+		"cuts": [0.75, 0.5, 0.25],
+		"speed": 45.0,
+		"unlock": 0,
+		"lines":
+		[
+			"WOBBLE WOBBLE POP POP",
+			"SHAKE IT FOR THE CAM",
+			"BASS DROP IN MY HEAD",
+			"SELFIE ON THE STAIRS",
+			"NOBODY KNOWS MY MOVES",
+			"ONE MORE DROP TONIGHT",
+		],
+	},
+	{
+		"id": "dirt",
+		"title": "DIRT ROAD FRIDAY",
+		"artist": "THE CREEKBED TWINS",
+		"genre": "COUNTRY SINGALONG",
+		"len": 20,
+		"gap": 0.95,
+		"rhythm": [1.0],
+		"pattern": "sweep",
+		"doubles": [0.0, 0.0, 0.1],
+		"win": 1.1,
+		"cuts": [0.7, 0.45, 0.2],
+		"speed": 45.0,
+		"unlock": 0,
+		"lines":
+		[
+			"DIRT ROAD ON FRIDAY",
+			"TAILGATE DOWN AND LOW",
+			"PORCH LIGHT STILL ON",
+			"HOME BY THE RIVER",
+			"SING IT TO THE CORN",
+			"NOBODY IS IN A RUSH",
+			"ONE MORE MILE OF GOLD",
+		],
+	},
+	{
+		"id": "neon",
+		"title": "NEON GYM CLASS",
+		"artist": "THE SYNTH SCOUTS",
+		"genre": "80S CLASSIC",
+		"len": 26,
+		"gap": 0.7,
+		"rhythm": [1.2, 0.8, 1.2, 0.8],
+		"pattern": "sync",
+		"doubles": [0.0, 0.0, 0.12],
+		"win": 1.0,
+		"cuts": [0.7, 0.5, 0.3],
+		"speed": 48.0,
+		"unlock": 0,
+		"lines":
+		[
+			"NEON LIGHTS AND SWEAT",
+			"LEG WARMERS ON FIRE",
+			"GYM CLASS AT MIDNIGHT",
+			"ROLL THE TAPE BACK",
+			"JUMP ROPE IN THE RAIN",
+			"FEEL THE SYNTH GLOW",
+			"NEON GYM CLASS, YEAH",
+		],
+	},
+	{
+		"id": "rap",
+		"title": "FAST RAP HOT MESS",
+		"artist": "MC SPREADSHEET",
+		"genre": "FAST RAP",
+		"len": 32,
+		"gap": 0.62,
+		"rhythm": [0.75, 0.75, 0.75, 1.5],
+		"pattern": "burst",
+		"doubles": [0.0, 0.12, 0.25],
+		"win": 0.85,
+		"cuts": [0.7, 0.45, 0.2],
+		"speed": 55.0,
+		"unlock": 3,
+		"lines":
+		[
+			"FAST WORDS HOT MESS",
+			"COFFEE ON MY SHIRT",
+			"RHYMES IN THE QUEUE",
+			"TICKET AFTER TICKET",
+			"TWO TIMES TOO FAST",
+			"BREATHE IN THE BRIDGE",
+			"HOT MESS HOT MESS",
+			"MIC DROP, MIC PICK UP",
+		],
+	},
+]
+var SONGS: Array = DEFAULT_SONGS.duplicate(true)
+# the escape room: which clue recipes each zone can show (zone n holds digit n of the code)
+const CLUE_ZONES := ["board", "clock", "plaque", "shelf"]
+const CLUE_KINDS := ["clue_board", "clue_clock", "clue_painting", "clue_shelf"]
+const RECIPES := {
+	"board": ["sum", "product", "missing"],
+	"clock": ["hour", "double"],
+	"plaque": ["number", "roman", "letter"],
+	"shelf": ["spine", "ribbons"],
+}
+const ROMAN := ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
+const PRODUCTS := {4: [2, 2], 6: [2, 3], 8: [2, 4], 9: [3, 3]}
+# what a friend says about each zone (the one in SPECIALTY gets the recipe tip as well)
+const SPECIALTY := {"Alan": "board", "Dan": "clock", "Garrison": "keypad", "Maya": "plaque"}
+const DEFAULT_RECIPE_TIPS := {
+	"sum": "ADD THE TWO NUMBERS.",
+	"product": "MULTIPLY THEM.",
+	"missing": "WHICH DIGIT IS NOT IN THE LIST?",
+	"hour": "THE HOUR IS THE DIGIT.",
+	"double": "THE DIGIT IS TWICE THE HOUR.",
+	"number": "THE NUMBER IS THE DIGIT.",
+	"roman": "READ THE ROMAN NUMERAL.",
+	"letter": "COUNT THE LETTER IN THE ALPHABET.",
+	"spine": "THE VOLUME NUMBER IS THE DIGIT.",
+	"ribbons": "COUNT THE BOOKMARK RIBBONS.",
+	"dial": "THE DIAL CLICKS: B = RIGHT PLACE, C = WRONG PLACE.",
+	"nodial": "THIS LOCK GIVES NOTHING AWAY. YOU NEED EVERY CLUE.",
+}
+var RECIPE_TIPS: Dictionary = DEFAULT_RECIPE_TIPS.duplicate(true)
+const DEFAULT_FRIEND_HINTS := {
+	"Alan":
+	{
+		"board": "THAT CHALKBOARD IS MY KIND OF PROBLEM. DO THE MATH.",
+		"clock": "THAT OLD WALL CLOCK STOPPED FOR A REASON.",
+		"plaque": "I THINK THERE IS A PLAQUE UNDER THE PAINTING.",
+		"shelf": "ONE BOOK ON THAT SHELF IS STICKING OUT. LOOK CLOSER.",
+		"keypad": "YOU HAVE THEM ALL. TRY THE KEYPAD ON THE VAULT.",
+	},
+	"Garrison":
+	{
+		"board": "SOMEBODY WROTE ON THAT CHALKBOARD. IT IS A CLUE, TRUST ME.",
+		"clock": "THE CLOCK IS STUCK AT A STRANGE TIME. WE SHOULD LOOK.",
+		"plaque": "A PLAQUE UNDER THE PAINTING! NOBODY HANGS A PAINTING FOR FREE.",
+		"shelf": "THAT BOOKSHELF HAS SOMETHING IN IT THAT DOES NOT BELONG.",
+		"keypad": "THAT IS ALL OF THEM. THE LOCK ON THE VAULT IS WAITING FOR YOU.",
+	},
+	"Dan":
+	{
+		"board": "THE CHALKBOARD LIGHT IS WIRED BADLY. LOOK AT THE BOARD.",
+		"clock": "THAT CLOCK IS NOT WIRED TO ANYTHING, SO SOMEONE STOPPED IT ON PURPOSE.",
+		"plaque": "THERE IS A CABLE RUN UNDER THE PAINTING. AND A PLAQUE.",
+		"shelf": "THE BOOKSHELF IS BOLTED TO THE WALL. SOMETHING ON IT IS NOT A BOOK.",
+		"keypad": "THE KEYPAD IS WIRED TO THE VAULT. ENTER WHAT YOU FOUND.",
+	},
+	"Maya":
+	{
+		"board": "THE CHALKBOARD LOOKS LIKE HOMEWORK. HOMEWORK IS A CLUE.",
+		"clock": "THE WALL CLOCK IS WRONG. NOBODY LEAVES A CLOCK WRONG.",
+		"plaque": "THAT PLAQUE UNDER THE PAINTING IS EASY TO MISS. READ IT.",
+		"shelf": "THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.",
+		"keypad": "THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.",
+	},
+	"Vic":
+	{
+		"board": "THE CHALKBOARD. TRUST ME ON THE CHALKBOARD.",
+		"clock": "THE CLOCK, TRUST ME, THE CLOCK.",
+		"plaque": "I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.",
+		"shelf": "THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.",
+		"keypad": "YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.",
+	},
+}
+var FRIEND_HINTS: Dictionary = DEFAULT_FRIEND_HINTS.duplicate(true)
+const DEFAULT_HERRINGS := [
+	"A BOOKSHELF FULL OF OLD MANUALS. NO NUMBERS HERE THAT MATTER.",
+	"A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
+	"ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
+]
+var HERRINGS: Array = DEFAULT_HERRINGS.duplicate(true)
 const ROOMS := {
 	"bowling": "bowling_alley",
 	"karaoke": "karaoke_bar",
@@ -109,6 +337,8 @@ var count := 0
 var skipped := 0
 var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
+var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
+var song_best := {}  # karaoke: best stars per song id
 
 var _canvas: Node2D
 var _prev_scale := 1.0
@@ -139,11 +369,25 @@ func reset() -> void:
 	skipped = 0
 	best = {}
 	known = {}
+	tastes = {}
+	song_best = {}
 	_offered = false
 
 
+# version 2 saves the dinner tastes and the best star count per song; an older save has neither
+# (it keeps the classic tastes, so what it already knows stays true)
 func to_dict() -> Dictionary:
-	return {"count": count, "skipped": skipped, "best": best, "known": known}
+	for who in PEOPLE:
+		taste(who)
+	return {
+		"version": 2,
+		"count": count,
+		"skipped": skipped,
+		"best": best,
+		"known": known,
+		"tastes": tastes,
+		"songs": song_best,
+	}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -152,6 +396,12 @@ func from_dict(data: Dictionary) -> void:
 	skipped = int(data.get("skipped", 0))
 	best = data.get("best", {})
 	known = data.get("known", {})
+	song_best = data.get("songs", {})
+	if int(data.get("version", 1)) >= 2:
+		tastes = data.get("tastes", {})
+	else:
+		for who in PEOPLE:
+			tastes[who] = classic_taste(who)
 
 
 # ---- invitations ------------------------------------------------------------------------------
@@ -284,13 +534,13 @@ func _open(id: String, from_invite: bool) -> void:
 	_canvas.queue_redraw()
 
 
-func begin_play() -> void:
+func begin_play(pick := "") -> void:
 	phase = "play"
 	match game:
 		"bowling":
 			_bowl_setup()
 		"karaoke":
-			_kara_setup()
+			_kara_setup(pick)
 		"escape":
 			_escape_setup()
 			if room_mode():
@@ -358,6 +608,8 @@ func tick(dt: float) -> void:
 func _input(event: InputEvent) -> void:
 	if not is_open or not (event is InputEventKey) or not event.pressed or event.echo:
 		return
+	if Cards.is_open:
+		return  # a card (song, budget) has the keys
 	if room_mode() and phase == "play" and not _room_wants(event.keycode):
 		return  # in the room you keep walking around
 	press(event.keycode)
@@ -383,7 +635,14 @@ func _press_page(key: int) -> void:
 		if key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_ESCAPE]:
 			close()
 	elif key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
-		begin_play()
+		if Cards.is_open:
+			return
+		if use_rooms and game == "karaoke":
+			ask_song()  # the card at the mic picks the song, then the game begins
+		elif use_rooms and game == "dinner" and Campaign.mode == "owner":
+			ask_budget()
+		else:
+			begin_play()
 	elif key == KEY_ESCAPE:
 		if Campaign.mode == "owner":
 			Owner.cash += int(GAMES[game].cost)
@@ -687,16 +946,120 @@ func _bowl_end() -> void:
 	_finish([3, 2, 1, 1][bowl_rank()])
 
 
+# ---- the song table
+func song_by_id(id: String) -> Dictionary:
+	for song in SONGS:
+		if str(song.id) == id:
+			return song
+	return SONGS[0]
+
+
+# a song is open when you have earned its stars on any song (the rap needs a 3 star night)
+func song_unlocked(id: String) -> bool:
+	var need := int(song_by_id(id).get("unlock", 0))
+	if need <= 0:
+		return true
+	for key in song_best:
+		if int(song_best[key]) >= need:
+			return true
+	return int(best.get("karaoke", 0)) >= need
+
+
+# the song the card offers first: in a campaign the first open one you have not three-starred yet
+func default_song() -> String:
+	if Campaign.active:
+		for song in SONGS:
+			if song_unlocked(str(song.id)) and int(song_best.get(str(song.id), 0)) < 3:
+				return str(song.id)
+	return str(SONGS[0].id)
+
+
+# the song card at the mic: the default first, a locked song last (greyed out)
+func song_options() -> Array:
+	var first := default_song()
+	var order := [first]
+	for song in SONGS:
+		if str(song.id) != first:
+			order.append(str(song.id))
+	var open := []
+	var shut := []
+	for id in order:
+		var song := song_by_id(str(id))
+		var stars_text := ""
+		if song_best.has(id):
+			var n := int(song_best[id])
+			stars_text = "  %d STAR%s" % [n, "" if n == 1 else "S"]
+		var entry := {"label": "%s%s" % [str(song.title), stars_text], "id": id}
+		if song_unlocked(str(id)):
+			open.append(entry)
+		else:
+			entry["enabled"] = false
+			entry["hint"] = "EARN %d STARS ON ANY SONG" % int(song.get("unlock", 0))
+			shut.append(entry)
+	return open + shut
+
+
+func ask_song() -> void:
+	Cards.ask(
+		"Karaoke host",
+		"Step up to the mic. Which song?",
+		song_options(),
+		func(id: String) -> void: begin_play(id)
+	)
+
+
 # ---- karaoke ------------------------------------------------------------------------------------
-func _kara_setup() -> void:
+# the chart of one song at one tier: {notes, gap, span, speed}. Pure given the generator, so tests can
+# build the same chart twice. Doubles put a second arrow in another lane on the same beat.
+func kara_chart(song: Dictionary, tier: String, r: RandomNumberGenerator) -> Dictionary:
+	var gap := float(song.gap) * float(Difficulty.at("karaoke.gap", tier)) / 0.75
+	var rhythm: Array = song.rhythm
+	var chance := float(song.doubles[maxi(0, Difficulty.TIERS.find(tier))])
 	var notes := []
-	var gap := Difficulty.f("karaoke.gap")
-	var r := Difficulty.rng("karaoke")
-	for i in SONG_LEN:
-		notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
+	var t := 1.5
+	var lane := r.randi_range(0, 3)
+	var dir := 1
+	for i in int(song.len):
+		match str(song.pattern):
+			"sweep":
+				if r.randf() < 0.15:
+					lane = r.randi_range(0, 3)
+				else:
+					if lane + dir < 0 or lane + dir > 3:
+						dir = -dir
+					lane += dir
+			"sync":
+				if i % 2 == 0:
+					lane = (lane + r.randi_range(1, 3)) % 4
+			"burst":
+				if i % 4 == 0:
+					lane = r.randi_range(0, 3)
+				else:
+					lane = (lane + 1) % 4
+			_:
+				lane = r.randi_range(0, 3)
+		notes.append({"lane": lane, "time": t, "state": ""})
+		if chance > 0.0 and r.randf() < chance:
+			notes.append({"lane": (lane + r.randi_range(1, 3)) % 4, "time": t, "state": ""})
+		t += gap * float(rhythm[i % rhythm.size()])
+	return {"notes": notes, "gap": gap, "span": t, "speed": float(song.speed)}
+
+
+func _kara_setup(song_id := "") -> void:
+	var id := song_id if song_id != "" else default_song()
+	if not song_unlocked(id):
+		id = str(SONGS[0].id)
+	var song := song_by_id(id)
+	var chart := kara_chart(song, Difficulty.tier, Difficulty.rng("karaoke"))
 	g = {
 		"t": 0.0,
-		"notes": notes,
+		"song": song,
+		"notes": chart.notes,
+		"len": int(song.len),
+		"gap": float(chart.gap),
+		"span": float(chart.span),
+		"speed": float(chart.speed),
+		"cuts": song.cuts,
 		"score": 0,
 		"perfect": 0,
 		"good": 0,
@@ -704,9 +1067,10 @@ func _kara_setup() -> void:
 		"streak": 0,
 		"flash": "",
 		"flash_t": 0.0,
-		"gap": gap,
-		"perfect_win": Difficulty.f("karaoke.perfect"),
-		"good_win": Difficulty.f("karaoke.good"),
+		"mood": 50.0,
+		"chorus": false,
+		"perfect_win": Difficulty.f("karaoke.perfect") * float(song.win),
+		"good_win": Difficulty.f("karaoke.good") * float(song.win),
 	}
 
 
@@ -719,9 +1083,13 @@ func _kara_tick(dt: float) -> void:
 			g.miss = int(g.miss) + 1
 			g.streak = 0
 			_streak_broken()
+			_mood_add(-6.0)
 			g.flash = "MISS"
 			g.flash_t = 0.5
-	if float(g.t) > _song_secs() + 0.6:
+	if float(g.mood) <= 0.0:
+		g.msg = "THE ROOM LAUGHS AND HEADS BACK TO THE BAR. GOOD TRY!"
+		_kara_end()
+	elif float(g.t) > _song_secs() + 0.6:
 		_kara_end()
 
 
@@ -730,7 +1098,21 @@ func _good_win() -> float:
 
 
 func _song_secs() -> float:
-	return 1.5 + float(g.get("gap", 0.75)) * float(SONG_LEN)
+	if g.has("span"):
+		return float(g.span)
+	return 1.5 + float(g.get("gap", 0.75)) * float(g.get("len", 24))
+
+
+# how the crowd feels, 0 to 100 (perfects lift it, misses sink it; a full room joins the last chorus)
+func _mood_add(amount: float) -> void:
+	g.mood = clampf(float(g.get("mood", 50.0)) + amount, 0.0, 100.0)
+	if float(g.mood) >= 100.0 and not g.get("chorus", false):
+		g.chorus = true
+		g.flash = "THE ROOM SINGS!"
+		g.flash_t = 1.2
+		if room_mode():
+			_cheer()
+			caption("THE WHOLE ROOM JOINS THE CHORUS!", 3.0)
 
 
 func _kara_press(key: int) -> void:
@@ -750,6 +1132,7 @@ func kara_hit(lane: int) -> String:
 	if pick.is_empty() or gap > _good_win():
 		g.streak = 0
 		_streak_broken()
+		_mood_add(-2.0)
 		return ""
 	var perfect := gap <= float(g.get("perfect_win", 0.12))
 	pick.state = "perfect" if perfect else "good"
@@ -759,6 +1142,7 @@ func kara_hit(lane: int) -> String:
 	g.streak = int(g.streak) + 1
 	g.flash = "PERFECT!" if perfect else "GOOD"
 	g.flash_t = 0.5
+	_mood_add((3.0 if perfect else 1.5) + minf(2.0, floorf(float(g.streak) / 4.0)))
 	if room_mode() and int(g.streak) % 4 == 0:
 		_cheer()
 	if room_mode() and int(g.streak) >= 8 and not g.get("dance", false):
@@ -768,20 +1152,37 @@ func kara_hit(lane: int) -> String:
 
 
 func _kara_end() -> void:
-	var share := float(g.score) / float(SONG_LEN * 2)
-	_finish(3 if share >= 0.75 else (2 if share >= 0.5 else (1 if share >= 0.25 else 0)))
+	var share := float(g.score) / float(maxi(1, g.notes.size() * 2))
+	var cuts: Array = g.get("cuts", [0.75, 0.5, 0.25])
+	var result := (
+		3 if share >= cuts[0] else (2 if share >= cuts[1] else (1 if share >= cuts[2] else 0))
+	)
+	if g.get("chorus", false) and share >= 0.5 and result < 3:
+		result += 1  # the room sang the last chorus with you
+	if g.has("song"):
+		var id := str(g.song.id)
+		song_best[id] = maxi(int(song_best.get(id, 0)), result)
+	_finish(result)
 
 
 # ---- escape room --------------------------------------------------------------------------------
+func _zeros(n: int) -> Array:
+	var out := []
+	out.resize(n)
+	out.fill(0)
+	return out
+
+
 func _escape_setup() -> void:
 	var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 	Difficulty.shuffle(digits, "escape")
+	var n := Difficulty.i("escape.digits")
 	var friends := 0
 	for who in Social.PEOPLE:
 		friends += 1 if Social.is_friendly(who) else 0
 	g = {
-		"code": [digits[0], digits[1], digits[2]],
-		"cur": [0, 0, 0],
+		"code": digits.slice(0, n),
+		"cur": _zeros(n),
 		"cursor": 0,
 		"guesses": [],
 		"time": Difficulty.f("escape.time"),
@@ -801,11 +1202,12 @@ func _escape_tick(dt: float) -> void:
 
 func _escape_press(key: int) -> void:
 	var cur: Array = g.cur
+	var n: int = cur.size()
 	match key:
 		KEY_LEFT:
-			g.cursor = (int(g.cursor) + 2) % 3
+			g.cursor = (int(g.cursor) + n - 1) % n
 		KEY_RIGHT:
-			g.cursor = (int(g.cursor) + 1) % 3
+			g.cursor = (int(g.cursor) + 1) % n
 		KEY_UP:
 			cur[int(g.cursor)] = (int(cur[int(g.cursor)]) + 1) % 10
 		KEY_DOWN:
@@ -824,7 +1226,7 @@ func escape_score(guess: Array) -> Array:
 	var code: Array = g.code
 	var bulls := 0
 	var cows := 0
-	for i in 3:
+	for i in code.size():
 		if int(guess[i]) == int(code[i]):
 			bulls += 1
 		elif code.has(int(guess[i])):
@@ -837,7 +1239,7 @@ func escape_try(guess: Array) -> void:
 		return
 	var score := escape_score(guess)
 	g.guesses.append([guess, score[0], score[1]])
-	if int(score[0]) == 3:
+	if int(score[0]) == g.code.size():
 		var tries: int = g.guesses.size()
 		var result := 3 if tries <= 4 else (2 if tries <= 6 else 1)
 		if int(g.hints_used) >= 2:
@@ -849,11 +1251,19 @@ func escape_try(guess: Array) -> void:
 		_finish(0)
 
 
+# the first friend you get on with (the hints are in their voice)
+func _friend() -> String:
+	for who in Social.PEOPLE:
+		if Social.is_friendly(who):
+			return who
+	return "Alan"
+
+
 func escape_hint() -> String:
 	if int(g.hints) <= 0:
 		return ""
 	var open := []
-	for i in 3:
+	for i in g.code.size():
 		if not g.revealed.has(i):
 			open.append(i)
 	if open.is_empty():
@@ -863,25 +1273,145 @@ func escape_hint() -> String:
 	g.hints = int(g.hints) - 1
 	g.hints_used = int(g.hints_used) + 1
 	g.cur[slot] = g.code[slot]
-	var friend := "ALAN"
-	for who in Social.PEOPLE:
-		if Social.is_friendly(who):
-			friend = who.to_upper()
-			break
-	g.msg = "%s: SLOT %d IS A %d" % [friend, slot + 1, int(g.code[slot])]
+	g.msg = "%s: SLOT %d IS A %d" % [_friend().to_upper(), slot + 1, int(g.code[slot])]
 	return str(g.msg)
 
 
 # ---- dinner -------------------------------------------------------------------------------------
+func topic_ids() -> Array:
+	var out := []
+	for t in TOPICS:
+		out.append(str(t.id))
+	return out
+
+
+func topic_tag(id: String) -> String:
+	for t in TOPICS:
+		if str(t.id) == id:
+			return str(t.tag)
+	return "light"
+
+
+# the tastes an old save (and the first versions of the game) always had
+func classic_taste(who: String) -> Dictionary:
+	var row: Dictionary = PEOPLE.get(who, {"loves": [], "hates": []})
+	return {"loves": row.loves.slice(0, 2), "hates": row.hates.slice(0, 1)}
+
+
+# what a person really loves and dreads in THIS save: the PEOPLE row with one or two tastes swapped
+func taste(who: String) -> Dictionary:
+	if not tastes.has(who):
+		tastes[who] = _roll_tastes(who)
+	return tastes[who]
+
+
+func _roll_tastes(who: String) -> Dictionary:
+	var row: Dictionary = PEOPLE.get(who, {"loves": [], "hates": []})
+	var loves: Array = row.loves.duplicate()
+	var hates: Array = row.hates.duplicate()
+	var r := Difficulty.rng_for("tastes", hash(who) & 0xFFFF)
+	for _swap in r.randi_range(1, 2):
+		var pool := []
+		for id in topic_ids():
+			if not loves.has(id) and not hates.has(id):
+				pool.append(id)
+		if hates.is_empty() or (not loves.is_empty() and r.randf() < 0.5):
+			if not loves.is_empty():
+				loves[r.randi_range(0, loves.size() - 1)] = pool[r.randi_range(0, pool.size() - 1)]
+		else:
+			var kind := []
+			for id in pool:
+				if not PROTECTED_TOPICS.has(id):
+					kind.append(id)
+			hates[r.randi_range(0, hates.size() - 1)] = kind[r.randi_range(0, kind.size() - 1)]
+	return {"loves": loves, "hates": hates}
+
+
+# 2 for something they love, 0 for something they dread, 1 otherwise (before mood)
+func taste_pts(who: String, topic: String) -> int:
+	var t := taste(who)
+	if t.loves.has(topic):
+		return 2
+	if t.hates.has(topic):
+		return 0
+	return 1
+
+
+# the mood of the day (and the owner's budget) lifts or sinks every answer by up to two points
+func diner_shift(who: String) -> int:
+	var shift := 0
+	if g.has("moods"):
+		shift += int(DINNER_MOODS[str(g.moods.get(who, "easygoing"))].shift)
+	shift += int(BUDGETS[str(g.get("budget", "normal"))].mood)
+	return clampi(shift, -2, 2)
+
+
+func diner_points(who: String, topic: String) -> int:
+	return clampi(taste_pts(who, topic) + diner_shift(who), 0, 3)
+
+
+# a trap: somebody at the table dreads it
+func is_trap(topic: String) -> bool:
+	for who in DINERS:
+		if taste(who).hates.has(topic):
+			return true
+	return false
+
+
+func dinner_mood_text() -> String:
+	var parts := []
+	for who in DINERS:
+		parts.append("%s IS %s" % [who.to_upper(), str(g.moods.get(who, "easygoing")).to_upper()])
+	return ", ".join(parts)
+
+
 func _dinner_setup() -> void:
-	g = {"round": 1, "options": [], "sel": 0, "react": {}, "wait": 0.0, "score": 0, "last": ""}
+	g = {
+		"round": 1,
+		"options": [],
+		"sel": 0,
+		"react": {},
+		"wait": 0.0,
+		"score": 0,
+		"last": "",
+		"budget": "normal",
+		"moods": {},
+		"picked": [],
+	}
+	var ids: Array = DINNER_MOODS.keys()
+	var r := Difficulty.rng("dinner")
+	for who in DINERS:
+		g.moods[who] = ids[r.randi_range(0, ids.size() - 1)]
 	_dinner_deal()
 
 
+# four topics a round: at least one safe (nobody dreads it) and one trap, never one you already used
 func _dinner_deal() -> void:
-	var pool: Array = TOPICS.duplicate()
-	Difficulty.shuffle(pool, "dinner")
-	g.options = pool.slice(0, 4)
+	var safe := []
+	var trap := []
+	for id in topic_ids():
+		if g.get("picked", []).has(id):
+			continue
+		if is_trap(id):
+			trap.append(id)
+		else:
+			safe.append(id)
+	if safe.is_empty() or trap.is_empty():
+		safe = []
+		trap = []
+		for id in topic_ids():
+			if is_trap(id):
+				trap.append(id)
+			else:
+				safe.append(id)
+	Difficulty.shuffle(safe, "dinner")
+	Difficulty.shuffle(trap, "dinner")
+	var chosen := [safe.pop_back(), trap.pop_back()]
+	var rest := safe + trap
+	Difficulty.shuffle(rest, "dinner")
+	chosen.append_array(rest.slice(0, 2))
+	Difficulty.shuffle(chosen, "dinner")
+	g.options = chosen
 	g.sel = 0
 	g.react = {}
 	g.wait = 0.0
@@ -914,17 +1444,12 @@ func dinner_talk(index: int) -> int:
 	var topic: String = g.options[index]
 	var total := 0
 	g.react = {}
+	g.picked.append(topic)
 	g.hidden = _dinner_hidden()
 	for who in DINERS:
-		var mood := "meh"
-		var pts := 1
-		if LOVES[who].has(topic):
-			mood = "love"
-			pts = 2
-		elif HATES[who] == topic:
-			mood = "hate"
-			pts = 0
-		total += pts
+		var base := taste_pts(who, topic)
+		var mood := "love" if base == 2 else ("hate" if base == 0 else "meh")
+		total += diner_points(who, topic)
 		g.react[who] = mood
 		if g.hidden.has(who):
 			continue  # a face you could not read teaches you nothing
@@ -941,6 +1466,39 @@ func dinner_talk(index: int) -> int:
 	return total
 
 
+# the owner pays: cheap, normal or fancy (the cost replaces the $300 charged on arrival)
+func budget_options() -> Array:
+	var spare := int(Owner.cash) + int(GAMES.dinner.cost)
+	var out := []
+	for id in ["normal", "cheap", "fancy"]:
+		var b: Dictionary = BUDGETS[id]
+		var entry := {"label": "%s ($%d)" % [str(b.label), int(b.cost)], "id": id}
+		if spare < int(b.cost):
+			entry["enabled"] = false
+			entry["hint"] = "NEED $%d" % int(b.cost)
+		out.append(entry)
+	return out
+
+
+func ask_budget() -> void:
+	Cards.ask(
+		"Restaurant host",
+		"Who picks up the check? A fancy table lifts the mood all night.",
+		budget_options(),
+		func(id: String) -> void:
+			begin_play()
+			set_budget(id)
+	)
+
+
+func set_budget(id: String) -> void:
+	if game != "dinner" or g.is_empty() or not BUDGETS.has(id):
+		return
+	if Campaign.mode == "owner":
+		Owner.cash += int(BUDGETS[str(g.budget)].cost) - int(BUDGETS[id].cost)
+	g.budget = id
+
+
 # harder tiers hide some faces for a round (the points still count)
 func _dinner_hidden() -> Array:
 	var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
@@ -951,9 +1509,18 @@ func _dinner_hidden() -> Array:
 	return order.slice(0, hide_n)
 
 
+# the score for 3 / 2 / 1 stars: a good mood at the table lifts the bar, a tired one lowers it
+func dinner_targets() -> Array:
+	var shifts := 0
+	for who in DINERS:
+		shifts += diner_shift(who)
+	return [21 + 3 * shifts, 17 + 3 * shifts, 13 + 3 * shifts]
+
+
 func _dinner_end() -> void:
 	var score := int(g.score)
-	_finish(3 if score >= 24 else (2 if score >= 19 else (1 if score >= 14 else 0)))
+	var cut := dinner_targets()
+	_finish(3 if score >= cut[0] else (2 if score >= cut[1] else (1 if score >= cut[2] else 0)))
 
 
 # ---- in the room: the games are played in the scene itself ---------------------------------------
@@ -1013,7 +1580,7 @@ func _room_begin() -> void:
 			var mic := _x0() + MIC_X
 			_place_player(mic)
 			_hold_player("talk", mic + 60.0)
-			caption("ARROW KEYS AT THE LINE. SING!", 4.0)
+			caption("%s. ARROW KEYS AT THE LINE. SING!" % str(g.song.title), 4.0)
 		"escape":
 			caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
 		"dinner":
@@ -1034,7 +1601,7 @@ func _room_process(delta: float) -> void:
 		if p != null and p.state == "sitting":
 			g.stage = "talk"
 			Game.ui_open = true
-			caption("PICK A TOPIC (UP / DOWN, ENTER). WATCH THEIR FACES.", 5.0)
+			caption("%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text(), 6.0)
 
 
 # keys the in-room game wants (the rest still move you around)
@@ -1115,14 +1682,123 @@ func _streak_broken() -> void:
 
 
 # ---- escape room extras
+# can this recipe show this digit? (a product needs a pair that multiplies to it, a double needs an even digit)
+func recipe_fits(recipe: String, digit: int) -> bool:
+	match recipe:
+		"product":
+			return PRODUCTS.has(digit)
+		"double":
+			return digit % 2 == 0
+	return true
+
+
+# one clue: what the zone shows ("show"), what the caption says ("say") and the digit it hides
+func make_clue(zone: String, recipe: String, digit: int, r: RandomNumberGenerator) -> Dictionary:
+	var clue := {"zone": zone, "recipe": recipe, "digit": digit, "args": {}, "show": "", "say": ""}
+	match recipe:
+		"sum":
+			var a := r.randi_range(0, digit)
+			clue.args = {"a": a, "b": digit - a}
+			clue.show = "%d+%d=?" % [a, digit - a]
+			clue.say = "THE CHALKBOARD: %d + %d = ?" % [a, digit - a]
+		"product":
+			var pair: Array = PRODUCTS[digit]
+			clue.args = {"a": pair[0], "b": pair[1]}
+			clue.show = "%dX%d=?" % pair
+			clue.say = "THE CHALKBOARD: %d X %d = ?" % pair
+		"missing":
+			var list := [1, 2, 3, 4, 5, 6, 7, 8, 9]
+			list.erase(digit)
+			for k in range(list.size() - 1, 0, -1):
+				var j := r.randi_range(0, k)
+				var tmp = list[k]
+				list[k] = list[j]
+				list[j] = tmp
+			clue.args = {"list": list}
+			clue.show = "%s|MISSING?" % "".join(PackedStringArray(list.map(func(v): return str(v))))
+			clue.say = (
+				"THE CHALKBOARD LISTS 1 TO 9 WITH ONE LEFT OUT: %s. WHICH ONE?"
+				% " ".join(PackedStringArray(list.map(func(v): return str(v))))
+			)
+		"hour":
+			clue.args = {"hour": digit}
+			clue.show = str(digit)
+			clue.say = "THE CLOCK HAS STOPPED AT %d O'CLOCK." % digit
+		"double":
+			var half := int(digit / 2.0)
+			clue.args = {"hour": half}
+			clue.show = str(half)
+			clue.say = (
+				"THE CLOCK HAS STOPPED AT %d O'CLOCK. A NOTE ON THE FACE: TWICE THE HOUR." % half
+			)
+		"number":
+			clue.args = {"n": digit}
+			clue.show = str(digit)
+			clue.say = "A BRASS PLAQUE UNDER THE PAINTING: NO. %d." % digit
+		"roman":
+			clue.args = {"numeral": ROMAN[digit]}
+			clue.show = ROMAN[digit]
+			clue.say = "THE PLAQUE UNDER THE PAINTING READS %s. A ROMAN NUMERAL." % ROMAN[digit]
+		"letter":
+			var letter := char(64 + digit)
+			clue.args = {"letter": letter}
+			clue.show = letter
+			clue.say = (
+				"THE PLAQUE UNDER THE PAINTING SHOWS THE LETTER %s. WHERE IS IT IN THE ALPHABET?"
+				% letter
+			)
+		"spine":
+			clue.args = {"n": digit}
+			clue.show = "VOL %d" % digit
+			clue.say = "ONE BOOK ON THE SHELF STICKS OUT: VOLUME %d." % digit
+		"ribbons":
+			clue.args = {"n": digit}
+			clue.show = str(digit)
+			clue.say = "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: %d." % digit
+	return clue
+
+
+# the digit a clue stands for, worked out from what it shows (tests check it against the code)
+func clue_answer(clue: Dictionary) -> int:
+	var a: Dictionary = clue.args
+	var out := int(a.get("n", 0))
+	match str(clue.recipe):
+		"sum":
+			out = int(a.a) + int(a.b)
+		"product":
+			out = int(a.a) * int(a.b)
+		"missing":
+			out = 45
+			for v in a.list:
+				out -= int(v)
+		"hour":
+			out = int(a.hour)
+		"double":
+			out = int(a.hour) * 2
+		"roman":
+			out = ROMAN.find(str(a.numeral))
+		"letter":
+			out = str(a.letter).unicode_at(0) - 64
+	return out
+
+
 func _escape_room_setup() -> void:
 	var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
 	Difficulty.shuffle(pool, "escape")
-	var a: int = pool[0]
-	var first := Difficulty.rng("escape").randi_range(0, a)
+	var n := Difficulty.i("escape.digits")
+	var r := Difficulty.rng("escape")
+	var clues := []
+	for i in n:
+		var zone: String = CLUE_ZONES[i]
+		var fits := []
+		for recipe in RECIPES[zone]:
+			if recipe_fits(str(recipe), int(pool[i])):
+				fits.append(recipe)
+		clues.append(make_clue(zone, str(fits[r.randi_range(0, fits.size() - 1)]), int(pool[i]), r))
+	var eq := [clues[0].args.get("a", 0), clues[0].args.get("b", 0)]
 	g = {
-		"code": [a, pool[1], pool[2]],
-		"cur": [0, 0, 0],
+		"code": pool.slice(0, n),
+		"cur": _zeros(n),
 		"cursor": 0,
 		"guesses": [],
 		"time": Difficulty.f("escape.time"),
@@ -1133,41 +1809,37 @@ func _escape_room_setup() -> void:
 		"found": [],
 		"entry": false,
 		"wrong": 0,
-		"eq": [first, a - first],
+		"clues": clues,
+		"dial": Difficulty.i("escape.dial") > 0,
+		"eq": eq,
 	}
 
 
 func interact(kind: String) -> void:
 	if not room_mode() or game != "escape" or phase != "play" or g.is_empty():
 		return
-	match kind:
-		"clue_board":
-			_found(0)
+	var index := CLUE_KINDS.find(kind)
+	if index >= 0:
+		if index < g.clues.size():
+			_found(index)
 			caption(
 				(
-					"THE CHALKBOARD: %d + %d = ?   THE ANSWER IS THE FIRST DIGIT."
-					% [int(g.eq[0]), int(g.eq[1])]
+					"%s  THAT IS DIGIT %d OF %d IN THE CODE."
+					% [str(g.clues[index].say), index + 1, g.code.size()]
 				),
-				5.0
-			)
-		"clue_clock":
-			_found(1)
-			caption(
-				"THE CLOCK HAS STOPPED AT %d O'CLOCK. THAT IS THE SECOND DIGIT." % int(g.code[1]),
-				5.0
-			)
-		"clue_painting":
-			_found(2)
-			caption(
-				"A BRASS PLAQUE UNDER THE PAINTING: NO. %d. THE THIRD DIGIT." % int(g.code[2]), 5.0
-			)
-		"keypad":
-			g.entry = true
-			Game.ui_open = true
-			caption(
-				"ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF",
 				6.0
 			)
+		else:
+			caption(
+				str(HERRINGS[Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)]), 4.0
+			)
+	elif kind == "keypad":
+		g.entry = true
+		Game.ui_open = true
+		caption(
+			"ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF",
+			6.0
+		)
 
 
 func _found(index: int) -> void:
@@ -1179,23 +1851,26 @@ func escape_nudge() -> String:
 	if int(g.hints) <= 0:
 		caption("NOBODY HAS ANYTHING LEFT TO SAY.", 2.0)
 		return ""
-	var friend := "ALAN"
-	for who in Social.PEOPLE:
-		if Social.is_friendly(who):
-			friend = who.to_upper()
-			break
-	var text := "YOU HAVE ALL THREE. TRY THE KEYPAD ON THE VAULT."
-	for i in 3:
+	var friend := _friend()
+	var zone := "keypad"
+	var recipe := ""
+	for i in g.clues.size():
 		if not g.found.has(i):
-			text = [
-				"TRY THE CHALKBOARD.", "THAT WALL CLOCK LOOKS WRONG.", "WHAT IS UNDER THE PAINTING?"
-			][i]
+			zone = CLUE_ZONES[i]
+			recipe = str(g.clues[i].recipe)
 			break
+	var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])
+	var text := str(table.get(zone, ""))
+	if str(SPECIALTY.get(friend, "")) == zone:
+		if zone == "keypad":
+			text += " " + str(RECIPE_TIPS["dial" if g.get("dial", false) else "nodial"])
+		else:
+			text += " " + str(RECIPE_TIPS.get(recipe, ""))
 	g.hints = int(g.hints) - 1
 	g.hints_used = int(g.hints_used) + 1
-	text = "%s: %s" % [friend, text]
-	caption(text, 4.0)
-	_bubble(_actor(friend.capitalize()), "!", 1.5)
+	text = "%s: %s" % [friend.to_upper(), text]
+	caption(text, 5.0)
+	_bubble(_actor(friend), "!", 1.5)
 	return text
 
 
@@ -1203,7 +1878,8 @@ func _room_submit() -> void:
 	var cur: Array = g.cur
 	if cur == g.code:
 		var left := float(g.time)
-		var result := 3 if left >= 70.0 else (2 if left >= 35.0 else 1)
+		var big := 70.0 if g.code.size() <= 3 else 55.0
+		var result := 3 if left >= big else (2 if left >= big / 2.0 else 1)
 		if int(g.hints_used) >= 2:
 			result = maxi(1, result - 1)
 		g.entry = false
@@ -1213,7 +1889,13 @@ func _room_submit() -> void:
 	g.wrong = int(g.wrong) + 1
 	var penalty := Difficulty.f("escape.wrong_penalty")
 	g.time = float(g.time) - penalty
-	caption("WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty), 3.0)
+	var text := "WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty)
+	if g.get("dial", false):
+		# the dial lock is a second route: it tells you which digits fit (bulls and cows)
+		var score := escape_score(cur)
+		g.guesses.append([cur.duplicate(), score[0], score[1]])
+		text += "  THE DIAL CLICKS: %d IN PLACE, %d OUT OF PLACE." % [int(score[0]), int(score[1])]
+	caption(text, 4.0)
 
 
 # ---- dinner extras
@@ -1302,10 +1984,15 @@ func _hud_karaoke(s: Rect2) -> void:
 func _hud_escape(s: Rect2) -> void:
 	var o := UiStyle.strip(_canvas, s)
 	if not g.get("entry", false):
-		_t("CLUES %d OF 3  HINTS %d" % [g.found.size(), int(g.hints)], o.x, o.y, WHITE)
+		_t(
+			"CLUES %d OF %d  HINTS %d" % [g.found.size(), g.code.size(), int(g.hints)],
+			o.x,
+			o.y,
+			WHITE
+		)
 		return
 	_t("CODE", o.x, o.y, WHITE)
-	for i in 3:
+	for i in g.code.size():
 		var r := Rect2(s.position.x + 32.0 + 12.0 * float(i), s.position.y + 1.0, 10.0, 9.0)
 		_canvas.draw_rect(r, WHITE)
 		_canvas.draw_rect(
@@ -1327,6 +2014,15 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
 		_t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
 		return
 	_t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+	# the mood of the day, one face per diner (A = Alan ...)
+	var fx_x := s.position.x + 92.0
+	for who in DINERS:
+		var md: String = str(g.get("moods", {}).get(who, "easygoing"))
+		var shift := int(DINNER_MOODS[md].shift)
+		var face := str(DINNER_MOODS[md].face)
+		_t(who.substr(0, 1), fx_x, o.y, UiStyle.SOFT)
+		_t(face, fx_x + 4.0, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
+		fx_x += 4.0 + 4.0 * float(face.length()) + 3.0
 	var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
 	var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
 	UiStyle.box(_canvas, box)
@@ -1377,6 +2073,8 @@ func _paint() -> void:
 	if room_mode() and phase == "play":
 		_paint_hud(size)
 		return
+	if Cards.is_open:
+		return  # the song / budget card has the screen (the page comes back after it)
 	if _traveled and _peek:
 		UiStyle.hint_bar(_canvas, size, "TAB = BACK TO THE GAME")
 		return
@@ -1443,18 +2141,19 @@ func _paint_result(b: Rect2) -> void:
 					"PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
 				)
 			"escape":
+				var digits := ""
+				for d in g.code:
+					digits += str(int(d))
 				detail = (
-					"CODE %d%d%d  TRIES %d  HINTS %d"
+					"CODE %s  TRIES %d  HINTS %d"
 					% [
-						int(g.code[0]),
-						int(g.code[1]),
-						int(g.code[2]),
+						digits,
 						maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
 						int(g.hints_used)
 					]
 				)
 			"dinner":
-				detail = "TABLE SCORE %d OF 30" % int(g.score)
+				detail = "TABLE SCORE %d (3 STARS AT %d)" % [int(g.score), int(dinner_targets()[0])]
 	if detail != "":
 		_t(detail, b.position.x, y + 3.0, BLUE)
 
@@ -1513,8 +2212,9 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 	var y := b.position.y
 	var top := y + (2.0 if hud else 18.0)
 	if not hud:
-		_t("TOTALLY LEGAL HIT (2013)", x, y, BLUE)
+		_t(("%s (%s)" % [str(g.song.title), str(g.song.genre)]).substr(0, 40), x, y, BLUE)
 		_t("SCORE %d   STREAK %d" % [int(g.score), int(g.streak)], x, y + 8.0)
+		_t("CROWD", b.end.x - 24.0, y + 8.0, UiStyle.MUTED)
 	var line_y := b.end.y - 12.0
 	var left := b.position.x + b.size.x * 0.5 - 40.0
 	for lane in 4:
@@ -1522,7 +2222,7 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 		_canvas.draw_rect(Rect2(cx - 9.0, top, 18.0, line_y + 6.0 - top), Color("dde3ee"))
 		_arrow(lane, Vector2(cx, line_y), 5.0, Color(LANE_COLORS[lane], 0.45))
 	for n in g.notes:
-		var dy: float = (float(n.time) - float(g.t)) * 45.0
+		var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0))
 		if dy < -14.0 or dy > line_y - top + 4.0:
 			continue
 		var col: Color = LANE_COLORS[int(n.lane)]
@@ -1533,6 +2233,14 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 		_arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
 	if float(g.flash_t) > 0.0 and not hud:
 		_tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
+	# the crowd: a bar that fills as they warm up (green when the whole room is singing)
+	var bar := Rect2(b.end.x - 6.0, top, 4.0, line_y + 6.0 - top)
+	var level := float(g.get("mood", 50.0)) / 100.0
+	_canvas.draw_rect(bar, UiStyle.SOFT)
+	_canvas.draw_rect(
+		Rect2(bar.position.x, bar.end.y - bar.size.y * level, 4.0, bar.size.y * level),
+		GREEN if level >= 0.6 else (AMBER if level >= 0.3 else RED)
+	)
 	var song := minf(1.0, float(g.t) / _song_secs())
 	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), UiStyle.SOFT)
 	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x * song, 3.0), BLUE)
@@ -1541,6 +2249,7 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 func _paint_escape(b: Rect2) -> void:
 	var x := b.position.x
 	var y := b.position.y
+	var n: int = g.code.size()
 	_t(
 		(
 			"TIME %d   HINTS LEFT %d   TRIES %d OF 8"
@@ -1554,24 +2263,18 @@ func _paint_escape(b: Rect2) -> void:
 	for entry in g.guesses:
 		if row >= 8:
 			break
+		var digits := []
+		for d in entry[0]:
+			digits.append(str(int(d)))
 		_t(
-			(
-				"%d %d %d  B%d C%d"
-				% [
-					int(entry[0][0]),
-					int(entry[0][1]),
-					int(entry[0][2]),
-					int(entry[1]),
-					int(entry[2])
-				]
-			),
+			"%s  B%d C%d" % [" ".join(PackedStringArray(digits)), int(entry[1]), int(entry[2])],
 			x,
 			y + 10.0 + 7.0 * float(row),
 			INK
 		)
 		row += 1
-	var bx := x + b.size.x - 74.0
-	for i in 3:
+	var bx := x + b.size.x - 20.0 * float(n) - 2.0
+	for i in n:
 		var r := Rect2(bx + 20.0 * float(i), y + 12.0, 16.0, 22.0)
 		_canvas.draw_rect(r, WHITE)
 		_canvas.draw_rect(
@@ -1588,7 +2291,6 @@ func _paint_escape(b: Rect2) -> void:
 	_t("U/D CHANGE   L/R MOVE", bx - 6.0, y + 40.0, Color("46506a"))
 	if str(g.msg) != "":
 		for part in _wrap(str(g.msg), 18):
-			y += 0.0
 			_t(part, bx - 6.0, y + 50.0, BLUE)
 			y += 7.0
 
@@ -1603,10 +2305,18 @@ func _paint_dinner(b: Rect2) -> void:
 			_canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
 		_t(str(g.options[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
 	var rx := x + 92.0
-	for i in 3:
+	for i in DINERS.size():
 		var who: String = DINERS[i]
 		var ry := y + 9.0 + 14.0 * float(i)
 		_t(who.to_upper(), rx, ry, BLUE)
+		var md: String = str(g.get("moods", {}).get(who, "easygoing"))
+		var shift := int(DINNER_MOODS[md].shift)
+		_t(
+			"%s %s" % [str(DINNER_MOODS[md].face), md.to_upper()],
+			rx + 60.0,
+			ry,
+			GREEN if shift > 0 else (RED if shift < 0 else UiStyle.MUTED)
+		)
 		if g.react.has(who):
 			var mood: String = g.react[who]
 			var face := "<3" if mood == "love" else (":(" if mood == "hate" else "OK")

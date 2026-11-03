@@ -34,6 +34,8 @@ func _process(_delta: float) -> bool:
 		o.start(cases[i])
 	elif t == 120:
 		o.press(KEY_ENTER)
+		if cases[i] == "karaoke":
+			root.get_node("Cards").pick(0)  # the song card at the mic
 		match cases[i]:
 			"bowling":
 				o.press(KEY_E)

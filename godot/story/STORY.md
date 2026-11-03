@@ -641,14 +641,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 6
 
-**9:30 Card: prospect** — Vic Marlowe `[Owner.CARDS.prospect.speaker]`
-> Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account. `[Owner.CARDS.prospect.text]`
-- **OFFER THE DISCOUNT** `[Owner.CARDS.prospect.options.0.label]`
-  - Signed! Vic is thrilled. Their tickets start tomorrow. `[Owner.CARDS.prospect.options.0.text]`
-- **HOLD THE PRICE** `[Owner.CARDS.prospect.options.1.label]`
-  - 50%: They sign at full price. Vic looks smug. `[Owner.CARDS.prospect.options.1.roll.0.2]`
-  - 50%: They pass. Vic sulks. `[Owner.CARDS.prospect.options.1.roll.1.2]`
-- **PASS** `[Owner.CARDS.prospect.options.2.label]`
+**9:30** Event: prospect (handled in code, it opens its own cards)
 
 **10:30** Event: profit_review (handled in code, it opens its own cards)
 

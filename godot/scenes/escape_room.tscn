@@ -131,6 +131,14 @@ target = NodePath("../../Fx/Painting")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UsePainting"]
 shape = SubResource("shape_clue")
 
+[node name="UseShelf" type="Area2D" parent="Interactables"]
+position = Vector2(52, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Shelf")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseShelf"]
+shape = SubResource("shape_clue")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Switch" type="Node2D" parent="Fx"]
@@ -157,6 +165,11 @@ kind = "clue_clock"
 position = Vector2(136, 10)
 script = ExtResource("fx")
 kind = "clue_painting"
+
+[node name="Shelf" type="Node2D" parent="Fx"]
+position = Vector2(38, 26)
+script = ExtResource("fx")
+kind = "clue_shelf"
 
 [node name="Timer" type="Node2D" parent="Fx"]
 position = Vector2(164, 4)
