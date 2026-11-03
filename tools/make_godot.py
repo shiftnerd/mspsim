@@ -26579,7 +26579,9 @@ const LOB_SPEED := 120.0  # extra forward speed at full charge
 const LOB_LIFT := 58.0  # extra upward speed at full charge
 const FIRE_GAP := 0.4
 const WAR_SECS := 45.0
-const DUCK_TOP := 40.0  # a ducking person is this tall (standing: 84)
+const DUCK_TOP := 40.0  # a ducking person is this tall
+const BODY_H := 62.0  # a standing person is this tall (the art is about 62 px from the feet to the top of the hair)
+const SEATED_H := 50.0  # a seated person: a lob can fly over their head or a desk-mate
 const REACT := {
     "Alan": {"base": -1, "friendly": "heart", "line": "Alan: Not at my desk, please.", "mood": "!"},
     "Garrison": {"base": 1, "friendly": "heart", "line": "Garrison: Oh, it is ON.", "mood": "!"},
@@ -26794,7 +26796,7 @@ func is_ducking(who: Node) -> bool:
 func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
     if absf(who.global_position.x - pos.x) >= 8.0:
         return false
-    var below: bool = pos.y > who.global_position.y - 84.0 and pos.y < who.global_position.y - 4.0
+    var below: bool = pos.y > who.global_position.y - body_height(who) and pos.y < who.global_position.y - 4.0
     if not below:
         return false
     if is_ducking(who) and pos.y < who.global_position.y - DUCK_TOP:
@@ -26803,6 +26805,12 @@ func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
             _dodged(who, str(dart.shooter))
         return false
     return true
+
+
+# how tall the body is for a dart: seated people are lower, so a lob arcs over them (or over the nearer person to the next one)
+func body_height(who: Node) -> float:
+    var seated: bool = who.get("state") in ["sitting", "sitdown", "standup"] or (who.get("seat") != null and who.get("cast_name") != null)
+    return SEATED_H if seated else BODY_H
 
 
 func _dodged(who: Node, shooter: String) -> void:

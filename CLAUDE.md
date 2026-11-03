@@ -820,6 +820,7 @@ New characters start as a copy of an existing one, then change only what differs
 
 ### Ducking (nerf + everyone) (`player.gd`, `npc.gd`, `nerf.gd`)
 - **Hold S or Down to duck** (player state `duck`, the crouch frame, no walking while held, not while aiming). A ducking body is `Nerf.DUCK_TOP` (40 px) tall instead of 84, so darts at chest or head height fly over it (`Nerf._hits`; a "DUCKED!" toast, `Nerf.dodges` counts them) while low shots and lobs coming down still hit. Picking up a blaster shows the keys in a toast.
+- **Dart hit boxes match the art** (`Nerf.BODY_H` 62, `SEATED_H` 50, `body_height(who)`): a dart only hits when it is within 8 px of the body in x and between the feet and the top of the head. They used to be 84 px tall, an invisible 20 px zone above every head, so a lob could not fly over a near coworker to hit the one behind. Seated people (the player or a seated cast member) are lower still. Test: `tests/nerf_lob.gd`.
 - **Coworkers duck** (`npc._duck_tick`): a standing, non-seated person whose way a dart is flying at (within 80 px, heading toward them, at body height) ducks for 0.9 s with a 60% chance per dart (rolled once per dart per person); shooting at a ducker toasts "MISSED! THEY DUCKED." In a nerf war the crew now dodges your darts about half the time, and you can duck theirs.
 - Test: `tests/nerf_duck.gd` (the player's hit box with S held, a coworker as a lower target, and ducking about 12 of 20 darts in an empty hall).
 
