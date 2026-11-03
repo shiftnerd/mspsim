@@ -3924,6 +3924,14 @@ IT HOLDS. NOT QUITE: TRY AGAIN.
 [PrinterGame.TEXT.jam_tear]
 RIP! A SCRAP IS STILL INSIDE.
 
+# PrinterGame > TEXT > jam_short
+[PrinterGame.TEXT.jam_short]
+TWO CLEAN PULLS: THE JAM EASES, ONE FEWER TO GO.
+
+# PrinterGame > TEXT > jam_scrap
+[PrinterGame.TEXT.jam_scrap]
+THE SCRAP NEEDS ONE MORE PULL.
+
 # PrinterGame > TEXT > toner_help
 [PrinterGame.TEXT.toner_help]
 LEFT / RIGHT TO PICK, SPACE TO INSTALL
@@ -3992,8 +4000,24 @@ P: PRAY TO THE SYSADMIN GODS
 [PrinterGame.TEXT.pray_none]
 THE GODS HAVE HEARD ENOUGH FROM YOU TODAY.
 
+# PrinterGame > TEXT > tired_note
+[PrinterGame.TEXT.tired_note]
+TIRED: THE MARKER RUNS %d PERCENT FASTER.
+
+# PrinterGame > TEXT > practice_help
+[PrinterGame.TEXT.practice_help]
+LEFT / RIGHT = MODEL  UP / DOWN = SEED
+
+# PrinterGame > TEXT > streak
+[PrinterGame.TEXT.streak]
+NO-PRAYER STREAK: %d
+
 
 # ======================= PrinterGame > QUESTIONS =======================
+# PrinterGame > QUESTIONS > 0 > error
+[PrinterGame.QUESTIONS.0.error]
+TONER LOW
+
 # PrinterGame > QUESTIONS > 0 > options > 1
 [PrinterGame.QUESTIONS.0.options.1]
 REPLACE THE CARTRIDGE
@@ -4058,161 +4082,887 @@ SET TRAY 1 TO PLAIN PAPER
 [PrinterGame.QUESTIONS.3.why]
 THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.
 
-
-# ======================= PrinterGame > PLOTTER_TEXT =======================
-# PrinterGame > PLOTTER_TEXT > title
-[PrinterGame.PLOTTER_TEXT.title]
-PLOTTER REPAIR
-
-# PrinterGame > PLOTTER_TEXT > intro1
-[PrinterGame.PLOTTER_TEXT.intro1]
-THE FORTY-INCH PLOTTER CHEWS ITS ROLL AND THE
-
-# PrinterGame > PLOTTER_TEXT > intro2
-[PrinterGame.PLOTTER_TEXT.intro2]
-DISPLAY SAYS MEDIA JAM. A PRINT DUE AT NOON.
-
-# PrinterGame > PLOTTER_TEXT > jam_help
-[PrinterGame.PLOTTER_TEXT.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
-
-# PrinterGame > PLOTTER_TEXT > jam_clean
-[PrinterGame.PLOTTER_TEXT.jam_clean]
-A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.
-
-# PrinterGame > PLOTTER_TEXT > jam_hold
-[PrinterGame.PLOTTER_TEXT.jam_hold]
-THE ROLL HOLDS. NOT QUITE: TRY AGAIN.
-
-# PrinterGame > PLOTTER_TEXT > jam_tear
-[PrinterGame.PLOTTER_TEXT.jam_tear]
-RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
-
-# PrinterGame > PLOTTER_TEXT > toner_help
-[PrinterGame.PLOTTER_TEXT.toner_help]
-LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
-
-# PrinterGame > PLOTTER_TEXT > toner_ok
-[PrinterGame.PLOTTER_TEXT.toner_ok]
-CLICK. THE INK TANK SEATS.
-
-# PrinterGame > PLOTTER_TEXT > toner_bad
-[PrinterGame.PLOTTER_TEXT.toner_bad]
-WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
-
-# PrinterGame > PLOTTER_TEXT > shake_help
-[PrinterGame.PLOTTER_TEXT.shake_help]
-ROCK THE INK TANK: A D A D A D
-
-# PrinterGame > PLOTTER_TEXT > shake_late
-[PrinterGame.PLOTTER_TEXT.shake_late]
-TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.
-
-# PrinterGame > PLOTTER_TEXT > hit
-[PrinterGame.PLOTTER_TEXT.hit]
-YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.
-
-# PrinterGame > PLOTTER_TEXT > stars3
-[PrinterGame.PLOTTER_TEXT.stars3]
-PERFECT. A CRISP FORTY-INCH SITE PLAN.
-
-# PrinterGame > PLOTTER_TEXT > stars2
-[PrinterGame.PLOTTER_TEXT.stars2]
-GOOD ENOUGH. A FEW BANDING LINES.
-
-# PrinterGame > PLOTTER_TEXT > stars1
-[PrinterGame.PLOTTER_TEXT.stars1]
-IT PLOTS. THE SCALE BAR IS A LITTLE OFF.
-
-# PrinterGame > PLOTTER_TEXT > stars0
-[PrinterGame.PLOTTER_TEXT.stars0]
-YOU GIVE UP. THE PLOTTER WINS.
-
-# PrinterGame > PLOTTER_TEXT > tray_help
-[PrinterGame.PLOTTER_TEXT.tray_help]
-MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
-
-# PrinterGame > PLOTTER_TEXT > tray_ok
-[PrinterGame.PLOTTER_TEXT.tray_ok]
-24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.
-
-# PrinterGame > PLOTTER_TEXT > tray_bad
-[PrinterGame.PLOTTER_TEXT.tray_bad]
-WRONG ROLL. THE PLOTTER CUTS IT SHORT.
-
-# PrinterGame > PLOTTER_TEXT > tray_hit
-[PrinterGame.PLOTTER_TEXT.tray_hit]
-YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
-
-# PrinterGame > PLOTTER_TEXT > pray_help
-[PrinterGame.PLOTTER_TEXT.pray_help]
-P: PRAY TO THE PLOTTER GODS
-
-
-# ======================= PrinterGame > PLOTTER_QUESTIONS =======================
-# PrinterGame > PLOTTER_QUESTIONS > 0 > error
-[PrinterGame.PLOTTER_QUESTIONS.0.error]
+# PrinterGame > QUESTIONS > 4 > error
+[PrinterGame.QUESTIONS.4.error]
 MEDIA JAM ROLL 1
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.0.options.0]
+# PrinterGame > QUESTIONS > 4 > options > 0
+[PrinterGame.QUESTIONS.4.options.0]
 PULL THE ROLL OUT HARD
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.0.options.1]
-OPEN THE COVER AND FEED IT STRAIGHT
+# PrinterGame > QUESTIONS > 4 > options > 1
+[PrinterGame.QUESTIONS.4.options.1]
+OPEN THE COVER, FEED IT STRAIGHT
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 2
-[PrinterGame.PLOTTER_QUESTIONS.0.options.2]
+# PrinterGame > QUESTIONS > 4 > options > 2
+[PrinterGame.QUESTIONS.4.options.2]
 ORDER A NEW ROLL
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > why
-[PrinterGame.PLOTTER_QUESTIONS.0.why]
+# PrinterGame > QUESTIONS > 4 > why
+[PrinterGame.QUESTIONS.4.why]
 A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > error
-[PrinterGame.PLOTTER_QUESTIONS.1.error]
+# PrinterGame > QUESTIONS > 5 > error
+[PrinterGame.QUESTIONS.5.error]
 REPLACE PRINTHEAD
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.1.options.0]
+# PrinterGame > QUESTIONS > 5 > options > 0
+[PrinterGame.QUESTIONS.5.options.0]
 ALIGN THE PRINTHEAD
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.1.options.1]
-SWAP THE PRINTHEAD AND ALIGN IT
+# PrinterGame > QUESTIONS > 5 > options > 1
+[PrinterGame.QUESTIONS.5.options.1]
+SWAP THE HEAD AND ALIGN IT
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > why
-[PrinterGame.PLOTTER_QUESTIONS.1.why]
+# PrinterGame > QUESTIONS > 5 > why
+[PrinterGame.QUESTIONS.5.why]
 BANDING THAT NEVER CLEARS MEANS A DEAD NOZZLE. SWAP IT, THEN ALIGN.
 
-# PrinterGame > PLOTTER_QUESTIONS > 2 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.2.options.0]
-ADD MEMORY OR PRINT THE SHEET AS A PDF
+# PrinterGame > QUESTIONS > 6 > error
+[PrinterGame.QUESTIONS.6.error]
+OUT OF MEMORY
 
-# PrinterGame > PLOTTER_QUESTIONS > 2 > why
-[PrinterGame.PLOTTER_QUESTIONS.2.why]
+# PrinterGame > QUESTIONS > 6 > options > 0
+[PrinterGame.QUESTIONS.6.options.0]
+ADD MEMORY OR SEND A FLAT PDF
+
+# PrinterGame > QUESTIONS > 6 > why
+[PrinterGame.QUESTIONS.6.why]
 A BIG DRAWING WITH A HEAVY HATCH CHOKES THE PLOTTER. SEND A FLATTENED PDF.
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > error
-[PrinterGame.PLOTTER_QUESTIONS.3.error]
+# PrinterGame > QUESTIONS > 7 > error
+[PrinterGame.QUESTIONS.7.error]
 PAPER SIZE MISMATCH
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.3.options.0]
+# PrinterGame > QUESTIONS > 7 > options > 0
+[PrinterGame.QUESTIONS.7.options.0]
 SET THE DRIVER TO ARCH D
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.3.options.1]
+# PrinterGame > QUESTIONS > 7 > options > 1
+[PrinterGame.QUESTIONS.7.options.1]
 BLAME THE INTERN
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 2
-[PrinterGame.PLOTTER_QUESTIONS.3.options.2]
+# PrinterGame > QUESTIONS > 7 > options > 2
+[PrinterGame.QUESTIONS.7.options.2]
 CUT THE ROLL BY HAND
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > why
-[PrinterGame.PLOTTER_QUESTIONS.3.why]
+# PrinterGame > QUESTIONS > 7 > why
+[PrinterGame.QUESTIONS.7.why]
 THE DRAWING SAYS 24 BY 36 BUT THE DRIVER SAYS LETTER. FIX THE PAPER SIZE.
+
+# PrinterGame > QUESTIONS > 8 > error
+[PrinterGame.QUESTIONS.8.error]
+STREAKS AFTER A NEW INK TANK
+
+# PrinterGame > QUESTIONS > 8 > options > 0
+[PrinterGame.QUESTIONS.8.options.0]
+RUN THE ALIGNMENT PAGE
+
+# PrinterGame > QUESTIONS > 8 > options > 2
+[PrinterGame.QUESTIONS.8.options.2]
+SHAKE THE PRINTER
+
+# PrinterGame > QUESTIONS > 8 > why
+[PrinterGame.QUESTIONS.8.why]
+A SWAPPED INK TANK OR HEAD NEEDS ALIGNING. PRINT THE ALIGNMENT PAGE AND PICK THE BEST BLOCKS.
+
+# PrinterGame > QUESTIONS > 9 > error
+[PrinterGame.QUESTIONS.9.error]
+JOB STUCK: 400 MB IN QUEUE
+
+# PrinterGame > QUESTIONS > 9 > options > 0
+[PrinterGame.QUESTIONS.9.options.0]
+PRINT IT TEN MORE TIMES
+
+# PrinterGame > QUESTIONS > 9 > options > 1
+[PrinterGame.QUESTIONS.9.options.1]
+RESTART THE SPOOLER, CLEAR QUEUE
+
+# PrinterGame > QUESTIONS > 9 > options > 2
+[PrinterGame.QUESTIONS.9.options.2]
+UNPLUG THE PRINTER
+
+# PrinterGame > QUESTIONS > 9 > why
+[PrinterGame.QUESTIONS.9.why]
+ONE HUGE SCAN BLOCKS THE QUEUE. STOP THE SPOOLER, EMPTY THE SPOOL FOLDER, START IT AGAIN.
+
+# PrinterGame > QUESTIONS > 10 > error
+[PrinterGame.QUESTIONS.10.error]
+CANNOT CONNECT TO SHARED PRINTER
+
+# PrinterGame > QUESTIONS > 10 > options > 0
+[PrinterGame.QUESTIONS.10.options.0]
+WAKE THE XP PC THAT SHARES IT
+
+# PrinterGame > QUESTIONS > 10 > options > 1
+[PrinterGame.QUESTIONS.10.options.1]
+REINSTALL EVERY PC
+
+# PrinterGame > QUESTIONS > 10 > options > 2
+[PrinterGame.QUESTIONS.10.options.2]
+BUY A NETWORK PRINTER
+
+# PrinterGame > QUESTIONS > 10 > why
+[PrinterGame.QUESTIONS.10.why]
+THE USB PRINTER IS SHARED FROM AN OLD XP PC AND THAT PC WENT TO SLEEP. KEEP IT AWAKE.
+
+# PrinterGame > QUESTIONS > 11 > error
+[PrinterGame.QUESTIONS.11.error]
+PRINTER NOT FOUND
+
+# PrinterGame > QUESTIONS > 11 > options > 0
+[PrinterGame.QUESTIONS.11.options.0]
+RESERVE ITS ADDRESS ON THE ROUTER
+
+# PrinterGame > QUESTIONS > 11 > options > 1
+[PrinterGame.QUESTIONS.11.options.1]
+REBUILD EVERY PC
+
+# PrinterGame > QUESTIONS > 11 > options > 2
+[PrinterGame.QUESTIONS.11.options.2]
+PRINT TO A FILE
+
+# PrinterGame > QUESTIONS > 11 > why
+[PrinterGame.QUESTIONS.11.why]
+THE DHCP LEASE RAN OUT AND THE PRINTER GOT A NEW IP. RESERVE ONE OR SET A STATIC ADDRESS.
+
+# PrinterGame > QUESTIONS > 12 > error
+[PrinterGame.QUESTIONS.12.error]
+PRINTS COME OUT AT THE OTHER OFFICE
+
+# PrinterGame > QUESTIONS > 12 > options > 0
+[PrinterGame.QUESTIONS.12.options.0]
+SET THE RIGHT DEFAULT PRINTER
+
+# PrinterGame > QUESTIONS > 12 > options > 1
+[PrinterGame.QUESTIONS.12.options.1]
+REBUILD THE LAPTOP
+
+# PrinterGame > QUESTIONS > 12 > options > 2
+[PrinterGame.QUESTIONS.12.options.2]
+UNPLUG THE OTHER PRINTER
+
+# PrinterGame > QUESTIONS > 12 > why
+[PrinterGame.QUESTIONS.12.why]
+THE LAPTOP KEPT THE DEFAULT PRINTER FROM THE OTHER OFFICE. PICK THE LOCAL ONE.
+
+# PrinterGame > QUESTIONS > 13 > error
+[PrinterGame.QUESTIONS.13.error]
+20 INSUFFICIENT MEMORY
+
+# PrinterGame > QUESTIONS > 13 > options > 0
+[PrinterGame.QUESTIONS.13.options.0]
+LOWER THE DPI OR ADD A DIMM
+
+# PrinterGame > QUESTIONS > 13 > options > 1
+[PrinterGame.QUESTIONS.13.options.1]
+POWER CYCLE UNTIL IT WORKS
+
+# PrinterGame > QUESTIONS > 13 > options > 2
+[PrinterGame.QUESTIONS.13.options.2]
+SEND THE JOB TWICE
+
+# PrinterGame > QUESTIONS > 13 > why
+[PrinterGame.QUESTIONS.13.why]
+THIS LASER HAS 2 MB. A FULL PAGE AT HIGH DPI WILL NOT FIT. LOWER THE RESOLUTION OR ADD MEMORY.
+
+# PrinterGame > QUESTIONS > 14 > error
+[PrinterGame.QUESTIONS.14.error]
+CLOSE DUPLEX UNIT
+
+# PrinterGame > QUESTIONS > 14 > options > 0
+[PrinterGame.QUESTIONS.14.options.0]
+PUSH THE DUPLEX UNIT UNTIL IT CLICKS
+
+# PrinterGame > QUESTIONS > 14 > options > 1
+[PrinterGame.QUESTIONS.14.options.1]
+REPLACE THE FUSER
+
+# PrinterGame > QUESTIONS > 14 > options > 2
+[PrinterGame.QUESTIONS.14.options.2]
+UPDATE THE FIRMWARE
+
+# PrinterGame > QUESTIONS > 14 > why
+[PrinterGame.QUESTIONS.14.why]
+THE DUPLEXER IS NOT SEATED, SO THE SENSOR SAYS OPEN. PUSH IT IN UNTIL IT CLICKS.
+
+# PrinterGame > QUESTIONS > 15 > error
+[PrinterGame.QUESTIONS.15.error]
+PICKS TWO SHEETS, THEN NONE
+
+# PrinterGame > QUESTIONS > 15 > options > 0
+[PrinterGame.QUESTIONS.15.options.0]
+OIL THE ROLLERS
+
+# PrinterGame > QUESTIONS > 15 > options > 1
+[PrinterGame.QUESTIONS.15.options.1]
+CLEAN OR SWAP THE FEED ROLLERS
+
+# PrinterGame > QUESTIONS > 15 > options > 2
+[PrinterGame.QUESTIONS.15.options.2]
+FAN THE PAPER FOREVER
+
+# PrinterGame > QUESTIONS > 15 > why
+[PrinterGame.QUESTIONS.15.why]
+GLAZED FEED ROLLERS LOSE THEIR GRIP. WIPE THEM WITH A DAMP CLOTH OR REPLACE THEM.
+
+# PrinterGame > QUESTIONS > 16 > error
+[PrinterGame.QUESTIONS.16.error]
+PRINTER DEAD, NO LIGHTS AT ALL
+
+# PrinterGame > QUESTIONS > 16 > options > 0
+[PrinterGame.QUESTIONS.16.options.0]
+CHECK THE POWER CORD
+
+# PrinterGame > QUESTIONS > 16 > options > 1
+[PrinterGame.QUESTIONS.16.options.1]
+REPLACE THE POWER SUPPLY
+
+# PrinterGame > QUESTIONS > 16 > why
+[PrinterGame.QUESTIONS.16.why]
+IT IS UNPLUGGED. THE CLEANER NEEDED THE SOCKET. PLUG IT IN AND TELL NOBODY.
+
+# PrinterGame > QUESTIONS > 17 > error
+[PrinterGame.QUESTIONS.17.error]
+WHITE LINES ACROSS THE PAGE
+
+# PrinterGame > QUESTIONS > 17 > options > 0
+[PrinterGame.QUESTIONS.17.options.0]
+RUN A HEAD CLEAN AND NOZZLE CHECK
+
+# PrinterGame > QUESTIONS > 17 > options > 1
+[PrinterGame.QUESTIONS.17.options.1]
+BUY A NEW PRINTER
+
+# PrinterGame > QUESTIONS > 17 > options > 2
+[PrinterGame.QUESTIONS.17.options.2]
+BLAME THE PAPER
+
+# PrinterGame > QUESTIONS > 17 > why
+[PrinterGame.QUESTIONS.17.why]
+A CLOGGED NOZZLE LEAVES GAPS. RUN THE HEAD CLEANING CYCLE AND PRINT A NOZZLE CHECK.
+
+# PrinterGame > QUESTIONS > 18 > error
+[PrinterGame.QUESTIONS.18.error]
+CARTRIDGE NOT RECOGNIZED
+
+# PrinterGame > QUESTIONS > 18 > options > 0
+[PrinterGame.QUESTIONS.18.options.0]
+RESEAT IT, WIPE THE CHIP CONTACTS
+
+# PrinterGame > QUESTIONS > 18 > options > 1
+[PrinterGame.QUESTIONS.18.options.1]
+TURN OFF THE FIREWALL
+
+# PrinterGame > QUESTIONS > 18 > why
+[PrinterGame.QUESTIONS.18.why]
+THE CHIP CONTACTS ARE DIRTY OR THE CARTRIDGE IS NOT SEATED. CLEAN AND RESEAT IT.
+
+# PrinterGame > QUESTIONS > 19 > error
+[PrinterGame.QUESTIONS.19.error]
+VERTICAL LINES ON EVERY SCAN
+
+# PrinterGame > QUESTIONS > 19 > options > 0
+[PrinterGame.QUESTIONS.19.options.0]
+REINSTALL THE SCAN DRIVER
+
+# PrinterGame > QUESTIONS > 19 > options > 1
+[PrinterGame.QUESTIONS.19.options.1]
+CLEAN THE SCANNER GLASS
+
+# PrinterGame > QUESTIONS > 19 > options > 2
+[PrinterGame.QUESTIONS.19.options.2]
+REPLACE THE TONER
+
+# PrinterGame > QUESTIONS > 19 > why
+[PrinterGame.QUESTIONS.19.why]
+A SPECK ON THE GLASS OR THE ADF STRIP DRAWS A LINE ON EVERY PAGE. WIPE BOTH.
+
+# PrinterGame > QUESTIONS > 20 > error
+[PrinterGame.QUESTIONS.20.error]
+ADF PICK FAILED
+
+# PrinterGame > QUESTIONS > 20 > options > 0
+[PrinterGame.QUESTIONS.20.options.0]
+OPEN THE ADF, REMOVE THE STAPLE
+
+# PrinterGame > QUESTIONS > 20 > options > 2
+[PrinterGame.QUESTIONS.20.options.2]
+SCAN WITH A PHONE
+
+# PrinterGame > QUESTIONS > 20 > why
+[PrinterGame.QUESTIONS.20.why]
+A STAPLE OR A CURLED CORNER BLOCKS THE FEEDER. OPEN THE COVER AND CLEAR THE PATH.
+
+# PrinterGame > QUESTIONS > 21 > error
+[PrinterGame.QUESTIONS.21.error]
+FAX: NO DIAL TONE
+
+# PrinterGame > QUESTIONS > 21 > options > 0
+[PrinterGame.QUESTIONS.21.options.0]
+REPLACE THE FAX BOARD
+
+# PrinterGame > QUESTIONS > 21 > options > 1
+[PrinterGame.QUESTIONS.21.options.1]
+MOVE THE CORD TO THE LINE JACK
+
+# PrinterGame > QUESTIONS > 21 > options > 2
+[PrinterGame.QUESTIONS.21.options.2]
+RESET THE ROUTER
+
+# PrinterGame > QUESTIONS > 21 > why
+[PrinterGame.QUESTIONS.21.why]
+THE PHONE CORD IS IN THE EXT JACK, NOT THE LINE JACK. SWAP IT OVER.
+
+# PrinterGame > QUESTIONS > 22 > error
+[PrinterGame.QUESTIONS.22.error]
+SCAN TO EMAIL FAILED
+
+# PrinterGame > QUESTIONS > 22 > options > 0
+[PrinterGame.QUESTIONS.22.options.0]
+CHECK THE MAIL SERVER AND PORT
+
+# PrinterGame > QUESTIONS > 22 > options > 1
+[PrinterGame.QUESTIONS.22.options.1]
+REPLACE THE SCANNER LAMP
+
+# PrinterGame > QUESTIONS > 22 > options > 2
+[PrinterGame.QUESTIONS.22.options.2]
+SCAN TO FOLDER FOREVER
+
+# PrinterGame > QUESTIONS > 22 > why
+[PrinterGame.QUESTIONS.22.why]
+THE SMTP SERVER OR PORT IN THE SCANNER SETTINGS IS WRONG, OR THE RELAY NEEDS A LOGIN.
+
+# PrinterGame > QUESTIONS > 23 > error
+[PrinterGame.QUESTIONS.23.error]
+PAPER OUT, BUT THERE IS PAPER
+
+# PrinterGame > QUESTIONS > 23 > options > 0
+[PrinterGame.QUESTIONS.23.options.0]
+FLIP THE ROLL, HEAT SIDE IN
+
+# PrinterGame > QUESTIONS > 23 > why
+[PrinterGame.QUESTIONS.23.why]
+THERMAL PAPER HAS ONE HEATED SIDE. LOADED BACKWARDS IT PRINTS NOTHING. TURN THE ROLL OVER.
+
+# PrinterGame > QUESTIONS > 24 > error
+[PrinterGame.QUESTIONS.24.error]
+RECEIPTS PRINT VERY FAINT
+
+# PrinterGame > QUESTIONS > 24 > options > 0
+[PrinterGame.QUESTIONS.24.options.0]
+CLEAN THE THERMAL HEAD
+
+# PrinterGame > QUESTIONS > 24 > options > 2
+[PrinterGame.QUESTIONS.24.options.2]
+REPLACE THE DRAWER
+
+# PrinterGame > QUESTIONS > 24 > why
+[PrinterGame.QUESTIONS.24.why]
+PAPER DUST BUILDS UP ON THE THERMAL HEAD. WIPE IT WITH ALCOHOL AND LET IT DRY.
+
+# PrinterGame > QUESTIONS > 25 > error
+[PrinterGame.QUESTIONS.25.error]
+CUTTER ERROR
+
+# PrinterGame > QUESTIONS > 25 > options > 0
+[PrinterGame.QUESTIONS.25.options.0]
+OPEN THE COVER, CLEAR THE SCRAP
+
+# PrinterGame > QUESTIONS > 25 > options > 1
+[PrinterGame.QUESTIONS.25.options.1]
+FORCE THE PAPER OUT
+
+# PrinterGame > QUESTIONS > 25 > options > 2
+[PrinterGame.QUESTIONS.25.options.2]
+RESTART THE REGISTER
+
+# PrinterGame > QUESTIONS > 25 > why
+[PrinterGame.QUESTIONS.25.why]
+A SCRAP OF PAPER IS STUCK IN THE CUTTER BLADE. OPEN THE COVER, REMOVE IT, RESEAT THE BLADE.
+
+# PrinterGame > QUESTIONS > 26 > error
+[PrinterGame.QUESTIONS.26.error]
+RECEIPT SHOWS GARBAGE LETTERS
+
+# PrinterGame > QUESTIONS > 26 > options > 0
+[PrinterGame.QUESTIONS.26.options.0]
+MATCH THE BAUD RATE TO THE REGISTER
+
+# PrinterGame > QUESTIONS > 26 > options > 1
+[PrinterGame.QUESTIONS.26.options.1]
+REPLACE THE ROLL
+
+# PrinterGame > QUESTIONS > 26 > options > 2
+[PrinterGame.QUESTIONS.26.options.2]
+UNPLUG THE DRAWER
+
+# PrinterGame > QUESTIONS > 26 > why
+[PrinterGame.QUESTIONS.26.why]
+THE SERIAL SETTINGS DO NOT MATCH THE REGISTER. SET THE SAME BAUD RATE ON BOTH.
+
+# PrinterGame > QUESTIONS > 27 > error
+[PrinterGame.QUESTIONS.27.error]
+PRINT IS PALE AND GHOSTLY
+
+# PrinterGame > QUESTIONS > 27 > options > 0
+[PrinterGame.QUESTIONS.27.options.0]
+REPLACE THE RIBBON
+
+# PrinterGame > QUESTIONS > 27 > options > 2
+[PrinterGame.QUESTIONS.27.options.2]
+SWITCH TO INKJET
+
+# PrinterGame > QUESTIONS > 27 > why
+[PrinterGame.QUESTIONS.27.why]
+A WORN RIBBON LEAVES FAINT DOTS. FIT A NEW ONE AND THE CARBON COPIES WILL BE READABLE.
+
+# PrinterGame > QUESTIONS > 28 > error
+[PrinterGame.QUESTIONS.28.error]
+FORMS DRIFT DOWN THE PAGE
+
+# PrinterGame > QUESTIONS > 28 > options > 0
+[PrinterGame.QUESTIONS.28.options.0]
+SET TOP OF FORM, SEAT THE PINS
+
+# PrinterGame > QUESTIONS > 28 > options > 1
+[PrinterGame.QUESTIONS.28.options.1]
+REPLACE THE PRINT HEAD
+
+# PrinterGame > QUESTIONS > 28 > why
+[PrinterGame.QUESTIONS.28.why]
+THE FORM IS NOT ON THE TRACTOR PINS, OR THE TOP-OF-FORM IS WRONG. SQUARE IT UP AND SET IT.
+
+# PrinterGame > QUESTIONS > 29 > error
+[PrinterGame.QUESTIONS.29.error]
+COPY THREE IS BLANK
+
+# PrinterGame > QUESTIONS > 29 > options > 0
+[PrinterGame.QUESTIONS.29.options.0]
+MOVE THE HEAD GAP LEVER OUT
+
+# PrinterGame > QUESTIONS > 29 > options > 2
+[PrinterGame.QUESTIONS.29.options.2]
+PRINT THREE TIMES
+
+# PrinterGame > QUESTIONS > 29 > why
+[PrinterGame.QUESTIONS.29.why]
+A MULTI-PART FORM IS THICKER. THE HEAD GAP LEVER MUST BE SET WIDER SO THE LAST COPY GETS INKED.
+
+# PrinterGame > QUESTIONS > 30 > error
+[PrinterGame.QUESTIONS.30.error]
+NOTHING PRINTS FROM WINDOWS 7
+
+# PrinterGame > QUESTIONS > 30 > options > 0
+[PrinterGame.QUESTIONS.30.options.0]
+PICK THE USB TO PARALLEL PORT
+
+# PrinterGame > QUESTIONS > 30 > why
+[PrinterGame.QUESTIONS.30.why]
+THE NEW PC HAS NO PARALLEL PORT. THE PRINTER NEEDS THE PORT OF ITS USB ADAPTER CABLE.
+
+# PrinterGame > QUESTIONS > 31 > error
+[PrinterGame.QUESTIONS.31.error]
+DRAWING PRINTS AT HALF SIZE
+
+# PrinterGame > QUESTIONS > 31 > options > 0
+[PrinterGame.QUESTIONS.31.options.0]
+SET THE SCALE TO 100 PERCENT
+
+# PrinterGame > QUESTIONS > 31 > options > 1
+[PrinterGame.QUESTIONS.31.options.1]
+ORDER A BIGGER ROLL
+
+# PrinterGame > QUESTIONS > 31 > why
+[PrinterGame.QUESTIONS.31.why]
+THE DRIVER IS ON FIT TO PAGE. SET THE SCALE TO 100 PERCENT AND CHOOSE THE RIGHT SHEET SIZE.
+
+# PrinterGame > QUESTIONS > 32 > error
+[PrinterGame.QUESTIONS.32.error]
+50.2 FUSER ERROR
+
+# PrinterGame > QUESTIONS > 32 > options > 0
+[PrinterGame.QUESTIONS.32.options.0]
+LET IT COOL, POWER CYCLE
+
+# PrinterGame > QUESTIONS > 32 > options > 1
+[PrinterGame.QUESTIONS.32.options.1]
+REPLACE THE FUSER AT ONCE
+
+# PrinterGame > QUESTIONS > 32 > options > 2
+[PrinterGame.QUESTIONS.32.options.2]
+OPEN THE FUSER HOT
+
+# PrinterGame > QUESTIONS > 32 > why
+[PrinterGame.QUESTIONS.32.why]
+A ONE-OFF FUSER ERROR OFTEN CLEARS AFTER COOLING. IF IT COMES BACK, REPLACE THE FUSER. NEVER OPEN IT HOT.
+
+# PrinterGame > QUESTIONS > 33 > error
+[PrinterGame.QUESTIONS.33.error]
+BLACK STREAK DOWN EVERY PAGE
+
+# PrinterGame > QUESTIONS > 33 > options > 0
+[PrinterGame.QUESTIONS.33.options.0]
+CLEAN OR REPLACE THE DRUM
+
+# PrinterGame > QUESTIONS > 33 > options > 2
+[PrinterGame.QUESTIONS.33.options.2]
+RESTART THE SPOOLER
+
+# PrinterGame > QUESTIONS > 33 > why
+[PrinterGame.QUESTIONS.33.why]
+A SCRATCHED OR DIRTY DRUM PRINTS THE SAME LINE ON EVERY PAGE. CLEAN IT OR FIT A NEW ONE.
+
+
+# ======================= PrinterGame > MODEL_TEXT =======================
+# PrinterGame > MODEL_TEXT > plotter > title
+[PrinterGame.MODEL_TEXT.plotter.title]
+PLOTTER REPAIR
+
+# PrinterGame > MODEL_TEXT > plotter > intro1
+[PrinterGame.MODEL_TEXT.plotter.intro1]
+THE FORTY-INCH PLOTTER CHEWS ITS ROLL
+
+# PrinterGame > MODEL_TEXT > plotter > intro2
+[PrinterGame.MODEL_TEXT.plotter.intro2]
+AND SAYS MEDIA JAM. A PRINT DUE AT NOON.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_help
+[PrinterGame.MODEL_TEXT.plotter.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
+
+# PrinterGame > MODEL_TEXT > plotter > jam_clean
+[PrinterGame.MODEL_TEXT.plotter.jam_clean]
+A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_hold
+[PrinterGame.MODEL_TEXT.plotter.jam_hold]
+THE ROLL HOLDS. NOT QUITE: TRY AGAIN.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_tear
+[PrinterGame.MODEL_TEXT.plotter.jam_tear]
+RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
+
+# PrinterGame > MODEL_TEXT > plotter > toner_help
+[PrinterGame.MODEL_TEXT.plotter.toner_help]
+LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
+
+# PrinterGame > MODEL_TEXT > plotter > toner_ok
+[PrinterGame.MODEL_TEXT.plotter.toner_ok]
+CLICK. THE INK TANK SEATS.
+
+# PrinterGame > MODEL_TEXT > plotter > toner_bad
+[PrinterGame.MODEL_TEXT.plotter.toner_bad]
+WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
+
+# PrinterGame > MODEL_TEXT > plotter > shake_help
+[PrinterGame.MODEL_TEXT.plotter.shake_help]
+ROCK THE INK TANK: A D A D A D
+
+# PrinterGame > MODEL_TEXT > plotter > shake_late
+[PrinterGame.MODEL_TEXT.plotter.shake_late]
+TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.
+
+# PrinterGame > MODEL_TEXT > plotter > hit
+[PrinterGame.MODEL_TEXT.plotter.hit]
+YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.
+
+# PrinterGame > MODEL_TEXT > plotter > stars3
+[PrinterGame.MODEL_TEXT.plotter.stars3]
+PERFECT. A CRISP FORTY-INCH SITE PLAN.
+
+# PrinterGame > MODEL_TEXT > plotter > stars2
+[PrinterGame.MODEL_TEXT.plotter.stars2]
+GOOD ENOUGH. A FEW BANDING LINES.
+
+# PrinterGame > MODEL_TEXT > plotter > stars1
+[PrinterGame.MODEL_TEXT.plotter.stars1]
+IT PLOTS. THE SCALE BAR IS A LITTLE OFF.
+
+# PrinterGame > MODEL_TEXT > plotter > stars0
+[PrinterGame.MODEL_TEXT.plotter.stars0]
+YOU GIVE UP. THE PLOTTER WINS.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_help
+[PrinterGame.MODEL_TEXT.plotter.tray_help]
+MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > plotter > tray_ok
+[PrinterGame.MODEL_TEXT.plotter.tray_ok]
+24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_bad
+[PrinterGame.MODEL_TEXT.plotter.tray_bad]
+WRONG ROLL. THE PLOTTER CUTS IT SHORT.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_hit
+[PrinterGame.MODEL_TEXT.plotter.tray_hit]
+YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > plotter > pray_help
+[PrinterGame.MODEL_TEXT.plotter.pray_help]
+P: PRAY TO THE PLOTTER GODS
+
+# PrinterGame > MODEL_TEXT > inkjet > title
+[PrinterGame.MODEL_TEXT.inkjet.title]
+INKJET REPAIR
+
+# PrinterGame > MODEL_TEXT > inkjet > intro1
+[PrinterGame.MODEL_TEXT.inkjet.intro1]
+THE INKJET PRINTS A PAGE OF WHITE LINES
+
+# PrinterGame > MODEL_TEXT > inkjet > intro2
+[PrinterGame.MODEL_TEXT.inkjet.intro2]
+AND A PAPER JAM LIGHT BLINKS. AGAIN.
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_help
+[PrinterGame.MODEL_TEXT.inkjet.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_clean
+[PrinterGame.MODEL_TEXT.inkjet.jam_clean]
+A CLEAN PULL. THE SHEET COMES OUT FLAT.
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_tear
+[PrinterGame.MODEL_TEXT.inkjet.jam_tear]
+RIP! A CORNER IS STILL UNDER THE ROLLER.
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_help
+[PrinterGame.MODEL_TEXT.inkjet.toner_help]
+LEFT / RIGHT TO PICK AN INK TANK, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_ok
+[PrinterGame.MODEL_TEXT.inkjet.toner_ok]
+CLICK. THE INK TANK SEATS.
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_bad
+[PrinterGame.MODEL_TEXT.inkjet.toner_bad]
+WRONG SLOT. THE INKJET BEEPS.
+
+# PrinterGame > MODEL_TEXT > inkjet > hit
+[PrinterGame.MODEL_TEXT.inkjet.hit]
+YOU TAP THE INKJET. IT PRINTS. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars3
+[PrinterGame.MODEL_TEXT.inkjet.stars3]
+PERFECT. THE ALIGNMENT PAGE IS CRISP.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars2
+[PrinterGame.MODEL_TEXT.inkjet.stars2]
+GOOD ENOUGH. A LITTLE BANDING.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars1
+[PrinterGame.MODEL_TEXT.inkjet.stars1]
+IT PRINTS. THE BLACK IS A BIT GREEN.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars0
+[PrinterGame.MODEL_TEXT.inkjet.stars0]
+YOU GIVE UP. THE INKJET WINS.
+
+# PrinterGame > MODEL_TEXT > inkjet > pray_help
+[PrinterGame.MODEL_TEXT.inkjet.pray_help]
+P: PRAY TO THE INK GODS
+
+# PrinterGame > MODEL_TEXT > mfp > title
+[PrinterGame.MODEL_TEXT.mfp.title]
+COPIER REPAIR
+
+# PrinterGame > MODEL_TEXT > mfp > intro1
+[PrinterGame.MODEL_TEXT.mfp.intro1]
+THE COPIER SCANS AND FAXES, THEN JAMS.
+
+# PrinterGame > MODEL_TEXT > mfp > intro2
+[PrinterGame.MODEL_TEXT.mfp.intro2]
+ADF MISFEED. PAPER EVERYWHERE.
+
+# PrinterGame > MODEL_TEXT > mfp > jam_help
+[PrinterGame.MODEL_TEXT.mfp.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET
+
+# PrinterGame > MODEL_TEXT > mfp > jam_clean
+[PrinterGame.MODEL_TEXT.mfp.jam_clean]
+A CLEAN PULL. THE SHEET LEAVES THE FEEDER WHOLE.
+
+# PrinterGame > MODEL_TEXT > mfp > jam_tear
+[PrinterGame.MODEL_TEXT.mfp.jam_tear]
+RIP! HALF A LETTER IS STUCK IN THE FEEDER.
+
+# PrinterGame > MODEL_TEXT > mfp > toner_help
+[PrinterGame.MODEL_TEXT.mfp.toner_help]
+LEFT / RIGHT TO PICK A CARTRIDGE, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > mfp > hit
+[PrinterGame.MODEL_TEXT.mfp.hit]
+YOU THUMP THE COPIER. IT WORKS. DO NOT TELL THE PARTNERS.
+
+# PrinterGame > MODEL_TEXT > mfp > stars3
+[PrinterGame.MODEL_TEXT.mfp.stars3]
+PERFECT. THE FAX GOES OUT AND THE COPIES ARE CLEAN.
+
+# PrinterGame > MODEL_TEXT > mfp > stars1
+[PrinterGame.MODEL_TEXT.mfp.stars1]
+IT COPIES. THE FAX STILL HISSES.
+
+# PrinterGame > MODEL_TEXT > mfp > stars0
+[PrinterGame.MODEL_TEXT.mfp.stars0]
+YOU GIVE UP. THE COPIER WINS.
+
+# PrinterGame > MODEL_TEXT > mfp > tray_help
+[PrinterGame.MODEL_TEXT.mfp.tray_help]
+TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > mfp > tray_ok
+[PrinterGame.MODEL_TEXT.mfp.tray_ok]
+LETTER PAPER IN TRAY 1. THE COPIER HUMS.
+
+# PrinterGame > MODEL_TEXT > mfp > tray_screen
+[PrinterGame.MODEL_TEXT.mfp.tray_screen]
+LOAD LETTER IN TRAY 1
+
+# PrinterGame > MODEL_TEXT > mfp > pray_help
+[PrinterGame.MODEL_TEXT.mfp.pray_help]
+P: PRAY TO THE COPIER GODS
+
+# PrinterGame > MODEL_TEXT > receipt > title
+[PrinterGame.MODEL_TEXT.receipt.title]
+RECEIPT PRINTER
+
+# PrinterGame > MODEL_TEXT > receipt > intro1
+[PrinterGame.MODEL_TEXT.receipt.intro1]
+THE RECEIPT PRINTER BEEPS AND THE LINE
+
+# PrinterGame > MODEL_TEXT > receipt > intro2
+[PrinterGame.MODEL_TEXT.receipt.intro2]
+AT THE DESK GROWS. THE LIGHT IS RED.
+
+# PrinterGame > MODEL_TEXT > receipt > jam_help
+[PrinterGame.MODEL_TEXT.receipt.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER
+
+# PrinterGame > MODEL_TEXT > receipt > jam_clean
+[PrinterGame.MODEL_TEXT.receipt.jam_clean]
+A CLEAN PULL. THE PAPER FEEDS STRAIGHT.
+
+# PrinterGame > MODEL_TEXT > receipt > jam_tear
+[PrinterGame.MODEL_TEXT.receipt.jam_tear]
+RIP! A CURL OF THERMAL PAPER IS STUCK.
+
+# PrinterGame > MODEL_TEXT > receipt > hit
+[PrinterGame.MODEL_TEXT.receipt.hit]
+YOU SMACK THE LID. IT CUTS A RECEIPT. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > receipt > stars3
+[PrinterGame.MODEL_TEXT.receipt.stars3]
+PERFECT. A CRISP RECEIPT AND A CLEAN CUT.
+
+# PrinterGame > MODEL_TEXT > receipt > stars2
+[PrinterGame.MODEL_TEXT.receipt.stars2]
+GOOD ENOUGH. THE CUT IS A LITTLE CROOKED.
+
+# PrinterGame > MODEL_TEXT > receipt > stars1
+[PrinterGame.MODEL_TEXT.receipt.stars1]
+IT PRINTS. THE TOTAL IS FAINT.
+
+# PrinterGame > MODEL_TEXT > receipt > stars0
+[PrinterGame.MODEL_TEXT.receipt.stars0]
+YOU GIVE UP. THE LINE GROWS.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_help
+[PrinterGame.MODEL_TEXT.receipt.tray_help]
+PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > receipt > tray_ok
+[PrinterGame.MODEL_TEXT.receipt.tray_ok]
+THE 80 MM ROLL IS IN, HEAT SIDE UP. IT CUTS CLEANLY.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_bad
+[PrinterGame.MODEL_TEXT.receipt.tray_bad]
+WRONG ROLL. THE LID WILL NOT CLOSE.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_hit
+[PrinterGame.MODEL_TEXT.receipt.tray_hit]
+YOU HIT THE LID AND IT CLOSES. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > receipt > pray_help
+[PrinterGame.MODEL_TEXT.receipt.pray_help]
+P: PRAY TO THE REGISTER GODS
+
+# PrinterGame > MODEL_TEXT > dot > title
+[PrinterGame.MODEL_TEXT.dot.title]
+DOT MATRIX REPAIR
+
+# PrinterGame > MODEL_TEXT > dot > intro1
+[PrinterGame.MODEL_TEXT.dot.intro1]
+THE OLD DOT MATRIX SCREECHES THROUGH ITS
+
+# PrinterGame > MODEL_TEXT > dot > intro2
+[PrinterGame.MODEL_TEXT.dot.intro2]
+FORMS AND THE TRACTOR FEED IS CROOKED.
+
+# PrinterGame > MODEL_TEXT > dot > jam_help
+[PrinterGame.MODEL_TEXT.dot.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FORM
+
+# PrinterGame > MODEL_TEXT > dot > jam_clean
+[PrinterGame.MODEL_TEXT.dot.jam_clean]
+A CLEAN PULL. THE FORM COMES OUT WHOLE.
+
+# PrinterGame > MODEL_TEXT > dot > jam_tear
+[PrinterGame.MODEL_TEXT.dot.jam_tear]
+RIP! A STRIP OF PINFEED HOLES IS STILL INSIDE.
+
+# PrinterGame > MODEL_TEXT > dot > toner_help
+[PrinterGame.MODEL_TEXT.dot.toner_help]
+LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > dot > toner_ok
+[PrinterGame.MODEL_TEXT.dot.toner_ok]
+CLICK. THE RIBBON SEATS.
+
+# PrinterGame > MODEL_TEXT > dot > toner_bad
+[PrinterGame.MODEL_TEXT.dot.toner_bad]
+WRONG RIBBON. THE HEAD GRINDS.
+
+# PrinterGame > MODEL_TEXT > dot > hit
+[PrinterGame.MODEL_TEXT.dot.hit]
+YOU THUMP THE CASE. IT SCREECHES AND WORKS.
+
+# PrinterGame > MODEL_TEXT > dot > stars3
+[PrinterGame.MODEL_TEXT.dot.stars3]
+PERFECT. THE CARBON COPY IS READABLE.
+
+# PrinterGame > MODEL_TEXT > dot > stars2
+[PrinterGame.MODEL_TEXT.dot.stars2]
+GOOD ENOUGH. A FEW PALE LINES.
+
+# PrinterGame > MODEL_TEXT > dot > stars1
+[PrinterGame.MODEL_TEXT.dot.stars1]
+IT PRINTS. THE THIRD COPY IS A GHOST.
+
+# PrinterGame > MODEL_TEXT > dot > stars0
+[PrinterGame.MODEL_TEXT.dot.stars0]
+YOU GIVE UP. THE DOT MATRIX WINS.
+
+# PrinterGame > MODEL_TEXT > dot > tray_help
+[PrinterGame.MODEL_TEXT.dot.tray_help]
+FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > dot > tray_ok
+[PrinterGame.MODEL_TEXT.dot.tray_ok]
+THE FORMS RIDE THE TRACTOR PINS, SQUARE AT LAST.
+
+# PrinterGame > MODEL_TEXT > dot > tray_bad
+[PrinterGame.MODEL_TEXT.dot.tray_bad]
+WRONG PAPER. THE PINS TEAR THE EDGE.
+
+# PrinterGame > MODEL_TEXT > dot > tray_screen
+[PrinterGame.MODEL_TEXT.dot.tray_screen]
+FORM FEED ERROR
+
+# PrinterGame > MODEL_TEXT > dot > pray_help
+[PrinterGame.MODEL_TEXT.dot.pray_help]
+P: PRAY TO THE FORMS GODS
 
 
 # ======================= Onsite > TEXT =======================

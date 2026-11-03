@@ -46,7 +46,7 @@ Nothing running. The owner playthrough fixes (round 1) and the canon text pass a
 | # | Item | Size | Notes |
 |---|---|---|---|
 | R1 | Difficulty and seeds | S | DONE (see section 1); still to do: a seed field you can type, saved stream positions, seeded `Msp` / `Owner` / `World` / `Onsite` randomness, hard-tier numbers checked by play, whether the tier deserves its own step instead of the chip on the select screen, drop the unused `ESCAPE_TIME` constant |
-| R2 | Printer variety: 28+ questions, models (laser, inkjet, plotter, MFP, receipt, dot matrix), escalating jams, parts bag, boss line printer | S-M | |
+| R2 | Printer variety: DONE (6 models, 34 tagged questions, jam chains, tired, per-model prayers and streak, practice seed; see CLAUDE.md "Printer variety"). Left: P4 boss line printer, P6 parts bag | S-M | |
 | R3 | Karaoke songs: four invented-title songs, hold and double notes, crowd-mood meter, duets, set lists | M | |
 | R4 | Escape room: clue recipes, random clue spots, 4-digit hard code, red herrings, friend hints; later themed rooms | M | |
 | R5 | Who comes along: `Outings.roster()`, bowling personalities, dinner tastes; Maya and Vic join in logic | M | pairs with X2 |
