@@ -32,12 +32,19 @@ func _ready() -> void:
 
 
 func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
-	if is_open:
+	if is_open or DayReport.is_open:
 		_queue.append([who, body, choices, on_pick])
 		return
 	speaker = who
 	text = body
 	options = choices
+	var any_enabled := false
+	for opt in choices:
+		any_enabled = any_enabled or bool(opt.get("enabled", true))
+	if not any_enabled:
+		# nothing affordable: a card must never trap the player (or hold the week report back)
+		options = choices.duplicate()
+		options.append({"label": "NOT NOW", "id": "__none"})
 	sel = 0
 	for i in options.size():
 		if bool(options[i].get("enabled", true)):
@@ -66,9 +73,16 @@ func pick(index: int) -> void:
 	_canvas.visible = false
 	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
-	if _callback.is_valid():
+	if id != "__none" and _callback.is_valid():
 		_callback.call(id)
 	if not _queue.is_empty():
+		var next: Array = _queue.pop_front()
+		ask(next[0], next[1], next[2], next[3])
+
+
+# cards that were asked while the day report covered the screen
+func flush() -> void:
+	if not is_open and not DayReport.is_open and not _queue.is_empty():
 		var next: Array = _queue.pop_front()
 		ask(next[0], next[1], next[2], next[3])
 
@@ -76,7 +90,7 @@ func pick(index: int) -> void:
 # Esc picks the option whose id is "leave" (conversations)
 func _pick_leave() -> void:
 	for i in options.size():
-		if str(options[i].id) == "leave":
+		if str(options[i].id) in ["leave", "__none"]:
 			pick(i)
 			return
 

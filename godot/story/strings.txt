@@ -1750,7 +1750,7 @@ Vic Marlowe
 
 # owner card: prospect
 [Owner.CARDS.prospect.text]
-Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account.
+New prospect %s wants us but asks for 20%% off for the first 6 weeks to sign. They are a good-sized account.
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.0.label]

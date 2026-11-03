@@ -20,6 +20,8 @@ var app := "home"
 var mail_sel := -1
 var tk_sel := -1
 var txt_open := false
+var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings)
+const HOME_APPS := ["mail", "tickets", "texts", "settings"]
 
 var _canvas: Node2D
 var _hits: Array = []
@@ -129,6 +131,8 @@ func _input(event: InputEvent) -> void:
 			KEY_LEFT, KEY_RIGHT:
 				if app == "choose":
 					activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
+				elif app == "home":
+					home_move(1 if event.keycode == KEY_RIGHT else -1)
 			KEY_ENTER, KEY_KP_ENTER:
 				enter()
 	else:
@@ -159,7 +163,15 @@ func back() -> void:
 	_canvas.queue_redraw()
 
 
+func home_move(step: int) -> void:
+	home_sel = clampi(home_sel + step, 0, HOME_APPS.size() - 1)
+	_canvas.queue_redraw()
+
+
 func move(step: int) -> void:
+	if app == "home":
+		home_move(step * 2)  # two icons per row
+		return
 	if app == "mail":
 		mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
 	elif app == "tickets":
@@ -176,6 +188,8 @@ func move(step: int) -> void:
 func enter() -> void:
 	if app == "choose":
 		activate("os:ios")
+	elif app == "home":
+		activate("app:" + str(HOME_APPS[home_sel]))
 	elif app == "mail" and mail_sel >= 0:
 		activate("mail:%d" % mail_sel)
 
@@ -540,6 +554,8 @@ func _paint_home(a: Rect2) -> void:
 		var cx := a.position.x + (i % 2) * cell_w + floorf((cell_w - isz) * 0.5)
 		var cy := a.position.y + 6 * _sc + (i / 2) * (isz + 12 * _sc)
 		var r := Rect2(cx, cy, isz, isz)
+		if i == home_sel:
+			_fill(Rect2(r.position - Vector2(3, 2), Vector2(isz + 6, isz + 10 * _sc)), Color(1, 1, 1, 0.35))
 		_icon(items[i][0], r)
 		var label: String = items[i][1]
 		if _tw(label) > cell_w - 2.0:
@@ -716,12 +732,18 @@ func _paint_texts(a: Rect2) -> void:
 	var chars := _chars(body.size.x - 10)
 	var y := body.position.y + 3 * _sc
 	var bubble := Color("2b79f0") if _is_ios() else Color("33b5e5")
-	for i in Msp.texts.size():
-		var m: Dictionary = Msp.texts[i]
+	var bottom := body.end.y - 10 * _sc  # the REPLY bar
+	for k in Msp.texts.size():
+		var m: Dictionary = Msp.texts[Msp.texts.size() - 1 - k]  # newest first
 		var lines := _wrap(m.body, chars)
 		var h := (lines.size() * 7 + 11) * _sc
-		if y + h > body.end.y:
-			break
+		if y + h > bottom:
+			if k > 0:
+				break
+			# the newest text always shows, cut to the lines that fit
+			var room := int((bottom - y - 9 * _sc - 2) / (7 * _sc))
+			lines = lines.slice(0, maxi(1, room))
+			h = (lines.size() * 7 + 11) * _sc
 		_text(_clip(m.from, chars), Vector2(body.position.x + 3, y), Color("7d8595"))
 		var r := Rect2(
 			body.position.x + 3, y + 7 * _sc, body.size.x - 6, lines.size() * 7 * _sc + 2

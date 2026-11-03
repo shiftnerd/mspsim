@@ -108,7 +108,9 @@ func _init() -> void:
 	var sales := root.get_node("Sales")
 	var ids := {}
 	for key in o.CARDS:
-		ids[key] = str(o.CARDS[key].text).substr(0, 40)
+		var card_text := str(o.CARDS[key].text)
+		var cut := card_text.find("%s")  # templated cards (the named prospect) match up to the name
+		ids[key] = card_text.substr(0, 40 if cut < 0 else mini(40, cut))
 	c.save_prefix = (
 		"user://bal_%s_"
 		% (

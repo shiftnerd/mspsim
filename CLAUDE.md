@@ -910,3 +910,13 @@ New characters start as a copy of an existing one, then change only what differs
 - **Left for later**: the owner campaign structure (the player becomes Alan or Garrison; its 15 "Alan" advisor cards, "techs" wording and the `Skill relative to a senior tech` hire card are only relabelled), the last-resort rule and ASK THE OWNER lifeline, owner `ASK FOR HELP` mechanics (a friend still fixes your oldest simple ticket, only the reply text is owner-flavoured), Social/Lync desk-ticket plumbing (`DESK_OWNER` maps desks 6 / 7 to them).
 - Test: `tests/canon.gd` (banned phrases absent from the player-facing tables and `strings.txt`, owners keep greetings / small talk / tips, owner Lynk messages mirror the generic options and effects).
 
+### Owner play-through fixes (items 1-6 and the lead name; test `tests/ownerfix.gd`)
+- **Cards and outings freeze the day**: `World.time_scale` reads 0 while a campaign has a `Cards` decision or an `Outings` game open. `Campaign._process` does not end the day while a card is open or an outing is open or being travelled to (`Outings.busy()`); `Cards.ask` queues behind the weekly report (`DayReport.is_open`) and `Cards.flush()` shows the queue after it. A card with no affordable option gets a NOT NOW option (`__none`, Esc picks it, the callback is not called) so it can never trap the week.
+- **Week 20 settles once**: `report_continue(final)` keeps `_awaiting` true (the clock is still at closing time).
+- **Valuation history**: `Owner.settle()` runs `Projects.week()` (payouts) before adding up the profit, so `history.profit` and `ebitda` (profit minus project money) agree.
+- **Vic's sold install** in the owner campaign is a one-off job (`Sales.INSTALL_JOB` $150 plus the hardware margin), not a desk ticket, so it cannot sit unworked or block `Msp.project_busy()`.
+- **Week 6 prospect** is a named client who is not signed yet (`Owner._prospect_card`, template `CARDS.prospect` with `%s`); the signed client is that one, and OFFER THE DISCOUNT applies 20% for 6 weeks (`fx.discount_new`).
+- **Phone**: TEXTS lists newest first and always shows the newest message (cut to fit); the home screen has keyboard selection (arrows, Enter opens, Esc closes; `Phone.home_sel`).
+- **Pitch site names**: the prospect's office (b skin) PC, owner and host prefix use the lead's real client name and contact (the lead card, the PC and the owner agree; `SITE_PROSPECT` / `OWNER_B` are no longer used).
+- Not done (kept in `docs/BACKLOG.md`): balance tuning, Vic complaint spread, Dana repeating advice, the 60% meeting upside, billing leak vs cash, REVIEW DUE in week 1, Esc in the Computer, invite cost text, the desk PC stealing E.
+

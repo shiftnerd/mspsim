@@ -10,6 +10,7 @@ signal client_signed(client: int)
 
 const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
+const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
@@ -161,6 +162,19 @@ func sign_client(wanted := -1) -> int:
 
 
 func sell_install() -> int:
+	if Owner.active():
+		# the owner campaign has no desk project for the team to work: the sale is a one-off job
+		# (the crew does the setup between tickets), so it can never block the next sale
+		var who := pick_client()
+		installs_sold += 1
+		Owner.on_deal("install", who)
+		Owner.cash += INSTALL_JOB
+		Owner.income_extra += INSTALL_JOB
+		Msp.send_text(
+			"Vic", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
+		)
+		changed.emit()
+		return who
 	if Msp.project_busy():
 		return -1
 	var client := pick_client()

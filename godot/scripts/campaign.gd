@@ -187,6 +187,8 @@ func _begin_day() -> void:
 func _process(_delta: float) -> void:
 	if not active or _awaiting or Game.title_mode or Onsite.busy:
 		return
+	if Cards.is_open or Outings.busy():
+		return  # the week report waits until every card and outing is finished
 	var late: bool = World.clock >= 23.5
 	if (
 		World.clock >= World.DAY_END
@@ -311,7 +313,10 @@ func _ending(r: Dictionary) -> String:
 
 # the report screen's button
 func report_continue(final: bool) -> void:
-	_awaiting = false
+	if final:
+		_awaiting = true  # the last day settles once: the clock is still at closing time
+	else:
+		_awaiting = false
 	if final and (mode == "tech" or mode == "owner") and not _fired_out:
 		Review.start()
 		return

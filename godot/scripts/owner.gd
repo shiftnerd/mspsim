@@ -272,12 +272,12 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "Vic Marlowe",
 		"text":
-		"Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account.",
+		"New prospect %s wants us but asks for 20%% off for the first 6 weeks to sign. They are a good-sized account.",
 		"options":
 		[
 			{
 				"label": "OFFER THE DISCOUNT",
-				"fx": {"sign": true},
+				"fx": {"sign": true, "discount_new": {"mult": 0.8, "weeks": 6}},
 				"text": "Signed! Vic is thrilled. Their tickets start tomorrow."
 			},
 			{
@@ -909,7 +909,7 @@ const DAYS := {
 	],
 	6:
 	[
-		{"at": 9.5, "card": "prospect"},
+		{"at": 9.5, "event": "prospect"},
 		{"at": 10.5, "event": "profit_review"},
 		{"at": 12.0, "event": "client_no"},
 		{"at": 15.0, "card": "mentor_offer"}
@@ -1305,6 +1305,8 @@ func fire(ev: Dictionary) -> void:
 		show_card(str(ev.card))
 		return
 	match str(ev.event):
+		"prospect":
+			_prospect_card()
 		"qbr":
 			_qbr()
 		"vic_report":
@@ -1486,7 +1488,11 @@ func apply(fx: Dictionary) -> void:
 	if fx.get("lose_tech", false):
 		lost_techs += 1
 	if fx.get("sign", false):
-		Sales.sign_client(int(fx.get("client", -1)))
+		var signed: int = Sales.sign_client(int(fx.get("client", -1)))
+		if signed >= 0 and fx.has("discount_new"):
+			discount[signed] = {
+				"mult": float(fx.discount_new.mult), "weeks": int(fx.discount_new.weeks)
+			}
 	if fx.has("onsite_visit"):
 		Onsite.start_visit(int(fx.onsite_visit.client), str(fx.onsite_visit.kind))
 	if fx.get("drop", false):
@@ -1558,6 +1564,28 @@ func advice() -> void:
 		"speaker": "Dana Whitfield (Consultant)", "text": text, "options": options
 	}
 	show_card("advice")
+
+
+# week 6: a named prospect (one who is not a client yet) asks for a discount to sign
+func _prospect_card() -> void:
+	var pool := []
+	for c in Msp.CLIENTS.size():
+		if not Sales.active.has(c):
+			pool.append(c)
+	if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+		return
+	var who: int = pool[randi() % pool.size()]
+	var card: Dictionary = CARDS.prospect.duplicate(true)
+	card.text = str(card.text) % Msp.CLIENTS[who].name
+	for opt in card.options:
+		if opt.has("fx") and opt.fx.has("sign"):
+			opt.fx["client"] = who
+		if opt.has("roll"):
+			for entry in opt.roll:
+				if entry[1].has("sign"):
+					entry[1]["client"] = who
+	_dynamic["prospect_live"] = card
+	show_card("prospect_live")
 
 
 # marketing brought in a prospect: you can take the meeting or hand it to Vic
@@ -2742,6 +2770,7 @@ func multiple() -> float:
 # end of the week: pay the bills, collect the fees, check who is leaving
 func settle() -> Dictionary:
 	var est := weekly_estimate()
+	Projects.week()  # payouts land before the books are added up, so profit and EBITDA agree
 	var profit: int = int(est.ebitda) + income_extra
 	# invoices: on-time clients pay now, slow payers join the receivables and pay weeks later
 	var collected := 0
@@ -2789,7 +2818,6 @@ func settle() -> Dictionary:
 	_poach_week()
 	_staff_week()
 	var hours_row: Array = Growth.owner_week()
-	Projects.week()
 	if randf() < 0.12 + float(marketing) / 2500.0:
 		_leads += 1
 	for c in discount.keys():

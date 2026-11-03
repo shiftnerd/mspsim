@@ -2667,7 +2667,12 @@ const CHAT_COOLDOWN := 60.0
 const FOREVER := 1.0e9
 
 var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ret, ...}
-var time_scale := 1.0
+var time_scale := 1.0:
+    get:
+        # the day clock waits while a decision card or an outing is open
+        if Campaign.active and (Cards.is_open or Outings.is_open):
+            return 0.0
+        return time_scale
 var meeting_gap := Vector2(120.0, 190.0)
 var day_len := 600.0  # real seconds for the 8 working hours
 var clock := DAY_START
@@ -6471,6 +6476,8 @@ var app := "home"
 var mail_sel := -1
 var tk_sel := -1
 var txt_open := false
+var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings)
+const HOME_APPS := ["mail", "tickets", "texts", "settings"]
 
 var _canvas: Node2D
 var _hits: Array = []
@@ -6578,6 +6585,8 @@ func _input(event: InputEvent) -> void:
             KEY_LEFT, KEY_RIGHT:
                 if app == "choose":
                     activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
+                elif app == "home":
+                    home_move(1 if event.keycode == KEY_RIGHT else -1)
             KEY_ENTER, KEY_KP_ENTER:
                 enter()
     else:
@@ -6608,7 +6617,15 @@ func back() -> void:
     _canvas.queue_redraw()
 
 
+func home_move(step: int) -> void:
+    home_sel = clampi(home_sel + step, 0, HOME_APPS.size() - 1)
+    _canvas.queue_redraw()
+
+
 func move(step: int) -> void:
+    if app == "home":
+        home_move(step * 2)  # two icons per row
+        return
     if app == "mail":
         mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
     elif app == "tickets":
@@ -6625,6 +6642,8 @@ func move(step: int) -> void:
 func enter() -> void:
     if app == "choose":
         activate("os:ios")
+    elif app == "home":
+        activate("app:" + str(HOME_APPS[home_sel]))
     elif app == "mail" and mail_sel >= 0:
         activate("mail:%d" % mail_sel)
 
@@ -6928,6 +6947,8 @@ func _paint_home(a: Rect2) -> void:
         var cx := a.position.x + (i % 2) * cell_w + floorf((cell_w - isz) * 0.5)
         var cy := a.position.y + 6 * _sc + (i / 2) * (isz + 12 * _sc)
         var r := Rect2(cx, cy, isz, isz)
+        if i == home_sel:
+            _fill(Rect2(r.position - Vector2(3, 2), Vector2(isz + 6, isz + 10 * _sc)), Color(1, 1, 1, 0.35))
         _icon(items[i][0], r)
         var label: String = items[i][1]
         if _tw(label) > cell_w - 2.0:
@@ -7073,12 +7094,18 @@ func _paint_texts(a: Rect2) -> void:
     var chars := _chars(body.size.x - 10)
     var y := body.position.y + 3 * _sc
     var bubble := Color("2b79f0") if _is_ios() else Color("33b5e5")
-    for i in Msp.texts.size():
-        var m: Dictionary = Msp.texts[i]
+    var bottom := body.end.y - 10 * _sc  # the REPLY bar
+    for k in Msp.texts.size():
+        var m: Dictionary = Msp.texts[Msp.texts.size() - 1 - k]  # newest first
         var lines := _wrap(m.body, chars)
         var h := (lines.size() * 7 + 11) * _sc
-        if y + h > body.end.y:
-            break
+        if y + h > bottom:
+            if k > 0:
+                break
+            # the newest text always shows, cut to the lines that fit
+            var room := int((bottom - y - 9 * _sc - 2) / (7 * _sc))
+            lines = lines.slice(0, maxi(1, room))
+            h = (lines.size() * 7 + 11) * _sc
         _text(_clip(m.from, chars), Vector2(body.position.x + 3, y), Color("7d8595"))
         var r := Rect2(body.position.x + 3, y + 7 * _sc, body.size.x - 6, lines.size() * 7 * _sc + 2)
         _round(r, Color("e5e5ea") if _is_ios() else Color("dcdcdc"))
@@ -7301,6 +7328,8 @@ func _begin_day() -> void:
 func _process(_delta: float) -> void:
     if not active or _awaiting or Game.title_mode or Onsite.busy:
         return
+    if Cards.is_open or Outings.busy():
+        return  # the week report waits until every card and outing is finished
     var late: bool = World.clock >= 23.5
     if World.clock >= World.DAY_END and (not Story.overtime or late) and (late or (Shift.can_end_day() and not Outings.invite_due())):
         if late and Story.overtime:
@@ -7387,7 +7416,10 @@ func _ending(r: Dictionary) -> String:
 
 # the report screen's button
 func report_continue(final: bool) -> void:
-    _awaiting = false
+    if final:
+        _awaiting = true  # the last day settles once: the clock is still at closing time
+    else:
+        _awaiting = false
     if final and (mode == "tech" or mode == "owner") and not _fired_out:
         Review.start()
         return
@@ -7472,6 +7504,7 @@ func finish() -> void:
     _canvas.visible = false
     _fade = 0.0
     Campaign.report_continue(bool(report.get("final", false)))
+    Cards.flush()
 
 
 func _input(event: InputEvent) -> void:
@@ -9387,12 +9420,19 @@ func _ready() -> void:
 
 
 func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
-    if is_open:
+    if is_open or DayReport.is_open:
         _queue.append([who, body, choices, on_pick])
         return
     speaker = who
     text = body
     options = choices
+    var any_enabled := false
+    for opt in choices:
+        any_enabled = any_enabled or bool(opt.get("enabled", true))
+    if not any_enabled:
+        # nothing affordable: a card must never trap the player (or hold the week report back)
+        options = choices.duplicate()
+        options.append({"label": "NOT NOW", "id": "__none"})
     sel = 0
     for i in options.size():
         if bool(options[i].get("enabled", true)):
@@ -9416,9 +9456,16 @@ func pick(index: int) -> void:
     _canvas.visible = false
     Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
     Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
-    if _callback.is_valid():
+    if id != "__none" and _callback.is_valid():
         _callback.call(id)
     if not _queue.is_empty():
+        var next: Array = _queue.pop_front()
+        ask(next[0], next[1], next[2], next[3])
+
+
+# cards that were asked while the day report covered the screen
+func flush() -> void:
+    if not is_open and not DayReport.is_open and not _queue.is_empty():
         var next: Array = _queue.pop_front()
         ask(next[0], next[1], next[2], next[3])
 
@@ -9426,7 +9473,7 @@ func pick(index: int) -> void:
 # Esc picks the option whose id is "leave" (conversations)
 func _pick_leave() -> void:
     for i in options.size():
-        if str(options[i].id) == "leave":
+        if str(options[i].id) in ["leave", "__none"]:
             pick(i)
             return
 
@@ -9533,6 +9580,7 @@ signal client_signed(client: int)
 
 const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
+const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
@@ -9688,6 +9736,19 @@ func sign_client(wanted := -1) -> int:
 
 
 func sell_install() -> int:
+    if Owner.active():
+        # the owner campaign has no desk project for the team to work: the sale is a one-off job
+        # (the crew does the setup between tickets), so it can never block the next sale
+        var who := pick_client()
+        installs_sold += 1
+        Owner.on_deal("install", who)
+        Owner.cash += INSTALL_JOB
+        Owner.income_extra += INSTALL_JOB
+        Msp.send_text(
+            "Vic", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
+        )
+        changed.emit()
+        return who
     if Msp.project_busy():
         return -1
     var client := pick_client()
@@ -9910,9 +9971,9 @@ const CARDS := {
     },
     "prospect": {
         "speaker": "Vic Marlowe",
-        "text": "Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account.",
+        "text": "New prospect %s wants us but asks for 20%% off for the first 6 weeks to sign. They are a good-sized account.",
         "options": [
-            {"label": "OFFER THE DISCOUNT", "fx": {"sign": true}, "text": "Signed! Vic is thrilled. Their tickets start tomorrow."},
+            {"label": "OFFER THE DISCOUNT", "fx": {"sign": true, "discount_new": {"mult": 0.8, "weeks": 6}}, "text": "Signed! Vic is thrilled. Their tickets start tomorrow."},
             {"label": "HOLD THE PRICE", "roll": [[0.5, {"sign": true}, "They sign at full price. Vic looks smug."], [0.5, {}, "They pass. Vic sulks."]]},
             {"label": "PASS", "fx": {}},
         ],
@@ -10141,7 +10202,7 @@ const DAYS := {
     3: [{"at": 9.1, "card": "queue"}, {"at": 9.3, "event": "leak_start"}, {"at": 15.0, "card": "marketing"}],
     4: [{"at": 9.5, "card": "desktop"}, {"at": 12.0, "card": "oncall_policy"}, {"at": 14.0, "card": "stack_psa"}],
     5: [{"at": 8.6, "event": "break_backup"}, {"at": 11.0, "card": "stack_hw"}, {"at": 14.0, "card": "billing_audit"}, {"at": 15.0, "event": "peer", "card": "peer1"}, {"at": 15.5, "event": "peer_goal"}, {"at": 12.0, "event": "growth_plan"}],
-    6: [{"at": 9.5, "card": "prospect"}, {"at": 10.5, "event": "profit_review"}, {"at": 12.0, "event": "client_no"}, {"at": 15.0, "card": "mentor_offer"}],
+    6: [{"at": 9.5, "event": "prospect"}, {"at": 10.5, "event": "profit_review"}, {"at": 12.0, "event": "client_no"}, {"at": 15.0, "card": "mentor_offer"}],
     7: [{"at": 11.0, "event": "qbr"}, {"at": 12.5, "card": "rdp_exposed"}, {"at": 14.0, "card": "stack_rmm"}],
     8: [{"at": 9.5, "card": "license"}, {"at": 13.0, "card": "vic_plan"}, {"at": 15.0, "event": "peer", "card": "peer2"}, {"at": 11.0, "event": "growth_stretch"}],
     9: [{"at": 9.8, "event": "grumble"}, {"at": 10.5, "event": "ransomware"}, {"at": 14.5, "card": "marketing"}],
@@ -10461,6 +10522,8 @@ func fire(ev: Dictionary) -> void:
         show_card(str(ev.card))
         return
     match str(ev.event):
+        "prospect":
+            _prospect_card()
         "qbr":
             _qbr()
         "vic_report":
@@ -10637,7 +10700,11 @@ func apply(fx: Dictionary) -> void:
     if fx.get("lose_tech", false):
         lost_techs += 1
     if fx.get("sign", false):
-        Sales.sign_client(int(fx.get("client", -1)))
+        var signed: int = Sales.sign_client(int(fx.get("client", -1)))
+        if signed >= 0 and fx.has("discount_new"):
+            discount[signed] = {
+                "mult": float(fx.discount_new.mult), "weeks": int(fx.discount_new.weeks)
+            }
     if fx.has("onsite_visit"):
         Onsite.start_visit(int(fx.onsite_visit.client), str(fx.onsite_visit.kind))
     if fx.get("drop", false):
@@ -10677,6 +10744,28 @@ func advice() -> void:
     options.append({"label": "DISMISS DANA (SAVE $400/WEEK)", "fx": {"weekly": -400, "unflag": "mentor"}})
     _dynamic["advice"] = {"speaker": "Dana Whitfield (Consultant)", "text": text, "options": options}
     show_card("advice")
+
+
+# week 6: a named prospect (one who is not a client yet) asks for a discount to sign
+func _prospect_card() -> void:
+    var pool := []
+    for c in Msp.CLIENTS.size():
+        if not Sales.active.has(c):
+            pool.append(c)
+    if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+        return
+    var who: int = pool[randi() % pool.size()]
+    var card: Dictionary = CARDS.prospect.duplicate(true)
+    card.text = str(card.text) % Msp.CLIENTS[who].name
+    for opt in card.options:
+        if opt.has("fx") and opt.fx.has("sign"):
+            opt.fx["client"] = who
+        if opt.has("roll"):
+            for entry in opt.roll:
+                if entry[1].has("sign"):
+                    entry[1]["client"] = who
+    _dynamic["prospect_live"] = card
+    show_card("prospect_live")
 
 
 # marketing brought in a prospect: you can take the meeting or hand it to Vic
@@ -11399,6 +11488,7 @@ func multiple() -> float:
 # end of the week: pay the bills, collect the fees, check who is leaving
 func settle() -> Dictionary:
     var est := weekly_estimate()
+    Projects.week()  # payouts land before the books are added up, so profit and EBITDA agree
     var profit: int = int(est.ebitda) + income_extra
     # invoices: on-time clients pay now, slow payers join the receivables and pay weeks later
     var collected := 0
@@ -11441,7 +11531,6 @@ func settle() -> Dictionary:
     _poach_week()
     _staff_week()
     var hours_row: Array = Growth.owner_week()
-    Projects.week()
     if randf() < 0.12 + float(marketing) / 2500.0:
         _leads += 1
     for c in discount.keys():
@@ -13484,6 +13573,11 @@ func from_dict(data: Dictionary) -> void:
 
 
 # ---- invitations ------------------------------------------------------------------------------
+# a game is open, or we are on the way to its room
+func busy() -> bool:
+    return is_open or _wait_id != ""
+
+
 func invite_day() -> bool:
     if not Campaign.active:
         return false
@@ -18128,15 +18222,13 @@ func _site_client() -> int:
     return 0
 
 
-func _host_prefix(c: int, skin: String) -> String:
-    if skin == "b":
-        return str(SITE_PROSPECT.get(site_type(c), "PROSPECT")).replace(" ", "").left(4)
+# the prospect's office (the b skin) is the lead's own company: the sign, the PC and the owner use
+# the client's real name and contact, so the lead card, the sign and the speaker all agree
+func _host_prefix(c: int, _skin: String) -> String:
     return str(Msp.CLIENTS[c].short)
 
 
 func _owner_name(c: int) -> String:
-    if _scene_name().ends_with("_b"):
-        return str(OWNER_B.get(site_type(c), "The owner"))
     return str(Msp.CLIENTS[c].contact)
 
 
@@ -18155,7 +18247,7 @@ func _open_pc(obj: String) -> void:
     for mail in apps.get("mails", []):
         mails.append(mail)
     var info := {
-        "name": str(Msp.CLIENTS[c].name).to_upper() if skin == "a" else SITE_PROSPECT.get(type, "PROSPECT"),
+        "name": str(Msp.CLIENTS[c].name).to_upper(),
         "type": type, "obj": obj, "wall": cols[0], "accent": cols[1],
         "pc": "%s-%s" % [_host_prefix(c, skin), str(PCS.get(obj, "PC1"))],
         "user": _owner_name(c),
