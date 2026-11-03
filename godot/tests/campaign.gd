@@ -36,7 +36,7 @@ func _init() -> void:
 	var r: Dictionary = report.report
 	_check(r.closed == 3 and r.open_left == 1 and r.missed == 0, "report counts: %s" % str(r))
 	_check(r.pay == 100 + 3 * 20 and c.cash == r.pay, "paycheck")
-	_check(c.rep == 50 + 3 * 2 - 1 and r.grade == "A", "reputation %d, grade %s" % [c.rep, r.grade])
+	_check(c.rep == 53 and r.grade == "A", "reputation (the day gain is capped at 3) %d, grade %s" % [c.rep, r.grade])
 	report.finish()
 	await create_timer(0.8).timeout
 	_check(c.day == 2 and c.has_save("tech") and c.saved_day("tech") == 2, "next day saved")

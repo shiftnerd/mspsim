@@ -82,7 +82,7 @@ func _init() -> void:
 	_check(
 		msp.score == score0 + 20 and msp.ticket(tid).fix_done, "score + the ticket can be closed"
 	)
-	_check(msp.close_ticket(tid).begins_with("CLOSED"), "ticket closes")
+	_check(msp.ticket(tid).status == "Closed", "the handover closes the ticket")
 	comp.close()
 
 	# the sloppy way: copy only what you can see, no backup, no verify -> the xray data is lost

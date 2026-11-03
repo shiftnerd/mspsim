@@ -347,7 +347,7 @@ const DEFAULT_BOOKS := {
 			{
 				"title": "CALL THE VENDOR",
 				"text":
-				"The mail software vendor has a support line. It is 17:40 and the queue is long.",
+				"The mail software vendor has a support line. The queue is long.",
 				"choices":
 				[
 					{
@@ -1261,7 +1261,7 @@ const DEFAULT_PROBLEMS := {
 			"pri": 1,
 			"special": "ceofraud",
 			"body":
-			"Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"
+			"Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"
 		},
 	],
 	"no2fa":
@@ -1332,7 +1332,7 @@ func max_points(id: String) -> int:
 func start(id: String, source := "email") -> int:
 	var ids := []
 	for prob in PROBLEMS[id]:
-		var t := Msp.create_problem(int(BOOKS[id].client), prob, source)
+		var t := Msp.create_problem(int(BOOKS[id].client), prob, source, true)
 		if not t.is_empty():
 			ids.append(int(t.id))
 	active = {
@@ -1442,6 +1442,11 @@ func finish() -> void:
 			var ep := Msp.endpoint(str(t.endpoint))
 			if not ep.is_empty() and ep.problem == "project":
 				ep.problem = ""
+			# the job is the work: its tickets close with it instead of sitting open until they breach
+			t.status = "Closed"
+			t.notes.append("Ticket closed with the job.")
+			if grade in ["S", "A", "B"]:
+				Msp.closed_ok += 1
 	Msp.mail(address, "RE: " + str(PROBLEMS[id][0].summary), str(extra.mail))
 	if id == "email24":
 		Story.overtime = false
@@ -1451,6 +1456,9 @@ func finish() -> void:
 	active.done = true
 	active.result = {"pts": percent, "grade": grade, "text": str(extra.mail)}
 	Story.flags[id] = grade
+	if id == "bus":
+		Story.flags["bus_reset"] = bool(flags.get("reset", false))
+		Story.flags["bus_doc"] = bool(flags.get("documented", false))
 	changed.emit()
 
 
@@ -1581,7 +1589,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
 					)
 				)
 		"ceofraud":
-			out.mail = "Thank you. The money is safe and Mr. Spence says he would like you to explain the whole thing to the partners."
+			out.mail = "Thank you. The money is safe and Atty. Spence says he would like you to explain the whole thing to the partners."
 			if flags.get("wired", false):
 				out.rep = -10
 				out.score = -25
@@ -1616,7 +1624,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
 								"client": client,
 								"summary": "Another strange email from the boss",
 								"body":
-								"We just got another odd email that looks like Mr. Spence wrote it. - %s",
+								"We just got another odd email that looks like Atty. Spence wrote it. - %s",
 								"pri": 1
 							}
 						)

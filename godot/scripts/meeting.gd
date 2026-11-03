@@ -173,6 +173,8 @@ func _preview() -> String:
 				names.append("a desktop install")
 			elif kind == "ransomware":
 				names.append("trouble at the law firm")
+		if d == Expo.TRIP_DAY and Expo.qualified:
+			names.append("the Rodent Nation trip (you are going)")
 	if names.is_empty():
 		return "Nothing scary on the calendar this week. Use the quiet to study."
 	return "Coming up this week: %s. Be ready." % ", ".join(names)

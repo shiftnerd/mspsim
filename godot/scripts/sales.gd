@@ -266,7 +266,14 @@ func deliver() -> void:
 	]
 	if vic_friend:
 		options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
-	Cards.ask("Vic Marlowe", text, options, resolve)
+	var ticket_id := int(pending.get("ticket", 0))
+	Cards.ask(
+		"Vic Marlowe",
+		text,
+		options,
+		resolve,
+		func() -> bool: return str(Msp.ticket(ticket_id).get("status", "Closed")) != "Closed"
+	)
 
 
 func resolve(choice: String) -> void:

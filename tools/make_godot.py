@@ -3689,6 +3689,7 @@ signal ticket_added(ticket: Dictionary)
 signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
+const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
     {"name": "Acme Dental Group", "short": "ACME", "contact": "Dr. Patel", "mail": "patel@acmedental.example"},
     {"name": "Brightside Realty", "short": "BRSD", "contact": "Karen Whitfield", "mail": "karen@brightside.example"},
@@ -3746,7 +3747,7 @@ const INSTALL_ITEMS := [
 const FIXES := {
     "spooler": "RESTART PRINT SPOOLER", "password": "RESET PASSWORD", "clear_temp": "CLEAR TEMP FILES",
     "reboot": "REBOOT", "av": "RUN AV SCAN", "restore": "RESTORE BACKUP", "adobe": "REPAIR ADOBE READER",
-    "shadow": "RECOVER SHADOW COPIES", "pay": "PAY THE RANSOM (BITCOIN)", "save": "ASK USER TO SAVE",
+    "shadow": "SHADOW COPIES", "pay": "PAY THE RANSOM", "save": "ASK USER TO SAVE",
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
@@ -4128,13 +4129,27 @@ func create_ticket(client: int, problem: int, source: String) -> Dictionary:
     return create_problem(client, PROBLEMS[problem], source)
 
 
-func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary:
+# force: a story job must always get its ticket, even when every machine of the client is already broken
+func create_problem(client: int, prob: Dictionary, source: String, force := false) -> Dictionary:
     var contact: String = CLIENTS[client].contact
     var eps := []
     for ep in endpoints:
         var is_server: bool = ep.name.contains("SRV")
         if ep.client == client and ep.problem == "" and is_server == prob.get("server", false):
             eps.append(ep)
+    if eps.is_empty() and force:
+        if prob.get("server", false):
+            for ep in endpoints:
+                if ep.client == client and ep.name.contains("SRV"):
+                    eps.append(ep)  # the one server: the bigger job takes it over
+        else:
+            var count := 0
+            for ep in endpoints:
+                if ep.client == client and not ep.name.contains("SRV"):
+                    count += 1
+            var extra := _endpoint(client, "PC-%02d" % (count + 1), "Windows 7 Pro")
+            endpoints.append(extra)
+            eps.append(extra)
     if eps.is_empty():
         return {}
     var picked: Dictionary = Mutators.pick_endpoint(eps)
@@ -4142,6 +4157,8 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
     picked.problem = prob.fix
     picked["unsaved"] = randf() < 0.65  # somebody is working on it: documents are open
     picked["asked"] = false
+    picked.erase("restore_failed")
+    picked.erase("shadow_tried")
     var t := {
         "id": _next_id, "client": client, "contact": contact, "summary": prob.summary, "pri": pri,
         "body": prob.body % contact.split(" ")[0], "status": "New", "sla_left": Mutators.sla(SLA_SECS[pri]),
@@ -4224,6 +4241,10 @@ func close_ticket(id: int) -> String:
     var t := ticket(id)
     if t.is_empty() or t.status == "Closed":
         return ""
+    if not t.fix_done and t.fix == "restore":
+        var ransomed := endpoint(str(t.endpoint))
+        if not ransomed.is_empty() and ransomed.get("restore_failed", false):
+            _ransom_lost(ransomed, "Gave up on the files. Data lost.")  # closing it is giving up
     if not t.fix_done:
         t.status = "In Progress"
         t.sla_left = maxf(t.sla_left, t.sla_total * 0.4)
@@ -4242,7 +4263,13 @@ func close_ticket(id: int) -> String:
     t.notes.append("Ticket closed.")
     if t.internal:
         _internal.erase(t.desk)
+    if str(t.get("outcome", "")) == "lost":
+        t.notes.append("Ticket closed. The data is gone.")
+        changed.emit()
+        return "CLOSED - DATA LOST"  # no points, and it does not count as a good close
     var points := 10 if not t.breached else 4
+    if str(t.get("outcome", "")) in ["paid", "partial"]:
+        points = 4
     score += points
     closed_ok += 1
     Career.note_ticket(str(t.fix))
@@ -4500,6 +4527,9 @@ func backup_check(client: int) -> Dictionary:
 
 func backup_rerun(client: int) -> void:
     var b: Dictionary = backups[client]
+    for ep in endpoints:
+        if ep.client == client and ep.problem == "restore":
+            return  # the job would only copy the encrypted files
     if not b.ok:
         b.ok = true
         b.good_day = Campaign.day
@@ -4517,6 +4547,19 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
+    # a desktop sitting in its box: Vic reminds you where the job is, for a few days
+    if Campaign.active and project_busy() and int(project.get("since", day)) < day:
+        if int(project.get("nagged", 0)) < 3:
+            project["nagged"] = int(project.get("nagged", 0)) + 1
+            var waiting := ticket(int(project.ticket))
+            if not waiting.is_empty() and waiting.status != "Closed":
+                send_text(
+                    "Vic",
+                    (
+                        "%s is still waiting on the new desktop. Ticket #%d, RMM PROJECT tab on %s."
+                        % [CLIENTS[int(project.client)].contact, int(waiting.id), waiting.endpoint]
+                    )
+                )
     if Campaign.active and Campaign.mode == "tech" and day == 1:
         _spawn_t = 75.0  # time to look around before the first ticket
     for c in backups.size():
@@ -4543,7 +4586,7 @@ func project_busy() -> bool:
 func start_project(ticket_id: int) -> void:
     project = {
         "ticket": ticket_id, "client": int(ticket(ticket_id).get("client", 0)), "found": {}, "selected": {}, "migrated": {}, "backup": false, "verified": false,
-        "done": false, "result": {},
+        "done": false, "result": {}, "since": Campaign.day, "nagged": 0,
     }
     for it in INSTALL_ITEMS:
         project.found[it.id] = it.hidden == ""
@@ -4644,6 +4687,8 @@ func project_handover() -> Dictionary:
         rep_delta -= 3 if project.backup else 8
     score += int((pts - 50) / 2.5) - (0 if outcome != "lost" else 15)
     Campaign.adjust_rep(rep_delta)
+    if outcome != "ok":
+        Campaign.add_scar(8 if outcome == "lost" else 2)
     Skills.add_xp("servers", 10)
     project.done = true
     project.result = {"pts": pts, "grade": grade, "lost": lost, "outcome": outcome}
@@ -4654,6 +4699,12 @@ func project_handover() -> Dictionary:
         var endpoint_state := endpoint(str(t.endpoint))
         if not endpoint_state.is_empty():
             endpoint_state.problem = ""
+        # the handover is the work: the ticket closes with it instead of sitting open for days
+        if t.status != "Closed":
+            t.status = "Closed"
+            t.notes.append("Ticket closed with the handover.")
+            if grade in ["S", "A", "B"] and outcome != "lost":
+                closed_ok += 1
     var who: String = CLIENTS[int(project.client)].contact
     var address: String = who + " <" + CLIENTS[int(project.client)].mail + ">"
     var text := "Everything is just where I left it. Great job! - " + who
@@ -4673,39 +4724,53 @@ func mail(from_name: String, subject: String, body: String) -> void:
     changed.emit()
 
 
-# ransomware: with a good backup it is a save, without one the data is gone
+# ransomware: with a good backup it is a save; without one the restore fails and the other options stay open
 func _restore(ep: Dictionary) -> String:
     var contact: String = CLIENTS[ep.client].contact
     var address: String = contact + " <" + CLIENTS[ep.client].mail + ">"
-    ep.problem = ""
     var good: bool = backups[ep.client].ok
+    if not good:
+        var first: bool = not ep.get("restore_failed", false)
+        ep["restore_failed"] = true
+        for t in tickets:
+            if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore" and first:
+                t.notes.append(
+                    (
+                        "Backup restore FAILED: the last good copy is from day %d and unusable. "
+                        + "Options left: shadow copies, pay the ransom, or give up the files."
+                    )
+                    % int(backups[ep.client].good_day)
+                )
+        if first:
+            send_text("Boss", "The backup will not restore?! Try the shadow copies. Do not pay yet.")
+        changed.emit()
+        return "BACKUP FAILED. TRY SHADOW COPIES OR PAY."
+    ep.problem = ""
     for t in tickets:
         if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
             t.fix_done = true
-            t.notes.append("Restored from backup. No data lost." if good else "NO USABLE BACKUP. Data lost.")
-    if good:
-        score += 15
-        Campaign.adjust_rep(5)
-        Skills.add_xp("security", 15)
-        _mail(address, "RE: " + RANSOM.summary, "Everything is back. You saved the whole firm. Thank you!!! - " + contact, 0)
-        Story.flags["ransom"] = "saved"
-    else:
-        score -= 30
-        Campaign.adjust_rep(-15)
-        _mail(address, "RE: " + RANSOM.summary, "You are saying there is NO BACKUP? Years of case files are gone. "
-            + "We are reviewing our contract. - " + contact, 0)
-        send_text("Boss", "No backup?! We need to talk about backups. Tomorrow. My office.")
-        Story.flags["ransom"] = "lost"
+            t.notes.append("Restored from backup. No data lost.")
+    score += 15
+    Campaign.adjust_rep(5)
+    Skills.add_xp("security", 15)
+    _mail(
+        address,
+        "RE: " + RANSOM.summary,
+        "Everything is back. You saved the whole firm. Thank you!!! - " + contact,
+        0
+    )
+    Story.flags["ransom"] = "saved"
     changed.emit()
-    return "RESTORED. NO DATA LOST." if good else "NO BACKUP FOUND. DATA LOST."
+    return "RESTORED. NO DATA LOST."
 
 
 # CryptoLocker (2013): with no backup you still have options, none of them good
-func _ransom_close(ep: Dictionary, note: String) -> void:
+func _ransom_close(ep: Dictionary, note: String, outcome := "lost") -> void:
     ep.problem = ""
     for t in tickets:
         if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
             t.fix_done = true
+            t.outcome = outcome  # a lost recovery earns nothing when it is closed
             t.notes.append(note)
 
 
@@ -4714,6 +4779,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
     _ransom_close(ep, note)
     score -= 30
     Campaign.adjust_rep(-15)
+    Campaign.add_scar(15)
     _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, "Years of files are gone and nothing worked. We are reviewing our contract. - " + contact, 0)
     send_text("Boss", "The files are gone and the backup was not there. We need to talk.")
     Story.flags["ransom"] = "lost"
@@ -4724,7 +4790,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 func _ransom_pay(ep: Dictionary) -> String:
     var contact: String = CLIENTS[ep.client].contact
     if randf() < 0.7:
-        _ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.")
+        _ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.", "paid")
         score -= 5
         Campaign.adjust_rep(-2)
         Story.flags["ransom"] = "paid"
@@ -4736,15 +4802,18 @@ func _ransom_pay(ep: Dictionary) -> String:
 
 
 func _ransom_shadow(ep: Dictionary) -> String:
+    if ep.get("shadow_tried", false):
+        return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
     if randf() < 0.4:
         var contact: String = CLIENTS[ep.client].contact
-        _ransom_close(ep, "Recovered most files from shadow copies. Some are gone.")
+        _ransom_close(ep, "Recovered most files from shadow copies. Some are gone.", "partial")
         score -= 8
         Campaign.adjust_rep(-3)
         Story.flags["ransom"] = "partial"
         _mail(CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">", "RE: " + RANSOM.summary, "Most of our files are back, a few are gone for good. Thank you for trying. - " + contact, 0)
         changed.emit()
         return "SHADOW COPIES RECOVERED MOST FILES."
+    ep["shadow_tried"] = true
     return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
 
 
@@ -4773,6 +4842,8 @@ func _process(delta: float) -> void:
                 t.breached = true
                 breached += 1
                 score -= 5
+                if int(t.pri) == 1:
+                    Campaign.add_scar(2)  # an unworked P1 is remembered
                 Growth.note_escalation(t)
                 if not t.internal:
                     Sales.adjust(int(t.client), -8)
@@ -4805,6 +4876,8 @@ func _watch_desks(dt: float) -> void:
 
 
 func _mail(from_name: String, subject: String, body: String, ticket_id: int) -> void:
+    if from_name.begins_with("Morgan"):
+        from_name = MORGAN_FROM  # one sender format for the manager, whichever way the story wrote it
     emails.push_front({"id": _next_mail, "from": from_name, "subject": subject, "body": body, "unread": true, "ticket": ticket_id})
     _next_mail += 1
 ''')
@@ -5966,7 +6039,7 @@ func _ep_alert(ep: Dictionary) -> bool:
     return false
 
 
-func _symptom(problem: String) -> String:
+func _symptom(problem: String, restore_failed := false) -> String:
     var texts := {
         "spooler": "PRINT SPOOLER SERVICE IS NOT RUNNING", "password": "ACCOUNT LOCKED OUT - TOO MANY BAD PASSWORDS",
         "clear_temp": "LOW DISK SPACE - DRIVE C IS 99% FULL", "reboot": "STOP ERROR 0X7B - SYSTEM HALTED",
@@ -5975,6 +6048,8 @@ func _symptom(problem: String) -> String:
         "adobe": "ADOBE READER PRINT DIALOG IS BROKEN. OTHER APPS PRINT FINE.",
         "project": "NEW PC ARRIVED. SEE THE PROJECT TAB TO SET UP AND MIGRATE.",
     }
+    if problem == "restore" and restore_failed:
+        return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
     if problem.begins_with("onsite_"):
         return str(Onsite.TEXT.symptom)
     return str(texts.get(problem, "NO ISSUES FOUND. ALL SERVICES NORMAL."))
@@ -5994,7 +6069,7 @@ func _rmm_detail(r: Rect2, narrow: bool) -> void:
     var alert: bool = ep.problem != ""
     _fill(Rect2(r.position.x + 4, r.position.y + 36, r.size.x - 8, 9), RED if alert else GREEN)
     _text("ALERT" if alert else "ONLINE - OK", r.position + Vector2(8, 38), WHITE)
-    var lines := _wrap(_symptom(ep.problem) if alert else "NO ISSUES FOUND.", chars)
+    var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)) if alert else "NO ISSUES FOUND.", chars)
     for i in lines.size():
         _text(lines[i], r.position + Vector2(4, 49 + i * 7), TXT)
     _button("connect", Rect2(r.position.x + 4, r.end.y - 12, 44, 10), "CONNECT", true, Color("f0b27a"))
@@ -6013,7 +6088,7 @@ func _paint_session(body: Rect2) -> void:
     _fill(Rect2(dlg.position, Vector2(dlg.size.x, 6)), Color("1c3b63"))
     var alert: bool = ep.problem != ""
     _text("SYSTEM MESSAGE" if alert else "ALL CLEAR", dlg.position + Vector2(3, 1), WHITE)
-    var lines := _wrap(_symptom(ep.problem), int((dlg.size.x - 8) / 4.0))
+    var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)), int((dlg.size.x - 8) / 4.0))
     for i in mini(lines.size(), 3):
         _text(lines[i], dlg.position + Vector2(4, 9 + i * 6), RED if alert else GREEN)
     _text(_clip(rmm_msg, int((body.size.x - 8) / 4.0)), body.position + Vector2(4, 42), WHITE)
@@ -6060,7 +6135,7 @@ func _paint_backups(body: Rect2) -> void:
     var row_h := 14.0
     if compact:
         row_h = 11.0 if Sales.active.size() <= 5 else 8.0
-    _text("NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY)
+    _text("NIGHTLY BACKUP JOBS - BACKUP WATCH CHECKS THEM FOR YOU" if Skills.backup_watch() else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY", body.position + Vector2(4, 3), RMM_GREY)
     for idx in Sales.active.size():
         var c: int = Sales.active[idx]
         var b: Dictionary = Msp.backups[c]
@@ -7390,6 +7465,7 @@ var player_as := ""  # the cast member you play as ("" = a character who is not 
 var mode := ""
 var day := 1
 var rep := START_REP
+var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -7399,9 +7475,43 @@ var _awaiting := false
 var _fired_out := false
 
 
+# gains get harder as the name grows: 100 is only for the end of a really good run
+func gain_scale() -> float:
+    if rep >= 85:
+        return 0.25
+    if rep >= 72:
+        return 0.3
+    return 0.6 if rep >= 60 else 1.0
+
+
+# the most the day report can add at this reputation
+func daily_cap() -> int:
+    for entry in [[72, 1], [58, 2], [50, 3]]:
+        if rep >= int(entry[0]):
+            return int(entry[1])
+    return 4
+
+
+func rep_cap() -> int:
+    return clampi(100 - scars, 40, 100)
+
+
+# a lasting cost: the ceiling drops now and recovers one point on each A or S day
+func add_scar(amount: int) -> void:
+    if not active:
+        return
+    scars = mini(scars + amount, 60)
+    rep = mini(rep, rep_cap())
+
+
 func adjust_rep(amount: int) -> void:
-    if active:
-        rep = clampi(rep + amount, 0, 100)
+    if not active:
+        return
+    var change := amount
+    if amount > 0:
+        change = maxi(1, roundi(float(amount) * gain_scale()))
+        change = mini(change, maxi(0, rep_cap() - rep))
+    rep = clampi(rep + change, 0, 100)
 
 
 func save_path(for_mode: String) -> String:
@@ -7453,6 +7563,7 @@ func new_game(for_mode: String) -> void:
     Game.vars["start_seated"] = player_as != ""
     day = 1
     rep = START_REP
+    scars = 0
     cash = 0
     history = []
     _awaiting = false
@@ -7494,6 +7605,7 @@ func continue_game(for_mode: String) -> bool:
     active = true
     day = int(cfg.get_value("campaign", "day", 1))
     rep = int(cfg.get_value("campaign", "rep", START_REP))
+    scars = int(cfg.get_value("campaign", "scars", 0))
     cash = int(cfg.get_value("campaign", "cash", 0))
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
@@ -7541,6 +7653,7 @@ func save() -> void:
     var cfg := ConfigFile.new()
     cfg.set_value("campaign", "day", day)
     cfg.set_value("campaign", "rep", rep)
+    cfg.set_value("campaign", "scars", scars)
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
@@ -7636,7 +7749,7 @@ func _make_report() -> Dictionary:
     var points: int = Msp.score - int(_base.score)
     var overtime: float = Story.ot_hours
     var pay := maxi(0, 100 + closed * 20 - missed * 25 - reopened * 10 + int(overtime * 30.0) + Shift.pay_extra())
-    var rep_delta := clampi(closed * 2 - missed * 3 - reopened * 2 - open_left + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, 8)
+    var rep_delta := clampi(closed * 2 - missed * 3 - reopened * 2 - open_left + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, daily_cap())
     var grade := "D"
     if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
         grade = "S"
@@ -7676,7 +7789,13 @@ func _end_day() -> void:
         r["bankrupt"] = books.bankrupt
     else:
         cash += int(r.pay)
-    rep = clampi(rep + int(r.rep_delta), 0, 100)
+    if mode == "tech":
+        if int(r.reopened) >= 3:
+            add_scar(2)  # a reopen storm: the clients stop trusting your closes
+        elif scars > 0 and r.grade in ["S", "A"]:
+            scars -= 1
+        r["rep_cap"] = rep_cap()
+    rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if mode == "tech" else 100)
     if r.get("bankrupt", false):
         rep = 0
     r["rep"] = rep
@@ -7743,6 +7862,11 @@ const GOOD := Color("8fe3a0")
 const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 const ROW := 7.0  # row height in virtual pixels (one font pixel at scale 1)
+const BIG_GRADES := {
+    "S": [".XXX", "X...", ".XX.", "...X", "XXX."], "A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
+    "B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."], "C": [".XXX", "X...", "X...", "X...", ".XXX"],
+    "D": ["XXX.", "X..X", "X..X", "X..X", "XXX."],
+}
 const GRADE_COLORS := {
     "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
 }
@@ -7930,6 +8054,15 @@ func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
     return h - 1.0
 
 
+# the grade letter in a 4x5 hand-drawn set: the 3x5 font makes B and E look alike at this size
+func _big_grade(grade: String, x: float, y: float, color: Color) -> void:
+    var rows: Array = BIG_GRADES[grade]
+    for ry in rows.size():
+        for rx in 4:
+            if str(rows[ry])[rx] == "X":
+                _r(x + float(rx * 4), y + float(ry * 4), 4.0, 4.0, color)
+
+
 # the grade box, then the stat tiles (big) or rows (compact); returns its height
 func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
     var grade := str(report.grade)
@@ -7941,7 +8074,10 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
     if draw:
         _r(x, y, gw, gh, gcol)
         _r(x + 1.0, y + 1.0, gw - 2.0, gh - 2.0, Color("0e121c"))
-        _t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
+        if BIG_GRADES.has(grade):
+            _big_grade(grade, x + floorf((gw - 16.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol)
+        else:
+            _t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
     if big:
         var h := gh + 4.0
         if draw:
@@ -10821,6 +10957,8 @@ const VIGNETTES := {
     "donuts": {
         "speaker": "Alan (Co-owner)",
         "text": "I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?",
+        "text_reset": "I am back, and I brought donuts. Morgan says you covered for me while I was out, and I heard what happened to the firewall. I am not angry. Show me how it is set up now?",
+        "text_plain": "I am back, and I brought donuts. Morgan says you covered for me while I was out. Nobody wrote down how the firewall is set up, so would you show me what you did?",
         "options": [
             {"id": "show", "label": "SHOW HIM, HE IS PROUD", "text": "Alan nods slowly. 'That is better than what I had.' (+3 servers XP)", "fx": {"xp": ["servers", 3], "social": {"Alan": 3}}},
             {"id": "nothing", "label": "SAY IT WAS NOTHING", "text": "He insists you are being modest and gives you the last donut.", "fx": {"social": {"Alan": 1}, "energy": 1}},
@@ -11621,7 +11759,7 @@ const DAYS := {
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Daily chore: verify backups",
          "body": "Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs "
          + "can fail silently and nobody notices until the day it really matters. It takes thirty "
-         + "seconds. - Morgan"},
+         + "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"},
         {"at": 10.5, "kind": "vignette", "id": "iphone"},
     ],
     3: [
@@ -11694,7 +11832,7 @@ const DAYS := {
     ],
     15: [
         {"at": 9.2, "kind": "mail", "from": MANAGER, "subject": "Pager again",
-         "body": "You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan"},
+         "body": "You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"},
     ],
     16: [
         {"at": 9.5, "kind": "playbook", "book": "netinstall",
@@ -11827,7 +11965,14 @@ func _vignette(id: String) -> void:
     var options := []
     for o in v.options:
         options.append({"label": str(o.label), "id": str(o.id)})
-    Cards.ask(str(v.speaker), str(v.text), options, func(pick: String) -> void: _vignette_answer(id, pick))
+    Cards.ask(str(v.speaker), _vignette_text(id, v), options, func(pick: String) -> void: _vignette_answer(id, pick))
+
+
+# Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
+func _vignette_text(id: String, v: Dictionary) -> String:
+    if id == "donuts" and not bool(flags.get("bus_doc", false)):
+        return str(v.get("text_reset" if bool(flags.get("bus_reset", false)) else "text_plain", v.text))
+    return str(v.text)
 
 
 func _vignette_answer(id: String, pick: String) -> void:
@@ -11922,7 +12067,7 @@ func _ransomware() -> void:
         t = Msp.create_problem(RANSOM_CLIENT, Msp.RANSOM, "monitoring")
     flags["ransom_ticket"] = int(t.get("id", 0))
     var warning := "Hoot and Holler has a ransom note on their server. "
-    warning += "Do NOT pay and do NOT reboot. Restore from backup!"
+    warning += "Do NOT pay and do NOT reboot. Restore from backup! (If it fails: shadow copies.)"
     Msp.send_text("Boss", warning)
 ''')
 
@@ -12215,7 +12360,7 @@ const BOOKS := {
                 {"label": "ASK THE STAFF WHAT THEY SEE", "secs": 5.0, "pts": 10, "hours": 0.3, "note": "Staff just says: it is broken."},
                 {"label": "REBOOT THE MAIL SERVER", "secs": 8.0, "pts": 0, "hours": 0.5, "flag": "rebooted", "note": "It is stuck in recovery now."},
             ]},
-            {"title": "CALL THE VENDOR", "text": "The mail software vendor has a support line. It is 17:40 and the queue is long.",
+            {"title": "CALL THE VENDOR", "text": "The mail software vendor has a support line. The queue is long.",
              "choices": [
                 {"label": "FOLLOW THE TIER 1 SCRIPT", "secs": 20.0, "pts": 5, "hours": 1.0, "note": "Forty minutes on hold. They say: reboot it."},
                 {"label": "ASK FOR TIER 2", "secs": 14.0, "pts": 20, "hours": 0.7, "note": "Tier 2 agrees it is the log drive."},
@@ -12419,7 +12564,7 @@ const PROBLEMS := {
     ],
     "ceofraud": [
         {"summary": "Odd request to wire $38,000 from the trust account", "fix": "project", "pri": 1, "special": "ceofraud",
-         "body": "Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"},
+         "body": "Our paralegal got an email from Atty. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s"},
     ],
     "no2fa": [
         {"summary": "Security review: stronger logins for Soggy Bottom", "fix": "project", "pri": 3, "special": "no2fa",
@@ -12467,7 +12612,7 @@ func max_points(id: String) -> int:
 func start(id: String, source := "email") -> int:
     var ids := []
     for prob in PROBLEMS[id]:
-        var t := Msp.create_problem(int(BOOKS[id].client), prob, source)
+        var t := Msp.create_problem(int(BOOKS[id].client), prob, source, true)
         if not t.is_empty():
             ids.append(int(t.id))
     active = {
@@ -12559,6 +12704,11 @@ func finish() -> void:
             var ep := Msp.endpoint(str(t.endpoint))
             if not ep.is_empty() and ep.problem == "project":
                 ep.problem = ""
+            # the job is the work: its tickets close with it instead of sitting open until they breach
+            t.status = "Closed"
+            t.notes.append("Ticket closed with the job.")
+            if grade in ["S", "A", "B"]:
+                Msp.closed_ok += 1
     Msp.mail(address, "RE: " + str(PROBLEMS[id][0].summary), str(extra.mail))
     if id == "email24":
         Story.overtime = false
@@ -12568,6 +12718,9 @@ func finish() -> void:
     active.done = true
     active.result = {"pts": percent, "grade": grade, "text": str(extra.mail)}
     Story.flags[id] = grade
+    if id == "bus":
+        Story.flags["bus_reset"] = bool(flags.get("reset", false))
+        Story.flags["bus_doc"] = bool(flags.get("documented", false))
     changed.emit()
 
 
@@ -12621,7 +12774,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
                 out.score = -5
                 out.follow.append({"client": client, "summary": "Our email is being blocked as spam", "body": "Customers say our messages bounce as spam. Is our server sending junk? - %s", "pri": 2})
         "ceofraud":
-            out.mail = "Thank you. The money is safe and Mr. Spence says he would like you to explain the whole thing to the partners."
+            out.mail = "Thank you. The money is safe and Atty. Spence says he would like you to explain the whole thing to the partners."
             if flags.get("wired", false):
                 out.rep = -10
                 out.score = -25
@@ -12636,7 +12789,7 @@ func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
                 if flags.get("deleted", false):
                     out.follow.append({"client": client, "summary": "The bank wants the original email", "body": "The bank asked for the original fraud email and it was deleted. Can you recover it? - %s", "pri": 3})
                 if flags.get("partial", false) or flags.get("reset", false):
-                    out.follow.append({"client": client, "summary": "Another strange email from the boss", "body": "We just got another odd email that looks like Mr. Spence wrote it. - %s", "pri": 1})
+                    out.follow.append({"client": client, "summary": "Another strange email from the boss", "body": "We just got another odd email that looks like Atty. Spence wrote it. - %s", "pri": 1})
                 if flags.get("quiet", false):
                     out.follow.append({"client": client, "summary": "The same request again", "body": "Somebody emailed asking for a wire again. Is this normal? - %s", "pri": 2})
                 if flags.get("trained", false):
@@ -12694,11 +12847,13 @@ const BLUE := Color("1f4e8c")
 const GRADE_NAMES := {"S": 5, "A": 4, "B": 3, "C": 2, "D": 1}
 const JOBS := [
     ["install", "NEW DESKTOP"], ["ransom", "RANSOMWARE"], ["rack", "RACK FELL OFF"], ["migration", "SERVER MIGRATION"],
-    ["email24", "EMAIL OUTAGE"], ["netinstall", "NETWORK INSTALL"],
+    ["email24", "EMAIL OUTAGE"], ["netinstall", "NETWORK INSTALL"], ["rdp", "RDP BREAK-IN"],
+    ["ceofraud", "WIRE FRAUD EMAIL"], ["no2fa", "TWO-STEP LOGINS"], ["bus", "THE ONE WHO KNEW"],
 ]
 const CLIENT_OF := {
     "rack": "Gnarly Gnomes", "migration": "Brightside Realty", "email24": "Soggy Bottom Brewing",
-    "netinstall": "Hoot and Holler",
+    "netinstall": "Hoot and Holler", "rdp": "Brightside Realty", "ceofraud": "Hoot and Holler",
+    "no2fa": "Soggy Bottom Brewing", "bus": "Acme Dental",
 }
 const QUOTES := {
     "FRIEND": "WORKING WITH YOU IS THE BEST PART OF MY DAY.", "FRIENDLY": "SOLID TEAMMATE. I WOULD WORK WITH YOU AGAIN.",
@@ -12758,14 +12913,35 @@ func _set_fade(value: float) -> void:
     _canvas.modulate.a = value
 
 
+# clients you cost their data (a lost ransomware recovery, a wiped desktop) never offer you a job
+func burned_clients() -> Array:
+    var out := []
+    if str(Story.flags.get("ransom", "")) == "lost":
+        out.append(str(Msp.CLIENTS[Story.RANSOM_CLIENT].name))
+    if str(Story.flags.get("install", "")) == "lost" and not Msp.project.is_empty():
+        out.append(str(Msp.CLIENTS[int(Msp.project.client)].name))
+    return out
+
+
+func _is_burned(short_name: String) -> bool:
+    for full in burned_clients():
+        if str(full).begins_with(short_name):
+            return true
+    return false
+
+
 func best_client() -> String:
-    var best := "Acme Dental"
+    var best := ""
     var best_rank := 0
     for key in CLIENT_OF:
         var rank := int(GRADE_NAMES.get(str(Story.flags.get(key, "")), 0))
-        if rank > best_rank:
+        if rank > best_rank and not _is_burned(str(CLIENT_OF[key])):
             best_rank = rank
             best = str(CLIENT_OF[key])
+    if best == "":
+        for name in ["Acme Dental", "Piedmont Pediatrics", "Zen Garden Yoga"]:
+            if not _is_burned(name):
+                return name
     return best
 
 
@@ -12887,7 +13063,7 @@ func page_lines() -> Array:
                 lines.append([Growth.status_line(), GOOD if Growth.graduated else INK])
             for job in JOBS:
                 var row := _job_line(job[0], job[1])
-                lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK)])
+                lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK), "job"])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
             for who in Social.people():
@@ -12900,6 +13076,8 @@ func page_lines() -> Array:
         _:
             lines.append(["THE END", BLUE])
             lines.append([str(EPILOGUES.get(ending, "")), INK])
+            if ending == "internal":
+                lines.append(["YOUR NEW DESK IS AT %s." % best_client().to_upper(), INK])
     return lines
 
 
@@ -12925,9 +13103,22 @@ func _paint() -> void:
     var pw := minf(size.x - 8.0, 250.0 * u)
     var chars := int((pw - 10.0 * u) / (4.0 * u))
     var rows := []
+    var held: Array = []  # job lines sit two to a row when the panel is wide enough
     for entry in page_lines():
+        if entry.size() > 2 and chars >= 58:
+            if held.is_empty():
+                held = entry
+                continue
+            rows.append([held[0], held[1], entry[0], entry[1]])
+            held = []
+            continue
+        if not held.is_empty():
+            rows.append([held[0], held[1]])
+            held = []
         for wrapped in _wrap(str(entry[0]), chars):
             rows.append([wrapped, entry[1]])
+    if not held.is_empty():
+        rows.append([held[0], held[1]])
     var extra := 0.0
     if page == _opt_page():
         extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
@@ -12941,6 +13132,9 @@ func _paint() -> void:
     var y := panel.position.y + 12.0 * u
     for row in rows:
         PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
+        if row.size() > 2:
+            var col_x: float = panel.position.x + (5.0 + 4.0 * 30.0) * u
+            PixelFont.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc)
         y += 7.0 * u
     if page == _opt_page():
         y += 3.0 * u
@@ -13000,9 +13194,11 @@ func _ready() -> void:
     _canvas.draw.connect(_paint)
 
 
-func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+# `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
+# and on_pick gets "__none" so the asker can clean up
+func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()) -> void:
     if is_open or DayReport.is_open:
-        _queue.append([who, body, choices, on_pick])
+        _queue.append([who, body, choices, on_pick, valid])
         return
     speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
     text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
@@ -13046,16 +13242,25 @@ func pick(index: int) -> void:
     Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
     if id != "__none" and _callback.is_valid():
         _callback.call(id)
-    if not _queue.is_empty():
+    _show_next()
+
+
+# the next queued card whose reason still holds (a Vic complaint for a ticket that closed meanwhile is dropped)
+func _show_next() -> void:
+    while not _queue.is_empty() and not is_open and not DayReport.is_open:
         var next: Array = _queue.pop_front()
-        ask(next[0], next[1], next[2], next[3])
+        var valid: Callable = next[4] if next.size() > 4 else Callable()
+        if valid.is_valid() and not bool(valid.call()):
+            if next[3].is_valid():
+                next[3].call("__none")
+            continue
+        ask(next[0], next[1], next[2], next[3], valid)
 
 
 # cards that were asked while the day report covered the screen
 func flush() -> void:
-    if not is_open and not DayReport.is_open and not _queue.is_empty():
-        var next: Array = _queue.pop_front()
-        ask(next[0], next[1], next[2], next[3])
+    if not is_open and not DayReport.is_open:
+        _show_next()
 
 
 # Esc picks the option whose id is "leave" (conversations)
@@ -13435,7 +13640,14 @@ func deliver() -> void:
     ]
     if vic_friend:
         options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
-    Cards.ask("Vic Marlowe", text, options, resolve)
+    var ticket_id := int(pending.get("ticket", 0))
+    Cards.ask(
+        "Vic Marlowe",
+        text,
+        options,
+        resolve,
+        func() -> bool: return str(Msp.ticket(ticket_id).get("status", "Closed")) != "Closed"
+    )
 
 
 func resolve(choice: String) -> void:
@@ -16626,15 +16838,20 @@ const COMMUTES := {
 }
 const WEEK_TRAFFIC := {
     1: {"text": "THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.", "extra": 0.15},
-    3: {"text": "FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.", "extra": 0.20},
+    3: {"text": "SPRING STORM SEASON. THE UNDERPASS FLOODS AND EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.", "extra": 0.20},
 }
 const REASONS := [
     "AN ACCIDENT ON THE HIGHWAY", "A STALLED TRUCK IN THE LEFT LANE", "A TRAIN SITTING ON THE CROSSING",
-    "RAIN AND A FENDER BENDER", "ROAD WORK NOBODY WARNED YOU ABOUT",
+    "RAIN AND A FENDER BENDER", "ROAD WORK NOBODY WARNED YOU ABOUT", "A SCHOOL BUS BROKEN DOWN AT THE LIGHT",
+    "A WATER MAIN BREAK AND A DETOUR THROUGH TOWN", "A DRAWBRIDGE STUCK OPEN", "A SLOW FUNERAL PROCESSION",
+    "A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU",
 ]
 const PAGES := [
     "the file server is almost out of disk space", "the nightly backup job failed", "the VPN is down for the remote staff",
-    "the mail queue is stuck", "the domain controller stopped answering pings",
+    "the mail queue is stuck", "the domain controller stopped answering pings", "the RAID array says it is degraded",
+    "the firewall locked everybody out after the firmware update", "the phone system lost its SIP trunk",
+    "the Exchange server is out of mailbox space", "the antivirus server stopped pushing updates",
+    "the UPS is on battery and beeping", "the print server queue is stuck again",
 ]
 
 var enabled := false
@@ -16649,6 +16866,8 @@ var pages_ignored := 0
 var last_note := ""
 
 var _asked := false
+var _last_page := ""
+var _last_reason := ""
 var _stay_until := 0.0
 var _warned := 0
 var _oncall_pay := 0
@@ -16760,9 +16979,20 @@ func begin_day(day: int) -> void:
         commute_card()
 
 
+# a random line that is not the one used last time
+func _fresh(list: Array, last: String) -> String:
+    if list.size() < 2:
+        return str(list[0]) if not list.is_empty() else ""
+    var pick: String = str(list[randi() % list.size()])
+    while pick == last:
+        pick = str(list[randi() % list.size()])
+    return pick
+
+
 func _page_card() -> void:
     var client := Sales.pick_client()
-    var what: String = PAGES[randi() % PAGES.size()]
+    var what: String = _fresh(PAGES, _last_page)
+    _last_page = what
     pages += 1
     var text := "2:10 AM. THE PAGER GOES OFF. %s: %s." % [str(Msp.CLIENTS[client].name).to_upper(), what.to_upper()]
     Cards.ask("PAGER", text, [
@@ -16830,7 +17060,8 @@ func commute(choice: String) -> void:
     var reason := ""
     if traffic:
         delay += randi_range(15, 60)
-        reason = REASONS[randi() % REASONS.size()]
+        reason = _fresh(REASONS, _last_reason)
+        _last_reason = reason
         add_energy(-3.0)
     late_min = maxi(0, delay)
     add_energy(float(c.energy))
@@ -16897,17 +17128,26 @@ func _process(delta: float) -> void:
         Msp.send_text("Boss", "You look rough. Go home when you can.")
 
 
+# the real time of day for card titles, 12 hour style
+func clock_label() -> String:
+    var h := int(World.clock)
+    var m := int((World.clock - float(h)) * 60.0)
+    return "%d:%02d %s" % [(h + 11) % 12 + 1, m, "PM" if h % 24 >= 12 else "AM"]
+
+
 # Campaign asks this before ending the day. With tickets still open at closing it offers to stay late.
 func can_end_day() -> bool:
     if not active():
         return true
     if Cards.is_open:
         return false
+    if not _asked and Story.ot_hours > 0.0 and World.clock >= World.DAY_END + 0.25:
+        _asked = true  # an overtime job already took the evening: staying later is not on offer
     if not _asked:
         _asked = true
         var open := Msp.open_tickets().size()
         if open > 0:
-            Cards.ask("5:00 PM", "%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?" % open, [
+            Cards.ask(clock_label(), "%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?" % open, [
                 {"label": "GO HOME", "id": "home"},
                 {"label": "STAY 1 HOUR (+$%d, -%d ENERGY)" % [STAY_PAY, STAY_COST], "id": "1"},
                 {"label": "STAY 2 HOURS (+$%d, -%d ENERGY)" % [STAY_PAY * 2, STAY_COST * 2], "id": "2"},
@@ -20522,6 +20762,8 @@ func _preview() -> String:
                 names.append("a desktop install")
             elif kind == "ransomware":
                 names.append("trouble at the law firm")
+        if d == Expo.TRIP_DAY and Expo.qualified:
+            names.append("the Rodent Nation trip (you are going)")
     if names.is_empty():
         return "Nothing scary on the calendar this week. Use the quiet to study."
     return "Coming up this week: %s. Be ready." % ", ".join(names)
@@ -22450,7 +22692,7 @@ const TEXT := {
     "invite_body": "LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan",
     "progress": "KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.",
     "yes_subject": "Pack your bags: Rodent Nation",
-    "yes_body": "You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
+    "yes_body": "You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
     "no_subject": "Rodent Nation: not this year",
     "no_body": "You did not quite make the KPIs (%s), so Dan is going to Rodent Nation this year. He will bring back notes. Aim for it next year. - Morgan",
     "arrive": "RODENT NATION 2014. Orlando, a resort the size of a small town: palm trees in the lobby, carpet with swirls, a ballroom that fits a thousand MSP nerds, and breakout rooms down every hallway. Your badge says TECH and has a little rat on it.",
@@ -22834,7 +23076,7 @@ func _scene_name() -> String:
 func _trip_tick() -> void:
     match _stage:
         "keynote":
-            Hints.objective = "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
+            Hints.objective = "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR)." if badge else "NEXT: THE KEYNOTE IN THE BALLROOM (LEFT DOOR). GET A BADGE AT REGISTRATION FIRST."
         "round":
             Hints.objective = "NEXT: PICK A SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
         "raffle":
@@ -23462,7 +23704,7 @@ const EVENTS := {
 }
 const STAFF := {
     "dental": ["Dr. Patel is with a patient. The x-ray machine is that grey box by the chair.", "We have a patient in the chair, so please keep the vacuum noises to a minimum.", "The coffee is for patients, but I will not tell if you have one."],
-    "law": ["Please be quiet in the hall, Mr. Spence is on the phone with a judge.", "Everything here is confidential. Do not read anything on the desks.", "The copier is cranky. We name it after the opposing counsel."],
+    "law": ["Please be quiet in the hall, Atty. Spence is on the phone with a judge.", "Everything here is confidential. Do not read anything on the desks.", "The copier is cranky. We name it after the opposing counsel."],
     "vet": ["Do not mind the dog. She likes computers. Too much.", "If you hear a howl from the back, it is just Otis getting his nails done.", "We have a cat in the closet. She is not lost. She is hiding from the beagle."],
     "arch": ["The plotter has opinions today. Good luck.", "Mind the model on the table, it took three weeks. And a lot of glue.", "If you move my pencil I will know."],
     "realty": ["I have a showing at one, so please be quick. Do you want coffee?", "Every house has a story. Most of them involve the plumbing.", "Do not mind the lockbox on the desk. It is very important."],
@@ -25783,9 +26025,16 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 var _acc := 0.0
 
 
+# a panel with its own title bar is up: the strip would sit over its heading
+func modal_open() -> bool:
+    if DayReport.is_open or Cards.is_open or Review.is_open or PrinterGame.is_open:
+        return true
+    return Outings.is_open and not (Outings.room_mode() and Outings.phase == "play")
+
+
 func _process(delta: float) -> void:
-    # the card header sits over the HUD text, so hide it while a card is up
-    visible = World.hud_visible and not DayReport.is_open and not Cards.is_open
+    # the card header sits over the HUD text, so hide it while a card or any panel is up
+    visible = World.hud_visible and not modal_open()
     _acc += delta
     if _acc > 0.25:
         _acc = 0.0

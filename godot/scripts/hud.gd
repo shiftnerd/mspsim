@@ -20,9 +20,16 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 var _acc := 0.0
 
 
+# a panel with its own title bar is up: the strip would sit over its heading
+func modal_open() -> bool:
+	if DayReport.is_open or Cards.is_open or Review.is_open or PrinterGame.is_open:
+		return true
+	return Outings.is_open and not (Outings.room_mode() and Outings.phase == "play")
+
+
 func _process(delta: float) -> void:
-	# the card header sits over the HUD text, so hide it while a card is up
-	visible = World.hud_visible and not DayReport.is_open and not Cards.is_open
+	# the card header sits over the HUD text, so hide it while a card or any panel is up
+	visible = World.hud_visible and not modal_open()
 	_acc += delta
 	if _acc > 0.25:
 		_acc = 0.0

@@ -885,7 +885,7 @@ const DEFAULT_STAFF := {
 	],
 	"law":
 	[
-		"Please be quiet in the hall, Mr. Spence is on the phone with a judge.",
+		"Please be quiet in the hall, Atty. Spence is on the phone with a judge.",
 		"Everything here is confidential. Do not read anything on the desks.",
 		"The copier is cranky. We name it after the opposing counsel."
 	],

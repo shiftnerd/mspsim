@@ -30,7 +30,7 @@ const DEFAULT_WEEK_TRAFFIC := {
 	1: {"text": "THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.", "extra": 0.15},
 	3:
 	{
-		"text": "FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.",
+		"text": "SPRING STORM SEASON. THE UNDERPASS FLOODS AND EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.",
 		"extra": 0.20
 	},
 }
@@ -41,6 +41,11 @@ const DEFAULT_REASONS := [
 	"A TRAIN SITTING ON THE CROSSING",
 	"RAIN AND A FENDER BENDER",
 	"ROAD WORK NOBODY WARNED YOU ABOUT",
+	"A SCHOOL BUS BROKEN DOWN AT THE LIGHT",
+	"A WATER MAIN BREAK AND A DETOUR THROUGH TOWN",
+	"A DRAWBRIDGE STUCK OPEN",
+	"A SLOW FUNERAL PROCESSION",
+	"A BLOWN TIRE ON THE SHOULDER AHEAD OF YOU",
 ]
 var REASONS: Array = DEFAULT_REASONS.duplicate(true)
 const DEFAULT_PAGES := [
@@ -49,6 +54,13 @@ const DEFAULT_PAGES := [
 	"the VPN is down for the remote staff",
 	"the mail queue is stuck",
 	"the domain controller stopped answering pings",
+	"the RAID array says it is degraded",
+	"the firewall locked everybody out after the firmware update",
+	"the phone system lost its SIP trunk",
+	"the Exchange server is out of mailbox space",
+	"the antivirus server stopped pushing updates",
+	"the UPS is on battery and beeping",
+	"the print server queue is stuck again",
 ]
 var PAGES: Array = DEFAULT_PAGES.duplicate(true)
 
@@ -64,6 +76,8 @@ var pages_ignored := 0
 var last_note := ""
 
 var _asked := false
+var _last_page := ""
+var _last_reason := ""
 var _stay_until := 0.0
 var _warned := 0
 var _oncall_pay := 0
@@ -167,9 +181,20 @@ func begin_day(day: int) -> void:
 		commute_card()
 
 
+# a random line that is not the one used last time
+func _fresh(list: Array, last: String) -> String:
+	if list.size() < 2:
+		return str(list[0]) if not list.is_empty() else ""
+	var pick: String = str(list[randi() % list.size()])
+	while pick == last:
+		pick = str(list[randi() % list.size()])
+	return pick
+
+
 func _page_card() -> void:
 	var client := Sales.pick_client()
-	var what: String = PAGES[randi() % PAGES.size()]
+	var what: String = _fresh(PAGES, _last_page)
+	_last_page = what
 	pages += 1
 	var text := (
 		"2:10 AM. THE PAGER GOES OFF. %s: %s."
@@ -260,7 +285,8 @@ func commute(choice: String) -> void:
 	var reason := ""
 	if traffic:
 		delay += randi_range(15, 60)
-		reason = REASONS[randi() % REASONS.size()]
+		reason = _fresh(REASONS, _last_reason)
+		_last_reason = reason
 		add_energy(-3.0)
 	late_min = maxi(0, delay)
 	add_energy(float(c.energy))
@@ -331,18 +357,27 @@ func _process(delta: float) -> void:
 		Msp.send_text("Boss", "You look rough. Go home when you can.")
 
 
+# the real time of day for card titles, 12 hour style
+func clock_label() -> String:
+	var h := int(World.clock)
+	var m := int((World.clock - float(h)) * 60.0)
+	return "%d:%02d %s" % [(h + 11) % 12 + 1, m, "PM" if h % 24 >= 12 else "AM"]
+
+
 # Campaign asks this before ending the day. With tickets still open at closing it offers to stay late.
 func can_end_day() -> bool:
 	if not active():
 		return true
 	if Cards.is_open:
 		return false
+	if not _asked and Story.ot_hours > 0.0 and World.clock >= World.DAY_END + 0.25:
+		_asked = true  # an overtime job already took the evening: staying later is not on offer
 	if not _asked:
 		_asked = true
 		var open := Msp.open_tickets().size()
 		if open > 0:
 			Cards.ask(
-				"5:00 PM",
+				clock_label(),
 				(
 					"%d TICKET(S) ARE STILL OPEN AND THE OFFICE IS EMPTYING OUT. STAY AND FINISH THEM?"
 					% open
