@@ -760,7 +760,7 @@ func _quota_card() -> void:
 		options,
 		func(id: String) -> void:
 			quota_level = id
-			Cards.ask(
+			Cards.ask_first(
 				"{sales_owner}",
 				"%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee. If a client leaves inside 90 days the commission comes back: half on salary, all of it on the other two plans." % str(QUOTAS[id].words),
 				[

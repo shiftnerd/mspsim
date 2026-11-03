@@ -14433,6 +14433,13 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
     _canvas.queue_redraw()
 
 
+# a follow-up to the card that was just picked: it goes in front of cards that were already waiting
+func ask_first(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+    _queue.push_front([who, body, choices, on_pick, Callable()])
+    if not is_open and not DayReport.is_open:
+        _show_next()
+
+
 func pick(index: int) -> void:
     if not is_open or index < 0 or index >= options.size() or not bool(options[index].get("enabled", true)):
         return
@@ -39947,7 +39954,7 @@ func _quota_card() -> void:
         options,
         func(id: String) -> void:
             quota_level = id
-            Cards.ask(
+            Cards.ask_first(
                 "{sales_owner}",
                 "%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee. If a client leaves inside 90 days the commission comes back: half on salary, all of it on the other two plans." % str(QUOTAS[id].words),
                 [

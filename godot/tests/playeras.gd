@@ -79,7 +79,7 @@ func _run() -> void:
 	var blurbs := []
 	for id in owner_ids:
 		blurbs.append(str(cs.info(id).blurb))
-	_check("TECHNICAL OWNER" in blurbs[0] and "SALES AND CULTURE" in blurbs[1], "each owner has a one-line blurb")
+	_check("TECH OWNER" in blurbs[0] and "SALES OWNER" in blurbs[1], "each owner has a one-line blurb")
 	cs.free()
 
 	# ---- the owner campaign as Alan

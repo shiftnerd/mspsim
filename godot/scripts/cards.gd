@@ -76,6 +76,13 @@ func ask(
 	_canvas.queue_redraw()
 
 
+# a follow-up to the card that was just picked: it goes in front of cards that were already waiting
+func ask_first(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+	_queue.push_front([who, body, choices, on_pick, Callable()])
+	if not is_open and not DayReport.is_open:
+		_show_next()
+
+
 func pick(index: int) -> void:
 	if (
 		not is_open
