@@ -172,7 +172,7 @@ func _run() -> void:
 	outings.start("dinner")
 	outings.press(KEY_ENTER)
 	var total: int = outings.dinner_talk(0)
-	_check(total >= 0 and total <= 4 and outings.diners() == ["Alan", "Garrison"], "dinner: two faces at the table")
+	_check(total >= 0 and total <= 6 and outings.diners() == ["Alan", "Garrison"], "dinner: two faces at the table")  # 2 points a face plus a mood point
 	outings.is_open = false
 	outings.start("escape")
 	outings.press(KEY_ENTER)

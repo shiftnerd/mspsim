@@ -477,8 +477,11 @@ func _init() -> void:
 		o.phase == "play" and o.g.budget == "fancy" and owner.cash == 5000 - 520, "fancy costs $520"
 	)
 	o.g.moods = {"Alan": "easygoing", "Garrison": "easygoing", "Dan": "easygoing"}
+	# the table is the roster minus you (in the owner campaign you are Alan or Garrison)
+	var table_n: int = o.diners().size()
+	var first: String = o.diners()[0]
 	_check(
-		o.diner_shift("Alan") == 1 and o.dinner_targets()[0] == 31,
+		o.diner_shift(first) == 1 and o.dinner_targets()[0] == roundi((22 + 3 * table_n) * float(table_n) / 3.0),
 		"a fancy table lifts everyone's mood (and the bar)"
 	)
 	o.set_budget("cheap")
