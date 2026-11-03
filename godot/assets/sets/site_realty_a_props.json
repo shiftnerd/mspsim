@@ -1,0 +1,12 @@
+[
+{"piece":"sold_sign","x":83,"y":61,"sort":100},
+{"piece":"chair_office","x":112,"y":65,"sort":95},
+{"piece":"desk_cubicle_74","x":114,"y":82,"sort":108},
+{"piece":"monitor","x":140,"y":61,"sort":96},
+{"piece":"keyboard","x":138,"y":79,"sort":108.5},
+{"piece":"chair_office","x":186,"y":65,"sort":95},
+{"piece":"desk_cubicle_74","x":188,"y":82,"sort":108},
+{"piece":"monitor","x":214,"y":61,"sort":96},
+{"piece":"keyboard","x":212,"y":79,"sort":108.5},
+{"piece":"printer_box","x":257,"y":79,"sort":106}
+]

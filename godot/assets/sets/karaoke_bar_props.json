@@ -1,0 +1,13 @@
+[
+{"piece":"bar_counter","x":7,"y":69,"sort":108},
+{"piece":"bar_stool","x":21,"y":77,"sort":99},
+{"piece":"bar_stool","x":43,"y":77,"sort":99},
+{"piece":"bar_stool","x":65,"y":77,"sort":99},
+{"piece":"chair_karaoke","x":114,"y":57,"sort":88},
+{"piece":"round_table","x":111,"y":77,"sort":108},
+{"piece":"chair_karaoke","x":166,"y":57,"sort":88},
+{"piece":"round_table","x":163,"y":77,"sort":108},
+{"piece":"speaker","x":177,"y":65,"sort":108},
+{"piece":"speaker","x":297,"y":65,"sort":108},
+{"piece":"mic_stand","x":245,"y":83,"sort":112}
+]

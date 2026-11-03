@@ -1,0 +1,4915 @@
+# MSPSim story text. Edit the text under each [key] and keep the [key] line as it is.
+# Keep %s / %d markers (they are filled in by the game). Lines under a key are joined into one paragraph.
+# The game is set in 2013-14: no AI, Teams, Slack, Windows 10/11, MFA, TikTok. See README.md.
+
+
+# ======================= Story > DAYS =======================
+# Day 1, 9:05, MAIL: from
+[Story.DAYS.1.0.from]
+Morgan Reyes - Manager
+
+# Day 1, 9:05, MAIL: subject
+[Story.DAYS.1.0.subject]
+Your first day
+
+# Day 1, 9:05, MAIL: body
+[Story.DAYS.1.0.body]
+Welcome to Pixel IT Partners. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan
+
+# Day 2, 9:05, MAIL: from
+[Story.DAYS.2.0.from]
+Morgan Reyes - Manager
+
+# Day 2, 9:05, MAIL: subject
+[Story.DAYS.2.0.subject]
+Daily chore: verify backups
+
+# Day 2, 9:05, MAIL: body
+[Story.DAYS.2.0.body]
+Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds. - Morgan
+
+# Day 3, 9:05, MAIL: from
+[Story.DAYS.3.0.from]
+Morgan Reyes - Manager
+
+# Day 3, 9:05, MAIL: subject
+[Story.DAYS.3.0.subject]
+Get good at PowerShell
+
+# Day 3, 9:05, MAIL: body
+[Story.DAYS.3.0.body]
+The PowerShell Academy is on your desktop. Every lesson makes your remote fixes faster and more reliable, and later levels unlock scripts that fix a whole client at once. Study between tickets. - Morgan
+
+# Day 4, 9:05, MAIL: from
+[Story.DAYS.4.0.from]
+Morgan Reyes - Manager
+
+# Day 4, 9:05, MAIL: subject
+[Story.DAYS.4.0.subject]
+Windows XP is going away
+
+# Day 4, 9:05, MAIL: body
+[Story.DAYS.4.0.body]
+Microsoft ends support for Windows XP and Office 2003 on April 8. After that there are no more security patches, so every XP machine at every client is a liability. Dr. Patel at Acme Dental is first. Survey the old PC (old software, old drivers, odd settings), back it up before you move anything, migrate, then verify with the user before you wipe it. - Morgan
+
+# Day 5, 9:11, MAIL: from
+[Story.DAYS.5.2.from]
+Morgan Reyes - Manager
+
+# Day 5, 9:11, MAIL: subject
+[Story.DAYS.5.2.subject]
+On-call rota starts Monday
+
+# Day 5, 9:11, MAIL: body
+[Story.DAYS.5.2.body]
+You are on the pager next week (Monday to Friday nights). If a client alert wakes you, you can get up and fix it, check it first, or let it ride, but clients do not forgive a dead server. On-call pay is $40 a day. Leave for work early enough, too: Route 9 is down to one lane. - Morgan
+
+# Day 7, 10:00, MAIL: from
+[Story.DAYS.7.0.from]
+Atty. Spence <spence@hootholler.example>
+
+# Day 7, 10:00, MAIL: subject
+[Story.DAYS.7.0.subject]
+Backup report?
+
+# Day 7, 10:00, MAIL: body
+[Story.DAYS.7.0.body]
+Hi, I have not seen the nightly backup report email for a few days. Probably nothing? - Spence
+
+# Day 7, 13:00, PLAYBOOK: text
+[Story.DAYS.7.1.text]
+Brightside's server is crawling and there are strangers in the logs. Their remote desktop may be open to the internet. Look, then close the door.
+
+# Day 8, 9:35, PLAYBOOK: text
+[Story.DAYS.8.0.text]
+Hoot and Holler got a strange email asking to wire money. The paralegal is waiting on you before she does anything.
+
+# Day 10, 10:00, PLAYBOOK: text
+[Story.DAYS.10.0.text]
+Gnarly Gnomes says their network rack fell off the wall. Everything is down. Go. Photos first!
+
+# Day 12, 9:30, PLAYBOOK: text
+[Story.DAYS.12.0.text]
+Brightside's server migration is today. Check the backups before you touch anything.
+
+# Day 13, 15:30, PLAYBOOK: text
+[Story.DAYS.13.0.text]
+Soggy Bottom Brewing runs 24x7 and their email just died. This could be a long night.
+
+# Day 14, 13:00, PLAYBOOK: text
+[Story.DAYS.14.0.text]
+Soggy Bottom keeps getting phished and still refuses stronger logins. Go and have the conversation.
+
+# Day 14, 9:11, MAIL: from
+[Story.DAYS.14.2.from]
+Morgan Reyes - Manager
+
+# Day 14, 9:11, MAIL: subject
+[Story.DAYS.14.2.subject]
+About last night
+
+# Day 14, 9:11, MAIL: body
+[Story.DAYS.14.2.body]
+Whatever happened with the brewery, thank you for staying late. Overtime is on your paycheck. Take it easy today. - Morgan
+
+# Day 15, 9:11, MAIL: from
+[Story.DAYS.15.0.from]
+Morgan Reyes - Manager
+
+# Day 15, 9:11, MAIL: subject
+[Story.DAYS.15.0.subject]
+Pager again
+
+# Day 15, 9:11, MAIL: body
+[Story.DAYS.15.0.body]
+You are back on call from Monday. First snow is forecast, so expect traffic and worse. - Morgan
+
+# Day 16, 9:30, PLAYBOOK: text
+[Story.DAYS.16.0.text]
+Hoot and Holler's branch office network install is today. Do it right, they remember.
+
+# Day 18, 9:11, MAIL: from
+[Story.DAYS.18.1.from]
+Morgan Reyes - Manager
+
+# Day 18, 9:11, MAIL: subject
+[Story.DAYS.18.1.subject]
+Reviews are coming
+
+# Day 18, 9:11, MAIL: body
+[Story.DAYS.18.1.body]
+Yearly reviews are on day 20. I look at your tickets, your big jobs and what your coworkers say about you. No pressure. A little pressure. - Morgan
+
+# Day 19, 9:30, PLAYBOOK: text
+[Story.DAYS.19.0.text]
+Acme's internet is flaky and the person who knows the firewall is out sick.
+
+# Day 20, 9:11, MAIL: from
+[Story.DAYS.20.1.from]
+Morgan Reyes - Manager
+
+# Day 20, 9:11, MAIL: subject
+[Story.DAYS.20.1.subject]
+Review at the end of the day
+
+# Day 20, 9:11, MAIL: body
+[Story.DAYS.20.1.body]
+We will sit down after close for your yearly review. There may be an offer or two. - Morgan
+
+
+# ======================= Story > VIGNETTES =======================
+# Story > VIGNETTES > iphone > speaker
+[Story.VIGNETTES.iphone.speaker]
+Karen Whitfield (Brightside Realty)
+
+# Story > VIGNETTES > iphone > text
+[Story.VIGNETTES.iphone.text]
+I just got a new iPhone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?
+
+# Story > VIGNETTES > iphone > options > 0 > label
+[Story.VIGNETTES.iphone.options.0.label]
+SET IT UP PROPERLY, WITH A PASSCODE
+
+# Story > VIGNETTES > iphone > options > 0 > text
+[Story.VIGNETTES.iphone.options.0.text]
+Her mail works and she has a passcode now. She says you are a lifesaver. (+4 customer XP)
+
+# Story > VIGNETTES > iphone > options > 1 > label
+[Story.VIGNETTES.iphone.options.1.label]
+SET IT UP AND MOVE HER CONTACTS TOO
+
+# Story > VIGNETTES > iphone > options > 1 > text
+[Story.VIGNETTES.iphone.options.1.text]
+It takes a while, but every client's number is on the new phone. She hugs you. A little. (+3 customer XP)
+
+# Story > VIGNETTES > iphone > options > 2 > label
+[Story.VIGNETTES.iphone.options.2.label]
+TELL HER TO CALL THE PHONE STORE
+
+# Story > VIGNETTES > iphone > options > 2 > text
+[Story.VIGNETTES.iphone.options.2.text]
+She sighs and says she will ask her nephew.
+
+# Story > VIGNETTES > heartbleed > speaker
+[Story.VIGNETTES.heartbleed.speaker]
+Garrison (Security)
+
+# Story > VIGNETTES > heartbleed > text
+[Story.VIGNETTES.heartbleed.text]
+Everybody is asking about Heartbleed, that bug in the news with a logo. Are any of our clients' servers affected? Somebody should check before they call us.
+
+# Story > VIGNETTES > heartbleed > options > 0 > label
+[Story.VIGNETTES.heartbleed.options.0.label]
+CHECK EVERY CLIENT AND WRITE A SHORT NOTE
+
+# Story > VIGNETTES > heartbleed > options > 0 > text
+[Story.VIGNETTES.heartbleed.options.0.text]
+Most are fine. One old firewall needs a patch and you schedule it for tonight. Garrison nods. (+6 security XP, reputation +1)
+
+# Story > VIGNETTES > heartbleed > options > 1 > label
+[Story.VIGNETTES.heartbleed.options.1.label]
+SEND A REASSURING EMAIL TO EVERYONE
+
+# Story > VIGNETTES > heartbleed > options > 1 > text
+[Story.VIGNETTES.heartbleed.options.1.text]
+You say 'we are looking into it and will update you'. Nobody replies. That is a good sign.
+
+# Story > VIGNETTES > heartbleed > options > 2 > label
+[Story.VIGNETTES.heartbleed.options.2.label]
+WAIT UNTIL SOMEONE ASKS
+
+# Story > VIGNETTES > heartbleed > options > 2 > text
+[Story.VIGNETTES.heartbleed.options.2.text]
+Garrison sighs. 'That is what everyone said about Target.'
+
+# Story > VIGNETTES > candy > speaker
+[Story.VIGNETTES.candy.speaker]
+The hygienist (Acme Dental)
+
+# Story > VIGNETTES > candy > text
+[Story.VIGNETTES.candy.text]
+I put Candy Crush on the front desk computer so the waiting room kids can play. Is that okay? It is very popular.
+
+# Story > VIGNETTES > candy > options > 0 > label
+[Story.VIGNETTES.candy.options.0.label]
+REMOVE IT AND EXPLAIN WHY
+
+# Story > VIGNETTES > candy > options > 0 > text
+[Story.VIGNETTES.candy.options.0.text]
+You explain malware and the license. She is a bit disappointed and very understanding. (+2 customer XP)
+
+# Story > VIGNETTES > candy > options > 1 > label
+[Story.VIGNETTES.candy.options.1.label]
+PLAY ONE LEVEL TO TEST IT FIRST
+
+# Story > VIGNETTES > candy > options > 1 > text
+[Story.VIGNETTES.candy.options.1.text]
+Level 41. It is very hard. Your coffee goes cold. (+2 energy)
+
+# Story > VIGNETTES > candy > options > 2 > label
+[Story.VIGNETTES.candy.options.2.label]
+TELL DR. PATEL
+
+# Story > VIGNETTES > candy > options > 2 > text
+[Story.VIGNETTES.candy.options.2.text]
+Dr. Patel is not amused. The hygienist is not amused either.
+
+# Story > VIGNETTES > pizza > speaker
+[Story.VIGNETTES.pizza.speaker]
+A salesman from a PSA vendor
+
+# Story > VIGNETTES > pizza > text
+[Story.VIGNETTES.pizza.text]
+Hi! I am bringing free pizza for the service desk and I would love just thirty minutes of your time to show you our ticketing software.
+
+# Story > VIGNETTES > pizza > options > 0 > label
+[Story.VIGNETTES.pizza.options.0.label]
+TAKE THE PIZZA AND LISTEN
+
+# Story > VIGNETTES > pizza > options > 0 > text
+[Story.VIGNETTES.pizza.options.0.text]
+The demo is okay, and you learn what the competition charges. The pizza is good. (+2 customer XP, +3 energy)
+
+# Story > VIGNETTES > pizza > options > 1 > label
+[Story.VIGNETTES.pizza.options.1.label]
+TAKE A SLICE AND LEAVE
+
+# Story > VIGNETTES > pizza > options > 1 > text
+[Story.VIGNETTES.pizza.options.1.text]
+Alan notices. He says nothing, loudly. (+2 energy)
+
+# Story > VIGNETTES > pizza > options > 2 > label
+[Story.VIGNETTES.pizza.options.2.label]
+TELL HIM WE ARE HAPPY WITH WHAT WE HAVE
+
+# Story > VIGNETTES > pizza > options > 2 > text
+[Story.VIGNETTES.pizza.options.2.text]
+He leaves the pizza anyway. Everyone is happy.
+
+# Story > VIGNETTES > win8 > speaker
+[Story.VIGNETTES.win8.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > win8 > text
+[Story.VIGNETTES.win8.text]
+I updated my computer to Windows 8 and now there is no Start button! Where did it go? I have a listing to send in ten minutes.
+
+# Story > VIGNETTES > win8 > options > 0 > label
+[Story.VIGNETTES.win8.options.0.label]
+SHOW HER THE HOT CORNERS AND THE START SCREEN
+
+# Story > VIGNETTES > win8 > options > 0 > text
+[Story.VIGNETTES.win8.options.0.text]
+She learns where everything went. She calls it 'the tiles' for the rest of the year. (+3 customer XP)
+
+# Story > VIGNETTES > win8 > options > 1 > label
+[Story.VIGNETTES.win8.options.1.label]
+INSTALL A START MENU REPLACEMENT
+
+# Story > VIGNETTES > win8 > options > 1 > text
+[Story.VIGNETTES.win8.options.1.text]
+A familiar button comes back and she cries a little. (+2 servers XP)
+
+# Story > VIGNETTES > win8 > options > 2 > label
+[Story.VIGNETTES.win8.options.2.label]
+TELL HER IT IS A FEATURE
+
+# Story > VIGNETTES > win8 > options > 2 > text
+[Story.VIGNETTES.win8.options.2.text]
+Dan laughs quietly across the room. She does not.
+
+# Story > VIGNETTES > selfreview > speaker
+[Story.VIGNETTES.selfreview.speaker]
+Morgan (Manager)
+
+# Story > VIGNETTES > selfreview > text
+[Story.VIGNETTES.selfreview.text]
+Before reviews: what are you proudest of this year? I will remember what you say.
+
+# Story > VIGNETTES > selfreview > options > 0 > label
+[Story.VIGNETTES.selfreview.options.0.label]
+THE BIG JOBS I GOT RIGHT
+
+# Story > VIGNETTES > selfreview > options > 0 > text
+[Story.VIGNETTES.selfreview.options.0.text]
+Morgan writes it down. 'That is what I will say to the owner.'
+
+# Story > VIGNETTES > selfreview > options > 1 > label
+[Story.VIGNETTES.selfreview.options.1.label]
+HOW MUCH I HAVE LEARNED
+
+# Story > VIGNETTES > selfreview > options > 1 > text
+[Story.VIGNETTES.selfreview.options.1.text]
+Morgan smiles. 'Keep doing that.' (+3 customer XP)
+
+# Story > VIGNETTES > selfreview > options > 2 > label
+[Story.VIGNETTES.selfreview.options.2.label]
+THE TEAM I WORK WITH
+
+# Story > VIGNETTES > selfreview > options > 2 > text
+[Story.VIGNETTES.selfreview.options.2.text]
+Morgan says the team has noticed. Word gets around.
+
+# Story > VIGNETTES > donuts > speaker
+[Story.VIGNETTES.donuts.speaker]
+Alan (Senior Tech)
+
+# Story > VIGNETTES > donuts > text
+[Story.VIGNETTES.donuts.text]
+I am back, and I brought donuts. I heard you covered for me. I read the page you wrote about the firewall. Show me how you set it up in the vault?
+
+# Story > VIGNETTES > donuts > options > 0 > label
+[Story.VIGNETTES.donuts.options.0.label]
+SHOW HIM, HE IS PROUD
+
+# Story > VIGNETTES > donuts > options > 0 > text
+[Story.VIGNETTES.donuts.options.0.text]
+Alan nods slowly. 'That is better than what I had.' (+3 servers XP)
+
+# Story > VIGNETTES > donuts > options > 1 > label
+[Story.VIGNETTES.donuts.options.1.label]
+SAY IT WAS NOTHING
+
+# Story > VIGNETTES > donuts > options > 1 > text
+[Story.VIGNETTES.donuts.options.1.text]
+He insists you are being modest and gives you the last donut.
+
+# Story > VIGNETTES > donuts > options > 2 > label
+[Story.VIGNETTES.donuts.options.2.label]
+EAT A DONUT AND CHANGE THE SUBJECT
+
+# Story > VIGNETTES > donuts > options > 2 > text
+[Story.VIGNETTES.donuts.options.2.text]
+You discuss the weather for a minute. The donut is very good. (+2 energy)
+
+
+# ======================= Playbook > BOOKS =======================
+# job: RACK RECOVERY
+[Playbook.BOOKS.rack.title]
+RACK RECOVERY
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.title]
+MAKE IT SAFE
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.text]
+The rack tore off the plywood wall and is lying on the floor, still powered, with the UPS beeping. What first?
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.0.label]
+POWER EVERYTHING DOWN
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.0.note]
+Everything powered down cleanly.
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.1.label]
+PHOTOGRAPH THE CABLING FIRST
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.1.note]
+Photos taken. They will save time later.
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.2.label]
+STAND IT UP RIGHT AWAY
+
+# job: RACK RECOVERY, step 1
+[Playbook.BOOKS.rack.steps.0.choices.2.note]
+Sparks! The switch fan died.
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.title]
+REMOUNT THE RACK
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.text]
+The plywood wall ripped out. How do you get the rack back up?
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.0.label]
+BUY ANCHORS, MOUNT TO THE STUDS
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.0.note]
+Mounted to the studs. It is not going anywhere.
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.1.label]
+PROP IT ON A DESK FOR NOW
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.1.note]
+Propped on a desk. Temporary.
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.2.label]
+SCREW IT INTO THE DRYWALL
+
+# job: RACK RECOVERY, step 2
+[Playbook.BOOKS.rack.steps.1.choices.2.note]
+Hopefully those anchors hold.
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.title]
+RECABLE
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.text]
+Dozens of cables, half the labels torn off. How do you put it back together?
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.0.label]
+FOLLOW YOUR PHOTOS
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.0.note]
+Cables match the photos exactly.
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.1.label]
+RUN THE CABLE TESTER
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.1.note]
+The tester maps every cable to its port.
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.2.label]
+TRACE AND LABEL EVERY CABLE
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.2.note]
+Slow, but every cable is now labelled.
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.3.label]
+PLUG THEM WHERE THEY FIT
+
+# job: RACK RECOVERY, step 3
+[Playbook.BOOKS.rack.steps.2.choices.3.note]
+It all fits somewhere.
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.title]
+POWER ON
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.text]
+Time to bring the network back up. In what order?
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.0.label]
+UPS, ROUTER, SWITCH, THEN THE NAS
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.0.note]
+Everything came up in order.
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.1.label]
+SWITCH FIRST, THEN THE REST
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.1.note]
+Worked, but the router had to be rebooted.
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.2.label]
+EVERYTHING AT ONCE
+
+# job: RACK RECOVERY, step 4
+[Playbook.BOOKS.rack.steps.3.choices.2.note]
+The NAS is running a disk check for an hour.
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.title]
+VERIFY
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.text]
+Lights are green. Are you done?
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.choices.0.label]
+TEST INTERNET, PRINTERS AND PHONES
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.choices.0.note]
+Everything tested and working.
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.choices.1.label]
+PING THE GATEWAY AND CALL IT DONE
+
+# job: RACK RECOVERY, step 5
+[Playbook.BOOKS.rack.steps.4.choices.1.note]
+The gateway answers. Probably fine.
+
+# job: SERVER MIGRATION
+[Playbook.BOOKS.migration.title]
+SERVER MIGRATION
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.title]
+PLAN
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.text]
+Brightside's old 2008 server is being replaced. Before anything else...
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.choices.0.label]
+CHECK THE BACKUPS FIRST
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.choices.0.note]
+Backups checked.
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.choices.1.label]
+SKIP IT, WE ARE IN A HURRY
+
+# job: SERVER MIGRATION, step 1
+[Playbook.BOOKS.migration.steps.0.choices.1.note]
+No time for backups. What could go wrong?
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.title]
+PICK A WINDOW
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.text]
+When do you do the cutover?
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.0.label]
+AFTER HOURS TONIGHT
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.0.note]
+Scheduled after hours. Nobody is disturbed.
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.1.label]
+SATURDAY MORNING
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.1.note]
+Scheduled for the weekend.
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.2.label]
+RIGHT NOW, DURING THE DAY
+
+# job: SERVER MIGRATION, step 2
+[Playbook.BOOKS.migration.steps.1.choices.2.note]
+Everyone is working. This will be noisy.
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.title]
+COPY THE DATA
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.text]
+File shares, line-of-business data and permissions all have to move.
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.0.label]
+ROBOCOPY SCRIPT, KEEP PERMISSIONS
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.0.note]
+Scripted copy with permissions intact.
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.1.label]
+DISK IMAGE THE OLD SERVER
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.1.note]
+Imaged and restored. Slow but safe.
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.2.label]
+DRAG AND DROP THE FOLDERS
+
+# job: SERVER MIGRATION, step 3
+[Playbook.BOOKS.migration.steps.2.choices.2.note]
+Copied, but the permissions did not follow.
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.title]
+CUTOVER
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.text]
+The new server has the data. Switch the office over.
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.choices.0.label]
+REPOINT DNS, REMAP DRIVES, TEST
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.choices.0.note]
+Cutover smooth. Drives remapped.
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.choices.1.label]
+JUST TURN THE OLD SERVER OFF
+
+# job: SERVER MIGRATION, step 4
+[Playbook.BOOKS.migration.steps.3.choices.1.note]
+Nobody can find the files. Phones are ringing.
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.title]
+RETIRE THE OLD ONE
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.text]
+What happens to the old server?
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.choices.0.label]
+KEEP IT POWERED OFF FOR TWO WEEKS
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.choices.0.note]
+Parked in the closet, just in case.
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.choices.1.label]
+WIPE IT NOW
+
+# job: SERVER MIGRATION, step 5
+[Playbook.BOOKS.migration.steps.4.choices.1.note]
+Wiped. There is no way back.
+
+# job: EMAIL OUTAGE
+[Playbook.BOOKS.email24.title]
+EMAIL OUTAGE
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.title]
+DIAGNOSE
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.text]
+The brewery runs 24x7 and nobody has had email for an hour. Fermentation alerts are not arriving. Where do you start?
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.0.label]
+READ THE MAIL SERVER LOGS
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.0.note]
+The mail database dismounted: the log drive is full.
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.1.label]
+ASK THE STAFF WHAT THEY SEE
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.1.note]
+Staff just says: it is broken.
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.2.label]
+REBOOT THE MAIL SERVER
+
+# job: EMAIL OUTAGE, step 1
+[Playbook.BOOKS.email24.steps.0.choices.2.note]
+It is stuck in recovery now.
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.title]
+CALL THE VENDOR
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.text]
+The mail software vendor has a support line. It is 17:40 and the queue is long.
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.0.label]
+FOLLOW THE TIER 1 SCRIPT
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.0.note]
+Forty minutes on hold. They say: reboot it.
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.1.label]
+ASK FOR TIER 2
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.1.note]
+Tier 2 agrees it is the log drive.
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.2.label]
+NEGOTIATE AN ESCALATION
+
+# job: EMAIL OUTAGE, step 2
+[Playbook.BOOKS.email24.steps.1.choices.2.note]
+An engineer is calling you back in ten minutes.
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.title]
+FIX IT
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.text]
+Free up the log drive and get the database mounted.
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.0.label]
+MOVE THE LOGS WITH A SCRIPT
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.0.note]
+Logs moved. The drive has 90 GB free.
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.1.label]
+WAIT FOR THE VENDOR ENGINEER
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.1.note]
+The engineer fixes it, eventually.
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.2.label]
+DELETE OLD LOGS BY HAND
+
+# job: EMAIL OUTAGE, step 3
+[Playbook.BOOKS.email24.steps.2.choices.2.note]
+You deleted logs the database still needed.
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.title]
+PROVE IT WORKS
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.text]
+The database says it is mounted.
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.choices.0.label]
+REMOUNT AND SEND TEST MAIL
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.choices.0.note]
+Test mail went through both ways.
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.choices.1.label]
+MARK IT FIXED AND GO HOME
+
+# job: EMAIL OUTAGE, step 4
+[Playbook.BOOKS.email24.steps.3.choices.1.note]
+Closed without testing. Hope.
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.title]
+TELL THE STAFF
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.text]
+People have been waiting all evening.
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.choices.0.label]
+EMAIL A STATUS TO EVERYONE
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.choices.0.note]
+A clear status email goes out.
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.choices.1.label]
+SAY NOTHING
+
+# job: EMAIL OUTAGE, step 5
+[Playbook.BOOKS.email24.steps.4.choices.1.note]
+Radio silence.
+
+# job: REMOTE ACCESS BREAK-IN
+[Playbook.BOOKS.rdp.title]
+REMOTE ACCESS BREAK-IN
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.title]
+DIAGNOSE
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.text]
+Brightside's server crawls and the realtors say strange users keep showing up in the logs. Where do you look?
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.0.label]
+READ THE SECURITY EVENT LOG
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.0.note]
+Thousands of failed logins a day from overseas, hammering the Administrator account.
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.1.label]
+ASK THE USERS WHAT CHANGED
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.1.note]
+Nobody changed anything. It was fine last week.
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.2.label]
+REBOOT THE SERVER
+
+# job: REMOTE ACCESS BREAK-IN, step 1
+[Playbook.BOOKS.rdp.steps.0.choices.2.note]
+Back up in minutes, just as slow.
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.title]
+FIND THE HOLE
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.text]
+Something is getting in. How do you find it?
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.0.label]
+CHECK THE FIREWALL RULES
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.0.note]
+Port 3389 (remote desktop) is forwarded straight to the server. The whole internet can try to log in.
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.1.label]
+SCAN THE SERVER FOR MALWARE
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.1.note]
+Nothing found. It is not a virus, it is somebody logging in.
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.2.label]
+BLAME THE ANTIVIRUS
+
+# job: REMOTE ACCESS BREAK-IN, step 2
+[Playbook.BOOKS.rdp.steps.1.choices.2.note]
+The antivirus has nothing to do with it.
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.title]
+CONTAIN
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.text]
+Some of those thousands of guesses might have worked. Most attackers back then just guess common passwords.
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.0.label]
+AUDIT THE ACCOUNTS, RESET THE WEAK PASSWORDS
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.0.note]
+Two accounts used passwords like Summer2013. One had been used from overseas last week: it relayed spam, nothing was copied.
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.1.label]
+JUST RESET THE ADMINISTRATOR PASSWORD
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.1.note]
+Better, but two realtor accounts still use weak passwords.
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.2.label]
+DO NOTHING UNTIL THE FIREWALL IS FIXED
+
+# job: REMOTE ACCESS BREAK-IN, step 3
+[Playbook.BOOKS.rdp.steps.2.choices.2.note]
+Whatever got in is still in.
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.title]
+CLOSE THE DOOR
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.text]
+Remote desktop is wide open to the internet. What do you do about it?
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.0.label]
+PUT REMOTE DESKTOP BEHIND A VPN
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.0.note]
+Remote access now needs the VPN first. The guessing attacks hit a closed door.
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.1.label]
+FIREWALL THAT AUTO-BLOCKS REPEATED FAILED LOGINS
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.1.note]
+After a few bad guesses an address is blocked automatically. The attacks stop within the hour.
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.2.label]
+JUST CHANGE THE REMOTE DESKTOP PORT NUMBER
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.2.note]
+A new port number. They will find it.
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.3.label]
+LEAVE IT, THE PASSWORDS ARE FIXED NOW
+
+# job: REMOTE ACCESS BREAK-IN, step 4
+[Playbook.BOOKS.rdp.steps.3.choices.3.note]
+Still open to the whole internet.
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.title]
+TELL THE CLIENT
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.text]
+How do you leave things with the realtors?
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.choices.0.label]
+WRITE IT UP, RECOMMEND TWO-FACTOR AND A VPN
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.choices.0.note]
+A clear write-up with recommendations goes to the owner.
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.choices.1.label]
+FIX IT QUIETLY
+
+# job: REMOTE ACCESS BREAK-IN, step 5
+[Playbook.BOOKS.rdp.steps.4.choices.1.note]
+No write-up. They never learn how close it was.
+
+# job: WIRE REQUEST FROM THE BOSS
+[Playbook.BOOKS.ceofraud.title]
+WIRE REQUEST FROM THE BOSS
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.title]
+THE EMAIL
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.text]
+A paralegal at Hoot and Holler forwards an email that looks like it is from Atty. Spence: wire $38,000 from the client trust account today, quietly, no calls. She thinks it is odd. What do you do first?
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.0.label]
+LOOK AT THE FULL EMAIL HEADERS
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.0.note]
+The sender name says Spence. The reply address is spence@hootholler-law.example: a lookalike domain.
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.1.label]
+CALL ATTY. SPENCE ON HIS CELL
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.1.note]
+He never sent anything. He is in a deposition and furious that anyone would think so.
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.2.label]
+REPLY AND ASK IF IT IS REAL
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.2.note]
+'Yes, it is me. Please hurry.' The scammer answers in four minutes.
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.3.label]
+TELL HER TO WIRE IT, IT LOOKS REAL
+
+# job: WIRE REQUEST FROM THE BOSS, step 1
+[Playbook.BOOKS.ceofraud.steps.0.choices.3.note]
+The wire goes out before lunch.
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.title]
+HOW DID THEY KNOW?
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.text]
+The email used the right wording, the right account and the right amount. Somebody has been reading the firm's mail. Where do you look?
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.0.label]
+CHECK THE MAILBOX RULES AND RECENT LOGINS
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.0.note]
+A hidden rule forwards every message mentioning wires to an outside address. The login that created it came from overseas.
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.1.label]
+RESET EVERYONE'S PASSWORD AND HOPE
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.1.note]
+New passwords, but the forwarding rule is still there.
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.2.label]
+BLAME THE SPAM FILTER
+
+# job: WIRE REQUEST FROM THE BOSS, step 2
+[Playbook.BOOKS.ceofraud.steps.1.choices.2.note]
+The spam filter has nothing to do with it.
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.title]
+CONTAIN IT
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.text]
+The attacker has a way into the mailbox. What do you do?
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.0.label]
+REMOVE THE RULE, RESET THE PASSWORD, END ALL SESSIONS
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.0.note]
+The rule is gone, the password is new and every login session is signed out.
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.1.label]
+JUST RESET THE PASSWORD
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.1.note]
+The old session is still signed in on a server in another country.
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.2.label]
+DELETE THE EMAIL AND MOVE ON
+
+# job: WIRE REQUEST FROM THE BOSS, step 3
+[Playbook.BOOKS.ceofraud.steps.2.choices.2.note]
+You deleted the evidence the bank will want.
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.title]
+THE MONEY
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.text]
+Was anything already sent? The trust account matters more than the mailbox.
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.choices.0.label]
+HAVE THE FIRM CALL THE BANK AND ASK FOR A RECALL NOW
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.choices.0.note]
+The bank freezes the wire in time. This is a good day.
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.choices.1.label]
+SEND THE BANK AN EMAIL FOR MORNING
+
+# job: WIRE REQUEST FROM THE BOSS, step 4
+[Playbook.BOOKS.ceofraud.steps.3.choices.1.note]
+The bank answers tomorrow. That is probably too late.
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.title]
+NEXT TIME
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.text]
+How do you leave things with the firm?
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.0.label]
+CALL-BACK RULE FOR EVERY WIRE REQUEST, PLUS TWO-FACTOR LOGIN FOR EMAIL
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.0.note]
+A new rule goes on the wall: no wire without a phone call to a known number.
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.1.label]
+SEND A SCARY EMAIL TO EVERYONE
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.1.note]
+Everybody reads it. Nobody changes anything.
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.2.label]
+FIX IT QUIETLY
+
+# job: WIRE REQUEST FROM THE BOSS, step 5
+[Playbook.BOOKS.ceofraud.steps.4.choices.2.note]
+No write-up. They will be a target again.
+
+# job: THE CLIENT WHO SAID NO
+[Playbook.BOOKS.no2fa.title]
+THE CLIENT WHO SAID NO
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.title]
+THE CONVERSATION
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.text]
+Soggy Bottom Brewing keeps getting phished and you want stronger passwords and a second login step. Lucy says it is too much hassle and she is not changing anything. How do you handle it?
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.0.label]
+SHOW HER WHAT A STOLEN PASSWORD LOOKS LIKE
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.0.note]
+You pull up a list of leaked passwords from other companies. Hers is on it. She goes quiet.
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.1.label]
+GET A SIGNED WAIVER
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.1.note]
+She signs that she was warned and declined. The paper trail will protect you.
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.2.label]
+INSIST: NO CHANGE, NO SERVICE
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.2.note]
+She is furious, but she agrees to try it for a month.
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.3.label]
+LET IT GO
+
+# job: THE CLIENT WHO SAID NO, step 1
+[Playbook.BOOKS.no2fa.steps.0.choices.3.note]
+You leave without a word. Nothing changes.
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.title]
+ROLL IT OUT
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.text]
+If she agrees, how do you do it so it hurts as little as possible?
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.0.label]
+START WITH THE OWNER AND THE BOOKKEEPER, THEN EVERYONE ELSE
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.0.note]
+The two people who handle money get it first. Everyone else gets it next week.
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.1.label]
+TURN IT ON FOR EVERYONE AT ONCE
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.1.needs_label]
+NEEDS THE INSIST
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.1.note]
+Everyone is locked out Monday morning. Lucy calls you eleven times.
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.2.label]
+WRITE DOWN THE RISK AND LEAVE IT
+
+# job: THE CLIENT WHO SAID NO, step 2
+[Playbook.BOOKS.no2fa.steps.1.choices.2.note]
+You file the risk assessment and move on.
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.title]
+THE FOLLOW-UP
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.text]
+How do you leave it?
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.choices.0.label]
+BOOK A CHECK-IN IN THREE WEEKS
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.choices.0.note]
+A reminder goes on the calendar.
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.choices.1.label]
+NOTHING
+
+# job: THE CLIENT WHO SAID NO, step 3
+[Playbook.BOOKS.no2fa.steps.2.choices.1.note]
+You will see how it goes.
+
+# job: THE ONLY PERSON WHO KNOWS
+[Playbook.BOOKS.bus.title]
+THE ONLY PERSON WHO KNOWS
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.title]
+ALAN IS OUT
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.text]
+Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan set it up years ago and Alan is out sick today. Nobody has the password. What do you try?
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.0.label]
+LOOK IN THE DOCUMENTATION PORTAL
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.0.note]
+There is an entry, half finished, and a note that says the password is in the safe.
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.1.label]
+LOOK ON ALAN'S DESK
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.1.note]
+A sticky note under the keyboard has a password on it. Of course it does.
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.2.label]
+CALL ALAN AT HOME
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.2.note]
+He answers from the couch and tells you.
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.3.label]
+FACTORY RESET THE FIREWALL
+
+# job: THE ONLY PERSON WHO KNOWS, step 1
+[Playbook.BOOKS.bus.steps.0.choices.3.note]
+It reboots with a blank configuration. Acme's internet is now completely gone.
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.title]
+GET IN
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.text]
+You have a way in (or you wiped it). What next?
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.0.label]
+CHANGE THE SETTING AND TEST EVERYTHING
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.0.note]
+The change is small and the internet is stable again.
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.1.label]
+CHANGE THE SETTING AND HOPE
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.1.note]
+It seems better.
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.2.label]
+REBUILD THE CONFIGURATION FROM SCRATCH
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.2.needs_label]
+ONLY AFTER A RESET
+
+# job: THE ONLY PERSON WHO KNOWS, step 2
+[Playbook.BOOKS.bus.steps.1.choices.2.note]
+It takes an hour, and you spend most of it guessing what Alan did.
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.title]
+NEVER AGAIN
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.text]
+This should never depend on one person. What do you do before you leave?
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.0.label]
+DOCUMENT IT AND PUT THE PASSWORD IN THE PASSWORD VAULT
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.0.note]
+The firewall now has a page in the portal and a vaulted password everyone can use.
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.1.label]
+WRITE IT ON A STICKY NOTE
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.1.note]
+Alan would be proud.
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.2.label]
+TELL ALAN TO WRITE IT DOWN LATER
+
+# job: THE ONLY PERSON WHO KNOWS, step 3
+[Playbook.BOOKS.bus.steps.2.choices.2.note]
+He promises to. He will not.
+
+# job: NETWORK INSTALL
+[Playbook.BOOKS.netinstall.title]
+NETWORK INSTALL
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.title]
+SURVEY THE SITE
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.text]
+Hoot and Holler is opening a branch office: 12 desks, a conference room and a printer room.
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.0.label]
+WALK THE SITE AND COUNT DROPS
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.0.note]
+You count 14 drops, not 12.
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.1.label]
+ASK FOR THE LAYOUT BY EMAIL
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.1.note]
+You get a rough floor plan.
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.2.label]
+TRUST THE FLOOR PLAN
+
+# job: NETWORK INSTALL, step 1
+[Playbook.BOOKS.netinstall.steps.0.choices.2.note]
+You plan for 12 drops.
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.title]
+RUN THE CABLE
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.text]
+Pulling cable through the ceiling.
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.0.label]
+CAT6, 14 DROPS
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.0.note]
+Cat6 pulled everywhere: future-proof.
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.1.label]
+CAT5E, 14 DROPS
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.1.note]
+Cat5e is fine for gigabit.
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.2.label]
+CAT5E, 10 DROPS TO SAVE TIME
+
+# job: NETWORK INSTALL, step 2
+[Playbook.BOOKS.netinstall.steps.1.choices.2.note]
+Four desks have no wall jack.
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.title]
+TEST THE RUNS
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.text]
+Are all those cables good?
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.0.label]
+CERTIFY EVERY DROP WITH THE TESTER
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.0.note]
+Every drop certified.
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.1.label]
+SPOT CHECK A FEW
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.1.note]
+Most look fine.
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.2.label]
+SKIP IT, WE WILL FIND OUT
+
+# job: NETWORK INSTALL, step 3
+[Playbook.BOOKS.netinstall.steps.2.choices.2.note]
+We will find out.
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.title]
+CONFIGURE THE SWITCHES
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.text]
+Data, voice phones and guest Wi-Fi all share this network.
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.0.label]
+VLANS: DATA, VOICE AND GUEST
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.0.note]
+Three clean VLANs with scripted configs.
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.1.label]
+SEPARATE THE VOICE VLAN ONLY
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.1.note]
+Phones are separate. Guests share the data VLAN.
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.2.label]
+ONE FLAT NETWORK
+
+# job: NETWORK INSTALL, step 4
+[Playbook.BOOKS.netinstall.steps.3.choices.2.note]
+Everything on one network.
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.title]
+WI-FI
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.text]
+Staff and guests want wireless everywhere.
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.choices.0.label]
+SURVEY, THEN PLACE TWO ACCESS POINTS
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.choices.0.note]
+Coverage is solid everywhere.
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.choices.1.label]
+ONE ACCESS POINT IN THE MIDDLE
+
+# job: NETWORK INSTALL, step 5
+[Playbook.BOOKS.netinstall.steps.4.choices.1.note]
+The conference room has a dead spot.
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.title]
+DOCUMENT IT
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.text]
+The job is done and it is nearly time to go.
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.choices.0.label]
+LABEL THE PANEL AND WRITE IT UP
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.choices.0.note]
+Every port labelled. Documentation filed.
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.choices.1.label]
+SKIP THE PAPERWORK
+
+# job: NETWORK INSTALL, step 6
+[Playbook.BOOKS.netinstall.steps.5.choices.1.note]
+No documentation. Future you will suffer.
+
+
+# ======================= Playbook > PROBLEMS =======================
+# Playbook > PROBLEMS > rack > 0 > summary
+[Playbook.PROBLEMS.rack.0.summary]
+RACK FELL OFF THE WALL - everything is down
+
+# Playbook > PROBLEMS > rack > 0 > body
+[Playbook.PROBLEMS.rack.0.body]
+The whole network rack came off the wall with a crash! Nothing works! Please come NOW. - %s
+
+# Playbook > PROBLEMS > rack > 1 > summary
+[Playbook.PROBLEMS.rack.1.summary]
+No internet in the whole shop
+
+# Playbook > PROBLEMS > rack > 1 > body
+[Playbook.PROBLEMS.rack.1.body]
+Is the internet down for you too? It is dead here. - %s
+
+# Playbook > PROBLEMS > rack > 2 > summary
+[Playbook.PROBLEMS.rack.2.summary]
+Phones are dead
+
+# Playbook > PROBLEMS > rack > 2 > body
+[Playbook.PROBLEMS.rack.2.body]
+Customers cannot reach us, the phones are all dead. - %s
+
+# Playbook > PROBLEMS > migration > 0 > summary
+[Playbook.PROBLEMS.migration.0.summary]
+Server migration: cutover
+
+# Playbook > PROBLEMS > migration > 0 > body
+[Playbook.PROBLEMS.migration.0.body]
+The old server is out of support, we agreed you would move us to the new one. Please do it carefully. - %s
+
+# Playbook > PROBLEMS > email24 > 0 > summary
+[Playbook.PROBLEMS.email24.0.summary]
+EMAIL DOWN - 24x7 site
+
+# Playbook > PROBLEMS > email24 > 0 > body
+[Playbook.PROBLEMS.email24.0.body]
+Nobody has had email for an hour and our fermentation alerts come by email. We run around the clock. FIX IT! - %s
+
+# Playbook > PROBLEMS > rdp > 0 > summary
+[Playbook.PROBLEMS.rdp.0.summary]
+Server very slow, strange logins in the log
+
+# Playbook > PROBLEMS > rdp > 0 > body
+[Playbook.PROBLEMS.rdp.0.body]
+Our server has been crawling all week and the log shows people we do not know. Can you look? - %s
+
+# Playbook > PROBLEMS > ceofraud > 0 > summary
+[Playbook.PROBLEMS.ceofraud.0.summary]
+Odd request to wire $38,000 from the trust account
+
+# Playbook > PROBLEMS > ceofraud > 0 > body
+[Playbook.PROBLEMS.ceofraud.0.body]
+Our paralegal got an email from Mr. Spence asking her to wire $38,000. He says he never sent it. What is going on? - %s
+
+# Playbook > PROBLEMS > no2fa > 0 > summary
+[Playbook.PROBLEMS.no2fa.0.summary]
+Security review: stronger logins for Soggy Bottom
+
+# Playbook > PROBLEMS > no2fa > 0 > body
+[Playbook.PROBLEMS.no2fa.0.body]
+You wanted to talk about passwords or something. I do not have time for this. - %s
+
+# Playbook > PROBLEMS > bus > 0 > summary
+[Playbook.PROBLEMS.bus.0.summary]
+Internet keeps dropping at Acme Dental
+
+# Playbook > PROBLEMS > bus > 0 > body
+[Playbook.PROBLEMS.bus.0.body]
+The internet drops every few minutes and patients are waiting. Alan always knows what to do but he is out today! - %s
+
+# Playbook > PROBLEMS > netinstall > 0 > summary
+[Playbook.PROBLEMS.netinstall.0.summary]
+New branch office network install
+
+# Playbook > PROBLEMS > netinstall > 0 > body
+[Playbook.PROBLEMS.netinstall.0.body]
+We open the new branch next week and need the network, phones and Wi-Fi set up. - %s
+
+
+# ======================= Owner > CARDS =======================
+# owner card: welcome
+[Owner.CARDS.welcome.speaker]
+Marge (Bookkeeper)
+
+# owner card: welcome
+[Owner.CARDS.welcome.text]
+Welcome, boss. Five clients, three techs, Vic in sales and $5,000 in the bank. Payroll and rent come out every week. How do you want to price our service?
+
+# owner card: welcome
+[Owner.CARDS.welcome.options.0.label]
+VOLUME PRICING (-15% FEES, VIC SELLS MORE)
+
+# owner card: welcome
+[Owner.CARDS.welcome.options.1.label]
+STANDARD PRICING
+
+# owner card: welcome
+[Owner.CARDS.welcome.options.2.label]
+PREMIUM PRICING (+20% FEES, HARDER SELL)
+
+# owner card: backup
+[Owner.CARDS.backup.speaker]
+Alan (Senior Tech)
+
+# owner card: backup
+[Owner.CARDS.backup.text]
+Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.
+
+# owner card: backup
+[Owner.CARDS.backup.options.0.label]
+BUY THE BACKUP SERVICE ($600 + $100/WEEK)
+
+# owner card: backup
+[Owner.CARDS.backup.options.1.label]
+NO, WE WILL CHECK THEM BY HAND
+
+# owner card: queue
+[Owner.CARDS.queue.speaker]
+Vic Marlowe
+
+# owner card: queue
+[Owner.CARDS.queue.text]
+The queue is getting long and clients are noticing. We either need more hands or faster hands.
+
+# owner card: queue
+[Owner.CARDS.queue.options.0.label]
+SEE HIRING CANDIDATES
+
+# owner card: queue
+[Owner.CARDS.queue.options.1.label]
+POWERSHELL TRAINING FOR THE CREW ($400)
+
+# owner card: queue
+[Owner.CARDS.queue.options.2.label]
+NEITHER, WE WILL COPE
+
+# owner card: desktop
+[Owner.CARDS.desktop.speaker]
+Vic Marlowe
+
+# owner card: desktop
+[Owner.CARDS.desktop.text]
+Dr. Patel wants a new desktop set up and migrated. What do I quote? Cheap closes easily, premium might scare him off. The job costs us about $400 of tech time.
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.0.label]
+$600 (ALMOST SURE)
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.0.roll.0.2]
+He accepts. The install goes smoothly.
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.0.roll.1.2]
+He shops around instead.
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.1.label]
+$1,000 (PROBABLY)
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.1.roll.0.2]
+Accepted. A tidy profit.
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.1.roll.1.2]
+He says it is too much.
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.2.label]
+$1,600 (A LONG SHOT)
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.2.roll.0.2]
+He accepts the premium quote!
+
+# owner card: desktop
+[Owner.CARDS.desktop.options.2.roll.1.2]
+He is insulted and says so.
+
+# owner card: prospect
+[Owner.CARDS.prospect.speaker]
+Vic Marlowe
+
+# owner card: prospect
+[Owner.CARDS.prospect.text]
+Piedmont Pediatrics wants us but asks for 20% off for the first three months to sign. They are a good-sized account.
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.0.label]
+OFFER THE DISCOUNT
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.0.text]
+Signed! Vic is thrilled. Their tickets start tomorrow.
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.1.label]
+HOLD THE PRICE
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.1.roll.0.2]
+They sign at full price. Vic looks smug.
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.1.roll.1.2]
+They pass. Vic sulks.
+
+# owner card: prospect
+[Owner.CARDS.prospect.options.2.label]
+PASS
+
+# owner card: license
+[Owner.CARDS.license.speaker]
+Alan (Senior Tech)
+
+# owner card: license
+[Owner.CARDS.license.text]
+Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone.
+
+# owner card: license
+[Owner.CARDS.license.options.0.label]
+PAY THE HIKE ($500)
+
+# owner card: license
+[Owner.CARDS.license.options.1.label]
+SWITCH ($300, SOME PAIN)
+
+# owner card: license
+[Owner.CARDS.license.options.1.roll.0.2]
+The switch goes smoothly and weekly costs drop.
+
+# owner card: license
+[Owner.CARDS.license.options.1.roll.1.2]
+The migration drags and clients notice.
+
+# owner card: rack
+[Owner.CARDS.rack.speaker]
+Vic Marlowe
+
+# owner card: rack
+[Owner.CARDS.rack.text]
+Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send?
+
+# owner card: rack
+[Owner.CARDS.rack.options.0.label]
+SEND ALAN NOW ($300)
+
+# owner card: rack
+[Owner.CARDS.rack.options.0.roll.0.2]
+Alan rebuilds it properly. Bob buys him lunch.
+
+# owner card: rack
+[Owner.CARDS.rack.options.0.roll.1.2]
+Fixed, but it took all night.
+
+# owner card: rack
+[Owner.CARDS.rack.options.1.label]
+SEND THE JUNIOR OR DAN ($100)
+
+# owner card: rack
+[Owner.CARDS.rack.options.1.roll.0.2]
+Back up by evening.
+
+# owner card: rack
+[Owner.CARDS.rack.options.1.roll.1.2]
+Cables were plugged into the wrong ports. Bob is furious.
+
+# owner card: rack
+[Owner.CARDS.rack.options.2.label]
+TELL THEM IT IS THEIR WALL
+
+# owner card: rack
+[Owner.CARDS.rack.options.2.roll.0.2]
+They fix it themselves. They are not happy.
+
+# owner card: rack
+[Owner.CARDS.rack.options.2.roll.1.2]
+Gnarly Gnomes cancels the contract.
+
+# owner card: migration
+[Owner.CARDS.migration.speaker]
+Vic Marlowe
+
+# owner card: migration
+[Owner.CARDS.migration.text]
+Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?
+
+# owner card: migration
+[Owner.CARDS.migration.options.0.label]
+FIXED PRICE $3,000
+
+# owner card: migration
+[Owner.CARDS.migration.options.0.roll.0.2]
+Smooth job, nice margin.
+
+# owner card: migration
+[Owner.CARDS.migration.options.0.roll.1.2]
+The job overran. You ate $1,200.
+
+# owner card: migration
+[Owner.CARDS.migration.options.0.roll_scoped.0.2]
+The scoping day paid off: a smooth job.
+
+# owner card: migration
+[Owner.CARDS.migration.options.0.roll_scoped.1.2]
+A small overrun, nothing serious.
+
+# owner card: migration
+[Owner.CARDS.migration.options.1.label]
+TIME AND MATERIALS (~$2,200)
+
+# owner card: migration
+[Owner.CARDS.migration.options.1.text]
+Brightside grumbles about the open-ended bill but pays.
+
+# owner card: email24
+[Owner.CARDS.email24.speaker]
+Alan (Senior Tech)
+
+# owner card: email24
+[Owner.CARDS.email24.text]
+Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.
+
+# owner card: email24
+[Owner.CARDS.email24.options.0.label]
+PREMIUM VENDOR + OVERTIME ($800)
+
+# owner card: email24
+[Owner.CARDS.email24.options.0.roll.0.2]
+Fixed by 9pm. The brewery owner sends beer.
+
+# owner card: email24
+[Owner.CARDS.email24.options.0.roll.1.2]
+Fixed, but after midnight.
+
+# owner card: email24
+[Owner.CARDS.email24.options.1.label]
+STANDARD VENDOR SUPPORT
+
+# owner card: email24
+[Owner.CARDS.email24.options.1.roll.0.2]
+Fixed overnight, barely.
+
+# owner card: email24
+[Owner.CARDS.email24.options.1.roll.1.2]
+Down until morning. A batch is lost. Lucy is livid.
+
+# owner card: email24
+[Owner.CARDS.email24.options.2.label]
+GO IN YOURSELF
+
+# owner card: email24
+[Owner.CARDS.email24.options.2.roll.0.2]
+You muddle through and fix it. Alan is impressed.
+
+# owner card: email24
+[Owner.CARDS.email24.options.2.roll.1.2]
+You make it worse before you make it better.
+
+# owner card: raise
+[Owner.CARDS.raise.speaker]
+Alan (Senior Tech)
+
+# owner card: raise
+[Owner.CARDS.raise.text]
+Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.
+
+# owner card: raise
+[Owner.CARDS.raise.options.0.label]
+GIVE THE RAISE
+
+# owner card: raise
+[Owner.CARDS.raise.options.1.label]
+NOT NOW
+
+# owner card: raise
+[Owner.CARDS.raise.options.1.roll.0.2]
+Alan shrugs and keeps working.
+
+# owner card: raise
+[Owner.CARDS.raise.options.1.roll.1.2]
+Alan hands in his notice. The team is stretched thin.
+
+# owner card: bid
+[Owner.CARDS.bid.speaker]
+Vic Marlowe
+
+# owner card: bid
+[Owner.CARDS.bid.text]
+Hoot and Holler is opening a branch and wants a network install. This is a big job.
+
+# owner card: bid
+[Owner.CARDS.bid.options.0.label]
+BID LOW $2,500
+
+# owner card: bid
+[Owner.CARDS.bid.options.0.roll.0.2]
+They accept. The crew grumbles about the margin.
+
+# owner card: bid
+[Owner.CARDS.bid.options.0.roll.1.2]
+They go with someone else.
+
+# owner card: bid
+[Owner.CARDS.bid.options.1.label]
+BID HIGH $4,500
+
+# owner card: bid
+[Owner.CARDS.bid.options.1.roll.0.2]
+They accept the premium bid.
+
+# owner card: bid
+[Owner.CARDS.bid.options.1.roll.1.2]
+They balk and walk.
+
+# owner card: poach
+[Owner.CARDS.poach.speaker]
+Vic Marlowe
+
+# owner card: poach
+[Owner.CARDS.poach.text]
+ByteBrothers is calling our clients with a cheaper quote and a free 'IT assessment'. Word is they already talked to a couple of ours.
+
+# owner card: poach
+[Owner.CARDS.poach.options.0.label]
+LOYALTY DISCOUNT: -10% FOR 4 WEEKS
+
+# owner card: poach
+[Owner.CARDS.poach.options.1.label]
+HEALTH CHECK AT EVERY CLIENT ($300)
+
+# owner card: poach
+[Owner.CARDS.poach.options.1.text]
+Backups verified and updates pushed everywhere. There is less for them to find.
+
+# owner card: poach
+[Owner.CARDS.poach.options.2.label]
+IGNORE THEM
+
+# owner card: poach
+[Owner.CARDS.poach.options.2.roll.1.2]
+A client switches to ByteBrothers.
+
+# owner card: peer_invite
+[Owner.CARDS.peer_invite.speaker]
+Marge (Bookkeeper)
+
+# owner card: peer_invite
+[Owner.CARDS.peer_invite.text]
+You were invited to the MSP Mastermind: a dozen non-competing MSP owners who meet regularly, compare their numbers (EBITDA, W-2 ratio) and warn each other about what is coming. Dues are $500 to join and $75 a week.
+
+# owner card: peer_invite
+[Owner.CARDS.peer_invite.options.0.label]
+JOIN THE PEER GROUP ($500 + $75/WEEK)
+
+# owner card: peer_invite
+[Owner.CARDS.peer_invite.options.0.text]
+You are in. The first meeting is in a few days.
+
+# owner card: peer_invite
+[Owner.CARDS.peer_invite.options.1.label]
+NOT NOW
+
+# owner card: mentor_offer
+[Owner.CARDS.mentor_offer.speaker]
+Dana Whitfield (Consultant)
+
+# owner card: mentor_offer
+[Owner.CARDS.mentor_offer.text]
+I ran an MSP for fifteen years and sold it. For $400 a week I will review your numbers, tell you what I would do, and nudge your big decisions in the right direction. You can dismiss me any time.
+
+# owner card: mentor_offer
+[Owner.CARDS.mentor_offer.options.0.label]
+HIRE DANA ($400/WEEK)
+
+# owner card: mentor_offer
+[Owner.CARDS.mentor_offer.options.0.text]
+Dana opens her notebook. Expect advice on Monday mornings.
+
+# owner card: mentor_offer
+[Owner.CARDS.mentor_offer.options.1.label]
+NO THANKS
+
+# owner card: peer1
+[Owner.CARDS.peer1.speaker]
+MSP Mastermind
+
+# owner card: peer1
+[Owner.CARDS.peer1.text]
+Tonight's topic: backups. Two members lost clients to silent backup failures. The group has a deal on a managed backup service, and a few members say you could charge 10% more.
+
+# owner card: peer1
+[Owner.CARDS.peer1.options.0.label]
+BACKUP SERVICE VIA THE GROUP ($400)
+
+# owner card: peer1
+[Owner.CARDS.peer1.options.1.label]
+RAISE PRICES 10% (MOOD -2)
+
+# owner card: peer1
+[Owner.CARDS.peer1.options.2.label]
+JUST NETWORK
+
+# owner card: peer2
+[Owner.CARDS.peer2.speaker]
+MSP Mastermind
+
+# owner card: peer2
+[Owner.CARDS.peer2.text]
+A member got hit by ransomware last month because their backups had quietly died and nobody had checked in weeks. The group's advice: have your team check every client's backup today.
+
+# owner card: peer2
+[Owner.CARDS.peer2.options.0.label]
+HAVE THE TEAM CHECK EVERY BACKUP
+
+# owner card: peer2
+[Owner.CARDS.peer2.options.0.text]
+Alan checks them all. Any failing job is rerun.
+
+# owner card: peer2
+[Owner.CARDS.peer2.options.1.label]
+WE ARE FINE
+
+# owner card: peer3
+[Owner.CARDS.peer3.speaker]
+MSP Mastermind
+
+# owner card: peer3
+[Owner.CARDS.peer3.text]
+A peer says fixed-price projects are where owners lose money: spend a day scoping the job before you quote anything.
+
+# owner card: peer3
+[Owner.CARDS.peer3.options.0.label]
+SCOPE PROJECTS FIRST ($300)
+
+# owner card: peer3
+[Owner.CARDS.peer3.options.0.text]
+Your next fixed-price quote will be much safer.
+
+# owner card: peer3
+[Owner.CARDS.peer3.options.1.label]
+SKIP IT
+
+# owner card: peer4
+[Owner.CARDS.peer4.speaker]
+MSP Mastermind
+
+# owner card: peer4
+[Owner.CARDS.peer4.text]
+Year-end benchmarks: members average a 15% EBITDA margin and keep payroll under 55% of revenue. Most raised prices at least 8% this year.
+
+# owner card: peer4
+[Owner.CARDS.peer4.options.0.label]
+RAISE PRICES 8% (MOOD -3)
+
+# owner card: peer4
+[Owner.CARDS.peer4.options.1.label]
+HOLD PRICES
+
+# owner card: marketing
+[Owner.CARDS.marketing.speaker]
+Vic Marlowe
+
+# owner card: marketing
+[Owner.CARDS.marketing.text]
+Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)
+
+# owner card: marketing
+[Owner.CARDS.marketing.options.0.label]
+NO MARKETING ($0)
+
+# owner card: marketing
+[Owner.CARDS.marketing.options.1.label]
+LIGHT ($150/WEEK)
+
+# owner card: marketing
+[Owner.CARDS.marketing.options.2.label]
+STANDARD ($400/WEEK)
+
+# owner card: marketing
+[Owner.CARDS.marketing.options.3.label]
+AGGRESSIVE ($900/WEEK)
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.speaker]
+Alan (Senior Tech)
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.text]
+Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run.
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.options.0.label]
+KEEP CONNECTWHY PSA
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.options.1.label]
+TICKETO LITE ($15/WK, $300 TO MIGRATE)
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.options.1.text]
+Migrated. The crew is not thrilled.
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.options.2.label]
+OPSFORGE PRO ($140/WK, $300 TO MIGRATE)
+
+# owner card: stack_psa
+[Owner.CARDS.stack_psa.options.2.text]
+The techs love the automation.
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.speaker]
+Alan (Senior Tech)
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.text]
+The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call.
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.options.0.label]
+KEEP LABRAT RMM
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.options.1.label]
+SNOUTECH BASIC ($25/WK, $300 TO MIGRATE)
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.options.1.text]
+Migrated. More surprises ahead.
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.options.2.label]
+LABRAT GOLD ($180/WK, $200 TO UPGRADE)
+
+# owner card: stack_rmm
+[Owner.CARDS.stack_rmm.options.2.text]
+Upgraded. Alerts start catching things early.
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.speaker]
+Vic Marlowe
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.text]
+Which hardware vendor do we recommend and resell? Hewlitt Packerd is the standard ($200 margin a deal). BudgetByte is cheap, so I sell more, but their machines fail more. DellightCo is premium and rock solid, but harder to sell.
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.options.0.label]
+HEWLITT PACKERD (THE STANDARD)
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.options.1.label]
+BUDGETBYTE (+12% SALES, MORE TICKETS)
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.options.1.text]
+Vic grins. Expect more calls about broken laptops.
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.options.2.label]
+DELLIGHTCO (SOLID, $350 MARGIN)
+
+# owner card: stack_hw
+[Owner.CARDS.stack_hw.options.2.text]
+Fewer fires, fatter margins, a slower sell.
+
+# owner card: vic_plan
+[Owner.CARDS.vic_plan.speaker]
+Marge (Bookkeeper)
+
+# owner card: vic_plan
+[Owner.CARDS.vic_plan.text]
+How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.
+
+# owner card: vic_plan
+[Owner.CARDS.vic_plan.options.0.label]
+SALARY ONLY ($750/WK)
+
+# owner card: vic_plan
+[Owner.CARDS.vic_plan.options.1.label]
+BALANCED ($550/WK + $150 A DEAL)
+
+# owner card: vic_plan
+[Owner.CARDS.vic_plan.options.2.label]
+COMMISSION-HEAVY ($350/WK + $300 A DEAL)
+
+# owner card: billing_audit
+[Owner.CARDS.billing_audit.speaker]
+Marge (Bookkeeper)
+
+# owner card: billing_audit
+[Owner.CARDS.billing_audit.text]
+I have a hunch we are not billing for everything: extra hours, license price rises we never passed on. A one-time billing audit ($400) would check every invoice against what we pay vendors and the hours we really work.
+
+# owner card: billing_audit
+[Owner.CARDS.billing_audit.options.0.label]
+DO THE BILLING AUDIT ($400)
+
+# owner card: billing_audit
+[Owner.CARDS.billing_audit.options.0.text]
+The audit finds unbilled work and vendor increases nobody passed through. Fixed from now on.
+
+# owner card: billing_audit
+[Owner.CARDS.billing_audit.options.1.label]
+SKIP IT
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.speaker]
+Alan (Senior Tech)
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.text]
+After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend.
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.options.0.label]
+ADOPT A $250/HOUR AFTER-HOURS FEE
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.options.0.text]
+Most non-critical after-hours calls stop. A few clients grumble.
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.options.1.label]
+PAY AN ON-CALL STIPEND ($150/WEEK)
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.options.1.text]
+The crew feels valued. Calls keep coming, but the pain is shared.
+
+# owner card: after_hours
+[Owner.CARDS.after_hours.options.2.label]
+NEITHER, WE WILL COPE
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.speaker]
+Alan (Senior Tech)
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.text]
+Clients are starting to call after hours. Somebody has to carry the pager. How do we run it?
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.0.label]
+ROTATE EVERYONE, $100/WEEK POOL
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.0.text]
+A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn.
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.1.label]
+ALAN TAKES IT EVERY WEEK (+$150)
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.1.text]
+Alan says fine. For now. The same person every week is how people quit.
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.2.label]
+YOU CARRY THE PAGER YOURSELF
+
+# owner card: oncall_policy
+[Owner.CARDS.oncall_policy.options.2.text]
+The crew is thrilled. Your nights will be less so, and it eats your owner hours every week.
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.speaker]
+Alan (Senior Tech)
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.text]
+Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy?
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.0.label]
+FLEXIBLE START TIMES (CORE 10 TO 4)
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.0.text]
+Morale lifts. The phones are a little thin first thing.
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.1.label]
+STRICT PUNCTUALITY, A QUIET WORD
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.1.text]
+People are on time. They also watch the clock at 5:00.
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.2.label]
+TRY A FOUR-DAY WEEK
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.2.roll.0.2]
+The crew is a different crew on Mondays. Clients barely notice.
+
+# owner card: flex_hours
+[Owner.CARDS.flex_hours.options.2.roll.1.2]
+Clients notice the quiet Fridays. Some are not happy.
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.speaker]
+Alan (Senior Tech)
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.text]
+Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.0.label]
+AUTO-BLOCKING FIREWALLS ($600 + $40/WEEK)
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.0.text]
+Repeated failed logins now get an address blocked automatically. The guessing stops.
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.1.label]
+PUT REMOTE ACCESS BEHIND A VPN ($1,200)
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.1.text]
+Remote access needs the VPN first. Users complain a little, attackers get nothing.
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.2.label]
+CHANGE THE PORT NUMBERS ($100)
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.2.text]
+It slows them down. It does not stop them.
+
+# owner card: rdp_exposed
+[Owner.CARDS.rdp_exposed.options.3.label]
+LEAVE IT
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.speaker]
+Alan (Senior Tech)
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.text]
+Hoot and Holler's server is encrypted by CryptoLocker. There is a countdown and a ransom demand in Bitcoin. The backup was not working. What now?
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.0.label]
+PAY THE RANSOM ($500)
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.0.roll.0.2]
+The key arrives and the files unlock. Nobody feels good about it.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.0.roll.1.2]
+They took the money and the key never came.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.1.label]
+TRY WINDOWS SHADOW COPIES
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.1.roll.0.2]
+Most files come back from shadow copies.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.1.roll.1.2]
+The malware deleted the shadow copies.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.2.label]
+ACCEPT THE LOSS
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.speaker]
+Marge (Bookkeeper)
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.text]
+Hoot and Holler lost years of case files because our backup was not working. Their lawyers are talking about suing us.
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.options.0.label]
+SETTLE ($2,500)
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.options.1.label]
+FIGHT IT
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.options.1.roll.0.2]
+The case is dismissed, but it cost you sleep.
+
+# owner card: ransom_lost
+[Owner.CARDS.ransom_lost.options.1.roll.1.2]
+You lose. It costs $6,000 and your name.
+
+
+# ======================= Msp > PROBLEMS =======================
+# Msp > PROBLEMS > 0 > summary
+[Msp.PROBLEMS.0.summary]
+Printer will not print
+
+# Msp > PROBLEMS > 0 > body
+[Msp.PROBLEMS.0.body]
+Every time I hit print it just sits there. People are waiting. Please help! - %s
+
+# Msp > PROBLEMS > 1 > summary
+[Msp.PROBLEMS.1.summary]
+Locked out of my PC
+
+# Msp > PROBLEMS > 1 > body
+[Msp.PROBLEMS.1.body]
+It says my account is locked out. I swear I did nothing. I cannot work until this is fixed. - %s
+
+# Msp > PROBLEMS > 2 > summary
+[Msp.PROBLEMS.2.summary]
+Computer is very slow
+
+# Msp > PROBLEMS > 2 > body
+[Msp.PROBLEMS.2.body]
+It takes ten minutes to open one document. Is it the weather? - %s
+
+# Msp > PROBLEMS > 3 > summary
+[Msp.PROBLEMS.3.summary]
+Computer frozen on a blue screen
+
+# Msp > PROBLEMS > 3 > body
+[Msp.PROBLEMS.3.body]
+There is a blue screen with a sad face on it. It has been like this since lunch. - %s
+
+# Msp > PROBLEMS > 4 > summary
+[Msp.PROBLEMS.4.summary]
+Pop-ups everywhere
+
+# Msp > PROBLEMS > 4 > body
+[Msp.PROBLEMS.4.body]
+Hundreds of pop-ups say I won a free cruise. Did I win a cruise? Also I cannot close them. - %s
+
+# Msp > PROBLEMS > 5 > summary
+[Msp.PROBLEMS.5.summary]
+Server not responding - nobody can work
+
+# Msp > PROBLEMS > 5 > body
+[Msp.PROBLEMS.5.body]
+THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. FIX IT! - %s
+
+
+# ======================= Msp > RANSOM =======================
+# Msp > RANSOM > summary
+[Msp.RANSOM.summary]
+Files encrypted - ransom note on the server
+
+# Msp > RANSOM > body
+[Msp.RANSOM.body]
+All our files have strange names and there is a note demanding bitcoin! HELP! - %s
+
+
+# ======================= Msp > ADOBE =======================
+# Msp > ADOBE > summary
+[Msp.ADOBE.summary]
+Adobe Reader will not print
+
+# Msp > ADOBE > body
+[Msp.ADOBE.body]
+I can open PDFs but print in Adobe Reader does nothing. Everything else prints. - %s
+
+
+# ======================= Msp > INSTALL =======================
+# Msp > INSTALL > summary
+[Msp.INSTALL.summary]
+Windows XP is ending: new desktop for Dr. Patel
+
+# Msp > INSTALL > body
+[Msp.INSTALL.body]
+Microsoft is dropping support for Windows XP on April 8 and my old computer is on it. The new one arrived! Please set it up and move everything over. I am with patients all day. - %s
+
+
+# ======================= Talk > GREETINGS =======================
+# Talk > GREETINGS > Alan > friend
+[Talk.GREETINGS.Alan.friend]
+Hey, there you are. Coffee is fresh. What is up?
+
+# Talk > GREETINGS > Alan > neutral
+[Talk.GREETINGS.Alan.neutral]
+Yeah? I have got about a minute.
+
+# Talk > GREETINGS > Garrison > friend
+[Talk.GREETINGS.Garrison.friend]
+Oh hey! Perfect timing, my brain needed a break. What is up?
+
+# Talk > GREETINGS > Garrison > neutral
+[Talk.GREETINGS.Garrison.neutral]
+Hi. What do you need?
+
+# Talk > GREETINGS > Dan > friend
+[Talk.GREETINGS.Dan.friend]
+Hey! Pull up a chair. Well, stand there. What is up?
+
+# Talk > GREETINGS > Dan > neutral
+[Talk.GREETINGS.Dan.neutral]
+Hey. Need something?
+
+# Talk > GREETINGS > Dan > cold
+[Talk.GREETINGS.Dan.cold]
+I am kind of in the middle of something.
+
+# Talk > GREETINGS > Vic > friend
+[Talk.GREETINGS.Vic.friend]
+My favourite tech! Talk to me.
+
+# Talk > GREETINGS > Vic > neutral
+[Talk.GREETINGS.Vic.neutral]
+Hey there. Quick one, I have a call at three.
+
+# Talk > GREETINGS > Vic > cold
+[Talk.GREETINGS.Vic.cold]
+Can this wait? I am on the phone in five.
+
+# Talk > GREETINGS > Maya > friend
+[Talk.GREETINGS.Maya.friend]
+Hi! Want half a granola bar? I have been saving it for someone nice.
+
+# Talk > GREETINGS > Maya > neutral
+[Talk.GREETINGS.Maya.neutral]
+Hey! Sorry, I have a user on hold. What is up?
+
+# Talk > GREETINGS > Maya > cold
+[Talk.GREETINGS.Maya.cold]
+Oh. Hi. I am just finishing something.
+
+
+# ======================= Talk > SMALL =======================
+# Talk > SMALL > Alan > 0
+[Talk.SMALL.Alan.0]
+Windows XP goes dark on April 8th. I have got a spreadsheet of every XP box we manage. It is longer than my coffee order.
+
+# Talk > SMALL > Alan > 1
+[Talk.SMALL.Alan.1]
+I have been doing this since the NT days. People still ask me to turn it off and on again. They are right more often than I like to admit.
+
+# Talk > SMALL > Alan > 2
+[Talk.SMALL.Alan.2]
+My kid asked what I do. I said I make sure the printers work. She said that sounds boring. She is not wrong.
+
+# Talk > SMALL > Alan > 3
+[Talk.SMALL.Alan.3]
+Did you see the Target breach news? Every client wants to know if they are next.
+
+# Talk > SMALL > Garrison > 0
+[Talk.SMALL.Garrison.0]
+Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013.
+
+# Talk > SMALL > Garrison > 1
+[Talk.SMALL.Garrison.1]
+I finally beat level 90 on Candy Crush. Do not tell the boss how many lives I spent.
+
+# Talk > SMALL > Garrison > 2
+[Talk.SMALL.Garrison.2]
+I keep telling clients: not every email from your bank is from your bank.
+
+# Talk > SMALL > Garrison > 3
+[Talk.SMALL.Garrison.3]
+Did you try that new LabRat script? It saved me an hour on Tuesday.
+
+# Talk > SMALL > Dan > 0
+[Talk.SMALL.Dan.0]
+I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work.
+
+# Talk > SMALL > Dan > 1
+[Talk.SMALL.Dan.1]
+Flappy Bird got pulled and I am stuck at 31. I am taking it personally.
+
+# Talk > SMALL > Dan > 2
+[Talk.SMALL.Dan.2]
+The best network is the one nobody talks about. The worst one is every one of our clients.
+
+# Talk > SMALL > Dan > 3
+[Talk.SMALL.Dan.3]
+I have been reading about Heartbleed. It is going to be a long April.
+
+# Talk > SMALL > Vic > 0
+[Talk.SMALL.Vic.0]
+Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy?
+
+# Talk > SMALL > Vic > 1
+[Talk.SMALL.Vic.1]
+I told a prospect we are the Apple of managed services. I do not know what that means either.
+
+# Talk > SMALL > Vic > 2
+[Talk.SMALL.Vic.2]
+Golf on Friday. A good relationship is built on the fifth hole.
+
+# Talk > SMALL > Vic > 3
+[Talk.SMALL.Vic.3]
+Clients love you. I just say you are the best in the building. It is only a little bit a lie.
+
+# Talk > SMALL > Maya > 0
+[Talk.SMALL.Maya.0]
+Today I walked a lady through plugging in her monitor. It was not plugged in. I said that was a very common problem and she felt great.
+
+# Talk > SMALL > Maya > 1
+[Talk.SMALL.Maya.1]
+I just got a Galaxy S4 and I have not turned off the camera shutter sound yet. Sorry, Dan.
+
+# Talk > SMALL > Maya > 2
+[Talk.SMALL.Maya.2]
+Alan showed me how to read an event log. I felt like a detective. A tired one.
+
+# Talk > SMALL > Maya > 3
+[Talk.SMALL.Maya.3]
+I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.
+
+
+# ======================= Talk > GOSSIP =======================
+# Talk > GOSSIP > 0
+[Talk.GOSSIP.0]
+Between us: Morgan has been in the manager meeting since nine. Never a good sign.
+
+# Talk > GOSSIP > 1
+[Talk.GOSSIP.1]
+I heard Vic is already negotiating next year's commission. Good for him.
+
+# Talk > GOSSIP > 2
+[Talk.GOSSIP.2]
+Somebody microwaved fish in the kitchenette again. We are not saying who.
+
+# Talk > GOSSIP > 3
+[Talk.GOSSIP.3]
+I heard the printer on the main floor jammed again. Nobody will own up to it.
+
+
+# ======================= Talk > TIPS_GENERIC =======================
+# Talk > TIPS_GENERIC > Alan > 0
+[Talk.TIPS_GENERIC.Alan.0]
+Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and they remember.
+
+# Talk > TIPS_GENERIC > Alan > 1
+[Talk.TIPS_GENERIC.Alan.1]
+Verify the backups every morning. A backup you have not tested is a hope, not a backup.
+
+# Talk > TIPS_GENERIC > Alan > 2
+[Talk.TIPS_GENERIC.Alan.2]
+Ask the user to save before you touch anything. It takes ten seconds and saves a bad email.
+
+# Talk > TIPS_GENERIC > Garrison > 0
+[Talk.TIPS_GENERIC.Garrison.0]
+Never use a default or seasonal password on a remote login. That is how they get in.
+
+# Talk > TIPS_GENERIC > Garrison > 1
+[Talk.TIPS_GENERIC.Garrison.1]
+If a ransom note shows up, do not reboot. Shadow copies first, backup if you have it, paying is the last resort.
+
+# Talk > TIPS_GENERIC > Garrison > 2
+[Talk.TIPS_GENERIC.Garrison.2]
+Two-factor login for admins first, users second. Most attacks are still just guessing.
+
+# Talk > TIPS_GENERIC > Dan > 0
+[Talk.TIPS_GENERIC.Dan.0]
+Label both ends of every cable. Future you will buy present you a coffee.
+
+# Talk > TIPS_GENERIC > Dan > 1
+[Talk.TIPS_GENERIC.Dan.1]
+No link on a desk? Check the patch cable in the closet before you blame the switch.
+
+# Talk > TIPS_GENERIC > Dan > 2
+[Talk.TIPS_GENERIC.Dan.2]
+The UPS gives you about ninety seconds. Plan the shutdown, do not improvise it.
+
+# Talk > TIPS_GENERIC > Vic > 0
+[Talk.TIPS_GENERIC.Vic.0]
+Clients forgive a slow fix. They do not forgive silence. Call before they call you.
+
+# Talk > TIPS_GENERIC > Vic > 1
+[Talk.TIPS_GENERIC.Vic.1]
+A happy client brings me a referral. An unhappy client brings me a competitor.
+
+# Talk > TIPS_GENERIC > Vic > 2
+[Talk.TIPS_GENERIC.Vic.2]
+If you can fix it before they notice, do. If you cannot, tell them early.
+
+# Talk > TIPS_GENERIC > Maya > 0
+[Talk.TIPS_GENERIC.Maya.0]
+Be kind to the user first. Half of the problem is that they are scared they broke something.
+
+# Talk > TIPS_GENERIC > Maya > 1
+[Talk.TIPS_GENERIC.Maya.1]
+Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.
+
+# Talk > TIPS_GENERIC > Maya > 2
+[Talk.TIPS_GENERIC.Maya.2]
+Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.
+
+
+# ======================= Talk > OWNER_HOLD =======================
+# Talk > OWNER_HOLD > low
+[Talk.OWNER_HOLD.low]
+I am good, boss. Busy, but good.
+
+# Talk > OWNER_HOLD > mid
+[Talk.OWNER_HOLD.mid]
+Honestly? Tired. The queue never really empties.
+
+# Talk > OWNER_HOLD > high
+[Talk.OWNER_HOLD.high]
+I am burning out. I am not going to lie to you.
+
+
+# ======================= Nerds > JOKES =======================
+# Nerds > JOKES > 0
+[Nerds.JOKES.0]
+have you tried turning it off and on again?
+
+# Nerds > JOKES > 1
+[Nerds.JOKES.1]
+just reinstall windows lol
+
+# Nerds > JOKES > 2
+[Nerds.JOKES.2]
+blame the antivirus
+
+# Nerds > JOKES > 3
+[Nerds.JOKES.3]
+that is a PEBKAC, tell the user
+
+# Nerds > JOKES > 4
+[Nerds.JOKES.4]
+format c: fixes everything
+
+
+# ======================= Nerds > THREADS =======================
+# Nerds > THREADS > 0 > title
+[Nerds.THREADS.0.title]
+Print spooler keeps dying on 2008 R2
+
+# Nerds > THREADS > 1 > title
+[Nerds.THREADS.1.title]
+Users locked out after bad passwords: GPO?
+
+# Nerds > THREADS > 2 > title
+[Nerds.THREADS.2.title]
+Disk full, where is all the temp junk?
+
+# Nerds > THREADS > 3 > title
+[Nerds.THREADS.3.title]
+Blue screen 0x7B after a controller swap
+
+# Nerds > THREADS > 4 > title
+[Nerds.THREADS.4.title]
+CryptoLocker: shadow copies, any luck?
+
+# Nerds > THREADS > 5 > title
+[Nerds.THREADS.5.title]
+Robocopy /MIR and NTFS permissions
+
+# Nerds > THREADS > 6 > title
+[Nerds.THREADS.6.title]
+VLANs for voice and data on a cheap switch
+
+# Nerds > THREADS > 7 > title
+[Nerds.THREADS.7.title]
+Stopping RDP brute force: what do you use?
+
+# Nerds > THREADS > 8 > title
+[Nerds.THREADS.8.title]
+Windows XP end of support: migration list?
+
+# Nerds > THREADS > 9 > title
+[Nerds.THREADS.9.title]
+Script to clean temp files on every client
+
+
+# ======================= Lync > MESSAGES =======================
+# Lync > MESSAGES > lunch > text
+[Lync.MESSAGES.lunch.text]
+Lunch? A few of us are grabbing sandwiches.
+
+# Lync > MESSAGES > lunch > options > 0 > label
+[Lync.MESSAGES.lunch.options.0.label]
+SURE, LET'S GO
+
+# Lync > MESSAGES > lunch > options > 0 > reply
+[Lync.MESSAGES.lunch.options.0.reply]
+Great, see you there!
+
+# Lync > MESSAGES > lunch > options > 1 > label
+[Lync.MESSAGES.lunch.options.1.label]
+CAN'T, SWAMPED
+
+# Lync > MESSAGES > lunch > options > 1 > reply
+[Lync.MESSAGES.lunch.options.1.reply]
+No worries, next time.
+
+# Lync > MESSAGES > phones > text
+[Lync.MESSAGES.phones.text]
+Can you cover my phones for ten minutes? I am stuck in a meeting.
+
+# Lync > MESSAGES > phones > options > 0 > label
+[Lync.MESSAGES.phones.options.0.label]
+SURE
+
+# Lync > MESSAGES > phones > options > 0 > reply
+[Lync.MESSAGES.phones.options.0.reply]
+Thanks, you are the best.
+
+# Lync > MESSAGES > phones > options > 1 > label
+[Lync.MESSAGES.phones.options.1.label]
+SORRY, CAN'T
+
+# Lync > MESSAGES > phones > options > 1 > reply
+[Lync.MESSAGES.phones.options.1.reply]
+Okay...
+
+# Lync > MESSAGES > help > text
+[Lync.MESSAGES.help.text]
+Quick one: how do you fix a print spooler that keeps stopping on Server 2008?
+
+# Lync > MESSAGES > help > options > 0 > label
+[Lync.MESSAGES.help.options.0.label]
+WALK THEM THROUGH IT
+
+# Lync > MESSAGES > help > options > 0 > reply
+[Lync.MESSAGES.help.options.0.reply]
+That did it! Thanks.
+
+# Lync > MESSAGES > help > options > 1 > label
+[Lync.MESSAGES.help.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > MESSAGES > help > options > 1 > reply
+[Lync.MESSAGES.help.options.1.reply]
+Sure. No problem.
+
+# Lync > MESSAGES > thanks > text
+[Lync.MESSAGES.thanks.text]
+Hey, thanks for being easy to work with.
+
+
+# ======================= Review > QUOTES =======================
+# Review > QUOTES > FRIEND
+[Review.QUOTES.FRIEND]
+WORKING WITH YOU IS THE BEST PART OF MY DAY.
+
+# Review > QUOTES > FRIENDLY
+[Review.QUOTES.FRIENDLY]
+SOLID TEAMMATE. I WOULD WORK WITH YOU AGAIN.
+
+# Review > QUOTES > NEUTRAL
+[Review.QUOTES.NEUTRAL]
+DOES THE JOB. HARD TO READ.
+
+# Review > QUOTES > COLD
+[Review.QUOTES.COLD]
+KEEPS TO THEMSELVES. A BIT ABRUPT.
+
+# Review > QUOTES > HOSTILE
+[Review.QUOTES.HOSTILE]
+HONESTLY? HARD TO WORK WITH.
+
+
+# ======================= Review > EPILOGUES =======================
+# Review > EPILOGUES > lead
+[Review.EPILOGUES.lead]
+YOU TAKE THE TEAM LEAD ROLE. MORE PAY, A PAGER AND THREE PEOPLE WHO NOW COME TO YOU WITH EVERYTHING. THE NEXT YEAR WILL BE A DIFFERENT KIND OF HARD.
+
+# Review > EPILOGUES > internal
+[Review.EPILOGUES.internal]
+YOU SWAP SIRENS FOR STEADY HOURS: ONE OFFICE, ONE NETWORK, NO ONE CALLING AT NIGHT. YOU WILL MISS THE CHAOS A LITTLE.
+
+# Review > EPILOGUES > stay
+[Review.EPILOGUES.stay]
+YOU STAY A TECH AT PIXEL IT PARTNERS. SAME DESK, SAME PHONES, A LOT MORE SKILL. THE TICKETS KEEP COMING.
+
+
+# ======================= Social > THANKS =======================
+# Social > THANKS > 0
+[Social.THANKS.0]
+thanks for grabbing the phones earlier!
+
+# Social > THANKS > 1
+[Social.THANKS.1]
+you are a lifesaver on the phones
+
+# Social > THANKS > 2
+[Social.THANKS.2]
+hey, appreciate the phone coverage
+
+
+# ======================= Shift > WEEK_TRAFFIC =======================
+# Shift > WEEK_TRAFFIC > 1 > text
+[Shift.WEEK_TRAFFIC.1.text]
+THE HIGHWAY IS DOWN TO ONE LANE THIS WEEK.
+
+# Shift > WEEK_TRAFFIC > 3 > text
+[Shift.WEEK_TRAFFIC.3.text]
+FIRST SNOW OF THE YEAR. EVERYONE DRIVES LIKE IT IS THE END OF THE WORLD.
+
+
+# ======================= Shift > REASONS =======================
+# Shift > REASONS > 0
+[Shift.REASONS.0]
+AN ACCIDENT ON THE HIGHWAY
+
+# Shift > REASONS > 1
+[Shift.REASONS.1]
+A STALLED TRUCK IN THE LEFT LANE
+
+# Shift > REASONS > 2
+[Shift.REASONS.2]
+A TRAIN SITTING ON THE CROSSING
+
+# Shift > REASONS > 3
+[Shift.REASONS.3]
+RAIN AND A FENDER BENDER
+
+# Shift > REASONS > 4
+[Shift.REASONS.4]
+ROAD WORK NOBODY WARNED YOU ABOUT
+
+
+# ======================= Shift > PAGES =======================
+# Shift > PAGES > 0
+[Shift.PAGES.0]
+the file server is almost out of disk space
+
+# Shift > PAGES > 1
+[Shift.PAGES.1]
+the nightly backup job failed
+
+# Shift > PAGES > 2
+[Shift.PAGES.2]
+the VPN is down for the remote staff
+
+# Shift > PAGES > 3
+[Shift.PAGES.3]
+the mail queue is stuck
+
+# Shift > PAGES > 4
+[Shift.PAGES.4]
+the domain controller stopped answering pings
+
+
+# ======================= Hints > DAY1 =======================
+# Hints > DAY1 > 0 > text
+[Hints.DAY1.0.text]
+ARROWS OR A/D MOVE. HOLD SHIFT TO RUN. SPACE JUMPS.
+
+# Hints > DAY1 > 1 > text
+[Hints.DAY1.1.text]
+E USES WHAT IS NEAR: DOORS, THE COFFEE MACHINE, CHAIRS. TAB PICKS THE TARGET.
+
+# Hints > DAY1 > 2 > text
+[Hints.DAY1.2.text]
+SIT AT A DESK AND PRESS E ON THE MONITOR TO OPEN THE COMPUTER. ESC CLOSES IT.
+
+# Hints > DAY1 > 3 > text
+[Hints.DAY1.3.text]
+P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLOW.
+
+# Hints > DAY1 > 4 > text
+[Hints.DAY1.4.text]
+TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA.
+
+
+# ======================= Growth > STRETCH =======================
+# Growth > STRETCH > servers
+[Growth.STRETCH.servers]
+A file server will not mount a share after a patch Tuesday
+
+# Growth > STRETCH > security
+[Growth.STRETCH.security]
+A user's mailbox is sending spam and nobody knows how
+
+# Growth > STRETCH > networking
+[Growth.STRETCH.networking]
+Two buildings are on the same subnet and nobody knows why
+
+# Growth > STRETCH > powershell
+[Growth.STRETCH.powershell]
+Fifty mailboxes need a setting changed and the GUI will take all day
+
+
+# ======================= Expo > TEXT =======================
+# Expo > TEXT > invite_subject
+[Expo.TEXT.invite_subject]
+Rodent Nation 2014: top performers go
+
+# Expo > TEXT > invite_body
+[Expo.TEXT.invite_body]
+LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan
+
+# Expo > TEXT > progress
+[Expo.TEXT.progress]
+KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.
+
+# Expo > TEXT > yes_subject
+[Expo.TEXT.yes_subject]
+Pack your bags: Rodent Nation
+
+# Expo > TEXT > yes_body
+[Expo.TEXT.yes_body]
+You hit the KPIs (%s). You fly out tomorrow for two days of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan
+
+# Expo > TEXT > no_subject
+[Expo.TEXT.no_subject]
+Rodent Nation: not this year
+
+# Expo > TEXT > no_body
+[Expo.TEXT.no_body]
+You did not quite make the KPIs (%s), so Dan is going to Rodent Nation this year. He will bring back notes. Aim for it next year. - Morgan
+
+# Expo > TEXT > arrive
+[Expo.TEXT.arrive]
+RODENT NATION 2014. Orlando, a resort the size of a small town: palm trees in the lobby, carpet with swirls, a ballroom that fits a thousand MSP nerds, and breakout rooms down every hallway. Your badge says TECH and has a little rat on it.
+
+# Expo > TEXT > keynote
+[Expo.TEXT.keynote]
+The LabRat CEO takes the stage in the ballroom under a sign that says AUTOMATE EVERYTHING. Eleven hundred people applaud a slide about a dashboard. Meanwhile your phone buzzes: the queue back home is not empty.
+
+# Expo > TEXT > keynote_listen
+[Expo.TEXT.keynote_listen]
+You put the phone away and listen. The CEO says the future is scripts, monitoring and fewer truck rolls. You take notes. (+3 customer XP)
+
+# Expo > TEXT > keynote_peek
+[Expo.TEXT.keynote_peek]
+You check the queue under the table. Dan has it, but you leave a few notes. It costs you half the keynote.
+
+# Expo > TEXT > hall
+[Expo.TEXT.hall]
+The solutions pavilion: a long row of booths, free pens, a man in a rat costume, and every vendor wants a scan of your badge.
+
+# Expo > TEXT > hall_swag
+[Expo.TEXT.hall_swag]
+You collect a bag of pens, stress balls and a USB drive nobody will ever plug in. Alan will want a pen. (coworkers like you a little more)
+
+# Expo > TEXT > hall_nerds
+[Expo.TEXT.hall_nerds]
+You find the LabRat Nerds forum regulars at the community table. Real faces behind the nicknames. (+4 forum karma)
+
+# Expo > TEXT > hall_vendor
+[Expo.TEXT.hall_vendor]
+A backup vendor walks you through a disaster recovery demo that actually works. You take the brochure. (+6 security XP)
+
+# Expo > TEXT > raffle_win
+[Expo.TEXT.raffle_win]
+They call your badge number: you won the Rock Star Upgrade! A new laptop bag, a hotel suite night and a dinner for two. You sleep like a baby. (energy full, +3 reputation)
+
+# Expo > TEXT > raffle_lose
+[Expo.TEXT.raffle_lose]
+Not your number. A man from Tulsa wins the Rock Star Upgrade and cries. Oh well.
+
+# Expo > TEXT > wrap
+[Expo.TEXT.wrap]
+The last session lets out. You fly home with a tote bag, a head full of ideas and a lanyard you will keep. Tomorrow the queue will want to hear about it.
+
+# Expo > TEXT > dan_back
+[Expo.TEXT.dan_back]
+Dan is back from Rodent Nation with a tote bag and one thing he swears will change your life: always label the patch panel. (+6 networking XP)
+
+# Expo > TEXT > home_pile
+[Expo.TEXT.home_pile]
+While you were away tickets piled up. Dan did what he could.
+
+# Expo > TEXT > home_ok
+[Expo.TEXT.home_ok]
+You checked in during the keynote, so the pile is small. Dan says thanks.
+
+# Expo > TEXT > report
+[Expo.TEXT.report]
+RODENT NATION TRIP
+
+# Expo > TEXT > checkin
+[Expo.TEXT.checkin]
+Welcome to Rodent Nation! Here is your badge, a lanyard, the agenda and a tote bag full of flyers. The ballroom opens at nine. The vendor hall is open all day.
+
+# Expo > TEXT > checkin_again
+[Expo.TEXT.checkin_again]
+You already have your badge, hon. Keynote is in the ballroom, left door.
+
+# Expo > TEXT > usher
+[Expo.TEXT.usher]
+Badge, please. No badge, no keynote. Registration is back in the lobby.
+
+# Expo > TEXT > greet_lurker
+[Expo.TEXT.greet_lurker]
+(Nobody here has ever seen your name on the forum.)
+
+# Expo > TEXT > greet_member
+[Expo.TEXT.greet_member]
+(They know your name from the forum.)
+
+# Expo > TEXT > greet_regular
+[Expo.TEXT.greet_regular]
+(Oh, you are THE regular from the forum! They are thrilled.)
+
+# Expo > TEXT > greet_guru
+[Expo.TEXT.greet_guru]
+(A forum guru in person! People stare at your badge.)
+
+# Expo > TEXT > boss_morgan
+[Expo.TEXT.boss_morgan]
+Thanks for being on time. Remember: ask users to save before you reboot, and verify the backups every morning.
+
+# Expo > TEXT > boss_marge
+[Expo.TEXT.boss_marge]
+I have the weekly numbers ready for after the meeting. Cash is tight, but we are okay.
+
+# Expo > TEXT > chat_again
+[Expo.TEXT.chat_again]
+You already chatted. They nod and go back to their coffee.
+
+# Expo > TEXT > vendor_again
+[Expo.TEXT.vendor_again]
+Back again? Here, take another pen. Let me know if you change your mind.
+
+# Expo > TEXT > spam_note
+[Expo.TEXT.spam_note]
+Your inbox fills with follow-ups from the vendors whose booths you gave your badge to.
+
+# Expo > TEXT > to_ballroom
+[Expo.TEXT.to_ballroom]
+The keynote starts at 9:00 in the BALLROOM. Left door in the lobby.
+
+# Expo > TEXT > to_hall
+[Expo.TEXT.to_hall]
+Breakout sessions are down the HALL (right door). Each door is a different session, check the easels. The EXPO HALL is always open too.
+
+# Expo > TEXT > to_booth
+[Expo.TEXT.to_booth]
+The vendor hall is always open: the EXPO HALL door in the lobby. Walk into a booth to see what they have.
+
+# Expo > TEXT > to_raffle
+[Expo.TEXT.to_raffle]
+The closing raffle is in the BALLROOM. Do not miss it.
+
+
+# ======================= Expo > ROUNDS =======================
+# Expo > ROUNDS > 0 > title
+[Expo.ROUNDS.0.title]
+ROUND 1: TUESDAY MORNING
+
+# Expo > ROUNDS > 0 > intro
+[Expo.ROUNDS.0.intro]
+The agenda has seven tracks at the same time. Pick one session.
+
+# Expo > ROUNDS > 0 > sessions > 0 > short
+[Expo.ROUNDS.0.sessions.0.short]
+SCRIPTING 101 LAB
+
+# Expo > ROUNDS > 0 > sessions > 0 > label
+[Expo.ROUNDS.0.sessions.0.label]
+SCRIPTING 101 LAB
+
+# Expo > ROUNDS > 0 > sessions > 0 > text
+[Expo.ROUNDS.0.sessions.0.text]
+A hands-on lab where you write your first real LabRat script. The instructor walks the room. Everything clicks. (+1 PowerShell level)
+
+# Expo > ROUNDS > 0 > sessions > 1 > short
+[Expo.ROUNDS.0.sessions.1.short]
+MONITOR BEST PRACTICE
+
+# Expo > ROUNDS > 0 > sessions > 1 > label
+[Expo.ROUNDS.0.sessions.1.label]
+MONITORING BEST PRACTICES
+
+# Expo > ROUNDS > 0 > sessions > 1 > text
+[Expo.ROUNDS.0.sessions.1.text]
+How to alert on what matters and stop drowning in noise: set thresholds, skip the disk-space-at-79-percent emails. (+8 networking XP)
+
+# Expo > ROUNDS > 0 > sessions > 2 > short
+[Expo.ROUNDS.0.sessions.2.short]
+PATCH MGMT BEST PRACTICE
+
+# Expo > ROUNDS > 0 > sessions > 2 > label
+[Expo.ROUNDS.0.sessions.2.label]
+PATCH MANAGEMENT BEST PRACTICES
+
+# Expo > ROUNDS > 0 > sessions > 2 > text
+[Expo.ROUNDS.0.sessions.2.text]
+Patch Tuesday, approvals, maintenance windows and rollback plans. You leave with a checklist. (+8 servers XP)
+
+# Expo > ROUNDS > 0 > sessions > 3 > short
+[Expo.ROUNDS.0.sessions.3.short]
+SERVICE DESK MATURITY
+
+# Expo > ROUNDS > 0 > sessions > 3 > label
+[Expo.ROUNDS.0.sessions.3.label]
+YOUR SERVICE DESK MATURITY LEVEL
+
+# Expo > ROUNDS > 0 > sessions > 3 > text
+[Expo.ROUNDS.0.sessions.3.text]
+A consultant shows where service desks usually stall: no process, no metrics, no follow-up. You finally have words for what Morgan keeps asking for. (+8 customer XP)
+
+# Expo > ROUNDS > 1 > title
+[Expo.ROUNDS.1.title]
+ROUND 2: TUESDAY AFTERNOON
+
+# Expo > ROUNDS > 1 > intro
+[Expo.ROUNDS.1.intro]
+Lunch was a rubber chicken. Pick the afternoon session.
+
+# Expo > ROUNDS > 1 > sessions > 0 > short
+[Expo.ROUNDS.1.sessions.0.short]
+SCRIPTING 201 LAB
+
+# Expo > ROUNDS > 1 > sessions > 0 > label
+[Expo.ROUNDS.1.sessions.0.label]
+SCRIPTING 201 LAB
+
+# Expo > ROUNDS > 1 > sessions > 0 > text
+[Expo.ROUNDS.1.sessions.0.text]
+Loops, variables and a script that restarts services across a whole client. Hard but useful. (+8 servers XP)
+
+# Expo > ROUNDS > 1 > sessions > 1 > short
+[Expo.ROUNDS.1.sessions.1.short]
+SECURITY FOR MODERN THREATS
+
+# Expo > ROUNDS > 1 > sessions > 1 > label
+[Expo.ROUNDS.1.sessions.1.label]
+RETHINKING SECURITY FOR MODERN THREATS
+
+# Expo > ROUNDS > 1 > sessions > 1 > text
+[Expo.ROUNDS.1.sessions.1.text]
+Antivirus alone is not enough anymore. Layers, patching, backups and training users. (+8 security XP)
+
+# Expo > ROUNDS > 1 > sessions > 2 > short
+[Expo.ROUNDS.1.sessions.2.short]
+MONEY MAKING BDR
+
+# Expo > ROUNDS > 1 > sessions > 2 > label
+[Expo.ROUNDS.1.sessions.2.label]
+ROLL YOUR OWN MONEY-MAKING BDR
+
+# Expo > ROUNDS > 1 > sessions > 2 > text
+[Expo.ROUNDS.1.sessions.2.text]
+A master MSP shows how a good backup and disaster recovery service pays for itself, and how to test restores. (+6 security XP)
+
+# Expo > ROUNDS > 1 > sessions > 3 > short
+[Expo.ROUNDS.1.sessions.3.short]
+BIGGEST MISTAKE PANEL
+
+# Expo > ROUNDS > 1 > sessions > 3 > label
+[Expo.ROUNDS.1.sessions.3.label]
+PARTNER PANEL: MY BIGGEST MISTAKE
+
+# Expo > ROUNDS > 1 > sessions > 3 > text
+[Expo.ROUNDS.1.sessions.3.text]
+Five owners confess their worst outages. The common thread: no backups, no documentation and no one checking. (+8 customer XP)
+
+# Expo > ROUNDS > 2 > title
+[Expo.ROUNDS.2.title]
+ROUND 3: WEDNESDAY MORNING
+
+# Expo > ROUNDS > 2 > intro
+[Expo.ROUNDS.2.intro]
+The last round before the flight. Pick one.
+
+# Expo > ROUNDS > 2 > sessions > 0 > label
+[Expo.ROUNDS.2.sessions.0.label]
+THE HIPAA QUESTIONS EVERY MSP SHOULD ASK
+
+# Expo > ROUNDS > 2 > sessions > 0 > text
+[Expo.ROUNDS.2.sessions.0.text]
+Dental offices and doctors have rules about their data. You now know what to ask Acme Dental. (+8 security XP, Acme Dental trusts you more)
+
+# Expo > ROUNDS > 2 > sessions > 1 > short
+[Expo.ROUNDS.2.sessions.1.short]
+BREAK FIX TO MANAGED
+
+# Expo > ROUNDS > 2 > sessions > 1 > label
+[Expo.ROUNDS.2.sessions.1.label]
+CONVERTING CLIENTS FROM BREAK/FIX TO MANAGED
+
+# Expo > ROUNDS > 2 > sessions > 1 > text
+[Expo.ROUNDS.2.sessions.1.text]
+How to explain monthly service to an owner who only calls when it is broken. (+8 customer XP)
+
+# Expo > ROUNDS > 2 > sessions > 2 > label
+[Expo.ROUNDS.2.sessions.2.label]
+UNDER THE HOOD: ADVANCED CONCEPTS
+
+# Expo > ROUNDS > 2 > sessions > 2 > text
+[Expo.ROUNDS.2.sessions.2.text]
+Database tables, agent logs and a few things the vendor admits they do not document. (+8 servers XP)
+
+# Expo > ROUNDS > 2 > sessions > 3 > short
+[Expo.ROUNDS.2.sessions.3.short]
+WHY I STAY PANEL
+
+# Expo > ROUNDS > 2 > sessions > 3 > label
+[Expo.ROUNDS.2.sessions.3.label]
+PARTNER PANEL: WHY I STAY (A TECH PERSPECTIVE)
+
+# Expo > ROUNDS > 2 > sessions > 3 > text
+[Expo.ROUNDS.2.sessions.3.text]
+Four techs from other MSPs say why they stayed: training budgets, a boss who answers the phone, and a real path to Tier 2. You think about Morgan. (+8 customer XP)
+
+
+# ======================= Expo > VENDORS =======================
+# Expo > VENDORS > 0 > speaker
+[Expo.VENDORS.0.speaker]
+Brad (ShadowPoint Backup)
+
+# Expo > VENDORS > 0 > text
+[Expo.VENDORS.0.text]
+Friend! Do your clients have a real backup, or just a USB drive in a drawer? ShadowPoint does image-based backup with instant virtualization. Forty percent off if you sign up this week!
+
+# Expo > VENDORS > 0 > options > 0 > label
+[Expo.VENDORS.0.options.0.label]
+SIT THROUGH THE DEMO
+
+# Expo > VENDORS > 0 > options > 0 > text
+[Expo.VENDORS.0.options.0.text]
+Brad boots a dead server as a virtual machine in four minutes. You are actually impressed. (+6 security XP)
+
+# Expo > VENDORS > 0 > options > 1 > label
+[Expo.VENDORS.0.options.1.label]
+ASK ABOUT PRICING
+
+# Expo > VENDORS > 0 > options > 1 > text
+[Expo.VENDORS.0.options.1.text]
+Per server, per month, plus storage, plus a setup fee that is somehow not in the brochure. You write it all down. (+3 customer XP)
+
+# Expo > VENDORS > 0 > options > 2 > label
+[Expo.VENDORS.0.options.2.label]
+SCAN MY BADGE FOR THE PRIZE
+
+# Expo > VENDORS > 0 > options > 2 > text
+[Expo.VENDORS.0.options.2.text]
+Beep. You are entered to win a tablet. Brad's smile gets a little wider. (raffle entry, expect emails)
+
+# Expo > VENDORS > 0 > options > 3 > label
+[Expo.VENDORS.0.options.3.label]
+NO THANKS, JUST LOOKING
+
+# Expo > VENDORS > 0 > options > 3 > text
+[Expo.VENDORS.0.options.3.text]
+Brad hands you a pen anyway and says he will be around all week.
+
+# Expo > VENDORS > 0 > mail > from
+[Expo.VENDORS.0.mail.from]
+Brad Kowalski <brad@shadowpoint.example>
+
+# Expo > VENDORS > 0 > mail > subject
+[Expo.VENDORS.0.mail.subject]
+Great meeting you at Rodent Nation!!!
+
+# Expo > VENDORS > 0 > mail > body
+[Expo.VENDORS.0.mail.body]
+Hi, it was great talking at the show! I wanted to follow up on that 40 percent offer. It expires FRIDAY. Can we do a quick 15 minute call? - Brad
+
+# Expo > VENDORS > 1 > speaker
+[Expo.VENDORS.1.speaker]
+Dee (WebWoot Security)
+
+# Expo > VENDORS > 1 > text
+[Expo.VENDORS.1.text]
+Quick question: are your clients protected from CryptoLocker? Because the other guys are not! Our cloud antivirus catches threats before they exist!
+
+# Expo > VENDORS > 1 > options > 0 > label
+[Expo.VENDORS.1.options.0.label]
+WATCH THE THREAT MAP
+
+# Expo > VENDORS > 1 > options > 0 > text
+[Expo.VENDORS.1.options.0.text]
+A glowing map of the world with red dots everywhere. Dee says each dot is somebody who did not buy WebWoot. It is mostly marketing, but you learn a few real terms. (+6 security XP)
+
+# Expo > VENDORS > 1 > options > 1 > label
+[Expo.VENDORS.1.options.1.label]
+ASK HOW IT WORKS UNDER THE HOOD
+
+# Expo > VENDORS > 1 > options > 1 > text
+[Expo.VENDORS.1.options.1.text]
+Dee has to fetch an engineer. He explains how definitions and heuristics differ and which clients benefit. Useful. (+3 servers XP)
+
+# Expo > VENDORS > 1 > options > 2 > label
+[Expo.VENDORS.1.options.2.label]
+SCAN MY BADGE FOR THE T-SHIRT
+
+# Expo > VENDORS > 1 > options > 2 > text
+[Expo.VENDORS.1.options.2.text]
+Beep. A free t-shirt and a lifetime of email. (raffle entry, expect emails)
+
+# Expo > VENDORS > 1 > options > 3 > label
+[Expo.VENDORS.1.options.3.label]
+WE ALREADY HAVE ANTIVIRUS
+
+# Expo > VENDORS > 1 > options > 3 > text
+[Expo.VENDORS.1.options.3.text]
+Dee says everyone says that, until they do not. She gives you a sticker.
+
+# Expo > VENDORS > 1 > mail > from
+[Expo.VENDORS.1.mail.from]
+Dee Kessler <dee@webwoot.example>
+
+# Expo > VENDORS > 1 > mail > subject
+[Expo.VENDORS.1.mail.subject]
+Is your client protected? (reminder)
+
+# Expo > VENDORS > 1 > mail > body
+[Expo.VENDORS.1.mail.body]
+Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let us show you a 30 day trial. Reply YES for a free assessment. - Dee
+
+# Expo > VENDORS > 2 > speaker
+[Expo.VENDORS.2.speaker]
+Rex (SoftSwipe PSA)
+
+# Expo > VENDORS > 2 > text
+[Expo.VENDORS.2.text]
+Still using ConnectWhy? I can hear it from here. SoftSwipe PSA: one pane of glass, tickets, billing, projects, even a CRM! Switch this quarter and we migrate your data FREE.
+
+# Expo > VENDORS > 2 > options > 0 > label
+[Expo.VENDORS.2.options.0.label]
+SEE THE DASHBOARD
+
+# Expo > VENDORS > 2 > options > 0 > text
+[Expo.VENDORS.2.options.0.text]
+A very busy dashboard with a very small font. The billing screen is genuinely good. (+6 customer XP)
+
+# Expo > VENDORS > 2 > options > 1 > label
+[Expo.VENDORS.2.options.1.label]
+ASK ABOUT MIGRATION
+
+# Expo > VENDORS > 2 > options > 1 > text
+[Expo.VENDORS.2.options.1.text]
+Rex goes quiet. Then he admits data migration is 'a partnership'. You note which fields are not imported. (+3 networking XP)
+
+# Expo > VENDORS > 2 > options > 2 > label
+[Expo.VENDORS.2.options.2.label]
+SCAN MY BADGE FOR THE DRAWING
+
+# Expo > VENDORS > 2 > options > 2 > text
+[Expo.VENDORS.2.options.2.text]
+Beep. A chance at a game console and a follow-up call from Rex. (raffle entry, expect emails)
+
+# Expo > VENDORS > 2 > options > 3 > label
+[Expo.VENDORS.2.options.3.label]
+WE ARE HAPPY WITH WHAT WE HAVE
+
+# Expo > VENDORS > 2 > options > 3 > text
+[Expo.VENDORS.2.options.3.text]
+Rex hands you a stress ball shaped like a ticket and says he will check back in a month.
+
+# Expo > VENDORS > 2 > mail > from
+[Expo.VENDORS.2.mail.from]
+Rex Dalton <rex@softswipe.example>
+
+# Expo > VENDORS > 2 > mail > subject
+[Expo.VENDORS.2.mail.subject]
+Following up: SoftSwipe PSA demo?
+
+# Expo > VENDORS > 2 > mail > body
+[Expo.VENDORS.2.mail.body]
+Hi! I saw you stopped by the booth. I would love to give you a personal demo of SoftSwipe PSA. Are you the decision maker? - Rex
+
+
+# ======================= Expo > CHATS =======================
+# Expo > CHATS > 0 > speaker
+[Expo.CHATS.0.speaker]
+rodent_rick (Dave, small MSP, Ohio)
+
+# Expo > CHATS > 0 > text
+[Expo.CHATS.0.text]
+Six techs, forty clients. We dropped per-incident billing last year. Flat monthly or nothing. Best decision we ever made.
+
+# Expo > CHATS > 0 > options > 0 > label
+[Expo.CHATS.0.options.0.label]
+ASK HOW HE SOLD IT
+
+# Expo > CHATS > 0 > options > 0 > text
+[Expo.CHATS.0.options.0.text]
+He says: stop calling it a price increase and call it predictable IT. And never discount the first year. (+4 customer XP)
+
+# Expo > CHATS > 0 > options > 1 > label
+[Expo.CHATS.0.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 0 > options > 1 > text
+[Expo.CHATS.0.options.1.text]
+You swap cards. His has a cartoon dog on it.
+
+# Expo > CHATS > 0 > options > 2 > label
+[Expo.CHATS.0.options.2.label]
+NICE TO MEET YOU
+
+# Expo > CHATS > 0 > options > 2 > text
+[Expo.CHATS.0.options.2.text]
+He tells you to look him up in the forum.
+
+# Expo > CHATS > 1 > speaker
+[Expo.CHATS.1.speaker]
+gnawer (Priya, in-house IT)
+
+# Expo > CHATS > 1 > text
+[Expo.CHATS.1.text]
+Forty Windows XP machines to go and support already ended in April. My boss thinks we can just leave them. Do you do XP migrations?
+
+# Expo > CHATS > 1 > options > 0 > label
+[Expo.CHATS.1.options.0.label]
+SHARE YOUR MIGRATION PLAN
+
+# Expo > CHATS > 1 > options > 0 > text
+[Expo.CHATS.1.options.0.text]
+You compare notes: image first, move the data, check the printers. She writes it on her badge. (+4 networking XP)
+
+# Expo > CHATS > 1 > options > 1 > label
+[Expo.CHATS.1.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 1 > options > 1 > text
+[Expo.CHATS.1.options.1.text]
+She promises to send you the checklist she is building.
+
+# Expo > CHATS > 1 > options > 2 > label
+[Expo.CHATS.1.options.2.label]
+GOOD LUCK WITH THAT
+
+# Expo > CHATS > 1 > options > 2 > text
+[Expo.CHATS.1.options.2.text]
+She groans and laughs.
+
+# Expo > CHATS > 2 > speaker
+[Expo.CHATS.2.speaker]
+PS_wizard (Gary, script guy)
+
+# Expo > CHATS > 2 > text
+[Expo.CHATS.2.text]
+I scripted our whole new-client onboarding in PowerShell. A weekend of work, saves me five hours a week. I will show anyone who asks.
+
+# Expo > CHATS > 2 > options > 0 > label
+[Expo.CHATS.2.options.0.label]
+ASK TO SEE IT
+
+# Expo > CHATS > 2 > options > 0 > text
+[Expo.CHATS.2.options.0.text]
+He walks you through loops and a function you can steal. You take screenshots with your phone. (+4 servers XP)
+
+# Expo > CHATS > 2 > options > 1 > label
+[Expo.CHATS.2.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 2 > options > 1 > text
+[Expo.CHATS.2.options.1.text]
+His card says SCRIPT WIZARD, which he printed himself.
+
+# Expo > CHATS > 2 > options > 2 > label
+[Expo.CHATS.2.options.2.label]
+MAYBE LATER
+
+# Expo > CHATS > 2 > options > 2 > text
+[Expo.CHATS.2.options.2.text]
+He looks a little disappointed.
+
+# Expo > CHATS > 3 > speaker
+[Expo.CHATS.3.speaker]
+old_hand (Tina, security consultant)
+
+# Expo > CHATS > 3 > text
+[Expo.CHATS.3.text]
+CryptoLocker hit two of my clients last month. Both had working backups, so it was a bad afternoon instead of a bad year. Test your restores!
+
+# Expo > CHATS > 3 > options > 0 > label
+[Expo.CHATS.3.options.0.label]
+ASK ABOUT HER RESTORE TEST
+
+# Expo > CHATS > 3 > options > 0 > text
+[Expo.CHATS.3.options.0.text]
+Once a quarter she restores a random file server into a lab and times it. You will do that. (+4 security XP)
+
+# Expo > CHATS > 3 > options > 1 > label
+[Expo.CHATS.3.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 3 > options > 1 > text
+[Expo.CHATS.3.options.1.text]
+She hands you a card with an incident hotline on the back.
+
+# Expo > CHATS > 3 > options > 2 > label
+[Expo.CHATS.3.options.2.label]
+GOOD ADVICE, THANKS
+
+# Expo > CHATS > 3 > options > 2 > text
+[Expo.CHATS.3.options.2.text]
+She tells you to do it before you need it.
+
+# Expo > CHATS > 4 > speaker
+[Expo.CHATS.4.speaker]
+xX_n00b_Xx (Marcus, shy owner)
+
+# Expo > CHATS > 4 > text
+[Expo.CHATS.4.text]
+Is it rude to take the free pen and walk away? I have a rule: twenty minute pitches are not worth a pen.
+
+# Expo > CHATS > 4 > options > 0 > label
+[Expo.CHATS.4.options.0.label]
+TELL HIM TO USE THE BADGE TRICK
+
+# Expo > CHATS > 4 > options > 0 > text
+[Expo.CHATS.4.options.0.text]
+You explain: turn your badge around so they cannot scan it. He laughs for a full minute. (+3 customer XP)
+
+# Expo > CHATS > 4 > options > 1 > label
+[Expo.CHATS.4.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 4 > options > 1 > text
+[Expo.CHATS.4.options.1.text]
+He swaps cards, a bit surprised that anyone asked.
+
+# Expo > CHATS > 4 > options > 2 > label
+[Expo.CHATS.4.options.2.label]
+ENJOY THE SHOW
+
+# Expo > CHATS > 4 > options > 2 > text
+[Expo.CHATS.4.options.2.text]
+He says he will try.
+
+# Expo > CHATS > 5 > speaker
+[Expo.CHATS.5.speaker]
+trollbot (Trent, 11,000 posts)
+
+# Expo > CHATS > 5 > text
+[Expo.CHATS.5.text]
+So YOU are the one from the forum. I read your answers. Wrong, all of them. I would correct them in person but I could go on for an hour.
+
+# Expo > CHATS > 5 > options > 0 > label
+[Expo.CHATS.5.options.0.label]
+ASK WHAT EXACTLY WAS WRONG
+
+# Expo > CHATS > 5 > options > 0 > text
+[Expo.CHATS.5.options.0.text]
+Forty minutes later you have learned nothing about PowerShell and a lot about staying calm with difficult people. (+3 customer XP)
+
+# Expo > CHATS > 5 > options > 1 > label
+[Expo.CHATS.5.options.1.label]
+SWAP BUSINESS CARDS
+
+# Expo > CHATS > 5 > options > 1 > text
+[Expo.CHATS.5.options.1.text]
+His card just says TRENT in a font you do not want to name.
+
+# Expo > CHATS > 5 > options > 2 > label
+[Expo.CHATS.5.options.2.label]
+WALK AWAY SLOWLY
+
+# Expo > CHATS > 5 > options > 2 > text
+[Expo.CHATS.5.options.2.text]
+He is already explaining something to somebody else.
+
+
+# ======================= PrinterGame > TEXT =======================
+# PrinterGame > TEXT > title
+[PrinterGame.TEXT.title]
+PRINTER REPAIR
+
+# PrinterGame > TEXT > intro1
+[PrinterGame.TEXT.intro1]
+THE COPIER GRINDS AND THE DISPLAY SAYS
+
+# PrinterGame > TEXT > intro2
+[PrinterGame.TEXT.intro2]
+PAPER JAM 13.20.00. THEY ALWAYS SAY THAT.
+
+# PrinterGame > TEXT > intro3
+[PrinterGame.TEXT.intro3]
+SPACE TO BEGIN, ESC TO GIVE UP
+
+# PrinterGame > TEXT > jam_help
+[PrinterGame.TEXT.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN
+
+# PrinterGame > TEXT > jam_clean
+[PrinterGame.TEXT.jam_clean]
+A CLEAN PULL. THE SHEET COMES OUT WHOLE.
+
+# PrinterGame > TEXT > jam_hold
+[PrinterGame.TEXT.jam_hold]
+IT HOLDS. NOT QUITE: TRY AGAIN.
+
+# PrinterGame > TEXT > jam_tear
+[PrinterGame.TEXT.jam_tear]
+RIP! A SCRAP IS STILL INSIDE.
+
+# PrinterGame > TEXT > toner_help
+[PrinterGame.TEXT.toner_help]
+LEFT / RIGHT TO PICK, SPACE TO INSTALL
+
+# PrinterGame > TEXT > toner_ok
+[PrinterGame.TEXT.toner_ok]
+CLICK. IT SEATS.
+
+# PrinterGame > TEXT > toner_bad
+[PrinterGame.TEXT.toner_bad]
+WRONG CARTRIDGE. THE PRINTER BEEPS.
+
+# PrinterGame > TEXT > shake_help
+[PrinterGame.TEXT.shake_help]
+SHAKE THE CARTRIDGE: A D A D A D
+
+# PrinterGame > TEXT > shake_late
+[PrinterGame.TEXT.shake_late]
+TOO SLOW. TONER DUST EVERYWHERE.
+
+# PrinterGame > TEXT > hit
+[PrinterGame.TEXT.hit]
+YOU HIT THE PRINTER. IT WORKS. DO NOT TELL ANYONE.
+
+# PrinterGame > TEXT > stars3
+[PrinterGame.TEXT.stars3]
+PERFECT. A FLAWLESS TEST PAGE.
+
+# PrinterGame > TEXT > stars2
+[PrinterGame.TEXT.stars2]
+GOOD ENOUGH. A FEW STREAKS.
+
+# PrinterGame > TEXT > stars1
+[PrinterGame.TEXT.stars1]
+IT PRINTS. MOSTLY.
+
+# PrinterGame > TEXT > stars0
+[PrinterGame.TEXT.stars0]
+YOU GIVE UP. THE PRINTER WINS.
+
+# PrinterGame > TEXT > tray_help
+[PrinterGame.TEXT.tray_help]
+PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+
+# PrinterGame > TEXT > tray_ok
+[PrinterGame.TEXT.tray_ok]
+LETTER PAPER IN TRAY 2. PC LOAD LETTER IS SOLVED. YOU ARE A HERO.
+
+# PrinterGame > TEXT > tray_bad
+[PrinterGame.TEXT.tray_bad]
+WRONG PAPER. THE PRINTER JAMS ON PRINCIPLE.
+
+# PrinterGame > TEXT > tray_hit
+[PrinterGame.TEXT.tray_hit]
+YOU HIT THE PRINTER AND IT WORKS. DO NOT TELL ANYONE.
+
+# PrinterGame > TEXT > pray_help
+[PrinterGame.TEXT.pray_help]
+P: PRAY TO THE SYSADMIN GODS
+
+# PrinterGame > TEXT > pray_none
+[PrinterGame.TEXT.pray_none]
+THE GODS HAVE HEARD ENOUGH FROM YOU TODAY.
+
+
+# ======================= PrinterGame > QUESTIONS =======================
+# PrinterGame > QUESTIONS > 0 > options > 1
+[PrinterGame.QUESTIONS.0.options.1]
+REPLACE THE CARTRIDGE
+
+# PrinterGame > QUESTIONS > 0 > options > 2
+[PrinterGame.QUESTIONS.0.options.2]
+SHAKE IT AND KEEP PRINTING
+
+# PrinterGame > QUESTIONS > 0 > why
+[PrinterGame.QUESTIONS.0.why]
+SHAKING BUYS ABOUT TWENTY PAGES. THEN THE STREAKS COME BACK.
+
+# PrinterGame > QUESTIONS > 1 > error
+[PrinterGame.QUESTIONS.1.error]
+ERROR 79 SERVICE
+
+# PrinterGame > QUESTIONS > 1 > options > 0
+[PrinterGame.QUESTIONS.1.options.0]
+REINSTALL THE DRIVER
+
+# PrinterGame > QUESTIONS > 1 > options > 1
+[PrinterGame.QUESTIONS.1.options.1]
+POWER CYCLE AND RESEAT THE FORMATTER
+
+# PrinterGame > QUESTIONS > 1 > options > 2
+[PrinterGame.QUESTIONS.1.options.2]
+CALL THE VENDOR
+
+# PrinterGame > QUESTIONS > 1 > why
+[PrinterGame.QUESTIONS.1.why]
+A 79 IS USUALLY THE FORMATTER OR A BAD PRINT JOB. UNPLUG, WAIT, RESEAT, TRY AGAIN.
+
+# PrinterGame > QUESTIONS > 2 > error
+[PrinterGame.QUESTIONS.2.error]
+PRINTER OFFLINE
+
+# PrinterGame > QUESTIONS > 2 > options > 0
+[PrinterGame.QUESTIONS.2.options.0]
+SET IT BACK ONLINE
+
+# PrinterGame > QUESTIONS > 2 > options > 1
+[PrinterGame.QUESTIONS.2.options.1]
+BUY A NEW PRINTER
+
+# PrinterGame > QUESTIONS > 2 > options > 2
+[PrinterGame.QUESTIONS.2.options.2]
+REINSTALL WINDOWS
+
+# PrinterGame > QUESTIONS > 2 > why
+[PrinterGame.QUESTIONS.2.why]
+SOMEONE PRESSED THE OFFLINE BUTTON. SOMEONE ALWAYS DOES.
+
+# PrinterGame > QUESTIONS > 3 > error
+[PrinterGame.QUESTIONS.3.error]
+PAPER MISMATCH TRAY 1
+
+# PrinterGame > QUESTIONS > 3 > options > 1
+[PrinterGame.QUESTIONS.3.options.1]
+SET TRAY 1 TO PLAIN PAPER
+
+# PrinterGame > QUESTIONS > 3 > why
+[PrinterGame.QUESTIONS.3.why]
+THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.
+
+
+# ======================= Onsite > TEXT =======================
+# Onsite > TEXT > fine
+[Onsite.TEXT.fine]
+You look it over. Nothing wrong with this one.
+
+# Onsite > TEXT > inspected
+[Onsite.TEXT.inspected]
+You already looked at that one.
+
+# Onsite > TEXT > found_ticket
+[Onsite.TEXT.found_ticket]
+You log a ticket. The team will pick it up. The client likes that you spotted it.
+
+# Onsite > TEXT > found_project
+[Onsite.TEXT.found_project]
+You note it as an opportunity. A quote will be waiting for you in the morning.
+
+# Onsite > TEXT > found_note
+[Onsite.TEXT.found_note]
+You make a mental note. It might become a problem.
+
+# Onsite > TEXT > found_nocampaign
+[Onsite.TEXT.found_nocampaign]
+You would log a ticket for that.
+
+# Onsite > TEXT > missed_mail
+[Onsite.TEXT.missed_mail]
+You looked right at it when you visited and did not say a word. Now it has broken. Please look at it today.
+
+# Onsite > TEXT > meeting_done
+[Onsite.TEXT.meeting_done]
+The meeting is over. You shake hands and walk out.
+
+# Onsite > TEXT > pitch_signed
+[Onsite.TEXT.pitch_signed]
+They sign. The owner walks you to the door and says to send the paperwork.
+
+# Onsite > TEXT > pitch_think
+[Onsite.TEXT.pitch_think]
+They will think about it. You leave a card and a folder.
+
+# Onsite > TEXT > qbr_fee
+[Onsite.TEXT.qbr_fee]
+They are so happy they add premium support. Their fee goes up 10 percent.
+
+# Onsite > TEXT > door_title
+[Onsite.TEXT.door_title]
+Your van is parked out front. Where to?
+
+# Onsite > TEXT > door_ticket
+[Onsite.TEXT.door_ticket]
+Ticket #%d needs you onsite at %s.
+
+# Onsite > TEXT > visit_confirm
+[Onsite.TEXT.visit_confirm]
+Drive to %s? About %d minutes each way, and the queue keeps ageing while you are out.
+
+# Onsite > TEXT > offer
+[Onsite.TEXT.offer]
+%s needs you onsite: this cannot be fixed from the RMM. The drive takes about %d minutes each way and your other tickets keep ageing while you are out.
+
+# Onsite > TEXT > go
+[Onsite.TEXT.go]
+DRIVE THERE NOW
+
+# Onsite > TEXT > arrive
+[Onsite.TEXT.arrive]
+You arrive at %s after %d minutes on the road. Walk to the equipment and press E on it.
+
+# Onsite > TEXT > nothing
+[Onsite.TEXT.nothing]
+Nothing wrong with this one. Look for what the ticket describes.
+
+# Onsite > TEXT > no_job
+[Onsite.TEXT.no_job]
+Everything looks fine here.
+
+# Onsite > TEXT > leave_unmet
+[Onsite.TEXT.leave_unmet]
+You have not met the owner yet. If you leave now the visit was a waste of a drive.
+
+# Onsite > TEXT > arrive_visit
+[Onsite.TEXT.arrive_visit]
+You arrive at %s after %d minutes on the road. Look around first, then ask for the owner (the OWNER door).
+
+# Onsite > TEXT > intro_mail
+[Onsite.TEXT.intro_mail]
+From day 3, some problems cannot be fixed from the RMM: a dead switch, a failing drive. The ticket will say GO ONSITE in the PSA. You can also use the front door any time to visit a client. Mind the clock: your other tickets keep ageing while you are out. - Morgan
+
+# Onsite > TEXT > cooldown
+[Onsite.TEXT.cooldown]
+You already logged something for them today. Give them a day.
+
+# Onsite > TEXT > leave_ask
+[Onsite.TEXT.leave_ask]
+The ticket is still open. If you leave now the client will not be happy.
+
+# Onsite > TEXT > stay
+[Onsite.TEXT.stay]
+STAY AND FINISH
+
+# Onsite > TEXT > home
+[Onsite.TEXT.home]
+You drive back to the office (%d minutes). The queue has grown.
+
+# Onsite > TEXT > fixed
+[Onsite.TEXT.fixed]
+Fixed onsite. The client signs the ticket and thanks you.
+
+# Onsite > TEXT > dropped
+[Onsite.TEXT.dropped]
+You left before finishing. The client is not pleased.
+
+# Onsite > TEXT > symptom
+[Onsite.TEXT.symptom]
+NO RESPONSE FROM THE HOST. NEEDS HANDS ON THE EQUIPMENT: GO ONSITE FROM THE PSA.
+
+# Onsite > TEXT > staff
+[Onsite.TEXT.staff]
+The front desk person points you toward the equipment and offers you a coffee.
+
+# Onsite > TEXT > printer_stars3
+[Onsite.TEXT.printer_stars3]
+FLAWLESS. The printer prints a perfect test page. The whole office applauds. (+12 servers XP)
+
+# Onsite > TEXT > printer_stars2
+[Onsite.TEXT.printer_stars2]
+You win, with a few scratches. The printer works, mostly. (+8 servers XP)
+
+# Onsite > TEXT > printer_stars1
+[Onsite.TEXT.printer_stars1]
+It prints. The streaks are still there but nobody will say anything. (+4 servers XP)
+
+# Onsite > TEXT > printer_stars0
+[Onsite.TEXT.printer_stars0]
+The printer won. You close the lid and promise to send a quote for a new one.
+
+# Onsite > TEXT > printer_practice
+[Onsite.TEXT.printer_practice]
+This printer is acting up. Want to take a crack at it? (practice: it does not count for a ticket)
+
+# Onsite > TEXT > printer_practice_done
+[Onsite.TEXT.printer_practice_done]
+Printer repair: %d of 3 stars.
+
+
+# ======================= Onsite > JOBS =======================
+# Onsite > JOBS > 0 > summary
+[Onsite.JOBS.0.summary]
+The whole office has no network
+
+# Onsite > JOBS > 0 > body
+[Onsite.JOBS.0.body]
+Nothing works since this morning. The little box on the wall has no lights. Please come out, we cannot work. - %s
+
+# Onsite > JOBS > 0 > intro
+[Onsite.JOBS.0.intro]
+The network cabinet is dark. The switch has no lights, the power adapter is warm and one cable end has been chewed.
+
+# Onsite > JOBS > 0 > options > 0 > label
+[Onsite.JOBS.0.options.0.label]
+SWAP IN A NEW SWITCH
+
+# Onsite > JOBS > 0 > options > 0 > text
+[Onsite.JOBS.0.options.0.text]
+New switch, same cables. Everything lights up and the whole office cheers. (+8 networking XP)
+
+# Onsite > JOBS > 0 > options > 1 > label
+[Onsite.JOBS.0.options.1.label]
+RESEAT THE POWER AND THE CABLES
+
+# Onsite > JOBS > 0 > options > 1 > text
+[Onsite.JOBS.0.options.1.text]
+It lights up for a minute, then dies again. It really needs replacing.
+
+# Onsite > JOBS > 0 > options > 2 > label
+[Onsite.JOBS.0.options.2.label]
+TAKE IT BACK TO THE SHOP
+
+# Onsite > JOBS > 0 > options > 2 > text
+[Onsite.JOBS.0.options.2.text]
+You bag the switch. The office is down until you come back. Not great.
+
+# Onsite > JOBS > 1 > summary
+[Onsite.JOBS.1.summary]
+The server is beeping and email is slow
+
+# Onsite > JOBS > 1 > body
+[Onsite.JOBS.1.body]
+There is a loud beep coming from the server in the back and the email is crawling. Please send someone. - %s
+
+# Onsite > JOBS > 1 > intro
+[Onsite.JOBS.1.intro]
+The server beeps every ten seconds. The front panel shows an amber light on the second drive: a failed disk in the RAID.
+
+# Onsite > JOBS > 1 > options > 0 > label
+[Onsite.JOBS.1.options.0.label]
+HOT-SWAP THE FAILED DRIVE
+
+# Onsite > JOBS > 1 > options > 0 > text
+[Onsite.JOBS.1.options.0.text]
+You pull the dead disk and slide in the spare. The array starts to rebuild and the beeping stops. (+8 servers XP)
+
+# Onsite > JOBS > 1 > options > 1 > label
+[Onsite.JOBS.1.options.1.label]
+SILENCE THE ALARM AND CHECK LATER
+
+# Onsite > JOBS > 1 > options > 1 > text
+[Onsite.JOBS.1.options.1.text]
+It is quiet now. That is not fixing it.
+
+# Onsite > JOBS > 1 > options > 2 > label
+[Onsite.JOBS.1.options.2.label]
+RUN A BACKUP FIRST, THEN SWAP
+
+# Onsite > JOBS > 1 > options > 2 > text
+[Onsite.JOBS.1.options.2.text]
+It takes a long time, but you have a fresh copy before touching anything. Then the swap goes smoothly. (+6 security XP)
+
+# Onsite > JOBS > 2 > summary
+[Onsite.JOBS.2.summary]
+The big printer is making a grinding noise
+
+# Onsite > JOBS > 2 > body
+[Onsite.JOBS.2.body]
+The copier makes a terrible noise and the pages come out with black streaks. Nobody here knows what to do. - %s
+
+# Onsite > JOBS > 2 > intro
+[Onsite.JOBS.2.intro]
+The printer grinds, leaves black streaks and smells hot. The fuser is shot and there is a scrap of paper wrapped around the rollers.
+
+# Onsite > JOBS > 2 > options > 0 > label
+[Onsite.JOBS.2.options.0.label]
+REPLACE THE FUSER UNIT
+
+# Onsite > JOBS > 2 > options > 0 > text
+[Onsite.JOBS.2.options.0.text]
+The new fuser snaps in. Crisp pages, no smell. (+5 servers XP)
+
+# Onsite > JOBS > 2 > options > 1 > label
+[Onsite.JOBS.2.options.1.label]
+CLEAR THE PAPER AND CLEAN THE ROLLERS
+
+# Onsite > JOBS > 2 > options > 1 > text
+[Onsite.JOBS.2.options.1.text]
+The streaks are gone, for now. The grinding comes back after twenty pages.
+
+# Onsite > JOBS > 2 > options > 2 > label
+[Onsite.JOBS.2.options.2.label]
+CALL THE COPIER COMPANY
+
+# Onsite > JOBS > 2 > options > 2 > text
+[Onsite.JOBS.2.options.2.text]
+They can come Thursday. The client is not pleased.
+
+# Onsite > JOBS > 2 > options > 3 > label
+[Onsite.JOBS.2.options.3.label]
+OPEN IT UP AND FIGHT IT
+
+# Onsite > JOBS > 2 > options > 3 > text
+[Onsite.JOBS.2.options.3.text]
+
+
+# Onsite > JOBS > 3 > summary
+[Onsite.JOBS.3.summary]
+The front desk computer will not turn on
+
+# Onsite > JOBS > 3 > body
+[Onsite.JOBS.3.body]
+Our front desk PC is dead. No lights, nothing. We cannot check anyone in. Please come as soon as you can. - %s
+
+# Onsite > JOBS > 3 > intro
+[Onsite.JOBS.3.intro]
+The front desk PC does not respond at all. You swap the power cable and still nothing: the power supply is dead.
+
+# Onsite > JOBS > 3 > options > 0 > label
+[Onsite.JOBS.3.options.0.label]
+SWAP THE POWER SUPPLY
+
+# Onsite > JOBS > 3 > options > 0 > text
+[Onsite.JOBS.3.options.0.text]
+A new power supply and the machine boots on the first try. Windows 7 never looked so good. (+6 servers XP)
+
+# Onsite > JOBS > 3 > options > 1 > label
+[Onsite.JOBS.3.options.1.label]
+SET UP THE LOANER PC
+
+# Onsite > JOBS > 3 > options > 1 > text
+[Onsite.JOBS.3.options.1.text]
+You plug in the spare and restore the user's profile. It takes a while, but they are back to work. (+4 customer XP)
+
+# Onsite > JOBS > 3 > options > 2 > label
+[Onsite.JOBS.3.options.2.label]
+TELL THEM TO TRY THE POWER BUTTON
+
+# Onsite > JOBS > 3 > options > 2 > text
+[Onsite.JOBS.3.options.2.text]
+They have tried the power button. Many times.
+
+# Onsite > JOBS > 4 > summary
+[Onsite.JOBS.4.summary]
+Network upgrade: replace the old hub
+
+# Onsite > JOBS > 4 > body
+[Onsite.JOBS.4.body]
+We are still on the little grey hub from 2006 and everything is slow. Can you swap it for something modern while you are here? - %s
+
+# Onsite > JOBS > 4 > intro
+[Onsite.JOBS.4.intro]
+An old 10/100 hub with a rat's nest of cables. A new gigabit switch is in the box. Every cable is a mystery.
+
+# Onsite > JOBS > 4 > options > 0 > label
+[Onsite.JOBS.4.options.0.label]
+LABEL EVERY CABLE, THEN SWAP
+
+# Onsite > JOBS > 4 > options > 0 > text
+[Onsite.JOBS.4.options.0.text]
+It takes all afternoon, but every cable has a label and the new switch hums happily. (+8 networking XP)
+
+# Onsite > JOBS > 4 > options > 1 > label
+[Onsite.JOBS.4.options.1.label]
+SWAP IT FAST AND TEST AFTER
+
+# Onsite > JOBS > 4 > options > 1 > text
+[Onsite.JOBS.4.options.1.text]
+Mostly fine. One printer cable goes to the wrong port and takes a while to find.
+
+# Onsite > JOBS > 4 > options > 2 > label
+[Onsite.JOBS.4.options.2.label]
+COME BACK AFTER HOURS
+
+# Onsite > JOBS > 4 > options > 2 > text
+[Onsite.JOBS.4.options.2.text]
+You schedule it for tonight. The client is fine with that, but you have to come back.
+
+
+# ======================= Onsite > MORE_JOBS =======================
+# Onsite > MORE_JOBS > 0 > summary
+[Onsite.MORE_JOBS.0.summary]
+The exam room computer froze with a patient in the room
+
+# Onsite > MORE_JOBS > 0 > body
+[Onsite.MORE_JOBS.0.body]
+Exam room 2 is frozen. The patient is in the chair and I cannot pull up their chart. Please hurry. - %s
+
+# Onsite > MORE_JOBS > 0 > intro
+[Onsite.MORE_JOBS.0.intro]
+The exam room PC is frozen on the practice software. A patient is waiting and the chart will not load.
+
+# Onsite > MORE_JOBS > 0 > options > 0 > label
+[Onsite.MORE_JOBS.0.options.0.label]
+RESTART THE PRACTICE SOFTWARE
+
+# Onsite > MORE_JOBS > 0 > options > 0 > text
+[Onsite.MORE_JOBS.0.options.0.text]
+The software restarts, but it hangs again when it opens the chart. Something else is wrong.
+
+# Onsite > MORE_JOBS > 0 > options > 1 > label
+[Onsite.MORE_JOBS.0.options.1.label]
+REBUILD THE USER PROFILE
+
+# Onsite > MORE_JOBS > 0 > options > 1 > text
+[Onsite.MORE_JOBS.0.options.1.text]
+A new profile, a quick reconnect to the database and the chart loads. The patient waited, but only a little. (+7 servers XP)
+
+# Onsite > MORE_JOBS > 0 > options > 2 > label
+[Onsite.MORE_JOBS.0.options.2.label]
+MOVE THE PATIENT TO THE OTHER EXAM ROOM
+
+# Onsite > MORE_JOBS > 0 > options > 2 > text
+[Onsite.MORE_JOBS.0.options.2.text]
+That works for today. The PC is still broken.
+
+# Onsite > MORE_JOBS > 1 > summary
+[Onsite.MORE_JOBS.1.summary]
+The digital x-ray sensor is not detected
+
+# Onsite > MORE_JOBS > 1 > body
+[Onsite.MORE_JOBS.1.body]
+The x-ray sensor says NOT FOUND and the patient is waiting for a bitewing. Please come fix it. - %s
+
+# Onsite > MORE_JOBS > 1 > intro
+[Onsite.MORE_JOBS.1.intro]
+The x-ray software cannot find the sensor. The USB cable has a kink and the driver shows a yellow warning.
+
+# Onsite > MORE_JOBS > 1 > options > 0 > label
+[Onsite.MORE_JOBS.1.options.0.label]
+REINSTALL THE SENSOR DRIVER
+
+# Onsite > MORE_JOBS > 1 > options > 0 > text
+[Onsite.MORE_JOBS.1.options.0.text]
+The old driver was corrupted. The new one finds the sensor right away. (+6 servers XP)
+
+# Onsite > MORE_JOBS > 1 > options > 1 > label
+[Onsite.MORE_JOBS.1.options.1.label]
+REPLACE THE USB CABLE
+
+# Onsite > MORE_JOBS > 1 > options > 1 > text
+[Onsite.MORE_JOBS.1.options.1.text]
+A fresh cable and the sensor lights up. It was a kinked cable all along. (+4 networking XP)
+
+# Onsite > MORE_JOBS > 1 > options > 2 > label
+[Onsite.MORE_JOBS.1.options.2.label]
+CALL THE SENSOR VENDOR
+
+# Onsite > MORE_JOBS > 1 > options > 2 > text
+[Onsite.MORE_JOBS.1.options.2.text]
+They want a serial number you cannot read. Nobody is happy.
+
+# Onsite > MORE_JOBS > 2 > summary
+[Onsite.MORE_JOBS.2.summary]
+The boss cannot get email on his tablet
+
+# Onsite > MORE_JOBS > 2 > body
+[Onsite.MORE_JOBS.2.body]
+My email has stopped working on my iPad and I have a big meeting this afternoon. Please fix it right away. - %s
+
+# Onsite > MORE_JOBS > 2 > intro
+[Onsite.MORE_JOBS.2.intro]
+The owner's tablet shows 'Cannot get mail'. The account password changed last week and the tablet still has the old one.
+
+# Onsite > MORE_JOBS > 2 > options > 0 > label
+[Onsite.MORE_JOBS.2.options.0.label]
+RE-ENTER THE ACCOUNT AND TEST IT
+
+# Onsite > MORE_JOBS > 2 > options > 0 > text
+[Onsite.MORE_JOBS.2.options.0.text]
+You re-enter the password and send a test message. He is delighted. (+6 customer XP)
+
+# Onsite > MORE_JOBS > 2 > options > 1 > label
+[Onsite.MORE_JOBS.2.options.1.label]
+CHECK THE WIFI AND REBOOT THE TABLET
+
+# Onsite > MORE_JOBS > 2 > options > 1 > text
+[Onsite.MORE_JOBS.2.options.1.text]
+The wifi is fine. The email is still broken. He is watching you.
+
+# Onsite > MORE_JOBS > 2 > options > 2 > label
+[Onsite.MORE_JOBS.2.options.2.label]
+PROMISE TO CALL HIM BACK
+
+# Onsite > MORE_JOBS > 2 > options > 2 > text
+[Onsite.MORE_JOBS.2.options.2.text]
+He is not pleased: the owner notices when a visit ends with a promise.
+
+
+# ======================= Onsite > EVENTS =======================
+# Onsite > EVENTS > vet > text
+[Onsite.EVENTS.vet.text]
+A golden retriever trots in, sniffs the front desk PC and lifts a leg. The tower sparks, the screen goes black and the dog looks very pleased.
+
+# Onsite > EVENTS > vet > options > 0 > label
+[Onsite.EVENTS.vet.options.0.label]
+SET UP A LOANER PC
+
+# Onsite > EVENTS > vet > options > 0 > text
+[Onsite.EVENTS.vet.options.0.text]
+You set up the spare PC while the receptionist apologizes to the dog. The vet laughs and says it happens at least once a year.
+
+# Onsite > EVENTS > vet > options > 1 > label
+[Onsite.EVENTS.vet.options.1.label]
+CLEAN IT UP AND TRY TO REVIVE IT
+
+# Onsite > EVENTS > vet > options > 1 > text
+[Onsite.EVENTS.vet.options.1.text]
+The motherboard is a goner. You write up a bill and a story you will tell for years.
+
+# Onsite > EVENTS > vet > options > 2 > label
+[Onsite.EVENTS.vet.options.2.label]
+TAKE A PHOTO FOR THE OFFICE
+
+# Onsite > EVENTS > vet > options > 2 > text
+[Onsite.EVENTS.vet.options.2.text]
+The photo is great. The vet was not amused.
+
+# Onsite > EVENTS > dental > text
+[Onsite.EVENTS.dental.text]
+A patient in the chair asks if you can please hurry: the internet is down and the x-ray would not load. The dentist looks at you hopefully.
+
+# Onsite > EVENTS > dental > options > 0 > label
+[Onsite.EVENTS.dental.options.0.label]
+PRIORITIZE THE X-RAY WORKSTATION
+
+# Onsite > EVENTS > dental > options > 0 > text
+[Onsite.EVENTS.dental.options.0.text]
+You get the x-ray running first. The patient gives you a thumbs up from the chair.
+
+# Onsite > EVENTS > dental > options > 1 > label
+[Onsite.EVENTS.dental.options.1.label]
+FINISH THE NETWORK FIRST
+
+# Onsite > EVENTS > dental > options > 1 > text
+[Onsite.EVENTS.dental.options.1.text]
+The dentist sighs. The patient reschedules.
+
+# Onsite > EVENTS > law > text
+[Onsite.EVENTS.law.text]
+Atty. Spence is on a call with a client and waves you silent. You crouch in the coat closet next to the server rack for twenty minutes.
+
+# Onsite > EVENTS > law > options > 0 > label
+[Onsite.EVENTS.law.options.0.label]
+WAIT QUIETLY
+
+# Onsite > EVENTS > law > options > 0 > text
+[Onsite.EVENTS.law.options.0.text]
+The attorney mouths a thank you when the call ends.
+
+# Onsite > EVENTS > law > options > 1 > label
+[Onsite.EVENTS.law.options.1.label]
+KEEP WORKING (QUIETLY)
+
+# Onsite > EVENTS > law > options > 1 > text
+[Onsite.EVENTS.law.options.1.text]
+A cable tie snaps loudly in the middle of the call. Oops.
+
+# Onsite > EVENTS > arch > text
+[Onsite.EVENTS.arch.text]
+The plotter just chewed a forty-foot roll of drawings that are due at noon. Erik Lindqvist stares at you, then at the plotter, then at you.
+
+# Onsite > EVENTS > arch > options > 0 > label
+[Onsite.EVENTS.arch.options.0.label]
+FREE THE ROLL AND REPRINT
+
+# Onsite > EVENTS > arch > options > 0 > text
+[Onsite.EVENTS.arch.options.0.text]
+You pull the paper out in one piece and reprint. The architect nearly hugs you.
+
+# Onsite > EVENTS > arch > options > 1 > label
+[Onsite.EVENTS.arch.options.1.label]
+SAY IT IS A PAPER PROBLEM
+
+# Onsite > EVENTS > arch > options > 1 > text
+[Onsite.EVENTS.arch.options.1.text]
+It was not a paper problem. He knows.
+
+# Onsite > EVENTS > realty > text
+[Onsite.EVENTS.realty.text]
+A showing is in progress: strangers walk through the office while you crawl under a desk to reach the cables.
+
+# Onsite > EVENTS > realty > options > 0 > label
+[Onsite.EVENTS.realty.options.0.label]
+SMILE AND KEEP WORKING
+
+# Onsite > EVENTS > realty > options > 0 > text
+[Onsite.EVENTS.realty.options.0.text]
+Karen introduces you as her IT genius. The prospects nod politely.
+
+# Onsite > EVENTS > realty > options > 1 > label
+[Onsite.EVENTS.realty.options.1.label]
+WAIT UNTIL THEY LEAVE
+
+# Onsite > EVENTS > realty > options > 1 > text
+[Onsite.EVENTS.realty.options.1.text]
+You spend ten minutes under the desk. Your knees will remember this.
+
+# Onsite > EVENTS > trailer > text
+[Onsite.EVENTS.trailer.text]
+The space heater trips the breaker and the whole trailer goes dark. The foreman swears. Your laptop is the only thing still on.
+
+# Onsite > EVENTS > trailer > options > 0 > label
+[Onsite.EVENTS.trailer.options.0.label]
+RESET THE BREAKER AND TELL THEM ABOUT THE HEATER
+
+# Onsite > EVENTS > trailer > options > 0 > text
+[Onsite.EVENTS.trailer.options.0.text]
+The lights come back. The foreman grudgingly moves the heater to another outlet.
+
+# Onsite > EVENTS > trailer > options > 1 > label
+[Onsite.EVENTS.trailer.options.1.label]
+PLUG THE SERVER INTO A BATTERY BACKUP
+
+# Onsite > EVENTS > trailer > options > 1 > text
+[Onsite.EVENTS.trailer.options.1.text]
+You bring in a small UPS from the van. The server survives the next brownout.
+
+
+# ======================= Onsite > STAFF =======================
+# Onsite > STAFF > dental > 0
+[Onsite.STAFF.dental.0]
+Dr. Patel is with a patient. The x-ray machine is that grey box by the chair.
+
+# Onsite > STAFF > dental > 1
+[Onsite.STAFF.dental.1]
+We have a patient in the chair, so please keep the vacuum noises to a minimum.
+
+# Onsite > STAFF > dental > 2
+[Onsite.STAFF.dental.2]
+The coffee is for patients, but I will not tell if you have one.
+
+# Onsite > STAFF > law > 0
+[Onsite.STAFF.law.0]
+Please be quiet in the hall, Mr. Spence is on the phone with a judge.
+
+# Onsite > STAFF > law > 1
+[Onsite.STAFF.law.1]
+Everything here is confidential. Do not read anything on the desks.
+
+# Onsite > STAFF > law > 2
+[Onsite.STAFF.law.2]
+The copier is cranky. We name it after the opposing counsel.
+
+# Onsite > STAFF > vet > 0
+[Onsite.STAFF.vet.0]
+Do not mind the dog. She likes computers. Too much.
+
+# Onsite > STAFF > vet > 1
+[Onsite.STAFF.vet.1]
+If you hear a howl from the back, it is just Otis getting his nails done.
+
+# Onsite > STAFF > vet > 2
+[Onsite.STAFF.vet.2]
+We have a cat in the closet. She is not lost. She is hiding from the beagle.
+
+# Onsite > STAFF > arch > 0
+[Onsite.STAFF.arch.0]
+The plotter has opinions today. Good luck.
+
+# Onsite > STAFF > arch > 1
+[Onsite.STAFF.arch.1]
+Mind the model on the table, it took three weeks. And a lot of glue.
+
+# Onsite > STAFF > arch > 2
+[Onsite.STAFF.arch.2]
+If you move my pencil I will know.
+
+# Onsite > STAFF > realty > 0
+[Onsite.STAFF.realty.0]
+I have a showing at one, so please be quick. Do you want coffee?
+
+# Onsite > STAFF > realty > 1
+[Onsite.STAFF.realty.1]
+Every house has a story. Most of them involve the plumbing.
+
+# Onsite > STAFF > realty > 2
+[Onsite.STAFF.realty.2]
+Do not mind the lockbox on the desk. It is very important.
+
+# Onsite > STAFF > trailer > 0
+[Onsite.STAFF.trailer.0]
+Mind the mud. And do not touch the heater. Last guy did and it was a whole thing.
+
+# Onsite > STAFF > trailer > 1
+[Onsite.STAFF.trailer.1]
+If the siren goes off, walk. Do not run. That is the demolition rule.
+
+# Onsite > STAFF > trailer > 2
+[Onsite.STAFF.trailer.2]
+The trailer shakes a little when they drop a wall. You get used to it.
+
+
+# ======================= Onsite > SITE_APPS =======================
+# Onsite > SITE_APPS > dental > title
+[Onsite.SITE_APPS.dental.title]
+TODAYS SCHEDULE
+
+# Onsite > SITE_APPS > dental > rows > 0
+[Onsite.SITE_APPS.dental.rows.0]
+9:00 SMITH, J   CLEANING
+
+# Onsite > SITE_APPS > dental > rows > 1
+[Onsite.SITE_APPS.dental.rows.1]
+9:30 ORTEGA, M  CROWN PREP
+
+# Onsite > SITE_APPS > dental > rows > 2
+[Onsite.SITE_APPS.dental.rows.2]
+10:15 LEE, K     X-RAYS
+
+# Onsite > SITE_APPS > dental > rows > 3
+[Onsite.SITE_APPS.dental.rows.3]
+11:00 BAKER, T   FILLING
+
+# Onsite > SITE_APPS > dental > rows > 4
+[Onsite.SITE_APPS.dental.rows.4]
+1:00 NGUYEN, A  CONSULT
+
+# Onsite > SITE_APPS > dental > mails > 0 > 1
+[Onsite.SITE_APPS.dental.mails.0.1]
+Please do not reboot the x-ray PC mid-scan
+
+# Onsite > SITE_APPS > dental > mails > 1 > 1
+[Onsite.SITE_APPS.dental.mails.1.1]
+Your order of gloves has shipped
+
+# Onsite > SITE_APPS > law > title
+[Onsite.SITE_APPS.law.title]
+OPEN MATTERS
+
+# Onsite > SITE_APPS > law > rows > 0
+[Onsite.SITE_APPS.law.rows.0]
+M-2231 ESTATE OF HOLLIS
+
+# Onsite > SITE_APPS > law > rows > 1
+[Onsite.SITE_APPS.law.rows.1]
+M-2240 BANKS V. COUNTY
+
+# Onsite > SITE_APPS > law > rows > 2
+[Onsite.SITE_APPS.law.rows.2]
+M-2252 LEASE REVIEW
+
+# Onsite > SITE_APPS > law > rows > 3
+[Onsite.SITE_APPS.law.rows.3]
+M-2257 CLOSING: MILL ST
+
+# Onsite > SITE_APPS > law > rows > 4
+[Onsite.SITE_APPS.law.rows.4]
+M-2261 DEPOSITION PREP
+
+# Onsite > SITE_APPS > law > mails > 0 > 1
+[Onsite.SITE_APPS.law.mails.0.1]
+Filed with the court at 4:55 (phew)
+
+# Onsite > SITE_APPS > law > mails > 1 > 1
+[Onsite.SITE_APPS.law.mails.1.1]
+Hearing moved to Thursday
+
+# Onsite > SITE_APPS > vet > title
+[Onsite.SITE_APPS.vet.title]
+TODAYS PATIENTS
+
+# Onsite > SITE_APPS > vet > rows > 0
+[Onsite.SITE_APPS.vet.rows.0]
+8:30 REX (GOLDEN)   VACCINES
+
+# Onsite > SITE_APPS > vet > rows > 1
+[Onsite.SITE_APPS.vet.rows.1]
+9:00 MISS KITTY      CHECKUP
+
+# Onsite > SITE_APPS > vet > rows > 2
+[Onsite.SITE_APPS.vet.rows.2]
+9:45 BUDDY (BEAGLE)  EAR INFECTION
+
+# Onsite > SITE_APPS > vet > rows > 3
+[Onsite.SITE_APPS.vet.rows.3]
+10:30 OTIS (POODLE)   DENTAL
+
+# Onsite > SITE_APPS > vet > rows > 4
+[Onsite.SITE_APPS.vet.rows.4]
+11:15 PEANUT (HAMSTER) WEIGH-IN
+
+# Onsite > SITE_APPS > vet > mails > 0 > 1
+[Onsite.SITE_APPS.vet.mails.0.1]
+The lab analyzer printed a blank page again
+
+# Onsite > SITE_APPS > vet > mails > 1 > 1
+[Onsite.SITE_APPS.vet.mails.1.1]
+New shipment of flea treatment
+
+# Onsite > SITE_APPS > arch > title
+[Onsite.SITE_APPS.arch.title]
+PROJECTS
+
+# Onsite > SITE_APPS > arch > rows > 0
+[Onsite.SITE_APPS.arch.rows.0]
+13-011 RIVERSIDE LIBRARY
+
+# Onsite > SITE_APPS > arch > rows > 1
+[Onsite.SITE_APPS.arch.rows.1]
+13-017 MILL ST LOFTS
+
+# Onsite > SITE_APPS > arch > rows > 2
+[Onsite.SITE_APPS.arch.rows.2]
+14-002 FIRE STATION 4
+
+# Onsite > SITE_APPS > arch > rows > 3
+[Onsite.SITE_APPS.arch.rows.3]
+14-005 HOUSE ADDITION
+
+# Onsite > SITE_APPS > arch > rows > 4
+[Onsite.SITE_APPS.arch.rows.4]
+14-009 PARKING DECK
+
+# Onsite > SITE_APPS > arch > mails > 0 > 1
+[Onsite.SITE_APPS.arch.mails.0.1]
+Need the revised plans by noon
+
+# Onsite > SITE_APPS > arch > mails > 1 > 1
+[Onsite.SITE_APPS.arch.mails.1.1]
+Roll 40 ft almost out of paper
+
+# Onsite > SITE_APPS > realty > title
+[Onsite.SITE_APPS.realty.title]
+ACTIVE LISTINGS
+
+# Onsite > SITE_APPS > realty > rows > 0
+[Onsite.SITE_APPS.realty.rows.0]
+412 OAK ST   $199K  2BD
+
+# Onsite > SITE_APPS > realty > rows > 1
+[Onsite.SITE_APPS.realty.rows.1]
+88 MAPLE CT  $249K  3BD
+
+# Onsite > SITE_APPS > realty > rows > 2
+[Onsite.SITE_APPS.realty.rows.2]
+7 LAKE RD    $325K  4BD
+
+# Onsite > SITE_APPS > realty > rows > 3
+[Onsite.SITE_APPS.realty.rows.3]
+1500 HILL DR $410K  4BD
+
+# Onsite > SITE_APPS > realty > rows > 4
+[Onsite.SITE_APPS.realty.rows.4]
+22 PINE LN   $179K  2BD
+
+# Onsite > SITE_APPS > realty > mails > 0 > 1
+[Onsite.SITE_APPS.realty.mails.0.1]
+Can we see the Oak St house Saturday?
+
+# Onsite > SITE_APPS > realty > mails > 1 > 1
+[Onsite.SITE_APPS.realty.mails.1.1]
+Three new listings in your area
+
+# Onsite > SITE_APPS > trailer > title
+[Onsite.SITE_APPS.trailer.title]
+TODAYS JOBS
+
+# Onsite > SITE_APPS > trailer > rows > 0
+[Onsite.SITE_APPS.trailer.rows.0]
+OLD MILL: IMPLOSION PREP
+
+# Onsite > SITE_APPS > trailer > rows > 1
+[Onsite.SITE_APPS.trailer.rows.1]
+FIFTH AND MAIN: STRIP OUT
+
+# Onsite > SITE_APPS > trailer > rows > 2
+[Onsite.SITE_APPS.trailer.rows.2]
+WAREHOUSE 9: HAUL AWAY
+
+# Onsite > SITE_APPS > trailer > rows > 3
+[Onsite.SITE_APPS.trailer.rows.3]
+SCHOOL ANNEX: ASBESTOS CHECK
+
+# Onsite > SITE_APPS > trailer > rows > 4
+[Onsite.SITE_APPS.trailer.rows.4]
+BRIDGE ST: EQUIPMENT MOVE
+
+# Onsite > SITE_APPS > trailer > mails > 0 > 1
+[Onsite.SITE_APPS.trailer.mails.0.1]
+Truck 3 is stuck in the mud again
+
+# Onsite > SITE_APPS > trailer > mails > 1 > 1
+[Onsite.SITE_APPS.trailer.mails.1.1]
+Hard hat inspection tomorrow
+
+
+# ======================= Onsite > PETS =======================
+# Onsite > PETS > dog > 0
+[Onsite.PETS.dog.0]
+You scratch behind the dog's ears. Her tail thumps the floor.
+
+# Onsite > PETS > dog > 1
+[Onsite.PETS.dog.1]
+The dog leans against your leg and sighs happily.
+
+# Onsite > PETS > dog > 2
+[Onsite.PETS.dog.2]
+A very good dog. She licks your hand.
+
+# Onsite > PETS > cat > 0
+[Onsite.PETS.cat.0]
+The cat purrs and head-butts your hand.
+
+# Onsite > PETS > cat > 1
+[Onsite.PETS.cat.1]
+You pet the cat. She tolerates it. Mostly.
+
+# Onsite > PETS > cat > 2
+[Onsite.PETS.cat.2]
+The cat stretches out and shows you her belly. It is a trap, but you pet her anyway.
+
+# Onsite > PETS > fish > 0
+[Onsite.PETS.fish.0]
+You tap the glass. The fish pretends not to know you.
+
+# Onsite > PETS > fish > 1
+[Onsite.PETS.fish.1]
+The orange fish swims to the glass, looks at you and leaves.
+
+
+# ======================= Onsite > FINDINGS =======================
+# Onsite > FINDINGS > pc > 0 > text
+[Onsite.FINDINGS.pc.0.text]
+Drive C on this PC is 98 percent full. Nobody has noticed.
+
+# Onsite > FINDINGS > pc > 0 > summary
+[Onsite.FINDINGS.pc.0.summary]
+Front desk PC is almost out of disk space
+
+# Onsite > FINDINGS > pc > 0 > body
+[Onsite.FINDINGS.pc.0.body]
+%s here: the front desk computer is getting slower every day. Can you take a look?
+
+# Onsite > FINDINGS > pc > 1 > text
+[Onsite.FINDINGS.pc.1.text]
+The antivirus on this PC expired in January. A small red shield sits in the corner and nobody clicks it.
+
+# Onsite > FINDINGS > pc > 1 > summary
+[Onsite.FINDINGS.pc.1.summary]
+Antivirus expired on a PC
+
+# Onsite > FINDINGS > pc > 1 > body
+[Onsite.FINDINGS.pc.1.body]
+%s here: we think the antivirus on one of our PCs has expired. Please check.
+
+# Onsite > FINDINGS > exam > 0 > text
+[Onsite.FINDINGS.exam.0.text]
+The exam room PC takes four minutes to open a chart. They have learned to start it before the patient arrives.
+
+# Onsite > FINDINGS > exam > 0 > summary
+[Onsite.FINDINGS.exam.0.summary]
+Exam room PC is very slow
+
+# Onsite > FINDINGS > exam > 0 > body
+[Onsite.FINDINGS.exam.0.body]
+%s here: the exam room computer is crawling. Could you have a look?
+
+# Onsite > FINDINGS > vip > 0 > text
+[Onsite.FINDINGS.vip.0.text]
+The owner's laptop has 41 pending updates and a sticker with a password on the lid.
+
+# Onsite > FINDINGS > vip > 0 > summary
+[Onsite.FINDINGS.vip.0.summary]
+Owner's laptop needs updates and a password policy
+
+# Onsite > FINDINGS > vip > 0 > body
+[Onsite.FINDINGS.vip.0.body]
+%s here: could you make sure my laptop is up to date?
+
+# Onsite > FINDINGS > printer > 0 > text
+[Onsite.FINDINGS.printer.0.text]
+The printer has a stack of old jobs stuck in the queue and a sticky note saying DO NOT USE.
+
+# Onsite > FINDINGS > printer > 0 > summary
+[Onsite.FINDINGS.printer.0.summary]
+Printer queue is stuck
+
+# Onsite > FINDINGS > printer > 0 > body
+[Onsite.FINDINGS.printer.0.body]
+%s here: the printer is stuck again. Please clear it.
+
+# Onsite > FINDINGS > cabinet > 0 > text
+[Onsite.FINDINGS.cabinet.0.text]
+The network is on an old grey hub with no labels and no battery backup. One power flicker and everything is down.
+
+# Onsite > FINDINGS > cabinet > 0 > summary
+[Onsite.FINDINGS.cabinet.0.summary]
+Replace the old hub and add a battery backup
+
+# Onsite > FINDINGS > cabinet > 0 > body
+[Onsite.FINDINGS.cabinet.0.body]
+%s here: we would like the network to be more reliable. Could you look at the equipment in the closet?
+
+# Onsite > FINDINGS > server > 0 > text
+[Onsite.FINDINGS.server.0.text]
+The server's drive light has been amber for a while and the backup log says the last good copy was nine days ago.
+
+# Onsite > FINDINGS > server > 0 > summary
+[Onsite.FINDINGS.server.0.summary]
+Server drive warning and old backup
+
+# Onsite > FINDINGS > server > 0 > body
+[Onsite.FINDINGS.server.0.body]
+%s here: someone noticed a light on the server. Can you check it today?
+
+# Onsite > FINDINGS > xray > 0 > text
+[Onsite.FINDINGS.xray.0.text]
+The x-ray sensor cable is bent in half and held with tape. It works. For now.
+
+# Onsite > FINDINGS > xray > 0 > summary
+[Onsite.FINDINGS.xray.0.summary]
+Replace a damaged x-ray sensor cable
+
+# Onsite > FINDINGS > xray > 0 > body
+[Onsite.FINDINGS.xray.0.body]
+%s here: could you look at the x-ray cable before it fails on a patient day?
+
+
+# ======================= Onsite > MEETINGS =======================
+# Onsite > MEETINGS > qbr > text
+[Onsite.MEETINGS.qbr.text]
+The owner welcomes you into the office: it is review time. Coffee, the numbers on your laptop and a client who has opinions about the printer.
+
+# Onsite > MEETINGS > qbr > options > 0 > label
+[Onsite.MEETINGS.qbr.options.0.label]
+WALK THROUGH THE NUMBERS
+
+# Onsite > MEETINGS > qbr > options > 0 > text
+[Onsite.MEETINGS.qbr.options.0.text]
+You show them tickets closed, response times and what the backups caught. They nod a lot.
+
+# Onsite > MEETINGS > qbr > options > 1 > label
+[Onsite.MEETINGS.qbr.options.1.label]
+ASK WHAT KEEPS THEM UP AT NIGHT
+
+# Onsite > MEETINGS > qbr > options > 1 > text
+[Onsite.MEETINGS.qbr.options.1.text]
+They talk for twenty minutes, and then mention a problem they never reported.
+
+# Onsite > MEETINGS > qbr > options > 2 > label
+[Onsite.MEETINGS.qbr.options.2.label]
+OFFER A MANAGED SERVICE
+
+# Onsite > MEETINGS > qbr > options > 2 > text
+[Onsite.MEETINGS.qbr.options.2.text]
+You explain how a managed service would take a worry off their plate. They ask for a proposal.
+
+# Onsite > MEETINGS > pitch > text
+[Onsite.MEETINGS.pitch.text]
+The owner has twenty minutes. You have a folder, a business card and a company logo on your shirt. Their IT guy is a nephew.
+
+# Onsite > MEETINGS > pitch > options > 0 > label
+[Onsite.MEETINGS.pitch.options.0.label]
+SHOW A SAMPLE REPORT
+
+# Onsite > MEETINGS > pitch > options > 0 > text
+[Onsite.MEETINGS.pitch.options.0.text]
+You show what a good month looks like: tickets, patches, backups. They look interested, with a pen in hand.
+
+# Onsite > MEETINGS > pitch > options > 1 > label
+[Onsite.MEETINGS.pitch.options.1.label]
+ASK ABOUT THEIR PAIN
+
+# Onsite > MEETINGS > pitch > options > 1 > text
+[Onsite.MEETINGS.pitch.options.1.text]
+You ask what goes wrong and then say nothing. People fill the silence, and you listen.
+
+# Onsite > MEETINGS > pitch > options > 2 > label
+[Onsite.MEETINGS.pitch.options.2.label]
+PROMISE THE MOON
+
+# Onsite > MEETINGS > pitch > options > 2 > text
+[Onsite.MEETINGS.pitch.options.2.text]
+You promise a ten minute response time, everything fixed by noon and free hardware. You are persuasive and you also know it is a lie.

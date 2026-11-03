@@ -1,0 +1,206 @@
+# MSPSim: game guide and pitch bible
+
+*A readable overview of the game for anyone who wants to review the story and design. No code needed. Line-by-line text is in
+`godot/story/STORY.md` (generated, read-only) and can be changed in `godot/story/strings.txt` (plain text). See `godot/story/README.md`.*
+
+---
+
+## 1. The pitch
+
+**MSPSim is a cartoon pixel-art office sim about working at a managed service provider (an "MSP") in 2013-14.**
+You are the person who keeps other companies' computers alive: the dentist whose X-ray software disappeared, the law firm hit by
+CryptoLocker, the brewery whose email server dies at midnight. Between tickets you get coffee, argue about the thermostat, answer the phone,
+and (because it is that kind of office) have nerf gun fights.
+
+Think *Code Monkeys* crossed with *Papers, Please* and *Overcooked*: a small, funny office that is secretly a pressure cooker.
+The jokes come from real MSP life; the stakes come from real MSP life too (a backup you forgot to check, a firewall that is wide open).
+
+**Two ways to play, one office:**
+- **Tech campaign** (the main game): 20 working days as a service-desk tech. Close tickets, fix things remotely, learn PowerShell,
+  keep your coworkers and clients happy, survive the big jobs, and decide your future at the yearly review.
+- **Owner campaign**: 20 weeks as the owner of the company. Pricing, hiring, tools, marketing, collections, a competitor poaching your clients,
+  and a valuation at the end.
+- **Free Play / Film Mode**: the office as a sandbox with no scoring, for filming scenes and wandering around.
+
+**Why it should be fun:** the work is a real puzzle with real consequences, the people are specific and funny, and the world is full of things
+to poke (a coffee machine, a rack of network cables you can unplug, a foam dart gun).
+
+---
+
+## 2. Tone and setting
+
+- **Year:** 2013 into spring 2014. **Windows XP support ends April 8, 2014** and everyone is panicking about it. CryptoLocker is the new scary thing.
+  RDP is open to the internet at half of all small businesses, and most attacks are just password guessing. Target's breach is in the news.
+  Flappy Bird, Candy Crush, Lync, iPhone 5 and Nexus 5, LabTech and ConnectWise are the furniture of daily life.
+- **Hard rule:** nothing from after 2014. No AI, no Teams or Slack, no Windows 10/11, no "MFA" (say *two-factor login*), no TikTok or Discord.
+  Reviewers: please flag any slip.
+- **Voice:** warm, dry, a little absurd, never mean. Jargon is used correctly and explained by context. Every character has a way of speaking
+  (Alan is gruff-but-kind, Garrison is excitable and security-minded, Dan is quiet and obsessive about labelling cables, Vic is a salesman who
+  over-promises). Emails and texts are short, human and slightly panicked, like real clients.
+- **Look:** blocky pixel characters with big heads and flat colours, inspired by *Code Monkeys*. Rooms are slightly grimy 2010s offices:
+  stained ceiling tiles, blue carpet, a green hallway. Outing rooms (bowling, karaoke, escape room, a neighbourhood grill) are dark and neon.
+- **Real brands are parodied:** the PSA is **ConnectWhy**, the RMM is **LabRat RMM**, the mail client is **Outlookish 2013**, the community forum is **LabRat Nerds**.
+
+---
+
+## 3. The world
+
+**Pixel IT Partners**, a six-room office: main floor, two offices, a kitchenette (with a fridge and a coffee machine that has opinions), a bathroom,
+a cubicle area, a conference room, and a network closet with a real rack you can plug and unplug. After work you can go bowling, sing karaoke,
+solve an escape room or eat at the restaurant.
+
+**The people**
+| Who | Role | Personality | What they do for you |
+|---|---|---|---|
+| **You** | Tech (or owner) | The new hire | |
+| **Alan** | Senior tech | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups |
+| **Garrison** | Security-minded tech | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password |
+| **Dan** | Network tech | Quiet, labels everything, plays Flappy Bird | Networking; notices when a desk has no link |
+| **Vic Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
+| **Morgan Reyes** | Your manager | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
+| **Marge** | Bookkeeper (owner mode) | Practical | Reads you the numbers |
+| **Maya** | Tier 1 tech (tech campaign and Free Play) | Friendly, ponytail, always has a granola bar | Customer skills; warns you when a ticket is about to breach; the first woman on the team |
+
+**The clients** (eleven, each with a contact and a personality; eight can be signed at once): Acme Dental Group (Dr. Patel), Brightside Realty, Gnarly Gnomes Landscaping,
+Hoot and Holler Law (Atty. Spence), Soggy Bottom Brewing, Piedmont Pediatrics, Rusty Anchor Marine Supply, Zen Garden Yoga, and three newer prospects: Paws and Claws
+Veterinary (Dr. Brandt), Lindqvist and Moss Architects, Iron Mule Demolition (an office trailer yard).
+
+**Client sites.** Six of them can be visited: dental, law, vet, architect, realty and the demolition trailers. Each site is several rooms (a front office, the IT closet
+with the rack and the server, an owner's office, and exam rooms for dental and vet) and exists in two looks, so a competitor or a prospect can look like a different
+business from your client. Medical and vet offices are staffed mostly by women; the competitors have different people. The vet has a dog and a cat, and you can pet both.
+
+---
+
+## 4. The core loop (tech campaign)
+
+1. **A ticket arrives** in the PSA (by email, phone call or monitoring alert). It has a priority and an SLA clock.
+2. **You diagnose and fix it** in the RMM: connect to the machine, read the symptom, pick the fix. Wrong fix: nothing changes. Right fix: ticket fixed.
+3. **You close it** in the PSA. Closing something that is not really fixed reopens it with an angry email.
+4. **The day ends** with a report: tickets closed, SLAs missed, reopened, client mood, coworker opinion, pay, reputation, a grade S to D.
+5. **Reputation** carries across days. At zero you are fired. At day 20 you get a review and a choice.
+
+**Things that make it more than a queue**
+- **Reboot vs the proper fix.** Rebooting a PC works for some problems but interrupts the user. If you do not ask them to save first, they lose their work and you
+  get an angry email. (The print spooler is the classic example.)
+- **Backups.** Nightly backups can fail silently. You only know if you check. A failed backup is invisible until ransomware hits.
+- **Skills.** PowerShell (lessons in the Academy; faster, more reliable fixes, scripts that fix a whole client) plus Networking, Servers, Security and Customer
+  skills that give perks (faster fixes, see whether a user has work open, backups that check themselves).
+- **Coworkers.** Everyone has an opinion of you based on how you act: answering their phones, not breaking their network, being friendly, helping.
+  Friends cover for you, give tips, teach you things and warn you before an SLA breaks. You can talk to people at their desks.
+- **Hours.** You choose when to leave for work (traffic!), whether to stay late, and some weeks you carry the pager. Tired techs make mistakes.
+- **LabRat Nerds.** A forum and an IRC channel of other techs: read threads for experience, answer questions for karma, and ask the channel what to do
+  (a "call a friend" poll that is mostly right and sometimes trolls you).
+- **The big jobs.** Multi-step scenarios with real choices and consequences that come back the next morning (see below).
+
+---
+
+## 5. The 20-day tech story
+
+| Day | What happens | Why it is there |
+|---|---|---|
+| 1 | Welcome mail. Only one random ticket. Look around. | Learn the controls, explore |
+| 2 | Morgan: verify the backups every morning | Plant the backup habit |
+| 3 | PowerShell Academy opens; the easy "Adobe Reader will not print" ticket | First real fix |
+| 4 | **Windows XP is going away.** Replace Dr. Patel's PC and migrate his stuff (survey, back up, migrate, verify). Lose the X-ray software and he is furious. | A scored, careful job |
+| 5 | A client's backup quietly breaks. On-call rota announced. First team outing. | Plant the ransomware |
+| 6 | Growth plan with Morgan (pick a skill and a helper). First weekly all-hands. | Progression |
+| 7 | **Remote access break-in** at Brightside: RDP open to the internet. Close the door properly (VPN, auto-blocking firewall) or suffer. | Period-correct security |
+| 8 | Stretch ticket with your helper | Growth |
+| 9 | **CryptoLocker** hits the law firm. With a good backup you are a hero; with none you shop for options (shadow copies, paying, praying). | The payoff of day 5 |
+| 10 | **A client's network rack falls off the wall.** Photograph first, remount, recable, verify. | A hands-on crisis |
+| 11 | Dr. Patel writes about how the install went; all-hands | Consequences |
+| 12 | **Server migration** at Brightside (check the backups first or the cutover is a disaster) | A planning job |
+| 13 | **24x7 email outage** at the brewery: a long night with a vendor call that runs past midnight | Overtime and endurance |
+| 14 | The law firm writes about the ransomware | Consequences |
+| 15 | Pager mail; second outing | Hours |
+| 16 | **Network install** at the law firm (survey, cable, certify, VLANs, Wi-Fi, document it); all-hands | Craft |
+| 17 | Growth protected time | |
+| 18 | Review warning; stretch ticket | Rising pressure |
+| 19 | Quiet before the review | |
+| 20 | Morgan names your roughest job. **Yearly review**: your reputation, your coworkers' quotes, your best client. | The ending |
+
+**The yearly review offers three futures:** become the **team lead** (more pay, a pager, three people who come to you with everything), take an
+**in-house IT job** at your best client (calm hours, no nights), or **stay an MSP tech** (same desk, more skill, the tickets keep coming).
+
+---
+
+## 6. The big jobs (playbooks)
+
+Each is a short story with 3 to 6 steps, each with choices. A choice can cost real seconds, game hours, or be locked behind a skill. Good choices score
+points; sloppy ones leave consequences that return next morning as follow-up tickets and emails.
+
+- **Windows XP replacement** (day 4)
+- **Remote access break-in** (day 7)
+- **Ransomware** (day 9)
+- **Rack recovery** (day 10)
+- **Server migration** (day 12)
+- **24x7 email outage** (day 13, runs into the night)
+- **Network install** (day 16)
+
+*Review question: are the choices interesting? Is there ever an obviously right answer with no tension? Are the consequences funny and fair?*
+
+---
+
+## 7. The owner campaign (20 weeks)
+
+You run the company. Each week is a decision and a P&L. The same story happens to you as decisions: backups, ransomware, the rack, the migration, the email night.
+
+**Systems:** pricing, hiring (candidates with traits), software and hardware stack choices (a cheap PSA that techs hate), marketing, accounts receivable and late payers,
+a peer group and a consultant (real advice from other owners), your account manager's pay plan, scope creep, burnout, client business reviews, remote access exposure,
+and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, missing updates) or, rarely, just a lower price. Clients often come back, and you can raise the price.
+
+**The numbers** that matter: EBITDA, the W-2 ratio (payroll vs revenue), client happiness, reputation. Week 20 is a board review with a valuation: sell, open a second office, or stay independent.
+
+---
+
+## 8. Things to poke (the "play" half)
+
+- **Talk to people at their desks** (small talk, ask for help, tips from the live game state, a daily lesson from friends).
+- **Instant messages** (Lync): lunch invites, "cover my phones", help requests.
+- **Pull the plug.** Turn the router off and desks lose network, people stop typing and grumble, and Dan walks to the closet. Turn the lights off and someone gets up and turns them back on.
+- **The weekly all-hands** (days 6, 11, 16): attend for a briefing and a question, skip it and Morgan notices.
+- **Team outings** (Fridays): bowling, karaoke, the escape room (find the code in the room), dinner (learn what each coworker likes). They happen in real rooms with the whole cast.
+- **Nerf guns.** A rack of blasters on the cubicle wall. Tap Z for a quick shot, hold Z to lob. Hit a friendly coworker and they fire back. Darts stick in monitors and can be picked up.
+- **Phone.** iPhone 5 or Nexus 5: mail, tickets, texts.
+- **Ducking.** Hold S or Down to duck; coworkers duck too. A rubber duck sits on your desk; press E on it.
+- **The sales bell.** Hangs high on the main office wall. Vic rings it when he closes a deal. You cannot reach it, but a foam dart can.
+- **The front door.** It is the way to the client sites: a "Where to?" menu with drive times that follow the clock (rush hour, lunch, the evening rush).
+  If you are working an onsite ticket, that client is at the top.
+- **Onsite visits** (tech campaign). Some tickets cannot be fixed remotely: a dead switch in the closet, a failing server drive, a dead exam room PC, a dental x-ray sensor,
+  the boss's tablet. You drive out, walk through the office, and use the client's own computer (their desktop, their software, not yours). Mishaps happen: the vet's dog pees on
+  the front desk PC. **Printers** are a small game: clear the jam, load the right paper when the display says PC LOAD LETTER, install the toner, answer the test page; you can
+  pray to the sysadmin gods for luck.
+- **Rodent Nation 2014** (tech campaign, day 17). A KPI-gated trip to LabRat's user conference in a Florida resort: keynote, three rounds of sessions picked from the real 2014
+  agenda, a vendor hall where parody vendors try to sell you things (scan your badge for a raffle ticket and get spammed), forum regulars from LabRat Nerds in person.
+- **Client profitability** (owner campaign). The Boardroom shows hours per client, who is over scope, and projects (desktop, network and server upgrades) and services (backup,
+  patching) that add recurring and one-time money. Firing a client has real word-of-mouth consequences.
+
+---
+
+## 9. What the player should feel
+
+- **Pressure that is funny, not punishing:** a P1 ticket and a ringing phone at the same time, but you can always see what you could have done.
+- **Growth you can feel:** the fixes get faster, new options unlock, coworkers start to trust you.
+- **Consequences:** the decisions you make early (check the backup! ask the user to save!) pay off or bite on day 9, day 11, day 14.
+- **A workplace with people in it:** you can mess around, and the people react.
+
+---
+
+## 10. Review questions
+
+1. **Story:** do the 20 days build? Which beats are strongest, weakest, missing? Which day would you cut or add?
+2. **Jobs:** are the choices tense? Are the consequences fair and funny?
+3. **Voice:** does each coworker sound like themselves? Are emails and texts believable for a 2013 small-business client?
+4. **Period:** anything anachronistic?
+5. **Owner campaign:** is the goal clear? Do the early decisions matter at week 20?
+6. **Tone:** where are we too mean, too goofy, too dry?
+7. **Gaps:** which MSP stories or jokes from your own experience should be in here?
+
+---
+
+## 11. Not built yet (ideas on the list)
+
+Sound (none yet), Maya in the owner campaign (she is not on that payroll), sales and owner visits to the client sites (check-ins and prospect pitches), sitting in the Rodent Nation sessions, a Rodent Nation
+trip for the owner campaign, a Friday nerf war event, BEC / wire-fraud scam story, vendor-breach storyline for the tech campaign, a "client says no" story for the tech campaign,
+documentation and bus-factor story (what if the person who knows everything is out?), a year-2 mode that keeps your skills, more quiet-day stories (days 6, 8, 11, 14, 17, 19),
+pricing models and a revenue-mix story, desk design and triage tiers. See `IDEAS.md` for the long list.

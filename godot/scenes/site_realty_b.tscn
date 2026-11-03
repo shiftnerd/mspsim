@@ -1,0 +1,240 @@
+[gd_scene load_steps=24 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/site_realty_b.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
+[ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_74.png" id="prop_desk_cubicle_74"]
+[ext_resource type="Texture2D" path="res://assets/props/keyboard.png" id="prop_keyboard"]
+[ext_resource type="Texture2D" path="res://assets/props/monitor.png" id="prop_monitor"]
+[ext_resource type="Texture2D" path="res://assets/props/printer_box.png" id="prop_printer_box"]
+[ext_resource type="Texture2D" path="res://assets/props/sold_sign.png" id="prop_sold_sign"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(768, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="SiteRealtyB" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(24, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(20, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(348, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(174, 118)
+metadata/facing = "right"
+
+[node name="from_van" type="Marker2D" parent="Spawns"]
+position = Vector2(84, 118)
+metadata/facing = "right"
+
+[node name="from_closet" type="Marker2D" parent="Spawns"]
+position = Vector2(325, 118)
+metadata/facing = "left"
+
+[node name="from_owner" type="Marker2D" parent="Spawns"]
+position = Vector2(85, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="DoorCloset" type="Area2D" parent="Interactables"]
+position = Vector2(325, 70)
+script = ExtResource("door")
+target_scene = "site_realty_closet_b"
+target_spawn = "from_office"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorCloset"]
+shape = SubResource("shape_door")
+
+[node name="DoorOwner" type="Area2D" parent="Interactables"]
+position = Vector2(85, 70)
+script = ExtResource("door")
+target_scene = "site_realty_office_b"
+target_spawn = "from_office"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorOwner"]
+shape = SubResource("shape_door")
+
+[node name="Usemonitor_3" type="Area2D" parent="Interactables"]
+position = Vector2(177, 70)
+script = ExtResource("interact")
+target = NodePath("../../Actors/monitor_3/Fx")
+group = "computers"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usemonitor_3"]
+shape = SubResource("shape_fx")
+
+[node name="Usemonitor_7" type="Area2D" parent="Interactables"]
+position = Vector2(251, 70)
+script = ExtResource("interact")
+target = NodePath("../../Actors/monitor_7/Fx")
+group = "computers"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usemonitor_7"]
+shape = SubResource("shape_fx")
+
+[node name="UseObjPc0" type="Area2D" parent="Interactables"]
+position = Vector2(176, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjPc0")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjPc0"]
+shape = SubResource("shape_fx")
+
+[node name="UseObjPrinter1" type="Area2D" parent="Interactables"]
+position = Vector2(295, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjPrinter1")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjPrinter1"]
+shape = SubResource("shape_fx")
+
+[node name="UseDoor" type="Area2D" parent="Interactables"]
+position = Vector2(45, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Door")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseDoor"]
+shape = SubResource("shape_fx")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="ObjPc0" type="Node2D" parent="Fx"]
+position = Vector2(165, 62)
+script = ExtResource("fx")
+kind = "onsite_pc"
+
+[node name="ObjPrinter1" type="Node2D" parent="Fx"]
+position = Vector2(282, 80)
+script = ExtResource("fx")
+kind = "onsite_printer"
+
+[node name="Door" type="Node2D" parent="Fx"]
+position = Vector2(28, 18)
+script = ExtResource("fx")
+kind = "onsite_door"
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="sold_sign_0" type="Sprite2D" parent="Actors"]
+position = Vector2(107, 100)
+centered = false
+offset = Vector2(0, -39)
+texture = ExtResource("prop_sold_sign")
+
+[node name="chair_office_1" type="Sprite2D" parent="Actors"]
+position = Vector2(136, 95)
+centered = false
+offset = Vector2(0, -30)
+texture = ExtResource("prop_chair_office")
+
+[node name="desk_cubicle_74_2" type="Sprite2D" parent="Actors"]
+position = Vector2(138, 108)
+centered = false
+offset = Vector2(0, -26)
+texture = ExtResource("prop_desk_cubicle_74")
+
+[node name="monitor_3" type="Sprite2D" parent="Actors"]
+position = Vector2(164, 96)
+centered = false
+offset = Vector2(0, -35)
+texture = ExtResource("prop_monitor")
+
+[node name="Fx" type="Node2D" parent="Actors/monitor_3"]
+position = Vector2(0, -35)
+script = ExtResource("fx")
+kind = "monitor"
+seed_offset = 3
+
+[node name="keyboard_4" type="Sprite2D" parent="Actors"]
+position = Vector2(162, 109)
+centered = false
+offset = Vector2(0, -30)
+texture = ExtResource("prop_keyboard")
+
+[node name="chair_office_5" type="Sprite2D" parent="Actors"]
+position = Vector2(210, 95)
+centered = false
+offset = Vector2(0, -30)
+texture = ExtResource("prop_chair_office")
+
+[node name="desk_cubicle_74_6" type="Sprite2D" parent="Actors"]
+position = Vector2(212, 108)
+centered = false
+offset = Vector2(0, -26)
+texture = ExtResource("prop_desk_cubicle_74")
+
+[node name="monitor_7" type="Sprite2D" parent="Actors"]
+position = Vector2(238, 96)
+centered = false
+offset = Vector2(0, -35)
+texture = ExtResource("prop_monitor")
+
+[node name="Fx" type="Node2D" parent="Actors/monitor_7"]
+position = Vector2(0, -35)
+script = ExtResource("fx")
+kind = "monitor"
+seed_offset = 7
+
+[node name="keyboard_8" type="Sprite2D" parent="Actors"]
+position = Vector2(236, 109)
+centered = false
+offset = Vector2(0, -30)
+texture = ExtResource("prop_keyboard")
+
+[node name="printer_box_9" type="Sprite2D" parent="Actors"]
+position = Vector2(281, 106)
+centered = false
+offset = Vector2(0, -27)
+texture = ExtResource("prop_printer_box")
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(84, 118)

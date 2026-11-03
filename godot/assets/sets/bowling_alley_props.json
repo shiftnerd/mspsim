@@ -1,0 +1,8 @@
+[
+{"piece":"shoe_counter","x":9,"y":73,"sort":108},
+{"piece":"ball_rack","x":99,"y":55,"sort":96},
+{"piece":"ball_return","x":177,"y":65,"sort":108},
+{"piece":"bench_seat","x":231,"y":73,"sort":99},
+{"piece":"score_table","x":227,"y":79,"sort":108},
+{"piece":"arcade","x":291,"y":61,"sort":108}
+]

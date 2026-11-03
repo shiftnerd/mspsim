@@ -1,0 +1,291 @@
+[gd_scene load_steps=24 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/restaurant.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+[ext_resource type="Texture2D" path="res://assets/props/booth_back.png" id="prop_booth_back"]
+[ext_resource type="Texture2D" path="res://assets/props/host_stand.png" id="prop_host_stand"]
+[ext_resource type="Texture2D" path="res://assets/props/plant_floor.png" id="prop_plant_floor"]
+[ext_resource type="Texture2D" path="res://assets/props/rest_bar.png" id="prop_rest_bar"]
+[ext_resource type="Texture2D" path="res://assets/props/stool_rest.png" id="prop_stool_rest"]
+[ext_resource type="Texture2D" path="res://assets/props/wood_table.png" id="prop_wood_table"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(768, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="Restaurant" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(24, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(20, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(348, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(84, 118)
+metadata/facing = "right"
+
+[node name="from_outing" type="Marker2D" parent="Spawns"]
+position = Vector2(64, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="ExitToMain" type="Area2D" parent="Interactables"]
+position = Vector2(28, 60)
+script = ExtResource("door")
+target_scene = "main_floor"
+target_spawn = "from_outside"
+auto = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToMain"]
+shape = SubResource("shape_exit")
+
+[node name="Seat1" type="Area2D" parent="Interactables"]
+position = Vector2(50, 89)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat1"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat2" type="Area2D" parent="Interactables"]
+position = Vector2(70, 89)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat2"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat3" type="Area2D" parent="Interactables"]
+position = Vector2(122, 89)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat3"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat4" type="Area2D" parent="Interactables"]
+position = Vector2(142, 89)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat4"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat5" type="Area2D" parent="Interactables"]
+position = Vector2(236, 101)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+stash = false
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat5"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat6" type="Area2D" parent="Interactables"]
+position = Vector2(264, 101)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+stash = false
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat6"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat7" type="Area2D" parent="Interactables"]
+position = Vector2(292, 101)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+stash = false
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat7"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat8" type="Area2D" parent="Interactables"]
+position = Vector2(320, 101)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+stash = false
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat8"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="UseSwitch" type="Area2D" parent="Interactables"]
+position = Vector2(34, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Switch")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseSwitch"]
+shape = SubResource("shape_fx")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="Switch" type="Node2D" parent="Fx"]
+position = Vector2(32, 54)
+script = ExtResource("fx")
+kind = "switch"
+
+[node name="NeonBar" type="Node2D" parent="Fx"]
+position = Vector2(186, 2)
+script = ExtResource("fx")
+kind = "neon_bar"
+
+[node name="TvA" type="Node2D" parent="Fx"]
+position = Vector2(232, 2)
+script = ExtResource("fx")
+kind = "sports_tv"
+
+[node name="TvB" type="Node2D" parent="Fx"]
+position = Vector2(288, 2)
+script = ExtResource("fx")
+kind = "sports_tv"
+
+[node name="PendantA" type="Node2D" parent="Fx"]
+position = Vector2(52, 2)
+script = ExtResource("fx")
+kind = "lamp"
+
+[node name="PendantB" type="Node2D" parent="Fx"]
+position = Vector2(124, 2)
+script = ExtResource("fx")
+kind = "lamp"
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="booth_back_0" type="Sprite2D" parent="Actors"]
+position = Vector2(35, 88)
+centered = false
+offset = Vector2(0, -39)
+texture = ExtResource("prop_booth_back")
+
+[node name="wood_table_1" type="Sprite2D" parent="Actors"]
+position = Vector2(33, 108)
+centered = false
+offset = Vector2(0, -31)
+texture = ExtResource("prop_wood_table")
+
+[node name="booth_back_2" type="Sprite2D" parent="Actors"]
+position = Vector2(107, 88)
+centered = false
+offset = Vector2(0, -39)
+texture = ExtResource("prop_booth_back")
+
+[node name="wood_table_3" type="Sprite2D" parent="Actors"]
+position = Vector2(105, 108)
+centered = false
+offset = Vector2(0, -31)
+texture = ExtResource("prop_wood_table")
+
+[node name="host_stand_4" type="Sprite2D" parent="Actors"]
+position = Vector2(177, 108)
+centered = false
+offset = Vector2(0, -33)
+texture = ExtResource("prop_host_stand")
+
+[node name="plant_floor_5" type="Sprite2D" parent="Actors"]
+position = Vector2(157, 108)
+centered = false
+offset = Vector2(0, -29)
+texture = ExtResource("prop_plant_floor")
+
+[node name="rest_bar_6" type="Sprite2D" parent="Actors"]
+position = Vector2(213, 108)
+centered = false
+offset = Vector2(0, -33)
+texture = ExtResource("prop_rest_bar")
+
+[node name="stool_rest_7" type="Sprite2D" parent="Actors"]
+position = Vector2(229, 99)
+centered = false
+offset = Vector2(0, -22)
+texture = ExtResource("prop_stool_rest")
+
+[node name="stool_rest_8" type="Sprite2D" parent="Actors"]
+position = Vector2(257, 99)
+centered = false
+offset = Vector2(0, -22)
+texture = ExtResource("prop_stool_rest")
+
+[node name="stool_rest_9" type="Sprite2D" parent="Actors"]
+position = Vector2(285, 99)
+centered = false
+offset = Vector2(0, -22)
+texture = ExtResource("prop_stool_rest")
+
+[node name="stool_rest_10" type="Sprite2D" parent="Actors"]
+position = Vector2(313, 99)
+centered = false
+offset = Vector2(0, -22)
+texture = ExtResource("prop_stool_rest")
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(84, 118)

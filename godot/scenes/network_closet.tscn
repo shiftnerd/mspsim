@@ -1,0 +1,240 @@
+[gd_scene load_steps=18 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/network_closet.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(768, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="NetworkCloset" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(24, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(108, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(260, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(182, 118)
+metadata/facing = "right"
+
+[node name="from_cubicles" type="Marker2D" parent="Spawns"]
+position = Vector2(172, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="DoorToCubicles" type="Area2D" parent="Interactables"]
+position = Vector2(133, 70)
+script = ExtResource("door")
+target_scene = "cubicle_area"
+target_spawn = "from_closet"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToCubicles"]
+shape = SubResource("shape_door")
+
+[node name="UseSwitch" type="Area2D" parent="Interactables"]
+position = Vector2(154, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Switch")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseSwitch"]
+shape = SubResource("shape_fx")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="Switch" type="Node2D" parent="Fx"]
+position = Vector2(152, 54)
+script = ExtResource("fx")
+kind = "switch"
+
+[node name="Rack" type="Node2D" parent="Fx"]
+position = Vector2(168, 2)
+script = ExtResource("fx")
+kind = "rack"
+
+[node name="Ports" type="Node2D" parent="."]
+
+[node name="sw1" type="Node2D" parent="Ports"]
+position = Vector2(178, 22)
+script = ExtResource("port")
+port_id = "sw1"
+
+[node name="sw2" type="Node2D" parent="Ports"]
+position = Vector2(182, 22)
+script = ExtResource("port")
+port_id = "sw2"
+
+[node name="sw3" type="Node2D" parent="Ports"]
+position = Vector2(186, 22)
+script = ExtResource("port")
+port_id = "sw3"
+
+[node name="sw4" type="Node2D" parent="Ports"]
+position = Vector2(190, 22)
+script = ExtResource("port")
+port_id = "sw4"
+
+[node name="sw5" type="Node2D" parent="Ports"]
+position = Vector2(194, 22)
+script = ExtResource("port")
+port_id = "sw5"
+
+[node name="sw6" type="Node2D" parent="Ports"]
+position = Vector2(198, 22)
+script = ExtResource("port")
+port_id = "sw6"
+
+[node name="sw7" type="Node2D" parent="Ports"]
+position = Vector2(202, 22)
+script = ExtResource("port")
+port_id = "sw7"
+
+[node name="sw8" type="Node2D" parent="Ports"]
+position = Vector2(206, 22)
+script = ExtResource("port")
+port_id = "sw8"
+
+[node name="sw9" type="Node2D" parent="Ports"]
+position = Vector2(210, 22)
+script = ExtResource("port")
+port_id = "sw9"
+
+[node name="sw10" type="Node2D" parent="Ports"]
+position = Vector2(214, 22)
+script = ExtResource("port")
+port_id = "sw10"
+
+[node name="sw11" type="Node2D" parent="Ports"]
+position = Vector2(218, 22)
+script = ExtResource("port")
+port_id = "sw11"
+
+[node name="sw12" type="Node2D" parent="Ports"]
+position = Vector2(222, 22)
+script = ExtResource("port")
+port_id = "sw12"
+
+[node name="wan" type="Node2D" parent="Ports"]
+position = Vector2(179, 35)
+script = ExtResource("port")
+port_id = "wan"
+
+[node name="nas_btn" type="Node2D" parent="Ports"]
+position = Vector2(225, 47)
+script = ExtResource("port")
+port_id = "nas_btn"
+
+[node name="pdu1" type="Node2D" parent="Ports"]
+position = Vector2(179, 60)
+script = ExtResource("port")
+port_id = "pdu1"
+
+[node name="pdu2" type="Node2D" parent="Ports"]
+position = Vector2(187, 60)
+script = ExtResource("port")
+port_id = "pdu2"
+
+[node name="pdu3" type="Node2D" parent="Ports"]
+position = Vector2(195, 60)
+script = ExtResource("port")
+port_id = "pdu3"
+
+[node name="pdu4" type="Node2D" parent="Ports"]
+position = Vector2(203, 60)
+script = ExtResource("port")
+port_id = "pdu4"
+
+[node name="pdu5" type="Node2D" parent="Ports"]
+position = Vector2(211, 60)
+script = ExtResource("port")
+port_id = "pdu5"
+
+[node name="pdu6" type="Node2D" parent="Ports"]
+position = Vector2(219, 60)
+script = ExtResource("port")
+port_id = "pdu6"
+
+[node name="ups1" type="Node2D" parent="Ports"]
+position = Vector2(207, 72)
+script = ExtResource("port")
+port_id = "ups1"
+
+[node name="ups2" type="Node2D" parent="Ports"]
+position = Vector2(215, 72)
+script = ExtResource("port")
+port_id = "ups2"
+
+[node name="ups3" type="Node2D" parent="Ports"]
+position = Vector2(223, 72)
+script = ExtResource("port")
+port_id = "ups3"
+
+[node name="ups_btn" type="Node2D" parent="Ports"]
+position = Vector2(228, 79)
+script = ExtResource("port")
+port_id = "ups_btn"
+
+[node name="wall" type="Node2D" parent="Ports"]
+position = Vector2(159, 74)
+script = ExtResource("port")
+port_id = "wall"
+
+[node name="RackZone" type="Area2D" parent="Interactables"]
+position = Vector2(198, 95)
+script = ExtResource("rack_zone")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/RackZone"]
+shape = SubResource("shape_rack")
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(172, 118)

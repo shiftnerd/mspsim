@@ -1,0 +1,370 @@
+extends Node
+# gdlint:disable=max-line-length
+# Nerf guns. Take a blaster from the rack in the cubicle area (E; E again to reload), Z fires a foam dart, G puts it away.
+# Darts fly in an arc, stick in walls and furniture (monitors flicker), and hit people: coworkers react in character,
+# friendly ones laugh and fire back (a short nerf war in the room), and walking over a dart on the floor picks it up.
+# In a campaign a hit relieves a little stress (+1 energy, up to 4 a day) and moves opinions.
+
+const DART := preload("res://scripts/dart.gd")
+const AIM := preload("res://scripts/aim.gd")
+const MAX_AMMO := 6
+const SPEED := 175.0
+const CHARGE_SECS := 1.1  # holding Z this long = a full-power lob
+const LOB_SPEED := 120.0  # extra forward speed at full charge
+const LOB_LIFT := 58.0  # extra upward speed at full charge
+const FIRE_GAP := 0.4
+const WAR_SECS := 45.0
+const DUCK_TOP := 40.0  # a ducking person is this tall (standing: 84)
+const REACT := {
+	"Alan": {"base": -1, "friendly": "heart", "line": "Alan: Not at my desk, please.", "mood": "!"},
+	"Garrison": {"base": 1, "friendly": "heart", "line": "Garrison: Oh, it is ON.", "mood": "!"},
+	"Maya": {"base": 1, "friendly": "heart", "line": "Maya: Hey! My granola bar!", "mood": "!"},
+	"Dan":
+	{"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
+	"Vic":
+	{
+		"base": 1,
+		"friendly": "heart",
+		"line": "Vic: Careful, I have a client call at two!",
+		"mood": "!"
+	},
+}
+
+var ammo := 0
+var hits := 0  # total hits on coworkers
+var taken := 0
+var war_t := 0.0
+var war_hits := 0
+var war_taken := 0
+var dodges := 0  # darts people ducked under
+
+var charge := 0.0
+var charging := false
+
+var _cool := 0.0
+var _preview: Node2D = null
+var _energy_today := 0
+var _energy_day := -1
+var _shot_t := {}  # name -> seconds until the next war shot
+var _dodge_ms := 0
+
+
+func _ready() -> void:
+	Campaign.day_started.connect(func(_d: int) -> void: _energy_today = 0)
+
+
+func reset() -> void:
+	ammo = 0
+	hits = 0
+	taken = 0
+	war_t = 0.0
+	war_hits = 0
+	war_taken = 0
+	_energy_today = 0
+
+
+func _scene() -> Node:
+	return get_tree().current_scene
+
+
+func _player() -> Node:
+	var scene := _scene()
+	return scene.get_node_or_null("Actors/Player") if scene != null else null
+
+
+func holding() -> bool:
+	var p := _player()
+	return p != null and str(p.get("held")) == "nerf"
+
+
+func on_given() -> void:
+	ammo = MAX_AMMO
+	Hints.toast("Z FIRES, HOLD Z TO LOB, S OR DOWN TO DUCK.", 4.0)
+
+
+# ---- firing ------------------------------------------------------------------------------------------
+func fire_player(p: Node, power := 0.0) -> bool:
+	if str(p.held) != "nerf" or ammo <= 0 or _cool > 0.0 or Game.ui_open or Game.busy:
+		if str(p.held) == "nerf" and ammo <= 0:
+			Hints.toast("OUT OF DARTS. PICK THEM UP OR RELOAD AT THE RACK (E).", 2.5)
+		return false
+	if p.state not in ["idle", "walk", "run", "sitting", "emote"]:
+		return false
+	_cool = FIRE_GAP
+	ammo -= 1
+	var dir := 1.0 if p.facing == "right" else -1.0
+	if p.state != "sitting":
+		p.start_emote("reach", 0.22)
+	_spawn(_muzzle(p, dir), dir, "Player", power)
+	return true
+
+
+# hold Z to aim: the longer you hold, the higher and further the dart goes; a tap is a quick shot
+func charge_start(p: Node) -> void:
+	if charging or str(p.held) != "nerf" or Game.ui_open or Game.busy:
+		return
+	if ammo <= 0:
+		fire_player(p)  # the "out of darts" message
+		return
+	if p.state not in ["idle", "walk", "run"]:
+		return
+	charging = true
+	charge = 0.0
+	p.start_emote("hold", 100000.0)
+	_preview = AIM.new()
+	_preview.z_index = 30
+	_scene().get_node("Actors").add_child(_preview)
+
+
+func charge_release(p: Node) -> void:
+	if not charging:
+		return
+	charging = false
+	var power := charge if charge > 0.12 else 0.0
+	charge = 0.0
+	if _preview != null and is_instance_valid(_preview):
+		_preview.queue_free()
+	_preview = null
+	_cool = 0.0
+	fire_player(p, power)
+
+
+func launch_velocity(dir: float, power: float) -> Vector2:
+	return Vector2(dir * (SPEED + power * LOB_SPEED), -14.0 - power * LOB_LIFT)
+
+
+func _update_charge(delta: float) -> void:
+	var p := _player()
+	if p == null or str(p.held) != "nerf" or Game.ui_open:
+		charging = false
+		charge = 0.0
+		if _preview != null and is_instance_valid(_preview):
+			_preview.queue_free()
+		_preview = null
+		return
+	charge = minf(1.0, charge + delta / CHARGE_SECS)
+	var dir := 1.0 if p.facing == "right" else -1.0
+	if _preview != null and is_instance_valid(_preview):
+		_preview.set_path(_muzzle(p, dir), launch_velocity(dir, charge))
+
+
+func fire_npc(npc: Node, dir: float, power := 0.0) -> void:
+	if not is_instance_valid(npc):
+		return
+	if npc.seat == null and npc._hold <= 0.0:
+		npc._begin_hold("reach", 0.3)
+	_spawn(_muzzle(npc, dir), dir, str(npc.cast_name), power)
+
+
+# shoulder height, so darts clear desks and low furniture when you stand beside them
+func _muzzle(who: Node, _dir: float) -> Vector2:
+	var seated: bool = who.get("seat") != null
+	return who.global_position + Vector2(_dir * 9.0, -40.0 if seated else -54.0)
+
+
+func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
+	var scene := _scene()
+	if scene == null:
+		return
+	var dart := DART.new()
+	dart.shooter = shooter
+	dart.vel = launch_velocity(dir, power) + Vector2(0.0, randf_range(-3.0, 3.0))
+	dart.position = pos
+	scene.get_node("Actors").add_child(dart)
+
+
+# the sales bell (a fx in group "bells"): a dart that reaches it rings it
+func hit_bell(pos: Vector2) -> bool:
+	for b in get_tree().get_nodes_in_group("bells"):
+		if b.hit_test(pos):
+			b.ring("dart")
+			return true
+	return false
+
+
+# ---- what a dart can hit -----------------------------------------------------------------------------
+func is_ducking(who: Node) -> bool:
+	return who.get("ducking") == true or who.get("state") == "duck"
+
+
+# does the dart at pos hit this body? a ducking body is lower, so a high shot flies over (a dodge)
+func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
+	if absf(who.global_position.x - pos.x) >= 8.0:
+		return false
+	var below: bool = pos.y > who.global_position.y - 84.0 and pos.y < who.global_position.y - 4.0
+	if not below:
+		return false
+	if is_ducking(who) and pos.y < who.global_position.y - DUCK_TOP:
+		if dart != null and not dart.has_meta("dodged"):
+			dart.set_meta("dodged", true)
+			_dodged(who, str(dart.shooter))
+		return false
+	return true
+
+
+func _dodged(who: Node, shooter: String) -> void:
+	dodges += 1
+	if who.get("cast_name") == null and Time.get_ticks_msec() - _dodge_ms > 3000:
+		_dodge_ms = Time.get_ticks_msec()
+		Hints.toast("DUCKED!", 1.2)
+	elif shooter == "Player":
+		Hints.toast("MISSED! THEY DUCKED.", 1.6)
+
+
+func find_victim(pos: Vector2, shooter: String, dart: Node = null) -> Node:
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		if str(npc.cast_name) == shooter or npc.get("_hidden") == true or not npc.visible:
+			continue
+		if _hits(npc, pos, dart):
+			return npc
+	var p := _player()
+	if p != null and shooter != "Player" and _hits(p, pos, dart):
+		return p
+	return null
+
+
+# a wall, or a prop sprite (desks, monitors, chairs): the dart sticks to it
+func stick_target(pos: Vector2) -> Node:
+	var scene := _scene()
+	if scene == null:
+		return null
+	var name := scene.scene_file_path.get_file().get_basename()
+	var info: Dictionary = World.DATA.SCENES.get(name, {})
+	if (
+		not info.is_empty()
+		and (pos.x < float(info.x0) + 2.0 or pos.x > float(info.x0) + float(info.W) - 2.0)
+	):
+		return scene
+	for child in scene.get_node("Actors").get_children():
+		if child is Sprite2D and child.texture != null:
+			var origin: Vector2 = child.global_position + child.offset
+			if Rect2(origin, child.texture.get_size()).has_point(pos):
+				return child
+	return null
+
+
+func dart_hit(dart: Node, victim: Node) -> void:
+	if victim.has_method("sit") and victim.get("cast_name") == null:
+		_hit_player(victim, str(dart.shooter))
+	else:
+		_hit_npc(victim, str(dart.shooter))
+
+
+func _hit_npc(npc: Node, shooter: String) -> void:
+	var who := str(npc.cast_name)
+	var react: Dictionary = REACT.get(who, REACT["Dan"])
+	if shooter == "Player":
+		hits += 1
+		war_hits += 1 if war_t > 0.0 else 0
+		var delta: int = int(react.base)
+		var friendly := Social.is_friendly(who)
+		if friendly:
+			delta = 2
+		elif Social.is_cold(who):
+			delta = -2
+		Social.change(who, delta)
+		npc.react_hit(str(react.friendly) if delta > 0 else str(react.mood))
+		Hints.toast("HIT! " + str(react.line), 2.6)
+		_relieve()
+		if delta > 0:
+			# a coworker who takes it well fires back at once (from the desk if they are sitting)
+			if war_t <= 0.0:
+				start_war()
+			_shot_t[who] = 0.8
+	else:
+		npc.react_hit("!")
+
+
+func _hit_player(p: Node, shooter: String) -> void:
+	taken += 1
+	war_taken += 1 if war_t > 0.0 else 0
+	if p.state != "sitting" and p.state != "death":
+		p.start_emote("hurt", 0.45)
+	p._ensure_bubble()
+	p._bubble.glyph = "!"
+	p._bubble.visible = true
+	Social.change(shooter, 1)
+	Hints.toast("%s GOT YOU!" % shooter.to_upper(), 2.0)
+	_relieve()
+
+
+func _relieve() -> void:
+	if Campaign.active and _energy_today < 4:
+		_energy_today += 1
+		Shift.add_energy(1.0)
+
+
+# ---- the war ------------------------------------------------------------------------------------------
+func start_war() -> void:
+	war_t = WAR_SECS
+	war_hits = 0
+	war_taken = 0
+	_shot_t = {}
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		if npc.get("_hidden") != true:
+			npc.give_item("nerf")  # everybody in the room, sitting or standing
+		_shot_t[str(npc.cast_name)] = randf_range(1.5, 3.5)
+	Hints.toast("NERF WAR! THEY ARE FIRING BACK.", 3.0)
+
+
+func _end_war() -> void:
+	war_t = 0.0
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		if is_instance_valid(npc) and str(npc.held) == "nerf":
+			npc.give_item("")
+	Hints.toast("NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken], 4.0)
+	if Campaign.active:
+		Social.change_all(1)
+
+
+func _process(delta: float) -> void:
+	_cool = maxf(0.0, _cool - delta)
+	if charging:
+		_update_charge(delta)
+	if war_t <= 0.0:
+		return
+	war_t -= delta
+	if war_t <= 0.0 or _scene() == null:
+		_end_war()
+		return
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		var who := str(npc.cast_name)
+		if npc.get("_hidden") == true or not _shot_t.has(who) or str(npc.held) != "nerf":
+			continue
+		_shot_t[who] = float(_shot_t[who]) - delta
+		if float(_shot_t[who]) <= 0.0:
+			_shot_t[who] = randf_range(2.0, 4.5)
+			_npc_shoots(npc)
+
+
+func _npc_shoots(npc: Node) -> void:
+	var targets := []
+	var p := _player()
+	if p != null:
+		targets.append(p)
+	for other in get_tree().get_nodes_in_group("npcs"):
+		if other != npc and other.get("_hidden") != true:
+			targets.append(other)
+	if targets.is_empty():
+		return
+	var target: Node = targets[randi() % targets.size()]
+	var dx: float = target.global_position.x - npc.global_position.x
+	var dir := 1.0 if dx >= 0.0 else -1.0
+	if npc.seat == null:
+		npc.facing = "right" if dir > 0.0 else "left"
+		npc._play("idle")
+	# lob it when the target is far away
+	fire_npc(npc, dir, clampf((absf(dx) - 110.0) / 200.0, 0.0, 1.0))
+
+
+func gone(dart: Node) -> void:
+	# a dart that came to rest on the floor can be collected
+	var p := _player()
+	if (
+		p != null
+		and str(p.held) == "nerf"
+		and ammo < MAX_AMMO
+		and absf(p.global_position.x - dart.global_position.x) < 10.0
+	):
+		ammo += 1
+		dart.queue_free()

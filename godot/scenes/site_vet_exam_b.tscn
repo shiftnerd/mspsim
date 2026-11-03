@@ -1,0 +1,155 @@
+[gd_scene load_steps=22 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/site_vet_exam_b.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+[ext_resource type="Texture2D" path="res://assets/props/cat_orange.png" id="prop_cat_orange"]
+[ext_resource type="Texture2D" path="res://assets/props/dog_beagle.png" id="prop_dog_beagle"]
+[ext_resource type="Texture2D" path="res://assets/props/exam_table_vet.png" id="prop_exam_table_vet"]
+[ext_resource type="Texture2D" path="res://assets/props/sink_counter_b.png" id="prop_sink_counter_b"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(768, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="SiteVetExamB" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(24, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(60, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(308, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(154, 118)
+metadata/facing = "right"
+
+[node name="from_office" type="Marker2D" parent="Spawns"]
+position = Vector2(114, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="DoorToOffice" type="Area2D" parent="Interactables"]
+position = Vector2(85, 70)
+script = ExtResource("door")
+target_scene = "site_vet_b"
+target_spawn = "@exam_return"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToOffice"]
+shape = SubResource("shape_door")
+
+[node name="UseObjExam" type="Area2D" parent="Interactables"]
+position = Vector2(164, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjExam")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjExam"]
+shape = SubResource("shape_fx")
+
+[node name="UseObjDog" type="Area2D" parent="Interactables"]
+position = Vector2(280, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjDog")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjDog"]
+shape = SubResource("shape_fx")
+
+[node name="UseObjCat" type="Area2D" parent="Interactables"]
+position = Vector2(232, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjCat")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjCat"]
+shape = SubResource("shape_fx")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="ObjExam" type="Node2D" parent="Fx"]
+position = Vector2(150, 64)
+script = ExtResource("fx")
+kind = "onsite_exam"
+
+[node name="ObjDog" type="Node2D" parent="Fx"]
+position = Vector2(268, 94)
+script = ExtResource("fx")
+kind = "onsite_dog"
+
+[node name="ObjCat" type="Node2D" parent="Fx"]
+position = Vector2(224, 56)
+script = ExtResource("fx")
+kind = "onsite_cat"
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="sink_counter_b_0" type="Sprite2D" parent="Actors"]
+position = Vector2(113, 108)
+centered = false
+offset = Vector2(0, -37)
+texture = ExtResource("prop_sink_counter_b")
+
+[node name="exam_table_vet_1" type="Sprite2D" parent="Actors"]
+position = Vector2(187, 108)
+centered = false
+offset = Vector2(0, -37)
+texture = ExtResource("prop_exam_table_vet")
+
+[node name="dog_beagle_2" type="Sprite2D" parent="Actors"]
+position = Vector2(267, 112)
+centered = false
+offset = Vector2(0, -19)
+texture = ExtResource("prop_dog_beagle")
+
+[node name="cat_orange_3" type="Sprite2D" parent="Actors"]
+position = Vector2(223, 109)
+centered = false
+offset = Vector2(0, -54)
+texture = ExtResource("prop_cat_orange")
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(124, 118)

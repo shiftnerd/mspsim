@@ -1,0 +1,15 @@
+# Godot caches and tool output
+godot/.godot/
+godot/.mcp/
+godot/override.cfg
+renders/
+*.tmp
+
+# Superseded attempts, installers and reference photos of real people stay local
+archive/
+
+# Editor / OS
+.vs/
+.vscode/
+Thumbs.db
+desktop.ini

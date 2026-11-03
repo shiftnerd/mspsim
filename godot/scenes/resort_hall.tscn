@@ -1,0 +1,171 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sets/resort_hall.png" id="bg"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
+[ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
+[ext_resource type="Script" path="res://scripts/door.gd" id="door"]
+[ext_resource type="Script" path="res://scripts/seat.gd" id="seat"]
+[ext_resource type="Script" path="res://scripts/fx.gd" id="fx"]
+[ext_resource type="Script" path="res://scripts/interact.gd" id="interact"]
+[ext_resource type="Script" path="res://scripts/port.gd" id="port"]
+[ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
+[ext_resource type="Texture2D" path="res://assets/props/plant_floor.png" id="prop_plant_floor"]
+
+[sub_resource type="RectangleShape2D" id="shape_floor"]
+size = Vector2(768, 20)
+
+[sub_resource type="RectangleShape2D" id="shape_wall"]
+size = Vector2(8, 300)
+
+[sub_resource type="RectangleShape2D" id="shape_door"]
+size = Vector2(30, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_exit"]
+size = Vector2(12, 200)
+
+[sub_resource type="RectangleShape2D" id="shape_seat"]
+size = Vector2(26, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_fx"]
+size = Vector2(24, 96)
+
+[sub_resource type="RectangleShape2D" id="shape_rack"]
+size = Vector2(100, 60)
+
+[node name="ResortHall" type="Node2D"]
+script = ExtResource("stage")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(24, -100)
+centered = false
+texture = ExtResource("bg")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(184, 128)
+
+[node name="Shape" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("shape_floor")
+
+[node name="WallLeft" type="StaticBody2D" parent="."]
+position = Vector2(20, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("shape_wall")
+
+[node name="WallRight" type="StaticBody2D" parent="."]
+position = Vector2(348, 0)
+
+[node name="Shape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("shape_wall")
+
+[node name="Spawns" type="Node2D" parent="."]
+
+[node name="start" type="Marker2D" parent="Spawns"]
+position = Vector2(174, 118)
+metadata/facing = "right"
+
+[node name="from_lobby" type="Marker2D" parent="Spawns"]
+position = Vector2(58, 118)
+metadata/facing = "right"
+
+[node name="from_a" type="Marker2D" parent="Spawns"]
+position = Vector2(73, 118)
+metadata/facing = "right"
+
+[node name="from_b" type="Marker2D" parent="Spawns"]
+position = Vector2(143, 118)
+metadata/facing = "right"
+
+[node name="from_c" type="Marker2D" parent="Spawns"]
+position = Vector2(213, 118)
+metadata/facing = "right"
+
+[node name="from_d" type="Marker2D" parent="Spawns"]
+position = Vector2(283, 118)
+metadata/facing = "right"
+
+[node name="Interactables" type="Node2D" parent="."]
+
+[node name="DoorToLobby" type="Area2D" parent="Interactables"]
+position = Vector2(41, 70)
+script = ExtResource("door")
+target_scene = "resort_lobby"
+target_spawn = "from_hall"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToLobby"]
+shape = SubResource("shape_door")
+
+[node name="DoorRoomA" type="Area2D" parent="Interactables"]
+position = Vector2(73, 70)
+script = ExtResource("door")
+target_scene = "breakout_room"
+target_spawn = "from_hall"
+remember = "conf_door=from_a"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorRoomA"]
+shape = SubResource("shape_door")
+
+[node name="DoorRoomB" type="Area2D" parent="Interactables"]
+position = Vector2(143, 70)
+script = ExtResource("door")
+target_scene = "breakout_room"
+target_spawn = "from_hall"
+remember = "conf_door=from_b"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorRoomB"]
+shape = SubResource("shape_door")
+
+[node name="DoorRoomC" type="Area2D" parent="Interactables"]
+position = Vector2(213, 70)
+script = ExtResource("door")
+target_scene = "breakout_room"
+target_spawn = "from_hall"
+remember = "conf_door=from_c"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorRoomC"]
+shape = SubResource("shape_door")
+
+[node name="DoorRoomD" type="Area2D" parent="Interactables"]
+position = Vector2(283, 70)
+script = ExtResource("door")
+target_scene = "breakout_room"
+target_spawn = "from_hall"
+remember = "conf_door=from_d"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorRoomD"]
+shape = SubResource("shape_door")
+
+[node name="Fx" type="Node2D" parent="."]
+
+[node name="Sign0" type="Node2D" parent="Fx"]
+position = Vector2(90, 57)
+script = ExtResource("fx")
+kind = "session_sign"
+
+[node name="Sign1" type="Node2D" parent="Fx"]
+position = Vector2(160, 57)
+script = ExtResource("fx")
+kind = "session_sign"
+
+[node name="Sign2" type="Node2D" parent="Fx"]
+position = Vector2(230, 57)
+script = ExtResource("fx")
+kind = "session_sign"
+
+[node name="Sign3" type="Node2D" parent="Fx"]
+position = Vector2(300, 57)
+script = ExtResource("fx")
+kind = "session_sign"
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="plant_floor_0" type="Sprite2D" parent="Actors"]
+position = Vector2(31, 108)
+centered = false
+offset = Vector2(0, -29)
+texture = ExtResource("prop_plant_floor")
+
+[node name="Player" parent="Actors" instance=ExtResource("player")]
+position = Vector2(84, 118)

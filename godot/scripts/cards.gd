@@ -1,0 +1,180 @@
+extends CanvasLayer
+# Decision cards: a modal dialog with a speaker, some text and 2-4 options. Used when the
+# account manager walks in with a client complaint, and for the owner campaign's business
+# decisions. Up/Down + Enter, number keys 1-4, or click.
+#   Cards.ask("Vic", "text...", [{"label": "I WILL PRIORITIZE IT", "id": "a"}, ...], on_pick)
+# Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const INK := Color("17121f")
+const WHITE := Color("ffffff")
+
+var is_open := false
+var speaker := ""
+var text := ""
+var options: Array = []
+var sel := 0
+
+var _canvas: Node2D
+var _callback := Callable()
+var _hits: Array = []
+var _mouse := Vector2.ZERO
+var _queue: Array = []
+var _opened := 0  # msec the card appeared: early confirms are ignored
+
+
+func _ready() -> void:
+	layer = 65
+	_canvas = Node2D.new()
+	_canvas.visible = false
+	add_child(_canvas)
+	_canvas.draw.connect(_paint)
+
+
+func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
+	if is_open:
+		_queue.append([who, body, choices, on_pick])
+		return
+	speaker = who
+	text = body
+	options = choices
+	sel = 0
+	for i in options.size():
+		if bool(options[i].get("enabled", true)):
+			sel = i
+			break
+	_callback = on_pick
+	is_open = true
+	_opened = Time.get_ticks_msec()
+	Game.ui_open = true
+	_canvas.visible = true
+	_mouse = get_viewport().get_mouse_position()
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	_canvas.queue_redraw()
+
+
+func pick(index: int) -> void:
+	if (
+		not is_open
+		or index < 0
+		or index >= options.size()
+		or not bool(options[index].get("enabled", true))
+	):
+		return
+	var id := str(options[index].id)
+	is_open = false
+	_canvas.visible = false
+	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
+	if _callback.is_valid():
+		_callback.call(id)
+	if not _queue.is_empty():
+		var next: Array = _queue.pop_front()
+		ask(next[0], next[1], next[2], next[3])
+
+
+# Esc picks the option whose id is "leave" (conversations)
+func _pick_leave() -> void:
+	for i in options.size():
+		if str(options[i].id) == "leave":
+			pick(i)
+			return
+
+
+func _move(step: int) -> void:
+	for _n in options.size():
+		sel = (sel + step + options.size()) % options.size()
+		if bool(options[sel].get("enabled", true)):
+			break
+	_canvas.queue_redraw()
+
+
+func _input(event: InputEvent) -> void:
+	if not is_open:
+		return
+	if event is InputEventMouseMotion:
+		_mouse = get_viewport().get_mouse_position()
+		for h in _hits:
+			if h.r.has_point(_mouse):
+				sel = int(h.i)
+		_canvas.queue_redraw()
+	elif (
+		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+	):
+		_mouse = get_viewport().get_mouse_position()
+		for h in _hits:
+			if h.r.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 450:
+				pick(int(h.i))
+				break
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_UP:
+			_move(-1)
+		elif event.keycode == KEY_DOWN:
+			_move(1)
+		elif event.keycode == KEY_ESCAPE:
+			_pick_leave()
+		elif Time.get_ticks_msec() - _opened < 450:
+			pass  # too soon: the card just appeared
+		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+			pick(sel)
+		elif event.keycode >= KEY_1 and event.keycode <= KEY_4:
+			pick(event.keycode - KEY_1)
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+
+func _wrap(s: String, chars: int) -> Array:
+	var out := []
+	var line := ""
+	for word in s.split(" "):
+		if line != "" and line.length() + 1 + word.length() > chars:
+			out.append(line)
+			line = word
+		else:
+			line = word if line == "" else line + " " + word
+	out.append(line)
+	return out
+
+
+func _paint() -> void:
+	var size := get_viewport().get_visible_rect().size
+	_hits.clear()
+	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
+	var pw := minf(size.x - 8.0, 250.0)
+	var chars := int((pw - 10.0) / 4.0)
+	var lines := _wrap(text, chars)
+	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + float(options.size()) * 11.0 + 4.0
+	# short screens (16:9, wide) keep the people visible by putting the card at the top
+	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
+	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
+	_canvas.draw_rect(panel, Color("e9ecf1"))
+	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
+	PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+	var y := panel.position.y + 12.0
+	for line in lines:
+		PixelFont.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK)
+		y += 7.0
+	y += 4.0
+	for i in options.size():
+		var opt: Dictionary = options[i]
+		var on: bool = bool(opt.get("enabled", true))
+		var r := Rect2(panel.position.x + 4, y, pw - 8, 10)
+		var col := (
+			Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
+		)
+		_canvas.draw_rect(r, col)
+		var label := "%d. %s" % [i + 1, str(opt.label)]
+		if not on and opt.has("hint"):
+			label += " [%s]" % str(opt.hint)
+		PixelFont.draw(
+			_canvas,
+			label.substr(0, chars - 1),
+			r.position + Vector2(3, 2),
+			INK if on else Color("8b93a1")
+		)
+		_hits.append({"r": r, "i": i})
+		y += 11.0
+	var m := _mouse.floor()
+	for i in 6:
+		_canvas.draw_rect(Rect2(m.x, m.y + i, 1 + mini(i, 3), 1), INK)
