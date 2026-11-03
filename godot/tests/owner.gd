@@ -35,7 +35,7 @@ func _init() -> void:
 
 	c.new_game("owner")
 	_check(
-		c.active and c.mode == "owner" and o.cash == 5000 and world.day_len == 240.0,
+		c.active and c.mode == "owner" and o.cash == o.START_CASH and world.day_len == 240.0,
 		"new owner campaign: $5,000, 4-minute weeks"
 	)
 	var est: Dictionary = o.weekly_estimate()
@@ -160,7 +160,7 @@ func _init() -> void:
 	)
 	o.apply({"hire": o.JUNIOR})
 	_check(
-		o.weekly_estimate().w2 > est.w2 and o.weekly_estimate().ebitda == 660 - 450,
+		o.weekly_estimate().w2 > est.w2 and o.weekly_estimate().ebitda == 660 - int(450 * 0.6),
 		"a hire raises the W-2 ratio and costs EBITDA"
 	)
 
@@ -341,6 +341,7 @@ func _init() -> void:
 
 	# a business review with a client
 	c.new_game("owner")
+	c.day = 7
 	o._qbr()
 	_check(
 		cards.is_open and cards.options.size() >= 3 and cards.text.contains("Business review"),

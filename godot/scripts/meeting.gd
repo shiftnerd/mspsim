@@ -81,6 +81,7 @@ func hold() -> void:
 	done_day = Campaign.day
 	if in_conference():
 		attended += 1
+		Career.add("meetings")
 		Social.change_all(1)
 		Skills.add_xp("people", 3)
 		if Campaign.mode == "owner":

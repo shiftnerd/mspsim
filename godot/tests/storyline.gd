@@ -12,6 +12,14 @@ func _check(ok: bool, what: String) -> void:
 	print(("ok   " if ok else "FAIL ") + what)
 
 
+# a decision card now freezes the day: dismiss whatever the story events opened
+func _drain(cards: Node) -> void:
+	var guard := 0
+	while cards.is_open and guard < 20:
+		cards.pick(cards.options.size() - 1)
+		guard += 1
+
+
 func _best(pb: Node) -> int:
 	var step: Dictionary = pb.current_step()
 	var best := -1
@@ -58,6 +66,7 @@ func _init() -> void:
 	var pb := root.get_node("Playbook")
 	var sk := root.get_node("Skills")
 	var story := root.get_node("Story")
+	var cards := root.get_node("Cards")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	c.new_game("tech")
@@ -74,6 +83,7 @@ func _init() -> void:
 			world.clock = hour
 			await process_frame
 			await process_frame
+			_drain(cards)
 			_work(msp, pb)
 		_check(
 			report.is_open,

@@ -344,12 +344,16 @@ func _draw_bowl_score() -> void:
 		PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
 		return
 	var t: Dictionary = game.totals
-	PixelFont.draw(
-		self, "YOU %02d ALN %02d" % [int(t["You"]), int(t["Alan"])], Vector2(2, 1), green, 1
-	)
-	PixelFont.draw(
-		self, "GAR %02d DAN %02d" % [int(t["Garrison"]), int(t["Dan"])], Vector2(2, 8), green, 1
-	)
+	var line1 := "YOU %02d" % int(t["You"])
+	if t.has("Alan"):
+		line1 += " ALN %02d" % int(t["Alan"])
+	var line2 := ""
+	if t.has("Garrison"):
+		line2 += "GAR %02d " % int(t["Garrison"])
+	if t.has("Dan"):
+		line2 += "DAN %02d" % int(t["Dan"])
+	PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
+	PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:
@@ -639,6 +643,7 @@ var _duck_base := 0.0
 
 func _duck_press() -> void:
 	_duck_count += 1
+	Career.add("duck_squeaks")
 	_duck_t = 1.6
 	var roll := randf()
 	if _duck_count % 10 == 0:

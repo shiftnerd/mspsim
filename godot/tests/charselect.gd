@@ -71,7 +71,10 @@ func _process(_delta: float) -> bool:
 				if root.get_node("World").CAST[n].character in tech:
 					cast_ok = false
 			_check(cast_ok, "no cast member is offered in a campaign (no NPC copy to hide)")
-			_check(cs.choices("owner") == tech, "the owner campaign follows the same rule")
+			_check(
+				cs.choices("owner") == ["office_alan", "casual_garrison"],
+				"the owner campaign offers Alan or Garrison (X2)"
+			)
 			cs.free()
 			_press(KEY_ENTER)
 		1:
@@ -217,8 +220,8 @@ func _process(_delta: float) -> bool:
 		20:
 			_press(KEY_ENTER)
 		21:
-			title._sel = title._items.size() - 1
-			_check(title._items[title._sel].id == "free", "FREE PLAY is the last item")
+			title._sel = title._items.size() - 2  # CAREER is the last entry
+			_check(title._items[title._sel].id == "free", "FREE PLAY is the item before CAREER")
 			_press(KEY_ENTER)
 		22:
 			var cs: Node = title._select

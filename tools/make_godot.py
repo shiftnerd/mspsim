@@ -177,8 +177,8 @@ PATCHABLE = {
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
-    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"],
-    "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
+    "scripts/events.gd": ["DECK"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
 }
 
@@ -348,8 +348,11 @@ Nerf="*res://scripts/nerf.gd"
 Projects="*res://scripts/projects.gd"
 Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
+Events="*res://scripts/events.gd"
 PrinterGame="*res://scripts/printer_game.gd"
+Career="*res://scripts/career.gd"
 Strings="*res://scripts/strings.gd"
+Roles="*res://scripts/roles.gd"
 
 [display]
 
@@ -944,8 +947,16 @@ func _draw_bowl_score() -> void:
         PixelFont.draw(self, str(game.msg).substr(0, 7), Vector2(2, 2), Color("ffe36b"), 2)
         return
     var t: Dictionary = game.totals
-    PixelFont.draw(self, "YOU %02d ALN %02d" % [int(t["You"]), int(t["Alan"])], Vector2(2, 1), green, 1)
-    PixelFont.draw(self, "GAR %02d DAN %02d" % [int(t["Garrison"]), int(t["Dan"])], Vector2(2, 8), green, 1)
+    var line1 := "YOU %02d" % int(t["You"])
+    if t.has("Alan"):
+        line1 += " ALN %02d" % int(t["Alan"])
+    var line2 := ""
+    if t.has("Garrison"):
+        line2 += "GAR %02d " % int(t["Garrison"])
+    if t.has("Dan"):
+        line2 += "DAN %02d" % int(t["Dan"])
+    PixelFont.draw(self, line1, Vector2(2, 1), green, 1)
+    PixelFont.draw(self, line2.strip_edges(), Vector2(2, 8), green, 1)
 
 
 func _escape_game() -> Dictionary:
@@ -1222,6 +1233,7 @@ var _duck_base := 0.0
 
 func _duck_press() -> void:
     _duck_count += 1
+    Career.add("duck_squeaks")
     _duck_t = 1.6
     var roll := randf()
     if _duck_count % 10 == 0:
@@ -1817,7 +1829,7 @@ const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
 const GLYPHS := ["dots", "!", "?", "heart", "dots"]
 const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
-const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2}
+const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5}
 
 @export var character := "office_dan"
 @export var facing := "right"
@@ -2738,7 +2750,10 @@ const CAST := {
     "Dan": {"character": "office_dan", "home": "main_floor", "seat": "Seat3"},
     "Vic": {"character": "sales_vic", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
     "Maya": {"character": "office_maya", "home": "main_floor", "seat": "Seat2"},
+    # the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
+    "Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
 }
+const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
 const FLOOR_Y := 118.0
 const SETTLE := 6.0  # after this long in a leg, someone you walk in on is already at the spot
@@ -2907,6 +2922,8 @@ func leg_exit(n: String) -> void:
 
 func node_left(n: String, held: String, sips: int) -> void:
     # the scene changed under a living NPC: carry on off-screen from about halfway through the leg
+    if not chars.has(n):
+        return  # a copy of somebody who just left the cast
     var st: Dictionary = chars[n]
     st.node = null
     st.held = held
@@ -2985,16 +3002,47 @@ func _make_char(n: String) -> Dictionary:
     }
 
 
-# Maya works in the tech campaign and Free Play (not on your payroll in the owner campaign).
+# the cast members who are NOT in the building right now: the person you play as (Campaign.player_as, a campaign
+# or Free Play) and Maya in the owner campaign (not on your payroll). CAST itself never changes.
+func roster_gone() -> Array:
+    var gone := []
+    if Campaign.player_as != "" and CAST.has(Campaign.player_as):
+        gone.append(Campaign.player_as)
+    if Campaign.active and Campaign.mode == "owner" and not gone.has("Maya"):
+        gone.append("Maya")
+    return gone
+
+
+# the cast name of a character sheet ("office_dan" -> "Dan"), "" for someone who is not in CAST
+func cast_of(character: String) -> String:
+    for n in CAST:
+        if str(CAST[n].character) == character:
+            return n
+    return ""
+
+
+# where the person you play as sits at the start: {scene, seat} (empty when you are not a cast member)
+func player_desk() -> Dictionary:
+    var who := Campaign.player_as
+    if who == "" or not CAST.has(who):
+        return {}
+    return {"scene": CAST[who].home, "seat": CAST[who].seat}
+
+
+# remove whoever is gone from `chars` (their node too) and bring everyone else back, in CAST order
 func apply_roster() -> void:
-    var owner_mode := Campaign.active and Campaign.mode == "owner"
-    if owner_mode and chars.has("Maya"):
-        var st: Dictionary = chars["Maya"]
-        if st.node != null and is_instance_valid(st.node):
-            st.node.queue_free()
-        chars.erase("Maya")
-    elif not owner_mode and not chars.has("Maya"):
-        chars["Maya"] = _make_char("Maya")
+    var gone := roster_gone()
+    for n in gone:
+        if chars.has(n):
+            var st: Dictionary = chars[n]
+            if st.node != null and is_instance_valid(st.node):
+                st.node.queue_free()
+            chars.erase(n)
+    for n in CAST:
+        if not gone.has(n) and not chars.has(n):
+            chars[n] = _make_char(n)
+            if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
+                _spawn(n)  # you just stopped being them (Free Play): they are at their desk
 
 
 func _on_lights_changed(room: String) -> void:
@@ -3111,8 +3159,8 @@ func _finish_leg(n: String) -> void:
 # an outing: the whole cast stands around `spots` (set-pixel x values) in `room` until end_outing()
 func start_outing(room: String, spots: Array, seats := {}) -> void:
     var x0 := float(DATA.SCENES[room].x0)
-    var i := 0
     for n in chars:
+        var i := CAST.keys().find(n)  # each person keeps their own standing spot, even when others are gone
         var st: Dictionary = chars[n]
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
@@ -3130,7 +3178,6 @@ func start_outing(room: String, spots: Array, seats := {}) -> void:
             "routine": PackedStringArray(["wait:100000"]),
         }]
         st.leg_t = FOREVER - 100.0  # already standing at their spot when the room appears
-        i += 1
     set_lights(room, true)
 
 
@@ -3223,10 +3270,17 @@ func _plan(n: String) -> Array:
     if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
         st.lunched = true
         # the account manager lunches with a client instead
-        return _visit_plan(n, 50.0) if CAST[n].get("role", "") == "sales" else _lunch_plan(n)
+        match str(CAST[n].get("role", "")):
+            "sales":
+                return _visit_plan(n, 50.0)
+            "manager":
+                return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open
+        return _lunch_plan(n)
     var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
     if CAST[n].get("role", "") == "sales":
         kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
+    elif CAST[n].get("role", "") == "manager":
+        kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
     return plan_for(n, kinds[randi() % kinds.size()])
 
 
@@ -3241,6 +3295,8 @@ func plan_for(n: String, kind: String) -> Array:
             legs = _trip(n, "cubicle_area", _cooler_leg())
         "closet":
             legs = _trip(n, "network_closet", _closet_leg())
+        "floor":
+            legs = _trip(n, "main_floor", _floor_leg())
         "bathroom":
             legs = _trip(n, "bathroom", _bathroom_leg())
         _:
@@ -3445,6 +3501,17 @@ func _closet_leg() -> Dictionary:
     }
 
 
+# the manager walks the main floor: a word at each desk, then back
+func _floor_leg() -> Dictionary:
+    return {
+        "kind": "floor",
+        "dur": 36.0,
+        "target_x": 100.0,
+        "routine":
+        PackedStringArray(["walk:270", "wait:1", "talk:4", "walk:196", "wait:1", "talk:3", "walk:100", "wait:2"]),
+    }
+
+
 func _cooler_leg() -> Dictionary:
     var u: Dictionary = _uses("cubicle_area")
     return {
@@ -3495,9 +3562,15 @@ func _start_meeting() -> void:
 # the weekly all-hands: everyone goes to the conference room and sits (the last seats are yours)
 func start_all_hands() -> void:
     var i := 1
-    for n in chars:
+    var owner_mode := Campaign.mode == "owner"
+    for n in CAST:
+        if not chars.has(n):
+            continue
         if chars[n].following:
             set_following(n, false)
+        if CAST[n].get("role", "") == "manager" and not owner_mode:
+            send_to_meeting(n, "", 90.0)  # Morgan hosts: standing at the whiteboard, no chair
+            continue
         send_to_meeting(n, "Seat%d" % i, 90.0)
         i += 1
 
@@ -3505,10 +3578,13 @@ func start_all_hands() -> void:
 func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
     var st: Dictionary = chars[n]
     var home: String = CAST[n].home
-    var x := float(DATA.SCENES["conference"].seats[seat])
-    var routine := ["walk:%d" % x, "sit:%s" % seat]
+    var hosting := seat == ""
+    var x := HOST_X if hosting else float(DATA.SCENES["conference"].seats[seat])
+    var routine := ["walk:%d" % x]
+    if not hosting:
+        routine.append("sit:%s" % seat)
     for _i in int(secs / 6.0):
-        routine.append_array(["wait:3", "say:2"])
+        routine.append_array(["wait:3", "talk:3"] if hosting else ["wait:3", "say:2"])
     var meeting := {
         "kind": "meeting", "scene": "conference", "target_x": x, "dur": secs,
         "routine": PackedStringArray(routine),
@@ -4022,7 +4098,7 @@ func unread_texts() -> int:
 
 
 func send_text(from_name: String, body: String) -> void:
-    var m := {"from": from_name, "body": body, "unread": true}
+    var m := {"from": Roles.sender(from_name), "body": body, "unread": true}
     texts.push_front(m)
     text_received.emit(m)
     changed.emit()
@@ -4156,6 +4232,7 @@ func close_ticket(id: int) -> String:
     var points := 10 if not t.breached else 4
     score += points
     closed_ok += 1
+    Career.note_ticket(str(t.fix))
     Skills.add_xp("networking" if t.internal else "people", 2)
     Social.note_ticket_closed(t)
     if not t.internal:
@@ -4886,7 +4963,7 @@ func _input(event: InputEvent) -> void:
     elif event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
             KEY_ESCAPE:
-                back()
+                escape()
             KEY_UP:
                 move(-1)
             KEY_DOWN:
@@ -4907,6 +4984,24 @@ func click(at: Vector2) -> void:
             return
     _menu = false
     _canvas.queue_redraw()
+
+
+# Esc steps back out of a sub-view (open menu, mail, ticket, session, lesson...) one level, and otherwise
+# closes the computer in a single press (it used to go app -> desktop -> closed)
+func escape() -> void:
+    var nested := (
+        _menu
+        or (app == "mail" and mail_view)
+        or (app == "psa" and psa_detail)
+        or (app == "rmm" and (rmm_session or rmm_detail))
+        or (app == "learn" and learn_lesson >= 0)
+        or (app == "lync" and lync_sel != "")
+        or (app == "site" and site_view != "desktop")
+    )
+    if nested:
+        back()
+    else:
+        close()
 
 
 func back() -> void:
@@ -4985,6 +5080,8 @@ func activate(id: String) -> void:
     match parts[0]:
         "app":
             app = parts[1]
+        "wall":
+            Career.cycle_pick("wallpaper")
         "close_app":
             if app == "site":
                 site_view = "desktop"
@@ -5556,9 +5653,10 @@ func _paint_site_window(accent: Color) -> void:
 
 func _paint_desktop() -> void:
     var a := _area
-    _fill(a, Color("2d6ca8"))
+    var wall := Career.wallpaper_color()
+    _fill(a, wall)
     for i in 8:
-        _fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), Color("3a79b8"))
+        _fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), wall.lightened(0.1))
     var title := "PIXEL IT PARTNERS"
     var scale := 2 if a.size.x >= 220.0 else 1
     var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
@@ -5586,6 +5684,12 @@ func _paint_desktop() -> void:
             _fill(Rect2(p.x + 22, p.y - 3, 9, 7), RED)
             _text(str(icons[i][2]), Vector2(p.x + 25, p.y - 2), WHITE)
         _region("app:" + icons[i][0], hit)
+    if Career.unlocked_of("wallpaper").size() > 1:  # a medal unlocked another wallpaper: click the chip to change
+        var chip := "WALLPAPER: " + str(Career.pick_of("wallpaper").title)
+        var cr := Rect2(a.end.x - _tw(chip) - 10, a.position.y + 3, _tw(chip) + 8, 9)
+        _fill(cr, Color(0, 0, 0, 0.35) if not cr.has_point(_mouse) else Color(0, 0, 0, 0.6))
+        _text(chip, cr.position + Vector2(4, 2), WHITE)
+        _region("wall:next", cr)
     var net := Net.desk_state(desk)
     if net != "ok":
         var note := "NETWORK CABLE UNPLUGGED" if net == "no_link" else "NO INTERNET ACCESS"
@@ -6375,7 +6479,7 @@ func _board_clients(a: Rect2) -> void:
             tag = "LATE $%d" % Owner.ar_total(c)
         elif Owner.pay_delay(c) > 0:
             tag = "PAYS SLOW"
-        var due := Campaign.day - int(Owner._qbr_done.get(c, -99)) >= 8
+        var due := Owner.review_due(c)
         var shown := tag
         if shown == "":
             shown = "AT RISK" if Owner.poach_risk(c) >= 0.12 else ("REVIEW DUE" if due else "")
@@ -6429,10 +6533,10 @@ func _board_team(a: Rect2) -> void:
     var names := ["ALAN", "GARRISON", "DAN"]
     var rows := []
     for i in maxi(0, 3 - Owner.lost_techs):
-        rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.WAGE], TXT])
+        rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.tech_wage()], TXT])
     for hire in Owner.extra_staff:
         var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
-        rows.append(["%s  %.2f  $%d/WK  %s" % [str(hire.name).to_upper(), float(hire.skill), int(hire.wage), tag], TXT])
+        rows.append(["%s  %.2f  $%d/WK  %s" % [str(hire.name).to_upper(), float(hire.skill), Owner.hire_wage(hire), tag], TXT])
     var plan: Dictionary = Owner.VIC_PLANS[Owner.vic_plan]
     rows.append(["VIC  %s  $%d/WK + $%d A DEAL" % [plan.label, int(plan.wage), int(plan.per_deal)], Color("6b421c")])
     var moods := Owner.vic_new_client_mood()
@@ -6502,7 +6606,7 @@ func _paint_stats() -> void:
         y += 4
     _text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
     y += 8
-    for who in Social.PEOPLE:
+    for who in Social.people():
         _text(who, Vector2(x, y), TXT)
         _text(Social.mood(who), Vector2(x + 44, y), _mood_color(who))
         var meter := Rect2(x + 92, y, 40, 5)
@@ -6670,6 +6774,8 @@ func _input(event: InputEvent) -> void:
                     activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
                 elif app == "home":
                     home_move(1 if event.keycode == KEY_RIGHT else -1)
+                elif app == "settings":
+                    activate("ring")
             KEY_ENTER, KEY_KP_ENTER:
                 enter()
     else:
@@ -6727,6 +6833,8 @@ func enter() -> void:
         activate("os:ios")
     elif app == "home":
         activate("app:" + str(HOME_APPS[home_sel]))
+    elif app == "settings":
+        activate("career")
     elif app == "mail" and mail_sel >= 0:
         activate("mail:%d" % mail_sel)
 
@@ -6748,6 +6856,11 @@ func activate(id: String) -> void:
                     m.unread = false
         "home":
             app = "home"
+        "ring":
+            Career.cycle_pick("ringtone")
+        "career":
+            close()
+            Career.open_screen()
         "back":
             back()
         "mail":
@@ -7218,11 +7331,24 @@ func _paint_settings(a: Rect2) -> void:
             _text("*", Vector2(r.end.x - 6, r.position.y + 2 * _sc), Color("2b79f0"))
         _region("os:" + ("ios" if ios else "android"), r)
     y += 25 * _sc
-    _text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
-    _text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
+    # the TONE and CAREER rows take the bottom of the screen: the network block only shows when it fits above them
+    var room := y + 16 * _sc <= body.end.y - 22 * _sc
+    if room:
+        _text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
+        _text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
     var note := _wrap("WORKS WITHOUT THE OFFICE NETWORK", _chars(body.size.x - 6))
+    if not room or y + (17 + 7 * note.size()) * _sc > body.end.y - 22 * _sc:
+        note = []
     for i in note.size():
         _text(str(note[i]), Vector2(body.position.x + 3, y + (17 + 7 * i) * _sc), Color("7d8595"))
+    var ring := Rect2(body.position.x + 2, body.end.y - 21 * _sc, body.size.x - 4, 9 * _sc)
+    _fill(ring, WHITE)
+    _text("TONE: " + _clip(Career.ringtone_name(), _chars(body.size.x - 10) - 6), ring.position + Vector2(3, 2 * _sc), INK)
+    _region("ring", ring)
+    var cr := Rect2(body.position.x + 2, body.end.y - 10 * _sc, body.size.x - 4, 9 * _sc)
+    _fill(cr, Color("dce8fa"))
+    _text("CAREER", cr.position + Vector2(3, 2 * _sc), INK)
+    _region("career", cr)
 ''')
 
 write("scripts/campaign.gd", '''extends Node
@@ -7241,6 +7367,7 @@ const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
 const START_REP := 50
 
 var active := false  # a real campaign (not free play) is running
+var player_as := ""  # the cast member you play as ("" = a character who is not in World.CAST); saved
 var mode := ""
 var day := 1
 var rep := START_REP
@@ -7273,9 +7400,36 @@ func saved_day(for_mode: String) -> int:
     return int(cfg.get_value("campaign", "day", 1))
 
 
+# who you play as in this mode, from the chosen character: the tech campaign never plays a cast member, the owner
+# campaign plays Alan or Garrison, Free Play any of the seven (a character outside the cast gives "")
+func derive_player_as(for_mode: String) -> String:
+    var who: String = World.cast_of(PLAYER.current_character)
+    if who == "":
+        return ""
+    if for_mode == "owner":
+        return who if Roles.OWNERS.has(who) else ""
+    return who if for_mode == FREE else ""
+
+
+# the room a new run starts in: your own desk when you play a cast member
+func start_scene() -> String:
+    var desk: Dictionary = World.player_desk()
+    return str(desk.scene) if not desk.is_empty() else "main_floor"
+
+
+# Free Play: the number keys swap the character you play, so the cast follows (the old one returns to their desk)
+func refresh_free() -> void:
+    if active or mode != FREE:
+        return
+    player_as = derive_player_as(FREE)
+    World.apply_roster()
+
+
 func new_game(for_mode: String) -> void:
     mode = for_mode
     active = MODES.has(for_mode)
+    player_as = derive_player_as(for_mode)
+    Game.vars["start_seated"] = player_as != ""
     day = 1
     rep = START_REP
     cash = 0
@@ -7292,17 +7446,21 @@ func new_game(for_mode: String) -> void:
     Shift.reset()
     Growth.reset()
     Outings.reset()
+    PrinterGame.reset()
     Difficulty.new_run()
     Talk.reset()
     Meeting.reset()
     Projects.reset()
     Expo.reset()
     Onsite.reset()
+    Events.reset()
     World.day_len = 240.0 if for_mode == "owner" else 600.0
     Msp.enabled = active
     if active:
         World.begin_next_day(1)
         _begin_day()
+    else:
+        World.apply_roster()
 
 
 func continue_game(for_mode: String) -> bool:
@@ -7317,6 +7475,9 @@ func continue_game(for_mode: String) -> bool:
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
+    var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
+    player_as = saved_as if World.CAST.has(saved_as) else ""
+    Game.vars["start_seated"] = player_as != ""
     _awaiting = false
     Msp.reset()
     Skills.from_dict(cfg.get_value("campaign", "skills", {}))
@@ -7328,11 +7489,13 @@ func continue_game(for_mode: String) -> bool:
     Shift.from_dict(cfg.get_value("campaign", "shift", {}))
     Growth.from_dict(cfg.get_value("campaign", "growth", {}))
     Outings.from_dict(cfg.get_value("campaign", "outings", {}))
+    PrinterGame.from_dict(cfg.get_value("campaign", "printer", {}))
     Difficulty.from_dict(cfg.get_value("campaign", "difficulty", {}))
     Meeting.from_dict(cfg.get_value("campaign", "meeting", {}))
     Projects.from_dict(cfg.get_value("campaign", "projects", {}))
     Expo.from_dict(cfg.get_value("campaign", "conference", {}))
     Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
+    Events.from_dict(cfg.get_value("campaign", "events", {}))
     Lync.reset()
     World.day_len = 240.0 if for_mode == "owner" else 600.0
     Story.flags = cfg.get_value("campaign", "story", {})
@@ -7354,6 +7517,7 @@ func save() -> void:
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
+    cfg.set_value("campaign", "player_as", player_as)
     cfg.set_value("campaign", "skills", Skills.to_dict())
     cfg.set_value("campaign", "story", Story.flags)
     cfg.set_value("campaign", "social", Social.to_dict())
@@ -7363,11 +7527,13 @@ func save() -> void:
     cfg.set_value("campaign", "shift", Shift.to_dict())
     cfg.set_value("campaign", "growth", Growth.to_dict())
     cfg.set_value("campaign", "outings", Outings.to_dict())
+    cfg.set_value("campaign", "printer", PrinterGame.to_dict())
     cfg.set_value("campaign", "difficulty", Difficulty.to_dict())
     cfg.set_value("campaign", "meeting", Meeting.to_dict())
     cfg.set_value("campaign", "projects", Projects.to_dict())
     cfg.set_value("campaign", "conference", Expo.to_dict())
     cfg.set_value("campaign", "onsite", Onsite.to_dict())
+    cfg.set_value("campaign", "events", Events.to_dict())
     cfg.set_value("campaign", "backups", Msp.backups)
     cfg.save(save_path(mode))
 
@@ -7387,6 +7553,8 @@ func quit_to_title() -> void:
     World.day_len = 600.0
     active = false
     mode = ""
+    player_as = ""
+    World.apply_roster()
     Msp.enabled = true
     World.time_scale = 1.0
     Game.ui_open = false
@@ -7405,6 +7573,7 @@ func _begin_day() -> void:
         Owner.begin_day(day)
     else:
         Shift.begin_day(day)
+    Events.begin_day(day)
     day_started.emit(day)
 
 
@@ -7467,7 +7636,9 @@ func _end_day() -> void:
         r["title"] = books.title
         r["grade"] = books.grade
         r["pay"] = 0
-        r["rep_delta"] = clampi(int(r.rep_delta) + (1 if int(books.profit) > 0 else -1), -3, 4)
+        # a profitable week helps the name; only a clearly bad one (a new hire, a project) hurts it
+        var profit_rep := 1 if int(books.profit) > 0 else (-1 if int(books.profit) < -1000 else 0)
+        r["rep_delta"] = clampi(int(r.rep_delta) + profit_rep, -3, 4)
         cash = Owner.cash
         r["bankrupt"] = books.bankrupt
     else:
@@ -8065,6 +8236,2485 @@ func from_dict(data: Dictionary) -> void:
     lesson_day = int(data.get("lesson_day", -1))
 ''')
 
+write("scripts/events.gd", '''extends Node
+# gdlint:disable=max-line-length
+# The event deck (roadmap R8). One small card per quiet day, drawn in the morning with the seeded
+# `events` stream (Difficulty.rng) and shown at a random time between 10:00 and 13:30. Cards use the
+# vignette format (speaker, text, options with fx) and the vignette resolver (Story._vignette_fx);
+# owner cards also use cash / burnout (Owner.apply). Quiet days only: no draw on a day that already has
+# a story vignette, the ransomware, the overtime night, an outing or the trip, the first two days, the
+# last day or in Free Play. The 17 extra vignettes live in Story.VIGNETTES (they carry `min_day`) and
+# share the same draw. Keep every magnitude small: a card must never make the day unwinnable.
+
+const VERSION := 1
+const KINDS := ["tech", "owner", "both"]
+const SKILLS := ["networking", "servers", "security", "people"]
+const FX_KEYS := ["xp", "mood", "mood_all", "rep", "social", "social_all", "energy", "hours", "cash", "burnout"]
+# the biggest absolute value each key may have (xp: up to +6)
+const FX_BOUNDS := {
+    "xp": 6,
+    "mood": 8,
+    "mood_all": 4,
+    "rep": 1,
+    "social": 3,
+    "social_all": 2,
+    "energy": 6,
+    "hours": 0.75,
+    "cash": 300,
+    "burnout": 4,
+}
+const OWNER_ONLY := ["cash", "burnout"]
+const TECH_ONLY := ["xp", "energy"]
+const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "Vic", "Maya"]
+const NAMES_FOR := {
+    "tech": ["Alan", "Garrison", "Morgan", "Dan", "Vic", "Maya"],
+    "owner": ["Alan", "Garrison", "Marge", "Dan", "Vic"],
+}
+const OWNERS := ["Alan", "Garrison"]
+const BUSY_KINDS := ["vignette", "ransomware", "callback_worst"]
+const WINDOW_START := 10.0
+const WINDOW_LEN := 3.5
+const LATEST := 15.5  # a card still waiting at this time is dropped
+const MAX_OPTIONS := 3
+const MAX_LABEL := 58
+const MAX_TEXT := 320
+const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
+
+const DEFAULT_DECK := {
+    "toner_late": {
+        "id": "toner_late",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 8,
+        "requires": [],
+        "speaker": "The toner supplier",
+        "text": "Your order of toner for three clients is a week late. The driver says the truck is 'around'. Two offices are down to their last cartridge.",
+        "options": [
+            {
+                "id": "local",
+                "label": "BUY A FEW CARTRIDGES AT THE OFFICE STORE",
+                "text": "A little more expensive, but nobody runs out. The cashier asks if you are starting a print shop.",
+                "fx": {
+                    "mood_all": 1,
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "warn",
+                "label": "WARN THE CLIENTS AND ASK THEM TO PRINT LESS",
+                "text": "Most of them say they never print anything. They print forty pages an hour.",
+                "fx": {
+                    "mood_all": -1
+                }
+            },
+            {
+                "id": "wait",
+                "label": "WAIT FOR THE TRUCK",
+                "text": "It arrives at 4:50 with the wrong colors in two of the boxes.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "heat_wave": {
+        "id": "heat_wave",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 12,
+        "max_day": 19,
+        "weight": 1.0,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "The building manager",
+        "text": "Heads up: the air conditioning is out in the whole building. The server closet is already at 91 degrees and climbing.",
+        "options": [
+            {
+                "id": "fan",
+                "label": "PROP THE DOOR OPEN AND BRING A BIG FAN",
+                "text": "It is loud and ugly, but the temperature drops by eight degrees.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "shutdown",
+                "label": "SHUT DOWN WHAT YOU CAN SAFELY LIVE WITHOUT",
+                "text": "A tidy shutdown of the test box and the old print server. The closet stays under 85.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        4
+                    ],
+                    "hours": 0.5,
+                    "mood_all": -1
+                }
+            },
+            {
+                "id": "hope",
+                "label": "HOPE THEY FIX IT BEFORE LUNCH",
+                "text": "They fix it at 2:30. The fans in the NAS sound like a jet engine until then.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "free_pizza": {
+        "id": "free_pizza",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A vendor rep",
+        "text": "I had a lunch-and-learn cancelled and I have six large pizzas going cold in my car. Would your team like them? No presentation, I promise. Maybe a short one.",
+        "options": [
+            {
+                "id": "yes",
+                "label": "SAY YES AND CALL EVERYONE TO THE KITCHEN",
+                "text": "The whole floor shows up in about eleven seconds. Somebody makes a joke about the thin crust.",
+                "fx": {
+                    "social_all": 2
+                }
+            },
+            {
+                "id": "one",
+                "label": "TAKE ONE BOX AND SEND HIM ON HIS WAY",
+                "text": "He leaves a brochure on top of the box. You do not read it.",
+                "fx": {
+                    "social_all": 1
+                }
+            },
+            {
+                "id": "no",
+                "label": "SAY NO, YOU HAVE A SERVICE CALL",
+                "text": "The pizza goes to the dentist next door instead.",
+                "fx": {}
+            }
+        ]
+    },
+    "cold_snap": {
+        "id": "cold_snap",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 6,
+        "weight": 1.2,
+        "cooldown": 15,
+        "requires": [],
+        "speaker": "A client's office manager",
+        "text": "It is freezing and the whole office brought in space heaters. Three of them are plugged into one power strip under my desk. Is that bad?",
+        "options": [
+            {
+                "id": "circuits",
+                "label": "SPLIT THEM ACROSS CIRCUITS AND SHOW HER THE BREAKER BOX",
+                "text": "Nothing trips all day. She says you are very calm for a person with a flashlight.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "mood": [
+                        2,
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "strip",
+                "label": "BUY THEM A PROPER SURGE STRIP",
+                "text": "It is not the real answer, but it is better than what they had.",
+                "fx": {
+                    "mood": [
+                        2,
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "leave",
+                "label": "TELL HER IT IS FINE",
+                "text": "At 2:15 the breaker trips and the server restarts by itself. Nobody is happy.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -5
+                    ]
+                }
+            }
+        ]
+    },
+    "lost_phone": {
+        "id": "lost_phone",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "{c}",
+        "text": "I cannot find my phone anywhere. I think I left it in the van, or at the pizza place, or in a client's bathroom. Could you ring it?",
+        "options": [
+            {
+                "id": "ring",
+                "label": "CALL IT AND FOLLOW THE RINGTONE",
+                "text": "It was in the van, between the seats. Thank you, thank you.",
+                "fx": {
+                    "social": {
+                        "{c}": 2
+                    },
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "locate",
+                "label": "USE THE LOCATE-MY-PHONE PAGE AND LOCK IT",
+                "text": "The map shows it a block away. You walk over together, and it was in the van all along.",
+                "fx": {
+                    "social": {
+                        "{c}": 2
+                    },
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "later",
+                "label": "SAY YOU WILL HELP AFTER THIS TICKET",
+                "text": "It turns up by itself. They are a little quiet at lunch.",
+                "fx": {
+                    "social": {
+                        "{c}": -1
+                    }
+                }
+            }
+        ]
+    },
+    "cousin_site": {
+        "id": "cousin_site",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "A client",
+        "text": "My cousin builds websites and he says our current one is 'so 2009'. He wants admin access to everything for a week. Is that okay?",
+        "options": [
+            {
+                "id": "scope",
+                "label": "ASK WHAT HE NEEDS AND GIVE HIM ONLY THAT",
+                "text": "You set up a separate login for the website host and nothing else. He is a little disappointed.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ]
+                }
+            },
+            {
+                "id": "meet",
+                "label": "OFFER TO MEET THE COUSIN FIRST",
+                "text": "He turns out to be nice and a bit overcommitted. The new site is going to be fine.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        2
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "full",
+                "label": "GIVE HIM THE PASSWORDS, SOMEONE HAS TO",
+                "text": "Two weeks later the domain registrar sends a strange email. You will deal with it later.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "toner_mixup": {
+        "id": "toner_mixup",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "The front desk at a client",
+        "text": "The toner that came today is for a different printer model. The box says laser but the printer says something else, and we have a stack of invoices to send.",
+        "options": [
+            {
+                "id": "swap",
+                "label": "CALL THE SUPPLIER AND ARRANGE A SWAP",
+                "text": "They send the right one by courier. Only half of the apology is believable.",
+                "fx": {
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "test",
+                "label": "CHECK THE PART NUMBER AND TRY IT ANYWAY",
+                "text": "It almost fits. After twenty minutes it very much does not.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        2
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "print",
+                "label": "PRINT THE INVOICES AT YOUR OWN OFFICE",
+                "text": "You print and drive them over. They say they will buy you lunch someday.",
+                "fx": {
+                    "mood": [
+                        3,
+                        4
+                    ],
+                    "hours": 0.6
+                }
+            }
+        ]
+    },
+    "leaky_ceiling": {
+        "id": "leaky_ceiling",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 14,
+        "requires": [],
+        "speaker": "The landlord's handyman",
+        "text": "There is a drip coming through the ceiling tile right above your server closet. I have a bucket. What do you want me to do?",
+        "options": [
+            {
+                "id": "tarp",
+                "label": "COVER THE RACK WITH A TARP AND MOVE THE UPS",
+                "text": "You and the handyman do it in ten minutes. He calls you 'the cable guy' and it is not meant as an insult.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "shutdown",
+                "label": "POWER DOWN THE BOTTOM OF THE RACK",
+                "text": "Safer, and a little dramatic. The roofer shows up the next morning.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        2
+                    ],
+                    "hours": 0.5,
+                    "mood_all": -1
+                }
+            },
+            {
+                "id": "bucket",
+                "label": "LEAVE THE BUCKET AND KEEP WORKING",
+                "text": "The bucket holds. Mostly.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "dropbox_it": {
+        "id": "dropbox_it",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "A client's accountant",
+        "text": "I moved all our client folders to a Dropbox account I made myself. It is so much easier than the file server. Can you just give my partner access too?",
+        "options": [
+            {
+                "id": "manage",
+                "label": "OFFER TO SET UP A BUSINESS ACCOUNT WITH RULES",
+                "text": "Shared folders, a policy and an admin. She says that sounds like a lot, then thanks you.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        3
+                    ],
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "ban",
+                "label": "TELL HER IT IS AGAINST THE POLICY",
+                "text": "She stops. She also stops answering your mail for a day.",
+                "fx": {
+                    "mood": [
+                        3,
+                        -4
+                    ]
+                }
+            },
+            {
+                "id": "allow",
+                "label": "LET HER KEEP IT, YOU HAVE MORE URGENT THINGS",
+                "text": "It works. It also adds a mystery that will probably come up again.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "first_chromebook": {
+        "id": "first_chromebook",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 7,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 20,
+        "requires": [],
+        "speaker": "A client",
+        "text": "I bought one of those little Chromebooks for $249 at the store. Can you put our software on it? I thought it was just like a normal laptop.",
+        "options": [
+            {
+                "id": "explain",
+                "label": "EXPLAIN WHAT IT CAN AND CAN NOT RUN",
+                "text": "It runs the web version of everything but the practice software. She decides to keep it for the waiting room.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ]
+                }
+            },
+            {
+                "id": "remote",
+                "label": "SET UP A REMOTE DESKTOP SESSION TO THE OFFICE PC",
+                "text": "It works, a little oddly. She is delighted, and tells her friends about it.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        2
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "return",
+                "label": "SUGGEST SHE RETURN IT",
+                "text": "She sighs and puts the box back in the car.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -3
+                    ]
+                }
+            }
+        ]
+    },
+    "xp_panic": {
+        "id": "xp_panic",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 9,
+        "weight": 1.4,
+        "cooldown": 14,
+        "requires": [],
+        "speaker": "A client",
+        "text": "My nephew says Windows XP stops being supported on April 8 and that after that every virus in the world will get in. Is it true? I have six of those computers.",
+        "options": [
+            {
+                "id": "plan",
+                "label": "MAKE A LIST OF EVERY XP MACHINE AND A SCHEDULE",
+                "text": "Six machines, three months, and a quote she can show her husband.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        4
+                    ],
+                    "mood": [
+                        1,
+                        4
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "calm",
+                "label": "TELL HER IT WILL BE FINE FOR NOW",
+                "text": "That is sort of true. She still asks again on Friday.",
+                "fx": {
+                    "mood": [
+                        1,
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "scare",
+                "label": "TELL HER SHE SHOULD HAVE LISTENED LAST YEAR",
+                "text": "She did not enjoy that.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -4
+                    ]
+                }
+            }
+        ]
+    },
+    "exchange_q": {
+        "id": "exchange_q",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 5,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 20,
+        "requires": [],
+        "speaker": "A client",
+        "text": "A vendor says we should move our email 'to the cloud' and get it hosted Exchange for $12 a mailbox. We have six people and an old server. Does that make sense?",
+        "options": [
+            {
+                "id": "compare",
+                "label": "WRITE A SHORT COMPARISON FOR THE OWNER",
+                "text": "Costs, risks, and what happens to the old mail. It is clear and she appreciates it.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        4
+                    ],
+                    "mood": [
+                        4,
+                        3
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "pilot",
+                "label": "PROPOSE A TEST WITH TWO MAILBOXES",
+                "text": "You migrate two people. It goes fine, and the vendor's dashboard has a surprise or two.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "wait",
+                "label": "TELL HER YOU WILL LOOK INTO IT SOMETIME",
+                "text": "Sometime turns into 'another time'.",
+                "fx": {
+                    "mood": [
+                        4,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "tax_season": {
+        "id": "tax_season",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 9,
+        "weight": 1.3,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "The accountant at a client",
+        "text": "It is tax season and my staff are calling you twice as often. They are in the same room, so please just answer both of them.",
+        "options": [
+            {
+                "id": "both",
+                "label": "ANSWER BOTH, BACK TO BACK",
+                "text": "You answer in order and they thank you for the same two fixes. Two answers, one problem.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "queue",
+                "label": "SET UP ONE PERSON AS THE CONTACT",
+                "text": "A single contact helps a lot. It also helps you.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        3,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "bill",
+                "label": "REMIND THEM THIS IS OUTSIDE THE AGREEMENT",
+                "text": "True, but not what they were hoping for in April.",
+                "fx": {
+                    "mood": [
+                        3,
+                        -4
+                    ]
+                }
+            }
+        ]
+    },
+    "office_move": {
+        "id": "office_move",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 6,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 24,
+        "requires": [],
+        "speaker": "A client",
+        "text": "We are moving to a new suite across the parking lot in a month. Can you tell me what the network needs? I would rather not find out on moving day.",
+        "options": [
+            {
+                "id": "survey",
+                "label": "WALK THE NEW SPACE WITH A TAPE MEASURE",
+                "text": "You count drops, check for a closet and write it all down. She hugs the clipboard.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        4
+                    ],
+                    "mood": [
+                        2,
+                        4
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "quote",
+                "label": "SEND A QUOTE FOR THE MOVE",
+                "text": "She replies with 'wow, you think of everything'.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        2,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "later",
+                "label": "ASK HER TO CALL BACK CLOSER TO THE DATE",
+                "text": "She calls back the night before. You are not very available.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -3
+                    ]
+                }
+            }
+        ]
+    },
+    "home_printer": {
+        "id": "home_printer",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.2,
+        "cooldown": 8,
+        "requires": [],
+        "speaker": "A client",
+        "text": "I know this is not work, but can you just look at my home printer? It has been blinking at me since Sunday. I will buy you lunch.",
+        "options": [
+            {
+                "id": "lunch",
+                "label": "OFFER TO LOOK AT IT AT THE OFFICE",
+                "text": "It was a loose paper tray. Lunch is a sandwich, and a good one.",
+                "fx": {
+                    "mood": [
+                        0,
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "phone",
+                "label": "WALK HER THROUGH IT ON THE PHONE",
+                "text": "Four minutes. The blinking was the tray. She is thrilled.",
+                "fx": {
+                    "mood": [
+                        0,
+                        2
+                    ],
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "nope",
+                "label": "SAY IT IS NOT IN THE CONTRACT",
+                "text": "True, and she understands. A little.",
+                "fx": {
+                    "mood": [
+                        0,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "licence_audit": {
+        "id": "licence_audit",
+        "kinds": [
+            "both"
+        ],
+        "min_day": 8,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 20,
+        "requires": [],
+        "speaker": "A letter from a software trade group",
+        "text": "The letter says it is 'a friendly reminder to review your licensing'. It lists a deadline and the number of your office PCs, which is correct.",
+        "options": [
+            {
+                "id": "review",
+                "label": "AUDIT EVERY CLIENT'S LICENSES BEFORE THE DEADLINE",
+                "text": "You find two stray installs and one very expired trial. Better you than them.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        4
+                    ],
+                    "rep": 1,
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "clean",
+                "label": "SCAN OUR OWN MACHINES AND LEAVE IT AT THAT",
+                "text": "Our house is in order. The letter goes into a drawer with the others.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "ignore",
+                "label": "PUT THE LETTER IN THE PILE",
+                "text": "A second letter, not so friendly, shows up in three weeks.",
+                "fx": {
+                    "rep": -1
+                }
+            }
+        ]
+    },
+    "pw_reset_call": {
+        "id": "pw_reset_call",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.2,
+        "cooldown": 6,
+        "requires": [],
+        "speaker": "A client",
+        "text": "I changed my password last week and now I cannot remember it. I wrote it down, but I wrote it on a sticky note and that note has been through the wash.",
+        "options": [
+            {
+                "id": "reset",
+                "label": "RESET IT AND SET UP A PASSWORD HINT SHEET",
+                "text": "She feels silly. You tell her it is the number two call of the week.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        0,
+                        3
+                    ],
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "manager",
+                "label": "SUGGEST A PASSWORD MANAGER",
+                "text": "She likes the idea. She also writes the master password on a sticky note.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        3
+                    ],
+                    "mood": [
+                        0,
+                        1
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "quick",
+                "label": "RESET IT AND HANG UP",
+                "text": "Efficient. A bit short.",
+                "fx": {
+                    "mood": [
+                        0,
+                        -1
+                    ]
+                }
+            }
+        ]
+    },
+    "guest_wifi": {
+        "id": "guest_wifi",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "The office manager at a client",
+        "text": "We have guests in the waiting room asking for the Wi-Fi and I am giving out the main password. Is there a better way?",
+        "options": [
+            {
+                "id": "guest",
+                "label": "SET UP A SEPARATE GUEST NETWORK",
+                "text": "A new name, a new password, and no access to the files. She puts it on a card at the front desk.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        4
+                    ],
+                    "mood": [
+                        0,
+                        3
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "change",
+                "label": "CHANGE THE PASSWORD AND TELL HER TO KEEP IT SECRET",
+                "text": "Less of a plan than it sounds. It works for a month.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        1
+                    ],
+                    "mood": [
+                        0,
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "sign",
+                "label": "TELL HER TO TAPE A SIGN TO THE ROUTER",
+                "text": "That is not an answer.",
+                "fx": {
+                    "mood": [
+                        0,
+                        -3
+                    ]
+                }
+            }
+        ]
+    },
+    "scam_call": {
+        "id": "scam_call",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "A client",
+        "text": "A man called from 'Windows technical support' and said my computer had a virus. He asked me to go to a website. I did, and then I thought I should call you.",
+        "options": [
+            {
+                "id": "clean",
+                "label": "REMOTE IN, CHECK EVERYTHING AND CHANGE HER PASSWORDS",
+                "text": "She gave him access for ten minutes. You find the tool and remove it. She will not forget this call.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        5
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "tell",
+                "label": "EXPLAIN HOW THOSE CALLS WORK AND HANG UP",
+                "text": "A short lesson. She nods firmly.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "brief",
+                "label": "SEND A WARNING TO ALL CLIENTS",
+                "text": "A short note, written in plain English. Several of them reply with 'thank you', one with 'what scam?'.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood_all": 1,
+                    "hours": 0.5
+                }
+            }
+        ]
+    },
+    "found_usb": {
+        "id": "found_usb",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "The cleaner at a client",
+        "text": "I found a little USB stick in the parking lot. It says 'PAYROLL' in marker. Should I give it to someone? I did not plug it in.",
+        "options": [
+            {
+                "id": "sandbox",
+                "label": "TAKE IT, SCAN IT ON AN ISOLATED MACHINE",
+                "text": "It is blank apart from a copy of a cat picture. Still, a good call.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        4
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "bin",
+                "label": "TELL HER TO THROW IT AWAY",
+                "text": "Fine, and done. Her face says she would have liked a bit more.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "plug",
+                "label": "PLUG IT INTO YOUR WORKSTATION TO SEE",
+                "text": "The antivirus has opinions. You spend an hour cleaning up.",
+                "fx": {
+                    "energy": -3,
+                    "hours": 0.5
+                }
+            }
+        ]
+    },
+    "coffee_machine": {
+        "id": "coffee_machine",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "{c}",
+        "text": "The coffee machine just coughed and stopped. I cannot work like this. You are good with machines. Please?",
+        "options": [
+            {
+                "id": "descale",
+                "label": "DESCALE IT, YOU HAVE DONE THIS BEFORE",
+                "text": "It sputters, clears its throat and makes a perfect cup. The room applauds.",
+                "fx": {
+                    "energy": 4,
+                    "social": {
+                        "{c}": 2
+                    },
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "order",
+                "label": "SUGGEST SPLITTING THE COST OF A NEW ONE",
+                "text": "A good idea. The new machine arrives on Friday.",
+                "fx": {
+                    "energy": 1,
+                    "social_all": 1
+                }
+            },
+            {
+                "id": "tea",
+                "label": "SUGGEST TEA",
+                "text": "The look you get is not at all like tea.",
+                "fx": {
+                    "social": {
+                        "{c}": -1
+                    }
+                }
+            }
+        ]
+    },
+    "tape_check": {
+        "id": "tape_check",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 14,
+        "requires": [],
+        "speaker": "A client",
+        "text": "My nephew says tape backups are old fashioned and that we should send everything to the cloud. We have been using the tapes for nine years. Do I need to change?",
+        "options": [
+            {
+                "id": "explain",
+                "label": "EXPLAIN THE OPTIONS AND WHAT EACH ONE COSTS",
+                "text": "She chooses a cloud copy and keeps one tape in the safe. Sensible.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        3
+                    ],
+                    "mood": [
+                        0,
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "test",
+                "label": "TEST A RESTORE FROM THE OLDEST TAPE",
+                "text": "It restores perfectly except for one folder. You are glad you asked.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        5
+                    ],
+                    "hours": 0.7
+                }
+            },
+            {
+                "id": "keep",
+                "label": "TELL HER THEY ARE FINE",
+                "text": "Until they are not.",
+                "fx": {
+                    "mood": [
+                        0,
+                        -1
+                    ]
+                }
+            }
+        ]
+    },
+    "spreadsheet_help": {
+        "id": "spreadsheet_help",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 8,
+        "requires": [],
+        "speaker": "{c}",
+        "text": "Do you know how to make a column add itself up in the spreadsheet? Not the whole thing, only if the cell says 'paid'? I have been at it for forty minutes.",
+        "options": [
+            {
+                "id": "show",
+                "label": "SHOW THEM, AND LEARN SOMETHING TOO",
+                "text": "A small formula. You both look at it for a moment, impressed.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "social": {
+                        "{c}": 2
+                    },
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "do",
+                "label": "DO IT FOR THEM",
+                "text": "It is done in a minute. They say you are a wizard, quietly.",
+                "fx": {
+                    "social": {
+                        "{c}": 1
+                    },
+                    "hours": 0.1
+                }
+            },
+            {
+                "id": "later",
+                "label": "TELL THEM TO ASK YOU LATER",
+                "text": "Later never quite happens.",
+                "fx": {
+                    "social": {
+                        "{c}": -1
+                    }
+                }
+            }
+        ]
+    },
+    "power_blip": {
+        "id": "power_blip",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "There was a thunderstorm and the lights flickered. Everything came back, but the server is beeping, and the beeping is in a rhythm.",
+        "options": [
+            {
+                "id": "ups",
+                "label": "CHECK THE UPS AND LOG THE EVENT",
+                "text": "The battery needs replacing soon. You write a note.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        4
+                    ],
+                    "mood": [
+                        2,
+                        2
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "silence",
+                "label": "SILENCE IT AND CHECK THE SERVER LOGS",
+                "text": "A clean restart, a clean shutdown. Good news, and a quiet room.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "ignore",
+                "label": "TELL THEM TO PRESS THE MUTE BUTTON",
+                "text": "It beeps again at 3 AM, in the dark.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -3
+                    ]
+                }
+            }
+        ]
+    },
+    "conference_call": {
+        "id": "conference_call",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "We are about to hold a conference call with a new customer and the speakerphone has no sound. The meeting starts in ten minutes. I am sweating.",
+        "options": [
+            {
+                "id": "fast",
+                "label": "RUN OVER AND SET UP A LAPTOP AS THE SPEAKER",
+                "text": "You plug it in, set the volume, and everybody smiles. They get the contract.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        3,
+                        5
+                    ],
+                    "hours": 0.5,
+                    "energy": -2
+                }
+            },
+            {
+                "id": "phone",
+                "label": "WALK THEM THROUGH IT FROM HERE",
+                "text": "It takes four of the ten minutes, and the meeting starts on time.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        2
+                    ],
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "book",
+                "label": "TELL THEM TO RESCHEDULE",
+                "text": "The new customer is not impressed.",
+                "fx": {
+                    "mood": [
+                        3,
+                        -5
+                    ]
+                }
+            }
+        ]
+    },
+    "old_pc_donation": {
+        "id": "old_pc_donation",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 5,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 20,
+        "requires": [],
+        "speaker": "The school secretary",
+        "text": "Our school computer lab needs machines. Do your clients ever throw away old ones? We would take anything that boots.",
+        "options": [
+            {
+                "id": "wipe",
+                "label": "WIPE A FEW OLD PCS PROPERLY AND DONATE THEM",
+                "text": "A pallet of Windows 7 machines goes to the school. The kids send you a drawing of a PC.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        4
+                    ],
+                    "social_all": 1,
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "list",
+                "label": "TAKE A LIST AND PASS IT ON",
+                "text": "A small thing, but they will be back next month.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "no",
+                "label": "TELL HER WE HAVE NOTHING",
+                "text": "True this week.",
+                "fx": {}
+            }
+        ]
+    },
+    "lunch_run": {
+        "id": "lunch_run",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 8,
+        "requires": [],
+        "speaker": "{c}",
+        "text": "I am doing a sandwich run. Want me to get you something? Last time I got your order wrong, so this time I am writing it down.",
+        "options": [
+            {
+                "id": "big",
+                "label": "A BIG SANDWICH AND SOMETHING TO DRINK",
+                "text": "It is perfect. You feel human again.",
+                "fx": {
+                    "energy": 5,
+                    "social": {
+                        "{c}": 1
+                    }
+                }
+            },
+            {
+                "id": "salad",
+                "label": "A SALAD",
+                "text": "It is a very good salad.",
+                "fx": {
+                    "energy": 2,
+                    "social": {
+                        "{c}": 1
+                    }
+                }
+            },
+            {
+                "id": "skip",
+                "label": "NO THANKS, YOU HAVE A TICKET",
+                "text": "You eat a granola bar over the keyboard.",
+                "fx": {
+                    "energy": -2
+                }
+            }
+        ]
+    },
+    "phish_invoice": {
+        "id": "phish_invoice",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "I got an email from a shipping company with an invoice attached, but I never ordered anything. I did not open it. I think. Maybe I did.",
+        "options": [
+            {
+                "id": "check",
+                "label": "CHECK HER PC AND THE MAIL SERVER",
+                "text": "She did open it, but the attachment did not run. You block the sender.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        5
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "teach",
+                "label": "TEACH THE WHOLE OFFICE WHAT TO LOOK FOR",
+                "text": "A fifteen-minute talk in the break room. The cookies helped.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        4
+                    ],
+                    "mood": [
+                        1,
+                        4
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "delete",
+                "label": "TELL HER TO DELETE IT",
+                "text": "True, but she wanted to know what it was.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "sticky_password": {
+        "id": "sticky_password",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A visiting client",
+        "text": "I am not sure it is smart to say, but everybody here keeps their password on a sticky note on the monitor. Is that a problem?",
+        "options": [
+            {
+                "id": "audit",
+                "label": "OFFER A PASSWORD CLEAN-UP AND A SHORT TALK",
+                "text": "You sit with each person for two minutes. It makes a real difference.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        4
+                    ],
+                    "mood": [
+                        0,
+                        3
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "drawer",
+                "label": "SUGGEST A LOCKED DRAWER AS A START",
+                "text": "A first step. It will do for now.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        2
+                    ],
+                    "mood": [
+                        0,
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "fine",
+                "label": "SAY IT IS FINE IF NOBODY VISITS",
+                "text": "A visitor is sitting right there, and she writes it down.",
+                "fx": {
+                    "mood": [
+                        0,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "projector_cart": {
+        "id": "projector_cart",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "We have a projector in the conference room and nobody knows how to connect it. The laptop says 'No signal'. We have a presentation in twenty minutes.",
+        "options": [
+            {
+                "id": "keys",
+                "label": "SHOW THEM THE KEY COMBINATION FOR THE SECOND SCREEN",
+                "text": "Fn plus a function key. They look at you as if you had performed magic.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        3
+                    ],
+                    "mood": [
+                        4,
+                        4
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "cable",
+                "label": "REPLACE THE OLD CABLE",
+                "text": "The old cable had a bent pin. You hand over the spare.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        2
+                    ],
+                    "mood": [
+                        4,
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "no",
+                "label": "TELL THEM TO REBOOT AND TRY AGAIN",
+                "text": "It works. It also takes twenty minutes.",
+                "fx": {
+                    "mood": [
+                        4,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "bad_cable": {
+        "id": "bad_cable",
+        "kinds": [
+            "tech"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "Our Internet is slow in one room, but only on Tuesdays, only after lunch. Everyone says it is a coincidence. I do not think so.",
+        "options": [
+            {
+                "id": "trace",
+                "label": "WALK THE CABLE AND FIND WHAT HAPPENS AFTER LUNCH",
+                "text": "The microwave and a bad switch share an outlet. You move one.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        5
+                    ],
+                    "mood": [
+                        2,
+                        4
+                    ],
+                    "hours": 0.7
+                }
+            },
+            {
+                "id": "log",
+                "label": "ASK HER TO KEEP A LOG FOR A WEEK",
+                "text": "A week later the log is very clear.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        2,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "restart",
+                "label": "RESTART THE ROUTER",
+                "text": "It is better on Wednesday. On Tuesday it is the same.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -1
+                    ]
+                }
+            }
+        ]
+    },
+    "insurance_agent": {
+        "id": "insurance_agent",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "An insurance agent",
+        "text": "After the Target news every client is asking about cyber liability cover. I can write you a policy for your company, and a short brochure for your clients.",
+        "options": [
+            {
+                "id": "policy",
+                "label": "TAKE THE POLICY FOR THE COMPANY",
+                "text": "A fair premium, and one more thing the clients ask about. Fewer sleepless nights.",
+                "fx": {
+                    "cash": -200,
+                    "rep": 1
+                }
+            },
+            {
+                "id": "brochure",
+                "label": "TAKE THE BROCHURE ONLY",
+                "text": "It is decent. A few clients keep it on their desk.",
+                "fx": {
+                    "cash": -30,
+                    "mood_all": 1
+                }
+            },
+            {
+                "id": "pass",
+                "label": "PASS",
+                "text": "He leaves a business card and a pen.",
+                "fx": {}
+            }
+        ]
+    },
+    "payroll_error": {
+        "id": "payroll_error",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 12,
+        "requires": [],
+        "speaker": "Marge (Bookkeeper)",
+        "text": "The bank charged us for a payroll run twice. I found it, I called them, and I have a refund in writing. I need ten minutes of your time to sign something.",
+        "options": [
+            {
+                "id": "sign",
+                "label": "SIGN IT AND THANK HER",
+                "text": "A refund of $220 is on the way. She smiles, once.",
+                "fx": {
+                    "cash": 220,
+                    "burnout": -1
+                }
+            },
+            {
+                "id": "meet",
+                "label": "TAKE HER TO LUNCH",
+                "text": "It costs forty dollars and buys a lot of loyalty.",
+                "fx": {
+                    "cash": -40,
+                    "burnout": -2
+                }
+            },
+            {
+                "id": "busy",
+                "label": "TELL HER YOU WILL SIGN IT TOMORROW",
+                "text": "A day late. The refund comes a day later too.",
+                "fx": {
+                    "cash": 100
+                }
+            }
+        ]
+    },
+    "van_tire": {
+        "id": "van_tire",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.9,
+        "cooldown": 10,
+        "requires": [
+            "client:2"
+        ],
+        "speaker": "Marge (Bookkeeper)",
+        "text": "The company van has a flat tire in the parking lot of Gnarly Gnomes. The jack is missing. The spare is also a bit flat.",
+        "options": [
+            {
+                "id": "tow",
+                "label": "CALL ROADSIDE ASSISTANCE",
+                "text": "They are quick, and polite, and it costs $90.",
+                "fx": {
+                    "cash": -90,
+                    "mood": [
+                        2,
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "fix",
+                "label": "FIX IT YOURSELF AND BORROW A JACK",
+                "text": "It takes an hour. Someone takes your photo.",
+                "fx": {
+                    "cash": -30,
+                    "burnout": 2,
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "wait",
+                "label": "GET A RIDE AND LEAVE IT FOR TOMORROW",
+                "text": "The visit is rescheduled. Gnarly Gnomes does not love that.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -4
+                    ]
+                }
+            }
+        ]
+    },
+    "referral_gift": {
+        "id": "referral_gift",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 16,
+        "requires": [],
+        "speaker": "A happy client",
+        "text": "I gave your name to a friend who owns a dry-cleaning shop. She is going to call. I hope that is alright. Also, here is a gift card for the team.",
+        "options": [
+            {
+                "id": "thank",
+                "label": "WRITE A HANDWRITTEN THANK YOU",
+                "text": "She puts it on her desk. The lead calls the next week.",
+                "fx": {
+                    "cash": 250,
+                    "mood_all": 1
+                }
+            },
+            {
+                "id": "share",
+                "label": "SPLIT THE GIFT CARD WITH THE TEAM",
+                "text": "Everyone gets a free lunch. Morale goes up a little.",
+                "fx": {
+                    "burnout": -3
+                }
+            },
+            {
+                "id": "keep",
+                "label": "KEEP THE CARD FOR YOURSELF",
+                "text": "You get a very nice dinner. Marge does not mention it, and you hear her not mentioning it.",
+                "fx": {
+                    "cash": 60,
+                    "burnout": 1
+                }
+            }
+        ]
+    },
+    "rebate_check": {
+        "id": "rebate_check",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 16,
+        "requires": [],
+        "speaker": "A distributor's account manager",
+        "text": "Your quarterly rebate check is ready. It is a little smaller than last time because of a new tier. I can explain, or you can just deposit it.",
+        "options": [
+            {
+                "id": "deposit",
+                "label": "DEPOSIT IT, THANK YOU",
+                "text": "$180 into the account. A quiet small win.",
+                "fx": {
+                    "cash": 180
+                }
+            },
+            {
+                "id": "ask",
+                "label": "ASK HIM TO EXPLAIN THE NEW TIER",
+                "text": "A twenty-minute call. You learn how to reach the next tier, and how many licenses it takes.",
+                "fx": {
+                    "cash": 180,
+                    "burnout": 1
+                }
+            },
+            {
+                "id": "push",
+                "label": "TELL HIM THE OLD RATE IS FINE",
+                "text": "He says he will see what he can do. He does not.",
+                "fx": {}
+            }
+        ]
+    },
+    "birthday_cake": {
+        "id": "birthday_cake",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "The team",
+        "text": "It is someone's birthday and the break room smells like a bakery. We bought a cake. Come and cut it before it gets too sad.",
+        "options": [
+            {
+                "id": "cut",
+                "label": "CUT THE CAKE AND SAY A FEW WORDS",
+                "text": "Everyone claps. A very small speech, a very big cake.",
+                "fx": {
+                    "burnout": -3,
+                    "cash": -20
+                }
+            },
+            {
+                "id": "pop",
+                "label": "POP IN FOR A MINUTE",
+                "text": "A slice of cake, a joke, and out. Good enough.",
+                "fx": {
+                    "burnout": -1
+                }
+            },
+            {
+                "id": "busy",
+                "label": "SEND YOUR REGRETS",
+                "text": "Somebody saves you a slice. It is a bit stale by 4:00.",
+                "fx": {
+                    "burnout": 1
+                }
+            }
+        ]
+    },
+    "copier_lease": {
+        "id": "copier_lease",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 16,
+        "requires": [],
+        "speaker": "The copier salesman",
+        "text": "Your copier lease is up in sixty days. I can renew at a slightly higher rate, or I can put you in a newer model with a longer contract. The newer one does color.",
+        "options": [
+            {
+                "id": "renew",
+                "label": "RENEW THE OLD ONE",
+                "text": "Predictable and cheap. The old copier sighs with relief.",
+                "fx": {
+                    "cash": -60
+                }
+            },
+            {
+                "id": "newer",
+                "label": "TAKE THE NEWER MODEL",
+                "text": "It is faster, it has color, and the contract is long. The team loves it.",
+                "fx": {
+                    "cash": -150,
+                    "burnout": -2
+                }
+            },
+            {
+                "id": "shop",
+                "label": "SHOP AROUND FOR A BETTER PRICE",
+                "text": "It takes you an evening and saves $70.",
+                "fx": {
+                    "cash": 70,
+                    "burnout": 2
+                }
+            }
+        ]
+    },
+    "chamber_lunch": {
+        "id": "chamber_lunch",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 4,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 14,
+        "requires": [],
+        "speaker": "The chamber of commerce",
+        "text": "Our monthly lunch is this Thursday. Small business owners, a keynote about marketing, and a very long raffle. Your seat is saved, if you want it.",
+        "options": [
+            {
+                "id": "go",
+                "label": "GO AND TALK TO PEOPLE",
+                "text": "A prospect hands you a card. The raffle prize is a pen. The prospect is better than the pen.",
+                "fx": {
+                    "cash": -35,
+                    "mood_all": 1,
+                    "burnout": 1
+                }
+            },
+            {
+                "id": "send",
+                "label": "SEND VIC",
+                "text": "He comes back with three business cards and a story.",
+                "fx": {
+                    "cash": -35,
+                    "burnout": -1
+                }
+            },
+            {
+                "id": "skip",
+                "label": "SKIP IT",
+                "text": "There is always the next one.",
+                "fx": {}
+            }
+        ]
+    },
+    "client_text_night": {
+        "id": "client_text_night",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 1.0,
+        "cooldown": 10,
+        "requires": [],
+        "speaker": "A client",
+        "text": "I know it is 9 PM, but I just got an email from the bank that I can not open and it says it is urgent. I am very sorry to text you now.",
+        "options": [
+            {
+                "id": "answer",
+                "label": "ANSWER AND CHECK IT TOGETHER",
+                "text": "It was a phishing email. She is grateful, and you are tired.",
+                "fx": {
+                    "mood_all": 1,
+                    "burnout": 3
+                }
+            },
+            {
+                "id": "morning",
+                "label": "REPLY THAT YOU WILL LOOK AT IT FIRST THING",
+                "text": "She spends the night worrying, but she is fine.",
+                "fx": {
+                    "burnout": -1
+                }
+            },
+            {
+                "id": "oncall",
+                "label": "FORWARD IT TO WHOEVER IS ON CALL",
+                "text": "A team effort, and a small win for the rota.",
+                "fx": {
+                    "burnout": 1
+                }
+            }
+        ]
+    },
+    "landlord_notice": {
+        "id": "landlord_notice",
+        "kinds": [
+            "owner"
+        ],
+        "min_day": 3,
+        "max_day": 20,
+        "weight": 0.8,
+        "cooldown": 16,
+        "requires": [],
+        "speaker": "The landlord",
+        "text": "A notice that the rent goes up 4 percent in the autumn. There is also a note about the parking lot being repaved on Thursday.",
+        "options": [
+            {
+                "id": "accept",
+                "label": "ACCEPT THE INCREASE",
+                "text": "It is a small amount, and the lot looks good afterward.",
+                "fx": {
+                    "cash": -40
+                }
+            },
+            {
+                "id": "negotiate",
+                "label": "ASK FOR A TWO-YEAR LEASE AT THE OLD RATE",
+                "text": "He says he will think about it. He does.",
+                "fx": {
+                    "cash": 40,
+                    "burnout": 1
+                }
+            },
+            {
+                "id": "move",
+                "label": "START LOOKING AT OTHER OFFICES",
+                "text": "You see three offices and one of them has a creaky floor.",
+                "fx": {
+                    "burnout": 2
+                }
+            }
+        ]
+    }
+}
+var DECK: Dictionary = DEFAULT_DECK.duplicate(true)
+
+var draws := 0  # how many mornings have drawn (saved; the `events` stream is replayed to this point)
+var last: Dictionary = {}  # card id -> the day it was last drawn
+var recent: Array = []  # the last ids drawn, newest last
+var pending: Dictionary = {}  # today's draw: {deck, id, at, who}
+var last_shown := ""  # the id of the card most recently shown (tests)
+var shown := 0
+
+var _ok_cache := {}
+
+
+func reset() -> void:
+    draws = 0
+    last = {}
+    recent = []
+    pending = {}
+    last_shown = ""
+    shown = 0
+
+
+# ---- saving ---------------------------------------------------------------------------------------
+func to_dict() -> Dictionary:
+    return {"version": VERSION, "draws": draws, "last": last.duplicate(), "recent": recent.duplicate()}
+
+
+# an old save has no `events` section: everything starts empty. The stream restarts from the run seed
+# on a continue, so it is replayed to where it was (each draw uses exactly ROLLS numbers).
+const ROLLS := 5
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    draws = int(data.get("draws", 0))
+    var saved_last: Variant = data.get("last", {})
+    if saved_last is Dictionary:
+        for id in saved_last:
+            last[str(id)] = int(saved_last[id])
+    var saved_recent: Variant = data.get("recent", [])
+    if saved_recent is Array:
+        for id in saved_recent:
+            recent.append(str(id))
+    var r := Difficulty.rng("events")
+    for i in draws * ROLLS:
+        r.randf()
+
+
+# ---- the people a card may name ---------------------------------------------------------------------
+# the coworkers (not the owners, not the manager) who exist in the current campaign
+func roster() -> Array:
+    var out := []
+    for who in World.CAST:
+        if OWNERS.has(who):
+            continue
+        if who == "Maya" and Campaign.mode == "owner":
+            continue  # she is not on the owner's payroll
+        out.append(str(who))
+    return out
+
+
+func _names_allowed(kinds: Array) -> Array:
+    var allowed := []
+    for n in ALL_NAMES:
+        var ok := true
+        for kind in ["tech", "owner"]:
+            if (kinds.has("both") or kinds.has(kind)) and not NAMES_FOR[kind].has(n):
+                ok = false
+        if ok:
+            allowed.append(n)
+    return allowed
+
+
+# ---- the balance guard ------------------------------------------------------------------------------
+# problems with an fx dictionary (empty = fine); `kinds` is the card's kinds
+func fx_problems(fx: Dictionary, kinds: Array) -> Array:
+    var out := []
+    var names := _names_allowed(kinds)
+    for key in fx:
+        var k := str(key)
+        if not FX_KEYS.has(k):
+            out.append("unknown fx key %s" % k)
+            continue
+        if OWNER_ONLY.has(k) and not kinds.has("owner"):
+            out.append("%s only belongs on an owner card" % k)
+        if TECH_ONLY.has(k) and kinds == ["owner"]:
+            out.append("%s does not belong on an owner card" % k)
+        var limit := float(FX_BOUNDS[k])
+        var v: Variant = fx[key]
+        match k:
+            "xp":
+                if not (v is Array) or v.size() != 2 or not SKILLS.has(str(v[0])):
+                    out.append("xp needs [skill, n]")
+                elif int(v[1]) < 1 or int(v[1]) > int(limit):
+                    out.append("xp %d is out of bounds" % int(v[1]))
+            "mood":
+                if not (v is Array) or v.size() != 2 or int(v[0]) < 0 or int(v[0]) > 4:
+                    out.append("mood needs [client 0-4, n]")
+                elif absf(float(v[1])) > limit:
+                    out.append("mood %d is out of bounds" % int(v[1]))
+            "social":
+                if not (v is Dictionary):
+                    out.append("social needs a dictionary")
+                else:
+                    for who in v:
+                        if absf(float(v[who])) > limit:
+                            out.append("social %s is out of bounds" % str(who))
+                        if str(who) != "{c}" and not names.has(str(who)):
+                            out.append("social names %s who is not in this campaign" % str(who))
+            "hours":
+                if float(v) < 0.0 or float(v) > limit:
+                    out.append("hours %s is out of bounds" % str(v))
+            _:
+                if absf(float(v)) > limit:
+                    out.append("%s %s is out of bounds" % [k, str(v)])
+    return out
+
+
+# true when no effect in the fx hurts much: a card must always offer a way out that costs (almost) nothing
+func is_safe_fx(fx: Dictionary) -> bool:
+    if int(fx.get("rep", 0)) < 0 or float(fx.get("energy", 0)) < 0.0:
+        return false
+    if int(fx.get("mood_all", 0)) < 0 or int(fx.get("cash", 0)) < -100:
+        return false
+    if fx.has("mood") and int(fx.mood[1]) < 0:
+        return false
+    if float(fx.get("burnout", 0)) > 2.0:
+        return false
+    for who in fx.get("social", {}):
+        if int(fx.social[who]) < 0:
+            return false
+    return true
+
+
+func _text_problems(text: String, kinds: Array) -> Array:
+    var out := []
+    var allowed := _names_allowed(kinds)
+    for n in ALL_NAMES:
+        if text.contains(n) and not allowed.has(n):
+            out.append("names %s who is not in this campaign" % n)
+    return out
+
+
+# every problem with one deck card (empty = fine)
+func violations(card: Dictionary) -> Array:
+    var out := []
+    var id := str(card.get("id", ""))
+    if id == "":
+        out.append("no id")
+    var kinds: Array = card.get("kinds", [])
+    if kinds.is_empty():
+        out.append("%s: no kinds" % id)
+    for kind in kinds:
+        if not KINDS.has(str(kind)):
+            out.append("%s: bad kind %s" % [id, str(kind)])
+    if kinds.has("both") and kinds.size() > 1:
+        out.append("%s: both must stand alone" % id)
+    var lo := int(card.get("min_day", 0))
+    var hi := int(card.get("max_day", 0))
+    if lo < 1 or hi > Campaign.TOTAL_DAYS or lo > hi:
+        out.append("%s: bad days %d-%d" % [id, lo, hi])
+    var weight := float(card.get("weight", 0.0))
+    if weight <= 0.0 or weight > 3.0:
+        out.append("%s: weight %s" % [id, str(weight)])
+    if int(card.get("cooldown", -1)) < 0 or int(card.get("cooldown", 0)) > 99:
+        out.append("%s: cooldown" % id)
+    if not (card.get("requires", []) is Array):
+        out.append("%s: requires must be a list" % id)
+    if str(card.get("speaker", "")) == "" or str(card.get("text", "")) == "":
+        out.append("%s: no speaker or text" % id)
+    if str(card.get("text", "")).length() > MAX_TEXT:
+        out.append("%s: text too long" % id)
+    out.append_array(_text_problems(str(card.get("speaker", "")) + " " + str(card.get("text", "")), kinds))
+    var options: Array = card.get("options", [])
+    if options.size() < 2 or options.size() > MAX_OPTIONS:
+        out.append("%s: needs 2-%d options" % [id, MAX_OPTIONS])
+    var ids := {}
+    var safe := false
+    for o in options:
+        var oid := str(o.get("id", ""))
+        if oid == "" or ids.has(oid):
+            out.append("%s: option id %s" % [id, oid])
+        ids[oid] = true
+        if str(o.get("label", "")) == "" or str(o.get("label", "")).length() > MAX_LABEL:
+            out.append("%s/%s: label" % [id, oid])
+        if str(o.get("text", "")) == "":
+            out.append("%s/%s: no result text" % [id, oid])
+        out.append_array(_text_problems(str(o.get("label", "")) + " " + str(o.get("text", "")), kinds))
+        var fx: Dictionary = o.get("fx", {})
+        for p in fx_problems(fx, kinds):
+            out.append("%s/%s: %s" % [id, oid, p])
+        if is_safe_fx(fx):
+            safe = true
+    if not safe:
+        out.append("%s: no option is safe" % id)
+    return out
+
+
+# the same checks for a Story vignette that is drawn from the deck
+func vignette_violations(id: String, v: Dictionary) -> Array:
+    var card := v.duplicate(true)
+    card["id"] = id
+    card["kinds"] = ["tech"]
+    card["weight"] = float(v.get("weight", 1.0))
+    card["cooldown"] = 99
+    card["max_day"] = int(v.get("max_day", Campaign.TOTAL_DAYS))
+    card["requires"] = []
+    return violations(card)
+
+
+# problems with the whole deck and the drawn vignettes
+func validate_all() -> Array:
+    var out := []
+    for id in DECK:
+        var card: Dictionary = DECK[id]
+        if str(card.get("id", "")) != str(id):
+            out.append("%s: the key and id differ" % str(id))
+        out.append_array(violations(card))
+    for id in Story.VIGNETTES:
+        if Story.VIGNETTES[id].has("min_day"):
+            out.append_array(vignette_violations(str(id), Story.VIGNETTES[id]))
+    return out
+
+
+func _valid(id: String, card: Dictionary, vignette: bool) -> bool:
+    var key := ("v:" if vignette else "e:") + id
+    if not _ok_cache.has(key):
+        var problems := vignette_violations(id, card) if vignette else violations(card)
+        _ok_cache[key] = problems.is_empty()
+    return bool(_ok_cache[key])
+
+
+# ---- which days draw ----------------------------------------------------------------------------------
+# a quiet day: no story card, no outing, no trip, not the first days or the last
+func quiet_day(day: int, mode: String) -> bool:
+    if day < (3 if mode == "tech" else 2) or day >= Campaign.TOTAL_DAYS:
+        return false
+    if mode == "tech":
+        if Outings.TECH_DAYS.has(day) or Expo.is_trip_day(day):
+            return false
+        for ev in Story.DAYS.get(day, []):
+            if BUSY_KINDS.has(str(ev.get("kind", ""))):
+                return false
+            if str(ev.get("kind", "")) == "playbook" and str(ev.get("book", "")) == "email24":
+                return false  # the overtime night
+        return true
+    if mode == "owner":
+        if Outings.OWNER_WEEKS.has(day):
+            return false
+        var events: Array = Owner.DAYS.get(day, [])
+        if events.size() > 3:
+            return false
+        for ev in events:
+            if str(ev.get("event", "")) == "ransomware" or str(ev.get("card", "")) == "email24":
+                return false
+        return true
+    return false
+
+
+func _requires_ok(card: Dictionary) -> bool:
+    for token in card.get("requires", []):
+        var parts := str(token).split(":")
+        match parts[0]:
+            "client":
+                if not Sales.active.has(int(parts[1])):
+                    return false
+            "cash":
+                if Campaign.mode != "owner" or Owner.cash < int(parts[1]):
+                    return false
+    var shown_text := str(card.get("speaker", "")) + str(card.get("text", ""))
+    return not (shown_text.contains("{c}") and roster().is_empty())
+
+
+func _cooled(id: String, cooldown: int, day: int) -> bool:
+    return last.has(id) and day - int(last[id]) < cooldown
+
+
+# every card that may be drawn today: [{deck, id, weight}]
+func pool(day: int, mode: String) -> Array:
+    var out := []
+    for id in DECK:
+        var card: Dictionary = DECK[id]
+        var kinds: Array = card.get("kinds", [])
+        if not (kinds.has(mode) or kinds.has("both")):
+            continue
+        if day < int(card.min_day) or day > int(card.max_day):
+            continue
+        if _cooled(str(id), int(card.cooldown), day) or not _requires_ok(card):
+            continue
+        if _valid(str(id), card, false):
+            out.append({"deck": "event", "id": str(id), "weight": float(card.weight)})
+    if mode == "tech":
+        for id in Story.VIGNETTES:
+            var v: Dictionary = Story.VIGNETTES[id]
+            if not v.has("min_day") or day < int(v.min_day) or day > int(v.get("max_day", 99)):
+                continue
+            if last.has(str(id)):
+                continue  # a vignette is shown once a run
+            if _valid(str(id), v, true):
+                out.append({"deck": "vignette", "id": str(id), "weight": float(v.get("weight", 1.0))})
+    return out
+
+
+# ---- the morning draw -----------------------------------------------------------------------------------
+# Called from Campaign._begin_day. Every draw uses exactly ROLLS numbers from the `events` stream,
+# so a fixed seed repeats and a continued run can replay the stream.
+func begin_day(day: int) -> void:
+    pending = {}
+    if not Campaign.active or Game.title_mode or not quiet_day(day, Campaign.mode):
+        return
+    draws += 1
+    var r := Difficulty.rng("events")
+    var pick_roll := r.randf()
+    var at_roll := r.randf()
+    var who_roll := r.randf()
+    r.randf()
+    r.randf()
+    var cards := pool(day, Campaign.mode)
+    if cards.is_empty():
+        return
+    var total := 0.0
+    for c in cards:
+        total += float(c.weight)
+    var target := pick_roll * total
+    var chosen: Dictionary = cards[cards.size() - 1]
+    for c in cards:
+        target -= float(c.weight)
+        if target < 0.0:
+            chosen = c
+            break
+    var people := roster()
+    pending = {
+        "deck": chosen.deck,
+        "id": chosen.id,
+        "at": snappedf(WINDOW_START + WINDOW_LEN * at_roll, 0.1),
+        "who": "" if people.is_empty() else str(people[int(who_roll * people.size()) % people.size()]),
+    }
+    last[str(chosen.id)] = day
+    recent.append(str(chosen.id))
+    while recent.size() > 12:
+        recent.pop_front()
+
+
+func _process(_delta: float) -> void:
+    if pending.is_empty() or not Campaign.active or Game.title_mode:
+        return
+    if World.clock >= LATEST:
+        pending = {}
+        return
+    if World.clock < float(pending.at) or World.time_scale <= 0.0 or Cards.is_open:
+        return
+    if Expo.away or Onsite.busy or Outings.busy() or DayReport.is_open:
+        return
+    var draw := pending
+    pending = {}
+    show_draw(draw)
+
+
+# ---- showing a card ---------------------------------------------------------------------------------------
+func show_draw(draw: Dictionary) -> void:
+    last_shown = str(draw.id)
+    shown += 1
+    if str(draw.deck) == "vignette":
+        Story.fire({"kind": "vignette", "id": str(draw.id)})
+        return
+    var card: Dictionary = DECK.get(str(draw.id), {})
+    if card.is_empty():
+        return
+    var c := resolve(card, str(draw.get("who", "")))
+    var options := []
+    for o in c.options:
+        options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
+
+
+# a copy of the card with {c} replaced by a coworker's name
+func resolve(card: Dictionary, who: String) -> Dictionary:
+    var c := card.duplicate(true)
+    var nm := who if who != "" else "A coworker"
+    c["speaker"] = str(c.speaker).replace("{c}", nm)
+    c["text"] = str(c.text).replace("{c}", nm)
+    for o in c.options:
+        o["label"] = str(o.label).replace("{c}", nm)
+        o["text"] = str(o.text).replace("{c}", nm)
+        if o.get("fx", {}).has("social"):
+            var swapped := {}
+            for k in o.fx.social:
+                swapped[str(k).replace("{c}", who)] = o.fx.social[k]
+            o.fx["social"] = swapped
+    return c
+
+
+func _answer(c: Dictionary, pick: String) -> void:
+    var text := ""
+    for o in c.options:
+        if str(o.id) == pick:
+            text = str(o.text)
+            apply_fx(o.get("fx", {}))
+    Cards.ask(str(c.speaker), text, OPTIONS_OK, func(_id: String) -> void: pass)
+
+
+# the vignette resolver does the work; cash and burnout go to the owner books, and an owner has no XP or
+# energy to gain
+func apply_fx(fx: Dictionary) -> void:
+    var rest := fx.duplicate(true)
+    var books := {}
+    for key in OWNER_ONLY:
+        if rest.has(key):
+            books[key] = rest[key]
+            rest.erase(key)
+    if Campaign.mode == "owner":
+        for key in TECH_ONLY:
+            rest.erase(key)
+        if not books.is_empty():
+            Owner.apply(books)
+    if rest.has("hours") and World.clock + float(rest.hours) > World.DAY_END - 1.5:
+        rest.erase("hours")  # never push the day into its last hour
+    Story._vignette_fx(rest)
+''')
+
 write("scripts/story.gd", '''extends Node
 # gdlint:disable=max-line-length
 # The tech campaign's script: what happens on each day (mails, texts, set-pieces) at a time of day.
@@ -8139,6 +10789,788 @@ const VIGNETTES := {
             {"id": "nothing", "label": "SAY IT WAS NOTHING", "text": "He insists you are being modest and gives you the last donut.", "fx": {"social": {"Alan": 1}, "energy": 1}},
             {"id": "subject", "label": "EAT A DONUT AND CHANGE THE SUBJECT", "text": "You discuss the weather for a minute. The donut is very good. (+2 energy)", "fx": {"energy": 2}},
         ],
+    },
+    "tape_swap":
+    {
+        "speaker": "The office manager (Gnarly Gnomes)",
+        "text": "Nobody has changed the backup tape since Monday. We keep forgetting. Could we just leave it in forever?",
+        "min_day": 3,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "label",
+                "label": "PUT A COLORED LABEL ON EACH DAY'S TAPE",
+                "text": "She buys a roll of stickers. The tapes look like a rainbow.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        2,
+                        3
+                    ]
+                }
+            },
+            {
+                "id": "auto",
+                "label": "SWITCH THEM TO DISK-BASED BACKUPS",
+                "text": "A small project for a rainy day.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        3
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "remind",
+                "label": "SEND A DAILY REMINDER EMAIL",
+                "text": "It works for two days.",
+                "fx": {
+                    "mood": [
+                        2,
+                        1
+                    ]
+                }
+            }
+        ]
+    },
+    "toolbar":
+    {
+        "speaker": "A realtor at Brightside",
+        "text": "My browser has a toolbar I did not ask for, and another one, and now a third. The page is the size of a postage stamp.",
+        "min_day": 3,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "remove",
+                "label": "REMOVE THEM ALL AND EXPLAIN THE 'NEXT' BUTTON",
+                "text": "She will never press 'Next' again without reading.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "reset",
+                "label": "RESET THE BROWSER",
+                "text": "Clean and fast. She stops cursing.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        1
+                    ],
+                    "mood": [
+                        1,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "shrug",
+                "label": "TELL HER TO CLOSE SOME TABS",
+                "text": "Not the answer she wanted.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -3
+                    ]
+                }
+            }
+        ]
+    },
+    "fax_black":
+    {
+        "speaker": "The paralegal (Hoot and Holler)",
+        "text": "The fax machine is printing black pages. Every page. The partners are waiting on a signed document and it is only coming out black.",
+        "min_day": 4,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "clean",
+                "label": "CLEAN THE SCANNER GLASS AND THE ROLLER",
+                "text": "A smudge the size of a dime. The fax prints beautifully.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        3
+                    ],
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "scan",
+                "label": "SCAN AND EMAIL THE DOCUMENT INSTEAD",
+                "text": "No fax needed. She looks at you as if you had invented email.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        3,
+                        4
+                    ]
+                }
+            },
+            {
+                "id": "order",
+                "label": "ORDER A NEW FAX MACHINE",
+                "text": "A new machine is fine, but the document is still stuck.",
+                "fx": {
+                    "mood": [
+                        3,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "sticky_dan":
+    {
+        "speaker": "Dan (Network tech)",
+        "text": "I found the main router password on a sticky note in three different offices. It is 'admin' in all three. Do you want me to fix it or yell?",
+        "min_day": 4,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "fix",
+                "label": "TELL HIM TO FIX IT AND YOU WILL WRITE THE NOTE",
+                "text": "He changes it. You write a short, friendly note. Dan nods.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        2
+                    ],
+                    "social": {
+                        "Dan": 2
+                    }
+                }
+            },
+            {
+                "id": "yell",
+                "label": "BOTH",
+                "text": "You say it together and feel better.",
+                "fx": {
+                    "social": {
+                        "Dan": 1
+                    },
+                    "energy": 1
+                }
+            },
+            {
+                "id": "later",
+                "label": "SAY IT CAN WAIT",
+                "text": "Dan raises an eyebrow, a very small one.",
+                "fx": {
+                    "social": {
+                        "Dan": -1
+                    }
+                }
+            }
+        ]
+    },
+    "captcha":
+    {
+        "speaker": "A realtor at Brightside",
+        "text": "The website keeps asking me to type distorted letters and I cannot read them. I have tried eleven times. Is the site broken?",
+        "min_day": 5,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "teach",
+                "label": "SIT WITH HER AND SOLVE A FEW",
+                "text": "She likes the one that reads 'banana'.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ],
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "audio",
+                "label": "SHOW HER THE AUDIO OPTION",
+                "text": "It sounds like a ghost reading numbers, but it works.",
+                "fx": {
+                    "mood": [
+                        1,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "email",
+                "label": "TELL HER TO EMAIL THEM",
+                "text": "She does. They respond in a week.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -1
+                    ]
+                }
+            }
+        ]
+    },
+    "cable_mess":
+    {
+        "speaker": "The owner (Gnarly Gnomes)",
+        "text": "Behind the desk there is a nest of cables. My assistant says it is a fire hazard. Can you make it nice? It is not nice.",
+        "min_day": 5,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "tidy",
+                "label": "LABEL, BUNDLE AND ROUTE EVERYTHING",
+                "text": "Twenty velcro ties and forty minutes. It looks like a catalog photo.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        4
+                    ],
+                    "mood": [
+                        2,
+                        4
+                    ],
+                    "hours": 0.7
+                }
+            },
+            {
+                "id": "some",
+                "label": "TIDY THE WORST HALF",
+                "text": "It is better. She says it is a start.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        2
+                    ],
+                    "mood": [
+                        2,
+                        2
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "point",
+                "label": "TELL HER IT IS NOT A HAZARD",
+                "text": "It is slightly a hazard.",
+                "fx": {
+                    "mood": [
+                        2,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "kid_laptop":
+    {
+        "speaker": "A client's teenager",
+        "text": "I need help. My mom said you set up her computer, and my school laptop will not connect to anything. Mom says I can ask you, but I have to say please.",
+        "min_day": 6,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "fix",
+                "label": "TAKE A LOOK, IT IS A FIVE MINUTE JOB",
+                "text": "A wrong setting. She thanks you in a very serious voice.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        4,
+                        3
+                    ],
+                    "hours": 0.2
+                }
+            },
+            {
+                "id": "teach",
+                "label": "SHOW HER HOW TO CHECK IT HERSELF",
+                "text": "She writes it down in a notebook. She will be running IT someday.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        4,
+                        2
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "no",
+                "label": "SAY YOU CAN ONLY HELP THE COMPANY",
+                "text": "She understands. Probably.",
+                "fx": {
+                    "mood": [
+                        4,
+                        -1
+                    ]
+                }
+            }
+        ]
+    },
+    "voip_pitch":
+    {
+        "speaker": "A salesman from a phone company",
+        "text": "Hi! Hosted phones are the next big thing. No more desk phone boxes in the closet. I would love to show you a quick demo with a headset.",
+        "min_day": 6,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "demo",
+                "label": "TRY THE DEMO",
+                "text": "The call is clear, the portal is clean, and the price is not.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "card",
+                "label": "TAKE HIS CARD AND PASS IT TO THE OWNERS",
+                "text": "Garrison files it with the other ideas. Alan nods slowly.",
+                "fx": {
+                    "social_all": 1
+                }
+            },
+            {
+                "id": "no",
+                "label": "SAY WE ARE HAPPY WITH WHAT WE HAVE",
+                "text": "He leaves a pen with a logo on it.",
+                "fx": {}
+            }
+        ]
+    },
+    "spam_folder":
+    {
+        "speaker": "The office manager (Acme Dental)",
+        "text": "The newsletter we send every month is landing in everybody's spam folder. Even mine. It looks fine to me!",
+        "min_day": 7,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "dns",
+                "label": "CHECK THE MAIL SETTINGS AND FIX THE SENDER RECORD",
+                "text": "One missing record. The mail lands in inboxes again.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        4
+                    ],
+                    "mood": [
+                        0,
+                        4
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "tips",
+                "label": "SUGGEST A BETTER SUBJECT LINE",
+                "text": "'FREE TEETH!!!' becomes 'Your spring checkup'. It helps.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "mood": [
+                        0,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "whitelist",
+                "label": "TELL EVERYONE TO MARK IT AS SAFE",
+                "text": "Half of them do. The other half do not read it.",
+                "fx": {
+                    "mood": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        ]
+    },
+    "charger_drawer":
+    {
+        "speaker": "Dan (Network tech)",
+        "text": "There is a drawer full of chargers and nobody knows what goes with what. I made a chart. It has color coding. Do you want a copy?",
+        "min_day": 8,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "copy",
+                "label": "YES, AND PUT IT ON THE WALL",
+                "text": "The drawer becomes the most organized place in the office.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "social": {
+                        "Dan": 2
+                    }
+                }
+            },
+            {
+                "id": "help",
+                "label": "HELP HIM LABEL THEM",
+                "text": "You find a charger for a phone nobody remembers. It is a good morning.",
+                "fx": {
+                    "social": {
+                        "Dan": 2
+                    },
+                    "energy": 1,
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "laugh",
+                "label": "LAUGH AT THE CHART",
+                "text": "Dan does not speak to you for twenty minutes.",
+                "fx": {
+                    "social": {
+                        "Dan": -2
+                    }
+                }
+            }
+        ]
+    },
+    "tv_monitor":
+    {
+        "speaker": "A realtor at Brightside",
+        "text": "I bought a 50 inch TV for my desk. It was on sale! It looks great, but my eyes hurt and the text is blurry. Can you fix it?",
+        "min_day": 8,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "set",
+                "label": "SET THE RIGHT RESOLUTION AND TEXT SIZE",
+                "text": "A tiny tweak. She says it is like new glasses.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        4
+                    ],
+                    "hours": 0.3
+                }
+            },
+            {
+                "id": "mount",
+                "label": "SUGGEST MOVING IT BACK A FEW FEET",
+                "text": "She tries it. A TV across the room is a TV.",
+                "fx": {
+                    "mood": [
+                        1,
+                        2
+                    ]
+                }
+            },
+            {
+                "id": "return",
+                "label": "SAY THAT A TV IS NOT A MONITOR",
+                "text": "She says it is a monitor now.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "scan_to_mail":
+    {
+        "speaker": "The paralegal (Hoot and Holler)",
+        "text": "The new copier says it can 'scan to email', but it asks for a server name I do not have. Can you do whatever it is that I should do?",
+        "min_day": 9,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "setup",
+                "label": "SET UP THE SCAN-TO-EMAIL PROPERLY",
+                "text": "A mail relay and a small password. The partners can scan from the copier.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        4
+                    ],
+                    "mood": [
+                        3,
+                        4
+                    ],
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "folder",
+                "label": "SET UP SCAN TO A SHARED FOLDER",
+                "text": "Simpler and safer. She approves.",
+                "fx": {
+                    "xp": [
+                        "networking",
+                        3
+                    ],
+                    "mood": [
+                        3,
+                        3
+                    ],
+                    "hours": 0.4
+                }
+            },
+            {
+                "id": "later",
+                "label": "TELL HER YOU WILL LOOK AT IT NEXT WEEK",
+                "text": "She keeps using the fax. Which is black.",
+                "fx": {
+                    "mood": [
+                        3,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "old_server_larry":
+    {
+        "speaker": "Alan (Co-owner)",
+        "text": "There is a server in the back that Larry set up in 2006. Nobody knows what it does and nobody will turn it off. Can you find out what is on it?",
+        "min_day": 10,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "find",
+                "label": "TRACE WHAT TALKS TO IT AND WRITE IT DOWN",
+                "text": "It runs a label printer and one database for the front desk. You document both.",
+                "fx": {
+                    "xp": [
+                        "servers",
+                        4
+                    ],
+                    "social": {
+                        "Alan": 2
+                    },
+                    "hours": 0.6
+                }
+            },
+            {
+                "id": "ask",
+                "label": "ASK EVERYONE IN THE OFFICE",
+                "text": "Someone remembers a login that works. Alan chuckles.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        2
+                    ],
+                    "social": {
+                        "Alan": 1
+                    }
+                }
+            },
+            {
+                "id": "leave",
+                "label": "LEAVE IT ALONE, LARRY KNOWS BEST",
+                "text": "Larry left in 2009.",
+                "fx": {
+                    "social": {
+                        "Alan": -1
+                    }
+                }
+            }
+        ]
+    },
+    "win81_update":
+    {
+        "speaker": "A realtor at Brightside",
+        "text": "The computer says there is a free update to Windows 8.1 and she wants to know if it brings the Start button back. I have been told it does. Is that true?",
+        "min_day": 11,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "yes",
+                "label": "TELL HER YES, AND INSTALL IT AFTER LUNCH",
+                "text": "A shiny button comes back, and she is pleased.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "mood": [
+                        1,
+                        3
+                    ],
+                    "hours": 0.5
+                }
+            },
+            {
+                "id": "careful",
+                "label": "BACK UP FIRST, THEN INSTALL",
+                "text": "It takes longer. It also does not fail.",
+                "fx": {
+                    "xp": [
+                        "security",
+                        2
+                    ],
+                    "mood": [
+                        1,
+                        2
+                    ],
+                    "hours": 0.7
+                }
+            },
+            {
+                "id": "skip",
+                "label": "TELL HER TO WAIT",
+                "text": "She installs it herself and tells you about it.",
+                "fx": {
+                    "mood": [
+                        1,
+                        -2
+                    ]
+                }
+            }
+        ]
+    },
+    "thank_you_card":
+    {
+        "speaker": "A card from Soggy Bottom Brewing",
+        "text": "A hand-written card arrives. 'Thank you for all your help this year. The beer is on us. Come by any Friday.' There is a drawing of a pint glass.",
+        "min_day": 15,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "frame",
+                "label": "PIN IT TO THE WALL",
+                "text": "Everyone reads it. It is a good morning.",
+                "fx": {
+                    "social_all": 1
+                }
+            },
+            {
+                "id": "share",
+                "label": "READ IT TO THE TEAM",
+                "text": "A little applause. A little embarrassment.",
+                "fx": {
+                    "rep": 1
+                }
+            },
+            {
+                "id": "keep",
+                "label": "PUT IT IN YOUR DRAWER",
+                "text": "A private small win.",
+                "fx": {
+                    "energy": 2
+                }
+            }
+        ]
+    },
+    "alan_sandwich":
+    {
+        "speaker": "Alan (Co-owner)",
+        "text": "I made two sandwiches this morning, one too many. Roast beef. You can have it if you tell me which of the three printers has been misbehaving the most.",
+        "min_day": 17,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "honest",
+                "label": "TELL HIM THE TRUTH ABOUT THE PRINTERS",
+                "text": "The sandwich is excellent. The answer is the one at Hoot and Holler.",
+                "fx": {
+                    "energy": 5,
+                    "social": {
+                        "Alan": 2
+                    }
+                }
+            },
+            {
+                "id": "diplomatic",
+                "label": "TAKE THE SANDWICH AND CHANGE THE SUBJECT",
+                "text": "Alan raises an eyebrow, but the sandwich stays.",
+                "fx": {
+                    "energy": 3,
+                    "social": {
+                        "Alan": 1
+                    }
+                }
+            },
+            {
+                "id": "no",
+                "label": "SAY YOU ALREADY ATE",
+                "text": "He eats both. He does not blame you.",
+                "fx": {}
+            }
+        ]
+    },
+    "first_week_note":
+    {
+        "speaker": "Morgan (Manager)",
+        "text": "The year is almost over. Is there something you wish somebody had told you on your first day? I am writing a note for the next new hire.",
+        "min_day": 18,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "tips",
+                "label": "WRITE DOWN THREE TIPS",
+                "text": "Morgan reads them aloud and says, 'Perfect.'",
+                "fx": {
+                    "xp": [
+                        "people",
+                        3
+                    ],
+                    "rep": 1
+                }
+            },
+            {
+                "id": "short",
+                "label": "SAY 'ASK QUESTIONS EARLY'",
+                "text": "Morgan writes that down and underlines it.",
+                "fx": {
+                    "xp": [
+                        "people",
+                        1
+                    ]
+                }
+            },
+            {
+                "id": "none",
+                "label": "SAY 'NOTHING, REALLY'",
+                "text": "Morgan thinks you are being modest.",
+                "fx": {}
+            }
+        ]
     },
 }
 const DAYS := {
@@ -8468,7 +11900,7 @@ write("scripts/social.gd", '''extends Node
 
 signal changed
 
-const PEOPLE := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+const ALL := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
 # Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
 const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
@@ -8476,9 +11908,10 @@ const ROLES := {
     "Garrison": "CO-OWNER",
     "Dan": "NETWORK TECH",
     "Vic": "ACCOUNT MANAGER",
-    "Maya": "TIER 1"
+    "Maya": "TIER 1",
+    "Morgan": "MANAGER"
 }
-const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya"}
+const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const THANKS := [
     "thanks for grabbing the phones earlier!", "you are a lifesaver on the phones", "hey, appreciate the phone coverage",
@@ -8499,6 +11932,22 @@ func is_owner(who: String) -> bool:
     return OWNERS.has(who)
 
 
+# Morgan runs the desk: she does not take tickets and is not one of the techs
+func is_manager(who: String) -> bool:
+    return who == "Morgan"
+
+
+# the coworkers you actually have: everyone in the building except the person you play as (and Maya, who is not on
+# your payroll in the owner campaign). Morgan is a coworker in every mode.
+func people() -> Array:
+    var gone: Array = World.roster_gone()
+    var out: Array = []
+    for who in ALL:
+        if not gone.has(who):
+            out.append(who)
+    return out
+
+
 func role(who: String) -> String:
     return str(ROLES.get(who, ""))
 
@@ -8509,7 +11958,7 @@ func _ready() -> void:
 
 func reset() -> void:
     rel = {}
-    for who in PEOPLE:
+    for who in ALL:
         rel[who] = 0
     calls_answered = 0
     day_delta = 0
@@ -8523,7 +11972,7 @@ func value(who: String) -> int:
 
 
 func change(who: String, amount: int) -> void:
-    if not Campaign.active or not rel.has(who):
+    if not Campaign.active or not rel.has(who) or not people().has(who):
         return
     var before := value(who)
     rel[who] = clampi(before + amount, -100, 100)
@@ -8532,7 +11981,7 @@ func change(who: String, amount: int) -> void:
 
 
 func change_all(amount: int) -> void:
-    for who in PEOPLE:
+    for who in people():
         change(who, amount)
 
 
@@ -8570,9 +12019,10 @@ func glyph(who: String) -> String:
 
 func average() -> float:
     var total := 0
-    for who in PEOPLE:
+    var all := people()
+    for who in all:
         total += value(who)
-    return float(total) / float(PEOPLE.size())
+    return float(total) / float(maxi(1, all.size()))
 
 
 # a small nudge to the end-of-day reputation change
@@ -8593,7 +12043,8 @@ func note_call_answered() -> void:
     calls_answered += 1
     if Campaign.active and calls_answered % 3 == 0:
         change_all(1)
-        Msp.send_text(PEOPLE[randi() % PEOPLE.size()], THANKS[randi() % THANKS.size()])
+        var pool := people()
+        Msp.send_text(pool[randi() % pool.size()], THANKS[randi() % THANKS.size()])
 
 
 func note_ticket_closed(ticket: Dictionary) -> void:
@@ -9315,6 +12766,7 @@ func finish() -> void:
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     _canvas.visible = false
     _fade = 0.0
+    Career.add("endings")
     Campaign.finish_campaign(ending)
 
 
@@ -9392,7 +12844,7 @@ func page_lines() -> Array:
                 lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK)])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
-            for who in Social.PEOPLE:
+            for who in Social.people():
                 var quotes: Dictionary = OWNER_QUOTES if Social.is_owner(who) else QUOTES
                 var tag := ", CO-OWNER" if Social.is_owner(who) else ""
                 lines.append(["%s%s (%s):" % [who.to_upper(), tag, Social.mood(who)], BLUE])
@@ -9506,7 +12958,7 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable) -> void:
     if is_open or DayReport.is_open:
         _queue.append([who, body, choices, on_pick])
         return
-    speaker = who
+    speaker = Roles.speaker(who)  # a card that names you comes from somebody else
     text = body
     options = choices
     var any_enabled := false
@@ -9665,6 +13117,7 @@ const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
 const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
+const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to Vic at most every other week
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
 var active: Array = START_CLIENTS.duplicate()
@@ -9674,6 +13127,7 @@ var last_deal := 'VIC CLOSED A DEAL!'  # what the sales bell says
 var installs_sold := 0
 var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
 var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
+var complained_day := {}  # client -> campaign day of their last complaint (the owner's weeks spread them out)
 
 var _cool := 40.0
 
@@ -9699,6 +13153,7 @@ func reset() -> void:
     installs_sold = 0
     pending = {}
     signed_day = {}
+    complained_day = {}
     _cool = 40.0
 
 
@@ -9851,11 +13306,20 @@ func sell_install() -> int:
 
 # ---- complaints -----------------------------------------------------------------------------
 # the client with a late open ticket and low satisfaction complains to Vic
+func complaint_cooling(client: int) -> bool:
+    return (
+        Owner.active()
+        and Campaign.day - int(complained_day.get(client, -99)) < CLIENT_COMPLAINT_WEEKS
+    )
+
+
 func find_complaint() -> Dictionary:
     var best := {}
     var worst := 1000.0
     for t in Msp.open_tickets():
         if t.internal or not active.has(int(t.client)) or str(t.special) != "":
+            continue
+        if complaint_cooling(int(t.client)):
             continue
         var urgency: float = (-1000.0 if t.breached else float(t.sla_left)) + float(mood(int(t.client)))
         if (t.breached or float(t.sla_left) < 45.0) and urgency < worst:
@@ -9876,6 +13340,7 @@ func _process(delta: float) -> void:
         return
     _cool = COMPLAINT_GAP
     pending = found
+    complained_day[int(found.client)] = Campaign.day
     World.send_vic_to_player()
 
 
@@ -9896,6 +13361,7 @@ func deliver() -> void:
     if text == "":
         pending = {}
         return
+    Career.add("vic_calls")
     var vic_friend := Social.is_friendly("Vic")
     var options := [
         {"label": "I WILL PRIORITIZE IT", "id": "prio"},
@@ -9958,12 +13424,15 @@ write("scripts/owner.gd", '''extends Node
 # Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
-const START_CASH := 5000
+const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
 const W2_TARGET := 0.55  # payroll as a share of revenue: healthy MSPs stay under this
 const PEER_MARGIN := 0.15  # the peer group's typical EBITDA margin
 const RENT := 500
+const SEAT_COST := 55  # weekly cost of each client past five (licences, desks, insurance, a bigger line)
+const ADVICE_GAP := 3  # weeks before Dana opens the same advice card again
+const HIRE_RAMP_WEEKS := 3  # a new hire costs 60% of the wage for the first weeks
 const TOOLS := 0  # tool costs now come from the stack
 const DEFAULT_STACK := {"psa": "connectwhy", "rmm": "labrat", "hardware": "hewlitt"}
 # What you run and sell. cost = weekly, speed = tech speed, morale = % effect on the crew, issues = ticket volume
@@ -10333,6 +13802,7 @@ var history: Array = []
 
 var _dynamic := {}  # cards built at run time (the consultant's advice, inbound leads)
 var _advised := false
+var _advice_week := {}  # advice topic -> week Dana last opened it (no repeats inside ADVICE_GAP weeks)
 var _leads := 0
 var _work := {}
 var _tick := 0.0
@@ -10402,6 +13872,7 @@ func reset() -> void:
     _leaving = []
     _dynamic = {}
     _advised = false
+    _advice_week = {}
     _leads = 0
 
 
@@ -10480,7 +13951,8 @@ func practices() -> int:
 
 
 func oml() -> int:
-    return clampi(1 + practices() / 2, 1, 5)
+    # a habit takes weeks to show: the level is capped by the calendar (4 at week 12, 5 at week 16)
+    return clampi(mini(1 + (practices() * 2) / 5, 1 + Campaign.day / 4), 1, 5)
 
 
 # everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
@@ -10779,11 +14251,17 @@ func apply(fx: Dictionary) -> void:
     vic_bonus += float(fx.get("vic", 0.0))
     weekly_extra += int(fx.get("weekly", 0))
     if fx.has("hire"):
-        extra_staff.append(fx.hire.duplicate())
+        var newbie: Dictionary = fx.hire.duplicate()
+        newbie["age"] = 0
+        extra_staff.append(newbie)
     if fx.get("lose_tech", false):
         lost_techs += 1
     if fx.get("sign", false):
         var signed: int = Sales.sign_client(int(fx.get("client", -1)))
+        if signed >= 0 and fx.has("sign_bonus"):
+            # the owner closed it in person: better first-month mood and a better fee
+            Sales.satisfaction[signed] = clampi(Sales.mood(signed) + int(fx.sign_bonus.mood), 0, 100)
+            fee_boost[signed] = float(fx.sign_bonus.fee)
         if signed >= 0 and fx.has("discount_new"):
             discount[signed] = {
                 "mult": float(fx.discount_new.mult), "weeks": int(fx.discount_new.weeks)
@@ -10803,27 +14281,71 @@ func apply(fx: Dictionary) -> void:
     Msp.changed.emit()
 
 
+# which advice card Dana opens: the relevant ones in priority order, never one shown in the last 3 weeks
+func advice_topic(open: int, est: Dictionary) -> String:
+    var relevant := []
+    if cash < 1500:
+        relevant.append("cash")
+    if float(est.w2) > W2_TARGET + 0.15:
+        relevant.append("w2")
+    if Sales.average() < 55.0:
+        relevant.append("mood")
+    if open >= 5:
+        relevant.append("queue")
+    if relevant.is_empty():
+        relevant.append("healthy")
+    relevant.append_array(["train", "lunch", "push"])
+    var oldest := ""
+    for topic in relevant:
+        var since: int = Campaign.day - int(_advice_week.get(topic, -99))
+        if since >= ADVICE_GAP:
+            return str(topic)
+        if oldest == "" or int(_advice_week.get(topic, -99)) < int(_advice_week.get(oldest, -99)):
+            oldest = str(topic)
+    return oldest
+
+
 # the consultant's Monday advice: a card built from your actual numbers
 func advice() -> void:
     var text := ""
     var options := []
     var open := Msp.open_tickets().size()
     var est := weekly_estimate()
-    if cash < 1500:
+    var key := advice_topic(open, est)
+    _advice_week[key] = Campaign.day
+    if key == "cash":
         text = "Cash is thin. I would look at pricing before anything else, and I would not add payroll right now."
         options = [{"label": "RAISE PRICES 8% (MOOD -3)", "fx": {"price": 0.08, "mood_all": -3}}, {"label": "I WILL MANAGE", "fx": {}}]
-    elif float(est.w2) > W2_TARGET + 0.15:
+    elif key == "w2":
         text = "Your W-2 ratio is %d%%. Healthy MSPs stay near %d%%. Either grow revenue or hold payroll flat until you do." % [int(100.0 * float(est.w2)), int(100.0 * W2_TARGET)]
         options = [{"label": "PUSH SALES (MARKETING $400/WEEK)", "fx": {"marketing": 400}}, {"label": "HOLD PAYROLL FLAT", "fx": {}}]
-    elif Sales.average() < 55.0:
+    elif key == "mood":
         text = "Your clients are unhappy. That always turns into churn a few weeks later. Fix the relationship before the revenue disappears."
         options = [{"label": "CLIENT REVIEW LUNCHES ($300)", "need": 300, "fx": {"cash": -300, "mood_all": 8}}, {"label": "FOCUS THE TEAM ON SLAS", "fx": {"speed": 0.1}}]
-    elif open >= 5:
+    elif key == "queue":
         text = "Your queue is backing up (%d open). Either add hands or make the hands you have faster." % open
         options = [{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}}, {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}}]
-    else:
+    elif key == "healthy":
         text = "Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind Vic." % int(100.0 * float(est.margin))
         options = [{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}}, {"label": "KEEP DOING WHAT WORKS", "fx": {}}]
+    elif key == "train":
+        text = "Whatever else is going on, the crew is the product. A week of training pays back in faster tickets and fewer reopens."
+        options = [
+            {"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}},
+            {"label": "NOT NOW", "fx": {}}
+        ]
+    elif key == "lunch":
+        text = "Clients rarely say they are unhappy until the day they leave. Take your best ones to lunch before the competitor does."
+        options = [
+            {"label": "CLIENT REVIEW LUNCHES ($300)", "need": 300, "fx": {"cash": -300, "mood_all": 8}},
+            {"label": "NOT NOW", "fx": {}}
+        ]
+    else:
+        text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind Vic whatever the month looks like." % int(100.0 * float(est.margin))
+        options = [
+            {"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}},
+            {"label": "NOT NOW", "fx": {}}
+        ]
     options.append({"label": "DISMISS DANA (SAVE $400/WEEK)", "fx": {"weekly": -400, "unflag": "mentor"}})
     _dynamic["advice"] = {"speaker": "Dana Whitfield (Consultant)", "text": text, "options": options}
     show_card("advice")
@@ -10867,7 +14389,7 @@ func _inbound_lead() -> void:
         "speaker": "Vic Marlowe",
         "text": "An inbound lead from our marketing: %s found us online and wants a meeting." % prospect,
         "options": [
-            {"label": "TAKE THE MEETING YOURSELF", "roll": [[0.6, {"sign": true, "client": lead}, "You charm them. %s signs." % prospect], [0.4, {}, "They say they will think about it."]]},
+            {"label": "TAKE THE MEETING YOURSELF (60%: HAPPIER, +10% FEE)", "roll": [[0.6, {"sign": true, "client": lead, "sign_bonus": {"mood": 15, "fee": 1.1}}, "You charm them. %s signs at a better rate and starts happy." % prospect], [0.4, {}, "They say they will think about it."]]},
             {"label": "LET VIC CLOSE IT (%d%%)" % int(vic_odds * 100.0), "roll": [[vic_odds, {"sign": true, "client": lead}, "Vic closes it. %s signs." % prospect], [1.0 - vic_odds, {}, "Vic fumbles it. They go quiet."]]},
         ],
     }
@@ -10917,6 +14439,7 @@ func _hire_card() -> void:
 # new hires change week by week: green ones learn, people-people please clients, flight risks leave
 func _staff_week() -> void:
     for hire in extra_staff.duplicate():
+        hire["age"] = int(hire.get("age", 99)) + 1
         var trait_data: Dictionary = TRAITS.get(str(hire.get("trait", "steady")), {})
         if trait_data.has("grow"):
             hire.skill = minf(1.0, float(hire.skill) + float(trait_data.grow))
@@ -11041,12 +14564,17 @@ func drop_client(client: int, reason := "") -> void:
     Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
 
 
+# a client is due a business review from week 6 on, 8 weeks after the last one (never at the start)
+func review_due(client: int) -> bool:
+    return Campaign.day >= 6 and Campaign.day - int(_qbr_done.get(client, -99)) >= 8
+
+
 # ---- quarterly business review: a client meeting ----------------------------------------------------------
 func _qbr() -> void:
     var pick := -1
     var worst := 100000
     for c in Sales.active:
-        if Campaign.day - int(_qbr_done.get(int(c), -99)) < 8:
+        if not review_due(int(c)):
             continue
         var score := Sales.mood(int(c)) - client_fee(int(c)) / 100
         if score < worst:
@@ -11514,15 +15042,41 @@ func client_fee(client: int) -> int:
     return int(float(FEE) * price * mult)
 
 
+# ---- costs that grow with the company and the calendar (X1 balance) ----------------------------
+# the techs ask for a raise at week 12; a new hire works for 60% of the wage while they learn the ropes
+func wage_mult() -> float:
+    return 1.05 if Campaign.day >= 12 else 1.0
+
+
+func tech_wage() -> int:
+    return int(round(float(WAGE) * wage_mult()))
+
+
+func hire_wage(hire: Dictionary) -> int:
+    var wage := int(round(float(hire.wage) * wage_mult()))
+    if int(hire.get("age", 99)) < HIRE_RAMP_WEEKS:
+        wage = int(round(float(wage) * 0.6))
+    return wage
+
+
+# rent (the lease escalates at weeks 9 and 14), liability insurance (week 12) and seats/licences/desks
+# for every client past five
+func overhead() -> int:
+    var rent := RENT + (50 if Campaign.day >= 9 else 0) + (50 if Campaign.day >= 14 else 0)
+    var insurance := 80 if Campaign.day >= 12 else 0
+    var seats := maxi(0, Sales.active.size() - 5) * SEAT_COST
+    return rent + insurance + seats
+
+
 func weekly_estimate() -> Dictionary:
     var revenue := 0
     for c in Sales.active:
         revenue += client_fee(int(c))
     revenue = int(float(revenue) * (1.0 - leak)) + Projects.service_revenue()
-    var payroll := WAGE * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
+    var payroll := tech_wage() * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
     for hire in extra_staff:
-        payroll += int(hire.wage)
-    var fixed := RENT + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
+        payroll += hire_wage(hire)
+    var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
     var ebitda := revenue - payroll - fixed - marketing
     var rev := float(maxi(1, revenue))
     return {
@@ -11581,12 +15135,14 @@ func settle() -> Dictionary:
             collected += int(inv.amount)
             ar.erase(inv)
     for c in Sales.active:
-        var fee := client_fee(int(c))
+        # the billing leak is money you never invoiced: cash and reported revenue agree
+        var fee := int(float(client_fee(int(c))) * (1.0 - leak))
         var delay := pay_delay(int(c))
         if delay <= 0:
             collected += fee
         else:
             ar.append({"client": int(c), "amount": fee, "age": 0, "delay": delay})
+    collected += Projects.service_revenue()  # managed services are billed with the monthly fee
     for inv in ar:
         var who := int(inv.client)
         if int(inv.age) >= 2 and int(inv.delay) >= 3 and not _late.has(who) and Campaign.day - int(_asked.get(who, -99)) >= 4:
@@ -11719,7 +15275,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["RANSOMWARE: %s" % {"saved": "SAVED BY BACKUP", "lost": "NO BACKUP!", "paid": "PAID THE RANSOM", "partial": "PARTIAL RECOVERY"}.get(str(Story.flags.get("ransom", "")), "-"), ink])
         1:
             lines.append(["WHAT YOUR TEAM SAYS", blue])
-            for who in Social.PEOPLE:
+            for who in Social.people():
                 lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
                 lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
         2:
@@ -11939,6 +15495,38 @@ const MESSAGES := {
         "text": "Thanks for being great with the clients. They keep mentioning you.",
         "options": [],
     },
+    "lunch_Morgan":
+    {
+        "text": "Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for.",
+        "options":
+        [
+            {"label": "SURE, I WILL BRING ONE", "social": 2, "reply": "Turkey, no pickles. You are a good person."},
+            {"label": "CAN'T, SWAMPED", "social": 0, "reply": "Understood. Close the P1s first."},
+        ],
+    },
+    "phones_Morgan":
+    {
+        "text": "I need ten quiet minutes with the owners' budget. Can you cover my phones?",
+        "options":
+        [
+            {"label": "SURE", "social": 2, "reply": "Thank you. I owe you one. Do not tell anyone I said that."},
+            {"label": "SORRY, CAN'T", "social": -1, "reply": "Fair. I will let it ring."},
+        ],
+    },
+    "help_Morgan":
+    {
+        "text": "Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me?",
+        "options":
+        [
+            {"label": "PULL THE LIST", "social": 2, "xp": 2, "reply": "That is exactly what I needed. Thank you."},
+            {"label": "TOO BUSY RIGHT NOW", "social": -1, "reply": "Sure. I will do it the slow way."},
+        ],
+    },
+    "thanks_Morgan":
+    {
+        "text": "Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.",
+        "options": [],
+    },
 }
 
 var chats := {}  # who -> [[from, text], ...]
@@ -11982,14 +15570,15 @@ func boss() -> String:
 
 
 func contacts() -> Array:
-    var out: Array = Social.PEOPLE.duplicate()
-    out.append(boss())
+    var out: Array = Social.people()
+    if not out.has(boss()):
+        out.append(boss())  # Marge in the owner campaign (Morgan is already a cast member)
     return out
 
 
 # [status text, colour name] from what the cast is doing right now
 func presence(who: String) -> Array:
-    if who == boss():
+    if who == boss() and not World.chars.has(who):
         return ["AVAILABLE", "green"]
     if not World.chars.has(who):
         return ["OFFLINE", "grey"]
@@ -12045,7 +15634,7 @@ func _process(delta: float) -> void:
 # a coworker messages you
 func incoming(forced_kind := "") -> void:
     var pool := []
-    for who in Social.PEOPLE:
+    for who in Social.people():
         if presence(who)[0] == "AVAILABLE" and not pending.has(who):
             pool.append(who)
     if pool.is_empty() or pending.size() >= 2:
@@ -12116,6 +15705,9 @@ func send_action(who: String, kind: String) -> String:
 
 
 func _lend_a_hand(who: String) -> void:
+    if Social.is_manager(who):
+        _push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
+        return
     var willing: bool = Social.value(who) >= 0 or randf() < 0.4
     var ticket := _helpable_ticket()
     var owner_voice := Social.is_owner(who)
@@ -12165,7 +15757,7 @@ func friend_warning() -> void:
     for t in Msp.open_tickets():
         if t.internal or _warned.has(int(t.id)) or t.breached or float(t.sla_left) > 40.0:
             continue
-        for who in Social.PEOPLE:
+        for who in Social.people():
             if Social.is_friendly(who) and presence(who)[0] == "AVAILABLE":
                 _warned[int(t.id)] = true
                 _push(who, who, "Heads up: #%d (%s) is about to breach its SLA." % [int(t.id), str(t.summary)])
@@ -12448,6 +16040,8 @@ const TABLE := {
     "printer.speed": [0.8, 1.0, 1.25],
     "printer.zone": [1.3, 1.0, 0.85],
     "printer.questions": [1, 2, 3],
+    # printer: pulls in the jam chain (a torn scrap adds one, two clean pulls in a row take one off, 3 to 6)
+    "printer.chain": [3, 3, 5],
     # nerf war: how long the coworkers wait between shots, x
     "nerf.gap": [1.35, 1.0, 0.7],
 }
@@ -12852,9 +16446,11 @@ func _arrive(reason: String) -> int:
         for i in late_min / 12:
             Sales.adjust(Sales.pick_client(), -2)
         if late_min >= 20:
-            var who: String = ["Alan", "Garrison", "Dan"][randi() % 3]
-            Social.change(who, -1)
-            Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
+            var pool: Array = ["Alan", "Garrison", "Dan"].filter(func(n: String) -> bool: return Social.people().has(n))
+            if not pool.is_empty():
+                var who: String = pool[randi() % pool.size()]
+                Social.change(who, -1)
+                Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
         if late_min >= 30:
             Msp.send_text("Boss", "Where are you? Clients are asking for you.")
     elif reason != "":
@@ -13116,7 +16712,8 @@ func start_plan() -> void:
 func _pick_helper(skill: String) -> void:
     var options := []
     for who in ["Alan", "Garrison", "Dan"]:
-        options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
+        if Social.people().has(who):
+            options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
     Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
 
 
@@ -13565,10 +17162,38 @@ const GREEN := UiStyle.GREEN
 const RED := UiStyle.RED
 const AMBER := UiStyle.GOLD
 const GAMES := {
-    "bowling": {"label": "BOWLING", "cost": 120, "blurb": "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.", "keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"},
-    "karaoke": {"label": "KARAOKE", "cost": 180, "blurb": "HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.", "keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"},
-    "escape": {"label": "ESCAPE ROOM", "cost": 240, "blurb": "CRACK THE 3 DIGIT CODE IN TWO MINUTES. BULLS = RIGHT DIGIT, RIGHT PLACE. COWS = RIGHT DIGIT, WRONG PLACE. FRIENDS GIVE HINTS.", "keys": "ARROWS  ENTER = TRY  H = HINT  ESC = LEAVE"},
-    "dinner": {"label": "DINNER", "cost": 300, "blurb": "FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.", "keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"},
+    "bowling":
+    {
+        "label": "BOWLING",
+        "cost": 120,
+        "blurb":
+        "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
+        "keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"
+    },
+    "karaoke":
+    {
+        "label": "KARAOKE",
+        "cost": 180,
+        "blurb":
+        "HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.",
+        "keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+    },
+    "escape":
+    {
+        "label": "ESCAPE ROOM",
+        "cost": 240,
+        "blurb":
+        "CRACK THE 3 DIGIT CODE IN TWO MINUTES. BULLS = RIGHT DIGIT, RIGHT PLACE. COWS = RIGHT DIGIT, WRONG PLACE. FRIENDS GIVE HINTS.",
+        "keys": "ARROWS  ENTER = TRY  H = HINT  ESC = LEAVE"
+    },
+    "dinner":
+    {
+        "label": "DINNER",
+        "cost": 300,
+        "blurb":
+        "FIVE ROUNDS OF TABLE TALK. EVERYONE LOVES SOMETHING AND DREADS SOMETHING. WATCH THEIR FACES AND REMEMBER.",
+        "keys": "UP / DOWN  ENTER = TALK  ESC = LEAVE"
+    },
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
 # dinner: 18 topics with a tag (light, deep, touchy); the diners' tastes are in PEOPLE
@@ -13821,13 +17446,19 @@ const HERRINGS := [
     "A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
     "ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
 ]
-const ROOMS := {"bowling": "bowling_alley", "karaoke": "karaoke_bar", "escape": "escape_room", "dinner": "restaurant"}
-# where Alan, Garrison, Dan, Vic and Maya stand in each room (set-pixel x); a fifth spot keeps
-# Maya from wrapping onto Alan's
+const ROOMS := {
+    "bowling": "bowling_alley",
+    "karaoke": "karaoke_bar",
+    "escape": "escape_room",
+    "dinner": "restaurant"
+}
+# where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
+# not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
-    "bowling": [114, 186, 214, 250, 140], "karaoke": [236, 262, 282, 130, 160],
-    "escape": [118, 175, 205, 305, 325],  # clear of the clue zones (clock 86, painting 149, board 238, keypad 276)
-    "dinner": [34, 62, 106, 140, 175],
+    "bowling": [114, 186, 214, 250, 140, 165],
+    "karaoke": [236, 262, 282, 130, 160, 100],
+    "escape": [118, 175, 205, 305, 325, 14],  # clear of the clue zones (shelf 52, clock 86, painting 149, board 238, keypad 276)
+    "dinner": [34, 62, 106, 140, 175, 205],
 }
 const TECH_DAYS := [5, 10, 15]
 const OWNER_WEEKS := [4, 9, 14, 19]
@@ -13930,6 +17561,26 @@ func invite_due() -> bool:
     return enabled and not _offered and invite_day() and not Story.overtime and not Game.title_mode
 
 
+# who is in the building for an outing: the current cast (World.CAST order) minus the person you play as
+func roster() -> Array:
+    var out := []
+    for n in World.CAST:
+        if World.chars.has(n) and n != Campaign.player_as:
+            out.append(n)
+    return out
+
+
+# the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
+func diners() -> Array:
+    var here := roster()
+    return DINERS.filter(func(n: String) -> bool: return here.has(n))
+
+
+func bowlers() -> Array:
+    var here := roster()
+    return BOWL_SKILL.keys().filter(func(n: String) -> bool: return here.has(n))
+
+
 func maybe_invite() -> void:
     if not enabled or _offered or is_open or Cards.is_open or Game.title_mode or not invite_day():
         return
@@ -13938,11 +17589,29 @@ func maybe_invite() -> void:
     _offered = true
     var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
     if Campaign.mode == "owner":
-        text = "The crew has been grinding for weeks. A team night would be noticed. It costs money, though."
-    Cards.ask(_host(), text, [
-        {"label": "YES, LET US GO", "id": "yes"},
-        {"label": "NOT TONIGHT", "id": "no"},
-    ], func(id: String) -> void: _invite_answer(id))
+        text = (
+            "The crew has been grinding for weeks. A team night would be noticed. It costs %s depending on the game."
+            % cost_range()
+        )
+    Cards.ask(
+        _host(),
+        text,
+        [
+            {"label": "YES, LET US GO", "id": "yes"},
+            {"label": "NOT TONIGHT", "id": "no"},
+        ],
+        func(id: String) -> void: _invite_answer(id)
+    )
+
+
+# the owner pays for the night: "$120 TO $300" (shown on the invitation before the game pick)
+func cost_range() -> String:
+    var lo := 100000
+    var hi := 0
+    for id in GAMES:
+        lo = mini(lo, int(GAMES[id].cost))
+        hi = maxi(hi, int(GAMES[id].cost))
+    return "$%d to $%d" % [lo, hi]
 
 
 # who asks: Garrison (culture owner) in the tech campaign; in the owner campaign the card comes from Alan
@@ -13965,21 +17634,36 @@ func pick_game(from_invite: bool) -> void:
     var options := []
     for id in GAMES:
         var cost := int(GAMES[id].cost)
-        var entry := {"label": "%s%s" % [str(GAMES[id].label), " ($%d)" % cost if Campaign.mode == "owner" else ""], "id": id}
+        var entry := {
+            "label":
+            "%s%s" % [str(GAMES[id].label), " ($%d)" % cost if Campaign.mode == "owner" else ""],
+            "id": id
+        }
         if Campaign.mode == "owner" and Owner.cash < cost:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % cost
         options.append(entry)
-    Cards.ask(_host(), "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.", options, func(id: String) -> void: start(id, from_invite))
+    Cards.ask(
+        _host(),
+        "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
+        options,
+        func(id: String) -> void: start(id, from_invite)
+    )
 
 
 func _unhandled_input(event: InputEvent) -> void:
     if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
         return
     if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
-        Cards.ask("Team outing", "Take the team out? (Free Play: nothing is scored.)", [
-            {"label": "LET US GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"},
-        ], func(id: String) -> void: _free_answer(id))
+        Cards.ask(
+            "Team outing",
+            "Take the team out? (Free Play: nothing is scored.)",
+            [
+                {"label": "LET US GO", "id": "yes"},
+                {"label": "NEVER MIND", "id": "no"},
+            ],
+            func(id: String) -> void: _free_answer(id)
+        )
 
 
 func _free_answer(id: String) -> void:
@@ -14060,7 +17744,11 @@ func close() -> void:
 func _process(delta: float) -> void:
     if _wait_id != "":
         var here := get_tree().current_scene
-        if not Game.busy and here != null and here.scene_file_path.get_file().get_basename() == str(ROOMS[_wait_id]):
+        if (
+            not Game.busy
+            and here != null
+            and here.scene_file_path.get_file().get_basename() == str(ROOMS[_wait_id])
+        ):
             var id := _wait_id
             _wait_id = ""
             _open(id, _from_invite)
@@ -14163,6 +17851,15 @@ func _finish(result: int) -> void:
     else:
         count += 1
         best[game] = maxi(int(best.get(game, 0)), result)
+        Career.note_outing(
+            game,
+            result,
+            {
+                "perfects": int(g.get("perfect", 0)),
+                "secs": roundi(Difficulty.f("escape.time") - float(g.get("time", 0.0))),
+                "score": int(g.get("score", 0))
+            }
+        )
         Social.change_all(1 + result)
         if Campaign.active:
             lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
@@ -14196,12 +17893,37 @@ func _all_up() -> Array:
     return [true, true, true, true, true, true, true, true, true, true]
 
 
+func _bowl_totals() -> Dictionary:
+    var totals := {"You": 0}
+    for who in bowlers():
+        totals[who] = 0
+    return totals
+
+
 func _bowl_setup() -> void:
     g = {
-        "frame": 1, "roll": 1, "pins": 10, "stage": "aim", "marker": 0.0, "power": 0.0, "dir": 1.0, "wait": 0.0,
-        "ball": 0.0, "msg": "", "totals": {"You": 0, "Alan": 0, "Garrison": 0, "Dan": 0}, "knocked": 0,
-        "up": [_all_up(), _all_up()], "fall": {}, "queue": [], "opp": "", "opp_t": 0.0, "opp_ball": 0.0,
-        "opp_off": 0.5, "opp_total": 0, "opp_knock": 0, "opp_phase": 0,
+        "frame": 1,
+        "roll": 1,
+        "pins": 10,
+        "stage": "aim",
+        "marker": 0.0,
+        "power": 0.0,
+        "dir": 1.0,
+        "wait": 0.0,
+        "ball": 0.0,
+        "msg": "",
+        "totals": _bowl_totals(),
+        "knocked": 0,
+        "up": [_all_up(), _all_up()],
+        "fall": {},
+        "queue": [],
+        "opp": "",
+        "opp_t": 0.0,
+        "opp_ball": 0.0,
+        "opp_off": 0.5,
+        "opp_total": 0,
+        "opp_knock": 0,
+        "opp_phase": 0,
     }
     if room_mode():
         g.stage = "ready"
@@ -14274,10 +17996,15 @@ func bowl_strength() -> float:
 func _bowl_resolve() -> void:
     var strength := bowl_strength()
     var left := int(g.pins)
-    var knocked := left if strength > 0.92 else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
+    var knocked := (
+        left
+        if strength > 0.92
+        else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
+    )
     g.knocked = knocked
     g.pins = left - knocked
     g.totals["You"] = int(g.totals["You"]) + knocked
+    Career.note_bowl(knocked, int(g.roll))
     if knocked == 10 and int(g.roll) == 1:
         g.totals["You"] = int(g.totals["You"]) + 3
         g.msg = "STRIKE!"
@@ -14292,7 +18019,7 @@ func _bowl_resolve() -> void:
     if room_mode():
         _pins_fall(0, knocked)
         _bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
-        for who in DINERS:
+        for who in diners():
             if knocked >= 10:
                 _bubble(_actor(who), "heart", 1.2)
 
@@ -14306,7 +18033,9 @@ func _bowl_roll_opp(who: String) -> Dictionary:
     if first == 10:
         total += 3
     else:
-        var second := clampi(roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first)
+        var second := clampi(
+            roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first
+        )
         total += second
         knock += second
     return {"total": total, "knock": knock}
@@ -14323,12 +18052,12 @@ func _bowl_next() -> void:
             caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
         return
     if room_mode():
-        g.queue = BOWL_SKILL.keys()
+        g.queue = bowlers()
         g.opp = ""
         g.stage = "others"
         caption("WAIT. THE CREW BOWLS NEXT.", 2.0)
         return
-    for who in BOWL_SKILL:
+    for who in bowlers():
         g.totals[who] = int(g.totals[who]) + int(_bowl_roll_opp(who).total)
     _bowl_advance()
 
@@ -14395,7 +18124,7 @@ func _pins_fall(lane: int, count: int) -> void:
 
 func bowl_rank() -> int:
     var rank := 0
-    for who in BOWL_SKILL:
+    for who in bowlers():
         if int(g.totals[who]) > int(g.totals["You"]):
             rank += 1
     return rank
@@ -14637,7 +18366,7 @@ func _escape_setup() -> void:
     Difficulty.shuffle(digits, "escape")
     var n := Difficulty.i("escape.digits")
     var friends := 0
-    for who in Social.PEOPLE:
+    for who in Social.people():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
         "code": digits.slice(0, n),
@@ -14710,12 +18439,17 @@ func escape_try(guess: Array) -> void:
         _finish(0)
 
 
-# the first friend you get on with (the hints are in their voice)
+# the first friend you get on with (the hints are in their voice); never yourself, and with nobody friendly the first person in the room
 func _friend() -> String:
-    for who in Social.PEOPLE:
+    for who in Social.people():
         if Social.is_friendly(who):
             return who
-    return "Alan"
+    var here := roster()
+    return str(here[0]) if not here.is_empty() else "Alan"
+
+
+func _first_friend() -> String:
+    return _friend().to_upper()
 
 
 func escape_hint() -> String:
@@ -14811,7 +18545,7 @@ func diner_points(who: String, topic: String) -> int:
 
 # a trap: somebody at the table dreads it
 func is_trap(topic: String) -> bool:
-    for who in DINERS:
+    for who in diners():
         if taste(who).hates.has(topic):
             return true
     return false
@@ -14819,7 +18553,7 @@ func is_trap(topic: String) -> bool:
 
 func dinner_mood_text() -> String:
     var parts := []
-    for who in DINERS:
+    for who in diners():
         parts.append("%s IS %s" % [who.to_upper(), str(g.moods.get(who, "easygoing")).to_upper()])
     return ", ".join(parts)
 
@@ -14839,7 +18573,7 @@ func _dinner_setup() -> void:
     }
     var ids: Array = DINNER_MOODS.keys()
     var r := Difficulty.rng("dinner")
-    for who in DINERS:
+    for who in diners():
         g.moods[who] = ids[r.randi_range(0, ids.size() - 1)]
     _dinner_deal()
 
@@ -14865,10 +18599,23 @@ func _dinner_deal() -> void:
                 safe.append(id)
     Difficulty.shuffle(safe, "dinner")
     Difficulty.shuffle(trap, "dinner")
-    var chosen := [safe.pop_back(), trap.pop_back()]
+    # a treat: somebody loves it and nobody dreads it, so a good round is always on the table
+    var treats := safe.filter(
+        func(id: String) -> bool:
+            for who in diners():
+                if taste(who).loves.has(id):
+                    return true
+            return false
+    )
+    var chosen := []
+    if not treats.is_empty():
+        chosen.append(treats[0])
+        safe.erase(treats[0])
+    chosen.append(safe.pop_back())
+    chosen.append(trap.pop_back())
     var rest := safe + trap
     Difficulty.shuffle(rest, "dinner")
-    chosen.append_array(rest.slice(0, 2))
+    chosen.append_array(rest.slice(0, 4 - chosen.size()))
     Difficulty.shuffle(chosen, "dinner")
     g.options = chosen
     g.sel = 0
@@ -14905,7 +18652,7 @@ func dinner_talk(index: int) -> int:
     g.react = {}
     g.picked.append(topic)
     g.hidden = _dinner_hidden()
-    for who in DINERS:
+    for who in diners():
         var base := taste_pts(who, topic)
         var mood := "love" if base == 2 else ("hate" if base == 0 else "meh")
         total += diner_points(who, topic)
@@ -14960,10 +18707,11 @@ func set_budget(id: String) -> void:
 
 # harder tiers hide some faces for a round (the points still count)
 func _dinner_hidden() -> Array:
-    var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
+    var table := diners()
+    var hide_n := table.size() - clampi(Difficulty.i("dinner.reveal"), 0, table.size())
     if hide_n <= 0:
         return []
-    var order: Array = DINERS.duplicate()
+    var order: Array = table.duplicate()
     Difficulty.shuffle(order, "dinner")
     return order.slice(0, hide_n)
 
@@ -14971,9 +18719,14 @@ func _dinner_hidden() -> Array:
 # the score for 3 / 2 / 1 stars: a good mood at the table lifts the bar, a tired one lowers it
 func dinner_targets() -> Array:
     var shifts := 0
-    for who in DINERS:
+    for who in diners():
         shifts += diner_shift(who)
-    return [21 + 3 * shifts, 17 + 3 * shifts, 13 + 3 * shifts]
+    var scale := float(diners().size()) / 3.0  # the bars are for a table of three
+    return [
+        roundi((22 + 3 * shifts) * scale),
+        roundi((15 + 3 * shifts) * scale),
+        roundi((10 + 3 * shifts) * scale)
+    ]
 
 
 func _dinner_end() -> void:
@@ -15077,7 +18830,10 @@ func _room_wants(key: int) -> bool:
                 return key in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER]
             return key == KEY_N
         _:
-            return str(g.get("stage", "")) == "talk" and key in [KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+            return (
+                str(g.get("stage", "")) == "talk"
+                and key in [KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+            )
 
 
 func _room_press(key: int) -> bool:
@@ -15123,7 +18879,12 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-    var who: String = Difficulty.pick(DINERS + ["Vic"], "karaoke")
+    var cheer: Array = diners()
+    if roster().has("Vic"):
+        cheer.append("Vic")
+    if cheer.is_empty():
+        return
+    var who: String = Difficulty.pick(cheer, "karaoke")
     _bubble(_actor(who), "heart", 1.5)
 
 
@@ -15134,7 +18895,9 @@ func _streak_broken() -> void:
         g.dance = false
         _hold_player("talk", _x0() + MIC_X + 60.0)
     if Difficulty.rng("karaoke").randf() < 0.3:
-        _bubble(_actor(Difficulty.pick(DINERS, "karaoke")), "?", 1.0)
+        var crowd := diners()
+        if not crowd.is_empty():
+            _bubble(_actor(Difficulty.pick(crowd, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
@@ -15357,14 +19120,24 @@ func _room_submit() -> void:
 # ---- dinner extras
 func _dinner_react() -> void:
     var parts := []
-    for who in DINERS:
+    for who in diners():
         var mood: String = g.react[who]
         if g.get("hidden", []).has(who):
             _bubble(_actor(who), "?", 1.3)
             parts.append("%s IS HARD TO READ" % who.to_upper())
             continue
-        _bubble(_actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3)
-        parts.append("%s %s" % [who.to_upper(), {"love": "LOVES IT", "hate": "DREADS IT", "meh": "IS FINE"}[mood]])
+        _bubble(
+            _actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3
+        )
+        parts.append(
+            (
+                "%s %s"
+                % [
+                    who.to_upper(),
+                    {"love": "LOVES IT", "hate": "DREADS IT", "meh": "IS FINE"}[mood]
+                ]
+            )
+        )
     caption(", ".join(parts), 2.0)
 
 
@@ -15394,21 +19167,33 @@ func _hud_bowling(s: Rect2) -> void:
         _canvas.draw_rect(bar, UiStyle.SOFT)
         if stage == "aim":
             _canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
-            _canvas.draw_rect(Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0), WHITE)
+            _canvas.draw_rect(
+                Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0),
+                WHITE
+            )
             _t("AIM", x, o.y, WHITE)
         else:
             _canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
-            _canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER)
+            _canvas.draw_rect(
+                Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER
+            )
             _t("POWER", x, o.y, WHITE)
     else:
-        var status := "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+        var status := (
+            "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+        )
         _t(status, x, o.y, UiStyle.SOFT)
 
 
 func _hud_karaoke(s: Rect2) -> void:
     var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
     UiStyle.box(_canvas, lanes)
-    _paint_karaoke(Rect2(lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0), true)
+    _paint_karaoke(
+        Rect2(
+            lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0
+        ),
+        true
+    )
     var o := UiStyle.strip(_canvas, s)
     _t("SCORE %d  STREAK %d" % [int(g.score), int(g.streak)], o.x, o.y, WHITE)
     if float(g.flash_t) > 0.0:
@@ -15450,7 +19235,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
     _t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
     # the mood of the day, one face per diner (A = Alan ...)
     var fx_x := s.position.x + 92.0
-    for who in DINERS:
+    for who in diners():
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
         var face := str(DINNER_MOODS[md].face)
@@ -15561,15 +19346,9 @@ func _paint_result(b: Rect2) -> void:
     if not g.is_empty():
         match game:
             "bowling":
-                detail = (
-                    "YOU %d  ALAN %d  GARRISON %d  DAN %d"
-                    % [
-                        int(g.totals["You"]),
-                        int(g.totals["Alan"]),
-                        int(g.totals["Garrison"]),
-                        int(g.totals["Dan"])
-                    ]
-                )
+                detail = "YOU %d" % int(g.totals["You"])
+                for who in bowlers():
+                    detail += "  %s %d" % [who.to_upper(), int(g.totals[who])]
             "karaoke":
                 detail = (
                     "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
@@ -15596,9 +19375,14 @@ func _paint_bowling(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
     _t("FRAME %d  ROLL %d" % [int(g.frame), int(g.roll)], x, y)
-    var names := ["You", "Alan", "Garrison", "Dan"]
-    for i in 4:
-        _t("%s %d" % [names[i].to_upper(), int(g.totals[names[i]])], x, y + 10.0 + 8.0 * float(i), BLUE if i == 0 else INK)
+    var names := ["You"] + bowlers()
+    for i in names.size():
+        _t(
+            "%s %d" % [names[i].to_upper(), int(g.totals[names[i]])],
+            x,
+            y + 10.0 + 8.0 * float(i),
+            BLUE if i == 0 else INK
+        )
     var lane := Rect2(x + 78.0, y, minf(b.size.x - 82.0, 90.0), b.size.y - 18.0)
     _canvas.draw_rect(lane, Color("d9b26b"))
     _canvas.draw_rect(Rect2(lane.position.x, lane.position.y, 3.0, lane.size.y), Color("5a3a22"))
@@ -15608,8 +19392,12 @@ func _paint_bowling(b: Rect2) -> void:
     for row in 4:
         for k in row + 1:
             var standing: bool = idx < int(g.pins)
-            var pos := Vector2(px + (float(k) - float(row) * 0.5) * 8.0, lane.position.y + 6.0 + float(row) * 7.0)
-            _canvas.draw_rect(Rect2(pos - Vector2(2, 2), Vector2(4, 4)), WHITE if standing else Color("b8975a"))
+            var pos := Vector2(
+                px + (float(k) - float(row) * 0.5) * 8.0, lane.position.y + 6.0 + float(row) * 7.0
+            )
+            _canvas.draw_rect(
+                Rect2(pos - Vector2(2, 2), Vector2(4, 4)), WHITE if standing else Color("b8975a")
+            )
             idx += 1
     if g.stage == "roll":
         var by := lane.end.y - 4.0 - (lane.size.y - 14.0) * float(g.ball)
@@ -15620,7 +19408,9 @@ func _paint_bowling(b: Rect2) -> void:
     _canvas.draw_rect(bar, Color("c9d2e0"))
     if g.stage == "aim":
         _canvas.draw_rect(Rect2(bar.position.x + 28.0, bar_y, 14.0, 5.0), GREEN)
-        _canvas.draw_rect(Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK)
+        _canvas.draw_rect(
+            Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK
+        )
         _t("AIM", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
     elif g.stage == "power":
         _canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
@@ -15728,8 +19518,9 @@ func _paint_dinner(b: Rect2) -> void:
             _canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
         _t(str(g.options[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
     var rx := x + 92.0
-    for i in DINERS.size():
-        var who: String = DINERS[i]
+    var table := diners()
+    for i in table.size():
+        var who: String = table[i]
         var ry := y + 9.0 + 14.0 * float(i)
         _t(who.to_upper(), rx, ry, BLUE)
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
@@ -15828,7 +19619,7 @@ write("scripts/talk.gd", '''extends Node
 # Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
-const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people"}
+const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people", "Morgan": "people"}
 const LESSON_XP := 6
 const GREETINGS := {
     "Alan": {
@@ -15855,6 +19646,12 @@ const GREETINGS := {
         "friend": "Hi! Want half a granola bar? I have been saving it for someone nice.",
         "neutral": "Hey! Sorry, I have a user on hold. What is up?",
         "cold": "Oh. Hi. I am just finishing something.",
+    },
+    "Morgan":
+    {
+        "friend": "Come in. Move the printouts, they are not load-bearing. What do you need?",
+        "neutral": "Yes? I have a budget call in five minutes. Go ahead.",
+        "cold": "Mm. Is this about the queue?",
     },
 }
 const SMALL := {
@@ -15893,6 +19690,15 @@ const SMALL := {
         "Alan showed me how to read an event log. I felt like a detective. A tired one.",
         "I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.",
     ],
+    "Morgan":
+    [
+        "Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.",
+        "Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet.",
+        "Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough.",
+        "I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part.",
+        "I put iOS 7 on my phone. It is very bright. I miss my buttons.",
+        "Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.",
+    ],
 }
 const GOSSIP := [
     "Between us: Morgan has been in the owners' office since nine. Never a good sign.",
@@ -15928,6 +19734,13 @@ const TIPS_GENERIC := {
         "Be kind to the user first. Half of the problem is that they are scared they broke something.",
         "Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.",
         "Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.",
+    ],
+    "Morgan":
+    [
+        "A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time.",
+        "If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.",
+        "Close what you fix. Reopen what you break. Just be the person who tells me which one it is.",
+        "Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.",
     ],
 }
 const OWNER_HOLD := {
@@ -16084,6 +19897,11 @@ func _state_tip() -> String:
         "Garrison":
             if Msp.breached > 0:
                 return "I walked the floor and saw the SLA misses on the board. Clients bring those up at the QBR. Fix the P1s first, always. The rest can wait ten minutes."
+        "Morgan":
+            if Msp.breached > 0:
+                return "We have missed an SLA today. It is not a disaster. Write down what happened so the next one does not."
+            if Msp.open_tickets().size() >= 4:
+                return "The queue is at %d tickets. Work the P1s first and tell me if you need me to move something." % Msp.open_tickets().size()
         "Maya":
             for t in Msp.open_tickets():
                 if float(t.sla_left) < 60.0 and not bool(t.breached):
@@ -16117,6 +19935,10 @@ func owner_idea() -> String:
             text = "Good call on the backups. Next, get remote access off the open internet."
             if not Owner.flags.get("backup_service", false):
                 text = "Every client without a managed backup is one bad day from calling a lawyer. We should sell the backup service."
+        "Morgan":
+            text = "Hire before you need to, not after. Hiring takes six weeks. Burnout takes three."
+            if Msp.open_tickets().size() >= 5:
+                text = "The queue is backed up and the crew is running hot. I would add a pair of hands before I added a tool."
         "Dan":
             text = "Label everything and write it down. The day Alan is on vacation you will be glad."
             for c in Sales.active:
@@ -16206,6 +20028,7 @@ func hold() -> void:
     done_day = Campaign.day
     if in_conference():
         attended += 1
+        Career.add("meetings")
         Social.change_all(1)
         Skills.add_xp("people", 3)
         if Campaign.mode == "owner":
@@ -16327,6 +20150,13 @@ const REACT := {
     "Alan": {"base": -1, "friendly": "heart", "line": "Alan: Not at my desk, please.", "mood": "!"},
     "Garrison": {"base": 1, "friendly": "heart", "line": "Garrison: Oh, it is ON.", "mood": "!"},
     "Maya": {"base": 1, "friendly": "heart", "line": "Maya: Hey! My granola bar!", "mood": "!"},
+    "Morgan":
+    {
+        "base": 0,
+        "friendly": "heart",
+        "line": "Morgan: I am going to pretend I did not see that. Once.",
+        "mood": "dots"
+    },
     "Dan": {"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
     "Vic": {"base": 1, "friendly": "heart", "line": "Vic: Careful, I have a client call at two!", "mood": "!"},
 }
@@ -16338,6 +20168,13 @@ var war_t := 0.0
 var war_hits := 0
 var war_taken := 0
 var dodges := 0  # darts people ducked under
+# the score of the war in progress (see war_result)
+var war_dodged := 0  # darts you ducked
+var war_missed := 0  # your darts they ducked
+var war_ff := 0  # coworkers hit by coworkers
+var war_assists := 0  # ... within 2.5 s of your own hit on the same person
+var war_longest := 0  # longest hit of yours, px
+var last_result := {}
 
 var charge := 0.0
 var charging := false
@@ -16348,6 +20185,7 @@ var _energy_today := 0
 var _energy_day := -1
 var _shot_t := {}  # name -> seconds until the next war shot
 var _dodge_ms := 0
+var _hit_ms := {}  # name -> when you last hit them
 
 
 func _ready() -> void:
@@ -16361,7 +20199,17 @@ func reset() -> void:
     war_t = 0.0
     war_hits = 0
     war_taken = 0
+    _reset_score()
     _energy_today = 0
+
+
+func _reset_score() -> void:
+    war_dodged = 0
+    war_missed = 0
+    war_ff = 0
+    war_assists = 0
+    war_longest = 0
+    _hit_ms = {}
 
 
 func _scene() -> Node:
@@ -16471,6 +20319,7 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
     dart.shooter = shooter
     dart.vel = launch_velocity(dir, power) + Vector2(0.0, Difficulty.rng("nerf").randf_range(-3.0, 3.0))
     dart.position = pos
+    dart.set_meta("x0", pos.x)
     scene.get_node("Actors").add_child(dart)
 
 
@@ -16505,6 +20354,12 @@ func _hits(who: Node, pos: Vector2, dart: Node) -> bool:
 
 func _dodged(who: Node, shooter: String) -> void:
     dodges += 1
+    if who.get("cast_name") == null:
+        Career.add("nerf_dodges")
+        if war_t > 0.0:
+            war_dodged += 1
+    elif shooter == "Player" and war_t > 0.0:
+        war_missed += 1
     if who.get("cast_name") == null and Time.get_ticks_msec() - _dodge_ms > 3000:
         _dodge_ms = Time.get_ticks_msec()
         Hints.toast("DUCKED!", 1.2)
@@ -16545,15 +20400,22 @@ func dart_hit(dart: Node, victim: Node) -> void:
     if victim.has_method("sit") and victim.get("cast_name") == null:
         _hit_player(victim, str(dart.shooter))
     else:
-        _hit_npc(victim, str(dart.shooter))
+        _hit_npc(victim, str(dart.shooter), dart)
 
 
-func _hit_npc(npc: Node, shooter: String) -> void:
+func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
     var who := str(npc.cast_name)
     var react: Dictionary = REACT.get(who, REACT["Dan"])
     if shooter == "Player":
         hits += 1
-        war_hits += 1 if war_t > 0.0 else 0
+        var reach := 0.0
+        if dart != null:
+            reach = absf(dart.position.x - float(dart.get_meta("x0", dart.position.x)))
+        Career.note_nerf_hit(reach)
+        _hit_ms[who] = Time.get_ticks_msec()
+        if war_t > 0.0:
+            war_hits += 1
+            war_longest = maxi(war_longest, roundi(reach))
         var delta: int = int(react.base)
         var friendly := Social.is_friendly(who)
         if friendly:
@@ -16568,9 +20430,15 @@ func _hit_npc(npc: Node, shooter: String) -> void:
             # a coworker who takes it well fires back at once (from the desk if they are sitting)
             if war_t <= 0.0:
                 start_war()
+                war_hits = 1  # the hit that started the war counts
+                war_longest = roundi(reach)
             _shot_t[who] = 0.8
     else:
         npc.react_hit("!")
+        if war_t > 0.0:
+            war_ff += 1
+            if Time.get_ticks_msec() - int(_hit_ms.get(who, -99999)) < 2500:
+                war_assists += 1
 
 
 func _hit_player(p: Node, shooter: String) -> void:
@@ -16597,6 +20465,7 @@ func start_war() -> void:
     war_t = WAR_SECS
     war_hits = 0
     war_taken = 0
+    _reset_score()
     _shot_t = {}
     for npc in get_tree().get_nodes_in_group("npcs"):
         if npc.get("_hidden") != true:
@@ -16610,9 +20479,45 @@ func _end_war() -> void:
     for npc in get_tree().get_nodes_in_group("npcs"):
         if is_instance_valid(npc) and str(npc.held) == "nerf":
             npc.give_item("")
-    Hints.toast("NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken], 4.0)
+    var s := war_result()
+    last_result = s
+    Career.add("nerf_wars")
+    var msg := "NERF WAR OVER: YOU HIT %d, THEY GOT YOU %d" % [war_hits, war_taken]
+    if not s.titles.is_empty():
+        msg += ". " + ", ".join(PackedStringArray(s.titles))
+    Hints.toast(msg, 5.0)
     if Campaign.active:
         Social.change_all(1)
+
+
+# the score card of a war: hits, taken, dodged (you), missed (they), friendly fire, assists, longest hit (px), titles
+func war_result() -> Dictionary:
+    var s := {
+        "hits": war_hits,
+        "taken": war_taken,
+        "dodged": war_dodged,
+        "missed": war_missed,
+        "ff": war_ff,
+        "assists": war_assists,
+        "longest": war_longest,
+    }
+    s["titles"] = war_titles(s)
+    return s
+
+
+func war_titles(s: Dictionary) -> Array:
+    var out := []
+    if int(s.dodged) >= 3:
+        out.append("MOST DUCKED")
+    if int(s.longest) >= 150:
+        out.append("SNIPER")
+    if int(s.ff) >= 3:
+        out.append("FRIENDLY FIRE")
+    if int(s.assists) >= 2:
+        out.append("TEAM PLAYER")
+    if int(s.hits) >= 5 and int(s.taken) == 0:
+        out.append("UNTOUCHABLE")
+    return out
 
 
 func _process(delta: float) -> void:
@@ -16782,6 +20687,85 @@ func _draw() -> void:
             draw_rect(Rect2(_dots[i] - Vector2(2, 2), Vector2(4, 4)), Color("ffe08a"))
 ''')
 
+write("scripts/roles.gd", '''extends Node
+# Who is who. Cards, texts and ticket owners name a person by their job ("Alan (Co-owner)" advises you,
+# "Boss" texts you). When you play AS that person (Campaign.player_as) the line has to come from somebody else:
+# the other owner in the owner campaign, otherwise the manager. `speaker()` and `sender()` do that remap; Cards.ask and
+# Msp.send_text call them, so no card has to know. X4 (the owner campaign rework) will give the cards real owner voices.
+
+const OWNERS := ["Alan", "Garrison"]
+const LABELS := {
+    "Alan": "Alan (Co-owner)",
+    "Garrison": "Garrison (Co-owner)",
+    "Dan": "Dan (Network Tech)",
+    "Vic": "Vic (Account Manager)",
+    "Maya": "Maya (Tier 1)",
+    "Morgan": "Morgan (Manager)",
+}
+# job -> the person who normally does it
+const JOBS := {
+    "tech owner": "Alan",
+    "sales owner": "Garrison",
+    "manager": "Morgan",
+    "network": "Dan",
+    "accounts": "Vic",
+    "tier1": "Maya",
+}
+
+
+func player() -> String:
+    return Campaign.player_as
+
+
+# the owner who is NOT you (owner campaign), "" otherwise
+func partner() -> String:
+    var me := Campaign.player_as
+    if Campaign.mode != "owner" or not OWNERS.has(me):
+        return ""
+    return "Garrison" if me == "Alan" else "Alan"
+
+
+# somebody who can say what `name` would have said
+func stand_in(who_name: String) -> String:
+    if who_name == "" or who_name != Campaign.player_as:
+        return who_name
+    var other := partner()
+    return other if other != "" else "Morgan"
+
+
+# the person doing a job right now ("tech owner" is Alan, unless you are Alan)
+func who(job: String) -> String:
+    return stand_in(str(JOBS.get(job, "Morgan")))
+
+
+func label(who_name: String) -> String:
+    return str(LABELS.get(who_name, who_name))
+
+
+# "Alan (Co-owner)" / "Alan" -> the name part when it is a known cast member, else ""
+func base_name(text: String) -> String:
+    for n in LABELS:
+        if text == n or text.begins_with(n + " ("):
+            return n
+    return ""
+
+
+# a card speaker: the same text unless it names you
+func speaker(text: String) -> String:
+    var n := base_name(text)
+    if n == "" or n != Campaign.player_as:
+        return text
+    return label(stand_in(n))
+
+
+# a phone text sender
+func sender(text: String) -> String:
+    var n := base_name(text)
+    if n == "" or n != Campaign.player_as:
+        return text
+    return stand_in(n)
+''')
+
 write("scripts/strings.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Story text you can edit without touching code. The game's mails, texts, jobs, cards, dialogue, forum threads and
@@ -16796,6 +20780,7 @@ write("scripts/strings.gd", '''extends Node
 const FILE := "res://story/strings.txt"
 const ROOTS := {
     "Story": ["DAYS", "VIGNETTES"],
+    "Events": ["DECK"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
@@ -16806,15 +20791,15 @@ const ROOTS := {
     "Social": ["THANKS"],
     "Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
     "Hints": ["DAY1"],
+    "Career": ["MEDALS", "UNLOCKS"],
     "Growth": ["STRETCH"],
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
-    "PrinterGame": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"],
-    "Onsite":
-    ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
+    "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
 }
 # fields that are always text (even when short, like OK) and fields that never are
-const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "situation", "result"]
+const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
 const BANNED := ["chatgpt", " ai ", "artificial intelligence", "microsoft teams", "slack", "microsoft 365", "office 365", "tiktok", "discord", "windows 10", "windows 11", "gdpr", "mfa ", "edr", "zoom call"]
 
@@ -18166,7 +22151,9 @@ func populate(stage: Node) -> void:
         return
     var scene := stage.scene_file_path.get_file().get_basename()
     if scene == "conference" and Campaign.active and Meeting.state in ["called", "done"]:
-        _boss(stage)
+        # Morgan is a real cast member now and hosts at the whiteboard herself; Marge still stands in for the owner campaign
+        if Campaign.mode == "owner" or not World.chars.has("Morgan"):
+            _boss(stage)
         return
     if not CROWD.has(scene):
         return
@@ -19290,6 +23277,7 @@ func _pet(kind: String) -> void:
     if lines.is_empty():
         return
     pets += 1
+    Career.add("pets")
     Hints.toast(str(lines[randi() % lines.size()]), 3.0)
     var p := get_tree().current_scene.get_node_or_null("Actors/Player")
     if p != null and p.has_method("start_emote") and kind != "fish":
@@ -19314,8 +23302,12 @@ func _chose(id: String) -> void:
     for o in job.options:
         if str(o.id) == id:
             opt = o
-    if str(opt.get("game", "")) == "printer":
-        PrinterGame.start(func(stars: int) -> void: _printer_done(stars), _printer_kind())
+    if str(opt.get("game", "")).begins_with("printer"):
+        PrinterGame.start(
+            func(stars: int) -> void: _printer_done(stars),
+            _printer_model(str(opt.get("game", ""))),
+            {"onsite": true}
+        )
         return
     _away(float(opt.hours), ticket_id)
     var ok := randf() < float(opt.chance)
@@ -19342,9 +23334,31 @@ func _printer_done(stars: int) -> void:
     Cards.ask("Onsite", str(TEXT.get("printer_stars%d" % stars, "")), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _after(ok))
 
 
-# the architects' printer is a plotter: the mini-game wears the PLOTTER_* texts there
-func _printer_kind() -> String:
-    return "plotter" if site_type(client) == "arch" else ""
+# which printer model fights back: the job's game field can force one ("printer:inkjet"), else the site decides
+# (architects: plotter, dentists: receipt or laser, law: multifunction, vets: inkjet, realty: laser or dot matrix,
+# the trailers: dot matrix); the either-or sites roll once per client and day from the printer stream
+func _printer_model(game := "printer") -> String:
+    var forced := game.get_slice(":", 1) if game.contains(":") else ""
+    if PrinterGame.MODELS.has(forced):
+        return forced
+    var either := ""
+    match site_type(client):
+        "arch":
+            return "plotter"
+        "law":
+            return "mfp"
+        "vet":
+            return "inkjet"
+        "trailer":
+            return "dot"
+        "dental":
+            either = "receipt"
+        "realty":
+            either = "dot"
+        _:
+            return "laser"
+    var r := Difficulty.rng_for("printer.model", client * 100 + Campaign.day)
+    return either if r.randi() % 2 == 0 else "laser"
 
 
 func _printer_practice() -> void:
@@ -19363,7 +23377,8 @@ func _practice_answer(pick: String) -> void:
             func(stars: int) -> void:
                 if stars >= 0:  # -1 = backed out on the intro page
                     Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0),
-            _printer_kind()
+            _printer_model(),
+            {"practice": true}
         )
 
 
@@ -19505,16 +23520,22 @@ func populate(stage: Node) -> void:
 
 write("scripts/printer_game.gd", '''extends CanvasLayer
 # gdlint:disable=max-line-length,max-returns,class-definitions-order
-# The printer mini-game (onsite, the bane of every MSP's existence): open the printer and fight it in three rounds.
-#   1. PAPER JAM: pull the stuck paper out of three spots. SPACE stops a moving marker: green = a clean pull,
-#      yellow = it holds (try again), red = it tears and leaves a scrap (a mistake).
-#   2. PC LOAD LETTER: the display says it, and nobody knows what it means. Load the right paper (LETTER) in the tray.
-#   3. TONER: install the four cartridges in the order the printer asks (left / right, SPACE), then shake the cartridge (A and D).
-#   4. TEST PAGE: two error messages on the little display; pick the right way to deal with each (1 / 2 / 3).
-# P prays to the sysadmin gods (3 prayers): good luck blesses you (the next mistake is forgiven, the green zone widens), bad luck costs you.
-# Fewer mistakes = more stars (0-3). Esc gives up. Used by Onsite (printer jobs, and practice in Free Play):
-#   PrinterGame.start(func(stars: int) -> void: ..., "plotter")  # optional second argument
-# The questions and texts are in QUESTIONS / TEXT so reviewers can edit them in story/strings.txt.
+# The printer mini-game (onsite, the bane of every MSP's existence): open the printer and fight it in rounds.
+# Which rounds depend on the MODEL (see MODELS): a laser has them all, the others drop or rename some.
+#   JAM:   pull the stuck paper out. SPACE stops a moving marker: green = a clean pull, yellow = it holds (try again),
+#          red = it tears and leaves a scrap (a mistake, and one more pull). The chain is 3 pulls (more on HARD, up to 6);
+#          two clean pulls in a row shorten it again (never below 3).
+#   TRAY:  the display says what is wrong with the paper (PC LOAD LETTER on a laser). Load the right paper or roll.
+#   TONER: install the cartridges (ink tanks, a ribbon) in the order the printer asks (left / right, SPACE).
+#   SHAKE: shake the cartridge (A and D).
+#   TEST:  error messages on the little display; pick the right way to deal with each (1 / 2 / 3).
+#          How many comes from Difficulty ("printer.questions": 1 / 2 / 3), drawn from QUESTIONS tagged for the model and tier.
+# P prays to the sysadmin gods (3 prayers; each model has its own): good luck blesses you (the next mistake is forgiven,
+# the green zone widens), bad luck costs you. Pray-free wins keep a streak. Fewer mistakes = more stars (0-3). Esc gives up.
+# Used by Onsite (printer jobs, and practice in Free Play where the intro page lets you pick the model and a seed):
+#   PrinterGame.start(func(stars: int) -> void: ..., "plotter", {"onsite": true})  # model and options are optional
+# options: onsite (the marker runs up to 15% faster when you are tired, see Shift.slow_mult), practice, seed (practice).
+# The questions and texts are in QUESTIONS / TEXT / MODEL_TEXT so reviewers can edit them in story/strings.txt.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
@@ -19525,6 +23546,71 @@ const BODY := Color("dfe3ea")
 const PAPER := Color("f4f2ea")
 const COLORS := [Color("2fa7d8"), Color("d8409a"), Color("f2d23c"), Color("2a2a33")]
 const COLOR_NAMES := ["CYAN", "MAGENTA", "YELLOW", "BLACK"]
+const RIBBON_COLORS := [Color("2a2a33"), Color("b3302f")]
+const RIBBON_NAMES := ["BLACK", "RED"]
+const TRAY := ["LETTER", "LEGAL", "A4", "HIT IT"]
+const PLOTTER_TRAY := ["24 BOND", "36 BOND", "MYLAR", "HIT IT"]
+const RECEIPT_TRAY := ["80 MM", "58 MM", "PLAIN", "HIT IT"]
+const DOT_TRAY := ["TRACTOR", "SINGLE", "LABELS", "HIT IT"]
+# the printer models. phases = the rounds in order (test is always last); tray / names / colors = what the tray and the
+# cartridge round offer (the right tray is always the first, the last one is the joke); look = how it is drawn.
+const MODELS := {
+    "laser":
+    {
+        "label": "LASER",
+        "phases": ["jam", "tray", "toner", "shake", "test"],
+        "tray": TRAY,
+        "names": COLOR_NAMES,
+        "colors": COLORS,
+        "look": "laser",
+    },
+    "inkjet":
+    {
+        "label": "INKJET",
+        "phases": ["jam", "toner", "test"],
+        "tray": TRAY,
+        "names": COLOR_NAMES,
+        "colors": COLORS,
+        "look": "inkjet",
+    },
+    "plotter":
+    {
+        "label": "PLOTTER",
+        "phases": ["jam", "tray", "toner", "shake", "test"],
+        "tray": PLOTTER_TRAY,
+        "names": COLOR_NAMES,
+        "colors": COLORS,
+        "look": "plotter",
+    },
+    "mfp":
+    {
+        "label": "MULTIFUNCTION",
+        "phases": ["jam", "tray", "toner", "test"],
+        "tray": TRAY,
+        "names": COLOR_NAMES,
+        "colors": COLORS,
+        "look": "mfp",
+    },
+    "receipt":
+    {
+        "label": "RECEIPT",
+        "phases": ["jam", "tray", "test"],
+        "tray": RECEIPT_TRAY,
+        "names": [],
+        "colors": [],
+        "look": "receipt",
+    },
+    "dot":
+    {
+        "label": "DOT MATRIX",
+        "phases": ["jam", "tray", "toner", "test"],
+        "tray": DOT_TRAY,
+        "names": RIBBON_NAMES,
+        "colors": RIBBON_COLORS,
+        "look": "dot",
+    },
+}
+const MODEL_ORDER := ["laser", "inkjet", "plotter", "mfp", "receipt", "dot"]
 const TEXT := {
     "title": "PRINTER REPAIR",
     "intro1": "THE COPIER GRINDS AND THE DISPLAY SAYS",
@@ -19534,6 +23620,8 @@ const TEXT := {
     "jam_clean": "A CLEAN PULL. THE SHEET COMES OUT WHOLE.",
     "jam_hold": "IT HOLDS. NOT QUITE: TRY AGAIN.",
     "jam_tear": "RIP! A SCRAP IS STILL INSIDE.",
+    "jam_short": "TWO CLEAN PULLS: THE JAM EASES, ONE FEWER TO GO.",
+    "jam_scrap": "THE SCRAP NEEDS ONE MORE PULL.",
     "toner_help": "LEFT / RIGHT TO PICK, SPACE TO INSTALL",
     "toner_ok": "CLICK. IT SEATS.",
     "toner_bad": "WRONG CARTRIDGE. THE PRINTER BEEPS.",
@@ -19552,99 +23640,244 @@ const TEXT := {
     "tray_ok": "LETTER PAPER IN TRAY 2. PC LOAD LETTER IS SOLVED. YOU ARE A HERO.",
     "tray_bad": "WRONG PAPER. THE PRINTER JAMS ON PRINCIPLE.",
     "tray_hit": "YOU HIT THE PRINTER AND IT WORKS. DO NOT TELL ANYONE.",
+    "tray_screen": "PC LOAD LETTER",
+    "tray_slot": "TRAY 2",
     "pray_help": "P: PRAY TO THE SYSADMIN GODS",
     "pray_none": "THE GODS HAVE HEARD ENOUGH FROM YOU TODAY.",
     "blessed_tag": "BLESSED",
+    "tired_tag": "TIRED",
+    "tired_note": "TIRED: THE MARKER RUNS %d PERCENT FASTER.",
+    "practice_help": "LEFT / RIGHT = MODEL  UP / DOWN = SEED",
+    "streak": "NO-PRAYER STREAK: %d",
 }
+# the per-model overlays on TEXT: only the keys that differ
+const MODEL_TEXT := {
+    "plotter":
+    {
+        "title": "PLOTTER REPAIR",
+        "intro1": "THE FORTY-INCH PLOTTER CHEWS ITS ROLL",
+        "intro2": "AND SAYS MEDIA JAM. A PRINT DUE AT NOON.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
+        "jam_clean": "A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.",
+        "jam_hold": "THE ROLL HOLDS. NOT QUITE: TRY AGAIN.",
+        "jam_tear": "RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.",
+        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL",
+        "toner_ok": "CLICK. THE INK TANK SEATS.",
+        "toner_bad": "WRONG INK TANK. THE PLOTTER BEEPS AT YOU.",
+        "shake_help": "ROCK THE INK TANK: A D A D A D",
+        "shake_late": "TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.",
+        "hit": "YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.",
+        "stars3": "PERFECT. A CRISP FORTY-INCH SITE PLAN.",
+        "stars2": "GOOD ENOUGH. A FEW BANDING LINES.",
+        "stars1": "IT PLOTS. THE SCALE BAR IS A LITTLE OFF.",
+        "stars0": "YOU GIVE UP. THE PLOTTER WINS.",
+        "tray_help": "MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
+        "tray_ok": "24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.",
+        "tray_bad": "WRONG ROLL. THE PLOTTER CUTS IT SHORT.",
+        "tray_hit": "YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.",
+        "tray_screen": "MEDIA MISMATCH",
+        "tray_slot": "ROLL 1",
+        "pray_help": "P: PRAY TO THE PLOTTER GODS",
+    },
+    "inkjet":
+    {
+        "title": "INKJET REPAIR",
+        "intro1": "THE INKJET PRINTS A PAGE OF WHITE LINES",
+        "intro2": "AND A PAPER JAM LIGHT BLINKS. AGAIN.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET",
+        "jam_clean": "A CLEAN PULL. THE SHEET COMES OUT FLAT.",
+        "jam_tear": "RIP! A CORNER IS STILL UNDER THE ROLLER.",
+        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO FIT",
+        "toner_ok": "CLICK. THE INK TANK SEATS.",
+        "toner_bad": "WRONG SLOT. THE INKJET BEEPS.",
+        "hit": "YOU TAP THE INKJET. IT PRINTS. DO NOT TELL ANYONE.",
+        "stars3": "PERFECT. THE ALIGNMENT PAGE IS CRISP.",
+        "stars2": "GOOD ENOUGH. A LITTLE BANDING.",
+        "stars1": "IT PRINTS. THE BLACK IS A BIT GREEN.",
+        "stars0": "YOU GIVE UP. THE INKJET WINS.",
+        "pray_help": "P: PRAY TO THE INK GODS",
+    },
+    "mfp":
+    {
+        "title": "COPIER REPAIR",
+        "intro1": "THE COPIER SCANS AND FAXES, THEN JAMS.",
+        "intro2": "ADF MISFEED. PAPER EVERYWHERE.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET",
+        "jam_clean": "A CLEAN PULL. THE SHEET LEAVES THE FEEDER WHOLE.",
+        "jam_tear": "RIP! HALF A LETTER IS STUCK IN THE FEEDER.",
+        "toner_help": "LEFT / RIGHT TO PICK A CARTRIDGE, SPACE TO FIT",
+        "hit": "YOU THUMP THE COPIER. IT WORKS. DO NOT TELL THE PARTNERS.",
+        "stars3": "PERFECT. THE FAX GOES OUT AND THE COPIES ARE CLEAN.",
+        "stars1": "IT COPIES. THE FAX STILL HISSES.",
+        "stars0": "YOU GIVE UP. THE COPIER WINS.",
+        "tray_help": "TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
+        "tray_ok": "LETTER PAPER IN TRAY 1. THE COPIER HUMS.",
+        "tray_screen": "LOAD LETTER IN TRAY 1",
+        "tray_slot": "TRAY 1",
+        "pray_help": "P: PRAY TO THE COPIER GODS",
+    },
+    "receipt":
+    {
+        "title": "RECEIPT PRINTER",
+        "intro1": "THE RECEIPT PRINTER BEEPS AND THE LINE",
+        "intro2": "AT THE DESK GROWS. THE LIGHT IS RED.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER",
+        "jam_clean": "A CLEAN PULL. THE PAPER FEEDS STRAIGHT.",
+        "jam_tear": "RIP! A CURL OF THERMAL PAPER IS STUCK.",
+        "hit": "YOU SMACK THE LID. IT CUTS A RECEIPT. DO NOT TELL ANYONE.",
+        "stars3": "PERFECT. A CRISP RECEIPT AND A CLEAN CUT.",
+        "stars2": "GOOD ENOUGH. THE CUT IS A LITTLE CROOKED.",
+        "stars1": "IT PRINTS. THE TOTAL IS FAINT.",
+        "stars0": "YOU GIVE UP. THE LINE GROWS.",
+        "tray_help": "PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
+        "tray_ok": "THE 80 MM ROLL IS IN, HEAT SIDE UP. IT CUTS CLEANLY.",
+        "tray_bad": "WRONG ROLL. THE LID WILL NOT CLOSE.",
+        "tray_hit": "YOU HIT THE LID AND IT CLOSES. DO NOT TELL ANYONE.",
+        "tray_screen": "PAPER OUT",
+        "tray_slot": "ROLL BAY",
+        "pray_help": "P: PRAY TO THE REGISTER GODS",
+    },
+    "dot":
+    {
+        "title": "DOT MATRIX REPAIR",
+        "intro1": "THE OLD DOT MATRIX SCREECHES THROUGH ITS",
+        "intro2": "FORMS AND THE TRACTOR FEED IS CROOKED.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FORM",
+        "jam_clean": "A CLEAN PULL. THE FORM COMES OUT WHOLE.",
+        "jam_tear": "RIP! A STRIP OF PINFEED HOLES IS STILL INSIDE.",
+        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT",
+        "toner_ok": "CLICK. THE RIBBON SEATS.",
+        "toner_bad": "WRONG RIBBON. THE HEAD GRINDS.",
+        "hit": "YOU THUMP THE CASE. IT SCREECHES AND WORKS.",
+        "stars3": "PERFECT. THE CARBON COPY IS READABLE.",
+        "stars2": "GOOD ENOUGH. A FEW PALE LINES.",
+        "stars1": "IT PRINTS. THE THIRD COPY IS A GHOST.",
+        "stars0": "YOU GIVE UP. THE DOT MATRIX WINS.",
+        "tray_help": "FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
+        "tray_ok": "THE FORMS RIDE THE TRACTOR PINS, SQUARE AT LAST.",
+        "tray_bad": "WRONG PAPER. THE PINS TEAR THE EDGE.",
+        "tray_screen": "FORM FEED ERROR",
+        "tray_slot": "TRACTOR",
+        "pray_help": "P: PRAY TO THE FORMS GODS",
+    },
+}
+# prayers: the laser (and anything without its own list) uses PRAYERS; the others have a faith of their own
 const PRAYERS := {
-    "good": [
+    "good":
+    [
         "THE SYSADMIN GODS SMILE. YOUR NEXT MISTAKE IS FORGIVEN.",
         "A WARM HUM FROM A DISTANT SERVER ROOM. YOU ARE BLESSED.",
         "A DOMAIN CONTROLLER REPLICATES IN YOUR HONOR. YOU ARE BLESSED.",
     ],
-    "meh": [
+    "meh":
+    [
         "THE GODS ARE BUSY RESTARTING A DOMAIN CONTROLLER.",
         "SILENCE. SOMEWHERE, A BACKUP FAILS.",
         "THE GODS PUT YOU ON HOLD. THE MUSIC IS BAD.",
     ],
-    "bad": [
+    "bad":
+    [
         "THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.",
         "A SURGE ON THE POWER LINE. THE GODS ARE DISPLEASED.",
     ],
 }
-const TRAY := ["LETTER", "LEGAL", "A4", "HIT IT"]
+const MODEL_PRAYERS := {
+    "inkjet":
+    {
+        "good": ["A DROP OF CYAN FALLS WHERE IT SHOULD. YOU ARE BLESSED.", "THE NOZZLES CLEAR ALL BY THEMSELVES. YOU ARE BLESSED."],
+        "meh": ["THE GODS OF INK ARE BUSY. THE CARTRIDGE IS EMPTY.", "A FAINT SMELL OF ISOPROPYL. NOTHING ELSE."],
+        "bad": ["THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.", "THE CHIP LIES ABOUT THE INK LEVEL. THE MARKER SPEEDS UP."],
+    },
+    "plotter":
+    {
+        "good": ["THE ROLL FEEDS STRAIGHT FOR ONCE. YOU ARE BLESSED.", "A SCALE BAR COMES OUT RIGHT. THE PLOTTER GODS NOD. YOU ARE BLESSED."],
+        "meh": ["THE GODS ARE AT A SITE MEETING. NO REPLY.", "SOMEONE REVISES THE DRAWING. THE GODS SIGH."],
+        "bad": ["THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.", "THE PRINTHEAD CRASHES ACROSS THE PAGE. THE MARKER SPEEDS UP."],
+    },
+    "mfp":
+    {
+        "good": ["THE FAX HANDSHAKE SOUNDS RIGHT. YOU ARE BLESSED.", "THE FEEDER PICKS ONE SHEET AT A TIME. YOU ARE BLESSED."],
+        "meh": ["THE GODS ARE ON THE OTHER LINE.", "A BUSY SIGNAL FROM ABOVE."],
+        "bad": ["THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.", "A FAX ARRIVES FOR THE WRONG OFFICE. THE MARKER SPEEDS UP."],
+    },
+    "receipt": {
+        "good": ["THE CUTTER SNAPS CLEAN. YOU ARE BLESSED.", "THE DRAWER POPS OPEN ON ITS OWN. YOU ARE BLESSED."],
+        "meh": ["THE GODS WANT A SIGNATURE ON THE SCREEN. NOTHING ELSE.", "THE GODS SAY THE TOTAL IS CORRECT. THAT IS ALL."],
+        "bad": ["THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.", "THE LINE AT THE DESK GROANS. THE MARKER SPEEDS UP."],
+    },
+    "dot":
+    {
+        "good": ["THE PINS FIND THEIR HOLES. YOU ARE BLESSED.", "A SOFT SCREECH OF APPROVAL FROM THE HEAD. YOU ARE BLESSED."],
+        "meh": ["THE GODS ARE BUSY RE-INKING A RIBBON.", "A CARBON COPY OF SILENCE."],
+        "bad": ["THE GODS DEMAND A SACRIFICE. A MISTAKE IS ADDED.", "THE HEAD SCREAMS AND THE CARRIAGE STUTTERS. THE MARKER SPEEDS UP."],
+    },
+}
+# the test-page questions. models = which printers show it (empty = all), hard = lowest tier it appears on
+# (0 easy, 1 normal, 2 hard; harder questions are only used on an easier tier when a model has too few).
+# Keep error and options to 36 characters, the display is small.
 const QUESTIONS := [
     {
         "error": "TONER LOW",
         "options": ["IGNORE IT", "REPLACE THE CARTRIDGE", "SHAKE IT AND KEEP PRINTING"],
-        "correct": 1, "hit": -1,
+        "correct": 1,
+        "hit": -1,
         "why": "SHAKING BUYS ABOUT TWENTY PAGES. THEN THE STREAKS COME BACK.",
+        "models": ["laser", "mfp"],
+        "hard": 0,
     },
     {
         "error": "ERROR 79 SERVICE",
         "options": ["REINSTALL THE DRIVER", "POWER CYCLE AND RESEAT THE FORMATTER", "CALL THE VENDOR"],
-        "correct": 1, "hit": -1,
+        "correct": 1,
+        "hit": -1,
         "why": "A 79 IS USUALLY THE FORMATTER OR A BAD PRINT JOB. UNPLUG, WAIT, RESEAT, TRY AGAIN.",
+        "models": ["laser", "mfp"],
+        "hard": 1,
     },
     {
         "error": "PRINTER OFFLINE",
         "options": ["SET IT BACK ONLINE", "BUY A NEW PRINTER", "REINSTALL WINDOWS"],
-        "correct": 0, "hit": -1,
+        "correct": 0,
+        "hit": -1,
         "why": "SOMEONE PRESSED THE OFFLINE BUTTON. SOMEONE ALWAYS DOES.",
+        "models": [],
+        "hard": 0,
     },
     {
         "error": "PAPER MISMATCH TRAY 1",
         "options": ["OPEN THE FUSER", "SET TRAY 1 TO PLAIN PAPER", "BLAME THE USER"],
-        "correct": 1, "hit": -1,
+        "correct": 1,
+        "hit": -1,
         "why": "THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.",
+        "models": ["laser", "mfp", "inkjet"],
+        "hard": 0,
     },
-]
-const PLOTTER_TEXT := {
-    "title": "PLOTTER REPAIR",
-    "intro1": "THE FORTY-INCH PLOTTER CHEWS ITS ROLL AND THE",
-    "intro2": "DISPLAY SAYS MEDIA JAM. A PRINT DUE AT NOON.",
-    "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
-    "jam_clean": "A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.",
-    "jam_hold": "THE ROLL HOLDS. NOT QUITE: TRY AGAIN.",
-    "jam_tear": "RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.",
-    "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL",
-    "toner_ok": "CLICK. THE INK TANK SEATS.",
-    "toner_bad": "WRONG INK TANK. THE PLOTTER BEEPS AT YOU.",
-    "shake_help": "ROCK THE INK TANK: A D A D A D",
-    "shake_late": "TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.",
-    "hit": "YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.",
-    "stars3": "PERFECT. A CRISP FORTY-INCH SITE PLAN.",
-    "stars2": "GOOD ENOUGH. A FEW BANDING LINES.",
-    "stars1": "IT PLOTS. THE SCALE BAR IS A LITTLE OFF.",
-    "stars0": "YOU GIVE UP. THE PLOTTER WINS.",
-    "tray_help": "MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
-    "tray_ok": "24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.",
-    "tray_bad": "WRONG ROLL. THE PLOTTER CUTS IT SHORT.",
-    "tray_hit": "YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.",
-    "pray_help": "P: PRAY TO THE PLOTTER GODS",
-}
-const PLOTTER_TRAY := ["24 IN BOND", "36 IN BOND", "MYLAR", "HIT IT"]
-const PLOTTER_QUESTIONS := [
     {
         "error": "MEDIA JAM ROLL 1",
-        "options": ["PULL THE ROLL OUT HARD", "OPEN THE COVER AND FEED IT STRAIGHT", "ORDER A NEW ROLL"],
+        "options": ["PULL THE ROLL OUT HARD", "OPEN THE COVER, FEED IT STRAIGHT", "ORDER A NEW ROLL"],
         "correct": 1,
         "hit": -1,
         "why": "A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.",
+        "models": ["plotter"],
+        "hard": 0,
     },
     {
         "error": "REPLACE PRINTHEAD",
-        "options": ["ALIGN THE PRINTHEAD", "SWAP THE PRINTHEAD AND ALIGN IT", "IGNORE IT"],
+        "options": ["ALIGN THE PRINTHEAD", "SWAP THE HEAD AND ALIGN IT", "IGNORE IT"],
         "correct": 1,
         "hit": -1,
         "why": "BANDING THAT NEVER CLEARS MEANS A DEAD NOZZLE. SWAP IT, THEN ALIGN.",
+        "models": ["plotter", "inkjet"],
+        "hard": 1,
     },
     {
         "error": "OUT OF MEMORY",
-        "options": ["ADD MEMORY OR PRINT THE SHEET AS A PDF", "REINSTALL CAD", "PRINT IT AGAIN"],
+        "options": ["ADD MEMORY OR SEND A FLAT PDF", "REINSTALL CAD", "PRINT IT AGAIN"],
         "correct": 0,
         "hit": -1,
         "why": "A BIG DRAWING WITH A HEAVY HATCH CHOKES THE PLOTTER. SEND A FLATTENED PDF.",
+        "models": ["plotter"],
+        "hard": 1,
     },
     {
         "error": "PAPER SIZE MISMATCH",
@@ -19652,11 +23885,247 @@ const PLOTTER_QUESTIONS := [
         "correct": 0,
         "hit": -1,
         "why": "THE DRAWING SAYS 24 BY 36 BUT THE DRIVER SAYS LETTER. FIX THE PAPER SIZE.",
+        "models": ["plotter"],
+        "hard": 0,
+    },
+    {
+        "error": "STREAKS AFTER A NEW INK TANK",
+        "options": ["RUN THE ALIGNMENT PAGE", "BUY MORE INK", "SHAKE THE PRINTER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A SWAPPED INK TANK OR HEAD NEEDS ALIGNING. PRINT THE ALIGNMENT PAGE AND PICK THE BEST BLOCKS.",
+        "models": ["inkjet", "plotter"],
+        "hard": 0,
+    },
+    {
+        "error": "JOB STUCK: 400 MB IN QUEUE",
+        "options": ["PRINT IT TEN MORE TIMES", "RESTART THE SPOOLER, CLEAR QUEUE", "UNPLUG THE PRINTER"],
+        "correct": 1,
+        "hit": -1,
+        "why": "ONE HUGE SCAN BLOCKS THE QUEUE. STOP THE SPOOLER, EMPTY THE SPOOL FOLDER, START IT AGAIN.",
+        "models": [],
+        "hard": 1,
+    },
+    {
+        "error": "CANNOT CONNECT TO SHARED PRINTER",
+        "options": ["WAKE THE XP PC THAT SHARES IT", "REINSTALL EVERY PC", "BUY A NETWORK PRINTER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE USB PRINTER IS SHARED FROM AN OLD XP PC AND THAT PC WENT TO SLEEP. KEEP IT AWAKE.",
+        "models": ["inkjet", "laser", "dot", "receipt"],
+        "hard": 1,
+    },
+    {
+        "error": "PRINTER NOT FOUND",
+        "options": ["RESERVE ITS ADDRESS ON THE ROUTER", "REBUILD EVERY PC", "PRINT TO A FILE"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE DHCP LEASE RAN OUT AND THE PRINTER GOT A NEW IP. RESERVE ONE OR SET A STATIC ADDRESS.",
+        "models": ["laser", "mfp", "plotter"],
+        "hard": 1,
+    },
+    {
+        "error": "PRINTS COME OUT AT THE OTHER OFFICE",
+        "options": ["SET THE RIGHT DEFAULT PRINTER", "REBUILD THE LAPTOP", "UNPLUG THE OTHER PRINTER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE LAPTOP KEPT THE DEFAULT PRINTER FROM THE OTHER OFFICE. PICK THE LOCAL ONE.",
+        "models": [],
+        "hard": 0,
+    },
+    {
+        "error": "20 INSUFFICIENT MEMORY",
+        "options": ["LOWER THE DPI OR ADD A DIMM", "POWER CYCLE UNTIL IT WORKS", "SEND THE JOB TWICE"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THIS LASER HAS 2 MB. A FULL PAGE AT HIGH DPI WILL NOT FIT. LOWER THE RESOLUTION OR ADD MEMORY.",
+        "models": ["laser"],
+        "hard": 1,
+    },
+    {
+        "error": "CLOSE DUPLEX UNIT",
+        "options": ["PUSH THE DUPLEX UNIT UNTIL IT CLICKS", "REPLACE THE FUSER", "UPDATE THE FIRMWARE"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE DUPLEXER IS NOT SEATED, SO THE SENSOR SAYS OPEN. PUSH IT IN UNTIL IT CLICKS.",
+        "models": ["laser", "mfp"],
+        "hard": 0,
+    },
+    {
+        "error": "PICKS TWO SHEETS, THEN NONE",
+        "options": ["OIL THE ROLLERS", "CLEAN OR SWAP THE FEED ROLLERS", "FAN THE PAPER FOREVER"],
+        "correct": 1,
+        "hit": -1,
+        "why": "GLAZED FEED ROLLERS LOSE THEIR GRIP. WIPE THEM WITH A DAMP CLOTH OR REPLACE THEM.",
+        "models": ["laser", "mfp", "inkjet"],
+        "hard": 1,
+    },
+    {
+        "error": "PRINTER DEAD, NO LIGHTS AT ALL",
+        "options": ["CHECK THE POWER CORD", "REPLACE THE POWER SUPPLY", "REIMAGE THE PC"],
+        "correct": 0,
+        "hit": -1,
+        "why": "IT IS UNPLUGGED. THE CLEANER NEEDED THE SOCKET. PLUG IT IN AND TELL NOBODY.",
+        "models": [],
+        "hard": 0,
+    },
+    {
+        "error": "WHITE LINES ACROSS THE PAGE",
+        "options": ["RUN A HEAD CLEAN AND NOZZLE CHECK", "BUY A NEW PRINTER", "BLAME THE PAPER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A CLOGGED NOZZLE LEAVES GAPS. RUN THE HEAD CLEANING CYCLE AND PRINT A NOZZLE CHECK.",
+        "models": ["inkjet"],
+        "hard": 0,
+    },
+    {
+        "error": "CARTRIDGE NOT RECOGNIZED",
+        "options": ["RESEAT IT, WIPE THE CHIP CONTACTS", "TURN OFF THE FIREWALL", "RESET THE PC"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE CHIP CONTACTS ARE DIRTY OR THE CARTRIDGE IS NOT SEATED. CLEAN AND RESEAT IT.",
+        "models": ["inkjet"],
+        "hard": 1,
+    },
+    {
+        "error": "VERTICAL LINES ON EVERY SCAN",
+        "options": ["REINSTALL THE SCAN DRIVER", "CLEAN THE SCANNER GLASS", "REPLACE THE TONER"],
+        "correct": 1,
+        "hit": -1,
+        "why": "A SPECK ON THE GLASS OR THE ADF STRIP DRAWS A LINE ON EVERY PAGE. WIPE BOTH.",
+        "models": ["mfp"],
+        "hard": 0,
+    },
+    {
+        "error": "ADF PICK FAILED",
+        "options": ["OPEN THE ADF, REMOVE THE STAPLE", "BUY A FLATBED", "SCAN WITH A PHONE"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A STAPLE OR A CURLED CORNER BLOCKS THE FEEDER. OPEN THE COVER AND CLEAR THE PATH.",
+        "models": ["mfp"],
+        "hard": 0,
+    },
+    {
+        "error": "FAX: NO DIAL TONE",
+        "options": ["REPLACE THE FAX BOARD", "MOVE THE CORD TO THE LINE JACK", "RESET THE ROUTER"],
+        "correct": 1,
+        "hit": -1,
+        "why": "THE PHONE CORD IS IN THE EXT JACK, NOT THE LINE JACK. SWAP IT OVER.",
+        "models": ["mfp"],
+        "hard": 1,
+    },
+    {
+        "error": "SCAN TO EMAIL FAILED",
+        "options": ["CHECK THE MAIL SERVER AND PORT", "REPLACE THE SCANNER LAMP", "SCAN TO FOLDER FOREVER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE SMTP SERVER OR PORT IN THE SCANNER SETTINGS IS WRONG, OR THE RELAY NEEDS A LOGIN.",
+        "models": ["mfp"],
+        "hard": 2,
+    },
+    {
+        "error": "PAPER OUT, BUT THERE IS PAPER",
+        "options": ["FLIP THE ROLL, HEAT SIDE IN", "BUY A NEW ROLL", "HIT THE LID"],
+        "correct": 0,
+        "hit": 2,
+        "why": "THERMAL PAPER HAS ONE HEATED SIDE. LOADED BACKWARDS IT PRINTS NOTHING. TURN THE ROLL OVER.",
+        "models": ["receipt"],
+        "hard": 0,
+    },
+    {
+        "error": "RECEIPTS PRINT VERY FAINT",
+        "options": ["CLEAN THE THERMAL HEAD", "ADD TONER", "REPLACE THE DRAWER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "PAPER DUST BUILDS UP ON THE THERMAL HEAD. WIPE IT WITH ALCOHOL AND LET IT DRY.",
+        "models": ["receipt"],
+        "hard": 0,
+    },
+    {
+        "error": "CUTTER ERROR",
+        "options": ["OPEN THE COVER, CLEAR THE SCRAP", "FORCE THE PAPER OUT", "RESTART THE REGISTER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A SCRAP OF PAPER IS STUCK IN THE CUTTER BLADE. OPEN THE COVER, REMOVE IT, RESEAT THE BLADE.",
+        "models": ["receipt"],
+        "hard": 1,
+    },
+    {
+        "error": "RECEIPT SHOWS GARBAGE LETTERS",
+        "options": ["MATCH THE BAUD RATE TO THE REGISTER", "REPLACE THE ROLL", "UNPLUG THE DRAWER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE SERIAL SETTINGS DO NOT MATCH THE REGISTER. SET THE SAME BAUD RATE ON BOTH.",
+        "models": ["receipt"],
+        "hard": 2,
+    },
+    {
+        "error": "PRINT IS PALE AND GHOSTLY",
+        "options": ["REPLACE THE RIBBON", "ADD TONER", "SWITCH TO INKJET"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A WORN RIBBON LEAVES FAINT DOTS. FIT A NEW ONE AND THE CARBON COPIES WILL BE READABLE.",
+        "models": ["dot"],
+        "hard": 0,
+    },
+    {
+        "error": "FORMS DRIFT DOWN THE PAGE",
+        "options": ["SET TOP OF FORM, SEAT THE PINS", "REPLACE THE PRINT HEAD", "PRINT SMALLER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE FORM IS NOT ON THE TRACTOR PINS, OR THE TOP-OF-FORM IS WRONG. SQUARE IT UP AND SET IT.",
+        "models": ["dot"],
+        "hard": 1,
+    },
+    {
+        "error": "COPY THREE IS BLANK",
+        "options": ["MOVE THE HEAD GAP LEVER OUT", "ADD A RIBBON", "PRINT THREE TIMES"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A MULTI-PART FORM IS THICKER. THE HEAD GAP LEVER MUST BE SET WIDER SO THE LAST COPY GETS INKED.",
+        "models": ["dot"],
+        "hard": 2,
+    },
+    {
+        "error": "NOTHING PRINTS FROM WINDOWS 7",
+        "options": ["PICK THE USB TO PARALLEL PORT", "INSTALL XP", "HIT IT"],
+        "correct": 0,
+        "hit": 2,
+        "why": "THE NEW PC HAS NO PARALLEL PORT. THE PRINTER NEEDS THE PORT OF ITS USB ADAPTER CABLE.",
+        "models": ["dot"],
+        "hard": 2,
+    },
+    {
+        "error": "DRAWING PRINTS AT HALF SIZE",
+        "options": ["SET THE SCALE TO 100 PERCENT", "ORDER A BIGGER ROLL", "REDRAW IT"],
+        "correct": 0,
+        "hit": -1,
+        "why": "THE DRIVER IS ON FIT TO PAGE. SET THE SCALE TO 100 PERCENT AND CHOOSE THE RIGHT SHEET SIZE.",
+        "models": ["plotter"],
+        "hard": 0,
+    },
+    {
+        "error": "50.2 FUSER ERROR",
+        "options": ["LET IT COOL, POWER CYCLE", "REPLACE THE FUSER AT ONCE", "OPEN THE FUSER HOT"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A ONE-OFF FUSER ERROR OFTEN CLEARS AFTER COOLING. IF IT COMES BACK, REPLACE THE FUSER. NEVER OPEN IT HOT.",
+        "models": ["laser", "mfp"],
+        "hard": 2,
+    },
+    {
+        "error": "BLACK STREAK DOWN EVERY PAGE",
+        "options": ["CLEAN OR REPLACE THE DRUM", "ADD PAPER", "RESTART THE SPOOLER"],
+        "correct": 0,
+        "hit": -1,
+        "why": "A SCRATCHED OR DIRTY DRUM PRINTS THE SAME LINE ON EVERY PAGE. CLEAN IT OR FIT A NEW ONE.",
+        "models": ["laser", "mfp"],
+        "hard": 1,
     },
 ]
 
 var is_open := false
-var kind := ""  # "" = an ordinary printer, "plotter" = the architects' plotter
+var model := "laser"
 var phase := ""
 var mistakes := 0
 var stars := 0
@@ -19664,6 +24133,8 @@ var msg := ""
 var marker := 0.0
 var zone := 0.5
 var spot := 0
+var jam_len := 3  # pulls in this chain (3 to 6): clean pulls shorten it, a torn scrap adds one
+var combo := 0  # clean pulls in a row
 var order: Array = []
 var step := 0
 var sel := 0
@@ -19674,9 +24145,15 @@ var faith := 3
 var blessed := 0
 var tray_sel := 0
 var fast := false
+var prayed := false
+var tired := 1.0  # marker speed x: 1.0 to 1.15 on an onsite job when Shift says you are tired
+var practice := false
+var practice_seed := 1
+var streak := 0  # pray-free wins in a row (saved with the campaign)
 
 var _canvas: Node2D
 var _callback := Callable()
+var _prng: RandomNumberGenerator = null  # only in practice: the seed on the intro page rules
 var _t := 0.0
 var _dir := 1.0
 var _shake_t := 0.0
@@ -19693,9 +24170,17 @@ func _ready() -> void:
     _canvas.draw.connect(_paint)
 
 
-func start(callback: Callable, flavour: String = "") -> void:
+func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {}) -> void:
     _callback = callback
-    kind = flavour
+    model = flavour if MODELS.has(flavour) else "laser"
+    practice = bool(opts.get("practice", false))
+    practice_seed = clampi(int(opts.get("seed", 1)), 1, 99)
+    tired = 1.0
+    if bool(opts.get("onsite", false)):
+        tired = 1.0 + clampf(Shift.slow_mult() - 1.0, 0.0, 0.5) * 0.3
+    _prng = null
+    if practice:
+        _reseed()
     is_open = true
     Game.ui_open = true
     _canvas.visible = true
@@ -19704,6 +24189,8 @@ func start(callback: Callable, flavour: String = "") -> void:
     stars = 0
     msg = ""
     spot = 0
+    jam_len = 3
+    combo = 0
     step = 0
     sel = 0
     qi = 0
@@ -19711,6 +24198,7 @@ func start(callback: Callable, flavour: String = "") -> void:
     blessed = 0
     tray_sel = 0
     fast = false
+    prayed = false
     marker = 0.0
     _t = 0.0
     _answered = false
@@ -19735,16 +24223,82 @@ func _score() -> int:
     return 0
 
 
+# ---- models, texts, randomness
+func _tx(key: String) -> String:
+    var over: Dictionary = MODEL_TEXT.get(model, {})
+    if over.has(key):
+        return str(over[key])
+    return str(TEXT.get(key, ""))
+
+
+func _qs() -> Array:
+    return QUESTIONS
+
+
+func _m() -> Dictionary:
+    return MODELS[model]
+
+
+func _phases() -> Array:
+    return _m().phases
+
+
+func _tray() -> Array:
+    return _m().tray
+
+
+func _names() -> Array:
+    return _m().names
+
+
+func _colors() -> Array:
+    return _m().colors
+
+
+func _rng() -> RandomNumberGenerator:
+    return _prng if _prng != null else Difficulty.rng("printer")
+
+
+func _reseed() -> void:
+    _prng = RandomNumberGenerator.new()
+    _prng.seed = hash("%d:%s" % [practice_seed, model])
+
+
+func _shuffle(list: Array) -> void:
+    var r := _rng()
+    for k in range(list.size() - 1, 0, -1):
+        var j := r.randi_range(0, k)
+        var tmp = list[k]
+        list[k] = list[j]
+        list[j] = tmp
+
+
+# the question indices that can come up on a model (no tier filter)
+func pool_for(for_model: String) -> Array:
+    var out := []
+    for k in QUESTIONS.size():
+        var tags: Array = QUESTIONS[k].get("models", [])
+        if tags.is_empty() or tags.has(for_model):
+            out.append(k)
+    return out
+
+
+func _prayers() -> Dictionary:
+    return MODEL_PRAYERS.get(model, PRAYERS)
+
+
 # ---- phases
 func _begin_jam() -> void:
     phase = "jam"
     spot = 0
+    combo = 0
+    jam_len = clampi(Difficulty.i("printer.chain"), 3, 6)
     _new_zone()
     msg = _tx("jam_help")
 
 
 func _new_zone() -> void:
-    zone = Difficulty.rng("printer").randf_range(0.22, 0.78)
+    zone = _rng().randf_range(0.22, 0.78)
     marker = 0.0
     _dir = 1.0
 
@@ -19753,6 +24307,27 @@ func _begin_tray() -> void:
     phase = "tray"
     tray_sel = 0
     msg = _tx("tray_help")
+
+
+# go on to the next round of this model (the test page is always the last)
+func _advance(keep_msg := false) -> void:
+    var keep := msg
+    var list := _phases()
+    var at := list.find(phase)
+    var nxt := str(list[at + 1]) if at >= 0 and at + 1 < list.size() else "test"
+    match nxt:
+        "jam":
+            _begin_jam()
+        "tray":
+            _begin_tray()
+        "toner":
+            _begin_toner()
+        "shake":
+            _begin_shake()
+        _:
+            _begin_test()
+    if keep_msg:
+        msg = keep
 
 
 func _mistake() -> void:
@@ -19768,24 +24343,27 @@ func _pray() -> void:
         msg = _tx("pray_none")
         return
     faith -= 1
-    var roll := Difficulty.rng("printer").randf()
+    prayed = true
+    var p := _prayers()
+    var r := _rng()
+    var roll := r.randf()
     if roll < 0.55:
         blessed += 1
-        msg = str(Difficulty.pick(PRAYERS.good, "printer"))
+        msg = str(p.good[r.randi_range(0, p.good.size() - 1)])
     elif roll < 0.8:
-        msg = str(Difficulty.pick(PRAYERS.meh, "printer"))
+        msg = str(p.meh[r.randi_range(0, p.meh.size() - 1)])
     elif roll < 0.92:
         mistakes += 1
-        msg = str(PRAYERS.bad[0])
+        msg = str(p.bad[0])
     else:
         fast = true
-        msg = str(PRAYERS.bad[1]) + " THE MARKER SPEEDS UP."
+        msg = str(p.bad[1]) if str(p.bad[1]).contains("SPEEDS UP") else str(p.bad[1]) + " THE MARKER SPEEDS UP."
 
 
 func _begin_toner() -> void:
     phase = "toner"
-    order = [0, 1, 2, 3]
-    Difficulty.shuffle(order, "printer")
+    order = range(_names().size())
+    _shuffle(order)
     step = 0
     sel = 0
     msg = _tx("toner_help")
@@ -19799,25 +24377,19 @@ func _begin_shake() -> void:
     msg = _tx("shake_help")
 
 
-# plotter flavour (the architects): the same rounds with the PLOTTER_* texts laid over the defaults
-func _tx(key: String) -> String:
-    if kind == "plotter" and PLOTTER_TEXT.has(key):
-        return str(PLOTTER_TEXT[key])
-    return str(TEXT.get(key, ""))
-
-
-func _qs() -> Array:
-    return PLOTTER_QUESTIONS if kind == "plotter" else QUESTIONS
-
-
-func _tray() -> Array:
-    return PLOTTER_TRAY if kind == "plotter" else TRAY
-
-
 func _begin_test() -> void:
     phase = "test"
-    var pool := range(_qs().size())
-    Difficulty.shuffle(pool, "printer")
+    var elig := []
+    var rest := []
+    var level := Difficulty.tier_index()
+    for k in pool_for(model):
+        if int(QUESTIONS[k].get("hard", 0)) <= level:
+            elig.append(k)
+        else:
+            rest.append(k)
+    _shuffle(elig)
+    _shuffle(rest)
+    var pool := elig + rest
     asked = pool.slice(0, mini(Difficulty.i("printer.questions"), pool.size()))
     qi = 0
     _answered = false
@@ -19829,6 +24401,28 @@ func _end() -> void:
     phase = "result"
     _result_t = 0.0
     msg = _tx("stars%d" % stars)
+    _record()
+
+
+# the pray-free streak: a win without a prayer adds one, a prayer or a lost run ends it
+func _record() -> void:
+    if stars >= 1 and not prayed:
+        streak += 1
+    else:
+        streak = 0
+    Career.note_printer(model, stars, prayed, streak)
+
+
+func to_dict() -> Dictionary:
+    return {"version": 1, "streak": streak}
+
+
+func from_dict(data: Dictionary) -> void:
+    streak = maxi(0, int(data.get("streak", 0)))
+
+
+func reset() -> void:
+    streak = 0
 
 
 # ---- input
@@ -19842,6 +24436,10 @@ func _input(event: InputEvent) -> void:
             press("left")
         KEY_RIGHT:
             press("right")
+        KEY_UP:
+            press("up")
+        KEY_DOWN:
+            press("down")
         KEY_A:
             press("a")
         KEY_D:
@@ -19871,6 +24469,7 @@ func press(key: String) -> void:
         phase = "result"
         _result_t = 0.0
         msg = _tx("stars0")
+        _record()
         _canvas.queue_redraw()
         return
     if key == "pray":
@@ -19881,7 +24480,17 @@ func press(key: String) -> void:
     match phase:
         "intro":
             if key == "confirm":
+                if practice:
+                    _reseed()
                 _begin_jam()
+            elif practice and key in ["left", "a", "right", "d"]:
+                var at := MODEL_ORDER.find(model)
+                var dir := -1 if key in ["left", "a"] else 1
+                model = str(MODEL_ORDER[posmod(at + dir, MODEL_ORDER.size())])
+                _reseed()
+            elif practice and key in ["up", "down"]:
+                practice_seed = clampi(practice_seed + (1 if key == "up" else -1), 1, 99)
+                _reseed()
         "tray":
             if key in ["left", "a"]:
                 tray_sel = posmod(tray_sel - 1, _tray().size())
@@ -19893,10 +24502,11 @@ func press(key: String) -> void:
             if key == "confirm":
                 _pull()
         "toner":
+            var n := _names().size()
             if key in ["left", "a"]:
-                sel = posmod(sel - 1, 4)
+                sel = posmod(sel - 1, n)
             elif key in ["right", "d"]:
-                sel = posmod(sel + 1, 4)
+                sel = posmod(sel + 1, n)
             elif key == "confirm":
                 _install()
         "shake":
@@ -19907,7 +24517,7 @@ func press(key: String) -> void:
                     shakes += 1
                     if shakes >= 10:
                         msg = ""
-                        _begin_test()
+                        _advance()
         "test":
             if not _answered and key in ["1", "2", "3"]:
                 _answer(int(key) - 1)
@@ -19922,19 +24532,13 @@ func press(key: String) -> void:
 func _load_paper() -> void:
     if tray_sel == 0:
         msg = _tx("tray_ok")
-        _begin_toner_after_tray()
-    elif tray_sel == 3 and Difficulty.rng("printer").randf() < 0.05:
+        _advance(true)
+    elif tray_sel == 3 and _rng().randf() < 0.05:
         msg = _tx("tray_hit")
-        _begin_toner_after_tray()
+        _advance(true)
     else:
         msg = _tx("tray_bad")
         _mistake()
-
-
-func _begin_toner_after_tray() -> void:
-    var keep := msg
-    _begin_toner()
-    msg = keep
 
 
 func _pull() -> void:
@@ -19942,14 +24546,23 @@ func _pull() -> void:
     var zw := Difficulty.f("printer.zone")
     if d <= (0.07 + 0.03 * float(mini(blessed, 2))) * zw:
         spot += 1
+        combo += 1
         msg = _tx("jam_clean")
+        if combo >= 2 and jam_len > 3 and jam_len - spot >= 2:
+            jam_len -= 1
+            combo = 0
+            msg += " " + _tx("jam_short")
         _new_zone()
-        if spot >= 3:
-            _begin_tray()
+        if spot >= jam_len:
+            _advance()
     elif d <= (0.16 + 0.04 * float(mini(blessed, 2))) * zw:
         msg = _tx("jam_hold")
     else:
         msg = _tx("jam_tear")
+        combo = 0
+        if jam_len < 6:
+            jam_len += 1
+            msg += " " + _tx("jam_scrap")
         _mistake()
         _new_zone()
 
@@ -19958,8 +24571,8 @@ func _install() -> void:
     if sel == int(order[step]):
         step += 1
         msg = _tx("toner_ok")
-        if step >= 4:
-            _begin_shake()
+        if step >= _names().size():
+            _advance(true)
     else:
         msg = _tx("toner_bad")
         _mistake()
@@ -19970,7 +24583,7 @@ func _answer(choice: int) -> void:
     _answered = true
     if choice == int(q.correct):
         msg = _tx("right") + " " + str(q.why)
-    elif choice == int(q.hit) and Difficulty.rng("printer").randf() < 0.05:
+    elif choice == int(q.hit) and _rng().randf() < 0.05:
         msg = _tx("hit")
     else:
         msg = _tx("wrong") + " " + str(q.why)
@@ -19992,8 +24605,8 @@ func _process(delta: float) -> void:
     _t += delta
     _result_t += delta
     if phase == "jam":
-        var speed := Difficulty.f("printer.speed")
-        marker += _dir * delta * (0.8 + 0.3 * float(spot)) * speed * (1.5 if fast else 1.0)
+        var speed := Difficulty.f("printer.speed") * tired
+        marker += _dir * delta * (0.8 + 0.3 * float(mini(spot, 4))) * speed * (1.5 if fast else 1.0)
         if marker >= 1.0:
             marker = 1.0
             _dir = -1.0
@@ -20005,7 +24618,7 @@ func _process(delta: float) -> void:
         if _shake_t <= 0.0:
             msg = _tx("shake_late")
             _mistake()
-            _begin_test()
+            _advance(true)
     _canvas.queue_redraw()
 
 
@@ -20047,7 +24660,7 @@ func _paint() -> void:
         note += "  PRAY %d" % faith
     UiStyle.panel(_canvas, panel, _tx("title"), note)
     if blessed > 0 and phase != "result":
-        _txt(str(TEXT.blessed_tag), 64, 2, Color("9cf0b0"))
+        _txt(str(TEXT.blessed_tag), PW - 32.0, 10, Color("1f7a3a"))
     match phase:
         "intro":
             _paint_intro()
@@ -20066,7 +24679,12 @@ func _paint() -> void:
     if phase != "result":
         var lines := _wrap(msg, int((panel.size.x - 8.0) / 4.0))
         for i in mini(lines.size(), 3):
-            _txt(str(lines[i]), 4, panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0, UiStyle.MUTED)
+            _txt(
+                str(lines[i]),
+                4,
+                panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0,
+                UiStyle.MUTED
+            )
     UiStyle.footer(_canvas, panel, _hint())
 
 
@@ -20084,38 +24702,108 @@ func _hint() -> String:
         "shake":
             return "A / D = SHAKE  P = PRAY  ESC = GIVE UP"
         "test":
-            return "SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+            return (
+                "SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+            )
     return _tx("done")
 
 
+# the printer, drawn in 160 x 40 at y: every model has its own shape
 func _printer(y: float) -> void:
-    _r(8, y, 160, 40, Color("c9cdd6"))
-    _r(8, y, 160, 3, Color("f2f4f8"))
-    _r(8, y + 37, 160, 3, Color("8e939e"))
-    _r(12, y + 8, 152, 24, Color("2e3138"))
-    for i in 4:
-        _canvas.draw_circle(_o + Vector2(32.0 + 40.0 * float(i), y + 20.0), 7.0, Color("6a6f7a"))
-        _canvas.draw_circle(_o + Vector2(32.0 + 40.0 * float(i), y + 20.0), 3.0, Color("4a4f5a"))
+    var cols := _colors()
+    match str(_m().look):
+        "inkjet":
+            _r(30, y, 116, 6, PAPER)  # the sheet in the rear feed
+            _r(8, y + 6, 160, 30, Color("e8e2d0"))
+            _r(8, y + 6, 160, 3, Color("fbf8ee"))
+            _r(12, y + 14, 152, 14, Color("2e3138"))
+            _r(52, y + 31, 72, 5, Color("2e3138"))  # the output tray
+            for i in 4:
+                _r(24.0 + 38.0 * float(i), y + 17, 26, 8, cols[i])
+        "plotter":
+            _r(8, y, 160, 22, Color("d5d8de"))
+            _r(8, y, 160, 3, Color("f2f4f8"))
+            _r(12, y + 8, 152, 8, Color("2e3138"))
+            _r(26, y + 22, 5, 18, Color("8e939e"))  # the stand
+            _r(145, y + 22, 5, 18, Color("8e939e"))
+            _r(44, y + 22, 88, 16, PAPER)  # the plot hanging out
+            _r(44, y + 22, 88, 1, Color("9aa7b8"))
+            _r(52, y + 28, 30, 1, Color("2fa7d8"))
+            _r(52, y + 32, 60, 1, Color("8a8f9a"))
+        "mfp":
+            _r(8, y, 160, 8, Color("9fb4c8"))  # the scanner lid and glass
+            _r(8, y, 160, 2, Color("d4e2ee"))
+            _r(8, y + 8, 160, 32, Color("c9cdd6"))
+            _r(8, y + 37, 160, 3, Color("8e939e"))
+            _r(12, y + 13, 152, 18, Color("2e3138"))
+            _r(18, y + 16, 30, 11, Color("3a6a42"))  # the little display
+            for i in 4:
+                _r(60.0 + 22.0 * float(i), y + 17, 16, 9, Color("6a6f7a"))
+        "receipt":
+            _r(52, y + 6, 72, 32, Color("e3e0d6"))
+            _r(52, y + 6, 72, 3, Color("fbf8ee"))
+            _r(56, y + 14, 64, 8, Color("2e3138"))  # the slot
+            _r(70, y + 22, 36, 16, PAPER)  # the receipt
+            for i in 4:
+                _r(70.0 + 9.0 * float(i), y + 36, 5, 2, PAPER)  # the torn edge
+            _r(60, y, 56, 6, Color("8e939e"))  # the lid
+            _canvas.draw_circle(_o + Vector2(114.0, y + 12.0), 2.0, Color("e04a3a"))
+        "dot":
+            _r(34, y, 108, 12, PAPER)  # the form coming up
+            for i in 5:
+                _r(36, y + 1.0 + 2.0 * float(i), 2, 1, Color("8a8f9a"))  # pinfeed holes
+                _r(138, y + 1.0 + 2.0 * float(i), 2, 1, Color("8a8f9a"))
+            _r(8, y + 12, 160, 26, Color("d9d2b8"))
+            _r(8, y + 12, 160, 3, Color("efe9d2"))
+            _r(8, y + 35, 160, 3, Color("a89f84"))
+            _r(20, y + 19, 136, 8, Color("3b3a36"))  # the carriage track
+            _r(80, y + 16, 14, 12, Color("2a2a33"))  # the head
+        _:
+            _r(8, y, 160, 40, Color("c9cdd6"))
+            _r(8, y, 160, 3, Color("f2f4f8"))
+            _r(8, y + 37, 160, 3, Color("8e939e"))
+            _r(12, y + 8, 152, 24, Color("2e3138"))
+            for i in 4:
+                _canvas.draw_circle(_o + Vector2(32.0 + 40.0 * float(i), y + 20.0), 7.0, Color("6a6f7a"))
+                _canvas.draw_circle(_o + Vector2(32.0 + 40.0 * float(i), y + 20.0), 3.0, Color("4a4f5a"))
 
 
 func _paint_intro() -> void:
     _printer(16)
     var lines := [_tx("intro1"), _tx("intro2")]
     for i in lines.size():
-        _txt(str(lines[i]), 6, 62.0 + float(i) * 7.0)
+        _txt(str(lines[i]), 4, 58.0 + float(i) * 7.0)
+    var y := 74.0
+    if practice:
+        _txt(
+            "< %s >  SEED %02d" % [str(_m().label), practice_seed],
+            4,
+            y,
+            UiStyle.HEAD
+        )
+        _txt(_tx("practice_help"), 4, y + 7.0, UiStyle.MUTED)
+        y += 14.0
+    if tired > 1.01:
+        _txt(_tx("tired_note") % int(roundf((tired - 1.0) * 100.0)), 4, y, Color("c0392b"))
 
 
 func _paint_jam() -> void:
     _printer(14)
-    for i in 3:
-        var x := 36.0 + 44.0 * float(i)
+    var n := jam_len
+    var w := minf(28.0, 160.0 / float(n) - 4.0)
+    for i in n:
+        var x := 8.0 + (float(i) + 0.5) * 160.0 / float(n)
         if i < spot:
-            _r(x - 14, 28, 28, 5, PAPER)
+            _r(x - w * 0.5, 28, w, 5, PAPER)
         else:
-            for k in 5:
-                _r(x - 12.0 + float(k) * 5.0, 24.0 + float((k + i) % 3) * 3.0, 6, 9, PAPER)
-                _r(x - 12.0 + float(k) * 5.0, 24.0 + float((k + i) % 3) * 3.0, 6, 1, Color("c9c3b2"))
-    _txt("PULLED %d OF 3" % spot, 8, 58)
+            var bits := maxi(2, int(w / 5.0))
+            for k in bits:
+                var bx := x - w * 0.5 + float(k) * w / float(bits)
+                _r(bx, 24.0 + float((k + i) % 3) * 3.0, w / float(bits) + 1.0, 9, PAPER)
+                _r(bx, 24.0 + float((k + i) % 3) * 3.0, w / float(bits) + 1.0, 1, Color("c9c3b2"))
+    _txt("PULLED %d OF %d" % [spot, jam_len], 8, 58)
+    if tired > 1.01:
+        _txt(_tx("tired_tag"), 80, 58, Color("c0392b"))
     _r(16, 74, 144, 10, Color("8a8f9a"))
     var zw := Difficulty.f("printer.zone")
     _r(16.0 + 144.0 * (zone - 0.16 * zw), 74, 144.0 * 0.32 * zw, 10, Color("f2c94c"))
@@ -20126,8 +24814,8 @@ func _paint_jam() -> void:
 func _paint_tray() -> void:
     _r(10, 14, 156, 20, Color("14301c"))
     _r(12, 16, 152, 16, Color("3a6a42"))
-    _txt("PC LOAD LETTER", 16, 21, Color("d8f8d8"), 1)
-    _txt("TRAY 2", 130, 21, Color("d8f8d8"), 1)
+    _txt(_tx("tray_screen"), 16, 21, Color("d8f8d8"), 1)
+    _txt(_tx("tray_slot"), 160.0 - float(_tx("tray_slot").length()) * 4.0, 21, Color("d8f8d8"), 1)
     for i in _tray().size():
         var x := 12.0 + 38.0 * float(i)
         _r(x, 40, 34, 28, INK)
@@ -20135,32 +24823,40 @@ func _paint_tray() -> void:
         if i < 3:
             for k in 3:
                 _r(x + 5, 46.0 + float(k) * 5.0, 24.0 - float(i) * 2.0, 1, Color("8a8f9a"))
-        _txt(str(_tray()[i]), x + 3, 58, INK)
+        _txt(str(_tray()[i]).substr(0, 8), x + 3, 58, INK)
         if i == tray_sel:
             _r(x - 2, 38, 38, 2, Color("ff6a3a"))
             _r(x - 2, 68, 38, 2, Color("ff6a3a"))
 
 
 func _paint_toner() -> void:
-    for i in 4:
-        var x := 14.0 + 40.0 * float(i)
+    var n := _names().size()
+    var x0 := (PW - (40.0 * float(n) - 10.0)) * 0.5
+    for i in n:
+        var x := x0 + 40.0 * float(i)
         _r(x, 24, 30, 36, INK)
-        _r(x + 1, 25, 28, 34, COLORS[i])
+        _r(x + 1, 25, 28, 34, _colors()[i])
         _r(x + 3, 28, 24, 5, Color(1, 1, 1, 0.35))
-        _txt(str(COLOR_NAMES[i]).substr(0, 4), x + 2, 50, Color.WHITE if i != 2 else INK)
+        _txt(str(_names()[i]).substr(0, 4), x + 2, 50, Color.WHITE if i != 2 or n < 4 else INK)
         if i == sel:
             _r(x - 2, 22, 34, 2, Color("ff6a3a"))
             _r(x - 2, 60, 34, 2, Color("ff6a3a"))
-    if step < 4:
-        _txt("INSTALL: " + str(COLOR_NAMES[int(order[step])]), 8, 70, INK, 1)
-    for i in 4:
-        _r(120.0 + 10.0 * float(i), 70, 7, 7, COLORS[int(order[i])] if i < step else Color("8a8f9a"))
+    if step < n:
+        _txt("INSTALL: " + str(_names()[int(order[step])]), 8, 70, INK, 1)
+    for i in n:
+        _r(
+            160.0 - 10.0 * float(n) + 10.0 * float(i),
+            70,
+            7,
+            7,
+            _colors()[int(order[i])] if i < step else Color("8a8f9a")
+        )
 
 
 func _paint_shake() -> void:
     var off := sin(_t * 30.0) * 3.0
     _r(70.0 + off, 22, 36, 44, INK)
-    _r(71.0 + off, 23, 34, 42, COLORS[3])
+    _r(71.0 + off, 23, 34, 42, _colors().back())
     _r(75.0 + off, 27, 26, 5, Color(1, 1, 1, 0.3))
     _r(16, 72, 144, 7, Color("8a8f9a"))
     _r(16, 72, 144.0 * float(shakes) / 10.0, 7, Color("4cff7a"))
@@ -20183,6 +24879,8 @@ func _paint_result() -> void:
         _txt(str(part), 4, y)
         y += 7.0
     _txt("MISTAKES %d" % mistakes, 4, y + 3.0, UiStyle.HEAD)
+    if streak >= 2:
+        _txt(_tx("streak") % streak, 4, y + 10.0, UiStyle.GOLD)
 ''')
 
 write("scripts/hud.gd", '''extends Node2D
@@ -20287,8 +24985,9 @@ write("scripts/charselect.gd", '''extends Node2D
 # Esc goes back, mouse hover and click work like the title menu. Confirming applies the choice
 # (Player.current_character, Phone.os) and emits done(result); Esc on the first step emits
 # cancelled. In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at
-# their desks as NPCs, so only the people who are not in World.CAST are offered; Free Play
-# offers everyone.
+# their desks as NPCs, so the tech campaign offers only the people who are not in World.CAST; the
+# owner campaign offers Alan or Garrison (the other owner becomes your partner NPC); Free Play offers
+# everyone. Whoever you pick as a cast member leaves the cast and sits at their own desk (Campaign.player_as).
 
 signal done(result: Dictionary)
 signal cancelled
@@ -20326,6 +25025,13 @@ const PEOPLE := {
         "name": "VIC",
         "blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
     },
+}
+# the owner campaign shows these instead of the Free Play blurbs
+const OWNER_BLURBS := {
+    "office_alan":
+    "THE TECHNICAL OWNER. SERVERS, BACKUPS AND THE STACK ARE YOURS; GARRISON KEEPS THE CLIENTS HAPPY.",
+    "casual_garrison":
+    "THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
 }
 const PHONES := [
     {
@@ -20365,8 +25071,11 @@ func needs_phone() -> bool:
     return mode == "tech"
 
 
-# who this mode offers: everyone in Free Play, only non-cast people in a campaign
+# who this mode offers: everyone in Free Play, Alan or Garrison in the owner campaign, only non-cast people in
+# the tech campaign
 func choices(for_mode: String) -> Array:
+    if for_mode == "owner":
+        return ["office_alan", "casual_garrison"]
     var cast: Array = []
     for n in World.CAST:
         cast.append(str(World.CAST[n].character))
@@ -20404,7 +25113,10 @@ func current_id() -> String:
 
 
 func info(id: String) -> Dictionary:
-    return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
+    var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
+    if mode == "owner" and OWNER_BLURBS.has(id):
+        entry["blurb"] = OWNER_BLURBS[id]
+    return entry
 
 
 func summary(with_tier := true) -> String:
@@ -20749,6 +25461,7 @@ var _items: Array = []
 var _menu: Node2D
 var _front: CanvasLayer
 var _select: Node2D = null  # the character select screen while it is open
+var _career: Node = null  # the career screen while it is open
 
 
 func _ready() -> void:
@@ -20962,7 +25675,7 @@ func _rotate() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if _started or _select != null:
+    if _started or _select != null or _career != null:
         return
     var go := false
     if event is InputEventKey and event.pressed and not event.echo:
@@ -21015,6 +25728,7 @@ func _open_menu() -> void:
     else:
         _items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
     _items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
+    _items.append({"label": "CAREER", "id": "career", "enabled": true})
     _sel = 0
     _menu_open = true
     _prompt.visible = false
@@ -21045,10 +25759,28 @@ func _choose(i: int) -> void:
     if i < 0 or i >= _items.size() or not _items[i].enabled:
         return
     var id := str(_items[i].id)
+    if id == "career":
+        _open_career()
+        return
     if id.ends_with("_continue"):
         _start(id)  # a saved run keeps its character: no select screen
     else:
         _open_select(id)
+
+
+func _open_career() -> void:
+    if _career != null:
+        return
+    _logo.visible = false
+    _menu.visible = false
+    _career = Career.open_screen(_close_career)
+
+
+func _close_career() -> void:
+    _career = null
+    _logo.visible = true
+    _menu.visible = _menu_open
+    _menu.queue_redraw()
 
 
 # new runs pick their character (and, in the tech campaign, their phone) first
@@ -21105,7 +25837,7 @@ func _start(id: String, summary := "") -> void:
             Campaign.continue_game("owner")
         _:
             Campaign.new_game(Campaign.FREE)
-    Game.go("main_floor", "start")
+    Game.go(Campaign.start_scene(), "start")
     if summary != "":
         var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
         Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
@@ -21408,6 +26140,7 @@ func _ready() -> void:
     Game.format_changed.connect(_apply_format)
     _apply_format()
     World.populate(self)
+    _seat_player()
     Expo.populate(self)
     Onsite.populate(self)
     _room = scene_file_path.get_file().get_basename()
@@ -21416,6 +26149,19 @@ func _ready() -> void:
     if Net.carrying != "" and _room != "network_closet":
         Net.drop_carry()  # a cable end cannot leave the closet
         _player.give("")
+
+
+# the first room of a run as a cast member: you are already sitting at your desk
+func _seat_player() -> void:
+    if not Game.vars.get("start_seated", false):
+        return
+    Game.vars.erase("start_seated")
+    var desk: Dictionary = World.player_desk()
+    if desk.is_empty() or str(desk.scene) != scene_file_path.get_file().get_basename():
+        return
+    var seat := get_node_or_null("Interactables/%s" % str(desk.seat))
+    if seat != null and _player.has_method("sit_now"):
+        _player.sit_now(seat)
 
 
 func _on_lights(room: String) -> void:
@@ -21599,6 +26345,8 @@ func nearest() -> Node:
         d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
         if n.get("low_priority") == true:
             d += 14.0
+        elif n.is_in_group("npcs") and str(n.get("role")) == "site:owner":
+            d -= 8.0  # the client owner beats the PC on their own desk (E talks to them, Tab still picks the PC)
         elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
             d += 20.0  # doors and equipment beat small talk with the client staff (Tab still selects them)
         if d < best_d:
@@ -21685,6 +26433,7 @@ func _unhandled_input(event: InputEvent) -> void:
         var i: int = event.keycode - KEY_1
         if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
             _switch_character(CHARACTERS[i])
+            Campaign.refresh_free()
 
 
 func _play(action: String) -> void:
@@ -21814,6 +26563,18 @@ func sit(s: Node) -> void:
     global_position = s.global_position
     facing = s.facing
     _play("sitdown")
+
+
+# the first frame of a run as a cast member: already at your desk
+func sit_now(s: Node) -> void:
+    seat = s
+    state = "sitting"
+    velocity = Vector2.ZERO
+    body_shape.set_deferred("disabled", true)
+    global_position = s.global_position
+    facing = s.facing
+    _play("type" if s.typing else "sit")
+    _stash()
 
 
 func _stand_up() -> void:
@@ -22349,6 +27110,624 @@ for fname, cfg in SETS.items():
               f'position = Vector2({x0 + 60}, {FLOOR_Y})', ""]
     text = f'[gd_scene load_steps={len(ext) + len(shapes) + 1} format=3]\n\n' + "\n".join(lines)
     write(f"scenes/{fname}.tscn", text)
+
+write("scripts/career.gd", '''extends Node
+# gdlint:disable=max-line-length
+# The Career: lifetime counters and medals that belong to YOU, not to one campaign slot. They are saved in
+# user://mspsim_career.cfg (Campaign.save_prefix + "career.cfg"), so New Game, a deleted campaign and the end of a
+# year do not reset them. The game feeds them through small hooks (Career.add / best / fastest and the note_*
+# helpers); every change re-checks the MEDALS table and toasts a new medal.
+#
+#   Career.value("tickets")          a counter ("tk.<fix>", "pr.<printer model>", "stars.<game>", "days.<mode>" ...)
+#   Career.unlocked("wall_sunset")   a cosmetic unlock (UNLOCKS): true once its medal is earned
+#   Career.wallpaper_color()         the Computer desktop tint you picked
+#   Career.ringtone_name()           the phone ringtone you picked
+#
+# MEDALS rules are lists of [counter, op, number] that must all hold; op is ">=" or "<=" (a "<=" counter must be
+# set, 0 means never done). Derived counters: printer_models, stars3, days_total, tk_other.
+# MEDALS and UNLOCKS are patchable text tables (story/strings.txt): title and desc are the text. Keep a desc under
+# 31 characters so it fits one line on the career screen.
+
+const SCREEN := preload("res://scripts/career_screen.gd")
+const VERSION := 1
+const GAMES := ["bowling", "karaoke", "escape", "dinner"]
+const KNOWN_FIXES := ["password", "spooler", "clear_temp", "reboot", "av", "restore", "adobe", "network", "project"]
+const MEDALS := [
+    {"id": "ticket_machine", "title": "TICKET MACHINE", "desc": "CLOSE 50 TICKETS", "rules": [["tickets", ">=", 50]]},
+    {"id": "help_desk_hero", "title": "HELP DESK HERO", "desc": "CLOSE 250 TICKETS", "rules": [["tickets", ">=", 250]]},
+    {"id": "sticky_savior", "title": "STICKY NOTES SAVIOR", "desc": "CLOSE 10 PASSWORD TICKETS", "rules": [["tk.password", ">=", 10]]},
+    {"id": "printer_whisperer", "title": "PRINTER WHISPERER", "desc": "WIN WITH EVERY PRINTER MODEL", "rules": [["printer_models", ">=", 6]]},
+    {"id": "never_restarted", "title": "NEVER RESTARTED", "desc": "5 PRINTER WINS, NO PRAYERS", "rules": [["pr_streak", ">=", 5]]},
+    {"id": "toner_wrangler", "title": "TONER WRANGLER", "desc": "WIN 20 PRINTER GAMES", "rules": [["printer_wins", ">=", 20]]},
+    {"id": "meeting_survivor", "title": "MEETING SURVIVOR", "desc": "ATTEND 5 ALL-HANDS", "rules": [["meetings", ">=", 5]]},
+    {"id": "duck_whisperer", "title": "DUCK WHISPERER", "desc": "TALK TO THE DUCK 50 TIMES", "rules": [["duck_squeaks", ">=", 50]]},
+    {"id": "people_person", "title": "PEOPLE PERSON", "desc": "PLAY 3 TEAM OUTINGS", "rules": [["outings", ">=", 3]]},
+    {"id": "full_house", "title": "FULL HOUSE", "desc": "3 STARS IN ALL FOUR GAMES", "rules": [["stars3", ">=", 4]]},
+    {"id": "gutter_guru", "title": "GUTTER GURU", "desc": "ROLL 10 GUTTER BALLS", "rules": [["bowl_gutters", ">=", 10]]},
+    {"id": "strike_zone", "title": "STRIKE ZONE", "desc": "ROLL 10 STRIKES", "rules": [["bowl_strikes", ">=", 10]]},
+    {"id": "crowd_pleaser", "title": "CROWD PLEASER", "desc": "HIT 20 PERFECT KARAOKE NOTES", "rules": [["kara_perfects", ">=", 20]]},
+    {"id": "vault_cracker", "title": "VAULT CRACKER", "desc": "OPEN THE VAULT IN 50 SECONDS", "rules": [["escape_best", "<=", 50]]},
+    {"id": "dinner_diplomat", "title": "DINNER DIPLOMAT", "desc": "SCORE 24 AT THE TEAM DINNER", "rules": [["dinner_best", ">=", 24]]},
+    {"id": "friday_warrior", "title": "FRIDAY WARRIOR", "desc": "SURVIVE 5 NERF WARS", "rules": [["nerf_wars", ">=", 5]]},
+    {"id": "dead_eye", "title": "DEAD EYE", "desc": "HIT COWORKERS 30 TIMES", "rules": [["nerf_hits", ">=", 30]]},
+    {"id": "long_shot", "title": "LONG SHOT", "desc": "HIT SOMEONE FROM 150 PX AWAY", "rules": [["nerf_longest", ">=", 150]]},
+    {"id": "limbo_legend", "title": "LIMBO LEGEND", "desc": "DUCK 25 DARTS", "rules": [["nerf_dodges", ">=", 25]]},
+    {"id": "cat_person", "title": "CAT PERSON", "desc": "PET 10 OFFICE ANIMALS", "rules": [["pets", ">=", 10]]},
+    {"id": "on_hold", "title": "ON HOLD, PLEASE", "desc": "HEAR OUT 5 CLIENT COMPLAINTS", "rules": [["vic_calls", ">=", 5]]},
+    {"id": "year_one", "title": "YEAR ONE", "desc": "FINISH A CAMPAIGN YEAR", "rules": [["endings", ">=", 1]]},
+    {"id": "regular", "title": "REGULAR", "desc": "PLAY 20 DAYS OR WEEKS", "rules": [["days_total", ">=", 20]]},
+    {"id": "corner_office", "title": "CORNER OFFICE", "desc": "RUN 10 OWNER WEEKS", "rules": [["days.owner", ">=", 10]]},
+]
+# cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
+# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
+# medal "" = always available; the first entry of a kind is its default.
+const UNLOCKS := [
+    {"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
+    {"id": "wall_sunset", "kind": "wallpaper", "title": "SUNSET ORANGE", "medal": "ticket_machine", "value": "b8683a"},
+    {"id": "wall_graphite", "kind": "wallpaper", "title": "GRAPHITE", "medal": "help_desk_hero", "value": "454b58"},
+    {"id": "wall_mint", "kind": "wallpaper", "title": "MINT", "medal": "printer_whisperer", "value": "3a9a84"},
+    {"id": "wall_plum", "kind": "wallpaper", "title": "PLUM", "medal": "friday_warrior", "value": "6a4690"},
+    {"id": "ring_classic", "kind": "ringtone", "title": "RING RING", "medal": "", "value": ""},
+    {"id": "ring_dial", "kind": "ringtone", "title": "OLD DIAL TONE", "medal": "never_restarted", "value": ""},
+    {"id": "ring_chime", "kind": "ringtone", "title": "WIND CHIME", "medal": "people_person", "value": ""},
+    {"id": "ring_marimba", "kind": "ringtone", "title": "MARIMBA", "medal": "crowd_pleaser", "value": ""},
+    {"id": "ring_quack", "kind": "ringtone", "title": "QUACK QUACK", "medal": "duck_whisperer", "value": ""},
+    {"id": "duck_gold", "kind": "duck", "title": "GOLD RUBBER DUCK", "medal": "duck_whisperer", "value": ""},
+    {"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
+    {"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
+    {"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
+]
+# what the career screen lists: [section, label, counter, format]
+const COUNTERS := [
+    ["DESK", "TICKETS CLOSED", "tickets", "n"],
+    ["", "  PASSWORDS", "tk.password", "n"],
+    ["", "  PRINTERS", "tk.spooler", "n"],
+    ["", "  CLEAN-UPS", "tk.clear_temp", "n"],
+    ["", "  REBOOTS", "tk.reboot", "n"],
+    ["", "  VIRUSES", "tk.av", "n"],
+    ["", "  RESTORES", "tk.restore", "n"],
+    ["", "  OTHER", "tk_other", "n"],
+    ["", "TECH DAYS WORKED", "days.tech", "n"],
+    ["", "OWNER WEEKS RUN", "days.owner", "n"],
+    ["", "YEARS FINISHED", "endings", "n"],
+    ["", "ALL-HANDS ATTENDED", "meetings", "n"],
+    ["OUTINGS", "OUTINGS PLAYED", "outings", "n"],
+    ["", "BOWLING BEST", "stars.bowling", "stars"],
+    ["", "KARAOKE BEST", "stars.karaoke", "stars"],
+    ["", "ESCAPE ROOM BEST", "stars.escape", "stars"],
+    ["", "DINNER BEST", "stars.dinner", "stars"],
+    ["", "STRIKES", "bowl_strikes", "n"],
+    ["", "GUTTER BALLS", "bowl_gutters", "n"],
+    ["", "PERFECT NOTES", "kara_perfects", "n"],
+    ["", "FASTEST ESCAPE", "escape_best", "secs"],
+    ["", "BEST DINNER SCORE", "dinner_best", "n"],
+    ["PRINTER", "PRINTER WINS", "printer_wins", "n"],
+    ["", "  LASER", "pr.laser", "n"],
+    ["", "  INKJET", "pr.inkjet", "n"],
+    ["", "  PLOTTER", "pr.plotter", "n"],
+    ["", "  COPIER", "pr.mfp", "n"],
+    ["", "  RECEIPT", "pr.receipt", "n"],
+    ["", "  DOT MATRIX", "pr.dot", "n"],
+    ["", "BEST NO-PRAYER RUN", "pr_streak", "n"],
+    ["NERF AND OFFICE", "NERF HITS", "nerf_hits", "n"],
+    ["", "DARTS DUCKED", "nerf_dodges", "n"],
+    ["", "NERF WARS", "nerf_wars", "n"],
+    ["", "LONGEST HIT", "nerf_longest", "px"],
+    ["", "ANIMALS PETTED", "pets", "n"],
+    ["", "COMPLAINTS HEARD", "vic_calls", "n"],
+    ["", "DUCK CHATS", "duck_squeaks", "n"],
+]
+const FLUSH_SECS := 3.0
+
+var counters := {}
+var earned := {}  # medal id -> true
+var prefs := {"wallpaper": "", "ringtone": ""}
+var toasts := true  # tests switch the medal toast off
+var last_medal := ""
+
+var _dirty := false
+var _flush_t := 0.0
+
+
+func _ready() -> void:
+    load_file()
+    Campaign.day_started.connect(_on_day)
+
+
+func path() -> String:
+    return Campaign.save_prefix + "career.cfg"
+
+
+# ---- save / load ------------------------------------------------------------------------------------
+func load_file() -> void:
+    counters = {}
+    earned = {}
+    prefs = {"wallpaper": "", "ringtone": ""}
+    var cfg := ConfigFile.new()
+    if cfg.load(path()) != OK:
+        return  # no file yet (or an old build): everything starts at zero
+    if cfg.has_section("counters"):
+        for k in cfg.get_section_keys("counters"):
+            counters[k] = int(cfg.get_value("counters", k, 0))
+    if cfg.has_section("medals"):
+        for k in cfg.get_section_keys("medals"):
+            if bool(cfg.get_value("medals", k, false)):
+                earned[k] = true
+    for k in prefs:
+        prefs[k] = str(cfg.get_value("prefs", k, ""))
+
+
+func save_file() -> void:
+    var cfg := ConfigFile.new()
+    cfg.set_value("career", "version", VERSION)
+    for k in counters:
+        cfg.set_value("counters", k, int(counters[k]))
+    for k in earned:
+        cfg.set_value("medals", k, true)
+    for k in prefs:
+        cfg.set_value("prefs", k, str(prefs[k]))
+    cfg.save(path())
+    _dirty = false
+
+
+func reset_all() -> void:
+    counters = {}
+    earned = {}
+    prefs = {"wallpaper": "", "ringtone": ""}
+    _dirty = true
+
+
+func _process(delta: float) -> void:
+    if _dirty:
+        _flush_t += delta
+        if _flush_t >= FLUSH_SECS:
+            _flush_t = 0.0
+            save_file()
+
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST and _dirty:
+        save_file()
+
+
+# ---- counters ---------------------------------------------------------------------------------------
+func value(key: String) -> int:
+    match key:
+        "printer_models":
+            var n := 0
+            for m in PrinterGame.MODELS:
+                if int(counters.get("pr." + str(m), 0)) > 0:
+                    n += 1
+            return n
+        "stars3":
+            var n := 0
+            for g in GAMES:
+                if int(counters.get("stars." + g, 0)) >= 3:
+                    n += 1
+            return n
+        "days_total":
+            return int(counters.get("days.tech", 0)) + int(counters.get("days.owner", 0)) + int(counters.get("days.free", 0))
+        "tk_other":
+            var sum := 0
+            for f in ["password", "spooler", "clear_temp", "reboot", "av", "restore"]:
+                sum += int(counters.get("tk." + f, 0))
+            return maxi(0, int(counters.get("tickets", 0)) - sum)
+    return int(counters.get(key, 0))
+
+
+func add(key: String, n := 1) -> void:
+    counters[key] = int(counters.get(key, 0)) + n
+    _changed()
+
+
+func best(key: String, v: int) -> void:
+    if v > int(counters.get(key, 0)):
+        counters[key] = v
+        _changed()
+
+
+func fastest(key: String, v: int) -> void:
+    var cur := int(counters.get(key, 0))
+    if v > 0 and (cur == 0 or v < cur):
+        counters[key] = v
+        _changed()
+
+
+func _changed() -> void:
+    _dirty = true
+    check_medals()
+
+
+# ---- the hooks the game calls --------------------------------------------------------------------------
+func note_ticket(fix: String) -> void:
+    counters["tickets"] = int(counters.get("tickets", 0)) + 1
+    counters["tk." + fix] = int(counters.get("tk." + fix, 0)) + 1
+    _changed()
+
+
+# a finished outing (result 0-3, or -1 for leaving early); info: strikes, gutters, perfects, escape_secs, dinner_score
+func note_outing(game: String, result: int, info := {}) -> void:
+    if result < 0:
+        return
+    add("outings")
+    best("stars." + game, result)
+    match game:
+        "karaoke":
+            add("kara_perfects", int(info.get("perfects", 0)))
+        "escape":
+            if result >= 1:
+                fastest("escape_best", int(info.get("secs", 0)))
+        "dinner":
+            best("dinner_best", int(info.get("score", 0)))
+
+
+func note_bowl(knocked: int, roll: int) -> void:
+    if knocked >= 10 and roll == 1:
+        add("bowl_strikes")
+    elif knocked == 0:
+        add("bowl_gutters")
+
+
+func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
+    if stars >= 1:
+        add("printer_wins")
+        add("pr." + model)
+    best("pr_streak", streak if not prayed else 0)
+
+
+func note_nerf_hit(reach: float) -> void:
+    add("nerf_hits")
+    best("nerf_longest", roundi(reach))
+
+
+func _on_day(_d: int) -> void:
+    add("days." + (Campaign.mode if Campaign.mode != "" else "free"))
+
+
+# ---- medals -----------------------------------------------------------------------------------------
+func rule_ok(r: Array) -> bool:
+    var v := value(str(r[0]))
+    var n := int(r[2])
+    if str(r[1]) == "<=":
+        return v > 0 and v <= n
+    return v >= n
+
+
+func met(m: Dictionary) -> bool:
+    for r in m.rules:
+        if not rule_ok(r):
+            return false
+    return true
+
+
+func has_medal(id: String) -> bool:
+    return earned.has(id)
+
+
+func medal(id: String) -> Dictionary:
+    for m in MEDALS:
+        if str(m.id) == id:
+            return m
+    return {}
+
+
+# award every medal whose rule now holds; returns the ids that are new
+func check_medals() -> Array:
+    var fresh := []
+    for m in MEDALS:
+        var id := str(m.id)
+        if not earned.has(id) and met(m):
+            earned[id] = true
+            fresh.append(id)
+    if not fresh.is_empty():
+        last_medal = str(fresh[fresh.size() - 1])
+        if toasts:
+            Hints.toast("MEDAL EARNED: " + str(medal(last_medal).title), 4.0)
+        save_file()
+    return fresh
+
+
+# progress text for a locked single-rule medal: "3/10" (empty when it has no count)
+func progress(m: Dictionary) -> String:
+    if m.rules.size() != 1 or str(m.rules[0][1]) != ">=":
+        return ""
+    return "%d/%d" % [mini(value(str(m.rules[0][0])), int(m.rules[0][2])), int(m.rules[0][2])]
+
+
+func earned_count() -> int:
+    var n := 0
+    for m in MEDALS:
+        if earned.has(str(m.id)):
+            n += 1
+    return n
+
+
+# ---- cosmetic unlocks -------------------------------------------------------------------------------
+func unlock_entry(id: String) -> Dictionary:
+    for u in UNLOCKS:
+        if str(u.id) == id:
+            return u
+    return {}
+
+
+func unlocked(id: String) -> bool:
+    var u := unlock_entry(id)
+    if u.is_empty():
+        return false
+    return str(u.medal) == "" or earned.has(str(u.medal))
+
+
+func unlocked_of(kind: String) -> Array:
+    var out := []
+    for u in UNLOCKS:
+        if str(u.kind) == kind and unlocked(str(u.id)):
+            out.append(u)
+    return out
+
+
+# the id picked for a kind (falls back to the default when the pick is not unlocked)
+func pick_of(kind: String) -> Dictionary:
+    var list := unlocked_of(kind)
+    if list.is_empty():
+        return {}
+    for u in list:
+        if str(u.id) == str(prefs.get(kind, "")):
+            return u
+    return list[0]
+
+
+func cycle_pick(kind: String, step := 1) -> Dictionary:
+    var list := unlocked_of(kind)
+    if list.is_empty():
+        return {}
+    var cur := str(pick_of(kind).id)
+    var at := 0
+    for i in list.size():
+        if str(list[i].id) == cur:
+            at = i
+    var nxt: Dictionary = list[posmod(at + step, list.size())]
+    prefs[kind] = str(nxt.id)
+    _dirty = true
+    save_file()
+    return nxt
+
+
+func wallpaper_color() -> Color:
+    var u := pick_of("wallpaper")
+    return Color(str(u.value)) if not u.is_empty() and str(u.value) != "" else Color("2d6ca8")
+
+
+func ringtone_name() -> String:
+    var u := pick_of("ringtone")
+    return str(u.title) if not u.is_empty() else "RING RING"
+
+
+# ---- the screen -------------------------------------------------------------------------------------
+# open the career screen on a CanvasLayer under the scene tree root; closing frees it. Returns the screen.
+func open_screen(on_close := Callable()) -> Node:
+    var layer := CanvasLayer.new()
+    layer.layer = 70
+    var screen: Node2D = SCREEN.new()
+    layer.add_child(screen)
+    get_tree().root.add_child(layer)
+    var was_ui := Game.ui_open
+    Game.ui_open = true
+    screen.closed.connect(
+        func() -> void:
+            Game.ui_open = was_ui
+            layer.queue_free()
+            if on_close.is_valid():
+                on_close.call()
+    )
+    return screen
+''')
+
+write("scripts/career_screen.gd", '''extends Node2D
+# gdlint:disable=max-line-length
+# The CAREER screen: lifetime counters (pages of rows) and the medal board (earned / locked with the rule hint),
+# drawn with the 3x5 font in the shared UiStyle panel. Opened by Career.open_screen() from the title menu and the
+# phone Settings. Left / Right (A / D) change page, Esc / Backspace go back, F9 cycles the format; the mouse can
+# click the < > buttons (or the wheel) and X. Two columns when the panel is wide (368x128, 320x180), one in portrait.
+
+signal closed
+
+const UiStyle := preload("res://scripts/ui_style.gd")
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const MEDAL_H := 16.0
+const ROW_H := 7.0
+const HEAD_ROW_H := 9.0
+
+var page := 0
+var pages: Array = []
+var _built_for := Vector2.ZERO
+var _btns: Array = []  # [Rect2, id]
+var _hover := ""
+var _born := -1
+
+
+func _ready() -> void:
+    _born = Engine.get_process_frames()
+    Game.format_changed.connect(queue_redraw)
+    queue_redraw()
+
+
+func page_count() -> int:
+    return pages.size()
+
+
+func go(step: int) -> void:
+    if pages.is_empty():
+        return
+    page = posmod(page + step, pages.size())
+    queue_redraw()
+
+
+func close() -> void:
+    closed.emit()
+
+
+func _input(event: InputEvent) -> void:
+    if Engine.get_process_frames() == _born:
+        return
+    if event is InputEventKey and event.pressed and not event.echo:
+        match event.keycode:
+            KEY_F9:
+                Game.cycle_format()
+            KEY_LEFT, KEY_A:
+                go(-1)
+            KEY_RIGHT, KEY_D:
+                go(1)
+            KEY_ESCAPE, KEY_BACKSPACE:
+                close()
+            _:
+                pass
+    elif event is InputEventMouseMotion:
+        var h := _hit(get_viewport().get_mouse_position())
+        if h != _hover:
+            _hover = h
+            queue_redraw()
+        return
+    elif event is InputEventMouseButton and event.pressed:
+        if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+            go(-1)
+        elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+            go(1)
+        elif event.button_index == MOUSE_BUTTON_LEFT:
+            click(get_viewport().get_mouse_position())
+    else:
+        return
+    get_viewport().set_input_as_handled()
+
+
+func _hit(at: Vector2) -> String:
+    for b in _btns:
+        if b[0].has_point(at):
+            return str(b[1])
+    return ""
+
+
+func click(at: Vector2) -> void:
+    match _hit(at):
+        "prev":
+            go(-1)
+        "next":
+            go(1)
+        "back":
+            close()
+
+
+# ---- layout -----------------------------------------------------------------------------------------
+func _body_rect(size: Vector2) -> Rect2:
+    var r := UiStyle.panel_rect(size, 360.0, 124.0 if size.y < 150.0 else 400.0)
+    return Rect2(r.position.x + 4.0, r.position.y + 12.0, r.size.x - 8.0, r.size.y - 21.0)
+
+
+func columns(body_w: float) -> int:
+    return 2 if body_w >= 290.0 else 1
+
+
+# split the counter rows and the medals into pages that fit the body
+func build(size: Vector2) -> void:
+    var body := _body_rect(size)
+    var cols := columns(body.size.x)
+    pages = []
+    var cap_c := int(body.size.y / ROW_H) * cols
+    var items: Array = []
+    for row in Career.COUNTERS:
+        if str(row[0]) != "":
+            items.append({"head": str(row[0])})
+        items.append({"label": str(row[1]), "key": str(row[2]), "fmt": str(row[3])})
+    var i := 0
+    while i < items.size():
+        var chunk: Array = items.slice(i, i + cap_c)
+        # do not leave a section title alone at the bottom of a page
+        if chunk.size() == cap_c and chunk.back().has("head"):
+            chunk.pop_back()
+        i += chunk.size()
+        pages.append({"title": "CAREER - TOTALS", "items": chunk})
+    var cap_m := maxi(1, int(body.size.y / MEDAL_H)) * cols
+    var n_pages := int(ceil(float(Career.MEDALS.size()) / float(cap_m)))
+    for p in n_pages:
+        pages.append({"title": "CAREER - MEDALS %d/%d" % [Career.earned_count(), Career.MEDALS.size()], "medals": Career.MEDALS.slice(p * cap_m, (p + 1) * cap_m)})
+    page = clampi(page, 0, maxi(0, pages.size() - 1))
+    _built_for = size
+
+
+func _fmt(v: int, fmt: String) -> String:
+    match fmt:
+        "stars":
+            return "-" if v <= 0 else "%d/3" % v
+        "secs":
+            return "-" if v <= 0 else "%d SEC" % v
+        "px":
+            return "-" if v <= 0 else "%d PX" % v
+    return str(v)
+
+
+func _draw() -> void:
+    var size := get_viewport_rect().size
+    draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.8))
+    if size != _built_for or pages.is_empty():
+        build(size)
+    _btns.clear()
+    var pg: Dictionary = pages[page]
+    var r := UiStyle.panel_rect(size, 360.0, 124.0 if size.y < 150.0 else 400.0)
+    var body := UiStyle.panel(self, r, str(pg.title), "%d/%d" % [page + 1, pages.size()])
+    var cols := columns(body.size.x)
+    var gap := 6.0
+    var colw := (body.size.x - gap * float(cols - 1)) / float(cols)
+    if pg.has("items"):
+        _draw_counters(pg.items, body, cols, colw, gap)
+    else:
+        _draw_medals(pg.medals, body, cols, colw, gap)
+    UiStyle.footer(self, r, "ARROWS PAGE  ESC BACK")
+    _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
+    _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
+    _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
+
+
+func _button(id: String, label: String, rc: Rect2) -> void:
+    _btns.append([rc, id])
+    draw_rect(rc, UiStyle.GOLD if _hover == id else UiStyle.SOFT)
+    UiStyle.center(self, label, rc.position.x + rc.size.x * 0.5, rc.position.y + 2.0, UiStyle.INK)
+
+
+func _draw_counters(items: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+    var per_col := int(body.size.y / ROW_H)
+    for i in items.size():
+        var it: Dictionary = items[i]
+        var cx := body.position.x + float(i / per_col) * (colw + gap)
+        var cy := body.position.y + float(i % per_col) * ROW_H
+        if it.has("head"):
+            UiStyle.text(self, str(it.head), cx, cy, UiStyle.HEAD)
+            draw_rect(Rect2(cx, cy + 6.0, colw, 1.0), UiStyle.SOFT)
+            continue
+        var v := Career.value(str(it.key))
+        UiStyle.text(self, str(it.label), cx, cy, UiStyle.INK)
+        UiStyle.right(self, _fmt(v, str(it.fmt)), cx + colw, cy, UiStyle.GOLD.darkened(0.35) if v > 0 else UiStyle.MUTED)
+
+
+func _draw_medals(list: Array, body: Rect2, cols: int, colw: float, gap: float) -> void:
+    var per_col := maxi(1, int(body.size.y / MEDAL_H))
+    var chars := int((colw - 9.0) / 4.0)
+    for i in list.size():
+        var m: Dictionary = list[i]
+        var x := body.position.x + float(i / per_col) * (colw + gap)
+        var y := body.position.y + float(i % per_col) * MEDAL_H
+        var got := Career.has_medal(str(m.id))
+        if got:
+            UiStyle.star(self, Vector2(x + 3.5, y + 3.0), 4.0, UiStyle.GOLD)
+        else:
+            draw_rect(Rect2(x, y, 7.0, 7.0), UiStyle.SOFT)
+            draw_rect(Rect2(x + 1.0, y + 1.0, 5.0, 5.0), UiStyle.PANEL)
+            draw_rect(Rect2(x + 2.0, y + 3.0, 3.0, 3.0), UiStyle.MUTED)
+        var prog := "" if got else Career.progress(m)
+        var name_chars := chars - (prog.length() + 1 if prog != "" else 0)
+        UiStyle.text(self, str(m.title).substr(0, name_chars), x + 9.0, y, UiStyle.INK if got else UiStyle.MUTED)
+        if prog != "":
+            UiStyle.right(self, prog, x + colw, y, UiStyle.MUTED)
+        UiStyle.text(self, str(m.desc).substr(0, chars), x + 9.0, y + 7.0, UiStyle.HEAD if got else UiStyle.MUTED.lightened(0.25))
+''')
 
 # format the generated scripts if gdtoolkit is installed (pip install gdtoolkit)
 import shutil

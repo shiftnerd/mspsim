@@ -133,6 +133,8 @@ func _input(event: InputEvent) -> void:
 					activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
 				elif app == "home":
 					home_move(1 if event.keycode == KEY_RIGHT else -1)
+				elif app == "settings":
+					activate("ring")
 			KEY_ENTER, KEY_KP_ENTER:
 				enter()
 	else:
@@ -190,6 +192,8 @@ func enter() -> void:
 		activate("os:ios")
 	elif app == "home":
 		activate("app:" + str(HOME_APPS[home_sel]))
+	elif app == "settings":
+		activate("career")
 	elif app == "mail" and mail_sel >= 0:
 		activate("mail:%d" % mail_sel)
 
@@ -211,6 +215,11 @@ func activate(id: String) -> void:
 					m.unread = false
 		"home":
 			app = "home"
+		"ring":
+			Career.cycle_pick("ringtone")
+		"career":
+			close()
+			Career.open_screen()
 		"back":
 			back()
 		"mail":
@@ -775,8 +784,21 @@ func _paint_settings(a: Rect2) -> void:
 			_text("*", Vector2(r.end.x - 6, r.position.y + 2 * _sc), Color("2b79f0"))
 		_region("os:" + ("ios" if ios else "android"), r)
 	y += 25 * _sc
-	_text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
-	_text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
+	# the TONE and CAREER rows take the bottom of the screen: the network block only shows when it fits above them
+	var room := y + 16 * _sc <= body.end.y - 22 * _sc
+	if room:
+		_text("NETWORK", Vector2(body.position.x + 3, y), Color("7d8595"))
+		_text("CELLULAR 4G", Vector2(body.position.x + 3, y + 8 * _sc), INK)
 	var note := _wrap("WORKS WITHOUT THE OFFICE NETWORK", _chars(body.size.x - 6))
+	if not room or y + (17 + 7 * note.size()) * _sc > body.end.y - 22 * _sc:
+		note = []
 	for i in note.size():
 		_text(str(note[i]), Vector2(body.position.x + 3, y + (17 + 7 * i) * _sc), Color("7d8595"))
+	var ring := Rect2(body.position.x + 2, body.end.y - 21 * _sc, body.size.x - 4, 9 * _sc)
+	_fill(ring, WHITE)
+	_text("TONE: " + _clip(Career.ringtone_name(), _chars(body.size.x - 10) - 6), ring.position + Vector2(3, 2 * _sc), INK)
+	_region("ring", ring)
+	var cr := Rect2(body.position.x + 2, body.end.y - 10 * _sc, body.size.x - 4, 9 * _sc)
+	_fill(cr, Color("dce8fa"))
+	_text("CAREER", cr.position + Vector2(3, 2 * _sc), INK)
+	_region("career", cr)

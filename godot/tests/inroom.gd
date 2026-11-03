@@ -284,7 +284,7 @@ func _init() -> void:
 		var top := -1
 		for i in 4:
 			var pts := 0
-			for who in o.DINERS:
+			for who in o.diners():
 				pts += o.diner_points(who, o.g.options[i])
 			if pts > top:
 				top = pts

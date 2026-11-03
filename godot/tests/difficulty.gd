@@ -108,6 +108,7 @@ func _init() -> void:
 		"printer.speed": 1.0,
 		"printer.zone": 1.0,
 		"printer.questions": 2.0,
+		"printer.chain": 3.0,
 		"nerf.gap": 1.0,
 	}
 	var same: bool = legacy.size() == d.TABLE.size()

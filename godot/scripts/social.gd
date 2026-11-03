@@ -10,7 +10,7 @@ extends Node
 
 signal changed
 
-const PEOPLE := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+const ALL := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
 # Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
 const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
@@ -18,9 +18,10 @@ const ROLES := {
 	"Garrison": "CO-OWNER",
 	"Dan": "NETWORK TECH",
 	"Vic": "ACCOUNT MANAGER",
-	"Maya": "TIER 1"
+	"Maya": "TIER 1",
+	"Morgan": "MANAGER"
 }
-const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya"}
+const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const DEFAULT_THANKS := [
 	"thanks for grabbing the phones earlier!",
@@ -44,6 +45,22 @@ func is_owner(who: String) -> bool:
 	return OWNERS.has(who)
 
 
+# Morgan runs the desk: she does not take tickets and is not one of the techs
+func is_manager(who: String) -> bool:
+	return who == "Morgan"
+
+
+# the coworkers you actually have: everyone in the building except the person you play as (and Maya, who is not on
+# your payroll in the owner campaign). Morgan is a coworker in every mode.
+func people() -> Array:
+	var gone: Array = World.roster_gone()
+	var out: Array = []
+	for who in ALL:
+		if not gone.has(who):
+			out.append(who)
+	return out
+
+
 func role(who: String) -> String:
 	return str(ROLES.get(who, ""))
 
@@ -54,7 +71,7 @@ func _ready() -> void:
 
 func reset() -> void:
 	rel = {}
-	for who in PEOPLE:
+	for who in ALL:
 		rel[who] = 0
 	calls_answered = 0
 	day_delta = 0
@@ -68,7 +85,7 @@ func value(who: String) -> int:
 
 
 func change(who: String, amount: int) -> void:
-	if not Campaign.active or not rel.has(who):
+	if not Campaign.active or not rel.has(who) or not people().has(who):
 		return
 	var before := value(who)
 	rel[who] = clampi(before + amount, -100, 100)
@@ -77,7 +94,7 @@ func change(who: String, amount: int) -> void:
 
 
 func change_all(amount: int) -> void:
-	for who in PEOPLE:
+	for who in people():
 		change(who, amount)
 
 
@@ -115,9 +132,10 @@ func glyph(who: String) -> String:
 
 func average() -> float:
 	var total := 0
-	for who in PEOPLE:
+	var all := people()
+	for who in all:
 		total += value(who)
-	return float(total) / float(PEOPLE.size())
+	return float(total) / float(maxi(1, all.size()))
 
 
 # a small nudge to the end-of-day reputation change
@@ -138,7 +156,8 @@ func note_call_answered() -> void:
 	calls_answered += 1
 	if Campaign.active and calls_answered % 3 == 0:
 		change_all(1)
-		Msp.send_text(PEOPLE[randi() % PEOPLE.size()], THANKS[randi() % THANKS.size()])
+		var pool := people()
+		Msp.send_text(pool[randi() % pool.size()], THANKS[randi() % THANKS.size()])
 
 
 func note_ticket_closed(ticket: Dictionary) -> void:

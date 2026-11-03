@@ -1779,6 +1779,7 @@ func _pet(kind: String) -> void:
 	if lines.is_empty():
 		return
 	pets += 1
+	Career.add("pets")
 	Hints.toast(str(lines[randi() % lines.size()]), 3.0)
 	var p := get_tree().current_scene.get_node_or_null("Actors/Player")
 	if p != null and p.has_method("start_emote") and kind != "fish":
@@ -1810,8 +1811,12 @@ func _chose(id: String) -> void:
 	for o in job.options:
 		if str(o.id) == id:
 			opt = o
-	if str(opt.get("game", "")) == "printer":
-		PrinterGame.start(func(stars: int) -> void: _printer_done(stars), _printer_kind())
+	if str(opt.get("game", "")).begins_with("printer"):
+		PrinterGame.start(
+			func(stars: int) -> void: _printer_done(stars),
+			_printer_model(str(opt.get("game", ""))),
+			{"onsite": true}
+		)
 		return
 	_away(float(opt.hours), ticket_id)
 	var ok := randf() < float(opt.chance)
@@ -1843,9 +1848,31 @@ func _printer_done(stars: int) -> void:
 	)
 
 
-# the architects' printer is a plotter: the mini-game wears the PLOTTER_* texts there
-func _printer_kind() -> String:
-	return "plotter" if site_type(client) == "arch" else ""
+# which printer model fights back: the job's game field can force one ("printer:inkjet"), else the site decides
+# (architects: plotter, dentists: receipt or laser, law: multifunction, vets: inkjet, realty: laser or dot matrix,
+# the trailers: dot matrix); the either-or sites roll once per client and day from the printer stream
+func _printer_model(game := "printer") -> String:
+	var forced := game.get_slice(":", 1) if game.contains(":") else ""
+	if PrinterGame.MODELS.has(forced):
+		return forced
+	var either := ""
+	match site_type(client):
+		"arch":
+			return "plotter"
+		"law":
+			return "mfp"
+		"vet":
+			return "inkjet"
+		"trailer":
+			return "dot"
+		"dental":
+			either = "receipt"
+		"realty":
+			either = "dot"
+		_:
+			return "laser"
+	var r := Difficulty.rng_for("printer.model", client * 100 + Campaign.day)
+	return either if r.randi() % 2 == 0 else "laser"
 
 
 func _printer_practice() -> void:
@@ -1869,7 +1896,8 @@ func _practice_answer(pick: String) -> void:
 			func(stars: int) -> void:
 				if stars >= 0:  # -1 = backed out on the intro page
 					Hints.toast(str(TEXT.printer_practice_done) % stars, 3.0),
-			_printer_kind()
+			_printer_model(),
+			{"practice": true}
 		)
 
 

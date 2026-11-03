@@ -149,6 +149,38 @@ const DEFAULT_MESSAGES := {
 		"text": "Thanks for being great with the clients. They keep mentioning you.",
 		"options": [],
 	},
+	"lunch_Morgan":
+	{
+		"text": "Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for.",
+		"options":
+		[
+			{"label": "SURE, I WILL BRING ONE", "social": 2, "reply": "Turkey, no pickles. You are a good person."},
+			{"label": "CAN'T, SWAMPED", "social": 0, "reply": "Understood. Close the P1s first."},
+		],
+	},
+	"phones_Morgan":
+	{
+		"text": "I need ten quiet minutes with the owners' budget. Can you cover my phones?",
+		"options":
+		[
+			{"label": "SURE", "social": 2, "reply": "Thank you. I owe you one. Do not tell anyone I said that."},
+			{"label": "SORRY, CAN'T", "social": -1, "reply": "Fair. I will let it ring."},
+		],
+	},
+	"help_Morgan":
+	{
+		"text": "Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me?",
+		"options":
+		[
+			{"label": "PULL THE LIST", "social": 2, "xp": 2, "reply": "That is exactly what I needed. Thank you."},
+			{"label": "TOO BUSY RIGHT NOW", "social": -1, "reply": "Sure. I will do it the slow way."},
+		],
+	},
+	"thanks_Morgan":
+	{
+		"text": "Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.",
+		"options": [],
+	},
 }
 var MESSAGES: Dictionary = DEFAULT_MESSAGES.duplicate(true)
 
@@ -185,14 +217,15 @@ func boss() -> String:
 
 
 func contacts() -> Array:
-	var out: Array = Social.PEOPLE.duplicate()
-	out.append(boss())
+	var out: Array = Social.people()
+	if not out.has(boss()):
+		out.append(boss())  # Marge in the owner campaign (Morgan is already a cast member)
 	return out
 
 
 # [status text, colour name] from what the cast is doing right now
 func presence(who: String) -> Array:
-	if who == boss():
+	if who == boss() and not World.chars.has(who):
 		return ["AVAILABLE", "green"]
 	if not World.chars.has(who):
 		return ["OFFLINE", "grey"]
@@ -252,7 +285,7 @@ func _process(delta: float) -> void:
 # a coworker messages you
 func incoming(forced_kind := "") -> void:
 	var pool := []
-	for who in Social.PEOPLE:
+	for who in Social.people():
 		if presence(who)[0] == "AVAILABLE" and not pending.has(who):
 			pool.append(who)
 	if pool.is_empty() or pending.size() >= 2:
@@ -329,6 +362,9 @@ func send_action(who: String, kind: String) -> String:
 
 
 func _lend_a_hand(who: String) -> void:
+	if Social.is_manager(who):
+		_push(who, who, "I run the desk, I do not take tickets. Tell me what is blocking you and I will clear the road.")
+		return
 	var willing: bool = Social.value(who) >= 0 or randf() < 0.4
 	var ticket := _helpable_ticket()
 	var owner_voice := Social.is_owner(who)
@@ -387,7 +423,7 @@ func friend_warning() -> void:
 	for t in Msp.open_tickets():
 		if t.internal or _warned.has(int(t.id)) or t.breached or float(t.sla_left) > 40.0:
 			continue
-		for who in Social.PEOPLE:
+		for who in Social.people():
 			if Social.is_friendly(who) and presence(who)[0] == "AVAILABLE":
 				_warned[int(t.id)] = true
 				_push(

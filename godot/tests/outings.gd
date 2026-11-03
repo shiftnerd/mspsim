@@ -113,7 +113,7 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 
 	# ---- escape room
-	for who in social.PEOPLE:
+	for who in social.people():
 		social.rel[who] = 0
 	social.rel["Alan"] = 60
 	social.rel["Dan"] = 40
@@ -282,7 +282,7 @@ func _init() -> void:
 	o.start("escape")
 	o.press(KEY_ENTER)
 	for friend in ["Alan", "Garrison", "Dan", "Maya", "Vic"]:
-		for who in social.PEOPLE:
+		for who in social.people():
 			social.rel[who] = 0
 		social.rel[friend] = 60
 		o._escape_room_setup()
@@ -306,7 +306,7 @@ func _init() -> void:
 		)
 		if friend == "Garrison":
 			_check(said.contains(o.RECIPE_TIPS["dial"]), "Garrison, the lock, explains the dial")
-	for who in social.PEOPLE:
+	for who in social.people():
 		social.rel[who] = 0
 	o._finish(-1)
 	o.press(KEY_ENTER)
@@ -381,7 +381,7 @@ func _init() -> void:
 		"the face shows the taste, not the mood"
 	)
 	_check(
-		o.dinner_targets()[0] == 21,
+		o.dinner_targets()[0] == 22,
 		"the 3 star bar follows the table's mood (chatty and tired cancel)"
 	)
 
@@ -478,7 +478,7 @@ func _init() -> void:
 	)
 	o.g.moods = {"Alan": "easygoing", "Garrison": "easygoing", "Dan": "easygoing"}
 	_check(
-		o.diner_shift("Alan") == 1 and o.dinner_targets()[0] == 30,
+		o.diner_shift("Alan") == 1 and o.dinner_targets()[0] == 31,
 		"a fancy table lifts everyone's mood (and the bar)"
 	)
 	o.set_budget("cheap")

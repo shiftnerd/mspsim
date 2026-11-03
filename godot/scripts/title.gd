@@ -37,6 +37,7 @@ var _items: Array = []
 var _menu: Node2D
 var _front: CanvasLayer
 var _select: Node2D = null  # the character select screen while it is open
+var _career: Node = null  # the career screen while it is open
 
 
 func _ready() -> void:
@@ -250,7 +251,7 @@ func _rotate() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _started or _select != null:
+	if _started or _select != null or _career != null:
 		return
 	var go := false
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -303,6 +304,7 @@ func _open_menu() -> void:
 	else:
 		_items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
 	_items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
+	_items.append({"label": "CAREER", "id": "career", "enabled": true})
 	_sel = 0
 	_menu_open = true
 	_prompt.visible = false
@@ -333,10 +335,28 @@ func _choose(i: int) -> void:
 	if i < 0 or i >= _items.size() or not _items[i].enabled:
 		return
 	var id := str(_items[i].id)
+	if id == "career":
+		_open_career()
+		return
 	if id.ends_with("_continue"):
 		_start(id)  # a saved run keeps its character: no select screen
 	else:
 		_open_select(id)
+
+
+func _open_career() -> void:
+	if _career != null:
+		return
+	_logo.visible = false
+	_menu.visible = false
+	_career = Career.open_screen(_close_career)
+
+
+func _close_career() -> void:
+	_career = null
+	_logo.visible = true
+	_menu.visible = _menu_open
+	_menu.queue_redraw()
 
 
 # new runs pick their character (and, in the tech campaign, their phone) first
@@ -393,7 +413,7 @@ func _start(id: String, summary := "") -> void:
 			Campaign.continue_game("owner")
 		_:
 			Campaign.new_game(Campaign.FREE)
-	Game.go("main_floor", "start")
+	Game.go(Campaign.start_scene(), "start")
 	if summary != "":
 		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
 		Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)

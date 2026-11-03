@@ -211,10 +211,13 @@ func _init() -> void:
 	# ---- the maturity badge
 	c.new_game("owner")
 	_check(o.oml() == 1, "a fresh company is at level 1: Beginning")
+	c.day = 3
 	o.flags["peer_group"] = true
 	o.flags["practice_profit"] = true
 	o.flags["backup_service"] = true
 	o.apply({"price": 0.1, "vic_plan": "balanced"})
+	_check(o.oml() <= 2, "habits alone do not buy maturity: it is capped by the week (%d at week 3)" % o.oml())
+	c.day = 16
 	_check(
 		o.oml() >= 3,
 		(
@@ -226,7 +229,9 @@ func _init() -> void:
 	o.flags["practice_handover"] = true
 	o.flags["collections_done"] = true
 	o.apply({"stack": {"psa": "opsforge"}})
-	_check(o.oml() == 5, "enough habits make you Innovating")
+	o.flags["growth_done"] = true
+	o.flags["practice_scope"] = true
+	_check(o.oml() == 5, "enough habits, given time, make you Innovating")
 
 	# ---- everything survives a save
 	c.new_game("owner")

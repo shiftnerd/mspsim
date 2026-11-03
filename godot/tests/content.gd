@@ -259,7 +259,9 @@ func _init() -> void:
 			int(o.PRODUCTS[digit][0]) * int(o.PRODUCTS[digit][1]) == int(digit),
 			"%d = %s" % [digit, str(o.PRODUCTS[digit])]
 		)
-	for who in social.PEOPLE:
+	for who in social.people():
+		if who == "Morgan":  # the manager does not come to outings; the code falls back to Alan's hints
+			continue
 		_check(o.FRIEND_HINTS.has(who), "%s has hints" % who)
 	for who in o.FRIEND_HINTS:
 		for zone in zones + ["keypad"]:

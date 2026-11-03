@@ -83,6 +83,8 @@ func nearest() -> Node:
 		d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
 		if n.get("low_priority") == true:
 			d += 14.0
+		elif n.is_in_group("npcs") and str(n.get("role")) == "site:owner":
+			d -= 8.0  # the client owner beats the PC on their own desk (E talks to them, Tab still picks the PC)
 		elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
 			d += 20.0  # doors and equipment beat small talk with the client staff (Tab still selects them)
 		if d < best_d:
@@ -174,6 +176,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var i: int = event.keycode - KEY_1
 		if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
 			_switch_character(CHARACTERS[i])
+			Campaign.refresh_free()
 
 
 func _play(action: String) -> void:
@@ -303,6 +306,18 @@ func sit(s: Node) -> void:
 	global_position = s.global_position
 	facing = s.facing
 	_play("sitdown")
+
+
+# the first frame of a run as a cast member: already at your desk
+func sit_now(s: Node) -> void:
+	seat = s
+	state = "sitting"
+	velocity = Vector2.ZERO
+	body_shape.set_deferred("disabled", true)
+	global_position = s.global_position
+	facing = s.facing
+	_play("type" if s.typing else "sit")
+	_stash()
 
 
 func _stand_up() -> void:

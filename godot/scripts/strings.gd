@@ -12,6 +12,7 @@ extends Node
 const FILE := "res://story/strings.txt"
 const ROOTS := {
 	"Story": ["DAYS", "VIGNETTES"],
+	"Events": ["DECK"],
 	"Playbook": ["BOOKS", "PROBLEMS"],
 	"Owner": ["CARDS"],
 	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
@@ -22,9 +23,10 @@ const ROOTS := {
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
 	"Hints": ["DAY1"],
+	"Career": ["MEDALS", "UNLOCKS"],
 	"Growth": ["STRETCH"],
 	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
-	"PrinterGame": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"],
+	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS"],
@@ -43,6 +45,7 @@ const TEXT_KEYS := [
 	"reply",
 	"desc",
 	"line",
+	"error",
 	"situation",
 	"result"
 ]

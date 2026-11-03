@@ -42,6 +42,20 @@ func _init() -> void:
 		strings.applied == 0, "and the file says the same as the code (%d edits)" % strings.applied
 	)
 
+	# ---- the event deck and the drawn vignettes are editable too
+	var ev: Node = root.get_node("Events")
+	_check(table.has("Events.DECK.toner_late.text"), "the event deck is in story/strings.txt")
+	_check(table.has("Story.VIGNETTES.captcha.options.0.text"), "the drawn vignettes are in story/strings.txt")
+	_check(ev.DECK.size() >= 40, "the deck has 40 or more cards (%d)" % ev.DECK.size())
+	var ev_text: String = ev.DECK.toner_late.text
+	var ev_temp := "user://test_strings_ev.txt"
+	_write(ev_temp, "[Events.DECK.toner_late.text]
+The toner is late again.
+")
+	strings.load_file(ev_temp)
+	_check(ev.DECK.toner_late.text == "The toner is late again." and ev.DEFAULT_DECK.toner_late.text == ev_text, "an edited event card is used, the default is kept")
+	ev.DECK.toner_late.text = ev_text
+
 	# ---- an edit takes effect
 	var key := "Story.DAYS.1.0.body"
 	var original: String = story.DAYS[1][0].body

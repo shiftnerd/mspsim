@@ -4,7 +4,7 @@ Where open bugs and gaps are tracked. The ordered plan for everything is `docs/R
 Status is as of the commit that last touched this file; move items to `CLAUDE.md` once they ship.
 
 ## In progress
-- Nothing is running. Next up in `docs/ROADMAP.md`: X1 (owner balance, smaller items and UX), then X2 (play as a cast member) and the owner campaign as Alan or Garrison.
+- Nothing is running. Next up in `docs/ROADMAP.md`: X2 (play as a cast member) and the owner campaign as Alan or Garrison.
 - Merged and done: owner playthrough fixes 1-6 and the pitch name mismatch, the canon text pass (Alan and Garrison as owners), polish round 2, tech playtest bug fixes, difficulty and seeds, day report and brand names, ticket alternatives, outing UI, site polish, character select.
 
 ## Owner playthrough findings (weeks 1-20, live play)
@@ -17,10 +17,10 @@ Medium
 ~~5. The "prospect" card (`owner.gd:271-293`) is hard-coded to Piedmont Pediatrics, signs a random client, and OFFER THE DISCOUNT never applies the promised 20%.~~ FIXED
 ~~6. Phone TEXTS list is blank on 368x128 (`phone.gd:713-732` lists oldest first and breaks when the first does not fit); the phone home screen has no keyboard selection (mouse only).~~ FIXED
 Balance
-7. Early game is tight (about +$660 a week, W-2 67% vs a 55% target, hiring in week 3 drops EBITDA to about -$265, reputation 50 to 41 over weeks 1-5) and then far too easy after week 12 (weekly EBITDA $2.5k then $10k, cash $53k+, value over $1M by week 17); maturity 4 reached by week 7 from clicking through cards.
-8. Vic complains about the same clients almost every week; Dana's Monday advice repeated the same card three times; "take the meeting yourself" (60%) is always worse than "let Vic close it" (95%); the billing leak lowers reported revenue but not collected cash (`owner.gd:2686` vs `:2754`).
+~~7. Early game is tight (about +$660 a week, W-2 67% vs a 55% target, hiring in week 3 drops EBITDA to about -$265, reputation 50 to 41 over weeks 1-5) and then far too easy after week 12 (weekly EBITDA $2.5k then $10k, cash $53k+, value over $1M by week 17); maturity 4 reached by week 7 from clicking through cards.~~ FIXED in X1 (see CLAUDE.md "Owner round 2")
+~~8. Vic complains about the same clients almost every week; Dana's Monday advice repeated the same card three times; "take the meeting yourself" (60%) is always worse than "let Vic close it" (95%); the billing leak lowers reported revenue but not collected cash (`owner.gd:2686` vs `:2754`).~~ FIXED
 UX and text
-9. HUD text draws over the card speaker bar and desktop icon labels (the tech-branch fix hides the HUD while a card is open: check the desktop labels); every client shows REVIEW DUE in week 1; Esc in the Computer needs a second press; cards do not freeze the clock mid-day; the outing invitation does not state costs until the game pick; at client sites the owner's desk PC steals E from the owner NPC.
+~~9. HUD text draws over the card speaker bar and desktop icon labels (the tech-branch fix hides the HUD while a card is open: check the desktop labels); every client shows REVIEW DUE in week 1; Esc in the Computer needs a second press; cards do not freeze the clock mid-day; the outing invitation does not state costs until the game pick; at client sites the owner's desk PC steals E from the owner NPC.~~ FIXED (desktop labels checked: the HUD hides while Cards is open; cards freeze the clock since round 1)
 10. (Name mismatch FIXED: the pitch site uses the lead's client name.) The pitch lead said Lindqvist and Moss but the site sign and speaker read NORTHLIGHT DESIGN; owner character select offers "ALAN - ON SITE" (`site_alan`) though Alan is on the team (the filter at `charselect.gd:86` matches only `office_alan`; with the new canon the owner campaign should instead offer Alan or Garrison as the owner).
 Not found: anachronisms, script errors, bankruptcy (cash stayed above $4,000). Worked: character select, Boardroom tabs, weekly report, stack / peer / mentor cards, projects, business review and prospect pitch at client sites, QBR price rises, profit reviews, competitor cards, the Tier 2 growth plan.
 

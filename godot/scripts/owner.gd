@@ -8,12 +8,15 @@ extends Node
 # Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
-const START_CASH := 5000
+const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
 const W2_TARGET := 0.55  # payroll as a share of revenue: healthy MSPs stay under this
 const PEER_MARGIN := 0.15  # the peer group's typical EBITDA margin
 const RENT := 500
+const SEAT_COST := 55  # weekly cost of each client past five (licences, desks, insurance, a bigger line)
+const ADVICE_GAP := 3  # weeks before Dana opens the same advice card again
+const HIRE_RAMP_WEEKS := 3  # a new hire costs 60% of the wage for the first weeks
 const TOOLS := 0  # tool costs now come from the stack
 const DEFAULT_STACK := {"psa": "connectwhy", "rmm": "labrat", "hardware": "hewlitt"}
 # What you run and sell. cost = weekly, speed = tech speed, morale = % effect on the crew, issues = ticket volume
@@ -1005,6 +1008,7 @@ var history: Array = []
 
 var _dynamic := {}  # cards built at run time (the consultant's advice, inbound leads)
 var _advised := false
+var _advice_week := {}  # advice topic -> week Dana last opened it (no repeats inside ADVICE_GAP weeks)
 var _leads := 0
 var _work := {}
 var _tick := 0.0
@@ -1074,6 +1078,7 @@ func reset() -> void:
 	_leaving = []
 	_dynamic = {}
 	_advised = false
+	_advice_week = {}
 	_leads = 0
 
 
@@ -1167,7 +1172,8 @@ func practices() -> int:
 
 
 func oml() -> int:
-	return clampi(1 + practices() / 2, 1, 5)
+	# a habit takes weeks to show: the level is capped by the calendar (4 at week 12, 5 at week 16)
+	return clampi(mini(1 + (practices() * 2) / 5, 1 + Campaign.day / 4), 1, 5)
 
 
 # everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
@@ -1484,11 +1490,17 @@ func apply(fx: Dictionary) -> void:
 	vic_bonus += float(fx.get("vic", 0.0))
 	weekly_extra += int(fx.get("weekly", 0))
 	if fx.has("hire"):
-		extra_staff.append(fx.hire.duplicate())
+		var newbie: Dictionary = fx.hire.duplicate()
+		newbie["age"] = 0
+		extra_staff.append(newbie)
 	if fx.get("lose_tech", false):
 		lost_techs += 1
 	if fx.get("sign", false):
 		var signed: int = Sales.sign_client(int(fx.get("client", -1)))
+		if signed >= 0 and fx.has("sign_bonus"):
+			# the owner closed it in person: better first-month mood and a better fee
+			Sales.satisfaction[signed] = clampi(Sales.mood(signed) + int(fx.sign_bonus.mood), 0, 100)
+			fee_boost[signed] = float(fx.sign_bonus.fee)
 		if signed >= 0 and fx.has("discount_new"):
 			discount[signed] = {
 				"mult": float(fx.discount_new.mult), "weeks": int(fx.discount_new.weeks)
@@ -1508,19 +1520,45 @@ func apply(fx: Dictionary) -> void:
 	Msp.changed.emit()
 
 
+# which advice card Dana opens: the relevant ones in priority order, never one shown in the last 3 weeks
+func advice_topic(open: int, est: Dictionary) -> String:
+	var relevant := []
+	if cash < 1500:
+		relevant.append("cash")
+	if float(est.w2) > W2_TARGET + 0.15:
+		relevant.append("w2")
+	if Sales.average() < 55.0:
+		relevant.append("mood")
+	if open >= 5:
+		relevant.append("queue")
+	if relevant.is_empty():
+		relevant.append("healthy")
+	relevant.append_array(["train", "lunch", "push"])
+	var oldest := ""
+	for topic in relevant:
+		var since: int = Campaign.day - int(_advice_week.get(topic, -99))
+		if since >= ADVICE_GAP:
+			return str(topic)
+		if oldest == "" or int(_advice_week.get(topic, -99)) < int(_advice_week.get(oldest, -99)):
+			oldest = str(topic)
+	return oldest
+
+
 # the consultant's Monday advice: a card built from your actual numbers
 func advice() -> void:
 	var text := ""
 	var options := []
 	var open := Msp.open_tickets().size()
 	var est := weekly_estimate()
-	if cash < 1500:
+	var key := advice_topic(open, est)
+	_advice_week[key] = Campaign.day
+	if key == "cash":
 		text = "Cash is thin. I would look at pricing before anything else, and I would not add payroll right now."
 		options = [
 			{"label": "RAISE PRICES 8% (MOOD -3)", "fx": {"price": 0.08, "mood_all": -3}},
 			{"label": "I WILL MANAGE", "fx": {}}
 		]
-	elif float(est.w2) > W2_TARGET + 0.15:
+	elif key == "w2":
 		text = (
 			"Your W-2 ratio is %d%%. Healthy MSPs stay near %d%%. Either grow revenue or hold payroll flat until you do."
 			% [int(100.0 * float(est.w2)), int(100.0 * W2_TARGET)]
@@ -1529,7 +1567,7 @@ func advice() -> void:
 			{"label": "PUSH SALES (MARKETING $400/WEEK)", "fx": {"marketing": 400}},
 			{"label": "HOLD PAYROLL FLAT", "fx": {}}
 		]
-	elif Sales.average() < 55.0:
+	elif key == "mood":
 		text = "Your clients are unhappy. That always turns into churn a few weeks later. Fix the relationship before the revenue disappears."
 		options = [
 			{
@@ -1539,7 +1577,7 @@ func advice() -> void:
 			},
 			{"label": "FOCUS THE TEAM ON SLAS", "fx": {"speed": 0.1}}
 		]
-	elif open >= 5:
+	elif key == "queue":
 		text = (
 			"Your queue is backing up (%d open). Either add hands or make the hands you have faster."
 			% open
@@ -1548,7 +1586,7 @@ func advice() -> void:
 			{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}},
 			{"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}}
 		]
-	else:
+	elif key == "healthy":
 		text = (
 			"Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind Vic."
 			% int(100.0 * float(est.margin))
@@ -1556,6 +1594,24 @@ func advice() -> void:
 		options = [
 			{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}},
 			{"label": "KEEP DOING WHAT WORKS", "fx": {}}
+		]
+	elif key == "train":
+		text = "Whatever else is going on, the crew is the product. A week of training pays back in faster tickets and fewer reopens."
+		options = [
+			{"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "speed": 0.25}},
+			{"label": "NOT NOW", "fx": {}}
+		]
+	elif key == "lunch":
+		text = "Clients rarely say they are unhappy until the day they leave. Take your best ones to lunch before the competitor does."
+		options = [
+			{"label": "CLIENT REVIEW LUNCHES ($300)", "need": 300, "fx": {"cash": -300, "mood_all": 8}},
+			{"label": "NOT NOW", "fx": {}}
+		]
+	else:
+		text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind Vic whatever the month looks like." % int(100.0 * float(est.margin))
+		options = [
+			{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}},
+			{"label": "NOT NOW", "fx": {}}
 		]
 	options.append(
 		{"label": "DISMISS DANA (SAVE $400/WEEK)", "fx": {"weekly": -400, "unflag": "mentor"}}
@@ -1609,10 +1665,14 @@ func _inbound_lead() -> void:
 		"options":
 		[
 			{
-				"label": "TAKE THE MEETING YOURSELF",
+				"label": "TAKE THE MEETING YOURSELF (60%: HAPPIER, +10% FEE)",
 				"roll":
 				[
-					[0.6, {"sign": true, "client": lead}, "You charm them. %s signs." % prospect],
+					[
+						0.6,
+						{"sign": true, "client": lead, "sign_bonus": {"mood": 15, "fee": 1.1}},
+						"You charm them. %s signs at a better rate and starts happy." % prospect
+					],
 					[0.4, {}, "They say they will think about it."]
 				]
 			},
@@ -1693,6 +1753,7 @@ func _hire_card() -> void:
 # new hires change week by week: green ones learn, people-people please clients, flight risks leave
 func _staff_week() -> void:
 	for hire in extra_staff.duplicate():
+		hire["age"] = int(hire.get("age", 99)) + 1
 		var trait_data: Dictionary = TRAITS.get(str(hire.get("trait", "steady")), {})
 		if trait_data.has("grow"):
 			hire.skill = minf(1.0, float(hire.skill) + float(trait_data.grow))
@@ -1876,12 +1937,17 @@ func drop_client(client: int, reason := "") -> void:
 	Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
 
 
+# a client is due a business review from week 6 on, 8 weeks after the last one (never at the start)
+func review_due(client: int) -> bool:
+	return Campaign.day >= 6 and Campaign.day - int(_qbr_done.get(client, -99)) >= 8
+
+
 # ---- quarterly business review: a client meeting ----------------------------------------------------------
 func _qbr() -> void:
 	var pick := -1
 	var worst := 100000
 	for c in Sales.active:
-		if Campaign.day - int(_qbr_done.get(int(c), -99)) < 8:
+		if not review_due(int(c)):
 			continue
 		var score := Sales.mood(int(c)) - client_fee(int(c)) / 100
 		if score < worst:
@@ -2707,15 +2773,41 @@ func client_fee(client: int) -> int:
 	return int(float(FEE) * price * mult)
 
 
+# ---- costs that grow with the company and the calendar (X1 balance) ----------------------------
+# the techs ask for a raise at week 12; a new hire works for 60% of the wage while they learn the ropes
+func wage_mult() -> float:
+	return 1.05 if Campaign.day >= 12 else 1.0
+
+
+func tech_wage() -> int:
+	return int(round(float(WAGE) * wage_mult()))
+
+
+func hire_wage(hire: Dictionary) -> int:
+	var wage := int(round(float(hire.wage) * wage_mult()))
+	if int(hire.get("age", 99)) < HIRE_RAMP_WEEKS:
+		wage = int(round(float(wage) * 0.6))
+	return wage
+
+
+# rent (the lease escalates at weeks 9 and 14), liability insurance (week 12) and seats/licences/desks
+# for every client past five
+func overhead() -> int:
+	var rent := RENT + (50 if Campaign.day >= 9 else 0) + (50 if Campaign.day >= 14 else 0)
+	var insurance := 80 if Campaign.day >= 12 else 0
+	var seats := maxi(0, Sales.active.size() - 5) * SEAT_COST
+	return rent + insurance + seats
+
+
 func weekly_estimate() -> Dictionary:
 	var revenue := 0
 	for c in Sales.active:
 		revenue += client_fee(int(c))
 	revenue = int(float(revenue) * (1.0 - leak)) + Projects.service_revenue()
-	var payroll := WAGE * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
+	var payroll := tech_wage() * maxi(0, 3 - lost_techs) + int(VIC_PLANS[vic_plan].wage) + _commission_week
 	for hire in extra_staff:
-		payroll += int(hire.wage)
-	var fixed := RENT + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
+		payroll += hire_wage(hire)
+	var fixed := overhead() + TOOLS + weekly_extra + stack_cost() + Projects.service_cost()
 	var ebitda := revenue - payroll - fixed - marketing
 	var rev := float(maxi(1, revenue))
 	return {
@@ -2780,12 +2872,14 @@ func settle() -> Dictionary:
 			collected += int(inv.amount)
 			ar.erase(inv)
 	for c in Sales.active:
-		var fee := client_fee(int(c))
+		# the billing leak is money you never invoiced: cash and reported revenue agree
+		var fee := int(float(client_fee(int(c))) * (1.0 - leak))
 		var delay := pay_delay(int(c))
 		if delay <= 0:
 			collected += fee
 		else:
 			ar.append({"client": int(c), "amount": fee, "age": 0, "delay": delay})
+	collected += Projects.service_revenue()  # managed services are billed with the monthly fee
 	for inv in ar:
 		var who := int(inv.client)
 		if (
@@ -3039,7 +3133,7 @@ func review_lines(page: int, ending: String) -> Array:
 			)
 		1:
 			lines.append(["WHAT YOUR TEAM SAYS", blue])
-			for who in Social.PEOPLE:
+			for who in Social.people():
 				lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], blue])
 				lines.append(["'%s'" % str(Review.QUOTES[Social.mood(who)]), ink])
 		2:

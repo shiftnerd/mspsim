@@ -382,6 +382,1864 @@ EAT A DONUT AND CHANGE THE SUBJECT
 [Story.VIGNETTES.donuts.options.2.text]
 You discuss the weather for a minute. The donut is very good. (+2 energy)
 
+# Story > VIGNETTES > tape_swap > speaker
+[Story.VIGNETTES.tape_swap.speaker]
+The office manager (Gnarly Gnomes)
+
+# Story > VIGNETTES > tape_swap > text
+[Story.VIGNETTES.tape_swap.text]
+Nobody has changed the backup tape since Monday. We keep forgetting. Could we just leave it in forever?
+
+# Story > VIGNETTES > tape_swap > options > 0 > label
+[Story.VIGNETTES.tape_swap.options.0.label]
+PUT A COLORED LABEL ON EACH DAY'S TAPE
+
+# Story > VIGNETTES > tape_swap > options > 0 > text
+[Story.VIGNETTES.tape_swap.options.0.text]
+She buys a roll of stickers. The tapes look like a rainbow.
+
+# Story > VIGNETTES > tape_swap > options > 1 > label
+[Story.VIGNETTES.tape_swap.options.1.label]
+SWITCH THEM TO DISK-BASED BACKUPS
+
+# Story > VIGNETTES > tape_swap > options > 1 > text
+[Story.VIGNETTES.tape_swap.options.1.text]
+A small project for a rainy day.
+
+# Story > VIGNETTES > tape_swap > options > 2 > label
+[Story.VIGNETTES.tape_swap.options.2.label]
+SEND A DAILY REMINDER EMAIL
+
+# Story > VIGNETTES > tape_swap > options > 2 > text
+[Story.VIGNETTES.tape_swap.options.2.text]
+It works for two days.
+
+# Story > VIGNETTES > toolbar > speaker
+[Story.VIGNETTES.toolbar.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > toolbar > text
+[Story.VIGNETTES.toolbar.text]
+My browser has a toolbar I did not ask for, and another one, and now a third. The page is the size of a postage stamp.
+
+# Story > VIGNETTES > toolbar > options > 0 > label
+[Story.VIGNETTES.toolbar.options.0.label]
+REMOVE THEM ALL AND EXPLAIN THE 'NEXT' BUTTON
+
+# Story > VIGNETTES > toolbar > options > 0 > text
+[Story.VIGNETTES.toolbar.options.0.text]
+She will never press 'Next' again without reading.
+
+# Story > VIGNETTES > toolbar > options > 1 > label
+[Story.VIGNETTES.toolbar.options.1.label]
+RESET THE BROWSER
+
+# Story > VIGNETTES > toolbar > options > 1 > text
+[Story.VIGNETTES.toolbar.options.1.text]
+Clean and fast. She stops cursing.
+
+# Story > VIGNETTES > toolbar > options > 2 > label
+[Story.VIGNETTES.toolbar.options.2.label]
+TELL HER TO CLOSE SOME TABS
+
+# Story > VIGNETTES > toolbar > options > 2 > text
+[Story.VIGNETTES.toolbar.options.2.text]
+Not the answer she wanted.
+
+# Story > VIGNETTES > fax_black > speaker
+[Story.VIGNETTES.fax_black.speaker]
+The paralegal (Hoot and Holler)
+
+# Story > VIGNETTES > fax_black > text
+[Story.VIGNETTES.fax_black.text]
+The fax machine is printing black pages. Every page. The partners are waiting on a signed document and it is only coming out black.
+
+# Story > VIGNETTES > fax_black > options > 0 > label
+[Story.VIGNETTES.fax_black.options.0.label]
+CLEAN THE SCANNER GLASS AND THE ROLLER
+
+# Story > VIGNETTES > fax_black > options > 0 > text
+[Story.VIGNETTES.fax_black.options.0.text]
+A smudge the size of a dime. The fax prints beautifully.
+
+# Story > VIGNETTES > fax_black > options > 1 > label
+[Story.VIGNETTES.fax_black.options.1.label]
+SCAN AND EMAIL THE DOCUMENT INSTEAD
+
+# Story > VIGNETTES > fax_black > options > 1 > text
+[Story.VIGNETTES.fax_black.options.1.text]
+No fax needed. She looks at you as if you had invented email.
+
+# Story > VIGNETTES > fax_black > options > 2 > label
+[Story.VIGNETTES.fax_black.options.2.label]
+ORDER A NEW FAX MACHINE
+
+# Story > VIGNETTES > fax_black > options > 2 > text
+[Story.VIGNETTES.fax_black.options.2.text]
+A new machine is fine, but the document is still stuck.
+
+# Story > VIGNETTES > sticky_dan > speaker
+[Story.VIGNETTES.sticky_dan.speaker]
+Dan (Network tech)
+
+# Story > VIGNETTES > sticky_dan > text
+[Story.VIGNETTES.sticky_dan.text]
+I found the main router password on a sticky note in three different offices. It is 'admin' in all three. Do you want me to fix it or yell?
+
+# Story > VIGNETTES > sticky_dan > options > 0 > label
+[Story.VIGNETTES.sticky_dan.options.0.label]
+TELL HIM TO FIX IT AND YOU WILL WRITE THE NOTE
+
+# Story > VIGNETTES > sticky_dan > options > 0 > text
+[Story.VIGNETTES.sticky_dan.options.0.text]
+He changes it. You write a short, friendly note. Dan nods.
+
+# Story > VIGNETTES > sticky_dan > options > 1 > label
+[Story.VIGNETTES.sticky_dan.options.1.label]
+BOTH
+
+# Story > VIGNETTES > sticky_dan > options > 1 > text
+[Story.VIGNETTES.sticky_dan.options.1.text]
+You say it together and feel better.
+
+# Story > VIGNETTES > sticky_dan > options > 2 > label
+[Story.VIGNETTES.sticky_dan.options.2.label]
+SAY IT CAN WAIT
+
+# Story > VIGNETTES > sticky_dan > options > 2 > text
+[Story.VIGNETTES.sticky_dan.options.2.text]
+Dan raises an eyebrow, a very small one.
+
+# Story > VIGNETTES > captcha > speaker
+[Story.VIGNETTES.captcha.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > captcha > text
+[Story.VIGNETTES.captcha.text]
+The website keeps asking me to type distorted letters and I cannot read them. I have tried eleven times. Is the site broken?
+
+# Story > VIGNETTES > captcha > options > 0 > label
+[Story.VIGNETTES.captcha.options.0.label]
+SIT WITH HER AND SOLVE A FEW
+
+# Story > VIGNETTES > captcha > options > 0 > text
+[Story.VIGNETTES.captcha.options.0.text]
+She likes the one that reads 'banana'.
+
+# Story > VIGNETTES > captcha > options > 1 > label
+[Story.VIGNETTES.captcha.options.1.label]
+SHOW HER THE AUDIO OPTION
+
+# Story > VIGNETTES > captcha > options > 1 > text
+[Story.VIGNETTES.captcha.options.1.text]
+It sounds like a ghost reading numbers, but it works.
+
+# Story > VIGNETTES > captcha > options > 2 > label
+[Story.VIGNETTES.captcha.options.2.label]
+TELL HER TO EMAIL THEM
+
+# Story > VIGNETTES > captcha > options > 2 > text
+[Story.VIGNETTES.captcha.options.2.text]
+She does. They respond in a week.
+
+# Story > VIGNETTES > cable_mess > speaker
+[Story.VIGNETTES.cable_mess.speaker]
+The owner (Gnarly Gnomes)
+
+# Story > VIGNETTES > cable_mess > text
+[Story.VIGNETTES.cable_mess.text]
+Behind the desk there is a nest of cables. My assistant says it is a fire hazard. Can you make it nice? It is not nice.
+
+# Story > VIGNETTES > cable_mess > options > 0 > label
+[Story.VIGNETTES.cable_mess.options.0.label]
+LABEL, BUNDLE AND ROUTE EVERYTHING
+
+# Story > VIGNETTES > cable_mess > options > 0 > text
+[Story.VIGNETTES.cable_mess.options.0.text]
+Twenty velcro ties and forty minutes. It looks like a catalog photo.
+
+# Story > VIGNETTES > cable_mess > options > 1 > label
+[Story.VIGNETTES.cable_mess.options.1.label]
+TIDY THE WORST HALF
+
+# Story > VIGNETTES > cable_mess > options > 1 > text
+[Story.VIGNETTES.cable_mess.options.1.text]
+It is better. She says it is a start.
+
+# Story > VIGNETTES > cable_mess > options > 2 > label
+[Story.VIGNETTES.cable_mess.options.2.label]
+TELL HER IT IS NOT A HAZARD
+
+# Story > VIGNETTES > cable_mess > options > 2 > text
+[Story.VIGNETTES.cable_mess.options.2.text]
+It is slightly a hazard.
+
+# Story > VIGNETTES > kid_laptop > speaker
+[Story.VIGNETTES.kid_laptop.speaker]
+A client's teenager
+
+# Story > VIGNETTES > kid_laptop > text
+[Story.VIGNETTES.kid_laptop.text]
+I need help. My mom said you set up her computer, and my school laptop will not connect to anything. Mom says I can ask you, but I have to say please.
+
+# Story > VIGNETTES > kid_laptop > options > 0 > label
+[Story.VIGNETTES.kid_laptop.options.0.label]
+TAKE A LOOK, IT IS A FIVE MINUTE JOB
+
+# Story > VIGNETTES > kid_laptop > options > 0 > text
+[Story.VIGNETTES.kid_laptop.options.0.text]
+A wrong setting. She thanks you in a very serious voice.
+
+# Story > VIGNETTES > kid_laptop > options > 1 > label
+[Story.VIGNETTES.kid_laptop.options.1.label]
+SHOW HER HOW TO CHECK IT HERSELF
+
+# Story > VIGNETTES > kid_laptop > options > 1 > text
+[Story.VIGNETTES.kid_laptop.options.1.text]
+She writes it down in a notebook. She will be running IT someday.
+
+# Story > VIGNETTES > kid_laptop > options > 2 > label
+[Story.VIGNETTES.kid_laptop.options.2.label]
+SAY YOU CAN ONLY HELP THE COMPANY
+
+# Story > VIGNETTES > kid_laptop > options > 2 > text
+[Story.VIGNETTES.kid_laptop.options.2.text]
+She understands. Probably.
+
+# Story > VIGNETTES > voip_pitch > speaker
+[Story.VIGNETTES.voip_pitch.speaker]
+A salesman from a phone company
+
+# Story > VIGNETTES > voip_pitch > text
+[Story.VIGNETTES.voip_pitch.text]
+Hi! Hosted phones are the next big thing. No more desk phone boxes in the closet. I would love to show you a quick demo with a headset.
+
+# Story > VIGNETTES > voip_pitch > options > 0 > label
+[Story.VIGNETTES.voip_pitch.options.0.label]
+TRY THE DEMO
+
+# Story > VIGNETTES > voip_pitch > options > 0 > text
+[Story.VIGNETTES.voip_pitch.options.0.text]
+The call is clear, the portal is clean, and the price is not.
+
+# Story > VIGNETTES > voip_pitch > options > 1 > label
+[Story.VIGNETTES.voip_pitch.options.1.label]
+TAKE HIS CARD AND PASS IT TO THE OWNERS
+
+# Story > VIGNETTES > voip_pitch > options > 1 > text
+[Story.VIGNETTES.voip_pitch.options.1.text]
+Garrison files it with the other ideas. Alan nods slowly.
+
+# Story > VIGNETTES > voip_pitch > options > 2 > label
+[Story.VIGNETTES.voip_pitch.options.2.label]
+SAY WE ARE HAPPY WITH WHAT WE HAVE
+
+# Story > VIGNETTES > voip_pitch > options > 2 > text
+[Story.VIGNETTES.voip_pitch.options.2.text]
+He leaves a pen with a logo on it.
+
+# Story > VIGNETTES > spam_folder > speaker
+[Story.VIGNETTES.spam_folder.speaker]
+The office manager (Acme Dental)
+
+# Story > VIGNETTES > spam_folder > text
+[Story.VIGNETTES.spam_folder.text]
+The newsletter we send every month is landing in everybody's spam folder. Even mine. It looks fine to me!
+
+# Story > VIGNETTES > spam_folder > options > 0 > label
+[Story.VIGNETTES.spam_folder.options.0.label]
+CHECK THE MAIL SETTINGS AND FIX THE SENDER RECORD
+
+# Story > VIGNETTES > spam_folder > options > 0 > text
+[Story.VIGNETTES.spam_folder.options.0.text]
+One missing record. The mail lands in inboxes again.
+
+# Story > VIGNETTES > spam_folder > options > 1 > label
+[Story.VIGNETTES.spam_folder.options.1.label]
+SUGGEST A BETTER SUBJECT LINE
+
+# Story > VIGNETTES > spam_folder > options > 1 > text
+[Story.VIGNETTES.spam_folder.options.1.text]
+'FREE TEETH!!!' becomes 'Your spring checkup'. It helps.
+
+# Story > VIGNETTES > spam_folder > options > 2 > label
+[Story.VIGNETTES.spam_folder.options.2.label]
+TELL EVERYONE TO MARK IT AS SAFE
+
+# Story > VIGNETTES > spam_folder > options > 2 > text
+[Story.VIGNETTES.spam_folder.options.2.text]
+Half of them do. The other half do not read it.
+
+# Story > VIGNETTES > charger_drawer > speaker
+[Story.VIGNETTES.charger_drawer.speaker]
+Dan (Network tech)
+
+# Story > VIGNETTES > charger_drawer > text
+[Story.VIGNETTES.charger_drawer.text]
+There is a drawer full of chargers and nobody knows what goes with what. I made a chart. It has color coding. Do you want a copy?
+
+# Story > VIGNETTES > charger_drawer > options > 0 > label
+[Story.VIGNETTES.charger_drawer.options.0.label]
+YES, AND PUT IT ON THE WALL
+
+# Story > VIGNETTES > charger_drawer > options > 0 > text
+[Story.VIGNETTES.charger_drawer.options.0.text]
+The drawer becomes the most organized place in the office.
+
+# Story > VIGNETTES > charger_drawer > options > 1 > label
+[Story.VIGNETTES.charger_drawer.options.1.label]
+HELP HIM LABEL THEM
+
+# Story > VIGNETTES > charger_drawer > options > 1 > text
+[Story.VIGNETTES.charger_drawer.options.1.text]
+You find a charger for a phone nobody remembers. It is a good morning.
+
+# Story > VIGNETTES > charger_drawer > options > 2 > label
+[Story.VIGNETTES.charger_drawer.options.2.label]
+LAUGH AT THE CHART
+
+# Story > VIGNETTES > charger_drawer > options > 2 > text
+[Story.VIGNETTES.charger_drawer.options.2.text]
+Dan does not speak to you for twenty minutes.
+
+# Story > VIGNETTES > tv_monitor > speaker
+[Story.VIGNETTES.tv_monitor.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > tv_monitor > text
+[Story.VIGNETTES.tv_monitor.text]
+I bought a 50 inch TV for my desk. It was on sale! It looks great, but my eyes hurt and the text is blurry. Can you fix it?
+
+# Story > VIGNETTES > tv_monitor > options > 0 > label
+[Story.VIGNETTES.tv_monitor.options.0.label]
+SET THE RIGHT RESOLUTION AND TEXT SIZE
+
+# Story > VIGNETTES > tv_monitor > options > 0 > text
+[Story.VIGNETTES.tv_monitor.options.0.text]
+A tiny tweak. She says it is like new glasses.
+
+# Story > VIGNETTES > tv_monitor > options > 1 > label
+[Story.VIGNETTES.tv_monitor.options.1.label]
+SUGGEST MOVING IT BACK A FEW FEET
+
+# Story > VIGNETTES > tv_monitor > options > 1 > text
+[Story.VIGNETTES.tv_monitor.options.1.text]
+She tries it. A TV across the room is a TV.
+
+# Story > VIGNETTES > tv_monitor > options > 2 > label
+[Story.VIGNETTES.tv_monitor.options.2.label]
+SAY THAT A TV IS NOT A MONITOR
+
+# Story > VIGNETTES > tv_monitor > options > 2 > text
+[Story.VIGNETTES.tv_monitor.options.2.text]
+She says it is a monitor now.
+
+# Story > VIGNETTES > scan_to_mail > speaker
+[Story.VIGNETTES.scan_to_mail.speaker]
+The paralegal (Hoot and Holler)
+
+# Story > VIGNETTES > scan_to_mail > text
+[Story.VIGNETTES.scan_to_mail.text]
+The new copier says it can 'scan to email', but it asks for a server name I do not have. Can you do whatever it is that I should do?
+
+# Story > VIGNETTES > scan_to_mail > options > 0 > label
+[Story.VIGNETTES.scan_to_mail.options.0.label]
+SET UP THE SCAN-TO-EMAIL PROPERLY
+
+# Story > VIGNETTES > scan_to_mail > options > 0 > text
+[Story.VIGNETTES.scan_to_mail.options.0.text]
+A mail relay and a small password. The partners can scan from the copier.
+
+# Story > VIGNETTES > scan_to_mail > options > 1 > label
+[Story.VIGNETTES.scan_to_mail.options.1.label]
+SET UP SCAN TO A SHARED FOLDER
+
+# Story > VIGNETTES > scan_to_mail > options > 1 > text
+[Story.VIGNETTES.scan_to_mail.options.1.text]
+Simpler and safer. She approves.
+
+# Story > VIGNETTES > scan_to_mail > options > 2 > label
+[Story.VIGNETTES.scan_to_mail.options.2.label]
+TELL HER YOU WILL LOOK AT IT NEXT WEEK
+
+# Story > VIGNETTES > scan_to_mail > options > 2 > text
+[Story.VIGNETTES.scan_to_mail.options.2.text]
+She keeps using the fax. Which is black.
+
+# Story > VIGNETTES > old_server_larry > speaker
+[Story.VIGNETTES.old_server_larry.speaker]
+Alan (Co-owner)
+
+# Story > VIGNETTES > old_server_larry > text
+[Story.VIGNETTES.old_server_larry.text]
+There is a server in the back that Larry set up in 2006. Nobody knows what it does and nobody will turn it off. Can you find out what is on it?
+
+# Story > VIGNETTES > old_server_larry > options > 0 > label
+[Story.VIGNETTES.old_server_larry.options.0.label]
+TRACE WHAT TALKS TO IT AND WRITE IT DOWN
+
+# Story > VIGNETTES > old_server_larry > options > 0 > text
+[Story.VIGNETTES.old_server_larry.options.0.text]
+It runs a label printer and one database for the front desk. You document both.
+
+# Story > VIGNETTES > old_server_larry > options > 1 > label
+[Story.VIGNETTES.old_server_larry.options.1.label]
+ASK EVERYONE IN THE OFFICE
+
+# Story > VIGNETTES > old_server_larry > options > 1 > text
+[Story.VIGNETTES.old_server_larry.options.1.text]
+Someone remembers a login that works. Alan chuckles.
+
+# Story > VIGNETTES > old_server_larry > options > 2 > label
+[Story.VIGNETTES.old_server_larry.options.2.label]
+LEAVE IT ALONE, LARRY KNOWS BEST
+
+# Story > VIGNETTES > old_server_larry > options > 2 > text
+[Story.VIGNETTES.old_server_larry.options.2.text]
+Larry left in 2009.
+
+# Story > VIGNETTES > win81_update > speaker
+[Story.VIGNETTES.win81_update.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > win81_update > text
+[Story.VIGNETTES.win81_update.text]
+The computer says there is a free update to Windows 8.1 and she wants to know if it brings the Start button back. I have been told it does. Is that true?
+
+# Story > VIGNETTES > win81_update > options > 0 > label
+[Story.VIGNETTES.win81_update.options.0.label]
+TELL HER YES, AND INSTALL IT AFTER LUNCH
+
+# Story > VIGNETTES > win81_update > options > 0 > text
+[Story.VIGNETTES.win81_update.options.0.text]
+A shiny button comes back, and she is pleased.
+
+# Story > VIGNETTES > win81_update > options > 1 > label
+[Story.VIGNETTES.win81_update.options.1.label]
+BACK UP FIRST, THEN INSTALL
+
+# Story > VIGNETTES > win81_update > options > 1 > text
+[Story.VIGNETTES.win81_update.options.1.text]
+It takes longer. It also does not fail.
+
+# Story > VIGNETTES > win81_update > options > 2 > label
+[Story.VIGNETTES.win81_update.options.2.label]
+TELL HER TO WAIT
+
+# Story > VIGNETTES > win81_update > options > 2 > text
+[Story.VIGNETTES.win81_update.options.2.text]
+She installs it herself and tells you about it.
+
+# Story > VIGNETTES > thank_you_card > speaker
+[Story.VIGNETTES.thank_you_card.speaker]
+A card from Soggy Bottom Brewing
+
+# Story > VIGNETTES > thank_you_card > text
+[Story.VIGNETTES.thank_you_card.text]
+A hand-written card arrives. 'Thank you for all your help this year. The beer is on us. Come by any Friday.' There is a drawing of a pint glass.
+
+# Story > VIGNETTES > thank_you_card > options > 0 > label
+[Story.VIGNETTES.thank_you_card.options.0.label]
+PIN IT TO THE WALL
+
+# Story > VIGNETTES > thank_you_card > options > 0 > text
+[Story.VIGNETTES.thank_you_card.options.0.text]
+Everyone reads it. It is a good morning.
+
+# Story > VIGNETTES > thank_you_card > options > 1 > label
+[Story.VIGNETTES.thank_you_card.options.1.label]
+READ IT TO THE TEAM
+
+# Story > VIGNETTES > thank_you_card > options > 1 > text
+[Story.VIGNETTES.thank_you_card.options.1.text]
+A little applause. A little embarrassment.
+
+# Story > VIGNETTES > thank_you_card > options > 2 > label
+[Story.VIGNETTES.thank_you_card.options.2.label]
+PUT IT IN YOUR DRAWER
+
+# Story > VIGNETTES > thank_you_card > options > 2 > text
+[Story.VIGNETTES.thank_you_card.options.2.text]
+A private small win.
+
+# Story > VIGNETTES > alan_sandwich > speaker
+[Story.VIGNETTES.alan_sandwich.speaker]
+Alan (Co-owner)
+
+# Story > VIGNETTES > alan_sandwich > text
+[Story.VIGNETTES.alan_sandwich.text]
+I made two sandwiches this morning, one too many. Roast beef. You can have it if you tell me which of the three printers has been misbehaving the most.
+
+# Story > VIGNETTES > alan_sandwich > options > 0 > label
+[Story.VIGNETTES.alan_sandwich.options.0.label]
+TELL HIM THE TRUTH ABOUT THE PRINTERS
+
+# Story > VIGNETTES > alan_sandwich > options > 0 > text
+[Story.VIGNETTES.alan_sandwich.options.0.text]
+The sandwich is excellent. The answer is the one at Hoot and Holler.
+
+# Story > VIGNETTES > alan_sandwich > options > 1 > label
+[Story.VIGNETTES.alan_sandwich.options.1.label]
+TAKE THE SANDWICH AND CHANGE THE SUBJECT
+
+# Story > VIGNETTES > alan_sandwich > options > 1 > text
+[Story.VIGNETTES.alan_sandwich.options.1.text]
+Alan raises an eyebrow, but the sandwich stays.
+
+# Story > VIGNETTES > alan_sandwich > options > 2 > label
+[Story.VIGNETTES.alan_sandwich.options.2.label]
+SAY YOU ALREADY ATE
+
+# Story > VIGNETTES > alan_sandwich > options > 2 > text
+[Story.VIGNETTES.alan_sandwich.options.2.text]
+He eats both. He does not blame you.
+
+# Story > VIGNETTES > first_week_note > speaker
+[Story.VIGNETTES.first_week_note.speaker]
+Morgan (Manager)
+
+# Story > VIGNETTES > first_week_note > text
+[Story.VIGNETTES.first_week_note.text]
+The year is almost over. Is there something you wish somebody had told you on your first day? I am writing a note for the next new hire.
+
+# Story > VIGNETTES > first_week_note > options > 0 > label
+[Story.VIGNETTES.first_week_note.options.0.label]
+WRITE DOWN THREE TIPS
+
+# Story > VIGNETTES > first_week_note > options > 0 > text
+[Story.VIGNETTES.first_week_note.options.0.text]
+Morgan reads them aloud and says, 'Perfect.'
+
+# Story > VIGNETTES > first_week_note > options > 1 > label
+[Story.VIGNETTES.first_week_note.options.1.label]
+SAY 'ASK QUESTIONS EARLY'
+
+# Story > VIGNETTES > first_week_note > options > 1 > text
+[Story.VIGNETTES.first_week_note.options.1.text]
+Morgan writes that down and underlines it.
+
+# Story > VIGNETTES > first_week_note > options > 2 > label
+[Story.VIGNETTES.first_week_note.options.2.label]
+SAY 'NOTHING, REALLY'
+
+# Story > VIGNETTES > first_week_note > options > 2 > text
+[Story.VIGNETTES.first_week_note.options.2.text]
+Morgan thinks you are being modest.
+
+
+# ======================= Events > DECK =======================
+# Events > DECK > toner_late > speaker
+[Events.DECK.toner_late.speaker]
+The toner supplier
+
+# Events > DECK > toner_late > text
+[Events.DECK.toner_late.text]
+Your order of toner for three clients is a week late. The driver says the truck is 'around'. Two offices are down to their last cartridge.
+
+# Events > DECK > toner_late > options > 0 > label
+[Events.DECK.toner_late.options.0.label]
+BUY A FEW CARTRIDGES AT THE OFFICE STORE
+
+# Events > DECK > toner_late > options > 0 > text
+[Events.DECK.toner_late.options.0.text]
+A little more expensive, but nobody runs out. The cashier asks if you are starting a print shop.
+
+# Events > DECK > toner_late > options > 1 > label
+[Events.DECK.toner_late.options.1.label]
+WARN THE CLIENTS AND ASK THEM TO PRINT LESS
+
+# Events > DECK > toner_late > options > 1 > text
+[Events.DECK.toner_late.options.1.text]
+Most of them say they never print anything. They print forty pages an hour.
+
+# Events > DECK > toner_late > options > 2 > label
+[Events.DECK.toner_late.options.2.label]
+WAIT FOR THE TRUCK
+
+# Events > DECK > toner_late > options > 2 > text
+[Events.DECK.toner_late.options.2.text]
+It arrives at 4:50 with the wrong colors in two of the boxes.
+
+# Events > DECK > heat_wave > speaker
+[Events.DECK.heat_wave.speaker]
+The building manager
+
+# Events > DECK > heat_wave > text
+[Events.DECK.heat_wave.text]
+Heads up: the air conditioning is out in the whole building. The server closet is already at 91 degrees and climbing.
+
+# Events > DECK > heat_wave > options > 0 > label
+[Events.DECK.heat_wave.options.0.label]
+PROP THE DOOR OPEN AND BRING A BIG FAN
+
+# Events > DECK > heat_wave > options > 0 > text
+[Events.DECK.heat_wave.options.0.text]
+It is loud and ugly, but the temperature drops by eight degrees.
+
+# Events > DECK > heat_wave > options > 1 > label
+[Events.DECK.heat_wave.options.1.label]
+SHUT DOWN WHAT YOU CAN SAFELY LIVE WITHOUT
+
+# Events > DECK > heat_wave > options > 1 > text
+[Events.DECK.heat_wave.options.1.text]
+A tidy shutdown of the test box and the old print server. The closet stays under 85.
+
+# Events > DECK > heat_wave > options > 2 > label
+[Events.DECK.heat_wave.options.2.label]
+HOPE THEY FIX IT BEFORE LUNCH
+
+# Events > DECK > heat_wave > options > 2 > text
+[Events.DECK.heat_wave.options.2.text]
+They fix it at 2:30. The fans in the NAS sound like a jet engine until then.
+
+# Events > DECK > free_pizza > speaker
+[Events.DECK.free_pizza.speaker]
+A vendor rep
+
+# Events > DECK > free_pizza > text
+[Events.DECK.free_pizza.text]
+I had a lunch-and-learn cancelled and I have six large pizzas going cold in my car. Would your team like them? No presentation, I promise. Maybe a short one.
+
+# Events > DECK > free_pizza > options > 0 > label
+[Events.DECK.free_pizza.options.0.label]
+SAY YES AND CALL EVERYONE TO THE KITCHEN
+
+# Events > DECK > free_pizza > options > 0 > text
+[Events.DECK.free_pizza.options.0.text]
+The whole floor shows up in about eleven seconds. Somebody makes a joke about the thin crust.
+
+# Events > DECK > free_pizza > options > 1 > label
+[Events.DECK.free_pizza.options.1.label]
+TAKE ONE BOX AND SEND HIM ON HIS WAY
+
+# Events > DECK > free_pizza > options > 1 > text
+[Events.DECK.free_pizza.options.1.text]
+He leaves a brochure on top of the box. You do not read it.
+
+# Events > DECK > free_pizza > options > 2 > label
+[Events.DECK.free_pizza.options.2.label]
+SAY NO, YOU HAVE A SERVICE CALL
+
+# Events > DECK > free_pizza > options > 2 > text
+[Events.DECK.free_pizza.options.2.text]
+The pizza goes to the dentist next door instead.
+
+# Events > DECK > cold_snap > speaker
+[Events.DECK.cold_snap.speaker]
+A client's office manager
+
+# Events > DECK > cold_snap > text
+[Events.DECK.cold_snap.text]
+It is freezing and the whole office brought in space heaters. Three of them are plugged into one power strip under my desk. Is that bad?
+
+# Events > DECK > cold_snap > options > 0 > label
+[Events.DECK.cold_snap.options.0.label]
+SPLIT THEM ACROSS CIRCUITS AND SHOW HER THE BREAKER BOX
+
+# Events > DECK > cold_snap > options > 0 > text
+[Events.DECK.cold_snap.options.0.text]
+Nothing trips all day. She says you are very calm for a person with a flashlight.
+
+# Events > DECK > cold_snap > options > 1 > label
+[Events.DECK.cold_snap.options.1.label]
+BUY THEM A PROPER SURGE STRIP
+
+# Events > DECK > cold_snap > options > 1 > text
+[Events.DECK.cold_snap.options.1.text]
+It is not the real answer, but it is better than what they had.
+
+# Events > DECK > cold_snap > options > 2 > label
+[Events.DECK.cold_snap.options.2.label]
+TELL HER IT IS FINE
+
+# Events > DECK > cold_snap > options > 2 > text
+[Events.DECK.cold_snap.options.2.text]
+At 2:15 the breaker trips and the server restarts by itself. Nobody is happy.
+
+# Events > DECK > lost_phone > speaker
+[Events.DECK.lost_phone.speaker]
+{c}
+
+# Events > DECK > lost_phone > text
+[Events.DECK.lost_phone.text]
+I cannot find my phone anywhere. I think I left it in the van, or at the pizza place, or in a client's bathroom. Could you ring it?
+
+# Events > DECK > lost_phone > options > 0 > label
+[Events.DECK.lost_phone.options.0.label]
+CALL IT AND FOLLOW THE RINGTONE
+
+# Events > DECK > lost_phone > options > 0 > text
+[Events.DECK.lost_phone.options.0.text]
+It was in the van, between the seats. Thank you, thank you.
+
+# Events > DECK > lost_phone > options > 1 > label
+[Events.DECK.lost_phone.options.1.label]
+USE THE LOCATE-MY-PHONE PAGE AND LOCK IT
+
+# Events > DECK > lost_phone > options > 1 > text
+[Events.DECK.lost_phone.options.1.text]
+The map shows it a block away. You walk over together, and it was in the van all along.
+
+# Events > DECK > lost_phone > options > 2 > label
+[Events.DECK.lost_phone.options.2.label]
+SAY YOU WILL HELP AFTER THIS TICKET
+
+# Events > DECK > lost_phone > options > 2 > text
+[Events.DECK.lost_phone.options.2.text]
+It turns up by itself. They are a little quiet at lunch.
+
+# Events > DECK > cousin_site > speaker
+[Events.DECK.cousin_site.speaker]
+A client
+
+# Events > DECK > cousin_site > text
+[Events.DECK.cousin_site.text]
+My cousin builds websites and he says our current one is 'so 2009'. He wants admin access to everything for a week. Is that okay?
+
+# Events > DECK > cousin_site > options > 0 > label
+[Events.DECK.cousin_site.options.0.label]
+ASK WHAT HE NEEDS AND GIVE HIM ONLY THAT
+
+# Events > DECK > cousin_site > options > 0 > text
+[Events.DECK.cousin_site.options.0.text]
+You set up a separate login for the website host and nothing else. He is a little disappointed.
+
+# Events > DECK > cousin_site > options > 1 > label
+[Events.DECK.cousin_site.options.1.label]
+OFFER TO MEET THE COUSIN FIRST
+
+# Events > DECK > cousin_site > options > 1 > text
+[Events.DECK.cousin_site.options.1.text]
+He turns out to be nice and a bit overcommitted. The new site is going to be fine.
+
+# Events > DECK > cousin_site > options > 2 > label
+[Events.DECK.cousin_site.options.2.label]
+GIVE HIM THE PASSWORDS, SOMEONE HAS TO
+
+# Events > DECK > cousin_site > options > 2 > text
+[Events.DECK.cousin_site.options.2.text]
+Two weeks later the domain registrar sends a strange email. You will deal with it later.
+
+# Events > DECK > toner_mixup > speaker
+[Events.DECK.toner_mixup.speaker]
+The front desk at a client
+
+# Events > DECK > toner_mixup > text
+[Events.DECK.toner_mixup.text]
+The toner that came today is for a different printer model. The box says laser but the printer says something else, and we have a stack of invoices to send.
+
+# Events > DECK > toner_mixup > options > 0 > label
+[Events.DECK.toner_mixup.options.0.label]
+CALL THE SUPPLIER AND ARRANGE A SWAP
+
+# Events > DECK > toner_mixup > options > 0 > text
+[Events.DECK.toner_mixup.options.0.text]
+They send the right one by courier. Only half of the apology is believable.
+
+# Events > DECK > toner_mixup > options > 1 > label
+[Events.DECK.toner_mixup.options.1.label]
+CHECK THE PART NUMBER AND TRY IT ANYWAY
+
+# Events > DECK > toner_mixup > options > 1 > text
+[Events.DECK.toner_mixup.options.1.text]
+It almost fits. After twenty minutes it very much does not.
+
+# Events > DECK > toner_mixup > options > 2 > label
+[Events.DECK.toner_mixup.options.2.label]
+PRINT THE INVOICES AT YOUR OWN OFFICE
+
+# Events > DECK > toner_mixup > options > 2 > text
+[Events.DECK.toner_mixup.options.2.text]
+You print and drive them over. They say they will buy you lunch someday.
+
+# Events > DECK > leaky_ceiling > speaker
+[Events.DECK.leaky_ceiling.speaker]
+The landlord's handyman
+
+# Events > DECK > leaky_ceiling > text
+[Events.DECK.leaky_ceiling.text]
+There is a drip coming through the ceiling tile right above your server closet. I have a bucket. What do you want me to do?
+
+# Events > DECK > leaky_ceiling > options > 0 > label
+[Events.DECK.leaky_ceiling.options.0.label]
+COVER THE RACK WITH A TARP AND MOVE THE UPS
+
+# Events > DECK > leaky_ceiling > options > 0 > text
+[Events.DECK.leaky_ceiling.options.0.text]
+You and the handyman do it in ten minutes. He calls you 'the cable guy' and it is not meant as an insult.
+
+# Events > DECK > leaky_ceiling > options > 1 > label
+[Events.DECK.leaky_ceiling.options.1.label]
+POWER DOWN THE BOTTOM OF THE RACK
+
+# Events > DECK > leaky_ceiling > options > 1 > text
+[Events.DECK.leaky_ceiling.options.1.text]
+Safer, and a little dramatic. The roofer shows up the next morning.
+
+# Events > DECK > leaky_ceiling > options > 2 > label
+[Events.DECK.leaky_ceiling.options.2.label]
+LEAVE THE BUCKET AND KEEP WORKING
+
+# Events > DECK > leaky_ceiling > options > 2 > text
+[Events.DECK.leaky_ceiling.options.2.text]
+The bucket holds. Mostly.
+
+# Events > DECK > dropbox_it > speaker
+[Events.DECK.dropbox_it.speaker]
+A client's accountant
+
+# Events > DECK > dropbox_it > text
+[Events.DECK.dropbox_it.text]
+I moved all our client folders to a Dropbox account I made myself. It is so much easier than the file server. Can you just give my partner access too?
+
+# Events > DECK > dropbox_it > options > 0 > label
+[Events.DECK.dropbox_it.options.0.label]
+OFFER TO SET UP A BUSINESS ACCOUNT WITH RULES
+
+# Events > DECK > dropbox_it > options > 0 > text
+[Events.DECK.dropbox_it.options.0.text]
+Shared folders, a policy and an admin. She says that sounds like a lot, then thanks you.
+
+# Events > DECK > dropbox_it > options > 1 > label
+[Events.DECK.dropbox_it.options.1.label]
+TELL HER IT IS AGAINST THE POLICY
+
+# Events > DECK > dropbox_it > options > 1 > text
+[Events.DECK.dropbox_it.options.1.text]
+She stops. She also stops answering your mail for a day.
+
+# Events > DECK > dropbox_it > options > 2 > label
+[Events.DECK.dropbox_it.options.2.label]
+LET HER KEEP IT, YOU HAVE MORE URGENT THINGS
+
+# Events > DECK > dropbox_it > options > 2 > text
+[Events.DECK.dropbox_it.options.2.text]
+It works. It also adds a mystery that will probably come up again.
+
+# Events > DECK > first_chromebook > speaker
+[Events.DECK.first_chromebook.speaker]
+A client
+
+# Events > DECK > first_chromebook > text
+[Events.DECK.first_chromebook.text]
+I bought one of those little Chromebooks for $249 at the store. Can you put our software on it? I thought it was just like a normal laptop.
+
+# Events > DECK > first_chromebook > options > 0 > label
+[Events.DECK.first_chromebook.options.0.label]
+EXPLAIN WHAT IT CAN AND CAN NOT RUN
+
+# Events > DECK > first_chromebook > options > 0 > text
+[Events.DECK.first_chromebook.options.0.text]
+It runs the web version of everything but the practice software. She decides to keep it for the waiting room.
+
+# Events > DECK > first_chromebook > options > 1 > label
+[Events.DECK.first_chromebook.options.1.label]
+SET UP A REMOTE DESKTOP SESSION TO THE OFFICE PC
+
+# Events > DECK > first_chromebook > options > 1 > text
+[Events.DECK.first_chromebook.options.1.text]
+It works, a little oddly. She is delighted, and tells her friends about it.
+
+# Events > DECK > first_chromebook > options > 2 > label
+[Events.DECK.first_chromebook.options.2.label]
+SUGGEST SHE RETURN IT
+
+# Events > DECK > first_chromebook > options > 2 > text
+[Events.DECK.first_chromebook.options.2.text]
+She sighs and puts the box back in the car.
+
+# Events > DECK > xp_panic > speaker
+[Events.DECK.xp_panic.speaker]
+A client
+
+# Events > DECK > xp_panic > text
+[Events.DECK.xp_panic.text]
+My nephew says Windows XP stops being supported on April 8 and that after that every virus in the world will get in. Is it true? I have six of those computers.
+
+# Events > DECK > xp_panic > options > 0 > label
+[Events.DECK.xp_panic.options.0.label]
+MAKE A LIST OF EVERY XP MACHINE AND A SCHEDULE
+
+# Events > DECK > xp_panic > options > 0 > text
+[Events.DECK.xp_panic.options.0.text]
+Six machines, three months, and a quote she can show her husband.
+
+# Events > DECK > xp_panic > options > 1 > label
+[Events.DECK.xp_panic.options.1.label]
+TELL HER IT WILL BE FINE FOR NOW
+
+# Events > DECK > xp_panic > options > 1 > text
+[Events.DECK.xp_panic.options.1.text]
+That is sort of true. She still asks again on Friday.
+
+# Events > DECK > xp_panic > options > 2 > label
+[Events.DECK.xp_panic.options.2.label]
+TELL HER SHE SHOULD HAVE LISTENED LAST YEAR
+
+# Events > DECK > xp_panic > options > 2 > text
+[Events.DECK.xp_panic.options.2.text]
+She did not enjoy that.
+
+# Events > DECK > exchange_q > speaker
+[Events.DECK.exchange_q.speaker]
+A client
+
+# Events > DECK > exchange_q > text
+[Events.DECK.exchange_q.text]
+A vendor says we should move our email 'to the cloud' and get it hosted Exchange for $12 a mailbox. We have six people and an old server. Does that make sense?
+
+# Events > DECK > exchange_q > options > 0 > label
+[Events.DECK.exchange_q.options.0.label]
+WRITE A SHORT COMPARISON FOR THE OWNER
+
+# Events > DECK > exchange_q > options > 0 > text
+[Events.DECK.exchange_q.options.0.text]
+Costs, risks, and what happens to the old mail. It is clear and she appreciates it.
+
+# Events > DECK > exchange_q > options > 1 > label
+[Events.DECK.exchange_q.options.1.label]
+PROPOSE A TEST WITH TWO MAILBOXES
+
+# Events > DECK > exchange_q > options > 1 > text
+[Events.DECK.exchange_q.options.1.text]
+You migrate two people. It goes fine, and the vendor's dashboard has a surprise or two.
+
+# Events > DECK > exchange_q > options > 2 > label
+[Events.DECK.exchange_q.options.2.label]
+TELL HER YOU WILL LOOK INTO IT SOMETIME
+
+# Events > DECK > exchange_q > options > 2 > text
+[Events.DECK.exchange_q.options.2.text]
+Sometime turns into 'another time'.
+
+# Events > DECK > tax_season > speaker
+[Events.DECK.tax_season.speaker]
+The accountant at a client
+
+# Events > DECK > tax_season > text
+[Events.DECK.tax_season.text]
+It is tax season and my staff are calling you twice as often. They are in the same room, so please just answer both of them.
+
+# Events > DECK > tax_season > options > 0 > label
+[Events.DECK.tax_season.options.0.label]
+ANSWER BOTH, BACK TO BACK
+
+# Events > DECK > tax_season > options > 0 > text
+[Events.DECK.tax_season.options.0.text]
+You answer in order and they thank you for the same two fixes. Two answers, one problem.
+
+# Events > DECK > tax_season > options > 1 > label
+[Events.DECK.tax_season.options.1.label]
+SET UP ONE PERSON AS THE CONTACT
+
+# Events > DECK > tax_season > options > 1 > text
+[Events.DECK.tax_season.options.1.text]
+A single contact helps a lot. It also helps you.
+
+# Events > DECK > tax_season > options > 2 > label
+[Events.DECK.tax_season.options.2.label]
+REMIND THEM THIS IS OUTSIDE THE AGREEMENT
+
+# Events > DECK > tax_season > options > 2 > text
+[Events.DECK.tax_season.options.2.text]
+True, but not what they were hoping for in April.
+
+# Events > DECK > office_move > speaker
+[Events.DECK.office_move.speaker]
+A client
+
+# Events > DECK > office_move > text
+[Events.DECK.office_move.text]
+We are moving to a new suite across the parking lot in a month. Can you tell me what the network needs? I would rather not find out on moving day.
+
+# Events > DECK > office_move > options > 0 > label
+[Events.DECK.office_move.options.0.label]
+WALK THE NEW SPACE WITH A TAPE MEASURE
+
+# Events > DECK > office_move > options > 0 > text
+[Events.DECK.office_move.options.0.text]
+You count drops, check for a closet and write it all down. She hugs the clipboard.
+
+# Events > DECK > office_move > options > 1 > label
+[Events.DECK.office_move.options.1.label]
+SEND A QUOTE FOR THE MOVE
+
+# Events > DECK > office_move > options > 1 > text
+[Events.DECK.office_move.options.1.text]
+She replies with 'wow, you think of everything'.
+
+# Events > DECK > office_move > options > 2 > label
+[Events.DECK.office_move.options.2.label]
+ASK HER TO CALL BACK CLOSER TO THE DATE
+
+# Events > DECK > office_move > options > 2 > text
+[Events.DECK.office_move.options.2.text]
+She calls back the night before. You are not very available.
+
+# Events > DECK > home_printer > speaker
+[Events.DECK.home_printer.speaker]
+A client
+
+# Events > DECK > home_printer > text
+[Events.DECK.home_printer.text]
+I know this is not work, but can you just look at my home printer? It has been blinking at me since Sunday. I will buy you lunch.
+
+# Events > DECK > home_printer > options > 0 > label
+[Events.DECK.home_printer.options.0.label]
+OFFER TO LOOK AT IT AT THE OFFICE
+
+# Events > DECK > home_printer > options > 0 > text
+[Events.DECK.home_printer.options.0.text]
+It was a loose paper tray. Lunch is a sandwich, and a good one.
+
+# Events > DECK > home_printer > options > 1 > label
+[Events.DECK.home_printer.options.1.label]
+WALK HER THROUGH IT ON THE PHONE
+
+# Events > DECK > home_printer > options > 1 > text
+[Events.DECK.home_printer.options.1.text]
+Four minutes. The blinking was the tray. She is thrilled.
+
+# Events > DECK > home_printer > options > 2 > label
+[Events.DECK.home_printer.options.2.label]
+SAY IT IS NOT IN THE CONTRACT
+
+# Events > DECK > home_printer > options > 2 > text
+[Events.DECK.home_printer.options.2.text]
+True, and she understands. A little.
+
+# Events > DECK > licence_audit > speaker
+[Events.DECK.licence_audit.speaker]
+A letter from a software trade group
+
+# Events > DECK > licence_audit > text
+[Events.DECK.licence_audit.text]
+The letter says it is 'a friendly reminder to review your licensing'. It lists a deadline and the number of your office PCs, which is correct.
+
+# Events > DECK > licence_audit > options > 0 > label
+[Events.DECK.licence_audit.options.0.label]
+AUDIT EVERY CLIENT'S LICENSES BEFORE THE DEADLINE
+
+# Events > DECK > licence_audit > options > 0 > text
+[Events.DECK.licence_audit.options.0.text]
+You find two stray installs and one very expired trial. Better you than them.
+
+# Events > DECK > licence_audit > options > 1 > label
+[Events.DECK.licence_audit.options.1.label]
+SCAN OUR OWN MACHINES AND LEAVE IT AT THAT
+
+# Events > DECK > licence_audit > options > 1 > text
+[Events.DECK.licence_audit.options.1.text]
+Our house is in order. The letter goes into a drawer with the others.
+
+# Events > DECK > licence_audit > options > 2 > label
+[Events.DECK.licence_audit.options.2.label]
+PUT THE LETTER IN THE PILE
+
+# Events > DECK > licence_audit > options > 2 > text
+[Events.DECK.licence_audit.options.2.text]
+A second letter, not so friendly, shows up in three weeks.
+
+# Events > DECK > pw_reset_call > speaker
+[Events.DECK.pw_reset_call.speaker]
+A client
+
+# Events > DECK > pw_reset_call > text
+[Events.DECK.pw_reset_call.text]
+I changed my password last week and now I cannot remember it. I wrote it down, but I wrote it on a sticky note and that note has been through the wash.
+
+# Events > DECK > pw_reset_call > options > 0 > label
+[Events.DECK.pw_reset_call.options.0.label]
+RESET IT AND SET UP A PASSWORD HINT SHEET
+
+# Events > DECK > pw_reset_call > options > 0 > text
+[Events.DECK.pw_reset_call.options.0.text]
+She feels silly. You tell her it is the number two call of the week.
+
+# Events > DECK > pw_reset_call > options > 1 > label
+[Events.DECK.pw_reset_call.options.1.label]
+SUGGEST A PASSWORD MANAGER
+
+# Events > DECK > pw_reset_call > options > 1 > text
+[Events.DECK.pw_reset_call.options.1.text]
+She likes the idea. She also writes the master password on a sticky note.
+
+# Events > DECK > pw_reset_call > options > 2 > label
+[Events.DECK.pw_reset_call.options.2.label]
+RESET IT AND HANG UP
+
+# Events > DECK > pw_reset_call > options > 2 > text
+[Events.DECK.pw_reset_call.options.2.text]
+Efficient. A bit short.
+
+# Events > DECK > guest_wifi > speaker
+[Events.DECK.guest_wifi.speaker]
+The office manager at a client
+
+# Events > DECK > guest_wifi > text
+[Events.DECK.guest_wifi.text]
+We have guests in the waiting room asking for the Wi-Fi and I am giving out the main password. Is there a better way?
+
+# Events > DECK > guest_wifi > options > 0 > label
+[Events.DECK.guest_wifi.options.0.label]
+SET UP A SEPARATE GUEST NETWORK
+
+# Events > DECK > guest_wifi > options > 0 > text
+[Events.DECK.guest_wifi.options.0.text]
+A new name, a new password, and no access to the files. She puts it on a card at the front desk.
+
+# Events > DECK > guest_wifi > options > 1 > label
+[Events.DECK.guest_wifi.options.1.label]
+CHANGE THE PASSWORD AND TELL HER TO KEEP IT SECRET
+
+# Events > DECK > guest_wifi > options > 1 > text
+[Events.DECK.guest_wifi.options.1.text]
+Less of a plan than it sounds. It works for a month.
+
+# Events > DECK > guest_wifi > options > 2 > label
+[Events.DECK.guest_wifi.options.2.label]
+TELL HER TO TAPE A SIGN TO THE ROUTER
+
+# Events > DECK > guest_wifi > options > 2 > text
+[Events.DECK.guest_wifi.options.2.text]
+That is not an answer.
+
+# Events > DECK > scam_call > speaker
+[Events.DECK.scam_call.speaker]
+A client
+
+# Events > DECK > scam_call > text
+[Events.DECK.scam_call.text]
+A man called from 'Windows technical support' and said my computer had a virus. He asked me to go to a website. I did, and then I thought I should call you.
+
+# Events > DECK > scam_call > options > 0 > label
+[Events.DECK.scam_call.options.0.label]
+REMOTE IN, CHECK EVERYTHING AND CHANGE HER PASSWORDS
+
+# Events > DECK > scam_call > options > 0 > text
+[Events.DECK.scam_call.options.0.text]
+She gave him access for ten minutes. You find the tool and remove it. She will not forget this call.
+
+# Events > DECK > scam_call > options > 1 > label
+[Events.DECK.scam_call.options.1.label]
+EXPLAIN HOW THOSE CALLS WORK AND HANG UP
+
+# Events > DECK > scam_call > options > 1 > text
+[Events.DECK.scam_call.options.1.text]
+A short lesson. She nods firmly.
+
+# Events > DECK > scam_call > options > 2 > label
+[Events.DECK.scam_call.options.2.label]
+SEND A WARNING TO ALL CLIENTS
+
+# Events > DECK > scam_call > options > 2 > text
+[Events.DECK.scam_call.options.2.text]
+A short note, written in plain English. Several of them reply with 'thank you', one with 'what scam?'.
+
+# Events > DECK > found_usb > speaker
+[Events.DECK.found_usb.speaker]
+The cleaner at a client
+
+# Events > DECK > found_usb > text
+[Events.DECK.found_usb.text]
+I found a little USB stick in the parking lot. It says 'PAYROLL' in marker. Should I give it to someone? I did not plug it in.
+
+# Events > DECK > found_usb > options > 0 > label
+[Events.DECK.found_usb.options.0.label]
+TAKE IT, SCAN IT ON AN ISOLATED MACHINE
+
+# Events > DECK > found_usb > options > 0 > text
+[Events.DECK.found_usb.options.0.text]
+It is blank apart from a copy of a cat picture. Still, a good call.
+
+# Events > DECK > found_usb > options > 1 > label
+[Events.DECK.found_usb.options.1.label]
+TELL HER TO THROW IT AWAY
+
+# Events > DECK > found_usb > options > 1 > text
+[Events.DECK.found_usb.options.1.text]
+Fine, and done. Her face says she would have liked a bit more.
+
+# Events > DECK > found_usb > options > 2 > label
+[Events.DECK.found_usb.options.2.label]
+PLUG IT INTO YOUR WORKSTATION TO SEE
+
+# Events > DECK > found_usb > options > 2 > text
+[Events.DECK.found_usb.options.2.text]
+The antivirus has opinions. You spend an hour cleaning up.
+
+# Events > DECK > coffee_machine > speaker
+[Events.DECK.coffee_machine.speaker]
+{c}
+
+# Events > DECK > coffee_machine > text
+[Events.DECK.coffee_machine.text]
+The coffee machine just coughed and stopped. I cannot work like this. You are good with machines. Please?
+
+# Events > DECK > coffee_machine > options > 0 > label
+[Events.DECK.coffee_machine.options.0.label]
+DESCALE IT, YOU HAVE DONE THIS BEFORE
+
+# Events > DECK > coffee_machine > options > 0 > text
+[Events.DECK.coffee_machine.options.0.text]
+It sputters, clears its throat and makes a perfect cup. The room applauds.
+
+# Events > DECK > coffee_machine > options > 1 > label
+[Events.DECK.coffee_machine.options.1.label]
+SUGGEST SPLITTING THE COST OF A NEW ONE
+
+# Events > DECK > coffee_machine > options > 1 > text
+[Events.DECK.coffee_machine.options.1.text]
+A good idea. The new machine arrives on Friday.
+
+# Events > DECK > coffee_machine > options > 2 > label
+[Events.DECK.coffee_machine.options.2.label]
+SUGGEST TEA
+
+# Events > DECK > coffee_machine > options > 2 > text
+[Events.DECK.coffee_machine.options.2.text]
+The look you get is not at all like tea.
+
+# Events > DECK > tape_check > speaker
+[Events.DECK.tape_check.speaker]
+A client
+
+# Events > DECK > tape_check > text
+[Events.DECK.tape_check.text]
+My nephew says tape backups are old fashioned and that we should send everything to the cloud. We have been using the tapes for nine years. Do I need to change?
+
+# Events > DECK > tape_check > options > 0 > label
+[Events.DECK.tape_check.options.0.label]
+EXPLAIN THE OPTIONS AND WHAT EACH ONE COSTS
+
+# Events > DECK > tape_check > options > 0 > text
+[Events.DECK.tape_check.options.0.text]
+She chooses a cloud copy and keeps one tape in the safe. Sensible.
+
+# Events > DECK > tape_check > options > 1 > label
+[Events.DECK.tape_check.options.1.label]
+TEST A RESTORE FROM THE OLDEST TAPE
+
+# Events > DECK > tape_check > options > 1 > text
+[Events.DECK.tape_check.options.1.text]
+It restores perfectly except for one folder. You are glad you asked.
+
+# Events > DECK > tape_check > options > 2 > label
+[Events.DECK.tape_check.options.2.label]
+TELL HER THEY ARE FINE
+
+# Events > DECK > tape_check > options > 2 > text
+[Events.DECK.tape_check.options.2.text]
+Until they are not.
+
+# Events > DECK > spreadsheet_help > speaker
+[Events.DECK.spreadsheet_help.speaker]
+{c}
+
+# Events > DECK > spreadsheet_help > text
+[Events.DECK.spreadsheet_help.text]
+Do you know how to make a column add itself up in the spreadsheet? Not the whole thing, only if the cell says 'paid'? I have been at it for forty minutes.
+
+# Events > DECK > spreadsheet_help > options > 0 > label
+[Events.DECK.spreadsheet_help.options.0.label]
+SHOW THEM, AND LEARN SOMETHING TOO
+
+# Events > DECK > spreadsheet_help > options > 0 > text
+[Events.DECK.spreadsheet_help.options.0.text]
+A small formula. You both look at it for a moment, impressed.
+
+# Events > DECK > spreadsheet_help > options > 1 > label
+[Events.DECK.spreadsheet_help.options.1.label]
+DO IT FOR THEM
+
+# Events > DECK > spreadsheet_help > options > 1 > text
+[Events.DECK.spreadsheet_help.options.1.text]
+It is done in a minute. They say you are a wizard, quietly.
+
+# Events > DECK > spreadsheet_help > options > 2 > label
+[Events.DECK.spreadsheet_help.options.2.label]
+TELL THEM TO ASK YOU LATER
+
+# Events > DECK > spreadsheet_help > options > 2 > text
+[Events.DECK.spreadsheet_help.options.2.text]
+Later never quite happens.
+
+# Events > DECK > power_blip > speaker
+[Events.DECK.power_blip.speaker]
+A client
+
+# Events > DECK > power_blip > text
+[Events.DECK.power_blip.text]
+There was a thunderstorm and the lights flickered. Everything came back, but the server is beeping, and the beeping is in a rhythm.
+
+# Events > DECK > power_blip > options > 0 > label
+[Events.DECK.power_blip.options.0.label]
+CHECK THE UPS AND LOG THE EVENT
+
+# Events > DECK > power_blip > options > 0 > text
+[Events.DECK.power_blip.options.0.text]
+The battery needs replacing soon. You write a note.
+
+# Events > DECK > power_blip > options > 1 > label
+[Events.DECK.power_blip.options.1.label]
+SILENCE IT AND CHECK THE SERVER LOGS
+
+# Events > DECK > power_blip > options > 1 > text
+[Events.DECK.power_blip.options.1.text]
+A clean restart, a clean shutdown. Good news, and a quiet room.
+
+# Events > DECK > power_blip > options > 2 > label
+[Events.DECK.power_blip.options.2.label]
+TELL THEM TO PRESS THE MUTE BUTTON
+
+# Events > DECK > power_blip > options > 2 > text
+[Events.DECK.power_blip.options.2.text]
+It beeps again at 3 AM, in the dark.
+
+# Events > DECK > conference_call > speaker
+[Events.DECK.conference_call.speaker]
+A client
+
+# Events > DECK > conference_call > text
+[Events.DECK.conference_call.text]
+We are about to hold a conference call with a new customer and the speakerphone has no sound. The meeting starts in ten minutes. I am sweating.
+
+# Events > DECK > conference_call > options > 0 > label
+[Events.DECK.conference_call.options.0.label]
+RUN OVER AND SET UP A LAPTOP AS THE SPEAKER
+
+# Events > DECK > conference_call > options > 0 > text
+[Events.DECK.conference_call.options.0.text]
+You plug it in, set the volume, and everybody smiles. They get the contract.
+
+# Events > DECK > conference_call > options > 1 > label
+[Events.DECK.conference_call.options.1.label]
+WALK THEM THROUGH IT FROM HERE
+
+# Events > DECK > conference_call > options > 1 > text
+[Events.DECK.conference_call.options.1.text]
+It takes four of the ten minutes, and the meeting starts on time.
+
+# Events > DECK > conference_call > options > 2 > label
+[Events.DECK.conference_call.options.2.label]
+TELL THEM TO RESCHEDULE
+
+# Events > DECK > conference_call > options > 2 > text
+[Events.DECK.conference_call.options.2.text]
+The new customer is not impressed.
+
+# Events > DECK > old_pc_donation > speaker
+[Events.DECK.old_pc_donation.speaker]
+The school secretary
+
+# Events > DECK > old_pc_donation > text
+[Events.DECK.old_pc_donation.text]
+Our school computer lab needs machines. Do your clients ever throw away old ones? We would take anything that boots.
+
+# Events > DECK > old_pc_donation > options > 0 > label
+[Events.DECK.old_pc_donation.options.0.label]
+WIPE A FEW OLD PCS PROPERLY AND DONATE THEM
+
+# Events > DECK > old_pc_donation > options > 0 > text
+[Events.DECK.old_pc_donation.options.0.text]
+A pallet of Windows 7 machines goes to the school. The kids send you a drawing of a PC.
+
+# Events > DECK > old_pc_donation > options > 1 > label
+[Events.DECK.old_pc_donation.options.1.label]
+TAKE A LIST AND PASS IT ON
+
+# Events > DECK > old_pc_donation > options > 1 > text
+[Events.DECK.old_pc_donation.options.1.text]
+A small thing, but they will be back next month.
+
+# Events > DECK > old_pc_donation > options > 2 > label
+[Events.DECK.old_pc_donation.options.2.label]
+TELL HER WE HAVE NOTHING
+
+# Events > DECK > old_pc_donation > options > 2 > text
+[Events.DECK.old_pc_donation.options.2.text]
+True this week.
+
+# Events > DECK > lunch_run > speaker
+[Events.DECK.lunch_run.speaker]
+{c}
+
+# Events > DECK > lunch_run > text
+[Events.DECK.lunch_run.text]
+I am doing a sandwich run. Want me to get you something? Last time I got your order wrong, so this time I am writing it down.
+
+# Events > DECK > lunch_run > options > 0 > label
+[Events.DECK.lunch_run.options.0.label]
+A BIG SANDWICH AND SOMETHING TO DRINK
+
+# Events > DECK > lunch_run > options > 0 > text
+[Events.DECK.lunch_run.options.0.text]
+It is perfect. You feel human again.
+
+# Events > DECK > lunch_run > options > 1 > label
+[Events.DECK.lunch_run.options.1.label]
+A SALAD
+
+# Events > DECK > lunch_run > options > 1 > text
+[Events.DECK.lunch_run.options.1.text]
+It is a very good salad.
+
+# Events > DECK > lunch_run > options > 2 > label
+[Events.DECK.lunch_run.options.2.label]
+NO THANKS, YOU HAVE A TICKET
+
+# Events > DECK > lunch_run > options > 2 > text
+[Events.DECK.lunch_run.options.2.text]
+You eat a granola bar over the keyboard.
+
+# Events > DECK > phish_invoice > speaker
+[Events.DECK.phish_invoice.speaker]
+A client
+
+# Events > DECK > phish_invoice > text
+[Events.DECK.phish_invoice.text]
+I got an email from a shipping company with an invoice attached, but I never ordered anything. I did not open it. I think. Maybe I did.
+
+# Events > DECK > phish_invoice > options > 0 > label
+[Events.DECK.phish_invoice.options.0.label]
+CHECK HER PC AND THE MAIL SERVER
+
+# Events > DECK > phish_invoice > options > 0 > text
+[Events.DECK.phish_invoice.options.0.text]
+She did open it, but the attachment did not run. You block the sender.
+
+# Events > DECK > phish_invoice > options > 1 > label
+[Events.DECK.phish_invoice.options.1.label]
+TEACH THE WHOLE OFFICE WHAT TO LOOK FOR
+
+# Events > DECK > phish_invoice > options > 1 > text
+[Events.DECK.phish_invoice.options.1.text]
+A fifteen-minute talk in the break room. The cookies helped.
+
+# Events > DECK > phish_invoice > options > 2 > label
+[Events.DECK.phish_invoice.options.2.label]
+TELL HER TO DELETE IT
+
+# Events > DECK > phish_invoice > options > 2 > text
+[Events.DECK.phish_invoice.options.2.text]
+True, but she wanted to know what it was.
+
+# Events > DECK > sticky_password > speaker
+[Events.DECK.sticky_password.speaker]
+A visiting client
+
+# Events > DECK > sticky_password > text
+[Events.DECK.sticky_password.text]
+I am not sure it is smart to say, but everybody here keeps their password on a sticky note on the monitor. Is that a problem?
+
+# Events > DECK > sticky_password > options > 0 > label
+[Events.DECK.sticky_password.options.0.label]
+OFFER A PASSWORD CLEAN-UP AND A SHORT TALK
+
+# Events > DECK > sticky_password > options > 0 > text
+[Events.DECK.sticky_password.options.0.text]
+You sit with each person for two minutes. It makes a real difference.
+
+# Events > DECK > sticky_password > options > 1 > label
+[Events.DECK.sticky_password.options.1.label]
+SUGGEST A LOCKED DRAWER AS A START
+
+# Events > DECK > sticky_password > options > 1 > text
+[Events.DECK.sticky_password.options.1.text]
+A first step. It will do for now.
+
+# Events > DECK > sticky_password > options > 2 > label
+[Events.DECK.sticky_password.options.2.label]
+SAY IT IS FINE IF NOBODY VISITS
+
+# Events > DECK > sticky_password > options > 2 > text
+[Events.DECK.sticky_password.options.2.text]
+A visitor is sitting right there, and she writes it down.
+
+# Events > DECK > projector_cart > speaker
+[Events.DECK.projector_cart.speaker]
+A client
+
+# Events > DECK > projector_cart > text
+[Events.DECK.projector_cart.text]
+We have a projector in the conference room and nobody knows how to connect it. The laptop says 'No signal'. We have a presentation in twenty minutes.
+
+# Events > DECK > projector_cart > options > 0 > label
+[Events.DECK.projector_cart.options.0.label]
+SHOW THEM THE KEY COMBINATION FOR THE SECOND SCREEN
+
+# Events > DECK > projector_cart > options > 0 > text
+[Events.DECK.projector_cart.options.0.text]
+Fn plus a function key. They look at you as if you had performed magic.
+
+# Events > DECK > projector_cart > options > 1 > label
+[Events.DECK.projector_cart.options.1.label]
+REPLACE THE OLD CABLE
+
+# Events > DECK > projector_cart > options > 1 > text
+[Events.DECK.projector_cart.options.1.text]
+The old cable had a bent pin. You hand over the spare.
+
+# Events > DECK > projector_cart > options > 2 > label
+[Events.DECK.projector_cart.options.2.label]
+TELL THEM TO REBOOT AND TRY AGAIN
+
+# Events > DECK > projector_cart > options > 2 > text
+[Events.DECK.projector_cart.options.2.text]
+It works. It also takes twenty minutes.
+
+# Events > DECK > bad_cable > speaker
+[Events.DECK.bad_cable.speaker]
+A client
+
+# Events > DECK > bad_cable > text
+[Events.DECK.bad_cable.text]
+Our Internet is slow in one room, but only on Tuesdays, only after lunch. Everyone says it is a coincidence. I do not think so.
+
+# Events > DECK > bad_cable > options > 0 > label
+[Events.DECK.bad_cable.options.0.label]
+WALK THE CABLE AND FIND WHAT HAPPENS AFTER LUNCH
+
+# Events > DECK > bad_cable > options > 0 > text
+[Events.DECK.bad_cable.options.0.text]
+The microwave and a bad switch share an outlet. You move one.
+
+# Events > DECK > bad_cable > options > 1 > label
+[Events.DECK.bad_cable.options.1.label]
+ASK HER TO KEEP A LOG FOR A WEEK
+
+# Events > DECK > bad_cable > options > 1 > text
+[Events.DECK.bad_cable.options.1.text]
+A week later the log is very clear.
+
+# Events > DECK > bad_cable > options > 2 > label
+[Events.DECK.bad_cable.options.2.label]
+RESTART THE ROUTER
+
+# Events > DECK > bad_cable > options > 2 > text
+[Events.DECK.bad_cable.options.2.text]
+It is better on Wednesday. On Tuesday it is the same.
+
+# Events > DECK > insurance_agent > speaker
+[Events.DECK.insurance_agent.speaker]
+An insurance agent
+
+# Events > DECK > insurance_agent > text
+[Events.DECK.insurance_agent.text]
+After the Target news every client is asking about cyber liability cover. I can write you a policy for your company, and a short brochure for your clients.
+
+# Events > DECK > insurance_agent > options > 0 > label
+[Events.DECK.insurance_agent.options.0.label]
+TAKE THE POLICY FOR THE COMPANY
+
+# Events > DECK > insurance_agent > options > 0 > text
+[Events.DECK.insurance_agent.options.0.text]
+A fair premium, and one more thing the clients ask about. Fewer sleepless nights.
+
+# Events > DECK > insurance_agent > options > 1 > label
+[Events.DECK.insurance_agent.options.1.label]
+TAKE THE BROCHURE ONLY
+
+# Events > DECK > insurance_agent > options > 1 > text
+[Events.DECK.insurance_agent.options.1.text]
+It is decent. A few clients keep it on their desk.
+
+# Events > DECK > insurance_agent > options > 2 > label
+[Events.DECK.insurance_agent.options.2.label]
+PASS
+
+# Events > DECK > insurance_agent > options > 2 > text
+[Events.DECK.insurance_agent.options.2.text]
+He leaves a business card and a pen.
+
+# Events > DECK > payroll_error > speaker
+[Events.DECK.payroll_error.speaker]
+Marge (Bookkeeper)
+
+# Events > DECK > payroll_error > text
+[Events.DECK.payroll_error.text]
+The bank charged us for a payroll run twice. I found it, I called them, and I have a refund in writing. I need ten minutes of your time to sign something.
+
+# Events > DECK > payroll_error > options > 0 > label
+[Events.DECK.payroll_error.options.0.label]
+SIGN IT AND THANK HER
+
+# Events > DECK > payroll_error > options > 0 > text
+[Events.DECK.payroll_error.options.0.text]
+A refund of $220 is on the way. She smiles, once.
+
+# Events > DECK > payroll_error > options > 1 > label
+[Events.DECK.payroll_error.options.1.label]
+TAKE HER TO LUNCH
+
+# Events > DECK > payroll_error > options > 1 > text
+[Events.DECK.payroll_error.options.1.text]
+It costs forty dollars and buys a lot of loyalty.
+
+# Events > DECK > payroll_error > options > 2 > label
+[Events.DECK.payroll_error.options.2.label]
+TELL HER YOU WILL SIGN IT TOMORROW
+
+# Events > DECK > payroll_error > options > 2 > text
+[Events.DECK.payroll_error.options.2.text]
+A day late. The refund comes a day later too.
+
+# Events > DECK > van_tire > speaker
+[Events.DECK.van_tire.speaker]
+Marge (Bookkeeper)
+
+# Events > DECK > van_tire > text
+[Events.DECK.van_tire.text]
+The company van has a flat tire in the parking lot of Gnarly Gnomes. The jack is missing. The spare is also a bit flat.
+
+# Events > DECK > van_tire > options > 0 > label
+[Events.DECK.van_tire.options.0.label]
+CALL ROADSIDE ASSISTANCE
+
+# Events > DECK > van_tire > options > 0 > text
+[Events.DECK.van_tire.options.0.text]
+They are quick, and polite, and it costs $90.
+
+# Events > DECK > van_tire > options > 1 > label
+[Events.DECK.van_tire.options.1.label]
+FIX IT YOURSELF AND BORROW A JACK
+
+# Events > DECK > van_tire > options > 1 > text
+[Events.DECK.van_tire.options.1.text]
+It takes an hour. Someone takes your photo.
+
+# Events > DECK > van_tire > options > 2 > label
+[Events.DECK.van_tire.options.2.label]
+GET A RIDE AND LEAVE IT FOR TOMORROW
+
+# Events > DECK > van_tire > options > 2 > text
+[Events.DECK.van_tire.options.2.text]
+The visit is rescheduled. Gnarly Gnomes does not love that.
+
+# Events > DECK > referral_gift > speaker
+[Events.DECK.referral_gift.speaker]
+A happy client
+
+# Events > DECK > referral_gift > text
+[Events.DECK.referral_gift.text]
+I gave your name to a friend who owns a dry-cleaning shop. She is going to call. I hope that is alright. Also, here is a gift card for the team.
+
+# Events > DECK > referral_gift > options > 0 > label
+[Events.DECK.referral_gift.options.0.label]
+WRITE A HANDWRITTEN THANK YOU
+
+# Events > DECK > referral_gift > options > 0 > text
+[Events.DECK.referral_gift.options.0.text]
+She puts it on her desk. The lead calls the next week.
+
+# Events > DECK > referral_gift > options > 1 > label
+[Events.DECK.referral_gift.options.1.label]
+SPLIT THE GIFT CARD WITH THE TEAM
+
+# Events > DECK > referral_gift > options > 1 > text
+[Events.DECK.referral_gift.options.1.text]
+Everyone gets a free lunch. Morale goes up a little.
+
+# Events > DECK > referral_gift > options > 2 > label
+[Events.DECK.referral_gift.options.2.label]
+KEEP THE CARD FOR YOURSELF
+
+# Events > DECK > referral_gift > options > 2 > text
+[Events.DECK.referral_gift.options.2.text]
+You get a very nice dinner. Marge does not mention it, and you hear her not mentioning it.
+
+# Events > DECK > rebate_check > speaker
+[Events.DECK.rebate_check.speaker]
+A distributor's account manager
+
+# Events > DECK > rebate_check > text
+[Events.DECK.rebate_check.text]
+Your quarterly rebate check is ready. It is a little smaller than last time because of a new tier. I can explain, or you can just deposit it.
+
+# Events > DECK > rebate_check > options > 0 > label
+[Events.DECK.rebate_check.options.0.label]
+DEPOSIT IT, THANK YOU
+
+# Events > DECK > rebate_check > options > 0 > text
+[Events.DECK.rebate_check.options.0.text]
+$180 into the account. A quiet small win.
+
+# Events > DECK > rebate_check > options > 1 > label
+[Events.DECK.rebate_check.options.1.label]
+ASK HIM TO EXPLAIN THE NEW TIER
+
+# Events > DECK > rebate_check > options > 1 > text
+[Events.DECK.rebate_check.options.1.text]
+A twenty-minute call. You learn how to reach the next tier, and how many licenses it takes.
+
+# Events > DECK > rebate_check > options > 2 > label
+[Events.DECK.rebate_check.options.2.label]
+TELL HIM THE OLD RATE IS FINE
+
+# Events > DECK > rebate_check > options > 2 > text
+[Events.DECK.rebate_check.options.2.text]
+He says he will see what he can do. He does not.
+
+# Events > DECK > birthday_cake > speaker
+[Events.DECK.birthday_cake.speaker]
+The team
+
+# Events > DECK > birthday_cake > text
+[Events.DECK.birthday_cake.text]
+It is someone's birthday and the break room smells like a bakery. We bought a cake. Come and cut it before it gets too sad.
+
+# Events > DECK > birthday_cake > options > 0 > label
+[Events.DECK.birthday_cake.options.0.label]
+CUT THE CAKE AND SAY A FEW WORDS
+
+# Events > DECK > birthday_cake > options > 0 > text
+[Events.DECK.birthday_cake.options.0.text]
+Everyone claps. A very small speech, a very big cake.
+
+# Events > DECK > birthday_cake > options > 1 > label
+[Events.DECK.birthday_cake.options.1.label]
+POP IN FOR A MINUTE
+
+# Events > DECK > birthday_cake > options > 1 > text
+[Events.DECK.birthday_cake.options.1.text]
+A slice of cake, a joke, and out. Good enough.
+
+# Events > DECK > birthday_cake > options > 2 > label
+[Events.DECK.birthday_cake.options.2.label]
+SEND YOUR REGRETS
+
+# Events > DECK > birthday_cake > options > 2 > text
+[Events.DECK.birthday_cake.options.2.text]
+Somebody saves you a slice. It is a bit stale by 4:00.
+
+# Events > DECK > copier_lease > speaker
+[Events.DECK.copier_lease.speaker]
+The copier salesman
+
+# Events > DECK > copier_lease > text
+[Events.DECK.copier_lease.text]
+Your copier lease is up in sixty days. I can renew at a slightly higher rate, or I can put you in a newer model with a longer contract. The newer one does color.
+
+# Events > DECK > copier_lease > options > 0 > label
+[Events.DECK.copier_lease.options.0.label]
+RENEW THE OLD ONE
+
+# Events > DECK > copier_lease > options > 0 > text
+[Events.DECK.copier_lease.options.0.text]
+Predictable and cheap. The old copier sighs with relief.
+
+# Events > DECK > copier_lease > options > 1 > label
+[Events.DECK.copier_lease.options.1.label]
+TAKE THE NEWER MODEL
+
+# Events > DECK > copier_lease > options > 1 > text
+[Events.DECK.copier_lease.options.1.text]
+It is faster, it has color, and the contract is long. The team loves it.
+
+# Events > DECK > copier_lease > options > 2 > label
+[Events.DECK.copier_lease.options.2.label]
+SHOP AROUND FOR A BETTER PRICE
+
+# Events > DECK > copier_lease > options > 2 > text
+[Events.DECK.copier_lease.options.2.text]
+It takes you an evening and saves $70.
+
+# Events > DECK > chamber_lunch > speaker
+[Events.DECK.chamber_lunch.speaker]
+The chamber of commerce
+
+# Events > DECK > chamber_lunch > text
+[Events.DECK.chamber_lunch.text]
+Our monthly lunch is this Thursday. Small business owners, a keynote about marketing, and a very long raffle. Your seat is saved, if you want it.
+
+# Events > DECK > chamber_lunch > options > 0 > label
+[Events.DECK.chamber_lunch.options.0.label]
+GO AND TALK TO PEOPLE
+
+# Events > DECK > chamber_lunch > options > 0 > text
+[Events.DECK.chamber_lunch.options.0.text]
+A prospect hands you a card. The raffle prize is a pen. The prospect is better than the pen.
+
+# Events > DECK > chamber_lunch > options > 1 > label
+[Events.DECK.chamber_lunch.options.1.label]
+SEND VIC
+
+# Events > DECK > chamber_lunch > options > 1 > text
+[Events.DECK.chamber_lunch.options.1.text]
+He comes back with three business cards and a story.
+
+# Events > DECK > chamber_lunch > options > 2 > label
+[Events.DECK.chamber_lunch.options.2.label]
+SKIP IT
+
+# Events > DECK > chamber_lunch > options > 2 > text
+[Events.DECK.chamber_lunch.options.2.text]
+There is always the next one.
+
+# Events > DECK > client_text_night > speaker
+[Events.DECK.client_text_night.speaker]
+A client
+
+# Events > DECK > client_text_night > text
+[Events.DECK.client_text_night.text]
+I know it is 9 PM, but I just got an email from the bank that I can not open and it says it is urgent. I am very sorry to text you now.
+
+# Events > DECK > client_text_night > options > 0 > label
+[Events.DECK.client_text_night.options.0.label]
+ANSWER AND CHECK IT TOGETHER
+
+# Events > DECK > client_text_night > options > 0 > text
+[Events.DECK.client_text_night.options.0.text]
+It was a phishing email. She is grateful, and you are tired.
+
+# Events > DECK > client_text_night > options > 1 > label
+[Events.DECK.client_text_night.options.1.label]
+REPLY THAT YOU WILL LOOK AT IT FIRST THING
+
+# Events > DECK > client_text_night > options > 1 > text
+[Events.DECK.client_text_night.options.1.text]
+She spends the night worrying, but she is fine.
+
+# Events > DECK > client_text_night > options > 2 > label
+[Events.DECK.client_text_night.options.2.label]
+FORWARD IT TO WHOEVER IS ON CALL
+
+# Events > DECK > client_text_night > options > 2 > text
+[Events.DECK.client_text_night.options.2.text]
+A team effort, and a small win for the rota.
+
+# Events > DECK > landlord_notice > speaker
+[Events.DECK.landlord_notice.speaker]
+The landlord
+
+# Events > DECK > landlord_notice > text
+[Events.DECK.landlord_notice.text]
+A notice that the rent goes up 4 percent in the autumn. There is also a note about the parking lot being repaved on Thursday.
+
+# Events > DECK > landlord_notice > options > 0 > label
+[Events.DECK.landlord_notice.options.0.label]
+ACCEPT THE INCREASE
+
+# Events > DECK > landlord_notice > options > 0 > text
+[Events.DECK.landlord_notice.options.0.text]
+It is a small amount, and the lot looks good afterward.
+
+# Events > DECK > landlord_notice > options > 1 > label
+[Events.DECK.landlord_notice.options.1.label]
+ASK FOR A TWO-YEAR LEASE AT THE OLD RATE
+
+# Events > DECK > landlord_notice > options > 1 > text
+[Events.DECK.landlord_notice.options.1.text]
+He says he will think about it. He does.
+
+# Events > DECK > landlord_notice > options > 2 > label
+[Events.DECK.landlord_notice.options.2.label]
+START LOOKING AT OTHER OFFICES
+
+# Events > DECK > landlord_notice > options > 2 > text
+[Events.DECK.landlord_notice.options.2.text]
+You see three offices and one of them has a creaky floor.
+
 
 # ======================= Playbook > BOOKS =======================
 # job: RACK RECOVERY
@@ -2598,6 +4456,18 @@ Hey! Sorry, I have a user on hold. What is up?
 [Talk.GREETINGS.Maya.cold]
 Oh. Hi. I am just finishing something.
 
+# Talk > GREETINGS > Morgan > friend
+[Talk.GREETINGS.Morgan.friend]
+Come in. Move the printouts, they are not load-bearing. What do you need?
+
+# Talk > GREETINGS > Morgan > neutral
+[Talk.GREETINGS.Morgan.neutral]
+Yes? I have a budget call in five minutes. Go ahead.
+
+# Talk > GREETINGS > Morgan > cold
+[Talk.GREETINGS.Morgan.cold]
+Mm. Is this about the queue?
+
 
 # ======================= Talk > SMALL =======================
 # Talk > SMALL > Alan > 0
@@ -2696,6 +4566,30 @@ Alan showed me how to read an event log. I felt like a detective. A tired one.
 [Talk.SMALL.Maya.3]
 I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.
 
+# Talk > SMALL > Morgan > 0
+[Talk.SMALL.Morgan.0]
+Alan wants a status report. Garrison wants a different status report. I wrote one report and gave it two titles.
+
+# Talk > SMALL > Morgan > 1
+[Talk.SMALL.Morgan.1]
+Windows XP ends in April. I have a spreadsheet, a colour code and a sense of dread. The dread does not fit in the spreadsheet.
+
+# Talk > SMALL > Morgan > 2
+[Talk.SMALL.Morgan.2]
+Every client has forwarded me a different article about the Target breach. They all think they are next. Fair enough.
+
+# Talk > SMALL > Morgan > 3
+[Talk.SMALL.Morgan.3]
+I was a tech for six years before anybody let me near a budget. Do not let anyone tell you the desk is the hard part.
+
+# Talk > SMALL > Morgan > 4
+[Talk.SMALL.Morgan.4]
+I put iOS 7 on my phone. It is very bright. I miss my buttons.
+
+# Talk > SMALL > Morgan > 5
+[Talk.SMALL.Morgan.5]
+Somebody left a foam dart on top of the whiteboard. I know who. I am letting it go. Once.
+
 
 # ======================= Talk > GOSSIP =======================
 # Talk > GOSSIP > 0
@@ -2783,6 +4677,22 @@ Say what you are going to do before you do it. 'I am going to restart your print
 # Talk > TIPS_GENERIC > Maya > 2
 [Talk.TIPS_GENERIC.Maya.2]
 Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.
+
+# Talk > TIPS_GENERIC > Morgan > 0
+[Talk.TIPS_GENERIC.Morgan.0]
+A ticket with no notes is a ticket I have to ask about. A ticket with notes is one I can defend at renewal time.
+
+# Talk > TIPS_GENERIC > Morgan > 1
+[Talk.TIPS_GENERIC.Morgan.1]
+If you are going to miss an SLA, tell me before it breaks. I can move things around. I cannot move things I do not know about.
+
+# Talk > TIPS_GENERIC > Morgan > 2
+[Talk.TIPS_GENERIC.Morgan.2]
+Close what you fix. Reopen what you break. Just be the person who tells me which one it is.
+
+# Talk > TIPS_GENERIC > Morgan > 3
+[Talk.TIPS_GENERIC.Morgan.3]
+Study between tickets. Nobody has ever been promoted for how fast they picked up the phone.
 
 
 # ======================= Talk > OWNER_HOLD =======================
@@ -3056,6 +4966,70 @@ Thanks for covering the floor lately. The clients notice, and so do the books.
 [Lync.MESSAGES.thanks_Garrison.text]
 Thanks for being great with the clients. They keep mentioning you.
 
+# Lync > MESSAGES > lunch_Morgan > text
+[Lync.MESSAGES.lunch_Morgan.text]
+Lunch? I am eating at my desk again. Bring me a sandwich and I will approve whatever you ask for.
+
+# Lync > MESSAGES > lunch_Morgan > options > 0 > label
+[Lync.MESSAGES.lunch_Morgan.options.0.label]
+SURE, I WILL BRING ONE
+
+# Lync > MESSAGES > lunch_Morgan > options > 0 > reply
+[Lync.MESSAGES.lunch_Morgan.options.0.reply]
+Turkey, no pickles. You are a good person.
+
+# Lync > MESSAGES > lunch_Morgan > options > 1 > label
+[Lync.MESSAGES.lunch_Morgan.options.1.label]
+CAN'T, SWAMPED
+
+# Lync > MESSAGES > lunch_Morgan > options > 1 > reply
+[Lync.MESSAGES.lunch_Morgan.options.1.reply]
+Understood. Close the P1s first.
+
+# Lync > MESSAGES > phones_Morgan > text
+[Lync.MESSAGES.phones_Morgan.text]
+I need ten quiet minutes with the owners' budget. Can you cover my phones?
+
+# Lync > MESSAGES > phones_Morgan > options > 0 > label
+[Lync.MESSAGES.phones_Morgan.options.0.label]
+SURE
+
+# Lync > MESSAGES > phones_Morgan > options > 0 > reply
+[Lync.MESSAGES.phones_Morgan.options.0.reply]
+Thank you. I owe you one. Do not tell anyone I said that.
+
+# Lync > MESSAGES > phones_Morgan > options > 1 > label
+[Lync.MESSAGES.phones_Morgan.options.1.label]
+SORRY, CAN'T
+
+# Lync > MESSAGES > phones_Morgan > options > 1 > reply
+[Lync.MESSAGES.phones_Morgan.options.1.reply]
+Fair. I will let it ring.
+
+# Lync > MESSAGES > help_Morgan > text
+[Lync.MESSAGES.help_Morgan.text]
+Quick one: Alan wants a count of every Windows XP box we manage before April. Can you pull the list from the RMM for me?
+
+# Lync > MESSAGES > help_Morgan > options > 0 > label
+[Lync.MESSAGES.help_Morgan.options.0.label]
+PULL THE LIST
+
+# Lync > MESSAGES > help_Morgan > options > 0 > reply
+[Lync.MESSAGES.help_Morgan.options.0.reply]
+That is exactly what I needed. Thank you.
+
+# Lync > MESSAGES > help_Morgan > options > 1 > label
+[Lync.MESSAGES.help_Morgan.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > MESSAGES > help_Morgan > options > 1 > reply
+[Lync.MESSAGES.help_Morgan.options.1.reply]
+Sure. I will do it the slow way.
+
+# Lync > MESSAGES > thanks_Morgan > text
+[Lync.MESSAGES.thanks_Morgan.text]
+Thanks for keeping your tickets tidy. It makes my Friday report a lot shorter.
+
 
 # ======================= Review > QUOTES =======================
 # Review > QUOTES > FRIEND
@@ -3203,6 +5177,258 @@ P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLO
 # Hints > DAY1 > 4 > text
 [Hints.DAY1.4.text]
 TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA.
+
+
+# ======================= Career > MEDALS =======================
+# Career > MEDALS > 0 > title
+[Career.MEDALS.0.title]
+TICKET MACHINE
+
+# Career > MEDALS > 0 > desc
+[Career.MEDALS.0.desc]
+CLOSE 50 TICKETS
+
+# Career > MEDALS > 1 > title
+[Career.MEDALS.1.title]
+HELP DESK HERO
+
+# Career > MEDALS > 1 > desc
+[Career.MEDALS.1.desc]
+CLOSE 250 TICKETS
+
+# Career > MEDALS > 2 > title
+[Career.MEDALS.2.title]
+STICKY NOTES SAVIOR
+
+# Career > MEDALS > 2 > desc
+[Career.MEDALS.2.desc]
+CLOSE 10 PASSWORD TICKETS
+
+# Career > MEDALS > 3 > title
+[Career.MEDALS.3.title]
+PRINTER WHISPERER
+
+# Career > MEDALS > 3 > desc
+[Career.MEDALS.3.desc]
+WIN WITH EVERY PRINTER MODEL
+
+# Career > MEDALS > 4 > title
+[Career.MEDALS.4.title]
+NEVER RESTARTED
+
+# Career > MEDALS > 4 > desc
+[Career.MEDALS.4.desc]
+5 PRINTER WINS, NO PRAYERS
+
+# Career > MEDALS > 5 > title
+[Career.MEDALS.5.title]
+TONER WRANGLER
+
+# Career > MEDALS > 5 > desc
+[Career.MEDALS.5.desc]
+WIN 20 PRINTER GAMES
+
+# Career > MEDALS > 6 > title
+[Career.MEDALS.6.title]
+MEETING SURVIVOR
+
+# Career > MEDALS > 6 > desc
+[Career.MEDALS.6.desc]
+ATTEND 5 ALL-HANDS
+
+# Career > MEDALS > 7 > title
+[Career.MEDALS.7.title]
+DUCK WHISPERER
+
+# Career > MEDALS > 7 > desc
+[Career.MEDALS.7.desc]
+TALK TO THE DUCK 50 TIMES
+
+# Career > MEDALS > 8 > title
+[Career.MEDALS.8.title]
+PEOPLE PERSON
+
+# Career > MEDALS > 8 > desc
+[Career.MEDALS.8.desc]
+PLAY 3 TEAM OUTINGS
+
+# Career > MEDALS > 9 > title
+[Career.MEDALS.9.title]
+FULL HOUSE
+
+# Career > MEDALS > 9 > desc
+[Career.MEDALS.9.desc]
+3 STARS IN ALL FOUR GAMES
+
+# Career > MEDALS > 10 > title
+[Career.MEDALS.10.title]
+GUTTER GURU
+
+# Career > MEDALS > 10 > desc
+[Career.MEDALS.10.desc]
+ROLL 10 GUTTER BALLS
+
+# Career > MEDALS > 11 > title
+[Career.MEDALS.11.title]
+STRIKE ZONE
+
+# Career > MEDALS > 11 > desc
+[Career.MEDALS.11.desc]
+ROLL 10 STRIKES
+
+# Career > MEDALS > 12 > title
+[Career.MEDALS.12.title]
+CROWD PLEASER
+
+# Career > MEDALS > 12 > desc
+[Career.MEDALS.12.desc]
+HIT 20 PERFECT KARAOKE NOTES
+
+# Career > MEDALS > 13 > title
+[Career.MEDALS.13.title]
+VAULT CRACKER
+
+# Career > MEDALS > 13 > desc
+[Career.MEDALS.13.desc]
+OPEN THE VAULT IN 50 SECONDS
+
+# Career > MEDALS > 14 > title
+[Career.MEDALS.14.title]
+DINNER DIPLOMAT
+
+# Career > MEDALS > 14 > desc
+[Career.MEDALS.14.desc]
+SCORE 24 AT THE TEAM DINNER
+
+# Career > MEDALS > 15 > title
+[Career.MEDALS.15.title]
+FRIDAY WARRIOR
+
+# Career > MEDALS > 15 > desc
+[Career.MEDALS.15.desc]
+SURVIVE 5 NERF WARS
+
+# Career > MEDALS > 16 > title
+[Career.MEDALS.16.title]
+DEAD EYE
+
+# Career > MEDALS > 16 > desc
+[Career.MEDALS.16.desc]
+HIT COWORKERS 30 TIMES
+
+# Career > MEDALS > 17 > title
+[Career.MEDALS.17.title]
+LONG SHOT
+
+# Career > MEDALS > 17 > desc
+[Career.MEDALS.17.desc]
+HIT SOMEONE FROM 150 PX AWAY
+
+# Career > MEDALS > 18 > title
+[Career.MEDALS.18.title]
+LIMBO LEGEND
+
+# Career > MEDALS > 18 > desc
+[Career.MEDALS.18.desc]
+DUCK 25 DARTS
+
+# Career > MEDALS > 19 > title
+[Career.MEDALS.19.title]
+CAT PERSON
+
+# Career > MEDALS > 19 > desc
+[Career.MEDALS.19.desc]
+PET 10 OFFICE ANIMALS
+
+# Career > MEDALS > 20 > title
+[Career.MEDALS.20.title]
+ON HOLD, PLEASE
+
+# Career > MEDALS > 20 > desc
+[Career.MEDALS.20.desc]
+HEAR OUT 5 CLIENT COMPLAINTS
+
+# Career > MEDALS > 21 > title
+[Career.MEDALS.21.title]
+YEAR ONE
+
+# Career > MEDALS > 21 > desc
+[Career.MEDALS.21.desc]
+FINISH A CAMPAIGN YEAR
+
+# Career > MEDALS > 22 > title
+[Career.MEDALS.22.title]
+REGULAR
+
+# Career > MEDALS > 22 > desc
+[Career.MEDALS.22.desc]
+PLAY 20 DAYS OR WEEKS
+
+# Career > MEDALS > 23 > title
+[Career.MEDALS.23.title]
+CORNER OFFICE
+
+# Career > MEDALS > 23 > desc
+[Career.MEDALS.23.desc]
+RUN 10 OWNER WEEKS
+
+
+# ======================= Career > UNLOCKS =======================
+# Career > UNLOCKS > 0 > title
+[Career.UNLOCKS.0.title]
+STANDARD BLUE
+
+# Career > UNLOCKS > 1 > title
+[Career.UNLOCKS.1.title]
+SUNSET ORANGE
+
+# Career > UNLOCKS > 2 > title
+[Career.UNLOCKS.2.title]
+GRAPHITE
+
+# Career > UNLOCKS > 3 > title
+[Career.UNLOCKS.3.title]
+MINT
+
+# Career > UNLOCKS > 4 > title
+[Career.UNLOCKS.4.title]
+PLUM
+
+# Career > UNLOCKS > 5 > title
+[Career.UNLOCKS.5.title]
+RING RING
+
+# Career > UNLOCKS > 6 > title
+[Career.UNLOCKS.6.title]
+OLD DIAL TONE
+
+# Career > UNLOCKS > 7 > title
+[Career.UNLOCKS.7.title]
+WIND CHIME
+
+# Career > UNLOCKS > 8 > title
+[Career.UNLOCKS.8.title]
+MARIMBA
+
+# Career > UNLOCKS > 9 > title
+[Career.UNLOCKS.9.title]
+QUACK QUACK
+
+# Career > UNLOCKS > 10 > title
+[Career.UNLOCKS.10.title]
+GOLD RUBBER DUCK
+
+# Career > UNLOCKS > 11 > title
+[Career.UNLOCKS.11.title]
+PIRATE RUBBER DUCK
+
+# Career > UNLOCKS > 12 > title
+[Career.UNLOCKS.12.title]
+STRESS BALL
+
+# Career > UNLOCKS > 13 > title
+[Career.UNLOCKS.13.title]
+DESK PENDULUM
 
 
 # ======================= Growth > STRETCH =======================
@@ -3924,6 +6150,14 @@ IT HOLDS. NOT QUITE: TRY AGAIN.
 [PrinterGame.TEXT.jam_tear]
 RIP! A SCRAP IS STILL INSIDE.
 
+# PrinterGame > TEXT > jam_short
+[PrinterGame.TEXT.jam_short]
+TWO CLEAN PULLS: THE JAM EASES, ONE FEWER TO GO.
+
+# PrinterGame > TEXT > jam_scrap
+[PrinterGame.TEXT.jam_scrap]
+THE SCRAP NEEDS ONE MORE PULL.
+
 # PrinterGame > TEXT > toner_help
 [PrinterGame.TEXT.toner_help]
 LEFT / RIGHT TO PICK, SPACE TO INSTALL
@@ -3992,8 +6226,24 @@ P: PRAY TO THE SYSADMIN GODS
 [PrinterGame.TEXT.pray_none]
 THE GODS HAVE HEARD ENOUGH FROM YOU TODAY.
 
+# PrinterGame > TEXT > tired_note
+[PrinterGame.TEXT.tired_note]
+TIRED: THE MARKER RUNS %d PERCENT FASTER.
+
+# PrinterGame > TEXT > practice_help
+[PrinterGame.TEXT.practice_help]
+LEFT / RIGHT = MODEL  UP / DOWN = SEED
+
+# PrinterGame > TEXT > streak
+[PrinterGame.TEXT.streak]
+NO-PRAYER STREAK: %d
+
 
 # ======================= PrinterGame > QUESTIONS =======================
+# PrinterGame > QUESTIONS > 0 > error
+[PrinterGame.QUESTIONS.0.error]
+TONER LOW
+
 # PrinterGame > QUESTIONS > 0 > options > 1
 [PrinterGame.QUESTIONS.0.options.1]
 REPLACE THE CARTRIDGE
@@ -4058,161 +6308,887 @@ SET TRAY 1 TO PLAIN PAPER
 [PrinterGame.QUESTIONS.3.why]
 THE TRAY SAYS LABELS BUT THE PAPER IS PLAIN. CHANGE THE TRAY SETTING.
 
-
-# ======================= PrinterGame > PLOTTER_TEXT =======================
-# PrinterGame > PLOTTER_TEXT > title
-[PrinterGame.PLOTTER_TEXT.title]
-PLOTTER REPAIR
-
-# PrinterGame > PLOTTER_TEXT > intro1
-[PrinterGame.PLOTTER_TEXT.intro1]
-THE FORTY-INCH PLOTTER CHEWS ITS ROLL AND THE
-
-# PrinterGame > PLOTTER_TEXT > intro2
-[PrinterGame.PLOTTER_TEXT.intro2]
-DISPLAY SAYS MEDIA JAM. A PRINT DUE AT NOON.
-
-# PrinterGame > PLOTTER_TEXT > jam_help
-[PrinterGame.PLOTTER_TEXT.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
-
-# PrinterGame > PLOTTER_TEXT > jam_clean
-[PrinterGame.PLOTTER_TEXT.jam_clean]
-A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.
-
-# PrinterGame > PLOTTER_TEXT > jam_hold
-[PrinterGame.PLOTTER_TEXT.jam_hold]
-THE ROLL HOLDS. NOT QUITE: TRY AGAIN.
-
-# PrinterGame > PLOTTER_TEXT > jam_tear
-[PrinterGame.PLOTTER_TEXT.jam_tear]
-RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
-
-# PrinterGame > PLOTTER_TEXT > toner_help
-[PrinterGame.PLOTTER_TEXT.toner_help]
-LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
-
-# PrinterGame > PLOTTER_TEXT > toner_ok
-[PrinterGame.PLOTTER_TEXT.toner_ok]
-CLICK. THE INK TANK SEATS.
-
-# PrinterGame > PLOTTER_TEXT > toner_bad
-[PrinterGame.PLOTTER_TEXT.toner_bad]
-WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
-
-# PrinterGame > PLOTTER_TEXT > shake_help
-[PrinterGame.PLOTTER_TEXT.shake_help]
-ROCK THE INK TANK: A D A D A D
-
-# PrinterGame > PLOTTER_TEXT > shake_late
-[PrinterGame.PLOTTER_TEXT.shake_late]
-TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.
-
-# PrinterGame > PLOTTER_TEXT > hit
-[PrinterGame.PLOTTER_TEXT.hit]
-YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.
-
-# PrinterGame > PLOTTER_TEXT > stars3
-[PrinterGame.PLOTTER_TEXT.stars3]
-PERFECT. A CRISP FORTY-INCH SITE PLAN.
-
-# PrinterGame > PLOTTER_TEXT > stars2
-[PrinterGame.PLOTTER_TEXT.stars2]
-GOOD ENOUGH. A FEW BANDING LINES.
-
-# PrinterGame > PLOTTER_TEXT > stars1
-[PrinterGame.PLOTTER_TEXT.stars1]
-IT PLOTS. THE SCALE BAR IS A LITTLE OFF.
-
-# PrinterGame > PLOTTER_TEXT > stars0
-[PrinterGame.PLOTTER_TEXT.stars0]
-YOU GIVE UP. THE PLOTTER WINS.
-
-# PrinterGame > PLOTTER_TEXT > tray_help
-[PrinterGame.PLOTTER_TEXT.tray_help]
-MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
-
-# PrinterGame > PLOTTER_TEXT > tray_ok
-[PrinterGame.PLOTTER_TEXT.tray_ok]
-24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.
-
-# PrinterGame > PLOTTER_TEXT > tray_bad
-[PrinterGame.PLOTTER_TEXT.tray_bad]
-WRONG ROLL. THE PLOTTER CUTS IT SHORT.
-
-# PrinterGame > PLOTTER_TEXT > tray_hit
-[PrinterGame.PLOTTER_TEXT.tray_hit]
-YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
-
-# PrinterGame > PLOTTER_TEXT > pray_help
-[PrinterGame.PLOTTER_TEXT.pray_help]
-P: PRAY TO THE PLOTTER GODS
-
-
-# ======================= PrinterGame > PLOTTER_QUESTIONS =======================
-# PrinterGame > PLOTTER_QUESTIONS > 0 > error
-[PrinterGame.PLOTTER_QUESTIONS.0.error]
+# PrinterGame > QUESTIONS > 4 > error
+[PrinterGame.QUESTIONS.4.error]
 MEDIA JAM ROLL 1
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.0.options.0]
+# PrinterGame > QUESTIONS > 4 > options > 0
+[PrinterGame.QUESTIONS.4.options.0]
 PULL THE ROLL OUT HARD
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.0.options.1]
-OPEN THE COVER AND FEED IT STRAIGHT
+# PrinterGame > QUESTIONS > 4 > options > 1
+[PrinterGame.QUESTIONS.4.options.1]
+OPEN THE COVER, FEED IT STRAIGHT
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > options > 2
-[PrinterGame.PLOTTER_QUESTIONS.0.options.2]
+# PrinterGame > QUESTIONS > 4 > options > 2
+[PrinterGame.QUESTIONS.4.options.2]
 ORDER A NEW ROLL
 
-# PrinterGame > PLOTTER_QUESTIONS > 0 > why
-[PrinterGame.PLOTTER_QUESTIONS.0.why]
+# PrinterGame > QUESTIONS > 4 > why
+[PrinterGame.QUESTIONS.4.why]
 A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > error
-[PrinterGame.PLOTTER_QUESTIONS.1.error]
+# PrinterGame > QUESTIONS > 5 > error
+[PrinterGame.QUESTIONS.5.error]
 REPLACE PRINTHEAD
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.1.options.0]
+# PrinterGame > QUESTIONS > 5 > options > 0
+[PrinterGame.QUESTIONS.5.options.0]
 ALIGN THE PRINTHEAD
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.1.options.1]
-SWAP THE PRINTHEAD AND ALIGN IT
+# PrinterGame > QUESTIONS > 5 > options > 1
+[PrinterGame.QUESTIONS.5.options.1]
+SWAP THE HEAD AND ALIGN IT
 
-# PrinterGame > PLOTTER_QUESTIONS > 1 > why
-[PrinterGame.PLOTTER_QUESTIONS.1.why]
+# PrinterGame > QUESTIONS > 5 > why
+[PrinterGame.QUESTIONS.5.why]
 BANDING THAT NEVER CLEARS MEANS A DEAD NOZZLE. SWAP IT, THEN ALIGN.
 
-# PrinterGame > PLOTTER_QUESTIONS > 2 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.2.options.0]
-ADD MEMORY OR PRINT THE SHEET AS A PDF
+# PrinterGame > QUESTIONS > 6 > error
+[PrinterGame.QUESTIONS.6.error]
+OUT OF MEMORY
 
-# PrinterGame > PLOTTER_QUESTIONS > 2 > why
-[PrinterGame.PLOTTER_QUESTIONS.2.why]
+# PrinterGame > QUESTIONS > 6 > options > 0
+[PrinterGame.QUESTIONS.6.options.0]
+ADD MEMORY OR SEND A FLAT PDF
+
+# PrinterGame > QUESTIONS > 6 > why
+[PrinterGame.QUESTIONS.6.why]
 A BIG DRAWING WITH A HEAVY HATCH CHOKES THE PLOTTER. SEND A FLATTENED PDF.
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > error
-[PrinterGame.PLOTTER_QUESTIONS.3.error]
+# PrinterGame > QUESTIONS > 7 > error
+[PrinterGame.QUESTIONS.7.error]
 PAPER SIZE MISMATCH
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 0
-[PrinterGame.PLOTTER_QUESTIONS.3.options.0]
+# PrinterGame > QUESTIONS > 7 > options > 0
+[PrinterGame.QUESTIONS.7.options.0]
 SET THE DRIVER TO ARCH D
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 1
-[PrinterGame.PLOTTER_QUESTIONS.3.options.1]
+# PrinterGame > QUESTIONS > 7 > options > 1
+[PrinterGame.QUESTIONS.7.options.1]
 BLAME THE INTERN
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > options > 2
-[PrinterGame.PLOTTER_QUESTIONS.3.options.2]
+# PrinterGame > QUESTIONS > 7 > options > 2
+[PrinterGame.QUESTIONS.7.options.2]
 CUT THE ROLL BY HAND
 
-# PrinterGame > PLOTTER_QUESTIONS > 3 > why
-[PrinterGame.PLOTTER_QUESTIONS.3.why]
+# PrinterGame > QUESTIONS > 7 > why
+[PrinterGame.QUESTIONS.7.why]
 THE DRAWING SAYS 24 BY 36 BUT THE DRIVER SAYS LETTER. FIX THE PAPER SIZE.
+
+# PrinterGame > QUESTIONS > 8 > error
+[PrinterGame.QUESTIONS.8.error]
+STREAKS AFTER A NEW INK TANK
+
+# PrinterGame > QUESTIONS > 8 > options > 0
+[PrinterGame.QUESTIONS.8.options.0]
+RUN THE ALIGNMENT PAGE
+
+# PrinterGame > QUESTIONS > 8 > options > 2
+[PrinterGame.QUESTIONS.8.options.2]
+SHAKE THE PRINTER
+
+# PrinterGame > QUESTIONS > 8 > why
+[PrinterGame.QUESTIONS.8.why]
+A SWAPPED INK TANK OR HEAD NEEDS ALIGNING. PRINT THE ALIGNMENT PAGE AND PICK THE BEST BLOCKS.
+
+# PrinterGame > QUESTIONS > 9 > error
+[PrinterGame.QUESTIONS.9.error]
+JOB STUCK: 400 MB IN QUEUE
+
+# PrinterGame > QUESTIONS > 9 > options > 0
+[PrinterGame.QUESTIONS.9.options.0]
+PRINT IT TEN MORE TIMES
+
+# PrinterGame > QUESTIONS > 9 > options > 1
+[PrinterGame.QUESTIONS.9.options.1]
+RESTART THE SPOOLER, CLEAR QUEUE
+
+# PrinterGame > QUESTIONS > 9 > options > 2
+[PrinterGame.QUESTIONS.9.options.2]
+UNPLUG THE PRINTER
+
+# PrinterGame > QUESTIONS > 9 > why
+[PrinterGame.QUESTIONS.9.why]
+ONE HUGE SCAN BLOCKS THE QUEUE. STOP THE SPOOLER, EMPTY THE SPOOL FOLDER, START IT AGAIN.
+
+# PrinterGame > QUESTIONS > 10 > error
+[PrinterGame.QUESTIONS.10.error]
+CANNOT CONNECT TO SHARED PRINTER
+
+# PrinterGame > QUESTIONS > 10 > options > 0
+[PrinterGame.QUESTIONS.10.options.0]
+WAKE THE XP PC THAT SHARES IT
+
+# PrinterGame > QUESTIONS > 10 > options > 1
+[PrinterGame.QUESTIONS.10.options.1]
+REINSTALL EVERY PC
+
+# PrinterGame > QUESTIONS > 10 > options > 2
+[PrinterGame.QUESTIONS.10.options.2]
+BUY A NETWORK PRINTER
+
+# PrinterGame > QUESTIONS > 10 > why
+[PrinterGame.QUESTIONS.10.why]
+THE USB PRINTER IS SHARED FROM AN OLD XP PC AND THAT PC WENT TO SLEEP. KEEP IT AWAKE.
+
+# PrinterGame > QUESTIONS > 11 > error
+[PrinterGame.QUESTIONS.11.error]
+PRINTER NOT FOUND
+
+# PrinterGame > QUESTIONS > 11 > options > 0
+[PrinterGame.QUESTIONS.11.options.0]
+RESERVE ITS ADDRESS ON THE ROUTER
+
+# PrinterGame > QUESTIONS > 11 > options > 1
+[PrinterGame.QUESTIONS.11.options.1]
+REBUILD EVERY PC
+
+# PrinterGame > QUESTIONS > 11 > options > 2
+[PrinterGame.QUESTIONS.11.options.2]
+PRINT TO A FILE
+
+# PrinterGame > QUESTIONS > 11 > why
+[PrinterGame.QUESTIONS.11.why]
+THE DHCP LEASE RAN OUT AND THE PRINTER GOT A NEW IP. RESERVE ONE OR SET A STATIC ADDRESS.
+
+# PrinterGame > QUESTIONS > 12 > error
+[PrinterGame.QUESTIONS.12.error]
+PRINTS COME OUT AT THE OTHER OFFICE
+
+# PrinterGame > QUESTIONS > 12 > options > 0
+[PrinterGame.QUESTIONS.12.options.0]
+SET THE RIGHT DEFAULT PRINTER
+
+# PrinterGame > QUESTIONS > 12 > options > 1
+[PrinterGame.QUESTIONS.12.options.1]
+REBUILD THE LAPTOP
+
+# PrinterGame > QUESTIONS > 12 > options > 2
+[PrinterGame.QUESTIONS.12.options.2]
+UNPLUG THE OTHER PRINTER
+
+# PrinterGame > QUESTIONS > 12 > why
+[PrinterGame.QUESTIONS.12.why]
+THE LAPTOP KEPT THE DEFAULT PRINTER FROM THE OTHER OFFICE. PICK THE LOCAL ONE.
+
+# PrinterGame > QUESTIONS > 13 > error
+[PrinterGame.QUESTIONS.13.error]
+20 INSUFFICIENT MEMORY
+
+# PrinterGame > QUESTIONS > 13 > options > 0
+[PrinterGame.QUESTIONS.13.options.0]
+LOWER THE DPI OR ADD A DIMM
+
+# PrinterGame > QUESTIONS > 13 > options > 1
+[PrinterGame.QUESTIONS.13.options.1]
+POWER CYCLE UNTIL IT WORKS
+
+# PrinterGame > QUESTIONS > 13 > options > 2
+[PrinterGame.QUESTIONS.13.options.2]
+SEND THE JOB TWICE
+
+# PrinterGame > QUESTIONS > 13 > why
+[PrinterGame.QUESTIONS.13.why]
+THIS LASER HAS 2 MB. A FULL PAGE AT HIGH DPI WILL NOT FIT. LOWER THE RESOLUTION OR ADD MEMORY.
+
+# PrinterGame > QUESTIONS > 14 > error
+[PrinterGame.QUESTIONS.14.error]
+CLOSE DUPLEX UNIT
+
+# PrinterGame > QUESTIONS > 14 > options > 0
+[PrinterGame.QUESTIONS.14.options.0]
+PUSH THE DUPLEX UNIT UNTIL IT CLICKS
+
+# PrinterGame > QUESTIONS > 14 > options > 1
+[PrinterGame.QUESTIONS.14.options.1]
+REPLACE THE FUSER
+
+# PrinterGame > QUESTIONS > 14 > options > 2
+[PrinterGame.QUESTIONS.14.options.2]
+UPDATE THE FIRMWARE
+
+# PrinterGame > QUESTIONS > 14 > why
+[PrinterGame.QUESTIONS.14.why]
+THE DUPLEXER IS NOT SEATED, SO THE SENSOR SAYS OPEN. PUSH IT IN UNTIL IT CLICKS.
+
+# PrinterGame > QUESTIONS > 15 > error
+[PrinterGame.QUESTIONS.15.error]
+PICKS TWO SHEETS, THEN NONE
+
+# PrinterGame > QUESTIONS > 15 > options > 0
+[PrinterGame.QUESTIONS.15.options.0]
+OIL THE ROLLERS
+
+# PrinterGame > QUESTIONS > 15 > options > 1
+[PrinterGame.QUESTIONS.15.options.1]
+CLEAN OR SWAP THE FEED ROLLERS
+
+# PrinterGame > QUESTIONS > 15 > options > 2
+[PrinterGame.QUESTIONS.15.options.2]
+FAN THE PAPER FOREVER
+
+# PrinterGame > QUESTIONS > 15 > why
+[PrinterGame.QUESTIONS.15.why]
+GLAZED FEED ROLLERS LOSE THEIR GRIP. WIPE THEM WITH A DAMP CLOTH OR REPLACE THEM.
+
+# PrinterGame > QUESTIONS > 16 > error
+[PrinterGame.QUESTIONS.16.error]
+PRINTER DEAD, NO LIGHTS AT ALL
+
+# PrinterGame > QUESTIONS > 16 > options > 0
+[PrinterGame.QUESTIONS.16.options.0]
+CHECK THE POWER CORD
+
+# PrinterGame > QUESTIONS > 16 > options > 1
+[PrinterGame.QUESTIONS.16.options.1]
+REPLACE THE POWER SUPPLY
+
+# PrinterGame > QUESTIONS > 16 > why
+[PrinterGame.QUESTIONS.16.why]
+IT IS UNPLUGGED. THE CLEANER NEEDED THE SOCKET. PLUG IT IN AND TELL NOBODY.
+
+# PrinterGame > QUESTIONS > 17 > error
+[PrinterGame.QUESTIONS.17.error]
+WHITE LINES ACROSS THE PAGE
+
+# PrinterGame > QUESTIONS > 17 > options > 0
+[PrinterGame.QUESTIONS.17.options.0]
+RUN A HEAD CLEAN AND NOZZLE CHECK
+
+# PrinterGame > QUESTIONS > 17 > options > 1
+[PrinterGame.QUESTIONS.17.options.1]
+BUY A NEW PRINTER
+
+# PrinterGame > QUESTIONS > 17 > options > 2
+[PrinterGame.QUESTIONS.17.options.2]
+BLAME THE PAPER
+
+# PrinterGame > QUESTIONS > 17 > why
+[PrinterGame.QUESTIONS.17.why]
+A CLOGGED NOZZLE LEAVES GAPS. RUN THE HEAD CLEANING CYCLE AND PRINT A NOZZLE CHECK.
+
+# PrinterGame > QUESTIONS > 18 > error
+[PrinterGame.QUESTIONS.18.error]
+CARTRIDGE NOT RECOGNIZED
+
+# PrinterGame > QUESTIONS > 18 > options > 0
+[PrinterGame.QUESTIONS.18.options.0]
+RESEAT IT, WIPE THE CHIP CONTACTS
+
+# PrinterGame > QUESTIONS > 18 > options > 1
+[PrinterGame.QUESTIONS.18.options.1]
+TURN OFF THE FIREWALL
+
+# PrinterGame > QUESTIONS > 18 > why
+[PrinterGame.QUESTIONS.18.why]
+THE CHIP CONTACTS ARE DIRTY OR THE CARTRIDGE IS NOT SEATED. CLEAN AND RESEAT IT.
+
+# PrinterGame > QUESTIONS > 19 > error
+[PrinterGame.QUESTIONS.19.error]
+VERTICAL LINES ON EVERY SCAN
+
+# PrinterGame > QUESTIONS > 19 > options > 0
+[PrinterGame.QUESTIONS.19.options.0]
+REINSTALL THE SCAN DRIVER
+
+# PrinterGame > QUESTIONS > 19 > options > 1
+[PrinterGame.QUESTIONS.19.options.1]
+CLEAN THE SCANNER GLASS
+
+# PrinterGame > QUESTIONS > 19 > options > 2
+[PrinterGame.QUESTIONS.19.options.2]
+REPLACE THE TONER
+
+# PrinterGame > QUESTIONS > 19 > why
+[PrinterGame.QUESTIONS.19.why]
+A SPECK ON THE GLASS OR THE ADF STRIP DRAWS A LINE ON EVERY PAGE. WIPE BOTH.
+
+# PrinterGame > QUESTIONS > 20 > error
+[PrinterGame.QUESTIONS.20.error]
+ADF PICK FAILED
+
+# PrinterGame > QUESTIONS > 20 > options > 0
+[PrinterGame.QUESTIONS.20.options.0]
+OPEN THE ADF, REMOVE THE STAPLE
+
+# PrinterGame > QUESTIONS > 20 > options > 2
+[PrinterGame.QUESTIONS.20.options.2]
+SCAN WITH A PHONE
+
+# PrinterGame > QUESTIONS > 20 > why
+[PrinterGame.QUESTIONS.20.why]
+A STAPLE OR A CURLED CORNER BLOCKS THE FEEDER. OPEN THE COVER AND CLEAR THE PATH.
+
+# PrinterGame > QUESTIONS > 21 > error
+[PrinterGame.QUESTIONS.21.error]
+FAX: NO DIAL TONE
+
+# PrinterGame > QUESTIONS > 21 > options > 0
+[PrinterGame.QUESTIONS.21.options.0]
+REPLACE THE FAX BOARD
+
+# PrinterGame > QUESTIONS > 21 > options > 1
+[PrinterGame.QUESTIONS.21.options.1]
+MOVE THE CORD TO THE LINE JACK
+
+# PrinterGame > QUESTIONS > 21 > options > 2
+[PrinterGame.QUESTIONS.21.options.2]
+RESET THE ROUTER
+
+# PrinterGame > QUESTIONS > 21 > why
+[PrinterGame.QUESTIONS.21.why]
+THE PHONE CORD IS IN THE EXT JACK, NOT THE LINE JACK. SWAP IT OVER.
+
+# PrinterGame > QUESTIONS > 22 > error
+[PrinterGame.QUESTIONS.22.error]
+SCAN TO EMAIL FAILED
+
+# PrinterGame > QUESTIONS > 22 > options > 0
+[PrinterGame.QUESTIONS.22.options.0]
+CHECK THE MAIL SERVER AND PORT
+
+# PrinterGame > QUESTIONS > 22 > options > 1
+[PrinterGame.QUESTIONS.22.options.1]
+REPLACE THE SCANNER LAMP
+
+# PrinterGame > QUESTIONS > 22 > options > 2
+[PrinterGame.QUESTIONS.22.options.2]
+SCAN TO FOLDER FOREVER
+
+# PrinterGame > QUESTIONS > 22 > why
+[PrinterGame.QUESTIONS.22.why]
+THE SMTP SERVER OR PORT IN THE SCANNER SETTINGS IS WRONG, OR THE RELAY NEEDS A LOGIN.
+
+# PrinterGame > QUESTIONS > 23 > error
+[PrinterGame.QUESTIONS.23.error]
+PAPER OUT, BUT THERE IS PAPER
+
+# PrinterGame > QUESTIONS > 23 > options > 0
+[PrinterGame.QUESTIONS.23.options.0]
+FLIP THE ROLL, HEAT SIDE IN
+
+# PrinterGame > QUESTIONS > 23 > why
+[PrinterGame.QUESTIONS.23.why]
+THERMAL PAPER HAS ONE HEATED SIDE. LOADED BACKWARDS IT PRINTS NOTHING. TURN THE ROLL OVER.
+
+# PrinterGame > QUESTIONS > 24 > error
+[PrinterGame.QUESTIONS.24.error]
+RECEIPTS PRINT VERY FAINT
+
+# PrinterGame > QUESTIONS > 24 > options > 0
+[PrinterGame.QUESTIONS.24.options.0]
+CLEAN THE THERMAL HEAD
+
+# PrinterGame > QUESTIONS > 24 > options > 2
+[PrinterGame.QUESTIONS.24.options.2]
+REPLACE THE DRAWER
+
+# PrinterGame > QUESTIONS > 24 > why
+[PrinterGame.QUESTIONS.24.why]
+PAPER DUST BUILDS UP ON THE THERMAL HEAD. WIPE IT WITH ALCOHOL AND LET IT DRY.
+
+# PrinterGame > QUESTIONS > 25 > error
+[PrinterGame.QUESTIONS.25.error]
+CUTTER ERROR
+
+# PrinterGame > QUESTIONS > 25 > options > 0
+[PrinterGame.QUESTIONS.25.options.0]
+OPEN THE COVER, CLEAR THE SCRAP
+
+# PrinterGame > QUESTIONS > 25 > options > 1
+[PrinterGame.QUESTIONS.25.options.1]
+FORCE THE PAPER OUT
+
+# PrinterGame > QUESTIONS > 25 > options > 2
+[PrinterGame.QUESTIONS.25.options.2]
+RESTART THE REGISTER
+
+# PrinterGame > QUESTIONS > 25 > why
+[PrinterGame.QUESTIONS.25.why]
+A SCRAP OF PAPER IS STUCK IN THE CUTTER BLADE. OPEN THE COVER, REMOVE IT, RESEAT THE BLADE.
+
+# PrinterGame > QUESTIONS > 26 > error
+[PrinterGame.QUESTIONS.26.error]
+RECEIPT SHOWS GARBAGE LETTERS
+
+# PrinterGame > QUESTIONS > 26 > options > 0
+[PrinterGame.QUESTIONS.26.options.0]
+MATCH THE BAUD RATE TO THE REGISTER
+
+# PrinterGame > QUESTIONS > 26 > options > 1
+[PrinterGame.QUESTIONS.26.options.1]
+REPLACE THE ROLL
+
+# PrinterGame > QUESTIONS > 26 > options > 2
+[PrinterGame.QUESTIONS.26.options.2]
+UNPLUG THE DRAWER
+
+# PrinterGame > QUESTIONS > 26 > why
+[PrinterGame.QUESTIONS.26.why]
+THE SERIAL SETTINGS DO NOT MATCH THE REGISTER. SET THE SAME BAUD RATE ON BOTH.
+
+# PrinterGame > QUESTIONS > 27 > error
+[PrinterGame.QUESTIONS.27.error]
+PRINT IS PALE AND GHOSTLY
+
+# PrinterGame > QUESTIONS > 27 > options > 0
+[PrinterGame.QUESTIONS.27.options.0]
+REPLACE THE RIBBON
+
+# PrinterGame > QUESTIONS > 27 > options > 2
+[PrinterGame.QUESTIONS.27.options.2]
+SWITCH TO INKJET
+
+# PrinterGame > QUESTIONS > 27 > why
+[PrinterGame.QUESTIONS.27.why]
+A WORN RIBBON LEAVES FAINT DOTS. FIT A NEW ONE AND THE CARBON COPIES WILL BE READABLE.
+
+# PrinterGame > QUESTIONS > 28 > error
+[PrinterGame.QUESTIONS.28.error]
+FORMS DRIFT DOWN THE PAGE
+
+# PrinterGame > QUESTIONS > 28 > options > 0
+[PrinterGame.QUESTIONS.28.options.0]
+SET TOP OF FORM, SEAT THE PINS
+
+# PrinterGame > QUESTIONS > 28 > options > 1
+[PrinterGame.QUESTIONS.28.options.1]
+REPLACE THE PRINT HEAD
+
+# PrinterGame > QUESTIONS > 28 > why
+[PrinterGame.QUESTIONS.28.why]
+THE FORM IS NOT ON THE TRACTOR PINS, OR THE TOP-OF-FORM IS WRONG. SQUARE IT UP AND SET IT.
+
+# PrinterGame > QUESTIONS > 29 > error
+[PrinterGame.QUESTIONS.29.error]
+COPY THREE IS BLANK
+
+# PrinterGame > QUESTIONS > 29 > options > 0
+[PrinterGame.QUESTIONS.29.options.0]
+MOVE THE HEAD GAP LEVER OUT
+
+# PrinterGame > QUESTIONS > 29 > options > 2
+[PrinterGame.QUESTIONS.29.options.2]
+PRINT THREE TIMES
+
+# PrinterGame > QUESTIONS > 29 > why
+[PrinterGame.QUESTIONS.29.why]
+A MULTI-PART FORM IS THICKER. THE HEAD GAP LEVER MUST BE SET WIDER SO THE LAST COPY GETS INKED.
+
+# PrinterGame > QUESTIONS > 30 > error
+[PrinterGame.QUESTIONS.30.error]
+NOTHING PRINTS FROM WINDOWS 7
+
+# PrinterGame > QUESTIONS > 30 > options > 0
+[PrinterGame.QUESTIONS.30.options.0]
+PICK THE USB TO PARALLEL PORT
+
+# PrinterGame > QUESTIONS > 30 > why
+[PrinterGame.QUESTIONS.30.why]
+THE NEW PC HAS NO PARALLEL PORT. THE PRINTER NEEDS THE PORT OF ITS USB ADAPTER CABLE.
+
+# PrinterGame > QUESTIONS > 31 > error
+[PrinterGame.QUESTIONS.31.error]
+DRAWING PRINTS AT HALF SIZE
+
+# PrinterGame > QUESTIONS > 31 > options > 0
+[PrinterGame.QUESTIONS.31.options.0]
+SET THE SCALE TO 100 PERCENT
+
+# PrinterGame > QUESTIONS > 31 > options > 1
+[PrinterGame.QUESTIONS.31.options.1]
+ORDER A BIGGER ROLL
+
+# PrinterGame > QUESTIONS > 31 > why
+[PrinterGame.QUESTIONS.31.why]
+THE DRIVER IS ON FIT TO PAGE. SET THE SCALE TO 100 PERCENT AND CHOOSE THE RIGHT SHEET SIZE.
+
+# PrinterGame > QUESTIONS > 32 > error
+[PrinterGame.QUESTIONS.32.error]
+50.2 FUSER ERROR
+
+# PrinterGame > QUESTIONS > 32 > options > 0
+[PrinterGame.QUESTIONS.32.options.0]
+LET IT COOL, POWER CYCLE
+
+# PrinterGame > QUESTIONS > 32 > options > 1
+[PrinterGame.QUESTIONS.32.options.1]
+REPLACE THE FUSER AT ONCE
+
+# PrinterGame > QUESTIONS > 32 > options > 2
+[PrinterGame.QUESTIONS.32.options.2]
+OPEN THE FUSER HOT
+
+# PrinterGame > QUESTIONS > 32 > why
+[PrinterGame.QUESTIONS.32.why]
+A ONE-OFF FUSER ERROR OFTEN CLEARS AFTER COOLING. IF IT COMES BACK, REPLACE THE FUSER. NEVER OPEN IT HOT.
+
+# PrinterGame > QUESTIONS > 33 > error
+[PrinterGame.QUESTIONS.33.error]
+BLACK STREAK DOWN EVERY PAGE
+
+# PrinterGame > QUESTIONS > 33 > options > 0
+[PrinterGame.QUESTIONS.33.options.0]
+CLEAN OR REPLACE THE DRUM
+
+# PrinterGame > QUESTIONS > 33 > options > 2
+[PrinterGame.QUESTIONS.33.options.2]
+RESTART THE SPOOLER
+
+# PrinterGame > QUESTIONS > 33 > why
+[PrinterGame.QUESTIONS.33.why]
+A SCRATCHED OR DIRTY DRUM PRINTS THE SAME LINE ON EVERY PAGE. CLEAN IT OR FIT A NEW ONE.
+
+
+# ======================= PrinterGame > MODEL_TEXT =======================
+# PrinterGame > MODEL_TEXT > plotter > title
+[PrinterGame.MODEL_TEXT.plotter.title]
+PLOTTER REPAIR
+
+# PrinterGame > MODEL_TEXT > plotter > intro1
+[PrinterGame.MODEL_TEXT.plotter.intro1]
+THE FORTY-INCH PLOTTER CHEWS ITS ROLL
+
+# PrinterGame > MODEL_TEXT > plotter > intro2
+[PrinterGame.MODEL_TEXT.plotter.intro2]
+AND SAYS MEDIA JAM. A PRINT DUE AT NOON.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_help
+[PrinterGame.MODEL_TEXT.plotter.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
+
+# PrinterGame > MODEL_TEXT > plotter > jam_clean
+[PrinterGame.MODEL_TEXT.plotter.jam_clean]
+A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_hold
+[PrinterGame.MODEL_TEXT.plotter.jam_hold]
+THE ROLL HOLDS. NOT QUITE: TRY AGAIN.
+
+# PrinterGame > MODEL_TEXT > plotter > jam_tear
+[PrinterGame.MODEL_TEXT.plotter.jam_tear]
+RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
+
+# PrinterGame > MODEL_TEXT > plotter > toner_help
+[PrinterGame.MODEL_TEXT.plotter.toner_help]
+LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
+
+# PrinterGame > MODEL_TEXT > plotter > toner_ok
+[PrinterGame.MODEL_TEXT.plotter.toner_ok]
+CLICK. THE INK TANK SEATS.
+
+# PrinterGame > MODEL_TEXT > plotter > toner_bad
+[PrinterGame.MODEL_TEXT.plotter.toner_bad]
+WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
+
+# PrinterGame > MODEL_TEXT > plotter > shake_help
+[PrinterGame.MODEL_TEXT.plotter.shake_help]
+ROCK THE INK TANK: A D A D A D
+
+# PrinterGame > MODEL_TEXT > plotter > shake_late
+[PrinterGame.MODEL_TEXT.plotter.shake_late]
+TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.
+
+# PrinterGame > MODEL_TEXT > plotter > hit
+[PrinterGame.MODEL_TEXT.plotter.hit]
+YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.
+
+# PrinterGame > MODEL_TEXT > plotter > stars3
+[PrinterGame.MODEL_TEXT.plotter.stars3]
+PERFECT. A CRISP FORTY-INCH SITE PLAN.
+
+# PrinterGame > MODEL_TEXT > plotter > stars2
+[PrinterGame.MODEL_TEXT.plotter.stars2]
+GOOD ENOUGH. A FEW BANDING LINES.
+
+# PrinterGame > MODEL_TEXT > plotter > stars1
+[PrinterGame.MODEL_TEXT.plotter.stars1]
+IT PLOTS. THE SCALE BAR IS A LITTLE OFF.
+
+# PrinterGame > MODEL_TEXT > plotter > stars0
+[PrinterGame.MODEL_TEXT.plotter.stars0]
+YOU GIVE UP. THE PLOTTER WINS.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_help
+[PrinterGame.MODEL_TEXT.plotter.tray_help]
+MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > plotter > tray_ok
+[PrinterGame.MODEL_TEXT.plotter.tray_ok]
+24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_bad
+[PrinterGame.MODEL_TEXT.plotter.tray_bad]
+WRONG ROLL. THE PLOTTER CUTS IT SHORT.
+
+# PrinterGame > MODEL_TEXT > plotter > tray_hit
+[PrinterGame.MODEL_TEXT.plotter.tray_hit]
+YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > plotter > pray_help
+[PrinterGame.MODEL_TEXT.plotter.pray_help]
+P: PRAY TO THE PLOTTER GODS
+
+# PrinterGame > MODEL_TEXT > inkjet > title
+[PrinterGame.MODEL_TEXT.inkjet.title]
+INKJET REPAIR
+
+# PrinterGame > MODEL_TEXT > inkjet > intro1
+[PrinterGame.MODEL_TEXT.inkjet.intro1]
+THE INKJET PRINTS A PAGE OF WHITE LINES
+
+# PrinterGame > MODEL_TEXT > inkjet > intro2
+[PrinterGame.MODEL_TEXT.inkjet.intro2]
+AND A PAPER JAM LIGHT BLINKS. AGAIN.
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_help
+[PrinterGame.MODEL_TEXT.inkjet.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_clean
+[PrinterGame.MODEL_TEXT.inkjet.jam_clean]
+A CLEAN PULL. THE SHEET COMES OUT FLAT.
+
+# PrinterGame > MODEL_TEXT > inkjet > jam_tear
+[PrinterGame.MODEL_TEXT.inkjet.jam_tear]
+RIP! A CORNER IS STILL UNDER THE ROLLER.
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_help
+[PrinterGame.MODEL_TEXT.inkjet.toner_help]
+LEFT / RIGHT TO PICK AN INK TANK, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_ok
+[PrinterGame.MODEL_TEXT.inkjet.toner_ok]
+CLICK. THE INK TANK SEATS.
+
+# PrinterGame > MODEL_TEXT > inkjet > toner_bad
+[PrinterGame.MODEL_TEXT.inkjet.toner_bad]
+WRONG SLOT. THE INKJET BEEPS.
+
+# PrinterGame > MODEL_TEXT > inkjet > hit
+[PrinterGame.MODEL_TEXT.inkjet.hit]
+YOU TAP THE INKJET. IT PRINTS. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars3
+[PrinterGame.MODEL_TEXT.inkjet.stars3]
+PERFECT. THE ALIGNMENT PAGE IS CRISP.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars2
+[PrinterGame.MODEL_TEXT.inkjet.stars2]
+GOOD ENOUGH. A LITTLE BANDING.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars1
+[PrinterGame.MODEL_TEXT.inkjet.stars1]
+IT PRINTS. THE BLACK IS A BIT GREEN.
+
+# PrinterGame > MODEL_TEXT > inkjet > stars0
+[PrinterGame.MODEL_TEXT.inkjet.stars0]
+YOU GIVE UP. THE INKJET WINS.
+
+# PrinterGame > MODEL_TEXT > inkjet > pray_help
+[PrinterGame.MODEL_TEXT.inkjet.pray_help]
+P: PRAY TO THE INK GODS
+
+# PrinterGame > MODEL_TEXT > mfp > title
+[PrinterGame.MODEL_TEXT.mfp.title]
+COPIER REPAIR
+
+# PrinterGame > MODEL_TEXT > mfp > intro1
+[PrinterGame.MODEL_TEXT.mfp.intro1]
+THE COPIER SCANS AND FAXES, THEN JAMS.
+
+# PrinterGame > MODEL_TEXT > mfp > intro2
+[PrinterGame.MODEL_TEXT.mfp.intro2]
+ADF MISFEED. PAPER EVERYWHERE.
+
+# PrinterGame > MODEL_TEXT > mfp > jam_help
+[PrinterGame.MODEL_TEXT.mfp.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET
+
+# PrinterGame > MODEL_TEXT > mfp > jam_clean
+[PrinterGame.MODEL_TEXT.mfp.jam_clean]
+A CLEAN PULL. THE SHEET LEAVES THE FEEDER WHOLE.
+
+# PrinterGame > MODEL_TEXT > mfp > jam_tear
+[PrinterGame.MODEL_TEXT.mfp.jam_tear]
+RIP! HALF A LETTER IS STUCK IN THE FEEDER.
+
+# PrinterGame > MODEL_TEXT > mfp > toner_help
+[PrinterGame.MODEL_TEXT.mfp.toner_help]
+LEFT / RIGHT TO PICK A CARTRIDGE, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > mfp > hit
+[PrinterGame.MODEL_TEXT.mfp.hit]
+YOU THUMP THE COPIER. IT WORKS. DO NOT TELL THE PARTNERS.
+
+# PrinterGame > MODEL_TEXT > mfp > stars3
+[PrinterGame.MODEL_TEXT.mfp.stars3]
+PERFECT. THE FAX GOES OUT AND THE COPIES ARE CLEAN.
+
+# PrinterGame > MODEL_TEXT > mfp > stars1
+[PrinterGame.MODEL_TEXT.mfp.stars1]
+IT COPIES. THE FAX STILL HISSES.
+
+# PrinterGame > MODEL_TEXT > mfp > stars0
+[PrinterGame.MODEL_TEXT.mfp.stars0]
+YOU GIVE UP. THE COPIER WINS.
+
+# PrinterGame > MODEL_TEXT > mfp > tray_help
+[PrinterGame.MODEL_TEXT.mfp.tray_help]
+TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > mfp > tray_ok
+[PrinterGame.MODEL_TEXT.mfp.tray_ok]
+LETTER PAPER IN TRAY 1. THE COPIER HUMS.
+
+# PrinterGame > MODEL_TEXT > mfp > tray_screen
+[PrinterGame.MODEL_TEXT.mfp.tray_screen]
+LOAD LETTER IN TRAY 1
+
+# PrinterGame > MODEL_TEXT > mfp > pray_help
+[PrinterGame.MODEL_TEXT.mfp.pray_help]
+P: PRAY TO THE COPIER GODS
+
+# PrinterGame > MODEL_TEXT > receipt > title
+[PrinterGame.MODEL_TEXT.receipt.title]
+RECEIPT PRINTER
+
+# PrinterGame > MODEL_TEXT > receipt > intro1
+[PrinterGame.MODEL_TEXT.receipt.intro1]
+THE RECEIPT PRINTER BEEPS AND THE LINE
+
+# PrinterGame > MODEL_TEXT > receipt > intro2
+[PrinterGame.MODEL_TEXT.receipt.intro2]
+AT THE DESK GROWS. THE LIGHT IS RED.
+
+# PrinterGame > MODEL_TEXT > receipt > jam_help
+[PrinterGame.MODEL_TEXT.receipt.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER
+
+# PrinterGame > MODEL_TEXT > receipt > jam_clean
+[PrinterGame.MODEL_TEXT.receipt.jam_clean]
+A CLEAN PULL. THE PAPER FEEDS STRAIGHT.
+
+# PrinterGame > MODEL_TEXT > receipt > jam_tear
+[PrinterGame.MODEL_TEXT.receipt.jam_tear]
+RIP! A CURL OF THERMAL PAPER IS STUCK.
+
+# PrinterGame > MODEL_TEXT > receipt > hit
+[PrinterGame.MODEL_TEXT.receipt.hit]
+YOU SMACK THE LID. IT CUTS A RECEIPT. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > receipt > stars3
+[PrinterGame.MODEL_TEXT.receipt.stars3]
+PERFECT. A CRISP RECEIPT AND A CLEAN CUT.
+
+# PrinterGame > MODEL_TEXT > receipt > stars2
+[PrinterGame.MODEL_TEXT.receipt.stars2]
+GOOD ENOUGH. THE CUT IS A LITTLE CROOKED.
+
+# PrinterGame > MODEL_TEXT > receipt > stars1
+[PrinterGame.MODEL_TEXT.receipt.stars1]
+IT PRINTS. THE TOTAL IS FAINT.
+
+# PrinterGame > MODEL_TEXT > receipt > stars0
+[PrinterGame.MODEL_TEXT.receipt.stars0]
+YOU GIVE UP. THE LINE GROWS.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_help
+[PrinterGame.MODEL_TEXT.receipt.tray_help]
+PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > receipt > tray_ok
+[PrinterGame.MODEL_TEXT.receipt.tray_ok]
+THE 80 MM ROLL IS IN, HEAT SIDE UP. IT CUTS CLEANLY.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_bad
+[PrinterGame.MODEL_TEXT.receipt.tray_bad]
+WRONG ROLL. THE LID WILL NOT CLOSE.
+
+# PrinterGame > MODEL_TEXT > receipt > tray_hit
+[PrinterGame.MODEL_TEXT.receipt.tray_hit]
+YOU HIT THE LID AND IT CLOSES. DO NOT TELL ANYONE.
+
+# PrinterGame > MODEL_TEXT > receipt > pray_help
+[PrinterGame.MODEL_TEXT.receipt.pray_help]
+P: PRAY TO THE REGISTER GODS
+
+# PrinterGame > MODEL_TEXT > dot > title
+[PrinterGame.MODEL_TEXT.dot.title]
+DOT MATRIX REPAIR
+
+# PrinterGame > MODEL_TEXT > dot > intro1
+[PrinterGame.MODEL_TEXT.dot.intro1]
+THE OLD DOT MATRIX SCREECHES THROUGH ITS
+
+# PrinterGame > MODEL_TEXT > dot > intro2
+[PrinterGame.MODEL_TEXT.dot.intro2]
+FORMS AND THE TRACTOR FEED IS CROOKED.
+
+# PrinterGame > MODEL_TEXT > dot > jam_help
+[PrinterGame.MODEL_TEXT.dot.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FORM
+
+# PrinterGame > MODEL_TEXT > dot > jam_clean
+[PrinterGame.MODEL_TEXT.dot.jam_clean]
+A CLEAN PULL. THE FORM COMES OUT WHOLE.
+
+# PrinterGame > MODEL_TEXT > dot > jam_tear
+[PrinterGame.MODEL_TEXT.dot.jam_tear]
+RIP! A STRIP OF PINFEED HOLES IS STILL INSIDE.
+
+# PrinterGame > MODEL_TEXT > dot > toner_help
+[PrinterGame.MODEL_TEXT.dot.toner_help]
+LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > dot > toner_ok
+[PrinterGame.MODEL_TEXT.dot.toner_ok]
+CLICK. THE RIBBON SEATS.
+
+# PrinterGame > MODEL_TEXT > dot > toner_bad
+[PrinterGame.MODEL_TEXT.dot.toner_bad]
+WRONG RIBBON. THE HEAD GRINDS.
+
+# PrinterGame > MODEL_TEXT > dot > hit
+[PrinterGame.MODEL_TEXT.dot.hit]
+YOU THUMP THE CASE. IT SCREECHES AND WORKS.
+
+# PrinterGame > MODEL_TEXT > dot > stars3
+[PrinterGame.MODEL_TEXT.dot.stars3]
+PERFECT. THE CARBON COPY IS READABLE.
+
+# PrinterGame > MODEL_TEXT > dot > stars2
+[PrinterGame.MODEL_TEXT.dot.stars2]
+GOOD ENOUGH. A FEW PALE LINES.
+
+# PrinterGame > MODEL_TEXT > dot > stars1
+[PrinterGame.MODEL_TEXT.dot.stars1]
+IT PRINTS. THE THIRD COPY IS A GHOST.
+
+# PrinterGame > MODEL_TEXT > dot > stars0
+[PrinterGame.MODEL_TEXT.dot.stars0]
+YOU GIVE UP. THE DOT MATRIX WINS.
+
+# PrinterGame > MODEL_TEXT > dot > tray_help
+[PrinterGame.MODEL_TEXT.dot.tray_help]
+FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > dot > tray_ok
+[PrinterGame.MODEL_TEXT.dot.tray_ok]
+THE FORMS RIDE THE TRACTOR PINS, SQUARE AT LAST.
+
+# PrinterGame > MODEL_TEXT > dot > tray_bad
+[PrinterGame.MODEL_TEXT.dot.tray_bad]
+WRONG PAPER. THE PINS TEAR THE EDGE.
+
+# PrinterGame > MODEL_TEXT > dot > tray_screen
+[PrinterGame.MODEL_TEXT.dot.tray_screen]
+FORM FEED ERROR
+
+# PrinterGame > MODEL_TEXT > dot > pray_help
+[PrinterGame.MODEL_TEXT.dot.pray_help]
+P: PRAY TO THE FORMS GODS
 
 
 # ======================= Onsite > TEXT =======================
