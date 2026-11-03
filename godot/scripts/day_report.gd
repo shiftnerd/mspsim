@@ -138,6 +138,9 @@ func _groups() -> Array:
 	]
 	if str(r.get("mutator", "")) != "":
 		groups.append(["THIS WEEK", [["EVENT", str(r.mutator), WARN]]])
+	var stepped := int(r.get("owners", Owners.stepped))
+	if stepped > 0:
+		groups[1][1].append(["OWNERS STEPPED IN", str(stepped), GOOD])
 	var energy := []
 	if int(r.get("energy", -1)) >= 0:
 		var e := int(r.energy)

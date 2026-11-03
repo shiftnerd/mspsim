@@ -46,6 +46,7 @@ Career="*res://scripts/career.gd"
 Toolbox="*res://scripts/toolbox.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
+Owners="*res://scripts/owners.gd"
 
 [display]
 
