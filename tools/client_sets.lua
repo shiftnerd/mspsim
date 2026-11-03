@@ -720,20 +720,155 @@ return function(L, builders)
     end}
   end
 
-  builders_closet = function(S)
+  -- ---------------------------------------------------------------- the IT closet, one look per business type
+  -- wall / vertical line / floor colours and the wall pattern; the accent stripe still comes from the skin
+  local CLOSET_LOOK = {
+    dental  = {wall = "#BCD8DE", line = "#A8C6CE", rail = "#E8F2F4", floor = "#E6E4DA", floor2 = "#CFCDC0", pat = "tile"},
+    vet     = {wall = "#C6D9B0", line = "#B2C79C", rail = "#8E7A5A", floor = "#A8B0A0", floor2 = "#939B8B", pat = "rail"},
+    law     = {wall = "#5E4332", line = "#4C3526", rail = "#C8A04A", floor = "#2E2433", floor2 = "#251C2A", pat = "panel"},
+    arch    = {wall = "#D9DDE2", line = "#C6CBD2", rail = "#2E5E9E", floor = "#8A8F98", floor2 = "#767B84", pat = "grid"},
+    realty  = {wall = "#E0D2B4", line = "#D0C09E", rail = "#B04A3A", floor = "#A89A82", floor2 = "#93856D", pat = "rail"},
+    trailer = {wall = "#8E8A76", line = "#7A765F", rail = "#F2C94C", floor = "#6E5A3C", floor2 = "#5A4930", pat = "corrugated"},
+  }
+
+  -- floor props (at most 18 wide: they stand between the door and the rack) and wall pieces (under the whiteboard)
+  function P.sterilizerCart()
+    return L.piece(16, 28, function(R)
+      R(0, 6, 16, 10, "#C9CDD6"); R(0, 6, 16, 2, "#F2F2EA"); R(2, 9, 8, 5, "#4A4F5A"); R(11, 9, 3, 2, "#4CFF7A"); R(11, 12, 3, 2, "#E04E4E")   -- autoclave
+      R(1, 0, 14, 5, "#8E939E"); R(3, 1, 4, 3, "#2E9AB8"); R(9, 1, 4, 3, "#F2F2EA")                                                          -- instrument tray
+      R(1, 16, 14, 2, "#8E939E"); R(2, 18, 2, 8, "#6A6F7A"); R(12, 18, 2, 8, "#6A6F7A"); R(1, 26, 3, 2, "#2E3138"); R(12, 26, 3, 2, "#2E3138")
+    end)
+  end
+  function P.xrayBox()
+    return L.piece(26, 22, function(R)
+      R(0, 0, 26, 22, "#C9CDD6"); R(2, 2, 22, 18, "#F4F6E8")
+      for i = 0, 5 do R(4 + i * 3, 5, 2, 5, i % 2 == 0 and "#8A9AA6" or "#B0BCC4"); R(4 + i * 3, 12, 2, 5, i % 2 == 0 and "#B0BCC4" or "#8A9AA6") end   -- two rows of teeth on the film
+      R(2, 10, 22, 1, "#8E939E"); R(10, 18, 6, 2, "#8E939E")
+    end)
+  end
+  function P.kennelShelf()
+    return L.piece(18, 30, function(R)
+      R(0, 0, 18, 30, "#6A6F7A"); R(1, 1, 16, 13, "#2E3138"); R(1, 16, 16, 13, "#2E3138")
+      for i = 0, 3 do R(3 + i * 4, 1, 1, 13, "#B8BCC4"); R(3 + i * 4, 16, 1, 13, "#B8BCC4") end
+      R(2, 11, 14, 3, "#C8A878"); R(2, 26, 14, 3, "#C8A878"); R(5, 6, 5, 5, "#A87A4A"); R(5, 5, 2, 2, "#7A5230")   -- bedding and a dog's head
+      R(13, 18, 3, 3, "#E07A2E")
+    end)
+  end
+  function P.leashBoard()
+    return L.piece(26, 18, function(R)
+      R(0, 0, 26, 18, "#8E7A5A"); R(2, 2, 22, 14, "#B09A74")
+      for i = 0, 3 do R(4 + i * 5, 3, 1, 2, "#6A6F7A"); R(3 + i * 5, 5, 3, 9 - i % 2 * 2, ({"#E04E4E", "#3E8E4A", "#4F7FD0", "#F2C94C"})[i + 1]) end
+    end)
+  end
+  function P.shredder()
+    return L.piece(16, 22, function(R)
+      R(0, 6, 16, 16, "#3A3F4A"); R(0, 6, 16, 2, "#5A606C"); R(2, 3, 12, 3, "#2E3138"); R(3, 9, 6, 1, "#17121F"); R(11, 10, 3, 2, "#4CFF7A")
+      for i = 0, 4 do R(3 + i * 2, i % 2, 1, 4, "#F2F2EA") end     -- strips poking out of the slot
+      R(2, 12, 12, 8, "#4A4F5A")
+    end)
+  end
+  function P.fileWall()
+    return L.piece(28, 30, function(R)
+      R(0, 0, 28, 30, "#3A2A20")
+      for r = 0, 2 do
+        R(1, 1 + r * 10, 26, 9, "#2A1E16")
+        for i = 0, 8 do R(2 + i * 3, 2 + r * 10, 2, 7, ({"#8E3A3A", "#C8A04A", "#3E5E8E", "#F2F2EA", "#4E7A4A"})[(i + r) % 5 + 1]) end
+      end
+    end)
+  end
+  function P.planRack()
+    return L.piece(16, 30, function(R)
+      R(0, 0, 16, 30, "#8A8F98"); R(1, 1, 14, 28, "#5A606C")
+      for r = 0, 3 do for c = 0, 2 do
+        R(2 + c * 4, 2 + r * 7, 3, 6, "#F2F2EA"); R(2 + c * 4, 2 + r * 7, 3, 1, "#4F7FD0"); R(2 + c * 4, 7 + r * 7, 3, 1, "#C9C3B2")
+      end end
+    end)
+  end
+  function P.plotterPaper()
+    return L.piece(28, 24, function(R)
+      R(0, 20, 28, 2, "#8A8F98")
+      R(1, 8, 12, 12, "#F2F2EA"); R(5, 12, 4, 4, "#8A8F98"); R(1, 8, 1, 12, "#C9C3B2")
+      R(15, 4, 12, 16, "#F2F2EA"); R(19, 10, 4, 4, "#8A8F98"); R(15, 4, 1, 16, "#C9C3B2")
+      R(3, 0, 8, 7, "#4F7FD0"); R(5, 2, 4, 1, "#F2F2EA"); R(5, 4, 3, 1, "#F2F2EA")                                   -- a blueprint roll standing on end
+    end)
+  end
+  function P.signStack()
+    return L.piece(16, 28, function(R)
+      R(2, 0, 12, 4, "#F2F2EA"); R(4, 1, 8, 2, "#B04A3A")
+      R(1, 4, 14, 22, "#E0D2B4"); R(1, 4, 14, 3, "#B04A3A"); R(3, 9, 10, 2, "#8A7A5A"); R(3, 14, 10, 2, "#8A7A5A"); R(3, 19, 10, 2, "#8A7A5A")
+      R(7, 5, 2, 21, "#6A4A2E"); R(0, 26, 16, 2, "#6A4A2E")
+    end)
+  end
+  function P.lockboxBoard()
+    return L.piece(26, 22, function(R)
+      R(0, 0, 26, 22, "#6A4A2E"); R(2, 2, 22, 18, "#8A6A44")
+      for i = 0, 4 do R(4 + i * 4, 4, 3, 3, "#C8A04A"); R(4 + i * 4, 8, 3, 6, i % 2 == 0 and "#4A4F5A" or "#C9CDD6") end   -- hooks with lockboxes
+      R(4, 16, 18, 2, "#F2F2EA")
+    end)
+  end
+  function P.toolCage()
+    return L.piece(18, 30, function(R)
+      R(0, 0, 18, 30, "#6A6F7A"); R(1, 1, 16, 28, "#2A2D36")
+      for x = 3, 15, 3 do R(x, 1, 1, 28, "#8E939E") end
+      for y = 5, 25, 6 do R(1, y, 16, 1, "#8E939E") end
+      R(3, 6, 3, 10, "#C8681E"); R(8, 8, 2, 12, "#F2C94C"); R(12, 6, 3, 8, "#4F7FD0"); R(4, 20, 10, 4, "#E04E4E")      -- tools behind the mesh
+    end)
+  end
+  function P.hatPegs()
+    return L.piece(28, 14, function(R)
+      R(0, 10, 28, 3, "#8A6A44")
+      for i = 0, 2 do
+        local x = 2 + i * 9
+        R(x, 3, 8, 6, ({"#F2C94C", "#F2862E", "#F2F2EA"})[i + 1]); R(x - 1, 8, 10, 2, ({"#C8A030", "#C8681E", "#C9C3B2"})[i + 1]); R(x + 3, 1, 2, 2, "#8E939E")
+        R(x + 3, 10, 2, 1, "#17121F")
+      end
+    end)
+  end
+
+  -- floor prop: {builder, name, height}; wall piece: builder (left x 146, top y 44, under the whiteboard)
+  local CLOSET_PROPS = {
+    dental  = {floor = {"sterilizerCart", "sterilizer_cart", 28}, wall = "xrayBox"},
+    vet     = {floor = {"kennelShelf", "kennel_shelf", 30}, wall = "leashBoard"},
+    law     = {floor = {"shredder", "shredder", 22}, wall = "fileWall"},
+    arch    = {floor = {"planRack", "plan_rack", 30}, wall = "plotterPaper"},
+    realty  = {floor = {"signStack", "sign_stack", 28}, wall = "lockboxBoard"},
+    trailer = {floor = {"toolCage", "tool_cage", 30}, wall = "hatPegs"},
+  }
+
+  builders_closet = function(kind, S)
+    local K, PR = CLOSET_LOOK[kind], CLOSET_PROPS[kind]
     return {W = 176, H = 128, fn = function(s)
       s.layer("Ceiling")
       local wall = s.layer("Wall")
-      F(wall, 0, 0, 176, 84, "#9AA1AB"); F(wall, 0, 0, 176, 3, S.accent); F(wall, 0, 84, 176, 6, OUT)
-      for x = 0, 175, 16 do F(wall, x, 3, 1, 81, "#8A919B") end
+      F(wall, 0, 0, 176, 84, K.wall); F(wall, 0, 0, 176, 3, S.accent); F(wall, 0, 84, 176, 6, OUT)
+      if K.pat == "tile" then
+        for x = 0, 175, 8 do F(wall, x, 60, 1, 24, K.line) end
+        for y = 60, 83, 8 do F(wall, 0, y, 176, 1, K.line) end
+        F(wall, 0, 58, 176, 2, K.rail)
+      elseif K.pat == "panel" then
+        for x = 0, 175, 12 do F(wall, x, 3, 1, 81, K.line); F(wall, x + 1, 3, 1, 81, "#6E5240") end
+        F(wall, 0, 60, 176, 2, K.rail); F(wall, 0, 62, 176, 22, K.line)
+      elseif K.pat == "corrugated" then
+        for x = 0, 175, 4 do F(wall, x, 3, 1, 81, K.line); F(wall, x + 2, 3, 1, 81, "#9E9A86") end
+        F(wall, 0, 3, 176, 2, K.rail)
+      elseif K.pat == "grid" then
+        for x = 0, 175, 16 do F(wall, x, 3, 1, 81, K.line) end
+        for y = 19, 83, 16 do F(wall, 0, y, 176, 1, K.line) end
+        F(wall, 0, 64, 176, 2, K.rail)
+      else  -- rail: a chair rail with a darker lower wall
+        for x = 0, 175, 16 do F(wall, x, 3, 1, 57, K.line) end
+        F(wall, 0, 60, 176, 2, K.rail); F(wall, 0, 62, 176, 22, K.line)
+      end
       local floor = s.layer("Floor")
       local y0 = 90 + L.YOFF
-      L.fill(floor, 0, y0, floor.width, floor.height - y0, "#C8C4B8")
-      for x = 0, floor.width - 1, 32 do L.fill(floor, x, y0, 1, floor.height - y0, "#B3AFA2") end
-      L.fill(floor, 0, y0, floor.width, 2, "#9A968A")
+      L.fill(floor, 0, y0, floor.width, floor.height - y0, K.floor)
+      for x = 0, floor.width - 1, 32 do L.fill(floor, x, y0, 1, floor.height - y0, K.floor2) end
+      L.fill(floor, 0, y0, floor.width, 2, K.floor2)
       s.put("Doors", P.slabDoor("#7B828F", "#646B77", "#97A0AD", "lever"), 4, 18); s.put("Plate", P.doorPlate("OFFICE"), 4, 9)
       s.put("Wall", P.whiteboard(), 128, 14)
+      s.put("Wall", P[PR.wall](), 146, 44)
       s.putS("Rack", P.siteRack(S), 56, 4, 104, "site_rack_" .. S.id)
+      s.putS("Floor", P[PR.floor[1]](), 39, 112 - PR.floor[3], 108, PR.floor[2] .. "_" .. kind)
       s.putS("Server", P.serverTower(), 126, 80, 108, "server_tower")
       s.putS("Boxes", P.drawerStack(S), 152, 76, 108, "drawer_stack_" .. S.id)
       if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
@@ -765,7 +900,7 @@ return function(L, builders)
   end
   for _, kind in ipairs({"dental", "law", "vet", "arch", "realty", "trailer"}) do
     for sid, S in pairs(SKINS[kind]) do
-      builders["site_" .. kind .. "_closet_" .. sid] = builders_closet(S)
+      builders["site_" .. kind .. "_closet_" .. sid] = builders_closet(kind, S)
       builders["site_" .. kind .. "_office_" .. sid] = builders_office(kind, S)
       if kind == "dental" or kind == "vet" then builders["site_" .. kind .. "_exam_" .. sid] = builders_exam(kind, S) end
     end

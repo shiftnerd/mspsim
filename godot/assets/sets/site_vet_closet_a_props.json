@@ -1,5 +1,6 @@
 [
 {"piece":"site_rack_a","x":55,"y":3,"sort":104},
+{"piece":"kennel_shelf_vet","x":38,"y":81,"sort":108},
 {"piece":"server_tower","x":125,"y":79,"sort":108},
 {"piece":"drawer_stack_a","x":151,"y":75,"sort":108}
 ]

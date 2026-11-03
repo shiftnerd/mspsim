@@ -13883,6 +13883,12 @@ THAT WAS FINE. GOOD, EVEN.
 I WILL ALLOW IT.
 
 
+# ======================= Outings > KARAOKE_TEXT =======================
+# Outings > KARAOKE_TEXT > doubles
+[Outings.KARAOKE_TEXT.doubles]
+DOUBLES NEED BOTH KEYS AT ONCE.
+
+
 # ======================= Build > QUIRKS =======================
 # Build > QUIRKS > caffeine > name
 [Build.QUIRKS.caffeine.name]

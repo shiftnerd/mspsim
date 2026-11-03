@@ -971,43 +971,43 @@ const CAST_AT := {
 	{  # [character, x, role] per site type, skin and room (main office, exam room, owner office)
 		"a":
 		{
-			"main": [["client_dentrec_a", 104, "staff"], ["client_hygienist", 190, "staff"]],
-			"exam": [["client_dentasst", 150, "staff"]],
-			"office": [["expo_atta", 150, "owner"]]
+			"main": [["client_dentrec_a", 104, "staff"], ["client_hygienist", 202, "staff"]],
+			"exam": [["client_dentasst", 104, "staff"]],
+			"office": [["expo_atta", 162, "owner"]]
 		},
 		"b":
 		{
-			"main": [["client_dentrec_b", 104, "staff"], ["expo_attd", 190, "staff"]],
-			"exam": [["client_denthyg_b", 150, "staff"]],
-			"office": [["client_dentdoc_b", 150, "owner"]]
+			"main": [["client_dentrec_b", 104, "staff"], ["expo_attd", 202, "staff"]],
+			"exam": [["client_denthyg_b", 104, "staff"]],
+			"office": [["client_dentdoc_b", 162, "owner"]]
 		},
 	},
 	"vet":
 	{
 		"a":
 		{
-			"main": [["client_vetrec_a", 104, "staff"], ["expo_vendh", 190, "staff"]],
-			"exam": [["client_vettech_a", 150, "staff"]],
-			"office": [["client_brandt", 150, "owner"]]
+			"main": [["client_vetrec_a", 88, "staff"], ["expo_vendh", 190, "staff"]],
+			"exam": [["client_vettech_a", 104, "staff"]],
+			"office": [["client_brandt", 162, "owner"]]
 		},
 		"b":
 		{
-			"main": [["client_vetrec_b", 104, "staff"], ["client_vettech_b", 190, "staff"]],
-			"exam": [["expo_vendi", 150, "staff"]],
-			"office": [["client_vetdoc_b", 150, "owner"]]
+			"main": [["client_vetrec_b", 88, "staff"], ["client_vettech_b", 190, "staff"]],
+			"exam": [["expo_vendi", 104, "staff"]],
+			"office": [["client_vetdoc_b", 162, "owner"]]
 		},
 	},
 	"law":
 	{
 		"a":
 		{
-			"main": [["client_paralegal", 170, "staff"], ["expo_attc", 214, "staff"]],
-			"office": [["expo_attb", 150, "owner"]]
+			"main": [["client_paralegal", 170, "staff"], ["expo_attc", 190, "staff"]],
+			"office": [["expo_attb", 162, "owner"]]
 		},
 		"b":
 		{
-			"main": [["expo_attf", 170, "staff"], ["client_paralegal_b", 214, "staff"]],
-			"office": [["client_attorney_b", 150, "owner"]]
+			"main": [["expo_attf", 170, "staff"], ["client_paralegal_b", 190, "staff"]],
+			"office": [["client_attorney_b", 162, "owner"]]
 		},
 	},
 	"arch":
@@ -1015,12 +1015,12 @@ const CAST_AT := {
 		"a":
 		{
 			"main": [["client_designer_a", 160, "staff"], ["expo_atte", 214, "staff"]],
-			"office": [["expo_vendp", 150, "owner"]]
+			"office": [["expo_vendp", 162, "owner"]]
 		},
 		"b":
 		{
 			"main": [["client_designer_b", 160, "staff"], ["expo_atta", 214, "staff"]],
-			"office": [["client_mina", 150, "owner"]]
+			"office": [["client_mina", 162, "owner"]]
 		},
 	},
 	"realty":
@@ -1028,12 +1028,12 @@ const CAST_AT := {
 		"a":
 		{
 			"main": [["client_agent_a", 100, "staff"], ["expo_vendp", 230, "staff"]],
-			"office": [["client_karen", 150, "owner"]]
+			"office": [["client_karen", 162, "owner"]]
 		},
 		"b":
 		{
 			"main": [["client_agent_b", 100, "staff"], ["expo_attc", 230, "staff"]],
-			"office": [["expo_atte", 150, "owner"]]
+			"office": [["expo_atte", 162, "owner"]]
 		},
 	},
 	"trailer":
@@ -1041,10 +1041,10 @@ const CAST_AT := {
 		"a":
 		{
 			"main": [["expo_vendo", 170, "staff"], ["expo_vendj", 214, "staff"]],
-			"office": [["expo_attb", 150, "owner"]]
+			"office": [["expo_attb", 162, "owner"]]
 		},
 		"b":
-		{"main": [["client_foreman_a", 170, "staff"]], "office": [["expo_atta", 150, "owner"]]},
+		{"main": [["client_foreman_a", 170, "staff"]], "office": [["expo_atta", 162, "owner"]]},
 	},
 }
 const OWNER_B := {

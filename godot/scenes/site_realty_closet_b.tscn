@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sets/site_realty_closet_b.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
 [ext_resource type="Texture2D" path="res://assets/props/drawer_stack_b.png" id="prop_drawer_stack_b"]
 [ext_resource type="Texture2D" path="res://assets/props/server_tower.png" id="prop_server_tower"]
+[ext_resource type="Texture2D" path="res://assets/props/sign_stack_realty.png" id="prop_sign_stack_realty"]
 [ext_resource type="Texture2D" path="res://assets/props/site_rack_b.png" id="prop_site_rack_b"]
 
 [sub_resource type="RectangleShape2D" id="shape_floor"]
@@ -119,13 +120,19 @@ centered = false
 offset = Vector2(0, -101)
 texture = ExtResource("prop_site_rack_b")
 
-[node name="server_tower_1" type="Sprite2D" parent="Actors"]
+[node name="sign_stack_realty_1" type="Sprite2D" parent="Actors"]
+position = Vector2(134, 108)
+centered = false
+offset = Vector2(0, -25)
+texture = ExtResource("prop_sign_stack_realty")
+
+[node name="server_tower_2" type="Sprite2D" parent="Actors"]
 position = Vector2(221, 108)
 centered = false
 offset = Vector2(0, -29)
 texture = ExtResource("prop_server_tower")
 
-[node name="drawer_stack_b_2" type="Sprite2D" parent="Actors"]
+[node name="drawer_stack_b_3" type="Sprite2D" parent="Actors"]
 position = Vector2(247, 108)
 centered = false
 offset = Vector2(0, -33)

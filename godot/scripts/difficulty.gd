@@ -28,6 +28,9 @@ const TABLE := {
 	"karaoke.gap": [0.95, 0.75, 0.55],
 	"karaoke.perfect": [0.16, 0.12, 0.09],
 	"karaoke.good": [0.36, 0.3, 0.24],
+	# karaoke: the first N misses of a song drain only `grace_drain` of the crowd instead of 6 (hard goes easy on the opening misses)
+	"karaoke.grace": [0, 0, 2],
+	"karaoke.grace_drain": [6.0, 6.0, 3.0],
 	# bowling: added to every opponent's skill (0.48-0.62 today), speed of the aim marker and the power bar
 	"bowl.opp_skill": [-0.08, 0.0, 0.08],
 	"bowl.aim_speed": [1.1, 1.5, 2.0],
@@ -45,7 +48,7 @@ const TABLE := {
 	"dinner.reveal": [3, 3, 2],
 	# printer: marker speed x, green zone width x, number of test-page questions
 	"printer.speed": [0.8, 1.0, 1.25],
-	"printer.zone": [1.3, 1.0, 0.85],
+	"printer.zone": [1.3, 1.0, 0.95],
 	"printer.questions": [1, 2, 3],
 	# printer: pulls in the jam chain (a torn scrap adds one, two clean pulls in a row take one off, 3 to 6)
 	"printer.chain": [3, 3, 5],
