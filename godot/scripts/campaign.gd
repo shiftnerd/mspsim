@@ -273,7 +273,9 @@ func _end_day() -> void:
 		r["title"] = books.title
 		r["grade"] = books.grade
 		r["pay"] = 0
-		r["rep_delta"] = clampi(int(r.rep_delta) + (1 if int(books.profit) > 0 else -1), -3, 4)
+		# a profitable week helps the name; only a clearly bad one (a new hire, a project) hurts it
+		var profit_rep := 1 if int(books.profit) > 0 else (-1 if int(books.profit) < -1000 else 0)
+		r["rep_delta"] = clampi(int(r.rep_delta) + profit_rep, -3, 4)
 		cash = Owner.cash
 		r["bankrupt"] = books.bankrupt
 	else:

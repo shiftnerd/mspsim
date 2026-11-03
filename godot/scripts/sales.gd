@@ -12,6 +12,7 @@ const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
 const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
+const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to Vic at most every other week
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
 var active: Array = START_CLIENTS.duplicate()
@@ -21,6 +22,7 @@ var last_deal := "VIC CLOSED A DEAL!"  # what the sales bell says
 var installs_sold := 0
 var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
 var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
+var complained_day := {}  # client -> campaign day of their last complaint (the owner's weeks spread them out)
 
 var _cool := 40.0
 
@@ -38,6 +40,7 @@ func reset() -> void:
 	installs_sold = 0
 	pending = {}
 	signed_day = {}
+	complained_day = {}
 	_cool = 40.0
 
 
@@ -194,11 +197,20 @@ func sell_install() -> int:
 
 # ---- complaints -----------------------------------------------------------------------------
 # the client with a late open ticket and low satisfaction complains to Vic
+func complaint_cooling(client: int) -> bool:
+	return (
+		Owner.active()
+		and Campaign.day - int(complained_day.get(client, -99)) < CLIENT_COMPLAINT_WEEKS
+	)
+
+
 func find_complaint() -> Dictionary:
 	var best := {}
 	var worst := 1000.0
 	for t in Msp.open_tickets():
 		if t.internal or not active.has(int(t.client)) or str(t.special) != "":
+			continue
+		if complaint_cooling(int(t.client)):
 			continue
 		var urgency: float = (
 			(-1000.0 if t.breached else float(t.sla_left)) + float(mood(int(t.client)))
@@ -221,6 +233,7 @@ func _process(delta: float) -> void:
 		return
 	_cool = COMPLAINT_GAP
 	pending = found
+	complained_day[int(found.client)] = Campaign.day
 	World.send_vic_to_player()
 
 

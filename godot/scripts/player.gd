@@ -83,6 +83,8 @@ func nearest() -> Node:
 		d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
 		if n.get("low_priority") == true:
 			d += 14.0
+		elif n.is_in_group("npcs") and str(n.get("role")) == "site:owner":
+			d -= 8.0  # the client owner beats the PC on their own desk (E talks to them, Tab still picks the PC)
 		elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
 			d += 20.0  # doors and equipment beat small talk with the client staff (Tab still selects them)
 		if d < best_d:

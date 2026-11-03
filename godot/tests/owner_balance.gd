@@ -137,7 +137,12 @@ func _init() -> void:
 				frames += 1
 				_answer(cards, ids)
 			frames_total += frames
+			if frames >= 40000:
+				print("  STUCK w%d cards=%s outing=%s ts=%s clock=%s awaiting=%s txt=%s" % [day, str(cards.is_open), str(root.get_node("Outings").busy()), str(root.get_node("World").time_scale), str(root.get_node("World").clock), str(c._awaiting), str(cards.text).substr(0, 60)])
 			last = day
+			if OS.get_environment("WEEKLY") != "" and not o.history.is_empty():
+				var hh: Dictionary = o.history[o.history.size() - 1]
+				print("  w%d cash %d rep %d ebitda %d clients %d oml %d val %d" % [day, o.cash, c.rep, int(hh.get("ebitda", 0)), sales.active.size(), o.oml(), o.valuation()])
 			if report.report.get("final", false):
 				break
 			report.finish()

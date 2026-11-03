@@ -174,7 +174,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_ESCAPE:
-				back()
+				escape()
 			KEY_UP:
 				move(-1)
 			KEY_DOWN:
@@ -195,6 +195,24 @@ func click(at: Vector2) -> void:
 			return
 	_menu = false
 	_canvas.queue_redraw()
+
+
+# Esc steps back out of a sub-view (open menu, mail, ticket, session, lesson...) one level, and otherwise
+# closes the computer in a single press (it used to go app -> desktop -> closed)
+func escape() -> void:
+	var nested := (
+		_menu
+		or (app == "mail" and mail_view)
+		or (app == "psa" and psa_detail)
+		or (app == "rmm" and (rmm_session or rmm_detail))
+		or (app == "learn" and learn_lesson >= 0)
+		or (app == "lync" and lync_sel != "")
+		or (app == "site" and site_view != "desktop")
+	)
+	if nested:
+		back()
+	else:
+		close()
 
 
 func back() -> void:
@@ -2043,7 +2061,7 @@ func _board_clients(a: Rect2) -> void:
 			tag = "LATE $%d" % Owner.ar_total(c)
 		elif Owner.pay_delay(c) > 0:
 			tag = "PAYS SLOW"
-		var due := Campaign.day - int(Owner._qbr_done.get(c, -99)) >= 8
+		var due := Owner.review_due(c)
 		var shown := tag
 		if shown == "":
 			shown = "AT RISK" if Owner.poach_risk(c) >= 0.12 else ("REVIEW DUE" if due else "")
@@ -2166,14 +2184,14 @@ func _board_team(a: Rect2) -> void:
 	var names := ["ALAN", "GARRISON", "DAN"]
 	var rows := []
 	for i in maxi(0, 3 - Owner.lost_techs):
-		rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.WAGE], TXT])
+		rows.append(["%s  SKILL 1.0  $%d/WK" % [names[i], Owner.tech_wage()], TXT])
 	for hire in Owner.extra_staff:
 		var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
 		rows.append(
 			[
 				(
 					"%s  %.2f  $%d/WK  %s"
-					% [str(hire.name).to_upper(), float(hire.skill), int(hire.wage), tag]
+					% [str(hire.name).to_upper(), float(hire.skill), Owner.hire_wage(hire), tag]
 				),
 				TXT
 			]
