@@ -12,7 +12,7 @@ Items marked **(real story)** came from the /r/msp research (see `docs/msp-resea
 - A labelled patch panel and cable tracing in the closet, a spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
 - Phone: more ticket types, a day-end score screen with a "best moment" recap.
 - Coworkers invite you to things (lunch, a beer after a hard night), react to the clock themselves ("lunch?"), weekends and holidays, the day-20 review quoting what they said.
-- A character-select / first-day screen (and picking the phone there), a settings and credits screen, music, an animated logo.
+- A settings and credits screen, music, an animated logo. (The character-select / first-day screen with the phone pick is done: see CLAUDE.md "Logo + title screen".)
 - More characters that can be played (Vic is now selectable as the 7th).
 
 ## Owner campaign

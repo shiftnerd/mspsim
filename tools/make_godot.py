@@ -6433,6 +6433,12 @@ func _save() -> void:
     cfg.save(SAVE)
 
 
+# the phone chosen on the character select screen (same saved preference as the first-open picker)
+func set_os(value: String) -> void:
+    os = value
+    _save()
+
+
 func open() -> void:
     if is_open or Game.ui_open or Game.busy or Game.title_mode:
         return
@@ -7051,6 +7057,7 @@ write("scripts/campaign.gd", '''extends Node
 
 signal day_started(day_number: int)
 
+const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
 const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
@@ -7130,6 +7137,8 @@ func continue_game(for_mode: String) -> bool:
     rep = int(cfg.get_value("campaign", "rep", START_REP))
     cash = int(cfg.get_value("campaign", "cash", 0))
     history = cfg.get_value("campaign", "history", [])
+    var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
+    PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
     _awaiting = false
     Msp.reset()
     Skills.from_dict(cfg.get_value("campaign", "skills", {}))
@@ -7165,6 +7174,7 @@ func save() -> void:
     cfg.set_value("campaign", "rep", rep)
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "history", history)
+    cfg.set_value("campaign", "character", PLAYER.current_character)
     cfg.set_value("campaign", "skills", Skills.to_dict())
     cfg.set_value("campaign", "story", Story.flags)
     cfg.set_value("campaign", "social", Social.to_dict())
@@ -18734,6 +18744,402 @@ func _draw_hint(text: String) -> void:
         PixelFont.draw(self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a"))
 ''')
 
+write("scripts/charselect.gd", '''extends Node2D
+# Character select / first-day screen, shown by the title menu before a new run starts. A row of
+# the playable characters (a carousel in narrow portrait) with an idle preview, a name and a short
+# blurb; the tech campaign then asks for your phone. Left / Right move, Enter / E / Space confirm,
+# Esc goes back, mouse hover and click work like the title menu. Confirming applies the choice
+# (Player.current_character, Phone.os) and emits done(result); Esc on the first step emits
+# cancelled. In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at
+# their desks as NPCs, so only the people who are not in World.CAST are offered; Free Play
+# offers everyone.
+
+signal done(result: Dictionary)
+signal cancelled
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const PLAYER := preload("res://scripts/player.gd")
+const GOLD := Color("f5d442")
+const INK := Color("17121f")
+const PANEL := Color(0.05, 0.07, 0.12, 0.85)
+const DIM := Color("9aa8c0")
+const PEOPLE := {
+    "office_teen":
+    {
+        "name": "TEEN",
+        "blurb": "FRESH HIRE WITH LONG HAIR AND BIG PLANS. LEARNS FAST, SPILLS COFFEE."
+    },
+    "office_adult":
+    {"name": "ADULT", "blurb": "SEASONED TECH IN A MAROON POLO. HAS REBOOTED EVERY XP BOX TWICE."},
+    "office_dan":
+    {"name": "DAN", "blurb": "CALM IN A BLUE SHIRT AND GLASSES. NETWORKS ARE HIS THING."},
+    "office_alan":
+    {"name": "ALAN", "blurb": "RED SHIRT, GREEN VEST, SERVER ROOM REGULAR. WATCHES THE BACKUPS."},
+    "site_alan":
+    {
+        "name": "ALAN - ON SITE",
+        "blurb": "ALAN IN THE GRAY WORK POLO. VAN KEYS, CABLE TESTER, NO TIME TO CHAT."
+    },
+    "casual_garrison":
+    {
+        "name": "GARRISON",
+        "blurb": "TEAL PLAID AND A GOATEE. SECURITY MINDED, ALWAYS TIME FOR A CHAT."
+    },
+    "sales_vic":
+    {
+        "name": "VIC",
+        "blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
+    },
+}
+const PHONES := [
+    {
+        "id": "ios",
+        "name": "IPHONE 5",
+        "blurb": "SLATE, IOS 7, ONE HOME BUTTON. EVERYONE ELSE'S SCREEN IS CRACKED."
+    },
+    {
+        "id": "android",
+        "name": "NEXUS 5",
+        "blurb": "MATTE BLACK, ANDROID 4.4 KITKAT. THE $349 PHONE WITH THE GOOD SCREEN."
+    },
+]
+
+var mode := "free"
+var step := "char"  # "char" then (tech campaign only) "phone"
+var ids: Array = []
+var sel := 0
+var phone_sel := 0
+var facing := "right"
+var _sprites: Array = []
+var _rects: Array = []  # [Rect2, kind, index] for the mouse
+var _born := -1
+
+
+func _ready() -> void:
+    _born = Engine.get_process_frames()
+    Game.format_changed.connect(queue_redraw)
+    queue_redraw()
+
+
+func is_campaign() -> bool:
+    return Campaign.MODES.has(mode)
+
+
+func needs_phone() -> bool:
+    return mode == "tech"
+
+
+# who this mode offers: everyone in Free Play, only non-cast people in a campaign
+func choices(for_mode: String) -> Array:
+    var cast: Array = []
+    for n in World.CAST:
+        cast.append(str(World.CAST[n].character))
+    var out: Array = []
+    for id in PLAYER.CHARACTERS:
+        if Campaign.MODES.has(for_mode) and id in cast:
+            continue
+        out.append(id)
+    return out
+
+
+func setup(for_mode: String) -> void:
+    mode = for_mode
+    step = "char"
+    ids = choices(mode)
+    sel = maxi(0, ids.find(PLAYER.current_character))
+    if not PLAYER.current_character in ids:
+        sel = maxi(0, ids.find("office_adult"))
+    phone_sel = 1 if Phone.os == "android" else 0
+    facing = "right"
+    for spr in _sprites:
+        spr.queue_free()
+    _sprites.clear()
+    for id in ids:
+        var spr := AnimatedSprite2D.new()
+        spr.sprite_frames = load("res://characters/%s.tres" % id)
+        spr.play("idle_right")
+        add_child(spr)
+        _sprites.append(spr)
+    queue_redraw()
+
+
+func current_id() -> String:
+    return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
+
+
+func info(id: String) -> Dictionary:
+    return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
+
+
+func summary() -> String:
+    var label: String = Campaign.MODES.get(mode, "FREE PLAY")
+    var s := "%s - %s" % [label, str(info(current_id()).name)]
+    if needs_phone():
+        s += " - " + str(PHONES[phone_sel].name)
+    return s
+
+
+func move(delta_sel: int) -> void:
+    if step == "char":
+        if ids.is_empty():
+            return
+        sel = (sel + delta_sel + ids.size()) % ids.size()
+        facing = "right" if delta_sel > 0 else "left"
+    else:
+        phone_sel = (phone_sel + delta_sel + PHONES.size()) % PHONES.size()
+    queue_redraw()
+
+
+func confirm() -> void:
+    if step == "char" and needs_phone():
+        step = "phone"
+        queue_redraw()
+        return
+    var result := {
+        "mode": mode,
+        "character": current_id(),
+        "phone": str(PHONES[phone_sel].id) if needs_phone() else "",
+        "summary": summary(),
+    }
+    PLAYER.current_character = current_id()
+    if needs_phone():
+        Phone.set_os(result.phone)
+    done.emit(result)
+
+
+func back() -> void:
+    if step == "phone":
+        step = "char"
+        queue_redraw()
+    else:
+        cancelled.emit()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+    if Engine.get_process_frames() == _born:
+        return
+    if event is InputEventKey and event.pressed and not event.echo:
+        match event.keycode:
+            KEY_F9:
+                Game.cycle_format()
+            KEY_LEFT, KEY_A:
+                move(-1)
+            KEY_RIGHT, KEY_D:
+                move(1)
+            KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
+                confirm()
+            KEY_ESCAPE, KEY_BACKSPACE:
+                back()
+            _:
+                return
+    elif event is InputEventMouseMotion:
+        _hover(get_viewport().get_mouse_position())
+        return
+    elif (
+        event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+    ):
+        _click(get_viewport().get_mouse_position())
+    else:
+        return
+    get_viewport().set_input_as_handled()
+
+
+func _hit(at: Vector2) -> Array:
+    for r in _rects:
+        if r[0].has_point(at):
+            return r
+    return []
+
+
+func _hover(at: Vector2) -> void:
+    var r := _hit(at)
+    if r.is_empty():
+        return
+    var kind: String = r[1]
+    if kind == "item" and step == "char" and sel != int(r[2]):
+        sel = int(r[2])
+        queue_redraw()
+    elif kind == "phone" and phone_sel != int(r[2]):
+        phone_sel = int(r[2])
+        queue_redraw()
+
+
+func _click(at: Vector2) -> void:
+    var r := _hit(at)
+    if r.is_empty():
+        return
+    match str(r[1]):
+        "back":
+            back()
+        "prev":
+            move(-1)
+        "next":
+            move(1)
+        _:
+            _hover(at)
+            confirm()
+
+
+# ---- drawing --------------------------------------------------------------------
+func _size() -> Vector2:
+    return Vector2(Game.FORMATS[Game.format].size)
+
+
+func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
+    PixelFont.draw(self, s, p, c)
+
+
+func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
+    _txt(s, Vector2(floorf((_size().x - float(PixelFont.width(s))) * 0.5), y), c)
+
+
+func _wrap(s: String, chars: int, max_lines := 4) -> Array:
+    var lines: Array = []
+    var line := ""
+    for word in s.split(" "):
+        if line != "" and line.length() + 1 + word.length() > chars:
+            lines.append(line)
+            line = word
+        else:
+            line = word if line == "" else line + " " + word
+    if line != "":
+        lines.append(line)
+    return lines.slice(0, max_lines)
+
+
+func _para(s: String, y: float, c: Color, max_lines := 4) -> float:
+    var chars := int((_size().x - 20.0) / 4.0)
+    for line in _wrap(s, chars, max_lines):
+        _ctxt(str(line), y, c)
+        y += 8.0
+    return y
+
+
+func _draw() -> void:
+    var size := _size()
+    var narrow := size.x < 250.0
+    _rects.clear()
+    draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
+    var heading := "CHOOSE YOUR CHARACTER" if step == "char" else "PICK YOUR PHONE"
+    _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
+    var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
+    draw_rect(back_r, PANEL)
+    _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
+    _rects.append([back_r, "back", 0])
+    if step == "char":
+        _draw_chars(size, narrow)
+    else:
+        _place_sprites(size, narrow)
+        _draw_phones(size, narrow)
+    _ctxt(
+        summary(), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
+    )
+    var hint := "LEFT RIGHT CHOOSE   ENTER PICK   ESC BACK"
+    if narrow:
+        _ctxt("LEFT RIGHT CHOOSE", size.y - 20.0, DIM)
+        _ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
+    else:
+        _ctxt(hint, size.y - 9.0, DIM)
+
+
+func _place_sprites(size: Vector2, narrow: bool) -> void:
+    var n := ids.size()
+    var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
+    var feet := 83.0 if size.y <= 130.0 else 104.0
+    if narrow:
+        feet = 176.0
+    for i in n:
+        var spr: AnimatedSprite2D = _sprites[i]
+        var show_it := step == "char" and (not narrow or i == sel)
+        spr.visible = show_it
+        spr.scale = Vector2(2, 2) if narrow else Vector2.ONE
+        var cx := size.x * 0.5 if narrow else (size.x - pitch * n) * 0.5 + pitch * (i + 0.5)
+        spr.position = Vector2(cx, feet - (80.0 if narrow else 40.0))
+        var face := facing if i == sel else ("right" if i < sel else "left")
+        var anim := "idle_" + face
+        if spr.animation != anim:
+            spr.play(anim)
+
+
+func _draw_chars(size: Vector2, narrow: bool) -> void:
+    _place_sprites(size, narrow)
+    var n := ids.size()
+    var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
+    var feet := 83.0 if size.y <= 130.0 else 104.0
+    if narrow:
+        feet = 176.0
+        var panel := Rect2(26.0, feet - 136.0, size.x - 52.0, 146.0)
+        draw_rect(panel, PANEL)
+        draw_rect(panel, GOLD, false, 1.0)
+        var mid := panel.position.y + panel.size.y * 0.5
+        for side in 2:
+            var ar := Rect2(2.0 if side == 0 else size.x - 22.0, mid - 12.0, 20.0, 24.0)
+            _rects.append([ar, "prev" if side == 0 else "next", 0])
+            _txt("<" if side == 0 else ">", ar.position + Vector2(8, 9), GOLD)
+        _rects.append([panel, "item", sel])
+        var dots_y := feet + 22.0
+        for i in n:
+            var dx := size.x * 0.5 + (float(i) - float(n - 1) * 0.5) * 8.0
+            draw_rect(Rect2(dx - 1.5, dots_y, 3, 3), GOLD if i == sel else Color("46506a"))
+    else:
+        for i in n:
+            var cx := (size.x - pitch * n) * 0.5 + pitch * (i + 0.5)
+            var r := Rect2(cx - pitch * 0.5 + 1.0, feet - 68.0, pitch - 2.0, 76.0)
+            _rects.append([r, "item", i])
+            draw_rect(r, Color(0.1, 0.13, 0.2, 0.9) if i == sel else PANEL)
+            if i == sel:
+                draw_rect(r, GOLD, false, 1.0)
+    var data := info(current_id())
+    var name_y := feet + (12.0 if narrow else 10.0)
+    _ctxt(str(data.name), name_y, GOLD)
+    var by := name_y + (20.0 if narrow else 9.0)
+    var end_y := _para(str(data.blurb), by, Color.WHITE, 4 if narrow else 2)
+    if is_campaign():
+        var note := "THE REST OF THE TEAM IS ALREADY AT THEIR DESKS"
+        if end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
+            _para(note, end_y + 2.0, DIM, 2)
+
+
+func _draw_phones(size: Vector2, narrow: bool) -> void:
+    var ph := 54.0 if size.y <= 130.0 else (80.0 if not narrow else 92.0)
+    var pw := floorf(ph * 0.52)
+    var top := 22.0 if size.y <= 130.0 else (26.0 if not narrow else 56.0)
+    for i in 2:
+        var ios := i == 0
+        var x := floorf(size.x * 0.5) + (-pw - 16.0 if ios else 16.0)
+        var b := Rect2(x, top, pw, ph)
+        var hot := phone_sel == i
+        _rects.append([Rect2(b.position - Vector2(6, 4), b.size + Vector2(12, 16)), "phone", i])
+        if hot:
+            draw_rect(Rect2(b.position - Vector2(3, 3), b.size + Vector2(6, 6)), GOLD)
+        draw_rect(b, Color("9aa0a8") if ios else Color("3a3d44"))
+        draw_rect(
+            Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)),
+            Color("1c1e23") if ios else Color("0e0f12")
+        )
+        var scr := Rect2(
+            b.position.x + 3,
+            b.position.y + (7 if ios else 5),
+            b.size.x - 6,
+            b.size.y - (19 if ios else 9)
+        )
+        draw_rect(scr, Color("4a78d6") if ios else Color("0b2742"))
+        draw_rect(
+            Rect2(scr.position.x + 2, scr.position.y + 3, scr.size.x - 4, 3), Color(1, 1, 1, 0.5)
+        )
+        if ios:
+            draw_circle(Vector2(b.position.x + pw * 0.5, b.end.y - 6), 2, Color("55595f"))
+        else:
+            draw_rect(Rect2(scr.position.x, scr.end.y - 3, scr.size.x, 3), Color("000000"))
+        var label: String = PHONES[i].name
+        _txt(
+            label,
+            Vector2(floorf(x + (pw - float(PixelFont.width(label))) * 0.5), b.end.y + 5),
+            Color.WHITE if hot else DIM
+        )
+    _para(str(PHONES[phone_sel].blurb), top + ph + 16.0, Color.WHITE, 3)
+''')
+
 write("scripts/title.gd", '''extends Node2D
 # Title screen. A few vignettes rotate behind the MSPSim logo: the cast lined up in the office, two
 # people on the phones at their desks, coffee and the fridge in the kitchenette, and a meeting in
@@ -18746,11 +19152,15 @@ const LOGO := preload("res://assets/ui/mspsim_logo.png")
 const LOGO_SMALL := preload("res://assets/ui/mspsim_logo_s.png")
 const PROMPT := preload("res://assets/ui/press_start.png")
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const CharSelect := preload("res://scripts/charselect.gd")
 const FLOOR_Y := 118.0
 const SHOW_SECS := 9.0
 const VIGNETTES := ["lineup", "phones", "kitchen", "conference"]
 const ROOMS := {
-    "lineup": "main_floor", "phones": "cubicle_area", "kitchen": "kitchenette", "conference": "conference"
+    "lineup": "main_floor",
+    "phones": "cubicle_area",
+    "kitchen": "kitchenette",
+    "conference": "conference"
 }
 
 var _cam: Camera2D
@@ -18767,6 +19177,8 @@ var _menu_open := false
 var _sel := 0
 var _items: Array = []
 var _menu: Node2D
+var _front: CanvasLayer
+var _select: Node2D = null  # the character select screen while it is open
 
 
 func _ready() -> void:
@@ -18787,6 +19199,7 @@ func _ready() -> void:
     var front := CanvasLayer.new()
     front.layer = 20
     add_child(front)
+    _front = front
     _logo = Sprite2D.new()
     _logo.centered = false
     front.add_child(_logo)
@@ -18833,7 +19246,9 @@ func _layout() -> void:
     if wide:
         _prompt.position = Vector2(size.x - pw - 8.0, size.y - ph - 3.0)
     else:
-        _prompt.position = Vector2(floorf((size.x - pw) * 0.5), size.y - ph - (17.0 if not narrow else 40.0))
+        _prompt.position = Vector2(
+            floorf((size.x - pw) * 0.5), size.y - ph - (17.0 if not narrow else 40.0)
+        )
 
 
 # build vignette number i (no fade; used at start, on a format change and by tests)
@@ -18868,7 +19283,11 @@ func _act(kind: String) -> void:
             var size := _size()
             var wide := size.x > 340.0 and size.y <= 130.0
             var narrow := size.x < 250.0
-            var xs := [150.0, 184.0, 218.0, -1.0] if narrow else ([128.0, 168.0, 208.0, -1.0] if wide else [142.0, 182.0, 270.0, 310.0])
+            var xs := (
+                [150.0, 184.0, 218.0, -1.0]
+                if narrow
+                else ([128.0, 168.0, 208.0, -1.0] if wide else [142.0, 182.0, 270.0, 310.0])
+            )
             var gap := ["talk:4", "wait:3"]
             _npc("casual_garrison", "left", xs[0], gap)
             _npc("office_alan", "right", xs[1], gap)
@@ -18884,16 +19303,66 @@ func _act(kind: String) -> void:
                 get_tree().create_timer(1.2 + 2.2 * i).timeout.connect(_ring.bind(zone))
         "kitchen":
             var u: Dictionary = data.uses
-            _npc("office_dan", "right", u.fridge + 40.0,
-                ["walk:%d" % (u.fridge + 8), "use:fridge", "wait:1", "sip", "wait:4", "sip", "wait:2"])
-            _npc("office_alan", "left", u.coffee + 40.0,
-                ["walk:%d" % (u.coffee + 20), "use:coffee", "wait:1", "sip", "wait:4", "sip", "wait:3"])
-            _npc("casual_garrison", "left", u.coffee + 70.0, ["wait:2", "talk:5", "wait:2", "talk:4", "wait:1"])
+            _npc(
+                "office_dan",
+                "right",
+                u.fridge + 40.0,
+                [
+                    "walk:%d" % (u.fridge + 8),
+                    "use:fridge",
+                    "wait:1",
+                    "sip",
+                    "wait:4",
+                    "sip",
+                    "wait:2"
+                ]
+            )
+            _npc(
+                "office_alan",
+                "left",
+                u.coffee + 40.0,
+                [
+                    "walk:%d" % (u.coffee + 20),
+                    "use:coffee",
+                    "wait:1",
+                    "sip",
+                    "wait:4",
+                    "sip",
+                    "wait:3"
+                ]
+            )
+            _npc(
+                "casual_garrison",
+                "left",
+                u.coffee + 70.0,
+                ["wait:2", "talk:5", "wait:2", "talk:4", "wait:1"]
+            )
         "conference":
             var s: Dictionary = data.seats
-            _npc("office_dan", "right", s.Seat1, ["wait:1", "say:3", "wait:4", "say:2"], "Seat1", "coffee")
-            _npc("office_alan", "right", s.Seat2, ["wait:4", "say:3", "wait:2", "say:3"], "Seat2", "soda")
-            _npc("casual_garrison", "right", s.Seat3, ["wait:2", "say:2", "wait:5", "say:2"], "Seat3", "bottle")
+            _npc(
+                "office_dan",
+                "right",
+                s.Seat1,
+                ["wait:1", "say:3", "wait:4", "say:2"],
+                "Seat1",
+                "coffee"
+            )
+            _npc(
+                "office_alan",
+                "right",
+                s.Seat2,
+                ["wait:4", "say:3", "wait:2", "say:3"],
+                "Seat2",
+                "soda"
+            )
+            _npc(
+                "casual_garrison",
+                "right",
+                s.Seat3,
+                ["wait:2", "say:2", "wait:5", "say:2"],
+                "Seat3",
+                "bottle"
+            )
 
 
 func _ring(zone: Variant) -> void:
@@ -18922,7 +19391,7 @@ func _rotate() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if _started:
+    if _started or _select != null:
         return
     var go := false
     if event is InputEventKey and event.pressed and not event.echo:
@@ -18936,7 +19405,9 @@ func _unhandled_input(event: InputEvent) -> void:
     elif event is InputEventMouseMotion and _menu_open:
         _hover(get_viewport().get_mouse_position())
         return
-    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+    elif (
+        event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+    ):
         go = true
         if _menu_open:
             if _hover(get_viewport().get_mouse_position()):
@@ -19002,6 +19473,48 @@ func _hover(at: Vector2) -> bool:
 func _choose(i: int) -> void:
     if i < 0 or i >= _items.size() or not _items[i].enabled:
         return
+    var id := str(_items[i].id)
+    if id.ends_with("_continue"):
+        _start(id)  # a saved run keeps its character: no select screen
+    else:
+        _open_select(id)
+
+
+# new runs pick their character (and, in the tech campaign, their phone) first
+func _open_select(id: String) -> void:
+    if _select != null:
+        return
+    var mode := Campaign.FREE
+    if id == "tech_new":
+        mode = "tech"
+    elif id == "owner_new":
+        mode = "owner"
+    _select = CharSelect.new()
+    _select.setup(mode)
+    _select.done.connect(_on_select_done.bind(id))
+    _select.cancelled.connect(_close_select)
+    _front.add_child(_select)
+    _logo.visible = false
+    _menu.visible = false
+
+
+func _close_select() -> void:
+    if _select == null:
+        return
+    _select.queue_free()
+    _select = null
+    _logo.visible = true
+    _menu.visible = _menu_open
+    _menu.queue_redraw()
+
+
+func _on_select_done(result: Dictionary, id: String) -> void:
+    _select.queue_free()
+    _select = null
+    _start(id, str(result.summary))
+
+
+func _start(id: String, summary := "") -> void:
     _started = true
     World.time_scale = 1.0
     World.hud_visible = _hud_was
@@ -19010,7 +19523,7 @@ func _choose(i: int) -> void:
     Outings.enabled = true
     Onsite.enabled = true
     Outings.use_rooms = true
-    match str(_items[i].id):
+    match id:
         "tech_new":
             Campaign.new_game("tech")
         "tech_continue":
@@ -19022,6 +19535,8 @@ func _choose(i: int) -> void:
         _:
             Campaign.new_game(Campaign.FREE)
     Game.go("main_floor", "start")
+    if summary != "":
+        Hints.toast(summary, 4.0)
 
 
 func _draw_menu() -> void:

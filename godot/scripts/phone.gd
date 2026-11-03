@@ -49,6 +49,12 @@ func _save() -> void:
 	cfg.save(SAVE)
 
 
+# the phone chosen on the character select screen (same saved preference as the first-open picker)
+func set_os(value: String) -> void:
+	os = value
+	_save()
+
+
 func open() -> void:
 	if is_open or Game.ui_open or Game.busy or Game.title_mode:
 		return

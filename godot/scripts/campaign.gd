@@ -7,6 +7,7 @@ extends Node
 
 signal day_started(day_number: int)
 
+const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
 const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN"}
@@ -86,6 +87,8 @@ func continue_game(for_mode: String) -> bool:
 	rep = int(cfg.get_value("campaign", "rep", START_REP))
 	cash = int(cfg.get_value("campaign", "cash", 0))
 	history = cfg.get_value("campaign", "history", [])
+	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
+	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
 	_awaiting = false
 	Msp.reset()
 	Skills.from_dict(cfg.get_value("campaign", "skills", {}))
@@ -121,6 +124,7 @@ func save() -> void:
 	cfg.set_value("campaign", "rep", rep)
 	cfg.set_value("campaign", "cash", cash)
 	cfg.set_value("campaign", "history", history)
+	cfg.set_value("campaign", "character", PLAYER.current_character)
 	cfg.set_value("campaign", "skills", Skills.to_dict())
 	cfg.set_value("campaign", "story", Story.flags)
 	cfg.set_value("campaign", "social", Social.to_dict())
