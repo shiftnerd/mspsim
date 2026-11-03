@@ -932,6 +932,29 @@ const DEFAULT_CARDS := {
 					[0.6, {"ransom_end": "lost"}, "The malware deleted the shadow copies."]
 				]
 			},
+			{
+				"label": "CALL THE BACKUP VENDOR'S SUPPORT ($150)",
+				"need": 150,
+				"roll": [
+					[0.5, {"cash": -150, "ransom_end": "vendor"}, "Support finds a version from before the infection and rolls the files back. Nothing is lost."],
+					[0.5, {"cash": -150, "ransom_end": "lost"}, "The synced copies were overwritten with the encrypted files. They are sorry."],
+				],
+			},
+			{
+				"label": "ISOLATE IT AND REBUILD FROM THE IMAGE ($300)",
+				"need": 300,
+				"fx": {"cash": -300, "ransom_end": "rebuilt", "rep": -2, "mood": {"3": -8}},
+				"text": "The server is clean by evening. Everything since the last good copy is gone, and the partners know it.",
+			},
+			{
+				"label": "CALL THE CYBER-INSURANCE LINE ($250 DEDUCTIBLE)",
+				"need": 250,
+				"policy": true,
+				"roll": [
+					[0.65, {"cash": -250, "ransom_end": "insured", "rep": -1}, "The insurer sends a recovery firm. The files come back and you pay the deductible."],
+					[0.35, {"cash": -250, "ransom_end": "lost"}, "The adjuster denies the claim: the policy wanted patched, backed-up systems."],
+				],
+			},
 			{"label": "ACCEPT THE LOSS", "fx": {"ransom_end": "lost"}},
 		],
 	},
@@ -1548,6 +1571,9 @@ func show_card(id: String) -> void:
 		if need > 0 and cash < need:
 			entry["enabled"] = false
 			entry["hint"] = "NEED $%d" % need
+		if opt.get("policy", false) and not Msp.cyber_insured(Story.RANSOM_CLIENT):
+			entry["enabled"] = false
+			entry["hint"] = "NO POLICY"
 		if opt.has("unless") and flags.get(str(opt.unless), false):
 			entry["enabled"] = false
 			entry["hint"] = "OWNED"
@@ -3227,17 +3253,7 @@ func _ransom_finish(kind: String) -> void:
 		ep.problem = ""
 	Msp.close_ticket(int(t.id))
 	Story.flags["ransom"] = kind
-	Msp.send_text(
-		"Alan",
-		(
-			"Hoot and Holler: %s."
-			% (
-				"ransom paid, the files are back"
-				if kind == "paid"
-				else "we recovered most files from shadow copies"
-			)
-		)
-	)
+	Msp.send_text("Alan", "Hoot and Holler: %s." % str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial)))
 
 
 # ---- RDP open to the internet: a stolen login ----------------------------------------------------------------
@@ -3616,7 +3632,7 @@ func goal_parts(final := false) -> Array:
 	var out := []
 	if Campaign.player_as == "Alan":
 		var ransom := str(Story.flags.get("ransom", ""))
-		out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom == "" or ransom == "saved"})
+		out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom in ["", "saved", "vendor"]})
 		out.append({"label": "NO BREAK-INS", "ok": incidents == 0})
 		out.append({"label": "A DOCUMENTED STACK (MATURITY 3)", "ok": oml() >= 3 or (not final and Campaign.day < 12)})
 	else:
@@ -3818,18 +3834,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["A/R OWED $%d   MATURITY: %s" % [ar_total(), OML_NAMES[oml() - 1]], ink])
 			lines.append(
 				[
-					(
-						"RANSOMWARE: %s"
-						% (
-							{
-								"saved": "SAVED BY BACKUP",
-								"lost": "NO BACKUP!",
-								"paid": "PAID THE RANSOM",
-								"partial": "PARTIAL RECOVERY"
-							}
-							. get(str(Story.flags.get("ransom", "")), "-")
-						)
-					),
+					"RANSOMWARE: %s" % str(Msp.RANSOM_LABELS.get(str(Story.flags.get("ransom", "")), "-")),
 					ink
 				]
 			)

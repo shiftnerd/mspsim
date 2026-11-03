@@ -117,10 +117,10 @@ func _init() -> void:
 	msp.break_backup(story.RANSOM_CLIENT)
 	o.fire({"event": "ransomware"})
 	_check(
-		cards.is_open and cards.options.size() == 3,
-		"no backup: pay, shadow copies or accept the loss"
+		cards.is_open and cards.options.size() == 6,
+		"no backup: pay, shadow copies, vendor, rebuild, insurer or accept the loss"
 	)
-	cards.pick(2)  # accept the loss
+	cards.pick(5)  # accept the loss
 	_check(
 		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Marge"),
 		"no backup, accepted the loss: data lost and a lawsuit card"

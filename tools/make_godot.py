@@ -4004,9 +4004,38 @@ const FIXES := {
     "spooler": "RESTART PRINT SPOOLER", "password": "RESET PASSWORD", "clear_temp": "CLEAR TEMP FILES",
     "reboot": "REBOOT", "av": "RUN AV SCAN", "restore": "RESTORE BACKUP", "adobe": "REPAIR ADOBE READER",
     "shadow": "SHADOW COPIES", "pay": "PAY THE RANSOM", "save": "ASK USER TO SAVE",
+"vendor": "VENDOR VERSIONS", "rebuild": "ISOLATE+REBUILD", "insurer": "CALL INSURER",
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
+# P6 (c): Free Play has no skills, so the skill-gated clever fixes open at this fixed level (every gate is 3 or less)
+const FREE_PLAY_LEVEL := 3
+# P6 (a): heavy fixes on a workstation that can also be done in person (tech campaign, client with a site)
+const HEAVY_ONSITE := ["reimage", "new_profile"]
+# P6 (b): the ransomed-machine options past shadow copies and paying. RANSOM_MULT = job time vs a normal fix, VENDOR_ODDS /
+# INSURER_ODDS = chance it works (rebuild always works but loses the files since the last good copy). A client carries a
+# cyber policy with chance INSURED_SHARE (seeded per client and run), so the insurer button only shows where there is one.
+# review / owner lines for each way the ransomware ended (Story.flags.ransom)
+const RANSOM_LABELS := {
+    "saved": "SAVED BY BACKUP",
+    "lost": "NO BACKUP!",
+    "paid": "PAID THE RANSOM",
+    "partial": "PARTIAL RECOVERY",
+    "vendor": "VENDOR RESTORED IT",
+    "rebuilt": "REBUILT, FILES LOST",
+    "insured": "INSURER GOT THEM BACK",
+}
+const RANSOM_LINES := {
+    "paid": "ransom paid, the files are back",
+    "partial": "we recovered most files from shadow copies",
+    "vendor": "the backup vendor restored an older version, nothing lost",
+    "rebuilt": "we rebuilt the machine from the image, the recent files are gone",
+    "insured": "the cyber insurer's recovery firm got the files back",
+}
+const VENDOR_ODDS := 0.5
+const INSURER_ODDS := 0.65
+const INSURED_SHARE := 0.5
+const RANSOM_MULT := {"vendor": 1.5, "rebuild": 4.0, "insurer": 1.0}
 # Q6: a workaround that comes back costs the client's patience (mood) and closing the rework earns little and does not count
 # as a closed ticket for the day's reputation, so a quick fix used on everything is net negative over a campaign
 const RETURN_MOOD := -3
@@ -4533,7 +4562,7 @@ func close_ticket(id: int) -> String:
         changed.emit()
         return "CLOSED - DATA LOST"  # no points, and it does not count as a good close
     var points := 10 if not t.breached else 4
-    if str(t.get("outcome", "")) in ["paid", "partial"]:
+    if str(t.get("outcome", "")) in ["paid", "partial", "rebuilt", "insured"]:
         points = 4
     if bool(t.get("repeat", false)):
         points = REPEAT_POINTS
@@ -4582,9 +4611,9 @@ func alt_unlocked(d: Dictionary) -> bool:
     var sk := str(d.get("skill", ""))
     if sk == "":
         return true
-    if not Campaign.active:
-        return false
-    var lv: int = Skills.ps_level if sk == "powershell" else Skills.level(sk)
+    var lv: int = FREE_PLAY_LEVEL
+    if Campaign.active:
+        lv = Skills.ps_level if sk == "powershell" else Skills.level(sk)
     return lv >= int(d.lvl)
 
 
@@ -4714,13 +4743,16 @@ func spawn_return(item: Dictionary) -> void:
 func _rmm_special(ep: Dictionary, action: String) -> String:
     if action == "save":
         return _ask_save(ep)
-    if ep.problem == "restore":
-        if action == "pay":
-            return _ransom_pay(ep)
-        if action == "shadow":
-            return _ransom_shadow(ep)
-        if action == "restore":
-            return _restore(ep)
+    var ransom_calls := {
+        "pay": _ransom_pay,
+        "shadow": _ransom_shadow,
+        "vendor": _ransom_vendor,
+        "rebuild": _ransom_rebuild,
+        "insurer": _ransom_insurer,
+        "restore": _restore,
+    }
+    if ep.problem == "restore" and ransom_calls.has(action):
+        return str((ransom_calls[action] as Callable).call(ep))
     return ""
 
 
@@ -5016,7 +5048,7 @@ func _restore(ep: Dictionary) -> String:
                 t.notes.append(
                     (
                         "Backup restore FAILED: the last good copy is from day %d and unusable. "
-                        + "Options left: shadow copies, pay the ransom, or give up the files."
+                        + "Options left: shadow copies, the backup vendor, rebuild, the insurer (if any), pay the ransom, or give up the files."
                     )
                     % int(backups[ep.client].good_day)
                 )
@@ -5094,6 +5126,97 @@ func _ransom_shadow(ep: Dictionary) -> String:
         return "SHADOW COPIES RECOVERED MOST FILES."
     ep["shadow_tried"] = true
     return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
+
+
+# P6 (b): more ways out of CryptoLocker, each with its own odds, cost and review line (Story.flags.ransom)
+func cyber_insured(client: int) -> bool:
+    return Difficulty.rng_for("msp.insured", client).randf() < INSURED_SHARE
+
+
+func _ransom_note(ep: Dictionary, body: String) -> void:
+    _mail(
+        CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">",
+        "RE: " + RANSOM.summary,
+        body + " - " + str(CLIENTS[ep.client].contact),
+        0
+    )
+
+
+# ask the cloud-backup vendor's support for an older version of the files: free, 50%, one try
+func _ransom_vendor(ep: Dictionary) -> String:
+    if ep.get("vendor_tried", false):
+        return "THE VENDOR HAS NO OTHER VERSIONS. TRY SOMETHING ELSE."
+    if Difficulty.rng("msp.fix").randf() < VENDOR_ODDS:
+        _ransom_close(ep, "Backup vendor support rolled the files back to a version from before the infection.", "vendor")
+        score -= 1
+        Story.flags["ransom"] = "vendor"
+        _ransom_note(ep, "Everything is back, from a copy the vendor kept. Thank you for thinking of calling them.")
+        changed.emit()
+        return "VENDOR RESTORED AN OLD VERSION. NO DATA LOST."
+    ep["vendor_tried"] = true
+    for t in tickets:
+        if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
+            t.notes.append("Vendor support: the synced copies were already overwritten by the encrypted files.")
+    return "VENDOR: THE VERSIONS WERE OVERWRITTEN. TRY SOMETHING ELSE."
+
+
+# pull the cable, rebuild the machine from the gold image: always works, the files since the last good copy are gone
+func _ransom_rebuild(ep: Dictionary) -> String:
+    _ransom_close(ep, "Isolated the machine and rebuilt it from the gold image. Files since the last good copy are gone.", "rebuilt")
+    score -= 10
+    Campaign.adjust_rep(-4)
+    Sales.adjust(int(ep.client), -8)
+    Story.flags["ransom"] = "rebuilt"
+    _ransom_note(ep, "The machine is clean again, but a lot of this month's files are gone for good. Please set up a real backup.")
+    changed.emit()
+    return "MACHINE REBUILT FROM THE IMAGE. RECENT FILES GONE."
+
+
+# the client's cyber-insurance line (only where there is a policy): 65% the insurer's recovery firm gets the files back
+func _ransom_insurer(ep: Dictionary) -> String:
+    if not cyber_insured(int(ep.client)):
+        return "NO CYBER POLICY ON FILE FOR THIS CLIENT."
+    if ep.get("insurer_tried", false):
+        return "THE CLAIM WAS DENIED. TRY SOMETHING ELSE."
+    if Difficulty.rng("msp.fix").randf() < INSURER_ODDS:
+        _ransom_close(ep, "Cyber-insurance recovery firm decrypted the files. Deductible paid.", "insured")
+        score -= 4
+        Campaign.adjust_rep(-1)
+        Story.flags["ransom"] = "insured"
+        _ransom_note(ep, "The insurance people got our files back. We will pay the deductible, and we want to talk about security.")
+        changed.emit()
+        return "INSURER'S RECOVERY FIRM GOT THE FILES BACK."
+    ep["insurer_tried"] = true
+    Sales.adjust(int(ep.client), -2)
+    for t in tickets:
+        if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
+            t.notes.append("Insurer denied the claim: the policy wants a patched, backed-up network.")
+    return "CLAIM DENIED. TRY SOMETHING ELSE."
+
+
+# P6 (a): a heavy fix on a workstation can be done in person at a client with a site (tech campaign only)
+func onsite_heavy(ep: Dictionary) -> String:
+    if not (Campaign.active and Campaign.mode == "tech") or ep.is_empty():
+        return ""
+    if ep.user == "server" or not Onsite.enabled or not Onsite.has_site(int(ep.client)):
+        return ""
+    for id in HEAVY_ONSITE:
+        if alts_for(ep).has(id):
+            return id
+    return ""
+
+
+# on a harder tier the remote version of that fix is slower and can fail at the last step (the onsite visit is the safe way)
+func heavy_fail_chance(ep: Dictionary, action: String) -> float:
+    if action in HEAVY_ONSITE and onsite_heavy(ep) != "":
+        return Difficulty.cf("tech.heavy_fail")
+    return 0.0
+
+
+func heavy_slow(ep: Dictionary, action: String) -> float:
+    if action in HEAVY_ONSITE and onsite_heavy(ep) != "":
+        return Difficulty.cf("tech.heavy_slow")
+    return 1.0
 
 
 # ---- clock -------------------------------------------------------------------
@@ -5648,11 +5771,16 @@ func _start_job(kind: String, action: String) -> void:
     var ep := Msp.endpoint(rmm_sel)
     if ep.is_empty() or not _job.is_empty():
         return
+    if kind == "fix" and action == "go_reimage":
+        Onsite.offer_reimage(rmm_sel)
+        return
     var act := action if kind == "fix" else str(ep.problem)
     if act == "":
         rmm_msg = "NOTHING TO FIX HERE."
         return
     var secs := Skills.fix_secs_for(act)
+    if kind == "fix":
+        secs *= Msp.heavy_slow(ep, act)
     if kind != "fix":
         secs += 1.0
     if act == "save" and Campaign.active:
@@ -5740,7 +5868,11 @@ func _finish_job() -> void:
     var ep := Msp.endpoint(rmm_sel)
     if ep.is_empty():
         return
-    if not (job.action in ["restore", "pay", "shadow", "save"]) and str(Msp.ALT_DEFS.get(str(job.action), {}).get("kind", "")) != "heavy" and randf() < Skills.fail_chance() + Growth.fail_adjust(str(job.action)):
+    var risk := Msp.heavy_fail_chance(ep, str(job.action))
+    if risk > 0.0 and Difficulty.rng("msp.fix").randf() < risk:
+        rmm_msg = "THE IMAGE FAILED AT 90 PERCENT. TRY AGAIN, OR GO ONSITE."
+        return
+    if not (job.action in ["restore", "pay", "shadow", "vendor", "rebuild", "insurer", "save"]) and str(Msp.ALT_DEFS.get(str(job.action), {}).get("kind", "")) != "heavy" and randf() < Skills.fail_chance() + Growth.fail_adjust(str(job.action)):
         rmm_msg = "TIRED: TYPED IT WRONG. TRY AGAIN." if Shift.is_tired() else "FIX DID NOT STICK. TRY AGAIN."
         return
     match str(job.kind):
@@ -6433,7 +6565,7 @@ func _symptom(problem: String, restore_failed := false) -> String:
         "project": "NEW PC ARRIVED. SEE THE PROJECT TAB TO SET UP AND MIGRATE.",
     }
     if problem == "restore" and restore_failed:
-        return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
+        return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, THE VENDOR, A REBUILD OR THE INSURER, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
     if problem.begins_with("onsite_"):
         return str(Onsite.TEXT.symptom)
     return str(texts.get(problem, "NO ISSUES FOUND. ALL SERVICES NORMAL."))
@@ -6482,8 +6614,10 @@ func _paint_session(body: Rect2) -> void:
         _fill(Rect2(body.position.x + 4, body.position.y + 48, (body.size.x - 8) * frac, 4), GREEN)
     var actions: Array = []
     for key in Msp.FIXES:
-        if (key == "shadow" or key == "pay") and ep.problem != "restore":
+        if key in ["shadow", "pay", "vendor", "rebuild", "insurer"] and ep.problem != "restore":
             continue  # only on a ransomed machine
+        if key == "insurer" and not Msp.cyber_insured(int(ep.client)):
+            continue  # no cyber policy
         if key == "save" and (ep.problem in ["", "reboot", "restore", "project"] or ep.user == "server"):
             continue  # nobody to warn, or the machine is already down
         actions.append(key)
@@ -6493,6 +6627,10 @@ func _paint_session(body: Rect2) -> void:
     for alt in Msp.alts_for(ep):
         actions.append(alt)
         labels.append(Msp.alt_label(ep, alt))
+    var heavy := Msp.onsite_heavy(ep)
+    if heavy != "":  # P6 (a): the same heavy fix in person
+        actions.append("go_reimage")
+        labels.append("ONSITE REIMAGE" if heavy == "reimage" else "ONSITE PROFILE")
     if Skills.can_script():
         actions.append("script")
         labels.append("SCRIPT: THIS CLIENT")
@@ -6510,6 +6648,8 @@ func _paint_session(body: Rect2) -> void:
         var tint := Color("9fd8ff") if id.begins_with("script") else Color("d9dde6")
         if Msp.ALT_DEFS.has(str(actions[i])):
             tint = ALT_TINTS[str(Msp.ALT_DEFS[actions[i]].kind)]
+        elif actions[i] == "go_reimage":
+            tint = ALT_TINTS["heavy"]
         _button(id, r, _clip(str(labels[i]), int((bw - 4.0) / 4.0)), _job.is_empty(), tint)
 
 
@@ -9687,7 +9827,7 @@ func fix_secs_for(action: String) -> float:
         return base
     var alt: Dictionary = Msp.ALT_DEFS.get(action, {})
     var skill := str(FIX_XP.get(str(alt["for"][0]) if not alt.is_empty() else action, ""))
-    var mult := float(alt.get("mult", 1.0))
+    var mult := float(alt.get("mult", Msp.RANSOM_MULT.get(action, 1.0)))
     if skill in ["servers", "security", "networking"]:
         mult -= 0.06 * float(level(skill))
         if Campaign.mode == "tech" and Growth.graduated and Growth.focus == skill:
@@ -13386,6 +13526,15 @@ func _callback_ransom() -> void:
         "paid":
             Msp.mail(from, "The ransom", "The partners still cannot believe we paid criminals in bitcoin. It worked, but we want a real backup plan, now. - Spence")
             Sales.adjust(RANSOM_CLIENT, -3)
+        "vendor":
+            Msp.mail(from, "Recovered files", "The backup vendor found an older copy and we lost nothing. Please keep that service. - Spence")
+            Sales.adjust(RANSOM_CLIENT, 3)
+        "rebuilt":
+            Msp.mail(from, "Rebuilt server", "The machine is clean, but a month of case notes is gone and I had to call clients. We want a real backup plan. - Spence")
+            Sales.adjust(RANSOM_CLIENT, -6)
+        "insured":
+            Msp.mail(from, "The insurance claim", "Our insurer got the files back and now wants a security review from us. Fair enough. - Spence")
+            Sales.adjust(RANSOM_CLIENT, -1)
         "lost":
             Msp.mail(from, "Reviewing our IT provider", "We lost two years of client files and had to tell the bar association. The partners are reviewing every IT provider in the county. - Spence")
             Sales.adjust(RANSOM_CLIENT, -12)
@@ -14395,7 +14544,7 @@ func _job_line(key: String, label: String) -> Array:
     if key == "install":
         return [label, {"ok": "PERFECT", "restored": "HAD A BACKUP", "lost": "DATA LOST"}.get(value, "-"), value == "lost"]
     if key == "ransom":
-        return [label, {"saved": "SAVED BY BACKUP", "lost": "NO BACKUP!", "paid": "PAID THE RANSOM", "partial": "PARTIAL RECOVERY"}.get(str(Story.flags.get("ransom", "")), "-"), Story.flags.get("ransom", "") == "lost"]
+        return [label, str(Msp.RANSOM_LABELS.get(str(Story.flags.get("ransom", "")), "-")), Story.flags.get("ransom", "") == "lost"]
     return [label, "GRADE " + value if value != "" else "-", value == "D"]
 
 
@@ -15493,6 +15642,29 @@ const CARDS := {
         "options": [
             {"label": "PAY THE RANSOM ($500)", "need": 500, "roll": [[0.7, {"cash": -500, "ransom_end": "paid", "rep": -1}, "The key arrives and the files unlock. Nobody feels good about it."], [0.3, {"cash": -500, "ransom_end": "lost"}, "They took the money and the key never came."]]},
             {"label": "TRY WINDOWS SHADOW COPIES", "roll": [[0.4, {"ransom_end": "partial", "rep": -2}, "Most files come back from shadow copies."], [0.6, {"ransom_end": "lost"}, "The malware deleted the shadow copies."]]},
+            {
+                "label": "CALL THE BACKUP VENDOR'S SUPPORT ($150)",
+                "need": 150,
+                "roll": [
+                    [0.5, {"cash": -150, "ransom_end": "vendor"}, "Support finds a version from before the infection and rolls the files back. Nothing is lost."],
+                    [0.5, {"cash": -150, "ransom_end": "lost"}, "The synced copies were overwritten with the encrypted files. They are sorry."],
+                ],
+            },
+            {
+                "label": "ISOLATE IT AND REBUILD FROM THE IMAGE ($300)",
+                "need": 300,
+                "fx": {"cash": -300, "ransom_end": "rebuilt", "rep": -2, "mood": {"3": -8}},
+                "text": "The server is clean by evening. Everything since the last good copy is gone, and the partners know it.",
+            },
+            {
+                "label": "CALL THE CYBER-INSURANCE LINE ($250 DEDUCTIBLE)",
+                "need": 250,
+                "policy": true,
+                "roll": [
+                    [0.65, {"cash": -250, "ransom_end": "insured", "rep": -1}, "The insurer sends a recovery firm. The files come back and you pay the deductible."],
+                    [0.35, {"cash": -250, "ransom_end": "lost"}, "The adjuster denies the claim: the policy wanted patched, backed-up systems."],
+                ],
+            },
             {"label": "ACCEPT THE LOSS", "fx": {"ransom_end": "lost"}},
         ],
     },
@@ -15999,6 +16171,9 @@ func show_card(id: String) -> void:
         if need > 0 and cash < need:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % need
+        if opt.get("policy", false) and not Msp.cyber_insured(Story.RANSOM_CLIENT):
+            entry["enabled"] = false
+            entry["hint"] = "NO POLICY"
         if opt.has("unless") and flags.get(str(opt.unless), false):
             entry["enabled"] = false
             entry["hint"] = "OWNED"
@@ -17182,7 +17357,7 @@ func _ransom_finish(kind: String) -> void:
         ep.problem = ""
     Msp.close_ticket(int(t.id))
     Story.flags["ransom"] = kind
-    Msp.send_text("Alan", "Hoot and Holler: %s." % ("ransom paid, the files are back" if kind == "paid" else "we recovered most files from shadow copies"))
+    Msp.send_text("Alan", "Hoot and Holler: %s." % str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial)))
 
 
 # ---- RDP open to the internet: a stolen login ----------------------------------------------------------------
@@ -17501,7 +17676,7 @@ func goal_parts(final := false) -> Array:
     var out := []
     if Campaign.player_as == "Alan":
         var ransom := str(Story.flags.get("ransom", ""))
-        out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom == "" or ransom == "saved"})
+        out.append({"label": "NO RANSOMWARE LOSS", "ok": ransom in ["", "saved", "vendor"]})
         out.append({"label": "NO BREAK-INS", "ok": incidents == 0})
         out.append({"label": "A DOCUMENTED STACK (MATURITY 3)", "ok": oml() >= 3 or (not final and Campaign.day < 12)})
     else:
@@ -17641,7 +17816,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["SALES: %d NEW CLIENTS, %d INSTALLS SOLD (%s)" % [Sales.deals, Sales.installs_sold, str(VIC_PLANS[vic_plan].label)], ink])
             lines.append(["STACK: %s, %s, %s" % [stack_option("psa").name, stack_option("rmm").name, stack_option("hardware").name], ink])
             lines.append(["A/R OWED $%d   MATURITY: %s" % [ar_total(), OML_NAMES[oml() - 1]], ink])
-            lines.append(["RANSOMWARE: %s" % {"saved": "SAVED BY BACKUP", "lost": "NO BACKUP!", "paid": "PAID THE RANSOM", "partial": "PARTIAL RECOVERY"}.get(str(Story.flags.get("ransom", "")), "-"), ink])
+            lines.append(["RANSOMWARE: %s" % str(Msp.RANSOM_LABELS.get(str(Story.flags.get("ransom", "")), "-")), ink])
         1:
             lines.append(["WHAT YOUR TEAM SAYS", blue])
             for who in Social.people():
@@ -18584,6 +18759,11 @@ const TABLE := {
     "tech.alt_ret": [0.8, 1.0, 1.3],
     "tech.drain": [0.9, 1.0, 2.0],
     "tech.pair": [0.0, 0.0, 0.7],
+    # P6 (a): a workstation heavy fix (reimage, rebuild profile) at a client with a site can be done in person. On the remote
+    # version: tech.heavy_fail = chance it fails at the last step, tech.heavy_slow = time x. tech.onsite_mood = client mood the visit earns.
+    "tech.heavy_fail": [0.0, 0.0, 0.25],
+    "tech.heavy_slow": [1.0, 1.0, 1.3],
+    "tech.onsite_mood": [3.0, 2.0, 1.0],
     "tech.gain": [1.25, 1.0, 0.4],
     "tech.loss": [0.75, 1.0, 2.2],
     "rep.gain": [1.2, 1.0, 0.8],
@@ -34521,7 +34701,7 @@ func _away(hours: float, except_id := 0) -> void:
     Shift.add_energy(-2.0 * hours)
 
 
-func _depart(id: int) -> void:
+func _depart(id: int, forced := {}) -> void:
     var t := Msp.ticket(id)
     if t.is_empty():
         return
@@ -34529,7 +34709,7 @@ func _depart(id: int) -> void:
         Computer.close()
     ticket_id = id
     client = int(t.client)
-    job = job_for(t)
+    job = forced if not forced.is_empty() else job_for(t)
     done = false
     _event_done = false
     _begin_trip()
@@ -34967,6 +35147,8 @@ func _finish_job() -> void:
         if ep.name == t.endpoint:
             ep.problem = ""
     Msp.add_note(ticket_id, "Fixed onsite.")
+    if bool(job.get("reimage", false)):
+        _reimage_done(t)
     fixed_count += 1
     Career.add("onsite_fixed")
     Career.note_first("site", site_type(client), "site_types")
@@ -34997,6 +35179,104 @@ func _leave() -> void:
 func _leave_answer(id: String, dropped: bool) -> void:
     if id == "go":
         _go_home(dropped)
+
+
+# ---- P6 (a): the heavy fix in person (REIMAGE PC / REBUILD PROFILE on a workstation at a client with a site). The RMM ticket you
+# were working is the job: no failed image over the wire, you ask them to save first, the client likes seeing you, and it costs the drive.
+const REIMAGE_TEXT := {
+    "offer": "%s: you can do that heavy fix in person instead of over the wire. About %d minutes each way. Onsite you ask them to save first, the image cannot fail on the way, and they like seeing you. Your other tickets keep ageing while you are out.",
+    "go": "DRIVE THERE AND DO IT",
+    "later": "NOT YET",
+    "image_intro": "The PC is at the front desk. You have the gold image on a USB stick. Ask them to save, then reimage it while they get a coffee.",
+    "profile_intro": "The PC is at the front desk. The profile is a mess. Ask them to save, then rebuild it in front of them.",
+    "image_label": "ASK THEM TO SAVE, THEN REIMAGE",
+    "profile_label": "ASK THEM TO SAVE, THEN REBUILD IT",
+    "image_text": "You ask them to save, reimage it from the stick and sit with them for the first login. Nothing lost. (+5 servers XP)",
+    "profile_text": "You ask them to save, rebuild the profile and copy their files across. Nothing lost. (+5 servers XP)",
+    "look_label": "LOOK IT OVER AND LEAVE",
+    "look_text": "You look it over and say you will be back. They are not impressed.",
+    "done": "Done in person: they saved first, nothing was lost, and the client noticed you came out.",
+}
+
+
+func reimage_job(heavy: String) -> Dictionary:
+    var kind := "profile" if heavy == "new_profile" else "image"
+    return {
+        "id": "reimage",
+        "object": "pc",
+        "pri": 2,
+        "reimage": true,
+        "intro": str(REIMAGE_TEXT[kind + "_intro"]),
+        "options":
+        [
+            {
+                "id": "image",
+                "label": str(REIMAGE_TEXT[kind + "_label"]),
+                "hours": 0.75,
+                "chance": 1.0,
+                "skill": "servers",
+                "xp": 5,
+                "text": str(REIMAGE_TEXT[kind + "_text"]),
+            },
+            {
+                "id": "look",
+                "label": str(REIMAGE_TEXT.look_label),
+                "hours": 0.25,
+                "chance": 0.0,
+                "skill": "",
+                "xp": 0,
+                "text": str(REIMAGE_TEXT.look_text),
+            },
+        ],
+    }
+
+
+# the dispatch card for the ONSITE button in the RMM session
+func offer_reimage(ep_name: String) -> void:
+    var ep := Msp.endpoint(ep_name)
+    var heavy := Msp.onsite_heavy(ep)
+    if heavy == "" or active or Cards.is_open:
+        return
+    var t := {}
+    for x in Msp.tickets:
+        if x.endpoint == ep_name and x.status != "Closed" and x.fix == ep.problem:
+            t = x
+    if t.is_empty():
+        return
+    var c := int(t.client)
+    Cards.ask(
+        "Dispatch",
+        (str(REIMAGE_TEXT.offer) % [str(Msp.CLIENTS[c].name), estimate_minutes(c)]) + _risk_text(c, int(t.id)),
+        [
+            {"label": str(REIMAGE_TEXT.go), "id": "go"},
+            {"label": str(REIMAGE_TEXT.later), "id": "later"},
+        ],
+        func(pick: String) -> void: _reimage_answer(pick, int(t.id), heavy)
+    )
+
+
+func _reimage_answer(pick: String, id: int, heavy: String) -> void:
+    if pick != "go":
+        return
+    var t := Msp.ticket(id)
+    if t.is_empty():
+        return
+    if Campaign.active:  # the round trip does not eat this ticket's own clock (same as an onsite job)
+        var extra := float(drive_minutes(int(t.client)) * 2 + 45) / 60.0 * 60.0 * World.day_len / 600.0
+        t.sla_total = float(t.sla_total) + extra
+        t.sla_left = float(t.sla_left) + extra
+    _depart(id, reimage_job(heavy))
+
+
+# in person: the user saved first (nothing lost), and the client mood bonus is a tier number
+func _reimage_done(t: Dictionary) -> void:
+    t["method"] = "onsite"
+    Sales.adjust(client, int(Difficulty.cf("tech.onsite_mood")))
+    for ep in Msp.endpoints:
+        if ep.name == t.endpoint:
+            ep["unsaved"] = false
+            ep["asked"] = false
+    Msp.add_note(ticket_id, str(REIMAGE_TEXT.done))
 
 
 func _go_home(dropped: bool) -> void:
@@ -40434,7 +40714,7 @@ func _problem_problems(p: Dictionary) -> Array:
         if not p.has(k):
             out.append("problem lacks %s" % k)
     if out.is_empty():
-        if not Msp.FIXES.has(str(p.fix)) or str(p.fix) in ["restore", "shadow", "pay", "save"]:
+        if not Msp.FIXES.has(str(p.fix)) or str(p.fix) in ["restore", "shadow", "pay", "save", "vendor", "rebuild", "insurer"]:
             out.append("problem fix %s" % str(p.fix))
         if int(p.pri) < 1 or int(p.pri) > 4:
             out.append("problem pri")

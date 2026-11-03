@@ -183,7 +183,7 @@ func fix_secs_for(action: String) -> float:
 		return base
 	var alt: Dictionary = Msp.ALT_DEFS.get(action, {})
 	var skill := str(FIX_XP.get(str(alt["for"][0]) if not alt.is_empty() else action, ""))
-	var mult := float(alt.get("mult", 1.0))
+	var mult := float(alt.get("mult", Msp.RANSOM_MULT.get(action, 1.0)))
 	if skill in ["servers", "security", "networking"]:
 		mult -= 0.06 * float(level(skill))
 		if Campaign.mode == "tech" and Growth.graduated and Growth.focus == skill:

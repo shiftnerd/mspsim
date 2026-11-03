@@ -897,7 +897,7 @@ func _problem_problems(p: Dictionary) -> Array:
 		if not p.has(k):
 			out.append("problem lacks %s" % k)
 	if out.is_empty():
-		if not Msp.FIXES.has(str(p.fix)) or str(p.fix) in ["restore", "shadow", "pay", "save"]:
+		if not Msp.FIXES.has(str(p.fix)) or str(p.fix) in ["restore", "shadow", "pay", "save", "vendor", "rebuild", "insurer"]:
 			out.append("problem fix %s" % str(p.fix))
 		if int(p.pri) < 1 or int(p.pri) > 4:
 			out.append("problem pri")

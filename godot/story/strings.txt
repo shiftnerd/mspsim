@@ -4830,6 +4830,38 @@ The malware deleted the shadow copies.
 
 # owner card: ransom_options
 [Owner.CARDS.ransom_options.options.2.label]
+CALL THE BACKUP VENDOR'S SUPPORT ($150)
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.2.roll.0.2]
+Support finds a version from before the infection and rolls the files back. Nothing is lost.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.2.roll.1.2]
+The synced copies were overwritten with the encrypted files. They are sorry.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.3.label]
+ISOLATE IT AND REBUILD FROM THE IMAGE ($300)
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.3.text]
+The server is clean by evening. Everything since the last good copy is gone, and the partners know it.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.4.label]
+CALL THE CYBER-INSURANCE LINE ($250 DEDUCTIBLE)
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.4.roll.0.2]
+The insurer sends a recovery firm. The files come back and you pay the deductible.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.4.roll.1.2]
+The adjuster denies the claim: the policy wanted patched, backed-up systems.
+
+# owner card: ransom_options
+[Owner.CARDS.ransom_options.options.5.label]
 ACCEPT THE LOSS
 
 # owner card: ransom_lost

@@ -1473,6 +1473,15 @@ func _callback_ransom() -> void:
 				)
 			)
 			Sales.adjust(RANSOM_CLIENT, -3)
+		"vendor":
+			Msp.mail(from, "Recovered files", "The backup vendor found an older copy and we lost nothing. Please keep that service. - Spence")
+			Sales.adjust(RANSOM_CLIENT, 3)
+		"rebuilt":
+			Msp.mail(from, "Rebuilt server", "The machine is clean, but a month of case notes is gone and I had to call clients. We want a real backup plan. - Spence")
+			Sales.adjust(RANSOM_CLIENT, -6)
+		"insured":
+			Msp.mail(from, "The insurance claim", "Our insurer got the files back and now wants a security review from us. Fair enough. - Spence")
+			Sales.adjust(RANSOM_CLIENT, -1)
 		"lost":
 			(
 				Msp

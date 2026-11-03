@@ -191,9 +191,40 @@ const FIXES := {
 	"shadow": "SHADOW COPIES",
 	"pay": "PAY THE RANSOM",
 	"save": "ASK USER TO SAVE",
+	"vendor": "VENDOR VERSIONS",
+	"rebuild": "ISOLATE+REBUILD",
+	"insurer": "CALL INSURER",
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
+# P6 (c): Free Play has no skills, so the skill-gated clever fixes open at this fixed level (every gate is 3 or less)
+const FREE_PLAY_LEVEL := 3
+# P6 (a): heavy fixes on a workstation that can also be done in person (tech campaign, client with a site)
+const HEAVY_ONSITE := ["reimage", "new_profile"]
+# P6 (b): the ransomed-machine options past shadow copies and paying. RANSOM_MULT = job time vs a normal fix, VENDOR_ODDS /
+# INSURER_ODDS = chance it works (rebuild always works but loses the files since the last good copy). A client carries a
+# cyber policy with chance INSURED_SHARE (seeded per client and run), so the insurer button only shows where there is one.
+# review / owner lines for each way the ransomware ended (Story.flags.ransom)
+const RANSOM_LABELS := {
+	"saved": "SAVED BY BACKUP",
+	"lost": "NO BACKUP!",
+	"paid": "PAID THE RANSOM",
+	"partial": "PARTIAL RECOVERY",
+	"vendor": "VENDOR RESTORED IT",
+	"rebuilt": "REBUILT, FILES LOST",
+	"insured": "INSURER GOT THEM BACK",
+}
+const RANSOM_LINES := {
+	"paid": "ransom paid, the files are back",
+	"partial": "we recovered most files from shadow copies",
+	"vendor": "the backup vendor restored an older version, nothing lost",
+	"rebuilt": "we rebuilt the machine from the image, the recent files are gone",
+	"insured": "the cyber insurer's recovery firm got the files back",
+}
+const VENDOR_ODDS := 0.5
+const INSURER_ODDS := 0.65
+const INSURED_SHARE := 0.5
+const RANSOM_MULT := {"vendor": 1.5, "rebuild": 4.0, "insurer": 1.0}
 # Q6: a workaround that comes back costs the client's patience (mood) and closing the rework earns little and does not count
 # as a closed ticket for the day's reputation, so a quick fix used on everything is net negative over a campaign
 const RETURN_MOOD := -3
@@ -782,7 +813,7 @@ func close_ticket(id: int) -> String:
 		changed.emit()
 		return "CLOSED - DATA LOST"  # no points, and it does not count as a good close
 	var points := 10 if not t.breached else 4
-	if str(t.get("outcome", "")) in ["paid", "partial"]:
+	if str(t.get("outcome", "")) in ["paid", "partial", "rebuilt", "insured"]:
 		points = 4
 	if bool(t.get("repeat", false)):
 		points = REPEAT_POINTS
@@ -831,9 +862,9 @@ func alt_unlocked(d: Dictionary) -> bool:
 	var sk := str(d.get("skill", ""))
 	if sk == "":
 		return true
-	if not Campaign.active:
-		return false
-	var lv: int = Skills.ps_level if sk == "powershell" else Skills.level(sk)
+	var lv: int = FREE_PLAY_LEVEL
+	if Campaign.active:
+		lv = Skills.ps_level if sk == "powershell" else Skills.level(sk)
 	return lv >= int(d.lvl)
 
 
@@ -963,13 +994,16 @@ func spawn_return(item: Dictionary) -> void:
 func _rmm_special(ep: Dictionary, action: String) -> String:
 	if action == "save":
 		return _ask_save(ep)
-	if ep.problem == "restore":
-		if action == "pay":
-			return _ransom_pay(ep)
-		if action == "shadow":
-			return _ransom_shadow(ep)
-		if action == "restore":
-			return _restore(ep)
+	var ransom_calls := {
+		"pay": _ransom_pay,
+		"shadow": _ransom_shadow,
+		"vendor": _ransom_vendor,
+		"rebuild": _ransom_rebuild,
+		"insurer": _ransom_insurer,
+		"restore": _restore,
+	}
+	if ep.problem == "restore" and ransom_calls.has(action):
+		return str((ransom_calls[action] as Callable).call(ep))
 	return ""
 
 
@@ -1283,7 +1317,7 @@ func _restore(ep: Dictionary) -> String:
 				t.notes.append(
 					(
 						"Backup restore FAILED: the last good copy is from day %d and unusable. "
-						+ "Options left: shadow copies, pay the ransom, or give up the files."
+						+ "Options left: shadow copies, the backup vendor, rebuild, the insurer (if any), pay the ransom, or give up the files."
 					)
 					% int(backups[ep.client].good_day)
 				)
@@ -1382,6 +1416,97 @@ func _ransom_shadow(ep: Dictionary) -> String:
 		return "SHADOW COPIES RECOVERED MOST FILES."
 	ep["shadow_tried"] = true
 	return "NO SHADOW COPIES LEFT. TRY SOMETHING ELSE."
+
+
+# P6 (b): more ways out of CryptoLocker, each with its own odds, cost and review line (Story.flags.ransom)
+func cyber_insured(client: int) -> bool:
+	return Difficulty.rng_for("msp.insured", client).randf() < INSURED_SHARE
+
+
+func _ransom_note(ep: Dictionary, body: String) -> void:
+	_mail(
+		CLIENTS[ep.client].contact + " <" + CLIENTS[ep.client].mail + ">",
+		"RE: " + RANSOM.summary,
+		body + " - " + str(CLIENTS[ep.client].contact),
+		0
+	)
+
+
+# ask the cloud-backup vendor's support for an older version of the files: free, 50%, one try
+func _ransom_vendor(ep: Dictionary) -> String:
+	if ep.get("vendor_tried", false):
+		return "THE VENDOR HAS NO OTHER VERSIONS. TRY SOMETHING ELSE."
+	if Difficulty.rng("msp.fix").randf() < VENDOR_ODDS:
+		_ransom_close(ep, "Backup vendor support rolled the files back to a version from before the infection.", "vendor")
+		score -= 1
+		Story.flags["ransom"] = "vendor"
+		_ransom_note(ep, "Everything is back, from a copy the vendor kept. Thank you for thinking of calling them.")
+		changed.emit()
+		return "VENDOR RESTORED AN OLD VERSION. NO DATA LOST."
+	ep["vendor_tried"] = true
+	for t in tickets:
+		if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
+			t.notes.append("Vendor support: the synced copies were already overwritten by the encrypted files.")
+	return "VENDOR: THE VERSIONS WERE OVERWRITTEN. TRY SOMETHING ELSE."
+
+
+# pull the cable, rebuild the machine from the gold image: always works, the files since the last good copy are gone
+func _ransom_rebuild(ep: Dictionary) -> String:
+	_ransom_close(ep, "Isolated the machine and rebuilt it from the gold image. Files since the last good copy are gone.", "rebuilt")
+	score -= 10
+	Campaign.adjust_rep(-4)
+	Sales.adjust(int(ep.client), -8)
+	Story.flags["ransom"] = "rebuilt"
+	_ransom_note(ep, "The machine is clean again, but a lot of this month's files are gone for good. Please set up a real backup.")
+	changed.emit()
+	return "MACHINE REBUILT FROM THE IMAGE. RECENT FILES GONE."
+
+
+# the client's cyber-insurance line (only where there is a policy): 65% the insurer's recovery firm gets the files back
+func _ransom_insurer(ep: Dictionary) -> String:
+	if not cyber_insured(int(ep.client)):
+		return "NO CYBER POLICY ON FILE FOR THIS CLIENT."
+	if ep.get("insurer_tried", false):
+		return "THE CLAIM WAS DENIED. TRY SOMETHING ELSE."
+	if Difficulty.rng("msp.fix").randf() < INSURER_ODDS:
+		_ransom_close(ep, "Cyber-insurance recovery firm decrypted the files. Deductible paid.", "insured")
+		score -= 4
+		Campaign.adjust_rep(-1)
+		Story.flags["ransom"] = "insured"
+		_ransom_note(ep, "The insurance people got our files back. We will pay the deductible, and we want to talk about security.")
+		changed.emit()
+		return "INSURER'S RECOVERY FIRM GOT THE FILES BACK."
+	ep["insurer_tried"] = true
+	Sales.adjust(int(ep.client), -2)
+	for t in tickets:
+		if t.endpoint == ep.name and t.status != "Closed" and t.fix == "restore":
+			t.notes.append("Insurer denied the claim: the policy wants a patched, backed-up network.")
+	return "CLAIM DENIED. TRY SOMETHING ELSE."
+
+
+# P6 (a): a heavy fix on a workstation can be done in person at a client with a site (tech campaign only)
+func onsite_heavy(ep: Dictionary) -> String:
+	if not (Campaign.active and Campaign.mode == "tech") or ep.is_empty():
+		return ""
+	if ep.user == "server" or not Onsite.enabled or not Onsite.has_site(int(ep.client)):
+		return ""
+	for id in HEAVY_ONSITE:
+		if alts_for(ep).has(id):
+			return id
+	return ""
+
+
+# on a harder tier the remote version of that fix is slower and can fail at the last step (the onsite visit is the safe way)
+func heavy_fail_chance(ep: Dictionary, action: String) -> float:
+	if action in HEAVY_ONSITE and onsite_heavy(ep) != "":
+		return Difficulty.cf("tech.heavy_fail")
+	return 0.0
+
+
+func heavy_slow(ep: Dictionary, action: String) -> float:
+	if action in HEAVY_ONSITE and onsite_heavy(ep) != "":
+		return Difficulty.cf("tech.heavy_slow")
+	return 1.0
 
 
 # ---- clock -------------------------------------------------------------------

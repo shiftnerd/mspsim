@@ -160,10 +160,10 @@ func _init() -> void:
 	msp.break_backup(story.RANSOM_CLIENT)
 	o._ransom()
 	_check(
-		cards.is_open and cards.options.size() == 3 and cards.text.contains("CryptoLocker"),
+		cards.is_open and cards.options.size() == 6 and cards.text.contains("CryptoLocker"),
 		"no backup: pay, shadow copies, or accept the loss"
 	)
-	cards.pick(2)
+	cards.pick(5)
 	_check(
 		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Marge"),
 		"accepting the loss leads to the lawsuit card"
