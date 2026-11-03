@@ -757,7 +757,7 @@ const DEFAULT_DECK := {
 		"min_day": 3,
 		"max_day": 20,
 		"weight": 1.2,
-		"cooldown": 8,
+		"cooldown": 20,
 		"requires": [],
 		"speaker": "A client",
 		"text": "I know this is not work, but can you just look at my home printer? It has been blinking at me since Sunday. I will buy you lunch.",

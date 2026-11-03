@@ -82,16 +82,16 @@ func _init() -> void:
 		pr.change_order(2)
 		accepted += 1 if o.cash > 1000 else 0
 	_check(
-		accepted > 20 and accepted < 55,
-		"a happy client agrees to a change order about 60 percent of the time (%d of 60)" % accepted
+		accepted > 15 and accepted < 55,
+		"a happy client pays (or half-pays) a change order about half the time (%d of 60)" % accepted
 	)
 	var billable := false
-	for i in 30:
+	for i in 80:
 		o.scope_fixed.erase(2)
-		var before: int = o.cash
+		sales.satisfaction[2] = 70
 		pr.change_order(2)
-		if o.cash > before:
-			billable = o.scope_fixed.get(2, false)
+		if o.scope_fixed.get(2, false):
+			billable = true
 			break
 	_check(billable, "and requests beyond the plan become billable")
 

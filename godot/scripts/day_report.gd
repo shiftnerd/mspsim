@@ -55,6 +55,7 @@ func _ready() -> void:
 func show_report(data: Dictionary) -> void:
 	report = data
 	is_open = true
+	Cards.cover()
 	_opened = Time.get_ticks_msec()
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()

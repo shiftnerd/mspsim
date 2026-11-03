@@ -545,7 +545,7 @@ or the owner (owner campaign, 20 weeks).
 ### Week 1
 
 **9:05 Card: welcome** — Marge (Bookkeeper) `[Owner.CARDS.welcome.speaker]`
-> Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and $7,500 in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
+> Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
 - **VOLUME PRICING (-15% FEES, VIC SELLS MORE)** `[Owner.CARDS.welcome.options.0.label]`
 - **STANDARD PRICING** `[Owner.CARDS.welcome.options.1.label]`
 - **PREMIUM PRICING (+20% FEES, HARDER SELL)** `[Owner.CARDS.welcome.options.2.label]`
@@ -810,6 +810,8 @@ or the owner (owner campaign, 20 weeks).
   - 60%: You muddle through and fix it. {tech} is impressed. `[Owner.CARDS.email24.options.2.roll.0.2]`
   - 40%: You make it worse before you make it better. `[Owner.CARDS.email24.options.2.roll.1.2]`
 
+**9:30** Event: vendor_rise (handled in code, it opens its own cards)
+
 ### Week 14
 
 **10:00** Event: vendor_breach (handled in code, it opens its own cards)
@@ -836,20 +838,26 @@ or the owner (owner campaign, 20 weeks).
 
 **11:30** Event: qbr (handled in code, it opens its own cards)
 
+**13:00** Event: credit_squeeze (handled in code, it opens its own cards)
+
 ### Week 16
 
 **9:30 Card: bid** — Vic Marlowe `[Owner.CARDS.bid.speaker]`
 > Hoot and Holler is opening a branch and wants a network install. This is a big job. `[Owner.CARDS.bid.text]`
 - **BID LOW $2,500** `[Owner.CARDS.bid.options.0.label]`
-  - 90%: They accept. The crew grumbles about the margin. `[Owner.CARDS.bid.options.0.roll.0.2]`
-  - 10%: They go with someone else. `[Owner.CARDS.bid.options.0.roll.1.2]`
-- **BID HIGH $4,500** `[Owner.CARDS.bid.options.1.label]`
-  - 45%: They accept the premium bid. `[Owner.CARDS.bid.options.1.roll.0.2]`
-  - 55%: They balk and walk. `[Owner.CARDS.bid.options.1.roll.1.2]`
+  - 78%: They accept. The crew grumbles about the margin. `[Owner.CARDS.bid.options.0.roll.0.2]`
+  - 12%: They accept, then the job runs long. After the overtime you clear $1,300. `[Owner.CARDS.bid.options.0.roll.1.2]`
+  - 10%: They go with someone else. `[Owner.CARDS.bid.options.0.roll.2.2]`
+- **BID HIGH $4,500 (RISKY)** `[Owner.CARDS.bid.options.1.label]`
+  - 35%: They accept the premium bid and pay in full. `[Owner.CARDS.bid.options.1.roll.0.2]`
+  - 20%: They accept, then dispute the invoice after the work. You settle at $3,000 and the relationship is bruised. `[Owner.CARDS.bid.options.1.roll.1.2]`
+  - 45%: They balk, walk, and mention it to people they know. `[Owner.CARDS.bid.options.1.roll.2.2]`
 
 **14:00** Event: client_breach (handled in code, it opens its own cards)
 
 **11:00** Event: growth_stretch (handled in code, it opens its own cards)
+
+**10:35** Event: key_poach (handled in code, it opens its own cards)
 
 ### Week 17
 
@@ -859,6 +867,8 @@ or the owner (owner campaign, 20 weeks).
 - **HOLD PRICES** `[Owner.CARDS.peer4.options.1.label]`
 
 **15:30** Event: peer_goal (handled in code, it opens its own cards)
+
+**11:30** Event: audit (handled in code, it opens its own cards)
 
 ### Week 18
 

@@ -107,9 +107,10 @@ func _init() -> void:
 	o.flags.backup_service = true
 	o.fire({"event": "ransomware"})
 	_check(
-		story.flags.ransom == "saved" and not cards.is_open,
-		"ransomware with the backup service: saved"
+		story.flags.ransom == "saved" and cards.is_open and cards.text.contains("nothing was lost"),
+		"ransomware with the backup service: saved (and a card says so)"
 	)
+	_clear_cards(cards)
 	msp.reset()
 	story.flags = {}
 	o.flags.backup_service = false
@@ -161,8 +162,8 @@ func _init() -> void:
 		"W-2 ratio 67.5%% and EBITDA margin 16.5%%"
 	)
 	_check(
-		o.multiple() == 5.0 and o.valuation() == int(660.0 * 52.0 * 5.0 * o.quality()) + o.cash,
-		"valuation = 5.0x annual EBITDA x reputation quality + cash (%d)" % o.valuation()
+		o.multiple() == 4.0 and absi(o.valuation() - (int(660.0 * 52.0 * 4.0 * o.quality() * clampf(0.5 + float(c.day) / 24.0, 0.5, 1.0)) + o.cash)) <= 1,
+		"valuation = 4.0x annual EBITDA x quality x seasoning + cash (%d)" % o.valuation()
 	)
 	o.apply({"hire": o.JUNIOR})
 	_check(

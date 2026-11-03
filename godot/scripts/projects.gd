@@ -215,8 +215,8 @@ func drag() -> float:
 # ---- opportunities -----------------------------------------------------------------------------------
 func _pick_type(client: int) -> String:
 	var pool := ["network", "server", "security"]
-	if Campaign.day >= 3 and Campaign.day <= 14:
-		pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8
+	if Campaign.day >= 3 and Campaign.day <= 8:
+		pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8; the wave ends with it (X9)
 	if not has_service(client, "backup"):
 		pool.append("backup_dr")
 	if not Owner.flags.get("rdp_safe", false) and Campaign.day >= 7:
@@ -291,17 +291,20 @@ func _quote_card(item: Dictionary) -> void:
 	var q := make_quote(client, str(item.type))
 	var name: String = Msp.CLIENTS[client].name
 	var t: Dictionary = TYPES[str(item.type)]
+	var blurb := str(t.blurb)
+	if Campaign.day > 8:
+		blurb = blurb.replace(" before April 8", " that are out of warranty")  # X9: the XP deadline has passed
 	var text := (
-		"%s: %s. Project: %s. About %d hours and $%d of hardware over %d weeks. At $%d fixed that is about $%d profit if nothing creeps. How do we quote it?"
+		"%s: %s. Project: %s. About %d hours and $%d of hardware over %d weeks. At $%d fixed that is about %s profit if nothing creeps. How do we quote it?"
 		% [
 			name,
-			str(t.blurb),
+			blurb,
 			str(t.label).to_lower(),
 			int(q.est),
 			int(q.hw),
 			int(q.weeks),
 			int(q.price),
-			quote_profit(q)
+			Owner.money(quote_profit(q))
 		]
 	)
 	Cards.ask(
@@ -410,8 +413,8 @@ func _creep_card(item: Dictionary) -> void:
 		+ (0.1 if Owner.flags.get("practice_scope", false) else 0.0)
 	)
 	var text := (
-		"%s's project is creeping: they keep adding things (extra machines, one more site, 'while you are here'). The fixed price will not cover it: about %d more hours."
-		% [str(Msp.CLIENTS[client].name), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
+		"%s project is creeping: they keep adding things (extra machines, one more site, 'while you are here'). The fixed price will not cover it: about %d more hours."
+		% [Owner.poss(str(Msp.CLIENTS[client].name)), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
 	)
 	Cards.ask(
 		"Alan (Co-owner)",
@@ -579,22 +582,46 @@ func change_order_amount(client: int) -> int:
 	return int(over_hours(client) * 4.0 * float(BILL_RATE))  # four weeks of the extra hours
 
 
+# X9: a change order is a gamble. A happy client, a pricing-minded owner and an early week help; a late-game squeeze hurts
+func change_order_odds(client: int) -> float:
+	return clampf(
+		0.22 + float(Sales.mood(client) - 40) / 200.0 + float(Owner.edge("fee_accept")) - Owner.pressure() * 0.15,
+		0.1,
+		0.7
+	)
+
+
 func change_order(client: int) -> String:
 	var amount := change_order_amount(client)
-	var odds := 0.6 if Sales.mood(client) >= 60 else 0.35
-	if randf() < odds:
+	var odds := change_order_odds(client)
+	var roll := randf()
+	if roll < odds:
 		Owner.cash += amount
 		Owner.income_extra += amount
 		week_income += amount
 		Owner.scope_fixed[client] = true  # from now on requests beyond the plan are billable
-		Sales.adjust(client, -3)
+		Sales.adjust(client, -5)
 		Owner.flags["practice_scope"] = true
 		return (
 			"They pay $%d for the extra work and accept that requests beyond the plan are billable."
 			% amount
 		)
-	Sales.adjust(client, -8)
-	return "They refuse the bill and say the work was always included. Things are tense."
+	if roll < odds + (1.0 - odds) * 0.35:
+		# a scope dispute: they pay half, want a discount to stay, and the relationship cools
+		var half := amount / 2
+		Owner.cash += half
+		Owner.income_extra += half
+		week_income += half
+		Owner.discount[client] = {"mult": 0.9, "weeks": 6}
+		Sales.adjust(client, -8)
+		return (
+			"A scope dispute: they pay half ($%d), ask for 10%% off for six weeks, and say the work was always included."
+			% half
+		)
+	Sales.adjust(client, -12)
+	if randf() < 0.5:
+		Owner.discount[client] = {"mult": 0.9, "weeks": 4}
+	return "They refuse the bill outright and threaten to review their contract. Things are tense."
 
 
 # how = polite (30 days notice, a referral to another firm) or now
