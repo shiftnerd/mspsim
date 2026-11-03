@@ -57,6 +57,7 @@ func _ready() -> void:
 func show_report(data: Dictionary) -> void:
 	report = data
 	is_open = true
+	Sfx.play_grade(str(data.get("grade", "")))
 	Cards.cover()
 	_opened = Time.get_ticks_msec()
 	_canvas.visible = true

@@ -69,6 +69,7 @@ func ask(
 	_callback = on_pick
 	is_open = true
 	_opened = Time.get_ticks_msec()
+	Sfx.play("ui_open")
 	Game.ui_open = true
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()
@@ -84,6 +85,8 @@ func ask_first(who: String, body: String, choices: Array, on_pick: Callable) -> 
 
 
 func pick(index: int) -> void:
+	if is_open and index >= 0 and index < options.size() and not bool(options[index].get("enabled", true)):
+		Sfx.play("ui_error")
 	if (
 		not is_open
 		or index < 0
@@ -92,6 +95,7 @@ func pick(index: int) -> void:
 	):
 		return
 	var id := str(options[index].id)
+	Sfx.play("ui_pick")
 	is_open = false
 	_canvas.visible = false
 	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
@@ -146,6 +150,7 @@ func _pick_leave() -> void:
 
 
 func _move(step: int) -> void:
+	Sfx.play("ui_tick")
 	for _n in options.size():
 		sel = (sel + step + options.size()) % options.size()
 		if bool(options[sel].get("enabled", true)):
