@@ -83,3 +83,36 @@ The outcome is bimodal: a bad opening week (rep under 30) snowballs because ever
 - The tech lazy bot is a calibration, not a measurement: its idle gap (55 s) decides whether normal lazy drifts (gap 25-40 s gave good endings in half the seeds, 55 s gives fired or rep under 15). Change `TECH_IDLE` in `bot_lib.gd` and the normal-lazy cell moves a lot; the careful bot's 28 s overhead matters the same way.
 - Time compression: the tech bot runs at ts=60 (one frame is one game second); at ts=30 the numbers were the same within noise. Owner at ts=8 is not valid (see above).
 - The machine was shared: a full matrix (4 modes x 3 tiers x 3 strategies x 4 seeds, about 2 hours of CPU) took many hours of wall time. Run cells as separate processes.
+
+## Recent additions check (Q6c: P5, P6, R12)
+Checked with the bots after P5 (Rodent Nation cards, projects `voip` and `email_move`), P6 (heavy fixes in person, new ransomware exits) and R12 (chair race). `tiers_balance.gd` passes (failures=0, seeds 11-12): careful rep easy >= normal >= hard for sales, tech and service, careful > lazy on every tier (tech 100/100/31 vs 36/0/0, service 100/100/89 vs 69/51/35).
+
+**Owner, careful bot, ts=4** (the `smart` policy now declines the vendor lock-ins: `rn_invite` = send the tech, the three booths = take the brochure; `OW_POLICIES` in `bot_lib.gd`; the older bot took pick 0 everywhere, i.e. went and signed every booth):
+
+| Run | Easy | Normal | Hard |
+|---|---|---|---|
+| old bot, seeds 1-3 | 3 good, rep 100 | 2 good 1 fired (week 10, bankrupt), rep 56 | 2 good 1 fired (week 19), rep 57 |
+| old bot, seeds 4-8 | | 5 good, rep 94 | 4 good 1 fired (week 15), rep 69 |
+| new bot, seeds 4-8 | | 5 good, rep 87 | 4 good 1 fired (week 14), rep 70 |
+
+Ordering holds (easy 100 > normal 80-94 > hard 57-70 by rep; good endings 3/3, 7/8, 6/8 with the old bot). The seeds 1-3 normal row is below hard only by noise (one bankruptcy in n=3). Owner hard now goes bankrupt in 1 seed in 4-5 (earlier notes: none in 5); I could not tell whether that is P5/P6 or variance, and it was not retuned. The Rodent Nation deals (`rn_rmm` +$25/week, `rn_psa` -5% speed, `rn_hw` Vic -3%) did not show up as a trap or a free win in these runs. On paper the pricing clinic (+3% on every fee, about $170 a week with 7 clients) pays back the $450 trip in three weeks, so GO YOURSELF beats STAY HOME in cash; left as is because the trip is a once-a-game choice and the alternatives (burnout -10, rep +1) are real.
+
+**Projects** (profit = price - hardware - hours x 15 s x `COST_PER_SEC` 2.9, i.e. $43.50 an hour, at the middle price): desktops $243 (9%, $14 an hour), security $271, network $684, server $1,836, backup_dr $528, **voip $480 (18%, $24 an hour)**, **email_move $798 (41%, $36 an hour)**. Neither new project dominates or is useless, so no change (email_move is the best margin of the small jobs because it carries almost no hardware; if the pool feels too generous, drop its price range to 1,400-2,200).
+
+**R12 chair race**: `Outings._finish` gives the chair race the same rewards as every other outing (everyone +1 + stars mood, owner burnout 5 + 3 x stars, tech energy 4 + 2 x stars, 3 stars = rep +1); there is no chair-only reward, so it cannot dominate.
+
+**P6 (a) heavy fixes** (`tech.heavy_fail` 0 / 0 / 0.25, `tech.heavy_slow` 1 / 1 / 1.3, `tech.onsite_mood` 3 / 2 / 1): normal is neutral by construction (`tests/difficulty.gd`). They only apply to the remote reimage and profile rebuild at a client with a site, so they make hard slightly harder and the tech hard cell was not re-measured beyond the smoke test above (careful hard rep 31 vs 100 normal).
+
+### Ransomware exits: expected value (Q6c)
+A "lost" ending costs, in the owner campaign, the `ransom_lost` card: settle $2,500, rep -3 (fighting it is $3,000 and rep -5.5 on average, so settling is the baseline). In the tech campaign `_ransom_lost` is score -30, rep -15, scar 15.
+
+| Exit | Owner: cash EV, rep EV | Owner: files back | Tech: score EV, rep EV | Time (x a fix) | Notes |
+|---|---|---|---|---|---|
+| Pay ($500, 70%) | -$1,250, -1.6 | 70% all | -12.5, -5.9 | 1.0 | fast, gambler's option |
+| Shadow copies (free, 40%) | -$1,500, -2.6 | 40% most | -8 on win, free try if it fails | 1.0 | a free roll in tech, worst single shot in owner but the only one when cash is under $150 |
+| Vendor versions (`VENDOR_ODDS` 0.5) | -$1,400, -1.5 ($150 owner, free in tech) | 50% all | -1 on win, free try if it fails | 1.5 | the best free roll |
+| Insurer (`INSURER_ODDS` 0.65, policy `INSURED_SHARE` 0.5) | -$1,125, -1.7 ($250) | 65% all | -4, -1 on win; mood -2 if denied | 1.0 | only where there is a policy |
+| Isolate and rebuild | **-$1,000, -3.0**, client mood -8 (was -$300, -2) | 0% (recent files lost) | -10, -4, mood -8 | 4.0 | certain, the safe floor |
+| Accept the loss | -$2,500, -3.0 | 0% | -30, -15 | 0 | |
+
+Finding: in the owner campaign the rebuild was strictly dominant (certain -$300 and rep -2 against expected -$1,100 to -$1,500 for every gamble, and its only drawback, the lost files, is the same drawback a failed gamble ends in). Raised to **$1,000 and rep -3** in `Owner.CARDS.ransom_options` (and the generator, and `story/strings.txt`): now the rebuild is the cheapest certain outcome, about level with paying in cash, worse in reputation, and nothing beats everything else (insurer is best on paper but needs a policy and is a gamble; pay keeps the files; shadow is free). `tests/p6.gd` asserts the rebuild's expected cash cost stays at least half of paying's, and that it costs $1,000. In the tech campaign the best sequence is vendor, then insurer (if any), then shadow, then rebuild: expected score about -3.4 with a policy and -5.1 without, against -12.5 for paying straight away. That is the "try the free things first" advice the in-game forum already gives, paid for in time (1.5x for the vendor, 4x for the rebuild on a P1 whose window is 120 s on normal), so it is not free; left unchanged. Paying is dominated on score and rep by the rebuild but is 4x faster and keeps the files 70% of the time, so it is still a real choice. Open: the odds (70 / 40 / 50 / 65%) and the 50% policy share are guesses, see `docs/realism-review.md`.

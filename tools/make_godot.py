@@ -15710,9 +15710,9 @@ const CARDS := {
                 ],
             },
             {
-                "label": "ISOLATE IT AND REBUILD FROM THE IMAGE ($300)",
-                "need": 300,
-                "fx": {"cash": -300, "ransom_end": "rebuilt", "rep": -2, "mood": {"3": -8}},
+                "label": "ISOLATE IT AND REBUILD FROM THE IMAGE ($1,000)",
+                "need": 1000,
+                "fx": {"cash": -1000, "ransom_end": "rebuilt", "rep": -3, "mood": {"3": -8}},
                 "text": "The server is clean by evening. Everything since the last good copy is gone, and the partners know it.",
             },
             {
