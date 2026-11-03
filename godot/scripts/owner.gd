@@ -756,6 +756,65 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"rn_invite": {
+		"speaker": "Vic Marlowe",
+		"text": "LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue?",
+		"options": [
+			{"label": "GO YOURSELF ($450)", "need": 450, "fx": {"cash": -450, "trip": true, "show": "rn_session"}},
+			{"label": "SEND {tech} ($300, HE BRINGS BACK ONE IDEA)", "need": 300, "fx": {"cash": -300, "trip": true, "speed": 0.03, "burnout": 3}, "text": "{tech} comes back with a tote bag, a sunburn and one idea that really does save the crew an hour a week. (+3% team speed)"},
+			{"label": "STAY HOME", "fx": {}, "text": "The invitation goes in the drawer with the others. The queue gets your full attention."},
+		],
+	},
+	"rn_session": {
+		"speaker": "RODENT NATION",
+		"text": "The resort: palm trees in the lobby, carpet with swirls, a ballroom for a thousand MSP nerds and a keynote about a dashboard. Between the keynote and the vendor hall there is one breakout session you can sit in. Which one?",
+		"options": [
+			{"label": "PRICING AND PACKAGING CLINIC (PRICES +3%)", "fx": {"price": 0.03, "show": "rn_hall"}},
+			{"label": "THE BURNOUT PANEL (CREW BURNOUT -10)", "fx": {"burnout": -10, "show": "rn_hall"}},
+			{"label": "THE HALLWAY TRACK (REP +1, CLIENTS +1 MOOD)", "fx": {"mood_all": 1, "rep": 1, "show": "rn_hall"}},
+		],
+	},
+	"rn_hall": {
+		"speaker": "RODENT NATION",
+		"text": "The vendor hall: a long row of booths, free pens, a man in a rat costume, and every badge scanner in the building pointed at you. The vendors you pay each month are here, and they are all selling. Which booth first?",
+		"options": [
+			{"label": "THE RMM BOOTH (LABRAT)", "unless": "rn_rmm", "fx": {"show": "rn_rmm"}},
+			{"label": "THE PSA BOOTH (OPSFORGE)", "unless": "rn_psa", "fx": {"show": "rn_psa"}},
+			{"label": "THE HARDWARE BOOTH (DELLIGHTCO)", "unless": "rn_hw", "fx": {"show": "rn_hw"}},
+			{"label": "HEAD HOME", "fx": {"show": "rn_wrap"}},
+		],
+	},
+	"rn_rmm": {
+		"speaker": "LabRat Sales Rep",
+		"text": "Show special, today only: upgrade to LabRat Gold ($180/week) and we waive half the migration, $150 instead of $300. Early alerts, better patching, fewer breaches. The three-year term and the add-on modules are in the fine print, and they come to about $25 a week.",
+		"options": [
+			{"label": "SIGN AT THE SHOW ($150, +$25/WK ADD-ONS)", "need": 150, "fx": {"cash": -150, "weekly": 25, "flag": "rn_rmm", "stack": {"rmm": "labrat_gold"}, "show": "rn_hall"}},
+			{"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_rmm", "show": "rn_hall"}},
+		],
+	},
+	"rn_psa": {
+		"speaker": "OpsForge Sales Rep",
+		"text": "Switch to OpsForge Pro ($140/week) at the show and we do the data import for $150. The crew loves the automation. Implementation takes about two weeks, and the crew works the old and the new system side by side until then.",
+		"options": [
+			{"label": "SIGN AT THE SHOW ($150, SLOWER FOR A WHILE)", "need": 150, "fx": {"cash": -150, "speed": -0.05, "flag": "rn_psa", "stack": {"psa": "opsforge"}, "show": "rn_hall"}},
+			{"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_psa", "show": "rn_hall"}},
+		],
+	},
+	"rn_hw": {
+		"speaker": "DellightCo Rep",
+		"text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.",
+		"options": [
+			{"label": "SIGN AT THE SHOW (FREE, VIC SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
+			{"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_hw", "show": "rn_hall"}},
+		],
+	},
+	"rn_wrap": {
+		"speaker": "RODENT NATION",
+		"text": "The last session lets out. You fly home with a tote bag, a stack of badge-scan emails you will be answering for a month and a lanyard you will keep. Back at the office the queue held up fine. The crew wants to hear about it.",
+		"options": [
+			{"label": "FLY HOME", "fx": {"mood_all": 1}, "text": "You tell the crew about the pens first. Then the ideas. (clients +1 mood)"},
+		],
+	},
 	"vic_plan":
 	{
 		"speaker": "Marge (Bookkeeper)",
@@ -1014,7 +1073,8 @@ const DAYS := {
 		{"at": 10.0, "card": "rack"},
 		{"at": 10.8, "event": "profit_review"},
 		{"at": 14.0, "event": "vic_report"},
-		{"at": 12.0, "card": "flex_hours"}
+		{"at": 12.0, "card": "flex_hours"},
+		{"at": 16.0, "card": "rn_invite"}
 	],
 	11:
 	[
@@ -1723,6 +1783,8 @@ func apply(fx: Dictionary) -> void:
 		_writeoff(int(fx.writeoff))
 	if fx.has("drop_client"):
 		drop_client(int(fx.drop_client), str(fx.get("left_for", "")))
+	if fx.get("trip", false):
+		Career.add("trips")
 	if fx.get("candidates", false):
 		_hire_card()
 	if fx.has("show"):

@@ -15433,6 +15433,65 @@ const CARDS := {
             {"label": "DELLIGHTCO (SOLID, $350 MARGIN)", "fx": {"stack": {"hardware": "dellight"}}, "text": "Fewer fires, fatter margins, a slower sell."},
         ],
     },
+    "rn_invite": {
+        "speaker": "Vic Marlowe",
+        "text": "LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue?",
+        "options": [
+            {"label": "GO YOURSELF ($450)", "need": 450, "fx": {"cash": -450, "trip": true, "show": "rn_session"}},
+            {"label": "SEND {tech} ($300, HE BRINGS BACK ONE IDEA)", "need": 300, "fx": {"cash": -300, "trip": true, "speed": 0.03, "burnout": 3}, "text": "{tech} comes back with a tote bag, a sunburn and one idea that really does save the crew an hour a week. (+3% team speed)"},
+            {"label": "STAY HOME", "fx": {}, "text": "The invitation goes in the drawer with the others. The queue gets your full attention."},
+        ],
+    },
+    "rn_session": {
+        "speaker": "RODENT NATION",
+        "text": "The resort: palm trees in the lobby, carpet with swirls, a ballroom for a thousand MSP nerds and a keynote about a dashboard. Between the keynote and the vendor hall there is one breakout session you can sit in. Which one?",
+        "options": [
+            {"label": "PRICING AND PACKAGING CLINIC (PRICES +3%)", "fx": {"price": 0.03, "show": "rn_hall"}},
+            {"label": "THE BURNOUT PANEL (CREW BURNOUT -10)", "fx": {"burnout": -10, "show": "rn_hall"}},
+            {"label": "THE HALLWAY TRACK (REP +1, CLIENTS +1 MOOD)", "fx": {"mood_all": 1, "rep": 1, "show": "rn_hall"}},
+        ],
+    },
+    "rn_hall": {
+        "speaker": "RODENT NATION",
+        "text": "The vendor hall: a long row of booths, free pens, a man in a rat costume, and every badge scanner in the building pointed at you. The vendors you pay each month are here, and they are all selling. Which booth first?",
+        "options": [
+            {"label": "THE RMM BOOTH (LABRAT)", "unless": "rn_rmm", "fx": {"show": "rn_rmm"}},
+            {"label": "THE PSA BOOTH (OPSFORGE)", "unless": "rn_psa", "fx": {"show": "rn_psa"}},
+            {"label": "THE HARDWARE BOOTH (DELLIGHTCO)", "unless": "rn_hw", "fx": {"show": "rn_hw"}},
+            {"label": "HEAD HOME", "fx": {"show": "rn_wrap"}},
+        ],
+    },
+    "rn_rmm": {
+        "speaker": "LabRat Sales Rep",
+        "text": "Show special, today only: upgrade to LabRat Gold ($180/week) and we waive half the migration, $150 instead of $300. Early alerts, better patching, fewer breaches. The three-year term and the add-on modules are in the fine print, and they come to about $25 a week.",
+        "options": [
+            {"label": "SIGN AT THE SHOW ($150, +$25/WK ADD-ONS)", "need": 150, "fx": {"cash": -150, "weekly": 25, "flag": "rn_rmm", "stack": {"rmm": "labrat_gold"}, "show": "rn_hall"}},
+            {"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_rmm", "show": "rn_hall"}},
+        ],
+    },
+    "rn_psa": {
+        "speaker": "OpsForge Sales Rep",
+        "text": "Switch to OpsForge Pro ($140/week) at the show and we do the data import for $150. The crew loves the automation. Implementation takes about two weeks, and the crew works the old and the new system side by side until then.",
+        "options": [
+            {"label": "SIGN AT THE SHOW ($150, SLOWER FOR A WHILE)", "need": 150, "fx": {"cash": -150, "speed": -0.05, "flag": "rn_psa", "stack": {"psa": "opsforge"}, "show": "rn_hall"}},
+            {"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_psa", "show": "rn_hall"}},
+        ],
+    },
+    "rn_hw": {
+        "speaker": "DellightCo Rep",
+        "text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.",
+        "options": [
+            {"label": "SIGN AT THE SHOW (FREE, VIC SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
+            {"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_hw", "show": "rn_hall"}},
+        ],
+    },
+    "rn_wrap": {
+        "speaker": "RODENT NATION",
+        "text": "The last session lets out. You fly home with a tote bag, a stack of badge-scan emails you will be answering for a month and a lanyard you will keep. Back at the office the queue held up fine. The crew wants to hear about it.",
+        "options": [
+            {"label": "FLY HOME", "fx": {"mood_all": 1}, "text": "You tell the crew about the pens first. Then the ideas. (clients +1 mood)"},
+        ],
+    },
     "vic_plan": {
         "speaker": "Marge (Bookkeeper)",
         "text": "How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
@@ -15515,7 +15574,7 @@ const DAYS := {
     7: [{"at": 11.0, "event": "qbr"}, {"at": 12.5, "card": "rdp_exposed"}, {"at": 14.0, "card": "stack_rmm"}],
     8: [{"at": 9.5, "card": "license"}, {"at": 13.0, "card": "vic_plan"}, {"at": 15.0, "event": "peer", "card": "peer2"}, {"at": 11.0, "event": "growth_stretch"}],
     9: [{"at": 9.8, "event": "grumble"}, {"at": 10.5, "event": "ransomware"}, {"at": 14.5, "card": "marketing"}, {"at": 13.0, "event": "partner", "card": "partner2"}],
-    10: [{"at": 10.0, "card": "rack"}, {"at": 10.8, "event": "profit_review"}, {"at": 14.0, "event": "vic_report"}, {"at": 12.0, "card": "flex_hours"}],
+    10: [{"at": 10.0, "card": "rack"}, {"at": 10.8, "event": "profit_review"}, {"at": 14.0, "event": "vic_report"}, {"at": 12.0, "card": "flex_hours"}, {"at": 16.0, "card": "rn_invite"}],
     11: [{"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"}, {"at": 15.5, "event": "peer_goal"}],
     12: [{"at": 9.5, "card": "migration"}, {"at": 10.5, "card": "after_hours"}, {"at": 11.5, "event": "growth_stretch"}],
     13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
@@ -16169,6 +16228,8 @@ func apply(fx: Dictionary) -> void:
         _writeoff(int(fx.writeoff))
     if fx.has("drop_client"):
         drop_client(int(fx.drop_client), str(fx.get("left_for", "")))
+    if fx.get("trip", false):
+        Career.add("trips")
     if fx.get("candidates", false):
         _hire_card()
     if fx.has("show"):
@@ -31994,11 +32055,14 @@ write("scripts/projects.gd", '''extends Node
 const SEC_PER_HOUR := 15.0  # one tech-hour = 15 tech-seconds of the simulation (a tech-second costs Owner.COST_PER_SEC)
 const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
-const SCOPE_CREEP := 0.25  # extra hours when a fixed-price job creeps
+# extra hours when a fixed-price job creeps
+const SCOPE_CREEP := 0.25
 const TYPES := {
     "desktops": {"label": "DESKTOP REFRESH (XP REPLACEMENT)", "price": [1800, 3600], "hw": 0.62, "hours": 18, "weeks": 2, "blurb": "five or six Windows XP desktops need replacing before April 8"},
     "network": {"label": "NETWORK UPGRADE (SWITCHES AND WI-FI)", "price": [2800, 3800], "hw": 0.45, "hours": 26, "weeks": 3, "blurb": "their wireless is a guessing game and the switches are ten years old"},
     "server": {"label": "SERVER REPLACEMENT", "price": [6500, 8500], "hw": 0.5, "hours": 44, "weeks": 4, "blurb": "the file server is out of warranty and out of disk"},
+    "voip": {"label": "PHONE SYSTEM UPGRADE (HOSTED VOIP)", "price": [2200, 3200], "hw": 0.5, "hours": 20, "weeks": 3, "blurb": "the phones are a tangle of analog lines and a box in the closet that nobody dares touch"},
+    "email_move": {"label": "EMAIL MIGRATION (HOSTED MAIL)", "price": [1500, 2400], "hw": 0.1, "hours": 22, "weeks": 2, "blurb": "the mailboxes are full and the old mail server hums like a refrigerator"},
     "backup_dr": {"label": "BACKUP AND RECOVERY SETUP", "price": [1200, 1600], "hw": 0.25, "hours": 12, "weeks": 2, "blurb": "they want to know they can recover when it all goes wrong"},
     "security": {"label": "SECURITY CLEANUP", "price": [900, 1300], "hw": 0.2, "hours": 14, "weeks": 2, "blurb": "remote access, passwords and the firewall all need attention"},
 }
@@ -32150,6 +32214,10 @@ func _pick_type(client: int) -> String:
         pool.append_array(["desktops", "desktops", "desktops"])  # Windows XP ends on April 8; the wave ends with it (X9)
     if not has_service(client, "backup"):
         pool.append("backup_dr")
+    if Campaign.day >= 5:
+        pool.append("voip")  # P5: hosted phones, once the first weeks of fires are out of the way
+    if Campaign.day >= 4:
+        pool.append("email_move")
     if not Owner.flags.get("rdp_safe", false) and Campaign.day >= 7:
         pool.append("security")
     return pool[randi() % pool.size()]
@@ -33821,6 +33889,7 @@ const FINDINGS := {
     "pc": [
         {"text": "Drive C on this PC is 98 percent full. Nobody has noticed.", "summary": "Front desk PC is almost out of disk space", "fix": "clear_temp", "pri": 3, "body": "%s here: the front desk computer is getting slower every day. Can you take a look?", "project": "desktops"},
         {"text": "The antivirus on this PC expired in January. A small red shield sits in the corner and nobody clicks it.", "summary": "Antivirus expired on a PC", "fix": "av", "pri": 3, "body": "%s here: we think the antivirus on one of our PCs has expired. Please check.", "project": "security"},
+        {"text": "The mailbox is at 4.9 of 5 gigabytes. The user keeps a folder called OLD OLD STUFF and says he needs every message in it.", "summary": "Mailbox almost full on a front desk PC", "fix": "onsite_mailbox", "pri": 3, "body": "%s here: email keeps bouncing back to people. Can you look at it?", "project": "email_move"},
     ],
     "exam": [
         {"text": "The exam room PC takes four minutes to open a chart. They have learned to start it before the patient arrives.", "summary": "Exam room PC is very slow", "fix": "clear_temp", "pri": 3, "body": "%s here: the exam room computer is crawling. Could you have a look?", "project": "desktops"},
@@ -33833,6 +33902,7 @@ const FINDINGS := {
     ],
     "cabinet": [
         {"text": "The network is on an old grey hub with no labels and no battery backup. One power flicker and everything is down.", "summary": "Replace the old hub and add a battery backup", "fix": "onsite_upgrade", "pri": 4, "body": "%s here: we would like the network to be more reliable. Could you look at the equipment in the closet?", "project": "network"},
+        {"text": "Four different phone lines come into the closet through a gadget that was installed by someone who has since retired. It buzzes.", "summary": "Old phone lines and the box that runs them", "fix": "onsite_phones", "pri": 3, "body": "%s here: the phones crackle and the receptionist cannot transfer calls. Could you look at the closet?", "project": "voip"},
     ],
     "server": [
         {"text": "The server's drive light has been amber for a while and the backup log says the last good copy was nine days ago.", "summary": "Server drive warning and old backup", "fix": "onsite_server", "pri": 2, "body": "%s here: someone noticed a light on the server. Can you check it today?", "project": "backup_dr"},
@@ -33995,6 +34065,39 @@ const MORE_JOBS := [
             {"id": "account", "label": "RE-ENTER THE ACCOUNT AND TEST IT", "hours": 0.35, "chance": 0.95, "skill": "people", "xp": 6, "text": "You re-enter the password and send a test message. He is delighted. (+6 customer XP)"},
             {"id": "wifi", "label": "CHECK THE WIFI AND REBOOT THE TABLET", "hours": 0.2, "chance": 0.3, "skill": "", "xp": 0, "text": "The wifi is fine. The email is still broken. He is watching you."},
             {"id": "later", "label": "PROMISE TO CALL HIM BACK", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "He is not pleased: the owner notices when a visit ends with a promise."},
+        ],
+    },
+    {
+        "id": "phones", "object": "cabinet", "pri": 2,
+        "summary": "The desk phones went dead after the power blip",
+        "body": "Every desk phone is dead since the lights flickered this morning. People are using their cell phones and the clients can tell. - %s",
+        "intro": "The phone gateway in the closet is dark. The little power brick is warm and the lights on the box never come back on.",
+        "options": [
+            {"id": "brick", "label": "REPLACE THE POWER BRICK FROM THE VAN", "hours": 0.4, "chance": 0.9, "skill": "networking", "xp": 6, "text": "A new brick, a long blink and a dial tone. The receptionist cheers and transfers a call at once. (+6 networking XP)"},
+            {"id": "reset", "label": "FACTORY RESET THE GATEWAY", "hours": 0.5, "chance": 0.4, "skill": "networking", "xp": 3, "text": "It boots with the factory settings and no lines. You spend the next hour finding the old configuration on a sticky note."},
+            {"id": "carrier", "label": "CALL THE PHONE COMPANY", "hours": 0.3, "chance": 0.0, "skill": "", "xp": 0, "text": "A recorded voice puts you on hold for twenty minutes. The phones are still dead."},
+        ],
+    },
+    {
+        "id": "wifi", "object": "cabinet", "pri": 3,
+        "summary": "The wireless keeps dropping all afternoon",
+        "body": "The wifi drops every few minutes, mostly in the back office and the waiting room. Customers are asking for the password again and again. - %s",
+        "intro": "One consumer-grade wireless router sits on a shelf in the closet, next to a microwave on the other side of the wall. Eleven networks are fighting for channel 6.",
+        "options": [
+            {"id": "channel", "label": "MOVE THE WIRELESS TO A QUIET CHANNEL", "hours": 0.3, "chance": 0.75, "skill": "networking", "xp": 5, "text": "Channel 1, a firmware update and a long walk with a laptop. The signal stays steady. (+5 networking XP)"},
+            {"id": "ap", "label": "ADD AN ACCESS POINT IN THE BACK OFFICE", "hours": 0.9, "chance": 0.95, "skill": "networking", "xp": 8, "text": "A second access point on a ceiling tile covers the dead corner. Nobody asks for the password again. (+8 networking XP)"},
+            {"id": "tell", "label": "TELL THEM TO MOVE THE MICROWAVE", "hours": 0.1, "chance": 0.0, "skill": "people", "xp": 1, "text": "They look at the microwave, then at you. The wifi drops while you are still standing there."},
+        ],
+    },
+    {
+        "id": "mailbox", "object": "pc", "pri": 3,
+        "summary": "Email bounces: the mailbox is full",
+        "body": "Customers are getting a message that my mailbox is full. I deleted a bunch and it still says full. Please fix it, I am missing orders. - %s",
+        "intro": "The mailbox is at its limit. Outlook says there are 40,000 messages, half of them in a folder called OLD OLD STUFF, and the data file is almost 4 gigabytes.",
+        "options": [
+            {"id": "archive", "label": "ARCHIVE OLD MAIL TO A DATA FILE", "hours": 0.6, "chance": 0.9, "skill": "servers", "xp": 6, "text": "The old mail moves to a data file on the shared drive, the mailbox shrinks and the bounces stop. He keeps every message. (+6 servers XP)"},
+            {"id": "empty", "label": "EMPTY THE DELETED ITEMS", "hours": 0.15, "chance": 0.35, "skill": "servers", "xp": 2, "text": "Eleven megabytes freed. It helps for about an hour."},
+            {"id": "quota", "label": "RAISE THE MAILBOX QUOTA", "hours": 0.2, "chance": 0.6, "skill": "servers", "xp": 3, "text": "Another gigabyte of room. It works for now, and the server will notice later."},
         ],
     },
 ]

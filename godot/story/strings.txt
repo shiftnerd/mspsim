@@ -4624,6 +4624,142 @@ DELLIGHTCO (SOLID, $350 MARGIN)
 [Owner.CARDS.stack_hw.options.2.text]
 Fewer fires, fatter margins, a slower sell.
 
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.speaker]
+Vic Marlowe
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.text]
+LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue?
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.options.0.label]
+GO YOURSELF ($450)
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.options.1.label]
+SEND {tech} ($300, HE BRINGS BACK ONE IDEA)
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.options.1.text]
+{tech} comes back with a tote bag, a sunburn and one idea that really does save the crew an hour a week. (+3% team speed)
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.options.2.label]
+STAY HOME
+
+# owner card: rn_invite
+[Owner.CARDS.rn_invite.options.2.text]
+The invitation goes in the drawer with the others. The queue gets your full attention.
+
+# owner card: rn_session
+[Owner.CARDS.rn_session.speaker]
+RODENT NATION
+
+# owner card: rn_session
+[Owner.CARDS.rn_session.text]
+The resort: palm trees in the lobby, carpet with swirls, a ballroom for a thousand MSP nerds and a keynote about a dashboard. Between the keynote and the vendor hall there is one breakout session you can sit in. Which one?
+
+# owner card: rn_session
+[Owner.CARDS.rn_session.options.0.label]
+PRICING AND PACKAGING CLINIC (PRICES +3%)
+
+# owner card: rn_session
+[Owner.CARDS.rn_session.options.1.label]
+THE BURNOUT PANEL (CREW BURNOUT -10)
+
+# owner card: rn_session
+[Owner.CARDS.rn_session.options.2.label]
+THE HALLWAY TRACK (REP +1, CLIENTS +1 MOOD)
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.speaker]
+RODENT NATION
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.text]
+The vendor hall: a long row of booths, free pens, a man in a rat costume, and every badge scanner in the building pointed at you. The vendors you pay each month are here, and they are all selling. Which booth first?
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.options.0.label]
+THE RMM BOOTH (LABRAT)
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.options.1.label]
+THE PSA BOOTH (OPSFORGE)
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.options.2.label]
+THE HARDWARE BOOTH (DELLIGHTCO)
+
+# owner card: rn_hall
+[Owner.CARDS.rn_hall.options.3.label]
+HEAD HOME
+
+# owner card: rn_rmm
+[Owner.CARDS.rn_rmm.speaker]
+LabRat Sales Rep
+
+# owner card: rn_rmm
+[Owner.CARDS.rn_rmm.text]
+Show special, today only: upgrade to LabRat Gold ($180/week) and we waive half the migration, $150 instead of $300. Early alerts, better patching, fewer breaches. The three-year term and the add-on modules are in the fine print, and they come to about $25 a week.
+
+# owner card: rn_rmm
+[Owner.CARDS.rn_rmm.options.0.label]
+SIGN AT THE SHOW ($150, +$25/WK ADD-ONS)
+
+# owner card: rn_rmm
+[Owner.CARDS.rn_rmm.options.1.label]
+TAKE THE BROCHURE
+
+# owner card: rn_psa
+[Owner.CARDS.rn_psa.speaker]
+OpsForge Sales Rep
+
+# owner card: rn_psa
+[Owner.CARDS.rn_psa.text]
+Switch to OpsForge Pro ($140/week) at the show and we do the data import for $150. The crew loves the automation. Implementation takes about two weeks, and the crew works the old and the new system side by side until then.
+
+# owner card: rn_psa
+[Owner.CARDS.rn_psa.options.0.label]
+SIGN AT THE SHOW ($150, SLOWER FOR A WHILE)
+
+# owner card: rn_psa
+[Owner.CARDS.rn_psa.options.1.label]
+TAKE THE BROCHURE
+
+# owner card: rn_hw
+[Owner.CARDS.rn_hw.speaker]
+DellightCo Rep
+
+# owner card: rn_hw
+[Owner.CARDS.rn_hw.text]
+We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.
+
+# owner card: rn_hw
+[Owner.CARDS.rn_hw.options.0.label]
+SIGN AT THE SHOW (FREE, VIC SELLS LESS)
+
+# owner card: rn_hw
+[Owner.CARDS.rn_hw.options.1.label]
+TAKE THE BROCHURE
+
+# owner card: rn_wrap
+[Owner.CARDS.rn_wrap.speaker]
+RODENT NATION
+
+# owner card: rn_wrap
+[Owner.CARDS.rn_wrap.text]
+The last session lets out. You fly home with a tote bag, a stack of badge-scan emails you will be answering for a month and a lanyard you will keep. Back at the office the queue held up fine. The crew wants to hear about it.
+
+# owner card: rn_wrap
+[Owner.CARDS.rn_wrap.options.0.label]
+FLY HOME
+
+# owner card: rn_wrap
+[Owner.CARDS.rn_wrap.options.0.text]
+You tell the crew about the pens first. Then the ideas. (clients +1 mood)
+
 # owner card: vic_plan
 [Owner.CARDS.vic_plan.speaker]
 Marge (Bookkeeper)
@@ -12410,6 +12546,114 @@ PROMISE TO CALL HIM BACK
 [Onsite.MORE_JOBS.2.options.2.text]
 He is not pleased: the owner notices when a visit ends with a promise.
 
+# Onsite > MORE_JOBS > 3 > summary
+[Onsite.MORE_JOBS.3.summary]
+The desk phones went dead after the power blip
+
+# Onsite > MORE_JOBS > 3 > body
+[Onsite.MORE_JOBS.3.body]
+Every desk phone is dead since the lights flickered this morning. People are using their cell phones and the clients can tell. - %s
+
+# Onsite > MORE_JOBS > 3 > intro
+[Onsite.MORE_JOBS.3.intro]
+The phone gateway in the closet is dark. The little power brick is warm and the lights on the box never come back on.
+
+# Onsite > MORE_JOBS > 3 > options > 0 > label
+[Onsite.MORE_JOBS.3.options.0.label]
+REPLACE THE POWER BRICK FROM THE VAN
+
+# Onsite > MORE_JOBS > 3 > options > 0 > text
+[Onsite.MORE_JOBS.3.options.0.text]
+A new brick, a long blink and a dial tone. The receptionist cheers and transfers a call at once. (+6 networking XP)
+
+# Onsite > MORE_JOBS > 3 > options > 1 > label
+[Onsite.MORE_JOBS.3.options.1.label]
+FACTORY RESET THE GATEWAY
+
+# Onsite > MORE_JOBS > 3 > options > 1 > text
+[Onsite.MORE_JOBS.3.options.1.text]
+It boots with the factory settings and no lines. You spend the next hour finding the old configuration on a sticky note.
+
+# Onsite > MORE_JOBS > 3 > options > 2 > label
+[Onsite.MORE_JOBS.3.options.2.label]
+CALL THE PHONE COMPANY
+
+# Onsite > MORE_JOBS > 3 > options > 2 > text
+[Onsite.MORE_JOBS.3.options.2.text]
+A recorded voice puts you on hold for twenty minutes. The phones are still dead.
+
+# Onsite > MORE_JOBS > 4 > summary
+[Onsite.MORE_JOBS.4.summary]
+The wireless keeps dropping all afternoon
+
+# Onsite > MORE_JOBS > 4 > body
+[Onsite.MORE_JOBS.4.body]
+The wifi drops every few minutes, mostly in the back office and the waiting room. Customers are asking for the password again and again. - %s
+
+# Onsite > MORE_JOBS > 4 > intro
+[Onsite.MORE_JOBS.4.intro]
+One consumer-grade wireless router sits on a shelf in the closet, next to a microwave on the other side of the wall. Eleven networks are fighting for channel 6.
+
+# Onsite > MORE_JOBS > 4 > options > 0 > label
+[Onsite.MORE_JOBS.4.options.0.label]
+MOVE THE WIRELESS TO A QUIET CHANNEL
+
+# Onsite > MORE_JOBS > 4 > options > 0 > text
+[Onsite.MORE_JOBS.4.options.0.text]
+Channel 1, a firmware update and a long walk with a laptop. The signal stays steady. (+5 networking XP)
+
+# Onsite > MORE_JOBS > 4 > options > 1 > label
+[Onsite.MORE_JOBS.4.options.1.label]
+ADD AN ACCESS POINT IN THE BACK OFFICE
+
+# Onsite > MORE_JOBS > 4 > options > 1 > text
+[Onsite.MORE_JOBS.4.options.1.text]
+A second access point on a ceiling tile covers the dead corner. Nobody asks for the password again. (+8 networking XP)
+
+# Onsite > MORE_JOBS > 4 > options > 2 > label
+[Onsite.MORE_JOBS.4.options.2.label]
+TELL THEM TO MOVE THE MICROWAVE
+
+# Onsite > MORE_JOBS > 4 > options > 2 > text
+[Onsite.MORE_JOBS.4.options.2.text]
+They look at the microwave, then at you. The wifi drops while you are still standing there.
+
+# Onsite > MORE_JOBS > 5 > summary
+[Onsite.MORE_JOBS.5.summary]
+Email bounces: the mailbox is full
+
+# Onsite > MORE_JOBS > 5 > body
+[Onsite.MORE_JOBS.5.body]
+Customers are getting a message that my mailbox is full. I deleted a bunch and it still says full. Please fix it, I am missing orders. - %s
+
+# Onsite > MORE_JOBS > 5 > intro
+[Onsite.MORE_JOBS.5.intro]
+The mailbox is at its limit. Outlook says there are 40,000 messages, half of them in a folder called OLD OLD STUFF, and the data file is almost 4 gigabytes.
+
+# Onsite > MORE_JOBS > 5 > options > 0 > label
+[Onsite.MORE_JOBS.5.options.0.label]
+ARCHIVE OLD MAIL TO A DATA FILE
+
+# Onsite > MORE_JOBS > 5 > options > 0 > text
+[Onsite.MORE_JOBS.5.options.0.text]
+The old mail moves to a data file on the shared drive, the mailbox shrinks and the bounces stop. He keeps every message. (+6 servers XP)
+
+# Onsite > MORE_JOBS > 5 > options > 1 > label
+[Onsite.MORE_JOBS.5.options.1.label]
+EMPTY THE DELETED ITEMS
+
+# Onsite > MORE_JOBS > 5 > options > 1 > text
+[Onsite.MORE_JOBS.5.options.1.text]
+Eleven megabytes freed. It helps for about an hour.
+
+# Onsite > MORE_JOBS > 5 > options > 2 > label
+[Onsite.MORE_JOBS.5.options.2.label]
+RAISE THE MAILBOX QUOTA
+
+# Onsite > MORE_JOBS > 5 > options > 2 > text
+[Onsite.MORE_JOBS.5.options.2.text]
+Another gigabyte of room. It works for now, and the server will notice later.
+
 
 # ======================= Onsite > EVENTS =======================
 # Onsite > EVENTS > vet > text
@@ -12912,6 +13156,18 @@ Antivirus expired on a PC
 [Onsite.FINDINGS.pc.1.body]
 %s here: we think the antivirus on one of our PCs has expired. Please check.
 
+# Onsite > FINDINGS > pc > 2 > text
+[Onsite.FINDINGS.pc.2.text]
+The mailbox is at 4.9 of 5 gigabytes. The user keeps a folder called OLD OLD STUFF and says he needs every message in it.
+
+# Onsite > FINDINGS > pc > 2 > summary
+[Onsite.FINDINGS.pc.2.summary]
+Mailbox almost full on a front desk PC
+
+# Onsite > FINDINGS > pc > 2 > body
+[Onsite.FINDINGS.pc.2.body]
+%s here: email keeps bouncing back to people. Can you look at it?
+
 # Onsite > FINDINGS > exam > 0 > text
 [Onsite.FINDINGS.exam.0.text]
 The exam room PC takes four minutes to open a chart. They have learned to start it before the patient arrives.
@@ -12959,6 +13215,18 @@ Replace the old hub and add a battery backup
 # Onsite > FINDINGS > cabinet > 0 > body
 [Onsite.FINDINGS.cabinet.0.body]
 %s here: we would like the network to be more reliable. Could you look at the equipment in the closet?
+
+# Onsite > FINDINGS > cabinet > 1 > text
+[Onsite.FINDINGS.cabinet.1.text]
+Four different phone lines come into the closet through a gadget that was installed by someone who has since retired. It buzzes.
+
+# Onsite > FINDINGS > cabinet > 1 > summary
+[Onsite.FINDINGS.cabinet.1.summary]
+Old phone lines and the box that runs them
+
+# Onsite > FINDINGS > cabinet > 1 > body
+[Onsite.FINDINGS.cabinet.1.body]
+%s here: the phones crackle and the receptionist cannot transfer calls. Could you look at the closet?
 
 # Onsite > FINDINGS > server > 0 > text
 [Onsite.FINDINGS.server.0.text]

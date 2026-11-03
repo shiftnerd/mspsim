@@ -75,7 +75,7 @@ MSP-research items still unbuilt (see `IDEAS.md` "From the MSP research"): docum
 | P2 | Dialogue Manager addon (only for long branching NPC conversations) | a need; a half-day spike would confirm syntax first |
 | P3 | Gitot in-editor git panel | optional |
 | P4 | Audio: music, UI sounds, ring tones | design and assets |
-| P5 | Owner campaign leftovers: Maya as the first hire, an owner Rodent Nation, sitting in conference sessions, more onsite jobs and projects | after X4 |
+| P5 | Owner campaign leftovers. **Partly done** (see CLAUDE.md "Owner campaign leftovers (P5)"): 3 new onsite jobs + 2 findings, 2 new projects (hosted phones, email migration), an owner Rodent Nation card chain tied to the stack (week 10). **Skipped:** Maya as the first hire (X4 already put her on the crew from week 1). **Open:** walking the owner trip in the venue, sitting in conference sessions, patchable `Projects.TYPES`, balance run for the new content | S-M |
 | P6 | Onsite requirement for heavy ticket fixes, ransomware alternatives, clever fixes in Free Play (alt-fix balance itself is Q6) | a design call |
 
 ## 8. Housekeeping

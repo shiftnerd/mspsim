@@ -752,6 +752,14 @@ or the owner (owner campaign, 20 weeks).
   - 50%: The crew is a different crew on Mondays. Clients barely notice. `[Owner.CARDS.flex_hours.options.2.roll.0.2]`
   - 50%: Clients notice the quiet Fridays. Some are not happy. `[Owner.CARDS.flex_hours.options.2.roll.1.2]`
 
+**16:00 Card: rn_invite** — Vic Marlowe `[Owner.CARDS.rn_invite.speaker]`
+> LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue? `[Owner.CARDS.rn_invite.text]`
+- **GO YOURSELF ($450)** `[Owner.CARDS.rn_invite.options.0.label]`
+- **SEND {tech} ($300, HE BRINGS BACK ONE IDEA)** `[Owner.CARDS.rn_invite.options.1.label]`
+  - {tech} comes back with a tote bag, a sunburn and one idea that really does save the crew an hour a week. (+3% team speed) `[Owner.CARDS.rn_invite.options.1.text]`
+- **STAY HOME** `[Owner.CARDS.rn_invite.options.2.label]`
+  - The invitation goes in the drawer with the others. The queue gets your full attention. `[Owner.CARDS.rn_invite.options.2.text]`
+
 ### Week 11
 
 **11:00** Event: qbr (handled in code, it opens its own cards)

@@ -1,5 +1,5 @@
 extends SceneTree
-# Maya, the new Tier 1 tech: a coworker at main floor desk 2 (not in the owner campaign).
+# Maya, the new Tier 1 tech: a coworker at main floor desk 2 (in the owner campaign she is on your payroll from week 1, X4).
 
 var failures := 0
 var frame := 0
