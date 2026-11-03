@@ -1,10 +1,10 @@
 # MSPSim backlog
 
-Where open work is tracked. Feature ideas (not yet committed to) live in `IDEAS.md`; the replayability write-up with code hooks is `docs/replayability-ideas.md`.
+Where open bugs and gaps are tracked. The ordered plan for everything is `docs/ROADMAP.md`. Feature ideas (not yet committed to) live in `IDEAS.md`; the replayability write-up with code hooks is `docs/replayability-ideas.md`.
 Status is as of the commit that last touched this file; move items to `CLAUDE.md` once they ship.
 
 ## In progress
-- **Owner playthrough bug fixes**: the findings below, to be fixed on a worktree branch (not started until the merged-build tests pass).
+- **Owner playthrough bug fixes, round 1** (worktree `ownerfix`): clock freeze while a card or outing is open, week-20 settle, valuation history, Vic's install ticket, prospect card, phone texts and keyboard, naming. Items 7-9 (balance, smaller, UX) are queued in `docs/ROADMAP.md` (X1).
 - **Canon text pass** (Alan and Garrison as owners), **play-as-cast-member** and the **new campaign paths**: designed in `docs/campaign-paths.md`, not started. Build order: player-as-cast-member, owner as Alan or Garrison, tech-campaign owner changes, Sales (Vic), Service (Dan).
 - **Replayability roadmap items 2-10** (`IDEAS.md`): item 1 (difficulty and seeds) is built and merged.
 - Merged and done: polish round 2, tech playtest bug fixes, difficulty and seeds, day report / brand names, ticket alternatives, outing UI, site polish, character select.
@@ -43,7 +43,7 @@ Not found: anachronisms, script errors, bankruptcy (cash stayed above $4,000). W
 Not covered by the playtest: days 6-20, the overtime-night card flow, the review, the conference trip, mouse clicks in a hidden window.
 
 ## Needs a decision from you
-- **Decided**: the service manager is played as **Dan**; the owner campaign is played as **Alan or Garrison** (the other is the co-owner NPC); in the tech campaign the owners are busy but jump in as a last resort to answer phones and clients. `docs/campaign-paths.md` is being revised for this.
+- **Decided**: the service manager is played as **Dan**; the owner campaign as **Alan or Garrison** (owners take a weekly draw from the bank balance); Morgan is a real cast member; in the tech campaign owners are busy but jump in as a last resort (phones, clients) at no reputation cost. The canon text pass is undecided (parked). See `docs/ROADMAP.md`.
 - **Era mentions**: decided. The two game names are parodied (Sugar Smash, Floppy Bat). Apple, Windows, Exchange and PowerShell stay as era context, and so does the old PC's "OUTLOOK 2003 PROFILE + PST" file name.
 - **Playing as a cast member in a campaign**: now wanted. Two new campaign paths need it: service manager (as Garrison) and sales (as Vic), see `IDEAS.md` "New campaign paths" and `docs/campaign-paths.md` (design in progress). Character select offers only teen, adult and site Alan in campaigns until this lands.
 - **Dialogue Manager addon**: research said skip for now (revisit only for long branching NPC conversations; a half-day spike would confirm its condition syntax). Alternative: conditional lines in the existing `Talk` tables.

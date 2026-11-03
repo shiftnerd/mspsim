@@ -370,13 +370,18 @@ PRESET: SCRIPTER  > FIXES RUN FASTER. NOBODY LIKES YOU YET.
 Effort: `Build` data/guards/saves **S**; `charselect.gd` build step **M**; wire into `Skills/Shift/Growth` **S**; per-path stat tables and readers **S** each inside their phases. Tests: `build.gd` (costs, budget per tier, guards, presets, bias floors/caps, old-save default), `charselect.gd`, `build_playthrough.gd` (all-zero build passes days 1-4; level-4 build has perks on day 1), `charselect_shots.gd` in three formats, tier x seed in `seeds.gd`.
 Risks: a third step on tight narrow formats; perks from day 1 need balance runs per preset; the `difficulty` branch must merge first or tier reads fall back to Normal.
 
-## 14. Open questions
-1. Is Morgan promoted to a real cast member (desk, agenda) or kept as a role NPC (`Expo._boss` pattern) that appears for scripted visits? Role NPC is cheaper; the service campaign wants him often.
-2. Owner base crew after the re-base: Dan + Maya + Sam + partner 0.5 hands-on. Is that the intended size, or should the owners keep working tickets at full speed in the owner campaign?
-3. Owner draws: do the owners take a weekly draw out of EBITDA in the owner campaign (changes the books), or stay off the P&L as today?
-4. Last-resort cost: reputation -1 per use in the tech campaign, or free (just a report line)?
-5. Day lengths: Service 6 min/day, Sales and Owner 4 min/week; acceptable?
-6. Hires (Sam and a second) need runtime NPCs with desks: fixed list or random from `Owner.NAMES`?
-7. Placeholder parody names: SalesHound CRM, ConnectWhy Dispatch, ConnectWhy Knowledge, "Summit Managed Holdings".
-8. Should the tech campaign's day-6 Growth helper pick still offer Alan at 60% availability, or only Dan and Maya?
-9. Does the Sales campaign need an "office walk-in" scene for prospects without sites, or may prospects reuse the six site types?
+## 14. Decisions and open questions
+**Decided by the user**
+- **Morgan Reyes is a real cast member** (desk, agenda, Social / Lync / Talk entries), not a role NPC. Consequences to design in P0/O1: where Morgan sits (an office, the conference room, or a main-floor desk), a routine (meetings, floor walks, all-hands host), `World.CAST` / `Social.PEOPLE` / `npc.DESKS` entries, a Lync contact (Morgan is already the boss contact), and `Expo._boss` / the all-hands whiteboard switching to the real NPC. The service campaign benefits (Morgan can show up often).
+- **Owners take a weekly draw from the bank balance** in the owner campaign (cash, not EBITDA): a weekly line on the P&L and the cash flow, a personal goal / partner-trust hook (a big draw makes the partner uneasy), tied to the weekly report; the amount is a card or policy choice, not free.
+- **An owner stepping in costs no reputation** in the tech campaign: the last-resort help is free (a report row and a short banter line only).
+- **Canon text pass** (Alan and Garrison cast as owners in dialogue, tips, Lynk, vignettes): **undecided**, parked in `docs/ROADMAP.md`; the design above assumes it eventually happens.
+
+**Still open**
+1. Owner base crew after the re-base: Dan + Maya + Sam + partner 0.5 hands-on. Is that the intended size, or should the owners keep working tickets at full speed in the owner campaign?
+2. Day lengths: Service 6 min/day, Sales and Owner 4 min/week; acceptable?
+3. Hires (Sam and a second) need runtime NPCs with desks: fixed list or random from `Owner.NAMES`?
+4. Placeholder parody names: SalesHound CRM, ConnectWhy Dispatch, ConnectWhy Knowledge, "Summit Managed Holdings".
+5. Should the tech campaign's day-6 Growth helper pick still offer Alan at 60% availability, or only Dan and Maya?
+6. Does the Sales campaign need an "office walk-in" scene for prospects without sites, or may prospects reuse the six site types?
+7. Morgan's desk and daily routine (see Decided).
