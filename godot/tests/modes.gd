@@ -1,6 +1,6 @@
 extends SceneTree
 # The mode registry (X8, "P0b"): Campaign.MODE_DEFS rows, the three gates crew / books / cards, identical behaviour for
-# tech and owner, planned modes (service, sales) present but not selectable, and no call site left on the old
+# tech, owner and sales (C1), the planned service mode present but not selectable, and no call site left on the old
 # Owner.active() gate. Headless; saves in user://test_*.
 
 var failures := 0
@@ -75,6 +75,11 @@ func _init() -> void:
 		"HUD, report and review types"
 	)
 	_check(
+		defs.sales.hud == "week_quota" and defs.sales.report == "pnl" and defs.sales.settle == "sales" and defs.sales.review == "sales"
+		and defs.sales.review_pages == 2 and defs.sales.selectable and defs.service.selectable,
+		"sales: HUD, report, settle and review types (service is selectable too)"
+	)
+	_check(
 		defs.owner.pace == 0.6 and defs.tech.pace == 1.0 and not defs.owner.maya_in_events and defs.tech.maya_in_events
 		and defs.owner.unit == "WEEK" and defs.tech.unit == "DAY",
 		"ticket pace, Maya in events, unit label"
@@ -133,9 +138,7 @@ func _init() -> void:
 	c.mode = "service"
 	var gates_service := _gates(c)
 	c.mode = "sales"
-	var gates_sales := _gates(c)
-	c.save()
-	_check(not c.has_save("sales"), "sales is never saved either")
+	var gates_sales := _gates(c)  # sales became selectable in C1 (tests/sales_campaign.gd covers its saves)
 	c.active = false
 	c.mode = ""
 	_check(gates_service == [true, false, true] and gates_sales == [true, true, true], "service / sales gates read their rows")

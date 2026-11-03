@@ -1352,8 +1352,8 @@ func _process(delta: float) -> void:
 			var slice := _tick
 			_tick = 0.0
 			_work_queue(slice)
-	if not cards:
-		return
+	if not cards or Campaign.mode == "sales":
+		return  # the sales campaign has its own weekly cards (SalesCampaign)
 	var events: Array = events_on(Campaign.day) if Campaign.mode == "owner" else []
 	for i in events.size():
 		var ev: Dictionary = events[i]
@@ -1424,6 +1424,8 @@ func begin_day(day: int) -> void:
 		for c in Sales.active:
 			if not Msp.backups[int(c)].ok and randf() < float(edge("backup_check")):
 				Msp.backup_rerun(int(c))  # a tech happened to check it
+	if Campaign.mode == "sales":
+		return  # no owner decisions for the account manager (SalesCampaign.begin_week deals the cards)
 	if not _late.is_empty():
 		var late_client: int = _late.pop_front()
 		_collections(late_client)

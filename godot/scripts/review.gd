@@ -141,6 +141,8 @@ func best_client() -> String:
 func make_offers() -> Array:
 	if Campaign.prop("review", "") == "board":
 		return Yeartwo.extra_offers(Owner.offers())
+	if Campaign.prop("review", "") == "sales":
+		return SalesCampaign.offers()
 	if Campaign.prop("review", "") == "service":
 		return Service.review_offers()
 	var out := []
@@ -286,6 +288,8 @@ func _job_line(key: String, label: String) -> Array:
 func page_lines() -> Array:
 	if Campaign.prop("review", "") == "board":
 		return Owner.review_lines(page, ending)
+	if Campaign.prop("review", "") == "sales":
+		return SalesCampaign.review_lines(page, ending)
 	if Campaign.prop("review", "") == "service":
 		return Service.review_lines(page, ending)
 	var lines := []

@@ -11,7 +11,7 @@ const PLAYER := preload("res://scripts/player.gd")
 const TOTAL_DAYS := 20
 const FREE := "free"
 # the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
-const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "SERVICE CAMPAIGN"}
+const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "SERVICE CAMPAIGN", "sales": "SALES CAMPAIGN"}
 # MODE REGISTRY (X8, "P0b"): one row per campaign mode. The three GATES say which machinery a mode runs:
 #   crew   the team works the ticket queue by itself (Owner.team_speed, _work_queue, ticket volume, premature closes)
 #   books  cash, P&L, payroll, weekly settle, valuation, the Boardroom app, projects, deal income
@@ -39,7 +39,7 @@ const MODE_DEFS := {
 	},
 	# C4 / V1 (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day. rep = Morgan's confidence
 	"service": {
-		"label": "SERVICE CAMPAIGN", "selectable": true,
+		"label": "SERVICE CAMPAIGN", "selectable": true, "year2": false,
 		"crew": true, "books": false, "cards": true, "books_lite": false,
 		"day_len": 360.0, "total_days": 20, "unit": "DAY",
 		"hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
@@ -48,15 +48,15 @@ const MODE_DEFS := {
 		"ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
 		"rep_label": "CONF",
 	},
-	# planned (campaign-paths 5): Vic sells; the crew delivers, a light set of books (commission, MRR), a card each week
+	# campaign-paths 5 (C1, slice S1): Vic sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
 	"sales": {
-		"label": "SALES CAMPAIGN", "selectable": false,
+		"label": "SALES CAMPAIGN", "selectable": true, "year2": false,
 		"crew": true, "books": true, "cards": true, "books_lite": true,
 		"day_len": 240.0, "total_days": 20, "unit": "WEEK",
-		"hud": "week_cash", "report": "pnl", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
-		"pace": 0.6, "shift": false, "scars": false, "maya_in_events": true,
-		"ending_fired": "REPUTATION GONE. YOU ARE FIRED.",
-		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
+		"hud": "week_quota", "report": "pnl", "settle": "sales", "review": "sales", "review_heading": "SALES REVIEW", "review_pages": 2,
+		"pace": 0.55, "shift": false, "scars": false, "maya_in_events": false,
+		"ending_fired": "GARRISON LETS YOU GO. THE PIPELINE STAYS.",
+		"ending_final": "TWENTY WEEKS DONE. YOUR SALES REVIEW IS NEXT.",
 	},
 }
 const START_REP := 50
@@ -180,6 +180,8 @@ func derive_player_as(for_mode: String) -> String:
 	var who: String = World.cast_of(PLAYER.current_character)
 	if for_mode == "owner":
 		return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
+	if for_mode == "sales":
+		return "Vic"  # the sales campaign is always played as Vic (C1)
 	if for_mode == "service":
 		return "Dan"  # the service manager campaign is always played as Dan (C4)
 	if who == "":
@@ -208,8 +210,8 @@ func new_game(for_mode: String) -> void:
 	mode = for_mode
 	active = is_selectable(for_mode)
 	player_as = derive_player_as(for_mode)
-	if for_mode == "owner" and World.cast_of(PLAYER.current_character) != player_as:
-		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan
+	if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
+		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or Vic (sales)
 	if for_mode == "service":
 		PLAYER.current_character = str(World.CAST["Dan"].character)
 	Game.vars["start_seated"] = player_as != ""
@@ -243,6 +245,7 @@ func new_game(for_mode: String) -> void:
 	Onsite.reset()
 	Events.reset()
 	Service.reset()
+	SalesCampaign.reset()
 	Mutators.start(for_mode)
 	Mutators.apply_start()
 	Build.apply_start()
@@ -251,6 +254,8 @@ func new_game(for_mode: String) -> void:
 		Service.begin_run()
 	World.day_len = day_len_for(for_mode)
 	Msp.enabled = active
+	if for_mode == "sales":
+		SalesCampaign.begin_run()
 	if active:
 		World.begin_next_day(1)
 		_begin_day()
@@ -279,6 +284,9 @@ func continue_game(for_mode: String) -> bool:
 	if for_mode == "owner" and not Roles.OWNERS.has(player_as):
 		player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
 		PLAYER.current_character = "office_alan"
+	if for_mode == "sales":
+		player_as = "Vic"
+		PLAYER.current_character = "sales_vic"
 	if for_mode == "service":
 		player_as = "Dan"
 		PLAYER.current_character = str(World.CAST["Dan"].character)
@@ -305,6 +313,9 @@ func continue_game(for_mode: String) -> bool:
 	Service.from_dict(cfg.get_value("campaign", "service", {}))
 	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
 	Yeartwo.from_dict(cfg.get_value("campaign", "yeartwo", {}))
+	SalesCampaign.from_dict(cfg.get_value("campaign", "sales_campaign", {}))
+	if for_mode == "sales":
+		SalesCampaign.begin_run()
 	Lync.reset()
 	World.day_len = day_len_for(for_mode)
 	Story.flags = cfg.get_value("campaign", "story", {})
@@ -349,6 +360,7 @@ func save() -> void:
 	cfg.set_value("campaign", "service", Service.to_dict())
 	cfg.set_value("campaign", "mutators", Mutators.to_dict())
 	cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
+	cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
 	cfg.save(save_path(mode))
 
@@ -393,6 +405,8 @@ func _begin_day() -> void:
 	Story.begin_day(day)
 	if cards_active():
 		Owner.begin_day(day)
+	if mode == "sales":
+		SalesCampaign.begin_week(day)
 	if mode == "service":
 		Service.begin_day(day)
 	if bool(prop("shift", false)):
@@ -493,7 +507,7 @@ func _end_day() -> void:
 	if mode == "service":
 		Service.close_day(r)  # the scorecard: groups, grade and Morgan's confidence change replace the ticket report
 	if books_active() and str(prop("report", "day")) == "pnl":
-		var books := Owner.settle()
+		var books: Dictionary = SalesCampaign.settle() if str(prop("settle", "owner")) == "sales" else Owner.settle()
 		r["rows"] = books.rows
 		r["title"] = books.title
 		r["grade"] = books.grade
@@ -501,6 +515,8 @@ func _end_day() -> void:
 		# a profitable week helps the name; only a clearly bad one (a new hire, a project) hurts it
 		var profit_rep := 1 if int(books.profit) > 0 else (-1 if int(books.profit) < -1000 else 0)
 		r["rep_delta"] = clampi(int(r.rep_delta) + profit_rep, -3, 4)
+		if books.has("rep_delta"):
+			r["rep_delta"] = int(books.rep_delta)  # the sales campaign scores the week by quota pace and client mood
 		cash = Owner.cash
 		r["bankrupt"] = books.bankrupt
 	else:

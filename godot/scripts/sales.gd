@@ -108,7 +108,7 @@ func rep_effect() -> int:
 
 # more clients = more tickets; Msp asks for this every time it schedules one
 func workload() -> float:
-	return float(active.size()) / 5.0
+	return float(active.size()) / 5.0 + SalesCampaign.extra_load()
 
 
 # ---- Vic's skill ----------------------------------------------------------------------------
@@ -239,7 +239,10 @@ func _process(delta: float) -> void:
 	_cool = COMPLAINT_GAP
 	pending = found
 	complained_day[int(found.client)] = Campaign.day
-	World.send_vic_to_player()
+	if Campaign.player_as == "Vic":
+		deliver()  # you are Vic: the client phones you directly
+	else:
+		World.send_vic_to_player()
 
 
 func complaint_text() -> String:
@@ -248,6 +251,8 @@ func complaint_text() -> String:
 		return ""
 	var contact: String = Msp.CLIENTS[int(t.client)].contact
 	var late := "is past its SLA" if t.breached else "has %s left" % Msp.mmss(float(t.sla_left))
+	if Campaign.player_as == "Vic":
+		return "Ticket #%d (%s) %s and my staff are not happy. Is anyone working on it?" % [int(t.id), t.summary, late]
 	return (
 		"%s from %s called me directly. Ticket #%d (%s) %s and they are not happy."
 		% [contact, Msp.CLIENTS[int(t.client)].name, int(t.id), t.summary, late]
@@ -272,8 +277,12 @@ func deliver() -> void:
 	if vic_friend:
 		options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
 	var ticket_id := int(pending.get("ticket", 0))
+	var speaker := "Vic Marlowe"
+	if Campaign.player_as == "Vic":
+		speaker = str(Msp.CLIENTS[int(pending.get("client", 0))].contact)
+		options[2]["label"] = "I WILL CALL THEM AND CALM THEM DOWN"
 	Cards.ask(
-		"Vic Marlowe",
+		speaker,
 		text,
 		options,
 		resolve,

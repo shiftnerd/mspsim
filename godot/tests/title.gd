@@ -52,8 +52,14 @@ func _process(_delta: float) -> bool:
 			_press(KEY_DOWN)
 		60:
 			_check(
+				current_scene._items[current_scene._sel].id == "sales_new",
+				"Down again goes to the sales campaign"
+			)
+			_press(KEY_DOWN)
+		65:
+			_check(
 				current_scene._items[current_scene._sel].id == "free",
-				"Down again reaches Free Play"
+				"and once more reaches Free Play"
 			)
 			_press(KEY_ENTER)
 		80:

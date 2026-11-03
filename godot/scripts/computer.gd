@@ -21,6 +21,7 @@ const RMM_GREY := Color("3b424d")
 # RMM session buttons for the other fixes: quick workaround, heavy fix, clever fix
 const ALT_TINTS := {"quick": Color("f2e2a0"), "heavy": Color("e9b1a8"), "clever": Color("a9e0b0")}
 const ORANGE := Color("e07b22")
+const Crm := preload("res://scripts/crm.gd")  # the SalesHound CRM app (sales campaign)
 const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
 const AMBER := Color("e0a030")
@@ -181,6 +182,9 @@ func _input(event: InputEvent) -> void:
 				move(1)
 			KEY_ENTER, KEY_KP_ENTER:
 				enter()
+			_:
+				if app == "crm":
+					Crm.key(self, event.keycode)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -257,6 +261,8 @@ func move(step: int) -> void:
 				psa_sel = list[clampi(_psa_index() + step, 0, list.size() - 1)].id
 		"rmm":
 			scroll_list(step)
+		"crm":
+			Crm.move(self, step)
 	_canvas.queue_redraw()
 
 
@@ -283,6 +289,8 @@ func enter() -> void:
 			activate("mail:%d" % mail_sel)
 	elif app == "psa" and not psa_detail and not Msp.open_tickets().is_empty():
 		activate("tk:%d" % psa_sel)
+	elif app == "crm":
+		Crm.enter(self)
 
 
 func activate(id: String) -> void:
@@ -326,6 +334,8 @@ func activate(id: String) -> void:
 			_learn_action(parts)
 		"btab":
 			board_tab = parts[1]
+		"crm":
+			Crm.action(self, parts)
 		"lync":
 			_lync_action(parts)
 		"nerds":
@@ -681,6 +691,8 @@ func _paint() -> void:
 			_paint_rmm()
 		"boardroom":
 			_paint_boardroom()
+		"crm":
+			Crm.paint(self)
 		"lync":
 			_paint_lync()
 		"nerds":
@@ -737,7 +749,9 @@ func _paint_taskbar() -> void:
 			["app:nerds", "NERDS"],
 			["logoff", "LOG OFF"],
 		]
-		if Campaign.books_active():
+		if Campaign.mode == "sales":
+			items.insert(4, ["app:crm", "SALESHOUND"])
+		elif Campaign.books_active():
 			items.insert(4, ["app:boardroom", "BOARDROOM"])
 		for i in items.size():
 			_button(
@@ -793,6 +807,12 @@ func _icon(kind: String, p: Vector2) -> void:
 			_fill(Rect2(p + Vector2(1, 3), Vector2(14, 9)), Color("8a5a2b"))
 			_fill(Rect2(p + Vector2(5, 0), Vector2(6, 4)), Color("6b421c"))
 			_fill(Rect2(p + Vector2(7, 6), Vector2(2, 3)), Color("f5d442"))
+		"crm":
+			_fill(Rect2(p + Vector2(1, 1), Vector2(14, 11)), Color("f3f6fb"))
+			_fill(Rect2(p + Vector2(1, 1), Vector2(14, 2)), Color("b8602b"))
+			_fill(Rect2(p + Vector2(3, 5), Vector2(3, 6)), Color("e0a030"))
+			_fill(Rect2(p + Vector2(7, 5), Vector2(3, 4)), Color("5aa0e8"))
+			_fill(Rect2(p + Vector2(11, 5), Vector2(3, 2)), GREEN)
 		"stats":
 			_fill(Rect2(p, Vector2(15, 12)), Color("e8ecf2"))
 			_fill(Rect2(p.x + 2, p.y + 6, 3, 5), GREEN)
@@ -968,7 +988,9 @@ func _paint_desktop() -> void:
 		["lync", "LYNK", Lync.unread_total()],
 		["nerds", "NERDS", 0],
 	]
-	if Campaign.books_active():
+	if Campaign.mode == "sales":
+		icons.append(["crm", "SALESHOUND", 0])
+	elif Campaign.books_active():
 		icons.append(["boardroom", "BOARDROOM", 0])
 	var per_col := maxi(1, int((a.size.y - TB - 6.0) / 27.0))
 	for i in icons.size():

@@ -54,6 +54,8 @@ const OWNER_BLURBS := {
 	"casual_garrison":
 	"THE SALES AND CULTURE OWNER. CLIENTS, PRICING AND MORALE ARE YOURS; ALAN KEEPS THE SERVERS ALIVE.",
 }
+# the sales campaign offers Vic only
+const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
 # the service manager campaign offers Dan only
 const SERVICE_BLURBS := {
 	"office_dan": "THE QUIET NETWORK TECH WHO LABELS EVERYTHING, PROMOTED TO RUN THE DESK. LABEL THE PEOPLE NOW.",
@@ -118,6 +120,8 @@ func choices(for_mode: String) -> Array:
 		return []  # registered but not playable yet (X8): it cannot be chosen
 	if for_mode == "owner":
 		return ["office_alan", "casual_garrison"]
+	if for_mode == "sales":
+		return ["sales_vic"]
 	if for_mode == "service":
 		return ["office_dan"]
 	var cast: Array = []
@@ -165,6 +169,8 @@ func info(id: String) -> Dictionary:
 	var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
 	if mode == "owner" and OWNER_BLURBS.has(id):
 		entry["blurb"] = OWNER_BLURBS[id]
+	if mode == "sales":
+		entry["blurb"] = SALES_BLURB
 	if mode == "service" and SERVICE_BLURBS.has(id):
 		entry["blurb"] = SERVICE_BLURBS[id]
 	return entry

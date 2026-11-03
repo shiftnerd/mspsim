@@ -184,6 +184,13 @@ func _init() -> void:
 	_check(y.max_clients(8) == 8 and y.build_bonus() == 0 and mu.sla(100.0) == 100.0, "Year 1: client cap 8, no build bonus, SLA untouched")
 	_check(y.counts("normal", [2, 3]) == [2, 3] and y.events_on("tech", 9, story.DAYS) == story.DAYS[9], "Year 1: mutator counts and the story days are the plain tables")
 	_check(not y.available("tech") and y.menu_items().is_empty(), "nothing finished yet: no NEW GAME PLUS entry")
+	var rec_other := ConfigFile.new()
+	for m in ["sales", "service"]:
+		rec_other.set_value(m, "ending", "stay")
+		rec_other.set_value(m, "finished", 1)
+	rec_other.save(c.save_prefix + "meta.cfg")
+	_check(not y.available("sales") and not y.available("service") and y.menu_items().is_empty(), "sales and service never show a NEW GAME PLUS entry, even when finished")
+	DirAccess.remove_absolute(_meta_path())
 	_check(build.budget("normal") == 12, "Year 1: the normal build budget is 12")
 
 	# ---- unlock: a finished campaign writes the record
@@ -324,18 +331,18 @@ func _init() -> void:
 	# ---- the Year 2 endings are reachable through the existing review
 	c.rep = 80
 	partner.reset()
-	_check(not review.make_offers().any(func(x: Dictionary) -> bool: return x.id == "head" or x.id == "buyout"), "no flags: no Year 2 endings in the tech review")
+	_check(not review.make_offers().any(func(x: Dictionary) -> bool: return x.id == "head" or x.id == "clientbuy"), "no flags: no Year 2 endings in the tech review")
 	y.set_flag("desk", "run")
 	y.set_flag("courted", "listen")
 	var ids: Array = review.make_offers().map(func(x: Dictionary) -> String: return x.id)
-	_check(ids.has("head") and ids.has("buyout") and ids.back() == "stay", "flags run the desk + courted unlock DEPARTMENT HEAD and the BUYOUT before STAY: %s" % str(ids))
+	_check(ids.has("head") and ids.has("clientbuy") and ids.back() == "stay", "flags run the desk + courted unlock DEPARTMENT HEAD and the BUYOUT before STAY: %s" % str(ids))
 	c.rep = 55
 	ids = review.make_offers().map(func(x: Dictionary) -> String: return x.id)
-	_check(not ids.has("head") and ids.has("buyout"), "a low reputation keeps the department head job closed (%s)" % str(ids))
+	_check(not ids.has("head") and ids.has("clientbuy"), "a low reputation keeps the department head job closed (%s)" % str(ids))
 	y.set_flag("courted", "no")
 	c.rep = 90
 	ids = review.make_offers().map(func(x: Dictionary) -> String: return x.id)
-	_check(ids.has("head") and not ids.has("buyout"), "declining the courtship removes the buyout (%s)" % str(ids))
+	_check(ids.has("head") and not ids.has("clientbuy"), "declining the courtship removes the buyout (%s)" % str(ids))
 	y.set_flag("courted", "told")
 	review.start()
 	var head_at: int = review.offers.map(func(x: Dictionary) -> String: return x.id).find("head")
@@ -450,14 +457,14 @@ func _init() -> void:
 	await process_frame
 	_check(review.is_open, "tech Y2: the yearly review follows day 20")
 	var ids2: Array = review.offers.map(func(x: Dictionary) -> String: return x.id)
-	_check(ids2.has("head") and ids2.has("buyout"), "tech Y2: the choices made on the way unlocked %s" % str(ids2))
+	_check(ids2.has("head") and ids2.has("clientbuy"), "tech Y2: the choices made on the way unlocked %s" % str(ids2))
 	_check(seen_speakers.has("Tony Marsh (Iron Mule Demolition)") and seen_speakers.has("Morgan (Manager)"), "tech Y2: both Year 2 beat cards were asked")
 	for key in ["ransom", "rack", "migration", "email24", "netinstall", "install"]:
 		_check(story.flags.has(key), "tech Y2: story job '%s' still ran (%s)" % [key, str(story.flags.get(key, "-"))])
-	review.choose(ids2.find("buyout"))
+	review.choose(ids2.find("clientbuy"))
 	review.finish()
 	await create_timer(0.5).timeout
-	_check(not c.active and not c.has_save("tech") and str(y.meta_get("tech").ending) == "buyout", "tech Y2 finished with the buyout ending")
+	_check(not c.active and not c.has_save("tech") and str(y.meta_get("tech").ending) == "clientbuy", "tech Y2 finished with the buyout ending")
 
 	# ---- the owner campaign: unlock, then a whole Year 2
 	_check(not y.available("owner"), "OWNER still locked before its own finish")

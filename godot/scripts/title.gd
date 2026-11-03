@@ -309,6 +309,11 @@ func _open_menu() -> void:
 		_items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
 	else:
 		_items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
+	if Campaign.has_save("sales"):
+		_items.append({"label": "CONTINUE SALES - WEEK %d" % Campaign.saved_day("sales"), "id": "sales_continue", "enabled": true})
+		_items.append({"label": "NEW SALES CAMPAIGN", "id": "sales_new", "enabled": true})
+	else:
+		_items.append({"label": "SALES CAMPAIGN", "id": "sales_new", "enabled": true})
 	_items.append_array(Yeartwo.menu_items())  # NEW GAME PLUS - <MODE> (YEAR 2) for every finished mode
 	_items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
 	_items.append({"label": "CAREER", "id": "career", "enabled": true})
@@ -380,6 +385,8 @@ func _open_select(id: String) -> void:
 		mode = "owner"
 	elif id == "service_new":
 		mode = "service"
+	elif id == "sales_new":
+		mode = "sales"
 	_select = CharSelect.new()
 	_select.setup(mode, year2)
 	_select.done.connect(_on_select_done.bind(id))
@@ -428,6 +435,10 @@ func _start(id: String, summary := "") -> void:
 			Campaign.new_game("service")
 		"service_continue":
 			Campaign.continue_game("service")
+		"sales_new":
+			Campaign.new_game("sales")
+		"sales_continue":
+			Campaign.continue_game("sales")
 		_:
 			Campaign.new_game(Campaign.FREE)
 	Game.go(Campaign.start_scene(), "start")
@@ -440,12 +451,13 @@ func _start(id: String, summary := "") -> void:
 func _draw_menu() -> void:
 	var size := _size()
 	var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
-	var pitch := minf(10.0, floorf((size.y - y - 1.0) / maxf(1.0, float(_items.size()))))  # a long menu (New Game Plus entries) packs tighter
+	# a long menu (continue + new for three campaigns) squeezes its rows to stay on screen
+	var pitch := clampf(floorf((size.y - 1.0 - y) / float(maxi(1, _items.size()))), 8.0, 10.0)
 	for i in _items.size():
 		var item: Dictionary = _items[i]
 		var label: String = item.label
 		var w := float(PixelFont.width(label)) + 12.0
-		var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, minf(9.0, pitch))
+		var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, pitch - 1.0)
 		item["rect"] = r
 		var chosen: bool = i == _sel and item.enabled
 		var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)

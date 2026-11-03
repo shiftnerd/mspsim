@@ -51,6 +51,7 @@ Service="*res://scripts/service.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
 Owners="*res://scripts/owners.gd"
+SalesCampaign="*res://scripts/sales_campaign.gd"
 
 [display]
 

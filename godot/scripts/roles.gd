@@ -103,6 +103,10 @@ func _token(key: String) -> String:
 			return partner() if partner() != "" else "Morgan"
 		"me":
 			return me()
+		"sales_owner":
+			return stand_in("Garrison")
+		"tech_owner":
+			return stand_in("Alan")
 	return ""
 
 
@@ -110,7 +114,7 @@ func _token(key: String) -> String:
 func fill(text: String) -> String:
 	if text.find("{") < 0:
 		return text
-	for key in ["tech", "ops", "partner", "me"]:
+	for key in ["tech", "ops", "partner", "me", "sales_owner", "tech_owner"]:
 		var tok: String = "{" + str(key) + "}"
 		if text == tok:
 			return label(_token(key))

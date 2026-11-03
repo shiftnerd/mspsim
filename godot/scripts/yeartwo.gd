@@ -67,7 +67,7 @@ const DEFAULT_YEAR2 := {
 		},
 	},
 	"beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}},
-	"endings": {"tech": ["head", "buyout"], "owner": ["merger", "franchise"]},
+	"endings": {"tech": ["head", "clientbuy"], "owner": ["merger", "franchise"]},
 }
 var YEAR2: Dictionary = DEFAULT_YEAR2.duplicate(true)
 const DEFAULT_TEXT := {
@@ -119,7 +119,7 @@ const DEFAULT_TEXT := {
 			"label": "BECOME DEPARTMENT HEAD",
 			"desc": "MORGAN MOVES UP AND THE OWNERS GIVE YOU THE WHOLE SERVICE DEPARTMENT: THE DESK, THE SCHEDULE AND THE BUDGET.",
 		},
-		"buyout": {
+		"clientbuy": {
 			"label": "LET IRON MULE BUY OUT YOUR CONTRACT",
 			"desc": "TONY MARSH PAYS PIXEL A BUYOUT FEE AND MAKES YOU HIS IT DIRECTOR.",
 		},
@@ -134,7 +134,7 @@ const DEFAULT_TEXT := {
 	},
 	"endings": {
 		"head": "YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.",
-		"buyout": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
+		"clientbuy": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
 		"merger": "THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SHOP WITH TWO LOGOS AND ONE VERY LONG ALL-HANDS. YOUR SIDE IS WORTH ABOUT ${value}.",
 		"franchise": "TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. MARGE ORDERS MORE FRAMES.",
 	},
@@ -648,7 +648,7 @@ func _offer_ok(id: String) -> bool:
 		"head":
 			var need := 60 if str(prev.get("ending", "")) == "lead" else 65
 			return flag("desk") == "run" and Campaign.rep >= need and Social.average() >= 0.0
-		"buyout":
+		"clientbuy":
 			return (flag("courted") == "listen" or flag("courted") == "told") and Campaign.rep >= 50
 		"merger":
 			return flag("merger") == "talks" and Campaign.rep >= 55 and Sales.active.size() >= 6 and Owner.cash >= 0
