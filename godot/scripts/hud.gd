@@ -66,6 +66,8 @@ func _draw() -> void:
 						" NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
 					)
 				lines.append(day_line)
+		if Mutators.tag() != "":
+			lines.append("* " + Mutators.tag())
 		if Nerf.holding():
 			if Nerf.charging:
 				lines.append("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0))

@@ -2347,7 +2347,7 @@ func pool(day: int, mode: String) -> Array:
 		if _cooled(str(id), int(card.cooldown), day) or not _requires_ok(card):
 			continue
 		if _valid(str(id), card, false):
-			out.append({"deck": "event", "id": str(id), "weight": float(card.weight)})
+			out.append({"deck": "event", "id": str(id), "weight": float(card.weight) * Mutators.boost(str(id))})
 	if mode == "tech":
 		for id in Story.VIGNETTES:
 			var v: Dictionary = Story.VIGNETTES[id]

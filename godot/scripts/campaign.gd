@@ -101,6 +101,8 @@ func new_game(for_mode: String) -> void:
 	Expo.reset()
 	Onsite.reset()
 	Events.reset()
+	Mutators.start(for_mode)
+	Mutators.apply_start()
 	World.day_len = 240.0 if for_mode == "owner" else 600.0
 	Msp.enabled = active
 	if active:
@@ -143,6 +145,7 @@ func continue_game(for_mode: String) -> bool:
 	Expo.from_dict(cfg.get_value("campaign", "conference", {}))
 	Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
 	Events.from_dict(cfg.get_value("campaign", "events", {}))
+	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
 	Lync.reset()
 	World.day_len = 240.0 if for_mode == "owner" else 600.0
 	Story.flags = cfg.get_value("campaign", "story", {})
@@ -181,12 +184,14 @@ func save() -> void:
 	cfg.set_value("campaign", "conference", Expo.to_dict())
 	cfg.set_value("campaign", "onsite", Onsite.to_dict())
 	cfg.set_value("campaign", "events", Events.to_dict())
+	cfg.set_value("campaign", "mutators", Mutators.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
 	cfg.save(save_path(mode))
 
 
 # the review is over: remember how the year ended and go back to the title
 func finish_campaign(ending: String) -> void:
+	Mutators.note_finish()
 	var meta := ConfigFile.new()
 	meta.load(save_prefix + "meta.cfg")
 	meta.set_value(mode, "ending", ending)
@@ -224,6 +229,7 @@ func _begin_day() -> void:
 	else:
 		Shift.begin_day(day)
 	Events.begin_day(day)
+	Mutators.begin_day(day)
 	day_started.emit(day)
 
 
@@ -246,7 +252,10 @@ func _process(_delta: float) -> void:
 
 # ---- end of day ------------------------------------------------------------
 func make_report() -> Dictionary:
-	return Expo.adjust_report(_make_report())
+	var r: Dictionary = Expo.adjust_report(_make_report())
+	if Mutators.tag() != "":
+		r["mutator"] = Mutators.tag()
+	return r
 
 
 func _make_report() -> Dictionary:
