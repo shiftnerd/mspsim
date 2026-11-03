@@ -280,12 +280,12 @@ func _init() -> void:
 		crew.size() == 2 and crew.any(func(c: String) -> bool: return c.begins_with("client_vet")),
 		"the vet office has a receptionist and a tech: %s" % str(crew)
 	)
-	var pets0: int = on.pets
+	var pets_before: int = on.pets
 	await _wait(0.8)
 	on.interact("dog")
-	_check(on.pets == pets0 + 1 and root.get_node("Hints").toast_text != "", "you can pet the dog")
+	_check(on.pets == pets_before + 1 and root.get_node("Hints").toast_text != "", "you can pet the dog")
 	on.interact("cat")
-	_check(on.pets == pets0 + 2, "and the cat")
+	_check(on.pets == pets_before + 2, "and the cat")
 	game.go("site_dental_b", "start")
 	await _wait(1.0)
 	var crew_b := []
@@ -389,6 +389,31 @@ func _init() -> void:
 	)
 	_drain(cards)
 
+	await _wait(1.5)
+	# the realty coffee bar pours a coffee; the sign-in sheet and the architects' desk only talk
+	game.go("site_realty_a", "start")
+	await _wait(0.8)
+	var pl := current_scene.get_node("Actors/Player")
+	pl.give("")
+	on.interact("coffeebar")
+	await _wait(1.4)
+	_check(str(pl.held) == "coffee", "the realty coffee bar gives you a coffee")
+	on.interact("coffeebar")
+	_check(str(pl.held) == "coffee", "a second pour does nothing more")
+	pl.give("")
+	var pets_site: int = on.pets
+	on.interact("signin")
+	on.interact("recep")
+	_check(str(pl.held) == "" and on.pets == pets_site, "the sign-in sheet and the reception desk have no game effect")
+	var names := []
+	for z in current_scene.get_node("Interactables").get_children():
+		names.append(str(z.name))
+	_check("UseObjCoffee" in names and "UseObjSignin" in names, "realty has coffee bar and sign-in zones")
+	_check(current_scene.get_node("Interactables/UseObjSignin").low_priority, "the sign-in zone is low priority")
+	game.go("site_arch_b", "start")
+	await _wait(0.8)
+	var recep := current_scene.get_node_or_null("Interactables/UseObjRecep")
+	_check(recep != null and recep.low_priority, "the architects' reception desk is a low priority zone")
 	await _wait(1.5)
 	# every room of every site loads, with something to use in it
 	for site in ["dental", "law", "vet", "arch", "realty", "trailer"]:

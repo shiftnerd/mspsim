@@ -12,7 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
 [ext_resource type="Texture2D" path="res://assets/props/blueprint_rack.png" id="prop_blueprint_rack"]
 [ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
-[ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_46.png" id="prop_desk_cubicle_46"]
+[ext_resource type="Texture2D" path="res://assets/props/recep_desk_arch_a.png" id="prop_recep_desk_arch_a"]
 [ext_resource type="Texture2D" path="res://assets/props/draft_table.png" id="prop_draft_table"]
 [ext_resource type="Texture2D" path="res://assets/props/monitor.png" id="prop_monitor"]
 [ext_resource type="Texture2D" path="res://assets/props/plotter.png" id="prop_plotter"]
@@ -135,6 +135,15 @@ target = NodePath("../../Fx/Door")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseDoor"]
 shape = SubResource("shape_fx")
 
+[node name="UseObjRecep" type="Area2D" parent="Interactables"]
+position = Vector2(265, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/ObjRecep")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseObjRecep"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="ObjPc0" type="Node2D" parent="Fx"]
@@ -151,6 +160,11 @@ kind = "onsite_printer"
 position = Vector2(28, 18)
 script = ExtResource("fx")
 kind = "onsite_door"
+
+[node name="ObjRecep" type="Node2D" parent="Fx"]
+position = Vector2(258, 77)
+script = ExtResource("fx")
+kind = "onsite_recep"
 
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
@@ -179,11 +193,11 @@ centered = false
 offset = Vector2(0, -37)
 texture = ExtResource("prop_plotter")
 
-[node name="desk_cubicle_46_4" type="Sprite2D" parent="Actors"]
-position = Vector2(261, 108)
+[node name="recep_desk_arch_a_4" type="Sprite2D" parent="Actors"]
+position = Vector2(257, 109)
 centered = false
-offset = Vector2(0, -26)
-texture = ExtResource("prop_desk_cubicle_46")
+offset = Vector2(0, -33)
+texture = ExtResource("prop_recep_desk_arch_a")
 
 [node name="monitor_5" type="Sprite2D" parent="Actors"]
 position = Vector2(269, 96)

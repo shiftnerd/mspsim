@@ -1270,7 +1270,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
 		_t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
 		return
 	_t("ROUND %d OF 5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
-	var w := minf(size.x - 8.0, 112.0)
+	var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
 	var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
 	UiStyle.box(_canvas, box)
 	for i in 4:

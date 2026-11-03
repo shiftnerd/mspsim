@@ -4918,6 +4918,50 @@ You tap the glass. The fish pretends not to know you.
 [Onsite.PETS.fish.1]
 The orange fish swims to the glass, looks at you and leaves.
 
+# Onsite > PETS > coffeebar > 0
+[Onsite.PETS.coffeebar.0]
+You pour a cup from the glass pot. It has been on the burner since the spring open house, but it is free.
+
+# Onsite > PETS > coffeebar > 1
+[Onsite.PETS.coffeebar.1]
+You fill a mug that says #1 IN SALES (2009). The coffee is hot and tastes like the pot.
+
+# Onsite > PETS > coffeebar > 2
+[Onsite.PETS.coffeebar.2]
+You help yourself to the open house coffee. The tip jar says 'for the intern'. You leave a quarter.
+
+# Onsite > PETS > coffeebar_full > 0
+[Onsite.PETS.coffeebar_full.0]
+You already have a cup. Greed is a sin, even in real estate.
+
+# Onsite > PETS > coffeebar_full > 1
+[Onsite.PETS.coffeebar_full.1]
+Your hands are full of coffee. The pot will wait.
+
+# Onsite > PETS > signin > 0
+[Onsite.PETS.signin.0]
+You sign in. Reason for visit: 'IT'. Under it a previous visitor wrote 'Dave - plumbing - yes'.
+
+# Onsite > PETS > signin > 1
+[Onsite.PETS.signin.1]
+The pen is on a string and the string is shorter than your arm. You sign sideways.
+
+# Onsite > PETS > signin > 2
+[Onsite.PETS.signin.2]
+NAME / COMPANY / TIME IN / REASON. The last line says 'Karen - Karen - 9:02 - I am the owner'.
+
+# Onsite > PETS > recep > 0
+[Onsite.PETS.recep.0]
+The receptionist: 'Are you here about the plotter? Please say you are here about the plotter.'
+
+# Onsite > PETS > recep > 1
+[Onsite.PETS.recep.1]
+The receptionist: 'The principals are in a charrette until five. Can I get you a coffee?'
+
+# Onsite > PETS > recep > 2
+[Onsite.PETS.recep.2]
+A roll of drawings on the desk has a sticky note: DO NOT TOUCH. NOT EVEN YOU, STEVE.
+
 
 # ======================= Onsite > FINDINGS =======================
 # Onsite > FINDINGS > pc > 0 > text
