@@ -125,11 +125,13 @@ func _add_inputs() -> void:
 func _load_character(name: String) -> void:
 	current_character = name
 	sprite.sprite_frames = load("res://characters/%s.tres" % name)
+	Look.apply(sprite, name, Look.is_custom())  # the custom person is the teen sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
 # hurt would otherwise never emit animation_finished and the state machine would hang)
 func _switch_character(name: String) -> void:
+	Look.active = false  # the number keys pick the stock people
 	var anim := sprite.animation
 	var frame := sprite.frame
 	var progress := sprite.frame_progress

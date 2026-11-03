@@ -1,4 +1,5 @@
 extends Node2D
+# gdlint:disable=max-returns
 # Character select / first-day screen, shown by the title menu before a new run starts. A row of
 # the playable characters (a carousel in narrow portrait) with an idle preview, a name and a short
 # blurb; the tech campaign then asks for your phone. Left / Right move, Enter / E / Space confirm,
@@ -19,6 +20,10 @@ const GOLD := Color("f5d442")
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
+const FREE_MODE := "free"
+const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
+const CREATE_ROWS := ["name", "skin", "hair", "shirt", "pants", "shoes", "random"]
+const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
 	"office_teen":
 	{
@@ -79,6 +84,7 @@ var ids: Array = []
 var sel := 0
 var phone_sel := 0
 var facing := "right"
+var create_row := 0  # the row of the create step (CREATE_ROWS)
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
@@ -98,6 +104,21 @@ func is_campaign() -> bool:
 
 func needs_phone() -> bool:
 	return mode == "tech"
+
+
+# MAKE YOUR OWN is offered where the player is nobody from the cast: the tech campaign and Free Play (the owner, sales and
+# service campaigns play Alan / Garrison / Vic / Dan)
+func offers_custom(for_mode: String) -> bool:
+	return for_mode == "tech" or for_mode == FREE_MODE
+
+
+func is_custom() -> bool:
+	return sel < ids.size() and ids[sel] == CUSTOM
+
+
+# the raw card id under the cursor (CUSTOM for the MAKE YOUR OWN card)
+func sel_id() -> String:
+	return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
 
 
 # the point-buy step (X7): the campaigns that have a stat set; Free Play has none
@@ -139,9 +160,14 @@ func setup(for_mode: String, year2 := false) -> void:
 	mode = for_mode
 	step = "char"
 	ids = choices(mode)
+	if offers_custom(mode):
+		ids.push_front(CUSTOM)
 	sel = maxi(0, ids.find(PLAYER.current_character))
 	if not PLAYER.current_character in ids:
 		sel = maxi(0, ids.find("office_adult"))
+	if offers_custom(mode) and Look.active:
+		sel = 0  # the last new run was a custom person
+	create_row = 0
 	phone_sel = 1 if Phone.os == "android" else 0
 	_panel = null
 	_confirmed = false
@@ -154,7 +180,8 @@ func setup(for_mode: String, year2 := false) -> void:
 	_sprites.clear()
 	for id in ids:
 		var spr := AnimatedSprite2D.new()
-		spr.sprite_frames = load("res://characters/%s.tres" % id)
+		spr.sprite_frames = load("res://characters/%s.tres" % (Look.BASE if id == CUSTOM else id))
+		Look.apply(spr, Look.BASE, id == CUSTOM)
 		spr.play("idle_right")
 		add_child(spr)
 		_sprites.append(spr)
@@ -162,10 +189,14 @@ func setup(for_mode: String, year2 := false) -> void:
 
 
 func current_id() -> String:
-	return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
+	if is_custom():
+		return Look.BASE
+	return sel_id()
 
 
 func info(id: String) -> Dictionary:
+	if id == CUSTOM:
+		return {"name": "MAKE YOUR OWN", "blurb": CUSTOM_BLURB}
 	var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
 	if mode == "owner" and OWNER_BLURBS.has(id):
 		entry["blurb"] = OWNER_BLURBS[id]
@@ -178,7 +209,8 @@ func info(id: String) -> Dictionary:
 
 func summary(with_tier := true) -> String:
 	var label: String = Campaign.MODES.get(mode, "FREE PLAY")
-	var s := "%s - %s" % [label, str(info(current_id()).name)]
+	var who: String = Look.final_name() if is_custom() else str(info(current_id()).name)
+	var s := "%s - %s" % [label, who]
 	if needs_phone():
 		s += " - " + str(PHONES[phone_sel].name)
 	if _panel != null and (step == "build" or _confirmed):
@@ -254,7 +286,13 @@ func move(delta_sel: int) -> void:
 
 
 func confirm() -> void:
-	if step == "char" and needs_phone():
+	if step == "char" and is_custom():
+		step = "create"
+		queue_redraw()
+		return
+	if step == "create":
+		Look.look["name"] = Look.final_name()
+	if (step == "char" or step == "create") and needs_phone():
 		step = "phone"
 		queue_redraw()
 		return
@@ -274,8 +312,11 @@ func confirm() -> void:
 		"summary": summary(),
 		"tier": Difficulty.tier,
 		"build": Build.pending,
+		"look": Look.look.duplicate() if is_custom() else {},
 	}
 	PLAYER.current_character = current_id()
+	Look.active = is_custom()
+	Look.save_settings(Look.active)  # the look is the default of the next new run
 	if needs_phone():
 		Phone.set_os(result.phone)
 	done.emit(result)
@@ -283,9 +324,12 @@ func confirm() -> void:
 
 func back() -> void:
 	if step == "build":
-		step = "phone" if needs_phone() else "char"
+		step = "phone" if needs_phone() else ("create" if is_custom() else "char")
 		queue_redraw()
 	elif step == "phone":
+		step = "create" if is_custom() else "char"
+		queue_redraw()
+	elif step == "create":
 		step = "char"
 		queue_redraw()
 	else:
@@ -296,6 +340,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Engine.get_process_frames() == _born or Toolbox.is_open:
 		return
 	if Controls.pressed(event):
+		if step == "create" and _create_input(event):
+			get_viewport().set_input_as_handled()
+			return
 		var dir := Controls.nav(event)
 		if step == "build" and _build_key(event, dir):
 			get_viewport().set_input_as_handled()
@@ -362,6 +409,81 @@ func _build_key(event: InputEvent, dir: String) -> bool:
 	return true
 
 
+func _create_input(event: InputEvent) -> bool:
+	if create_row == 0 and _type_key(event):
+		queue_redraw()
+		return true
+	return _create_key(event, Controls.nav(event))
+
+
+# the create step: Up / Down pick a row, Left / Right change it (the NAME row steps through suggested names, RANDOM rolls a
+# person), Enter on RANDOM rolls, Enter on any other row goes on
+func _create_key(event: InputEvent, dir: String) -> bool:
+	if dir == "up":
+		create_row = (create_row + CREATE_ROWS.size() - 1) % CREATE_ROWS.size()
+	elif dir == "down":
+		create_row = (create_row + 1) % CREATE_ROWS.size()
+	elif dir == "left" or dir == "right":
+		_create_change(-1 if dir == "left" else 1)
+	elif Controls.confirm(event) and CREATE_ROWS[create_row] == "random":
+		roll_look()
+	else:
+		return false
+	queue_redraw()
+	return true
+
+
+func _create_change(delta: int) -> void:
+	var role: String = CREATE_ROWS[create_row]
+	if role == "name":
+		Look.cycle_name(delta)
+	elif role == "random":
+		roll_look()
+	else:
+		Look.set_swatch(role, maxi(0, Look.swatch_index(role)) + delta)
+	_refresh_look()
+
+
+# typing on the NAME row: letters, digits, space and dash are added, Backspace deletes (an empty name lets Backspace go back)
+func _type_key(event: InputEvent) -> bool:
+	if not event is InputEventKey:
+		return false
+	var code: int = event.keycode
+	var buf := str(Look.look.get("name", ""))
+	if code == KEY_BACKSPACE:
+		if buf == "":
+			return false
+		Look.look["name"] = buf.left(buf.length() - 1)
+		_refresh_look()
+		return true
+	if code in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE, KEY_TAB]:
+		return false
+	var ch := ""
+	if event.unicode > 0:
+		ch = char(event.unicode)
+	elif code >= KEY_A and code <= KEY_Z:
+		ch = char(code)
+	if not Look.name_char_ok(ch):
+		return false
+	if buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
+		Look.look["name"] = buf + ch.to_upper()
+	_refresh_look()
+	return true
+
+
+func roll_look() -> void:
+	Look.randomize_look()
+	_refresh_look()
+
+
+# the preview cards wear the look
+func _refresh_look() -> void:
+	for i in ids.size():
+		if ids[i] == CUSTOM:
+			Look.apply(_sprites[i], Look.BASE, true)
+	queue_redraw()
+
+
 func _hit(at: Vector2) -> Array:
 	for r in _rects:
 		if r[0].has_point(at):
@@ -377,6 +499,11 @@ func _hover(at: Vector2) -> void:
 	if kind.begins_with("b_"):
 		if step == "build":
 			_panel.hover(kind, int(r[2]))
+			queue_redraw()
+	elif step == "create" and kind in ["sw", "row", "name_prev", "name_next", "random"]:
+		var row := floori(float(r[2]) / 100.0) if kind == "sw" else (int(r[2]) if kind == "row" else (6 if kind == "random" else 0))
+		if row != create_row:
+			create_row = row
 			queue_redraw()
 	elif kind == "item" and step == "char" and sel != int(r[2]):
 		sel = int(r[2])
@@ -396,6 +523,22 @@ func _click(at: Vector2) -> void:
 			queue_redraw()
 		return
 	match str(r[1]):
+		"sw":
+			create_row = floori(float(r[2]) / 100.0)
+			Look.set_swatch(str(CREATE_ROWS[create_row]), int(r[2]) % 100)
+			_refresh_look()
+		"row":
+			create_row = int(r[2])
+			queue_redraw()
+		"name_prev", "name_next":
+			create_row = 0
+			Look.cycle_name(-1 if str(r[1]) == "name_prev" else 1)
+			_refresh_look()
+		"random":
+			create_row = CREATE_ROWS.size() - 1
+			roll_look()
+		"go":
+			confirm()
 		"back":
 			back()
 		"prev":
@@ -477,7 +620,7 @@ func _draw() -> void:
 	var narrow := size.x < 250.0
 	_rects.clear()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
-	var heading := "CHOOSE YOUR CHARACTER" if step == "char" else ("PICK YOUR PHONE" if step == "phone" else "BUILD YOUR CHARACTER")
+	var heading: String = {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE"}.get(step, "BUILD YOUR CHARACTER")
 	_ctxt(heading, 22.0 if narrow else 6.0, GOLD)
 	var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
 	draw_rect(back_r, PANEL)
@@ -491,6 +634,9 @@ func _draw() -> void:
 			_draw_mut(size, narrow)
 	if step == "char":
 		_draw_chars(size, narrow)
+	elif step == "create":
+		_place_sprites(size, narrow)
+		_draw_create(size, narrow)
 	elif step == "build":
 		_place_sprites(size, narrow)
 		_panel.draw(self, size, narrow, _rects)
@@ -499,6 +645,13 @@ func _draw() -> void:
 		_draw_phones(size, narrow)
 	_draw_summary(size, narrow)
 	var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
+	if step == "create":
+		if narrow:
+			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
+			_ctxt("TYPE NAME  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+		else:
+			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  TYPE NAME  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+		return
 	if step == "build":
 		if narrow:
 			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
@@ -625,6 +778,16 @@ func _draw_mut(size: Vector2, narrow: bool) -> void:
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
 	var n := ids.size()
+	if step == "create":  # only the custom person, big enough to see the colours
+		var lay := _create_layout(size, narrow)
+		for i in n:
+			var cs: AnimatedSprite2D = _sprites[i]
+			cs.visible = i == sel
+			cs.scale = Vector2.ONE
+			cs.position = Vector2(float(lay.cx), float(lay.feet) - 40.0)
+			if i == sel and cs.animation != "idle_" + facing:
+				cs.play("idle_" + facing)
+		return
 	var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
 	var feet := 83.0 if size.y <= 130.0 else 104.0
 	if narrow:
@@ -670,7 +833,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 			draw_rect(r, Color(0.1, 0.13, 0.2, 0.9) if i == sel else PANEL)
 			if i == sel:
 				draw_rect(r, GOLD, false, 1.0)
-	var data := info(current_id())
+	var data := info(sel_id())
 	var name_y := feet + (12.0 if narrow else 10.0)
 	_ctxt(str(data.name), name_y, GOLD)
 	var by := name_y + (20.0 if narrow else 9.0)
@@ -684,6 +847,69 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 			note = str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", note)).to_upper()
 		if end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
 			_para(note, end_y + 2.0, DIM, 2)
+
+
+# where the create step puts the preview (cx, feet) and the rows (x0, y0, pitch): wide 368x128, h 320x180, v 180x320
+func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
+	if narrow:
+		return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 128.0, "pitch": 14.0}
+	if size.y <= 130.0:
+		return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
+	return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
+
+
+# the create step (R15): a name row, one swatch row per colour, and a RANDOM / DONE row; the preview is live
+func _draw_create(size: Vector2, narrow: bool) -> void:
+	var lay := _create_layout(size, narrow)
+	var x0: float = lay.x0
+	var pitch: float = lay.pitch
+	var sx := x0 + 30.0
+	var cell := minf(12.0, floorf((size.x - sx - 6.0) / 12.0))
+	var sw := cell - 3.0
+	var who := str(Look.look.get("name", ""))
+	var cap := who if who != "" else "?"
+	_txt(cap, Vector2(floorf(float(lay.cx) - float(PixelFont.width(cap)) * 0.5), float(lay.feet) + 3.0), GOLD)
+	for i in CREATE_ROWS.size():
+		var role: String = CREATE_ROWS[i]
+		var y: float = float(lay.y0) + float(i) * pitch
+		var hot := i == create_row
+		var sy := y + floorf((pitch - sw) * 0.5)
+		var ty := sy + floorf((sw - 5.0) * 0.5)
+		if hot:
+			draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
+		if role == "name":
+			_txt("NAME", Vector2(x0, ty), GOLD if hot else DIM)
+			var box := Rect2(sx + 8.0, sy, 49.0, sw)
+			draw_rect(box, INK)
+			draw_rect(box, GOLD if hot else DIM, false, 1.0)
+			var shown := who + ("_" if hot and who.length() < Look.MAX_NAME else "")
+			_txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
+			_txt("<", Vector2(sx, ty), GOLD)
+			_txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
+			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "name_prev", 0])
+			_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "name_next", 0])
+		elif role == "random":
+			var rr := Rect2(x0, sy - 1.0, 44.0, 9.0)
+			draw_rect(rr, PANEL)
+			draw_rect(rr, GOLD if hot else DIM, false, 1.0)
+			_txt("RANDOM", Vector2(rr.position.x + 10.0, rr.position.y + 2.0), Color.WHITE)
+			_rects.append([rr, "random", 0])
+			var gr := Rect2(x0 + 50.0, sy - 1.0, 32.0, 9.0)
+			draw_rect(gr, PANEL)
+			draw_rect(gr, GOLD, false, 1.0)
+			_txt("DONE", Vector2(gr.position.x + 8.0, gr.position.y + 2.0), GOLD)
+			_rects.append([gr, "go", 0])
+		else:
+			_txt(role.to_upper(), Vector2(x0, ty), GOLD if hot else DIM)
+			var list: Array = Look.SWATCHES[role]
+			for j in list.size():
+				var r := Rect2(sx + float(j) * cell, sy, sw, sw)
+				draw_rect(r, Color.html(str(list[j])))
+				draw_rect(r, Color(1, 1, 1, 0.25), false, 1.0)
+				if list[j] == Look.look[role]:
+					draw_rect(r.grow(1.0), GOLD, false, 1.0)
+				_rects.append([Rect2(r.position.x - 1.0, y, cell, pitch), "sw", i * 100 + j])
+		_rects.append([Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch), "row", i])
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:

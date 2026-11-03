@@ -103,7 +103,7 @@ func _process(_delta: float) -> bool:
 			var cs: Node = title._select
 			_check(cs != null and cs.mode == "tech", "TECH CAMPAIGN opens the select screen")
 			_check(
-				cs.ids.size() == 3 and cs.current_id() == "office_adult", "starts on the default"
+				cs.ids.size() == 4 and cs.current_id() == "office_adult", "starts on the default"
 			)
 			_check(not title._started and not campaign.active, "nothing has started yet")
 			_press(KEY_RIGHT)
@@ -286,7 +286,7 @@ func _process(_delta: float) -> bool:
 		26:
 			var cs: Node = title._select
 			_check(
-				cs != null and cs.mode == "free" and cs.ids.size() == 7, "free play offers all 7"
+				cs != null and cs.mode == "free" and cs.ids.size() == 8, "free play offers all 7 plus MAKE YOUR OWN"
 			)
 			_check(not cs.needs_phone() and "SALES" != cs.summary(), "no phone step in free play")
 			for k in 7:

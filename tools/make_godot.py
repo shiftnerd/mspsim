@@ -343,6 +343,7 @@ Msp="*res://scripts/msp.gd"
 Computer="*res://scripts/computer.gd"
 Phone="*res://scripts/phone.gd"
 Build="*res://scripts/build.gd"
+Look="*res://scripts/look.gd"
 Campaign="*res://scripts/campaign.gd"
 DayReport="*res://scripts/day_report.gd"
 Skills="*res://scripts/skills.gd"
@@ -1909,6 +1910,7 @@ const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
 const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
 
 @export var character := "office_dan"
+var custom := false  # a copy of the player's custom person (Look): the teen sheet in their colours
 @export var facing := "right"
 @export var routine: PackedStringArray = []
 @export var start_seat := ""
@@ -1962,6 +1964,7 @@ var _t := 0.0
 
 func _ready() -> void:
     sprite.sprite_frames = load("res://characters/%s.tres" % character)
+    Look.apply(sprite, character, custom)
     add_to_group("npcs")
     sprite.animation_finished.connect(_on_animation_finished)
     body_entered.connect(_on_body_entered)
@@ -8337,6 +8340,7 @@ func continue_game(for_mode: String) -> bool:
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
+    Look.from_dict(cfg.get_value("campaign", "look", {}))  # an old save has none: a stock character
     var saved_as := str(cfg.get_value("campaign", "player_as", ""))  # old saves: nobody
     player_as = saved_as if World.CAST.has(saved_as) else ""
     if for_mode == "owner" and not Roles.OWNERS.has(player_as):
@@ -8397,6 +8401,7 @@ func save() -> void:
     cfg.set_value("campaign", "year", year)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
+    cfg.set_value("campaign", "look", Look.to_dict())  # R15: the colours of a custom person (character is office_teen then)
     cfg.set_value("campaign", "player_as", player_as)
     cfg.set_value("campaign", "build", build)
     cfg.set_value("campaign", "skills", Skills.to_dict())
@@ -39331,6 +39336,7 @@ func _paint_seed(size: Vector2) -> void:
 
 
 write("scripts/charselect.gd", '''extends Node2D
+# gdlint:disable=max-returns
 # Character select / first-day screen, shown by the title menu before a new run starts. A row of
 # the playable characters (a carousel in narrow portrait) with an idle preview, a name and a short
 # blurb; the tech campaign then asks for your phone. Left / Right move, Enter / E / Space confirm,
@@ -39351,6 +39357,10 @@ const GOLD := Color("f5d442")
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
+const FREE_MODE := "free"
+const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
+const CREATE_ROWS := ["name", "skin", "hair", "shirt", "pants", "shoes", "random"]
+const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
     "office_teen":
     {
@@ -39411,6 +39421,7 @@ var ids: Array = []
 var sel := 0
 var phone_sel := 0
 var facing := "right"
+var create_row := 0  # the row of the create step (CREATE_ROWS)
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
@@ -39430,6 +39441,21 @@ func is_campaign() -> bool:
 
 func needs_phone() -> bool:
     return mode == "tech"
+
+
+# MAKE YOUR OWN is offered where the player is nobody from the cast: the tech campaign and Free Play (the owner, sales and
+# service campaigns play Alan / Garrison / Vic / Dan)
+func offers_custom(for_mode: String) -> bool:
+    return for_mode == "tech" or for_mode == FREE_MODE
+
+
+func is_custom() -> bool:
+    return sel < ids.size() and ids[sel] == CUSTOM
+
+
+# the raw card id under the cursor (CUSTOM for the MAKE YOUR OWN card)
+func sel_id() -> String:
+    return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
 
 
 # the point-buy step (X7): the campaigns that have a stat set; Free Play has none
@@ -39471,9 +39497,14 @@ func setup(for_mode: String, year2 := false) -> void:
     mode = for_mode
     step = "char"
     ids = choices(mode)
+    if offers_custom(mode):
+        ids.push_front(CUSTOM)
     sel = maxi(0, ids.find(PLAYER.current_character))
     if not PLAYER.current_character in ids:
         sel = maxi(0, ids.find("office_adult"))
+    if offers_custom(mode) and Look.active:
+        sel = 0  # the last new run was a custom person
+    create_row = 0
     phone_sel = 1 if Phone.os == "android" else 0
     _panel = null
     _confirmed = false
@@ -39486,7 +39517,8 @@ func setup(for_mode: String, year2 := false) -> void:
     _sprites.clear()
     for id in ids:
         var spr := AnimatedSprite2D.new()
-        spr.sprite_frames = load("res://characters/%s.tres" % id)
+        spr.sprite_frames = load("res://characters/%s.tres" % (Look.BASE if id == CUSTOM else id))
+        Look.apply(spr, Look.BASE, id == CUSTOM)
         spr.play("idle_right")
         add_child(spr)
         _sprites.append(spr)
@@ -39494,10 +39526,14 @@ func setup(for_mode: String, year2 := false) -> void:
 
 
 func current_id() -> String:
-    return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
+    if is_custom():
+        return Look.BASE
+    return sel_id()
 
 
 func info(id: String) -> Dictionary:
+    if id == CUSTOM:
+        return {"name": "MAKE YOUR OWN", "blurb": CUSTOM_BLURB}
     var entry: Dictionary = PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""}).duplicate()
     if mode == "owner" and OWNER_BLURBS.has(id):
         entry["blurb"] = OWNER_BLURBS[id]
@@ -39510,7 +39546,8 @@ func info(id: String) -> Dictionary:
 
 func summary(with_tier := true) -> String:
     var label: String = Campaign.MODES.get(mode, "FREE PLAY")
-    var s := "%s - %s" % [label, str(info(current_id()).name)]
+    var who: String = Look.final_name() if is_custom() else str(info(current_id()).name)
+    var s := "%s - %s" % [label, who]
     if needs_phone():
         s += " - " + str(PHONES[phone_sel].name)
     if _panel != null and (step == "build" or _confirmed):
@@ -39586,7 +39623,13 @@ func move(delta_sel: int) -> void:
 
 
 func confirm() -> void:
-    if step == "char" and needs_phone():
+    if step == "char" and is_custom():
+        step = "create"
+        queue_redraw()
+        return
+    if step == "create":
+        Look.look["name"] = Look.final_name()
+    if (step == "char" or step == "create") and needs_phone():
         step = "phone"
         queue_redraw()
         return
@@ -39606,8 +39649,11 @@ func confirm() -> void:
         "summary": summary(),
         "tier": Difficulty.tier,
         "build": Build.pending,
+        "look": Look.look.duplicate() if is_custom() else {},
     }
     PLAYER.current_character = current_id()
+    Look.active = is_custom()
+    Look.save_settings(Look.active)  # the look is the default of the next new run
     if needs_phone():
         Phone.set_os(result.phone)
     done.emit(result)
@@ -39615,9 +39661,12 @@ func confirm() -> void:
 
 func back() -> void:
     if step == "build":
-        step = "phone" if needs_phone() else "char"
+        step = "phone" if needs_phone() else ("create" if is_custom() else "char")
         queue_redraw()
     elif step == "phone":
+        step = "create" if is_custom() else "char"
+        queue_redraw()
+    elif step == "create":
         step = "char"
         queue_redraw()
     else:
@@ -39628,6 +39677,9 @@ func _unhandled_input(event: InputEvent) -> void:
     if Engine.get_process_frames() == _born or Toolbox.is_open:
         return
     if Controls.pressed(event):
+        if step == "create" and _create_input(event):
+            get_viewport().set_input_as_handled()
+            return
         var dir := Controls.nav(event)
         if step == "build" and _build_key(event, dir):
             get_viewport().set_input_as_handled()
@@ -39694,6 +39746,81 @@ func _build_key(event: InputEvent, dir: String) -> bool:
     return true
 
 
+func _create_input(event: InputEvent) -> bool:
+    if create_row == 0 and _type_key(event):
+        queue_redraw()
+        return true
+    return _create_key(event, Controls.nav(event))
+
+
+# the create step: Up / Down pick a row, Left / Right change it (the NAME row steps through suggested names, RANDOM rolls a
+# person), Enter on RANDOM rolls, Enter on any other row goes on
+func _create_key(event: InputEvent, dir: String) -> bool:
+    if dir == "up":
+        create_row = (create_row + CREATE_ROWS.size() - 1) % CREATE_ROWS.size()
+    elif dir == "down":
+        create_row = (create_row + 1) % CREATE_ROWS.size()
+    elif dir == "left" or dir == "right":
+        _create_change(-1 if dir == "left" else 1)
+    elif Controls.confirm(event) and CREATE_ROWS[create_row] == "random":
+        roll_look()
+    else:
+        return false
+    queue_redraw()
+    return true
+
+
+func _create_change(delta: int) -> void:
+    var role: String = CREATE_ROWS[create_row]
+    if role == "name":
+        Look.cycle_name(delta)
+    elif role == "random":
+        roll_look()
+    else:
+        Look.set_swatch(role, maxi(0, Look.swatch_index(role)) + delta)
+    _refresh_look()
+
+
+# typing on the NAME row: letters, digits, space and dash are added, Backspace deletes (an empty name lets Backspace go back)
+func _type_key(event: InputEvent) -> bool:
+    if not event is InputEventKey:
+        return false
+    var code: int = event.keycode
+    var buf := str(Look.look.get("name", ""))
+    if code == KEY_BACKSPACE:
+        if buf == "":
+            return false
+        Look.look["name"] = buf.left(buf.length() - 1)
+        _refresh_look()
+        return true
+    if code in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE, KEY_TAB]:
+        return false
+    var ch := ""
+    if event.unicode > 0:
+        ch = char(event.unicode)
+    elif code >= KEY_A and code <= KEY_Z:
+        ch = char(code)
+    if not Look.name_char_ok(ch):
+        return false
+    if buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
+        Look.look["name"] = buf + ch.to_upper()
+    _refresh_look()
+    return true
+
+
+func roll_look() -> void:
+    Look.randomize_look()
+    _refresh_look()
+
+
+# the preview cards wear the look
+func _refresh_look() -> void:
+    for i in ids.size():
+        if ids[i] == CUSTOM:
+            Look.apply(_sprites[i], Look.BASE, true)
+    queue_redraw()
+
+
 func _hit(at: Vector2) -> Array:
     for r in _rects:
         if r[0].has_point(at):
@@ -39709,6 +39836,11 @@ func _hover(at: Vector2) -> void:
     if kind.begins_with("b_"):
         if step == "build":
             _panel.hover(kind, int(r[2]))
+            queue_redraw()
+    elif step == "create" and kind in ["sw", "row", "name_prev", "name_next", "random"]:
+        var row := floori(float(r[2]) / 100.0) if kind == "sw" else (int(r[2]) if kind == "row" else (6 if kind == "random" else 0))
+        if row != create_row:
+            create_row = row
             queue_redraw()
     elif kind == "item" and step == "char" and sel != int(r[2]):
         sel = int(r[2])
@@ -39728,6 +39860,22 @@ func _click(at: Vector2) -> void:
             queue_redraw()
         return
     match str(r[1]):
+        "sw":
+            create_row = floori(float(r[2]) / 100.0)
+            Look.set_swatch(str(CREATE_ROWS[create_row]), int(r[2]) % 100)
+            _refresh_look()
+        "row":
+            create_row = int(r[2])
+            queue_redraw()
+        "name_prev", "name_next":
+            create_row = 0
+            Look.cycle_name(-1 if str(r[1]) == "name_prev" else 1)
+            _refresh_look()
+        "random":
+            create_row = CREATE_ROWS.size() - 1
+            roll_look()
+        "go":
+            confirm()
         "back":
             back()
         "prev":
@@ -39809,7 +39957,7 @@ func _draw() -> void:
     var narrow := size.x < 250.0
     _rects.clear()
     draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
-    var heading := "CHOOSE YOUR CHARACTER" if step == "char" else ("PICK YOUR PHONE" if step == "phone" else "BUILD YOUR CHARACTER")
+    var heading: String = {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE"}.get(step, "BUILD YOUR CHARACTER")
     _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
     var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
     draw_rect(back_r, PANEL)
@@ -39823,6 +39971,9 @@ func _draw() -> void:
             _draw_mut(size, narrow)
     if step == "char":
         _draw_chars(size, narrow)
+    elif step == "create":
+        _place_sprites(size, narrow)
+        _draw_create(size, narrow)
     elif step == "build":
         _place_sprites(size, narrow)
         _panel.draw(self, size, narrow, _rects)
@@ -39831,6 +39982,13 @@ func _draw() -> void:
         _draw_phones(size, narrow)
     _draw_summary(size, narrow)
     var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
+    if step == "create":
+        if narrow:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
+            _ctxt("TYPE NAME  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+        else:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  TYPE NAME  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+        return
     if step == "build":
         if narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
@@ -39955,6 +40113,16 @@ func _draw_mut(size: Vector2, narrow: bool) -> void:
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
     var n := ids.size()
+    if step == "create":  # only the custom person, big enough to see the colours
+        var lay := _create_layout(size, narrow)
+        for i in n:
+            var cs: AnimatedSprite2D = _sprites[i]
+            cs.visible = i == sel
+            cs.scale = Vector2.ONE
+            cs.position = Vector2(float(lay.cx), float(lay.feet) - 40.0)
+            if i == sel and cs.animation != "idle_" + facing:
+                cs.play("idle_" + facing)
+        return
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
     var feet := 83.0 if size.y <= 130.0 else 104.0
     if narrow:
@@ -40000,7 +40168,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
             draw_rect(r, Color(0.1, 0.13, 0.2, 0.9) if i == sel else PANEL)
             if i == sel:
                 draw_rect(r, GOLD, false, 1.0)
-    var data := info(current_id())
+    var data := info(sel_id())
     var name_y := feet + (12.0 if narrow else 10.0)
     _ctxt(str(data.name), name_y, GOLD)
     var by := name_y + (20.0 if narrow else 9.0)
@@ -40014,6 +40182,69 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
             note = str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", note)).to_upper()
         if end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
             _para(note, end_y + 2.0, DIM, 2)
+
+
+# where the create step puts the preview (cx, feet) and the rows (x0, y0, pitch): wide 368x128, h 320x180, v 180x320
+func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
+    if narrow:
+        return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 128.0, "pitch": 14.0}
+    if size.y <= 130.0:
+        return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
+    return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
+
+
+# the create step (R15): a name row, one swatch row per colour, and a RANDOM / DONE row; the preview is live
+func _draw_create(size: Vector2, narrow: bool) -> void:
+    var lay := _create_layout(size, narrow)
+    var x0: float = lay.x0
+    var pitch: float = lay.pitch
+    var sx := x0 + 30.0
+    var cell := minf(12.0, floorf((size.x - sx - 6.0) / 12.0))
+    var sw := cell - 3.0
+    var who := str(Look.look.get("name", ""))
+    var cap := who if who != "" else "?"
+    _txt(cap, Vector2(floorf(float(lay.cx) - float(PixelFont.width(cap)) * 0.5), float(lay.feet) + 3.0), GOLD)
+    for i in CREATE_ROWS.size():
+        var role: String = CREATE_ROWS[i]
+        var y: float = float(lay.y0) + float(i) * pitch
+        var hot := i == create_row
+        var sy := y + floorf((pitch - sw) * 0.5)
+        var ty := sy + floorf((sw - 5.0) * 0.5)
+        if hot:
+            draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
+        if role == "name":
+            _txt("NAME", Vector2(x0, ty), GOLD if hot else DIM)
+            var box := Rect2(sx + 8.0, sy, 49.0, sw)
+            draw_rect(box, INK)
+            draw_rect(box, GOLD if hot else DIM, false, 1.0)
+            var shown := who + ("_" if hot and who.length() < Look.MAX_NAME else "")
+            _txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
+            _txt("<", Vector2(sx, ty), GOLD)
+            _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
+            _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "name_prev", 0])
+            _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "name_next", 0])
+        elif role == "random":
+            var rr := Rect2(x0, sy - 1.0, 44.0, 9.0)
+            draw_rect(rr, PANEL)
+            draw_rect(rr, GOLD if hot else DIM, false, 1.0)
+            _txt("RANDOM", Vector2(rr.position.x + 10.0, rr.position.y + 2.0), Color.WHITE)
+            _rects.append([rr, "random", 0])
+            var gr := Rect2(x0 + 50.0, sy - 1.0, 32.0, 9.0)
+            draw_rect(gr, PANEL)
+            draw_rect(gr, GOLD, false, 1.0)
+            _txt("DONE", Vector2(gr.position.x + 8.0, gr.position.y + 2.0), GOLD)
+            _rects.append([gr, "go", 0])
+        else:
+            _txt(role.to_upper(), Vector2(x0, ty), GOLD if hot else DIM)
+            var list: Array = Look.SWATCHES[role]
+            for j in list.size():
+                var r := Rect2(sx + float(j) * cell, sy, sw, sw)
+                draw_rect(r, Color.html(str(list[j])))
+                draw_rect(r, Color(1, 1, 1, 0.25), false, 1.0)
+                if list[j] == Look.look[role]:
+                    draw_rect(r.grow(1.0), GOLD, false, 1.0)
+                _rects.append([Rect2(r.position.x - 1.0, y, cell, pitch), "sw", i * 100 + j])
+        _rects.append([Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch), "row", i])
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:
@@ -40135,6 +40366,7 @@ func _ready() -> void:
     _menu.draw.connect(_draw_menu)
     Game.format_changed.connect(_on_format)
     Difficulty.load_settings()
+    Look.load_settings()
     Sfx.settings_changed.connect(_menu.queue_redraw)
     Sfx.play_music("title")
     show_vignette(0)
@@ -41067,11 +41299,13 @@ func _add_inputs() -> void:
 func _load_character(name: String) -> void:
     current_character = name
     sprite.sprite_frames = load("res://characters/%s.tres" % name)
+    Look.apply(sprite, name, Look.is_custom())  # the custom person is the teen sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
 # hurt would otherwise never emit animation_finished and the state machine would hang)
 func _switch_character(name: String) -> void:
+    Look.active = false  # the number keys pick the stock people
     var anim := sprite.animation
     var frame := sprite.frame
     var progress := sprite.frame_progress
@@ -48426,6 +48660,357 @@ static func action(cp, parts: PackedStringArray) -> void:
             if not l.is_empty():
                 SalesCampaign.drop_lead(int(l.id))
                 cp._say("DROPPED " + str(l.name).to_upper())
+''')
+
+write("scripts/look.gd", '''extends Node
+# gdlint:disable=max-line-length
+# CHARACTER CREATOR, LEVEL 1: COLOURS ONLY (roadmap R15). The custom person is the TEEN sheet (Look.BASE) drawn through a
+# palette-swap shader (canvas_item) that replaces each flat colour of that sheet with the player's choice. There is no new
+# art: every animation, seat, hand and ear position keeps working, and anything keyed by character name (Player.CHARACTERS,
+# hands json, Social, Lync, Talk) sees plain "office_teen".
+#
+#   look        {name, skin, hair, shirt, pants, shoes}: five colours as 6 digit hex text, plus a name (up to 10 characters)
+#   SOURCES     the flat colours of office_teen_right / _left.png that are recoloured: [hex, role, level]. Level 0 is the
+#               base colour of the role, 1 and 2 are the shades (or the highlight) computed from the chosen base, so the
+#               figure stays consistent (shade_of). The outline #17121F, the eyes, brows, mouth, belt, buckle and watch are
+#               KEEPS: listed so the nearest-colour match never takes them for a neighbouring shade.
+#   Hurt flash  frames 25 and 28 of the sheet are every colour mixed 70% to white; the shader and map_color() match those too
+#   active      the current person IS the custom one (is_custom(): active and the player's sheet is BASE)
+#
+# The shader and map_color() are one algorithm (nearest source colour inside a tolerance); tests/creator.gd runs map_color()
+# over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
+# new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
+
+const PLAYER := preload("res://scripts/player.gd")
+const BASE := "office_teen"
+const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
+const MAX_NAME := 10
+const FLASH := 0.7  # the hurt frames mix every colour this far to white
+const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
+const FLASH_TOL := 0.01
+const MIN_STEP := 0.045  # the least a shade differs from its base in value
+const SOURCES := [
+    ["f3b488", "skin", 0],
+    ["d88a62", "skin", 1],
+    ["b8663f", "skin", 2],
+    ["9a5124", "hair", 0],
+    ["c47a38", "hair", 1],
+    ["4f7fd0", "shirt", 0],
+    ["3a62a8", "shirt", 1],
+    ["bbd0f5", "shirt", 2],
+    ["3a3f66", "pants", 0],
+    ["2f3354", "pants", 1],
+    ["272b48", "pants", 2],
+    ["5a3522", "shoes", 0],
+    ["4a2c1c", "shoes", 1],
+]
+# never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
+const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33"]
+const SWATCHES := {
+    "skin": ["fbd7bc", "f3b488", "e3a272", "c68642", "a8683a", "8d5524", "6b3e22", "4a2a18"],
+    "hair":
+    [
+        "9a5124",
+        "2a1c14",
+        "4a3222",
+        "74492a",
+        "c9a25b",
+        "e8d090",
+        "b8421f",
+        "8a8f9a",
+        "e8e8ec",
+        "3a5fb0",
+        "8e3fa8",
+        "e05a9a"
+    ],
+    "shirt":
+    [
+        "4f7fd0",
+        "8c2b40",
+        "b8292f",
+        "4f9c8e",
+        "3c55c0",
+        "2f6b3a",
+        "e0a030",
+        "f4f2ea",
+        "2a2f3a",
+        "7a4fb0",
+        "d0602a",
+        "e08aa8"
+    ],
+    "pants": ["3a3f66", "2b3550", "3f5e8e", "8a6a42", "2a2a33", "6a6f7a", "5a4a3a", "7a3030"],
+    "shoes": ["5a3522", "2a2a33", "8a8f9a", "cfc8b5", "3a3a44", "7a2020", "2f4a73", "6e7a68"],
+}
+# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, Vic, Maya, Morgan) or the crew (Sam, Terry)
+const NAMES := [
+    "JAMIE",
+    "CASEY",
+    "RILEY",
+    "TAYLOR",
+    "JORDAN",
+    "QUINN",
+    "AVERY",
+    "DREW",
+    "KELLY",
+    "CHRIS",
+    "PAT",
+    "LEE"
+]
+
+var active := false
+var look: Dictionary = default_look()
+var _shader: Shader = null
+
+
+func default_look() -> Dictionary:
+    return {
+        "name": NAMES[0],
+        "skin": "f3b488",
+        "hair": "9a5124",
+        "shirt": "4f7fd0",
+        "pants": "3a3f66",
+        "shoes": "5a3522"
+    }
+
+
+# ---- the colour maths ------------------------------------------------------------------
+# the shade (level 1), deeper shade or highlight (level 2) of a base colour for a role: the same hue shift and
+# saturation / value ratios as the original sheet's base -> shade pair (skin f3b488 -> d88a62 -> b8663f, hair 9a5124 ->
+# highlight c47a38, shirt 4f7fd0 -> 3a62a8 and the button tint bbd0f5, pants 3a3f66 -> 2f3354 -> 272b48, shoes 5a3522 ->
+# 4a2c1c), so the original base gives back exactly the original shades and every other base keeps the same look.
+# Very dark or very light bases still get a step of at least MIN_STEP in value.
+func shade_of(base: Color, role: String, level: int) -> Color:
+    if level == 0:
+        return base
+    var from_c := Color.WHITE
+    var to_c := Color.WHITE
+    for row in SOURCES:
+        if row[1] == role and int(row[2]) == 0:
+            from_c = Color.html(str(row[0]))
+        elif row[1] == role and int(row[2]) == level:
+            to_c = Color.html(str(row[0]))
+    var hue := fposmod(base.h + (to_c.h - from_c.h), 1.0)
+    var sat := clampf(base.s * to_c.s / maxf(from_c.s, 0.01), 0.0, 1.0)
+    var val := clampf(base.v * to_c.v / from_c.v, 0.0, 1.0)
+    if to_c.v < from_c.v and base.v - val < MIN_STEP:
+        val = maxf(base.v - MIN_STEP, 0.0)
+    elif to_c.v > from_c.v and val - base.v < MIN_STEP:
+        val = minf(base.v + MIN_STEP, 1.0)
+    return Color.from_hsv(hue, sat, val)
+
+
+func _color_of(look_dict: Dictionary, role: String) -> Color:
+    return Color.html(str(look_dict.get(role, "ffffff")))
+
+
+# the recoloured value of every SOURCES row followed by the KEEPS (themselves), for this look
+func palette(look_dict: Dictionary) -> PackedColorArray:
+    var out := PackedColorArray()
+    for row in SOURCES:
+        out.append(shade_of(_color_of(look_dict, str(row[1])), str(row[1]), int(row[2])))
+    for hex in KEEPS:
+        out.append(Color.html(str(hex)))
+    return out
+
+
+func sources() -> PackedColorArray:
+    var out := PackedColorArray()
+    for row in SOURCES:
+        out.append(Color.html(str(row[0])))
+    for hex in KEEPS:
+        out.append(Color.html(str(hex)))
+    return out
+
+
+func _dist(a: Color, b: Color) -> float:
+    return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length()
+
+
+# the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the TEEN sheet
+# turns into for this look (an unknown colour comes back unchanged)
+func map_color(c: Color, look_dict: Dictionary) -> Color:
+    var src := sources()
+    var dst := palette(look_dict)
+    var best := -1
+    var best_d := 1000.0
+    var best_flash := false
+    for i in src.size():
+        var d := _dist(c, src[i])
+        if d < TOL and d < best_d:
+            best = i
+            best_d = d
+            best_flash = false
+        var f := _dist(c, src[i].lerp(Color.WHITE, FLASH))
+        if f < FLASH_TOL and f < best_d:
+            best = i
+            best_d = f
+            best_flash = true
+    if best < 0:
+        return c
+    var out: Color = dst[best].lerp(Color.WHITE, FLASH) if best_flash else dst[best]
+    return Color(out.r, out.g, out.b, c.a)
+
+
+func shader() -> Shader:
+    if _shader == null:
+        var n := SOURCES.size() + KEEPS.size()
+        _shader = Shader.new()
+        _shader.code = (
+            """shader_type canvas_item;
+uniform vec4 src[%d];
+uniform vec4 dst[%d];
+varying vec4 vcol;
+void vertex() {
+  vcol = COLOR;
+}
+void fragment() {
+  vec4 c = texture(TEXTURE, UV);
+  int best = -1;
+  float best_d = 1000.0;
+  bool best_flash = false;
+  vec3 o = c.rgb;
+  if (c.a > 0.0) {
+    for (int i = 0; i < %d; i++) {
+      float d = distance(c.rgb, src[i].rgb);
+      if (d < %f && d < best_d) { best = i; best_d = d; best_flash = false; }
+      float f = distance(c.rgb, mix(src[i].rgb, vec3(1.0), %f));
+      if (f < %f && f < best_d) { best = i; best_d = f; best_flash = true; }
+    }
+  }
+  if (best >= 0) {
+    o = dst[best].rgb;
+    if (best_flash) { o = mix(o, vec3(1.0), %f); }
+  }
+  COLOR = vec4(o, c.a) * vcol;
+}
+"""
+            % [n, n, n, TOL, FLASH, FLASH_TOL, FLASH]
+        )
+    return _shader
+
+
+func make_material(look_dict: Dictionary) -> ShaderMaterial:
+    var m := ShaderMaterial.new()
+    m.shader = shader()
+    m.set_shader_parameter("src", sources())
+    m.set_shader_parameter("dst", palette(look_dict))
+    return m
+
+
+# ---- who is custom ------------------------------------------------------------------
+func is_custom() -> bool:
+    return active and PLAYER.current_character == BASE
+
+
+# the custom name ("" while the player is a stock character)
+func display_name() -> String:
+    return str(look.name) if is_custom() else ""
+
+
+# put the palette-swap material on a sprite showing `character` when it is the custom person (the player's sprite, the
+# select screen's preview card, an NPC copy), otherwise none
+func apply(sprite: CanvasItem, character: String, custom: bool) -> void:
+    sprite.material = make_material(look) if custom and character == BASE else null
+
+
+# ---- editing --------------------------------------------------------------------------
+func clean_name(text: String) -> String:
+    var out := ""
+    for ch in text.to_upper():
+        if (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == " " or ch == "-":
+            out += ch
+    return out.strip_edges().left(MAX_NAME)
+
+
+# the name as the game uses it: cleaned, never empty
+func final_name() -> String:
+    var nm := clean_name(str(look.get("name", "")))
+    return nm if nm != "" else NAMES[0]
+
+
+func name_char_ok(ch: String) -> bool:
+    return (
+        ch.length() == 1
+        and (
+            (ch >= "A" and ch <= "Z")
+            or (ch >= "a" and ch <= "z")
+            or (ch >= "0" and ch <= "9")
+            or ch == " "
+            or ch == "-"
+        )
+    )
+
+
+# the suggested names, one step forward or back from the current name
+func cycle_name(step: int) -> void:
+    var i := NAMES.find(final_name())
+    look["name"] = NAMES[(maxi(i, 0) + step + NAMES.size()) % NAMES.size()]
+
+
+func sanitize(d: Dictionary) -> Dictionary:
+    var out := default_look()
+    for role in ROLES:
+        var hex := str(d.get(role, out[role])).to_lower().trim_prefix("#")
+        if hex.length() == 6 and hex.is_valid_hex_number():
+            out[role] = hex
+    var nm := clean_name(str(d.get("name", "")))
+    out["name"] = nm if nm != "" else NAMES[0]
+    return out
+
+
+func swatch_index(role: String) -> int:
+    var list: Array = SWATCHES[role]
+    return list.find(str(look[role]))
+
+
+func set_swatch(role: String, index: int) -> void:
+    var list: Array = SWATCHES[role]
+    look[role] = list[(index % list.size() + list.size()) % list.size()]
+
+
+# a random person from the seeded "creator" stream: the same run seed gives the same sequence of people
+func randomize_look() -> void:
+    var r := Difficulty.rng("creator")
+    for role in ROLES:
+        var list: Array = SWATCHES[role]
+        look[role] = list[r.randi() % list.size()]
+    look["name"] = NAMES[r.randi() % NAMES.size()]
+
+
+# ---- save, load, settings ------------------------------------------------------------
+func to_dict() -> Dictionary:
+    var out := look.duplicate()
+    out["active"] = is_custom()
+    return out
+
+
+func from_dict(d: Dictionary) -> void:
+    if d.is_empty():
+        active = false  # an old save, or a stock character
+        return
+    look = sanitize(d)
+    active = bool(d.get("active", false))
+
+
+func load_settings() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(Difficulty.settings_path) != OK or not cfg.has_section("look"):
+        return
+    var d := {}
+    for key in cfg.get_section_keys("look"):
+        d[key] = cfg.get_value("look", key)
+    look = sanitize(d)
+    active = bool(d.get("custom", false))
+
+
+# remember the look and whether the last new run used it (the select screen opens on the MAKE YOUR OWN card again)
+func save_settings(custom_run: bool) -> void:
+    var cfg := ConfigFile.new()
+    cfg.load(Difficulty.settings_path)
+    for key in look:
+        cfg.set_value("look", key, look[key])
+    cfg.set_value("look", "custom", custom_run)
+    cfg.save(Difficulty.settings_path)
 ''')
 
 # format the generated scripts if gdtoolkit is installed (pip install gdtoolkit)
