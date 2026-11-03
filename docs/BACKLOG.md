@@ -8,6 +8,7 @@ Status is as of the commit that last touched this file; move items to `CLAUDE.md
 - **Polish round 2** [`polish`]: look at the rebuilt dental / law / vet / trailer main offices, architect reception chair covering the desk label, interact zones for the realty coffee bar / sign-in sheet / arch reception, dinner topic list overlapping Vic at h format, printer pages at h, onsite staff stealing E from doors and equipment.
 - **Tech playtest bugs** [`bugfix`]: the 13 findings from the live tech-campaign playthrough (below).
 - **Owner campaign live playthrough** (main build): findings will be added here when it reports.
+- **Campaign paths design** (`docs/campaign-paths.md`): service manager (Garrison) and sales (Vic) campaigns plus the play-as-a-cast-member prerequisite; read-only design agent.
 
 ## Tech playtest findings (days 1-5; all assigned to the `bugfix` branch)
 1. Complaints and calls about tickets that are already closed (`sales.gd` complaint text / deliver only check the ticket exists).
@@ -27,7 +28,7 @@ Not covered by the playtest: days 6-20, the overtime-night card flow, the review
 
 ## Needs a decision from you
 - **Era mentions**: decided. The two game names are parodied (Sugar Smash, Floppy Bat). Apple, Windows, Exchange and PowerShell stay as era context, and so does the old PC's "OUTLOOK 2003 PROFILE + PST" file name.
-- **Playing as a cast member in a campaign** (Alan, Garrison, Dan, Vic): character select offers only teen, adult and site Alan there, because the cast member's NPC copy would have to be removed and their Social / Lync / Talk / desk entries handled. Worth doing?
+- **Playing as a cast member in a campaign**: now wanted. Two new campaign paths need it: service manager (as Garrison) and sales (as Vic), see `IDEAS.md` "New campaign paths" and `docs/campaign-paths.md` (design in progress). Character select offers only teen, adult and site Alan in campaigns until this lands.
 - **Dialogue Manager addon**: research said skip for now (revisit only for long branching NPC conversations; a half-day spike would confirm its condition syntax). Alternative: conditional lines in the existing `Talk` tables.
 - **Gitot** (in-editor git panel): optional; the repo is set up and the CLI / GitHub Desktop work fine.
 

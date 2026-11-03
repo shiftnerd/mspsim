@@ -19,6 +19,12 @@ All of it follows the same rules: data tables (patchable, in `strings.txt` style
 10. **Year 2 / New Game+** (new clients active, shifted story beats, harder SLAs) and a **daily seed**; a Free Play toolbox (pick any game, song, printer model, arena, seed) for filming.
 Later: bowling lane oil / spin / alleys / league night / handicaps, nerf modes (capture the monitor, VIP defence, scarce ammo, arenas), conference-trip randomisation, onsite job parameter variance and a dispatch roulette.
 
+## New campaign paths (user direction)
+Today there are two campaigns: the tech (you are the Tier 1 tech) and the owner. Two more are wanted, each played as an existing cast member:
+- **Service manager, played as Garrison** (the "operator" idea, item 44 below): you do not own the company, you own the process. Dispatch, tiering, runbooks, SLAs, onboarding, hiring and escalations; you answer to the owner (Morgan); metrics are first response, first-call resolution, SLA, utilisation, tech retention and client mood. Fits the maturity ladder and the desk-design decision (tiered vs swarming vs pods, with or without a dispatcher).
+- **Sales / account manager, played as Vic**: close deals, run client visits and business reviews, quotes and projects, the sales-to-service handover, over-promising versus delivery, commission and quota, renewals and churn. Reuses `Sales`, `Onsite` visits, the project quote cards and the client roster.
+- Both need the "play as a cast member" work first (the chosen cast member's NPC copy must be removed and the team handled without them). The design write-up with systems to reuse, loops, metrics, story arc and phasing is `docs/campaign-paths.md` (in progress).
+
 ## Tech campaign
 - A real conference-room scene for the yearly review (Morgan, with the team visible behind).
 - More story days for the quiet days (6, 8, 11, 14, 17, 19): the weeks between the big jobs need small human beats.
