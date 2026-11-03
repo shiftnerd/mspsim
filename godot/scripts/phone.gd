@@ -1,6 +1,6 @@
 extends CanvasLayer
-# The cell phone (2013): press P. The first time you pick iPhone 5 (iOS 7 look) or Nexus 5
-# (Android 4.4 look); the choice is saved and can be changed in Settings. Like the computer it
+# The cell phone (2013): press P. The first time you pick iFone 5 (slate phone, iOS-style look) or Nexxus 5
+# (Android-style look); the choice is saved and can be changed in Settings. Like the computer it
 # takes over the screen (the office stays visible in a faded strip at the top). Apps: Mail (the
 # same inbox as Outlookish), Tickets (a small ConnectWhy PSA: look, take, note), Texts (dispatch
 # and the boss text you about urgent tickets) and Settings. The phone is on cellular, so it still
@@ -478,7 +478,7 @@ func _paint_choose(a: Rect2) -> void:
 			_disc(Vector2(b.position.x + w * 0.5, b.end.y - 6), 2, Color("55595f"))
 		else:
 			_fill(Rect2(scr.position.x, scr.end.y - 3, scr.size.x, 3), Color("000000"))
-		var label: String = "IPHONE 5" if ios else "NEXUS 5"
+		var label: String = "IFONE 5" if ios else "NEXXUS 5"
 		_text(label, Vector2(floorf(x + (w - _tw(label)) * 0.5), b.end.y + 5), WHITE)
 		_region(
 			"os:" + ("ios" if ios else "android"),
@@ -557,7 +557,7 @@ func _paint_home(a: Rect2) -> void:
 	else:
 		var bar := Rect2(a.position.x + 3, a.end.y - 12 * _sc, a.size.x - 6, 8 * _sc)
 		_fill(bar, Color("eeeeee"))
-		_text("GOOGLE", bar.position + Vector2(3, 1.5 * _sc), Color("4a7bd0"))
+		_text("GOOGOL", bar.position + Vector2(3, 1.5 * _sc), Color("4a7bd0"))
 
 
 # ---- shared app chrome -------------------------------------------------------
@@ -742,7 +742,7 @@ func _paint_settings(a: Rect2) -> void:
 		var ios := i == 0
 		var r := Rect2(body.position.x + 2, y + i * 11 * _sc, body.size.x - 4, 9 * _sc)
 		_fill(r, Color("dce8fa") if (ios == _is_ios()) else WHITE)
-		_text("IPHONE 5" if ios else "NEXUS 5", r.position + Vector2(3, 2 * _sc), INK)
+		_text("IFONE 5" if ios else "NEXXUS 5", r.position + Vector2(3, 2 * _sc), INK)
 		if ios == _is_ios():
 			_text("*", Vector2(r.end.x - 6, r.position.y + 2 * _sc), Color("2b79f0"))
 		_region("os:" + ("ios" if ios else "android"), r)

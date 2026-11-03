@@ -1,11 +1,22 @@
 extends CanvasLayer
-# The end-of-day report for the campaigns: a dimmed screen with a small panel (tickets closed,
-# SLA missed, pay, reputation, a grade letter) and a button. Enter / Space / click continues.
-# Drawn in code with the pixel font.
+# The end-of-day report for the campaigns: a dimmed screen with a dark panel: a big grade and the
+# score / paycheck / reputation / cash on one side (or on top in narrow formats), the details
+# grouped under TICKETS / PEOPLE / ENERGY (the owner's books as one group), then the ending text
+# and a button. Enter / Space / click continues. Drawn in code with the 3x5 pixel font; the text
+# scale drops from 2 to 1 when a narrow format cannot fit everything.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
+const PANEL := Color("171c2a")
+const STRIPE := Color("1f2536")
+const LINE := Color("3a4562")
+const LABEL := Color("b4bfd6")
+const HEAD := Color("7fb6ff")
+const GOOD := Color("8fe3a0")
+const BAD := Color("ff8a80")
+const WARN := Color("ffd27a")
+const ROW := 7.0  # row height in virtual pixels (one font pixel at scale 1)
 const GRADE_COLORS := {
 	"S": Color("f5d442"),
 	"A": Color("5fd068"),
@@ -21,6 +32,8 @@ var _canvas: Node2D
 var _mouse := Vector2.ZERO
 var _button := Rect2()
 var _fade := 0.0
+var _sc := 1  # text scale in use (2 on narrow screens that have room for it)
+var _o := Vector2.ZERO  # panel origin in screen pixels
 var _opened := 0  # the report ignores confirm keys for a moment so it is not dismissed unread
 
 
@@ -81,58 +94,210 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-func _rows() -> Array:
+func _groups() -> Array:
 	if report.has("rows"):
-		return report.rows
+		var books := []
+		for row in report.rows:
+			if str(row[0]) != "":
+				books.append(row)
+		return [["", books]]
 	var r := report
-	var signed := "%+d" % int(r.rep_delta)
-	return [
-		["TICKETS CLOSED", str(r.closed), WHITE],
-		["SLA MISSED", str(r.missed), Color("ff8a80") if int(r.missed) > 0 else WHITE],
-		["REOPENED", str(r.reopened), Color("ff8a80") if int(r.reopened) > 0 else WHITE],
-		["STILL OPEN", str(r.open_left), WHITE],
-		["CLIENT MOOD", "%d%%" % int(r.clients), WHITE],
-		["DAY SCORE", str(r.points), WHITE],
-		(
-			["OVERTIME", "%.1fH" % float(r.overtime), Color("8fe3a0")]
-			if float(r.overtime) > 0.0
-			else ["", "", WHITE]
-		),
+	var mood := int(r.clients)
+	var social := int(r.social)
+	var groups := [
 		[
-			"COWORKERS",
-			"%+d" % int(r.social),
-			(
-				Color("8fe3a0")
-				if int(r.social) > 0
-				else (Color("ff8a80") if int(r.social) < 0 else WHITE)
-			)
-		],
-		(
+			"TICKETS",
 			[
-				"ENERGY",
-				_energy_text(),
-				Color("ff8a80") if int(r.get("energy", 100)) < 35 else Color("8fe3a0")
+				["CLOSED", str(r.closed), GOOD if int(r.closed) > 0 else WHITE],
+				["SLA MISSED", str(r.missed), BAD if int(r.missed) > 0 else GOOD],
+				["REOPENED", str(r.reopened), BAD if int(r.reopened) > 0 else GOOD],
+				["STILL OPEN", str(r.open_left), WARN if int(r.open_left) > 0 else GOOD],
 			]
-			if int(r.get("energy", -1)) >= 0
-			else ["", "", WHITE]
-		),
-		["PAYCHECK", "$%d" % int(r.pay), Color("8fe3a0")],
-		["REPUTATION", "%d (%s)" % [int(r.rep), signed], WHITE],
-		["CASH", "$%d" % int(r.cash), Color("8fe3a0")],
+		],
+		[
+			"PEOPLE",
+			[
+				["CLIENT MOOD", "%d%%" % mood, GOOD if mood >= 70 else (BAD if mood < 40 else WARN)],
+				[
+					"COWORKERS",
+					"%+d" % social if social != 0 else "0",
+					GOOD if social > 0 else (BAD if social < 0 else WHITE)
+				],
+			]
+		],
 	]
+	var energy := []
+	if int(r.get("energy", -1)) >= 0:
+		var e := int(r.energy)
+		energy.append(["ENERGY", "%d%%" % e, BAD if e < 35 else (WARN if e < 55 else GOOD)])
+		var notes := []
+		if int(r.get("late", 0)) >= 10:
+			notes.append("LATE %dM" % int(r.late))
+		if int(r.get("oncall", 0)) > 0:
+			notes.append("ON CALL")
+		if not notes.is_empty():
+			energy.append(["LATE / ON CALL", " ".join(notes), WARN])
+	if float(r.overtime) > 0.0:
+		energy.append(["OVERTIME", "%.1fH" % float(r.overtime), GOOD])
+	if not energy.is_empty():
+		groups.append(["ENERGY", energy])
+	return groups
 
 
-func _energy_text() -> String:
-	var s := "%d%%" % int(report.get("energy", 0))
-	if int(report.get("late", 0)) >= 10:
-		s += " LATE %dM" % int(report.late)
-	if int(report.get("oncall", 0)) > 0:
-		s += " ON CALL"
-	return s
+# the big numbers: [label, short label, value, colour]
+func _hero() -> Array:
+	var r := report
+	var delta := int(r.get("rep_delta", 0))
+	var tiles := []
+	if not report.has("rows"):
+		var pts := int(r.points)
+		var pcol := GOOD if pts >= 10 else (BAD if pts < 0 else WHITE)
+		tiles.append(["DAY SCORE", "SCORE", str(pts), pcol])
+		tiles.append(["PAYCHECK", "PAY", "$%d" % int(r.pay), GOOD if int(r.pay) > 0 else WHITE])
+	var rep_text := "%d (%+d)" % [int(r.rep), delta] if delta != 0 else str(int(r.rep))
+	var rcol := GOOD if delta > 0 else (BAD if delta < 0 else WHITE)
+	tiles.append(["REPUTATION", "REP", rep_text, rcol])
+	if not report.has("rows"):
+		var cash := int(r.cash)
+		tiles.append(["CASH", "CASH", "%s$%d" % ["-" if cash < 0 else "", absi(cash)], GOOD if cash >= 0 else BAD])
+	return tiles
 
 
-func _text(s: String, p: Vector2, c: Color, scale: int) -> void:
-	PixelFont.draw(_canvas, s, p, c, scale)
+# text in virtual pixels relative to the panel
+func _t(s: String, x: float, y: float, c: Color, mult: int = 1) -> void:
+	PixelFont.draw(_canvas, s, _o + Vector2(x, y) * float(_sc), c, _sc * mult)
+
+
+func _tw(s: String, mult: int = 1) -> float:
+	return float(PixelFont.width(s, _sc * mult)) / float(_sc)
+
+
+func _r(x: float, y: float, w: float, h: float, c: Color) -> void:
+	var u := float(_sc)
+	_canvas.draw_rect(Rect2(_o + Vector2(x, y) * u, Vector2(w, h) * u), c)
+
+
+# one list row: label left, value right; a value that does not fit goes on its own line
+func _row(x: float, y: float, w: float, row: Array, stripe: bool, draw: bool) -> float:
+	var label := str(row[0])
+	var value := str(row[1])
+	var two := _tw(label) + _tw(value) + 8.0 > w
+	var h := ROW * (2.0 if two else 1.0)
+	if draw:
+		if stripe:
+			_r(x, y, w, h, STRIPE)
+		_t(label, x + 2.0, y + 1.0, LABEL)
+		_t(value, x + w - 2.0 - _tw(value), y + 1.0 + (ROW if two else 0.0), row[2])
+	return h
+
+
+func _list(x: float, y: float, w: float, groups: Array, draw: bool) -> float:
+	var h := 0.0
+	for g in groups:
+		var name := str(g[0])
+		if name != "":
+			if draw:
+				_t(name, x + 2.0, y + h + 1.0, HEAD)
+				_r(x + _tw(name) + 5.0, y + h + 3.0, w - _tw(name) - 5.0, 1.0, LINE)
+			h += ROW
+		var i := 0
+		for row in g[1]:
+			h += _row(x, y + h, w, row, i % 2 == 1, draw)
+			i += 1
+		h += 1.0
+	return h - 1.0
+
+
+# the grade box, then the stat tiles (big) or rows (compact); returns its height
+func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
+	var grade := str(report.grade)
+	var gcol: Color = GRADE_COLORS.get(grade, WHITE)
+	var tiles := _hero()
+	var owner_books := report.has("rows")
+	var gh := 28.0 if big else 26.0
+	var gw := 30.0 if big else 22.0
+	if draw:
+		_r(x, y, gw, gh, gcol)
+		_r(x + 1.0, y + 1.0, gw - 2.0, gh - 2.0, Color("0e121c"))
+		_t(grade, x + floorf((gw - 12.0) * 0.5), y + floorf((gh - 20.0) * 0.5), gcol, 4)
+	if big:
+		var h := gh + 4.0
+		if draw:
+			_t("GRADE", x + gw + 4.0, y + 2.0, LABEL)
+			if not owner_books:
+				_t(str(tiles[0][0]), x + gw + 4.0, y + 12.0, LABEL)
+				_t(str(tiles[0][2]), x + gw + 4.0, y + 18.0, tiles[0][3], 2)
+		for k in range(0 if owner_books else 1, tiles.size()):
+			var value := str(tiles[k][2])
+			if draw:
+				_r(x, y + h, w, 12.0, STRIPE)
+				_t(str(tiles[k][0]), x + 2.0, y + h + 4.0, LABEL)
+				_t(value, x + w - 2.0 - _tw(value, 2), y + h + 1.0, tiles[k][3], 2)
+			h += 13.0
+		return h - 1.0
+	# compact: the grade box on the left, the numbers as rows beside it
+	var rx := x + gw + 3.0
+	var rw := w - gw - 3.0
+	var rh := 0.0
+	for tile in tiles:
+		rh += _row(rx, y + rh, rw, [tile[1], tile[2], tile[3]], true, draw)
+	return maxf(gh, rh)
+
+
+func _panel_w(sc: int, size: Vector2) -> float:
+	return minf(size.x / float(sc) - 8.0, 300.0)
+
+
+func _button_label() -> String:
+	if bool(report.final):
+		return "FINISH" if bool(report.fired) or Campaign.mode == "free" else "REVIEW"
+	return "NEXT DAY"
+
+
+# the whole panel below the title bar; returns the panel height in virtual pixels
+func _stack(sc: int, size: Vector2, draw: bool) -> float:
+	_sc = sc
+	var wide := size.x / float(sc) >= 200.0
+	var big := size.x / float(sc) >= 140.0
+	var pw := _panel_w(sc, size)
+	var groups := _groups()
+	var y := 11.0
+	var inner := pw - 8.0
+	var hero_w := 112.0
+	if wide:
+		var hh := _hero_block(4.0, y, hero_w, true, draw)
+		var lx := 4.0 + hero_w + 6.0
+		if draw:
+			_r(4.0 + hero_w + 2.0, y, 1.0, hh, LINE)
+		var lh := _list(lx, y, pw - lx - 4.0, groups, draw)
+		y += maxf(hh, lh)
+	else:
+		y += _hero_block(4.0, y, inner, big, draw) + 3.0
+		y += _list(4.0, y, inner, groups, draw)
+	var ending := str(report.get("ending", ""))
+	if ending != "":
+		y += 4.0
+		var col := BAD if bool(report.get("fired", false)) else WARN
+		for line in _wrap(ending, int(inner / 4.0)):
+			if draw:
+				_t(line, 4.0, y, col)
+			y += ROW
+	y += 2.0
+	if draw:
+		_r(4.0, y, inner, 1.0, LINE)
+	y += 2.0
+	var label := _button_label()
+	var bw := _tw(label) + 12.0
+	var hint := "ENTER OR CLICK"
+	if _tw(hint) + bw + 12.0 > pw:
+		hint = "ENTER"
+	if draw:
+		_t(hint, 4.0, y + 2.5, LABEL)
+		_button = Rect2(_o + Vector2(pw - bw - 4.0, y) * float(sc), Vector2(bw, 10.0) * float(sc))
+		var hot := _button.has_point(_mouse)
+		_r(pw - bw - 4.0, y, bw, 10.0, Color("5aa0e8") if hot else Color("3a7bd5"))
+		_t(label, pw - bw + 2.0, y + 2.5, WHITE)
+	return y + 10.0 + 3.0
 
 
 func _paint() -> void:
@@ -140,55 +305,24 @@ func _paint() -> void:
 		return
 	var size := get_viewport().get_visible_rect().size
 	var sc := 2 if size.x < 220.0 else 1
+	var h := _stack(sc, size, false)
+	if sc == 2 and h * 2.0 > size.y - 4.0:
+		sc = 1
+		h = _stack(sc, size, false)
 	var u := float(sc)
-	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.82))
-	var rows := _rows().filter(func(row: Array) -> bool: return str(row[0]) != "")
-	var ending: String = str(report.ending)
-	var pw := minf(size.x - 8.0, 150.0 * u)
-	var rh := 8.0 if rows.size() <= 11 else 7.0
-	var ph := (14.0 + float(rows.size()) * rh + (16.0 if ending != "" else 4.0) + 18.0) * u
-	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
-	_canvas.draw_rect(panel, Color("e9ecf1"))
-	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9.0 * u)), Color("1f4e8c"))
+	var pw := _panel_w(sc, size)
+	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.86))
+	_o = Vector2(floorf((size.x - pw * u) * 0.5), maxf(1.0, floorf((size.y - h * u) * 0.5)))
+	_r(-1.0, -1.0, pw + 2.0, h + 2.0, LINE)
+	_r(0.0, 0.0, pw, h, PANEL)
+	_r(0.0, 0.0, pw, 10.0, Color("1f4e8c"))
 	var title := str(
 		report.get("title", "DAY %d OF %d COMPLETE" % [int(report.day), int(report.total_days)])
 	)
-	_text(title, panel.position + Vector2(3.0 * u, 2.0 * u), WHITE, sc)
-	var y := panel.position.y + 12.0 * u
-	for row in rows:
-		_text(row[0], Vector2(panel.position.x + 4.0 * u, y), Color("46506a"), sc)
-		var value: String = row[1]
-		var vw := float(PixelFont.width(value, sc))
-		# values are drawn on a dark chip so the light colours stay readable
-		_canvas.draw_rect(
-			Rect2(panel.end.x - vw - 7.0 * u, y - u, vw + 6.0 * u, 7.0 * u), Color("2a2f3a")
-		)
-		_text(value, Vector2(panel.end.x - vw - 4.0 * u, y), row[2], sc)
-		y += rh * u
-	var grade: String = str(report.grade)
-	var gcol: Color = GRADE_COLORS.get(grade, WHITE)
-	var gbox := Rect2(panel.position.x + 4.0 * u, panel.end.y - 15.0 * u, 12.0 * u, 12.0 * u)
-	_canvas.draw_rect(gbox, Color("2a2f3a"))
-	_text(grade, gbox.position + Vector2(u, 1.0 * u), gcol, sc * 2)
-	_text("GRADE", gbox.position + Vector2(14.0 * u, 3.0 * u), Color("46506a"), sc)
-	if ending != "":
-		var lines := _wrap(ending, int((pw - 8.0 * u) / (4.0 * u)))
-		for line in lines:
-			_text(
-				line,
-				Vector2(panel.position.x + 4.0 * u, y + 1.0 * u),
-				Color("b3262c") if report.fired else Color("1f4e8c"),
-				sc
-			)
-			y += 7.0 * u
-	var label := "NEXT DAY"
-	if bool(report.final):
-		label = "FINISH" if bool(report.fired) or Campaign.mode == "free" else "REVIEW"
-	var bw := float(PixelFont.width(label, sc)) + 12.0 * u
-	_button = Rect2(panel.end.x - bw - 4.0 * u, panel.end.y - 13.0 * u, bw, 9.0 * u)
-	var hot := _button.has_point(_mouse)
-	_canvas.draw_rect(_button, Color("5aa0e8") if hot else Color("3a7bd5"))
-	_text(label, _button.position + Vector2(6.0 * u, 2.0 * u), WHITE, sc)
+	if _tw(title) + 8.0 > pw:
+		title = title.replace(" COMPLETE", "")
+	_t(title, 4.0, 2.5, WHITE)
+	_stack(sc, size, true)
 	var m := _mouse.floor()
 	for i in 6:
 		_canvas.draw_rect(Rect2(m.x, m.y + i, 1 + mini(i, 3), 1), INK)

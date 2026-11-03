@@ -15,7 +15,7 @@ const DEFAULT_VIGNETTES := {
 	{
 		"speaker": "Karen Whitfield (Brightside Realty)",
 		"text":
-		"I just got a new iPhone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?",
+		"I just got a new iFone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?",
 		"options":
 		[
 			{

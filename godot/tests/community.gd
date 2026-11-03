@@ -1,5 +1,5 @@
 extends SceneTree
-# Lync 2013 (presence, messages, friend warnings, the boss) and LabRat Nerds (forum karma, the
+# Lynk 2013 (presence, messages, friend warnings, the boss) and LabRat Nerds (forum karma, the
 # IRC call-a-friend poll, its accuracy and cooldown). Headless.
 
 var failures := 0

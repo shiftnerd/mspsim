@@ -21,7 +21,7 @@ var _acc := 0.0
 
 
 func _process(delta: float) -> void:
-	visible = World.hud_visible
+	visible = World.hud_visible and not DayReport.is_open
 	_acc += delta
 	if _acc > 0.25:
 		_acc = 0.0
