@@ -40845,6 +40845,13 @@ const ROOMS := {
     "conference": "conference"
 }
 
+const MODE_NAMES := {
+    "tech": "TECH CAMPAIGN",
+    "owner": "OWNER CAMPAIGN",
+    "service": "SERVICE MANAGER",
+    "sales": "SALES"
+}
+
 var _cam: Camera2D
 var _logo: Sprite2D
 var _prompt: Sprite2D
@@ -40858,6 +40865,10 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
+var _level := "top"  # "top" or "sub" (a campaign's submenu)
+var _sub_mode := ""
+var _top_sel := 0  # the top-menu cursor to come back to
+var _heading := ""
 var _menu: Node2D
 var _front: CanvasLayer
 var _select: Node2D = null  # the character select screen while it is open
@@ -41113,46 +41124,73 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
     elif confirm:
         _choose(_sel)
     elif Controls.back(event, false):
+        _back()
+
+
+# Esc / back / pad B: a campaign submenu returns to the top menu (cursor kept), the top menu closes
+func _back() -> void:
+    if _level == "sub":
+        _show_top(_top_sel)
+    else:
         _menu_open = false
         _menu.visible = false
 
 
 func _open_menu() -> void:
-    _items = []
-    var snap: Dictionary = Campaign.resume_info("tech")  # a mid-day resume point (R16)
-    if not snap.is_empty():
-        var snap_label := "CONTINUE TECH - DAY %d  %s" % [int(snap.day), str(snap.text)] + Yeartwo.saved_tag("tech")
-        _items.append({"label": snap_label, "id": "tech_resume", "enabled": true})
-    if Campaign.has_save("tech"):
-        var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech") + Yeartwo.saved_tag("tech")
-        _items.append({"label": label, "id": "tech_continue", "enabled": true})
-        _items.append({"label": "NEW TECH CAMPAIGN", "id": "tech_new", "enabled": true})
-    else:
-        _items.append({"label": "TECH CAMPAIGN", "id": "tech_new", "enabled": true})
-    if Campaign.has_save("owner"):
-        var owner_label := "CONTINUE OWNER - WEEK %d" % Campaign.saved_day("owner") + Yeartwo.saved_tag("owner")
-        _items.append({"label": owner_label, "id": "owner_continue", "enabled": true})
-        _items.append({"label": "NEW OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
-    else:
-        _items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
-    if Campaign.has_save("service"):
-        var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service") + Yeartwo.saved_tag("service")
-        _items.append({"label": service_label, "id": "service_continue", "enabled": true})
-        _items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
-    else:
-        _items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
-    if Campaign.has_save("sales"):
-        _items.append({"label": "CONTINUE SALES - WEEK %d" % Campaign.saved_day("sales"), "id": "sales_continue", "enabled": true})
-        _items.append({"label": "NEW SALES CAMPAIGN", "id": "sales_new", "enabled": true})
-    else:
-        _items.append({"label": "SALES CAMPAIGN", "id": "sales_new", "enabled": true})
-    _items.append_array(Yeartwo.menu_items())  # NEW GAME PLUS - <MODE> (YEAR 2) for every finished mode
-    _items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
-    _items.append({"label": "CAREER", "id": "career", "enabled": true})
-    _sel = 0
+    _show_top(0)
     _menu_open = true
     _prompt.visible = false
     _menu.visible = true
+    _menu.queue_redraw()
+
+
+# the six short top lines: four campaigns, Free Play, Career
+func _show_top(sel: int) -> void:
+    _level = "top"
+    _sub_mode = ""
+    _heading = ""
+    _items = []
+    for mode in MODE_NAMES:
+        _items.append({"label": MODE_NAMES[mode], "id": mode, "enabled": Campaign.is_selectable(mode)})
+    _items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
+    _items.append({"label": "CAREER", "id": "career", "enabled": true})
+    _sel = clampi(sel, 0, _items.size() - 1)
+    _menu.queue_redraw()
+
+
+# the rows of a campaign submenu: CONTINUE (mid-day resume point and / or the day-start save), START YEAR 2
+# (that mode's Year 1 is finished), NEW CAMPAIGN
+func sub_items(mode: String) -> Array:
+    var out := []
+    var unit := "WEEK" if mode == "owner" or mode == "sales" else "DAY"
+    var tag := Yeartwo.saved_tag(mode)
+    var snap: Dictionary = Campaign.resume_info(mode) if mode == "tech" else {}  # a mid-day resume point (R16)
+    if not snap.is_empty():
+        var snap_label := "CONTINUE - %s %d  %s" % [unit, int(snap.day), str(snap.text)] + tag
+        out.append({"label": snap_label, "id": mode + "_resume", "enabled": true})
+    if Campaign.has_save(mode):
+        var label := "CONTINUE - %s %d" % [unit, Campaign.saved_day(mode)] + tag
+        if not snap.is_empty():
+            label = "%s %d FROM THE START" % [unit, Campaign.saved_day(mode)] + tag
+        out.append({"label": label, "id": mode + "_continue", "enabled": true})
+    if Yeartwo.available(mode):
+        out.append({"label": "START YEAR 2", "id": mode + "_y2", "enabled": true})
+    out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
+    return out
+
+
+# a campaign line: its submenu, or straight to the new-run flow when NEW CAMPAIGN is all it could offer
+func _enter_mode(mode: String) -> void:
+    var rows := sub_items(mode)
+    if rows.size() == 1:
+        _open_select(mode + "_new")
+        return
+    _top_sel = _sel
+    _level = "sub"
+    _sub_mode = mode
+    _heading = str(MODE_NAMES[mode])
+    _items = rows
+    _sel = 0
     _menu.queue_redraw()
 
 
@@ -41181,6 +41219,9 @@ func _choose(i: int) -> void:
     var id := str(_items[i].id)
     if id == "career":
         _open_career()
+        return
+    if MODE_NAMES.has(id):
+        _enter_mode(id)
         return
     if id.ends_with("_continue") or id.ends_with("_resume"):
         _start(id)  # a saved run keeps its character: no select screen
@@ -41285,20 +41326,21 @@ func _start(id: String, summary := "") -> void:
 func _draw_menu() -> void:
     var size := _size()
     var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
-    # a long menu (continue + new for three campaigns) squeezes its rows to stay on screen
+    # one column; the rows (and the heading of a submenu) squeeze to stay on screen
     var avail := size.y - 1.0 - y
-    var pitch := clampf(floorf(avail / float(maxi(1, _items.size()))), 8.0, 10.0)
-    # still too tall at the minimum row height (the short wide format with every campaign saved): two columns
-    var cols := 2 if float(_items.size()) * pitch > avail and size.x >= 300.0 else 1
-    var per_col := int(ceil(float(_items.size()) / float(cols)))
-    if cols == 2:
-        pitch = clampf(floorf(avail / float(per_col)), 8.0, 10.0)
+    var rows := _items.size() + (1 if _heading != "" else 0)
+    var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 10.0)
+    if _heading != "":
+        var hw := float(PixelFont.width(_heading)) + 12.0
+        var hr := Rect2(floorf((size.x - hw) * 0.5), y, hw, pitch - 1.0)
+        _menu.draw_rect(hr, Color(0.05, 0.07, 0.12, 0.95))
+        PixelFont.draw(_menu, _heading, hr.position + Vector2(6, 2), Color("f5d442"))
+        y += pitch
     for i in _items.size():
         var item: Dictionary = _items[i]
         var label: String = item.label
         var w := float(PixelFont.width(label)) + 12.0
-        var col_cx := size.x * (0.5 if cols == 1 else (0.25 if i < per_col else 0.75))
-        var r := Rect2(floorf(col_cx - w * 0.5), y + float(i % per_col) * pitch, w, pitch - 1.0)
+        var r := Rect2(floorf(size.x * 0.5 - w * 0.5), y + float(i) * pitch, w, pitch - 1.0)
         item["rect"] = r
         var chosen: bool = i == _sel and item.enabled
         var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)

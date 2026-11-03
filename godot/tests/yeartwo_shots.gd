@@ -38,12 +38,13 @@ func _process(_delta: float) -> bool:
 			meta.save(c.save_prefix + "meta.cfg")
 		40:
 			current_scene._open_menu()
+			_shot("top")
+			current_scene._choose(0)  # TECH CAMPAIGN: no save, but a finished year, so a submenu
 			var ids: Array = current_scene._items.map(func(i: Dictionary) -> String: return i.id)
-			_check(ids.has("tech_y2") and ids.has("owner_y2") and ids.find("tech_y2") < ids.find("free"), "the menu has both NEW GAME PLUS entries before Free Play: %s" % str(ids))
-			_check(ids.has("tech_new") and not ids.has("tech_continue"), "no save: no Continue entry, the normal new game is still there")
+			_check(ids == ["tech_y2", "tech_new"], "the tech submenu has START YEAR 2 and NEW CAMPAIGN: %s" % str(ids))
 		50:
 			_shot("menu")
-			current_scene._choose(current_scene._items.map(func(i: Dictionary) -> String: return i.id).find("tech_y2"))
+			current_scene._choose(0)  # START YEAR 2
 		80:
 			var cs: Node = current_scene._select
 			_check(cs != null and y.pending and cs.mode == "tech", "NEW GAME PLUS opens the character select with Year 2 pending")

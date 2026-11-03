@@ -259,8 +259,10 @@ func _process(_delta: float) -> bool:
 		20:
 			_press(KEY_ENTER)
 		21:
-			# the menu now has CONTINUE TECH first: choosing it must not open the select screen
-			_check(title._items[0].id == "tech_continue", "the menu offers Continue")
+			# the tech submenu has CONTINUE first: choosing it must not open the select screen
+			_check(title._items[0].id == "tech", "the top menu starts with TECH CAMPAIGN")
+			title._choose(0)
+			_check(title._items[0].id == "tech_continue", "its submenu offers Continue")
 			_press(KEY_ENTER)
 		22:
 			_check(title._select == null and title._started, "Continue skips the select screen")
