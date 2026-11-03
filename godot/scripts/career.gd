@@ -44,6 +44,19 @@ const DEFAULT_MEDALS := [
 	{"id": "year_one", "title": "YEAR ONE", "desc": "FINISH A CAMPAIGN YEAR", "rules": [["endings", ">=", 1]]},
 	{"id": "regular", "title": "REGULAR", "desc": "PLAY 20 DAYS OR WEEKS", "rules": [["days_total", ">=", 20]]},
 	{"id": "corner_office", "title": "CORNER OFFICE", "desc": "RUN 10 OWNER WEEKS", "rules": [["days.owner", ">=", 10]]},
+	{"id": "hook_shot", "title": "HOOK SHOT", "desc": "5 STRIKES WITH A HOOK", "rules": [["bowl_hook_strikes", ">=", 5]]},
+	{"id": "league_champion", "title": "LEAGUE CHAMPION", "desc": "WIN A LEAGUE SEASON", "rules": [["league_titles", ">=", 1]]},
+	{"id": "alley_cat", "title": "ALLEY CAT", "desc": "BOWL AT ALL THREE ALLEYS", "rules": [["alleys", ">=", 3]]},
+	{"id": "cup_captured", "title": "CUP CAPTURED", "desc": "CAPTURE THE CUP 5 TIMES", "rules": [["nerf_cups", ">=", 5]]},
+	{"id": "last_standing", "title": "LAST ONE STANDING", "desc": "WIN 3 ELIMINATION WARS", "rules": [["nerf_elim_wins", ">=", 3]]},
+	{"id": "ghost", "title": "GHOST", "desc": "HIDE FOR A WHOLE ROUND", "rules": [["nerf_hide_wins", ">=", 1]]},
+	{"id": "arena_regular", "title": "ARENA REGULAR", "desc": "FIGHT IN ALL 3 ARENAS", "rules": [["nerf_arenas", ">=", 3]]},
+	{"id": "conference_goer", "title": "CONFERENCE GOER", "desc": "ATTEND THE CONFERENCE", "rules": [["trips", ">=", 1]]},
+	{"id": "raffle_luck", "title": "RAFFLE LUCK", "desc": "WIN THE CONFERENCE RAFFLE", "rules": [["raffle_wins", ">=", 1]]},
+	{"id": "session_hopper", "title": "SESSION HOPPER", "desc": "SEE 6 DIFFERENT SESSIONS", "rules": [["sessions_seen", ">=", 6]]},
+	{"id": "road_warrior", "title": "ROAD WARRIOR", "desc": "SURVIVE 5 TRAFFIC JAMS", "rules": [["road_events", ">=", 5]]},
+	{"id": "field_tech", "title": "FIELD TECH", "desc": "FIX 10 ONSITE JOBS", "rules": [["onsite_fixed", ">=", 10]]},
+	{"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
@@ -88,6 +101,9 @@ const COUNTERS := [
 	["", "DINNER BEST", "stars.dinner", "stars"],
 	["", "STRIKES", "bowl_strikes", "n"],
 	["", "GUTTER BALLS", "bowl_gutters", "n"],
+	["", "HOOK STRIKES", "bowl_hook_strikes", "n"],
+	["", "LEAGUE TITLES", "league_titles", "n"],
+	["", "ALLEYS BOWLED", "alleys", "n"],
 	["", "PERFECT NOTES", "kara_perfects", "n"],
 	["", "FASTEST ESCAPE", "escape_best", "secs"],
 	["", "BEST DINNER SCORE", "dinner_best", "n"],
@@ -101,10 +117,17 @@ const COUNTERS := [
 	["", "BEST NO-PRAYER RUN", "pr_streak", "n"],
 	["NERF AND OFFICE", "NERF HITS", "nerf_hits", "n"],
 	["", "DARTS DUCKED", "nerf_dodges", "n"],
+	["", "CUPS CAPTURED", "nerf_cups", "n"],
+	["", "ELIMINATION WINS", "nerf_elim_wins", "n"],
+	["", "ARENAS FOUGHT IN", "nerf_arenas", "n"],
 	["", "NERF WARS", "nerf_wars", "n"],
 	["", "LONGEST HIT", "nerf_longest", "px"],
 	["", "ANIMALS PETTED", "pets", "n"],
 	["", "COMPLAINTS HEARD", "vic_calls", "n"],
+	["", "CONFERENCES", "trips", "n"],
+	["", "SESSIONS SEEN", "sessions_seen", "n"],
+	["", "ONSITE JOBS FIXED", "onsite_fixed", "n"],
+	["", "TRAFFIC JAMS", "road_events", "n"],
 	["SALES", "DEALS WON", "deals_won", "n"],
 	["", "CLAWBACKS", "clawbacks", "n"],
 	["", "RENEWALS WON", "renewals", "n"],
@@ -259,6 +282,17 @@ func note_outing(game: String, result: int, info := {}) -> void:
 			best("dinner_best", int(info.get("score", 0)))
 
 
+# the first time an id of a kind is seen (an alley, an arena, a session, a site type) it counts once toward total
+func note_first(kind: String, id: String, total: String) -> void:
+	var key := kind + "." + id
+	if int(counters.get(key, 0)) > 0:
+		return
+	counters[key] = 1
+	add(total)
+
+
+func note_alley(id: String) -> void:
+	note_first("alley", id, "alleys")
 func note_bowl(knocked: int, roll: int) -> void:
 	if knocked >= 10 and roll == 1:
 		add("bowl_strikes")

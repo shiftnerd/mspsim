@@ -33,6 +33,7 @@ func _fly(delta: float) -> void:
 		_trail.pop_front()
 	position += vel * delta
 	vel.y += GRAVITY * delta
+	Nerf.cup_check(global_position, shooter)
 	if not has_meta("belled") and Nerf.hit_bell(global_position):
 		set_meta("belled", true)
 		vel = Vector2(-vel.x * 0.2, 25.0)

@@ -88,7 +88,7 @@ func _draw() -> void:
 				lines.append(
 					(
 						"DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s"
-						% [Nerf.ammo, ("  WAR %d" % int(Nerf.war_t)) if Nerf.war_t > 0.0 else ""]
+						% [Nerf.ammo, (("  WAR %d" % int(Nerf.war_t)) + Nerf.hud_extra()) if Nerf.war_t > 0.0 else ""]
 					)
 				)
 		for i in lines.size():

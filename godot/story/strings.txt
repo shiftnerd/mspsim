@@ -10042,6 +10042,110 @@ CORNER OFFICE
 [Career.MEDALS.23.desc]
 RUN 10 OWNER WEEKS
 
+# Career > MEDALS > 24 > title
+[Career.MEDALS.24.title]
+HOOK SHOT
+
+# Career > MEDALS > 24 > desc
+[Career.MEDALS.24.desc]
+5 STRIKES WITH A HOOK
+
+# Career > MEDALS > 25 > title
+[Career.MEDALS.25.title]
+LEAGUE CHAMPION
+
+# Career > MEDALS > 25 > desc
+[Career.MEDALS.25.desc]
+WIN A LEAGUE SEASON
+
+# Career > MEDALS > 26 > title
+[Career.MEDALS.26.title]
+ALLEY CAT
+
+# Career > MEDALS > 26 > desc
+[Career.MEDALS.26.desc]
+BOWL AT ALL THREE ALLEYS
+
+# Career > MEDALS > 27 > title
+[Career.MEDALS.27.title]
+CUP CAPTURED
+
+# Career > MEDALS > 27 > desc
+[Career.MEDALS.27.desc]
+CAPTURE THE CUP 5 TIMES
+
+# Career > MEDALS > 28 > title
+[Career.MEDALS.28.title]
+LAST ONE STANDING
+
+# Career > MEDALS > 28 > desc
+[Career.MEDALS.28.desc]
+WIN 3 ELIMINATION WARS
+
+# Career > MEDALS > 29 > title
+[Career.MEDALS.29.title]
+GHOST
+
+# Career > MEDALS > 29 > desc
+[Career.MEDALS.29.desc]
+HIDE FOR A WHOLE ROUND
+
+# Career > MEDALS > 30 > title
+[Career.MEDALS.30.title]
+ARENA REGULAR
+
+# Career > MEDALS > 30 > desc
+[Career.MEDALS.30.desc]
+FIGHT IN ALL 3 ARENAS
+
+# Career > MEDALS > 31 > title
+[Career.MEDALS.31.title]
+CONFERENCE GOER
+
+# Career > MEDALS > 31 > desc
+[Career.MEDALS.31.desc]
+ATTEND THE CONFERENCE
+
+# Career > MEDALS > 32 > title
+[Career.MEDALS.32.title]
+RAFFLE LUCK
+
+# Career > MEDALS > 32 > desc
+[Career.MEDALS.32.desc]
+WIN THE CONFERENCE RAFFLE
+
+# Career > MEDALS > 33 > title
+[Career.MEDALS.33.title]
+SESSION HOPPER
+
+# Career > MEDALS > 33 > desc
+[Career.MEDALS.33.desc]
+SEE 6 DIFFERENT SESSIONS
+
+# Career > MEDALS > 34 > title
+[Career.MEDALS.34.title]
+ROAD WARRIOR
+
+# Career > MEDALS > 34 > desc
+[Career.MEDALS.34.desc]
+SURVIVE 5 TRAFFIC JAMS
+
+# Career > MEDALS > 35 > title
+[Career.MEDALS.35.title]
+FIELD TECH
+
+# Career > MEDALS > 35 > desc
+[Career.MEDALS.35.desc]
+FIX 10 ONSITE JOBS
+
+# Career > MEDALS > 36 > title
+[Career.MEDALS.36.title]
+JACK OF ALL SITES
+
+# Career > MEDALS > 36 > desc
+[Career.MEDALS.36.desc]
+FIX JOBS AT 4 SITE TYPES
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

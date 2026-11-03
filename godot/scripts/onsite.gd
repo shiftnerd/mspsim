@@ -9,6 +9,7 @@ extends Node
 
 const DRIVE_MINUTES := {0: 20, 1: 35, 3: 25, 8: 50, 9: 30, 10: 70}  # the usual drive to each client site
 const DEFAULT_DRIVE := 45
+const Variety := preload("res://scripts/onsite_variety.gd")
 const SLA_PER_HOUR := 45.0  # seconds taken off the other tickets' clocks for each hour you are away
 const SITES := {
 	0: {"type": "dental", "skin": "a"},
@@ -1074,6 +1075,9 @@ var _pet_first := true
 var _event_done := false
 var _roll_day := -1
 var _spawn_at := -1.0
+var calls := 0  # onsite jobs created so far (the roulette salt)
+var recent: Array = []  # the last clients who called
+var seen_jobs := {}  # job id -> how often it came up
 
 
 func _ready() -> void:
@@ -1100,11 +1104,14 @@ func reset() -> void:
 	_met = false
 	_event_done = false
 	_roll_day = -1
+	calls = 0
+	recent = []
+	seen_jobs = {}
 	_spawn_at = -1.0
 
 
 func to_dict() -> Dictionary:
-	return {"visits": visits, "fixed": fixed_count, "pets": pets, "missed": _missed}
+	return {"visits": visits, "fixed": fixed_count, "pets": pets, "missed": _missed, "calls": calls, "recent": recent, "seen": seen_jobs}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -1113,6 +1120,9 @@ func from_dict(data: Dictionary) -> void:
 	fixed_count = int(data.get("fixed", 0))
 	pets = int(data.get("pets", 0))
 	_missed = data.get("missed", [])
+	calls = int(data.get("calls", 0))
+	recent = data.get("recent", [])
+	seen_jobs = data.get("seen", {})
 
 
 func is_tech() -> bool:
@@ -1167,19 +1177,21 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 	for c in Sales.active:
 		if SITES.has(int(c)) and Sales.takes_tickets(int(c)):
 			options.append(int(c))
+	if client_index < 0 and has_open_job():
+		return {}
 	if client_index < 0:
 		if options.is_empty():
 			return {}
-		client_index = options[Difficulty.rng("onsite.jobs").randi() % options.size()]
+		client_index = Variety.pick_client(_roulette(1), options, recent)
 	var type := site_type(client_index)
 	var pool := []
 	var here: Array = OBJECTS.get(type, [])
-	for j in JOBS + MORE_JOBS:
-		if (job_id == "" or str(j.id) == job_id) and here.has(str(j.object)):
+	for j in JOBS + MORE_JOBS + Variety.VARIANT_JOBS:
+		if (job_id == "" or str(j.id) == job_id) and here.has(str(j.object)) and Variety.fits(j, type):
 			pool.append(j)
 	if pool.is_empty() or type == "":
 		return {}
-	var pick: Dictionary = pool[Difficulty.rng("onsite.jobs").randi() % pool.size()]
+	var pick: Dictionary = Variety.pick_job(_roulette(2), pool, seen_jobs)
 	var prob := {
 		"summary": str(pick.summary),
 		"fix": "onsite_" + str(pick.id),
@@ -1188,6 +1200,8 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 		"server": str(pick.object) == "server",
 	}
 	var made := Msp.create_problem(client_index, prob, "phone")
+	if not made.is_empty():
+		_remember(client_index, str(pick.id))
 	if not made.is_empty() and Campaign.active:
 		# the clock is paused on the road, but the client still expects a visit to be possible:
 		# add the round trip (plus some work) to the SLA, in the same units as `_away`
@@ -1198,13 +1212,43 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 	return made
 
 
+# ---- the dispatch roulette (R11, onsite_variety.gd): seeded per day and per call, so a save resumes the same calls
+func _roulette(kind: int) -> RandomNumberGenerator:
+	if Campaign.active:
+		return Difficulty.rng_for("onsite.roulette", Campaign.day * 1000 + calls * 10 + kind)
+	return Difficulty.rng("onsite.jobs")
+
+
+func has_open_job() -> bool:
+	for t in Msp.tickets:
+		if t.status != "Closed" and is_onsite(t):
+			return true
+	return false
+
+
+func _remember(c: int, job_id: String) -> void:
+	calls += 1
+	recent.append(c)
+	while recent.size() > 3:
+		recent.pop_front()
+	seen_jobs[job_id] = int(seen_jobs.get(job_id, 0)) + 1
+
+
+# the road to a site: sometimes something happens (campaign only; a free trip takes no time)
+func _roll_road(c: int) -> Dictionary:
+	if not Campaign.active:
+		return {}
+	var ev := Variety.road_event(Difficulty.rng_for("onsite.road", Campaign.day * 100 + visits))
+	if not ev.is_empty() and int(ev.min) > 0:
+		Career.add("road_events")
+	return ev
 func is_onsite(t: Dictionary) -> bool:
 	return str(t.get("fix", "")).begins_with("onsite_")
 
 
 func job_for(t: Dictionary) -> Dictionary:
 	var id := str(t.get("fix", "")).trim_prefix("onsite_")
-	for j in JOBS + MORE_JOBS:
+	for j in JOBS + MORE_JOBS + Variety.VARIANT_JOBS:
 		if str(j.id) == id:
 			return j
 	return {}
@@ -1482,12 +1526,14 @@ func _depart(id: int) -> void:
 	Msp.set_status(id, "In Progress")
 	Msp.add_note(id, "Technician dispatched onsite.")
 	var mins := _trip_minutes(client)
+	var road := _roll_road(client)
+	mins = maxi(10, mins + int(road.get("min", 0)))
 	_back_min = _trip_minutes(client)
 	_away(float(mins) / 60.0, id)
 	active = true
 	_pet_first = true
 	Game.go(site_scene(client), "from_van")
-	Hints.toast(str(TEXT.arrive) % [str(Msp.CLIENTS[client].name), mins], 5.0)
+	Hints.toast((str(TEXT.arrive) % [str(Msp.CLIENTS[client].name), mins]) + " " + str(road.get("text", "")), 5.0)
 
 
 # ---- at the site (E on the equipment, see fx kinds onsite_*)
@@ -1980,6 +2026,8 @@ func _finish_job() -> void:
 			ep.problem = ""
 	Msp.add_note(ticket_id, "Fixed onsite.")
 	fixed_count += 1
+	Career.add("onsite_fixed")
+	Career.note_first("site", site_type(client), "site_types")
 	Msp.close_ticket(ticket_id)
 	if not _event_done:
 		_maybe_event()

@@ -100,6 +100,8 @@ func _init() -> void:
 		"bowl.opp_skill": 0.0,
 		"bowl.aim_speed": 1.5,
 		"bowl.power_speed": 1.2,
+		"bowl.oil": 1.0,
+		"bowl.spin_noise": 1.0,
 		"escape.time": 120.0,
 		"escape.wrong_penalty": 10.0,
 		"dinner.reveal": 3.0,

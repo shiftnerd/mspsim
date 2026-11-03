@@ -170,6 +170,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_Z:
 			Nerf.charge_start(self)
 			return
+	if event.keycode == KEY_V and held == "nerf":
+		Nerf.offer_war()
+		return
 		if event.keycode == KEY_G and held == "nerf":
 			give("")
 			return

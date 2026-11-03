@@ -32,6 +32,9 @@ const TABLE := {
 	"bowl.opp_skill": [-0.08, 0.0, 0.08],
 	"bowl.aim_speed": [1.1, 1.5, 2.0],
 	"bowl.power_speed": [0.9, 1.2, 1.6],
+	# bowling (R11): how strict the oil is (x the lane's width) and how wild a hook is (x)
+	"bowl.oil": [0.85, 1.0, 1.15],
+	"bowl.spin_noise": [0.7, 1.0, 1.4],
 	# escape room: seconds on the clock, seconds a wrong code takes off (in the room)
 	"escape.time": [150.0, 120.0, 105.0],
 	"escape.wrong_penalty": [5.0, 10.0, 15.0],

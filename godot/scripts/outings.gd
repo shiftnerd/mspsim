@@ -12,6 +12,7 @@ signal finished(game: String, stars: int)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
+const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -438,6 +439,7 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
+var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
 var party_set := false
@@ -473,6 +475,7 @@ func reset() -> void:
 	known = {}
 	tastes = {}
 	song_best = {}
+	league = BowlVariety.new_league()
 	_offered = false
 
 
@@ -489,6 +492,7 @@ func to_dict() -> Dictionary:
 		"known": known,
 		"tastes": tastes,
 		"songs": song_best,
+		"league": league,
 	}
 
 
@@ -499,6 +503,9 @@ func from_dict(data: Dictionary) -> void:
 	best = data.get("best", {})
 	known = data.get("known", {})
 	song_best = data.get("songs", {})
+	league = BowlVariety.new_league()
+	for key in data.get("league", {}):
+		league[key] = data.league[key]
 	if int(data.get("version", 1)) >= 2:
 		tastes = data.get("tastes", {})
 	else:
@@ -721,7 +728,7 @@ func pick_game(from_invite: bool) -> void:
 		_host(),
 		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
 		options,
-		func(id: String) -> void: start(id, from_invite, {"party": party.duplicate()})
+		func(id: String) -> void: start(id, from_invite, _game_options(id))
 	)
 
 
@@ -1014,6 +1021,10 @@ func _bowl_setup() -> void:
 		"opp_knock": 0,
 		"opp_first": 0,
 		"opp_phase": 0,
+		"alley": str(opts.get("alley", "strike_zone")),
+		"spin": 0,
+		"acc": 1.0,
+		"hcp": _league_hcp(str(opts.get("alley", "strike_zone"))),
 	}
 	if room_mode():
 		g.stage = "ready"
@@ -1050,6 +1061,18 @@ func _bowl_tick(dt: float) -> void:
 
 
 func _bowl_press(key: int) -> void:
+	if key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"]:
+		var want := -1 if key == KEY_LEFT else 1
+		g.spin = 0 if int(g.get("spin", 0)) == want else want
+		caption(
+			(
+				"NO HOOK. THE GREEN ZONE IS BACK."
+				if int(g.spin) == 0
+				else "HOOK %s: THE GREEN ZONE MOVES. A WILD HOOK CAN GO OFF THE LANE." % ("LEFT" if want < 0 else "RIGHT")
+			),
+			99.0
+		)
+		return
 	if key not in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E]:
 		return
 	if room_mode() and g.stage not in ["ready", "aim", "power"]:
@@ -1061,7 +1084,7 @@ func _bowl_press(key: int) -> void:
 		g.stage = "aim"
 		g.marker = 0.0
 		g.dir = 1.0
-		caption("PRESS E TO STOP THE AIM (STOP IN THE GREEN).", 99.0)
+		caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
 	elif g.stage == "aim":
 		g.stage = "power"
 		g.power = 0.0
@@ -1077,9 +1100,12 @@ func _bowl_press(key: int) -> void:
 
 
 func bowl_strength() -> float:
-	var accuracy := 1.0 - absf(float(g.marker) - 0.5) * 2.0
+	var spin := int(g.get("spin", 0))
+	var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"))
+	g.acc = accuracy
 	var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
-	var noise := Difficulty.rng("bowl").randf_range(-0.08, 0.08)
+	var span := 0.08 + BowlVariety.HOOK_NOISE * absf(float(spin)) * Difficulty.f("bowl.spin_noise")
+	var noise := Difficulty.rng("bowl").randf_range(-span, span)
 	return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
 
 
@@ -1091,10 +1117,12 @@ func _bowl_resolve() -> void:
 		if strength > 0.92
 		else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
 	)
+	knocked = _hook_adjust(knocked, left, strength)
 	g.knocked = knocked
 	g.pins = left - knocked
 	g.totals["You"] = int(g.totals["You"]) + knocked
 	Career.note_bowl(knocked, int(g.roll))
+	_note_hook(knocked)
 	if knocked == 10 and int(g.roll) == 1:
 		g.totals["You"] = int(g.totals["You"]) + 3
 		g.msg = "STRIKE!"
@@ -1106,6 +1134,9 @@ func _bowl_resolve() -> void:
 		g.msg = "%d PINS" % knocked
 	g.stage = "pause"
 	g.wait = 1.4 if room_mode() else 1.1
+	if str(g.get("hook_msg", "")) != "":
+		g.msg = str(g.hook_msg)
+	g.erase("hook_msg")
 	if room_mode():
 		_pins_fall(0, knocked)
 		_bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
@@ -1120,6 +1151,7 @@ func _bowl_resolve() -> void:
 func _bowl_roll_opp(who: String) -> Dictionary:
 	var row: Dictionary = BOWLERS[who]
 	var skill := float(row.skill) + Difficulty.f("bowl.opp_skill")
+	skill += BowlVariety.fit(oil_id(), who)
 	var r := Difficulty.rng("bowl")
 	if float(row.streak) > 0.0:
 		skill += float(row.streak) * (1.0 if int(g.get("frame", 1)) % 2 == 0 else -1.0)
@@ -1254,16 +1286,124 @@ func _pins_fall(lane: int, count: int) -> void:
 		g.fall["%d_%d" % [lane, standing[i]]] = 0.8
 
 
+# ---- oil, hook and league (R11; the tables are in bowl_variety.gd)
+func alley_id() -> String:
+	return str(g.get("alley", "strike_zone"))
+
+
+func oil_id() -> String:
+	return str(BowlVariety.alley(alley_id()).oil)
+
+
+func is_league() -> bool:
+	return bool(BowlVariety.alley(alley_id()).league)
+
+
+# where the green zone sits on the aim bar (0..1) and how wide it is
+func bowl_center() -> float:
+	return BowlVariety.center(oil_id(), int(g.get("spin", 0)))
+
+
+func bowl_zone_width() -> float:
+	return 0.2 / (float(BowlVariety.oil(oil_id()).width) * Difficulty.f("bowl.oil"))
+
+
+func _aim_label() -> String:
+	var s := int(g.get("spin", 0))
+	return "AIM" if s == 0 else ("HOOK L" if s < 0 else "HOOK R")
+
+
+func _league_hcp(alley: String) -> Dictionary:
+	var out := {}
+	if not bool(BowlVariety.alley(alley).league):
+		return out
+	for who in ["You"] + bowlers():
+		out[who] = BowlVariety.handicap(league, str(who))
+	return out
+
+
+# a hook thrown far from the green zone sweeps off the lane; a hook that lands well carries the pins
+func _hook_adjust(knocked: int, left: int, strength: float) -> int:
+	if int(g.get("spin", 0)) == 0:
+		return knocked
+	if float(g.get("acc", 1.0)) < BowlVariety.GUTTER_ACC:
+		g["hook_msg"] = "HOOKED OFF THE LANE..."
+		return 0
+	if strength > 0.92 - BowlVariety.HOOK_STRIKE:
+		return left
+	return knocked
+
+
+func _note_hook(knocked: int) -> void:
+	if int(g.get("spin", 0)) != 0:
+		Career.add("bowl_hooks")
+		if knocked >= 10 and int(g.roll) == 1:
+			Career.add("bowl_hook_strikes")
+	g.spin = 0
+
+
+# score used for the rank: pins plus the league handicap (nothing on an ordinary night)
+func _bowl_adj(who: String) -> int:
+	return int(g.totals[who]) + int(g.get("hcp", {}).get(who, 0))
+
+
+func _league_close() -> void:
+	Career.note_alley(alley_id())
+	if not is_league():
+		return
+	var scores := {}
+	for who in g.totals:
+		scores[who] = int(g.totals[who])
+	var res := BowlVariety.record(league, scores)
+	var place := 1
+	for who in g.totals:
+		if who != "You" and int(res.adjusted[who]) > int(res.adjusted["You"]):
+			place += 1
+	var places := ["1ST", "2ND", "3RD", "4TH", "5TH", "6TH"]
+	Career.add("league_nights")
+	lines.append(
+		"LEAGUE NIGHT %d OF %d: YOU PLACE %s WITH HANDICAPS." % [int(res.night), BowlVariety.LEAGUE_NIGHTS, places[mini(place - 1, 5)]]
+	)
+	if bool(res.done):
+		Career.add("league_seasons")
+		if str(res.winner) == "You":
+			Career.add("league_titles")
+			lines.append("THE SEASON IS OVER. YOU WIN THE LEAGUE! THEY GIVE YOU A SMALL TROPHY.")
+		else:
+			lines.append("THE SEASON IS OVER. %s WINS THE LEAGUE. SEE YOU NEXT SEASON." % str(res.winner).to_upper())
+
+
+# the alley for tonight: a seeded draw (a season in progress pulls people to league night)
+func _game_options(id: String) -> Dictionary:
+	var o := {"party": party.duplicate()}
+	if id == "bowling":
+		o["alley"] = BowlVariety.pick_alley(Difficulty.rng_for("alley", count * 7 + int(league.night)), int(league.night))
+	return o
+
+
+func _paint_bowl_intro(b: Rect2, y0: float) -> float:
+	var y := y0
+	var alley := BowlVariety.alley(str(opts.get("alley", "strike_zone")))
+	var oil := BowlVariety.oil(str(alley.oil))
+	var texts := ["ALLEY: " + str(alley.label), str(alley.line), str(oil.line), "LEFT / RIGHT = HOOK (MORE CARRY, MORE RISK)."]
+	if bool(alley.league):
+		texts.append("LEAGUE: NIGHT %d OF %d. HANDICAPS COUNT FOR THE RANK." % [int(league.night) + 1, BowlVariety.LEAGUE_NIGHTS])
+	for text in texts:
+		for part in _wrap(text, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y, BLUE if text == texts[0] else INK)
+			y += 7.0
+	return y + 2.0
 func bowl_rank() -> int:
 	var rank := 0
 	for who in bowlers():
-		if int(g.totals[who]) > int(g.totals["You"]):
+		if _bowl_adj(who) > _bowl_adj("You"):
 			rank += 1
 	return rank
 
 
 func _bowl_end() -> void:
 	_finish([3, 2, 1, 1, 1][mini(bowl_rank(), 4)])
+	_league_close()
 
 
 # ---- the song table
@@ -1962,7 +2102,7 @@ func _room_wants(key: int) -> bool:
 		return true
 	match game:
 		"bowling":
-			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
 		"karaoke":
 			return key in LANE_KEYS
 		"escape":
@@ -2319,12 +2459,12 @@ func _hud_bowling(s: Rect2) -> void:
 		var bar := Rect2(s.position.x + 82.0, s.position.y + 3.0, 80.0, 5.0)
 		_canvas.draw_rect(bar, UiStyle.SOFT)
 		if stage == "aim":
-			_canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
+			_canvas.draw_rect(Rect2(bar.position.x + 79.0 * (bowl_center() - bowl_zone_width() * 0.5), bar.position.y, 79.0 * bowl_zone_width(), 5.0), GREEN)
 			_canvas.draw_rect(
 				Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0),
 				WHITE
 			)
-			_t("AIM", x, o.y, WHITE)
+			_t(_aim_label(), x, o.y, WHITE)
 		else:
 			_canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
 			_canvas.draw_rect(
@@ -2490,6 +2630,8 @@ func _paint_intro(b: Rect2) -> void:
 	if Campaign.mode == "owner":
 		_t("COST $%d" % int(GAMES[game].cost), b.position.x, y, RED)
 		y += 7.0
+	if game == "bowling":
+		y = _paint_bowl_intro(b, y)
 	if best.has(game):
 		_t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
 
@@ -2566,11 +2708,11 @@ func _paint_bowling(b: Rect2) -> void:
 	var bar := Rect2(x, bar_y, 70.0, 5.0)
 	_canvas.draw_rect(bar, Color("c9d2e0"))
 	if g.stage == "aim":
-		_canvas.draw_rect(Rect2(bar.position.x + 28.0, bar_y, 14.0, 5.0), GREEN)
+		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * (bowl_center() - bowl_zone_width() * 0.5), bar_y, 69.0 * bowl_zone_width(), 5.0), GREEN)
 		_canvas.draw_rect(
 			Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK
 		)
-		_t("AIM", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
+		_t(_aim_label(), x + 74.0 - 4.0, bar_y - 8.0, BLUE)
 	elif g.stage == "power":
 		_canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
 		_canvas.draw_rect(Rect2(bar.position.x, bar_y, 70.0 * float(g.power), 5.0), AMBER)

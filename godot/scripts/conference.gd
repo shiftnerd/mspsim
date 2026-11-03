@@ -15,6 +15,7 @@ const CLOCKS := [10.0, 13.0, 15.0]
 const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
 const MORGAN := "Morgan Reyes - Manager"
+const Trip := preload("res://scripts/trip_variety.gd")
 const DEFAULT_TEXT := {
 	"invite_subject": "Rodent Nation 2014: top performers go",
 	"invite_body":
@@ -810,6 +811,7 @@ func _on_day(day: int) -> void:
 		peeked = false
 		picks = []
 		went = true
+		Career.add("trips")
 		_stage = "arrive"
 		rnd = 0
 		_seen = ""
@@ -906,9 +908,44 @@ func _trip_tick() -> void:
 				_raffle()
 
 
+# ---- the agenda of this run (R11, see trip_variety.gd): the sessions in the four rooms of a round, the booths, the talks
+func menu(round_index: int) -> Array:
+	return Trip.menu(round_index, ROUNDS[round_index].sessions)
+
+
+# every session a round can have (a pick is looked up here, whichever rooms showed it)
+func pool(round_index: int) -> Array:
+	var all: Array = ROUNDS[round_index].sessions.duplicate()
+	if round_index < Trip.MORE_SESSIONS.size():
+		all.append_array(Trip.MORE_SESSIONS[round_index])
+	return all
+
+
+func chat_def(index: int) -> Dictionary:
+	var slots := Trip.chat_slots(CHATS)
+	return slots[index % slots.size()]
+
+
+func raffle_odds() -> float:
+	return Trip.raffle_base() + 0.04 * float(mini(entries, 3))
+
+
+func _vendor(id: String) -> Dictionary:
+	var v := _vendor_base(id)
+	if v.is_empty():
+		for extra in Trip.EXTRA_VENDORS:
+			if str(extra.id) == id:
+				return extra
+	return v
+
+
+func _vendor_xp() -> Dictionary:
+	var all := VENDOR_XP.duplicate()
+	all.merge(Trip.VENDOR_XP)
+	return all
 func _enter_breakout() -> void:
 	var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
-	var sessions: Array = ROUNDS[rnd].sessions
+	var sessions: Array = menu(rnd)
 	var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
 	_session(rnd, str(found.id))
 
@@ -916,7 +953,7 @@ func _enter_breakout() -> void:
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
 func sign_lines(door: int) -> Array:
 	if away and _stage == "round" and rnd < ROUNDS.size():
-		var sessions: Array = ROUNDS[rnd].sessions
+		var sessions: Array = menu(rnd)
 		if door < sessions.size():
 			var words := str(sessions[door].get("short", sessions[door].label)).split(" ")
 			var lines := []
@@ -964,10 +1001,11 @@ func _keynote_answer(id: String) -> void:
 
 func _session(index: int, id: String) -> void:
 	var found: Dictionary = {}
-	for s in ROUNDS[index].sessions:
+	for s in pool(index):
 		if str(s.id) == id:
 			found = s
 	picks.append(id)
+	Career.note_first("session", id, "sessions_seen")
 	var text := str(found.get("text", ""))
 	var skill := str(found.get("skill", ""))
 	if id == "ps101":
@@ -1047,12 +1085,13 @@ func _hall_answer(id: String) -> void:
 
 
 func _raffle() -> void:
-	var win := randf() < 0.08 + 0.04 * float(mini(entries, 3))
+	var win := Difficulty.rng("trip").randf() < raffle_odds()
 	var text := str(TEXT.raffle_win) if win else str(TEXT.raffle_lose)
 	if win:
 		Shift.add_energy(100.0)
 		Campaign.adjust_rep(3)
-	text += " " + str(TEXT.wrap)
+		Career.add("raffle_wins")
+	text += " " + (Trip.drum_line(Trip.raffle_base()) + " " if Trip.drum_line(Trip.raffle_base()) != "" else "") + str(TEXT.wrap)
 	Cards.ask(
 		"RODENT NATION",
 		text,
@@ -1105,7 +1144,7 @@ func populate(stage: Node) -> void:
 	if not CROWD.has(scene):
 		return
 	var x0 := float(World.DATA.SCENES[scene].x0)
-	for c in CROWD[scene]:
+	for c in Trip.remap_crowd(CROWD[scene], scene):
 		var npc: Node = NPC_SCENE.instantiate()
 		npc.character = str(c.who)
 		npc.facing = str(c.facing)
@@ -1160,7 +1199,7 @@ func _checkin() -> void:
 	)
 
 
-func _vendor(id: String) -> Dictionary:
+func _vendor_base(id: String) -> Dictionary:
 	for v in VENDORS:
 		if str(v.id) == id:
 			return v
@@ -1205,14 +1244,14 @@ func _pitch_answer(id: String, oid: String) -> void:
 	if oid == "scan":
 		spam += 1
 		entries += 1
-	elif VENDOR_XP.get(id, {}).has(oid):
-		var fx: Array = VENDOR_XP[id][oid]
+	elif _vendor_xp().get(id, {}).has(oid):
+		var fx: Array = _vendor_xp()[id][oid]
 		Skills.add_xp(str(fx[0]), int(fx[1]))
 	Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 
 
 func _chat(index: int) -> void:
-	var c: Dictionary = CHATS[index]
+	var c: Dictionary = chat_def(index)
 	if _talked.has(index):
 		Cards.ask(
 			str(c.speaker),
@@ -1238,7 +1277,7 @@ func _greeting() -> String:
 
 
 func _chat_answer(index: int, oid: String) -> void:
-	var c: Dictionary = CHATS[index]
+	var c: Dictionary = chat_def(index)
 	var text := ""
 	for o in c.options:
 		if str(o.id) == oid:

@@ -18407,6 +18407,9 @@ const TABLE := {
     "bowl.opp_skill": [-0.08, 0.0, 0.08],
     "bowl.aim_speed": [1.1, 1.5, 2.0],
     "bowl.power_speed": [0.9, 1.2, 1.6],
+    # bowling (R11): how strict the oil is (x the lane's width) and how wild a hook is (x)
+    "bowl.oil": [0.85, 1.0, 1.15],
+    "bowl.spin_noise": [0.7, 1.0, 1.4],
     # escape room: seconds on the clock, seconds a wrong code takes off (in the room)
     "escape.time": [150.0, 120.0, 105.0],
     "escape.wrong_penalty": [5.0, 10.0, 15.0],
@@ -19653,6 +19656,222 @@ static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
     return top
 ''')
 
+write("scripts/bowl_variety.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Bowling variety (roadmap R11, ideas B2 B3 B4 B5 B6): oil patterns, alleys, bowling styles, the hook (spin) and the
+# league night. A static helper that Outings preloads; the game state stays in Outings (g.alley, g.spin, league).
+# A game started without options uses the classic alley (STRIKE ZONE LANES, house shot, no league), so older tests and
+# the Free Play toolbox are unchanged. The tier numbers live in Difficulty.TABLE (bowl.oil, bowl.spin_noise).
+
+# bias = how far the oil pushes the ball to the right (the green zone moves LEFT by that much),
+# width = how fast accuracy falls away from the green zone (house shot 1.0 is the classic bar)
+const OILS := {
+    "house":
+    {
+        "label": "HOUSE SHOT",
+        "bias": 0.0,
+        "width": 1.0,
+        "line": "HOUSE SHOT: EVEN OIL. THE GREEN ZONE IS WHERE YOU EXPECT IT."
+    },
+    "dry":
+    {
+        "label": "DRY LANES",
+        "bias": 0.12,
+        "width": 1.0,
+        "line": "DRY LANES: THE BALL DRIFTS RIGHT. THE GREEN ZONE SITS LEFT. A LEFT HOOK FIGHTS THE DRIFT."
+    },
+    "sport":
+    {
+        "label": "SPORT SHOT",
+        "bias": 0.03,
+        "width": 1.35,
+        "line": "SPORT SHOT: TIGHT OIL. THE GREEN ZONE IS NARROW AND MISSES COST MORE."
+    },
+}
+# three alleys: the sign, the oil, and who is there. share = how often the seeded draw picks it
+const ALLEYS := {
+    "strike_zone":
+    {
+        "label": "STRIKE ZONE LANES",
+        "short": "STRIKE ZONE",
+        "oil": "house",
+        "league": false,
+        "share": 0.4,
+        "line": "THE USUAL ALLEY. THE BALL RETURN IS SLOW BUT HONEST."
+    },
+    "rental":
+    {
+        "label": "RENTED LANES AT THE REC CENTER",
+        "short": "REC CENTER",
+        "oil": "dry",
+        "league": false,
+        "share": 0.35,
+        "line": "TWO LANES, ONE BROKEN VENDING MACHINE AND NO OIL TO SPEAK OF."
+    },
+    "league":
+    {
+        "label": "PIN PALS LEAGUE NIGHT",
+        "short": "LEAGUE NIGHT",
+        "oil": "sport",
+        "league": true,
+        "share": 0.25,
+        "line": "THURSDAY LEAGUE. THREE NIGHTS MAKE A SEASON. WEAKER BOWLERS GET A HANDICAP."
+    },
+}
+const ALLEY_ORDER := ["strike_zone", "rental", "league"]
+const LEAGUE_NIGHTS := 3
+const HOOK_STRIKE := 0.05  # a hook lowers the strike line (0.92) by this much: the angle carries the pins
+const HOOK_NOISE := 0.07  # ... and widens the wobble of the roll
+const HOOK_LEFT_CANCEL := 0.7  # a hook against the drift cancels this much of it (with the drift: 1 + this)
+const GUTTER_ACC := 0.3  # a hook thrown this far from the green zone sweeps off the lane
+# how the lane suits a style: oil -> style -> change of the roll's skill (0.48-0.66 today)
+const STYLES := {
+    "Alan": "straight",
+    "Garrison": "hooker",
+    "Dan": "power",
+    "Vic": "show",
+    "Maya": "precise",
+    "Morgan": "precise",
+}
+const STYLE_LABELS := {
+    "straight": "STRAIGHT",
+    "hooker": "HOOKER",
+    "power": "POWER",
+    "show": "SHOW-OFF",
+    "precise": "PRECISE",
+}
+const STYLE_FIT := {
+    "house": {"straight": 0.0, "hooker": 0.0, "power": 0.0, "show": 0.0, "precise": 0.0},
+    "dry": {"straight": -0.05, "hooker": 0.05, "power": 0.0, "show": 0.0, "precise": -0.02},
+    "sport": {"straight": 0.02, "hooker": -0.04, "power": -0.05, "show": -0.02, "precise": 0.05},
+}
+
+
+static func alley(id: String) -> Dictionary:
+    return ALLEYS.get(id, ALLEYS["strike_zone"])
+
+
+static func oil(id: String) -> Dictionary:
+    return OILS.get(id, OILS["house"])
+
+
+static func oil_of(alley_id: String) -> Dictionary:
+    return oil(str(alley(alley_id).oil))
+
+
+# where the green zone sits on the 0..1 aim bar for this oil and hook (-1 left, 0 straight, 1 right)
+static func center(oil_id: String, spin: int) -> float:
+    var bias := float(oil(oil_id).bias)
+    var scale := 1.0
+    if spin < 0:
+        scale = 1.0 - HOOK_LEFT_CANCEL
+    elif spin > 0:
+        scale = 1.0 + HOOK_LEFT_CANCEL
+    return clampf(0.5 - bias * scale, 0.1, 0.9)
+
+
+# how well the aim marker (0..1) fits the lane: 1 = in the middle of the green zone
+static func accuracy(oil_id: String, marker: float, spin: int, tier_width := 1.0) -> float:
+    var w := float(oil(oil_id).width) * tier_width
+    return clampf(1.0 - absf(marker - center(oil_id, spin)) * 2.0 * w, 0.0, 1.0)
+
+
+static func style_of(who: String) -> String:
+    return str(STYLES.get(who, "straight"))
+
+
+# change of a bowler's skill on this lane
+static func fit(oil_id: String, who: String) -> float:
+    return float(STYLE_FIT.get(oil_id, STYLE_FIT["house"]).get(style_of(who), 0.0))
+
+
+# the seeded draw of tonight's alley; a league season in progress pulls people back to league night
+static func pick_alley(rng: RandomNumberGenerator, league_night: int) -> String:
+    var shares := {}
+    for id in ALLEY_ORDER:
+        shares[id] = float(ALLEYS[id].share)
+    if league_night > 0:
+        shares["league"] = 1.2
+    var total := 0.0
+    for id in ALLEY_ORDER:
+        total += float(shares[id])
+    var roll := rng.randf() * total
+    for id in ALLEY_ORDER:
+        roll -= float(shares[id])
+        if roll <= 0.0:
+            return id
+    return "strike_zone"
+
+
+# ---- league night -------------------------------------------------------------------------------------
+# league = {"night": nights played this season, "totals": {who: pins}, "games": {who: games}, "seasons": n, "titles": n}
+static func new_league() -> Dictionary:
+    return {"night": 0, "totals": {}, "games": {}, "seasons": 0, "titles": 0}
+
+
+# handicap of one bowler tonight: 0.9 x the gap to the best average so far (nothing on the first night)
+static func handicap(league: Dictionary, who: String) -> int:
+    var games: Dictionary = league.get("games", {})
+    var totals: Dictionary = league.get("totals", {})
+    if not games.has(who) or int(games[who]) <= 0:
+        return 0
+    var best := 0.0
+    for name in games:
+        if int(games[name]) > 0:
+            best = maxf(best, float(totals.get(name, 0)) / float(games[name]))
+    var mine := float(totals.get(who, 0)) / float(games[who])
+    return maxi(0, roundi((best - mine) * 0.9))
+
+
+# add a finished night (scores = {who: pins}); returns {"night": n, "done": bool, "winner": who or ""} and resets at the
+# end of a season. Winner = highest season total with handicaps counted.
+static func record(league: Dictionary, scores: Dictionary) -> Dictionary:
+    var totals: Dictionary = league.totals
+    var games: Dictionary = league.games
+    var adjusted := {}
+    for who in scores:
+        adjusted[who] = int(scores[who]) + handicap(league, str(who))
+    for who in scores:
+        totals[who] = int(totals.get(who, 0)) + int(scores[who])
+        games[who] = int(games.get(who, 0)) + 1
+    league.night = int(league.night) + 1
+    var out := {"night": int(league.night), "done": false, "winner": "", "adjusted": adjusted}
+    if int(league.night) >= LEAGUE_NIGHTS:
+        var best := -1
+        for who in totals:
+            var tot := int(totals[who]) + handicap_total(league, str(who))
+            if tot > best:
+                best = tot
+                out.winner = str(who)
+        out.done = true
+        league.seasons = int(league.seasons) + 1
+        if out.winner == "You":
+            league.titles = int(league.titles) + 1
+        league.night = 0
+        league.totals = {}
+        league.games = {}
+    return out
+
+
+# the handicap a season total gets: the average gap x the nights played
+static func handicap_total(league: Dictionary, who: String) -> int:
+    return handicap(league, who) * int(league.get("games", {}).get(who, 0))
+
+
+static func league_standing(league: Dictionary) -> Array:
+    var rows := []
+    for who in league.get("totals", {}):
+        rows.append(
+            {
+                "who": str(who),
+                "total": int(league.totals[who]),
+                "hcp": handicap(league, str(who)),
+            }
+        )
+    rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.total) + int(a.hcp) * 3 > int(b.total) + int(b.hcp) * 3)
+    return rows
+''')
+
 write("scripts/outings.gd", '''extends CanvasLayer
 # gdlint:disable=max-line-length
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
@@ -19666,6 +19885,7 @@ signal finished(game: String, stars: int)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
+const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -20086,6 +20306,7 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
+var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
 var party_set := false
@@ -20121,6 +20342,7 @@ func reset() -> void:
     known = {}
     tastes = {}
     song_best = {}
+    league = BowlVariety.new_league()
     _offered = false
 
 
@@ -20137,6 +20359,7 @@ func to_dict() -> Dictionary:
         "known": known,
         "tastes": tastes,
         "songs": song_best,
+        "league": league,
     }
 
 
@@ -20147,6 +20370,9 @@ func from_dict(data: Dictionary) -> void:
     best = data.get("best", {})
     known = data.get("known", {})
     song_best = data.get("songs", {})
+    league = BowlVariety.new_league()
+    for key in data.get("league", {}):
+        league[key] = data.league[key]
     if int(data.get("version", 1)) >= 2:
         tastes = data.get("tastes", {})
     else:
@@ -20369,7 +20595,7 @@ func pick_game(from_invite: bool) -> void:
         _host(),
         "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
         options,
-        func(id: String) -> void: start(id, from_invite, {"party": party.duplicate()})
+        func(id: String) -> void: start(id, from_invite, _game_options(id))
     )
 
 
@@ -20662,6 +20888,10 @@ func _bowl_setup() -> void:
         "opp_knock": 0,
         "opp_first": 0,
         "opp_phase": 0,
+        "alley": str(opts.get("alley", "strike_zone")),
+        "spin": 0,
+        "acc": 1.0,
+        "hcp": _league_hcp(str(opts.get("alley", "strike_zone"))),
     }
     if room_mode():
         g.stage = "ready"
@@ -20698,6 +20928,18 @@ func _bowl_tick(dt: float) -> void:
 
 
 func _bowl_press(key: int) -> void:
+    if key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"]:
+        var want := -1 if key == KEY_LEFT else 1
+        g.spin = 0 if int(g.get("spin", 0)) == want else want
+        caption(
+            (
+                "NO HOOK. THE GREEN ZONE IS BACK."
+                if int(g.spin) == 0
+                else "HOOK %s: THE GREEN ZONE MOVES. A WILD HOOK CAN GO OFF THE LANE." % ("LEFT" if want < 0 else "RIGHT")
+            ),
+            99.0
+        )
+        return
     if key not in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E]:
         return
     if room_mode() and g.stage not in ["ready", "aim", "power"]:
@@ -20709,7 +20951,7 @@ func _bowl_press(key: int) -> void:
         g.stage = "aim"
         g.marker = 0.0
         g.dir = 1.0
-        caption("PRESS E TO STOP THE AIM (STOP IN THE GREEN).", 99.0)
+        caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
     elif g.stage == "aim":
         g.stage = "power"
         g.power = 0.0
@@ -20725,9 +20967,12 @@ func _bowl_press(key: int) -> void:
 
 
 func bowl_strength() -> float:
-    var accuracy := 1.0 - absf(float(g.marker) - 0.5) * 2.0
+    var spin := int(g.get("spin", 0))
+    var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"))
+    g.acc = accuracy
     var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
-    var noise := Difficulty.rng("bowl").randf_range(-0.08, 0.08)
+    var span := 0.08 + BowlVariety.HOOK_NOISE * absf(float(spin)) * Difficulty.f("bowl.spin_noise")
+    var noise := Difficulty.rng("bowl").randf_range(-span, span)
     return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
 
 
@@ -20739,10 +20984,12 @@ func _bowl_resolve() -> void:
         if strength > 0.92
         else clampi(roundi(float(left) * minf(1.0, strength * 1.15)), 0, left)
     )
+    knocked = _hook_adjust(knocked, left, strength)
     g.knocked = knocked
     g.pins = left - knocked
     g.totals["You"] = int(g.totals["You"]) + knocked
     Career.note_bowl(knocked, int(g.roll))
+    _note_hook(knocked)
     if knocked == 10 and int(g.roll) == 1:
         g.totals["You"] = int(g.totals["You"]) + 3
         g.msg = "STRIKE!"
@@ -20754,6 +21001,9 @@ func _bowl_resolve() -> void:
         g.msg = "%d PINS" % knocked
     g.stage = "pause"
     g.wait = 1.4 if room_mode() else 1.1
+    if str(g.get("hook_msg", "")) != "":
+        g.msg = str(g.hook_msg)
+    g.erase("hook_msg")
     if room_mode():
         _pins_fall(0, knocked)
         _bubble(_actor("Player"), "!" if knocked >= 8 else ("?" if knocked == 0 else "dots"), 1.2)
@@ -20768,6 +21018,7 @@ func _bowl_resolve() -> void:
 func _bowl_roll_opp(who: String) -> Dictionary:
     var row: Dictionary = BOWLERS[who]
     var skill := float(row.skill) + Difficulty.f("bowl.opp_skill")
+    skill += BowlVariety.fit(oil_id(), who)
     var r := Difficulty.rng("bowl")
     if float(row.streak) > 0.0:
         skill += float(row.streak) * (1.0 if int(g.get("frame", 1)) % 2 == 0 else -1.0)
@@ -20902,16 +21153,124 @@ func _pins_fall(lane: int, count: int) -> void:
         g.fall["%d_%d" % [lane, standing[i]]] = 0.8
 
 
+# ---- oil, hook and league (R11; the tables are in bowl_variety.gd)
+func alley_id() -> String:
+    return str(g.get("alley", "strike_zone"))
+
+
+func oil_id() -> String:
+    return str(BowlVariety.alley(alley_id()).oil)
+
+
+func is_league() -> bool:
+    return bool(BowlVariety.alley(alley_id()).league)
+
+
+# where the green zone sits on the aim bar (0..1) and how wide it is
+func bowl_center() -> float:
+    return BowlVariety.center(oil_id(), int(g.get("spin", 0)))
+
+
+func bowl_zone_width() -> float:
+    return 0.2 / (float(BowlVariety.oil(oil_id()).width) * Difficulty.f("bowl.oil"))
+
+
+func _aim_label() -> String:
+    var s := int(g.get("spin", 0))
+    return "AIM" if s == 0 else ("HOOK L" if s < 0 else "HOOK R")
+
+
+func _league_hcp(alley: String) -> Dictionary:
+    var out := {}
+    if not bool(BowlVariety.alley(alley).league):
+        return out
+    for who in ["You"] + bowlers():
+        out[who] = BowlVariety.handicap(league, str(who))
+    return out
+
+
+# a hook thrown far from the green zone sweeps off the lane; a hook that lands well carries the pins
+func _hook_adjust(knocked: int, left: int, strength: float) -> int:
+    if int(g.get("spin", 0)) == 0:
+        return knocked
+    if float(g.get("acc", 1.0)) < BowlVariety.GUTTER_ACC:
+        g["hook_msg"] = "HOOKED OFF THE LANE..."
+        return 0
+    if strength > 0.92 - BowlVariety.HOOK_STRIKE:
+        return left
+    return knocked
+
+
+func _note_hook(knocked: int) -> void:
+    if int(g.get("spin", 0)) != 0:
+        Career.add("bowl_hooks")
+        if knocked >= 10 and int(g.roll) == 1:
+            Career.add("bowl_hook_strikes")
+    g.spin = 0
+
+
+# score used for the rank: pins plus the league handicap (nothing on an ordinary night)
+func _bowl_adj(who: String) -> int:
+    return int(g.totals[who]) + int(g.get("hcp", {}).get(who, 0))
+
+
+func _league_close() -> void:
+    Career.note_alley(alley_id())
+    if not is_league():
+        return
+    var scores := {}
+    for who in g.totals:
+        scores[who] = int(g.totals[who])
+    var res := BowlVariety.record(league, scores)
+    var place := 1
+    for who in g.totals:
+        if who != "You" and int(res.adjusted[who]) > int(res.adjusted["You"]):
+            place += 1
+    var places := ["1ST", "2ND", "3RD", "4TH", "5TH", "6TH"]
+    Career.add("league_nights")
+    lines.append(
+        "LEAGUE NIGHT %d OF %d: YOU PLACE %s WITH HANDICAPS." % [int(res.night), BowlVariety.LEAGUE_NIGHTS, places[mini(place - 1, 5)]]
+    )
+    if bool(res.done):
+        Career.add("league_seasons")
+        if str(res.winner) == "You":
+            Career.add("league_titles")
+            lines.append("THE SEASON IS OVER. YOU WIN THE LEAGUE! THEY GIVE YOU A SMALL TROPHY.")
+        else:
+            lines.append("THE SEASON IS OVER. %s WINS THE LEAGUE. SEE YOU NEXT SEASON." % str(res.winner).to_upper())
+
+
+# the alley for tonight: a seeded draw (a season in progress pulls people to league night)
+func _game_options(id: String) -> Dictionary:
+    var o := {"party": party.duplicate()}
+    if id == "bowling":
+        o["alley"] = BowlVariety.pick_alley(Difficulty.rng_for("alley", count * 7 + int(league.night)), int(league.night))
+    return o
+
+
+func _paint_bowl_intro(b: Rect2, y0: float) -> float:
+    var y := y0
+    var alley := BowlVariety.alley(str(opts.get("alley", "strike_zone")))
+    var oil := BowlVariety.oil(str(alley.oil))
+    var texts := ["ALLEY: " + str(alley.label), str(alley.line), str(oil.line), "LEFT / RIGHT = HOOK (MORE CARRY, MORE RISK)."]
+    if bool(alley.league):
+        texts.append("LEAGUE: NIGHT %d OF %d. HANDICAPS COUNT FOR THE RANK." % [int(league.night) + 1, BowlVariety.LEAGUE_NIGHTS])
+    for text in texts:
+        for part in _wrap(text, int(b.size.x / 4.0)):
+            _t(part, b.position.x, y, BLUE if text == texts[0] else INK)
+            y += 7.0
+    return y + 2.0
 func bowl_rank() -> int:
     var rank := 0
     for who in bowlers():
-        if int(g.totals[who]) > int(g.totals["You"]):
+        if _bowl_adj(who) > _bowl_adj("You"):
             rank += 1
     return rank
 
 
 func _bowl_end() -> void:
     _finish([3, 2, 1, 1, 1][mini(bowl_rank(), 4)])
+    _league_close()
 
 
 # ---- the song table
@@ -21610,7 +21969,7 @@ func _room_wants(key: int) -> bool:
         return true
     match game:
         "bowling":
-            return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+            return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
         "karaoke":
             return key in LANE_KEYS
         "escape":
@@ -21967,12 +22326,12 @@ func _hud_bowling(s: Rect2) -> void:
         var bar := Rect2(s.position.x + 82.0, s.position.y + 3.0, 80.0, 5.0)
         _canvas.draw_rect(bar, UiStyle.SOFT)
         if stage == "aim":
-            _canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
+            _canvas.draw_rect(Rect2(bar.position.x + 79.0 * (bowl_center() - bowl_zone_width() * 0.5), bar.position.y, 79.0 * bowl_zone_width(), 5.0), GREEN)
             _canvas.draw_rect(
                 Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0),
                 WHITE
             )
-            _t("AIM", x, o.y, WHITE)
+            _t(_aim_label(), x, o.y, WHITE)
         else:
             _canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
             _canvas.draw_rect(
@@ -22138,6 +22497,8 @@ func _paint_intro(b: Rect2) -> void:
     if Campaign.mode == "owner":
         _t("COST $%d" % int(GAMES[game].cost), b.position.x, y, RED)
         y += 7.0
+    if game == "bowling":
+        y = _paint_bowl_intro(b, y)
     if best.has(game):
         _t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
 
@@ -22214,11 +22575,11 @@ func _paint_bowling(b: Rect2) -> void:
     var bar := Rect2(x, bar_y, 70.0, 5.0)
     _canvas.draw_rect(bar, Color("c9d2e0"))
     if g.stage == "aim":
-        _canvas.draw_rect(Rect2(bar.position.x + 28.0, bar_y, 14.0, 5.0), GREEN)
+        _canvas.draw_rect(Rect2(bar.position.x + 69.0 * (bowl_center() - bowl_zone_width() * 0.5), bar_y, 69.0 * bowl_zone_width(), 5.0), GREEN)
         _canvas.draw_rect(
             Rect2(bar.position.x + 69.0 * float(g.marker), bar_y - 2.0, 2.0, 9.0), INK
         )
-        _t("AIM", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
+        _t(_aim_label(), x + 74.0 - 4.0, bar_y - 8.0, BLUE)
     elif g.stage == "power":
         _canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
         _canvas.draw_rect(Rect2(bar.position.x, bar_y, 70.0 * float(g.power), 5.0), AMBER)
@@ -23257,6 +23618,93 @@ func _owner_answer(id: String) -> void:
     Cards.ask("All-hands", text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 ''')
 
+write("scripts/nerf_modes.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Nerf war modes and arenas (roadmap R11). Static tables that Nerf preloads; the state lives in Nerf.
+# A war started with start_war() and no mode is the classic free-for-all (the rack, a happy coworker firing back).
+# V while holding a blaster opens the mode card in an arena room (the office, the cubicle area, the conference room).
+
+const MODES := {
+    "cup":
+    {
+        "label": "CAPTURE THE CUP",
+        "line": "KNOCK THE CUP OFF ITS STAND THREE TIMES BEFORE THE CREW DOES. IT MOVES EACH TIME.",
+        "win": 3,
+    },
+    "elim":
+    {
+        "label": "ELIMINATION",
+        "line": "EVERYONE HAS LIVES. A HIT TAKES ONE. LAST ONE STANDING WINS. DUCKING HELPS.",
+        "win": 0,
+    },
+    "hide":
+    {
+        "label": "HIDE AND SEEK LITE",
+        "line": "ONE COWORKER IS THE SEEKER. STAY UNHIT UNTIL THE CLOCK RUNS OUT. DUCK, MOVE, OR STUN THE SEEKER WITH A HIT.",
+        "win": 0,
+    },
+}
+const MODE_ORDER := ["cup", "elim", "hide"]
+# secs = round length, gap = x the crew's shot interval, lives = elimination lives, cups = where the cup can stand (share of the room width)
+const ARENAS := {
+    "main_floor": {"label": "THE OFFICE", "secs": 50.0, "gap": 1.0, "lives": 3, "cups": [0.25, 0.5, 0.78]},
+    "cubicle_area": {"label": "THE CUBICLE AREA", "secs": 45.0, "gap": 0.9, "lives": 3, "cups": [0.2, 0.45, 0.8]},
+    "conference": {"label": "THE CONFERENCE ROOM", "secs": 40.0, "gap": 1.2, "lives": 2, "cups": [0.15, 0.5, 0.85]},
+}
+const CUP_Y := 44.0  # world y of the cup (on a shelf above the monitors: it takes a lob, hold Z)
+const CUP_HALF_W := 14.0
+const CUP_FALL_SECS := 0.9
+const HIDE_STUN := 4.0
+const SEEKER_GAP := [1.6, 2.8]
+
+
+static func arena_for(scene: String) -> Dictionary:
+    return ARENAS.get(scene, {})
+
+
+static func cup_x(arena: Dictionary, x0: float, width: float, index: int) -> float:
+    var spots: Array = arena.cups
+    return x0 + width * float(spots[index % spots.size()])
+
+
+# the next spot at least 60 px away from where the player stands (cycling through the arena's list)
+static func next_cup_index(arena: Dictionary, x0: float, width: float, from: int, player_x: float) -> int:
+    var n: int = arena.cups.size()
+    for step in range(1, n + 1):
+        var i := (from + step) % n
+        if absf(cup_x(arena, x0, width, i) - player_x) >= 60.0:
+            return i
+    return (from + 1) % n
+''')
+
+write("scripts/nerf_cup.gd", '''extends Node2D
+# The cup of CAPTURE THE CUP: a code-drawn paper cup on a little stand. fall() tips it over for a moment.
+
+var fall_t := 0.0
+
+
+func fall() -> void:
+    fall_t = 0.9
+
+
+func _process(delta: float) -> void:
+    fall_t = maxf(0.0, fall_t - delta)
+    queue_redraw()
+
+
+func _draw() -> void:
+    var dark := Color("17121f")
+    draw_rect(Rect2(-6, 2, 12, 3), Color("8a6a42"))
+    draw_rect(Rect2(-5, 5, 2, 4), Color("6a4f2e"))
+    draw_rect(Rect2(3, 5, 2, 4), Color("6a4f2e"))
+    if fall_t > 0.0:
+        var k := 1.0 - fall_t / 0.9
+        draw_set_transform(Vector2(0, 0), k * 1.4, Vector2.ONE)
+    draw_colored_polygon(PackedVector2Array([Vector2(-5, -10), Vector2(5, -10), Vector2(4, 2), Vector2(-4, 2)]), Color("e0463c"))
+    draw_rect(Rect2(-4.5, -6, 9, 2), Color("ffffff"))
+    draw_rect(Rect2(-5, -11, 10, 1), dark)
+''')
+
 write("scripts/nerf.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Nerf guns. Take a blaster from the rack in the cubicle area (E; E again to reload), Z fires a foam dart, G puts it away.
@@ -23266,6 +23714,8 @@ write("scripts/nerf.gd", '''extends Node
 
 const DART := preload("res://scripts/dart.gd")
 const AIM := preload("res://scripts/aim.gd")
+const Modes := preload("res://scripts/nerf_modes.gd")
+const CUP := preload("res://scripts/nerf_cup.gd")
 const MAX_AMMO := 6
 const SPEED := 175.0
 const CHARGE_SECS := 1.1  # holding Z this long = a full-power lob
@@ -23303,6 +23753,22 @@ var war_ff := 0  # coworkers hit by coworkers
 var war_assists := 0  # ... within 2.5 s of your own hit on the same person
 var war_longest := 0  # longest hit of yours, px
 var last_result := {}
+# the mode of the war in progress (R11): "" = the classic free-for-all, "cup", "elim" or "hide" (see nerf_modes.gd)
+var mode := ""
+var arena := ""
+var cups := 0  # cups you knocked down
+var cups_rival := 0  # cups the crew knocked down
+var lives := {}  # elimination: name (or "Player") -> lives left
+var downed := {}  # elimination: who is out
+var hide_t := 0.0  # hide and seek: seconds you were unseen
+var hide_found := false
+var seeker := ""
+var stunned := 0.0
+var mode_result := {}
+var cup_wait := 0.0
+var cup_node_index := -1
+var cup_x := 0.0
+var cup_node: Node2D = null
 
 var charge := 0.0
 var charging := false
@@ -23329,6 +23795,7 @@ func reset() -> void:
     war_taken = 0
     _reset_score()
     _energy_today = 0
+    _clear_mode()
 
 
 func _reset_score() -> void:
@@ -23356,7 +23823,7 @@ func holding() -> bool:
 
 func on_given() -> void:
     ammo = MAX_AMMO
-    Hints.toast("Z FIRES, HOLD Z TO LOB, S OR DOWN TO DUCK.", 4.0)
+    Hints.toast("Z FIRES, HOLD Z TO LOB, S TO DUCK, V PICKS A WAR GAME.", 4.0)
 
 
 # ---- firing ------------------------------------------------------------------------------------------
@@ -23497,7 +23964,7 @@ func _dodged(who: Node, shooter: String) -> void:
 
 func find_victim(pos: Vector2, shooter: String, dart: Node = null) -> Node:
     for npc in get_tree().get_nodes_in_group("npcs"):
-        if str(npc.cast_name) == shooter or npc.get("_hidden") == true or not npc.visible:
+        if str(npc.cast_name) == shooter or npc.get("_hidden") == true or not npc.visible or downed.has(str(npc.cast_name)):
             continue
         if _hits(npc, pos, dart):
             return npc
@@ -23540,6 +24007,7 @@ func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
         if dart != null:
             reach = absf(dart.position.x - float(dart.get_meta("x0", dart.position.x)))
         Career.note_nerf_hit(reach)
+        _mode_hit(who)
         _hit_ms[who] = Time.get_ticks_msec()
         if war_t > 0.0:
             war_hits += 1
@@ -23563,6 +24031,7 @@ func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
             _shot_t[who] = 0.8
     else:
         npc.react_hit("!")
+        _lose_life(str(npc.cast_name))
         if war_t > 0.0:
             war_ff += 1
             if Time.get_ticks_msec() - int(_hit_ms.get(who, -99999)) < 2500:
@@ -23571,6 +24040,7 @@ func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
 
 func _hit_player(p: Node, shooter: String) -> void:
     taken += 1
+    _player_hit_mode()
     war_taken += 1 if war_t > 0.0 else 0
     if p.state != "sitting" and p.state != "death":
         p.start_emote("hurt", 0.45)
@@ -23589,7 +24059,7 @@ func _relieve() -> void:
 
 
 # ---- the war ------------------------------------------------------------------------------------------
-func start_war() -> void:
+func start_war(mode_id := "") -> void:
     war_t = WAR_SECS
     war_hits = 0
     war_taken = 0
@@ -23600,8 +24070,242 @@ func start_war() -> void:
             npc.give_item("nerf")  # everybody in the room, sitting or standing
         _shot_t[str(npc.cast_name)] = Difficulty.rng("nerf").randf_range(1.5, 3.5)
     Hints.toast("NERF WAR! THEY ARE FIRING BACK.", 3.0)
+    _begin_mode(mode_id)
 
 
+# ---- modes and arenas (R11) -----------------------------------------------------------------------------
+func arena_scene() -> String:
+    var s := _scene()
+    return "" if s == null else s.scene_file_path.get_file().get_basename()
+
+
+# V with a blaster in hand: pick the game for this room
+func offer_war() -> void:
+    if war_t > 0.0 or Game.ui_open or Cards.is_open or Game.busy or not holding():
+        return
+    var a := Modes.arena_for(arena_scene())
+    if a.is_empty():
+        Hints.toast("NO ARENA HERE. TRY THE OFFICE, THE CUBICLES OR THE CONFERENCE ROOM.", 3.0)
+        return
+    var options := []
+    for id in Modes.MODE_ORDER:
+        options.append({"label": str(Modes.MODES[id].label), "id": id})
+    options.append({"label": "FREE-FOR-ALL (NO RULES)", "id": "free"})
+    options.append({"label": "NEVER MIND", "id": "no"})
+    Cards.ask(
+        "NERF WAR",
+        "ARENA: %s (%d SECONDS). PICK A GAME." % [str(a.label), int(a.secs)],
+        options,
+        func(id: String) -> void: war_picked(id)
+    )
+
+
+func war_picked(id: String) -> void:
+    if id == "no" or war_t > 0.0:
+        return
+    start_war("" if id == "free" else id)
+
+
+func _clear_mode() -> void:
+    mode = ""
+    lives = {}
+    downed = {}
+    cups = 0
+    cups_rival = 0
+    hide_t = 0.0
+    hide_found = false
+    seeker = ""
+    stunned = 0.0
+    cup_wait = 0.0
+    if cup_node != null and is_instance_valid(cup_node):
+        cup_node.queue_free()
+    cup_node = null
+
+
+func _begin_mode(id: String) -> void:
+    _clear_mode()
+    if id == "" or not Modes.MODES.has(id):
+        return
+    var a := Modes.arena_for(arena_scene())
+    if a.is_empty():
+        return
+    mode = id
+    arena = arena_scene()
+    war_t = float(a.secs)
+    Career.note_first("arena", arena, "nerf_arenas")
+    var names := []
+    for npc in get_tree().get_nodes_in_group("npcs"):
+        if npc.get("_hidden") != true:
+            names.append(str(npc.cast_name))
+    match id:
+        "cup":
+            _place_cup(-1)
+        "elim":
+            lives["Player"] = int(a.lives)
+            for n in names:
+                lives[n] = int(a.lives)
+        "hide":
+            if not names.is_empty():
+                seeker = str(Difficulty.pick(names, "nerf"))
+            for npc in get_tree().get_nodes_in_group("npcs"):
+                if str(npc.cast_name) != seeker and str(npc.held) == "nerf":
+                    npc.give_item("")
+            _shot_t = {seeker: 1.5}
+    Hints.toast("%s IN %s. %s" % [str(Modes.MODES[id].label), str(a.label), str(Modes.MODES[id].line)], 5.0)
+
+
+func _place_cup(from: int) -> void:
+    var a := Modes.arena_for(arena)
+    var info: Dictionary = World.DATA.SCENES.get(arena, {})
+    var p := _player()
+    var x0 := float(info.get("x0", 0))
+    var w := float(info.get("W", 320))
+    var idx := Modes.next_cup_index(a, x0, w, from, p.global_position.x if p != null else 0.0)
+    cup_x = Modes.cup_x(a, x0, w, idx)
+    cup_node_index = idx
+    if cup_node == null or not is_instance_valid(cup_node):
+        cup_node = CUP.new()
+        cup_node.z_index = 12
+        _scene().get_node("Actors").add_child(cup_node)
+    cup_node.position = Vector2(cup_x, Modes.CUP_Y)
+
+
+# a dart in flight at pos (dart.gd calls this): does it knock the cup off its stand?
+func cup_check(pos: Vector2, shooter: String) -> void:
+    if mode != "cup" or war_t <= 0.0 or cup_wait > 0.0 or cup_node == null:
+        return
+    if absf(pos.x - cup_x) > Modes.CUP_HALF_W or pos.y < Modes.CUP_Y - 14.0 or pos.y > Modes.CUP_Y + 10.0:
+        return
+    cup_down(shooter)
+
+
+func cup_down(shooter: String) -> void:
+    cup_wait = Modes.CUP_FALL_SECS
+    cup_node.fall()
+    var win := int(Modes.MODES.cup.win)
+    if shooter == "Player":
+        cups += 1
+        Career.add("nerf_cups")
+        Hints.toast("CUP DOWN! %d OF %d" % [cups, win], 2.0)
+    else:
+        cups_rival += 1
+        Hints.toast("%s KNOCKED THE CUP! %d OF %d FOR THE CREW" % [shooter.to_upper(), cups_rival, win], 2.5)
+    if cups >= win or cups_rival >= win:
+        _end_war()
+
+
+# called every frame of a mode war from _process; true = the war is over (you left the arena)
+func _mode_ends(delta: float) -> bool:
+    if mode == "":
+        return false
+    if arena_scene() != arena:
+        return true
+    stunned = maxf(0.0, stunned - delta)
+    if mode == "hide":
+        hide_t += delta
+    elif mode == "cup" and cup_wait > 0.0:
+        cup_wait -= delta
+        if cup_wait <= 0.0:
+            _place_cup(cup_node_index)
+    return false
+
+
+func _npc_fire_at(npc: Node, x: float) -> void:
+    var dx: float = x - npc.global_position.x
+    var dir := 1.0 if dx >= 0.0 else -1.0
+    if npc.seat == null:
+        npc.facing = "right" if dir > 0.0 else "left"
+        npc._play("idle")
+    fire_npc(npc, dir, clampf((absf(dx) - 110.0) / 200.0, 0.0, 1.0))
+
+
+func _mode_hit(who: String) -> void:
+    if mode == "elim":
+        _lose_life(who)
+    elif mode == "hide" and who == seeker:
+        stunned = Modes.HIDE_STUN
+        Hints.toast("SEEKER STUNNED FOR %d SECONDS" % int(Modes.HIDE_STUN), 2.0)
+
+
+func _player_hit_mode() -> void:
+    if mode == "hide" and war_t > 0.0:
+        hide_found = true
+        Hints.toast("FOUND!", 1.5)
+        _end_war()
+    else:
+        _lose_life("Player")
+
+
+func _lose_life(who: String) -> void:
+    if mode != "elim" or war_t <= 0.0 or not lives.has(who) or downed.has(who):
+        return
+    lives[who] = int(lives[who]) - 1
+    if int(lives[who]) > 0:
+        return
+    downed[who] = true
+    if who == "Player":
+        Hints.toast("YOU ARE OUT!", 2.0)
+        _end_war()
+        return
+    for npc in get_tree().get_nodes_in_group("npcs"):
+        if str(npc.cast_name) == who:
+            npc.give_item("")
+            npc.react_hit("dots")
+    _shot_t.erase(who)
+    Hints.toast("%s IS OUT!" % who.to_upper(), 1.8)
+    for n in lives:
+        if n != "Player" and not downed.has(n):
+            return
+    _end_war()
+
+
+func hud_extra() -> String:
+    match mode:
+        "cup":
+            return "  CUP %d/%d" % [cups, int(Modes.MODES.cup.win)]
+        "elim":
+            return "  LIVES %d" % int(lives.get("Player", 0))
+        "hide":
+            return "  UNSEEN %d" % int(hide_t)
+    return ""
+
+
+func _end_mode() -> void:
+    if mode == "":
+        return
+    var won := false
+    var line := ""
+    match mode:
+        "cup":
+            var need := int(Modes.MODES.cup.win)
+            won = cups >= need
+            line = (
+                "CUP WAR: YOU %d, THE CREW %d. %s"
+                % [cups, cups_rival, "YOU WIN!" if won else ("THE CREW WINS." if cups_rival > cups else "TIME. A DRAW.")]
+            )
+        "elim":
+            won = not downed.has("Player")
+            for n in lives:
+                if n != "Player" and not downed.has(n):
+                    won = false
+            line = (
+                "ELIMINATION: "
+                + ("LAST ONE STANDING!" if won else ("YOU WERE OUT." if downed.has("Player") else "TIME. SOME OF THEM SURVIVED."))
+            )
+            if won:
+                Career.add("nerf_elim_wins")
+        "hide":
+            won = not hide_found and hide_t >= float(Modes.arena_for(arena).secs) - 1.5
+            Career.best("nerf_hide_best", int(hide_t))
+            line = ("HIDE AND SEEK: UNSEEN FOR %d SECONDS!" if won else "HIDE AND SEEK: FOUND AFTER %d SECONDS.") % int(hide_t)
+            if won:
+                Career.add("nerf_hide_wins")
+    if won:
+        Career.add("nerf_mode_wins")
+    mode_result = {"id": mode, "arena": arena, "won": won, "line": line, "cups": cups, "rival": cups_rival, "secs": int(hide_t)}
+    last_result["mode"] = mode_result
+    Hints.toast(line, 5.0)
+    _clear_mode()
 func _end_war() -> void:
     war_t = 0.0
     for npc in get_tree().get_nodes_in_group("npcs"):
@@ -23614,6 +24318,7 @@ func _end_war() -> void:
     if not s.titles.is_empty():
         msg += ". " + ", ".join(PackedStringArray(s.titles))
     Hints.toast(msg, 5.0)
+    _end_mode()
     if Campaign.active:
         Social.change_all(1)
 
@@ -23655,7 +24360,7 @@ func _process(delta: float) -> void:
     if war_t <= 0.0:
         return
     war_t -= delta
-    if war_t <= 0.0 or _scene() == null:
+    if war_t <= 0.0 or _scene() == null or _mode_ends(delta):
         _end_war()
         return
     for npc in get_tree().get_nodes_in_group("npcs"):
@@ -23678,6 +24383,20 @@ func _npc_shoots(npc: Node) -> void:
             targets.append(other)
     if targets.is_empty():
         return
+    var rng := Difficulty.rng("nerf")
+    if mode == "hide":
+        if stunned > 0.0:
+            return
+        _shot_t[str(npc.cast_name)] = rng.randf_range(float(Modes.SEEKER_GAP[0]), float(Modes.SEEKER_GAP[1])) * Difficulty.f("nerf.gap")
+        if p != null:
+            targets = [p]
+    elif mode == "cup" and cup_node != null and rng.randf() < 0.4:
+        _npc_fire_at(npc, cup_x)
+        return
+    elif mode == "elim":
+        targets = targets.filter(func(t: Node) -> bool: return not downed.has(str(t.get("cast_name"))))
+        if targets.is_empty():
+            return
     var target: Node = Difficulty.pick(targets, "nerf")
     var dx: float = target.global_position.x - npc.global_position.x
     var dir := 1.0 if dx >= 0.0 else -1.0
@@ -23731,6 +24450,7 @@ func _fly(delta: float) -> void:
         _trail.pop_front()
     position += vel * delta
     vel.y += GRAVITY * delta
+    Nerf.cup_check(global_position, shooter)
     if not has_meta("belled") and Nerf.hit_bell(global_position):
         set_meta("belled", true)
         vel = Vector2(-vel.x * 0.2, 25.0)
@@ -31628,6 +32348,268 @@ func from_dict(data: Dictionary) -> void:
     _next_id = int(data.get("next", 1))
 ''')
 
+write("scripts/trip_variety.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Rodent Nation 2014 variety (roadmap R11): every run gets its own agenda. Static helper that Expo preloads.
+#   - the session menu of each round (4 rooms: the headline session stays where it was, the rest rotate through a bigger pool)
+#   - which three of five vendors have a booth and where, which attendees you meet (same sprite, different conversation)
+#   - the raffle odds of the year (6 to 12 percent, plus 4 percent per badge scan as before)
+# Everything is drawn from Difficulty.rng_for with the run seed, so a save resumes the same trip. The KPIs, the XP per
+# session (8) and the per diem are not touched. Skills used: powershell (lab only), networking, servers, security, people.
+
+# round index -> slot -> session id that never moves (the scripting lab and the security session)
+const PINS := {0: {0: "ps101"}, 1: {1: "security"}}
+const MORE_SESSIONS := [
+    [
+        {
+            "id": "docs",
+            "short": "DOCUMENTATION THAT GETS READ",
+            "label": "DOCUMENTATION THAT GETS READ",
+            "skill": "people",
+            "xp": 8,
+            "text": "A tired consultant shows a one page runbook that technicians actually open at 2 a.m. You rewrite three of yours on the flight home in your head. (+8 customer XP)"
+        },
+        {
+            "id": "macs",
+            "short": "THE ODD MACHINE: MAC AND LINUX",
+            "label": "THE ODD MACHINE: MAC AND LINUX IN A WINDOWS SHOP",
+            "skill": "networking",
+            "xp": 8,
+            "text": "Two clients have a designer with a laptop that nobody understands. The speaker has a checklist for them: sharing, backups and who gets the blame. (+8 networking XP)"
+        },
+    ],
+    [
+        {
+            "id": "spam",
+            "short": "SPAM FILTERING THAT WORKS",
+            "label": "SPAM FILTERING THAT WORKS",
+            "skill": "security",
+            "xp": 8,
+            "text": "A filter, three rules and a quarantine email the user will read. The room laughs at the slide of the worst phishing mail of the year. (+8 security XP)"
+        },
+        {
+            "id": "virt",
+            "short": "VIRTUAL SERVERS ON A BUDGET",
+            "label": "VIRTUAL SERVERS ON A BUDGET",
+            "skill": "servers",
+            "xp": 8,
+            "text": "One good box instead of three tired ones. The speaker is firm about backups and gentle about licences. (+8 servers XP)"
+        },
+    ],
+    [
+        {
+            "id": "qbr",
+            "short": "SELLING THE BUSINESS REVIEW",
+            "label": "SELLING THE QUARTERLY BUSINESS REVIEW",
+            "skill": "people",
+            "xp": 8,
+            "text": "Show the client what you did, then what is coming. The speaker's best slide is a chart of tickets that did not happen. (+8 customer XP)"
+        },
+        {
+            "id": "ransom",
+            "short": "CRYPTOLOCKER: WHAT WE LEARNED",
+            "label": "CRYPTOLOCKER: WHAT WE LEARNED",
+            "skill": "security",
+            "xp": 8,
+            "text": "Backups you have tested, shares that are not open to everyone and a plan for the Monday it happens anyway. (+8 security XP)"
+        },
+    ],
+]
+const SLOT_GENDER := ["m", "f", "m", "f", "m", "m"]  # the attendee sprites of Expo.CROWD (att:0 .. att:5)
+const VENDOR_IDS := ["backup", "webwoot", "psa", "voip", "rmmx"]
+const VENDOR_LOOK := {"backup": "expo_vendg", "webwoot": "expo_dee", "psa": "expo_vendo", "voip": "expo_vendh", "rmmx": "expo_vendi"}
+const BOOTH_X := [71, 159, 272]
+const VENDOR_XP := {"voip": {"demo": ["networking", 6], "price": ["people", 3]}, "rmmx": {"demo": ["servers", 6], "price": ["security", 3]}}
+const EXTRA_VENDORS := [
+    {
+        "id": "voip",
+        "speaker": "Sam (CloudCall Voice)",
+        "text": "Do your clients still have a phone closet from 2004? CloudCall hosts the whole system: desk phones, a mobile app and a receptionist who finally gets a vacation. First three months free!",
+        "options":
+        [
+            {"id": "demo", "label": "TRY THE SOFTPHONE", "text": "You make a call from a laptop. The sound is clear, the latency is not. Sam says that is the hotel wifi. (+6 networking XP)"},
+            {"id": "price", "label": "ASK ABOUT PRICING", "text": "Per seat, per month, plus a line for the fax, which you did not ask about. (+3 customer XP)"},
+            {"id": "scan", "label": "SCAN MY BADGE FOR THE PRIZE", "text": "Beep. You are entered to win a headset. Sam's smile gets a little wider. (raffle entry, expect emails)"},
+            {"id": "no", "label": "NO THANKS", "text": "Sam hands you a pen shaped like a phone anyway."},
+        ],
+        "mail":
+        {
+            "from": "Sam Ortega <sam@cloudcall.example>",
+            "subject": "Your free three months at CloudCall",
+            "body": "Hi! It was great to see you in Florida. Your free three months are still waiting. Can I send over a quote for your biggest client? - Sam"
+        },
+    },
+    {
+        "id": "rmmx",
+        "speaker": "Jordan (PatchPals RMM)",
+        "text": "Patching the whole client base used to take a week. With PatchPals it takes a lunch break and one scary dashboard. Can I show you the dashboard?",
+        "options":
+        [
+            {"id": "demo", "label": "WATCH THE DASHBOARD", "text": "Four hundred machines go green in a minute. Jordan does not mention the nine that stayed red. You do. (+6 servers XP)"},
+            {"id": "price", "label": "ASK HOW IT HANDLES FAILURES", "text": "A long answer about retries and a short one about who gets the call. You write both down. (+3 security XP)"},
+            {"id": "scan", "label": "SCAN MY BADGE FOR THE PRIZE", "text": "Beep. You are entered to win a tablet. Jordan's smile gets a little wider. (raffle entry, expect emails)"},
+            {"id": "no", "label": "NO THANKS", "text": "Jordan gives you a sticker. It says PATCH IT."},
+        ],
+        "mail":
+        {
+            "from": "Jordan Pike <jordan@patchpals.example>",
+            "subject": "Following up from the Rodent Nation expo hall",
+            "body": "Hi! Thanks for stopping by the booth. I put your name down for a pilot of PatchPals. Can we find fifteen minutes this week? - Jordan"
+        },
+    },
+]
+# extra attendees (same shape as Expo.CHATS) with the gender of the sprite they can use
+const EXTRA_CHATS := [
+    {
+        "gender": "f",
+        "speaker": "ticket_lena (Lena, help desk lead)",
+        "text": "We answer in four minutes and the clients still say we are slow. I think it is the first sentence. What do you open with?",
+        "options":
+        [
+            {"id": "learn", "label": "SHARE YOUR FIRST SENTENCE", "skill": "people", "xp": 4, "text": "She writes down: I have it, and here is what happens next. She says it is shorter than her old one. (+4 customer XP)"},
+            {"id": "cards", "label": "SWAP BUSINESS CARDS", "skill": "", "xp": 0, "text": "You swap cards. Hers has a headset on it."},
+            {"id": "bye", "label": "NICE TO MEET YOU", "skill": "", "xp": 0, "text": "She says to look her up on the forum."},
+        ],
+    },
+    {
+        "gender": "m",
+        "speaker": "omar_ops (Omar, two-person MSP)",
+        "text": "My partner does the sales and I do everything else. How do you decide which client gets the Saturday?",
+        "options":
+        [
+            {"id": "learn", "label": "TALK ABOUT SLAs AND A PHONE LIST", "skill": "servers", "xp": 4, "text": "He did not have a list. He takes a photo of your napkin. (+4 servers XP)"},
+            {"id": "cards", "label": "SWAP BUSINESS CARDS", "skill": "", "xp": 0, "text": "You swap cards. His is handwritten."},
+            {"id": "bye", "label": "NICE TO MEET YOU", "skill": "", "xp": 0, "text": "He has a flight to catch and he waves with his coffee."},
+        ],
+    },
+    {
+        "gender": "f",
+        "speaker": "rosa_net (Rosa, school district IT)",
+        "text": "Eleven hundred students, one wireless controller and a principal who streams video in the hall. Any advice?",
+        "options":
+        [
+            {"id": "learn", "label": "TALK ABOUT SEPARATE VLANS", "skill": "networking", "xp": 4, "text": "She grins. That was the exact thing she was afraid to propose. (+4 networking XP)"},
+            {"id": "cards", "label": "SWAP BUSINESS CARDS", "skill": "", "xp": 0, "text": "You swap cards. Hers has a school bus on it."},
+            {"id": "bye", "label": "NICE TO MEET YOU", "skill": "", "xp": 0, "text": "The bell rings on her phone. She says it is the principal."},
+        ],
+    },
+]
+
+
+# the four sessions of one round: pinned rooms first, the rest from the pool in a seeded order
+static func menu(round_index: int, base: Array) -> Array:
+    var pool: Array = base.duplicate()
+    if round_index < MORE_SESSIONS.size():
+        pool.append_array(MORE_SESSIONS[round_index])
+    var pins: Dictionary = PINS.get(round_index, {})
+    var out: Array = []
+    var rest: Array = []
+    for s in pool:
+        var pinned := false
+        for slot in pins:
+            if str(pins[slot]) == str(s.id):
+                pinned = true
+        if not pinned:
+            rest.append(s)
+    var r := Difficulty.rng_for("trip.menu", round_index)
+    for i in range(rest.size() - 1, 0, -1):
+        var j := r.randi_range(0, i)
+        var tmp = rest[i]
+        rest[i] = rest[j]
+        rest[j] = tmp
+    var size := mini(4, pool.size())
+    for slot in size:
+        var picked: Dictionary = {}
+        if pins.has(slot):
+            for s in pool:
+                if str(s.id) == str(pins[slot]):
+                    picked = s
+        if picked.is_empty() and not rest.is_empty():
+            picked = rest.pop_front()
+        out.append(picked)
+    return out
+
+
+# the vendors with a booth this year: three of five, each at one of the three booth spots
+static func trip_vendors() -> Array:
+    var r := Difficulty.rng_for("trip.vendors", 0)
+    var ids := VENDOR_IDS.duplicate()
+    for i in range(ids.size() - 1, 0, -1):
+        var j := r.randi_range(0, i)
+        var tmp = ids[i]
+        ids[i] = ids[j]
+        ids[j] = tmp
+    return ids.slice(0, 3)
+
+
+static func booth_x(slot: int) -> int:
+    var xs := BOOTH_X.duplicate()
+    var r := Difficulty.rng_for("trip.booths", 0)
+    for i in range(xs.size() - 1, 0, -1):
+        var j := r.randi_range(0, i)
+        var tmp = xs[i]
+        xs[i] = xs[j]
+        xs[j] = tmp
+    return int(xs[slot % xs.size()])
+
+
+# the CROWD list of a scene with this year's vendors in the booths
+static func remap_crowd(list: Array, scene: String) -> Array:
+    if scene != "vendor_hall":
+        return list
+    var vendors := trip_vendors()
+    var out: Array = []
+    var slot := 0
+    for c in list:
+        var entry: Dictionary = c.duplicate(true)
+        if str(entry.role).begins_with("vendor:"):
+            var id := str(vendors[slot])
+            entry["role"] = "vendor:" + id
+            entry["who"] = str(VENDOR_LOOK[id])
+            entry["x"] = booth_x(slot)
+            slot += 1
+        out.append(entry)
+    return out
+
+
+# which conversation each of the six attendee slots has this year (index into base + extras, same gender as the sprite)
+static func chat_slots(base: Array) -> Array:
+    var pool: Array = []
+    for i in base.size():
+        pool.append({"gender": SLOT_GENDER[i % SLOT_GENDER.size()], "chat": base[i]})
+    for c in EXTRA_CHATS:
+        pool.append({"gender": str(c.gender), "chat": c})
+    var r := Difficulty.rng_for("trip.chats", 0)
+    for i in range(pool.size() - 1, 0, -1):
+        var j := r.randi_range(0, i)
+        var tmp = pool[i]
+        pool[i] = pool[j]
+        pool[j] = tmp
+    var out: Array = []
+    for slot in 6:
+        var want: String = SLOT_GENDER[slot]
+        for k in pool.size():
+            if str(pool[k].gender) == want:
+                out.append(pool[k].chat)
+                pool.remove_at(k)
+                break
+    return out
+
+
+# the raffle: 6, 8, 10 or 12 percent before the badge scans
+static func raffle_base() -> float:
+    var r := Difficulty.rng_for("trip.raffle", 0)
+    return [0.06, 0.08, 0.1, 0.12][r.randi_range(0, 3)]
+
+
+static func drum_line(base: float) -> String:
+    if base < 0.07:
+        return "The drum looked half empty. Everyone remembers that."
+    if base > 0.11:
+        return "The drum was packed with tickets this year."
+    return ""
+''')
+
 write("scripts/conference.gd", '''extends Node
 # gdlint:disable=max-line-length
 # RODENT NATION 2014: LabRat's yearly user conference (a parody of the real RMM vendor's June 2014 event).
@@ -31644,6 +32626,7 @@ const CLOCKS := [10.0, 13.0, 15.0]
 const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
 const MORGAN := "Morgan Reyes - Manager"
+const Trip := preload("res://scripts/trip_variety.gd")
 const TEXT := {
     "invite_subject": "Rodent Nation 2014: top performers go",
     "invite_body": "LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan",
@@ -31984,6 +32967,7 @@ func _on_day(day: int) -> void:
         peeked = false
         picks = []
         went = true
+        Career.add("trips")
         _stage = "arrive"
         rnd = 0
         _seen = ""
@@ -32066,9 +33050,44 @@ func _trip_tick() -> void:
                 _raffle()
 
 
+# ---- the agenda of this run (R11, see trip_variety.gd): the sessions in the four rooms of a round, the booths, the talks
+func menu(round_index: int) -> Array:
+    return Trip.menu(round_index, ROUNDS[round_index].sessions)
+
+
+# every session a round can have (a pick is looked up here, whichever rooms showed it)
+func pool(round_index: int) -> Array:
+    var all: Array = ROUNDS[round_index].sessions.duplicate()
+    if round_index < Trip.MORE_SESSIONS.size():
+        all.append_array(Trip.MORE_SESSIONS[round_index])
+    return all
+
+
+func chat_def(index: int) -> Dictionary:
+    var slots := Trip.chat_slots(CHATS)
+    return slots[index % slots.size()]
+
+
+func raffle_odds() -> float:
+    return Trip.raffle_base() + 0.04 * float(mini(entries, 3))
+
+
+func _vendor(id: String) -> Dictionary:
+    var v := _vendor_base(id)
+    if v.is_empty():
+        for extra in Trip.EXTRA_VENDORS:
+            if str(extra.id) == id:
+                return extra
+    return v
+
+
+func _vendor_xp() -> Dictionary:
+    var all := VENDOR_XP.duplicate()
+    all.merge(Trip.VENDOR_XP)
+    return all
 func _enter_breakout() -> void:
     var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
-    var sessions: Array = ROUNDS[rnd].sessions
+    var sessions: Array = menu(rnd)
     var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
     _session(rnd, str(found.id))
 
@@ -32076,7 +33095,7 @@ func _enter_breakout() -> void:
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
 func sign_lines(door: int) -> Array:
     if away and _stage == "round" and rnd < ROUNDS.size():
-        var sessions: Array = ROUNDS[rnd].sessions
+        var sessions: Array = menu(rnd)
         if door < sessions.size():
             var words := str(sessions[door].get("short", sessions[door].label)).split(" ")
             var lines := []
@@ -32114,10 +33133,11 @@ func _keynote_answer(id: String) -> void:
 
 func _session(index: int, id: String) -> void:
     var found: Dictionary = {}
-    for s in ROUNDS[index].sessions:
+    for s in pool(index):
         if str(s.id) == id:
             found = s
     picks.append(id)
+    Career.note_first("session", id, "sessions_seen")
     var text := str(found.get("text", ""))
     var skill := str(found.get("skill", ""))
     if id == "ps101":
@@ -32182,12 +33202,13 @@ func _hall_answer(id: String) -> void:
 
 
 func _raffle() -> void:
-    var win := randf() < 0.08 + 0.04 * float(mini(entries, 3))
+    var win := Difficulty.rng("trip").randf() < raffle_odds()
     var text := str(TEXT.raffle_win) if win else str(TEXT.raffle_lose)
     if win:
         Shift.add_energy(100.0)
         Campaign.adjust_rep(3)
-    text += " " + str(TEXT.wrap)
+        Career.add("raffle_wins")
+    text += " " + (Trip.drum_line(Trip.raffle_base()) + " " if Trip.drum_line(Trip.raffle_base()) != "" else "") + str(TEXT.wrap)
     Cards.ask("RODENT NATION", text, [{"label": "FLY HOME", "id": "ok"}], func(_id: String) -> void: _finish())
 
 
@@ -32235,7 +33256,7 @@ func populate(stage: Node) -> void:
     if not CROWD.has(scene):
         return
     var x0 := float(World.DATA.SCENES[scene].x0)
-    for c in CROWD[scene]:
+    for c in Trip.remap_crowd(CROWD[scene], scene):
         var npc: Node = NPC_SCENE.instantiate()
         npc.character = str(c.who)
         npc.facing = str(c.facing)
@@ -32283,7 +33304,7 @@ func _checkin() -> void:
     Cards.ask("Registration", text, [{"label": "THANKS", "id": "ok"}], func(_id: String) -> void: pass)
 
 
-func _vendor(id: String) -> Dictionary:
+func _vendor_base(id: String) -> Dictionary:
     for v in VENDORS:
         if str(v.id) == id:
             return v
@@ -32321,14 +33342,14 @@ func _pitch_answer(id: String, oid: String) -> void:
     if oid == "scan":
         spam += 1
         entries += 1
-    elif VENDOR_XP.get(id, {}).has(oid):
-        var fx: Array = VENDOR_XP[id][oid]
+    elif _vendor_xp().get(id, {}).has(oid):
+        var fx: Array = _vendor_xp()[id][oid]
         Skills.add_xp(str(fx[0]), int(fx[1]))
     Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 
 
 func _chat(index: int) -> void:
-    var c: Dictionary = CHATS[index]
+    var c: Dictionary = chat_def(index)
     if _talked.has(index):
         Cards.ask(str(c.speaker), str(TEXT.chat_again), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
         return
@@ -32344,7 +33365,7 @@ func _greeting() -> String:
 
 
 func _chat_answer(index: int, oid: String) -> void:
-    var c: Dictionary = CHATS[index]
+    var c: Dictionary = chat_def(index)
     var text := ""
     for o in c.options:
         if str(o.id) == oid:
@@ -32359,6 +33380,205 @@ func _chat_answer(index: int, oid: String) -> void:
 ''')
 
 
+write("scripts/onsite_variety.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Onsite variety (roadmap R11): more job variants per site type, a seeded dispatch roulette (which client calls, which job,
+# what happens on the road) and the road events. Static helper that Onsite preloads; the state (calls, recent clients,
+# jobs seen) lives in Onsite and is saved. Jobs use the same shape as Onsite.JOBS plus "sites" (the site types they fit).
+# The one-open-job rule is kept by Onsite.create_job (the roulette never creates a second one).
+
+const ROAD_CHANCE := 0.35
+const ROAD := [
+    {"id": "accident", "min": 20, "w": 1.0, "text": "AN ACCIDENT ON ROUTE 9 BACKS UP THE ROAD: +20 MIN."},
+    {"id": "bus", "min": 10, "w": 1.5, "text": "A SCHOOL BUS STOPS AT EVERY CORNER: +10 MIN."},
+    {"id": "bridge", "min": 15, "w": 0.8, "text": "THE DRAWBRIDGE IS UP FOR A BARGE: +15 MIN."},
+    {"id": "roadwork", "min": 10, "w": 1.5, "text": "ROAD WORK. ONE LANE AND A MAN WITH A SIGN: +10 MIN."},
+    {"id": "backroad", "min": -10, "w": 1.0, "text": "A BACK ROAD YOU HAD NEVER TRIED WORKS: -10 MIN."},
+    {"id": "green", "min": -5, "w": 1.0, "text": "GREEN LIGHTS ALL THE WAY: -5 MIN."},
+]
+const VARIANT_JOBS := [
+    {
+        "id": "dent_cam",
+        "sites": ["dental"],
+        "object": "exam",
+        "pri": 2,
+        "summary": "The intraoral camera shows a black picture",
+        "body": "Since the update last night the little camera shows nothing in exam room 2 and the hygienist cannot take her photos. - %s",
+        "intro": "The exam room PC finds the camera, then the practice software shows a black square. The driver date is from last night.",
+        "options":
+        [
+            {"id": "roll", "label": "ROLL BACK THE CAMERA DRIVER", "hours": 0.5, "chance": 0.95, "skill": "servers", "xp": 6, "text": "The old driver loads, the picture comes back and the hygienist waves the camera at you like a trophy. (+6 servers XP)"},
+            {"id": "usb", "label": "TRY ANOTHER USB PORT", "hours": 0.2, "chance": 0.3, "skill": "servers", "xp": 2, "text": "A new port, the same black square. At least the cable is fine."},
+            {"id": "vendor", "label": "CALL THE CAMERA VENDOR", "hours": 0.6, "chance": 0.0, "skill": "", "xp": 0, "text": "Hold music, a ticket number and a promise for Thursday. The camera does not work today."},
+        ],
+    },
+    {
+        "id": "dent_claims",
+        "sites": ["dental"],
+        "object": "pc",
+        "pri": 3,
+        "summary": "The insurance claims website will not open",
+        "body": "The front desk cannot send claims to the insurance site. It says my browser is too old. It is the browser I have always used. - %s",
+        "intro": "The front desk PC runs an old browser and an old Java. The claims portal changed its login last week and refuses both.",
+        "options":
+        [
+            {"id": "update", "label": "UPDATE THE BROWSER AND THE PLUGIN", "hours": 0.75, "chance": 0.9, "skill": "security", "xp": 6, "text": "A new browser, the right plugin and a long sigh from the receptionist. Claims go out. (+6 security XP)"},
+            {"id": "compat", "label": "TURN ON COMPATIBILITY VIEW", "hours": 0.2, "chance": 0.35, "skill": "security", "xp": 2, "text": "The page loads for a minute, then asks for a plugin that is not there. Not quite."},
+            {"id": "fax", "label": "SUGGEST THEY FAX THE CLAIMS", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "The receptionist looks at you for a long time. The claims still do not go out."},
+        ],
+    },
+    {
+        "id": "law_scan",
+        "sites": ["law"],
+        "object": "printer",
+        "pri": 3,
+        "summary": "Scan to email stopped working on the copier",
+        "body": "The big copier scans, but the email never arrives. The paralegals have been walking documents to each other's desks all morning. - %s",
+        "intro": "The copier shows SENT, the mail server shows nothing. The scan to email settings still point at the server that was retired in March.",
+        "options":
+        [
+            {"id": "smtp", "label": "POINT IT AT THE NEW MAIL SERVER", "hours": 0.5, "chance": 0.95, "skill": "networking", "xp": 6, "text": "New address, new test page, one scan to your own inbox. The paralegals stop walking. (+6 networking XP)"},
+            {"id": "folder", "label": "SET UP SCAN TO A SHARED FOLDER", "hours": 0.75, "chance": 0.6, "skill": "servers", "xp": 4, "text": "Scans land in a folder on the server. Half the staff cannot find it. It works, mostly. (+4 servers XP)"},
+            {"id": "reboot", "label": "POWER CYCLE THE COPIER", "hours": 0.15, "chance": 0.0, "skill": "", "xp": 0, "text": "It comes back with the same settings and the same problem, and a warm smell."},
+        ],
+    },
+    {
+        "id": "law_files",
+        "sites": ["law"],
+        "object": "server",
+        "pri": 2,
+        "summary": "The partners cannot open client folders",
+        "body": "Half of the case folders say access denied since a paralegal reorganized the shared drive. A hearing is at three. - %s",
+        "intro": "The file server is up, but the Cases folder lost its permissions when it was dragged into another folder. Two partners and four paralegals are locked out.",
+        "options":
+        [
+            {"id": "inherit", "label": "RESET INHERITED PERMISSIONS", "hours": 0.75, "chance": 0.9, "skill": "servers", "xp": 8, "text": "One reset on the top folder and every case opens again. The paralegal promises not to drag anything ever again. (+8 servers XP)"},
+            {"id": "everyone", "label": "GIVE EVERYONE FULL ACCESS", "hours": 0.2, "chance": 0.0, "skill": "security", "xp": 1, "text": "It opens, but now the receptionist can read the divorce files. You have to come back to this."},
+            {"id": "restore", "label": "RESTORE LAST NIGHT'S BACKUP", "hours": 1.5, "chance": 0.5, "skill": "servers", "xp": 4, "text": "The restore takes most of the afternoon and the permissions come back, with the paralegal's edits gone. (+4 servers XP)"},
+        ],
+    },
+    {
+        "id": "vet_lab",
+        "sites": ["vet"],
+        "object": "exam",
+        "pri": 2,
+        "summary": "Lab results do not reach the patient records",
+        "body": "The blood analyzer prints results, but they never show up in the pet's record on the computer. The doctor is typing them in by hand. - %s",
+        "intro": "The analyzer is plugged into the exam room PC with a serial adapter. The practice software lost the port number after the last update.",
+        "options":
+        [
+            {"id": "port", "label": "SET THE COM PORT IN THE SOFTWARE", "hours": 0.5, "chance": 0.95, "skill": "servers", "xp": 6, "text": "COM3, nine thousand six hundred baud and the results start arriving. A beagle's bloodwork scrolls past. (+6 servers XP)"},
+            {"id": "adapter", "label": "REPLACE THE SERIAL ADAPTER", "hours": 0.6, "chance": 0.45, "skill": "servers", "xp": 3, "text": "A new adapter gets a new port number. It is better, but not fixed."},
+            {"id": "manual", "label": "TELL THEM TO KEEP TYPING IT IN", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "The doctor is polite about it, which is worse."},
+        ],
+    },
+    {
+        "id": "vet_desk",
+        "sites": ["vet"],
+        "object": "pc",
+        "pri": 3,
+        "summary": "The check in computer is crawling on boarding days",
+        "body": "On boarding days the front desk computer takes a minute to open one record. There is a line of people with carriers. - %s",
+        "intro": "The front desk PC has a full disk, forty startup programs and the booking software open in three windows. It is also the PC the dog sits next to.",
+        "options":
+        [
+            {"id": "clean", "label": "CLEAN THE DISK AND THE STARTUP", "hours": 0.75, "chance": 0.9, "skill": "servers", "xp": 6, "text": "Twelve gigabytes of old photos moved to the server and the startup list cut to five. The line moves again. (+6 servers XP)"},
+            {"id": "ram", "label": "ADD MEMORY", "hours": 0.5, "chance": 0.55, "skill": "servers", "xp": 3, "text": "More memory helps, a little. The disk is still the problem."},
+            {"id": "later", "label": "TELL THEM TO PLAN FOR A NEW PC", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "True, and no help to the line of carriers today."},
+        ],
+    },
+    {
+        "id": "trl_card",
+        "sites": ["trailer"],
+        "object": "pc",
+        "pri": 2,
+        "summary": "The foreman's laptop cannot reach the estimating software",
+        "body": "I am in the trailer and the estimating program says no connection. The job bid is due at four. - %s",
+        "intro": "The trailer connects to the main office through a cellular modem on the roof. The modem shows one bar and a message about a data plan.",
+        "options":
+        [
+            {"id": "plan", "label": "FIX THE DATA PLAN AND MOVE THE MODEM", "hours": 0.75, "chance": 0.9, "skill": "networking", "xp": 7, "text": "A call to the carrier, the modem moved to the other window and four bars. The bid goes in at 3:40. (+7 networking XP)"},
+            {"id": "hotspot", "label": "USE YOUR PHONE AS A HOTSPOT", "hours": 0.3, "chance": 0.5, "skill": "networking", "xp": 2, "text": "It works for the bid, for twenty minutes. Then your phone gets warm and the signal drops."},
+            {"id": "drive", "label": "DRIVE THE FILES TO THE MAIN OFFICE ON A STICK", "hours": 1.0, "chance": 0.0, "skill": "", "xp": 0, "text": "You make the bid on time and the foreman is relieved. The trailer is still offline."},
+        ],
+    },
+    {
+        "id": "trl_bridge",
+        "sites": ["trailer"],
+        "object": "cabinet",
+        "pri": 1,
+        "summary": "The second trailer has lost the network",
+        "body": "The yard trailer cannot reach the printer or the files. The wireless thing between the trailers is blinking funny. - %s",
+        "intro": "A wireless bridge links the two trailers. The one on the yard side is blinking amber and pointing a few degrees away from its partner.",
+        "options":
+        [
+            {"id": "align", "label": "REALIGN THE BRIDGE AND RESET IT", "hours": 0.75, "chance": 0.9, "skill": "networking", "xp": 8, "text": "A ladder, a compass app and a firm hand. The light goes green and the yard trailer is back. (+8 networking XP)"},
+            {"id": "cable", "label": "RUN A LONG CABLE ACROSS THE YARD", "hours": 1.0, "chance": 0.4, "skill": "networking", "xp": 3, "text": "It works until the first truck drives over it. You tape up what is left."},
+            {"id": "skip", "label": "TELL THEM TO WALK FILES OVER", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "Nobody enjoys this suggestion. The foreman writes your name on a list."},
+        ],
+    },
+]
+
+
+static func fits(job: Dictionary, site_type: String) -> bool:
+    return not job.has("sites") or (job.sites as Array).has(site_type)
+
+
+# jobs of one site type that are new in R11
+static func jobs_for(site_type: String) -> Array:
+    return VARIANT_JOBS.filter(func(j: Dictionary) -> bool: return fits(j, site_type))
+
+
+# which client calls: the one who called last is less likely, then the one before
+static func pick_client(rng: RandomNumberGenerator, options: Array, recent: Array) -> int:
+    var weights: Array = []
+    var total := 0.0
+    for c in options:
+        var w := 1.0
+        var idx := recent.rfind(c)
+        if idx >= 0:
+            w = 0.25 if idx == recent.size() - 1 else 0.6
+        weights.append(w)
+        total += w
+    var roll := rng.randf() * total
+    for i in options.size():
+        roll -= float(weights[i])
+        if roll <= 0.0:
+            return int(options[i])
+    return int(options[options.size() - 1])
+
+
+# which job: ones you have not seen yet are favoured
+static func pick_job(rng: RandomNumberGenerator, pool: Array, seen: Dictionary) -> Dictionary:
+    var total := 0.0
+    var weights: Array = []
+    for j in pool:
+        var w := 1.0 / (1.0 + float(seen.get(str(j.id), 0)))
+        weights.append(w)
+        total += w
+    var roll := rng.randf() * total
+    for i in pool.size():
+        roll -= float(weights[i])
+        if roll <= 0.0:
+            return pool[i]
+    return pool[pool.size() - 1]
+
+
+# what happens on the road (or {} for an ordinary drive)
+static func road_event(rng: RandomNumberGenerator) -> Dictionary:
+    if rng.randf() >= ROAD_CHANCE:
+        return {}
+    var total := 0.0
+    for e in ROAD:
+        total += float(e.w)
+    var roll := rng.randf() * total
+    for e in ROAD:
+        roll -= float(e.w)
+        if roll <= 0.0:
+            return e
+    return ROAD[0]
+''')
+
 write("scripts/onsite.gd", '''extends Node
 # gdlint:disable=max-line-length,max-returns
 # Onsite visits (tech campaign): some tickets cannot be fixed from the RMM. The PSA shows GO ONSITE; you drive to the client
@@ -32369,6 +33589,7 @@ write("scripts/onsite.gd", '''extends Node
 
 const DRIVE_MINUTES := {0: 20, 1: 35, 3: 25, 8: 50, 9: 30, 10: 70}  # the usual drive to each client site
 const DEFAULT_DRIVE := 45
+const Variety := preload("res://scripts/onsite_variety.gd")
 const SLA_PER_HOUR := 45.0  # seconds taken off the other tickets' clocks for each hour you are away
 const SITES := {
     0: {"type": "dental", "skin": "a"},
@@ -32733,6 +33954,9 @@ var _pet_first := true
 var _event_done := false
 var _roll_day := -1
 var _spawn_at := -1.0
+var calls := 0  # onsite jobs created so far (the roulette salt)
+var recent: Array = []  # the last clients who called
+var seen_jobs := {}  # job id -> how often it came up
 
 
 func _ready() -> void:
@@ -32759,11 +33983,14 @@ func reset() -> void:
     _met = false
     _event_done = false
     _roll_day = -1
+    calls = 0
+    recent = []
+    seen_jobs = {}
     _spawn_at = -1.0
 
 
 func to_dict() -> Dictionary:
-    return {"visits": visits, "fixed": fixed_count, "pets": pets, "missed": _missed}
+    return {"visits": visits, "fixed": fixed_count, "pets": pets, "missed": _missed, "calls": calls, "recent": recent, "seen": seen_jobs}
 
 
 func from_dict(data: Dictionary) -> void:
@@ -32772,6 +33999,9 @@ func from_dict(data: Dictionary) -> void:
     fixed_count = int(data.get("fixed", 0))
     pets = int(data.get("pets", 0))
     _missed = data.get("missed", [])
+    calls = int(data.get("calls", 0))
+    recent = data.get("recent", [])
+    seen_jobs = data.get("seen", {})
 
 
 func is_tech() -> bool:
@@ -32826,24 +34056,28 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
     for c in Sales.active:
         if SITES.has(int(c)) and Sales.takes_tickets(int(c)):
             options.append(int(c))
+    if client_index < 0 and has_open_job():
+        return {}
     if client_index < 0:
         if options.is_empty():
             return {}
-        client_index = options[Difficulty.rng("onsite.jobs").randi() % options.size()]
+        client_index = Variety.pick_client(_roulette(1), options, recent)
     var type := site_type(client_index)
     var pool := []
     var here: Array = OBJECTS.get(type, [])
-    for j in JOBS + MORE_JOBS:
-        if (job_id == "" or str(j.id) == job_id) and here.has(str(j.object)):
+    for j in JOBS + MORE_JOBS + Variety.VARIANT_JOBS:
+        if (job_id == "" or str(j.id) == job_id) and here.has(str(j.object)) and Variety.fits(j, type):
             pool.append(j)
     if pool.is_empty() or type == "":
         return {}
-    var pick: Dictionary = pool[Difficulty.rng("onsite.jobs").randi() % pool.size()]
+    var pick: Dictionary = Variety.pick_job(_roulette(2), pool, seen_jobs)
     var prob := {
         "summary": str(pick.summary), "fix": "onsite_" + str(pick.id), "pri": int(pick.pri), "body": str(pick.body),
         "server": str(pick.object) == "server",
     }
     var made := Msp.create_problem(client_index, prob, "phone")
+    if not made.is_empty():
+        _remember(client_index, str(pick.id))
     if not made.is_empty() and Campaign.active:
         # the clock is paused on the road, but the client still expects a visit to be possible:
         # add the round trip (plus some work) to the SLA, in the same units as `_away`
@@ -32854,13 +34088,43 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
     return made
 
 
+# ---- the dispatch roulette (R11, onsite_variety.gd): seeded per day and per call, so a save resumes the same calls
+func _roulette(kind: int) -> RandomNumberGenerator:
+    if Campaign.active:
+        return Difficulty.rng_for("onsite.roulette", Campaign.day * 1000 + calls * 10 + kind)
+    return Difficulty.rng("onsite.jobs")
+
+
+func has_open_job() -> bool:
+    for t in Msp.tickets:
+        if t.status != "Closed" and is_onsite(t):
+            return true
+    return false
+
+
+func _remember(c: int, job_id: String) -> void:
+    calls += 1
+    recent.append(c)
+    while recent.size() > 3:
+        recent.pop_front()
+    seen_jobs[job_id] = int(seen_jobs.get(job_id, 0)) + 1
+
+
+# the road to a site: sometimes something happens (campaign only; a free trip takes no time)
+func _roll_road(c: int) -> Dictionary:
+    if not Campaign.active:
+        return {}
+    var ev := Variety.road_event(Difficulty.rng_for("onsite.road", Campaign.day * 100 + visits))
+    if not ev.is_empty() and int(ev.min) > 0:
+        Career.add("road_events")
+    return ev
 func is_onsite(t: Dictionary) -> bool:
     return str(t.get("fix", "")).begins_with("onsite_")
 
 
 func job_for(t: Dictionary) -> Dictionary:
     var id := str(t.get("fix", "")).trim_prefix("onsite_")
-    for j in JOBS + MORE_JOBS:
+    for j in JOBS + MORE_JOBS + Variety.VARIANT_JOBS:
         if str(j.id) == id:
             return j
     return {}
@@ -33103,12 +34367,14 @@ func _depart(id: int) -> void:
     Msp.set_status(id, "In Progress")
     Msp.add_note(id, "Technician dispatched onsite.")
     var mins := _trip_minutes(client)
+    var road := _roll_road(client)
+    mins = maxi(10, mins + int(road.get("min", 0)))
     _back_min = _trip_minutes(client)
     _away(float(mins) / 60.0, id)
     active = true
     _pet_first = true
     Game.go(site_scene(client), "from_van")
-    Hints.toast(str(TEXT.arrive) % [str(Msp.CLIENTS[client].name), mins], 5.0)
+    Hints.toast((str(TEXT.arrive) % [str(Msp.CLIENTS[client].name), mins]) + " " + str(road.get("text", "")), 5.0)
 
 
 # ---- at the site (E on the equipment, see fx kinds onsite_*)
@@ -33533,6 +34799,8 @@ func _finish_job() -> void:
             ep.problem = ""
     Msp.add_note(ticket_id, "Fixed onsite.")
     fixed_count += 1
+    Career.add("onsite_fixed")
+    Career.note_first("site", site_type(client), "site_types")
     Msp.close_ticket(ticket_id)
     if not _event_done:
         _maybe_event()
@@ -35059,7 +36327,7 @@ func _draw() -> void:
             if Nerf.charging:
                 lines.append("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0))
             else:
-                lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, ("  WAR %d" % int(Nerf.war_t)) if Nerf.war_t > 0.0 else ""])
+                lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, (("  WAR %d" % int(Nerf.war_t)) + Nerf.hud_extra()) if Nerf.war_t > 0.0 else ""])
         for i in lines.size():
             PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
             PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
@@ -37389,6 +38657,9 @@ func _unhandled_input(event: InputEvent) -> void:
         if event.keycode == KEY_Z:
             Nerf.charge_start(self)
             return
+    if event.keycode == KEY_V and held == "nerf":
+        Nerf.offer_war()
+        return
         if event.keycode == KEY_G and held == "nerf":
             give("")
             return
@@ -40083,6 +41354,19 @@ const MEDALS := [
     {"id": "year_one", "title": "YEAR ONE", "desc": "FINISH A CAMPAIGN YEAR", "rules": [["endings", ">=", 1]]},
     {"id": "regular", "title": "REGULAR", "desc": "PLAY 20 DAYS OR WEEKS", "rules": [["days_total", ">=", 20]]},
     {"id": "corner_office", "title": "CORNER OFFICE", "desc": "RUN 10 OWNER WEEKS", "rules": [["days.owner", ">=", 10]]},
+    {"id": "hook_shot", "title": "HOOK SHOT", "desc": "5 STRIKES WITH A HOOK", "rules": [["bowl_hook_strikes", ">=", 5]]},
+    {"id": "league_champion", "title": "LEAGUE CHAMPION", "desc": "WIN A LEAGUE SEASON", "rules": [["league_titles", ">=", 1]]},
+    {"id": "alley_cat", "title": "ALLEY CAT", "desc": "BOWL AT ALL THREE ALLEYS", "rules": [["alleys", ">=", 3]]},
+    {"id": "cup_captured", "title": "CUP CAPTURED", "desc": "CAPTURE THE CUP 5 TIMES", "rules": [["nerf_cups", ">=", 5]]},
+    {"id": "last_standing", "title": "LAST ONE STANDING", "desc": "WIN 3 ELIMINATION WARS", "rules": [["nerf_elim_wins", ">=", 3]]},
+    {"id": "ghost", "title": "GHOST", "desc": "HIDE FOR A WHOLE ROUND", "rules": [["nerf_hide_wins", ">=", 1]]},
+    {"id": "arena_regular", "title": "ARENA REGULAR", "desc": "FIGHT IN ALL 3 ARENAS", "rules": [["nerf_arenas", ">=", 3]]},
+    {"id": "conference_goer", "title": "CONFERENCE GOER", "desc": "ATTEND THE CONFERENCE", "rules": [["trips", ">=", 1]]},
+    {"id": "raffle_luck", "title": "RAFFLE LUCK", "desc": "WIN THE CONFERENCE RAFFLE", "rules": [["raffle_wins", ">=", 1]]},
+    {"id": "session_hopper", "title": "SESSION HOPPER", "desc": "SEE 6 DIFFERENT SESSIONS", "rules": [["sessions_seen", ">=", 6]]},
+    {"id": "road_warrior", "title": "ROAD WARRIOR", "desc": "SURVIVE 5 TRAFFIC JAMS", "rules": [["road_events", ">=", 5]]},
+    {"id": "field_tech", "title": "FIELD TECH", "desc": "FIX 10 ONSITE JOBS", "rules": [["onsite_fixed", ">=", 10]]},
+    {"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
@@ -40127,6 +41411,9 @@ const COUNTERS := [
     ["", "DINNER BEST", "stars.dinner", "stars"],
     ["", "STRIKES", "bowl_strikes", "n"],
     ["", "GUTTER BALLS", "bowl_gutters", "n"],
+    ["", "HOOK STRIKES", "bowl_hook_strikes", "n"],
+    ["", "LEAGUE TITLES", "league_titles", "n"],
+    ["", "ALLEYS BOWLED", "alleys", "n"],
     ["", "PERFECT NOTES", "kara_perfects", "n"],
     ["", "FASTEST ESCAPE", "escape_best", "secs"],
     ["", "BEST DINNER SCORE", "dinner_best", "n"],
@@ -40140,10 +41427,17 @@ const COUNTERS := [
     ["", "BEST NO-PRAYER RUN", "pr_streak", "n"],
     ["NERF AND OFFICE", "NERF HITS", "nerf_hits", "n"],
     ["", "DARTS DUCKED", "nerf_dodges", "n"],
+    ["", "CUPS CAPTURED", "nerf_cups", "n"],
+    ["", "ELIMINATION WINS", "nerf_elim_wins", "n"],
+    ["", "ARENAS FOUGHT IN", "nerf_arenas", "n"],
     ["", "NERF WARS", "nerf_wars", "n"],
     ["", "LONGEST HIT", "nerf_longest", "px"],
     ["", "ANIMALS PETTED", "pets", "n"],
     ["", "COMPLAINTS HEARD", "vic_calls", "n"],
+    ["", "CONFERENCES", "trips", "n"],
+    ["", "SESSIONS SEEN", "sessions_seen", "n"],
+    ["", "ONSITE JOBS FIXED", "onsite_fixed", "n"],
+    ["", "TRAFFIC JAMS", "road_events", "n"],
     ["SALES", "DEALS WON", "deals_won", "n"],
     ["", "CLAWBACKS", "clawbacks", "n"],
     ["", "RENEWALS WON", "renewals", "n"],
@@ -40295,6 +41589,17 @@ func note_outing(game: String, result: int, info := {}) -> void:
             best("dinner_best", int(info.get("score", 0)))
 
 
+# the first time an id of a kind is seen (an alley, an arena, a session, a site type) it counts once toward total
+func note_first(kind: String, id: String, total: String) -> void:
+    var key := kind + "." + id
+    if int(counters.get(key, 0)) > 0:
+        return
+    counters[key] = 1
+    add(total)
+
+
+func note_alley(id: String) -> void:
+    note_first("alley", id, "alleys")
 func note_bowl(knocked: int, roll: int) -> void:
     if knocked >= 10 and roll == 1:
         add("bowl_strikes")
