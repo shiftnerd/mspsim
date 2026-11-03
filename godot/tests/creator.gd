@@ -129,6 +129,9 @@ func _check_style(look: Node, style: String) -> void:
 		var outside := 0
 		var eyes := 0
 		var big := 0
+		# long hair hangs to the shoulder and the ponytail swings out behind: they get a wider box
+		var margin := 12 if style == "long" else (8 if style == "ponytail" else 6)
+		var limit := 36 if style == "long" else 30
 		for fr in NFRAMES:
 			var dbox := Rect2i()
 			var abox := Rect2i()
@@ -148,13 +151,13 @@ func _check_style(look: Node, style: String) -> void:
 						if da[i + 3] > 0 and _in(da, i, EYES):
 							eyes += 1
 			if d_any:
-				if not abox.grow(6).encloses(dbox):
+				if not abox.grow(margin).encloses(dbox):
 					outside += 1
-				if dbox.size.x > 30 or dbox.size.y > 30:
+				if dbox.size.x > limit or dbox.size.y > limit:
 					big += 1
 		_check(style == "side" or changed > 100, "%s %s: the hair differs from the teen's (%d pixels)" % [style, facing, changed])
 		_check(outside == 0, "%s %s: the hair stays inside the head box in every frame (%d frames outside)" % [style, facing, outside])
-		_check(big == 0, "%s %s: the head box is at most 30x30 px" % [style, facing])
+		_check(big == 0, "%s %s: the head box is at most %dx%d px" % [style, facing, limit, limit])
 		_check(eyes == 0, "%s %s: the hair never covers the eyes (%d pixels)" % [style, facing, eyes])
 		var ha := FileAccess.get_file_as_string("res://assets/characters/office_teen_%s_hands.json" % facing)
 		var hb := FileAccess.get_file_as_string("res://assets/characters/%s_%s_hands.json" % [sheet, facing])
@@ -325,11 +328,20 @@ func _init() -> void:
 	)
 	_check(dirty.hair_style == "side", "a missing hairstyle is side (old saves)")
 	_check(look.sanitize({"hair_style": "curly"}).hair_style == "curly", "a shipped hairstyle is kept")
-	for bad in ["long", "bald", "nonsense", 5]:
+	for bad in ["", "mohawk", "nonsense", 5]:
 		_check(look.sanitize({"hair_style": bad}).hair_style == "side", "hairstyle %s is not shipped: side" % str(bad))
 	_check(look.default_look().hair_style == "side", "the default look wears the teen's own hair")
 	for planned in look.HAIR_PLANNED:
 		_check(not planned in look.HAIR_STYLES, "%s is planned, not shipped" % planned)
+	_check(
+		look.HAIR_STYLES.size() == 10 and look.HAIR_PLANNED.is_empty(),
+		"level 2 hair is complete: ten styles, none planned"
+	)
+	for style in look.HAIR_STYLES:  # every style survives sanitize and a save round trip
+		var kept: Dictionary = look.sanitize({"hair_style": style})
+		_check(kept.hair_style == style, "%s is a shipped hairstyle" % style)
+		var back: Dictionary = look.sanitize(JSON.parse_string(JSON.stringify(look.sanitize({"hair_style": style}))))
+		_check(back.hair_style == style, "%s survives a save and load" % style)
 
 	# ---- the hairstyle sheets
 	_check(_sheet(look, "side") == "office_teen", "side is the teen's own sheet (no duplicate files)")
@@ -390,7 +402,7 @@ func _init() -> void:
 	_check(cs._sprites[0].is_playing() and cs._sprites[0].material != null, "the preview keeps animating in the palette")
 	cs._unhandled_input(_key(KEY_LEFT))
 	cs._unhandled_input(_key(KEY_LEFT))
-	_check(look.look.hair_style == "curly", "Left goes back and wraps to the last style")
+	_check(look.look.hair_style == look.HAIR_STYLES[-1], "Left goes back and wraps to the last style")
 	cs._unhandled_input(_key(KEY_RIGHT))
 	_check(look.look.hair_style == "side", "Right wraps to the first style")
 	cs.queue_redraw()

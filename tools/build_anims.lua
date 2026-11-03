@@ -8,12 +8,15 @@ local OUT = R .. "godot/assets/characters/"
 local E = dofile(T .. "anim.lua")
 local poses, tags = dofile(T .. "poses.lua")
 -- set the global ONLY = {"name"} before dofile to rebuild just one character
+-- GHOST = {name = "office_teen"}: measure the death frames' shift with that character's Hair layer too (the drawn hairstyles,
+-- so every style lands exactly where the teen does; see anim.lua an.ghost)
+local ghost = GHOST or {}
 local names = ONLY or {"office_teen", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"}
 for _, n in ipairs(names) do
   for _, side in ipairs({"right", "left"}) do
     local inP = R .. n .. "_" .. side .. ".aseprite"
     local outP = R .. n .. "_" .. side .. "_anim.aseprite"
-    local hands = E.build(inP, outP, poses, tags)
+    local hands = E.build(inP, outP, poses, tags, ghost[n] and (R .. ghost[n] .. "_" .. side .. ".aseprite") or nil)
     local spr = Sprite{fromFile = outP}
     local W, H = spr.width, spr.height
     local sheet = Image(W * #spr.frames, H, ColorMode.RGB)
