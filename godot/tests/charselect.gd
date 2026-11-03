@@ -76,6 +76,23 @@ func _process(_delta: float) -> bool:
 				"the owner campaign offers Alan or Garrison (X2)"
 			)
 			cs.free()
+			# the build step per mode (X7): owner goes straight from the character to the build (no phone), Free Play has none
+			var os: Node = load("res://scripts/charselect.gd").new()
+			os.setup("owner")
+			_check(os.needs_build() and not os.needs_phone(), "owner: a build step, no phone step")
+			os.confirm()
+			_check(os.step == "build" and os._panel.who == "Alan" and os._panel.path == "owner", "owner: the build step reads Alan's bias")
+			_check(os._panel.level("technical") >= 2 and os._panel.points_left() >= 0, "Alan's TECHNICAL shows its free 2")
+			os.back()
+			_check(os.step == "char", "Esc on the owner build step goes back to the character")
+			os.move(1)
+			os.confirm()
+			_check(os._panel.who == "Garrison" and os._panel.level("sales") >= 2, "Garrison: the panel is rebuilt for the other owner")
+			os.free()
+			var fp: Node = load("res://scripts/charselect.gd").new()
+			fp.setup("free")
+			_check(not fp.needs_build(), "Free Play has no build step")
+			fp.free()
 			_press(KEY_ENTER)
 		1:
 			_check(title._menu_open, "Enter opens the title menu")
@@ -145,6 +162,42 @@ func _process(_delta: float) -> bool:
 		13:
 			_press(KEY_ENTER)
 		14:
+			var cs: Node = title._select
+			var build := root.get_node("Build")
+			_check(cs.step == "build" and cs._panel != null, "the phone step leads to the build step (X7)")
+			_check(cs._panel.path == "tech" and cs._panel.who == "", "tech build step: the five Skills, no bias")
+			_check(
+				cs._panel.name_text() == "GENERALIST" and "GENERALIST" in cs.summary(),
+				"it starts on a preset and the summary line names it"
+			)
+			_check(cs._panel.valid() and cs._panel.points_left() >= 0, "the starting preset is valid")
+			_press(KEY_P)  # next preset
+			_press(KEY_DOWN)  # row 1: networking
+			_press(KEY_LEFT)  # -1 networking
+		15:
+			var cs: Node = title._select
+			_check(cs._panel.row == 1, "Down moves to the next row")
+			_check(cs._panel.name_text() == "CUSTOM", "P picked SCRIPTER and the edit made it CUSTOM (%s)" % cs._panel.name_text())
+			_check(cs._panel.level("networking") == 0 and cs._panel.level("powershell") == 4, "Left took a level off NETWORKING")
+			_press(KEY_ESCAPE)
+		16:
+			var cs: Node = title._select
+			_check(cs.step == "phone", "Esc on the build step goes back to the phone")
+			_press(KEY_ENTER)
+		17:
+			var cs: Node = title._select
+			_check(cs.step == "build" and cs._panel.level("networking") == 0, "Enter on the phone returns to the build, edits kept")
+			cs._panel.b = root.get_node("Build").new_build("normal")
+			cs._panel.set_level("powershell", 4)
+			cs._panel.set_level("networking", 4)
+			_check(cs._panel.level("networking") == 0 and cs._panel.note != "", "a second stat at 4 is refused with a note (%s)" % cs._panel.note)
+			cs._panel.set_level("powershell", 3)
+			cs._panel.set_level("security", 3)
+			cs._panel.set_level("servers", 3)
+			cs._panel.set_level("people", 3)
+			_check(cs._panel.level("people") == 0 and cs._panel.points_left() == 0, "the budget is enforced while buying (0 left)")
+			cs.confirm()
+		18:
 			_check(title._started and campaign.active and campaign.mode == "tech", "tech started")
 			_check(
 				root.get_node("Difficulty").tier == "normal", "the run starts on the chosen tier"
@@ -161,6 +214,11 @@ func _process(_delta: float) -> bool:
 				"the chosen character is the player"
 			)
 			_check(phone.os == "android", "the phone preference is set (Nexxus 5)")
+			_check(
+				campaign.build.stats.get("powershell", 0) == 3 and root.get_node("Skills").ps_level == 3,
+				"the chosen build reaches the game: PowerShell 3 on day 1"
+			)
+			_check(root.get_node("Build").pending.is_empty(), "the pending build was taken")
 			var world := root.get_node("World")
 			_check(
 				world.chars.has("Alan") and world.chars.has("Dan"),
@@ -168,7 +226,7 @@ func _process(_delta: float) -> bool:
 			)
 			campaign.save()
 			wait = 60
-		15:
+		19:
 			var cfg := ConfigFile.new()
 			cfg.load(campaign.save_path("tech"))
 			_check(
@@ -196,13 +254,13 @@ func _process(_delta: float) -> bool:
 			root.get_node("World").time_scale = 0.0
 			change_scene_to_file("res://scenes/title.tscn")
 			wait = 40
-		16:
+		20:
 			_press(KEY_ENTER)
-		17:
+		21:
 			# the menu now has CONTINUE TECH first: choosing it must not open the select screen
 			_check(title._items[0].id == "tech_continue", "the menu offers Continue")
 			_press(KEY_ENTER)
-		18:
+		22:
 			_check(title._select == null and title._started, "Continue skips the select screen")
 			_check(
 				campaign.active and player_script.current_character == "casual_garrison",
@@ -212,18 +270,18 @@ func _process(_delta: float) -> bool:
 			campaign.mode = ""
 			DirAccess.remove_absolute(campaign.save_path("tech"))
 			wait = 90  # let the scene change to the main floor finish first
-		19:
+		23:
 			root.get_node("Game").title_mode = true
 			root.get_node("World").time_scale = 0.0
 			change_scene_to_file("res://scenes/title.tscn")
 			wait = 40
-		20:
+		24:
 			_press(KEY_ENTER)
-		21:
+		25:
 			title._sel = title._items.size() - 2  # CAREER is the last entry
 			_check(title._items[title._sel].id == "free", "FREE PLAY is the item before CAREER")
 			_press(KEY_ENTER)
-		22:
+		26:
 			var cs: Node = title._select
 			_check(
 				cs != null and cs.mode == "free" and cs.ids.size() == 7, "free play offers all 7"
@@ -234,7 +292,7 @@ func _process(_delta: float) -> bool:
 					cs.move(1)
 			_check(cs.current_id() == "sales_vic", "Vic is the 7th")
 			cs.confirm()
-		23:
+		27:
 			_check(title._started and not campaign.active, "free play started without a campaign")
 			_check(player_script.current_character == "sales_vic", "playing as Vic")
 			phone.set_os(old_os)

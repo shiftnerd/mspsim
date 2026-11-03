@@ -1096,7 +1096,7 @@ var _ransom_ticket := 0
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
 func reset() -> void:
-	cash = START_CASH
+	cash = START_CASH + Build.cash_bonus()
 	flags = {}
 	price = 1.0
 	speed = 1.0
@@ -1212,6 +1212,10 @@ func edges_for(owner_name: String) -> Dictionary:
 	var mine: Dictionary = OWNER_EDGES.get(owner_name, {})
 	for key in mine:
 		out[key] = mine[key]
+	var plus: Dictionary = Build.edge_deltas(owner_name)  # point-buy (X7): the stats above the free floors
+	for key in plus:
+		if out.has(key):
+			out[key] = Build.clamp_edge(str(key), float(out[key]) + float(plus[key]))
 	return out
 
 

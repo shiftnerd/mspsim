@@ -9163,3 +9163,199 @@ THAT WAS FINE. GOOD, EVEN.
 # Outings > CREW_LINES > Morgan > sing > 1
 [Outings.CREW_LINES.Morgan.sing.1]
 I WILL ALLOW IT.
+# ======================= Build > QUIRKS =======================
+# Build > QUIRKS > caffeine > name
+[Build.QUIRKS.caffeine.name]
+CAFFEINE DEPENDENT
+
+# Build > QUIRKS > caffeine > text
+[Build.QUIRKS.caffeine.text]
+START AT 65 ENERGY AND TIRE A QUARTER FASTER. THE COFFEE MACHINE IS YOUR FRIEND.
+
+# Build > QUIRKS > slow > text
+[Build.QUIRKS.slow.text]
+EVERY SKILL NEEDS 20 PERCENT MORE EXPERIENCE TO LEVEL UP.
+
+# Build > QUIRKS > butter > text
+[Build.QUIRKS.butter.text]
+REMOTE FIXES FAIL 4 PERCENT MORE OFTEN. CHECK YOUR TYPING TWICE.
+
+# Build > QUIRKS > quick > text
+[Build.QUIRKS.quick.text]
+EVERY SKILL NEEDS 15 PERCENT LESS EXPERIENCE TO LEVEL UP.
+
+# Build > QUIRKS > early > text
+[Build.QUIRKS.early.text]
+START AT 90 ENERGY AND WAKE UP A LITTLE MORE RESTED EVERY MORNING.
+
+# Build > QUIRKS > stubborn > text
+[Build.QUIRKS.stubborn.text]
+YOUR PARTNER STARTS WITH 10 LESS TRUST. YOU DO NOT BACK DOWN.
+
+# Build > QUIRKS > listener > text
+[Build.QUIRKS.listener.text]
+YOUR PARTNER STARTS WITH 10 MORE TRUST. YOU HEAR THEM OUT.
+
+# Build > QUIRKS > overpromise > text
+[Build.QUIRKS.overpromise.text]
+YOU SAY YES TO EVERYTHING. DELIVERY HAS TO CATCH UP.
+
+# Build > QUIRKS > quiet > text
+[Build.QUIRKS.quiet.text]
+YOU PREFER A CLOSED DOOR AND A SHORT MEETING.
+
+
+# ======================= Build > PRESETS =======================
+# Build > PRESETS > tech > 0 > text
+[Build.PRESETS.tech.0.text]
+A BIT OF EVERYTHING. NO BAD DAYS, NO BIG WINS.
+
+# Build > PRESETS > tech > 1 > text
+[Build.PRESETS.tech.1.text]
+FIXES RUN FASTER AND SCRIPTS WORK ON DAY ONE. NOBODY LIKES YOU YET.
+
+# Build > PRESETS > tech > 2 > text
+[Build.PRESETS.tech.2.text]
+THE CLOSET IS YOUR HAPPY PLACE. PRINTERS AND OUTAGES FEAR YOU.
+
+# Build > PRESETS > tech > 3 > text
+[Build.PRESETS.tech.3.text]
+CLIENTS WAIT LONGER AND THE TEAM LIKES YOU. THE SERVERS NOT SO MUCH.
+
+# Build > PRESETS > owner_alan > 0 > text
+[Build.PRESETS.owner_alan.0.text]
+A CLEAN STACK AND QUIET SERVERS. THE BOOKS ARE ALMOST AS TIDY.
+
+# Build > PRESETS > owner_alan > 1 > text
+[Build.PRESETS.owner_alan.1.text]
+EVERY DOLLAR HAS A JOB. CLIENTS ACCEPT FEE RISES AND THE BANK STARTS FATTER.
+
+# Build > PRESETS > owner_alan > 2 > text
+[Build.PRESETS.owner_alan.2.text]
+YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS.
+
+# Build > PRESETS > owner_garrison > 0 > text
+[Build.PRESETS.owner_garrison.0.text]
+MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE.
+
+# Build > PRESETS > owner_garrison > 1 > text
+[Build.PRESETS.owner_garrison.1.text]
+A HAPPY CREW AND A TRUSTING PARTNER. THE NUMBERS FOLLOW, MAYBE.
+
+# Build > PRESETS > owner_garrison > 2 > text
+[Build.PRESETS.owner_garrison.2.text]
+REVIEWS GO WELL, FEES GO UP, NEW CLIENTS START HAPPY.
+
+# Build > PRESETS > service > 0 > text
+[Build.PRESETS.service.0.text]
+EVERYTHING HAS A RUNBOOK AND A LABEL.
+
+# Build > PRESETS > service > 1 > text
+[Build.PRESETS.service.1.text]
+ONE ON ONES THAT WORK. THE BOARD LOOKS A LITTLE MESSY.
+
+# Build > PRESETS > service > 2 > text
+[Build.PRESETS.service.2.text]
+YOU SEE THE FIRE BEFORE IT STARTS.
+
+# Build > PRESETS > service > 3 > text
+[Build.PRESETS.service.3.text]
+CLIENTS CALL YOU FIRST. YOUR CREW KNOWS WHY.
+
+# Build > PRESETS > sales > 0 > text
+[Build.PRESETS.sales.0.text]
+NEW LEADS EVERY WEEK. RENEWALS ARE SOMEBODY ELSE'S PROBLEM.
+
+# Build > PRESETS > sales > 1 > text
+[Build.PRESETS.sales.1.text]
+RENEWALS AND REFERRALS. NOBODY EVER LEAVES.
+
+# Build > PRESETS > sales > 2 > text
+[Build.PRESETS.sales.2.text]
+YOU FIND THE REAL PROBLEM AND QUOTE THE REAL FIX.
+
+# Build > PRESETS > sales > 3 > text
+[Build.PRESETS.sales.3.text]
+YOU CLOSE ANYTHING. KEEP THE PROMISES YOU MAKE.
+
+
+# ======================= Build > INFO =======================
+# Build > INFO > tech > powershell > text
+[Build.INFO.tech.powershell.text]
+FASTER AND SAFER RMM FIXES. LEVEL 2 SCRIPTS A WHOLE CLIENT, LEVEL 4 EVERY CLIENT.
+
+# Build > INFO > tech > networking > text
+[Build.INFO.tech.networking.text]
+FASTER NETWORK AND PRINTER FIXES. LEVEL 2 NAMES THE PATCH PANEL PORT.
+
+# Build > INFO > tech > servers > text
+[Build.INFO.tech.servers.text]
+SERVER AND WORKSTATION FIXES ARE 6 PERCENT FASTER PER LEVEL.
+
+# Build > INFO > tech > security > text
+[Build.INFO.tech.security.text]
+FASTER SECURITY FIXES. LEVEL 3 MAKES BACKUPS CHECK THEMSELVES.
+
+# Build > INFO > tech > people > text
+[Build.INFO.tech.people.text]
+LEVEL 2 SHOWS WHO HAS WORK OPEN. LEVEL 3 AND UP SLOWS THE SLA CLOCKS. THE TEAM LIKES YOU MORE.
+
+# Build > INFO > owner > technical > text
+[Build.INFO.owner.technical.text]
+FEWER REOPENED TICKETS AND BREAK-INS. FAILING BACKUPS GET NOTICED SOONER.
+
+# Build > INFO > owner > finance > text
+[Build.INFO.owner.finance.text]
+FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER.
+
+# Build > INFO > owner > sales > text
+[Build.INFO.owner.sales.text]
+MARKETING WORKS BETTER AND VIC CLOSES MORE.
+
+# Build > INFO > owner > culture > text
+[Build.INFO.owner.culture.text]
+A HAPPIER CREW, BIGGER RELIEF FROM OUTINGS AND MORE TRUST FROM YOUR PARTNER.
+
+# Build > INFO > owner > clients > text
+[Build.INFO.owner.clients.text]
+BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED.
+
+# Build > INFO > service > dispatch > text
+[Build.INFO.service.dispatch.text]
+THE BOARD IS LESS FUZZY: YOU SEE WHO IS BUSY AND WHAT IS STUCK.
+
+# Build > INFO > service > process > text
+[Build.INFO.service.process.text]
+RUNBOOKS ARE CHEAP TO WRITE AND THE CREW FOLLOWS THEM.
+
+# Build > INFO > service > people > text
+[Build.INFO.service.people.text]
+ONE ON ONES GAIN MORE AND LYNK REPLIES ARE WARMER.
+
+# Build > INFO > service > escalation > text
+[Build.INFO.service.escalation.text]
+YOU KNOW WHEN A TICKET SHOULD GO UP AND WHEN IT SHOULD NOT.
+
+# Build > INFO > service > relations > text
+[Build.INFO.service.relations.text]
+CLIENTS CALL YOU FIRST AND FORGIVE MORE.
+
+# Build > INFO > sales > pitch > text
+[Build.INFO.sales.pitch.text]
+MORE LEADS BECOME MEETINGS AND MORE MEETINGS BECOME QUOTES.
+
+# Build > INFO > sales > discovery > text
+[Build.INFO.sales.discovery.text]
+YOU FIND THE REAL PROBLEM BEFORE YOU QUOTE.
+
+# Build > INFO > sales > negotiation > text
+[Build.INFO.sales.negotiation.text]
+DISCOUNT ASKS COST LESS AND DEALS CLOSE AT A BETTER PRICE.
+
+# Build > INFO > sales > relationships > text
+[Build.INFO.sales.relationships.text]
+RENEWALS AND REFERRALS COME EASIER.
+
+# Build > INFO > sales > honesty > text
+[Build.INFO.sales.honesty.text]
+FEWER PROMISES TO KEEP AND LESS RISK OF A CLAWBACK.
