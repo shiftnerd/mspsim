@@ -492,7 +492,7 @@ func _process(_delta: float) -> void:
 # trouble from sloppy jobs comes back the next morning
 func queue_followup(item: Dictionary) -> void:
 	var entry := item.duplicate()
-	entry["due"] = Campaign.day + 1
+	entry["due"] = Campaign.day + int(item.get("days", 1))
 	var list: Array = flags.get("followups", [])
 	list.append(entry)
 	flags["followups"] = list
@@ -503,10 +503,7 @@ func _spawn_followups() -> void:
 	var keep := []
 	for item in list:
 		if int(item.due) <= Campaign.day:
-			var prob := {
-				"summary": item.summary, "fix": "reboot", "pri": item.pri, "body": item.body
-			}
-			Msp.create_problem(int(item.client), prob, "email")
+			Msp.spawn_return(item)
 		else:
 			keep.append(item)
 	flags["followups"] = keep

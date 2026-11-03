@@ -87,34 +87,34 @@ const DEFAULT_PROBLEMS := [
 		"summary": "Printer will not print",
 		"fix": "spooler",
 		"pri": 3,
-		"body": "Every time I hit print it just sits there. People are waiting. Please help! - %s"
+		"body": "Every time I hit print it just sits there. I deleted the jobs and it did nothing. The copier down the hall is on the network too. People are waiting. Please help! - %s"
 	},
 	{
 		"summary": "Locked out of my PC",
 		"fix": "password",
 		"pri": 2,
 		"body":
-		"It says my account is locked out. I swear I did nothing. I cannot work until this is fixed. - %s"
+		"It says my account is locked out. I swear I did nothing. Can you just give me a temporary password, or make me a fresh login? I cannot work until this is fixed. - %s"
 	},
 	{
 		"summary": "Computer is very slow",
 		"fix": "clear_temp",
 		"pri": 3,
-		"body": "It takes ten minutes to open one document. Is it the weather? - %s"
+		"body": "It takes ten minutes to open one document. I emptied the recycle bin and nothing changed. Last time somebody just wiped it. Is it the weather? - %s"
 	},
 	{
 		"summary": "Computer frozen on a blue screen",
 		"fix": "reboot",
 		"pri": 2,
 		"body":
-		"There is a blue screen with a sad face on it. It has been like this since lunch. - %s"
+		"There is a blue screen with a sad face on it. It has been like this since lunch. I tried the F8 menu but did not know what to pick. Do I need a new computer? - %s"
 	},
 	{
 		"summary": "Pop-ups everywhere",
 		"fix": "av",
 		"pri": 2,
 		"body":
-		"Hundreds of pop-ups say I won a free cruise. Did I win a cruise? Also I cannot close them. - %s"
+		"Hundreds of pop-ups say I won a free cruise. Did I win a cruise? I reset my browser and they came right back. Also I cannot close them. - %s"
 	},
 	{
 		"summary": "Server not responding - nobody can work",
@@ -122,7 +122,7 @@ const DEFAULT_PROBLEMS := [
 		"pri": 1,
 		"server": true,
 		"body":
-		"THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. FIX IT! - %s"
+		"THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. Somebody says restart the services, somebody else says roll it back to last night. FIX IT! - %s"
 	},
 ]
 var PROBLEMS: Array = DEFAULT_PROBLEMS.duplicate(true)
@@ -140,7 +140,7 @@ const DEFAULT_ADOBE := {
 	"fix": "adobe",
 	"pri": 4,
 	"special": "adobe",
-	"body": "I can open PDFs but print in Adobe Reader does nothing. Everything else prints. - %s",
+	"body": "I can open PDFs but print in Adobe Reader does nothing. Everything else prints, even from the browser. - %s",
 }
 var ADOBE: Dictionary = DEFAULT_ADOBE.duplicate(true)
 const DEFAULT_INSTALL := {
@@ -193,6 +193,242 @@ const FIXES := {
 }
 # problems a reboot also clears (it works, but it is not the proper fix: the user is interrupted)
 const ALT_FIXES := {"spooler": ["reboot"]}
+# other valid fixes. kind: quick (fast, little XP, may come back 1-2 days later), heavy (slow, always
+# works, costs the client something), clever (needs a skill level: faster, more XP).
+# for = the problems it clears (server = a server only); mult = time vs the proper fix;
+# xp = experience; mood/score = consequences; ret = chance it comes back; loses = restarts the PC
+# (the user loses unsaved work they were not warned about; a blue-screened PC has none);
+# back/back_body = the follow-up ticket
+const ALT_DEFS := {
+	"clear_queue":
+	{
+		"for": ["spooler"],
+		"kind": "quick",
+		"label": "CLEAR PRINT QUEUE",
+		"mult": 0.4,
+		"xp": 2,
+		"ret": 0.45,
+		"text": "Stuck jobs deleted. The printer wakes up, for now.",
+		"note": "Deleted the stuck print jobs (the spooler itself was never restarted).",
+		"back": "Printer stuck again",
+		"back_body": "The printer worked for a day and now it just sits there again. - %s",
+	},
+	"reinstall_printer":
+	{
+		"for": ["spooler"],
+		"kind": "heavy",
+		"label": "REINSTALL PRINTER",
+		"mult": 3.0,
+		"xp": 3,
+		"mood": -1,
+		"text": "Driver removed and reinstalled. Slow, but the printer is solid now.",
+		"note": "Removed and reinstalled the printer driver.",
+	},
+	"copier_route":
+	{
+		"for": ["spooler"],
+		"kind": "clever",
+		"label": "PRINT TO COPIER",
+		"skill": "networking",
+		"lvl": 2,
+		"mult": 0.5,
+		"xp": 6,
+		"mood": 1,
+		"text": "Mapped the hallway copier and made it their default printer. Back to work.",
+		"note": "Pointed the user at the network copier while the spooler gets fixed later.",
+	},
+	"temp_pass":
+	{
+		"for": ["password"],
+		"kind": "quick",
+		"label": "GIVE TEMP PASSWORD",
+		"mult": 0.4,
+		"xp": 1,
+		"ret": 0.5,
+		"text": "Gave a temporary password over the phone. Please change it, please.",
+		"note": "Read a temporary password over the phone (it will end up on a sticky note).",
+		"back": "Locked out of my PC again",
+		"back_body": "I wrote the temporary password on a sticky note and typed it wrong. Locked out again. - %s",
+	},
+	"new_profile":
+	{
+		"for": ["password"],
+		"kind": "heavy",
+		"label": "REBUILD PROFILE",
+		"mult": 4.0,
+		"xp": 3,
+		"mood": -2,
+		"loses": true,
+		"text": "New domain profile built. Desktop and settings are back to factory.",
+		"note": "Deleted and rebuilt the user's profile.",
+	},
+	"unlock_ps":
+	{
+		"for": ["password"],
+		"kind": "clever",
+		"label": "UNLOCK-ADACCOUNT",
+		"skill": "powershell",
+		"lvl": 2,
+		"mult": 0.5,
+		"xp": 6,
+		"text": "One line of PowerShell unlocked the account and cleared the lockout source.",
+		"note": "Unlocked the account with Unlock-ADAccount and killed the stale mapped drive.",
+	},
+	"recycle":
+	{
+		"for": ["clear_temp"],
+		"kind": "quick",
+		"label": "EMPTY RECYCLE BIN",
+		"mult": 0.4,
+		"xp": 2,
+		"ret": 0.6,
+		"text": "Recycle bin emptied. A few GB back, it will not last.",
+		"note": "Emptied the recycle bin (the temp files are still there).",
+		"back": "Computer is slow again",
+		"back_body": "It was better for a day and now it is crawling again. The disk light never stops. - %s",
+	},
+	"disk_script":
+	{
+		"for": ["clear_temp"],
+		"kind": "clever",
+		"label": "CLEANUP SCRIPT",
+		"skill": "powershell",
+		"lvl": 3,
+		"mult": 0.5,
+		"xp": 6,
+		"text": "Script cleared temp, old profiles and the update cache. Disk space is back.",
+		"note": "Ran a cleanup script across the profile, temp and update cache folders.",
+	},
+	"browser_reset":
+	{
+		"for": ["av"],
+		"kind": "quick",
+		"label": "RESET BROWSER",
+		"mult": 0.4,
+		"xp": 1,
+		"ret": 0.5,
+		"text": "Browser reset to defaults. The pop-ups stopped, the adware did not.",
+		"note": "Reset the browser settings (the adware is still installed).",
+		"back": "Pop-ups are back",
+		"back_body": "The pop-ups came back and now they have a new toolbar. Still no cruise. - %s",
+	},
+	"spyhunt":
+	{
+		"for": ["av"],
+		"kind": "clever",
+		"label": "SPYHUNT LOG SCAN",
+		"skill": "security",
+		"lvl": 2,
+		"mult": 0.6,
+		"xp": 7,
+		"text": "SpyHunt log showed the startup entry. Removed it by hand, no full scan needed.",
+		"note": "Read the SpyHunt log and removed the adware startup entry and its service by hand.",
+	},
+	"reimage":
+	{
+		"for": ["clear_temp", "av", "reboot"],
+		"kind": "heavy",
+		"label": "REIMAGE PC",
+		"mult": 7.0,
+		"xp": 3,
+		"mood": -4,
+		"loses": true,
+		"text": "Reimaged from the gold image. Clean machine, but the user logs in to everything again.",
+		"note": "Reimaged the PC from the gold image.",
+	},
+	"last_good":
+	{
+		"for": ["reboot"],
+		"kind": "quick",
+		"label": "LAST KNOWN GOOD",
+		"mult": 0.6,
+		"xp": 2,
+		"mood": -1,
+		"ret": 0.35,
+		"text": "Booted the Last Known Good Configuration. Windows loads, for now.",
+		"note": "Rebooted into Last Known Good Configuration (the driver is still bad).",
+		"back": "Blue screen again",
+		"back_body": "The blue screen is back, same as before. It came up fine for a day. - %s",
+	},
+	"safemode":
+	{
+		"for": ["reboot"],
+		"kind": "clever",
+		"label": "SAFE MODE DRIVER",
+		"skill": "servers",
+		"lvl": 2,
+		"mult": 0.7,
+		"xp": 7,
+		"mood": -1,
+		"text": "Safe mode, rolled back the bad driver, normal boot. Fixed for good.",
+		"note": "Booted safe mode and rolled back the driver that caused the STOP error.",
+	},
+	"restart_services":
+	{
+		"for": ["reboot"],
+		"server": true,
+		"kind": "quick",
+		"label": "RESTART SERVICES",
+		"mult": 0.5,
+		"xp": 2,
+		"ret": 0.4,
+		"text": "Restarted the file and mail services. Users are back, the cause is still there.",
+		"note": "Restarted the key services (no root cause found).",
+		"back": "Server slow and dropping again",
+		"back_body": "The server is hanging again. Same as the other day. Everyone is waiting. - %s",
+	},
+	"snapshot":
+	{
+		"for": ["reboot"],
+		"server": true,
+		"kind": "heavy",
+		"label": "ROLL BACK SNAPSHOT",
+		"mult": 5.0,
+		"xp": 3,
+		"mood": -3,
+		"score": -2,
+		"text": "Rolled back to last night's snapshot. Up, but today's changes are gone.",
+		"note": "Reverted the server VM to last night's snapshot (the day's file changes were lost).",
+	},
+	"event_log":
+	{
+		"for": ["reboot"],
+		"server": true,
+		"kind": "clever",
+		"label": "FIND HUNG SERVICE",
+		"skill": "servers",
+		"lvl": 3,
+		"mult": 0.6,
+		"xp": 8,
+		"mood": 1,
+		"text": "The event log named the hung service. Fixed it without a reboot. Nobody noticed.",
+		"note": "Read the event log, killed the hung service and patched the cause. No reboot.",
+	},
+	"print_browser":
+	{
+		"for": ["adobe"],
+		"kind": "quick",
+		"label": "PRINT FROM BROWSER",
+		"mult": 0.3,
+		"xp": 1,
+		"ret": 0.6,
+		"text": "Showed them how to open PDFs in the browser and print from there.",
+		"note": "Workaround: open PDFs in the browser and print from there.",
+		"back": "Adobe Reader still will not print",
+		"back_body": "I opened another PDF in Reader and it will not print either. Please fix it properly. - %s",
+	},
+	"reader_reinstall":
+	{
+		"for": ["adobe"],
+		"kind": "heavy",
+		"label": "REINSTALL READER",
+		"mult": 3.0,
+		"xp": 3,
+		"mood": -1,
+		"text": "Uninstalled and reinstalled Adobe Reader. Printing works.",
+		"note": "Uninstalled and reinstalled Adobe Reader.",
+	},
+}
 const FIX_DONE_TEXT := {
 	"spooler": "Print spooler restarted. Queued jobs are printing.",
 	"password": "Password reset and account unlocked.",
@@ -264,6 +500,7 @@ func reset() -> void:
 	_down.clear()
 	_up.clear()
 	_internal.clear()
+	_later.clear()
 	backups.clear()
 	project = {}
 	for c in CLIENTS.size():
@@ -531,7 +768,135 @@ func rmm_action(name: String, action: String) -> String:
 		return str(FIX_DONE_TEXT[action])
 	if action == "reboot":
 		return _reboot_other(ep)
+	if ALT_DEFS.has(action):
+		return _alt_fix(ep, action)
 	return "DONE. NOTHING CHANGED."
+
+
+# ---- other valid fixes (ALT_DEFS) -------------------------------------------------
+var alt_roll := -1.0  # tests: a fixed roll for "does the workaround come back?"
+var _later: Array = []  # follow-ups outside a campaign: {left, item}
+
+
+func alt_unlocked(d: Dictionary) -> bool:
+	var sk := str(d.get("skill", ""))
+	if sk == "":
+		return true
+	if not Campaign.active:
+		return false
+	var lv: int = Skills.ps_level if sk == "powershell" else Skills.level(sk)
+	return lv >= int(d.lvl)
+
+
+# the other fixes on offer for this machine's problem
+func alts_for(ep: Dictionary) -> Array:
+	var out := []
+	if str(ep.get("problem", "")) in ["", "restore", "project"]:
+		return out
+	var is_server: bool = ep.user == "server"
+	for id in ALT_DEFS:
+		var d: Dictionary = ALT_DEFS[id]
+		if d["for"].has(str(ep.problem)) and bool(d.get("server", false)) == is_server:
+			if alt_unlocked(d):
+				out.append(id)
+	return out
+
+
+func alt_label(ep: Dictionary, id: String) -> String:
+	var d: Dictionary = ALT_DEFS[id]
+	var unsaved: bool = bool(ep.get("unsaved", false)) and not bool(ep.get("asked", false))
+	var up: bool = bool(d.get("loses", false)) and unsaved and ep.problem != "reboot"
+	if up and Skills.sees_open_docs():
+		return str(d.label) + " !"
+	return str(d.label)
+
+
+func _alt_fix(ep: Dictionary, action: String) -> String:
+	if not alts_for(ep).has(action):
+		return "DONE. NOTHING CHANGED."
+	var d: Dictionary = ALT_DEFS[action]
+	var client := int(ep.client)
+	var prob := str(ep.problem)
+	var lost: bool = (
+		bool(d.get("loses", false))
+		and prob != "reboot"
+		and bool(ep.get("unsaved", false))
+		and not bool(ep.get("asked", false))
+	)
+	var tk := {}
+	for t in tickets:
+		if t.endpoint == str(ep.name) and t.status != "Closed" and t.fix == prob:
+			tk = t
+			t.fix_done = true
+			t["method"] = str(d.kind)
+			t.notes.append(str(d.note) + (" The user lost unsaved work." if lost else ""))
+	if int(d.get("mood", 0)) != 0:
+		Sales.adjust(client, int(d.mood))
+	score += int(d.get("score", 0))
+	Skills.add_xp(str(Skills.FIX_XP.get(prob, "servers")), int(d.xp))
+	ep.problem = ""
+	var text := str(d.text)
+	if lost:
+		_lose_work(ep, int(tk.get("id", 0)))
+		text += " THE USER LOST UNSAVED WORK!"
+	ep.unsaved = false
+	ep.asked = false
+	var roll := alt_roll if alt_roll >= 0.0 else randf()
+	if roll < float(d.get("ret", 0.0)) and not tk.is_empty():
+		_queue_return(tk, d, prob)
+	changed.emit()
+	return text
+
+
+# a restart that cost somebody their unsaved work
+func _lose_work(ep: Dictionary, ticket_id: int) -> void:
+	var client := int(ep.client)
+	Sales.adjust(client, -6)
+	score -= 3
+	var contact: Dictionary = CLIENTS[client]
+	_mail(
+		str(contact.contact) + " <" + str(contact.mail) + ">",
+		"I LOST MY WORK!",
+		(
+			"You restarted my computer while I had a report open and I never saved it. "
+			+ "Hours of work, gone. A warning would have taken ten seconds. - "
+			+ str(contact.contact).split(" ")[0]
+		),
+		ticket_id
+	)
+
+
+# a workaround that did not hold: the same problem is back in 1-2 days (tech campaign) or soon
+func _queue_return(t: Dictionary, d: Dictionary, prob: String) -> void:
+	var item := {
+		"client": int(t.client),
+		"summary": str(d.back),
+		"pri": int(t.pri),
+		"body": str(d.back_body),
+		"fix": prob,
+		"server": str(t.endpoint).contains("SRV"),
+		"esc": true,
+	}
+	t.notes.append("Only a workaround: this will probably come back.")
+	if Campaign.active and Campaign.mode == "tech":
+		item["days"] = 1 + randi() % 2
+		Story.queue_followup(item)
+	else:
+		_later.append({"left": randf_range(150.0, 300.0), "item": item})
+
+
+# the follow-up ticket for a workaround that came back (also used by Story's follow-ups)
+func spawn_return(item: Dictionary) -> void:
+	var prob := {
+		"summary": item.summary,
+		"fix": item.get("fix", "reboot"),
+		"pri": item.pri,
+		"body": item.body,
+		"server": item.get("server", false),
+	}
+	var t := create_problem(int(item.client), prob, "email")
+	if not t.is_empty() and bool(item.get("esc", false)):
+		Growth.note_escalation(t)
 
 
 # actions with their own rules: asking the user to save, and the ransomware options
@@ -942,6 +1307,12 @@ func _process(delta: float) -> void:
 		_spawn_t = randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult()
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
+	for i in range(_later.size() - 1, -1, -1):
+		_later[i].left -= dt
+		if _later[i].left <= 0.0:
+			var item: Dictionary = _later[i].item
+			_later.remove_at(i)
+			spawn_return(item)
 	for t in tickets:
 		if t.status != "Closed" and t.status != "Waiting":
 			t.sla_left -= dt * Skills.sla_pace()

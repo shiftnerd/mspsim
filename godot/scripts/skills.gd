@@ -170,8 +170,9 @@ func fix_secs_for(action: String) -> float:
 	var base := fix_secs()
 	if base <= 0.0:
 		return base
-	var skill := str(FIX_XP.get(action, ""))
-	var mult := 1.0
+	var alt: Dictionary = Msp.ALT_DEFS.get(action, {})
+	var skill := str(FIX_XP.get(str(alt["for"][0]) if not alt.is_empty() else action, ""))
+	var mult := float(alt.get("mult", 1.0))
 	if skill in ["servers", "security", "networking"]:
 		mult -= 0.06 * float(level(skill))
 		if Campaign.mode == "tech" and Growth.graduated and Growth.focus == skill:
@@ -197,7 +198,7 @@ func perk_text(skill: String, lv: int) -> String:
 			if skill == "security" and lv == 3:
 				return "BACKUP WATCH: BACKUPS CHECK THEMSELVES"
 			if skill == "networking" and lv == 2:
-				return "CLOSET TIP ON OUTAGE TICKETS"
+				return "CLOSET TIP + COPIER REROUTE"
 			return "%s FIXES %d%% FASTER" % [NAMES[skill], 6 * lv]
 		"people":
 			if lv == 2:
