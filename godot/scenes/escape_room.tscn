@@ -37,11 +37,11 @@ size = Vector2(26, 60)
 [sub_resource type="RectangleShape2D" id="shape_fx"]
 size = Vector2(24, 96)
 
-[sub_resource type="RectangleShape2D" id="shape_clue"]
-size = Vector2(36, 96)
-
 [sub_resource type="RectangleShape2D" id="shape_rack"]
 size = Vector2(100, 60)
+
+[sub_resource type="RectangleShape2D" id="shape_clue"]
+size = Vector2(36, 96)
 
 [node name="EscapeRoom" type="Node2D"]
 script = ExtResource("stage")

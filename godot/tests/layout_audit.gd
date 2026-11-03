@@ -108,7 +108,7 @@ func _run() -> void:
 		fmt = f
 		game.set_format(f)
 		root.get_node("Campaign").save_prefix = "user://test_audit_%d_" % OS.get_process_id()
-		root.get_node("Difficulty").settings_path = "user://test_audit_settings.cfg"
+		root.get_node("Difficulty").settings_path = "user://test_audit_%d_settings.cfg" % OS.get_process_id()
 		if _want("title"):
 			await _title_phase()
 		if _want("floor"):

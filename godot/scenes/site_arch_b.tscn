@@ -12,10 +12,10 @@
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
 [ext_resource type="Texture2D" path="res://assets/props/blueprint_rack.png" id="prop_blueprint_rack"]
 [ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
-[ext_resource type="Texture2D" path="res://assets/props/recep_desk_arch_b.png" id="prop_recep_desk_arch_b"]
 [ext_resource type="Texture2D" path="res://assets/props/draft_table.png" id="prop_draft_table"]
 [ext_resource type="Texture2D" path="res://assets/props/monitor.png" id="prop_monitor"]
 [ext_resource type="Texture2D" path="res://assets/props/plotter.png" id="prop_plotter"]
+[ext_resource type="Texture2D" path="res://assets/props/recep_desk_arch_b.png" id="prop_recep_desk_arch_b"]
 
 [sub_resource type="RectangleShape2D" id="shape_floor"]
 size = Vector2(768, 20)

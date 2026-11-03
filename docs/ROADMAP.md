@@ -81,10 +81,10 @@ MSP-research items still unbuilt (see `IDEAS.md` "From the MSP research"): docum
 ## 8. Housekeeping
 | # | Item | Size |
 |---|---|---|
-| H1 | Rerun `tools/make_godot.py` in a scratch copy and diff against `godot/`: it has been hand-edited in lockstep for many rounds | S |
+| H1 | Rerun `tools/make_godot.py` in a scratch copy and diff against `godot/`: it has been hand-edited in lockstep for many rounds | Done. `tools/check_generator.py` regenerates in a scratch copy and diffs (see CLAUDE.md); the generator now reproduces the committed output (up to gdformat normalisation) |
 | H2 | Decide what to do about the ~270 `.import` files Godot rewrites on open (commit once or ignore) | S |
 | H3 | Add `.gitattributes` (`* text=auto eol=lf`) to stop line-ending warnings | S |
-| H4 | Give each test its own save prefix so tests can run in parallel | M |
+| H4 | Give each test its own save prefix so tests can run in parallel | Done. every test uses a per-process save/settings prefix; `tools/run_tests.py -j N` runs them in parallel |
 | H5 | Open `/hooks` once so the worktree hooks in `D:/Creative/.claude/` go live; clean up subagent worktrees (they are kept after an agent finishes) | S |
-| H6 | gdlint: a `max-returns` error on `Outings.hint` | S |
+| H6 | gdlint: a `max-returns` error on `Outings.hint` | Done. `Outings.hint` split into `_room_hint` / `_bowl_hint`; remaining gdlint findings are listed in CLAUDE.md |
 | H7 | Answer the open questions in `docs/campaign-paths.md` section 14 (crew size, day lengths, hires, parody names, Growth helper, walk-in scene) | decisions |

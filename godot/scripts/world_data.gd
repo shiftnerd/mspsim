@@ -174,7 +174,14 @@ const SCENES := {
 		"links": [{"name": "ToMain", "x": 28, "to": "main_floor", "spawn": "from_outside"}],
 		"seats": {},
 		"uses":
-		{"switch": 34, "keypad": 276, "clue_board": 238, "clue_clock": 86, "clue_painting": 149},
+		{
+			"switch": 34,
+			"keypad": 276,
+			"clue_board": 238,
+			"clue_clock": 86,
+			"clue_painting": 149,
+			"clue_shelf": 52
+		},
 		"outside_x": -1
 	},
 	"resort_lobby":
@@ -579,7 +586,7 @@ const SCENES := {
 			{"name": "Owner", "x": 85, "to": "site_arch_office_a", "spawn": "from_office"}
 		],
 		"seats": {},
-		"uses": {"onsite_pc": 280, "onsite_printer": 232, "onsite_door": 45},
+		"uses": {"onsite_pc": 280, "onsite_printer": 232, "onsite_door": 45, "onsite_recep": 265},
 		"outside_x": -1
 	},
 	"site_arch_closet_a":
@@ -619,7 +626,7 @@ const SCENES := {
 			{"name": "Owner", "x": 85, "to": "site_arch_office_b", "spawn": "from_office"}
 		],
 		"seats": {},
-		"uses": {"onsite_pc": 280, "onsite_printer": 232, "onsite_door": 45},
+		"uses": {"onsite_pc": 280, "onsite_printer": 232, "onsite_door": 45, "onsite_recep": 265},
 		"outside_x": -1
 	},
 	"site_arch_closet_b":
@@ -659,7 +666,14 @@ const SCENES := {
 			{"name": "Owner", "x": 85, "to": "site_realty_office_a", "spawn": "from_office"}
 		],
 		"seats": {},
-		"uses": {"onsite_pc": 176, "onsite_printer": 295, "onsite_door": 45},
+		"uses":
+		{
+			"onsite_pc": 176,
+			"onsite_printer": 295,
+			"onsite_door": 45,
+			"onsite_coffeebar": 121,
+			"onsite_signin": 153
+		},
 		"outside_x": -1
 	},
 	"site_realty_closet_a":
@@ -699,7 +713,14 @@ const SCENES := {
 			{"name": "Owner", "x": 85, "to": "site_realty_office_b", "spawn": "from_office"}
 		],
 		"seats": {},
-		"uses": {"onsite_pc": 176, "onsite_printer": 295, "onsite_door": 45},
+		"uses":
+		{
+			"onsite_pc": 176,
+			"onsite_printer": 295,
+			"onsite_door": 45,
+			"onsite_coffeebar": 121,
+			"onsite_signin": 153
+		},
 		"outside_x": -1
 	},
 	"site_realty_closet_b":

@@ -7,7 +7,7 @@ extends CanvasLayer
 # works when the office network is down. Everything is drawn in code with the pixel font.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const SAVE := "user://mspsim_phone.cfg"
+var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const RED := Color("e0463c")
@@ -41,14 +41,14 @@ func _ready() -> void:
 	_canvas.draw.connect(_paint)
 	Msp.changed.connect(_refresh)
 	var cfg := ConfigFile.new()
-	if cfg.load(SAVE) == OK:
+	if cfg.load(save_path) == OK:
 		os = str(cfg.get_value("phone", "os", ""))
 
 
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("phone", "os", os)
-	cfg.save(SAVE)
+	cfg.save(save_path)
 
 
 # the phone chosen on the character select screen (same saved preference as the first-open picker)

@@ -15,8 +15,8 @@ var saved_world_cast := 0
 
 
 func _initialize() -> void:
-	root.get_node("Difficulty").settings_path = "user://test_cs_settings.cfg"
-	DirAccess.remove_absolute("user://test_cs_settings.cfg")
+	root.get_node("Difficulty").settings_path = "user://test_cs_%d_settings.cfg" % OS.get_process_id()
+	DirAccess.remove_absolute("user://test_cs_%d_settings.cfg" % OS.get_process_id())
 	change_scene_to_file("res://scenes/title.tscn")
 
 
@@ -52,6 +52,7 @@ func _process(_delta: float) -> bool:
 				if campaign.has_save(m):
 					DirAccess.remove_absolute(campaign.save_path(m))
 			old_os = phone.os
+			phone.save_path = "user://test_cs_%d_phone.cfg" % OS.get_process_id()
 			phone.os = "ios"  # the default highlight
 			old_char = player_script.current_character
 			player_script.current_character = "office_adult"
@@ -139,7 +140,7 @@ func _process(_delta: float) -> bool:
 			var diff := root.get_node("Difficulty")
 			_check(diff.tier == "hard" and cs.summary().ends_with("HARD"), "Up makes it harder")
 			var cfg := ConfigFile.new()
-			cfg.load("user://test_cs_settings.cfg")
+			cfg.load("user://test_cs_%d_settings.cfg" % OS.get_process_id())
 			_check(
 				cfg.get_value("difficulty", "tier", "") == "hard",
 				"the choice is saved in the settings"

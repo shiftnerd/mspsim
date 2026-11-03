@@ -2130,31 +2130,45 @@ func blocks_interact() -> bool:
 
 # the one control hint line: pages show it as their footer, rooms in the bar at the bottom
 func hint() -> String:
+	var text := ""
 	if phase == "intro":
-		return "ENTER = START  ESC = SKIP  TAB = LOOK" if _traveled else "ENTER = START  ESC = SKIP"
-	if phase == "result":
-		return "ENTER = CONTINUE"
-	if not room_mode():
-		return str(GAMES[game].keys)
+		text = "ENTER = START  ESC = SKIP  TAB = LOOK" if _traveled else "ENTER = START  ESC = SKIP"
+	elif phase == "result":
+		text = "ENTER = CONTINUE"
+	elif not room_mode():
+		text = str(GAMES[game].keys)
+	else:
+		text = _room_hint()
+	return text
+
+
+func _room_hint() -> String:
+	var text := "E = SIT DOWN  ESC = LEAVE"
+	if str(g.get("stage", "")) == "talk":
+		text = "UP / DOWN  ENTER = TALK  ESC = LEAVE"
 	match game:
 		"bowling":
-			match str(g.get("stage", "")):
-				"ready":
-					return "E = STEP UP  ESC = LEAVE"
-				"aim":
-					return "E = STOP THE AIM  ESC = LEAVE"
-				"power":
-					return "E = STOP THE POWER  ESC = LEAVE"
-			return "WAIT FOR YOUR TURN  ESC = LEAVE"
+			text = _bowl_hint(str(g.get("stage", "")))
 		"karaoke":
-			return "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+			text = "ARROW KEYS = HIT NOTES  ESC = LEAVE"
 		"escape":
 			if g.get("entry", false):
-				return "ARROWS  ENTER = TRY  ESC = BACK"
-			return "E = LOOK / USE  N = HINT  ESC = LEAVE"
-	if str(g.get("stage", "")) == "talk":
-		return "UP / DOWN  ENTER = TALK  ESC = LEAVE"
-	return "E = SIT DOWN  ESC = LEAVE"
+				text = "ARROWS  ENTER = TRY  ESC = BACK"
+			else:
+				text = "E = LOOK / USE  N = HINT  ESC = LEAVE"
+	return text
+
+
+func _bowl_hint(stage: String) -> String:
+	var text := "WAIT FOR YOUR TURN  ESC = LEAVE"
+	match stage:
+		"ready":
+			text = "E = STEP UP  ESC = LEAVE"
+		"aim":
+			text = "E = STOP THE AIM  ESC = LEAVE"
+		"power":
+			text = "E = STOP THE POWER  ESC = LEAVE"
+	return text
 
 
 # ---- karaoke extras

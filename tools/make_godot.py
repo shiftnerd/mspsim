@@ -267,9 +267,15 @@ def _depth(line):
     return d
 
 
-def make_patchable(text, names):
+# these files declare the mutable copies after the last constant instead of next to each table
+PATCH_LATE = {"scripts/career.gd"}
+NO_PATCH_HEADER = {"scripts/events.gd"}  # its header already lists max-line-length only; nothing else needed
+
+
+def make_patchable(text, names, late=False, header=True):
     lines = text.split("\n")
     out = []
+    late_vars = []
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -286,11 +292,20 @@ def make_patchable(text, names):
                 block.append(lines[i])
                 depth += _depth(lines[i])
             out.extend(block)
-            out.append("var %s: %s = DEFAULT_%s.duplicate(true)" % (hit, kind, hit))
+            var_line = "var %s: %s = DEFAULT_%s.duplicate(true)" % (hit, kind, hit)
+            if late:
+                late_vars.append(var_line)
+            else:
+                out.append(var_line)
         else:
             out.append(line)
         i += 1
+    if late:
+        k = next(n for n, ln in enumerate(out) if ln.startswith("var ") or ln.startswith("func "))
+        out[k:k] = late_vars + [""]
     result = "\n".join(out)
+    if late or not header:
+        return result
     # the mutable copies are upper case variables declared next to their constants
     first, rest = result.split("\n", 1)
     return first + "\n# gdlint:disable=class-definitions-order,class-variable-name\n" + rest
@@ -300,7 +315,7 @@ def write(rel, text):
     if rel in INLINE:
         text = externalize(text, os.path.basename(rel)[:-3].capitalize(), INLINE[rel])
     if rel in PATCHABLE:
-        text = make_patchable(text, PATCHABLE[rel])
+        text = make_patchable(text, PATCHABLE[rel], rel in PATCH_LATE, rel not in NO_PATCH_HEADER)
     path = os.path.normpath(os.path.join(ROOT, rel))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="\n") as f:
@@ -351,10 +366,10 @@ Nerf="*res://scripts/nerf.gd"
 Projects="*res://scripts/projects.gd"
 Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
+PrinterGame="*res://scripts/printer_game.gd"
 Events="*res://scripts/events.gd"
 Mutators="*res://scripts/mutators.gd"
 Yeartwo="*res://scripts/yeartwo.gd"
-PrinterGame="*res://scripts/printer_game.gd"
 Career="*res://scripts/career.gd"
 Toolbox="*res://scripts/toolbox.gd"
 Crew="*res://scripts/crew.gd"
@@ -7163,7 +7178,7 @@ write("scripts/phone.gd", '''extends CanvasLayer
 # works when the office network is down. Everything is drawn in code with the pixel font.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const SAVE := "user://mspsim_phone.cfg"
+var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const RED := Color("e0463c")
@@ -7197,14 +7212,14 @@ func _ready() -> void:
     _canvas.draw.connect(_paint)
     Msp.changed.connect(_refresh)
     var cfg := ConfigFile.new()
-    if cfg.load(SAVE) == OK:
+    if cfg.load(save_path) == OK:
         os = str(cfg.get_value("phone", "os", ""))
 
 
 func _save() -> void:
     var cfg := ConfigFile.new()
     cfg.set_value("phone", "os", os)
-    cfg.save(SAVE)
+    cfg.save(save_path)
 
 
 # the phone chosen on the character select screen (same saved preference as the first-open picker)
@@ -8110,8 +8125,8 @@ func new_game(for_mode: String) -> void:
     Expo.reset()
     Onsite.reset()
     Events.reset()
-    SalesCampaign.reset()
     Service.reset()
+    SalesCampaign.reset()
     Mutators.start(for_mode)
     Mutators.apply_start()
     Build.apply_start()
@@ -9151,15 +9166,15 @@ const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
 var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
+const GRADE_COLORS := {
+    "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
+}
+
 const BIG_GRADES := {
     "S": [".XXX", "X...", ".XX.", "...X", "XXX."], "A": [".XX.", "X..X", "XXXX", "X..X", "X..X"],
     "B": ["XXX.", "X..X", "XXX.", "X..X", "XXX."], "C": [".XXX", "X...", "X...", "X...", ".XXX"],
     "D": ["XXX.", "X..X", "X..X", "X..X", "XXX."],
 }
-const GRADE_COLORS := {
-    "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
-}
-
 var is_open := false
 var report := {}
 
@@ -9567,14 +9582,6 @@ const LESSONS := [
 var xp := {}
 var ps_level := 0
 var lesson_day := -1  # the day an Academy lesson was last passed (one a day)
-
-
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -14797,14 +14804,6 @@ var complained_day := {}  # client -> campaign day of their last complaint (the 
 var _cool := 40.0
 
 
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
-
-
 func _ready() -> void:
     reset()
 
@@ -15641,8 +15640,10 @@ func team_speed() -> float:
     for hire in extra_staff:
         total += float(hire.skill) + (0.1 if hire.get("trait", "") == "wizard" else 0.0)
     var morale := (0.9 + clampf(Social.average() / 400.0, -0.1, 0.2)) * (1.0 + (stack_sum("morale") + edge("morale")) / 100.0)
-    return total * (speed + stack_sum("speed")) * morale * MANAGER_BOOST
+    return (
+        total * (speed + stack_sum("speed")) * morale * MANAGER_BOOST
         * (1.0 - burnout / 300.0) * (1.0 - Growth.capacity_loss()) * (1.0 - Projects.drag())
+    )
 
 
 # ---- the stack you run and sell ----------------------------------------------------------------
@@ -17674,9 +17675,9 @@ func review_lines(page: int, ending: String) -> Array:
 func to_dict() -> Dictionary:
     return {
         "cash": cash, "flags": flags, "price": price, "speed": speed, "vic": vic_bonus, "weekly": weekly_extra, "payroll_extra": payroll_extra,
-        "draw_policy": draw_policy, "draw_paid": draw_paid, "draw_warned": draw_warned, "hire_quits": hire_quits,
+        "lost": lost_techs, "draw_policy": draw_policy, "draw_paid": draw_paid, "draw_warned": draw_warned, "hire_quits": hire_quits,
         "incidents": incidents, "outings_seen": _outings_seen, "partner": Partner.to_dict(),
-        "lost": lost_techs, "staff": extra_staff, "discount": discount, "history": history, "leaving": _leaving,
+        "staff": extra_staff, "discount": discount, "history": history, "leaving": _leaving,
         "marketing": marketing, "leads": _leads, "stack": stack, "ar": ar, "fee_boost": fee_boost,
         "vic_plan": vic_plan, "vic_deals": vic_deals, "vic_signed": vic_signed, "late": _late, "asked": _asked,
         "qbr": _qbr_done, "profit_hist": profit_hist, "scope_fixed": scope_fixed, "burnout": burnout, "leak": leak,
@@ -17925,14 +17926,6 @@ var _t := 40.0
 var _warn_t := 5.0
 var _warned := {}
 var _thanked := {}
-
-
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -18333,14 +18326,6 @@ var hint := {}  # {question, best, votes, total, pending}
 var _last_ask := -999.0
 var _lines: Array = []  # queued [delay, nick, text]
 var _day := -1
-
-
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -18899,14 +18884,6 @@ var _warned := 0
 var _oncall_pay := 0
 
 
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
-
-
 func _ready() -> void:
     reset()
 
@@ -19278,14 +19255,6 @@ var esc_skill := {}  # skill -> escalations
 var owner_used := 0.0  # owner hours spent on escalations this week
 var owner_warned := false
 var _skip_note := false
-
-
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -22174,31 +22143,45 @@ func blocks_interact() -> bool:
 
 # the one control hint line: pages show it as their footer, rooms in the bar at the bottom
 func hint() -> String:
+    var text := ""
     if phase == "intro":
-        return "ENTER = START  ESC = SKIP  TAB = LOOK" if _traveled else "ENTER = START  ESC = SKIP"
-    if phase == "result":
-        return "ENTER = CONTINUE"
-    if not room_mode():
-        return str(GAMES[game].keys)
+        text = "ENTER = START  ESC = SKIP  TAB = LOOK" if _traveled else "ENTER = START  ESC = SKIP"
+    elif phase == "result":
+        text = "ENTER = CONTINUE"
+    elif not room_mode():
+        text = str(GAMES[game].keys)
+    else:
+        text = _room_hint()
+    return text
+
+
+func _room_hint() -> String:
+    var text := "E = SIT DOWN  ESC = LEAVE"
+    if str(g.get("stage", "")) == "talk":
+        text = "UP / DOWN  ENTER = TALK  ESC = LEAVE"
     match game:
         "bowling":
-            match str(g.get("stage", "")):
-                "ready":
-                    return "E = STEP UP  ESC = LEAVE"
-                "aim":
-                    return "E = STOP THE AIM  ESC = LEAVE"
-                "power":
-                    return "E = STOP THE POWER  ESC = LEAVE"
-            return "WAIT FOR YOUR TURN  ESC = LEAVE"
+            text = _bowl_hint(str(g.get("stage", "")))
         "karaoke":
-            return "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+            text = "ARROW KEYS = HIT NOTES  ESC = LEAVE"
         "escape":
             if g.get("entry", false):
-                return "ARROWS  ENTER = TRY  ESC = BACK"
-            return "E = LOOK / USE  N = HINT  ESC = LEAVE"
-    if str(g.get("stage", "")) == "talk":
-        return "UP / DOWN  ENTER = TALK  ESC = LEAVE"
-    return "E = SIT DOWN  ESC = LEAVE"
+                text = "ARROWS  ENTER = TRY  ESC = BACK"
+            else:
+                text = "E = LOOK / USE  N = HINT  ESC = LEAVE"
+    return text
+
+
+func _bowl_hint(stage: String) -> String:
+    var text := "WAIT FOR YOUR TURN  ESC = LEAVE"
+    match stage:
+        "ready":
+            text = "E = STEP UP  ESC = LEAVE"
+        "aim":
+            text = "E = STOP THE AIM  ESC = LEAVE"
+        "power":
+            text = "E = STOP THE POWER  ESC = LEAVE"
+    return text
 
 
 # ---- karaoke extras
@@ -32025,14 +32008,6 @@ var _queue: Array = []  # things waiting for next morning: {kind: project|servic
 var _next_id := 1
 
 
-func is_owner(who: String) -> bool:
-    return OWNERS.has(who)
-
-
-func role(who: String) -> String:
-    return str(ROLES.get(who, ""))
-
-
 func _ready() -> void:
     reset()
 
@@ -38204,10 +38179,10 @@ func _open_select(id: String) -> void:
         mode = "tech"
     elif id == "owner_new":
         mode = "owner"
-    elif id == "sales_new":
-        mode = "sales"
     elif id == "service_new":
         mode = "service"
+    elif id == "sales_new":
+        mode = "sales"
     _select = CharSelect.new()
     _select.setup(mode, year2)
     _select.done.connect(_on_select_done.bind(id))
@@ -38252,14 +38227,14 @@ func _start(id: String, summary := "") -> void:
             Campaign.new_game("owner")
         "owner_continue":
             Campaign.continue_game("owner")
-        "sales_new":
-            Campaign.new_game("sales")
-        "sales_continue":
-            Campaign.continue_game("sales")
         "service_new":
             Campaign.new_game("service")
         "service_continue":
             Campaign.continue_game("service")
+        "sales_new":
+            Campaign.new_game("sales")
+        "sales_continue":
+            Campaign.continue_game("sales")
         _:
             Campaign.new_game(Campaign.FREE)
     Game.go(Campaign.start_scene(), "start")
@@ -41514,7 +41489,7 @@ func _draw_chip(c: CanvasItem, rects: Array, ri: int, r: Rect2) -> void:
 ''')
 
 write("scripts/career.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,class-definitions-order,class-variable-name
 # The Career: lifetime counters and medals that belong to YOU, not to one campaign slot. They are saved in
 # user://mspsim_career.cfg (Campaign.save_prefix + "career.cfg"), so New Game, a deleted campaign and the end of a
 # year do not reset them. The game feeds them through small hooks (Career.add / best / fastest and the note_*
@@ -42174,7 +42149,6 @@ func _draw_medals(list: Array, body: Rect2, cols: int, colw: float, gap: float) 
 ''')
 
 write("scripts/sales_campaign.gd", '''extends Node
-# gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # The sales campaign as Vic (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
 # April to August 2014, 4 real minutes a week. The company runs on autopilot behind you (the crew works the queue, light books);

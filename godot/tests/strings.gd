@@ -48,7 +48,7 @@ func _init() -> void:
 	_check(table.has("Story.VIGNETTES.captcha.options.0.text"), "the drawn vignettes are in story/strings.txt")
 	_check(ev.DECK.size() >= 40, "the deck has 40 or more cards (%d)" % ev.DECK.size())
 	var ev_text: String = ev.DECK.toner_late.text
-	var ev_temp := "user://test_strings_ev.txt"
+	var ev_temp := "user://test_strings_%d_ev.txt" % OS.get_process_id()
 	_write(ev_temp, "[Events.DECK.toner_late.text]
 The toner is late again.
 ")
@@ -59,7 +59,7 @@ The toner is late again.
 	# ---- an edit takes effect
 	var key := "Story.DAYS.1.0.body"
 	var original: String = story.DAYS[1][0].body
-	var temp := "user://test_strings.txt"
+	var temp := "user://test_strings_%d.txt" % OS.get_process_id()
 	_write(temp, "# a comment\n[%s]\nWelcome to the first day.\nThis wraps over two lines.\n" % key)
 	var n: int = strings.load_file(temp)
 	_check(

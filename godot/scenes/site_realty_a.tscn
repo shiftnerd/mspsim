@@ -11,11 +11,11 @@
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
 [ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
+[ext_resource type="Texture2D" path="res://assets/props/coffee_bar_a.png" id="prop_coffee_bar_a"]
 [ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_74.png" id="prop_desk_cubicle_74"]
 [ext_resource type="Texture2D" path="res://assets/props/keyboard.png" id="prop_keyboard"]
 [ext_resource type="Texture2D" path="res://assets/props/monitor.png" id="prop_monitor"]
 [ext_resource type="Texture2D" path="res://assets/props/printer_box.png" id="prop_printer_box"]
-[ext_resource type="Texture2D" path="res://assets/props/coffee_bar_a.png" id="prop_coffee_bar_a"]
 
 [sub_resource type="RectangleShape2D" id="shape_floor"]
 size = Vector2(768, 20)

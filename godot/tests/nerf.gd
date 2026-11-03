@@ -24,6 +24,7 @@ func _init() -> void:
 	var social := root.get_node("Social")
 	var game := root.get_node("Game")
 	game.title_mode = false
+	c.save_prefix = "user://test_nerf_%d_" % OS.get_process_id()
 	c.new_game("tech")
 	c.day = 3
 	world.time_scale = 1.0
