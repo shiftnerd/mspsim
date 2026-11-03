@@ -1187,6 +1187,8 @@ func crew_names() -> Array:
 
 # the ticket-working skill of the employees you started with (hires are added by team_speed)
 func crew_skill() -> float:
+	if Campaign.mode == "service":
+		return Crew.skill()  # Maya and the two techs, scaled by morale (C4)
 	var total := 0.0
 	for i in crew_size():
 		total += float(CREW[i].skill)
@@ -1216,6 +1218,8 @@ func edges_for(owner_name: String) -> Dictionary:
 
 
 func edge(key: String) -> float:
+	if Campaign.mode == "service":
+		return Service.edge(key)  # the huddle focus and the memo effects (C4)
 	return float(edges_for(Campaign.player_as)[key]) if Campaign.cards_active() else float(DEFAULT_EDGE[key])
 
 
@@ -1346,7 +1350,7 @@ func _process(delta: float) -> void:
 			_work_queue(slice)
 	if not cards:
 		return
-	var events: Array = DAYS.get(Campaign.day, [])
+	var events: Array = DAYS.get(Campaign.day, []) if Campaign.mode == "owner" else []
 	for i in events.size():
 		var ev: Dictionary = events[i]
 		if not _fired.has(i) and World.clock >= float(ev.at):
@@ -1368,6 +1372,8 @@ func _work_queue(seconds: float) -> void:
 	for t in Msp.open_tickets():
 		if t.fix == "project" or t.fix == "network" or t.internal:
 			continue
+		if Campaign.mode == "service" and str(t.special) != "":
+			continue  # incidents are yours or your delegate's (Service.incident)
 		if t.fix_done:
 			Msp.close_ticket(int(t.id))
 			continue
@@ -1396,6 +1402,8 @@ func _finish_ticket(t: Dictionary) -> void:
 
 # ---- a new week ------------------------------------------------------------------------------
 func begin_day(day: int) -> void:
+	if Campaign.mode == "service":
+		return  # the service campaign has its own mornings (Service.begin_day)
 	_fired = {}
 	_advised = false
 	income_extra = 0

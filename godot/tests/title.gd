@@ -44,6 +44,12 @@ func _process(_delta: float) -> bool:
 				"Down goes to the owner campaign"
 			)
 			_press(KEY_DOWN)
+		57:
+			_check(
+				current_scene._items[current_scene._sel].id == "service_new",
+				"Down goes to the service manager campaign"
+			)
+			_press(KEY_DOWN)
 		60:
 			_check(
 				current_scene._items[current_scene._sel].id == "free",
