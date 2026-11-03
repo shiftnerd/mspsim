@@ -49,15 +49,15 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 a cubicle area, a conference room, and a network closet with a real rack you can plug and unplug. After work you can go bowling, sing karaoke,
 solve an escape room or eat at the restaurant.
 
-**The people**
+**The people** (canon: **Alan and Garrison are the two owners** of Pixel IT Partners. Alan leans technical, Garrison leans sales and culture; Office 1 and Office 2 are theirs. Story text, Talk lines and specialities still show them as techs and need a pass: see `docs/BACKLOG.md`.)
 | Who | Role | Personality | What they do for you |
 |---|---|---|---|
 | **You** | Tech (or owner) | The new hire | |
-| **Alan** | Senior tech | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups |
-| **Garrison** | Security-minded tech | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password |
+| **Alan** | Co-owner, the technical one (still the senior tech; Office 1) | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups |
+| **Garrison** | Co-owner, the sales and culture one (Office 2; still security-minded) | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password |
 | **Dan** | Network tech | Quiet, labels everything, plays Floppy Bat | Networking; notices when a desk has no link |
 | **Vic Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
-| **Morgan Reyes** | Your manager | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
+| **Morgan Reyes** | Your manager (reports to the two owners) | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
 | **Marge** | Bookkeeper (owner mode) | Practical | Reads you the numbers |
 | **Maya** | Tier 1 tech (tech campaign and Free Play) | Friendly, ponytail, always has a granola bar | Customer skills; warns you when a ticket is about to breach; the first woman on the team |
 
