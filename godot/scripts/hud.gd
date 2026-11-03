@@ -73,6 +73,8 @@ func _draw() -> void:
 						" NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
 					)
 				lines.append(day_line)
+		if Yeartwo.active():
+			lines.append("YEAR 2")
 		if Mutators.tag() != "":
 			lines.append("* " + Mutators.tag())
 		if Nerf.holding():

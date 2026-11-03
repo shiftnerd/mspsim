@@ -491,6 +491,9 @@ func ticket_rate() -> float:
 
 func ticket_weights() -> Dictionary:
 	var out: Dictionary = hook("ticket_weight", {}).duplicate()
+	var y2: Dictionary = Yeartwo.ticket_weights()  # Year 2: more printer and security tickets, more servers
+	for k in y2:
+		out[k] = float(out.get(k, 1.0)) * float(y2[k])
 	if start_window():
 		var s: Dictionary = start_row().get("ticket_weight", {})
 		for k in s:
@@ -505,7 +508,7 @@ func boost(card_id: String) -> float:
 
 
 func sla(secs: float) -> float:
-	return secs * float(hook("sla_mult", 1.0))
+	return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult()
 
 
 # the ticket kind of the next random ticket: {} = the usual uniform pick (nothing is active, no random number used)
@@ -553,6 +556,8 @@ func priority(pri: int, ep: Dictionary) -> int:
 	var cap := int(hook("xp_pri", 0))
 	if cap > 0 and str(ep.get("os", "")).contains("XP") and pri > cap:
 		return cap
+	if pri == 2 and Yeartwo.promote():
+		return 1  # Year 2: a bigger share of P1s
 	return pri
 
 
@@ -641,7 +646,7 @@ func make_plan(mode: String, tier: String) -> Array:
 	if not Campaign.MODES.has(mode):
 		return out
 	var r := Difficulty.rng("mutators")
-	var range_n: Array = COUNT_BY_TIER.get(tier, COUNT_BY_TIER.normal)
+	var range_n: Array = Yeartwo.counts(tier, COUNT_BY_TIER.get(tier, COUNT_BY_TIER.normal))
 	var slots: Array = slots_for(mode).duplicate()
 	var n := mini(r.randi_range(int(range_n[0]), int(range_n[1])), slots.size())
 	for k in range(slots.size() - 1, 0, -1):
@@ -651,7 +656,7 @@ func make_plan(mode: String, tier: String) -> Array:
 		slots[j] = tmp
 	var starts: Array = slots.slice(0, n)
 	starts.sort()
-	var pool := ids_for(mode)
+	var pool := Yeartwo.without_banned(ids_for(mode))
 	var deck := pool.duplicate()
 	for day in starts:
 		if deck.is_empty():
@@ -679,7 +684,7 @@ func start(mode: String) -> void:
 	if Campaign.MODES.has(mode) and starts_for(mode).has(pending_start):
 		start_id = pending_start
 	pending_start = STANDARD
-	plan = make_plan(mode, Difficulty.tier)
+	plan = Yeartwo.apply_pick(make_plan(mode, Difficulty.tier), mode)
 
 
 # the starting condition's overrides on the fresh state (after Sales / Owner were reset)

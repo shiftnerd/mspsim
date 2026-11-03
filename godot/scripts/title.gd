@@ -292,23 +292,24 @@ func _menu_key(code: Key, confirm: bool) -> void:
 func _open_menu() -> void:
 	_items = []
 	if Campaign.has_save("tech"):
-		var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech")
+		var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech") + Yeartwo.saved_tag("tech")
 		_items.append({"label": label, "id": "tech_continue", "enabled": true})
 		_items.append({"label": "NEW TECH CAMPAIGN", "id": "tech_new", "enabled": true})
 	else:
 		_items.append({"label": "TECH CAMPAIGN", "id": "tech_new", "enabled": true})
 	if Campaign.has_save("owner"):
-		var owner_label := "CONTINUE OWNER - WEEK %d" % Campaign.saved_day("owner")
+		var owner_label := "CONTINUE OWNER - WEEK %d" % Campaign.saved_day("owner") + Yeartwo.saved_tag("owner")
 		_items.append({"label": owner_label, "id": "owner_continue", "enabled": true})
 		_items.append({"label": "NEW OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
 	else:
 		_items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
 	if Campaign.has_save("service"):
-		var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service")
+		var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service") + Yeartwo.saved_tag("service")
 		_items.append({"label": service_label, "id": "service_continue", "enabled": true})
 		_items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
 	else:
 		_items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
+	_items.append_array(Yeartwo.menu_items())  # NEW GAME PLUS - <MODE> (YEAR 2) for every finished mode
 	_items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
 	_items.append({"label": "CAREER", "id": "career", "enabled": true})
 	_sel = 0
@@ -369,6 +370,9 @@ func _close_career() -> void:
 func _open_select(id: String) -> void:
 	if _select != null:
 		return
+	var year2 := id.ends_with("_y2")  # New Game Plus (Yeartwo): the same screen with the MUT chip
+	if year2:
+		id = id.trim_suffix("_y2") + "_new"
 	var mode := Campaign.FREE
 	if id == "tech_new":
 		mode = "tech"
@@ -377,7 +381,7 @@ func _open_select(id: String) -> void:
 	elif id == "service_new":
 		mode = "service"
 	_select = CharSelect.new()
-	_select.setup(mode)
+	_select.setup(mode, year2)
 	_select.done.connect(_on_select_done.bind(id))
 	_select.cancelled.connect(_close_select)
 	_front.add_child(_select)
@@ -386,6 +390,7 @@ func _open_select(id: String) -> void:
 
 
 func _close_select() -> void:
+	Yeartwo.pending = false
 	if _select == null:
 		return
 	_select.queue_free()
@@ -435,11 +440,12 @@ func _start(id: String, summary := "") -> void:
 func _draw_menu() -> void:
 	var size := _size()
 	var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
+	var pitch := minf(10.0, floorf((size.y - y - 1.0) / maxf(1.0, float(_items.size()))))  # a long menu (New Game Plus entries) packs tighter
 	for i in _items.size():
 		var item: Dictionary = _items[i]
 		var label: String = item.label
 		var w := float(PixelFont.width(label)) + 12.0
-		var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * 10.0, w, 9.0)
+		var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, minf(9.0, pitch))
 		item["rect"] = r
 		var chosen: bool = i == _sel and item.enabled
 		var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)

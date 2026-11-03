@@ -131,7 +131,7 @@ func choices(for_mode: String) -> Array:
 	return out
 
 
-func setup(for_mode: String) -> void:
+func setup(for_mode: String, year2 := false) -> void:
 	mode = for_mode
 	step = "char"
 	ids = choices(mode)
@@ -142,6 +142,7 @@ func setup(for_mode: String) -> void:
 	_panel = null
 	_confirmed = false
 	Mutators.pending_start = Mutators.STANDARD
+	Yeartwo.begin_select(for_mode, year2)  # New Game Plus: the MUT chip and +2 build points
 	Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
 	facing = "right"
 	for spr in _sprites:
@@ -176,6 +177,8 @@ func summary(with_tier := true) -> String:
 		s += " - " + str(PHONES[phone_sel].name)
 	if _panel != null and (step == "build" or _confirmed):
 		s += " - " + str(_panel.name_text())
+	if Yeartwo.pending:
+		s += " - YEAR 2"
 	if with_tier:
 		s += " - " + Difficulty.label()
 		if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
@@ -191,6 +194,19 @@ func change_start(step: int) -> void:
 	var i := maxi(0, list.find(Mutators.pending_start))
 	Mutators.pending_start = str(list[(i + step + list.size()) % list.size()])
 	queue_redraw()
+
+
+# M / Shift+M (or a click on the MUT chip arrows) pick the mutator of a Year 2 run, B switches PICK / BAN
+func change_mut(step: int) -> void:
+	if Yeartwo.pending:
+		Yeartwo.change_mut(mode, step)
+		queue_redraw()
+
+
+func toggle_mut_mode() -> void:
+	if Yeartwo.pending:
+		Yeartwo.toggle_mut_mode()
+		queue_redraw()
 
 
 # Up / Down (or a click on the arrows) change the difficulty; it is remembered in the settings file
@@ -294,6 +310,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				change_tier(-1)
 			KEY_TAB:
 				change_start(-1 if event.shift_pressed else 1)
+			KEY_M:
+				change_mut(-1 if event.shift_pressed else 1)
+			KEY_B:
+				toggle_mut_mode()
 			KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
 				confirm()
 			KEY_ESCAPE, KEY_BACKSPACE:
@@ -379,6 +399,12 @@ func _click(at: Vector2) -> void:
 			change_start(-1)
 		"start_up":
 			change_start(1)
+		"mut_down":
+			change_mut(-1)
+		"mut_up":
+			change_mut(1)
+		"mut_mode":
+			toggle_mut_mode()
 		"seed":
 			open_seed()
 		"tools":
@@ -438,6 +464,8 @@ func _draw() -> void:
 	_draw_seed(size, narrow)
 	if is_campaign() and step == "char":
 		_draw_start(size, narrow)
+		if Yeartwo.pending:
+			_draw_mut(size, narrow)
 	if step == "char":
 		_draw_chars(size, narrow)
 	elif step == "build":
@@ -447,7 +475,7 @@ func _draw() -> void:
 		_place_sprites(size, narrow)
 		_draw_phones(size, narrow)
 	_draw_summary(size, narrow)
-	var extra := "T TOOLS" if mode == "free" else "TAB START"
+	var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
 	if step == "build":
 		if narrow:
 			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
@@ -545,6 +573,28 @@ func _draw_start(size: Vector2, narrow: bool) -> void:
 	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
 	_rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "start_down", 0])
 	_rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "start_up", 0])
+
+
+# Year 2: the mutator chip MUT < AUTO > (M picks, B switches PICK / BAN): right under the level chip when wide, at the left
+# under the heading at 320 wide, centred below the level chip in portrait
+func _draw_mut(size: Vector2, narrow: bool) -> void:
+	var text := Yeartwo.chip_text()
+	var w := float(PixelFont.width("PICK PRINTER APOC.")) + 16.0
+	var pos := Vector2(3.0, 14.0)
+	if narrow:
+		pos = Vector2(3.0, 12.0)
+	elif size.x > 340.0:
+		pos = Vector2(size.x - w - 3.0, 14.0)
+	var r := Rect2(pos, Vector2(w, 9.0))
+	draw_rect(r, PANEL)
+	draw_rect(r, GOLD if Yeartwo.pick != "" else (Color("ff8a80") if Yeartwo.ban != "" else DIM), false, 1.0)
+	_txt("<", r.position + Vector2(3, 2), GOLD)
+	_txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+	var tw := float(PixelFont.width(text))
+	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+	_rects.append([Rect2(r.position, Vector2(w * 0.5 - 14.0, 9.0)), "mut_down", 0])
+	_rects.append([Rect2(r.position + Vector2(w * 0.5 + 14.0, 0.0), Vector2(w * 0.5 - 14.0, 9.0)), "mut_up", 0])
+	_rects.append([Rect2(r.position + Vector2(w * 0.5 - 14.0, 0.0), Vector2(28.0, 9.0)), "mut_mode", 0])
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:

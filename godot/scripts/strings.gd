@@ -14,6 +14,7 @@ const ROOTS := {
 	"Story": ["DAYS", "VIGNETTES"],
 	"Events": ["DECK"],
 	"Mutators": ["MUTATORS", "STARTS"],
+	"Yeartwo": ["CARRY", "YEAR2", "TEXT"],
 	"Playbook": ["BOOKS", "PROBLEMS"],
 	"Owner": ["CARDS"],
 	"Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "DAYS", "REVIEW"],

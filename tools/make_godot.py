@@ -178,7 +178,7 @@ PATCHABLE = {
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
-    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
 }
 
@@ -352,6 +352,7 @@ Expo="*res://scripts/conference.gd"
 Onsite="*res://scripts/onsite.gd"
 Events="*res://scripts/events.gd"
 Mutators="*res://scripts/mutators.gd"
+Yeartwo="*res://scripts/yeartwo.gd"
 PrinterGame="*res://scripts/printer_game.gd"
 Career="*res://scripts/career.gd"
 Toolbox="*res://scripts/toolbox.gd"
@@ -7580,7 +7581,7 @@ const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "
 # row here plus its content tables; "selectable" stays false until its slice is playable. See docs/campaign-paths.md 8.1.
 const MODE_DEFS := {
     "tech": {
-        "label": "TECH CAMPAIGN", "selectable": true,
+        "label": "TECH CAMPAIGN", "selectable": true, "year2": true,
         "crew": false, "books": false, "cards": false, "books_lite": false,
         "day_len": 600.0, "total_days": 20, "unit": "DAY",
         "hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
@@ -7589,7 +7590,7 @@ const MODE_DEFS := {
         "ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
     },
     "owner": {
-        "label": "OWNER CAMPAIGN", "selectable": true,
+        "label": "OWNER CAMPAIGN", "selectable": true, "year2": true,
         "crew": true, "books": true, "cards": true, "books_lite": false,
         "day_len": 240.0, "total_days": 20, "unit": "WEEK",
         "hud": "week_cash", "report": "pnl", "review": "board", "review_heading": "BOARD REVIEW", "review_pages": 3,
@@ -7628,6 +7629,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
+var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -7778,6 +7780,8 @@ func new_game(for_mode: String) -> void:
     cash = 0
     history = []
     _awaiting = false
+    Yeartwo.reset()
+    year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
     Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
     build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
     Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
@@ -7803,6 +7807,7 @@ func new_game(for_mode: String) -> void:
     Mutators.start(for_mode)
     Mutators.apply_start()
     Build.apply_start()
+    Yeartwo.begin_run(for_mode)  # Year 2: the carry-over, the three newer clients, the story shuffle
     if for_mode == "service":
         Service.begin_run()
     World.day_len = day_len_for(for_mode)
@@ -7826,6 +7831,7 @@ func continue_game(for_mode: String) -> bool:
     rep = int(cfg.get_value("campaign", "rep", START_REP))
     scars = int(cfg.get_value("campaign", "scars", 0))
     cash = int(cfg.get_value("campaign", "cash", 0))
+    year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
     history = cfg.get_value("campaign", "history", [])
     var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
     PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
@@ -7859,6 +7865,7 @@ func continue_game(for_mode: String) -> bool:
     Events.from_dict(cfg.get_value("campaign", "events", {}))
     Service.from_dict(cfg.get_value("campaign", "service", {}))
     Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
+    Yeartwo.from_dict(cfg.get_value("campaign", "yeartwo", {}))
     Lync.reset()
     World.day_len = day_len_for(for_mode)
     Story.flags = cfg.get_value("campaign", "story", {})
@@ -7879,6 +7886,7 @@ func save() -> void:
     cfg.set_value("campaign", "rep", rep)
     cfg.set_value("campaign", "scars", scars)
     cfg.set_value("campaign", "cash", cash)
+    cfg.set_value("campaign", "year", year)
     cfg.set_value("campaign", "history", history)
     cfg.set_value("campaign", "character", PLAYER.current_character)
     cfg.set_value("campaign", "player_as", player_as)
@@ -7901,6 +7909,7 @@ func save() -> void:
     cfg.set_value("campaign", "events", Events.to_dict())
     cfg.set_value("campaign", "service", Service.to_dict())
     cfg.set_value("campaign", "mutators", Mutators.to_dict())
+    cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
     cfg.set_value("campaign", "backups", Msp.backups)
     cfg.save(save_path(mode))
 
@@ -7911,6 +7920,7 @@ func finish_campaign(ending: String) -> void:
     var meta := ConfigFile.new()
     meta.load(save_prefix + "meta.cfg")
     meta.set_value(mode, "ending", ending)
+    Yeartwo.record(meta, mode, ending)  # the unlock for New Game Plus: ending, reputation, value, levels, tier
     meta.save(save_prefix + "meta.cfg")
     if has_save(mode):
         DirAccess.remove_absolute(save_path(mode))
@@ -7923,6 +7933,7 @@ func quit_to_title() -> void:
     mode = ""
     player_as = ""
     build = {}
+    year = 1
     World.apply_roster()
     Msp.enabled = true
     World.time_scale = 1.0
@@ -7946,6 +7957,7 @@ func _begin_day() -> void:
         Shift.begin_day(day)
     Events.begin_day(day)
     Mutators.begin_day(day)
+    Yeartwo.begin_day(day)
     day_started.emit(day)
 
 
@@ -7967,6 +7979,7 @@ func make_report() -> Dictionary:
     var r: Dictionary = Expo.adjust_report(_make_report())
     if Mutators.tag() != "":
         r["mutator"] = Mutators.tag()
+    r["year"] = year
     return r
 
 
@@ -8073,6 +8086,717 @@ func report_continue(final: bool) -> void:
     _begin_day()
     Game.go("main_floor", "from_outside")
 ''')
+
+write("scripts/yeartwo.gd", '''extends Node
+# gdlint:disable=max-line-length
+# Year 2 / New Game Plus (roadmap R10b, docs/replayability-ideas.md 3.2 and 3.3).
+#
+# Finishing a campaign (Campaign.finish_campaign, after the review or the board review) records the mode, the ending
+# id, the final reputation, the company value / partner trust / skill levels, the difficulty and the year in the meta
+# file (`user://mspsim_meta.cfg`, one section per mode). A mode whose registry row says `"year2": true` and that has
+# been finished gets a title menu entry NEW GAME PLUS - <MODE> (YEAR 2). It opens the usual character select (the
+# point-buy step gets +2 points) plus a MUT chip: AUTO, PICK <mutator> or BAN <mutator> (keys M and B).
+#
+# Year 2 is a number on the run: `Campaign.year` (1 = the normal game, 2 = Year 2; saved as `campaign/year`, an old
+# save has none and loads as 1). Everything below is READ by existing functions through this autoload, so a Year 1
+# run behaves exactly as before (tests/yeartwo.gd checks the neutral values):
+#   CARRY   what comes over from the finished run: skills (a capped level), reputation (a fraction), the owner's company
+#           value as a capped bit of start cash, the partner's trust, +2 build points. Career and Outings.known live
+#           outside the campaign slot and simply stay.
+#   YEAR2   what is harder: SLA clocks (Mutators.sla), the ticket weights and P1 share (Mutators.ticket_weights /
+#           priority), the three newer clients active from day 1 (Sales.reset / max_clients), one tier more mutators
+#           (Mutators.make_plan), the story shuffle (Story.events_on / Owner.events_on), the Year 2 beat cards that set
+#           choice flags (`Story.flags["y2"]`, saved with the campaign) and the extra endings those flags unlock.
+#   TEXT    the intro card, the beat cards, the offers and the epilogues (patchable like the rest).
+# A new mode (service, sales) plugs in by getting `"year2": true` in Campaign.MODE_DEFS and rows in YEAR2.beats /
+# YEAR2.shuffle / YEAR2.endings and TEXT; nothing else in this file names a mode except the day tables of `_base`.
+
+const VERSION := 1
+const YEAR := 2
+const CARRY := {
+    "skills": {"offset": -1, "cap": 3, "text": "SKILLS CARRY OVER ONE LEVEL LOWER, NEVER ABOVE 3."},
+    "powershell": {"offset": 0, "cap": 3, "text": "POWERSHELL LESSONS YOU PASSED COUNT AS YOUR LEVEL, UP TO 3."},
+    "rep": {"fraction": 0.6, "min": 40, "max": 70, "text": "REPUTATION RESTARTS AT 60 PERCENT OF WHERE YOU ENDED (40 AT LEAST)."},
+    "cash": {"fraction": 0.01, "cap": 5000, "text": "ONE PERCENT OF THE COMPANY VALUE BECOMES START CASH, UP TO $5000."},
+    "trust": {"min": 40, "max": 75, "text": "YOUR PARTNER'S TRUST CARRIES OVER (BETWEEN 40 AND 75)."},
+    "build": {"points": 2, "text": "TWO EXTRA BUILD POINTS."},
+}
+const YEAR2 := {
+    "sla": {"mult": 0.85, "text": "SLA CLOCKS RUN 15 PERCENT TIGHTER."},
+    "tickets": {
+        "weights": {"spooler": 1.7, "av": 1.7, "password": 1.3, "server": 1.6},
+        "p1_promote": 0.12,
+        "text": "MORE PRINTER AND SECURITY TICKETS, AND MORE OF THEM ARE P1.",
+    },
+    "clients": {
+        "client": ["Paws and Claws Veterinary", "Lindqvist and Moss Architects", "Iron Mule Demolition"],
+        "max": 10,
+        "text": "THREE NEW CLIENTS ARE ON THE BOOKS FROM DAY ONE.",
+    },
+    "mutators": {
+        "counts": {"easy": [2, 3], "normal": [4, 5], "hard": [5, 6]},
+        "text": "ONE TIER MORE MUTATORS.",
+    },
+    "shuffle": {
+        "max_shift": 2,
+        "text": "THE YEAR'S BIG JOBS MOVE AROUND BY A DAY OR TWO.",
+        "tech": {
+            "min_day": 3,
+            "books": ["rdp", "ceofraud", "rack", "migration", "no2fa", "netinstall", "bus"],
+            "vignettes": ["iphone", "heartbleed", "candy", "pizza", "win8", "selfreview"],
+            "linked": {"donuts": "bus"},
+            "fixed": ["email24", "ransomware", "install"],
+        },
+        "owner": {
+            "min_day": 3,
+            "events": ["qbr", "profit_review", "grumble", "vic_report"],
+            "fixed": ["ransomware", "poach_wave", "vendor_breach", "client_breach"],
+        },
+    },
+    "beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}},
+    "endings": {"tech": ["head", "buyout"], "owner": ["merger", "franchise"]},
+}
+const TEXT := {
+    "intro": {
+        "speaker": "YEAR 2",
+        "text": "A NEW YEAR AT PIXEL IT PARTNERS. YOU KEEP WHAT YOU LEARNED, THE CLIENTS EXPECT MORE.",
+    },
+    "beats": {
+        "tech": {
+            "courted": {
+                "speaker": "Tony Marsh (Iron Mule Demolition)",
+                "text": "Between you and me: if you ever want out of the MSP life, I would pay Pixel a buyout fee and put you on my payroll as the IT director. Nothing to decide today.",
+                "options": [
+                    {"label": "I AM LISTENING", "id": "listen", "reply": "Tony grins and slides over a business card with a hard hat on it.", "fx": {}},
+                    {"label": "TELL MORGAN FIRST", "id": "told", "reply": "Tony nods. Morgan hears it from you and quietly approves.", "fx": {"social": {"Morgan": 2}}},
+                    {"label": "THANKS, NO", "id": "no", "reply": "Tony shrugs. The offer stays open, he says, like a garage door.", "fx": {"rep": 1}},
+                ],
+            },
+            "desk": {
+                "speaker": "Morgan (Manager)",
+                "text": "I am at the vendor summit for a week. Could you run the morning stand-up and look after the desk schedule while I am gone?",
+                "options": [
+                    {"label": "I WILL RUN THE DESK", "id": "run", "reply": "Morgan hands over the clipboard and the good pen. The team behaves, mostly.", "fx": {"xp": ["people", 8], "social_all": 1}},
+                    {"label": "MAYBE NEXT TIME", "id": "pass", "reply": "Morgan asks Dan instead and does not mention it again.", "fx": {}},
+                ],
+            },
+        },
+        "owner": {
+            "merger": {
+                "speaker": "Walt Reiner (Tri-County Tech Group)",
+                "text": "I run the biggest shop in three counties and I like how yours is run. Lunch? I would like to talk about putting our names on one door.",
+                "options": [
+                    {"label": "TAKE THE MEETING", "id": "talks", "reply": "Walt orders for both of you and asks for your client list on a napkin.", "fx": {}},
+                    {"label": "NOT INTERESTED", "id": "no", "reply": "Walt shakes your hand anyway. He has a long memory and a short lunch break.", "fx": {}},
+                ],
+            },
+            "franchise": {
+                "speaker": "Pat Okafor (Consultant)",
+                "text": "Your runbooks are better than most. Two shops in other towns would pay to use your name and your procedures. A pilot costs $1,500 for the binders and the signs.",
+                "options": [
+                    {"label": "START A PILOT ($1500)", "id": "pilot", "reply": "Pat prints thirty binders. Marge frames the first invoice.", "fx": {"cash": -1500}, "need": 1500},
+                    {"label": "MAYBE LATER", "id": "later", "reply": "Pat leaves a folder on your desk. It stays there, glowing.", "fx": {}},
+                ],
+            },
+        },
+    },
+    "offers": {
+        "head": {
+            "label": "BECOME DEPARTMENT HEAD",
+            "desc": "MORGAN MOVES UP AND THE OWNERS GIVE YOU THE WHOLE SERVICE DEPARTMENT: THE DESK, THE SCHEDULE AND THE BUDGET.",
+        },
+        "buyout": {
+            "label": "LET IRON MULE BUY OUT YOUR CONTRACT",
+            "desc": "TONY MARSH PAYS PIXEL A BUYOUT FEE AND MAKES YOU HIS IT DIRECTOR.",
+        },
+        "merger": {
+            "label": "MERGE WITH TRI-COUNTY TECH GROUP",
+            "desc": "A BIGGER SHOP, A BIGGER NOC AND BOTH NAMES ON THE DOOR. THEY VALUE YOUR SIDE AT ABOUT ${value}.",
+        },
+        "franchise": {
+            "label": "LICENSE THE PIXEL IT NAME",
+            "desc": "TWO SHOPS IN OTHER TOWNS RUN ON YOUR BINDERS AND PAY YOU A FEE. THE BRAND GOES REGIONAL.",
+        },
+    },
+    "endings": {
+        "head": "YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.",
+        "buyout": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
+        "merger": "THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SHOP WITH TWO LOGOS AND ONE VERY LONG ALL-HANDS. YOUR SIDE IS WORTH ABOUT ${value}.",
+        "franchise": "TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. MARGE ORDERS MORE FRAMES.",
+    },
+}
+
+var pending := false  # New Game Plus was chosen on the title menu: the next Campaign.new_game takes it
+var pick := ""  # a mutator the plan must contain ("" = AUTO)
+var ban := ""  # a mutator the plan must not contain
+var mut_mode := "pick"  # what the character select chip does with the chosen mutator: "pick" or "ban"
+var moves: Array = []  # the story shuffle: [{mode, key, from, to}]
+var carried: Dictionary = {}  # what this run took over from the last one (shown on the intro card, saved)
+var prev: Dictionary = {}  # the meta record of the finished run this one follows
+
+
+func reset() -> void:
+    moves = []
+    carried = {}
+    prev = {}
+
+
+# ---- the meta record (unlock) ---------------------------------------------------------------------------------
+func meta_path() -> String:
+    return Campaign.save_prefix + "meta.cfg"
+
+
+func meta_get(mode: String) -> Dictionary:
+    var cfg := ConfigFile.new()
+    if cfg.load(meta_path()) != OK or not cfg.has_section(mode):
+        return {}
+    var out := {}
+    for key in cfg.get_section_keys(mode):
+        out[key] = cfg.get_value(mode, key)
+    return out
+
+
+# finish_campaign calls this with the open meta file, after it wrote the ending id
+func record(meta: ConfigFile, mode: String, ending: String) -> void:
+    var done := int(meta.get_value(mode, "finished", 0)) + 1
+    meta.set_value(mode, "finished", done)
+    meta.set_value(mode, "ending", ending)
+    meta.set_value(mode, "year", maxi(1, Campaign.year))
+    meta.set_value(mode, "rep", Campaign.rep)
+    meta.set_value(mode, "tier", Difficulty.tier)
+    meta.set_value(mode, "seed", Difficulty.run_seed)
+    meta.set_value(mode, "clients", Sales.active.size())
+    var levels := {}
+    for key in Skills.NAMES:
+        levels[key] = Skills.level(str(key))
+    meta.set_value(mode, "skills", levels)
+    var books := Campaign.books_active()
+    meta.set_value(mode, "value", Owner.valuation() if books else 0)
+    meta.set_value(mode, "cash", Owner.cash if books else Campaign.cash)
+    meta.set_value(mode, "trust", Partner.trust)
+    if Campaign.year >= YEAR:
+        Career.add("year2_done")
+
+
+# can this mode start a Year 2? (the registry row allows it and a run of it has been finished)
+func available(mode: String) -> bool:
+    if not Campaign.is_selectable(mode) or not bool(Campaign.prop("year2", false, mode)):
+        return false
+    var rec := meta_get(mode)
+    return int(rec.get("finished", 1 if str(rec.get("ending", "")) != "" else 0)) > 0
+
+
+# the title menu rows (one per finished mode)
+func menu_items() -> Array:
+    var out := []
+    for mode in Campaign.MODE_DEFS:
+        if available(str(mode)):
+            out.append({"label": "NEW GAME PLUS - %s (YEAR 2)" % str(mode).to_upper(), "id": "%s_y2" % str(mode), "enabled": true})
+    return out
+
+
+# the " - YEAR 2" mark of a saved run for the CONTINUE entries
+func saved_tag(mode: String) -> String:
+    var cfg := ConfigFile.new()
+    if cfg.load(Campaign.save_path(mode)) != OK:
+        return ""
+    return " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= YEAR else ""
+
+
+# ---- choosing it on the character select ---------------------------------------------------------------------------
+# the screen opens (setup): remember the choice; a normal run clears it
+func begin_select(mode: String, year2: bool) -> void:
+    pending = year2 and available(mode)
+    pick = ""
+    ban = ""
+    mut_mode = "pick"
+
+
+func take_pending(mode: String) -> bool:
+    var yes := pending and available(mode)
+    pending = false
+    prev = meta_get(mode) if yes else {}
+    return yes
+
+
+func active() -> bool:
+    return Campaign.active and Campaign.year >= YEAR
+
+
+# the build step is open for a Year 2 run, or one is running
+func build_bonus() -> int:
+    return int(CARRY.build.points) if (pending or active()) else 0
+
+
+# the ids the chip cycles through (AUTO first)
+func mutator_ids(mode: String) -> Array:
+    var out := [""]
+    out.append_array(Mutators.ids_for(mode))
+    return out
+
+
+func change_mut(mode: String, step: int) -> void:
+    var ids := mutator_ids(mode)
+    var cur := pick if mut_mode == "pick" else ban
+    var i := maxi(0, ids.find(cur))
+    var next := str(ids[(i + step + ids.size()) % ids.size()])
+    pick = next if mut_mode == "pick" else ""
+    ban = next if mut_mode == "ban" else ""
+
+
+func toggle_mut_mode() -> void:
+    var cur := pick if mut_mode == "pick" else ban
+    mut_mode = "ban" if mut_mode == "pick" else "pick"
+    pick = cur if mut_mode == "pick" else ""
+    ban = cur if mut_mode == "ban" else ""
+
+
+func chip_text() -> String:
+    var id := pick if pick != "" else ban
+    if id == "":
+        return "MUT  AUTO"
+    var label := str(Mutators.MUTATORS.get(id, {}).get("name", id)).to_upper()
+    if label.length() > 13:
+        label = label.substr(0, 12) + "."
+    return "%s %s" % ["PICK" if pick != "" else "BAN", label]
+
+
+# ---- the numbers other scripts read ------------------------------------------------------------------------------
+func sla_mult() -> float:
+    return float(YEAR2.sla.mult) if active() else 1.0
+
+
+func ticket_weights() -> Dictionary:
+    return YEAR2.tickets.weights if active() else {}
+
+
+# a P2 ticket that becomes P1 (drawn from the year2 stream; never in Year 1)
+func promote() -> bool:
+    if not active():
+        return false
+    return Difficulty.rng("year2.p1").randf() < float(YEAR2.tickets.p1_promote)
+
+
+func max_clients(base: int) -> int:
+    return maxi(base, int(YEAR2.clients.max)) if active() else base
+
+
+# Mutators.make_plan: the count range of the tier, one tier up in Year 2
+func counts(tier: String, normal: Array) -> Array:
+    if not active():
+        return normal
+    return YEAR2.mutators.counts.get(tier, normal)
+
+
+func without_banned(ids: Array) -> Array:
+    if not active() or ban == "" or pick != "":
+        return ids
+    var out := []
+    for id in ids:
+        if str(id) != ban:
+            out.append(id)
+    return out
+
+
+# Mutators.start: the picked mutator is in the plan (it takes over one entry)
+func apply_pick(plan: Array, mode: String) -> Array:
+    if not active() or pick == "" or not Mutators.MUTATORS.has(pick):
+        return plan
+    for e in plan:
+        if str(e.id) == pick:
+            return plan
+    var slots: Array = Mutators.slots_for(mode)
+    if plan.is_empty():
+        plan.append({"id": pick, "from": int(slots[0]), "to": int(slots[0])})
+        return plan
+    var r := Difficulty.rng("year2")
+    var at := r.randi_range(0, plan.size() - 1)
+    var e: Dictionary = plan[at]
+    var next_from := 9999
+    if at + 1 < plan.size():
+        next_from = int(plan[at + 1].from)
+    var to := int(e.from)
+    while to - int(e.from) + 1 < Mutators.duration_of(pick, mode) and slots.has(to + 1) and to + 1 < next_from:
+        to += 1
+    plan[at] = {"id": pick, "from": int(e.from), "to": to}
+    return plan
+
+
+# ---- carrying over ---------------------------------------------------------------------------------------------
+# the rules applied to a meta record: pure, so tests can feed it any record
+func carry_for(mode: String, rec: Dictionary) -> Dictionary:
+    var out := {"rep": Campaign.START_REP, "skills": {}, "ps": 0, "cash": 0, "trust": -1}
+    if rec.is_empty():
+        return out
+    var rep_row: Dictionary = CARRY.rep
+    out["rep"] = clampi(roundi(float(rec.get("rep", Campaign.START_REP)) * float(rep_row.fraction)), int(rep_row.min), int(rep_row.max))
+    var sk_row: Dictionary = CARRY.skills
+    var saved: Dictionary = rec.get("skills", {}) if rec.get("skills", {}) is Dictionary else {}
+    for key in Skills.NAMES:
+        if str(key) == "powershell":
+            continue
+        out.skills[key] = clampi(int(saved.get(key, 0)) + int(sk_row.offset), 0, int(sk_row.cap))
+    var ps_row: Dictionary = CARRY.powershell
+    out["ps"] = clampi(int(saved.get("powershell", 0)) + int(ps_row.offset), 0, int(ps_row.cap))
+    var cash_row: Dictionary = CARRY.cash
+    out["cash"] = clampi(roundi(float(rec.get("value", 0)) * float(cash_row.fraction)), 0, int(cash_row.cap))
+    var trust_row: Dictionary = CARRY.trust
+    out["trust"] = clampi(int(rec.get("trust", 55)), int(trust_row.min), int(trust_row.max))
+    return out
+
+
+# Campaign.new_game, after the usual start (build, starting condition): the carry-over, the clients, the shuffle
+func begin_run(mode: String) -> void:
+    if not active():
+        return
+    carried = carry_for(mode, prev)
+    Campaign.rep = int(carried.rep)
+    if not Campaign.books_active():
+        for key in carried.skills:
+            var lv := int(carried.skills[key])
+            if lv > Skills.level(str(key)):
+                Skills.xp[key] = Skills.need(lv - 1)
+        Skills.ps_level = maxi(Skills.ps_level, int(carried.ps))
+    else:
+        Owner.cash += int(carried.cash)
+        Partner.trust = clampi(int(carried.trust) + Build.trust_bonus(), 0, 100)
+    for cname in YEAR2.clients.client:
+        var idx := client_index(str(cname))
+        if idx >= 0 and not Sales.active.has(idx):
+            Sales.active.append(idx)
+    moves = story_shuffle(mode)
+    Career.add("year2_runs")
+
+
+func client_index(cname: String) -> int:
+    for i in Msp.CLIENTS.size():
+        if str(Msp.CLIENTS[i].name) == cname:
+            return i
+    return -1
+
+
+func intro_text() -> String:
+    var parts: Array = [str(TEXT.intro.text)]
+    for key in ["sla", "tickets", "clients", "mutators", "shuffle"]:
+        parts.append(str(YEAR2[key].text))
+    if not carried.is_empty():
+        var s := "YOU CARRY OVER: REPUTATION %d" % int(carried.rep)
+        if Campaign.books_active():
+            s += ", $%d START CASH, PARTNER TRUST %d" % [int(carried.cash), Partner.trust]
+        else:
+            var bits := []
+            for key in carried.skills:
+                if int(carried.skills[key]) > 0:
+                    bits.append("%s %d" % [str(Skills.NAMES[key]), int(carried.skills[key])])
+            if int(carried.ps) > 0:
+                bits.append("POWERSHELL %d" % int(carried.ps))
+            if not bits.is_empty():
+                s += ", " + ", ".join(bits)
+        parts.append(s + ".")
+    return " ".join(parts)
+
+
+# ---- the story shuffle -----------------------------------------------------------------------------------------
+# the day table of a mode (the scripted beats): the tech story or the owner weeks
+func _base(mode: String) -> Dictionary:
+    return Story.DAYS if mode == "tech" else (Owner.DAYS if mode == "owner" else {})
+
+
+func _key(ev: Dictionary) -> String:
+    var kind := str(ev.get("kind", ""))
+    if kind == "playbook":
+        return "book:" + str(ev.get("book", ""))
+    if kind == "vignette":
+        return "vig:" + str(ev.get("id", ""))
+    if ev.has("kind"):
+        return "kind:" + kind
+    if ev.has("event") and not ev.has("card"):
+        return "ev:" + str(ev.event)
+    return ""
+
+
+# the events of one day with the moves applied (the day tables are never edited)
+func events_on(mode: String, day: int, base: Dictionary) -> Array:
+    var list: Array = base.get(day, [])
+    if moves.is_empty():
+        return list
+    var out := []
+    for ev in list:
+        var gone := false
+        for m in moves:
+            if str(m.mode) == mode and int(m.from) == day and str(m.key) == _key(ev):
+                gone = true
+                break
+        if not gone:
+            out.append(ev)
+    for m in moves:
+        if str(m.mode) == mode and int(m.to) == day:
+            for ev in base.get(int(m.from), []):
+                if _key(ev) == str(m.key):
+                    out.append(ev)
+                    break
+    return out
+
+
+# the days a moved beat may not land on
+func blocked_days(mode: String) -> Dictionary:
+    var out := {}
+    var base := _base(mode)
+    var cfg: Dictionary = YEAR2.shuffle.get(mode, {})
+    var fixed: Array = cfg.get("fixed", [])
+    for day in base:
+        for ev in base[day]:
+            var key := _key(ev)
+            for f in fixed:
+                if key.ends_with(":" + str(f)):
+                    out[int(day)] = true
+    var outings: Array = Outings.OWNER_WEEKS if mode == "owner" else Outings.TECH_DAYS
+    for d in outings:
+        out[int(d)] = true
+    if mode == "tech":
+        out[Expo.TRIP_DAY] = true
+    var beats: Dictionary = YEAR2.beats.get(mode, {})
+    for id in beats:
+        out[int(beats[id])] = true
+    for e in Mutators.plan:
+        for d in range(int(e.from), int(e.to) + 1):
+            out[d] = true
+    return out
+
+
+# the beats that may move, as groups (a linked vignette follows its job): [{members: [{key, kind, from}]}]
+func _groups(mode: String, base: Dictionary, cfg: Dictionary) -> Array:
+    var movable: Array = []
+    if mode == "tech":
+        for b in cfg.get("books", []):
+            movable.append("book:" + str(b))
+        for v in cfg.get("vignettes", []):
+            movable.append("vig:" + str(v))
+    else:
+        for e in cfg.get("events", []):
+            movable.append("ev:" + str(e))
+    var linked: Dictionary = cfg.get("linked", {})
+    var days: Array = base.keys()
+    days.sort()
+    var out := []
+    for key in movable:
+        for day in days:
+            for ev in base[day]:
+                if _key(ev) != key:
+                    continue
+                var members := [{"key": key, "from": int(day)}]
+                for v in linked:
+                    if str(linked[v]) == key.substr(5):
+                        for d2 in days:
+                            for ev2 in base[d2]:
+                                if _key(ev2) == "vig:" + str(v):
+                                    members.append({"key": "vig:" + str(v), "from": int(d2)})
+                out.append({"members": members})
+    return out
+
+
+func _kind_of(key: String) -> String:
+    return key.split(":")[0]
+
+
+# one day's load: how many playbooks, vignettes and which keys are there after the moves so far
+func _load(mode: String, base: Dictionary, placed: Array, day: int) -> Dictionary:
+    var out := {"books": 0, "vigs": 0, "n": 0, "keys": {}}
+    var moved_away := []
+    for p in placed:
+        if int(p.from) == day:
+            moved_away.append(str(p.key))
+    for ev in base.get(day, []):
+        var key := _key(ev)
+        if moved_away.has(key):
+            continue
+        _count(out, key)
+    for p in placed:
+        if int(p.to) == day:
+            _count(out, str(p.key))
+    return out
+
+
+func _count(load_: Dictionary, key: String) -> void:
+    load_.n += 1
+    load_.keys[key] = true
+    if key.begins_with("book:"):
+        load_.books += 1
+    elif key.begins_with("vig:"):
+        load_.vigs += 1
+
+
+# Where can the beats of a group go? Deterministic for a seed (Difficulty.rng("year2")), by at most `max_shift`
+# days, never onto an outing day, the trip day, the overtime night, the ransomware or install day, a Year 2 beat
+# day, a day inside the mutator plan, a day that already has a playbook (for a playbook) or a vignette (for a vignette).
+func story_shuffle(mode: String, rng: RandomNumberGenerator = null) -> Array:
+    var cfg: Dictionary = YEAR2.shuffle.get(mode, {})
+    if cfg.is_empty():
+        return []
+    var r: RandomNumberGenerator = rng if rng != null else Difficulty.rng("year2")
+    var base := _base(mode)
+    var span := int(YEAR2.shuffle.max_shift)
+    var lo := int(cfg.get("min_day", 3))
+    var hi := Campaign.total_days() - 1
+    var blocked := blocked_days(mode)
+    var placed: Array = []  # the moves made so far
+    var order: Array = _groups(mode, base, cfg)
+    Difficulty.shuffle_with(order, r)  # who gets the free days first changes with the seed
+    for g in order:
+        var deltas: Array = []
+        for d in range(-span, span + 1):
+            if d != 0:
+                deltas.append(d)
+        Difficulty.shuffle_with(deltas, r)
+        deltas.append(0)
+        for d in deltas:
+            if d == 0:
+                break
+            var ok := true
+            var trial: Array = placed.duplicate()
+            for m in g.members:
+                var t := int(m.from) + int(d)
+                var load_ := _load(mode, base, trial, t)
+                var kind := _kind_of(str(m.key))
+                if t < mini(lo, int(m.from)) or t > hi or blocked.has(t):
+                    ok = false
+                elif kind == "book" and int(load_.books) > 0:
+                    ok = false
+                elif kind == "vig" and int(load_.vigs) > 0:
+                    ok = false
+                elif kind == "ev" and (load_.keys.has(str(m.key)) or int(load_.n) >= 4):
+                    ok = false
+                if not ok:
+                    break
+                trial.append({"key": str(m.key), "from": int(m.from), "to": t})
+            if ok:
+                placed = trial
+                break
+    var out := []
+    for p in placed:
+        out.append({"mode": mode, "key": str(p.key), "from": int(p.from), "to": int(p.to)})
+    return out
+
+
+# ---- the Year 2 beats (cards that set flags) ----------------------------------------------------------------------
+func flag(key: String) -> String:
+    var f: Dictionary = Story.flags.get("y2", {})
+    return str(f.get(key, ""))
+
+
+func set_flag(key: String, value: String) -> void:
+    var f: Dictionary = Story.flags.get("y2", {})
+    f[key] = value
+    Story.flags["y2"] = f
+
+
+# Campaign._begin_day
+func begin_day(day: int) -> void:
+    if not active() or Game.title_mode:
+        return
+    if day == 1:
+        Cards.ask(str(TEXT.intro.speaker), intro_text(), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+    var beats: Dictionary = YEAR2.beats.get(Campaign.mode, {})
+    for id in beats:
+        if int(beats[id]) == day:
+            beat(str(id))
+
+
+func beat(id: String) -> void:
+    var row: Dictionary = TEXT.beats.get(Campaign.mode, {}).get(id, {})
+    if row.is_empty():
+        return
+    var options := []
+    for o in row.options:
+        var enabled := true
+        if o.has("need") and Campaign.books_active():
+            enabled = Owner.cash >= int(o.need)
+        options.append({"label": str(o.label), "id": str(o.id), "enabled": enabled})
+    Cards.ask(str(row.speaker), str(row.text), options, func(oid: String) -> void: answer(id, oid))
+
+
+func answer(id: String, oid: String) -> void:
+    var row: Dictionary = TEXT.beats.get(Campaign.mode, {}).get(id, {})
+    for o in row.get("options", []):
+        if str(o.id) != oid:
+            continue
+        set_flag(id, oid)
+        var fx: Dictionary = o.get("fx", {})
+        if not fx.is_empty():
+            Events.apply_fx(fx)
+        Cards.ask(str(row.speaker), str(o.reply), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+# ---- the Year 2 endings -----------------------------------------------------------------------------------------
+func _offer_ok(id: String) -> bool:
+    match id:
+        "head":
+            var need := 60 if str(prev.get("ending", "")) == "lead" else 65
+            return flag("desk") == "run" and Campaign.rep >= need and Social.average() >= 0.0
+        "buyout":
+            return (flag("courted") == "listen" or flag("courted") == "told") and Campaign.rep >= 50
+        "merger":
+            return flag("merger") == "talks" and Campaign.rep >= 55 and Sales.active.size() >= 6 and Owner.cash >= 0
+        "franchise":
+            return flag("franchise") == "pilot" and Campaign.rep >= 60 and Sales.active.size() >= 6 and Owner.oml() >= 2
+    return false
+
+
+func _fill(text: String) -> String:
+    var value := "0"
+    if Campaign.books_active():
+        value = str(int(Owner.valuation() * 11 / 10))
+    return text.replace("${value}", "$" + value).replace("{value}", value)
+
+
+# the offers of the review, with the Year 2 endings the flags unlock slotted in before STAY
+func extra_offers(out: Array) -> Array:
+    if not active():
+        return out
+    var add := []
+    for id in YEAR2.endings.get(Campaign.mode, []):
+        if _offer_ok(str(id)):
+            var row: Dictionary = TEXT.offers.get(str(id), {})
+            add.append({"id": str(id), "label": _fill(str(row.get("label", id))), "desc": _fill(str(row.get("desc", "")))})
+    if add.is_empty():
+        return out
+    var at := out.size()
+    for i in out.size():
+        if str(out[i].id) in ["stay", "left"]:
+            at = i
+            break
+    var merged: Array = out.slice(0, at)
+    merged.append_array(add)
+    merged.append_array(out.slice(at))
+    return merged
+
+
+func ending_text(id: String) -> String:
+    return _fill(str(TEXT.endings.get(id, "")))
+
+
+func is_year2_ending(id: String) -> bool:
+    return TEXT.endings.has(id)
+
+
+# ---- saving ---------------------------------------------------------------------------------------------------
+func to_dict() -> Dictionary:
+    return {"version": VERSION, "moves": moves.duplicate(true), "carried": carried.duplicate(true), "pick": pick, "ban": ban, "prev": prev.duplicate(true)}
+
+
+func from_dict(data: Dictionary) -> void:
+    reset()
+    var saved: Variant = data.get("moves", [])
+    if saved is Array:
+        for m in saved:
+            if m is Dictionary and m.has("key"):
+                moves.append({"mode": str(m.get("mode", "tech")), "key": str(m.key), "from": int(m.get("from", 0)), "to": int(m.get("to", 0))})
+    carried = data.get("carried", {}) if data.get("carried", {}) is Dictionary else {}
+    prev = data.get("prev", {}) if data.get("prev", {}) is Dictionary else {}
+    pick = str(data.get("pick", ""))
+    ban = str(data.get("ban", ""))
+''')
+
 
 write("scripts/day_report.gd", '''extends CanvasLayer
 # The end-of-day report for the campaigns: a dimmed screen with a dark panel: a big grade and the
@@ -8420,6 +9144,8 @@ func _paint() -> void:
     var title := str(
         report.get("title", "DAY %d OF %d COMPLETE" % [int(report.day), int(report.total_days)])
     )
+    if int(report.get("year", 1)) >= 2:
+        title += " - YEAR 2"
     if _tw(title) + 8.0 > pw:
         title = title.replace(" COMPLETE", "")
     _t(title, 4.0, 2.5, WHITE)
@@ -10964,7 +11690,7 @@ func quiet_day(day: int, mode: String) -> bool:
     if mode == "tech":
         if Outings.TECH_DAYS.has(day) or Expo.is_trip_day(day):
             return false
-        for ev in Story.DAYS.get(day, []):
+        for ev in Story.events_on(day):
             if BUSY_KINDS.has(str(ev.get("kind", ""))):
                 return false
             if str(ev.get("kind", "")) == "playbook" and str(ev.get("book", "")) == "email24":
@@ -10973,7 +11699,7 @@ func quiet_day(day: int, mode: String) -> bool:
     if mode == "owner":
         if Outings.OWNER_WEEKS.has(day):
             return false
-        var events: Array = Owner.DAYS.get(day, [])
+        var events: Array = Owner.events_on(day)
         if events.size() > 3:
             return false
         for ev in events:
@@ -12131,6 +12857,11 @@ func reset() -> void:
     Playbook.reset()
 
 
+# the scripted events of a day; Year 2 moves some of them by a day or two (Yeartwo.story_shuffle)
+func events_on(day: int) -> Array:
+    return Yeartwo.events_on("tech", day, DAYS)
+
+
 func begin_day(day: int) -> void:
     _fired = {}
     _followed = false
@@ -12142,7 +12873,7 @@ func begin_day(day: int) -> void:
 func _process(_delta: float) -> void:
     if not Campaign.active or Campaign.mode != "tech" or Game.title_mode or World.time_scale <= 0.0:
         return
-    var events: Array = DAYS.get(Campaign.day, [])
+    var events: Array = events_on(Campaign.day)
     for i in events.size():
         var ev: Dictionary = events[i]
         if not _fired.has(i) and World.clock >= float(ev.at):
@@ -13203,7 +13934,7 @@ func best_client() -> String:
 
 func make_offers() -> Array:
     if Campaign.prop("review", "") == "board":
-        return Owner.offers()
+        return Yeartwo.extra_offers(Owner.offers())
     if Campaign.prop("review", "") == "service":
         return Service.review_offers()
     var out := []
@@ -13221,7 +13952,7 @@ func make_offers() -> Array:
         "id": "stay", "label": "STAY AN MSP TECH",
         "desc": "KEEP YOUR DESK, YOUR PHONES AND YOUR CHAOS." if Campaign.rep >= 45 else "ON NOTICE: PROVE YOURSELF NEXT YEAR.",
     })
-    return out
+    return Yeartwo.extra_offers(out)
 
 
 func choose(index: int) -> void:
@@ -13335,7 +14066,7 @@ func page_lines() -> Array:
             lines.append(["YOUR OPTIONS", BLUE])
         _:
             lines.append(["THE END", BLUE])
-            lines.append([str(EPILOGUES.get(ending, "")), INK])
+            lines.append([str(EPILOGUES.get(ending, Yeartwo.ending_text(ending))), INK])
             if ending == "internal":
                 lines.append(["YOUR NEW DESK IS AT %s." % best_client().to_upper(), INK])
     return lines
@@ -13687,6 +14418,11 @@ func reset() -> void:
     _cool = 40.0
 
 
+# Year 2 raises the cap (the three newer clients start on the books)
+func max_clients() -> int:
+    return Yeartwo.max_clients(MAX_CLIENTS)
+
+
 func is_active(client: int) -> bool:
     return active.has(client)
 
@@ -13767,7 +14503,7 @@ func visit_done() -> bool:
         Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
         return false
     var dealt := -1
-    if active.size() < MAX_CLIENTS and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
+    if active.size() < max_clients() and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
         dealt = sign_client()
         if dealt >= 0:
             last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
@@ -14663,7 +15399,7 @@ func _process(delta: float) -> void:
             _work_queue(slice)
     if not cards:
         return
-    var events: Array = DAYS.get(Campaign.day, []) if Campaign.mode == "owner" else []
+    var events: Array = events_on(Campaign.day) if Campaign.mode == "owner" else []
     for i in events.size():
         var ev: Dictionary = events[i]
         if not _fired.has(i) and World.clock >= float(ev.at):
@@ -14672,6 +15408,11 @@ func _process(delta: float) -> void:
     if flags.get("mentor", false) and not _advised and Campaign.day >= 7 and Campaign.day < Campaign.TOTAL_DAYS and World.clock >= 9.7:
         _advised = true
         advice()
+
+
+# the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
+func events_on(day: int) -> Array:
+    return Yeartwo.events_on("owner", day, DAYS)
 
 
 func _work_queue(seconds: float) -> void:
@@ -15075,7 +15816,7 @@ func _prospect_card() -> void:
     for c in Msp.CLIENTS.size():
         if not Sales.active.has(c):
             pool.append(c)
-    if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+    if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
         return
     var who: int = pool[randi() % pool.size()]
     var card: Dictionary = CARDS.prospect.duplicate(true)
@@ -15099,7 +15840,7 @@ func _inbound_lead() -> void:
     for c in Msp.CLIENTS.size():
         if not Sales.active.has(c):
             pool.append(c)
-    if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+    if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
         return
     pool.sort_custom(func(a: int, b: int) -> bool: return int(Onsite.has_site(a)) > int(Onsite.has_site(b)))
     var lead: int = pool[0]
@@ -16127,6 +16868,8 @@ func _base_offers() -> Array:
 
 
 func _ending_text(ending: String) -> String:
+    if Yeartwo.is_year2_ending(ending):
+        return Yeartwo.ending_text(ending)
     var p := Roles.partner().to_upper()
     match ending:
         "buyout":
@@ -21427,7 +22170,7 @@ func _answer(id: String) -> void:
 func _preview() -> String:
     var names := []
     for d in range(Campaign.day + 1, Campaign.day + 6):
-        for ev in Story.DAYS.get(d, []):
+        for ev in Story.events_on(d):
             var kind := str(ev.get("kind", ""))
             if kind == "playbook" and BOOKS.has(str(ev.book)):
                 names.append(str(BOOKS[str(ev.book)]))
@@ -24217,6 +24960,7 @@ const ROOTS := {
     "Story": ["DAYS", "VIGNETTES"],
     "Events": ["DECK"],
     "Mutators": ["MUTATORS", "STARTS"],
+    "Yeartwo": ["CARRY", "YEAR2", "TEXT"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
     "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "DAYS", "REVIEW"],
@@ -28388,6 +29132,8 @@ func _draw() -> void:
                 if Shift.active():
                     day_line += " NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
                 lines.append(day_line)
+        if Yeartwo.active():
+            lines.append("YEAR 2")
         if Mutators.tag() != "":
             lines.append("* " + Mutators.tag())
         if Nerf.holding():
@@ -29118,7 +29864,7 @@ func choices(for_mode: String) -> Array:
     return out
 
 
-func setup(for_mode: String) -> void:
+func setup(for_mode: String, year2 := false) -> void:
     mode = for_mode
     step = "char"
     ids = choices(mode)
@@ -29129,6 +29875,7 @@ func setup(for_mode: String) -> void:
     _panel = null
     _confirmed = false
     Mutators.pending_start = Mutators.STANDARD
+    Yeartwo.begin_select(for_mode, year2)  # New Game Plus: the MUT chip and +2 build points
     Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
     facing = "right"
     for spr in _sprites:
@@ -29163,6 +29910,8 @@ func summary(with_tier := true) -> String:
         s += " - " + str(PHONES[phone_sel].name)
     if _panel != null and (step == "build" or _confirmed):
         s += " - " + str(_panel.name_text())
+    if Yeartwo.pending:
+        s += " - YEAR 2"
     if with_tier:
         s += " - " + Difficulty.label()
         if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
@@ -29178,6 +29927,19 @@ func change_start(step: int) -> void:
     var i := maxi(0, list.find(Mutators.pending_start))
     Mutators.pending_start = str(list[(i + step + list.size()) % list.size()])
     queue_redraw()
+
+
+# M / Shift+M (or a click on the MUT chip arrows) pick the mutator of a Year 2 run, B switches PICK / BAN
+func change_mut(step: int) -> void:
+    if Yeartwo.pending:
+        Yeartwo.change_mut(mode, step)
+        queue_redraw()
+
+
+func toggle_mut_mode() -> void:
+    if Yeartwo.pending:
+        Yeartwo.toggle_mut_mode()
+        queue_redraw()
 
 
 # Up / Down (or a click on the arrows) change the difficulty; it is remembered in the settings file
@@ -29281,6 +30043,10 @@ func _unhandled_input(event: InputEvent) -> void:
                 change_tier(-1)
             KEY_TAB:
                 change_start(-1 if event.shift_pressed else 1)
+            KEY_M:
+                change_mut(-1 if event.shift_pressed else 1)
+            KEY_B:
+                toggle_mut_mode()
             KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
                 confirm()
             KEY_ESCAPE, KEY_BACKSPACE:
@@ -29366,6 +30132,12 @@ func _click(at: Vector2) -> void:
             change_start(-1)
         "start_up":
             change_start(1)
+        "mut_down":
+            change_mut(-1)
+        "mut_up":
+            change_mut(1)
+        "mut_mode":
+            toggle_mut_mode()
         "seed":
             open_seed()
         "tools":
@@ -29425,6 +30197,8 @@ func _draw() -> void:
     _draw_seed(size, narrow)
     if is_campaign() and step == "char":
         _draw_start(size, narrow)
+        if Yeartwo.pending:
+            _draw_mut(size, narrow)
     if step == "char":
         _draw_chars(size, narrow)
     elif step == "build":
@@ -29434,7 +30208,7 @@ func _draw() -> void:
         _place_sprites(size, narrow)
         _draw_phones(size, narrow)
     _draw_summary(size, narrow)
-    var extra := "T TOOLS" if mode == "free" else "TAB START"
+    var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
     if step == "build":
         if narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
@@ -29530,6 +30304,28 @@ func _draw_start(size: Vector2, narrow: bool) -> void:
     _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
     _rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "start_down", 0])
     _rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "start_up", 0])
+
+
+# Year 2: the mutator chip MUT < AUTO > (M picks, B switches PICK / BAN): right under the level chip when wide, at the left
+# under the heading at 320 wide, centred below the level chip in portrait
+func _draw_mut(size: Vector2, narrow: bool) -> void:
+    var text := Yeartwo.chip_text()
+    var w := float(PixelFont.width("PICK PRINTER APOC.")) + 16.0
+    var pos := Vector2(3.0, 14.0)
+    if narrow:
+        pos = Vector2(3.0, 12.0)
+    elif size.x > 340.0:
+        pos = Vector2(size.x - w - 3.0, 14.0)
+    var r := Rect2(pos, Vector2(w, 9.0))
+    draw_rect(r, PANEL)
+    draw_rect(r, GOLD if Yeartwo.pick != "" else (Color("ff8a80") if Yeartwo.ban != "" else DIM), false, 1.0)
+    _txt("<", r.position + Vector2(3, 2), GOLD)
+    _txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+    var tw := float(PixelFont.width(text))
+    _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+    _rects.append([Rect2(r.position, Vector2(w * 0.5 - 14.0, 9.0)), "mut_down", 0])
+    _rects.append([Rect2(r.position + Vector2(w * 0.5 + 14.0, 0.0), Vector2(w * 0.5 - 14.0, 9.0)), "mut_up", 0])
+    _rects.append([Rect2(r.position + Vector2(w * 0.5 - 14.0, 0.0), Vector2(28.0, 9.0)), "mut_mode", 0])
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
@@ -29926,23 +30722,24 @@ func _menu_key(code: Key, confirm: bool) -> void:
 func _open_menu() -> void:
     _items = []
     if Campaign.has_save("tech"):
-        var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech")
+        var label := "CONTINUE TECH - DAY %d" % Campaign.saved_day("tech") + Yeartwo.saved_tag("tech")
         _items.append({"label": label, "id": "tech_continue", "enabled": true})
         _items.append({"label": "NEW TECH CAMPAIGN", "id": "tech_new", "enabled": true})
     else:
         _items.append({"label": "TECH CAMPAIGN", "id": "tech_new", "enabled": true})
     if Campaign.has_save("owner"):
-        var owner_label := "CONTINUE OWNER - WEEK %d" % Campaign.saved_day("owner")
+        var owner_label := "CONTINUE OWNER - WEEK %d" % Campaign.saved_day("owner") + Yeartwo.saved_tag("owner")
         _items.append({"label": owner_label, "id": "owner_continue", "enabled": true})
         _items.append({"label": "NEW OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
     else:
         _items.append({"label": "OWNER CAMPAIGN", "id": "owner_new", "enabled": true})
     if Campaign.has_save("service"):
-        var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service")
+        var service_label := "CONTINUE SERVICE - DAY %d" % Campaign.saved_day("service") + Yeartwo.saved_tag("service")
         _items.append({"label": service_label, "id": "service_continue", "enabled": true})
         _items.append({"label": "NEW SERVICE CAMPAIGN", "id": "service_new", "enabled": true})
     else:
         _items.append({"label": "SERVICE MANAGER CAMPAIGN", "id": "service_new", "enabled": true})
+    _items.append_array(Yeartwo.menu_items())  # NEW GAME PLUS - <MODE> (YEAR 2) for every finished mode
     _items.append({"label": "FREE PLAY - FILM MODE", "id": "free", "enabled": true})
     _items.append({"label": "CAREER", "id": "career", "enabled": true})
     _sel = 0
@@ -30003,6 +30800,9 @@ func _close_career() -> void:
 func _open_select(id: String) -> void:
     if _select != null:
         return
+    var year2 := id.ends_with("_y2")  # New Game Plus (Yeartwo): the same screen with the MUT chip
+    if year2:
+        id = id.trim_suffix("_y2") + "_new"
     var mode := Campaign.FREE
     if id == "tech_new":
         mode = "tech"
@@ -30011,7 +30811,7 @@ func _open_select(id: String) -> void:
     elif id == "service_new":
         mode = "service"
     _select = CharSelect.new()
-    _select.setup(mode)
+    _select.setup(mode, year2)
     _select.done.connect(_on_select_done.bind(id))
     _select.cancelled.connect(_close_select)
     _front.add_child(_select)
@@ -30020,6 +30820,7 @@ func _open_select(id: String) -> void:
 
 
 func _close_select() -> void:
+    Yeartwo.pending = false
     if _select == null:
         return
     _select.queue_free()
@@ -30069,11 +30870,12 @@ func _start(id: String, summary := "") -> void:
 func _draw_menu() -> void:
     var size := _size()
     var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
+    var pitch := minf(10.0, floorf((size.y - y - 1.0) / maxf(1.0, float(_items.size()))))  # a long menu (New Game Plus entries) packs tighter
     for i in _items.size():
         var item: Dictionary = _items[i]
         var label: String = item.label
         var w := float(PixelFont.width(label)) + 12.0
-        var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * 10.0, w, 9.0)
+        var r := Rect2(floorf((size.x - w) * 0.5), y + float(i) * pitch, w, minf(9.0, pitch))
         item["rect"] = r
         var chosen: bool = i == _sel and item.enabled
         var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)
@@ -31824,6 +32626,9 @@ func ticket_rate() -> float:
 
 func ticket_weights() -> Dictionary:
     var out: Dictionary = hook("ticket_weight", {}).duplicate()
+    var y2: Dictionary = Yeartwo.ticket_weights()  # Year 2: more printer and security tickets, more servers
+    for k in y2:
+        out[k] = float(out.get(k, 1.0)) * float(y2[k])
     if start_window():
         var s: Dictionary = start_row().get("ticket_weight", {})
         for k in s:
@@ -31838,7 +32643,7 @@ func boost(card_id: String) -> float:
 
 
 func sla(secs: float) -> float:
-    return secs * float(hook("sla_mult", 1.0))
+    return secs * float(hook("sla_mult", 1.0)) * Yeartwo.sla_mult()
 
 
 # the ticket kind of the next random ticket: {} = the usual uniform pick (nothing is active, no random number used)
@@ -31886,6 +32691,8 @@ func priority(pri: int, ep: Dictionary) -> int:
     var cap := int(hook("xp_pri", 0))
     if cap > 0 and str(ep.get("os", "")).contains("XP") and pri > cap:
         return cap
+    if pri == 2 and Yeartwo.promote():
+        return 1  # Year 2: a bigger share of P1s
     return pri
 
 
@@ -31974,7 +32781,7 @@ func make_plan(mode: String, tier: String) -> Array:
     if not Campaign.MODES.has(mode):
         return out
     var r := Difficulty.rng("mutators")
-    var range_n: Array = COUNT_BY_TIER.get(tier, COUNT_BY_TIER.normal)
+    var range_n: Array = Yeartwo.counts(tier, COUNT_BY_TIER.get(tier, COUNT_BY_TIER.normal))
     var slots: Array = slots_for(mode).duplicate()
     var n := mini(r.randi_range(int(range_n[0]), int(range_n[1])), slots.size())
     for k in range(slots.size() - 1, 0, -1):
@@ -31984,7 +32791,7 @@ func make_plan(mode: String, tier: String) -> Array:
         slots[j] = tmp
     var starts: Array = slots.slice(0, n)
     starts.sort()
-    var pool := ids_for(mode)
+    var pool := Yeartwo.without_banned(ids_for(mode))
     var deck := pool.duplicate()
     for day in starts:
         if deck.is_empty():
@@ -32012,7 +32819,7 @@ func start(mode: String) -> void:
     if Campaign.MODES.has(mode) and starts_for(mode).has(pending_start):
         start_id = pending_start
     pending_start = STANDARD
-    plan = make_plan(mode, Difficulty.tier)
+    plan = Yeartwo.apply_pick(make_plan(mode, Difficulty.tier), mode)
 
 
 # the starting condition's overrides on the fresh state (after Sales / Owner were reset)
@@ -32612,7 +33419,7 @@ func total_levels(b: Dictionary, path: String, who: String) -> int:
 
 # ---- budget and cost -------------------------------------------------------------------------------------------
 func budget(tier: String) -> int:
-    return int(BUDGET.get(tier, BUDGET.normal))
+    return int(BUDGET.get(tier, BUDGET.normal)) + Yeartwo.build_bonus()  # Year 2: +2 points
 
 
 func quirk_points(b: Dictionary) -> int:

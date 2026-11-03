@@ -2481,6 +2481,216 @@ FAMILY BUSINESS
 Your father-in-law built this company and does not like change. Every card that changes the stack costs $250 more in 'conversations'.
 
 
+# ======================= Yeartwo > CARRY =======================
+# Yeartwo > CARRY > skills > text
+[Yeartwo.CARRY.skills.text]
+SKILLS CARRY OVER ONE LEVEL LOWER, NEVER ABOVE 3.
+
+# Yeartwo > CARRY > powershell > text
+[Yeartwo.CARRY.powershell.text]
+POWERSHELL LESSONS YOU PASSED COUNT AS YOUR LEVEL, UP TO 3.
+
+# Yeartwo > CARRY > rep > text
+[Yeartwo.CARRY.rep.text]
+REPUTATION RESTARTS AT 60 PERCENT OF WHERE YOU ENDED (40 AT LEAST).
+
+# Yeartwo > CARRY > cash > text
+[Yeartwo.CARRY.cash.text]
+ONE PERCENT OF THE COMPANY VALUE BECOMES START CASH, UP TO $5000.
+
+# Yeartwo > CARRY > trust > text
+[Yeartwo.CARRY.trust.text]
+YOUR PARTNER'S TRUST CARRIES OVER (BETWEEN 40 AND 75).
+
+# Yeartwo > CARRY > build > text
+[Yeartwo.CARRY.build.text]
+TWO EXTRA BUILD POINTS.
+
+
+# ======================= Yeartwo > YEAR2 =======================
+# Yeartwo > YEAR2 > sla > text
+[Yeartwo.YEAR2.sla.text]
+SLA CLOCKS RUN 15 PERCENT TIGHTER.
+
+# Yeartwo > YEAR2 > tickets > text
+[Yeartwo.YEAR2.tickets.text]
+MORE PRINTER AND SECURITY TICKETS, AND MORE OF THEM ARE P1.
+
+# Yeartwo > YEAR2 > clients > text
+[Yeartwo.YEAR2.clients.text]
+THREE NEW CLIENTS ARE ON THE BOOKS FROM DAY ONE.
+
+# Yeartwo > YEAR2 > mutators > text
+[Yeartwo.YEAR2.mutators.text]
+ONE TIER MORE MUTATORS.
+
+# Yeartwo > YEAR2 > shuffle > text
+[Yeartwo.YEAR2.shuffle.text]
+THE YEAR'S BIG JOBS MOVE AROUND BY A DAY OR TWO.
+
+
+# ======================= Yeartwo > TEXT =======================
+# Yeartwo > TEXT > intro > speaker
+[Yeartwo.TEXT.intro.speaker]
+YEAR 2
+
+# Yeartwo > TEXT > intro > text
+[Yeartwo.TEXT.intro.text]
+A NEW YEAR AT PIXEL IT PARTNERS. YOU KEEP WHAT YOU LEARNED, THE CLIENTS EXPECT MORE.
+
+# Yeartwo > TEXT > beats > tech > courted > speaker
+[Yeartwo.TEXT.beats.tech.courted.speaker]
+Tony Marsh (Iron Mule Demolition)
+
+# Yeartwo > TEXT > beats > tech > courted > text
+[Yeartwo.TEXT.beats.tech.courted.text]
+Between you and me: if you ever want out of the MSP life, I would pay Pixel a buyout fee and put you on my payroll as the IT director. Nothing to decide today.
+
+# Yeartwo > TEXT > beats > tech > courted > options > 0 > label
+[Yeartwo.TEXT.beats.tech.courted.options.0.label]
+I AM LISTENING
+
+# Yeartwo > TEXT > beats > tech > courted > options > 0 > reply
+[Yeartwo.TEXT.beats.tech.courted.options.0.reply]
+Tony grins and slides over a business card with a hard hat on it.
+
+# Yeartwo > TEXT > beats > tech > courted > options > 1 > label
+[Yeartwo.TEXT.beats.tech.courted.options.1.label]
+TELL MORGAN FIRST
+
+# Yeartwo > TEXT > beats > tech > courted > options > 1 > reply
+[Yeartwo.TEXT.beats.tech.courted.options.1.reply]
+Tony nods. Morgan hears it from you and quietly approves.
+
+# Yeartwo > TEXT > beats > tech > courted > options > 2 > label
+[Yeartwo.TEXT.beats.tech.courted.options.2.label]
+THANKS, NO
+
+# Yeartwo > TEXT > beats > tech > courted > options > 2 > reply
+[Yeartwo.TEXT.beats.tech.courted.options.2.reply]
+Tony shrugs. The offer stays open, he says, like a garage door.
+
+# Yeartwo > TEXT > beats > tech > desk > speaker
+[Yeartwo.TEXT.beats.tech.desk.speaker]
+Morgan (Manager)
+
+# Yeartwo > TEXT > beats > tech > desk > text
+[Yeartwo.TEXT.beats.tech.desk.text]
+I am at the vendor summit for a week. Could you run the morning stand-up and look after the desk schedule while I am gone?
+
+# Yeartwo > TEXT > beats > tech > desk > options > 0 > label
+[Yeartwo.TEXT.beats.tech.desk.options.0.label]
+I WILL RUN THE DESK
+
+# Yeartwo > TEXT > beats > tech > desk > options > 0 > reply
+[Yeartwo.TEXT.beats.tech.desk.options.0.reply]
+Morgan hands over the clipboard and the good pen. The team behaves, mostly.
+
+# Yeartwo > TEXT > beats > tech > desk > options > 1 > label
+[Yeartwo.TEXT.beats.tech.desk.options.1.label]
+MAYBE NEXT TIME
+
+# Yeartwo > TEXT > beats > tech > desk > options > 1 > reply
+[Yeartwo.TEXT.beats.tech.desk.options.1.reply]
+Morgan asks Dan instead and does not mention it again.
+
+# Yeartwo > TEXT > beats > owner > merger > speaker
+[Yeartwo.TEXT.beats.owner.merger.speaker]
+Walt Reiner (Tri-County Tech Group)
+
+# Yeartwo > TEXT > beats > owner > merger > text
+[Yeartwo.TEXT.beats.owner.merger.text]
+I run the biggest shop in three counties and I like how yours is run. Lunch? I would like to talk about putting our names on one door.
+
+# Yeartwo > TEXT > beats > owner > merger > options > 0 > label
+[Yeartwo.TEXT.beats.owner.merger.options.0.label]
+TAKE THE MEETING
+
+# Yeartwo > TEXT > beats > owner > merger > options > 0 > reply
+[Yeartwo.TEXT.beats.owner.merger.options.0.reply]
+Walt orders for both of you and asks for your client list on a napkin.
+
+# Yeartwo > TEXT > beats > owner > merger > options > 1 > label
+[Yeartwo.TEXT.beats.owner.merger.options.1.label]
+NOT INTERESTED
+
+# Yeartwo > TEXT > beats > owner > merger > options > 1 > reply
+[Yeartwo.TEXT.beats.owner.merger.options.1.reply]
+Walt shakes your hand anyway. He has a long memory and a short lunch break.
+
+# Yeartwo > TEXT > beats > owner > franchise > speaker
+[Yeartwo.TEXT.beats.owner.franchise.speaker]
+Pat Okafor (Consultant)
+
+# Yeartwo > TEXT > beats > owner > franchise > text
+[Yeartwo.TEXT.beats.owner.franchise.text]
+Your runbooks are better than most. Two shops in other towns would pay to use your name and your procedures. A pilot costs $1,500 for the binders and the signs.
+
+# Yeartwo > TEXT > beats > owner > franchise > options > 0 > label
+[Yeartwo.TEXT.beats.owner.franchise.options.0.label]
+START A PILOT ($1500)
+
+# Yeartwo > TEXT > beats > owner > franchise > options > 0 > reply
+[Yeartwo.TEXT.beats.owner.franchise.options.0.reply]
+Pat prints thirty binders. Marge frames the first invoice.
+
+# Yeartwo > TEXT > beats > owner > franchise > options > 1 > label
+[Yeartwo.TEXT.beats.owner.franchise.options.1.label]
+MAYBE LATER
+
+# Yeartwo > TEXT > beats > owner > franchise > options > 1 > reply
+[Yeartwo.TEXT.beats.owner.franchise.options.1.reply]
+Pat leaves a folder on your desk. It stays there, glowing.
+
+# Yeartwo > TEXT > offers > head > label
+[Yeartwo.TEXT.offers.head.label]
+BECOME DEPARTMENT HEAD
+
+# Yeartwo > TEXT > offers > head > desc
+[Yeartwo.TEXT.offers.head.desc]
+MORGAN MOVES UP AND THE OWNERS GIVE YOU THE WHOLE SERVICE DEPARTMENT: THE DESK, THE SCHEDULE AND THE BUDGET.
+
+# Yeartwo > TEXT > offers > buyout > label
+[Yeartwo.TEXT.offers.buyout.label]
+LET IRON MULE BUY OUT YOUR CONTRACT
+
+# Yeartwo > TEXT > offers > buyout > desc
+[Yeartwo.TEXT.offers.buyout.desc]
+TONY MARSH PAYS PIXEL A BUYOUT FEE AND MAKES YOU HIS IT DIRECTOR.
+
+# Yeartwo > TEXT > offers > merger > label
+[Yeartwo.TEXT.offers.merger.label]
+MERGE WITH TRI-COUNTY TECH GROUP
+
+# Yeartwo > TEXT > offers > merger > desc
+[Yeartwo.TEXT.offers.merger.desc]
+A BIGGER SHOP, A BIGGER NOC AND BOTH NAMES ON THE DOOR. THEY VALUE YOUR SIDE AT ABOUT ${value}.
+
+# Yeartwo > TEXT > offers > franchise > label
+[Yeartwo.TEXT.offers.franchise.label]
+LICENSE THE PIXEL IT NAME
+
+# Yeartwo > TEXT > offers > franchise > desc
+[Yeartwo.TEXT.offers.franchise.desc]
+TWO SHOPS IN OTHER TOWNS RUN ON YOUR BINDERS AND PAY YOU A FEE. THE BRAND GOES REGIONAL.
+
+# Yeartwo > TEXT > endings > head
+[Yeartwo.TEXT.endings.head]
+YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.
+
+# Yeartwo > TEXT > endings > buyout
+[Yeartwo.TEXT.endings.buyout]
+IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.
+
+# Yeartwo > TEXT > endings > merger
+[Yeartwo.TEXT.endings.merger]
+THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SHOP WITH TWO LOGOS AND ONE VERY LONG ALL-HANDS. YOUR SIDE IS WORTH ABOUT ${value}.
+
+# Yeartwo > TEXT > endings > franchise
+[Yeartwo.TEXT.endings.franchise]
+TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. MARGE ORDERS MORE FRAMES.
+
+
 # ======================= Playbook > BOOKS =======================
 # job: RACK RECOVERY
 [Playbook.BOOKS.rack.title]

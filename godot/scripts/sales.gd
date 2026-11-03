@@ -44,6 +44,11 @@ func reset() -> void:
 	_cool = 40.0
 
 
+# Year 2 raises the cap (the three newer clients start on the books)
+func max_clients() -> int:
+	return Yeartwo.max_clients(MAX_CLIENTS)
+
+
 func is_active(client: int) -> bool:
 	return active.has(client)
 
@@ -124,7 +129,7 @@ func visit_done() -> bool:
 		Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
 		return false
 	var dealt := -1
-	if active.size() < MAX_CLIENTS and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
+	if active.size() < max_clients() and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
 		dealt = sign_client()
 		if dealt >= 0:
 			last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"

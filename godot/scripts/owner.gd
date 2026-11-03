@@ -1354,7 +1354,7 @@ func _process(delta: float) -> void:
 			_work_queue(slice)
 	if not cards:
 		return
-	var events: Array = DAYS.get(Campaign.day, []) if Campaign.mode == "owner" else []
+	var events: Array = events_on(Campaign.day) if Campaign.mode == "owner" else []
 	for i in events.size():
 		var ev: Dictionary = events[i]
 		if not _fired.has(i) and World.clock >= float(ev.at):
@@ -1369,6 +1369,11 @@ func _process(delta: float) -> void:
 	):
 		_advised = true
 		advice()
+
+
+# the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
+func events_on(day: int) -> Array:
+	return Yeartwo.events_on("owner", day, DAYS)
 
 
 func _work_queue(seconds: float) -> void:
@@ -1809,7 +1814,7 @@ func _prospect_card() -> void:
 	for c in Msp.CLIENTS.size():
 		if not Sales.active.has(c):
 			pool.append(c)
-	if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+	if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
 		return
 	var who: int = pool[randi() % pool.size()]
 	var card: Dictionary = CARDS.prospect.duplicate(true)
@@ -1833,7 +1838,7 @@ func _inbound_lead() -> void:
 	for c in Msp.CLIENTS.size():
 		if not Sales.active.has(c):
 			pool.append(c)
-	if pool.is_empty() or Sales.active.size() >= Sales.MAX_CLIENTS:
+	if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
 		return
 	pool.sort_custom(
 		func(a: int, b: int) -> bool: return int(Onsite.has_site(a)) > int(Onsite.has_site(b))
@@ -3396,6 +3401,8 @@ func _base_offers() -> Array:
 
 
 func _ending_text(ending: String) -> String:
+	if Yeartwo.is_year2_ending(ending):
+		return Yeartwo.ending_text(ending)
 	var p := Roles.partner().to_upper()
 	match ending:
 		"buyout":

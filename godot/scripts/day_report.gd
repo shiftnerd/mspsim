@@ -355,6 +355,8 @@ func _paint() -> void:
 	var title := str(
 		report.get("title", "DAY %d OF %d COMPLETE" % [int(report.day), int(report.total_days)])
 	)
+	if int(report.get("year", 1)) >= 2:
+		title += " - YEAR 2"
 	if _tw(title) + 8.0 > pw:
 		title = title.replace(" COMPLETE", "")
 	_t(title, 4.0, 2.5, WHITE)

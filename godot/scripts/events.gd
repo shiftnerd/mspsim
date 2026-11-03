@@ -2299,7 +2299,7 @@ func quiet_day(day: int, mode: String) -> bool:
 	if mode == "tech":
 		if Outings.TECH_DAYS.has(day) or Expo.is_trip_day(day):
 			return false
-		for ev in Story.DAYS.get(day, []):
+		for ev in Story.events_on(day):
 			if BUSY_KINDS.has(str(ev.get("kind", ""))):
 				return false
 			if str(ev.get("kind", "")) == "playbook" and str(ev.get("book", "")) == "email24":
@@ -2308,7 +2308,7 @@ func quiet_day(day: int, mode: String) -> bool:
 	if mode == "owner":
 		if Outings.OWNER_WEEKS.has(day):
 			return false
-		var events: Array = Owner.DAYS.get(day, [])
+		var events: Array = Owner.events_on(day)
 		if events.size() > 3:
 			return false
 		for ev in events:

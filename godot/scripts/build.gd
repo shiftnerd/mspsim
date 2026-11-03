@@ -226,7 +226,7 @@ func total_levels(b: Dictionary, path: String, who: String) -> int:
 
 # ---- budget and cost -------------------------------------------------------------------------------------------
 func budget(tier: String) -> int:
-	return int(BUDGET.get(tier, BUDGET.normal))
+	return int(BUDGET.get(tier, BUDGET.normal)) + Yeartwo.build_bonus()  # Year 2: +2 points
 
 
 func quirk_points(b: Dictionary) -> int:

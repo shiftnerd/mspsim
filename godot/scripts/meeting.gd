@@ -165,7 +165,7 @@ func _answer(id: String) -> void:
 func _preview() -> String:
 	var names := []
 	for d in range(Campaign.day + 1, Campaign.day + 6):
-		for ev in Story.DAYS.get(d, []):
+		for ev in Story.events_on(d):
 			var kind := str(ev.get("kind", ""))
 			if kind == "playbook" and BOOKS.has(str(ev.book)):
 				names.append(str(BOOKS[str(ev.book)]))

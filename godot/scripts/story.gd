@@ -1253,6 +1253,11 @@ func reset() -> void:
 	Playbook.reset()
 
 
+# the scripted events of a day; Year 2 moves some of them by a day or two (Yeartwo.story_shuffle)
+func events_on(day: int) -> Array:
+	return Yeartwo.events_on("tech", day, DAYS)
+
+
 func begin_day(day: int) -> void:
 	_fired = {}
 	_followed = false
@@ -1264,7 +1269,7 @@ func begin_day(day: int) -> void:
 func _process(_delta: float) -> void:
 	if not Campaign.active or Campaign.mode != "tech" or Game.title_mode or World.time_scale <= 0.0:
 		return
-	var events: Array = DAYS.get(Campaign.day, [])
+	var events: Array = events_on(Campaign.day)
 	for i in events.size():
 		var ev: Dictionary = events[i]
 		if not _fired.has(i) and World.clock >= float(ev.at):

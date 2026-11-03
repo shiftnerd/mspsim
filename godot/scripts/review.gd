@@ -140,7 +140,7 @@ func best_client() -> String:
 
 func make_offers() -> Array:
 	if Campaign.prop("review", "") == "board":
-		return Owner.offers()
+		return Yeartwo.extra_offers(Owner.offers())
 	if Campaign.prop("review", "") == "service":
 		return Service.review_offers()
 	var out := []
@@ -186,7 +186,7 @@ func make_offers() -> Array:
 			}
 		)
 	)
-	return out
+	return Yeartwo.extra_offers(out)
 
 
 func choose(index: int) -> void:
@@ -352,7 +352,7 @@ func page_lines() -> Array:
 			lines.append(["YOUR OPTIONS", BLUE])
 		_:
 			lines.append(["THE END", BLUE])
-			lines.append([str(EPILOGUES.get(ending, "")), INK])
+			lines.append([str(EPILOGUES.get(ending, Yeartwo.ending_text(ending))), INK])
 			if ending == "internal":
 				lines.append(["YOUR NEW DESK IS AT %s." % best_client().to_upper(), INK])
 	return lines

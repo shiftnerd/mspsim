@@ -20,7 +20,7 @@ const MODES := {"tech": "TECH CAMPAIGN", "owner": "OWNER CAMPAIGN", "service": "
 # row here plus its content tables; "selectable" stays false until its slice is playable. See docs/campaign-paths.md 8.1.
 const MODE_DEFS := {
 	"tech": {
-		"label": "TECH CAMPAIGN", "selectable": true,
+		"label": "TECH CAMPAIGN", "selectable": true, "year2": true,
 		"crew": false, "books": false, "cards": false, "books_lite": false,
 		"day_len": 600.0, "total_days": 20, "unit": "DAY",
 		"hud": "day_rep", "report": "day", "review": "yearly", "review_heading": "YEARLY REVIEW", "review_pages": 2,
@@ -29,7 +29,7 @@ const MODE_DEFS := {
 		"ending_final": "YEAR COMPLETE. YOUR YEARLY REVIEW IS NEXT.",
 	},
 	"owner": {
-		"label": "OWNER CAMPAIGN", "selectable": true,
+		"label": "OWNER CAMPAIGN", "selectable": true, "year2": true,
 		"crew": true, "books": true, "cards": true, "books_lite": false,
 		"day_len": 240.0, "total_days": 20, "unit": "WEEK",
 		"hud": "week_cash", "report": "pnl", "review": "board", "review_heading": "BOARD REVIEW", "review_pages": 3,
@@ -68,6 +68,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
+var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -218,6 +219,8 @@ func new_game(for_mode: String) -> void:
 	cash = 0
 	history = []
 	_awaiting = false
+	Yeartwo.reset()
+	year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
 	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
 	build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
 	Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
@@ -243,6 +246,7 @@ func new_game(for_mode: String) -> void:
 	Mutators.start(for_mode)
 	Mutators.apply_start()
 	Build.apply_start()
+	Yeartwo.begin_run(for_mode)  # Year 2: the carry-over, the three newer clients, the story shuffle
 	if for_mode == "service":
 		Service.begin_run()
 	World.day_len = day_len_for(for_mode)
@@ -266,6 +270,7 @@ func continue_game(for_mode: String) -> bool:
 	rep = int(cfg.get_value("campaign", "rep", START_REP))
 	scars = int(cfg.get_value("campaign", "scars", 0))
 	cash = int(cfg.get_value("campaign", "cash", 0))
+	year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
 	history = cfg.get_value("campaign", "history", [])
 	var saved_char := str(cfg.get_value("campaign", "character", "office_adult"))
 	PLAYER.current_character = saved_char if saved_char in PLAYER.CHARACTERS else "office_adult"
@@ -299,6 +304,7 @@ func continue_game(for_mode: String) -> bool:
 	Events.from_dict(cfg.get_value("campaign", "events", {}))
 	Service.from_dict(cfg.get_value("campaign", "service", {}))
 	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
+	Yeartwo.from_dict(cfg.get_value("campaign", "yeartwo", {}))
 	Lync.reset()
 	World.day_len = day_len_for(for_mode)
 	Story.flags = cfg.get_value("campaign", "story", {})
@@ -319,6 +325,7 @@ func save() -> void:
 	cfg.set_value("campaign", "rep", rep)
 	cfg.set_value("campaign", "scars", scars)
 	cfg.set_value("campaign", "cash", cash)
+	cfg.set_value("campaign", "year", year)
 	cfg.set_value("campaign", "history", history)
 	cfg.set_value("campaign", "character", PLAYER.current_character)
 	cfg.set_value("campaign", "player_as", player_as)
@@ -341,6 +348,7 @@ func save() -> void:
 	cfg.set_value("campaign", "events", Events.to_dict())
 	cfg.set_value("campaign", "service", Service.to_dict())
 	cfg.set_value("campaign", "mutators", Mutators.to_dict())
+	cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
 	cfg.save(save_path(mode))
 
@@ -351,6 +359,7 @@ func finish_campaign(ending: String) -> void:
 	var meta := ConfigFile.new()
 	meta.load(save_prefix + "meta.cfg")
 	meta.set_value(mode, "ending", ending)
+	Yeartwo.record(meta, mode, ending)  # the unlock for New Game Plus: ending, reputation, value, levels, tier
 	meta.save(save_prefix + "meta.cfg")
 	if has_save(mode):
 		DirAccess.remove_absolute(save_path(mode))
@@ -363,6 +372,7 @@ func quit_to_title() -> void:
 	mode = ""
 	player_as = ""
 	build = {}
+	year = 1
 	World.apply_roster()
 	Msp.enabled = true
 	World.time_scale = 1.0
@@ -389,6 +399,7 @@ func _begin_day() -> void:
 		Shift.begin_day(day)
 	Events.begin_day(day)
 	Mutators.begin_day(day)
+	Yeartwo.begin_day(day)
 	day_started.emit(day)
 
 
@@ -414,6 +425,7 @@ func make_report() -> Dictionary:
 	var r: Dictionary = Expo.adjust_report(_make_report())
 	if Mutators.tag() != "":
 		r["mutator"] = Mutators.tag()
+	r["year"] = year
 	return r
 
 
