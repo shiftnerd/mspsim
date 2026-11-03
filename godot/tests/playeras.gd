@@ -13,6 +13,25 @@ func _check(ok: bool, what: String) -> void:
 	print(("ok   " if ok else "FAIL ") + what)
 
 
+# a randomly drawn event card owns the keyboard and blocks an outing from starting: dismiss any first
+func _dismiss_cards() -> void:
+	var cards := root.get_node("Cards")
+	var guard := 0
+	while cards.is_open and guard < 20:
+		cards.pick(cards.options.size() - 1)
+		guard += 1
+
+
+func _begin(outings: Node, id: String) -> void:
+	_dismiss_cards()
+	outings.start(id)
+
+
+func _enter(outings: Node) -> void:
+	_dismiss_cards()
+	outings.press(KEY_ENTER)
+
+
 func _initialize() -> void:
 	change_scene_to_file("res://scenes/main_floor.tscn")
 
@@ -164,18 +183,18 @@ func _run() -> void:
 	c.new_game("free")
 	outings.enabled = true
 	outings.use_rooms = false
-	outings.start("bowling")
-	outings.press(KEY_ENTER)
+	_begin(outings, "bowling")
+	_enter(outings)
 	_check(not outings.g.totals.has("Dan") and outings.g.totals.has("Alan"), "bowling: no Dan on the scoreboard")
 	_check(outings.bowlers() == ["Alan", "Garrison"], "bowlers = the roster that bowls")
 	outings.is_open = false
-	outings.start("dinner")
-	outings.press(KEY_ENTER)
+	_begin(outings, "dinner")
+	_enter(outings)
 	var total: int = outings.dinner_talk(0)
 	_check(total >= 0 and total <= 6 and outings.diners() == ["Alan", "Garrison"], "dinner: two faces at the table")  # 2 points a face plus a mood point
 	outings.is_open = false
-	outings.start("escape")
-	outings.press(KEY_ENTER)
+	_begin(outings, "escape")
+	_enter(outings)
 	outings.escape_hint()
 	_check(outings.g.has("code"), "escape: hints work without Dan")
 	outings.is_open = false
