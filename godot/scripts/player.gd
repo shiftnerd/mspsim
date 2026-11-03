@@ -251,7 +251,8 @@ func _ringing_phone() -> Node:
 		return null
 	for zone in get_tree().get_nodes_in_group("phones"):
 		var fx: Node = zone.get_node(zone.target)
-		var dx: float = zone.global_position.x - seat.global_position.x
+		var home: float = seat.global_position.x - (_roll.off if _roll.seat == seat else 0.0)  # a rolled chair keeps its desk phone in reach
+		var dx: float = zone.global_position.x - home
 		var near := dx > 20.0 and dx < 70.0  # a desk phone sits to the right of its own seat
 		if fx.ringing and not fx.busy and near:
 			return zone

@@ -84,6 +84,14 @@ func _init() -> void:
 	await _wait(120)
 	_check(absf(roll.vel) < 0.5, "friction stops it")
 
+	# a rolled chair still reaches its own desk phone: reach is measured from the chair's desk spot
+	var own_phone: Node = null
+	for zone in get_nodes_in_group("phones"):
+		var pdx: float = zone.global_position.x - (seat.global_position.x - roll.off)
+		if pdx > 20.0 and pdx < 70.0:
+			own_phone = zone
+	_check(own_phone != null, "your desk phone is in reach of the desk spot, not the rolled seat (off %.1f)" % roll.off)
+
 	# the walls and props: it never leaves [lo, hi]
 	_check(roll.lo <= -20.0 and roll.lo >= -80.0, "there is room to back away from the desk (lo %.1f)" % roll.lo)
 	_check(roll.hi <= 8.0, "the chair cannot be driven through its own desk (hi %.1f)" % roll.hi)
