@@ -5509,28 +5509,23 @@ func _input(event: InputEvent) -> void:
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
         scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
-    elif event is InputEventKey and event.pressed and not event.echo:
+    elif Controls.pressed(event):
         Sfx.play("ui_tick")
-        if app == "dispatch" and _dispatch_key(event):
+        var dir := Controls.nav(event, false)
+        if _app_key(event, dir):
             _canvas.queue_redraw()
             get_viewport().set_input_as_handled()
             return
-        if app == "knowledge" and _knowledge_key(event):
-            _canvas.queue_redraw()
-            get_viewport().set_input_as_handled()
-            return
-        match event.keycode:
-            KEY_ESCAPE:
-                escape()
-            KEY_UP:
-                move(-1)
-            KEY_DOWN:
-                move(1)
-            KEY_ENTER, KEY_KP_ENTER:
-                enter()
-            _:
-                if app == "crm":
-                    Crm.key(self, event.keycode)
+        if Controls.back(event, false):
+            escape()
+        elif dir == "up":
+            move(-1)
+        elif dir == "down":
+            move(1)
+        elif Controls.confirm(event, false, false):
+            enter()
+        elif app == "crm" and event is InputEventKey:
+            Crm.key(self, event.keycode)
     else:
         return
     get_viewport().set_input_as_handled()
@@ -6866,6 +6861,20 @@ func _paint_dispatch() -> void:
     dispatch.paint(self, body)
 
 
+# the dispatch board and the knowledge base take keys by name; a pad press goes in as the arrow or "enter" it stands for
+func _app_key(event: InputEvent, dir: String) -> bool:
+    if app != "dispatch" and app != "knowledge":
+        return false
+    if event is InputEventKey:
+        return _dispatch_key(event) if app == "dispatch" else _knowledge_key(event)
+    var pad := dir
+    if pad == "" and Controls.confirm(event):
+        pad = "enter"
+    if pad == "":
+        return false
+    return dispatch.key(pad) if app == "dispatch" else Service.kb.key(pad)
+
+
 func _dispatch_key(event: InputEventKey) -> bool:
     var names := {
         KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
@@ -7440,7 +7449,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if not is_open and event is InputEventKey and event.pressed and not event.echo:
+    if not is_open and Controls.pressed(event):
         if Controls.matches(event, "phone"):
             open()
             get_viewport().set_input_as_handled()
@@ -7455,25 +7464,25 @@ func _input(event: InputEvent) -> void:
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         _mouse = event.position
         click(_mouse)
-    elif event is InputEventKey and event.pressed and not event.echo:
-        match event.keycode:
-            KEY_ESCAPE:
-                back()
-            KEY_P:
-                close()
-            KEY_UP:
-                move(-1)
-            KEY_DOWN:
-                move(1)
-            KEY_LEFT, KEY_RIGHT:
-                if app == "choose":
-                    activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
-                elif app == "home":
-                    home_move(1 if event.keycode == KEY_RIGHT else -1)
-                elif app == "settings":
-                    activate("ring")
-            KEY_ENTER, KEY_KP_ENTER:
-                enter()
+    elif Controls.pressed(event):
+        var dir := Controls.nav(event, false)
+        if Controls.back(event, false):
+            back()
+        elif Controls.matches(event, "phone"):
+            close()
+        elif dir == "up":
+            move(-1)
+        elif dir == "down":
+            move(1)
+        elif dir == "left" or dir == "right":
+            if app == "choose":
+                activate("os:" + ("android" if dir == "right" else "ios"))
+            elif app == "home":
+                home_move(1 if dir == "right" else -1)
+            elif app == "settings":
+                activate("ring")
+        elif Controls.confirm(event, false, false):
+            enter()
     else:
         return
     get_viewport().set_input_as_handled()
@@ -9403,8 +9412,8 @@ func _input(event: InputEvent) -> void:
         _mouse = event.position
         if _button.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 600:
             finish()
-    elif event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE] and Time.get_ticks_msec() - _opened >= 600:
+    elif Controls.pressed(event):
+        if Controls.confirm(event, false) and Time.get_ticks_msec() - _opened >= 600:
             finish()
     else:
         return
@@ -14543,13 +14552,14 @@ func _input(event: InputEvent) -> void:
                     sel = int(_hits[i].id)
                     choose(sel)
                 break
-    elif event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+    elif Controls.pressed(event):
+        var dir := Controls.nav(event, false)
+        if Controls.confirm(event, false):
             advance()
-        elif event.keycode == KEY_UP and page == _opt_page():
+        elif dir == "up" and page == _opt_page():
             sel = maxi(0, sel - 1)
             _canvas.queue_redraw()
-        elif event.keycode == KEY_DOWN and page == _opt_page():
+        elif dir == "down" and page == _opt_page():
             sel = mini(offers.size() - 1, sel + 1)
             _canvas.queue_redraw()
     else:
@@ -14858,18 +14868,19 @@ func _input(event: InputEvent) -> void:
             if h.r.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 450:
                 pick(int(h.i))
                 break
-    elif event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_UP:
+    elif Controls.pressed(event):
+        var dir := Controls.nav(event, false)
+        if dir == "up":
             _move(-1)
-        elif event.keycode == KEY_DOWN:
+        elif dir == "down":
             _move(1)
-        elif event.keycode == KEY_ESCAPE:
+        elif Controls.back(event, false):
             _pick_leave()
         elif Time.get_ticks_msec() - _opened < 450:
             pass  # too soon: the card just appeared
-        elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+        elif Controls.confirm(event, false, false):
             pick(sel)
-        elif event.keycode >= KEY_1 and event.keycode <= KEY_4:
+        elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
             pick(event.keycode - KEY_1)
     else:
         return
@@ -22112,6 +22123,7 @@ const ROOM_INTRO := {
     "WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
+const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 # karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
 # HARD scale it by Difficulty karaoke.gap); rhythm = gap multipliers cycled over the notes; pattern =
@@ -22827,14 +22839,40 @@ func tick(dt: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-    if not is_open or not (event is InputEventKey) or not event.pressed or event.echo:
+    if not is_open or not Controls.pressed(event):
+        return
+    var key := _event_key(event)
+    if key == KEY_NONE:
         return
     if Cards.is_open:
         return  # a card (song, budget) has the keys
-    if room_mode() and phase == "play" and not _room_wants(event.keycode):
+    if room_mode() and phase == "play" and not _room_wants(key):
         return  # in the room you keep walking around
-    press(event.keycode)
+    press(key)
     get_viewport().set_input_as_handled()
+
+
+# the key code the game logic works on: a key is itself, a pad button or action is the key it stands for
+# (D-pad or stick = the arrows, A = Enter, X = E, B = Esc; in the chair race A and B are the two pushes, Z and X)
+func _event_key(event: InputEvent) -> int:
+    if event is InputEventKey:
+        return event.keycode
+    var racing: bool = game == "chair" and phase == "play"
+    var dir := Controls.nav(event, false)
+    var key := KEY_NONE
+    if racing and Controls.matches(event, "push_a"):
+        key = KEY_Z
+    elif racing and Controls.matches(event, "push_b"):
+        key = KEY_X
+    elif dir != "":
+        key = PAD_ARROWS[dir]
+    elif Controls.back(event):
+        key = KEY_ESCAPE
+    elif Controls.matches(event, "interact"):
+        key = KEY_E
+    elif Controls.confirm(event):
+        key = KEY_ENTER
+    return key
 
 
 func press(key: int) -> void:
@@ -38138,31 +38176,29 @@ func reset() -> void:
 
 # ---- input
 func _input(event: InputEvent) -> void:
-    if not is_open or not (event is InputEventKey and event.pressed and not event.echo):
+    if not is_open or not Controls.pressed(event):
         return
-    match event.keycode:
-        KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E:
-            press("confirm")
-        KEY_LEFT:
-            press("left")
-        KEY_RIGHT:
-            press("right")
-        KEY_UP:
-            press("up")
-        KEY_DOWN:
-            press("down")
-        KEY_A:
-            press("a")
-        KEY_D:
-            press("d")
-        KEY_1, KEY_2, KEY_3:
-            press(str(event.keycode - KEY_0))
-        KEY_P:
-            press("pray")
-        KEY_ESCAPE:
-            press("escape")
-        _:
-            return
+    var dir := Controls.nav(event, false)
+    if dir != "":
+        press(dir)
+    elif Controls.confirm(event):
+        press("confirm")
+    elif Controls.back(event, false):
+        press("escape")
+    elif event is InputEventKey:
+        match event.keycode:
+            KEY_A:
+                press("a")
+            KEY_D:
+                press("d")
+            KEY_1, KEY_2, KEY_3:
+                press(str(event.keycode - KEY_0))
+            KEY_P:
+                press("pray")
+            _:
+                return
+    else:
+        return
     get_viewport().set_input_as_handled()
 
 
@@ -39084,7 +39120,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _input(event: InputEvent) -> void:
     if not is_open:
         return
-    if event is InputEventKey and event.pressed and not event.echo:
+    if Controls.pressed(event):
         _key(event)
     elif event is InputEventMouseMotion:
         _hover(event.position)
@@ -39093,26 +39129,48 @@ func _input(event: InputEvent) -> void:
     get_viewport().set_input_as_handled()
 
 
-func _key(event: InputEventKey) -> void:
-    if event.keycode == KEY_F9:
+func _key(event: InputEvent) -> void:
+    if event is InputEventKey and event.keycode == KEY_F9:
         Game.cycle_format()
         return
     if mode == "seed":
-        _seed_key(event)
+        if event is InputEventKey:
+            _seed_key(event)
+        else:
+            _seed_pad(event)
         return
-    match event.keycode:
-        KEY_UP, KEY_W:
-            move_row(-1)
-        KEY_DOWN, KEY_S:
-            move_row(1)
-        KEY_LEFT, KEY_A:
-            change(-1)
-        KEY_RIGHT, KEY_D:
-            change(1)
-        KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
-            activate()
-        KEY_ESCAPE, KEY_BACKSPACE:
-            close(false)
+    var dir := Controls.nav(event)
+    if dir == "up":
+        move_row(-1)
+    elif dir == "down":
+        move_row(1)
+    elif dir == "left":
+        change(-1)
+    elif dir == "right":
+        change(1)
+    elif Controls.confirm(event):
+        activate()
+    elif Controls.back(event):
+        close(false)
+
+
+# the seed entry from a pad: Up / Down move the focus, A presses the focused button, B closes (typing is keyboard only)
+func _seed_pad(event: InputEvent) -> void:
+    var dir := Controls.nav(event)
+    if dir == "down":
+        seed_focus = (seed_focus + 1) % 3
+    elif dir == "up":
+        seed_focus = (seed_focus + 2) % 3
+    elif dir == "left" and seed_focus > 0:
+        seed_focus = 1
+    elif dir == "right" and seed_focus > 0:
+        seed_focus = 2
+    elif Controls.confirm(event):
+        _seed_act(seed_focus)
+    elif Controls.back(event):
+        close(false)
+        return
+    _canvas.queue_redraw()
 
 
 func _seed_key(event: InputEventKey) -> void:
@@ -39569,37 +39627,43 @@ func back() -> void:
 func _unhandled_input(event: InputEvent) -> void:
     if Engine.get_process_frames() == _born or Toolbox.is_open:
         return
-    if event is InputEventKey and event.pressed and not event.echo:
-        if step == "build" and _build_key(event.keycode):
+    if Controls.pressed(event):
+        var dir := Controls.nav(event)
+        if step == "build" and _build_key(event, dir):
             get_viewport().set_input_as_handled()
             return
-        match event.keycode:
-            KEY_X:
-                open_seed()
-            KEY_T:
-                open_tools()
-            KEY_F9:
-                Game.cycle_format()
-            KEY_LEFT, KEY_A:
-                move(-1)
-            KEY_RIGHT, KEY_D:
-                move(1)
-            KEY_UP, KEY_W:
-                change_tier(1)
-            KEY_DOWN, KEY_S:
-                change_tier(-1)
-            KEY_TAB:
-                change_start(-1 if event.shift_pressed else 1)
-            KEY_M:
-                change_mut(-1 if event.shift_pressed else 1)
-            KEY_B:
-                toggle_mut_mode()
-            KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
-                confirm()
-            KEY_ESCAPE, KEY_BACKSPACE:
-                back()
-            _:
-                return
+        if dir == "left":
+            move(-1)
+        elif dir == "right":
+            move(1)
+        elif dir == "up":
+            change_tier(1)
+        elif dir == "down":
+            change_tier(-1)
+        elif Controls.confirm(event):
+            confirm()
+        elif Controls.back(event):
+            back()
+        elif Controls.matches(event, "pick_prev"):
+            change_start(-1)
+        elif Controls.matches(event, "pick_next"):
+            change_start(1)
+        elif event is InputEventKey:
+            match event.keycode:
+                KEY_X:
+                    open_seed()
+                KEY_T:
+                    open_tools()
+                KEY_F9:
+                    Game.cycle_format()
+                KEY_M:
+                    change_mut(-1 if event.shift_pressed else 1)
+                KEY_B:
+                    toggle_mut_mode()
+                _:
+                    return
+        else:
+            return
     elif event is InputEventMouseMotion:
         _hover(event.position)
         return
@@ -39613,20 +39677,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # the build step's own keys: Up / Down rows, Left / Right change, P preset (the rest is shared with the other steps)
-func _build_key(code: Key) -> bool:
-    match code:
-        KEY_UP, KEY_W:
-            _panel.move_row(-1)
-        KEY_DOWN, KEY_S:
-            _panel.move_row(1)
-        KEY_LEFT, KEY_A:
-            _panel.change(-1)
-        KEY_RIGHT, KEY_D:
-            _panel.change(1)
-        KEY_P:
-            _panel.cycle_preset(1)
-        _:
-            return false
+func _build_key(event: InputEvent, dir: String) -> bool:
+    if dir == "up":
+        _panel.move_row(-1)
+    elif dir == "down":
+        _panel.move_row(1)
+    elif dir == "left":
+        _panel.change(-1)
+    elif dir == "right":
+        _panel.change(1)
+    elif event is InputEventKey and event.keycode == KEY_P:
+        _panel.cycle_preset(1)
+    else:
+        return false
     queue_redraw()
     return true
 
@@ -40251,13 +40314,13 @@ func _unhandled_input(event: InputEvent) -> void:
     if _started or _select != null or _career != null:
         return
     var go := false
-    if event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_F9:
+    if Controls.pressed(event):
+        if event is InputEventKey and event.keycode == KEY_F9:
             Game.cycle_format()
             _menu.queue_redraw()
-        go = event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]
+        go = Controls.confirm(event)
         if _menu_open:
-            _menu_key(event.keycode, go)
+            _menu_key(event, go)
             return
     elif event is InputEventMouseMotion and _menu_open:
         _hover(event.position)
@@ -40274,14 +40337,15 @@ func _unhandled_input(event: InputEvent) -> void:
         _open_menu()
 
 
-func _menu_key(code: Key, confirm: bool) -> void:
-    if code == KEY_UP:
+func _menu_key(event: InputEvent, confirm: bool) -> void:
+    var dir := Controls.nav(event, false)
+    if dir == "up":
         _move(-1)
-    elif code == KEY_DOWN:
+    elif dir == "down":
         _move(1)
     elif confirm:
         _choose(_sel)
-    elif code == KEY_ESCAPE:
+    elif Controls.back(event, false):
         _menu_open = false
         _menu.visible = false
 
@@ -44186,18 +44250,16 @@ func close() -> void:
 func _input(event: InputEvent) -> void:
     if Engine.get_process_frames() == _born:
         return
-    if event is InputEventKey and event.pressed and not event.echo:
-        match event.keycode:
-            KEY_F9:
-                Game.cycle_format()
-            KEY_LEFT, KEY_A:
-                go(-1)
-            KEY_RIGHT, KEY_D:
-                go(1)
-            KEY_ESCAPE, KEY_BACKSPACE:
-                close()
-            _:
-                pass
+    if Controls.pressed(event):
+        var dir := Controls.nav(event)
+        if event is InputEventKey and event.keycode == KEY_F9:
+            Game.cycle_format()
+        elif dir == "left":
+            go(-1)
+        elif dir == "right":
+            go(1)
+        elif Controls.back(event):
+            close()
     elif event is InputEventMouseMotion:
         var h := _hit(event.position)
         if h != _hover:
@@ -48374,13 +48436,15 @@ if shutil.which("gdformat"):
     print("formatted scripts with gdformat")
 # Godot only re-imports changed PNGs in the editor or an import pass; a stale import makes new sheet frames blank
 write("scripts/controls.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns
 # Autoload: the one place that says which key (and which gamepad button) does what (roadmap R14, portability).
 # Every control is a named InputMap action registered here at startup; scripts ask for the action instead of a raw
 # key, so a controller or a touch layer can be added later without touching the game scripts.
 #   Controls.matches(event, "push_a")   true when a key event is one of the action's keys, or the action itself
 #                                       (tests send plain key events, a gamepad sends the action)
 #   Controls.confirm(event) / back(event)  Enter, Space or E / Esc or Backspace, or the ui_accept / ui_cancel actions
+#   Controls.pressed(event)             a fresh key, pad button, action or stick push (guards the menu handlers)
+#   Controls.nav(event) / step(...)     "up" "down" "left" "right" from arrows, W A S D, the D-pad or the stick
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
@@ -48410,6 +48474,10 @@ const ACTIONS := {
     "mute": [[KEY_M], [], []],
     "pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
 }
+
+# menu directions by key: the arrows always, the letters when a screen asks for them
+const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right"}
+const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 
 # the help page of the pause menu: pages of [what, keys]
 const HELP := [
@@ -48455,12 +48523,24 @@ const HELP := [
 ]
 
 
+var _stick := {}
+var _stick_event: InputEvent = null
+var _stick_frame := -1
+var _stick_result := false
+
+
 func _ready() -> void:
     ensure()
 
 
 # register every action that is missing (the player and the tests may also call this; it is safe to repeat)
 func ensure() -> void:
+    # the menu actions need the pad's A and B (Godot's own defaults leave them out in some builds)
+    for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+        if InputMap.has_action(pair[0]) and not _has_button(pair[0], pair[1]):
+            var btn := InputEventJoypadButton.new()
+            btn.button_index = pair[1]
+            InputMap.action_add_event(pair[0], btn)
     for action in ACTIONS:
         if InputMap.has_action(action):
             continue
@@ -48481,6 +48561,13 @@ func ensure() -> void:
             InputMap.action_add_event(action, motion)
 
 
+func _has_button(action: String, button: int) -> bool:
+    for ev in InputMap.action_get_events(action):
+        if ev is InputEventJoypadButton and ev.button_index == button:
+            return true
+    return false
+
+
 # is this event the action? Plain key events (from tests, or keys with no physical code) are compared by key code
 func matches(event: InputEvent, action: String) -> bool:
     if not ACTIONS.has(action):
@@ -48496,16 +48583,82 @@ func matches(event: InputEvent, action: String) -> bool:
     return false
 
 
-func confirm(event: InputEvent) -> bool:
+# Enter, Space or E (a screen that never took Space or E passes false), or the ui_accept action from a pad
+func confirm(event: InputEvent, with_e: bool = true, with_space: bool = true) -> bool:
     if event is InputEventKey:
-        return event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E] or event.is_action("ui_accept")
+        var codes: Array = [KEY_ENTER, KEY_KP_ENTER]
+        if with_space:
+            codes.append(KEY_SPACE)
+        if with_e:
+            codes.append(KEY_E)
+        return event.keycode in codes
     return event.is_action("ui_accept")
 
 
-func back(event: InputEvent) -> bool:
+# Esc or Backspace (a screen that only took Esc passes false), or the ui_cancel action from a pad
+func back(event: InputEvent, with_backspace: bool = true) -> bool:
     if event is InputEventKey:
-        return event.keycode in [KEY_ESCAPE, KEY_BACKSPACE] or event.is_action("ui_cancel")
+        return event.keycode == KEY_ESCAPE or (with_backspace and event.keycode == KEY_BACKSPACE)
     return event.is_action("ui_cancel")
+
+
+# a fresh press: a key (not a repeat), a pad button, an action, or a stick pushed past half way (once per push).
+# Screens guard their handlers with this instead of `event is InputEventKey and event.pressed and not event.echo`
+func pressed(event: InputEvent) -> bool:
+    if event is InputEventKey:
+        return event.pressed and not event.echo
+    if event is InputEventJoypadButton or event is InputEventAction:
+        return event.pressed
+    if event is InputEventJoypadMotion:
+        return _stick_push(event)
+    return false
+
+
+# "up", "down", "left" or "right" for a fresh press of an arrow (and W A S D when letters is true), a D-pad button or
+# a stick push (the ui_up / ui_down / ui_left / ui_right actions); "" for anything else
+func nav(event: InputEvent, letters: bool = true) -> String:
+    if not pressed(event):
+        return ""
+    if event is InputEventKey:
+        if NAV_ARROWS.has(event.keycode):
+            return NAV_ARROWS[event.keycode]
+        return NAV_LETTERS.get(event.keycode, "") if letters else ""
+    if event is InputEventJoypadMotion:
+        # the left stick, by hand: is_action() does not tell up from down on an axis
+        if event.axis == JOY_AXIS_LEFT_X:
+            return "right" if event.axis_value > 0.0 else "left"
+        return ("down" if event.axis_value > 0.0 else "up") if event.axis == JOY_AXIS_LEFT_Y else ""
+    for dir in ["up", "down", "left", "right"]:
+        if event.is_action("ui_" + dir):
+            return dir
+    return ""
+
+
+# -1 for up / left, 1 for down / right, 0 for none: the step a list or a carousel takes (vertical: up and down only,
+# otherwise left and right only)
+func step(event: InputEvent, vertical: bool, letters: bool = true) -> int:
+    var d := nav(event, letters)
+    if vertical:
+        return -1 if d == "up" else (1 if d == "down" else 0)
+    return -1 if d == "left" else (1 if d == "right" else 0)
+
+
+# stick events repeat on every wobble: only the move from inside the dead zone to past half way counts, and every
+# screen that looks at the same event gets the same answer
+func _stick_push(event: InputEventJoypadMotion) -> bool:
+    var frame := Engine.get_process_frames()
+    if event == _stick_event and frame == _stick_frame:
+        return _stick_result
+    _stick_event = event
+    _stick_frame = frame
+    var key: int = event.device * 32 + event.axis
+    var now := 0
+    if absf(event.axis_value) >= 0.5:
+        now = 1 if event.axis_value > 0.0 else -1
+    var was: int = _stick.get(key, 0)
+    _stick[key] = now
+    _stick_result = now != 0 and now != was
+    return _stick_result
 ''')
 
 write("scripts/pause_menu.gd", '''extends CanvasLayer

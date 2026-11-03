@@ -256,13 +256,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _started or _select != null or _career != null:
 		return
 	var go := false
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F9:
+	if Controls.pressed(event):
+		if event is InputEventKey and event.keycode == KEY_F9:
 			Game.cycle_format()
 			_menu.queue_redraw()
-		go = event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]
+		go = Controls.confirm(event)
 		if _menu_open:
-			_menu_key(event.keycode, go)
+			_menu_key(event, go)
 			return
 	elif event is InputEventMouseMotion and _menu_open:
 		_hover(event.position)
@@ -279,14 +279,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_open_menu()
 
 
-func _menu_key(code: Key, confirm: bool) -> void:
-	if code == KEY_UP:
+func _menu_key(event: InputEvent, confirm: bool) -> void:
+	var dir := Controls.nav(event, false)
+	if dir == "up":
 		_move(-1)
-	elif code == KEY_DOWN:
+	elif dir == "down":
 		_move(1)
 	elif confirm:
 		_choose(_sel)
-	elif code == KEY_ESCAPE:
+	elif Controls.back(event, false):
 		_menu_open = false
 		_menu.visible = false
 

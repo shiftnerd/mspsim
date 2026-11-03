@@ -103,7 +103,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_open and event is InputEventKey and event.pressed and not event.echo:
+	if not is_open and Controls.pressed(event):
 		if Controls.matches(event, "phone"):
 			open()
 			get_viewport().set_input_as_handled()
@@ -120,25 +120,25 @@ func _input(event: InputEvent) -> void:
 	):
 		_mouse = event.position
 		click(_mouse)
-	elif event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_ESCAPE:
-				back()
-			KEY_P:
-				close()
-			KEY_UP:
-				move(-1)
-			KEY_DOWN:
-				move(1)
-			KEY_LEFT, KEY_RIGHT:
-				if app == "choose":
-					activate("os:" + ("android" if event.keycode == KEY_RIGHT else "ios"))
-				elif app == "home":
-					home_move(1 if event.keycode == KEY_RIGHT else -1)
-				elif app == "settings":
-					activate("ring")
-			KEY_ENTER, KEY_KP_ENTER:
-				enter()
+	elif Controls.pressed(event):
+		var dir := Controls.nav(event, false)
+		if Controls.back(event, false):
+			back()
+		elif Controls.matches(event, "phone"):
+			close()
+		elif dir == "up":
+			move(-1)
+		elif dir == "down":
+			move(1)
+		elif dir == "left" or dir == "right":
+			if app == "choose":
+				activate("os:" + ("android" if dir == "right" else "ios"))
+			elif app == "home":
+				home_move(1 if dir == "right" else -1)
+			elif app == "settings":
+				activate("ring")
+		elif Controls.confirm(event, false, false):
+			enter()
 	else:
 		return
 	get_viewport().set_input_as_handled()

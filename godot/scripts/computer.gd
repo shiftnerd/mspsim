@@ -190,28 +190,23 @@ func _input(event: InputEvent) -> void:
 		and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]
 	):
 		scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
-	elif event is InputEventKey and event.pressed and not event.echo:
+	elif Controls.pressed(event):
 		Sfx.play("ui_tick")
-		if app == "dispatch" and _dispatch_key(event):
+		var dir := Controls.nav(event, false)
+		if _app_key(event, dir):
 			_canvas.queue_redraw()
 			get_viewport().set_input_as_handled()
 			return
-		if app == "knowledge" and _knowledge_key(event):
-			_canvas.queue_redraw()
-			get_viewport().set_input_as_handled()
-			return
-		match event.keycode:
-			KEY_ESCAPE:
-				escape()
-			KEY_UP:
-				move(-1)
-			KEY_DOWN:
-				move(1)
-			KEY_ENTER, KEY_KP_ENTER:
-				enter()
-			_:
-				if app == "crm":
-					Crm.key(self, event.keycode)
+		if Controls.back(event, false):
+			escape()
+		elif dir == "up":
+			move(-1)
+		elif dir == "down":
+			move(1)
+		elif Controls.confirm(event, false, false):
+			enter()
+		elif app == "crm" and event is InputEventKey:
+			Crm.key(self, event.keycode)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -1811,6 +1806,20 @@ func _paint_dispatch() -> void:
 	if _offline("CONNECTWHY DISPATCH - SERVER NOT AVAILABLE.", body):
 		return
 	dispatch.paint(self, body)
+
+
+# the dispatch board and the knowledge base take keys by name; a pad press goes in as the arrow or "enter" it stands for
+func _app_key(event: InputEvent, dir: String) -> bool:
+	if app != "dispatch" and app != "knowledge":
+		return false
+	if event is InputEventKey:
+		return _dispatch_key(event) if app == "dispatch" else _knowledge_key(event)
+	var pad := dir
+	if pad == "" and Controls.confirm(event):
+		pad = "enter"
+	if pad == "":
+		return false
+	return dispatch.key(pad) if app == "dispatch" else Service.kb.key(pad)
 
 
 func _dispatch_key(event: InputEventKey) -> bool:

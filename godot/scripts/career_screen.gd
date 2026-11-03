@@ -45,18 +45,16 @@ func close() -> void:
 func _input(event: InputEvent) -> void:
 	if Engine.get_process_frames() == _born:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_F9:
-				Game.cycle_format()
-			KEY_LEFT, KEY_A:
-				go(-1)
-			KEY_RIGHT, KEY_D:
-				go(1)
-			KEY_ESCAPE, KEY_BACKSPACE:
-				close()
-			_:
-				pass
+	if Controls.pressed(event):
+		var dir := Controls.nav(event)
+		if event is InputEventKey and event.keycode == KEY_F9:
+			Game.cycle_format()
+		elif dir == "left":
+			go(-1)
+		elif dir == "right":
+			go(1)
+		elif Controls.back(event):
+			close()
 	elif event is InputEventMouseMotion:
 		var h := _hit(event.position)
 		if h != _hover:
