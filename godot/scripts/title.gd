@@ -414,6 +414,7 @@ func _start(id: String, summary := "") -> void:
 		_:
 			Campaign.new_game(Campaign.FREE)
 	Game.go(Campaign.start_scene(), "start")
+	Toolbox.after_start()
 	if summary != "":
 		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
 		Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)

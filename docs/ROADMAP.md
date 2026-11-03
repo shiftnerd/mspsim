@@ -43,7 +43,7 @@ Running in worktrees: R3 / R4 / R6 (karaoke songs, escape-room recipes, dinner v
 ## 5. Planned: replayability (`docs/replayability-ideas.md`, `IDEAS.md`)
 | # | Item | Size | Notes |
 |---|---|---|---|
-| R1 | Difficulty and seeds | S | DONE (see section 1); still to do: a seed field you can type, saved stream positions, seeded `Msp` / `Owner` / `World` / `Onsite` randomness, hard-tier numbers checked by play, whether the tier deserves its own step instead of the chip on the select screen, drop the unused `ESCAPE_TIME` constant |
+| R1 | Difficulty and seeds | S | DONE (see section 1). R1 leftovers DONE in R10a: typed seed field, saved stream positions, seeded `Msp` / `Sales` / `World` / `Onsite` randomness, `ESCAPE_TIME` dropped. Still open: `Owner` / `Shift` / `Projects` randomness, hard-tier numbers checked by play, a separate tier step instead of the chip |
 | R2 | Printer variety: DONE (6 models, 34 tagged questions, jam chains, tired, per-model prayers and streak, practice seed; see CLAUDE.md "Printer variety"). Left: P4 boss line printer, P6 parts bag | S-M | |
 | R3 | Karaoke songs: four invented-title songs, hold and double notes, crowd-mood meter, duets, set lists | M | |
 | R4 | Escape room: clue recipes, random clue spots, 4-digit hard code, red herrings, friend hints; later themed rooms | M | |
@@ -52,7 +52,7 @@ Running in worktrees: R3 / R4 / R6 (karaoke songs, escape-room recipes, dinner v
 | R7 | Career screen and medals, cosmetic unlocks, nerf-war scoring | M | DONE (see CLAUDE.md "Career, medals and nerf scoring"). Left: more medals tied to R3-R6 and R8-R10 content (songs, clue recipes, events, mutators, Year 2), a duck / desk-toy art for the data-only unlocks, a real ringtone sound, a medal detail view, Free Play hotkey for the screen (today: phone Settings) |
 | R8 | Event deck (40 cards) and vignette deck (24) | M | DONE (`Events` autoload, 41 cards + 17 drawn vignettes, see CLAUDE.md "Event deck and vignette deck"); left: seasonal tags beyond day windows, a Career counter, mutator hooks (R9) |
 | R9 | Mutators (Heartbleed week, XP end of life, flu season...) and starting conditions | M | DONE (`Mutators` autoload, 11 mutators + 5 starting conditions, see CLAUDE.md "Mutators and starting conditions"); left: a `cash_mult` hook, Free Play menu entry (only the ` key chooser exists), owner-only mutators beyond slow payers, New Game+ choosing mutators (R10), mutator art / sound |
-| R10 | Year 2 / New Game+, daily seed, Free Play toolbox | L | after R8, R9 |
+| R10 | Year 2 / New Game+, daily seed, Free Play toolbox | L | part a DONE (daily seed, Free Play toolbox with fixed take, seed page; see CLAUDE.md "Seeds, daily seed and the Free Play toolbox"). **R10b** (Year 2 / New Game+ choosing mutators) stays open |
 | R11 | Bowling oil / spin / alleys / league; nerf modes and arenas; conference-trip randomisation; onsite job variance and dispatch roulette | M each | later |
 
 ## 5b. Planned: testing and quality

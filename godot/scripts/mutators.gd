@@ -424,7 +424,7 @@ func current_id() -> String:
 		return ""
 	if Campaign.active:
 		return id_at(Campaign.day)
-	return forced
+	return "" if Difficulty.fixed_take else forced
 
 
 func id_at(day: int) -> String:
@@ -514,8 +514,8 @@ func pick_problem() -> Dictionary:
 	var extras: Array = hook("extra_problems", [])
 	if w.is_empty() and extras.is_empty():
 		return {}
-	if not extras.is_empty() and randf() < float(hook("extra_chance", 0.0)):
-		return extras[randi() % extras.size()]
+	if not extras.is_empty() and Difficulty.rng("msp.tickets").randf() < float(hook("extra_chance", 0.0)):
+		return extras[Difficulty.rng("msp.tickets").randi() % extras.size()]
 	var weights := []
 	var total := 0.0
 	for p in Msp.PROBLEMS:
@@ -524,7 +524,7 @@ func pick_problem() -> Dictionary:
 			x = float(w.server)
 		weights.append(x)
 		total += x
-	var roll := randf() * total
+	var roll := Difficulty.rng("msp.tickets").randf() * total
 	for i in weights.size():
 		roll -= float(weights[i])
 		if roll < 0.0:
@@ -536,11 +536,11 @@ func pick_problem() -> Dictionary:
 func pick_endpoint(eps: Array) -> Dictionary:
 	var w: Dictionary = hook("user_weight", {})
 	if w.is_empty():
-		return eps[randi() % eps.size()]
+		return eps[Difficulty.rng("msp.tickets").randi() % eps.size()]
 	var total := 0.0
 	for ep in eps:
 		total += float(w.get(str(ep.get("user", "")), 1.0))
-	var roll := randf() * total
+	var roll := Difficulty.rng("msp.tickets").randf() * total
 	for ep in eps:
 		roll -= float(w.get(str(ep.get("user", "")), 1.0))
 		if roll < 0.0:
@@ -842,7 +842,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.keycode != KEY_QUOTELEFT or Game.title_mode or Campaign.active or Game.ui_open:
 		return
-	if Campaign.mode != Campaign.FREE:
+	if Campaign.mode != Campaign.FREE or Difficulty.fixed_take:
 		return
 	cycle_forced(1)
 	Hints.toast("MUTATOR: " + (tag() if forced != "" else "NONE"), 3.0)

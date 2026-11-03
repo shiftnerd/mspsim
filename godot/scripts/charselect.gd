@@ -116,6 +116,7 @@ func setup(for_mode: String) -> void:
 		sel = maxi(0, ids.find("office_adult"))
 	phone_sel = 1 if Phone.os == "android" else 0
 	Mutators.pending_start = Mutators.STANDARD
+	Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
 	facing = "right"
 	for spr in _sprites:
 		spr.queue_free()
@@ -169,6 +170,24 @@ func change_tier(delta_tier: int) -> void:
 	queue_redraw()
 
 
+# X (or a click on the SEED chip): type, paste, roll or pick today's seed
+func open_seed() -> void:
+	Toolbox.open_seed(func(_go: bool) -> void: queue_redraw())
+
+
+# T (Free Play): the toolbox; GO there starts Free Play and launches the chosen game
+func open_tools() -> void:
+	if mode != "free":
+		return
+	Toolbox.open_tools(true, _tools_closed)
+
+
+func _tools_closed(go: bool) -> void:
+	queue_redraw()
+	if go:
+		confirm()
+
+
 func move(delta_sel: int) -> void:
 	if step == "char":
 		if ids.is_empty():
@@ -207,10 +226,14 @@ func back() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if Engine.get_process_frames() == _born:
+	if Engine.get_process_frames() == _born or Toolbox.is_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
+			KEY_X:
+				open_seed()
+			KEY_T:
+				open_tools()
 			KEY_F9:
 				Game.cycle_format()
 			KEY_LEFT, KEY_A:
@@ -280,6 +303,10 @@ func _click(at: Vector2) -> void:
 			change_start(-1)
 		"start_up":
 			change_start(1)
+		"seed":
+			open_seed()
+		"tools":
+			open_tools()
 		_:
 			_hover(at)
 			confirm()
@@ -332,6 +359,7 @@ func _draw() -> void:
 	_txt("< ESC", back_r.position + Vector2(2, 2), DIM)
 	_rects.append([back_r, "back", 0])
 	_draw_tier(size, narrow)
+	_draw_seed(size, narrow)
 	if is_campaign() and step == "char":
 		_draw_start(size, narrow)
 	if step == "char":
@@ -344,10 +372,11 @@ func _draw() -> void:
 		size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)),
 		Color.WHITE
 	)
-	var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   TAB START   ENTER PICK   ESC BACK"
+	var extra := "T TOOLS" if mode == "free" else "TAB START"
+	var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
 	if narrow:
 		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
-		_ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
+		_ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
 	else:
 		_ctxt(hint, size.y - 9.0, DIM)
 
@@ -367,6 +396,33 @@ func _draw_tier(size: Vector2, narrow: bool) -> void:
 	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
 	_rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
 	_rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
+
+
+# the run seed chip: SEED 4F2A9C (X opens the seed page); in Free Play a TOOLS chip follows it
+func _draw_seed(size: Vector2, narrow: bool) -> void:
+	var text := "SEED  " + Difficulty.seed_text()
+	if Difficulty.daily != "":
+		text = "DAILY " + Difficulty.seed_text()
+	var w := float(PixelFont.width("SEED  4F2A9C")) + 8.0
+	var pos := Vector2(34.0, 3.0)
+	var wide := size.x > 340.0
+	if wide and is_campaign():  # the START chip sits at the left
+		var level_w := float(PixelFont.width("LEVEL  HARD")) + 24.0
+		pos = Vector2(size.x - level_w - 3.0 - w - 4.0, 3.0)
+	var r := Rect2(pos, Vector2(w, 9.0))
+	draw_rect(r, PANEL)
+	draw_rect(r, GOLD if Difficulty.daily != "" else DIM, false, 1.0)
+	var tw := float(PixelFont.width(text))
+	_txt(text, r.position + Vector2(floorf((w - tw) * 0.5), 2), Color.WHITE)
+	_rects.append([r, "seed", 0])
+	if mode == "free" and step == "char":
+		var tools := Rect2(pos + Vector2(w + 3.0, 0.0), Vector2(float(PixelFont.width("TOOLS")) + 8.0, 9.0))
+		if not wide:
+			tools.position = Vector2(size.x - tools.size.x - 3.0, 3.0 if narrow else 14.0)
+		draw_rect(tools, PANEL)
+		draw_rect(tools, GOLD if Difficulty.fixed_take else DIM, false, 1.0)
+		_txt("TOOLS", tools.position + Vector2(4, 2), Color.WHITE)
+		_rects.append([tools, "tools", 0])
 
 
 # the starting condition chip: START < MESSY MSP > (left of the heading, under the level chip at 320 wide, top right in portrait)

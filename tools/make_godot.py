@@ -351,6 +351,7 @@ Events="*res://scripts/events.gd"
 Mutators="*res://scripts/mutators.gd"
 PrinterGame="*res://scripts/printer_game.gd"
 Career="*res://scripts/career.gd"
+Toolbox="*res://scripts/toolbox.gd"
 Strings="*res://scripts/strings.gd"
 Roles="*res://scripts/roles.gd"
 
@@ -2712,7 +2713,7 @@ func _ready() -> void:
     randomize()
     for n in CAST:
         chars[n] = _make_char(n)
-    _meeting_t = randf_range(meeting_gap.x, meeting_gap.y)
+    _meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
     lights_changed.connect(_on_lights_changed)
     var layer := CanvasLayer.new()
     layer.layer = 90
@@ -2724,7 +2725,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and not event.shift_pressed:
         hud_visible = not hud_visible
 
 
@@ -2870,7 +2871,7 @@ func _process(delta: float) -> void:
         _new_day()
     _meeting_t -= delta
     if _meeting_t <= 0.0:
-        _meeting_t = randf_range(meeting_gap.x, meeting_gap.y)
+        _meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
         if clock < LUNCH_START - 0.3 or (clock > LUNCH_START + 1.3 and clock < DAY_END - 0.5):
             _start_meeting()
 
@@ -2902,7 +2903,7 @@ func _watch_outage(delta: float) -> void:
 
 
 func _make_char(n: String) -> Dictionary:
-    var leg := _work_leg(n, true, randf_range(20.0, 50.0))
+    var leg := _work_leg(n, true, Difficulty.rng("world").randf_range(20.0, 50.0))
     return {
         "scene": CAST[n].home,
         "arrive": "",
@@ -3187,7 +3188,7 @@ func _plan(n: String) -> Array:
     if st.scene != CAST[n].home or st.arriving:
         st.arriving = false
         var legs := _travel(st.scene, CAST[n].home, origin_x)
-        legs.append(_work_leg(n, false, randf_range(25.0, 50.0)))
+        legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 50.0)))
         return legs
     if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
         st.lunched = true
@@ -3203,7 +3204,7 @@ func _plan(n: String) -> Array:
         kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
     elif CAST[n].get("role", "") == "manager":
         kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
-    return plan_for(n, kinds[randi() % kinds.size()])
+    return plan_for(n, kinds[Difficulty.rng("world").randi() % kinds.size()])
 
 
 func plan_for(n: String, kind: String) -> Array:
@@ -3212,7 +3213,7 @@ func plan_for(n: String, kind: String) -> Array:
         "coffee":
             legs = _trip(n, "kitchenette", _coffee_leg())
         "visit":
-            return _visit_plan(n, randf_range(45.0, 90.0))
+            return _visit_plan(n, Difficulty.rng("world").randf_range(45.0, 90.0))
         "cooler":
             legs = _trip(n, "cubicle_area", _cooler_leg())
         "closet":
@@ -3222,8 +3223,8 @@ func plan_for(n: String, kind: String) -> Array:
         "bathroom":
             legs = _trip(n, "bathroom", _bathroom_leg())
         _:
-            return [_work_leg(n, true, randf_range(30.0, 70.0))]
-    legs.append(_work_leg(n, false, randf_range(25.0, 55.0)))
+            return [_work_leg(n, true, Difficulty.rng("world").randf_range(30.0, 70.0))]
+    legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 55.0)))
     return legs
 
 
@@ -3258,7 +3259,7 @@ func _lunch_plan(n: String) -> Array:
     var legs := _travel(st.scene, "conference", _hint_x(n))
     legs.append(eat)
     legs.append_array(_travel("conference", home, x))
-    legs.append(_work_leg(n, false, randf_range(25.0, 45.0)))
+    legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 45.0)))
     return legs
 
 
@@ -3515,7 +3516,7 @@ func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
     var legs := _travel(here, "conference", _hint_x(n))
     legs.append(meeting)
     legs.append_array(_travel("conference", home, x))
-    legs.append(_work_leg(n, false, randf_range(25.0, 50.0)))
+    legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 50.0)))
     st.legs = legs
     st.leg_t = legs[0].dur
     if st.node != null and is_instance_valid(st.node):
@@ -3970,7 +3971,7 @@ func reset() -> void:
         backups.append({"ok": true, "good_day": 0, "checked_day": -1})
     for c in CLIENTS.size():
         for n in 3:
-            endpoints.append(_endpoint(c, "PC-%02d" % (n + 1), OS_NAMES[randi() % OS_NAMES.size()]))
+            endpoints.append(_endpoint(c, "PC-%02d" % (n + 1), OS_NAMES[Difficulty.rng("msp.fleet").randi() % OS_NAMES.size()]))
         endpoints.append(_endpoint(c, "SRV-01", "Server 2008 R2"))
     _mail(
         COMPANY + " HR", "Welcome to the service desk",
@@ -3983,7 +3984,7 @@ func reset() -> void:
 func _endpoint(client: int, suffix: String, os_name: String) -> Dictionary:
     return {
         "name": "%s-%s" % [CLIENTS[client].short, suffix], "client": client,
-        "user": USERS[randi() % USERS.size()] if not suffix.begins_with("SRV") else "server", "os": os_name, "problem": "",
+        "user": USERS[Difficulty.rng("msp.fleet").randi() % USERS.size()] if not suffix.begins_with("SRV") else "server", "os": os_name, "problem": "",
         "unsaved": false, "asked": false,
     }
 
@@ -4055,7 +4056,7 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
     var picked: Dictionary = Mutators.pick_endpoint(eps)
     var pri: int = Mutators.priority(int(prob.pri), picked)
     picked.problem = prob.fix
-    picked["unsaved"] = randf() < 0.65  # somebody is working on it: documents are open
+    picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
     picked["asked"] = false
     var t := {
         "id": _next_id, "client": client, "contact": contact, "summary": prob.summary, "pri": pri,
@@ -4086,7 +4087,7 @@ func _random_ticket(source: String) -> Dictionary:
         var pick: Dictionary = Mutators.pick_problem()
         var t: Dictionary
         if pick.is_empty():
-            t = create_ticket(Sales.pick_client(), randi() % PROBLEMS.size(), source)
+            t = create_ticket(Sales.pick_client(), Difficulty.rng("msp.tickets").randi() % PROBLEMS.size(), source)
         else:
             t = create_problem(Sales.pick_client(), pick, source)
         if not t.is_empty():
@@ -4261,7 +4262,7 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
         text += " THE USER LOST UNSAVED WORK!"
     ep.unsaved = false
     ep.asked = false
-    var roll := alt_roll if alt_roll >= 0.0 else randf()
+    var roll := alt_roll if alt_roll >= 0.0 else Difficulty.rng("msp.fix").randf()
     if roll < float(d.get("ret", 0.0)) and not tk.is_empty():
         _queue_return(tk, d, prob)
     changed.emit()
@@ -4299,10 +4300,10 @@ func _queue_return(t: Dictionary, d: Dictionary, prob: String) -> void:
     }
     t.notes.append("Only a workaround: this will probably come back.")
     if Campaign.active and Campaign.mode == "tech":
-        item["days"] = 1 + randi() % 2
+        item["days"] = 1 + Difficulty.rng("msp.fix").randi() % 2
         Story.queue_followup(item)
     else:
-        _later.append({"left": randf_range(150.0, 300.0), "item": item})
+        _later.append({"left": Difficulty.rng("msp.fix").randf_range(150.0, 300.0), "item": item})
 
 
 # the follow-up ticket for a workaround that came back (also used by Story's follow-ups)
@@ -4361,7 +4362,7 @@ func _ask_save(ep: Dictionary) -> String:
 # user is interrupted, and anyone with unsaved work who was not warned loses it
 func _reboot_other(ep: Dictionary) -> String:
     if not ep.has("unsaved"):
-        ep["unsaved"] = randf() < 0.5
+        ep["unsaved"] = Difficulty.rng("msp.fix").randf() < 0.5
     var client := int(ep.client)
     var lost: bool = bool(ep.unsaved) and not bool(ep.get("asked", false))
     var alt: bool = ALT_FIXES.get(str(ep.problem), []).has("reboot")
@@ -4438,7 +4439,7 @@ func new_day(day: int) -> void:
         var b: Dictionary = backups[c]
         if not b.ok:
             continue
-        if day >= 2 and c != Story.RANSOM_CLIENT and randf() < 0.08 and Campaign.active:
+        if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < 0.08 and Campaign.active:
             b.ok = false
             b.good_day = day - 1
         else:
@@ -4638,7 +4639,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 
 func _ransom_pay(ep: Dictionary) -> String:
     var contact: String = CLIENTS[ep.client].contact
-    if randf() < 0.7:
+    if Difficulty.rng("msp.fix").randf() < 0.7:
         _ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.")
         score -= 5
         Campaign.adjust_rep(-2)
@@ -4651,7 +4652,7 @@ func _ransom_pay(ep: Dictionary) -> String:
 
 
 func _ransom_shadow(ep: Dictionary) -> String:
-    if randf() < 0.4:
+    if Difficulty.rng("msp.fix").randf() < 0.4:
         var contact: String = CLIENTS[ep.client].contact
         _ransom_close(ep, "Recovered most files from shadow copies. Some are gone.")
         score -= 8
@@ -4672,7 +4673,7 @@ func _process(delta: float) -> void:
         return
     _spawn_t -= dt
     if _spawn_t <= 0.0:
-        _spawn_t = randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
+        _spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
         if open_tickets().size() < 6 and World.clock < World.DAY_END:
             _random_ticket("email")
     for i in range(_later.size() - 1, -1, -1):
@@ -7363,6 +7364,8 @@ func new_game(for_mode: String) -> void:
     cash = 0
     history = []
     _awaiting = false
+    Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+    Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
     Msp.reset()
     Skills.reset()
     Story.reset()
@@ -7375,7 +7378,6 @@ func new_game(for_mode: String) -> void:
     Growth.reset()
     Outings.reset()
     PrinterGame.reset()
-    Difficulty.new_run()
     Talk.reset()
     Meeting.reset()
     Projects.reset()
@@ -10264,7 +10266,8 @@ func to_dict() -> Dictionary:
 
 
 # an old save has no `events` section: everything starts empty. The stream restarts from the run seed
-# on a continue, so it is replayed to where it was (each draw uses exactly ROLLS numbers).
+# on a continue of an old save, so it is replayed to where it was (each draw uses exactly ROLLS numbers);
+# saves written since R10a carry every stream position (Difficulty.to_dict) and need no replay.
 const ROLLS := 5
 
 
@@ -10280,8 +10283,9 @@ func from_dict(data: Dictionary) -> void:
         for id in saved_recent:
             recent.append(str(id))
     var r := Difficulty.rng("events")
-    for i in draws * ROLLS:
-        r.randf()
+    if not Difficulty.resumed("events"):  # a save with stream positions is already in place
+        for i in draws * ROLLS:
+            r.randf()
 
 
 # ---- the people a card may name ---------------------------------------------------------------------
@@ -13119,7 +13123,7 @@ func pick_client() -> int:
     var total := 0.0
     for c in ready:
         total += Owner.client_weight(int(c))
-    var roll := randf() * total
+    var roll := Difficulty.rng("msp.tickets").randf() * total
     for c in ready:
         roll -= Owner.client_weight(int(c))
         if roll <= 0.0:
@@ -13174,11 +13178,11 @@ func vic_skill() -> float:
 func visit_done() -> bool:
     if not Campaign.active or not Msp.enabled:
         return false
-    if randf() > vic_skill():
+    if Difficulty.rng("sales").randf() > vic_skill():
         Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
         return false
     var dealt := -1
-    if active.size() < MAX_CLIENTS and (randf() < 0.55 or Msp.project_busy()):
+    if active.size() < MAX_CLIENTS and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
         dealt = sign_client()
         if dealt >= 0:
             last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
@@ -13196,7 +13200,7 @@ func sign_client(wanted := -1) -> int:
             pool.append(c)
     if pool.is_empty():
         return -1
-    var client: int = pool[randi() % pool.size()]
+    var client: int = pool[Difficulty.rng("sales").randi() % pool.size()]
     if wanted >= 0 and pool.has(wanted):
         client = wanted
     active.append(client)
@@ -15958,8 +15962,14 @@ write("scripts/difficulty.gd", '''extends Node
 # Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
 # run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input.
 # The tier is remembered in user://mspsim_settings.cfg (title menu); the tier and run seed are saved in
-# the campaign file (`difficulty` section; old saves load as normal with a fresh seed). Only the seed is
-# saved, not the position inside each stream: a continued run restarts its streams from the seed.
+# the campaign file (`difficulty` section; old saves load as normal with a fresh seed). The state of every
+# stream that was used is saved too (`streams`), so a continued run resumes each stream where it stopped;
+# an old save has no states and its streams restart from the seed.
+#
+#   Difficulty.parse_seed("4f2a9c")  a typed or pasted seed (hex; any other text is hashed); 0 = nothing typed
+#   Difficulty.daily_seed()          the seed of today's date (local clock, the same for everybody that day)
+#   Difficulty.roll_seed()           pick a random seed now and pin it (the character select screen shows it)
+#   Difficulty.fixed_take            Free Play toolbox: no random events or mutators, streams restart each take
 
 const TIERS := ["easy", "normal", "hard"]
 const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
@@ -15992,7 +16002,12 @@ var tier := "normal"
 var run_seed := 0
 var settings_path := "user://mspsim_settings.cfg"
 
+var daily := ""  # "YYYYMMDD" while the run seed is the daily seed of that date
+var fixed_take := false  # Free Play toolbox "fixed take": retakes match (see take_reset)
+
 var _streams := {}
+var _saved := {}  # stream -> saved state, applied when the stream is first used after a load
+var _resumed := {}  # streams whose state came from a save
 var _pinned := false  # seed_run() was called: the next new_run() keeps that seed
 
 
@@ -16050,28 +16065,109 @@ func seed_text() -> String:
 func seed_run(value: int) -> void:
     run_seed = maxi(1, value & SEED_MASK)
     _pinned = true
+    daily = ""
+    _forget_streams()
+
+
+func _forget_streams() -> void:
     _streams.clear()
+    _saved.clear()
+    _resumed.clear()
+
+
+# a random seed now, kept for the next run (the select screen shows it and the player may change it)
+func roll_seed() -> int:
+    seed_run(_random_seed())
+    return run_seed
+
+
+# text typed or pasted into the seed field: up to 6 hex digits are the code itself ("4F2A9C", "#4f2a9c", "0x1F");
+# longer hex keeps its low 24 bits; any other text is hashed (a word is a fine seed). 0 means nothing usable.
+func parse_seed(text: String) -> int:
+    var t := text.strip_edges().to_upper().replace(" ", "").replace("-", "")
+    t = t.trim_prefix("#").trim_prefix("0X")
+    if t == "":
+        return 0
+    var hex := true
+    for ch in t:
+        if not (ch >= "0" and ch <= "9") and not (ch >= "A" and ch <= "F"):
+            hex = false
+    if hex:
+        return maxi(1, t.hex_to_int() & SEED_MASK)
+    return maxi(1, hash(t) & SEED_MASK)
+
+
+# today's date as the year-month-day number; the same value for everybody on the same local date
+func date_number(date: Dictionary = {}) -> int:
+    var d := date if not date.is_empty() else Time.get_date_dict_from_system()
+    return int(d.year) * 10000 + int(d.month) * 100 + int(d.day)
+
+
+func daily_seed(date: Dictionary = {}) -> int:
+    return maxi(1, date_number(date) & SEED_MASK)
+
+
+# "03 NOV" for the button label
+func date_label(date: Dictionary = {}) -> String:
+    var d := date if not date.is_empty() else Time.get_date_dict_from_system()
+    var months := ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    return "%02d %s" % [int(d.day), months[clampi(int(d.month) - 1, 0, 11)]]
+
+
+# pin today's seed; the run that starts next counts as a daily seed run in the Career counters
+func use_daily(date: Dictionary = {}) -> int:
+    seed_run(daily_seed(date))
+    daily = "%08d" % date_number(date)
+    return run_seed
 
 
 # a fresh run (New Game): a new random seed unless seed_run() fixed one first
 func new_run() -> void:
     if _pinned:
         _pinned = false
-        _streams.clear()
+        _forget_streams()
+        _note_daily()
         return
     run_seed = _random_seed()
-    _streams.clear()
+    daily = ""
+    _forget_streams()
+
+
+# a daily seed run counts once per date in Career ("daily_seeds")
+func _note_daily() -> void:
+    if daily == "":
+        return
+    if int(Career.counters.get("dsd." + daily, 0)) == 0:
+        Career.counters["dsd." + daily] = 1
+        Career.add("daily_seeds")
+
+
+# fixed take: every take starts the streams again from the seed, so a retake repeats the draws
+func take_reset() -> void:
+    _forget_streams()
 
 
 # one persistent generator per system: the same seed gives the same draws in the same order
 func rng(stream: String) -> RandomNumberGenerator:
     if not _streams.has(stream):
-        _streams[stream] = rng_for(stream, 0)
+        var r := rng_for(stream, 0)
+        if _saved.has(stream):
+            r.state = int(str(_saved[stream]))
+            _resumed[stream] = true
+            _saved.erase(stream)
+        _streams[stream] = r
     return _streams[stream]
+
+
+# true when this stream was resumed from a save (its position is already restored)
+func resumed(stream: String) -> bool:
+    return _resumed.has(stream)
 
 
 # an independent generator for (stream, salt), e.g. one per day or per setup
 func rng_for(stream: String, salt: int) -> RandomNumberGenerator:
+    if run_seed == 0:  # an autoload that runs before this one
+        run_seed = _random_seed()
     var r := RandomNumberGenerator.new()
     r.seed = hash("%d:%s:%d" % [run_seed, stream, salt])
     return r
@@ -16079,7 +16175,10 @@ func rng_for(stream: String, salt: int) -> RandomNumberGenerator:
 
 # Fisher-Yates with a stream (Array.shuffle() would use the global generator)
 func shuffle(list: Array, stream: String) -> void:
-    var r := rng(stream)
+    shuffle_with(list, rng(stream))
+
+
+func shuffle_with(list: Array, r: RandomNumberGenerator) -> void:
     for k in range(list.size() - 1, 0, -1):
         var j := r.randi_range(0, k)
         var tmp = list[k]
@@ -16093,15 +16192,26 @@ func pick(list: Array, stream: String) -> Variant:
 
 # ---- campaign save ---------------------------------------------------------------------------------
 func to_dict() -> Dictionary:
-    return {"version": 1, "tier": tier, "seed": run_seed}
+    var states := {}
+    for name in _saved:  # not used yet since the load: keep the saved position
+        states[name] = str(_saved[name])
+    for name in _streams:
+        states[name] = str(_streams[name].state)
+    return {"version": 2, "tier": tier, "seed": run_seed, "streams": states, "daily": daily}
 
 
 func from_dict(data: Dictionary) -> void:
     set_tier(str(data.get("tier", "normal")))
     var saved := int(data.get("seed", 0))
     _pinned = false
-    _streams.clear()
+    _forget_streams()
     run_seed = saved if saved > 0 else _random_seed()
+    daily = str(data.get("daily", ""))
+    fixed_take = false
+    var states: Variant = data.get("streams", {})
+    if saved > 0 and states is Dictionary:  # an old save has none: the streams restart from the seed
+        for name in states:
+            _saved[str(name)] = str(states[name])
 
 
 # ---- settings (the tier chosen on the title menu) ----------------------------------------------------
@@ -17129,7 +17239,6 @@ const ROOM_INTRO := {
 const SONG_LEN := 24
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
-const ESCAPE_TIME := 120.0
 const ROOMS := {"bowling": "bowling_alley", "karaoke": "karaoke_bar", "escape": "escape_room", "dinner": "restaurant"}
 # where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
@@ -17147,6 +17256,7 @@ var is_open := false
 var game := ""
 var phase := "intro"  # intro, play, result
 var g := {}
+var opts := {}  # Free Play toolbox parameters of this game: chart, set, code_len, table, panel (empty = as usual)
 var stars := 0
 var lines: Array = []  # the result page
 var count := 0
@@ -17229,7 +17339,8 @@ func roster() -> Array:
 # the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
 func diners() -> Array:
     var here := roster()
-    return DINERS.filter(func(n: String) -> bool: return here.has(n))
+    var table: Array = opts.get("table", [])
+    return DINERS.filter(func(n: String) -> bool: return here.has(n) and (table.is_empty() or table.has(n)))
 
 
 func bowlers() -> Array:
@@ -17305,9 +17416,16 @@ func _free_answer(id: String) -> void:
 
 
 # ---- running an outing ------------------------------------------------------------------------
-func start(id: String, from_invite := false) -> void:
+# options (Free Play toolbox, all optional): "chart" 1-4 = a fixed karaoke chart, "set" 1-9 = a fixed escape
+# code, "code_len" 3 or 4 (the overlay escape room), "table" = the dinner guests, "panel" = the overlay
+# version instead of the room. Without options every draw comes from the run's streams as before.
+func start(id: String, from_invite := false, options := {}) -> void:
+    opts = options.duplicate()
+    if Difficulty.fixed_take:
+        Difficulty.take_reset()
     var here := get_tree().current_scene
-    if use_rooms and ROOMS.has(id) and here != null and not Game.title_mode:
+    var in_room := use_rooms and not bool(opts.get("panel", false))
+    if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
         _return_scene = here.scene_file_path.get_file().get_basename()
         var me := here.get_node_or_null("Actors/Player")
         _return_x = me.global_position.x if me != null else -1.0
@@ -17734,7 +17852,8 @@ func _bowl_end() -> void:
 func _kara_setup() -> void:
     var notes := []
     var gap := Difficulty.f("karaoke.gap")
-    var r := Difficulty.rng("karaoke")
+    var chart := int(opts.get("chart", 0))
+    var r := Difficulty.rng_for("karaoke.chart", chart) if chart > 0 else Difficulty.rng("karaoke")
     for i in SONG_LEN:
         notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
     g = {"t": 0.0, "notes": notes, "score": 0, "perfect": 0, "good": 0, "miss": 0, "streak": 0, "flash": "", "flash_t": 0.0,
@@ -17807,14 +17926,21 @@ func _kara_end() -> void:
 # ---- escape room --------------------------------------------------------------------------------
 func _escape_setup() -> void:
     var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    Difficulty.shuffle(digits, "escape")
+    Difficulty.shuffle_with(digits, _escape_rng())
+    var n_digits := clampi(int(opts.get("code_len", 3)), 3, 4)
     var friends := 0
     for who in Social.people():
         friends += 1 if Social.is_friendly(who) else 0
     g = {
-        "code": [digits[0], digits[1], digits[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
+        "code": digits.slice(0, n_digits), "cur": [0, 0, 0, 0].slice(0, n_digits), "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
         "hints": clampi(maxi(1, friends), 1, 3), "hints_used": 0, "revealed": [], "msg": "",
     }
+
+
+# the generator of one escape code: a fixed set from the toolbox repeats every take, otherwise the run's stream
+func _escape_rng() -> RandomNumberGenerator:
+    var set_n := int(opts.get("set", 0))
+    return Difficulty.rng_for("escape.set", set_n) if set_n > 0 else Difficulty.rng("escape")
 
 
 func _escape_tick(dt: float) -> void:
@@ -17828,9 +17954,9 @@ func _escape_press(key: int) -> void:
     var cur: Array = g.cur
     match key:
         KEY_LEFT:
-            g.cursor = (int(g.cursor) + 2) % 3
+            g.cursor = (int(g.cursor) + cur.size() - 1) % cur.size()
         KEY_RIGHT:
-            g.cursor = (int(g.cursor) + 1) % 3
+            g.cursor = (int(g.cursor) + 1) % cur.size()
         KEY_UP:
             cur[int(g.cursor)] = (int(cur[int(g.cursor)]) + 1) % 10
         KEY_DOWN:
@@ -17849,7 +17975,7 @@ func escape_score(guess: Array) -> Array:
     var code: Array = g.code
     var bulls := 0
     var cows := 0
-    for i in 3:
+    for i in code.size():
         if int(guess[i]) == int(code[i]):
             bulls += 1
         elif code.has(int(guess[i])):
@@ -17862,7 +17988,7 @@ func escape_try(guess: Array) -> void:
         return
     var score := escape_score(guess)
     g.guesses.append([guess, score[0], score[1]])
-    if int(score[0]) == 3:
+    if int(score[0]) == g.code.size():
         var tries: int = g.guesses.size()
         var result := 3 if tries <= 4 else (2 if tries <= 6 else 1)
         if int(g.hints_used) >= 2:
@@ -17887,7 +18013,7 @@ func escape_hint() -> String:
     if int(g.hints) <= 0:
         return ""
     var open := []
-    for i in 3:
+    for i in g.code.size():
         if not g.revealed.has(i):
             open.append(i)
     if open.is_empty():
@@ -18157,11 +18283,19 @@ func _streak_broken() -> void:
 
 
 # ---- escape room extras
+func _code_text(code: Array, sep: String) -> String:
+    var parts := []
+    for d in code:
+        parts.append(str(int(d)))
+    return sep.join(PackedStringArray(parts))
+
+
 func _escape_room_setup() -> void:
     var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    Difficulty.shuffle(pool, "escape")
+    var rng := _escape_rng()
+    Difficulty.shuffle_with(pool, rng)
     var a: int = pool[0]
-    var first := Difficulty.rng("escape").randi_range(0, a)
+    var first := rng.randi_range(0, a)
     g = {
         "code": [a, pool[1], pool[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
         "hints": 3, "hints_used": 0, "revealed": [], "msg": "", "found": [], "entry": false, "wrong": 0,
@@ -18426,11 +18560,9 @@ func _paint_result(b: Rect2) -> void:
                 detail = "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
             "escape":
                 detail = (
-                    "CODE %d%d%d  TRIES %d  HINTS %d"
+                    "CODE %s  TRIES %d  HINTS %d"
                     % [
-                        int(g.code[0]),
-                        int(g.code[1]),
-                        int(g.code[2]),
+                        _code_text(g.code, ""),
                         maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
                         int(g.hints_used)
                     ]
@@ -18517,10 +18649,11 @@ func _paint_escape(b: Rect2) -> void:
     for entry in g.guesses:
         if row >= 8:
             break
-        _t("%d %d %d  B%d C%d" % [int(entry[0][0]), int(entry[0][1]), int(entry[0][2]), int(entry[1]), int(entry[2])], x, y + 10.0 + 7.0 * float(row), INK)
+        _t("%s  B%d C%d" % [_code_text(entry[0], " "), int(entry[1]), int(entry[2])], x, y + 10.0 + 7.0 * float(row), INK)
         row += 1
-    var bx := x + b.size.x - 74.0
-    for i in 3:
+    var digits_n: int = g.cur.size()
+    var bx := x + b.size.x - 74.0 - 20.0 * float(digits_n - 3)
+    for i in digits_n:
         var r := Rect2(bx + 20.0 * float(i), y + 12.0, 16.0, 22.0)
         _canvas.draw_rect(r, WHITE)
         _canvas.draw_rect(Rect2(r.position.x, r.end.y - 2.0, 16.0, 2.0), BLUE if int(g.cursor) == i else Color("c9d2e0"))
@@ -21747,10 +21880,10 @@ func _on_day(day: int) -> void:
     for t in Msp.tickets:
         if t.status != "Closed" and is_onsite(t):
             skip = true  # one onsite problem at a time
-    if guaranteed or (not skip and randf() < 0.5):
-        _spawn_at = 10.0 + randf() * 4.0
+    if guaranteed or (not skip and Difficulty.rng("onsite.jobs").randf() < 0.5):
+        _spawn_at = 10.0 + Difficulty.rng("onsite.jobs").randf() * 4.0
         if [5, 6, 10, 11, 15].has(day):
-            _spawn_at = 9.6 + randf() * 1.6  # before the all-hands and the evening outing
+            _spawn_at = 9.6 + Difficulty.rng("onsite.jobs").randf() * 1.6  # before the all-hands and the evening outing
 
 
 func _process(_delta: float) -> void:
@@ -21769,7 +21902,7 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
     if client_index < 0:
         if options.is_empty():
             return {}
-        client_index = options[randi() % options.size()]
+        client_index = options[Difficulty.rng("onsite.jobs").randi() % options.size()]
     var type := site_type(client_index)
     var pool := []
     var here: Array = OBJECTS.get(type, [])
@@ -21778,7 +21911,7 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
             pool.append(j)
     if pool.is_empty() or type == "":
         return {}
-    var pick: Dictionary = pool[randi() % pool.size()]
+    var pick: Dictionary = pool[Difficulty.rng("onsite.jobs").randi() % pool.size()]
     var prob := {
         "summary": str(pick.summary), "fix": "onsite_" + str(pick.id), "pri": int(pick.pri), "body": str(pick.body),
         "server": str(pick.object) == "server",
@@ -21857,7 +21990,7 @@ func estimate_minutes(c: int) -> int:
 
 func _trip_minutes(c: int) -> int:
     var base := float(drive_minutes(c)) * traffic_factor()
-    return maxi(10, int(round(base * randf_range(0.9, 1.15) / 5.0)) * 5)
+    return maxi(10, int(round(base * Difficulty.rng("onsite.jobs").randf_range(0.9, 1.15) / 5.0)) * 5)
 
 
 # ---- the front door: choose where to drive (the ticket you are working comes first)
@@ -22160,10 +22293,10 @@ func inspect(obj: String) -> void:
     _inspected[obj] = true
     var pool: Array = FINDINGS.get(obj, [])
     var chance := 0.7 if visit_kind != "" else 0.3
-    if pool.is_empty() or randf() > chance:
+    if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
         Hints.toast(str(TEXT.fine), 2.0)
         return
-    _found(pool[randi() % pool.size()])
+    _found(pool[Difficulty.rng("onsite").randi() % pool.size()])
 
 
 func _found(f: Dictionary) -> void:
@@ -22208,7 +22341,7 @@ func _found_answer(f: Dictionary, id: String) -> void:
 func _missed_follow_up() -> void:
     var keep: Array = []
     for entry in _missed:
-        if randf() < 0.25 and Campaign.active and Msp.enabled:
+        if Difficulty.rng("onsite").randf() < 0.25 and Campaign.active and Msp.enabled:
             var f: Dictionary = entry.f
             var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 2, "body": str(TEXT.missed_mail) + " - %s"}
             Msp.create_problem(int(entry.client), prob, "email")
@@ -22241,14 +22374,14 @@ func _meeting_answer(id: String) -> void:
         match id:
             "numbers":
                 Sales.adjust(c, 6)
-                if randf() < 0.4:
+                if Difficulty.rng("onsite").randf() < 0.4:
                     Owner.apply({"fee_boost": {"client": c, "mult": 1.1}})
                     text += " " + str(TEXT.qbr_fee)
             "listen":
                 Sales.adjust(c, 10)
-                var pool: Array = FINDINGS.get(["cabinet", "server", "pc"][randi() % 3], [])
+                var pool: Array = FINDINGS.get(["cabinet", "server", "pc"][Difficulty.rng("onsite").randi() % 3], [])
                 if not pool.is_empty():
-                    Cards.ask("The owner", text, [{"label": "GO ON", "id": "ok"}], func(_id: String) -> void: _found(pool[randi() % pool.size()]))
+                    Cards.ask("The owner", text, [{"label": "GO ON", "id": "ok"}], func(_id: String) -> void: _found(pool[Difficulty.rng("onsite").randi() % pool.size()]))
                     return
             _:
                 Sales.adjust(c, 4)
@@ -22259,7 +22392,7 @@ func _meeting_answer(id: String) -> void:
             odds = 0.8 if visit_findings > 0 else 0.5
         elif id == "moon":
             odds = 0.45
-        if randf() < odds:
+        if Difficulty.rng("onsite").randf() < odds:
             Sales.sign_client(c)
             if id == "moon":
                 Sales.adjust(c, -8)
@@ -22327,7 +22460,7 @@ func _chose(id: String) -> void:
         )
         return
     _away(float(opt.hours), ticket_id)
-    var ok := randf() < float(opt.chance)
+    var ok := Difficulty.rng("onsite").randf() < float(opt.chance)
     var text := str(opt.text)
     if float(opt.chance) <= 0.0:
         Sales.adjust(client, -4 if bool(job.get("vip", false)) else -2)
@@ -22426,7 +22559,7 @@ func event_fits(ev: Dictionary) -> bool:
 func _maybe_event() -> void:
     _event_done = true
     var ev: Dictionary = EVENTS.get(site_type(client), {})
-    if ev.is_empty() or not event_fits(ev) or randf() > 0.55:
+    if ev.is_empty() or not event_fits(ev) or Difficulty.rng("onsite").randf() > 0.55:
         return
     var options := []
     for o in ev.options:
@@ -23997,6 +24130,563 @@ func _draw_hint(text: String) -> void:
         PixelFont.draw(self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a"))
 ''')
 
+write("scripts/toolbox.gd", '''extends CanvasLayer
+# gdlint:disable=max-line-length
+# Free Play toolbox and the run seed panel (roadmap R10 part a). Two small modal pages on one canvas:
+#
+#   Toolbox.open_seed(on_close)        the SEED page: type or paste hex (4F2A9C) or any word, RANDOM, TODAY <date>
+#   Toolbox.open_tools(in_title, cb)   the TOOLBOX page: pick a game and its parameters, the seed, FIXED TAKE, a mutator
+#   Toolbox.launch()                   start the chosen game with the chosen parameters (tests call this too)
+#
+# The toolbox is opened from the character select screen of Free Play (T key or the TOOLBOX chip; GO there starts Free
+# Play and launches the game once the room is up) and in Free Play with Shift+F10. It only calls the public functions
+# of the games: Outings.start(id, false, options), PrinterGame.start(callback, model, options), Nerf.start_war() and
+# Mutators.set_forced(). Rows by game:
+#   KARAOKE  SONG      RANDOM or fixed chart 1-4 (the same notes every take)
+#   ESCAPE   CLUE SET  RANDOM or fixed code 1-9;  CODE LENGTH 3 or 4 (4 digits is the overlay version);  VIEW ROOM or PANEL
+#   DINNER   TABLE     all three, or two of Alan, Garrison and Dan
+#   PRINTER  MODEL     the six printer models (a fixed take plays the practice set of the seed, so the questions repeat)
+# FIXED TAKE (Difficulty.fixed_take): every launch restarts all random streams (and the global generator) from the
+# seed, mutators are off and so is the ` chooser, and the campaign event deck never runs. Retakes match.
+# Keys: Up / Down row, Left / Right change, Enter (GO, SEED), Esc closes. The mouse works on every row: the left half
+# of a row steps back, the right half steps forward.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
+const GAMES := ["", "bowling", "karaoke", "escape", "dinner", "printer", "nerf"]
+const GAME_LABELS := {
+    "": "NONE",
+    "bowling": "BOWLING",
+    "karaoke": "KARAOKE",
+    "escape": "ESCAPE ROOM",
+    "dinner": "DINNER",
+    "printer": "PRINTER",
+    "nerf": "NERF WAR",
+}
+const TABLES := [[], ["Alan", "Garrison"], ["Alan", "Dan"], ["Garrison", "Dan"]]
+const TABLE_LABELS := ["ALL THREE", "ALAN GARRISON", "ALAN DAN", "GARRISON DAN"]
+const CHARTS := 4
+const SETS := 9
+const MAX_TEXT := 12
+
+var is_open := false
+var mode := "tools"  # "tools" or "seed"
+var in_title := false  # opened from the character select screen: GO starts Free Play
+var queued := false  # GO on the title: launch once Free Play is running
+var game_i := 0
+var chart := 0  # 0 = random
+var clue_set := 0  # 0 = random
+var code_len := 3
+var panel_view := false
+var table_i := 0
+var model_i := 0
+var mutator := ""
+var sel := 0
+var seed_buf := ""
+var seed_focus := 0  # 0 text field, 1 RANDOM, 2 TODAY
+var last_launch := {}  # what the last launch() started (tests): {game, options}
+
+var _on_close := Callable()
+var _canvas: Node2D
+var _rects: Array = []  # [Rect2, kind, index]
+var _was_ui := false
+var _under_tools := false  # the seed page was opened from the toolbox page
+
+
+func _ready() -> void:
+    layer = 72
+    _canvas = Node2D.new()
+    _canvas.visible = false
+    add_child(_canvas)
+    _canvas.draw.connect(_paint)
+    Game.format_changed.connect(_canvas.queue_redraw)
+
+
+# ---- the settings ------------------------------------------------------------------------------
+func game_id() -> String:
+    return str(GAMES[game_i])
+
+
+func model_id() -> String:
+    return str(PrinterGame.MODEL_ORDER[model_i])
+
+
+# the options handed to Outings.start for the chosen game
+func outing_options() -> Dictionary:
+    var out := {}
+    match game_id():
+        "karaoke":
+            if chart > 0:
+                out["chart"] = chart
+        "escape":
+            if clue_set > 0:
+                out["set"] = clue_set
+            if code_len == 4:
+                out["code_len"] = 4
+            if panel_view or code_len == 4:
+                out["panel"] = true
+        "dinner":
+            if table_i > 0:
+                out["table"] = TABLES[table_i].duplicate()
+    return out
+
+
+func printer_options() -> Dictionary:
+    if Difficulty.fixed_take:
+        return {"practice": true, "seed": 1 + Difficulty.run_seed % 99}
+    return {}
+
+
+func set_fixed_take(on: bool) -> void:
+    Difficulty.fixed_take = on
+    if on:
+        mutator = ""
+        Mutators.set_forced("")
+        Difficulty.take_reset()
+        seed(Difficulty.run_seed)
+
+
+# start the chosen game; returns false when nothing is chosen or the game cannot start now
+func launch() -> bool:
+    var id := game_id()
+    if id == "" or Outings.is_open or PrinterGame.is_open:
+        return false
+    _apply_mutator()
+    if Difficulty.fixed_take:
+        Difficulty.take_reset()
+        seed(Difficulty.run_seed)
+    var options := outing_options()
+    last_launch = {"game": id, "options": options}
+    match id:
+        "printer":
+            PrinterGame.start(_printer_done, model_id(), printer_options())
+            last_launch["options"] = printer_options()
+            last_launch["model"] = model_id()
+        "nerf":
+            Nerf.start_war()
+        _:
+            Outings.start(id, false, options)
+    return true
+
+
+func _printer_done(stars: int) -> void:
+    Hints.toast("PRINTER: %d OF 3 STARS" % stars, 3.0)
+
+
+func _apply_mutator() -> void:
+    if Campaign.active or Game.title_mode:
+        return
+    Mutators.set_forced("" if Difficulty.fixed_take else mutator)
+
+
+# called when Free Play has started from the title: the chosen mutator, then the queued game
+func after_start() -> void:
+    if Campaign.active:
+        Difficulty.fixed_take = false
+        return
+    _apply_mutator()
+    if not queued:
+        return
+    queued = false
+    await get_tree().create_timer(1.2).timeout
+    launch()
+
+
+# ---- opening and closing ----------------------------------------------------------------------------
+func can_open() -> bool:
+    return not is_open and not Game.title_mode and not Campaign.active and not Game.ui_open
+
+
+func open_tools(from_title := false, on_close := Callable()) -> void:
+    if is_open:
+        return
+    if not from_title and not can_open():
+        return
+    in_title = from_title
+    queued = false
+    mutator = Mutators.forced if not from_title else mutator
+    _show("tools", on_close)
+    sel = clampi(sel, 0, rows().size() - 1)
+
+
+func open_seed(on_close := Callable()) -> void:
+    if is_open:
+        return
+    seed_buf = ""
+    seed_focus = 0
+    _show("seed", on_close)
+
+
+func _show(for_mode: String, on_close: Callable) -> void:
+    mode = for_mode
+    _on_close = on_close
+    _was_ui = Game.ui_open
+    Game.ui_open = true
+    is_open = true
+    _canvas.visible = true
+    _canvas.queue_redraw()
+
+
+func close(go := false) -> void:
+    if not is_open:
+        return
+    if mode == "seed" and _under_tools:  # back to the toolbox page
+        _under_tools = false
+        mode = "tools"
+        _canvas.queue_redraw()
+        return
+    is_open = false
+    _canvas.visible = false
+    Game.ui_open = _was_ui
+    var cb := _on_close
+    _on_close = Callable()
+    if cb.is_valid():
+        cb.call(go)
+
+
+# ---- seed page ---------------------------------------------------------------------------------------
+func type_char(ch: String) -> void:
+    if seed_buf.length() < MAX_TEXT:
+        seed_buf += ch.to_upper()
+        _canvas.queue_redraw()
+
+
+func backspace() -> void:
+    seed_buf = seed_buf.substr(0, maxi(0, seed_buf.length() - 1))
+    _canvas.queue_redraw()
+
+
+func paste() -> void:
+    var clip := DisplayServer.clipboard_get().strip_edges().to_upper()
+    for i in clip.length():
+        var c := clip[i]
+        if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
+            type_char(c)
+
+
+# apply the typed text; an empty field keeps the current seed. Returns the seed now in force.
+func seed_commit() -> int:
+    var v := Difficulty.parse_seed(seed_buf)
+    if v > 0:
+        Difficulty.seed_run(v)
+    if Difficulty.fixed_take:
+        Difficulty.take_reset()
+    return Difficulty.run_seed
+
+
+func seed_random() -> int:
+    Difficulty.roll_seed()
+    return Difficulty.run_seed
+
+
+func seed_today() -> int:
+    return Difficulty.use_daily()
+
+
+func _seed_act(which: int) -> void:
+    match which:
+        0:
+            seed_commit()
+        1:
+            seed_random()
+        _:
+            seed_today()
+    close(false)
+
+
+# ---- the toolbox rows --------------------------------------------------------------------------------
+func rows() -> Array:
+    var out := [{"id": "game", "label": "GAME", "value": str(GAME_LABELS[game_id()])}]
+    match game_id():
+        "karaoke":
+            out.append({"id": "chart", "label": "SONG", "value": "RANDOM" if chart == 0 else "CHART %d" % chart})
+        "escape":
+            out.append({"id": "set", "label": "CLUE SET", "value": "RANDOM" if clue_set == 0 else "SET %d" % clue_set})
+            out.append({"id": "len", "label": "CODE DIGITS", "value": str(code_len)})
+            out.append({"id": "view", "label": "VIEW", "value": "PANEL" if (panel_view or code_len == 4) else "ROOM"})
+        "dinner":
+            out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
+        "printer":
+            out.append({"id": "model", "label": "MODEL", "value": str(PrinterGame.MODELS[model_id()].label)})
+    var tag := "DAILY " + Difficulty.seed_text() if Difficulty.daily != "" else Difficulty.seed_text()
+    out.append({"id": "seed", "label": "SEED", "value": tag})
+    out.append({"id": "take", "label": "FIXED TAKE", "value": "ON" if Difficulty.fixed_take else "OFF"})
+    if not Difficulty.fixed_take:
+        var name := "NONE"
+        if mutator != "" and Mutators.MUTATORS.has(mutator):
+            name = str(Mutators.MUTATORS[mutator].get("name", mutator)).to_upper()
+        out.append({"id": "mutator", "label": "MUTATOR", "value": name})
+    var go := "START FREE PLAY" if in_title else ("GO" if game_id() != "" else "CLOSE")
+    out.append({"id": "go", "label": "", "value": go})
+    return out
+
+
+func current_row() -> Dictionary:
+    var list := rows()
+    return list[clampi(sel, 0, list.size() - 1)]
+
+
+func move_row(step: int) -> void:
+    var n := rows().size()
+    sel = (sel + step + n) % n
+    _canvas.queue_redraw()
+
+
+# Left / Right (or a click) on the selected row
+func change(step: int) -> void:
+    match str(current_row().id):
+        "game":
+            game_i = (game_i + step + GAMES.size()) % GAMES.size()
+            sel = 0
+        "chart":
+            chart = (chart + step + CHARTS + 1) % (CHARTS + 1)
+        "set":
+            clue_set = (clue_set + step + SETS + 1) % (SETS + 1)
+        "len":
+            code_len = 4 if code_len == 3 else 3
+        "view":
+            panel_view = not panel_view
+            if code_len == 4:
+                code_len = 3
+        "table":
+            table_i = (table_i + step + TABLES.size()) % TABLES.size()
+        "model":
+            model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
+        "take":
+            set_fixed_take(not Difficulty.fixed_take)
+        "mutator":
+            var ids: Array = [""]
+            ids.append_array(Mutators.ids_for("tech"))
+            var at := ids.find(mutator)
+            mutator = str(ids[(maxi(at, 0) + step + ids.size()) % ids.size()])
+        "seed":
+            if step != 0:
+                seed_random()
+    sel = clampi(sel, 0, rows().size() - 1)
+    _canvas.queue_redraw()
+
+
+# Enter on the selected row
+func activate() -> void:
+    match str(current_row().id):
+        "seed":
+            seed_buf = ""
+            seed_focus = 0
+            _under_tools = true
+            mode = "seed"
+            _canvas.queue_redraw()
+        "go":
+            if in_title:
+                queued = game_id() != ""
+                close(true)
+            elif game_id() == "":
+                close(false)
+            else:
+                close(false)
+                launch()
+        "take", "mutator", "game", "chart", "set", "len", "view", "table", "model":
+            change(1)
+
+
+# ---- input -----------------------------------------------------------------------------------------
+func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and event.shift_pressed:
+        if can_open() and Campaign.mode == Campaign.FREE:
+            open_tools()
+            get_viewport().set_input_as_handled()
+
+
+func _input(event: InputEvent) -> void:
+    if not is_open:
+        return
+    if event is InputEventKey and event.pressed and not event.echo:
+        _key(event)
+    elif event is InputEventMouseMotion:
+        _hover(get_viewport().get_mouse_position())
+    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        _click(get_viewport().get_mouse_position())
+    get_viewport().set_input_as_handled()
+
+
+func _key(event: InputEventKey) -> void:
+    if event.keycode == KEY_F9:
+        Game.cycle_format()
+        return
+    if mode == "seed":
+        _seed_key(event)
+        return
+    match event.keycode:
+        KEY_UP, KEY_W:
+            move_row(-1)
+        KEY_DOWN, KEY_S:
+            move_row(1)
+        KEY_LEFT, KEY_A:
+            change(-1)
+        KEY_RIGHT, KEY_D:
+            change(1)
+        KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
+            activate()
+        KEY_ESCAPE, KEY_BACKSPACE:
+            close(false)
+
+
+func _seed_key(event: InputEventKey) -> void:
+    match event.keycode:
+        KEY_ESCAPE:
+            close(false)
+        KEY_ENTER, KEY_KP_ENTER:
+            _seed_act(seed_focus)
+        KEY_TAB, KEY_DOWN:
+            seed_focus = (seed_focus + 1) % 3
+            _canvas.queue_redraw()
+        KEY_UP:
+            seed_focus = (seed_focus + 2) % 3
+            _canvas.queue_redraw()
+        KEY_LEFT:
+            if seed_focus > 0:
+                seed_focus = 1
+                _canvas.queue_redraw()
+        KEY_RIGHT:
+            if seed_focus > 0:
+                seed_focus = 2
+                _canvas.queue_redraw()
+        KEY_BACKSPACE:
+            backspace()
+        KEY_V:
+            if event.ctrl_pressed:
+                paste()
+            elif seed_focus == 0:
+                type_char("V")
+        _:
+            if seed_focus == 0 and event.unicode > 32 and event.unicode < 127 and not event.ctrl_pressed:
+                var c := char(event.unicode).to_upper()
+                if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
+                    type_char(c)
+
+
+func _hit(at: Vector2) -> Array:
+    for r in _rects:
+        if r[0].has_point(at):
+            return r
+    return []
+
+
+func _hover(at: Vector2) -> void:
+    var r := _hit(at)
+    if r.is_empty():
+        return
+    if str(r[1]) == "row" and sel != int(r[2]):
+        sel = int(r[2])
+        _canvas.queue_redraw()
+    elif str(r[1]) == "focus" and seed_focus != int(r[2]):
+        seed_focus = int(r[2])
+        _canvas.queue_redraw()
+
+
+func _click(at: Vector2) -> void:
+    var r := _hit(at)
+    if r.is_empty():
+        return
+    match str(r[1]):
+        "row":
+            sel = int(r[2])
+            var rect: Rect2 = r[0]
+            var id := str(current_row().id)
+            if id in ["go", "seed"]:
+                activate()
+            else:
+                change(1 if at.x >= rect.position.x + rect.size.x * 0.5 else -1)
+        "focus":
+            seed_focus = int(r[2])
+            if seed_focus > 0:
+                _seed_act(seed_focus)
+            else:
+                _canvas.queue_redraw()
+
+
+# ---- drawing ---------------------------------------------------------------------------------------
+func _size() -> Vector2:
+    return Vector2(Game.FORMATS[Game.format].size)
+
+
+func _paint() -> void:
+    _rects.clear()
+    var size := _size()
+    _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.05, 0.6))
+    if mode == "seed":
+        _paint_seed(size)
+    else:
+        _paint_tools(size)
+
+
+func _paint_tools(size: Vector2) -> void:
+    var list := rows()
+    var h := 12.0 + 9.0 * float(list.size()) + 12.0
+    var r := UiStyle.panel_rect(size, 300.0, h)
+    var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", "SHIFT F10" if not in_title else "")
+    var label_w := 52.0
+    for i in list.size():
+        var row: Dictionary = list[i]
+        var y := body.position.y + 9.0 * float(i)
+        var rect := Rect2(body.position.x - 2.0, y - 1.0, body.size.x + 4.0, 9.0)
+        _rects.append([rect, "row", i])
+        var hot := i == sel
+        if hot:
+            _canvas.draw_rect(rect, UiStyle.SOFT)
+        var id := str(row.id)
+        var value := str(row.value)
+        if id == "go":
+            var w := float(PixelFont.width(value)) + 12.0
+            var gr := Rect2(rect.position.x + floorf((rect.size.x - w) * 0.5), y - 1.0, w, 9.0)
+            _canvas.draw_rect(gr, UiStyle.GREEN if hot else UiStyle.MUTED)
+            UiStyle.center(_canvas, value, gr.position.x + w * 0.5, y + 1.0, UiStyle.WHITE)
+            continue
+        UiStyle.text(_canvas, str(row.label), body.position.x, y + 1.0, UiStyle.INK)
+        var vx := body.position.x + label_w
+        var vw := body.size.x - label_w
+        UiStyle.center(_canvas, value, vx + vw * 0.5, y + 1.0, UiStyle.HEAD if hot else UiStyle.INK)
+        if hot and id != "seed":
+            UiStyle.text(_canvas, "<", vx, y + 1.0, UiStyle.GOLD)
+            UiStyle.text(_canvas, ">", vx + vw - 5.0, y + 1.0, UiStyle.GOLD)
+    var hint := "UP DOWN ROW  LEFT RIGHT CHANGE  ENTER  ESC CLOSE"
+    if r.size.x < 250.0:
+        hint = "ARROWS  ENTER  ESC"
+    UiStyle.footer(_canvas, r, hint)
+
+
+func _paint_seed(size: Vector2) -> void:
+    var r := UiStyle.panel_rect(size, 220.0, 70.0)
+    var body := UiStyle.panel(_canvas, r, "RUN SEED", "NOW " + Difficulty.seed_text())
+    var field := Rect2(body.position.x, body.position.y + 1.0, body.size.x, 11.0)
+    _canvas.draw_rect(field, UiStyle.WHITE)
+    _canvas.draw_rect(field, UiStyle.HEAD if seed_focus == 0 else UiStyle.SOFT, false, 1.0)
+    var shown := seed_buf
+    if shown == "" and seed_focus != 0:
+        shown = "HEX OR ANY WORD"
+    var caret := "_" if (seed_focus == 0 and int(Time.get_ticks_msec() / 400) % 2 == 0) else ""
+    UiStyle.text(_canvas, shown + caret, field.position.x + 3.0, field.position.y + 2.0, UiStyle.INK if seed_buf != "" else UiStyle.MUTED)
+    _rects.append([field, "focus", 0])
+    var labels := ["RANDOM", "TODAY " + Difficulty.date_label()]
+    var x := body.position.x
+    var by := body.position.y + 16.0
+    for k in 2:
+        var w := float(PixelFont.width(labels[k])) + 10.0
+        var br := Rect2(x, by, w, 11.0)
+        _canvas.draw_rect(br, UiStyle.HEAD if seed_focus == k + 1 else UiStyle.MUTED)
+        UiStyle.text(_canvas, labels[k], br.position.x + 5.0, by + 2.0, UiStyle.WHITE)
+        _rects.append([br, "focus", k + 1])
+        x += w + 4.0
+    if Difficulty.daily != "":
+        UiStyle.text(_canvas, "DAILY SEED RUN", body.position.x, by + 15.0, UiStyle.GREEN)
+    var hint := "TYPE OR PASTE  TAB  ENTER OK  ESC"
+    if r.size.x < 200.0:
+        hint = "TYPE  TAB  ENTER  ESC"
+    UiStyle.footer(_canvas, r, hint)
+    if seed_focus == 0:  # keep the caret blinking
+        _canvas.queue_redraw()
+''')
+
+
 write("scripts/charselect.gd", '''extends Node2D
 # Character select / first-day screen, shown by the title menu before a new run starts. A row of
 # the playable characters (a carousel in narrow portrait) with an idle preview, a name and a short
@@ -24115,6 +24805,7 @@ func setup(for_mode: String) -> void:
         sel = maxi(0, ids.find("office_adult"))
     phone_sel = 1 if Phone.os == "android" else 0
     Mutators.pending_start = Mutators.STANDARD
+    Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
     facing = "right"
     for spr in _sprites:
         spr.queue_free()
@@ -24168,6 +24859,24 @@ func change_tier(delta_tier: int) -> void:
     queue_redraw()
 
 
+# X (or a click on the SEED chip): type, paste, roll or pick today's seed
+func open_seed() -> void:
+    Toolbox.open_seed(func(_go: bool) -> void: queue_redraw())
+
+
+# T (Free Play): the toolbox; GO there starts Free Play and launches the chosen game
+func open_tools() -> void:
+    if mode != "free":
+        return
+    Toolbox.open_tools(true, _tools_closed)
+
+
+func _tools_closed(go: bool) -> void:
+    queue_redraw()
+    if go:
+        confirm()
+
+
 func move(delta_sel: int) -> void:
     if step == "char":
         if ids.is_empty():
@@ -24206,10 +24915,14 @@ func back() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if Engine.get_process_frames() == _born:
+    if Engine.get_process_frames() == _born or Toolbox.is_open:
         return
     if event is InputEventKey and event.pressed and not event.echo:
         match event.keycode:
+            KEY_X:
+                open_seed()
+            KEY_T:
+                open_tools()
             KEY_F9:
                 Game.cycle_format()
             KEY_LEFT, KEY_A:
@@ -24279,6 +24992,10 @@ func _click(at: Vector2) -> void:
             change_start(-1)
         "start_up":
             change_start(1)
+        "seed":
+            open_seed()
+        "tools":
+            open_tools()
         _:
             _hover(at)
             confirm()
@@ -24331,6 +25048,7 @@ func _draw() -> void:
     _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
     _rects.append([back_r, "back", 0])
     _draw_tier(size, narrow)
+    _draw_seed(size, narrow)
     if is_campaign() and step == "char":
         _draw_start(size, narrow)
     if step == "char":
@@ -24341,10 +25059,11 @@ func _draw() -> void:
     _ctxt(
         summary(false), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
     )
-    var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   TAB START   ENTER PICK   ESC BACK"
+    var extra := "T TOOLS" if mode == "free" else "TAB START"
+    var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
     if narrow:
         _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
-        _ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
+        _ctxt("%s  X SEED  ENTER  ESC" % extra, size.y - 12.0, DIM)
     else:
         _ctxt(hint, size.y - 9.0, DIM)
 
@@ -24362,6 +25081,33 @@ func _draw_tier(size: Vector2, narrow: bool) -> void:
     _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
     _rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
     _rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
+
+
+# the run seed chip: SEED 4F2A9C (X opens the seed page); in Free Play a TOOLS chip follows it
+func _draw_seed(size: Vector2, narrow: bool) -> void:
+    var text := "SEED  " + Difficulty.seed_text()
+    if Difficulty.daily != "":
+        text = "DAILY " + Difficulty.seed_text()
+    var w := float(PixelFont.width("SEED  4F2A9C")) + 8.0
+    var pos := Vector2(34.0, 3.0)
+    var wide := size.x > 340.0
+    if wide and is_campaign():  # the START chip sits at the left
+        var level_w := float(PixelFont.width("LEVEL  HARD")) + 24.0
+        pos = Vector2(size.x - level_w - 3.0 - w - 4.0, 3.0)
+    var r := Rect2(pos, Vector2(w, 9.0))
+    draw_rect(r, PANEL)
+    draw_rect(r, GOLD if Difficulty.daily != "" else DIM, false, 1.0)
+    var tw := float(PixelFont.width(text))
+    _txt(text, r.position + Vector2(floorf((w - tw) * 0.5), 2), Color.WHITE)
+    _rects.append([r, "seed", 0])
+    if mode == "free" and step == "char":
+        var tools := Rect2(pos + Vector2(w + 3.0, 0.0), Vector2(float(PixelFont.width("TOOLS")) + 8.0, 9.0))
+        if not wide:
+            tools.position = Vector2(size.x - tools.size.x - 3.0, 3.0 if narrow else 14.0)
+        draw_rect(tools, PANEL)
+        draw_rect(tools, GOLD if Difficulty.fixed_take else DIM, false, 1.0)
+        _txt("TOOLS", tools.position + Vector2(4, 2), Color.WHITE)
+        _rects.append([tools, "tools", 0])
 
 
 # the starting condition chip: START < MESSY MSP > (left of the heading, under the level chip at 320 wide, top right in portrait)
@@ -24901,6 +25647,7 @@ func _start(id: String, summary := "") -> void:
         _:
             Campaign.new_game(Campaign.FREE)
     Game.go(Campaign.start_scene(), "start")
+    Toolbox.after_start()
     if summary != "":
         var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
         Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
@@ -26596,7 +27343,7 @@ func current_id() -> String:
         return ""
     if Campaign.active:
         return id_at(Campaign.day)
-    return forced
+    return "" if Difficulty.fixed_take else forced
 
 
 func id_at(day: int) -> String:
@@ -26686,8 +27433,8 @@ func pick_problem() -> Dictionary:
     var extras: Array = hook("extra_problems", [])
     if w.is_empty() and extras.is_empty():
         return {}
-    if not extras.is_empty() and randf() < float(hook("extra_chance", 0.0)):
-        return extras[randi() % extras.size()]
+    if not extras.is_empty() and Difficulty.rng("msp.tickets").randf() < float(hook("extra_chance", 0.0)):
+        return extras[Difficulty.rng("msp.tickets").randi() % extras.size()]
     var weights := []
     var total := 0.0
     for p in Msp.PROBLEMS:
@@ -26696,7 +27443,7 @@ func pick_problem() -> Dictionary:
             x = float(w.server)
         weights.append(x)
         total += x
-    var roll := randf() * total
+    var roll := Difficulty.rng("msp.tickets").randf() * total
     for i in weights.size():
         roll -= float(weights[i])
         if roll < 0.0:
@@ -26708,11 +27455,11 @@ func pick_problem() -> Dictionary:
 func pick_endpoint(eps: Array) -> Dictionary:
     var w: Dictionary = hook("user_weight", {})
     if w.is_empty():
-        return eps[randi() % eps.size()]
+        return eps[Difficulty.rng("msp.tickets").randi() % eps.size()]
     var total := 0.0
     for ep in eps:
         total += float(w.get(str(ep.get("user", "")), 1.0))
-    var roll := randf() * total
+    var roll := Difficulty.rng("msp.tickets").randf() * total
     for ep in eps:
         roll -= float(w.get(str(ep.get("user", "")), 1.0))
         if roll < 0.0:
@@ -27014,7 +27761,7 @@ func _unhandled_input(event: InputEvent) -> void:
         return
     if event.keycode != KEY_QUOTELEFT or Game.title_mode or Campaign.active or Game.ui_open:
         return
-    if Campaign.mode != Campaign.FREE:
+    if Campaign.mode != Campaign.FREE or Difficulty.fixed_take:
         return
     cycle_forced(1)
     Hints.toast("MUTATOR: " + (tag() if forced != "" else "NONE"), 3.0)
@@ -27309,6 +28056,7 @@ const COUNTERS := [
     ["", "ALL-HANDS ATTENDED", "meetings", "n"],
     ["", "MUTATOR WEEKS", "mut_days", "n"],
     ["", "STARTS FINISHED", "starts_done", "n"],
+    ["", "DAILY SEEDS PLAYED", "daily_seeds", "n"],
     ["OUTINGS", "OUTINGS PLAYED", "outings", "n"],
     ["", "BOWLING BEST", "stars.bowling", "stars"],
     ["", "KARAOKE BEST", "stars.karaoke", "stars"],

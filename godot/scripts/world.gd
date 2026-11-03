@@ -65,7 +65,7 @@ func _ready() -> void:
 	randomize()
 	for n in CAST:
 		chars[n] = _make_char(n)
-	_meeting_t = randf_range(meeting_gap.x, meeting_gap.y)
+	_meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
 	lights_changed.connect(_on_lights_changed)
 	var layer := CanvasLayer.new()
 	layer.layer = 90
@@ -77,7 +77,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and not event.shift_pressed:
 		hud_visible = not hud_visible
 
 
@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 		_new_day()
 	_meeting_t -= delta
 	if _meeting_t <= 0.0:
-		_meeting_t = randf_range(meeting_gap.x, meeting_gap.y)
+		_meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
 		if clock < LUNCH_START - 0.3 or (clock > LUNCH_START + 1.3 and clock < DAY_END - 0.5):
 			_start_meeting()
 
@@ -255,7 +255,7 @@ func _watch_outage(delta: float) -> void:
 
 
 func _make_char(n: String) -> Dictionary:
-	var leg := _work_leg(n, true, randf_range(20.0, 50.0))
+	var leg := _work_leg(n, true, Difficulty.rng("world").randf_range(20.0, 50.0))
 	return {
 		"scene": CAST[n].home,
 		"arrive": "",
@@ -569,7 +569,7 @@ func _plan(n: String) -> Array:
 	if st.scene != CAST[n].home or st.arriving:
 		st.arriving = false
 		var legs := _travel(st.scene, CAST[n].home, origin_x)
-		legs.append(_work_leg(n, false, randf_range(25.0, 50.0)))
+		legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 50.0)))
 		return legs
 	if clock >= LUNCH_START and not st.lunched and clock < LUNCH_START + 1.2:
 		st.lunched = true
@@ -585,7 +585,7 @@ func _plan(n: String) -> Array:
 		kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
 	elif CAST[n].get("role", "") == "manager":
 		kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
-	return plan_for(n, kinds[randi() % kinds.size()])
+	return plan_for(n, kinds[Difficulty.rng("world").randi() % kinds.size()])
 
 
 func plan_for(n: String, kind: String) -> Array:
@@ -594,7 +594,7 @@ func plan_for(n: String, kind: String) -> Array:
 		"coffee":
 			legs = _trip(n, "kitchenette", _coffee_leg())
 		"visit":
-			return _visit_plan(n, randf_range(45.0, 90.0))
+			return _visit_plan(n, Difficulty.rng("world").randf_range(45.0, 90.0))
 		"cooler":
 			legs = _trip(n, "cubicle_area", _cooler_leg())
 		"closet":
@@ -604,8 +604,8 @@ func plan_for(n: String, kind: String) -> Array:
 		"bathroom":
 			legs = _trip(n, "bathroom", _bathroom_leg())
 		_:
-			return [_work_leg(n, true, randf_range(30.0, 70.0))]
-	legs.append(_work_leg(n, false, randf_range(25.0, 55.0)))
+			return [_work_leg(n, true, Difficulty.rng("world").randf_range(30.0, 70.0))]
+	legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 55.0)))
 	return legs
 
 
@@ -643,7 +643,7 @@ func _lunch_plan(n: String) -> Array:
 	var legs := _travel(st.scene, "conference", _hint_x(n))
 	legs.append(eat)
 	legs.append_array(_travel("conference", home, x))
-	legs.append(_work_leg(n, false, randf_range(25.0, 45.0)))
+	legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 45.0)))
 	return legs
 
 
@@ -977,7 +977,7 @@ func send_to_meeting(n: String, seat: String, secs := 48.0) -> void:
 	var legs := _travel(here, "conference", _hint_x(n))
 	legs.append(meeting)
 	legs.append_array(_travel("conference", home, x))
-	legs.append(_work_leg(n, false, randf_range(25.0, 50.0)))
+	legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 50.0)))
 	st.legs = legs
 	st.leg_t = legs[0].dur
 	if st.node != null and is_instance_valid(st.node):

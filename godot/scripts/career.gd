@@ -80,6 +80,7 @@ const COUNTERS := [
 	["", "ALL-HANDS ATTENDED", "meetings", "n"],
 	["", "MUTATOR WEEKS", "mut_days", "n"],
 	["", "STARTS FINISHED", "starts_done", "n"],
+	["", "DAILY SEEDS PLAYED", "daily_seeds", "n"],
 	["OUTINGS", "OUTINGS PLAYED", "outings", "n"],
 	["", "BOWLING BEST", "stars.bowling", "stars"],
 	["", "KARAOKE BEST", "stars.karaoke", "stars"],

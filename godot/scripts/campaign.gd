@@ -82,6 +82,8 @@ func new_game(for_mode: String) -> void:
 	cash = 0
 	history = []
 	_awaiting = false
+	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+	Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
 	Msp.reset()
 	Skills.reset()
 	Story.reset()
@@ -94,7 +96,6 @@ func new_game(for_mode: String) -> void:
 	Growth.reset()
 	Outings.reset()
 	PrinterGame.reset()
-	Difficulty.new_run()
 	Talk.reset()
 	Meeting.reset()
 	Projects.reset()

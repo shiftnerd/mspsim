@@ -166,16 +166,16 @@ func _init() -> void:
 	for i in 60:
 		seen[str(mu.pick_endpoint(eps).user)] = true
 	_check(seen.size() == 3, "pick_endpoint is the uniform pick")
-	# the same random numbers as the old inline expression
-	seed(99)
+	# the same numbers as the plain uniform pick, now from the seeded `msp.tickets` stream
+	root.get_node("Difficulty").seed_run(99)
 	var a := []
 	for i in 10:
 		a.append(mu.pick_endpoint(eps).user)
-	seed(99)
+	root.get_node("Difficulty").seed_run(99)
 	var b := []
 	for i in 10:
-		b.append(eps[randi() % eps.size()].user)
-	_check(a == b, "pick_endpoint consumes the random stream exactly like the old code")
+		b.append(eps[root.get_node("Difficulty").rng("msp.tickets").randi() % eps.size()].user)
+	_check(a == b, "pick_endpoint consumes the msp.tickets stream exactly like the plain uniform pick")
 	var t0: Dictionary = msp.create_problem(0, msp.PROBLEMS[0], "test")
 	_check(int(t0.pri) == 3 and is_equal_approx(float(t0.sla_left), 300.0), "a normal ticket: P3 with the 300 s SLA")
 	shift.reset()

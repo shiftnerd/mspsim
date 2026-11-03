@@ -2085,7 +2085,8 @@ func to_dict() -> Dictionary:
 
 
 # an old save has no `events` section: everything starts empty. The stream restarts from the run seed
-# on a continue, so it is replayed to where it was (each draw uses exactly ROLLS numbers).
+# on a continue of an old save, so it is replayed to where it was (each draw uses exactly ROLLS numbers);
+# saves written since R10a carry every stream position (Difficulty.to_dict) and need no replay.
 const ROLLS := 5
 
 
@@ -2101,8 +2102,9 @@ func from_dict(data: Dictionary) -> void:
 		for id in saved_recent:
 			recent.append(str(id))
 	var r := Difficulty.rng("events")
-	for i in draws * ROLLS:
-		r.randf()
+	if not Difficulty.resumed("events"):  # a save with stream positions is already in place
+		for i in draws * ROLLS:
+			r.randf()
 
 
 # ---- the people a card may name ---------------------------------------------------------------------

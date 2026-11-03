@@ -100,7 +100,7 @@ func _init() -> void:
 		"bowl.opp_skill": 0.0,
 		"bowl.aim_speed": 1.5,
 		"bowl.power_speed": 1.2,
-		"escape.time": o.ESCAPE_TIME,
+		"escape.time": 120.0,
 		"escape.wrong_penalty": 10.0,
 		"dinner.reveal": 3.0,
 		"printer.speed": 1.0,

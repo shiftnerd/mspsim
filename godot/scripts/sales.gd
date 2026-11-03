@@ -65,7 +65,7 @@ func pick_client() -> int:
 	var total := 0.0
 	for c in ready:
 		total += Owner.client_weight(int(c))
-	var roll := randf() * total
+	var roll := Difficulty.rng("msp.tickets").randf() * total
 	for c in ready:
 		roll -= Owner.client_weight(int(c))
 		if roll <= 0.0:
@@ -120,11 +120,11 @@ func vic_skill() -> float:
 func visit_done() -> bool:
 	if not Campaign.active or not Msp.enabled:
 		return false
-	if randf() > vic_skill():
+	if Difficulty.rng("sales").randf() > vic_skill():
 		Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
 		return false
 	var dealt := -1
-	if active.size() < MAX_CLIENTS and (randf() < 0.55 or Msp.project_busy()):
+	if active.size() < MAX_CLIENTS and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
 		dealt = sign_client()
 		if dealt >= 0:
 			last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
@@ -142,7 +142,7 @@ func sign_client(wanted := -1) -> int:
 			pool.append(c)
 	if pool.is_empty():
 		return -1
-	var client: int = pool[randi() % pool.size()]
+	var client: int = pool[Difficulty.rng("sales").randi() % pool.size()]
 	if wanted >= 0 and pool.has(wanted):
 		client = wanted
 	active.append(client)

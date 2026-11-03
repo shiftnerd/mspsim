@@ -1148,10 +1148,10 @@ func _on_day(day: int) -> void:
 	for t in Msp.tickets:
 		if t.status != "Closed" and is_onsite(t):
 			skip = true  # one onsite problem at a time
-	if guaranteed or (not skip and randf() < 0.5):
-		_spawn_at = 10.0 + randf() * 4.0
+	if guaranteed or (not skip and Difficulty.rng("onsite.jobs").randf() < 0.5):
+		_spawn_at = 10.0 + Difficulty.rng("onsite.jobs").randf() * 4.0
 		if [5, 6, 10, 11, 15].has(day):
-			_spawn_at = 9.6 + randf() * 1.6  # before the all-hands and the evening outing
+			_spawn_at = 9.6 + Difficulty.rng("onsite.jobs").randf() * 1.6  # before the all-hands and the evening outing
 
 
 func _process(_delta: float) -> void:
@@ -1170,7 +1170,7 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 	if client_index < 0:
 		if options.is_empty():
 			return {}
-		client_index = options[randi() % options.size()]
+		client_index = options[Difficulty.rng("onsite.jobs").randi() % options.size()]
 	var type := site_type(client_index)
 	var pool := []
 	var here: Array = OBJECTS.get(type, [])
@@ -1179,7 +1179,7 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 			pool.append(j)
 	if pool.is_empty() or type == "":
 		return {}
-	var pick: Dictionary = pool[randi() % pool.size()]
+	var pick: Dictionary = pool[Difficulty.rng("onsite.jobs").randi() % pool.size()]
 	var prob := {
 		"summary": str(pick.summary),
 		"fix": "onsite_" + str(pick.id),
@@ -1269,7 +1269,7 @@ func estimate_minutes(c: int) -> int:
 
 func _trip_minutes(c: int) -> int:
 	var base := float(drive_minutes(c)) * traffic_factor()
-	return maxi(10, int(round(base * randf_range(0.9, 1.15) / 5.0)) * 5)
+	return maxi(10, int(round(base * Difficulty.rng("onsite.jobs").randf_range(0.9, 1.15) / 5.0)) * 5)
 
 
 # ---- the front door: choose where to drive (the ticket you are working comes first)
@@ -1620,10 +1620,10 @@ func inspect(obj: String) -> void:
 	_inspected[obj] = true
 	var pool: Array = FINDINGS.get(obj, [])
 	var chance := 0.7 if visit_kind != "" else 0.3
-	if pool.is_empty() or randf() > chance:
+	if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
 		Hints.toast(str(TEXT.fine), 2.0)
 		return
-	_found(pool[randi() % pool.size()])
+	_found(pool[Difficulty.rng("onsite").randi() % pool.size()])
 
 
 func _found(f: Dictionary) -> void:
@@ -1672,7 +1672,7 @@ func _found_answer(f: Dictionary, id: String) -> void:
 func _missed_follow_up() -> void:
 	var keep: Array = []
 	for entry in _missed:
-		if randf() < 0.25 and Campaign.active and Msp.enabled:
+		if Difficulty.rng("onsite").randf() < 0.25 and Campaign.active and Msp.enabled:
 			var f: Dictionary = entry.f
 			var prob := {
 				"summary": str(f.summary),
@@ -1715,18 +1715,18 @@ func _meeting_answer(id: String) -> void:
 		match id:
 			"numbers":
 				Sales.adjust(c, 6)
-				if randf() < 0.4:
+				if Difficulty.rng("onsite").randf() < 0.4:
 					Owner.apply({"fee_boost": {"client": c, "mult": 1.1}})
 					text += " " + str(TEXT.qbr_fee)
 			"listen":
 				Sales.adjust(c, 10)
-				var pool: Array = FINDINGS.get(["cabinet", "server", "pc"][randi() % 3], [])
+				var pool: Array = FINDINGS.get(["cabinet", "server", "pc"][Difficulty.rng("onsite").randi() % 3], [])
 				if not pool.is_empty():
 					Cards.ask(
 						"The owner",
 						text,
 						[{"label": "GO ON", "id": "ok"}],
-						func(_id: String) -> void: _found(pool[randi() % pool.size()])
+						func(_id: String) -> void: _found(pool[Difficulty.rng("onsite").randi() % pool.size()])
 					)
 					return
 			_:
@@ -1744,7 +1744,7 @@ func _meeting_answer(id: String) -> void:
 			odds = 0.8 if visit_findings > 0 else 0.5
 		elif id == "moon":
 			odds = 0.45
-		if randf() < odds:
+		if Difficulty.rng("onsite").randf() < odds:
 			Sales.sign_client(c)
 			if id == "moon":
 				Sales.adjust(c, -8)
@@ -1819,7 +1819,7 @@ func _chose(id: String) -> void:
 		)
 		return
 	_away(float(opt.hours), ticket_id)
-	var ok := randf() < float(opt.chance)
+	var ok := Difficulty.rng("onsite").randf() < float(opt.chance)
 	var text := str(opt.text)
 	if float(opt.chance) <= 0.0:
 		Sales.adjust(client, -4 if bool(job.get("vip", false)) else -2)
@@ -1928,7 +1928,7 @@ func event_fits(ev: Dictionary) -> bool:
 func _maybe_event() -> void:
 	_event_done = true
 	var ev: Dictionary = EVENTS.get(site_type(client), {})
-	if ev.is_empty() or not event_fits(ev) or randf() > 0.55:
+	if ev.is_empty() or not event_fits(ev) or Difficulty.rng("onsite").randf() > 0.55:
 		return
 	var options := []
 	for o in ev.options:

@@ -79,7 +79,6 @@ const ROOM_INTRO := {
 const SONG_LEN := 24
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
-const ESCAPE_TIME := 120.0
 const ROOMS := {
 	"bowling": "bowling_alley",
 	"karaoke": "karaoke_bar",
@@ -103,6 +102,7 @@ var is_open := false
 var game := ""
 var phase := "intro"  # intro, play, result
 var g := {}
+var opts := {}  # Free Play toolbox parameters of this game: chart, set, code_len, table, panel (empty = as usual)
 var stars := 0
 var lines: Array = []  # the result page
 var count := 0
@@ -185,7 +185,8 @@ func roster() -> Array:
 # the people the games have a personality for (love / dread topics, bowling skill): the trio, minus you
 func diners() -> Array:
 	var here := roster()
-	return DINERS.filter(func(n: String) -> bool: return here.has(n))
+	var table: Array = opts.get("table", [])
+	return DINERS.filter(func(n: String) -> bool: return here.has(n) and (table.is_empty() or table.has(n)))
 
 
 func bowlers() -> Array:
@@ -281,9 +282,16 @@ func _free_answer(id: String) -> void:
 
 
 # ---- running an outing ------------------------------------------------------------------------
-func start(id: String, from_invite := false) -> void:
+# options (Free Play toolbox, all optional): "chart" 1-4 = a fixed karaoke chart, "set" 1-9 = a fixed escape
+# code, "code_len" 3 or 4 (the overlay escape room), "table" = the dinner guests, "panel" = the overlay
+# version instead of the room. Without options every draw comes from the run's streams as before.
+func start(id: String, from_invite := false, options := {}) -> void:
+	opts = options.duplicate()
+	if Difficulty.fixed_take:
+		Difficulty.take_reset()
 	var here := get_tree().current_scene
-	if use_rooms and ROOMS.has(id) and here != null and not Game.title_mode:
+	var in_room := use_rooms and not bool(opts.get("panel", false))
+	if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
 		_return_scene = here.scene_file_path.get_file().get_basename()
 		var me := here.get_node_or_null("Actors/Player")
 		_return_x = me.global_position.x if me != null else -1.0
@@ -738,7 +746,8 @@ func _bowl_end() -> void:
 func _kara_setup() -> void:
 	var notes := []
 	var gap := Difficulty.f("karaoke.gap")
-	var r := Difficulty.rng("karaoke")
+	var chart := int(opts.get("chart", 0))
+	var r := Difficulty.rng_for("karaoke.chart", chart) if chart > 0 else Difficulty.rng("karaoke")
 	for i in SONG_LEN:
 		notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
 	g = {
@@ -822,13 +831,14 @@ func _kara_end() -> void:
 # ---- escape room --------------------------------------------------------------------------------
 func _escape_setup() -> void:
 	var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-	Difficulty.shuffle(digits, "escape")
+	Difficulty.shuffle_with(digits, _escape_rng())
+	var n_digits := clampi(int(opts.get("code_len", 3)), 3, 4)
 	var friends := 0
 	for who in Social.people():
 		friends += 1 if Social.is_friendly(who) else 0
 	g = {
-		"code": [digits[0], digits[1], digits[2]],
-		"cur": [0, 0, 0],
+		"code": digits.slice(0, n_digits),
+		"cur": [0, 0, 0, 0].slice(0, n_digits),
 		"cursor": 0,
 		"guesses": [],
 		"time": Difficulty.f("escape.time"),
@@ -837,6 +847,12 @@ func _escape_setup() -> void:
 		"revealed": [],
 		"msg": "",
 	}
+
+
+# the generator of one escape code: a fixed set from the toolbox repeats every take, otherwise the run's stream
+func _escape_rng() -> RandomNumberGenerator:
+	var set_n := int(opts.get("set", 0))
+	return Difficulty.rng_for("escape.set", set_n) if set_n > 0 else Difficulty.rng("escape")
 
 
 func _escape_tick(dt: float) -> void:
@@ -850,9 +866,9 @@ func _escape_press(key: int) -> void:
 	var cur: Array = g.cur
 	match key:
 		KEY_LEFT:
-			g.cursor = (int(g.cursor) + 2) % 3
+			g.cursor = (int(g.cursor) + cur.size() - 1) % cur.size()
 		KEY_RIGHT:
-			g.cursor = (int(g.cursor) + 1) % 3
+			g.cursor = (int(g.cursor) + 1) % cur.size()
 		KEY_UP:
 			cur[int(g.cursor)] = (int(cur[int(g.cursor)]) + 1) % 10
 		KEY_DOWN:
@@ -871,7 +887,7 @@ func escape_score(guess: Array) -> Array:
 	var code: Array = g.code
 	var bulls := 0
 	var cows := 0
-	for i in 3:
+	for i in code.size():
 		if int(guess[i]) == int(code[i]):
 			bulls += 1
 		elif code.has(int(guess[i])):
@@ -884,7 +900,7 @@ func escape_try(guess: Array) -> void:
 		return
 	var score := escape_score(guess)
 	g.guesses.append([guess, score[0], score[1]])
-	if int(score[0]) == 3:
+	if int(score[0]) == g.code.size():
 		var tries: int = g.guesses.size()
 		var result := 3 if tries <= 4 else (2 if tries <= 6 else 1)
 		if int(g.hints_used) >= 2:
@@ -909,7 +925,7 @@ func escape_hint() -> String:
 	if int(g.hints) <= 0:
 		return ""
 	var open := []
-	for i in 3:
+	for i in g.code.size():
 		if not g.revealed.has(i):
 			open.append(i)
 	if open.is_empty():
@@ -1182,11 +1198,19 @@ func _streak_broken() -> void:
 
 
 # ---- escape room extras
+func _code_text(code: Array, sep: String) -> String:
+	var parts := []
+	for d in code:
+		parts.append(str(int(d)))
+	return sep.join(PackedStringArray(parts))
+
+
 func _escape_room_setup() -> void:
 	var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-	Difficulty.shuffle(pool, "escape")
+	var rng := _escape_rng()
+	Difficulty.shuffle_with(pool, rng)
 	var a: int = pool[0]
-	var first := Difficulty.rng("escape").randi_range(0, a)
+	var first := rng.randi_range(0, a)
 	g = {
 		"code": [a, pool[1], pool[2]],
 		"cur": [0, 0, 0],
@@ -1501,11 +1525,9 @@ func _paint_result(b: Rect2) -> void:
 				)
 			"escape":
 				detail = (
-					"CODE %d%d%d  TRIES %d  HINTS %d"
+					"CODE %s  TRIES %d  HINTS %d"
 					% [
-						int(g.code[0]),
-						int(g.code[1]),
-						int(g.code[2]),
+						_code_text(g.code, ""),
 						maxi(g.guesses.size(), int(g.get("wrong", 0)) + (1 if stars > 0 else 0)),
 						int(g.hints_used)
 					]
@@ -1612,23 +1634,15 @@ func _paint_escape(b: Rect2) -> void:
 		if row >= 8:
 			break
 		_t(
-			(
-				"%d %d %d  B%d C%d"
-				% [
-					int(entry[0][0]),
-					int(entry[0][1]),
-					int(entry[0][2]),
-					int(entry[1]),
-					int(entry[2])
-				]
-			),
+			"%s  B%d C%d" % [_code_text(entry[0], " "), int(entry[1]), int(entry[2])],
 			x,
 			y + 10.0 + 7.0 * float(row),
 			INK
 		)
 		row += 1
-	var bx := x + b.size.x - 74.0
-	for i in 3:
+	var digits_n: int = g.cur.size()
+	var bx := x + b.size.x - 74.0 - 20.0 * float(digits_n - 3)
+	for i in digits_n:
 		var r := Rect2(bx + 20.0 * float(i), y + 12.0, 16.0, 22.0)
 		_canvas.draw_rect(r, WHITE)
 		_canvas.draw_rect(

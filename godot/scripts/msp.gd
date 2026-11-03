@@ -507,7 +507,7 @@ func reset() -> void:
 		backups.append({"ok": true, "good_day": 0, "checked_day": -1})
 	for c in CLIENTS.size():
 		for n in 3:
-			endpoints.append(_endpoint(c, "PC-%02d" % (n + 1), OS_NAMES[randi() % OS_NAMES.size()]))
+			endpoints.append(_endpoint(c, "PC-%02d" % (n + 1), OS_NAMES[Difficulty.rng("msp.fleet").randi() % OS_NAMES.size()]))
 		endpoints.append(_endpoint(c, "SRV-01", "Server 2008 R2"))
 	_mail(
 		COMPANY + " HR",
@@ -525,7 +525,7 @@ func _endpoint(client: int, suffix: String, os_name: String) -> Dictionary:
 	return {
 		"name": "%s-%s" % [CLIENTS[client].short, suffix],
 		"client": client,
-		"user": USERS[randi() % USERS.size()] if not suffix.begins_with("SRV") else "server",
+		"user": USERS[Difficulty.rng("msp.fleet").randi() % USERS.size()] if not suffix.begins_with("SRV") else "server",
 		"os": os_name,
 		"problem": "",
 		"unsaved": false,
@@ -603,7 +603,7 @@ func create_problem(client: int, prob: Dictionary, source: String) -> Dictionary
 	var picked: Dictionary = Mutators.pick_endpoint(eps)
 	var pri: int = Mutators.priority(int(prob.pri), picked)
 	picked.problem = prob.fix
-	picked["unsaved"] = randf() < 0.65  # somebody is working on it: documents are open
+	picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
 	picked["asked"] = false
 	var t := {
 		"id": _next_id,
@@ -648,7 +648,7 @@ func _random_ticket(source: String) -> Dictionary:
 		var pick: Dictionary = Mutators.pick_problem()
 		var t: Dictionary
 		if pick.is_empty():
-			t = create_ticket(Sales.pick_client(), randi() % PROBLEMS.size(), source)
+			t = create_ticket(Sales.pick_client(), Difficulty.rng("msp.tickets").randi() % PROBLEMS.size(), source)
 		else:
 			t = create_problem(Sales.pick_client(), pick, source)
 		if not t.is_empty():
@@ -848,7 +848,7 @@ func _alt_fix(ep: Dictionary, action: String) -> String:
 		text += " THE USER LOST UNSAVED WORK!"
 	ep.unsaved = false
 	ep.asked = false
-	var roll := alt_roll if alt_roll >= 0.0 else randf()
+	var roll := alt_roll if alt_roll >= 0.0 else Difficulty.rng("msp.fix").randf()
 	if roll < float(d.get("ret", 0.0)) and not tk.is_empty():
 		_queue_return(tk, d, prob)
 	changed.emit()
@@ -886,10 +886,10 @@ func _queue_return(t: Dictionary, d: Dictionary, prob: String) -> void:
 	}
 	t.notes.append("Only a workaround: this will probably come back.")
 	if Campaign.active and Campaign.mode == "tech":
-		item["days"] = 1 + randi() % 2
+		item["days"] = 1 + Difficulty.rng("msp.fix").randi() % 2
 		Story.queue_followup(item)
 	else:
-		_later.append({"left": randf_range(150.0, 300.0), "item": item})
+		_later.append({"left": Difficulty.rng("msp.fix").randf_range(150.0, 300.0), "item": item})
 
 
 # the follow-up ticket for a workaround that came back (also used by Story's follow-ups)
@@ -948,7 +948,7 @@ func _ask_save(ep: Dictionary) -> String:
 # user is interrupted, and anyone with unsaved work who was not warned loses it
 func _reboot_other(ep: Dictionary) -> String:
 	if not ep.has("unsaved"):
-		ep["unsaved"] = randf() < 0.5
+		ep["unsaved"] = Difficulty.rng("msp.fix").randf() < 0.5
 	var client := int(ep.client)
 	var lost: bool = bool(ep.unsaved) and not bool(ep.get("asked", false))
 	var alt: bool = ALT_FIXES.get(str(ep.problem), []).has("reboot")
@@ -1031,7 +1031,7 @@ func new_day(day: int) -> void:
 		var b: Dictionary = backups[c]
 		if not b.ok:
 			continue
-		if day >= 2 and c != Story.RANSOM_CLIENT and randf() < 0.08 and Campaign.active:
+		if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < 0.08 and Campaign.active:
 			b.ok = false
 			b.good_day = day - 1
 		else:
@@ -1261,7 +1261,7 @@ func _ransom_lost(ep: Dictionary, note: String) -> String:
 
 func _ransom_pay(ep: Dictionary) -> String:
 	var contact: String = CLIENTS[ep.client].contact
-	if randf() < 0.7:
+	if Difficulty.rng("msp.fix").randf() < 0.7:
 		_ransom_close(ep, "Ransom paid in Bitcoin. Files decrypted.")
 		score -= 5
 		Campaign.adjust_rep(-2)
@@ -1282,7 +1282,7 @@ func _ransom_pay(ep: Dictionary) -> String:
 
 
 func _ransom_shadow(ep: Dictionary) -> String:
-	if randf() < 0.4:
+	if Difficulty.rng("msp.fix").randf() < 0.4:
 		var contact: String = CLIENTS[ep.client].contact
 		_ransom_close(ep, "Recovered most files from shadow copies. Some are gone.")
 		score -= 8
@@ -1311,7 +1311,7 @@ func _process(delta: float) -> void:
 		return
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
-		_spawn_t = randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
+		_spawn_t = Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) / Owner.issue_mult() * Mutators.ticket_rate()
 		if open_tickets().size() < 6 and World.clock < World.DAY_END:
 			_random_ticket("email")
 	for i in range(_later.size() - 1, -1, -1):
