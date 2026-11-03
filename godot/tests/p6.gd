@@ -215,8 +215,19 @@ func _init() -> void:
 	_check(str(card.options[idx_rebuild].label).begins_with("ISOLATE IT AND REBUILD"), "option 3 is the rebuild")
 	o._picked("ransom_options", idx_rebuild)
 	_drain(cards)
-	_check(story.flags.ransom == "rebuilt" and o.cash == 4700, "owner: rebuild costs $300 and is recorded")
+	_check(story.flags.ransom == "rebuilt" and o.cash == 4000, "owner: rebuild costs $1,000 and is recorded")
 	_check(not bool(o.goal_parts(true)[0].ok) if c.player_as == "Alan" else true, "...and is not a clean year")
+	# Q6: expected cash cost of each owner exit (a "lost" ending costs the $2,500 settlement); no exit may be a free lunch
+	var ev := {}
+	for opt in card.options:
+		var cost := 0.0
+		if opt.has("roll"):
+			for r in opt.roll:
+				cost -= float(r[0]) * (float(r[1].get("cash", 0)) - (2500.0 if r[1].get("ransom_end", "") == "lost" else 0.0))
+		else:
+			cost = -float(opt.fx.get("cash", 0)) + (2500.0 if opt.fx.get("ransom_end", "") == "lost" else 0.0)
+		ev[str(opt.label).substr(0, 8)] = cost
+	_check(float(ev["ISOLATE "]) >= 0.5 * float(ev["PAY THE "]), "balance: the rebuild is not cheaper than half the expected cost of paying (%s)" % str(ev))
 	msp.reset()
 	story.reset()
 	rt = msp.create_problem(story.RANSOM_CLIENT, msp.RANSOM, "test")
