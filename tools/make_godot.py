@@ -4286,6 +4286,9 @@ func create_problem(client: int, prob: Dictionary, source: String, force := fals
         return {}
     var picked: Dictionary = Mutators.pick_endpoint(eps)
     var pri: int = Mutators.priority(int(prob.pri), picked)
+    var newclient: String = SalesCampaign.Retention.new_client_for(client, _next_id)  # C2: a new premium-SLA client's ticket goes first
+    if newclient != "":
+        pri = maxi(1, pri - 1)
     picked.problem = prob.fix
     picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
     picked["asked"] = false
@@ -4295,7 +4298,7 @@ func create_problem(client: int, prob: Dictionary, source: String, force := fals
         "id": _next_id, "client": client, "contact": contact, "summary": prob.summary, "pri": pri,
         "body": prob.body % contact.split(" ")[0], "status": "New", "sla_left": Mutators.sla(SLA_SECS[pri]),
         "sla_total": Mutators.sla(SLA_SECS[pri]), "endpoint": picked.name, "fix": prob.fix, "fix_done": false,
-        "notes": ["Ticket created by " + source + "."], "internal": false, "special": prob.get("special", ""), "desk": 0, "source": source, "breached": false,
+        "notes": ["Ticket created by " + source + "."], "internal": false, "special": prob.get("special", ""), "desk": 0, "source": source, "breached": false, "newclient": newclient,
     }
     _next_id += 1
     tickets.append(t)
@@ -5270,6 +5273,7 @@ func escape() -> void:
         or (app == "lync" and lync_sel != "")
         or (app == "dispatch" and dispatch.nested())
         or (app == "site" and site_view != "desktop")
+        or (app == "crm" and SalesCampaign.crm_view != "list")
     )
     if nested:
         back()
@@ -5280,6 +5284,8 @@ func escape() -> void:
 func back() -> void:
     if _menu:
         _menu = false
+    elif app == "crm" and SalesCampaign.crm_view != "list":
+        SalesCampaign.QuoteBuilder.close()
     elif app == "desktop":
         close()
     elif app == "mail" and mail_view:
@@ -35843,6 +35849,10 @@ const COUNTERS := [
     ["", "LONGEST HIT", "nerf_longest", "px"],
     ["", "ANIMALS PETTED", "pets", "n"],
     ["", "COMPLAINTS HEARD", "vic_calls", "n"],
+    ["SALES", "DEALS WON", "deals_won", "n"],
+    ["", "CLAWBACKS", "clawbacks", "n"],
+    ["", "RENEWALS WON", "renewals", "n"],
+    ["", "UPSELLS SOLD", "upsells", "n"],
     ["", "DUCK CHATS", "duck_squeaks", "n"],
     ["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
 ]
@@ -36372,6 +36382,10 @@ write("scripts/sales_campaign.gd", '''extends Node
 
 signal changed
 
+const Deals := preload("res://scripts/deals.gd")
+const Retention := preload("res://scripts/retention.gd")
+const Handover := preload("res://scripts/handover.gd")
+const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SLOTS := 8
 const MAX_OPEN := 9  # open leads in the pipeline
 const COLD_WEEKS := 4  # a lead nobody touched this long goes cold
@@ -36492,6 +36506,27 @@ var crm_sel := 0
 var crm_tab := "ALL"
 var visit_lead := 0  # the lead you are visiting (Onsite hooks read it)
 var last_report := ""
+# C2: the deeper loop
+var crm_view := "list"  # the CRM shows the pipeline ("list") or the quote builder ("build")
+var crm_page := 0  # the detail pane: 0 summary, 1 promises and risk
+var qb: Dictionary = {}  # the quote being built: {id, q, row, page}
+var pending_handover := 0  # id of the won deal waiting for the conference room
+var handover_queue: Array = []  # more wins waiting behind it
+var rival_wins := 0  # quoted deals ByteBrothers took
+var clawbacks := 0
+var clawed_total := 0
+var week_clawback := 0
+var churned: Array = []  # clients that left: {name, week, left, mrr, claw, why}
+var base_book: Array = []  # the clients you inherited, up for renewal on a schedule
+var base_ready := false
+var lost_base := 0  # weekly fee lost with base clients that did not renew
+var expansion_base := 0  # weekly fee added to base clients by upsells
+var expansion_total := 0  # new MRR from upsells and price rises
+var renewals_won := 0
+var renewals_lost := 0
+var upsells := 0
+var handovers := 0
+var _poll := 0.0
 
 
 func _ready() -> void:
@@ -36528,8 +36563,37 @@ func reset() -> void:
     crm_tab = "ALL"
     visit_lead = 0
     last_report = ""
-    if Hints.objective.begins_with("RING THE SALES BELL"):
+    crm_view = "list"
+    crm_page = 0
+    qb = {}
+    pending_handover = 0
+    handover_queue = []
+    rival_wins = 0
+    clawbacks = 0
+    clawed_total = 0
+    week_clawback = 0
+    churned = []
+    base_book = []
+    base_ready = false
+    lost_base = 0
+    expansion_base = 0
+    expansion_total = 0
+    renewals_won = 0
+    renewals_lost = 0
+    upsells = 0
+    handovers = 0
+    if Hints.objective.begins_with("RING THE SALES BELL") or Hints.objective.begins_with("HANDOVER"):
         Hints.objective = ""
+
+
+# the handover waits for you in the conference room: check twice a second
+func _process(delta: float) -> void:
+    if pending_handover == 0:
+        return
+    _poll += delta
+    if _poll >= 0.4:
+        _poll = 0.0
+        Handover.tick()
 
 
 # the sales campaign is the running mode
@@ -36669,6 +36733,9 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
         "visited": false,
         "moon": false,
         "why": "",
+        "touch": Campaign.day,
+        "notes": [],
+        "follow": 0,
     }
     next_id += 1
     return lead
@@ -36690,6 +36757,7 @@ func lead_text(l: Dictionary) -> String:
 
 
 func accept_lead(l: Dictionary) -> void:
+    Deals.touch(l, "ON THE PIPELINE")
     leads.append(l)
     changed.emit()
 
@@ -36704,20 +36772,7 @@ func drop_lead(id: int, why := "DROPPED") -> void:
 
 
 func _age_leads(day: int) -> void:
-    for l in leads.duplicate():
-        var age := day - int(l.week)
-        match str(l.stage):
-            "LEAD", "MEETING":
-                if age >= COLD_WEEKS:
-                    l.stage = "LOST"
-                    l.why = "WENT COLD"
-            "QUOTED":
-                if age >= COLD_WEEKS + QUOTE_WEEKS:
-                    l.stage = "LOST"
-                    l.why = "NO ANSWER"
-            _:
-                if age >= 3 + COLD_WEEKS:
-                    leads.erase(l)
+    Deals.age(day)
 
 
 # ---- the week --------------------------------------------------------------------------------------------
@@ -36731,6 +36786,13 @@ func begin_week(day: int) -> void:
     week_calls = 0
     week_visits = 0
     week_quotes = 0
+    week_clawback = 0
+    if not base_ready:
+        base_ready = true
+        if base_book.is_empty():
+            Retention.schedule_base()
+    Handover.paperwork_all()
+    Deals.resolve_pending(day)
     _age_leads(day)
     _beat_cards(day)
     var fresh := draw_week(Difficulty.rng("leads"))
@@ -36746,6 +36808,8 @@ func begin_week(day: int) -> void:
         if bool(d.get("complain", false)) and not bool(d.get("resolved", false)) and day >= int(d.week) + 2 and not bool(d.get("asked", false)):
             d["asked"] = true
             _complaint_card(d)
+    for e in Retention.due(day):
+        Retention.renewal_card(e)
     changed.emit()
 
 
@@ -36805,7 +36869,7 @@ func _quota_card() -> void:
             quota_level = id
             Cards.ask(
                 "{sales_owner}",
-                "%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee." % str(QUOTAS[id].words),
+                "%s Now your pay. Salary pays $750 a week and a week of the fee per deal. Balanced pays $550 and two weeks of the fee. Commission-heavy pays $350 and three weeks of the fee. If a client leaves inside 90 days the commission comes back: half on salary, all of it on the other two plans." % str(QUOTAS[id].words),
                 [
                     {"label": "SALARY: $750 + 1 WEEK OF THE FEE", "id": "salary"},
                     {"label": "BALANCED: $550 + 2 WEEKS OF THE FEE", "id": "balanced"},
@@ -36861,25 +36925,16 @@ func discount_ok(lead: Dictionary) -> bool:
     return crunch or behind_pace() or int(lead.users) >= 25
 
 
-func margin_pct(q: Dictionary) -> float:
-    var base := float(METHODS[str(q.method)].base)
-    return 1.0 - (1.0 - base) / float(PRICES[str(q.price)].mult)
+func margin_pct(q: Dictionary, lead: Dictionary = {}) -> float:
+    return Deals.margin(q, lead)
 
 
 func quote_price(lead: Dictionary, q: Dictionary) -> int:
-    return int(round(float(lead.fee) * float(PRICES[str(q.price)].mult) * float(METHODS[str(q.method)].mrr)))
+    return Deals.price(lead, q)
 
 
 func win_chance(lead: Dictionary, q: Dictionary) -> float:
-    var p := float(lead.quality) / 100.0 * 0.8
-    if bool(lead.get("visited", false)):
-        p += 0.10
-    if bool(lead.get("called", false)):
-        p += 0.04
-    if bool(lead.get("moon", false)):
-        p += 0.05
-    p += float(METHODS[str(q.method)].win) + float(PROMISES[str(q.promise)].win) + float(PRICES[str(q.price)].win)
-    return clampf(p, 0.05, 0.92)
+    return Deals.win(lead, q)
 
 
 # what the crew can honestly take on right now (points; a 1-hour response promise is 4)
@@ -36894,10 +36949,7 @@ func capacity() -> float:
 
 
 func promise_gap(lead: Dictionary, q: Dictionary) -> float:
-    var gap := float(PROMISES[str(q.promise)].pts) - capacity() + float(METHODS[str(q.method)].gap)
-    if bool(lead.get("moon", false)):
-        gap += 1.5
-    return snappedf(maxf(0.0, gap), 0.1)
+    return Deals.gap(lead, q)
 
 
 func commission_for(mrr: int) -> int:
@@ -36907,6 +36959,7 @@ func commission_for(mrr: int) -> int:
     return int(round(c))
 
 
+# the quote builder is a screen inside the CRM (see quote_builder.gd); the cards that used to ask method, promise and price are gone
 func start_quote(id: int) -> void:
     var l := lead_by_id(id)
     if l.is_empty() or not ["LEAD", "MEETING"].has(str(l.stage)):
@@ -36915,100 +36968,30 @@ func start_quote(id: int) -> void:
     if slots_left() < 1:
         Hints.toast("NO SELLING HOURS LEFT THIS WEEK.", 2.5)
         return
-    _ask_method(l, {})
+    QuoteBuilder.begin(l)
+    changed.emit()
 
 
-func _ask_method(l: Dictionary, q: Dictionary) -> void:
-    var options := []
-    for k in ["fixed", "scope", "tm"]:
-        var enabled := slots_left() >= int(METHODS[k].hours)
-        options.append({"label": str(METHODS[k].label), "id": k, "enabled": enabled, "hint": "NEEDS %d HOURS" % int(METHODS[k].hours)})
-    options.append({"label": "NOT NOW", "id": "leave"})
-    Cards.ask(
-        "Quote builder",
-        "%s, %d users. %s. How do you want to sell it?" % [str(l.name), int(l.users), str(l.pain).capitalize()],
-        options,
-        func(id: String) -> void:
-            if id == "leave":
-                return
-            q["method"] = id
-            _ask_promise(l, q)
-    )
+# a follow-up call keeps a deal warm: an hour, the last touch resets and a quoted deal is harder for ByteBrothers to take
+func follow_up(id: int) -> String:
+    var l := lead_by_id(id)
+    if l.is_empty() or not is_open(l):
+        return "NOTHING TO FOLLOW UP."
+    if int(l.get("follow", 0)) >= Deals.MAX_FOLLOW and str(l.stage) == "QUOTED":
+        return "YOU HAVE CHASED THIS ONE ENOUGH."
+    if not spend(1):
+        return "NO SELLING HOURS LEFT."
+    l["follow"] = int(l.get("follow", 0)) + 1
+    l["quality"] = mini(100, int(l.quality) + 2)
+    Deals.touch(l, "FOLLOWED UP")
+    changed.emit()
+    return "FOLLOWED UP WITH %s" % str(l.who).to_upper()
 
 
-func _ask_promise(l: Dictionary, q: Dictionary) -> void:
-    var options := []
-    for k in ["low", "std", "high"]:
-        options.append({"label": "%s (+%d%%)" % [str(PROMISES[k].label), int(round(100.0 * float(PROMISES[k].win)))], "id": k})
-    options.append({"label": "BACK", "id": "leave"})
-    Cards.ask(
-        "Quote builder",
-        "What do you promise on service? Dan and Morgan will have to deliver it. Capacity today is about %.1f; a 1 hour response needs 4." % capacity(),
-        options,
-        func(id: String) -> void:
-            if id == "leave":
-                _ask_method(l, q)
-                return
-            q["promise"] = id
-            _ask_price(l, q, false)
-    )
-
-
-func _ask_price(l: Dictionary, q: Dictionary, no_20: bool) -> void:
-    var options := []
-    for k in ["premium", "list", "d10", "d20"]:
-        var t := {"method": q.method, "promise": q.promise, "price": k}
-        var m := margin_pct(t)
-        var ok := m >= margin_floor - 0.0001
-        var hint := "ALAN: UNDER THE MARGIN FLOOR"
-        if k == "d20" and no_20:
-            ok = false
-            hint = "GARRISON SAID NO"
-        options.append(
-            {
-                "label": "$%d/WK  WIN %d%%  MARGIN %d%%  %s" % [quote_price(l, t), int(round(100.0 * win_chance(l, t))), int(round(100.0 * m)), str(PRICES[k].label).get_slice(":", 0).get_slice(" (", 0)],
-                "id": k,
-                "enabled": ok,
-                "hint": hint,
-            }
-        )
-    options.append({"label": "BACK", "id": "leave"})
-    Cards.ask(
-        "Quote builder",
-        "Pick the price for %s. The margin floor is %d%%; the promise gap if you win would be %.1f." % [str(l.name), int(round(100.0 * margin_floor)), promise_gap(l, q)],
-        options,
-        func(id: String) -> void:
-            if id == "leave":
-                _ask_promise(l, q)
-                return
-            q["price"] = id
-            if id == "d20":
-                _approve_discount(l, q)
-            else:
-                send_quote(l, q)
-    )
-
-
-func _approve_discount(l: Dictionary, q: Dictionary) -> void:
-    var yes := discount_ok(l)
-    Cards.ask(
-        "{sales_owner}",
-        (
-            "Twenty percent for %s? %s Fine, but get it signed." % [str(l.name), "We need the logo." if int(l.users) >= 25 else "You are behind on the quarter."]
-            if yes
-            else "Twenty percent for a small account? No. Ten, tops. Find me the money somewhere else."
-        ),
-        [{"label": "OK", "id": "ok"}],
-        func(_id: String) -> void:
-            if yes:
-                send_quote(l, q)
-            else:
-                _ask_price(l, q, true)
-    )
-
-
-# the quote goes out: hours and discovery fee are spent, the dice decide (a seeded stream), the result lands at once
-func send_quote(l: Dictionary, q: Dictionary) -> void:
+# the quote goes out: hours and discovery fee are spent, one seeded roll decides: a yes on the spot, "we will think about it" (the
+# deal stays QUOTED and ByteBrothers may take it before they answer) or a no
+func send_quote(l: Dictionary, q_in: Dictionary) -> void:
+    var q := Deals.norm(q_in)
     var hours := int(METHODS[str(q.method)].hours)
     if not spend(hours):
         return
@@ -37018,12 +37001,27 @@ func send_quote(l: Dictionary, q: Dictionary) -> void:
     quotes_sent += 1
     q["win"] = win_chance(l, q)
     q["price_week"] = quote_price(l, q)
-    q["margin"] = margin_pct(q)
-    l["quote"] = q.duplicate()
-    var won := Difficulty.rng("deals").randf() < float(q.win)
-    if won:
+    q["margin"] = margin_pct(q, l)
+    l["quote"] = q.duplicate(true)
+    l["margin"] = q.margin
+    l["discount"] = q.discount
+    l["promises"] = Deals.promise_list(l, q)
+    Deals.touch(l, "QUOTE $%d/WK, WIN %d%%" % [int(q.price_week), int(round(100.0 * float(q.win)))])
+    var roll := Difficulty.rng("deals").randf()
+    var p := float(q.win)
+    if roll < p:
         l.stage = "QUOTED"
         close_deal(l, q)
+    elif roll < p + (1.0 - p) * Deals.HOLD:
+        l.stage = "QUOTED"
+        l["quoted_day"] = Campaign.day
+        l["follow"] = 0
+        Cards.ask(
+            str(l.who),
+            "Thank you for the proposal. We like it. Give us a few days to talk it over. (We are also talking to ByteBrothers.)",
+            [{"label": "I WILL CALL YOU IN A FEW DAYS", "id": "ok"}],
+            func(_id: String) -> void: pass
+        )
     else:
         l.stage = "LOST"
         l.why = "WENT ELSEWHERE"
@@ -37037,8 +37035,11 @@ func send_quote(l: Dictionary, q: Dictionary) -> void:
     changed.emit()
 
 
-func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
-    var mrr := int(q.price_week)
+func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
+    var q := Deals.norm(q_in)
+    var mrr := int(q.price_week) if q.has("price_week") else quote_price(l, q)
+    if not q.has("margin"):
+        q["margin"] = margin_pct(q, l)
     var gap := promise_gap(l, q)
     var com := commission_for(mrr)
     var qi := quarter_index()
@@ -37047,12 +37048,19 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
     week_deals += 1
     week_commission += com
     commission_total += com
+    week_cost += int(Deals.ONBOARD[str(q.onboard)].cost)
     wins += 1
+    Career.add("deals_won")
+    var promises: Array = l.get("promises", [])
+    if promises.is_empty():
+        promises = Deals.promise_list(l, q)
     var deal := {
         "id": int(l.id),
         "name": str(l.name),
         "type": str(l.type),
+        "who": str(l.who),
         "mrr": mrr,
+        "signed_mrr": mrr,
         "margin": float(q.margin),
         "week": Campaign.day,
         "promise": str(q.promise),
@@ -37061,9 +37069,23 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
         "complain": false,
         "resolved": false,
         "asked": false,
+        "discount": int(q.discount),
+        "extras": q.extras.duplicate(),
+        "onboard": str(q.onboard),
+        "promises": promises,
+        "commission": com,
+        "churn": 10,
+        "state": "handover",
+        "breaches": 0,
+        "onboarded": false,
+        "onboard_due": Campaign.day + int(Deals.ONBOARD[str(q.onboard)].weeks),
+        "kept": 0,
+        "broken": 0,
     }
     book.append(deal)
     l.stage = "WON"
+    l["promises"] = promises
+    Deals.touch(l, "WON $%d/WK" % mrr)
     Sales.deals += 1
     Sales.last_deal = "YOU CLOSED %s!" % str(l.name).to_upper()
     bell_ready = true
@@ -37073,14 +37095,19 @@ func close_deal(l: Dictionary, q: Dictionary) -> Dictionary:
         str(l.who),
         "We are in. Send the paperwork. Weekly fee $%d, signed for twelve months. Your commission is $%d." % [mrr, com],
         [{"label": "THANK YOU", "id": "ok"}],
-        func(_id: String) -> void: _handover_card(deal)
+        func(_id: String) -> void: Handover.queue(deal)
     )
     changed.emit()
     return deal
 
 
-# the handover to Morgan and Dan: the promise against what they can carry
+# the old three-answer handover maps onto the promise list: tell the real SLA = renegotiate everything, brief them = keep everything,
+# send the paperwork = drop everything. A deal without a promise list (an old save) uses the original arithmetic.
 func handover(deal: Dictionary, how: String) -> void:
+    if not deal.get("promises", []).is_empty():
+        Handover.decide_all(deal, {"honest": "renegotiated", "brief": "kept"}.get(how, "dropped"))
+        Handover.finish(deal, false)
+        return
     var gap: float = float(deal.gap)
     match how:
         "honest":
@@ -37095,29 +37122,10 @@ func handover(deal: Dictionary, how: String) -> void:
             if gap >= 0.5:
                 Social.change("Dan", -1)
     var g: float = float(deal.gap)
-    # an honest SLA conversation costs a little goodwill up front; a gap costs a lot of it
     deal["mood"] = clampi(72 - int(round(g * 8.0)) - (2 if how == "honest" and gap >= 0.5 else 0), 25, 85)
     deal["complain"] = g >= 0.5
+    deal["state"] = "active"
     changed.emit()
-
-
-func _handover_card(deal: Dictionary) -> void:
-    var g := float(deal.gap)
-    var gap_text := (
-        "You promised more than we can carry today: a gap of %.1f." % g
-        if g >= 0.5
-        else "What you promised fits what we can do."
-    )
-    Cards.ask(
-        "{ops}",
-        "Handover for %s with Dan and me. $%d a week, %s. %s" % [str(deal.name), int(deal.mrr), str(PROMISES[str(deal.promise)].label).to_lower(), gap_text],
-        [
-            {"label": "TELL THEM THE REAL SLA, BRIEF DAN AND MORGAN", "id": "honest"},
-            {"label": "BRIEF DAN AND MORGAN ON THE PROMISE", "id": "brief"},
-            {"label": "JUST SEND THE SIGNED PAPERWORK OVER", "id": "gloss"},
-        ],
-        func(id: String) -> void: handover(deal, id)
-    )
 
 
 func _complaint_card(deal: Dictionary) -> void:
@@ -37161,6 +37169,7 @@ func call_lead(id: int) -> String:
     l.called = true
     l.stage = "MEETING"
     l.quality = mini(100, int(l.quality) + 5)
+    Deals.touch(l, "CALLED")
     week_calls += 1
     changed.emit()
     return "CALLED %s: %s" % [str(l.who).to_upper(), str(l.pain).to_upper()]
@@ -37265,6 +37274,7 @@ func pitch_answer(id: String, text: String) -> void:
         return
     l.visited = true
     l.stage = "MEETING"
+    Deals.touch(l, "VISITED THE OFFICE")
     match id:
         "report":
             l.quality = mini(100, int(l.quality) + 6)
@@ -37296,6 +37306,8 @@ func ring_bell(fx: Node) -> bool:
     bell_ready = false
     bell_rings += 1
     Hints.objective = ""
+    if pending_handover != 0:
+        Handover._objective()
     fx.ring("player")
     Social.change_all(1)
     Campaign.adjust_rep(1)
@@ -37329,18 +37341,19 @@ func _grade(ratio: float) -> String:
     return "D"
 
 
+# clients of the new book whose churn meter is in the red
+func at_risk() -> int:
+    var n := 0
+    for d in book:
+        if int(d.get("churn", 0)) >= 60:
+            n += 1
+    return n
+
+
 func settle() -> Dictionary:
     var day := Campaign.day
     _hire_for_book()
-    var est: Dictionary = Owner.weekly_estimate()
-    var serve := 0
-    for d in book:
-        serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
-    var revenue := int(est.revenue) + book_mrr()
-    var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost
-    Owner.cash += profit
-    Owner.history.append({"day": day, "profit": profit, "ebitda": profit, "cash": Owner.cash})
-    # the book: new clients settle in, unkept promises wear them down
+    # the book: new clients settle in, unkept promises wear them down, then the 90 day clock ticks (a client may leave)
     for d in book:
         if int(d.week) == day:
             continue
@@ -37350,6 +37363,15 @@ func settle() -> Dictionary:
         if Sales.average() < 55.0:
             drift -= 1
         d["mood"] = clampi(int(d.mood) + drift, 0, 100)
+    Retention.week_tick(day)
+    var est: Dictionary = Owner.weekly_estimate()
+    var serve := 0
+    for d in book:
+        serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
+    var revenue := int(est.revenue) + book_mrr() - lost_base + expansion_base
+    var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost + week_clawback
+    Owner.cash += profit
+    Owner.history.append({"day": day, "profit": profit, "ebitda": profit, "cash": Owner.cash})
     var qi := quarter_index(day)
     var q: Dictionary = QUARTERS[qi]
     var pct := quota_pct(qi)
@@ -37384,10 +37406,10 @@ func settle() -> Dictionary:
         ["NEW MRR SIGNED", "$%d/WK (%d DEAL%s)" % [week_new, week_deals, "" if week_deals == 1 else "S"], green if week_new > 0 else warn],
         ["PIPELINE VALUE", "$%d/WK, %d LEADS" % [pipeline_value(), open_leads().size()], Color.WHITE],
         ["QUOTA %s" % str(q.label), "%d%% ($%d/$%d)" % [pct, int(q_signed[qi]), quota_target(qi)], green if pct >= 100 else (warn if ratio >= 0.75 else red)],
-        ["COMMISSION EARNED", "$%d ($%d TOTAL)" % [week_commission, commission_total], green if week_commission > 0 else Color.WHITE],
+        ["COMMISSION EARNED", "$%d ($%d TOTAL)%s" % [week_commission, commission_total, (", -$%d CLAWED BACK" % week_clawback) if week_clawback > 0 else ""], red if week_clawback > 0 else (green if week_commission > 0 else Color.WHITE)],
         ["CLIENT MOOD", "%d%% (%d NEW)" % [int(mood), book.size()], green if mood >= 70.0 else (red if mood < 50.0 else warn)],
         ["SELLING HOURS", "%d CALLS, %d VISITS, %d QUOTES" % [week_calls, week_visits, week_quotes], Color.WHITE],
-        ["NEW BOOK", "$%d/WK, %d CLIENT%s" % [book_mrr(), book.size(), "" if book.size() == 1 else "S"], Color.WHITE],
+        ["NEW BOOK", "$%d/WK, %d CLIENT%s, %d AT RISK" % [book_mrr(), book.size(), "" if book.size() == 1 else "S", at_risk()], Color.WHITE],
         ["COMPANY", "EBITDA %s, CASH %s" % [_money(profit), _money(Owner.cash)], green if profit >= 0 else red],
         ["VERDICT", verdict, red if grade in ["C", "D"] or (closing and q_result[qi] == "MISS") else green],
     ]
@@ -37478,6 +37500,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["DEALS WON %d  QUOTES LOST %d  COMMISSION $%d" % [wins, losses, commission_total], ink])
             lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
             lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
+            lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])
             for who in Social.people():
@@ -37512,6 +37535,21 @@ func to_dict() -> Dictionary:
         "complaints": complaints,
         "bell": bell_ready,
         "rings": bell_rings,
+        "rival_wins": rival_wins,
+        "clawbacks": clawbacks,
+        "clawed": clawed_total,
+        "churned": churned,
+        "base_book": base_book,
+        "base_ready": base_ready,
+        "lost_base": lost_base,
+        "exp_base": expansion_base,
+        "expansion": expansion_total,
+        "renewals_won": renewals_won,
+        "renewals_lost": renewals_lost,
+        "upsells": upsells,
+        "handovers": handovers,
+        "pending": pending_handover,
+        "hqueue": handover_queue,
     }
 
 
@@ -37535,6 +37573,1250 @@ func from_dict(data: Dictionary) -> void:
     complaints = int(data.get("complaints", 0))
     bell_ready = bool(data.get("bell", false))
     bell_rings = int(data.get("rings", 0))
+    rival_wins = int(data.get("rival_wins", 0))
+    clawbacks = int(data.get("clawbacks", 0))
+    clawed_total = int(data.get("clawed", 0))
+    churned = data.get("churned", [])
+    base_book = data.get("base_book", [])
+    base_ready = bool(data.get("base_ready", false))
+    lost_base = int(data.get("lost_base", 0))
+    expansion_base = int(data.get("exp_base", 0))
+    expansion_total = int(data.get("expansion", 0))
+    renewals_won = int(data.get("renewals_won", 0))
+    renewals_lost = int(data.get("renewals_lost", 0))
+    upsells = int(data.get("upsells", 0))
+    handovers = int(data.get("handovers", 0))
+    pending_handover = int(data.get("pending", 0))
+    handover_queue = data.get("hqueue", [])
+''')
+
+write("scripts/deals.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# Deals as records (sales campaign, roadmap C2; docs/campaign-paths.md section 5): a deal is the lead dictionary that lives in
+# SalesCampaign.leads, extended with the quote, the promises made, the discount, the last touch and notes. Stages: LEAD, MEETING,
+# QUOTED (a quote the client is still thinking about), WON, LOST. The rules live here as static functions, the state stays in
+# SalesCampaign: stale deals cool off (the quality drops and an untouched lead goes cold), a quoted deal can be stolen by ByteBrothers
+# (a seeded roll per week that rises with every week you leave it untouched) and the quote maths of the builder screen
+# (price, SLA tier, scope items, onboarding speed, discount -> win chance, margin, promise gap, cash flow) is here too.
+
+const WINDOW_WEEKS := 13  # the 90 day clock: 13 campaign weeks of 7 days (91 days)
+const NEW_CLIENT_WEEKS := 4  # the first 30 days of a new client
+const HOLD := 0.45  # of the quotes that do not win on the spot, this share stays open ("we will think about it")
+const MAX_FOLLOW := 3
+const EXTRAS := {
+    "backup": {"label": "MANAGED BACKUP", "short": "BACKUP", "fee": 110, "cost": 35, "pts": 0.3, "pain": ["backup", "files"]},
+    "patching": {"label": "MANAGED UPDATES AND AV", "short": "UPDATES+AV", "fee": 80, "cost": 25, "pts": 0.2, "pain": ["xp", "virus", "printer"]},
+    "security": {"label": "MANAGED SECURITY", "short": "SECURITY", "fee": 95, "cost": 40, "pts": 0.4, "pain": ["hipaa", "stolen", "virus"]},
+}
+const EXTRA_ORDER := ["backup", "patching", "security"]
+const ONBOARD := {
+    "rush": {"label": "LIVE IN 1 WEEK", "short": "1 WEEK", "weeks": 1, "win": 0.05, "pts": 0.7, "cost": 250},
+    "std": {"label": "LIVE IN 2 WEEKS", "short": "2 WEEKS", "weeks": 2, "win": 0.0, "pts": 0.0, "cost": 100},
+    "slow": {"label": "LIVE IN 4 WEEKS", "short": "4 WEEKS", "weeks": 4, "win": -0.03, "pts": -0.3, "cost": 0},
+}
+const ONBOARD_ORDER := ["rush", "std", "slow"]
+const TIER_NAME := {"low": "BASIC", "std": "STANDARD", "high": "PREMIUM"}
+const RESPONSE := {"low": "NEXT BUSINESS DAY", "std": "4 HOUR RESPONSE", "high": "1 HOUR RESPONSE, ANY TIME"}
+const DISCOUNTS := [0, 10, 20]
+const METHOD_ORDER := ["fixed", "scope", "tm"]
+const METHOD_SHORT := {"fixed": "FIXED PRICE", "scope": "SCOPE FIRST", "tm": "TIME + MATERIALS"}
+const TIER_RIVAL := {"easy": 0.8, "normal": 1.0, "hard": 1.2}
+const NOTE_KEEP := 6
+
+
+# ---- the quote: a normal form so the old {method, promise, price} dictionaries and the builder's both work
+static func norm(q: Dictionary) -> Dictionary:
+    var n: Dictionary = q.duplicate()
+    var price: String = str(q.get("price", "list"))
+    var disc: int = int(q.get("discount", 0))
+    if price == "d10":
+        price = "list"
+        disc = maxi(disc, 10)
+    elif price == "d20":
+        price = "list"
+        disc = maxi(disc, 20)
+    n["price"] = price
+    n["discount"] = disc
+    n["method"] = str(q.get("method", "fixed"))
+    n["promise"] = str(q.get("promise", "std"))
+    n["extras"] = q.get("extras", [])
+    n["onboard"] = str(q.get("onboard", "std"))
+    return n
+
+
+static func price_mult(q: Dictionary) -> float:
+    var n := norm(q)
+    return (1.10 if str(n.price) == "premium" else 1.0) * (1.0 - float(n.discount) / 100.0)
+
+
+static func extras_fee(q: Dictionary) -> int:
+    var total := 0
+    for e in norm(q).extras:
+        total += int(EXTRAS[str(e)].fee)
+    return total
+
+
+static func extras_cost(q: Dictionary) -> int:
+    var total := 0
+    for e in norm(q).extras:
+        total += int(EXTRAS[str(e)].cost)
+    return total
+
+
+static func margin(q: Dictionary, lead: Dictionary = {}) -> float:
+    var n := norm(q)
+    var list: float = float(lead.fee) if not lead.is_empty() else 600.0
+    var base: float = float(SalesCampaign.METHODS[str(n.method)].base)
+    var rev: float = (list + float(extras_fee(n))) * price_mult(n)
+    var cost: float = (1.0 - base) * list + float(extras_cost(n))
+    return 1.0 - cost / maxf(1.0, rev)
+
+
+static func price(lead: Dictionary, q: Dictionary) -> int:
+    var n := norm(q)
+    return int(round((float(lead.fee) + float(extras_fee(n))) * price_mult(n) * float(SalesCampaign.METHODS[str(n.method)].mrr)))
+
+
+static func pain_match(lead: Dictionary, extra: String) -> bool:
+    var pain: String = str(lead.get("pain", "")).to_lower()
+    for k in EXTRAS[extra].pain:
+        if pain.contains(str(k)):
+            return true
+    return false
+
+
+static func win(lead: Dictionary, q: Dictionary) -> float:
+    var n := norm(q)
+    var p: float = float(lead.quality) / 100.0 * 0.8
+    if bool(lead.get("visited", false)):
+        p += 0.10
+    if bool(lead.get("called", false)):
+        p += 0.04
+    if bool(lead.get("moon", false)):
+        p += 0.05
+    p += float(SalesCampaign.METHODS[str(n.method)].win) + float(SalesCampaign.PROMISES[str(n.promise)].win)
+    p += (-0.07 if str(n.price) == "premium" else 0.0) + 0.006 * float(n.discount)
+    for e in n.extras:
+        p += 0.04 if pain_match(lead, str(e)) else -0.015
+    p += float(ONBOARD[str(n.onboard)].win)
+    return clampf(p, 0.05, 0.92)
+
+
+# the promise gap in points, and where it comes from (kept in step with SalesCampaign.promise_gap)
+static func gap_parts(lead: Dictionary, q: Dictionary) -> Dictionary:
+    var n := norm(q)
+    var sla: float = float(SalesCampaign.PROMISES[str(n.promise)].pts) - SalesCampaign.capacity() + float(SalesCampaign.METHODS[str(n.method)].gap)
+    if bool(lead.get("moon", false)):
+        sla += 1.5
+    var extras := 0.0
+    for e in n.extras:
+        extras += float(EXTRAS[str(e)].pts)
+    var onboard: float = float(ONBOARD[str(n.onboard)].pts)
+    var total: float = maxf(0.0, sla + extras + onboard)
+    return {"sla": sla, "extras": extras, "onboard": onboard, "total": snappedf(total, 0.1)}
+
+
+static func gap(lead: Dictionary, q: Dictionary) -> float:
+    return float(gap_parts(lead, q).total)
+
+
+# the cash effect over the first four weeks: gross profit minus onboarding, discovery and the commission
+static func cash4(lead: Dictionary, q: Dictionary) -> int:
+    var n := norm(q)
+    var p: int = price(lead, n)
+    var gp: float = float(p) * margin(n, lead)
+    var cost: int = int(ONBOARD[str(n.onboard)].cost)
+    if str(n.method) == "scope":
+        cost += SalesCampaign.DISCOVERY
+    return int(round(4.0 * gp)) - cost - SalesCampaign.commission_for(p)
+
+
+# everything the builder shows, in one place (tests read this too)
+static func gauges(lead: Dictionary, q: Dictionary) -> Dictionary:
+    var n := norm(q)
+    var m: float = margin(n, lead)
+    var g: float = gap(lead, n)
+    var hours: int = int(SalesCampaign.METHODS[str(n.method)].hours)
+    var blocks := []
+    var can_send := true
+    if m < SalesCampaign.margin_floor - 0.0001:
+        blocks.append({"who": "ALAN", "text": "%d%% IS UNDER MY %d%% FLOOR." % [int(round(100.0 * m)), int(round(100.0 * SalesCampaign.margin_floor))], "hard": true})
+        can_send = false
+    if int(n.discount) >= 20:
+        if SalesCampaign.discount_ok(lead):
+            blocks.append({"who": "GARRISON", "text": "20%% OFF, OK: %s. GET IT SIGNED." % ("WE NEED THE LOGO" if int(lead.users) >= 25 else "YOU ARE BEHIND ON THE QUARTER"), "hard": false})
+        else:
+            blocks.append({"who": "GARRISON", "text": "20%% FOR A SMALL ACCOUNT? NO. TEN, TOPS.", "hard": true})
+            can_send = false
+    if SalesCampaign.slots_left() < hours:
+        blocks.append({"who": "CLOCK", "text": "THIS QUOTE NEEDS %d SELLING HOURS." % hours, "hard": true})
+        can_send = false
+    if g >= 1.5:
+        blocks.append({"who": "MORGAN", "text": "GAP %.1f: DAN AND I CANNOT CARRY THAT TODAY." % g, "hard": false})
+    return {
+        "win": win(lead, n),
+        "margin": m,
+        "gap": g,
+        "price": price(lead, n),
+        "cash4": cash4(lead, n),
+        "hours": hours,
+        "blocks": blocks,
+        "can_send": can_send,
+        "cap": SalesCampaign.capacity(),
+    }
+
+
+# ---- touches, notes, staleness and the risk meter -----------------------------------------------------
+static func touch(l: Dictionary, text := "") -> void:
+    l["touch"] = Campaign.day
+    if text != "":
+        note(l, text)
+
+
+static func note(l: Dictionary, text: String) -> void:
+    var notes: Array = l.get("notes", [])
+    notes.append("WK%d %s" % [Campaign.day, text])
+    while notes.size() > NOTE_KEEP:
+        notes.pop_front()
+    l["notes"] = notes
+
+
+static func stale_weeks(l: Dictionary, day := -1) -> int:
+    var d: int = Campaign.day if day < 0 else day
+    return maxi(0, d - int(l.get("touch", l.week)))
+
+
+# the chance ByteBrothers takes a quoted deal this week: it rises every week you leave it alone and falls with every follow-up
+static func steal_chance(l: Dictionary, day := -1) -> float:
+    var d: int = Campaign.day if day < 0 else day
+    var weeks: int = maxi(0, d - int(l.get("quoted_day", d)))
+    var p: float = 0.08 + 0.09 * float(stale_weeks(l, d)) + 0.04 * float(weeks) - 0.10 * float(int(l.get("follow", 0)))
+    p *= float(TIER_RIVAL.get(Difficulty.tier, 1.0))
+    return clampf(p, 0.04, 0.6)
+
+
+# 0..100: how close the deal is to going cold, being stolen, or (once won) churning
+static func risk(l: Dictionary) -> int:
+    match str(l.stage):
+        "LEAD", "MEETING":
+            return clampi(int(round(100.0 * float(stale_weeks(l)) / float(SalesCampaign.COLD_WEEKS))), 0, 100)
+        "QUOTED":
+            return clampi(int(round(100.0 * steal_chance(l, Campaign.day + 1))), 0, 100)
+        "WON":
+            var d: Dictionary = book_deal(int(l.id))
+            return int(d.get("churn", 0)) if not d.is_empty() else 0
+    return 0
+
+
+static func book_deal(id: int) -> Dictionary:
+    for d in SalesCampaign.book:
+        if int(d.id) == id:
+            return d
+    return {}
+
+
+# ---- the week: pending quotes are answered, stale leads cool ---------------------------------------------
+static func resolve_pending(day: int) -> void:
+    for l in SalesCampaign.leads.duplicate():
+        if str(l.stage) != "QUOTED":
+            continue
+        var weeks: int = day - int(l.get("quoted_day", day))
+        if weeks <= 0:
+            continue
+        var r: RandomNumberGenerator = Difficulty.rng_for("rival", int(l.id) * 100 + day)
+        if r.randf() < steal_chance(l, day):
+            steal(l)
+            continue
+        var q: Dictionary = l.get("quote", {})
+        var p: float = minf(0.9, float(q.get("win", 0.4)) * 0.8 + 0.12 * float(int(l.get("follow", 0))))
+        if r.randf() < p:
+            note(l, "THEY SAID YES")
+            SalesCampaign.close_deal(l, q)
+        elif weeks >= 3:
+            l.stage = "LOST"
+            l["why"] = "NO ANSWER"
+            SalesCampaign.losses += 1
+            note(l, "NO ANSWER")
+
+
+static func steal(l: Dictionary) -> void:
+    l.stage = "LOST"
+    l["why"] = "BYTEBROTHERS TOOK IT"
+    SalesCampaign.losses += 1
+    SalesCampaign.rival_wins += 1
+    note(l, "BYTEBROTHERS UNDERCUT")
+    Lync._push("Garrison", "Garrison", "ByteBrothers signed %s. They called them while we were thinking about it." % str(l.name))
+    Cards.ask(
+        "{sales_owner}",
+        "ByteBrothers just signed %s, the quote we sent %d weeks ago. They called every other day. Slow quotes lose to the guy who phones back." % [str(l.name), Campaign.day - int(l.get("quoted_day", Campaign.day))],
+        [{"label": "NOTED. I WILL FOLLOW UP FASTER.", "id": "ok"}],
+        func(_id: String) -> void: pass
+    )
+
+
+# a leads ages by the week since it was last touched: the quality fades, then it goes cold (QUOTED ones are handled above)
+static func age(day: int) -> void:
+    for l in SalesCampaign.leads.duplicate():
+        var idle: int = stale_weeks(l, day)
+        match str(l.stage):
+            "LEAD", "MEETING":
+                if idle >= SalesCampaign.COLD_WEEKS:
+                    l.stage = "LOST"
+                    l["why"] = "WENT COLD"
+                    note(l, "WENT COLD")
+                elif idle >= 2:
+                    l["quality"] = maxi(10, int(l.quality) - 3)
+            "QUOTED":
+                if day - int(l.get("quoted_day", l.week)) >= SalesCampaign.COLD_WEEKS + SalesCampaign.QUOTE_WEEKS:
+                    l.stage = "LOST"
+                    l["why"] = "NO ANSWER"
+            "LOST":
+                if day - int(l.week) >= 3 + SalesCampaign.COLD_WEEKS:
+                    SalesCampaign.leads.erase(l)
+            "WON":
+                if day - int(l.week) > WINDOW_WEEKS + 1:
+                    SalesCampaign.leads.erase(l)
+
+
+# ---- the promises ---------------------------------------------------------------------------------------
+# one entry per promise made in the quote; the deal's gap is split between them (so the handover can treat each on its own)
+static func promise_list(lead: Dictionary, q: Dictionary) -> Array:
+    var n := norm(q)
+    var parts := gap_parts(lead, n)
+    var total: float = float(parts.total)
+    var raw := []
+    var sla_raw: float = maxf(0.0, float(parts.sla))
+    var items := []
+    var promise: String = str(n.promise)
+    if promise == "low":
+        items.append({"id": "sla", "kind": "SLA", "label": "%s SLA: %s" % [TIER_NAME[promise], RESPONSE[promise]], "raw": sla_raw})
+    else:
+        items.append({"id": "sla", "kind": "SLA", "label": "%s SLA TIER" % TIER_NAME[promise], "raw": sla_raw * 0.4})
+        items.append({"id": "response", "kind": "RESPONSE", "label": RESPONSE[promise], "raw": sla_raw * 0.6})
+    for e in n.extras:
+        items.append({"id": "x_" + str(e), "kind": "SCOPE", "label": str(EXTRAS[str(e)].label), "raw": float(EXTRAS[str(e)].pts)})
+    var ob: Dictionary = ONBOARD[str(n.onboard)]
+    items.append({"id": "onboard", "kind": "ONBOARDING", "label": str(ob.label), "raw": maxf(0.0, float(ob.pts))})
+    var sum := 0.0
+    for it in items:
+        sum += float(it.raw)
+    for it in items:
+        var share: float = (float(it.raw) / sum) if sum > 0.0 else 0.0
+        it["gap"] = snappedf(total * share, 0.1)
+        it["state"] = "open"
+        it.erase("raw")
+        raw.append(it)
+    # the snapped shares add up to the total exactly (the largest one takes the rounding)
+    if not raw.is_empty():
+        var big := 0
+        var sum2 := 0.0
+        for k in raw.size():
+            sum2 += float(raw[k].gap)
+            if float(raw[k].gap) > float(raw[big].gap):
+                big = k
+        raw[big]["gap"] = snappedf(maxf(0.0, float(raw[big].gap) + total - sum2), 0.1)
+    return raw
+
+
+static func promise_gap_total(list: Array, state_gap: bool) -> float:
+    var total := 0.0
+    for p in list:
+        total += float(p.get("left", p.gap)) if state_gap else float(p.gap)
+    return total
+''')
+
+write("scripts/retention.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# Keeping what you sold (sales campaign, roadmap C2): the 90 day clock of a won client with a churn-risk meter, the clawback of the
+# commission when they leave inside it, renewals on a schedule with the business review (QBR) and the upsell of services, and the
+# new-client SLA priority bump for the first 30 days of a premium promise. Static functions; the state is in SalesCampaign (book,
+# base_book, churned) so it saves with the campaign. Units: a campaign week is 7 game days, so the 90 day window is
+# Deals.WINDOW_WEEKS = 13 weeks and the first 30 days are Deals.NEW_CLIENT_WEEKS = 4 weeks.
+
+const Deals := preload("res://scripts/deals.gd")
+const RENEW_AFTER := 14  # weeks from signing to the first renewal (a twelve month contract, compressed)
+const CLAW := {"salary": 0.5, "balanced": 1.0, "commission": 1.0}  # the share of the commission taken back on a churn inside the window
+const CLAW_WORDS := {"salary": "HALF", "balanced": "ALL", "commission": "ALL"}
+const BASE_NAMES := 5  # the clients that were already on the books come up for renewal too
+const BASE_MRR := 650
+const UPSELL_FEE := {"backup": 110, "patching": 80, "security": 95}
+
+
+# ---- the book that was there before you ------------------------------------------------------------------
+static func schedule_base() -> void:
+    SalesCampaign.base_book = []
+    var r: RandomNumberGenerator = Difficulty.rng_for("renewals", 7)
+    var weeks := [6, 8, 10, 12, 14, 16, 17, 19]
+    for i in mini(BASE_NAMES, Msp.CLIENTS.size()):
+        var due: int = weeks[r.randi() % weeks.size()] + (r.randi() % 2)
+        SalesCampaign.base_book.append({"id": -1 - i, "name": str(Msp.CLIENTS[i].name), "client": i, "mrr": BASE_MRR + 50 * i, "renew_at": due, "kept": 0, "broken": 0, "mood": 70, "who": str(Msp.CLIENTS[i].contact)})
+
+
+static func entry_mood(e: Dictionary) -> int:
+    if int(e.get("client", -1)) >= 0:
+        return Sales.mood(int(e.client))
+    return int(e.get("mood", 60))
+
+
+static func adjust_mood(e: Dictionary, n: int) -> void:
+    if int(e.get("client", -1)) >= 0:
+        Sales.adjust(int(e.client), n)
+    else:
+        e["mood"] = clampi(int(e.get("mood", 60)) + n, 0, 100)
+
+
+static func renew_at(e: Dictionary) -> int:
+    return int(e.get("renew_at", int(e.get("week", 1)) + RENEW_AFTER))
+
+
+static func due(day: int) -> Array:
+    var out := []
+    for e in SalesCampaign.base_book:
+        if renew_at(e) == day:
+            out.append(e)
+    for d in SalesCampaign.book:
+        if renew_at(d) == day and str(d.get("state", "active")) != "handover":
+            out.append(d)
+    return out
+
+
+# ---- kept promises count for the renewal --------------------------------------------------------------
+static func kept_count(e: Dictionary) -> int:
+    var n := 0
+    for p in e.get("promises", []):
+        if str(p.state) == "kept":
+            n += 1
+    return n + int(e.get("kept", 0))
+
+
+static func broken_count(e: Dictionary) -> int:
+    var n := 0
+    for p in e.get("promises", []):
+        if str(p.state) == "dropped":
+            n += 1
+    return n + int(e.get("broken", 0))
+
+
+static func renew_chance(e: Dictionary, bonus := 0.0, raise_price := false) -> float:
+    var p: float = 0.40 + float(entry_mood(e)) / 250.0 + 0.04 * float(kept_count(e)) - 0.06 * float(broken_count(e)) + bonus
+    if raise_price:
+        p -= 0.15
+    return clampf(p, 0.10, 0.95)
+
+
+# ---- the 90 day clock, once a week (SalesCampaign.settle) ------------------------------------------------
+static func sla_state(d: Dictionary) -> String:
+    for p in d.get("promises", []):
+        if str(p.id) == "sla":
+            return str(p.state)
+    return "open"
+
+
+static func week_tick(day: int) -> void:
+    for d in SalesCampaign.book.duplicate():
+        if str(d.get("state", "active")) == "handover" or int(d.week) == day:
+            continue
+        var delta := 0.0
+        var gap_left: float = float(d.gap)
+        if gap_left >= 0.5 and not bool(d.resolved):
+            delta += 5.0 * gap_left
+        var breaches := 0
+        for t in Msp.tickets:
+            if str(t.get("newclient", "")) == str(d.name) and bool(t.breached) and not bool(t.get("cc", false)):
+                t["cc"] = true
+                breaches += 1
+        d["breaches"] = int(d.get("breaches", 0)) + breaches
+        delta += 5.0 * float(breaches)
+        var mood: int = int(d.mood)
+        if mood < 50:
+            delta += float(50 - mood) / 6.0
+        elif mood >= 70:
+            delta -= 2.0
+        if not bool(d.get("onboarded", true)) and day >= int(d.get("onboard_due", 0)):
+            if SalesCampaign.capacity() >= 1.2 or int(d.get("delays", 0)) >= 2:
+                d["onboarded"] = true
+                d["mood"] = clampi(int(d.mood) + 3, 0, 100)
+                Msp.send_text("Morgan", "%s is live. Dan finished the onboarding." % str(d.name))
+            else:
+                d["delays"] = int(d.get("delays", 0)) + 1
+                d["mood"] = clampi(int(d.mood) - 2, 0, 100)
+                delta += 5.0
+                Deals.note(SalesCampaign.lead_by_id(int(d.id)), "ONBOARDING SLIPPED")
+        delta -= 1.5 * float(kept_count(d))
+        d["churn"] = clampi(int(round(float(d.get("churn", 10)) + delta)), 0, 100)
+        var in_window: bool = day - int(d.week) <= Deals.WINDOW_WEEKS
+        if in_window:
+            var c: int = int(d.churn)
+            var r: RandomNumberGenerator = Difficulty.rng_for("churn", int(d.id) * 100 + day)
+            var p: float = maxf(0.0, float(c - 50) / 150.0)
+            if c >= 100 or r.randf() < p:
+                leave(d, _why(d, breaches))
+                continue
+        elif str(d.get("state", "active")) != "safe":
+            d["state"] = "safe"
+            Hints.toast("%s CLEARED THEIR 90 DAYS. THE COMMISSION IS YOURS." % str(d.name).to_upper(), 4.0)
+            Lync._push("Garrison", "Garrison", "%s made it past 90 days. That is a real client. Well done." % str(d.name))
+            Deals.note(SalesCampaign.lead_by_id(int(d.id)), "CLEARED 90 DAYS")
+
+
+static func _why(d: Dictionary, breaches: int) -> String:
+    if float(d.gap) >= 0.5 and not bool(d.resolved):
+        return "THE PROMISE GAP: YOU SOLD MORE THAN WE COULD DELIVER"
+    if int(d.get("breaches", 0)) >= 2 or breaches > 0:
+        return "TICKETS KEPT BREACHING THEIR SLA"
+    if int(d.mood) < 50:
+        return "THEY WERE UNHAPPY FROM THE START"
+    return "THE ONBOARDING DRAGGED ON"
+
+
+# the client leaves inside the 90 days: the commission is clawed back by the pay plan, a short card explains
+static func leave(d: Dictionary, why: String) -> void:
+    var claw: int = int(round(float(d.get("commission", 0)) * float(CLAW.get(SalesCampaign.plan, 1.0))))
+    SalesCampaign.commission_total -= claw
+    SalesCampaign.week_clawback += claw
+    SalesCampaign.clawbacks += 1
+    SalesCampaign.clawed_total += claw
+    var qi: int = SalesCampaign.quarter_index(int(d.week))
+    if str(SalesCampaign.q_result[qi]) == "":
+        SalesCampaign.q_signed[qi] = maxi(0, int(SalesCampaign.q_signed[qi]) - int(d.get("signed_mrr", d.mrr)))
+    SalesCampaign.book.erase(d)
+    SalesCampaign.churned.append({"name": str(d.name), "week": int(d.week), "left": Campaign.day, "mrr": int(d.mrr), "claw": claw, "why": why})
+    var l: Dictionary = SalesCampaign.lead_by_id(int(d.id))
+    if not l.is_empty():
+        l.stage = "LOST"
+        l["why"] = "LEFT IN THE 90 DAYS"
+        Deals.note(l, "LEFT, CLAWBACK $%d" % claw)
+    Career.add("clawbacks")
+    Social.change("Garrison", -1)
+    Campaign.adjust_rep(-1)
+    Cards.ask(
+        "{sales_owner}",
+        "%s gave notice after %d weeks. %s. Your pay plan takes %s of the commission back: -$%d. Alan will ask what we learn from it." % [str(d.name), Campaign.day - int(d.week), why.capitalize(), str(CLAW_WORDS.get(SalesCampaign.plan, "ALL")).to_lower(), claw],
+        [{"label": "UNDERSTOOD", "id": "ok"}],
+        func(_id: String) -> void: pass
+    )
+    SalesCampaign.changed.emit()
+
+
+# ---- the new-client SLA bump --------------------------------------------------------------------------------
+# A new client with a premium promise (still being honoured) has its tickets worked first for 30 days. The book clients are not
+# Msp.CLIENTS, so this models them as a share of the ticket stream: returns the name of the deal the ticket belongs to, or "".
+static func new_client_for(_client: int, tid: int) -> String:
+    if not SalesCampaign.in_mode():
+        return ""
+    var live := []
+    for d in SalesCampaign.book:
+        if Campaign.day - int(d.week) <= Deals.NEW_CLIENT_WEEKS and str(d.promise) == "high" and sla_state(d) != "dropped" and sla_state(d) != "renegotiated":
+            live.append(d)
+    if live.is_empty():
+        return ""
+    var r: RandomNumberGenerator = Difficulty.rng_for("newticket", tid)
+    if r.randf() < minf(0.6, 0.25 * float(live.size())):
+        return str(live[r.randi() % live.size()].name)
+    return ""
+
+
+# ---- renewals ---------------------------------------------------------------------------------------------------
+static func renewal_card(e: Dictionary) -> void:
+    var mood: int = entry_mood(e)
+    var text := "%s: the contract is up for renewal. $%d a week, they are %d%% happy, %d promises kept, %d broken." % [str(e.name), int(e.mrr), mood, kept_count(e), broken_count(e)]
+    Cards.ask(
+        "Renewal",
+        text,
+        [
+            {"label": "RENEW AS IT IS (%d%%)" % int(round(100.0 * renew_chance(e))), "id": "same"},
+            {"label": "RUN A BUSINESS REVIEW FIRST (1 HOUR)", "id": "qbr", "enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"},
+            {"label": "RAISE THE PRICE 10%% (%d%%)" % int(round(100.0 * renew_chance(e, 0.0, true))), "id": "raise"},
+        ],
+        func(id: String) -> void: renewal_pick(e, id)
+    )
+
+
+static func renewal_pick(e: Dictionary, id: String) -> void:
+    match id:
+        "qbr":
+            if not SalesCampaign.spend(1):
+                return renewal_card(e)
+            _qbr_card(e)
+        "raise":
+            renew_roll(e, 0.0, true)
+        _:
+            renew_roll(e, 0.0, false)
+
+
+# the business review at the client: the same three talks as the owner campaign's QBR (Onsite.MEETINGS.qbr)
+static func _qbr_card(e: Dictionary) -> void:
+    var mt: Dictionary = Onsite.MEETINGS.get("qbr", {})
+    var options := []
+    for o in mt.get("options", []):
+        options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(
+        str(e.get("who", "The owner")),
+        str(mt.get("text", "It is review time.")),
+        options,
+        func(id: String) -> void:
+            Career.add("qbrs")
+            match id:
+                "numbers":
+                    adjust_mood(e, 6)
+                    renew_roll(e, 0.08, false)
+                "listen":
+                    adjust_mood(e, 10)
+                    renew_roll(e, 0.12, false)
+                _:
+                    adjust_mood(e, 3)
+                    upsell_card(e, func() -> void: renew_roll(e, 0.05, false))
+    )
+
+
+static func renew_roll(e: Dictionary, bonus: float, raise_price: bool) -> void:
+    var r: RandomNumberGenerator = Difficulty.rng_for("renew", absi(int(e.id)) * 100 + Campaign.day)
+    var p: float = renew_chance(e, bonus, raise_price)
+    var ok: bool = r.randf() < p
+    var base: bool = int(e.id) < 0
+    if ok:
+        e["renew_at"] = Campaign.day + RENEW_AFTER
+        var com: int = int(round(float(e.mrr) * 0.5 * float(SalesCampaign.PLAN_RATE.get(SalesCampaign.plan, 2.0))))
+        SalesCampaign.commission_total += com
+        SalesCampaign.week_commission += com
+        SalesCampaign.renewals_won += 1
+        Career.add("renewals")
+        var extra := ""
+        if raise_price:
+            var more: int = int(round(float(e.mrr) * 0.10))
+            e["mrr"] = int(e.mrr) + more
+            _expand(e, more)
+            extra = " The new fee is $%d a week." % int(e.mrr)
+        Social.change("Garrison", 1)
+        Cards.ask(str(e.get("who", "The owner")), "We will stay another year. Thank you for sitting down with us.%s Your renewal commission is $%d." % [extra, com], [{"label": "THANK YOU", "id": "ok"}], func(_id: String) -> void: pass)
+        if not base:
+            var l: Dictionary = SalesCampaign.lead_by_id(int(e.id))
+            if not l.is_empty():
+                Deals.note(l, "RENEWED")
+    else:
+        SalesCampaign.renewals_lost += 1
+        Campaign.adjust_rep(-1)
+        Social.change("Garrison", -1)
+        if base:
+            SalesCampaign.lost_base += int(e.mrr)
+            SalesCampaign.base_book.erase(e)
+        else:
+            SalesCampaign.book.erase(e)
+            SalesCampaign.churned.append({"name": str(e.name), "week": int(e.week), "left": Campaign.day, "mrr": int(e.mrr), "claw": 0, "why": "DID NOT RENEW"})
+        Cards.ask(str(e.get("who", "The owner")), "We have decided to look at other providers. It is nothing personal; the renewal price and the last few months just did not add up for us.", [{"label": "UNDERSTOOD", "id": "ok"}], func(_id: String) -> void: pass)
+    SalesCampaign.changed.emit()
+
+
+# new MRR from a price rise or an upsell counts toward the quarter
+static func _expand(e: Dictionary, more: int) -> void:
+    var qi: int = SalesCampaign.quarter_index()
+    SalesCampaign.q_signed[qi] = int(SalesCampaign.q_signed[qi]) + more
+    SalesCampaign.week_new += more
+    SalesCampaign.expansion_total += more
+
+
+# ---- upsell: services you can sell to a client you already have -------------------------------------------------
+static func upsold(e: Dictionary) -> Array:
+    var out: Array = e.get("extras", []).duplicate()
+    out.append_array(e.get("upsold", []))
+    return out
+
+
+static func upsell_options(e: Dictionary) -> Array:
+    var have := upsold(e)
+    var out := []
+    for k in Deals.EXTRA_ORDER:
+        if not have.has(k):
+            out.append(k)
+    return out
+
+
+static func upsell_card(e: Dictionary, then := Callable()) -> void:
+    var left := upsell_options(e)
+    if left.is_empty():
+        Hints.toast("THEY ALREADY HAVE EVERY SERVICE WE SELL.", 2.5)
+        if then.is_valid():
+            then.call()
+        return
+    var options := []
+    for k in left:
+        options.append({"label": "%s: $%d/WK" % [str(Deals.EXTRAS[k].label), int(UPSELL_FEE[k])], "id": k})
+    options.append({"label": "NOT NOW", "id": "none"})
+    Cards.ask(
+        "Upsell",
+        "%s is %d%% happy. Which service do you offer them?" % [str(e.name), entry_mood(e)],
+        options,
+        func(id: String) -> void:
+            if id != "none":
+                upsell_roll(e, id)
+            if then.is_valid():
+                then.call()
+    )
+
+
+static func upsell_roll(e: Dictionary, id: String) -> bool:
+    var n: int = int(e.get("upsells", 0))
+    var r: RandomNumberGenerator = Difficulty.rng_for("upsell", absi(int(e.id)) * 100 + Campaign.day * 7 + n)
+    var p: float = 0.70 if entry_mood(e) >= 60 else 0.40
+    e["upsells"] = n + 1
+    if r.randf() >= p:
+        Hints.toast("%s WANTS TO THINK ABOUT THE %s." % [str(e.name).to_upper(), str(Deals.EXTRAS[id].short)], 3.0)
+        return false
+    var fee: int = int(UPSELL_FEE[id])
+    var list: Array = e.get("upsold", [])
+    list.append(id)
+    e["upsold"] = list
+    if int(e.id) >= 0:
+        var cost: int = int(Deals.EXTRAS[id].cost)
+        var total: float = float(e.mrr) + float(fee)
+        e["margin"] = (float(e.mrr) * float(e.get("margin", 0.5)) + float(fee - cost)) / total
+    else:
+        SalesCampaign.expansion_base += fee
+    e["mrr"] = int(e.mrr) + fee
+    _expand(e, fee)
+    var com: int = int(round(float(fee) * 0.5 * float(SalesCampaign.PLAN_RATE.get(SalesCampaign.plan, 2.0))))
+    SalesCampaign.commission_total += com
+    SalesCampaign.week_commission += com
+    SalesCampaign.upsells += 1
+    Career.add("upsells")
+    adjust_mood(e, 2)
+    Hints.toast("SOLD %s TO %s: +$%d/WK, COMMISSION $%d." % [str(Deals.EXTRAS[id].short), str(e.name).to_upper(), fee, com], 4.0)
+    SalesCampaign.changed.emit()
+    return true
+''')
+
+write("scripts/handover.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# The handover scene (sales campaign, roadmap C2): after a win Morgan and Dan sit down in the conference room (the real Conference
+# scene, World.send_to_meeting) and you go through the promise list with them. Each promise is KEPT (Dan plans for it, half the gap
+# stays as load), RENEGOTIATED (you tell the client the real terms: no gap, a little goodwill spent) or DROPPED (nobody tells the
+# client: the whole gap stays and the client still expects it). What is left of the gap becomes the new client's starting mood and
+# the service risk that feeds the churn meter. Dan and Morgan answer with bubbles and a short card. If you never walk in, the next
+# Monday the paperwork is sent over and everything counts as dropped.
+
+const Deals := preload("res://scripts/deals.gd")
+const KEEP_FACTOR := 0.5
+const RENEG_MOOD := 3
+const START_MOOD := 72
+
+
+static func pending() -> Dictionary:
+    if SalesCampaign.pending_handover == 0:
+        return {}
+    return Deals.book_deal(SalesCampaign.pending_handover)
+
+
+# the win has been thanked: call the meeting
+static func queue(deal: Dictionary) -> void:
+    deal["state"] = "handover"
+    if SalesCampaign.pending_handover != 0:
+        SalesCampaign.handover_queue.append(int(deal.id))  # one meeting at a time
+        return
+    SalesCampaign.pending_handover = int(deal.id)
+    _call_team()
+    _objective()
+    if Meeting.in_conference():
+        start(deal)
+
+
+static func _call_team() -> void:
+    if not (World.chars.has("Morgan") and World.chars.has("Dan")):
+        return
+    World.send_to_meeting("Morgan", "Seat3", 150.0)
+    World.send_to_meeting("Dan", "Seat4", 150.0)
+
+
+static func _objective() -> void:
+    if not SalesCampaign.bell_ready:
+        Hints.objective = "HANDOVER: JOIN MORGAN AND DAN IN THE CONFERENCE ROOM"
+
+
+static func clear_objective() -> void:
+    if Hints.objective.begins_with("HANDOVER"):
+        Hints.objective = ""
+
+
+# polled by SalesCampaign: you walked into the conference room with a handover waiting
+static func tick() -> void:
+    var d := pending()
+    if d.is_empty():
+        SalesCampaign.pending_handover = 0
+        return
+    if Cards.is_open or DayReport.is_open:
+        return
+    if Meeting.in_conference():
+        start(d)
+
+
+static func start(deal: Dictionary) -> void:
+    SalesCampaign.pending_handover = 0
+    clear_objective()
+    var list: Array = deal.get("promises", [])
+    if list.is_empty():
+        finish(deal, false)
+        return
+    Cards.ask(
+        "{ops}",
+        "Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it." % [str(deal.name), int(deal.mrr), list.size()],
+        [{"label": "LET US GO THROUGH THE LIST", "id": "go"}],
+        func(_id: String) -> void: ask_promise(deal, 0)
+    )
+
+
+static func promise_text(deal: Dictionary, i: int) -> String:
+    var list: Array = deal.promises
+    var p: Dictionary = list[i]
+    var g: float = float(p.gap)
+    var dan := "Dan: that one is easy." if g < 0.3 else ("Dan: tight, but I can plan for it." if g < 1.0 else "Dan: I do not have the people for that one.")
+    return "Promise %d of %d, %s: %s (gap %.1f). %s" % [i + 1, list.size(), str(p.kind).to_lower(), str(p.label), g, dan]
+
+
+static func ask_promise(deal: Dictionary, i: int) -> void:
+    var list: Array = deal.promises
+    if i >= list.size():
+        finish(deal, true)
+        return
+    var p: Dictionary = list[i]
+    var g: float = float(p.gap)
+    Cards.ask(
+        "{ops}",
+        promise_text(deal, i),
+        [
+            {"label": "KEEP IT: DAN PLANS FOR IT", "id": "kept"},
+            {"label": "RENEGOTIATE: TELL THEM THE REAL TERMS", "id": "renegotiated"},
+            {"label": "DROP IT AND SAY NOTHING", "id": "dropped"},
+        ],
+        func(id: String) -> void:
+            decide(deal, i, id)
+            _react(id, g)
+            ask_promise(deal, i + 1)
+    )
+
+
+# one promise's outcome: what is left of its gap
+static func decide(deal: Dictionary, i: int, how: String) -> void:
+    var p: Dictionary = deal.promises[i]
+    p["state"] = how
+    var g: float = float(p.gap)
+    match how:
+        "kept":
+            p["left"] = snappedf(g * KEEP_FACTOR, 0.1)
+        "renegotiated":
+            p["left"] = 0.0
+        _:
+            p["left"] = g
+
+
+# the whole list at once (the old three-answer handover maps onto this)
+static func decide_all(deal: Dictionary, how: String) -> void:
+    for i in deal.get("promises", []).size():
+        decide(deal, i, how)
+
+
+# turn the outcomes into the client's starting mood and the service risk
+static func finish(deal: Dictionary, show_card: bool) -> void:
+    var left := 0.0
+    var kept := 0
+    var reneg := 0
+    var dropped := 0
+    var heavy_kept := false
+    var heavy_dropped := false
+    for p in deal.get("promises", []):
+        left += float(p.get("left", p.gap))
+        match str(p.state):
+            "kept":
+                kept += 1
+                heavy_kept = heavy_kept or float(p.gap) >= 0.5
+            "renegotiated":
+                reneg += 1
+            "dropped":
+                dropped += 1
+                heavy_dropped = heavy_dropped or float(p.gap) >= 0.5
+    left = snappedf(left, 0.1)
+    deal["gap"] = left
+    deal["mood"] = clampi(START_MOOD - int(round(left * 8.0)) - RENEG_MOOD * reneg, 25, 85)
+    deal["complain"] = left >= 0.5
+    deal["resolved"] = false
+    deal["churn"] = clampi(int(round(10.0 + 12.0 * left + 4.0 * float(dropped))), 0, 100)
+    deal["state"] = "active"
+    deal["onboarded"] = false
+    deal["onboard_due"] = int(deal.week) + int(Deals.ONBOARD[str(deal.get("onboard", "std"))].weeks)
+    deal["delays"] = 0
+    if reneg > 0:
+        Social.change("Morgan", 1)
+        Social.change("Dan", 1)
+    if heavy_kept:
+        Social.change("Dan", 1)
+    if heavy_dropped:
+        Social.change("Dan", -1)
+    var l: Dictionary = SalesCampaign.lead_by_id(int(deal.id))
+    if not l.is_empty():
+        l["promises"] = deal.get("promises", [])
+        Deals.note(l, "HANDOVER: GAP %.1f, MOOD %d" % [left, int(deal.mood)])
+    SalesCampaign.handovers += 1
+    if show_card:
+        var line := (
+            "That I can work with. I will label the tickets and %s goes live on schedule." % str(deal.name)
+            if left < 0.5
+            else (
+                "It is tight, %s will notice. Please do not promise more than this." % str(deal.name)
+                if left < 1.5
+                else "I cannot staff that. Expect %s to call you before the month is out." % str(deal.name)
+            )
+        )
+        Cards.ask(
+            "Dan (Network Tech)",
+            "%s Starting mood %d%%, service risk %.1f." % [line, int(deal.mood), left],
+            [{"label": "OK", "id": "ok"}],
+            func(_id: String) -> void: _react("done", left)
+        )
+    _next()
+    SalesCampaign.changed.emit()
+
+
+# the next win in line gets its meeting
+static func _next() -> void:
+    if SalesCampaign.pending_handover != 0 or SalesCampaign.handover_queue.is_empty():
+        return
+    SalesCampaign.pending_handover = int(SalesCampaign.handover_queue.pop_front())
+    _call_team()
+    _objective()
+
+
+# nobody went to the conference room: the signed paperwork goes over and every promise is dropped
+static func paperwork(deal: Dictionary) -> void:
+    if SalesCampaign.pending_handover == int(deal.id):
+        SalesCampaign.pending_handover = 0
+    clear_objective()
+    decide_all(deal, "dropped")
+    finish(deal, false)
+    Msp.send_text("Morgan", "The paperwork for %s came over with no handover. Dan is guessing what you promised." % str(deal.name))
+
+
+# Monday: every handover nobody attended becomes paperwork
+static func paperwork_all() -> void:
+    var ids: Array = SalesCampaign.handover_queue.duplicate()
+    if SalesCampaign.pending_handover != 0:
+        ids.push_front(SalesCampaign.pending_handover)
+    SalesCampaign.handover_queue = []
+    SalesCampaign.pending_handover = 0
+    for id in ids:
+        var d := Deals.book_deal(int(id))
+        if not d.is_empty() and str(d.get("state", "")) == "handover":
+            paperwork(d)
+
+
+static func _react(how: String, gap: float) -> void:
+    var dan := "!" if gap >= 1.0 else ("dots" if how == "kept" else "heart")
+    var morgan := "heart" if how == "renegotiated" else ("?" if how == "dropped" else "dots")
+    if how == "done":
+        dan = "heart" if gap < 0.5 else ("dots" if gap < 1.5 else "!")
+        morgan = "heart" if gap < 0.5 else "dots"
+    bubble("Dan", dan)
+    bubble("Morgan", morgan)
+
+
+# a speech bubble over a cast member who is in the room (no-op when they are elsewhere or the test has no scene)
+static func bubble(who: String, glyph: String) -> void:
+    if not World.chars.has(who):
+        return
+    var node = World.chars[who].get("node")
+    if node == null or not is_instance_valid(node):
+        return
+    var b = node.get("_bubble")
+    if b == null:
+        return
+    b.glyph = glyph
+    b.visible = true
+    node.set("_grumble_t", 2.6)
+''')
+
+write("scripts/quote_builder.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# The quote builder (sales campaign, roadmap C2): one screen inside the SalesHound CRM that replaces the old method / promise / price
+# card chain. Steppers for the method, price, discount, SLA tier, the three scope items and the onboarding speed on one side, live
+# GAUGES on the other: WIN CHANCE, MARGIN (with Alan's floor as a tick), PROMISE vs CAPACITY GAP (capacity comes from the crew model
+# and the open queue) and the CASH over the first four weeks. Alan's margin floor and Garrison's 20% sign-off are inline blocks with
+# the owner's line; a blocked quote cannot be sent. Wide screens show both halves, narrow ones (portrait) are paged: fields, then
+# gauges. The maths is Deals.gauges(); this script only paints and routes input. State: SalesCampaign.qb {id, q, row, page}.
+
+const Deals := preload("res://scripts/deals.gd")
+const ROWS := ["method", "price", "discount", "promise", "backup", "patching", "security", "onboard"]
+const LABEL := {
+    "method": "METHOD",
+    "price": "PRICE",
+    "discount": "DISCOUNT",
+    "promise": "SLA TIER",
+    "backup": "BACKUP",
+    "patching": "UPDATES+AV",
+    "security": "SECURITY",
+    "onboard": "ONBOARDING",
+}
+const GOOD := Color("2f7d46")
+const WARN := Color("b8791a")
+const BAD := Color("c0392b")
+const INK := Color("20242c")
+const MUTED := Color("5a6a85")
+const TRACK := Color("c9d2e0")
+
+
+static func default_quote() -> Dictionary:
+    return {"method": "fixed", "promise": "std", "price": "list", "discount": 0, "extras": [], "onboard": "std"}
+
+
+static func begin(l: Dictionary) -> void:
+    SalesCampaign.qb = {"id": int(l.id), "q": default_quote(), "row": 0, "page": 0}
+    SalesCampaign.crm_view = "build"
+
+
+static func close() -> void:
+    SalesCampaign.qb = {}
+    SalesCampaign.crm_view = "list"
+
+
+static func lead() -> Dictionary:
+    if SalesCampaign.qb.is_empty():
+        return {}
+    return SalesCampaign.lead_by_id(int(SalesCampaign.qb.id))
+
+
+static func quote() -> Dictionary:
+    return SalesCampaign.qb.get("q", default_quote())
+
+
+static func value_text(field: String) -> String:
+    var q := quote()
+    match field:
+        "method":
+            return str(Deals.METHOD_SHORT[str(q.method)])
+        "price":
+            return "+10%" if str(q.price) == "premium" else "LIST"
+        "discount":
+            return "NONE" if int(q.discount) == 0 else "%d%% OFF" % int(q.discount)
+        "promise":
+            return str(Deals.TIER_NAME[str(q.promise)])
+        "onboard":
+            return str(Deals.ONBOARD[str(q.onboard)].short)
+    return ("ON $%d" % int(Deals.EXTRAS[field].fee)) if q.extras.has(field) else "OFF"
+
+
+# change a stepper by one step (dir -1 / +1)
+static func change(field: String, dir: int) -> void:
+    var q := quote()
+    match field:
+        "method":
+            var i: int = Deals.METHOD_ORDER.find(str(q.method))
+            q["method"] = Deals.METHOD_ORDER[posmod(i + dir, Deals.METHOD_ORDER.size())]
+        "price":
+            q["price"] = "premium" if str(q.price) == "list" else "list"
+        "discount":
+            var i: int = Deals.DISCOUNTS.find(int(q.discount))
+            q["discount"] = Deals.DISCOUNTS[clampi(i + dir, 0, Deals.DISCOUNTS.size() - 1)]
+        "promise":
+            var order := ["low", "std", "high"]
+            q["promise"] = order[clampi(order.find(str(q.promise)) + dir, 0, 2)]
+        "onboard":
+            var i: int = Deals.ONBOARD_ORDER.find(str(q.onboard))
+            q["onboard"] = Deals.ONBOARD_ORDER[clampi(i + dir, 0, Deals.ONBOARD_ORDER.size() - 1)]
+        _:
+            var ex: Array = q.extras
+            if ex.has(field):
+                ex.erase(field)
+            else:
+                ex.append(field)
+            q["extras"] = ex
+
+
+static func gauges() -> Dictionary:
+    var l := lead()
+    if l.is_empty():
+        return {}
+    return Deals.gauges(l, quote())
+
+
+# ---- painting ---------------------------------------------------------------------------------------------
+static func paint(cp, body: Rect2) -> void:
+    cp._fill(body, Color("f3f6fb"))
+    var l := lead()
+    if l.is_empty():
+        close()
+        return
+    var g := gauges()
+    var w: float = body.size.x
+    var wide: bool = w >= 250.0
+    var page: int = int(SalesCampaign.qb.get("page", 0))
+    var chars: int = int(w / 4.0) - 2
+    # header: who, how big, what it costs in hours
+    cp._fill(Rect2(body.position, Vector2(w, 9)), Color("e4d9c9"))
+    var head := "%s  %d USERS  $%d  HRS %d" % [str(l.name).to_upper(), int(l.users), int(l.fee), SalesCampaign.slots_left()]
+    cp._text(cp._clip(head, chars), body.position + Vector2(3, 2), INK)
+    var area := Rect2(body.position + Vector2(0, 10), body.size - Vector2(0, 10))
+    if wide:
+        var left := Rect2(area.position, Vector2(floorf(w * 0.5), area.size.y))
+        var right := Rect2(area.position + Vector2(left.size.x, 0), Vector2(w - left.size.x, area.size.y))
+        _paint_fields(cp, left, false)
+        _paint_gauges(cp, right, g, true)
+    else:
+        if page == 0:
+            _paint_fields(cp, Rect2(area.position, Vector2(w, area.size.y - 11)), true)
+            var mini := "WIN %d%%  MARGIN %d%%  GAP %.1f" % [int(round(100.0 * float(g.win))), int(round(100.0 * float(g.margin))), float(g.gap)]
+            cp._text(cp._clip(mini, chars), Vector2(area.position.x + 3, area.end.y - 18), INK)
+        else:
+            _paint_gauges(cp, Rect2(area.position, Vector2(w, area.size.y - 11)), g, false)
+        var by: float = area.end.y - 10
+        cp._button("crm:qb:back", Rect2(area.position.x + 2, by, 40, 9), "BACK", true)
+        if page == 0:
+            cp._button("crm:qb:page", Rect2(area.end.x - 62, by, 60, 9), "GAUGES >", true, Color("a9c4e8"))
+        else:
+            cp._button("crm:qb:page", Rect2(area.position.x + 46, by, 52, 9), "< FIELDS", true, Color("a9c4e8"))
+            cp._button("crm:qb:send", Rect2(area.end.x - 62, by, 60, 9), "SEND QUOTE", bool(g.can_send), Color("a9e0b0"))
+
+
+static func _paint_fields(cp, r: Rect2, roomy: bool) -> void:
+    cp._fill(r, Color("ffffff"))
+    var n: int = ROWS.size()
+    var row_h: float = clampf(floorf((r.size.y - 1.0) / float(n)), 7.0, 17.0 if roomy else 10.0)
+    var sel: int = int(SalesCampaign.qb.get("row", 0))
+    for i in n:
+        var f: String = ROWS[i]
+        var row := Rect2(r.position.x, r.position.y + 1.0 + float(i) * row_h, r.size.x, row_h)
+        cp._row(row, i == sel, i % 2 == 1)
+        cp._region("crm:qb:row:%d" % i, row)
+        var ty: float = row.position.y + floorf((row_h - 5.0) * 0.5)
+        cp._text(str(LABEL[f]), Vector2(row.position.x + 2, ty), INK)
+        var vw: float = 62.0
+        var vx: float = row.end.x - vw - 2.0
+        cp._button("crm:qb:chg:%s:-1" % f, Rect2(vx, row.position.y + 1, 7, row_h - 2), "<", true)
+        cp._button("crm:qb:chg:%s:1" % f, Rect2(vx + vw - 7, row.position.y + 1, 7, row_h - 2), ">", true)
+        var vt: String = cp._clip(value_text(f), 12)
+        cp._text(vt, Vector2(vx + 7 + floorf((vw - 14 - cp._tw(vt)) * 0.5), ty), WARN if f in ["discount"] and vt != "NONE" else INK)
+
+
+static func _tone(good: bool, ok: bool) -> Color:
+    return GOOD if good else (WARN if ok else BAD)
+
+
+static func _bar(cp, r: Rect2, frac: float, col: Color, tick := -1.0) -> void:
+    cp._fill(r, TRACK)
+    cp._fill(Rect2(r.position, Vector2(floorf(r.size.x * clampf(frac, 0.0, 1.0)), r.size.y)), col)
+    if tick >= 0.0:
+        cp._fill(Rect2(r.position.x + floorf(r.size.x * clampf(tick, 0.0, 1.0)), r.position.y - 1, 1, r.size.y + 2), INK)
+
+
+static func _paint_gauges(cp, r: Rect2, g: Dictionary, with_buttons: bool) -> void:
+    cp._fill(r, Color("eef3f9"))
+    cp._fill(Rect2(r.position, Vector2(1, r.size.y)), TRACK)
+    var x: float = r.position.x + 4.0
+    var bw: float = r.size.x - 8.0
+    var y: float = r.position.y + 2.0
+    var tall: bool = not with_buttons
+    var step: float = 14.0 if tall else 11.0
+    var chars: int = int(bw / 4.0)
+    var win: float = float(g.win)
+    var m: float = float(g.margin)
+    var gp: float = float(g.gap)
+    var cash: int = int(g.cash4)
+    # WIN CHANCE
+    cp._text(cp._clip("WIN CHANCE %d%%" % int(round(100.0 * win)), chars), Vector2(x, y), INK)
+    _bar(cp, Rect2(x, y + 6, bw, 3), win, _tone(win >= 0.55, win >= 0.35))
+    y += step
+    # MARGIN with Alan's floor
+    var floor_m: float = SalesCampaign.margin_floor
+    cp._text(cp._clip("MARGIN %d%% (FLOOR %d%%)" % [int(round(100.0 * m)), int(round(100.0 * floor_m))], chars), Vector2(x, y), INK)
+    _bar(cp, Rect2(x, y + 6, bw, 3), m / 0.7, _tone(m >= floor_m + 0.06, m >= floor_m - 0.0001), floor_m / 0.7)
+    y += step
+    # PROMISE vs CAPACITY
+    cp._text(cp._clip("PROMISE GAP %.1f (CAPACITY %.1f)" % [gp, float(g.cap)], chars), Vector2(x, y), INK)
+    _bar(cp, Rect2(x, y + 6, bw, 3), gp / 3.0, _tone(gp <= 0.3, gp <= 1.0))
+    y += step
+    # CASH over four weeks
+    cp._text(cp._clip("CASH 4 WEEKS %s$%d" % ["-" if cash < 0 else "+", absi(cash)], chars), Vector2(x, y), INK)
+    _bar(cp, Rect2(x, y + 6, bw, 3), absf(float(cash)) / 3000.0, _tone(cash >= 500, cash >= 0))
+    y += step
+    cp._text(cp._clip("PRICE $%d/WK  HOURS %d" % [int(g.price), int(g.hours)], chars), Vector2(x, y), MUTED)
+    y += 7.0
+    # the owners' lines
+    var line_h := 7.0
+    var room: int = int((r.end.y - y - (11.0 if with_buttons else 12.0)) / line_h)
+    var shown := 0
+    for b in g.blocks:
+        if shown >= room:
+            break
+        var col: Color = BAD if bool(b.hard) else WARN
+        var lines: Array = cp._wrap("%s: %s" % [str(b.who), str(b.text)], chars)
+        for ln in lines:
+            if shown >= room:
+                break
+            cp._text(str(ln), Vector2(x, y), col)
+            y += line_h
+            shown += 1
+    if with_buttons:
+        var by: float = r.end.y - 10.0
+        cp._button("crm:qb:back", Rect2(r.position.x + 3, by, 34, 9), "BACK", true)
+        cp._button("crm:qb:send", Rect2(r.end.x - 62, by, 59, 9), "SEND QUOTE", bool(g.can_send), Color("a9e0b0"))
+
+
+# ---- input -------------------------------------------------------------------------------------------
+static func move(_cp, step: int) -> void:
+    SalesCampaign.qb["row"] = clampi(int(SalesCampaign.qb.get("row", 0)) + step, 0, ROWS.size() - 1)
+
+
+static func send(cp) -> void:
+    var l := lead()
+    if l.is_empty():
+        close()
+        return
+    var g := gauges()
+    if not bool(g.can_send):
+        var why := "NOT YET"
+        for b in g.blocks:
+            if bool(b.hard):
+                why = "%s: %s" % [str(b.who), str(b.text)]
+                break
+        cp._say(why)
+        return
+    var q := quote().duplicate(true)
+    close()
+    SalesCampaign.send_quote(l, q)
+    cp._say("QUOTE SENT TO %s" % str(l.name).to_upper())
+
+
+static func enter(cp) -> void:
+    var wide: bool = cp._area.size.x >= 250.0
+    if not wide and int(SalesCampaign.qb.get("page", 0)) == 0:
+        SalesCampaign.qb["page"] = 1
+        return
+    send(cp)
+
+
+static func key(cp, code: int) -> void:
+    match code:
+        KEY_LEFT:
+            change(ROWS[int(SalesCampaign.qb.get("row", 0))], -1)
+        KEY_RIGHT:
+            change(ROWS[int(SalesCampaign.qb.get("row", 0))], 1)
+        KEY_TAB:
+            SalesCampaign.qb["page"] = 1 - int(SalesCampaign.qb.get("page", 0))
+        KEY_S:
+            send(cp)
+        KEY_B:
+            close()
+    cp._canvas.queue_redraw()
+
+
+static func action(cp, parts: PackedStringArray) -> void:
+    match parts[2]:
+        "row":
+            SalesCampaign.qb["row"] = clampi(int(parts[3]), 0, ROWS.size() - 1)
+        "chg":
+            SalesCampaign.qb["row"] = maxi(0, ROWS.find(parts[3]))
+            change(parts[3], int(parts[4]))
+        "page":
+            SalesCampaign.qb["page"] = 1 - int(SalesCampaign.qb.get("page", 0))
+        "send":
+            send(cp)
+        "back":
+            close()
 ''')
 
 write("scripts/crm.gd", '''extends RefCounted
@@ -37542,10 +38824,13 @@ write("scripts/crm.gd", '''extends RefCounted
 # The SalesHound CRM (sales campaign, slice S1): a desktop app for Vic that lists the pipeline and lets you work a lead. It is a
 # simple read-and-move list: the tabs filter by stage (LEAD / MEETING / QUOTED / WON / LOST), Up / Down pick a lead, and the
 # buttons (or C / V / Q / D) call, visit, quote or drop it. A call and a quote cost one selling hour each (SalesCampaign.spend),
-# a visit drives you to their office. The full CRM (deal stages with promises, gauges, renewals) is slice S2.
+# a visit drives you to their office. C2 adds: F (CHASE) follows a deal up, U (UPSELL) sells a service to a won client, I (INFO) flips
+# the detail pane to the deal record (risk meter, promises, notes, the 90 day clock) and Q opens the quote builder screen
+# (quote_builder.gd) in place of the list while you build a quote (SalesCampaign.crm_view).
 # All state lives in SalesCampaign (crm_sel, crm_tab, leads); this script only paints and routes input for the Computer.
 # `cp` is the Computer autoload: its drawing helpers (_fill, _text, _button, _row, _region, _window, _clip, _wrap) do the work.
 
+const Deals := preload("res://scripts/deals.gd")
 const TABS := [["ALL", "ALL"], ["LEAD", "LEAD"], ["MEETING", "MEET"], ["QUOTED", "QUOTE"], ["WON", "WON"], ["LOST", "LOST"]]
 const STAGE_SHORT := {"LEAD": "LEAD", "MEETING": "MEET", "QUOTED": "QUOTE", "WON": "WON", "LOST": "LOST"}
 const STAGE_TINT := {
@@ -37590,6 +38875,10 @@ static func selected() -> Dictionary:
 
 
 static func paint(cp) -> void:
+    if SalesCampaign.crm_view == "build":
+        var bb: Rect2 = cp._window("SALESHOUND CRM - QUOTE BUILDER", Color("b8602b"))
+        SalesCampaign.QuoteBuilder.paint(cp, bb)
+        return
     var body: Rect2 = cp._window("SALESHOUND CRM - PIPELINE", Color("b8602b"))
     cp._fill(body, Color("f3f6fb"))
     var sel := selected()
@@ -37655,8 +38944,39 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
     var chars: int = int((r.size.x - 8.0) / 4.0)
     var x: float = r.position.x + 4.0
     var y: float = r.position.y + 2.0
-    cp._text(cp._clip(str(l.name).to_upper(), chars), Vector2(x, y), STAGE_TINT[str(l.stage)])
+    cp._text(cp._clip(str(l.name).to_upper(), chars - 4), Vector2(x, y), STAGE_TINT[str(l.stage)])
+    cp._text("%d/2" % (SalesCampaign.crm_page + 1), Vector2(r.end.x - 16, y), MUTED)
     y += 7.0
+    if SalesCampaign.crm_page == 1:
+        _paint_record(cp, r, l, x, y, chars)
+    else:
+        _paint_summary(cp, r, l, x, y, chars)
+    # the buttons
+    var stage: String = str(l.stage)
+    var open: bool = ["LEAD", "MEETING"].has(stage)
+    var live: bool = open or stage == "QUOTED"
+    var n := 6
+    var bw: float = (r.size.x - 6.0) / float(n)
+    var by: float = r.end.y - 18.0
+    var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
+    var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
+    var can_quote: bool = open and SalesCampaign.slots_left() >= 1
+    var can_chase: bool = live and SalesCampaign.slots_left() >= 1
+    var can_up: bool = stage == "WON" and SalesCampaign.slots_left() >= 1 and not Deals.book_deal(int(l.id)).is_empty()
+    cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
+    cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
+    cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
+    cp._button("crm:follow", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "CHASE", can_chase)
+    if stage == "WON":
+        cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
+    else:
+        cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
+    cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
+    cp._text(cp._clip("C CALL V VISIT Q QUOTE F CHASE D DROP U UPSELL I INFO", chars), Vector2(x, r.end.y - 7.0), MUTED)
+
+
+static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:
+    var y: float = y0
     var info := "%s  %d USERS  $%d/WK" % [str(SalesCampaign.TYPES[str(l.type)].label), int(l.users), int(l.fee)]
     cp._text(cp._clip(info, chars), Vector2(x, y), INK)
     y += 7.0
@@ -37669,27 +38989,78 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
     status += "  VISITED" if bool(l.visited) else ""
     cp._text(cp._clip(status, chars), Vector2(x, y), MUTED)
     y += 7.0
-    if str(l.stage) == "LOST" and str(l.get("why", "")) != "":
+    var stage: String = str(l.stage)
+    if stage == "LOST" and str(l.get("why", "")) != "":
         cp._text(cp._clip("LOST: " + str(l.why), chars), Vector2(x, y), STAGE_TINT["LOST"])
-    elif str(l.stage) == "WON":
-        cp._text("WON. THE HANDOVER IS DONE.", Vector2(x, y), STAGE_TINT["WON"])
+    elif stage == "WON":
+        var d: Dictionary = Deals.book_deal(int(l.id))
+        var txt := "WON. THE HANDOVER IS DONE."
+        if not d.is_empty():
+            txt = "HANDOVER WAITS IN THE CONFERENCE ROOM" if str(d.get("state", "")) == "handover" else "90 DAYS: WEEK %d OF %d" % [mini(Campaign.day - int(d.week), Deals.WINDOW_WEEKS), Deals.WINDOW_WEEKS]
+        cp._text(cp._clip(txt, chars), Vector2(x, y), STAGE_TINT["WON"])
+    elif stage == "QUOTED":
+        cp._text(cp._clip("QUOTED. BYTEBROTHERS MAY STEAL IT", chars), Vector2(x, y), STAGE_TINT["QUOTED"])
     elif not bool(l.site):
         cp._text("PHONE ONLY, NO SITE VISIT", Vector2(x, y), MUTED)
-    # the buttons
-    var open: bool = ["LEAD", "MEETING"].has(str(l.stage))
-    var bw: float = (r.size.x - 6.0) / 4.0
-    var by: float = r.end.y - 18.0
-    var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
-    var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
-    var can_quote: bool = open and SalesCampaign.slots_left() >= 1
-    cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
-    cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
-    cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
-    cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "DROP", open, Color("e9b1a8"))
-    cp._text(cp._clip("C CALL  V VISIT  Q QUOTE  D DROP", chars), Vector2(x, r.end.y - 7.0), MUTED)
 
 
-static func move(_cp, step: int) -> void:
+# the deal record: risk meter, the promises made, the last note
+static func _paint_record(cp, r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:
+    var y: float = y0
+    var stage: String = str(l.stage)
+    var risk: int = Deals.risk(l)
+    var label := "GOING COLD"
+    if stage == "QUOTED":
+        label = "STOLEN BY BYTEBROTHERS"
+    elif stage == "WON":
+        label = "CHURN RISK"
+    elif stage == "LOST":
+        label = "FINISHED"
+    cp._text(cp._clip("%s %d%%" % [label, risk], chars), Vector2(x, y), INK)
+    y += 6.0
+    var bar_w: float = r.size.x - 10.0
+    cp._fill(Rect2(x, y, bar_w, 3), Color("c9d2e0"))
+    var tint: Color = Color("2f7d46") if risk < 35 else (Color("b8791a") if risk < 65 else Color("c0392b"))
+    cp._fill(Rect2(x, y, floorf(bar_w * float(risk) / 100.0), 3), tint)
+    y += 5.0
+    var line2 := "TOUCHED WK %d  CHASED %d" % [int(l.get("touch", l.week)), int(l.get("follow", 0))]
+    if stage == "WON":
+        var d: Dictionary = Deals.book_deal(int(l.id))
+        if not d.is_empty():
+            line2 = "GAP %.1f MOOD %d KEPT %d BROKEN %d" % [float(d.gap), int(d.mood), SalesCampaign.Retention.kept_count(d), SalesCampaign.Retention.broken_count(d)]
+    cp._text(cp._clip(line2, chars), Vector2(x, y), MUTED)
+    y += 7.0
+    var promises: Array = l.get("promises", [])
+    if promises.is_empty():
+        cp._text(cp._clip("NO PROMISES YET. THEY COME WITH THE QUOTE.", chars), Vector2(x, y), MUTED)
+        y += 7.0
+    var room: int = int((r.end.y - 19.0 - y) / 7.0)
+    var notes: Array = l.get("notes", [])
+    var show_note: bool = not notes.is_empty() and room >= promises.size() + 1
+    if show_note:
+        room -= 1
+    var shown := 0
+    var fit: int = room if promises.size() <= room else maxi(1, room - 1)
+    for p in promises:
+        if shown >= fit:
+            break
+        var st: String = str(p.state)
+        var tag: String = {"open": "-", "kept": "K", "renegotiated": "R", "dropped": "D"}.get(st, "-")
+        var col: Color = {"open": INK, "kept": Color("2f7d46"), "renegotiated": Color("b8791a"), "dropped": Color("c0392b")}.get(st, INK)
+        cp._text(cp._clip("%s %s" % [tag, str(p.label)], chars), Vector2(x, y), col)
+        y += 7.0
+        shown += 1
+    if promises.size() > shown:
+        cp._text("+%d MORE PROMISES" % (promises.size() - shown), Vector2(x, y), MUTED)
+        y += 7.0
+    if show_note:
+        cp._text(cp._clip(str(notes.back()), chars), Vector2(x, y), MUTED)
+
+
+static func move(cp, step: int) -> void:
+    if SalesCampaign.crm_view == "build":
+        SalesCampaign.QuoteBuilder.move(cp, step)
+        return
     var list := rows()
     if list.is_empty():
         return
@@ -37702,6 +39073,10 @@ static func move(_cp, step: int) -> void:
 
 # Enter does the next sensible thing: call a fresh lead, quote one you have talked to
 static func enter(cp) -> void:
+    if SalesCampaign.crm_view == "build":
+        SalesCampaign.QuoteBuilder.enter(cp)
+        cp._canvas.queue_redraw()
+        return
     var l := selected()
     if l.is_empty():
         return
@@ -37712,6 +39087,9 @@ static func enter(cp) -> void:
 
 
 static func key(cp, code: int) -> void:
+    if SalesCampaign.crm_view == "build":
+        SalesCampaign.QuoteBuilder.key(cp, code)
+        return
     match code:
         KEY_C:
             action(cp, ["crm", "call"])
@@ -37721,6 +39099,12 @@ static func key(cp, code: int) -> void:
             action(cp, ["crm", "quote"])
         KEY_D:
             action(cp, ["crm", "drop"])
+        KEY_F:
+            action(cp, ["crm", "follow"])
+        KEY_U:
+            action(cp, ["crm", "upsell"])
+        KEY_I:
+            action(cp, ["crm", "more"])
         KEY_LEFT, KEY_RIGHT:
             var at := 0
             for i in TABS.size():
@@ -37731,8 +39115,26 @@ static func key(cp, code: int) -> void:
 
 
 static func action(cp, parts: PackedStringArray) -> void:
+    if parts[1] == "qb":
+        SalesCampaign.QuoteBuilder.action(cp, parts)
+        return
     var l := selected()
     match parts[1]:
+        "more":
+            SalesCampaign.crm_page = 1 - SalesCampaign.crm_page
+        "follow":
+            if not l.is_empty():
+                cp._say(SalesCampaign.follow_up(int(l.id)))
+        "upsell":
+            var d: Dictionary = Deals.book_deal(int(l.get("id", 0))) if not l.is_empty() else {}
+            if d.is_empty() or str(l.stage) != "WON":
+                cp._say("NO CLIENT TO UPSELL.")
+            elif SalesCampaign.slots_left() < 1:
+                cp._say("NO SELLING HOURS LEFT.")
+            elif SalesCampaign.Retention.upsell_options(d).is_empty():
+                cp._say("THEY HAVE EVERY SERVICE WE SELL.")
+            elif SalesCampaign.spend(1):
+                SalesCampaign.Retention.upsell_card(d)
         "tab":
             SalesCampaign.crm_tab = parts[2]
         "sel":

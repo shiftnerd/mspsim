@@ -234,6 +234,7 @@ func escape() -> void:
 		or (app == "lync" and lync_sel != "")
 		or (app == "dispatch" and dispatch.nested())
 		or (app == "site" and site_view != "desktop")
+		or (app == "crm" and SalesCampaign.crm_view != "list")
 	)
 	if nested:
 		back()
@@ -244,6 +245,8 @@ func escape() -> void:
 func back() -> void:
 	if _menu:
 		_menu = false
+	elif app == "crm" and SalesCampaign.crm_view != "list":
+		SalesCampaign.QuoteBuilder.close()
 	elif app == "desktop":
 		close()
 	elif app == "mail" and mail_view:

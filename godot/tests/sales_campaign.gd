@@ -225,25 +225,23 @@ func _init() -> void:
 	_check(not target.is_empty(), "there is a lead to quote")
 	var tid := int(target.id)
 	sc.start_quote(tid)
-	_check(cards.is_open and str(cards.speaker) == "Quote builder" and cards.options.size() == 4, "the quote builder asks the method first")
-	_check("FIXED" in str(cards.options[0].label) and "SCOPE" in str(cards.options[1].label) and "TIME AND MATERIALS" in str(cards.options[2].label), "fixed price / scope first / time and materials")
-	cards.pick(0)
-	_check("promise" in str(cards.text).to_lower() and cards.options.size() == 4, "then the promise level")
-	cards.pick(2)  # high
-	_check("price" in str(cards.text).to_lower(), "then the price")
-	var floor_before: float = sc.margin_floor
-	_check(cards.options[3].enabled == (sc.margin_pct({"method": "fixed", "price": "d20"}) >= floor_before), "the 20% option follows the margin floor")
+	_check(sc.crm_view == "build" and not cards.is_open and int(sc.qb.id) == tid, "the quote builder is a screen now, not a chain of cards")
+	var qb = sc.QuoteBuilder
+	var dl = sc.Deals
+	_check(str(qb.quote().method) == "fixed" and str(qb.quote().promise) == "std" and int(qb.quote().discount) == 0, "it starts from a fixed price, a standard SLA and no discount")
+	var g1: Dictionary = qb.gauges()
+	_check(absf(float(g1.win) - sc.win_chance(target, qb.quote())) < 0.0001 and absf(float(g1.margin) - sc.margin_pct(qb.quote(), target)) < 0.0001, "the gauges are the quote maths")
 	sc.margin_floor = 0.42
-	cards.pick(4)  # BACK
-	_check("promise" in str(cards.text).to_lower(), "BACK steps back")
-	cards.pick(2)
-	_check(not cards.options[3].enabled and "ALAN" in str(cards.options[3].hint), "Alan's floor blocks 20% off a fixed price")
-	_check(cards.options[2].enabled, "10% off is still above a 42% floor")
-	cards.pick(4)
-	cards.pick(3)  # back to the method
-	_clear(cards, 3)  # NOT NOW
-	_check(not cards.is_open and str(sc.lead_by_id(tid).stage) == "LEAD", "leaving the builder sends nothing")
+	qb.change("discount", 1)
+	qb.change("discount", 1)
+	var g2: Dictionary = qb.gauges()
+	_check(int(qb.quote().discount) == 20 and not g2.can_send and str(g2.blocks[0].who) == "ALAN", "Alan's floor blocks 20% off a fixed price inline")
+	qb.change("discount", -1)
+	_check(qb.gauges().can_send, "10% off is still above a 42% floor")
+	qb.change("discount", -1)
 	sc.margin_floor = 0.35
+	qb.close()
+	_check(sc.crm_view == "list" and str(sc.lead_by_id(tid).stage) == "LEAD", "leaving the builder sends nothing")
 
 	# Garrison's discount approval: a small account is refused, a big one or a behind-pace quarter is approved
 	var small := {"users": 10, "name": "Small", "who": "Dr. S", "fee": 400, "quality": 40, "type": "dental", "id": 500, "stage": "LEAD", "visited": false, "called": false, "moon": false, "pain": "x", "site": false, "week": 1, "why": ""}
@@ -369,21 +367,30 @@ func _init() -> void:
 	_check(com == int(round(float(mrr) * 2.0)), "balanced commission is two weeks of the fee (%d of %d)" % [com, mrr])
 	var gap_before: float = float(deal.gap)
 	_check(gap_before >= 1.0, "a 1 hour promise with no scoping carries a gap (%.1f)" % gap_before)
-	# handover: tell the truth closes the gap, glossing keeps it
+	# the handover is a scene now: the thank-you card queues it for the conference room, then each promise is kept, renegotiated or dropped
 	cards.pick(0)  # thank you
-	_check(cards.is_open and str(cards.speaker).begins_with("Morgan") and "Handover" in str(cards.text), "then the handover card from Morgan")
-	_check(cards.options.size() == 3, "handover: tell the real SLA / brief them / just send the paperwork")
+	_check(sc.pending_handover == int(deal.id) and str(deal.state) == "handover" and not cards.is_open, "the thank-you queues the handover for the conference room")
+	_check("HANDOVER" in str(hints.objective) or sc.bell_ready, "and the objective line points there")
+	_check(deal.promises.size() >= 3, "a high SLA quote makes a promise list (%d promises)" % deal.promises.size())
 	var dan0: int = social.value("Dan")
-	cards.pick(2)
-	_check(float(deal.gap) == gap_before and bool(deal.complain) and int(deal.mood) < 72, "glossing it over keeps the gap, lowers the start mood (%d) and queues a complaint" % int(deal.mood))
+	sc.Handover.start(deal)
+	_check(cards.is_open and str(cards.speaker).begins_with("Morgan") and "Handover" in str(cards.text), "in the room Morgan opens the handover")
+	cards.pick(0)
+	_check(cards.is_open and cards.options.size() == 3 and "Promise 1 of" in str(cards.text), "then one card per promise: keep / renegotiate / drop")
+	var n_promises: int = deal.promises.size()
+	for _i in n_promises:
+		cards.pick(2)  # drop it
+	_check(cards.is_open and str(cards.speaker).begins_with("Dan"), "Dan answers with a short card")
+	cards.pick(0)
+	_check(absf(float(deal.gap) - gap_before) < 0.001 and bool(deal.complain) and int(deal.mood) < 72, "dropping every promise keeps the gap (%.1f), lowers the start mood (%d) and queues a complaint" % [float(deal.gap), int(deal.mood)])
 	_check(social.value("Dan") == dan0 - 1, "and Dan notices")
-	var deal2 := deal.duplicate()
+	_check(str(deal.state) == "active" and sc.pending_handover == 0, "the deal is live")
+	var deal2: Dictionary = deal.duplicate(true)
 	sc.handover(deal2, "honest")
-	_check(float(deal2.gap) == 0.0 and not bool(deal2.complain), "the honest briefing closes the gap")
-	var deal3 := deal.duplicate()
-	deal3.gap = 1.0
+	_check(float(deal2.gap) == 0.0 and not bool(deal2.complain), "the honest briefing (renegotiate everything) closes the gap")
+	var deal3: Dictionary = deal.duplicate(true)
 	sc.handover(deal3, "brief")
-	_check(absf(float(deal3.gap) - 0.5) < 0.001, "a briefing halves the gap")
+	_check(absf(float(deal3.gap) - snappedf(gap_before * 0.5, 0.1)) < 0.21, "a briefing (keep everything) halves the gap")
 	_check(int(deal.mood) == 72 - int(round(gap_before * 8.0)), "start mood = 72 - 8 x gap")
 
 	# the complaint comes two weeks later
@@ -503,7 +510,7 @@ func _init() -> void:
 	_check(c.continue_game("sales"), "the run continues")
 	_clear(cards)
 	_check(c.mode == "sales" and c.day == 7 and c.player_as == "Vic" and not world.chars.has("Vic"), "continue: week 7, played as Vic, Vic's copy gone")
-	_check(sc.quota_level == "safe" and sc.plan == "salary" and absf(sc.margin_floor - 0.47) < 0.0001 and sc.commission_total == 1234 and sc.wins == 3, "continue keeps quota, plan, floor, commission and wins")
+	_check(sc.quota_level == "safe" and sc.plan == "salary" and absf(sc.margin_floor - 0.47) < 0.0001 and sc.commission_total >= 1234 and sc.wins == 3, "continue keeps quota, plan, floor, commission and wins (a renewal due that week may add to it)")
 	_check(sc.q_signed[0] == 900 and sc.bell_ready, "and the quarter's MRR and the waiting bell")
 	_check(names_now.all(func(n: String) -> bool: return _lead_names(sc).has(n)), "and the pipeline")
 	_check(owner_node.vic_plan == "salary" and not root.get_node("Outings").enabled, "the plan is back on the payroll and outings stay off")
@@ -533,13 +540,26 @@ func _init() -> void:
 					if str(l.stage) in ["LEAD", "MEETING"] and sc.slots_left() >= 2:
 						sc.call_lead(int(l.id))
 						world.clock = maxf(world.clock, hour)
-						sc.send_quote(l, {"method": "scope" if (day % 3 == 0) else "fixed", "promise": "std" if (day % 2 == 0) else "low", "price": "list"})
+						sc.send_quote(
+							l,
+							{
+								"method": "scope" if (day % 3 == 0) else "fixed",
+								"promise": "high" if (day % 4 == 1) else ("std" if (day % 2 == 0) else "low"),
+								"price": "list",
+								"discount": 10 if day % 7 == 0 else 0,
+								"extras": ["backup"] if day % 2 == 0 else [],
+								"onboard": "rush" if day % 5 == 0 else "std",
+							}
+						)
 						_clear(cards)
 			if not acted or hour > 9.3:
 				world.clock = maxf(world.clock, hour)
 			await process_frame
 			await process_frame
 			_clear(cards, 0)
+			if hour > 10.0 and sc.pending_handover != 0 and not sc.Handover.pending().is_empty():
+				sc.Handover.start(sc.Handover.pending())  # you walk into the conference room
+				_clear(cards, day % 3)  # keep / renegotiate / drop, a different way each week
 			if hour > 13.0 and sc.bell_ready:
 				sc.ring_bell(_dummy_bell())
 		_check(report.is_open, "week %d ends with a report (cash $%d, signed %d)" % [day, owner_node.cash, mrr_total])
@@ -557,6 +577,14 @@ func _init() -> void:
 	_check(weeks == 20 and ended, "played all 20 weeks and reached the final report (%d weeks)" % weeks)
 	_check(sc.q_result[0] != "" and sc.q_result[1] != "", "both quarters were scored: %s" % str(sc.q_result))
 	_check(sc.wins + sc.losses >= 5, "a spread of quotes went out (won %d lost %d)" % [sc.wins, sc.losses])
+	_check(sc.handovers >= 1 and sc.handovers >= sc.wins - 2, "the deeper loop ran: every win went through the handover (%d of %d wins)" % [sc.handovers, sc.wins])
+	var tracked := 0
+	for lead_row in sc.leads:
+		if lead_row.has("promises") and not lead_row.promises.is_empty():
+			tracked += 1
+	_check(tracked >= 1 or sc.wins == 0, "deals keep their promise lists (%d)" % tracked)
+	_check(root.get_node("Career").value("deals_won") >= sc.wins, "Career counts the deals won (%d)" % root.get_node("Career").value("deals_won"))
+	print("deeper loop: wins %d losses %d rival %d clawbacks %d ($%d) renewals %d/%d upsells %d churned %d" % [sc.wins, sc.losses, sc.rival_wins, sc.clawbacks, sc.clawed_total, sc.renewals_won, sc.renewals_won + sc.renewals_lost, sc.upsells, sc.churned.size()])
 	var rep_ok: bool = c.rep > 0
 	if ended and report.report.get("fired", false):
 		print("(the run lost Garrison's trust: a valid ending)")
