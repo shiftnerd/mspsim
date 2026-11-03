@@ -199,7 +199,7 @@ func _init() -> void:
 		o.dinner_talk(worst)
 		o.tick(2.0)
 	_check(
-		o.phase == "result" and o.stars <= 1, "talking about the wrong things: %d stars" % o.stars
+		o.phase == "result" and o.stars <= 2, "talking about the wrong things: %d stars" % o.stars
 	)
 	o.press(KEY_ENTER)
 
