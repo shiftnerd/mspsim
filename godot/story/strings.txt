@@ -2472,7 +2472,7 @@ Printer will not print
 
 # Msp > PROBLEMS > 0 > body
 [Msp.PROBLEMS.0.body]
-Every time I hit print it just sits there. People are waiting. Please help! - %s
+Every time I hit print it just sits there. I deleted the jobs and it did nothing. The copier down the hall is on the network too. People are waiting. Please help! - %s
 
 # Msp > PROBLEMS > 1 > summary
 [Msp.PROBLEMS.1.summary]
@@ -2480,7 +2480,7 @@ Locked out of my PC
 
 # Msp > PROBLEMS > 1 > body
 [Msp.PROBLEMS.1.body]
-It says my account is locked out. I swear I did nothing. I cannot work until this is fixed. - %s
+It says my account is locked out. I swear I did nothing. Can you just give me a temporary password, or make me a fresh login? I cannot work until this is fixed. - %s
 
 # Msp > PROBLEMS > 2 > summary
 [Msp.PROBLEMS.2.summary]
@@ -2488,7 +2488,7 @@ Computer is very slow
 
 # Msp > PROBLEMS > 2 > body
 [Msp.PROBLEMS.2.body]
-It takes ten minutes to open one document. Is it the weather? - %s
+It takes ten minutes to open one document. I emptied the recycle bin and nothing changed. Last time somebody just wiped it. Is it the weather? - %s
 
 # Msp > PROBLEMS > 3 > summary
 [Msp.PROBLEMS.3.summary]
@@ -2496,7 +2496,7 @@ Computer frozen on a blue screen
 
 # Msp > PROBLEMS > 3 > body
 [Msp.PROBLEMS.3.body]
-There is a blue screen with a sad face on it. It has been like this since lunch. - %s
+There is a blue screen with a sad face on it. It has been like this since lunch. I tried the F8 menu but did not know what to pick. Do I need a new computer? - %s
 
 # Msp > PROBLEMS > 4 > summary
 [Msp.PROBLEMS.4.summary]
@@ -2504,7 +2504,7 @@ Pop-ups everywhere
 
 # Msp > PROBLEMS > 4 > body
 [Msp.PROBLEMS.4.body]
-Hundreds of pop-ups say I won a free cruise. Did I win a cruise? Also I cannot close them. - %s
+Hundreds of pop-ups say I won a free cruise. Did I win a cruise? I reset my browser and they came right back. Also I cannot close them. - %s
 
 # Msp > PROBLEMS > 5 > summary
 [Msp.PROBLEMS.5.summary]
@@ -2512,7 +2512,7 @@ Server not responding - nobody can work
 
 # Msp > PROBLEMS > 5 > body
 [Msp.PROBLEMS.5.body]
-THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. FIX IT! - %s
+THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. Somebody says restart the services, somebody else says roll it back to last night. FIX IT! - %s
 
 
 # ======================= Msp > RANSOM =======================
@@ -2532,7 +2532,7 @@ Adobe Reader will not print
 
 # Msp > ADOBE > body
 [Msp.ADOBE.body]
-I can open PDFs but print in Adobe Reader does nothing. Everything else prints. - %s
+I can open PDFs but print in Adobe Reader does nothing. Everything else prints, even from the browser. - %s
 
 
 # ======================= Msp > INSTALL =======================

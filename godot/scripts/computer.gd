@@ -18,6 +18,8 @@ const TASK := Color("1c3b63")
 const OUTLOOK := Color("2b579a")
 const PSA_BLUE := Color("1f4e8c")
 const RMM_GREY := Color("3b424d")
+# RMM session buttons for the other fixes: quick workaround, heavy fix, clever fix
+const ALT_TINTS := {"quick": Color("f2e2a0"), "heavy": Color("e9b1a8"), "clever": Color("a9e0b0")}
 const ORANGE := Color("e07b22")
 const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
@@ -457,6 +459,7 @@ func _finish_job() -> void:
 		return
 	if (
 		not (job.action in ["restore", "pay", "shadow", "save"])
+		and str(Msp.ALT_DEFS.get(str(job.action), {}).get("kind", "")) != "heavy"
 		and randf() < Skills.fail_chance() + Growth.fail_adjust(str(job.action))
 	):
 		rmm_msg = (
@@ -1299,6 +1302,9 @@ func _paint_session(body: Rect2) -> void:
 	var labels: Array = []
 	for key in actions:
 		labels.append(Msp.reboot_label(ep) if key == "reboot" else Msp.FIXES[key])
+	for alt in Msp.alts_for(ep):
+		actions.append(alt)
+		labels.append(Msp.alt_label(ep, alt))
 	if Skills.can_script():
 		actions.append("script")
 		labels.append("SCRIPT: THIS CLIENT")
@@ -1307,12 +1313,15 @@ func _paint_session(body: Rect2) -> void:
 		labels.append("SCRIPT: ALL CLIENTS")
 	var cols := clampi(int(body.size.x / 84.0), 2, 4)
 	var bw := floorf((body.size.x - 6) / float(cols))
+	# many buttons (other fixes + both scripts): squeeze the rows so they stay inside the window
+	var rows := ceili(float(actions.size()) / float(cols))
+	var pitch := clampf(floorf((body.end.y - body.position.y - 55.0) / float(rows)), 7.0, 10.0)
 	for i in actions.size():
 		var r := Rect2(
 			body.position.x + 3 + float(i % cols) * bw,
-			body.position.y + 54 + float(i / cols) * 10.0,
+			body.position.y + 54 + float(i / cols) * pitch,
 			bw - 2,
-			9
+			pitch - 1.0
 		)
 		var id: String = (
 			"fix:" + str(actions[i])
@@ -1320,7 +1329,9 @@ func _paint_session(body: Rect2) -> void:
 			else str(actions[i])
 		)
 		var tint := Color("9fd8ff") if id.begins_with("script") else Color("d9dde6")
-		_button(id, r, str(labels[i]), _job.is_empty(), tint)
+		if Msp.ALT_DEFS.has(str(actions[i])):
+			tint = ALT_TINTS[str(Msp.ALT_DEFS[actions[i]].kind)]
+		_button(id, r, _clip(str(labels[i]), int((bw - 4.0) / 4.0)), _job.is_empty(), tint)
 
 
 func _paint_backups(body: Rect2) -> void:
