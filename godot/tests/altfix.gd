@@ -39,10 +39,10 @@ func _init() -> void:
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 
-	# outside a campaign a workaround comes back on a timer; clever fixes need a campaign
+	# outside a campaign a workaround comes back on a timer; clever fixes open at the fixed Free Play level (P6)
 	var t := _t(msp, 0)
 	var ep: Dictionary = msp.endpoint(t.endpoint)
-	_check(msp.alts_for(ep) == ["clear_queue", "reinstall_printer"], "free play offers 2 spooler alts")
+	_check(msp.alts_for(ep) == ["clear_queue", "reinstall_printer", "copier_route"], "free play offers 3 spooler alts (clever at the fixed level)")
 	msp.alt_roll = 0.0
 	var res: String = msp.rmm_action(ep.name, "clear_queue")
 	_check(msp._later.size() == 1, "free play: the workaround is queued to come back soon")

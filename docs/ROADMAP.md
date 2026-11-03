@@ -76,7 +76,7 @@ MSP-research items still unbuilt (see `IDEAS.md` "From the MSP research"): docum
 | P3 | Gitot in-editor git panel | optional |
 | P4 | Audio: music, UI sounds, ring tones | design and assets |
 | P5 | Owner campaign leftovers: Maya as the first hire, an owner Rodent Nation, sitting in conference sessions, more onsite jobs and projects | after X4 |
-| P6 | Onsite requirement for heavy ticket fixes, ransomware alternatives, clever fixes in Free Play (alt-fix balance itself is Q6) | a design call |
+| P6 | DONE (see CLAUDE.md "P6: heavy fixes in person, more ransomware exits, clever fixes in Free Play"): ONSITE REIMAGE / PROFILE offer for workstation heavy fixes at clients with a site (tier dials `tech.heavy_fail / heavy_slow / onsite_mood`), vendor versions / isolate+rebuild / cyber insurance as ransom exits (RMM and owner card), clever fixes open in Free Play at level 3. Left: tuning by bot playthrough (Q6) | done |
 
 ## 8. Housekeeping
 | # | Item | Size |

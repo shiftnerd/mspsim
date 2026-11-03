@@ -467,11 +467,16 @@ func _start_job(kind: String, action: String) -> void:
 	var ep := Msp.endpoint(rmm_sel)
 	if ep.is_empty() or not _job.is_empty():
 		return
+	if kind == "fix" and action == "go_reimage":
+		Onsite.offer_reimage(rmm_sel)
+		return
 	var act := action if kind == "fix" else str(ep.problem)
 	if act == "":
 		rmm_msg = "NOTHING TO FIX HERE."
 		return
 	var secs := Skills.fix_secs_for(act)
+	if kind == "fix":
+		secs *= Msp.heavy_slow(ep, act)
 	if kind != "fix":
 		secs += 1.0
 	if act == "save" and Campaign.active:
@@ -559,8 +564,12 @@ func _finish_job() -> void:
 	var ep := Msp.endpoint(rmm_sel)
 	if ep.is_empty():
 		return
+	var risk := Msp.heavy_fail_chance(ep, str(job.action))
+	if risk > 0.0 and Difficulty.rng("msp.fix").randf() < risk:
+		rmm_msg = "THE IMAGE FAILED AT 90 PERCENT. TRY AGAIN, OR GO ONSITE."
+		return
 	if (
-		not (job.action in ["restore", "pay", "shadow", "save"])
+		not (job.action in ["restore", "pay", "shadow", "vendor", "rebuild", "insurer", "save"])
 		and str(Msp.ALT_DEFS.get(str(job.action), {}).get("kind", "")) != "heavy"
 		and randf() < Skills.fail_chance() + Growth.fail_adjust(str(job.action))
 	):
@@ -1411,7 +1420,7 @@ func _symptom(problem: String, restore_failed := false) -> String:
 		"project": "NEW PC ARRIVED. SEE THE PROJECT TAB TO SET UP AND MIGRATE.",
 	}
 	if problem == "restore" and restore_failed:
-		return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
+		return "BACKUP RESTORE FAILED. TRY SHADOW COPIES, THE VENDOR, A REBUILD OR THE INSURER, PAY THE RANSOM OR GIVE UP: CLOSE THE TICKET."
 	if problem.begins_with("onsite_"):
 		return str(Onsite.TEXT.symptom)
 	return str(texts.get(problem, "NO ISSUES FOUND. ALL SERVICES NORMAL."))
@@ -1474,8 +1483,10 @@ func _paint_session(body: Rect2) -> void:
 		_fill(Rect2(body.position.x + 4, body.position.y + 48, (body.size.x - 8) * frac, 4), GREEN)
 	var actions: Array = []
 	for key in Msp.FIXES:
-		if (key == "shadow" or key == "pay") and ep.problem != "restore":
+		if key in ["shadow", "pay", "vendor", "rebuild", "insurer"] and ep.problem != "restore":
 			continue  # only on a ransomed machine
+		if key == "insurer" and not Msp.cyber_insured(int(ep.client)):
+			continue  # no cyber policy
 		if (
 			key == "save"
 			and (ep.problem in ["", "reboot", "restore", "project"] or ep.user == "server")
@@ -1488,6 +1499,10 @@ func _paint_session(body: Rect2) -> void:
 	for alt in Msp.alts_for(ep):
 		actions.append(alt)
 		labels.append(Msp.alt_label(ep, alt))
+	var heavy := Msp.onsite_heavy(ep)
+	if heavy != "":  # P6 (a): the same heavy fix in person
+		actions.append("go_reimage")
+		labels.append("ONSITE REIMAGE" if heavy == "reimage" else "ONSITE PROFILE")
 	if Skills.can_script():
 		actions.append("script")
 		labels.append("SCRIPT: THIS CLIENT")
@@ -1514,6 +1529,8 @@ func _paint_session(body: Rect2) -> void:
 		var tint := Color("9fd8ff") if id.begins_with("script") else Color("d9dde6")
 		if Msp.ALT_DEFS.has(str(actions[i])):
 			tint = ALT_TINTS[str(Msp.ALT_DEFS[actions[i]].kind)]
+		elif actions[i] == "go_reimage":
+			tint = ALT_TINTS["heavy"]
 		_button(id, r, _clip(str(labels[i]), int((bw - 4.0) / 4.0)), _job.is_empty(), tint)
 
 

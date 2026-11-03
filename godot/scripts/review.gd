@@ -271,15 +271,7 @@ func _job_line(key: String, label: String) -> Array:
 	if key == "ransom":
 		return [
 			label,
-			(
-				{
-					"saved": "SAVED BY BACKUP",
-					"lost": "NO BACKUP!",
-					"paid": "PAID THE RANSOM",
-					"partial": "PARTIAL RECOVERY"
-				}
-				. get(str(Story.flags.get("ransom", "")), "-")
-			),
+			str(Msp.RANSOM_LABELS.get(str(Story.flags.get("ransom", "")), "-")),
 			Story.flags.get("ransom", "") == "lost"
 		]
 	return [label, "GRADE " + value if value != "" else "-", value == "D"]

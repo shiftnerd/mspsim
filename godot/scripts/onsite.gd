@@ -1511,7 +1511,7 @@ func _away(hours: float, except_id := 0) -> void:
 	Shift.add_energy(-2.0 * hours)
 
 
-func _depart(id: int) -> void:
+func _depart(id: int, forced := {}) -> void:
 	var t := Msp.ticket(id)
 	if t.is_empty():
 		return
@@ -1519,7 +1519,7 @@ func _depart(id: int) -> void:
 		Computer.close()
 	ticket_id = id
 	client = int(t.client)
-	job = job_for(t)
+	job = forced if not forced.is_empty() else job_for(t)
 	done = false
 	_event_done = false
 	_begin_trip()
@@ -2025,6 +2025,8 @@ func _finish_job() -> void:
 		if ep.name == t.endpoint:
 			ep.problem = ""
 	Msp.add_note(ticket_id, "Fixed onsite.")
+	if bool(job.get("reimage", false)):
+		_reimage_done(t)
 	fixed_count += 1
 	Career.add("onsite_fixed")
 	Career.note_first("site", site_type(client), "site_types")
@@ -2065,6 +2067,104 @@ func _leave() -> void:
 func _leave_answer(id: String, dropped: bool) -> void:
 	if id == "go":
 		_go_home(dropped)
+
+
+# ---- P6 (a): the heavy fix in person (REIMAGE PC / REBUILD PROFILE on a workstation at a client with a site). The RMM ticket you
+# were working is the job: no failed image over the wire, you ask them to save first, the client likes seeing you, and it costs the drive.
+const REIMAGE_TEXT := {
+	"offer": "%s: you can do that heavy fix in person instead of over the wire. About %d minutes each way. Onsite you ask them to save first, the image cannot fail on the way, and they like seeing you. Your other tickets keep ageing while you are out.",
+	"go": "DRIVE THERE AND DO IT",
+	"later": "NOT YET",
+	"image_intro": "The PC is at the front desk. You have the gold image on a USB stick. Ask them to save, then reimage it while they get a coffee.",
+	"profile_intro": "The PC is at the front desk. The profile is a mess. Ask them to save, then rebuild it in front of them.",
+	"image_label": "ASK THEM TO SAVE, THEN REIMAGE",
+	"profile_label": "ASK THEM TO SAVE, THEN REBUILD IT",
+	"image_text": "You ask them to save, reimage it from the stick and sit with them for the first login. Nothing lost. (+5 servers XP)",
+	"profile_text": "You ask them to save, rebuild the profile and copy their files across. Nothing lost. (+5 servers XP)",
+	"look_label": "LOOK IT OVER AND LEAVE",
+	"look_text": "You look it over and say you will be back. They are not impressed.",
+	"done": "Done in person: they saved first, nothing was lost, and the client noticed you came out.",
+}
+
+
+func reimage_job(heavy: String) -> Dictionary:
+	var kind := "profile" if heavy == "new_profile" else "image"
+	return {
+		"id": "reimage",
+		"object": "pc",
+		"pri": 2,
+		"reimage": true,
+		"intro": str(REIMAGE_TEXT[kind + "_intro"]),
+		"options":
+		[
+			{
+				"id": "image",
+				"label": str(REIMAGE_TEXT[kind + "_label"]),
+				"hours": 0.75,
+				"chance": 1.0,
+				"skill": "servers",
+				"xp": 5,
+				"text": str(REIMAGE_TEXT[kind + "_text"]),
+			},
+			{
+				"id": "look",
+				"label": str(REIMAGE_TEXT.look_label),
+				"hours": 0.25,
+				"chance": 0.0,
+				"skill": "",
+				"xp": 0,
+				"text": str(REIMAGE_TEXT.look_text),
+			},
+		],
+	}
+
+
+# the dispatch card for the ONSITE button in the RMM session
+func offer_reimage(ep_name: String) -> void:
+	var ep := Msp.endpoint(ep_name)
+	var heavy := Msp.onsite_heavy(ep)
+	if heavy == "" or active or Cards.is_open:
+		return
+	var t := {}
+	for x in Msp.tickets:
+		if x.endpoint == ep_name and x.status != "Closed" and x.fix == ep.problem:
+			t = x
+	if t.is_empty():
+		return
+	var c := int(t.client)
+	Cards.ask(
+		"Dispatch",
+		(str(REIMAGE_TEXT.offer) % [str(Msp.CLIENTS[c].name), estimate_minutes(c)]) + _risk_text(c, int(t.id)),
+		[
+			{"label": str(REIMAGE_TEXT.go), "id": "go"},
+			{"label": str(REIMAGE_TEXT.later), "id": "later"},
+		],
+		func(pick: String) -> void: _reimage_answer(pick, int(t.id), heavy)
+	)
+
+
+func _reimage_answer(pick: String, id: int, heavy: String) -> void:
+	if pick != "go":
+		return
+	var t := Msp.ticket(id)
+	if t.is_empty():
+		return
+	if Campaign.active:  # the round trip does not eat this ticket's own clock (same as an onsite job)
+		var extra := float(drive_minutes(int(t.client)) * 2 + 45) / 60.0 * 60.0 * World.day_len / 600.0
+		t.sla_total = float(t.sla_total) + extra
+		t.sla_left = float(t.sla_left) + extra
+	_depart(id, reimage_job(heavy))
+
+
+# in person: the user saved first (nothing lost), and the client mood bonus is a tier number
+func _reimage_done(t: Dictionary) -> void:
+	t["method"] = "onsite"
+	Sales.adjust(client, int(Difficulty.cf("tech.onsite_mood")))
+	for ep in Msp.endpoints:
+		if ep.name == t.endpoint:
+			ep["unsaved"] = false
+			ep["asked"] = false
+	Msp.add_note(ticket_id, str(REIMAGE_TEXT.done))
 
 
 func _go_home(dropped: bool) -> void:
