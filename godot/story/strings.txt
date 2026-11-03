@@ -164,7 +164,7 @@ Karen Whitfield (Brightside Realty)
 
 # Story > VIGNETTES > iphone > text
 [Story.VIGNETTES.iphone.text]
-I just got a new iPhone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?
+I just got a new iFone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?
 
 # Story > VIGNETTES > iphone > options > 0 > label
 [Story.VIGNETTES.iphone.options.0.label]

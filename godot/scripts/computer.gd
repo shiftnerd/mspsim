@@ -673,7 +673,7 @@ func _paint_taskbar() -> void:
 			["app:rmm", "LABRAT"],
 			["app:learn", "POWERSHELL"],
 			["app:stats", "PROFILE"],
-			["app:lync", "LYNC"],
+			["app:lync", "LYNK"],
 			["app:nerds", "NERDS"],
 			["logoff", "LOG OFF"],
 		]
@@ -785,7 +785,7 @@ func _paint_site() -> void:
 	_text("WINDOWS 7 PROFESSIONAL", Vector2(a.position.x + 4, a.end.y - TB - 8), ink)
 	var icons := [
 		["practice", _clip(str(site_info.get("app", "APP")), 10), "app"],
-		["mail", "OUTLOOK", "mail"],
+		["mail", "MAIL", "mail"],
 		["computer", "COMPUTER", "psa"],
 		["tools", "TOOLS", "stats"],
 	]
@@ -817,7 +817,7 @@ func _paint_site_window(accent: Color) -> void:
 				_text(_clip(str(row), chars), Vector2(body.position.x + 4, y), TXT)
 				y += 8
 		"mail":
-			var body := _window("OUTLOOK 2010 - INBOX", Color("2b5797"))
+			var body := _window("OUTLOOKISH 2010 - INBOX", Color("2b5797"))
 			chars = int(body.size.x / 4.0) - 2
 			var y := body.position.y + 4
 			for mail in info.get("mails", []):
@@ -904,7 +904,7 @@ func _paint_desktop() -> void:
 		["rmm", "LABRAT", 0],
 		["learn", "POWERSHELL", 0],
 		["stats", "PROFILE", 0],
-		["lync", "LYNC", Lync.unread_total()],
+		["lync", "LYNK", Lync.unread_total()],
 		["nerds", "NERDS", 0],
 	]
 	if Owner.active():
@@ -1580,12 +1580,12 @@ func _paint_quiz(body: Rect2) -> void:
 
 
 # ---- profile / stats -----------------------------------------------------------
-# ---- Microsoft Lync 2013 ------------------------------------------------------------
+# ---- Lynk 2013 ------------------------------------------------------------
 func _paint_lync() -> void:
-	var body := _window("MICROSOFT LYNC 2013", Color("0a6ab8"))
+	var body := _window("LYNK 2013", Color("0a6ab8"))
 	_fill(body, WHITE)
 	if Net.desk_state(desk) == "no_link":
-		_text("LYNC CANNOT SIGN IN. NO NETWORK CABLE.", body.position + Vector2(6, 8), RED)
+		_text("LYNK CANNOT SIGN IN. NO NETWORK CABLE.", body.position + Vector2(6, 8), RED)
 		return
 	var contacts: Array = Lync.contacts()
 	var narrow := body.size.x < 250.0

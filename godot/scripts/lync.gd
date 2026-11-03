@@ -1,7 +1,7 @@
 extends Node
 # gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=max-line-length
-# Microsoft Lync 2013 on the desktop: presence (what your coworkers are doing, read from the cast simulation) and instant
+# Lynk 2013 on the desktop: presence (what your coworkers are doing, read from the cast simulation) and instant
 # messages. Coworkers message you (lunch, "cover my phones", "how do you fix...", a thank-you) and you answer with quick
 # replies that move how they feel about you; you can message them (lunch?, need a hand, thanks) and ask the boss
 # (Morgan in the tech campaign, Marge in the owner campaign). Friends warn you before a ticket breaches its SLA.

@@ -463,6 +463,7 @@ New characters start as a copy of an existing one, then change only what differs
   a pitch-black closet, side view of the rack, and an IT "ticket" objective loop for the MSP Simulator.
 
 ### Computer + MSP (`scripts/computer.gd` autoload `Computer`, `msp.gd` autoload `Msp`, `pixelfont.gd`)
+- **Brand name rule**: any product whose UI or behaviour we imitate gets a parody name (ConnectWhy PSA, LabRat RMM, Outlookish 2013, Lynk 2013 for Lync, iFone 5 and Nexxus 5 for the phones, a Googol search bar, the vendors in `Expo.VENDORS`). Real names are fine only as 2013-14 era context that is just talked about, never shown as a UI we draw: Windows 7 / 8.1 / XP, Exchange, Office 2003, Heartbleed, CryptoLocker, PowerShell, Flappy Bird, Candy Crush. Internal ids and save values are unchanged (`Lync` autoload, `app:lync`, phone cfg `ios` / `android`); only display text uses the parody names.
 - **Fake names**: PSA = **ConnectWhy PSA** (ConnectWise Manage style board), RMM = **LabRat RMM** (LabTech/Automate style tree), mail =
   **Outlookish 2013**, company = Pixel IT Partners. Clients (Acme Dental, Brightside Realty, Gnarly Gnomes, Hoot and Holler Law, Soggy Bottom
   Brewing) are in `Msp.CLIENTS`; each has 3 PCs + a server as RMM endpoints.
@@ -481,7 +482,7 @@ New characters start as a copy of an existing one, then change only what differs
 
 ### Cell phone (`scripts/phone.gd` autoload `Phone`)
 - **P** opens it anywhere (not on the title screen); Esc / P closes. Same takeover + faded strip as the computer (`Game.ui_open`, `Game.ui_shift`).
-  First open asks **iPhone 5** (slate, iOS 7 look: gradient wallpaper, rounded icons, home button, iOS header + back chevron) or **Nexus 5**
+  First open asks **iFone 5** (slate, iOS-style look: gradient wallpaper, rounded icons, home button, iOS header + back chevron) or **Nexxus 5**
   (matte black, Android 4.4 look: dark status bar, Holo teal headers, on-screen back / home / recents bar); saved in `user://mspsim_phone.cfg`,
   changeable in Settings. Left/Right/Enter also work in the picker. Screen scale doubles in tall formats.
 - Apps: Mail (the same `Msp.emails`), Tickets (`Msp.open_tickets()`: view, TAKE, NOTE; CLOSE says to use a computer), Texts (`Msp.texts`),
@@ -499,6 +500,7 @@ New characters start as a copy of an existing one, then change only what differs
 - **Campaigns are fixed and independent**: `TOTAL_DAYS` = 20 days each, one save per mode (`user://mspsim_tech.cfg`, `..._owner.cfg`; `Campaign.save_prefix`
   can be pointed elsewhere). Saved at the end of each day (not at New Game): day, reputation (start 50), cash, history. Continue loads it and starts
   that morning clean (`Msp.reset()`, `World.begin_next_day(day)`: the cast is sent outside and drifts back in, lights reset, clock 8:30).
+- **Day report layout** (`day_report.gd`, dark panel): big grade box + SCORE / PAYCHECK / REPUTATION / CASH tiles on the left (on top in narrow formats), the details grouped under TICKETS / PEOPLE / ENERGY on the right (the owner's weekly books are one group), green / amber / red values, ending text, then an ENTER hint and the button. Row values that do not fit drop to their own line; narrow formats try text scale 2 and fall back to 1. Screenshots: `tests/report_shots.gd` (renderer needed, `-- --format=h|v|wide`; worst cases: every row, final day, fired, owner books). The HUD hides while the report is open.
 - **Day end**: when `World.clock >= DAY_END` (World no longer skips the night itself while a campaign is active) the sim freezes and `DayReport`
   shows closed / SLA missed / reopened / still open / day score / paycheck / reputation / cash and a grade S-D. Paycheck = 100 + 20 per closed
   - 25 per SLA miss - 10 per reopen (min 0); reputation moves by closed*2 - missed*3 - reopened*2 - open, clamped -10..+8. Reputation 0 = fired
@@ -651,7 +653,7 @@ New characters start as a copy of an existing one, then change only what differs
 - Balance (natural time, three strategies, ~4 min): smart $32k / rep 88 / value $822k (7.5x); cut-corners $51k cash but rep 22, value $677k; cash-grab rep 16, mood 25, value $479k (4.0x).
 - Tests: `tests/owner2.gd` (37 checks). The collections test in `tests/owner.gd` reads cash right after the pick because a queued inbound-lead card can sign a client and change cash.
 
-### 2013-14 realism pass: Windows XP, RDP, CryptoLocker options, a competitor, Lync, LabRat Nerds
+### 2013-14 realism pass: Windows XP, RDP, CryptoLocker options, a competitor, Lynk, LabRat Nerds
 - **Day 4 = Windows XP end of support (April 8, 2014).** The install ticket and Morgan's mail are about XP and Office 2003; the old PC's items are XP-era (Office 2003 files, Outlook 2003 PST, XP drivers for the xray software).
 - **RDP open to the internet** (the era's real break-in: most attacks were password guessing). Tech campaign: day 7 playbook `rdp` at Brightside (read the security log, find port 3389 forwarded to the server, audit weak passwords like Summer2013,
   then close the door: VPN, a firewall that auto-blocks repeated failed logins, just changing the port (they find it), or leaving it open; write it up). Flags drive follow-ups ("server hacked again", "our email is blocked as spam").
@@ -665,7 +667,7 @@ New characters start as a copy of an existing one, then change only what differs
 - **Winback** (`gone`, `_winback_week`, `_winback_card`): a client lost on price (and happy with you: mood 60+ => 12%/week after 3 weeks, rising 4%/week after week 5, max 35%) often comes back when the cheap service disappoints; one who left for cause rarely does
   (6% at mood 45+). The card lets you welcome them back at the old price (mood +10, rep +1), raise 15% (70% accept, 50% if they left unhappy), raise 15% and put the scope in writing, or turn them down. They return with patch debt 4 (nobody patched them while away).
   A $300 health check (poach card, week 18) reruns every backup and halves every client's patch debt.
-- **Lync 2013** (`Lync` autoload, desktop app LYNC; HUD `IM n`): presence from the cast simulation (available / in a meeting / away / with a client / offline), coworkers message you (lunch invites, "cover my phones", "how do you fix a print spooler", a thank-you) with quick replies that
+- **Lynk 2013** (parody of Microsoft Lync; `Lync` autoload keeps its internal name, desktop app LYNK; HUD `IM n`): presence from the cast simulation (available / in a meeting / away / with a client / offline), coworkers message you (lunch invites, "cover my phones", "how do you fix a print spooler", a thank-you) with quick replies that
   change `Social`; you message them (LUNCH? 85%+ yes for friends, NEED A HAND = a friend fixes your oldest simple ticket but you owe them -1, THANKS!); friends warn you a ticket is about to breach; Morgan (tech) / Marge (owner) answer advice / status. Campaign only.
 - **LabRat Nerds** (`Nerds` autoload, desktop app NERDS; a parody of the LabTech Geek forum and IRC): FORUM: 5 threads a day; READ = 2 XP; ANSWER needs the skill level, gives 4 XP and +2 karma (a wrong attempt costs 1 karma). Ranks LURKER / MEMBER / REGULAR / GURU by karma.
   IRC `#labratnerds` = **call a friend**: ASK ABOUT THIS TICKET (which fix; for a ransomed machine without a backup the right answer is shadow copies, not paying) or ASK ABOUT THE JOB (what next in a playbook). Four nicks answer one by one (rodent_rick, gnawer, PS_wizard, old_hand, xX_n00b_Xx, trollbot);
@@ -747,7 +749,7 @@ New characters start as a copy of an existing one, then change only what differs
 - **Academy**: one PowerShell lesson can be passed per day (`Skills.lesson_day`, "ONE LESSON A DAY") and each costs 3 energy.
 - **Earlier choices come back** (`Story` callbacks): day 11 Dr. Patel writes about the desktop install (ok / restored / lost: client mood +6 / +1 / -8), day 14 Atty. Spence about the ransomware (saved = a renewal and +1 reputation, partial, paid, lost = they review their provider), day 20 Morgan brings up your worst job before the review. The review's first page shows all five levels and the outing count.
 - **Owner**: the weekly report adds `VALUE (ESTIMATE)` with a path label (`Owner.path_label`: growth / profit / safe pair of hands / just surviving); the Boardroom BOOKS tab shows PATH, RDP exposure and how many clients are at poaching risk (`at_risk_count`). Test: `tests/perks.gd`.
-- Reviewer findings **not yet done**: outing UI styles are inconsistent (three styles), no audio at all, day-report legibility, stale iPhone/Nexus/Lync brand parody rule, thin replay value (no year 2), ticket types with two valid fixes beyond the spooler.
+- Reviewer findings **not yet done**: outing UI styles are inconsistent (three styles), no audio at all, thin replay value (no year 2), ticket types with two valid fixes beyond the spooler.
 
 ### Talking to people at their desks (`Talk` autoload, `npc.gd`), and NPC reactions
 - **E on a coworker in a campaign** (seated at their desk or standing) opens a conversation card (`Talk.start`): **SMALL TALK** (a line in their voice, period-correct: XP end of life, the Target breach, Flappy Bird, Candy Crush; a coworker who likes you sometimes adds gossip; +1 opinion with a cooldown), **ASK FOR HELP** (reuses Lync's `help`: a friend fixes your oldest simple ticket, others are swamped),
@@ -860,5 +862,5 @@ New characters start as a copy of an existing one, then change only what differs
 - **Owner balance re-check** (`tests/owner_balance.gd -- smart|cheap|greedy`, `NOPROJ=1` environment variable turns projects and services off for A/B): after projects, services, onsite reviews and the bell, results are noisy but the picture is the same as before: smart ends with reputation 30-100 (typically 85+), value $218k-$815k; cheap ends with reputation 0-71 (usually under 30) and value $343k-$1,037k; greedy reputation 10-33. Valuation alone can let a cash-grab beat the careful strategy on a good run (it did before projects existed: with projects off, cheap reached $839k against smart $488k), so judge by reputation and mood too. Variance between runs is large (a single bad event can halve a run); do three or more runs per strategy before concluding anything. Open idea: weigh the valuation's quality factor more heavily at low reputation.
 
 ### Quiet-day vignettes (`Story.VIGNETTES`, event kind `vignette`)
-- Seven small 2013-14 moments for the quiet tech days, each a card with 2-3 choices and a result card: day 2 Karen's new iPhone 5S, day 5 Heartbleed, day 7 Candy Crush at Acme's front desk, day 12 a PSA vendor's pizza pitch, day 14 "where is Start" (Windows 8), day 18 Morgan's self-review question, day 19 Alan returns with donuts. Option `fx` keys: `xp [skill, n]`, `mood [client, n]`, `mood_all`, `rep`, `social {name: n}`, `social_all`, `energy`, `hours`. Text is in the editable story tables (`Story.VIGNETTES`). Test: `tests/vignettes.gd`.
+- Seven small 2013-14 moments for the quiet tech days, each a card with 2-3 choices and a result card: day 2 Karen's new iFone 5S, day 5 Heartbleed, day 7 Candy Crush at Acme's front desk, day 12 a PSA vendor's pizza pitch, day 14 "where is Start" (Windows 8), day 18 Morgan's self-review question, day 19 Alan returns with donuts. Option `fx` keys: `xp [skill, n]`, `mood [client, n]`, `mood_all`, `rep`, `social {name: n}`, `social_all`, `energy`, `hours`. Text is in the editable story tables (`Story.VIGNETTES`). Test: `tests/vignettes.gd`.
 - Still open small leftovers: realty coffee bar / sign-in sheet, architect reception, plotter-flavoured printer intro, per-business door plates, full business names on site signs.

@@ -31,7 +31,7 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 
 - **Year:** 2013 into spring 2014. **Windows XP support ends April 8, 2014** and everyone is panicking about it. CryptoLocker is the new scary thing.
   RDP is open to the internet at half of all small businesses, and most attacks are just password guessing. Target's breach is in the news.
-  Flappy Bird, Candy Crush, Lync, iPhone 5 and Nexus 5, LabTech and ConnectWise are the furniture of daily life.
+  Flappy Bird, Candy Crush, Lynk, the iFone 5 and Nexxus 5, LabRat and ConnectWhy are the furniture of daily life.
 - **Hard rule:** nothing from after 2014. No AI, no Teams or Slack, no Windows 10/11, no "MFA" (say *two-factor login*), no TikTok or Discord.
   Reviewers: please flag any slip.
 - **Voice:** warm, dry, a little absurd, never mean. Jargon is used correctly and explained by context. Every character has a way of speaking
@@ -156,12 +156,12 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 ## 8. Things to poke (the "play" half)
 
 - **Talk to people at their desks** (small talk, ask for help, tips from the live game state, a daily lesson from friends).
-- **Instant messages** (Lync): lunch invites, "cover my phones", help requests.
+- **Instant messages** (Lynk): lunch invites, "cover my phones", help requests.
 - **Pull the plug.** Turn the router off and desks lose network, people stop typing and grumble, and Dan walks to the closet. Turn the lights off and someone gets up and turns them back on.
 - **The weekly all-hands** (days 6, 11, 16): attend for a briefing and a question, skip it and Morgan notices.
 - **Team outings** (Fridays): bowling, karaoke, the escape room (find the code in the room), dinner (learn what each coworker likes). They happen in real rooms with the whole cast.
 - **Nerf guns.** A rack of blasters on the cubicle wall. Tap Z for a quick shot, hold Z to lob. Hit a friendly coworker and they fire back. Darts stick in monitors and can be picked up.
-- **Phone.** iPhone 5 or Nexus 5: mail, tickets, texts.
+- **Phone.** iFone 5 or Nexxus 5: mail, tickets, texts.
 - **Ducking.** Hold S or Down to duck; coworkers duck too. A rubber duck sits on your desk; press E on it.
 - **The sales bell.** Hangs high on the main office wall. Vic rings it when he closes a deal. You cannot reach it, but a foam dart can.
 - **The front door.** It is the way to the client sites: a "Where to?" menu with drive times that follow the clock (rush hour, lunch, the evening rush).
