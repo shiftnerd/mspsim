@@ -265,12 +265,27 @@ func commute(choice: String) -> void:
 	add_energy(float(c.energy))
 	if late_min >= 10:
 		late_total += 1
-	_arrive(reason)
+	var waiting := _arrive(reason)
 	World.time_scale = 1.0
+	Hints.toast(_arrival_text(delay, waiting), 6.0)
 	changed.emit()
 
 
-func _arrive(reason: String) -> void:
+# the line shown right after the commute card: how it went
+func _arrival_text(delay: int, waiting: int) -> String:
+	if late_min >= 10:
+		return (
+			"YOU ARRIVE %d MIN LATE. %d TICKET%s WAITING."
+			% [late_min, waiting, "" if waiting == 1 else "S"]
+		)
+	if delay < 0:
+		return "YOU ARRIVE %d MIN EARLY. COFFEE FIRST." % -delay
+	return "YOU ARRIVE ON TIME."
+
+
+# returns how many tickets were already waiting when you got in
+func _arrive(reason: String) -> int:
+	var waiting := 0
 	if late_min >= 10:
 		var sorry := "You arrive %d minutes late" % late_min
 		Msp.send_text(
@@ -279,6 +294,7 @@ func _arrive(reason: String) -> void:
 		for i in clampi(late_min / 15, 1, 3):
 			var t: Dictionary = Msp._random_ticket("email")
 			if not t.is_empty():
+				waiting += 1
 				t.sla_left = maxf(
 					float(t.sla_total) * 0.5, float(t.sla_left) - float(late_min) * 1.25
 				)
@@ -292,6 +308,7 @@ func _arrive(reason: String) -> void:
 			Msp.send_text("Boss", "Where are you? Clients are asking for you.")
 	elif reason != "":
 		Msp.send_text("Commute", "Traffic: %s. You left early enough. Phew." % reason.capitalize())
+	return waiting
 
 
 # ---- the day ---------------------------------------------------------------------------------

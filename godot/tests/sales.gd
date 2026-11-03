@@ -37,6 +37,17 @@ func _model() -> void:
 	var t: Dictionary = msp._random_ticket("test")
 	_check(int(t.client) == new_client, "tickets only come from active clients")
 	sales.active = [0, 1, 2, 3, 4]
+	# a client signed today only sends tickets from tomorrow (the sign-up mail says so)
+	sales.active = [0, 1, 2, 3, 4, new_client]
+	_check(not sales.takes_tickets(new_client) and sales.takes_tickets(0), "new client waits a day")
+	var all_new := true
+	for i in 30:
+		all_new = all_new and int(sales.pick_client()) != new_client
+	_check(all_new, "no tickets from a client signed today")
+	c.day += 1
+	_check(sales.takes_tickets(new_client), "they start tomorrow")
+	c.day -= 1
+	sales.active = [0, 1, 2, 3, 4]
 
 	msp.reset()
 	var installs: int = sales.sell_install()
@@ -95,6 +106,27 @@ func _model() -> void:
 		sales.mood(0) == mood0 + 6 - 6 and social.value("Vic") == vic0 - 1,
 		"brushing them off costs both"
 	)
+
+	# a ticket closed before Vic arrives is not complained about, and a card answered after closing does nothing
+	sales.reset()
+	msp.reset()
+	var gone: Dictionary = msp.create_ticket(0, 1, "test")
+	msp.ticket(gone.id).sla_left = 10.0
+	sales.pending = sales.find_complaint()
+	msp.rmm_action(gone.endpoint, gone.fix)
+	msp.close_ticket(gone.id)
+	_check(sales.complaint_text() == "", "no complaint text for a closed ticket")
+	sales.deliver()
+	_check(not cards.is_open and sales.pending.is_empty(), "Vic says nothing about a closed ticket")
+	var gone2: Dictionary = msp.create_ticket(0, 1, "test")
+	msp.ticket(gone2.id).sla_left = 10.0
+	sales.pending = sales.find_complaint()
+	sales.deliver()
+	var mood_g: int = sales.mood(0)
+	msp.rmm_action(gone2.endpoint, gone2.fix)
+	msp.close_ticket(gone2.id)
+	cards.pick(0)
+	_check(sales.mood(0) == mood_g + 5 and msp.ticket(gone2.id).pri != 1, "answering after it closed changes nothing")
 
 	# save + load
 	sales.satisfaction[3] = 12

@@ -1142,7 +1142,7 @@ func _process(_delta: float) -> void:
 func create_job(client_index := -1, job_id := "") -> Dictionary:
 	var options := []
 	for c in Sales.active:
-		if SITES.has(int(c)):
+		if SITES.has(int(c)) and Sales.takes_tickets(int(c)):
 			options.append(int(c))
 	if client_index < 0:
 		if options.is_empty():
@@ -1164,7 +1164,15 @@ func create_job(client_index := -1, job_id := "") -> Dictionary:
 		"body": str(pick.body),
 		"server": str(pick.object) == "server",
 	}
-	return Msp.create_problem(client_index, prob, "phone")
+	var made := Msp.create_problem(client_index, prob, "phone")
+	if not made.is_empty() and Campaign.active:
+		# the clock is paused on the road, but the client still expects a visit to be possible:
+		# add the round trip (plus some work) to the SLA, in the same units as `_away`
+		var extra := float(drive_minutes(client_index) * 2 + 30) / 60.0 * 60.0
+		extra *= World.day_len / 600.0
+		made.sla_total = float(made.sla_total) + extra
+		made.sla_left = float(made.sla_left) + extra
+	return made
 
 
 func is_onsite(t: Dictionary) -> bool:
@@ -1209,21 +1217,22 @@ func traffic_label(hour := -1.0) -> String:
 
 # what the trip should take right now (shown on the cards)
 # how many open tickets would run out of time during a trip of this many minutes (there and back, plus some work)
-func at_risk(minutes: int) -> int:
+func at_risk(minutes: int, except_id := 0) -> int:
 	var hours := float(minutes * 2 + 30) / 60.0
 	var n := 0
 	var scale := World.day_len / 600.0
 	for t in Msp.tickets:
 		if (
 			t.status != "Closed"
+			and int(t.id) != except_id
 			and float(t.sla_left) - hours * SLA_PER_HOUR * scale <= float(t.sla_total) * 0.4
 		):
 			n += 1
 	return n
 
 
-func _risk_text(c: int) -> String:
-	var n := at_risk(estimate_minutes(c)) if Campaign.active else 0
+func _risk_text(c: int, except_id := 0) -> String:
+	var n := at_risk(estimate_minutes(c), except_id) if Campaign.active else 0
 	return (
 		""
 		if n == 0
@@ -1401,7 +1410,7 @@ func offer(id: int) -> void:
 				str(TEXT.offer)
 				% [str(Msp.CLIENTS[int(t.client)].name), estimate_minutes(int(t.client))]
 			)
-			+ _risk_text(int(t.client))
+			+ _risk_text(int(t.client), id)
 		),
 		[
 			{"label": str(TEXT.go), "id": "go"},
@@ -1829,11 +1838,26 @@ func _after(ok: bool) -> void:
 		_maybe_event()
 
 
+# a mishap only happens where its text makes sense: the dog and the showing need a PC job,
+# the breaker and the closet call need the closet, the plotter needs the printer
+func event_fits(ev: Dictionary) -> bool:
+	var groups := {
+		"pc": ["pc", "exam", "vip", "xray"],
+		"cabinet": ["cabinet", "server"],
+		"server": ["cabinet", "server"],
+		"printer": ["printer"],
+	}
+	var want := str(ev.get("object", ""))
+	if want == "" or job.is_empty() or not groups.has(want):
+		return true
+	return (groups[want] as Array).has(str(job.get("object", "")))
+
+
 # a random mishap at this kind of site (once per visit, 55%)
 func _maybe_event() -> void:
 	_event_done = true
 	var ev: Dictionary = EVENTS.get(site_type(client), {})
-	if ev.is_empty() or randf() > 0.55:
+	if ev.is_empty() or not event_fits(ev) or randf() > 0.55:
 		return
 	var options := []
 	for o in ev.options:

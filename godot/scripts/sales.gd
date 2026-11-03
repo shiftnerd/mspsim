@@ -19,6 +19,7 @@ var deals := 0
 var last_deal := "VIC CLOSED A DEAL!"  # what the sales bell says
 var installs_sold := 0
 var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
+var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
 
 var _cool := 40.0
 
@@ -35,6 +36,7 @@ func reset() -> void:
 	deals = 0
 	installs_sold = 0
 	pending = {}
+	signed_day = {}
 	_cool = 40.0
 
 
@@ -42,16 +44,29 @@ func is_active(client: int) -> bool:
 	return active.has(client)
 
 
+# a client signed today only starts sending tickets tomorrow (the sign-up mail says so)
+func takes_tickets(client: int) -> bool:
+	if not active.has(client):
+		return false
+	return not (Campaign.active and int(signed_day.get(client, -1)) == Campaign.day)
+
+
 func pick_client() -> int:
-	var total := 0.0
+	var ready: Array = []
 	for c in active:
+		if takes_tickets(int(c)):
+			ready.append(c)
+	if ready.is_empty():
+		ready = active
+	var total := 0.0
+	for c in ready:
 		total += Owner.client_weight(int(c))
 	var roll := randf() * total
-	for c in active:
+	for c in ready:
 		roll -= Owner.client_weight(int(c))
 		if roll <= 0.0:
 			return int(c)
-	return int(active[0])
+	return int(ready[0])
 
 
 func mood(client: int) -> int:
@@ -127,6 +142,7 @@ func sign_client(wanted := -1) -> int:
 	if wanted >= 0 and pool.has(wanted):
 		client = wanted
 	active.append(client)
+	signed_day[client] = Campaign.day
 	satisfaction[client] = Owner.new_client_mood() if Owner.active() else 75
 	deals += 1
 	Owner.on_deal("client", client)
@@ -196,7 +212,7 @@ func _process(delta: float) -> void:
 
 func complaint_text() -> String:
 	var t := Msp.ticket(int(pending.get("ticket", 0)))
-	if t.is_empty():
+	if t.is_empty() or str(t.status) == "Closed":
 		return ""
 	var contact: String = Msp.CLIENTS[int(t.client)].contact
 	var late := "is past its SLA" if t.breached else "has %s left" % Msp.mmss(float(t.sla_left))
@@ -229,7 +245,7 @@ func resolve(choice: String) -> void:
 	var t := Msp.ticket(int(pending.get("ticket", 0)))
 	var client := int(pending.get("client", 0))
 	pending = {}
-	if t.is_empty():
+	if t.is_empty() or str(t.status) == "Closed":
 		return
 	match choice:
 		"prio":
