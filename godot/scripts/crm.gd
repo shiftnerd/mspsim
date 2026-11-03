@@ -151,7 +151,13 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
 	else:
 		cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
 	cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
-	cp._text(cp._clip("C CALL V VISIT Q QUOTE F CHASE D DROP U UPSELL I INFO", chars), Vector2(x, r.end.y - 7.0), MUTED)
+	var keys := ""
+	for item in ["C CALL", "V VISIT", "Q QUOTE", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+		if (keys + "  " + item).strip_edges().length() <= chars:
+			keys = (keys + "  " + item).strip_edges()
+		else:
+			break
+	cp._text(keys, Vector2(x, r.end.y - 7.0), MUTED)
 
 
 static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, chars: int) -> void:

@@ -55,3 +55,23 @@ All tracked as items in `docs/ROADMAP.md`: audio, year 2, Maya in the outing log
 - Git reports "LF will be replaced by CRLF" on every touch: add a `.gitattributes` (`* text=auto eol=lf`) so line endings stay stable.
 - Worktrees: the Claude Code hooks in `D:/Creative/.claude/` create `D:/Creative/pixelproject-wt/<name>` on branch `wt/<name>`; they go live after opening `/hooks` once. Agents' worktrees are kept after a subagent finishes: remove them with `git worktree remove`.
 - Tests that use `user://test_*` saves share files: run one at a time (giving each test its own save prefix is in `IDEAS.md`).
+
+## Visual QA sweep (Q3 + Q4, branch q3)
+Method: every `*_shots.gd` test at wide, h and v (screenshots viewed for the newer screens), then all 37 shots tests again with `LAYOUT_AUDIT=1` (Game prints `OFFSCREEN` / `OVERLAP` lines from `PixelFont.audit`), plus the new `tests/layout_audit.gd` (163 screens: title, charselect, build, career, toolbox, cards, day reports, computer and phone apps, boardroom, CRM, quote builder, Dispatch, Knowledge, hiring cards; fails on any text rect outside the viewport).
+Fixed (both the .gd and `make_godot.py`):
+- Card options were cut off with no ellipsis at narrow widths (owner trust chips, handover "RENEGOTIATE: TELL THEM THE REAL TERM"): they wrap onto more rows now (`cards.gd`).
+- Character select at 368x128: the two-line Sales / Service blurb overlapped the summary line (keeps the whole sentences that fit one line); the Year 2 hint was 339 px wide at 320x180 and ran off both edges; the portrait hint dropped "PICK" / "BACK" (three lines now).
+- Title menu at 368x128 with saves for all campaigns: CAREER drew below the screen (two columns when the rows cannot fit).
+- Day report at 368x128: the owner and service reports with every row pushed ENTER OR CLICK / NEXT DAY off the bottom (6 px rows when 7 do not fit).
+- PROFILE at 368x128: the last lines (NEXT PERK) drew below the window (lines that do not fit are dropped, least important last).
+- Dispatch CAPACITY at 368x128 with six techs: the totals line hid behind the FOCUS bar (7 px rows).
+- Boardroom BOOKS at 180x320: GOAL and ON BOARD ended in ".." (values wrap under themselves).
+- CRM record key hint ended in "D DROP.." / "U U.." (whole items only); backup header (180 wide), Nerds forum hint and the escape-room "U/D CHANGE" hint ran off the narrow screen.
+Remaining / not done:
+- The audit only sees PixelFont text inside a CanvasLayer; text clipped by a panel but still inside the viewport, bars, icons and sprites are not checked, and world-space fx text (lyrics, TV, keypad) is skipped on purpose. OVERLAP is only printed (the check is rough: it ignores shadow copies and identical positions).
+- PROFILE at 368x128 now drops the lowest lines when the Rodent Nation KPI list is long; a second page would be nicer.
+- `tests/campaign_shots.gd` at h / v logs `stage.gd:125` "global_position on Nil" errors (the test leaves title mode with no player); test-only, not looked into.
+- Not shot live in a real window: Q3's hard-tier mini-game feel and the 12 site offices were not covered by this sweep.
+
+## Q4: why clicks missed in a hidden / headless window (FIXED)
+Cause: the UI scripts read `get_viewport().get_mouse_position()` inside `_input`. For a synthetic `Input.parse_input_event` that is the real OS cursor (or stale), not the click, and `parse_input_event` also expects window pixels (the 4x window), not logical pixels; headless has a 64x64 window with a 1x transform. Fix: the 19 `_input` handlers (cards, computer, phone, day report, review, title, charselect, career screen, toolbox) use `event.position`; `Game.click_at(ui_point)` / `hover_at` send the event through `Input.parse_input_event` with the window's content-scale transform. `tests/click_harness.gd` clicks the title menu, a card option and a Computer app button (works headless and in a real window at wide / h / v). Note: Cards and the day report ignore clicks for 0.45 s of real time, so wait on `Time.get_ticks_msec()`, not frames, under `--fixed-fps`.

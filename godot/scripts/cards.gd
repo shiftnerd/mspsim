@@ -157,7 +157,7 @@ func _input(event: InputEvent) -> void:
 	if not is_open or DayReport.is_open:
 		return
 	if event is InputEventMouseMotion:
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		for h in _hits:
 			if h.r.has_point(_mouse):
 				sel = int(h.i)
@@ -165,7 +165,7 @@ func _input(event: InputEvent) -> void:
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		for h in _hits:
 			if h.r.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 450:
 				pick(int(h.i))
@@ -210,7 +210,19 @@ func _paint() -> void:
 	var lines := []
 	for para in text.split("\n"):
 		lines.append_array(_wrap(para, chars))
-	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + float(options.size()) * 11.0 + 4.0
+	# option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
+	var opt_lines := []
+	var opts_h := 0.0
+	for opt in options:
+		var chip_w := (str(opt.get("chip", "")).length() + 1 if str(opt.get("chip", "")) != "" else 0)
+		chip_w += (str(opt.get("trust_chip", "")).length() + 1 if str(opt.get("trust_chip", "")) != "" else 0)
+		var full := "%d. %s" % [opt_lines.size() + 1, str(opt.label)]
+		if not bool(opt.get("enabled", true)) and opt.has("hint"):
+			full += " [%s]" % str(opt.hint)
+		var rows: Array = _wrap(full, chars - 1 - chip_w)
+		opt_lines.append(rows)
+		opts_h += 3.0 + 7.0 * float(rows.size()) + 1.0
+	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
 	# short screens (16:9, wide) keep the people visible by putting the card at the top
 	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
 	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
@@ -225,19 +237,17 @@ func _paint() -> void:
 	for i in options.size():
 		var opt: Dictionary = options[i]
 		var on: bool = bool(opt.get("enabled", true))
-		var r := Rect2(panel.position.x + 4, y, pw - 8, 10)
+		var rows: Array = opt_lines[i]
+		var r := Rect2(panel.position.x + 4, y, pw - 8, 3.0 + 7.0 * float(rows.size()))
 		var col := (
 			Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
 		)
 		_canvas.draw_rect(r, col)
-		var label := "%d. %s" % [i + 1, str(opt.label)]
-		if not on and opt.has("hint"):
-			label += " [%s]" % str(opt.hint)
 		var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
 		var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
-		var room := chars - 1 - (chip.length() + 1 if chip != "" else 0) - (tchip.length() + 1 if tchip != "" else 0)
 		var right_edge := r.end.x
-		PixelFont.draw(_canvas, label.substr(0, room), r.position + Vector2(3, 2), INK if on else Color("8b93a1"))
+		for k in rows.size():
+			PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, 2 + 7 * k), INK if on else Color("8b93a1"))
 		if chip != "":
 			var tint := Color("2f7d46")
 			if str(opt.get("stance", "")) == "warn":
@@ -257,7 +267,7 @@ func _paint() -> void:
 			_canvas.draw_rect(trect, ttint)
 			PixelFont.draw(_canvas, tchip, trect.position + Vector2(2, 1), WHITE)
 		_hits.append({"r": r, "i": i})
-		y += 11.0
+		y += r.size.y + 1.0
 	var m := _mouse.floor()
 	for i in 6:
 		_canvas.draw_rect(Rect2(m.x, m.y + i, 1 + mini(i, 3), 1), INK)

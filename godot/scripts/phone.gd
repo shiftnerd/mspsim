@@ -111,12 +111,12 @@ func _input(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseMotion:
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		_canvas.queue_redraw()
 	elif (
 		event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 	):
-		_mouse = get_viewport().get_mouse_position()
+		_mouse = event.position
 		click(_mouse)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:

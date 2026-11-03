@@ -2802,7 +2802,7 @@ func _paint_escape(b: Rect2) -> void:
 			GREEN if g.revealed.has(i) else INK,
 			2
 		)
-	_t("U/D CHANGE   L/R MOVE", bx - 6.0, y + 40.0, Color("46506a"))
+	_t("U/D CHANGE   L/R MOVE", minf(bx - 6.0, b.end.x - 87.0), y + 40.0, Color("46506a"))
 	if str(g.msg) != "":
 		for part in _wrap(str(g.msg), 18):
 			_t(part, bx - 6.0, y + 50.0, BLUE)

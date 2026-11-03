@@ -58,7 +58,7 @@ func _input(event: InputEvent) -> void:
 			_:
 				pass
 	elif event is InputEventMouseMotion:
-		var h := _hit(get_viewport().get_mouse_position())
+		var h := _hit(event.position)
 		if h != _hover:
 			_hover = h
 			queue_redraw()
@@ -69,7 +69,7 @@ func _input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			go(1)
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			click(get_viewport().get_mouse_position())
+			click(event.position)
 	else:
 		return
 	get_viewport().set_input_as_handled()
