@@ -97,6 +97,8 @@ func _init() -> void:
 		"karaoke.gap": 0.75,
 		"karaoke.perfect": 0.12,
 		"karaoke.good": 0.3,
+		"karaoke.grace": 0.0,
+		"karaoke.grace_drain": 6.0,
 		"bowl.opp_skill": 0.0,
 		"bowl.aim_speed": 1.5,
 		"bowl.power_speed": 1.2,
@@ -249,6 +251,45 @@ func _init() -> void:
 	_check(
 		means.easy < means.normal and means.normal < means.hard, "opponent skill follows the tier"
 	)
+
+	# QA items 6 and 8: hard goes easy on the first two misses of a song and warns about doubles; its printer green zone is wider
+	for t in d.TIERS:
+		d.set_tier(t)
+		d.seed_run(5)
+		o._kara_setup()
+		var want := [6.0, 6.0, 6.0] if t != "hard" else [3.0, 3.0, 6.0]
+		_check(
+			o._miss_drain(1) == want[0] and o._miss_drain(2) == want[1] and o._miss_drain(3) == want[2],
+			"karaoke miss drain ramp: " + t
+		)
+		o.g.mood = 50.0
+		o.g.t = float(o.g.notes[0].time) + float(o.g.good_win) + 0.01
+		o._kara_tick(0.0)
+		var expect := 50.0
+		for k in int(o.g.miss):
+			expect -= o._miss_drain(k + 1)
+		_check(
+			int(o.g.miss) >= 1 and is_equal_approx(float(o.g.mood), expect),
+			"first miss drains %s on %s" % [str(50.0 - float(o.g.mood)), t]
+		)
+		_check(
+			(o.kara_warning() != "") == (t != "easy"), "karaoke doubles warning is shown on " + t
+		)
+	d.set_tier("normal")
+	_check(
+		o.kara_warning("wobble") == "" and o.kara_warning("rap") != "", "normal: only the rap warns"
+	)
+	d.set_tier("hard")
+	_check(o.kara_warning("wobble") != "", "hard warns on every song")
+	_check(
+		is_equal_approx(float(d.at("printer.zone", "easy")), 1.3)
+		and is_equal_approx(float(d.at("printer.zone", "normal")), 1.0),
+		"printer zone easy / normal unchanged"
+	)
+	# a clean pull at the slowest hard marker speed (0.8 x 1.25 tracks per second) lasts at least 120 ms
+	var window: float = 0.14 * float(d.at("printer.zone", "hard")) / (0.8 * float(d.at("printer.speed", "hard")))
+	_check(window >= 0.12 and window < 0.2, "hard clean pull window is %d ms" % int(window * 1000.0))
+	d.set_tier("normal")
 
 	# dinner: hard hides a face for the round, and what you could not read is not learned
 	d.set_tier("hard")

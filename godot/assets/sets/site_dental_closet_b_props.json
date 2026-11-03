@@ -1,5 +1,6 @@
 [
 {"piece":"site_rack_b","x":55,"y":3,"sort":104},
+{"piece":"sterilizer_cart_dental","x":38,"y":83,"sort":108},
 {"piece":"server_tower","x":125,"y":79,"sort":108},
 {"piece":"drawer_stack_b","x":151,"y":75,"sort":108}
 ]

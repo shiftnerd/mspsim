@@ -417,6 +417,8 @@ const DEFAULT_CREW_LINES := {
 	},
 }
 var CREW_LINES: Dictionary = DEFAULT_CREW_LINES.duplicate(true)
+const DEFAULT_KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH KEYS AT ONCE."}
+var KARAOKE_TEXT: Dictionary = DEFAULT_KARAOKE_TEXT.duplicate(true)
 const ROOMS := {
 	"bowling": "bowling_alley",
 	"karaoke": "karaoke_bar",
@@ -1509,10 +1511,22 @@ func song_options() -> Array:
 	return open + shut
 
 
+# the one-line warning for songs with two arrows on one beat ("" when there are none): hard always has them
+func kara_warning(song_id := "") -> String:
+	var idx := maxi(0, Difficulty.TIERS.find(Difficulty.tier))
+	if Difficulty.tier == "hard":
+		return str(KARAOKE_TEXT.doubles)
+	for song in SONGS:
+		if (song_id == "" or str(song.id) == song_id) and float(song.doubles[idx]) > 0.0:
+			return str(KARAOKE_TEXT.doubles)
+	return ""
+
+
 func ask_song() -> void:
+	var warn := kara_warning()
 	Cards.ask(
 		"Karaoke host",
-		"Step up to the mic. Which song?",
+		"Step up to the mic. Which song?" + ((" " + warn) if warn != "" else ""),
 		song_options(),
 		func(id: String) -> void: begin_play(id)
 	)
@@ -1593,7 +1607,7 @@ func _kara_tick(dt: float) -> void:
 			g.miss = int(g.miss) + 1
 			g.streak = 0
 			_streak_broken()
-			_mood_add(-6.0)
+			_mood_add(-_miss_drain(int(g.miss)))
 			g.flash = "MISS"
 			g.flash_t = 0.5
 	if float(g.mood) <= 0.0:
@@ -1601,6 +1615,13 @@ func _kara_tick(dt: float) -> void:
 		_kara_end()
 	elif float(g.t) > _song_secs() + 0.6:
 		_kara_end()
+
+
+# the crowd cools by 6 per missed note; on hard the first two misses of a song cost 3 (Difficulty karaoke.grace / grace_drain)
+func _miss_drain(nth: int) -> float:
+	if nth <= Difficulty.i("karaoke.grace"):
+		return Difficulty.f("karaoke.grace_drain")
+	return 6.0
 
 
 func _good_win() -> float:
@@ -2509,7 +2530,7 @@ func _paint_hud(size: Vector2) -> void:
 		"bowling":
 			_hud_bowling(strip)
 		"karaoke":
-			_hud_karaoke(strip)
+			_hud_karaoke(strip, size)
 		"escape":
 			_hud_escape(strip)
 		_:
@@ -2544,8 +2565,11 @@ func _hud_bowling(s: Rect2) -> void:
 		_t(status, x, o.y, UiStyle.SOFT)
 
 
-func _hud_karaoke(s: Rect2) -> void:
-	var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
+# at 180 px wide (the v format) the lanes box is 15 px shorter so it stays below the singers' feet; paint_karaoke
+# squeezes the note travel to match, so the notes still arrive on the same beat
+func _hud_karaoke(s: Rect2, size: Vector2) -> void:
+	var tall := 78.0 if size.x >= 260.0 else 63.0
+	var lanes := Rect2(4.0, s.position.y - tall - 1.0, 100.0, tall)
 	UiStyle.box(_canvas, lanes)
 	_paint_karaoke(
 		Rect2(
@@ -2769,6 +2793,8 @@ func _paint_intro(b: Rect2) -> void:
 	var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
 	if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
 		blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
+	if game == "karaoke":
+		blurb += " " + kara_warning(default_song() if not _traveled else "")
 	for line in _wrap(blurb, int(b.size.x / 4.0)):
 		_t(line, b.position.x, y)
 		y += 7.0
@@ -2889,12 +2915,13 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 		_t("CROWD", b.end.x - 24.0, y + 8.0, UiStyle.MUTED)
 	var line_y := b.end.y - 12.0
 	var left := b.position.x + b.size.x * 0.5 - 40.0
+	var squeeze := minf(1.0, (line_y - top) / 60.0) if hud else 1.0  # the short lanes box at v
 	for lane in 4:
 		var cx := left + 20.0 * float(lane) + 10.0
 		_canvas.draw_rect(Rect2(cx - 9.0, top, 18.0, line_y + 6.0 - top), Color("dde3ee"))
 		_arrow(lane, Vector2(cx, line_y), 5.0, Color(LANE_COLORS[lane], 0.45))
 	for n in g.notes:
-		var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0))
+		var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0)) * squeeze
 		if dy < -14.0 or dy > line_y - top + 4.0:
 			continue
 		var col: Color = LANE_COLORS[int(n.lane)]

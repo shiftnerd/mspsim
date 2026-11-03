@@ -33,7 +33,7 @@ const ROOTS := {
 	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
+	"Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
 	"SalesCampaign": ["BEAT_TEXT"],
 }

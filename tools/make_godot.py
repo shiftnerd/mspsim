@@ -179,7 +179,7 @@ PATCHABLE = {
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
+    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
 }
 
@@ -18826,6 +18826,9 @@ const TABLE := {
     "karaoke.gap": [0.95, 0.75, 0.55],
     "karaoke.perfect": [0.16, 0.12, 0.09],
     "karaoke.good": [0.36, 0.3, 0.24],
+    # karaoke: the first N misses of a song drain only `grace_drain` of the crowd instead of 6 (hard goes easy on the opening misses)
+    "karaoke.grace": [0, 0, 2],
+    "karaoke.grace_drain": [6.0, 6.0, 3.0],
     # bowling: added to every opponent's skill (0.48-0.62 today), speed of the aim marker and the power bar
     "bowl.opp_skill": [-0.08, 0.0, 0.08],
     "bowl.aim_speed": [1.1, 1.5, 2.0],
@@ -18843,7 +18846,7 @@ const TABLE := {
     "dinner.reveal": [3, 3, 2],
     # printer: marker speed x, green zone width x, number of test-page questions
     "printer.speed": [0.8, 1.0, 1.25],
-    "printer.zone": [1.3, 1.0, 0.85],
+    "printer.zone": [1.3, 1.0, 0.95],
     "printer.questions": [1, 2, 3],
     # printer: pulls in the jam chain (a torn scrap adds one, two clean pulls in a row take one off, 3 to 6)
     "printer.chain": [3, 3, 5],
@@ -22372,6 +22375,7 @@ const CREW_LINES := {
         "sing": ["THAT WAS FINE. GOOD, EVEN.", "I WILL ALLOW IT."],
     },
 }
+const KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH KEYS AT ONCE."}
 const ROOMS := {
     "bowling": "bowling_alley",
     "karaoke": "karaoke_bar",
@@ -23464,10 +23468,22 @@ func song_options() -> Array:
     return open + shut
 
 
+# the one-line warning for songs with two arrows on one beat ("" when there are none): hard always has them
+func kara_warning(song_id := "") -> String:
+    var idx := maxi(0, Difficulty.TIERS.find(Difficulty.tier))
+    if Difficulty.tier == "hard":
+        return str(KARAOKE_TEXT.doubles)
+    for song in SONGS:
+        if (song_id == "" or str(song.id) == song_id) and float(song.doubles[idx]) > 0.0:
+            return str(KARAOKE_TEXT.doubles)
+    return ""
+
+
 func ask_song() -> void:
+    var warn := kara_warning()
     Cards.ask(
         "Karaoke host",
-        "Step up to the mic. Which song?",
+        "Step up to the mic. Which song?" + ((" " + warn) if warn != "" else ""),
         song_options(),
         func(id: String) -> void: begin_play(id)
     )
@@ -23548,7 +23564,7 @@ func _kara_tick(dt: float) -> void:
             g.miss = int(g.miss) + 1
             g.streak = 0
             _streak_broken()
-            _mood_add(-6.0)
+            _mood_add(-_miss_drain(int(g.miss)))
             g.flash = "MISS"
             g.flash_t = 0.5
     if float(g.mood) <= 0.0:
@@ -23556,6 +23572,13 @@ func _kara_tick(dt: float) -> void:
         _kara_end()
     elif float(g.t) > _song_secs() + 0.6:
         _kara_end()
+
+
+# the crowd cools by 6 per missed note; on hard the first two misses of a song cost 3 (Difficulty karaoke.grace / grace_drain)
+func _miss_drain(nth: int) -> float:
+    if nth <= Difficulty.i("karaoke.grace"):
+        return Difficulty.f("karaoke.grace_drain")
+    return 6.0
 
 
 func _good_win() -> float:
@@ -24464,7 +24487,7 @@ func _paint_hud(size: Vector2) -> void:
         "bowling":
             _hud_bowling(strip)
         "karaoke":
-            _hud_karaoke(strip)
+            _hud_karaoke(strip, size)
         "escape":
             _hud_escape(strip)
         _:
@@ -24499,8 +24522,11 @@ func _hud_bowling(s: Rect2) -> void:
         _t(status, x, o.y, UiStyle.SOFT)
 
 
-func _hud_karaoke(s: Rect2) -> void:
-    var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
+# at 180 px wide (the v format) the lanes box is 15 px shorter so it stays below the singers' feet; paint_karaoke
+# squeezes the note travel to match, so the notes still arrive on the same beat
+func _hud_karaoke(s: Rect2, size: Vector2) -> void:
+    var tall := 78.0 if size.x >= 260.0 else 63.0
+    var lanes := Rect2(4.0, s.position.y - tall - 1.0, 100.0, tall)
     UiStyle.box(_canvas, lanes)
     _paint_karaoke(
         Rect2(
@@ -24724,6 +24750,8 @@ func _paint_intro(b: Rect2) -> void:
     var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
     if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
         blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
+    if game == "karaoke":
+        blurb += " " + kara_warning(default_song() if not _traveled else "")
     for line in _wrap(blurb, int(b.size.x / 4.0)):
         _t(line, b.position.x, y)
         y += 7.0
@@ -24844,12 +24872,13 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
         _t("CROWD", b.end.x - 24.0, y + 8.0, UiStyle.MUTED)
     var line_y := b.end.y - 12.0
     var left := b.position.x + b.size.x * 0.5 - 40.0
+    var squeeze := minf(1.0, (line_y - top) / 60.0) if hud else 1.0  # the short lanes box at v
     for lane in 4:
         var cx := left + 20.0 * float(lane) + 10.0
         _canvas.draw_rect(Rect2(cx - 9.0, top, 18.0, line_y + 6.0 - top), Color("dde3ee"))
         _arrow(lane, Vector2(cx, line_y), 5.0, Color(LANE_COLORS[lane], 0.45))
     for n in g.notes:
-        var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0))
+        var dy: float = (float(n.time) - float(g.t)) * float(g.get("speed", 45.0)) * squeeze
         if dy < -14.0 or dy > line_y - top + 4.0:
             continue
         var col: Color = LANE_COLORS[int(n.lane)]
@@ -33826,7 +33855,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
     "SalesCampaign": ["BEAT_TEXT"],
 }
@@ -36180,28 +36209,28 @@ const STAFF := {
 const NPC_SCENE := preload("res://scenes/npc.tscn")
 const CAST_AT := {   # [character, x, role] per site type, skin and room (main office, exam room, owner office)
     "dental": {
-        "a": {"main": [["client_dentrec_a", 104, "staff"], ["client_hygienist", 190, "staff"]], "exam": [["client_dentasst", 150, "staff"]], "office": [["expo_atta", 150, "owner"]]},
-        "b": {"main": [["client_dentrec_b", 104, "staff"], ["expo_attd", 190, "staff"]], "exam": [["client_denthyg_b", 150, "staff"]], "office": [["client_dentdoc_b", 150, "owner"]]},
+        "a": {"main": [["client_dentrec_a", 104, "staff"], ["client_hygienist", 202, "staff"]], "exam": [["client_dentasst", 104, "staff"]], "office": [["expo_atta", 162, "owner"]]},
+        "b": {"main": [["client_dentrec_b", 104, "staff"], ["expo_attd", 202, "staff"]], "exam": [["client_denthyg_b", 104, "staff"]], "office": [["client_dentdoc_b", 162, "owner"]]},
     },
     "vet": {
-        "a": {"main": [["client_vetrec_a", 104, "staff"], ["expo_vendh", 190, "staff"]], "exam": [["client_vettech_a", 150, "staff"]], "office": [["client_brandt", 150, "owner"]]},
-        "b": {"main": [["client_vetrec_b", 104, "staff"], ["client_vettech_b", 190, "staff"]], "exam": [["expo_vendi", 150, "staff"]], "office": [["client_vetdoc_b", 150, "owner"]]},
+        "a": {"main": [["client_vetrec_a", 88, "staff"], ["expo_vendh", 190, "staff"]], "exam": [["client_vettech_a", 104, "staff"]], "office": [["client_brandt", 162, "owner"]]},
+        "b": {"main": [["client_vetrec_b", 88, "staff"], ["client_vettech_b", 190, "staff"]], "exam": [["expo_vendi", 104, "staff"]], "office": [["client_vetdoc_b", 162, "owner"]]},
     },
     "law": {
-        "a": {"main": [["client_paralegal", 170, "staff"], ["expo_attc", 214, "staff"]], "office": [["expo_attb", 150, "owner"]]},
-        "b": {"main": [["expo_attf", 170, "staff"], ["client_paralegal_b", 214, "staff"]], "office": [["client_attorney_b", 150, "owner"]]},
+        "a": {"main": [["client_paralegal", 170, "staff"], ["expo_attc", 190, "staff"]], "office": [["expo_attb", 162, "owner"]]},
+        "b": {"main": [["expo_attf", 170, "staff"], ["client_paralegal_b", 190, "staff"]], "office": [["client_attorney_b", 162, "owner"]]},
     },
     "arch": {
-        "a": {"main": [["client_designer_a", 160, "staff"], ["expo_atte", 214, "staff"]], "office": [["expo_vendp", 150, "owner"]]},
-        "b": {"main": [["client_designer_b", 160, "staff"], ["expo_atta", 214, "staff"]], "office": [["client_mina", 150, "owner"]]},
+        "a": {"main": [["client_designer_a", 160, "staff"], ["expo_atte", 214, "staff"]], "office": [["expo_vendp", 162, "owner"]]},
+        "b": {"main": [["client_designer_b", 160, "staff"], ["expo_atta", 214, "staff"]], "office": [["client_mina", 162, "owner"]]},
     },
     "realty": {
-        "a": {"main": [["client_agent_a", 100, "staff"], ["expo_vendp", 230, "staff"]], "office": [["client_karen", 150, "owner"]]},
-        "b": {"main": [["client_agent_b", 100, "staff"], ["expo_attc", 230, "staff"]], "office": [["expo_atte", 150, "owner"]]},
+        "a": {"main": [["client_agent_a", 100, "staff"], ["expo_vendp", 230, "staff"]], "office": [["client_karen", 162, "owner"]]},
+        "b": {"main": [["client_agent_b", 100, "staff"], ["expo_attc", 230, "staff"]], "office": [["expo_atte", 162, "owner"]]},
     },
     "trailer": {
-        "a": {"main": [["expo_vendo", 170, "staff"], ["expo_vendj", 214, "staff"]], "office": [["expo_attb", 150, "owner"]]},
-        "b": {"main": [["client_foreman_a", 170, "staff"]], "office": [["expo_atta", 150, "owner"]]},
+        "a": {"main": [["expo_vendo", 170, "staff"], ["expo_vendj", 214, "staff"]], "office": [["expo_attb", 162, "owner"]]},
+        "b": {"main": [["client_foreman_a", 170, "staff"]], "office": [["expo_atta", 162, "owner"]]},
     },
 }
 const OWNER_B := {
