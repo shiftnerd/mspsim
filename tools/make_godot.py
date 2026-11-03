@@ -338,6 +338,7 @@ Lync="*res://scripts/lync.gd"
 Nerds="*res://scripts/nerds.gd"
 Shift="*res://scripts/shift.gd"
 Growth="*res://scripts/growth.gd"
+Difficulty="*res://scripts/difficulty.gd"
 Outings="*res://scripts/outings.gd"
 Hints="*res://scripts/hints.gd"
 Talk="*res://scripts/talk.gd"
@@ -7115,6 +7116,7 @@ func new_game(for_mode: String) -> void:
     Shift.reset()
     Growth.reset()
     Outings.reset()
+    Difficulty.new_run()
     Talk.reset()
     Meeting.reset()
     Projects.reset()
@@ -7150,6 +7152,7 @@ func continue_game(for_mode: String) -> bool:
     Shift.from_dict(cfg.get_value("campaign", "shift", {}))
     Growth.from_dict(cfg.get_value("campaign", "growth", {}))
     Outings.from_dict(cfg.get_value("campaign", "outings", {}))
+    Difficulty.from_dict(cfg.get_value("campaign", "difficulty", {}))
     Meeting.from_dict(cfg.get_value("campaign", "meeting", {}))
     Projects.from_dict(cfg.get_value("campaign", "projects", {}))
     Expo.from_dict(cfg.get_value("campaign", "conference", {}))
@@ -7184,6 +7187,7 @@ func save() -> void:
     cfg.set_value("campaign", "shift", Shift.to_dict())
     cfg.set_value("campaign", "growth", Growth.to_dict())
     cfg.set_value("campaign", "outings", Outings.to_dict())
+    cfg.set_value("campaign", "difficulty", Difficulty.to_dict())
     cfg.set_value("campaign", "meeting", Meeting.to_dict())
     cfg.set_value("campaign", "projects", Projects.to_dict())
     cfg.set_value("campaign", "conference", Expo.to_dict())
@@ -11987,6 +11991,177 @@ func from_dict(data: Dictionary) -> void:
     karma = int(data.get("karma", 10))
 ''')
 
+write("scripts/difficulty.gd", '''extends Node
+# gdlint:disable=max-line-length
+# One dial for the repeatable activities (printer, karaoke, bowling, escape room, dinner, nerf war):
+# a tier (easy / normal / hard), a run seed, and a seeded random stream per system.
+#
+#   Difficulty.f("karaoke.gap")      a number from TABLE for the current tier
+#   Difficulty.rng("karaoke")        the RandomNumberGenerator of one system (same seed = same draws)
+#   Difficulty.seed_run(12345)       tests and "daily seed" runs: fixes the seed and restarts every stream
+#
+# TABLE is the only place the numbers live: [easy, normal, hard]. Normal is exactly today's behaviour.
+# Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
+# run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input.
+# The tier is remembered in user://mspsim_settings.cfg (title menu); the tier and run seed are saved in
+# the campaign file (`difficulty` section; old saves load as normal with a fresh seed). Only the seed is
+# saved, not the position inside each stream: a continued run restarts its streams from the seed.
+
+const TIERS := ["easy", "normal", "hard"]
+const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
+const SEED_MASK := 0xFFFFFF
+const TABLE := {
+    # karaoke: seconds between notes, perfect / good hit windows (a miss is a note older than the good window)
+    "karaoke.gap": [0.95, 0.75, 0.55],
+    "karaoke.perfect": [0.16, 0.12, 0.09],
+    "karaoke.good": [0.36, 0.3, 0.24],
+    # bowling: added to every opponent's skill (0.48-0.62 today), speed of the aim marker and the power bar
+    "bowl.opp_skill": [-0.08, 0.0, 0.08],
+    "bowl.aim_speed": [1.1, 1.5, 2.0],
+    "bowl.power_speed": [0.9, 1.2, 1.6],
+    # escape room: seconds on the clock, seconds a wrong code takes off (in the room)
+    "escape.time": [150.0, 120.0, 105.0],
+    "escape.wrong_penalty": [5.0, 10.0, 15.0],
+    # dinner: how many of the three faces show their reaction (the others stay hidden for that round)
+    "dinner.reveal": [3, 3, 2],
+    # printer: marker speed x, green zone width x, number of test-page questions
+    "printer.speed": [0.8, 1.0, 1.25],
+    "printer.zone": [1.3, 1.0, 0.85],
+    "printer.questions": [1, 2, 3],
+    # nerf war: how long the coworkers wait between shots, x
+    "nerf.gap": [1.35, 1.0, 0.7],
+}
+
+var tier := "normal"
+var run_seed := 0
+var settings_path := "user://mspsim_settings.cfg"
+
+var _streams := {}
+var _pinned := false  # seed_run() was called: the next new_run() keeps that seed
+
+
+func _ready() -> void:
+    if run_seed == 0:
+        run_seed = _random_seed()
+
+
+func _random_seed() -> int:
+    var r := RandomNumberGenerator.new()
+    r.randomize()
+    return maxi(1, r.randi() & SEED_MASK)
+
+
+# ---- tier ----------------------------------------------------------------------------------------
+func tier_index() -> int:
+    return maxi(0, TIERS.find(tier))
+
+
+func set_tier(name: String) -> void:
+    tier = name if name in TIERS else "normal"
+
+
+func cycle_tier(step: int) -> String:
+    set_tier(TIERS[(tier_index() + step + TIERS.size()) % TIERS.size()])
+    return tier
+
+
+func label() -> String:
+    return str(LABELS.get(tier, "NORMAL"))
+
+
+# the number for one key at the current tier (0 and an error for an unknown key)
+func f(key: String) -> float:
+    return float(at(key, tier))
+
+
+func i(key: String) -> int:
+    return int(at(key, tier))
+
+
+func at(key: String, for_tier: String) -> Variant:
+    if not TABLE.has(key):
+        push_error("Difficulty: unknown key " + key)
+        return 0.0
+    return TABLE[key][maxi(0, TIERS.find(for_tier))]
+
+
+# ---- seed and random streams -----------------------------------------------------------------------
+func seed_text() -> String:
+    return "%06X" % run_seed
+
+
+# fix the run seed (tests, daily seed): every stream starts again from it
+func seed_run(value: int) -> void:
+    run_seed = maxi(1, value & SEED_MASK)
+    _pinned = true
+    _streams.clear()
+
+
+# a fresh run (New Game): a new random seed unless seed_run() fixed one first
+func new_run() -> void:
+    if _pinned:
+        _pinned = false
+        _streams.clear()
+        return
+    run_seed = _random_seed()
+    _streams.clear()
+
+
+# one persistent generator per system: the same seed gives the same draws in the same order
+func rng(stream: String) -> RandomNumberGenerator:
+    if not _streams.has(stream):
+        _streams[stream] = rng_for(stream, 0)
+    return _streams[stream]
+
+
+# an independent generator for (stream, salt), e.g. one per day or per setup
+func rng_for(stream: String, salt: int) -> RandomNumberGenerator:
+    var r := RandomNumberGenerator.new()
+    r.seed = hash("%d:%s:%d" % [run_seed, stream, salt])
+    return r
+
+
+# Fisher-Yates with a stream (Array.shuffle() would use the global generator)
+func shuffle(list: Array, stream: String) -> void:
+    var r := rng(stream)
+    for k in range(list.size() - 1, 0, -1):
+        var j := r.randi_range(0, k)
+        var tmp = list[k]
+        list[k] = list[j]
+        list[j] = tmp
+
+
+func pick(list: Array, stream: String) -> Variant:
+    return list[rng(stream).randi_range(0, list.size() - 1)]
+
+
+# ---- campaign save ---------------------------------------------------------------------------------
+func to_dict() -> Dictionary:
+    return {"version": 1, "tier": tier, "seed": run_seed}
+
+
+func from_dict(data: Dictionary) -> void:
+    set_tier(str(data.get("tier", "normal")))
+    var saved := int(data.get("seed", 0))
+    _pinned = false
+    _streams.clear()
+    run_seed = saved if saved > 0 else _random_seed()
+
+
+# ---- settings (the tier chosen on the title menu) ----------------------------------------------------
+func load_settings() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(settings_path) == OK:
+        set_tier(str(cfg.get_value("difficulty", "tier", "normal")))
+
+
+func save_settings() -> void:
+    var cfg := ConfigFile.new()
+    cfg.load(settings_path)
+    cfg.set_value("difficulty", "tier", tier)
+    cfg.save(settings_path)
+''')
+
 write("scripts/shift.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Hour management for the tech campaign. A tech's day is more than tickets: when you leave for
@@ -13316,7 +13491,8 @@ func _bowl_tick(dt: float) -> void:
     var stage: String = g.stage
     if stage == "aim" or stage == "power":
         var key := "marker" if stage == "aim" else "power"
-        var v: float = float(g[key]) + float(g.dir) * dt * (1.5 if stage == "aim" else 1.2)
+        var speed := Difficulty.f("bowl.aim_speed" if stage == "aim" else "bowl.power_speed")
+        var v: float = float(g[key]) + float(g.dir) * dt * speed
         if v >= 1.0:
             v = 1.0
             g.dir = -1.0
@@ -13366,7 +13542,8 @@ func _bowl_press(key: int) -> void:
 func bowl_strength() -> float:
     var accuracy := 1.0 - absf(float(g.marker) - 0.5) * 2.0
     var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
-    return clampf(accuracy * 0.6 + quality * 0.4 + randf_range(-0.08, 0.08), 0.0, 1.0)
+    var noise := Difficulty.rng("bowl").randf_range(-0.08, 0.08)
+    return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
 
 
 func _bowl_resolve() -> void:
@@ -13396,14 +13573,15 @@ func _bowl_resolve() -> void:
 
 
 func _bowl_roll_opp(who: String) -> Dictionary:
-    var skill := float(BOWL_SKILL[who])
-    var first := clampi(roundi(10.0 * (skill + randf_range(-0.28, 0.28))), 0, 10)
+    var skill := float(BOWL_SKILL[who]) + Difficulty.f("bowl.opp_skill")
+    var r := Difficulty.rng("bowl")
+    var first := clampi(roundi(10.0 * (skill + r.randf_range(-0.28, 0.28))), 0, 10)
     var total := first
     var knock := first
     if first == 10:
         total += 3
     else:
-        var second := clampi(roundi(float(10 - first) * (skill + randf_range(-0.28, 0.28))), 0, 10 - first)
+        var second := clampi(roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first)
         total += second
         knock += second
     return {"total": total, "knock": knock}
@@ -13457,7 +13635,8 @@ func _bowl_others(dt: float) -> void:
         var res := _bowl_roll_opp(str(g.opp))
         g.opp_total = int(res.total)
         g.opp_knock = int(res.knock)
-        g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * randf_range(-0.5, 0.5), 0.0, 1.0)
+        var wobble := Difficulty.rng("bowl").randf_range(-0.5, 0.5)
+        g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * wobble, 0.0, 1.0)
         g.opp_ball = 0.0
         g.opp_t = 0.0
         g.opp_phase = 0
@@ -13483,7 +13662,7 @@ func _pins_fall(lane: int, count: int) -> void:
     for i in 10:
         if up[i]:
             standing.append(i)
-    standing.shuffle()
+    Difficulty.shuffle(standing, "bowl")
     for i in mini(count, standing.size()):
         up[standing[i]] = false
         g.fall["%d_%d" % [lane, standing[i]]] = 0.8
@@ -13504,24 +13683,36 @@ func _bowl_end() -> void:
 # ---- karaoke ------------------------------------------------------------------------------------
 func _kara_setup() -> void:
     var notes := []
+    var gap := Difficulty.f("karaoke.gap")
+    var r := Difficulty.rng("karaoke")
     for i in SONG_LEN:
-        notes.append({"lane": randi() % 4, "time": 1.5 + 0.75 * float(i), "state": ""})
-    g = {"t": 0.0, "notes": notes, "score": 0, "perfect": 0, "good": 0, "miss": 0, "streak": 0, "flash": "", "flash_t": 0.0}
+        notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
+    g = {"t": 0.0, "notes": notes, "score": 0, "perfect": 0, "good": 0, "miss": 0, "streak": 0, "flash": "", "flash_t": 0.0,
+        "gap": gap, "perfect_win": Difficulty.f("karaoke.perfect"), "good_win": Difficulty.f("karaoke.good"),
+    }
 
 
 func _kara_tick(dt: float) -> void:
     g.t = float(g.t) + dt
     g.flash_t = maxf(0.0, float(g.flash_t) - dt)
     for n in g.notes:
-        if n.state == "" and float(n.time) + 0.3 < float(g.t):
+        if n.state == "" and float(n.time) + _good_win() < float(g.t):
             n.state = "miss"
             g.miss = int(g.miss) + 1
             g.streak = 0
             _streak_broken()
             g.flash = "MISS"
             g.flash_t = 0.5
-    if float(g.t) > 1.5 + 0.75 * float(SONG_LEN) + 0.6:
+    if float(g.t) > _song_secs() + 0.6:
         _kara_end()
+
+
+func _good_win() -> float:
+    return float(g.get("good_win", 0.3))
+
+
+func _song_secs() -> float:
+    return 1.5 + float(g.get("gap", 0.75)) * float(SONG_LEN)
 
 
 func _kara_press(key: int) -> void:
@@ -13538,11 +13729,11 @@ func kara_hit(lane: int) -> String:
         if n.state == "" and int(n.lane) == lane and absf(float(n.time) - float(g.t)) < gap:
             gap = absf(float(n.time) - float(g.t))
             pick = n
-    if pick.is_empty() or gap > 0.3:
+    if pick.is_empty() or gap > _good_win():
         g.streak = 0
         _streak_broken()
         return ""
-    var perfect := gap <= 0.12
+    var perfect := gap <= float(g.get("perfect_win", 0.12))
     pick.state = "perfect" if perfect else "good"
     g.score = int(g.score) + (2 if perfect else 1)
     g.perfect = int(g.perfect) + (1 if perfect else 0)
@@ -13566,12 +13757,12 @@ func _kara_end() -> void:
 # ---- escape room --------------------------------------------------------------------------------
 func _escape_setup() -> void:
     var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    digits.shuffle()
+    Difficulty.shuffle(digits, "escape")
     var friends := 0
     for who in Social.PEOPLE:
         friends += 1 if Social.is_friendly(who) else 0
     g = {
-        "code": [digits[0], digits[1], digits[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": ESCAPE_TIME,
+        "code": [digits[0], digits[1], digits[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
         "hints": clampi(maxi(1, friends), 1, 3), "hints_used": 0, "revealed": [], "msg": "",
     }
 
@@ -13642,7 +13833,7 @@ func escape_hint() -> String:
             open.append(i)
     if open.is_empty():
         return ""
-    var slot: int = open[randi() % open.size()]
+    var slot: int = Difficulty.pick(open, "escape")
     g.revealed.append(slot)
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
@@ -13664,7 +13855,7 @@ func _dinner_setup() -> void:
 
 func _dinner_deal() -> void:
     var pool: Array = TOPICS.duplicate()
-    pool.shuffle()
+    Difficulty.shuffle(pool, "dinner")
     g.options = pool.slice(0, 4)
     g.sel = 0
     g.react = {}
@@ -13698,6 +13889,7 @@ func dinner_talk(index: int) -> int:
     var topic: String = g.options[index]
     var total := 0
     g.react = {}
+    g.hidden = _dinner_hidden()
     for who in DINERS:
         var mood := "meh"
         var pts := 1
@@ -13709,6 +13901,8 @@ func dinner_talk(index: int) -> int:
             pts = 0
         total += pts
         g.react[who] = mood
+        if g.hidden.has(who):
+            continue  # a face you could not read teaches you nothing
         var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
         if mood == "love" and not entry.likes.has(topic):
             entry.likes.append(topic)
@@ -13720,6 +13914,16 @@ func dinner_talk(index: int) -> int:
     if room_mode():
         _dinner_react()
     return total
+
+
+# harder tiers hide some faces for a round (the points still count)
+func _dinner_hidden() -> Array:
+    var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
+    if hide_n <= 0:
+        return []
+    var order: Array = DINERS.duplicate()
+    Difficulty.shuffle(order, "dinner")
+    return order.slice(0, hide_n)
 
 
 func _dinner_end() -> void:
@@ -13868,7 +14072,7 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-    var who: String = (DINERS + ["Vic"])[randi() % 4]
+    var who: String = Difficulty.pick(DINERS + ["Vic"], "karaoke")
     _bubble(_actor(who), "heart", 1.5)
 
 
@@ -13878,18 +14082,18 @@ func _streak_broken() -> void:
     if g.get("dance", false):
         g.dance = false
         _hold_player("talk", _x0() + MIC_X + 60.0)
-    if randf() < 0.3:
-        _bubble(_actor(DINERS[randi() % 3]), "?", 1.0)
+    if Difficulty.rng("karaoke").randf() < 0.3:
+        _bubble(_actor(Difficulty.pick(DINERS, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
 func _escape_room_setup() -> void:
     var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    pool.shuffle()
+    Difficulty.shuffle(pool, "escape")
     var a: int = pool[0]
-    var first := randi_range(0, a)
+    var first := Difficulty.rng("escape").randi_range(0, a)
     g = {
-        "code": [a, pool[1], pool[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": ESCAPE_TIME,
+        "code": [a, pool[1], pool[2]], "cur": [0, 0, 0], "cursor": 0, "guesses": [], "time": Difficulty.f("escape.time"),
         "hints": 3, "hints_used": 0, "revealed": [], "msg": "", "found": [], "entry": false, "wrong": 0,
         "eq": [first, a - first],
     }
@@ -13953,8 +14157,9 @@ func _room_submit() -> void:
         _finish(result)
         return
     g.wrong = int(g.wrong) + 1
-    g.time = float(g.time) - 10.0
-    caption("WRONG CODE. THE ALARM SHAVES 10 SECONDS OFF.", 3.0)
+    var penalty := Difficulty.f("escape.wrong_penalty")
+    g.time = float(g.time) - penalty
+    caption("WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty), 3.0)
 
 
 # ---- dinner extras
@@ -13962,6 +14167,10 @@ func _dinner_react() -> void:
     var parts := []
     for who in DINERS:
         var mood: String = g.react[who]
+        if g.get("hidden", []).has(who):
+            _bubble(_actor(who), "?", 1.3)
+            parts.append("%s IS HARD TO READ" % who.to_upper())
+            continue
         _bubble(_actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3)
         parts.append("%s %s" % [who.to_upper(), {"love": "LOVES IT", "hate": "DREADS IT", "meh": "IS FINE"}[mood]])
     caption(", ".join(parts), 2.0)
@@ -14235,7 +14444,7 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
         _arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
     if float(g.flash_t) > 0.0 and not hud:
         _tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
-    var song := minf(1.0, float(g.t) / (1.5 + 0.75 * float(SONG_LEN)))
+    var song := minf(1.0, float(g.t) / _song_secs())
     _canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), UiStyle.SOFT)
     _canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x * song, 3.0), BLUE)
 
@@ -14281,6 +14490,9 @@ func _paint_dinner(b: Rect2) -> void:
         if g.react.has(who):
             var mood: String = g.react[who]
             var face := "<3" if mood == "love" else (":(" if mood == "hate" else "OK")
+            if g.get("hidden", []).has(who):
+                face = "??"
+                mood = "meh"
             _t(face, rx + 40.0, ry, GREEN if mood == "love" else (RED if mood == "hate" else INK))
         var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
         var note := ""
@@ -14997,7 +15209,7 @@ func _spawn(pos: Vector2, dir: float, shooter: String, power := 0.0) -> void:
         return
     var dart := DART.new()
     dart.shooter = shooter
-    dart.vel = launch_velocity(dir, power) + Vector2(0.0, randf_range(-3.0, 3.0))
+    dart.vel = launch_velocity(dir, power) + Vector2(0.0, Difficulty.rng("nerf").randf_range(-3.0, 3.0))
     dart.position = pos
     scene.get_node("Actors").add_child(dart)
 
@@ -15129,7 +15341,7 @@ func start_war() -> void:
     for npc in get_tree().get_nodes_in_group("npcs"):
         if npc.get("_hidden") != true:
             npc.give_item("nerf")  # everybody in the room, sitting or standing
-        _shot_t[str(npc.cast_name)] = randf_range(1.5, 3.5)
+        _shot_t[str(npc.cast_name)] = Difficulty.rng("nerf").randf_range(1.5, 3.5)
     Hints.toast("NERF WAR! THEY ARE FIRING BACK.", 3.0)
 
 
@@ -15159,7 +15371,7 @@ func _process(delta: float) -> void:
             continue
         _shot_t[who] = float(_shot_t[who]) - delta
         if float(_shot_t[who]) <= 0.0:
-            _shot_t[who] = randf_range(2.0, 4.5)
+            _shot_t[who] = Difficulty.rng("nerf").randf_range(2.0, 4.5) * Difficulty.f("nerf.gap")
             _npc_shoots(npc)
 
 
@@ -15173,7 +15385,7 @@ func _npc_shoots(npc: Node) -> void:
             targets.append(other)
     if targets.is_empty():
         return
-    var target: Node = targets[randi() % targets.size()]
+    var target: Node = Difficulty.pick(targets, "nerf")
     var dx: float = target.global_position.x - npc.global_position.x
     var dir := 1.0 if dx >= 0.0 else -1.0
     if npc.seat == null:
@@ -18212,7 +18424,7 @@ func _begin_jam() -> void:
 
 
 func _new_zone() -> void:
-    zone = randf_range(0.22, 0.78)
+    zone = Difficulty.rng("printer").randf_range(0.22, 0.78)
     marker = 0.0
     _dir = 1.0
 
@@ -18236,12 +18448,12 @@ func _pray() -> void:
         msg = _tx("pray_none")
         return
     faith -= 1
-    var roll := randf()
+    var roll := Difficulty.rng("printer").randf()
     if roll < 0.55:
         blessed += 1
-        msg = str(PRAYERS.good[randi() % PRAYERS.good.size()])
+        msg = str(Difficulty.pick(PRAYERS.good, "printer"))
     elif roll < 0.8:
-        msg = str(PRAYERS.meh[randi() % PRAYERS.meh.size()])
+        msg = str(Difficulty.pick(PRAYERS.meh, "printer"))
     elif roll < 0.92:
         mistakes += 1
         msg = str(PRAYERS.bad[0])
@@ -18253,7 +18465,7 @@ func _pray() -> void:
 func _begin_toner() -> void:
     phase = "toner"
     order = [0, 1, 2, 3]
-    order.shuffle()
+    Difficulty.shuffle(order, "printer")
     step = 0
     sel = 0
     msg = _tx("toner_help")
@@ -18285,8 +18497,8 @@ func _tray() -> Array:
 func _begin_test() -> void:
     phase = "test"
     var pool := range(_qs().size())
-    pool.shuffle()
-    asked = [pool[0], pool[1]]
+    Difficulty.shuffle(pool, "printer")
+    asked = pool.slice(0, mini(Difficulty.i("printer.questions"), pool.size()))
     qi = 0
     _answered = false
     msg = _tx("test_help")
@@ -18391,7 +18603,7 @@ func _load_paper() -> void:
     if tray_sel == 0:
         msg = _tx("tray_ok")
         _begin_toner_after_tray()
-    elif tray_sel == 3 and randf() < 0.05:
+    elif tray_sel == 3 and Difficulty.rng("printer").randf() < 0.05:
         msg = _tx("tray_hit")
         _begin_toner_after_tray()
     else:
@@ -18407,13 +18619,14 @@ func _begin_toner_after_tray() -> void:
 
 func _pull() -> void:
     var d := absf(marker - zone)
-    if d <= 0.07 + 0.03 * float(mini(blessed, 2)):
+    var zw := Difficulty.f("printer.zone")
+    if d <= (0.07 + 0.03 * float(mini(blessed, 2))) * zw:
         spot += 1
         msg = _tx("jam_clean")
         _new_zone()
         if spot >= 3:
             _begin_tray()
-    elif d <= 0.16 + 0.04 * float(mini(blessed, 2)):
+    elif d <= (0.16 + 0.04 * float(mini(blessed, 2))) * zw:
         msg = _tx("jam_hold")
     else:
         msg = _tx("jam_tear")
@@ -18437,7 +18650,7 @@ func _answer(choice: int) -> void:
     _answered = true
     if choice == int(q.correct):
         msg = _tx("right") + " " + str(q.why)
-    elif choice == int(q.hit) and randf() < 0.05:
+    elif choice == int(q.hit) and Difficulty.rng("printer").randf() < 0.05:
         msg = _tx("hit")
     else:
         msg = _tx("wrong") + " " + str(q.why)
@@ -18459,7 +18672,8 @@ func _process(delta: float) -> void:
     _t += delta
     _result_t += delta
     if phase == "jam":
-        marker += _dir * delta * (0.8 + 0.3 * float(spot)) * (1.5 if fast else 1.0)
+        var speed := Difficulty.f("printer.speed")
+        marker += _dir * delta * (0.8 + 0.3 * float(spot)) * speed * (1.5 if fast else 1.0)
         if marker >= 1.0:
             marker = 1.0
             _dir = -1.0
@@ -18583,8 +18797,9 @@ func _paint_jam() -> void:
                 _r(x - 12.0 + float(k) * 5.0, 24.0 + float((k + i) % 3) * 3.0, 6, 1, Color("c9c3b2"))
     _txt("PULLED %d OF 3" % spot, 8, 58)
     _r(16, 74, 144, 10, Color("8a8f9a"))
-    _r(16.0 + 144.0 * (zone - 0.16), 74, 144.0 * 0.32, 10, Color("f2c94c"))
-    _r(16.0 + 144.0 * (zone - 0.07), 74, 144.0 * 0.14, 10, Color("4cff7a"))
+    var zw := Difficulty.f("printer.zone")
+    _r(16.0 + 144.0 * (zone - 0.16 * zw), 74, 144.0 * 0.32 * zw, 10, Color("f2c94c"))
+    _r(16.0 + 144.0 * (zone - 0.07 * zw), 74, 144.0 * 0.14 * zw, 10, Color("4cff7a"))
     _r(16.0 + 144.0 * marker - 1.0, 71, 3, 16, INK)
 
 
@@ -18871,12 +19086,21 @@ func info(id: String) -> Dictionary:
     return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
 
 
-func summary() -> String:
+func summary(with_tier := true) -> String:
     var label: String = Campaign.MODES.get(mode, "FREE PLAY")
     var s := "%s - %s" % [label, str(info(current_id()).name)]
     if needs_phone():
         s += " - " + str(PHONES[phone_sel].name)
+    if with_tier:
+        s += " - " + Difficulty.label()
     return s
+
+
+# Up / Down (or a click on the arrows) change the difficulty; it is remembered in the settings file
+func change_tier(delta_tier: int) -> void:
+    Difficulty.cycle_tier(delta_tier)
+    Difficulty.save_settings()
+    queue_redraw()
 
 
 func move(delta_sel: int) -> void:
@@ -18900,6 +19124,7 @@ func confirm() -> void:
         "character": current_id(),
         "phone": str(PHONES[phone_sel].id) if needs_phone() else "",
         "summary": summary(),
+        "tier": Difficulty.tier,
     }
     PLAYER.current_character = current_id()
     if needs_phone():
@@ -18926,6 +19151,10 @@ func _unhandled_input(event: InputEvent) -> void:
                 move(-1)
             KEY_RIGHT, KEY_D:
                 move(1)
+            KEY_UP, KEY_W:
+                change_tier(1)
+            KEY_DOWN, KEY_S:
+                change_tier(-1)
             KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
                 confirm()
             KEY_ESCAPE, KEY_BACKSPACE:
@@ -18975,6 +19204,10 @@ func _click(at: Vector2) -> void:
             move(-1)
         "next":
             move(1)
+        "tier_down":
+            change_tier(-1)
+        "tier_up":
+            change_tier(1)
         _:
             _hover(at)
             confirm()
@@ -19026,20 +19259,36 @@ func _draw() -> void:
     draw_rect(back_r, PANEL)
     _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
     _rects.append([back_r, "back", 0])
+    _draw_tier(size, narrow)
     if step == "char":
         _draw_chars(size, narrow)
     else:
         _place_sprites(size, narrow)
         _draw_phones(size, narrow)
     _ctxt(
-        summary(), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
+        summary(false), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
     )
-    var hint := "LEFT RIGHT CHOOSE   ENTER PICK   ESC BACK"
+    var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   ENTER PICK   ESC BACK"
     if narrow:
-        _ctxt("LEFT RIGHT CHOOSE", size.y - 20.0, DIM)
+        _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
         _ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
     else:
         _ctxt(hint, size.y - 9.0, DIM)
+
+
+# the difficulty chip: LEVEL < NORMAL > (top right, or under the heading in narrow portrait)
+func _draw_tier(size: Vector2, narrow: bool) -> void:
+    var text := "LEVEL  %s" % Difficulty.label()
+    var w := float(PixelFont.width("LEVEL  HARD")) + 24.0
+    var r := Rect2(floorf((size.x - w) * 0.5) if narrow else size.x - w - 3.0, 30.0 if narrow else 3.0, w, 9.0)
+    draw_rect(r, PANEL)
+    draw_rect(r, GOLD if Difficulty.tier != "normal" else DIM, false, 1.0)
+    _txt("<", r.position + Vector2(3, 2), GOLD)
+    _txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+    var tw := float(PixelFont.width(text))
+    _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+    _rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
+    _rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
@@ -19217,6 +19466,7 @@ func _ready() -> void:
     front.add_child(_menu)
     _menu.draw.connect(_draw_menu)
     Game.format_changed.connect(_on_format)
+    Difficulty.load_settings()
     show_vignette(0)
 
 
@@ -19536,7 +19786,8 @@ func _start(id: String, summary := "") -> void:
             Campaign.new_game(Campaign.FREE)
     Game.go("main_floor", "start")
     if summary != "":
-        Hints.toast(summary, 4.0)
+        var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
+        Hints.toast(summary + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
 func _draw_menu() -> void:

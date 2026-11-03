@@ -125,12 +125,21 @@ func info(id: String) -> Dictionary:
 	return PEOPLE.get(id, {"name": id.to_upper(), "blurb": ""})
 
 
-func summary() -> String:
+func summary(with_tier := true) -> String:
 	var label: String = Campaign.MODES.get(mode, "FREE PLAY")
 	var s := "%s - %s" % [label, str(info(current_id()).name)]
 	if needs_phone():
 		s += " - " + str(PHONES[phone_sel].name)
+	if with_tier:
+		s += " - " + Difficulty.label()
 	return s
+
+
+# Up / Down (or a click on the arrows) change the difficulty; it is remembered in the settings file
+func change_tier(delta_tier: int) -> void:
+	Difficulty.cycle_tier(delta_tier)
+	Difficulty.save_settings()
+	queue_redraw()
 
 
 func move(delta_sel: int) -> void:
@@ -154,6 +163,7 @@ func confirm() -> void:
 		"character": current_id(),
 		"phone": str(PHONES[phone_sel].id) if needs_phone() else "",
 		"summary": summary(),
+		"tier": Difficulty.tier,
 	}
 	PLAYER.current_character = current_id()
 	if needs_phone():
@@ -180,6 +190,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				move(-1)
 			KEY_RIGHT, KEY_D:
 				move(1)
+			KEY_UP, KEY_W:
+				change_tier(1)
+			KEY_DOWN, KEY_S:
+				change_tier(-1)
 			KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_SPACE:
 				confirm()
 			KEY_ESCAPE, KEY_BACKSPACE:
@@ -229,6 +243,10 @@ func _click(at: Vector2) -> void:
 			move(-1)
 		"next":
 			move(1)
+		"tier_down":
+			change_tier(-1)
+		"tier_up":
+			change_tier(1)
 		_:
 			_hover(at)
 			confirm()
@@ -280,20 +298,40 @@ func _draw() -> void:
 	draw_rect(back_r, PANEL)
 	_txt("< ESC", back_r.position + Vector2(2, 2), DIM)
 	_rects.append([back_r, "back", 0])
+	_draw_tier(size, narrow)
 	if step == "char":
 		_draw_chars(size, narrow)
 	else:
 		_place_sprites(size, narrow)
 		_draw_phones(size, narrow)
 	_ctxt(
-		summary(), size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)), Color.WHITE
+		summary(false),
+		size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0)),
+		Color.WHITE
 	)
-	var hint := "LEFT RIGHT CHOOSE   ENTER PICK   ESC BACK"
+	var hint := "LEFT RIGHT CHOOSE   UP DOWN LEVEL   ENTER PICK   ESC BACK"
 	if narrow:
-		_ctxt("LEFT RIGHT CHOOSE", size.y - 20.0, DIM)
+		_ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 20.0, DIM)
 		_ctxt("ENTER PICK   ESC BACK", size.y - 12.0, DIM)
 	else:
 		_ctxt(hint, size.y - 9.0, DIM)
+
+
+# the difficulty chip: LEVEL < NORMAL > (top right, or under the heading in narrow portrait)
+func _draw_tier(size: Vector2, narrow: bool) -> void:
+	var text := "LEVEL  %s" % Difficulty.label()
+	var w := float(PixelFont.width("LEVEL  HARD")) + 24.0
+	var r := Rect2(
+		floorf((size.x - w) * 0.5) if narrow else size.x - w - 3.0, 30.0 if narrow else 3.0, w, 9.0
+	)
+	draw_rect(r, PANEL)
+	draw_rect(r, GOLD if Difficulty.tier != "normal" else DIM, false, 1.0)
+	_txt("<", r.position + Vector2(3, 2), GOLD)
+	_txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
+	var tw := float(PixelFont.width(text))
+	_txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
+	_rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
+	_rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:

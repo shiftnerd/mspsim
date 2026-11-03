@@ -134,7 +134,8 @@ const PLOTTER_TRAY := ["24 IN BOND", "36 IN BOND", "MYLAR", "HIT IT"]
 const DEFAULT_PLOTTER_QUESTIONS := [
 	{
 		"error": "MEDIA JAM ROLL 1",
-		"options": ["PULL THE ROLL OUT HARD", "OPEN THE COVER AND FEED IT STRAIGHT", "ORDER A NEW ROLL"],
+		"options":
+		["PULL THE ROLL OUT HARD", "OPEN THE COVER AND FEED IT STRAIGHT", "ORDER A NEW ROLL"],
 		"correct": 1,
 		"hit": -1,
 		"why": "A SKEWED LEADING EDGE JAMS THE PINCH ROLLERS. RELOAD IT STRAIGHT.",
@@ -252,7 +253,7 @@ func _begin_jam() -> void:
 
 
 func _new_zone() -> void:
-	zone = randf_range(0.22, 0.78)
+	zone = Difficulty.rng("printer").randf_range(0.22, 0.78)
 	marker = 0.0
 	_dir = 1.0
 
@@ -276,12 +277,12 @@ func _pray() -> void:
 		msg = _tx("pray_none")
 		return
 	faith -= 1
-	var roll := randf()
+	var roll := Difficulty.rng("printer").randf()
 	if roll < 0.55:
 		blessed += 1
-		msg = str(PRAYERS.good[randi() % PRAYERS.good.size()])
+		msg = str(Difficulty.pick(PRAYERS.good, "printer"))
 	elif roll < 0.8:
-		msg = str(PRAYERS.meh[randi() % PRAYERS.meh.size()])
+		msg = str(Difficulty.pick(PRAYERS.meh, "printer"))
 	elif roll < 0.92:
 		mistakes += 1
 		msg = str(PRAYERS.bad[0])
@@ -293,7 +294,7 @@ func _pray() -> void:
 func _begin_toner() -> void:
 	phase = "toner"
 	order = [0, 1, 2, 3]
-	order.shuffle()
+	Difficulty.shuffle(order, "printer")
 	step = 0
 	sel = 0
 	msg = _tx("toner_help")
@@ -325,8 +326,8 @@ func _tray() -> Array:
 func _begin_test() -> void:
 	phase = "test"
 	var pool := range(_qs().size())
-	pool.shuffle()
-	asked = [pool[0], pool[1]]
+	Difficulty.shuffle(pool, "printer")
+	asked = pool.slice(0, mini(Difficulty.i("printer.questions"), pool.size()))
 	qi = 0
 	_answered = false
 	msg = _tx("test_help")
@@ -431,7 +432,7 @@ func _load_paper() -> void:
 	if tray_sel == 0:
 		msg = _tx("tray_ok")
 		_begin_toner_after_tray()
-	elif tray_sel == 3 and randf() < 0.05:
+	elif tray_sel == 3 and Difficulty.rng("printer").randf() < 0.05:
 		msg = _tx("tray_hit")
 		_begin_toner_after_tray()
 	else:
@@ -447,13 +448,14 @@ func _begin_toner_after_tray() -> void:
 
 func _pull() -> void:
 	var d := absf(marker - zone)
-	if d <= 0.07 + 0.03 * float(mini(blessed, 2)):
+	var zw := Difficulty.f("printer.zone")
+	if d <= (0.07 + 0.03 * float(mini(blessed, 2))) * zw:
 		spot += 1
 		msg = _tx("jam_clean")
 		_new_zone()
 		if spot >= 3:
 			_begin_tray()
-	elif d <= 0.16 + 0.04 * float(mini(blessed, 2)):
+	elif d <= (0.16 + 0.04 * float(mini(blessed, 2))) * zw:
 		msg = _tx("jam_hold")
 	else:
 		msg = _tx("jam_tear")
@@ -477,7 +479,7 @@ func _answer(choice: int) -> void:
 	_answered = true
 	if choice == int(q.correct):
 		msg = _tx("right") + " " + str(q.why)
-	elif choice == int(q.hit) and randf() < 0.05:
+	elif choice == int(q.hit) and Difficulty.rng("printer").randf() < 0.05:
 		msg = _tx("hit")
 	else:
 		msg = _tx("wrong") + " " + str(q.why)
@@ -499,7 +501,8 @@ func _process(delta: float) -> void:
 	_t += delta
 	_result_t += delta
 	if phase == "jam":
-		marker += _dir * delta * (0.8 + 0.3 * float(spot)) * (1.5 if fast else 1.0)
+		var speed := Difficulty.f("printer.speed")
+		marker += _dir * delta * (0.8 + 0.3 * float(spot)) * speed * (1.5 if fast else 1.0)
 		if marker >= 1.0:
 			marker = 1.0
 			_dir = -1.0
@@ -572,7 +575,12 @@ func _paint() -> void:
 	if phase != "result":
 		var lines := _wrap(msg, int((panel.size.x - 8.0) / 4.0))
 		for i in mini(lines.size(), 3):
-			_txt(str(lines[i]), 4, panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0, UiStyle.MUTED)
+			_txt(
+				str(lines[i]),
+				4,
+				panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0,
+				UiStyle.MUTED
+			)
 	UiStyle.footer(_canvas, panel, _hint())
 
 
@@ -590,7 +598,9 @@ func _hint() -> String:
 		"shake":
 			return "A / D = SHAKE  P = PRAY  ESC = GIVE UP"
 		"test":
-			return "SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+			return (
+				"SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+			)
 	return _tx("done")
 
 
@@ -629,8 +639,9 @@ func _paint_jam() -> void:
 				)
 	_txt("PULLED %d OF 3" % spot, 8, 58)
 	_r(16, 74, 144, 10, Color("8a8f9a"))
-	_r(16.0 + 144.0 * (zone - 0.16), 74, 144.0 * 0.32, 10, Color("f2c94c"))
-	_r(16.0 + 144.0 * (zone - 0.07), 74, 144.0 * 0.14, 10, Color("4cff7a"))
+	var zw := Difficulty.f("printer.zone")
+	_r(16.0 + 144.0 * (zone - 0.16 * zw), 74, 144.0 * 0.32 * zw, 10, Color("f2c94c"))
+	_r(16.0 + 144.0 * (zone - 0.07 * zw), 74, 144.0 * 0.14 * zw, 10, Color("4cff7a"))
 	_r(16.0 + 144.0 * marker - 1.0, 71, 3, 16, INK)
 
 

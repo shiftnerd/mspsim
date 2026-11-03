@@ -15,6 +15,8 @@ var saved_world_cast := 0
 
 
 func _initialize() -> void:
+	root.get_node("Difficulty").settings_path = "user://test_cs_settings.cfg"
+	DirAccess.remove_absolute("user://test_cs_settings.cfg")
 	change_scene_to_file("res://scenes/title.tscn")
 
 
@@ -105,10 +107,26 @@ func _process(_delta: float) -> bool:
 		7:
 			var cs: Node = title._select
 			_check(cs.phone_sel == 1 and "NEXXUS 5" in cs.summary(), "the phone can be changed")
+			_check(
+				root.get_node("Difficulty").tier == "normal" and cs.summary().ends_with("NORMAL"),
+				"the summary line ends with the difficulty (normal by default)"
+			)
+			_press(KEY_UP)  # harder
 			_press(KEY_ESCAPE)
 		8:
 			var cs: Node = title._select
 			_check(cs.step == "char", "Esc on the phone step goes back to the character")
+			var diff := root.get_node("Difficulty")
+			_check(diff.tier == "hard" and cs.summary().ends_with("HARD"), "Up makes it harder")
+			var cfg := ConfigFile.new()
+			cfg.load("user://test_cs_settings.cfg")
+			_check(
+				cfg.get_value("difficulty", "tier", "") == "hard",
+				"the choice is saved in the settings"
+			)
+			_press(KEY_DOWN)
+			_press(KEY_DOWN)  # hard -> normal -> easy
+			_press(KEY_UP)  # ... -> normal
 			_press(KEY_ESCAPE)
 		9:
 			_check(title._select == null and title._menu_open, "Esc on the first step: title menu")
@@ -125,6 +143,16 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		14:
 			_check(title._started and campaign.active and campaign.mode == "tech", "tech started")
+			_check(
+				root.get_node("Difficulty").tier == "normal", "the run starts on the chosen tier"
+			)
+			_check(
+				(
+					root.get_node("Hints").toast_text.contains("NORMAL")
+					and root.get_node("Hints").toast_text.contains("RUN ")
+				),
+				"the start toast shows the tier and the run seed"
+			)
 			_check(
 				player_script.current_character == "office_teen",
 				"the chosen character is the player"

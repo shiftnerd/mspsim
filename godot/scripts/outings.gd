@@ -482,7 +482,8 @@ func _bowl_tick(dt: float) -> void:
 	var stage: String = g.stage
 	if stage == "aim" or stage == "power":
 		var key := "marker" if stage == "aim" else "power"
-		var v: float = float(g[key]) + float(g.dir) * dt * (1.5 if stage == "aim" else 1.2)
+		var speed := Difficulty.f("bowl.aim_speed" if stage == "aim" else "bowl.power_speed")
+		var v: float = float(g[key]) + float(g.dir) * dt * speed
 		if v >= 1.0:
 			v = 1.0
 			g.dir = -1.0
@@ -532,7 +533,8 @@ func _bowl_press(key: int) -> void:
 func bowl_strength() -> float:
 	var accuracy := 1.0 - absf(float(g.marker) - 0.5) * 2.0
 	var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
-	return clampf(accuracy * 0.6 + quality * 0.4 + randf_range(-0.08, 0.08), 0.0, 1.0)
+	var noise := Difficulty.rng("bowl").randf_range(-0.08, 0.08)
+	return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
 
 
 func _bowl_resolve() -> void:
@@ -566,15 +568,16 @@ func _bowl_resolve() -> void:
 
 
 func _bowl_roll_opp(who: String) -> Dictionary:
-	var skill := float(BOWL_SKILL[who])
-	var first := clampi(roundi(10.0 * (skill + randf_range(-0.28, 0.28))), 0, 10)
+	var skill := float(BOWL_SKILL[who]) + Difficulty.f("bowl.opp_skill")
+	var r := Difficulty.rng("bowl")
+	var first := clampi(roundi(10.0 * (skill + r.randf_range(-0.28, 0.28))), 0, 10)
 	var total := first
 	var knock := first
 	if first == 10:
 		total += 3
 	else:
 		var second := clampi(
-			roundi(float(10 - first) * (skill + randf_range(-0.28, 0.28))), 0, 10 - first
+			roundi(float(10 - first) * (skill + r.randf_range(-0.28, 0.28))), 0, 10 - first
 		)
 		total += second
 		knock += second
@@ -629,7 +632,8 @@ func _bowl_others(dt: float) -> void:
 		var res := _bowl_roll_opp(str(g.opp))
 		g.opp_total = int(res.total)
 		g.opp_knock = int(res.knock)
-		g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * randf_range(-0.5, 0.5), 0.0, 1.0)
+		var wobble := Difficulty.rng("bowl").randf_range(-0.5, 0.5)
+		g.opp_off = clampf(0.5 + (1.0 - float(res.knock) / 10.0) * wobble, 0.0, 1.0)
 		g.opp_ball = 0.0
 		g.opp_t = 0.0
 		g.opp_phase = 0
@@ -655,7 +659,7 @@ func _pins_fall(lane: int, count: int) -> void:
 	for i in 10:
 		if up[i]:
 			standing.append(i)
-	standing.shuffle()
+	Difficulty.shuffle(standing, "bowl")
 	for i in mini(count, standing.size()):
 		up[standing[i]] = false
 		g.fall["%d_%d" % [lane, standing[i]]] = 0.8
@@ -676,8 +680,10 @@ func _bowl_end() -> void:
 # ---- karaoke ------------------------------------------------------------------------------------
 func _kara_setup() -> void:
 	var notes := []
+	var gap := Difficulty.f("karaoke.gap")
+	var r := Difficulty.rng("karaoke")
 	for i in SONG_LEN:
-		notes.append({"lane": randi() % 4, "time": 1.5 + 0.75 * float(i), "state": ""})
+		notes.append({"lane": r.randi_range(0, 3), "time": 1.5 + gap * float(i), "state": ""})
 	g = {
 		"t": 0.0,
 		"notes": notes,
@@ -687,7 +693,10 @@ func _kara_setup() -> void:
 		"miss": 0,
 		"streak": 0,
 		"flash": "",
-		"flash_t": 0.0
+		"flash_t": 0.0,
+		"gap": gap,
+		"perfect_win": Difficulty.f("karaoke.perfect"),
+		"good_win": Difficulty.f("karaoke.good"),
 	}
 
 
@@ -695,15 +704,23 @@ func _kara_tick(dt: float) -> void:
 	g.t = float(g.t) + dt
 	g.flash_t = maxf(0.0, float(g.flash_t) - dt)
 	for n in g.notes:
-		if n.state == "" and float(n.time) + 0.3 < float(g.t):
+		if n.state == "" and float(n.time) + _good_win() < float(g.t):
 			n.state = "miss"
 			g.miss = int(g.miss) + 1
 			g.streak = 0
 			_streak_broken()
 			g.flash = "MISS"
 			g.flash_t = 0.5
-	if float(g.t) > 1.5 + 0.75 * float(SONG_LEN) + 0.6:
+	if float(g.t) > _song_secs() + 0.6:
 		_kara_end()
+
+
+func _good_win() -> float:
+	return float(g.get("good_win", 0.3))
+
+
+func _song_secs() -> float:
+	return 1.5 + float(g.get("gap", 0.75)) * float(SONG_LEN)
 
 
 func _kara_press(key: int) -> void:
@@ -720,11 +737,11 @@ func kara_hit(lane: int) -> String:
 		if n.state == "" and int(n.lane) == lane and absf(float(n.time) - float(g.t)) < gap:
 			gap = absf(float(n.time) - float(g.t))
 			pick = n
-	if pick.is_empty() or gap > 0.3:
+	if pick.is_empty() or gap > _good_win():
 		g.streak = 0
 		_streak_broken()
 		return ""
-	var perfect := gap <= 0.12
+	var perfect := gap <= float(g.get("perfect_win", 0.12))
 	pick.state = "perfect" if perfect else "good"
 	g.score = int(g.score) + (2 if perfect else 1)
 	g.perfect = int(g.perfect) + (1 if perfect else 0)
@@ -748,7 +765,7 @@ func _kara_end() -> void:
 # ---- escape room --------------------------------------------------------------------------------
 func _escape_setup() -> void:
 	var digits := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-	digits.shuffle()
+	Difficulty.shuffle(digits, "escape")
 	var friends := 0
 	for who in Social.PEOPLE:
 		friends += 1 if Social.is_friendly(who) else 0
@@ -757,7 +774,7 @@ func _escape_setup() -> void:
 		"cur": [0, 0, 0],
 		"cursor": 0,
 		"guesses": [],
-		"time": ESCAPE_TIME,
+		"time": Difficulty.f("escape.time"),
 		"hints": clampi(maxi(1, friends), 1, 3),
 		"hints_used": 0,
 		"revealed": [],
@@ -831,7 +848,7 @@ func escape_hint() -> String:
 			open.append(i)
 	if open.is_empty():
 		return ""
-	var slot: int = open[randi() % open.size()]
+	var slot: int = Difficulty.pick(open, "escape")
 	g.revealed.append(slot)
 	g.hints = int(g.hints) - 1
 	g.hints_used = int(g.hints_used) + 1
@@ -853,7 +870,7 @@ func _dinner_setup() -> void:
 
 func _dinner_deal() -> void:
 	var pool: Array = TOPICS.duplicate()
-	pool.shuffle()
+	Difficulty.shuffle(pool, "dinner")
 	g.options = pool.slice(0, 4)
 	g.sel = 0
 	g.react = {}
@@ -887,6 +904,7 @@ func dinner_talk(index: int) -> int:
 	var topic: String = g.options[index]
 	var total := 0
 	g.react = {}
+	g.hidden = _dinner_hidden()
 	for who in DINERS:
 		var mood := "meh"
 		var pts := 1
@@ -898,6 +916,8 @@ func dinner_talk(index: int) -> int:
 			pts = 0
 		total += pts
 		g.react[who] = mood
+		if g.hidden.has(who):
+			continue  # a face you could not read teaches you nothing
 		var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
 		if mood == "love" and not entry.likes.has(topic):
 			entry.likes.append(topic)
@@ -909,6 +929,16 @@ func dinner_talk(index: int) -> int:
 	if room_mode():
 		_dinner_react()
 	return total
+
+
+# harder tiers hide some faces for a round (the points still count)
+func _dinner_hidden() -> Array:
+	var hide_n := DINERS.size() - clampi(Difficulty.i("dinner.reveal"), 0, DINERS.size())
+	if hide_n <= 0:
+		return []
+	var order: Array = DINERS.duplicate()
+	Difficulty.shuffle(order, "dinner")
+	return order.slice(0, hide_n)
 
 
 func _dinner_end() -> void:
@@ -1060,7 +1090,7 @@ func hint() -> String:
 
 # ---- karaoke extras
 func _cheer() -> void:
-	var who: String = (DINERS + ["Vic"])[randi() % 4]
+	var who: String = Difficulty.pick(DINERS + ["Vic"], "karaoke")
 	_bubble(_actor(who), "heart", 1.5)
 
 
@@ -1070,22 +1100,22 @@ func _streak_broken() -> void:
 	if g.get("dance", false):
 		g.dance = false
 		_hold_player("talk", _x0() + MIC_X + 60.0)
-	if randf() < 0.3:
-		_bubble(_actor(DINERS[randi() % 3]), "?", 1.0)
+	if Difficulty.rng("karaoke").randf() < 0.3:
+		_bubble(_actor(Difficulty.pick(DINERS, "karaoke")), "?", 1.0)
 
 
 # ---- escape room extras
 func _escape_room_setup() -> void:
 	var pool := [1, 2, 3, 4, 5, 6, 7, 8, 9]
-	pool.shuffle()
+	Difficulty.shuffle(pool, "escape")
 	var a: int = pool[0]
-	var first := randi_range(0, a)
+	var first := Difficulty.rng("escape").randi_range(0, a)
 	g = {
 		"code": [a, pool[1], pool[2]],
 		"cur": [0, 0, 0],
 		"cursor": 0,
 		"guesses": [],
-		"time": ESCAPE_TIME,
+		"time": Difficulty.f("escape.time"),
 		"hints": 3,
 		"hints_used": 0,
 		"revealed": [],
@@ -1171,8 +1201,9 @@ func _room_submit() -> void:
 		_finish(result)
 		return
 	g.wrong = int(g.wrong) + 1
-	g.time = float(g.time) - 10.0
-	caption("WRONG CODE. THE ALARM SHAVES 10 SECONDS OFF.", 3.0)
+	var penalty := Difficulty.f("escape.wrong_penalty")
+	g.time = float(g.time) - penalty
+	caption("WRONG CODE. THE ALARM SHAVES %d SECONDS OFF." % int(penalty), 3.0)
 
 
 # ---- dinner extras
@@ -1180,6 +1211,10 @@ func _dinner_react() -> void:
 	var parts := []
 	for who in DINERS:
 		var mood: String = g.react[who]
+		if g.get("hidden", []).has(who):
+			_bubble(_actor(who), "?", 1.3)
+			parts.append("%s IS HARD TO READ" % who.to_upper())
+			continue
 		_bubble(
 			_actor(who), "heart" if mood == "love" else ("!" if mood == "hate" else "dots"), 1.3
 		)
@@ -1221,21 +1256,33 @@ func _hud_bowling(s: Rect2) -> void:
 		_canvas.draw_rect(bar, UiStyle.SOFT)
 		if stage == "aim":
 			_canvas.draw_rect(Rect2(bar.position.x + 32.0, bar.position.y, 16.0, 5.0), GREEN)
-			_canvas.draw_rect(Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0), WHITE)
+			_canvas.draw_rect(
+				Rect2(bar.position.x + 79.0 * float(g.marker), bar.position.y - 2.0, 2.0, 9.0),
+				WHITE
+			)
 			_t("AIM", x, o.y, WHITE)
 		else:
 			_canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
-			_canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER)
+			_canvas.draw_rect(
+				Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER
+			)
 			_t("POWER", x, o.y, WHITE)
 	else:
-		var status := "YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+		var status := (
+			"YOUR TURN" if stage == "ready" else ("ROLLING" if stage == "roll" else "CREW BOWLS")
+		)
 		_t(status, x, o.y, UiStyle.SOFT)
 
 
 func _hud_karaoke(s: Rect2) -> void:
 	var lanes := Rect2(4.0, s.position.y - 79.0, 100.0, 78.0)
 	UiStyle.box(_canvas, lanes)
-	_paint_karaoke(Rect2(lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0), true)
+	_paint_karaoke(
+		Rect2(
+			lanes.position.x + 2.0, lanes.position.y + 2.0, lanes.size.x - 4.0, lanes.size.y - 4.0
+		),
+		true
+	)
 	var o := UiStyle.strip(_canvas, s)
 	_t("SCORE %d  STREAK %d" % [int(g.score), int(g.streak)], o.x, o.y, WHITE)
 	if float(g.flash_t) > 0.0:
@@ -1382,7 +1429,9 @@ func _paint_result(b: Rect2) -> void:
 					]
 				)
 			"karaoke":
-				detail = "PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
+				detail = (
+					"PERFECT %d  GOOD %d  MISSED %d" % [int(g.perfect), int(g.good), int(g.miss)]
+				)
 			"escape":
 				detail = (
 					"CODE %d%d%d  TRIES %d  HINTS %d"
@@ -1474,7 +1523,7 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 		_arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
 	if float(g.flash_t) > 0.0 and not hud:
 		_tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
-	var song := minf(1.0, float(g.t) / (1.5 + 0.75 * float(SONG_LEN)))
+	var song := minf(1.0, float(g.t) / _song_secs())
 	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x, 3.0), UiStyle.SOFT)
 	_canvas.draw_rect(Rect2(x, b.end.y - 4.0, b.size.x * song, 3.0), BLUE)
 
@@ -1551,6 +1600,9 @@ func _paint_dinner(b: Rect2) -> void:
 		if g.react.has(who):
 			var mood: String = g.react[who]
 			var face := "<3" if mood == "love" else (":(" if mood == "hate" else "OK")
+			if g.get("hidden", []).has(who):
+				face = "??"
+				mood = "meh"
 			_t(face, rx + 40.0, ry, GREEN if mood == "love" else (RED if mood == "hate" else INK))
 		var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
 		var note := ""

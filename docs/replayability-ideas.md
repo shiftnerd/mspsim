@@ -201,9 +201,11 @@ Rules: numbers live in `TIERS`; text lives in `strings.txt`; layout (note patter
 
 ## 5. Prioritised roadmap (value per effort)
 
+Status: item 1 is built (see CLAUDE.md, "Difficulty and seeds"). Differences from the spec below: `f(key)` (not `get`) reads a discrete easy / normal / hard table instead of interpolating a `level()`; `rng(stream)` returns one persistent generator per stream (plus `rng_for(stream, salt)`); the tier is chosen on the character select screen (Up / Down) and remembered in `user://mspsim_settings.cfg`; there is no seed field to type yet; only the seed (not the stream position) is saved. Items 2-10 are still open.
+
 | # | Item | Effort | Why |
 |---|---|---|---|
-| 1 | `Difficulty` autoload + seeded `rng(stream)` + tier setting in the title menu + save section | M | Unlocks everything else and fixes test determinism |
+| 1 | **BUILT.** `Difficulty` autoload + seeded `rng(stream)` + tier setting in the title menu + save section | M | Unlocks everything else and fixes test determinism |
 | 2 | Printer: bigger `QUESTIONS` pool (28+), 2-3 models with their own text (laser, inkjet, plotter), parameters from `Difficulty` | S-M | Best content-per-hour; printer is used on every onsite; closes the plotter leftover |
 | 3 | Karaoke `SONGS` table (4 parody songs, tempo and note-type by tier) plus the 4-site constants cleanup | M | Biggest felt variety for the most-played outing |
 | 4 | Escape room clue recipes + randomised clue spots + 4-digit hard + timer scaling (existing study) | M | Re-solves each run without new art |
