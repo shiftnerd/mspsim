@@ -28,7 +28,7 @@ const PEOPLE := {
 	"office_dan":
 	{"name": "DAN", "blurb": "CALM IN A BLUE SHIRT AND GLASSES. NETWORKS ARE HIS THING."},
 	"office_alan":
-	{"name": "ALAN", "blurb": "RED SHIRT, GREEN VEST, SERVER ROOM REGULAR. WATCHES THE BACKUPS."},
+	{"name": "ALAN", "blurb": "CO-OWNER IN A RED SHIRT AND GREEN VEST. SERVER ROOM REGULAR, WATCHES THE BACKUPS."},
 	"site_alan":
 	{
 		"name": "ALAN - ON SITE",
@@ -37,7 +37,7 @@ const PEOPLE := {
 	"casual_garrison":
 	{
 		"name": "GARRISON",
-		"blurb": "TEAL PLAID AND A GOATEE. SECURITY MINDED, ALWAYS TIME FOR A CHAT."
+		"blurb": "CO-OWNER IN TEAL PLAID AND A GOATEE. CLIENTS AND CULTURE, ALWAYS TIME FOR A CHAT."
 	},
 	"sales_vic":
 	{

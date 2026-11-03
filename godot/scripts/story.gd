@@ -42,9 +42,9 @@ const DEFAULT_VIGNETTES := {
 	},
 	"heartbleed":
 	{
-		"speaker": "Garrison (Security)",
+		"speaker": "Garrison (Co-owner)",
 		"text":
-		"Everybody is asking about Heartbleed, that bug in the news with a logo. Are any of our clients' servers affected? Somebody should check before they call us.",
+		"Every client is asking about Heartbleed, that bug in the news with a logo, and I told them we are on it. Are any of their servers affected? Please check before they call us again.",
 		"options":
 		[
 			{
@@ -162,7 +162,7 @@ const DEFAULT_VIGNETTES := {
 			{
 				"id": "jobs",
 				"label": "THE BIG JOBS I GOT RIGHT",
-				"text": "Morgan writes it down. 'That is what I will say to the owner.'",
+				"text": "Morgan writes it down. 'That is what I will say to Alan and Garrison.'",
 				"fx": {"rep": 1}
 			},
 			{
@@ -181,9 +181,9 @@ const DEFAULT_VIGNETTES := {
 	},
 	"donuts":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
-		"I am back, and I brought donuts. I heard you covered for me. I read the page you wrote about the firewall. Show me how you set it up in the vault?",
+		"I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?",
 		"options":
 		[
 			{
@@ -218,7 +218,7 @@ const DEFAULT_DAYS := {
 			"subject": "Your first day",
 			"body":
 			(
-				"Welcome to Pixel IT Partners. Tickets come in on ConnectWhy PSA, you fix things "
+				"Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things "
 				+ "with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets "
 				+ "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"
 			)

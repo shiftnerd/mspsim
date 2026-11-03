@@ -4,7 +4,8 @@ extends Node
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.
-# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales.
+# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
+# are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
 const SPECIALTY := {
 	"Alan": "servers",
@@ -17,14 +18,14 @@ const LESSON_XP := 6
 const DEFAULT_GREETINGS := {
 	"Alan":
 	{
-		"friend": "Hey, there you are. Coffee is fresh. What is up?",
-		"neutral": "Yeah? I have got about a minute.",
+		"friend": "Hey, there you are. Coffee is fresh and the books can wait ten minutes. What is up?",
+		"neutral": "Yeah? I have got about a minute. Payroll is waiting.",
 		"cold": "...Yes?",
 	},
 	"Garrison":
 	{
-		"friend": "Oh hey! Perfect timing, my brain needed a break. What is up?",
-		"neutral": "Hi. What do you need?",
+		"friend": "Oh hey! Perfect timing, I just got off with a client and my brain needed a break. What is up?",
+		"neutral": "Hi. What do you need? I have a client on in five.",
 		"cold": "Mm. What?",
 	},
 	"Dan":
@@ -51,16 +52,20 @@ const DEFAULT_SMALL := {
 	"Alan":
 	[
 		"Windows XP goes dark on April 8th. I have got a spreadsheet of every XP box we manage. It is longer than my coffee order.",
-		"I have been doing this since the NT days. People still ask me to turn it off and on again. They are right more often than I like to admit.",
+		"I have been doing this since the NT days. These days it is payroll and vendor calls, but people still ask me to turn it off and on again. They are right more often than I like to admit.",
 		"My kid asked what I do. I said I make sure the printers work. She said that sounds boring. She is not wrong.",
-		"Did you see the Target breach news? Every client wants to know if they are next.",
+		"Did you see the Target breach news? Every client wants to know if they are next. Garrison has been on the phone with them since eight.",
+		"The van needs brakes. The books say we can afford brakes. Barely.",
+		"I priced a new rack for the closet. Buy it, do not build it, unless you enjoy supporting your own script.",
 	],
 	"Garrison":
 	[
 		"Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013.",
-		"I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent.",
+		"I finally beat level 90 on Sugar Smash. Do not tell Alan how many lives I spent.",
 		"I keep telling clients: not every email from your bank is from your bank.",
-		"Did you try that new LabRat script? It saved me an hour on Tuesday.",
+		"Alan's new LabRat script saved the crew an hour on Tuesday. Do not tell him I said so.",
+		"I am planning the next team outing. Bowling is the safe bet, karaoke is the brave one.",
+		"Hiring is the hard part. Good techs are never on the market on a Monday.",
 	],
 	"Dan":
 	[
@@ -86,7 +91,7 @@ const DEFAULT_SMALL := {
 }
 var SMALL: Dictionary = DEFAULT_SMALL.duplicate(true)
 const DEFAULT_GOSSIP := [
-	"Between us: Morgan has been in the manager meeting since nine. Never a good sign.",
+	"Between us: Morgan has been in the owners' office since nine. Never a good sign.",
 	"I heard Vic is already negotiating next year's commission. Good for him.",
 	"Somebody microwaved fish in the kitchenette again. We are not saying who.",
 	"I heard the printer on the main floor jammed again. Nobody will own up to it.",
@@ -95,15 +100,17 @@ var GOSSIP: Array = DEFAULT_GOSSIP.duplicate(true)
 const DEFAULT_TIPS_GENERIC := {
 	"Alan":
 	[
-		"Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and they remember.",
-		"Verify the backups every morning. A backup you have not tested is a hope, not a backup.",
-		"Ask the user to save before you touch anything. It takes ten seconds and saves a bad email.",
+		"Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and the client remembers it at renewal time.",
+		"Verify the backups every morning. A backup you have not tested is a hope, not a backup. It is my name on the contract, not yours.",
+		"Ask the user to save before you touch anything. It takes ten seconds and saves a bad email in my inbox.",
+		"Buy it, do not build it. A script nobody else can read is a bus factor of one, and that one is usually me.",
 	],
 	"Garrison":
 	[
-		"Never use a default or seasonal password on a remote login. That is how they get in.",
+		"Never use a default or seasonal password on a remote login. That is how they get in. I say it to every prospect.",
 		"If a ransom note shows up, do not reboot. Shadow copies first, backup if you have it, paying is the last resort.",
 		"Two-factor login for admins first, users second. Most attacks are still just guessing.",
+		"Call the client before the invoice does. A short call keeps the contract; a long silence loses it.",
 	],
 	"Dan":
 	[
@@ -276,7 +283,7 @@ func _state_tip() -> String:
 			for c in Sales.active:
 				if not Msp.backups[int(c)].ok:
 					return (
-						"Hey, %s's backup looked red this morning. Check it before it matters."
+						"I was in the console before nine and %s's backup is red. Check it before it matters."
 						% str(Msp.CLIENTS[int(c)].name)
 					)
 		"Dan":
@@ -298,7 +305,7 @@ func _state_tip() -> String:
 				)
 		"Garrison":
 			if Msp.breached > 0:
-				return "I saw the SLA misses on the board. Fix the P1s first, always. The rest can wait ten minutes."
+				return "I walked the floor and saw the SLA misses on the board. Clients bring those up at the QBR. Fix the P1s first, always. The rest can wait ten minutes."
 		"Maya":
 			for t in Msp.open_tickets():
 				if float(t.sla_left) < 60.0 and not bool(t.breached):

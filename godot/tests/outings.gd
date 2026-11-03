@@ -231,8 +231,8 @@ func _init() -> void:
 	social.rel["Alan"] = 10
 	o.maybe_invite()
 	_check(
-		cards.is_open and cards.options.size() == 2 and cards.speaker.contains("Alan"),
-		"Friday: Alan invites you"
+		cards.is_open and cards.options.size() == 2 and cards.speaker.contains("Garrison"),
+		"Friday: Garrison invites you"
 	)
 	cards.pick(1)
 	_check(o.skipped == 1 and social.value("Alan") == 9, "saying no costs a little goodwill")
@@ -243,7 +243,7 @@ func _init() -> void:
 	world.clock = 17.4
 	_check(o.invite_due(), "a trip that gets you home after five still owes you the invitation")
 	o.maybe_invite()
-	_check(cards.is_open and cards.speaker.contains("Alan"), "and it is offered late")
+	_check(cards.is_open and cards.speaker.contains("Garrison"), "and it is offered late")
 	cards.pick(1)
 	world.clock = 16.2
 	o._offered = false

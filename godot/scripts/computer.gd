@@ -27,7 +27,7 @@ const AMBER := Color("e0a030")
 const NOTES := [
 	"Called the client, left a voicemail.",
 	"Checked in with the user, working on it.",
-	"Escalated to the senior tech.",
+	"Escalated to Tier 2.",
 	"Gathered logs from the machine.",
 	"Client says it is still broken.",
 ]
@@ -1705,7 +1705,15 @@ func _paint_lync() -> void:
 	var info2: Array = Lync.presence(lync_sel)
 	Lync.mark_read(lync_sel)
 	_text(
-		_clip("%s - %s" % [lync_sel.to_upper(), str(info2[0])], int((w - 40) / 4.0)),
+		_clip(
+			"%s%s - %s"
+			% [
+				lync_sel.to_upper(),
+				" (OWNER)" if Social.is_owner(lync_sel) else "",
+				str(info2[0])
+			],
+			int((w - 40) / 4.0)
+		),
 		Vector2(x + 4, body.position.y + 3),
 		Color("0a6ab8")
 	)
@@ -2281,7 +2289,7 @@ func _paint_stats() -> void:
 		y = body.position.y + 4
 	else:
 		y += 4
-	_text("COWORKERS", Vector2(x, y), Color("2f6b4f"))
+	_text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
 	y += 8
 	for who in Social.PEOPLE:
 		_text(who, Vector2(x, y), TXT)

@@ -88,7 +88,7 @@ The game is set in 2013-14: Outlookish 2013, an iFone 5 or a Nexxus 5, Windows 7
 
 Bowling, karaoke, an escape room, dinner. A way for the team to be people, not just a queue. Works in every mode because it plugs into systems that already exist.
 
-- **Tech campaign:** the coworkers invite you (Alan: "a few of us are going bowling Thursday"); you can say yes, no, or "only if the queue is quiet". Going raises coworker opinions (`Social`), especially with the ones who are cold to you;
+- **Tech campaign:** the coworkers invite you (Garrison, the culture owner: "a few of us are going bowling Thursday"); you can say yes, no, or "only if the queue is quiet". Going raises coworker opinions (`Social`), especially with the ones who are cold to you;
   skipping too often lowers them. Mini-moments rather than a full mini-game: a scene in a bowling alley or karaoke bar with the cast (their sprites in a new set), a few choices (sing the song, pay for dinner, leave early because the pager
   went off). The pager going off mid-karaoke is a natural place for the on-call idea below.
 - **Owner campaign:** a budget decision with a payoff: a team outing costs $150-$600 (dinner, bowling, an escape room, a karaoke night, an off-site day) and gives **morale** (which lowers burnout, raises team speed), a one-time bump

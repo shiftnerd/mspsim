@@ -11,10 +11,10 @@ Effort: S under a day, M 1-3 days, L a week or more. Status: DONE, NOW (an agent
 - Difficulty tiers and seeded randomness are wanted; point-buy stats at character select are wanted.
 - Parody names for products whose UI we imitate (Sugar Smash, Floppy Bat, iFone, Nexxus, Lynk, Googol); Apple, Windows, Exchange and PowerShell stay as era context.
 - Dialogue Manager addon: skip for now. Gitot: optional.
-- Undecided: the **canon text pass** (recasting Alan and Garrison as owners in dialogue, tips, Lynk, vignettes).
+- Decided and done: the **canon text pass** (Alan and Garrison recast as owners in dialogue, tips, Lynk, vignettes, review, outings; see CLAUDE.md "Canon: the owners").
 
 ## 1. Done
-Tech and owner campaigns playable end to end; Free Play; the outing rooms and four mini-games; client sites and onsite visits; printer game; nerf war; character select; day report redesign; parody brand names; extra valid fixes for every ticket type; one shared outing UI; site polish round 1 and 2; tech playtest bug fixes (13); Difficulty autoload with seeded random streams and an easy / normal / hard choice; the repo on GitHub (private) with worktree hooks; research on Dialogue Manager and Gitot; the replayability and new-campaign design documents; a full 20-week owner playthrough.
+Tech and owner campaigns playable end to end; Free Play; the outing rooms and four mini-games; client sites and onsite visits; printer game; nerf war; character select; day report redesign; parody brand names; extra valid fixes for every ticket type; one shared outing UI; site polish round 1 and 2; tech playtest bug fixes (13); Difficulty autoload with seeded random streams and an easy / normal / hard choice; the repo on GitHub (private) with worktree hooks; research on Dialogue Manager and Gitot; the replayability and new-campaign design documents; a full 20-week owner playthrough; the canon text pass (P1: Alan and Garrison as owners in Talk, Lynk, vignettes, review quotes, outings invitations and labels; the owner campaign and the last-resort rule are left for X4 / X6).
 
 ## 2. Now
 | # | Item | Size | Notes |
@@ -65,7 +65,6 @@ Not scheduled; pick as the campaigns above land. Highlights: yearly review in a 
 ## 7. Parked (decision or dependency needed)
 | # | Item | Waiting on |
 |---|---|---|
-| P1 | **Canon text pass**: Alan and Garrison as owners in Talk lines, tips, Lynk messages, vignettes, review quotes, `World.CAST` roles, the all-hands (about 120 name references in 17 files) | your decision |
 | P2 | Dialogue Manager addon (only for long branching NPC conversations) | a need; a half-day spike would confirm syntax first |
 | P3 | Gitot in-editor git panel | optional |
 | P4 | Audio: music, UI sounds, ring tones | design and assets |

@@ -14,7 +14,7 @@ Your first day
 
 # Day 1, 9:05, MAIL: body
 [Story.DAYS.1.0.body]
-Welcome to Pixel IT Partners. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan
+Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan
 
 # Day 2, 9:05, MAIL: from
 [Story.DAYS.2.0.from]
@@ -192,11 +192,11 @@ She sighs and says she will ask her nephew.
 
 # Story > VIGNETTES > heartbleed > speaker
 [Story.VIGNETTES.heartbleed.speaker]
-Garrison (Security)
+Garrison (Co-owner)
 
 # Story > VIGNETTES > heartbleed > text
 [Story.VIGNETTES.heartbleed.text]
-Everybody is asking about Heartbleed, that bug in the news with a logo. Are any of our clients' servers affected? Somebody should check before they call us.
+Every client is asking about Heartbleed, that bug in the news with a logo, and I told them we are on it. Are any of their servers affected? Please check before they call us again.
 
 # Story > VIGNETTES > heartbleed > options > 0 > label
 [Story.VIGNETTES.heartbleed.options.0.label]
@@ -332,7 +332,7 @@ THE BIG JOBS I GOT RIGHT
 
 # Story > VIGNETTES > selfreview > options > 0 > text
 [Story.VIGNETTES.selfreview.options.0.text]
-Morgan writes it down. 'That is what I will say to the owner.'
+Morgan writes it down. 'That is what I will say to Alan and Garrison.'
 
 # Story > VIGNETTES > selfreview > options > 1 > label
 [Story.VIGNETTES.selfreview.options.1.label]
@@ -352,11 +352,11 @@ Morgan says the team has noticed. Word gets around.
 
 # Story > VIGNETTES > donuts > speaker
 [Story.VIGNETTES.donuts.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # Story > VIGNETTES > donuts > text
 [Story.VIGNETTES.donuts.text]
-I am back, and I brought donuts. I heard you covered for me. I read the page you wrote about the firewall. Show me how you set it up in the vault?
+I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?
 
 # Story > VIGNETTES > donuts > options > 0 > label
 [Story.VIGNETTES.donuts.options.0.label]
@@ -990,7 +990,7 @@ WRITE IT UP, RECOMMEND TWO-FACTOR AND A VPN
 
 # job: REMOTE ACCESS BREAK-IN, step 5
 [Playbook.BOOKS.rdp.steps.4.choices.0.note]
-A clear write-up with recommendations goes to the owner.
+A clear write-up with recommendations goes to the owners.
 
 # job: REMOTE ACCESS BREAK-IN, step 5
 [Playbook.BOOKS.rdp.steps.4.choices.1.label]
@@ -1278,7 +1278,7 @@ ALAN IS OUT
 
 # job: THE ONLY PERSON WHO KNOWS, step 1
 [Playbook.BOOKS.bus.steps.0.text]
-Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan set it up years ago and Alan is out sick today. Nobody has the password. What do you try?
+Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan, one of our owners, built it years ago and he is out sick today. Nobody has the password. What do you try?
 
 # job: THE ONLY PERSON WHO KNOWS, step 1
 [Playbook.BOOKS.bus.steps.0.choices.0.label]
@@ -1666,7 +1666,7 @@ PREMIUM PRICING (+20% FEES, HARDER SELL)
 
 # owner card: backup
 [Owner.CARDS.backup.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: backup
 [Owner.CARDS.backup.text]
@@ -1778,7 +1778,7 @@ PASS
 
 # owner card: license
 [Owner.CARDS.license.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: license
 [Owner.CARDS.license.text]
@@ -1882,7 +1882,7 @@ Brightside grumbles about the open-ended bill but pays.
 
 # owner card: email24
 [Owner.CARDS.email24.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: email24
 [Owner.CARDS.email24.text]
@@ -1926,7 +1926,7 @@ You make it worse before you make it better.
 
 # owner card: raise
 [Owner.CARDS.raise.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: raise
 [Owner.CARDS.raise.text]
@@ -2150,7 +2150,7 @@ AGGRESSIVE ($900/WEEK)
 
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.text]
@@ -2178,7 +2178,7 @@ The techs love the automation.
 
 # owner card: stack_rmm
 [Owner.CARDS.stack_rmm.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: stack_rmm
 [Owner.CARDS.stack_rmm.text]
@@ -2274,7 +2274,7 @@ SKIP IT
 
 # owner card: after_hours
 [Owner.CARDS.after_hours.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: after_hours
 [Owner.CARDS.after_hours.text]
@@ -2302,7 +2302,7 @@ NEITHER, WE WILL COPE
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: oncall_policy
 [Owner.CARDS.oncall_policy.text]
@@ -2334,7 +2334,7 @@ The crew is thrilled. Your nights will be less so, and it eats your owner hours 
 
 # owner card: flex_hours
 [Owner.CARDS.flex_hours.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: flex_hours
 [Owner.CARDS.flex_hours.text]
@@ -2370,7 +2370,7 @@ Clients notice the quiet Fridays. Some are not happy.
 
 # owner card: rdp_exposed
 [Owner.CARDS.rdp_exposed.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: rdp_exposed
 [Owner.CARDS.rdp_exposed.text]
@@ -2406,7 +2406,7 @@ LEAVE IT
 
 # owner card: ransom_options
 [Owner.CARDS.ransom_options.speaker]
-Alan (Senior Tech)
+Alan (Co-owner)
 
 # owner card: ransom_options
 [Owner.CARDS.ransom_options.text]
@@ -2548,19 +2548,19 @@ Microsoft is dropping support for Windows XP on April 8 and my old computer is o
 # ======================= Talk > GREETINGS =======================
 # Talk > GREETINGS > Alan > friend
 [Talk.GREETINGS.Alan.friend]
-Hey, there you are. Coffee is fresh. What is up?
+Hey, there you are. Coffee is fresh and the books can wait ten minutes. What is up?
 
 # Talk > GREETINGS > Alan > neutral
 [Talk.GREETINGS.Alan.neutral]
-Yeah? I have got about a minute.
+Yeah? I have got about a minute. Payroll is waiting.
 
 # Talk > GREETINGS > Garrison > friend
 [Talk.GREETINGS.Garrison.friend]
-Oh hey! Perfect timing, my brain needed a break. What is up?
+Oh hey! Perfect timing, I just got off with a client and my brain needed a break. What is up?
 
 # Talk > GREETINGS > Garrison > neutral
 [Talk.GREETINGS.Garrison.neutral]
-Hi. What do you need?
+Hi. What do you need? I have a client on in five.
 
 # Talk > GREETINGS > Dan > friend
 [Talk.GREETINGS.Dan.friend]
@@ -2606,7 +2606,7 @@ Windows XP goes dark on April 8th. I have got a spreadsheet of every XP box we m
 
 # Talk > SMALL > Alan > 1
 [Talk.SMALL.Alan.1]
-I have been doing this since the NT days. People still ask me to turn it off and on again. They are right more often than I like to admit.
+I have been doing this since the NT days. These days it is payroll and vendor calls, but people still ask me to turn it off and on again. They are right more often than I like to admit.
 
 # Talk > SMALL > Alan > 2
 [Talk.SMALL.Alan.2]
@@ -2614,7 +2614,15 @@ My kid asked what I do. I said I make sure the printers work. She said that soun
 
 # Talk > SMALL > Alan > 3
 [Talk.SMALL.Alan.3]
-Did you see the Target breach news? Every client wants to know if they are next.
+Did you see the Target breach news? Every client wants to know if they are next. Garrison has been on the phone with them since eight.
+
+# Talk > SMALL > Alan > 4
+[Talk.SMALL.Alan.4]
+The van needs brakes. The books say we can afford brakes. Barely.
+
+# Talk > SMALL > Alan > 5
+[Talk.SMALL.Alan.5]
+I priced a new rack for the closet. Buy it, do not build it, unless you enjoy supporting your own script.
 
 # Talk > SMALL > Garrison > 0
 [Talk.SMALL.Garrison.0]
@@ -2622,7 +2630,7 @@ Everybody is changing their passwords after that Target thing. I would love it i
 
 # Talk > SMALL > Garrison > 1
 [Talk.SMALL.Garrison.1]
-I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent.
+I finally beat level 90 on Sugar Smash. Do not tell Alan how many lives I spent.
 
 # Talk > SMALL > Garrison > 2
 [Talk.SMALL.Garrison.2]
@@ -2630,7 +2638,15 @@ I keep telling clients: not every email from your bank is from your bank.
 
 # Talk > SMALL > Garrison > 3
 [Talk.SMALL.Garrison.3]
-Did you try that new LabRat script? It saved me an hour on Tuesday.
+Alan's new LabRat script saved the crew an hour on Tuesday. Do not tell him I said so.
+
+# Talk > SMALL > Garrison > 4
+[Talk.SMALL.Garrison.4]
+I am planning the next team outing. Bowling is the safe bet, karaoke is the brave one.
+
+# Talk > SMALL > Garrison > 5
+[Talk.SMALL.Garrison.5]
+Hiring is the hard part. Good techs are never on the market on a Monday.
 
 # Talk > SMALL > Dan > 0
 [Talk.SMALL.Dan.0]
@@ -2684,7 +2700,7 @@ I am trying to learn PowerShell on my lunch break. It is a lot like learning Fre
 # ======================= Talk > GOSSIP =======================
 # Talk > GOSSIP > 0
 [Talk.GOSSIP.0]
-Between us: Morgan has been in the manager meeting since nine. Never a good sign.
+Between us: Morgan has been in the owners' office since nine. Never a good sign.
 
 # Talk > GOSSIP > 1
 [Talk.GOSSIP.1]
@@ -2702,19 +2718,23 @@ I heard the printer on the main floor jammed again. Nobody will own up to it.
 # ======================= Talk > TIPS_GENERIC =======================
 # Talk > TIPS_GENERIC > Alan > 0
 [Talk.TIPS_GENERIC.Alan.0]
-Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and they remember.
+Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and the client remembers it at renewal time.
 
 # Talk > TIPS_GENERIC > Alan > 1
 [Talk.TIPS_GENERIC.Alan.1]
-Verify the backups every morning. A backup you have not tested is a hope, not a backup.
+Verify the backups every morning. A backup you have not tested is a hope, not a backup. It is my name on the contract, not yours.
 
 # Talk > TIPS_GENERIC > Alan > 2
 [Talk.TIPS_GENERIC.Alan.2]
-Ask the user to save before you touch anything. It takes ten seconds and saves a bad email.
+Ask the user to save before you touch anything. It takes ten seconds and saves a bad email in my inbox.
+
+# Talk > TIPS_GENERIC > Alan > 3
+[Talk.TIPS_GENERIC.Alan.3]
+Buy it, do not build it. A script nobody else can read is a bus factor of one, and that one is usually me.
 
 # Talk > TIPS_GENERIC > Garrison > 0
 [Talk.TIPS_GENERIC.Garrison.0]
-Never use a default or seasonal password on a remote login. That is how they get in.
+Never use a default or seasonal password on a remote login. That is how they get in. I say it to every prospect.
 
 # Talk > TIPS_GENERIC > Garrison > 1
 [Talk.TIPS_GENERIC.Garrison.1]
@@ -2723,6 +2743,10 @@ If a ransom note shows up, do not reboot. Shadow copies first, backup if you hav
 # Talk > TIPS_GENERIC > Garrison > 2
 [Talk.TIPS_GENERIC.Garrison.2]
 Two-factor login for admins first, users second. Most attacks are still just guessing.
+
+# Talk > TIPS_GENERIC > Garrison > 3
+[Talk.TIPS_GENERIC.Garrison.3]
+Call the client before the invoice does. A short call keeps the contract; a long silence loses it.
 
 # Talk > TIPS_GENERIC > Dan > 0
 [Talk.TIPS_GENERIC.Dan.0]
@@ -2904,6 +2928,134 @@ Sure. No problem.
 [Lync.MESSAGES.thanks.text]
 Hey, thanks for being easy to work with.
 
+# Lync > MESSAGES > lunch_Alan > text
+[Lync.MESSAGES.lunch_Alan.text]
+Lunch? I am ordering sandwiches for whoever is around. The company is paying, God help the books.
+
+# Lync > MESSAGES > lunch_Alan > options > 0 > label
+[Lync.MESSAGES.lunch_Alan.options.0.label]
+SURE, LET'S GO
+
+# Lync > MESSAGES > lunch_Alan > options > 0 > reply
+[Lync.MESSAGES.lunch_Alan.options.0.reply]
+Good. I ordered extra pickles.
+
+# Lync > MESSAGES > lunch_Alan > options > 1 > label
+[Lync.MESSAGES.lunch_Alan.options.1.label]
+CAN'T, SWAMPED
+
+# Lync > MESSAGES > lunch_Alan > options > 1 > reply
+[Lync.MESSAGES.lunch_Alan.options.1.reply]
+No worries. I will leave one in the fridge.
+
+# Lync > MESSAGES > lunch_Garrison > text
+[Lync.MESSAGES.lunch_Garrison.text]
+Lunch? I am taking the team out for sandwiches. Company card, I promise.
+
+# Lync > MESSAGES > lunch_Garrison > options > 0 > label
+[Lync.MESSAGES.lunch_Garrison.options.0.label]
+SURE, LET'S GO
+
+# Lync > MESSAGES > lunch_Garrison > options > 0 > reply
+[Lync.MESSAGES.lunch_Garrison.options.0.reply]
+Great, see you there!
+
+# Lync > MESSAGES > lunch_Garrison > options > 1 > label
+[Lync.MESSAGES.lunch_Garrison.options.1.label]
+CAN'T, SWAMPED
+
+# Lync > MESSAGES > lunch_Garrison > options > 1 > reply
+[Lync.MESSAGES.lunch_Garrison.options.1.reply]
+No worries, next time. I will tell them you said hi.
+
+# Lync > MESSAGES > phones_Alan > text
+[Lync.MESSAGES.phones_Alan.text]
+Acme's office manager wants a call back and I am buried in vendor invoices. Can you ring them for me?
+
+# Lync > MESSAGES > phones_Alan > options > 0 > label
+[Lync.MESSAGES.phones_Alan.options.0.label]
+SURE
+
+# Lync > MESSAGES > phones_Alan > options > 0 > reply
+[Lync.MESSAGES.phones_Alan.options.0.reply]
+Thanks. That saves me twenty minutes.
+
+# Lync > MESSAGES > phones_Alan > options > 1 > label
+[Lync.MESSAGES.phones_Alan.options.1.label]
+SORRY, CAN'T
+
+# Lync > MESSAGES > phones_Alan > options > 1 > reply
+[Lync.MESSAGES.phones_Alan.options.1.reply]
+Okay... I will do it after the invoices.
+
+# Lync > MESSAGES > phones_Garrison > text
+[Lync.MESSAGES.phones_Garrison.text]
+A client wants a call back and I am stuck in a prospect meeting. Can you ring them and say we are on it?
+
+# Lync > MESSAGES > phones_Garrison > options > 0 > label
+[Lync.MESSAGES.phones_Garrison.options.0.label]
+SURE
+
+# Lync > MESSAGES > phones_Garrison > options > 0 > reply
+[Lync.MESSAGES.phones_Garrison.options.0.reply]
+Thanks, you are the best.
+
+# Lync > MESSAGES > phones_Garrison > options > 1 > label
+[Lync.MESSAGES.phones_Garrison.options.1.label]
+SORRY, CAN'T
+
+# Lync > MESSAGES > phones_Garrison > options > 1 > reply
+[Lync.MESSAGES.phones_Garrison.options.1.reply]
+Okay... I will step out.
+
+# Lync > MESSAGES > help_Alan > text
+[Lync.MESSAGES.help_Alan.text]
+The backup vendor wants us to renew. Can you look at their numbers and tell me if I am being sold something?
+
+# Lync > MESSAGES > help_Alan > options > 0 > label
+[Lync.MESSAGES.help_Alan.options.0.label]
+TAKE A LOOK AT IT
+
+# Lync > MESSAGES > help_Alan > options > 0 > reply
+[Lync.MESSAGES.help_Alan.options.0.reply]
+That did it! Thanks. I will push back on the price.
+
+# Lync > MESSAGES > help_Alan > options > 1 > label
+[Lync.MESSAGES.help_Alan.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > MESSAGES > help_Alan > options > 1 > reply
+[Lync.MESSAGES.help_Alan.options.1.reply]
+Sure. No problem. I will read the fine print myself.
+
+# Lync > MESSAGES > help_Garrison > text
+[Lync.MESSAGES.help_Garrison.text]
+I have a QBR with Brightside on Thursday. Can you join and answer the technical questions?
+
+# Lync > MESSAGES > help_Garrison > options > 0 > label
+[Lync.MESSAGES.help_Garrison.options.0.label]
+JOIN THE QBR
+
+# Lync > MESSAGES > help_Garrison > options > 0 > reply
+[Lync.MESSAGES.help_Garrison.options.0.reply]
+Perfect, thank you! I do the charm, you do the facts.
+
+# Lync > MESSAGES > help_Garrison > options > 1 > label
+[Lync.MESSAGES.help_Garrison.options.1.label]
+TOO BUSY RIGHT NOW
+
+# Lync > MESSAGES > help_Garrison > options > 1 > reply
+[Lync.MESSAGES.help_Garrison.options.1.reply]
+Sure. No problem. I will fake the technical parts.
+
+# Lync > MESSAGES > thanks_Alan > text
+[Lync.MESSAGES.thanks_Alan.text]
+Thanks for covering the floor lately. The clients notice, and so do the books.
+
+# Lync > MESSAGES > thanks_Garrison > text
+[Lync.MESSAGES.thanks_Garrison.text]
+Thanks for being great with the clients. They keep mentioning you.
+
 
 # ======================= Review > QUOTES =======================
 # Review > QUOTES > FRIEND
@@ -2927,6 +3079,28 @@ KEEPS TO THEMSELVES. A BIT ABRUPT.
 HONESTLY? HARD TO WORK WITH.
 
 
+# ======================= Review > OWNER_QUOTES =======================
+# Review > OWNER_QUOTES > FRIEND
+[Review.OWNER_QUOTES.FRIEND]
+GLAD WE HIRED YOU. THE CLIENTS ASK FOR YOU BY NAME.
+
+# Review > OWNER_QUOTES > FRIENDLY
+[Review.OWNER_QUOTES.FRIENDLY]
+GOOD HIRE. I WOULD TRUST YOU WITH A CLIENT.
+
+# Review > OWNER_QUOTES > NEUTRAL
+[Review.OWNER_QUOTES.NEUTRAL]
+DOES THE JOB. NO COMPLAINTS ON MY DESK.
+
+# Review > OWNER_QUOTES > COLD
+[Review.OWNER_QUOTES.COLD]
+I SEE THE NUMBERS. I DO NOT SEE MUCH ELSE.
+
+# Review > OWNER_QUOTES > HOSTILE
+[Review.OWNER_QUOTES.HOSTILE]
+WE NEED TO TALK ABOUT FIT. THE BOOKS DO NOT LIE.
+
+
 # ======================= Review > EPILOGUES =======================
 # Review > EPILOGUES > lead
 [Review.EPILOGUES.lead]
@@ -2938,7 +3112,7 @@ YOU SWAP SIRENS FOR STEADY HOURS: ONE OFFICE, ONE NETWORK, NO ONE CALLING AT NIG
 
 # Review > EPILOGUES > stay
 [Review.EPILOGUES.stay]
-YOU STAY A TECH AT PIXEL IT PARTNERS. SAME DESK, SAME PHONES, A LOT MORE SKILL. THE TICKETS KEEP COMING.
+YOU STAY A TECH AT PIXEL IT PARTNERS. ALAN AND GARRISON KEEP THE BUSINESS RUNNING, YOU KEEP THE TICKETS MOVING. SAME DESK, A LOT MORE SKILL.
 
 
 # ======================= Social > THANKS =======================

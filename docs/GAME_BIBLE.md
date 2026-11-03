@@ -35,7 +35,7 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 - **Hard rule:** nothing from after 2014. No AI, no Teams or Slack, no Windows 10/11, no "MFA" (say *two-factor login*), no TikTok or Discord.
   Reviewers: please flag any slip.
 - **Voice:** warm, dry, a little absurd, never mean. Jargon is used correctly and explained by context. Every character has a way of speaking
-  (Alan is gruff-but-kind, Garrison is excitable and security-minded, Dan is quiet and obsessive about labelling cables, Vic is a salesman who
+  (Alan is the gruff-but-kind technical owner, Garrison is the excitable sales-and-culture owner with a security scare story for everything, Dan is quiet and obsessive about labelling cables, Vic is a salesman who
   over-promises). Emails and texts are short, human and slightly panicked, like real clients.
 - **Look:** blocky pixel characters with big heads and flat colours, inspired by *Code Monkeys*. Rooms are slightly grimy 2010s offices:
   stained ceiling tiles, blue carpet, a green hallway. Outing rooms (bowling, karaoke, escape room, a neighbourhood grill) are dark and neon.
@@ -49,12 +49,12 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 a cubicle area, a conference room, and a network closet with a real rack you can plug and unplug. After work you can go bowling, sing karaoke,
 solve an escape room or eat at the restaurant.
 
-**The people** (canon: **Alan and Garrison are the two owners** of Pixel IT Partners. Alan leans technical, Garrison leans sales and culture; Office 1 and Office 2 are theirs. Story text, Talk lines and specialities still show them as techs and need a pass: see `docs/BACKLOG.md`.)
+**The people** (canon: **Alan and Garrison are the two owners** of Pixel IT Partners. Alan leans technical, Garrison leans sales and culture; Office 1 and Office 2 are theirs. They are not ticket techs: they talk about payroll, clients, the van, vendors, hiring and the next outing, and in the tech campaign only jump in as a last resort. Morgan manages the floor for them.)
 | Who | Role | Personality | What they do for you |
 |---|---|---|---|
 | **You** | Tech (or owner) | The new hire | |
-| **Alan** | Co-owner, the technical one (still the senior tech; Office 1) | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups |
-| **Garrison** | Co-owner, the sales and culture one (Office 2; still security-minded) | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password |
+| **Alan** | Co-owner, the technical one (servers, backups, the stack, the closet; Office 1) | Gruff, patient, a sandwich man. "Not at my desk, please." | Servers; warns you about failing backups ("it is my name on the contract") |
+| **Garrison** | Co-owner, the sales and culture one (clients, hiring, morale, outings; Office 2; security-minded as a quirk) | Excitable, loves a good scare story | Security; tells you why Summer2013 is not a password; usually the one who invites you out after work |
 | **Dan** | Network tech | Quiet, labels everything, plays Floppy Bat | Networking; notices when a desk has no link |
 | **Vic Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
 | **Morgan Reyes** | Your manager (reports to the two owners) | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |

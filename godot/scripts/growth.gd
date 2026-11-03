@@ -26,7 +26,7 @@ const DEFAULT_STRETCH := {
 var STRETCH: Dictionary = DEFAULT_STRETCH.duplicate(true)
 
 var focus := ""
-var helper := ""  # tech: the coworker who catches your mistakes
+var helper := ""  # tech: the coworker (or owner: Alan, Garrison) who catches your mistakes
 var learner := ""  # owner: the tech being developed
 var progress := 0.0
 var graduated := false
@@ -182,7 +182,7 @@ func _pick_helper(skill: String) -> void:
 		options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
 	Cards.ask(
 		"Morgan (Manager)",
-		"Who should be near you to catch your mistakes while you stretch? Someone you get along with will say it kindly.",
+		"Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.",
 		options,
 		func(who: String) -> void: _plan_set(skill, who)
 	)
@@ -423,7 +423,7 @@ func _bottleneck_card() -> void:
 	if learner == "":
 		options.push_front({"label": "START A GROWTH PLAN FOR THE TEAM", "id": "plan"})
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		"Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.",
 		options,
 		func(id: String) -> void: _bottleneck_pick(id)
@@ -445,7 +445,7 @@ func owner_plan_card() -> void:
 	for who in names:
 		options.append({"label": who.to_upper(), "id": who})
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		"Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.",
 		options,
 		func(who: String) -> void: _owner_skill(who)
@@ -466,7 +466,7 @@ func _owner_skill(who: String) -> void:
 			}
 		)
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		"Which skill? Pick the one the shop keeps escalating.",
 		options,
 		func(skill: String) -> void: _owner_plan_set(who, skill)
@@ -494,7 +494,7 @@ func owner_stretch() -> void:
 		return
 	var chance := clampf(0.40 + progress / 250.0, 0.2, 0.85)
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		(
 			"A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk."
 			% [str(STRETCH[focus]).to_lower(), learner]
@@ -541,7 +541,7 @@ func _graduate_owner() -> void:
 	Owner.flags["growth_done"] = true
 	var who := learner
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		(
 			"%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market."
 			% [who, focus_name()]

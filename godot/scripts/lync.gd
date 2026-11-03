@@ -3,6 +3,7 @@ extends Node
 # gdlint:disable=max-line-length
 # Lynk 2013 on the desktop: presence (what your coworkers are doing, read from the cast simulation) and instant
 # messages. Coworkers message you (lunch, "cover my phones", "how do you fix...", a thank-you) and you answer with quick
+# (the owners, Alan and Garrison, ask owner things instead: MESSAGES keys like "phones_Alan" win over "phones")
 # replies that move how they feel about you; you can message them (lunch?, need a hand, thanks) and ask the boss
 # (Morgan in the tech campaign, Marge in the owner campaign). Friends warn you before a ticket breaches its SLA.
 # Campaign only; in free play the app shows presence and nothing else happens.
@@ -58,6 +59,96 @@ const DEFAULT_MESSAGES := {
 		],
 	},
 	"thanks": {"text": "Hey, thanks for being easy to work with.", "options": []},
+	"lunch_Alan":
+	{
+		"text": "Lunch? I am ordering sandwiches for whoever is around. The company is paying, God help the books.",
+		"options":
+		[
+			{"label": "SURE, LET'S GO", "social": 2, "reply": "Good. I ordered extra pickles."},
+			{
+				"label": "CAN'T, SWAMPED",
+				"social": 0,
+				"reply": "No worries. I will leave one in the fridge."
+			},
+		],
+	},
+	"lunch_Garrison":
+	{
+		"text": "Lunch? I am taking the team out for sandwiches. Company card, I promise.",
+		"options":
+		[
+			{"label": "SURE, LET'S GO", "social": 2, "reply": "Great, see you there!"},
+			{
+				"label": "CAN'T, SWAMPED",
+				"social": 0,
+				"reply": "No worries, next time. I will tell them you said hi."
+			},
+		],
+	},
+	"phones_Alan":
+	{
+		"text": "Acme's office manager wants a call back and I am buried in vendor invoices. Can you ring them for me?",
+		"options":
+		[
+			{"label": "SURE", "social": 2, "reply": "Thanks. That saves me twenty minutes."},
+			{"label": "SORRY, CAN'T", "social": -1, "reply": "Okay... I will do it after the invoices."},
+		],
+	},
+	"phones_Garrison":
+	{
+		"text": "A client wants a call back and I am stuck in a prospect meeting. Can you ring them and say we are on it?",
+		"options":
+		[
+			{"label": "SURE", "social": 2, "reply": "Thanks, you are the best."},
+			{"label": "SORRY, CAN'T", "social": -1, "reply": "Okay... I will step out."},
+		],
+	},
+	"help_Alan":
+	{
+		"text": "The backup vendor wants us to renew. Can you look at their numbers and tell me if I am being sold something?",
+		"options":
+		[
+			{
+				"label": "TAKE A LOOK AT IT",
+				"social": 2,
+				"xp": 2,
+				"reply": "That did it! Thanks. I will push back on the price."
+			},
+			{
+				"label": "TOO BUSY RIGHT NOW",
+				"social": -1,
+				"reply": "Sure. No problem. I will read the fine print myself."
+			},
+		],
+	},
+	"help_Garrison":
+	{
+		"text": "I have a QBR with Brightside on Thursday. Can you join and answer the technical questions?",
+		"options":
+		[
+			{
+				"label": "JOIN THE QBR",
+				"social": 2,
+				"xp": 2,
+				"reply": "Perfect, thank you! I do the charm, you do the facts."
+			},
+			{
+				"label": "TOO BUSY RIGHT NOW",
+				"social": -1,
+				"reply": "Sure. No problem. I will fake the technical parts."
+			},
+		],
+	},
+	"thanks_Alan":
+	{
+		"text": "Thanks for covering the floor lately. The clients notice, and so do the books.",
+		"options": [],
+	},
+	"thanks_Garrison":
+	{
+		"text": "Thanks for being great with the clients. They keep mentioning you.",
+		"options": [],
+	},
 }
 var MESSAGES: Dictionary = DEFAULT_MESSAGES.duplicate(true)
 
@@ -182,6 +273,8 @@ func incoming(forced_kind := "") -> void:
 		else:
 			kind = "thanks"
 	var msg: Dictionary = MESSAGES[kind]
+	if MESSAGES.has(kind + "_" + who):
+		msg = MESSAGES[kind + "_" + who]
 	if kind == "thanks" and Social.value(who) < 25 and forced_kind == "":
 		return
 	_push(who, who, str(msg.text))
@@ -238,13 +331,17 @@ func send_action(who: String, kind: String) -> String:
 func _lend_a_hand(who: String) -> void:
 	var willing: bool = Social.value(who) >= 0 or randf() < 0.4
 	var ticket := _helpable_ticket()
+	var owner_voice := Social.is_owner(who)
 	if not willing:
-		_push(who, who, "Sorry, I am swamped.")
+		_push(who, who, "Sorry, I am buried in the books today." if owner_voice else "Sorry, I am swamped.")
 	elif ticket.is_empty():
 		_push(who, who, "Nothing in your queue needs me. Looking good!")
 	else:
 		Msp.rmm_action(str(ticket.endpoint), str(ticket.fix))
-		_push(who, who, "On it... done: #%d is fixed. You owe me one." % int(ticket.id))
+		var done := "On it... done: #%d is fixed. You owe me one."
+		if owner_voice:
+			done = "Fine, I will look. Done: #%d is fixed. Do not make a habit of it."
+		_push(who, who, done % int(ticket.id))
 		Social.change(who, -1)
 
 

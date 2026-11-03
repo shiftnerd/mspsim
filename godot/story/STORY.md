@@ -12,7 +12,7 @@ or the owner (owner campaign, 20 weeks).
 ### Day 1
 
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Your first day* `[Story.DAYS.1.0.subject]`
-> Welcome to Pixel IT Partners. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan `[Story.DAYS.1.0.body]`
+> Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan `[Story.DAYS.1.0.body]`
 
 ### Day 2
 
@@ -365,7 +365,7 @@ or the owner (owner campaign, 20 weeks).
 **Step 5: TELL THE CLIENT** `[Playbook.BOOKS.rdp.steps.4.title]`
 > How do you leave things with the realtors? `[Playbook.BOOKS.rdp.steps.4.text]`
 - **WRITE IT UP, RECOMMEND TWO-FACTOR AND A VPN** `[Playbook.BOOKS.rdp.steps.4.choices.0.label]` (15 points, remembers: documented)
-  - Result: A clear write-up with recommendations goes to the owner. `[Playbook.BOOKS.rdp.steps.4.choices.0.note]`
+  - Result: A clear write-up with recommendations goes to the owners. `[Playbook.BOOKS.rdp.steps.4.choices.0.note]`
 - **FIX IT QUIETLY** `[Playbook.BOOKS.rdp.steps.4.choices.1.label]` (5 points)
   - Result: No write-up. They never learn how close it was. `[Playbook.BOOKS.rdp.steps.4.choices.1.note]`
 
@@ -457,7 +457,7 @@ or the owner (owner campaign, 20 weeks).
   > The internet drops every few minutes and patients are waiting. Alan always knows what to do but he is out today! - [name] `[Playbook.PROBLEMS.bus.0.body]`
 
 **Step 1: ALAN IS OUT** `[Playbook.BOOKS.bus.steps.0.title]`
-> Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan set it up years ago and Alan is out sick today. Nobody has the password. What do you try? `[Playbook.BOOKS.bus.steps.0.text]`
+> Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan, one of our owners, built it years ago and he is out sick today. Nobody has the password. What do you try? `[Playbook.BOOKS.bus.steps.0.text]`
 - **LOOK IN THE DOCUMENTATION PORTAL** `[Playbook.BOOKS.bus.steps.0.choices.0.label]` (25 points, remembers: docs)
   - Result: There is an entry, half finished, and a note that says the password is in the safe. `[Playbook.BOOKS.bus.steps.0.choices.0.note]`
 - **LOOK ON ALAN'S DESK** `[Playbook.BOOKS.bus.steps.0.choices.1.label]` (10 points, remembers: sticky)
@@ -552,7 +552,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 2
 
-**9:05 Card: backup** — Alan (Senior Tech) `[Owner.CARDS.backup.speaker]`
+**9:05 Card: backup** — Alan (Co-owner) `[Owner.CARDS.backup.speaker]`
 > Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week. `[Owner.CARDS.backup.text]`
 - **BUY THE BACKUP SERVICE ($600 + $100/WEEK)** `[Owner.CARDS.backup.options.0.label]`
 - **NO, WE WILL CHECK THEM BY HAND** `[Owner.CARDS.backup.options.1.label]`
@@ -594,7 +594,7 @@ or the owner (owner campaign, 20 weeks).
   - 40%: He accepts the premium quote! `[Owner.CARDS.desktop.options.2.roll.0.2]`
   - 60%: He is insulted and says so. `[Owner.CARDS.desktop.options.2.roll.1.2]`
 
-**12:00 Card: oncall_policy** — Alan (Senior Tech) `[Owner.CARDS.oncall_policy.speaker]`
+**12:00 Card: oncall_policy** — Alan (Co-owner) `[Owner.CARDS.oncall_policy.speaker]`
 > Clients are starting to call after hours. Somebody has to carry the pager. How do we run it? `[Owner.CARDS.oncall_policy.text]`
 - **ROTATE EVERYONE, $100/WEEK POOL** `[Owner.CARDS.oncall_policy.options.0.label]`
   - A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn. `[Owner.CARDS.oncall_policy.options.0.text]`
@@ -603,7 +603,7 @@ or the owner (owner campaign, 20 weeks).
 - **YOU CARRY THE PAGER YOURSELF** `[Owner.CARDS.oncall_policy.options.2.label]`
   - The crew is thrilled. Your nights will be less so, and it eats your owner hours every week. `[Owner.CARDS.oncall_policy.options.2.text]`
 
-**14:00 Card: stack_psa** — Alan (Senior Tech) `[Owner.CARDS.stack_psa.speaker]`
+**14:00 Card: stack_psa** — Alan (Co-owner) `[Owner.CARDS.stack_psa.speaker]`
 > Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run. `[Owner.CARDS.stack_psa.text]`
 - **KEEP CONNECTWHY PSA** `[Owner.CARDS.stack_psa.options.0.label]`
 - **TICKETO LITE ($15/WK, $300 TO MIGRATE)** `[Owner.CARDS.stack_psa.options.1.label]`
@@ -664,7 +664,7 @@ or the owner (owner campaign, 20 weeks).
 
 **11:00** Event: qbr (handled in code, it opens its own cards)
 
-**12:30 Card: rdp_exposed** — Alan (Senior Tech) `[Owner.CARDS.rdp_exposed.speaker]`
+**12:30 Card: rdp_exposed** — Alan (Co-owner) `[Owner.CARDS.rdp_exposed.speaker]`
 > Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes. `[Owner.CARDS.rdp_exposed.text]`
 - **AUTO-BLOCKING FIREWALLS ($600 + $40/WEEK)** `[Owner.CARDS.rdp_exposed.options.0.label]`
   - Repeated failed logins now get an address blocked automatically. The guessing stops. `[Owner.CARDS.rdp_exposed.options.0.text]`
@@ -674,7 +674,7 @@ or the owner (owner campaign, 20 weeks).
   - It slows them down. It does not stop them. `[Owner.CARDS.rdp_exposed.options.2.text]`
 - **LEAVE IT** `[Owner.CARDS.rdp_exposed.options.3.label]`
 
-**14:00 Card: stack_rmm** — Alan (Senior Tech) `[Owner.CARDS.stack_rmm.speaker]`
+**14:00 Card: stack_rmm** — Alan (Co-owner) `[Owner.CARDS.stack_rmm.speaker]`
 > The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call. `[Owner.CARDS.stack_rmm.text]`
 - **KEEP LABRAT RMM** `[Owner.CARDS.stack_rmm.options.0.label]`
 - **SNOUTECH BASIC ($25/WK, $300 TO MIGRATE)** `[Owner.CARDS.stack_rmm.options.1.label]`
@@ -684,7 +684,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 8
 
-**9:30 Card: license** — Alan (Senior Tech) `[Owner.CARDS.license.speaker]`
+**9:30 Card: license** — Alan (Co-owner) `[Owner.CARDS.license.speaker]`
 > Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone. `[Owner.CARDS.license.text]`
 - **PAY THE HIKE ($500)** `[Owner.CARDS.license.options.0.label]`
 - **SWITCH ($300, SOME PAIN)** `[Owner.CARDS.license.options.1.label]`
@@ -736,7 +736,7 @@ or the owner (owner campaign, 20 weeks).
 
 **14:00** Event: vic_report (handled in code, it opens its own cards)
 
-**12:00 Card: flex_hours** — Alan (Senior Tech) `[Owner.CARDS.flex_hours.speaker]`
+**12:00 Card: flex_hours** — Alan (Co-owner) `[Owner.CARDS.flex_hours.speaker]`
 > Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy? `[Owner.CARDS.flex_hours.text]`
 - **FLEXIBLE START TIMES (CORE 10 TO 4)** `[Owner.CARDS.flex_hours.options.0.label]`
   - Morale lifts. The phones are a little thin first thing. `[Owner.CARDS.flex_hours.options.0.text]`
@@ -770,7 +770,7 @@ or the owner (owner campaign, 20 weeks).
 - **TIME AND MATERIALS (~$2,200)** `[Owner.CARDS.migration.options.1.label]`
   - Brightside grumbles about the open-ended bill but pays. `[Owner.CARDS.migration.options.1.text]`
 
-**10:30 Card: after_hours** — Alan (Senior Tech) `[Owner.CARDS.after_hours.speaker]`
+**10:30 Card: after_hours** — Alan (Co-owner) `[Owner.CARDS.after_hours.speaker]`
 > After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend. `[Owner.CARDS.after_hours.text]`
 - **ADOPT A $250/HOUR AFTER-HOURS FEE** `[Owner.CARDS.after_hours.options.0.label]`
   - Most non-critical after-hours calls stop. A few clients grumble. `[Owner.CARDS.after_hours.options.0.text]`
@@ -782,7 +782,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 13
 
-**15:30 Card: email24** — Alan (Senior Tech) `[Owner.CARDS.email24.speaker]`
+**15:30 Card: email24** — Alan (Co-owner) `[Owner.CARDS.email24.speaker]`
 > Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime. `[Owner.CARDS.email24.text]`
 - **PREMIUM VENDOR + OVERTIME ($800)** `[Owner.CARDS.email24.options.0.label]`
   - 90%: Fixed by 9pm. The brewery owner sends beer. `[Owner.CARDS.email24.options.0.roll.0.2]`
@@ -809,7 +809,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 15
 
-**9:30 Card: raise** — Alan (Senior Tech) `[Owner.CARDS.raise.speaker]`
+**9:30 Card: raise** — Alan (Co-owner) `[Owner.CARDS.raise.speaker]`
 > Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise. `[Owner.CARDS.raise.text]`
 - **GIVE THE RAISE** `[Owner.CARDS.raise.options.0.label]`
 - **NOT NOW** `[Owner.CARDS.raise.options.1.label]`
@@ -858,29 +858,35 @@ or the owner (owner campaign, 20 weeks).
 
 ### Alan
 
-- Greeting (friend): Hey, there you are. Coffee is fresh. What is up? `[Talk.GREETINGS.Alan.friend]`
-- Greeting (neutral): Yeah? I have got about a minute. `[Talk.GREETINGS.Alan.neutral]`
+- Greeting (friend): Hey, there you are. Coffee is fresh and the books can wait ten minutes. What is up? `[Talk.GREETINGS.Alan.friend]`
+- Greeting (neutral): Yeah? I have got about a minute. Payroll is waiting. `[Talk.GREETINGS.Alan.neutral]`
 - Greeting (cold): ...Yes? `[Talk.GREETINGS.Alan.cold]`
 - Small talk: Windows XP goes dark on April 8th. I have got a spreadsheet of every XP box we manage. It is longer than my coffee order. `[Talk.SMALL.Alan.0]`
-- Small talk: I have been doing this since the NT days. People still ask me to turn it off and on again. They are right more often than I like to admit. `[Talk.SMALL.Alan.1]`
+- Small talk: I have been doing this since the NT days. These days it is payroll and vendor calls, but people still ask me to turn it off and on again. They are right more often than I like to admit. `[Talk.SMALL.Alan.1]`
 - Small talk: My kid asked what I do. I said I make sure the printers work. She said that sounds boring. She is not wrong. `[Talk.SMALL.Alan.2]`
-- Small talk: Did you see the Target breach news? Every client wants to know if they are next. `[Talk.SMALL.Alan.3]`
-- Tip: Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and they remember. `[Talk.TIPS_GENERIC.Alan.0]`
-- Tip: Verify the backups every morning. A backup you have not tested is a hope, not a backup. `[Talk.TIPS_GENERIC.Alan.1]`
-- Tip: Ask the user to save before you touch anything. It takes ten seconds and saves a bad email. `[Talk.TIPS_GENERIC.Alan.2]`
+- Small talk: Did you see the Target breach news? Every client wants to know if they are next. Garrison has been on the phone with them since eight. `[Talk.SMALL.Alan.3]`
+- Small talk: The van needs brakes. The books say we can afford brakes. Barely. `[Talk.SMALL.Alan.4]`
+- Small talk: I priced a new rack for the closet. Buy it, do not build it, unless you enjoy supporting your own script. `[Talk.SMALL.Alan.5]`
+- Tip: Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and the client remembers it at renewal time. `[Talk.TIPS_GENERIC.Alan.0]`
+- Tip: Verify the backups every morning. A backup you have not tested is a hope, not a backup. It is my name on the contract, not yours. `[Talk.TIPS_GENERIC.Alan.1]`
+- Tip: Ask the user to save before you touch anything. It takes ten seconds and saves a bad email in my inbox. `[Talk.TIPS_GENERIC.Alan.2]`
+- Tip: Buy it, do not build it. A script nobody else can read is a bus factor of one, and that one is usually me. `[Talk.TIPS_GENERIC.Alan.3]`
 
 ### Garrison
 
-- Greeting (friend): Oh hey! Perfect timing, my brain needed a break. What is up? `[Talk.GREETINGS.Garrison.friend]`
-- Greeting (neutral): Hi. What do you need? `[Talk.GREETINGS.Garrison.neutral]`
+- Greeting (friend): Oh hey! Perfect timing, I just got off with a client and my brain needed a break. What is up? `[Talk.GREETINGS.Garrison.friend]`
+- Greeting (neutral): Hi. What do you need? I have a client on in five. `[Talk.GREETINGS.Garrison.neutral]`
 - Greeting (cold): Mm. What? `[Talk.GREETINGS.Garrison.cold]`
 - Small talk: Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013. `[Talk.SMALL.Garrison.0]`
-- Small talk: I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent. `[Talk.SMALL.Garrison.1]`
+- Small talk: I finally beat level 90 on Sugar Smash. Do not tell Alan how many lives I spent. `[Talk.SMALL.Garrison.1]`
 - Small talk: I keep telling clients: not every email from your bank is from your bank. `[Talk.SMALL.Garrison.2]`
-- Small talk: Did you try that new LabRat script? It saved me an hour on Tuesday. `[Talk.SMALL.Garrison.3]`
-- Tip: Never use a default or seasonal password on a remote login. That is how they get in. `[Talk.TIPS_GENERIC.Garrison.0]`
+- Small talk: Alan's new LabRat script saved the crew an hour on Tuesday. Do not tell him I said so. `[Talk.SMALL.Garrison.3]`
+- Small talk: I am planning the next team outing. Bowling is the safe bet, karaoke is the brave one. `[Talk.SMALL.Garrison.4]`
+- Small talk: Hiring is the hard part. Good techs are never on the market on a Monday. `[Talk.SMALL.Garrison.5]`
+- Tip: Never use a default or seasonal password on a remote login. That is how they get in. I say it to every prospect. `[Talk.TIPS_GENERIC.Garrison.0]`
 - Tip: If a ransom note shows up, do not reboot. Shadow copies first, backup if you have it, paying is the last resort. `[Talk.TIPS_GENERIC.Garrison.1]`
 - Tip: Two-factor login for admins first, users second. Most attacks are still just guessing. `[Talk.TIPS_GENERIC.Garrison.2]`
+- Tip: Call the client before the invoice does. A short call keeps the contract; a long silence loses it. `[Talk.TIPS_GENERIC.Garrison.3]`
 
 ### Dan
 
@@ -923,7 +929,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Gossip (anyone, now and then)
 
-- Between us: Morgan has been in the manager meeting since nine. Never a good sign. `[Talk.GOSSIP.0]`
+- Between us: Morgan has been in the owners' office since nine. Never a good sign. `[Talk.GOSSIP.0]`
 - I heard Vic is already negotiating next year's commission. Good for him. `[Talk.GOSSIP.1]`
 - Somebody microwaved fish in the kitchenette again. We are not saying who. `[Talk.GOSSIP.2]`
 - I heard the printer on the main floor jammed again. Nobody will own up to it. `[Talk.GOSSIP.3]`
@@ -932,12 +938,12 @@ or the owner (owner campaign, 20 weeks).
 
 ### Random help-desk tickets
 
-- *Printer will not print* `[Msp.PROBLEMS.0.summary]`: Every time I hit print it just sits there. People are waiting. Please help! - %s `[Msp.PROBLEMS.0.body]`
-- *Locked out of my PC* `[Msp.PROBLEMS.1.summary]`: It says my account is locked out. I swear I did nothing. I cannot work until this is fixed. - %s `[Msp.PROBLEMS.1.body]`
-- *Computer is very slow* `[Msp.PROBLEMS.2.summary]`: It takes ten minutes to open one document. Is it the weather? - %s `[Msp.PROBLEMS.2.body]`
-- *Computer frozen on a blue screen* `[Msp.PROBLEMS.3.summary]`: There is a blue screen with a sad face on it. It has been like this since lunch. - %s `[Msp.PROBLEMS.3.body]`
-- *Pop-ups everywhere* `[Msp.PROBLEMS.4.summary]`: Hundreds of pop-ups say I won a free cruise. Did I win a cruise? Also I cannot close them. - %s `[Msp.PROBLEMS.4.body]`
-- *Server not responding - nobody can work* `[Msp.PROBLEMS.5.summary]`: THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. FIX IT! - %s `[Msp.PROBLEMS.5.body]`
+- *Printer will not print* `[Msp.PROBLEMS.0.summary]`: Every time I hit print it just sits there. I deleted the jobs and it did nothing. The copier down the hall is on the network too. People are waiting. Please help! - %s `[Msp.PROBLEMS.0.body]`
+- *Locked out of my PC* `[Msp.PROBLEMS.1.summary]`: It says my account is locked out. I swear I did nothing. Can you just give me a temporary password, or make me a fresh login? I cannot work until this is fixed. - %s `[Msp.PROBLEMS.1.body]`
+- *Computer is very slow* `[Msp.PROBLEMS.2.summary]`: It takes ten minutes to open one document. I emptied the recycle bin and nothing changed. Last time somebody just wiped it. Is it the weather? - %s `[Msp.PROBLEMS.2.body]`
+- *Computer frozen on a blue screen* `[Msp.PROBLEMS.3.summary]`: There is a blue screen with a sad face on it. It has been like this since lunch. I tried the F8 menu but did not know what to pick. Do I need a new computer? - %s `[Msp.PROBLEMS.3.body]`
+- *Pop-ups everywhere* `[Msp.PROBLEMS.4.summary]`: Hundreds of pop-ups say I won a free cruise. Did I win a cruise? I reset my browser and they came right back. Also I cannot close them. - %s `[Msp.PROBLEMS.4.body]`
+- *Server not responding - nobody can work* `[Msp.PROBLEMS.5.summary]`: THE SERVER IS DOWN. Nobody can open anything. Everyone is standing around. Somebody says restart the services, somebody else says roll it back to last night. FIX IT! - %s `[Msp.PROBLEMS.5.body]`
 
 ### LabRat Nerds forum threads
 
@@ -964,6 +970,26 @@ or the owner (owner campaign, 20 weeks).
   - You say: WALK THEM THROUGH IT -> they reply: That did it! Thanks.
   - You say: TOO BUSY RIGHT NOW -> they reply: Sure. No problem.
 - **thanks**: Hey, thanks for being easy to work with. `[Lync.MESSAGES.thanks.text]`
+- **lunch_Alan**: Lunch? I am ordering sandwiches for whoever is around. The company is paying, God help the books. `[Lync.MESSAGES.lunch_Alan.text]`
+  - You say: SURE, LET'S GO -> they reply: Good. I ordered extra pickles.
+  - You say: CAN'T, SWAMPED -> they reply: No worries. I will leave one in the fridge.
+- **lunch_Garrison**: Lunch? I am taking the team out for sandwiches. Company card, I promise. `[Lync.MESSAGES.lunch_Garrison.text]`
+  - You say: SURE, LET'S GO -> they reply: Great, see you there!
+  - You say: CAN'T, SWAMPED -> they reply: No worries, next time. I will tell them you said hi.
+- **phones_Alan**: Acme's office manager wants a call back and I am buried in vendor invoices. Can you ring them for me? `[Lync.MESSAGES.phones_Alan.text]`
+  - You say: SURE -> they reply: Thanks. That saves me twenty minutes.
+  - You say: SORRY, CAN'T -> they reply: Okay... I will do it after the invoices.
+- **phones_Garrison**: A client wants a call back and I am stuck in a prospect meeting. Can you ring them and say we are on it? `[Lync.MESSAGES.phones_Garrison.text]`
+  - You say: SURE -> they reply: Thanks, you are the best.
+  - You say: SORRY, CAN'T -> they reply: Okay... I will step out.
+- **help_Alan**: The backup vendor wants us to renew. Can you look at their numbers and tell me if I am being sold something? `[Lync.MESSAGES.help_Alan.text]`
+  - You say: TAKE A LOOK AT IT -> they reply: That did it! Thanks. I will push back on the price.
+  - You say: TOO BUSY RIGHT NOW -> they reply: Sure. No problem. I will read the fine print myself.
+- **help_Garrison**: I have a QBR with Brightside on Thursday. Can you join and answer the technical questions? `[Lync.MESSAGES.help_Garrison.text]`
+  - You say: JOIN THE QBR -> they reply: Perfect, thank you! I do the charm, you do the facts.
+  - You say: TOO BUSY RIGHT NOW -> they reply: Sure. No problem. I will fake the technical parts.
+- **thanks_Alan**: Thanks for covering the floor lately. The clients notice, and so do the books. `[Lync.MESSAGES.thanks_Alan.text]`
+- **thanks_Garrison**: Thanks for being great with the clients. They keep mentioning you. `[Lync.MESSAGES.thanks_Garrison.text]`
 
 ### Commute and on-call
 
@@ -996,8 +1022,16 @@ or the owner (owner campaign, 20 weeks).
 - COLD: KEEPS TO THEMSELVES. A BIT ABRUPT. `[Review.QUOTES.COLD]`
 - HOSTILE: HONESTLY? HARD TO WORK WITH. `[Review.QUOTES.HOSTILE]`
 
+### What the owners (Alan, Garrison) say about you
+
+- FRIEND: GLAD WE HIRED YOU. THE CLIENTS ASK FOR YOU BY NAME. `[Review.OWNER_QUOTES.FRIEND]`
+- FRIENDLY: GOOD HIRE. I WOULD TRUST YOU WITH A CLIENT. `[Review.OWNER_QUOTES.FRIENDLY]`
+- NEUTRAL: DOES THE JOB. NO COMPLAINTS ON MY DESK. `[Review.OWNER_QUOTES.NEUTRAL]`
+- COLD: I SEE THE NUMBERS. I DO NOT SEE MUCH ELSE. `[Review.OWNER_QUOTES.COLD]`
+- HOSTILE: WE NEED TO TALK ABOUT FIT. THE BOOKS DO NOT LIE. `[Review.OWNER_QUOTES.HOSTILE]`
+
 ### Epilogues
 
 - **lead**: YOU TAKE THE TEAM LEAD ROLE. MORE PAY, A PAGER AND THREE PEOPLE WHO NOW COME TO YOU WITH EVERYTHING. THE NEXT YEAR WILL BE A DIFFERENT KIND OF HARD. `[Review.EPILOGUES.lead]`
 - **internal**: YOU SWAP SIRENS FOR STEADY HOURS: ONE OFFICE, ONE NETWORK, NO ONE CALLING AT NIGHT. YOU WILL MISS THE CHAOS A LITTLE. `[Review.EPILOGUES.internal]`
-- **stay**: YOU STAY A TECH AT PIXEL IT PARTNERS. SAME DESK, SAME PHONES, A LOT MORE SKILL. THE TICKETS KEEP COMING. `[Review.EPILOGUES.stay]`
+- **stay**: YOU STAY A TECH AT PIXEL IT PARTNERS. ALAN AND GARRISON KEEP THE BUSINESS RUNNING, YOU KEEP THE TICKETS MOVING. SAME DESK, A LOT MORE SKILL. `[Review.EPILOGUES.stay]`

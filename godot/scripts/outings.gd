@@ -3,7 +3,7 @@ extends CanvasLayer
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
 #   teammates give hints), DINNER (conversation: learn what each person likes).
-# Tech campaign: on days 5, 10 and 15 Alan asks at 16:00 (open tickets wait; you go home after). Owner campaign:
+# Tech campaign: on days 5, 10 and 15 Garrison (the culture owner) asks at 16:00 (open tickets wait; you go home after). Owner campaign:
 # weeks 4, 9, 14 and 19, and it costs money. Free Play: press O. Results (0-3 stars) change coworker opinions, energy
 # (tech) and burnout (owner); skipping invitations costs a little goodwill. Everything is drawn in code.
 
@@ -174,11 +174,11 @@ func maybe_invite() -> void:
 	if World.time_scale <= 0.0 or World.clock < 16.0 or Story.overtime:
 		return
 	_offered = true
-	var text := "A few of us are heading out after work. Come with us? The open tickets will still be here in the morning."
+	var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
 	if Campaign.mode == "owner":
 		text = "The crew has been grinding for weeks. A team night would be noticed. It costs money, though."
 	Cards.ask(
-		"Alan (Senior Tech)",
+		_host(),
 		text,
 		[
 			{"label": "YES, LET US GO", "id": "yes"},
@@ -186,6 +186,11 @@ func maybe_invite() -> void:
 		],
 		func(id: String) -> void: _invite_answer(id)
 	)
+
+
+# who asks: Garrison (culture owner) in the tech campaign; in the owner campaign the card comes from Alan
+func _host() -> String:
+	return "Alan (Co-owner)" if Campaign.mode == "owner" else "Garrison (Co-owner)"
 
 
 func _invite_answer(id: String) -> void:
@@ -213,7 +218,7 @@ func pick_game(from_invite: bool) -> void:
 			entry["hint"] = "NEED $%d" % cost
 		options.append(entry)
 	Cards.ask(
-		"Alan (Senior Tech)",
+		_host(),
 		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.",
 		options,
 		func(id: String) -> void: start(id, from_invite)

@@ -18,7 +18,7 @@ const ROOTS := {
 	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
 	"Nerds": ["JOKES", "THREADS"],
 	"Lync": ["MESSAGES"],
-	"Review": ["QUOTES", "EPILOGUES"],
+	"Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
 	"Hints": ["DAY1"],

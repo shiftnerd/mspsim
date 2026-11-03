@@ -604,7 +604,7 @@ const DEFAULT_BOOKS := {
 						"pts": 15,
 						"hours": 0.3,
 						"flag": "documented",
-						"note": "A clear write-up with recommendations goes to the owner."
+						"note": "A clear write-up with recommendations goes to the owners."
 					},
 					{
 						"label": "FIX IT QUIETLY",
@@ -909,7 +909,7 @@ const DEFAULT_BOOKS := {
 			{
 				"title": "ALAN IS OUT",
 				"text":
-				"Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan set it up years ago and Alan is out sick today. Nobody has the password. What do you try?",
+				"Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan, one of our owners, built it years ago and he is out sick today. Nobody has the password. What do you try?",
 				"choices":
 				[
 					{

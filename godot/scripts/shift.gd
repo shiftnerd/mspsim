@@ -303,7 +303,7 @@ func _arrive(reason: String) -> int:
 		if late_min >= 20:
 			var who: String = ["Alan", "Garrison", "Dan"][randi() % 3]
 			Social.change(who, -1)
-			Lync._push(who, who, "Phones were backing up. I covered for you. Please be on time.")
+			Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
 		if late_min >= 30:
 			Msp.send_text("Boss", "Where are you? Clients are asking for you.")
 	elif reason != "":

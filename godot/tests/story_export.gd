@@ -425,6 +425,20 @@ func _endings() -> void:
 			"- %s: %s %s" % [str(mood), str(review.QUOTES[mood]), _k(["Review", "QUOTES", mood])]
 		)
 	md.append("")
+	md.append("### What the owners (Alan, Garrison) say about you")
+	md.append("")
+	for mood in review.OWNER_QUOTES:
+		md.append(
+			(
+				"- %s: %s %s"
+				% [
+					str(mood),
+					str(review.OWNER_QUOTES[mood]),
+					_k(["Review", "OWNER_QUOTES", mood])
+				]
+			)
+		)
+	md.append("")
 	md.append("### Epilogues")
 	md.append("")
 	for id in review.EPILOGUES:

@@ -34,6 +34,15 @@ const DEFAULT_QUOTES := {
 	"HOSTILE": "HONESTLY? HARD TO WORK WITH.",
 }
 var QUOTES: Dictionary = DEFAULT_QUOTES.duplicate(true)
+# what the two owners (Alan, Garrison) write in the yearly review instead
+const DEFAULT_OWNER_QUOTES := {
+	"FRIEND": "GLAD WE HIRED YOU. THE CLIENTS ASK FOR YOU BY NAME.",
+	"FRIENDLY": "GOOD HIRE. I WOULD TRUST YOU WITH A CLIENT.",
+	"NEUTRAL": "DOES THE JOB. NO COMPLAINTS ON MY DESK.",
+	"COLD": "I SEE THE NUMBERS. I DO NOT SEE MUCH ELSE.",
+	"HOSTILE": "WE NEED TO TALK ABOUT FIT. THE BOOKS DO NOT LIE.",
+}
+var OWNER_QUOTES: Dictionary = DEFAULT_OWNER_QUOTES.duplicate(true)
 const DEFAULT_EPILOGUES := {
 	"lead":
 	(
@@ -46,7 +55,7 @@ const DEFAULT_EPILOGUES := {
 		+ "YOU WILL MISS THE CHAOS A LITTLE."
 	),
 	"stay":
-	"YOU STAY A TECH AT PIXEL IT PARTNERS. SAME DESK, SAME PHONES, A LOT MORE SKILL. THE TICKETS KEEP COMING.",
+	"YOU STAY A TECH AT PIXEL IT PARTNERS. ALAN AND GARRISON KEEP THE BUSINESS RUNNING, YOU KEEP THE TICKETS MOVING. SAME DESK, A LOT MORE SKILL.",
 }
 var EPILOGUES: Dictionary = DEFAULT_EPILOGUES.duplicate(true)
 
@@ -112,7 +121,7 @@ func make_offers() -> Array:
 					"id": "lead",
 					"label": "BECOME TEAM LEAD",
 					"desc":
-					"MORGAN WANTS YOU TO RUN THE SERVICE DESK: MORE PAY, MORE PEOPLE, MORE PAGER.",
+					"MORGAN AND THE OWNERS WANT YOU TO RUN THE SERVICE DESK: MORE PAY, MORE PEOPLE, MORE PAGER.",
 				}
 			)
 		)
@@ -289,10 +298,12 @@ func page_lines() -> Array:
 					]
 				)
 		1:
-			lines.append(["WHAT YOUR TEAM SAYS", BLUE])
+			lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
 			for who in Social.PEOPLE:
-				lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], BLUE])
-				lines.append(["'%s'" % QUOTES[Social.mood(who)], INK])
+				var quotes: Dictionary = OWNER_QUOTES if Social.is_owner(who) else QUOTES
+				var tag := ", CO-OWNER" if Social.is_owner(who) else ""
+				lines.append(["%s%s (%s):" % [who.to_upper(), tag, Social.mood(who)], BLUE])
+				lines.append(["'%s'" % quotes[Social.mood(who)], INK])
 		2:
 			lines.append(["YOUR OPTIONS", BLUE])
 		_:

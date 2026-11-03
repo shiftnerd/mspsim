@@ -176,7 +176,7 @@ PATCHABLE = {
     "scripts/msp.gd": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
     "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES"],
-    "scripts/review.gd": ["QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
+    "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"],
     "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "PLOTTER_TEXT", "PLOTTER_QUESTIONS"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
 }
@@ -4658,7 +4658,7 @@ const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
 const AMBER := Color("e0a030")
 const NOTES := [
-    "Called the client, left a voicemail.", "Checked in with the user, working on it.", "Escalated to the senior tech.",
+    "Called the client, left a voicemail.", "Checked in with the user, working on it.", "Escalated to Tier 2.",
     "Gathered logs from the machine.", "Client says it is still broken.",
 ]
 
@@ -6066,7 +6066,7 @@ func _paint_lync() -> void:
     _fill(Rect2(x, body.position.y, w, body.size.y), Color("f1f4f8"))
     var info2: Array = Lync.presence(lync_sel)
     Lync.mark_read(lync_sel)
-    _text(_clip("%s - %s" % [lync_sel.to_upper(), str(info2[0])], int((w - 40) / 4.0)), Vector2(x + 4, body.position.y + 3), Color("0a6ab8"))
+    _text(_clip("%s%s - %s" % [lync_sel.to_upper(), " (OWNER)" if Social.is_owner(lync_sel) else "", str(info2[0])], int((w - 40) / 4.0)), Vector2(x + 4, body.position.y + 3), Color("0a6ab8"))
     if narrow:
         _button("lync:back", Rect2(body.end.x - 28, body.position.y + 1, 26, 8), "BACK")
     var chars := int((w - 8) / 4.0)
@@ -6412,7 +6412,7 @@ func _paint_stats() -> void:
         y = body.position.y + 4
     else:
         y += 4
-    _text("COWORKERS", Vector2(x, y), Color("2f6b4f"))
+    _text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
     y += 8
     for who in Social.PEOPLE:
         _text(who, Vector2(x, y), TXT)
@@ -7795,6 +7795,14 @@ var ps_level := 0
 var lesson_day := -1  # the day an Academy lesson was last passed (one a day)
 
 
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
+
+
 func _ready() -> void:
     reset()
 
@@ -7963,8 +7971,8 @@ const VIGNETTES := {
         ],
     },
     "heartbleed": {
-        "speaker": "Garrison (Security)",
-        "text": "Everybody is asking about Heartbleed, that bug in the news with a logo. Are any of our clients' servers affected? Somebody should check before they call us.",
+        "speaker": "Garrison (Co-owner)",
+        "text": "Every client is asking about Heartbleed, that bug in the news with a logo, and I told them we are on it. Are any of their servers affected? Please check before they call us again.",
         "options": [
             {"id": "check", "label": "CHECK EVERY CLIENT AND WRITE A SHORT NOTE", "text": "Most are fine. One old firewall needs a patch and you schedule it for tonight. Garrison nods. (+6 security XP, reputation +1)", "fx": {"xp": ["security", 6], "rep": 1, "hours": 0.5}},
             {"id": "mail", "label": "SEND A REASSURING EMAIL TO EVERYONE", "text": "You say 'we are looking into it and will update you'. Nobody replies. That is a good sign.", "fx": {"mood_all": 2}},
@@ -8002,14 +8010,14 @@ const VIGNETTES := {
         "speaker": "Morgan (Manager)",
         "text": "Before reviews: what are you proudest of this year? I will remember what you say.",
         "options": [
-            {"id": "jobs", "label": "THE BIG JOBS I GOT RIGHT", "text": "Morgan writes it down. 'That is what I will say to the owner.'", "fx": {"rep": 1}},
+            {"id": "jobs", "label": "THE BIG JOBS I GOT RIGHT", "text": "Morgan writes it down. 'That is what I will say to Alan and Garrison.'", "fx": {"rep": 1}},
             {"id": "learn", "label": "HOW MUCH I HAVE LEARNED", "text": "Morgan smiles. 'Keep doing that.' (+3 customer XP)", "fx": {"xp": ["people", 3]}},
             {"id": "team", "label": "THE TEAM I WORK WITH", "text": "Morgan says the team has noticed. Word gets around.", "fx": {"social_all": 2}},
         ],
     },
     "donuts": {
-        "speaker": "Alan (Senior Tech)",
-        "text": "I am back, and I brought donuts. I heard you covered for me. I read the page you wrote about the firewall. Show me how you set it up in the vault?",
+        "speaker": "Alan (Co-owner)",
+        "text": "I am back, and I brought donuts. Morgan says you covered for me while I was out. I read the page you wrote about the firewall I built. Show me how you set it up in the vault?",
         "options": [
             {"id": "show", "label": "SHOW HIM, HE IS PROUD", "text": "Alan nods slowly. 'That is better than what I had.' (+3 servers XP)", "fx": {"xp": ["servers", 3], "social": {"Alan": 3}}},
             {"id": "nothing", "label": "SAY IT WAS NOTHING", "text": "He insists you are being modest and gives you the last donut.", "fx": {"social": {"Alan": 1}, "energy": 1}},
@@ -8020,7 +8028,7 @@ const VIGNETTES := {
 const DAYS := {
     1: [
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Your first day",
-         "body": "Welcome to Pixel IT Partners. Tickets come in on ConnectWhy PSA, you fix things "
+         "body": "Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things "
          + "with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets "
          + "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"},
     ],
@@ -8345,6 +8353,15 @@ write("scripts/social.gd", '''extends Node
 signal changed
 
 const PEOPLE := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+# Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
+const OWNERS := ["Alan", "Garrison"]
+const ROLES := {
+    "Alan": "CO-OWNER",
+    "Garrison": "CO-OWNER",
+    "Dan": "NETWORK TECH",
+    "Vic": "ACCOUNT MANAGER",
+    "Maya": "TIER 1"
+}
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const THANKS := [
@@ -8360,6 +8377,14 @@ var day_delta := 0
 var _last_chat := {}
 var _closed := 0
 var _reopen_loss := 0  # coworker opinion lost to reopens today (capped)
+
+
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -8640,7 +8665,7 @@ const BOOKS := {
             ]},
             {"title": "TELL THE CLIENT", "text": "How do you leave things with the realtors?",
              "choices": [
-                {"label": "WRITE IT UP, RECOMMEND TWO-FACTOR AND A VPN", "secs": 6.0, "pts": 15, "hours": 0.3, "flag": "documented", "note": "A clear write-up with recommendations goes to the owner."},
+                {"label": "WRITE IT UP, RECOMMEND TWO-FACTOR AND A VPN", "secs": 6.0, "pts": 15, "hours": 0.3, "flag": "documented", "note": "A clear write-up with recommendations goes to the owners."},
                 {"label": "FIX IT QUIETLY", "secs": 0.0, "pts": 5, "hours": 0.0, "note": "No write-up. They never learn how close it was."},
             ]},
         ],
@@ -8706,7 +8731,7 @@ const BOOKS := {
     "bus": {
         "title": "THE ONLY PERSON WHO KNOWS", "client": 0, "specials": ["bus"],
         "steps": [
-            {"title": "ALAN IS OUT", "text": "Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan set it up years ago and Alan is out sick today. Nobody has the password. What do you try?",
+            {"title": "ALAN IS OUT", "text": "Acme Dental's internet is flaky and the fix is a setting in their firewall. Alan, one of our owners, built it years ago and he is out sick today. Nobody has the password. What do you try?",
              "choices": [
                 {"label": "LOOK IN THE DOCUMENTATION PORTAL", "secs": 6.0, "pts": 25, "hours": 0.3, "flag": "docs", "note": "There is an entry, half finished, and a note that says the password is in the safe."},
                 {"label": "LOOK ON ALAN'S DESK", "secs": 4.0, "pts": 10, "hours": 0.2, "flag": "sticky", "note": "A sticky note under the keyboard has a password on it. Of course it does."},
@@ -9076,12 +9101,18 @@ const QUOTES := {
     "NEUTRAL": "DOES THE JOB. HARD TO READ.", "COLD": "KEEPS TO THEMSELVES. A BIT ABRUPT.",
     "HOSTILE": "HONESTLY? HARD TO WORK WITH.",
 }
+# what the two owners (Alan, Garrison) write in the yearly review instead
+const OWNER_QUOTES := {
+    "FRIEND": "GLAD WE HIRED YOU. THE CLIENTS ASK FOR YOU BY NAME.", "FRIENDLY": "GOOD HIRE. I WOULD TRUST YOU WITH A CLIENT.",
+    "NEUTRAL": "DOES THE JOB. NO COMPLAINTS ON MY DESK.", "COLD": "I SEE THE NUMBERS. I DO NOT SEE MUCH ELSE.",
+    "HOSTILE": "WE NEED TO TALK ABOUT FIT. THE BOOKS DO NOT LIE.",
+}
 const EPILOGUES := {
     "lead": "YOU TAKE THE TEAM LEAD ROLE. MORE PAY, A PAGER AND THREE PEOPLE WHO NOW COME TO YOU WITH EVERYTHING. "
     + "THE NEXT YEAR WILL BE A DIFFERENT KIND OF HARD.",
     "internal": "YOU SWAP SIRENS FOR STEADY HOURS: ONE OFFICE, ONE NETWORK, NO ONE CALLING AT NIGHT. "
     + "YOU WILL MISS THE CHAOS A LITTLE.",
-    "stay": "YOU STAY A TECH AT PIXEL IT PARTNERS. SAME DESK, SAME PHONES, A LOT MORE SKILL. THE TICKETS KEEP COMING.",
+    "stay": "YOU STAY A TECH AT PIXEL IT PARTNERS. ALAN AND GARRISON KEEP THE BUSINESS RUNNING, YOU KEEP THE TICKETS MOVING. SAME DESK, A LOT MORE SKILL.",
 }
 
 var is_open := false
@@ -9141,7 +9172,7 @@ func make_offers() -> Array:
     if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
         out.append({
             "id": "lead", "label": "BECOME TEAM LEAD",
-            "desc": "MORGAN WANTS YOU TO RUN THE SERVICE DESK: MORE PAY, MORE PEOPLE, MORE PAGER.",
+            "desc": "MORGAN AND THE OWNERS WANT YOU TO RUN THE SERVICE DESK: MORE PAY, MORE PEOPLE, MORE PAGER.",
         })
     if Campaign.rep >= 45:
         out.append({
@@ -9244,10 +9275,12 @@ func page_lines() -> Array:
                 var row := _job_line(job[0], job[1])
                 lines.append(["%s: %s" % [row[0], row[1]], BAD if row[2] else (GOOD if row[1] != "-" else INK)])
         1:
-            lines.append(["WHAT YOUR TEAM SAYS", BLUE])
+            lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", BLUE])
             for who in Social.PEOPLE:
-                lines.append(["%s (%s):" % [who.to_upper(), Social.mood(who)], BLUE])
-                lines.append(["'%s'" % QUOTES[Social.mood(who)], INK])
+                var quotes: Dictionary = OWNER_QUOTES if Social.is_owner(who) else QUOTES
+                var tag := ", CO-OWNER" if Social.is_owner(who) else ""
+                lines.append(["%s%s (%s):" % [who.to_upper(), tag, Social.mood(who)], BLUE])
+                lines.append(["'%s'" % quotes[Social.mood(who)], INK])
         2:
             lines.append(["YOUR OPTIONS", BLUE])
         _:
@@ -9512,6 +9545,14 @@ var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
 var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
 
 var _cool := 40.0
+
+
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -9842,7 +9883,7 @@ const CARDS := {
         ],
     },
     "backup": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
         "options": [
             {"label": "BUY THE BACKUP SERVICE ($600 + $100/WEEK)", "need": 600, "fx": {"cash": -600, "weekly": 100, "flag": "backup_service"}},
@@ -9877,7 +9918,7 @@ const CARDS := {
         ],
     },
     "license": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone.",
         "options": [
             {"label": "PAY THE HIKE ($500)", "need": 500, "fx": {"cash": -500}},
@@ -9903,7 +9944,7 @@ const CARDS := {
         ],
     },
     "email24": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.",
         "options": [
             {"label": "PREMIUM VENDOR + OVERTIME ($800)", "need": 800, "roll": [[0.9, {"cash": -800, "mood": {"4": 12}, "rep": 3}, "Fixed by 9pm. The brewery owner sends beer."], [0.1, {"cash": -800, "mood": {"4": 4}}, "Fixed, but after midnight."]]},
@@ -9912,7 +9953,7 @@ const CARDS := {
         ],
     },
     "raise": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
         "options": [
             {"label": "GIVE THE RAISE", "fx": {"weekly": 100, "speed": 0.1}},
@@ -9996,7 +10037,7 @@ const CARDS := {
         ],
     },
     "stack_psa": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run.",
         "options": [
             {"label": "KEEP CONNECTWHY PSA", "fx": {}},
@@ -10005,7 +10046,7 @@ const CARDS := {
         ],
     },
     "stack_rmm": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call.",
         "options": [
             {"label": "KEEP LABRAT RMM", "fx": {}},
@@ -10040,7 +10081,7 @@ const CARDS := {
         ],
     },
     "after_hours": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend.",
         "options": [
             {"label": "ADOPT A $250/HOUR AFTER-HOURS FEE", "fx": {"flag": "after_hours_fee", "mood_all": -3}, "text": "Most non-critical after-hours calls stop. A few clients grumble."},
@@ -10049,7 +10090,7 @@ const CARDS := {
         ],
     },
     "oncall_policy": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Clients are starting to call after hours. Somebody has to carry the pager. How do we run it?",
         "options": [
             {"label": "ROTATE EVERYONE, $100/WEEK POOL", "fx": {"weekly": 100, "flag": "oncall_stipend", "burnout": -4}, "text": "A fair rota with a little money behind it. Nobody loves the pager, but everybody takes a turn."},
@@ -10058,7 +10099,7 @@ const CARDS := {
         ],
     },
     "flex_hours": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy?",
         "options": [
             {"label": "FLEXIBLE START TIMES (CORE 10 TO 4)", "fx": {"flag": "flex_hours", "burnout": -6, "speed": -0.02}, "text": "Morale lifts. The phones are a little thin first thing."},
@@ -10067,7 +10108,7 @@ const CARDS := {
         ],
     },
     "rdp_exposed": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
         "options": [
             {"label": "AUTO-BLOCKING FIREWALLS ($600 + $40/WEEK)", "need": 600, "fx": {"cash": -600, "weekly": 40, "flag": "rdp_safe"}, "text": "Repeated failed logins now get an address blocked automatically. The guessing stops."},
@@ -10077,7 +10118,7 @@ const CARDS := {
         ],
     },
     "ransom_options": {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "Hoot and Holler's server is encrypted by CryptoLocker. There is a countdown and a ransom demand in Bitcoin. The backup was not working. What now?",
         "options": [
             {"label": "PAY THE RANSOM ($500)", "need": 500, "roll": [[0.7, {"cash": -500, "ransom_end": "paid", "rep": -1}, "The key arrives and the files unlock. Nobody feels good about it."], [0.3, {"cash": -500, "ransom_end": "lost"}, "They took the money and the key never came."]]},
@@ -10738,7 +10779,7 @@ func _grumble() -> void:
         return
     var fallback: Dictionary = {worst_cat: DEFAULT_STACK[worst_cat]}
     _dynamic["grumble"] = {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "The crew hates %s. Morale is sinking and people are updating their resumes." % str(stack_option(worst_cat).name),
         "options": [
             {"label": "SWITCH BACK TO THE STANDARD ($300)", "need": 300, "fx": {"cash": -300, "stack": fallback}, "text": "Cheers all round."},
@@ -10942,7 +10983,7 @@ func _burnout_week() -> void:
     if burnout >= 50.0 and not _burn_warned:
         _burn_warned = true
         _dynamic["burnout"] = {
-            "speaker": "Alan (Senior Tech)",
+            "speaker": "Alan (Co-owner)",
             "text": "Boss, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
             "options": [
                 {"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}},
@@ -10962,7 +11003,7 @@ func _vendor_breach() -> void:
     var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
     var vendor: String = str(stack_option("rmm").name)
     _dynamic["vendor_breach"] = {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "%s just announced a breach: attackers pushed malicious code through their update channel. Every shop that uses it is exposed, including us. How fast do we move?" % vendor,
         "options": [
             {"label": "NOTIFY CLIENTS + ROTATE CREDENTIALS ($600)", "need": 600, "fx": {"cash": -600, "mood_all": -3, "rep": 2}, "text": "You got ahead of it. Clients respected the honesty."},
@@ -10985,7 +11026,7 @@ func _client_no() -> void:
     risk_choice = ""
     var key := str(pick)
     _dynamic["client_no"] = {
-        "speaker": "Alan (Senior Tech)",
+        "speaker": "Alan (Co-owner)",
         "text": "%s's owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge." % Msp.CLIENTS[pick].name,
         "options": [
             {"label": "GET A SIGNED RISK-ACCEPTANCE WAIVER", "fx": {"risk_choice": "waiver", "mood": {key: -2}}, "text": "Signed and filed. If anything happens, there is a paper trail."},
@@ -11601,6 +11642,7 @@ write("scripts/lync.gd", '''extends Node
 # gdlint:disable=max-line-length
 # Lynk 2013 on the desktop: presence (what your coworkers are doing, read from the cast simulation) and instant
 # messages. Coworkers message you (lunch, "cover my phones", "how do you fix...", a thank-you) and you answer with quick
+# (the owners, Alan and Garrison, ask owner things instead: MESSAGES keys like "phones_Alan" win over "phones")
 # replies that move how they feel about you; you can message them (lunch?, need a hand, thanks) and ask the boss
 # (Morgan in the tech campaign, Marge in the owner campaign). Friends warn you before a ticket breaches its SLA.
 # Campaign only; in free play the app shows presence and nothing else happens.
@@ -11635,6 +11677,96 @@ const MESSAGES := {
         ],
     },
     "thanks": {"text": "Hey, thanks for being easy to work with.", "options": []},
+    "lunch_Alan":
+    {
+        "text": "Lunch? I am ordering sandwiches for whoever is around. The company is paying, God help the books.",
+        "options":
+        [
+            {"label": "SURE, LET'S GO", "social": 2, "reply": "Good. I ordered extra pickles."},
+            {
+                "label": "CAN'T, SWAMPED",
+                "social": 0,
+                "reply": "No worries. I will leave one in the fridge."
+            },
+        ],
+    },
+    "lunch_Garrison":
+    {
+        "text": "Lunch? I am taking the team out for sandwiches. Company card, I promise.",
+        "options":
+        [
+            {"label": "SURE, LET'S GO", "social": 2, "reply": "Great, see you there!"},
+            {
+                "label": "CAN'T, SWAMPED",
+                "social": 0,
+                "reply": "No worries, next time. I will tell them you said hi."
+            },
+        ],
+    },
+    "phones_Alan":
+    {
+        "text": "Acme's office manager wants a call back and I am buried in vendor invoices. Can you ring them for me?",
+        "options":
+        [
+            {"label": "SURE", "social": 2, "reply": "Thanks. That saves me twenty minutes."},
+            {"label": "SORRY, CAN'T", "social": -1, "reply": "Okay... I will do it after the invoices."},
+        ],
+    },
+    "phones_Garrison":
+    {
+        "text": "A client wants a call back and I am stuck in a prospect meeting. Can you ring them and say we are on it?",
+        "options":
+        [
+            {"label": "SURE", "social": 2, "reply": "Thanks, you are the best."},
+            {"label": "SORRY, CAN'T", "social": -1, "reply": "Okay... I will step out."},
+        ],
+    },
+    "help_Alan":
+    {
+        "text": "The backup vendor wants us to renew. Can you look at their numbers and tell me if I am being sold something?",
+        "options":
+        [
+            {
+                "label": "TAKE A LOOK AT IT",
+                "social": 2,
+                "xp": 2,
+                "reply": "That did it! Thanks. I will push back on the price."
+            },
+            {
+                "label": "TOO BUSY RIGHT NOW",
+                "social": -1,
+                "reply": "Sure. No problem. I will read the fine print myself."
+            },
+        ],
+    },
+    "help_Garrison":
+    {
+        "text": "I have a QBR with Brightside on Thursday. Can you join and answer the technical questions?",
+        "options":
+        [
+            {
+                "label": "JOIN THE QBR",
+                "social": 2,
+                "xp": 2,
+                "reply": "Perfect, thank you! I do the charm, you do the facts."
+            },
+            {
+                "label": "TOO BUSY RIGHT NOW",
+                "social": -1,
+                "reply": "Sure. No problem. I will fake the technical parts."
+            },
+        ],
+    },
+    "thanks_Alan":
+    {
+        "text": "Thanks for covering the floor lately. The clients notice, and so do the books.",
+        "options": [],
+    },
+    "thanks_Garrison":
+    {
+        "text": "Thanks for being great with the clients. They keep mentioning you.",
+        "options": [],
+    },
 }
 
 var chats := {}  # who -> [[from, text], ...]
@@ -11645,6 +11777,14 @@ var _t := 40.0
 var _warn_t := 5.0
 var _warned := {}
 var _thanked := {}
+
+
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -11754,6 +11894,8 @@ func incoming(forced_kind := "") -> void:
         else:
             kind = "thanks"
     var msg: Dictionary = MESSAGES[kind]
+    if MESSAGES.has(kind + "_" + who):
+        msg = MESSAGES[kind + "_" + who]
     if kind == "thanks" and Social.value(who) < 25 and forced_kind == "":
         return
     _push(who, who, str(msg.text))
@@ -11804,13 +11946,17 @@ func send_action(who: String, kind: String) -> String:
 func _lend_a_hand(who: String) -> void:
     var willing: bool = Social.value(who) >= 0 or randf() < 0.4
     var ticket := _helpable_ticket()
+    var owner_voice := Social.is_owner(who)
     if not willing:
-        _push(who, who, "Sorry, I am swamped.")
+        _push(who, who, "Sorry, I am buried in the books today." if owner_voice else "Sorry, I am swamped.")
     elif ticket.is_empty():
         _push(who, who, "Nothing in your queue needs me. Looking good!")
     else:
         Msp.rmm_action(str(ticket.endpoint), str(ticket.fix))
-        _push(who, who, "On it... done: #%d is fixed. You owe me one." % int(ticket.id))
+        var done := "On it... done: #%d is fixed. You owe me one."
+        if owner_voice:
+            done = "Fine, I will look. Done: #%d is fixed. Do not make a habit of it."
+        _push(who, who, done % int(ticket.id))
         Social.change(who, -1)
 
 
@@ -11899,6 +12045,14 @@ var hint := {}  # {question, best, votes, total, pending}
 var _last_ask := -999.0
 var _lines: Array = []  # queued [delay, nick, text]
 var _day := -1
+
+
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -12310,6 +12464,14 @@ var _warned := 0
 var _oncall_pay := 0
 
 
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
+
+
 func _ready() -> void:
     reset()
 
@@ -12517,7 +12679,7 @@ func _arrive(reason: String) -> int:
         if late_min >= 20:
             var who: String = ["Alan", "Garrison", "Dan"][randi() % 3]
             Social.change(who, -1)
-            Lync._push(who, who, "Phones were backing up. I covered for you. Please be on time.")
+            Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
         if late_min >= 30:
             Msp.send_text("Boss", "Where are you? Clients are asking for you.")
     elif reason != "":
@@ -12641,7 +12803,7 @@ const STRETCH := {
 }
 
 var focus := ""
-var helper := ""  # tech: the coworker who catches your mistakes
+var helper := ""  # tech: the coworker (or owner: Alan, Garrison) who catches your mistakes
 var learner := ""  # owner: the tech being developed
 var progress := 0.0
 var graduated := false
@@ -12657,6 +12819,14 @@ var esc_skill := {}  # skill -> escalations
 var owner_used := 0.0  # owner hours spent on escalations this week
 var owner_warned := false
 var _skip_note := false
+
+
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:
@@ -12772,7 +12942,7 @@ func _pick_helper(skill: String) -> void:
     var options := []
     for who in ["Alan", "Garrison", "Dan"]:
         options.append({"label": "%s (%s)" % [who.to_upper(), Social.mood(who)], "id": who})
-    Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
+    Cards.ask("Morgan (Manager)", "Who should be near you to catch your mistakes while you stretch? Alan and Garrison are the owners and their time is tight. Someone you get along with will say it kindly.", options, func(who: String) -> void: _plan_set(skill, who))
 
 
 func _plan_set(skill: String, who: String) -> void:
@@ -12933,7 +13103,7 @@ func _bottleneck_card() -> void:
     var options := [{"label": "KEEP DOING IT MYSELF", "id": "keep"}]
     if learner == "":
         options.push_front({"label": "START A GROWTH PLAN FOR THE TEAM", "id": "plan"})
-    Cards.ask("Alan (Senior Tech)", "Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.", options, func(id: String) -> void: _bottleneck_pick(id))
+    Cards.ask("Alan (Co-owner)", "Boss, you are the only Tier 3. Every hard ticket ends on your desk and nobody else learns the work while you do it. You have no time left for clients.", options, func(id: String) -> void: _bottleneck_pick(id))
 
 
 func _bottleneck_pick(id: String) -> void:
@@ -12950,14 +13120,14 @@ func owner_plan_card() -> void:
     var options := []
     for who in names:
         options.append({"label": who.to_upper(), "id": who})
-    Cards.ask("Alan (Senior Tech)", "Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.", options, func(who: String) -> void: _owner_skill(who))
+    Cards.ask("Alan (Co-owner)", "Opportunity shortage, not talent shortage. Who do we grow into a Tier 2? Thirty paid minutes a week, protected, a stretch ticket now and then, and I will be the helper.", options, func(who: String) -> void: _owner_skill(who))
 
 
 func _owner_skill(who: String) -> void:
     var options := []
     for skill in ["servers", "security", "networking"]:
         options.append({"label": "%s (%d ESCALATIONS SO FAR)" % [str(Skills.NAMES[skill]), int(esc_skill.get(skill, 0))], "id": skill})
-    Cards.ask("Alan (Senior Tech)", "Which skill? Pick the one the shop keeps escalating.", options, func(skill: String) -> void: _owner_plan_set(who, skill))
+    Cards.ask("Alan (Co-owner)", "Which skill? Pick the one the shop keeps escalating.", options, func(skill: String) -> void: _owner_plan_set(who, skill))
 
 
 func _owner_plan_set(who: String, skill: String) -> void:
@@ -12974,7 +13144,7 @@ func owner_stretch() -> void:
     if Campaign.mode != "owner" or learner == "" or graduated:
         return
     var chance := clampf(0.40 + progress / 250.0, 0.2, 0.85)
-    Cards.ask("Alan (Senior Tech)", "A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk." % [str(STRETCH[focus]).to_lower(), learner], [
+    Cards.ask("Alan (Co-owner)", "A Tier 2 ticket just came in (%s). %s could take it, with me at the next desk." % [str(STRETCH[focus]).to_lower(), learner], [
         {"label": "STRETCH ASSIGNMENT (%d%%)" % int(chance * 100.0), "id": "stretch"},
         {"label": "THE SENIOR TAKES IT", "id": "senior"},
         {"label": "I WILL HANDLE IT (4 OWNER HOURS)", "id": "owner"},
@@ -13011,7 +13181,7 @@ func _graduate_owner() -> void:
     Owner.speed += 0.05
     Owner.flags["growth_done"] = true
     var who := learner
-    Cards.ask("Alan (Senior Tech)", "%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market." % [who, focus_name()], [
+    Cards.ask("Alan (Co-owner)", "%s is a Tier 2 in %s now. Escalations to you will drop. They also know what that is worth on the market." % [who, focus_name()], [
         {"label": "GIVE A RAISE ($60/WEEK)", "id": "raise"},
         {"label": "NOT NOW", "id": "no"},
     ], func(id: String) -> void: _raise(id, who))
@@ -13204,7 +13374,7 @@ write("scripts/outings.gd", '''extends CanvasLayer
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
 #   teammates give hints), DINNER (conversation: learn what each person likes).
-# Tech campaign: on days 5, 10 and 15 Alan asks at 16:00 (open tickets wait; you go home after). Owner campaign:
+# Tech campaign: on days 5, 10 and 15 Garrison (the culture owner) asks at 16:00 (open tickets wait; you go home after). Owner campaign:
 # weeks 4, 9, 14 and 19, and it costs money. Free Play: press O. Results (0-3 stars) change coworker opinions, energy
 # (tech) and burnout (owner); skipping invitations costs a little goodwill. Everything is drawn in code.
 
@@ -13333,13 +13503,18 @@ func maybe_invite() -> void:
     if World.time_scale <= 0.0 or World.clock < 16.0 or Story.overtime:
         return
     _offered = true
-    var text := "A few of us are heading out after work. Come with us? The open tickets will still be here in the morning."
+    var text := "The crew is heading out after work and I would like you there. Come with us? The open tickets will still be here in the morning."
     if Campaign.mode == "owner":
         text = "The crew has been grinding for weeks. A team night would be noticed. It costs money, though."
-    Cards.ask("Alan (Senior Tech)", text, [
+    Cards.ask(_host(), text, [
         {"label": "YES, LET US GO", "id": "yes"},
         {"label": "NOT TONIGHT", "id": "no"},
     ], func(id: String) -> void: _invite_answer(id))
+
+
+# who asks: Garrison (culture owner) in the tech campaign; in the owner campaign the card comes from Alan
+func _host() -> String:
+    return "Alan (Co-owner)" if Campaign.mode == "owner" else "Garrison (Co-owner)"
 
 
 func _invite_answer(id: String) -> void:
@@ -13362,7 +13537,7 @@ func pick_game(from_invite: bool) -> void:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % cost
         options.append(entry)
-    Cards.ask("Alan (Senior Tech)", "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.", options, func(id: String) -> void: start(id, from_invite))
+    Cards.ask(_host(), "Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork and dinner needs good conversation.", options, func(id: String) -> void: start(id, from_invite))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -14680,19 +14855,20 @@ write("scripts/talk.gd", '''extends Node
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.
-# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales.
+# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
+# are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
 const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people"}
 const LESSON_XP := 6
 const GREETINGS := {
     "Alan": {
-        "friend": "Hey, there you are. Coffee is fresh. What is up?",
-        "neutral": "Yeah? I have got about a minute.",
+        "friend": "Hey, there you are. Coffee is fresh and the books can wait ten minutes. What is up?",
+        "neutral": "Yeah? I have got about a minute. Payroll is waiting.",
         "cold": "...Yes?",
     },
     "Garrison": {
-        "friend": "Oh hey! Perfect timing, my brain needed a break. What is up?",
-        "neutral": "Hi. What do you need?",
+        "friend": "Oh hey! Perfect timing, I just got off with a client and my brain needed a break. What is up?",
+        "neutral": "Hi. What do you need? I have a client on in five.",
         "cold": "Mm. What?",
     },
     "Dan": {
@@ -14714,15 +14890,19 @@ const GREETINGS := {
 const SMALL := {
     "Alan": [
         "Windows XP goes dark on April 8th. I have got a spreadsheet of every XP box we manage. It is longer than my coffee order.",
-        "I have been doing this since the NT days. People still ask me to turn it off and on again. They are right more often than I like to admit.",
+        "I have been doing this since the NT days. These days it is payroll and vendor calls, but people still ask me to turn it off and on again. They are right more often than I like to admit.",
         "My kid asked what I do. I said I make sure the printers work. She said that sounds boring. She is not wrong.",
-        "Did you see the Target breach news? Every client wants to know if they are next.",
+        "Did you see the Target breach news? Every client wants to know if they are next. Garrison has been on the phone with them since eight.",
+        "The van needs brakes. The books say we can afford brakes. Barely.",
+        "I priced a new rack for the closet. Buy it, do not build it, unless you enjoy supporting your own script.",
     ],
     "Garrison": [
         "Everybody is changing their passwords after that Target thing. I would love it if they used something better than Summer2013.",
-        "I finally beat level 90 on Sugar Smash. Do not tell the boss how many lives I spent.",
+        "I finally beat level 90 on Sugar Smash. Do not tell Alan how many lives I spent.",
         "I keep telling clients: not every email from your bank is from your bank.",
-        "Did you try that new LabRat script? It saved me an hour on Tuesday.",
+        "Alan's new LabRat script saved the crew an hour on Tuesday. Do not tell him I said so.",
+        "I am planning the next team outing. Bowling is the safe bet, karaoke is the brave one.",
+        "Hiring is the hard part. Good techs are never on the market on a Monday.",
     ],
     "Dan": [
         "I labeled every patch panel port last weekend. Nobody noticed. That is how you know it was good work.",
@@ -14745,21 +14925,23 @@ const SMALL := {
     ],
 }
 const GOSSIP := [
-    "Between us: Morgan has been in the manager meeting since nine. Never a good sign.",
+    "Between us: Morgan has been in the owners' office since nine. Never a good sign.",
     "I heard Vic is already negotiating next year's commission. Good for him.",
     "Somebody microwaved fish in the kitchenette again. We are not saying who.",
     "I heard the printer on the main floor jammed again. Nobody will own up to it.",
 ]
 const TIPS_GENERIC := {
     "Alan": [
-        "Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and they remember.",
-        "Verify the backups every morning. A backup you have not tested is a hope, not a backup.",
-        "Ask the user to save before you touch anything. It takes ten seconds and saves a bad email.",
+        "Restart the print spooler instead of rebooting. People who get rebooted without warning lose their work, and the client remembers it at renewal time.",
+        "Verify the backups every morning. A backup you have not tested is a hope, not a backup. It is my name on the contract, not yours.",
+        "Ask the user to save before you touch anything. It takes ten seconds and saves a bad email in my inbox.",
+        "Buy it, do not build it. A script nobody else can read is a bus factor of one, and that one is usually me.",
     ],
     "Garrison": [
-        "Never use a default or seasonal password on a remote login. That is how they get in.",
+        "Never use a default or seasonal password on a remote login. That is how they get in. I say it to every prospect.",
         "If a ransom note shows up, do not reboot. Shadow copies first, backup if you have it, paying is the last resort.",
         "Two-factor login for admins first, users second. Most attacks are still just guessing.",
+        "Call the client before the invoice does. A short call keeps the contract; a long silence loses it.",
     ],
     "Dan": [
         "Label both ends of every cable. Future you will buy present you a coffee.",
@@ -14917,7 +15099,7 @@ func _state_tip() -> String:
         "Alan":
             for c in Sales.active:
                 if not Msp.backups[int(c)].ok:
-                    return "Hey, %s's backup looked red this morning. Check it before it matters." % str(Msp.CLIENTS[int(c)].name)
+                    return "I was in the console before nine and %s's backup is red. Check it before it matters." % str(Msp.CLIENTS[int(c)].name)
         "Dan":
             for d in range(1, 9):
                 if Net.desk_state(d) != "ok":
@@ -14931,7 +15113,7 @@ func _state_tip() -> String:
                 return "%s sounded annoyed when I called. Give them some attention before they start shopping around." % str(Msp.CLIENTS[worst].name)
         "Garrison":
             if Msp.breached > 0:
-                return "I saw the SLA misses on the board. Fix the P1s first, always. The rest can wait ten minutes."
+                return "I walked the floor and saw the SLA misses on the board. Clients bring those up at the QBR. Fix the P1s first, always. The rest can wait ten minutes."
         "Maya":
             for t in Msp.open_tickets():
                 if float(t.sla_left) < 60.0 and not bool(t.breached):
@@ -15080,7 +15262,7 @@ func _unhappiest() -> int:
 
 
 func _run_tech() -> void:
-    var text := "Quick all-hands. Reputation is %d and our clients are %d%% happy. " % [Campaign.rep, int(Sales.average())]
+    var text := "Quick all-hands. Alan and Garrison asked me to share the numbers: reputation is %d and our clients are %d%% happy. " % [Campaign.rep, int(Sales.average())]
     text += ["Remember to ask users to save before you reboot anything.", "Verify the backups every morning.", "Close what you fix, and tell clients early when you cannot."][(Campaign.day / 5) % 3]
     Cards.ask("Morgan (Manager)", text, [
         {"label": "ASK ABOUT THE CLIENTS", "id": "clients"},
@@ -15650,7 +15832,7 @@ const ROOTS := {
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD"],
     "Nerds": ["JOKES", "THREADS"],
     "Lync": ["MESSAGES"],
-    "Review": ["QUOTES", "EPILOGUES"],
+    "Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
     "Social": ["THANKS"],
     "Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
     "Hints": ["DAY1"],
@@ -15929,6 +16111,14 @@ var _queue: Array = []  # things waiting for next morning: {kind: project|servic
 var _next_id := 1
 
 
+func is_owner(who: String) -> bool:
+    return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+    return str(ROLES.get(who, ""))
+
+
 func _ready() -> void:
     reset()
 
@@ -16191,7 +16381,7 @@ func _creep_card(item: Dictionary) -> void:
     var extra := int(float(p.price) * SCOPE_CREEP)
     var odds := 0.55 + (0.15 if Sales.mood(client) >= 70 else 0.0) + (0.1 if Owner.flags.get("practice_scope", false) else 0.0)
     var text := "%s's project is creeping: they keep adding things (extra machines, one more site, 'while you are here'). The fixed price will not cover it: about %d more hours." % [str(Msp.CLIENTS[client].name), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
-    Cards.ask("Alan (Senior Tech)", text, [
+    Cards.ask("Alan (Co-owner)", text, [
         {"label": "BILL A CHANGE ORDER ($%d, %d%% THEY AGREE)" % [extra, int(odds * 100.0)], "id": "co"},
         {"label": "HOLD THE ORIGINAL SCOPE (THEY ARE ANNOYED)", "id": "hold"},
         {"label": "EAT THE COST", "id": "eat"},
@@ -19150,7 +19340,7 @@ const PEOPLE := {
     "office_dan":
     {"name": "DAN", "blurb": "CALM IN A BLUE SHIRT AND GLASSES. NETWORKS ARE HIS THING."},
     "office_alan":
-    {"name": "ALAN", "blurb": "RED SHIRT, GREEN VEST, SERVER ROOM REGULAR. WATCHES THE BACKUPS."},
+    {"name": "ALAN", "blurb": "CO-OWNER IN A RED SHIRT AND GREEN VEST. SERVER ROOM REGULAR, WATCHES THE BACKUPS."},
     "site_alan":
     {
         "name": "ALAN - ON SITE",
@@ -19159,7 +19349,7 @@ const PEOPLE := {
     "casual_garrison":
     {
         "name": "GARRISON",
-        "blurb": "TEAL PLAID AND A GOATEE. SECURITY MINDED, ALWAYS TIME FOR A CHAT."
+        "blurb": "CO-OWNER IN TEAL PLAID AND A GOATEE. CLIENTS AND CULTURE, ALWAYS TIME FOR A CHAT."
     },
     "sales_vic":
     {

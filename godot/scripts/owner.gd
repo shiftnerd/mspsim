@@ -194,7 +194,7 @@ const DEFAULT_CARDS := {
 	},
 	"backup":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Boss, backup jobs fail silently and we only find out when someone needs them. A managed backup service checks them every night: $600 to set up and $100 a week.",
 		"options":
@@ -293,7 +293,7 @@ const DEFAULT_CARDS := {
 	},
 	"license":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Our remote support software renews with a 30% hike. We can pay it, or switch to a cheaper tool and migrate everyone.",
 		"options":
@@ -390,7 +390,7 @@ const DEFAULT_CARDS := {
 	},
 	"email24":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. Alan will stay late if you approve overtime.",
 		"options":
@@ -436,7 +436,7 @@ const DEFAULT_CARDS := {
 	},
 	"raise":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Boss, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
 		"options":
@@ -618,7 +618,7 @@ const DEFAULT_CARDS := {
 	},
 	"stack_psa":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Our PSA contract is up for renewal. ConnectWhy is the standard ($60/week). Ticketo Lite is much cheaper ($15) but the crew finds it clunky. OpsForge Pro ($140) is what the big shops run.",
 		"options":
@@ -640,7 +640,7 @@ const DEFAULT_CARDS := {
 	},
 	"stack_rmm":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"The RMM renewal is here. LabRat is the standard ($80/week). SnoutTech Basic is cheap ($25) but it misses things. LabRat Gold ($180) catches problems before clients call.",
 		"options":
@@ -711,7 +711,7 @@ const DEFAULT_CARDS := {
 	},
 	"after_hours":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"After-hours calls are burning the crew out: pages at 2 a.m. for things that could wait. Other owners charge an after-hours fee and most non-critical calls simply stop. Or we can pay an on-call stipend.",
 		"options":
@@ -731,7 +731,7 @@ const DEFAULT_CARDS := {
 	},
 	"oncall_policy":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Clients are starting to call after hours. Somebody has to carry the pager. How do we run it?",
 		"options":
@@ -757,7 +757,7 @@ const DEFAULT_CARDS := {
 	},
 	"flex_hours":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Three of the crew were late this month and two are asking for flexible hours. Route 9 is down to one lane. What is the policy?",
 		"options":
@@ -792,7 +792,7 @@ const DEFAULT_CARDS := {
 	},
 	"rdp_exposed":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Boss, remote desktop is open to the whole internet at three client sites. The logs show thousands of password guesses a day from overseas. Most are just guessing common passwords, but one lucky guess is all it takes.",
 		"options":
@@ -822,7 +822,7 @@ const DEFAULT_CARDS := {
 	},
 	"ransom_options":
 	{
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		"Hoot and Holler's server is encrypted by CryptoLocker. There is a countdown and a ransom demand in Bitcoin. The backup was not working. What now?",
 		"options":
@@ -1701,7 +1701,7 @@ func _grumble() -> void:
 		return
 	var fallback: Dictionary = {worst_cat: DEFAULT_STACK[worst_cat]}
 	_dynamic["grumble"] = {
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		(
 			"The crew hates %s. Morale is sinking and people are updating their resumes."
@@ -2074,7 +2074,7 @@ func _burnout_week() -> void:
 	if burnout >= 50.0 and not _burn_warned:
 		_burn_warned = true
 		_dynamic["burnout"] = {
-			"speaker": "Alan (Senior Tech)",
+			"speaker": "Alan (Co-owner)",
 			"text":
 			"Boss, the crew is fried. Nights, weekends, a queue that never empties. Somebody is going to quit if nothing changes.",
 			"options":
@@ -2096,7 +2096,7 @@ func _vendor_breach() -> void:
 	var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
 	var vendor: String = str(stack_option("rmm").name)
 	_dynamic["vendor_breach"] = {
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		(
 			"%s just announced a breach: attackers pushed malicious code through their update channel. Every shop that uses it is exposed, including us. How fast do we move?"
@@ -2145,7 +2145,7 @@ func _client_no() -> void:
 	risk_choice = ""
 	var key := str(pick)
 	_dynamic["client_no"] = {
-		"speaker": "Alan (Senior Tech)",
+		"speaker": "Alan (Co-owner)",
 		"text":
 		(
 			"%s's owner refuses to turn on two-factor login for email. 'Too annoying for staff.' We have warned them twice. They will not budge."

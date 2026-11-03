@@ -414,7 +414,7 @@ func _creep_card(item: Dictionary) -> void:
 		% [str(Msp.CLIENTS[client].name), int(float(p.est) * SCOPE_CREEP / (1.0 + SCOPE_CREEP))]
 	)
 	Cards.ask(
-		"Alan (Senior Tech)",
+		"Alan (Co-owner)",
 		text,
 		[
 			{

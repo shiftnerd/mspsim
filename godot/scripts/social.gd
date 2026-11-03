@@ -11,6 +11,15 @@ extends Node
 signal changed
 
 const PEOPLE := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+# Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
+const OWNERS := ["Alan", "Garrison"]
+const ROLES := {
+	"Alan": "CO-OWNER",
+	"Garrison": "CO-OWNER",
+	"Dan": "NETWORK TECH",
+	"Vic": "ACCOUNT MANAGER",
+	"Maya": "TIER 1"
+}
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const DEFAULT_THANKS := [
@@ -29,6 +38,14 @@ var day_delta := 0
 var _last_chat := {}
 var _closed := 0
 var _reopen_loss := 0  # coworker opinion lost to reopens today (capped)
+
+
+func is_owner(who: String) -> bool:
+	return OWNERS.has(who)
+
+
+func role(who: String) -> String:
+	return str(ROLES.get(who, ""))
 
 
 func _ready() -> void:

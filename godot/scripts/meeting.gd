@@ -111,7 +111,7 @@ func _unhappiest() -> int:
 
 func _run_tech() -> void:
 	var text := (
-		"Quick all-hands. Reputation is %d and our clients are %d%% happy. "
+		"Quick all-hands. Alan and Garrison asked me to share the numbers: reputation is %d and our clients are %d%% happy. "
 		% [Campaign.rep, int(Sales.average())]
 	)
 	text += [

@@ -22,7 +22,7 @@ Facts that shape everything:
 - The owner campaign has a **crew autopilot** (`Owner.team_speed()` + `_work_queue()`, tech-seconds WORK 180/140/100/72, 7% premature closes) gated by `Owner.active()` (`mode == "owner"`, 40+ call sites).
   Its base crew is hard-coded `3 - lost_techs` (Alan, Garrison, Dan); with the owners no longer on the payroll as techs, it needs a re-base (Dan, Maya, Sam, plus the partner's part-time hands-on).
 - Free Play offers all seven by ghosting the NPC copy (`npc.gd _process`: `_hidden`); the ghost likely still holds its seat and takes meetings (verify). Campaigns need the Maya pattern.
-- `Owner.CARDS` has 15 cards spoken by "Alan (Senior Tech)", 16 by Vic, 9 by Marge: those speaker strings are the main text pass for the owner chapter.
+- `Owner.CARDS` has 15 cards spoken by "Alan (Co-owner)", 16 by Vic, 9 by Marge: those speaker strings are the main text pass for the owner chapter.
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ Facts that shape everything:
 3. **Your desk** = `CAST[player_as].home/seat` via `World.player_desk()`: Alan office_one Seat1, Garrison office_two Seat1, Dan main_floor Seat3, Vic cubicle_area Seat1. New runs start seated there (`Game.vars.start_seated`, `stage.gd`).
    Desk phone (seat-left rule) and desk-outage internal ticket (desks 6/7/3/4) are generic and become yours.
 4. **Who covers their duties**: tickets are one shared queue, so nobody loses tickets. Roles are data: `Talk.SPECIALTY` fallback for tips; meeting/lunch seats stay empty; a role map `Roles.who("tech lead")` points cards that said
-   "Alan (Senior Tech)" at the right person (Dan, Morgan or the partner owner).
+   "Alan (Co-owner)" at the right person (Dan, Morgan or the partner owner).
 5. **Address**: a `role` tag per campaign (`owner`, `manager`, `sales`) read by `Talk` and `Lync`: reports bring you problems, the partner owner talks business, Morgan talks operations.
 6. **Their agenda** is dropped, never simulated off-screen; their opinion row disappears (`Social.people()`).
 7. `charselect`: owner offers Alan and Garrison (two choices, normal carousel); service offers Dan only, sales Vic only (single card); phone step stays; then the build step (section 13).
@@ -106,7 +106,7 @@ Same week structure as today (a week = one 4-minute day: the weekly card deck, t
 | Item | Change |
 |---|---|
 | Anonymous owner -> a person | `Owner.profile = Build + Campaign.player_as`; `Owner.edge(key)` accessors used in `_finish_ticket` (premature close), `vic_extra`, `marketing_bonus`, `new_client_mood`, `_rdp_week`, `_burnout_week`, `poach_risk` |
-| Speakers | `Owner.CARDS` 15 "Alan (Senior Tech)" -> `{lead}` token resolved by `Roles` (Dan, Morgan or the partner); also `strings.txt` `[key]`s |
+| Speakers | `Owner.CARDS` 15 "Alan (Co-owner)" -> `{lead}` token resolved by `Roles` (Dan, Morgan or the partner); also `strings.txt` `[key]`s |
 | Roster | `apply_roster` drops the chosen owner, keeps Maya (restore the earlier exclusion test in `tests/maya.gd`); base crew = Dan + Maya + Sam + partner hands-on 0.5 (re-tune `team_speed`, `WAGE` payroll excludes owners) |
 | Partner | new `partner.gd` autoload (trust, stance table, meeting cards); NPC partner Alan/Garrison already exists; add a `meeting` leg that seats them at the table at beats |
 | Books | draw rows in `settle()`, valuation unchanged, review gets the PARTNERSHIP page and new offers |
@@ -272,7 +272,7 @@ Minimal changes so Alan and Garrison read as busy owners who still answer a phon
 Effects: the owner walks to the nearest ringing phone and answers with a headset (existing `_update_call` path) or takes the complaint; the at-risk ticket gets SLA +45 s; the day report shows `OWNER STEPPED IN: n` (reputation -1 each, never a game over; they remember: Social -1 and a friendly line later). Alan takes technical calls, Garrison clients. Never in Free Play, never days 1-3.
 **Minimal code**: `World.send_to_player(name, kind)` (shared with the other campaigns), `Owners.check`, a `cover` leg kind, `Msp` SLA extension hook, `DayReport` row. Effort **S-M**.
 
-**Files/strings needing the text pass** (about 120 `"Alan"/"Garrison"` hits over 17 files): `talk.gd` (15), `growth.gd` (14), `outings.gd` (15), `owner.gd` (29, including 15 "Alan (Senior Tech)" speakers), `story.gd` (10), `playbook.gd` (7, incl. the day-19 "only person who knows" job: now an owner-knowledge problem), `projects.gd` (5),
+**Files/strings needing the text pass** (about 120 `"Alan"/"Garrison"` hits over 17 files): `talk.gd` (15), `growth.gd` (14), `outings.gd` (15), `owner.gd` (29, including 15 "Alan (Co-owner)" speakers), `story.gd` (10), `playbook.gd` (7, incl. the day-19 "only person who knows" job: now an owner-knowledge problem), `projects.gd` (5),
 `meeting.gd`, `nerf.gd`, `shift.gd`, `lync.gd` messages, `charselect.gd` blurbs (ALAN: "CO-OWNER, TECHNICAL"; GARRISON: "CO-OWNER, SALES AND CULTURE"), `story/strings.txt` and `STORY.md` (regenerate with `tests/story_export.gd --sync --doc`), `docs/GAME_BIBLE.md` cast table, `CLAUDE.md` cast sections.
 Tests: `talk.gd`, `community.gd`, `social.gd`, `growth.gd`, `meeting.gd`, `outings.gd`, new `owners.gd` (trigger rule, cooldowns, no day 1-3, Free Play off), `strings.gd`.
 
