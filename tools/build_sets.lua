@@ -153,12 +153,13 @@ dofile(TOOLS .. "bathroom_sets.lua")(L, builders)  -- the two restrooms behind t
 dofile(TOOLS .. "outing_sets.lua")(L, builders)   -- bowling alley, karaoke bar, escape room
 dofile(TOOLS .. "venue_sets.lua")(L, builders)    -- Rodent Nation: resort lobby, hall, ballroom, four breakout rooms (SALON A-D), vendor hall
 dofile(TOOLS .. "warehouse_set.lua")(L, builders)  -- the warehouse (1480 px wide: staging and e-waste storage, chair race phase 1)
+dofile(TOOLS .. "lot_set.lua")(L, builders)        -- the walkable parking lot outside the dock (warehouse_lot, outdoor: no ceiling, transparent sky)
 dofile(TOOLS .. "client_sets.lua")(L, builders)   -- client sites: site_<type>_<skin> (dental, law, vet, arch, realty, trailer x a, b)
 local exported = {}
 local T, B = L.CEIL_H, L.FLOOR_EXT
 local seeds = {main_floor = 3, office_one = 7, office_two = 8, conference = 11, kitchenette = 5, bathroom_1 = 13, bathroom_2 = 14, cubicle_area = 9,
   network_closet = 15, bowling_alley = 21, karaoke_bar = 22, escape_room = 23, restaurant = 24,
-  resort_lobby = 31, resort_hall = 32, ballroom = 33, breakout_a = 34, breakout_b = 36, breakout_c = 37, breakout_d = 38, vendor_hall = 35, warehouse = 41}
+  resort_lobby = 31, resort_hall = 32, ballroom = 33, breakout_a = 34, breakout_b = 36, breakout_c = 37, breakout_d = 38, vendor_hall = 35, warehouse = 41, warehouse_lot = 42}
 for name, b in pairs(builders) do
   if ONLY and not ONLY[name] then goto continue end
   L.YOFF = T                                  -- builders keep their old 0..128 coordinates; the canvas grows around them
@@ -166,7 +167,7 @@ for name, b in pairs(builders) do
   L.XOFF = (totalW - b.W) // 2                -- narrow rooms get an off-stage margin on both sides
   local H = T + b.H + B
   local function finish(set)
-    L.ceiling(set.layer("Ceiling"), totalW, T, seeds[name] or 1)
+    if not b.outdoor then L.ceiling(set.layer("Ceiling"), totalW, T, seeds[name] or 1) end   -- an outdoor set keeps a transparent sky
     L.margins(set, b.W)
     if b.post then b.post(set) end
   end

@@ -264,7 +264,7 @@ func _init() -> void:
 	var through := 0
 	for a in data.SCENES:
 		for b in data.SCENES:
-			if a == b or a == "warehouse" or b == "warehouse" or a == "network_closet" or b == "network_closet":
+			if a == b or a == "warehouse" or b == "warehouse" or a == "network_closet" or b == "network_closet" or a == "warehouse_lot" or b == "warehouse_lot":
 				continue
 			for h in world._route(a, b):
 				if h.to == "warehouse":

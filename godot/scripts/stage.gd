@@ -103,6 +103,13 @@ func _set_dark(amount: float) -> void:
 		node.modulate = inverse
 
 
+# the parking lot outside the dock (R21c): the light comes from the sky, so the whole picture takes the colour of the hour
+func _lot_tint() -> void:
+	var tint: Color = preload("res://scripts/outside.gd").phase(World.clock).tint
+	for layer in ["Background", "Fx", "Actors"]:
+		get_node(layer).modulate = tint
+
+
 func _apply_format() -> void:
 	var f: Dictionary = Game.FORMATS[Game.format]
 	_cam.zoom = Vector2.ONE * float(f.zoom)
@@ -130,6 +137,8 @@ func _apply_format() -> void:
 func _process(_delta: float) -> void:
 	if Game.title_mode or _player == null or _cam == null:
 		return
+	if _room == "warehouse_lot":
+		_lot_tint()
 	var f: Dictionary = Game.FORMATS[Game.format]
 	if f.follow or _long or Game.ui_shift > 0.0:
 		var base_y: float = float(f.cam_y) if f.follow else 64.0
@@ -166,7 +175,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not OS.is_debug_build():
 			return  # the F-key room jumps below are for development builds only
 		if event.keycode == KEY_F11 and event.alt_pressed:
-			Game.go("warehouse", "start")
+			Game.go("warehouse_lot" if event.shift_pressed else "warehouse", "start")
 			return
 		if event.keycode == KEY_F11 and event.ctrl_pressed:
 			var sites := []

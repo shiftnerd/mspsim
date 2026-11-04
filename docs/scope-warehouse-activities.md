@@ -27,11 +27,11 @@ Read-only scoping pass (Nov 2026) from the code and docs, nothing was run. Line 
 - Tier keys: `corn.opp_skill`, `corn.aim_speed`, `corn.power_speed`, `corn.to`.
 
 ## C. Overhead door and the outside
-**BUILT (Nov 2026, R21 part c):** see CLAUDE.md "The warehouse" (R21c). Left for later: a walkable `warehouse_lot` scene, the chair race rolling the door up at the start.
+**BUILT (Nov 2026, R21 part c):** see CLAUDE.md "The warehouse" (R21c). The walkable `warehouse_lot` scene is **built too** (Nov 2026, CLAUDE.md "The parking lot outside the dock"); the chair race rolls the door up at the start (built).
 - The door is already its own 120x80 sprite (set x 1287); the doorway is drawn into the baked background.
 - **Outside:** a separate backdrop node behind the Background, with a transparent hole in the baked art, so the sky can follow the game clock (morning, noon, late afternoon, dusk) with a gradient and clouds drawn in code. One ~120x80 pixel lot image (asphalt, painted lines, two 2013-14 cars, the company van, a light pole, a dumpster, a fence).
 - **Door:** an fx kind `roll_door` with `open` 0..1 in 12 fps steps (the slats rise, clipped). A wall switch prop beside it with a normal-priority interact zone (so it beats the dart board), rattle and thunk sounds; warm daylight spill on the floor when open; door state kept as a field and saved with the scene; independent of `World.lights`.
-- **Walking out:** a view only in v1; a `warehouse_lot` scene is large (new set, links, spawns, cast routing), so later.
+- **Walking out:** built after v1 as the `warehouse_lot` scene (new set `tools/lot_set.lua`, a `special = "dock"` doorway, spawns `from_lot` / `from_warehouse`, a dead end for the cast routing).
 - **Chair race:** the door starts closed; rolling it up at the start is an optional cinematic.
 - Cost: S for the switch and door fx, M for the backdrop and the baked-art hole, S for the sky and sounds, S for tests.
 
