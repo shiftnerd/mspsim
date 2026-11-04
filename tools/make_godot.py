@@ -2655,10 +2655,6 @@ func _ready() -> void:
 
 
 func use(body: Node) -> void:
-    if role == "twin":  # Free Play's copy of the player (World.toggle_twin): no cast chat, no desk
-        _face(body.global_position.x)
-        Hints.toast("SAME LOOK, SAME PERSON", 1.5)
-        return
     if role != "":
         if seat == null:
             _face(body.global_position.x)
@@ -3952,8 +3948,6 @@ var chat_chance := 0.8
 var lights := {}  # room -> bool (a missing room is lit)
 var door_open := 0.0  # the dock door (0 closed, 1 open): kept for the day and in the resume point
 var lights_by_npc := false  # a cast member is flipping a switch (nobody reacts to that)
-var twin_on := false  # Free Play: the TWIN row of the pause menu
-var twin: Node = null  # the twin's NPC in the room (null when off, or between rooms)
 var _outage_t := 0.0  # seconds the network has been down somewhere
 var _closet_sent := false
 
@@ -4120,52 +4114,6 @@ func populate(stage: Node) -> void:
         chars[n].node = null
         if chars[n].scene == _scene:
             _spawn(n)
-    if twin_on:
-        _spawn_twin()
-
-
-# Free Play TWIN (R15 level 3 step e): an NPC copy of the player's custom look, accessories included (npc.gd custom_look, built by
-# Look.copy_look), standing near you in whatever room you are in. The pause menu's TWIN row turns it on and off; an outfit swap makes a new one.
-func toggle_twin() -> void:
-    twin_on = not twin_on
-    remove_twin()
-    if twin_on:
-        _spawn_twin()
-
-
-func remove_twin() -> void:
-    if twin != null and is_instance_valid(twin):
-        if twin.get_parent() != null:
-            twin.get_parent().remove_child(twin)  # at once, so the new twin can take the name
-        twin.queue_free()
-    twin = null
-
-
-func refresh_twin() -> void:
-    if twin_on:
-        remove_twin()
-        _spawn_twin()
-
-
-func _spawn_twin() -> void:
-    if _stage == null or not is_instance_valid(_stage):
-        return
-    var actors := _stage.get_node_or_null("Actors")
-    if actors == null:
-        return
-    var npc: Node = NPC_SCENE.instantiate()
-    npc.name = "Twin"
-    npc.character = Look.BASE
-    npc.custom = true
-    npc.custom_look = Look.copy_look()
-    npc.role = "twin"
-    npc.routine = PackedStringArray(["wait:4", "say:2"])
-    var who := actors.get_node_or_null("Player")
-    var px := float(who.position.x) if who != null else 160.0
-    npc.facing = "left" if px > 160.0 else "right"
-    npc.position = Vector2(clampf(px + (-40.0 if px > 160.0 else 40.0), 24.0, 360.0), FLOOR_Y)
-    actors.add_child(npc)
-    twin = npc
 
 
 func _spawn(n: String) -> void:
@@ -45777,7 +45725,6 @@ func _outfit_done(_result: Dictionary) -> void:
     _close_outfit()
     _outfit_live()
     Campaign.refresh_free()  # the cast member you were walks back to their desk
-    World.refresh_twin()
     Hints.toast("NEW LOOK", 1.5)
 
 
@@ -45789,7 +45736,6 @@ func _outfit_cancelled() -> void:
             who.wear_look()  # Look.restore already put the old look back
         else:
             who._switch_character(_outfit_char)
-    World.refresh_twin()
 
 
 func open_seed(on_close := Callable()) -> void:
@@ -58850,20 +58796,19 @@ func _labels() -> Array:
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
-    elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look, and a copy of it beside you
+    elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
         rows.append("OUTFIT")
-        rows.append("TWIN: %s" % ("ON" if World.twin_on else "OFF"))
     rows.append("QUIT TO TITLE")
     return rows
 
 
-# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "twin", "quit"
+# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
     elif Campaign.mode == Campaign.FREE:
-        ids.append_array(["outfit", "twin"])
+        ids.append("outfit")
     ids.append("quit")
     return ids[clampi(i, 0, ids.size() - 1)]
 
@@ -58885,10 +58830,6 @@ func _activate() -> void:
     if _row_id(_sel) == "outfit":
         close()
         Toolbox.open_outfit.call_deferred()
-        return
-    if _row_id(_sel) == "twin":
-        World.toggle_twin()
-        _canvas.queue_redraw()
         return
     if _sel == _labels().size() - 1:
         _confirm = true
@@ -58985,8 +58926,6 @@ func _key(event: InputEvent) -> void:
             Game.cycle_format()
         elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
-        elif not _confirm and _row_id(_sel) == "twin":
-            World.toggle_twin()
     elif Controls.confirm(event):
         _activate()
         return

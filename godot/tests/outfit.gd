@@ -226,28 +226,9 @@ func _init() -> void:
 	await _wait(2)
 	_check(c.mode == "free" and not c.active and who.current_character == "office_adult", "Free Play with a stock person")
 
-	# the twin
 	look.active = true
 	look.look = look.sanitize({"name": "ZOE", "hair_style": "bob", "skin": "8d5524", "shirt": "2f6b3a"})
 	look.acc = full.duplicate()
-	world.toggle_twin()
-	await _wait(3)
-	var twin := current_scene.get_node_or_null("Actors/Twin")
-	_check(twin != null and twin.custom and twin.character == look.BASE, "the TWIN is an NPC copy in the room")
-	_check(twin.custom_look.acc.glasses == "round" and twin.custom_look.skin == "8d5524", "it carries the player's look and accessories")
-	var tgear = twin.sprite.get_node_or_null("HeadGear")
-	_check(tgear != null and tgear.get_node("glasses").visible and tgear.get_node("hat").visible and tgear.get_node("watch").visible, "the copy wears the overlay (glasses, hat, watch)")
-	_check(twin.sprite.sprite_frames == look.frames_for(look.BASE, true, twin.custom_look), "its sheet is the hat-aware hairstyle sheet")
-	_check((twin.sprite.material as ShaderMaterial).get_shader_parameter("dst")[0] == Color.html("8d5524"), "and the palette is the player's")
-	change_scene_to_file("res://scenes/cubicle_area.tscn")
-	await _settle()
-	_check(current_scene.get_node_or_null("Actors/Twin") != null, "the twin follows you into the next room")
-	change_scene_to_file("res://scenes/main_floor.tscn")
-	await _settle()
-	who = _player()
-	world.toggle_twin()
-	await _wait(3)
-	_check(current_scene.get_node_or_null("Actors/Twin") == null and not world.twin_on, "TWIN off removes it")
 
 	# ---- the outfit swap, key Y
 	_check(tb.can_outfit() and not tb.outfit_open, "Y is available in Free Play")
@@ -315,11 +296,7 @@ func _init() -> void:
 	await _key(KEY_ESCAPE)
 	_check(pm.is_open and paused, "Esc opens the pause menu in Free Play")
 	var labels: Array = pm._labels()
-	_check(labels == ["RESUME", "CONTROLS", "SHAPE: %s" % game.format.to_upper(), "OUTFIT", "TWIN: OFF", "QUIT TO TITLE"], "Free Play rows: OUTFIT and TWIN before QUIT")
-	pm._sel = 4
-	await _key(KEY_ENTER)
-	_check(world.twin_on, "the TWIN row turns the copy on")
-	_check(pm.is_open and pm._labels()[4] == "TWIN: ON", "and says so")
+	_check(labels == ["RESUME", "CONTROLS", "SHAPE: %s" % game.format.to_upper(), "OUTFIT", "QUIT TO TITLE"], "Free Play rows: OUTFIT before QUIT")
 	pm._sel = 3
 	await _key(KEY_ENTER)
 	await _wait(3)
@@ -330,9 +307,6 @@ func _init() -> void:
 	ov.create_col = 2
 	await _key(KEY_ENTER)
 	await _wait(3)
-	var t2 := current_scene.get_node_or_null("Actors/Twin")
-	_check(t2 != null and t2.custom_look.acc.glasses == "thick", "an outfit swap gives the twin the new look")
-	world.toggle_twin()
 	await _key(KEY_ESCAPE)
 	pm._sel = pm._labels().size() - 1
 	_check(pm._row_id(pm._sel) == "quit", "the last row is QUIT")
@@ -342,7 +316,7 @@ func _init() -> void:
 	c.mode = "tech"
 	c.active = true
 	var tech_rows: Array = pm._labels()
-	_check(not "OUTFIT" in tech_rows and not "TWIN: OFF" in tech_rows and "DAY LENGTH" in str(tech_rows), "a campaign keeps its own rows (no OUTFIT, no TWIN)")
+	_check(not "OUTFIT" in tech_rows and "DAY LENGTH" in str(tech_rows), "a campaign keeps its own rows (no OUTFIT)")
 	_check(not tb.can_outfit(), "and no outfit swap")
 	c.active = false
 	c.mode = "free"

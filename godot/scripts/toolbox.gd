@@ -240,7 +240,6 @@ func _outfit_done(_result: Dictionary) -> void:
 	_close_outfit()
 	_outfit_live()
 	Campaign.refresh_free()  # the cast member you were walks back to their desk
-	World.refresh_twin()
 	Hints.toast("NEW LOOK", 1.5)
 
 
@@ -252,7 +251,6 @@ func _outfit_cancelled() -> void:
 			who.wear_look()  # Look.restore already put the old look back
 		else:
 			who._switch_character(_outfit_char)
-	World.refresh_twin()
 
 
 func open_seed(on_close := Callable()) -> void:

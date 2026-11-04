@@ -65,8 +65,6 @@ var chat_chance := 0.8
 var lights := {}  # room -> bool (a missing room is lit)
 var door_open := 0.0  # the dock door (0 closed, 1 open): kept for the day and in the resume point
 var lights_by_npc := false  # a cast member is flipping a switch (nobody reacts to that)
-var twin_on := false  # Free Play: the TWIN row of the pause menu
-var twin: Node = null  # the twin's NPC in the room (null when off, or between rooms)
 var _outage_t := 0.0  # seconds the network has been down somewhere
 var _closet_sent := false
 
@@ -233,52 +231,6 @@ func populate(stage: Node) -> void:
 		chars[n].node = null
 		if chars[n].scene == _scene:
 			_spawn(n)
-	if twin_on:
-		_spawn_twin()
-
-
-# Free Play TWIN (R15 level 3 step e): an NPC copy of the player's custom look, accessories included (npc.gd custom_look, built by
-# Look.copy_look), standing near you in whatever room you are in. The pause menu's TWIN row turns it on and off; an outfit swap makes a new one.
-func toggle_twin() -> void:
-	twin_on = not twin_on
-	remove_twin()
-	if twin_on:
-		_spawn_twin()
-
-
-func remove_twin() -> void:
-	if twin != null and is_instance_valid(twin):
-		if twin.get_parent() != null:
-			twin.get_parent().remove_child(twin)  # at once, so the new twin can take the name
-		twin.queue_free()
-	twin = null
-
-
-func refresh_twin() -> void:
-	if twin_on:
-		remove_twin()
-		_spawn_twin()
-
-
-func _spawn_twin() -> void:
-	if _stage == null or not is_instance_valid(_stage):
-		return
-	var actors := _stage.get_node_or_null("Actors")
-	if actors == null:
-		return
-	var npc: Node = NPC_SCENE.instantiate()
-	npc.name = "Twin"
-	npc.character = Look.BASE
-	npc.custom = true
-	npc.custom_look = Look.copy_look()
-	npc.role = "twin"
-	npc.routine = PackedStringArray(["wait:4", "say:2"])
-	var who := actors.get_node_or_null("Player")
-	var px := float(who.position.x) if who != null else 160.0
-	npc.facing = "left" if px > 160.0 else "right"
-	npc.position = Vector2(clampf(px + (-40.0 if px > 160.0 else 40.0), 24.0, 360.0), FLOOR_Y)
-	actors.add_child(npc)
-	twin = npc
 
 
 func _spawn(n: String) -> void:

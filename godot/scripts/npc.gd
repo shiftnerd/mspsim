@@ -105,10 +105,6 @@ func _ready() -> void:
 
 
 func use(body: Node) -> void:
-	if role == "twin":  # Free Play's copy of the player (World.toggle_twin): no cast chat, no desk
-		_face(body.global_position.x)
-		Hints.toast("SAME LOOK, SAME PERSON", 1.5)
-		return
 	if role != "":
 		if seat == null:
 			_face(body.global_position.x)

@@ -86,20 +86,19 @@ func _labels() -> Array:
 	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
 	if Campaign.active:
 		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
-	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look, and a copy of it beside you
+	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
 		rows.append("OUTFIT")
-		rows.append("TWIN: %s" % ("ON" if World.twin_on else "OFF"))
 	rows.append("QUIT TO TITLE")
 	return rows
 
 
-# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "twin", "quit"
+# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
 	var ids := ["resume", "controls", "shape"]
 	if Campaign.active:
 		ids.append("day")
 	elif Campaign.mode == Campaign.FREE:
-		ids.append_array(["outfit", "twin"])
+		ids.append("outfit")
 	ids.append("quit")
 	return ids[clampi(i, 0, ids.size() - 1)]
 
@@ -121,10 +120,6 @@ func _activate() -> void:
 	if _row_id(_sel) == "outfit":
 		close()
 		Toolbox.open_outfit.call_deferred()
-		return
-	if _row_id(_sel) == "twin":
-		World.toggle_twin()
-		_canvas.queue_redraw()
 		return
 	if _sel == _labels().size() - 1:
 		_confirm = true
@@ -221,8 +216,6 @@ func _key(event: InputEvent) -> void:
 			Game.cycle_format()
 		elif not _confirm and _row_id(_sel) == "day":
 			Difficulty.cycle_day_scale(1 if right else -1)
-		elif not _confirm and _row_id(_sel) == "twin":
-			World.toggle_twin()
 	elif Controls.confirm(event):
 		_activate()
 		return
