@@ -51061,6 +51061,8 @@ shape = SubResource("RectangleShape2D_npc")
 
 # ---- map data for the persistent cast (scripts/world_data.gd) ----------------
 world_scenes = {}
+# where a seated cup stands on the table: table top (feet y - 18) + 3; the raised conference / karaoke / restaurant tables
+CUP_Y = {"conference": 74.0, "karaoke_bar": 74.0, "restaurant": 74.0}
 for fname, cfg in SETS.items():
     W = cfg["W"]
     x0 = (VIEW_W - W) // 2
@@ -51177,7 +51179,7 @@ for fname, cfg in SETS.items():
         lounge = len(seat_cfg) > 3 and seat_cfg[3]
         lines += [f'[node name="Seat{i + 1}" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + sx}, {sy})',
                   'script = ExtResource("seat")', 'facing = "right"', f'typing = {"true" if typing else "false"}',
-                  *(['stash = false'] if lounge else ([] if typing else ['cup_dx = 14.0', 'cup_y = 80.0'])), "",
+                  *(['stash = false'] if lounge else ([] if typing else ['cup_dx = 14.0', f'cup_y = {CUP_Y.get(fname, 80.0)}'])), "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat{i + 1}"]',
                   'position = Vector2(0, -14)', 'shape = SubResource("shape_seat")', ""]
     bgfx = BGFX.get(fname, [])

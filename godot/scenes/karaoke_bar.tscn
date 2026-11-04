@@ -92,7 +92,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat1"]
 position = Vector2(0, -14)
@@ -104,7 +104,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat2"]
 position = Vector2(0, -14)
@@ -116,7 +116,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat3"]
 position = Vector2(0, -14)
@@ -233,13 +233,13 @@ texture = ExtResource("prop_chair_karaoke_side")
 [node name="round_table_7" type="Sprite2D" parent="Actors"]
 position = Vector2(135, 108)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -38)
 texture = ExtResource("prop_round_table")
 
 [node name="round_table_8" type="Sprite2D" parent="Actors"]
 position = Vector2(187, 108)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -38)
 texture = ExtResource("prop_round_table")
 
 [node name="speaker_9" type="Sprite2D" parent="Actors"]

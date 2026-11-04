@@ -80,10 +80,10 @@ return function(L, builders)
 
   -- ================================================================ CONFERENCE (bigger: room for the whole company)
   function P.confTableWide(w)
-    return L.piece(w, 30, function(R)
+    return L.piece(w, 37, function(R)   -- 7 px taller than it was: the top is at belly height of a sitter (feet y - 18), so the table hides the lap
       L.box(R, 0, 0, w, 5, "#C9955A", "#E0B47A", "#A57445")
       R(2, 5, w - 4, 3, "#A57445")
-      for _, x in ipairs({14, math.floor(w / 2) - 3, w - 20}) do R(x, 8, 6, 22, "#8A5E36") end
+      for _, x in ipairs({14, math.floor(w / 2) - 3, w - 20}) do R(x, 8, 6, 29, "#8A5E36") end
       -- things on the table: notepads, mugs, a carafe, a laptop
       for i = 0, 5 do
         local x = 14 + i * math.floor((w - 40) / 5)
@@ -296,10 +296,10 @@ return function(L, builders)
   end
 
   function P.roundTable()
-    return L.piece(42, 30, function(R)
+    return L.piece(42, 37, function(R)   -- 7 px taller than it was: the top is at belly height of a sitter, so the table hides the lap
       L.box(R, 0, 0, 42, 6, "#5A3A22", "#8A5A32", "#3E281A")
       R(2, 6, 38, 2, "#3E281A")
-      R(19, 8, 4, 18, "#2A1B3D"); R(10, 26, 22, 4, "#2A1B3D")
+      R(19, 8, 4, 25, "#2A1B3D"); R(10, 33, 22, 4, "#2A1B3D")
       R(5, -3, 5, 3, "#F4F2EA"); R(14, -2, 3, 2, "#E04E4E")           -- a drink and a song book
       R(26, -4, 10, 4, "#E04ECB"); R(27, -3, 8, 1, "#FFD0F4")
     end)
@@ -390,7 +390,7 @@ return function(L, builders)
       s.putS("Chairs" .. sx, P.chairSide("#6A3A8A", "#8A5AAA", "#4A2A66"), sx - 14, 54, 88, "chair_karaoke_side")
     end
     for _, tx in ipairs({112, 164}) do
-      s.putS("Table" .. tx, P.roundTable(), tx, 78, 108, "round_table")
+      s.putS("Table" .. tx, P.roundTable(), tx, 71, 108, "round_table")
     end
     s.putS("SpeakerL", P.speaker(), 178, 66, 108, "speaker")
     s.putS("SpeakerR", P.speaker(), 298, 66, 108, "speaker")
@@ -559,10 +559,10 @@ return function(L, builders)
   end
 
   function P.woodTable()
-    return L.piece(52, 28, function(R)
+    return L.piece(52, 35, function(R)   -- 7 px taller than it was (see roundTable)
       L.box(R, 0, 0, 52, 6, "#8A5A32", "#B07A44", "#5A3A22")
       R(2, 6, 48, 2, "#5A3A22")
-      R(24, 8, 4, 16, "#3A281A"); R(12, 24, 28, 4, "#3A281A")
+      R(24, 8, 4, 23, "#3A281A"); R(12, 31, 28, 4, "#3A281A")
       R(4, -4, 3, 4, "#C0392B"); R(5, -6, 1, 2, "#F2F2EA")
       R(10, -3, 4, 3, "#F2F2EA"); R(11, -3, 2, 1, "#8E939E")
       R(19, -3, 2, 3, "#F2F2EA"); R(22, -3, 2, 3, "#F2F2EA")
@@ -692,7 +692,7 @@ return function(L, builders)
     s.put("TVs", P.sportsTv(), 206, 0); s.put("TVs", P.sportsTv(), 262, 0)
     for _, bx in ipairs({12, 84}) do
       s.putS("BoothBack" .. bx, P.boothBack(), bx, 50, 88, "booth_back")
-      s.putS("Table" .. bx, P.woodTable(), bx - 2, 78, 108, "wood_table")
+      s.putS("Table" .. bx, P.woodTable(), bx - 2, 71, 108, "wood_table")
       s.put("Pendants", P.pendant(), bx + 16, -24)
     end
     s.putS("Host", P.hostStand(), 154, 76, 108, "host_stand")

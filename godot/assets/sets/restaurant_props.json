@@ -1,8 +1,8 @@
 [
 {"piece":"booth_back","x":11,"y":49,"sort":88},
-{"piece":"wood_table","x":9,"y":77,"sort":108},
+{"piece":"wood_table","x":9,"y":70,"sort":108},
 {"piece":"booth_back","x":83,"y":49,"sort":88},
-{"piece":"wood_table","x":81,"y":77,"sort":108},
+{"piece":"wood_table","x":81,"y":70,"sort":108},
 {"piece":"host_stand","x":153,"y":75,"sort":108},
 {"piece":"plant_floor","x":133,"y":79,"sort":108},
 {"piece":"rest_bar","x":189,"y":75,"sort":108},
