@@ -234,6 +234,18 @@ function E.load(path)
   return an
 end
 
+-- an accessory layer (glasses, facial hair, hats ...) drawn only in the overlay sheets (tools/make_head_sheets.lua): it is
+-- rotated and shifted like the head (headBlit) but NOT measured for the death frames' union shift, so a tall hat cannot move
+-- the body. Add it after the character's own layers (the same idea as an.ghost, which is measured but not drawn).
+-- Always a head layer (headBlit). acc = false only means it IS measured, like Glasses or Hair: the one-off reference characters of
+-- the golden test are built that way (an accessory as a real layer of a prebaked character).
+function E.addLayer(an, name, S, acc)
+  local rec = {name = name, vis = true, S = S, head = true, acc = acc and true or nil}
+  an.layers[#an.layers + 1] = rec
+  an.by[name] = rec
+  return rec
+end
+
 -- rendering ----------------------------------------------------------------
 local HEAD = {Face = true, Hair = true, Beard = true, Stubble = true, Glasses = true}
 
@@ -329,7 +341,7 @@ function E.render(an, pose, f)
     elseif n == "Body" then
       headBlit(O, mask(S, function(x, y) return y <= 22 end))
       blitShift(O, mask(S, function(x, y) return y >= 23 end), torsoDx, torsoDy)
-    elseif HEAD[n] then
+    elseif HEAD[n] or L.head then
       headBlit(O, S)
     else
       blitShift(O, S, torsoDx, torsoDy)   -- shirt, belt, collar, vest, extras
@@ -358,6 +370,7 @@ function E.render(an, pose, f)
       srcs[#srcs + 1] = G
     end
     for i, O in ipairs(srcs) do
+      local isAcc = an.layers[i] and an.layers[i].acc
       local N = Image(BW, BH, ColorMode.RGB)
       for Y2 = 0, BH - 1 do for X2 = 0, BW - 1 do
         local X, Y = X2 - BX, Y2 - BY
@@ -371,7 +384,7 @@ function E.render(an, pose, f)
       end end
       rot[i] = N
       local a, b, cc, d = bbox(N)
-      if a then
+      if a and not isAcc then
         if a < x0 then x0 = a end; if cc > x1 then x1 = cc end
         if b < y0 then y0 = b end; if d > y1 then y1 = d end
       end

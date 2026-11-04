@@ -72,6 +72,20 @@ func _sheet_colors(look: Node) -> Array:
 				if not seen.has(key):
 					seen[key] = true
 					out.append(Color8(data[i], data[i + 1], data[i + 2]))
+	# level 3 step b: the head overlay sheets (glasses, facial hair) go through the same shader
+	for slot in look.ACC_STYLES:
+		for id in look.ACC_STYLES[slot]:
+			for facing in ["right", "left"]:
+				var img: Image = (load("res://assets/accessories/%s_%s_%s.png" % [slot, id, facing]) as Texture2D).get_image()
+				img.convert(Image.FORMAT_RGBA8)
+				var data := img.get_data()
+				for i in range(0, data.size(), 4):
+					if data[i + 3] == 0:
+						continue
+					var key := "%02x%02x%02x" % [data[i], data[i + 1], data[i + 2]]
+					if not seen.has(key):
+						seen[key] = true
+						out.append(Color8(data[i], data[i + 1], data[i + 2]))
 	return out
 
 
@@ -205,7 +219,8 @@ func _init() -> void:
 	var flash := 0
 	var unknown: Array = []
 	var bright: Dictionary = _bright_look()
-	var pal_b: PackedColorArray = look.palette(bright)
+	var bright_acc := {"beard_color": "e05a9a", "frame_color": "ff00ff"}  # the accessory roles recoloured too
+	var pal_b: PackedColorArray = look.palette(bright, bright_acc)
 	var outline_ok := true
 	var changed := 0
 	for col in colors:
@@ -221,7 +236,7 @@ func _init() -> void:
 		if kind == "":
 			unknown.append(col.to_html(false))
 			continue
-		var out: Color = look.map_color(col, bright)
+		var out: Color = look.map_color(col, bright, bright_acc)
 		var want: Color = (
 			pal_b[idx] if kind == "exact" else pal_b[idx].lerp(Color.WHITE, look.FLASH)
 		)
@@ -254,6 +269,9 @@ func _init() -> void:
 	_check(outline_ok, "the outline, eyes, brows, mouth, buckle and watch are untouched")
 	var same := true
 	for i in pal_def.size():
+		# the beard and stubble art colours stand for "the hair colour" and "a bit of both": not the default look's colours
+		if i < nsrc and str(look.SOURCES[i][1]) in ["beard", "stubble"]:
+			continue
 		if not _near(pal_def[i], src[i], 0.004):
 			same = false
 	_check(same, "the default look gives back the original sheet colours (shades included)")

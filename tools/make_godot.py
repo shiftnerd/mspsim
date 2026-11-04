@@ -3482,6 +3482,129 @@ func _draw() -> void:
         draw_rect(Rect2(-2, -1, 4, 5), Color("8cc0e8"))
 ''')
 
+
+write("scripts/head_gear.gd", '''extends Node2D
+# THE HEAD OVERLAY (roadmap R15 level 3 step b): glasses and facial hair drawn over a custom person's head by one Sprite2D per slot.
+# A child of the body's AnimatedSprite2D (so it sits above the body and below the held items and the headset, which are siblings
+# added later, and it follows the sprite's transform and visibility): the player, an NPC copy (custom_look) and the select preview
+# all get one from Look.apply. It NEVER plays an animation of its own: it reads the body sprite's current `animation` and `frame`,
+# maps them to a sheet index with the same START table as held_item.gd (one const, no drift), and shows that 32x32 cell of
+# assets/accessories/<slot>_<id>_<facing>.png at the position of the shared origin table head_origin_<facing>.json (both made by
+# tools/make_head_sheets.lua). Backwards sitdown, one-shots, pause() while jumping, a character switch and the seated gestures
+# all just change sprite.animation / sprite.frame, so there is nothing to drift; frame_changed and animation_changed resync at
+# once (no frame of lag whatever the process order), _process is the safety net. An animation without a START entry hides it.
+# The sprites use the body's palette shader (Look.make_material), so the colours and the hurt flash (sheet frames 25 and 28 are
+# baked to white) match.
+
+const HELD_ITEM := preload("res://scripts/held_item.gd")
+const DIR := "res://assets/accessories/"
+const SLOTS := ["beard", "glasses"]  # drawing order, lowest first (hats and the rest are later steps)
+const CELL := 32
+const FRAMES := 123
+
+static var _origins := {}
+
+var _sprite: AnimatedSprite2D = null
+var _on := false
+var _look: Dictionary = {}
+var _sig := 0
+var _ids := {}
+var _slots := {}
+
+
+# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 123 [x, y] pairs
+static func origins(facing: String) -> Array:
+    if not _origins.has(facing):
+        var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "head_origin_%s.json" % facing))
+        _origins[facing] = parsed if parsed is Array else []
+    return _origins[facing]
+
+
+# the sheet index of an animation frame (the body sheet is 123 frames; the overlay sheets have the same 123 cells), -1 = none
+static func frame_index(anim: String, frame: int) -> int:
+    var parts := anim.rsplit("_", true, 1)
+    if parts.size() < 2 or not HELD_ITEM.START.has(parts[0]):
+        return -1
+    var idx: int = int(HELD_ITEM.START[parts[0]]) + frame
+    return idx if idx >= 0 and idx < FRAMES else -1
+
+
+# Look.apply calls this: on = the sprite shows the custom person, look_dict = the look to wear (empty = the player's own)
+func configure(on: bool, look_dict: Dictionary) -> void:
+    _sprite = get_parent() as AnimatedSprite2D
+    _on = on
+    _look = look_dict
+    if _sprite != null and not _sprite.frame_changed.is_connected(_sync):
+        _sprite.frame_changed.connect(_sync)
+        _sprite.animation_changed.connect(_sync)
+    _rebuild()
+    _sync()
+
+
+func _signature() -> int:
+    return hash([_on, _look if not _look.is_empty() else [Look.look, Look.acc]])
+
+
+func _slot_sprite(slot: String) -> Sprite2D:
+    if not _slots.has(slot):
+        var s := Sprite2D.new()
+        s.name = slot
+        s.centered = false
+        s.region_enabled = true
+        add_child(s)
+        _slots[slot] = s
+    return _slots[slot]
+
+
+func _rebuild() -> void:
+    _sig = _signature()
+    var lk: Dictionary = _look if not _look.is_empty() else Look.look
+    var ac: Dictionary = Look.acc_of(_look)
+    for slot in SLOTS:
+        var id := str(ac.get(slot, "")) if _on else ""
+        _ids[slot] = id
+        var s := _slot_sprite(slot)
+        s.visible = id != ""
+        s.material = Look.make_material(lk, ac) if id != "" else null
+        s.set_meta("path", "")
+
+
+func _sync() -> void:
+    if not _on or _sprite == null or _sprite.sprite_frames == null:
+        visible = false
+        return
+    var anim := String(_sprite.animation)
+    var idx := frame_index(anim, _sprite.frame)
+    var facing := "right" if anim.ends_with("_right") else "left"
+    var table := origins(facing)
+    if idx < 0 or idx >= table.size() or not _sprite.sprite_frames.has_animation(anim):
+        visible = false
+        return
+    visible = true
+    var top_left := _sprite.offset
+    if _sprite.centered:
+        var tex := _sprite.sprite_frames.get_frame_texture(anim, _sprite.frame)
+        top_left -= tex.get_size() * 0.5 if tex != null else Vector2(32, 40)
+    var at := top_left + Vector2(float(table[idx][0]), float(table[idx][1]))
+    for slot in SLOTS:
+        var id := str(_ids.get(slot, ""))
+        if id == "":
+            continue
+        var s: Sprite2D = _slots[slot]
+        var path := "%s%s_%s_%s.png" % [DIR, slot, id, facing]
+        if str(s.get_meta("path", "")) != path:
+            s.texture = load(path)
+            s.set_meta("path", path)
+        s.position = at
+        s.region_rect = Rect2(idx * CELL, 0, CELL, CELL)
+
+
+func _process(_delta: float) -> void:
+    if _sig != _signature():  # the player's look (or acc) changed under us
+        _rebuild()
+    _sync()
+''')
+
 write("scripts/desk_cup.gd", '''extends Node2D
 # A cup on a desk (the node sits on the desk's sort line; the cup is drawn up on the desktop).
 
@@ -52191,6 +52314,9 @@ write("scripts/look.gd", '''extends Node
 # over every colour of both sheets. The last look is kept in user://mspsim_settings.cfg ([look]) as the default for the next
 # new run, and the campaign save carries it (campaign/look; an old save has none and loads as before).
 #
+# LEVEL 3 STEP B, HEAD ACCESSORIES (glasses, facial hair; hats and the rest later): `acc` (ids per slot, see the block marked LEVEL 3
+# below) is drawn by scripts/head_gear.gd as overlay sprites on the sheet's head, recoloured by the same shader (frame, beard and
+# stubble colours are SOURCES rows; the lens is a KEEP).
 # LEVEL 2, HAIRSTYLES: look.hair_style picks one of HAIR_STYLES. Every style is a complete prebaked character (the intern with
 # another Hair layer, tools/make_hair.lua, sheets and SpriteFrames like any other character): `side` is the intern's own hair
 # (office_intern itself), the others are custom_intern_<style>. sheet_for() maps a look to that character name and every place
@@ -52222,9 +52348,14 @@ const SOURCES := [
     ["272b48", "pants", 2],
     ["5a3522", "shoes", 0],
     ["4a2c1c", "shoes", 1],
+    # level 3 step b (the head overlay sheets only, see tools/make_accessories.lua): glasses frame, beard base and shade, stubble
+    ["1e1e26", "frame", 0],
+    ["7d5a3a", "beard", 0],
+    ["55402c", "beard", 1],
+    ["e0a07a", "stubble", 0],
 ]
 # never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
-const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33"]
+const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33", "2f3d44"]  # the last one: sunglasses lens
 const SWATCHES := {
     "skin": ["fbd7bc", "f3b488", "e3a272", "c68642", "a8683a", "8d5524", "6b3e22", "4a2a18"],
     "hair":
@@ -52276,8 +52407,27 @@ const NAMES := [
     "LEE"
 ]
 
+# ---- LEVEL 3 STEP B: head accessories (the block is separate on purpose: the create-step UI rows come later) --------------
+const HEAD_GEAR := preload("res://scripts/head_gear.gd")
+# every slot of `acc`; only the ones with art have styles (the others are reserved: hats, nametag, lanyard and watch are later steps)
+const ACC_SLOTS := ["glasses", "beard", "hat", "badge", "lanyard", "watch"]
+const ACC_STYLES := {
+    "glasses": ["thin", "thick", "round", "aviator"],
+    "beard": ["stubble", "goatee", "full", "moustache"],
+    "hat": [],
+    "badge": [],
+    "lanyard": [],
+    "watch": [],
+}
+const FRAME_DEFAULT := "1e1e26"  # glasses frame colour when acc.frame_color is empty (the art colour)
+const FRAME_STYLE := {"round": "8c6a1e", "aviator": "b8bcc4"}  # wire frames default to metal
+const STUBBLE_MIX := 0.4  # stubble = the skin colour mixed this far to the beard colour
+
 var active := false
 var look: Dictionary = default_look()
+# the accessories of the player's look: {glasses, beard, hat, badge, lanyard, watch} = style ids ("" = none), plus the optional
+# beard_color (empty = the hair colour) and frame_color (empty = the style's default), both 6 digit hex
+var acc: Dictionary = default_acc()
 var _shader: Shader = null
 
 
@@ -52324,10 +52474,10 @@ func _color_of(look_dict: Dictionary, role: String) -> Color:
 
 
 # the recoloured value of every SOURCES row followed by the KEEPS (themselves), for this look
-func palette(look_dict: Dictionary) -> PackedColorArray:
+func palette(look_dict: Dictionary, acc_dict: Dictionary = {}) -> PackedColorArray:
     var out := PackedColorArray()
     for row in SOURCES:
-        out.append(shade_of(_color_of(look_dict, str(row[1])), str(row[1]), int(row[2])))
+        out.append(shade_of(_role_base(look_dict, acc_dict, str(row[1])), str(row[1]), int(row[2])))
     for hex in KEEPS:
         out.append(Color.html(str(hex)))
     return out
@@ -52348,9 +52498,9 @@ func _dist(a: Color, b: Color) -> float:
 
 # the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the INTERN sheet
 # turns into for this look (an unknown colour comes back unchanged)
-func map_color(c: Color, look_dict: Dictionary) -> Color:
+func map_color(c: Color, look_dict: Dictionary, acc_dict: Dictionary = {}) -> Color:
     var src := sources()
-    var dst := palette(look_dict)
+    var dst := palette(look_dict, acc_dict)
     var best := -1
     var best_d := 1000.0
     var best_flash := false
@@ -52409,11 +52559,11 @@ void fragment() {
     return _shader
 
 
-func make_material(look_dict: Dictionary) -> ShaderMaterial:
+func make_material(look_dict: Dictionary, acc_dict: Dictionary = {}) -> ShaderMaterial:
     var m := ShaderMaterial.new()
     m.shader = shader()
     m.set_shader_parameter("src", sources())
-    m.set_shader_parameter("dst", palette(look_dict))
+    m.set_shader_parameter("dst", palette(look_dict, acc_dict))
     return m
 
 
@@ -52432,7 +52582,8 @@ func display_name() -> String:
 # (look_dict: the look to wear, empty = the player's own; an NPC copy carries its own)
 func apply(sprite: CanvasItem, character: String, custom: bool, look_dict: Dictionary = {}) -> void:
     var lk := look_dict if not look_dict.is_empty() else look
-    sprite.material = make_material(lk) if custom and character == BASE else null
+    sprite.material = make_material(lk, acc_of(look_dict)) if custom and character == BASE else null
+    _attach_gear(sprite, custom and character == BASE, look_dict)
 
 
 # the character (sheet) name that shows `character`: the plain name, or for the custom person the sheet of the hairstyle
@@ -52525,10 +52676,12 @@ func randomize_look() -> void:
 func to_dict() -> Dictionary:
     var out := look.duplicate()
     out["active"] = is_custom()
+    out["acc"] = acc.duplicate()
     return out
 
 
 func from_dict(d: Dictionary) -> void:
+    acc = sanitize_acc(d.get("acc", {}))  # an old save has none: no accessories
     if d.is_empty():
         active = false  # an old save, or a stock character
         return
@@ -52544,6 +52697,7 @@ func load_settings() -> void:
     for key in cfg.get_section_keys("look"):
         d[key] = cfg.get_value("look", key)
     look = sanitize(d)
+    acc = sanitize_acc(d.get("acc", {}))
     active = bool(d.get("custom", false))
 
 
@@ -52554,7 +52708,95 @@ func save_settings(custom_run: bool) -> void:
     for key in look:
         cfg.set_value("look", key, look[key])
     cfg.set_value("look", "custom", custom_run)
+    cfg.set_value("look", "acc", acc.duplicate())
     cfg.save(Difficulty.settings_path)
+
+
+# ---- LEVEL 3 STEP B: head accessories ------------------------------------------------------------------
+func default_acc() -> Dictionary:
+    var out := {}
+    for slot in ACC_SLOTS:
+        out[slot] = ""
+    out["beard_color"] = ""
+    out["frame_color"] = ""
+    return out
+
+
+# a checked copy: unknown slots, ids (and the not yet built hats ...) become none, a bad colour becomes empty
+func sanitize_acc(d: Variant) -> Dictionary:
+    var out := default_acc()
+    if not d is Dictionary:
+        return out
+    for slot in ACC_SLOTS:
+        var id := str(d.get(slot, ""))
+        if id in ACC_STYLES[slot]:
+            out[slot] = id
+    for key in ["beard_color", "frame_color"]:
+        var hex := str(d.get(key, "")).to_lower().trim_prefix("#")
+        if hex.length() == 6 and hex.is_valid_hex_number():
+            out[key] = hex
+    return out
+
+
+# the ids of a slot, none ("") first: the create step's rows will cycle through these
+func acc_ids(slot: String) -> Array:
+    var ids: Array = [""]
+    ids.append_array(ACC_STYLES.get(slot, []))
+    return ids
+
+
+# the helper tests and the UI use: false (nothing changes) for an unknown slot or id
+func set_acc(slot: String, id: String) -> bool:
+    if not ACC_STYLES.has(slot) or not id in acc_ids(slot):
+        return false
+    acc[slot] = id
+    return true
+
+
+func cycle_acc(slot: String, step: int) -> void:
+    var ids := acc_ids(slot)
+    var i := maxi(ids.find(str(acc.get(slot, ""))), 0)
+    acc[slot] = ids[(i + step + ids.size()) % ids.size()]
+
+
+# the accessories a look dict wears: an empty dict is the player's own (Look.acc), a copy's dict carries its own "acc"
+func acc_of(look_dict: Dictionary) -> Dictionary:
+    return acc if look_dict.is_empty() else sanitize_acc(look_dict.get("acc", {}))
+
+
+func frame_color(acc_dict: Dictionary) -> String:
+    var hex := str(acc_dict.get("frame_color", ""))
+    return hex if hex != "" else str(FRAME_STYLE.get(str(acc_dict.get("glasses", "")), FRAME_DEFAULT))
+
+
+func beard_color(look_dict: Dictionary, acc_dict: Dictionary) -> Color:
+    var hex := str(acc_dict.get("beard_color", ""))
+    return Color.html(hex) if hex != "" else _color_of(look_dict, "hair")
+
+
+# the colour a SOURCES role is recoloured from (roles of the look dict, and the accessory roles)
+func _role_base(look_dict: Dictionary, acc_dict: Dictionary, role: String) -> Color:
+    if role == "frame":
+        return Color.html(frame_color(acc_dict))
+    if role == "beard":
+        return beard_color(look_dict, acc_dict)
+    if role == "stubble":
+        return _color_of(look_dict, "skin").lerp(beard_color(look_dict, acc_dict), STUBBLE_MIX)
+    return _color_of(look_dict, role)
+
+
+# the overlay node (a child of the body sprite: drawn above it, below the held items that are its siblings added later)
+func _attach_gear(sprite: CanvasItem, on: bool, look_dict: Dictionary) -> void:
+    if not sprite is AnimatedSprite2D:
+        return
+    var gear := sprite.get_node_or_null("HeadGear")
+    if gear == null:
+        if not on:
+            return
+        gear = HEAD_GEAR.new()
+        gear.name = "HeadGear"
+        sprite.add_child(gear)
+    gear.configure(on, look_dict)
 ''')
 
 # format the generated scripts if gdtoolkit is installed (pip install gdtoolkit)
