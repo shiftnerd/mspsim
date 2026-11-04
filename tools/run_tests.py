@@ -5,12 +5,13 @@
 Names are matched against godot/tests/*.gd (`campaign`, `owner*`, `tests/skills.gd`). With no names it runs every
 headless regression test (everything except the SKIP patterns below: screenshot tests, balance runs, harnesses).
 A test passes when the exit code is 0, no output line is a FAIL marker and there is no SCRIPT ERROR. A FAIL marker is a
-line that starts with FAIL (an `ok ... FAIL ...` line, as t2 prints, does not count) or "failures=N" with N > 0. Every test uses its own save prefix (user://test_<pid>_...), so workers do not collide.
+line that starts with FAIL (an `ok ... FAIL ...` line, as t2 prints, does not count) or "failures=N" with N > 0. Every test uses its own save prefix (user://test_<pid>_...), so workers do not collide; the runner deletes a test's files when it ends and any test file older than an hour at the start (process ids get reused, and a test must not inherit an earlier test's career counters).
 Full output of each test goes to <scratch>/run_tests/<name>.log (default: the temp dir); failures print a tail.
 """
 import argparse
 import concurrent.futures as cf
 import fnmatch
+import glob
 import os
 import re
 import subprocess
@@ -53,17 +54,52 @@ def discover(names, include_skipped):
     return picked
 
 
+def user_dir():
+    """The project's user:// folder (where tests keep their user://test_<pid>_* save files)."""
+    name = "MSPSim"
+    try:
+        with open(os.path.join(GODOT_DIR, "project.godot"), encoding="utf-8") as f:
+            m = re.search(r'^config/name="([^"]+)"', f.read(), re.M)
+            if m:
+                name = m.group(1)
+    except OSError:
+        pass
+    base = os.environ.get("APPDATA")
+    if base:
+        return os.path.join(base, "Godot", "app_userdata", name)
+    return os.path.join(os.path.expanduser("~"), ".local", "share", "godot", "app_userdata", name)
+
+
+def purge_test_files(pid=None):
+    """Delete leftover test saves. Process ids get reused, so a test that inherits an earlier test's career or campaign
+    file (same pid) is no longer starting clean (the mastery ramp reads career counters): purge a pid's files after each
+    test, and old files at the start of a run."""
+    pattern = "test_%s_*" % (pid if pid is not None else "*")
+    for path in glob.glob(os.path.join(user_dir(), pattern)):
+        try:
+            # at the start of a run only old files go (another run in a different worktree may be using fresh ones)
+            if pid is None and time.time() - os.path.getmtime(path) < 3600:
+                continue
+            os.remove(path)
+        except OSError:
+            pass
+
+
 def run_one(test, godot, timeout, logdir):
     t0 = time.time()
     cmd = [godot, "--headless", "--fixed-fps", "60", "--path", GODOT_DIR, "-s", "res://tests/" + test]
     status, out = "ok", ""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
-        r = subprocess.run(cmd, capture_output=True, timeout=timeout)
-        out = (r.stdout + b"\n" + r.stderr).decode("utf-8", "replace")
-        code = r.returncode
-    except subprocess.TimeoutExpired as e:
-        out = ((e.stdout or b"") + b"\n" + (e.stderr or b"")).decode("utf-8", "replace")
+        so, se = proc.communicate(timeout=timeout)
+        out = (so + b"\n" + se).decode("utf-8", "replace")
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        so, se = proc.communicate()
+        out = ((so or b"") + b"\n" + (se or b"")).decode("utf-8", "replace")
         code, status = -1, "timeout"
+    purge_test_files(proc.pid)
     lines = out.splitlines()
     fails = sum(1 for l in lines if FAIL_RE.match(l) or FAILURES_RE.search(l))
     errs = sum(1 for l in lines if ERR_RE.search(l))
@@ -90,6 +126,7 @@ def main():
         print("\n".join(tests))
         return 0
     os.makedirs(a.logdir, exist_ok=True)
+    purge_test_files()
     t0 = time.time()
     results = []
     with cf.ThreadPoolExecutor(max_workers=a.jobs) as ex:
