@@ -1,5 +1,8 @@
 extends Node2D
-# THE HEAD OVERLAY (roadmap R15 level 3 step b): glasses and facial hair drawn over a custom person's head by one Sprite2D per slot.
+# THE ACCESSORY OVERLAY (roadmap R15 level 3 steps b, c, d): glasses, facial hair, hats, a name sticker, a lanyard and a watch drawn over
+# a custom person by one Sprite2D per slot. Each slot has a KIND that says which part of the body its cell follows (tools/make_head_sheets.lua
+# renders the cells and one origin table per kind): head (glasses, beard), hat (a bigger cell, a hat stands above the face), torso (badge,
+# lanyard: the near arm is cut out of the cell) and wrist (the watch rides on the arm; a 16 px cell).
 # A child of the body's AnimatedSprite2D (so it sits above the body and below the held items and the headset, which are siblings
 # added later, and it follows the sprite's transform and visibility): the player, an NPC copy (custom_look) and the select preview
 # all get one from Look.apply. It NEVER plays an animation of its own: it reads the body sprite's current `animation` and `frame`,
@@ -13,8 +16,9 @@ extends Node2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
-const SLOTS := ["beard", "glasses"]  # drawing order, lowest first (hats and the rest are later steps)
-const CELL := 32
+const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
+const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
+const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
 const FRAMES := 123
 
 static var _origins := {}
@@ -27,12 +31,13 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 123 [x, y] pairs
-static func origins(facing: String) -> Array:
-	if not _origins.has(facing):
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "head_origin_%s.json" % facing))
-		_origins[facing] = parsed if parsed is Array else []
-	return _origins[facing]
+# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 123 [x, y] pairs
+static func origins(facing: String, kind := "head") -> Array:
+	var key := kind + "_" + facing
+	if not _origins.has(key):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "%s_origin_%s.json" % [kind, facing]))
+		_origins[key] = parsed if parsed is Array else []
+	return _origins[key]
 
 
 # the sheet index of an animation frame (the body sheet is 123 frames; the overlay sheets have the same 123 cells), -1 = none
@@ -91,8 +96,7 @@ func _sync() -> void:
 	var anim := String(_sprite.animation)
 	var idx := frame_index(anim, _sprite.frame)
 	var facing := "right" if anim.ends_with("_right") else "left"
-	var table := origins(facing)
-	if idx < 0 or idx >= table.size() or not _sprite.sprite_frames.has_animation(anim):
+	if idx < 0 or idx >= FRAMES or not _sprite.sprite_frames.has_animation(anim):
 		visible = false
 		return
 	visible = true
@@ -100,18 +104,21 @@ func _sync() -> void:
 	if _sprite.centered:
 		var tex := _sprite.sprite_frames.get_frame_texture(anim, _sprite.frame)
 		top_left -= tex.get_size() * 0.5 if tex != null else Vector2(32, 40)
-	var at := top_left + Vector2(float(table[idx][0]), float(table[idx][1]))
 	for slot in SLOTS:
 		var id := str(_ids.get(slot, ""))
 		if id == "":
 			continue
+		var table := origins(facing, str(KIND[slot]))
+		if idx >= table.size():
+			continue
 		var s: Sprite2D = _slots[slot]
+		var cell: int = CELLS[KIND[slot]]
 		var path := "%s%s_%s_%s.png" % [DIR, slot, id, facing]
 		if str(s.get_meta("path", "")) != path:
 			s.texture = load(path)
 			s.set_meta("path", path)
-		s.position = at
-		s.region_rect = Rect2(idx * CELL, 0, CELL, CELL)
+		s.position = top_left + Vector2(float(table[idx][0]), float(table[idx][1]))
+		s.region_rect = Rect2(idx * cell, 0, cell, cell)
 
 
 func _process(_delta: float) -> void:

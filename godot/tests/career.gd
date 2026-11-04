@@ -6,7 +6,7 @@ extends SceneTree
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/career.gd
 
 const DENY := ["nintendo", "playstation", "xbox", "microsoft", "google", "apple", "sony", "sega", "atari", "hewlett", "canon", "epson", "xerox", "ricoh", "lexmark", "kyocera", "ikea", "pepsi", "coca", "mcdonald", "starbucks", "youtube", "facebook", "twitter", "amazon", "netflix", "nike", "disney", "pixar", "pokemon", "mario", "zelda", "tetris", "angry bird", "candy crush", "rickroll", " lego", "hasbro", " wii", "ps4"]
-const NAMES := ["GUTTER GURU", "STICKY NOTES SAVIOR", "PRINTER WHISPERER", "NEVER RESTARTED", "MEETING SURVIVOR", "DUCK WHISPERER", "PEOPLE PERSON", "FRIDAY WARRIOR"]
+const NAMES := ["GUTTER GURU", "STICKY NOTES SAVIOR", "PRINTER WHISPERER", "NEVER RESTARTED", "MEETING SURVIVOR", "DUCK WHISPERER", "PEOPLE PERSON", "FRIDAY WARRIOR", "OLD TREE"]
 
 var failures := 0
 var c: Node
