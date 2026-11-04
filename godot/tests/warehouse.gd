@@ -1,7 +1,7 @@
 extends SceneTree
 # The warehouse (chair race phase 1): a 1480 px room. It loads with its effects and props, every prop stands on the floor line,
 # the walkway is clear, the loose race props are parked off the lane, the player walks from the entry door to the dock in every
-# output format with the camera always inside the art, and the cast routes through the map are unchanged. Headless.
+# output format with the camera always inside the art, and the cast routes through the map (the closet trip passes through it). Headless.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/warehouse.gd
 
 var failures := 0
@@ -53,9 +53,10 @@ func _init() -> void:
 	_check(art_w >= 1280.0, "the room is long (%d px wide, the old widest set is 368)" % int(art_w))
 	for fx_name in ["FlickerLamp", "BenchScreen", "TreeLights", "Switch", "DartBoard"]:
 		_check(room.get_node_or_null("Fx/" + fx_name) != null, "effect " + fx_name)
-	_check(room.get_node_or_null("Interactables/DoorToCloset") != null, "a steel door back to the closet")
-	_check(room.get_node_or_null("Interactables/ExitToCloset") != null, "the left edge leaves to the closet")
-	var spawns := ["from_main", "from_closet", "from_outing"].filter(func(n: String) -> bool: return room.get_node_or_null("Spawns/" + n) != null)
+	_check(room.get_node_or_null("Interactables/DoorToKitchenette") != null, "a steel door back to the kitchenette")
+	_check(room.get_node_or_null("Interactables/ExitToKitchenette") != null, "the left edge leaves to the kitchenette")
+	_check(room.get_node_or_null("Interactables/DoorToCloset") != null, "the blue steel door to the closet")
+	var spawns := ["from_kitchenette", "from_closet", "from_outing"].filter(func(n: String) -> bool: return room.get_node_or_null("Spawns/" + n) != null)
 	_check(spawns.size() == 3, "entry spawns + from_outing")
 	_check(room.get_node("Interactables/UseDartBoard").low_priority, "the dart board zone is low priority")
 
@@ -121,7 +122,7 @@ func _init() -> void:
 		_check(worst_out <= 1.5, "%s: the camera stays inside the art (worst %.1f px out)" % [fmt, worst_out])
 		_check(not lost_player, "%s: the player stays on screen" % fmt)
 		_check(absf(player.global_position.y - 118.0) < 2.0, "%s: feet on the floor line" % fmt)
-		# and back to the start: the left edge leaves for the closet
+		# and back to the start: the left edge leaves for the kitchenette
 		Input.action_press("move_left")
 		Input.action_press("run")
 		frames = 0
@@ -130,45 +131,37 @@ func _init() -> void:
 			frames += 1
 		Input.action_release("move_left")
 		Input.action_release("run")
-		await _wait_scene("network_closet")
-		_check(_scene_name() == "network_closet", "%s: the left end leads back to the network closet" % fmt)
+		await _wait_scene("kitchenette")
+		_check(_scene_name() == "kitchenette", "%s: the left end leads back to the kitchenette" % fmt)
 		var cp: Node2D = current_scene.get_node("Actors/Player")
-		_check(cp.global_position.x > 100.0, "%s: back in the closet at the warehouse end (x %d)" % [fmt, int(cp.global_position.x)])
+		_check(cp.global_position.x > 150.0, "%s: back in the kitchenette beside the steel door (x %d)" % [fmt, int(cp.global_position.x)])
 	game.set_format("wide")
-
-	# ---- the closet's right end enters the warehouse
-	change_scene_to_file("res://scenes/network_closet.tscn")
-	await _wait_scene("network_closet")
-	var ex: Node2D = current_scene.get_node("Interactables/ExitToWarehouse")
-	current_scene.get_node("Actors/Player").global_position = Vector2(ex.global_position.x, 118)
-	await _wait_scene("warehouse")
-	_check(_scene_name() == "warehouse", "the closet's right end leads into the warehouse")
 
 	# ---- the cast: the map still routes as before, and nobody routes through the warehouse
 	var data := load("res://scripts/world_data.gd")
 	_check(data.SCENES.has("warehouse"), "the warehouse is in the world data")
 	var expect := {
-		["main_floor", "network_closet"]: ["cubicle_area", "network_closet"],
 		["main_floor", "conference"]: ["cubicle_area", "conference"],
 		["office_one", "kitchenette"]: ["main_floor", "kitchenette"],
 		["kitchenette", "bathroom_1"]: ["bathroom_1"],
 		["kitchenette", "bathroom_2"]: ["bathroom_2"],
-		["network_closet", "main_floor"]: ["cubicle_area", "main_floor"],
+		["main_floor", "warehouse"]: ["kitchenette", "warehouse"],
+		["network_closet", "main_floor"]: ["warehouse", "kitchenette", "main_floor"],
 	}
 	for pair in expect:
 		var hops := []
 		for h in world._route(pair[0], pair[1]):
 			hops.append(h.to)
-		_check(hops == expect[pair], "route %s -> %s unchanged %s" % [pair[0], pair[1], str(hops)])
+		_check(hops == expect[pair], "route %s -> %s %s" % [pair[0], pair[1], str(hops)])
 	var through := 0
 	for a in data.SCENES:
 		for b in data.SCENES:
-			if a == b or a == "warehouse" or b == "warehouse":
+			if a == b or a == "warehouse" or b == "warehouse" or a == "network_closet" or b == "network_closet":
 				continue
 			for h in world._route(a, b):
 				if h.to == "warehouse":
 					through += 1
-	_check(through == 0, "no cast route passes through the warehouse")
-	_check(not world._route("main_floor", "warehouse").is_empty(), "the warehouse can be reached from the main floor (closet)")
+	_check(through == 0, "only the closet trip passes through the warehouse")
+	_check(not world._route("main_floor", "warehouse").is_empty(), "the warehouse can be reached from the main floor (kitchenette)")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

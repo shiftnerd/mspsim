@@ -108,9 +108,9 @@ builders.conference = {W = 320, H = 128, fn = function(s)
   s.putS("PlantR", P.floorPlant(), 262, 80, 108, "plant_floor")
 end}
 
--- ===== KITCHENETTE 176x128 =====
-builders.kitchenette = {W = 176, H = 128, fn = function(s)
-  local W = 176
+-- ===== KITCHENETTE 304x128 (R24: widened from 176 so the heavy steel door to the warehouse fits on the right) =====
+builders.kitchenette = {W = 304, H = 128, fn = function(s)
+  local W = 304
   L.wall(s.layer("Wall"), W, "#8FC43A", "#79A82F"); L.tiles(s.layer("Floor"), W)
   local bath = P.slabDoor("#DDB680", "#C79F68", "#EBCB9A", "black")
   s.put("Doors", bath, 4, 18); s.put("Doors", bath, 136, 18)
@@ -118,6 +118,10 @@ builders.kitchenette = {W = 176, H = 128, fn = function(s)
   s.put("Fridge", P.fridge(), 46, 30); s.put("UpperCabinets", P.upperCabinets(), 78, 36)
   s.put("Counter", P.lowerCabinets(), 76, 76)
   s.put("CounterProps", P.coffee(), 82, 60); s.put("CounterProps", P.sink(), 109, 66)
+  -- the way to the warehouse: a heavy grey steel door (set x 206..246, centre 226), its plate and a small notice
+  s.put("Doors", P.steelDoor(40, 72, "#7B828F", "#646B77", "#97A0AD"), 206, 18)
+  s.put("Plate", P.doorPlate("WAREHSE", "#4A4F5A"), 210, 9)
+  s.put("Plate", P.smallSign("STAFF ONLY"), 252, 34)
 end}
 
 -- ===== CUBICLE AREA 288x128 (cubicles 3 and 4 + copier corner) =====
@@ -138,7 +142,9 @@ builders.cubicle_area = {W = 320, H = 128, fn = function(s)
   s.putS("Copier", P.copier(), 200, 82, 108, "copier")
   s.putS("Cooler", P.cooler(), 238, 78, 108, "cooler")
   s.putS("Plant", P.floorPlant(), 262, 78, 108, "plant_floor")
-  s.put("Doors", P.slabDoor("#7B828F", "#646B77", "#97A0AD", "lever"), 282, 18)   -- the network closet
+  -- R24: the closet door that stood here (set x 282..316) moved into the warehouse; a filing cabinet and a framed notice fill the wall
+  s.putS("Cabinet", P.filingCabinet(), 292, 78, 108, "filing_cabinet")
+  s.put("Frames", P.frame(14, 18, "#E8B070", "#7A4A8A"), 292, 34)
   s.put("Wall plates", P.nerfRack(), 190, 34)
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
 end}
@@ -146,7 +152,7 @@ end}
 -- ===== NETWORK CLOSET 144x128: a door, an outlet, the ISP jack and one rack =====
 builders.network_closet = {W = 144, H = 128, fn = function(s)
   L.wall(s.layer("Wall"), 144, "#9AA1AB", "#828994"); L.tiles(s.layer("Floor"), 144)
-  s.put("Doors", P.slabDoor("#7B828F", "#646B77", "#97A0AD", "lever"), 4, 18)
+  s.put("Doors", P.steelDoor(34, 72, "#2F5FA8", "#234A85", "#4F82C8"), 4, 18)   -- R24: the blue steel door; it leads out to the warehouse
   s.put("Wall plates", P.wallOutlet(), L.CLOSET.outlet[1], L.CLOSET.outlet[2])
   s.put("Wall plates", P.ispJack(), L.CLOSET.jack[1], L.CLOSET.jack[2])
   s.put("Rack", P.networkRack(), L.CLOSET.rack[1], L.CLOSET.rack[2])

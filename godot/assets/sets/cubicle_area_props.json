@@ -11,5 +11,6 @@
 {"piece":"desk_phone","x":163,"y":71,"sort":108.3},
 {"piece":"copier","x":199,"y":81,"sort":108},
 {"piece":"cooler","x":237,"y":77,"sort":108},
-{"piece":"plant_floor","x":261,"y":77,"sort":108}
+{"piece":"plant_floor","x":261,"y":77,"sort":108},
+{"piece":"filing_cabinet","x":291,"y":77,"sort":108}
 ]

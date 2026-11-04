@@ -6,7 +6,7 @@ const SETS := {
 	"main_floor": [368, 0, 60],
 	"cubicle_area": [320, 24, 80],
 	"network_closet": [144, 112, 60],
-	"kitchenette": [176, 96, 90],
+	"kitchenette": [304, 32, 90],
 	"conference": [320, 88, 120],
 	"office_one": [176, 96, 80],
 	"office_two": [176, 96, 108],

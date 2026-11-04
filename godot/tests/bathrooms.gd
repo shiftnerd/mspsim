@@ -65,7 +65,7 @@ func _send(n: String) -> void:
 	var st: Dictionary = world.chars[n]
 	st.scene = "kitchenette"
 	st.arrive = "from_main"
-	st.legs = world._bath_legs(world._baths_near(236.0)[0], 236.0) + [world._work_leg(n, false, 30.0)]
+	st.legs = world._bath_legs(world._baths_near(172.0)[0], 172.0) + [world._work_leg(n, false, 30.0)]
 	world._gate_bathroom(n)
 	st.leg_t = st.legs[0].dur
 
@@ -120,7 +120,7 @@ func _init() -> void:
 	await _wait_scene("kitchenette")
 	_check(_door("DoorBathLeft").occupancy == "bathroom_1" and _door("DoorBathRight").occupancy == "bathroom_2", "each kitchenette door watches its own room")
 	_check(not _door("DoorBathLeft").is_locked() and not _door("DoorBathRight").is_locked(), "both doors are open when nobody is inside")
-	for pair in [["DoorBathLeft", "bathroom_1", 156.0], ["DoorBathRight", "bathroom_2", 216.0]]:
+	for pair in [["DoorBathLeft", "bathroom_1", 92.0], ["DoorBathRight", "bathroom_2", 152.0]]:
 		_use_door(pair[0])
 		_check(await _wait_scene(pair[1]), "%s leads to %s" % [pair[0], pair[1]])
 		_check(world.bathroom_occupied(pair[1]), "the player inside makes %s occupied" % pair[1])
@@ -227,7 +227,7 @@ func _init() -> void:
 	# ---- a person inside at 17:00 is released
 	_reset_cast()
 	world.chars["Alan"].scene = "bathroom_2"
-	world.chars["Alan"].legs = [world._bath_legs("bathroom_2", 236.0)[1]] + world._travel("bathroom_2", "kitchenette", 200.0)
+	world.chars["Alan"].legs = [world._bath_legs("bathroom_2", 172.0)[1]] + world._travel("bathroom_2", "kitchenette", 136.0)
 	world.chars["Alan"].leg_t = world.chars["Alan"].legs[0].dur
 	world.clock = world.DAY_END + 0.1
 	var out := false

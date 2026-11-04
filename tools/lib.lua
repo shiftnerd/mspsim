@@ -493,6 +493,73 @@ function P.slabDoor(base, shade, hi, knob)
   end)
 end
 
+-- a heavy steel door (R24): a steel frame, a flat leaf with two pressed panels, three hinge knuckles on the left, a lever, a
+-- deadbolt, a door closer on top and a kick plate. opts.reader draws a badge reader and keypad on the frame at the right (the
+-- piece is then w wide with the leaf narrower); opts.frame is the frame colour.
+function P.steelDoor(w, h, base, shade, hi, opts)
+  opts = opts or {}
+  return L.piece(w, h, function(R)
+    local rw = opts.reader and 9 or 0
+    local lw = w - 6 - rw                                   -- the leaf
+    R(0, 0, w, h, "#1E1E22")
+    R(1, 1, w - 2, h - 1, opts.frame or shade)
+    R(3, 3, lw, h - 3, base); R(3, 3, 1, h - 3, hi); R(3 + lw - 2, 3, 2, h - 3, shade)
+    R(6, 9, lw - 10, h // 3 - 2, shade); R(7, 10, lw - 12, h // 3 - 4, base); R(7, 10, lw - 12, 1, hi)
+    local ly = 9 + h // 3 + 3
+    R(6, ly, lw - 10, h - ly - 14, shade); R(7, ly + 1, lw - 12, h - ly - 16, base); R(7, ly + 1, lw - 12, 1, hi)
+    R(3, h - 10, lw, 9, shade); R(3, h - 10, lw, 1, hi)     -- the kick plate and its rivets
+    for i = 0, 3 do R(5 + i * ((lw - 8) // 3), h - 6, 1, 1, hi) end
+    R(3, 3, lw, 4, "#2A2A33"); R(5, 4, lw - 10, 1, "#4A4A58"); R(lw - 8, 7, 7, 1, "#2A2A33")   -- the door closer
+    for _, y in ipairs({12, h // 2 - 4, h - 26}) do R(1, y, 3, 6, "#2A2A33"); R(1, y, 1, 6, "#4A4A58") end   -- hinges
+    local hx, hy = lw - 7, h // 2 + 2
+    R(hx, hy, 9, 3, "#C8CCD8"); R(hx, hy, 9, 1, "#EDEFF4"); R(hx + 6, hy - 3, 3, 8, "#8E939E")   -- lever on its rose
+    R(hx + 4, hy - 10, 4, 4, "#2A2A33"); R(hx + 5, hy - 9, 2, 1, "#8E939E")                     -- the deadbolt
+    if opts.reader then
+      local rx = w - rw - 1
+      R(rx, 20, 8, 17, "#2A2D36"); R(rx, 20, 8, 1, "#4A4F5A")
+      R(rx + 2, 22, 4, 2, "#4EC46A"); R(rx + 2, 22, 4, 1, "#9EF0B0")                           -- the green light
+      for r = 0, 2 do for c = 0, 2 do R(rx + 1 + c * 2, 26 + r * 2, 1, 1, "#B8BCC4") end end    -- the keypad
+      R(rx + 1, 33, 6, 2, "#14566E")                                                           -- the card slot
+    end
+  end)
+end
+
+-- 3x5 pixel font (the game UI font) for door plates and small signs
+local DOORFONT = {
+  A = {"XXX","X.X","XXX","X.X","X.X"}, C = {".XX","X..","X..","X..",".XX"}, E = {"XXX","X..","XX.","X..","XXX"},
+  F = {"XXX","X..","XX.","X..","X.."}, I = {"XXX",".X.",".X.",".X.","XXX"},
+  H = {"X.X","X.X","XXX","X.X","X.X"}, K = {"X.X","X.X","XX.","X.X","X.X"}, L = {"X..","X..","X..","X..","XXX"},
+  N = {"XXX","X.X","X.X","X.X","X.X"}, O = {".X.","X.X","X.X","X.X",".X."}, R = {"XX.","X.X","XX.","X.X","X.X"},
+  S = {".XX","X..",".X.","..X","XX."}, T = {"XXX",".X.",".X.",".X.",".X."}, W = {"X.X","X.X","XXX","XXX","X.X"},
+  Y = {"X.X","X.X",".X.",".X.",".X."}, [" "] = {"...","...","...","...","..."},
+}
+function L.doorText(R, str, x, y, col)
+  for i = 1, #str do
+    local rows = DOORFONT[str:sub(i, i)] or DOORFONT[" "]
+    for r = 1, 5 do for c = 1, 3 do
+      if rows[r]:sub(c, c) == "X" then R(x + (i - 1) * 4 + (c - 1), y + r - 1, 1, 1, col) end
+    end end
+  end
+end
+
+-- a door plate over a steel door: dark border, a coloured field, white letters (8 characters or fewer)
+function P.doorPlate(text, field)
+  local w = #text * 4 - 1 + 4
+  return L.piece(w, 8, function(R)
+    R(0, 0, w, 8, "#2A2D36"); R(1, 1, w - 2, 6, field or "#14566E")
+    L.doorText(R, text, 3, 1, "#FFFFFF")
+  end)
+end
+
+-- a small notice: white card, a red band on top, dark letters
+function P.smallSign(text)
+  local w = #text * 4 - 1 + 4
+  return L.piece(w, 11, function(R)
+    R(0, 0, w, 11, "#F4F2EA"); R(0, 0, w, 3, "#C23B2E"); R(0, 10, w, 1, "#CFCBBE"); R(w - 1, 3, 1, 8, "#CFCBBE")
+    L.doorText(R, text, 2, 4, "#17121F")
+  end)
+end
+
 function P.tv()
   return L.piece(36, 22, function(R)
     L.box(R, 0, 0, 36, 22, "#2A2A33", "#4A4A56", "#1C1C24")
