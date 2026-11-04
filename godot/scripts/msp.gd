@@ -16,6 +16,7 @@ const COMPANY := "Pixel IT Partners"
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): tickets opened, closed and missed per day
 const Incident := preload("res://scripts/incident.gd")  # R37: review lessons change the odds
 const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
+const PSA_FROM := "ConnectWhy PSA <noreply@connectwhy.example>"  # ticket assignment notices are automated PSA mail, not the client writing in
 const CLIENTS := [
 	{
 		"name": "Acme Dental Group",
@@ -559,7 +560,7 @@ func reset() -> void:
 		),
 		0
 	)
-	send_text("Dispatch", "Welcome! Press P for your phone. I will text you about urgent tickets.")
+	send_text("Dispatch", "Welcome! Press P for your phone. New tickets arrive as ConnectWhy PSA email; texts are for your boss and your coworkers.")
 
 
 # the resume point (Campaign.snapshot, R16): the whole service desk, so a mid-day continue puts every ticket,
@@ -754,12 +755,21 @@ func create_problem(
 	_next_id += 1
 	tickets.append(t)
 	Dash.note_opened()
-	_mail(contact + " <" + CLIENTS[client].mail + ">", t.summary, t.body, t.id)
+	_mail(PSA_FROM, "Ticket #%d assigned: %s" % [t.id, t.summary], assignment_mail(t), t.id)
 	ticket_added.emit(t)
-	if t.pri <= 2:
-		send_text("Dispatch", "P%d #%d %s - %s" % [t.pri, t.id, t.summary, CLIENTS[client].name])
 	changed.emit()
 	return t
+
+
+# the automated ConnectWhy PSA notice for a new ticket: who, what, how urgent, and the request in the client's own words
+func assignment_mail(t: Dictionary, request := "") -> String:
+	var who := "Pixel IT Partners (internal)" if t.internal else str(CLIENTS[int(t.client)].name)
+	var text := request if request != "" else str(t.body)
+	var machine := ("Machine: %s. " % str(t.endpoint)) if str(t.endpoint) != "" else ""
+	return (
+		"Ticket #%d has been assigned to you. Client: %s. Contact: %s. Priority: P%d. %sRequest: %s This is an automated message from ConnectWhy PSA. Please do not reply."
+		% [int(t.id), who, str(t.contact), int(t.pri), machine, text]
+	)
 
 
 func day_cap() -> int:
@@ -829,7 +839,7 @@ func create_internal(desk: int, summary: String, body: String) -> void:
 	Dash.note_opened()
 	_internal[desk] = t.id
 	Social.note_outage(desk)
-	_mail("Staff - " + str(DESK_NAMES.get(desk, "?")), summary, body, t.id)
+	_mail(PSA_FROM, "Ticket #%d assigned: %s" % [t.id, summary], assignment_mail(t, "Reported by " + str(DESK_NAMES.get(desk, "?")) + ". " + body), t.id)
 	ticket_added.emit(t)
 	changed.emit()
 
