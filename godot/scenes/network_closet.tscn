@@ -87,12 +87,25 @@ target = NodePath("../../Fx/Switch")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseSwitch"]
 shape = SubResource("shape_fx")
 
+[node name="UseToner" type="Area2D" parent="Interactables"]
+position = Vector2(247, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Toner")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseToner"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Switch" type="Node2D" parent="Fx"]
 position = Vector2(152, 54)
 script = ExtResource("fx")
 kind = "switch"
+
+[node name="Toner" type="Node2D" parent="Fx"]
+position = Vector2(241, 111)
+script = ExtResource("fx")
+kind = "toner_kit"
 
 [node name="Rack" type="Node2D" parent="Fx"]
 position = Vector2(168, 2)
@@ -225,6 +238,46 @@ port_id = "ups_btn"
 position = Vector2(159, 74)
 script = ExtResource("port")
 port_id = "wall"
+
+[node name="pp1" type="Node2D" parent="Ports"]
+position = Vector2(178, 9)
+script = ExtResource("port")
+port_id = "pp1"
+
+[node name="pp2" type="Node2D" parent="Ports"]
+position = Vector2(185, 9)
+script = ExtResource("port")
+port_id = "pp2"
+
+[node name="pp3" type="Node2D" parent="Ports"]
+position = Vector2(192, 9)
+script = ExtResource("port")
+port_id = "pp3"
+
+[node name="pp4" type="Node2D" parent="Ports"]
+position = Vector2(199, 9)
+script = ExtResource("port")
+port_id = "pp4"
+
+[node name="pp5" type="Node2D" parent="Ports"]
+position = Vector2(206, 9)
+script = ExtResource("port")
+port_id = "pp5"
+
+[node name="pp6" type="Node2D" parent="Ports"]
+position = Vector2(213, 9)
+script = ExtResource("port")
+port_id = "pp6"
+
+[node name="pp7" type="Node2D" parent="Ports"]
+position = Vector2(220, 9)
+script = ExtResource("port")
+port_id = "pp7"
+
+[node name="pp8" type="Node2D" parent="Ports"]
+position = Vector2(227, 9)
+script = ExtResource("port")
+port_id = "pp8"
 
 [node name="RackZone" type="Area2D" parent="Interactables"]
 position = Vector2(198, 95)

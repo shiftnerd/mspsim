@@ -106,7 +106,7 @@ const SCENES := {
 		"spawns": {"start": [182, "right"], "from_warehouse": [172, "right"]},
 		"links": [{"name": "ToWarehouse", "x": 133, "to": "warehouse", "spawn": "from_closet"}],
 		"seats": {},
-		"uses": {"switch": 154},
+		"uses": {"switch": 154, "toner_kit": 247},
 		"outside_x": -1
 	},
 	"warehouse":

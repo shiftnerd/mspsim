@@ -51,7 +51,7 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 ## 3. The world
 
 **Pixel IT Partners**: main floor, two offices, a kitchenette (with a fridge and a coffee machine that has opinions) and two restrooms,
-a cubicle area, a conference room, a warehouse with a parking lot, and behind the warehouse a network closet with a real rack you can plug and unplug.
+a cubicle area, a conference room, a warehouse with a parking lot, and behind the warehouse a network closet with a real rack you can plug and unplug (its patch panel is labelled by Dan, mostly: some tags are missing, faded or wrong, and a toner and probe traces the real cable).
 After work you can go bowling, sing karaoke, solve an escape room, eat at the restaurant, play cornhole and have a cookout, or race office chairs.
 
 **The people** (canon: **Alan and Garrison are the two owners** of Pixel IT Partners. Alan leans technical, Garrison leans sales and culture; Office 1 and Office 2 are theirs. They are not ticket techs: they talk about payroll, clients, the van, vendors, hiring and the next outing, and in the tech campaign only jump in as a last resort. Morgan manages the floor for them.)

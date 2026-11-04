@@ -113,6 +113,14 @@ func _draw() -> void:
 		draw_rect(Rect2(-2, -4, 5, 7), INK)
 		draw_rect(Rect2(-1, -3, 3, 4), Color("4f7fd0"))
 		draw_rect(Rect2(-1, 1, 3, 2), Color("c8ccd8"))
+	elif item == "toner":  # tone generator with a probe wand (R37); the LED blinks while a tone is clipped on a desk
+		draw_rect(Rect2(-3, -3, 7, 8), INK)
+		draw_rect(Rect2(-2, -2, 5, 6), Color("e8a030"))
+		draw_rect(Rect2(-1, -1, 3, 2), Color("3c414d"))
+		var on: bool = Net.tone_desk > 0 and int(_t * 4.0) % 2 == 0
+		draw_rect(Rect2(0, 2, 1, 1), Color("9fe870") if on else Color("5a3a18"))
+		draw_rect(Rect2(_side * 3.0 - 0.5, -8, 1, 6), INK)  # the probe wand
+		draw_rect(Rect2(_side * 3.0 - 0.5, -9, 1, 1), Color("e04646"))
 	elif item == "plug_pwr":
 		draw_rect(Rect2(-2, -4, 5, 7), INK)
 		draw_rect(Rect2(-1, -3, 3, 4), Color("3c414d"))

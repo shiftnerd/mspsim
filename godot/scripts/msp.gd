@@ -816,6 +816,11 @@ func create_internal(desk: int, summary: String, body: String) -> void:
 				if Campaign.active and Skills.level("networking") >= 2
 				else []
 			)
+			+ (
+				["Tip: jack labels drift. If port %d is not the one, trace it with the toner (tool case in the closet)." % desk]
+				if Campaign.active and Skills.level("networking") >= 3 and Net.is_loose(desk)
+				else []
+			)
 		),
 		"breached": false,
 	}

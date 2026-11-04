@@ -18,10 +18,11 @@ Built from it: the owner campaign played as Alan or Garrison (the other is the c
 - More story days for the quiet days: the weeks between the big jobs still need small human beats.
 - Dialer / calling clients from the phone app, replies that do something, a notification buzz and banner on the HUD, a lock screen, a camera app.
 - NPCs noticing and reporting outages themselves (a coworker calls it in before the monitoring does).
-- A labelled patch panel and cable tracing in the closet, a spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
-- Phone: more ticket types, a "best moment" recap on the day report.
-- Coworkers invite you to things beyond the Lynk lunch messages (a beer after a hard night), weekends and holidays.
-- A settings and credits screen, an animated logo.
+- (Built: labelled patch panel and cable tracing.) A spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
+- Phone: more ticket types, a day-end score screen with a "best moment" recap.
+- Coworkers invite you to things (lunch, a beer after a hard night), react to the clock themselves ("lunch?"), weekends and holidays, the day-20 review quoting what they said.
+- A settings and credits screen, music, an animated logo. (The character-select / first-day screen with the phone pick is done: see CLAUDE.md "Logo + title screen".)
+- More characters that can be played (Vic is now selectable as the 7th).
 
 ## Owner campaign
 - Client QBR as a real conference-room scene with a client character (not only a card).
