@@ -192,6 +192,8 @@ func _run() -> void:
 	var gutters := 0
 	for i in 12:
 		o._bowl_setup()
+		o.g.shift = 0.0  # classic centre again (the moving sweet spot would change how far off 0.0 is)
+		o.g.pcen = 0.85
 		o.g.marker = 0.0
 		o.g.power = 0.0
 		var g0: int = c.value("bowl_gutters")
