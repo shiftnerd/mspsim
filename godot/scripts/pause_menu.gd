@@ -33,7 +33,7 @@ func _ready() -> void:
 # true when there is a room with a player in it and nothing else has the screen
 func can_open(strict := true) -> bool:
 	var scene := get_tree().current_scene
-	if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or scene.get_node_or_null("Actors/Player") == null:
+	if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or Players.player0(scene) == null:
 		return false
 	if not strict:
 		return true

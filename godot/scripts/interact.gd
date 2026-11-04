@@ -8,7 +8,7 @@ extends Area2D
 @export var low_priority := false  # loses to nearby things (the duck must not steal the monitor)
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone
 
 
 func _ready() -> void:
@@ -25,26 +25,28 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.has_method("sit"):
-		_player = body
+		if body not in _bodies:
+			_bodies.append(body)
 		body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
 	if body.has_method("sit"):
 		body.remove_near(self)
-		_player = null
+		_bodies.erase(body)
 	_arrow.visible = false
+
+
+func _watched() -> bool:
+	for body in _bodies:
+		if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+			return true
+	return false
 
 
 func _process(_delta: float) -> void:
 	var fx := get_node(target)
-	_arrow.visible = (
-		_player != null
-		and _player.nearest() == self
-		and _player.state != "sitting"
-		and not fx.busy
-		and (fx.kind != "bell" or SalesCampaign.bell_ready)
-	)
+	_arrow.visible = _watched() and not fx.busy and (fx.kind != "bell" or SalesCampaign.bell_ready)
 
 
 func _hand_over(body: Node, fx: Node) -> void:

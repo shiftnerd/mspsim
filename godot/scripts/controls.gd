@@ -8,6 +8,8 @@ extends Node
 #   Controls.confirm(event) / back(event)  Enter, Space or E / Esc or Backspace, or the ui_accept / ui_cancel actions
 #   Controls.pressed(event)             a fresh key, pad button, action or stick push (guards the menu handlers)
 #   Controls.nav(event) / step(...)     "up" "down" "left" "right" from arrows, W A S D, the D-pad or the stick
+# Co-op (Players.coop, off by default): confirm_for(event, slot) / back_for(event, slot), action_for(slot, "jump"),
+# slot_of(event); slot 1 reads a p2_ copy of the table bound to its own pad (ensure_slot).
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
@@ -93,6 +95,7 @@ const HELP := [
 
 
 var _stick := {}
+var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
 var _stick_frame := -1
 var _stick_result := false
@@ -128,6 +131,79 @@ func ensure() -> void:
 			motion.axis = ax[0]
 			motion.axis_value = ax[1]
 			InputMap.action_add_event(action, motion)
+
+
+# co-op (docs/scope-coop.md 5.1): slot 0 keeps the plain action names, slot 1 uses a p2_ copy of the whole table that only
+# listens to its own joypad device. "" for slot 0, "p2_" for slot 1.
+func prefix(slot: int) -> String:
+	return "" if slot <= 0 else "p%d_" % (slot + 1)
+
+
+# the action name that slot `slot` reads: action_for(1, "jump") = "p2_jump"
+func action_for(slot: int, action: String) -> String:
+	return prefix(slot) + action
+
+
+# register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on
+# (Players.enable_coop / join), so single player never sees a p2_ action. Pad 2 needs its own confirm and cancel: the
+# built-in ui_accept / ui_cancel listen to device 0 only, so p2_ui_accept / p2_ui_cancel carry A and B for the device.
+func ensure_slot(slot: int, device: int) -> void:
+	if slot <= 0 or _slot_device.get(slot, -2) == device:
+		return
+	_slot_device[slot] = device
+	var pfx := prefix(slot)
+	for action in ACTIONS:
+		var spec: Array = ACTIONS[action]
+		var events := []
+		for button in spec[1]:
+			var pad := InputEventJoypadButton.new()
+			pad.button_index = button
+			pad.device = device
+			events.append(pad)
+		for ax in spec[2]:
+			var motion := InputEventJoypadMotion.new()
+			motion.axis = ax[0]
+			motion.axis_value = ax[1]
+			motion.device = device
+			events.append(motion)
+		_rebind(pfx + action, events)
+	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+		var btn := InputEventJoypadButton.new()
+		btn.button_index = pair[1]
+		btn.device = device
+		_rebind(pfx + pair[0], [btn])
+
+
+func _rebind(name: String, events: Array) -> void:
+	if InputMap.has_action(name):
+		InputMap.action_erase_events(name)
+	else:
+		InputMap.add_action(name, 0.5)
+	for ev in events:
+		InputMap.action_add_event(name, ev)
+
+
+# which player an event belongs to (see Players.slot_of): keys are slot 0, a pad is the slot that joined on its device
+func slot_of(event: InputEvent) -> int:
+	return Players.slot_of(event)
+
+
+# confirm / back for a slot: slot 0 is the plain confirm() / back() (Enter, Space, E or its pad A), slot 1 is the A / B of
+# its own pad only. An event that belongs to another slot is never a confirm.
+func confirm_for(event: InputEvent, slot: int, with_e: bool = true, with_space: bool = true) -> bool:
+	if slot_of(event) != slot:
+		return false
+	if slot <= 0:
+		return confirm(event, with_e, with_space)
+	return event.is_action(prefix(slot) + "ui_accept")
+
+
+func back_for(event: InputEvent, slot: int, with_backspace: bool = true) -> bool:
+	if slot_of(event) != slot:
+		return false
+	if slot <= 0:
+		return back(event, with_backspace)
+	return event.is_action(prefix(slot) + "ui_cancel")
 
 
 func _has_button(action: String, button: int) -> bool:

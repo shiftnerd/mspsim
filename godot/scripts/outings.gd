@@ -939,7 +939,7 @@ func start(id: String, from_invite := false, options := {}) -> void:
 	var in_room := use_rooms and not bool(opts.get("panel", false))
 	if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
 		_return_scene = here.scene_file_path.get_file().get_basename()
-		var me := here.get_node_or_null("Actors/Player")
+		var me := Players.player0(here)
 		_return_x = me.global_position.x if me != null else -1.0
 		_traveled = true
 		_wait_id = id

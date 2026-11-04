@@ -394,7 +394,7 @@ func start(who: String, npc: Node) -> void:
 
 func _player() -> Node:
 	var scene := get_tree().current_scene
-	return scene.get_node_or_null("Actors/Player") if scene != null else null
+	return Players.player0(scene) if scene != null else null
 
 
 func _bubble(glyph: String) -> void:

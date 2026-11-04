@@ -886,7 +886,7 @@ func send_vic_to_player() -> void:
 		return
 	var px := 150.0
 	var player: Node = (
-		_stage.get_node_or_null("Actors/Player") if is_instance_valid(_stage) else null
+		Players.player0(_stage) if is_instance_valid(_stage) else null
 	)
 	if player != null:
 		px = player.global_position.x
