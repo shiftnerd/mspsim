@@ -3,6 +3,8 @@
 *A readable overview of the game for anyone who wants to review the story and design. No code needed. Line-by-line text is in
 `godot/story/STORY.md` (generated, read-only) and can be changed in `godot/story/strings.txt` (plain text). See `godot/story/README.md`.*
 
+*Looking for how to play, not the story? The spoiler-free [instruction manual](manual/README.md) covers the controls, menus and places.*
+
 ---
 
 ## 1. The pitch
