@@ -52,6 +52,8 @@ func _init() -> void:
 	var campaign := root.get_node("Campaign")
 	game.title_mode = false
 	campaign.new_game(campaign.FREE)
+	# the run seed decides moods, drawings and rival skill: pin it so the order of the dependent outings below never changes
+	root.get_node("Difficulty").seed_run(4240)
 	change_scene_to_file("res://scenes/main_floor.tscn")
 	await _settle("main_floor")
 	o.enabled = true
@@ -265,6 +267,7 @@ func _init() -> void:
 	await _leave(o)
 
 	# ---- dinner at the booth
+	dif.seed_run(4241)
 	await _go(o, "dinner", "restaurant")
 	o.press(KEY_ENTER)
 	_check(o.g.stage == "sit", "dinner waits until you sit down")

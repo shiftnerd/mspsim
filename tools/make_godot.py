@@ -859,6 +859,7 @@ var goal := 0.0  # roll_door: the state asked for (World.door_open)
 var _door: Sprite2D = null
 var _door_acc := 0.0
 var _door_snd := 0.0
+var _door_loud := false  # the rattle is heard everywhere (the chair race start), not by distance
 
 
 func _ready() -> void:
@@ -2075,6 +2076,23 @@ func door_toggle() -> void:
     _door_snd = _time + 0.9
 
 
+# the chair race rolls the door up for its start and down again after (the rattle plays at full volume, the door is far
+# from the starting line); a door that was already open is left alone
+func door_set(want: float, loud := false) -> void:
+    goal = clampf(want, 0.0, 1.0)
+    World.door_open = goal
+    _door_loud = loud
+    _door_rattle()
+    _door_snd = _time + 0.9
+
+
+func _door_rattle() -> void:
+    if _door_loud:
+        Sfx.play("door_rattle")
+    else:
+        Sfx.play_near("door_rattle", self)
+
+
 func _door_ready() -> void:
     add_to_group("roll_door")
     goal = clampf(World.door_open, 0.0, 1.0)
@@ -2103,7 +2121,7 @@ func _door_tick(delta: float) -> void:
         return
     open = move_toward(open, goal, delta / DOOR_SECS)
     if _time >= _door_snd:
-        Sfx.play_near("door_rattle", self)
+        _door_rattle()
         _door_snd = _time + 0.9
     _door_acc += delta
     var done := is_equal_approx(open, goal)
@@ -2113,7 +2131,11 @@ func _door_tick(delta: float) -> void:
         _door_acc = 0.0
         door_apply()
     if done:
-        Sfx.play_near("door_thunk", self)
+        if _door_loud:
+            Sfx.play("door_thunk")
+        else:
+            Sfx.play_near("door_thunk", self)
+        _door_loud = false
 
 
 # the wall plate: an up button (open, green) and a down button (close, amber); a red light blinks while it rolls
@@ -28433,7 +28455,7 @@ func begin_play(pick := "") -> void:
         "grill":
             _grill_setup()
         "chair":
-            pass  # set up when the page opened: the race is on the floor, the countdown starts now
+            _chair_door(true)  # set up when the page opened: the race is on the floor, the countdown starts now
         _:
             _dinner_setup()
     if room_mode():
@@ -30347,6 +30369,30 @@ func _chair_clear() -> void:
     if track != null and is_instance_valid(track):
         track.clear()
     g.erase("track")
+    _chair_door(false)
+
+
+# the warehouse overhead door rolls up for the start (a small cinematic through the roll_door fx, loud because it is far from
+# the grid) and down again when the race is over; a door the player had already opened stays open
+func _chair_door(up: bool) -> void:
+    var door := get_tree().get_first_node_in_group("roll_door") if room_mode() else null
+    if up:
+        if door == null or g.has("door_was"):
+            return
+        g["door_was"] = float(door.goal)
+        if door.goal < 0.5:
+            door.door_set(1.0, true)
+        return
+    if not g.has("door_was"):
+        return
+    var was: float = g.get("door_was")
+    g.erase("door_was")
+    if was >= 0.5:
+        return
+    if door != null and is_instance_valid(door):
+        door.door_set(0.0, true)
+    else:
+        World.door_open = 0.0
 
 
 func _chair_tick(dt: float) -> void:
@@ -30416,6 +30462,7 @@ func _chair_end() -> void:
     g.new_best = not race.dnf and (not chair_best.has(Difficulty.tier) or t < float(chair_best[Difficulty.tier]))
     if g.new_best:
         chair_best[Difficulty.tier] = snappedf(t, 0.01)
+    _chair_door(false)
     _finish(race.stars())
 
 
