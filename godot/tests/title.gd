@@ -63,7 +63,10 @@ func _process(_delta: float) -> bool:
 			)
 			_press(KEY_ENTER)
 		80:
-			_check(current_scene._select != null, "Free Play opens the character select")
+			_check(current_scene._select != null, "Free Play opens the character select (straight in the creator)")
+			_press(KEY_ENTER)  # the creator goes on to the options page
+		100:
+			_check(current_scene._select != null and current_scene._select.step == "options", "Enter goes on to the options page")
 			_press(KEY_ENTER)
 		150:
 			_check(

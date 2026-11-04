@@ -49,6 +49,7 @@ func _process(_delta: float) -> bool:
 			var cs: Node = current_scene._select
 			_check(cs != null and y.pending and cs.mode == "tech", "NEW GAME PLUS opens the character select with Year 2 pending")
 			_check(cs.summary().contains("YEAR 2"), "the summary names YEAR 2")
+			cs.step = "options"  # the MUT row lives on the options page
 		90:
 			_shot("chip_auto")
 			current_scene._select.change_mut(1)
@@ -60,8 +61,7 @@ func _process(_delta: float) -> bool:
 		110:
 			_check(y.ban != "" and y.chip_text().begins_with("BAN"), "B turns it into a ban: " + y.chip_text())
 			_shot("chip_ban")
-			current_scene._select.confirm()
-			current_scene._select.confirm()
+			current_scene._select.confirm()  # build
 		130:
 			_check(current_scene._select.step == "build" and root.get_node("Build").budget("normal") == 14, "the build step offers 14 points in Year 2")
 			_shot("build")

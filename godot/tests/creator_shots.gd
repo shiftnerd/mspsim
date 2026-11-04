@@ -30,8 +30,7 @@ func _process(_delta: float) -> bool:
 			current_scene._open_menu()
 			current_scene._choose(0)  # TECH CAMPAIGN
 		80:
-			current_scene._select.setup("tech")
-			current_scene._select.sel = 0
+			current_scene._select.setup("tech")  # opens in the creator
 			look.look = {
 				"name": "JORDAN",
 				"hair_style": "curly",
@@ -44,8 +43,7 @@ func _process(_delta: float) -> bool:
 			current_scene._select._refresh_look()
 		100:
 			_shot("card")
-			current_scene._select.confirm()
-			current_scene._select.create_row = 1
+			current_scene._select.create_row = 2
 			current_scene._select.queue_redraw()
 		130:
 			_shot("create")
@@ -56,8 +54,6 @@ func _process(_delta: float) -> bool:
 		145:
 			_shot("create_clothes")
 			current_scene._select.setup("free")
-			current_scene._select.sel = 0
-			current_scene._select.confirm()
 			look.look = {
 				"name": "ZOE",
 				"hair_style": "receding",

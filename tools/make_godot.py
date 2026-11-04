@@ -47741,15 +47741,19 @@ func _paint_seed(size: Vector2) -> void:
 
 write("scripts/charselect.gd", '''extends Node2D
 # gdlint:disable=max-returns
-# Character select / first-day screen, shown by the title menu before a new run starts. A row of
-# the playable characters (a carousel in narrow portrait) with an idle preview, a name and a short
-# blurb; the tech campaign then asks for your phone. Left / Right move, Enter / E / Space confirm,
-# Esc goes back, mouse hover and click work like the title menu. Confirming applies the choice
-# (Player.current_character, Phone.os) and emits done(result); Esc on the first step emits
-# cancelled. In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at
-# their desks as NPCs, so the tech campaign offers only the people who are not in World.CAST; the
-# owner campaign offers Alan or Garrison (the other owner becomes your partner NPC); Free Play offers
-# everyone. Whoever you pick as a cast member leaves the cast and sits at their own desk (Campaign.player_as).
+# Character select / first-day screen, shown by the title menu before a new run starts. The tech campaign and
+# Free Play open STRAIGHT INTO the creator (the "create" step, the player's last custom look): its first row is
+# START < MY LOOK >, one selector that also lists the ready-made people (and the saved looks). A ready-made
+# person is an EDITABLE look (STOCK_LOOKS) while the original sprite plays unchanged if the player leaves it as is;
+# the first edit turns it into MY LOOK. The owner, sales and service campaigns still show their fixed people
+# (a short row of cards, "char" step). Every mode then goes on through its own pages, one option list per page: the
+# phone (tech only), "options" (LEVEL, START, SEED, TOOLS, MUT) and the point-buy "build". Left / Right change,
+# Enter / E / Space go on, Esc goes back one page (Esc on the first emits cancelled), mouse hover and click work like
+# the title menu. Confirming applies the choice (Player.current_character, Phone.os) and emits done(result).
+# In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at their desks as NPCs, so the tech
+# campaign offers only the people who are not in World.CAST; the owner campaign offers Alan or Garrison (the other
+# owner becomes your partner NPC); Free Play offers everyone. Whoever you pick as a cast member leaves the cast and
+# sits at their own desk (Campaign.player_as).
 
 signal done(result: Dictionary)
 signal cancelled
@@ -47848,6 +47852,69 @@ const POSES := [
 ]
 const POSE_SECS := 2.4
 const GRID_COLS := 9  # the pad's letter grid
+const START_ROW := {"kind": "start", "label": "START"}  # the first row of the LOOK page when there is more than one way to start
+# The ready-made people as editable looks (the START list): the closest creator look to each stock sheet. Only the changed fields
+# are listed (the rest is Look.default_look()). The exact original sprite plays while the look is left alone (see set_start).
+const STOCK_LOOKS := {
+    "office_intern": {"name": "INTERN"},
+    "office_adult":
+    {
+        "name": "ADULT",
+        "hair_style": "receding",
+        "hair": "74492a",
+        "shirt": "8c2b40",
+        "shoes": "8a8f9a",
+        "acc": {"beard": "full"}
+    },
+    "office_dan":
+    {
+        "name": "DAN",
+        "hair_style": "short",
+        "hair": "4a3222",
+        "shirt": "3c55c0",
+        "pants": "8a6a42",
+        "shoes": "3a3a44",
+        "acc": {"glasses": "thin"}
+    },
+    "office_alan":
+    {
+        "name": "ALAN",
+        "hair_style": "short",
+        "hair": "3e2c20",
+        "shirt": "7fa39b",
+        "pants": "3f5e8e",
+        "shoes": "6e7a68"
+    },
+    "site_alan":
+    {
+        "name": "SITE ALAN",
+        "hair_style": "short",
+        "hair": "3e2c20",
+        "shirt": "4e535b",
+        "pants": "3f5e8e",
+        "shoes": "6e7a68"
+    },
+    "casual_garrison":
+    {
+        "name": "GARRISON",
+        "hair_style": "curly",
+        "hair": "2a1c14",
+        "shirt": "4f9c8e",
+        "pants": "2b3550",
+        "shoes": "cfc8b5",
+        "pattern": "plaid",
+        "acc": {"beard": "goatee"}
+    },
+    "sales_vic":
+    {
+        "name": "VIC",
+        "hair_style": "short",
+        "hair": "8a6a3a",
+        "shirt": "2b3a5e",
+        "pants": "3a3f4a",
+        "shoes": "2a2a33"
+    },
+}
 const CUSTOM_BLURB := "CHOOSE LOOK AND CLOTHES ON THE PAGES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
     "office_intern":
@@ -47904,9 +47971,11 @@ const PHONES := [
 ]
 
 var mode := "free"
-var step := "char"  # "char", then (tech campaign only) "phone", then (tech and owner) "build" (X7, build_panel.gd)
-var ids: Array = []
+var step := "char"  # the page: "char" (cards: owner, sales, service) or "create" (tech, Free Play), "phone" (tech), "options", "build" (X7)
+var ids: Array = []  # the cards of the char step, or (direct) the START list: CUSTOM, "slotN" (a saved look), then the ready-made people
 var sel := 0
+var direct := false  # opens straight into the creator (tech, Free Play, the outfit swap): ids is the START list
+var opt_row := 0  # the row of the options page (options_rows())
 var phone_sel := 0
 var facing := "right"
 var create_row := 0  # the row of the create step: an index into the page's rows, one past the last = the RANDOM | PRESETS | DONE row
@@ -47925,6 +47994,8 @@ var _name_backup := ""
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
+var _mine := {}  # {look, acc}: the working custom look (MY LOOK); a ready-made start never overwrites it
+var _start_sig := ""  # the look a ready-made start loaded: while it is unchanged the original sprite is played
 var _panel: RefCounted = null  # the build step's working build
 var _confirmed := false
 
@@ -47950,12 +48021,87 @@ func offers_custom(for_mode: String) -> bool:
 
 
 func is_custom() -> bool:
-    return sel < ids.size() and ids[sel] == CUSTOM
+    if sel >= ids.size():
+        return false
+    var id := str(ids[sel])
+    return id == CUSTOM or id.begins_with("slot") or (overlay and STOCK_LOOKS.has(id))
 
 
-# the raw card id under the cursor (CUSTOM for the MAKE YOUR OWN card)
+# the START list entry under the cursor (CUSTOM for MY LOOK, "slotN" for a saved look, or a ready-made person's id)
 func sel_id() -> String:
     return str(ids[sel]) if sel < ids.size() else PLAYER.current_character
+
+
+# a ready-made person is picked and still unedited: the run plays the original sprite
+func stock_pick() -> bool:
+    return direct and not overlay and STOCK_LOOKS.has(sel_id())
+
+
+# the START list of a mode that opens in the creator: MY LOOK, the saved looks that exist, then the ready-made people the
+# cast rule allows (choices(): non-cast people in the tech campaign, everyone in Free Play)
+func start_options(for_mode: String) -> Array:
+    var out: Array = [CUSTOM]
+    for i in Look.PRESET_SLOTS:
+        if not Look.preset(i).is_empty():
+            out.append("slot%d" % (i + 1))
+    out.append_array(choices(for_mode))
+    return out
+
+
+# the text of the START box (12 characters at most)
+func start_label(id: String) -> String:
+    if id == CUSTOM:
+        return "MY LOOK"
+    if id.begins_with("slot"):
+        return str(Look.preset(int(id.substr(4)) - 1).get("name", id)).to_upper()
+    return str(STOCK_LOOKS.get(id, {}).get("name", id.to_upper()))
+
+
+func _look_sig() -> String:
+    return str(Look.look) + str(Look.acc)
+
+
+# pick an entry of the START list: the look it stands for is worn by the creator at once. MY LOOK brings back the working look;
+# a ready-made person brings its STOCK_LOOKS look (editable) and, until something changes, the original sprite
+func set_start(index: int) -> void:
+    if not direct or ids.is_empty():
+        return
+    sel = posmod(index, ids.size())
+    var id := sel_id()
+    if id == CUSTOM:
+        Look.look = (_mine.look as Dictionary).duplicate()
+        Look.acc = (_mine.acc as Dictionary).duplicate()
+    elif id.begins_with("slot"):
+        Look.load_preset(int(id.substr(4)) - 1)
+    else:
+        var d: Dictionary = STOCK_LOOKS[id]
+        Look.look = Look.sanitize(d)
+        Look.acc = Look.sanitize_acc(d.get("acc", {}))
+    _start_sig = _look_sig()
+    _refresh_look(true)
+
+
+# the working custom look goes back into Look (a ready-made person was only borrowed)
+func _restore_mine() -> void:
+    if direct and not overlay and not _mine.is_empty():
+        Look.look = (_mine.look as Dictionary).duplicate()
+        Look.acc = (_mine.acc as Dictionary).duplicate()
+
+
+# the one preview sprite: the START list's (direct) or the card's under the cursor
+func _preview() -> AnimatedSprite2D:
+    if direct:
+        return _sprites[0] if not _sprites.is_empty() else null
+    return _sprites[sel] if sel < _sprites.size() else null
+
+
+func _new_sprite(character: String, custom: bool) -> AnimatedSprite2D:
+    var spr := AnimatedSprite2D.new()
+    spr.sprite_frames = Look.frames_for(character, custom)
+    Look.apply(spr, character, custom)
+    spr.play("idle_right")
+    add_child(spr)
+    return spr
 
 
 # the point-buy step (X7): the campaigns that have a stat set; Free Play has none
@@ -47995,15 +48141,22 @@ func choices(for_mode: String) -> Array:
 
 func setup(for_mode: String, year2 := false) -> void:
     mode = for_mode
-    step = "char"
-    ids = choices(mode)
-    if offers_custom(mode):
-        ids.push_front(CUSTOM)
-    sel = maxi(0, ids.find(PLAYER.current_character))
-    if not PLAYER.current_character in ids:
-        sel = maxi(0, ids.find("office_adult"))
-    if offers_custom(mode) and Look.active:
-        sel = 0  # the last new run was a custom person
+    direct = offers_custom(mode)
+    overlay = false
+    if direct:  # tech and Free Play open in the creator, on the last custom look
+        Look.load_presets()
+        ids = start_options(mode)
+        step = "create"
+        sel = 0
+    else:
+        ids = choices(mode)
+        step = "char"
+        sel = maxi(0, ids.find(PLAYER.current_character))
+        if not PLAYER.current_character in ids:
+            sel = maxi(0, ids.find("office_adult"))
+    _mine = {"look": Look.look.duplicate(), "acc": Look.acc.duplicate()}
+    _start_sig = ""
+    opt_row = 0
     create_row = 0
     create_page = 0
     create_col = 0
@@ -48018,23 +48171,26 @@ func setup(for_mode: String, year2 := false) -> void:
     for spr in _sprites:
         spr.queue_free()
     _sprites.clear()
-    for id in ids:
-        var spr := AnimatedSprite2D.new()
-        spr.sprite_frames = Look.frames_for(Look.BASE if id == CUSTOM else id, id == CUSTOM)
-        Look.apply(spr, Look.BASE, id == CUSTOM)
-        spr.play("idle_right")
-        add_child(spr)
-        _sprites.append(spr)
+    if direct:
+        _sprites.append(_new_sprite(Look.BASE, true))  # one preview: the look, or (a ready-made start) the original sprite
+    else:
+        for id in ids:
+            _sprites.append(_new_sprite(id, false))
     queue_redraw()
 
 
-# the Free Play outfit swap: the create step alone, editing the player's own look live (Esc restores it, DONE keeps it)
+# the Free Play outfit swap: the create step alone, editing the player's own look live (Esc restores it, DONE keeps it). It offers the
+# same START list as Free Play, but every start is an editable look (the swap always keeps a custom look)
 func setup_overlay() -> void:
     overlay = true
+    direct = true
     mode = FREE_MODE
     step = "create"
-    ids = [CUSTOM]
+    Look.load_presets()
+    ids = start_options(mode)
     sel = 0
+    opt_row = 0
+    _start_sig = ""
     create_row = 0
     create_page = 0
     create_col = 0
@@ -48045,15 +48201,11 @@ func setup_overlay() -> void:
     facing = "right"
     _backup = Look.snapshot()
     Look.active = true  # the preview wears the look even when the player is a stock person right now
+    _mine = {"look": Look.look.duplicate(), "acc": Look.acc.duplicate()}
     for spr in _sprites:
         spr.queue_free()
     _sprites.clear()
-    var spr := AnimatedSprite2D.new()
-    spr.sprite_frames = Look.frames_for(Look.BASE, true)
-    Look.apply(spr, Look.BASE, true)
-    spr.play("idle_right")
-    add_child(spr)
-    _sprites.append(spr)
+    _sprites.append(_new_sprite(Look.BASE, true))
     queue_redraw()
 
 
@@ -48086,11 +48238,11 @@ func toggle_hold() -> void:
     queue_redraw()
 
 
-# the custom card plays the pose (a one-shot gesture that has finished starts again)
+# the preview person plays the pose (a one-shot gesture that has finished starts again)
 func _apply_pose() -> void:
-    if step != "create" or sel >= _sprites.size():
+    var spr := _preview()
+    if step != "create" or spr == null:
         return
-    var spr: AnimatedSprite2D = _sprites[sel]
     var anim := pose_anim()
     if spr.sprite_frames == null or not spr.sprite_frames.has_animation(anim):
         return
@@ -48204,27 +48356,41 @@ func move(delta_sel: int) -> void:
             return
         sel = (sel + delta_sel + ids.size()) % ids.size()
         facing = "right" if delta_sel > 0 else "left"
-    else:
+    elif step == "phone":
         phone_sel = (phone_sel + delta_sel + PHONES.size()) % PHONES.size()
     queue_redraw()
 
 
+# the pages of this mode in order: the character (cards) or the creator, the phone (tech), the run options, the point-buy build
+func flow() -> Array:
+    var out: Array = ["create" if direct else "char"]
+    if needs_phone():
+        out.append("phone")
+    out.append("options")
+    if needs_build():
+        out.append("build")
+    return out
+
+
+# Enter on a page goes to the next one; on the last it starts the run
 func confirm() -> void:
     if overlay:
         _finish_overlay(true)
         return
-    if step == "char" and is_custom():
-        step = "create"
-        queue_redraw()
-        return
-    if step == "create":
+    if step == "create" and is_custom():
         Look.look["name"] = Look.final_name()
-    if (step == "char" or step == "create") and needs_phone():
-        step = "phone"
+        if sel == 0:
+            _mine = {"look": Look.look.duplicate(), "acc": Look.acc.duplicate()}
+    var pages := flow()
+    var at := pages.find(step)
+    if at >= 0 and at < pages.size() - 1:
+        var nxt := str(pages[at + 1])
+        if nxt == "build":
+            _open_build()
+        else:
+            step = nxt
+            opt_row = 0
         queue_redraw()
-        return
-    if step != "build" and needs_build():
-        _open_build()
         return
     if step == "build" and not _panel.valid():
         queue_redraw()
@@ -48232,6 +48398,9 @@ func confirm() -> void:
         return
     _confirmed = step == "build"
     Build.pending = _panel.build_out() if _confirmed else {}
+    var custom := is_custom()
+    if not custom:
+        _restore_mine()  # a ready-made person is played as is: the settings keep the last custom look
     var result := {
         "mode": mode,
         "character": current_id(),
@@ -48239,31 +48408,31 @@ func confirm() -> void:
         "summary": summary(),
         "tier": Difficulty.tier,
         "build": Build.pending,
-        "look": Look.look.duplicate() if is_custom() else {},
+        "look": Look.look.duplicate() if custom else {},
     }
     PLAYER.current_character = current_id()
-    Look.active = is_custom()
+    Look.active = custom
     Look.save_settings(Look.active)  # the look is the default of the next new run
     if needs_phone():
         Phone.set_os(result.phone)
     done.emit(result)
 
 
+# Esc goes back one page; on the first page it leaves the screen
 func back() -> void:
     if step == "create" and create_modal != "":
         close_modal(false)
-    elif overlay:
+        return
+    if overlay:
         _finish_overlay(false)
-    elif step == "build":
-        step = "phone" if needs_phone() else ("create" if is_custom() else "char")
-        queue_redraw()
-    elif step == "phone":
-        step = "create" if is_custom() else "char"
-        queue_redraw()
-    elif step == "create":
-        step = "char"
+        return
+    var pages := flow()
+    var at := pages.find(step)
+    if at > 0:
+        step = str(pages[at - 1])
         queue_redraw()
     else:
+        _restore_mine()
         cancelled.emit()
 
 
@@ -48278,36 +48447,21 @@ func _unhandled_input(event: InputEvent) -> void:
         if step == "build" and _build_key(event, dir):
             get_viewport().set_input_as_handled()
             return
+        if step == "options" and _options_key(event, dir):
+            get_viewport().set_input_as_handled()
+            return
         if dir == "left":
             move(-1)
         elif dir == "right":
             move(1)
-        elif dir == "up":
-            change_tier(1)
-        elif dir == "down":
-            change_tier(-1)
+        elif dir != "":
+            return
         elif Controls.confirm(event):
             confirm()
         elif Controls.back(event):
             back()
-        elif Controls.matches(event, "pick_prev"):
-            change_start(-1)
-        elif Controls.matches(event, "pick_next"):
-            change_start(1)
-        elif event is InputEventKey:
-            match event.keycode:
-                KEY_X:
-                    open_seed()
-                KEY_T:
-                    open_tools()
-                KEY_F9:
-                    Game.cycle_format()
-                KEY_M:
-                    change_mut(-1 if event.shift_pressed else 1)
-                KEY_B:
-                    toggle_mut_mode()
-                _:
-                    return
+        elif event is InputEventKey and event.keycode == KEY_F9:
+            Game.cycle_format()
         else:
             return
     elif event is InputEventMouseMotion:
@@ -48320,6 +48474,77 @@ func _unhandled_input(event: InputEvent) -> void:
     else:
         return
     get_viewport().set_input_as_handled()
+
+
+# the rows of the options page: LEVEL always, START (a campaign: the starting condition), MUT (Year 2), SEED, TOOLS (Free Play), then GO
+func options_rows() -> Array:
+    var out: Array = [{"id": "level", "label": "LEVEL"}]
+    if is_campaign():
+        out.append({"id": "start", "label": "START"})
+    if Yeartwo.pending:
+        out.append({"id": "mut", "label": "MUT"})
+    out.append({"id": "seed", "label": "SEED"})
+    if mode == FREE_MODE:
+        out.append({"id": "tools", "label": "TOOLS"})
+    out.append({"id": "go", "label": "GO"})
+    return out
+
+
+# one change step of an options row (Left / Right, the arrows)
+func _options_change(row_id: String, delta: int) -> void:
+    match row_id:
+        "level":
+            change_tier(delta)
+        "start":
+            change_start(delta)
+        "mut":
+            change_mut(delta)
+
+
+func _options_press(row_id: String) -> void:
+    match row_id:
+        "seed":
+            open_seed()
+        "tools":
+            open_tools()
+        "mut":
+            toggle_mut_mode()
+        _:
+            confirm()
+
+
+# the options page: Up / Down rows, Left / Right change, Enter goes on (SEED and TOOLS open their page); the old hotkeys X seed,
+# T tools, Tab start, M / B mutator still work
+func _options_key(event: InputEvent, dir: String) -> bool:
+    var rows := options_rows()
+    opt_row = clampi(opt_row, 0, rows.size() - 1)
+    var row_id := str(rows[opt_row].id)
+    if dir == "up":
+        opt_row = (opt_row + rows.size() - 1) % rows.size()
+    elif dir == "down":
+        opt_row = (opt_row + 1) % rows.size()
+    elif dir == "left" or dir == "right":
+        _options_change(row_id, -1 if dir == "left" else 1)
+    elif Controls.confirm(event) and row_id in ["seed", "tools"]:
+        _options_press(row_id)
+    elif Controls.matches(event, "pick_prev"):
+        change_start(-1)
+    elif Controls.matches(event, "pick_next"):
+        change_start(1)
+    elif event is InputEventKey and event.keycode in [KEY_X, KEY_T, KEY_M, KEY_B]:
+        match event.keycode:
+            KEY_X:
+                open_seed()
+            KEY_T:
+                open_tools()
+            KEY_M:
+                change_mut(-1 if event.shift_pressed else 1)
+            KEY_B:
+                toggle_mut_mode()
+    else:
+        return false
+    queue_redraw()
+    return true
 
 
 # the build step's own keys: Up / Down rows, Left / Right change, P preset (the rest is shared with the other steps)
@@ -48390,6 +48615,9 @@ func _create_change(delta: int) -> void:
         return
     var row: Dictionary = rows[create_row]
     match str(row.kind):
+        "start":
+            set_start(sel + delta)
+            return
         "name":
             Look.cycle_name(delta)
         "choice":
@@ -48424,7 +48652,10 @@ func _pages() -> Array:
 func _page_rows() -> Array:
     var pages := _pages()
     create_page = clampi(create_page, 0, pages.size() - 1)
-    return pages[create_page].rows
+    var rows: Array = pages[create_page].rows
+    if direct and ids.size() > 1 and str(pages[create_page].id) == "look":
+        return [START_ROW] + rows  # START < MY LOOK > first: the ready-made people and saved looks live here
+    return rows
 
 
 func _turn_page(delta: int) -> void:
@@ -48591,6 +48822,8 @@ func roll_look() -> void:
 
 # the text of a choice row's box: the style (a hairstyle a hat replaces shows as SPIKY>SHORT), or the accessory's name
 func _choice_text(row: Dictionary) -> String:
+    if str(row.kind) == "start":
+        return start_label(sel_id())
     if str(row.kind) == "acc":
         return Look.acc_title(str(row.id), str(Look.acc.get(row.id, "")))
     var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
@@ -48604,15 +48837,21 @@ func _choice_text(row: Dictionary) -> String:
 
 
 # the preview cards wear the look
-func _refresh_look() -> void:
-    for i in ids.size():
-        if ids[i] == CUSTOM:
-            Look.apply(_sprites[i], Look.BASE, true)
-            var fr := Look.frames_for(Look.BASE, true)
-            if _sprites[i].sprite_frames != fr:  # another hairstyle is another sheet: keep the animation running
-                var anim: StringName = _sprites[i].animation
-                _sprites[i].sprite_frames = fr
-                _sprites[i].play(anim)
+func _refresh_look(from_start := false) -> void:
+    if direct and not from_start and sel != 0 and _look_sig() != _start_sig:
+        sel = 0  # an edit turns a ready-made person or a saved look into MY LOOK
+    if direct and sel == 0:
+        _mine = {"look": Look.look.duplicate(), "acc": Look.acc.duplicate()}
+    var spr := _preview()
+    if spr != null:
+        var stock := stock_pick()
+        var cid := sel_id() if stock else Look.BASE
+        Look.apply(spr, cid, not stock)
+        var fr := Look.frames_for(cid, not stock)
+        if spr.sprite_frames != fr:  # another hairstyle is another sheet: keep the animation running
+            var anim: StringName = spr.animation
+            spr.sprite_frames = fr
+            spr.play(anim)
     look_changed.emit()
     queue_redraw()
 
@@ -48635,6 +48874,9 @@ func _hover(at: Vector2) -> void:
             queue_redraw()
     elif step == "create" and kind in ["sw", "row", "name_box", "ch_prev", "ch_next", "act", "pre_save", "pre_load", "pre_cancel", "gcell"]:
         _create_hover(r)
+    elif kind == "opt" and step == "options":
+        opt_row = int(r[2])
+        queue_redraw()
     elif kind == "item" and step == "char" and sel != int(r[2]):
         sel = int(r[2])
         queue_redraw()
@@ -48708,6 +48950,12 @@ func _click(at: Vector2) -> void:
             _grid_press(_grid_i)
         "go":
             confirm()
+        "opt":  # a click on an options row: select it; SEED, TOOLS, MUT and GO act (the arrows change LEVEL, START and MUT)
+            opt_row = int(r[2])
+            var row_id := str(options_rows()[opt_row].id)
+            if row_id in ["seed", "tools", "mut", "go"]:
+                _options_press(row_id)
+            queue_redraw()
         "back":
             back()
         "prev":
@@ -48789,24 +49037,23 @@ func _draw() -> void:
     var narrow := size.x < 250.0
     _rects.clear()
     draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.78 if overlay else 0.9))  # the outfit overlay lets the room show through
-    var heading: String = {"char": "CHOOSE YOUR CHARACTER", "create": "CHANGE YOUR LOOK" if overlay else "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE"}.get(step, "BUILD YOUR CHARACTER")
+    var titles := {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE", "options": "SET UP THE RUN"}
+    if overlay:
+        titles["create"] = "CHANGE YOUR LOOK"
+    var heading: String = titles.get(step, "BUILD YOUR CHARACTER")
     _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
     var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
     draw_rect(back_r, PANEL)
     _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
     _rects.append([back_r, "back", 0])
-    if not overlay:
-        _draw_tier(size, narrow)
-        _draw_seed(size, narrow)
-    if is_campaign() and step == "char":
-        _draw_start(size, narrow)
-        if Yeartwo.pending:
-            _draw_mut(size, narrow)
     if step == "char":
         _draw_chars(size, narrow)
     elif step == "create":
         _place_sprites(size, narrow)
         _draw_create(size, narrow)
+    elif step == "options":
+        _place_sprites(size, narrow)
+        _draw_options(size, narrow)
     elif step == "build":
         _place_sprites(size, narrow)
         _panel.draw(self, size, narrow, _rects)
@@ -48815,7 +49062,6 @@ func _draw() -> void:
         _draw_phones(size, narrow)
     if not overlay:
         _draw_summary(size, narrow)
-    var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
     if step == "create":
         if create_modal != "":
             _ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
@@ -48831,19 +49077,18 @@ func _draw() -> void:
     if step == "build":
         if narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _ctxt("P PRESET  ENTER GO  ESC BACK", size.y - 12.0, DIM)
         else:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  X SEED  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0, DIM)
         return
-    var hint := "LEFT RIGHT CHOOSE  UP DOWN LEVEL  %s  X SEED  ENTER PICK  ESC BACK" % extra
-    if float(PixelFont.width(hint)) > size.x - 4.0:  # NEW GAME PLUS adds M MUT B BAN: too long for 320
-        hint = hint.replace("LEFT RIGHT CHOOSE", "LEFT RIGHT")
-    if narrow:
-        _ctxt("LEFT RIGHT CHOOSE   UP DOWN LEVEL", size.y - 27.0, DIM)
-        _ctxt("%s  X SEED" % extra, size.y - 19.0, DIM)
-        _ctxt("ENTER PICK  ESC BACK", size.y - 11.0, DIM)
-    else:
-        _ctxt(hint, size.y - 9.0, DIM)
+    if step == "options":
+        if narrow:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
+            _ctxt("ENTER GO  ESC BACK", size.y - 12.0, DIM)
+        else:
+            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+        return
+    _ctxt("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
 
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
@@ -48865,123 +49110,93 @@ func _draw_summary(size: Vector2, narrow: bool) -> void:
     _ctxt(text, base, Color.WHITE)
 
 
-# the difficulty chip: LEVEL < NORMAL > (top right, or under the heading in narrow portrait)
-func _draw_tier(size: Vector2, narrow: bool) -> void:
-    var text := "LEVEL  %s" % Difficulty.label()
-    var w := float(PixelFont.width("LEVEL  HARD")) + 24.0
-    var r := Rect2(
-        floorf((size.x - w) * 0.5) if narrow else size.x - w - 3.0, 30.0 if narrow else 3.0, w, 9.0
-    )
-    draw_rect(r, PANEL)
-    draw_rect(r, GOLD if Difficulty.tier != "normal" else DIM, false, 1.0)
-    _txt("<", r.position + Vector2(3, 2), GOLD)
-    _txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
-    var tw := float(PixelFont.width(text))
-    _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
-    _rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "tier_down", 0])
-    _rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "tier_up", 0])
+# the value shown in an options row's box
+func _options_text(row_id: String) -> String:
+    match row_id:
+        "level":
+            return Difficulty.label()
+        "start":
+            return str(Mutators.STARTS.get(Mutators.pending_start, {}).get("short", "STANDARD"))
+        "mut":
+            return Yeartwo.chip_text().trim_prefix("MUT  ")
+        "seed":
+            return ("DAILY " if Difficulty.daily != "" else "") + Difficulty.seed_text()
+    return "OPEN"
 
 
-# the run seed chip: SEED 4F2A9C (X opens the seed page); in Free Play a TOOLS chip follows it
-func _draw_seed(size: Vector2, narrow: bool) -> void:
-    var text := "SEED  " + Difficulty.seed_text()
-    if Difficulty.daily != "":
-        text = "DAILY " + Difficulty.seed_text()
-    var w := float(PixelFont.width("SEED  4F2A9C")) + 8.0
-    var pos := Vector2(34.0, 3.0)
-    var wide := size.x > 340.0
-    if wide and is_campaign():  # the START chip sits at the left
-        var level_w := float(PixelFont.width("LEVEL  HARD")) + 24.0
-        pos = Vector2(size.x - level_w - 3.0 - w - 4.0, 3.0)
-    var r := Rect2(pos, Vector2(w, 9.0))
-    draw_rect(r, PANEL)
-    draw_rect(r, GOLD if Difficulty.daily != "" else DIM, false, 1.0)
-    var tw := float(PixelFont.width(text))
-    _txt(text, r.position + Vector2(floorf((w - tw) * 0.5), 2), Color.WHITE)
-    _rects.append([r, "seed", 0])
-    if is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode; tag it beside the seed
-        var tag_w := float(PixelFont.width("COZY")) + 8.0
-        var tag := Rect2(r.position + Vector2(0.0, 10.0), Vector2(tag_w, 8.0))  # under the seed chip (portrait)
-        if wide:
-            tag = Rect2(Vector2(size.x - tag_w - 3.0, 13.0), Vector2(tag_w, 8.0))  # under the level chip, clear of the heading
-        elif not narrow:
-            tag = Rect2(r.position + Vector2(w + 3.0, 0.0), Vector2(tag_w, 9.0))  # beside it (the h format has room)
-        draw_rect(tag, PANEL)
-        draw_rect(tag, GOLD, false, 1.0)
-        _txt("COZY", tag.position + Vector2(4, tag.size.y * 0.5 - 3.0), GOLD)
-    if mode == "free" and step == "char":
-        var tools := Rect2(pos + Vector2(w + 3.0, 0.0), Vector2(float(PixelFont.width("TOOLS")) + 8.0, 9.0))
-        if not wide:
-            tools.position = Vector2(size.x - tools.size.x - 3.0, 3.0 if narrow else 14.0)
-        draw_rect(tools, PANEL)
-        draw_rect(tools, GOLD if Difficulty.fixed_take else DIM, false, 1.0)
-        _txt("TOOLS", tools.position + Vector2(4, 2), Color.WHITE)
-        _rects.append([tools, "tools", 0])
-
-
-# the starting condition chip: START < MESSY MSP > (left of the heading, under the level chip at 320 wide, top right in portrait)
-func _draw_start(size: Vector2, narrow: bool) -> void:
-    var s: Dictionary = Mutators.STARTS.get(Mutators.pending_start, {})
-    var text := "START  %s" % str(s.get("short", "STANDARD"))
-    var w := float(PixelFont.width("START  FAMILY BIZ")) + 16.0
-    var pos := Vector2(34.0, 3.0)
-    if narrow:
-        pos = Vector2(size.x - w - 3.0, 3.0)
-    elif size.x < 340.0:
-        pos = Vector2(size.x - w - 3.0, 14.0)
-    var r := Rect2(pos, Vector2(w, 9.0))
-    draw_rect(r, PANEL)
-    draw_rect(r, GOLD if Mutators.pending_start != Mutators.STANDARD else DIM, false, 1.0)
-    _txt("<", r.position + Vector2(3, 2), GOLD)
-    _txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
-    var tw := float(PixelFont.width(text))
-    _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
-    _rects.append([Rect2(r.position, Vector2(w * 0.5, 9.0)), "start_down", 0])
-    _rects.append([Rect2(r.position + Vector2(w * 0.5, 0.0), Vector2(w * 0.5, 9.0)), "start_up", 0])
-
-
-# Year 2: the mutator chip MUT < AUTO > (M picks, B switches PICK / BAN): right under the level chip when wide, at the left
-# under the heading at 320 wide, centred below the level chip in portrait
-func _draw_mut(size: Vector2, narrow: bool) -> void:
-    var text := Yeartwo.chip_text()
-    var w := float(PixelFont.width("PICK PRINTER APOC.")) + 16.0
-    var pos := Vector2(3.0, 14.0)
-    if narrow:
-        pos = Vector2(3.0, 12.0)
-    elif size.x > 340.0:
-        pos = Vector2(size.x - w - 3.0, 14.0)
-    var r := Rect2(pos, Vector2(w, 9.0))
-    draw_rect(r, PANEL)
-    draw_rect(r, GOLD if Yeartwo.pick != "" else (Color("ff8a80") if Yeartwo.ban != "" else DIM), false, 1.0)
-    _txt("<", r.position + Vector2(3, 2), GOLD)
-    _txt(">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
-    var tw := float(PixelFont.width(text))
-    _txt(text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
-    _rects.append([Rect2(r.position, Vector2(w * 0.5 - 14.0, 9.0)), "mut_down", 0])
-    _rects.append([Rect2(r.position + Vector2(w * 0.5 + 14.0, 0.0), Vector2(w * 0.5 - 14.0, 9.0)), "mut_up", 0])
-    _rects.append([Rect2(r.position + Vector2(w * 0.5 - 14.0, 0.0), Vector2(28.0, 9.0)), "mut_mode", 0])
+# the options page (the step after the creator / phone): LEVEL, START, MUT, SEED, TOOLS and GO, one row each, with the person on the left.
+# These used to be chips on every page; now they are rows of a page of their own
+func _draw_options(size: Vector2, narrow: bool) -> void:
+    var lay := _create_layout(size, narrow)
+    var x0: float = lay.x0
+    var pitch: float = lay.pitch
+    var sx := x0 + 30.0
+    var bw := 84.0
+    var rows := options_rows()
+    opt_row = clampi(opt_row, 0, rows.size() - 1)
+    var who := Look.final_name() if is_custom() else str(info(current_id()).name)
+    _txt(who, Vector2(floorf(float(lay.cx) - float(PixelFont.width(who)) * 0.5), float(lay.feet) + 3.0), GOLD)
+    for i in rows.size():
+        var row_id := str(rows[i].id)
+        var y := float(lay.y0) + float(i) * pitch
+        var hot := i == opt_row
+        var ty := y + floorf((pitch - 5.0) * 0.5)
+        var whole := Rect2(x0 - 3.0, y, sx + 8.0 + bw + 12.0 - x0 + 3.0, pitch)
+        if hot:
+            draw_rect(Rect2(whole.position, Vector2(whole.size.x, pitch - 1.0)), PANEL)
+        if row_id == "go":
+            _chip(Rect2(x0, y + 1.0, 56.0, pitch - 3.0), "START RUN", hot)
+        else:
+            _txt(str(rows[i].label), Vector2(x0, ty), GOLD if hot else DIM)
+            var box := Rect2(sx + 8.0, y + 1.0, bw, pitch - 3.0)
+            draw_rect(box, INK)
+            draw_rect(box, GOLD if hot else DIM, false, 1.0)
+            var text := _options_text(row_id)
+            _txt(text, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(text))) * 0.5), ty), Color.WHITE)
+            if row_id in ["level", "start", "mut"]:
+                _txt("<", Vector2(sx, ty), GOLD)
+                _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
+                _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
+                _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
+            if row_id == "level" and is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode
+                _txt("COZY", Vector2(box.end.x + 14.0, ty), GOLD)
+        _rects.append([whole, "opt", i])
+    if str(rows[opt_row].id) == "start":  # what the starting condition does
+        var note := str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", "")).to_upper()
+        var chars := int((size.x - x0 - 6.0) / 4.0)
+        var ny := float(lay.y0) + float(rows.size()) * pitch + 3.0
+        for line in _wrap(note, chars, 3):
+            _txt(str(line), Vector2(x0, ny), DIM)
+            ny += 8.0
 
 
 func _place_sprites(size: Vector2, narrow: bool) -> void:
-    var n := ids.size()
-    if step == "create":  # only the custom person, big enough to see the colours
+    if step == "create" or step == "options":  # the one person, big enough to see the colours, beside the rows
         var lay := _create_layout(size, narrow)
-        for i in n:
-            var cs: AnimatedSprite2D = _sprites[i]
-            cs.visible = i == sel
-            cs.scale = Vector2.ONE
-            cs.position = Vector2(float(lay.cx), float(lay.feet) - 40.0)
-            if i == sel:
-                _apply_pose()
+        var shown := _preview()
+        for spr in _sprites:
+            spr.visible = spr == shown
+        if shown == null:
+            return
+        shown.scale = Vector2.ONE
+        shown.position = Vector2(float(lay.cx), float(lay.feet) - 40.0)
+        if step == "create":
+            _apply_pose()
+        elif shown.animation != "idle_" + facing:
+            shown.play("idle_" + facing)
         return
+    if step != "char":  # the phone and build pages show no person
+        for spr in _sprites:
+            spr.visible = false
+        return
+    var n := ids.size()
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
     var feet := 83.0 if size.y <= 130.0 else 104.0
     if narrow:
         feet = 176.0
     for i in n:
         var spr: AnimatedSprite2D = _sprites[i]
-        var show_it := step == "char" and (not narrow or i == sel)
-        spr.visible = show_it
+        spr.visible = not narrow or i == sel
         spr.scale = Vector2(2, 2) if narrow else Vector2.ONE
         var cx := size.x * 0.5 if narrow else (size.x - pitch * n) * 0.5 + pitch * (i + 0.5)
         spr.position = Vector2(cx, feet - (80.0 if narrow else 40.0))
@@ -49027,12 +49242,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     if size.y <= 130.0 and not narrow:
         blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
     var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
-    if is_campaign():
-        var note := "THE REST OF THE TEAM IS ALREADY AT THEIR DESKS"
-        if Mutators.pending_start != Mutators.STANDARD:
-            note = str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", note)).to_upper()
-        if end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
-            _para(note, end_y + 2.0, DIM, 2)
+    if is_campaign() and end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
+        _para("THE REST OF THE TEAM IS ALREADY AT THEIR DESKS", end_y + 2.0, DIM, 2)
 
 
 # where the create step puts the preview (cx, feet) and the rows (x0, y0, pitch): wide 368x128, h 320x180, v 180x320. The tab
@@ -49100,7 +49311,7 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
             draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
         _txt(str(row.label), Vector2(x0, ty), GOLD if hot else DIM)
         var kind := str(row.kind)
-        if kind == "name" or kind == "choice" or kind == "acc":
+        if kind == "name" or kind == "choice" or kind == "acc" or kind == "start":
             var box := Rect2(sx + 8.0, sy, 49.0, sw)
             draw_rect(box, INK)
             draw_rect(box, GOLD if hot else DIM, false, 1.0)
@@ -49113,7 +49324,10 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
             else:
                 var st := _choice_text(row)
                 _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
-                if kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
+                if kind == "start":  # what the start is: the original sprite as is (until an edit), or a saved look
+                    var tag := "READY-MADE" if stock_pick() else ("SAVED" if sel_id().begins_with("slot") else "")
+                    _txt(tag, Vector2(box.end.x + 14.0, ty), DIM)
+                elif kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
                     _txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
                 elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
                     _txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)

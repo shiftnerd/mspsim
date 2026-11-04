@@ -29,6 +29,7 @@ func _process(_delta: float) -> bool:
 		80:
 			current_scene._select.setup("tech")
 			current_scene._select.confirm()  # phone
+			current_scene._select.confirm()  # options
 			current_scene._select.confirm()  # build
 		100:
 			_shot("tech")
@@ -47,15 +48,17 @@ func _process(_delta: float) -> bool:
 		120:
 			_shot("note")
 			cs.setup("owner")
-			cs.confirm()
+			cs.confirm()  # options
+			cs.confirm()  # build
 			cs._panel.row = 2
 			cs._panel.set_level("sales", 3)
 			cs.queue_redraw()
 		140:
 			_shot("owner_capped")
-			cs.move(1)
+			cs.back()
 			cs.back()
 			cs.move(1)
+			cs.confirm()
 			cs.confirm()
 			cs._panel.cycle_preset(1)
 			cs._panel.row = 7
@@ -63,6 +66,7 @@ func _process(_delta: float) -> bool:
 		160:
 			_shot("garrison")
 			cs.setup("sales")
+			cs.confirm()  # options
 			cs.confirm()  # build (the sales campaign's stat set, C3)
 			cs._panel.row = 1
 			cs._panel.set_level("negotiation", 2)

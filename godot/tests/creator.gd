@@ -390,14 +390,12 @@ func _init() -> void:
 	_check(cs.ids.size() == 8 and cs.ids[0] == "custom", "Free Play offers it first")
 	cs.setup("tech")
 	_check(
-		cs.current_id() == "office_adult" and not cs.is_custom(),
-		"the default selection is unchanged"
+		cs.is_custom() and cs.step == "create" and cs.current_id() == "office_intern",
+		"the select opens straight in the creator on MY LOOK, the intern sheet"
 	)
-	cs.sel = 0
-	_check(cs.is_custom() and cs.current_id() == "office_intern", "the custom card is the intern sheet")
-	cs._unhandled_input(_key(KEY_ENTER))
-	_check(cs.step == "create", "Enter on MAKE YOUR OWN opens the create step")
-	_check(cs.create_row == 0, "it starts on the NAME row")
+	_check(cs.create_row == 0 and str(cs._page_rows()[0].kind) == "start", "it starts on the START row")
+	cs.ids = ["custom"]  # with nothing else to start from the START row is hidden (charselect.gd covers it): the rows below are NAME first
+	_check(cs.create_row == 0 and str(cs._page_rows()[0].kind) == "name", "it starts on the NAME row")
 	# keys: name
 	for i in 5:
 		cs._unhandled_input(_key(KEY_BACKSPACE))
@@ -503,9 +501,10 @@ func _init() -> void:
 	cs._unhandled_input(_pad(JOY_BUTTON_LEFT_SHOULDER))
 	_check(cs.create_page == 0, "a pad's left shoulder button goes back a page")
 	# back and forward
+	var left := [false]
+	cs.cancelled.connect(func() -> void: left[0] = true)
 	cs._unhandled_input(_pad(JOY_BUTTON_B))
-	_check(cs.step == "char", "B goes back to the cards")
-	cs._unhandled_input(_key(KEY_ENTER))
+	_check(left[0] and cs.step == "create", "B on the first page leaves the select (cancelled)")
 	look.look["name"] = "ZOE"
 	look.look["skin"] = "8d5524"
 	look.look["hair_style"] = "receding"
@@ -571,7 +570,8 @@ func _init() -> void:
 	player.current_character = "office_adult"
 	cs.setup("free")
 	_check(cs.is_custom(), "the select screen opens on MAKE YOUR OWN after a custom run")
-	cs.sel = 2
+	cs.set_start(2)  # the ready-made adult
+	cs.confirm()
 	cs.confirm()
 	_check(not look.active and not look.is_custom(), "choosing a stock person ends the custom look")
 	cs.queue_free()
@@ -690,9 +690,8 @@ func _level3(look: Node, d: Node, player) -> void:
 	await process_frame
 	await process_frame
 	cs.setup("free")
-	cs.sel = 0
-	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "create", "level 3: the create step is open")
+	cs.ids = ["custom"]  # no START row here: the row indices below are the pages' own
 	# pages and rows
 	_check(cs._pages().size() == 5, "five pages with tabs: LOOK, CLOTHES, SHOES, EXTRAS, WORK (%d pages)" % cs._pages().size())
 	_check(_page_labels(cs, 0) == ["NAME", "STYLE", "SKIN", "HAIR"], "the LOOK page rows: %s" % str(_page_labels(cs, 0)))

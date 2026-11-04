@@ -158,14 +158,30 @@ func _title_phase() -> void:
 		_begin()
 		cs.setup(mode)
 		await _end("charselect " + mode)
-	for mode in ["tech", "owner", "sales", "service"]:
+	for mode in ["free", "tech", "owner", "sales", "service"]:  # the pages after the character / creator: the phone (tech), the options, the build
 		cs.setup(mode)
 		await _wait(3)
+		var guard := 0
+		while cs.step != "options" and guard < 4:
+			if cs.step == "phone":
+				_begin()
+				await _end("phone " + mode)
+			cs.confirm()
+			guard += 1
+		_begin()
+		cs.queue_redraw()
+		await _end("options " + mode)
+		if mode == "tech" or mode == "owner":
+			root.get_node("Yeartwo").begin_select(mode, true)  # the MUT row too
+			cs.opt_row = 2
+			_begin()
+			cs.queue_redraw()
+			await _end("options year2 " + mode)
+			root.get_node("Yeartwo").pending = false
+		if mode == "free":
+			continue
 		_begin()
 		cs.confirm()
-		if mode == "tech":
-			await _wait(3)
-			cs.confirm()
 		await _end("build " + mode)
 		if cs._panel != null:
 			_begin()
@@ -173,28 +189,26 @@ func _title_phase() -> void:
 			cs._panel.cycle_quirk(0, 1)
 			cs.queue_redraw()
 			await _end("build quirk " + mode)
-	cs.setup("tech")
-	await _wait(3)
-	_begin()
-	root.get_node("Yeartwo").begin_select("tech", true)
-	cs.queue_redraw()
-	await _end("charselect year2 chip")
-	root.get_node("Yeartwo").pending = false
 	for mode in ["tech", "free"]:
-		cs.setup(mode)
-		cs.sel = 0
+		cs.setup(mode)  # opens straight in the creator, START row first
 		await _wait(3)
 		_begin()
-		cs.confirm()  # MAKE YOUR OWN: the create step
 		root.get_node("Look").look["name"] = "WWWWWWWWWW"
+		cs.queue_redraw()
 		await _end("creator " + mode)
+		_begin()
+		cs.set_start(cs.ids.size() - 1)  # the last ready-made person (READY-MADE tag)
+		cs.queue_redraw()
+		await _end("creator ready-made " + mode)
+		cs.set_start(0)
+		root.get_node("Look").look["name"] = "WWWWWWWWWW"
 		_begin()
 		cs.create_row = cs._page_rows().size()
 		cs.queue_redraw()
 		await _end("creator random row " + mode)
 		_begin()
 		root.get_node("Look").look["hair_style"] = "receding"  # the longest style name
-		cs.create_row = 1
+		cs.create_row = 2
 		cs.queue_redraw()
 		await _end("creator style row " + mode)
 		root.get_node("Look").look["hair_style"] = "side"
@@ -223,7 +237,7 @@ func _title_phase() -> void:
 		lk.look["hair_style"] = "curly"
 		_begin()
 		cs.set_page(0)
-		cs.create_row = 1
+		cs.create_row = 2
 		cs.queue_redraw()
 		await _end("creator style hat " + mode)
 		for pg in [2, 3]:

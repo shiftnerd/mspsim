@@ -35,6 +35,7 @@ func _process(_delta: float) -> bool:
 				quit(1)
 				return true
 			cs.setup("tech")
+			cs.step = "options"  # the START row lives on the options page
 		90:
 			_shot("chip_standard")
 		95:
@@ -48,6 +49,7 @@ func _process(_delta: float) -> bool:
 			_shot("chip_rival")
 		125:
 			current_scene._select.setup("owner")
+			current_scene._select.step = "options"
 			for i in 3:
 				current_scene._select.change_start(1)
 		135:
