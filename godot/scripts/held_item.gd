@@ -21,6 +21,14 @@ const START := {
 	"call": 69,
 	"sitcall": 71,
 	"dance": 73,
+	"sitstretch": 85,
+	"sitscratch": 90,
+	"sitlook": 96,
+	"sityawn": 101,
+	"sitslump": 106,
+	"sitmouse": 110,
+	"sitphone": 114,
+	"sitnod": 119,
 	"sitdown": 35,
 	"sit": 37,
 	"type": 39
@@ -120,6 +128,9 @@ func _draw() -> void:
 		draw_rect(Rect2(-2, -4, 4, 9), Color("cfe6f6"))
 		draw_rect(Rect2(-2, -1, 4, 6), Color("8cc0e8"))
 		draw_rect(Rect2(-1, -7, 2, 1), Color("f4f2ea"))
+	elif item == "phone":
+		draw_rect(Rect2(-2, -4, 5, 8), INK)
+		draw_rect(Rect2(-1, -3, 3, 6), Color("5a6a85") if int(_t * 2.0) % 2 == 0 else Color("8cc0e8"))
 	elif item == "water":
 		draw_rect(Rect2(-3, -4, 6, 9), INK)
 		draw_rect(Rect2(-2, -3, 4, 7), Color("e4f2fb"))

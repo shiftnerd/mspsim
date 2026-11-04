@@ -309,6 +309,9 @@ function E.render(an, pose, f)
     end
     hand = {round(hx + OX + armDx), round(hy + OY + torsoDy)}
   end
+  -- pose.armTop: the near arm is drawn on the extra top layer "Arm Top" (above Face / Hair / Vest), so a hand can come up
+  -- to the face or head instead of disappearing behind it
+  local top = Image(CW, CH, ColorMode.RGB)
   for _, L in ipairs(an.layers) do
     local O = Image(CW, CH, ColorMode.RGB)
     local S = L.S
@@ -320,7 +323,7 @@ function E.render(an, pose, f)
       for _, p in ipairs(legs) do drawLeg(O, p.pants, p, rootDy) end
       blitShift(O, mask(S, function(x, y) return y <= 46 end), torsoDx, torsoDy)
     elseif n == "Near Arm" or (n == "Watch" and an.watchOn == "N") then
-      limbRot(O, S, an.armN, 25, an.armN, 34, (pose.aN or 0) * f, (pose.aNr or 0) * f, armDx, torsoDy)
+      limbRot(pose.armTop and top or O, S, an.armN, 25, an.armN, 34, (pose.aN or 0) * f, (pose.aNr or 0) * f, armDx, torsoDy)
     elseif n == "Back Arm" or (n == "Watch" and an.watchOn == "F") then
       limbRot(O, S, an.armF, 25, an.armF, 34, (pose.aF or 0) * f, (pose.aFr or 0) * f, armDx, torsoDy)
     elseif n == "Body" then
@@ -333,6 +336,7 @@ function E.render(an, pose, f)
     end
     out[#out + 1] = O
   end
+  out[#out + 1] = top
   -- whole-body rotation (death)
   if pose.rotBody then
     local deg = pose.rotBody * f
@@ -414,6 +418,9 @@ function E.build(inPath, outPath, poses, tags, ghostPath)
     l.isVisible = L.vis
     layerObjs[i] = l
   end
+  local topLayer = spr:newLayer()
+  topLayer.name = "Arm Top"
+  layerObjs[#layerObjs + 1] = topLayer
   for fi, pose in ipairs(poses) do
     if fi > 1 then spr:newFrame() end
     local imgs, hand, ear = E.render(an, pose, f)
