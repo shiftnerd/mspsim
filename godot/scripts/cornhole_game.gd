@@ -55,6 +55,9 @@ var phase := "ready"  # ready, aim, power, flight, settle, opp, round_end, done
 var round_no := 1
 var seq := 0  # 0..7 inside a round, even = you
 var opp := ""
+var aim_c := 0.5  # where the hole sits on the aim bar this bag (drawn green); moves when a zone_rng is given
+var pow_c := POWER_BEST  # and on the power bar
+var zone_rng: RandomNumberGenerator = null
 var marker := 0.0
 var marker_aim := 0.5  # the aim you stopped at
 var power := 0.0
@@ -86,6 +89,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
 	assist = bool(params.get("assist", false))
 	floor_stars = int(params.get("floor", 0))
 	rng = r
+	zone_rng = params.get("zone_rng", null)
 	crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
 	round_no = 0
 	score_you = 0
@@ -151,12 +155,22 @@ func press() -> String:
 
 
 # where a bag with this aim and power would land (without the wobble)
-static func spot(aim: float, pow_v: float) -> Vector2:
-	return Vector2(HOLE_X + (pow_v - POWER_BEST) * POWER_SCALE, (aim - 0.5) * AIM_SCALE)
+static func spot(aim: float, pow_v: float, aim_mid := 0.5, pow_mid := POWER_BEST) -> Vector2:
+	return Vector2(HOLE_X + (pow_v - pow_mid) * POWER_SCALE, (aim - aim_mid) * AIM_SCALE)
+
+
+# a new sweet spot for your next bag: the hole is the same, the stops that find it move (the green is drawn there)
+func roll_zone() -> void:
+	if zone_rng == null:
+		aim_c = 0.5
+		pow_c = POWER_BEST
+		return
+	aim_c = zone_rng.randf_range(0.32, 0.68)
+	pow_c = zone_rng.randf_range(0.42, 0.78)
 
 
 func throw_you(aim: float, pow_v: float) -> void:
-	var p := spot(aim, pow_v)
+	var p := spot(aim, pow_v, aim_c, pow_c)
 	p.x += rng.randfn(0.0, NOISE)
 	p.y += rng.randfn(0.0, NOISE)
 	_launch("you", p)
@@ -258,6 +272,7 @@ func _next_turn() -> void:
 		marker = 0.0
 		power = 0.0
 		dir = 1.0
+		roll_zone()
 	else:
 		phase = "opp"
 

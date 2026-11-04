@@ -1163,6 +1163,16 @@ func _press_game(key: int) -> void:
 			_dinner_press(key)
 
 
+# the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner has no skill-check numbers to ramp.
+func _mastery_lines(result: int) -> Array:
+	if result < 2 or game == "dinner" or Difficulty.fixed_take:
+		return []
+	var n := mini(int(Career.value("good." + game)), Difficulty.RAMP_PLAYS)
+	if n >= Difficulty.RAMP_PLAYS:
+		return ["FULL MASTERY."]
+	return ["MASTERY %d/%d. SHARPER NEXT TIME." % [n, Difficulty.RAMP_PLAYS]]
+
+
 # stars: 0-3, or -1 when you left early
 func _finish(result: int) -> void:
 	stars = result
@@ -1204,6 +1214,7 @@ func _finish(result: int) -> void:
 			lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % liking)
 		else:
 			lines.append("A GOOD NIGHT OUT. (FREE PLAY: NOTHING IS SCORED.)")
+		lines.append_array(_mastery_lines(result))
 		if Campaign.mode == "owner":
 			var relief := (2.0 + float(result)) if lunch_on() else 5.0 + 3.0 * float(result)
 			Owner.burnout = clampf(Owner.burnout - relief, 0.0, 100.0)
@@ -1269,6 +1280,7 @@ func _bowl_setup() -> void:
 		"acc": 1.0,
 		"hcp": _league_hcp(str(opts.get("alley", "strike_zone"))),
 	}
+	_bowl_zone_roll()
 	if room_mode():
 		g.stage = "ready"
 		caption("YOUR TURN. PRESS E TO STEP UP.", 99.0)
@@ -1327,6 +1339,7 @@ func _bowl_press(key: int) -> void:
 		g.stage = "aim"
 		g.marker = 0.0
 		g.dir = 1.0
+		_bowl_zone_roll()
 		caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
 	elif g.stage == "aim":
 		g.stage = "power"
@@ -1345,9 +1358,9 @@ func _bowl_press(key: int) -> void:
 
 func bowl_strength() -> float:
 	var spin := int(g.get("spin", 0))
-	var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"))
+	var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"), float(g.get("shift", 0.0)))
 	g.acc = accuracy
-	var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
+	var quality := clampf(1.0 - absf(float(g.power) - float(g.get("pcen", 0.85))) / 0.85, 0.0, 1.0)
 	var span := 0.08 + BowlVariety.HOOK_NOISE * absf(float(spin)) * Difficulty.f("bowl.spin_noise")
 	var noise := Difficulty.rng("bowl").randf_range(-span, span)
 	return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
@@ -1446,6 +1459,7 @@ func _bowl_next() -> void:
 		g.stage = "aim"
 		g.marker = 0.0
 		g.dir = 1.0
+		_bowl_zone_roll()
 		if room_mode():
 			caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
 		return
@@ -1472,6 +1486,7 @@ func _bowl_advance() -> void:
 	g.stage = "ready" if room_mode() else "aim"
 	g.marker = 0.0
 	g.dir = 1.0
+	_bowl_zone_roll()
 	g.msg = ""
 	g.up = [_all_up(), _all_up()]
 	if room_mode():
@@ -1546,7 +1561,17 @@ func is_league() -> bool:
 
 # where the green zone sits on the aim bar (0..1) and how wide it is
 func bowl_center() -> float:
-	return BowlVariety.center(oil_id(), int(g.get("spin", 0)))
+	return BowlVariety.center(oil_id(), int(g.get("spin", 0)), float(g.get("shift", 0.0)))
+
+
+# the green zones move: every roll draws a new aim shift and a new power centre (stream "bowl_zone"; Free Play fixed takes repeat)
+const ZONE_SHIFT := 0.12
+const POWER_ZONE := [0.62, 0.9]  # where the power bar's best point can sit (0.85 was the old fixed one)
+
+
+func _bowl_zone_roll() -> void:
+	g.shift = Difficulty.zone("bowl", -ZONE_SHIFT, ZONE_SHIFT)
+	g.pcen = Difficulty.zone("bowl", POWER_ZONE[0], POWER_ZONE[1])
 
 
 func bowl_zone_width() -> float:
@@ -1729,7 +1754,7 @@ func ask_song() -> void:
 # the chart of one song at one tier: {notes, gap, span, speed}. Pure given the generator, so tests can
 # build the same chart twice. Doubles put a second arrow in another lane on the same beat.
 func kara_chart(song: Dictionary, tier: String, r: RandomNumberGenerator) -> Dictionary:
-	var gap := float(song.gap) * float(Difficulty.at("karaoke.gap", tier)) / 0.75
+	var gap := float(song.gap) * Difficulty.mastery_blend("karaoke.gap", tier) / 0.75
 	var rhythm: Array = song.rhythm
 	var chance := float(song.doubles[maxi(0, Difficulty.TIERS.find(tier))])
 	var notes := []
@@ -2770,7 +2795,7 @@ func _hud_bowling(s: Rect2) -> void:
 			)
 			_t(_aim_label(), x, o.y, WHITE)
 		else:
-			_canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
+			_canvas.draw_rect(Rect2(bar.position.x + 79.0 * (float(g.get("pcen", 0.85)) - 0.125), bar.position.y, 14.0, 5.0), GREEN)
 			_canvas.draw_rect(
 				Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER
 			)
@@ -3072,6 +3097,7 @@ func _corn_params() -> Dictionary:
 		"power_speed": Difficulty.f("corn.power_speed"),
 		"assist": Difficulty.i("corn.assist") > 0,
 		"floor": 1 if Difficulty.cozy_on() else 0,
+		"zone_rng": Difficulty.rng("cornhole_zone"),
 	}
 
 
@@ -3240,7 +3266,7 @@ func _hud_cornhole(s: Rect2) -> void:
 	if cg.phase == "aim" or cg.phase == "power":
 		_canvas.draw_rect(bar, UiStyle.SOFT)
 		var aim: bool = cg.phase == "aim"
-		var centre := 0.5 if aim else CornholeGame.POWER_BEST
+		var centre: float = cg.aim_c if aim else cg.pow_c
 		var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
 		_canvas.draw_rect(Rect2(bar.position.x + 79.0 * (centre - half), bar.position.y, 79.0 * half * 2.0, 5.0), GREEN)
 		var v: float = cg.marker if aim else cg.power
@@ -3266,7 +3292,7 @@ func _paint_cornhole(b: Rect2) -> void:
 	if cg.phase == "aim" or cg.phase == "power":
 		_canvas.draw_rect(bar, Color("c9d2e0"))
 		var aim: bool = cg.phase == "aim"
-		var centre := 0.5 if aim else CornholeGame.POWER_BEST
+		var centre: float = cg.aim_c if aim else cg.pow_c
 		var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
 		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * (centre - half), bar.position.y, 69.0 * half * 2.0, 5.0), GREEN)
 		var v: float = cg.marker if aim else cg.power
@@ -3287,6 +3313,7 @@ func _grill_params() -> Dictionary:
 		"time": Difficulty.f("grill.time"),
 		"flare": Difficulty.f("grill.flare"),
 		"dogs": Difficulty.f("grill.dogs"),
+		"zone_rng": Difficulty.rng("grill_zone"),
 		"cozy": Difficulty.cozy_on(),
 	}
 	if lunch_on():  # a short lunch: two tickets fewer, a fifth less time
@@ -3447,7 +3474,7 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
 		var cell := Rect2(gbox.position.x + 3.0 + 21.0 * float(i), gbox.position.y + 3.0, 20.0, 25.0)
 		var slot: Dictionary = gg.slots[i]
 		var dog: bool = slot.kind == "dog"
-		var win: Vector2 = gg.flip_range(str(slot.kind))
+		var win: Vector2 = gg.flip_range(str(slot.kind), float(slot.get("woff", 0.0)))
 		if i == gg.sel:
 			_canvas.draw_rect(cell, AMBER)
 			_canvas.draw_rect(Rect2(cell.position + Vector2.ONE, cell.size - Vector2(2, 2)), UiStyle.DARK)
@@ -3655,7 +3682,7 @@ func _paint_intro(b: Rect2) -> void:
 		if game == "cornhole":
 			who_text += ".  FIRST TO %d." % Difficulty.i("corn.to")
 		else:
-			who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), Difficulty.i("grill.time")]
+			who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), roundi(Difficulty.f("grill.time"))]
 		for part in _wrap(who_text, int(b.size.x / 4.0)):
 			_t(part, b.position.x, y)
 			y += 7.0
@@ -3757,7 +3784,7 @@ func _paint_bowling(b: Rect2) -> void:
 		)
 		_t(_aim_label(), x + 74.0 - 4.0, bar_y - 8.0, BLUE)
 	elif g.stage == "power":
-		_canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
+		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * (float(g.get("pcen", 0.85)) - 0.125), bar_y, 12.0, 5.0), GREEN)
 		_canvas.draw_rect(Rect2(bar.position.x, bar_y, 70.0 * float(g.power), 5.0), AMBER)
 		_t("POWER", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
 	if str(g.msg) != "":

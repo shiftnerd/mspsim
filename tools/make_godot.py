@@ -23398,6 +23398,13 @@ write("scripts/difficulty.gd", '''extends Node
 #   Difficulty.rng("karaoke")        the RandomNumberGenerator of one system (same seed = same draws)
 #   Difficulty.seed_run(12345)       tests and "daily seed" runs: fixes the seed and restarts every stream
 #
+# MASTERY RAMP: the numbers above are the FIRST play of a game. Every GOOD play (2+ stars, not left early) of a game adds
+# one to Career counter "good.<game>"; m = clamp(good / RAMP_PLAYS, 0, 1). f() blends the skill-check keys listed in
+# MASTERY_KEYS from the tier's value toward a tighter target by m (see mastery_blend). Nothing else is scaled.
+#
+#   Difficulty.mastery("karaoke")    m of one game (0 with fixed_take, 0 when nothing is counted)
+#   Difficulty.zone("bowl", lo, hi)  a target position drawn from the game's own seeded stream "<game>_zone"
+#
 # TABLE is the only place the numbers live: [easy, normal, hard]. Normal is exactly today's behaviour.
 # Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
 # run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input of the tiers'
@@ -23543,6 +23550,24 @@ const TABLE := {
     "service.trust": [0.7, 1.0, 1.6],
 }
 
+# ---- the mastery ramp (per game, not per day) ---------------------------------------------------------
+const RAMP_PLAYS := 10  # good plays that bring a game to full mastery
+const EASY_RAMP := 0.35  # the Easy tier (cozy included) only blends this share of the way toward the normal value
+const HARD_OVER := 0.25  # at full mastery Hard goes at most this share of the normal-to-hard step beyond its own value
+const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "corn": "cornhole"}
+# the keys that tighten with mastery. Everything else stays fixed on purpose: counts and switches (karaoke.grace,
+# escape.digits / dial, dinner.reveal, printer.questions / chain, corn.to / assist, grill.tickets), random frequencies
+# (grill.flare, grill.dogs), prizes and thresholds (not in TABLE at all), the nerf war and the campaign dials.
+const MASTERY_KEYS := [
+    "karaoke.gap", "karaoke.perfect", "karaoke.good",
+    "bowl.opp_skill", "bowl.aim_speed", "bowl.power_speed", "bowl.oil", "bowl.spin_noise",
+    "escape.time", "escape.wrong_penalty",
+    "printer.speed", "printer.zone",
+    "grill.cook_rate", "grill.window", "grill.time",
+    "chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill",
+    "corn.opp_skill", "corn.aim_speed", "corn.power_speed",
+]
+
 var tier := "normal"
 var run_seed := 0
 var day_scale := 1.0  # the DAY LENGTH in use today (x on the mode's day_len); changes at the next morning
@@ -23593,11 +23618,11 @@ func label() -> String:
 
 # the number for one key at the current tier (0 and an error for an unknown key)
 func f(key: String) -> float:
-    return float(at(key, tier))
+    return mastery_blend(key, tier)
 
 
 func i(key: String) -> int:
-    return int(at(key, tier))
+    return int(at(key, tier))  # whole numbers (digits, counts, switches) never ramp
 
 
 # a campaign dial (Q6): the tier's number while a campaign runs, the normal one otherwise (Free Play and the old tests are unchanged)
@@ -23608,6 +23633,44 @@ func cf(key: String) -> float:
 # the ticket dials of the running mode: the tech campaign reads tech.pace / tech.sla, the crew campaigns (owner, sales, service) crew.pace / crew.sla
 func cm(base: String) -> float:
     return cf(("tech." if Campaign.mode == "tech" else "crew.") + base)
+
+
+# ---- the mastery ramp --------------------------------------------------------------------------------
+func game_of(key: String) -> String:
+    return str(MASTERY_GAMES.get(key.get_slice(".", 0), ""))
+
+
+# m 0..1 of one game: good plays / RAMP_PLAYS. Free Play fixed takes stay repeatable (0).
+func mastery(game: String) -> float:
+    if fixed_take or game == "":
+        return 0.0
+    return clampf(float(Career.value("good." + game)) / float(RAMP_PLAYS), 0.0, 1.0)
+
+
+# the value of a key at a tier with a given mastery: easy -> EASY_RAMP of the way to normal, normal -> hard,
+# hard -> hard plus HARD_OVER of the normal-to-hard step. m 0 is exactly the TABLE value.
+func blend(key: String, for_tier: String, m: float) -> float:
+    var v := float(at(key, for_tier))
+    if m <= 0.0 or not key in MASTERY_KEYS:
+        return v
+    var row: Array = TABLE[key]
+    var k := maxi(0, TIERS.find(for_tier))
+    var target := float(row[2]) + HARD_OVER * (float(row[2]) - float(row[1]))
+    var w := m
+    if k < 2:
+        target = float(row[k + 1])
+    if k == 0:
+        w = m * EASY_RAMP
+    return lerpf(v, target, w)
+
+
+func mastery_blend(key: String, for_tier: String) -> float:
+    return blend(key, for_tier, mastery(game_of(key)))
+
+
+# a target position (the sweet spot of a skill check) from the game's own stream; no stream draw changes elsewhere
+func zone(game: String, lo: float, hi: float) -> float:
+    return rng(game + "_zone").randf_range(lo, hi)
 
 
 func at(key: String, for_tier: String) -> Variant:
@@ -25891,6 +25954,9 @@ var phase := "ready"  # ready, aim, power, flight, settle, opp, round_end, done
 var round_no := 1
 var seq := 0  # 0..7 inside a round, even = you
 var opp := ""
+var aim_c := 0.5  # where the hole sits on the aim bar this bag (drawn green); moves when a zone_rng is given
+var pow_c := POWER_BEST  # and on the power bar
+var zone_rng: RandomNumberGenerator = null
 var marker := 0.0
 var marker_aim := 0.5  # the aim you stopped at
 var power := 0.0
@@ -25922,6 +25988,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
     assist = bool(params.get("assist", false))
     floor_stars = int(params.get("floor", 0))
     rng = r
+    zone_rng = params.get("zone_rng", null)
     crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
     round_no = 0
     score_you = 0
@@ -25987,12 +26054,22 @@ func press() -> String:
 
 
 # where a bag with this aim and power would land (without the wobble)
-static func spot(aim: float, pow_v: float) -> Vector2:
-    return Vector2(HOLE_X + (pow_v - POWER_BEST) * POWER_SCALE, (aim - 0.5) * AIM_SCALE)
+static func spot(aim: float, pow_v: float, aim_mid := 0.5, pow_mid := POWER_BEST) -> Vector2:
+    return Vector2(HOLE_X + (pow_v - pow_mid) * POWER_SCALE, (aim - aim_mid) * AIM_SCALE)
+
+
+# a new sweet spot for your next bag: the hole is the same, the stops that find it move (the green is drawn there)
+func roll_zone() -> void:
+    if zone_rng == null:
+        aim_c = 0.5
+        pow_c = POWER_BEST
+        return
+    aim_c = zone_rng.randf_range(0.32, 0.68)
+    pow_c = zone_rng.randf_range(0.42, 0.78)
 
 
 func throw_you(aim: float, pow_v: float) -> void:
-    var p := spot(aim, pow_v)
+    var p := spot(aim, pow_v, aim_c, pow_c)
     p.x += rng.randfn(0.0, NOISE)
     p.y += rng.randfn(0.0, NOISE)
     _launch("you", p)
@@ -26094,6 +26171,7 @@ func _next_turn() -> void:
         marker = 0.0
         power = 0.0
         dir = 1.0
+        roll_zone()
     else:
         phase = "opp"
 
@@ -26198,6 +26276,7 @@ const BURN := 0.9
 const BASE_RATE := 0.05  # cook value per second per side at cook_rate 1
 const WIN_LO := 0.35
 const WIN_W := 0.35
+const WIN_SHIFT := 0.07  # a new patty's flip window may sit this far earlier or later (its width never changes)
 const COOL_MUL := 0.25
 const FLARE_MUL := 2.4
 const FLARE_LEN := 4.0
@@ -26219,6 +26298,7 @@ var flare_scale := 1.0
 var dog_share := 0.0
 var cozy := false
 var rng: RandomNumberGenerator
+var zone_rng: RandomNumberGenerator = null  # draws where each new patty's flip window sits (none: always the classic place)
 var names: Array = []
 
 var slots: Array = []
@@ -26251,6 +26331,7 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
     if cozy:
         flare_scale = 0.0
     rng = r
+    zone_rng = params.get("zone_rng", null)
     names = who.duplicate() if not who.is_empty() else ["A COWORKER"]
     slots = []
     var n_dogs := roundi(float(SLOTS) * dog_share)
@@ -26278,7 +26359,8 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 
 
 func _fresh(kind := "burger") -> Dictionary:
-    return {"on": true, "kind": kind, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+    var off := zone_rng.randf_range(-WIN_SHIFT, WIN_SHIFT) if zone_rng != null else 0.0
+    return {"on": true, "kind": kind, "woff": off, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
 
 
 # what a new slot holds: a dog when the open orders want more dogs than the grate has (and nothing else is missing more)
@@ -26373,10 +26455,12 @@ func doneness(i: int) -> String:
     return "well" if b == "burnt" and cozy else b
 
 
-func flip_range(kind := "burger") -> Vector2:
-    if kind == "dog":
-        return Vector2(DOG_WIN_LO, DOG_WIN_LO + DOG_WIN_W * window)
-    return Vector2(WIN_LO, WIN_LO + WIN_W * window)
+func flip_range(kind := "burger", off := 0.0) -> Vector2:
+    var lo := DOG_WIN_LO if kind == "dog" else WIN_LO
+    var hi := lo + (DOG_WIN_W if kind == "dog" else WIN_W) * window
+    var room := (DOG_BURN if kind == "dog" else BURN) - 0.03 - hi  # the window stays clear of the burn line
+    var d := clampf(off, -lo + 0.05, maxf(0.0, room))
+    return Vector2(lo + d, hi + d)
 
 
 # ---- the player's keys ------------------------------------------------------------------------------------------
@@ -26396,7 +26480,7 @@ func flip(i: int = -1) -> String:
     var down: int = s.down
     var v := float(s.c[down])
     var is_dog: bool = s.kind == "dog"
-    var r := flip_range(str(s.kind))
+    var r := flip_range(str(s.kind), float(s.get("woff", 0.0)))
     var res := "sear"
     if v < r.x:
         s.c[down] = v * (0.7 if is_dog else 0.5)
@@ -27509,21 +27593,21 @@ static func oil_of(alley_id: String) -> Dictionary:
     return oil(str(alley(alley_id).oil))
 
 
-# where the green zone sits on the 0..1 aim bar for this oil and hook (-1 left, 0 straight, 1 right)
-static func center(oil_id: String, spin: int) -> float:
+# where the green zone sits on the 0..1 aim bar for this oil and hook (-1 left, 0 straight, 1 right); shift = this throw's draw
+static func center(oil_id: String, spin: int, shift := 0.0) -> float:
     var bias := float(oil(oil_id).bias)
     var scale := 1.0
     if spin < 0:
         scale = 1.0 - HOOK_LEFT_CANCEL
     elif spin > 0:
         scale = 1.0 + HOOK_LEFT_CANCEL
-    return clampf(0.5 - bias * scale, 0.1, 0.9)
+    return clampf(0.5 - bias * scale + shift, 0.1, 0.9)
 
 
 # how well the aim marker (0..1) fits the lane: 1 = in the middle of the green zone
-static func accuracy(oil_id: String, marker: float, spin: int, tier_width := 1.0) -> float:
+static func accuracy(oil_id: String, marker: float, spin: int, tier_width := 1.0, shift := 0.0) -> float:
     var w := float(oil(oil_id).width) * tier_width
-    return clampf(1.0 - absf(marker - center(oil_id, spin)) * 2.0 * w, 0.0, 1.0)
+    return clampf(1.0 - absf(marker - center(oil_id, spin, shift)) * 2.0 * w, 0.0, 1.0)
 
 
 static func style_of(who: String) -> String:
@@ -28779,6 +28863,16 @@ func _press_game(key: int) -> void:
             _dinner_press(key)
 
 
+# the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner has no skill-check numbers to ramp.
+func _mastery_lines(result: int) -> Array:
+    if result < 2 or game == "dinner" or Difficulty.fixed_take:
+        return []
+    var n := mini(int(Career.value("good." + game)), Difficulty.RAMP_PLAYS)
+    if n >= Difficulty.RAMP_PLAYS:
+        return ["FULL MASTERY."]
+    return ["MASTERY %d/%d. SHARPER NEXT TIME." % [n, Difficulty.RAMP_PLAYS]]
+
+
 # stars: 0-3, or -1 when you left early
 func _finish(result: int) -> void:
     stars = result
@@ -28820,6 +28914,7 @@ func _finish(result: int) -> void:
             lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % liking)
         else:
             lines.append("A GOOD NIGHT OUT. (FREE PLAY: NOTHING IS SCORED.)")
+        lines.append_array(_mastery_lines(result))
         if Campaign.mode == "owner":
             var relief := (2.0 + float(result)) if lunch_on() else 5.0 + 3.0 * float(result)
             Owner.burnout = clampf(Owner.burnout - relief, 0.0, 100.0)
@@ -28885,6 +28980,7 @@ func _bowl_setup() -> void:
         "acc": 1.0,
         "hcp": _league_hcp(str(opts.get("alley", "strike_zone"))),
     }
+    _bowl_zone_roll()
     if room_mode():
         g.stage = "ready"
         caption("YOUR TURN. PRESS E TO STEP UP.", 99.0)
@@ -28943,6 +29039,7 @@ func _bowl_press(key: int) -> void:
         g.stage = "aim"
         g.marker = 0.0
         g.dir = 1.0
+        _bowl_zone_roll()
         caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
     elif g.stage == "aim":
         g.stage = "power"
@@ -28961,9 +29058,9 @@ func _bowl_press(key: int) -> void:
 
 func bowl_strength() -> float:
     var spin := int(g.get("spin", 0))
-    var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"))
+    var accuracy := BowlVariety.accuracy(oil_id(), float(g.marker), spin, Difficulty.f("bowl.oil"), float(g.get("shift", 0.0)))
     g.acc = accuracy
-    var quality := clampf(1.0 - absf(float(g.power) - 0.85) / 0.85, 0.0, 1.0)
+    var quality := clampf(1.0 - absf(float(g.power) - float(g.get("pcen", 0.85))) / 0.85, 0.0, 1.0)
     var span := 0.08 + BowlVariety.HOOK_NOISE * absf(float(spin)) * Difficulty.f("bowl.spin_noise")
     var noise := Difficulty.rng("bowl").randf_range(-span, span)
     return clampf(accuracy * 0.6 + quality * 0.4 + noise, 0.0, 1.0)
@@ -29062,6 +29159,7 @@ func _bowl_next() -> void:
         g.stage = "aim"
         g.marker = 0.0
         g.dir = 1.0
+        _bowl_zone_roll()
         if room_mode():
             caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
         return
@@ -29088,6 +29186,7 @@ func _bowl_advance() -> void:
     g.stage = "ready" if room_mode() else "aim"
     g.marker = 0.0
     g.dir = 1.0
+    _bowl_zone_roll()
     g.msg = ""
     g.up = [_all_up(), _all_up()]
     if room_mode():
@@ -29162,7 +29261,17 @@ func is_league() -> bool:
 
 # where the green zone sits on the aim bar (0..1) and how wide it is
 func bowl_center() -> float:
-    return BowlVariety.center(oil_id(), int(g.get("spin", 0)))
+    return BowlVariety.center(oil_id(), int(g.get("spin", 0)), float(g.get("shift", 0.0)))
+
+
+# the green zones move: every roll draws a new aim shift and a new power centre (stream "bowl_zone"; Free Play fixed takes repeat)
+const ZONE_SHIFT := 0.12
+const POWER_ZONE := [0.62, 0.9]  # where the power bar's best point can sit (0.85 was the old fixed one)
+
+
+func _bowl_zone_roll() -> void:
+    g.shift = Difficulty.zone("bowl", -ZONE_SHIFT, ZONE_SHIFT)
+    g.pcen = Difficulty.zone("bowl", POWER_ZONE[0], POWER_ZONE[1])
 
 
 func bowl_zone_width() -> float:
@@ -29345,7 +29454,7 @@ func ask_song() -> void:
 # the chart of one song at one tier: {notes, gap, span, speed}. Pure given the generator, so tests can
 # build the same chart twice. Doubles put a second arrow in another lane on the same beat.
 func kara_chart(song: Dictionary, tier: String, r: RandomNumberGenerator) -> Dictionary:
-    var gap := float(song.gap) * float(Difficulty.at("karaoke.gap", tier)) / 0.75
+    var gap := float(song.gap) * Difficulty.mastery_blend("karaoke.gap", tier) / 0.75
     var rhythm: Array = song.rhythm
     var chance := float(song.doubles[maxi(0, Difficulty.TIERS.find(tier))])
     var notes := []
@@ -30386,7 +30495,7 @@ func _hud_bowling(s: Rect2) -> void:
             )
             _t(_aim_label(), x, o.y, WHITE)
         else:
-            _canvas.draw_rect(Rect2(bar.position.x + 58.0, bar.position.y, 14.0, 5.0), GREEN)
+            _canvas.draw_rect(Rect2(bar.position.x + 79.0 * (float(g.get("pcen", 0.85)) - 0.125), bar.position.y, 14.0, 5.0), GREEN)
             _canvas.draw_rect(
                 Rect2(bar.position.x, bar.position.y, 80.0 * float(g.power), 5.0), AMBER
             )
@@ -30688,6 +30797,7 @@ func _corn_params() -> Dictionary:
         "power_speed": Difficulty.f("corn.power_speed"),
         "assist": Difficulty.i("corn.assist") > 0,
         "floor": 1 if Difficulty.cozy_on() else 0,
+        "zone_rng": Difficulty.rng("cornhole_zone"),
     }
 
 
@@ -30856,7 +30966,7 @@ func _hud_cornhole(s: Rect2) -> void:
     if cg.phase == "aim" or cg.phase == "power":
         _canvas.draw_rect(bar, UiStyle.SOFT)
         var aim: bool = cg.phase == "aim"
-        var centre := 0.5 if aim else CornholeGame.POWER_BEST
+        var centre: float = cg.aim_c if aim else cg.pow_c
         var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
         _canvas.draw_rect(Rect2(bar.position.x + 79.0 * (centre - half), bar.position.y, 79.0 * half * 2.0, 5.0), GREEN)
         var v: float = cg.marker if aim else cg.power
@@ -30882,7 +30992,7 @@ func _paint_cornhole(b: Rect2) -> void:
     if cg.phase == "aim" or cg.phase == "power":
         _canvas.draw_rect(bar, Color("c9d2e0"))
         var aim: bool = cg.phase == "aim"
-        var centre := 0.5 if aim else CornholeGame.POWER_BEST
+        var centre: float = cg.aim_c if aim else cg.pow_c
         var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
         _canvas.draw_rect(Rect2(bar.position.x + 69.0 * (centre - half), bar.position.y, 69.0 * half * 2.0, 5.0), GREEN)
         var v: float = cg.marker if aim else cg.power
@@ -30903,6 +31013,7 @@ func _grill_params() -> Dictionary:
         "time": Difficulty.f("grill.time"),
         "flare": Difficulty.f("grill.flare"),
         "dogs": Difficulty.f("grill.dogs"),
+        "zone_rng": Difficulty.rng("grill_zone"),
         "cozy": Difficulty.cozy_on(),
     }
     if lunch_on():  # a short lunch: two tickets fewer, a fifth less time
@@ -31063,7 +31174,7 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
         var cell := Rect2(gbox.position.x + 3.0 + 21.0 * float(i), gbox.position.y + 3.0, 20.0, 25.0)
         var slot: Dictionary = gg.slots[i]
         var dog: bool = slot.kind == "dog"
-        var win: Vector2 = gg.flip_range(str(slot.kind))
+        var win: Vector2 = gg.flip_range(str(slot.kind), float(slot.get("woff", 0.0)))
         if i == gg.sel:
             _canvas.draw_rect(cell, AMBER)
             _canvas.draw_rect(Rect2(cell.position + Vector2.ONE, cell.size - Vector2(2, 2)), UiStyle.DARK)
@@ -31271,7 +31382,7 @@ func _paint_intro(b: Rect2) -> void:
         if game == "cornhole":
             who_text += ".  FIRST TO %d." % Difficulty.i("corn.to")
         else:
-            who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), Difficulty.i("grill.time")]
+            who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), roundi(Difficulty.f("grill.time"))]
         for part in _wrap(who_text, int(b.size.x / 4.0)):
             _t(part, b.position.x, y)
             y += 7.0
@@ -31373,7 +31484,7 @@ func _paint_bowling(b: Rect2) -> void:
         )
         _t(_aim_label(), x + 74.0 - 4.0, bar_y - 8.0, BLUE)
     elif g.stage == "power":
-        _canvas.draw_rect(Rect2(bar.position.x + 52.0, bar_y, 12.0, 5.0), GREEN)
+        _canvas.draw_rect(Rect2(bar.position.x + 69.0 * (float(g.get("pcen", 0.85)) - 0.125), bar_y, 12.0, 5.0), GREEN)
         _canvas.draw_rect(Rect2(bar.position.x, bar_y, 70.0 * float(g.power), 5.0), AMBER)
         _t("POWER", x + 74.0 - 4.0, bar_y - 8.0, BLUE)
     if str(g.msg) != "":
@@ -52163,6 +52274,7 @@ func note_outing(game: String, result: int, info := {}) -> void:
     else:
         add("outings")
     best("stars." + game, result)
+    note_good(game, result)
     match game:
         "karaoke":
             add("kara_perfects", int(info.get("perfects", 0)))
@@ -52198,7 +52310,14 @@ func note_bowl(knocked: int, roll: int) -> void:
         add("bowl_gutters")
 
 
+# the mastery ramp (Difficulty.mastery): a GOOD play is 2+ stars, counted once per finished play (never an early exit)
+func note_good(game: String, result: int) -> void:
+    if result >= 2:
+        add("good." + game)
+
+
 func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
+    note_good("printer", stars)
     if stars >= 1:
         add("printer_wins")
         add("pr." + model)

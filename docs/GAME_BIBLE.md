@@ -181,6 +181,7 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 
 - **Pressure that is funny, not punishing:** a P1 ticket and a ringing phone at the same time, but you can always see what you could have done.
 - **Growth you can feel:** the fixes get faster, new options unlock, coworkers start to trust you.
+- **Mastery:** the activities get a little sharper with every good play (2+ stars) of that game, up to 10 plays; the first play of any game is always exactly the chosen level, and the sweet spots in the skill checks move so the rhythm cannot be memorised.
 - **Consequences:** the decisions you make early (check the backup! ask the user to save!) pay off or bite on day 9, day 11, day 14.
 - **A workplace with people in it:** you can mess around, and the people react.
 

@@ -536,7 +536,8 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 	_check(not o.is_open, "and it closes again")
 
-	# the tiers feed the race
+	# the tiers feed the race (a fresh career: the mastery ramp starts at 0)
+	root.get_node("Career").reset_all()
 	for tier in ["easy", "normal", "hard"]:
 		diff.set_tier(tier)
 		var p: Dictionary = o._chair_params()

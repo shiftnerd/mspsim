@@ -238,6 +238,7 @@ func _init() -> void:
 			if absf(float(spot) - area.global_position.x) < half:
 				clear = false
 	_check(clear, "nobody stands in a clue zone")
+	root.get_node("Career").reset_all()  # the mastery ramp would shorten the penalty after the plays above
 	current_scene.get_node("Fx/Keypad").play()
 	time0 = o.g.time
 	o.g.cur = [0, 0, 0, 0]
@@ -325,10 +326,10 @@ func _init() -> void:
 	_check(current_scene.get_node("Fx/BoardA")._corn_game() == cg and current_scene.get_node("Fx/BoardB")._corn_game() == cg, "both boards draw from the game")
 	o.tick(1.5)
 	_check(cg.phase == "aim" and o.hint().begins_with("E = STOP THE AIM") and o._caption.contains("AIM"), "aim: clear prompt")
-	cg.marker = 0.5
+	cg.marker = cg.aim_c
 	o.press(KEY_E)
 	_check(cg.phase == "power" and o.hint().begins_with("E = STOP THE POWER"), "E stops the aim")
-	cg.power = 0.6
+	cg.power = cg.pow_c
 	o.press(KEY_E)
 	o.tick(0.1)
 	_check(cg.phase == "flight" and wp.state == "emote" and str(wp.sprite.animation).begins_with("toss_"), "E throws: the bag flies and you toss (the toss pose)")
@@ -341,10 +342,10 @@ func _init() -> void:
 	while o.phase == "play" and guard2 < 6000:
 		guard2 += 1
 		if cg.phase == "aim":
-			cg.marker = 0.5
+			cg.marker = cg.aim_c
 			o.press(KEY_E)
 		elif cg.phase == "power":
-			cg.power = 0.6
+			cg.power = cg.pow_c
 			o.press(KEY_E)
 		o.tick(0.1)
 		if guard2 % 50 == 0:

@@ -324,6 +324,7 @@ func note_outing(game: String, result: int, info := {}) -> void:
 	else:
 		add("outings")
 	best("stars." + game, result)
+	note_good(game, result)
 	match game:
 		"karaoke":
 			add("kara_perfects", int(info.get("perfects", 0)))
@@ -359,7 +360,14 @@ func note_bowl(knocked: int, roll: int) -> void:
 		add("bowl_gutters")
 
 
+# the mastery ramp (Difficulty.mastery): a GOOD play is 2+ stars, counted once per finished play (never an early exit)
+func note_good(game: String, result: int) -> void:
+	if result >= 2:
+		add("good." + game)
+
+
 func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
+	note_good("printer", stars)
 	if stars >= 1:
 		add("printer_wins")
 		add("pr." + model)

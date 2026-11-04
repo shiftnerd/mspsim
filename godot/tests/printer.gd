@@ -422,6 +422,7 @@ func _models(pg: Node, on: Node, _game: Node) -> void:
 	pg.marker = 0.0
 	pg._dir = 1.0
 	pg.spot = 0
+	root.get_node("Career").reset_all()  # mastery 0: the table speed
 	pg._process(0.1)
 	_check(is_equal_approx(pg.marker, 0.08 * pg.tired), "the marker really runs faster when tired")
 	pg.press("escape")
