@@ -113,6 +113,20 @@ const TABLE := {
 	"chair.slick": [0.8, 1.0, 1.3],
 	"chair.par": [1.2, 1.0, 0.9],
 	"chair.skill": [-0.08, 0.0, 0.08],
+	# cornhole (R21): points to win, added to the crew's skill, how fast the aim marker and the power bar bounce (a bar a second),
+	# 1 = a bag that lands just short slides up onto the board
+	"corn.to": [11, 15, 21],
+	"corn.opp_skill": [-0.08, 0.0, 0.06],
+	"corn.aim_speed": [1.0, 1.3, 1.7],
+	"corn.power_speed": [0.8, 1.1, 1.5],
+	"corn.assist": [1, 0, 0],
+	# the cookout (R21): x on how fast a side cooks, x on the width of the flip window, tickets in a round, seconds, x on how often
+	# a flare-up starts (Cozy Easy has none)
+	"grill.cook_rate": [0.85, 1.0, 1.25],
+	"grill.window": [1.3, 1.0, 0.8],
+	"grill.tickets": [5, 6, 6],
+	"grill.time": [85, 75, 68],
+	"grill.flare": [0.5, 1.0, 1.5],
 	# Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
 	# SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
 	# (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).

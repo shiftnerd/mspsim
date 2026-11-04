@@ -443,5 +443,35 @@ func _floor_phase() -> void:
 	_begin()
 	await _end("chair race result")
 	out.close()
+	# ---- R21: cornhole and the cookout (the overlay versions: intro, play, result)
+	for id in ["cornhole", "grill"]:
+		_begin()
+		out.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+		await _end("%s intro" % id)
+		out.press(KEY_ENTER)
+		out.tick(2.0)
+		if id == "cornhole":
+			out.g.game.marker = 0.4
+			out.g.game.score_you = 7
+			out.g.game.score_opp = 4
+		else:
+			out.g.game.slots[1].c = [0.5, 0.2]
+			out.g.game.slots[2].flare = 3.0
+			out.g.game.msg_t = 2.0
+		out.tick(0.3)
+		_begin()
+		await _end("%s play" % id)
+		if id == "grill":
+			out.g.game.served = 5
+			out.g.game.done = true
+		else:
+			out.g.game.score_you = 15
+			out.g.game.phase = "round_end"
+			out.g.game.t = 99.0
+		out.tick(1.0)
+		out.tick(2.0)
+		_begin()
+		await _end("%s result" % id)
+		out.close()
 	out.enabled = false
 	print("floor phase done for ", fmt, " (crew ", crew.members.size(), ")")

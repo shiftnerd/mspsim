@@ -57,6 +57,8 @@ const DEFAULT_MEDALS := [
 	{"id": "road_warrior", "title": "ROAD WARRIOR", "desc": "SURVIVE 5 TRAFFIC JAMS", "rules": [["road_events", ">=", 5]]},
 	{"id": "field_tech", "title": "FIELD TECH", "desc": "FIX 10 ONSITE JOBS", "rules": [["onsite_fixed", ">=", 10]]},
 	{"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
+	{"id": "bag_man", "title": "BAG MAN", "desc": "10 BAGS IN THE HOLE", "rules": [["bags_in_hole", ">=", 10]]},
+	{"id": "grill_sergeant", "title": "GRILL SERGEANT", "desc": "A COOKOUT, NOTHING BURNT", "rules": [["grill_clean", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
@@ -99,6 +101,10 @@ const COUNTERS := [
 	["", "KARAOKE BEST", "stars.karaoke", "stars"],
 	["", "ESCAPE ROOM BEST", "stars.escape", "stars"],
 	["", "DINNER BEST", "stars.dinner", "stars"],
+	["", "CORNHOLE BEST", "stars.cornhole", "stars"],
+	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
+	["", "COOKOUT BEST", "stars.grill", "stars"],
+	["", "BURGERS SERVED", "burgers_served", "n"],
 	["", "STRIKES", "bowl_strikes", "n"],
 	["", "GUTTER BALLS", "bowl_gutters", "n"],
 	["", "HOOK STRIKES", "bowl_hook_strikes", "n"],
@@ -280,6 +286,12 @@ func note_outing(game: String, result: int, info := {}) -> void:
 				fastest("escape_best", int(info.get("secs", 0)))
 		"dinner":
 			best("dinner_best", int(info.get("score", 0)))
+		"cornhole":
+			add("bags_in_hole", int(info.get("holes", 0)))
+		"grill":
+			add("burgers_served", int(info.get("served", 0)))
+			if bool(info.get("clean", false)):
+				best("grill_clean", 1)
 
 
 # the first time an id of a kind is seen (an alley, an arena, a session, a site type) it counts once toward total

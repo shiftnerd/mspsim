@@ -143,7 +143,7 @@ func hit() -> void:
 
 
 func play() -> void:
-	if kind.begins_with("clue_") or kind == "keypad":
+	if kind.begins_with("clue_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
 		Outings.interact(kind)
 		return
 	if kind == "bell":
@@ -279,6 +279,14 @@ func _draw() -> void:
 			_draw_sports()
 		"bowl_lane":
 			_draw_bowl_lane()
+		"cornhole_a":
+			_draw_cornhole_a()
+		"cornhole_b":
+			_draw_cornhole_board("b")
+		"cornhole_tray":
+			_draw_cornhole_tray()
+		"grill":
+			_draw_grill()
 		"bowl_score":
 			_draw_bowl_score()
 		"clue_board":
@@ -363,6 +371,145 @@ func _lane_x(lane: int, y: float) -> float:
 
 func _lane_w(y: float) -> float:
 	return lerpf(22.0, 52.0, clampf((y - 28.0) / 55.0, 0.0, 1.0))
+
+
+# ---- cornhole and the cookout in the warehouse (R21). Set x / y numbers: board A (yours, blue) and board B (the crew's, red) on the floor,
+# 24 px long and 12 deep (half a pixel an inch), the hole 19.5 px from the near end; the bags are 3 px.
+const CORN_BOARD := {"a": 1140.0, "b": 1236.0, "len": 24.0, "dep": 12.0, "y": 115.0, "hole": 19.5}
+const BAG_YOU := Color("5aa0e8")
+const BAG_CREW := Color("e0463c")
+
+
+func _corn_game() -> RefCounted:
+	if Outings.is_open and Outings.game == "cornhole" and Outings.phase != "intro" and Outings.g.has("game"):
+		return Outings.g.game
+	return null
+
+
+func _grill_game() -> RefCounted:
+	if Outings.is_open and Outings.game == "grill" and Outings.phase != "intro" and Outings.g.has("game"):
+		return Outings.g.game
+	return null
+
+
+# a set-x / y point in this node's own coordinates
+func _wx(set_x: float, y: float) -> Vector2:
+	return to_local(Vector2(float(World.DATA.SCENES[_room].x0) + set_x, y))
+
+
+# where a bag lands, in set pixels: yours go to board B (px runs to the right), the crew's to board A (to the left)
+func corn_xy(who: String, px: float, py: float) -> Vector2:
+	if who == "you":
+		return Vector2(float(CORN_BOARD.b) + px * 0.5, float(CORN_BOARD.y) + py * 0.5)
+	return Vector2(float(CORN_BOARD.a) + float(CORN_BOARD.len) - px * 0.5, float(CORN_BOARD.y) - py * 0.5)
+
+
+func _draw_cornhole_board(side: String) -> void:
+	var a := side == "a"
+	var left := float(CORN_BOARD[side])
+	var blen := float(CORN_BOARD.len)
+	var dep := float(CORN_BOARD.dep)
+	var top := float(CORN_BOARD.y) - dep * 0.5
+	var col := Color("3d78c4") if a else Color("c0392b")
+	var dark := col.darkened(0.45)
+	draw_rect(Rect2(_wx(left + 1.0, top + dep + 1.0), Vector2(blen, 3.0)), Color(0, 0, 0, 0.3))  # the shadow
+	draw_rect(Rect2(_wx(left + 1.0, top + dep), Vector2(2.0, 3.0)), Color("3a2a1c"))  # legs
+	draw_rect(Rect2(_wx(left + blen - 3.0, top + dep), Vector2(2.0, 3.0)), Color("3a2a1c"))
+	draw_rect(Rect2(_wx(left, top + dep - 1.0), Vector2(blen, 2.0)), dark)  # the front edge
+	draw_rect(Rect2(_wx(left, top), Vector2(blen, dep - 1.0)), col)  # the painted top
+	draw_rect(Rect2(_wx(left, top), Vector2(blen, 1.0)), col.lightened(0.3))
+	var near := left + blen - 3.0 if a else left
+	draw_rect(Rect2(_wx(near, top), Vector2(3.0, dep - 1.0)), Color("f4f1e8"))  # a white band at the near end
+	var far := left if a else left + blen - 2.0
+	draw_rect(Rect2(_wx(far, top), Vector2(2.0, dep - 1.0)), dark)  # the raised far end
+	var hx := left + blen - float(CORN_BOARD.hole) if a else left + float(CORN_BOARD.hole)
+	draw_circle(_wx(hx, float(CORN_BOARD.y) - 0.5), 3.4, dark)
+	draw_circle(_wx(hx, float(CORN_BOARD.y) - 0.5), 2.7, Color("120d14"))
+	var game := _corn_game()
+	if game == null:
+		return
+	for bag in game.landed:
+		if (str(bag.who) == "you") == a or str(bag.kind) == "hole":
+			continue
+		_draw_bag(corn_xy(str(bag.who), float(bag.px), float(bag.py)), str(bag.who) == "you", 0.0)
+
+
+func _draw_bag(at: Vector2, mine: bool, lift: float) -> void:
+	var col := BAG_YOU if mine else BAG_CREW
+	var p := _wx(at.x - 1.5, at.y - 1.5 - lift)
+	draw_rect(Rect2(p + Vector2(0, 1), Vector2(3, 2)), col.darkened(0.4))
+	draw_rect(Rect2(p, Vector2(3, 2)), col)
+	draw_rect(Rect2(p, Vector2(3, 1)), col.lightened(0.3))
+
+
+# board A also draws the bag in the air (one arc from the thrower's hand to where it comes down)
+func _draw_cornhole_a() -> void:
+	_draw_cornhole_board("a")
+	var game := _corn_game()
+	if game == null or game.flying.is_empty():
+		return
+	var mine := str(game.flying.who) == "you"
+	var from := Vector2(Outings.CORN_A + 8.0, 92.0) if mine else Vector2(Outings.CORN_B - 8.0, 92.0)
+	var land := corn_xy(str(game.flying.who), float(game.flying.px), float(game.flying.py))
+	var t := clampf(float(game.flying.t), 0.0, 1.0)
+	var at := from.lerp(land, t)
+	var up := 4.0 * 30.0 * t * (1.0 - t)
+	at.y += 0.0
+	draw_rect(Rect2(_wx(at.x - 1.5, land.y + 1.0), Vector2(3, 1)), Color(0, 0, 0, 0.3))
+	_draw_bag(Vector2(at.x, at.y), mine, up)
+
+
+func _draw_cornhole_tray() -> void:
+	var x := 1100.0
+	draw_rect(Rect2(_wx(x, 112.0), Vector2(14, 7)), Color("6b4a2a"))
+	draw_rect(Rect2(_wx(x, 112.0), Vector2(14, 1)), Color("8a6338"))
+	draw_rect(Rect2(_wx(x + 1.0, 109.0), Vector2(3, 3)), BAG_YOU)
+	draw_rect(Rect2(_wx(x + 5.0, 109.0), Vector2(3, 3)), BAG_YOU.darkened(0.2))
+	draw_rect(Rect2(_wx(x + 9.0, 109.0), Vector2(3, 3)), BAG_CREW)
+	draw_rect(Rect2(_wx(x + 3.0, 107.0), Vector2(3, 3)), BAG_CREW.darkened(0.2))
+
+
+# the grill: a little smoke always, more while patties cook, flames in a flare-up, plates for what was served, and a bubble with
+# the order over each coworker in the queue (the grate itself is in the HUD, the sprite is too small)
+func _draw_grill() -> void:
+	var game := _grill_game()
+	var busy_grill: bool = game != null and game.cooking()
+	var puffs := 4 if busy_grill else 2
+	for i in puffs:
+		var ph := fmod(_time * (0.55 if busy_grill else 0.3) + float(i) / float(puffs), 1.0)
+		var r := 1.2 + ph * 2.6
+		draw_circle(Vector2(15.0 + sin(_time * 1.7 + float(i) * 2.1) * 3.0 + ph * 3.0, -1.0 - ph * 24.0), r, Color(0.75, 0.75, 0.78, 0.42 * (1.0 - ph)))
+	if game == null:
+		return
+	for slot in game.flare_slots():
+		var fx := 5.0 + 7.0 * float(slot)
+		var flick := 4.0 + 3.0 * sin(_time * 22.0 + float(slot) * 1.7)
+		draw_colored_polygon(PackedVector2Array([Vector2(fx, 4.0), Vector2(fx + 3.0, 4.0 - flick - 4.0), Vector2(fx + 6.0, 4.0)]), Color("f08a30"))
+		draw_colored_polygon(PackedVector2Array([Vector2(fx + 1.5, 4.0), Vector2(fx + 3.0, 4.0 - flick), Vector2(fx + 4.5, 4.0)]), Color("ffe36b"))
+	for i in mini(game.served, 6):  # the plates
+		draw_rect(Rect2(36.0 + float(i % 3) * 5.0, 33.0 - floorf(float(i) / 3.0) * 3.0, 4.0, 2.0), Color("f4f1e8"))
+		draw_rect(Rect2(37.0 + float(i % 3) * 5.0, 32.0 - floorf(float(i) / 3.0) * 3.0, 2.0, 1.0), Color("8f5233"))
+	var scene := get_tree().current_scene
+	if scene == null or not Outings.room_mode() or get_viewport_rect().size.y < 170.0:  # wide (128 px) has no room over the heads: the HUD box lists the orders
+		return
+	for t in game.open_tickets():
+		var node := scene.get_node_or_null("Actors/" + str(t.who))
+		if node == null:
+			continue
+		var ls: Array = game.lines(t)
+		var w := 4.0
+		for line in ls:
+			w = maxf(w, float(str(line).length()) * 4.0 + 3.0)
+		var h := 7.0 * float(ls.size()) + 3.0
+		var at := to_local(node.global_position + Vector2(0.0, -62.0 - 9.0 * float(int(t.id) % 2)))
+		var rect := Rect2(at.x - w * 0.5, at.y - h, w, h)
+		var frac := clampf(float(t.left) / Outings.GrillGame.PATIENCE, 0.0, 1.0)
+		draw_rect(Rect2(rect.position - Vector2.ONE, rect.size + Vector2(2, 2)), Color("17121f"))
+		draw_rect(rect, Color("f4f1e8"))
+		draw_rect(Rect2(rect.position.x, rect.end.y - 1.0, rect.size.x * (1.0 if game.cozy else frac), 1.0), Color("2f9e4f") if frac > 0.4 or game.cozy else Color("c0392b"))
+		draw_rect(Rect2(at.x - 1.0, rect.end.y + 1.0, 2.0, 2.0), Color("17121f"))
+		for k in ls.size():
+			PixelFont.draw(self, str(ls[k]), Vector2(rect.position.x + 2.0, rect.position.y + 1.0 + 7.0 * float(k)), Color("17121f"), 1)
 
 
 func _draw_bowl_lane() -> void:

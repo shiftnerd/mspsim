@@ -1,9 +1,11 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # The outing games played inside the rooms: bowling on the lane (pins fall, the crew bowls next
 # door), karaoke at the mic, the escape room's clues and keypad, dinner at the booth. Headless.
 
 var failures := 0
 var _others_checked := false
+var _cool_at := {}
 
 
 func _check(ok: bool, what: String) -> void:
@@ -298,6 +300,89 @@ func _init() -> void:
 		o.tick(2.0)
 	_check(o.phase == "result" and o.stars >= 2, "good conversation: %d stars" % o.stars)
 	await _leave(o)
+	# ---- R21: cornhole in the warehouse (two boards, you at A, the crew member of the round at B)
+	dif.seed_run(4242)  # these two play a bot through a seeded game, so the run is the same every time
+	await _go(o, "cornhole", "warehouse")
+	_check(o.is_open and o.room_mode() and o.phase == "intro", "cornhole opens in the warehouse")
+	o.press(KEY_ENTER)
+	var cg: RefCounted = o.g.game
+	var wp := current_scene.get_node("Actors/Player")
+	var wx0: float = o._x0()
+	_check(absf(wp.global_position.x - (wx0 + o.CORN_A)) < 1.0 and not game.ui_open, "you stand at board A")
+	o.tick(0.1)
+	var alan := current_scene.get_node("Actors/Alan")
+	var gar := current_scene.get_node("Actors/Garrison")
+	_check(absf(alan.global_position.x - (wx0 + o.CORN_B)) < 2.0, "Alan, the first opponent, stands at board B")
+	_check(absf(gar.global_position.x - (wx0 + float(o.SPOTS.cornhole[1]))) < 2.0, "Garrison watches with the audience")
+	_check(o.blocks_interact() and o.hint().begins_with("WAIT FOR YOUR THROW"), "READY: wait for your throw")
+	await process_frame
+	await process_frame
+	var cam := current_scene.get_viewport().get_camera_2d()
+	_check(cam != null and absf(cam.offset.x - o.CORN_PAN) < 0.5 and cam.offset.y >= 0.0, "the camera sits between the boards and above the HUD (%s)" % str(cam.offset))
+	_check(current_scene.get_node("Fx/BoardA")._corn_game() == cg and current_scene.get_node("Fx/BoardB")._corn_game() == cg, "both boards draw from the game")
+	o.tick(1.5)
+	_check(cg.phase == "aim" and o.hint().begins_with("E = STOP THE AIM") and o._caption.contains("AIM"), "aim: clear prompt")
+	cg.marker = 0.5
+	o.press(KEY_E)
+	_check(cg.phase == "power" and o.hint().begins_with("E = STOP THE POWER"), "E stops the aim")
+	cg.power = 0.6
+	o.press(KEY_E)
+	o.tick(0.1)
+	_check(cg.phase == "flight" and wp.state == "emote", "E throws: the bag flies and you reach")
+	o.tick(1.0)
+	_check(cg.landed.size() == 1 and cg.landed[0].who == "you", "the bag lands on board B")
+	var fxa := current_scene.get_node("Fx/BoardA")
+	_check(absf(fxa.corn_xy("you", 39.0, 0.0).x - (1236.0 + 19.5)) < 0.01, "the hole is 19.5 px from the near end of board B")
+	var heard := false
+	var guard2 := 0
+	while o.phase == "play" and guard2 < 6000:
+		guard2 += 1
+		if cg.phase == "aim":
+			cg.marker = 0.5
+			o.press(KEY_E)
+		elif cg.phase == "power":
+			cg.power = 0.6
+			o.press(KEY_E)
+		o.tick(0.1)
+		if guard2 % 50 == 0:
+			await process_frame
+		if cg.round_no == 2 and cg.phase in ["aim", "ready"] and not heard:
+			heard = true
+			_check(absf(gar.global_position.x - (wx0 + o.CORN_B)) < 2.0 and absf(alan.global_position.x - (wx0 + float(o.SPOTS.cornhole[0]))) < 2.0, "round 2: Garrison walks to board B, Alan back to the audience")
+	_check(heard and o.phase == "result" and o.stars >= 2, "a perfect game reaches the result page (%d stars)" % o.stars)
+	await _leave(o)
+	_check(not is_instance_valid(cam) or absf(cam.offset.x) < 0.5, "the camera is back to normal")
+
+	# ---- R21: the cookout at the grill
+	dif.seed_run(4244)
+	await _go(o, "grill", "warehouse")
+	o.press(KEY_ENTER)
+	var gg: RefCounted = o.g.game
+	wp = current_scene.get_node("Actors/Player")
+	_check(absf(wp.global_position.x - (wx0 + o.GRILL_X)) < 1.0, "you stand at the grill")
+	_check(absf(current_scene.get_node("Actors/Alan").global_position.x - (wx0 + float(o.SPOTS.grill[0]))) < 2.0, "the crew queues to your left")
+	_check(o.blocks_interact() and o.hint().begins_with("ARROWS = PICK"), "the hint line: arrows, E, space, shift")
+	_check(current_scene.get_node("Fx/Grill")._grill_game() == gg, "the grill draws from the game")
+	await process_frame
+	await process_frame
+	cam = current_scene.get_viewport().get_camera_2d()
+	_check(absf(cam.offset.x - o.GRILL_PAN) < 0.5, "the camera shows the queue")
+	o.tick(1.5)
+	_check(gg.open_tickets().size() == 1 and o._marks.size() >= 1, "the first order comes in with a bubble over the customer")
+	o.press(KEY_RIGHT)
+	_check(gg.sel == 1, "RIGHT picks the next patty")
+	gg.slots[1].c = [0.45, 0.0]
+	o.press(KEY_E)
+	_check(gg.slots[1].down == 1 and wp.state == "emote", "E flips (you reach)")
+	var guard3 := 0
+	while o.phase == "play" and guard3 < 4000:
+		guard3 += 1
+		_grill_bot(o, gg)
+		o.tick(0.1)
+		if guard3 % 40 == 0:
+			await process_frame
+	_check(o.phase == "result" and o.stars >= 2 and gg.served >= 4, "a cook gets a result (%d stars, %d served)" % [o.stars, gg.served])
+	await _leave(o)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)
 
@@ -307,3 +392,35 @@ func _check_others_once(o: Node) -> void:
 		return
 	_others_checked = true
 	_check(o.g.up.size() == 2 and o.g.queue.size() == 3, "the crew queue: Alan, Garrison, Dan")
+
+
+# a cook that plays the real keys: picks the slot, flips with E, serves with Space, parks a flaring patty with Shift (and puts it back after 5 s)
+func _grill_bot(o: Node, gg: RefCounted) -> void:
+	for i in 4:
+		var s: Dictionary = gg.slots[i]
+		if not s.on:
+			_cool_at.erase(i)
+			continue
+		var nw := 0
+		var nm := 0
+		for t in gg.open_tickets():
+			nw += int(t.need.well) - int(t.have.well)
+			nm += int(t.need.medium) - int(t.have.medium)
+		var c: Array = s.c
+		var lo := minf(float(c[0]), float(c[1]))
+		var hi := maxf(float(c[0]), float(c[1]))
+		var done: String = gg.doneness(i)
+		var key := KEY_NONE
+		if float(s.flare) > 0.0 and not s.cool:
+			key = KEY_SHIFT
+			_cool_at[i] = gg.clock
+		elif s.cool:
+			if gg.clock - float(_cool_at.get(i, 0.0)) > 5.0:
+				key = KEY_SHIFT
+		elif int(s.flipped) == 0 and float(c[s.down]) >= (0.58 if nw > nm else 0.4):
+			key = KEY_E
+		elif int(s.flipped) >= 1 and ((done == "medium" and nm > 0 and lo >= 0.37) or (done == "well" and nw > 0 and lo >= 0.58) or hi > 0.84):
+			key = KEY_SPACE
+		if key != KEY_NONE:
+			gg.sel = i
+			o.press(key)

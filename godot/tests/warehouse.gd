@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # The warehouse (chair race phase 1): a 1480 px room. It loads with its effects and props, every prop stands on the floor line,
 # the walkway is clear, the loose race props are parked off the lane, the player walks from the entry door to the dock in every
 # output format with the camera always inside the art, and the cast routes through the map (the closet trip passes through it). Headless.
@@ -59,6 +60,15 @@ func _init() -> void:
 	var spawns := ["from_kitchenette", "from_closet", "from_outing"].filter(func(n: String) -> bool: return room.get_node_or_null("Spawns/" + n) != null)
 	_check(spawns.size() == 3, "entry spawns + from_outing")
 	_check(room.get_node("Interactables/UseDartBoard").low_priority, "the dart board zone is low priority")
+	# R21: the cornhole boards, the bag tray and the grill are E zones with their own effect node (drawn in code, nothing solid on the floor)
+	for pair in [["UseBoardA", "BoardA", "cornhole_a"], ["UseBoardB", "BoardB", "cornhole_b"], ["UseBagTray", "BagTray", "cornhole_tray"], ["UseGrill", "Grill", "grill"]]:
+		var zone := room.get_node_or_null("Interactables/" + str(pair[0]))
+		var fx_node := room.get_node_or_null("Fx/" + str(pair[1]))
+		_check(zone != null and fx_node != null and fx_node.kind == pair[2] and zone.target == zone.get_path_to(fx_node), "%s starts the outing through the %s effect" % [pair[0], pair[2]])
+	var corn_x: Array = []
+	for zone_name in ["UseBoardA", "UseBoardB"]:
+		corn_x.append(room.get_node("Interactables/" + zone_name).position.x)
+	_check(corn_x[0] > -556.0 + 1098.0 and corn_x[1] < -556.0 + 1287.0 and corn_x[1] - corn_x[0] > 80.0, "the boards stand between the FINISH line (1098) and the door (1287), far enough apart to throw")
 
 	# ---- props: all on the floor line, the walkway (feet y 110 to 127) is clear
 	var actors := room.get_node("Actors")

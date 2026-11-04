@@ -1,6 +1,6 @@
 extends CanvasLayer
 # gdlint:disable=class-definitions-order,class-variable-name
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
 #   teammates give hints), DINNER (conversation: learn what each person likes).
@@ -15,6 +15,8 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const ChairRace := preload("res://scripts/chair_race.gd")
 const ChairTrack := preload("res://scripts/chair_track.gd")
+const CornholeGame := preload("res://scripts/cornhole_game.gd")
+const GrillGame := preload("res://scripts/grill_game.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -62,6 +64,22 @@ const GAMES := {
 		"blurb":
 		"RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
 		"keys": "ARROWS = LANE  Z X = PUSH  ESC = LEAVE"
+	},
+	"cornhole":
+	{
+		"label": "CORNHOLE",
+		"cost": 100,
+		"blurb":
+		"TOSS BAGS AT THE BOARDS IN THE WAREHOUSE AGAINST THE CREW. STOP THE AIM, THEN THE POWER. A HOLE IS 3, THE BOARD IS 1, BAGS CANCEL. FIRST TO THE TARGET WINS.",
+		"keys": "E = STOP AIM / POWER  ESC = LEAVE"
+	},
+	"grill":
+	{
+		"label": "COOKOUT",
+		"cost": 150,
+		"blurb":
+		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS IN TIME, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND KEEP THE FLARE-UPS UNDER CONTROL.",
+		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
@@ -157,6 +175,15 @@ const PLAYER_SEAT := "Seat2"
 const LANE_NEAR := [152.0, 252.0]
 const LANE_FAR := [160.0, 244.0]
 const MIC_X := 238.0
+# the warehouse games (set x): you at cornhole board A, the opponent at board B (the boards are drawn by fx.gd, kinds cornhole_a /
+# cornhole_b), the cook at the grill; the camera is lifted so the walkway shows above the HUD and panned to the middle of the action
+const CORN_A := 1126.0
+const CORN_B := 1274.0
+const CORN_LIFT := 166.0
+const CORN_PAN := 74.0
+const GRILL_X := 1294.0
+const GRILL_LIFT := 182.0
+const GRILL_PAN := -30.0
 const ROOM_INTRO := {
 	"bowling":
 	"TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
@@ -168,6 +195,10 @@ const ROOM_INTRO := {
 	"WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 	"chair":
 	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
+	"cornhole":
+	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
+	"grill":
+	"THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -383,6 +414,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["IT HAPPENS. ROLL AGAIN.", "THE LANE IS SLICK TONIGHT."],
 		"talk": ["I WILL TAKE THE SPARE.", "SLOW AND STEADY."],
 		"sing": ["HA! KEEP GOING!", "THAT IS A REAL VOICE."],
+		"hole": ["PRECISION. THAT IS THE WORD.", "RIGHT IN THE HOLE."],
+		"miss": ["WIND. THERE IS WIND IN HERE.", "THE BOARD MOVED."],
+		"cook": ["THAT IS A PROPER BURGER.", "NICE SEAR. I APPROVE."],
+		"wait": ["I HAVE A MEETING IN TEN.", "IS THERE A TICKET SYSTEM HERE?"],
 	},
 	"Garrison":
 	{
@@ -390,6 +425,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["OH NO. OH NO NO.", "I BLAME THE SHOES."],
 		"talk": ["I AM ON FIRE. OR NOT.", "THE NEXT ONE IS MINE."],
 		"sing": ["WOO! SING IT!", "ENCORE! ENCORE!"],
+		"hole": ["BAG IN! DID EVERYONE SEE?!", "THE CROWD GOES WILD."],
+		"miss": ["THE BAG HAD A MIND OF ITS OWN.", "WE DO NOT SPEAK OF THAT ONE."],
+		"cook": ["THIS IS THE BEST DAY EVER.", "A BURGER! IN THE WAREHOUSE!"],
+		"wait": ["I AM SO HUNGRY RIGHT NOW.", "IS IT LUNCH YET? STILL LUNCH?"],
 	},
 	"Dan":
 	{
@@ -397,6 +436,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["THE BALL HAS A MIND OF ITS OWN.", "THAT WAS A BAD CABLE RUN."],
 		"talk": ["WATCH THIS ONE.", "I MIGHT GET A TURKEY."],
 		"sing": ["NOT BAD AT ALL.", "I WOULD NOT TRY THAT."],
+		"hole": ["I DID THAT ON PURPOSE.", "SEE? HOLE. SMALL HOLE."],
+		"miss": ["THAT BAG WAS DEFECTIVE.", "TO BE FAIR, IT WAS A LONG WAY."],
+		"cook": ["MEDIUM. EXACTLY AS FILED.", "NO TICKET NEEDED FOR THIS."],
+		"wait": ["MY BURGER IS IN THE QUEUE.", "I FILED THIS ORDER TWICE."],
 	},
 	"Vic":
 	{
@@ -404,6 +447,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["THE PINS WERE LOOSE.", "THAT DOES NOT COUNT, RIGHT?"],
 		"talk": ["WATCH AND LEARN.", "I HAVE A GUY AT THIS ALLEY."],
 		"sing": ["I KNEW YOU HAD IT!", "I HAVE A GUY FOR RECORDING."],
+		"hole": ["TOLD YOU. I TOLD THE WHOLE ROOM.", "THAT IS HOW YOU CLOSE A DEAL."],
+		"miss": ["LET US CALL THAT A WARM-UP.", "THE BOARD IS TILTED, RIGHT?"],
+		"cook": ["THIS BURGER IS A WIN WIN.", "I KNOW A GUY WHO COOKS. YOU."],
+		"wait": ["I HAVE A CLIENT CALL SOON.", "CAN I EXPENSE WAITING?"],
 	},
 	"Maya":
 	{
@@ -411,6 +458,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["ONE PIN. REALLY.", "I WAS A BIT LEFT."],
 		"talk": ["I HAVE A PLAN FOR THIS ONE.", "AIM, THEN BREATHE."],
 		"sing": ["THAT NOTE WAS PERFECT.", "OK, THAT WAS GOOD."],
+		"hole": ["NICE AND CLEAN.", "RIGHT IN."],
+		"miss": ["I AIMED A BIT LEFT.", "OK, NOT THAT ONE."],
+		"cook": ["PERFECT. THANK YOU.", "THAT IS EXACTLY WHAT I ASKED FOR."],
+		"wait": ["STILL WAITING, NO RUSH.", "I CAN COME BACK."],
 	},
 	"Morgan":
 	{
@@ -418,6 +469,10 @@ const DEFAULT_CREW_LINES := {
 		"groan": ["WELL. THAT HAPPENED.", "I AM ONLY HERE FOR THE SHOES."],
 		"talk": ["I DO NOT BOWL. I JUST WIN.", "ONE FRAME BEHIND IS FINE."],
 		"sing": ["THAT WAS FINE. GOOD, EVEN.", "I WILL ALLOW IT."],
+		"hole": ["NOT BAD. DO NOT TELL HR.", "ACCEPTABLE."],
+		"miss": ["WELL. THAT HAPPENED.", "I AM ONLY HERE FOR THE SNACKS."],
+		"cook": ["IT IS FINE. IT IS GOOD, EVEN.", "I WILL ALLOW THIS BURGER."],
+		"wait": ["I DO NOT WAIT. I ABSORB.", "TIMER IS RUNNING, YOU KNOW."],
 	},
 }
 var CREW_LINES: Dictionary = DEFAULT_CREW_LINES.duplicate(true)
@@ -428,7 +483,9 @@ const ROOMS := {
 	"karaoke": "karaoke_bar",
 	"escape": "escape_room",
 	"dinner": "restaurant",
-	"chair": "warehouse"
+	"chair": "warehouse",
+	"cornhole": "warehouse",
+	"grill": "warehouse"
 }
 # where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
@@ -438,6 +495,8 @@ const SPOTS := {
 	"escape": [118, 175, 205, 305, 325, 14],  # clear of the clue zones (shelf 52, clock 86, painting 149, board 238, keypad 276)
 	"dinner": [34, 62, 106, 140, 175, 205],
 	"chair": [1135, 1160, 1185, 1210, 1235, 1260],  # whoever is not racing watches from beyond the finish line
+	"cornhole": [1096, 1080, 1064, 1048, 1032, 1016],  # the audience left of board A; the opponent of the round walks to board B
+	"grill": [1262, 1230, 1198, 1166, 1134, 1102],  # the queue to the left of the cook, nearest first
 }
 const TECH_DAYS := [5, 10, 15]
 const OWNER_WEEKS := [4, 9, 14, 19]
@@ -748,7 +807,7 @@ func pick_game(from_invite: bool) -> void:
 		options.append(entry)
 	Cards.ask(
 		_host(),
-		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork, dinner needs good conversation and the chair race needs a steady rhythm.",
+		"Where to? Bowling is easy, karaoke is risky, the escape room needs teamwork, dinner needs good conversation, the chair race needs a steady rhythm, cornhole is a friendly toss and the cookout is a rush of orders.",
 		options,
 		func(id: String) -> void: start(id, from_invite, _game_options(id))
 	)
@@ -836,6 +895,10 @@ func begin_play(pick := "") -> void:
 			_escape_setup()
 			if room_mode():
 				_escape_room_setup()
+		"cornhole":
+			_corn_setup()
+		"grill":
+			_grill_setup()
 		"chair":
 			pass  # set up when the page opened: the race is on the floor, the countdown starts now
 		_:
@@ -849,6 +912,7 @@ func close() -> void:
 		return
 	is_open = false
 	_chair_clear()
+	_reset_camera()
 	_canvas.visible = false
 	Game.ui_open = false
 	World.time_scale = _prev_scale
@@ -897,6 +961,10 @@ func tick(dt: float) -> void:
 			_escape_tick(dt)
 		"chair":
 			_chair_tick(dt)
+		"cornhole":
+			_corn_tick(dt)
+		"grill":
+			_grill_tick(dt)
 		_:
 			_dinner_tick(dt)
 
@@ -921,12 +989,15 @@ func _event_key(event: InputEvent) -> int:
 	if event is InputEventKey:
 		return event.keycode
 	var racing: bool = game == "chair" and phase == "play"
+	var grilling: bool = game == "grill" and phase == "play"
 	var dir := Controls.nav(event, false)
 	var key := KEY_NONE
 	if racing and Controls.matches(event, "push_a"):
 		key = KEY_Z
 	elif racing and Controls.matches(event, "push_b"):
 		key = KEY_X
+	elif grilling and Controls.matches(event, "run"):
+		key = KEY_SHIFT  # B on a pad: the cool side
 	elif dir != "":
 		key = PAD_ARROWS[dir]
 	elif Controls.back(event):
@@ -989,6 +1060,10 @@ func _press_game(key: int) -> void:
 			_escape_press(key)
 		"chair":
 			_chair_press(key)
+		"cornhole":
+			_corn_press(key)
+		"grill":
+			_grill_press(key)
 		_:
 			_dinner_press(key)
 
@@ -1010,12 +1085,19 @@ func _finish(result: int) -> void:
 			{
 				"perfects": int(g.get("perfect", 0)),
 				"secs": roundi(Difficulty.f("escape.time") - float(g.get("time", 0.0))),
-				"score": int(g.get("score", 0))
+				"score": int(g.get("score", 0)),
+				"holes": int(g.game.holes) if game == "cornhole" and g.has("game") else 0,
+				"served": int(g.game.served) if game == "grill" and g.has("game") else 0,
+				"clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2
 			}
 		)
 		Social.change_all(1 + result)
 		if game == "chair":
 			lines.append_array(_chair_lines())
+		if game == "cornhole":
+			lines.append_array(_corn_lines())
+		if game == "grill":
+			lines.append_array(_grill_lines())
 		if Campaign.mode == "sales":
 			lines.append_array(SalesCampaign.outing_done(game, result))
 		if Campaign.active:
@@ -2157,6 +2239,10 @@ func _room_begin() -> void:
 			_place_player(mic)
 			_hold_player("talk", mic + 60.0)
 			caption("%s. ARROW KEYS AT THE LINE. SING!" % str(g.song.title), 4.0)
+		"cornhole":
+			_corn_begin()
+		"grill":
+			_grill_begin()
 		"escape":
 			caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
 		"dinner":
@@ -2166,6 +2252,7 @@ func _room_begin() -> void:
 
 func _room_process(delta: float) -> void:
 	_caption_t = maxf(0.0, _caption_t - delta)
+	_room_extras(delta)
 	for node in _marks.keys():
 		_marks[node] = float(_marks[node]) - delta
 		if float(_marks[node]) <= 0.0:
@@ -2187,6 +2274,10 @@ func _room_wants(key: int) -> bool:
 	match game:
 		"bowling":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
+		"cornhole":
+			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+		"grill":
+			return key in [KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_SHIFT]
 		"karaoke":
 			return key in LANE_KEYS
 		"escape":
@@ -2209,7 +2300,7 @@ func _room_press(key: int) -> bool:
 
 # E belongs to the bowling game while it runs (the crew should not answer it)
 func blocks_interact() -> bool:
-	return is_open and room_mode() and phase == "play" and game == "bowling"
+	return is_open and room_mode() and phase == "play" and game in ["bowling", "cornhole", "grill"]
 
 
 # the one control hint line: pages show it as their footer, rooms in the bar at the bottom
@@ -2237,6 +2328,10 @@ func _room_hint() -> String:
 			text = "ARROW KEYS = HIT NOTES  ESC = LEAVE"
 		"chair":
 			text = _chair_hint()
+		"cornhole":
+			text = _corn_hint()
+		"grill":
+			text = _grill_hint()
 		"escape":
 			if g.get("entry", false):
 				text = "ARROWS  ENTER = TRY  ESC = BACK"
@@ -2427,6 +2522,9 @@ func _escape_room_setup() -> void:
 
 
 func interact(kind: String) -> void:
+	if kind.begins_with("cornhole_") or kind == "grill":
+		_offer_here("grill" if kind == "grill" else "cornhole")
+		return
 	if not room_mode() or game != "escape" or phase != "play" or g.is_empty():
 		return
 	var index := CLUE_KINDS.find(kind)
@@ -2546,6 +2644,10 @@ func _paint_hud(size: Vector2) -> void:
 			_hud_karaoke(strip, size)
 		"chair":
 			_hud_chair(strip)
+		"cornhole":
+			_hud_cornhole(strip)
+		"grill":
+			_hud_grill(strip, size)
 		"escape":
 			_hud_escape(strip)
 		_:
@@ -2831,6 +2933,484 @@ func _hud_chair(s: Rect2) -> void:
 	_canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
 
 
+# ---- cornhole (R21 a): two boards in the warehouse, you at A, the crew member of the round at B ------------------------
+func cornholers() -> Array:
+	var pool := present() if opts.has("party") else roster()
+	return CornholeGame.ORDER.filter(func(n: String) -> bool: return pool.has(n))
+
+
+func _corn_params() -> Dictionary:
+	return {
+		"to": Difficulty.i("corn.to"),
+		"opp_skill": Difficulty.f("corn.opp_skill"),
+		"aim_speed": Difficulty.f("corn.aim_speed"),
+		"power_speed": Difficulty.f("corn.power_speed"),
+		"assist": Difficulty.i("corn.assist") > 0,
+		"floor": 1 if Difficulty.cozy_on() else 0,
+	}
+
+
+func _corn_setup() -> void:
+	var cg := CornholeGame.new()
+	cg.setup(_corn_params(), cornholers(), Difficulty.rng("cornhole"))
+	g = {"game": cg, "end_t": 0.0, "last_phase": "", "round": 0, "remark": "", "remark_t": 0.0}
+
+
+# you step up to board A and the audience stands to the left of it
+func _corn_begin() -> void:
+	g["snap"] = 3
+	_place_player(_x0() + CORN_A)
+	_hold_player("idle", _x0() + CORN_B)
+	caption("CORNHOLE. FOUR BAGS EACH, A HOLE IS 3, THE BOARD IS 1.", 4.0)
+
+
+func _corn_tick(dt: float) -> void:
+	var cg: RefCounted = g.game
+	cg.step(dt)
+	g.remark_t = maxf(0.0, float(g.remark_t) - dt)
+	_corn_cues(cg)
+	if cg.is_done():
+		g.end_t = float(g.end_t) + dt
+		if float(g.end_t) >= 1.2:
+			_corn_end()
+
+
+# sounds, poses and remarks for what just happened, and the line in the caption bar
+func _corn_cues(cg: RefCounted) -> void:
+	for e in cg.events:
+		match str(e.e):
+			"hole":
+				Sfx.play("bag_hole")
+				_corn_react(cg, str(e.who), true)
+			"knock":
+				Sfx.play("bag_knock")
+			"thud":
+				Sfx.play("bag_thud")
+				_corn_react(cg, str(e.who), false)
+			"round":
+				_corn_seat(cg)
+	cg.events.clear()
+	if cg.phase == "flight" and str(g.last_phase) != "flight":
+		var mine: bool = str(cg.flying.get("who", "")) == "you"
+		var node := _actor("Player") if mine else _actor(str(cg.opp))
+		if room_mode():
+			_pose(node, "reach", 0.7, _x0() + (CORN_B if mine else CORN_A))
+	g.last_phase = cg.phase
+	if room_mode():
+		_corn_keep_held(cg)
+	var line := ""
+	match str(cg.phase):
+		"aim":
+			line = "AIM: PRESS E WHEN THE MARKER IS IN THE GREEN."
+		"power":
+			line = "POWER: PRESS E WHEN THE BAR IS IN THE GREEN."
+		"opp":
+			line = "%s STEPS UP." % str(cg.opp).to_upper()
+		_:
+			line = str(cg.msg)
+	if float(g.remark_t) > 0.0 and cg.phase in ["flight", "settle", "opp", "round_end"]:
+		line = str(g.remark)
+	caption(line, 0.3)
+
+
+# the crew member of the round walks to board B, the one before goes back to the audience
+func _corn_seat(cg: RefCounted) -> void:
+	if not room_mode() or int(g.round) == cg.round_no:
+		return
+	g.round = cg.round_no
+	var spots: Array = SPOTS.cornhole
+	var cast := World.CAST.keys()
+	for who in cg.crew:
+		var node := _actor(str(who))
+		if node == null:
+			continue
+		var home := _x0() + float(spots[maxi(0, cast.find(who)) % spots.size()])
+		var at := _x0() + CORN_B if str(who) == str(cg.opp) else home
+		node.global_position = Vector2(at, node.global_position.y)
+		_pose(node, "idle", 0.1, _x0() + (CORN_A if str(who) == str(cg.opp) else CORN_B))
+
+
+# a pose for a person: you have start_emote, a coworker has _face and _begin_hold (then _refresh puts the idle frame back)
+func _pose(node: Node, anim: String, secs: float, toward: float) -> void:
+	if node == null:
+		return
+	if node.has_method("start_emote"):
+		node.start_emote(anim, secs, toward)
+	elif node.has_method("_begin_hold"):
+		node._face(toward)
+		node._begin_hold(anim, secs)
+
+
+# a throw or a wait should not let the player wander off or fall out of the pose
+func _corn_keep_held(cg: RefCounted) -> void:
+	var p := _actor("Player")
+	if p != null and p.state != "emote" and phase == "play" and not cg.is_done():
+		_hold_player("idle", _x0() + CORN_B)
+
+
+func _corn_react(cg: RefCounted, who: String, hole: bool) -> void:
+	var speaker := str(cg.opp) if who == "opp" else ""
+	if who == "you" and hole and not cg.crew.is_empty():
+		speaker = str(cg.crew[randi() % cg.crew.size()])
+	elif who == "you" and not hole and randf() < 0.5:
+		speaker = str(cg.opp)
+	if room_mode():
+		var thrower := _actor("Player") if who == "you" else _actor(str(cg.opp))
+		_bubble(thrower, "!" if hole else "?", 1.2)
+		if hole and speaker != "" and speaker != str(cg.opp):
+			_bubble(_actor(speaker), "heart", 1.2)
+	if speaker == "" or randf() > (0.75 if hole else 0.5):
+		return
+	var line := crew_line(speaker, "hole" if hole else "miss")
+	if line != "":
+		g.remark = "%s: %s" % [speaker.to_upper(), line]
+		g.remark_t = 2.4
+
+
+func _corn_press(key: int) -> void:
+	if key not in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
+		return
+	var cg: RefCounted = g.game
+	if not cg.your_turn():
+		caption("WAIT. IT IS NOT YOUR THROW.", 1.2)
+		return
+	if cg.press() == "aim":
+		Sfx.play("ui_tick")
+
+
+func _corn_hint() -> String:
+	var cg: RefCounted = g.game
+	if cg.phase == "aim":
+		return "E = STOP THE AIM  ESC = LEAVE"
+	if cg.phase == "power":
+		return "E = STOP THE POWER  ESC = LEAVE"
+	return "WAIT FOR YOUR THROW  ESC = LEAVE"
+
+
+func _corn_end() -> void:
+	var cg: RefCounted = g.game
+	_finish(cg.stars())
+
+
+func _corn_lines() -> Array:
+	var cg: RefCounted = g.game
+	var out := []
+	if cg.won:
+		out.append("YOU WON %d TO %d." % [cg.score_you, cg.score_opp] + (" A BLOWOUT." if cg.margin() >= CornholeGame.BIG_WIN else ""))
+	elif Difficulty.cozy_on():
+		out.append("THEY WON %d TO %d. NOBODY IS KEEPING SCORE, REALLY." % [cg.score_opp, cg.score_you])
+	else:
+		out.append("THE CREW WON %d TO %d. REMATCH SOMETIME." % [cg.score_opp, cg.score_you])
+	out.append("%d BAGS IN THE HOLE, %d ON THE BOARD." % [cg.holes, cg.boards])
+	return out
+
+
+# the strip at the bottom: the score, which bag, then the aim marker or the power bar (the green is the hole)
+func _hud_cornhole(s: Rect2) -> void:
+	var cg: RefCounted = g.game
+	var o := UiStyle.strip(_canvas, s)
+	_t("%d-%d TO %d" % [cg.score_you, cg.score_opp, cg.to], o.x, o.y, WHITE)
+	_t("BAG %d" % cg.bag_no(), s.position.x + 52.0, o.y, UiStyle.SOFT)
+	var bar := Rect2(s.position.x + 82.0, s.position.y + 3.0, 80.0, 5.0)
+	if cg.phase == "aim" or cg.phase == "power":
+		_canvas.draw_rect(bar, UiStyle.SOFT)
+		var aim: bool = cg.phase == "aim"
+		var centre := 0.5 if aim else CornholeGame.POWER_BEST
+		var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
+		_canvas.draw_rect(Rect2(bar.position.x + 79.0 * (centre - half), bar.position.y, 79.0 * half * 2.0, 5.0), GREEN)
+		var v: float = cg.marker if aim else cg.power
+		_canvas.draw_rect(Rect2(bar.position.x + 79.0 * v, bar.position.y - 2.0, 2.0, 9.0), WHITE)
+	else:
+		var status := "ROUND %d" % cg.round_no
+		if cg.phase == "opp" or (cg.phase in ["flight", "settle"] and str(cg.opp) != "" and cg.seq % 2 == 1):
+			status = "%s THROWS" % str(cg.opp).to_upper()
+		elif cg.phase in ["flight", "settle"]:
+			status = "YOUR BAG FLIES"
+		_t(status, bar.position.x, o.y, UiStyle.SOFT)
+
+
+# the overlay version (no room): the numbers
+func _paint_cornhole(b: Rect2) -> void:
+	var cg: RefCounted = g.game
+	var y := b.position.y
+	_t("ROUND %d: YOU AGAINST %s" % [cg.round_no, str(cg.opp)], b.position.x, y)
+	_t("SCORE %d TO %d  (FIRST TO %d)" % [cg.score_you, cg.score_opp, cg.to], b.position.x, y + 9.0, BLUE)
+	_t("BAG %d OF %d  THIS ROUND %d TO %d" % [cg.bag_no(), CornholeGame.BAGS, cg.round_you, cg.round_opp], b.position.x, y + 18.0)
+	_t(str(cg.msg), b.position.x, y + 27.0, RED if cg.phase == "round_end" else INK)
+	var bar := Rect2(b.position.x, b.end.y - 8.0, 70.0, 5.0)
+	if cg.phase == "aim" or cg.phase == "power":
+		_canvas.draw_rect(bar, Color("c9d2e0"))
+		var aim: bool = cg.phase == "aim"
+		var centre := 0.5 if aim else CornholeGame.POWER_BEST
+		var half := CornholeGame.HOLE_R / (CornholeGame.AIM_SCALE if aim else CornholeGame.POWER_SCALE)
+		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * (centre - half), bar.position.y, 69.0 * half * 2.0, 5.0), GREEN)
+		var v: float = cg.marker if aim else cg.power
+		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * v, bar.position.y - 2.0, 2.0, 9.0), INK)
+
+
+# ---- the cookout (R21 b): the grill in the dock, the crew queues to the left of you -------------------------------------
+func grill_crew() -> Array:
+	var pool := present() if opts.has("party") else roster()
+	return _by_cast(pool)
+
+
+func _grill_params() -> Dictionary:
+	return {
+		"cook_rate": Difficulty.f("grill.cook_rate"),
+		"window": Difficulty.f("grill.window"),
+		"tickets": Difficulty.i("grill.tickets"),
+		"time": Difficulty.f("grill.time"),
+		"flare": Difficulty.f("grill.flare"),
+		"cozy": Difficulty.cozy_on(),
+	}
+
+
+func _grill_setup() -> void:
+	var gg := GrillGame.new()
+	gg.setup(_grill_params(), grill_crew(), Difficulty.rng("grill"))
+	g = {"game": gg, "end_t": 0.0, "remark": "", "remark_t": 0.0, "sizzle": 0.0}
+
+
+func _grill_begin() -> void:
+	g["snap"] = 3
+	_place_player(_x0() + GRILL_X)
+	_hold_player("idle", _x0() + GRILL_X + 60.0)
+	caption("ARROWS PICK A PATTY. E FLIPS, SPACE SERVES, SHIFT = COOL SIDE.", 5.0)
+
+
+func _grill_tick(dt: float) -> void:
+	var gg: RefCounted = g.game
+	gg.step(dt)
+	g.remark_t = maxf(0.0, float(g.remark_t) - dt)
+	g.sizzle = float(g.sizzle) - dt
+	_grill_cues(gg)
+	if gg.done:
+		g.end_t = float(g.end_t) + dt
+		if float(g.end_t) >= 1.4:
+			_grill_end()
+
+
+func _grill_cues(gg: RefCounted) -> void:
+	var p := _actor("Player")
+	for e in gg.events:
+		match str(e.e):
+			"flip":
+				Sfx.play("grill_sizzle")
+				if p != null and room_mode():
+					p.start_emote("reach", 0.5, _x0() + GRILL_X + 60.0)
+			"flare":
+				Sfx.play("grill_flare")
+			"bell":
+				Sfx.play("serve_bell")
+				if p != null and room_mode():
+					p.start_emote("hold", 0.6, _x0() + GRILL_X + 60.0)
+				_grill_react(str(e.who), "cook", "heart")
+			"new":
+				Sfx.play("ui_tick")
+				_bubble(_actor(str(e.who)), "!", 1.6)
+			"gone":
+				_grill_react(str(e.who), "wait", "?")
+			"toss":
+				Sfx.play("ui_error")
+			"burnt":
+				Sfx.play("grill_flare")
+	gg.events.clear()
+	if gg.cooking() and float(g.sizzle) <= 0.0:
+		g.sizzle = 3.0
+		Sfx.play("grill_sizzle", 0.4)
+	if room_mode() and p != null and p.state != "emote" and phase == "play" and not gg.done:
+		_hold_player("idle", _x0() + GRILL_X + 60.0)
+	var line := str(gg.msg) if float(gg.msg_t) > 0.0 else "ARROWS PICK A PATTY. E FLIPS IT, SPACE SERVES IT, SHIFT PARKS IT ON THE COOL SIDE."
+	if float(g.remark_t) > 0.0:
+		line = str(g.remark)
+	caption(line, 0.3)
+
+
+func _grill_react(who: String, kind: String, glyph: String) -> void:
+	if room_mode():
+		_bubble(_actor(who), glyph, 1.4)
+	if randf() > 0.7:
+		return
+	var line := crew_line(who, kind)
+	if line != "":
+		g.remark = "%s: %s" % [who.to_upper(), line]
+		g.remark_t = 2.4
+
+
+func _grill_press(key: int) -> void:
+	var gg: RefCounted = g.game
+	match key:
+		KEY_LEFT, KEY_A:
+			gg.move_sel(-1)
+			Sfx.play("ui_tick")
+		KEY_RIGHT, KEY_D:
+			gg.move_sel(1)
+			Sfx.play("ui_tick")
+		KEY_E:
+			gg.flip()
+		KEY_SPACE, KEY_ENTER, KEY_KP_ENTER:
+			gg.pull()
+			var p := _actor("Player")
+			if p != null and room_mode():
+				p.start_emote("hold", 0.5, _x0() + GRILL_X + 60.0)
+		KEY_SHIFT:
+			gg.cool()
+
+
+func _grill_hint() -> String:
+	return "ARROWS = PICK  E = FLIP  SPACE = SERVE"
+
+
+func _grill_end() -> void:
+	var gg: RefCounted = g.game
+	_finish(gg.stars())
+
+
+func _grill_lines() -> Array:
+	var gg: RefCounted = g.game
+	var out := []
+	out.append("SERVED %d OF %d TICKETS." % [gg.served, gg.total()])
+	if gg.burnt == 0:
+		out.append("NOTHING BURNT. THE GRILL IS SPOTLESS.")
+	elif Difficulty.cozy_on():
+		out.append("%d CRISPY ONES. THE CREW ATE THEM ANYWAY." % gg.burnt)
+	else:
+		out.append("%d BURNT. THE SMOKE ALARM IS A GOOD SPORT." % gg.burnt)
+	return out
+
+
+func _hud_grill(s: Rect2, size: Vector2) -> void:
+	var gg: RefCounted = g.game
+	var o := UiStyle.strip(_canvas, s)
+	var secs := int(ceilf(gg.time_left()))
+	_t("SERVED %d/%d  %dS  BURNT %d" % [gg.served, gg.total(), secs, gg.burnt], o.x, o.y, WHITE)
+	# the open tickets, left: who, what, how long they will wait
+	var rows: Array = gg.open_tickets().slice(0, 3)
+	var tall := 30.0
+	var tbox := Rect2(4.0, s.position.y - tall - 1.0, 78.0, tall)
+	UiStyle.box(_canvas, tbox)
+	if rows.is_empty():
+		_t("NO ORDERS", tbox.position.x + 4.0, tbox.position.y + 4.0, UiStyle.SOFT)
+	for i in rows.size():
+		var t: Dictionary = rows[i]
+		var ry := tbox.position.y + 3.0 + 9.0 * float(i)
+		var codes := ""
+		var left_w := int(t.need.well) - int(t.have.well)
+		var left_m := int(t.need.medium) - int(t.have.medium)
+		if left_w > 0:
+			codes += "%dW" % left_w
+		if left_m > 0:
+			codes += (" " if codes != "" else "") + "%dM" % left_m
+		_t(str(t.who).to_upper().substr(0, 6), tbox.position.x + 3.0, ry, WHITE)
+		_t(codes, tbox.position.x + 28.0, ry, AMBER)
+		var frac := clampf(float(t.left) / GrillGame.PATIENCE, 0.0, 1.0) if not gg.cozy else 1.0
+		_canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0, 3.0), UiStyle.MUTED)
+		_canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0 * frac, 3.0), GREEN if frac > 0.5 else (AMBER if frac > 0.25 else RED))
+	# the grate, right: four patties, the up side's colour, the down side's progress under it
+	var gbox := Rect2(size.x - 4.0 - 90.0, s.position.y - tall - 1.0, 90.0, tall)
+	UiStyle.box(_canvas, gbox)
+	var win: Vector2 = gg.flip_range()
+	for i in GrillGame.SLOTS:
+		var cell := Rect2(gbox.position.x + 3.0 + 21.0 * float(i), gbox.position.y + 3.0, 20.0, 25.0)
+		var slot: Dictionary = gg.slots[i]
+		if i == gg.sel:
+			_canvas.draw_rect(cell, AMBER)
+			_canvas.draw_rect(Rect2(cell.position + Vector2.ONE, cell.size - Vector2(2, 2)), UiStyle.DARK)
+		_t(str(i + 1), cell.position.x + 9.0, cell.position.y + 19.0, AMBER if i == gg.sel else UiStyle.SOFT)
+		if not slot.on:
+			continue
+		var up: float = float(slot.c[1 - int(slot.down)])
+		var down_v: float = float(slot.c[int(slot.down)])
+		_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 3.0, 17.0, 10.0), _cook_color(up))
+		_canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 4.0, 15.0, 1.0), Color(1, 1, 1, 0.18))
+		var bar := Rect2(cell.position.x + 2.0, cell.position.y + 15.0, 16.0, 3.0)
+		_canvas.draw_rect(bar, UiStyle.MUTED)
+		_canvas.draw_rect(Rect2(bar.position.x + 17.0 * win.x, bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
+		_canvas.draw_rect(Rect2(bar.position.x + 17.0 * minf(win.y, 1.0), bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
+		_canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 17.0 * clampf(down_v, 0.0, 1.0), 3.0), _cook_color(down_v))
+		var tag := str(gg.doneness(i))
+		if slot.cool:
+			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("5aa0e8"))
+		elif float(slot.flare) > 0.0:
+			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("f08a30") if int(float(Time.get_ticks_msec()) / 120.0) % 2 == 0 else RED)
+		_t({"raw": "R", "medium": "M", "well": "W", "burnt": "X"}.get(tag, "-"), cell.position.x + 9.0, cell.position.y + 6.0, INK if tag == "raw" else WHITE)
+
+
+func _cook_color(v: float) -> Color:
+	if v > GrillGame.BURN:
+		return Color("2a1c18")
+	if v < 0.35:
+		return Color("e58a8a").lerp(Color("c9704f"), v / 0.35)
+	if v < 0.55:
+		return Color("c9704f").lerp(Color("8f5233"), (v - 0.35) / 0.2)
+	return Color("8f5233").lerp(Color("4a2c1c"), clampf((v - 0.55) / 0.35, 0.0, 1.0))
+
+
+# the overlay version (no room): the numbers
+func _paint_grill(b: Rect2) -> void:
+	var gg: RefCounted = g.game
+	var y := b.position.y
+	_t("SERVED %d OF %d  TIME %d  BURNT %d" % [gg.served, gg.total(), int(ceilf(gg.time_left())), gg.burnt], b.position.x, y)
+	for i in GrillGame.SLOTS:
+		var slot: Dictionary = gg.slots[i]
+		var text := "%d: EMPTY" % (i + 1)
+		if slot.on:
+			text = "%d: %s  %d %d" % [i + 1, str(gg.doneness(i)).to_upper(), int(float(slot.c[0]) * 100.0), int(float(slot.c[1]) * 100.0)]
+		_t(text, b.position.x, y + 9.0 + 8.0 * float(i), BLUE if i == gg.sel else INK)
+	var rows: Array = gg.open_tickets().slice(0, 3)
+	for i in rows.size():
+		var t: Dictionary = rows[i]
+		_t("%s: %s" % [str(t.who).to_upper(), ", ".join(gg.lines(t))], b.position.x, y + 43.0 + 8.0 * float(i), AMBER)
+	if float(gg.msg_t) > 0.0:
+		_t(str(gg.msg), b.position.x, b.end.y - 8.0, RED)
+
+
+# ---- the warehouse extras for both games: the camera sits so the floor is above the HUD, boards and grill are the way in
+# (the walkway band y 110 to 127 must show above the strip and the caption bars: a short screen looks lower down)
+func _room_extras(_delta: float) -> void:
+	if not room_mode() or game not in ["cornhole", "grill"] or phase == "intro":
+		return
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var f: Dictionary = Game.FORMATS[Game.format]
+	var view := get_viewport().get_visible_rect().size / float(f.zoom)
+	var centre: float = float(f.cam_y) if f.follow else 64.0
+	var lift := CORN_LIFT if game == "cornhole" else GRILL_LIFT
+	cam.offset = Vector2(CORN_PAN if game == "cornhole" else GRILL_PAN, maxf(0.0, lift - (centre + view.y * 0.5)))
+	if int(g.get("snap", 0)) > 0:  # you were moved 900 px: the camera should not glide there
+		g.snap = int(g.snap) - 1
+		cam.reset_smoothing()
+
+
+func _reset_camera() -> void:
+	var cam := get_viewport().get_camera_2d() if is_inside_tree() else null
+	if cam != null:
+		cam.offset = Vector2.ZERO
+
+
+# E on a board, the bag tray or the grill: a Free Play outing right here (never in a campaign: those come on outing days)
+func _offer_here(id: String) -> void:
+	if is_open or Cards.is_open or busy():
+		return
+	if not enabled or Campaign.active or Game.title_mode:
+		Hints.toast(
+			"THE CORNHOLE BOARDS. SOMEONE CHALKED THE SCORE ON THE WALL." if id == "cornhole" else "A BBQ GRILL. SOMEONE LEFT THE TONGS OUT.", 3.0
+		)
+		return
+	var ask := "Throw some bags? Cornhole against the crew. (Free Play: nothing is scored.) " if id == "cornhole" else "Fire up the grill? A cookout for the crew. (Free Play: nothing is scored.) "
+	party_set = false
+	draw_party()
+	Cards.ask(
+		"Team outing",
+		ask + coming_text(),
+		[{"label": "LET US GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
+		func(answer: String) -> void:
+			if answer == "yes":
+				start(id, false, _game_options(id))
+	)
+
+
 func _t(s: String, x: float, y: float, color := INK) -> void:
 	PixelFont.draw(_canvas, s, Vector2(x, y), color, 1)
 
@@ -2895,6 +3475,10 @@ func _paint() -> void:
 					_paint_escape(body)
 				"chair":
 					_paint_chair(body)
+				"cornhole":
+					_paint_cornhole(body)
+				"grill":
+					_paint_grill(body)
 				_:
 					_paint_dinner(body)
 	UiStyle.footer(_canvas, panel, hint())
@@ -2916,6 +3500,16 @@ func _paint_intro(b: Rect2) -> void:
 		y += 7.0
 	if game == "bowling":
 		y = _paint_bowl_intro(b, y)
+	if game == "cornhole" or game == "grill":
+		var crew_names := cornholers() if game == "cornhole" else grill_crew()
+		var who_text := ("OPPONENTS: " if game == "cornhole" else "ORDERS FROM: ") + join_names(crew_names, true) if not crew_names.is_empty() else "JUST YOU AND THE HOUSE."
+		if game == "cornhole":
+			who_text += ".  FIRST TO %d." % Difficulty.i("corn.to")
+		else:
+			who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), Difficulty.i("grill.time")]
+		for part in _wrap(who_text, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y)
+			y += 7.0
 	if game == "chair":
 		var names := racers()
 		var who := "RIVALS: " + join_names(names, true) if not names.is_empty() else "NO RIVALS TONIGHT: A TIME TRIAL."
@@ -2961,6 +3555,10 @@ func _paint_result(b: Rect2) -> void:
 				)
 			"dinner":
 				detail = "TABLE SCORE %d (3 STARS AT %d)" % [int(g.score), int(dinner_targets()[0])]
+			"cornhole":
+				detail = "YOU %d  CREW %d  HOLES %d" % [int(g.game.score_you), int(g.game.score_opp), int(g.game.holes)]
+			"grill":
+				detail = "SERVED %d OF %d  BURNT %d" % [int(g.game.served), int(g.game.total()), int(g.game.burnt)]
 			"chair":
 				var race: RefCounted = g.race
 				detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
