@@ -387,7 +387,7 @@ return function(L, builders)
     for _, x in ipairs({22, 44, 66}) do s.putS("Stools", P.stool(), x, 78, 99, "bar_stool") end
     -- two tables with seats behind them (like the conference room)
     for _, sx in ipairs({121, 141, 173}) do   -- one side-view chair behind each seat (seat x - 14)
-      s.putS("Chairs" .. sx, P.chairSide("#6A3A8A", "#8A5AAA", "#4A2A66"), sx - 14, 54, 88, "chair_karaoke_side")
+      s.putS("Chairs" .. sx, P.chairSide("#6A3A8A", "#8A5AAA", "#4A2A66"), sx - 14, 58, 88, "chair_karaoke_side")
     end
     for _, tx in ipairs({112, 164}) do
       s.putS("Table" .. tx, P.roundTable(), tx, 78, 108, "round_table")

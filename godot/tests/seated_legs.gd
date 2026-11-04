@@ -1,8 +1,9 @@
 extends SceneTree
 # Seated legs: the knee bends. Every seated frame (sitdown's last frame, sit, type, sitsip, sitcall and the eight R26 gestures) has the
 # thigh running forward from the hips and the shin dropping straight down, so a shoe sole stands on the floor row (79) in front of the
-# pelvis. tools/poses.lua `seat()` (legRef / floor / legDy / lNx / lFx) and tools/anim.lua build it; the body does not move: the head's
-# top row of the old straight-shin sit stays.
+# pelvis. tools/poses.lua `seat()` (lift / shin / floor / legDy / lNx / lFx / keepN / keepF / leanAdd / armLen) and tools/anim.lua build
+# it. The whole body above the legs is raised 6 px relative to the feet (the hips sit at about row 72 instead of 77), the shin is 4
+# rows longer, so the head top of the intern's sit / type frames is row 26 (it was 32).
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/seated_legs.gd
 
 const FW := 64
@@ -14,8 +15,8 @@ const CHARS := [
 ]
 # sheet cells of every seated pose: sitdown's seated frame, sit 37-38, type 39-41, sitsip, sitcall, and the gestures 85-122
 const SEATED := [36, 37, 38, 39, 40, 41, 66, 67, 68, 71, 72]
-# first opaque row of the intern's seated frames in the old straight-shin build (the head and torso must not move)
-const TOP37 := 32
+# first opaque row of the intern's seated frames: 6 px higher than the old floor-sitting build (row 32)
+const TOP37 := 26
 
 var failures := 0
 
@@ -56,8 +57,8 @@ func _initialize() -> void:
 							low = y
 							if y == FLOOR:
 								on79 += 1
-							# the shin and shoe: rows 74-79 in front of the pelvis block (x >= 41 facing right, x <= 22 facing left)
-							if y >= 74 and ((facing == "right" and x >= 41) or (facing == "left" and x <= 22)):
+							# the shin and shoe: rows 73-79 in front of the pelvis block (x >= 41 facing right, x <= 22 facing left)
+							if y >= 73 and ((facing == "right" and x >= 41) or (facing == "left" and x <= 22)):
 								shin += 1
 				if low != FLOOR:
 					bad_low.append("%s_%s %d" % [c, facing, f])
@@ -69,7 +70,7 @@ func _initialize() -> void:
 	_check(worst_low == FLOOR, "no seated frame goes below the floor row")
 	_check(worst_row79 >= 6, "a shoe sole of at least 6 px is on the floor row in every seated frame (fewest: %d)" % worst_row79)
 	_check(worst_shin >= 30, "there is shin and shoe in front of the pelvis below the thigh band in every seated frame (fewest pixels: %d)" % worst_shin)
-	# the body did not move: the first opaque row of the intern's sit and type frames is the old one
+	# the body is raised: the first opaque row of the intern's sit and type frames
 	var intern := _raw("res://assets/characters/office_intern_right.png")
 	for f in [37, 39]:
 		var top := -1
@@ -77,6 +78,6 @@ func _initialize() -> void:
 			for x in range(FW):
 				if top < 0 and intern.get_pixel(f * FW + x, y).a > 0.0:
 					top = y
-		_check(top == TOP37, "intern frame %d: the head top row is still %d (got %d)" % [f, TOP37, top])
+		_check(top == TOP37, "intern frame %d: the head top row is %d (got %d)" % [f, TOP37, top])
 	print("seated_legs: %d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)

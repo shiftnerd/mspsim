@@ -1,6 +1,6 @@
 [
 {"piece":"couch","x":41,"y":68,"sort":99},
-{"piece":"chair_office_side","x":90,"y":65,"sort":95},
+{"piece":"chair_office_side","x":90,"y":69,"sort":95},
 {"piece":"desk_cubicle_74","x":87,"y":82,"sort":108},
 {"piece":"monitor_a","x":108,"y":64,"sort":96},
 {"piece":"monitor_b","x":127,"y":65,"sort":96},

@@ -46,12 +46,18 @@ func _initialize() -> void:
 					continue
 				seats_checked += 1
 				var ok := false
+				var on_floor := false
 				for c in chairs:
 					var d: float = s.position.x - c.position.x
 					# the backrest sits 9 to 16 px left of the seat, the chair is 20 px wide and on the seat's row
 					if d >= 9.0 and d <= 16.0 and absf(c.position.y - s.position.y) < 14.0:
 						ok = true
+						# the casters (the last art row) stand on the sitter's feet line: top y + 32 = the seat's y
+						var bottom: float = c.position.y + c.offset.y + float(c.texture.get_height()) - 2.0   # the PNG has a 1 px margin
+						on_floor = c.texture.get_height() == 34 and absf(bottom - s.position.y) <= 0.5
 				_check(ok, "%s: %s has a side chair behind it" % [f, s.name])
+				if ok:
+					_check(on_floor, "%s: the chair behind %s is a 32 px chair with its casters on the feet line" % [f, s.name])
 		scene.free()
 	_check(chairs_total >= 30, "the sets expose side chairs (%d)" % chairs_total)
 	_check(seats_checked >= 15, "seats were checked against chairs (%d)" % seats_checked)

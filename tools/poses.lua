@@ -84,10 +84,12 @@ add("death", {
 -- (kn 60, thigh 85 / 80, shin straight down) the engine measures the ground with, `floor` then moves each leg so its sole is on that row,
 -- `legDy` lifts the thighs 3 px off the pelvis block so a shin shows under them, lNx / lFx slide the hip pivots forward (the near leg starts
 -- behind the far one, 9 px apart in the still) so both knees clear the pelvis block and the near foot ends up a little behind the far one.
+local SEAT_LIFT, SEAT_SHIN = 6, 4
 local SEAT_REF = {kn = 60, lN = 85, lNr = -85, lF = 80, lFr = -80}
 local function seat(extra)
   local p = {kn = 55, legDy = -3, lNx = 8, lFx = 3, lN = 90, lNr = -90, lF = 88, lFr = -88, legRef = SEAT_REF, floor = true,
-             bob = 4, aN = 60, aNr = 25, aF = 65, aFr = 22, dur = 120}
+             bob = 4, aN = 60, aNr = 25, aF = 65, aFr = 22, dur = 120,
+             lift = SEAT_LIFT, shin = SEAT_SHIN, keepN = true, keepF = true, leanAdd = 2, armLen = 2}
   for k, v in pairs(extra or {}) do p[k] = v end
   return p
 end
@@ -150,7 +152,7 @@ add("sip", {
 -- seated sip: the near forearm brings the cup up from the desk
 add("sitsip", {
   seat({aN = 58, aNr = 75, dur = 150}),
-  seat({aN = 80, aNr = 44, dur = 450}),
+  seat({aN = 80, aNr = 44, keepN = false, dur = 450}),
   seat({aN = 64, aNr = 63, dur = 150}),
 })
 
@@ -160,8 +162,8 @@ add("call", {
   hold({aN = 95, aNr = 127, dur = 450}),
 })
 add("sitcall", {
-  seat({aN = 99, aNr = 118, dur = 450}),
-  seat({aN = 93, aNr = 125, dur = 450}),
+  seat({aN = 99, aNr = 118, keepN = false, dur = 450}),
+  seat({aN = 93, aNr = 125, keepN = false, dur = 450}),
 })
 
 -- dance = the robot: no bounce or sway, everything snaps between stiff poses with holds. Angles: 0 = arm hanging, 90 = pointing
@@ -189,19 +191,19 @@ add("dance", {
 -- ---- seated life (frames 86+): idle gestures for people who sit (see npc.gd / player.gd `_gesture`) ----
 -- The far arm is the one that goes to the head (the near arm is drawn over the face); the near arm does the desk work.
 add("sitstretch", {
-  seat({aN = 30, aNr = 40, aF = 60, aFr = 30, lean = -1, dur = 130}),
-  seat({aN = -20, aNr = 25, aF = 120, aFr = 15, lean = -2, hrot = -6, dur = 130}),
-  seat({aN = -45, aNr = 20, aF = 132, aFr = 22, lean = -3, hrot = -10, hy = -1, dur = 280}),
-  seat({aN = -50, aNr = 18, aF = 138, aFr = 18, lean = -3, hrot = -12, hy = -1, dur = 450}),
-  seat({aN = 0, aNr = 30, aF = 100, aFr = 25, lean = -1, hrot = -4, dur = 140}),
+  seat({keepN = false, keepF = false, aN = 30, aNr = 40, aF = 60, aFr = 30, lean = -1, dur = 130}),
+  seat({keepN = false, keepF = false, aN = -20, aNr = 25, aF = 120, aFr = 15, lean = -2, hrot = -6, dur = 130}),
+  seat({keepN = false, keepF = false, aN = -45, aNr = 20, aF = 132, aFr = 22, lean = -3, hrot = -10, hy = -1, dur = 280}),
+  seat({keepN = false, keepF = false, aN = -50, aNr = 18, aF = 138, aFr = 18, lean = -3, hrot = -12, hy = -1, dur = 450}),
+  seat({keepN = false, keepF = false, aN = 0, aNr = 30, aF = 100, aFr = 25, lean = -1, hrot = -4, dur = 140}),
 })
 add("sitscratch", {
-  seat({aN = 90, aNr = 60, aF = 25, aFr = 65, armTop = true, dur = 140}),
-  seat({aN = 140, aNr = 60, aF = 25, aFr = 65, hrot = 4, armTop = true, dur = 160}),
-  seat({aN = 148, aNr = 50, aF = 25, aFr = 65, hrot = 5, armTop = true, dur = 150}),
-  seat({aN = 140, aNr = 62, aF = 25, aFr = 65, hrot = 3, armTop = true, dur = 150}),
-  seat({aN = 148, aNr = 50, aF = 25, aFr = 65, hrot = 5, armTop = true, dur = 150}),
-  seat({aN = 90, aNr = 60, aF = 25, aFr = 65, armTop = true, dur = 140}),
+  seat({keepN = false, aN = 90, aNr = 60, aF = 25, aFr = 65, armTop = true, dur = 140}),
+  seat({keepN = false, aN = 140, aNr = 60, aF = 25, aFr = 65, hrot = 4, armTop = true, dur = 160}),
+  seat({keepN = false, aN = 148, aNr = 50, aF = 25, aFr = 65, hrot = 5, armTop = true, dur = 150}),
+  seat({keepN = false, aN = 140, aNr = 62, aF = 25, aFr = 65, hrot = 3, armTop = true, dur = 150}),
+  seat({keepN = false, aN = 148, aNr = 50, aF = 25, aFr = 65, hrot = 5, armTop = true, dur = 150}),
+  seat({keepN = false, aN = 90, aNr = 60, aF = 25, aFr = 65, armTop = true, dur = 140}),
 })
 add("sitlook", {
   seat({aNr = 20, aFr = 30, hrot = -4, dur = 200}),
@@ -211,11 +213,11 @@ add("sitlook", {
   seat({aNr = 20, aFr = 30, hrot = -2, dur = 200}),
 })
 add("sityawn", {
-  seat({aN = 20, aNr = 60, aF = 25, aFr = 65, hrot = -4, lean = -1, dur = 160}),
-  seat({aN = 62, aNr = 85, aF = 25, aFr = 65, hrot = -9, lean = -1, face = "hurt", armTop = true, dur = 200}),
-  seat({aN = 72, aNr = 90, aF = 25, aFr = 65, hrot = -13, lean = -2, hy = -1, face = "hurt", armTop = true, dur = 520}),
-  seat({aN = 66, aNr = 88, aF = 25, aFr = 65, hrot = -6, lean = -1, face = "blink", armTop = true, dur = 200}),
-  seat({aN = 20, aNr = 60, aF = 25, aFr = 65, dur = 160}),
+  seat({keepN = false, aN = 20, aNr = 60, aF = 25, aFr = 65, hrot = -4, lean = -1, dur = 160}),
+  seat({keepN = false, aN = 62, aNr = 85, aF = 25, aFr = 65, hrot = -9, lean = -1, face = "hurt", armTop = true, dur = 200}),
+  seat({keepN = false, aN = 72, aNr = 90, aF = 25, aFr = 65, hrot = -13, lean = -2, hy = -1, face = "hurt", armTop = true, dur = 520}),
+  seat({keepN = false, aN = 66, aNr = 88, aF = 25, aFr = 65, hrot = -6, lean = -1, face = "blink", armTop = true, dur = 200}),
+  seat({keepN = false, aN = 20, aNr = 60, aF = 25, aFr = 65, dur = 160}),
 })
 add("sitslump", {
   seat({aN = 20, aNr = 60, aF = 25, aFr = 65, lean = -1, bob = 4, dur = 260}),
@@ -230,11 +232,11 @@ add("sitmouse", {
   seat({aN = 56, aNr = 26, aF = 20, aFr = 60, hrot = -3, dur = 200}),
 })
 add("sitphone", {
-  seat({aN = 40, aNr = 60, aF = 25, aFr = 65, dur = 180}),
-  seat({aN = 70, aNr = 100, aF = 25, aFr = 65, hrot = 8, dur = 200}),
-  seat({aN = 74, aNr = 96, aF = 25, aFr = 65, hrot = 10, dur = 420}),
-  seat({aN = 70, aNr = 102, aF = 25, aFr = 65, hrot = 8, dur = 420}),
-  seat({aN = 40, aNr = 60, aF = 25, aFr = 65, dur = 180}),
+  seat({keepN = false, aN = 40, aNr = 60, aF = 25, aFr = 65, dur = 180}),
+  seat({keepN = false, aN = 70, aNr = 100, aF = 25, aFr = 65, hrot = 8, dur = 200}),
+  seat({keepN = false, aN = 74, aNr = 96, aF = 25, aFr = 65, hrot = 10, dur = 420}),
+  seat({keepN = false, aN = 70, aNr = 102, aF = 25, aFr = 65, hrot = 8, dur = 420}),
+  seat({keepN = false, aN = 40, aNr = 60, aF = 25, aFr = 65, dur = 180}),
 })
 add("sitnod", {
   relaxed({dur = 150}),

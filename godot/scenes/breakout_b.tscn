@@ -132,31 +132,31 @@ y_sort_enabled = true
 [node name="chair_wood_side_0" type="Sprite2D" parent="Actors"]
 position = Vector2(143, 94)
 centered = false
-offset = Vector2(0, -40)
+offset = Vector2(0, -36)
 texture = ExtResource("prop_chair_wood_side")
 
 [node name="chair_wood_side_1" type="Sprite2D" parent="Actors"]
 position = Vector2(171, 94)
 centered = false
-offset = Vector2(0, -40)
+offset = Vector2(0, -36)
 texture = ExtResource("prop_chair_wood_side")
 
 [node name="chair_wood_side_2" type="Sprite2D" parent="Actors"]
 position = Vector2(120, 98)
 centered = false
-offset = Vector2(0, -35)
+offset = Vector2(0, -31)
 texture = ExtResource("prop_chair_wood_side")
 
 [node name="chair_wood_side_3" type="Sprite2D" parent="Actors"]
 position = Vector2(148, 98)
 centered = false
-offset = Vector2(0, -35)
+offset = Vector2(0, -31)
 texture = ExtResource("prop_chair_wood_side")
 
 [node name="chair_wood_side_4" type="Sprite2D" parent="Actors"]
 position = Vector2(176, 98)
 centered = false
-offset = Vector2(0, -35)
+offset = Vector2(0, -31)
 texture = ExtResource("prop_chair_wood_side")
 
 [node name="coffee_station_5" type="Sprite2D" parent="Actors"]

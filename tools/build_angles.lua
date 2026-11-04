@@ -1,7 +1,7 @@
 -- Rebuilds the multi-angle piece files in office/pieces/ (frames tagged front / side, side faces right).
 -- Covers every piece in lib.lua (side builders: P.*Side in lib.lua and side_views.lua).
 -- Run: dofile("D:/creative/pixelproject/tools/build_angles.lua")
-local TOOLS = "D:/creative/pixelproject/tools/"
+local TOOLS = (ROOT or "D:/creative/pixelproject/") .. "tools/"
 local L = dofile(TOOLS .. "lib.lua")
 local P = L.P
 
