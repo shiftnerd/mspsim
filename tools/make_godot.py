@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky"]
@@ -209,10 +209,10 @@ PATCHABLE = {
     "scripts/story.gd": ["DAYS", "VIGNETTES"], "scripts/playbook.gd": ["BOOKS", "PROBLEMS"], "scripts/owner.gd": ["CARDS"],
     "scripts/msp.gd": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
-    "scripts/nerds.gd": ["JOKES", "THREADS"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
+    "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
-    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
     "scripts/difficulty.gd": ["COZY_TEXT"],
@@ -19564,12 +19564,20 @@ const NICKS := {
     "gnawer": {"acc": 0.75, "color": Color("3cc15a")},
     "PS_wizard": {"acc": 0.9, "color": Color("c585f0")},
     "old_hand": {"acc": 0.8, "color": Color("e0a030")},
+    "MPriest": {"acc": 0.85, "color": Color("e8d88a")},
     "xX_n00b_Xx": {"acc": 0.4, "color": Color("e07b22")},
     "trollbot": {"acc": 0.2, "color": Color("d23c3c")},
 }
 const JOKES := [
     "have you tried turning it off and on again?", "just reinstall windows lol", "blame the antivirus",
     "that is a PEBKAC, tell the user", "format c: fixes everything",
+]
+# MPriest (Priest Michael, the forum moderator) ends his answers in the channel with one of these
+const BLESSINGS := [
+    "bless you, mate.",
+    "go in peace and test your restores.",
+    "she'll be right.",
+    "no worries, and sin no more.",
 ]
 const THREADS := [
     {"title": "Print spooler keeps dying on 2008 R2", "skill": "servers", "level": 0},
@@ -19698,6 +19706,8 @@ func ask(question: String, options: Array, best: int) -> Dictionary:
         var text := "I would go with: " + str(options[pick]).to_lower()
         if nick == "trollbot" and randf() < 0.5:
             text = str(JOKES[randi() % JOKES.size()])
+        elif nick == "MPriest":
+            text += " " + str(BLESSINGS[randi() % BLESSINGS.size()])
         _lines.append([1.2 + float(i) * 1.6, nick, text])
     var winner := best
     var most := -1
@@ -35228,7 +35238,7 @@ const ROOTS := {
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
-    "Nerds": ["JOKES", "THREADS"],
+    "Nerds": ["JOKES", "THREADS", "BLESSINGS"],
     "Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
     "Social": ["THANKS"],
@@ -35237,7 +35247,7 @@ const ROOTS := {
     "Hints": ["DAY1"],
     "Career": ["MEDALS", "UNLOCKS"],
     "Growth": ["STRETCH"],
-    "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
+    "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
@@ -36459,6 +36469,21 @@ const CHATS := [
         ],
     },
 ]
+# LabRat Nerds forum regulars at the conference: each stands in the crowd with the role forum:<id> and has one short chat per trip
+# (nobody is shuffled into a slot: they are fixed people). Option fields: skill + xp, karma (forum karma) and social (every coworker's
+# opinion) only count in a campaign, text_free is what the option says in Free Play instead of text.
+const FORUM := [
+    {
+        "id": "priest", "speaker": "MPriest (Priest Michael, forum mod, Australia)",
+        "text": "G'day! Michael. On the forum I am MPriest, and the collar is a long story. Half my private messages start with: Forgive me, father, for I rebooted production at 3 p.m. So, what is weighing on you?",
+        "options": [
+            {"id": "confess", "label": "CONFESS A SYSADMIN SIN", "skill": "servers", "xp": 4, "text": "You admit you never tested a restore. He sighs like a man who has heard it before. A green tick on the report is a rumour, mate, not a restore. Test one every month and go and sin no more. (+4 servers XP)"},
+            {"id": "bless", "label": "BLESS MY FRESH BACKUP", "skill": "security", "xp": 3, "text": "He lays two fingers on your laptop. 'In the name of the full, the differential and the offsite copy.' Then he grins. 'It only counts once you have restored it. She'll be right.' (+3 security XP)"},
+            {"id": "forum", "label": "ASK ABOUT THE FORUM", "skill": "", "xp": 0, "karma": 3, "text": "'Your answers are decent. Plain and polite, and nobody ever got banned for polite.' He pins one of your posts to the top of the thread. (+3 forum karma)", "text_free": "'Good bunch, the forum. Plain answers and no flame wars on my watch. Come back when you have a real job on.'"},
+            {"id": "crew", "label": "ASK ABOUT YOUR CREW", "skill": "", "xp": 0, "social": 1, "text": "'Say thanks out loud. It costs nothing and techs remember it longer than the raise.' You decide to try it on Monday. (coworkers like you a little more)", "text_free": "'Say thanks out loud, mate. It costs nothing and techs remember it.'"},
+        ],
+    },
+]
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
 const SPEAKERS := {
     "ps101": ["GARY NOVAK", "LABRAT TRAINING"],
@@ -36489,6 +36514,7 @@ const CROWD := {
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
+        {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
     ],
     "ballroom": [
         {"who": "expo_atta", "role": "att:0", "x": 77, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
@@ -37040,6 +37066,8 @@ func npc_use(npc: Node, _body: Node) -> void:
         _pitch(role.substr(7))
     elif role.begins_with("att:"):
         _chat(int(role.substr(4)) % CHATS.size())
+    elif role.begins_with("forum:"):
+        _forum(role.substr(6))
 
 
 func _checkin() -> void:
@@ -37108,6 +37136,46 @@ func _chat(index: int) -> void:
 func _greeting() -> String:
     var line := str(TEXT.get("greet_" + Nerds.rank().to_lower(), ""))
     return line + " " if line != "" else ""
+
+
+# a forum regular from Expo.FORUM (role forum:<id>): one chat per trip, an option can give XP, forum karma and coworker opinion
+func forum_def(id: String) -> Dictionary:
+    for f in FORUM:
+        if str(f.id) == id:
+            return f
+    return {}
+
+
+func _forum(id: String) -> void:
+    var c := forum_def(id)
+    if c.is_empty():
+        return
+    if _talked.has("forum:" + id):
+        Cards.ask(str(c.speaker), str(TEXT.chat_again), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+        return
+    var options := []
+    for o in c.options:
+        options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(str(c.speaker), _greeting() + str(c.text), options, func(oid: String) -> void: _forum_answer(id, oid))
+
+
+func _forum_answer(id: String, oid: String) -> void:
+    var c := forum_def(id)
+    var text := ""
+    for o in c.options:
+        if str(o.id) != oid:
+            continue
+        text = str(o.text)
+        if int(o.xp) > 0 and str(o.skill) != "":
+            Skills.add_xp(str(o.skill), int(o.xp))
+        if Campaign.active:
+            Nerds.karma += int(o.get("karma", 0))
+            if int(o.get("social", 0)) != 0:
+                Social.change_all(int(o.social))
+        elif o.has("text_free"):
+            text = str(o.text_free)
+    _talked["forum:" + id] = true
+    Cards.ask(str(c.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 
 
 func _chat_answer(index: int, oid: String) -> void:

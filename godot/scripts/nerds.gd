@@ -14,6 +14,7 @@ const NICKS := {
 	"gnawer": {"acc": 0.75, "color": Color("3cc15a")},
 	"PS_wizard": {"acc": 0.9, "color": Color("c585f0")},
 	"old_hand": {"acc": 0.8, "color": Color("e0a030")},
+	"MPriest": {"acc": 0.85, "color": Color("e8d88a")},
 	"xX_n00b_Xx": {"acc": 0.4, "color": Color("e07b22")},
 	"trollbot": {"acc": 0.2, "color": Color("d23c3c")},
 }
@@ -25,6 +26,14 @@ const DEFAULT_JOKES := [
 	"format c: fixes everything",
 ]
 var JOKES: Array = DEFAULT_JOKES.duplicate(true)
+# MPriest (Priest Michael, the forum moderator) ends his answers in the channel with one of these
+const DEFAULT_BLESSINGS := [
+	"bless you, mate.",
+	"go in peace and test your restores.",
+	"she'll be right.",
+	"no worries, and sin no more.",
+]
+var BLESSINGS: Array = DEFAULT_BLESSINGS.duplicate(true)
 const DEFAULT_THREADS := [
 	{"title": "Print spooler keeps dying on 2008 R2", "skill": "servers", "level": 0},
 	{"title": "Users locked out after bad passwords: GPO?", "skill": "security", "level": 0},
@@ -153,6 +162,8 @@ func ask(question: String, options: Array, best: int) -> Dictionary:
 		var text := "I would go with: " + str(options[pick]).to_lower()
 		if nick == "trollbot" and randf() < 0.5:
 			text = str(JOKES[randi() % JOKES.size()])
+		elif nick == "MPriest":
+			text += " " + str(BLESSINGS[randi() % BLESSINGS.size()])
 		_lines.append([1.2 + float(i) * 1.6, nick, text])
 	var winner := best
 	var most := -1
