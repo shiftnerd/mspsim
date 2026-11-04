@@ -791,6 +791,7 @@ const TREE_BULBS := [
 @export var kind := "monitor"
 @export var seed_offset := 0
 @export var desk := 0  # desk 1-8 = its patch panel port; the network decides if it works
+@export var panel := 0  # monitor screens: 0 = the single big monitor, 1 = the 4:3 panel A (E opens the computer), 2 = the 16:9 panel B
 
 var busy := false
 var item := ""
@@ -1480,6 +1481,9 @@ func _r(x: float, y: float, w: float, h: float, c: Color) -> void:
 
 
 func _draw_monitor() -> void:
+    if panel > 0:
+        _draw_panel()
+        return
     if _time < _hit_until:
         for bx in 9:
             for by in 5:
@@ -1506,6 +1510,66 @@ func _draw_monitor() -> void:
             _r(5 + last_len, 13, 1, 1, Color("3c4660"))
     if (int(_time) + seed_offset * 3) % 11 == 0 and fmod(_time, 1.0) < 0.15:
         _r(3, 3, 19, 12, Color(1, 1, 1, 0.3))
+
+
+# the screen areas under the art's blue title bar: the lone monitor, then the dual-desk panels A (4:3) and B (16:9)
+const PANELS := [Rect2(3, 6, 19, 9), Rect2(3, 5, 14, 8), Rect2(2, 4, 20, 9)]
+
+
+# one screen of a dual-monitor desk: A shows the PSA ticket list / mail, B the RMM chart and tree; they never show the
+# same frame (the content cycle is offset per panel). Offline desks show the same icons as the single monitor.
+func _draw_panel() -> void:
+    var rc: Rect2 = PANELS[panel]
+    var px := rc.position.x
+    var py := rc.position.y
+    var pw := rc.size.x
+    var ph := rc.size.y
+    if _time < _hit_until:
+        for bx in int(pw / 2.0):
+            for by in int(ph / 2.0):
+                var v := 0.3 + 0.1 * float(_h(bx + by * 9 + int(_time * 25.0)) % 6)
+                _r(px + bx * 2.0, py + by * 2.0, 2, 2, Color(v, v, v + 0.04))
+        return
+    var net := Net.desk_state(desk)
+    if net != "ok":
+        _draw_panel_error(rc, net)
+        return
+    var ink := Color("9fb4c8")
+    var step := int(_scroll) + panel * 5
+    _r(px, py, pw, ph, Color("dde8f0"))
+    var chart := _h(step / 7) % 4 != 0 if panel == 2 else _h(step / 7) % 4 == 0
+    if chart:
+        for j in int(pw / 3.0):
+            var bh := 1.0 + float(_h(j + step / 2) % int(ph - 2.0))
+            _r(px + 1 + j * 3.0, py + ph - bh, 2, bh, Color("7fa6d8") if j % 2 == 0 else ink)
+    else:
+        var last_len := 0.0
+        for i in int((ph - 1.0) / 2.0):
+            last_len = 3.0 + float(_h(step + i) % int(pw - 6.0))
+            if panel == 1:
+                _r(px + 1, py + 1 + i * 2.0, 2, 1, Color("d99a4a") if _h(step + i * 3) % 3 == 0 else Color("7fa6d8"))
+                _r(px + 4, py + 1 + i * 2.0, last_len, 1, ink)
+            else:
+                _r(px + 1 + float((i + step) % 3) * 2.0, py + 1 + i * 2.0, last_len - 2.0, 1, ink)
+        if panel == 1 and int(_time * 2.0) % 2 == 0:
+            _r(px + 5 + last_len, py + ph - 2, 1, 1, Color("3c4660"))
+    if (int(_time) + seed_offset * 3) % 11 == 0 and fmod(_time, 1.0) < 0.15:
+        _r(px, py - 2, pw, ph + 2, Color(1, 1, 1, 0.3))
+
+
+func _draw_panel_error(rc: Rect2, state: String) -> void:
+    _r(rc.position.x, rc.position.y, rc.size.x, rc.size.y, Color("1e2a44"))
+    var cx := int(rc.position.x + rc.size.x / 2.0)
+    var y0 := int(rc.position.y) + int((rc.size.y - 7.0) / 2.0)
+    if state == "no_link":
+        for i in 7:
+            _r(cx - 3 + i, y0 + i, 1, 1, Color("e04646"))
+            _r(cx + 3 - i, y0 + i, 1, 1, Color("e04646"))
+    else:
+        for row in 6:
+            _r(cx - (row >> 1), y0 + row, 1 + row, 1, Color("f2c230"))
+        _r(cx, y0 + 2, 1, 3, Color("1e2a44"))
+        _r(cx, y0 + 6, 1, 1, Color("1e2a44"))
 
 
 func _draw_tv() -> void:
@@ -42950,7 +43014,9 @@ shape = SubResource("RectangleShape2D_body")
 
 # Ambient/interactive effects. Props: copier/cooler get an effect on the sprite (their art is y-sorted), monitors
 # get a live screen. BGFX are on the background art: (name, kind, art_x, art_y, interact_x)
-PIECE_W = {"copier": 30, "cooler": 14, "desk_phone": 14, "monitor": 26, "rubber_duck": 4}
+PIECE_W = {"copier": 30, "cooler": 14, "desk_phone": 14, "monitor": 26, "monitor_a": 20, "monitor_b": 24, "rubber_duck": 4}
+# dual-monitor desks (R25): A (4:3, E opens the computer) and B (16:9, a screen and nothing else: no interact zone) are `monitor` fx with a `panel`
+MON_PANEL = {"monitor_a": 1, "monitor_b": 2}
 # effects with no interaction: (name, kind, art_x, art_y)
 AMBIENT = {
     # the red / green occupied light on each bath door plate; the dying bar light over the old bathroom's cracked mirror
@@ -43082,7 +43148,7 @@ def desk_line(scene, piece, counts):
     """`desk = N` for monitors and phones (N = their patch panel port); the copier is desk 8."""
     if piece == "copier":
         return ["desk = 8"]
-    if piece not in ("monitor", "desk_phone") or scene not in DESK_BASE:
+    if piece not in ("monitor", "monitor_a", "monitor_b", "desk_phone") or scene not in DESK_BASE:
         return []
     n = counts.get(piece, 0)
     counts[piece] = n + 1
@@ -43160,11 +43226,11 @@ for fname, cfg in SETS.items():
     bgfx = BGFX.get(fname, [])
     for i, p in enumerate(props):
         p["_node"] = f'{p["piece"]}_{i}'
-    for p in [q for q in props if q["piece"] in PIECE_W]:
+    for p in [q for q in props if q["piece"] in PIECE_W and q["piece"] != "monitor_b"]:
         ix = p["x"] + PIECE_W[p["piece"]] // 2
         lines += [f'[node name="Use{p["_node"]}" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + ix}, 70)',
                   'script = ExtResource("interact")', f'target = NodePath("../../Actors/{p["_node"]}/Fx")',
-                  *(['group = "phones"'] if p["piece"] == "desk_phone" else (['group = "computers"'] if p["piece"] == "monitor" else (['low_priority = true'] if p["piece"] == "rubber_duck" else []))), "",
+                  *(['group = "phones"'] if p["piece"] == "desk_phone" else (['group = "computers"'] if p["piece"] in ("monitor", "monitor_a") else (['low_priority = true'] if p["piece"] == "rubber_duck" else []))), "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Use{p["_node"]}"]',
                   'shape = SubResource("shape_fx")', ""]
     for name, kind, ax, ay, ix, *opt in bgfx:
@@ -43207,10 +43273,12 @@ for fname, cfg in SETS.items():
                   f'position = Vector2({x0 + p["x"]}, {sort_y})', 'centered = false',
                   f'offset = Vector2(0, {p["y"] - sort_y})',
                   f'texture = ExtResource("prop_{p["piece"]}")', ""]
-        if p["piece"] in PIECE_W or p["piece"] == "monitor":
+        if p["piece"] in PIECE_W:
             lines += [f'[node name="Fx" type="Node2D" parent="Actors/{p["piece"]}_{i}"]',
                       f'position = Vector2(0, {p["y"] - sort_y})', 'script = ExtResource("fx")',
-                      f'kind = "{p["piece"]}"', f'seed_offset = {i}', *desk_line(fname, p["piece"], desk_count), ""]
+                      f'kind = "{"monitor" if p["piece"] in MON_PANEL else p["piece"]}"', f'seed_offset = {i}',
+                      *([f'panel = {MON_PANEL[p["piece"]]}'] if p["piece"] in MON_PANEL else []),
+                      *desk_line(fname, p["piece"], desk_count), ""]
     lines += ['[node name="Player" parent="Actors" instance=ExtResource("player")]',
               f'position = Vector2({x0 + 60}, {FLOOR_Y})', ""]
     text = f'[gd_scene load_steps={len(ext) + len(shapes) + 1} format=3]\n\n' + "\n".join(lines)

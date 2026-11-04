@@ -17,6 +17,9 @@ L.saveAngles("desk_cubicle_74", {{tag = "front", layers = one(P.desk(74))}, {tag
 L.saveAngles("desk_office_68", {{tag = "front", layers = one(P.desk(68))}, {tag = "side", layers = one(P.deskSide(25))}})
 L.saveAngles("bookshelf", {{tag = "front", layers = one(P.bookshelf())}, {tag = "side", layers = one(P.bookshelfSide(12))}})
 L.saveAngles("monitor", {{tag = "front", layers = one(P.monitor())}, {tag = "side", layers = one(P.monitorSide())}})
+L.saveAngles("monitor_a", {{tag = "front", layers = one(P.monitorA())}, {tag = "side", layers = one(P.monitorASide())}})
+L.saveAngles("monitor_b", {{tag = "front", layers = one(P.monitorB())}, {tag = "side", layers = one(P.monitorSide())}})
+L.saveAngles("mouse", {{tag = "front", layers = one(P.mouse())}, {tag = "side", layers = one(P.mouse())}})
 L.saveAngles("keyboard", {{tag = "front", layers = one(P.keyboard())}, {tag = "side", layers = one(P.keyboardSide())}})
 L.saveAngles("chair_office", {{tag = "front", layers = one(P.chair())}, {tag = "side", layers = one(P.chairSide())}})
 

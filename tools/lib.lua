@@ -280,6 +280,52 @@ function P.monitor()
   end)
 end
 
+-- Dual-monitor desks (R25): an older 4:3 19-inch panel (A, the one E opens; fx screen img x3..16 y5..12) next to a slim
+-- 16:9 panel (B, fx screen img x2..21 y4..12). Same outline, palette and light as P.monitor. Content 18x18 and 22x17.
+function P.monitorA()
+  return L.piece(18, 18, function(R)
+    L.box(R, 0, 0, 18, 14, "#3A3A46", "#5A5A68", "#22222B")
+    R(2, 2, 14, 10, "#DDE8F0"); R(2, 2, 14, 2, "#7FA6D8")
+    R(4, 6, 8, 1, "#9FB4C8"); R(4, 8, 6, 1, "#9FB4C8")
+    R(7, 14, 4, 2, "#2A2A33"); R(4, 16, 10, 2, "#2A2A33")
+  end)
+end
+
+function P.monitorB()
+  return L.piece(22, 17, function(R)
+    L.box(R, 0, 0, 22, 13, "#2A2A33", "#4A4A56", "#1C1C24")
+    R(1, 1, 20, 11, "#DDE8F0"); R(1, 1, 20, 2, "#7FA6D8")
+    R(3, 5, 10, 1, "#9FB4C8"); R(3, 7, 7, 1, "#9FB4C8")
+    R(9, 13, 4, 2, "#2A2A33"); R(6, 15, 10, 2, "#2A2A33")
+  end)
+end
+
+function P.mouse()
+  return L.piece(4, 2, function(R)
+    R(0, 0, 4, 2, "#4A4A56"); R(0, 1, 4, 1, "#2A2A33"); R(1, 0, 2, 1, "#6A6A78")
+  end)
+end
+
+function P.monitorASide()
+  return L.piece(14, 19, function(R)
+    L.box(R, 3, 0, 7, 14, "#3A3A46", "#5A5A68", "#22222B")   -- the deeper 4:3 panel
+    R(9, 2, 1, 10, "#DDE8F0")
+    R(2, 4, 2, 8, "#22222B")
+    R(5, 14, 4, 3, "#2A2A33"); R(2, 17, 10, 2, "#2A2A33")
+  end)
+end
+
+-- R25: everything on a desk top, two monitors side by side. D = the desk's put x (the desk is 74 wide, the seat at D+12).
+-- Left to right: the sitter, monitor A (D+21, the one E opens), monitor B (D+40), the phone (D+62, flush with the
+-- desk's right end); the keyboard sits at D+28 (hands reach it) with the mouse past the seated cup (D+51).
+function P.dualTop(s, layer, D, phone)
+  s.putS(layer, P.monitorA(), D + 21, 65, 96, "monitor_a")
+  s.putS(layer, P.monitorB(), D + 40, 66, 96, "monitor_b")
+  s.putS(layer, P.keyboard(), D + 28, 80, 108.5, "keyboard")
+  s.putS(layer, P.mouse(), D + 51, 81, 108.5, "mouse")
+  if phone then s.putS(layer, P.deskPhoneBase(), D + 62, 72, 108.3, "desk_phone") end
+end
+
 function P.keyboard()
   return L.piece(16, 3, function(R)
     R(0, 0, 16, 3, "#3A3A44")
