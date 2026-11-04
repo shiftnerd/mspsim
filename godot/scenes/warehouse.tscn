@@ -86,6 +86,10 @@ metadata/facing = "right"
 position = Vector2(-496, 118)
 metadata/facing = "right"
 
+[node name="from_outing" type="Marker2D" parent="Spawns"]
+position = Vector2(-386, 118)
+metadata/facing = "right"
+
 [node name="Interactables" type="Node2D" parent="."]
 
 [node name="DoorToCloset" type="Area2D" parent="Interactables"]

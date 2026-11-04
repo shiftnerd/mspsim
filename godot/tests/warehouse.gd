@@ -55,7 +55,8 @@ func _init() -> void:
 		_check(room.get_node_or_null("Fx/" + fx_name) != null, "effect " + fx_name)
 	_check(room.get_node_or_null("Interactables/DoorToCloset") != null, "a steel door back to the closet")
 	_check(room.get_node_or_null("Interactables/ExitToCloset") != null, "the left edge leaves to the closet")
-	_check(room.get_node_or_null("Spawns/from_main") != null and room.get_node_or_null("Spawns/from_closet") != null, "entry spawns")
+	var spawns := ["from_main", "from_closet", "from_outing"].filter(func(n: String) -> bool: return room.get_node_or_null("Spawns/" + n) != null)
+	_check(spawns.size() == 3, "entry spawns + from_outing")
 	_check(room.get_node("Interactables/UseDartBoard").low_priority, "the dart board zone is low priority")
 
 	# ---- props: all on the floor line, the walkway (feet y 110 to 127) is clear
