@@ -270,7 +270,7 @@ func _init() -> void:
 	await _wait(2)
 	await _key(KEY_Y)
 	ov = tb._outfit
-	ov.set_page(2)
+	ov.set_page(3)
 	ov.create_row = 0
 	await _key(KEY_RIGHT)
 	_check(look.acc.glasses == "thin", "Right on GLASSES in the overlay changes the look")
@@ -287,7 +287,7 @@ func _init() -> void:
 	# DONE keeps it
 	await _key(KEY_Y)
 	ov = tb._outfit
-	ov.set_page(2)
+	ov.set_page(3)
 	ov.create_row = 2
 	await _key(KEY_RIGHT)
 	_check(look.acc.hat != "", "a hat picked")
