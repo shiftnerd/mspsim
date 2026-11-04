@@ -27,14 +27,30 @@ local STYLES = {
   bob = {src = "site_alan", base = "3e2c20", hi = "5a4232", x = 8, y = 13, ext = {
     "..BBB.", ".BBBBB", ".BBBBB", ".BCBBB", ".BBBBB", ".BBBBB", ".BBCBB", ".BBBBB", "..BBB.",
   }},
-  ponytail = {src = "site_alan", base = "3e2c20", hi = "5a4232", x = 3, y = 5, ext = {
-    "......BB.", ".....BBBB", "....TBBBB", "...BBBBB.", "...BBCBB.", "..BBBBB..", "..BBBB...", "..BBCB...", "..BBB....", "...BB....",
-    "...BB....", "...B.....",
+  -- `grid`: {y, x, "pattern"} rows drawn in order over an empty Hair layer (B base, C highlight, T outline colour, F the
+  -- ear shadow skin colour d88a62, which the skin recolour already handles); every B / C cell is outlined automatically.
+  ponytail = {grid = {
+    {2, 14, "BBBBBBBBBBBB"}, {3, 12, "BBBBCCCCBBBBBBBB"}, {4, 11, "BBBBBBBBBBBBBBBBBB"},
+    {5, 10, "BBBBBBBBBBBBBBBBBBBB"}, {6, 10, "BBBBBBBBBBBBBBBBBBBB"}, {7, 10, "BBBBBBBBBBBBBBBBBBBB"},
+    {8, 10, "BBBBBBBBBBBBBBBB"}, {9, 10, "BBBBBBBB"}, {10, 10, "BBBBB"}, {11, 10, "BBBB"}, {12, 10, "BBB"},
+    -- the tail: a flared fan behind the tie, hanging straight down, a highlight stripe, tapering to a tip
+    {6, 7, "B"}, {7, 7, "B"}, {8, 6, "CB"}, {9, 5, "CBB"}, {10, 4, "CBB"}, {11, 3, "BCBB"},
+    {12, 3, "BBBB"}, {13, 3, "BBB"}, {14, 4, "BCB"}, {15, 4, "BBB"}, {16, 5, "BB"}, {17, 5, "B"},
+    {6, 8, "TT"}, {7, 8, "TT"}, {8, 8, "TT"},
   }},
-  bun = {src = "site_alan", base = "3e2c20", hi = "5a4232", x = 9, y = 0, ext = {
-    "..BBBB..", ".BBCBBB.", ".BBBBBB.", "..BBBB..", "...TT...",
+  bun = {grid = {
+    {2, 14, "BBBBBBBBBBBB"}, {3, 12, "BBBBCCCCBBBBBBBB"}, {4, 11, "BBBBBBBBBBBBBBBBBB"},
+    {5, 10, "BBBBBBBBBBBBBBBBBBBB"}, {6, 10, "BBBBBBBBBBBBBBBBBBBB"}, {7, 10, "BBBBBBBBBBBBBBBBBBBB"},
+    {8, 10, "BBBBBBBBBBBBBBBB"}, {9, 10, "BBBBBBBB"}, {10, 10, "BBBBB"}, {11, 10, "BBBB"}, {12, 10, "BBB"},
+    -- the bun: a round ball on the back of the crown with its own dark ring
+    {0, 10, "TTTT"}, {1, 9, "TBCBBT"}, {2, 8, "TBCBBBBT"}, {3, 8, "TBBBBBBT"}, {4, 8, "TBBBBBBT"},
+    {5, 9, "TBBBBT"}, {6, 10, "TTTT"},
   }},
-  bald = {empty = true},
+  -- bald: no hair, but the back of the skull is shaded with the ear's skin shadow so the head reads round, not a block
+  bald = {grid = {
+    {5, 11, "FF"}, {6, 11, "F"}, {7, 11, "F"}, {8, 11, "F"}, {9, 11, "F"}, {10, 11, "F"}, {11, 11, "F"}, {12, 11, "F"},
+    {13, 11, "F"},
+  }},
   spiky = {
     spans = {
       [1] = {{15, 15}, {19, 19}, {23, 23}},
@@ -83,7 +99,17 @@ local function drawnRight(c)
   if c.empty then return full end
   local base, hi = rgb(BASE_HEX), rgb(HI_HEX)
   local cells = {}
-  if c.spans then
+  if c.grid then
+    local cols = {B = base, C = hi, T = rgb(OUTLINE_HEX), F = rgb("d88a62")}
+    for _, r in ipairs(c.grid) do
+      for i = 1, #r[3] do
+        local ch = r[3]:sub(i, i)
+        local x, y = r[2] + i - 1, r[1]
+        full:putPixel(x, y, cols[ch])
+        if ch == "B" or ch == "C" then cells[#cells + 1] = {x, y} end
+      end
+    end
+  elseif c.spans then
     for y, list in pairs(c.spans) do for _, s in ipairs(list) do for x = s[1], s[2] do
       full:putPixel(x, y, base); cells[#cells + 1] = {x, y}
     end end end
@@ -112,7 +138,7 @@ local function drawnRight(c)
 end
 
 local function build(style, c)
-  if c.empty or c.spans or c.ext then
+  if c.empty or c.grid or c.spans or c.ext then
     local right = drawnRight(c)
     for _, side in ipairs({"right", "left"}) do
       local full = side == "right" and right or mirror(right)
