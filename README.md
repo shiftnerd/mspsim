@@ -6,10 +6,10 @@ MSPSim is a cartoon pixel-art office sim about working at a managed service prov
 other companies' computers alive. You close tickets, plug and unplug real network cables, answer a headset phone, survive a
 24-hour email outage, and still have time for a nerf gun war by the copier.
 
-Think *Code Monkeys* meets *Papers, Please* meets *Overcooked*: a small, funny office that is secretly a pressure cooker.
+Think *Papers, Please* meets *Overcooked*, set in a tiny, grimy, very funny office that is secretly a pressure cooker.
 The jokes come from real MSP life. So do the stakes (a backup you forgot to check, a firewall that is wide open to the internet).
 
-> **Pixel IT Partners**: six rooms, two owners who disagree about the thermostat, one rack in a closet behind a warehouse,
+> **Pixel IT Partners**: one small office, two owners who disagree about the thermostat, one rack in a closet behind a warehouse,
 > and a sales guy who promised the client "by Friday".
 
 Built with [Godot 4.7](https://godotengine.org) (GL Compatibility), all art drawn as code and Aseprite pixels. It is private and

@@ -1,5 +1,7 @@
 # Scope: cozy mode and mid-day autosave (roadmap R16 items 1 to 3)
 
+**STATUS: built.** Cozy mode shipped as the Easy tier (`Difficulty.cozy_on()`, not the separate toggle recommended below) with the day-length option; the mid-day resume point is built through step 4. What is still open (a separate cozy toggle, resume step 5 extras) is in `docs/ROADMAP.md` R16. System notes: CLAUDE.md "Mid-day resume point" and "Cozy Easy and the day length option".
+
 Two read-only scoping passes (Nov 2026), from docs and targeted code reads, not play-tested. Line numbers are as of commit 6e1e07f and will drift.
 
 ## A. Cozy mode

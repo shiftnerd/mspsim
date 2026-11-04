@@ -1,5 +1,7 @@
 # Replayability and variety: decision document
 
+**STATUS: built.** The items in this document (roadmap R1 to R11) are built; it is kept as the design record, with the code hooks. What is still open is in `docs/ROADMAP.md`.
+
 Scope: MSPSim (Godot 4.7.2, `godot/scripts/`). Read-only review of `outings.gd`, `printer_game.gd`, `nerf.gd`,
 `onsite.gd`, `msp.gd`, `story.gd`, `owner.gd`, CLAUDE.md, IDEAS.md. Effort: S under a day, M 1-3 days, L a week or more.
 Risk: how likely the change is to break existing tests, saves or art.

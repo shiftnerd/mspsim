@@ -1,5 +1,7 @@
 # Scope: character creator level 3 (roadmap R15)
 
+**Sheets are 129 frames now (the toss pose was added by R29); the 123 below is the scoping-time count.**
+
 **Status: steps (a), (b) (overlay pipeline, glasses (4), facial hair (4)), (b-UI) (the EXTRAS and WORK create pages), (c) (six hats, the hat hair rule, the unlock kinds, the old tree), (d) (nametag, conference lanyard, three watches) and (e) (the mirror preview, the Free Play outfit swap, NPC copies and presets with accessories) are BUILT (Nov 2026; see CLAUDE.md, Character creator level 3 steps b to e). and step (f), real clothes (shirts, bottoms, shoes as overlays on a bare-skin base; see the Clothes section), is BUILT too.** Read-only scoping pass (Nov 2026) from the code, nothing was run. Items marked (inference) are unverified. Levels 1 (colours) and 2 (ten prebaked hairstyles, each a complete character) are done.
 
 ## Recommendation: a hybrid, head-only overlay sheets (approach C)

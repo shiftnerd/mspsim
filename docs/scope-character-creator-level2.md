@@ -1,5 +1,7 @@
 # Scope: character creator level 2, hair first (roadmap R15)
 
+**STATUS: built.** Hair (ten prebaked styles), glasses, beards and real clothes all shipped under R15 (see CLAUDE.md "Character creator"). Sheets are 129 frames now (the 123 and 85 below are the scoping-time counts).
+
 Read-only scoping pass (Nov 2026) from the code and assets, not play-tested. Items marked (inference) were not verified.
 
 ## How the sprite is built today
@@ -17,7 +19,7 @@ Read-only scoping pass (Nov 2026) from the code and assets, not play-tested. Ite
 **Decision (owner, Nov 2026): the PREBAKE was chosen instead of approach C.** Every hairstyle is a complete character (stills, `_anim.aseprite`, sheets, hands json, SpriteFrames via `EXTRA_CHARACTERS`), about 33 KB per style per facing; fine for hair, but it multiplies for shirts and pants, to be revisited then. `Look.frames_for` here just loads the style's `.tres`. The sections below describe the rejected composition for reference.
 
 ## Art pipeline
-- New `tools/build_hair.lua`, modelled on `build_anims.lua`: for each style make a intern still whose Hair layer is the style, run `E.build`, export two sheets by layer visibility (all layers except Hair, and Hair only). Left facings are generated like `make_fem` does.
+- New `tools/make_hair.lua`, modelled on `build_anims.lua`: for each style make a intern still whose Hair layer is the style, run `E.build`, export two sheets by layer visibility (all layers except Hair, and Hair only). Left facings are generated like `make_fem` does.
 - Sources: reuse existing Hair layers (site Alan short, office adult receding, casual Garrison curly) remapped to the intern hair colours `9a5124` / highlight `c47a38`; port the make_fem set (long, bob, ponytail, bun, curly); the intern's side-swept hair becomes style `side` (the golden reference); bald needs the Body layer to carry a skull outline (inference: verify with `view_sprite`, otherwise draw a thin scalp style).
 - Colours: only hair, its highlight and the outline are safe. A new shade needs a new `Look.SOURCES` row and must stay about 0.06 RGB distance away from the KEEPS colours (brows `6b3416` are close, check). `tests/creator.gd` `_sheet_colors` must scan the hair sheets too. The ponytail tie maps to the shirt colour.
 - Verify with `view_sprite`, `lint_sprite`, contact strips of key frames (idle, run, hurt 25 / 28, death, sit / type, dance, call) and `creator_shots.gd`.
@@ -46,7 +48,5 @@ Hair is complete with the prebake: ten styles (side, short, receding, curly, lon
 - Pants variants must keep the leg gap and the rows 50 to 55 that the engine reads; skirts and shorts need bare legs below the hem (inference).
 - Shirts are the hard one: sleeves live in the arm layers with the hands, the far arm is behind the torso and the near arm in front (three sheets: far sleeve, torso, near sleeve), arms rotate about the shoulder with an elbow so every sleeve style is a full arm layer, and long sleeves or hoods change the neckline.
 
-## Decisions needed
-1. Which hairstyles for the first release (suggested 9: side, short, receding, curly, long, bob, ponytail, bun, bald)?
-2. Is bald in?
-3. Start with approach C (composited single sheet)?
+## Decisions (settled)
+Ten hairstyles for the first release (the nine suggested plus spiky), bald is in, and the prebake replaced approach C (the composited single sheet).

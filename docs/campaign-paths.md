@@ -1,6 +1,6 @@
 # New campaign paths: Owner (as Alan or Garrison), Service Manager (as Dan), Sales (as Vic), plus owners in the tech campaign
 
-Design only, nothing built. Revision 2 (canon change). Read-only pass over CLAUDE.md, IDEAS.md (24-25, 40-52), GAME_BIBLE.md, msp-research.md,
+**STATUS: built.** All four campaigns designed here (tech with the owners as a last resort, owner as Alan or Garrison, service manager as Dan, sales as Vic) are playable; this document is kept for the design rationale and the extension guide (section 8.1). Revision 2 (canon change). Read-only pass over CLAUDE.md, IDEAS.md (24-25, 40-52), GAME_BIBLE.md, msp-research.md,
 replayability-ideas.md and `campaign, owner, sales, onsite, msp, world, story, playbook, social, cards, day_report, review, title, charselect,
 shift, growth, projects, talk, lync, skills` (`.gd`). Effort: S under a day, M 1-3 days, L a week or more.
 Parody names only; 2013-14 only (no AI, no Slack/Teams); never punish family or health.
@@ -380,7 +380,7 @@ Risks: a third step on tight narrow formats; perks from day 1 need balance runs 
 - **Morgan Reyes is a real cast member** (desk, agenda, Social / Lync / Talk entries), not a role NPC. Consequences to design in P0/O1: where Morgan sits (an office, the conference room, or a main-floor desk), a routine (meetings, floor walks, all-hands host), `World.CAST` / `Social.PEOPLE` / `npc.DESKS` entries, a Lync contact (Morgan is already the boss contact), and `Expo._boss` / the all-hands whiteboard switching to the real NPC. The service campaign benefits (Morgan can show up often).
 - **Owners take a weekly draw from the bank balance** in the owner campaign (cash, not EBITDA): a weekly line on the P&L and the cash flow, a personal goal / partner-trust hook (a big draw makes the partner uneasy), tied to the weekly report; the amount is a card or policy choice, not free.
 - **An owner stepping in costs no reputation** in the tech campaign: the last-resort help is free (a report row and a short banter line only).
-- **Canon text pass** (Alan and Garrison cast as owners in dialogue, tips, Lynk, vignettes): **undecided**, parked in `docs/ROADMAP.md`; the design above assumes it eventually happens.
+- **Canon text pass** (Alan and Garrison cast as owners in dialogue, tips, Lynk, vignettes): done, see CLAUDE.md "Canon: the owners".
 
 **Still open**
 1. Owner base crew after the re-base: Dan + Maya + Sam + partner 0.5 hands-on. Is that the intended size, or should the owners keep working tickets at full speed in the owner campaign?
