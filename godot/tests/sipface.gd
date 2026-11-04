@@ -5,7 +5,7 @@ var frame := 0
 
 
 func _initialize() -> void:
-	change_scene_to_file("res://scenes/bathroom.tscn")
+	change_scene_to_file("res://scenes/bathroom_1.tscn")
 
 
 func _process(_delta: float) -> bool:

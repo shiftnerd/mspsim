@@ -290,6 +290,8 @@ func _draw() -> void:
 			_draw_duck()
 		"flicker_lamp":
 			_draw_flicker_lamp()
+		"occupied_1", "occupied_2":
+			_draw_occupied()
 		"bench_screen":
 			_draw_bench_screen()
 		"tree_lights":
@@ -743,15 +745,22 @@ func _draw_lamp() -> void:
 	draw_circle(Vector2(6, 4), 14.0, Color(1.0, 0.9, 0.5, 0.09))
 
 
-# the warehouse's dying high-bay light: mostly on, now and then a burst of flicker (the node sits on the bulb)
+# a dying light (the warehouse high bay, the old bathroom's bar light): mostly on, now and then a burst of flicker; dark
+# with the room's lights (the node sits on the bulb)
 func _draw_flicker_lamp() -> void:
 	var slot := int(_time * 9.0)
 	var burst := _h(floori(slot / 14.0)) % 3 == 0
-	if burst and _h(slot) % 3 == 0:
+	if (burst and _h(slot) % 3 == 0) or not World.lights_on(_room):
 		return
 	_r(-6, 0, 13, 2, Color("fff3c0"))
 	draw_circle(Vector2(0, 10), 18.0, Color(1.0, 0.95, 0.7, 0.09))
 	draw_circle(Vector2(0, 40), 46.0, Color(1.0, 0.95, 0.7, 0.04))
+
+
+# the dot on a bath door plate in the kitchenette: red while somebody is in that bathroom, green when it is free
+func _draw_occupied() -> void:
+	var taken := World.bathroom_occupied("bathroom_" + kind.right(1))
+	_r(0, 0, 2, 2, Color("e04040") if taken else Color("4ed06a"))
 
 
 # the bench PC being imaged: a blue screen with a progress bar that fills over and over

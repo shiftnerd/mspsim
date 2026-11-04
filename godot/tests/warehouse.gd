@@ -150,7 +150,8 @@ func _init() -> void:
 		["main_floor", "network_closet"]: ["cubicle_area", "network_closet"],
 		["main_floor", "conference"]: ["cubicle_area", "conference"],
 		["office_one", "kitchenette"]: ["main_floor", "kitchenette"],
-		["kitchenette", "bathroom"]: ["bathroom"],
+		["kitchenette", "bathroom_1"]: ["bathroom_1"],
+		["kitchenette", "bathroom_2"]: ["bathroom_2"],
 		["network_closet", "main_floor"]: ["cubicle_area", "main_floor"],
 	}
 	for pair in expect:

@@ -1,6 +1,6 @@
 extends SceneTree
 # The persistent cast, in three parts:
-#  A) stand in the empty bathroom and fast-forward: everyone wanders off and comes home again
+#  A) stand in the empty first bathroom and fast-forward: everyone wanders off and comes home again
 #  B) in the kitchenette, send Alan for coffee: he walks in from the main floor, then leaves
 #  C) stand in the conference room and call a meeting: the people arrive and sit down
 # Frames: Godot --path godot --fixed-fps 60 --write-movie out.png -s res://tests/world.gd
@@ -17,7 +17,7 @@ var world: Node
 
 
 func _initialize() -> void:
-	change_scene_to_file("res://scenes/bathroom.tscn")
+	change_scene_to_file("res://scenes/bathroom_1.tscn")
 
 
 func _desc(n: String) -> String:

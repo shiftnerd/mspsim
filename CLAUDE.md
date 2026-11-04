@@ -172,12 +172,12 @@ New characters start as a copy of an existing one, then change only what differs
   R revive, 1-6 switch character (any time, even mid-animation: `_switch_character` keeps the running
   animation), F1-F5 switch set. Floor line is y=118; each set is centred in the viewport with walls.
   Doors: Office 1/2 -> office (the office door returns to whichever you used, `Game.vars`), kitchenette
-  left/right bath doors -> one shared bathroom set (its door returns to the one you used), main floor left
+  left/right bath doors -> two different single-occupancy bathrooms (`bathroom_1` / `bathroom_2`, each door returns to its own kitchenette spawn; a door is locked while somebody is inside), main floor left
   edge -> kitchenette, right edge -> cubicle area (cubicles 3/4, copier, cooler, whiteboard), whose right
   edge -> conference (its left edge -> cubicle area, its door -> main floor). The glass front door is locked:
   the arrow turns red and shakes (`locked = true` on a door). Fade between scenes is in the `Game` autoload.
   Tests in `godot/tests/`: smoke, seats, extras (switching character / sit again), doors, edges (every
-  edge exit both ways). F-keys: F1 main, F2 office 1, F3 office 2, F4 conference, F5 kitchenette, F6 bathroom, F7 cubicles.
+  edge exit both ways). F-keys: F1 main, F2 office 1, F3 office 2, F4 conference, F5 kitchenette, F6 bathroom 1 (Shift+F6 bathroom 2), F7 cubicles.
 - Depth: `tools/build_sets.lua` (needs `tools/lib.lua`) builds every set twice: the full `.aseprite` and a
   Godot export = background PNG + one PNG per y-sorted prop + `<set>_props.json` placements. Props sort by
   their base y against the player's feet y, so a seated player (feet y 97 / 89) sits between the chair (95 /
@@ -289,12 +289,12 @@ New characters start as a copy of an existing one, then change only what differs
 - Ceiling (`L.ceiling`): old yellowed 2x2 ft acoustic tiles with pinholes and water stains, white T-bar grid, 2x4 ft fluorescent
   troffers (one tube dying per room), sprinkler heads, wall angle strip at the wall line. Seeds per set in `build_sets.lua`.
 - Floor: **blue low-pile carpet** (`#3E5E8E`, speckle, 2 ft carpet-tile seams) in main floor, cubicles, offices, conference;
-  kitchenette and bathroom keep their tile floor (extended). Carpet/tiles now run to the bottom of the taller canvas.
+  kitchenette and the bathrooms keep their tile floor (extended). Carpet/tiles now run to the bottom of the taller canvas.
 - Formats: 16:9 = 320x180 (6x -> 1080p), 9:16 = 180x320 (6x -> 1920 tall). `tests/format.gd` renders every set in both with a
   `Camera2D` + `root.content_scale_size` (needs a renderer, not headless) and saves PNGs to `user://`.
 - Narrow rooms: any set narrower than `L.MIN_W` (320) is built on a 320-wide canvas. `L.XOFF` = (320 - W) // 2 is added by
   `put`; wall/carpet/tiles/ceiling span the full canvas width; `L.margins` then darkens the two margins (x0.55) and draws a
-  3px dark cutaway edge at the real room boundary, so the margins read as "off stage". Margins: bathroom 96, conference 64,
+  3px dark cutaway edge at the real room boundary, so the margins read as "off stage". Margins: bathrooms 96, conference 64,
   offices/kitchenette 72, cubicles 16 (each side). Godot shifts the Background sprite left by that margin (`MIN_W` in
   `make_godot.py`); room coordinates, props, walls and spawns are unchanged.
 
@@ -364,7 +364,7 @@ New characters start as a copy of an existing one, then change only what differs
   and live in the whole building: **Alan** (`office_alan`, Office 1 desk), **Garrison** (`casual_garrison`, Office 2 desk), **Dan**
   (`office_dan`, main-floor cubicle 3). Edit `CAST` in `world.gd` to add people (home scene + seat).
 - Each has an agenda of *legs* (`{kind, scene, routine, dur, target_x, to_scene/to_spawn}`): work at the desk (seated, sips, phone), coffee
-  (kitchenette machine, sometimes the fridge), cooler (copier + water), bathroom (sink), or a meeting in the conference room (every 2-3
+  (kitchenette machine, sometimes the fridge), cooler (copier + water), bathroom (sink; see Bathrooms below), or a meeting in the conference room (every 2-3
   min `World` sends 2-3 people at their desks to Seat1-3; they sit and take turns talking, then go home). Travel legs are routed through
   the real doors/edges by BFS over `world_data.gd` (generated: x0, W, spawns, links with absolute x, seats, uses).
 - In the room you are in they are real `npc.tscn` nodes (named `Alan` etc., `cast_name` set) running the current leg's routine; when it
@@ -374,6 +374,7 @@ New characters start as a copy of an existing one, then change only what differs
   door they came through. Held drinks (`held`/`sips`) travel with them; if you are playing as that character the NPC copy is hidden.
 - Useful in tests: `World.time_scale`, `World.meeting_gap`, `World.force_activity(name, "coffee"|"cooler"|"bathroom"|"work")`,
   `World.send_to_meeting(name, "Seat1")`. Tests: `tests/world.gd` (fast-forward, coffee arrival, meeting), `tests/chat.gd`.
+- **Bathrooms (R22)**: two single-occupancy unisex restrooms, `bathroom_1` behind the kitchenette's left door and `bathroom_2` behind the right one (the old shared `bathroom` set and its `remember` / `ret` return bookkeeping are gone). They are drawn by `tools/bathroom_sets.lua` (loaded by `build_sets.lua`; rebuild with `ONLY = {bathroom_1 = true, bathroom_2 = true, kitchenette = true}`, the kitchenette carries the `P.bathPlate` door plates BATH 1 / BATH 2): **bathroom 1** is old and shabby (cream wall tile with a dark border band, checkered floor, cracked mirror, almond pedestal sink with a rust stain, a hand-written OUT OF PAPER sign, wall plunger, empty paper holder, old towel dispenser, a bar light over the mirror that flickers: fx `flicker_lamp`, which now also goes dark with the room's lights; door on the left); **bathroom 2** is the remodel (grey subway tile over a teal wainscot, vanity with cabinet and bowl sink, frameless mirror, TEAMWORK poster, hand dryer, plant, air freshener, pedal bin; door on the right, spawns face left). All fixtures are background art (no y-sorted props); the `sink` / `toilet` fx keep their geometry (water at x + 8, flush handle at (10, 2)), the vanity's fx sits 7 px left of the piece. **Occupancy**: `World.bathroom_occupied(room, except := "")` is the single source of truth: true when a cast member's scene is that room or their current leg walks through that door (`legs[0].to_scene`), or, in the room you are in, the player or a non-cast NPC node stands in it. Kitchenette doors have `occupancy = "bathroom_N"` (generated from the door target): `door.is_locked()`, the arrow goes grey (red and shaking on E) and `Hints.toast("OCCUPIED")`; the plates have fx `occupied_1` / `occupied_2` (2 x 2 red / green dot). Cast: `plan_for(n, "bathroom")` = travel to the kitchenette + `_bath_legs(room)` (the entry leg is marked `bath`, then the visit, then the way out) + travel home, nearest door first; `_gate_bathroom(n)` runs whenever a leg becomes the current one (`leg_done`, `_finish_leg`): a free room proceeds, otherwise the other room is taken, and with both taken the person gets a `wait` leg (stands 16 to 34 px from the door, routine step `dots:N` = a `...` bubble) and retries, `BATH_TRIES` (4) times of `BATH_WAIT` (4 s), then drops the visit and goes home to work. Off screen the same gate runs on the timers, so two people never share a room; a person inside at 17:00 simply finishes the visit before `_leave_plan`. Old saves / resume files that say `bathroom` map to `bathroom_1` (`World.LEGACY_ROOMS`, used by `Resume.apply_world` for the lights and `apply_player` for the room; the cast is re-planned at their desks anyway). F6 = bathroom 1, Shift+F6 = bathroom 2. Test: `tests/bathrooms.gd`.
 - Talking: the NPC zone is wider (46 px) so you can start a chat from ~30 px away, and `slide_to` steps the player to `TALK_GAP` (32 px)
   from the NPC, on the side they were on (clamped by the room walls), instead of overlapping.
 - Not done yet: characters never talk to each other on their own, no lunch/leave-for-the-day schedule, and the player cannot ask someone to

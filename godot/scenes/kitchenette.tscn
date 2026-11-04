@@ -81,9 +81,9 @@ metadata/facing = "left"
 [node name="DoorBathLeft" type="Area2D" parent="Interactables"]
 position = Vector2(117, 70)
 script = ExtResource("door")
-target_scene = "bathroom"
-target_spawn = "from_door"
-remember = "bath_return=from_bath_left"
+target_scene = "bathroom_1"
+target_spawn = "from_kitchenette"
+occupancy = "bathroom_1"
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorBathLeft"]
 shape = SubResource("shape_door")
@@ -91,9 +91,9 @@ shape = SubResource("shape_door")
 [node name="DoorBathRight" type="Area2D" parent="Interactables"]
 position = Vector2(249, 70)
 script = ExtResource("door")
-target_scene = "bathroom"
-target_spawn = "from_door"
-remember = "bath_return=from_bath_right"
+target_scene = "bathroom_2"
+target_spawn = "from_kitchenette"
+occupancy = "bathroom_2"
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorBathRight"]
 shape = SubResource("shape_door")
@@ -150,6 +150,16 @@ kind = "fridge"
 position = Vector2(136, 54)
 script = ExtResource("fx")
 kind = "switch"
+
+[node name="LightLeft" type="Node2D" parent="Fx"]
+position = Vector2(130, 12)
+script = ExtResource("fx")
+kind = "occupied_1"
+
+[node name="LightRight" type="Node2D" parent="Fx"]
+position = Vector2(262, 12)
+script = ExtResource("fx")
+kind = "occupied_2"
 
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true

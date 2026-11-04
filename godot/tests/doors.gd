@@ -1,5 +1,5 @@
 extends SceneTree
-# Bathroom doors (both, and the way back out to the same door) + the locked front door.
+# Bathroom doors (each leads to its own bathroom and back out to the same door) + the locked front door.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/doors.gd
 
 var frame := 0
@@ -44,7 +44,7 @@ func _process(_delta: float) -> bool:
 		20:
 			_tap("interact")
 		80:
-			_log("left bath door -> bathroom (expect Bathroom, x=180)")
+			_log("left bath door -> bathroom_1 (expect Bathroom1)")
 		85:
 			_goto_door("DoorToKitchenette")
 		95:
@@ -56,7 +56,7 @@ func _process(_delta: float) -> bool:
 		165:
 			_tap("interact")
 		220:
-			_log("right bath door -> bathroom (expect Bathroom)")
+			_log("right bath door -> bathroom_2 (expect Bathroom2)")
 		225:
 			_goto_door("DoorToKitchenette")
 		235:

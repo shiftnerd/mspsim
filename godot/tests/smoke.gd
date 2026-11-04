@@ -29,7 +29,8 @@ func _initialize() -> void:
 		"office_two",
 		"conference",
 		"kitchenette",
-		"bathroom",
+		"bathroom_1",
+		"bathroom_2",
 		"cubicle_area",
 		"network_closet"
 	]:

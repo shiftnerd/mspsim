@@ -68,7 +68,7 @@ func world_dict() -> Dictionary:
 		if node != null and is_instance_valid(node):  # standing in the room: the live person knows
 			held = str(node.held)
 			sips = int(node.sips)
-		cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched, "ret": st.ret}
+		cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched}
 	return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "cast": cast}
 
 
@@ -148,7 +148,7 @@ func apply_world(d: Dictionary) -> void:
 	var lights: Variant = d.get("lights", {})
 	if lights is Dictionary:
 		for room in lights:
-			World.lights[str(room)] = bool(lights[room])
+			World.lights[World.LEGACY_ROOMS.get(str(room), str(room))] = bool(lights[room])
 	Mutators.prepare_day(World.day)  # who is out sick today (flu season), the same pick as this morning
 	World.apply_roster()
 	var cast: Dictionary = d.get("cast", {})
@@ -162,7 +162,6 @@ func apply_world(d: Dictionary) -> void:
 		st.held = str(saved.get("held", ""))
 		st.sips = int(saved.get("sips", 0))
 		st.lunched = bool(saved.get("lunched", false))
-		st.ret = str(saved.get("ret", ""))
 		st.following = false
 		st.follow_t = 0.0
 		st.fresh = false
@@ -190,7 +189,7 @@ func apply_world(d: Dictionary) -> void:
 
 # the room, the held cup and the seat travel through Game.vars; the stage seats the player (Stage._seat_player)
 func apply_player(d: Dictionary) -> void:
-	var room := str(d.get("room", ""))
+	var room: String = World.LEGACY_ROOMS.get(str(d.get("room", "")), str(d.get("room", "")))
 	if room != "" and ResourceLoader.exists("res://scenes/%s.tscn" % room):
 		Campaign._resume_scene = room
 		Game.vars["resume_seat"] = str(d.get("seat", ""))
