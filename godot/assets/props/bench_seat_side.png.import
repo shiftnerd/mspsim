@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxcxpkm5vmhfu"
-path="res://.godot/imported/bench_seat.png-7ff044c5847f72243cffe555e947db73.ctex"
+uid="uid://cmwh84002x2mo"
+path="res://.godot/imported/bench_seat_side.png-7da38677ef1a41b7792e71f6219c2599.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/props/bench_seat.png"
-dest_files=["res://.godot/imported/bench_seat.png-7ff044c5847f72243cffe555e947db73.ctex"]
+source_file="res://assets/props/bench_seat_side.png"
+dest_files=["res://.godot/imported/bench_seat_side.png-7da38677ef1a41b7792e71f6219c2599.ctex"]
 
 [params]
 

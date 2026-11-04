@@ -42,7 +42,7 @@ const SCENES := {
 		"W": 176,
 		"spawns": {"start": [156, "right"], "from_main": [158, "right"]},
 		"links": [{"name": "ToMain", "x": 117, "to": "main_floor", "spawn": "from_office2"}],
-		"seats": {"Seat1": 196, "Seat2": 151, "Seat3": 165},
+		"seats": {"Seat1": 196, "Seat2": 145, "Seat3": 171},
 		"uses": {"switch": 140},
 		"outside_x": -1
 	},
@@ -163,7 +163,7 @@ const SCENES := {
 		"W": 320,
 		"spawns": {"start": [84, "right"], "from_outing": [64, "right"]},
 		"links": [{"name": "ToMain", "x": 28, "to": "main_floor", "spawn": "from_outside"}],
-		"seats": {"Seat1": 270, "Seat2": 290},
+		"seats": {"Seat1": 266, "Seat2": 292},
 		"uses": {"switch": 34},
 		"outside_x": -1
 	},
@@ -233,7 +233,7 @@ const SCENES := {
 			{"name": "ToHall", "x": 325, "to": "resort_hall", "spawn": "from_lobby"},
 			{"name": "Expo", "x": 287, "to": "vendor_hall", "spawn": "from_hall"}
 		],
-		"seats": {"Seat1": 75, "Seat2": 89},
+		"seats": {"Seat1": 65, "Seat2": 91},
 		"uses": {},
 		"outside_x": -1
 	},

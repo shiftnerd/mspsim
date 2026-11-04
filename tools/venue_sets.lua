@@ -323,7 +323,9 @@ return function(L, builders)
     s.putS("PalmB", P.palm(), 200, 14, 108, "palm")
     s.put("Doors", P.hallDoor("EXPO"), 250, 18)
     s.putS("Reg", P.regDesk(), 112, 76, 108, "reg_desk")
-    s.putS("Couch", P.couch(), 38, 69, 99, "couch")
+    -- two lounge seats, side-on like the sitters (seat x - 13), both facing right
+    s.putS("CouchA", P.couchSide(), 28, 69, 99, "couch_side")
+    s.putS("CouchB", P.couchSide(), 54, 69, 99, "couch_side")
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
   end}
 

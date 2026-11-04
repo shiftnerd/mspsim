@@ -11,7 +11,7 @@
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
 [ext_resource type="Texture2D" path="res://assets/props/chair_office_side.png" id="prop_chair_office_side"]
-[ext_resource type="Texture2D" path="res://assets/props/couch.png" id="prop_couch"]
+[ext_resource type="Texture2D" path="res://assets/props/couch_side.png" id="prop_couch_side"]
 [ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_74.png" id="prop_desk_cubicle_74"]
 [ext_resource type="Texture2D" path="res://assets/props/desk_phone.png" id="prop_desk_phone"]
 [ext_resource type="Texture2D" path="res://assets/props/filing_cabinet.png" id="prop_filing_cabinet"]
@@ -100,7 +100,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat2" type="Area2D" parent="Interactables"]
-position = Vector2(151, 101)
+position = Vector2(145, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -111,7 +111,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat3" type="Area2D" parent="Interactables"]
-position = Vector2(165, 101)
+position = Vector2(171, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -121,22 +121,22 @@ stash = false
 position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
-[node name="Usemonitor_a_3" type="Area2D" parent="Interactables"]
+[node name="Usemonitor_a_4" type="Area2D" parent="Interactables"]
 position = Vector2(214, 70)
 script = ExtResource("interact")
-target = NodePath("../../Actors/monitor_a_3/Fx")
+target = NodePath("../../Actors/monitor_a_4/Fx")
 group = "computers"
 
-[node name="Shape" type="CollisionShape2D" parent="Interactables/Usemonitor_a_3"]
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usemonitor_a_4"]
 shape = SubResource("shape_fx")
 
-[node name="Usedesk_phone_7" type="Area2D" parent="Interactables"]
+[node name="Usedesk_phone_8" type="Area2D" parent="Interactables"]
 position = Vector2(252, 70)
 script = ExtResource("interact")
-target = NodePath("../../Actors/desk_phone_7/Fx")
+target = NodePath("../../Actors/desk_phone_8/Fx")
 group = "phones"
 
-[node name="Shape" type="CollisionShape2D" parent="Interactables/Usedesk_phone_7"]
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usedesk_phone_8"]
 shape = SubResource("shape_fx")
 
 [node name="UseSwitch" type="Area2D" parent="Interactables"]
@@ -157,84 +157,90 @@ kind = "switch"
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
 
-[node name="couch_0" type="Sprite2D" parent="Actors"]
-position = Vector2(137, 99)
+[node name="couch_side_0" type="Sprite2D" parent="Actors"]
+position = Vector2(131, 99)
 centered = false
 offset = Vector2(0, -31)
-texture = ExtResource("prop_couch")
+texture = ExtResource("prop_couch_side")
 
-[node name="chair_office_side_1" type="Sprite2D" parent="Actors"]
+[node name="couch_side_1" type="Sprite2D" parent="Actors"]
+position = Vector2(157, 99)
+centered = false
+offset = Vector2(0, -31)
+texture = ExtResource("prop_couch_side")
+
+[node name="chair_office_side_2" type="Sprite2D" parent="Actors"]
 position = Vector2(186, 95)
 centered = false
 offset = Vector2(0, -30)
 texture = ExtResource("prop_chair_office_side")
 
-[node name="desk_cubicle_74_2" type="Sprite2D" parent="Actors"]
+[node name="desk_cubicle_74_3" type="Sprite2D" parent="Actors"]
 position = Vector2(183, 108)
 centered = false
 offset = Vector2(0, -26)
 texture = ExtResource("prop_desk_cubicle_74")
 
-[node name="monitor_a_3" type="Sprite2D" parent="Actors"]
+[node name="monitor_a_4" type="Sprite2D" parent="Actors"]
 position = Vector2(204, 96)
 centered = false
 offset = Vector2(0, -32)
 texture = ExtResource("prop_monitor_a")
 
-[node name="Fx" type="Node2D" parent="Actors/monitor_a_3"]
+[node name="Fx" type="Node2D" parent="Actors/monitor_a_4"]
 position = Vector2(0, -32)
 script = ExtResource("fx")
 kind = "monitor"
-seed_offset = 3
+seed_offset = 4
 panel = 1
 desk = 7
 
-[node name="monitor_b_4" type="Sprite2D" parent="Actors"]
+[node name="monitor_b_5" type="Sprite2D" parent="Actors"]
 position = Vector2(223, 96)
 centered = false
 offset = Vector2(0, -31)
 texture = ExtResource("prop_monitor_b")
 
-[node name="Fx" type="Node2D" parent="Actors/monitor_b_4"]
+[node name="Fx" type="Node2D" parent="Actors/monitor_b_5"]
 position = Vector2(0, -31)
 script = ExtResource("fx")
 kind = "monitor"
-seed_offset = 4
+seed_offset = 5
 panel = 2
 desk = 7
 
-[node name="keyboard_5" type="Sprite2D" parent="Actors"]
+[node name="keyboard_6" type="Sprite2D" parent="Actors"]
 position = Vector2(211, 109)
 centered = false
 offset = Vector2(0, -30)
 texture = ExtResource("prop_keyboard")
 
-[node name="mouse_6" type="Sprite2D" parent="Actors"]
+[node name="mouse_7" type="Sprite2D" parent="Actors"]
 position = Vector2(234, 109)
 centered = false
 offset = Vector2(0, -29)
 texture = ExtResource("prop_mouse")
 
-[node name="desk_phone_7" type="Sprite2D" parent="Actors"]
+[node name="desk_phone_8" type="Sprite2D" parent="Actors"]
 position = Vector2(245, 108)
 centered = false
 offset = Vector2(0, -37)
 texture = ExtResource("prop_desk_phone")
 
-[node name="Fx" type="Node2D" parent="Actors/desk_phone_7"]
+[node name="Fx" type="Node2D" parent="Actors/desk_phone_8"]
 position = Vector2(0, -37)
 script = ExtResource("fx")
 kind = "desk_phone"
-seed_offset = 7
+seed_offset = 8
 desk = 7
 
-[node name="filing_cabinet_8" type="Sprite2D" parent="Actors"]
+[node name="filing_cabinet_9" type="Sprite2D" parent="Actors"]
 position = Vector2(257, 108)
 centered = false
 offset = Vector2(0, -31)
 texture = ExtResource("prop_filing_cabinet")
 
-[node name="plant_floor_9" type="Sprite2D" parent="Actors"]
+[node name="plant_floor_10" type="Sprite2D" parent="Actors"]
 position = Vector2(115, 108)
 centered = false
 offset = Vector2(0, -29)

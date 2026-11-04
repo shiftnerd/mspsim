@@ -256,7 +256,9 @@ return function(L, builders)
     s.putS("Counter", P.shoeCounter(), 10, 74, 108, "shoe_counter")
     s.putS("Rack", P.ballRack(), 100, 56, 96, "ball_rack")
     s.putS("Return1", P.ballReturn(), 178, 66, 108, "ball_return")
-    s.putS("BenchA", P.benchSeat(), 232, 74, 99, "bench_seat")
+    -- the bench is two side-on red seats now (seat x - 13), both facing right like the sitters
+    s.putS("BenchA", P.loungeSide("#C73B4A", "#E0606E", "#962A36"), 229, 69, 99, "bench_seat_side")
+    s.putS("BenchB", P.loungeSide("#C73B4A", "#E0606E", "#962A36"), 255, 69, 99, "bench_seat_side")
     s.putS("TableA", P.scoreTable(), 228, 80, 108, "score_table")
     s.putS("Arcade", P.arcade(), 292, 62, 108, "arcade")
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 120, 56) end

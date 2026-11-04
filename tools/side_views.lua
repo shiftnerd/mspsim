@@ -195,14 +195,25 @@ return function(L, P)
     end)
   end
 
-  function P.couchSide()
-    return L.piece(22, 31, function(R)
-      L.box(R, 0, 0, 6, 22, "#3F7F86", "#5C9EA6", "#2C5C62")
-      L.box(R, 0, 12, 22, 15, "#356C72", "#4C8C94", "#26535A")
-      L.box(R, 6, 8, 14, 6, "#4C8C94", "#6AAEB6", "#356C72")
-      R(2, 27, 3, 4, "#2A1C14"); R(17, 27, 3, 4, "#2A1C14")
+  -- a lounge seat from the side, facing RIGHT (one person per piece; the two-seat front couch and the bowling bench are now two of these):
+  -- a tall padded back at the rear, a 4 row cushion with a lit top edge whose top is art row 25, a skirt and two stub legs. The art is 24x33,
+  -- put at `seat_y - 32` and `seat_x - 13`, so the seat top is 7 px above the sitter's soles, right under the thighs (same as the task chair).
+  function P.loungeSide(base, hi, sh)
+    base = base or "#356C72"; hi = hi or "#4C8C94"; sh = sh or "#26535A"
+    local r, g, b = tonumber(hi:sub(2, 3), 16), tonumber(hi:sub(4, 5), 16), tonumber(hi:sub(6, 7), 16)
+    local top = string.format("#%02X%02X%02X", math.min(255, r + 30), math.min(255, g + 30), math.min(255, b + 30))
+    return L.piece(24, 33, function(R)
+      R(0, 3, 6, 22, base); R(1, 2, 4, 1, base); R(2, 1, 2, 1, base)       -- back, rounded at the top
+      R(1, 3, 1, 21, hi); R(2, 2, 1, 1, hi)                                -- lit edge
+      R(5, 3, 1, 22, sh)                                                   -- the seat side of the back is shaded
+      R(0, 25, 24, 4, base); R(1, 25, 21, 1, top); R(1, 26, 22, 1, hi)     -- cushion, lit top
+      R(23, 25, 1, 4, sh); R(0, 28, 24, 1, sh)                             -- rounded front, underside
+      R(0, 29, 24, 2, sh); R(1, 29, 22, 1, base)                           -- skirt
+      R(2, 31, 3, 2, "#2A1C14"); R(19, 31, 3, 2, "#2A1C14")                -- legs
     end)
   end
+
+  function P.couchSide() return P.loungeSide("#3F7F86", "#5C9EA6", "#2C5C62") end
 
   function P.frameSide(h)
     h = h or 18

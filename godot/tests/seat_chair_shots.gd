@@ -2,7 +2,8 @@ extends SceneTree
 # Screenshots of people sitting in chairs (renderer needed). Sits the player in a seat of each listed scene and saves the
 # whole frame plus a 8x crop around the seat to user://seatchair_<tag>_<scene>_<seat>[_crop].png.
 #   Godot --path godot -s res://tests/seat_chair_shots.gd -- --format=wide|h|v
-# Env SC_TAG names the run (default "x"); SC_ONLY = "scene/Seat1,scene/Seat2" limits the list.
+# Env SC_TAG names the run (default "x"); SC_ONLY = "scene/Seat1,scene/Seat2" limits the list; SC_CHAR = a character id for the
+# sitter (default the Free Play player, e.g. office_maya for a woman); SC_ROLL = px to roll a desk chair out.
 
 const ENTRIES := [
 	["main_floor", "Seat1"],
@@ -32,6 +33,8 @@ func _initialize() -> void:
 		entries = []
 		for s in OS.get_environment("SC_ONLY").split(","):
 			entries.append(s.split("/"))
+	if OS.get_environment("SC_CHAR") != "":
+		load("res://scripts/player.gd").current_character = OS.get_environment("SC_CHAR")
 	change_scene_to_file("res://scenes/main_floor.tscn")
 
 

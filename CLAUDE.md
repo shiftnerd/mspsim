@@ -347,7 +347,7 @@ New characters start as a copy of an existing one, then change only what differs
   puppets still draw). Placement rule: chair left edge = seat x - 15 (desk chairs, what `chair_roll.gd` `SEAT_DX` expects) or about seat x - 14
   for the other rooms, so the backrest stands right behind the sitter's back. Test `tests/side_chairs.gd` checks every non-lounge seat in a room
   with chairs has one; screenshots with `tests/seat_chair_shots.gd` (`SC_TAG`, `SC_ONLY` env, `-- --format=wide|h|v`, renderer needed).
-  Other furniture (couch, booth backs, bar stools, benches) still uses the `front` frames or its own art.
+  Lounge seats are side-on too: `P.loungeSide(base, hi, sh)` (24x33, side_views.lua; `P.couchSide` is its teal version) is ONE seat per piece, so the two-seat front couches (Office 2, resort lobby) and the bowling bench are now two side-view seats each (pieces `couch_side` teal and `bench_seat_side` red; the front `couch.png` / `bench_seat.png` props are gone). Art at `seat_x - 13`, `seat_y - 32`, seats 26 px apart, all facing right like every seat. Still front-view on purpose: booth backs (a banquette along the wall behind the table), bar stools (a round top is the same from every side), and the Office 1 slipper armchair is already a side view. Client site waiting chairs and the owner-office sofa have no seat nodes (nobody sits there). `tests/side_chairs.gd` checks every lounge seat has a side piece or a stool behind it and no scene uses the front couch / bench.
 
 ### Taller sets: ceiling + floor extension (for 16:9 and 9:16 video)
 - Set backgrounds are now **W x 320** (100 ceiling + the old 128 + 92 floor extension). Builders keep their old 0..128
@@ -401,7 +401,7 @@ New characters start as a copy of an existing one, then change only what differs
 
 ### Sittable lounge furniture, wider desks, desk phones (headset)
 - Office 1's armchair is now the SIDE view (`chair_slipper_green_side`, 22x32, seat 19 px off the floor like the desk chairs) so the
-  sitter faces the same way as the chair; Office 2's couch (40x31) has two seats (one per cushion). Lounge seats are `(x, y, False, True)`
+  sitter faces the same way as the chair; Office 2 has two teal side-view lounge seats (art x 36 and 62, seats at set x 49 and 75). Lounge seats are `(x, y, False, True)`
   in `SETS` (4th item = lounge): `stash = false` so a cup stays in the hand, `sit` pose, relaxed arms. Furniture sorts at y 99, the
   sitter at 101. This is the first use of a per-prop angle: pass the side image and a `_side` piece name to `putS`.
 - Every desk is now `desk_cubicle_74` wide so a phone fits (the desk top has been re-laid with TWO monitors since R25, see "Dual monitors on every desk"; the old single-monitor numbers were monitor D+26, keyboard D+24, phone D+57..D+69). Seated cups
