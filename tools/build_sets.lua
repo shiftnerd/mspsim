@@ -34,10 +34,8 @@ builders.main_floor = {W = 368, H = 128, fn = function(s)
   -- open desk: sitter at the desk's left end facing right, keyboard then monitor in front of them
   s.putS("OpenDeskChair", P.chair(), 64, 66, 95, "chair_office")
   s.putS("OpenDesk", P.desk(74), 66, 83, 108, "desk_cubicle_74")
-  s.putS("OpenDeskProps", P.monitor(), 92, 62, 96, "monitor")
-  s.putS("OpenDeskProps", P.keyboard(), 90, 80, 108.5, "keyboard")
-  s.putS("OpenDeskProps", P.deskPhoneBase(), 127, 72, 108.3, "desk_phone")
-  s.putS("OpenDeskProps", P.rubberDuck(), 115, 73, 108.6, "rubber_duck")   -- on the desk, between the monitor and the phone
+  P.dualTop(s, "OpenDeskProps", 66, true)   -- two monitors, keyboard, mouse, phone (R25)
+  s.putS("OpenDeskProps", P.rubberDuck(), 110, 53, 108.6, "rubber_duck")   -- sits on top of the right-hand monitor
   -- cubicles
   local shell, cal, note = P.cubicleShell(), P.calendar(), P.sticky()
   for _, cx in ipairs({198, 282}) do
@@ -45,9 +43,7 @@ builders.main_floor = {W = 368, H = 128, fn = function(s)
     s.put("CubiclePropsBack", cal, cx + 8, 60); s.put("CubiclePropsBack", note, cx + 60, 64)
     s.putS("CubicleChairs", P.chair(), cx + 1, 66, 95, "chair_office")
     s.putS("CubicleDesks", P.desk(74), cx + 3, 83, 108, "desk_cubicle_74")
-    s.putS("CubicleProps", P.monitor(), cx + 29, 62, 96, "monitor")
-    s.putS("CubicleProps", P.keyboard(), cx + 27, 80, 108.5, "keyboard")
-    s.putS("CubicleProps", P.deskPhoneBase(), cx + 60, 72, 108.3, "desk_phone")
+    P.dualTop(s, "CubicleProps", cx + 3, true)
   end
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 140, 56) end
 end}
@@ -64,9 +60,7 @@ builders.office_one = {W = 176, H = 128, fn = function(s)
   s.putS("Armchair", P.slipperSide(), 40, 68, 99, "chair_slipper_green_side")   -- side view: you can sit in it
   s.putS("Chair", P.chair(), 66, 66, 95, "chair_office")
   s.putS("Desk", P.desk(74), 68, 83, 108, "desk_cubicle_74")
-  s.putS("Props", P.monitor(), 94, 62, 96, "monitor")
-  s.putS("Props", P.keyboard(), 92, 80, 108.5, "keyboard")
-  s.putS("Props", P.deskPhoneBase(), 125, 72, 108.3, "desk_phone")
+  P.dualTop(s, "Props", 68, true)
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 118, 56) end
 end}
 
@@ -80,9 +74,7 @@ builders.office_two = {W = 176, H = 128, fn = function(s)
   s.putS("Couch", P.couch(), 42, 69, 99, "couch")
   s.putS("Chair", P.chair(), 91, 66, 95, "chair_office")
   s.putS("Desk", P.desk(74), 88, 83, 108, "desk_cubicle_74")
-  s.putS("Props", P.monitor(), 114, 62, 96, "monitor")
-  s.putS("Props", P.keyboard(), 112, 80, 108.5, "keyboard")
-  s.putS("Props", P.deskPhoneBase(), 145, 72, 108.3, "desk_phone")
+  P.dualTop(s, "Props", 88, true)
   s.putS("Cabinet", P.filingCabinet(), 162, 78, 108, "filing_cabinet")
   s.putS("FloorPlant", P.floorPlant(), 20, 80, 108, "plant_floor")
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
@@ -134,9 +126,7 @@ builders.cubicle_area = {W = 320, H = 128, fn = function(s)
     s.put("CubiclePropsBack", cal, cx + 56, 60); s.put("CubiclePropsBack", note, cx + 10, 64)
     s.putS("CubicleChairs", P.chair(), cx + 1, 66, 95, "chair_office")
     s.putS("CubicleDesks", P.desk(74), cx + 3, 83, 108, "desk_cubicle_74")
-    s.putS("CubicleProps", P.monitor(), cx + 29, 62, 96, "monitor")
-    s.putS("CubicleProps", P.keyboard(), cx + 27, 80, 108.5, "keyboard")
-    s.putS("CubicleProps", P.deskPhoneBase(), cx + 60, 72, 108.3, "desk_phone")
+    P.dualTop(s, "CubicleProps", cx + 3, true)
   end
   s.put("Whiteboard", P.whiteboard(), 222, 30)
   s.putS("Copier", P.copier(), 200, 82, 108, "copier")

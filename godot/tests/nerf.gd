@@ -104,7 +104,7 @@ func _init() -> void:
 	# a dart hits the player
 	nerf.fire_npc(vic, -1.0)
 	var back = get_nodes_in_group("darts")[-1]
-	back.global_position = player.global_position + Vector2(20.0, -40.0)
+	back.global_position = player.global_position + Vector2(10.0, -40.0)  # closer than the desk phone (R25 moved it right)
 	back.vel = Vector2(-175.0, 0.0)
 	back.shooter = "Vic"
 	steps = 0
