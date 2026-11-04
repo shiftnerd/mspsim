@@ -160,6 +160,8 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 
 **Lessons learned (weeks 11 and 15, and after a wire loss):** a card per incident class (ransomware, the rack, the email night, wire fraud). Hold it (runbook: half a day of your hours, morale up; or a check: some cash and a small weekly cost) or skip it (morale down, and the same class of incident gets about 15% more likely). A held review is a maturity practice and makes the repeat 40-50% less likely (RDP break-ins and their cost, the vendor breach, wire fraud) or the crew a little faster (the rack).
 
+**Rival habits and good habits (scoped, R38, not built):** see `docs/scope-bad-habits.md`.
+
 **The numbers** that matter: EBITDA, the W-2 ratio (payroll vs revenue), client happiness, reputation. Week 20 is a board review with a valuation: sell, open a second office, or stay independent.
 
 ---
