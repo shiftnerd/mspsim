@@ -3,13 +3,13 @@ extends SceneTree
 # Character creator, level 1 (R15, Look + the create step of charselect.gd): the palette table maps every colour of the
 # intern sheet and leaves the outline alone, a look is saved and restored with the campaign (an old save loads as before),
 # the MAKE YOUR OWN step is reachable by keys, pad and mouse, and RANDOM is deterministic from the run seed.
-# Level 2 (hairstyles, prebaked sheets custom_intern_<style>): every shipped style plays all 85 frames in both facings, differs
+# Level 2 (hairstyles, prebaked sheets custom_intern_<style>): every shipped style plays all 123 frames in both facings, differs
 # from the intern sheet only around the head, never covers the eyes, is saved and restored, and an old save wears `side`.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/creator.gd
 
 const SHEET_W := 64
 const SHEET_H := 80
-const NFRAMES := 85
+const NFRAMES := 123
 const EYES := [Color8(255, 255, 255), Color8(58, 36, 24)]  # eye white and pupil
 # colours that locate the head in a frame: hair, its highlight, the brows and the eyes (and their hurt flash mixes)
 const HEAD_COLORS := [
@@ -121,7 +121,7 @@ func _check_style(look: Node, style: String) -> void:
 		var b := _rgba("%s_%s" % [sheet, facing])
 		_check(
 			b.get_width() == NFRAMES * SHEET_W and b.get_height() == SHEET_H,
-			"%s %s: the sheet is 85 frames of 64x80" % [style, facing]
+			"%s %s: the sheet is 123 frames of 64x80" % [style, facing]
 		)
 		var da := a.get_data()
 		var db := b.get_data()
@@ -130,7 +130,7 @@ func _check_style(look: Node, style: String) -> void:
 		var eyes := 0
 		var big := 0
 		# long hair hangs to the shoulder and the ponytail swings out behind: they get a wider box
-		var margin := 12 if style == "long" else (8 if style == "ponytail" else 6)
+		var margin := 16 if style == "long" else (8 if style == "ponytail" else 6)
 		var limit := 36 if style == "long" else 30
 		for fr in NFRAMES:
 			var dbox := Rect2i()

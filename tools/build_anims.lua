@@ -12,12 +12,27 @@ local poses, tags = dofile(T .. "poses.lua")
 -- GHOST = {name = "office_intern"}: measure the death frames' shift with that character's Hair layer too (the drawn hairstyles,
 -- so every style lands exactly where the intern does; see anim.lua an.ghost)
 local ghost = GHOST or {}
-local names = ONLY or {"office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"}
+-- default = EVERY character found in sprites/<group>/ (a still `<name>_right.aseprite`), so a new character is built without edits
+local DRAWN = {long = true, bob = true, ponytail = true, bun = true, bald = true, spiky = true}
+local function allNames()
+  local list = {}
+  for _, g in ipairs({"staff", "clients", "expo", "custom"}) do
+    for _, f in ipairs(app.fs.listFiles(R .. "sprites/" .. g)) do
+      local n = f:match("^(.+)_right%.aseprite$")
+      if n then list[#list + 1] = n end
+    end
+  end
+  table.sort(list)
+  return list
+end
+local names = ONLY or allNames()
 for _, n in ipairs(names) do
   for _, side in ipairs({"right", "left"}) do
     local inP = SP(R, n .. "_" .. side)
     local outP = SP(R, n .. "_" .. side .. "_anim")
-    local hands = E.build(inP, outP, poses, tags, ghost[n] and SP(R, ghost[n] .. "_" .. side) or nil)
+    local gname = ghost[n]
+    if not gname and ONLY == nil and DRAWN[n:match("^custom_intern_(.+)$") or ""] then gname = "office_intern" end
+    local hands = E.build(inP, outP, poses, tags, gname and SP(R, gname .. "_" .. side) or nil)
     local spr = Sprite{fromFile = outP}
     local W, H = spr.width, spr.height
     local sheet = Image(W * #spr.frames, H, ColorMode.RGB)

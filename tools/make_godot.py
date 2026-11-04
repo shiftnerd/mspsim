@@ -29,13 +29,16 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
 
 # frame durations (ms), 42 frames, matching tools/poses.lua
 DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 90, 110] + [80, 120, 110]
-        + [80, 100, 80, 80, 80, 90, 600] + [110, 120] + [600, 500] + [150, 150, 150]
+        + [80, 100, 80, 80, 80, 90, 600] + [110, 120] + [900, 700] + [150, 150, 150]
         + [90, 330, 90] + [140] * 4 + [180] * 4
         + [500, 320] + [90] * 8 + [130, 450, 130] + [150, 450, 150]
         + [450, 450] + [450, 450]
-        + [200, 160, 200, 240, 240, 240, 200, 200, 240, 200, 200, 160])
+        + [200, 160, 200, 240, 240, 240, 200, 200, 240, 200, 200, 160]
+        # seated life (86-123): stretch, scratch, look, yawn, slump, mouse, phone, nod
+        + [130, 130, 280, 450, 140] + [140, 160, 150, 150, 150, 140] + [200, 420, 420, 140, 200]
+        + [160, 200, 520, 200, 160] + [260, 400, 700, 300] + [200] * 4 + [180, 200, 420, 420, 180] + [150, 150, 140, 150])
 NFRAMES = len(DURS)
-assert NFRAMES == 85
+assert NFRAMES == 123
 # animation name -> (first frame, last frame, 1-based, loop)
 ANIMS = {
     "idle": (1, 4, True), "walk": (5, 12, True), "run": (13, 18, True),
@@ -43,6 +46,8 @@ ANIMS = {
     "hurt": (26, 28, False), "death": (29, 35, False),
     "reach": (43, 45, False), "wave": (46, 49, True), "talk": (50, 53, True),
     "hold": (54, 55, True), "walkhold": (56, 63, True), "sip": (64, 66, False), "sitsip": (67, 69, False), "call": (70, 71, True), "sitcall": (72, 73, True), "dance": (74, 85, True),
+    "sitstretch": (86, 90, False), "sitscratch": (91, 96, False), "sitlook": (97, 101, False), "sityawn": (102, 106, False),
+    "sitslump": (107, 110, False), "sitmouse": (111, 114, False), "sitphone": (115, 119, False), "sitnod": (120, 123, False),
     "sitdown": (36, 37, False), "sit": (38, 39, True), "type": (40, 42, True),
 }
 
@@ -2000,6 +2005,118 @@ func _draw() -> void:
                 draw_rect(Rect2(-w / 2 + x, top + y, 1, 1), color)
 ''')
 
+write("scripts/seat_life.gd", '''extends RefCounted
+# Seated life (R26): a seeded gesture picker for people in chairs (npc.gd, player.gd). Every 5 to 18 seconds of
+# seated idle time (typing counts) the owner plays one non-looping gesture animation (`sitstretch` ... `sitnod`, frames
+# 86-123 of every sheet) and then goes back to `type` / `sit`. This class only decides WHEN and WHICH; the owner checks
+# that nothing else is going on (a call, a chat, an outage grumble, Game.busy ...) and passes `ready` to tick().
+
+const ALL := [
+    "sitstretch",
+    "sitscratch",
+    "sitlook",
+    "sityawn",
+    "sitslump",
+    "sitmouse",
+    "sitphone",
+    "sitnod",
+    "sip",
+]
+# gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
+const HEAD_ONLY := ["sitlook", "sitnod"]
+const MIN_GAP := 5.0
+const MAX_GAP := 18.0
+# the plain weights (sitmouse needs a desk, sitnod is a meeting / lunch one, sip needs a drink)
+const BASE := {
+    "sitstretch": 1.0,
+    "sitscratch": 1.0,
+    "sitlook": 2.0,
+    "sityawn": 1.0,
+    "sitslump": 1.0,
+    "sitmouse": 2.0,
+    "sitphone": 1.0,
+    "sitnod": 3.0,
+    "sip": 1.5,
+}
+# personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, Vic checks his phone,
+# Maya drums and looks around; everyone else (clients' staff included) uses BASE
+const PERSONALITY := {
+    "Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
+    "Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
+    "Dan": {"sitscratch": 4.0, "sitlook": 1.0},
+    "Vic": {"sitphone": 5.0, "sitstretch": 1.5},
+    "Maya": {"sitmouse": 4.0, "sitlook": 3.5},
+}
+# the player's character ids (and any NPC that is not a named cast member) map to the same personalities
+const CHARACTER_KEY := {
+    "office_alan": "Alan",
+    "site_alan": "Alan",
+    "casual_garrison": "Garrison",
+    "office_dan": "Dan",
+    "sales_vic": "Vic",
+    "office_maya": "Maya",
+}
+const NONE := {}
+
+var who := ""
+var rng: RandomNumberGenerator
+var timer := 0.0
+var _mine: Dictionary = NONE
+
+
+# a stable per-person, per-day number for Difficulty.rng_for
+static func salt_for(name_key: String, day: int) -> int:
+    return day * 1009 + absi(name_key.hash()) % 1009
+
+
+func _init(name_key: String, salt: int) -> void:
+    who = name_key
+    _mine = PERSONALITY.get(CHARACTER_KEY.get(name_key, name_key), NONE)
+    rng = Difficulty.rng_for("gesture", salt)
+    timer = rng.randf_range(MIN_GAP, MAX_GAP)
+
+
+# counts seated idle time; true once the gap is over (call pick() next)
+func tick(delta: float, ready: bool) -> bool:
+    if not ready:
+        return false
+    timer -= delta
+    return timer <= 0.0
+
+
+func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
+    if g == "sip":
+        return float(_mine.get(g, BASE[g])) if cup_in_reach else 0.0
+    if held and not HEAD_ONLY.has(g):
+        return 0.0
+    if g == "sitmouse" and not typing:
+        return 0.0
+    if g == "sitnod" and typing:
+        return 0.0
+    return float(_mine.get(g, BASE[g]))
+
+
+# the next gesture ("" if none fits); restarts the gap
+func pick(typing: bool, held: bool, cup_in_reach: bool) -> String:
+    timer = rng.randf_range(MIN_GAP, MAX_GAP)
+    var total := 0.0
+    for g in ALL:
+        total += weight(g, typing, held, cup_in_reach)
+    if total <= 0.0:
+        return ""
+    var roll := rng.randf() * total
+    for g in ALL:
+        roll -= weight(g, typing, held, cup_in_reach)
+        if roll <= 0.0 and weight(g, typing, held, cup_in_reach) > 0.0:
+            return g
+    return "sitlook"
+
+
+# somebody in the room is talking (a meeting): mostly look their way, sometimes nod; restarts the gap
+func pick_listen() -> String:
+    timer = rng.randf_range(MIN_GAP, MAX_GAP) * 0.7
+    return "sitlook" if rng.randf() < 0.55 else "sitnod"''')
+
 write("scripts/npc.gd", '''extends Area2D
 # gdlint:disable=class-definitions-order
 # A background character that runs a routine of steps (strings). Cast members (cast_name set,
@@ -2010,6 +2127,7 @@ write("scripts/npc.gd", '''extends Area2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const PLAYER := preload("res://scripts/player.gd")
+const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const SPEED := 32.0
 const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
@@ -2066,6 +2184,8 @@ var _call_stage := ""  # "", "tap_on", "talking", "tap_off"
 var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
+var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var _stage: Node = get_parent().get_parent()
@@ -2266,6 +2386,8 @@ func character_id() -> String:
 
 
 func _play(anim: String) -> void:
+    if _gesture != "":
+        _cancel_gesture()
     var a := anim
     if held != "" and seat == null:
         if anim == "idle":
@@ -2313,6 +2435,7 @@ func _occupy(seat_name: String, instant: bool) -> bool:
     seat.occupied = true
     global_position = seat.global_position
     facing = seat.facing
+    _life = null
     if instant:
         state = "sitting"
     else:
@@ -2362,6 +2485,7 @@ func _process(delta: float) -> void:
     _update_cast_chat(delta)
     _update_greeting()
     _update_reactions(delta)
+    _update_gesture(delta)
     _arrow.visible = (
         _inside != null and _inside.nearest() == self and _can_chat() and _hold <= 0.0
     )
@@ -2696,6 +2820,7 @@ func _start(parts: PackedStringArray) -> bool:
         "stand":
             started = seat != null
             if started:
+                _cancel_gesture()
                 state = "standup"
                 sprite.play_backwards("sitdown_%s" % facing)
         "sync":
@@ -2790,7 +2915,98 @@ func _start_use() -> void:
     _fx.play()
 
 
+# ---- seated life (R26): now and then a seated person stretches, scratches, yawns, looks around ... ----
+# Every 5 to 18 seconds of idle sitting (typing counts) `_life` picks one gesture; never during a call, a chat, an outage
+# grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
+func _update_gesture(delta: float) -> void:
+    if _gesture != "":
+        return
+    var idle := (
+        seat != null
+        and (state == "wait" or state == "sync")
+        and _hold <= 0.0
+        and _call_stage == ""
+        and not _offline
+        and _grumble_t <= 0.0
+        and flag_glyph == ""
+        and not _bubble.visible
+        and not _hidden
+        and not Game.busy
+    )
+    if _life == null:
+        if not idle:
+            return
+        var key := cast_name if cast_name != "" else "%s%d" % [character, int(global_position.x)]
+        var day: int = Campaign.day if Campaign.active else 0
+        _life = SEAT_LIFE.new(cast_name if cast_name != "" else character, SEAT_LIFE.salt_for(key, day))
+    if _life.tick(delta, idle):
+        _start_gesture()
+
+
+func _start_gesture() -> void:
+    var room: String = _stage.scene_file_path.get_file().get_basename()
+    if not World.lights_on(room):
+        _life.timer = 2.0
+        return
+    var g: String = ""
+    if not seat.typing and _speaker_talking():
+        g = _life.pick_listen()  # a meeting: eyes on whoever is talking, a nod now and then
+    else:
+        g = _life.pick(seat.typing, held != "", held != "")
+    if g == "":
+        return
+    _gesture = g
+    if g == "sip":
+        _item.item = held
+        if _desk != null:
+            _desk.item = ""
+        sprite.play("sitsip_%s" % facing)
+        return
+    if g == "sitphone":
+        _item.item = "phone"
+    sprite.play("%s_%s" % [g, facing])
+
+
+# somebody standing in the room is talking (the boss at the whiteboard, a chat): the seated people look at them
+func _speaker_talking() -> bool:
+    for other in get_tree().get_nodes_in_group("npcs"):
+        if other != self and other.seat == null and other.visible and (other.state == "talk" or (other._hold > 0.0 and other._hold_len > 2.0)):
+            return true
+    return false
+
+
+func gesturing() -> bool:
+    return _gesture != ""
+
+
+func _cancel_gesture() -> void:
+    var g := _gesture
+    _gesture = ""
+    if g == "sip":
+        _stash()
+    elif g == "sitphone":
+        _item.item = ""
+
+
+func _end_gesture() -> void:
+    var g := _gesture
+    _gesture = ""
+    if g == "sip":
+        sips += 1
+        if sips >= 6:
+            held = ""
+            _item.item = ""
+        else:
+            _stash()
+    elif g == "sitphone":
+        _item.item = ""
+    _play(_rest_anim())
+
+
 func _on_animation_finished() -> void:
+    if _gesture != "":
+        _end_gesture()
+        return
     match state:
         "use":
             state = "usewait"
@@ -2913,6 +3129,9 @@ func _draw() -> void:
         draw_rect(Rect2(-2, -4, 4, 9), Color("cfe6f6"))
         draw_rect(Rect2(-2, -1, 4, 6), Color("8cc0e8"))
         draw_rect(Rect2(-1, -7, 2, 1), Color("f4f2ea"))
+    elif item == "phone":
+        draw_rect(Rect2(-2, -4, 5, 8), INK)
+        draw_rect(Rect2(-1, -3, 3, 6), Color("5a6a85") if int(_t * 2.0) % 2 == 0 else Color("8cc0e8"))
     elif item == "water":
         draw_rect(Rect2(-3, -4, 6, 9), INK)
         draw_rect(Rect2(-2, -3, 4, 7), Color("e4f2fb"))
@@ -21641,6 +21860,8 @@ func _pose(p: Node) -> void:
     if p.state != "sitting" or not seat.typing:
         return
     var want := "sit" if (absf(off) > 3.0 or absf(vel) > 4.0) else "type"
+    if want == "type" and p.gesturing():
+        return  # an idle gesture is playing (seated life); it hands back to type when it ends
     if not str(p.sprite.animation).begins_with(want + "_"):
         p._play(want)
 
@@ -42373,6 +42594,7 @@ write("scripts/player.gd", '''extends CharacterBody2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
+const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
 const GRAVITY := 900.0
@@ -42405,6 +42627,8 @@ var _pick: Node = null  # the target chosen with Tab (until you walk away from i
 var _pick_x := 0.0
 var _near: Array[Node] = []  # doors / seats whose area we are inside
 var _roll: Node  # rolls the desk chair you sit in (Shift + A / D, see chair_roll.gd)
+var _life: RefCounted = null  # seated idle gestures (seat_life.gd), made when you first sit
+var _gesture := ""  # the seated gesture playing now
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var body_shape: CollisionShape2D = $Collision
@@ -42531,6 +42755,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _play(action: String) -> void:
+    if _gesture != "":
+        _cancel_gesture()
     var anim := action
     if action == "duck":
         anim = "crouch"
@@ -42652,6 +42878,7 @@ func _set_state(new_state: String) -> void:
 
 func sit(s: Node) -> void:
     seat = s
+    _life = null
     state = "sitdown"
     velocity = Vector2.ZERO
     body_shape.set_deferred("disabled", true)
@@ -42663,6 +42890,7 @@ func sit(s: Node) -> void:
 # the first frame of a run as a cast member: already at your desk
 func sit_now(s: Node) -> void:
     seat = s
+    _life = null
     state = "sitting"
     velocity = Vector2.ZERO
     body_shape.set_deferred("disabled", true)
@@ -42673,6 +42901,7 @@ func sit_now(s: Node) -> void:
 
 
 func _stand_up() -> void:
+    _cancel_gesture()
     state = "standup"
     sprite.play_backwards("sitdown_%s" % facing)
 
@@ -42826,6 +43055,8 @@ func _physics_process(delta: float) -> void:
 
     if state in ["sitdown", "sitting", "standup"]:
         velocity = Vector2.ZERO
+        if state == "sitting":
+            _gesture_tick(delta, locked)
         if state == "sitting" and running and dir != 0.0 and _roll.drive(self, dir, delta):
             pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
         elif state == "sitting" and interact and _ringing_phone() != null:
@@ -42905,7 +43136,42 @@ func _physics_process(delta: float) -> void:
             _set_state("land")
 
 
+# ---- seated life (R26): you stretch, scratch, yawn, look around while you sit (typing counts) ----
+# seat_life.gd picks one every 5 to 18 seconds of idle sitting; never during a call, an emote, Game.busy, a rolled chair
+# (and _physics_process does not get here while Game.ui_open); with a drink in hand only the head gestures.
+func _gesture_tick(delta: float, locked: bool) -> void:
+    if _gesture != "":
+        return
+    if _life == null:
+        var key := "%s:%s" % [current_character, seat.name]
+        var day: int = Campaign.day if Campaign.active else 0
+        _life = SEAT_LIFE.new(current_character, SEAT_LIFE.salt_for(key, day))
+    var rolling: bool = absf(_roll.off) > 3.0 or absf(_roll.vel) > 4.0
+    var idle := not locked and _call_stage == "" and not rolling and not _sip_pending
+    if _life.tick(delta, idle):
+        var g: String = _life.pick(seat.typing, held != "", false)
+        if g != "":
+            _gesture = g
+            if g == "sitphone":
+                _item.item = "phone"
+            sprite.play("%s_%s" % [g, facing])
+
+
+func gesturing() -> bool:
+    return _gesture != ""
+
+
+func _cancel_gesture() -> void:
+    if _gesture == "sitphone":
+        _item.item = held
+    _gesture = ""
+
+
 func _on_animation_finished() -> void:
+    if _gesture != "":
+        _cancel_gesture()
+        _play("type" if seat.typing else "sit")
+        return
     match state:
         "crouch":
             velocity.y = -JUMP_SPEED

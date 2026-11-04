@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
+const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
 const GRAVITY := 900.0
@@ -42,6 +43,8 @@ var _pick: Node = null  # the target chosen with Tab (until you walk away from i
 var _pick_x := 0.0
 var _near: Array[Node] = []  # doors / seats whose area we are inside
 var _roll: Node  # rolls the desk chair you sit in (Shift + A / D, see chair_roll.gd)
+var _life: RefCounted = null  # seated idle gestures (seat_life.gd), made when you first sit
+var _gesture := ""  # the seated gesture playing now
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var body_shape: CollisionShape2D = $Collision
@@ -168,6 +171,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _play(action: String) -> void:
+	if _gesture != "":
+		_cancel_gesture()
 	var anim := action
 	if action == "duck":
 		anim = "crouch"
@@ -289,6 +294,7 @@ func _set_state(new_state: String) -> void:
 
 func sit(s: Node) -> void:
 	seat = s
+	_life = null
 	state = "sitdown"
 	velocity = Vector2.ZERO
 	body_shape.set_deferred("disabled", true)
@@ -300,6 +306,7 @@ func sit(s: Node) -> void:
 # the first frame of a run as a cast member: already at your desk
 func sit_now(s: Node) -> void:
 	seat = s
+	_life = null
 	state = "sitting"
 	velocity = Vector2.ZERO
 	body_shape.set_deferred("disabled", true)
@@ -310,6 +317,7 @@ func sit_now(s: Node) -> void:
 
 
 func _stand_up() -> void:
+	_cancel_gesture()
 	state = "standup"
 	sprite.play_backwards("sitdown_%s" % facing)
 
@@ -468,6 +476,8 @@ func _physics_process(delta: float) -> void:
 
 	if state in ["sitdown", "sitting", "standup"]:
 		velocity = Vector2.ZERO
+		if state == "sitting":
+			_gesture_tick(delta, locked)
 		if state == "sitting" and running and dir != 0.0 and _roll.drive(self, dir, delta):
 			pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
 		elif state == "sitting" and interact and _ringing_phone() != null:
@@ -552,7 +562,42 @@ func _physics_process(delta: float) -> void:
 			_set_state("land")
 
 
+# ---- seated life (R26): you stretch, scratch, yawn, look around while you sit (typing counts) ----
+# seat_life.gd picks one every 5 to 18 seconds of idle sitting; never during a call, an emote, Game.busy, a rolled chair
+# (and _physics_process does not get here while Game.ui_open); with a drink in hand only the head gestures.
+func _gesture_tick(delta: float, locked: bool) -> void:
+	if _gesture != "":
+		return
+	if _life == null:
+		var key := "%s:%s" % [current_character, seat.name]
+		var day: int = Campaign.day if Campaign.active else 0
+		_life = SEAT_LIFE.new(current_character, SEAT_LIFE.salt_for(key, day))
+	var rolling: bool = absf(_roll.off) > 3.0 or absf(_roll.vel) > 4.0
+	var idle := not locked and _call_stage == "" and not rolling and not _sip_pending
+	if _life.tick(delta, idle):
+		var g: String = _life.pick(seat.typing, held != "", false)
+		if g != "":
+			_gesture = g
+			if g == "sitphone":
+				_item.item = "phone"
+			sprite.play("%s_%s" % [g, facing])
+
+
+func gesturing() -> bool:
+	return _gesture != ""
+
+
+func _cancel_gesture() -> void:
+	if _gesture == "sitphone":
+		_item.item = held
+	_gesture = ""
+
+
 func _on_animation_finished() -> void:
+	if _gesture != "":
+		_cancel_gesture()
+		_play("type" if seat.typing else "sit")
+		return
 	match state:
 		"crouch":
 			velocity.y = -JUMP_SPEED

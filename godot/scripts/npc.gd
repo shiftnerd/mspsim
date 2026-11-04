@@ -8,6 +8,7 @@ extends Area2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const PLAYER := preload("res://scripts/player.gd")
+const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const SPEED := 32.0
 const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
@@ -64,6 +65,8 @@ var _call_stage := ""  # "", "tap_on", "talking", "tap_off"
 var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
+var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var _stage: Node = get_parent().get_parent()
@@ -264,6 +267,8 @@ func character_id() -> String:
 
 
 func _play(anim: String) -> void:
+	if _gesture != "":
+		_cancel_gesture()
 	var a := anim
 	if held != "" and seat == null:
 		if anim == "idle":
@@ -311,6 +316,7 @@ func _occupy(seat_name: String, instant: bool) -> bool:
 	seat.occupied = true
 	global_position = seat.global_position
 	facing = seat.facing
+	_life = null
 	if instant:
 		state = "sitting"
 	else:
@@ -360,6 +366,7 @@ func _process(delta: float) -> void:
 	_update_cast_chat(delta)
 	_update_greeting()
 	_update_reactions(delta)
+	_update_gesture(delta)
 	_arrow.visible = (
 		_inside != null and _inside.nearest() == self and _can_chat() and _hold <= 0.0
 	)
@@ -694,6 +701,7 @@ func _start(parts: PackedStringArray) -> bool:
 		"stand":
 			started = seat != null
 			if started:
+				_cancel_gesture()
 				state = "standup"
 				sprite.play_backwards("sitdown_%s" % facing)
 		"sync":
@@ -788,7 +796,98 @@ func _start_use() -> void:
 	_fx.play()
 
 
+# ---- seated life (R26): now and then a seated person stretches, scratches, yawns, looks around ... ----
+# Every 5 to 18 seconds of idle sitting (typing counts) `_life` picks one gesture; never during a call, a chat, an outage
+# grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
+func _update_gesture(delta: float) -> void:
+	if _gesture != "":
+		return
+	var idle := (
+		seat != null
+		and (state == "wait" or state == "sync")
+		and _hold <= 0.0
+		and _call_stage == ""
+		and not _offline
+		and _grumble_t <= 0.0
+		and flag_glyph == ""
+		and not _bubble.visible
+		and not _hidden
+		and not Game.busy
+	)
+	if _life == null:
+		if not idle:
+			return
+		var key := cast_name if cast_name != "" else "%s%d" % [character, int(global_position.x)]
+		var day: int = Campaign.day if Campaign.active else 0
+		_life = SEAT_LIFE.new(cast_name if cast_name != "" else character, SEAT_LIFE.salt_for(key, day))
+	if _life.tick(delta, idle):
+		_start_gesture()
+
+
+func _start_gesture() -> void:
+	var room: String = _stage.scene_file_path.get_file().get_basename()
+	if not World.lights_on(room):
+		_life.timer = 2.0
+		return
+	var g: String = ""
+	if not seat.typing and _speaker_talking():
+		g = _life.pick_listen()  # a meeting: eyes on whoever is talking, a nod now and then
+	else:
+		g = _life.pick(seat.typing, held != "", held != "")
+	if g == "":
+		return
+	_gesture = g
+	if g == "sip":
+		_item.item = held
+		if _desk != null:
+			_desk.item = ""
+		sprite.play("sitsip_%s" % facing)
+		return
+	if g == "sitphone":
+		_item.item = "phone"
+	sprite.play("%s_%s" % [g, facing])
+
+
+# somebody standing in the room is talking (the boss at the whiteboard, a chat): the seated people look at them
+func _speaker_talking() -> bool:
+	for other in get_tree().get_nodes_in_group("npcs"):
+		if other != self and other.seat == null and other.visible and (other.state == "talk" or (other._hold > 0.0 and other._hold_len > 2.0)):
+			return true
+	return false
+
+
+func gesturing() -> bool:
+	return _gesture != ""
+
+
+func _cancel_gesture() -> void:
+	var g := _gesture
+	_gesture = ""
+	if g == "sip":
+		_stash()
+	elif g == "sitphone":
+		_item.item = ""
+
+
+func _end_gesture() -> void:
+	var g := _gesture
+	_gesture = ""
+	if g == "sip":
+		sips += 1
+		if sips >= 6:
+			held = ""
+			_item.item = ""
+		else:
+			_stash()
+	elif g == "sitphone":
+		_item.item = ""
+	_play(_rest_anim())
+
+
 func _on_animation_finished() -> void:
+	if _gesture != "":
+		_end_gesture()
+		return
 	match state:
 		"use":
 			state = "usewait"

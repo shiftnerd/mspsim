@@ -220,6 +220,8 @@ func _pose(p: Node) -> void:
 	if p.state != "sitting" or not seat.typing:
 		return
 	var want := "sit" if (absf(off) > 3.0 or absf(vel) > 4.0) else "type"
+	if want == "type" and p.gesturing():
+		return  # an idle gesture is playing (seated life); it hands back to type when it ends
 	if not str(p.sprite.animation).begins_with(want + "_"):
 		p._play(want)
 
