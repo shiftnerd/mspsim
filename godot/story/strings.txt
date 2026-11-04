@@ -14528,6 +14528,14 @@ WAREHOUSE ALL-STAR
 [Career.MEDALS.42.desc]
 3 STARS IN EACH WAREHOUSE GAME
 
+# Career > MEDALS > 43 > title
+[Career.MEDALS.43.title]
+BULLSEYE
+
+# Career > MEDALS > 43 > desc
+[Career.MEDALS.43.desc]
+HIT THE BULL AT DARTS
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

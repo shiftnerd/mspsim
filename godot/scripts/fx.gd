@@ -34,10 +34,11 @@ const DURATIONS := {
 	"monitor": 0.0,
 	"fridge": 3.2,
 	"desk_phone": 10.4,
-	"switch": 0.35
+	"switch": 0.35,
+	"vending_machine": 1.8
 }
 # seconds into the effect when the item is handed over (default: at the end)
-const HAND_AT := {"fridge": 1.5}
+const HAND_AT := {"fridge": 1.5, "vending_machine": 1.2}
 const DART_LINES := [
 	"BULLSEYE... NEARLY.",
 	"TWENTY. NOT BAD.",
@@ -147,6 +148,8 @@ func _ready() -> void:
 	_start = _time - 100.0
 	if kind == "roll_door":
 		_door_ready()
+	if kind == "dart_board":
+		z_index = 1  # the live darts are drawn over the panel sprite (an actor) they stick in
 
 
 # a foam dart hit this screen: it glitches for a moment
@@ -168,8 +171,11 @@ func play() -> void:
 		door_press()
 		return
 	if kind == "dart_board":
-		_dart_n += 1
-		Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
+		if not Outings.offer_darts():  # a round of darts (a card); when none can start now the board just makes a joke
+			_dart_n += 1
+			Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
+		return
+	if _warehouse_press():
 		return
 	if kind == "old_tree":
 		_tree_press()
@@ -182,9 +188,13 @@ func play() -> void:
 		return
 	if busy:
 		return
+	if kind == "vending_machine" and not _vend_start():
+		return
 	busy = true
 	_handed = false
 	_start = _time
+	if kind == "vending_machine":
+		_vend_go()
 	if kind == "fridge":
 		item = ["soda", "bottle"][randi() % 2]
 	if kind == "desk_phone":
@@ -206,7 +216,11 @@ func _tree_press() -> void:
 	var first := not Career.has_medal("old_tree")
 	Career.add("old_tree")
 	_dart_n += 1
-	Hints.toast(TREE_FIRST if first else TREE_LINES[(_dart_n - 1) % TREE_LINES.size()], 3.0)
+	var lights: Node = get_parent().get_node_or_null("TreeLights")
+	if first or lights == null or _dart_n % 3 == 0:
+		Hints.toast(TREE_FIRST if first else TREE_LINES[(_dart_n - 1) % TREE_LINES.size()], 3.0)
+	else:
+		Hints.toast(lights.tree_toggle(), 3.0)
 
 
 func _process(delta: float) -> void:
@@ -217,6 +231,8 @@ func _process(delta: float) -> void:
 		_door_tick(delta)
 	if kind == "rubber_duck":
 		_duck_tick(delta)
+	if kind == "vending_machine":
+		_vend_tick()
 	if _bell_t > 0.0:
 		_bell_t = maxf(0.0, _bell_t - delta)
 		queue_redraw()
@@ -352,6 +368,20 @@ func _draw() -> void:
 			_draw_bench_screen()
 		"tree_lights":
 			_draw_tree_lights()
+		"dart_board":
+			_draw_dart_board()
+		"vending_machine":
+			_draw_vending()
+		"chair_rack":
+			_draw_chair_rack()
+		"cage":
+			_draw_cage()
+		"lamp_chain":
+			_draw_lamp_chain()
+		"radio":
+			_draw_radio()
+		"floor_fan":
+			_draw_floor_fan()
 
 
 func _outing_escape() -> Dictionary:
@@ -977,6 +1007,8 @@ func _draw_flicker_lamp() -> void:
 	var burst := _h(floori(slot / 14.0)) % 3 == 0
 	if (burst and _h(slot) % 3 == 0) or not World.lights_on(_room):
 		return
+	if _time < _kick_until and (_time < _kick_until - 0.6 or _h(slot) % 2 == 0):
+		return  # the pull chain: dark, then a stutter back
 	_r(-6, 0, 13, 2, Color("fff3c0"))
 	draw_circle(Vector2(0, 10), 18.0, Color(1.0, 0.95, 0.7, 0.09))
 	draw_circle(Vector2(0, 40), 46.0, Color(1.0, 0.95, 0.7, 0.04))
@@ -990,7 +1022,7 @@ func _draw_occupied() -> void:
 
 # the bench PC being imaged: a blue screen with a progress bar that fills over and over
 func _draw_bench_screen() -> void:
-	var p := fmod(_time * 6.0, 100.0)
+	var p := fmod((_time - _img_t0) * 6.0, 100.0)
 	_r(0, 0, 18, 12, Color("1f5fa8"))
 	_r(1, 1, 16, 1, Color("8fc0f0"))
 	PixelFont.draw(self, "IMG", Vector2(2, 3), Color("ffffff"), 1)
@@ -1001,8 +1033,13 @@ func _draw_bench_screen() -> void:
 # the long-forgotten string of lights on the old tree: a few bulbs still work, and they flicker
 func _draw_tree_lights() -> void:
 	var cols := [Color("e04e4e"), Color("f2c94c"), Color("4ec46a"), Color("4a8fe0")]
+	if _time - _pop_t < 0.5 and _pop_i >= 0:  # a bulb just popped: a white spark
+		var sp: Vector2 = TREE_BULBS[_pop_i]
+		draw_circle(sp + Vector2(1, 1), 3.0 + 6.0 * (_time - _pop_t), Color(1.0, 1.0, 0.85, 0.6 - (_time - _pop_t)))
+	if not tree_on:
+		return
 	for i in TREE_BULBS.size():
-		if i % 4 == 3 or (i % 3 == 1 and _h(int(_time * 4.0) + i) % 4 == 0):
+		if tree_popped.has(i) or i % 4 == 3 or (i % 3 == 1 and _h(int(_time * 4.0) + i) % 4 == 0):
 			continue
 		var b: Vector2 = TREE_BULBS[i]
 		_r(b.x, b.y, 2, 2, cols[i % 4])
@@ -1665,3 +1702,380 @@ func _draw_toilet() -> void:
 		if t < 2.2:
 			_r(4, 12 + k % 2, 9, 1, Color("8cb4dc"))
 			_r(6 + k % 3, 14, 5, 1, Color("b4d4ec"))
+
+
+# ---- the dart board in the warehouse: the live darts of a round (Outings game "darts", see darts_game.gd) ----------------------
+# The board is the baked 21 px one at art (1046, 74), 10.4 px for the 170 mm radius. Darts are drawn over the actors (z 1) as a coloured
+# 2 px dot with a steel tip, the colour of whoever threw it; the dart in the air flies from the throw line in a small arc.
+const DART_C := Vector2(-1.0, 8.0)  # the board's centre in this node's coordinates
+const DART_PX := 10.4 / 170.0  # pixels a millimetre
+const DART_FROM := Vector2(-55.0, 14.0)  # the hand at the throw line
+const DART_COLORS := [Color("5aa0e8"), Color("f2862e"), Color("e0463c"), Color("5fd068")]
+
+
+func _darts_game() -> RefCounted:
+	if Outings.is_open and Outings.game == "darts" and Outings.phase != "intro" and Outings.g.has("game"):
+		return Outings.g.game
+	return null
+
+
+func _draw_dart_board() -> void:
+	var dg := _darts_game()
+	if dg == null:
+		return
+	for d in dg.darts_now:
+		var at: Vector2 = DART_C + Vector2(float(d.px), float(d.py)) * DART_PX
+		var col: Color = DART_COLORS[maxi(0, dg.players.find(str(d.who))) % DART_COLORS.size()]
+		_r(at.x - 1.0, at.y - 1.0, 2, 2, col)
+		_r(at.x + 1.0, at.y, 1, 1, Color("c8ccd8"))
+	if dg.phase == "flight" and not dg.flying.is_empty():
+		var u: float = float(dg.flying.t)
+		var end: Vector2 = DART_C + Vector2(float(dg.flying.px), float(dg.flying.py)) * DART_PX
+		var pos: Vector2 = DART_FROM.lerp(end, u) + Vector2(0.0, -6.0 * sin(PI * u))
+		var dir: Vector2 = (end - DART_FROM).normalized()
+		var col: Color = DART_COLORS[maxi(0, dg.players.find(str(dg.flying.who))) % DART_COLORS.size()]
+		draw_line(pos - dir * 3.0, pos, col, 1.0)
+		_r(pos.x, pos.y, 1, 1, Color("c8ccd8"))
+
+
+# ---- the warehouse's odds and ends (small E interactions, drawn in code; no set art) ---------------------------------------------
+# vending_machine (a soda or water, rarely "it ate your quarter"), chair_rack (a chair rolls out), cage (a peek into the parts cage),
+# bench_pc (the imaging PC: how far along, press again to restart), lamp_chain (the high bay light), radio (three fake stations on the
+# bench), floor_fan (it spins), and the old tree's lights (E toggles them, a bulb now and then pops). All except the machine are low
+# priority (they never steal E from a door); every line is picked with Difficulty.rng_for from the day so a day reads the same.
+const VEND_LINES := [
+	"CLUNK. A SODA, ONLY A LITTLE WARM.",
+	"CLUNK. COLD ENOUGH.",
+	"TWO QUARTERS WELL SPENT.",
+	"THE MACHINE GRUNTS AND PAYS OUT.",
+]
+const VEND_WATER := "A BOTTLE OF WATER. HEALTHY. SUSPICIOUS."
+const VEND_ATE := "IT ATE YOUR QUARTER. PRESS E TO THUMP IT."
+const VEND_THUMP := "YOU THUMP THE SIDE. A SODA FALLS OUT. JUSTICE."
+const VEND_FULL := "YOUR HANDS ARE FULL."
+const RACK_LINES := [
+	"A CHAIR WITH ONE GOOD WHEEL. YOU KNOW THE TYPE.",
+	"IT SQUEAKS. THEY ALL SQUEAK.",
+	"A FRESH CHAIR. YOUR BACK WILL NOT NOTICE.",
+	"THE RACK HAS SIX MORE JUST LIKE IT.",
+]
+const RACK_AGAIN := "IT SPINS ONCE AND STOPS. THE FLOOR IS NOT LEVEL."
+const CAGE_LINES := [
+	"A BOX OF PS/2 KEYBOARDS. LABELED KEEP.",
+	"SIXTEEN SERIAL CABLES. NOBODY KNOWS WHY.",
+	"A TOWER LABELED DO NOT WIPE. IT IS WIPED.",
+	"BAGS OF SCREWS. NOT ONE FITS ANYTHING.",
+	"A SHELF OF OLD POWER BRICKS. ALL DIFFERENT.",
+	"A BOX OF VGA CABLES. THE MONITORS ARE LONG GONE.",
+	"SOMEBODY'S LUNCH, ON THE TOP SHELF. SINCE SPRING.",
+	"A STACK OF XP DISCS. WHO KEEPS THESE?",
+]
+const CAGE_FINDS := [
+	"FOUND A SPARE PATCH CABLE. YOU WILL NEED IT SOMEDAY.",
+	"A BOX OF NEW MICE, STILL IN THE BAG.",
+	"A SEALED TONER. SOMEONE WILL BEG FOR THIS.",
+]
+const IMG_LINES := [
+	"THE BAR HAS ITS OWN SCHEDULE.",
+	"SOMEONE SAID TWENTY MINUTES. THAT WAS YESTERDAY.",
+	"THE DISK LIGHT FLICKERS. A GOOD SIGN, PROBABLY.",
+	"IT HAS NOT MOVED SINCE YOU LOOKED. IT HAS.",
+]
+const IMG_AGAIN := "YOU HIT RESTART. SOMEBODY WILL NOTICE."
+const LAMP_LINES := [
+	"YOU PULL THE CHAIN. THE LIGHT THINKS ABOUT IT.",
+	"CLICK. DARK. CLICK. NOT DARK. PROGRESS.",
+	"THE BALLAST HUMS A LITTLE LOUDER NOW.",
+]
+# station, now playing (invented names and songs)
+const RADIO_STATIONS := [
+	{"name": "KQRZ 98.1 THE HAMSTER", "num": "981", "lines": ["THE DONGLES: SUMMER OF WI-FI.", "NINE IN A ROW, NO TALKING.", "A TRAFFIC TUNE FOR THE BIG BRIDGE."]},
+	{"name": "WTKT 1040 AM TRAFFIC", "num": "104", "lines": ["THE BRIDGE IS CLOSED. AGAIN.", "WEATHER: SUNNY, CHANCE OF TICKETS.", "THE HOME TEAM LOST. ASK ALAN."]},
+	{"name": "K-FLEX 101.9 CLASSIC", "num": "102", "lines": ["BLUE SCREEN BABY, THE ROCKING CHAIRS.", "A SONG YOUR DAD LIKES, AGAIN.", "THE REQUEST LINE IS BUSY."]},
+]
+const FAN_ON := "THE FAN WHIRS. IT MOVES THE HEAT AROUND."
+const FAN_OFF := "THE FAN SPINS DOWN. THE HEAT STAYS PUT."
+const TREE_ON := [
+	"THE LIGHTS COME ON. IT IS NOT EVEN DECEMBER.",
+	"A STRING OF BULBS, WARM AGAIN. GOOD ENOUGH.",
+]
+const TREE_OFF := "LIGHTS OFF. THE TREE GOES BACK TO WAITING."
+const TREE_POP := "POP. A BULB GOES. ONE FEWER TO LOSE."
+
+static var fan_on := false  # the floor fan runs (kept while you are away from the room)
+static var radio_i := 0  # 0 off, else the station + 1
+static var tree_on := true  # the old tree's lights
+static var tree_popped: Array = []  # bulbs that have popped
+
+var _x_n := 0  # presses of this node
+var _x_t := -100.0  # when it was last pressed (_time)
+var _vend_owed := false  # the machine owes you a soda (it ate your quarter)
+var _vend_ate := false
+var _vend_clunk := false
+var _img_t0 := 0.0  # bench_screen: when the progress bar started over
+var _kick_until := 0.0  # flicker_lamp: kicked by the pull chain
+var _pop_t := -100.0
+var _pop_i := -1
+var _tree_n := 0
+
+
+func _x_line(list: Array, salt: String) -> String:
+	_x_n += 1
+	var r := Difficulty.rng_for("wh_" + salt, maxi(0, Campaign.day) * 131 + _x_n)
+	return str(list[r.randi_range(0, list.size() - 1)])
+
+
+func _x_roll(salt: String) -> float:
+	return Difficulty.rng_for("wh_" + salt, maxi(0, Campaign.day) * 977 + _x_n * 13 + 5).randf()
+
+
+# E on one of the small things (true when it was handled here); the vending machine goes the held-item way in play()
+func _warehouse_press() -> bool:
+	match kind:
+		"chair_rack":
+			_rack_press()
+		"cage":
+			_cage_press()
+		"bench_pc":
+			_bench_press()
+		"lamp_chain":
+			_chain_press()
+		"radio":
+			_radio_press()
+		"floor_fan":
+			_fan_press()
+		_:
+			return false
+	return true
+
+
+# ---- the vending machine: a held item, like the coffee machine
+func _vend_start() -> bool:
+	if _player != null and str(_player.get("held")) != "":
+		Hints.toast(VEND_FULL, 2.0)
+		return false
+	return true
+
+
+func _vend_go() -> void:
+	_x_n += 1
+	_vend_ate = false
+	_vend_clunk = false
+	var roll := _x_roll("vend")
+	if _vend_owed:
+		_vend_owed = false
+		item = "soda"
+		Hints.toast(VEND_THUMP, 3.0)
+	elif roll < 0.1:
+		_vend_owed = true
+		_vend_ate = true
+		item = ""
+		Hints.toast(VEND_ATE, 3.2)
+	elif roll < 0.38:
+		item = "bottle"
+		Hints.toast(VEND_WATER, 2.5)
+	else:
+		item = "soda"
+		Hints.toast(VEND_LINES[_x_n % VEND_LINES.size()], 2.5)
+	Sfx.play_near("ui_tick", self)
+
+
+func _vend_tick() -> void:
+	if busy and not _vend_clunk and _time - _start >= 0.9:
+		_vend_clunk = true
+		Sfx.play_near("ui_error" if _vend_ate else "clunk", self)
+
+
+func _draw_vending() -> void:
+	if not busy:
+		return
+	var e := _time - _start
+	var red := Color("e04646")
+	var col := red if (e < 0.9 or _vend_ate) else Color("4ed06a")
+	if _vend_ate and int(e * 8.0) % 2 == 1:
+		col = Color("6a1f1f")
+	_r(22, 22, 2, 1, col)
+	if not _vend_ate and e >= 0.9:
+		var can := Color("d23c3c") if item == "soda" else Color("8cc0e8")
+		_r(10, 35, 4, 5, Color("17121f"))
+		_r(11, 36, 2, 3, can)
+		_r(11, 35, 2, 1, Color("b8bcc4"))
+
+
+# ---- the chair rack: a chair rolls out of the bottom row and across the front, then back in
+func _rack_press() -> void:
+	var out := _time - _x_t < 6.0
+	_x_t = _time if not out else _x_t
+	Sfx.play_near("squeak", self)
+	Hints.toast(RACK_AGAIN if out else _x_line(RACK_LINES, "rack"), 2.8)
+
+
+func _draw_chair_rack() -> void:
+	var e := _time - _x_t
+	if e < 0.0 or e > 6.5:
+		return
+	var x := 61.0
+	var y := 29.0
+	if e < 0.4:
+		y += 6.0 * (e / 0.4)
+	else:
+		y += 6.0
+		var u := clampf((e - 0.4) / 1.8, 0.0, 1.0)
+		x += 40.0 * (1.0 - (1.0 - u) * (1.0 - u))
+		if e > 5.5:
+			x -= 40.0 * clampf((e - 5.5) / 1.0, 0.0, 1.0)
+	var backs := [Color("6e727c"), Color("7a2f3b"), Color("3f6aa0"), Color("2a2e36")]
+	var back: Color = backs[(_x_n) % backs.size()]
+	var ink := Color("17121f")
+	_r(x, y, 12, 9, ink)
+	_r(x + 1, y + 1, 10, 7, back)
+	_r(x - 1, y + 9, 14, 4, ink)
+	_r(x, y + 10, 12, 2, Color("3c414d"))
+	_r(x + 4, y + 13, 4, 6, ink)
+	_r(x + 5, y + 13, 2, 6, Color("2a2e36"))
+	_r(x, y + 19, 12, 2, ink)
+	_r(x + 1, y + 21, 3, 2, ink)
+	_r(x + 8, y + 21, 3, 2, ink)
+
+
+# ---- the parts cage: you peek in with a flashlight, now and then something useful is in there
+func _cage_press() -> void:
+	_x_t = _time
+	_x_n += 1
+	Sfx.play_near("ui_tick", self)
+	if _x_roll("cage") < 0.125:
+		Career.add("cage_finds")
+		Hints.toast(CAGE_FINDS[_x_n % CAGE_FINDS.size()], 3.2)
+	else:
+		Hints.toast(_x_line(CAGE_LINES, "cage"), 3.0)
+
+
+func _draw_cage() -> void:
+	var e := _time - _x_t
+	if e < 0.0 or e > 1.8:
+		return
+	var p := Vector2(float(_h(_x_n) % 61) - 30.0, float(_h(_x_n + 3) % 25) - 14.0 + 4.0 * sin(e * 6.0))
+	draw_circle(p, 13.0, Color(1.0, 0.95, 0.6, 0.12))
+	draw_circle(p, 7.0, Color(1.0, 0.96, 0.7, 0.2))
+
+
+# ---- the bench PC being imaged: how far along it is; a second press in a row restarts it
+func img_pct() -> int:
+	return int(fmod((_time - _img_t0) * 6.0, 100.0))
+
+
+func img_restart() -> void:
+	_img_t0 = _time
+
+
+func _bench_press() -> void:
+	var screen: Node = get_parent().get_node_or_null("BenchScreen")
+	var again := _time - _x_t < 8.0
+	_x_t = _time
+	_x_n += 1
+	if screen == null:
+		return
+	Sfx.play_near("ui_tick", self)
+	if again:
+		screen.img_restart()
+		Hints.toast(IMG_AGAIN, 3.0)
+	else:
+		Hints.toast("IMG %d PERCENT. %s" % [screen.img_pct(), _x_line(IMG_LINES, "img")], 3.2)
+
+
+# ---- the high bay light: a pull chain hangs from it
+func kick() -> void:
+	_kick_until = _time + 2.0
+
+
+func _chain_press() -> void:
+	_x_t = _time
+	var lamp: Node = get_parent().get_node_or_null("FlickerLamp")
+	if lamp != null:
+		lamp.kick()
+	Sfx.play_near("clunk", self)
+	Hints.toast(_x_line(LAMP_LINES, "lamp"), 2.8)
+
+
+func _draw_lamp_chain() -> void:
+	var e := _time - _x_t
+	var sway := sin(e * 9.0) * maxf(0.0, 1.0 - e / 1.2) * 3.0 if e >= 0.0 else 0.0
+	for i in 22:
+		var f := float(i) / 21.0
+		_r(sway * f, float(i) * 2.0, 1, 1, Color("8e939e") if i % 2 == 0 else Color("5a606c"))
+	_r(sway - 1.0, 44, 3, 3, Color("c8ccd8"))
+
+
+# ---- the radio on the bench: off, then three stations
+func _radio_press() -> void:
+	radio_i = (radio_i + 1) % (RADIO_STATIONS.size() + 1)
+	_x_t = _time
+	Sfx.play_near("ui_pick" if radio_i > 0 else "ui_tick", self)
+	if radio_i == 0:
+		Hints.toast("THE RADIO CLICKS OFF. THE WAREHOUSE HUMS.", 2.5)
+		return
+	var st: Dictionary = RADIO_STATIONS[radio_i - 1]
+	var lines: Array = st.lines
+	Hints.toast("%s: %s" % [st.name, _x_line(lines, "radio")], 3.6)
+
+
+func _draw_radio() -> void:
+	var ink := Color("17121f")
+	_r(0, 2, 16, 8, ink)
+	_r(1, 3, 14, 6, Color("3b4150"))
+	_r(3, 0, 10, 2, ink)
+	_r(2, 4, 4, 4, Color("8e939e"))
+	_r(10, 4, 4, 4, Color("8e939e"))
+	_r(3, 5, 2, 2, Color("3c414d"))
+	_r(11, 5, 2, 2, Color("3c414d"))
+	draw_line(Vector2(14, 2), Vector2(18, -5), Color("c8ccd8"), 1.0)
+	if radio_i == 0:
+		_r(7, 4, 2, 3, Color("2a2e36"))
+		return
+	_r(6, 4, 4, 3, Color("123a1c"))
+	var step := int(_time * 8.0)
+	for k in 3:
+		var hh := 1 + _h(step + k * 5) % 3
+		_r(6 + k, 7 - hh, 1, hh, Color("4ed06a"))
+	for k in 2:  # two notes drifting up
+		var f := fposmod(_time * 0.7 + float(k) * 0.5, 1.0)
+		_r(4.0 + float(k) * 7.0 + sin(f * 6.0 + float(k)) * 2.0, -2.0 - 9.0 * f, 2, 2, Color(1.0, 0.95, 0.6, 1.0 - f))
+
+
+# ---- the floor fan: E starts or stops it; the blades are a few spokes turned every frame
+func _fan_press() -> void:
+	fan_on = not fan_on
+	Sfx.play_near("ui_pick" if fan_on else "ui_tick", self)
+	Hints.toast(FAN_ON if fan_on else FAN_OFF, 2.5)
+
+
+func _draw_floor_fan() -> void:
+	if not fan_on:
+		return
+	var c := Vector2(11, 8.5)
+	var base := float(int(_time * 12.0)) * 0.9
+	draw_circle(c, 7.0, Color(0.85, 0.9, 0.95, 0.28))
+	for k in 3:
+		var a := base + float(k) * TAU / 3.0
+		draw_line(c, c + Vector2(cos(a), sin(a)) * 6.5, Color("e6ebf2"), 1.0)
+	_r(c.x - 1.0, c.y - 1.0, 2, 2, Color("5a606c"))
+
+
+# ---- the old tree's lights (the tree itself is the E zone `old_tree`, see _tree_press)
+func tree_toggle() -> String:
+	tree_on = not tree_on
+	_tree_n += 1
+	Sfx.play_near("ui_tick", self)
+	if not tree_on:
+		return TREE_OFF
+	var r := Difficulty.rng_for("wh_tree", maxi(0, Campaign.day) * 131 + _tree_n + tree_popped.size() * 7)
+	if r.randf() < 0.2 and tree_popped.size() < TREE_BULBS.size() - 2:
+		var pick := r.randi_range(0, TREE_BULBS.size() - 1)
+		while tree_popped.has(pick):
+			pick = (pick + 1) % TREE_BULBS.size()
+		tree_popped.append(pick)
+		_pop_i = pick
+		_pop_t = _time
+		Sfx.play_near("squeak", self)
+		return TREE_POP
+	return str(TREE_ON[_tree_n % TREE_ON.size()])

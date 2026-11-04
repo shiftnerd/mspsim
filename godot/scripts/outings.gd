@@ -17,6 +17,7 @@ const ChairRace := preload("res://scripts/chair_race.gd")
 const ChairTrack := preload("res://scripts/chair_track.gd")
 const CornholeGame := preload("res://scripts/cornhole_game.gd")
 const GrillGame := preload("res://scripts/grill_game.gd")
+const DartsGame := preload("res://scripts/darts_game.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -80,6 +81,15 @@ const GAMES := {
 		"blurb":
 		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
 		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
+	},
+	"darts":
+	{
+		"label": "DARTS",
+		"cost": 0,
+		"casual": true,
+		"blurb":
+		"A QUICK ROUND AT THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD: PRESS E TO THROW AT IT. THREE DARTS A TURN, THREE ROUNDS, HIGHEST TOTAL WINS.",
+		"keys": "E = THROW  ESC = LEAVE"
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
@@ -182,6 +192,16 @@ const CORN_B := 1274.0
 const CORN_LIFT := 166.0
 const CORN_PAN := 74.0
 const GRILL_X := 1294.0
+# darts: you throw from the line at DART_X (set x), the board hangs at DART_BOARD_X (the panel's board, fx kind dart_board); the others wait
+# to the left of the line (DART_SPOTS) and the thrower of the turn steps up to it
+const DART_X := 992.0
+const DART_BOARD_X := 1046.0
+const DART_SPOTS := [962.0, 938.0, 914.0, 890.0]
+const DARTS_LIFT := 166.0
+const DARTS_PAN := 10.0
+const DARTS_MAX := 3  # opponents
+const DARTS_ENERGY := 2  # a campaign round at the board: a little energy on the first two plays of a day
+const DARTS_LEN := 0.25  # game hours a round takes in a campaign
 const GRILL_LIFT := 182.0
 const GRILL_PAN := -30.0
 const ROOM_INTRO := {
@@ -197,6 +217,8 @@ const ROOM_INTRO := {
 	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
 	"cornhole":
 	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
+	"darts":
+	"THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
 	"grill":
 	"THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
@@ -485,7 +507,8 @@ const ROOMS := {
 	"dinner": "restaurant",
 	"chair": "warehouse",
 	"cornhole": "warehouse",
-	"grill": "warehouse"
+	"grill": "warehouse",
+	"darts": "warehouse"
 }
 # where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
@@ -497,6 +520,7 @@ const SPOTS := {
 	"chair": [1135, 1160, 1185, 1210, 1235, 1260],  # whoever is not racing watches from beyond the finish line
 	"cornhole": [1096, 1080, 1064, 1048, 1032, 1016],  # the audience left of board A; the opponent of the round walks to board B
 	"grill": [1262, 1230, 1198, 1166, 1134, 1102],  # the queue to the left of the cook, nearest first
+	"darts": [962, 938, 914, 890, 866, 842],  # waiting their turn left of the throw line
 }
 const TECH_DAYS := [5, 10, 15]
 # the lunch break (R29): days (weeks in the owner campaign) with a midday cookout or cornhole in the warehouse, between 12:00 and
@@ -544,6 +568,9 @@ var _offered := false
 var lunches := 0  # lunch breaks taken (a campaign's midday cookout or cornhole, R29)
 var lunch_skips := 0
 var _lunch_offered := false  # today's lunch card has been shown (saved in the resume point)
+var darts_plays := 0  # casual rounds at the dart board (saved)
+var darts_day := -1  # the campaign day of darts_today
+var darts_today := 0  # rounds played on darts_day: the first two give energy, the first the coworkers' goodwill
 
 
 func _ready() -> void:
@@ -573,6 +600,9 @@ func reset() -> void:
 	_lunch_offered = false
 	lunches = 0
 	lunch_skips = 0
+	darts_plays = 0
+	darts_day = -1
+	darts_today = 0
 
 
 # version 2 saves the dinner tastes and the best star count per song; an older save has neither
@@ -592,6 +622,9 @@ func to_dict() -> Dictionary:
 		"chair": chair_best,
 		"lunches": lunches,
 		"lunch_skips": lunch_skips,
+		"darts_plays": darts_plays,
+		"darts_day": darts_day,
+		"darts_today": darts_today,
 	}
 
 
@@ -605,6 +638,9 @@ func from_dict(data: Dictionary) -> void:
 	chair_best = data.get("chair", {})
 	lunches = int(data.get("lunches", 0))
 	lunch_skips = int(data.get("lunch_skips", 0))
+	darts_plays = int(data.get("darts_plays", 0))
+	darts_day = int(data.get("darts_day", -1))
+	darts_today = int(data.get("darts_today", 0))
 	league = BowlVariety.new_league()
 	for key in data.get("league", {}):
 		league[key] = data.league[key]
@@ -854,6 +890,8 @@ func cost_range() -> String:
 	var lo := 100000
 	var hi := 0
 	for id in GAMES:
+		if GAMES[id].get("casual", false):
+			continue
 		lo = mini(lo, int(GAMES[id].cost))
 		hi = maxi(hi, int(GAMES[id].cost))
 	# X9: the owner's dinner can be the fancy one when it is played in the restaurant
@@ -886,6 +924,8 @@ func pick_game(from_invite: bool) -> void:
 		draw_party()
 	var options := []
 	for id in GAMES:
+		if GAMES[id].get("casual", false):
+			continue  # the dart board is its own thing (E at the board), not an evening out
 		var cost := int(GAMES[id].cost)
 		var entry := {
 			"label":
@@ -933,6 +973,8 @@ func _free_answer(id: String) -> void:
 # draw comes from the run's streams (Difficulty.rng) as before.
 func start(id: String, from_invite := false, options := {}) -> void:
 	opts = options.duplicate()
+	if GAMES.get(id, {}).get("casual", false):
+		opts["casual"] = true  # the dart board is a casual game whoever starts it (the toolbox, a test)
 	if Difficulty.fixed_take:
 		Difficulty.take_reset()
 	var here := get_tree().current_scene
@@ -968,7 +1010,7 @@ func _open(id: String, from_invite: bool) -> void:
 	is_open = true
 	Game.ui_open = true
 	_canvas.visible = true
-	if Campaign.mode == "owner" and not lunch_on():
+	if Campaign.mode == "owner" and not lunch_on() and not casual_on():
 		Owner.cash -= int(GAMES[id].cost)
 	if id == "chair":
 		_chair_setup()
@@ -990,6 +1032,8 @@ func begin_play(pick := "") -> void:
 			_corn_setup()
 		"grill":
 			_grill_setup()
+		"darts":
+			_darts_setup()
 		"chair":
 			_chair_door(true)  # set up when the page opened: the race is on the floor, the countdown starts now
 		_:
@@ -1016,9 +1060,12 @@ func close() -> void:
 		Game.go(_return_scene, "start")
 	if lunch_on() and Campaign.active:
 		_lunch_after()
+	if casual_on() and Campaign.active and stars >= 0:
+		_casual_after()
 	_traveled = false
 	_peek = false
 	opts["lunch"] = false
+	opts["casual"] = false
 	finished.emit(game, stars)
 
 
@@ -1060,6 +1107,8 @@ func tick(dt: float) -> void:
 			_corn_tick(dt)
 		"grill":
 			_grill_tick(dt)
+		"darts":
+			_darts_tick(dt)
 		_:
 			_dinner_tick(dt)
 
@@ -1132,7 +1181,7 @@ func _press_page(key: int) -> void:
 		else:
 			begin_play()
 	elif key == KEY_ESCAPE:
-		if Campaign.mode == "owner" and not lunch_on():
+		if Campaign.mode == "owner" and not lunch_on() and not casual_on():
 			Owner.cash += int(GAMES[game].cost)
 		_finish(-1)
 
@@ -1159,6 +1208,8 @@ func _press_game(key: int) -> void:
 			_corn_press(key)
 		"grill":
 			_grill_press(key)
+		"darts":
+			_darts_press(key)
 		_:
 			_dinner_press(key)
 
@@ -1178,11 +1229,15 @@ func _finish(result: int) -> void:
 	stars = result
 	phase = "result"
 	lines = []
-	if result < 0 and lunch_on():
+	if result < 0 and casual_on():
+		lines.append("YOU PUT THE DARTS BACK. NOBODY MINDS.")
+	elif result < 0 and lunch_on():
 		lines.append("YOU HEAD BACK TO YOUR DESK. NOBODY MINDS A SHORT LUNCH.")
 	elif result < 0:
 		lines.append("YOU LEFT EARLY. NOBODY SAYS ANYTHING. EVERYBODY NOTICES.")
 		Social.change_all(-1)
+	elif casual_on():
+		_darts_finish(result)
 	else:
 		count += 1
 		best[game] = maxi(int(best.get(game, 0)), result)
@@ -2368,6 +2423,8 @@ func _room_begin() -> void:
 			_corn_begin()
 		"grill":
 			_grill_begin()
+		"darts":
+			_darts_begin()
 		"escape":
 			caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
 		"dinner":
@@ -2399,7 +2456,7 @@ func _room_wants(key: int) -> bool:
 	match game:
 		"bowling":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
-		"cornhole":
+		"cornhole", "darts":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
 		"grill":
 			return key in [KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_SHIFT]
@@ -2425,7 +2482,7 @@ func _room_press(key: int) -> bool:
 
 # E belongs to the bowling game while it runs (the crew should not answer it)
 func blocks_interact() -> bool:
-	return is_open and room_mode() and phase == "play" and game in ["bowling", "cornhole", "grill"]
+	return is_open and room_mode() and phase == "play" and game in ["bowling", "cornhole", "grill", "darts"]
 
 
 # the one control hint line: pages show it as their footer, rooms in the bar at the bottom
@@ -2457,6 +2514,8 @@ func _room_hint() -> String:
 			text = _corn_hint()
 		"grill":
 			text = _grill_hint()
+		"darts":
+			text = _darts_hint()
 		"escape":
 			if g.get("entry", false):
 				text = "ARROWS  ENTER = TRY  ESC = BACK"
@@ -2647,6 +2706,9 @@ func _escape_room_setup() -> void:
 
 
 func interact(kind: String) -> void:
+	if kind == "dart_board":
+		offer_darts()
+		return
 	if kind.begins_with("cornhole_") or kind == "grill":
 		_offer_here("grill" if kind == "grill" else "cornhole")
 		return
@@ -2773,6 +2835,8 @@ func _paint_hud(size: Vector2) -> void:
 			_hud_cornhole(strip)
 		"grill":
 			_hud_grill(strip, size)
+		"darts":
+			_hud_darts(strip, size)
 		"escape":
 			_hud_escape(strip)
 		_:
@@ -3299,6 +3363,351 @@ func _paint_cornhole(b: Rect2) -> void:
 		_canvas.draw_rect(Rect2(bar.position.x + 69.0 * v, bar.position.y - 2.0, 2.0, 9.0), INK)
 
 
+# ---- darts: a casual round at the board in the warehouse (not an evening outing) ---------------------------------------------
+# E at the board (fx kind dart_board) offers a round: you and one or two coworkers who wander over, three darts a turn, three
+# rounds, an aim reticle that drifts over the board (see DartsGame). In Free Play nothing is scored; in a campaign a round costs
+# DARTS_LEN game hours and gives a little energy (the first two rounds of a day) and, the first round of a day, +1 opinion with the
+# people who played (_darts_finish, _casual_after). Esc leaves early: no stars, no penalty.
+func casual_on() -> bool:
+	return bool(opts.get("casual", false))
+
+
+# the opponents: the party (up to DARTS_MAX) or, when the game was not started with one, the first two on the roster
+func darts_crew() -> Array:
+	var pool := present() if opts.has("party") else roster()
+	var crew_list := DartsGame.ORDER.filter(func(n: String) -> bool: return pool.has(n))
+	return crew_list.slice(0, DARTS_MAX if opts.has("party") else 2)
+
+
+# one or two coworkers who are up for a round: a seeded pick from an own stream (the evening parties keep their draws)
+func darts_party() -> Array:
+	var here := roster().filter(func(n: String) -> bool: return DartsGame.ORDER.has(n) and not Social.is_hostile(n))
+	if here.is_empty():
+		return []
+	var r := Difficulty.rng_for("darts_party", darts_plays * 17 + maxi(0, Campaign.day))
+	Difficulty.shuffle_with(here, r)
+	var n := 2 if here.size() >= 2 and r.randf() < 0.6 else 1
+	return _by_cast(here.slice(0, n))
+
+
+# a round can start now: nothing else has the player (a card, an outing, a visit, overtime, a carried cable, a stopped clock) and a campaign day has the minutes left
+func darts_ready() -> bool:
+	if not enabled or is_open or busy() or Cards.is_open or Cards.waiting() > 0 or Game.title_mode or Game.busy or Game.ui_open:
+		return false
+	if Campaign.active:
+		if World.time_scale <= 0.0 or Story.overtime or Onsite.busy or Onsite.active or Net.carrying != "" or Playbook.is_active() or Expo.away:
+			return false
+		if World.clock + DARTS_LEN >= World.DAY_END:
+			return false
+	return true
+
+
+# E at the board: the card (false when a round cannot start now, the board then only makes a joke)
+func offer_darts() -> bool:
+	if not darts_ready():
+		return false
+	var pty := darts_party()
+	var text := "A round of darts: three darts a turn, three rounds, highest total wins. "
+	if pty.is_empty():
+		text += "Nobody else is around, so it is you against the house."
+	else:
+		text += "%s %s up for it." % [join_names(pty, false), "is" if pty.size() == 1 else "are"]
+	text += " It takes about a quarter of an hour." if Campaign.active else " (Free Play: nothing is scored.)"
+	Cards.ask(
+		"Darts",
+		text,
+		[{"label": "LET'S PLAY", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
+		func(answer: String) -> void:
+			if answer == "yes":
+				start("darts", false, {"party": pty, "casual": true})
+	)
+	return true
+
+
+func _darts_params() -> Dictionary:
+	return {
+		"drift": Difficulty.f("darts.drift"),
+		"speed": Difficulty.f("darts.speed"),
+		"noise": Difficulty.f("darts.noise"),
+		"opp_skill": Difficulty.f("darts.opp_skill"),
+		"floor": 1 if Difficulty.cozy_on() else 0,
+		"zone_rng": Difficulty.rng("darts_zone"),
+	}
+
+
+func _darts_setup() -> void:
+	var dg := DartsGame.new()
+	dg.setup(_darts_params(), darts_crew(), Difficulty.rng("darts"))
+	g = {"game": dg, "end_t": 0.0, "last_phase": "", "remark": "", "remark_t": 0.0}
+
+
+func _darts_begin() -> void:
+	g["snap"] = 3
+	_darts_seat(g.game)
+	caption("DARTS. THREE DARTS A TURN, THREE ROUNDS. E THROWS AT THE RETICLE.", 4.0)
+
+
+# the thrower of the turn stands at the line, everybody else waits to the left of it, facing the board
+func _darts_seat(dg: RefCounted) -> void:
+	if not room_mode():
+		return
+	var x0 := _x0()
+	var k := 0
+	var up := str(dg.thrower())
+	for who in dg.players:
+		var node := _actor("Player") if who == "You" else _actor(str(who))
+		if node == null:
+			continue
+		var at: float = DART_X
+		if str(who) != up:
+			at = float(DART_SPOTS[k % DART_SPOTS.size()])
+			k += 1
+		if who == "You":
+			_place_player(x0 + at)
+			_hold_player("idle", x0 + DART_BOARD_X)
+		else:
+			node.global_position = Vector2(x0 + at, node.global_position.y)
+			_pose(node, "idle", 0.1, x0 + DART_BOARD_X)
+
+
+func _darts_tick(dt: float) -> void:
+	var dg: RefCounted = g.game
+	dg.step(dt)
+	g.remark_t = maxf(0.0, float(g.remark_t) - dt)
+	_darts_cues(dg)
+	if dg.is_done():
+		g.end_t = float(g.end_t) + dt
+		if float(g.end_t) >= 1.6:
+			_finish(dg.stars())
+
+
+# sounds, poses and remarks for what just happened, and the line in the caption bar
+func _darts_cues(dg: RefCounted) -> void:
+	for e in dg.events:
+		match str(e.e):
+			"dart", "bull":
+				Sfx.play("dart_hit")
+				if str(e.e) == "bull":
+					Sfx.play("bag_hole")
+				_darts_react(dg, e)
+			"turn":
+				_darts_seat(dg)
+			"pull":
+				Sfx.play("ui_tick")
+	dg.events.clear()
+	if dg.phase == "flight" and str(g.last_phase) != "flight" and room_mode():
+		var who := str(dg.flying.who)
+		_pose(_actor("Player") if who == "You" else _actor(who), "toss", 0.9, _x0() + DART_BOARD_X)
+	g.last_phase = dg.phase
+	if room_mode():
+		var p := _actor("Player")
+		if p != null and p.state != "emote" and phase == "play" and not dg.is_done():
+			_hold_player("idle", _x0() + DART_BOARD_X)
+	var line := ""
+	match str(dg.phase):
+		"aim":
+			line = "AIM: PRESS E TO THROW AT THE RETICLE. THE WOBBLE SETTLES FOR A MOMENT."
+		"opp", "ready":
+			line = str(dg.msg)
+		_:
+			line = str(dg.msg)
+	if float(g.remark_t) > 0.0 and dg.phase in ["settle", "pull", "opp"]:
+		line = str(g.remark)
+	caption(line, 0.3)
+
+
+# a big dart (40 or more, or the bull) is cheered by somebody else, a dart off the board groans
+func _darts_react(dg: RefCounted, e: Dictionary) -> void:
+	var who := str(e.who)
+	var pts := int(e.pts)
+	var big: bool = pts >= 40
+	var off: bool = pts == 0
+	var speaker := ""
+	if big:
+		var others: Array = dg.players.filter(func(n: String) -> bool: return n != who and n != "You" and n != "THE HOUSE")
+		if not others.is_empty():
+			speaker = str(others[randi() % others.size()])
+	elif off and who != "You":
+		speaker = who
+	elif off and randf() < 0.5 and not dg.crew.is_empty():
+		speaker = str(dg.crew[randi() % dg.crew.size()])
+	if room_mode():
+		var thrower := _actor("Player") if who == "You" else _actor(who)
+		if big or off:
+			_bubble(thrower, "!" if big else "?", 1.2)
+		if big and speaker != "":
+			_bubble(_actor(speaker), "heart", 1.2)
+	if speaker == "" or randf() > (0.8 if big else 0.5):
+		return
+	var line := crew_line(speaker, "hole" if big else "miss")
+	if line != "":
+		g.remark = "%s: %s" % [speaker.to_upper(), line]
+		g.remark_t = 2.4
+
+
+func _darts_press(key: int) -> void:
+	if key not in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
+		return
+	var dg: RefCounted = g.game
+	if not dg.aiming():
+		if not dg.is_done():
+			caption("WAIT. IT IS NOT YOUR THROW.", 1.2)
+		return
+	dg.press()
+
+
+func _darts_hint() -> String:
+	var dg: RefCounted = g.game
+	return "E = THROW  ESC = LEAVE" if dg.aiming() else "WAIT FOR YOUR THROW  ESC = LEAVE"
+
+
+# the result of a round (a casual game): the records, a line or two about the game, the small campaign rewards
+func _darts_finish(result: int) -> void:
+	var dg: RefCounted = g.game
+	darts_plays += 1
+	best[game] = maxi(int(best.get(game, 0)), result)
+	Career.note_outing(game, result, {"casual": true, "bulls": dg.bulls, "score": int(dg.totals["You"])})
+	lines.append_array(_darts_lines())
+	if Campaign.active:
+		if darts_day != Campaign.day:
+			darts_day = Campaign.day
+			darts_today = 0
+		var first := darts_today == 0
+		darts_today += 1
+		if first and not dg.crew.is_empty():
+			for who in dg.crew:
+				Social.change(str(who), 1)
+			lines.append("THEY LIKE YOU A LITTLE MORE: A FRIENDLY GAME.")
+		if Campaign.mode == "owner":
+			Owner.burnout = clampf(Owner.burnout - 2.0, 0.0, 100.0)
+			lines.append("BURNOUT DOWN 2 POINTS. A QUICK BREAK HELPS.")
+		elif Campaign.mode != "sales":
+			if darts_today <= 2:
+				Shift.add_energy(float(DARTS_ENERGY))
+				lines.append("ENERGY +%d. A QUICK BREAK HELPS." % DARTS_ENERGY)
+			else:
+				lines.append("NO MORE BREAKS TODAY. BACK TO THE QUEUE.")
+	else:
+		lines.append("A QUICK ROUND. (FREE PLAY: NOTHING IS SCORED.)")
+	lines.append_array(_mastery_lines(result))
+
+
+func _darts_lines() -> Array:
+	var dg: RefCounted = g.game
+	var out := []
+	var mine := int(dg.totals["You"])
+	if dg.margin() > 0:
+		out.append("YOU WIN %d TO %d." % [mine, dg.best_opp()] + (" A WALKOVER." if dg.margin() >= DartsGame.BIG_WIN else ""))
+	elif dg.margin() == 0:
+		out.append("A TIE AT %d. NOBODY WILL LET IT GO." % mine)
+	elif Difficulty.cozy_on():
+		out.append("%s WON WITH %d. YOU HAD %d. IT IS ONLY DARTS." % [str(dg.leader()).to_upper(), dg.best_opp(), mine])
+	else:
+		out.append("%s WINS WITH %d. YOU HAD %d. REMATCH SOMETIME." % [str(dg.leader()).to_upper(), dg.best_opp(), mine])
+	var extra := "BEST DART %d" % dg.best_dart
+	if dg.bulls > 0:
+		extra += ", %d BULLSEYE%s" % [dg.bulls, "" if dg.bulls == 1 else "S"]
+	if dg.trebles > 0:
+		extra += ", %d TREBLE%s" % [dg.trebles, "" if dg.trebles == 1 else "S"]
+	out.append(extra + ".")
+	return out
+
+
+# back at work after a campaign round: the clock moved on DARTS_LEN hours and the queue aged at half the onsite rate (not on Cozy Easy)
+func _casual_after() -> void:
+	World.clock = minf(World.DAY_END - 0.25, World.clock + DARTS_LEN)
+	if not Difficulty.cozy_on():
+		var scale := World.day_len / 600.0
+		for t in Msp.tickets:
+			if t.status != "Closed":
+				t.sla_left = maxf(float(t.sla_total) * 0.35, float(t.sla_left) - DARTS_LEN * Onsite.SLA_PER_HOUR * 0.5 * scale)
+	Hints.toast("BACK FROM THE DART BOARD. THE QUEUE WAITED." if Difficulty.cozy_on() else "BACK FROM THE DART BOARD. THE QUEUE KEPT TICKING A LITTLE.", 3.0)
+
+
+const DART_COLORS := [Color("5aa0e8"), Color("f2862e"), Color("e0463c"), Color("5fd068")]
+
+
+func _dart_color(dg: RefCounted, who: String) -> Color:
+	return DART_COLORS[maxi(0, dg.players.find(who)) % DART_COLORS.size()]
+
+
+# a ring segment of the board (a polygon along two arcs, angles in radians clockwise from the top)
+func _board_wedge(c: Vector2, r0: float, r1: float, a0: float, a1: float, color: Color) -> void:
+	var pts := PackedVector2Array()
+	for k in 4:
+		var a := lerpf(a0, a1, float(k) / 3.0)
+		pts.append(c + Vector2(sin(a), -cos(a)) * r1)
+	for k in 4:
+		var a := lerpf(a1, a0, float(k) / 3.0)
+		pts.append(c + Vector2(sin(a), -cos(a)) * r0)
+	_canvas.draw_colored_polygon(pts, color)
+
+
+# the zoomed board of the HUD: the real rings at r pixels, this turn's darts and, on your aim, the reticle (its ring is tighter when steady)
+func _draw_dart_zoom(c: Vector2, r: float, dg: RefCounted) -> void:
+	var sc := r / DartsGame.BOARD_R
+	_canvas.draw_circle(c, r + 1.5, INK)
+	for i in 20:
+		var a0 := deg_to_rad(float(i) * 18.0 - 9.0)
+		var a1 := deg_to_rad(float(i) * 18.0 + 9.0)
+		var dark: bool = i % 2 == 0
+		var single := Color("2a2a33") if dark else Color("e8ddb0")
+		var ring := Color("c23b2e") if dark else Color("2f8b4e")
+		_board_wedge(c, DartsGame.OUTER_BULL_R * sc, DartsGame.TREBLE_IN * sc, a0, a1, single)
+		_board_wedge(c, DartsGame.TREBLE_IN * sc, DartsGame.TREBLE_OUT * sc, a0, a1, ring)
+		_board_wedge(c, DartsGame.TREBLE_OUT * sc, DartsGame.DOUBLE_IN * sc, a0, a1, single)
+		_board_wedge(c, DartsGame.DOUBLE_IN * sc, r, a0, a1, ring)
+	_canvas.draw_circle(c, DartsGame.OUTER_BULL_R * sc, Color("2f8b4e"))
+	_canvas.draw_circle(c, maxf(1.0, DartsGame.BULL_R * sc), Color("c23b2e"))
+	for d in dg.darts_now:
+		var at := c + Vector2(float(d.px), float(d.py)) * sc
+		at = c + (at - c).limit_length(r + 3.0)
+		var col := _dart_color(dg, str(d.who))
+		_canvas.draw_rect(Rect2(at - Vector2(2.0, 2.0), Vector2(4.0, 4.0)), INK)
+		_canvas.draw_rect(Rect2(at - Vector2(1.0, 1.0), Vector2(2.0, 2.0)), col)
+	if dg.aiming():
+		var at: Vector2 = c + Vector2(dg.reticle()) * sc
+		at = c + (at - c).limit_length(r + 3.0)
+		var rad: float = 2.0 + 3.5 * float(dg.steadiness(dg.aim_t))
+		_canvas.draw_arc(at, rad + 1.0, 0.0, TAU, 14, INK, 1.0)
+		_canvas.draw_arc(at, rad, 0.0, TAU, 14, AMBER, 1.0)
+		_canvas.draw_rect(Rect2(at - Vector2(0.5, 0.5), Vector2(1.0, 1.0)), WHITE)
+
+
+# the strip: the round, everybody's total (the thrower bright) and the darts left in this turn; the zoomed board sits above its right end
+func _hud_darts(s: Rect2, size: Vector2) -> void:
+	var dg: RefCounted = g.game
+	var o := UiStyle.strip(_canvas, s)
+	_t("R%d/%d" % [dg.round_no(), dg.rounds], o.x, o.y, UiStyle.SOFT)
+	var x := s.position.x + 26.0
+	for who in dg.players:
+		var short := "YOU" if who == "You" else str(who).to_upper().substr(0, 3)
+		var text := "%s %d" % [short, int(dg.totals[who])]
+		_t(text, x, o.y, WHITE if str(who) == str(dg.thrower()) else UiStyle.SOFT)
+		x += 4.0 * float(text.length()) + 6.0
+	var left: int = DartsGame.DARTS - dg.dart_i if dg.phase in ["ready", "aim", "opp"] else (DartsGame.DARTS - dg.dart_i - 1 if dg.phase in ["flight", "settle"] else 0)
+	for i in DartsGame.DARTS:
+		var px := s.end.x - 8.0 - 6.0 * float(DartsGame.DARTS - 1 - i)
+		var col := AMBER if i < left else UiStyle.MUTED
+		_canvas.draw_rect(Rect2(px, s.position.y + 4.0, 3.0, 3.0), col)
+	var r := 22.0
+	var box := Rect2(size.x - 2.0 * r - 8.0, s.position.y - 2.0 * r - 6.0, 2.0 * r + 8.0, 2.0 * r + 6.0)
+	UiStyle.box(_canvas, box)
+	_draw_dart_zoom(Vector2(box.position.x + box.size.x * 0.5, box.position.y + 4.0 + r), r, dg)
+
+
+# the overlay version (no room): the numbers and the zoomed board
+func _paint_darts(b: Rect2) -> void:
+	var dg: RefCounted = g.game
+	var y := b.position.y
+	_t("ROUND %d OF %d   DART %d OF %d" % [dg.round_no(), dg.rounds, mini(DartsGame.DARTS, dg.dart_i + 1), DartsGame.DARTS], b.position.x, y)
+	for i in dg.players.size():
+		var who: String = dg.players[i]
+		_t("%s %d" % [who.to_upper(), int(dg.totals[who])], b.position.x, y + 9.0 + 8.0 * float(i), BLUE if who == str(dg.thrower()) else INK)
+	_t(str(dg.msg), b.position.x, b.end.y - 8.0, RED if dg.phase == "pull" else INK)
+	_draw_dart_zoom(Vector2(b.end.x - 32.0, b.position.y + 34.0), 30.0, dg)
+
+
 # ---- the cookout (R21 b): the grill in the dock, the crew queues to the left of you -------------------------------------
 func grill_crew() -> Array:
 	var pool := present() if opts.has("party") else roster()
@@ -3544,7 +3953,7 @@ func _paint_grill(b: Rect2) -> void:
 # ---- the warehouse extras for both games: the camera sits so the floor is above the HUD, boards and grill are the way in
 # (the walkway band y 110 to 127 must show above the strip and the caption bars: a short screen looks lower down)
 func _room_extras(_delta: float) -> void:
-	if not room_mode() or game not in ["cornhole", "grill"] or phase == "intro":
+	if not room_mode() or game not in ["cornhole", "grill", "darts"] or phase == "intro":
 		return
 	var cam := get_viewport().get_camera_2d()
 	if cam == null:
@@ -3552,8 +3961,9 @@ func _room_extras(_delta: float) -> void:
 	var f: Dictionary = Game.FORMATS[Game.format]
 	var view := get_viewport().get_visible_rect().size / float(f.zoom)
 	var centre: float = float(f.cam_y) if f.follow else 64.0
-	var lift := CORN_LIFT if game == "cornhole" else GRILL_LIFT
-	cam.offset = Vector2(CORN_PAN if game == "cornhole" else GRILL_PAN, maxf(0.0, lift - (centre + view.y * 0.5)))
+	var lift := CORN_LIFT if game == "cornhole" else (DARTS_LIFT if game == "darts" else GRILL_LIFT)
+	var pan := CORN_PAN if game == "cornhole" else (DARTS_PAN if game == "darts" else GRILL_PAN)
+	cam.offset = Vector2(pan, maxf(0.0, lift - (centre + view.y * 0.5)))
 	if int(g.get("snap", 0)) > 0:  # you were moved 900 px: the camera should not glide there
 		g.snap = int(g.snap) - 1
 		cam.reset_smoothing()
@@ -3634,7 +4044,7 @@ func _paint() -> void:
 		Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
 	)
 	var panel := UiStyle.panel_rect(size, 250.0, 112.0)
-	var title := str(GAMES[game].label) + ("  TEAM OUTING" if phase != "result" else "  RESULT")
+	var title := str(GAMES[game].label) + (("  A QUICK ROUND" if casual_on() else "  TEAM OUTING") if phase != "result" else "  RESULT")
 	var body := UiStyle.panel(_canvas, panel, title, "", 0.88 if _traveled else 1.0)
 	match phase:
 		"intro":
@@ -3655,6 +4065,8 @@ func _paint() -> void:
 					_paint_cornhole(body)
 				"grill":
 					_paint_grill(body)
+				"darts":
+					_paint_darts(body)
 				_:
 					_paint_dinner(body)
 	UiStyle.footer(_canvas, panel, hint())
@@ -3683,6 +4095,13 @@ func _paint_intro(b: Rect2) -> void:
 			who_text += ".  FIRST TO %d." % Difficulty.i("corn.to")
 		else:
 			who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), roundi(Difficulty.f("grill.time"))]
+		for part in _wrap(who_text, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y)
+			y += 7.0
+	if game == "darts":
+		var crew_names := darts_crew()
+		var who_text := ("OPPONENTS: " + join_names(crew_names, true)) if not crew_names.is_empty() else "JUST YOU AND THE HOUSE"
+		who_text += ".  %d ROUNDS OF %d DARTS." % [DartsGame.ROUNDS, DartsGame.DARTS]
 		for part in _wrap(who_text, int(b.size.x / 4.0)):
 			_t(part, b.position.x, y)
 			y += 7.0
@@ -3735,6 +4154,12 @@ func _paint_result(b: Rect2) -> void:
 				detail = "YOU %d  CREW %d  HOLES %d" % [int(g.game.score_you), int(g.game.score_opp), int(g.game.holes)]
 			"grill":
 				detail = "SERVED %d OF %d  BURNT %d" % [int(g.game.served), int(g.game.total()), int(g.game.burnt)]
+			"darts":
+				var dg: RefCounted = g.game
+				detail = "YOU %d" % int(dg.totals["You"])
+				for who in dg.players:
+					if who != "You":
+						detail += "  %s %d" % [str(who).to_upper(), int(dg.totals[who])]
 			"chair":
 				var race: RefCounted = g.race
 				detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]

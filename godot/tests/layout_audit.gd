@@ -530,7 +530,7 @@ func _floor_phase() -> void:
 	await _end("chair race result")
 	out.close()
 	# ---- R21: cornhole and the cookout (the overlay versions: intro, play, result)
-	for id in ["cornhole", "grill"]:
+	for id in ["cornhole", "grill", "darts"]:
 		_begin()
 		out.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
 		await _end("%s intro" % id)
@@ -540,14 +540,21 @@ func _floor_phase() -> void:
 			out.g.game.marker = 0.4
 			out.g.game.score_you = 7
 			out.g.game.score_opp = 4
-		else:
+		elif id == "grill":
 			out.g.game.slots[1].c = [0.5, 0.2]
 			out.g.game.slots[2].flare = 3.0
 			out.g.game.msg_t = 2.0
+		else:
+			for who in out.g.game.players:
+				out.g.game.totals[who] = 87 if who == "You" else 52
 		out.tick(0.3)
 		_begin()
 		await _end("%s play" % id)
-		if id == "grill":
+		if id == "darts":
+			for who in out.g.game.players:
+				out.g.game.totals[who] = 214 if who == "You" else 132
+			out.g.game.phase = "done"
+		elif id == "grill":
 			out.g.game.served = 5
 			out.g.game.done = true
 		else:

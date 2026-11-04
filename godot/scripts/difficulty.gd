@@ -133,6 +133,12 @@ const TABLE := {
 	"grill.window": [1.3, 1.0, 0.8],
 	"grill.tickets": [5, 6, 6],
 	"grill.time": [85, 75, 68],
+	# darts (warehouse board): the size of the aim reticle's loop in mm (the board is 170 across the radius), how fast it moves (radians a
+	# second), the scatter of your own dart in mm, added to the crew's skill
+	"darts.drift": [46.0, 58.0, 70.0],
+	"darts.speed": [1.5, 1.9, 2.4],
+	"darts.noise": [6.0, 7.0, 8.0],
+	"darts.opp_skill": [-0.08, 0.0, 0.06],
 	"grill.flare": [0.5, 1.0, 1.5],
 	# hot dogs (R29): the share of the items on the orders that are dogs (0 = a burger-only cookout)
 	"grill.dogs": [0.3, 0.35, 0.4],
@@ -165,7 +171,7 @@ const TABLE := {
 const RAMP_PLAYS := 10  # good plays that bring a game to full mastery
 const EASY_RAMP := 0.35  # the Easy tier (cozy included) only blends this share of the way toward the normal value
 const HARD_OVER := 0.25  # at full mastery Hard goes at most this share of the normal-to-hard step beyond its own value
-const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "corn": "cornhole"}
+const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "corn": "cornhole", "darts": "darts"}
 # the keys that tighten with mastery. Everything else stays fixed on purpose: counts and switches (karaoke.grace,
 # escape.digits / dial, dinner.reveal, printer.questions / chain, corn.to / assist, grill.tickets), random frequencies
 # (grill.flare, grill.dogs), prizes and thresholds (not in TABLE at all), the nerf war and the campaign dials.
@@ -177,6 +183,7 @@ const MASTERY_KEYS := [
 	"grill.cook_rate", "grill.window", "grill.time",
 	"chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill",
 	"corn.opp_skill", "corn.aim_speed", "corn.power_speed",
+	"darts.drift", "darts.speed", "darts.opp_skill",
 ]
 
 var tier := "normal"

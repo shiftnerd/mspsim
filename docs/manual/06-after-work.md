@@ -2,7 +2,7 @@
 
 # AFTER WORK
 
-*Seven ways to spend an evening with people you spend every other hour with.*
+*Seven ways to spend an evening with people you spend every other hour with, and one quick game any time.*
 
 ---
 
@@ -172,6 +172,30 @@ for. Serve each order **the way it was asked**, and keep an eye out for flare-up
 | `Esc` | Leave. |
 
 > **WARNING:** The grill is not insured against enthusiasm.
+
+---
+
+## DARTS
+
+Not an evening out: a quick round at the dart board in the warehouse, whenever you like. Press **`E`** at the board, choose **LET'S PLAY**, and
+one or two coworkers (Alan, Garrison, Dan, Maya or Vic, whoever is up for it) take turns with you. Three darts a turn, three rounds, highest total wins.
+
+1. A **reticle** drifts across the board. Press **`E`** and the dart goes wherever it is. There is a little scatter, so nobody is perfect.
+2. The wobble **settles for a moment** (about a second in) and then your arm tires, so there is a moment to wait for. Every dart has a **new sweet spot**: the loop's centre and speed move from dart to dart.
+3. The **bull** is 50, the outer bull 25, the thin **treble** ring counts three times its number, the outer **double** ring twice. Anything else is the number of its wedge. Off the board is nothing.
+4. The zoomed board in the corner shows this turn's darts and the reticle. The ring around the reticle is smaller when the wobble is steady.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `E` / `Space` / `Enter` | Throw. |
+| `Esc` | Leave. No stars, and nobody minds. |
+
+Stars: win by **40 or more** for three, win for two, a tie or a narrow loss for one. In **Free Play** nothing is scored. In a **campaign** a round takes about
+**a quarter of an hour** on the clock, gives **a little energy** (the first two rounds of the day) and, the first round of the day, a little more goodwill with the
+people who played. It never counts as an outing and the owner pays nothing. A **bullseye** earns the **BULLSEYE** medal. Darts also get sharper the more you play them well,
+like everything else here.
+
+> **TIP:** Do not throw in the first second. Wait for the wobble to settle, then press as the reticle crosses the bull.
 
 ---
 
