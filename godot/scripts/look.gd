@@ -631,7 +631,7 @@ func _read_presets(cfg: ConfigFile) -> void:
 	presets = []
 	for i in PRESET_SLOTS:
 		var v: Variant = cfg.get_value("looks", "slot%d" % (i + 1), {}) if cfg.has_section("looks") else {}
-		presets.append(sanitize(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
+		presets.append(sanitize_preset(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
 
 
 func load_presets() -> void:
@@ -656,7 +656,8 @@ func save_preset(slot: int) -> void:
 		presets.append({})
 	var keep := look.duplicate()
 	keep["name"] = final_name()
-	presets[slot] = sanitize(keep)
+	keep["acc"] = acc.duplicate()  # level 3 step e: a preset keeps the accessories too
+	presets[slot] = sanitize_preset(keep)
 	var cfg := ConfigFile.new()
 	cfg.load(Difficulty.settings_path)
 	cfg.set_value("looks", "slot%d" % (slot + 1), presets[slot])
@@ -668,8 +669,36 @@ func load_preset(slot: int) -> bool:
 	var p := preset(slot)
 	if p.is_empty():
 		return false
-	look = p.duplicate()
+	look = sanitize(p)  # the look fields only; the accessories come from the preset's own `acc` (none for an old preset)
+	acc = sanitize_acc(p.get("acc", {}))
 	return true
+
+
+# a preset or an NPC copy: the look fields plus its `acc` (checked, locked styles demoted); sanitize() itself leaves `acc` out of Look.look
+func sanitize_preset(d: Dictionary) -> Dictionary:
+	var out := sanitize(d)
+	out["acc"] = sanitize_acc(d.get("acc", {}))
+	return out
+
+
+# the player's look as an NPC copy wears it (npc.gd custom_look, tests/npc_twin.gd): the look fields and the accessories, `over` wins
+func copy_look(over: Dictionary = {}) -> Dictionary:
+	var out := look.duplicate()
+	out["acc"] = acc.duplicate()
+	for key in over:
+		out[key] = over[key]
+	return sanitize_preset(out)
+
+
+# the player's whole look, kept while the outfit overlay edits it live (Esc puts it back)
+func snapshot() -> Dictionary:
+	return {"look": look.duplicate(), "acc": acc.duplicate(), "active": active}
+
+
+func restore(snap: Dictionary) -> void:
+	look = (snap.get("look", look) as Dictionary).duplicate()
+	acc = (snap.get("acc", acc) as Dictionary).duplicate()
+	active = bool(snap.get("active", active))
 # ---- LEVEL 3 STEP B: head accessories ------------------------------------------------------------------
 func default_acc() -> Dictionary:
 	var out := {}

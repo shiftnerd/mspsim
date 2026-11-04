@@ -135,6 +135,17 @@ func _load_character(name: String) -> void:
 # hurt would otherwise never emit animation_finished and the state machine would hang)
 func _switch_character(name: String) -> void:
 	Look.active = false  # the number keys pick the stock people
+	_reload_sheet(name)
+
+
+# the outfit overlay (Toolbox.open_outfit) is done: wear Look.look and Look.acc now (the sheet of the hairstyle, the palette
+# material, the HeadGear overlay), whoever you were before, without losing the running animation
+func wear_look() -> void:
+	Look.active = true
+	_reload_sheet(Look.BASE)
+
+
+func _reload_sheet(name: String) -> void:
 	var anim := sprite.animation
 	var frame := sprite.frame
 	var progress := sprite.frame_progress
@@ -165,7 +176,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			give("")
 			return
 		var i: int = event.keycode - KEY_1
-		if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
+		if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
 			_switch_character(CHARACTERS[i])
 			Campaign.refresh_free()
 

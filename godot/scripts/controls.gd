@@ -33,6 +33,10 @@ const ACTIONS := {
 	"pick_prev": [[], [JOY_BUTTON_LEFT_SHOULDER], []],
 	"page_prev": [[KEY_Q, KEY_PAGEUP], [JOY_BUTTON_LEFT_SHOULDER], []],  # the create step's pages (R15 level 3)
 	"page_next": [[KEY_E, KEY_PAGEDOWN], [JOY_BUTTON_RIGHT_SHOULDER], []],
+	"hold_pose": [[KEY_TAB], [JOY_BUTTON_Y], []],  # the create step's mirror preview: hold the pose / let it cycle (R15 level 3 step e)
+	"pose_prev": [[KEY_COMMA], [], []],
+	"pose_next": [[KEY_PERIOD], [], []],
+	"outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
 	"give_item": [[KEY_G], [], []],
 	"phone": [[KEY_P], [JOY_BUTTON_BACK], []],
@@ -82,7 +86,7 @@ const HELP := [
 			["CHAIR RACE STEER", "ARROWS"],
 			["BOWLING AND ESCAPE", "E"],
 			["KARAOKE LANES", "ARROWS"],
-			["SCREEN SHAPE", "F9"],
+			["SHAPE, OUTFIT", "F9, Y (FREE PLAY)"],
 		],
 	],
 ]

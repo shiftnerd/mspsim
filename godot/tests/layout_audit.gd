@@ -198,6 +198,15 @@ func _title_phase() -> void:
 		cs.queue_redraw()
 		await _end("creator style row " + mode)
 		root.get_node("Look").look["hair_style"] = "side"
+		# level 3 step e: the mirror preview's pose line (the longest label, held) and the wrapped keys line
+		_begin()
+		cs.create_row = 0
+		cs.set_pose(6, true)  # HOLD SCRATCH
+		cs.queue_redraw()
+		await _end("creator pose held " + mode)
+		cs.set_pose(3)
+		cs.pose_hold = false
+		cs.set_pose(0)
 		# level 3: the CLOTHES page (the longest values), the bottom row on it, the presets chooser, the pad's name grid
 		root.get_node("Look").look["pattern"] = "stripes"
 		root.get_node("Look").look["shorts"] = "shorts"
@@ -242,6 +251,17 @@ func _title_phase() -> void:
 		cs.set_page(0)
 		lk.look["pattern"] = "none"
 		lk.look["shorts"] = "none"
+	# level 3 step e: the Free Play outfit overlay (the create step over the room, no run chips)
+	var ov = load("res://scripts/charselect.gd").new()
+	t._front.add_child(ov)
+	ov.setup_overlay()
+	for pg in [0, 2]:
+		_begin()
+		ov.set_page(pg)
+		ov.queue_redraw()
+		await _end("outfit overlay page %d" % pg)
+	ov.queue_free()
+	root.get_node("Look").active = false
 	t._close_select()
 	await _wait(3)
 	# career screen

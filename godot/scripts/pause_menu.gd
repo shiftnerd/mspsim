@@ -33,7 +33,7 @@ func _ready() -> void:
 # true when there is a room with a player in it and nothing else has the screen
 func can_open(strict := true) -> bool:
 	var scene := get_tree().current_scene
-	if scene == null or Game.title_mode or Game.busy or scene.get_node_or_null("Actors/Player") == null:
+	if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or scene.get_node_or_null("Actors/Player") == null:
 		return false
 	if not strict:
 		return true
@@ -86,8 +86,22 @@ func _labels() -> Array:
 	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
 	if Campaign.active:
 		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look, and a copy of it beside you
+		rows.append("OUTFIT")
+		rows.append("TWIN: %s" % ("ON" if World.twin_on else "OFF"))
 	rows.append("QUIT TO TITLE")
 	return rows
+
+
+# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "twin", "quit"
+func _row_id(i: int) -> String:
+	var ids := ["resume", "controls", "shape"]
+	if Campaign.active:
+		ids.append("day")
+	elif Campaign.mode == Campaign.FREE:
+		ids.append_array(["outfit", "twin"])
+	ids.append("quit")
+	return ids[clampi(i, 0, ids.size() - 1)]
 
 
 func _activate() -> void:
@@ -100,8 +114,16 @@ func _activate() -> void:
 			_sel = _labels().size() - 1
 		_canvas.queue_redraw()
 		return
-	if Campaign.active and _sel == 3:
+	if _row_id(_sel) == "day":
 		Difficulty.cycle_day_scale(1)
+		_canvas.queue_redraw()
+		return
+	if _row_id(_sel) == "outfit":
+		close()
+		Toolbox.open_outfit.call_deferred()
+		return
+	if _row_id(_sel) == "twin":
+		World.toggle_twin()
 		_canvas.queue_redraw()
 		return
 	if _sel == _labels().size() - 1:
@@ -121,7 +143,7 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
-	var h := 76.0 + (12.0 if Campaign.active else 0.0)
+	var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
 	if _page >= 0:
 		h = 108.0
 	elif _confirm:
@@ -197,8 +219,10 @@ func _key(event: InputEvent) -> void:
 	elif left or right:
 		if not _confirm and _sel == 2:
 			Game.cycle_format()
-		elif not _confirm and _sel == 3 and Campaign.active:
+		elif not _confirm and _row_id(_sel) == "day":
 			Difficulty.cycle_day_scale(1 if right else -1)
+		elif not _confirm and _row_id(_sel) == "twin":
+			World.toggle_twin()
 	elif Controls.confirm(event):
 		_activate()
 		return
@@ -226,7 +250,7 @@ func _paint() -> void:
 			c.draw_rect(rr, UiStyle.HEAD)
 		UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
 	var foot := "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME"
-	if not _confirm and Campaign.active and _sel == 3:
+	if not _confirm and _row_id(_sel) == "day":
 		foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
 	UiStyle.footer(c, r, foot)
 

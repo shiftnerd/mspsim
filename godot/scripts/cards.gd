@@ -98,7 +98,7 @@ func pick(index: int) -> void:
 	Sfx.play("ui_pick")
 	is_open = false
 	_canvas.visible = false
-	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
+	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
 	if id != "__none" and _callback.is_valid():
 		_callback.call(id)
