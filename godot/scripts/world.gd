@@ -41,8 +41,14 @@ const LUNCH_START := 12.0
 const FOLLOW_SECS := 120.0
 const CHAT_COOLDOWN := 60.0
 const FOREVER := 1.0e9
+# the two single-occupancy bathrooms behind the kitchenette doors (R22) and how patient somebody is outside an occupied one
+const BATHROOMS := ["bathroom_1", "bathroom_2"]
+const BATH_TRIES := 4  # waits at the door (BATH_WAIT seconds each) before giving up and going back to work
+const BATH_WAIT := 4.0
+# scene names of old saves and resume files
+const LEGACY_ROOMS := {"bathroom": "bathroom_1"}
 
-var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ret, ...}
+var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ...}
 var time_scale := 1.0:
 	get:
 		# the day clock waits while a decision card or an outing is open
@@ -117,6 +123,105 @@ func clock_text() -> String:
 	return "%d:%02d" % [h % 24, m]
 
 
+# ---- bathrooms: one person at a time ------------------------------------------
+# The single source of truth for the kitchenette doors, the occupied lights, the cast legs and the tests: somebody is inside
+# (a cast member whose scene it is, the player or any other person standing in the room you are in) or is about to be (a cast
+# member whose current leg walks through that door, so two people never head for the same free room). `except` is the cast
+# member who is asking.
+func bathroom_occupied(room: String, except := "") -> bool:
+	for n in chars:
+		var st: Dictionary = chars[n]
+		if n == except:
+			continue
+		if st.scene == room or (not st.legs.is_empty() and st.legs[0].get("to_scene", "") == room):
+			return true
+	if room != _scene or not is_instance_valid(_stage):
+		return false
+	for who in _stage.get_node("Actors").get_children():
+		if who is CharacterBody2D or (who.is_in_group("npcs") and who.cast_name == ""):
+			return true
+	return false
+
+
+# a leg that walks into a bathroom is about to start: take the nearest free one, or wait outside and try again in a few
+# seconds; after BATH_TRIES waits give up (the legs after the visit are the way home and the next work leg)
+func _gate_bathroom(n: String) -> void:
+	var st: Dictionary = chars[n]
+	var room := str(st.legs[0].get("bath", ""))
+	if room == "" or not bathroom_occupied(room, n):
+		return
+	var x := _hint_x(n)
+	for other in _baths_near(x):
+		if not bathroom_occupied(other, n):
+			st.legs = _bath_legs(other, x) + st.legs.slice(3)
+			return
+	var tries := int(st.legs[0].get("tries", 0))
+	if tries >= BATH_TRIES:
+		st.legs = st.legs.slice(3)
+		if st.legs.is_empty():
+			st.legs = _plan(n)
+		return
+	st.legs[0]["tries"] = tries + 1
+	st.legs.push_front(_bath_wait_leg(n, room))
+
+
+# there and back through the nearest bathroom door: travel to the kitchenette, the visit, travel home
+func _bathroom_trip(n: String) -> Array:
+	var home: String = row(n).home
+	var x := float(DATA.SCENES[home].seats[row(n).seat])
+	var legs := _travel(home, "kitchenette", x)
+	var from_x := x if legs.is_empty() else _spawn_x("kitchenette", legs[legs.size() - 1].to_spawn)
+	legs.append_array(_bath_legs(_baths_near(from_x)[0], from_x))
+	legs.append_array(_travel("kitchenette", home, _spawn_x("kitchenette", legs[legs.size() - 1].to_spawn)))
+	return legs
+
+
+# three legs: through the kitchenette door into `room` (marked `bath`, the gate looks at it), the visit, back out
+func _bath_legs(room: String, from_x: float) -> Array:
+	var u: Dictionary = _uses(room)
+	var legs := _travel("kitchenette", room, from_x)
+	legs[0]["bath"] = room
+	legs.append(
+		{
+			"kind": "bathroom",
+			"scene": room,
+			"dur": 12.0,
+			"target_x": float(u.sink),
+			"routine": PackedStringArray(["walk:%d" % u.sink, "use:sink", "wait:2"]),
+		}
+	)
+	legs.append_array(_travel(room, "kitchenette", float(u.sink)))
+	return legs
+
+
+# stand a little way from the door of `room`, with a dots bubble
+func _bath_wait_leg(n: String, room: String) -> Dictionary:
+	var door_x := _bath_door_x(room)
+	var side := 1.0 if door_x < 184.0 else -1.0
+	var x := door_x + side * (16.0 + 9.0 * float(absi(n.hash()) % 3))
+	return {
+		"kind": "wait",
+		"scene": "kitchenette",
+		"dur": BATH_WAIT + 3.0,
+		"target_x": x,
+		"routine": PackedStringArray(["stand", "walk:%d" % int(x), "dots:%d" % int(BATH_WAIT)]),
+	}
+
+
+func _bath_door_x(room: String) -> float:
+	for link in DATA.SCENES["kitchenette"].links:
+		if link.to == room:
+			return float(link.x)
+	return 0.0
+
+
+# the bathrooms, the nearest kitchenette door first
+func _baths_near(x: float) -> Array:
+	var rooms := BATHROOMS.duplicate()
+	rooms.sort_custom(func(a: String, b: String) -> bool: return absf(_bath_door_x(a) - x) < absf(_bath_door_x(b) - x))
+	return rooms
+
+
 # ---- the room the player is in -----------------------------------------------
 func populate(stage: Node) -> void:
 	_stage = stage
@@ -177,6 +282,7 @@ func leg_done(n: String) -> void:
 	st.legs.pop_front()
 	if st.legs.is_empty():
 		st.legs = _plan(n)
+	_gate_bathroom(n)
 	st.leg_t = st.legs[0].dur
 	if st.node != null and is_instance_valid(st.node):
 		st.node.set_routine(st.legs[0].routine)
@@ -285,7 +391,6 @@ func _make_char(n: String) -> Dictionary:
 		"node": null,
 		"held": "",
 		"sips": 0,
-		"ret": "",
 		"lunched": false,
 		"following": false,
 		"follow_t": 0.0,
@@ -434,13 +539,8 @@ func _finish_leg(n: String) -> void:
 	if leg.get("lights_last", false) and last_one_out(leg.scene, n):
 		set_lights(leg.scene, false)
 	if leg.has("to_scene"):
-		var spawn: String = leg.to_spawn
-		if spawn.begins_with("@"):
-			spawn = st.ret
-		if leg.get("remember", "") != "":
-			st.ret = leg.remember
 		st.scene = leg.to_scene
-		st.arrive = spawn
+		st.arrive = leg.to_spawn
 		if st.scene != OUTSIDE and st.scene != _scene and clock < DAY_END:
 			set_lights(st.scene, true)  # someone walking in unseen switches the lights on
 		st.fresh = leg.kind == "away" and leg.scene == OUTSIDE
@@ -474,6 +574,7 @@ func _finish_leg(n: String) -> void:
 				}
 			)
 		)
+	_gate_bathroom(n)
 	st.leg_t = st.legs[0].dur
 	if st.scene == _scene and is_instance_valid(_stage) and st.node == null:
 		_spawn(n)
@@ -651,7 +752,7 @@ func plan_for(n: String, kind: String) -> Array:
 		"floor":
 			legs = _trip(n, "main_floor", _floor_leg())
 		"bathroom":
-			legs = _trip(n, "bathroom", _bathroom_leg())
+			legs = _bathroom_trip(n)
 		_:
 			return [_work_leg(n, true, Difficulty.rng("world").randf_range(30.0, 70.0))]
 	legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 55.0)))
@@ -835,7 +936,6 @@ func _travel(from_scene: String, to_scene: String, from_x: float, closing := fal
 					"dur": absf(float(link.x) - x) / SPEED + (4.0 if closing else 2.0),
 					"to_scene": link.to,
 					"to_spawn": link.spawn,
-					"remember": link.get("remember", ""),
 					"lights_last": closing,
 				}
 			)
@@ -987,16 +1087,6 @@ func _cooler_leg() -> Dictionary:
 				"sip"
 			]
 		),
-	}
-
-
-func _bathroom_leg() -> Dictionary:
-	var u: Dictionary = _uses("bathroom")
-	return {
-		"kind": "bathroom",
-		"dur": 12.0,
-		"target_x": float(u.sink),
-		"routine": PackedStringArray(["walk:%d" % u.sink, "use:sink", "wait:2"]),
 	}
 
 

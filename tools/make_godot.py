@@ -75,8 +75,8 @@ SETS = {
     "kitchenette": dict(node="Kitchenette", W=176,
         spawns={"start": (60, "right"), "from_main": (140, "left"), "from_bath_left": (60, "right"),
                 "from_bath_right": (120, "left")},
-        doors=[("BathLeft", 21, "bathroom", "from_door", "bath_return=from_bath_left"),
-               ("BathRight", 153, "bathroom", "from_door", "bath_return=from_bath_right")],
+        doors=[("BathLeft", 21, "bathroom_1", "from_kitchenette", ""),
+               ("BathRight", 153, "bathroom_2", "from_kitchenette", "")],
         exits=[("ToMain", "right", "main_floor", "from_kitchen")], seats=[]),
     "cubicle_area": dict(node="CubicleArea", W=320,
         spawns={"start": (80, "right"), "from_main": (28, "right"), "from_conf": (270, "left"),
@@ -138,9 +138,14 @@ SETS = {
         spawns={"start": (150, "right"), "from_hall": (290, "left"), "from_booth": (150, "right")},
         doors=[("ToLobby", 303, "resort_lobby", "from_expo", "")],
         exits=[], seats=[]),
-    "bathroom": dict(node="Bathroom", W=128,
-        spawns={"start": (60, "right"), "from_door": (60, "right")},
-        doors=[("ToKitchenette", 21, "kitchenette", "@bath_return", "")], exits=[], seats=[]),
+    # the two single-occupancy restrooms (R22): the left kitchenette door leads to bathroom_1 (door on its left), the right one to
+    # bathroom_2 (door on its right), and each door leads back to its own kitchenette spawn
+    "bathroom_1": dict(node="Bathroom1", W=128,
+        spawns={"start": (60, "right"), "from_kitchenette": (60, "right")},
+        doors=[("ToKitchenette", 21, "kitchenette", "from_bath_left", "")], exits=[], seats=[]),
+    "bathroom_2": dict(node="Bathroom2", W=128,
+        spawns={"start": (68, "left"), "from_kitchenette": (68, "left")},
+        doors=[("ToKitchenette", 107, "kitchenette", "from_bath_right", "")], exits=[], seats=[]),
 }
 
 
@@ -592,6 +597,10 @@ func shake() -> void:
     _shake_t = 0.35
 
 
+func shaking() -> bool:
+    return _shake_t > 0.0
+
+
 func _process(delta: float) -> void:
     _t += delta
     position.y = base_y + (1 if int(_t * 4.0) % 2 == 0 else 0)
@@ -612,6 +621,7 @@ write("scripts/door.gd", '''extends Area2D
 @export var remember := ""            # "key=value" stored in Game.vars when used
 @export var auto := false
 @export var locked := false           # can't be used: the arrow turns red and shakes
+@export var occupancy := ""           # a bathroom scene: the door is locked while somebody is inside (World.bathroom_occupied)
 @export var special := ""            # "front" = the office front door: choose a client site to drive to
 @export var arrow_offset := Vector2(0, -36)
 
@@ -650,17 +660,25 @@ func _on_body_exited(body: Node) -> void:
     _arrow.visible = false
 
 
+func is_locked() -> bool:
+    return locked or (occupancy != "" and World.bathroom_occupied(occupancy))
+
+
 func _process(_delta: float) -> void:
     if _arrow != null:
         _arrow.visible = _player != null and _player.nearest() == self and _player.state != "sitting"
+        if occupancy != "" and not _arrow.shaking():
+            _arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
 
 func use(_body: Node) -> void:
     if special == "front":
         Onsite.offer_door()
         return
-    if locked:
+    if is_locked():
         _arrow.shake()
+        if occupancy != "":
+            Hints.toast("OCCUPIED")
         return
     if remember != "":
         var kv := remember.split("=")
@@ -986,6 +1004,8 @@ func _draw() -> void:
             _draw_duck()
         "flicker_lamp":
             _draw_flicker_lamp()
+        "occupied_1", "occupied_2":
+            _draw_occupied()
         "bench_screen":
             _draw_bench_screen()
         "tree_lights":
@@ -1412,15 +1432,22 @@ func _draw_lamp() -> void:
     draw_circle(Vector2(6, 4), 14.0, Color(1.0, 0.9, 0.5, 0.09))
 
 
-# the warehouse's dying high-bay light: mostly on, now and then a burst of flicker (the node sits on the bulb)
+# a dying light (the warehouse high bay, the old bathroom's bar light): mostly on, now and then a burst of flicker; dark
+# with the room's lights (the node sits on the bulb)
 func _draw_flicker_lamp() -> void:
     var slot := int(_time * 9.0)
     var burst := _h(floori(slot / 14.0)) % 3 == 0
-    if burst and _h(slot) % 3 == 0:
+    if (burst and _h(slot) % 3 == 0) or not World.lights_on(_room):
         return
     _r(-6, 0, 13, 2, Color("fff3c0"))
     draw_circle(Vector2(0, 10), 18.0, Color(1.0, 0.95, 0.7, 0.09))
     draw_circle(Vector2(0, 40), 46.0, Color(1.0, 0.95, 0.7, 0.04))
+
+
+# the dot on a bath door plate in the kitchenette: red while somebody is in that bathroom, green when it is free
+func _draw_occupied() -> void:
+    var taken := World.bathroom_occupied("bathroom_" + kind.right(1))
+    _r(0, 0, 2, 2, Color("e04040") if taken else Color("4ed06a"))
 
 
 # the bench PC being imaged: a blue screen with a progress bar that fills over and over
@@ -2651,6 +2678,12 @@ func _start(parts: PackedStringArray) -> bool:
             state = "wait"
             _timer = float(parts[1])
             _play(_rest_anim())
+        "dots":
+            state = "wait"
+            _timer = float(parts[1])
+            _bubble.glyph = "dots"
+            _bubble.visible = true
+            _play(_rest_anim())
         "say", "talk":
             state = parts[0]
             _timer = float(parts[1])
@@ -2975,8 +3008,14 @@ const LUNCH_START := 12.0
 const FOLLOW_SECS := 120.0
 const CHAT_COOLDOWN := 60.0
 const FOREVER := 1.0e9
+# the two single-occupancy bathrooms behind the kitchenette doors (R22) and how patient somebody is outside an occupied one
+const BATHROOMS := ["bathroom_1", "bathroom_2"]
+const BATH_TRIES := 4  # waits at the door (BATH_WAIT seconds each) before giving up and going back to work
+const BATH_WAIT := 4.0
+# scene names of old saves and resume files
+const LEGACY_ROOMS := {"bathroom": "bathroom_1"}
 
-var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ret, ...}
+var chars := {}  # name -> {scene, arrive, legs, leg_t, node, held, sips, ...}
 var time_scale := 1.0:
     get:
         # the day clock waits while a decision card or an outing is open
@@ -3051,6 +3090,105 @@ func clock_text() -> String:
     return "%d:%02d" % [h % 24, m]
 
 
+# ---- bathrooms: one person at a time ------------------------------------------
+# The single source of truth for the kitchenette doors, the occupied lights, the cast legs and the tests: somebody is inside
+# (a cast member whose scene it is, the player or any other person standing in the room you are in) or is about to be (a cast
+# member whose current leg walks through that door, so two people never head for the same free room). `except` is the cast
+# member who is asking.
+func bathroom_occupied(room: String, except := "") -> bool:
+    for n in chars:
+        var st: Dictionary = chars[n]
+        if n == except:
+            continue
+        if st.scene == room or (not st.legs.is_empty() and st.legs[0].get("to_scene", "") == room):
+            return true
+    if room != _scene or not is_instance_valid(_stage):
+        return false
+    for who in _stage.get_node("Actors").get_children():
+        if who is CharacterBody2D or (who.is_in_group("npcs") and who.cast_name == ""):
+            return true
+    return false
+
+
+# a leg that walks into a bathroom is about to start: take the nearest free one, or wait outside and try again in a few
+# seconds; after BATH_TRIES waits give up (the legs after the visit are the way home and the next work leg)
+func _gate_bathroom(n: String) -> void:
+    var st: Dictionary = chars[n]
+    var room := str(st.legs[0].get("bath", ""))
+    if room == "" or not bathroom_occupied(room, n):
+        return
+    var x := _hint_x(n)
+    for other in _baths_near(x):
+        if not bathroom_occupied(other, n):
+            st.legs = _bath_legs(other, x) + st.legs.slice(3)
+            return
+    var tries := int(st.legs[0].get("tries", 0))
+    if tries >= BATH_TRIES:
+        st.legs = st.legs.slice(3)
+        if st.legs.is_empty():
+            st.legs = _plan(n)
+        return
+    st.legs[0]["tries"] = tries + 1
+    st.legs.push_front(_bath_wait_leg(n, room))
+
+
+# there and back through the nearest bathroom door: travel to the kitchenette, the visit, travel home
+func _bathroom_trip(n: String) -> Array:
+    var home: String = row(n).home
+    var x := float(DATA.SCENES[home].seats[row(n).seat])
+    var legs := _travel(home, "kitchenette", x)
+    var from_x := x if legs.is_empty() else _spawn_x("kitchenette", legs[legs.size() - 1].to_spawn)
+    legs.append_array(_bath_legs(_baths_near(from_x)[0], from_x))
+    legs.append_array(_travel("kitchenette", home, _spawn_x("kitchenette", legs[legs.size() - 1].to_spawn)))
+    return legs
+
+
+# three legs: through the kitchenette door into `room` (marked `bath`, the gate looks at it), the visit, back out
+func _bath_legs(room: String, from_x: float) -> Array:
+    var u: Dictionary = _uses(room)
+    var legs := _travel("kitchenette", room, from_x)
+    legs[0]["bath"] = room
+    legs.append(
+        {
+            "kind": "bathroom",
+            "scene": room,
+            "dur": 12.0,
+            "target_x": float(u.sink),
+            "routine": PackedStringArray(["walk:%d" % u.sink, "use:sink", "wait:2"]),
+        }
+    )
+    legs.append_array(_travel(room, "kitchenette", float(u.sink)))
+    return legs
+
+
+# stand a little way from the door of `room`, with a dots bubble
+func _bath_wait_leg(n: String, room: String) -> Dictionary:
+    var door_x := _bath_door_x(room)
+    var side := 1.0 if door_x < 184.0 else -1.0
+    var x := door_x + side * (16.0 + 9.0 * float(absi(n.hash()) % 3))
+    return {
+        "kind": "wait",
+        "scene": "kitchenette",
+        "dur": BATH_WAIT + 3.0,
+        "target_x": x,
+        "routine": PackedStringArray(["stand", "walk:%d" % int(x), "dots:%d" % int(BATH_WAIT)]),
+    }
+
+
+func _bath_door_x(room: String) -> float:
+    for link in DATA.SCENES["kitchenette"].links:
+        if link.to == room:
+            return float(link.x)
+    return 0.0
+
+
+# the bathrooms, the nearest kitchenette door first
+func _baths_near(x: float) -> Array:
+    var rooms := BATHROOMS.duplicate()
+    rooms.sort_custom(func(a: String, b: String) -> bool: return absf(_bath_door_x(a) - x) < absf(_bath_door_x(b) - x))
+    return rooms
+
+
 # ---- the room the player is in -----------------------------------------------
 func populate(stage: Node) -> void:
     _stage = stage
@@ -3111,6 +3249,7 @@ func leg_done(n: String) -> void:
     st.legs.pop_front()
     if st.legs.is_empty():
         st.legs = _plan(n)
+    _gate_bathroom(n)
     st.leg_t = st.legs[0].dur
     if st.node != null and is_instance_valid(st.node):
         st.node.set_routine(st.legs[0].routine)
@@ -3219,7 +3358,6 @@ func _make_char(n: String) -> Dictionary:
         "node": null,
         "held": "",
         "sips": 0,
-        "ret": "",
         "lunched": false,
         "following": false,
         "follow_t": 0.0,
@@ -3355,13 +3493,8 @@ func _finish_leg(n: String) -> void:
     if leg.get("lights_last", false) and last_one_out(leg.scene, n):
         set_lights(leg.scene, false)
     if leg.has("to_scene"):
-        var spawn: String = leg.to_spawn
-        if spawn.begins_with("@"):
-            spawn = st.ret
-        if leg.get("remember", "") != "":
-            st.ret = leg.remember
         st.scene = leg.to_scene
-        st.arrive = spawn
+        st.arrive = leg.to_spawn
         if st.scene != OUTSIDE and st.scene != _scene and clock < DAY_END:
             set_lights(st.scene, true)  # someone walking in unseen switches the lights on
         st.fresh = leg.kind == "away" and leg.scene == OUTSIDE
@@ -3391,6 +3524,7 @@ func _finish_leg(n: String) -> void:
                 "dur": 9.0,
             }
         )
+    _gate_bathroom(n)
     st.leg_t = st.legs[0].dur
     if st.scene == _scene and is_instance_valid(_stage) and st.node == null:
         _spawn(n)
@@ -3556,7 +3690,7 @@ func plan_for(n: String, kind: String) -> Array:
         "floor":
             legs = _trip(n, "main_floor", _floor_leg())
         "bathroom":
-            legs = _trip(n, "bathroom", _bathroom_leg())
+            legs = _bathroom_trip(n)
         _:
             return [_work_leg(n, true, Difficulty.rng("world").randf_range(30.0, 70.0))]
     legs.append(_work_leg(n, false, Difficulty.rng("world").randf_range(25.0, 55.0)))
@@ -3689,7 +3823,7 @@ func _travel(from_scene: String, to_scene: String, from_x: float, closing := fal
             "kind": "travel", "scene": link.from, "target_x": float(link.x),
             "routine": PackedStringArray(routine),
             "dur": absf(float(link.x) - x) / SPEED + (4.0 if closing else 2.0),
-            "to_scene": link.to, "to_spawn": link.spawn, "remember": link.get("remember", ""),
+            "to_scene": link.to, "to_spawn": link.spawn,
             "lights_last": closing,
         })
         x = _spawn_x(link.to, link.spawn)
@@ -3817,14 +3951,6 @@ func _cooler_leg() -> Dictionary:
         "routine": PackedStringArray(
             ["walk:%d" % u.copier, "use:copier", "walk:%d" % u.cooler, "use:cooler", "wait:2", "sip"]
         ),
-    }
-
-
-func _bathroom_leg() -> Dictionary:
-    var u: Dictionary = _uses("bathroom")
-    return {
-        "kind": "bathroom", "dur": 12.0, "target_x": float(u.sink),
-        "routine": PackedStringArray(["walk:%d" % u.sink, "use:sink", "wait:2"]),
     }
 
 
@@ -42056,7 +42182,7 @@ write("scripts/stage.gd", '''extends Node2D
 # camera for the current output format (Game.format). F1-F7 jump between sets, F9 cycles format.
 
 const SETS := [
-    "main_floor", "office_one", "office_two", "conference", "kitchenette", "bathroom", "cubicle_area",
+    "main_floor", "office_one", "office_two", "conference", "kitchenette", "bathroom_1", "cubicle_area",
     "network_closet"
 ]
 
@@ -42232,6 +42358,9 @@ func _unhandled_input(event: InputEvent) -> void:
             return
         if event.keycode == KEY_F12:
             Game.go("restaurant" if event.shift_pressed else "karaoke_bar", "start")
+            return
+        if event.keycode == KEY_F6 and event.shift_pressed:
+            Game.go("bathroom_2", "start")
             return
         var i: int = event.keycode - KEY_F1
         if i >= 0 and i < SETS.size():
@@ -42824,6 +42953,9 @@ shape = SubResource("RectangleShape2D_body")
 PIECE_W = {"copier": 30, "cooler": 14, "desk_phone": 14, "monitor": 26, "rubber_duck": 4}
 # effects with no interaction: (name, kind, art_x, art_y)
 AMBIENT = {
+    # the red / green occupied light on each bath door plate; the dying bar light over the old bathroom's cracked mirror
+    "kitchenette": [("LightLeft", "occupied_1", 34, 12), ("LightRight", "occupied_2", 166, 12)],
+    "bathroom_1": [("BarLight", "flicker_lamp", 75, 24)],
     "resort_hall": [("Sign0", "session_sign", 66, 57), ("Sign1", "session_sign", 136, 57), ("Sign2", "session_sign", 206, 57),
                     ("Sign3", "session_sign", 276, 57)],
     "bowling_alley": [("NeonBowl", "neon_bowl", 176, 6), ("NeonShoes", "neon_shoes", 22, 6), ("Lanes", "bowl_lane", 0, 0),
@@ -42845,7 +42977,8 @@ BGFX = {
     "cubicle_area": [("Switch", "switch", 8, 54, 10), ("NerfRack", "nerf_rack", 190, 34, 203)],
     "kitchenette": [("Coffee", "coffee", 82, 60, 90), ("Fridge", "fridge", 46, 30, 78, 59, -46),
                     ("Switch", "switch", 40, 54, 42)],
-    "bathroom": [("Sink", "sink", 65, 64, 73), ("Toilet", "toilet", 100, 66, 108), ("Switch", "switch", 42, 54, 44)],
+    "bathroom_1": [("Sink", "sink", 65, 64, 73), ("Toilet", "toilet", 100, 66, 108), ("Switch", "switch", 42, 54, 44)],
+    "bathroom_2": [("Sink", "sink", 59, 60, 67), ("Toilet", "toilet", 20, 66, 28), ("Switch", "switch", 40, 48, 42)],
     "network_closet": [("Switch", "switch", 40, 54, 42)],
     "bowling_alley": [("Switch", "switch", 8, 54, 10)],
     "karaoke_bar": [("Switch", "switch", 8, 54, 10)],
@@ -42925,10 +43058,7 @@ for fname, cfg in SETS.items():
             outside_x = x0 + cx
         if locked or not tscene:
             continue
-        link = {"name": dname, "x": x0 + cx, "to": tscene, "spawn": tspawn}
-        if remember.startswith("bath_return="):
-            link["remember"] = remember.split("=")[1]
-        links.append(link)
+        links.append({"name": dname, "x": x0 + cx, "to": tscene, "spawn": tspawn})
     for ename, side, tscene, tspawn in cfg["exits"]:
         links.append({"name": ename, "x": x0 + 4 if side == "left" else x0 + W - 4, "to": tscene, "spawn": tspawn})
     seats = {f"Seat{i + 1}": x0 + sc[0] for i, sc in enumerate(cfg["seats"])}
@@ -43005,6 +43135,8 @@ for fname, cfg in SETS.items():
                   'script = ExtResource("door")', f'target_scene = "{tscene}"', f'target_spawn = "{tspawn}"']
         if remember:
             lines.append(f'remember = "{remember}"')
+        if tscene.startswith("bathroom_"):
+            lines.append(f'occupancy = "{tscene}"')   # locked while somebody is inside (World.bathroom_occupied)
         if locked and dname == "FrontDoor":
             lines.append('special = "front"')   # the front door opens the where-to menu (Onsite.offer_door)
         elif locked:
@@ -50423,7 +50555,7 @@ func world_dict() -> Dictionary:
         if node != null and is_instance_valid(node):  # standing in the room: the live person knows
             held = str(node.held)
             sips = int(node.sips)
-        cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched, "ret": st.ret}
+        cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched}
     return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "cast": cast}
 
 
@@ -50503,7 +50635,7 @@ func apply_world(d: Dictionary) -> void:
     var lights: Variant = d.get("lights", {})
     if lights is Dictionary:
         for room in lights:
-            World.lights[str(room)] = bool(lights[room])
+            World.lights[World.LEGACY_ROOMS.get(str(room), str(room))] = bool(lights[room])
     Mutators.prepare_day(World.day)  # who is out sick today (flu season), the same pick as this morning
     World.apply_roster()
     var cast: Dictionary = d.get("cast", {})
@@ -50517,7 +50649,6 @@ func apply_world(d: Dictionary) -> void:
         st.held = str(saved.get("held", ""))
         st.sips = int(saved.get("sips", 0))
         st.lunched = bool(saved.get("lunched", false))
-        st.ret = str(saved.get("ret", ""))
         st.following = false
         st.follow_t = 0.0
         st.fresh = false
@@ -50545,7 +50676,7 @@ func apply_world(d: Dictionary) -> void:
 
 # the room, the held cup and the seat travel through Game.vars; the stage seats the player (Stage._seat_player)
 func apply_player(d: Dictionary) -> void:
-    var room := str(d.get("room", ""))
+    var room: String = World.LEGACY_ROOMS.get(str(d.get("room", "")), str(d.get("room", "")))
     if room != "" and ResourceLoader.exists("res://scenes/%s.tscn" % room):
         Campaign._resume_scene = room
         Game.vars["resume_seat"] = str(d.get("seat", ""))

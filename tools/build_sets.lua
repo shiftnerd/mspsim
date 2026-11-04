@@ -114,19 +114,10 @@ builders.kitchenette = {W = 176, H = 128, fn = function(s)
   L.wall(s.layer("Wall"), W, "#8FC43A", "#79A82F"); L.tiles(s.layer("Floor"), W)
   local bath = P.slabDoor("#DDB680", "#C79F68", "#EBCB9A", "black")
   s.put("Doors", bath, 4, 18); s.put("Doors", bath, 136, 18)
+  s.put("Plate", P.bathPlate("BATH 1"), 4, 9); s.put("Plate", P.bathPlate("BATH 2"), 136, 9)   -- the occupied lights are fx `occupied_N`
   s.put("Fridge", P.fridge(), 46, 30); s.put("UpperCabinets", P.upperCabinets(), 78, 36)
   s.put("Counter", P.lowerCabinets(), 76, 76)
   s.put("CounterProps", P.coffee(), 82, 60); s.put("CounterProps", P.sink(), 109, 66)
-end}
-
--- ===== BATHROOM 128x128 (shared by both bath doors) =====
-builders.bathroom = {W = 128, H = 128, fn = function(s)
-  local W = 128
-  L.wall(s.layer("Wall"), W, "#CFE3EA", "#B3CCD6"); L.tiles(s.layer("Floor"), W)
-  s.put("Doors", P.slabDoor("#DDB680", "#C79F68", "#EBCB9A", "black"), 4, 18)
-  s.put("Mirror", P.mirror(), 66, 32)
-  s.put("Sink", P.bathSink(), 65, 64)
-  s.put("Toilet", P.toilet(), 100, 66)
 end}
 
 -- ===== CUBICLE AREA 288x128 (cubicles 3 and 4 + copier corner) =====
@@ -161,13 +152,14 @@ builders.network_closet = {W = 144, H = 128, fn = function(s)
   s.put("Rack", P.networkRack(), L.CLOSET.rack[1], L.CLOSET.rack[2])
 end}
 
+dofile(TOOLS .. "bathroom_sets.lua")(L, builders)  -- the two restrooms behind the kitchenette doors (bathroom_1, bathroom_2)
 dofile(TOOLS .. "outing_sets.lua")(L, builders)   -- bowling alley, karaoke bar, escape room
 dofile(TOOLS .. "venue_sets.lua")(L, builders)    -- Rodent Nation: resort lobby, hall, ballroom, breakout room, vendor hall
 dofile(TOOLS .. "warehouse_set.lua")(L, builders)  -- the warehouse (1480 px wide: staging and e-waste storage, chair race phase 1)
 dofile(TOOLS .. "client_sets.lua")(L, builders)   -- client sites: site_<type>_<skin> (dental, law, vet, arch, realty, trailer x a, b)
 local exported = {}
 local T, B = L.CEIL_H, L.FLOOR_EXT
-local seeds = {main_floor = 3, office_one = 7, office_two = 8, conference = 11, kitchenette = 5, bathroom = 13, cubicle_area = 9,
+local seeds = {main_floor = 3, office_one = 7, office_two = 8, conference = 11, kitchenette = 5, bathroom_1 = 13, bathroom_2 = 14, cubicle_area = 9,
   network_closet = 15, bowling_alley = 21, karaoke_bar = 22, escape_room = 23, restaurant = 24,
   resort_lobby = 31, resort_hall = 32, ballroom = 33, breakout_room = 34, vendor_hall = 35, warehouse = 41}
 for name, b in pairs(builders) do

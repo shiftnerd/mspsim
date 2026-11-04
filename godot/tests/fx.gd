@@ -8,8 +8,10 @@ const ENTRIES := [
 	["kitchenette", "UseCoffee", "../Fx/Coffee"],
 	["cubicle_area", "Usecopier", ""],
 	["cubicle_area", "Usecooler", ""],
-	["bathroom", "UseSink", "../Fx/Sink"],
-	["bathroom", "UseToilet", "../Fx/Toilet"],
+	["bathroom_1", "UseSink", "../Fx/Sink"],
+	["bathroom_1", "UseToilet", "../Fx/Toilet"],
+	["bathroom_2", "UseSink", "../Fx/Sink"],
+	["bathroom_2", "UseToilet", "../Fx/Toilet"],
 ]
 const BLOCK := 600
 

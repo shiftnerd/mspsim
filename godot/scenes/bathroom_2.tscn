@@ -1,6 +1,6 @@
 [gd_scene load_steps=18 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/sets/bathroom.png" id="bg"]
+[ext_resource type="Texture2D" path="res://assets/sets/bathroom_2.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
 [ext_resource type="Script" path="res://scripts/stage.gd" id="stage"]
 [ext_resource type="Script" path="res://scripts/door.gd" id="door"]
@@ -32,7 +32,7 @@ size = Vector2(24, 96)
 [sub_resource type="RectangleShape2D" id="shape_rack"]
 size = Vector2(100, 60)
 
-[node name="Bathroom" type="Node2D"]
+[node name="Bathroom2" type="Node2D"]
 script = ExtResource("stage")
 
 [node name="Background" type="Sprite2D" parent="."]
@@ -61,26 +61,26 @@ shape = SubResource("shape_wall")
 [node name="Spawns" type="Node2D" parent="."]
 
 [node name="start" type="Marker2D" parent="Spawns"]
-position = Vector2(180, 118)
-metadata/facing = "right"
+position = Vector2(188, 118)
+metadata/facing = "left"
 
-[node name="from_door" type="Marker2D" parent="Spawns"]
-position = Vector2(180, 118)
-metadata/facing = "right"
+[node name="from_kitchenette" type="Marker2D" parent="Spawns"]
+position = Vector2(188, 118)
+metadata/facing = "left"
 
 [node name="Interactables" type="Node2D" parent="."]
 
 [node name="DoorToKitchenette" type="Area2D" parent="Interactables"]
-position = Vector2(141, 70)
+position = Vector2(227, 70)
 script = ExtResource("door")
 target_scene = "kitchenette"
-target_spawn = "@bath_return"
+target_spawn = "from_bath_right"
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToKitchenette"]
 shape = SubResource("shape_door")
 
 [node name="UseSink" type="Area2D" parent="Interactables"]
-position = Vector2(193, 70)
+position = Vector2(187, 70)
 script = ExtResource("interact")
 target = NodePath("../../Fx/Sink")
 
@@ -88,7 +88,7 @@ target = NodePath("../../Fx/Sink")
 shape = SubResource("shape_fx")
 
 [node name="UseToilet" type="Area2D" parent="Interactables"]
-position = Vector2(228, 70)
+position = Vector2(148, 70)
 script = ExtResource("interact")
 target = NodePath("../../Fx/Toilet")
 
@@ -96,7 +96,7 @@ target = NodePath("../../Fx/Toilet")
 shape = SubResource("shape_fx")
 
 [node name="UseSwitch" type="Area2D" parent="Interactables"]
-position = Vector2(164, 70)
+position = Vector2(162, 70)
 script = ExtResource("interact")
 target = NodePath("../../Fx/Switch")
 
@@ -106,17 +106,17 @@ shape = SubResource("shape_fx")
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Sink" type="Node2D" parent="Fx"]
-position = Vector2(185, 64)
+position = Vector2(179, 60)
 script = ExtResource("fx")
 kind = "sink"
 
 [node name="Toilet" type="Node2D" parent="Fx"]
-position = Vector2(220, 66)
+position = Vector2(140, 66)
 script = ExtResource("fx")
 kind = "toilet"
 
 [node name="Switch" type="Node2D" parent="Fx"]
-position = Vector2(162, 54)
+position = Vector2(160, 48)
 script = ExtResource("fx")
 kind = "switch"
 

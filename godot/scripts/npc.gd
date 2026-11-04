@@ -676,6 +676,12 @@ func _start(parts: PackedStringArray) -> bool:
 			state = "wait"
 			_timer = float(parts[1])
 			_play(_rest_anim())
+		"dots":
+			state = "wait"
+			_timer = float(parts[1])
+			_bubble.glyph = "dots"
+			_bubble.visible = true
+			_play(_rest_anim())
 		"say", "talk":
 			state = parts[0]
 			_timer = float(parts[1])

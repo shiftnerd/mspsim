@@ -75,20 +75,8 @@ const SCENES := {
 		},
 		"links":
 		[
-			{
-				"name": "BathLeft",
-				"x": 117,
-				"to": "bathroom",
-				"spawn": "from_door",
-				"remember": "from_bath_left"
-			},
-			{
-				"name": "BathRight",
-				"x": 249,
-				"to": "bathroom",
-				"spawn": "from_door",
-				"remember": "from_bath_right"
-			},
+			{"name": "BathLeft", "x": 117, "to": "bathroom_1", "spawn": "from_kitchenette"},
+			{"name": "BathRight", "x": 249, "to": "bathroom_2", "spawn": "from_kitchenette"},
 			{"name": "ToMain", "x": 268, "to": "main_floor", "spawn": "from_kitchen"}
 		],
 		"seats": {},
@@ -287,15 +275,26 @@ const SCENES := {
 		"uses": {"booth_swag": 95, "booth_vendor": 183, "booth_nerds": 271},
 		"outside_x": -1
 	},
-	"bathroom":
+	"bathroom_1":
 	{
 		"x0": 120,
 		"W": 128,
-		"spawns": {"start": [180, "right"], "from_door": [180, "right"]},
+		"spawns": {"start": [180, "right"], "from_kitchenette": [180, "right"]},
 		"links":
-		[{"name": "ToKitchenette", "x": 141, "to": "kitchenette", "spawn": "@bath_return"}],
+		[{"name": "ToKitchenette", "x": 141, "to": "kitchenette", "spawn": "from_bath_left"}],
 		"seats": {},
 		"uses": {"sink": 193, "toilet": 228, "switch": 164},
+		"outside_x": -1
+	},
+	"bathroom_2":
+	{
+		"x0": 120,
+		"W": 128,
+		"spawns": {"start": [188, "left"], "from_kitchenette": [188, "left"]},
+		"links":
+		[{"name": "ToKitchenette", "x": 227, "to": "kitchenette", "spawn": "from_bath_right"}],
+		"seats": {},
+		"uses": {"sink": 187, "toilet": 148, "switch": 162},
 		"outside_x": -1
 	},
 	"site_dental_a":

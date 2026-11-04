@@ -9,7 +9,7 @@ const SETS := [
 	"office_two",
 	"conference",
 	"kitchenette",
-	"bathroom",
+	"bathroom_1",
 	"cubicle_area",
 	"network_closet"
 ]
@@ -186,6 +186,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if event.keycode == KEY_F12:
 			Game.go("restaurant" if event.shift_pressed else "karaoke_bar", "start")
+			return
+		if event.keycode == KEY_F6 and event.shift_pressed:
+			Game.go("bathroom_2", "start")
 			return
 		var i: int = event.keycode - KEY_F1
 		if i >= 0 and i < SETS.size():

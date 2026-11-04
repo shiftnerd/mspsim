@@ -10,7 +10,8 @@ const SETS := {
 	"conference": [320, 88, 120],
 	"office_one": [176, 96, 80],
 	"office_two": [176, 96, 108],
-	"bathroom": [128, 120, 60],
+	"bathroom_1": [128, 120, 60],
+	"bathroom_2": [128, 120, 68],
 }
 const FORMATS := {"h": Vector2i(320, 180), "v": Vector2i(180, 320)}
 

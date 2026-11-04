@@ -6,6 +6,7 @@ extends Area2D
 @export var remember := ""  # "key=value" stored in Game.vars when used
 @export var auto := false
 @export var locked := false  # can't be used: the arrow turns red and shakes
+@export var occupancy := ""  # a bathroom scene: the door is locked while somebody is inside (World.bathroom_occupied)
 @export var special := ""  # "front" = the office front door: choose a client site to drive to
 @export var arrow_offset := Vector2(0, -36)
 
@@ -44,19 +45,27 @@ func _on_body_exited(body: Node) -> void:
 	_arrow.visible = false
 
 
+func is_locked() -> bool:
+	return locked or (occupancy != "" and World.bathroom_occupied(occupancy))
+
+
 func _process(_delta: float) -> void:
 	if _arrow != null:
 		_arrow.visible = (
 			_player != null and _player.nearest() == self and _player.state != "sitting"
 		)
+		if occupancy != "" and not _arrow.shaking():
+			_arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
 
 func use(_body: Node) -> void:
 	if special == "front":
 		Onsite.offer_door()
 		return
-	if locked:
+	if is_locked():
 		_arrow.shake()
+		if occupancy != "":
+			Hints.toast("OCCUPIED")
 		return
 	if remember != "":
 		var kv := remember.split("=")

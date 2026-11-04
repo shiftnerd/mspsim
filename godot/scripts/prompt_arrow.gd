@@ -24,6 +24,10 @@ func shake() -> void:
 	_shake_t = 0.35
 
 
+func shaking() -> bool:
+	return _shake_t > 0.0
+
+
 func _process(delta: float) -> void:
 	_t += delta
 	position.y = base_y + (1 if int(_t * 4.0) % 2 == 0 else 0)
