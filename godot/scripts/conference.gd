@@ -565,6 +565,97 @@ const DEFAULT_FORUM := [
 			},
 		],
 	},
+	{
+		"id": "grizzle",
+		"speaker": "GrizzleAdmin (the forum admin since 2008)",
+		"text":
+		"Hmph. I run the boards. Been here since the forum was one box under a desk. Before you ask: yes, I read the FAQ, no, you did not, and no, I will not unban the guy who posted in capitals for a week.",
+		"options":
+		[
+			{
+				"id": "old",
+				"label": "ASK ABOUT THE OLD DAYS",
+				"skill": "servers",
+				"xp": 4,
+				"text":
+				"He tells you about the first forum server: a desktop under a desk, the database on the same disk as the system. 'It died on a Friday. Separate the data from the system and back up both. Now go away.' (+4 servers XP)"
+			},
+			{
+				"id": "lab",
+				"label": "SHOW HIM YOUR LAB NOTES",
+				"skill": "security",
+				"xp": 3,
+				"text":
+				"He reads your notes for a long, silent minute. 'You test before production. Good. Nobody does.' He almost smiles. Almost. (+3 security XP)"
+			},
+			{
+				"id": "rules",
+				"label": "ASK ABOUT THE RULES",
+				"skill": "",
+				"xp": 0,
+				"karma": 3,
+				"text":
+				"'Search first. Say what version. No capitals. Test on a lab box.' He nods. 'You follow them, which is why I have never banned you.' (+3 forum karma)",
+				"text_free":
+				"'Search first. Say what version. No capitals. Test on a lab box. That is all of it.'"
+			},
+			{
+				"id": "coffee",
+				"label": "OFFER HIM A COFFEE",
+				"skill": "",
+				"xp": 0,
+				"social": 1,
+				"text":
+				"'Black. No sugar. The cup is always too small.' He tells you the best thing a tech can do is bring the coffee when the server is down. You will try it. (coworkers like you a little more)",
+				"text_free": "'Black. No sugar. Hmph. Thanks.'"
+			},
+		],
+	},
+	{
+		"id": "pip",
+		"speaker": "HELPPLZ_Pip (forum newbie)",
+		"text":
+		"HI!!! I AM PIP!!! MY CAPS LOCK IS STUCK AND SO IS EVERYTHING ELSE!!! THE ADMIN SAYS I AM NOT ALLOWED TO TALK LIKE THIS!!! DO YOU HAVE A MINUTE???",
+		"options":
+		[
+			{
+				"id": "help",
+				"label": "HELP WITH HIS PROBLEM",
+				"skill": "people",
+				"xp": 4,
+				"text":
+				"His PC is slow. You ask what it does when it is slow: he has 40 toolbars and 3 antivirus programs. You teach him to take things away one at a time. 'WOW THANK YOU!!!' (+4 customer XP)"
+			},
+			{
+				"id": "search",
+				"label": "TEACH HIM THE SEARCH BOX",
+				"skill": "",
+				"xp": 0,
+				"karma": 3,
+				"text":
+				"You show him the search box and how to say which version he has. His next post is in lower case. The admin pins it out of pure shock. (+3 forum karma)",
+				"text_free": "You show him the search box. He says 'WHAT A BUTTON.'"
+			},
+			{
+				"id": "caps",
+				"label": "ASK ABOUT THE CAPS",
+				"skill": "people",
+				"xp": 3,
+				"text":
+				"'IT IS ON SINCE 2011!!!' You press the key. He stares at the keyboard for a long time. 'MY WHOLE LIFE.' (+3 customer XP)"
+			},
+			{
+				"id": "bag",
+				"label": "GIVE HIM YOUR TOTE BAG",
+				"skill": "",
+				"xp": 0,
+				"social": 1,
+				"text":
+				"He puts it on his head and tells everyone near the booth about you in capital letters. By Monday your coworkers have heard. (coworkers like you a little more)",
+				"text_free": "He puts it on his head and tells everyone about you."
+			},
+		],
+	},
 ]
 var FORUM: Array = DEFAULT_FORUM.duplicate(true)
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
@@ -611,6 +702,13 @@ const CROWD := {
 			"x": 243,
 			"facing": "right",
 			"routine": ["talk:5", "wait:3"]
+		},
+		{
+			"who": "expo_grizzle",
+			"role": "forum:grizzle",
+			"x": 182,
+			"facing": "left",
+			"routine": ["wait:6", "say:2", "wait:4"]
 		},
 	],
 	"resort_hall":
@@ -803,6 +901,13 @@ const CROWD := {
 			"x": 238,
 			"facing": "left",
 			"routine": ["wait:5", "talk:3"]
+		},
+		{
+			"who": "expo_pip",
+			"role": "forum:pip",
+			"x": 205,
+			"facing": "right",
+			"routine": ["wait:4", "talk:3", "wait:2", "say:2"]
 		},
 	],
 }
@@ -1112,6 +1217,8 @@ func _vendor_xp() -> Dictionary:
 	var all := VENDOR_XP.duplicate()
 	all.merge(Trip.VENDOR_XP)
 	return all
+
+
 func _enter_breakout() -> void:
 	var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
 	var sessions: Array = menu(rnd)
@@ -1145,7 +1252,8 @@ func room_info(door: int, chars := 22) -> Dictionary:
 	return {
 		"id": str(at.id),
 		"round": int(at.round) + 1,
-		"time": "%d:%02d %s" % [hour if hour <= 12 else hour - 12, minutes, "AM" if hour < 12 else "PM"],
+		"time":
+		"%d:%02d %s" % [hour if hour <= 12 else hour - 12, minutes, "AM" if hour < 12 else "PM"],
 		"title": _wrap(str(found.get("short", found.label)), chars),
 		"speaker": SPEAKERS.get(str(at.id), ["GUEST SPEAKER", "RODENT NATION"]),
 	}
@@ -1295,7 +1403,15 @@ func _raffle() -> void:
 		Shift.add_energy(100.0)
 		Campaign.adjust_rep(3)
 		Career.add("raffle_wins")
-	text += " " + (Trip.drum_line(Trip.raffle_base()) + " " if Trip.drum_line(Trip.raffle_base()) != "" else "") + str(TEXT.wrap)
+	text += (
+		" "
+		+ (
+			Trip.drum_line(Trip.raffle_base()) + " "
+			if Trip.drum_line(Trip.raffle_base()) != ""
+			else ""
+		)
+		+ str(TEXT.wrap)
+	)
 	Cards.ask(
 		"RODENT NATION",
 		text,

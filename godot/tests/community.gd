@@ -175,11 +175,11 @@ func _init() -> void:
 	nerds.ensure_threads()
 	_check(nerds.threads.size() == 5, "five threads a day")
 	var xp_before := 0
-	for key in ["servers", "security", "networking"]:
+	for key in ["servers", "security", "networking", "people"]:
 		xp_before += int(sk.xp.get(key, 0))
 	nerds.read_thread(0)
 	var xp_after := 0
-	for key in ["servers", "security", "networking"]:
+	for key in ["servers", "security", "networking", "people"]:
 		xp_after += int(sk.xp.get(key, 0))
 	_check(
 		xp_after == xp_before + 2 and nerds.threads[0].read,
