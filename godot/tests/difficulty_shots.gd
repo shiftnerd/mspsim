@@ -31,18 +31,19 @@ func _process(_delta: float) -> bool:
 			current_scene._choose(0)  # TECH CAMPAIGN
 		80:
 			current_scene._select.setup("tech")
+			current_scene._select.step = "options"  # the LEVEL row lives on the options page
 		90:
-			_shot("normal_char")
+			_shot("normal_options")
 			current_scene._select.change_tier(1)
 		110:
-			_shot("hard_char")
+			_shot("hard_options")
 			current_scene._select.confirm()
 		130:
-			_shot("hard_phone")
-			current_scene._select.back()
+			_shot("hard_build")
+			current_scene._select.back()  # to the options
 			current_scene._select.change_tier(-2)
 		150:
-			_shot("easy_char")
+			_shot("easy_options")
 			d.set_tier("normal")
 			DirAccess.remove_absolute(d.settings_path)
 			print("DONE")

@@ -91,9 +91,8 @@ func _init() -> void:
 	var cs = cs_script.new()
 	root.add_child(cs)
 	cs.setup("free")
-	cs.sel = 0
-	cs.confirm()
-	_check(cs.step == "create" and cs.is_custom(), "MAKE YOUR OWN opens the create step")
+	_check(cs.step == "create" and cs.is_custom(), "Free Play opens straight in the create step on MY LOOK")
+	cs.ids = ["custom"]  # no START row here: the poses and the NAME row are what this test is about (charselect.gd covers START)
 	_check(cs_script.POSES.size() == 14, "fourteen poses")
 	var names := []
 	for p in cs_script.POSES:
@@ -259,7 +258,7 @@ func _init() -> void:
 	var pg = who.sprite.get_node("HeadGear")
 	_check(pg.get_node("glasses").visible and (pg.get_node("glasses").material as ShaderMaterial) != null, "the player's HeadGear shows the new glasses live")
 	ov.set_page(0)
-	ov.create_row = 2
+	ov.create_row = 3  # START, NAME, STYLE, SKIN
 	await _key(KEY_RIGHT)
 	_check((who.sprite.material as ShaderMaterial).get_shader_parameter("dst")[0] != Color.html("8d5524"), "a new skin colour reaches the player's material live")
 	await _key(KEY_ESCAPE)
