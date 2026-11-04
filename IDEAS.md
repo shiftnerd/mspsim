@@ -34,7 +34,7 @@ Consequences and ideas that follow:
 - More story days for the quiet days (6, 8, 11, 14, 17, 19): the weeks between the big jobs need small human beats.
 - Dialer / calling clients from the phone app, replies that do something, a notification buzz and banner on the HUD, a lock screen, a camera app.
 - NPCs noticing and reporting outages themselves (a coworker calls it in before the monitoring does).
-- A labelled patch panel and cable tracing in the closet, a spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
+- (Built: labelled patch panel and cable tracing.) A spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
 - Phone: more ticket types, a day-end score screen with a "best moment" recap.
 - Coworkers invite you to things (lunch, a beer after a hard night), react to the clock themselves ("lunch?"), weekends and holidays, the day-20 review quoting what they said.
 - A settings and credits screen, music, an animated logo. (The character-select / first-day screen with the phone pick is done: see CLAUDE.md "Logo + title screen".)

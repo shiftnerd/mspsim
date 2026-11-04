@@ -556,6 +556,7 @@ func _start(id: String, summary := "") -> void:
 	Shift.enabled = true
 	Outings.enabled = true
 	Onsite.enabled = true
+	Net.cable_faults = true  # R37: loose patch cables in the tech campaign (tests start campaigns without them)
 	Outings.use_rooms = true
 	var run_mode := id.get_slice("_", 0)
 	Campaign.slot = _slot if Campaign.MODES.has(run_mode) else 1

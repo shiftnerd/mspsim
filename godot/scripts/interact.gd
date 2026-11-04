@@ -1,4 +1,5 @@
 extends Area2D
+# gdlint:disable=max-returns
 # Press E next to it to play an effect (see fx.gd) on `target`.
 
 @export var target: NodePath
@@ -62,6 +63,8 @@ func use(body: Node) -> void:
 		return
 	if fx.kind == "tv":  # the wall TV: the metrics board full size, read only (Esc closes)
 		Computer.open_tv()
+		return
+	if fx.toner_use(body, look_x if look_x != 0.0 else global_position.x):  # R37: the tool case, or the toner at a desk
 		return
 	if fx.style == "computer":
 		Computer.open(fx.desk)

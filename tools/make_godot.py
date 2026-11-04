@@ -1031,6 +1031,8 @@ func _draw() -> void:
             _draw_tv()
         "rack":
             _draw_rack()
+        "toner_kit":
+            _draw_toner_kit()
         "switch":
             _draw_switch()
         "door_switch":
@@ -1924,7 +1926,87 @@ func _draw_rack() -> void:
     var st := Net.status()
     _rack_leds(Net.layout, st)
     _rack_ups(Net.layout, st)
+    _rack_labels()
     _rack_cables()
+    _rack_beep()
+
+
+# the tag beside each patch panel jack (R37): Dan's printed ones are white and crisp, hand-written tape is yellow, faded tape
+# is pale with a ghost of a number, torn-off tape leaves nothing. Wrong tags look just like right ones: only the probe knows.
+func _rack_labels() -> void:
+    for jack in range(1, 9):
+        var far := Net.far_pos("p%d" % jack)
+        var tag: Dictionary = Net.label(jack)
+        var x := far.x + 2.0
+        var ink := Color("17121f")
+        match str(tag.state):
+            "dan", "fixed":
+                _r(x, 3, 4, 7, Color("efebdd"))
+            "ok", "wrong":
+                _r(x, 3, 4, 7, Color("dcc46a"))
+            "faded":
+                _r(x, 3, 4, 7, Color("b9b08a"))
+                ink = Color("a79f80")
+            "blank":
+                _r(x, 8, 4, 2, Color("8a8468"))  # a stub of tape left on the panel
+                continue
+        PixelFont.draw(self, str(int(tag.n)), Vector2(x + 0.5, 4), ink, 1)
+        if tag.state == "fixed":
+            _r(x + 1, 9, 2, 1, Color("5fbf4a"))
+
+
+# ---- the tool case with the toner and probe (R37): E takes the toner out, E again puts it back ----
+# E on this fx (interact.gd): the tool case takes / returns the toner, and the toner at a desk's monitor, phone or the copier
+# clips its tone onto that desk's wall jack (probe the patch panel in the closet to find the cable). True = handled.
+func toner_use(body: Node, reach_x: float) -> bool:
+    if kind == "toner_kit":
+        toner_press(body)
+        return true
+    if body.held == "toner" and desk >= 1 and kind in ["monitor", "desk_phone", "copier"]:
+        Net.tone_at(desk)
+        Hints.toast("TONE ON AT DESK %d. NOW PROBE THE PATCH PANEL IN THE CLOSET" % desk, 3.5)
+        Sfx.play("ui_pick")
+        body.reach(reach_x)
+        return true
+    return false
+
+
+func toner_press(body: Node) -> void:
+    body.reach(global_position.x)
+    if body.held == "toner":
+        body.give("")
+        Net.tone_at(0)
+        Hints.toast("TONER BACK IN THE CASE", 2.0)
+    elif body.held == "":
+        body.give("toner")
+        Hints.toast("TONER AND PROBE. E AT A DESK CLIPS THE TONE ON, E AT A PATCH JACK PROBES", 4.0)
+    else:
+        Hints.toast("HANDS FULL", 1.8)
+
+
+func _draw_toner_kit() -> void:
+    var out: bool = Game.vars.get("held", "") == "toner"
+    _r(0, 0, 12, 7, Color("17121f"))
+    _r(1, 1, 10, 5, Color("e8a030"))
+    _r(1, 1, 10, 1, Color("f6c85a"))
+    _r(5, 0, 2, 2, Color("17121f"))  # the handle
+    if out:
+        _r(2, 3, 8, 2, Color("3a2a10"))  # the foam is empty
+    else:
+        _r(3, 3, 6, 2, Color("3c414d"))
+        _r(9, 3, 1, 2, Color("9fe870") if int(_time * 2.0) % 2 == 0 else Color("2f5a28"))
+
+
+# the probe found a cable: a green ring round its jack for a moment
+func _rack_beep() -> void:
+    if Net.beep_t <= 0.0 or int(Net.beep_t * 6.0) % 2 == 1:
+        return
+    var at := Net.far_pos("p%d" % Net.beep_jack)
+    var ring := Color("9fe870")
+    _r(at.x - 3, at.y - 4, 7, 1, ring)
+    _r(at.x - 3, at.y + 3, 7, 1, ring)
+    _r(at.x - 3, at.y - 3, 1, 6, ring)
+    _r(at.x + 3, at.y - 3, 1, 6, ring)
 
 
 func _led(pos: Array, color: Color) -> void:
@@ -2301,6 +2383,7 @@ func _draw_toilet() -> void:
 ''')
 
 write("scripts/interact.gd", '''extends Area2D
+# gdlint:disable=max-returns
 # Press E next to it to play an effect (see fx.gd) on `target`.
 
 @export var target: NodePath
@@ -2364,6 +2447,8 @@ func use(body: Node) -> void:
         return
     if fx.kind == "tv":  # the wall TV: the metrics board full size, read only (Esc closes)
         Computer.open_tv()
+        return
+    if fx.toner_use(body, look_x if look_x != 0.0 else global_position.x):  # R37: the tool case, or the toner at a desk
         return
     if fx.style == "computer":
         Computer.open(fx.desk)
@@ -3544,6 +3629,14 @@ func _draw() -> void:
         draw_rect(Rect2(-2, -4, 5, 7), INK)
         draw_rect(Rect2(-1, -3, 3, 4), Color("4f7fd0"))
         draw_rect(Rect2(-1, 1, 3, 2), Color("c8ccd8"))
+    elif item == "toner":  # tone generator with a probe wand (R37); the LED blinks while a tone is clipped on a desk
+        draw_rect(Rect2(-3, -3, 7, 8), INK)
+        draw_rect(Rect2(-2, -2, 5, 6), Color("e8a030"))
+        draw_rect(Rect2(-1, -1, 3, 2), Color("3c414d"))
+        var on: bool = Net.tone_desk > 0 and int(_t * 4.0) % 2 == 0
+        draw_rect(Rect2(0, 2, 1, 1), Color("9fe870") if on else Color("5a3a18"))
+        draw_rect(Rect2(_side * 3.0 - 0.5, -8, 1, 6), INK)  # the probe wand
+        draw_rect(Rect2(_side * 3.0 - 0.5, -9, 1, 1), Color("e04646"))
     elif item == "plug_pwr":
         draw_rect(Rect2(-2, -4, 5, 7), INK)
         draw_rect(Rect2(-1, -3, 3, 4), Color("3c414d"))
@@ -5711,7 +5804,8 @@ func create_internal(desk: int, summary: String, body: String) -> void:
         "id": _next_id, "client": -1, "contact": DESK_NAMES.get(desk, "Staff"), "summary": summary, "pri": 2, "body": body,
         "status": "New", "sla_left": SLA_SECS[2] * Difficulty.sla_scale(), "sla_total": SLA_SECS[2] * Difficulty.sla_scale(), "endpoint": "", "fix": "network",
         "fix_done": false, "internal": true, "desk": desk, "source": "monitoring",
-        "notes": ["Detected automatically."] + (["Tip: check patch panel port %d in the closet." % desk] if Campaign.active and Skills.level("networking") >= 2 else []),
+        "notes": ["Detected automatically."] + (["Tip: check patch panel port %d in the closet." % desk] if Campaign.active and Skills.level("networking") >= 2 else [])
+            + (["Tip: jack labels drift. If port %d is not the one, trace it with the toner (tool case in the closet)." % desk] if Campaign.active and Skills.level("networking") >= 3 and Net.is_loose(desk) else []),
         "breached": false,
     }
     _next_id += 1
@@ -11570,6 +11664,7 @@ const XP_AT := [15, 40, 80, 130, 200]  # experience needed for levels 1 to 5
 const FIX_XP := {
     "spooler": "networking", "password": "security", "clear_temp": "servers", "reboot": "servers", "av": "security",
     "restore": "security", "adobe": "servers",
+    "trace": "networking",  # R37: found a loose cable with the toner instead of trusting a bad jack label (Net.reseat)
 }
 const FIX_SECS := [6.0, 5.0, 4.0, 3.0, 2.0, 1.5]  # by PowerShell level
 const FAIL := [0.25, 0.18, 0.1, 0.04, 0.0, 0.0]
@@ -49793,6 +49888,7 @@ func _start(id: String, summary := "") -> void:
     Shift.enabled = true
     Outings.enabled = true
     Onsite.enabled = true
+    Net.cable_faults = true  # R37: loose patch cables in the tech campaign (tests start campaigns without them)
     Outings.use_rooms = true
     var run_mode := id.get_slice("_", 0)
     Campaign.slot = _slot if Campaign.MODES.has(run_mode) else 1
@@ -49873,6 +49969,14 @@ const DEFAULTS := {
     "pdu_in": ["feed", "ups1"], "ups_in": ["inlet", "wall"],
 }
 const PATCH_COLORS := ["#4f7fd0", "#4f9c8e", "#e0a030", "#9a60c8"]
+# R37 cable tracing: the patch panel's jack labels, a loose cable and the toner and probe (see "Network closet" in CLAUDE.md)
+const DAN_JACKS := [1, 3, 8]  # printed label-maker tags (Dan is proud of them): always right
+const DRIFT_JACKS := [2, 4, 5, 6, 7]  # hand-written tape that drifts when somebody re-plugs things
+const WHO := {1: "DESK 1", 2: "MAYA", 3: "DAN", 4: "VIC", 5: "MORGAN", 6: "ALAN", 7: "GARRISON", 8: "COPIER"}
+const FLAP_SECS := 6.0  # a healthy jack you re-seat drops its desk this long
+const TRACE_XP := 6  # networking XP for finding a loose cable by tracing instead of trusting a bad label
+const FAULT_FROM_DAY := 3  # tech campaign: from this day a cable may work loose
+const FAULT_CHANCE := 0.4
 
 var layout := {}
 var cables := {}  # id -> {kind, end}
@@ -49881,7 +49985,22 @@ var carrying := ""  # the cable whose end is in the player's hand
 var ups_on := true
 var nas_on := true
 var battery := 1.0
+var labels := {}  # jack 1-8 -> {n: the desk the tag says (0 = nothing written), state: dan / ok / wrong / faded / blank / fixed}
+var faults := {}  # patch cable id -> true: half-seated at the panel, that desk has no link until the jack is re-seated
+var fixed_labels := {}  # jack -> true: relabelled by you, right from then on
+var cable_faults := false  # the title turns this on for a real run: only then may a cable work loose in the tech campaign
+var tone_desk := 0  # the tone generator is clipped on this desk's wall jack (0 = not clipped)
+var traced := {}  # desk -> the jack where the probe beeped for it
+var beep_jack := 0  # the jack that just beeped (a ring is drawn round it)
+var beep_t := 0.0
 var _boot := {"sw": 99.0, "rt": 99.0, "nas": 99.0}
+var _flap := {}  # jack -> seconds left of a dropped link
+var _untrusted := {}  # jack -> true when its label was not right at the moment the cable worked loose
+var _label_key := ""
+var _plan_day := -1
+var _plan := {}
+var _fired_day := -1
+var _pokes := 0
 
 
 func _ready() -> void:
@@ -49901,11 +50020,35 @@ func reset() -> void:
     battery = 1.0
     for key in _boot:
         _boot[key] = 99.0
+    labels.clear()
+    faults.clear()
+    fixed_labels.clear()
+    traced.clear()
+    _flap.clear()
+    _untrusted.clear()
+    _label_key = ""
+    tone_desk = 0
+    beep_jack = 0
+    beep_t = 0.0
+    _plan_day = -1
+    _fired_day = -1
 
 
 # the resume point (R16): where every cable end is and what is powered
 func to_dict() -> Dictionary:
-    return {"cables": cables.duplicate(true), "ups_on": ups_on, "nas_on": nas_on, "battery": battery, "boot": _boot.duplicate()}
+    return {
+        "cables": cables.duplicate(true),
+        "ups_on": ups_on,
+        "nas_on": nas_on,
+        "battery": battery,
+        "boot": _boot.duplicate(),
+        "faults": faults.keys(),
+        "fixed": fixed_labels.keys(),
+        "untrusted": _untrusted.keys(),
+        "traced": traced.duplicate(),
+        "tone": tone_desk,
+        "fired": _fired_day,
+    }
 
 
 func from_dict(data: Dictionary) -> void:
@@ -49923,6 +50066,18 @@ func from_dict(data: Dictionary) -> void:
     if boot is Dictionary:
         for key in _boot:
             _boot[key] = float(boot.get(key, 99.0))
+    for id in data.get("faults", []):
+        faults[str(id)] = true
+    for k in data.get("fixed", []):
+        fixed_labels[int(k)] = true
+    for k in data.get("untrusted", []):
+        _untrusted[int(k)] = true
+    var saved_trace: Variant = data.get("traced", {})
+    if saved_trace is Dictionary:
+        for d in saved_trace:
+            traced[int(d)] = int(saved_trace[d])
+    tone_desk = int(data.get("tone", 0))
+    _fired_day = int(data.get("fired", -1))
 
 
 func cable_color(id: String) -> Color:
@@ -50026,12 +50181,15 @@ func desk_state(desk: int) -> String:
     if desk < 1 or desk > 8:
         return "ok"
     var s := status()
+    if faults.has("p%d" % desk) or float(_flap.get(desk, 0.0)) > 0.0:
+        return "no_link"
     if not (s.sw_ready and cables["p%d" % desk].end.begins_with("sw")):
         return "no_link"
     return "ok" if s.internet else "no_internet"
 
 
 func _process(delta: float) -> void:
+    _tick_tracing(delta)
     var p := power()
     for key in ["sw", "rt", "nas"]:
         _boot[key] = _boot[key] + delta if p[key] else 0.0
@@ -50040,6 +50198,163 @@ func _process(delta: float) -> void:
             battery = minf(1.0, battery + delta / 100.0)
         else:
             battery = maxf(0.0, battery - delta / 90.0)
+
+
+# ---- cable tracing (R37): labels on the patch panel jacks, loose cables, the toner and probe ----
+# jack k's cable always runs to desk k (the copier is desk 8); only the TAG on the jack can be wrong.
+func label(jack: int) -> Dictionary:
+    _ensure_labels()
+    return labels[jack]
+
+
+func label_ok(jack: int) -> bool:
+    return str(label(jack).state) in ["dan", "ok", "fixed"]
+
+
+# what the tag shows: "5 MORGAN", "FADED", "BLANK"
+func label_text(jack: int) -> String:
+    var l := label(jack)
+    if l.state == "blank":
+        return "BLANK"
+    if l.state == "faded":
+        return "FADED"
+    return "%d %s" % [int(l.n), WHO[int(l.n)]]
+
+
+func _label_epoch() -> int:
+    return World.day if Campaign.active else 0
+
+
+func _ensure_labels() -> void:
+    var epoch := _label_epoch()
+    if _label_key == "%d:%d" % [Difficulty.run_seed, epoch] and not labels.is_empty():
+        return
+    labels = roll_labels(epoch)
+    _label_key = "%d:%d" % [Difficulty.run_seed, epoch]
+
+
+# the labels of one day, seeded per run (Difficulty stream "labels"): Dan's tags are right, one pair of hand-written tags is
+# swapped (two pairs now and then), the rest of the tape may be blank or faded. Your relabelled jacks stay right.
+func roll_labels(epoch: int) -> Dictionary:
+    var r := Difficulty.rng_for("labels", epoch)
+    var out := {}
+    for k in range(1, 9):
+        out[k] = {"n": k, "state": "dan" if DAN_JACKS.has(k) else "ok"}
+    var drift := DRIFT_JACKS.duplicate()
+    Difficulty.shuffle_with(drift, r)
+    var pairs := 2 if r.randf() < 0.35 else 1
+    for i in pairs:
+        var a: int = drift.pop_front()
+        var b: int = drift.pop_front()
+        out[a] = {"n": b, "state": "wrong"}
+        out[b] = {"n": a, "state": "wrong"}
+    for k in drift:
+        var roll := r.randf()
+        if roll < 0.25:
+            out[k] = {"n": 0, "state": "blank"}
+        elif roll < 0.5:
+            out[k] = {"n": k, "state": "faded"}
+    for k in fixed_labels:
+        out[k] = {"n": k, "state": "fixed"}
+    return out
+
+
+func is_loose(jack: int) -> bool:
+    return faults.has("p%d" % jack)
+
+
+func loosen(jack: int) -> void:
+    faults["p%d" % jack] = true
+    _untrusted[jack] = not label_ok(jack)
+    traced.erase(jack)
+
+
+# the tone generator is clipped on the wall jack at this desk
+func tone_at(desk: int) -> void:
+    tone_desk = desk
+
+
+# the probe on a patch panel jack: a beep when its cable is the one with the tone on it
+func probe(jack: int) -> String:
+    if tone_desk == 0:
+        return "notone"
+    if tone_desk != jack:
+        return "quiet"
+    traced[jack] = jack
+    beep_jack = jack
+    beep_t = 2.5
+    return "beep"
+
+
+# E on a patch jack with empty hands: pull the cable and push it back in. Fixes a half-seated cable (a bonus when you traced it
+# because its label could not be trusted); on a healthy jack the desk drops for a few seconds and its owner is not pleased.
+func reseat(jack: int) -> String:
+    var id := "p%d" % jack
+    if faults.has(id):
+        faults.erase(id)
+        _flap[jack] = 1.0
+        var bonus: bool = bool(_untrusted.get(jack, false)) and int(traced.get(jack, 0)) == jack
+        _untrusted.erase(jack)
+        if bonus:
+            Skills.add_xp(str(Skills.FIX_XP.get("trace", "networking")), TRACE_XP)
+            Social.change(str(Social.DESK_OWNER.get(jack, "")), 2)
+            return "traced_fix"
+        return "fixed"
+    if float(_flap.get(jack, 0.0)) <= 0.0:
+        Social.note_outage(jack)
+    _flap[jack] = FLAP_SECS
+    if not Campaign.active:
+        _pokes += 1
+        if Difficulty.rng_for("labels.loose", _pokes).randf() < 0.5:
+            faults[id] = true  # Free Play: it did not go back in properly
+            _untrusted[jack] = not label_ok(jack)
+            return "loose"
+    return "bounced"
+
+
+# the tiny relabel action: the probe found this jack, so write the right tag (Dan likes that)
+func relabel(jack: int) -> bool:
+    if label_ok(jack) or int(traced.get(jack, 0)) != jack:
+        return false
+    fixed_labels[jack] = true
+    labels[jack] = {"n": jack, "state": "fixed"}
+    Social.change("Dan", 2)
+    return true
+
+
+# tech campaign: from day 3 a patch cable may work loose at a seeded time; the desk then raises the usual "no network cable" ticket
+func fault_plan(day: int) -> Dictionary:
+    var r := Difficulty.rng_for("cablefault", day)
+    var on := day >= FAULT_FROM_DAY and r.randf() < FAULT_CHANCE
+    var at := 9.5 + r.randf() * 5.0
+    var pick_bad := r.randf() < 0.7
+    var any := r.randi_range(1, 5)
+    var pick := r.randf()
+    var bad := []
+    var today := roll_labels(day)
+    for k in range(1, 6):
+        if not str(today[k].state) in ["dan", "ok", "fixed"]:
+            bad.append(k)
+    var jack: int = any
+    if pick_bad and not bad.is_empty():
+        jack = bad[int(pick * bad.size())]
+    return {"on": on, "at": at, "jack": jack}
+
+
+func _tick_tracing(delta: float) -> void:
+    beep_t = maxf(0.0, beep_t - delta)
+    for k in _flap.keys():
+        _flap[k] = maxf(0.0, float(_flap[k]) - delta)
+        if _flap[k] <= 0.0:
+            _flap.erase(k)
+    if not (cable_faults and Campaign.active and Campaign.mode == "tech" and Msp.enabled) or Game.title_mode:
+        return
+    if World.day != _plan_day:
+        _plan_day = World.day
+        _plan = fault_plan(World.day)
+    if _plan.on and _fired_day != World.day and World.clock >= float(_plan.at):
+        _fired_day = World.day
+        loosen(int(_plan.jack))
 ''')
 
 write("scripts/port.gd", '''extends Node2D
@@ -50047,15 +50362,21 @@ write("scripts/port.gd", '''extends Node2D
 # port, the wall outlet, or a power button. E pulls the plug out (you carry the cable end) or
 # plugs the cable you carry into it.
 
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const INK := Color("17121f")
+
 @export var port_id := ""
 @export var arrow_offset := Vector2(0, -5)
 
 var player: Node = null
 var _arrow: Node2D
+var _shown := false
 
 
 func _ready() -> void:
     add_to_group("ports")
+    if _is_jack():
+        z_index = 30  # the tag readout sits over the rack
     _arrow = preload("res://scripts/prompt_arrow.gd").new()
     _arrow.base_y = arrow_offset.y
     _arrow.position = arrow_offset
@@ -50065,9 +50386,76 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
     _arrow.visible = player != null and player.nearest() == self
+    if _is_jack():
+        var sel := _arrow.visible
+        if sel != _shown:
+            _shown = sel
+            queue_redraw()
+        elif sel:
+            queue_redraw()  # the tag text follows the labels (a relabel, a new day)
+
+
+func _is_jack() -> bool:
+    return port_id.begins_with("pp")
+
+
+# the tag on a patch panel jack, as a readable strip under it while the arrow is on the jack
+func _draw() -> void:
+    if not _is_jack() or not _shown:
+        return
+    var jack := int(port_id.substr(2))
+    var text := Net.label_text(jack)
+    var w := PixelFont.width(text, 1) + 4
+    var jack_x := 10.0 + 7.0 * float(jack - 1)  # the jack's x inside the rack art (70 wide)
+    var x := clampf(-w * 0.5, 2.0 - jack_x, 68.0 - jack_x - w)
+    draw_rect(Rect2(x - 1, 4, w + 2, 9), INK)
+    draw_rect(Rect2(x, 5, w, 7), Color("efe6c8") if Net.label_ok(jack) else Color("c9b98a"))
+    PixelFont.draw(self, text, Vector2(x + 2, 6), INK, 1)
+
+
+# E on a patch panel jack: with the toner it probes (a beep, or a second E relabels a bad tag), with empty hands it re-seats the cable
+func _use_jack(body: Node) -> void:
+    var jack := int(port_id.substr(2))
+    if Net.carrying != "" or not body.held in ["", "toner"]:
+        _arrow.shake()
+        return
+    body.reach(global_position.x)
+    if body.held == "":
+        match Net.reseat(jack):
+            "traced_fix":
+                Hints.toast("RE-SEATED JACK %d. YOU TRACED IT: NICE WORK (+NETWORKING)" % jack, 3.0)
+                Sfx.play("ticket")
+            "fixed":
+                Hints.toast("RE-SEATED JACK %d: THE DESK IS BACK" % jack, 2.5)
+                Sfx.play("ui_pick")
+            "loose":
+                Hints.toast("JACK %d WORKED LOOSE. THE DESK DROPS" % jack, 2.5)
+                Sfx.play("ui_error")
+            _:
+                Hints.toast("RE-SEATED JACK %d. IT WAS FINE: THAT DESK DROPS FOR A MOMENT" % jack, 3.0)
+                Sfx.play("ui_error")
+        return
+    if int(Net.traced.get(jack, 0)) == jack and Net.relabel(jack):
+        Hints.toast("NEW TAG ON JACK %d: %s. DAN WOULD APPROVE" % [jack, Net.label_text(jack)], 3.0)
+        Sfx.play("ui_pick")
+        return
+    match Net.probe(jack):
+        "notone":
+            Hints.toast("NO TONE YET. CLIP IT ON A DESK JACK: E AT THE MONITOR OR PHONE", 3.0)
+            _arrow.shake()
+        "quiet":
+            Hints.toast("JACK %d: SILENCE. NOT DESK %d" % [jack, Net.tone_desk], 2.0)
+            Sfx.play("ui_tick")
+        _:
+            var tag := "" if Net.label_ok(jack) else ". TAG SAYS %s: E AGAIN TO RELABEL" % Net.label_text(jack)
+            Hints.toast("BEEP! JACK %d IS DESK %d%s" % [jack, jack, tag], 3.5)
+            Sfx.play("ui_pick")
 
 
 func use(body: Node) -> void:
+    if _is_jack():
+        _use_jack(body)
+        return
     if port_id.ends_with("_btn"):
         Net.press(port_id)
         body.reach(global_position.x)
@@ -50987,7 +51375,7 @@ BGFX = {
                     ("Switch", "switch", 40, 54, 42)],
     "bathroom_1": [("Sink", "sink", 65, 64, 73), ("Toilet", "toilet", 100, 66, 108), ("Switch", "switch", 42, 54, 44)],
     "bathroom_2": [("Sink", "sink", 59, 60, 67), ("Toilet", "toilet", 20, 66, 28), ("Switch", "switch", 40, 48, 42)],
-    "network_closet": [("Switch", "switch", 40, 54, 42)],
+    "network_closet": [("Switch", "switch", 40, 54, 42), ("Toner", "toner_kit", 129, 111, 135)],   # R37: the tool case with the toner and probe
     "bowling_alley": [("Switch", "switch", 8, 54, 10)],
     "karaoke_bar": [("Switch", "switch", 8, 54, 10)],
     "escape_room": [("Switch", "switch", 8, 54, 10), ("Keypad", "keypad", 244, 40, 252),
@@ -51220,6 +51608,11 @@ for fname, cfg in SETS.items():
             lines += [f'[node name="{pt["id"]}" type="Node2D" parent="Ports"]',
                       f'position = Vector2({x0 + rx + pt["x"]}, {ry + pt["y"]})',
                       'script = ExtResource("port")', f'port_id = "{pt["id"]}"', ""]
+        for k in range(1, 9):   # R37: the 8 patch panel jacks (labels, the probe, re-seating); the cable's panel end is `far["p<k>"]`
+            fx_, fy_ = lay["far"][f"p{k}"]
+            lines += [f'[node name="pp{k}" type="Node2D" parent="Ports"]',
+                      f'position = Vector2({x0 + rx + fx_}, {ry + fy_})',
+                      'script = ExtResource("port")', f'port_id = "pp{k}"', ""]
         lines += ['[node name="RackZone" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + 86}, 95)',
                   'script = ExtResource("rack_zone")', "",
                   '[node name="Shape" type="CollisionShape2D" parent="Interactables/RackZone"]',

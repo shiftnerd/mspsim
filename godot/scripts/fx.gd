@@ -280,6 +280,8 @@ func _draw() -> void:
 			_draw_tv()
 		"rack":
 			_draw_rack()
+		"toner_kit":
+			_draw_toner_kit()
 		"switch":
 			_draw_switch()
 		"door_switch":
@@ -1199,7 +1201,87 @@ func _draw_rack() -> void:
 	var st := Net.status()
 	_rack_leds(Net.layout, st)
 	_rack_ups(Net.layout, st)
+	_rack_labels()
 	_rack_cables()
+	_rack_beep()
+
+
+# the tag beside each patch panel jack (R37): Dan's printed ones are white and crisp, hand-written tape is yellow, faded tape
+# is pale with a ghost of a number, torn-off tape leaves nothing. Wrong tags look just like right ones: only the probe knows.
+func _rack_labels() -> void:
+	for jack in range(1, 9):
+		var far := Net.far_pos("p%d" % jack)
+		var tag: Dictionary = Net.label(jack)
+		var x := far.x + 2.0
+		var ink := Color("17121f")
+		match str(tag.state):
+			"dan", "fixed":
+				_r(x, 3, 4, 7, Color("efebdd"))
+			"ok", "wrong":
+				_r(x, 3, 4, 7, Color("dcc46a"))
+			"faded":
+				_r(x, 3, 4, 7, Color("b9b08a"))
+				ink = Color("a79f80")
+			"blank":
+				_r(x, 8, 4, 2, Color("8a8468"))  # a stub of tape left on the panel
+				continue
+		PixelFont.draw(self, str(int(tag.n)), Vector2(x + 0.5, 4), ink, 1)
+		if tag.state == "fixed":
+			_r(x + 1, 9, 2, 1, Color("5fbf4a"))
+
+
+# ---- the tool case with the toner and probe (R37): E takes the toner out, E again puts it back ----
+# E on this fx (interact.gd): the tool case takes / returns the toner, and the toner at a desk's monitor, phone or the copier
+# clips its tone onto that desk's wall jack (probe the patch panel in the closet to find the cable). True = handled.
+func toner_use(body: Node, reach_x: float) -> bool:
+	if kind == "toner_kit":
+		toner_press(body)
+		return true
+	if body.held == "toner" and desk >= 1 and kind in ["monitor", "desk_phone", "copier"]:
+		Net.tone_at(desk)
+		Hints.toast("TONE ON AT DESK %d. NOW PROBE THE PATCH PANEL IN THE CLOSET" % desk, 3.5)
+		Sfx.play("ui_pick")
+		body.reach(reach_x)
+		return true
+	return false
+
+
+func toner_press(body: Node) -> void:
+	body.reach(global_position.x)
+	if body.held == "toner":
+		body.give("")
+		Net.tone_at(0)
+		Hints.toast("TONER BACK IN THE CASE", 2.0)
+	elif body.held == "":
+		body.give("toner")
+		Hints.toast("TONER AND PROBE. E AT A DESK CLIPS THE TONE ON, E AT A PATCH JACK PROBES", 4.0)
+	else:
+		Hints.toast("HANDS FULL", 1.8)
+
+
+func _draw_toner_kit() -> void:
+	var out: bool = Game.vars.get("held", "") == "toner"
+	_r(0, 0, 12, 7, Color("17121f"))
+	_r(1, 1, 10, 5, Color("e8a030"))
+	_r(1, 1, 10, 1, Color("f6c85a"))
+	_r(5, 0, 2, 2, Color("17121f"))  # the handle
+	if out:
+		_r(2, 3, 8, 2, Color("3a2a10"))  # the foam is empty
+	else:
+		_r(3, 3, 6, 2, Color("3c414d"))
+		_r(9, 3, 1, 2, Color("9fe870") if int(_time * 2.0) % 2 == 0 else Color("2f5a28"))
+
+
+# the probe found a cable: a green ring round its jack for a moment
+func _rack_beep() -> void:
+	if Net.beep_t <= 0.0 or int(Net.beep_t * 6.0) % 2 == 1:
+		return
+	var at := Net.far_pos("p%d" % Net.beep_jack)
+	var ring := Color("9fe870")
+	_r(at.x - 3, at.y - 4, 7, 1, ring)
+	_r(at.x - 3, at.y + 3, 7, 1, ring)
+	_r(at.x - 3, at.y - 3, 1, 6, ring)
+	_r(at.x + 3, at.y - 3, 1, 6, ring)
 
 
 func _led(pos: Array, color: Color) -> void:
