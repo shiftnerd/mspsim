@@ -31,6 +31,8 @@ const ACTIONS := {
 	"push_b": [[KEY_X], [JOY_BUTTON_B], []],
 	"pick_next": [[KEY_TAB], [JOY_BUTTON_RIGHT_SHOULDER], []],
 	"pick_prev": [[], [JOY_BUTTON_LEFT_SHOULDER], []],
+	"page_prev": [[KEY_Q, KEY_PAGEUP], [JOY_BUTTON_LEFT_SHOULDER], []],  # the create step's pages (R15 level 3)
+	"page_next": [[KEY_E, KEY_PAGEDOWN], [JOY_BUTTON_RIGHT_SHOULDER], []],
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
 	"give_item": [[KEY_G], [], []],
 	"phone": [[KEY_P], [JOY_BUTTON_BACK], []],

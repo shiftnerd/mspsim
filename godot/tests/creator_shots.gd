@@ -49,6 +49,12 @@ func _process(_delta: float) -> bool:
 			current_scene._select.queue_redraw()
 		130:
 			_shot("create")
+			current_scene._select.set_page(1)
+			look.look["pattern"] = "plaid"
+			look.look["shorts"] = "shorts"
+			current_scene._select._refresh_look()
+		145:
+			_shot("create_clothes")
 			current_scene._select.setup("free")
 			current_scene._select.sel = 0
 			current_scene._select.confirm()
@@ -62,7 +68,7 @@ func _process(_delta: float) -> bool:
 				"shoes": "2a2a33"
 			}
 			current_scene._select._refresh_look()
-		160:
+		170:
 			_shot("create_free")
 			print("DONE")
 			quit(0)

@@ -1,5 +1,5 @@
 extends SceneTree
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,duplicated-load
 # Character creator, level 1 (R15, Look + the create step of charselect.gd): the palette table maps every colour of the
 # intern sheet and leaves the outline alone, a look is saved and restored with the campaign (an old save loads as before),
 # the MAKE YOUR OWN step is reachable by keys, pad and mouse, and RANDOM is deterministic from the run seed.
@@ -392,7 +392,7 @@ func _init() -> void:
 	_check(look.look.name == "ZOE" and cs.step == "create", "Backspace deletes, E types a letter")
 	# keys: the STYLE row
 	cs._unhandled_input(_key(KEY_DOWN))
-	_check(cs.create_row == 1 and cs.CREATE_ROWS[1] == "style", "Down moves to STYLE")
+	_check(cs.create_row == 1 and cs._page_rows()[1].id == "hair_style", "Down moves to STYLE")
 	_check(look.look.hair_style == "side", "the card starts with the intern's own hair")
 	cs._unhandled_input(_key(KEY_RIGHT))
 	_check(
@@ -410,14 +410,14 @@ func _init() -> void:
 	await process_frame
 	var chip := Rect2()
 	for r in cs._rects:
-		if r[1] == "style_next":
+		if r[1] == "ch_next":
 			chip = r[0]
 	_check(chip.size.x > 0.0, "the STYLE chips are on screen for the mouse")
 	cs.create_row = 0
 	cs._unhandled_input(_click(chip.get_center()))
 	_check(look.look.hair_style == "short" and cs.create_row == 1, "a click on > picks the next hairstyle")
 	for r in cs._rects:
-		if r[1] == "style_prev":
+		if r[1] == "ch_prev":
 			chip = r[0]
 	cs._unhandled_input(_click(chip.get_center()))
 	_check(look.look.hair_style == "side", "a click on < goes back")
@@ -444,9 +444,9 @@ func _init() -> void:
 	)
 	_check(cs._sprites[0].material != null, "the preview wears the look")
 	# pad: down to the last row and back
-	for i in 5:
+	for i in 2:
 		cs._unhandled_input(_pad(JOY_BUTTON_DPAD_DOWN))
-	_check(cs.create_row == 7, "the D-pad reaches the RANDOM row")
+	_check(cs.create_row == 4 and cs.create_row == cs._page_rows().size(), "the D-pad reaches the RANDOM | PRESETS | DONE row")
 	d.seed_run(31)
 	cs._unhandled_input(_pad(JOY_BUTTON_A))
 	var rolled: Dictionary = look.look.duplicate()
@@ -457,21 +457,33 @@ func _init() -> void:
 	)
 	cs._unhandled_input(_pad(JOY_BUTTON_DPAD_UP))
 	cs._unhandled_input(_pad(JOY_BUTTON_DPAD_RIGHT))
-	_check(cs.create_row == 6, "the D-pad moves up and changes shoes")
-	# mouse: click a swatch
+	_check(cs.create_row == 3, "the D-pad moves up and changes the hair colour")
+	# mouse: the CLOTHES tab, then click a swatch
+	cs.queue_redraw()
+	await process_frame
+	await process_frame
+	var tab := Rect2()
+	for r in cs._rects:
+		if r[1] == "tab" and int(r[2]) == 1:
+			tab = r[0]
+	_check(tab.size.x > 0.0, "the CLOTHES tab chip is on screen for the mouse")
+	cs._unhandled_input(_click(tab.get_center()))
+	_check(cs.create_page == 1, "a click on the tab opens the page")
 	cs.queue_redraw()
 	await process_frame
 	await process_frame
 	var target: Rect2 = Rect2()
 	for r in cs._rects:
-		if r[1] == "sw" and int(r[2]) == 400 + 3:
+		if r[1] == "sw" and int(r[2]) == 3:
 			target = r[0]
 	_check(target.size.x > 0.0, "the shirt swatches are on screen for the mouse")
 	cs._unhandled_input(_click(target.get_center()))
 	_check(
-		look.look.shirt == look.SWATCHES.shirt[3] and cs.create_row == 4,
+		look.look.shirt == look.SWATCHES.shirt[3] and cs.create_row == 0,
 		"a click picks that shirt colour"
 	)
+	cs._unhandled_input(_pad(JOY_BUTTON_LEFT_SHOULDER))
+	_check(cs.create_page == 0, "a pad's left shoulder button goes back a page")
 	# back and forward
 	cs._unhandled_input(_pad(JOY_BUTTON_B))
 	_check(cs.step == "char", "B goes back to the cards")
@@ -630,5 +642,338 @@ func _init() -> void:
 		"the global look is unchanged by the copy (side)"
 	)
 	spr.free()
+	await _level3(look, d, player)
 	print("failures=%d" % failures)
 	quit(1 if failures > 0 else 0)
+
+
+# ---- level 3 step (a): pages, presets, the pad's name grid, RANDOM's new draws, pattern and shorts masks ----
+func _page_labels(cs: Node2D, page: int) -> Array:
+	var out: Array = []
+	for r in cs._pages()[page].rows:
+		out.append(str(r.label))
+	return out
+
+
+func _level3(look: Node, d: Node, player) -> void:
+	d.settings_path = "user://test_creator3_%d_settings.cfg" % OS.get_process_id()
+	DirAccess.remove_absolute(d.settings_path)
+	look.look = look.default_look()
+	look.look["name"] = "ZOE"
+	look.active = false
+	look.presets = [{}, {}, {}]
+	player.current_character = "office_adult"
+	var cs: Node2D = load("res://scripts/charselect.gd").new()
+	root.add_child(cs)
+	await process_frame
+	await process_frame
+	cs.setup("free")
+	cs.sel = 0
+	cs._unhandled_input(_key(KEY_ENTER))
+	_check(cs.step == "create", "level 3: the create step is open")
+	# pages and rows
+	_check(cs._pages().size() == 2, "the empty EXTRAS page has no tab (%d pages)" % cs._pages().size())
+	_check(_page_labels(cs, 0) == ["NAME", "STYLE", "SKIN", "HAIR"], "the LOOK page rows: %s" % str(_page_labels(cs, 0)))
+	_check(
+		_page_labels(cs, 1) == ["SHIRT", "PATTERN", "PANTS", "BOTTOM", "SHOES"],
+		"the CLOTHES page rows: %s" % str(_page_labels(cs, 1))
+	)
+	_check(cs.CREATE_PAGES[2].id == "extras" and cs.CREATE_PAGES[2].rows.is_empty(), "EXTRAS exists, empty, with its own text")
+	# keys: Q and E turn the page except as letters on the NAME row
+	cs.create_row = 2
+	cs._unhandled_input(_key(KEY_E))
+	_check(cs.create_page == 1, "E turns to the next page")
+	_check(cs.create_row == 2, "the row stays")
+	cs._unhandled_input(_key(KEY_Q))
+	_check(cs.create_page == 0, "Q turns back")
+	cs.create_row = 0
+	cs._unhandled_input(_key(KEY_E, 69))
+	_check(cs.create_page == 0 and str(look.look.name) == "ZOEE", "on the NAME row E is a letter: %s" % look.look.name)
+	cs._unhandled_input(_key(KEY_BACKSPACE))
+	cs._unhandled_input(_key(KEY_PAGEDOWN))
+	_check(cs.create_page == 1, "Page Down turns the page even on the NAME row")
+	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
+	_check(cs.create_page == 0, "a pad's right shoulder button turns the page (wraps)")
+	cs.create_row = cs._page_rows().size()
+	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
+	_check(cs.create_row == cs._page_rows().size() and cs.create_row == 5, "the bottom row stays the bottom row across pages")
+	# values: pattern and shorts rows
+	cs.create_row = 1
+	cs._unhandled_input(_key(KEY_RIGHT))
+	_check(look.look.pattern == "stripes", "Right on PATTERN picks stripes")
+	cs.create_row = 3
+	cs._unhandled_input(_key(KEY_RIGHT))
+	_check(look.look.shorts == "shorts", "Right on BOTTOM picks shorts")
+	var mat: ShaderMaterial = cs._sprites[0].material
+	_check(
+		mat != null and int(mat.get_shader_parameter("pattern")) == 1 and float(mat.get_shader_parameter("hems")[0]) == 67.0,
+		"the preview material carries the pattern and the hem rows"
+	)
+	cs._unhandled_input(_key(KEY_RIGHT))
+	_check(look.look.shorts == "none", "BOTTOM wraps")
+	mat = cs._sprites[0].material
+	_check(float(mat.get_shader_parameter("hems")[0]) == 255.0, "no shorts: the hems are off")
+	# the layout of every page keeps its rects on screen
+	for page in 2:
+		cs.set_page(page)
+		cs.queue_redraw()
+		await process_frame
+		await process_frame
+		var kinds := {}
+		for r in cs._rects:
+			kinds[r[1]] = true
+		_check(kinds.has("tab") and kinds.has("act") and kinds.has("row"), "page %d has tabs, rows and the bottom buttons" % page)
+	# presets
+	cs.set_page(0)
+	look.look = look.sanitize({"name": "ZOE", "skin": "8d5524", "hair": "e05a9a", "shirt": "2f6b3a", "pattern": "plaid", "shorts": "shorts"})
+	cs.create_row = 4
+	cs._unhandled_input(_key(KEY_RIGHT))
+	_check(cs.create_col == 1, "Right on the bottom row picks PRESETS")
+	cs._unhandled_input(_key(KEY_ENTER))
+	_check(cs.create_modal == "presets" and cs.step == "create", "Enter opens the presets chooser")
+	cs._unhandled_input(_key(KEY_ENTER))  # SAVE HERE on slot 1
+	_check(look.preset(0).name == "ZOE" and look.preset(0).pattern == "plaid", "SAVE HERE keeps the look in slot 1")
+	var cfg := ConfigFile.new()
+	_check(
+		cfg.load(d.settings_path) == OK and cfg.has_section_key("looks", "slot1") and not cfg.has_section_key("looks", "slot2"),
+		"the settings file has [looks] slot1 only"
+	)
+	cs._unhandled_input(_key(KEY_DOWN))
+	cs._unhandled_input(_key(KEY_RIGHT))
+	cs._unhandled_input(_key(KEY_ENTER))  # LOAD an empty slot: nothing happens
+	_check(cs.create_modal == "presets" and look.look.name == "ZOE", "loading an empty slot does nothing")
+	look.look = look.default_look()
+	look.look["name"] = "MAX"
+	cs._unhandled_input(_key(KEY_UP))
+	cs._unhandled_input(_key(KEY_ENTER))  # LOAD slot 1
+	_check(cs.create_modal == "" and look.look.name == "ZOE" and look.look.skin == "8d5524" and look.look.shorts == "shorts", "LOAD wears slot 1")
+	mat = cs._sprites[0].material
+	_check(
+		int(mat.get_shader_parameter("pattern")) == 2 and mat.get_shader_parameter("dst")[0] == Color.html("8d5524"),
+		"the preview wears the loaded look live"
+	)
+	# Esc cancels, the mouse saves into slot 2
+	cs.open_presets()
+	cs._unhandled_input(_key(KEY_ESCAPE))
+	_check(cs.create_modal == "" and cs.step == "create", "Esc closes the chooser and stays on the create step")
+	cs.open_presets()
+	cs.queue_redraw()
+	await process_frame
+	await process_frame
+	var save2 := Rect2()
+	var cancel := Rect2()
+	for r in cs._rects:
+		if r[1] == "pre_save" and int(r[2]) == 1:
+			save2 = r[0]
+		if r[1] == "pre_cancel":
+			cancel = r[0]
+	_check(save2.size.x > 0.0 and cancel.size.x > 0.0, "the chooser buttons are on screen")
+	look.look["name"] = "RUBY"
+	cs._unhandled_input(_click(save2.get_center()))
+	_check(look.preset(1).name == "RUBY", "a click on SAVE HERE keeps slot 2")
+	cs._unhandled_input(_click(cancel.get_center()))
+	_check(cs.create_modal == "", "CANCEL closes it")
+	look.presets = [{}, {}, {}]
+	look.load_presets()
+	_check(look.preset(0).name == "ZOE" and look.preset(1).name == "RUBY" and look.preset(2).is_empty(), "presets survive a reload of the settings file")
+	_check(look.preset(1).pattern == "plaid", "a preset keeps the pattern")
+	# an old settings file has no [looks], a hand made one has junk
+	cfg = ConfigFile.new()
+	cfg.set_value("look", "skin", "8d5524")
+	cfg.save(d.settings_path)
+	look.look = look.default_look()
+	look.load_settings()
+	_check(look.preset(0).is_empty() and look.preset(2).is_empty() and look.look.skin == "8d5524", "an old settings file loads with empty presets")
+	_check(look.look.pattern == "none" and look.look.shorts == "none", "and a look without a pattern wears none")
+	cfg.set_value("looks", "slot1", "nonsense")
+	cfg.set_value("looks", "slot2", {"name": "OLD", "skin": "zzz", "pattern": "spots"})
+	cfg.save(d.settings_path)
+	look.load_settings()
+	_check(look.preset(0).is_empty() and look.preset(1).name == "OLD" and look.preset(1).pattern == "none", "junk presets are cleaned")
+	# the pad's name grid
+	look.look = look.default_look()
+	look.look["name"] = "AB"
+	cs.set_page(0)
+	cs.create_row = 0
+	cs._unhandled_input(_key(KEY_ENTER))
+	_check(cs.step == "phone" or cs.create_modal == "", "Enter on the NAME row with a keyboard goes on as before")
+	cs.step = "create"
+	cs.create_modal = ""
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(cs.create_modal == "name", "A on the NAME row opens the letter grid")
+	_check(cs.grid_cells().size() == 30, "the grid has A to Z, dash, SP, DEL and DONE")
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name == "ABA", "A types the cell under the cursor: %s" % look.look.name)
+	cs._unhandled_input(_pad(JOY_BUTTON_DPAD_RIGHT))
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name == "ABAB", "the D-pad moves the cursor: %s" % look.look.name)
+	cs._unhandled_input(_pad(JOY_BUTTON_DPAD_DOWN))
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name == "ABABK", "Down moves a row: %s" % look.look.name)
+	cs._grid_i = 28
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name == "ABAB", "DEL deletes")
+	cs._grid_i = 0
+	for i in 12:
+		cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name.length() == look.MAX_NAME, "the grid stops at %d characters" % look.MAX_NAME)
+	cs._unhandled_input(_pad(JOY_BUTTON_B))
+	_check(cs.create_modal == "" and look.look.name == "AB" and cs.step == "create", "Back cancels and restores the name")
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	cs._grid_i = 29
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(cs.create_modal == "" and look.look.name == "ABA", "DONE keeps the name")
+	look.look["name"] = ""
+	cs.open_name_grid()
+	cs._grid_i = 26 + 1  # SP
+	cs._unhandled_input(_pad(JOY_BUTTON_A))
+	_check(look.look.name == "", "a space cannot start the name")
+	cs._unhandled_input(_key(KEY_Z, 90))
+	_check(look.look.name == "Z", "a keyboard still types while the grid is open")
+	cs.close_modal()
+	# the mouse: a click on the name box opens the grid (no keyboard)
+	cs.queue_redraw()
+	await process_frame
+	await process_frame
+	var box := Rect2()
+	for r in cs._rects:
+		if r[1] == "name_box":
+			box = r[0]
+	cs._unhandled_input(_click(box.get_center()))
+	_check(cs.create_modal == "name", "a click on the name box opens the grid")
+	cs.close_modal()
+	cs.queue_free()
+
+	# RANDOM: the new fields are drawn after everything else
+	d.seed_run(4242)
+	look.randomize_look()
+	var got: Dictionary = look.look.duplicate()
+	d.seed_run(4242)
+	var rr: RandomNumberGenerator = d.rng("creator")
+	for role in look.ROLES:
+		rr.randi()
+	rr.randi()
+	rr.randi()
+	_check(
+		got.pattern == look.PATTERNS[rr.randi() % look.PATTERNS.size()] and got.shorts == look.SHORTS[rr.randi() % look.SHORTS.size()],
+		"RANDOM draws pattern and shorts after the colours, the name and the style"
+	)
+	var pats := {}
+	var shs := {}
+	for s in range(2000, 2060):
+		d.seed_run(s)
+		look.randomize_look()
+		pats[look.look.pattern] = true
+		shs[look.look.shorts] = true
+	_check(pats.size() == look.PATTERNS.size() and shs.size() == look.SHORTS.size(), "RANDOM reaches every pattern and both bottoms")
+	# sanitize, saves
+	_check(look.sanitize({}).pattern == "none" and look.sanitize({}).shorts == "none", "an old look has no pattern and no shorts")
+	_check(look.sanitize({"pattern": "plaid", "shorts": "shorts"}).pattern == "plaid", "a pattern is kept")
+	_check(look.sanitize({"pattern": "polka", "shorts": 3}).pattern == "none" and look.sanitize({"shorts": 3}).shorts == "none", "unknown values are none")
+	look.look = look.sanitize({"pattern": "checks", "shorts": "shorts"})
+	look.active = true
+	var saved: Dictionary = look.to_dict()
+	look.look = look.default_look()
+	look.from_dict(saved)
+	_check(look.look.pattern == "checks" and look.look.shorts == "shorts", "the campaign dictionary keeps pattern and shorts")
+	look.save_settings(true)
+	look.look = look.default_look()
+	look.load_settings()
+	_check(look.look.pattern == "checks" and look.look.shorts == "shorts", "the settings keep pattern and shorts")
+	var npc_look: Dictionary = look.sanitize({"pattern": "stripes", "shorts": "shorts"})
+	var spr := AnimatedSprite2D.new()
+	look.apply(spr, "office_intern", true, npc_look)
+	_check(
+		int(spr.material.get_shader_parameter("pattern")) == 1 and float(spr.material.get_shader_parameter("hems")[1]) == 68.0,
+		"an NPC copy wears its own pattern and shorts"
+	)
+	spr.free()
+	DirAccess.remove_absolute(d.settings_path)
+	_check(look.HEMS.size() == look.FRAMES, "one hem row per frame")
+	_check_masks(look)
+
+
+# pattern and shorts leave everything but the shirt body and the trouser legs alone, on every frame of the sheet
+func _check_masks(look: Node) -> void:
+	var skin_src: PackedColorArray = look.sources()
+	var s0: int = look._first("shirt")
+	var p0: int = look._first("pants")
+	var plain: Dictionary = look.sanitize({"shirt": "e0a030", "pants": "7a3030", "skin": "8d5524"})
+	var combos := [
+		["plaid", "shorts", "e0a030"],
+		["stripes", "none", "f4f2ea"],
+		["checks", "shorts", "2a2f3a"],
+	]
+	for facing in ["right", "left"]:
+		var img := _rgba("office_intern_%s" % facing)
+		var every3: Array = range(0, NFRAMES, 3) + [25, 28, 29, 30, 32, 34, 35, 36, 86, 95, 100, 104, 110, 115, 122]
+		var subset := [0, 4, 12, 18, 20, 26, 28, 31, 37, 40, 43, 64, 78, 90, 107, 120]
+		for combo in combos:
+			if facing == "left" and combo[0] != "plaid":
+				continue
+			var frames: Array = every3 if (facing == "right" and combo[0] == "plaid") else subset
+			var lk: Dictionary = plain.duplicate()
+			lk["shirt"] = combo[2]
+			var base_pal: PackedColorArray = look.palette(lk)
+			var test: Dictionary = lk.duplicate()
+			test["pattern"] = combo[0]
+			test["shorts"] = combo[1]
+			var shirt_changed := 0
+			var pants_changed := 0
+			var stray := 0
+			var in_flash := 0
+			var in_death := 0
+			var hem_bad := 0
+			var sleeve_hit := 0
+			var shorts_skin_bad := 0
+			for f in frames:
+				var min_pants := 999
+				for y in SHEET_H:
+					for x in SHEET_W:
+						var px: int = f * SHEET_W + x
+						var c := img.get_pixel(px, y)
+						if c.a == 0.0:
+							continue
+						var m: Array = look._match(c)
+						var idx: int = m[0]
+						if idx >= p0 and idx < p0 + 3 and not m[1]:
+							min_pants = mini(min_pants, y)
+						var a: Color = look.map_pixel(img, px, y, lk, base_pal)
+						var b: Color = look.map_pixel(img, px, y, test, base_pal)
+						if _near(a, b, 0.0005):
+							continue
+						if m[1]:
+							in_flash += 1
+						elif idx == s0 or idx == s0 + 1:
+							shirt_changed += 1
+							for k in range(1, look.SLEEVE_REACH + 1):
+								if y + k < SHEET_H:
+									var t := img.get_pixel(px, y + k)
+									for i in 3:
+										if t.a > 0.0 and _near(t, skin_src[i], look.TOL):
+											sleeve_hit += 1
+						elif idx >= p0 and idx < p0 + 3 and combo[1] == "shorts":
+							pants_changed += 1
+							if f >= 29 and f <= 34:
+								in_death += 1
+							if y < look.HEMS[f]:
+								hem_bad += 1
+							if not _near(b, base_pal[idx - p0], 0.001):
+								shorts_skin_bad += 1
+						else:
+							stray += 1
+				if combo[1] == "shorts" and facing == "right" and not f in [25, 28, 29, 30, 31, 32, 33, 34] and f < 123:
+					if min_pants != 999 and look.HEMS[f] != min_pants + 9:
+						hem_bad += 1
+			var tag := "%s %s %s %s" % [facing, combo[0], combo[1], combo[2]]
+			_check(stray == 0, "%s: only shirt and trouser pixels change (stray %d)" % [tag, stray])
+			_check(in_flash == 0, "%s: the hurt flash frames take neither (%d)" % [tag, in_flash])
+			_check(shirt_changed > 40, "%s: the shirt shows the pattern (%d pixels)" % [tag, shirt_changed])
+			_check(sleeve_hit == 0, "%s: no sleeve over a forearm is patterned (%d)" % [tag, sleeve_hit])
+			if combo[1] == "shorts":
+				_check(pants_changed > 30, "%s: the legs turn to skin (%d pixels)" % [tag, pants_changed])
+				_check(in_death == 0 and hem_bad == 0, "%s: shorts stay below the hem and off the death frames (%d, %d)" % [tag, in_death, hem_bad])
+				_check(shorts_skin_bad == 0, "%s: the legs are exactly the skin tones" % tag)
+			else:
+				_check(pants_changed == 0, "%s: without shorts the trousers are unchanged" % tag)

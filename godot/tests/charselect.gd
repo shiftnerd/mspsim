@@ -291,6 +291,18 @@ func _process(_delta: float) -> bool:
 				cs != null and cs.mode == "free" and cs.ids.size() == 8, "free play offers all 7 plus MAKE YOUR OWN"
 			)
 			_check(not cs.needs_phone() and "SALES" != cs.summary(), "no phone step in free play")
+			cs.sel = 0
+			cs.confirm()
+			_check(cs.step == "create" and cs._pages().size() == 2, "MAKE YOUR OWN opens the create step with two pages")
+			cs.set_page(1)
+			_check(cs._page_rows()[1].id == "pattern" and cs._page_rows().size() == 5, "the CLOTHES page has its five rows")
+			cs.open_presets()
+			_check(cs.create_modal == "presets", "the presets chooser opens")
+			cs.back()
+			_check(cs.create_modal == "" and cs.step == "create", "Back closes the chooser first")
+			cs.back()
+			_check(cs.step == "char", "Back leaves the create step")
+			cs.set_page(0)
 			for k in 7:
 				if cs.current_id() != "sales_vic":
 					cs.move(1)
