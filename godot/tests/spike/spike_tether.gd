@@ -79,7 +79,8 @@ func run_case(fmt: String, view: float, room: float) -> void:
 		t += DT
 	var cap: float = minf(view, room) - 2.0 * MARGIN
 	var fits := room <= view
-	print("INFO %-7s view=%3d room=%4d  max separation %.1f px (cap %.1f), scenario-2 crossing time %.1f s%s" % [fmt, int(view), int(room), s.worst_sep, cap, t, " (room fits the view: no scrolling)" if fits else ""])
+	var note := " (room fits the view: no scrolling)" if fits else ""
+	print("INFO %-7s view=%3d room=%4d  max separation %.1f px (cap %.1f), scenario-2 crossing time %.1f s%s" % [fmt, int(view), int(room), s.worst_sep, cap, t, note])
 	ok(s.outside == 0, "%s view %d room %d: both players always inside the visible rect" % [fmt, int(view), int(room)])
 	ok(s.worst_sep <= cap + 0.6, "%s view %d room %d: separation never above view - 2*margin" % [fmt, int(view), int(room)])
 	ok(s.cam_out == 0, "%s view %d room %d: camera never shows outside the room" % [fmt, int(view), int(room)])

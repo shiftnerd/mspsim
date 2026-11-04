@@ -75,7 +75,8 @@ func _run() -> void:
 	var dl0 := []
 	find_doors(stage, dl0)
 	for d in dl0:
-		info("door %s auto=%s at %s size=%s -> %s" % [d.name, d.auto, d.global_position, d.get_child(0).shape.size if d.get_child_count() > 0 and d.get_child(0) is CollisionShape2D else "?", d.target_scene])
+		var shape_size = d.get_child(0).shape.size if d.get_child_count() > 0 and d.get_child(0) is CollisionShape2D else "?"
+		info("door %s auto=%s at %s size=%s -> %s" % [d.name, d.auto, d.global_position, shape_size, d.target_scene])
 	info("scene %s, P1 at %s state=%s" % [stage.name, p1.global_position, p1.state])
 	# ---- spawn P2 the way stage.gd could: instantiate player.tscn at runtime under Actors
 	var ps: PackedScene = load("res://scenes/player.tscn")
@@ -129,7 +130,8 @@ func _run() -> void:
 	p2.global_position = door.global_position + Vector2(200, 0)
 	p2.velocity = Vector2.ZERO
 	await _wait(8)
-	info("after P2 walked away, P1 still in the zone: door._player=%s arrow.visible=%s p1.nearest()==door %s" % [door._player, door._arrow.visible if door._arrow else "n/a", p1.nearest() == door])
+	var arrow_vis = door._arrow.visible if door._arrow else "n/a"
+	info("after P2 walked away, P1 still in the zone: door._player=%s arrow.visible=%s p1.nearest()==door %s" % [door._player, arrow_vis, p1.nearest() == door])
 	ok(door._player != null and door._arrow.visible, "BUG CHECK: door keeps the arrow for P1 after P2 leaves the zone")
 	# ---- seats
 	var seats := []
