@@ -137,6 +137,38 @@ low_priority = true
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseDartBoard"]
 shape = SubResource("shape_fx")
 
+[node name="UseBoardA" type="Area2D" parent="Interactables"]
+position = Vector2(596, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/BoardA")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseBoardA"]
+shape = SubResource("shape_fx")
+
+[node name="UseBoardB" type="Area2D" parent="Interactables"]
+position = Vector2(692, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/BoardB")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseBoardB"]
+shape = SubResource("shape_fx")
+
+[node name="UseBagTray" type="Area2D" parent="Interactables"]
+position = Vector2(551, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/BagTray")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseBagTray"]
+shape = SubResource("shape_fx")
+
+[node name="UseGrill" type="Area2D" parent="Interactables"]
+position = Vector2(769, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Grill")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseGrill"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Switch" type="Node2D" parent="Fx"]
@@ -148,6 +180,26 @@ kind = "switch"
 position = Vector2(491, 66)
 script = ExtResource("fx")
 kind = "dart_board"
+
+[node name="BoardA" type="Node2D" parent="Fx"]
+position = Vector2(584, 0)
+script = ExtResource("fx")
+kind = "cornhole_a"
+
+[node name="BoardB" type="Node2D" parent="Fx"]
+position = Vector2(680, 0)
+script = ExtResource("fx")
+kind = "cornhole_b"
+
+[node name="BagTray" type="Node2D" parent="Fx"]
+position = Vector2(544, 0)
+script = ExtResource("fx")
+kind = "cornhole_tray"
+
+[node name="Grill" type="Node2D" parent="Fx"]
+position = Vector2(753, 71)
+script = ExtResource("fx")
+kind = "grill"
 
 [node name="FlickerLamp" type="Node2D" parent="Fx"]
 position = Vector2(304, -19)

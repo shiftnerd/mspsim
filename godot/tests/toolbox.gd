@@ -127,6 +127,14 @@ func _run() -> void:
 	_check(not pg.is_open, "printer closes")
 	_check(_go(tb, "nerf") and nerf.war_t > 0.0, "NERF WAR starts the war")
 	nerf._end_war()
+	# R21: the two warehouse games have no extra rows (GAME, SEED, FIXED TAKE, MUTATOR, GO), and launch their outing
+	for id in ["cornhole", "grill"]:
+		tb.game_i = tb.GAMES.find(id)
+		_check(tb.GAME_LABELS.has(id) and str(tb.rows()[1].id) == "seed", "%s: no options rows" % id)
+		_check(_go(tb, id) and o.is_open and o.game == id, "%s launches the outing" % id)
+		o.begin_play()
+		_check(o.g.has("game"), "%s sets up" % id)
+		o.close()
 	# ---- fixed take
 	tb.set_fixed_take(true)
 	_check(d.fixed_take and m.current_id() == "" and m.forced == "", "fixed take: no mutator")
@@ -183,7 +191,7 @@ func _run() -> void:
 	_check(tb.game_id() == "bowling", "right on GAME steps to the next game")
 	_key(tb, KEY_LEFT)
 	_key(tb, KEY_LEFT)
-	_check(tb.game_id() == "chair", "left wraps to the last game")
+	_check(tb.game_id() == "grill", "left wraps to the last game")
 	tb.game_i = 0
 	_key(tb, KEY_ESCAPE)
 	_check(not tb.is_open and not root.get_node("Game").ui_open, "Esc closes")

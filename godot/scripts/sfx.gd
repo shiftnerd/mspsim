@@ -211,6 +211,39 @@ const SOUNDS := {
 	"kara_perfect":
 	[{"w": "sq", "seq": [84, 88, 91], "step": 0.045, "t": 0.07, "v": 0.18, "duty": 0.25}],
 	"kara_good": [{"w": "sq", "seq": [79, 84], "step": 0.05, "t": 0.08, "v": 0.16, "duty": 0.5}],
+	# cornhole: a bag on the floor (soft thud), on the board (wood knock), down the hole (a thunk and a slide)
+	"bag_thud":
+	[
+		{"w": "noise", "f": 400.0, "t": 0.12, "v": 0.3, "k": 5.0, "lp": 0.3},
+		{"w": "sine", "f": 90.0, "f2": 55.0, "t": 0.12, "v": 0.3, "k": 4.0}
+	],
+	"bag_knock":
+	[
+		{"w": "tri", "f": 240.0, "f2": 170.0, "t": 0.1, "v": 0.34, "k": 5.0},
+		{"w": "noise", "f": 1500.0, "t": 0.04, "v": 0.2, "k": 6.0, "lp": 0.6}
+	],
+	"bag_hole":
+	[
+		{"w": "tri", "f": 200.0, "f2": 120.0, "t": 0.14, "v": 0.34, "k": 4.0},
+		{"w": "noise", "f": 700.0, "t": 0.2, "v": 0.14, "k": 3.0, "lp": 0.15, "at": 0.05},
+		{"w": "sq", "seq": [79, 84, 88], "step": 0.06, "t": 0.08, "v": 0.14, "duty": 0.25, "at": 0.16}
+	],
+	# the cookout: the sizzle of a flip, a flare-up whoosh, the serve bell
+	"grill_sizzle":
+	[
+		{"w": "noise", "f": 4200.0, "t": 0.7, "v": 0.2, "k": 2.0, "am": 31.0, "lp": 0.7},
+		{"w": "noise", "f": 2600.0, "t": 0.5, "v": 0.1, "k": 3.0, "am": 13.0, "lp": 0.4}
+	],
+	"grill_flare":
+	[
+		{"w": "noise", "f": 500.0, "t": 0.6, "v": 0.3, "k": 2.5, "lp": 0.08},
+		{"w": "saw", "f": 70.0, "f2": 150.0, "t": 0.5, "v": 0.12, "k": 2.0}
+	],
+	"serve_bell":
+	[
+		{"w": "sine", "f": 2093.0, "t": 0.5, "v": 0.3, "k": 6.0},
+		{"w": "sine", "f": 2637.0, "t": 0.5, "v": 0.2, "k": 6.0, "at": 0.12}
+	],
 }
 # Songs: bpm, root (MIDI), chords as [offset, tones], seed (the melody and the arpeggio shape come from it), crush (bit steps)
 const SONGS := {

@@ -559,7 +559,7 @@ func _init() -> void:
 	o._offered = false
 	o.maybe_invite()
 	cards.pick(0)
-	_check(cards.is_open and cards.options.size() == 5, "then the five activities")
+	_check(cards.is_open and cards.options.size() == 7, "then the seven activities")
 	var energy0: float = shift.energy
 	cards.pick(0)
 	_check(o.is_open and o.game == "bowling" and o._from_invite, "off to bowling")
@@ -604,6 +604,29 @@ func _init() -> void:
 	o.press(KEY_ESCAPE)
 	_check(owner.cash == 130, "leaving before you start refunds the money")
 	o.press(KEY_ENTER)
+	# R21: cornhole ($100) and the cookout ($150) are on the card for the owner, cost money, refund on the intro page
+	owner.cash = 5000
+	o._offered = false
+	world.clock = 16.2
+	o.maybe_invite()
+	cards.pick(0)
+	var labels: Array = cards.options.map(func(opt: Dictionary) -> String: return str(opt.label))
+	_check(labels.has("CORNHOLE ($100)") and labels.has("COOKOUT ($150)"), "the card offers cornhole and the cookout with prices")
+	cards.pick(5)
+	_check(o.is_open and o.game == "cornhole" and owner.cash == 4900, "cornhole costs $100")
+	o.press(KEY_ESCAPE)
+	_check(owner.cash == 5000, "leaving cornhole before you start refunds it")
+	o.press(KEY_ENTER)
+	o._offered = false
+	world.clock = 16.2
+	o.maybe_invite()
+	cards.pick(0)
+	cards.pick(6)
+	_check(o.is_open and o.game == "grill" and owner.cash == 4850, "the cookout costs $150")
+	o.press(KEY_ESCAPE)
+	_check(owner.cash == 5000, "leaving the cookout before you start refunds it")
+	o.press(KEY_ENTER)
+	_check(o.cost_range() == "$100 to $300" or o.cost_range() == "$100 to $520", "the cost range starts at the $100 cornhole (%s)" % o.cost_range())
 
 	# ---- free play: the O key
 	c.new_game(c.FREE)

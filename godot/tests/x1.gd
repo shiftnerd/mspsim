@@ -200,7 +200,7 @@ func _init() -> void:
 	world.time_scale = 1.0
 	outings.maybe_invite()
 	_check(
-		cards.is_open and "$120 to $300" in cards.text,
+		cards.is_open and "$100 to $300" in cards.text,
 		"the invitation says what the night costs: %s" % cards.text
 	)
 	_clear(cards)

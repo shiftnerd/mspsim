@@ -220,7 +220,7 @@ func _init() -> void:
 	outings.use_rooms = true
 	_check(outings.cost_range().contains("$520"), "the invitation range includes the fancy dinner: %s" % outings.cost_range())
 	outings.use_rooms = false
-	_check(outings.cost_range() == "$120 to $300", "...and is the plain range without the restaurant")
+	_check(outings.cost_range() == "$100 to $300", "...and is the plain range without the restaurant")
 	var q: Dictionary = {"price": 1800, "hw": 1500, "est": 40}
 	var quoted: int = projects.quote_profit(q)
 	_check(not o.money(quoted).contains("$-"), "a negative quote reads -$n: %s" % o.money(quoted))

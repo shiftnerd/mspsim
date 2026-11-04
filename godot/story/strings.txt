@@ -10424,6 +10424,22 @@ JACK OF ALL SITES
 [Career.MEDALS.36.desc]
 FIX JOBS AT 4 SITE TYPES
 
+# Career > MEDALS > 37 > title
+[Career.MEDALS.37.title]
+BAG MAN
+
+# Career > MEDALS > 37 > desc
+[Career.MEDALS.37.desc]
+10 BAGS IN THE HOLE
+
+# Career > MEDALS > 38 > title
+[Career.MEDALS.38.title]
+GRILL SERGEANT
+
+# Career > MEDALS > 38 > desc
+[Career.MEDALS.38.desc]
+A COOKOUT, NOTHING BURNT
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title
@@ -13836,6 +13852,38 @@ HA! KEEP GOING!
 [Outings.CREW_LINES.Alan.sing.1]
 THAT IS A REAL VOICE.
 
+# Outings > CREW_LINES > Alan > hole > 0
+[Outings.CREW_LINES.Alan.hole.0]
+PRECISION. THAT IS THE WORD.
+
+# Outings > CREW_LINES > Alan > hole > 1
+[Outings.CREW_LINES.Alan.hole.1]
+RIGHT IN THE HOLE.
+
+# Outings > CREW_LINES > Alan > miss > 0
+[Outings.CREW_LINES.Alan.miss.0]
+WIND. THERE IS WIND IN HERE.
+
+# Outings > CREW_LINES > Alan > miss > 1
+[Outings.CREW_LINES.Alan.miss.1]
+THE BOARD MOVED.
+
+# Outings > CREW_LINES > Alan > cook > 0
+[Outings.CREW_LINES.Alan.cook.0]
+THAT IS A PROPER BURGER.
+
+# Outings > CREW_LINES > Alan > cook > 1
+[Outings.CREW_LINES.Alan.cook.1]
+NICE SEAR. I APPROVE.
+
+# Outings > CREW_LINES > Alan > wait > 0
+[Outings.CREW_LINES.Alan.wait.0]
+I HAVE A MEETING IN TEN.
+
+# Outings > CREW_LINES > Alan > wait > 1
+[Outings.CREW_LINES.Alan.wait.1]
+IS THERE A TICKET SYSTEM HERE?
+
 # Outings > CREW_LINES > Garrison > cheer > 0
 [Outings.CREW_LINES.Garrison.cheer.0]
 YES! DID YOU SEE THAT?
@@ -13863,6 +13911,38 @@ THE NEXT ONE IS MINE.
 # Outings > CREW_LINES > Garrison > sing > 1
 [Outings.CREW_LINES.Garrison.sing.1]
 ENCORE! ENCORE!
+
+# Outings > CREW_LINES > Garrison > hole > 0
+[Outings.CREW_LINES.Garrison.hole.0]
+BAG IN! DID EVERYONE SEE?!
+
+# Outings > CREW_LINES > Garrison > hole > 1
+[Outings.CREW_LINES.Garrison.hole.1]
+THE CROWD GOES WILD.
+
+# Outings > CREW_LINES > Garrison > miss > 0
+[Outings.CREW_LINES.Garrison.miss.0]
+THE BAG HAD A MIND OF ITS OWN.
+
+# Outings > CREW_LINES > Garrison > miss > 1
+[Outings.CREW_LINES.Garrison.miss.1]
+WE DO NOT SPEAK OF THAT ONE.
+
+# Outings > CREW_LINES > Garrison > cook > 0
+[Outings.CREW_LINES.Garrison.cook.0]
+THIS IS THE BEST DAY EVER.
+
+# Outings > CREW_LINES > Garrison > cook > 1
+[Outings.CREW_LINES.Garrison.cook.1]
+A BURGER! IN THE WAREHOUSE!
+
+# Outings > CREW_LINES > Garrison > wait > 0
+[Outings.CREW_LINES.Garrison.wait.0]
+I AM SO HUNGRY RIGHT NOW.
+
+# Outings > CREW_LINES > Garrison > wait > 1
+[Outings.CREW_LINES.Garrison.wait.1]
+IS IT LUNCH YET? STILL LUNCH?
 
 # Outings > CREW_LINES > Dan > cheer > 0
 [Outings.CREW_LINES.Dan.cheer.0]
@@ -13896,6 +13976,38 @@ NOT BAD AT ALL.
 [Outings.CREW_LINES.Dan.sing.1]
 I WOULD NOT TRY THAT.
 
+# Outings > CREW_LINES > Dan > hole > 0
+[Outings.CREW_LINES.Dan.hole.0]
+I DID THAT ON PURPOSE.
+
+# Outings > CREW_LINES > Dan > hole > 1
+[Outings.CREW_LINES.Dan.hole.1]
+SEE? HOLE. SMALL HOLE.
+
+# Outings > CREW_LINES > Dan > miss > 0
+[Outings.CREW_LINES.Dan.miss.0]
+THAT BAG WAS DEFECTIVE.
+
+# Outings > CREW_LINES > Dan > miss > 1
+[Outings.CREW_LINES.Dan.miss.1]
+TO BE FAIR, IT WAS A LONG WAY.
+
+# Outings > CREW_LINES > Dan > cook > 0
+[Outings.CREW_LINES.Dan.cook.0]
+MEDIUM. EXACTLY AS FILED.
+
+# Outings > CREW_LINES > Dan > cook > 1
+[Outings.CREW_LINES.Dan.cook.1]
+NO TICKET NEEDED FOR THIS.
+
+# Outings > CREW_LINES > Dan > wait > 0
+[Outings.CREW_LINES.Dan.wait.0]
+MY BURGER IS IN THE QUEUE.
+
+# Outings > CREW_LINES > Dan > wait > 1
+[Outings.CREW_LINES.Dan.wait.1]
+I FILED THIS ORDER TWICE.
+
 # Outings > CREW_LINES > Vic > cheer > 0
 [Outings.CREW_LINES.Vic.cheer.0]
 I TOLD YOU. I TOLD EVERYONE.
@@ -13928,6 +14040,38 @@ I KNEW YOU HAD IT!
 [Outings.CREW_LINES.Vic.sing.1]
 I HAVE A GUY FOR RECORDING.
 
+# Outings > CREW_LINES > Vic > hole > 0
+[Outings.CREW_LINES.Vic.hole.0]
+TOLD YOU. I TOLD THE WHOLE ROOM.
+
+# Outings > CREW_LINES > Vic > hole > 1
+[Outings.CREW_LINES.Vic.hole.1]
+THAT IS HOW YOU CLOSE A DEAL.
+
+# Outings > CREW_LINES > Vic > miss > 0
+[Outings.CREW_LINES.Vic.miss.0]
+LET US CALL THAT A WARM-UP.
+
+# Outings > CREW_LINES > Vic > miss > 1
+[Outings.CREW_LINES.Vic.miss.1]
+THE BOARD IS TILTED, RIGHT?
+
+# Outings > CREW_LINES > Vic > cook > 0
+[Outings.CREW_LINES.Vic.cook.0]
+THIS BURGER IS A WIN WIN.
+
+# Outings > CREW_LINES > Vic > cook > 1
+[Outings.CREW_LINES.Vic.cook.1]
+I KNOW A GUY WHO COOKS. YOU.
+
+# Outings > CREW_LINES > Vic > wait > 0
+[Outings.CREW_LINES.Vic.wait.0]
+I HAVE A CLIENT CALL SOON.
+
+# Outings > CREW_LINES > Vic > wait > 1
+[Outings.CREW_LINES.Vic.wait.1]
+CAN I EXPENSE WAITING?
+
 # Outings > CREW_LINES > Maya > cheer > 1
 [Outings.CREW_LINES.Maya.cheer.1]
 RIGHT ON THE HEAD PIN.
@@ -13956,6 +14100,34 @@ THAT NOTE WAS PERFECT.
 [Outings.CREW_LINES.Maya.sing.1]
 OK, THAT WAS GOOD.
 
+# Outings > CREW_LINES > Maya > hole > 0
+[Outings.CREW_LINES.Maya.hole.0]
+NICE AND CLEAN.
+
+# Outings > CREW_LINES > Maya > miss > 0
+[Outings.CREW_LINES.Maya.miss.0]
+I AIMED A BIT LEFT.
+
+# Outings > CREW_LINES > Maya > miss > 1
+[Outings.CREW_LINES.Maya.miss.1]
+OK, NOT THAT ONE.
+
+# Outings > CREW_LINES > Maya > cook > 0
+[Outings.CREW_LINES.Maya.cook.0]
+PERFECT. THANK YOU.
+
+# Outings > CREW_LINES > Maya > cook > 1
+[Outings.CREW_LINES.Maya.cook.1]
+THAT IS EXACTLY WHAT I ASKED FOR.
+
+# Outings > CREW_LINES > Maya > wait > 0
+[Outings.CREW_LINES.Maya.wait.0]
+STILL WAITING, NO RUSH.
+
+# Outings > CREW_LINES > Maya > wait > 1
+[Outings.CREW_LINES.Maya.wait.1]
+I CAN COME BACK.
+
 # Outings > CREW_LINES > Morgan > cheer > 0
 [Outings.CREW_LINES.Morgan.cheer.0]
 NOT BAD. DO NOT TELL HR.
@@ -13983,6 +14155,34 @@ THAT WAS FINE. GOOD, EVEN.
 # Outings > CREW_LINES > Morgan > sing > 1
 [Outings.CREW_LINES.Morgan.sing.1]
 I WILL ALLOW IT.
+
+# Outings > CREW_LINES > Morgan > hole > 0
+[Outings.CREW_LINES.Morgan.hole.0]
+NOT BAD. DO NOT TELL HR.
+
+# Outings > CREW_LINES > Morgan > miss > 0
+[Outings.CREW_LINES.Morgan.miss.0]
+WELL. THAT HAPPENED.
+
+# Outings > CREW_LINES > Morgan > miss > 1
+[Outings.CREW_LINES.Morgan.miss.1]
+I AM ONLY HERE FOR THE SNACKS.
+
+# Outings > CREW_LINES > Morgan > cook > 0
+[Outings.CREW_LINES.Morgan.cook.0]
+IT IS FINE. IT IS GOOD, EVEN.
+
+# Outings > CREW_LINES > Morgan > cook > 1
+[Outings.CREW_LINES.Morgan.cook.1]
+I WILL ALLOW THIS BURGER.
+
+# Outings > CREW_LINES > Morgan > wait > 0
+[Outings.CREW_LINES.Morgan.wait.0]
+I DO NOT WAIT. I ABSORB.
+
+# Outings > CREW_LINES > Morgan > wait > 1
+[Outings.CREW_LINES.Morgan.wait.1]
+TIMER IS RUNNING, YOU KNOW.
 
 
 # ======================= Outings > KARAOKE_TEXT =======================
