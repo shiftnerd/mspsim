@@ -1,0 +1,197 @@
+<sub>MSPSIM INSTRUCTION MANUAL &nbsp;|&nbsp; CHAPTER 6 &nbsp;|&nbsp; PAGE 23</sub>
+
+# AFTER WORK
+
+*Seven ways to spend an evening with people you spend every other hour with.*
+
+---
+
+## HOW OUTINGS WORK
+
+Now and then somebody suggests that the team goes out. You can say **yes** or **no** (but see the note on skipping). If you go, the
+game takes you and the crew to the venue, plays one little game, and brings you back.
+
+In **Free Play** you can start one yourself: press **`O`**, answer **LET'S GO**, then choose where.
+
+| GAME | WHERE | YOU DO |
+|---|---|---|
+| **Bowling** | The bowling alley | Timing: stop two moving markers in the green. |
+| **Karaoke** | The karaoke bar | Rhythm: hit the arrows as they reach the line. |
+| **Escape Room** | The escape room | Puzzle: find clues, crack a code. |
+| **Dinner** | The neighbourhood grill | Conversation: learn what everybody likes. |
+| **Chair Race** | The warehouse | Rhythm: race the crew on rolling office chairs. |
+| **Cornhole** | The warehouse | Timing: toss bags at the boards. |
+| **Cookout** | The warehouse dock | Speed: run the grill and serve the orders. |
+
+### Everything every game has in common
+
+| STEP | WHAT HAPPENS |
+|---|---|
+| **The intro page** | A short description and the keys at the bottom. Press `Enter` or `Space` to start. `Esc` to leave. |
+| **The game** | You play it. Your coworkers play with you, and react. |
+| **The result page** | **0 to 3 stars.** `Enter`, `Space` or `Esc` to carry on. |
+
+| CONTROL | KEYBOARD | GAMEPAD |
+|---|---|---|
+| Arrows | Arrow keys | D-pad or left stick |
+| Confirm | `Enter` | `A` |
+| `E` | `E` | `X` |
+| Leave | `Esc` | `B` |
+
+> **NOTE:** In a campaign, leaving early is allowed, but nobody says anything and everybody notices. Skipping an invitation costs a
+> little goodwill too. The Owner campaign charges the company for the evening.
+
+> **TIP:** In a room-based game (all of them are, at the time of writing) you can keep walking around between turns.
+> The game only listens for its own keys while you play.
+
+---
+
+## BOWLING
+
+![A bowling frame: the crew lined up at the alley with the score captions at the bottom.](img/bowling.png)
+
+Five frames against your coworkers.
+
+1. It is your turn when the caption says so: press **`E`** (or `Space`) to step up.
+2. A marker sweeps from side to side across the lane. Press **`E`** to stop it **in the green**: that is your aim.
+3. A second marker swings for **power**. Press **`E`** again, once more in the green.
+4. Watch the pins fall. Repeat for your second roll.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `E` / `Space` | Step up, stop the aim, stop the power. |
+| `Left` / `Right` | While the markers are moving: **hook** the ball that way. Press the same direction again to cancel. A hook moves the green zone, and a wild one can leave the lane. |
+| `Esc` | Leave. |
+
+> **TIP:** Hooks are for people who have been doing this a while.
+
+---
+
+## KARAOKE
+
+Take the mic. A card lets you **pick the song** (`Up` / `Down` then `Enter`, or press `1` to `4`). Notes scroll toward a line. As
+each one reaches it, press the matching arrow.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `Left` `Up` `Down` `Right` | Hit the note in that lane. |
+| `Esc` | Leave. |
+
+Four lanes, four colours, one microphone, and the whole room right there with you. Some songs are locked until you earn them.
+
+> **NOTE:** Nervous? The room is right there with you. If you do well, the whole room joins the chorus.
+
+---
+
+## ESCAPE ROOM
+
+Crack the code on the keypad before time runs out. The code is a few digits long (three on some levels, four on others).
+
+1. **Look around.** Stand at the chalkboard, the clock, the painting and the shelf and press **`E`**. Each shows a clue.
+2. **Find the keypad** and press `E` to start entering a guess.
+3. **`Left` / `Right`** choose a digit, **`Up` / `Down`** change it, **`Enter`** tries the code.
+4. The door tells you how you did: **bulls** are the right digit in the right place, **cows** are the right digit in the wrong place.
+5. You have a limited number of tries and a time limit.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `E` | Examine a clue; use the keypad. |
+| `Left` `Right` `Up` `Down` | Choose and change digits. |
+| `Enter` | Try the code. |
+| `N` | Ask a friend for a **nudge**. Use too many and the stars shrink. |
+| `Esc` | Stop entering. Press it again to leave. |
+
+> **TIP:** Your friends know more than they say. A hint from the right person is a good use of a nudge.
+
+---
+
+## DINNER
+
+A booth at the neighbourhood grill. Everyone at the table loves something and dreads something else.
+
+1. Press **`E`** on the booth to sit with the team.
+2. Over five rounds, **pick a topic**: `Up` / `Down` then `Enter`.
+3. Watch their faces. A topic somebody likes goes well; one they dread does not. Remember who liked what.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `E` | Sit down at the booth. |
+| `Up` / `Down` | Choose a topic. |
+| `Enter` | Say it. |
+| `Esc` | Leave. |
+
+> **TIP:** There is no skill check here, so no mastery. It is purely about listening. (You will find this harder than the
+> bowling.)
+
+> **NOTE:** In the Owner campaign you also set the budget for the evening before you sit down.
+
+---
+
+## CHAIR RACE
+
+Race the crew down the length of the warehouse on rolling office chairs.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `Z` then `X` then `Z`... | Push off, alternating the two keys. **A steady rhythm is fast.** Mashing tires you out. |
+| `Up` / `Down` (or `W` / `S`) | Change lane. |
+| `Esc` | Leave. |
+
+Cones, signs and boxes cost time. The gamepad's `A` and `B` stand for `Z` and `X`.
+
+> **TIP:** Watch the rhythm, not the chair.
+
+---
+
+## CORNHOLE
+
+Toss bags at the boards in the warehouse against the crew. Four bags each.
+
+1. Press **`E`** to stop the **aim** sweeping across the board.
+2. Press **`E`** again to stop the **power**.
+3. A bag in the **hole** is worth 3. A bag on the **board** is worth 1. Bags that land against each other cancel out. First to the target wins.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `E` / `Space` / `Enter` | Stop the aim, stop the power. |
+| `Esc` | Leave. |
+
+---
+
+## COOKOUT
+
+You are on the grill at the warehouse dock. Orders arrive from the crew: burgers, hot dogs, all of it cooked the way it was asked
+for. Serve each order **the way it was asked**, and keep an eye out for flare-ups.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `Left` / `Right` (or `A` / `D`) | Pick a patty. |
+| `E` | Flip it. |
+| `Space` / `Enter` | Serve it. |
+| `Shift` | Move it to the cool side (`B` on a gamepad). |
+| `Esc` | Leave. |
+
+> **WARNING:** The grill is not insured against enthusiasm.
+
+---
+
+## STARS AND GETTING SHARPER
+
+Every game ends with **0 to 3 stars**. Stars are how the team felt about the evening: good results make people like you more,
+and a three-star night is the kind of thing that gets talked about.
+
+Every game also **gets sharper the more you play it well**:
+
+- A **good** play is 2 or more stars, and you stayed to the end.
+- Each good play adds one to that game's **mastery**, up to **10**.
+- As mastery rises, the game's skill checks tighten: the markers swing a little faster, the windows shrink a little.
+- The result page tells you, with a line like `MASTERY 3/10. SHARPER NEXT TIME.` At the top it reads `FULL MASTERY.`
+
+So your hundredth game of bowling is not the same as your first. Replays stay interesting because you keep getting better and the
+game keeps keeping up.
+
+> **NOTE:** Dinner has no skill check, so it has no mastery line. Toolbox games set to a "fixed take" are meant to repeat exactly, so they stay at the starting difficulty.
+
+> **TIP:** The difficulty level (EASY, NORMAL, HARD) sets where the game starts. Mastery changes how it feels from there.
+
+<sub>&lt;&lt; Previous: [Chapter 5](05-your-computer-and-phone.md) &nbsp;|&nbsp; [Contents](README.md) &nbsp;|&nbsp; Next: [Chapter 7: Make Your Own](07-make-your-own.md) &gt;&gt;</sub>
