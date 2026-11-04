@@ -35,7 +35,7 @@ const LINES := {
 const ASK_LINES := {
 	"cold": {
 		"Alan": "I like you fine, but I have payroll to run. Ask me again once we have worked together a bit more.",
-		"Garrison": "Love the energy, but I am slammed. Let us get to know each other first, yeah?",
+		"Garrison": "Love the energy, but I am slammed. Let's get to know each other first, yeah?",
 	},
 	"used": {
 		"Alan": "I already did what I could for you today. Tomorrow.",

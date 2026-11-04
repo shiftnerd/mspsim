@@ -210,7 +210,7 @@ const DEFAULT_BEAT_TEXT := {
 			],
 		},
 		"res_comfort": {"speaker": "Atty. Spence", "text": "Thank you. I do not know what I would do without you people. I will not forget that you picked up the phone."},
-		"res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let us do it now, before I change my mind."},
+		"res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let's do it now, before I change my mind."},
 	},
 	"slip": {
 		"card": {

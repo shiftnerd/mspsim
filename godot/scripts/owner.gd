@@ -1617,7 +1617,7 @@ func _goal_card() -> void:
 			if alan
 			else "Every owner wants something out of this place. Yours is the shop clients love: client mood of 75 or better, and a team that stays. It goes on the weekly report."
 		),
-		"options": [{"label": "GOOD. LET US GO.", "fx": {}}],
+		"options": [{"label": "GOOD. LET'S GO.", "fx": {}}],
 	}
 	show_card("owner_goal")
 

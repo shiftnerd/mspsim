@@ -16203,7 +16203,7 @@ func page_lines() -> Array:
     match page:
         0:
             lines.append(["MORGAN REYES - MANAGER", BLUE])
-            lines.append(["TWENTY DAYS DONE. LET US LOOK AT THE YEAR.", INK])
+            lines.append(["TWENTY DAYS DONE. LET'S LOOK AT THE YEAR.", INK])
             lines.append(["REPUTATION %d   CASH $%d" % [Campaign.rep, Campaign.cash], INK])
             lines.append(["CLOSED %d   SLA MISSED %d   REOPENED %d" % [Msp.closed_ok, Msp.breached, Msp.reopened], INK])
             var best_skill := "powershell"
@@ -17866,7 +17866,7 @@ func _goal_card() -> void:
             if alan
             else "Every owner wants something out of this place. Yours is the shop clients love: client mood of 75 or better, and a team that stays. It goes on the weekly report."
         ),
-        "options": [{"label": "GOOD. LET US GO.", "fx": {}}],
+        "options": [{"label": "GOOD. LET'S GO.", "fx": {}}],
     }
     show_card("owner_goal")
 
@@ -23450,8 +23450,8 @@ const COZY_TEXT := {
     "sla_text": "Ticket #%d ran past its SLA. It happens. The client is fine, just keep an eye on the clock.",
     "reopen_note": "Client asked for another look: not quite right yet.",
     "reopen_mail": "Hi there, it looks like this one is still acting up. No rush, whenever you get a chance to take another look. Thanks!",
-    "ransom_mail": "The files are gone and that hurts, but we know you tried everything. Let us talk about backups. - %s",
-    "ransom_text": "The files are gone. It happens. Let us talk about backups when you have a minute.",
+    "ransom_mail": "The files are gone and that hurts, but we know you tried everything. Let's talk about backups. - %s",
+    "ransom_text": "The files are gone. It happens. Let's talk about backups when you have a minute.",
     "tired_text": "You are getting tired. A cup of coffee from the kitchenette would not hurt.",
     "commute_late": "SLEEP IN. LEAVE AT 8:30 (YOU WILL STILL MAKE IT)",
     "pager_ignore": "LET THE BACKUP PHONE TAKE IT",
@@ -28066,7 +28066,7 @@ const CREW_LINES := {
         "talk": ["WATCH AND LEARN.", "I HAVE A GUY AT THIS ALLEY."],
         "sing": ["I KNEW YOU HAD IT!", "I HAVE A GUY FOR RECORDING."],
         "hole": ["TOLD YOU. I TOLD THE WHOLE ROOM.", "THAT IS HOW YOU CLOSE A DEAL."],
-        "miss": ["LET US CALL THAT A WARM-UP.", "THE BOARD IS TILTED, RIGHT?"],
+        "miss": ["LET'S CALL THAT A WARM-UP.", "THE BOARD IS TILTED, RIGHT?"],
         "cook": ["THIS BURGER IS A WIN WIN.", "I KNOW A GUY WHO COOKS. YOU."],
         "wait": ["I HAVE A CLIENT CALL SOON.", "CAN I EXPENSE WAITING?"],
     },
@@ -28388,7 +28388,7 @@ func maybe_invite() -> void:
         _host(),
         text,
         [
-            {"label": "YES, LET US GO", "id": "yes"},
+            {"label": "YES, LET'S GO", "id": "yes"},
             {"label": "NOT TONIGHT", "id": "no"},
         ],
         func(id: String) -> void: _invite_answer(id)
@@ -28530,7 +28530,7 @@ func _unhandled_input(event: InputEvent) -> void:
             "Team outing",
             "Take the team out? (Free Play: nothing is scored.) " + coming_text(),
             [
-                {"label": "LET US GO", "id": "yes"},
+                {"label": "LET'S GO", "id": "yes"},
                 {"label": "NEVER MIND", "id": "no"},
             ],
             func(id: String) -> void: _free_answer(id)
@@ -31169,7 +31169,7 @@ func _offer_here(id: String) -> void:
     Cards.ask(
         "Team outing",
         ask + coming_text(),
-        [{"label": "LET US GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
+        [{"label": "LET'S GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
         func(answer: String) -> void:
             if answer == "yes":
                 start(id, false, _game_options(id))
@@ -31877,7 +31877,7 @@ const VIC_ASK := {
     "Garrison": {
         "label": "PIPELINE UPDATE",
         "ahead": "{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.",
-        "behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let us talk about the hot ones.",
+        "behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let's talk about the hot ones.",
     },
 }
 
@@ -33830,7 +33830,7 @@ const LINES := {
 const ASK_LINES := {
     "cold": {
         "Alan": "I like you fine, but I have payroll to run. Ask me again once we have worked together a bit more.",
-        "Garrison": "Love the energy, but I am slammed. Let us get to know each other first, yeah?",
+        "Garrison": "Love the energy, but I am slammed. Let's get to know each other first, yeah?",
     },
     "used": {
         "Alan": "I already did what I could for you today. Tomorrow.",
@@ -34441,7 +34441,7 @@ const DEFAULT_ONE_ON_ONES := {
             [
                 {"label": "TELL HER EXACTLY WHAT WAS GOOD", "reply": "Eleven is good. The Acme spooler notes were the best. I mean it.", "fx": {"morale": 6, "retain": 1}},
                 {"label": "SAY THANKS", "reply": "Thanks. Keep going.", "fx": {"morale": 2}},
-                {"label": "ASK ABOUT THE REOPENS", "reply": "Two came back. Let us look at those together.", "fx": {"morale": -2, "skill": 0.02}},
+                {"label": "ASK ABOUT THE REOPENS", "reply": "Two came back. Let's look at those together.", "fx": {"morale": -2, "skill": 0.02}},
             ],
         },
         {
@@ -34479,7 +34479,7 @@ const DEFAULT_ONE_ON_ONES := {
             "options":
             [
                 {"label": "ASK HIM TO ASK, ALWAYS", "reply": "Asking is part of the job. Five minutes is the rule: stuck for five, ask. I wrote it on the board.", "fx": {"morale": 4, "retain": 1}},
-                {"label": "WALK THROUGH THE FIX", "reply": "Let us do it now. I will show you where the queue lives.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "WALK THROUGH THE FIX", "reply": "Let's do it now. I will show you where the queue lives.", "fx": {"morale": 5, "skill": 0.03}},
                 {"label": "TELL HIM TO TRY HARDER", "reply": "Try harder.", "fx": {"morale": -4}},
             ],
         },
@@ -35927,7 +35927,7 @@ func review_lines(page: int, ending: String) -> Array:
     match page:
         0:
             lines.append(["MORGAN REYES - MANAGER", blue])
-            lines.append(["TWENTY DAYS AT THE DESK. LET US LOOK AT THE NUMBERS.", ink])
+            lines.append(["TWENTY DAYS AT THE DESK. LET'S LOOK AT THE NUMBERS.", ink])
             lines.append(["CONFIDENCE %d   CREW MORALE %d   CLIENT MOOD %d" % [Campaign.rep, Crew.morale_avg(), int(Sales.average())], ink])
             lines.append(["CLOSED %d   SLA MISSED %d   REOPENED %d" % [Msp.closed_ok, Msp.breached, Msp.reopened], ink])
             var count := {"S": 0, "A": 0, "B": 0, "C": 0, "D": 0}
@@ -41301,7 +41301,7 @@ const EXTRA_CHATS := [
     {
         "gender": "m",
         "speaker": "omar_ops (Omar, two-person MSP)",
-        "text": "My partner does the sales and I do everything else. How do you decide which client gets the Saturday?",
+        "text": "My partner does the sales and I do everything else. When two clients both need me on a Saturday, how do you decide who goes first?",
         "options":
         [
             {"id": "learn", "label": "TALK ABOUT SLAs AND A PHONE LIST", "skill": "servers", "xp": 4, "text": "He did not have a list. He takes a photo of your napkin. (+4 servers XP)"},
@@ -41548,7 +41548,7 @@ const VENDORS := [
             {"id": "scan", "label": "SCAN MY BADGE FOR THE T-SHIRT", "text": "Beep. A free t-shirt and a lifetime of email. (raffle entry, expect emails)"},
             {"id": "no", "label": "WE ALREADY HAVE ANTIVIRUS", "text": "Dee says everyone says that, until they do not. She gives you a sticker."},
         ],
-        "mail": {"from": "Dee Kessler <dee@webwoot.example>", "subject": "Is your client protected? (reminder)", "body": "Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let us show you a 30 day trial. Reply YES for a free assessment. - Dee"},
+        "mail": {"from": "Dee Kessler <dee@webwoot.example>", "subject": "Is your client protected? (reminder)", "body": "Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let's show you a 30 day trial. Reply YES for a free assessment. - Dee"},
     },
     {
         "id": "psa", "speaker": "Rex (SoftSwipe PSA)",
@@ -52774,7 +52774,7 @@ const BEAT_TEXT := {
             ],
         },
         "res_comfort": {"speaker": "Atty. Spence", "text": "Thank you. I do not know what I would do without you people. I will not forget that you picked up the phone."},
-        "res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let us do it now, before I change my mind."},
+        "res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let's do it now, before I change my mind."},
     },
     "slip": {
         "card": {
@@ -55780,7 +55780,7 @@ static func start(deal: Dictionary) -> void:
     Cards.ask(
         "{ops}",
         "Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it." % [str(deal.name), int(deal.mrr), list.size()],
-        [{"label": "LET US GO THROUGH THE LIST", "id": "go"}],
+        [{"label": "LET'S GO THROUGH THE LIST", "id": "go"}],
         func(_id: String) -> void: ask_promise(deal, 0)
     )
 

@@ -340,7 +340,7 @@ const DEFAULT_VIC_ASK := {
 	"Garrison": {
 		"label": "PIPELINE UPDATE",
 		"ahead": "{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.",
-		"behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let us talk about the hot ones.",
+		"behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let's talk about the hot ones.",
 	},
 }
 var VIC_ASK: Dictionary = DEFAULT_VIC_ASK.duplicate(true)

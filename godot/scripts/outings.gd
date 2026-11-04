@@ -448,7 +448,7 @@ const DEFAULT_CREW_LINES := {
 		"talk": ["WATCH AND LEARN.", "I HAVE A GUY AT THIS ALLEY."],
 		"sing": ["I KNEW YOU HAD IT!", "I HAVE A GUY FOR RECORDING."],
 		"hole": ["TOLD YOU. I TOLD THE WHOLE ROOM.", "THAT IS HOW YOU CLOSE A DEAL."],
-		"miss": ["LET US CALL THAT A WARM-UP.", "THE BOARD IS TILTED, RIGHT?"],
+		"miss": ["LET'S CALL THAT A WARM-UP.", "THE BOARD IS TILTED, RIGHT?"],
 		"cook": ["THIS BURGER IS A WIN WIN.", "I KNOW A GUY WHO COOKS. YOU."],
 		"wait": ["I HAVE A CLIENT CALL SOON.", "CAN I EXPENSE WAITING?"],
 	},
@@ -772,7 +772,7 @@ func maybe_invite() -> void:
 		_host(),
 		text,
 		[
-			{"label": "YES, LET US GO", "id": "yes"},
+			{"label": "YES, LET'S GO", "id": "yes"},
 			{"label": "NOT TONIGHT", "id": "no"},
 		],
 		func(id: String) -> void: _invite_answer(id)
@@ -914,7 +914,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			"Team outing",
 			"Take the team out? (Free Play: nothing is scored.) " + coming_text(),
 			[
-				{"label": "LET US GO", "id": "yes"},
+				{"label": "LET'S GO", "id": "yes"},
 				{"label": "NEVER MIND", "id": "no"},
 			],
 			func(id: String) -> void: _free_answer(id)
@@ -3553,7 +3553,7 @@ func _offer_here(id: String) -> void:
 	Cards.ask(
 		"Team outing",
 		ask + coming_text(),
-		[{"label": "LET US GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
+		[{"label": "LET'S GO", "id": "yes"}, {"label": "NEVER MIND", "id": "no"}],
 		func(answer: String) -> void:
 			if answer == "yes":
 				start(id, false, _game_options(id))

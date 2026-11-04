@@ -5606,7 +5606,7 @@ ASK ABOUT THE REOPENS
 
 # Service > ONE_ON_ONES > Maya > 0 > options > 2 > reply
 [Service.ONE_ON_ONES.Maya.0.options.2.reply]
-Two came back. Let us look at those together.
+Two came back. Let's look at those together.
 
 # Service > ONE_ON_ONES > Maya > 1 > text
 [Service.ONE_ON_ONES.Maya.1.text]
@@ -5710,7 +5710,7 @@ WALK THROUGH THE FIX
 
 # Service > ONE_ON_ONES > Tech > 0 > options > 1 > reply
 [Service.ONE_ON_ONES.Tech.0.options.1.reply]
-Let us do it now. I will show you where the queue lives.
+Let's do it now. I will show you where the queue lives.
 
 # Service > ONE_ON_ONES > Tech > 0 > options > 2 > label
 [Service.ONE_ON_ONES.Tech.0.options.2.label]
@@ -9236,7 +9236,7 @@ PIPELINE UPDATE
 
 # Talk > VIC_ASK > Garrison > behind
 [Talk.VIC_ASK.Garrison.behind]
-{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let us talk about the hot ones.
+{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let's talk about the hot ones.
 
 
 # ======================= Nerds > JOKES =======================
@@ -11668,11 +11668,11 @@ Hi there, it looks like this one is still acting up. No rush, whenever you get a
 
 # Difficulty > COZY_TEXT > ransom_mail
 [Difficulty.COZY_TEXT.ransom_mail]
-The files are gone and that hurts, but we know you tried everything. Let us talk about backups. - %s
+The files are gone and that hurts, but we know you tried everything. Let's talk about backups. - %s
 
 # Difficulty > COZY_TEXT > ransom_text
 [Difficulty.COZY_TEXT.ransom_text]
-The files are gone. It happens. Let us talk about backups when you have a minute.
+The files are gone. It happens. Let's talk about backups when you have a minute.
 
 # Difficulty > COZY_TEXT > tired_text
 [Difficulty.COZY_TEXT.tired_text]
@@ -12682,7 +12682,7 @@ Is your client protected? (reminder)
 
 # Expo > VENDORS > 1 > mail > body
 [Expo.VENDORS.1.mail.body]
-Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let us show you a 30 day trial. Reply YES for a free assessment. - Dee
+Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let's show you a 30 day trial. Reply YES for a free assessment. - Dee
 
 # Expo > VENDORS > 2 > speaker
 [Expo.VENDORS.2.speaker]
@@ -15942,7 +15942,7 @@ THAT IS HOW YOU CLOSE A DEAL.
 
 # Outings > CREW_LINES > Vic > miss > 0
 [Outings.CREW_LINES.Vic.miss.0]
-LET US CALL THAT A WARM-UP.
+LET'S CALL THAT A WARM-UP.
 
 # Outings > CREW_LINES > Vic > miss > 1
 [Outings.CREW_LINES.Vic.miss.1]
@@ -16592,7 +16592,7 @@ Atty. Spence
 
 # SalesCampaign > BEAT_TEXT > crypto > res_renew > text
 [SalesCampaign.BEAT_TEXT.crypto.res_renew.text]
-You want to talk renewal while my files are locked? ...Actually, yes. Let us do it now, before I change my mind.
+You want to talk renewal while my files are locked? ...Actually, yes. Let's do it now, before I change my mind.
 
 # SalesCampaign > BEAT_TEXT > slip > card > speaker
 [SalesCampaign.BEAT_TEXT.slip.card.speaker]

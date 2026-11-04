@@ -71,7 +71,7 @@ static func start(deal: Dictionary) -> void:
 	Cards.ask(
 		"{ops}",
 		"Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it." % [str(deal.name), int(deal.mrr), list.size()],
-		[{"label": "LET US GO THROUGH THE LIST", "id": "go"}],
+		[{"label": "LET'S GO THROUGH THE LIST", "id": "go"}],
 		func(_id: String) -> void: ask_promise(deal, 0)
 	)
 

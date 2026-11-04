@@ -218,7 +218,7 @@ const DEFAULT_ONE_ON_ONES := {
 			[
 				{"label": "TELL HER EXACTLY WHAT WAS GOOD", "reply": "Eleven is good. The Acme spooler notes were the best. I mean it.", "fx": {"morale": 6, "retain": 1}},
 				{"label": "SAY THANKS", "reply": "Thanks. Keep going.", "fx": {"morale": 2}},
-				{"label": "ASK ABOUT THE REOPENS", "reply": "Two came back. Let us look at those together.", "fx": {"morale": -2, "skill": 0.02}},
+				{"label": "ASK ABOUT THE REOPENS", "reply": "Two came back. Let's look at those together.", "fx": {"morale": -2, "skill": 0.02}},
 			],
 		},
 		{
@@ -256,7 +256,7 @@ const DEFAULT_ONE_ON_ONES := {
 			"options":
 			[
 				{"label": "ASK HIM TO ASK, ALWAYS", "reply": "Asking is part of the job. Five minutes is the rule: stuck for five, ask. I wrote it on the board.", "fx": {"morale": 4, "retain": 1}},
-				{"label": "WALK THROUGH THE FIX", "reply": "Let us do it now. I will show you where the queue lives.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "WALK THROUGH THE FIX", "reply": "Let's do it now. I will show you where the queue lives.", "fx": {"morale": 5, "skill": 0.03}},
 				{"label": "TELL HIM TO TRY HARDER", "reply": "Try harder.", "fx": {"morale": -4}},
 			],
 		},
@@ -1704,7 +1704,7 @@ func review_lines(page: int, ending: String) -> Array:
 	match page:
 		0:
 			lines.append(["MORGAN REYES - MANAGER", blue])
-			lines.append(["TWENTY DAYS AT THE DESK. LET US LOOK AT THE NUMBERS.", ink])
+			lines.append(["TWENTY DAYS AT THE DESK. LET'S LOOK AT THE NUMBERS.", ink])
 			lines.append(["CONFIDENCE %d   CREW MORALE %d   CLIENT MOOD %d" % [Campaign.rep, Crew.morale_avg(), int(Sales.average())], ink])
 			lines.append(["CLOSED %d   SLA MISSED %d   REOPENED %d" % [Msp.closed_ok, Msp.breached, Msp.reopened], ink])
 			var count := {"S": 0, "A": 0, "B": 0, "C": 0, "D": 0}

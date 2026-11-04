@@ -287,7 +287,7 @@ const DEFAULT_VENDORS := [
 			"from": "Dee Kessler <dee@webwoot.example>",
 			"subject": "Is your client protected? (reminder)",
 			"body":
-			"Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let us show you a 30 day trial. Reply YES for a free assessment. - Dee"
+			"Hi! Following up from Rodent Nation. Did you know ransomware is way up this year? Let's show you a 30 day trial. Reply YES for a free assessment. - Dee"
 		},
 	},
 	{

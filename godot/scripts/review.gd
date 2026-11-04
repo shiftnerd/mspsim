@@ -289,7 +289,7 @@ func page_lines() -> Array:
 	match page:
 		0:
 			lines.append(["MORGAN REYES - MANAGER", BLUE])
-			lines.append(["TWENTY DAYS DONE. LET US LOOK AT THE YEAR.", INK])
+			lines.append(["TWENTY DAYS DONE. LET'S LOOK AT THE YEAR.", INK])
 			lines.append(["REPUTATION %d   CASH $%d" % [Campaign.rep, Campaign.cash], INK])
 			lines.append(
 				[

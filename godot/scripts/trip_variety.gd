@@ -124,7 +124,7 @@ const EXTRA_CHATS := [
 	{
 		"gender": "m",
 		"speaker": "omar_ops (Omar, two-person MSP)",
-		"text": "My partner does the sales and I do everything else. How do you decide which client gets the Saturday?",
+		"text": "My partner does the sales and I do everything else. When two clients both need me on a Saturday, how do you decide who goes first?",
 		"options":
 		[
 			{"id": "learn", "label": "TALK ABOUT SLAs AND A PHONE LIST", "skill": "servers", "xp": 4, "text": "He did not have a list. He takes a photo of your napkin. (+4 servers XP)"},
