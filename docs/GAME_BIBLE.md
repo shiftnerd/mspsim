@@ -110,16 +110,16 @@ business from your client. Medical and vet offices are staffed mostly by women; 
 | 5 | A client's backup quietly breaks. On-call rota announced. First team outing. | Plant the ransomware |
 | 6 | Growth plan with Morgan (pick a skill and a helper). First weekly all-hands. | Progression |
 | 7 | **Remote access break-in** at Brightside: RDP open to the internet. Close the door properly (VPN, auto-blocking firewall) or suffer. | Period-correct security |
-| 8 | **Wire request from the boss:** a paralegal forwards an email that looks like Atty. Spence asking for a $38,000 wire. Spot the fake and contain it. Also a stretch ticket with your helper. | Period-correct fraud |
+| 8 | **Wire request from the boss** at the law firm (a spoofed partner email asks for $38,000: read the headers, find the hidden forwarding rule, contain it, have the firm call the bank, leave a call-back rule and two-factor login). Stretch ticket with your helper. | 2013-14 CEO fraud, growth |
 | 9 | **CryptoLocker** hits the law firm. With a good backup you are a hero; with none you shop for options (shadow copies, paying, praying). | The payoff of day 5 |
 | 10 | **A client's network rack falls off the wall.** Photograph first, remount, recable, verify. | A hands-on crisis |
-| 11 | Dr. Patel writes about how the install went; all-hands | Consequences |
-| 12 | **Server migration** at Brightside (check the backups first or the cutover is a disaster) | A planning job |
+| 11 | Dr. Patel writes about how the install went; all-hands. **Morgan runs two blameless post-incident reviews** (the wire fraud, the fallen rack): root cause, then up to two action items. Optional; skipping costs 2 with Morgan. | Consequences, learning |
+| 12 | **Server migration** at Brightside (check the backups first or the cutover is a disaster). Afternoon: the ransomware review. | A planning job |
 | 13 | **24x7 email outage** at the brewery: a long night with a vendor call that runs past midnight | Overtime and endurance |
 | 14 | **The client who said no:** Lucy refuses stronger logins. Also, the law firm writes about the ransomware. | Persuasion and consequences |
-| 15 | Pager mail; second outing | Hours |
+| 15 | Pager mail; second outing; the email night review | Hours |
 | 16 | **Network install** at the law firm (survey, cable, certify, VLANs, Wi-Fi, document it); all-hands | Craft |
-| 17 | Growth protected time | |
+| 17 | Growth protected time. Brightside's bookkeeper gets a landlord email with "new bank details": with the wire check from the review she calls back and is grateful, without it she asks you (and may pay a scammer). | The review pays off or does not |
 | 18 | Review warning; stretch ticket | Rising pressure |
 | 19 | **The only person who knows:** the firewall fix needs Alan, who is out sick. | Documentation and bus factor |
 | 20 | Morgan names your roughest job. **Yearly review**: your reputation, your coworkers' quotes, your best client. | The ending |
@@ -142,6 +142,7 @@ points; sloppy ones leave consequences that return next morning as follow-up tic
 - **24x7 email outage** (day 13, runs into the night)
 - **Network install** (day 16)
 - **Wire request from the boss** (day 8), **The client who said no** (day 14), **The only person who knows** (day 19)
+- **Post-incident reviews** (days 11, 12, 15; a card chain, not a playbook): the choices set flags that change later odds (restore tests halve overnight backup failures, a runbook makes fixes safer, a patch policy trims ticket volume, a wire check changes the day 17 email)
 
 *Review question: are the choices interesting? Is there ever an obviously right answer with no tension? Are the consequences funny and fair?*
 
@@ -154,6 +155,10 @@ You run the company. Each week is a decision and a P&L. The same story happens t
 **Systems:** pricing, hiring (candidates with traits), software and hardware stack choices (a cheap PSA that techs hate), marketing, accounts receivable and late payers,
 a peer group and a consultant (real advice from other owners), your account manager's pay plan, scope creep, burnout, client business reviews, remote access exposure,
 and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, missing updates) or, rarely, just a lower price. Clients often come back, and you can raise the price.
+
+**Wire fraud (week 13 on, `Incident`):** a client's bookkeeper forwards a spoofed boss email asking for a wire. Warn every client and start a call-back rule ($350), sell the hosted email filter as a recurring service ($250 setup, $45 a week each, mood-dependent take-up), do both, or ignore it. From then on a weekly roll (about 3.5% per client; policy cuts the hits that get through to a quarter, the filter to a half) either catches a fake request (a toast and a text from Marge) or costs a client real money (at most two a run): credit them 40% and sign them for the filter, hire a lawyer ($600, better odds with the policy on file), ask your insurer (30% pays, 70% with the funds transfer fraud rider the broker offers after the first loss at $30 a week), or tell them it was their own process. Week 15 Marge shows you a "new bank account" email for your own distributor invoice ($2,400). The weekly report shows WIRE FRAUD RISK.
+
+**Lessons learned (weeks 11 and 15, and after a wire loss):** a card per incident class (ransomware, the rack, the email night, wire fraud). Hold it (runbook: half a day of your hours, morale up; or a check: some cash and a small weekly cost) or skip it (morale down, and the same class of incident gets about 15% more likely). A held review is a maturity practice and makes the repeat 40-50% less likely (RDP break-ins and their cost, the vendor breach, wire fraud) or the crew a little faster (the rack).
 
 **The numbers** that matter: EBITDA, the W-2 ratio (payroll vs revenue), client happiness, reputation. Week 20 is a board review with a valuation: sell, open a second office, or stay independent.
 

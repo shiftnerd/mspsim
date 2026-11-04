@@ -9,6 +9,7 @@ extends Node
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
+const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -1040,6 +1041,262 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"bec_scare":
+	{
+		"speaker": "{tech}",
+		"text":
+		"{me}, {client}'s bookkeeper just forwarded us an email that looks like it came from their owner: wire {amount} to a new account today, keep it quiet, no phone calls. She had a bad feeling and asked us first. It is a fake. Someone read their mail for days and copied the owner's style. This is hitting small offices all over the country, and every client of ours has the same hole.",
+		"options":
+		[
+			{
+				"label": "WARN EVERY CLIENT, START A CALL-BACK RULE ($350)",
+				"need": 350,
+				"fx": {"cash": -350, "bec": "policy"},
+				"text":
+				"A one page letter goes to every client: no payment and no bank change without a phone call to a number you already had. Two clients thank you. Their bookkeepers start calling back."
+			},
+			{
+				"label": "OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)",
+				"need": 250,
+				"fx": {"cash": -250, "bec": "filter"},
+				"text":
+				"Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
+			},
+			{
+				"label": "DO BOTH ($550)",
+				"need": 550,
+				"fx": {"cash": -550, "bec": "both"},
+				"text":
+				"The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books."
+			},
+			{
+				"label": "IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES",
+				"fx": {"bec": "ignore"},
+				"text": "You file it under lucky. The next one may not come with a bookkeeper who asks first."
+			},
+		],
+	},
+	"bec_marge":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"{me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it.",
+		"options":
+		[
+			{
+				"label": "CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE",
+				"fx": {"bec": "self_check", "owner_hours": 1},
+				"text":
+				"The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had."
+			},
+			{
+				"label": "PAY IT, WE ARE LATE ALREADY",
+				"roll":
+				[
+					[0.55, {"cash": -2400, "bec": "self_check"}, "It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down."],
+					[0.45, {}, "It was real. The distributor changed banks. You got lucky and Marge knows it."]
+				]
+			},
+			{
+				"label": "REPLY TO THE EMAIL AND ASK IF IT IS REAL",
+				"roll":
+				[
+					[0.7, {"cash": -2400, "bec": "self_check"}, "The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone."],
+					[0.3, {}, "The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out."]
+				]
+			},
+		],
+	},
+	"bec_loss":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"{me}, {client} wired {amount} to a scammer this week. An email 'from' their owner told accounting to pay a new account and it worked. Their mailbox had been watched for days. Their owner is on the phone with the bank and his first question is what IT was doing. What do we say?",
+		"options":
+		[
+			{
+				"label": "CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER",
+				"fx": {"bec": "credit"},
+				"text":
+				"Marge cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day."
+			},
+			{
+				"label": "LET OUR LAWYER ANSWER THEIR LETTER ($600)",
+				"need": 600,
+				"fx": {"cash": -600, "bec": "lawyer"}
+			},
+			{
+				"label": "ASK OUR INSURER",
+				"fx": {"bec": "claim"}
+			},
+			{
+				"label": "TELL THEM IT WAS THEIR OWN PROCESS",
+				"fx": {"bec": "blame"}
+			},
+		],
+	},
+	"bec_lawyer_ok":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"Our lawyer reads the contract and the file. Email security is on the recommended list and payments are the client's own process. He writes a calm, short answer and points to the letter we sent. They drop the claim. The relationship is cooler, but it is alive.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_lawyer_bad":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"Our lawyer finds no written warning and no call-back rule on file. Their lawyer says we ran their mail and should have seen it. We settle for half the loss to keep this out of court. Word gets around the building.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_claim_ok":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"The broker comes back with good news: the funds transfer fraud rider covers a client who is tricked into sending money. We credit the client and the insurer pays most of it back after the deductible. The client sees you stand behind your work.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_claim_no":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"The insurer says our policy covers a breach of our own systems, not money a client sent to a criminal by choice. That is a crime policy question and we do not have the rider. We credit the client ourselves.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_blame_left":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"You tell their owner it was their process. He agrees quietly, then sends a termination letter for the end of the month. Two other firms in the building hear about it.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_blame_stay":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"You tell their owner it was their process. He goes quiet, then says they will stay for now. The tone of every email from them has changed.",
+		"options": [{"label": "OK", "fx": {}}],
+	},
+	"bec_rider":
+	{
+		"speaker": "Marge (Bookkeeper)",
+		"text":
+		"Our broker called about the wire fraud. A funds transfer fraud rider on the crime policy would cover a client who is tricked into sending money and blames us, up to $25,000 a claim. It is $30 a week. Without it we pay out of pocket every time.",
+		"options":
+		[
+			{
+				"label": "ADD THE RIDER ($30/WEEK)",
+				"fx": {"bec": "rider"},
+				"text": "Signed. The next claim will be a phone call, not a crisis."
+			},
+			{"label": "LEAVE THE POLICY AS IT IS", "fx": {}},
+		],
+	},
+	"pm_ransom":
+	{
+		"speaker": "{tech}",
+		"text":
+		"{me}, CryptoLocker is behind us. Before the week eats it, the team wants an afternoon: what happened, the real cause, what we change. Nobody gets blamed, it is about the process. We can do it properly, or skip it.",
+		"options":
+		[
+			{
+				"label": "HOLD THE REVIEW AND WRITE THE RUNBOOK (HALF A DAY)",
+				"fx": {"pm": ["ransom", "runbook"], "owner_hours": 6, "burnout": -2, "social_all": 1},
+				"text":
+				"Four people, a whiteboard and an honest timeline. The backup alert sat unread for two days. The restore steps go on one page in the vault. Nobody was blamed, and everybody said so."
+			},
+			{
+				"label": "HOLD IT AND ADD A WEEKLY RESTORE TEST ($250 + $15/WEEK)",
+				"need": 250,
+				"fx": {"cash": -250, "weekly": 15, "pm": ["ransom", "check"], "owner_hours": 3, "social_all": 1},
+				"text":
+				"Every Friday someone restores one real file from each client and signs the sheet. It takes twenty minutes and it would have caught this."
+			},
+			{
+				"label": "SKIP IT, THE QUEUE IS FULL",
+				"fx": {"pm": ["ransom", "skip"], "burnout": 2, "social_all": -1},
+				"text": "The queue gets a little shorter. The whiteboard stays blank. Nobody says anything, which is its own answer."
+			},
+		],
+	},
+	"pm_rack": {
+		"speaker": "{tech}",
+		"text":
+		"{me}, the fallen rack at Gnarly Gnomes is a story the team already tells at lunch. It is also a pattern: plywood walls, no labels, no photos. Do we write it down so the next one is boring?",
+		"options":
+		[
+			{
+				"label": "HOLD THE REVIEW AND START A SITE CHECKLIST (HALF A DAY)",
+				"fx": {"pm": ["rack", "runbook"], "owner_hours": 5, "social_all": 1},
+				"text":
+				"Every closet gets a photo, labelled cables and a look at the wall. The team finds two more racks in the same state. The checklist fits on one page."
+			},
+			{
+				"label": "HOLD IT AND BUY A SPARE SWITCH AND LABELS ($200)",
+				"need": 200,
+				"fx": {"cash": -200, "pm": ["rack", "check"], "owner_hours": 3, "social_all": 1},
+				"text":
+				"A spare switch and a roll of cable labels live in the van now. The next closet that fails is an hour, not an afternoon."
+			},
+			{
+				"label": "SKIP IT, THEY ARE BACK UP",
+				"fx": {"pm": ["rack", "skip"], "burnout": 2, "social_all": -1},
+				"text": "Gnarly Gnomes is up and happy. The next wall is still plywood."
+			},
+		],
+	},
+	"pm_email": {
+		"speaker": "{tech}",
+		"text":
+		"{me}, the email night at the brewery ran past midnight. Before we all forget it, the team wants a short review: what broke, why nobody saw it coming and what we change. No blame, just the list.",
+		"options":
+		[
+			{
+				"label": "HOLD THE REVIEW AND WRITE A STATUS TEMPLATE (HALF A DAY)",
+				"fx": {"pm": ["email", "runbook"], "owner_hours": 5, "burnout": -2, "social_all": 1},
+				"text":
+				"A full log drive nobody watched, and a client who heard nothing for an hour. Now there is a disk alert and a one line status message every 30 minutes. Nobody was blamed."
+			},
+			{
+				"label": "HOLD IT AND PAY FOR SECOND-LEVEL ALERTS ($300 + $20/WEEK)",
+				"need": 300,
+				"fx": {"cash": -300, "weekly": 20, "pm": ["email", "check"], "owner_hours": 3, "social_all": 1},
+				"text":
+				"Mail disks and queues page a second person now, so a quiet failure does not sit until the phone rings."
+			},
+			{
+				"label": "SKIP IT, WE ARE TIRED",
+				"fx": {"pm": ["email", "skip"], "burnout": 2, "social_all": -1},
+				"text": "Everyone goes home. The disk is still the same size."
+			},
+		],
+	},
+	"pm_bec": {
+		"speaker": "{tech}",
+		"text":
+		"{me}, the wire fraud at {client} cost them real money and us a lot of sleep. The team wants an hour: how it got through, which control would have stopped it, what we change. No blame for the bookkeeper, she did what the process allowed.",
+		"options":
+		[
+			{
+				"label": "HOLD THE REVIEW AND WRITE THE WIRE REQUEST CHECKLIST (HALF A DAY)",
+				"fx": {"pm": ["bec", "runbook"], "owner_hours": 5, "social_all": 1},
+				"text":
+				"The checklist is short: call back on a known number, a second person for any new account, a hold on anything marked urgent and secret. We offer it to every client as a one page handout."
+			},
+			{
+				"label": "HOLD IT AND MAKE TWO-FACTOR LOGIN STANDARD FOR EMAIL ($300)",
+				"need": 300,
+				"fx": {"cash": -300, "pm": ["bec", "check"], "owner_hours": 4, "social_all": 1},
+				"text":
+				"Two-factor login goes on every client mailbox that handles money, starting with the ones that were hit. A stolen password alone is not enough any more."
+			},
+			{
+				"label": "SKIP IT, THE CLIENT IS ALREADY HANDLED",
+				"fx": {"pm": ["bec", "skip"], "burnout": 2, "social_all": -1},
+				"text": "The client is handled. The process that let it through is not."
+			},
+		],
+	},
 }
 var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 const DAYS := {
@@ -1102,6 +1359,8 @@ const DAYS := {
 	],
 	11:
 	[
+		{"at": 10.4, "card": "pm_ransom"},
+		{"at": 14.2, "card": "pm_rack"},
 		{"at": 11.0, "event": "qbr"},
 		{"at": 15.0, "event": "peer", "card": "peer3"},
 		{"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"},
@@ -1113,7 +1372,7 @@ const DAYS := {
 		{"at": 10.5, "card": "after_hours"},
 		{"at": 11.5, "event": "growth_stretch"}
 	],
-	13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
+	13: [{"at": 12.0, "card": "bec_scare"}, {"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
 	14:
 	[
 		{"at": 10.0, "event": "vendor_breach"},
@@ -1121,7 +1380,7 @@ const DAYS := {
 		{"at": 15.0, "card": "marketing"}
 	],
 	15:
-	[{"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}, {"at": 13.0, "event": "credit_squeeze"}],
+	[{"at": 9.8, "card": "pm_email"}, {"at": 14.0, "card": "bec_marge"}, {"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}, {"at": 13.0, "event": "credit_squeeze"}],
 	16:
 	[
 		{"at": 9.5, "card": "bid"},
@@ -1394,6 +1653,8 @@ func practices() -> int:
 	n += 1 if stack_sum("speed") > 0.0 else 0
 	n += 1 if flags.get("growth_done", false) else 0
 	n += 1 if flags.get("practice_scope", false) else 0
+	n += 1 if flags.get("practice_callback", false) else 0  # a call-back rule on payment changes
+	n += 1 if flags.get("practice_postmortem", false) else 0  # a blameless post-incident review
 	n += 1 if int(flags.get("outings", 0)) >= 2 else 0
 	return n
 
@@ -1546,6 +1807,7 @@ func begin_day(day: int) -> void:
 		_poach_card(_poach_queue.pop_front())
 	if not _winback_queue.is_empty():
 		_winback_card(int(_winback_queue.pop_front()))
+	Incident.morning()
 	Projects.begin_week()
 
 
@@ -1663,7 +1925,7 @@ func show_card(id: String) -> void:
 
 # X9: numbers a card quotes are read when it opens ({cash} = what is in the bank right now)
 func fill_text(body: String) -> String:
-	return body.replace("{cash}", money(cash))
+	return Incident.fill(body.replace("{cash}", money(cash)))
 
 
 # X9: a possessive that copes with names ending in s ("Lindqvist and Moss Architects'", not "Architects's")
@@ -1753,6 +2015,14 @@ func apply(fx: Dictionary) -> void:
 		marketing = int(fx.marketing)
 	if fx.has("burnout"):
 		burnout = clampf(burnout + float(fx.burnout), 0.0, 100.0)
+	if fx.has("owner_hours"):
+		Growth.owner_used += float(fx.owner_hours)  # hours of the owner's week (a review, a letter)
+	if fx.has("social_all"):
+		Social.change_all(int(fx.social_all))  # how the team feels about it
+	if fx.has("pm"):
+		Incident.owner_review(str(fx.pm[0]), str(fx.pm[1]))  # a post-incident review: class, how
+	if fx.has("bec"):
+		Incident.owner_fx(str(fx.bec))  # wire fraud
 	if fx.has("remediate"):
 		var healed := int(fx.remediate)
 		Msp.backup_rerun(healed)
@@ -2771,7 +3041,7 @@ func _credit_squeeze() -> void:
 
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
 func _vendor_breach() -> void:
-	var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
+	var hit := clampf(0.35 * security_risk() * Incident.lesson_mult("email"), 0.05, 0.8)
 	var vendor: String = str(stack_option("rmm").name)
 	_dynamic["vendor_breach"] = {
 		"speaker": "{tech}",
@@ -3326,11 +3596,13 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
 	if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
 		return
-	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp"))
+	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom")
 	if randf() >= chance:
 		return
 	var victim: int = Sales.active[randi() % Sales.active.size()]
 	var cost := 1200 if flags.get("backup_service", false) else 2500
+	if flags.get("pm_ransom", "") in ["runbook", "check"]:
+		cost = int(cost * 0.75)  # the runbook: the team knows what to do
 	incidents += 1
 	apply({"cash": -cost, "mood": {str(victim): -12}, "rep": -3})
 	Cards.ask(
@@ -3522,6 +3794,7 @@ func settle() -> Dictionary:
 	client_work = {}
 	_burnout_week()
 	_rdp_week()
+	Incident.week()
 	_poach_week()
 	_staff_week()
 	_owner_week(profit)
@@ -3586,6 +3859,14 @@ func settle() -> Dictionary:
 		]
 	)
 	rows.append(hours_row)
+	if Incident.armed():
+		rows.append(
+			[
+				"WIRE FRAUD RISK",
+				"%s (%d CAUGHT, %d LOST)" % [Incident.risk_word(), int(flags.get("bec_caught", 0)), Incident.losses()],
+				Color("8fe3a0") if Incident.risk_word() == "LOW" else Color("ffd27a")
+			]
+		)
 	rows.append(partner_row())
 	rows.append(goal_row())
 	if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():

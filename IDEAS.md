@@ -167,11 +167,11 @@ Still open: the tech-campaign vendor breach night; the LabRat Nerds later ideas 
    named owner for onboarding, SLAs that match what the team can really do. Onboarding as a project (discovery, documentation, agent rollout) with a real score.
 7. **[gap]** Documentation and bus factor: techs have a knowledge stat; when a senior tech leaves, resolution times rise for weeks and a credential-rotation project appears (only the passwords they knew, if you documented
    which). Documentation tool in the stack; "write it up" as a post-job step; the tech who knows everything and writes nothing.
-8. **[gap]** Business email compromise / wire fraud at a client: the victim sues the MSP (negligence, breach of contract), courts may split the fault, callback verification on payment changes, and the insurance wording
+8. **[BUILT, R37]** Business email compromise / wire fraud at a client: the victim sues the MSP (negligence, breach of contract), courts may split the fault, callback verification on payment changes, and the insurance wording
    (cyber vs crime, client's policy vs yours). Both campaigns.
 9. **[gap]** Revenue mix as a driver: recurring vs projects vs hardware vs managed security (managed services run ~50%+ gross margin, hardware resale ~20-30% in one source) feeding the valuation multiple; a
    managed-security service line you can add (and the incidents it prevents).
-10. **[gap]** Post-incident review: after any incident (ransomware, rack, email outage, vendor breach) a review card; the lessons you write up reduce the next incident's cost; skipping it repeats the mistake.
+10. **[BUILT, R37]** Post-incident review: after any incident (ransomware, rack, email outage, vendor breach) a review card; the lessons you write up reduce the next incident's cost; skipping it repeats the mistake.
 
 ### Deepen what we have
 11. **[deepen]** Late payers: late fees (about 1.5% a month in sample clauses), suspension only after written notice (about 5 business days), escalation around day 21 / 30 / 35, a reactivation fee equal to a month,

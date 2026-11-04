@@ -11,7 +11,7 @@ extends Node
 
 const FILE := "res://story/strings.txt"
 const ROOTS := {
-	"Story": ["DAYS", "VIGNETTES"],
+	"Story": ["DAYS", "VIGNETTES", "POSTMORTEMS"],
 	"Events": ["DECK"],
 	"Mutators": ["MUTATORS", "STARTS"],
 	"Yeartwo": ["CARRY", "YEAR2", "TEXT"],

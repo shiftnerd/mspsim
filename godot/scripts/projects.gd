@@ -94,6 +94,13 @@ const SERVICES := {
 		"cost": 25,
 		"blurb": "we keep every machine patched and protected"
 	},
+	"mailfilter":
+	{
+		"label": "MANAGED EMAIL FILTER",
+		"price": 45,
+		"cost": 15,
+		"blurb": "a hosted filter holds lookalike senders and spoofed bosses before they reach the inbox"
+	},
 }
 const PLATFORM_SETUP := 600
 const PLATFORM_WEEKLY := 100

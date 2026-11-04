@@ -31,6 +31,9 @@ const POLICIES := {
 		"stack_hw": 0,
 		"vic_plan": 1,
 		"draw": 0,
+		"bec_scare": 0,
+		"bec_marge": 0,
+		"pm_ransom": 0,
 	},
 	"cheap":
 	{
@@ -58,6 +61,12 @@ const POLICIES := {
 		"stack_hw": 2,
 		"vic_plan": 2,
 		"draw": 1,
+		"bec_scare": 3,
+		"bec_marge": 1,
+		"pm_ransom": 2,
+		"pm_rack": 2,
+		"pm_email": 2,
+		"pm_bec": 2,
 	},
 	"greedy":
 	{
@@ -85,6 +94,12 @@ const POLICIES := {
 		"stack_hw": 2,
 		"vic_plan": 2,
 		"draw": 2,
+		"bec_scare": 3,
+		"bec_marge": 1,
+		"pm_ransom": 2,
+		"pm_rack": 2,
+		"pm_email": 2,
+		"pm_bec": 2,
 	},
 }
 

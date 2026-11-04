@@ -10,6 +10,262 @@ extends Node
 
 const RANSOM_CLIENT := 3  # Hoot and Holler Law
 const MANAGER := "Morgan Reyes - Manager"
+const Incident := preload("res://scripts/incident.gd")  # R37: Morgan's post-incident reviews
+const DEFAULT_POSTMORTEMS := {
+	"ransom":
+	{
+		"title": "RANSOMWARE REVIEW",
+		"skill": "security",
+		"intro":
+		"{me}, got half an hour? Before the ransomware week turns into a story we tell badly, let us write down what happened: the timeline, the real cause, what we change. It is blameless, we look at the process and not at a person. Or we can skip it.",
+		"go": "SIT DOWN WITH MORGAN",
+		"skip": "SKIP IT, TOO BUSY",
+		"skipped": "Morgan nods and puts the marker back. 'We will see how it goes,' she says. It sounds like she thinks it will happen again.",
+		"cause_q": "Morgan draws a timeline on the whiteboard. The files were encrypted at 10:30. The backup alert was in the queue for two days. What was the root cause?",
+		"causes":
+		[
+			{
+				"id": "backups",
+				"label": "THE BACKUP ALERT SAT UNREAD AND NOBODY TESTED A RESTORE",
+				"right": true,
+				"note": "Morgan nods. The alert was real and the process had no owner. That is a system problem we can fix."
+			},
+			{
+				"id": "person",
+				"label": "THE STAFF CLICKED A BAD ATTACHMENT",
+				"right": false,
+				"note": "Morgan frowns. People click things. A process that needs everyone to be perfect is the problem. We do not put names on the board."
+			},
+			{
+				"id": "luck",
+				"label": "BAD LUCK, IT HAPPENS TO EVERYONE",
+				"right": false,
+				"note": "Morgan sighs. Luck was part of it, but luck is not an action item."
+			},
+		],
+		"items_q": "Pick the first thing we change. Small and real beats big and never.",
+		"more_q": "Good. One more, or is that enough for now?",
+		"enough": "THAT IS ENOUGH FOR NOW",
+		"items":
+		[
+			{
+				"id": "backup_verify",
+				"eff": "backups",
+				"label": "A WEEKLY RESTORE TEST FOR EVERY BACKUP",
+				"note": "Every Friday a tech restores one real file from each client and signs the sheet."
+			},
+			{
+				"id": "runbook",
+				"eff": "fixes",
+				"label": "A ONE PAGE RANSOMWARE RUNBOOK",
+				"note": "Isolate the machine, do not pay yet, check the backup, call the client. It goes in the vault."
+			},
+			{
+				"id": "patch_policy",
+				"eff": "pace",
+				"label": "A PATCH POLICY: SECOND TUESDAY, NO EXCEPTIONS",
+				"note": "Updates go out on a schedule instead of whenever someone remembers."
+			},
+			{
+				"id": "drill",
+				"eff": "xp",
+				"label": "A FIRE DRILL: CUT A MACHINE OFF THE NETWORK",
+				"note": "You time it. Four minutes the first run, ninety seconds the second."
+			},
+		],
+		"done": "Morgan photographs the whiteboard and mails the list to the owners. It is short on purpose, and it has names next to every line, for next time."
+	},
+	"rack":
+	{
+		"title": "RACK REVIEW",
+		"skill": "networking",
+		"intro":
+		"{me}, the fallen rack at Gnarly Gnomes is already a lunch story. It is also a pattern: plywood walls, no labels, no photos. Fifteen minutes, blameless, and we write it down. Or we skip it.",
+		"go": "SIT DOWN WITH MORGAN",
+		"skip": "SKIP IT, TOO BUSY",
+		"skipped": "Morgan shrugs. 'The next wall is plywood too,' she says. 'I just hope someone tells me before it moves.'",
+		"cause_q": "Morgan pulls up the photos you took. A rack bolted to plywood with drywall anchors, a fan in the closet and thirty unlabeled cables. What was the root cause?",
+		"causes":
+		[
+			{
+				"id": "mount",
+				"label": "NOBODY CHECKS THE WALL OR THE LABELS WHEN WE INSTALL A RACK",
+				"right": true,
+				"note": "Morgan nods. We have no site checklist, so a good install and a bad one look the same on the invoice."
+			},
+			{
+				"id": "person",
+				"label": "WHOEVER INSTALLED IT THE FIRST TIME DID A BAD JOB",
+				"right": false,
+				"note": "Morgan shakes her head. We do not know who, and we do not need to. The question is why our process let it pass."
+			},
+			{
+				"id": "client",
+				"label": "THE CLIENT HUNG IT THERE, IT IS THEIR PROBLEM",
+				"right": false,
+				"note": "Morgan raises an eyebrow. It is their wall. It is also our rack in our report."
+			},
+		],
+		"items_q": "What do we change? Pick the first.",
+		"more_q": "Good. One more, or is that enough for now?",
+		"enough": "THAT IS ENOUGH FOR NOW",
+		"items":
+		[
+			{
+				"id": "cable_labels",
+				"eff": "fixes",
+				"label": "LABEL CABLES AND PHOTOGRAPH EVERY RACK ON INSTALL",
+				"note": "A photo and a label now means the next tech does not have to guess."
+			},
+			{
+				"id": "anchor_check",
+				"eff": "pace",
+				"label": "ADD A WALL AND RACK CHECK TO EVERY SITE VISIT",
+				"note": "It takes two minutes and it catches the quiet problems before they fall off a wall."
+			},
+			{
+				"id": "spares",
+				"eff": "calm",
+				"label": "KEEP A SPARE SWITCH AND CABLES IN THE VAN",
+				"note": "The team likes this one. Nobody wants to explain a missing part to an angry client."
+			},
+			{
+				"id": "site_walk",
+				"eff": "xp",
+				"label": "WALK EVERY CLIENT CLOSET WITH A CHECKLIST",
+				"note": "You learn more in a day of closets than from a week of tickets."
+			},
+		],
+		"done": "Morgan prints the checklist and pins it above the van keys."
+	},
+	"email":
+	{
+		"title": "EMAIL OUTAGE REVIEW",
+		"skill": "servers",
+		"intro":
+		"{me}, the brewery night ran past midnight, and the only thing worse than a long night is a long night we learn nothing from. Blameless review, twenty minutes, one page. Or we skip it.",
+		"go": "SIT DOWN WITH MORGAN",
+		"skip": "SKIP IT, TOO TIRED",
+		"skipped": "Morgan nods slowly. 'Get some sleep,' she says. 'We will talk about it when it happens again.'",
+		"cause_q": "Morgan reads the timeline. The log drive filled up, the mail database dismounted and the brewery heard nothing from us for an hour. What was the root cause?",
+		"causes":
+		[
+			{
+				"id": "disk",
+				"label": "NOBODY WAS WATCHING THE LOG DRIVE, AND NOBODY TOLD THE CLIENT",
+				"right": true,
+				"note": "Morgan nods. No alert on a disk filling up, and no habit of telling the client what we know. Both are fixable."
+			},
+			{
+				"id": "person",
+				"label": "WHOEVER SET UP THE SERVER LEFT THE LOGS ON",
+				"right": false,
+				"note": "Morgan frowns. That is a person, and it was years ago. We do not write that on the board."
+			},
+			{
+				"id": "vendor",
+				"label": "THE SOFTWARE VENDOR SHOULD HAVE WARNED US",
+				"right": false,
+				"note": "Morgan taps the pen. Maybe. We cannot change them, though. We can change what we watch."
+			},
+		],
+		"items_q": "What do we change? Pick the first.",
+		"more_q": "Good. One more, or is that enough for now?",
+		"enough": "THAT IS ENOUGH FOR NOW",
+		"items":
+		[
+			{
+				"id": "second_oncall",
+				"eff": "calm",
+				"label": "A SECOND PERSON ON CALL FOR 24x7 CLIENTS",
+				"note": "Nobody likes being the only one who can fix it at 2 a.m. The team notices that you asked."
+			},
+			{
+				"id": "status_template",
+				"eff": "fixes",
+				"label": "A STATUS MESSAGE EVERY 30 MINUTES DURING AN OUTAGE",
+				"note": "One line to the client: what we know, what we are doing, when you hear from us next."
+			},
+			{
+				"id": "disk_alerts",
+				"eff": "pace",
+				"label": "DISK AND MAIL QUEUE ALERTS ON EVERY SERVER",
+				"note": "The RMM can watch free space. It just was not set to."
+			},
+			{
+				"id": "vendor_contacts",
+				"eff": "xp",
+				"label": "A LIST OF VENDOR SUPPORT NUMBERS AND ACCOUNT PINS",
+				"note": "Half the night went on finding who to call. Now it is on one sheet."
+			},
+		],
+		"done": "Morgan files the page where the next person will see it first."
+	},
+	"bec":
+	{
+		"title": "WIRE FRAUD REVIEW",
+		"skill": "security",
+		"intro":
+		"{me}, the fake wire request at Hoot and Holler could have gone very differently. Let us do a blameless review: how it got that far, which control would have stopped it, what we change for every client. Or we skip it.",
+		"go": "SIT DOWN WITH MORGAN",
+		"skip": "SKIP IT, TOO BUSY",
+		"skipped": "Morgan taps the desk. 'The next one will look the same,' she says. 'Different law firm, same email.'",
+		"cause_q": "Morgan lays the email next to a real one. Same wording, same amount, a lookalike domain, and a rule quietly forwarding the firm's mail. What was the root cause?",
+		"causes":
+		[
+			{
+				"id": "process",
+				"label": "ONE PERSON CAN MOVE MONEY ON AN EMAIL, AND NOBODY WATCHES THE MAILBOX RULES",
+				"right": true,
+				"note": "Morgan nods. A single email was enough to move money, and a hidden rule had been reading the firm's mail for days. Both are process, not people."
+			},
+			{
+				"id": "person",
+				"label": "THE PARALEGAL SHOULD HAVE KNOWN BETTER",
+				"right": false,
+				"note": "Morgan shakes her head. She is the one who called us. The system should not need her to be perfect."
+			},
+			{
+				"id": "filter",
+				"label": "THE SPAM FILTER MISSED IT",
+				"right": false,
+				"note": "Morgan taps the filter report. It was a clean message from a real mailbox. A filter was never going to catch it."
+			},
+		],
+		"items_q": "What do we change? Pick the first.",
+		"more_q": "Good. One more, or is that enough for now?",
+		"enough": "THAT IS ENOUGH FOR NOW",
+		"items":
+		[
+			{
+				"id": "wire_check",
+				"eff": "check",
+				"label": "A SECOND-PERSON CHECK AND A CALL-BACK ON EVERY WIRE REQUEST",
+				"note": "Nobody moves money on an email alone. A second person calls the number we already had."
+			},
+			{
+				"id": "two_factor",
+				"eff": "check",
+				"label": "TWO-FACTOR LOGIN FOR EVERY MAILBOX THAT HANDLES MONEY",
+				"note": "A stolen password alone does not get you into the mailbox any more."
+			},
+			{
+				"id": "rules_audit",
+				"eff": "fixes",
+				"label": "A MONTHLY AUDIT OF MAILBOX FORWARDING RULES",
+				"note": "Ten minutes a client. The hidden rule would have shown up on the first check."
+			},
+			{
+				"id": "client_talk",
+				"eff": "mood",
+				"label": "A SHORT TALK FOR EACH CLIENT'S ACCOUNTING STAFF",
+				"note": "Clients like being told what to watch for. It feels like service, because it is."
+			},
+		],
+		"done": "Morgan writes the owners a one page summary and says nothing about who was at fault. That is the point."
+	},
+}
+var POSTMORTEMS: Dictionary = DEFAULT_POSTMORTEMS.duplicate(true)
 const DEFAULT_VIGNETTES := {
 	"iphone":
 	{
@@ -37,6 +293,55 @@ const DEFAULT_VIGNETTES := {
 				"label": "TELL HER TO CALL THE PHONE STORE",
 				"text": "She sighs and says she will ask her nephew.",
 				"fx": {"mood": [1, -3]}
+			},
+		],
+	},
+	"invoice":
+	{
+		"speaker": "Karen Whitfield (Brightside Realty)",
+		"text":
+		"Our landlord emailed new bank details for the rent and wants it wired today. The signature looks right, but the address is a little off. Should I just do it? I do not want to be late.",
+		"text_checked":
+		"The landlord emailed new bank details for the rent. Then I remembered Morgan's rule: a call-back before any bank change. I called the number on the lease and he never sent it! Thank you for the rule.",
+		"options":
+		[
+			{
+				"id": "call",
+				"label": "TELL HER TO CALL THE LANDLORD ON THE LEASE NUMBER",
+				"text":
+				"He never sent it. She is a little shaken and a lot grateful. (+4 security XP, reputation +1)",
+				"fx": {"xp": ["security", 4], "rep": 1, "mood": [1, 5], "hours": 0.2}
+			},
+			{
+				"id": "headers",
+				"label": "CHECK THE EMAIL HEADERS FOR HER",
+				"text":
+				"The sender is a lookalike domain. She does not pay and you tell her to call him anyway. (+6 security XP)",
+				"fx": {"xp": ["security", 6], "mood": [1, 3], "hours": 0.4}
+			},
+			{
+				"id": "late",
+				"label": "SAY IT IS PROBABLY FINE, PAY IT",
+				"text":
+				"She wires the rent. The real landlord calls on Friday asking where it is. Brightside is out the money and not happy. (reputation -2)",
+				"fx": {"rep": -2, "mood": [1, -8]}
+			},
+		],
+		"options_checked":
+		[
+			{
+				"id": "ok",
+				"label": "SAY YOU ARE GLAD THE RULE WORKED",
+				"text":
+				"She tells everyone in the office. Two of them ask who set it up. (+4 security XP, reputation +1)",
+				"fx": {"xp": ["security", 4], "rep": 1, "mood": [1, 6]}
+			},
+			{
+				"id": "more",
+				"label": "OFFER A FIVE MINUTE TALK FOR HER WHOLE OFFICE",
+				"text":
+				"Nine people, one whiteboard, no jargon. The office manager asks for a copy of the checklist. (+6 security XP)",
+				"fx": {"xp": ["security", 6], "mood": [1, 8], "hours": 0.4}
 			},
 		],
 	},
@@ -1126,7 +1431,12 @@ const DEFAULT_DAYS := {
 			"Gnarly Gnomes says their network rack fell off the wall. Everything is down. Go. Photos first!"
 		},
 	],
-	11: [{"at": 10.0, "kind": "callback_install"}],
+	11:
+	[
+		{"at": 10.0, "kind": "callback_install"},
+		{"at": 11.0, "kind": "postmortem", "cls": "bec"},
+		{"at": 14.0, "kind": "postmortem", "cls": "rack"}
+	],
 	12:
 	[
 		{
@@ -1137,6 +1447,7 @@ const DEFAULT_DAYS := {
 			"Brightside's server migration is today. Check the backups before you touch anything."
 		},
 		{"at": 11.0, "kind": "growth_block"},
+		{"at": 14.0, "kind": "postmortem", "cls": "ransom"},
 		{"at": 15.5, "kind": "vignette", "id": "pizza"},
 	],
 	13:
@@ -1183,6 +1494,7 @@ const DEFAULT_DAYS := {
 			"body":
 			"You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"
 		},
+		{"at": 10.5, "kind": "postmortem", "cls": "email"},
 	],
 	16:
 	[
@@ -1194,7 +1506,7 @@ const DEFAULT_DAYS := {
 			"Hoot and Holler's branch office network install is today. Do it right, they remember."
 		},
 	],
-	17: [{"at": 11.0, "kind": "growth_block"}],
+	17: [{"at": 11.0, "kind": "growth_block"}, {"at": 14.0, "kind": "vignette", "id": "invoice"}],
 	18:
 	[
 		{"at": 14.0, "kind": "growth_stretch"},
@@ -1294,6 +1606,7 @@ func _process(_delta: float) -> void:
 	if not _followed and World.clock >= 9.4:
 		_followed = true
 		_spawn_followups()
+		Incident.tech_morning()
 
 
 # trouble from sloppy jobs comes back the next morning
@@ -1331,6 +1644,8 @@ func fire(ev: Dictionary) -> void:
 			Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
 		"vignette":
 			_vignette(str(ev.id))
+		"postmortem":
+			Incident.tech_start(str(ev.cls))
 		"adobe":
 			Msp.create_problem(int(ev.client), Msp.ADOBE, "email")
 		"callback_install":
@@ -1372,7 +1687,7 @@ func _vignette(id: String) -> void:
 	if v.is_empty():
 		return
 	var options := []
-	for o in v.options:
+	for o in _vopts(id, v):
 		options.append({"label": str(o.label), "id": str(o.id)})
 	Cards.ask(
 		str(v.speaker),
@@ -1382,8 +1697,19 @@ func _vignette(id: String) -> void:
 	)
 
 
+# R37: after a wire fraud review that added a check, Brightside's bookkeeper calls back first
+func _checked(id: String) -> bool:
+	return id == "invoice" and bool(flags.get("pm_eff_check", false))
+
+
+func _vopts(id: String, v: Dictionary) -> Array:
+	return v.options_checked if _checked(id) else v.options
+
+
 # Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
 func _vignette_text(id: String, v: Dictionary) -> String:
+	if id == "invoice" and _checked(id):
+		return str(v.text_checked)
 	if id == "donuts" and not bool(flags.get("bus_doc", false)):
 		return str(v.get("text_reset" if bool(flags.get("bus_reset", false)) else "text_plain", v.text))
 	return str(v.text)
@@ -1392,7 +1718,7 @@ func _vignette_text(id: String, v: Dictionary) -> String:
 func _vignette_answer(id: String, pick: String) -> void:
 	var v: Dictionary = VIGNETTES[id]
 	var text := ""
-	for o in v.options:
+	for o in _vopts(id, v):
 		if str(o.id) == pick:
 			text = str(o.text)
 			_vignette_fx(o.get("fx", {}))

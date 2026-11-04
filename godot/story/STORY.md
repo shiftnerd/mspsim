@@ -94,6 +94,10 @@ or the owner (owner campaign, 20 weeks).
 
 **10:00 CALLBACK INSTALL**. The desktop install comes back: the client reacts to how it went.
 
+**11:00 POSTMORTEM**. A scripted event (postmortem).
+
+**14:00 POSTMORTEM**. A scripted event (postmortem).
+
 *Every day also has: a morning commute, random tickets, coworker chat. Today: all-hands at 14:00.*
 
 ### Day 12
@@ -102,6 +106,8 @@ or the owner (owner campaign, 20 weeks).
 > Brightside's server migration is today. Check the backups before you touch anything. `[Story.DAYS.12.0.text]`
 
 **11:00 GROWTH BLOCK**. 30 protected training minutes.
+
+**14:00 POSTMORTEM**. A scripted event (postmortem).
 
 **15:30 VIGNETTE**. A scripted event (vignette).
 
@@ -129,6 +135,8 @@ or the owner (owner campaign, 20 weeks).
 **9:11 MAIL**, from Morgan Reyes - Manager. Subject: *Pager again* `[Story.DAYS.15.0.subject]`
 > You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan `[Story.DAYS.15.0.body]`
 
+**10:30 POSTMORTEM**. A scripted event (postmortem).
+
 *Every day also has: a morning commute, random tickets, coworker chat. Today: team outing invitation at 16:00.*
 
 ### Day 16
@@ -141,6 +149,8 @@ or the owner (owner campaign, 20 weeks).
 ### Day 17
 
 **11:00 GROWTH BLOCK**. 30 protected training minutes.
+
+**14:00 VIGNETTE**. A scripted event (vignette).
 
 *Every day also has: a morning commute, random tickets, coworker chat. Today: on call tonight.*
 
@@ -762,6 +772,24 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 11
 
+**10:24 Card: pm_ransom** — {tech} `[Owner.CARDS.pm_ransom.speaker]`
+> {me}, CryptoLocker is behind us. Before the week eats it, the team wants an afternoon: what happened, the real cause, what we change. Nobody gets blamed, it is about the process. We can do it properly, or skip it. `[Owner.CARDS.pm_ransom.text]`
+- **HOLD THE REVIEW AND WRITE THE RUNBOOK (HALF A DAY)** `[Owner.CARDS.pm_ransom.options.0.label]`
+  - Four people, a whiteboard and an honest timeline. The backup alert sat unread for two days. The restore steps go on one page in the vault. Nobody was blamed, and everybody said so. `[Owner.CARDS.pm_ransom.options.0.text]`
+- **HOLD IT AND ADD A WEEKLY RESTORE TEST ($250 + $15/WEEK)** `[Owner.CARDS.pm_ransom.options.1.label]`
+  - Every Friday someone restores one real file from each client and signs the sheet. It takes twenty minutes and it would have caught this. `[Owner.CARDS.pm_ransom.options.1.text]`
+- **SKIP IT, THE QUEUE IS FULL** `[Owner.CARDS.pm_ransom.options.2.label]`
+  - The queue gets a little shorter. The whiteboard stays blank. Nobody says anything, which is its own answer. `[Owner.CARDS.pm_ransom.options.2.text]`
+
+**14:11 Card: pm_rack** — {tech} `[Owner.CARDS.pm_rack.speaker]`
+> {me}, the fallen rack at Gnarly Gnomes is a story the team already tells at lunch. It is also a pattern: plywood walls, no labels, no photos. Do we write it down so the next one is boring? `[Owner.CARDS.pm_rack.text]`
+- **HOLD THE REVIEW AND START A SITE CHECKLIST (HALF A DAY)** `[Owner.CARDS.pm_rack.options.0.label]`
+  - Every closet gets a photo, labelled cables and a look at the wall. The team finds two more racks in the same state. The checklist fits on one page. `[Owner.CARDS.pm_rack.options.0.text]`
+- **HOLD IT AND BUY A SPARE SWITCH AND LABELS ($200)** `[Owner.CARDS.pm_rack.options.1.label]`
+  - A spare switch and a roll of cable labels live in the van now. The next closet that fails is an hour, not an afternoon. `[Owner.CARDS.pm_rack.options.1.text]`
+- **SKIP IT, THEY ARE BACK UP** `[Owner.CARDS.pm_rack.options.2.label]`
+  - Gnarly Gnomes is up and happy. The next wall is still plywood. `[Owner.CARDS.pm_rack.options.2.text]`
+
 **11:00** Event: qbr (handled in code, it opens its own cards)
 
 **15:00 Card: peer3** — MSP Mastermind `[Owner.CARDS.peer3.speaker]`
@@ -806,6 +834,17 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 13
 
+**12:00 Card: bec_scare** — {tech} `[Owner.CARDS.bec_scare.speaker]`
+> {me}, {client}'s bookkeeper just forwarded us an email that looks like it came from their owner: wire {amount} to a new account today, keep it quiet, no phone calls. She had a bad feeling and asked us first. It is a fake. Someone read their mail for days and copied the owner's style. This is hitting small offices all over the country, and every client of ours has the same hole. `[Owner.CARDS.bec_scare.text]`
+- **WARN EVERY CLIENT, START A CALL-BACK RULE ($350)** `[Owner.CARDS.bec_scare.options.0.label]`
+  - A one page letter goes to every client: no payment and no bank change without a phone call to a number you already had. Two clients thank you. Their bookkeepers start calling back. `[Owner.CARDS.bec_scare.options.0.text]`
+- **OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)** `[Owner.CARDS.bec_scare.options.1.label]`
+  - Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do. `[Owner.CARDS.bec_scare.options.1.text]`
+- **DO BOTH ($550)** `[Owner.CARDS.bec_scare.options.2.label]`
+  - The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books. `[Owner.CARDS.bec_scare.options.2.text]`
+- **IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES** `[Owner.CARDS.bec_scare.options.3.label]`
+  - You file it under lucky. The next one may not come with a bookkeeper who asks first. `[Owner.CARDS.bec_scare.options.3.text]`
+
 **15:30 Card: email24** — {tech} `[Owner.CARDS.email24.speaker]`
 > Soggy Bottom's email just died. They run 24x7 and their fermentation alerts come by email. The vendor offers premium support. I will stay late if you approve overtime. `[Owner.CARDS.email24.text]`
 - **PREMIUM VENDOR + OVERTIME ($800)** `[Owner.CARDS.email24.options.0.label]`
@@ -834,6 +873,26 @@ or the owner (owner campaign, 20 weeks).
 - **AGGRESSIVE ($900/WEEK)** `[Owner.CARDS.marketing.options.3.label]`
 
 ### Week 15
+
+**9:48 Card: pm_email** — {tech} `[Owner.CARDS.pm_email.speaker]`
+> {me}, the email night at the brewery ran past midnight. Before we all forget it, the team wants a short review: what broke, why nobody saw it coming and what we change. No blame, just the list. `[Owner.CARDS.pm_email.text]`
+- **HOLD THE REVIEW AND WRITE A STATUS TEMPLATE (HALF A DAY)** `[Owner.CARDS.pm_email.options.0.label]`
+  - A full log drive nobody watched, and a client who heard nothing for an hour. Now there is a disk alert and a one line status message every 30 minutes. Nobody was blamed. `[Owner.CARDS.pm_email.options.0.text]`
+- **HOLD IT AND PAY FOR SECOND-LEVEL ALERTS ($300 + $20/WEEK)** `[Owner.CARDS.pm_email.options.1.label]`
+  - Mail disks and queues page a second person now, so a quiet failure does not sit until the phone rings. `[Owner.CARDS.pm_email.options.1.text]`
+- **SKIP IT, WE ARE TIRED** `[Owner.CARDS.pm_email.options.2.label]`
+  - Everyone goes home. The disk is still the same size. `[Owner.CARDS.pm_email.options.2.text]`
+
+**14:00 Card: bec_marge** — Marge (Bookkeeper) `[Owner.CARDS.bec_marge.speaker]`
+> {me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it. `[Owner.CARDS.bec_marge.text]`
+- **CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE** `[Owner.CARDS.bec_marge.options.0.label]`
+  - The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had. `[Owner.CARDS.bec_marge.options.0.text]`
+- **PAY IT, WE ARE LATE ALREADY** `[Owner.CARDS.bec_marge.options.1.label]`
+  - 55%: It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down. `[Owner.CARDS.bec_marge.options.1.roll.0.2]`
+  - 45%: It was real. The distributor changed banks. You got lucky and Marge knows it. `[Owner.CARDS.bec_marge.options.1.roll.1.2]`
+- **REPLY TO THE EMAIL AND ASK IF IT IS REAL** `[Owner.CARDS.bec_marge.options.2.label]`
+  - 70%: The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone. `[Owner.CARDS.bec_marge.options.2.roll.0.2]`
+  - 30%: The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out. `[Owner.CARDS.bec_marge.options.2.roll.1.2]`
 
 **9:30 Card: raise** — Dan (Network Tech) `[Owner.CARDS.raise.speaker]`
 > {me}, I have taken on the hardest jobs all year. I would like a $100 a week raise. `[Owner.CARDS.raise.text]`
