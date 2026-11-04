@@ -382,6 +382,27 @@ func _misc() -> void:
 	for i in threads.size():
 		md.append("- %s %s" % [str(threads[i].title), _k(["Nerds", "THREADS", i, "title"])])
 	md.append("")
+	md.append("### LabRat Nerds IRC: topics you can talk about (each nick answers in its own voice)")
+	md.append("")
+	var topics: Array = root.get_node("Nerds").TOPICS
+	for i in topics.size():
+		md.append("- %s %s" % [str(topics[i].label), _k(["Nerds", "TOPICS", i, "label"])])
+	md.append("")
+	md.append("### LabRat Nerds IRC: the channel talks to itself (first line of each exchange)")
+	md.append("")
+	var amb: Array = root.get_node("Nerds").AMBIENT
+	for i in amb.size():
+		md.append(
+			(
+				"- %s: %s %s"
+				% [
+					str(amb[i].lines[0][0]),
+					str(amb[i].lines[0][1]),
+					_k(["Nerds", "AMBIENT", i, "lines", 0, 1])
+				]
+			)
+		)
+	md.append("")
 	md.append("### LabRat Nerds regulars at Rodent Nation (the forum people in the crowd)")
 	md.append("")
 	var forum: Array = root.get_node("Expo").FORUM

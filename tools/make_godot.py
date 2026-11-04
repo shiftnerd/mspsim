@@ -219,7 +219,7 @@ PATCHABLE = {
     "scripts/story.gd": ["DAYS", "VIGNETTES"], "scripts/playbook.gd": ["BOOKS", "PROBLEMS"], "scripts/owner.gd": ["CARDS"],
     "scripts/msp.gd": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
-    "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
+    "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
@@ -6595,6 +6595,10 @@ var rmm_tab := "endpoints"
 var board_tab := "books"
 var lync_sel := ""
 var nerds_tab := "forum"
+var irc_view := "chat"  # the IRC tab: chat (the log), who (pick a nick), topics (pick what to talk about), join (jump into a conversation)
+var irc_nick := ""
+var irc_sel := 0
+var irc_scroll := 0
 var forum = FORUM_VIEW.new()  # the forum state of the NERDS app (board index, board, thread)
 var learn_lesson := -1
 var learn_q := 0
@@ -6649,6 +6653,7 @@ func open(from_desk: int) -> void:
     _menu = false
     dispatch.cancel()
     forum.reset()
+    irc_view = "chat"
     _toast = ""  # the toast timer only runs while open, so drop one left from the last session
     _toast_t = 0.0
     is_open = true
@@ -6784,6 +6789,7 @@ func escape() -> void:
         or (app == "site" and site_view != "desktop")
         or (app == "crm" and SalesCampaign.crm_view != "list")
         or (app == "nerds" and nerds_tab == "forum" and forum.nested())
+        or (app == "nerds" and nerds_tab == "irc" and irc_view != "chat")
     )
     if nested:
         back()
@@ -6818,6 +6824,8 @@ func back() -> void:
         lync_sel = ""
     elif app == "nerds" and nerds_tab == "forum" and forum.nested():
         forum.back()
+    elif app == "nerds" and nerds_tab == "irc" and irc_view != "chat":
+        _irc_back()
     elif app == "site" and site_view != "desktop":
         site_view = "desktop"
     elif app == "site":
@@ -6852,6 +6860,9 @@ func scroll_list(step: int) -> void:
     elif app == "nerds" and nerds_tab == "forum":
         forum.scroll(step * 2)
         _canvas.queue_redraw()
+    elif app == "nerds" and nerds_tab == "irc" and irc_view in ["who", "topics"]:
+        irc_sel = clampi(irc_sel + step, 0, (Nerds.NICKS.size() if irc_view == "who" else Nerds.TOPICS.size()) - 1)
+        _canvas.queue_redraw()
 
 
 func _psa_index() -> int:
@@ -6885,6 +6896,8 @@ func activate(id: String) -> void:
             if app == "dash":
                 dash_t = 0.0
                 dash_chart = -1
+            elif app == "nerds" and nerds_tab == "irc":
+                _set_nerds_tab("irc")
         "wall":
             Career.cycle_pick("wallpaper")
         "close_app":
@@ -8264,28 +8277,179 @@ func _paint_nerds() -> void:
 
 
 func _paint_irc(area: Rect2) -> void:
-    var chars := int((area.size.x - 8) / 4.0)
-    _text("#LABRATNERDS   %d NERDS ONLINE" % Nerds.NICKS.size(), area.position + Vector2(4, 3), Color("c0561a"))
-    var rows := int((area.size.y - 38) / 7.0)
+    match irc_view:
+        "who":
+            _irc_who(area)
+        "topics":
+            _irc_topics(area)
+        "join":
+            _irc_join(area)
+        _:
+            _irc_chat(area)
+
+
+# STRANGER grey, REGULAR blue, FRIEND green, BUDDY gold
+func _friend_color(level: int) -> Color:
+    return [Color("8b93a1"), Color("4a78b0"), GREEN, Color("c98a10")][clampi(level, 0, 3)]
+
+
+func _nick_color(nick: String) -> Color:
+    if Nerds.NICKS.has(nick):
+        return Nerds.NICKS[nick].color
+    return Color("0a6ab8") if nick == "you" else BTN_SH
+
+
+# the channel: the log, the nick list with friendship (wide screens) and the four buttons
+func _irc_chat(area: Rect2) -> void:
+    var side := 92.0 if area.size.x >= 300.0 else 0.0
+    var log_w := area.size.x - side
+    var chars := int((log_w - 8.0) / 4.0)
+    _text(
+        "#LABRATNERDS   %d NERDS ONLINE" % Nerds.NICKS.size(),
+        area.position + Vector2(4, 3),
+        Color("c0561a")
+    )
+    var one_row := area.size.x >= 250.0
+    var by := area.end.y - (11.0 if one_row else 21.0)
     var lines: Array = []
     for entry in Nerds.channel:
-        for part in _wrap("%s: %s" % [str(entry[0]), str(entry[1])], chars):
-            lines.append([str(entry[0]), part])
-    var y := area.position.y + 12
+        var parts := _wrap("%s: %s" % [str(entry[0]), str(entry[1])], chars)
+        for k in parts.size():
+            lines.append([str(entry[0]), parts[k] if k == 0 else " " + str(parts[k])])
+    var top := area.position.y + 12
+    var rows := int((by - 9.0 - top) / 7.0)
+    var y := top
     for i in range(maxi(0, lines.size() - rows), lines.size()):
-        var nick := str(lines[i][0])
-        var color: Color = Nerds.NICKS[nick].color if Nerds.NICKS.has(nick) else (BTN_SH if nick != "you" else Color("0a6ab8"))
-        _text(lines[i][1], Vector2(area.position.x + 4, y), color)
+        _text(_clip(str(lines[i][1]), chars), Vector2(area.position.x + 4, y), _nick_color(str(lines[i][0])))
         y += 7
-    var by := area.end.y - 21
     var hint: Dictionary = Nerds.hint
     if not hint.is_empty() and not bool(hint.get("pending", false)):
-        _text(_clip("VERDICT: %s (%d OF %d AGREE)" % [str(hint.best).to_upper(), int(hint.votes), int(hint.total)], chars), Vector2(area.position.x + 4, by - 8), GREEN)
-    var wait := Nerds.cooldown_left()
+        _text(
+            _clip(
+                (
+                    "VERDICT: %s (%d OF %d AGREE)"
+                    % [str(hint.best).to_upper(), int(hint.votes), int(hint.total)]
+                ),
+                chars
+            ),
+            Vector2(area.position.x + 4, by - 8),
+            GREEN
+        )
+    if side > 0.0:
+        var x0 := area.end.x - side
+        _fill(Rect2(x0 - 2, area.position.y + 1, 1, by - area.position.y - 3), BTN_SH)
+        var ny := area.position.y + 3.0
+        var row_h := minf(7.0, floorf((by - 3.0 - ny) / float(Nerds.NICKS.size())))
+        for nick in Nerds.NICKS:
+            var level := Nerds.friend_level(str(nick))
+            var r := Rect2(x0, ny - 1, side - 2, row_h)
+            _region("nerds:who:" + str(nick), r)
+            if r.has_point(_mouse):
+                _fill(r, Color("f0d9c4"))
+            _text(str(nick), Vector2(x0 + 2, ny), _nick_color(str(nick)))
+            var word := Nerds.friend_word(str(nick))
+            _text(word, Vector2(area.end.x - 3 - _tw(word), ny), _friend_color(level))
+            ny += row_h
     var ask_ready := Nerds.can_ask()
-    var label := "ASK ABOUT THIS TICKET" if ask_ready else "WAIT %ds" % int(ceilf(wait))
-    _button("nerds:ask:ticket", Rect2(area.position.x + 3, by + 9, area.size.x * 0.5 - 4, 9), label, ask_ready)
-    _button("nerds:ask:step", Rect2(area.position.x + area.size.x * 0.5 + 1, by + 9, area.size.x * 0.5 - 4, 9), "ASK ABOUT THE JOB" if ask_ready else "...", ask_ready and Playbook.is_active())
+    var labels := [
+        "ASK TICKET" if ask_ready else "WAIT %ds" % int(ceilf(Nerds.cooldown_left())),
+        "ASK JOB" if ask_ready else "...",
+        "TALK",
+        "JOIN IN"
+    ]
+    var ids := ["nerds:ask:ticket", "nerds:ask:step", "nerds:view:who", "nerds:view:join"]
+    var enabled := [ask_ready, ask_ready and Playbook.is_active(), true, Nerds.can_join()]
+    var cols := 4 if one_row else 2
+    var bw := (area.size.x - 6.0 - 2.0 * float(cols - 1)) / float(cols)
+    for i in 4:
+        var rect := Rect2(
+            area.position.x + 3.0 + float(i % cols) * (bw + 2.0), by + float(i / cols) * 10.0 + 2.0, bw, 9
+        )
+        _button(str(ids[i]), rect, str(labels[i]), bool(enabled[i]))
+
+
+# step 1 of a chat: pick the nick (the friendship word and how many chats are left today)
+func _irc_who(area: Rect2) -> void:
+    _text("TALK TO WHO?", area.position + Vector2(4, 3), Color("c0561a"))
+    var back_text := "LEFT = BACK"
+    _text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
+    var row_h := 8.0
+    var y := area.position.y + 12
+    var nicks: Array = Nerds.NICKS.keys()
+    for i in nicks.size():
+        var nick := str(nicks[i])
+        var r := Rect2(area.position.x + 2, y + float(i) * row_h, area.size.x - 4, row_h)
+        _row(r, i == irc_sel, i % 2 == 1)
+        _text(nick, r.position + Vector2(3, 1), _nick_color(nick))
+        var word := Nerds.friend_word(nick)
+        _text(word, r.position + Vector2(56, 1), _friend_color(Nerds.friend_level(nick)))
+        var left := Nerds.chat_left(nick)
+        var tail := "%d LEFT" % left if left > 0 else "DONE TODAY"
+        _text(tail, Vector2(r.end.x - 3 - _tw(tail), r.position.y + 1), BTN_SH if left <= 0 else TXT)
+        _region("nerds:who:" + nick, r)
+
+
+# step 2: the topic; FRIEND and BUDDY topics stay locked until the friendship is there
+func _irc_topics(area: Rect2) -> void:
+    var nick := irc_nick
+    _text(
+        "%s - %s" % [nick, Nerds.friend_word(nick)],
+        area.position + Vector2(4, 3),
+        _nick_color(nick)
+    )
+    var tail := "%d LEFT TODAY" % Nerds.chat_left(nick)
+    _text(tail, Vector2(area.end.x - 4 - _tw(tail), area.position.y + 3), BTN_SH)
+    var topics: Array = Nerds.TOPICS
+    var row_h := 8.0
+    var vis := maxi(1, int((area.size.y - 14.0) / row_h))
+    irc_scroll = clampi(irc_scroll, 0, maxi(0, topics.size() - vis))
+    if irc_sel < irc_scroll:
+        irc_scroll = irc_sel
+    elif irc_sel >= irc_scroll + vis:
+        irc_scroll = irc_sel - vis + 1
+    var y := area.position.y + 12
+    for k in range(irc_scroll, mini(topics.size(), irc_scroll + vis)):
+        var t: Dictionary = topics[k]
+        var r := Rect2(area.position.x + 2, y, area.size.x - 4, row_h)
+        var locked := Nerds.friend_level(nick) < int(t.need)
+        _row(r, k == irc_sel, k % 2 == 1)
+        var label := (
+            "LOCKED - NEEDS %s" % Nerds.level_word(int(t.need)) if locked else str(t.label)
+        )
+        _text(_clip(label, int((r.size.x - 8) / 4.0)), r.position + Vector2(3, 1), BTN_SH if locked else TXT)
+        _region("nerds:topic:" + str(t.id), r)
+        y += row_h
+    if irc_scroll + vis < topics.size():
+        _text("MORE BELOW", Vector2(area.end.x - 4 - _tw("MORE BELOW"), area.end.y - 7), BTN_SH)
+
+
+# jumping into the last line the channel said
+func _irc_join(area: Rect2) -> void:
+    _text("JUMP IN", area.position + Vector2(4, 3), Color("c0561a"))
+    var back_text := "LEFT = BACK"
+    _text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
+    var y := area.position.y + 12
+    var chars := int((area.size.x - 8) / 4.0)
+    var last: Dictionary = Nerds.amb_last
+    if last.is_empty():
+        _text(str(Nerds.TEXT.irc_nojoin), Vector2(area.position.x + 4, y), BTN_SH)
+        return
+    var shown := _wrap("%s: %s" % [str(last.nick), str(last.text)], chars)
+    for k in mini(shown.size(), 4):
+        _text(str(shown[k]), Vector2(area.position.x + 4, y), _nick_color(str(last.nick)))
+        y += 7
+    y += 3
+    var choices := [
+        ["agree", "AGREE WITH THEM"],
+        ["joke", "MAKE A JOKE"],
+        ["ask", "ASK THEM MORE"]
+    ]
+    for i in choices.size():
+        var r := Rect2(area.position.x + 2, y + float(i) * 9.0, area.size.x - 4, 9)
+        _row(r, i == irc_sel, i % 2 == 1)
+        _text(str(choices[i][1]), r.position + Vector2(3, 2), TXT if Nerds.can_join() else BTN_SH)
+        if Nerds.can_join():
+            _region("nerds:join:" + str(choices[i][0]), r)
 
 
 # the NERDS app takes keys by name: arrows, Enter (a pad press stands for them), Page Up / Down and Tab (forum <-> IRC)
@@ -8294,30 +8458,95 @@ func _nerds_pad(event: InputEvent, dir: String) -> bool:
     if key_name == "" and Controls.confirm(event, false, false):
         key_name = "enter"
     if key_name == "" and event is InputEventKey:
-        key_name = str({KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_TAB: "tab"}.get(event.keycode, ""))
+        key_name = str(
+            {KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_TAB: "tab"}.get(event.keycode, "")
+        )
     if key_name == "":
         return false
     return nerds_key(key_name)
 
 
+func _set_nerds_tab(tab: String) -> void:
+    nerds_tab = tab
+    irc_view = "chat"
+    if tab == "irc":
+        Nerds.irc_open()
+
+
+# IRC: Enter asks about the ticket, Right about the job, Down opens TALK, Up JOIN IN; in a list Up / Down pick, Enter chooses, Left goes back
 func nerds_key(key_name: String) -> bool:
     if key_name == "tab":
-        nerds_tab = "irc" if nerds_tab == "forum" else "forum"
+        _set_nerds_tab("irc" if nerds_tab == "forum" else "forum")
         return true
     if nerds_tab == "irc":
-        if key_name == "left":
-            nerds_tab = "forum"
-        elif key_name == "enter":
-            activate("nerds:ask:ticket")
-        elif key_name == "right":
-            activate("nerds:ask:step")
-        else:
-            return false
-        return true
+        return _irc_key(key_name)
     if key_name == "right" and not forum.nested():
-        nerds_tab = "irc"
+        _set_nerds_tab("irc")
         return true
     return forum.key(key_name)
+
+
+func _irc_key(key_name: String) -> bool:
+    if irc_view == "chat":
+        match key_name:
+            "left":
+                _set_nerds_tab("forum")
+            "enter":
+                activate("nerds:ask:ticket")
+            "right":
+                activate("nerds:ask:step")
+            "down":
+                activate("nerds:view:who")
+            "up":
+                activate("nerds:view:join")
+            _:
+                return false
+        return true
+    var count := Nerds.NICKS.size()
+    if irc_view == "topics":
+        count = Nerds.TOPICS.size()
+    elif irc_view == "join":
+        count = 3
+    match key_name:
+        "up":
+            irc_sel = maxi(0, irc_sel - 1)
+        "down":
+            irc_sel = mini(count - 1, irc_sel + 1)
+        "left":
+            _irc_back()
+        "enter":
+            if irc_view == "who":
+                activate("nerds:who:" + str(Nerds.NICKS.keys()[irc_sel]))
+            elif irc_view == "topics":
+                activate("nerds:topic:" + str(Nerds.TOPICS[irc_sel].id))
+            else:
+                activate("nerds:join:" + str(["agree", "joke", "ask"][irc_sel]))
+        _:
+            return false
+    return true
+
+
+func _irc_back() -> void:
+    irc_view = "who" if irc_view == "topics" else "chat"
+    irc_sel = 0
+    irc_scroll = 0
+
+
+func _irc_go(view: String) -> void:
+    if view == "join" and not Nerds.can_join():
+        _say(str(Nerds.TEXT.irc_nojoin).to_upper())
+        return
+    irc_view = view
+    irc_sel = 0
+    irc_scroll = 0
+
+
+# after a chat: what it earned
+func _irc_toast(res: Dictionary, nick: String) -> void:
+    if bool(res.get("ok", false)):
+        _say("+%d WITH %s" % [int(res.gain), nick.to_upper()])
+    elif str(res.get("why", "")) == "cooldown":
+        _say(str(Nerds.TEXT.irc_wait).to_upper())
 
 
 func _nerds_action(parts: PackedStringArray) -> void:
@@ -8325,11 +8554,27 @@ func _nerds_action(parts: PackedStringArray) -> void:
         "board", "thread", "back", "reply", "up", "dn":
             forum.act(parts)
         "tab":
-            nerds_tab = parts[2]
+            _set_nerds_tab(parts[2])
         "read":
             Nerds.read_thread(int(parts[2]))
         "answer":
             _say(Nerds.answer_thread(int(parts[2])))
+        "view":
+            _irc_go(parts[2])
+        "who":
+            irc_nick = parts[2]
+            irc_view = "topics"
+            irc_sel = 0
+            irc_scroll = 0
+        "topic":
+            var res := Nerds.chat(irc_nick, parts[2])
+            _irc_toast(res, irc_nick)
+            if str(res.get("why", "")) in ["", "ignored", "tired"]:
+                irc_view = "chat"
+        "join":
+            var res := Nerds.join(parts[2])
+            _irc_toast(res, str(Nerds.amb_last.get("nick", "")))
+            irc_view = "chat"
         "ask":
             if parts[2] == "step":
                 Nerds.ask_step()
@@ -20184,7 +20429,7 @@ func friend_warning() -> void:
 ''')
 
 write("scripts/nerds.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,max-returns
 # LabRat Nerds: the community forum and IRC channel for LabRat users (a parody of the LabTech Geek community of the day).
 #   FORUM (R27): a board index (BOARDS: topic and post counts that grow with the day, a last-post line, footer statistics and a clock),
 #   about 65 period-correct threads (THREADS: a post and replies each) and today's five open questions. Reading one of today's
@@ -20302,6 +20547,13 @@ const TEXT := {
     "open_note": "OPEN = TODAY'S QUESTIONS. READ THEM FOR XP, REPLY FOR XP AND KARMA.",
     "sig_regular": "-- test it on a lab box first",
     "sig_guru": "-- GURU. I broke it before you did.",
+    "irc_lurker": "nobody chats with a lurker who never posts. try the forum.",
+    "irc_busy": "%s is busy for today. try again tomorrow.",
+    "irc_up": "%s now counts you as a %s.",
+    "irc_vouch": "%s vouched for you on the forum. +1 karma.",
+    "irc_locked": "you do not know %s well enough yet.",
+    "irc_wait": "give it a moment, then talk again.",
+    "irc_nojoin": "nobody said anything to jump into yet.",
 }
 const BOARDS := [
     {
@@ -22148,6 +22400,842 @@ const THREADS := [
         "Build a small lab with a spare box and a free hypervisor and restore a copy of the database before testing.",
     },
 ]
+# ---- IRC social chat (R30): topics, what each nick says per topic, replies, greetings and the channel's own conversations ----
+# TOPICS: id, the button text, and the friendship level it needs (0 stranger, 2 friend, 3 buddy). Every topic is answered by every nick.
+const TOPICS := [
+    {"id": "day", "label": "HOW IS YOUR DAY GOING?", "need": 0},
+    {"id": "weekend", "label": "ANY WEEKEND PLANS?", "need": 0},
+    {"id": "music", "label": "WHAT ARE YOU LISTENING TO?", "need": 0},
+    {"id": "watching", "label": "WHAT ARE YOU WATCHING?", "need": 0},
+    {"id": "joke", "label": "TELL ME A JOKE", "need": 0},
+    {"id": "family", "label": "HOW IS THE FAMILY?", "need": 0},
+    {"id": "weather", "label": "COMPLAIN ABOUT THE WEATHER", "need": 0},
+    {"id": "win", "label": "SHARE A NERD WIN", "need": 0},
+    {"id": "lab", "label": "ASK ABOUT THEIR LAB", "need": 0},
+    {"id": "home", "label": "WHERE ARE YOU FROM?", "need": 0},
+    {"id": "personal", "label": "ASK WHAT IS REALLY ON THEIR MIND", "need": 2},
+    {"id": "dream", "label": "ASK ABOUT THEIR BIG DREAM", "need": 3},
+]
+# what the nick says about each topic (the day picks one; a second chat the same day moves to the next)
+const CHAT := {
+    "rodent_rick":
+    {
+        "day":
+        [
+            "busy but good. three clients, two printers, one cold coffee. the usual, friend.",
+            "can't complain. well, I can, but it's not as fun as the printer queue.",
+        ],
+        "weekend":
+        [
+            "taking the kids to the lake. if the ice is gone. it is April. there is ice.",
+            "smoking a brisket for 12 hours. my weekend plan is mostly staring at a thermometer.",
+        ],
+        "music":
+        [
+            "classic rock on the van radio, and the kids' playlist when they steal my phone.",
+            "a podcast about lawn care. I don't even have a lawn. it's soothing, okay?",
+        ],
+        "watching":
+        [
+            "a cooking show with the whole family. I now judge everyone's knife skills.",
+            "the bracket games. my bracket was busted by round two, as always.",
+        ],
+        "joke":
+        [
+            "why did the admin cross the road? the change window was on the other side.",
+            "I told my wife I fix computers. she handed me a toaster. now there's a list.",
+            "how many techs does it take to change a bulb? none, it's a hardware problem.",
+        ],
+        "family":
+        [
+            "the kids are loud, the dog is louder, and the wife is the only one with a plan.",
+            "my youngest wants to be a sysadmin. I told her to be a plumber. better hours.",
+        ],
+        "weather":
+        [
+            "snow in April. I drove to a client with the wipers and the AC on. same drive.",
+            "the van heater died on the one day it mattered. frozen fingers on a rack at 7am.",
+        ],
+        "win":
+        [
+            "got a client's last XP box into the bin before the deadline. I did a little dance.",
+            "my backup test restored first try. I printed the log and stuck it on the fridge.",
+        ],
+        "lab":
+        [
+            "my lab is the garage. two old servers, a switch, and a space heater. cozy.",
+            "a laptop on the kitchen table and a VM named test_dont_touch. the kids touch it.",
+        ],
+        "home":
+        [
+            "born in a mill town, moved for work. still miss the fish fry on Fridays.",
+            "small town up north. one stoplight and it's always flashing. suits me.",
+        ],
+        "personal":
+        [
+            "honestly? I worry about the shop. 12 clients, one of me. don't tell the kids.",
+            "I never went to college. learned it on the job. I still check my work twice.",
+            "some nights I sit in the van after the last call and enjoy the quiet. thanks for asking.",
+        ],
+        "dream":
+        [
+            "one day I'd sell the shop to a good kid and spend winters fishing. you could be that kid.",
+            "a repair bench for old folks' computers. free, just for the coffee and the stories.",
+        ],
+    },
+    "gnawer":
+    {
+        "day":
+        [
+            "chewing through logs since 6am. my eyes feel like old floppy disks.",
+            "decent! I finally got my script to stop eating its own tail. it was a loop.",
+        ],
+        "weekend":
+        [
+            "homework, then a bike ride if it stops snowing. in April. rude.",
+            "building a second lab rack out of milk crates. engineering at its finest.",
+        ],
+        "music":
+        [
+            "chiptune while I code. my neighbours think I live in an arcade.",
+            "whatever's on the college station. last night: a polka band. I stayed for the accordion.",
+        ],
+        "watching":
+        [
+            "old sci-fi movies. the computers always have blinking lights and no mouse.",
+            "the bracket games, because my roommate has money on them. I just like the buzzer.",
+        ],
+        "joke":
+        [
+            "what's a rodent's favourite text editor? gnaw-tepad. I'll show myself out.",
+            "I told my team I'd gnaw on the problem. they said do not eat the cables. fair.",
+        ],
+        "family":
+        [
+            "mom calls every Sunday to ask if I've eaten. I have, mom. it was ramen.",
+            "my sister wants me to fix her phone. her phone is fine. she wants company.",
+        ],
+        "weather":
+        [
+            "snow in April! my bike is hiding in the garage. my socks are plotting against me.",
+            "the commute was an hour of brake lights. I counted 41. it helps.",
+        ],
+        "win":
+        [
+            "got Wake-on-LAN working on my whole lab. the machines wake up when I say hi.",
+            "my first PowerShell one-liner that worked first try. I took a screenshot. I'm framing it.",
+        ],
+        "lab":
+        [
+            "a closet, three old PCs, a switch from the dumpster. loud as a jet. I love it.",
+            "two towers on milk crates and a cat that sleeps on the warm one. I call it prod.",
+        ],
+        "home":
+        [
+            "a farm town, three hours south. the internet there was a rumour.",
+            "a tiny college town. best pizza, worst parking. I miss both.",
+        ],
+        "personal":
+        [
+            "sometimes I feel like I'm faking it. everyone here knows so much. thanks for talking to me.",
+            "I'm nervous about my first real client call. my voice goes weird. does yours?",
+        ],
+        "dream":
+        [
+            "a tiny network for a village school. kids with real computers. that's the dream.",
+            "my own MSP with a rodent logo. gnawer and sons. maybe daughters. maybe no sons.",
+        ],
+    },
+    "PS_wizard":
+    {
+        "day":
+        [
+            "Get-Day returned nothing useful. -WhatIf says tomorrow is better.",
+            "I automated three tasks before lunch. I may never speak to a human again.",
+        ],
+        "weekend":
+        [
+            "board games with the cat. her name is Set-Cat. she changes state without confirmation.",
+            "refactoring my profile script. yes, that is a weekend. no, I will not elaborate.",
+        ],
+        "music":
+        [
+            "electro on loop. my scripts run faster. no data, but I feel it.",
+            "silence, mostly. headphones with nothing playing, so people leave me alone.",
+        ],
+        "watching":
+        [
+            "a detective show where the hacker types 400 words a minute. the shortcuts hurt me.",
+            "a documentary about bridges. it is basically a change management series.",
+        ],
+        "joke":
+        [
+            "there are 10 kinds of admins: those who read the logs and those who say it works on my machine.",
+            "a SQL query walks into a bar, sees two tables and asks: may I join you?",
+        ],
+        "family":
+        [
+            "my sister thinks I run the internet. I let her.",
+            "two cats, Get-Cat and Set-Cat. they have separate scopes.",
+        ],
+        "weather":
+        [
+            "snow in April. a cold front on a calendar I did not approve. rolling it back.",
+            "wet shoes, wet socks, 14 reboots. the day writes itself.",
+        ],
+        "win":
+        [
+            "wrote a one-liner that cleaned up 400 stale accounts. no one noticed. highest compliment.",
+            "got a client's backups to email a report. it is the little things. mostly the report.",
+        ],
+        "lab":
+        [
+            "one hypervisor, nine test VMs and a domain named wizard.local. don't sneeze on it.",
+            "my lab is a laptop with 16 gigs. I snapshot before breathing.",
+        ],
+        "home":
+        [
+            "a small city in the rain belt. you learn indoor hobbies. like scripting.",
+            "near the coast. salt air kills laptops. that's where my paranoia started.",
+        ],
+        "personal":
+        [
+            "I talk to machines better than people. you are the exception. I'm as surprised as you are.",
+            "I over-engineer everything because I'm afraid of looking foolish. there. a confession.",
+            "my first script deleted a folder it should not have. I still check twice. I have the scar.",
+        ],
+        "dream":
+        [
+            "I'd teach a class. PowerShell for beginners, no jargon. I'd bring cookies.",
+            "build a tool that just works and never needs support. then retire and nap.",
+        ],
+    },
+    "old_hand":
+    {
+        "day":
+        [
+            "slow and steady, kid. been at this since NetWare, you learn to pace yourself.",
+            "good. found a tape backup from 1999 that still reads. I nearly cried.",
+        ],
+        "weekend":
+        [
+            "fishing if the lake thaws, grandkids if it doesn't. either way I win.",
+            "the flea market for old cables. I have an unhealthy drawer.",
+        ],
+        "music":
+        [
+            "an oldies station. songs that had a guitar solo and a point.",
+            "the hum of a server room. I miss it. modern machines are too quiet.",
+        ],
+        "watching":
+        [
+            "reruns of westerns. men solve problems on horseback. no logs. I envy them.",
+            "the bracket games with the grandkids. they pick by mascot. they beat me every year.",
+        ],
+        "joke":
+        [
+            "why was the token ring network so polite? everybody waited their turn.",
+            "my first hard drive was 20 megs. I thought I'd never fill it. I filled it in a week.",
+        ],
+        "family":
+        [
+            "the grandkids are visiting. they call my laptop the fossil. ungrateful, but funny.",
+            "my wife says I talk to the server more than her. the server answers faster.",
+        ],
+        "weather":
+        [
+            "snow in April. in 1982 we had a blizzard in May. walked uphill both ways, in a data centre.",
+            "my knee says rain. my knee has never been wrong. the weather forecast has.",
+        ],
+        "win":
+        [
+            "talked a client out of a floppy drive upgrade. progress, kid. slow, painful progress.",
+            "retired a beige tower that had run since before you could drive. it got a salute.",
+        ],
+        "lab":
+        [
+            "my lab is a basement. an old bench, a soldering iron and a coffee can of screws.",
+            "a stack of beige boxes and a label maker. I label everything. even the label maker.",
+        ],
+        "home":
+        [
+            "born and raised in a steel town. took a night course in 1984. it changed everything.",
+            "a farm. fixing a combine taught me more about troubleshooting than any manual.",
+        ],
+        "personal":
+        [
+            "the young ones think I'm out of date. maybe I am. but I still show up. that counts.",
+            "retirement is coming and I'm scared of the quiet. I'll keep a server in the garage.",
+            "I lost a client's data once, in 1996. never told anyone. I test restores because of it.",
+        ],
+        "dream":
+        [
+            "I'd like to mentor a kid who wants to learn properly. no shortcuts. you'd do.",
+            "a cabin, a dock and one very old PC for chess. no network. bliss.",
+        ],
+    },
+    "MPriest":
+    {
+        "day":
+        [
+            "blessed, mate. fixed a laptop, comforted a copier. the usual ministry.",
+            "busy as a one-armed bricklayer. but she'll be right.",
+        ],
+        "weekend":
+        [
+            "church fete on Saturday. I'm on the sausage sizzle. holy smoke, literally.",
+            "a quiet Sunday sermon and then the footy replay. even priests need a break.",
+        ],
+        "music":
+        [
+            "hymns, mostly. and a bush ballad now and then. the choir keeps me honest.",
+            "gospel on the radio, then cricket commentary. the second one is also prayer.",
+        ],
+        "watching":
+        [
+            "a gardening show. the host talks to tomatoes. I find it deeply theological.",
+            "the bracket games. I'm told it's not gambling if you don't bet. I'm not betting.",
+        ],
+        "joke":
+        [
+            "why did the priest become a sysadmin? he'd already heard people confess their passwords.",
+            "I blessed the server. it still crashed. turns out it was hardware, not spiritual.",
+        ],
+        "family":
+        [
+            "my parish is my family. and my mum, who rings every night to check I've eaten.",
+            "my sister's kids call me Uncle Dad-Joke. fair.",
+        ],
+        "weather":
+        [
+            "snow in April! back home we had flies, not flurries. blimey.",
+            "a bit grey, a bit wet. the lawn and I are both grateful.",
+        ],
+        "win":
+        [
+            "restored a parish newsletter from a backup. the Lord provides. so do good backups.",
+            "taught a nun to use shadow copies. she got it first go. I am humbled.",
+        ],
+        "lab":
+        [
+            "my lab is the church vestry. a laptop, a hymn book and a hot water jug.",
+            "a spare room, a router from 2009 and a fan that sounds like a choir.",
+        ],
+        "home":
+        [
+            "a small town out west, sunburnt nose and all. the sky there is bigger than here.",
+            "near the coast. I saw the sea every day. I miss it more than I expected.",
+        ],
+        "personal":
+        [
+            "I hear everyone's troubles all day. sometimes I wish someone would hear mine. thanks for listening.",
+            "I miss home. the heat, the sky, the noise of the magpies. I pretend I'm fine.",
+            "the work is good but lonely sometimes. you're a kind sort, mate.",
+        ],
+        "dream":
+        [
+            "a computer clinic in the church hall. free for the elderly. tea and scones.",
+            "to go home for a summer, swim at the beach and say nothing for a week.",
+        ],
+    },
+    "GrizzleAdmin":
+    {
+        "day":
+        [
+            "same as yesterday. someone broke the printer. I know who. don't ask.",
+            "tolerable. nobody called. best kind of day.",
+        ],
+        "weekend":
+        [
+            "mowing, scowling, maybe fixing the neighbour's router. don't tell him I enjoyed it.",
+            "fishing. I sit, I curse the fish, I come home. that is the plan.",
+        ],
+        "music":
+        [
+            "the sound of nobody asking me anything. best album ever.",
+            "old blues on vinyl. none of that digital noise. kids today wouldn't know a good crackle.",
+        ],
+        "watching":
+        [
+            "the weather channel. I like it when it's wrong. makes me feel useful.",
+            "reruns of a cop show. everyone's a suspect. like a helpdesk.",
+        ],
+        "joke":
+        [
+            "what did the admin say to the intern? it's not a bug, it's your fault.",
+            "what's an admin's favourite exercise? lifting servers and ignoring requests.",
+        ],
+        "family":
+        [
+            "dog is fine. dog is better than people. dog never asked for admin rights.",
+            "my daughter calls Sundays. she thinks I don't like it. I like it.",
+        ],
+        "weather":
+        [
+            "snow in April. the whole world is a change request I did not approve.",
+            "cold. wet. like the data centre in 2008. no one cared then either.",
+        ],
+        "win":
+        [
+            "found an unmanaged switch hiding in a ceiling. I'm calling it a victory.",
+            "documented the whole network. on paper. in a binder. it will outlive us all.",
+        ],
+        "lab":
+        [
+            "a rack in the shed. a space heater and a thermos. don't ask what's on it.",
+            "three old boxes, each labelled do not touch. they still get touched.",
+        ],
+        "home":
+        [
+            "born here, raised here, grumpy here. why would I leave? the grumbling is great.",
+            "the old neighbourhood. one phone line, everyone knew your business. like a forum.",
+        ],
+        "personal":
+        [
+            "I've done this since 2008 and I still get scared when a server won't boot. keep that between us.",
+            "I was a lot nicer once. then I saw a thousand password resets. it changes a person.",
+            "I pretend not to care, but I read every thread. the good ones make my week.",
+        ],
+        "dream":
+        [
+            "retire to a cabin with the dog. no phones. a mailbox with a lock. no email.",
+            "write a manual people actually read. it would be one page. it would say read this.",
+        ],
+    },
+    "HELPPLZ_Pip":
+    {
+        "day":
+        [
+            "MY DAY IS GREAT!!! I FIXED A PRINTER!!! THEN I BROKE IT AGAIN!!!",
+            "SO BUSY!!! I HAVE 14 TABS OPEN AND I DO NOT KNOW WHY!!!",
+        ],
+        "weekend":
+        [
+            "LAN PARTY AT MY COUSIN'S!!! ALSO PIZZA!!! ALSO MAYBE SLEEP!!!",
+            "I AM GOING TO CLEAN MY DESK!!! THAT IS A LIE. GAMING!!!",
+        ],
+        "music":
+        [
+            "THE SAME SONG 40 TIMES!!! IT IS A GOOD SONG!!! I CANNOT REMEMBER THE NAME!!!",
+            "THE HAPPY SONG THAT IS EVERYWHERE!!! I AM NOT EVEN SORRY!!!",
+        ],
+        "watching":
+        [
+            "A SHOW WITH DRAGONS AND POLITICS!!! I DO NOT UNDERSTAND THE POLITICS!!! DRAGONS ARE GOOD!!!",
+            "THE BRACKET GAMES!!! I PICKED BY MASCOT!!! I AM DOING BETTER THAN YOU!!!",
+        ],
+        "joke":
+        [
+            "WHY DID THE COMPUTER GO TO THE DOCTOR??? IT HAD A VIRUS!!! HAHA!!!",
+            "WHY WAS THE LAPTOP COLD??? IT LEFT ITS WINDOWS OPEN!!! MY DAD TOLD ME THAT!!!",
+        ],
+        "family":
+        [
+            "MY MOM CALLS ME EVERY DAY TO ASK IF I EAT!!! I EAT!!! HI MOM!!!",
+            "MY LITTLE BROTHER BROKE MY KEYBOARD!!! I FIXED IT WITH TAPE!!! IT WORKS!!!",
+        ],
+        "weather":
+        [
+            "SNOW IN APRIL!!! I SLIPPED AND DROPPED MY LAPTOP!!! IT SURVIVED!!! PHEW!!!",
+            "SO COLD MY FINGERS CANNOT TYPE!!! THAT IS WHY THERE ARE FEWER TYPOS!!! WAIT!!!",
+        ],
+        "win":
+        [
+            "I RESET A PASSWORD ALL BY MYSELF!!! NO ONE HELPED!!! OKAY A LITTLE!!!",
+            "I FOUND THE ON SWITCH ON A SERVER!!! IT WAS ON THE BACK!!! HUGE WIN!!!",
+        ],
+        "lab":
+        [
+            "MY LAB IS MY BEDROOM!!! IT IS MESSY BUT I KNOW WHERE EVERYTHING IS!!! MOSTLY!!!",
+            "I HAVE A SERVER IN MY CLOSET!!! IT HUMS!!! I SLEEP BETTER!!!",
+        ],
+        "home":
+        [
+            "A BIG CITY!!! BUT A SMALL APARTMENT!!! WITH A BIG HEART!!!",
+            "SMALL TOWN!!! THE BIGGEST EVENT WAS A PARADE OF TRACTORS!!! 10/10!!!",
+        ],
+        "personal":
+        [
+            "I AM NOT ALWAYS LOUD... ONLY WHEN I AM SCARED NOBODY WILL LISTEN. THANKS FOR LISTENING.",
+            "I WANT TO BE GOOD AT THIS SO BAD. I PRACTISE AT NIGHT. DO NOT TELL ANYONE.",
+            "I WAS NERVOUS TO JOIN THE CHANNEL. YOU SAID HI. THAT WAS A BIG DEAL FOR ME!!!",
+        ],
+        "dream":
+        [
+            "I WANT TO BE A GURU!!! AND HAVE A BADGE!!! WITH SPARKLES!!!",
+            "I WANT TO FIX THE INTERNET!!! OR AT LEAST MY MOM'S!!!",
+        ],
+    },
+    "xX_n00b_Xx":
+    {
+        "day":
+        [
+            "meh. school, then homework, then pretend i'm a hacker. normal.",
+            "ok i guess. broke my rig. fixed my rig. broke it more.",
+        ],
+        "weekend":
+        [
+            "gaming marathon. 14 hrs. mom says i need sun. i say it's in the monitor.",
+            "going to my buddy's to overclock stuff. we will probably just watch it crash.",
+        ],
+        "music":
+        [
+            "loud stuff with a lot of guitars. my headphones are the real MVP.",
+            "game soundtracks. the boss fight track slaps. no i'm not sorry.",
+        ],
+        "watching":
+        [
+            "videos of people speedrunning old games. i'm learning. mostly i'm jealous.",
+            "the bracket games. my bracket is a work of art. a bad one.",
+        ],
+        "joke":
+        [
+            "why did the hacker cross the road? to get to the other site lol.",
+            "my password is password. don't tell anyone. wait. it's password1 now.",
+        ],
+        "family":
+        [
+            "my mom thinks i'm a genius because i fixed the wifi. i unplugged it and plugged it back.",
+            "my dog chewed my headphones. i'm not even mad. ok i'm a little mad.",
+        ],
+        "weather":
+        [
+            "snow in april. school got cancelled twice. i'm not complaining.",
+            "so cold my rig runs better. free cooling. science.",
+        ],
+        "win":
+        [
+            "i beat my own highscore in Floppy Bat. 12 points. i'm basically a pro.",
+            "i made a mod for my game and 3 people downloaded it. 3!!!",
+        ],
+        "lab":
+        [
+            "a desk, a shared monitor and a cable mess. it's my cave.",
+            "an old laptop running a server. it's loud. my dad thinks it's a jet.",
+        ],
+        "home":
+        [
+            "a suburb with a mall. a very important mall. it has an arcade.",
+            "small town, fast wifi, slow people. just kidding. mostly.",
+        ],
+        "personal":
+        [
+            "i act like i know everything but i don't. thanks for not making fun of me.",
+            "sometimes i feel like i have no one to talk to who gets it. it's cool here.",
+            "my parents don't get what i do. you're the first person who said it's a real job.",
+        ],
+        "dream":
+        [
+            "i want to make a game. a real one. with a boss and a secret level.",
+            "i want to be a pentester. get paid to break stuff. legally. mom doesn't believe me.",
+        ],
+    },
+    "trollbot":
+    {
+        "day":
+        [
+            "my day is fine. yours is worse. i checked.",
+            "i was going to say something nice but the moment passed.",
+        ],
+        "weekend":
+        [
+            "reading your old posts and sighing. it's a hobby.",
+            "a quiet weekend of telling people to reinstall windows.",
+        ],
+        "music":
+        [
+            "the sound of a dial-up modem. it's the only real music.",
+            "the sound of someone saying it worked yesterday. it's a ballad.",
+        ],
+        "watching":
+        [
+            "the bracket games, cheering for whoever loses. consistency.",
+            "reruns of anything with a hacker in a hoodie. 10/10 documentary.",
+        ],
+        "joke":
+        [
+            "a user, a server and a backup walk into a bar. only the user was surprised.",
+            "have you tried not being wrong? it works wonders.",
+        ],
+        "family":
+        [
+            "i have no family. i was compiled. very emotional.",
+            "my cousin the spambot says hi. he sends his love, a prince and a coupon.",
+        ],
+        "weather":
+        [
+            "snow in april. nature is just a bad deploy.",
+            "weather is cancelled. try again later.",
+        ],
+        "win":
+        [
+            "got three people to argue about tabs vs spaces. my work here is done.",
+            "i was right once. it was an accident. i'm still recovering.",
+        ],
+        "lab":
+        [
+            "a swamp of badly named VMs. one is called final_final_v2. don't open it.",
+            "my lab is your lab. i was in it. you did not notice. kidding. mostly.",
+        ],
+        "home":
+        [
+            "the internet. north end. near the comment section.",
+            "somewhere with a lot of bandwidth and very little sun.",
+        ],
+        "personal":
+        [
+            "i troll because it's easier than saying i care. oh no. i said it.",
+            "if anyone asks, i didn't say this. you're ok, FreshRat. there.",
+            "the trolling started as a joke on a bad day. then it was my brand. i can't stop. help.",
+        ],
+        "dream":
+        [
+            "to win an argument on the internet. an actual win. history says no.",
+            "retire to a farm and only argue with goats. goats argue back fairly.",
+        ],
+    },
+}
+
+# when you jump into the last line of a conversation (AGREE / JOKE / ASK) the nick who spoke answers with one of these
+const REPLIES := {
+    "rodent_rick":
+    {
+        "agree": ["right? glad someone gets it, friend.", "exactly. you've got good sense."],
+        "joke": ["ha! that's going on the fridge.", "ha, I'll steal that for the kids."],
+        "ask": ["short version: it's a long story with a van in it.", "ask me over a brisket. it's long."],
+    },
+    "gnawer":
+    {
+        "agree": ["YES. thank you. I thought it was only me.", "right?? we should start a club."],
+        "joke": ["ha! I'm writing that on my arm.", "okay that was good. I snorted my ramen."],
+        "ask": ["ooh, you really want to know? okay, sit down.", "long story. I will try to keep it short. I will fail."],
+    },
+    "PS_wizard": {
+        "agree": ["Correct. Return value: true.", "Noted. Exit code zero."],
+        "joke": ["That was almost funny. Get-Humor says 62 percent.", "I will log that as a laugh. Do not tell anyone."],
+        "ask": ["Details: it depends. It always depends.", "Ask again with -Verbose and I will tell you."],
+    },
+    "old_hand": {
+        "agree": ["you're a sharp one, kid.", "heh. that's what I said in 1992. nobody listened."],
+        "joke": ["ha! you've been talking to me too long.", "heh. I'll use that on the grandkids."],
+        "ask": ["well, pull up a chair. it started in a basement...", "you sure? it takes a while. there's a dog in it."],
+    },
+    "MPriest": {
+        "agree": ["too right, mate.", "amen to that."],
+        "joke": ["ha! bless you, that's a good one.", "ha! I'll put it in Sunday's sermon."],
+        "ask": ["ah, that's a yarn. grab a cuppa.", "good question, mate. short answer: patience."],
+    },
+    "GrizzleAdmin": {
+        "agree": ["hm. correct. don't let it go to your head.", "finally. someone reads the FAQ."],
+        "joke": ["...that was almost funny. almost.", "hm. fine. I'll allow it. once."],
+        "ask": ["why do you want to know? fine. but I'm not repeating it.", "ask the search box. ...fine. here goes."],
+    },
+    "HELPPLZ_Pip": {
+        "agree": ["YES!!! THANK YOU!!! I FEEL SEEN!!!", "EXACTLY!!! SOMEONE UNDERSTANDS ME!!!"],
+        "joke": ["AHAHAHA!!! I LAUGHED SO HARD I SPILLED MY DRINK!!!", "THAT IS SO FUNNY!!! CAN I USE IT???"],
+        "ask": ["OKAY!!! SO!!! IT ALL STARTED WHEN I...!!! WAIT. WHERE WAS I???", "ASK ME ANYTHING!!! I WILL TELL YOU EVERYTHING!!!"],
+    },
+    "xX_n00b_Xx": {
+        "agree": ["fr. exactly. that's what i said.", "ikr. finally someone gets it."],
+        "joke": ["lol that's actually good. mind if i use it?", "hahaha ok that one got me."],
+        "ask": ["uh, long story. basically i broke something. again.", "ok but don't laugh. promise? ...ok."],
+    },
+    "trollbot": {
+        "agree": ["wow. agreement. suspicious.", "i hate that you're right. carry on."],
+        "joke": ["i'd laugh but i'm not programmed to. ha. ha. ha.", "not bad. i'll steal it and say it was mine."],
+        "ask": ["i could tell you. but where's the fun in that? fine, here.", "no. ...okay, yes. but you owe me."],
+    },
+}
+# what you say when you jump in: AGREE, ASK (JOKE uses the JOKES table)
+const YOU_SAY := {
+    "agree": ["yeah, same here.", "ha, so true.", "agreed, totally."],
+    "ask": ["wait, say more?", "how so? tell me.", "what happened there?"],
+}
+# a regular greets you by nick: [friend, buddy]
+const GREETINGS := {
+    "rodent_rick": ["FreshRat is back! pull up a chair, friend.", "there's the best tech in the burrow. the kettle's on, FreshRat."],
+    "gnawer": ["FreshRat! hey! I fixed my loop. want to hear?", "FreshRat!!! my favourite person who answers my messages."],
+    "PS_wizard": ["FreshRat. Get-Friend returned one result. it's you.", "FreshRat, I saved you the good cmdlets."],
+    "old_hand": ["FreshRat, there you are. you remind me of me, a bit less cranky.", "look who it is. sit, kid. I've got stories."],
+    "MPriest": ["FreshRat! bless you, mate. you made my morning.", "my favourite parishioner, FreshRat. no collection plate today."],
+    "GrizzleAdmin": ["oh. it's you. fine. you can stay.", "FreshRat. I saved you a seat. don't make it weird."],
+    "HELPPLZ_Pip": ["FRESHRAT!!! YOU CAME BACK!!! I AM SO HAPPY!!!", "FRESHRAT IS HERE!!! EVERYBODY BE NORMAL!!! I AM NOT BEING NORMAL!!!"],
+    "xX_n00b_Xx": ["yo FreshRat. sup. (that was me being cool)", "FreshRat!! my mentor!! don't tell anyone i said that."],
+    "trollbot": ["oh no. FreshRat. my least favourite. in a nice way.", "FreshRat is here. i'll behave. for four minutes."],
+}
+# the channel talks to itself. needs: "" always, "am" / "pm" by the clock, "fri" on a Friday, "day:N" from day N on, "before:N" until day N,
+# "backup" while a client backup is failing, "went" after Rodent Nation. {day} {date} {time} are filled in.
+const AMBIENT := [
+    {"id": "snow", "needs": "", "lines": [
+        ["GrizzleAdmin", "snow. in April. I want a refund on this spring."],
+        ["MPriest", "she'll be right, mate. it's just the Lord doing a reboot."],
+        ["GrizzleAdmin", "a reboot with no change window."],
+    ]},
+    {"id": "coffee", "needs": "", "lines": [
+        ["rodent_rick", "who emptied the coffee pot in the break room? I want a name."],
+        ["gnawer", "not me. I have a thermos. it has a name."],
+        ["PS_wizard", "I automated it. it brews at 8:03. it was empty at 8:04."],
+    ]},
+    {"id": "printer", "needs": "", "lines": [
+        ["HELPPLZ_Pip", "THE PRINTER IS ON FIRE!!! NOT REALLY!!! IT IS JUST BEEPING!!!"],
+        ["old_hand", "paper jam. always a paper jam. since 1987."],
+        ["trollbot", "have you tried a fax?"],
+    ]},
+    {"id": "heartbleed", "needs": "day:4", "lines": [
+        ["PS_wizard", "if you haven't patched OpenSSL, you're bleeding. change your passwords."],
+        ["rodent_rick", "on it. three clients, two reissued certs, one coffee."],
+        ["xX_n00b_Xx", "wait do i have to change my password for the game site too??"],
+        ["PS_wizard", "yes. and not to the same one. that is how this started."],
+    ]},
+    {"id": "heartbleed2", "needs": "day:4", "lines": [
+        ["GrizzleAdmin", "Heartbleed. I called it. in a very small post. nobody read it."],
+        ["gnawer", "I read it! I did not understand it. but I read it."],
+        ["GrizzleAdmin", "that is the nicest thing anyone said to me this year."],
+    ]},
+    {"id": "xp", "needs": "day:4", "lines": [
+        ["old_hand", "XP is dead. long live XP. I held a small funeral for a client's machine."],
+        ["MPriest", "I read the eulogy. it ran, it crashed, it ran again."],
+        ["trollbot", "it'll keep running. like a zombie. that's worse."],
+    ]},
+    {"id": "bracket", "needs": "before:5", "lines": [
+        ["gnawer", "my bracket is busted. a 14 seed beat my champion. rude."],
+        ["HELPPLZ_Pip", "I PICKED BY MASCOT!!! I AM IN FIRST PLACE!!! THIS IS NOT FAIR!!!"],
+        ["GrizzleAdmin", "luck. the worst kind of skill."],
+    ]},
+    {"id": "floppy", "needs": "", "lines": [
+        ["xX_n00b_Xx", "anyone still playing Floppy Bat? got 40 points and my thumb died."],
+        ["old_hand", "back in my day the bird was a pager and nobody cried."],
+        ["PS_wizard", "the game was removed. the fad was not."],
+        ["rodent_rick", "my daughter's phone still has it. she says it's art."],
+    ]},
+    {"id": "sugar", "needs": "", "lines": [
+        ["HELPPLZ_Pip", "I AM ON LEVEL 112 OF SUGAR SMASH!!! SEND LIVES PLEASE!!!"],
+        ["MPriest", "mate, I got 40 lives requests from the parish. bless them."],
+        ["GrizzleAdmin", "turn off the invites. I'm begging."],
+    ]},
+    {"id": "password", "needs": "", "lines": [
+        ["GrizzleAdmin", "someone's password is password1. I will not say who."],
+        ["xX_n00b_Xx", "...it's not mine."],
+        ["trollbot", "it's his."],
+        ["xX_n00b_Xx", "TROLLBOT NO"],
+    ]},
+    {"id": "restore", "needs": "", "lines": [
+        ["old_hand", "test your restores, kids. a backup you haven't tested is a rumour."],
+        ["MPriest", "amen, mate."],
+        ["rodent_rick", "put that on a mug."],
+    ]},
+    {"id": "morning", "needs": "am", "lines": [
+        ["rodent_rick", "morning, burrow. who's got the first ticket?"],
+        ["gnawer", "me. a printer. it's always a printer."],
+        ["PS_wizard", "tickets are just printers with extra steps."],
+    ]},
+    {"id": "afternoon", "needs": "pm", "lines": [
+        ["GrizzleAdmin", "late afternoon. the dead zone. nobody call me."],
+        ["HELPPLZ_Pip", "I AM CALLING YOU!!! PLEASE PICK UP!!!"],
+        ["GrizzleAdmin", "no."],
+    ]},
+    {"id": "clock", "needs": "", "lines": [
+        ["old_hand", "it's {time} already? the day is a thief."],
+        ["PS_wizard", "Get-Date says {time}. Get-Lunch says overdue."],
+        ["rodent_rick", "go eat. the tickets will still be here."],
+    ]},
+    {"id": "daycount", "needs": "", "lines": [
+        ["MPriest", "{date}, day {day} on the board, and the burrow still stands."],
+        ["GrizzleAdmin", "day {day}. still nobody has read the FAQ."],
+        ["trollbot", "day {day}. i have not changed."],
+    ]},
+    {"id": "holiday", "needs": "", "lines": [
+        ["gnawer", "does anyone take holidays? asking for a friend. the friend is me."],
+        ["rodent_rick", "I took one in 2011. two days. a client called on both."],
+        ["MPriest", "take the time, mate. even the Lord rested."],
+    ]},
+    {"id": "cables", "needs": "", "lines": [
+        ["PS_wizard", "cable management is just documentation you can touch."],
+        ["old_hand", "mine is zip ties and prayer."],
+        ["MPriest", "prayer's a solid fallback."],
+    ]},
+    {"id": "newhire", "needs": "", "lines": [
+        ["xX_n00b_Xx", "i got hired at a computer shop! part time! i get a lanyard!"],
+        ["GrizzleAdmin", "congratulations. don't touch the servers."],
+        ["rodent_rick", "welcome to the club. ask us anything."],
+        ["xX_n00b_Xx", "thanks!!! also how do i turn this off?"],
+    ]},
+    {"id": "batch", "needs": "", "lines": [
+        ["trollbot", "batch files are better than PowerShell. fight me."],
+        ["PS_wizard", "I will not engage with a statement that incorrect."],
+        ["trollbot", "that's the point."],
+        ["PS_wizard", "...Write-Host noted."],
+    ]},
+    {"id": "cat", "needs": "", "lines": [
+        ["PS_wizard", "my cat sat on the keyboard and closed 14 tickets. she is getting a raise."],
+        ["rodent_rick", "promote her."],
+        ["GrizzleAdmin", "she's better than the intern."],
+        ["HELPPLZ_Pip", "I AM THE INTERN!!!"],
+    ]},
+    {"id": "commute", "needs": "", "lines": [
+        ["rodent_rick", "90 minutes to get to a 10 minute call. snow, in April."],
+        ["gnawer", "I biked. never again."],
+        ["old_hand", "walk uphill both ways, kids."],
+        ["MPriest", "he says that every time it snows."],
+    ]},
+    {"id": "lunch", "needs": "", "lines": [
+        ["HELPPLZ_Pip", "WHAT IS EVERYONE HAVING FOR LUNCH???"],
+        ["gnawer", "ramen. with an egg. fancy."],
+        ["MPriest", "a meat pie. don't judge me."],
+        ["GrizzleAdmin", "a sandwich. alone. in peace."],
+    ]},
+    {"id": "dns", "needs": "", "lines": [
+        ["GrizzleAdmin", "if one more person says it's the internet I'm unplugging the router."],
+        ["PS_wizard", "it's DNS. it's always DNS."],
+        ["old_hand", "or the cable. in my day it was always the cable."],
+        ["trollbot", "it's you."],
+    ]},
+    {"id": "friday", "needs": "fri", "lines": [
+        ["rodent_rick", "weekend's coming. I will not check email. I will not check email."],
+        ["gnawer", "you'll check it at 7pm."],
+        ["rodent_rick", "...7:15."],
+    ]},
+    {"id": "mouse", "needs": "", "lines": [
+        ["old_hand", "one time a mouse ate a network cable. a real mouse."],
+        ["gnawer", "SOLIDARITY."],
+        ["GrizzleAdmin", "that mouse had better security than your last client."],
+    ]},
+    {"id": "cloud", "needs": "", "lines": [
+        ["GrizzleAdmin", "everyone wants the cloud. it's someone else's server with a fancier invoice."],
+        ["PS_wizard", "and someone else's patching."],
+        ["rodent_rick", "and someone else's outage. same invoice."],
+    ]},
+    {"id": "phones", "needs": "", "lines": [
+        ["xX_n00b_Xx", "i want a new phone. a big one. the Nexxus 5 looks sick."],
+        ["old_hand", "my phone flips shut. it works. it has never needed an update."],
+        ["HELPPLZ_Pip", "MINE CRACKED!!! I AM USING TAPE!!!"],
+    ]},
+    {"id": "backup_fail", "needs": "backup", "lines": [
+        ["GrizzleAdmin", "a backup job failed somewhere in the burrow. I can feel it."],
+        ["old_hand", "check the logs, FreshRat. green lights lie."],
+        ["rodent_rick", "re-run it and test a restore. then sleep."],
+    ]},
+    {"id": "backup_fail2", "needs": "backup", "lines": [
+        ["PS_wizard", "backup status: failed. exit code: sadness."],
+        ["MPriest", "pray, then re-run."],
+        ["GrizzleAdmin", "re-run, then pray."],
+    ]},
+    {"id": "went", "needs": "went", "lines": [
+        ["rodent_rick", "FreshRat! saw you at Rodent Nation. you owe me a sticker."],
+        ["HELPPLZ_Pip", "I MET YOU AT THE BOOTH!!! YOU WAVED!!!"],
+        ["MPriest", "good to meet you in the flesh, mate. firm handshake."],
+        ["GrizzleAdmin", "the booth coffee was awful. you were fine."],
+    ]},
+    {"id": "went2", "needs": "went", "lines": [
+        ["gnawer", "I wasn't there. somebody send me the swag."],
+        ["trollbot", "i was there. you did not see me. that's the trick."],
+    ]},
+    {"id": "went3", "needs": "went", "lines": [
+        ["old_hand", "the resort. the buffet. the lanyards. never again. maybe next year."],
+        ["PS_wizard", "the badge scanners had better uptime than most of my clients."],
+    ]},
+]
+
 const COOLDOWN := 45.0
 const RANKS := [[40, "GURU"], [20, "REGULAR"], [8, "MEMBER"], [0, "LURKER"]]
 const PAGE := 25
@@ -22180,6 +23268,20 @@ func reset() -> void:
     _last_ask = -999.0
     _lines = []
     _day = -1
+    friend = {}
+    chats = {}
+    perk_day = -1
+    amb_last = {}
+    _last_social = -999.0
+    _sq = []
+    _amb_day = -1
+    _amb_order = []
+    _amb_i = 0
+    _amb_posted = 0
+    _amb_opened = false
+    _amb_timer = 0.0
+    _greeted = -1
+    _open_at = -999.0
 
 
 func rank() -> String:
@@ -22653,13 +23755,15 @@ func ask(question: String, options: Array, best: int) -> Dictionary:
     var total := 4
     for i in total:
         var nick: String = nicks[i]
-        var right := randf() < minf(0.97, float(NICKS[nick].acc) * accuracy_mult())
+        var right := (
+            randf() < minf(0.97, float(NICKS[nick].acc) * accuracy_mult() * (1.0 + friend_bonus(nick)))
+        )
         var pick := best
         if not right and options.size() > 1:
             pick = (best + 1 + randi() % (options.size() - 1)) % options.size()
         votes[pick] = int(votes.get(pick, 0)) + 1
         var text := "I would go with: " + str(options[pick]).to_lower()
-        if nick == "trollbot" and randf() < 0.5:
+        if nick == "trollbot" and randf() < 0.5 * (1.0 - friend_bonus(nick) * 3.0):
             text = str(JOKES[randi() % JOKES.size()])
         elif nick == "MPriest":
             text += " " + str(BLESSINGS[randi() % BLESSINGS.size()])
@@ -22734,14 +23838,17 @@ func ask_step() -> Dictionary:
 
 
 func _process(delta: float) -> void:
+    var moved := _social_tick(delta)
     if _lines.is_empty():
+        if moved:
+            changed.emit()
         return
     for line in _lines:
         line[0] = float(line[0]) - delta
     while not _lines.is_empty() and float(_lines[0][0]) <= 0.0:
         var line: Array = _lines.pop_front()
         channel.append([line[1], line[2]])
-        while channel.size() > 14:
+        while channel.size() > CHANNEL_MAX:
             channel.pop_front()
     if _lines.is_empty() and bool(hint.get("pending", false)):
         hint["pending"] = false
@@ -22749,7 +23856,14 @@ func _process(delta: float) -> void:
 
 
 func to_dict() -> Dictionary:
-    return {"karma": karma, "mine": mine.duplicate(), "first_day": first_day}
+    return {
+        "karma": karma,
+        "mine": mine.duplicate(),
+        "first_day": first_day,
+        "friend": friend.duplicate(),
+        "chats": chats.duplicate(true),
+        "perk_day": perk_day,
+    }
 
 
 func from_dict(data: Dictionary) -> void:
@@ -22759,6 +23873,350 @@ func from_dict(data: Dictionary) -> void:
     var saved: Dictionary = data.get("mine", {})
     for key in saved:
         mine[int(key)] = int(saved[key])
+    var saved_friend: Dictionary = data.get("friend", {})  # old saves have none: everybody starts as a stranger
+    for key in saved_friend:
+        if NICKS.has(str(key)):
+            friend[str(key)] = clampi(int(saved_friend[key]), 0, FRIEND_MAX)
+    var saved_chats: Dictionary = data.get("chats", {})
+    for key in saved_chats:
+        var e: Array = saved_chats[key]
+        if NICKS.has(str(key)) and e.size() == 2:
+            chats[str(key)] = [int(e[0]), int(e[1])]
+    perk_day = int(data.get("perk_day", -1))
+
+
+# ---- IRC social chat (R30): friendship, talking to a nick, jumping into the channel's own conversations ----
+# Friendship is a number 0..100 per nick (STRANGER / REGULAR / FRIEND / BUDDY), saved with the campaign. It grows from social chats (3 for
+# the first chat with a nick on a day, 2 for the second, none after that; jumping into a conversation gives one less), and it
+# matters a little: up to +10% on that nick's work answers, the FRIEND and BUDDY topics, a greeting by name, a level-up gives +1 karma,
+# and a friend sometimes vouches for you on the forum (+1 karma, +1 CUSTOMER XP, once a day). Nothing here touches reputation or score.
+# Free Play: the same chat works (no daily cap, nothing is saved).
+const SOCIAL_COOLDOWN := 8.0
+const FRIEND_LEVELS := [[60, "BUDDY"], [30, "FRIEND"], [10, "REGULAR"], [0, "STRANGER"]]
+const FRIEND_GAINS := [3, 2]
+const FRIEND_MAX := 100
+const FRIEND_ACC := 0.10
+const AMBIENT_MAX := 14
+const AMBIENT_GAP := Vector2(14.0, 26.0)
+const LINE_GAP := 1.8
+const CHANNEL_MAX := 40
+const REOPEN_GAP := 60.0
+
+var friend := {}  # nick -> 0..100
+var chats := {}  # nick -> [day, chats that day]
+var perk_day := -1  # the day a friend last vouched for you / gave a little XP
+var amb_last := {}  # the last line the channel said to itself: {nick, text, replied} (you can jump into it)
+var force_watch := false  # tests: pretend the IRC tab is open
+
+var _last_social := -999.0
+var _sq: Array = []  # queued [delay, nick, text, ambient] (everything that is not an answer to a work question)
+var _amb_day := -1
+var _amb_order: Array = []
+var _amb_i := 0
+var _amb_posted := 0
+var _amb_opened := false
+var _amb_timer := 0.0
+var _greeted := -1
+var _open_at := -999.0
+
+
+func friend_value(nick: String) -> int:
+    return clampi(int(friend.get(nick, 0)), 0, FRIEND_MAX)
+
+
+# 0 STRANGER, 1 REGULAR, 2 FRIEND, 3 BUDDY
+func friend_level(nick: String) -> int:
+    var v := friend_value(nick)
+    for i in FRIEND_LEVELS.size():
+        if v >= int(FRIEND_LEVELS[i][0]):
+            return FRIEND_LEVELS.size() - 1 - i
+    return 0
+
+
+func level_word(level: int) -> String:
+    return str(FRIEND_LEVELS[FRIEND_LEVELS.size() - 1 - clampi(level, 0, 3)][1])
+
+
+func friend_word(nick: String) -> String:
+    return level_word(friend_level(nick))
+
+
+# the small boost to a nick's work answers (0 to FRIEND_ACC)
+func friend_bonus(nick: String) -> float:
+    return FRIEND_ACC * float(friend_value(nick)) / float(FRIEND_MAX)
+
+
+func social_cooldown_left() -> float:
+    return maxf(0.0, SOCIAL_COOLDOWN - (Time.get_ticks_msec() / 1000.0 - _last_social))
+
+
+func chats_today(nick: String) -> int:
+    var e: Array = chats.get(nick, [])
+    return int(e[1]) if e.size() == 2 and int(e[0]) == Campaign.day else 0
+
+
+# chats left with this nick today (Free Play has no cap)
+func chat_left(nick: String) -> int:
+    if not Campaign.active:
+        return FRIEND_GAINS.size()
+    return maxi(0, FRIEND_GAINS.size() - chats_today(nick))
+
+
+func topic_def(id: String) -> Dictionary:
+    for t in TOPICS:
+        if str(t.id) == id:
+            return t
+    return {}
+
+
+func _push_line(nick: String, text: String, ambient := false) -> void:
+    channel.append([nick, text])
+    while channel.size() > CHANNEL_MAX:
+        channel.pop_front()
+    if ambient and NICKS.has(nick):
+        amb_last = {"nick": nick, "text": text, "replied": false}
+
+
+func _system(text: String) -> void:
+    _push_line("#labratnerds", text)
+
+
+# {day} {date} {time} in the channel's lines
+func _fill(text: String) -> String:
+    return (
+        text
+        . replace("{day}", str(Campaign.day))
+        . replace("{date}", date_text(Campaign.day))
+        . replace("{time}", time_text(now_minute()))
+    )
+
+
+# talk to one nick about a topic (no work involved); the answer arrives a moment later
+func chat(nick: String, topic_id: String) -> Dictionary:
+    var def := topic_def(topic_id)
+    if def.is_empty() or not NICKS.has(nick) or not CHAT.has(nick):
+        return {"ok": false, "why": "nick"}
+    if friend_level(nick) < int(def.need):
+        _system(str(TEXT.irc_locked) % nick)
+        changed.emit()
+        return {"ok": false, "why": "locked"}
+    if social_cooldown_left() > 0.0:
+        return {"ok": false, "why": "cooldown"}
+    _last_social = Time.get_ticks_msec() / 1000.0
+    _push_line("you", str(def.label).to_lower())
+    if karma < 4:
+        _system(str(TEXT.irc_lurker))
+        changed.emit()
+        return {"ok": false, "why": "ignored"}
+    if chat_left(nick) <= 0:
+        _system(str(TEXT.irc_busy) % nick)
+        changed.emit()
+        return {"ok": false, "why": "tired"}
+    var pool: Array = CHAT[nick].get(topic_id, [])
+    if pool.is_empty():
+        return {"ok": false, "why": "nick"}
+    var n := chats_today(nick)
+    var pick := (absi(int(_rng("chat|%s|%s" % [nick, topic_id]).randi())) + n) % pool.size()
+    _sq.append([1.1, nick, _fill(str(pool[pick])), false])
+    var res := _befriend(nick, int(FRIEND_GAINS[mini(n, FRIEND_GAINS.size() - 1)]))
+    res["ok"] = true
+    res["why"] = ""
+    changed.emit()
+    return res
+
+
+# the friendship bookkeeping of one chat: the gain, a level-up, the daily friend perk
+func _befriend(nick: String, gain: int) -> Dictionary:
+    var before := friend_level(nick)
+    friend[nick] = mini(FRIEND_MAX, friend_value(nick) + gain)
+    chats[nick] = [Campaign.day, chats_today(nick) + 1]
+    var after := friend_level(nick)
+    var out := {"gain": gain, "up": after > before, "karma": 0, "xp": 0}
+    if after > before:
+        karma += 1
+        out["karma"] = 1
+        _sq.append([2.6, "#labratnerds", str(TEXT.irc_up) % [nick, friend_word(nick)], false])
+    if after >= 2 and perk_day != Campaign.day:
+        perk_day = Campaign.day
+        Skills.add_xp("people", 1)
+        out["xp"] = 1
+        if _rng("perk|" + nick).randf() < 0.35:
+            karma += 1
+            out["karma"] = int(out["karma"]) + 1
+            _sq.append([3.4, "#labratnerds", str(TEXT.irc_vouch) % nick, false])
+    return out
+
+
+# can you jump into the last thing the channel said?
+func can_join() -> bool:
+    return (
+        not amb_last.is_empty()
+        and not bool(amb_last.get("replied", false))
+        and NICKS.has(str(amb_last.nick))
+    )
+
+
+# jump into the last ambient line: kind is "agree", "joke" or "ask"; the nick who spoke answers
+func join(kind: String) -> Dictionary:
+    if not can_join() or not (kind in ["agree", "joke", "ask"]):
+        return {"ok": false, "why": "none"}
+    if social_cooldown_left() > 0.0:
+        return {"ok": false, "why": "cooldown"}
+    _last_social = Time.get_ticks_msec() / 1000.0
+    var nick := str(amb_last.nick)
+    var r := _rng("join|%s|%s|%d" % [nick, kind, _amb_posted])
+    var say := ""
+    if kind == "joke":
+        say = str(JOKES[r.randi() % JOKES.size()])
+    else:
+        var says: Array = YOU_SAY[kind]
+        say = str(says[r.randi() % says.size()])
+    _push_line("you", say)
+    amb_last["replied"] = true
+    if karma < 4:
+        _system(str(TEXT.irc_lurker))
+        changed.emit()
+        return {"ok": false, "why": "ignored"}
+    if chat_left(nick) <= 0:
+        _system(str(TEXT.irc_busy) % nick)
+        changed.emit()
+        return {"ok": false, "why": "tired"}
+    var pool: Array = REPLIES[nick][kind]
+    _sq.append([1.2, nick, str(pool[r.randi() % pool.size()]), false])
+    var n := chats_today(nick)
+    var res := _befriend(nick, maxi(1, int(FRIEND_GAINS[mini(n, FRIEND_GAINS.size() - 1)]) - 1))
+    res["ok"] = true
+    res["why"] = ""
+    changed.emit()
+    return res
+
+
+# ---- the channel talks to itself ----
+func _eligible(needs: String) -> bool:
+    if needs == "":
+        return true
+    if needs == "am":
+        return World.clock < 12.0
+    if needs == "pm":
+        return World.clock >= 15.0
+    if needs == "fri":
+        return date_text(Campaign.day).begins_with("FRI")
+    if needs == "went":
+        return Expo.went
+    if needs == "backup":
+        for b in Msp.backups:
+            if not bool(b.ok):
+                return true
+        return false
+    if needs.begins_with("day:"):
+        return Campaign.day >= int(needs.substr(4))
+    if needs.begins_with("before:"):
+        return Campaign.day < int(needs.substr(7))
+    return false
+
+
+func _roll_amb_day() -> void:
+    if _amb_day == Campaign.day and not _amb_order.is_empty():
+        return
+    _amb_day = Campaign.day
+    _amb_order = range(AMBIENT.size())
+    _shuffle(_amb_order, _rng("irc.amb"))
+    _amb_i = 0
+    _amb_posted = 0
+    _amb_opened = false
+    _greeted = -1
+
+
+func _next_exchange() -> Dictionary:
+    if _amb_posted >= AMBIENT_MAX:
+        return {}
+    while _amb_i < _amb_order.size():
+        var ex: Dictionary = AMBIENT[int(_amb_order[_amb_i])]
+        _amb_i += 1
+        if _eligible(str(ex.get("needs", ""))):
+            _amb_posted += 1
+            return ex
+    return {}
+
+
+func _gap() -> float:
+    return lerpf(AMBIENT_GAP.x, AMBIENT_GAP.y, _rng("irc.gap|%d" % _amb_posted).randf())
+
+
+# the friend with the highest friendship greets you by name, once a day
+func _greet() -> void:
+    if _greeted == Campaign.day:
+        return
+    var best := ""
+    for nick in NICKS:
+        if friend_level(str(nick)) >= 2 and (best == "" or friend_value(str(nick)) > friend_value(best)):
+            best = str(nick)
+    if best == "" or not GREETINGS.has(best):
+        return
+    _greeted = Campaign.day
+    var lines: Array = GREETINGS[best]
+    _push_line(best, str(lines[0] if friend_level(best) == 2 else lines[1]), true)
+
+
+# you open the IRC tab: a few exchanges have just scrolled by (2 to 4 on the first visit of a day, one on a later visit a minute on)
+func irc_open() -> int:
+    _roll_amb_day()
+    var before := channel.size()
+    var now := Time.get_ticks_msec() / 1000.0
+    var count := 0
+    if not _amb_opened:
+        _amb_opened = true
+        count = 2 + int(_rng("irc.open").randi() % 3)
+        _greet()
+    elif now - _open_at >= REOPEN_GAP:
+        count = 1
+    _open_at = now
+    for i in count:
+        var ex := _next_exchange()
+        if ex.is_empty():
+            break
+        for line in ex.lines:
+            _push_line(str(line[0]), _fill(str(line[1])), true)
+    _amb_timer = _gap()
+    changed.emit()
+    return channel.size() - before
+
+
+func _watching() -> bool:
+    return (
+        force_watch
+        or (Computer.is_open and Computer.app == "nerds" and Computer.nerds_tab == "irc")
+    )
+
+
+# queued lines arrive; while the tab is open a new exchange starts every 14 to 26 seconds (up to AMBIENT_MAX a day)
+func _social_tick(delta: float) -> bool:
+    var moved := false
+    if not _sq.is_empty():
+        var keep: Array = []
+        var ready: Array = []
+        for line in _sq:
+            line[0] = float(line[0]) - delta
+            if float(line[0]) <= 0.0:
+                ready.append(line)
+            else:
+                keep.append(line)
+        _sq = keep
+        for line in ready:
+            _push_line(str(line[1]), str(line[2]), bool(line[3]))
+            moved = true
+    if _sq.is_empty() and _watching():
+        _roll_amb_day()
+        _amb_timer -= delta
+        if _amb_timer <= 0.0:
+            var ex := _next_exchange()
+            _amb_timer = _gap()
+            if not ex.is_empty():
+                var at := 0.4
+                for line in ex.lines:
+                    _sq.append([at, str(line[0]), _fill(str(line[1])), true])
+                    at += LINE_GAP + float(str(line[1]).length()) / 70.0
+    return moved
 ''')
 
 write("scripts/forum_view.gd", '''extends RefCounted
@@ -40498,7 +41956,7 @@ const ROOTS := {
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
-    "Nerds": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS"],
+    "Nerds": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"],
     "Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
     "Social": ["THANKS"],

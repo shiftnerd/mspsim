@@ -1091,6 +1091,56 @@ or the owner (owner campaign, 20 weeks).
 - Writing a plugin that reads SNMP `[Nerds.THREADS.69.title]`
 - Unit testing a plugin without a lab `[Nerds.THREADS.70.title]`
 
+### LabRat Nerds IRC: topics you can talk about (each nick answers in its own voice)
+
+- HOW IS YOUR DAY GOING? `[Nerds.TOPICS.0.label]`
+- ANY WEEKEND PLANS? `[Nerds.TOPICS.1.label]`
+- WHAT ARE YOU LISTENING TO? `[Nerds.TOPICS.2.label]`
+- WHAT ARE YOU WATCHING? `[Nerds.TOPICS.3.label]`
+- TELL ME A JOKE `[Nerds.TOPICS.4.label]`
+- HOW IS THE FAMILY? `[Nerds.TOPICS.5.label]`
+- COMPLAIN ABOUT THE WEATHER `[Nerds.TOPICS.6.label]`
+- SHARE A NERD WIN `[Nerds.TOPICS.7.label]`
+- ASK ABOUT THEIR LAB `[Nerds.TOPICS.8.label]`
+- WHERE ARE YOU FROM? `[Nerds.TOPICS.9.label]`
+- ASK WHAT IS REALLY ON THEIR MIND `[Nerds.TOPICS.10.label]`
+- ASK ABOUT THEIR BIG DREAM `[Nerds.TOPICS.11.label]`
+
+### LabRat Nerds IRC: the channel talks to itself (first line of each exchange)
+
+- GrizzleAdmin: snow. in April. I want a refund on this spring. `[Nerds.AMBIENT.0.lines.0.1]`
+- rodent_rick: who emptied the coffee pot in the break room? I want a name. `[Nerds.AMBIENT.1.lines.0.1]`
+- HELPPLZ_Pip: THE PRINTER IS ON FIRE!!! NOT REALLY!!! IT IS JUST BEEPING!!! `[Nerds.AMBIENT.2.lines.0.1]`
+- PS_wizard: if you haven't patched OpenSSL, you're bleeding. change your passwords. `[Nerds.AMBIENT.3.lines.0.1]`
+- GrizzleAdmin: Heartbleed. I called it. in a very small post. nobody read it. `[Nerds.AMBIENT.4.lines.0.1]`
+- old_hand: XP is dead. long live XP. I held a small funeral for a client's machine. `[Nerds.AMBIENT.5.lines.0.1]`
+- gnawer: my bracket is busted. a 14 seed beat my champion. rude. `[Nerds.AMBIENT.6.lines.0.1]`
+- xX_n00b_Xx: anyone still playing Floppy Bat? got 40 points and my thumb died. `[Nerds.AMBIENT.7.lines.0.1]`
+- HELPPLZ_Pip: I AM ON LEVEL 112 OF SUGAR SMASH!!! SEND LIVES PLEASE!!! `[Nerds.AMBIENT.8.lines.0.1]`
+- GrizzleAdmin: someone's password is password1. I will not say who. `[Nerds.AMBIENT.9.lines.0.1]`
+- old_hand: test your restores, kids. a backup you haven't tested is a rumour. `[Nerds.AMBIENT.10.lines.0.1]`
+- rodent_rick: morning, burrow. who's got the first ticket? `[Nerds.AMBIENT.11.lines.0.1]`
+- GrizzleAdmin: late afternoon. the dead zone. nobody call me. `[Nerds.AMBIENT.12.lines.0.1]`
+- old_hand: it's {time} already? the day is a thief. `[Nerds.AMBIENT.13.lines.0.1]`
+- MPriest: {date}, day {day} on the board, and the burrow still stands. `[Nerds.AMBIENT.14.lines.0.1]`
+- gnawer: does anyone take holidays? asking for a friend. the friend is me. `[Nerds.AMBIENT.15.lines.0.1]`
+- PS_wizard: cable management is just documentation you can touch. `[Nerds.AMBIENT.16.lines.0.1]`
+- xX_n00b_Xx: i got hired at a computer shop! part time! i get a lanyard! `[Nerds.AMBIENT.17.lines.0.1]`
+- trollbot: batch files are better than PowerShell. fight me. `[Nerds.AMBIENT.18.lines.0.1]`
+- PS_wizard: my cat sat on the keyboard and closed 14 tickets. she is getting a raise. `[Nerds.AMBIENT.19.lines.0.1]`
+- rodent_rick: 90 minutes to get to a 10 minute call. snow, in April. `[Nerds.AMBIENT.20.lines.0.1]`
+- HELPPLZ_Pip: WHAT IS EVERYONE HAVING FOR LUNCH??? `[Nerds.AMBIENT.21.lines.0.1]`
+- GrizzleAdmin: if one more person says it's the internet I'm unplugging the router. `[Nerds.AMBIENT.22.lines.0.1]`
+- rodent_rick: weekend's coming. I will not check email. I will not check email. `[Nerds.AMBIENT.23.lines.0.1]`
+- old_hand: one time a mouse ate a network cable. a real mouse. `[Nerds.AMBIENT.24.lines.0.1]`
+- GrizzleAdmin: everyone wants the cloud. it's someone else's server with a fancier invoice. `[Nerds.AMBIENT.25.lines.0.1]`
+- xX_n00b_Xx: i want a new phone. a big one. the Nexxus 5 looks sick. `[Nerds.AMBIENT.26.lines.0.1]`
+- GrizzleAdmin: a backup job failed somewhere in the burrow. I can feel it. `[Nerds.AMBIENT.27.lines.0.1]`
+- PS_wizard: backup status: failed. exit code: sadness. `[Nerds.AMBIENT.28.lines.0.1]`
+- rodent_rick: FreshRat! saw you at Rodent Nation. you owe me a sticker. `[Nerds.AMBIENT.29.lines.0.1]`
+- gnawer: I wasn't there. somebody send me the swag. `[Nerds.AMBIENT.30.lines.0.1]`
+- old_hand: the resort. the buffet. the lanyards. never again. maybe next year. `[Nerds.AMBIENT.31.lines.0.1]`
+
 ### LabRat Nerds regulars at Rodent Nation (the forum people in the crowd)
 
 - **MPriest (Priest Michael, forum mod, Australia)** `[Expo.FORUM.0.speaker]`
