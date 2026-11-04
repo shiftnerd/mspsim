@@ -137,6 +137,8 @@ func _process(_delta: float) -> bool:
 				other.seat.occupied = false
 				other.seat = null
 				other.queue_free()
+		for zone in get_nodes_in_group("phones"):
+			zone.remove_from_group("phones")  # a ringing desk phone would turn the gesture into a call: keep the room quiet
 		_dan = _spawn("office_dan", "Seat1", "")
 		_alan = _spawn("office_alan", "Seat2", "coffee")
 		phase = 1
@@ -190,7 +192,7 @@ func _process(_delta: float) -> bool:
 			phase = 4
 			frame = 0
 		elif frame > 19 * 60 + 600:
-			_check(false, "a seated NPC gestured within 19 s")
+			_check(false, "a seated NPC gestured within 19 s (state %s, call %s, item %s)" % [str(_dan.state), str(_dan._call_stage), str(_dan._item.item)])
 			phase = 4
 			frame = 0
 	elif phase == 4 and frame == 2:
