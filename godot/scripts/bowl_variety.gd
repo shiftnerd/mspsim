@@ -101,21 +101,21 @@ static func oil_of(alley_id: String) -> Dictionary:
 	return oil(str(alley(alley_id).oil))
 
 
-# where the green zone sits on the 0..1 aim bar for this oil and hook (-1 left, 0 straight, 1 right)
-static func center(oil_id: String, spin: int) -> float:
+# where the green zone sits on the 0..1 aim bar for this oil and hook (-1 left, 0 straight, 1 right); shift = this throw's draw
+static func center(oil_id: String, spin: int, shift := 0.0) -> float:
 	var bias := float(oil(oil_id).bias)
 	var scale := 1.0
 	if spin < 0:
 		scale = 1.0 - HOOK_LEFT_CANCEL
 	elif spin > 0:
 		scale = 1.0 + HOOK_LEFT_CANCEL
-	return clampf(0.5 - bias * scale, 0.1, 0.9)
+	return clampf(0.5 - bias * scale + shift, 0.1, 0.9)
 
 
 # how well the aim marker (0..1) fits the lane: 1 = in the middle of the green zone
-static func accuracy(oil_id: String, marker: float, spin: int, tier_width := 1.0) -> float:
+static func accuracy(oil_id: String, marker: float, spin: int, tier_width := 1.0, shift := 0.0) -> float:
 	var w := float(oil(oil_id).width) * tier_width
-	return clampf(1.0 - absf(marker - center(oil_id, spin)) * 2.0 * w, 0.0, 1.0)
+	return clampf(1.0 - absf(marker - center(oil_id, spin, shift)) * 2.0 * w, 0.0, 1.0)
 
 
 static func style_of(who: String) -> String:

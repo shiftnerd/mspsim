@@ -160,9 +160,10 @@ func _run() -> void:
 	_check(c.value("stars.karaoke") == 2 and c.value("kara_perfects") == 10, "best stars keep the max, perfects add up")
 	o.game = "escape"
 	o.g = {"time": 80.0}
+	var want := roundi(root.get_node("Difficulty").f("escape.time") - 80.0)
 	o._finish(3)
 	var secs: int = c.value("escape_best")
-	_check(secs == roundi(root.get_node("Difficulty").f("escape.time") - 80.0), "escape best time = clock used (%d s)" % secs)
+	_check(secs == want, "escape best time = clock used (%d s)" % secs)
 	o.g = {"time": 100.0}
 	o._finish(2)
 	_check(c.value("escape_best") == secs - 20 or c.value("escape_best") < secs, "a faster escape replaces it")

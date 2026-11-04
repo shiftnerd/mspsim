@@ -120,6 +120,7 @@ func _init() -> void:
 	# the song is what the game reads, not constants
 	d.set_tier("normal")
 	d.seed_run(3)
+	root.get_node("Career").reset_all()  # mastery 0: the table numbers
 	o.start("karaoke")
 	o.begin_play("dirt")
 	var dirt: Dictionary = o.song_by_id("dirt")

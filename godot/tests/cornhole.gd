@@ -364,10 +364,10 @@ func _init() -> void:
 		guard += 1
 		var cg: RefCounted = o.g.game
 		if cg.phase == "aim":
-			cg.marker = 0.5
+			cg.marker = cg.aim_c
 			o.press(KEY_E)
 		elif cg.phase == "power":
-			cg.power = Corn.POWER_BEST
+			cg.power = cg.pow_c
 			o.press(KEY_E)
 		o.tick(0.1)
 	o_stars = o.stars

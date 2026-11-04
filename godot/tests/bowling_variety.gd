@@ -16,6 +16,8 @@ func _check(ok: bool, what: String) -> void:
 func _play(o: Node, marker: float, spin: int) -> void:
 	var guard := 0
 	while o.phase == "play" and guard < 60:
+		o.g.shift = 0.0
+		o.g.pcen = 0.85
 		o.g.marker = marker
 		if spin != 0:
 			o.press(KEY_LEFT if spin < 0 else KEY_RIGHT)
@@ -70,6 +72,7 @@ func _init() -> void:
 	o.start("bowling")
 	o.press(KEY_ENTER)
 	_check(o.g.alley == "strike_zone" and o.oil_id() == "house", "no options = the classic alley")
+	o.g.shift = 0.0
 	_check(is_equal_approx(o.bowl_center(), 0.5) and is_equal_approx(o.bowl_zone_width(), 0.2), "classic green zone")
 	_play(o, 0.5, 0)
 	_check(o.phase == "result" and o.stars >= 2, "perfect classic bowling still wins (%d stars)" % o.stars)
@@ -81,6 +84,8 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 	_check(o.oil_id() == "dry" and o.bowl_center() < 0.4, "the rented lanes are dry")
 	o.g.stage = "aim"
+	o.g.shift = 0.0
+	o.g.pcen = 0.85
 	o.g.marker = BV.center("dry", 0)
 	var straight: float = 0.0
 	for i in 20:
@@ -113,6 +118,8 @@ func _init() -> void:
 		o.g.roll = 1
 		o.g.pins = 10
 		o.g.spin = -1
+		o.g.shift = 0.0
+		o.g.pcen = 0.85
 		o.g.marker = BV.center("dry", -1)
 		o.g.power = 0.85
 		o.g.stage = "power"

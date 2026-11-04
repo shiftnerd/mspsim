@@ -8,6 +8,13 @@ extends Node
 #   Difficulty.rng("karaoke")        the RandomNumberGenerator of one system (same seed = same draws)
 #   Difficulty.seed_run(12345)       tests and "daily seed" runs: fixes the seed and restarts every stream
 #
+# MASTERY RAMP: the numbers above are the FIRST play of a game. Every GOOD play (2+ stars, not left early) of a game adds
+# one to Career counter "good.<game>"; m = clamp(good / RAMP_PLAYS, 0, 1). f() blends the skill-check keys listed in
+# MASTERY_KEYS from the tier's value toward a tighter target by m (see mastery_blend). Nothing else is scaled.
+#
+#   Difficulty.mastery("karaoke")    m of one game (0 with fixed_take, 0 when nothing is counted)
+#   Difficulty.zone("bowl", lo, hi)  a target position drawn from the game's own seeded stream "<game>_zone"
+#
 # TABLE is the only place the numbers live: [easy, normal, hard]. Normal is exactly today's behaviour.
 # Fairness rule: every hard value stays beatable (windows stay open, timers stay long enough for a clean
 # run); tests/difficulty.gd checks the karaoke windows against the note gap. Energy is not an input of the tiers'
@@ -154,6 +161,24 @@ const TABLE := {
 	"service.trust": [0.7, 1.0, 1.6],
 }
 
+# ---- the mastery ramp (per game, not per day) ---------------------------------------------------------
+const RAMP_PLAYS := 10  # good plays that bring a game to full mastery
+const EASY_RAMP := 0.35  # the Easy tier (cozy included) only blends this share of the way toward the normal value
+const HARD_OVER := 0.25  # at full mastery Hard goes at most this share of the normal-to-hard step beyond its own value
+const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "corn": "cornhole"}
+# the keys that tighten with mastery. Everything else stays fixed on purpose: counts and switches (karaoke.grace,
+# escape.digits / dial, dinner.reveal, printer.questions / chain, corn.to / assist, grill.tickets), random frequencies
+# (grill.flare, grill.dogs), prizes and thresholds (not in TABLE at all), the nerf war and the campaign dials.
+const MASTERY_KEYS := [
+	"karaoke.gap", "karaoke.perfect", "karaoke.good",
+	"bowl.opp_skill", "bowl.aim_speed", "bowl.power_speed", "bowl.oil", "bowl.spin_noise",
+	"escape.time", "escape.wrong_penalty",
+	"printer.speed", "printer.zone",
+	"grill.cook_rate", "grill.window", "grill.time",
+	"chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill",
+	"corn.opp_skill", "corn.aim_speed", "corn.power_speed",
+]
+
 var tier := "normal"
 var run_seed := 0
 var day_scale := 1.0  # the DAY LENGTH in use today (x on the mode's day_len); changes at the next morning
@@ -204,11 +229,11 @@ func label() -> String:
 
 # the number for one key at the current tier (0 and an error for an unknown key)
 func f(key: String) -> float:
-	return float(at(key, tier))
+	return mastery_blend(key, tier)
 
 
 func i(key: String) -> int:
-	return int(at(key, tier))
+	return int(at(key, tier))  # whole numbers (digits, counts, switches) never ramp
 
 
 # a campaign dial (Q6): the tier's number while a campaign runs, the normal one otherwise (Free Play and the old tests are unchanged)
@@ -219,6 +244,44 @@ func cf(key: String) -> float:
 # the ticket dials of the running mode: the tech campaign reads tech.pace / tech.sla, the crew campaigns (owner, sales, service) crew.pace / crew.sla
 func cm(base: String) -> float:
 	return cf(("tech." if Campaign.mode == "tech" else "crew.") + base)
+
+
+# ---- the mastery ramp --------------------------------------------------------------------------------
+func game_of(key: String) -> String:
+	return str(MASTERY_GAMES.get(key.get_slice(".", 0), ""))
+
+
+# m 0..1 of one game: good plays / RAMP_PLAYS. Free Play fixed takes stay repeatable (0).
+func mastery(game: String) -> float:
+	if fixed_take or game == "":
+		return 0.0
+	return clampf(float(Career.value("good." + game)) / float(RAMP_PLAYS), 0.0, 1.0)
+
+
+# the value of a key at a tier with a given mastery: easy -> EASY_RAMP of the way to normal, normal -> hard,
+# hard -> hard plus HARD_OVER of the normal-to-hard step. m 0 is exactly the TABLE value.
+func blend(key: String, for_tier: String, m: float) -> float:
+	var v := float(at(key, for_tier))
+	if m <= 0.0 or not key in MASTERY_KEYS:
+		return v
+	var row: Array = TABLE[key]
+	var k := maxi(0, TIERS.find(for_tier))
+	var target := float(row[2]) + HARD_OVER * (float(row[2]) - float(row[1]))
+	var w := m
+	if k < 2:
+		target = float(row[k + 1])
+	if k == 0:
+		w = m * EASY_RAMP
+	return lerpf(v, target, w)
+
+
+func mastery_blend(key: String, for_tier: String) -> float:
+	return blend(key, for_tier, mastery(game_of(key)))
+
+
+# a target position (the sweet spot of a skill check) from the game's own stream; no stream draw changes elsewhere
+func zone(game: String, lo: float, hi: float) -> float:
+	return rng(game + "_zone").randf_range(lo, hi)
 
 
 func at(key: String, for_tier: String) -> Variant:

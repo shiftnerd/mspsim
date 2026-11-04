@@ -25,6 +25,7 @@ const BURN := 0.9
 const BASE_RATE := 0.05  # cook value per second per side at cook_rate 1
 const WIN_LO := 0.35
 const WIN_W := 0.35
+const WIN_SHIFT := 0.07  # a new patty's flip window may sit this far earlier or later (its width never changes)
 const COOL_MUL := 0.25
 const FLARE_MUL := 2.4
 const FLARE_LEN := 4.0
@@ -46,6 +47,7 @@ var flare_scale := 1.0
 var dog_share := 0.0
 var cozy := false
 var rng: RandomNumberGenerator
+var zone_rng: RandomNumberGenerator = null  # draws where each new patty's flip window sits (none: always the classic place)
 var names: Array = []
 
 var slots: Array = []
@@ -78,6 +80,7 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 	if cozy:
 		flare_scale = 0.0
 	rng = r
+	zone_rng = params.get("zone_rng", null)
 	names = who.duplicate() if not who.is_empty() else ["A COWORKER"]
 	slots = []
 	var n_dogs := roundi(float(SLOTS) * dog_share)
@@ -105,7 +108,8 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 
 
 func _fresh(kind := "burger") -> Dictionary:
-	return {"on": true, "kind": kind, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+	var off := zone_rng.randf_range(-WIN_SHIFT, WIN_SHIFT) if zone_rng != null else 0.0
+	return {"on": true, "kind": kind, "woff": off, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
 
 
 # what a new slot holds: a dog when the open orders want more dogs than the grate has (and nothing else is missing more)
@@ -200,10 +204,12 @@ func doneness(i: int) -> String:
 	return "well" if b == "burnt" and cozy else b
 
 
-func flip_range(kind := "burger") -> Vector2:
-	if kind == "dog":
-		return Vector2(DOG_WIN_LO, DOG_WIN_LO + DOG_WIN_W * window)
-	return Vector2(WIN_LO, WIN_LO + WIN_W * window)
+func flip_range(kind := "burger", off := 0.0) -> Vector2:
+	var lo := DOG_WIN_LO if kind == "dog" else WIN_LO
+	var hi := lo + (DOG_WIN_W if kind == "dog" else WIN_W) * window
+	var room := (DOG_BURN if kind == "dog" else BURN) - 0.03 - hi  # the window stays clear of the burn line
+	var d := clampf(off, -lo + 0.05, maxf(0.0, room))
+	return Vector2(lo + d, hi + d)
 
 
 # ---- the player's keys ------------------------------------------------------------------------------------------
@@ -223,7 +229,7 @@ func flip(i: int = -1) -> String:
 	var down: int = s.down
 	var v := float(s.c[down])
 	var is_dog: bool = s.kind == "dog"
-	var r := flip_range(str(s.kind))
+	var r := flip_range(str(s.kind), float(s.get("woff", 0.0)))
 	var res := "sear"
 	if v < r.x:
 		s.c[down] = v * (0.7 if is_dog else 0.5)
