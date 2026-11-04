@@ -235,10 +235,10 @@ const SCENES := {
 		"links":
 		[
 			{"name": "ToLobby", "x": 41, "to": "resort_lobby", "spawn": "from_hall"},
-			{"name": "RoomA", "x": 73, "to": "breakout_room", "spawn": "from_hall"},
-			{"name": "RoomB", "x": 143, "to": "breakout_room", "spawn": "from_hall"},
-			{"name": "RoomC", "x": 213, "to": "breakout_room", "spawn": "from_hall"},
-			{"name": "RoomD", "x": 283, "to": "breakout_room", "spawn": "from_hall"}
+			{"name": "RoomA", "x": 73, "to": "breakout_a", "spawn": "from_hall"},
+			{"name": "RoomB", "x": 143, "to": "breakout_b", "spawn": "from_hall"},
+			{"name": "RoomC", "x": 213, "to": "breakout_c", "spawn": "from_hall"},
+			{"name": "RoomD", "x": 283, "to": "breakout_d", "spawn": "from_hall"}
 		],
 		"seats": {},
 		"uses": {},
@@ -254,13 +254,43 @@ const SCENES := {
 		"uses": {},
 		"outside_x": -1
 	},
-	"breakout_room":
+	"breakout_a":
 	{
 		"x0": 64,
 		"W": 240,
 		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
 		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
-		"seats": {"Seat1": 143, "Seat2": 183, "Seat3": 223},
+		"seats": {"Seat1": 143, "Seat2": 173, "Seat3": 203},
+		"uses": {},
+		"outside_x": -1
+	},
+	"breakout_b":
+	{
+		"x0": 64,
+		"W": 240,
+		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
+		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
+		"seats": {"Seat1": 135, "Seat2": 163, "Seat3": 191},
+		"uses": {},
+		"outside_x": -1
+	},
+	"breakout_c":
+	{
+		"x0": 64,
+		"W": 240,
+		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
+		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
+		"seats": {"Seat1": 123, "Seat2": 155, "Seat3": 187},
+		"uses": {},
+		"outside_x": -1
+	},
+	"breakout_d":
+	{
+		"x0": 64,
+		"W": 240,
+		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
+		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
+		"seats": {"Seat1": 149, "Seat2": 179, "Seat3": 209},
 		"uses": {},
 		"outside_x": -1
 	},

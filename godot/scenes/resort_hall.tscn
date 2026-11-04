@@ -99,7 +99,7 @@ shape = SubResource("shape_door")
 [node name="DoorRoomA" type="Area2D" parent="Interactables"]
 position = Vector2(73, 70)
 script = ExtResource("door")
-target_scene = "breakout_room"
+target_scene = "breakout_a"
 target_spawn = "from_hall"
 remember = "conf_door=from_a"
 
@@ -109,7 +109,7 @@ shape = SubResource("shape_door")
 [node name="DoorRoomB" type="Area2D" parent="Interactables"]
 position = Vector2(143, 70)
 script = ExtResource("door")
-target_scene = "breakout_room"
+target_scene = "breakout_b"
 target_spawn = "from_hall"
 remember = "conf_door=from_b"
 
@@ -119,7 +119,7 @@ shape = SubResource("shape_door")
 [node name="DoorRoomC" type="Area2D" parent="Interactables"]
 position = Vector2(213, 70)
 script = ExtResource("door")
-target_scene = "breakout_room"
+target_scene = "breakout_c"
 target_spawn = "from_hall"
 remember = "conf_door=from_c"
 
@@ -129,7 +129,7 @@ shape = SubResource("shape_door")
 [node name="DoorRoomD" type="Area2D" parent="Interactables"]
 position = Vector2(283, 70)
 script = ExtResource("door")
-target_scene = "breakout_room"
+target_scene = "breakout_d"
 target_spawn = "from_hall"
 remember = "conf_door=from_d"
 

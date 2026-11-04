@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c7sgyyim0k78k"
-path="res://.godot/imported/breakout_room.png-2ecf06d644d3ce96b3bb9df789cfa515.ctex"
+uid="uid://byxamf4ibls6p"
+path="res://.godot/imported/chair_blue.png-6b3db5a529e807a150d1cdb45a94e4bc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sets/breakout_room.png"
-dest_files=["res://.godot/imported/breakout_room.png-2ecf06d644d3ce96b3bb9df789cfa515.ctex"]
+source_file="res://assets/props/chair_blue.png"
+dest_files=["res://.godot/imported/chair_blue.png-6b3db5a529e807a150d1cdb45a94e4bc.ctex"]
 
 [params]
 

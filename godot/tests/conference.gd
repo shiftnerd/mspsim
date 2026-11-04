@@ -28,6 +28,95 @@ func _fake(role: String) -> Node:
 	return n
 
 
+# the speaker NPC of a breakout room must be fully visible from the chest up: nothing in front of him reaches above chest height
+func _check_speaker(room: String) -> void:
+	var speaker: Node = null
+	for n in get_nodes_in_group("npcs"):
+		if str(n.role) == "speaker":
+			speaker = n
+	_check(speaker != null, "%s has a speaker standing in it" % room)
+	if speaker == null:
+		return
+	var in_front_ok := true
+	for child in current_scene.get_node("Actors").get_children():
+		if not (child is Sprite2D) or child.texture == null:
+			continue
+		if child.position.y < speaker.position.y:
+			continue  # behind the speaker
+		var top: float = child.position.y + child.offset.y
+		var left: float = child.position.x
+		var right: float = left + child.texture.get_width()
+		if right > speaker.position.x - 10.0 and left < speaker.position.x + 10.0 and top < speaker.position.y - 45.0:
+			in_front_ok = false
+	_check(in_front_ok, "%s: nothing in front of the speaker rises above his chest" % room)
+	# no chair sits where the speaker stands, and every prop chair has a seat beside it or is a back row chair
+	var stray := 0
+	for child in current_scene.get_node("Actors").get_children():
+		if str(child.name).begins_with("chair_") and absf(child.position.x + 9.0 - speaker.position.x) < 14.0:
+			stray += 1
+	_check(stray == 0, "%s: no stray chair under the speaker" % room)
+
+
+# four different rooms: separate scenes with their own background, props and seats, behind four different hall doors
+func _check_rooms_distinct() -> void:
+	var rooms := ["breakout_a", "breakout_b", "breakout_c", "breakout_d"]
+	var seen_bg := {}
+	var seen_props := {}
+	for room in rooms:
+		var scene: Node = load("res://scenes/%s.tscn" % room).instantiate()
+		seen_bg[str(scene.get_node("Background").texture.resource_path)] = true
+		var kinds := []
+		for child in scene.get_node("Actors").get_children():
+			kinds.append(str(child.name).rstrip("0123456789"))
+		kinds.sort()
+		seen_props[",".join(kinds)] = true
+		scene.free()
+	_check(seen_bg.size() == 4, "the four breakout rooms have four different backgrounds")
+	_check(seen_props.size() == 4, "the four breakout rooms have different furniture")
+	var hall: Node = load("res://scenes/resort_hall.tscn").instantiate()
+	var targets := {}
+	for door in hall.get_node("Interactables").get_children():
+		if str(door.name).begins_with("DoorRoom"):
+			targets[str(door.target_scene)] = true
+	hall.free()
+	_check(targets.size() == 4, "the four hall doors lead to four different rooms")
+	for room in rooms:
+		var scene: Node = load("res://scenes/%s.tscn" % room).instantiate()
+		_check(scene.get_node_or_null("Fx/Screen") != null, "%s has a session screen" % room)
+		scene.free()
+
+
+# nobody from a client site works the conference: no client_* sprite in the crowd, the vendors or their looks
+func _check_crowd_clean() -> void:
+	var cf := root.get_node("Expo")
+	var bad := []
+	for room in cf.CROWD:
+		for entry in cf.CROWD[room]:
+			if str(entry.who).begins_with("client_"):
+				bad.append("%s:%s" % [room, entry.who])
+	for id in cf.Trip.VENDOR_LOOK:
+		if str(cf.Trip.VENDOR_LOOK[id]).begins_with("client_"):
+			bad.append("vendor:%s" % id)
+	_check(bad.is_empty(), "no client_* person works the venue (%s)" % str(bad))
+	var clerk := ""
+	for entry in cf.CROWD.resort_lobby:
+		if str(entry.role) == "checkin":
+			clerk = str(entry.who)
+	_check(clerk == "expo_regdesk", "the check-in clerk is the conference staffer (%s)" % clerk)
+	for room in ["breakout_a", "breakout_b", "breakout_c", "breakout_d"]:
+		var speakers := 0
+		for entry in cf.CROWD[room]:
+			speakers += 1 if str(entry.role) == "speaker" else 0
+		_check(speakers == 1, "%s has one speaker in the crowd" % room)
+	# the attendee sprites still match the gender of their chat slot
+	for room in cf.CROWD:
+		for entry in cf.CROWD[room]:
+			if str(entry.role).begins_with("att:"):
+				var slot := int(str(entry.role).substr(4))
+				var female: bool = ["expo_priya", "expo_tina"].has(str(entry.who))
+				_check(female == (cf.Trip.SLOT_GENDER[slot] == "f"), "%s: %s fits chat slot %d" % [room, entry.who, slot])
+
+
 func _init() -> void:
 	await process_frame
 	var c := root.get_node("Campaign")
@@ -105,10 +194,18 @@ func _init() -> void:
 	_check(cf.sign_lines(0).size() > 0, "the easels in the hall show the round's sessions")
 	var ps0: int = sk.ps_level
 	game.vars["conf_door"] = "from_a"
-	game.go("breakout_room", "from_hall")
+	game.go("breakout_a", "from_hall")
 	await _wait(1.0)
 	_check(cards.is_open and cf.picks.size() == 1, "walking into room A starts that session")
+	var info_a: Dictionary = cf.room_info(0)
+	_check(
+		str(info_a.id) == "ps101" and int(info_a.round) == 1 and str(info_a.time) == "10:00 AM",
+		"room A's screen shows the session behind door A (id, round, time)"
+	)
+	_check(info_a.title.size() > 0 and str(info_a.speaker[0]) != "", "the screen has a title and a speaker")
+	_check_speaker("breakout_a")
 	cards.pick(0)
+	_check(cf.room_info(0).id == "ps101", "the screen keeps your session after the card (the round moved on)")
 	_check(
 		sk.ps_level == ps0 + 1 and cf.rnd == 1,
 		"the scripting lab teaches PowerShell and round 2 opens"
@@ -117,20 +214,34 @@ func _init() -> void:
 	await _wait(1.0)
 	var sec0: int = int(sk.xp.security)
 	game.vars["conf_door"] = "from_b"
-	game.go("breakout_room", "from_hall")
+	game.go("breakout_b", "from_hall")
 	await _wait(1.0)
+	var menu1: Array = cf.menu(1)
+	_check(
+		str(cf.room_info(1).id) == str(menu1[1].id) and cf.room_info(1).round == 2,
+		"room B's screen shows the round 2 session behind door B (%s)" % str(menu1[1].id)
+	)
+	_check(
+		cf.room_info(0, 22).title != cf.room_info(1, 22).title,
+		"rooms A and B show different sessions"
+	)
+	_check_speaker("breakout_b")
 	cards.pick(0)
 	_check(int(sk.xp.security) > sec0 and cf.rnd == 2, "the security session gives experience")
 	game.go("resort_hall", "from_b")
 	await _wait(1.0)
 	game.vars["conf_door"] = "from_d"
-	game.go("breakout_room", "from_hall")
+	game.go("breakout_d", "from_hall")
 	await _wait(1.5)
 	_check(
-		_scene() == "breakout_room" and cards.is_open and cf.picks.size() == 3,
+		_scene() == "breakout_d" and cards.is_open and cf.picks.size() == 3,
 		"room D of round 3 is a session now"
 	)
+	_check(cf.room_info(3).id == "stay" or cf.room_info(3).id == cf.picks[2], "room D's screen shows the session you picked")
+	_check_speaker("breakout_d")
 	cards.pick(0)
+	await _check_rooms_distinct()
+	_check_crowd_clean()
 	_check(cf._stage == "raffle", "then it is time for the raffle")
 	game.go("vendor_hall", "from_hall")
 	await _wait(1.0)

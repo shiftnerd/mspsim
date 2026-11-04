@@ -1,7 +1,7 @@
 -- RODENT NATION 2014 venue: a (fictional) Florida resort conference centre.
 -- Loaded by build_sets.lua:  dofile(TOOLS .. "venue_sets.lua")(L, builders)
 -- Sets: resort_lobby (atrium, check-in, ballroom doors), resort_hall (the breakout corridor), ballroom (keynote stage),
---       breakout_room (a session room), vendor_hall (the solutions pavilion). 320 px wide (breakout 240).
+--       breakout_a to breakout_d (four different session rooms: SALON A to D), vendor_hall (the solutions pavilion). 320 px wide (the breakout rooms 240).
 return function(L, builders)
   local P = L.P
   local OUT = "#17121F"
@@ -288,16 +288,6 @@ return function(L, builders)
     end)
   end
 
-  function P.speakerTable()
-    return L.piece(70, 30, function(R)
-      L.box(R, 0, 0, 70, 5, "#F2EFE6", "#FFFFFF", "#C9C3B2")
-      R(0, 5, 70, 25, "#14566E"); R(0, 5, 70, 2, "#F2C94C")
-      R(8, -8, 12, 8, "#2E3138"); R(9, -7, 10, 5, "#6A7A8A")
-      R(30, -6, 4, 6, "#8AB4D8"); R(29, -7, 6, 1, "#5E86A8")
-      R(44, -3, 7, 3, "#F2F2EA"); R(54, -3, 6, 3, "#F2F2EA")
-    end)
-  end
-
   function P.waterTable()
     return L.piece(34, 30, function(R)
       R(0, 6, 34, 24, "#F2EFE6"); R(0, 6, 34, 2, "#C9C3B2")
@@ -371,20 +361,265 @@ return function(L, builders)
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
   end}
 
-  builders.breakout_room = {W = 240, H = 128, post = function(set) darkCeiling(set, 0.8, {1.1, 1.05, 0.95}) end, fn = function(s)
+  -- ---------------------------------------------------------------- the four breakout rooms (SALON A to D)
+  -- Each hall door A to D has its own room, with its own wall, floor, light, furniture and speaker spot; the screen (or
+  -- whiteboard) is blank art and the fx `session_screen` (fx.gd) writes the real session on it. People stand on y 118, so a
+  -- prop sorted at 119 hides the speaker from the hips down (the lectern) and one sorted at 100 stands behind (tables, stools).
+  local function roomPlate(s, text, x, col, txt)
+    s.put("Plate", L.piece(#text * 4 + 5, 9, function(R)
+      R(0, 0, #text * 4 + 5, 9, col); R(1, 1, #text * 4 + 3, 1, "#FFFFFF")
+      drawText(R, text, 3, 2, 1, txt)
+    end), x, 24)
+  end
+
+  local function woodFloor(set, base, dark, light)
+    local floor = set.layer("Floor")
+    local y0 = 90 + L.YOFF
+    L.fill(floor, 0, y0, floor.width, floor.height - y0, base)
+    for row = 0, (floor.height - y0) // 7 do
+      local y = y0 + row * 7
+      L.fill(floor, 0, y, floor.width, 1, dark)
+      local off = (row * 37) % 52
+      for x = -off, floor.width, 52 do if x >= 0 then L.fill(floor, x, y, 1, 7, dark) end end
+    end
+    for y = y0, floor.height - 1 do for x = 0, floor.width - 1 do
+      local h = hash(x, y, 11)
+      if h % 29 == 0 then L.fill(floor, x, y, 3, 1, light) elseif h % 37 == 0 then L.fill(floor, x, y, 2, 1, dark) end
+    end end
+    L.fill(floor, 0, y0, floor.width, 2, "#2A1B10")
+  end
+
+  local function tileCarpet(set, base, dark, light)
+    local floor = set.layer("Floor")
+    local y0 = 90 + L.YOFF
+    L.fill(floor, 0, y0, floor.width, floor.height - y0, base)
+    for y = y0, floor.height - 1 do for x = 0, floor.width - 1 do
+      local h = hash(x, y, 19)
+      if h % 9 == 0 then L.fill(floor, x, y, 1, 1, light) elseif h % 13 == 0 then L.fill(floor, x, y, 1, 1, dark) end
+    end end
+    for x = 0, floor.width - 1, 20 do L.fill(floor, x, y0, 1, floor.height - y0, dark) end
+    for y = y0 + 8, floor.height - 1, 20 do L.fill(floor, 0, y, floor.width, 1, dark) end
+    L.fill(floor, 0, y0, floor.width, 2, "#3A4048")
+  end
+
+  -- a plain wall: base colour, an optional stripe pattern, a rail and a wainscot, crown and baseboard
+  local function roomWall(set, W, o)
+    local wall = set.layer("Wall")
+    F(wall, 0, 0, W, 84, o.base)
+    if o.stripe then for x = 0, W - 1, 12 do F(wall, x, 4, 6, 46, o.stripe) end end
+    F(wall, 0, 0, W, 3, o.crown); F(wall, 0, 3, W, 1, o.crownHi or "#F6EFD9")
+    F(wall, 0, 50, W, 2, o.railHi); F(wall, 0, 52, W, 32, o.wains)
+    if o.planks then for x = 0, W - 1, 8 do F(wall, x, 52, 1, 32, o.planks) end; F(wall, 0, 52, W, 1, o.planks) end
+    if o.panels then
+      for x = 0, W - 1, 24 do F(wall, x + 3, 56, 18, 22, o.panels); F(wall, x + 3, 56, 18, 1, o.railHi) end
+    end
+    F(wall, 0, 84, W, 6, OUT)
+  end
+
+  function P.roomScreen(kind, w, h)
+    return L.piece(w, h, function(R)
+      if kind == "a" then                                              -- a wall projection screen in a dark bezel
+        R(0, 0, w, h, "#17121F"); R(2, 2, w - 4, h - 4, "#1E5A8A")
+        for y = 2, h - 3 do R(2, y, w - 4, 1, (y - 2) * 2 < h - 4 and "#2A7AB8" or "#1E5A8A") end
+        disc(R, w - 7, 7, 3, "#8E939E"); disc(R, w - 10, 4, 1, "#8E939E"); disc(R, w - 4, 4, 1, "#8E939E")
+      elseif kind == "b" then                                          -- a white pull-down screen on a black valance
+        R(0, 0, w, 5, "#2A2D36"); R(0, 5, w, 1, "#4A4F5A")
+        R(1, 6, w - 2, h - 8, "#F4F2EA"); R(1, 6, 2, h - 8, "#E0DCCB"); R(w - 3, 6, 2, h - 8, "#D6D1BE")
+        R(0, h - 3, w, 3, "#2A2D36"); R(w // 2 - 1, h - 1, 3, 1, "#B8943A")
+      elseif kind == "c" then                                          -- a big gold-framed display
+        R(0, 0, w, h, "#B8943A"); R(1, 1, w - 2, 1, "#F2D878"); R(2, 2, w - 4, h - 4, "#0E1118")
+        for i = 0, 6 do R(4 + i * 3, 4 + i * 2, 6, 1, "#1A2030") end
+      else                                                             -- a whiteboard with a marker tray
+        R(0, 0, w, h - 3, "#B8BCC4"); R(2, 2, w - 4, h - 7, "#F4F2EA")
+        R(4, 4, 10, 1, "#D8D4C4"); R(6, h - 9, 14, 1, "#D8D4C4")      -- old ghost marks
+        R(0, h - 4, w, 4, "#8E939E")
+        R(6, h - 6, 5, 2, "#E04040"); R(13, h - 6, 5, 2, "#3A6FD0"); R(20, h - 6, 5, 2, "#2A2A33")
+      end
+    end)
+  end
+
+  function P.lectern()
+    return L.piece(22, 38, function(R)
+      R(10, 0, 1, 7, "#2A2A33"); R(10, 0, 5, 1, "#2A2A33"); R(14, 0, 2, 3, "#2A2A33"); R(14, 1, 1, 1, "#8E939E")   -- gooseneck mic
+      R(0, 8, 22, 5, "#7A5030"); R(0, 8, 22, 1, "#B08050"); R(0, 12, 22, 1, "#3E281A")
+      R(3, 13, 16, 21, "#6A4A2E"); R(4, 14, 14, 19, "#8A6038"); R(4, 14, 14, 1, "#9A7048")
+      R(8, 18, 6, 7, "#14566E"); R(9, 19, 4, 5, "#F2C94C"); R(10, 21, 2, 2, "#14566E")                           -- the plate
+      R(2, 34, 18, 4, "#3E281A")
+    end)
+  end
+
+  function P.flipChart()
+    return L.piece(30, 52, function(R)
+      R(3, 40, 2, 12, "#6A6F7A"); R(25, 40, 2, 12, "#6A6F7A"); R(14, 34, 2, 18, "#6A6F7A"); R(1, 50, 6, 2, "#4A4F5A"); R(23, 50, 6, 2, "#4A4F5A")
+      R(0, 0, 30, 37, "#8E939E"); R(1, 1, 28, 35, "#F4F2EA"); R(1, 1, 28, 2, "#E04040")
+      R(9, 0, 12, 2, "#4A4F5A")
+      R(4, 7, 4, 1, "#3A6FD0"); R(10, 7, 14, 1, "#3A6FD0"); R(4, 12, 4, 1, "#3A6FD0"); R(10, 12, 11, 1, "#3A6FD0")
+      R(4, 17, 4, 1, "#3A6FD0"); R(10, 17, 16, 1, "#3A6FD0"); R(7, 24, 16, 8, "#E8E4D4"); R(9, 26, 12, 1, "#E04040"); R(9, 29, 8, 1, "#3A6FD0")
+    end)
+  end
+
+  function P.presenterTable(w, cloth, trim)
+    return L.piece(w, 36, function(R)
+      R(5, 2, 13, 8, "#2E3138"); R(6, 3, 11, 5, "#6A7A8A"); R(3, 9, 17, 1, "#2E3138")                        -- a laptop
+      R(26, 5, 16, 5, "#E4E4E0"); R(28, 3, 8, 2, "#C9C9C0"); R(40, 6, 3, 3, "#17121F")                        -- a projector
+      R(w - 18, 3, 4, 7, "#8AB4D8"); R(w - 12, 6, 3, 4, "#F4F2EA"); R(w - 8, 6, 3, 4, "#F4F2EA")               -- a bottle and cups
+      L.box(R, 0, 10, w, 4, "#F2EFE6", "#FFFFFF", "#C9C3B2")
+      R(1, 14, w - 2, 22, cloth); R(1, 14, w - 2, 2, trim); R(1, 33, w - 2, 3, "#17121F")
+      for x = 5, w - 6, 6 do R(x, 17, 1, 15, trim) end
+    end)
+  end
+
+  function P.coffeeStation()
+    return L.piece(40, 42, function(R)
+      R(5, 1, 12, 3, "#8E939E"); R(4, 4, 14, 14, "#B8BCC4"); R(5, 5, 3, 12, "#E8ECF0"); R(16, 6, 1, 11, "#8E939E")  -- the urn
+      R(17, 11, 4, 2, "#2A2D36"); R(19, 13, 2, 2, "#2A2D36")                                                       -- spigot
+      for i = 0, 2 do R(26, 10 - i * 3, 5, 3, "#F4F2EA"); R(26, 10 - i * 3, 5, 1, "#D8D4C4") end                    -- cups
+      R(33, 10, 5, 8, "#E8E4D4"); R(34, 11, 3, 3, "#E08A3A")                                                       -- sugar and a tray
+      L.box(R, 0, 18, 40, 4, "#F2EFE6", "#FFFFFF", "#C9C3B2")
+      R(1, 22, 38, 20, "#2E6A5A"); R(1, 22, 38, 2, "#F2C94C"); R(1, 39, 38, 3, "#17121F")
+      R(7, 27, 26, 8, "#1E4A3E"); centred(R, "COFFEE", 20, 29, 1, "#F2C94C")
+    end)
+  end
+
+  function P.barStool(seat)
+    return L.piece(14, 32, function(R)
+      R(0, 0, 14, 5, seat); R(0, 0, 14, 1, "#FFFFFF"); R(1, 5, 12, 1, "#17121F")
+      R(6, 6, 2, 18, "#8E939E"); R(2, 16, 10, 1, "#6A6F7A")
+      R(1, 24, 2, 8, "#6A6F7A"); R(11, 24, 2, 8, "#6A6F7A"); R(5, 28, 4, 4, "#4A4F5A")
+    end)
+  end
+
+  function P.sideTable()
+    return L.piece(18, 34, function(R)
+      R(6, 1, 5, 8, "#8AB4D8"); R(7, 0, 3, 1, "#5E86A8"); R(2, 5, 3, 4, "#F4F2EA"); R(13, 6, 3, 3, "#F4F2EA")
+      L.box(R, 0, 9, 18, 3, "#3A3F4A", "#5A606C", "#22262E")
+      R(8, 12, 2, 18, "#8E939E"); R(3, 30, 12, 3, "#4A4F5A")
+    end)
+  end
+
+  function P.labTable()
+    return L.piece(66, 30, function(R)
+      for _, x in ipairs({5, 38}) do
+        R(x, 0, 18, 11, "#B8BCC4"); R(x + 1, 1, 16, 9, "#9AA0AE"); R(x + 8, 4, 3, 3, "#E8E4D4"); R(x - 2, 10, 22, 2, "#4A4F5A")
+      end
+      R(28, 5, 5, 6, "#F4F2EA"); R(29, 6, 3, 1, "#E04040")
+      L.box(R, 0, 11, 66, 4, "#D8D4C4", "#F6F2E2", "#A8A494")
+      R(3, 15, 3, 15, "#6A6F7A"); R(60, 15, 3, 15, "#6A6F7A"); R(6, 16, 54, 9, "#8E939E"); R(6, 16, 54, 1, "#B8BCC4")
+      R(20, 26, 8, 1, "#2A2D36"); R(44, 25, 6, 1, "#2A2D36")                                                       -- cables
+    end)
+  end
+
+  function P.velvetDrape(w, h)
+    return L.piece(w, h, function(R)
+      R(0, 0, w, 7, "#B8943A"); R(0, 0, w, 1, "#F2D878"); R(0, 7, w, 3, "#6A1624")
+      for x = 0, w - 1 do R(x, 10, 1, h - 10, (x // 3) % 2 == 0 and "#8A2434" or "#6A1624") end
+      R(0, h - 3, w, 3, "#4A0E18")
+      R(0, 38, w, 3, "#B8943A")                                                                                  -- the tieback
+    end)
+  end
+
+  function P.wifiSign()
+    return L.piece(34, 17, function(R)
+      R(0, 0, 34, 17, "#F4F2EA"); R(0, 0, 34, 4, "#2E7A8E"); centred(R, "WIFI", 17, 6, 1, "#17121F")
+      centred(R, "RATNET14", 17, 11, 1, "#2E7A8E")
+    end)
+  end
+
+  -- -------- SALON A: the classic lecture room (cream and teal, lit warm). Lectern on the right, the speaker behind it.
+  builders.breakout_a = {W = 240, H = 128, post = function(set) darkCeiling(set, 0.85, {1.1, 1.05, 0.95}) end, fn = function(s)
     s.layer("Ceiling")
     resortWall(s, 240, "#E4DCC8", "#D2C8AC", "#14566E")
     resortCarpet(s, "#1F4E5F", "#163A48", "#C8A83C", "#D8704A")
-    s.put("Screen", P.bigScreen(84, 44), 120, 10)
-    s.put("Banner", P.banner(), 52, 14)
+    roomPlate(s, "SALON A", 34, "#14566E", "#FFFFFF")
     s.put("Doors", P.hallDoor("EXIT"), 4, 18)
+    s.put("Screen", P.roomScreen("a", 94, 46), 134, 8)
+    s.put("Banner", P.banner(), 92, 14)
+    s.put("Sconce", P.sconce(), 66, 34); s.put("Sconce", P.sconce(), 228, 34)
     s.put("Chandelier", P.chandelier(), 40, -26); s.put("Chandelier", P.chandelier(), 150, -26)
-    s.putS("Speaker", P.speakerTable(), 124, 66, 100, "speaker_table")
-    s.putS("Water", P.waterTable(), 202, 78, 108, "water_table")
-    s.putS("RowA", P.rowBacks(150), 50, 74, 94, "row_backs_small")
-    for _, x in ipairs({70, 110, 150}) do
+    for _, x in ipairs({85, 115, 140}) do
+      s.putS("BackRow", P.chair("#4A4D55", "#6A6E78", "#35373E"), x, 62, 94, "chair_conference")
+    end
+    for _, x in ipairs({70, 100, 130}) do
       s.putS("Seats", P.chair("#4A4D55", "#6A6E78", "#35373E"), x, 58 + 22, 98, "chair_conference")
     end
+    s.putS("Water", P.waterTable(), 36, 78, 108, "water_table")
+    s.putS("Flip", P.flipChart(), 160, 50, 101, "flip_chart")
+    s.putS("Plant", P.floorPlant(), 222, 74, 101, "plant_floor")
+    s.putS("Lectern", P.lectern(), 192, 81, 119, "lectern")
+    if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
+  end}
+
+  -- -------- SALON B: the sunroom workshop (sage green walls, wooden floor, a window, a coffee station, a low presenter table).
+  builders.breakout_b = {W = 240, H = 128, post = function(set) darkCeiling(set, 1.1, {1.15, 1.1, 0.9}) end, fn = function(s)
+    s.layer("Ceiling")
+    roomWall(s, 240, {base = "#CFDDBE", stripe = "#C6D6B4", crown = "#5E7A4E", railHi = "#E8D8A8", wains = "#8A5E3A", planks = "#6E4A2C"})
+    woodFloor(s, "#9A6A3E", "#7A5230", "#B58452")
+    roomPlate(s, "SALON B", 34, "#5E7A4E", "#FFFFFF")
+    s.put("Doors", P.hallDoor("EXIT"), 4, 18)
+    s.put("Window", P.bigWindow(50, 50), 82, 14)
+    s.put("Screen", P.roomScreen("b", 100, 56), 136, 6)
+    s.put("Clock", P.clock(), 70, 20)
+    for _, x in ipairs({80, 108}) do
+      s.putS("BackRow", P.chair("#8A5E3A", "#B08050", "#6A4426"), x, 62, 94, "chair_wood")
+    end
+    for _, x in ipairs({62, 90, 118}) do
+      s.putS("Seats", P.chair("#8A5E3A", "#B08050", "#6A4426"), x, 58 + 22, 98, "chair_wood")
+    end
+    s.putS("Coffee", P.coffeeStation(), 22, 62, 100, "coffee_station")
+    s.putS("Table", P.presenterTable(60, "#2E6A5A", "#F2C94C"), 148, 65, 100, "presenter_table")
+    s.putS("Plant", P.floorPlant(), 222, 74, 101, "plant_floor")
+    if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
+  end}
+
+  -- -------- SALON C: the panel room (navy and gold, dim, spotlights on a rug with bar stools and a side table).
+  builders.breakout_c = {W = 240, H = 128, post = function(set) darkCeiling(set, 0.45, {0.95, 1.0, 1.25}) end, fn = function(s)
+    s.layer("Ceiling")
+    roomWall(s, 240, {base = "#2E3A5C", stripe = "#33416A", crown = "#C8A83C", crownHi = "#F2D878", railHi = "#C8A83C", wains = "#1E2640", panels = "#252E4E"})
+    resortCarpet(s, "#2A2F4E", "#1E2238", "#C8A83C", "#8A3040")
+    -- the rug the panel sits on, and two light beams from the ceiling
+    local floor = s.layer("Floor")
+    F(floor, 134, 98, 100, 26, "#6A1624"); F(floor, 135, 99, 98, 24, "#8A2434"); F(floor, 138, 102, 92, 18, "#6A1624")
+    for x = 140, 226, 6 do F(floor, x, 105, 2, 12, "#C8A83C") end
+    local wall = s.layer("Wall")
+    for _, bx in ipairs({152, 196}) do
+      for y = 4, 83 do
+        local half = 4 + (y - 4) * 12 // 80
+        F(wall, bx - half, y, half * 2, 1, ((y + bx) % 2 == 0) and "#3A4870" or "#364368")
+      end
+    end
+    roomPlate(s, "SALON C", 34, "#C8A83C", "#1E2640")
+    s.put("Doors", P.hallDoor("EXIT"), 4, 18)
+    s.put("Drape", P.velvetDrape(18, 78), 76, 6); s.put("Drape", P.velvetDrape(18, 78), 100, 6)
+    s.put("Screen", P.roomScreen("c", 96, 44), 128, 10)
+    s.put("Sconce", P.sconce(), 70, 30)
+    s.put("Chandelier", P.chandelier(), 30, -26)
+    for _, x in ipairs({50, 82, 114}) do
+      s.putS("BackRow", P.chair("#8A2434", "#B03A4C", "#5E1622"), x + 16, 62, 94, "chair_velvet")
+      s.putS("Seats", P.chair("#8A2434", "#B03A4C", "#5E1622"), x, 58 + 22, 98, "chair_velvet")
+    end
+    s.putS("StoolA", P.barStool("#3A3F4A"), 146, 70, 100, "stool_panel")
+    s.putS("StoolB", P.barStool("#3A3F4A"), 166, 70, 100, "stool_panel")
+    s.putS("Side", P.sideTable(), 214, 70, 100, "side_table")
+    s.putS("Plant", P.floorPlant(), 224, 70, 99, "plant_floor")
+    if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
+  end}
+
+  -- -------- SALON D: the training lab (cool grey walls, grey carpet tile, bright light, lab tables, a whiteboard, nothing in front of the speaker).
+  builders.breakout_d = {W = 240, H = 128, post = function(set) darkCeiling(set, 1.12, {0.95, 1.05, 1.18}) end, fn = function(s)
+    s.layer("Ceiling")
+    roomWall(s, 240, {base = "#DDE4EA", crown = "#2E7A8E", crownHi = "#BFE4F8", railHi = "#FFFFFF", wains = "#BFC9D2", panels = "#CCD5DC"})
+    tileCarpet(s, "#6E7680", "#5A626C", "#808892")
+    roomPlate(s, "SALON D", 34, "#2E7A8E", "#FFFFFF")
+    s.put("Doors", P.hallDoor("EXIT"), 4, 18)
+    s.put("Screen", P.roomScreen("d", 104, 46), 128, 12)
+    s.put("Wifi", P.wifiSign(), 72, 26)
+    s.put("Clock", P.clock(), 112, 18)
+    s.putS("Lab1", P.labTable(), 44, 58, 92, "lab_table")
+    s.putS("Lab2", P.labTable(), 114, 58, 92, "lab_table")
+    for _, x in ipairs({76, 106, 136}) do
+      s.putS("Seats", P.chair("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 58 + 22, 98, "chair_blue")
+    end
+    s.putS("Plant", P.floorPlant(), 6, 74, 101, "plant_floor")
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
   end}
 

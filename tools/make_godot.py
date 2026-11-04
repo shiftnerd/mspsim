@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky"]
@@ -121,19 +121,31 @@ SETS = {
         spawns={"start": (150, "right"), "from_lobby": (34, "right"), "from_a": (49, "right"),
                 "from_b": (119, "right"), "from_c": (189, "right"), "from_d": (259, "right")},
         doors=[("ToLobby", 17, "resort_lobby", "from_hall", ""),
-               ("RoomA", 49, "breakout_room", "from_hall", "conf_door=from_a"),
-               ("RoomB", 119, "breakout_room", "from_hall", "conf_door=from_b"),
-               ("RoomC", 189, "breakout_room", "from_hall", "conf_door=from_c"),
-               ("RoomD", 259, "breakout_room", "from_hall", "conf_door=from_d")],
+               ("RoomA", 49, "breakout_a", "from_hall", "conf_door=from_a"),
+               ("RoomB", 119, "breakout_b", "from_hall", "conf_door=from_b"),
+               ("RoomC", 189, "breakout_c", "from_hall", "conf_door=from_c"),
+               ("RoomD", 259, "breakout_d", "from_hall", "conf_door=from_d")],
         exits=[], seats=[]),
     "ballroom": dict(node="Ballroom", W=320,
         spawns={"start": (150, "right"), "from_lobby": (270, "left")},
         doors=[("ToLobby", 305, "resort_lobby", "from_ballroom", "")],
         exits=[], seats=[(77, 95, False), (117, 95, False), (157, 95, False), (197, 95, False)]),
-    "breakout_room": dict(node="BreakoutRoom", W=240,
+    "breakout_a": dict(node="BreakoutA", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(79, 99, False), (119, 99, False), (159, 99, False)]),
+        exits=[], seats=[(79, 99, False), (109, 99, False), (139, 99, False)]),
+    "breakout_b": dict(node="BreakoutB", W=240,
+        spawns={"start": (80, "right"), "from_hall": (40, "right")},
+        doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
+        exits=[], seats=[(71, 99, False), (99, 99, False), (127, 99, False)]),
+    "breakout_c": dict(node="BreakoutC", W=240,
+        spawns={"start": (80, "right"), "from_hall": (40, "right")},
+        doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
+        exits=[], seats=[(59, 99, False), (91, 99, False), (123, 99, False)]),
+    "breakout_d": dict(node="BreakoutD", W=240,
+        spawns={"start": (80, "right"), "from_hall": (40, "right")},
+        doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
+        exits=[], seats=[(85, 99, False), (115, 99, False), (145, 99, False)]),
     "vendor_hall": dict(node="VendorHall", W=320,
         spawns={"start": (150, "right"), "from_hall": (290, "left"), "from_booth": (150, "right")},
         doors=[("ToLobby", 303, "resort_lobby", "from_expo", "")],
@@ -827,7 +839,7 @@ func _ready() -> void:
     _room = owner.scene_file_path.get_file().get_basename() if owner != null else ""
     if kind == "monitor":
         style = "computer"
-    if kind in ["monitor", "tv", "fridge", "lyrics", "keypad", "ledtimer", "redlight", "sports_tv", "bowl_score", "bench_screen", "tree_lights"] or kind.begins_with("neon"):
+    if kind in ["monitor", "tv", "fridge", "lyrics", "keypad", "ledtimer", "redlight", "sports_tv", "bowl_score", "bench_screen", "tree_lights", "session_screen"] or kind.begins_with("neon"):
         add_to_group("emissive")  # screens and the open fridge keep glowing when the lights are out
     if kind == "bell":
         add_to_group("bells")
@@ -998,6 +1010,8 @@ func _draw() -> void:
             _draw_lamp()
         "session_sign":
             _draw_session_sign()
+        "session_screen":
+            _draw_session_screen()
         "bell":
             _draw_bell()
         "rubber_duck":
@@ -1425,6 +1439,36 @@ func _draw_session_sign() -> void:
     for line in lines:
         PixelFont.draw(self, str(line), Vector2(2.0, y), Color("14566e"), 1)
         y += 6.0
+
+
+# the screen of a breakout room (SALON A to D) shows the session of that door: round and time, the title, the speaker
+func _draw_session_screen() -> void:
+    var letter := _room.right(1)
+    var st := _screen_style(letter)
+    var info: Dictionary = Expo.room_info("abcd".find(letter), int(st.chars))
+    if info.is_empty():
+        return
+    PixelFont.draw(self, "ROUND %d  %s" % [int(info.round), str(info.time)], Vector2(2, 1), st.head, 1)
+    var lines: Array = info.title
+    var y := 9.0
+    for i in mini(lines.size(), int(st.lines)):
+        PixelFont.draw(self, str(lines[i]), Vector2(2, y), st.title, 1)
+        y += 6.0
+    var who: Array = info.speaker
+    PixelFont.draw(self, str(who[0]), Vector2(2, float(st.h) - 12.0), st.who, 1)
+    PixelFont.draw(self, str(who[1]), Vector2(2, float(st.h) - 6.0), st.head, 1)
+
+
+# text area, letters per line, title lines and colours of each room's screen (blue wall screen, white pull-down, gold display, whiteboard)
+func _screen_style(letter: String) -> Dictionary:
+    match letter:
+        "b":
+            return {"h": 44, "chars": 24, "lines": 3, "head": Color("6a6f7a"), "title": Color("14566e"), "who": Color("8a2434")}
+        "c":
+            return {"h": 40, "chars": 23, "lines": 3, "head": Color("8a93a8"), "title": Color("f2d878"), "who": Color("ffffff")}
+        "d":
+            return {"h": 36, "chars": 25, "lines": 2, "head": Color("6a6f7a"), "title": Color("2a4fb8"), "who": Color("c03030")}
+    return {"h": 40, "chars": 22, "lines": 3, "head": Color("bfe4f8"), "title": Color("ffffff"), "who": Color("f2c94c")}
 
 
 func _draw_lamp() -> void:
@@ -36011,9 +36055,30 @@ const CHATS := [
         ],
     },
 ]
+# who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
+const SPEAKERS := {
+    "ps101": ["GARY NOVAK", "LABRAT TRAINING"],
+    "ps201": ["GARY NOVAK", "LABRAT TRAINING"],
+    "monitor": ["RAJ PATEL", "BRIGHTLINE IT"],
+    "patch": ["LINDA CHO", "UPTIME PARTNERS"],
+    "oml": ["HAL BRENNER", "DESK COACH LLC"],
+    "docs": ["PAM OKAFOR", "RUNBOOK CO"],
+    "macs": ["TED LOWRY", "ODD MACHINE IT"],
+    "security": ["DEE MARCHETTI", "WEBWOOT SECURITY"],
+    "bdr": ["BRAD LUND", "SHADOWPOINT BACKUP"],
+    "panel": ["FOUR MSP OWNERS", "MODERATED PANEL"],
+    "hipaa": ["RUTH ANSELM", "HEALTHSAFE IT LAW"],
+    "managed": ["STU KAPLAN", "TWO MAN MSP FOUNDER"],
+    "spam": ["IVAN ROSE", "MAILGUARD"],
+    "virt": ["CARL WEBB", "BOXES AND BYTES"],
+    "hood": ["LABRAT ENGINEERS", "PRODUCT TEAM"],
+    "stay": ["FOUR TECHS", "FROM OTHER MSPS"],
+    "qbr": ["NINA FLORES", "CLIENT FIRST IT"],
+    "ransom": ["OMAR SAYED", "DISASTER DRILL"],
+}
 const CROWD := {
     "resort_lobby": [
-        {"who": "client_dentrec_b", "role": "checkin", "x": 100, "facing": "right", "routine": ["wait:6", "say:2"]},
+        {"who": "expo_regdesk", "role": "checkin", "x": 100, "facing": "right", "routine": ["wait:6", "say:2"]},
         {"who": "expo_atta", "role": "att:0", "x": 215, "facing": "left", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_priya", "role": "att:1", "x": 243, "facing": "right", "routine": ["talk:5", "wait:3"]},
     ],
@@ -36026,16 +36091,32 @@ const CROWD := {
         {"who": "expo_attb", "role": "att:4", "x": 157, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
         {"who": "expo_tina", "role": "att:3", "x": 230, "facing": "left", "routine": ["wait:6", "say:2"]},
     ],
-    "breakout_room": [
+    "breakout_a": [
+        {"who": "expo_vendj", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 79, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
-        {"who": "expo_priya", "role": "att:1", "x": 159, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_priya", "role": "att:1", "x": 139, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+    ],
+    "breakout_b": [
+        {"who": "expo_dee", "role": "speaker", "x": 214, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_attb", "role": "att:4", "x": 71, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
+        {"who": "expo_atta", "role": "att:0", "x": 127, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+    ],
+    "breakout_c": [
+        {"who": "expo_vendp", "role": "speaker", "x": 192, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_tina", "role": "att:3", "x": 91, "facing": "right", "seat": "Seat2", "routine": ["wait:8"]},
+        {"who": "expo_attc", "role": "att:5", "x": 123, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+    ],
+    "breakout_d": [
+        {"who": "expo_vendg", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_priya", "role": "att:1", "x": 85, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
+        {"who": "expo_atta", "role": "att:0", "x": 145, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
     ],
     "vendor_hall": [
         {"who": "expo_vendg", "role": "vendor:backup", "x": 159, "facing": "right", "routine": ["wait:5", "say:2"]},
         {"who": "expo_dee", "role": "vendor:webwoot", "x": 71, "facing": "right", "routine": ["wait:4", "say:2"]},
         {"who": "expo_vendo", "role": "vendor:psa", "x": 272, "facing": "right", "routine": ["wait:6", "say:2"]},
         {"who": "expo_attb", "role": "att:4", "x": 150, "facing": "right", "routine": ["walk:100", "wait:3", "walk:270", "wait:3"]},
-        {"who": "expo_attc", "role": "att:5", "x": 280, "facing": "left", "routine": ["wait:5", "talk:3"]},
+        {"who": "expo_attc", "role": "att:5", "x": 238, "facing": "left", "routine": ["wait:5", "talk:3"]},
     ],
 }
 
@@ -36061,6 +36142,7 @@ var _met := {}
 var _booths := {}
 var _talked := {}
 var _sign_cache := {}
+var _shown := {}  # the session on the screen of the breakout room you are in (kept until you leave)
 
 
 func _ready() -> void:
@@ -36089,6 +36171,7 @@ func reset() -> void:
     _met = {}
     _booths = {}
     _talked = {}
+    _shown = {}
 
 
 func to_dict() -> Dictionary:
@@ -36250,6 +36333,8 @@ func _trip_tick() -> void:
         Game.vars["conf_booth"] = ""
         _hall_answer(booth)
         return
+    if not scene.begins_with("breakout_"):
+        _shown = {}
     if scene == _seen:
         return
     _seen = scene
@@ -36262,7 +36347,7 @@ func _trip_tick() -> void:
                 else:
                     Cards.ask("Usher", str(TEXT.usher), [{"label": "BACK TO REGISTRATION", "id": "back"}], func(_id: String) -> void: Game.go("resort_lobby", "from_ballroom"))
         "round":
-            if scene == "breakout_room":
+            if scene.begins_with("breakout_"):
                 _enter_breakout()
         "raffle":
             if scene == "ballroom":
@@ -36309,7 +36394,52 @@ func _enter_breakout() -> void:
     var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
     var sessions: Array = menu(rnd)
     var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
+    _shown = {"door": idx, "round": rnd, "id": str(found.id)}
     _session(rnd, str(found.id))
+
+
+# the session on the screen of breakout room `door` (0 = A to 3 = D): the one you walked in on, else the round that is on now
+func session_at(door: int) -> Dictionary:
+    if not _shown.is_empty() and int(_shown.door) == door:
+        return _shown
+    var r := clampi(rnd, 0, ROUNDS.size() - 1)
+    var sessions: Array = menu(r)
+    var s: Dictionary = sessions[mini(door, sessions.size() - 1)]
+    return {"door": door, "round": r, "id": str(s.id)}
+
+
+# what the room's screen and sign show: round, time, the title wrapped to `chars` letters, the speaker (name, company)
+func room_info(door: int, chars := 22) -> Dictionary:
+    var at := session_at(door)
+    var found := {}
+    for s in pool(int(at.round)):
+        if str(s.id) == str(at.id):
+            found = s
+    if found.is_empty():
+        return {}
+    var clock := float(CLOCKS[int(at.round)])
+    var hour := int(clock)
+    var minutes := int((clock - float(hour)) * 60.0)
+    return {
+        "id": str(at.id),
+        "round": int(at.round) + 1,
+        "time": "%d:%02d %s" % [hour if hour <= 12 else hour - 12, minutes, "AM" if hour < 12 else "PM"],
+        "title": _wrap(str(found.get("short", found.label)), chars),
+        "speaker": SPEAKERS.get(str(at.id), ["GUEST SPEAKER", "RODENT NATION"]),
+    }
+
+
+func _wrap(text: String, limit: int) -> Array:
+    var lines := []
+    var cur := ""
+    for w in text.split(" "):
+        if cur != "" and cur.length() + 1 + str(w).length() > limit:
+            lines.append(cur)
+            cur = str(w)
+        else:
+            cur = (cur + " " + str(w)).strip_edges()
+    lines.append(cur)
+    return lines
 
 
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
@@ -36317,17 +36447,7 @@ func sign_lines(door: int) -> Array:
     if away and _stage == "round" and rnd < ROUNDS.size():
         var sessions: Array = menu(rnd)
         if door < sessions.size():
-            var words := str(sessions[door].get("short", sessions[door].label)).split(" ")
-            var lines := []
-            var cur := ""
-            for w in words:
-                if cur != "" and cur.length() + 1 + str(w).length() > 9:
-                    lines.append(cur)
-                    cur = str(w)
-                else:
-                    cur = (cur + " " + str(w)).strip_edges()
-            lines.append(cur)
-            return lines
+            return _wrap(str(sessions[door].get("short", sessions[door].label)), 9)
     return []
 
 
@@ -36506,6 +36626,8 @@ func npc_use(npc: Node, _body: Node) -> void:
         Cards.ask("Morgan (Manager)" if who == "morgan" else "Marge (Bookkeeper)", str(TEXT.get("boss_" + who, "Thanks for coming.")), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
     elif role == "checkin":
         _checkin()
+    elif role == "speaker":
+        Hints.toast("SHH. THE SPEAKER IS MID-SENTENCE. TAKE A SEAT.", 3.0)
     elif role == "site:owner":
         Onsite.interact("owner")
     elif role.begins_with("site:"):
@@ -42352,7 +42474,7 @@ func _unhandled_input(event: InputEvent) -> void:
             Game.go("escape_room" if event.shift_pressed else "bowling_alley", "start")
             return
         if event.keycode == KEY_F12 and event.ctrl_pressed:
-            var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_room", "vendor_hall"]
+            var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_a", "breakout_b", "breakout_c", "breakout_d", "vendor_hall"]
             var here := get_tree().current_scene.scene_file_path.get_file().get_basename()
             Game.go(venue[(venue.find(here) + 1) % venue.size()], "start")
             return
@@ -42958,6 +43080,11 @@ AMBIENT = {
     "bathroom_1": [("BarLight", "flicker_lamp", 75, 24)],
     "resort_hall": [("Sign0", "session_sign", 66, 57), ("Sign1", "session_sign", 136, 57), ("Sign2", "session_sign", 206, 57),
                     ("Sign3", "session_sign", 276, 57)],
+    # the screen of each breakout room (SALON A to D) is written by the session of that door (fx session_screen, Expo.room_info)
+    "breakout_a": [("Screen", "session_screen", 136, 10)],
+    "breakout_b": [("Screen", "session_screen", 138, 13)],
+    "breakout_c": [("Screen", "session_screen", 130, 12)],
+    "breakout_d": [("Screen", "session_screen", 130, 14)],
     "bowling_alley": [("NeonBowl", "neon_bowl", 176, 6), ("NeonShoes", "neon_shoes", 22, 6), ("Lanes", "bowl_lane", 0, 0),
                       ("Scores", "bowl_score", 108, 8)],
     "karaoke_bar": [("NeonKaraoke", "neon_karaoke", 12, 4), ("Lyrics", "lyrics", 208, 28), ("Disco", "discoball", 145, -4)],
