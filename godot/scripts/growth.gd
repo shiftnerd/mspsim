@@ -12,6 +12,7 @@ extends Node
 # Owner campaign: you choose who is developed. Hard escalations land on the owner's desk (the only
 # Tier 3): a weekly pool of OWNER HOURS that escalations eat; when it runs dry, sales and marketing suffer.
 
+const Incident := preload("res://scripts/incident.gd")  # R37: a runbook from a review makes fixes safer
 const SKILLS := ["servers", "security", "networking", "powershell"]
 const OWNER_HOURS := 40.0
 const ADMIN_HOURS := 12.0
@@ -112,13 +113,13 @@ func gaps() -> Array:
 # fixes get safer in the skill you are growing
 func fail_adjust(action: String) -> float:
 	if not Campaign.active or Campaign.mode != "tech" or focus == "" or progress <= 0.0:
-		return 0.0
+		return Incident.fix_bonus()
 	var matches: bool = (
 		str(Skills.FIX_XP.get(action, "")) == focus
 		or focus == "powershell"
 		or focus == "networking"
 	)
-	return -(0.08 if matches else 0.02) * progress / 100.0
+	return -(0.08 if matches else 0.02) * progress / 100.0 + Incident.fix_bonus()
 
 
 func status_line() -> String:

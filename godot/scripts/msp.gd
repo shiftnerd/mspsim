@@ -14,6 +14,7 @@ signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): tickets opened, closed and missed per day
+const Incident := preload("res://scripts/incident.gd")  # R37: review lessons change the odds
 const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
 	{
@@ -1204,7 +1205,7 @@ func new_day(day: int) -> void:
 		var b: Dictionary = backups[c]
 		if not b.ok:
 			continue
-		if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < 0.08 and Campaign.active:
+		if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < Incident.backup_fail_chance() and Campaign.active:
 			b.ok = false
 			b.good_day = day - 1
 		else:
@@ -1582,7 +1583,7 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
-	var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload())
+	var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
 	return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
 
 

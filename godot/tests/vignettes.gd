@@ -22,8 +22,8 @@ func _init() -> void:
 		for ev in story.DAYS[d]:
 			if str(ev.get("kind", "")) == "vignette":
 				scheduled[str(ev.id)] = d
-	_check(scheduled.size() == 7, "seven vignettes are on the calendar")
-	_check(story.VIGNETTES.size() == 24, "the vignette deck has 24 cards")
+	_check(scheduled.size() == 8, "eight vignettes are on the calendar")
+	_check(story.VIGNETTES.size() == 25, "the vignette deck has 25 cards")
 	var drawn := 0
 	for id in story.VIGNETTES:
 		if story.VIGNETTES[id].has("min_day"):

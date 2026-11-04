@@ -216,7 +216,7 @@ for _t, _label in SITE_TYPES.items():
 # DEFAULT_<NAME> and a mutable copy `var <NAME> = DEFAULT_<NAME>.duplicate(true)` right after it, so that the
 # Strings autoload can replace text from story/strings.txt. Nothing else in the code changes.
 PATCHABLE = {
-    "scripts/story.gd": ["DAYS", "VIGNETTES"], "scripts/playbook.gd": ["BOOKS", "PROBLEMS"], "scripts/owner.gd": ["CARDS"],
+    "scripts/story.gd": ["DAYS", "VIGNETTES", "POSTMORTEMS"], "scripts/playbook.gd": ["BOOKS", "PROBLEMS"], "scripts/owner.gd": ["CARDS"],
     "scripts/msp.gd": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
     "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
@@ -5088,6 +5088,7 @@ signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): tickets opened, closed and missed per day
+const Incident := preload("res://scripts/incident.gd")  # R37: review lessons change the odds
 const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
     {"name": "Acme Dental Group", "short": "ACME", "contact": "Dr. Patel", "mail": "patel@acmedental.example"},
@@ -6089,7 +6090,7 @@ func new_day(day: int) -> void:
         var b: Dictionary = backups[c]
         if not b.ok:
             continue
-        if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < 0.08 and Campaign.active:
+        if day >= 2 and c != Story.RANSOM_CLIENT and Difficulty.rng("msp.tickets").randf() < Incident.backup_fail_chance() and Campaign.active:
             b.ok = false
             b.good_day = day - 1
         else:
@@ -6434,7 +6435,7 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
-    var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload())
+    var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
     return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
 
 
@@ -14259,6 +14260,261 @@ write("scripts/story.gd", '''extends Node
 
 const RANSOM_CLIENT := 3  # Hoot and Holler Law
 const MANAGER := "Morgan Reyes - Manager"
+const Incident := preload("res://scripts/incident.gd")  # R37: Morgan's post-incident reviews
+const POSTMORTEMS := {
+    "ransom":
+    {
+        "title": "RANSOMWARE REVIEW",
+        "skill": "security",
+        "intro":
+        "{me}, got half an hour? Before the ransomware week turns into a story we tell badly, let us write down what happened: the timeline, the real cause, what we change. It is blameless, we look at the process and not at a person. Or we can skip it.",
+        "go": "SIT DOWN WITH MORGAN",
+        "skip": "SKIP IT, TOO BUSY",
+        "skipped": "Morgan nods and puts the marker back. 'We will see how it goes,' she says. It sounds like she thinks it will happen again.",
+        "cause_q": "Morgan draws a timeline on the whiteboard. The files were encrypted at 10:30. The backup alert was in the queue for two days. What was the root cause?",
+        "causes":
+        [
+            {
+                "id": "backups",
+                "label": "THE BACKUP ALERT SAT UNREAD AND NOBODY TESTED A RESTORE",
+                "right": true,
+                "note": "Morgan nods. The alert was real and the process had no owner. That is a system problem we can fix."
+            },
+            {
+                "id": "person",
+                "label": "THE STAFF CLICKED A BAD ATTACHMENT",
+                "right": false,
+                "note": "Morgan frowns. People click things. A process that needs everyone to be perfect is the problem. We do not put names on the board."
+            },
+            {
+                "id": "luck",
+                "label": "BAD LUCK, IT HAPPENS TO EVERYONE",
+                "right": false,
+                "note": "Morgan sighs. Luck was part of it, but luck is not an action item."
+            },
+        ],
+        "items_q": "Pick the first thing we change. Small and real beats big and never.",
+        "more_q": "Good. One more, or is that enough for now?",
+        "enough": "THAT IS ENOUGH FOR NOW",
+        "items":
+        [
+            {
+                "id": "backup_verify",
+                "eff": "backups",
+                "label": "A WEEKLY RESTORE TEST FOR EVERY BACKUP",
+                "note": "Every Friday a tech restores one real file from each client and signs the sheet."
+            },
+            {
+                "id": "runbook",
+                "eff": "fixes",
+                "label": "A ONE PAGE RANSOMWARE RUNBOOK",
+                "note": "Isolate the machine, do not pay yet, check the backup, call the client. It goes in the vault."
+            },
+            {
+                "id": "patch_policy",
+                "eff": "pace",
+                "label": "A PATCH POLICY: SECOND TUESDAY, NO EXCEPTIONS",
+                "note": "Updates go out on a schedule instead of whenever someone remembers."
+            },
+            {
+                "id": "drill",
+                "eff": "xp",
+                "label": "A FIRE DRILL: CUT A MACHINE OFF THE NETWORK",
+                "note": "You time it. Four minutes the first run, ninety seconds the second."
+            },
+        ],
+        "done": "Morgan photographs the whiteboard and mails the list to the owners. It is short on purpose, and it has names next to every line, for next time."
+    },
+    "rack":
+    {
+        "title": "RACK REVIEW",
+        "skill": "networking",
+        "intro":
+        "{me}, the fallen rack at Gnarly Gnomes is already a lunch story. It is also a pattern: plywood walls, no labels, no photos. Fifteen minutes, blameless, and we write it down. Or we skip it.",
+        "go": "SIT DOWN WITH MORGAN",
+        "skip": "SKIP IT, TOO BUSY",
+        "skipped": "Morgan shrugs. 'The next wall is plywood too,' she says. 'I just hope someone tells me before it moves.'",
+        "cause_q": "Morgan pulls up the photos you took. A rack bolted to plywood with drywall anchors, a fan in the closet and thirty unlabeled cables. What was the root cause?",
+        "causes":
+        [
+            {
+                "id": "mount",
+                "label": "NOBODY CHECKS THE WALL OR THE LABELS WHEN WE INSTALL A RACK",
+                "right": true,
+                "note": "Morgan nods. We have no site checklist, so a good install and a bad one look the same on the invoice."
+            },
+            {
+                "id": "person",
+                "label": "WHOEVER INSTALLED IT THE FIRST TIME DID A BAD JOB",
+                "right": false,
+                "note": "Morgan shakes her head. We do not know who, and we do not need to. The question is why our process let it pass."
+            },
+            {
+                "id": "client",
+                "label": "THE CLIENT HUNG IT THERE, IT IS THEIR PROBLEM",
+                "right": false,
+                "note": "Morgan raises an eyebrow. It is their wall. It is also our rack in our report."
+            },
+        ],
+        "items_q": "What do we change? Pick the first.",
+        "more_q": "Good. One more, or is that enough for now?",
+        "enough": "THAT IS ENOUGH FOR NOW",
+        "items":
+        [
+            {
+                "id": "cable_labels",
+                "eff": "fixes",
+                "label": "LABEL CABLES AND PHOTOGRAPH EVERY RACK ON INSTALL",
+                "note": "A photo and a label now means the next tech does not have to guess."
+            },
+            {
+                "id": "anchor_check",
+                "eff": "pace",
+                "label": "ADD A WALL AND RACK CHECK TO EVERY SITE VISIT",
+                "note": "It takes two minutes and it catches the quiet problems before they fall off a wall."
+            },
+            {
+                "id": "spares",
+                "eff": "calm",
+                "label": "KEEP A SPARE SWITCH AND CABLES IN THE VAN",
+                "note": "The team likes this one. Nobody wants to explain a missing part to an angry client."
+            },
+            {
+                "id": "site_walk",
+                "eff": "xp",
+                "label": "WALK EVERY CLIENT CLOSET WITH A CHECKLIST",
+                "note": "You learn more in a day of closets than from a week of tickets."
+            },
+        ],
+        "done": "Morgan prints the checklist and pins it above the van keys."
+    },
+    "email":
+    {
+        "title": "EMAIL OUTAGE REVIEW",
+        "skill": "servers",
+        "intro":
+        "{me}, the brewery night ran past midnight, and the only thing worse than a long night is a long night we learn nothing from. Blameless review, twenty minutes, one page. Or we skip it.",
+        "go": "SIT DOWN WITH MORGAN",
+        "skip": "SKIP IT, TOO TIRED",
+        "skipped": "Morgan nods slowly. 'Get some sleep,' she says. 'We will talk about it when it happens again.'",
+        "cause_q": "Morgan reads the timeline. The log drive filled up, the mail database dismounted and the brewery heard nothing from us for an hour. What was the root cause?",
+        "causes":
+        [
+            {
+                "id": "disk",
+                "label": "NOBODY WAS WATCHING THE LOG DRIVE, AND NOBODY TOLD THE CLIENT",
+                "right": true,
+                "note": "Morgan nods. No alert on a disk filling up, and no habit of telling the client what we know. Both are fixable."
+            },
+            {
+                "id": "person",
+                "label": "WHOEVER SET UP THE SERVER LEFT THE LOGS ON",
+                "right": false,
+                "note": "Morgan frowns. That is a person, and it was years ago. We do not write that on the board."
+            },
+            {
+                "id": "vendor",
+                "label": "THE SOFTWARE VENDOR SHOULD HAVE WARNED US",
+                "right": false,
+                "note": "Morgan taps the pen. Maybe. We cannot change them, though. We can change what we watch."
+            },
+        ],
+        "items_q": "What do we change? Pick the first.",
+        "more_q": "Good. One more, or is that enough for now?",
+        "enough": "THAT IS ENOUGH FOR NOW",
+        "items":
+        [
+            {
+                "id": "second_oncall",
+                "eff": "calm",
+                "label": "A SECOND PERSON ON CALL FOR 24x7 CLIENTS",
+                "note": "Nobody likes being the only one who can fix it at 2 a.m. The team notices that you asked."
+            },
+            {
+                "id": "status_template",
+                "eff": "fixes",
+                "label": "A STATUS MESSAGE EVERY 30 MINUTES DURING AN OUTAGE",
+                "note": "One line to the client: what we know, what we are doing, when you hear from us next."
+            },
+            {
+                "id": "disk_alerts",
+                "eff": "pace",
+                "label": "DISK AND MAIL QUEUE ALERTS ON EVERY SERVER",
+                "note": "The RMM can watch free space. It just was not set to."
+            },
+            {
+                "id": "vendor_contacts",
+                "eff": "xp",
+                "label": "A LIST OF VENDOR SUPPORT NUMBERS AND ACCOUNT PINS",
+                "note": "Half the night went on finding who to call. Now it is on one sheet."
+            },
+        ],
+        "done": "Morgan files the page where the next person will see it first."
+    },
+    "bec":
+    {
+        "title": "WIRE FRAUD REVIEW",
+        "skill": "security",
+        "intro":
+        "{me}, the fake wire request at Hoot and Holler could have gone very differently. Let us do a blameless review: how it got that far, which control would have stopped it, what we change for every client. Or we skip it.",
+        "go": "SIT DOWN WITH MORGAN",
+        "skip": "SKIP IT, TOO BUSY",
+        "skipped": "Morgan taps the desk. 'The next one will look the same,' she says. 'Different law firm, same email.'",
+        "cause_q": "Morgan lays the email next to a real one. Same wording, same amount, a lookalike domain, and a rule quietly forwarding the firm's mail. What was the root cause?",
+        "causes":
+        [
+            {
+                "id": "process",
+                "label": "ONE PERSON CAN MOVE MONEY ON AN EMAIL, AND NOBODY WATCHES THE MAILBOX RULES",
+                "right": true,
+                "note": "Morgan nods. A single email was enough to move money, and a hidden rule had been reading the firm's mail for days. Both are process, not people."
+            },
+            {
+                "id": "person",
+                "label": "THE PARALEGAL SHOULD HAVE KNOWN BETTER",
+                "right": false,
+                "note": "Morgan shakes her head. She is the one who called us. The system should not need her to be perfect."
+            },
+            {
+                "id": "filter",
+                "label": "THE SPAM FILTER MISSED IT",
+                "right": false,
+                "note": "Morgan taps the filter report. It was a clean message from a real mailbox. A filter was never going to catch it."
+            },
+        ],
+        "items_q": "What do we change? Pick the first.",
+        "more_q": "Good. One more, or is that enough for now?",
+        "enough": "THAT IS ENOUGH FOR NOW",
+        "items":
+        [
+            {
+                "id": "wire_check",
+                "eff": "check",
+                "label": "A SECOND-PERSON CHECK AND A CALL-BACK ON EVERY WIRE REQUEST",
+                "note": "Nobody moves money on an email alone. A second person calls the number we already had."
+            },
+            {
+                "id": "two_factor",
+                "eff": "check",
+                "label": "TWO-FACTOR LOGIN FOR EVERY MAILBOX THAT HANDLES MONEY",
+                "note": "A stolen password alone does not get you into the mailbox any more."
+            },
+            {
+                "id": "rules_audit",
+                "eff": "fixes",
+                "label": "A MONTHLY AUDIT OF MAILBOX FORWARDING RULES",
+                "note": "Ten minutes a client. The hidden rule would have shown up on the first check."
+            },
+            {
+                "id": "client_talk",
+                "eff": "mood",
+                "label": "A SHORT TALK FOR EACH CLIENT'S ACCOUNTING STAFF",
+                "note": "Clients like being told what to watch for. It feels like service, because it is."
+            },
+        ],
+        "done": "Morgan writes the owners a one page summary and says nothing about who was at fault. That is the point."
+    },
+}
 const VIGNETTES := {
     "iphone": {
         "speaker": "Karen Whitfield (Brightside Realty)",
@@ -14267,6 +14523,55 @@ const VIGNETTES := {
             {"id": "proper", "label": "SET IT UP PROPERLY, WITH A PASSCODE", "text": "Her mail works and she has a passcode now. She says you are a lifesaver. (+4 customer XP)", "fx": {"xp": ["people", 4], "mood": [1, 4], "hours": 0.3}},
             {"id": "all", "label": "SET IT UP AND MOVE HER CONTACTS TOO", "text": "It takes a while, but every client's number is on the new phone. She hugs you. A little. (+3 customer XP)", "fx": {"xp": ["people", 3], "mood": [1, 6], "hours": 0.6, "energy": -1}},
             {"id": "store", "label": "TELL HER TO CALL THE PHONE STORE", "text": "She sighs and says she will ask her nephew.", "fx": {"mood": [1, -3]}},
+        ],
+    },
+    "invoice":
+    {
+        "speaker": "Karen Whitfield (Brightside Realty)",
+        "text":
+        "Our landlord emailed new bank details for the rent and wants it wired today. The signature looks right, but the address is a little off. Should I just do it? I do not want to be late.",
+        "text_checked":
+        "The landlord emailed new bank details for the rent. Then I remembered Morgan's rule: a call-back before any bank change. I called the number on the lease and he never sent it! Thank you for the rule.",
+        "options":
+        [
+            {
+                "id": "call",
+                "label": "TELL HER TO CALL THE LANDLORD ON THE LEASE NUMBER",
+                "text":
+                "He never sent it. She is a little shaken and a lot grateful. (+4 security XP, reputation +1)",
+                "fx": {"xp": ["security", 4], "rep": 1, "mood": [1, 5], "hours": 0.2}
+            },
+            {
+                "id": "headers",
+                "label": "CHECK THE EMAIL HEADERS FOR HER",
+                "text":
+                "The sender is a lookalike domain. She does not pay and you tell her to call him anyway. (+6 security XP)",
+                "fx": {"xp": ["security", 6], "mood": [1, 3], "hours": 0.4}
+            },
+            {
+                "id": "late",
+                "label": "SAY IT IS PROBABLY FINE, PAY IT",
+                "text":
+                "She wires the rent. The real landlord calls on Friday asking where it is. Brightside is out the money and not happy. (reputation -2)",
+                "fx": {"rep": -2, "mood": [1, -8]}
+            },
+        ],
+        "options_checked":
+        [
+            {
+                "id": "ok",
+                "label": "SAY YOU ARE GLAD THE RULE WORKED",
+                "text":
+                "She tells everyone in the office. Two of them ask who set it up. (+4 security XP, reputation +1)",
+                "fx": {"xp": ["security", 4], "rep": 1, "mood": [1, 6]}
+            },
+            {
+                "id": "more",
+                "label": "OFFER A FIVE MINUTE TALK FOR HER WHOLE OFFICE",
+                "text":
+                "Nine people, one whiteboard, no jargon. The office manager asks for a copy of the checklist. (+6 security XP)",
+                "fx": {"xp": ["security", 6], "mood": [1, 8], "hours": 0.4}
+            },
         ],
     },
     "heartbleed": {
@@ -15169,11 +15474,12 @@ const DAYS := {
         {"at": 10.0, "kind": "playbook", "book": "rack",
          "text": "Gnarly Gnomes says their network rack fell off the wall. Everything is down. Go. Photos first!"},
     ],
-    11: [{"at": 10.0, "kind": "callback_install"}],
+    11: [{"at": 10.0, "kind": "callback_install"}, {"at": 11.0, "kind": "postmortem", "cls": "bec"}, {"at": 14.0, "kind": "postmortem", "cls": "rack"}],
     12: [
         {"at": 9.5, "kind": "playbook", "book": "migration",
          "text": "Brightside's server migration is today. Check the backups before you touch anything."},
         {"at": 11.0, "kind": "growth_block"},
+        {"at": 14.0, "kind": "postmortem", "cls": "ransom"},
         {"at": 15.5, "kind": "vignette", "id": "pizza"},
     ],
     13: [
@@ -15193,12 +15499,13 @@ const DAYS := {
     15: [
         {"at": 9.2, "kind": "mail", "from": MANAGER, "subject": "Pager again",
          "body": "You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"},
+        {"at": 10.5, "kind": "postmortem", "cls": "email"},
     ],
     16: [
         {"at": 9.5, "kind": "playbook", "book": "netinstall",
          "text": "Hoot and Holler's branch office network install is today. Do it right, they remember."},
     ],
-    17: [{"at": 11.0, "kind": "growth_block"}],
+    17: [{"at": 11.0, "kind": "growth_block"}, {"at": 14.0, "kind": "vignette", "id": "invoice"}],
     18: [
         {"at": 14.0, "kind": "growth_stretch"},
         {"at": 9.2, "kind": "mail", "from": MANAGER, "subject": "Reviews are coming",
@@ -15276,6 +15583,7 @@ func _process(_delta: float) -> void:
     if not _followed and World.clock >= 9.4:
         _followed = true
         _spawn_followups()
+        Incident.tech_morning()
 
 
 # trouble from sloppy jobs comes back the next morning
@@ -15313,6 +15621,8 @@ func fire(ev: Dictionary) -> void:
             Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
         "vignette":
             _vignette(str(ev.id))
+        "postmortem":
+            Incident.tech_start(str(ev.cls))
         "adobe":
             Msp.create_problem(int(ev.client), Msp.ADOBE, "email")
         "callback_install":
@@ -15344,13 +15654,24 @@ func _vignette(id: String) -> void:
     if v.is_empty():
         return
     var options := []
-    for o in v.options:
+    for o in _vopts(id, v):
         options.append({"label": str(o.label), "id": str(o.id)})
     Cards.ask(str(v.speaker), _vignette_text(id, v), options, func(pick: String) -> void: _vignette_answer(id, pick))
 
 
+# R37: after a wire fraud review that added a check, Brightside's bookkeeper calls back first
+func _checked(id: String) -> bool:
+    return id == "invoice" and bool(flags.get("pm_eff_check", false))
+
+
+func _vopts(id: String, v: Dictionary) -> Array:
+    return v.options_checked if _checked(id) else v.options
+
+
 # Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
 func _vignette_text(id: String, v: Dictionary) -> String:
+    if id == "invoice" and _checked(id):
+        return str(v.text_checked)
     if id == "donuts" and not bool(flags.get("bus_doc", false)):
         return str(v.get("text_reset" if bool(flags.get("bus_reset", false)) else "text_plain", v.text))
     return str(v.text)
@@ -15359,7 +15680,7 @@ func _vignette_text(id: String, v: Dictionary) -> String:
 func _vignette_answer(id: String, pick: String) -> void:
     var v: Dictionary = VIGNETTES[id]
     var text := ""
-    for o in v.options:
+    for o in _vopts(id, v):
         if str(o.id) == pick:
             text = str(o.text)
             _vignette_fx(o.get("fx", {}))
@@ -17165,6 +17486,7 @@ write("scripts/owner.gd", '''extends Node
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
+const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -17631,6 +17953,262 @@ const CARDS := {
             {"label": "FIGHT IT", "roll": [[0.5, {"rep": -3}, "The case is dismissed, but it cost you sleep."], [0.5, {"cash": -6000, "rep": -8}, "You lose. It costs $6,000 and your name."]]},
         ],
     },
+    "bec_scare":
+    {
+        "speaker": "{tech}",
+        "text":
+        "{me}, {client}'s bookkeeper just forwarded us an email that looks like it came from their owner: wire {amount} to a new account today, keep it quiet, no phone calls. She had a bad feeling and asked us first. It is a fake. Someone read their mail for days and copied the owner's style. This is hitting small offices all over the country, and every client of ours has the same hole.",
+        "options":
+        [
+            {
+                "label": "WARN EVERY CLIENT, START A CALL-BACK RULE ($350)",
+                "need": 350,
+                "fx": {"cash": -350, "bec": "policy"},
+                "text":
+                "A one page letter goes to every client: no payment and no bank change without a phone call to a number you already had. Two clients thank you. Their bookkeepers start calling back."
+            },
+            {
+                "label": "OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)",
+                "need": 250,
+                "fx": {"cash": -250, "bec": "filter"},
+                "text":
+                "Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
+            },
+            {
+                "label": "DO BOTH ($550)",
+                "need": 550,
+                "fx": {"cash": -550, "bec": "both"},
+                "text":
+                "The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books."
+            },
+            {
+                "label": "IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES",
+                "fx": {"bec": "ignore"},
+                "text": "You file it under lucky. The next one may not come with a bookkeeper who asks first."
+            },
+        ],
+    },
+    "bec_marge":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "{me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it.",
+        "options":
+        [
+            {
+                "label": "CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE",
+                "fx": {"bec": "self_check", "owner_hours": 1},
+                "text":
+                "The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had."
+            },
+            {
+                "label": "PAY IT, WE ARE LATE ALREADY",
+                "roll":
+                [
+                    [0.55, {"cash": -2400, "bec": "self_check"}, "It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down."],
+                    [0.45, {}, "It was real. The distributor changed banks. You got lucky and Marge knows it."]
+                ]
+            },
+            {
+                "label": "REPLY TO THE EMAIL AND ASK IF IT IS REAL",
+                "roll":
+                [
+                    [0.7, {"cash": -2400, "bec": "self_check"}, "The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone."],
+                    [0.3, {}, "The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out."]
+                ]
+            },
+        ],
+    },
+    "bec_loss":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "{me}, {client} wired {amount} to a scammer this week. An email 'from' their owner told accounting to pay a new account and it worked. Their mailbox had been watched for days. Their owner is on the phone with the bank and his first question is what IT was doing. What do we say?",
+        "options":
+        [
+            {
+                "label": "CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER",
+                "fx": {"bec": "credit"},
+                "text":
+                "Marge cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day."
+            },
+            {
+                "label": "LET OUR LAWYER ANSWER THEIR LETTER ($600)",
+                "need": 600,
+                "fx": {"cash": -600, "bec": "lawyer"}
+            },
+            {
+                "label": "ASK OUR INSURER",
+                "fx": {"bec": "claim"}
+            },
+            {
+                "label": "TELL THEM IT WAS THEIR OWN PROCESS",
+                "fx": {"bec": "blame"}
+            },
+        ],
+    },
+    "bec_lawyer_ok":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "Our lawyer reads the contract and the file. Email security is on the recommended list and payments are the client's own process. He writes a calm, short answer and points to the letter we sent. They drop the claim. The relationship is cooler, but it is alive.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_lawyer_bad":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "Our lawyer finds no written warning and no call-back rule on file. Their lawyer says we ran their mail and should have seen it. We settle for half the loss to keep this out of court. Word gets around the building.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_claim_ok":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "The broker comes back with good news: the funds transfer fraud rider covers a client who is tricked into sending money. We credit the client and the insurer pays most of it back after the deductible. The client sees you stand behind your work.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_claim_no":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "The insurer says our policy covers a breach of our own systems, not money a client sent to a criminal by choice. That is a crime policy question and we do not have the rider. We credit the client ourselves.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_blame_left":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "You tell their owner it was their process. He agrees quietly, then sends a termination letter for the end of the month. Two other firms in the building hear about it.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_blame_stay":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "You tell their owner it was their process. He goes quiet, then says they will stay for now. The tone of every email from them has changed.",
+        "options": [{"label": "OK", "fx": {}}],
+    },
+    "bec_rider":
+    {
+        "speaker": "Marge (Bookkeeper)",
+        "text":
+        "Our broker called about the wire fraud. A funds transfer fraud rider on the crime policy would cover a client who is tricked into sending money and blames us, up to $25,000 a claim. It is $30 a week. Without it we pay out of pocket every time.",
+        "options":
+        [
+            {
+                "label": "ADD THE RIDER ($30/WEEK)",
+                "fx": {"bec": "rider"},
+                "text": "Signed. The next claim will be a phone call, not a crisis."
+            },
+            {"label": "LEAVE THE POLICY AS IT IS", "fx": {}},
+        ],
+    },
+    "pm_ransom":
+    {
+        "speaker": "{tech}",
+        "text":
+        "{me}, CryptoLocker is behind us. Before the week eats it, the team wants an afternoon: what happened, the real cause, what we change. Nobody gets blamed, it is about the process. We can do it properly, or skip it.",
+        "options":
+        [
+            {
+                "label": "HOLD THE REVIEW AND WRITE THE RUNBOOK (HALF A DAY)",
+                "fx": {"pm": ["ransom", "runbook"], "owner_hours": 6, "burnout": -2, "social_all": 1},
+                "text":
+                "Four people, a whiteboard and an honest timeline. The backup alert sat unread for two days. The restore steps go on one page in the vault. Nobody was blamed, and everybody said so."
+            },
+            {
+                "label": "HOLD IT AND ADD A WEEKLY RESTORE TEST ($250 + $15/WEEK)",
+                "need": 250,
+                "fx": {"cash": -250, "weekly": 15, "pm": ["ransom", "check"], "owner_hours": 3, "social_all": 1},
+                "text":
+                "Every Friday someone restores one real file from each client and signs the sheet. It takes twenty minutes and it would have caught this."
+            },
+            {
+                "label": "SKIP IT, THE QUEUE IS FULL",
+                "fx": {"pm": ["ransom", "skip"], "burnout": 2, "social_all": -1},
+                "text": "The queue gets a little shorter. The whiteboard stays blank. Nobody says anything, which is its own answer."
+            },
+        ],
+    },
+    "pm_rack": {
+        "speaker": "{tech}",
+        "text":
+        "{me}, the fallen rack at Gnarly Gnomes is a story the team already tells at lunch. It is also a pattern: plywood walls, no labels, no photos. Do we write it down so the next one is boring?",
+        "options":
+        [
+            {
+                "label": "HOLD THE REVIEW AND START A SITE CHECKLIST (HALF A DAY)",
+                "fx": {"pm": ["rack", "runbook"], "owner_hours": 5, "social_all": 1},
+                "text":
+                "Every closet gets a photo, labelled cables and a look at the wall. The team finds two more racks in the same state. The checklist fits on one page."
+            },
+            {
+                "label": "HOLD IT AND BUY A SPARE SWITCH AND LABELS ($200)",
+                "need": 200,
+                "fx": {"cash": -200, "pm": ["rack", "check"], "owner_hours": 3, "social_all": 1},
+                "text":
+                "A spare switch and a roll of cable labels live in the van now. The next closet that fails is an hour, not an afternoon."
+            },
+            {
+                "label": "SKIP IT, THEY ARE BACK UP",
+                "fx": {"pm": ["rack", "skip"], "burnout": 2, "social_all": -1},
+                "text": "Gnarly Gnomes is up and happy. The next wall is still plywood."
+            },
+        ],
+    },
+    "pm_email": {
+        "speaker": "{tech}",
+        "text":
+        "{me}, the email night at the brewery ran past midnight. Before we all forget it, the team wants a short review: what broke, why nobody saw it coming and what we change. No blame, just the list.",
+        "options":
+        [
+            {
+                "label": "HOLD THE REVIEW AND WRITE A STATUS TEMPLATE (HALF A DAY)",
+                "fx": {"pm": ["email", "runbook"], "owner_hours": 5, "burnout": -2, "social_all": 1},
+                "text":
+                "A full log drive nobody watched, and a client who heard nothing for an hour. Now there is a disk alert and a one line status message every 30 minutes. Nobody was blamed."
+            },
+            {
+                "label": "HOLD IT AND PAY FOR SECOND-LEVEL ALERTS ($300 + $20/WEEK)",
+                "need": 300,
+                "fx": {"cash": -300, "weekly": 20, "pm": ["email", "check"], "owner_hours": 3, "social_all": 1},
+                "text":
+                "Mail disks and queues page a second person now, so a quiet failure does not sit until the phone rings."
+            },
+            {
+                "label": "SKIP IT, WE ARE TIRED",
+                "fx": {"pm": ["email", "skip"], "burnout": 2, "social_all": -1},
+                "text": "Everyone goes home. The disk is still the same size."
+            },
+        ],
+    },
+    "pm_bec": {
+        "speaker": "{tech}",
+        "text":
+        "{me}, the wire fraud at {client} cost them real money and us a lot of sleep. The team wants an hour: how it got through, which control would have stopped it, what we change. No blame for the bookkeeper, she did what the process allowed.",
+        "options":
+        [
+            {
+                "label": "HOLD THE REVIEW AND WRITE THE WIRE REQUEST CHECKLIST (HALF A DAY)",
+                "fx": {"pm": ["bec", "runbook"], "owner_hours": 5, "social_all": 1},
+                "text":
+                "The checklist is short: call back on a known number, a second person for any new account, a hold on anything marked urgent and secret. We offer it to every client as a one page handout."
+            },
+            {
+                "label": "HOLD IT AND MAKE TWO-FACTOR LOGIN STANDARD FOR EMAIL ($300)",
+                "need": 300,
+                "fx": {"cash": -300, "pm": ["bec", "check"], "owner_hours": 4, "social_all": 1},
+                "text":
+                "Two-factor login goes on every client mailbox that handles money, starting with the ones that were hit. A stolen password alone is not enough any more."
+            },
+            {
+                "label": "SKIP IT, THE CLIENT IS ALREADY HANDLED",
+                "fx": {"pm": ["bec", "skip"], "burnout": 2, "social_all": -1},
+                "text": "The client is handled. The process that let it through is not."
+            },
+        ],
+    },
 }
 const DAYS := {
     1: [{"at": 9.1, "card": "welcome"}, {"at": 9.6, "event": "owner_goal"}],
@@ -17643,11 +18221,11 @@ const DAYS := {
     8: [{"at": 9.5, "card": "license"}, {"at": 13.0, "card": "vic_plan"}, {"at": 15.0, "event": "peer", "card": "peer2"}, {"at": 11.0, "event": "growth_stretch"}],
     9: [{"at": 9.8, "event": "grumble"}, {"at": 10.5, "event": "ransomware"}, {"at": 14.5, "card": "marketing"}, {"at": 13.0, "event": "partner", "card": "partner2"}],
     10: [{"at": 10.0, "card": "rack"}, {"at": 10.8, "event": "profit_review"}, {"at": 14.0, "event": "vic_report"}, {"at": 12.0, "card": "flex_hours"}, {"at": 16.0, "card": "rn_invite"}],
-    11: [{"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"}, {"at": 15.5, "event": "peer_goal"}],
+    11: [{"at": 10.4, "card": "pm_ransom"}, {"at": 14.2, "card": "pm_rack"}, {"at": 11.0, "event": "qbr"}, {"at": 15.0, "event": "peer", "card": "peer3"}, {"at": 15.2, "event": "leak_hint"}, {"at": 9.6, "card": "draw_review"}, {"at": 15.5, "event": "peer_goal"}],
     12: [{"at": 9.5, "card": "migration"}, {"at": 10.5, "card": "after_hours"}, {"at": 11.5, "event": "growth_stretch"}],
-    13: [{"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
+    13: [{"at": 12.0, "card": "bec_scare"}, {"at": 15.5, "card": "email24"}, {"at": 10.0, "event": "partner", "card": "partner3"}, {"at": 9.5, "event": "vendor_rise"}],
     14: [{"at": 10.0, "event": "vendor_breach"}, {"at": 11.0, "event": "profit_review"}, {"at": 15.0, "card": "marketing"}],
-    15: [{"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}, {"at": 13.0, "event": "credit_squeeze"}],
+    15: [{"at": 9.8, "card": "pm_email"}, {"at": 14.0, "card": "bec_marge"}, {"at": 9.5, "card": "raise"}, {"at": 10.5, "event": "grumble"}, {"at": 11.5, "event": "qbr"}, {"at": 13.0, "event": "credit_squeeze"}],
     16: [{"at": 9.5, "card": "bid"}, {"at": 14.0, "event": "client_breach"}, {"at": 11.0, "event": "growth_stretch"}, {"at": 10.6, "event": "key_poach"}],
     17: [{"at": 15.0, "event": "peer", "card": "peer4"}, {"at": 10.0, "event": "partner", "card": "partner4"}, {"at": 15.5, "event": "peer_goal"}, {"at": 11.5, "event": "audit"}],
     18: [{"at": 9.5, "event": "poach_wave"}, {"at": 11.0, "event": "profit_review"}],
@@ -17901,6 +18479,8 @@ func practices() -> int:
     n += 1 if stack_sum("speed") > 0.0 else 0
     n += 1 if flags.get("growth_done", false) else 0
     n += 1 if flags.get("practice_scope", false) else 0
+    n += 1 if flags.get("practice_callback", false) else 0  # a call-back rule on payment changes
+    n += 1 if flags.get("practice_postmortem", false) else 0  # a blameless post-incident review
     n += 1 if int(flags.get("outings", 0)) >= 2 else 0
     return n
 
@@ -18040,6 +18620,7 @@ func begin_day(day: int) -> void:
         _poach_card(_poach_queue.pop_front())
     if not _winback_queue.is_empty():
         _winback_card(int(_winback_queue.pop_front()))
+    Incident.morning()
     Projects.begin_week()
 
 
@@ -18152,7 +18733,7 @@ func show_card(id: String) -> void:
 
 # X9: numbers a card quotes are read when it opens ({cash} = what is in the bank right now)
 func fill_text(body: String) -> String:
-    return body.replace("{cash}", money(cash))
+    return Incident.fill(body.replace("{cash}", money(cash)))
 
 
 # X9: a possessive that copes with names ending in s ("Lindqvist and Moss Architects'", not "Architects's")
@@ -18242,6 +18823,14 @@ func apply(fx: Dictionary) -> void:
         marketing = int(fx.marketing)
     if fx.has("burnout"):
         burnout = clampf(burnout + float(fx.burnout), 0.0, 100.0)
+    if fx.has("owner_hours"):
+        Growth.owner_used += float(fx.owner_hours)  # hours of the owner's week (a review, a letter)
+    if fx.has("social_all"):
+        Social.change_all(int(fx.social_all))  # how the team feels about it
+    if fx.has("pm"):
+        Incident.owner_review(str(fx.pm[0]), str(fx.pm[1]))  # a post-incident review: class, how
+    if fx.has("bec"):
+        Incident.owner_fx(str(fx.bec))  # wire fraud
     if fx.has("remediate"):
         var healed := int(fx.remediate)
         Msp.backup_rerun(healed)
@@ -18999,7 +19588,7 @@ func _credit_squeeze() -> void:
 
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
 func _vendor_breach() -> void:
-    var hit := clampf(0.35 * security_risk(), 0.05, 0.8)
+    var hit := clampf(0.35 * security_risk() * Incident.lesson_mult("email"), 0.05, 0.8)
     var vendor: String = str(stack_option("rmm").name)
     _dynamic["vendor_breach"] = {
         "speaker": "{tech}",
@@ -19324,11 +19913,13 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
     if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
         return
-    var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp"))
+    var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom")
     if randf() >= chance:
         return
     var victim: int = Sales.active[randi() % Sales.active.size()]
     var cost := 1200 if flags.get("backup_service", false) else 2500
+    if flags.get("pm_ransom", "") in ["runbook", "check"]:
+        cost = int(cost * 0.75)  # the runbook: the team knows what to do
     incidents += 1
     apply({"cash": -cost, "mood": {str(victim): -12}, "rep": -3})
     Cards.ask(
@@ -19500,6 +20091,7 @@ func settle() -> Dictionary:
     client_work = {}
     _burnout_week()
     _rdp_week()
+    Incident.week()
     _poach_week()
     _staff_week()
     _owner_week(profit)
@@ -19544,6 +20136,8 @@ func settle() -> Dictionary:
         ]
     )
     rows.append(hours_row)
+    if Incident.armed():
+        rows.append(["WIRE FRAUD RISK", "%s (%d CAUGHT, %d LOST)" % [Incident.risk_word(), int(flags.get("bec_caught", 0)), Incident.losses()], Color("8fe3a0") if Incident.risk_word() == "LOW" else Color("ffd27a")])
     rows.append(partner_row())
     rows.append(goal_row())
     if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():
@@ -26456,6 +27050,7 @@ write("scripts/growth.gd", '''extends Node
 # Owner campaign: you choose who is developed. Hard escalations land on the owner's desk (the only
 # Tier 3): a weekly pool of OWNER HOURS that escalations eat; when it runs dry, sales and marketing suffer.
 
+const Incident := preload("res://scripts/incident.gd")  # R37: a runbook from a review makes fixes safer
 const SKILLS := ["servers", "security", "networking", "powershell"]
 const OWNER_HOURS := 40.0
 const ADMIN_HOURS := 12.0
@@ -26553,9 +27148,9 @@ func gaps() -> Array:
 # fixes get safer in the skill you are growing
 func fail_adjust(action: String) -> float:
     if not Campaign.active or Campaign.mode != "tech" or focus == "" or progress <= 0.0:
-        return 0.0
+        return Incident.fix_bonus()
     var matches: bool = str(Skills.FIX_XP.get(action, "")) == focus or focus == "powershell" or focus == "networking"
-    return -(0.08 if matches else 0.02) * progress / 100.0
+    return -(0.08 if matches else 0.02) * progress / 100.0 + Incident.fix_bonus()
 
 
 func status_line() -> String:
@@ -41946,7 +42541,7 @@ write("scripts/strings.gd", '''extends Node
 
 const FILE := "res://story/strings.txt"
 const ROOTS := {
-    "Story": ["DAYS", "VIGNETTES"],
+    "Story": ["DAYS", "VIGNETTES", "POSTMORTEMS"],
     "Events": ["DECK"],
     "Mutators": ["MUTATORS", "STARTS"],
     "Yeartwo": ["CARRY", "YEAR2", "TEXT"],
@@ -42228,6 +42823,7 @@ const TYPES := {
 const SERVICES := {
     "backup": {"label": "MANAGED BACKUP", "price": 110, "cost": 35, "blurb": "we watch their backups every night and fix failures before they matter"},
     "patching": {"label": "MANAGED UPDATES AND AV", "price": 80, "cost": 25, "blurb": "we keep every machine patched and protected"},
+    "mailfilter": {"label": "MANAGED EMAIL FILTER", "price": 45, "cost": 15, "blurb": "a hosted filter holds lookalike senders and spoofed bosses before they reach the inbox"},
 }
 const PLATFORM_SETUP := 600
 const PLATFORM_WEEKLY := 100
@@ -60545,6 +61141,391 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
         UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
         y += 9.0
     UiStyle.footer(c, r, "LEFT RIGHT = PAGE  ESC = BACK")
+''')
+
+write("scripts/incident.gd", '''extends RefCounted
+# R37: business email compromise (wire fraud) and the post-incident review. A static helper (no state of its own):
+# the owner campaign keeps its numbers in Owner.flags (saved with the campaign), the tech campaign in Story.flags.
+#   Owner: a client is hit by a spoofed boss email. Weekly exposure roll from week 12 (after the scare card): the
+#   call-back rule, the hosted email filter service and a good review each make a hit less likely. Cards are in
+#   Owner.CARDS (bec_*, pm_*), so the text is editable in story/strings.txt.
+#   Tech: Story.POSTMORTEMS (Morgan runs a blameless review: what happened, the root cause, two action items).
+# Everything here is 2013-14: phone calls, a hosted spam filter, a funds transfer fraud rider on a crime policy.
+
+const FILTER := "mailfilter"  # the recurring service (Projects.SERVICES)
+const FIRST_WEEK := 13
+const BASE := 0.035  # chance per client per week that a scammer tries
+const MAX_LOSSES := 2
+const GAP := 2  # weeks between losses
+const SHARE := 0.4  # the share of a client's loss you credit
+const PM_DONE := 0.6  # a held review: the same class of incident is this much less likely (check variant: 0.5)
+const PM_SKIP := 1.15  # a skipped review repeats the mistake
+# what has to have happened before a tech review makes sense (Story.flags set when the job or ticket is finished)
+const HAPPENED := {"ransom": "ransom", "rack": "rack", "email": "email24", "bec": "ceofraud"}
+const MORGAN := "Morgan Reyes (Manager)"
+
+
+# ---- owner campaign: wire fraud ----------------------------------------------------------------------------
+static func armed() -> bool:
+    return Campaign.mode == "owner" and Owner.flags.has("card_bec_scare") and Campaign.day >= FIRST_WEEK
+
+
+# a scammer tries this client this week
+static func attempt_chance(client: int) -> float:
+    var p := BASE
+    if Owner.flags.get("bec_ignored", false):
+        p *= 1.5
+    if Sales.mood(client) < 40:
+        p *= 1.4
+    return p
+
+
+# the share of attempts that get through (the rest are caught by a call-back or the filter)
+static func miss_share(client: int) -> float:
+    var miss := 1.0
+    if Owner.flags.get("bec_policy", false):
+        miss *= 0.25
+    elif Owner.flags.get("bec_self_check", false):
+        miss *= 0.7
+    if Projects.has_service(client, FILTER):
+        miss *= 0.5
+    return miss * lesson_mult("bec")
+
+
+# the sum over clients: what the weekly report calls the wire fraud risk
+static func exposure() -> float:
+    var total := 0.0
+    for c in Sales.active:
+        total += attempt_chance(int(c)) * miss_share(int(c))
+    return total
+
+
+static func risk_word() -> String:
+    var e := exposure()
+    return "HIGH" if e >= 0.15 else ("MEDIUM" if e >= 0.05 else "LOW")
+
+
+static func losses() -> int:
+    return int(Owner.flags.get("bec_losses", 0))
+
+
+# {client} and {amount} in card text: the client in the story (picked when the scare card opens) and the sum
+static func fill(body: String) -> String:
+    if not body.contains("{client}") and not body.contains("{amount}"):
+        return body
+    if not Owner.flags.has("bec_client") or not Sales.active.has(int(Owner.flags.bec_client)):
+        if Sales.active.is_empty():
+            return body
+        Owner.flags["bec_client"] = int(Sales.active[randi() % Sales.active.size()])
+        Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+    var name: String = str(Msp.CLIENTS[int(Owner.flags.bec_client)].name)
+    return body.replace("{client}", name).replace("{amount}", Owner.money(int(Owner.flags.get("bec_amount", 8000))))
+
+
+static func credit_amount() -> int:
+    return int(round(float(Owner.flags.get("bec_amount", 8000)) * SHARE / 50.0)) * 50
+
+
+# called by Owner.settle once a week
+static func week() -> void:
+    if not armed():
+        return
+    for c in Sales.active.duplicate():
+        if randf() >= attempt_chance(int(c)):
+            continue
+        var can_hit := losses() < MAX_LOSSES and Campaign.day - int(Owner.flags.get("bec_last", -9)) >= GAP
+        if randf() < miss_share(int(c)) and can_hit:
+            _hit(int(c))
+        else:
+            _caught(int(c))
+        return  # one event a week
+
+
+static func _caught(client: int) -> void:
+    Sales.adjust(client, 3)
+    Owner.flags["bec_caught"] = int(Owner.flags.get("bec_caught", 0)) + 1
+    var msg := "%s CAUGHT A FAKE WIRE REQUEST." % str(Msp.CLIENTS[client].name).to_upper()
+    Msp.send_text("Marge", "%s They called back before paying. Nothing lost." % msg)
+    Hints.toast(msg, 4.0)
+
+
+static func _hit(client: int) -> void:
+    Owner.flags["bec_client"] = client
+    Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+    Owner.flags["bec_losses"] = losses() + 1
+    Owner.flags["bec_last"] = Campaign.day
+    Owner.apply({"mood": {str(client): -12}})
+    var queue: Array = Owner.flags.get("inc_queue", [])
+    queue.append("bec_loss")
+    if not Owner.flags.get("bec_rider", false) and not Owner.flags.get("bec_rider_asked", false):
+        queue.append("bec_rider")
+    if not Owner.flags.has("pm_bec"):
+        queue.append("pm_bec")
+    Owner.flags["inc_queue"] = queue
+
+
+# the next morning: one queued card a day (Owner.begin_day)
+static func morning() -> void:
+    var queue: Array = Owner.flags.get("inc_queue", [])
+    if queue.is_empty():
+        return
+    var id := str(queue.pop_front())
+    Owner.flags["inc_queue"] = queue
+    if id == "bec_rider":
+        Owner.flags["bec_rider_asked"] = true
+    Owner.show_card(id)
+
+
+# the fx key "bec" in a card option
+static func owner_fx(kind: String) -> void:
+    var client := int(Owner.flags.get("bec_client", -1))
+    var key := str(client)
+    match kind:
+        "policy":
+            _policy()
+        "filter":
+            sell_filter(client)
+        "both":
+            _policy()
+            sell_filter(client)
+        "ignore":
+            Owner.flags["bec_ignored"] = true
+        "self_check":
+            Owner.flags["bec_self_check"] = true
+            Owner.flags["practice_callback"] = true
+        "credit":
+            Owner.apply({"cash": -credit_amount(), "mood": {key: 6}})
+            if Sales.active.has(client) and not Projects.has_service(client, FILTER):
+                Projects.sell_service(client, FILTER)
+        "lawyer":
+            var odds := 0.8 if Owner.flags.get("bec_policy", false) else 0.5
+            if randf() < odds:
+                Owner.apply({"mood": {key: -3}})
+                Owner.show_card("bec_lawyer_ok")
+            else:
+                var half := int(float(Owner.flags.get("bec_amount", 8000)) * 0.5)
+                Owner.apply({"cash": -half, "rep": -3, "mood": {key: -10}})
+                Owner.show_card("bec_lawyer_bad")
+        "claim":
+            var odds2 := 0.7 if Owner.flags.get("bec_rider", false) else 0.3
+            if randf() < odds2:
+                Owner.apply({"cash": -int(credit_amount() / 5), "mood": {key: 5}})
+                Owner.show_card("bec_claim_ok")
+            else:
+                Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
+                Owner.show_card("bec_claim_no")
+        "blame":
+            Owner.apply({"rep": -3, "mood": {key: -18}})
+            if Sales.active.has(client) and randf() < 0.4:
+                Owner.drop_client(client, "")
+                Owner.show_card("bec_blame_left")
+            else:
+                Owner.show_card("bec_blame_stay")
+        "rider":
+            Owner.flags["bec_rider"] = true
+            Owner.weekly_extra += 30
+
+
+static func _policy() -> void:
+    Owner.flags["bec_policy"] = true
+    Owner.flags["practice_callback"] = true
+    Owner.apply({"mood_all": 1, "owner_hours": 4})
+
+
+# the hosted email filter: the client in the story signs, the others by mood. Returns how many signed.
+static func sell_filter(victim := -1, everyone := true) -> int:
+    var n := 0
+    for c in Sales.active.duplicate():
+        if Projects.has_service(int(c), FILTER):
+            continue
+        var yes := int(c) == victim or (everyone and randf() < 0.35 + float(Sales.mood(int(c))) / 250.0)
+        if yes:
+            Projects.sell_service(int(c), FILTER)
+            n += 1
+    if n > 0:
+        Hints.toast("%d CLIENTS SIGNED FOR THE EMAIL FILTER." % n, 4.0)
+    return n
+
+
+# ---- post-incident review: owner side ----------------------------------------------------------------------
+# the fx key "pm": [class, how] with how = runbook / check / skip
+static func owner_review(cls: String, how: String) -> void:
+    Owner.flags["pm_" + cls] = how
+    if how == "skip":
+        return
+    Owner.flags["practice_postmortem"] = true
+    if cls == "rack":
+        Owner.speed += 0.03  # a labelled, photographed rack is quicker to fix next time
+
+
+# 1.0 without a review, PM_DONE (0.5 for the check variant) after one, PM_SKIP when it was skipped
+static func lesson_mult(cls: String) -> float:
+    match str(Owner.flags.get("pm_" + cls, "")):
+        "runbook":
+            return PM_DONE
+        "check":
+            return 0.5
+        "skip":
+            return PM_SKIP
+    return 1.0
+
+
+# ---- tech campaign: Morgan's blameless review ---------------------------------------------------------------
+static func tech_ready(cls: String) -> bool:
+    return Story.flags.has(str(HAPPENED.get(cls, cls)))
+
+
+# a review event fired: run it now, or wait until the incident has happened (Year 2 moves the big jobs around)
+static func tech_start(cls: String) -> void:
+    if str(Story.flags.get("pm_" + cls, "")) != "":
+        return
+    if not tech_ready(cls):
+        var wait: Array = Story.flags.get("pm_wait", [])
+        if not wait.has(cls):
+            wait.append(cls)
+        Story.flags["pm_wait"] = wait
+        return
+    _tech_open(cls)
+
+
+# each morning after 9:40 (Story._spawn_followups): reviews that were waiting for their incident
+static func tech_morning() -> void:
+    var wait: Array = Story.flags.get("pm_wait", [])
+    for cls in wait.duplicate():
+        if tech_ready(str(cls)):
+            wait.erase(cls)
+            Story.flags["pm_wait"] = wait
+            _tech_open(str(cls))
+            return
+
+
+static func _tech_open(cls: String) -> void:
+    var pm: Dictionary = Story.POSTMORTEMS.get(cls, {})
+    if pm.is_empty():
+        return
+    Story.flags["pm_" + cls] = "open"
+    Cards.ask(
+        MORGAN,
+        str(pm.intro),
+        [{"label": str(pm.go), "id": "go"}, {"label": str(pm.skip), "id": "skip"}],
+        func(pick: String) -> void: _tech_intro(cls, pick)
+    )
+
+
+static func _tech_intro(cls: String, pick: String) -> void:
+    var pm: Dictionary = Story.POSTMORTEMS[cls]
+    if pick == "skip":
+        Story.flags["pm_" + cls] = "skip"
+        Social.change("Morgan", -2)
+        Cards.ask(MORGAN, str(pm.skipped), [{"label": "OK", "id": "ok"}], func(_p: String) -> void: pass)
+        return
+    World.clock += 0.5  # half an hour in the conference room
+    var options := []
+    for cause in pm.causes:
+        options.append({"label": str(cause.label), "id": str(cause.id)})
+    Cards.ask(MORGAN, str(pm.cause_q), options, func(id: String) -> void: _tech_cause(cls, id))
+
+
+static func _tech_cause(cls: String, id: String) -> void:
+    var pm: Dictionary = Story.POSTMORTEMS[cls]
+    var note := ""
+    for cause in pm.causes:
+        if str(cause.id) != id:
+            continue
+        note = str(cause.note)
+        if bool(cause.get("right", false)):
+            Story.flags["pm_cause"] = int(Story.flags.get("pm_cause", 0)) + 1
+            Skills.add_xp(str(pm.skill), 6)
+            Social.change("Morgan", 1)
+        elif id == "person":
+            Social.change("Morgan", -1)  # a blameless review does not name a person
+    Cards.ask(
+        MORGAN,
+        note + " " + str(pm.items_q),
+        _item_options(pm, []),
+        func(pick: String) -> void: _tech_item(cls, [], pick)
+    )
+
+
+static func _item_options(pm: Dictionary, taken: Array) -> Array:
+    var options := []
+    for item in pm.items:
+        if not taken.has(str(item.id)):
+            options.append({"label": str(item.label), "id": str(item.id)})
+    if not taken.is_empty():
+        options.append({"label": str(pm.enough), "id": "enough"})
+    return options
+
+
+static func _tech_item(cls: String, taken: Array, pick: String) -> void:
+    var pm: Dictionary = Story.POSTMORTEMS[cls]
+    var now := taken.duplicate()
+    var note := ""
+    if pick != "enough":
+        now.append(pick)
+        for item in pm.items:
+            if str(item.id) == pick:
+                note = str(item.note)
+    if pick == "enough" or now.size() >= 2:
+        _tech_close(cls, now, note)
+        return
+    Cards.ask(
+        MORGAN,
+        note + " " + str(pm.more_q),
+        _item_options(pm, now),
+        func(next: String) -> void: _tech_item(cls, now, next)
+    )
+
+
+static func _tech_close(cls: String, taken: Array, last_note: String) -> void:
+    var pm: Dictionary = Story.POSTMORTEMS[cls]
+    for item in pm.items:
+        if taken.has(str(item.id)):
+            _tech_effect(str(item.eff), pm)
+            Story.flags["pm_" + str(item.id)] = true
+    Story.flags["pm_" + cls] = "done"
+    Social.change("Morgan", 2 if not taken.is_empty() else 0)
+    Cards.ask(
+        MORGAN,
+        (last_note + " " + str(pm.done)).strip_edges(),
+        [{"label": "OK", "id": "ok"}],
+        func(_p: String) -> void: pass
+    )
+
+
+# immediate effects happen now; the rest are flags other scripts read (pm_has)
+static func _tech_effect(eff: String, pm: Dictionary) -> void:
+    Story.flags["pm_eff_" + eff] = true
+    match eff:
+        "xp":
+            var skill := str(pm.skill)
+            Skills.add_xp(skill, 8)
+            if Growth.esc_skill.has(skill):
+                Growth.esc_skill[skill] = maxi(0, int(Growth.esc_skill[skill]) - 2)  # one gap less to close
+        "calm":
+            Social.change_all(1)
+        "mood":
+            for c in Sales.active:
+                Sales.adjust(int(c), 2)
+
+
+static func pm_has(eff: String) -> bool:
+    return Campaign.mode == "tech" and bool(Story.flags.get("pm_eff_" + eff, false))
+
+
+# read by Msp.new_day: the chance a backup quietly fails overnight
+static func backup_fail_chance() -> float:
+    return 0.04 if pm_has("backups") else 0.08
+
+
+# read by Growth.fail_adjust: a runbook makes fixes a little safer
+static func fix_bonus() -> float:
+    return -0.03 if pm_has("fixes") else 0.0
+
+
+# read by Msp.next_spawn_gap: patch policy and monitoring mean a few fewer tickets
+static func ticket_gap() -> float:
+    return 1.05 if pm_has("pace") else 1.0
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

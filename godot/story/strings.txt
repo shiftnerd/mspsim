@@ -190,6 +190,58 @@ TELL HER TO CALL THE PHONE STORE
 [Story.VIGNETTES.iphone.options.2.text]
 She sighs and says she will ask her nephew.
 
+# Story > VIGNETTES > invoice > speaker
+[Story.VIGNETTES.invoice.speaker]
+Karen Whitfield (Brightside Realty)
+
+# Story > VIGNETTES > invoice > text
+[Story.VIGNETTES.invoice.text]
+Our landlord emailed new bank details for the rent and wants it wired today. The signature looks right, but the address is a little off. Should I just do it? I do not want to be late.
+
+# Story > VIGNETTES > invoice > text_checked
+[Story.VIGNETTES.invoice.text_checked]
+The landlord emailed new bank details for the rent. Then I remembered Morgan's rule: a call-back before any bank change. I called the number on the lease and he never sent it! Thank you for the rule.
+
+# Story > VIGNETTES > invoice > options > 0 > label
+[Story.VIGNETTES.invoice.options.0.label]
+TELL HER TO CALL THE LANDLORD ON THE LEASE NUMBER
+
+# Story > VIGNETTES > invoice > options > 0 > text
+[Story.VIGNETTES.invoice.options.0.text]
+He never sent it. She is a little shaken and a lot grateful. (+4 security XP, reputation +1)
+
+# Story > VIGNETTES > invoice > options > 1 > label
+[Story.VIGNETTES.invoice.options.1.label]
+CHECK THE EMAIL HEADERS FOR HER
+
+# Story > VIGNETTES > invoice > options > 1 > text
+[Story.VIGNETTES.invoice.options.1.text]
+The sender is a lookalike domain. She does not pay and you tell her to call him anyway. (+6 security XP)
+
+# Story > VIGNETTES > invoice > options > 2 > label
+[Story.VIGNETTES.invoice.options.2.label]
+SAY IT IS PROBABLY FINE, PAY IT
+
+# Story > VIGNETTES > invoice > options > 2 > text
+[Story.VIGNETTES.invoice.options.2.text]
+She wires the rent. The real landlord calls on Friday asking where it is. Brightside is out the money and not happy. (reputation -2)
+
+# Story > VIGNETTES > invoice > options_checked > 0 > label
+[Story.VIGNETTES.invoice.options_checked.0.label]
+SAY YOU ARE GLAD THE RULE WORKED
+
+# Story > VIGNETTES > invoice > options_checked > 0 > text
+[Story.VIGNETTES.invoice.options_checked.0.text]
+She tells everyone in the office. Two of them ask who set it up. (+4 security XP, reputation +1)
+
+# Story > VIGNETTES > invoice > options_checked > 1 > label
+[Story.VIGNETTES.invoice.options_checked.1.label]
+OFFER A FIVE MINUTE TALK FOR HER WHOLE OFFICE
+
+# Story > VIGNETTES > invoice > options_checked > 1 > text
+[Story.VIGNETTES.invoice.options_checked.1.text]
+Nine people, one whiteboard, no jargon. The office manager asks for a copy of the checklist. (+6 security XP)
+
 # Story > VIGNETTES > heartbleed > speaker
 [Story.VIGNETTES.heartbleed.speaker]
 Garrison (Co-owner)
@@ -933,6 +985,392 @@ SAY 'NOTHING, REALLY'
 # Story > VIGNETTES > first_week_note > options > 2 > text
 [Story.VIGNETTES.first_week_note.options.2.text]
 Morgan thinks you are being modest.
+
+
+# ======================= Story > POSTMORTEMS =======================
+# Story > POSTMORTEMS > ransom > title
+[Story.POSTMORTEMS.ransom.title]
+RANSOMWARE REVIEW
+
+# Story > POSTMORTEMS > ransom > intro
+[Story.POSTMORTEMS.ransom.intro]
+{me}, got half an hour? Before the ransomware week turns into a story we tell badly, let us write down what happened: the timeline, the real cause, what we change. It is blameless, we look at the process and not at a person. Or we can skip it.
+
+# Story > POSTMORTEMS > ransom > go
+[Story.POSTMORTEMS.ransom.go]
+SIT DOWN WITH MORGAN
+
+# Story > POSTMORTEMS > ransom > skip
+[Story.POSTMORTEMS.ransom.skip]
+SKIP IT, TOO BUSY
+
+# Story > POSTMORTEMS > ransom > skipped
+[Story.POSTMORTEMS.ransom.skipped]
+Morgan nods and puts the marker back. 'We will see how it goes,' she says. It sounds like she thinks it will happen again.
+
+# Story > POSTMORTEMS > ransom > cause_q
+[Story.POSTMORTEMS.ransom.cause_q]
+Morgan draws a timeline on the whiteboard. The files were encrypted at 10:30. The backup alert was in the queue for two days. What was the root cause?
+
+# Story > POSTMORTEMS > ransom > causes > 0 > label
+[Story.POSTMORTEMS.ransom.causes.0.label]
+THE BACKUP ALERT SAT UNREAD AND NOBODY TESTED A RESTORE
+
+# Story > POSTMORTEMS > ransom > causes > 0 > note
+[Story.POSTMORTEMS.ransom.causes.0.note]
+Morgan nods. The alert was real and the process had no owner. That is a system problem we can fix.
+
+# Story > POSTMORTEMS > ransom > causes > 1 > label
+[Story.POSTMORTEMS.ransom.causes.1.label]
+THE STAFF CLICKED A BAD ATTACHMENT
+
+# Story > POSTMORTEMS > ransom > causes > 1 > note
+[Story.POSTMORTEMS.ransom.causes.1.note]
+Morgan frowns. People click things. A process that needs everyone to be perfect is the problem. We do not put names on the board.
+
+# Story > POSTMORTEMS > ransom > causes > 2 > label
+[Story.POSTMORTEMS.ransom.causes.2.label]
+BAD LUCK, IT HAPPENS TO EVERYONE
+
+# Story > POSTMORTEMS > ransom > causes > 2 > note
+[Story.POSTMORTEMS.ransom.causes.2.note]
+Morgan sighs. Luck was part of it, but luck is not an action item.
+
+# Story > POSTMORTEMS > ransom > items_q
+[Story.POSTMORTEMS.ransom.items_q]
+Pick the first thing we change. Small and real beats big and never.
+
+# Story > POSTMORTEMS > ransom > more_q
+[Story.POSTMORTEMS.ransom.more_q]
+Good. One more, or is that enough for now?
+
+# Story > POSTMORTEMS > ransom > enough
+[Story.POSTMORTEMS.ransom.enough]
+THAT IS ENOUGH FOR NOW
+
+# Story > POSTMORTEMS > ransom > items > 0 > label
+[Story.POSTMORTEMS.ransom.items.0.label]
+A WEEKLY RESTORE TEST FOR EVERY BACKUP
+
+# Story > POSTMORTEMS > ransom > items > 0 > note
+[Story.POSTMORTEMS.ransom.items.0.note]
+Every Friday a tech restores one real file from each client and signs the sheet.
+
+# Story > POSTMORTEMS > ransom > items > 1 > label
+[Story.POSTMORTEMS.ransom.items.1.label]
+A ONE PAGE RANSOMWARE RUNBOOK
+
+# Story > POSTMORTEMS > ransom > items > 1 > note
+[Story.POSTMORTEMS.ransom.items.1.note]
+Isolate the machine, do not pay yet, check the backup, call the client. It goes in the vault.
+
+# Story > POSTMORTEMS > ransom > items > 2 > label
+[Story.POSTMORTEMS.ransom.items.2.label]
+A PATCH POLICY: SECOND TUESDAY, NO EXCEPTIONS
+
+# Story > POSTMORTEMS > ransom > items > 2 > note
+[Story.POSTMORTEMS.ransom.items.2.note]
+Updates go out on a schedule instead of whenever someone remembers.
+
+# Story > POSTMORTEMS > ransom > items > 3 > label
+[Story.POSTMORTEMS.ransom.items.3.label]
+A FIRE DRILL: CUT A MACHINE OFF THE NETWORK
+
+# Story > POSTMORTEMS > ransom > items > 3 > note
+[Story.POSTMORTEMS.ransom.items.3.note]
+You time it. Four minutes the first run, ninety seconds the second.
+
+# Story > POSTMORTEMS > ransom > done
+[Story.POSTMORTEMS.ransom.done]
+Morgan photographs the whiteboard and mails the list to the owners. It is short on purpose, and it has names next to every line, for next time.
+
+# Story > POSTMORTEMS > rack > title
+[Story.POSTMORTEMS.rack.title]
+RACK REVIEW
+
+# Story > POSTMORTEMS > rack > intro
+[Story.POSTMORTEMS.rack.intro]
+{me}, the fallen rack at Gnarly Gnomes is already a lunch story. It is also a pattern: plywood walls, no labels, no photos. Fifteen minutes, blameless, and we write it down. Or we skip it.
+
+# Story > POSTMORTEMS > rack > go
+[Story.POSTMORTEMS.rack.go]
+SIT DOWN WITH MORGAN
+
+# Story > POSTMORTEMS > rack > skip
+[Story.POSTMORTEMS.rack.skip]
+SKIP IT, TOO BUSY
+
+# Story > POSTMORTEMS > rack > skipped
+[Story.POSTMORTEMS.rack.skipped]
+Morgan shrugs. 'The next wall is plywood too,' she says. 'I just hope someone tells me before it moves.'
+
+# Story > POSTMORTEMS > rack > cause_q
+[Story.POSTMORTEMS.rack.cause_q]
+Morgan pulls up the photos you took. A rack bolted to plywood with drywall anchors, a fan in the closet and thirty unlabeled cables. What was the root cause?
+
+# Story > POSTMORTEMS > rack > causes > 0 > label
+[Story.POSTMORTEMS.rack.causes.0.label]
+NOBODY CHECKS THE WALL OR THE LABELS WHEN WE INSTALL A RACK
+
+# Story > POSTMORTEMS > rack > causes > 0 > note
+[Story.POSTMORTEMS.rack.causes.0.note]
+Morgan nods. We have no site checklist, so a good install and a bad one look the same on the invoice.
+
+# Story > POSTMORTEMS > rack > causes > 1 > label
+[Story.POSTMORTEMS.rack.causes.1.label]
+WHOEVER INSTALLED IT THE FIRST TIME DID A BAD JOB
+
+# Story > POSTMORTEMS > rack > causes > 1 > note
+[Story.POSTMORTEMS.rack.causes.1.note]
+Morgan shakes her head. We do not know who, and we do not need to. The question is why our process let it pass.
+
+# Story > POSTMORTEMS > rack > causes > 2 > label
+[Story.POSTMORTEMS.rack.causes.2.label]
+THE CLIENT HUNG IT THERE, IT IS THEIR PROBLEM
+
+# Story > POSTMORTEMS > rack > causes > 2 > note
+[Story.POSTMORTEMS.rack.causes.2.note]
+Morgan raises an eyebrow. It is their wall. It is also our rack in our report.
+
+# Story > POSTMORTEMS > rack > items_q
+[Story.POSTMORTEMS.rack.items_q]
+What do we change? Pick the first.
+
+# Story > POSTMORTEMS > rack > more_q
+[Story.POSTMORTEMS.rack.more_q]
+Good. One more, or is that enough for now?
+
+# Story > POSTMORTEMS > rack > enough
+[Story.POSTMORTEMS.rack.enough]
+THAT IS ENOUGH FOR NOW
+
+# Story > POSTMORTEMS > rack > items > 0 > label
+[Story.POSTMORTEMS.rack.items.0.label]
+LABEL CABLES AND PHOTOGRAPH EVERY RACK ON INSTALL
+
+# Story > POSTMORTEMS > rack > items > 0 > note
+[Story.POSTMORTEMS.rack.items.0.note]
+A photo and a label now means the next tech does not have to guess.
+
+# Story > POSTMORTEMS > rack > items > 1 > label
+[Story.POSTMORTEMS.rack.items.1.label]
+ADD A WALL AND RACK CHECK TO EVERY SITE VISIT
+
+# Story > POSTMORTEMS > rack > items > 1 > note
+[Story.POSTMORTEMS.rack.items.1.note]
+It takes two minutes and it catches the quiet problems before they fall off a wall.
+
+# Story > POSTMORTEMS > rack > items > 2 > label
+[Story.POSTMORTEMS.rack.items.2.label]
+KEEP A SPARE SWITCH AND CABLES IN THE VAN
+
+# Story > POSTMORTEMS > rack > items > 2 > note
+[Story.POSTMORTEMS.rack.items.2.note]
+The team likes this one. Nobody wants to explain a missing part to an angry client.
+
+# Story > POSTMORTEMS > rack > items > 3 > label
+[Story.POSTMORTEMS.rack.items.3.label]
+WALK EVERY CLIENT CLOSET WITH A CHECKLIST
+
+# Story > POSTMORTEMS > rack > items > 3 > note
+[Story.POSTMORTEMS.rack.items.3.note]
+You learn more in a day of closets than from a week of tickets.
+
+# Story > POSTMORTEMS > rack > done
+[Story.POSTMORTEMS.rack.done]
+Morgan prints the checklist and pins it above the van keys.
+
+# Story > POSTMORTEMS > email > title
+[Story.POSTMORTEMS.email.title]
+EMAIL OUTAGE REVIEW
+
+# Story > POSTMORTEMS > email > intro
+[Story.POSTMORTEMS.email.intro]
+{me}, the brewery night ran past midnight, and the only thing worse than a long night is a long night we learn nothing from. Blameless review, twenty minutes, one page. Or we skip it.
+
+# Story > POSTMORTEMS > email > go
+[Story.POSTMORTEMS.email.go]
+SIT DOWN WITH MORGAN
+
+# Story > POSTMORTEMS > email > skip
+[Story.POSTMORTEMS.email.skip]
+SKIP IT, TOO TIRED
+
+# Story > POSTMORTEMS > email > skipped
+[Story.POSTMORTEMS.email.skipped]
+Morgan nods slowly. 'Get some sleep,' she says. 'We will talk about it when it happens again.'
+
+# Story > POSTMORTEMS > email > cause_q
+[Story.POSTMORTEMS.email.cause_q]
+Morgan reads the timeline. The log drive filled up, the mail database dismounted and the brewery heard nothing from us for an hour. What was the root cause?
+
+# Story > POSTMORTEMS > email > causes > 0 > label
+[Story.POSTMORTEMS.email.causes.0.label]
+NOBODY WAS WATCHING THE LOG DRIVE, AND NOBODY TOLD THE CLIENT
+
+# Story > POSTMORTEMS > email > causes > 0 > note
+[Story.POSTMORTEMS.email.causes.0.note]
+Morgan nods. No alert on a disk filling up, and no habit of telling the client what we know. Both are fixable.
+
+# Story > POSTMORTEMS > email > causes > 1 > label
+[Story.POSTMORTEMS.email.causes.1.label]
+WHOEVER SET UP THE SERVER LEFT THE LOGS ON
+
+# Story > POSTMORTEMS > email > causes > 1 > note
+[Story.POSTMORTEMS.email.causes.1.note]
+Morgan frowns. That is a person, and it was years ago. We do not write that on the board.
+
+# Story > POSTMORTEMS > email > causes > 2 > label
+[Story.POSTMORTEMS.email.causes.2.label]
+THE SOFTWARE VENDOR SHOULD HAVE WARNED US
+
+# Story > POSTMORTEMS > email > causes > 2 > note
+[Story.POSTMORTEMS.email.causes.2.note]
+Morgan taps the pen. Maybe. We cannot change them, though. We can change what we watch.
+
+# Story > POSTMORTEMS > email > items_q
+[Story.POSTMORTEMS.email.items_q]
+What do we change? Pick the first.
+
+# Story > POSTMORTEMS > email > more_q
+[Story.POSTMORTEMS.email.more_q]
+Good. One more, or is that enough for now?
+
+# Story > POSTMORTEMS > email > enough
+[Story.POSTMORTEMS.email.enough]
+THAT IS ENOUGH FOR NOW
+
+# Story > POSTMORTEMS > email > items > 0 > label
+[Story.POSTMORTEMS.email.items.0.label]
+A SECOND PERSON ON CALL FOR 24x7 CLIENTS
+
+# Story > POSTMORTEMS > email > items > 0 > note
+[Story.POSTMORTEMS.email.items.0.note]
+Nobody likes being the only one who can fix it at 2 a.m. The team notices that you asked.
+
+# Story > POSTMORTEMS > email > items > 1 > label
+[Story.POSTMORTEMS.email.items.1.label]
+A STATUS MESSAGE EVERY 30 MINUTES DURING AN OUTAGE
+
+# Story > POSTMORTEMS > email > items > 1 > note
+[Story.POSTMORTEMS.email.items.1.note]
+One line to the client: what we know, what we are doing, when you hear from us next.
+
+# Story > POSTMORTEMS > email > items > 2 > label
+[Story.POSTMORTEMS.email.items.2.label]
+DISK AND MAIL QUEUE ALERTS ON EVERY SERVER
+
+# Story > POSTMORTEMS > email > items > 2 > note
+[Story.POSTMORTEMS.email.items.2.note]
+The RMM can watch free space. It just was not set to.
+
+# Story > POSTMORTEMS > email > items > 3 > label
+[Story.POSTMORTEMS.email.items.3.label]
+A LIST OF VENDOR SUPPORT NUMBERS AND ACCOUNT PINS
+
+# Story > POSTMORTEMS > email > items > 3 > note
+[Story.POSTMORTEMS.email.items.3.note]
+Half the night went on finding who to call. Now it is on one sheet.
+
+# Story > POSTMORTEMS > email > done
+[Story.POSTMORTEMS.email.done]
+Morgan files the page where the next person will see it first.
+
+# Story > POSTMORTEMS > bec > title
+[Story.POSTMORTEMS.bec.title]
+WIRE FRAUD REVIEW
+
+# Story > POSTMORTEMS > bec > intro
+[Story.POSTMORTEMS.bec.intro]
+{me}, the fake wire request at Hoot and Holler could have gone very differently. Let us do a blameless review: how it got that far, which control would have stopped it, what we change for every client. Or we skip it.
+
+# Story > POSTMORTEMS > bec > go
+[Story.POSTMORTEMS.bec.go]
+SIT DOWN WITH MORGAN
+
+# Story > POSTMORTEMS > bec > skip
+[Story.POSTMORTEMS.bec.skip]
+SKIP IT, TOO BUSY
+
+# Story > POSTMORTEMS > bec > skipped
+[Story.POSTMORTEMS.bec.skipped]
+Morgan taps the desk. 'The next one will look the same,' she says. 'Different law firm, same email.'
+
+# Story > POSTMORTEMS > bec > cause_q
+[Story.POSTMORTEMS.bec.cause_q]
+Morgan lays the email next to a real one. Same wording, same amount, a lookalike domain, and a rule quietly forwarding the firm's mail. What was the root cause?
+
+# Story > POSTMORTEMS > bec > causes > 0 > label
+[Story.POSTMORTEMS.bec.causes.0.label]
+ONE PERSON CAN MOVE MONEY ON AN EMAIL, AND NOBODY WATCHES THE MAILBOX RULES
+
+# Story > POSTMORTEMS > bec > causes > 0 > note
+[Story.POSTMORTEMS.bec.causes.0.note]
+Morgan nods. A single email was enough to move money, and a hidden rule had been reading the firm's mail for days. Both are process, not people.
+
+# Story > POSTMORTEMS > bec > causes > 1 > label
+[Story.POSTMORTEMS.bec.causes.1.label]
+THE PARALEGAL SHOULD HAVE KNOWN BETTER
+
+# Story > POSTMORTEMS > bec > causes > 1 > note
+[Story.POSTMORTEMS.bec.causes.1.note]
+Morgan shakes her head. She is the one who called us. The system should not need her to be perfect.
+
+# Story > POSTMORTEMS > bec > causes > 2 > label
+[Story.POSTMORTEMS.bec.causes.2.label]
+THE SPAM FILTER MISSED IT
+
+# Story > POSTMORTEMS > bec > causes > 2 > note
+[Story.POSTMORTEMS.bec.causes.2.note]
+Morgan taps the filter report. It was a clean message from a real mailbox. A filter was never going to catch it.
+
+# Story > POSTMORTEMS > bec > items_q
+[Story.POSTMORTEMS.bec.items_q]
+What do we change? Pick the first.
+
+# Story > POSTMORTEMS > bec > more_q
+[Story.POSTMORTEMS.bec.more_q]
+Good. One more, or is that enough for now?
+
+# Story > POSTMORTEMS > bec > enough
+[Story.POSTMORTEMS.bec.enough]
+THAT IS ENOUGH FOR NOW
+
+# Story > POSTMORTEMS > bec > items > 0 > label
+[Story.POSTMORTEMS.bec.items.0.label]
+A SECOND-PERSON CHECK AND A CALL-BACK ON EVERY WIRE REQUEST
+
+# Story > POSTMORTEMS > bec > items > 0 > note
+[Story.POSTMORTEMS.bec.items.0.note]
+Nobody moves money on an email alone. A second person calls the number we already had.
+
+# Story > POSTMORTEMS > bec > items > 1 > label
+[Story.POSTMORTEMS.bec.items.1.label]
+TWO-FACTOR LOGIN FOR EVERY MAILBOX THAT HANDLES MONEY
+
+# Story > POSTMORTEMS > bec > items > 1 > note
+[Story.POSTMORTEMS.bec.items.1.note]
+A stolen password alone does not get you into the mailbox any more.
+
+# Story > POSTMORTEMS > bec > items > 2 > label
+[Story.POSTMORTEMS.bec.items.2.label]
+A MONTHLY AUDIT OF MAILBOX FORWARDING RULES
+
+# Story > POSTMORTEMS > bec > items > 2 > note
+[Story.POSTMORTEMS.bec.items.2.note]
+Ten minutes a client. The hidden rule would have shown up on the first check.
+
+# Story > POSTMORTEMS > bec > items > 3 > label
+[Story.POSTMORTEMS.bec.items.3.label]
+A SHORT TALK FOR EACH CLIENT'S ACCOUNTING STAFF
+
+# Story > POSTMORTEMS > bec > items > 3 > note
+[Story.POSTMORTEMS.bec.items.3.note]
+Clients like being told what to watch for. It feels like service, because it is.
+
+# Story > POSTMORTEMS > bec > done
+[Story.POSTMORTEMS.bec.done]
+Morgan writes the owners a one page summary and says nothing about who was at fault. That is the point.
 
 
 # ======================= Events > DECK =======================
@@ -5023,6 +5461,334 @@ The case is dismissed, but it cost you sleep.
 # owner card: ransom_lost
 [Owner.CARDS.ransom_lost.options.1.roll.1.2]
 You lose. It costs $6,000 and your name.
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.speaker]
+{tech}
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.text]
+{me}, {client}'s bookkeeper just forwarded us an email that looks like it came from their owner: wire {amount} to a new account today, keep it quiet, no phone calls. She had a bad feeling and asked us first. It is a fake. Someone read their mail for days and copied the owner's style. This is hitting small offices all over the country, and every client of ours has the same hole.
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.0.label]
+WARN EVERY CLIENT, START A CALL-BACK RULE ($350)
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.0.text]
+A one page letter goes to every client: no payment and no bank change without a phone call to a number you already had. Two clients thank you. Their bookkeepers start calling back.
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.1.label]
+OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.1.text]
+Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do.
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.2.label]
+DO BOTH ($550)
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.2.text]
+The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books.
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.3.label]
+IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES
+
+# owner card: bec_scare
+[Owner.CARDS.bec_scare.options.3.text]
+You file it under lucky. The next one may not come with a bookkeeper who asks first.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.text]
+{me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.0.label]
+CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.0.text]
+The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.1.label]
+PAY IT, WE ARE LATE ALREADY
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.1.roll.0.2]
+It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.1.roll.1.2]
+It was real. The distributor changed banks. You got lucky and Marge knows it.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.2.label]
+REPLY TO THE EMAIL AND ASK IF IT IS REAL
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.2.roll.0.2]
+The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone.
+
+# owner card: bec_marge
+[Owner.CARDS.bec_marge.options.2.roll.1.2]
+The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out.
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.text]
+{me}, {client} wired {amount} to a scammer this week. An email 'from' their owner told accounting to pay a new account and it worked. Their mailbox had been watched for days. Their owner is on the phone with the bank and his first question is what IT was doing. What do we say?
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.0.label]
+CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.0.text]
+Marge cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day.
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.1.label]
+LET OUR LAWYER ANSWER THEIR LETTER ($600)
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.2.label]
+ASK OUR INSURER
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.3.label]
+TELL THEM IT WAS THEIR OWN PROCESS
+
+# owner card: bec_lawyer_ok
+[Owner.CARDS.bec_lawyer_ok.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_lawyer_ok
+[Owner.CARDS.bec_lawyer_ok.text]
+Our lawyer reads the contract and the file. Email security is on the recommended list and payments are the client's own process. He writes a calm, short answer and points to the letter we sent. They drop the claim. The relationship is cooler, but it is alive.
+
+# owner card: bec_lawyer_ok
+[Owner.CARDS.bec_lawyer_ok.options.0.label]
+OK
+
+# owner card: bec_lawyer_bad
+[Owner.CARDS.bec_lawyer_bad.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_lawyer_bad
+[Owner.CARDS.bec_lawyer_bad.text]
+Our lawyer finds no written warning and no call-back rule on file. Their lawyer says we ran their mail and should have seen it. We settle for half the loss to keep this out of court. Word gets around the building.
+
+# owner card: bec_lawyer_bad
+[Owner.CARDS.bec_lawyer_bad.options.0.label]
+OK
+
+# owner card: bec_claim_ok
+[Owner.CARDS.bec_claim_ok.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_claim_ok
+[Owner.CARDS.bec_claim_ok.text]
+The broker comes back with good news: the funds transfer fraud rider covers a client who is tricked into sending money. We credit the client and the insurer pays most of it back after the deductible. The client sees you stand behind your work.
+
+# owner card: bec_claim_ok
+[Owner.CARDS.bec_claim_ok.options.0.label]
+OK
+
+# owner card: bec_claim_no
+[Owner.CARDS.bec_claim_no.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_claim_no
+[Owner.CARDS.bec_claim_no.text]
+The insurer says our policy covers a breach of our own systems, not money a client sent to a criminal by choice. That is a crime policy question and we do not have the rider. We credit the client ourselves.
+
+# owner card: bec_claim_no
+[Owner.CARDS.bec_claim_no.options.0.label]
+OK
+
+# owner card: bec_blame_left
+[Owner.CARDS.bec_blame_left.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_blame_left
+[Owner.CARDS.bec_blame_left.text]
+You tell their owner it was their process. He agrees quietly, then sends a termination letter for the end of the month. Two other firms in the building hear about it.
+
+# owner card: bec_blame_left
+[Owner.CARDS.bec_blame_left.options.0.label]
+OK
+
+# owner card: bec_blame_stay
+[Owner.CARDS.bec_blame_stay.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_blame_stay
+[Owner.CARDS.bec_blame_stay.text]
+You tell their owner it was their process. He goes quiet, then says they will stay for now. The tone of every email from them has changed.
+
+# owner card: bec_blame_stay
+[Owner.CARDS.bec_blame_stay.options.0.label]
+OK
+
+# owner card: bec_rider
+[Owner.CARDS.bec_rider.speaker]
+Marge (Bookkeeper)
+
+# owner card: bec_rider
+[Owner.CARDS.bec_rider.text]
+Our broker called about the wire fraud. A funds transfer fraud rider on the crime policy would cover a client who is tricked into sending money and blames us, up to $25,000 a claim. It is $30 a week. Without it we pay out of pocket every time.
+
+# owner card: bec_rider
+[Owner.CARDS.bec_rider.options.0.label]
+ADD THE RIDER ($30/WEEK)
+
+# owner card: bec_rider
+[Owner.CARDS.bec_rider.options.0.text]
+Signed. The next claim will be a phone call, not a crisis.
+
+# owner card: bec_rider
+[Owner.CARDS.bec_rider.options.1.label]
+LEAVE THE POLICY AS IT IS
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.speaker]
+{tech}
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.text]
+{me}, CryptoLocker is behind us. Before the week eats it, the team wants an afternoon: what happened, the real cause, what we change. Nobody gets blamed, it is about the process. We can do it properly, or skip it.
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.0.label]
+HOLD THE REVIEW AND WRITE THE RUNBOOK (HALF A DAY)
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.0.text]
+Four people, a whiteboard and an honest timeline. The backup alert sat unread for two days. The restore steps go on one page in the vault. Nobody was blamed, and everybody said so.
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.1.label]
+HOLD IT AND ADD A WEEKLY RESTORE TEST ($250 + $15/WEEK)
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.1.text]
+Every Friday someone restores one real file from each client and signs the sheet. It takes twenty minutes and it would have caught this.
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.2.label]
+SKIP IT, THE QUEUE IS FULL
+
+# owner card: pm_ransom
+[Owner.CARDS.pm_ransom.options.2.text]
+The queue gets a little shorter. The whiteboard stays blank. Nobody says anything, which is its own answer.
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.speaker]
+{tech}
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.text]
+{me}, the fallen rack at Gnarly Gnomes is a story the team already tells at lunch. It is also a pattern: plywood walls, no labels, no photos. Do we write it down so the next one is boring?
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.0.label]
+HOLD THE REVIEW AND START A SITE CHECKLIST (HALF A DAY)
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.0.text]
+Every closet gets a photo, labelled cables and a look at the wall. The team finds two more racks in the same state. The checklist fits on one page.
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.1.label]
+HOLD IT AND BUY A SPARE SWITCH AND LABELS ($200)
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.1.text]
+A spare switch and a roll of cable labels live in the van now. The next closet that fails is an hour, not an afternoon.
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.2.label]
+SKIP IT, THEY ARE BACK UP
+
+# owner card: pm_rack
+[Owner.CARDS.pm_rack.options.2.text]
+Gnarly Gnomes is up and happy. The next wall is still plywood.
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.speaker]
+{tech}
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.text]
+{me}, the email night at the brewery ran past midnight. Before we all forget it, the team wants a short review: what broke, why nobody saw it coming and what we change. No blame, just the list.
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.0.label]
+HOLD THE REVIEW AND WRITE A STATUS TEMPLATE (HALF A DAY)
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.0.text]
+A full log drive nobody watched, and a client who heard nothing for an hour. Now there is a disk alert and a one line status message every 30 minutes. Nobody was blamed.
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.1.label]
+HOLD IT AND PAY FOR SECOND-LEVEL ALERTS ($300 + $20/WEEK)
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.1.text]
+Mail disks and queues page a second person now, so a quiet failure does not sit until the phone rings.
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.2.label]
+SKIP IT, WE ARE TIRED
+
+# owner card: pm_email
+[Owner.CARDS.pm_email.options.2.text]
+Everyone goes home. The disk is still the same size.
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.speaker]
+{tech}
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.text]
+{me}, the wire fraud at {client} cost them real money and us a lot of sleep. The team wants an hour: how it got through, which control would have stopped it, what we change. No blame for the bookkeeper, she did what the process allowed.
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.0.label]
+HOLD THE REVIEW AND WRITE THE WIRE REQUEST CHECKLIST (HALF A DAY)
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.0.text]
+The checklist is short: call back on a known number, a second person for any new account, a hold on anything marked urgent and secret. We offer it to every client as a one page handout.
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.1.label]
+HOLD IT AND MAKE TWO-FACTOR LOGIN STANDARD FOR EMAIL ($300)
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.1.text]
+Two-factor login goes on every client mailbox that handles money, starting with the ones that were hit. A stolen password alone is not enough any more.
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.2.label]
+SKIP IT, THE CLIENT IS ALREADY HANDLED
+
+# owner card: pm_bec
+[Owner.CARDS.pm_bec.options.2.text]
+The client is handled. The process that let it through is not.
 
 
 # ======================= Service > HUDDLE =======================
