@@ -9083,6 +9083,13 @@ func slot_part(for_slot := 0) -> String:
     return "" if n <= 1 else "_s%d" % clampi(n, 2, SLOTS)
 
 
+func _ready() -> void:
+    # tests and headless runs write saves, the career and the meta file under their own prefix (a test that chose its own keeps it)
+    var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+    if is_test and save_prefix == "user://mspsim_":
+        save_prefix = "user://test_%d_" % OS.get_process_id()
+
+
 func save_path(for_mode: String, for_slot := 0) -> String:
     return save_prefix + for_mode + slot_part(for_slot) + ".cfg"
 

@@ -45,7 +45,9 @@ Hair stays prebaked. Accessories (glasses, facial hair, hats, and later a nameta
 - Tests: a golden check (overlay composited on the body equals a one-off prebaked reference for 123 frames, both facings); sync (index and position per animation including backwards `sitdown`, `pause()` and a character switch); the hurt flash on frames 25 and 28 with overlay colours; every accessory pixel fits its 32x32 cell including death; save and restore, old saves, unlock demotion; layout audit per page at wide, h and v.
 - Risks: the death union shift (above); hats drawn over a hand if `Arm Top` is not baked in; an animation missing from `START` hides the overlay; a one-frame lag from process order (use `frame_changed` if visible); accessory colours must be added to `Look.KEEPS` and the shader mapping so the hurt flash does not recolour them.
 
-## Decisions needed
-1. Approach C (head-only overlay) and the shipping order, with the no-art stopgap first?
-2. The first release: glasses 4, facial hair 4, hats 6 (a beanie, a ball cap, a hard hat, a Santa hat, two more of your choice)?
-3. Are real shirt styles (short sleeves, shorts) wanted, or are the shader patterns and hoodie colour enough for now?
+## Decisions (owner, Nov 2026)
+
+1. **Approach:** head-only overlay sheets (C), with the no-art stopgap (presets, RANDOM, pages, shader patterns, hoodie colour, shorts, pad name grid) first.
+2. **First-release accessories (proposed list, accepted as a starting point):** GLASSES (4): thin rectangular (Dan's), thick black rectangular, round wire, aviator sunglasses. FACIAL HAIR (4): stubble, goatee, full beard, moustache. HATS (6): knit beanie, ball cap, hard hat (a warehouse medal unlock), Santa hat (unlocked from the old Christmas tree), bucket hat, party hat (an outing unlock). EXTRAS: a nametag, a conference-teal lanyard, a watch.
+3. **Clothes:** REAL clothes are wanted (step 6 is in, not optional): shirts (polo, tee, button-down, sweater), bottoms (trousers, jeans, shorts, skirt), shoes (sneakers, boots, dress shoes), on a bare-skin base character, after the overlay accessories ship.
+4. **Order:** (a) no-art stopgap and the page layout; (b) the overlay pipeline with glasses and facial hair; (c) hats with the hair fallback rule and the unlock kinds; (d) nametag, lanyard, watch; (e) mirror preview, Free Play swap, NPC copies; (f) real clothes.
