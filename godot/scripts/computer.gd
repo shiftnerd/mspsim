@@ -57,6 +57,10 @@ var rmm_tab := "endpoints"
 var board_tab := "books"
 var lync_sel := ""
 var nerds_tab := "forum"
+var irc_view := "chat"  # the IRC tab: chat (the log), who (pick a nick), topics (pick what to talk about), join (jump into a conversation)
+var irc_nick := ""
+var irc_sel := 0
+var irc_scroll := 0
 var forum = FORUM_VIEW.new()  # the forum state of the NERDS app (board index, board, thread)
 var learn_lesson := -1
 var learn_q := 0
@@ -111,6 +115,7 @@ func open(from_desk: int) -> void:
 	_menu = false
 	dispatch.cancel()
 	forum.reset()
+	irc_view = "chat"
 	_toast = ""  # the toast timer only runs while open, so drop one left from the last session
 	_toast_t = 0.0
 	is_open = true
@@ -257,6 +262,7 @@ func escape() -> void:
 		or (app == "site" and site_view != "desktop")
 		or (app == "crm" and SalesCampaign.crm_view != "list")
 		or (app == "nerds" and nerds_tab == "forum" and forum.nested())
+		or (app == "nerds" and nerds_tab == "irc" and irc_view != "chat")
 	)
 	if nested:
 		back()
@@ -291,6 +297,8 @@ func back() -> void:
 		lync_sel = ""
 	elif app == "nerds" and nerds_tab == "forum" and forum.nested():
 		forum.back()
+	elif app == "nerds" and nerds_tab == "irc" and irc_view != "chat":
+		_irc_back()
 	elif app == "site" and site_view != "desktop":
 		site_view = "desktop"
 	elif app == "site":
@@ -325,6 +333,9 @@ func scroll_list(step: int) -> void:
 	elif app == "nerds" and nerds_tab == "forum":
 		forum.scroll(step * 2)
 		_canvas.queue_redraw()
+	elif app == "nerds" and nerds_tab == "irc" and irc_view in ["who", "topics"]:
+		irc_sel = clampi(irc_sel + step, 0, (Nerds.NICKS.size() if irc_view == "who" else Nerds.TOPICS.size()) - 1)
+		_canvas.queue_redraw()
 
 
 func _psa_index() -> int:
@@ -358,6 +369,8 @@ func activate(id: String) -> void:
 			if app == "dash":
 				dash_t = 0.0
 				dash_chart = -1
+			elif app == "nerds" and nerds_tab == "irc":
+				_set_nerds_tab("irc")
 		"wall":
 			Career.cycle_pick("wallpaper")
 		"close_app":
@@ -2084,28 +2097,51 @@ func _paint_nerds() -> void:
 
 
 func _paint_irc(area: Rect2) -> void:
-	var chars := int((area.size.x - 8) / 4.0)
+	match irc_view:
+		"who":
+			_irc_who(area)
+		"topics":
+			_irc_topics(area)
+		"join":
+			_irc_join(area)
+		_:
+			_irc_chat(area)
+
+
+# STRANGER grey, REGULAR blue, FRIEND green, BUDDY gold
+func _friend_color(level: int) -> Color:
+	return [Color("8b93a1"), Color("4a78b0"), GREEN, Color("c98a10")][clampi(level, 0, 3)]
+
+
+func _nick_color(nick: String) -> Color:
+	if Nerds.NICKS.has(nick):
+		return Nerds.NICKS[nick].color
+	return Color("0a6ab8") if nick == "you" else BTN_SH
+
+
+# the channel: the log, the nick list with friendship (wide screens) and the four buttons
+func _irc_chat(area: Rect2) -> void:
+	var side := 92.0 if area.size.x >= 300.0 else 0.0
+	var log_w := area.size.x - side
+	var chars := int((log_w - 8.0) / 4.0)
 	_text(
 		"#LABRATNERDS   %d NERDS ONLINE" % Nerds.NICKS.size(),
 		area.position + Vector2(4, 3),
 		Color("c0561a")
 	)
-	var rows := int((area.size.y - 38) / 7.0)
+	var one_row := area.size.x >= 250.0
+	var by := area.end.y - (11.0 if one_row else 21.0)
 	var lines: Array = []
 	for entry in Nerds.channel:
-		for part in _wrap("%s: %s" % [str(entry[0]), str(entry[1])], chars):
-			lines.append([str(entry[0]), part])
-	var y := area.position.y + 12
+		var parts := _wrap("%s: %s" % [str(entry[0]), str(entry[1])], chars)
+		for k in parts.size():
+			lines.append([str(entry[0]), parts[k] if k == 0 else " " + str(parts[k])])
+	var top := area.position.y + 12
+	var rows := int((by - 9.0 - top) / 7.0)
+	var y := top
 	for i in range(maxi(0, lines.size() - rows), lines.size()):
-		var nick := str(lines[i][0])
-		var color: Color = (
-			Nerds.NICKS[nick].color
-			if Nerds.NICKS.has(nick)
-			else (BTN_SH if nick != "you" else Color("0a6ab8"))
-		)
-		_text(lines[i][1], Vector2(area.position.x + 4, y), color)
+		_text(_clip(str(lines[i][1]), chars), Vector2(area.position.x + 4, y), _nick_color(str(lines[i][0])))
 		y += 7
-	var by := area.end.y - 21
 	var hint: Dictionary = Nerds.hint
 	if not hint.is_empty() and not bool(hint.get("pending", false)):
 		_text(
@@ -2119,21 +2155,121 @@ func _paint_irc(area: Rect2) -> void:
 			Vector2(area.position.x + 4, by - 8),
 			GREEN
 		)
-	var wait := Nerds.cooldown_left()
+	if side > 0.0:
+		var x0 := area.end.x - side
+		_fill(Rect2(x0 - 2, area.position.y + 1, 1, by - area.position.y - 3), BTN_SH)
+		var ny := area.position.y + 3.0
+		var row_h := minf(7.0, floorf((by - 3.0 - ny) / float(Nerds.NICKS.size())))
+		for nick in Nerds.NICKS:
+			var level := Nerds.friend_level(str(nick))
+			var r := Rect2(x0, ny - 1, side - 2, row_h)
+			_region("nerds:who:" + str(nick), r)
+			if r.has_point(_mouse):
+				_fill(r, Color("f0d9c4"))
+			_text(str(nick), Vector2(x0 + 2, ny), _nick_color(str(nick)))
+			var word := Nerds.friend_word(str(nick))
+			_text(word, Vector2(area.end.x - 3 - _tw(word), ny), _friend_color(level))
+			ny += row_h
 	var ask_ready := Nerds.can_ask()
-	var label := "ASK ABOUT THIS TICKET" if ask_ready else "WAIT %ds" % int(ceilf(wait))
-	_button(
-		"nerds:ask:ticket",
-		Rect2(area.position.x + 3, by + 9, area.size.x * 0.5 - 4, 9),
-		label,
-		ask_ready
+	var labels := [
+		"ASK TICKET" if ask_ready else "WAIT %ds" % int(ceilf(Nerds.cooldown_left())),
+		"ASK JOB" if ask_ready else "...",
+		"TALK",
+		"JOIN IN"
+	]
+	var ids := ["nerds:ask:ticket", "nerds:ask:step", "nerds:view:who", "nerds:view:join"]
+	var enabled := [ask_ready, ask_ready and Playbook.is_active(), true, Nerds.can_join()]
+	var cols := 4 if one_row else 2
+	var bw := (area.size.x - 6.0 - 2.0 * float(cols - 1)) / float(cols)
+	for i in 4:
+		var rect := Rect2(
+			area.position.x + 3.0 + float(i % cols) * (bw + 2.0), by + float(i / cols) * 10.0 + 2.0, bw, 9
+		)
+		_button(str(ids[i]), rect, str(labels[i]), bool(enabled[i]))
+
+
+# step 1 of a chat: pick the nick (the friendship word and how many chats are left today)
+func _irc_who(area: Rect2) -> void:
+	_text("TALK TO WHO?", area.position + Vector2(4, 3), Color("c0561a"))
+	var back_text := "LEFT = BACK"
+	_text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
+	var row_h := 8.0
+	var y := area.position.y + 12
+	var nicks: Array = Nerds.NICKS.keys()
+	for i in nicks.size():
+		var nick := str(nicks[i])
+		var r := Rect2(area.position.x + 2, y + float(i) * row_h, area.size.x - 4, row_h)
+		_row(r, i == irc_sel, i % 2 == 1)
+		_text(nick, r.position + Vector2(3, 1), _nick_color(nick))
+		var word := Nerds.friend_word(nick)
+		_text(word, r.position + Vector2(56, 1), _friend_color(Nerds.friend_level(nick)))
+		var left := Nerds.chat_left(nick)
+		var tail := "%d LEFT" % left if left > 0 else "DONE TODAY"
+		_text(tail, Vector2(r.end.x - 3 - _tw(tail), r.position.y + 1), BTN_SH if left <= 0 else TXT)
+		_region("nerds:who:" + nick, r)
+
+
+# step 2: the topic; FRIEND and BUDDY topics stay locked until the friendship is there
+func _irc_topics(area: Rect2) -> void:
+	var nick := irc_nick
+	_text(
+		"%s - %s" % [nick, Nerds.friend_word(nick)],
+		area.position + Vector2(4, 3),
+		_nick_color(nick)
 	)
-	_button(
-		"nerds:ask:step",
-		Rect2(area.position.x + area.size.x * 0.5 + 1, by + 9, area.size.x * 0.5 - 4, 9),
-		"ASK ABOUT THE JOB" if ask_ready else "...",
-		ask_ready and Playbook.is_active()
-	)
+	var tail := "%d LEFT TODAY" % Nerds.chat_left(nick)
+	_text(tail, Vector2(area.end.x - 4 - _tw(tail), area.position.y + 3), BTN_SH)
+	var topics: Array = Nerds.TOPICS
+	var row_h := 8.0
+	var vis := maxi(1, int((area.size.y - 14.0) / row_h))
+	irc_scroll = clampi(irc_scroll, 0, maxi(0, topics.size() - vis))
+	if irc_sel < irc_scroll:
+		irc_scroll = irc_sel
+	elif irc_sel >= irc_scroll + vis:
+		irc_scroll = irc_sel - vis + 1
+	var y := area.position.y + 12
+	for k in range(irc_scroll, mini(topics.size(), irc_scroll + vis)):
+		var t: Dictionary = topics[k]
+		var r := Rect2(area.position.x + 2, y, area.size.x - 4, row_h)
+		var locked := Nerds.friend_level(nick) < int(t.need)
+		_row(r, k == irc_sel, k % 2 == 1)
+		var label := (
+			"LOCKED - NEEDS %s" % Nerds.level_word(int(t.need)) if locked else str(t.label)
+		)
+		_text(_clip(label, int((r.size.x - 8) / 4.0)), r.position + Vector2(3, 1), BTN_SH if locked else TXT)
+		_region("nerds:topic:" + str(t.id), r)
+		y += row_h
+	if irc_scroll + vis < topics.size():
+		_text("MORE BELOW", Vector2(area.end.x - 4 - _tw("MORE BELOW"), area.end.y - 7), BTN_SH)
+
+
+# jumping into the last line the channel said
+func _irc_join(area: Rect2) -> void:
+	_text("JUMP IN", area.position + Vector2(4, 3), Color("c0561a"))
+	var back_text := "LEFT = BACK"
+	_text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
+	var y := area.position.y + 12
+	var chars := int((area.size.x - 8) / 4.0)
+	var last: Dictionary = Nerds.amb_last
+	if last.is_empty():
+		_text(str(Nerds.TEXT.irc_nojoin), Vector2(area.position.x + 4, y), BTN_SH)
+		return
+	var shown := _wrap("%s: %s" % [str(last.nick), str(last.text)], chars)
+	for k in mini(shown.size(), 4):
+		_text(str(shown[k]), Vector2(area.position.x + 4, y), _nick_color(str(last.nick)))
+		y += 7
+	y += 3
+	var choices := [
+		["agree", "AGREE WITH THEM"],
+		["joke", "MAKE A JOKE"],
+		["ask", "ASK THEM MORE"]
+	]
+	for i in choices.size():
+		var r := Rect2(area.position.x + 2, y + float(i) * 9.0, area.size.x - 4, 9)
+		_row(r, i == irc_sel, i % 2 == 1)
+		_text(str(choices[i][1]), r.position + Vector2(3, 2), TXT if Nerds.can_join() else BTN_SH)
+		if Nerds.can_join():
+			_region("nerds:join:" + str(choices[i][0]), r)
 
 
 # the NERDS app takes keys by name: arrows, Enter (a pad press stands for them), Page Up / Down and Tab (forum <-> IRC)
@@ -2150,24 +2286,87 @@ func _nerds_pad(event: InputEvent, dir: String) -> bool:
 	return nerds_key(key_name)
 
 
+func _set_nerds_tab(tab: String) -> void:
+	nerds_tab = tab
+	irc_view = "chat"
+	if tab == "irc":
+		Nerds.irc_open()
+
+
+# IRC: Enter asks about the ticket, Right about the job, Down opens TALK, Up JOIN IN; in a list Up / Down pick, Enter chooses, Left goes back
 func nerds_key(key_name: String) -> bool:
 	if key_name == "tab":
-		nerds_tab = "irc" if nerds_tab == "forum" else "forum"
+		_set_nerds_tab("irc" if nerds_tab == "forum" else "forum")
 		return true
 	if nerds_tab == "irc":
-		if key_name == "left":
-			nerds_tab = "forum"
-		elif key_name == "enter":
-			activate("nerds:ask:ticket")
-		elif key_name == "right":
-			activate("nerds:ask:step")
-		else:
-			return false
-		return true
+		return _irc_key(key_name)
 	if key_name == "right" and not forum.nested():
-		nerds_tab = "irc"
+		_set_nerds_tab("irc")
 		return true
 	return forum.key(key_name)
+
+
+func _irc_key(key_name: String) -> bool:
+	if irc_view == "chat":
+		match key_name:
+			"left":
+				_set_nerds_tab("forum")
+			"enter":
+				activate("nerds:ask:ticket")
+			"right":
+				activate("nerds:ask:step")
+			"down":
+				activate("nerds:view:who")
+			"up":
+				activate("nerds:view:join")
+			_:
+				return false
+		return true
+	var count := Nerds.NICKS.size()
+	if irc_view == "topics":
+		count = Nerds.TOPICS.size()
+	elif irc_view == "join":
+		count = 3
+	match key_name:
+		"up":
+			irc_sel = maxi(0, irc_sel - 1)
+		"down":
+			irc_sel = mini(count - 1, irc_sel + 1)
+		"left":
+			_irc_back()
+		"enter":
+			if irc_view == "who":
+				activate("nerds:who:" + str(Nerds.NICKS.keys()[irc_sel]))
+			elif irc_view == "topics":
+				activate("nerds:topic:" + str(Nerds.TOPICS[irc_sel].id))
+			else:
+				activate("nerds:join:" + str(["agree", "joke", "ask"][irc_sel]))
+		_:
+			return false
+	return true
+
+
+func _irc_back() -> void:
+	irc_view = "who" if irc_view == "topics" else "chat"
+	irc_sel = 0
+	irc_scroll = 0
+
+
+func _irc_go(view: String) -> void:
+	if view == "join" and not Nerds.can_join():
+		_say(str(Nerds.TEXT.irc_nojoin).to_upper())
+		return
+	irc_view = view
+	irc_sel = 0
+	irc_scroll = 0
+
+
+# after a chat: what it earned
+func _irc_toast(res: Dictionary, nick: String) -> void:
+	if bool(res.get("ok", false)):
+		_say("+%d WITH %s" % [int(res.gain), nick.to_upper()])
+	elif str(res.get("why", "")) == "cooldown":
+		_say(str(Nerds.TEXT.irc_wait).to_upper())
 
 
 func _nerds_action(parts: PackedStringArray) -> void:
@@ -2175,11 +2374,27 @@ func _nerds_action(parts: PackedStringArray) -> void:
 		"board", "thread", "back", "reply", "up", "dn":
 			forum.act(parts)
 		"tab":
-			nerds_tab = parts[2]
+			_set_nerds_tab(parts[2])
 		"read":
 			Nerds.read_thread(int(parts[2]))
 		"answer":
 			_say(Nerds.answer_thread(int(parts[2])))
+		"view":
+			_irc_go(parts[2])
+		"who":
+			irc_nick = parts[2]
+			irc_view = "topics"
+			irc_sel = 0
+			irc_scroll = 0
+		"topic":
+			var res := Nerds.chat(irc_nick, parts[2])
+			_irc_toast(res, irc_nick)
+			if str(res.get("why", "")) in ["", "ignored", "tired"]:
+				irc_view = "chat"
+		"join":
+			var res := Nerds.join(parts[2])
+			_irc_toast(res, str(Nerds.amb_last.get("nick", "")))
+			irc_view = "chat"
 		"ask":
 			if parts[2] == "step":
 				Nerds.ask_step()

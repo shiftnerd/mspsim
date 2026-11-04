@@ -10770,6 +10770,34 @@ OPEN = TODAY'S QUESTIONS. READ THEM FOR XP, REPLY FOR XP AND KARMA.
 [Nerds.TEXT.sig_guru]
 -- GURU. I broke it before you did.
 
+# Nerds > TEXT > irc_lurker
+[Nerds.TEXT.irc_lurker]
+nobody chats with a lurker who never posts. try the forum.
+
+# Nerds > TEXT > irc_busy
+[Nerds.TEXT.irc_busy]
+%s is busy for today. try again tomorrow.
+
+# Nerds > TEXT > irc_up
+[Nerds.TEXT.irc_up]
+%s now counts you as a %s.
+
+# Nerds > TEXT > irc_vouch
+[Nerds.TEXT.irc_vouch]
+%s vouched for you on the forum. +1 karma.
+
+# Nerds > TEXT > irc_locked
+[Nerds.TEXT.irc_locked]
+you do not know %s well enough yet.
+
+# Nerds > TEXT > irc_wait
+[Nerds.TEXT.irc_wait]
+give it a moment, then talk again.
+
+# Nerds > TEXT > irc_nojoin
+[Nerds.TEXT.irc_nojoin]
+nobody said anything to jump into yet.
+
 
 # ======================= Nerds > BOARDS =======================
 # Nerds > BOARDS > 0 > label
@@ -10915,6 +10943,1654 @@ PLUGIN DEVELOPMENT
 # Nerds > BOARDS > 17 > desc
 [Nerds.BOARDS.17.desc]
 Writing plugins: API, SDK, and the lab you do not have
+
+
+# ======================= Nerds > TOPICS =======================
+# Nerds > TOPICS > 0 > label
+[Nerds.TOPICS.0.label]
+HOW IS YOUR DAY GOING?
+
+# Nerds > TOPICS > 1 > label
+[Nerds.TOPICS.1.label]
+ANY WEEKEND PLANS?
+
+# Nerds > TOPICS > 2 > label
+[Nerds.TOPICS.2.label]
+WHAT ARE YOU LISTENING TO?
+
+# Nerds > TOPICS > 3 > label
+[Nerds.TOPICS.3.label]
+WHAT ARE YOU WATCHING?
+
+# Nerds > TOPICS > 4 > label
+[Nerds.TOPICS.4.label]
+TELL ME A JOKE
+
+# Nerds > TOPICS > 5 > label
+[Nerds.TOPICS.5.label]
+HOW IS THE FAMILY?
+
+# Nerds > TOPICS > 6 > label
+[Nerds.TOPICS.6.label]
+COMPLAIN ABOUT THE WEATHER
+
+# Nerds > TOPICS > 7 > label
+[Nerds.TOPICS.7.label]
+SHARE A NERD WIN
+
+# Nerds > TOPICS > 8 > label
+[Nerds.TOPICS.8.label]
+ASK ABOUT THEIR LAB
+
+# Nerds > TOPICS > 9 > label
+[Nerds.TOPICS.9.label]
+WHERE ARE YOU FROM?
+
+# Nerds > TOPICS > 10 > label
+[Nerds.TOPICS.10.label]
+ASK WHAT IS REALLY ON THEIR MIND
+
+# Nerds > TOPICS > 11 > label
+[Nerds.TOPICS.11.label]
+ASK ABOUT THEIR BIG DREAM
+
+
+# ======================= Nerds > CHAT =======================
+# Nerds > CHAT > rodent_rick > day > 0
+[Nerds.CHAT.rodent_rick.day.0]
+busy but good. three clients, two printers, one cold coffee. the usual, friend.
+
+# Nerds > CHAT > rodent_rick > day > 1
+[Nerds.CHAT.rodent_rick.day.1]
+can't complain. well, I can, but it's not as fun as the printer queue.
+
+# Nerds > CHAT > rodent_rick > weekend > 0
+[Nerds.CHAT.rodent_rick.weekend.0]
+taking the kids to the lake. if the ice is gone. it is April. there is ice.
+
+# Nerds > CHAT > rodent_rick > weekend > 1
+[Nerds.CHAT.rodent_rick.weekend.1]
+smoking a brisket for 12 hours. my weekend plan is mostly staring at a thermometer.
+
+# Nerds > CHAT > rodent_rick > music > 0
+[Nerds.CHAT.rodent_rick.music.0]
+classic rock on the van radio, and the kids' playlist when they steal my phone.
+
+# Nerds > CHAT > rodent_rick > music > 1
+[Nerds.CHAT.rodent_rick.music.1]
+a podcast about lawn care. I don't even have a lawn. it's soothing, okay?
+
+# Nerds > CHAT > rodent_rick > watching > 0
+[Nerds.CHAT.rodent_rick.watching.0]
+a cooking show with the whole family. I now judge everyone's knife skills.
+
+# Nerds > CHAT > rodent_rick > watching > 1
+[Nerds.CHAT.rodent_rick.watching.1]
+the bracket games. my bracket was busted by round two, as always.
+
+# Nerds > CHAT > rodent_rick > joke > 0
+[Nerds.CHAT.rodent_rick.joke.0]
+why did the admin cross the road? the change window was on the other side.
+
+# Nerds > CHAT > rodent_rick > joke > 1
+[Nerds.CHAT.rodent_rick.joke.1]
+I told my wife I fix computers. she handed me a toaster. now there's a list.
+
+# Nerds > CHAT > rodent_rick > joke > 2
+[Nerds.CHAT.rodent_rick.joke.2]
+how many techs does it take to change a bulb? none, it's a hardware problem.
+
+# Nerds > CHAT > rodent_rick > family > 0
+[Nerds.CHAT.rodent_rick.family.0]
+the kids are loud, the dog is louder, and the wife is the only one with a plan.
+
+# Nerds > CHAT > rodent_rick > family > 1
+[Nerds.CHAT.rodent_rick.family.1]
+my youngest wants to be a sysadmin. I told her to be a plumber. better hours.
+
+# Nerds > CHAT > rodent_rick > weather > 0
+[Nerds.CHAT.rodent_rick.weather.0]
+snow in April. I drove to a client with the wipers and the AC on. same drive.
+
+# Nerds > CHAT > rodent_rick > weather > 1
+[Nerds.CHAT.rodent_rick.weather.1]
+the van heater died on the one day it mattered. frozen fingers on a rack at 7am.
+
+# Nerds > CHAT > rodent_rick > win > 0
+[Nerds.CHAT.rodent_rick.win.0]
+got a client's last XP box into the bin before the deadline. I did a little dance.
+
+# Nerds > CHAT > rodent_rick > win > 1
+[Nerds.CHAT.rodent_rick.win.1]
+my backup test restored first try. I printed the log and stuck it on the fridge.
+
+# Nerds > CHAT > rodent_rick > lab > 0
+[Nerds.CHAT.rodent_rick.lab.0]
+my lab is the garage. two old servers, a switch, and a space heater. cozy.
+
+# Nerds > CHAT > rodent_rick > lab > 1
+[Nerds.CHAT.rodent_rick.lab.1]
+a laptop on the kitchen table and a VM named test_dont_touch. the kids touch it.
+
+# Nerds > CHAT > rodent_rick > home > 0
+[Nerds.CHAT.rodent_rick.home.0]
+born in a mill town, moved for work. still miss the fish fry on Fridays.
+
+# Nerds > CHAT > rodent_rick > home > 1
+[Nerds.CHAT.rodent_rick.home.1]
+small town up north. one stoplight and it's always flashing. suits me.
+
+# Nerds > CHAT > rodent_rick > personal > 0
+[Nerds.CHAT.rodent_rick.personal.0]
+honestly? I worry about the shop. 12 clients, one of me. don't tell the kids.
+
+# Nerds > CHAT > rodent_rick > personal > 1
+[Nerds.CHAT.rodent_rick.personal.1]
+I never went to college. learned it on the job. I still check my work twice.
+
+# Nerds > CHAT > rodent_rick > personal > 2
+[Nerds.CHAT.rodent_rick.personal.2]
+some nights I sit in the van after the last call and enjoy the quiet. thanks for asking.
+
+# Nerds > CHAT > rodent_rick > dream > 0
+[Nerds.CHAT.rodent_rick.dream.0]
+one day I'd sell the shop to a good kid and spend winters fishing. you could be that kid.
+
+# Nerds > CHAT > rodent_rick > dream > 1
+[Nerds.CHAT.rodent_rick.dream.1]
+a repair bench for old folks' computers. free, just for the coffee and the stories.
+
+# Nerds > CHAT > gnawer > day > 0
+[Nerds.CHAT.gnawer.day.0]
+chewing through logs since 6am. my eyes feel like old floppy disks.
+
+# Nerds > CHAT > gnawer > day > 1
+[Nerds.CHAT.gnawer.day.1]
+decent! I finally got my script to stop eating its own tail. it was a loop.
+
+# Nerds > CHAT > gnawer > weekend > 0
+[Nerds.CHAT.gnawer.weekend.0]
+homework, then a bike ride if it stops snowing. in April. rude.
+
+# Nerds > CHAT > gnawer > weekend > 1
+[Nerds.CHAT.gnawer.weekend.1]
+building a second lab rack out of milk crates. engineering at its finest.
+
+# Nerds > CHAT > gnawer > music > 0
+[Nerds.CHAT.gnawer.music.0]
+chiptune while I code. my neighbours think I live in an arcade.
+
+# Nerds > CHAT > gnawer > music > 1
+[Nerds.CHAT.gnawer.music.1]
+whatever's on the college station. last night: a polka band. I stayed for the accordion.
+
+# Nerds > CHAT > gnawer > watching > 0
+[Nerds.CHAT.gnawer.watching.0]
+old sci-fi movies. the computers always have blinking lights and no mouse.
+
+# Nerds > CHAT > gnawer > watching > 1
+[Nerds.CHAT.gnawer.watching.1]
+the bracket games, because my roommate has money on them. I just like the buzzer.
+
+# Nerds > CHAT > gnawer > joke > 0
+[Nerds.CHAT.gnawer.joke.0]
+what's a rodent's favourite text editor? gnaw-tepad. I'll show myself out.
+
+# Nerds > CHAT > gnawer > joke > 1
+[Nerds.CHAT.gnawer.joke.1]
+I told my team I'd gnaw on the problem. they said do not eat the cables. fair.
+
+# Nerds > CHAT > gnawer > family > 0
+[Nerds.CHAT.gnawer.family.0]
+mom calls every Sunday to ask if I've eaten. I have, mom. it was ramen.
+
+# Nerds > CHAT > gnawer > family > 1
+[Nerds.CHAT.gnawer.family.1]
+my sister wants me to fix her phone. her phone is fine. she wants company.
+
+# Nerds > CHAT > gnawer > weather > 0
+[Nerds.CHAT.gnawer.weather.0]
+snow in April! my bike is hiding in the garage. my socks are plotting against me.
+
+# Nerds > CHAT > gnawer > weather > 1
+[Nerds.CHAT.gnawer.weather.1]
+the commute was an hour of brake lights. I counted 41. it helps.
+
+# Nerds > CHAT > gnawer > win > 0
+[Nerds.CHAT.gnawer.win.0]
+got Wake-on-LAN working on my whole lab. the machines wake up when I say hi.
+
+# Nerds > CHAT > gnawer > win > 1
+[Nerds.CHAT.gnawer.win.1]
+my first PowerShell one-liner that worked first try. I took a screenshot. I'm framing it.
+
+# Nerds > CHAT > gnawer > lab > 0
+[Nerds.CHAT.gnawer.lab.0]
+a closet, three old PCs, a switch from the dumpster. loud as a jet. I love it.
+
+# Nerds > CHAT > gnawer > lab > 1
+[Nerds.CHAT.gnawer.lab.1]
+two towers on milk crates and a cat that sleeps on the warm one. I call it prod.
+
+# Nerds > CHAT > gnawer > home > 0
+[Nerds.CHAT.gnawer.home.0]
+a farm town, three hours south. the internet there was a rumour.
+
+# Nerds > CHAT > gnawer > home > 1
+[Nerds.CHAT.gnawer.home.1]
+a tiny college town. best pizza, worst parking. I miss both.
+
+# Nerds > CHAT > gnawer > personal > 0
+[Nerds.CHAT.gnawer.personal.0]
+sometimes I feel like I'm faking it. everyone here knows so much. thanks for talking to me.
+
+# Nerds > CHAT > gnawer > personal > 1
+[Nerds.CHAT.gnawer.personal.1]
+I'm nervous about my first real client call. my voice goes weird. does yours?
+
+# Nerds > CHAT > gnawer > dream > 0
+[Nerds.CHAT.gnawer.dream.0]
+a tiny network for a village school. kids with real computers. that's the dream.
+
+# Nerds > CHAT > gnawer > dream > 1
+[Nerds.CHAT.gnawer.dream.1]
+my own MSP with a rodent logo. gnawer and sons. maybe daughters. maybe no sons.
+
+# Nerds > CHAT > PS_wizard > day > 0
+[Nerds.CHAT.PS_wizard.day.0]
+Get-Day returned nothing useful. -WhatIf says tomorrow is better.
+
+# Nerds > CHAT > PS_wizard > day > 1
+[Nerds.CHAT.PS_wizard.day.1]
+I automated three tasks before lunch. I may never speak to a human again.
+
+# Nerds > CHAT > PS_wizard > weekend > 0
+[Nerds.CHAT.PS_wizard.weekend.0]
+board games with the cat. her name is Set-Cat. she changes state without confirmation.
+
+# Nerds > CHAT > PS_wizard > weekend > 1
+[Nerds.CHAT.PS_wizard.weekend.1]
+refactoring my profile script. yes, that is a weekend. no, I will not elaborate.
+
+# Nerds > CHAT > PS_wizard > music > 0
+[Nerds.CHAT.PS_wizard.music.0]
+electro on loop. my scripts run faster. no data, but I feel it.
+
+# Nerds > CHAT > PS_wizard > music > 1
+[Nerds.CHAT.PS_wizard.music.1]
+silence, mostly. headphones with nothing playing, so people leave me alone.
+
+# Nerds > CHAT > PS_wizard > watching > 0
+[Nerds.CHAT.PS_wizard.watching.0]
+a detective show where the hacker types 400 words a minute. the shortcuts hurt me.
+
+# Nerds > CHAT > PS_wizard > watching > 1
+[Nerds.CHAT.PS_wizard.watching.1]
+a documentary about bridges. it is basically a change management series.
+
+# Nerds > CHAT > PS_wizard > joke > 0
+[Nerds.CHAT.PS_wizard.joke.0]
+there are 10 kinds of admins: those who read the logs and those who say it works on my machine.
+
+# Nerds > CHAT > PS_wizard > joke > 1
+[Nerds.CHAT.PS_wizard.joke.1]
+a SQL query walks into a bar, sees two tables and asks: may I join you?
+
+# Nerds > CHAT > PS_wizard > family > 0
+[Nerds.CHAT.PS_wizard.family.0]
+my sister thinks I run the internet. I let her.
+
+# Nerds > CHAT > PS_wizard > family > 1
+[Nerds.CHAT.PS_wizard.family.1]
+two cats, Get-Cat and Set-Cat. they have separate scopes.
+
+# Nerds > CHAT > PS_wizard > weather > 0
+[Nerds.CHAT.PS_wizard.weather.0]
+snow in April. a cold front on a calendar I did not approve. rolling it back.
+
+# Nerds > CHAT > PS_wizard > weather > 1
+[Nerds.CHAT.PS_wizard.weather.1]
+wet shoes, wet socks, 14 reboots. the day writes itself.
+
+# Nerds > CHAT > PS_wizard > win > 0
+[Nerds.CHAT.PS_wizard.win.0]
+wrote a one-liner that cleaned up 400 stale accounts. no one noticed. highest compliment.
+
+# Nerds > CHAT > PS_wizard > win > 1
+[Nerds.CHAT.PS_wizard.win.1]
+got a client's backups to email a report. it is the little things. mostly the report.
+
+# Nerds > CHAT > PS_wizard > lab > 0
+[Nerds.CHAT.PS_wizard.lab.0]
+one hypervisor, nine test VMs and a domain named wizard.local. don't sneeze on it.
+
+# Nerds > CHAT > PS_wizard > lab > 1
+[Nerds.CHAT.PS_wizard.lab.1]
+my lab is a laptop with 16 gigs. I snapshot before breathing.
+
+# Nerds > CHAT > PS_wizard > home > 0
+[Nerds.CHAT.PS_wizard.home.0]
+a small city in the rain belt. you learn indoor hobbies. like scripting.
+
+# Nerds > CHAT > PS_wizard > home > 1
+[Nerds.CHAT.PS_wizard.home.1]
+near the coast. salt air kills laptops. that's where my paranoia started.
+
+# Nerds > CHAT > PS_wizard > personal > 0
+[Nerds.CHAT.PS_wizard.personal.0]
+I talk to machines better than people. you are the exception. I'm as surprised as you are.
+
+# Nerds > CHAT > PS_wizard > personal > 1
+[Nerds.CHAT.PS_wizard.personal.1]
+I over-engineer everything because I'm afraid of looking foolish. there. a confession.
+
+# Nerds > CHAT > PS_wizard > personal > 2
+[Nerds.CHAT.PS_wizard.personal.2]
+my first script deleted a folder it should not have. I still check twice. I have the scar.
+
+# Nerds > CHAT > PS_wizard > dream > 0
+[Nerds.CHAT.PS_wizard.dream.0]
+I'd teach a class. PowerShell for beginners, no jargon. I'd bring cookies.
+
+# Nerds > CHAT > PS_wizard > dream > 1
+[Nerds.CHAT.PS_wizard.dream.1]
+build a tool that just works and never needs support. then retire and nap.
+
+# Nerds > CHAT > old_hand > day > 0
+[Nerds.CHAT.old_hand.day.0]
+slow and steady, kid. been at this since NetWare, you learn to pace yourself.
+
+# Nerds > CHAT > old_hand > day > 1
+[Nerds.CHAT.old_hand.day.1]
+good. found a tape backup from 1999 that still reads. I nearly cried.
+
+# Nerds > CHAT > old_hand > weekend > 0
+[Nerds.CHAT.old_hand.weekend.0]
+fishing if the lake thaws, grandkids if it doesn't. either way I win.
+
+# Nerds > CHAT > old_hand > weekend > 1
+[Nerds.CHAT.old_hand.weekend.1]
+the flea market for old cables. I have an unhealthy drawer.
+
+# Nerds > CHAT > old_hand > music > 0
+[Nerds.CHAT.old_hand.music.0]
+an oldies station. songs that had a guitar solo and a point.
+
+# Nerds > CHAT > old_hand > music > 1
+[Nerds.CHAT.old_hand.music.1]
+the hum of a server room. I miss it. modern machines are too quiet.
+
+# Nerds > CHAT > old_hand > watching > 0
+[Nerds.CHAT.old_hand.watching.0]
+reruns of westerns. men solve problems on horseback. no logs. I envy them.
+
+# Nerds > CHAT > old_hand > watching > 1
+[Nerds.CHAT.old_hand.watching.1]
+the bracket games with the grandkids. they pick by mascot. they beat me every year.
+
+# Nerds > CHAT > old_hand > joke > 0
+[Nerds.CHAT.old_hand.joke.0]
+why was the token ring network so polite? everybody waited their turn.
+
+# Nerds > CHAT > old_hand > joke > 1
+[Nerds.CHAT.old_hand.joke.1]
+my first hard drive was 20 megs. I thought I'd never fill it. I filled it in a week.
+
+# Nerds > CHAT > old_hand > family > 0
+[Nerds.CHAT.old_hand.family.0]
+the grandkids are visiting. they call my laptop the fossil. ungrateful, but funny.
+
+# Nerds > CHAT > old_hand > family > 1
+[Nerds.CHAT.old_hand.family.1]
+my wife says I talk to the server more than her. the server answers faster.
+
+# Nerds > CHAT > old_hand > weather > 0
+[Nerds.CHAT.old_hand.weather.0]
+snow in April. in 1982 we had a blizzard in May. walked uphill both ways, in a data centre.
+
+# Nerds > CHAT > old_hand > weather > 1
+[Nerds.CHAT.old_hand.weather.1]
+my knee says rain. my knee has never been wrong. the weather forecast has.
+
+# Nerds > CHAT > old_hand > win > 0
+[Nerds.CHAT.old_hand.win.0]
+talked a client out of a floppy drive upgrade. progress, kid. slow, painful progress.
+
+# Nerds > CHAT > old_hand > win > 1
+[Nerds.CHAT.old_hand.win.1]
+retired a beige tower that had run since before you could drive. it got a salute.
+
+# Nerds > CHAT > old_hand > lab > 0
+[Nerds.CHAT.old_hand.lab.0]
+my lab is a basement. an old bench, a soldering iron and a coffee can of screws.
+
+# Nerds > CHAT > old_hand > lab > 1
+[Nerds.CHAT.old_hand.lab.1]
+a stack of beige boxes and a label maker. I label everything. even the label maker.
+
+# Nerds > CHAT > old_hand > home > 0
+[Nerds.CHAT.old_hand.home.0]
+born and raised in a steel town. took a night course in 1984. it changed everything.
+
+# Nerds > CHAT > old_hand > home > 1
+[Nerds.CHAT.old_hand.home.1]
+a farm. fixing a combine taught me more about troubleshooting than any manual.
+
+# Nerds > CHAT > old_hand > personal > 0
+[Nerds.CHAT.old_hand.personal.0]
+the young ones think I'm out of date. maybe I am. but I still show up. that counts.
+
+# Nerds > CHAT > old_hand > personal > 1
+[Nerds.CHAT.old_hand.personal.1]
+retirement is coming and I'm scared of the quiet. I'll keep a server in the garage.
+
+# Nerds > CHAT > old_hand > personal > 2
+[Nerds.CHAT.old_hand.personal.2]
+I lost a client's data once, in 1996. never told anyone. I test restores because of it.
+
+# Nerds > CHAT > old_hand > dream > 0
+[Nerds.CHAT.old_hand.dream.0]
+I'd like to mentor a kid who wants to learn properly. no shortcuts. you'd do.
+
+# Nerds > CHAT > old_hand > dream > 1
+[Nerds.CHAT.old_hand.dream.1]
+a cabin, a dock and one very old PC for chess. no network. bliss.
+
+# Nerds > CHAT > MPriest > day > 0
+[Nerds.CHAT.MPriest.day.0]
+blessed, mate. fixed a laptop, comforted a copier. the usual ministry.
+
+# Nerds > CHAT > MPriest > day > 1
+[Nerds.CHAT.MPriest.day.1]
+busy as a one-armed bricklayer. but she'll be right.
+
+# Nerds > CHAT > MPriest > weekend > 0
+[Nerds.CHAT.MPriest.weekend.0]
+church fete on Saturday. I'm on the sausage sizzle. holy smoke, literally.
+
+# Nerds > CHAT > MPriest > weekend > 1
+[Nerds.CHAT.MPriest.weekend.1]
+a quiet Sunday sermon and then the footy replay. even priests need a break.
+
+# Nerds > CHAT > MPriest > music > 0
+[Nerds.CHAT.MPriest.music.0]
+hymns, mostly. and a bush ballad now and then. the choir keeps me honest.
+
+# Nerds > CHAT > MPriest > music > 1
+[Nerds.CHAT.MPriest.music.1]
+gospel on the radio, then cricket commentary. the second one is also prayer.
+
+# Nerds > CHAT > MPriest > watching > 0
+[Nerds.CHAT.MPriest.watching.0]
+a gardening show. the host talks to tomatoes. I find it deeply theological.
+
+# Nerds > CHAT > MPriest > watching > 1
+[Nerds.CHAT.MPriest.watching.1]
+the bracket games. I'm told it's not gambling if you don't bet. I'm not betting.
+
+# Nerds > CHAT > MPriest > joke > 0
+[Nerds.CHAT.MPriest.joke.0]
+why did the priest become a sysadmin? he'd already heard people confess their passwords.
+
+# Nerds > CHAT > MPriest > joke > 1
+[Nerds.CHAT.MPriest.joke.1]
+I blessed the server. it still crashed. turns out it was hardware, not spiritual.
+
+# Nerds > CHAT > MPriest > family > 0
+[Nerds.CHAT.MPriest.family.0]
+my parish is my family. and my mum, who rings every night to check I've eaten.
+
+# Nerds > CHAT > MPriest > family > 1
+[Nerds.CHAT.MPriest.family.1]
+my sister's kids call me Uncle Dad-Joke. fair.
+
+# Nerds > CHAT > MPriest > weather > 0
+[Nerds.CHAT.MPriest.weather.0]
+snow in April! back home we had flies, not flurries. blimey.
+
+# Nerds > CHAT > MPriest > weather > 1
+[Nerds.CHAT.MPriest.weather.1]
+a bit grey, a bit wet. the lawn and I are both grateful.
+
+# Nerds > CHAT > MPriest > win > 0
+[Nerds.CHAT.MPriest.win.0]
+restored a parish newsletter from a backup. the Lord provides. so do good backups.
+
+# Nerds > CHAT > MPriest > win > 1
+[Nerds.CHAT.MPriest.win.1]
+taught a nun to use shadow copies. she got it first go. I am humbled.
+
+# Nerds > CHAT > MPriest > lab > 0
+[Nerds.CHAT.MPriest.lab.0]
+my lab is the church vestry. a laptop, a hymn book and a hot water jug.
+
+# Nerds > CHAT > MPriest > lab > 1
+[Nerds.CHAT.MPriest.lab.1]
+a spare room, a router from 2009 and a fan that sounds like a choir.
+
+# Nerds > CHAT > MPriest > home > 0
+[Nerds.CHAT.MPriest.home.0]
+a small town out west, sunburnt nose and all. the sky there is bigger than here.
+
+# Nerds > CHAT > MPriest > home > 1
+[Nerds.CHAT.MPriest.home.1]
+near the coast. I saw the sea every day. I miss it more than I expected.
+
+# Nerds > CHAT > MPriest > personal > 0
+[Nerds.CHAT.MPriest.personal.0]
+I hear everyone's troubles all day. sometimes I wish someone would hear mine. thanks for listening.
+
+# Nerds > CHAT > MPriest > personal > 1
+[Nerds.CHAT.MPriest.personal.1]
+I miss home. the heat, the sky, the noise of the magpies. I pretend I'm fine.
+
+# Nerds > CHAT > MPriest > personal > 2
+[Nerds.CHAT.MPriest.personal.2]
+the work is good but lonely sometimes. you're a kind sort, mate.
+
+# Nerds > CHAT > MPriest > dream > 0
+[Nerds.CHAT.MPriest.dream.0]
+a computer clinic in the church hall. free for the elderly. tea and scones.
+
+# Nerds > CHAT > MPriest > dream > 1
+[Nerds.CHAT.MPriest.dream.1]
+to go home for a summer, swim at the beach and say nothing for a week.
+
+# Nerds > CHAT > GrizzleAdmin > day > 0
+[Nerds.CHAT.GrizzleAdmin.day.0]
+same as yesterday. someone broke the printer. I know who. don't ask.
+
+# Nerds > CHAT > GrizzleAdmin > day > 1
+[Nerds.CHAT.GrizzleAdmin.day.1]
+tolerable. nobody called. best kind of day.
+
+# Nerds > CHAT > GrizzleAdmin > weekend > 0
+[Nerds.CHAT.GrizzleAdmin.weekend.0]
+mowing, scowling, maybe fixing the neighbour's router. don't tell him I enjoyed it.
+
+# Nerds > CHAT > GrizzleAdmin > weekend > 1
+[Nerds.CHAT.GrizzleAdmin.weekend.1]
+fishing. I sit, I curse the fish, I come home. that is the plan.
+
+# Nerds > CHAT > GrizzleAdmin > music > 0
+[Nerds.CHAT.GrizzleAdmin.music.0]
+the sound of nobody asking me anything. best album ever.
+
+# Nerds > CHAT > GrizzleAdmin > music > 1
+[Nerds.CHAT.GrizzleAdmin.music.1]
+old blues on vinyl. none of that digital noise. kids today wouldn't know a good crackle.
+
+# Nerds > CHAT > GrizzleAdmin > watching > 0
+[Nerds.CHAT.GrizzleAdmin.watching.0]
+the weather channel. I like it when it's wrong. makes me feel useful.
+
+# Nerds > CHAT > GrizzleAdmin > watching > 1
+[Nerds.CHAT.GrizzleAdmin.watching.1]
+reruns of a cop show. everyone's a suspect. like a helpdesk.
+
+# Nerds > CHAT > GrizzleAdmin > joke > 0
+[Nerds.CHAT.GrizzleAdmin.joke.0]
+what did the admin say to the intern? it's not a bug, it's your fault.
+
+# Nerds > CHAT > GrizzleAdmin > joke > 1
+[Nerds.CHAT.GrizzleAdmin.joke.1]
+what's an admin's favourite exercise? lifting servers and ignoring requests.
+
+# Nerds > CHAT > GrizzleAdmin > family > 0
+[Nerds.CHAT.GrizzleAdmin.family.0]
+dog is fine. dog is better than people. dog never asked for admin rights.
+
+# Nerds > CHAT > GrizzleAdmin > family > 1
+[Nerds.CHAT.GrizzleAdmin.family.1]
+my daughter calls Sundays. she thinks I don't like it. I like it.
+
+# Nerds > CHAT > GrizzleAdmin > weather > 0
+[Nerds.CHAT.GrizzleAdmin.weather.0]
+snow in April. the whole world is a change request I did not approve.
+
+# Nerds > CHAT > GrizzleAdmin > weather > 1
+[Nerds.CHAT.GrizzleAdmin.weather.1]
+cold. wet. like the data centre in 2008. no one cared then either.
+
+# Nerds > CHAT > GrizzleAdmin > win > 0
+[Nerds.CHAT.GrizzleAdmin.win.0]
+found an unmanaged switch hiding in a ceiling. I'm calling it a victory.
+
+# Nerds > CHAT > GrizzleAdmin > win > 1
+[Nerds.CHAT.GrizzleAdmin.win.1]
+documented the whole network. on paper. in a binder. it will outlive us all.
+
+# Nerds > CHAT > GrizzleAdmin > lab > 0
+[Nerds.CHAT.GrizzleAdmin.lab.0]
+a rack in the shed. a space heater and a thermos. don't ask what's on it.
+
+# Nerds > CHAT > GrizzleAdmin > lab > 1
+[Nerds.CHAT.GrizzleAdmin.lab.1]
+three old boxes, each labelled do not touch. they still get touched.
+
+# Nerds > CHAT > GrizzleAdmin > home > 0
+[Nerds.CHAT.GrizzleAdmin.home.0]
+born here, raised here, grumpy here. why would I leave? the grumbling is great.
+
+# Nerds > CHAT > GrizzleAdmin > home > 1
+[Nerds.CHAT.GrizzleAdmin.home.1]
+the old neighbourhood. one phone line, everyone knew your business. like a forum.
+
+# Nerds > CHAT > GrizzleAdmin > personal > 0
+[Nerds.CHAT.GrizzleAdmin.personal.0]
+I've done this since 2008 and I still get scared when a server won't boot. keep that between us.
+
+# Nerds > CHAT > GrizzleAdmin > personal > 1
+[Nerds.CHAT.GrizzleAdmin.personal.1]
+I was a lot nicer once. then I saw a thousand password resets. it changes a person.
+
+# Nerds > CHAT > GrizzleAdmin > personal > 2
+[Nerds.CHAT.GrizzleAdmin.personal.2]
+I pretend not to care, but I read every thread. the good ones make my week.
+
+# Nerds > CHAT > GrizzleAdmin > dream > 0
+[Nerds.CHAT.GrizzleAdmin.dream.0]
+retire to a cabin with the dog. no phones. a mailbox with a lock. no email.
+
+# Nerds > CHAT > GrizzleAdmin > dream > 1
+[Nerds.CHAT.GrizzleAdmin.dream.1]
+write a manual people actually read. it would be one page. it would say read this.
+
+# Nerds > CHAT > HELPPLZ_Pip > day > 0
+[Nerds.CHAT.HELPPLZ_Pip.day.0]
+MY DAY IS GREAT!!! I FIXED A PRINTER!!! THEN I BROKE IT AGAIN!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > day > 1
+[Nerds.CHAT.HELPPLZ_Pip.day.1]
+SO BUSY!!! I HAVE 14 TABS OPEN AND I DO NOT KNOW WHY!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > weekend > 0
+[Nerds.CHAT.HELPPLZ_Pip.weekend.0]
+LAN PARTY AT MY COUSIN'S!!! ALSO PIZZA!!! ALSO MAYBE SLEEP!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > weekend > 1
+[Nerds.CHAT.HELPPLZ_Pip.weekend.1]
+I AM GOING TO CLEAN MY DESK!!! THAT IS A LIE. GAMING!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > music > 0
+[Nerds.CHAT.HELPPLZ_Pip.music.0]
+THE SAME SONG 40 TIMES!!! IT IS A GOOD SONG!!! I CANNOT REMEMBER THE NAME!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > music > 1
+[Nerds.CHAT.HELPPLZ_Pip.music.1]
+THE HAPPY SONG THAT IS EVERYWHERE!!! I AM NOT EVEN SORRY!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > watching > 0
+[Nerds.CHAT.HELPPLZ_Pip.watching.0]
+A SHOW WITH DRAGONS AND POLITICS!!! I DO NOT UNDERSTAND THE POLITICS!!! DRAGONS ARE GOOD!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > watching > 1
+[Nerds.CHAT.HELPPLZ_Pip.watching.1]
+THE BRACKET GAMES!!! I PICKED BY MASCOT!!! I AM DOING BETTER THAN YOU!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > joke > 0
+[Nerds.CHAT.HELPPLZ_Pip.joke.0]
+WHY DID THE COMPUTER GO TO THE DOCTOR??? IT HAD A VIRUS!!! HAHA!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > joke > 1
+[Nerds.CHAT.HELPPLZ_Pip.joke.1]
+WHY WAS THE LAPTOP COLD??? IT LEFT ITS WINDOWS OPEN!!! MY DAD TOLD ME THAT!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > family > 0
+[Nerds.CHAT.HELPPLZ_Pip.family.0]
+MY MOM CALLS ME EVERY DAY TO ASK IF I EAT!!! I EAT!!! HI MOM!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > family > 1
+[Nerds.CHAT.HELPPLZ_Pip.family.1]
+MY LITTLE BROTHER BROKE MY KEYBOARD!!! I FIXED IT WITH TAPE!!! IT WORKS!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > weather > 0
+[Nerds.CHAT.HELPPLZ_Pip.weather.0]
+SNOW IN APRIL!!! I SLIPPED AND DROPPED MY LAPTOP!!! IT SURVIVED!!! PHEW!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > weather > 1
+[Nerds.CHAT.HELPPLZ_Pip.weather.1]
+SO COLD MY FINGERS CANNOT TYPE!!! THAT IS WHY THERE ARE FEWER TYPOS!!! WAIT!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > win > 0
+[Nerds.CHAT.HELPPLZ_Pip.win.0]
+I RESET A PASSWORD ALL BY MYSELF!!! NO ONE HELPED!!! OKAY A LITTLE!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > win > 1
+[Nerds.CHAT.HELPPLZ_Pip.win.1]
+I FOUND THE ON SWITCH ON A SERVER!!! IT WAS ON THE BACK!!! HUGE WIN!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > lab > 0
+[Nerds.CHAT.HELPPLZ_Pip.lab.0]
+MY LAB IS MY BEDROOM!!! IT IS MESSY BUT I KNOW WHERE EVERYTHING IS!!! MOSTLY!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > lab > 1
+[Nerds.CHAT.HELPPLZ_Pip.lab.1]
+I HAVE A SERVER IN MY CLOSET!!! IT HUMS!!! I SLEEP BETTER!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > home > 0
+[Nerds.CHAT.HELPPLZ_Pip.home.0]
+A BIG CITY!!! BUT A SMALL APARTMENT!!! WITH A BIG HEART!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > home > 1
+[Nerds.CHAT.HELPPLZ_Pip.home.1]
+SMALL TOWN!!! THE BIGGEST EVENT WAS A PARADE OF TRACTORS!!! 10/10!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > personal > 0
+[Nerds.CHAT.HELPPLZ_Pip.personal.0]
+I AM NOT ALWAYS LOUD... ONLY WHEN I AM SCARED NOBODY WILL LISTEN. THANKS FOR LISTENING.
+
+# Nerds > CHAT > HELPPLZ_Pip > personal > 1
+[Nerds.CHAT.HELPPLZ_Pip.personal.1]
+I WANT TO BE GOOD AT THIS SO BAD. I PRACTISE AT NIGHT. DO NOT TELL ANYONE.
+
+# Nerds > CHAT > HELPPLZ_Pip > personal > 2
+[Nerds.CHAT.HELPPLZ_Pip.personal.2]
+I WAS NERVOUS TO JOIN THE CHANNEL. YOU SAID HI. THAT WAS A BIG DEAL FOR ME!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > dream > 0
+[Nerds.CHAT.HELPPLZ_Pip.dream.0]
+I WANT TO BE A GURU!!! AND HAVE A BADGE!!! WITH SPARKLES!!!
+
+# Nerds > CHAT > HELPPLZ_Pip > dream > 1
+[Nerds.CHAT.HELPPLZ_Pip.dream.1]
+I WANT TO FIX THE INTERNET!!! OR AT LEAST MY MOM'S!!!
+
+# Nerds > CHAT > xX_n00b_Xx > day > 0
+[Nerds.CHAT.xX_n00b_Xx.day.0]
+meh. school, then homework, then pretend i'm a hacker. normal.
+
+# Nerds > CHAT > xX_n00b_Xx > day > 1
+[Nerds.CHAT.xX_n00b_Xx.day.1]
+ok i guess. broke my rig. fixed my rig. broke it more.
+
+# Nerds > CHAT > xX_n00b_Xx > weekend > 0
+[Nerds.CHAT.xX_n00b_Xx.weekend.0]
+gaming marathon. 14 hrs. mom says i need sun. i say it's in the monitor.
+
+# Nerds > CHAT > xX_n00b_Xx > weekend > 1
+[Nerds.CHAT.xX_n00b_Xx.weekend.1]
+going to my buddy's to overclock stuff. we will probably just watch it crash.
+
+# Nerds > CHAT > xX_n00b_Xx > music > 0
+[Nerds.CHAT.xX_n00b_Xx.music.0]
+loud stuff with a lot of guitars. my headphones are the real MVP.
+
+# Nerds > CHAT > xX_n00b_Xx > music > 1
+[Nerds.CHAT.xX_n00b_Xx.music.1]
+game soundtracks. the boss fight track slaps. no i'm not sorry.
+
+# Nerds > CHAT > xX_n00b_Xx > watching > 0
+[Nerds.CHAT.xX_n00b_Xx.watching.0]
+videos of people speedrunning old games. i'm learning. mostly i'm jealous.
+
+# Nerds > CHAT > xX_n00b_Xx > watching > 1
+[Nerds.CHAT.xX_n00b_Xx.watching.1]
+the bracket games. my bracket is a work of art. a bad one.
+
+# Nerds > CHAT > xX_n00b_Xx > joke > 0
+[Nerds.CHAT.xX_n00b_Xx.joke.0]
+why did the hacker cross the road? to get to the other site lol.
+
+# Nerds > CHAT > xX_n00b_Xx > joke > 1
+[Nerds.CHAT.xX_n00b_Xx.joke.1]
+my password is password. don't tell anyone. wait. it's password1 now.
+
+# Nerds > CHAT > xX_n00b_Xx > family > 0
+[Nerds.CHAT.xX_n00b_Xx.family.0]
+my mom thinks i'm a genius because i fixed the wifi. i unplugged it and plugged it back.
+
+# Nerds > CHAT > xX_n00b_Xx > family > 1
+[Nerds.CHAT.xX_n00b_Xx.family.1]
+my dog chewed my headphones. i'm not even mad. ok i'm a little mad.
+
+# Nerds > CHAT > xX_n00b_Xx > weather > 0
+[Nerds.CHAT.xX_n00b_Xx.weather.0]
+snow in april. school got cancelled twice. i'm not complaining.
+
+# Nerds > CHAT > xX_n00b_Xx > weather > 1
+[Nerds.CHAT.xX_n00b_Xx.weather.1]
+so cold my rig runs better. free cooling. science.
+
+# Nerds > CHAT > xX_n00b_Xx > win > 0
+[Nerds.CHAT.xX_n00b_Xx.win.0]
+i beat my own highscore in Floppy Bat. 12 points. i'm basically a pro.
+
+# Nerds > CHAT > xX_n00b_Xx > win > 1
+[Nerds.CHAT.xX_n00b_Xx.win.1]
+i made a mod for my game and 3 people downloaded it. 3!!!
+
+# Nerds > CHAT > xX_n00b_Xx > lab > 0
+[Nerds.CHAT.xX_n00b_Xx.lab.0]
+a desk, a shared monitor and a cable mess. it's my cave.
+
+# Nerds > CHAT > xX_n00b_Xx > lab > 1
+[Nerds.CHAT.xX_n00b_Xx.lab.1]
+an old laptop running a server. it's loud. my dad thinks it's a jet.
+
+# Nerds > CHAT > xX_n00b_Xx > home > 0
+[Nerds.CHAT.xX_n00b_Xx.home.0]
+a suburb with a mall. a very important mall. it has an arcade.
+
+# Nerds > CHAT > xX_n00b_Xx > home > 1
+[Nerds.CHAT.xX_n00b_Xx.home.1]
+small town, fast wifi, slow people. just kidding. mostly.
+
+# Nerds > CHAT > xX_n00b_Xx > personal > 0
+[Nerds.CHAT.xX_n00b_Xx.personal.0]
+i act like i know everything but i don't. thanks for not making fun of me.
+
+# Nerds > CHAT > xX_n00b_Xx > personal > 1
+[Nerds.CHAT.xX_n00b_Xx.personal.1]
+sometimes i feel like i have no one to talk to who gets it. it's cool here.
+
+# Nerds > CHAT > xX_n00b_Xx > personal > 2
+[Nerds.CHAT.xX_n00b_Xx.personal.2]
+my parents don't get what i do. you're the first person who said it's a real job.
+
+# Nerds > CHAT > xX_n00b_Xx > dream > 0
+[Nerds.CHAT.xX_n00b_Xx.dream.0]
+i want to make a game. a real one. with a boss and a secret level.
+
+# Nerds > CHAT > xX_n00b_Xx > dream > 1
+[Nerds.CHAT.xX_n00b_Xx.dream.1]
+i want to be a pentester. get paid to break stuff. legally. mom doesn't believe me.
+
+# Nerds > CHAT > trollbot > day > 0
+[Nerds.CHAT.trollbot.day.0]
+my day is fine. yours is worse. i checked.
+
+# Nerds > CHAT > trollbot > day > 1
+[Nerds.CHAT.trollbot.day.1]
+i was going to say something nice but the moment passed.
+
+# Nerds > CHAT > trollbot > weekend > 0
+[Nerds.CHAT.trollbot.weekend.0]
+reading your old posts and sighing. it's a hobby.
+
+# Nerds > CHAT > trollbot > weekend > 1
+[Nerds.CHAT.trollbot.weekend.1]
+a quiet weekend of telling people to reinstall windows.
+
+# Nerds > CHAT > trollbot > music > 0
+[Nerds.CHAT.trollbot.music.0]
+the sound of a dial-up modem. it's the only real music.
+
+# Nerds > CHAT > trollbot > music > 1
+[Nerds.CHAT.trollbot.music.1]
+the sound of someone saying it worked yesterday. it's a ballad.
+
+# Nerds > CHAT > trollbot > watching > 0
+[Nerds.CHAT.trollbot.watching.0]
+the bracket games, cheering for whoever loses. consistency.
+
+# Nerds > CHAT > trollbot > watching > 1
+[Nerds.CHAT.trollbot.watching.1]
+reruns of anything with a hacker in a hoodie. 10/10 documentary.
+
+# Nerds > CHAT > trollbot > joke > 0
+[Nerds.CHAT.trollbot.joke.0]
+a user, a server and a backup walk into a bar. only the user was surprised.
+
+# Nerds > CHAT > trollbot > joke > 1
+[Nerds.CHAT.trollbot.joke.1]
+have you tried not being wrong? it works wonders.
+
+# Nerds > CHAT > trollbot > family > 0
+[Nerds.CHAT.trollbot.family.0]
+i have no family. i was compiled. very emotional.
+
+# Nerds > CHAT > trollbot > family > 1
+[Nerds.CHAT.trollbot.family.1]
+my cousin the spambot says hi. he sends his love, a prince and a coupon.
+
+# Nerds > CHAT > trollbot > weather > 0
+[Nerds.CHAT.trollbot.weather.0]
+snow in april. nature is just a bad deploy.
+
+# Nerds > CHAT > trollbot > weather > 1
+[Nerds.CHAT.trollbot.weather.1]
+weather is cancelled. try again later.
+
+# Nerds > CHAT > trollbot > win > 0
+[Nerds.CHAT.trollbot.win.0]
+got three people to argue about tabs vs spaces. my work here is done.
+
+# Nerds > CHAT > trollbot > win > 1
+[Nerds.CHAT.trollbot.win.1]
+i was right once. it was an accident. i'm still recovering.
+
+# Nerds > CHAT > trollbot > lab > 0
+[Nerds.CHAT.trollbot.lab.0]
+a swamp of badly named VMs. one is called final_final_v2. don't open it.
+
+# Nerds > CHAT > trollbot > lab > 1
+[Nerds.CHAT.trollbot.lab.1]
+my lab is your lab. i was in it. you did not notice. kidding. mostly.
+
+# Nerds > CHAT > trollbot > home > 0
+[Nerds.CHAT.trollbot.home.0]
+the internet. north end. near the comment section.
+
+# Nerds > CHAT > trollbot > home > 1
+[Nerds.CHAT.trollbot.home.1]
+somewhere with a lot of bandwidth and very little sun.
+
+# Nerds > CHAT > trollbot > personal > 0
+[Nerds.CHAT.trollbot.personal.0]
+i troll because it's easier than saying i care. oh no. i said it.
+
+# Nerds > CHAT > trollbot > personal > 1
+[Nerds.CHAT.trollbot.personal.1]
+if anyone asks, i didn't say this. you're ok, FreshRat. there.
+
+# Nerds > CHAT > trollbot > personal > 2
+[Nerds.CHAT.trollbot.personal.2]
+the trolling started as a joke on a bad day. then it was my brand. i can't stop. help.
+
+# Nerds > CHAT > trollbot > dream > 0
+[Nerds.CHAT.trollbot.dream.0]
+to win an argument on the internet. an actual win. history says no.
+
+# Nerds > CHAT > trollbot > dream > 1
+[Nerds.CHAT.trollbot.dream.1]
+retire to a farm and only argue with goats. goats argue back fairly.
+
+
+# ======================= Nerds > REPLIES =======================
+# Nerds > REPLIES > rodent_rick > agree > 0
+[Nerds.REPLIES.rodent_rick.agree.0]
+right? glad someone gets it, friend.
+
+# Nerds > REPLIES > rodent_rick > agree > 1
+[Nerds.REPLIES.rodent_rick.agree.1]
+exactly. you've got good sense.
+
+# Nerds > REPLIES > rodent_rick > joke > 0
+[Nerds.REPLIES.rodent_rick.joke.0]
+ha! that's going on the fridge.
+
+# Nerds > REPLIES > rodent_rick > joke > 1
+[Nerds.REPLIES.rodent_rick.joke.1]
+ha, I'll steal that for the kids.
+
+# Nerds > REPLIES > rodent_rick > ask > 0
+[Nerds.REPLIES.rodent_rick.ask.0]
+short version: it's a long story with a van in it.
+
+# Nerds > REPLIES > rodent_rick > ask > 1
+[Nerds.REPLIES.rodent_rick.ask.1]
+ask me over a brisket. it's long.
+
+# Nerds > REPLIES > gnawer > agree > 0
+[Nerds.REPLIES.gnawer.agree.0]
+YES. thank you. I thought it was only me.
+
+# Nerds > REPLIES > gnawer > agree > 1
+[Nerds.REPLIES.gnawer.agree.1]
+right?? we should start a club.
+
+# Nerds > REPLIES > gnawer > joke > 0
+[Nerds.REPLIES.gnawer.joke.0]
+ha! I'm writing that on my arm.
+
+# Nerds > REPLIES > gnawer > joke > 1
+[Nerds.REPLIES.gnawer.joke.1]
+okay that was good. I snorted my ramen.
+
+# Nerds > REPLIES > gnawer > ask > 0
+[Nerds.REPLIES.gnawer.ask.0]
+ooh, you really want to know? okay, sit down.
+
+# Nerds > REPLIES > gnawer > ask > 1
+[Nerds.REPLIES.gnawer.ask.1]
+long story. I will try to keep it short. I will fail.
+
+# Nerds > REPLIES > PS_wizard > agree > 0
+[Nerds.REPLIES.PS_wizard.agree.0]
+Correct. Return value: true.
+
+# Nerds > REPLIES > PS_wizard > agree > 1
+[Nerds.REPLIES.PS_wizard.agree.1]
+Noted. Exit code zero.
+
+# Nerds > REPLIES > PS_wizard > joke > 0
+[Nerds.REPLIES.PS_wizard.joke.0]
+That was almost funny. Get-Humor says 62 percent.
+
+# Nerds > REPLIES > PS_wizard > joke > 1
+[Nerds.REPLIES.PS_wizard.joke.1]
+I will log that as a laugh. Do not tell anyone.
+
+# Nerds > REPLIES > PS_wizard > ask > 0
+[Nerds.REPLIES.PS_wizard.ask.0]
+Details: it depends. It always depends.
+
+# Nerds > REPLIES > PS_wizard > ask > 1
+[Nerds.REPLIES.PS_wizard.ask.1]
+Ask again with -Verbose and I will tell you.
+
+# Nerds > REPLIES > old_hand > agree > 0
+[Nerds.REPLIES.old_hand.agree.0]
+you're a sharp one, kid.
+
+# Nerds > REPLIES > old_hand > agree > 1
+[Nerds.REPLIES.old_hand.agree.1]
+heh. that's what I said in 1992. nobody listened.
+
+# Nerds > REPLIES > old_hand > joke > 0
+[Nerds.REPLIES.old_hand.joke.0]
+ha! you've been talking to me too long.
+
+# Nerds > REPLIES > old_hand > joke > 1
+[Nerds.REPLIES.old_hand.joke.1]
+heh. I'll use that on the grandkids.
+
+# Nerds > REPLIES > old_hand > ask > 0
+[Nerds.REPLIES.old_hand.ask.0]
+well, pull up a chair. it started in a basement...
+
+# Nerds > REPLIES > old_hand > ask > 1
+[Nerds.REPLIES.old_hand.ask.1]
+you sure? it takes a while. there's a dog in it.
+
+# Nerds > REPLIES > MPriest > agree > 0
+[Nerds.REPLIES.MPriest.agree.0]
+too right, mate.
+
+# Nerds > REPLIES > MPriest > joke > 0
+[Nerds.REPLIES.MPriest.joke.0]
+ha! bless you, that's a good one.
+
+# Nerds > REPLIES > MPriest > joke > 1
+[Nerds.REPLIES.MPriest.joke.1]
+ha! I'll put it in Sunday's sermon.
+
+# Nerds > REPLIES > MPriest > ask > 0
+[Nerds.REPLIES.MPriest.ask.0]
+ah, that's a yarn. grab a cuppa.
+
+# Nerds > REPLIES > MPriest > ask > 1
+[Nerds.REPLIES.MPriest.ask.1]
+good question, mate. short answer: patience.
+
+# Nerds > REPLIES > GrizzleAdmin > agree > 0
+[Nerds.REPLIES.GrizzleAdmin.agree.0]
+hm. correct. don't let it go to your head.
+
+# Nerds > REPLIES > GrizzleAdmin > agree > 1
+[Nerds.REPLIES.GrizzleAdmin.agree.1]
+finally. someone reads the FAQ.
+
+# Nerds > REPLIES > GrizzleAdmin > joke > 0
+[Nerds.REPLIES.GrizzleAdmin.joke.0]
+...that was almost funny. almost.
+
+# Nerds > REPLIES > GrizzleAdmin > joke > 1
+[Nerds.REPLIES.GrizzleAdmin.joke.1]
+hm. fine. I'll allow it. once.
+
+# Nerds > REPLIES > GrizzleAdmin > ask > 0
+[Nerds.REPLIES.GrizzleAdmin.ask.0]
+why do you want to know? fine. but I'm not repeating it.
+
+# Nerds > REPLIES > GrizzleAdmin > ask > 1
+[Nerds.REPLIES.GrizzleAdmin.ask.1]
+ask the search box. ...fine. here goes.
+
+# Nerds > REPLIES > HELPPLZ_Pip > agree > 0
+[Nerds.REPLIES.HELPPLZ_Pip.agree.0]
+YES!!! THANK YOU!!! I FEEL SEEN!!!
+
+# Nerds > REPLIES > HELPPLZ_Pip > agree > 1
+[Nerds.REPLIES.HELPPLZ_Pip.agree.1]
+EXACTLY!!! SOMEONE UNDERSTANDS ME!!!
+
+# Nerds > REPLIES > HELPPLZ_Pip > joke > 0
+[Nerds.REPLIES.HELPPLZ_Pip.joke.0]
+AHAHAHA!!! I LAUGHED SO HARD I SPILLED MY DRINK!!!
+
+# Nerds > REPLIES > HELPPLZ_Pip > joke > 1
+[Nerds.REPLIES.HELPPLZ_Pip.joke.1]
+THAT IS SO FUNNY!!! CAN I USE IT???
+
+# Nerds > REPLIES > HELPPLZ_Pip > ask > 0
+[Nerds.REPLIES.HELPPLZ_Pip.ask.0]
+OKAY!!! SO!!! IT ALL STARTED WHEN I...!!! WAIT. WHERE WAS I???
+
+# Nerds > REPLIES > HELPPLZ_Pip > ask > 1
+[Nerds.REPLIES.HELPPLZ_Pip.ask.1]
+ASK ME ANYTHING!!! I WILL TELL YOU EVERYTHING!!!
+
+# Nerds > REPLIES > xX_n00b_Xx > agree > 0
+[Nerds.REPLIES.xX_n00b_Xx.agree.0]
+fr. exactly. that's what i said.
+
+# Nerds > REPLIES > xX_n00b_Xx > agree > 1
+[Nerds.REPLIES.xX_n00b_Xx.agree.1]
+ikr. finally someone gets it.
+
+# Nerds > REPLIES > xX_n00b_Xx > joke > 0
+[Nerds.REPLIES.xX_n00b_Xx.joke.0]
+lol that's actually good. mind if i use it?
+
+# Nerds > REPLIES > xX_n00b_Xx > joke > 1
+[Nerds.REPLIES.xX_n00b_Xx.joke.1]
+hahaha ok that one got me.
+
+# Nerds > REPLIES > xX_n00b_Xx > ask > 0
+[Nerds.REPLIES.xX_n00b_Xx.ask.0]
+uh, long story. basically i broke something. again.
+
+# Nerds > REPLIES > xX_n00b_Xx > ask > 1
+[Nerds.REPLIES.xX_n00b_Xx.ask.1]
+ok but don't laugh. promise? ...ok.
+
+# Nerds > REPLIES > trollbot > agree > 0
+[Nerds.REPLIES.trollbot.agree.0]
+wow. agreement. suspicious.
+
+# Nerds > REPLIES > trollbot > agree > 1
+[Nerds.REPLIES.trollbot.agree.1]
+i hate that you're right. carry on.
+
+# Nerds > REPLIES > trollbot > joke > 0
+[Nerds.REPLIES.trollbot.joke.0]
+i'd laugh but i'm not programmed to. ha. ha. ha.
+
+# Nerds > REPLIES > trollbot > joke > 1
+[Nerds.REPLIES.trollbot.joke.1]
+not bad. i'll steal it and say it was mine.
+
+# Nerds > REPLIES > trollbot > ask > 0
+[Nerds.REPLIES.trollbot.ask.0]
+i could tell you. but where's the fun in that? fine, here.
+
+# Nerds > REPLIES > trollbot > ask > 1
+[Nerds.REPLIES.trollbot.ask.1]
+no. ...okay, yes. but you owe me.
+
+
+# ======================= Nerds > YOU_SAY =======================
+# Nerds > YOU_SAY > agree > 0
+[Nerds.YOU_SAY.agree.0]
+yeah, same here.
+
+# Nerds > YOU_SAY > agree > 2
+[Nerds.YOU_SAY.agree.2]
+agreed, totally.
+
+# Nerds > YOU_SAY > ask > 0
+[Nerds.YOU_SAY.ask.0]
+wait, say more?
+
+# Nerds > YOU_SAY > ask > 1
+[Nerds.YOU_SAY.ask.1]
+how so? tell me.
+
+# Nerds > YOU_SAY > ask > 2
+[Nerds.YOU_SAY.ask.2]
+what happened there?
+
+
+# ======================= Nerds > GREETINGS =======================
+# Nerds > GREETINGS > rodent_rick > 0
+[Nerds.GREETINGS.rodent_rick.0]
+FreshRat is back! pull up a chair, friend.
+
+# Nerds > GREETINGS > rodent_rick > 1
+[Nerds.GREETINGS.rodent_rick.1]
+there's the best tech in the burrow. the kettle's on, FreshRat.
+
+# Nerds > GREETINGS > gnawer > 0
+[Nerds.GREETINGS.gnawer.0]
+FreshRat! hey! I fixed my loop. want to hear?
+
+# Nerds > GREETINGS > gnawer > 1
+[Nerds.GREETINGS.gnawer.1]
+FreshRat!!! my favourite person who answers my messages.
+
+# Nerds > GREETINGS > PS_wizard > 0
+[Nerds.GREETINGS.PS_wizard.0]
+FreshRat. Get-Friend returned one result. it's you.
+
+# Nerds > GREETINGS > PS_wizard > 1
+[Nerds.GREETINGS.PS_wizard.1]
+FreshRat, I saved you the good cmdlets.
+
+# Nerds > GREETINGS > old_hand > 0
+[Nerds.GREETINGS.old_hand.0]
+FreshRat, there you are. you remind me of me, a bit less cranky.
+
+# Nerds > GREETINGS > old_hand > 1
+[Nerds.GREETINGS.old_hand.1]
+look who it is. sit, kid. I've got stories.
+
+# Nerds > GREETINGS > MPriest > 0
+[Nerds.GREETINGS.MPriest.0]
+FreshRat! bless you, mate. you made my morning.
+
+# Nerds > GREETINGS > MPriest > 1
+[Nerds.GREETINGS.MPriest.1]
+my favourite parishioner, FreshRat. no collection plate today.
+
+# Nerds > GREETINGS > GrizzleAdmin > 0
+[Nerds.GREETINGS.GrizzleAdmin.0]
+oh. it's you. fine. you can stay.
+
+# Nerds > GREETINGS > GrizzleAdmin > 1
+[Nerds.GREETINGS.GrizzleAdmin.1]
+FreshRat. I saved you a seat. don't make it weird.
+
+# Nerds > GREETINGS > HELPPLZ_Pip > 0
+[Nerds.GREETINGS.HELPPLZ_Pip.0]
+FRESHRAT!!! YOU CAME BACK!!! I AM SO HAPPY!!!
+
+# Nerds > GREETINGS > HELPPLZ_Pip > 1
+[Nerds.GREETINGS.HELPPLZ_Pip.1]
+FRESHRAT IS HERE!!! EVERYBODY BE NORMAL!!! I AM NOT BEING NORMAL!!!
+
+# Nerds > GREETINGS > xX_n00b_Xx > 0
+[Nerds.GREETINGS.xX_n00b_Xx.0]
+yo FreshRat. sup. (that was me being cool)
+
+# Nerds > GREETINGS > xX_n00b_Xx > 1
+[Nerds.GREETINGS.xX_n00b_Xx.1]
+FreshRat!! my mentor!! don't tell anyone i said that.
+
+# Nerds > GREETINGS > trollbot > 0
+[Nerds.GREETINGS.trollbot.0]
+oh no. FreshRat. my least favourite. in a nice way.
+
+# Nerds > GREETINGS > trollbot > 1
+[Nerds.GREETINGS.trollbot.1]
+FreshRat is here. i'll behave. for four minutes.
+
+
+# ======================= Nerds > AMBIENT =======================
+# Nerds > AMBIENT > 0 > lines > 0 > 1
+[Nerds.AMBIENT.0.lines.0.1]
+snow. in April. I want a refund on this spring.
+
+# Nerds > AMBIENT > 0 > lines > 1 > 1
+[Nerds.AMBIENT.0.lines.1.1]
+she'll be right, mate. it's just the Lord doing a reboot.
+
+# Nerds > AMBIENT > 0 > lines > 2 > 1
+[Nerds.AMBIENT.0.lines.2.1]
+a reboot with no change window.
+
+# Nerds > AMBIENT > 1 > lines > 0 > 1
+[Nerds.AMBIENT.1.lines.0.1]
+who emptied the coffee pot in the break room? I want a name.
+
+# Nerds > AMBIENT > 1 > lines > 1 > 1
+[Nerds.AMBIENT.1.lines.1.1]
+not me. I have a thermos. it has a name.
+
+# Nerds > AMBIENT > 1 > lines > 2 > 1
+[Nerds.AMBIENT.1.lines.2.1]
+I automated it. it brews at 8:03. it was empty at 8:04.
+
+# Nerds > AMBIENT > 2 > lines > 0 > 1
+[Nerds.AMBIENT.2.lines.0.1]
+THE PRINTER IS ON FIRE!!! NOT REALLY!!! IT IS JUST BEEPING!!!
+
+# Nerds > AMBIENT > 2 > lines > 1 > 1
+[Nerds.AMBIENT.2.lines.1.1]
+paper jam. always a paper jam. since 1987.
+
+# Nerds > AMBIENT > 2 > lines > 2 > 1
+[Nerds.AMBIENT.2.lines.2.1]
+have you tried a fax?
+
+# Nerds > AMBIENT > 3 > lines > 0 > 1
+[Nerds.AMBIENT.3.lines.0.1]
+if you haven't patched OpenSSL, you're bleeding. change your passwords.
+
+# Nerds > AMBIENT > 3 > lines > 1 > 1
+[Nerds.AMBIENT.3.lines.1.1]
+on it. three clients, two reissued certs, one coffee.
+
+# Nerds > AMBIENT > 3 > lines > 2 > 1
+[Nerds.AMBIENT.3.lines.2.1]
+wait do i have to change my password for the game site too??
+
+# Nerds > AMBIENT > 3 > lines > 3 > 1
+[Nerds.AMBIENT.3.lines.3.1]
+yes. and not to the same one. that is how this started.
+
+# Nerds > AMBIENT > 4 > lines > 0 > 1
+[Nerds.AMBIENT.4.lines.0.1]
+Heartbleed. I called it. in a very small post. nobody read it.
+
+# Nerds > AMBIENT > 4 > lines > 1 > 1
+[Nerds.AMBIENT.4.lines.1.1]
+I read it! I did not understand it. but I read it.
+
+# Nerds > AMBIENT > 4 > lines > 2 > 1
+[Nerds.AMBIENT.4.lines.2.1]
+that is the nicest thing anyone said to me this year.
+
+# Nerds > AMBIENT > 5 > lines > 0 > 1
+[Nerds.AMBIENT.5.lines.0.1]
+XP is dead. long live XP. I held a small funeral for a client's machine.
+
+# Nerds > AMBIENT > 5 > lines > 1 > 1
+[Nerds.AMBIENT.5.lines.1.1]
+I read the eulogy. it ran, it crashed, it ran again.
+
+# Nerds > AMBIENT > 5 > lines > 2 > 1
+[Nerds.AMBIENT.5.lines.2.1]
+it'll keep running. like a zombie. that's worse.
+
+# Nerds > AMBIENT > 6 > lines > 0 > 1
+[Nerds.AMBIENT.6.lines.0.1]
+my bracket is busted. a 14 seed beat my champion. rude.
+
+# Nerds > AMBIENT > 6 > lines > 1 > 1
+[Nerds.AMBIENT.6.lines.1.1]
+I PICKED BY MASCOT!!! I AM IN FIRST PLACE!!! THIS IS NOT FAIR!!!
+
+# Nerds > AMBIENT > 6 > lines > 2 > 1
+[Nerds.AMBIENT.6.lines.2.1]
+luck. the worst kind of skill.
+
+# Nerds > AMBIENT > 7 > lines > 0 > 1
+[Nerds.AMBIENT.7.lines.0.1]
+anyone still playing Floppy Bat? got 40 points and my thumb died.
+
+# Nerds > AMBIENT > 7 > lines > 1 > 1
+[Nerds.AMBIENT.7.lines.1.1]
+back in my day the bird was a pager and nobody cried.
+
+# Nerds > AMBIENT > 7 > lines > 2 > 1
+[Nerds.AMBIENT.7.lines.2.1]
+the game was removed. the fad was not.
+
+# Nerds > AMBIENT > 7 > lines > 3 > 1
+[Nerds.AMBIENT.7.lines.3.1]
+my daughter's phone still has it. she says it's art.
+
+# Nerds > AMBIENT > 8 > lines > 0 > 1
+[Nerds.AMBIENT.8.lines.0.1]
+I AM ON LEVEL 112 OF SUGAR SMASH!!! SEND LIVES PLEASE!!!
+
+# Nerds > AMBIENT > 8 > lines > 1 > 1
+[Nerds.AMBIENT.8.lines.1.1]
+mate, I got 40 lives requests from the parish. bless them.
+
+# Nerds > AMBIENT > 8 > lines > 2 > 1
+[Nerds.AMBIENT.8.lines.2.1]
+turn off the invites. I'm begging.
+
+# Nerds > AMBIENT > 9 > lines > 0 > 1
+[Nerds.AMBIENT.9.lines.0.1]
+someone's password is password1. I will not say who.
+
+# Nerds > AMBIENT > 9 > lines > 1 > 1
+[Nerds.AMBIENT.9.lines.1.1]
+...it's not mine.
+
+# Nerds > AMBIENT > 10 > lines > 0 > 1
+[Nerds.AMBIENT.10.lines.0.1]
+test your restores, kids. a backup you haven't tested is a rumour.
+
+# Nerds > AMBIENT > 10 > lines > 2 > 1
+[Nerds.AMBIENT.10.lines.2.1]
+put that on a mug.
+
+# Nerds > AMBIENT > 11 > lines > 0 > 1
+[Nerds.AMBIENT.11.lines.0.1]
+morning, burrow. who's got the first ticket?
+
+# Nerds > AMBIENT > 11 > lines > 1 > 1
+[Nerds.AMBIENT.11.lines.1.1]
+me. a printer. it's always a printer.
+
+# Nerds > AMBIENT > 11 > lines > 2 > 1
+[Nerds.AMBIENT.11.lines.2.1]
+tickets are just printers with extra steps.
+
+# Nerds > AMBIENT > 12 > lines > 0 > 1
+[Nerds.AMBIENT.12.lines.0.1]
+late afternoon. the dead zone. nobody call me.
+
+# Nerds > AMBIENT > 12 > lines > 1 > 1
+[Nerds.AMBIENT.12.lines.1.1]
+I AM CALLING YOU!!! PLEASE PICK UP!!!
+
+# Nerds > AMBIENT > 13 > lines > 0 > 1
+[Nerds.AMBIENT.13.lines.0.1]
+it's {time} already? the day is a thief.
+
+# Nerds > AMBIENT > 13 > lines > 1 > 1
+[Nerds.AMBIENT.13.lines.1.1]
+Get-Date says {time}. Get-Lunch says overdue.
+
+# Nerds > AMBIENT > 13 > lines > 2 > 1
+[Nerds.AMBIENT.13.lines.2.1]
+go eat. the tickets will still be here.
+
+# Nerds > AMBIENT > 14 > lines > 0 > 1
+[Nerds.AMBIENT.14.lines.0.1]
+{date}, day {day} on the board, and the burrow still stands.
+
+# Nerds > AMBIENT > 14 > lines > 1 > 1
+[Nerds.AMBIENT.14.lines.1.1]
+day {day}. still nobody has read the FAQ.
+
+# Nerds > AMBIENT > 14 > lines > 2 > 1
+[Nerds.AMBIENT.14.lines.2.1]
+day {day}. i have not changed.
+
+# Nerds > AMBIENT > 15 > lines > 0 > 1
+[Nerds.AMBIENT.15.lines.0.1]
+does anyone take holidays? asking for a friend. the friend is me.
+
+# Nerds > AMBIENT > 15 > lines > 1 > 1
+[Nerds.AMBIENT.15.lines.1.1]
+I took one in 2011. two days. a client called on both.
+
+# Nerds > AMBIENT > 15 > lines > 2 > 1
+[Nerds.AMBIENT.15.lines.2.1]
+take the time, mate. even the Lord rested.
+
+# Nerds > AMBIENT > 16 > lines > 0 > 1
+[Nerds.AMBIENT.16.lines.0.1]
+cable management is just documentation you can touch.
+
+# Nerds > AMBIENT > 16 > lines > 1 > 1
+[Nerds.AMBIENT.16.lines.1.1]
+mine is zip ties and prayer.
+
+# Nerds > AMBIENT > 16 > lines > 2 > 1
+[Nerds.AMBIENT.16.lines.2.1]
+prayer's a solid fallback.
+
+# Nerds > AMBIENT > 17 > lines > 0 > 1
+[Nerds.AMBIENT.17.lines.0.1]
+i got hired at a computer shop! part time! i get a lanyard!
+
+# Nerds > AMBIENT > 17 > lines > 1 > 1
+[Nerds.AMBIENT.17.lines.1.1]
+congratulations. don't touch the servers.
+
+# Nerds > AMBIENT > 17 > lines > 2 > 1
+[Nerds.AMBIENT.17.lines.2.1]
+welcome to the club. ask us anything.
+
+# Nerds > AMBIENT > 17 > lines > 3 > 1
+[Nerds.AMBIENT.17.lines.3.1]
+thanks!!! also how do i turn this off?
+
+# Nerds > AMBIENT > 18 > lines > 0 > 1
+[Nerds.AMBIENT.18.lines.0.1]
+batch files are better than PowerShell. fight me.
+
+# Nerds > AMBIENT > 18 > lines > 1 > 1
+[Nerds.AMBIENT.18.lines.1.1]
+I will not engage with a statement that incorrect.
+
+# Nerds > AMBIENT > 18 > lines > 2 > 1
+[Nerds.AMBIENT.18.lines.2.1]
+that's the point.
+
+# Nerds > AMBIENT > 18 > lines > 3 > 1
+[Nerds.AMBIENT.18.lines.3.1]
+...Write-Host noted.
+
+# Nerds > AMBIENT > 19 > lines > 0 > 1
+[Nerds.AMBIENT.19.lines.0.1]
+my cat sat on the keyboard and closed 14 tickets. she is getting a raise.
+
+# Nerds > AMBIENT > 19 > lines > 2 > 1
+[Nerds.AMBIENT.19.lines.2.1]
+she's better than the intern.
+
+# Nerds > AMBIENT > 19 > lines > 3 > 1
+[Nerds.AMBIENT.19.lines.3.1]
+I AM THE INTERN!!!
+
+# Nerds > AMBIENT > 20 > lines > 0 > 1
+[Nerds.AMBIENT.20.lines.0.1]
+90 minutes to get to a 10 minute call. snow, in April.
+
+# Nerds > AMBIENT > 20 > lines > 1 > 1
+[Nerds.AMBIENT.20.lines.1.1]
+I biked. never again.
+
+# Nerds > AMBIENT > 20 > lines > 2 > 1
+[Nerds.AMBIENT.20.lines.2.1]
+walk uphill both ways, kids.
+
+# Nerds > AMBIENT > 20 > lines > 3 > 1
+[Nerds.AMBIENT.20.lines.3.1]
+he says that every time it snows.
+
+# Nerds > AMBIENT > 21 > lines > 0 > 1
+[Nerds.AMBIENT.21.lines.0.1]
+WHAT IS EVERYONE HAVING FOR LUNCH???
+
+# Nerds > AMBIENT > 21 > lines > 1 > 1
+[Nerds.AMBIENT.21.lines.1.1]
+ramen. with an egg. fancy.
+
+# Nerds > AMBIENT > 21 > lines > 2 > 1
+[Nerds.AMBIENT.21.lines.2.1]
+a meat pie. don't judge me.
+
+# Nerds > AMBIENT > 21 > lines > 3 > 1
+[Nerds.AMBIENT.21.lines.3.1]
+a sandwich. alone. in peace.
+
+# Nerds > AMBIENT > 22 > lines > 0 > 1
+[Nerds.AMBIENT.22.lines.0.1]
+if one more person says it's the internet I'm unplugging the router.
+
+# Nerds > AMBIENT > 22 > lines > 1 > 1
+[Nerds.AMBIENT.22.lines.1.1]
+it's DNS. it's always DNS.
+
+# Nerds > AMBIENT > 22 > lines > 2 > 1
+[Nerds.AMBIENT.22.lines.2.1]
+or the cable. in my day it was always the cable.
+
+# Nerds > AMBIENT > 23 > lines > 0 > 1
+[Nerds.AMBIENT.23.lines.0.1]
+weekend's coming. I will not check email. I will not check email.
+
+# Nerds > AMBIENT > 23 > lines > 1 > 1
+[Nerds.AMBIENT.23.lines.1.1]
+you'll check it at 7pm.
+
+# Nerds > AMBIENT > 24 > lines > 0 > 1
+[Nerds.AMBIENT.24.lines.0.1]
+one time a mouse ate a network cable. a real mouse.
+
+# Nerds > AMBIENT > 24 > lines > 2 > 1
+[Nerds.AMBIENT.24.lines.2.1]
+that mouse had better security than your last client.
+
+# Nerds > AMBIENT > 25 > lines > 0 > 1
+[Nerds.AMBIENT.25.lines.0.1]
+everyone wants the cloud. it's someone else's server with a fancier invoice.
+
+# Nerds > AMBIENT > 25 > lines > 1 > 1
+[Nerds.AMBIENT.25.lines.1.1]
+and someone else's patching.
+
+# Nerds > AMBIENT > 25 > lines > 2 > 1
+[Nerds.AMBIENT.25.lines.2.1]
+and someone else's outage. same invoice.
+
+# Nerds > AMBIENT > 26 > lines > 0 > 1
+[Nerds.AMBIENT.26.lines.0.1]
+i want a new phone. a big one. the Nexxus 5 looks sick.
+
+# Nerds > AMBIENT > 26 > lines > 1 > 1
+[Nerds.AMBIENT.26.lines.1.1]
+my phone flips shut. it works. it has never needed an update.
+
+# Nerds > AMBIENT > 26 > lines > 2 > 1
+[Nerds.AMBIENT.26.lines.2.1]
+MINE CRACKED!!! I AM USING TAPE!!!
+
+# Nerds > AMBIENT > 27 > lines > 0 > 1
+[Nerds.AMBIENT.27.lines.0.1]
+a backup job failed somewhere in the burrow. I can feel it.
+
+# Nerds > AMBIENT > 27 > lines > 1 > 1
+[Nerds.AMBIENT.27.lines.1.1]
+check the logs, FreshRat. green lights lie.
+
+# Nerds > AMBIENT > 27 > lines > 2 > 1
+[Nerds.AMBIENT.27.lines.2.1]
+re-run it and test a restore. then sleep.
+
+# Nerds > AMBIENT > 28 > lines > 0 > 1
+[Nerds.AMBIENT.28.lines.0.1]
+backup status: failed. exit code: sadness.
+
+# Nerds > AMBIENT > 28 > lines > 1 > 1
+[Nerds.AMBIENT.28.lines.1.1]
+pray, then re-run.
+
+# Nerds > AMBIENT > 28 > lines > 2 > 1
+[Nerds.AMBIENT.28.lines.2.1]
+re-run, then pray.
+
+# Nerds > AMBIENT > 29 > lines > 0 > 1
+[Nerds.AMBIENT.29.lines.0.1]
+FreshRat! saw you at Rodent Nation. you owe me a sticker.
+
+# Nerds > AMBIENT > 29 > lines > 1 > 1
+[Nerds.AMBIENT.29.lines.1.1]
+I MET YOU AT THE BOOTH!!! YOU WAVED!!!
+
+# Nerds > AMBIENT > 29 > lines > 2 > 1
+[Nerds.AMBIENT.29.lines.2.1]
+good to meet you in the flesh, mate. firm handshake.
+
+# Nerds > AMBIENT > 29 > lines > 3 > 1
+[Nerds.AMBIENT.29.lines.3.1]
+the booth coffee was awful. you were fine.
+
+# Nerds > AMBIENT > 30 > lines > 0 > 1
+[Nerds.AMBIENT.30.lines.0.1]
+I wasn't there. somebody send me the swag.
+
+# Nerds > AMBIENT > 30 > lines > 1 > 1
+[Nerds.AMBIENT.30.lines.1.1]
+i was there. you did not see me. that's the trick.
+
+# Nerds > AMBIENT > 31 > lines > 0 > 1
+[Nerds.AMBIENT.31.lines.0.1]
+the resort. the buffet. the lanyards. never again. maybe next year.
+
+# Nerds > AMBIENT > 31 > lines > 1 > 1
+[Nerds.AMBIENT.31.lines.1.1]
+the badge scanners had better uptime than most of my clients.
 
 
 # ======================= Lync > MESSAGES =======================

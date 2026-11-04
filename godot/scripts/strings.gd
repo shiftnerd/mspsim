@@ -65,7 +65,22 @@ const ROOTS := {
 		"VIC_STATE",
 		"VIC_ASK"
 	],
-	"Nerds": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS"],
+	"Nerds":
+	[
+		"JOKES",
+		"THREADS",
+		"BLESSINGS",
+		"GRUMBLES",
+		"CORRECTIONS",
+		"TEXT",
+		"BOARDS",
+		"TOPICS",
+		"CHAT",
+		"REPLIES",
+		"YOU_SAY",
+		"GREETINGS",
+		"AMBIENT"
+	],
 	"Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
 	"Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
 	"Social": ["THANKS"],

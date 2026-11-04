@@ -89,7 +89,7 @@ business from your client. Medical and vet offices are staffed mostly by women; 
   Friends cover for you, give tips, teach you things and warn you before an SLA breaks. You can talk to people at their desks.
 - **Hours.** You choose when to leave for work (traffic!), whether to stay late, and some weeks you carry the pager. Tired techs make mistakes.
 - **LabRat Nerds.** A forum and an IRC channel of other techs: read threads for experience, answer questions for karma, and ask the channel what to do
-  (a "call a friend" poll that is mostly right and sometimes trolls you).
+  (a "call a friend" poll that is mostly right and sometimes trolls you). The channel is also just a place to hang out: chat with the nine regulars about the weekend, the weather and the news of April 2014, overhear their own banter (about the backup that failed, the trip, the day), jump in, and over the days become friends with them. A friend answers your work questions a little better, greets you by name and sooner or later opens up about something real.
 - **The big jobs.** Multi-step scenarios with real choices and consequences that come back the next morning (see below).
 
 ---
