@@ -196,6 +196,10 @@ for name, b in pairs(builders) do
   print(name .. ": " .. #e.props .. " props, canvas " .. totalW .. "x" .. H .. ", margin " .. L.XOFF)
   ::continue::
 end
+if not ONLY or ONLY.warehouse then   -- R21c: the parking lot seen through the dock doorway (a prop under office/pieces, drawn behind the Background in Godot)
+  L.exportPng(P.warehouseLot(), GODOT .. "props/warehouse_lot.png")
+  L.savePiece(P.warehouseLot(), "warehouse_lot")
+end
 L.exportPng(P.deskPhoneHandset(), GODOT .. "props/desk_phone_handset.png")
 L.writeRackLayout(GODOT .. "props/network_rack_layout.json")
 L.YOFF = 0

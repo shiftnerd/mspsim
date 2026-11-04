@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sets/warehouse.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
@@ -24,6 +24,7 @@
 [ext_resource type="Texture2D" path="res://assets/props/race_trash_can.png" id="prop_race_trash_can"]
 [ext_resource type="Texture2D" path="res://assets/props/race_wet_sign.png" id="prop_race_wet_sign"]
 [ext_resource type="Texture2D" path="res://assets/props/vending_machine.png" id="prop_vending_machine"]
+[ext_resource type="Script" path="res://scripts/outside.gd" id="outside"]
 
 [sub_resource type="RectangleShape2D" id="shape_floor"]
 size = Vector2(1880, 20)
@@ -48,6 +49,11 @@ size = Vector2(100, 60)
 
 [node name="Warehouse" type="Node2D"]
 script = ExtResource("stage")
+
+[node name="Backdrop" type="Node2D" parent="."]
+position = Vector2(731, 12)
+script = ExtResource("outside")
+mode = "sky"
 
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(-556, -100)
@@ -137,7 +143,29 @@ low_priority = true
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseDartBoard"]
 shape = SubResource("shape_fx")
 
+[node name="UseDoor" type="Area2D" parent="Interactables"]
+position = Vector2(791, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Door")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseDoor"]
+shape = SubResource("shape_fx")
+
+[node name="UseDoorSwitch" type="Area2D" parent="Interactables"]
+position = Vector2(866, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/DoorSwitch")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseDoorSwitch"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
+
+[node name="Daylight" type="Node2D" parent="."]
+position = Vector2(731, 12)
+z_index = 1
+script = ExtResource("outside")
+mode = "spill"
 
 [node name="Switch" type="Node2D" parent="Fx"]
 position = Vector2(-510, 54)
@@ -148,6 +176,16 @@ kind = "switch"
 position = Vector2(491, 66)
 script = ExtResource("fx")
 kind = "dart_board"
+
+[node name="Door" type="Node2D" parent="Fx"]
+position = Vector2(731, 12)
+script = ExtResource("fx")
+kind = "roll_door"
+
+[node name="DoorSwitch" type="Node2D" parent="Fx"]
+position = Vector2(863, 76)
+script = ExtResource("fx")
+kind = "door_switch"
 
 [node name="FlickerLamp" type="Node2D" parent="Fx"]
 position = Vector2(304, -19)

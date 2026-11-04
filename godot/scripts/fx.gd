@@ -87,6 +87,14 @@ var _next_channel := 7.0
 var _static_until := 0.0
 var _player: Node = null
 
+const DOOR_SECS := 3.0  # the roll-up door takes this long
+const DOOR_TEX_H := 82  # the door sprite: 120 x 80 plus the outline pad
+var open := 0.0  # roll_door: how far open the slats are (0 closed, 1 open), moved toward goal
+var goal := 0.0  # roll_door: the state asked for (World.door_open)
+var _door: Sprite2D = null
+var _door_acc := 0.0
+var _door_snd := 0.0
+
 
 func _ready() -> void:
 	item = ITEMS.get(kind, "")
@@ -125,6 +133,8 @@ func _ready() -> void:
 		_next_ring = _time + 14.0 + float(seed_offset % 5) * 8.0
 	_next_channel = _time + 7.0
 	_start = _time - 100.0
+	if kind == "roll_door":
+		_door_ready()
 
 
 # a foam dart hit this screen: it glitches for a moment
@@ -141,6 +151,9 @@ func play() -> void:
 		return
 	if kind == "rubber_duck":
 		_duck_press()
+		return
+	if kind == "roll_door" or kind == "door_switch":
+		door_press()
 		return
 	if kind == "dart_board":
 		_dart_n += 1
@@ -175,6 +188,8 @@ func play() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	if kind == "roll_door":
+		_door_tick(delta)
 	if kind == "rubber_duck":
 		_duck_tick(delta)
 	if _bell_t > 0.0:
@@ -242,6 +257,8 @@ func _draw() -> void:
 			_draw_rack()
 		"switch":
 			_draw_switch()
+		"door_switch":
+			_draw_door_switch()
 		"desk_phone":
 			_draw_phone()
 		"fridge":
@@ -1146,6 +1163,75 @@ func _draw_switch() -> void:
 		_r(2, 0, 1, 1, Color("9fe870"))
 	else:
 		_r(2, 4, 1, 3, Color("8e939e"))
+
+
+# ---- the dock door (R21c): the switch and the door itself are both E zones; pressing while it moves reverses it
+func door_press() -> void:
+	var door: Node = self if kind == "roll_door" else get_tree().get_first_node_in_group("roll_door")
+	if door != null:
+		door.door_toggle()
+
+
+func door_toggle() -> void:
+	goal = 0.0 if goal > 0.5 else 1.0
+	World.door_open = goal
+	Hints.toast("OPENING" if goal > 0.5 else "CLOSING", 1.8)
+	Sfx.play_near("door_rattle", self)
+	_door_snd = _time + 0.9
+
+
+func _door_ready() -> void:
+	add_to_group("roll_door")
+	goal = clampf(World.door_open, 0.0, 1.0)
+	open = goal
+	var actors: Node = owner.get_node_or_null("Actors") if owner != null else null
+	if actors != null:
+		for c in actors.get_children():
+			if c is Sprite2D and str(c.name).begins_with("overhead_door"):
+				_door = c
+	door_apply()
+
+
+# the slats rise into the housing: the sprite shows its lowest rows from the top edge, so the bottom bar climbs
+func door_apply() -> void:
+	if _door == null:
+		return
+	var rows := clampi(roundi((1.0 - open) * float(DOOR_TEX_H)), 0, DOOR_TEX_H)
+	_door.region_enabled = true
+	_door.region_rect = Rect2(0, DOOR_TEX_H - rows, _door.texture.get_width(), rows)
+	_door.visible = rows > 0
+
+
+# moves continuously, shows in 12 fps steps; a rattle while it rolls and a thunk when it stops
+func _door_tick(delta: float) -> void:
+	if is_equal_approx(open, goal):
+		return
+	open = move_toward(open, goal, delta / DOOR_SECS)
+	if _time >= _door_snd:
+		Sfx.play_near("door_rattle", self)
+		_door_snd = _time + 0.9
+	_door_acc += delta
+	var done := is_equal_approx(open, goal)
+	if done:
+		open = goal
+	if _door_acc >= STEP or done:
+		_door_acc = 0.0
+		door_apply()
+	if done:
+		Sfx.play_near("door_thunk", self)
+
+
+# the wall plate: an up button (open, green) and a down button (close, amber); a red light blinks while it rolls
+func _draw_door_switch() -> void:
+	var up: bool = goal > 0.5
+	_r(-1, -1, 8, 14, Color("17121f"))
+	_r(0, 0, 6, 12, Color("efebdd"))
+	_r(1, 1, 4, 10, Color("c9c4b2"))
+	_r(2, 2, 2, 3, Color("9fe870") if up else Color("5a6a58"))
+	_r(2, 7, 2, 3, Color("6a5a3a") if up else Color("e8b040"))
+	if not is_equal_approx(open, goal) and int(_time * 4.0) % 2 == 0:
+		_r(2, 5, 2, 1, Color("e05050"))
+
 
 
 func _draw_phone() -> void:

@@ -839,6 +839,14 @@ var _next_channel := 7.0
 var _static_until := 0.0
 var _player: Node = null
 
+const DOOR_SECS := 3.0  # the roll-up door takes this long
+const DOOR_TEX_H := 82  # the door sprite: 120 x 80 plus the outline pad
+var open := 0.0  # roll_door: how far open the slats are (0 closed, 1 open), moved toward goal
+var goal := 0.0  # roll_door: the state asked for (World.door_open)
+var _door: Sprite2D = null
+var _door_acc := 0.0
+var _door_snd := 0.0
+
 
 func _ready() -> void:
     item = ITEMS.get(kind, "")
@@ -858,6 +866,8 @@ func _ready() -> void:
         _next_ring = _time + 14.0 + float(seed_offset % 5) * 8.0
     _next_channel = _time + 7.0
     _start = _time - 100.0
+    if kind == "roll_door":
+        _door_ready()
 
 
 # a foam dart hit this screen: it glitches for a moment
@@ -874,6 +884,9 @@ func play() -> void:
         return
     if kind == "rubber_duck":
         _duck_press()
+        return
+    if kind == "roll_door" or kind == "door_switch":
+        door_press()
         return
     if kind == "dart_board":
         _dart_n += 1
@@ -908,6 +921,8 @@ func play() -> void:
 
 func _process(delta: float) -> void:
     _time += delta
+    if kind == "roll_door":
+        _door_tick(delta)
     if kind == "rubber_duck":
         _duck_tick(delta)
     if _bell_t > 0.0:
@@ -975,6 +990,8 @@ func _draw() -> void:
             _draw_rack()
         "switch":
             _draw_switch()
+        "door_switch":
+            _draw_door_switch()
         "desk_phone":
             _draw_phone()
         "fridge":
@@ -1848,6 +1865,75 @@ func _draw_switch() -> void:
         _r(2, 0, 1, 1, Color("9fe870"))
     else:
         _r(2, 4, 1, 3, Color("8e939e"))
+
+
+# ---- the dock door (R21c): the switch and the door itself are both E zones; pressing while it moves reverses it
+func door_press() -> void:
+    var door: Node = self if kind == "roll_door" else get_tree().get_first_node_in_group("roll_door")
+    if door != null:
+        door.door_toggle()
+
+
+func door_toggle() -> void:
+    goal = 0.0 if goal > 0.5 else 1.0
+    World.door_open = goal
+    Hints.toast("OPENING" if goal > 0.5 else "CLOSING", 1.8)
+    Sfx.play_near("door_rattle", self)
+    _door_snd = _time + 0.9
+
+
+func _door_ready() -> void:
+    add_to_group("roll_door")
+    goal = clampf(World.door_open, 0.0, 1.0)
+    open = goal
+    var actors: Node = owner.get_node_or_null("Actors") if owner != null else null
+    if actors != null:
+        for c in actors.get_children():
+            if c is Sprite2D and str(c.name).begins_with("overhead_door"):
+                _door = c
+    door_apply()
+
+
+# the slats rise into the housing: the sprite shows its lowest rows from the top edge, so the bottom bar climbs
+func door_apply() -> void:
+    if _door == null:
+        return
+    var rows := clampi(roundi((1.0 - open) * float(DOOR_TEX_H)), 0, DOOR_TEX_H)
+    _door.region_enabled = true
+    _door.region_rect = Rect2(0, DOOR_TEX_H - rows, _door.texture.get_width(), rows)
+    _door.visible = rows > 0
+
+
+# moves continuously, shows in 12 fps steps; a rattle while it rolls and a thunk when it stops
+func _door_tick(delta: float) -> void:
+    if is_equal_approx(open, goal):
+        return
+    open = move_toward(open, goal, delta / DOOR_SECS)
+    if _time >= _door_snd:
+        Sfx.play_near("door_rattle", self)
+        _door_snd = _time + 0.9
+    _door_acc += delta
+    var done := is_equal_approx(open, goal)
+    if done:
+        open = goal
+    if _door_acc >= STEP or done:
+        _door_acc = 0.0
+        door_apply()
+    if done:
+        Sfx.play_near("door_thunk", self)
+
+
+# the wall plate: an up button (open, green) and a down button (close, amber); a red light blinks while it rolls
+func _draw_door_switch() -> void:
+    var up: bool = goal > 0.5
+    _r(-1, -1, 8, 14, Color("17121f"))
+    _r(0, 0, 6, 12, Color("efebdd"))
+    _r(1, 1, 4, 10, Color("c9c4b2"))
+    _r(2, 2, 2, 3, Color("9fe870") if up else Color("5a6a58"))
+    _r(2, 7, 2, 3, Color("6a5a3a") if up else Color("e8b040"))
+    if not is_equal_approx(open, goal) and int(_time * 4.0) % 2 == 0:
+        _r(2, 5, 2, 1, Color("e05050"))
+
 
 
 func _draw_phone() -> void:
@@ -3360,6 +3446,7 @@ var hud_visible := true
 var chat_count := 0
 var chat_chance := 0.8
 var lights := {}  # room -> bool (a missing room is lit)
+var door_open := 0.0  # the dock door (0 closed, 1 open): kept for the day and in the resume point
 var lights_by_npc := false  # a cast member is flipping a switch (nobody reacts to that)
 var _outage_t := 0.0  # seconds the network has been down somewhere
 var _closet_sent := false
@@ -3793,6 +3880,7 @@ func begin_next_day(number: int) -> void:
         st.held = ""
         st.sips = 0
     lights.clear()
+    door_open = 0.0  # the crew rolls the door down overnight
     day = number - 1
     _new_day()
 
@@ -20340,6 +20428,19 @@ const SOUNDS := {
         {"w": "tri", "f": 150.0, "f2": 55.0, "t": 0.14, "v": 0.5, "k": 3.0},
         {"w": "noise", "f": 900.0, "t": 0.04, "v": 0.25, "k": 3.0, "lp": 0.5}
     ],
+    # the dock door (R21c): rolling slats while it moves (about a second, replayed), and the thunk when it stops
+    "door_rattle":
+    [
+        {"w": "noise", "f": 700.0, "t": 0.95, "v": 0.2, "k": 0.0, "am": 22.0, "lp": 0.25},
+        {"w": "noise", "f": 1800.0, "t": 0.95, "v": 0.1, "k": 0.0, "am": 31.0, "lp": 0.5},
+        {"w": "saw", "f": 55.0, "f2": 62.0, "t": 0.95, "v": 0.12, "k": 0.0, "am": 11.0}
+    ],
+    "door_thunk":
+    [
+        {"w": "tri", "f": 120.0, "f2": 45.0, "t": 0.25, "v": 0.5, "k": 3.5},
+        {"w": "noise", "f": 600.0, "t": 0.12, "v": 0.3, "k": 4.0, "lp": 0.4},
+        {"w": "noise", "f": 2200.0, "t": 0.18, "v": 0.12, "k": 5.0, "at": 0.1, "am": 30.0, "lp": 0.6}
+    ],
     "bowl_roll":
     [
         {"w": "noise", "f": 300.0, "t": 0.9, "v": 0.28, "k": 0.0, "am": 6.0, "lp": 0.12},
@@ -27531,11 +27632,23 @@ func stick_target(pos: Vector2) -> Node:
     if not info.is_empty() and (pos.x < float(info.x0) + 2.0 or pos.x > float(info.x0) + float(info.W) - 2.0):
         return scene
     for child in scene.get_node("Actors").get_children():
-        if child is Sprite2D and child.texture != null:
+        if child is Sprite2D and child.texture != null and child.visible:
             var origin: Vector2 = child.global_position + child.offset
-            if Rect2(origin, child.texture.get_size()).has_point(pos):
+            var size: Vector2 = child.region_rect.size if child.region_enabled else child.texture.get_size()
+            if Rect2(origin, size).has_point(pos):
                 return child
     return null
+
+
+# the clear part of the dock doorway (R21c): the open door lets a dart out into the parking lot
+func door_gap(pos: Vector2) -> bool:
+    var door := get_tree().get_first_node_in_group("roll_door")
+    if door == null:
+        return false
+    var local: Vector2 = pos - door.global_position
+    var rows := (1.0 - float(door.open)) * float(door.DOOR_TEX_H)
+    return local.x >= 0.0 and local.x <= 120.0 and local.y >= rows and local.y <= 75.0
+
 
 
 func dart_hit(dart: Node, victim: Node) -> void:
@@ -28008,6 +28121,9 @@ func _fly(delta: float) -> void:
         Nerf.dart_hit(self, victim)
         position.x -= signf(vel.x) * 4.0
         _land()
+        return
+    if Nerf.door_gap(global_position):  # out through the open dock door: gone for good
+        queue_free()
         return
     var target := Nerf.stick_target(global_position)
     if target != null:
@@ -43449,7 +43565,8 @@ BGFX = {
                     ("Painting", "clue_painting", 112, 10, 125),
                     ("Shelf", "clue_shelf", 14, 26, 28)],
     "restaurant": [("Switch", "switch", 8, 54, 10)],
-    "warehouse": [("Switch", "switch", 46, 54, 48), ("DartBoard", "dart_board", 1047, 66, 1047)],
+    "warehouse": [("Switch", "switch", 46, 54, 48), ("DartBoard", "dart_board", 1047, 66, 1047),
+                  ("Door", "roll_door", 1287, 12, 1347), ("DoorSwitch", "door_switch", 1419, 76, 1422)],
     "vendor_hall": [("BoothSwag", "booth_swag", 40, 36, 71), ("BoothBackup", "booth_vendor", 128, 36, 159),
                     ("BoothForum", "booth_nerds", 216, 36, 247)],
 }
@@ -43566,6 +43683,8 @@ for fname, cfg in SETS.items():
            ('Script', 'res://scripts/port.gd', 'port'), ('Script', 'res://scripts/rack_zone.gd', 'rack_zone'),
            ('PackedScene', 'res://scenes/npc.tscn', 'npc')]
     ext += [('Texture2D', f'res://assets/props/{p}.png', f'prop_{p}') for p in pieces]
+    if fname == "warehouse":
+        ext.append(('Script', 'res://scripts/outside.gd', 'outside'))   # R21c: the sky and lot behind the dock doorway, and the daylight spill
     lines = [f'[ext_resource type="{t}" path="{path}" id="{i}"]' for t, path, i in ext]
     lines.append("")
     shapes = {"floor": (max(VIEW_W, W) + 400, 20), "wall": (8, 300), "door": (30, 96), "exit": (12, 200), "seat": (26, 60), "fx": (24, 96), "rack": (100, 60)}
@@ -43574,6 +43693,8 @@ for fname, cfg in SETS.items():
     for k, (w, h) in shapes.items():
         lines += [f'[sub_resource type="RectangleShape2D" id="shape_{k}"]', f'size = Vector2({w}, {h})', ""]
     lines += [f'[node name="{node}" type="Node2D"]', 'script = ExtResource("stage")', ""]
+    if fname == "warehouse":   # R21c: the outside, BEHIND the Background (its doorway is a transparent hole), at the opening x 1287, y 12
+        lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'script = ExtResource("outside")', 'mode = "sky"', ""]
     lines += ['[node name="Background" type="Sprite2D" parent="."]', f'position = Vector2({x0 - max(0, (MIN_W - W) // 2)}, {-SET_TOP})',
               'centered = false', 'texture = ExtResource("bg")', ""]
     # collision: floor + side walls
@@ -43638,6 +43759,8 @@ for fname, cfg in SETS.items():
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Use{name}"]',
                   'shape = SubResource("shape_clue")' if fname == "escape_room" and (kind.startswith("clue_") or kind == "keypad") else 'shape = SubResource("shape_fx")', ""]
     lines += ['[node name="Fx" type="Node2D" parent="."]', ""]
+    if fname == "warehouse":   # R21c: warm daylight on the floor in front of the open door (additive, above the actors, not tinted by the lights)
+        lines += ['[node name="Daylight" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'z_index = 1', 'script = ExtResource("outside")', 'mode = "spill"', ""]
     for name, kind, ax, ay, ix, *opt in bgfx:
         lines += [f'[node name="{name}" type="Node2D" parent="Fx"]', f'position = Vector2({x0 + ax}, {ay})',
                   'script = ExtResource("fx")', f'kind = "{kind}"', ""]
@@ -43679,6 +43802,150 @@ for fname, cfg in SETS.items():
               f'position = Vector2({x0 + 60}, {FLOOR_Y})', ""]
     text = f'[gd_scene load_steps={len(ext) + len(shapes) + 1} format=3]\n\n' + "\n".join(lines)
     write(f"scenes/{fname}.tscn", text)
+
+write("scripts/outside.gd", '''extends Node2D
+# gdlint:disable=max-line-length,class-definitions-order
+# The outside of the warehouse, seen through the dock doorway (R21c). Two nodes of the warehouse scene use this script:
+#   Backdrop (mode "sky")  sits BEHIND the Background. The baked wall art has a transparent hole where the doorway is, so this
+#                          node's sky gradient, clouds, sun and the static parking lot picture show through it. It is not tinted
+#                          by the room's lights (the outside is daylight), and it only draws while the door is not fully closed.
+#   Daylight (mode "spill") sits above the floor and the people: a warm, additive light rect in front of the door that grows with
+#                          the door and follows the clock phase. It ignores World.lights (switch the room off, the daylight stays).
+# Both read the door (fx.gd kind roll_door, group "roll_door"): `open` 0..1. The sky follows World.clock through `phase()`.
+# Art-local coordinates: (0, 0) is the top-left of the doorway opening, W x H pixels. Redraws in 12 fps steps.
+
+const W := 120
+const H := 76
+const STEP := 1.0 / 12.0
+const LOT := "res://assets/props/warehouse_lot.png"
+# clock, sky top, sky bottom (at the horizon), cloud, tint of the lot picture, spill colour (alpha = how strong)
+const KEYS := [
+    [8.5, Color("8fb8e0"), Color("f4d9b0"), Color("fff1e0"), Color(1.0, 0.97, 0.92), Color(1.0, 0.82, 0.5, 0.14)],
+    [10.0, Color("79b2e8"), Color("cde6f4"), Color("ffffff"), Color(1.0, 1.0, 1.0), Color(1.0, 0.9, 0.65, 0.2)],
+    [12.5, Color("4f94e0"), Color("bfe0f6"), Color("ffffff"), Color(1.0, 1.0, 1.0), Color(1.0, 0.95, 0.75, 0.24)],
+    [15.5, Color("6a9ad8"), Color("f2d8a0"), Color("fff0d0"), Color(1.0, 0.95, 0.85), Color(1.0, 0.85, 0.55, 0.24)],
+    [17.0, Color("4a5c9a"), Color("f28c5a"), Color("f2a87a"), Color(0.93, 0.8, 0.74), Color(1.0, 0.6, 0.3, 0.2)],
+    [18.2, Color("141c3a"), Color("3a3f6a"), Color("2a2f55"), Color(0.4, 0.42, 0.65), Color(0.5, 0.6, 1.0, 0.08)],
+]
+# the SPILL bands on the floor in front of the door: y (art, from the door top), height, strength
+const BANDS := [[81, 8, 1.0], [89, 10, 0.75], [99, 11, 0.5], [110, 10, 0.3], [120, 9, 0.14]]
+# x, y, width, speed (px a second) of the clouds
+const CLOUDS := [[8.0, 5.0, 26.0, 1.4], [54.0, 12.0, 34.0, 0.9], [96.0, 3.0, 20.0, 1.9], [30.0, 17.0, 18.0, 1.1], [76.0, 20.0, 22.0, 1.6]]
+
+@export var mode := "sky"
+
+var open := 0.0  # how far the door is open, copied from the door every frame
+var _door: Node = null
+var _lot: Texture2D = null
+var _t := 0.0
+var _acc := 0.0
+
+
+# the sky at a clock time (hours, 9.0 = opening): the colours and the strength of the light. Tests call it.
+static func phase(clock: float) -> Dictionary:
+    var last := KEYS.size() - 1
+    var i := 0
+    while i < last - 1 and clock > float(KEYS[i + 1][0]):
+        i += 1
+    var a: Array = KEYS[i]
+    var b: Array = KEYS[i + 1]
+    var f := clampf((clock - float(a[0])) / (float(b[0]) - float(a[0])), 0.0, 1.0)
+    return {
+        "top": (a[1] as Color).lerp(b[1], f),
+        "bottom": (a[2] as Color).lerp(b[2], f),
+        "cloud": (a[3] as Color).lerp(b[3], f),
+        "tint": (a[4] as Color).lerp(b[4], f),
+        "spill": (a[5] as Color).lerp(b[5], f)
+    }
+
+
+func _ready() -> void:
+    if mode == "sky":
+        _lot = load(LOT)
+    if mode == "spill":
+        var mat := CanvasItemMaterial.new()
+        mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+        material = mat
+    _t = 100.0 + float(randi() % 50)  # the clouds start somewhere
+
+
+func _process(delta: float) -> void:
+    _t += delta
+    if _door == null or not is_instance_valid(_door):
+        _door = get_tree().get_first_node_in_group("roll_door")
+    var now: float = 0.0 if _door == null else float(_door.open)
+    var changed := not is_equal_approx(now, open)
+    open = now
+    visible = open > 0.001
+    _acc += delta
+    if _acc >= STEP or changed:
+        _acc = 0.0
+        if visible:
+            queue_redraw()
+
+
+func _px(x: float, y: float, w: float, h: float, c: Color) -> void:
+    var x0 := clampf(x, 0.0, float(W))
+    var x1 := clampf(x + w, 0.0, float(W))
+    if x1 > x0:
+        draw_rect(Rect2(x0, y, x1 - x0, h), c)
+
+
+func _draw() -> void:
+    var ph := phase(World.clock)
+    if mode == "spill":
+        _draw_spill(ph)
+        return
+    # the sky: 2 px bands, top colour to the horizon colour
+    for y in range(0, H, 2):
+        var f := float(y) / float(H - 12)
+        _px(0, y, W, 2, (ph.top as Color).lerp(ph.bottom, clampf(f * f, 0.0, 1.0)))
+    _draw_sun()
+    for c in CLOUDS:
+        _draw_cloud(c, ph.cloud)
+    if _lot != null:
+        draw_texture(_lot, Vector2.ZERO, ph.tint)
+
+
+# a sun that climbs from the left to the top and sets behind the tree line at closing time
+func _draw_sun() -> void:
+    var u := (World.clock - 8.5) / 9.5
+    if u <= 0.0 or u >= 1.0:
+        return
+    var sx := 10.0 + u * 100.0
+    var sy := 36.0 - sin(u * PI) * 32.0
+    var low := absf(u - 0.5) * 2.0
+    var col := Color("fff6d0").lerp(Color("ff9a4a"), clampf(low * 1.2, 0.0, 1.0))
+    for dy in range(-4, 5):
+        var half := int(round(sqrt(maxf(0.0, 20.0 - float(dy * dy)))))
+        _px(sx - half, sy + dy, half * 2 + 1, 1, col)
+
+
+func _draw_cloud(c: Array, col: Color) -> void:
+    var w: float = c[2]
+    var x := floorf(fposmod(float(c[0]) + _t * float(c[3]), float(W) + w * 2.0)) - w
+    var y: float = c[1]
+    _px(x + w * 0.2, y, w * 0.45, 2, col)
+    _px(x + w * 0.1, y + 2, w * 0.8, 2, col)
+    _px(x, y + 4, w, 2, col.darkened(0.1))
+    _px(x + w * 0.05, y + 6, w * 0.9, 1, col.darkened(0.2))
+
+
+# warm daylight on the floor in front of the open door, in bands that fade out with distance and with the door
+func _draw_spill(ph: Dictionary) -> void:
+    var c: Color = ph.spill
+    var o := floorf(open * 6.0) / 6.0
+    for b in BANDS:
+        var a: float = c.a * o * float(b[2])
+        var col := Color(c.r, c.g, c.b, a)
+        var y := float(b[0])
+        var h := float(b[1])
+        draw_rect(Rect2(0, y, W, h), col)
+        draw_rect(Rect2(-5, y, 5, h), Color(c.r, c.g, c.b, a * 0.45))
+        draw_rect(Rect2(W, y, 5, h), Color(c.r, c.g, c.b, a * 0.45))
+        draw_rect(Rect2(-9, y + 1, 4, h - 2), Color(c.r, c.g, c.b, a * 0.2))
+        draw_rect(Rect2(W + 5, y + 1, 4, h - 2), Color(c.r, c.g, c.b, a * 0.2))
+''')
 
 write("scripts/mutators.gd", '''extends Node
 # gdlint:disable=max-line-length
@@ -51020,7 +51287,7 @@ func world_dict() -> Dictionary:
             held = str(node.held)
             sips = int(node.sips)
         cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched}
-    return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "cast": cast}
+    return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "door": World.door_open, "cast": cast}
 
 
 func player_dict() -> Dictionary:
@@ -51096,6 +51363,7 @@ func apply_world(d: Dictionary) -> void:
     World.day = int(d.get("day", Campaign.day))
     World.clock = float(d.get("clock", World.DAY_START))
     World.lights.clear()
+    World.door_open = clampf(float(d.get("door", 0.0)), 0.0, 1.0)
     var lights: Variant = d.get("lights", {})
     if lights is Dictionary:
         for room in lights:
