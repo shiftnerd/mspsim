@@ -13,7 +13,7 @@
 [ext_resource type="Texture2D" path="res://assets/props/arcade.png" id="prop_arcade"]
 [ext_resource type="Texture2D" path="res://assets/props/ball_rack.png" id="prop_ball_rack"]
 [ext_resource type="Texture2D" path="res://assets/props/ball_return.png" id="prop_ball_return"]
-[ext_resource type="Texture2D" path="res://assets/props/bench_seat.png" id="prop_bench_seat"]
+[ext_resource type="Texture2D" path="res://assets/props/bench_seat_side.png" id="prop_bench_seat_side"]
 [ext_resource type="Texture2D" path="res://assets/props/score_table.png" id="prop_score_table"]
 [ext_resource type="Texture2D" path="res://assets/props/shoe_counter.png" id="prop_shoe_counter"]
 
@@ -87,7 +87,7 @@ auto = true
 shape = SubResource("shape_exit")
 
 [node name="Seat1" type="Area2D" parent="Interactables"]
-position = Vector2(270, 101)
+position = Vector2(266, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -98,7 +98,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat2" type="Area2D" parent="Interactables"]
-position = Vector2(290, 101)
+position = Vector2(292, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -164,19 +164,25 @@ centered = false
 offset = Vector2(0, -43)
 texture = ExtResource("prop_ball_return")
 
-[node name="bench_seat_3" type="Sprite2D" parent="Actors"]
-position = Vector2(255, 99)
+[node name="bench_seat_side_3" type="Sprite2D" parent="Actors"]
+position = Vector2(252, 99)
 centered = false
-offset = Vector2(0, -26)
-texture = ExtResource("prop_bench_seat")
+offset = Vector2(0, -31)
+texture = ExtResource("prop_bench_seat_side")
 
-[node name="score_table_4" type="Sprite2D" parent="Actors"]
+[node name="bench_seat_side_4" type="Sprite2D" parent="Actors"]
+position = Vector2(278, 99)
+centered = false
+offset = Vector2(0, -31)
+texture = ExtResource("prop_bench_seat_side")
+
+[node name="score_table_5" type="Sprite2D" parent="Actors"]
 position = Vector2(251, 108)
 centered = false
 offset = Vector2(0, -29)
 texture = ExtResource("prop_score_table")
 
-[node name="arcade_5" type="Sprite2D" parent="Actors"]
+[node name="arcade_6" type="Sprite2D" parent="Actors"]
 position = Vector2(315, 108)
 centered = false
 offset = Vector2(0, -47)

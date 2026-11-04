@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxcxpkm5vmhfu"
-path="res://.godot/imported/bench_seat.png-7ff044c5847f72243cffe555e947db73.ctex"
+uid="uid://dlp06riq4k0i7"
+path="res://.godot/imported/chair_karaoke_side.png-b86071debf7e76e635a6d5d9311aa35b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/props/bench_seat.png"
-dest_files=["res://.godot/imported/bench_seat.png-7ff044c5847f72243cffe555e947db73.ctex"]
+source_file="res://assets/props/chair_karaoke_side.png"
+dest_files=["res://.godot/imported/chair_karaoke_side.png-b86071debf7e76e635a6d5d9311aa35b.ctex"]
 
 [params]
 

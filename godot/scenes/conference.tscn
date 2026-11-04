@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sets/conference.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
@@ -10,7 +10,8 @@
 [ext_resource type="Script" path="res://scripts/port.gd" id="port"]
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
-[ext_resource type="Texture2D" path="res://assets/props/chair_conference.png" id="prop_chair_conference"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_conference_side.png" id="prop_chair_conference_side"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_conference_side_l.png" id="prop_chair_conference_side_l"]
 [ext_resource type="Texture2D" path="res://assets/props/conference_table_wide.png" id="prop_conference_table_wide"]
 [ext_resource type="Texture2D" path="res://assets/props/plant_floor.png" id="prop_plant_floor"]
 
@@ -102,7 +103,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat1"]
 position = Vector2(0, -14)
@@ -114,7 +115,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat2"]
 position = Vector2(0, -14)
@@ -126,7 +127,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat3"]
 position = Vector2(0, -14)
@@ -138,7 +139,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat4"]
 position = Vector2(0, -14)
@@ -150,7 +151,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat5"]
 position = Vector2(0, -14)
@@ -162,7 +163,7 @@ script = ExtResource("seat")
 facing = "right"
 typing = false
 cup_dx = 14.0
-cup_y = 80.0
+cup_y = 74.0
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/Seat6"]
 position = Vector2(0, -14)
@@ -186,71 +187,71 @@ kind = "switch"
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
 
-[node name="chair_conference_0" type="Sprite2D" parent="Actors"]
-position = Vector2(79, 88)
+[node name="chair_conference_side_0" type="Sprite2D" parent="Actors"]
+position = Vector2(74, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
-[node name="chair_conference_1" type="Sprite2D" parent="Actors"]
-position = Vector2(111, 88)
+[node name="chair_conference_side_1" type="Sprite2D" parent="Actors"]
+position = Vector2(106, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
-[node name="chair_conference_2" type="Sprite2D" parent="Actors"]
-position = Vector2(143, 88)
+[node name="chair_conference_side_2" type="Sprite2D" parent="Actors"]
+position = Vector2(138, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
-[node name="chair_conference_3" type="Sprite2D" parent="Actors"]
-position = Vector2(175, 88)
+[node name="chair_conference_side_3" type="Sprite2D" parent="Actors"]
+position = Vector2(170, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
-[node name="chair_conference_4" type="Sprite2D" parent="Actors"]
-position = Vector2(207, 88)
+[node name="chair_conference_side_4" type="Sprite2D" parent="Actors"]
+position = Vector2(202, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
-[node name="chair_conference_5" type="Sprite2D" parent="Actors"]
-position = Vector2(239, 88)
+[node name="chair_conference_side_5" type="Sprite2D" parent="Actors"]
+position = Vector2(234, 88)
 centered = false
-offset = Vector2(0, -31)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -35)
+texture = ExtResource("prop_chair_conference_side")
 
 [node name="conference_table_wide_6" type="Sprite2D" parent="Actors"]
 position = Vector2(63, 108)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -38)
 texture = ExtResource("prop_conference_table_wide")
 
-[node name="chair_conference_7" type="Sprite2D" parent="Actors"]
+[node name="chair_conference_side_l_7" type="Sprite2D" parent="Actors"]
 position = Vector2(95, 112)
 centered = false
-offset = Vector2(0, -27)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -36)
+texture = ExtResource("prop_chair_conference_side_l")
 
-[node name="chair_conference_8" type="Sprite2D" parent="Actors"]
+[node name="chair_conference_side_l_8" type="Sprite2D" parent="Actors"]
 position = Vector2(143, 112)
 centered = false
-offset = Vector2(0, -27)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -36)
+texture = ExtResource("prop_chair_conference_side_l")
 
-[node name="chair_conference_9" type="Sprite2D" parent="Actors"]
+[node name="chair_conference_side_l_9" type="Sprite2D" parent="Actors"]
 position = Vector2(191, 112)
 centered = false
-offset = Vector2(0, -27)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -36)
+texture = ExtResource("prop_chair_conference_side_l")
 
-[node name="chair_conference_10" type="Sprite2D" parent="Actors"]
+[node name="chair_conference_side_l_10" type="Sprite2D" parent="Actors"]
 position = Vector2(239, 112)
 centered = false
-offset = Vector2(0, -27)
-texture = ExtResource("prop_chair_conference")
+offset = Vector2(0, -36)
+texture = ExtResource("prop_chair_conference_side_l")
 
 [node name="plant_floor_11" type="Sprite2D" parent="Actors"]
 position = Vector2(33, 108)

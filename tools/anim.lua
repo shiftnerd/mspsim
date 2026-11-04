@@ -120,6 +120,26 @@ local function compressLeg(M, c)
   return N
 end
 
+-- seated shin: rows past `at` move down n (the pants repeat row `at` n more times, so the calf grows; the shoes just drop)
+local function stretchShin(M, n, at, dup)
+  if not n or n <= 0 then return M end
+  local N = Image(M.width, M.height + n, ColorMode.RGB)
+  for y = 0, M.height - 1 do
+    for x = 0, M.width - 1 do
+      local v = M:getPixel(x, y)
+      if A(v) > 0 then
+        if y <= at then
+          N:putPixel(x, y, v)
+          if dup and y == at then for k = 1, n do N:putPixel(x, y + k, v) end end
+        else
+          N:putPixel(x, y + n, v)
+        end
+      end
+    end
+  end
+  return N
+end
+
 local function faceVariant(S, kind)
   if kind == nil or kind == "normal" then return S end
   local F = Image(S)
@@ -274,6 +294,10 @@ local function legParts(an, f, pose, Pover, Sover)
     local pm = mask(Pn, function(x, y) return y >= 47 and (left and x < gap or (not left) and x > gap) end)
     pm = compressLeg(pm, c)
     local sm = mask(Sn, function(x, y) return left and x <= sb or (not left) and x >= sb end)
+    if pose.shin and pose.shin > 0 then
+      pm = stretchShin(pm, pose.shin, 55, true)
+      sm = stretchShin(sm, pose.shin, 55, false)
+    end
     parts[#parts + 1] = {role = role, cx = cx, pants = pm, shoes = sm}
   end
   if nearIsLeft then add("F", false); add("N", true) else add("F", true); add("N", false) end
@@ -281,22 +305,40 @@ local function legParts(an, f, pose, Pover, Sover)
 end
 
 function E.render(an, pose, f)
-  local lean = (pose.lean or 0) * f
+  local lean0 = (pose.lean or 0) * f
+  local lean = lean0 + (pose.leanAdd or 0) * f     -- seated: the sitter leans toward the desk; the keepN / keepF hand target ignores it
   local rootDx = round((pose.rx or 0) * f)
-  local bobDy = (pose.bob or 0) + (pose.crouch or 0)
+  -- pose.lift (the seated poses): the whole body above the legs moves up this many px relative to the feet (the hips sit on the seat,
+  -- the legs bend under them); the shin / floor fields place the legs, the ground is measured with the un-stretched legs
+  local lift = pose.lift or 0
+  local bobDy = (pose.bob or 0) + (pose.crouch or 0) - lift
   local legs = legParts(an, f, pose)
-  local lg = {N = {pose.lN or 0, pose.lNl or 0, pose.lNr or 0}, F = {pose.lF or 0, pose.lFl or 0, pose.lFr or 0}}
-  local function drawLeg(O, M, p, dy0)
-    local g = lg[p.role]
-    limbRot(O, M, p.cx, 47, p.cx, pose.kn or 54, g[1] * f, g[3] * f, rootDx, dy0 - g[2] + (pose.legDy or 0))
+  local legsG = legs
+  if pose.shin then legsG = legParts(an, f, {crouch = pose.crouch}) end
+  local function drawLegOf(P, O, M, p, dy0)
+    local g = p.role == "N" and {P.lN or 0, P.lNl or 0, P.lNr or 0} or {P.lF or 0, P.lFl or 0, P.lFr or 0}
+    limbRot(O, M, p.cx, 47, p.cx, P.kn or 54, g[1] * f, g[3] * f, rootDx + round(((P.legDx or 0) + ((p.role == "N" and P.lNx or p.role == "F" and P.lFx) or 0)) * f), dy0 - g[2] + (P.legDy or 0))
   end
-  -- auto ground: render shoes only and measure the lowest row
+  local adj = {N = 0, F = 0}   -- pose.floor: per-leg lift/drop that puts each sole on the ground row (set below)
+  local function drawLeg(O, M, p, dy0) drawLegOf(pose, O, M, p, dy0 + adj[p.role]) end
+  -- auto ground: render shoes only and measure the lowest row. pose.legRef (a table of leg fields) is the leg setup the ground
+  -- is measured with: the seated poses bend the knee (legDy / kn) but keep the body exactly where the old straight-shin sit put it
   local rootDy = pose.ry or 0
   if pose.ground ~= false then
     local T = Image(CW, CH, ColorMode.RGB)
-    for _, p in ipairs(legs) do drawLeg(T, p.shoes, p, 0) end
+    for _, p in ipairs(legsG) do drawLegOf(pose.legRef or pose, T, p.shoes, p, 0) end
     local _, _, _, y1 = bbox(T)
     if y1 then rootDy = rootDy + (GROUND - y1) end
+  end
+  -- pose.floor (the seated poses): the body stays where legRef put it, then each leg is moved up or down so ITS shoe sole is on the
+  -- ground row, whatever the knee height / thigh angle (a bent knee with the foot flat on the floor)
+  if pose.floor then
+    for _, p in ipairs(legs) do
+      local T = Image(CW, CH, ColorMode.RGB)
+      drawLegOf(pose, T, p.shoes, p, rootDy)
+      local _, _, _, y1 = bbox(T)
+      if y1 then adj[p.role] = GROUND - y1 end
+    end
   end
   local out = {}
   local function torsoDx(y) return round(lean * clamp((38 - y) / 14, 0, 1)) + rootDx end
@@ -304,6 +346,9 @@ function E.render(an, pose, f)
   local headDy = bobDy + (pose.hy or 0) + rootDy
   local torsoDy = bobDy + rootDy
   local armDx = rootDx + round(lean * 0.9)
+  local armDx0 = rootDx + round(lean0 * 0.9)
+  local armLen = pose.armLen or 0     -- seated: the forearm is this many rows longer (a bent arm has to reach the desk from a raised shoulder)
+  local function armS(S, dup) return armLen > 0 and stretchShin(S, armLen, 35, dup) or S end
   local function headBlit(O, M)
     local hr = (pose.hrot or 0) * f
     if hr == 0 then
@@ -312,26 +357,69 @@ function E.render(an, pose, f)
       blitRot(O, M, an.headCx, 22, hr, headDx, headDy)
     end
   end
-  -- where the near hand grips (canvas coords): used to attach held items
-  local hand
-  do
-    local ang, rel = (pose.aN or 0) * f, (pose.aNr or 0) * f
-    local function rot(a, b, deg)
-      local r = math.rad(deg)
-      return a * math.cos(r) + b * math.sin(r), -a * math.sin(r) + b * math.cos(r)
+  -- where an arm's hand grips (canvas coords, float): the near hand attaches held items (and the hands json); `ang` / `rel` are the
+  -- signed angles (already times the facing)
+  local function rot(a, b, deg)
+    local r = math.rad(deg)
+    return a * math.cos(r) + b * math.sin(r), -a * math.sin(r) + b * math.cos(r)
+  end
+  local ay1Cache = {}
+  local function tipOf(near, ang, rel, tdy, adx)
+    local ax = near and an.armN or an.armF
+    local ay1 = ay1Cache[near]
+    if ay1 == nil then
+      local _, _, _, y1 = bbox(armS(an.by[near and "Near Arm" or "Back Arm"].S, true))
+      ay1 = y1 or false
+      ay1Cache[near] = ay1
     end
-    local _, _, _, ay1 = bbox(an.by["Near Arm"].S)
-    local hx0, hy0 = an.armN, (ay1 or 41) - 2
+    local hx0, hy0 = ax, (ay1 or 41) - 2
     local hx, hy
     if rel == 0 then
-      local a, b = rot(hx0 - an.armN, hy0 - 25, ang)
-      hx, hy = an.armN + a, 25 + b
+      local a, b = rot(hx0 - ax, hy0 - 25, ang)
+      hx, hy = ax + a, 25 + b
     else
       local ex, ey = rot(0, 9, ang)
-      local a, b = rot(hx0 - an.armN, hy0 - 34, ang + rel)
-      hx, hy = an.armN + ex + a, 25 + ey + b
+      local a, b = rot(hx0 - ax, hy0 - 34, ang + rel)
+      hx, hy = ax + ex + a, 25 + ey + b
     end
-    hand = {round(hx + OX + armDx), round(hy + OY + torsoDy)}
+    return hx + OX + adx, hy + OY + tdy
+  end
+  -- pose.keepN / pose.keepF (the seated poses): the body is `lift` px higher than it used to be, but the hand stays where the
+  -- un-lifted pose put it (on the keys, the mouse, the desk): the two arm angles are re-solved so the hand tip lands on the same pixel
+  if lift ~= 0 and (pose.keepN or pose.keepF) then
+    local np = {}
+    for k, v in pairs(pose) do np[k] = v end
+    for _, near in ipairs({true, false}) do
+      if (near and pose.keepN) or ((not near) and pose.keepF) then
+        local kA, kR = near and "aN" or "aF", near and "aNr" or "aFr"
+        local a0, r0 = (pose[kA] or 0), (pose[kR] or 0)
+        local tx, ty = tipOf(near, a0 * f, r0 * f, torsoDy + lift, armDx0)
+        local best, ba, br = 1e18, a0, r0
+        -- the search is the same for every pose / character with these numbers: cache it
+        local _, _, _, cy1 = bbox(an.by[near and "Near Arm" or "Back Arm"].S)
+        local ckey = table.concat({near and 1 or 0, a0, r0, f, near and an.armN or an.armF, cy1 or -1, torsoDy, lift, armDx, armDx0, armLen}, ",")
+        E.ik = E.ik or {}
+        local hit = E.ik[ckey]
+        if hit then np[kA], np[kR] = hit[1], hit[2] else
+        local function try(a, r)
+          local x, y = tipOf(near, a * f, r * f, torsoDy, armDx)
+          local c = (x - tx) ^ 2 + (y - ty) ^ 2 + 0.0004 * ((a - a0) ^ 2 + (r - r0) ^ 2)
+          if c < best then best, ba, br = c, a, r end
+        end
+        for a = a0 - 45, a0 + 60, 3 do for r = r0 - 60, r0 + 60, 3 do try(a, r) end end
+        local ca, cr = ba, br
+        for a = ca - 3, ca + 3 do for r = cr - 3, cr + 3 do try(a, r) end end
+        np[kA], np[kR] = ba, br
+        E.ik[ckey] = {ba, br}
+        end
+      end
+    end
+    pose = np
+  end
+  local hand
+  do
+    local hx, hy = tipOf(true, (pose.aN or 0) * f, (pose.aNr or 0) * f, torsoDy, armDx)
+    hand = {round(hx), round(hy)}
   end
   -- pose.armTop: the near arm is drawn on the extra top layer "Arm Top" (above Face / Hair / Vest), so a hand can come up
   -- to the face or head instead of disappearing behind it
@@ -351,15 +439,15 @@ function E.render(an, pose, f)
       for _, p in ipairs(legs) do drawLeg(O, p.pants, p, rootDy) end
       blitShift(O, mask(S, function(x, y) return y <= 46 end), torsoDx, torsoDy)
     elseif n == "Near Arm" or (n == "Watch" and an.watchOn == "N") then
-      limbRot(pose.armTop and top or O, S, an.armN, 25, an.armN, 34, (pose.aN or 0) * f, (pose.aNr or 0) * f, armDx, torsoDy)
+      limbRot(pose.armTop and top or O, armS(S, n ~= "Watch"), an.armN, 25, an.armN, 34, (pose.aN or 0) * f, (pose.aNr or 0) * f, armDx, torsoDy)
     elseif n == "Back Arm" or (n == "Watch" and an.watchOn == "F") then
-      limbRot(O, S, an.armF, 25, an.armF, 34, (pose.aF or 0) * f, (pose.aFr or 0) * f, armDx, torsoDy)
+      limbRot(O, armS(S, n ~= "Watch"), an.armF, 25, an.armF, 34, (pose.aF or 0) * f, (pose.aFr or 0) * f, armDx, torsoDy)
     elseif n == "Body" then
       headBlit(O, mask(S, function(x, y) return y <= 22 end))
       blitShift(O, mask(S, function(x, y) return y >= 23 end), torsoDx, torsoDy)
     elseif L.arm then   -- a wrist accessory (watch): follows the near ("N") or far ("F") arm like the Watch layer does
       local near = L.arm == "N"
-      limbRot((near and L.reftop and pose.armTop) and top or O, S, near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, (near and (pose.aN or 0) or (pose.aF or 0)) * f,
+      limbRot((near and L.reftop and pose.armTop) and top or O, armS(S, false), near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, (near and (pose.aN or 0) or (pose.aF or 0)) * f,
         (near and (pose.aNr or 0) or (pose.aFr or 0)) * f, armDx, torsoDy)   -- (was `near and pose.aN or pose.aF`: a near arm with no aN took aF)
     elseif HEAD[n] or L.head then
       headBlit(O, S)

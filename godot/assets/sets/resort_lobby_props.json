@@ -2,5 +2,6 @@
 {"piece":"palm","x":95,"y":13,"sort":108},
 {"piece":"palm","x":199,"y":13,"sort":108},
 {"piece":"reg_desk","x":111,"y":75,"sort":108},
-{"piece":"couch","x":37,"y":68,"sort":99}
+{"piece":"couch_side","x":27,"y":68,"sort":99},
+{"piece":"couch_side","x":53,"y":68,"sort":99}
 ]

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ba7fl8u3niyd5"
-path="res://.godot/imported/chair_conference.png-09c8fedf6a75770c4578a25a2f986138.ctex"
+uid="uid://dl4kc4qhnlbeb"
+path="res://.godot/imported/couch_side.png-0497c0d3e20c25af06b910fa5f173c65.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/props/chair_conference.png"
-dest_files=["res://.godot/imported/chair_conference.png-09c8fedf6a75770c4578a25a2f986138.ctex"]
+source_file="res://assets/props/couch_side.png"
+dest_files=["res://.godot/imported/couch_side.png-0497c0d3e20c25af06b910fa5f173c65.ctex"]
 
 [params]
 

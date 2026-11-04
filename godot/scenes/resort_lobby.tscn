@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://scripts/port.gd" id="port"]
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
-[ext_resource type="Texture2D" path="res://assets/props/couch.png" id="prop_couch"]
+[ext_resource type="Texture2D" path="res://assets/props/couch_side.png" id="prop_couch_side"]
 [ext_resource type="Texture2D" path="res://assets/props/palm.png" id="prop_palm"]
 [ext_resource type="Texture2D" path="res://assets/props/reg_desk.png" id="prop_reg_desk"]
 
@@ -113,7 +113,7 @@ target_spawn = "from_hall"
 shape = SubResource("shape_door")
 
 [node name="Seat1" type="Area2D" parent="Interactables"]
-position = Vector2(75, 101)
+position = Vector2(65, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -124,7 +124,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat2" type="Area2D" parent="Interactables"]
-position = Vector2(89, 101)
+position = Vector2(91, 101)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -157,11 +157,17 @@ centered = false
 offset = Vector2(0, -33)
 texture = ExtResource("prop_reg_desk")
 
-[node name="couch_3" type="Sprite2D" parent="Actors"]
-position = Vector2(61, 99)
+[node name="couch_side_3" type="Sprite2D" parent="Actors"]
+position = Vector2(51, 99)
 centered = false
 offset = Vector2(0, -31)
-texture = ExtResource("prop_couch")
+texture = ExtResource("prop_couch_side")
+
+[node name="couch_side_4" type="Sprite2D" parent="Actors"]
+position = Vector2(77, 99)
+centered = false
+offset = Vector2(0, -31)
+texture = ExtResource("prop_couch_side")
 
 [node name="Player" parent="Actors" instance=ExtResource("player")]
 position = Vector2(84, 118)

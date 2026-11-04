@@ -72,7 +72,7 @@ SETS = {
     "office_two": dict(node="OfficeTwo", W=176,
         spawns={"start": (60, "right"), "from_main": (62, "right")},
         doors=[("ToMain", 21, "main_floor", "from_office2", "")],
-        exits=[], seats=[(100, 101, True), (55, 101, False, True), (69, 101, False, True)]),
+        exits=[], seats=[(100, 101, True), (49, 101, False, True), (75, 101, False, True)]),
     "conference": dict(node="Conference", W=320,
         spawns={"start": (60, "right"), "from_main": (262, "left"), "from_cubicles": (28, "right")},
         doors=[("ToMain", 299, "main_floor", "from_conf", "")],
@@ -115,7 +115,7 @@ SETS = {
     "bowling_alley": dict(node="BowlingAlley", W=320,
         spawns={"start": (60, "right"), "from_outing": (40, "right")},
         doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")],
-        seats=[(246, 101, False, True), (266, 101, False, True)]),
+        seats=[(242, 101, False, True), (268, 101, False, True)]),
     "karaoke_bar": dict(node="KaraokeBar", W=320,
         spawns={"start": (60, "right"), "from_outing": (40, "right")},
         doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")],
@@ -134,7 +134,7 @@ SETS = {
                 "from_ballroom": (50, "right"), "from_expo": (263, "right")},
         doors=[("Ballroom", 37, "ballroom", "from_lobby", ""), ("ToHall", 301, "resort_hall", "from_lobby", ""),
                ("Expo", 263, "vendor_hall", "from_hall", "")],
-        exits=[], seats=[(51, 101, False, True), (65, 101, False, True)]),
+        exits=[], seats=[(41, 101, False, True), (67, 101, False, True)]),
     "resort_hall": dict(node="ResortHall", W=320,
         spawns={"start": (150, "right"), "from_lobby": (34, "right"), "from_a": (49, "right"),
                 "from_b": (119, "right"), "from_c": (189, "right"), "from_d": (259, "right")},
@@ -51061,6 +51061,8 @@ shape = SubResource("RectangleShape2D_npc")
 
 # ---- map data for the persistent cast (scripts/world_data.gd) ----------------
 world_scenes = {}
+# where a seated cup stands on the table: table top (feet y - 18) + 3; the raised conference / karaoke / restaurant tables
+CUP_Y = {"conference": 74.0, "karaoke_bar": 74.0, "restaurant": 74.0}
 for fname, cfg in SETS.items():
     W = cfg["W"]
     x0 = (VIEW_W - W) // 2
@@ -51177,7 +51179,7 @@ for fname, cfg in SETS.items():
         lounge = len(seat_cfg) > 3 and seat_cfg[3]
         lines += [f'[node name="Seat{i + 1}" type="Area2D" parent="Interactables"]', f'position = Vector2({x0 + sx}, {sy})',
                   'script = ExtResource("seat")', 'facing = "right"', f'typing = {"true" if typing else "false"}',
-                  *(['stash = false'] if lounge else ([] if typing else ['cup_dx = 14.0', 'cup_y = 80.0'])), "",
+                  *(['stash = false'] if lounge else ([] if typing else ['cup_dx = 14.0', f'cup_y = {CUP_Y.get(fname, 80.0)}'])), "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat{i + 1}"]',
                   'position = Vector2(0, -14)', 'shape = SubResource("shape_seat")', ""]
     bgfx = BGFX.get(fname, [])
@@ -58967,8 +58969,8 @@ const MIN_STEP := 0.045  # the least a shade differs from its base in value
 #   3 pixels straight below it is a sleeve over a forearm). The shader only matches colours, so skin, outline, face, belt,
 #   buckle and shoes are untouched by construction.
 # shorts: pants pixels (all three tones) at or below the hem row of the frame (HEMS, the first pants row plus 9, baked per
-#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated, only
-#   the thighs show, so the trousers stay; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
+#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated (hem = pelvis top plus 9, row 74):
+#   the thighs stay trousers and the shin turns to skin; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
 const PATTERNS := ["none", "stripes", "plaid", "checks"]
 const SHORTS := ["none", "shorts"]
 # ---- LEVEL 3 STEP (f): real clothes on a bare-skin base (scripts/clothes_gear.gd, tools/make_clothes.lua) ----
@@ -58997,10 +58999,10 @@ const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
 const HEMS := [
     67, 68, 68, 68, 68, 68, 67, 67, 68, 68, 67, 67, 69, 68, 64, 69, 68, 64, 70, 63, 55, 61, 71, 69, 67, 67, 67, 67, 67,
-    255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
-    67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
-    80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
-    80, 80, 80, 80, 80, 80,
+    255, 255, 255, 255, 255, 255, 70, 74, 74, 75, 74, 74, 74, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
+    67, 67, 68, 68, 67, 67, 67, 67, 67, 74, 74, 74, 67, 67, 74, 74, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 74, 74,
+    74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 76, 76, 74, 74, 74, 74, 74, 74, 74, 74,
+    74, 74, 74, 74, 74, 74,
     68, 69, 68, 67, 67, 67
 ]
 const SOURCES := [

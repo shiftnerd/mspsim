@@ -46,6 +46,15 @@ function L.piece(w, h, fn)
 end
 
 -- filled box with highlight on top/left and shade on bottom/right
+-- horizontal mirror of an image (left-facing version of a right-facing side view)
+function L.flipH(img)
+  local o = Image(img.width, img.height, ColorMode.RGB)
+  for y = 0, img.height - 1 do
+    for x = 0, img.width - 1 do o:putPixel(img.width - 1 - x, y, img:getPixel(x, y)) end
+  end
+  return o
+end
+
 function L.box(R, x, y, w, h, base, hi, sh)
   R(x, y, w, h, base)
   R(x + w - 1, y, 1, h, sh)
@@ -398,14 +407,41 @@ function P.keyboardSide()
   end)
 end
 
+-- an office task chair from the side, facing RIGHT (mirror it for a left-facing sitter with L.flipH). Art 18x35. The seat top is art
+-- row 28 = frame row 72, right under the thighs (put the art at feet_y - 35, so the sitter's sole row is art row 35); everything
+-- under the seat is drawn a little nearer the camera than the sitter's feet, so the casters end 1 px below the sole row:
+-- a leaning backrest that rises above the shoulder blades with a lumbar bulge and a light edge, a cushion with a lit top and a
+-- visible thickness, a short chrome gas lift (2 rows), a five-star base seen as a flat ellipse with its legs and round casters.
+-- (The old front chair P.chair is 18x33, still used by the chair race.)
+local function lighter(hex, n)
+  local r, g, b = tonumber(hex:sub(2, 3), 16), tonumber(hex:sub(4, 5), 16), tonumber(hex:sub(6, 7), 16)
+  return string.format("#%02X%02X%02X", math.min(255, r + n), math.min(255, g + n), math.min(255, b + n))
+end
 function P.chairSide(base, hi, sh)
   base = base or "#2A2A33"; hi = hi or "#4A4A56"; sh = sh or "#1C1C24"
-  return L.piece(18, 33, function(R)
-    L.box(R, 0, 0, 3, 15, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
-    L.box(R, 0, 15, 18, 4, base, hi, sh)                     -- seat
-    R(8, 19, 2, 10, sh)                                      -- gas post
-    R(1, 29, 16, 2, base)                                    -- star base
-    R(0, 31, 3, 2, sh); R(15, 31, 3, 2, sh); R(7, 31, 3, 2, sh)
+  local top = lighter(hi, 34)
+  local chrome, chromeSh = "#B8BEC9", "#7C8290"
+  return L.piece(18, 35, function(R)
+    -- backrest: outline, light edge, two body tones; it leans back at the top, bulges forward at the lumbar
+    local function slab(y0, y1, x0)
+      for y = y0, y1 do
+        R(x0, y, 1, 1, sh); R(x0 + 1, y, 1, 1, top); R(x0 + 2, y, 1, 1, hi); R(x0 + 3, y, 1, 1, base); R(x0 + 4, y, 1, 1, sh)
+      end
+    end
+    R(1, 0, 3, 1, sh)                                           -- rounded top
+    slab(1, 9, 0); slab(10, 17, 1); slab(18, 24, 2)
+    R(2, 25, 3, 3, sh); R(3, 25, 1, 3, base)                    -- post into the seat
+    -- seat: lit top edge, cushion body, shadowed underside with the plate, rounded front
+    R(1, 28, 16, 1, top); R(0, 28, 1, 1, sh); R(17, 28, 1, 1, sh)
+    R(0, 29, 18, 1, sh); R(1, 29, 16, 1, hi)
+    R(0, 30, 18, 1, sh); R(4, 30, 9, 1, base)
+    -- gas lift: a short chrome column (2 rows)
+    R(7, 31, 1, 2, sh); R(8, 31, 1, 2, chrome); R(9, 31, 1, 2, chromeSh); R(10, 31, 1, 2, sh)
+    -- star base: a flat ellipse and a hub; the casters stand on the sitter's sole row and hang 1 px below it
+    R(3, 33, 12, 1, sh); R(2, 33, 14, 1, base); R(7, 33, 4, 1, hi)
+    for _, cx in ipairs({0, 7, 15}) do
+      R(cx, 33, 3, 2, sh); R(cx + 1, 33, 1, 1, hi)
+    end
   end)
 end
 
