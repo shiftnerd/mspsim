@@ -100,10 +100,18 @@ SETS = {
     # the WAREHOUSE (chair race phase 1): 1480 px wide. R24: reached from the kitchenette (its grey steel door, or the left edge, at set x 21)
     # and it holds the BLUE steel door (set x 729, between the parts cage and the back storage room) into the network closet.
     "warehouse": dict(node="Warehouse", W=1480,
-        spawns={"start": (60, "right"), "from_kitchenette": (60, "right"), "from_closet": (764, "right"), "from_outing": (170, "right")},
+        spawns={"start": (60, "right"), "from_kitchenette": (60, "right"), "from_closet": (764, "right"), "from_outing": (170, "right"),
+                "from_lot": (1350, "left")},
         doors=[("ToKitchenette", 21, "kitchenette", "from_warehouse", ""),
-               ("ToCloset", 729, "network_closet", "from_warehouse", "")],
+               ("ToCloset", 729, "network_closet", "from_warehouse", ""),
+               ("ToLot", 1375, "warehouse_lot", "from_warehouse", "")],     # R21c: through the open overhead door (locked while it is not all the way up)
         exits=[("ToKitchenette", "left", "kitchenette", "from_warehouse")], seats=[]),
+    # the parking lot outside the warehouse dock (R21c): 780 px, no ceiling, the sky follows the game clock. The doorway at its left end
+    # (set x 0..120) leads back into the warehouse (E at the doorway, or walk off the left edge); nobody from the cast goes out there.
+    "warehouse_lot": dict(node="WarehouseLot", W=780,
+        spawns={"start": (90, "right"), "from_warehouse": (70, "right")},
+        doors=[("ToWarehouse", 60, "warehouse", "from_lot", "")],
+        exits=[("ToWarehouse", "left", "warehouse", "from_lot")], seats=[]),
     "bowling_alley": dict(node="BowlingAlley", W=320,
         spawns={"start": (60, "right"), "from_outing": (40, "right")},
         doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")],
@@ -644,7 +652,7 @@ write("scripts/door.gd", '''extends Area2D
 @export var auto := false
 @export var locked := false           # can't be used: the arrow turns red and shakes
 @export var occupancy := ""           # a bathroom scene: the door is locked while somebody is inside (World.bathroom_occupied)
-@export var special := ""            # "front" = the office front door: choose a client site to drive to
+@export var special := ""            # "front" = the office front door: choose a client site to drive to; "dock" = the warehouse doorway to the lot (locked unless the overhead door is all the way up)
 @export var arrow_offset := Vector2(0, -36)
 
 var _arrow: Node2D
@@ -683,13 +691,19 @@ func _on_body_exited(body: Node) -> void:
 
 
 func is_locked() -> bool:
-    return locked or (occupancy != "" and World.bathroom_occupied(occupancy))
+    return locked or (occupancy != "" and World.bathroom_occupied(occupancy)) or (special == "dock" and not _dock_open())
+
+
+# the overhead door (fx kind roll_door) has rolled all the way up
+func _dock_open() -> bool:
+    var door: Node = get_tree().get_first_node_in_group("roll_door")
+    return door != null and float(door.open) >= 0.999 and float(door.goal) > 0.5
 
 
 func _process(_delta: float) -> void:
     if _arrow != null:
         _arrow.visible = _player != null and _player.nearest() == self and _player.state != "sitting"
-        if occupancy != "" and not _arrow.shaking():
+        if (occupancy != "" or special == "dock") and not _arrow.shaking():
             _arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
 
@@ -701,6 +715,8 @@ func use(_body: Node) -> void:
         _arrow.shake()
         if occupancy != "":
             Hints.toast("OCCUPIED")
+        elif special == "dock":
+            Hints.toast("THE DOOR IS SHUT. ROLL IT UP FIRST.", 2.2)
         return
     if remember != "":
         var kv := remember.split("=")
@@ -48680,6 +48696,13 @@ func _set_dark(amount: float) -> void:
         node.modulate = inverse
 
 
+# the parking lot outside the dock (R21c): the light comes from the sky, so the whole picture takes the colour of the hour
+func _lot_tint() -> void:
+    var tint: Color = preload("res://scripts/outside.gd").phase(World.clock).tint
+    for layer in ["Background", "Fx", "Actors"]:
+        get_node(layer).modulate = tint
+
+
 func _apply_format() -> void:
     var f: Dictionary = Game.FORMATS[Game.format]
     _cam.zoom = Vector2.ONE * float(f.zoom)
@@ -48707,6 +48730,8 @@ func _apply_format() -> void:
 func _process(_delta: float) -> void:
     if Game.title_mode or _player == null or _cam == null:
         return
+    if _room == "warehouse_lot":
+        _lot_tint()
     var f: Dictionary = Game.FORMATS[Game.format]
     if f.follow or _long or Game.ui_shift > 0.0:
         var base_y: float = float(f.cam_y) if f.follow else 64.0
@@ -48743,7 +48768,7 @@ func _unhandled_input(event: InputEvent) -> void:
         if not OS.is_debug_build():
             return  # the F-key room jumps below are for development builds only
         if event.keycode == KEY_F11 and event.alt_pressed:
-            Game.go("warehouse", "start")
+            Game.go("warehouse_lot" if event.shift_pressed else "warehouse", "start")
             return
         if event.keycode == KEY_F11 and event.ctrl_pressed:
             var sites := []
@@ -49579,7 +49604,7 @@ for fname, cfg in SETS.items():
            ('Script', 'res://scripts/port.gd', 'port'), ('Script', 'res://scripts/rack_zone.gd', 'rack_zone'),
            ('PackedScene', 'res://scenes/npc.tscn', 'npc')]
     ext += [('Texture2D', f'res://assets/props/{p}.png', f'prop_{p}') for p in pieces]
-    if fname == "warehouse":
+    if fname in ("warehouse", "warehouse_lot"):
         ext.append(('Script', 'res://scripts/outside.gd', 'outside'))   # R21c: the sky and lot behind the dock doorway, and the daylight spill
     lines = [f'[ext_resource type="{t}" path="{path}" id="{i}"]' for t, path, i in ext]
     lines.append("")
@@ -49591,6 +49616,8 @@ for fname, cfg in SETS.items():
     lines += [f'[node name="{node}" type="Node2D"]', 'script = ExtResource("stage")', ""]
     if fname == "warehouse":   # R21c: the outside, BEHIND the Background (its doorway is a transparent hole), at the opening x 1287, y 12
         lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'script = ExtResource("outside")', 'mode = "sky"', ""]
+    if fname == "warehouse_lot":   # R21c: the sky of the lot, BEHIND the Background (the art has a transparent sky), from the top of the art down to the tree line
+        lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0}, {-SET_TOP})', 'script = ExtResource("outside")', 'mode = "lot"', f'view_w = {W}', 'view_h = 150', ""]
     lines += ['[node name="Background" type="Sprite2D" parent="."]', f'position = Vector2({x0 - max(0, (MIN_W - W) // 2)}, {-SET_TOP})',
               'centered = false', 'texture = ExtResource("bg")', ""]
     # collision: floor + side walls
@@ -49614,6 +49641,8 @@ for fname, cfg in SETS.items():
                   'script = ExtResource("door")', f'target_scene = "{tscene}"', f'target_spawn = "{tspawn}"']
         if remember:
             lines.append(f'remember = "{remember}"')
+        if tscene == "warehouse_lot":
+            lines.append('special = "dock"')   # R21c: only usable while the overhead door is all the way up
         if tscene.startswith("bathroom_"):
             lines.append(f'occupancy = "{tscene}"')   # locked while somebody is inside (World.bathroom_occupied)
         if locked and dname == "FrontDoor":
@@ -49657,6 +49686,9 @@ for fname, cfg in SETS.items():
     lines += ['[node name="Fx" type="Node2D" parent="."]', ""]
     if fname == "warehouse":   # R21c: warm daylight on the floor in front of the open door (additive, above the actors, not tinted by the lights)
         lines += ['[node name="Daylight" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'z_index = 1', 'script = ExtResource("outside")', 'mode = "spill"', ""]
+    if fname == "warehouse_lot":   # R21c: the two street lights glow at dusk and at night (additive, above the actors)
+        for _n, _lx in enumerate((267, 571)):
+            lines += [f'[node name="Lamp{_n}" type="Node2D" parent="."]', f'position = Vector2({x0 + _lx}, 25)', 'z_index = 1', 'script = ExtResource("outside")', 'mode = "lamp"', ""]
     for name, kind, ax, ay, ix, *opt in bgfx:
         lines += [f'[node name="{name}" type="Node2D" parent="Fx"]', f'position = Vector2({x0 + ax}, {ay})',
                   'script = ExtResource("fx")', f'kind = "{kind}"', ""]
@@ -49708,6 +49740,9 @@ write("scripts/outside.gd", '''extends Node2D
 #   Daylight (mode "spill") sits above the floor and the people: a warm, additive light rect in front of the door that grows with
 #                          the door and follows the clock phase. It ignores World.lights (switch the room off, the daylight stays).
 # Both read the door (fx.gd kind roll_door, group "roll_door"): `open` 0..1. The sky follows World.clock through `phase()`.
+# The walkable parking lot (scene warehouse_lot) uses the same script: Backdrop (mode "lot", view_w x view_h, always drawn: the sky,
+# sun and clouds behind the transparent sky of the set art) and Lamp (mode "lamp": a warm additive glow round a street light and on
+# the asphalt under it, strength from `lamp()`, only at dusk and at night).
 # Art-local coordinates: (0, 0) is the top-left of the doorway opening, W x H pixels. Redraws in 12 fps steps.
 
 const W := 120
@@ -49729,12 +49764,15 @@ const BANDS := [[81, 8, 1.0], [89, 10, 0.75], [99, 11, 0.5], [110, 10, 0.3], [12
 const CLOUDS := [[8.0, 5.0, 26.0, 1.4], [54.0, 12.0, 34.0, 0.9], [96.0, 3.0, 20.0, 1.9], [30.0, 17.0, 18.0, 1.1], [76.0, 20.0, 22.0, 1.6]]
 
 @export var mode := "sky"
+@export var view_w := 120  # the size of the picture: the doorway, or the whole sky of the lot
+@export var view_h := 76
 
 var open := 0.0  # how far the door is open, copied from the door every frame
 var _door: Node = null
 var _lot: Texture2D = null
 var _t := 0.0
 var _acc := 0.0
+var _night := -1.0
 
 
 # the sky at a clock time (hours, 9.0 = opening): the colours and the strength of the light. Tests call it.
@@ -49755,10 +49793,15 @@ static func phase(clock: float) -> Dictionary:
     }
 
 
+# how much the street lights glow at a clock time (0 by day, 1 at night)
+static func lamp(clock: float) -> float:
+    return clampf((clock - 16.6) / 1.5, 0.0, 1.0)
+
+
 func _ready() -> void:
     if mode == "sky":
         _lot = load(LOT)
-    if mode == "spill":
+    if mode == "spill" or mode == "lamp":
         var mat := CanvasItemMaterial.new()
         mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
         material = mat
@@ -49773,6 +49816,13 @@ func _process(delta: float) -> void:
     var changed := not is_equal_approx(now, open)
     open = now
     visible = open > 0.001
+    if mode == "lot" or mode == "lamp":
+        visible = true
+        changed = false
+        if mode == "lamp":
+            var n := floorf(lamp(World.clock) * 24.0) / 24.0
+            changed = not is_equal_approx(n, _night)
+            _night = n
     _acc += delta
     if _acc >= STEP or changed:
         _acc = 0.0
@@ -49781,8 +49831,8 @@ func _process(delta: float) -> void:
 
 
 func _px(x: float, y: float, w: float, h: float, c: Color) -> void:
-    var x0 := clampf(x, 0.0, float(W))
-    var x1 := clampf(x + w, 0.0, float(W))
+    var x0 := clampf(x, 0.0, float(view_w))
+    var x1 := clampf(x + w, 0.0, float(view_w))
     if x1 > x0:
         draw_rect(Rect2(x0, y, x1 - x0, h), c)
 
@@ -49792,13 +49842,25 @@ func _draw() -> void:
     if mode == "spill":
         _draw_spill(ph)
         return
+    if mode == "lamp":
+        _draw_lamp()
+        return
     # the sky: 2 px bands, top colour to the horizon colour
-    for y in range(0, H, 2):
-        var f := float(y) / float(H - 12)
-        _px(0, y, W, 2, (ph.top as Color).lerp(ph.bottom, clampf(f * f, 0.0, 1.0)))
+    for y in range(0, view_h, 2):
+        var f := float(y) / float(view_h - 12)
+        _px(0, y, view_w, 2, (ph.top as Color).lerp(ph.bottom, clampf(f * f, 0.0, 1.0)))
     _draw_sun()
     for c in CLOUDS:
         _draw_cloud(c, ph.cloud)
+    if mode == "lot":
+        for k in range(CLOUDS.size()):  # the lot is wide: a second set of clouds further along
+            var c: Array = CLOUDS[k].duplicate()
+            c[0] = float(c[0]) + 190.0 + float(k) * 70.0
+            c[1] = float(c[1]) + 100.0 - float(k) * 6.0
+            _draw_cloud(c, ph.cloud)
+            c = CLOUDS[k].duplicate()
+            c[0] = float(c[0]) + 420.0 + float(k) * 40.0
+            _draw_cloud(c, ph.cloud)
     if _lot != null:
         draw_texture(_lot, Vector2.ZERO, ph.tint)
 
@@ -49810,6 +49872,9 @@ func _draw_sun() -> void:
         return
     var sx := 10.0 + u * 100.0
     var sy := 36.0 - sin(u * PI) * 32.0
+    if mode == "lot":  # the whole sky of the lot: the sun crosses all of it, the horizon is at y 142
+        sx = 30.0 + u * float(view_w - 60)
+        sy = 142.0 - sin(u * PI) * 124.0
     var low := absf(u - 0.5) * 2.0
     var col := Color("fff6d0").lerp(Color("ff9a4a"), clampf(low * 1.2, 0.0, 1.0))
     for dy in range(-4, 5):
@@ -49819,12 +49884,31 @@ func _draw_sun() -> void:
 
 func _draw_cloud(c: Array, col: Color) -> void:
     var w: float = c[2]
-    var x := floorf(fposmod(float(c[0]) + _t * float(c[3]), float(W) + w * 2.0)) - w
+    var x := floorf(fposmod(float(c[0]) + _t * float(c[3]), float(view_w) + w * 2.0)) - w
     var y: float = c[1]
     _px(x + w * 0.2, y, w * 0.45, 2, col)
     _px(x + w * 0.1, y + 2, w * 0.8, 2, col)
     _px(x, y + 4, w, 2, col.darkened(0.1))
     _px(x + w * 0.05, y + 6, w * 0.9, 1, col.darkened(0.2))
+
+
+# a street light: rings of warm light round the lamp head (0, 0 of this node) and a pool on the asphalt under it
+func _draw_lamp() -> void:
+    var n := lamp(World.clock)
+    if n <= 0.01:
+        return
+    var col := Color(1.0, 0.86, 0.5)
+    for ring in [[34, 0.05], [26, 0.06], [18, 0.07], [10, 0.1], [5, 0.16]]:
+        var r: int = ring[0]
+        for dy in range(-r, r + 1):
+            var half := int(sqrt(float(r * r - dy * dy)))
+            draw_rect(Rect2(-half, dy, half * 2 + 1, 1), Color(col.r, col.g, col.b, float(ring[1]) * n))
+    for pool in [[44, 8, 0.05], [32, 6, 0.06], [20, 4, 0.07]]:
+        var rx: int = pool[0]
+        var ry: int = pool[1]
+        for dy in range(-ry, ry + 1):
+            var half := int(float(rx) * sqrt(1.0 - float(dy * dy) / float(ry * ry + 1)))
+            draw_rect(Rect2(-half, 88 + dy, half * 2 + 1, 1), Color(col.r, col.g, col.b, float(pool[2]) * n))
 
 
 # warm daylight on the floor in front of the open door, in bands that fade out with distance and with the door

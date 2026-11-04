@@ -7,6 +7,9 @@ extends Node2D
 #   Daylight (mode "spill") sits above the floor and the people: a warm, additive light rect in front of the door that grows with
 #                          the door and follows the clock phase. It ignores World.lights (switch the room off, the daylight stays).
 # Both read the door (fx.gd kind roll_door, group "roll_door"): `open` 0..1. The sky follows World.clock through `phase()`.
+# The walkable parking lot (scene warehouse_lot) uses the same script: Backdrop (mode "lot", view_w x view_h, always drawn: the sky,
+# sun and clouds behind the transparent sky of the set art) and Lamp (mode "lamp": a warm additive glow round a street light and on
+# the asphalt under it, strength from `lamp()`, only at dusk and at night).
 # Art-local coordinates: (0, 0) is the top-left of the doorway opening, W x H pixels. Redraws in 12 fps steps.
 
 const W := 120
@@ -28,12 +31,15 @@ const BANDS := [[81, 8, 1.0], [89, 10, 0.75], [99, 11, 0.5], [110, 10, 0.3], [12
 const CLOUDS := [[8.0, 5.0, 26.0, 1.4], [54.0, 12.0, 34.0, 0.9], [96.0, 3.0, 20.0, 1.9], [30.0, 17.0, 18.0, 1.1], [76.0, 20.0, 22.0, 1.6]]
 
 @export var mode := "sky"
+@export var view_w := 120  # the size of the picture: the doorway, or the whole sky of the lot
+@export var view_h := 76
 
 var open := 0.0  # how far the door is open, copied from the door every frame
 var _door: Node = null
 var _lot: Texture2D = null
 var _t := 0.0
 var _acc := 0.0
+var _night := -1.0
 
 
 # the sky at a clock time (hours, 9.0 = opening): the colours and the strength of the light. Tests call it.
@@ -54,10 +60,15 @@ static func phase(clock: float) -> Dictionary:
 	}
 
 
+# how much the street lights glow at a clock time (0 by day, 1 at night)
+static func lamp(clock: float) -> float:
+	return clampf((clock - 16.6) / 1.5, 0.0, 1.0)
+
+
 func _ready() -> void:
 	if mode == "sky":
 		_lot = load(LOT)
-	if mode == "spill":
+	if mode == "spill" or mode == "lamp":
 		var mat := CanvasItemMaterial.new()
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		material = mat
@@ -72,6 +83,13 @@ func _process(delta: float) -> void:
 	var changed := not is_equal_approx(now, open)
 	open = now
 	visible = open > 0.001
+	if mode == "lot" or mode == "lamp":
+		visible = true
+		changed = false
+		if mode == "lamp":
+			var n := floorf(lamp(World.clock) * 24.0) / 24.0
+			changed = not is_equal_approx(n, _night)
+			_night = n
 	_acc += delta
 	if _acc >= STEP or changed:
 		_acc = 0.0
@@ -80,8 +98,8 @@ func _process(delta: float) -> void:
 
 
 func _px(x: float, y: float, w: float, h: float, c: Color) -> void:
-	var x0 := clampf(x, 0.0, float(W))
-	var x1 := clampf(x + w, 0.0, float(W))
+	var x0 := clampf(x, 0.0, float(view_w))
+	var x1 := clampf(x + w, 0.0, float(view_w))
 	if x1 > x0:
 		draw_rect(Rect2(x0, y, x1 - x0, h), c)
 
@@ -91,13 +109,25 @@ func _draw() -> void:
 	if mode == "spill":
 		_draw_spill(ph)
 		return
+	if mode == "lamp":
+		_draw_lamp()
+		return
 	# the sky: 2 px bands, top colour to the horizon colour
-	for y in range(0, H, 2):
-		var f := float(y) / float(H - 12)
-		_px(0, y, W, 2, (ph.top as Color).lerp(ph.bottom, clampf(f * f, 0.0, 1.0)))
+	for y in range(0, view_h, 2):
+		var f := float(y) / float(view_h - 12)
+		_px(0, y, view_w, 2, (ph.top as Color).lerp(ph.bottom, clampf(f * f, 0.0, 1.0)))
 	_draw_sun()
 	for c in CLOUDS:
 		_draw_cloud(c, ph.cloud)
+	if mode == "lot":
+		for k in range(CLOUDS.size()):  # the lot is wide: a second set of clouds further along
+			var c: Array = CLOUDS[k].duplicate()
+			c[0] = float(c[0]) + 190.0 + float(k) * 70.0
+			c[1] = float(c[1]) + 100.0 - float(k) * 6.0
+			_draw_cloud(c, ph.cloud)
+			c = CLOUDS[k].duplicate()
+			c[0] = float(c[0]) + 420.0 + float(k) * 40.0
+			_draw_cloud(c, ph.cloud)
 	if _lot != null:
 		draw_texture(_lot, Vector2.ZERO, ph.tint)
 
@@ -109,6 +139,9 @@ func _draw_sun() -> void:
 		return
 	var sx := 10.0 + u * 100.0
 	var sy := 36.0 - sin(u * PI) * 32.0
+	if mode == "lot":  # the whole sky of the lot: the sun crosses all of it, the horizon is at y 142
+		sx = 30.0 + u * float(view_w - 60)
+		sy = 142.0 - sin(u * PI) * 124.0
 	var low := absf(u - 0.5) * 2.0
 	var col := Color("fff6d0").lerp(Color("ff9a4a"), clampf(low * 1.2, 0.0, 1.0))
 	for dy in range(-4, 5):
@@ -118,12 +151,31 @@ func _draw_sun() -> void:
 
 func _draw_cloud(c: Array, col: Color) -> void:
 	var w: float = c[2]
-	var x := floorf(fposmod(float(c[0]) + _t * float(c[3]), float(W) + w * 2.0)) - w
+	var x := floorf(fposmod(float(c[0]) + _t * float(c[3]), float(view_w) + w * 2.0)) - w
 	var y: float = c[1]
 	_px(x + w * 0.2, y, w * 0.45, 2, col)
 	_px(x + w * 0.1, y + 2, w * 0.8, 2, col)
 	_px(x, y + 4, w, 2, col.darkened(0.1))
 	_px(x + w * 0.05, y + 6, w * 0.9, 1, col.darkened(0.2))
+
+
+# a street light: rings of warm light round the lamp head (0, 0 of this node) and a pool on the asphalt under it
+func _draw_lamp() -> void:
+	var n := lamp(World.clock)
+	if n <= 0.01:
+		return
+	var col := Color(1.0, 0.86, 0.5)
+	for ring in [[34, 0.05], [26, 0.06], [18, 0.07], [10, 0.1], [5, 0.16]]:
+		var r: int = ring[0]
+		for dy in range(-r, r + 1):
+			var half := int(sqrt(float(r * r - dy * dy)))
+			draw_rect(Rect2(-half, dy, half * 2 + 1, 1), Color(col.r, col.g, col.b, float(ring[1]) * n))
+	for pool in [[44, 8, 0.05], [32, 6, 0.06], [20, 4, 0.07]]:
+		var rx: int = pool[0]
+		var ry: int = pool[1]
+		for dy in range(-ry, ry + 1):
+			var half := int(float(rx) * sqrt(1.0 - float(dy * dy) / float(ry * ry + 1)))
+			draw_rect(Rect2(-half, 88 + dy, half * 2 + 1, 1), Color(col.r, col.g, col.b, float(pool[2]) * n))
 
 
 # warm daylight on the floor in front of the open door, in bands that fade out with distance and with the door

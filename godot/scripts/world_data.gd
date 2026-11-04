@@ -118,12 +118,14 @@ const SCENES := {
 			"start": [-496, "right"],
 			"from_kitchenette": [-496, "right"],
 			"from_closet": [208, "right"],
-			"from_outing": [-386, "right"]
+			"from_outing": [-386, "right"],
+			"from_lot": [794, "left"]
 		},
 		"links":
 		[
 			{"name": "ToKitchenette", "x": -535, "to": "kitchenette", "spawn": "from_warehouse"},
 			{"name": "ToCloset", "x": 173, "to": "network_closet", "spawn": "from_warehouse"},
+			{"name": "ToLot", "x": 819, "to": "warehouse_lot", "spawn": "from_warehouse"},
 			{"name": "ToKitchenette", "x": -552, "to": "kitchenette", "spawn": "from_warehouse"}
 		],
 		"seats": {},
@@ -139,6 +141,20 @@ const SCENES := {
 			"grill": 769,
 			"old_tree": 896
 		},
+		"outside_x": -1
+	},
+	"warehouse_lot":
+	{
+		"x0": -206,
+		"W": 780,
+		"spawns": {"start": [-116, "right"], "from_warehouse": [-136, "right"]},
+		"links":
+		[
+			{"name": "ToWarehouse", "x": -146, "to": "warehouse", "spawn": "from_lot"},
+			{"name": "ToWarehouse", "x": -202, "to": "warehouse", "spawn": "from_lot"}
+		],
+		"seats": {},
+		"uses": {},
 		"outside_x": -1
 	},
 	"bowling_alley":

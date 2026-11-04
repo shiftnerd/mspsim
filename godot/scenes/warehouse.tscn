@@ -96,6 +96,10 @@ metadata/facing = "right"
 position = Vector2(-386, 118)
 metadata/facing = "right"
 
+[node name="from_lot" type="Marker2D" parent="Spawns"]
+position = Vector2(794, 118)
+metadata/facing = "left"
+
 [node name="Interactables" type="Node2D" parent="."]
 
 [node name="DoorToKitchenette" type="Area2D" parent="Interactables"]
@@ -114,6 +118,16 @@ target_scene = "network_closet"
 target_spawn = "from_warehouse"
 
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToCloset"]
+shape = SubResource("shape_door")
+
+[node name="DoorToLot" type="Area2D" parent="Interactables"]
+position = Vector2(819, 70)
+script = ExtResource("door")
+target_scene = "warehouse_lot"
+target_spawn = "from_warehouse"
+special = "dock"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToLot"]
 shape = SubResource("shape_door")
 
 [node name="ExitToKitchenette" type="Area2D" parent="Interactables"]
