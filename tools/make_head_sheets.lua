@@ -1,9 +1,9 @@
 -- Renders the character creator's accessory OVERLAY sheets (roadmap R15 level 3 steps b, c, d): for every accessory layer of
 -- office/accessories.aseprite (glasses_thin ... beard_full, hat_beanie ..., lanyard_conference, badge_name, watch_silver ...), on the
--- intern, all 123 poses of tools/poses.lua through the animation engine, cropped to a fixed cell that follows the part of the body the
+-- intern, every pose of tools/poses.lua through the animation engine, cropped to a fixed cell that follows the part of the body the
 -- accessory belongs to in every pose (tilt, hurt, death, dance, the seated gestures). Output, in godot/assets/accessories/:
---   <slot>_<id>_<facing>.png    123 cells wide x 32 tall (16 for the wrist), one per accessory per facing (left = mirror of right)
---   <kind>_origin_<facing>.json 123 [x, y] pairs: the cell's top left in canvas coords of the 64x80 body frame, one table per KIND
+--   <slot>_<id>_<facing>.png    one cell per pose, wide x 32 tall (16 for the wrist), one per accessory per facing (left = mirror of right)
+--   <kind>_origin_<facing>.json one [x, y] per pose pairs: the cell's top left in canvas coords of the 64x80 body frame, one table per KIND
 -- of accessory, shared by all of that kind (head_origin_*.json is the step b file):
 --   head   glasses, beard   a 32 cell centred on the Face layer's box
 --   hat    hats             a 40 cell (a lying head carries a hat far from the face centre), HAT_UP px higher than the head cell
@@ -20,7 +20,7 @@
 -- REF = {"glasses_round", "beard_full", "hat_cap"}: also build one-off reference characters for the golden test
 -- (tests/accessories.gd): the intern sheet WITH that accessory as an ordinary layer (head: above Hair, measured for the death shift
 -- like any layer; hat, torso, wrist: unmeasured as in the overlay, a torso piece under the near arm, a wrist piece on its arm):
--- godot/tests/golden/ref_<name>_<facing>.png, 123 frames of 64x80.
+-- godot/tests/golden/ref_<name>_<facing>.png, one frame per pose of 64x80.
 local R = ROOT or "D:/creative/pixelproject/"
 local T = R .. "tools/"
 local OUT = R .. "godot/assets/accessories/"
