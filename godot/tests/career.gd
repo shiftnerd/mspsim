@@ -182,6 +182,8 @@ func _run() -> void:
 	var strikes_before: int = c.value("bowl_strikes")
 	o.game = "bowling"
 	o._bowl_setup()
+	o.g.shift = 0.0  # the moving sweet spot (R30) is pinned: this test needs the classic centre
+	o.g.pcen = 0.85
 	o.g.marker = 0.5
 	o.g.power = 0.85
 	o._bowl_resolve()
