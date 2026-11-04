@@ -44,7 +44,7 @@ In the wider shapes the whole room fits on screen. In the narrow portrait shapes
 | **BATHROOMS** | One person at a time. | Back to the kitchenette. |
 | **CUBICLE AREA** | Two desks, the nerf rack, the copier, the water cooler and another wall TV. | Left edge to the main floor. Right edge to the **Conference Room**. |
 | **CONFERENCE ROOM** | A long table, six chairs, a screen on the wall and a light switch. | Left edge to the cubicle area. The far door to the main floor. |
-| **WAREHOUSE** | A very long room: chair rack, vending machine, parts cage, dart board, cornhole boards, a grill, an old Christmas tree and a big overhead door. | Left door back to the kitchenette. A blue steel door marked **NETWORK**. The overhead doorway to the lot. |
+| **WAREHOUSE** | A very long room: chair rack, vending machine, parts cage, dart board, cornhole boards, a grill, an old Christmas tree and a big overhead door. | Left door back to the kitchenette. A blue steel door marked **NETWORK**, just a few steps in from it. The overhead doorway to the lot. |
 | **NETWORK CLOSET** | One rack and the things plugged into it. | The blue door, back to the warehouse. |
 | **LOT** | The parking lot out back, with a dumpster and a lamp post. | The doorway back to the warehouse. |
 
@@ -92,7 +92,7 @@ You can probably guess most of these by looking. Here is the short list of what 
 
 ## THE NETWORK CLOSET
 
-Behind the warehouse, through the blue steel door marked **NETWORK**, is a small tiled room with one rack in it. This is where the
+Just inside the warehouse, through the blue steel door marked **NETWORK** (a few steps from the kitchenette door), is a small tiled room with one rack in it. This is where the
 office's network actually lives. Cables run from the rack to the desks.
 
 Stand anywhere in the closet and every plug in the rack is within reach. Use `Tab` to move the arrow from one port to the next, and

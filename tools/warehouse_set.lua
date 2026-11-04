@@ -835,8 +835,9 @@ return function(L, builders)
     -- wall decor
     local D = "Decor"
     s.put(D, P.timeClock(), 56, 44)
-    s.put(D, P.poster(1), 86, 44); s.put(D, P.poster(2), 104, 44); s.put(D, P.poster(3), 122, 44)
-    s.put(D, P.splitAc(), 90, 27)
+    -- the old poster row and split AC made way for the blue closet door (x 80..124); the AC moved right, the posters to the old door spot
+    s.put(D, P.poster(1), 706, 40); s.put(D, P.poster(3), 726, 40)
+    s.put(D, P.splitAc(), 242, 27)
     s.put(D, banner("START", 2, 70, "#2E8B4A", "#F2F2EA", "#F2F2EA"), 165, 28)
     s.put(D, banner("FINISH", 2, 72, "#ECECE6", "#17121F", "#17121F"), 1064, 28)
     s.put(D, P.partnerBanner(), 296, 30)
@@ -851,10 +852,10 @@ return function(L, builders)
     s.put(D, P.cableRun(), 1040, 100)
     s.put("Doors", P.steelDoor(34, 72, "#7B828F", "#646B77", "#97A0AD"), 4, 18)    -- R24: the grey steel door back to the kitchenette (set x 21)
     s.put("Plate", P.doorPlate("KITCHEN", "#4A4F5A"), 5, 9)
-    -- R24: the BLUE STEEL DOOR to the network closet, on the wall between the parts cage and the back storage room (centre x 729);
-    -- a badge reader and keypad on the frame, a NETWORK plate over it. The extinguisher moved right to make room.
-    s.put("Doors", P.steelDoor(44, 64, "#2F5FA8", "#234A85", "#4F82C8", {reader = true}), 711, 26)
-    s.put("Plate", P.doorPlate("NETWORK", "#234A85"), 713, 17)
+    -- R24: the BLUE STEEL DOOR to the network closet, on the back wall just right of the time clock, ~80 px from the kitchenette door
+    -- (centre x 102, left of the chair rack); a badge reader and keypad on the frame, a NETWORK plate over it.
+    s.put("Doors", P.steelDoor(44, 64, "#2F5FA8", "#234A85", "#4F82C8", {reader = true}), 80, 26)
+    s.put("Plate", P.doorPlate("NETWORK", "#234A85"), 82, 17)
 
     -- pegboard over the bench, a plain one with tool shadows
     local peg = L.piece(88, 26, function(R)

@@ -98,12 +98,12 @@ SETS = {
         doors=[("ToWarehouse", 21, "warehouse", "from_closet", "")],     # R24: the blue steel door; the closet is reached through the warehouse
         exits=[], seats=[]),
     # the WAREHOUSE (chair race phase 1): 1480 px wide. R24: reached from the kitchenette (its grey steel door, or the left edge, at set x 21)
-    # and it holds the BLUE steel door (set x 729, between the parts cage and the back storage room) into the network closet.
+    # and it holds the BLUE steel door (set x 102, on the back wall near the kitchenette door) into the network closet.
     "warehouse": dict(node="Warehouse", W=1480,
-        spawns={"start": (60, "right"), "from_kitchenette": (60, "right"), "from_closet": (764, "right"), "from_outing": (170, "right"),
+        spawns={"start": (60, "right"), "from_kitchenette": (60, "right"), "from_closet": (130, "right"), "from_outing": (170, "right"),
                 "from_lot": (1350, "left")},
         doors=[("ToKitchenette", 21, "kitchenette", "from_warehouse", ""),
-               ("ToCloset", 729, "network_closet", "from_warehouse", ""),
+               ("ToCloset", 102, "network_closet", "from_warehouse", ""),
                ("ToLot", 1375, "warehouse_lot", "from_warehouse", "")],     # R21c: through the open overhead door (locked while it is not all the way up)
         exits=[("ToKitchenette", "left", "kitchenette", "from_warehouse")], seats=[]),
     # the parking lot outside the warehouse dock (R21c): 780 px, no ceiling, the sky follows the game clock. The doorway at its left end

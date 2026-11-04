@@ -89,7 +89,7 @@ position = Vector2(-496, 118)
 metadata/facing = "right"
 
 [node name="from_closet" type="Marker2D" parent="Spawns"]
-position = Vector2(208, 118)
+position = Vector2(-426, 118)
 metadata/facing = "right"
 
 [node name="from_outing" type="Marker2D" parent="Spawns"]
@@ -112,7 +112,7 @@ target_spawn = "from_warehouse"
 shape = SubResource("shape_door")
 
 [node name="DoorToCloset" type="Area2D" parent="Interactables"]
-position = Vector2(173, 70)
+position = Vector2(-454, 70)
 script = ExtResource("door")
 target_scene = "network_closet"
 target_spawn = "from_warehouse"
