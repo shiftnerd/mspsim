@@ -293,9 +293,9 @@ func _process(_delta: float) -> bool:
 			_check(not cs.needs_phone() and "SALES" != cs.summary(), "no phone step in free play")
 			cs.sel = 0
 			cs.confirm()
-			_check(cs.step == "create" and cs._pages().size() == 4, "MAKE YOUR OWN opens the create step with four pages")
+			_check(cs.step == "create" and cs._pages().size() == 5, "MAKE YOUR OWN opens the create step with five pages")
 			cs.set_page(1)
-			_check(cs._page_rows()[1].id == "pattern" and cs._page_rows().size() == 5, "the CLOTHES page has its five rows")
+			_check(cs._page_rows()[2].id == "pattern" and cs._page_rows().size() == 5, "the CLOTHES page has its five rows")
 			cs.open_presets()
 			_check(cs.create_modal == "presets", "the presets chooser opens")
 			cs.back()

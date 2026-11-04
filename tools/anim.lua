@@ -243,9 +243,12 @@ function E.addLayer(an, name, S, acc, opts)
   opts = opts or {}
   -- opts.kind: "head" (default: rotated like the head), "torso" (shifted like the shirt: lanyard, name sticker) or "wrist"
   -- (rides on an arm like the watch does: opts.arm "N" near arm or "F" far arm; opts.reftop draws it on the Arm Top layer when the arm is
-  -- there, as the intern's own Watch layer is, for the golden reference characters only); opts.before = the name of a layer to go under
+  -- there, as the intern's own Watch layer is, for the golden reference characters only); opts.before = the name of a layer to go under;
+  -- "leg" (a pair of trousers or shoes of its own, opts.leg "pants" or "shoes": rendered like the Pants / Shoes layers but from this
+  -- image, per leg with the knee and crouch; the character creator's real clothes, tools/make_clothes_sheets.lua)
   local kind = opts.kind or "head"
-  local rec = {name = name, vis = true, S = S, head = kind == "head", acc = acc and true or nil, arm = kind == "wrist" and opts.arm or nil, reftop = opts.reftop}
+  local rec = {name = name, vis = true, S = S, head = kind == "head", acc = acc and true or nil, arm = kind == "wrist" and opts.arm or nil, reftop = opts.reftop,
+    leg = kind == "leg" and opts.leg or nil}
   local at = #an.layers + 1
   if opts.before then
     for i, L in ipairs(an.layers) do if L.name == opts.before then at = i; break end end
@@ -258,13 +261,13 @@ end
 -- rendering ----------------------------------------------------------------
 local HEAD = {Face = true, Hair = true, Beard = true, Stubble = true, Glasses = true}
 
-local function legParts(an, f, pose, auto)
-  -- returns list of {layerName, mask, pivotX, role} for both legs
+local function legParts(an, f, pose, Pover, Sover)
+  -- returns list of {layerName, mask, pivotX, role} for both legs (Pover / Sover: a clothes piece's own pants or shoes image)
   local nearIsLeft = an.leftNear
   local parts = {}
   local c = pose.crouch or 0
-  local Pn = an.by["Pants"].S
-  local Sn = an.by["Shoes"].S
+  local Pn = Pover or an.by["Pants"].S
+  local Sn = Sover or an.by["Shoes"].S
   local gap, sb = an.gap, an.sb
   local function add(role, left)
     local cx = left and an.legL or an.legR
@@ -338,7 +341,11 @@ function E.render(an, pose, f)
     local S = L.S
     local n = L.name
     if n == "Face" then S = faceVariant(S, pose.face) end
-    if n == "Shoes" then
+    if L.leg then
+      local lp = L.leg == "pants" and legParts(an, f, pose, S, nil) or legParts(an, f, pose, nil, S)
+      for _, p in ipairs(lp) do drawLeg(O, L.leg == "pants" and p.pants or p.shoes, p, rootDy) end
+      if L.leg == "pants" then blitShift(O, mask(S, function(x, y) return y <= 46 end), torsoDx, torsoDy) end
+    elseif n == "Shoes" then
       for _, p in ipairs(legs) do drawLeg(O, p.shoes, p, rootDy) end
     elseif n == "Pants" then
       for _, p in ipairs(legs) do drawLeg(O, p.pants, p, rootDy) end
@@ -352,8 +359,8 @@ function E.render(an, pose, f)
       blitShift(O, mask(S, function(x, y) return y >= 23 end), torsoDx, torsoDy)
     elseif L.arm then   -- a wrist accessory (watch): follows the near ("N") or far ("F") arm like the Watch layer does
       local near = L.arm == "N"
-      limbRot((near and L.reftop and pose.armTop) and top or O, S, near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, ((near and pose.aN or pose.aF) or 0) * f,
-        ((near and pose.aNr or pose.aFr) or 0) * f, armDx, torsoDy)
+      limbRot((near and L.reftop and pose.armTop) and top or O, S, near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, (near and (pose.aN or 0) or (pose.aF or 0)) * f,
+        (near and (pose.aNr or 0) or (pose.aFr or 0)) * f, armDx, torsoDy)   -- (was `near and pose.aN or pose.aF`: a near arm with no aN took aF)
     elseif HEAD[n] or L.head then
       headBlit(O, S)
     else
