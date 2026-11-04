@@ -25,6 +25,7 @@ var app := "home"
 var mail_sel := -1
 var tk_sel := -1
 var txt_open := false
+var txt_scroll := 0  # how many of the newest texts are scrolled past (Up / Down / the wheel)
 var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings, 4 the dock's PHONE)
 const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone"]
 const KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"]
@@ -390,6 +391,8 @@ func move(step: int) -> void:
 		return
 	if app == "mail":
 		mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
+	elif app == "texts":
+		txt_scroll = clampi(txt_scroll + step, 0, maxi(0, Msp.texts.size() - 1))
 	elif app == "tickets":
 		var list := Msp.open_tickets()
 		if not list.is_empty():
@@ -439,6 +442,7 @@ func activate(id: String) -> void:
 			mail_sel = -1
 			tk_sel = -1
 			txt_open = false
+			txt_scroll = 0
 			if app == "phone":
 				ph_view = "contacts"
 				dialog = {}
@@ -1125,18 +1129,21 @@ func _paint_texts(a: Rect2) -> void:
 	var chars := _chars(body.size.x - 10)
 	var y := body.position.y + 3 * _sc
 	var bubble := Color("2b79f0") if _is_ios() else Color("33b5e5")
-	var bottom := body.end.y - 10 * _sc  # the REPLY bar
-	for k in Msp.texts.size():
-		var m: Dictionary = Msp.texts[Msp.texts.size() - 1 - k]  # newest first
+	var bottom := body.end.y - (18 if Msp.texts.size() > 1 else 10) * _sc  # the REPLY bar (and the "n OF m" line above it)
+	txt_scroll = clampi(txt_scroll, 0, maxi(0, Msp.texts.size() - 1))
+	var shown := 0
+	for k in range(txt_scroll, Msp.texts.size()):
+		var m: Dictionary = Msp.texts[k]  # Msp.send_text push_fronts: index 0 is the newest, scrolled past `txt_scroll` of them
 		var lines := _wrap(m.body, chars)
 		var h := (lines.size() * 7 + 11) * _sc
 		if y + h > bottom:
-			if k > 0:
+			if shown > 0:
 				break
-			# the newest text always shows, cut to the lines that fit
+			# the first text on the page always shows, cut to the lines that fit
 			var room := int((bottom - y - 9 * _sc - 2) / (7 * _sc))
 			lines = lines.slice(0, maxi(1, room))
 			h = (lines.size() * 7 + 11) * _sc
+		shown += 1
 		_text(_clip(m.from, chars), Vector2(body.position.x + 3, y), Color("7d8595"))
 		var r := Rect2(
 			body.position.x + 3, y + 7 * _sc, body.size.x - 6, lines.size() * 7 * _sc + 2
@@ -1147,6 +1154,10 @@ func _paint_texts(a: Rect2) -> void:
 		y += h + 2 * _sc
 	if Msp.texts.is_empty():
 		_text("NO MESSAGES", body.position + Vector2(4, 6 * _sc), Color("8b93a1"))
+	elif Msp.texts.size() > 1:
+		# where you are in the list and how to reach the rest (the newest text used to hide everything above the fold)
+		var more := "%d-%d OF %d  UP/DOWN" % [txt_scroll + 1, txt_scroll + shown, Msp.texts.size()]
+		_text(_clip(more, _chars(body.size.x - 8)), Vector2(body.position.x + 3, body.end.y - 18 * _sc), Color("8b93a1"))
 	_fill(Rect2(body.position.x, body.end.y - 10 * _sc, body.size.x, 10 * _sc), Color("f1f1f4"))
 	_text("REPLY", Vector2(body.position.x + 3, body.end.y - 8 * _sc), bubble)
 	_region("reply", Rect2(body.position.x, body.end.y - 10 * _sc, body.size.x, 10 * _sc))
