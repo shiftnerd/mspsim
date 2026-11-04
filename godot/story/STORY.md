@@ -1029,6 +1029,67 @@ or the owner (owner campaign, 20 weeks).
 - Stopping RDP brute force: what do you use? `[Nerds.THREADS.7.title]`
 - Windows XP end of support: migration list? `[Nerds.THREADS.8.title]`
 - Script to clean temp files on every client `[Nerds.THREADS.9.title]`
+- Forum rules (read before posting) `[Nerds.THREADS.10.title]`
+- Agents not reporting in `[Nerds.THREADS.11.title]`
+- Patch Tuesday auto-approve rules `[Nerds.THREADS.12.title]`
+- Which backup alerts are noise? `[Nerds.THREADS.13.title]`
+- Rodent Nation 2014: who is going? `[Nerds.THREADS.14.title]`
+- What is on your desk right now? Post pics `[Nerds.THREADS.15.title]`
+- Best ticket you ever got `[Nerds.THREADS.16.title]`
+- XP end of support: what are you telling clients? `[Nerds.THREADS.17.title]`
+- Plugin template that survives an upgrade `[Nerds.THREADS.18.title]`
+- Plugin crashed the database after the upgrade `[Nerds.THREADS.19.title]`
+- Plugin Sandbox rules and how to submit `[Nerds.THREADS.20.title]`
+- Custom tab that shows the warranty date `[Nerds.THREADS.21.title]`
+- Tab with a ScreenConnect link per agent `[Nerds.THREADS.22.title]`
+- Custom tab: last reboot and uptime `[Nerds.THREADS.23.title]`
+- Dashboards: show us your office TV `[Nerds.THREADS.24.title]`
+- Red and green tiles for open tickets `[Nerds.THREADS.25.title]`
+- Dashboard for missed SLAs only `[Nerds.THREADS.26.title]`
+- Move the database to its own disk `[Nerds.THREADS.27.title]`
+- Agent check-in interval: 5 minutes or 15? `[Nerds.THREADS.28.title]`
+- Stop the nightly cleanup from deleting logs `[Nerds.THREADS.29.title]`
+- Cloud server access after the upgrade `[Nerds.THREADS.30.title]`
+- Moving a hosted mailbox without losing the calendar `[Nerds.THREADS.31.title]`
+- Is it OK to host the RMM server in the cloud? `[Nerds.THREADS.32.title]`
+- Disable Java auto-update on XP boxes `[Nerds.THREADS.33.title]`
+- Set the power plan on every laptop `[Nerds.THREADS.34.title]`
+- Nightly robocopy with an email report `[Nerds.THREADS.35.title]`
+- Ninite for all new installs `[Nerds.THREADS.36.title]`
+- Command line: find who has a file open `[Nerds.THREADS.37.title]`
+- Free tool to read SMART data `[Nerds.THREADS.38.title]`
+- Dataview: machines with no antivirus `[Nerds.THREADS.39.title]`
+- Dataview: laptops older than 4 years `[Nerds.THREADS.40.title]`
+- Dataview: servers with less than 10 percent free `[Nerds.THREADS.41.title]`
+- RAID monitoring on older servers (SNMP OID?) `[Nerds.THREADS.42.title]`
+- UPS battery status over SNMP `[Nerds.THREADS.43.title]`
+- Switch port alerts: too noisy `[Nerds.THREADS.44.title]`
+- Temperature sensor in the server closet `[Nerds.THREADS.45.title]`
+- Feature request: bulk-close old tickets `[Nerds.THREADS.46.title]`
+- Please add a dark mode `[Nerds.THREADS.47.title]`
+- iFone 5 screen for the ticket app: please `[Nerds.THREADS.48.title]`
+- Vote: patch status on the home screen `[Nerds.THREADS.49.title]`
+- Moving off the old remote tool `[Nerds.THREADS.50.title]`
+- VNC through the firewall: what port? `[Nerds.THREADS.51.title]`
+- Tunnel the remote tool through a proxy `[Nerds.THREADS.52.title]`
+- Count patching percentage per client `[Nerds.THREADS.53.title]`
+- Bad performance percent in the health report `[Nerds.THREADS.54.title]`
+- Monthly report the owner will actually read `[Nerds.THREADS.55.title]`
+- SQL: tickets closed per tech per week `[Nerds.THREADS.56.title]`
+- How to post a script (read this first) `[Nerds.THREADS.57.title]`
+- Detect files with double extensions (invoice.pdf.exe) `[Nerds.THREADS.58.title]`
+- Restart a stuck service remotely `[Nerds.THREADS.59.title]`
+- Find users with passwords that never expire `[Nerds.THREADS.60.title]`
+- Script: list installed software to a CSV `[Nerds.THREADS.61.title]`
+- Welcome to the Vendor Lounge (approved vendors only) `[Nerds.THREADS.62.title]`
+- ShadowPoint Backup: forty percent off image backup `[Nerds.THREADS.63.title]`
+- WebWoot Security: free scan for your clients `[Nerds.THREADS.64.title]`
+- SoftSwipe PSA: tired of your ticket system? `[Nerds.THREADS.65.title]`
+- Rodent Nation 2014: thank you for stopping by `[Nerds.THREADS.66.title]`
+- Re: Rodent Nation 2014 follow-up: your free trial `[Nerds.THREADS.67.title]`
+- Plugin API: where are the docs? `[Nerds.THREADS.68.title]`
+- Writing a plugin that reads SNMP `[Nerds.THREADS.69.title]`
+- Unit testing a plugin without a lab `[Nerds.THREADS.70.title]`
 
 ### LabRat Nerds regulars at Rodent Nation (the forum people in the crowd)
 
@@ -1038,6 +1099,18 @@ or the owner (owner campaign, 20 weeks).
   - **BLESS MY FRESH BACKUP** `[Expo.FORUM.0.options.1.label]`: He lays two fingers on your laptop. 'In the name of the full, the differential and the offsite copy.' Then he grins. 'It only counts once you have restored it. She'll be right.' (+3 security XP) `[Expo.FORUM.0.options.1.text]`
   - **ASK ABOUT THE FORUM** `[Expo.FORUM.0.options.2.label]`: 'Your answers are decent. Plain and polite, and nobody ever got banned for polite.' He pins one of your posts to the top of the thread. (+3 forum karma) `[Expo.FORUM.0.options.2.text]`
   - **ASK ABOUT YOUR CREW** `[Expo.FORUM.0.options.3.label]`: 'Say thanks out loud. It costs nothing and techs remember it longer than the raise.' You decide to try it on Monday. (coworkers like you a little more) `[Expo.FORUM.0.options.3.text]`
+- **GrizzleAdmin (the forum admin since 2008)** `[Expo.FORUM.1.speaker]`
+  - Hmph. I run the boards. Been here since the forum was one box under a desk. Before you ask: yes, I read the FAQ, no, you did not, and no, I will not unban the guy who posted in capitals for a week. `[Expo.FORUM.1.text]`
+  - **ASK ABOUT THE OLD DAYS** `[Expo.FORUM.1.options.0.label]`: He tells you about the first forum server: a desktop under a desk, the database on the same disk as the system. 'It died on a Friday. Separate the data from the system and back up both. Now go away.' (+4 servers XP) `[Expo.FORUM.1.options.0.text]`
+  - **SHOW HIM YOUR LAB NOTES** `[Expo.FORUM.1.options.1.label]`: He reads your notes for a long, silent minute. 'You test before production. Good. Nobody does.' He almost smiles. Almost. (+3 security XP) `[Expo.FORUM.1.options.1.text]`
+  - **ASK ABOUT THE RULES** `[Expo.FORUM.1.options.2.label]`: 'Search first. Say what version. No capitals. Test on a lab box.' He nods. 'You follow them, which is why I have never banned you.' (+3 forum karma) `[Expo.FORUM.1.options.2.text]`
+  - **OFFER HIM A COFFEE** `[Expo.FORUM.1.options.3.label]`: 'Black. No sugar. The cup is always too small.' He tells you the best thing a tech can do is bring the coffee when the server is down. You will try it. (coworkers like you a little more) `[Expo.FORUM.1.options.3.text]`
+- **HELPPLZ_Pip (forum newbie)** `[Expo.FORUM.2.speaker]`
+  - HI!!! I AM PIP!!! MY CAPS LOCK IS STUCK AND SO IS EVERYTHING ELSE!!! THE ADMIN SAYS I AM NOT ALLOWED TO TALK LIKE THIS!!! DO YOU HAVE A MINUTE??? `[Expo.FORUM.2.text]`
+  - **HELP WITH HIS PROBLEM** `[Expo.FORUM.2.options.0.label]`: His PC is slow. You ask what it does when it is slow: he has 40 toolbars and 3 antivirus programs. You teach him to take things away one at a time. 'WOW THANK YOU!!!' (+4 customer XP) `[Expo.FORUM.2.options.0.text]`
+  - **TEACH HIM THE SEARCH BOX** `[Expo.FORUM.2.options.1.label]`: You show him the search box and how to say which version he has. His next post is in lower case. The admin pins it out of pure shock. (+3 forum karma) `[Expo.FORUM.2.options.1.text]`
+  - **ASK ABOUT THE CAPS** `[Expo.FORUM.2.options.2.label]`: 'IT IS ON SINCE 2011!!!' You press the key. He stares at the keyboard for a long time. 'MY WHOLE LIFE.' (+3 customer XP) `[Expo.FORUM.2.options.2.text]`
+  - **GIVE HIM YOUR TOTE BAG** `[Expo.FORUM.2.options.3.label]`: He puts it on his head and tells everyone near the booth about you in capital letters. By Monday your coworkers have heard. (coworkers like you a little more) `[Expo.FORUM.2.options.3.text]`
 
 ### Instant messages from coworkers (Lync)
 

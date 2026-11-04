@@ -1,5 +1,7 @@
 # Scope: LabRat Nerds forum overhaul (roadmap R27)
 
+**Status: DONE.** Built as below (18 boards, 71 threads, `scripts/forum_view.gd` for the screens, model and data in `nerds.gd`, all text in `story/strings.txt`). Decisions while building: the daily five questions are still the only threads that give XP and karma (others are SOLVED, stickies locked); ANSWER posts the thread's own `answer` text under your nick (FreshRat); a wrong try posts a polite Re: correction; the footer date uses working days (day 4 = Tue Apr 8 2014); Dashboards is a plain board (R20 can link it later); script threads need a PowerShell level and pay +1 karma once SCRIPT: THIS CLIENT is unlocked. Extra: two more forum regulars, GrizzleAdmin (lobby) and HELPPLZ_Pip (forum booth), built like Priest Michael. Details: CLAUDE.md, LabRat Nerds.
+
 Inspiration: the owner's archived copy of the real forum that inspired it (a Feb 2015 snapshot of the LabTech Geek board index). Notes below are from that page. Brand rule: our forum is LabRat Nerds, an invented parody; real products appear only as things people talk about.
 
 ## What the real board looked like

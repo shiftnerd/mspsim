@@ -9,6 +9,7 @@ extends CanvasLayer
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const DISPATCH := preload("res://scripts/dispatch.gd")
+const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
 const TB := 11.0  # taskbar height
 const TXT := Color("20242c")
 const WHITE := Color("ffffff")
@@ -56,6 +57,7 @@ var rmm_tab := "endpoints"
 var board_tab := "books"
 var lync_sel := ""
 var nerds_tab := "forum"
+var forum = FORUM_VIEW.new()  # the forum state of the NERDS app (board index, board, thread)
 var learn_lesson := -1
 var learn_q := 0
 var learn_right := 0
@@ -108,6 +110,7 @@ func open(from_desk: int) -> void:
 	rmm_session = false
 	_menu = false
 	dispatch.cancel()
+	forum.reset()
 	_toast = ""  # the toast timer only runs while open, so drop one left from the last session
 	_toast_t = 0.0
 	is_open = true
@@ -253,6 +256,7 @@ func escape() -> void:
 		or (app == "dispatch" and dispatch.nested())
 		or (app == "site" and site_view != "desktop")
 		or (app == "crm" and SalesCampaign.crm_view != "list")
+		or (app == "nerds" and nerds_tab == "forum" and forum.nested())
 	)
 	if nested:
 		back()
@@ -285,6 +289,8 @@ func back() -> void:
 		learn_done = false
 	elif app == "lync" and lync_sel != "":
 		lync_sel = ""
+	elif app == "nerds" and nerds_tab == "forum" and forum.nested():
+		forum.back()
 	elif app == "site" and site_view != "desktop":
 		site_view = "desktop"
 	elif app == "site":
@@ -315,6 +321,9 @@ func move(step: int) -> void:
 func scroll_list(step: int) -> void:
 	if app == "rmm" and not rmm_session and rmm_tab == "endpoints":
 		rmm_scroll = maxi(0, rmm_scroll + step * 24)
+		_canvas.queue_redraw()
+	elif app == "nerds" and nerds_tab == "forum":
+		forum.scroll(step * 2)
 		_canvas.queue_redraw()
 
 
@@ -1132,7 +1141,11 @@ func _paint_mail() -> void:
 	if _offline("OUTLOOKISH CANNOT CONNECT TO THE MAIL SERVER.", body):
 		return
 	var narrow := body.size.x < 250.0
-	var list_w := body.size.x if (narrow and not mail_view) else (0.0 if narrow else clampf(floorf(body.size.x * 0.48), 112.0, 150.0))
+	var list_w := (
+		body.size.x
+		if (narrow and not mail_view)
+		else (0.0 if narrow else clampf(floorf(body.size.x * 0.48), 112.0, 150.0))
+	)
 	if not narrow:
 		_fill(Rect2(body.position, Vector2(40, body.size.y)), Color("dfe5ef"))
 		_text("INBOX", body.position + Vector2(4, 4), OUTLOOK)
@@ -1481,7 +1494,8 @@ func _rmm_detail(r: Rect2, narrow: bool) -> void:
 	_fill(Rect2(r.position.x + 4, r.position.y + 36, r.size.x - 8, 9), RED if alert else GREEN)
 	_text("ALERT" if alert else "ONLINE - OK", r.position + Vector2(8, 38), WHITE)
 	var lines := _wrap(
-		_symptom(ep.problem, ep.get("restore_failed", false)) if alert else "NO ISSUES FOUND.", chars
+		_symptom(ep.problem, ep.get("restore_failed", false)) if alert else "NO ISSUES FOUND.",
+		chars
 	)
 	for i in lines.size():
 		_text(lines[i], r.position + Vector2(4, 49 + i * 7), TXT)
@@ -1513,7 +1527,9 @@ func _paint_session(body: Rect2) -> void:
 	_fill(Rect2(dlg.position, Vector2(dlg.size.x, 6)), Color("1c3b63"))
 	var alert: bool = ep.problem != ""
 	_text("SYSTEM MESSAGE" if alert else "ALL CLEAR", dlg.position + Vector2(3, 1), WHITE)
-	var lines := _wrap(_symptom(ep.problem, ep.get("restore_failed", false)), int((dlg.size.x - 8) / 4.0))
+	var lines := _wrap(
+		_symptom(ep.problem, ep.get("restore_failed", false)), int((dlg.size.x - 8) / 4.0)
+	)
 	for i in mini(lines.size(), 3):
 		_text(lines[i], dlg.position + Vector2(4, 9 + i * 6), RED if alert else GREEN)
 	_text(_clip(rmm_msg, int((body.size.x - 8) / 4.0)), body.position + Vector2(4, 42), WHITE)
@@ -1586,12 +1602,12 @@ func _paint_backups(body: Rect2) -> void:
 		else "NIGHTLY BACKUP JOBS - VERIFY EACH ONE EVERY DAY"
 	)
 	if body.size.x < 200.0:  # the narrow portrait screen: the short wording
-		head_note = "BACKUP JOBS - WATCH CHECKS THEM" if Skills.backup_watch() else "BACKUP JOBS - VERIFY EACH EVERY DAY"
-	_text(
-		head_note,
-		body.position + Vector2(4, 3),
-		RMM_GREY
-	)
+		head_note = (
+			"BACKUP JOBS - WATCH CHECKS THEM"
+			if Skills.backup_watch()
+			else "BACKUP JOBS - VERIFY EACH EVERY DAY"
+		)
+	_text(head_note, body.position + Vector2(4, 3), RMM_GREY)
 	for idx in Sales.active.size():
 		var c: int = Sales.active[idx]
 		var b: Dictionary = Msp.backups[c]
@@ -1853,6 +1869,8 @@ func _paint_dispatch() -> void:
 
 # the dispatch board and the knowledge base take keys by name; a pad press goes in as the arrow or "enter" it stands for
 func _app_key(event: InputEvent, dir: String) -> bool:
+	if app == "nerds":
+		return _nerds_pad(event, dir)
 	if app != "dispatch" and app != "knowledge":
 		return false
 	if event is InputEventKey:
@@ -1867,8 +1885,21 @@ func _app_key(event: InputEvent, dir: String) -> bool:
 
 func _dispatch_key(event: InputEventKey) -> bool:
 	var names := {
-		KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
-		KEY_KP_ENTER: "enter", KEY_A: "a", KEY_T: "t", KEY_E: "e", KEY_U: "u", KEY_C: "c", KEY_B: "b", KEY_S: "s", KEY_F: "f",
+		KEY_TAB: "tab",
+		KEY_LEFT: "left",
+		KEY_RIGHT: "right",
+		KEY_UP: "up",
+		KEY_DOWN: "down",
+		KEY_ENTER: "enter",
+		KEY_KP_ENTER: "enter",
+		KEY_A: "a",
+		KEY_T: "t",
+		KEY_E: "e",
+		KEY_U: "u",
+		KEY_C: "c",
+		KEY_B: "b",
+		KEY_S: "s",
+		KEY_F: "f",
 	}
 	if not names.has(event.keycode):
 		return false
@@ -1888,9 +1919,23 @@ func _paint_knowledge() -> void:
 
 func _knowledge_key(event: InputEventKey) -> bool:
 	var names := {
-		KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
-		KEY_KP_ENTER: "enter", KEY_W: "w", KEY_H: "h", KEY_T: "t", KEY_R: "r", KEY_D: "d", KEY_C: "c",
-		KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_BRACKETLEFT: "pgup", KEY_BRACKETRIGHT: "pgdn",
+		KEY_TAB: "tab",
+		KEY_LEFT: "left",
+		KEY_RIGHT: "right",
+		KEY_UP: "up",
+		KEY_DOWN: "down",
+		KEY_ENTER: "enter",
+		KEY_KP_ENTER: "enter",
+		KEY_W: "w",
+		KEY_H: "h",
+		KEY_T: "t",
+		KEY_R: "r",
+		KEY_D: "d",
+		KEY_C: "c",
+		KEY_PAGEUP: "pgup",
+		KEY_PAGEDOWN: "pgdn",
+		KEY_BRACKETLEFT: "pgup",
+		KEY_BRACKETRIGHT: "pgdn",
 	}
 	if not names.has(event.keycode):
 		return false
@@ -1935,12 +1980,14 @@ func _paint_lync() -> void:
 	Lync.mark_read(lync_sel)
 	_text(
 		_clip(
-			"%s%s - %s"
-			% [
-				lync_sel.to_upper(),
-				" (OWNER)" if Social.is_owner(lync_sel) else "",
-				str(info2[0])
-			],
+			(
+				"%s%s - %s"
+				% [
+					lync_sel.to_upper(),
+					" (OWNER)" if Social.is_owner(lync_sel) else "",
+					str(info2[0])
+				]
+			),
 			int((w - 40) / 4.0)
 		),
 		Vector2(x + 4, body.position.y + 3),
@@ -2033,48 +2080,16 @@ func _paint_nerds() -> void:
 	if nerds_tab == "irc":
 		_paint_irc(area)
 		return
-	var chars := int((area.size.x - 62) / 4.0)
-	var y := area.position.y + 3
-	for i in Nerds.threads.size():
-		var th: Dictionary = Nerds.threads[i]
-		var def: Dictionary = Nerds.THREADS[int(th.id)]
-		var rr := Rect2(area.position.x, y, area.size.x, 11)
-		_row(rr, false, i % 2 == 1)
-		var tag := "ANSWERED" if th.answered else ("READ" if th.read else "NEW")
-		_text(
-			_clip(str(def.title), chars),
-			rr.position + Vector2(3, 3),
-			TXT if not th.read else Color("7d8595")
-		)
-		_text(
-			tag,
-			Vector2(rr.end.x - 58, rr.position.y + 3),
-			GREEN if th.answered else (Color("7d8595") if th.read else ORANGE)
-		)
-		_button(
-			"nerds:read:%d" % i, Rect2(rr.end.x - 32, rr.position.y + 1, 14, 9), "R", not th.read
-		)
-		_button(
-			"nerds:answer:%d" % i,
-			Rect2(rr.end.x - 16, rr.position.y + 1, 14, 9),
-			"A",
-			not th.answered
-		)
-		y += 12
-	if area.size.x < 290.0:  # two short lines on the narrow screens
-		_text("R = READ (A LITTLE XP)", Vector2(area.position.x + 4, y + 2), Color("7d8595"))
-		_text("A = ANSWER (NEEDS THE SKILL: XP + KARMA)", Vector2(area.position.x + 4, y + 9), Color("7d8595"))
-	else:
-		_text(
-			"R = READ (A LITTLE XP)   A = ANSWER (NEEDS THE SKILL: MORE XP + KARMA)",
-			Vector2(area.position.x + 4, y + 2),
-			Color("7d8595")
-		)
+	forum.paint(self, area)
 
 
 func _paint_irc(area: Rect2) -> void:
 	var chars := int((area.size.x - 8) / 4.0)
-	_text("#LABRATNERDS   6 NERDS ONLINE", area.position + Vector2(4, 3), Color("c0561a"))
+	_text(
+		"#LABRATNERDS   %d NERDS ONLINE" % Nerds.NICKS.size(),
+		area.position + Vector2(4, 3),
+		Color("c0561a")
+	)
 	var rows := int((area.size.y - 38) / 7.0)
 	var lines: Array = []
 	for entry in Nerds.channel:
@@ -2121,8 +2136,44 @@ func _paint_irc(area: Rect2) -> void:
 	)
 
 
+# the NERDS app takes keys by name: arrows, Enter (a pad press stands for them), Page Up / Down and Tab (forum <-> IRC)
+func _nerds_pad(event: InputEvent, dir: String) -> bool:
+	var key_name := dir
+	if key_name == "" and Controls.confirm(event, false, false):
+		key_name = "enter"
+	if key_name == "" and event is InputEventKey:
+		key_name = str(
+			{KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_TAB: "tab"}.get(event.keycode, "")
+		)
+	if key_name == "":
+		return false
+	return nerds_key(key_name)
+
+
+func nerds_key(key_name: String) -> bool:
+	if key_name == "tab":
+		nerds_tab = "irc" if nerds_tab == "forum" else "forum"
+		return true
+	if nerds_tab == "irc":
+		if key_name == "left":
+			nerds_tab = "forum"
+		elif key_name == "enter":
+			activate("nerds:ask:ticket")
+		elif key_name == "right":
+			activate("nerds:ask:step")
+		else:
+			return false
+		return true
+	if key_name == "right" and not forum.nested():
+		nerds_tab = "irc"
+		return true
+	return forum.key(key_name)
+
+
 func _nerds_action(parts: PackedStringArray) -> void:
 	match parts[1]:
+		"board", "thread", "back", "reply", "up", "dn":
+			forum.act(parts)
 		"tab":
 			nerds_tab = parts[2]
 		"read":
@@ -2232,7 +2283,21 @@ func _board_books(a: Rect2) -> void:
 		["A/R OWED", "$%d" % Owner.ar_total(), AMBER if Owner.ar_total() > 0 else TXT],
 		["COMPANY VALUE", Owner.value_text(), Color("6b421c")],
 		["TEAM SPEED", "%.1f" % Owner.team_speed(), TXT],
-		["OWNER DRAW", "$%d/WK (%s)" % [Owner.draw_due() if Campaign.day >= Owner.DRAW_START else int(Owner.DRAW.get(Owner.draw_policy, 0)), Owner.draw_policy.to_upper()], TXT],
+		[
+			"OWNER DRAW",
+			(
+				"$%d/WK (%s)"
+				% [
+					(
+						Owner.draw_due()
+						if Campaign.day >= Owner.DRAW_START
+						else int(Owner.DRAW.get(Owner.draw_policy, 0))
+					),
+					Owner.draw_policy.to_upper()
+				]
+			),
+			TXT
+		],
 		["GOAL", Owner.goal_row()[1], TXT],
 		["ON BOARD", ", ".join(advisers) if not advisers.is_empty() else "NOBODY YET", TXT],
 		["MATURITY", "%d %s" % [Owner.oml(), Owner.OML_NAMES[Owner.oml() - 1]], Color("6b421c")],
@@ -2412,10 +2477,25 @@ func _board_team(a: Rect2) -> void:
 	for i in Owner.crew_size():
 		var member: Dictionary = Owner.CREW[i]
 		var wage := int(round(float(member.wage) * Owner.wage_mult()))
-		rows.append(["%s  SKILL %.1f  $%d/WK" % [str(member.name).to_upper(), float(member.skill), wage], TXT])
-	rows.append(["MORGAN  MANAGER  $%d/WK" % int(round(float(Owner.MORGAN_WAGE) * Owner.wage_mult())), TXT])
+		rows.append(
+			[
+				"%s  SKILL %.1f  $%d/WK" % [str(member.name).to_upper(), float(member.skill), wage],
+				TXT
+			]
+		)
+	rows.append(
+		["MORGAN  MANAGER  $%d/WK" % int(round(float(Owner.MORGAN_WAGE) * Owner.wage_mult())), TXT]
+	)
 	if Roles.partner() != "":
-		rows.append(["%s  CO-OWNER  HANDS-ON %.1f  TRUST %d" % [Roles.partner().to_upper(), Partner.hands(), Partner.trust], Color("6b421c")])
+		rows.append(
+			[
+				(
+					"%s  CO-OWNER  HANDS-ON %.1f  TRUST %d"
+					% [Roles.partner().to_upper(), Partner.hands(), Partner.trust]
+				),
+				Color("6b421c")
+			]
+		)
 	for hire in Owner.extra_staff:
 		var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
 		rows.append(

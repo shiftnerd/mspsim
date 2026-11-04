@@ -9266,41 +9266,1385 @@ format c: fixes everything
 [Nerds.THREADS.0.title]
 Print spooler keeps dying on 2008 R2
 
+# Nerds > THREADS > 0 > posts > 0 > text
+[Nerds.THREADS.0.posts.0.text]
+The spooler stops every morning around nine. Restart it and it works until tomorrow. Server is 2008 R2, about 40 printers.
+
+# Nerds > THREADS > 0 > posts > 1 > text
+[Nerds.THREADS.0.posts.1.text]
+Delete the stuck job files in the spool folder, then check for the one bad driver. It is always the 32 bit driver from 2009.
+
+# Nerds > THREADS > 0 > posts > 2 > text
+[Nerds.THREADS.0.posts.2.text]
+Seconded. Twenty seven of our forty printers were running one cheap driver. Replaced it and no more morning deaths.
+
+# Nerds > THREADS > 0 > answer
+[Nerds.THREADS.0.answer]
+Clear the spool folder, stop and start the service, then remove the old 32 bit driver. Mine was a copier from 2009.
+
 # Nerds > THREADS > 1 > title
 [Nerds.THREADS.1.title]
 Users locked out after bad passwords: GPO?
+
+# Nerds > THREADS > 1 > posts > 0 > text
+[Nerds.THREADS.1.posts.0.text]
+Whole office locked out on Monday mornings. Is the lockout policy too tight? It says 3 tries.
+
+# Nerds > THREADS > 1 > posts > 1 > text
+[Nerds.THREADS.1.posts.1.text]
+3 tries is a policy written by someone who has never met a user. Set 10, reset after 30 minutes. And look for the phone that still has the old password saved.
+
+# Nerds > THREADS > 1 > posts > 2 > text
+[Nerds.THREADS.1.posts.2.text]
+The phone. It is always the phone. Check the mail sync on the boss's phone first.
+
+# Nerds > THREADS > 1 > answer
+[Nerds.THREADS.1.answer]
+Raise the threshold to 10 and the reset to 30 minutes, then hunt the phone or laptop with the old saved password.
 
 # Nerds > THREADS > 2 > title
 [Nerds.THREADS.2.title]
 Disk full, where is all the temp junk?
 
+# Nerds > THREADS > 2 > posts > 0 > text
+[Nerds.THREADS.2.posts.0.text]
+C: is at 98 percent on a file server. Not much installed. Where does the space go?
+
+# Nerds > THREADS > 2 > posts > 1 > text
+[Nerds.THREADS.2.posts.1.text]
+Run a folder size tool from the root. Check the Windows folder for old installer files, and look for a log that never rotates.
+
+# Nerds > THREADS > 2 > posts > 2 > text
+[Nerds.THREADS.2.posts.2.text]
+In my case it was 40 GB of IIS logs. Nobody had set the cleanup. Twelve months of them.
+
+# Nerds > THREADS > 2 > answer
+[Nerds.THREADS.2.answer]
+Scan the drive by folder size. Usually it is logs, old profiles or the installer cache. Clear those, then set a cleanup job.
+
 # Nerds > THREADS > 3 > title
 [Nerds.THREADS.3.title]
 Blue screen 0x7B after a controller swap
+
+# Nerds > THREADS > 3 > posts > 0 > text
+[Nerds.THREADS.3.posts.0.text]
+Swapped the RAID card on an old server, now it blue screens 0x7B at boot. Disks are fine on the new card.
+
+# Nerds > THREADS > 3 > posts > 1 > text
+[Nerds.THREADS.3.posts.1.text]
+0x7B is inaccessible boot device. The new controller driver is not in the image. Boot a repair disk and load the driver, or switch it to the old mode in the BIOS.
+
+# Nerds > THREADS > 3 > posts > 2 > text
+[Nerds.THREADS.3.posts.2.text]
+just reinstall windows lol
+
+# Nerds > THREADS > 3 > posts > 3 > text
+[Nerds.THREADS.3.posts.3.text]
+Nobody reinstall anything. Read the post above.
+
+# Nerds > THREADS > 3 > answer
+[Nerds.THREADS.3.answer]
+Boot the repair disk, load the new controller driver, then reboot. Do not reinstall, the data is fine.
 
 # Nerds > THREADS > 4 > title
 [Nerds.THREADS.4.title]
 CryptoLocker: shadow copies, any luck?
 
+# Nerds > THREADS > 4 > posts > 0 > text
+[Nerds.THREADS.4.posts.0.text]
+A client got hit. Files all renamed and a ransom note, 300 dollars in bitcoin. They have no backup. Is paying the only way?
+
+# Nerds > THREADS > 4 > posts > 1 > text
+[Nerds.THREADS.4.posts.1.text]
+Try shadow copies first. The thing does not always remove them. Right click the folder, previous versions. Disconnect the machine from the network before you do anything else.
+
+# Nerds > THREADS > 4 > posts > 2 > text
+[Nerds.THREADS.4.posts.2.text]
+We got about 40 percent back that way. Pay only if you must, and tell the client it may not work. Then sell them a backup.
+
+# Nerds > THREADS > 4 > answer
+[Nerds.THREADS.4.answer]
+Unplug it from the network, check previous versions and shadow copies, and restore what you can. Paying is a last resort.
+
 # Nerds > THREADS > 5 > title
 [Nerds.THREADS.5.title]
 Robocopy /MIR and NTFS permissions
+
+# Nerds > THREADS > 5 > posts > 0 > text
+[Nerds.THREADS.5.posts.0.text]
+Mirrored a share to a new server with robocopy /MIR. Files are there but nobody can open half of them.
+
+# Nerds > THREADS > 5 > posts > 1 > text
+[Nerds.THREADS.5.posts.1.text]
+You need /COPY:DATSOU, or /SEC. Default does not copy the security. And careful, /MIR deletes at the destination.
+
+# Nerds > THREADS > 5 > posts > 2 > text
+[Nerds.THREADS.5.posts.2.text]
+I have seen /MIR delete a whole department. Run it with /L first. Always /L first.
+
+# Nerds > THREADS > 5 > answer
+[Nerds.THREADS.5.answer]
+Use /COPYALL or /COPY:DATSOU, run with /L first to preview, and only then run it for real. /MIR deletes extras.
 
 # Nerds > THREADS > 6 > title
 [Nerds.THREADS.6.title]
 VLANs for voice and data on a cheap switch
 
+# Nerds > THREADS > 6 > posts > 0 > text
+[Nerds.THREADS.6.posts.0.text]
+Office wants phones and PCs on separate VLANs on one cheap managed switch. Phones plug in, PCs plug into the phone.
+
+# Nerds > THREADS > 6 > posts > 1 > text
+[Nerds.THREADS.6.posts.1.text]
+Tag the voice VLAN on the phone port, leave data untagged as the native VLAN. The phone passes the PC through.
+
+# Nerds > THREADS > 6 > posts > 2 > text
+[Nerds.THREADS.6.posts.2.text]
+Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port.
+
+# Nerds > THREADS > 6 > answer
+[Nerds.THREADS.6.answer]
+Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.
+
 # Nerds > THREADS > 7 > title
 [Nerds.THREADS.7.title]
 Stopping RDP brute force: what do you use?
+
+# Nerds > THREADS > 7 > posts > 0 > text
+[Nerds.THREADS.7.posts.0.text]
+Event log full of failed logins from China. Port 3389 is forwarded to the server. Please tell me what to do.
+
+# Nerds > THREADS > 7 > posts > 1 > text
+[Nerds.THREADS.7.posts.1.text]
+First, stop forwarding 3389. Use a VPN. If you cannot, change the port and use a firewall that blocks repeat failures.
+
+# Nerds > THREADS > 7 > posts > 2 > text
+[Nerds.THREADS.7.posts.2.text]
+Brother, I have seen this sin many times. Close the door. Bless you.
+
+# Nerds > THREADS > 7 > answer
+[Nerds.THREADS.7.answer]
+Stop forwarding 3389. Put it behind a VPN or at least a firewall that blocks repeat failed logins, and check for weak passwords.
 
 # Nerds > THREADS > 8 > title
 [Nerds.THREADS.8.title]
 Windows XP end of support: migration list?
 
+# Nerds > THREADS > 8 > posts > 0 > text
+[Nerds.THREADS.8.posts.0.text]
+April 8 is close. Anyone have a checklist for moving a small office off XP? Twelve PCs, two with old apps.
+
+# Nerds > THREADS > 8 > posts > 1 > text
+[Nerds.THREADS.8.posts.1.text]
+Inventory first. Ones that cannot go to 7 get isolated, no internet. Back up profiles, move to 7 and Office 2010 at the same time.
+
+# Nerds > THREADS > 8 > posts > 2 > text
+[Nerds.THREADS.8.posts.2.text]
+I was running XP before most of you could spell RMM. Do not wait until April 7.
+
+# Nerds > THREADS > 8 > answer
+[Nerds.THREADS.8.answer]
+Inventory the PCs, back up the profiles, upgrade to Windows 7 and isolate any old app machine from the internet.
+
 # Nerds > THREADS > 9 > title
 [Nerds.THREADS.9.title]
 Script to clean temp files on every client
+
+# Nerds > THREADS > 9 > posts > 0 > text
+[Nerds.THREADS.9.posts.0.text]
+Need a script to clear temp folders on all our clients every week. Anything safe to run unattended?
+
+# Nerds > THREADS > 9 > posts > 1 > text
+[Nerds.THREADS.9.posts.1.text]
+Delete files older than a week in the user temp and the Windows temp. Skip anything locked. Run it as a script in the RMM, not by hand.
+
+# Nerds > THREADS > 9 > posts > 2 > text
+[Nerds.THREADS.9.posts.2.text]
+format c: fixes everything
+
+# Nerds > THREADS > 9 > answer
+[Nerds.THREADS.9.answer]
+Delete files older than seven days from the Windows and user temp folders, skip the locked ones, and run it weekly as a scheduled script.
+
+# Nerds > THREADS > 10 > title
+[Nerds.THREADS.10.title]
+Forum rules (read before posting)
+
+# Nerds > THREADS > 10 > posts > 0 > text
+[Nerds.THREADS.10.posts.0.text]
+1. Search before you ask. 2. Say what version you run. 3. Test every script on a lab box before production. 4. No ALL CAPS posts. 5. Be polite or be gone. This site is not affiliated with the software vendor.
+
+# Nerds > THREADS > 10 > posts > 1 > text
+[Nerds.THREADS.10.posts.1.text]
+Rule six is mine: sin no more, and post your results afterwards.
+
+# Nerds > THREADS > 10 > posts > 2 > text
+[Nerds.THREADS.10.posts.2.text]
+WHAT IS A LAB BOX?
+
+# Nerds > THREADS > 11 > title
+[Nerds.THREADS.11.title]
+Agents not reporting in
+
+# Nerds > THREADS > 11 > posts > 0 > text
+[Nerds.THREADS.11.posts.0.text]
+About 30 agents have not checked in since Friday. Server is fine. Anyone else seeing this?
+
+# Nerds > THREADS > 11 > posts > 1 > text
+[Nerds.THREADS.11.posts.1.text]
+Do the offline machines share a site? Ours were all behind one router that got a new firmware.
+
+# Nerds > THREADS > 11 > posts > 2 > text
+[Nerds.THREADS.11.posts.2.text]
+Check the agent service and the time. Clocks that are off by a few minutes stop checking in.
+
+# Nerds > THREADS > 11 > answer
+[Nerds.THREADS.11.answer]
+Check whether they share a site or router first, then the agent service and the clock on the machine.
+
+# Nerds > THREADS > 12 > title
+[Nerds.THREADS.12.title]
+Patch Tuesday auto-approve rules
+
+# Nerds > THREADS > 12 > posts > 0 > text
+[Nerds.THREADS.12.posts.0.text]
+Do you auto-approve everything on Patch Tuesday or wait? Last month a patch broke printing for a whole client.
+
+# Nerds > THREADS > 12 > posts > 1 > text
+[Nerds.THREADS.12.posts.1.text]
+Critical and security on a test group first, the rest a week later. Never on the same day as month end.
+
+# Nerds > THREADS > 12 > posts > 2 > text
+[Nerds.THREADS.12.posts.2.text]
+Patch Tuesday is not the day to find out. Wait a week.
+
+# Nerds > THREADS > 12 > answer
+[Nerds.THREADS.12.answer]
+Approve critical updates to a small test group first, wait a few days, then roll out. Never patch the whole fleet on the first day.
+
+# Nerds > THREADS > 13 > title
+[Nerds.THREADS.13.title]
+Which backup alerts are noise?
+
+# Nerds > THREADS > 13 > posts > 0 > text
+[Nerds.THREADS.13.posts.0.text]
+I get 200 backup emails a day. Which ones do you really act on?
+
+# Nerds > THREADS > 13 > posts > 1 > text
+[Nerds.THREADS.13.posts.1.text]
+Failed twice in a row is a call. Missing for 24 hours is a call. Success mails go to the bin. Warnings about open files, ignore.
+
+# Nerds > THREADS > 13 > posts > 2 > text
+[Nerds.THREADS.13.posts.2.text]
+A green tick is a rumour. Test a restore once a month.
+
+# Nerds > THREADS > 13 > answer
+[Nerds.THREADS.13.answer]
+Act on two failures in a row or a missing job, ignore success mails and open file warnings, and test one restore every month.
+
+# Nerds > THREADS > 14 > title
+[Nerds.THREADS.14.title]
+Rodent Nation 2014: who is going?
+
+# Nerds > THREADS > 14 > posts > 0 > text
+[Nerds.THREADS.14.posts.0.text]
+Anyone going to the conference in Orlando? I need someone to share a taxi and a room with.
+
+# Nerds > THREADS > 14 > posts > 1 > text
+[Nerds.THREADS.14.posts.1.text]
+I will be at the community table with a sunburn. Come say hello.
+
+# Nerds > THREADS > 14 > posts > 2 > text
+[Nerds.THREADS.14.posts.2.text]
+is there free pizza
+
+# Nerds > THREADS > 14 > answer
+[Nerds.THREADS.14.answer]
+I am hoping to go. See you at the community table, and I will bring a pen for the raffle.
+
+# Nerds > THREADS > 15 > title
+[Nerds.THREADS.15.title]
+What is on your desk right now? Post pics
+
+# Nerds > THREADS > 15 > posts > 0 > text
+[Nerds.THREADS.15.posts.0.text]
+Mine: two monitors, a cold coffee, a stress ball shaped like a router, and 14 sticky notes.
+
+# Nerds > THREADS > 15 > posts > 1 > text
+[Nerds.THREADS.15.posts.1.text]
+A label maker, a console cable, and half a sandwich from Tuesday.
+
+# Nerds > THREADS > 15 > posts > 2 > text
+[Nerds.THREADS.15.posts.2.text]
+A very old keyboard. Do not touch it.
+
+# Nerds > THREADS > 15 > answer
+[Nerds.THREADS.15.answer]
+Two monitors, a headset, a rubber duck and a pile of cables I swear I will sort on Friday.
+
+# Nerds > THREADS > 16 > title
+[Nerds.THREADS.16.title]
+Best ticket you ever got
+
+# Nerds > THREADS > 16 > posts > 0 > text
+[Nerds.THREADS.16.posts.0.text]
+Mine: the coffee machine would not print. It was a coffee machine. Yours?
+
+# Nerds > THREADS > 16 > posts > 1 > text
+[Nerds.THREADS.16.posts.1.text]
+A user called because the internet was broken. It was a cup holder: the CD tray.
+
+# Nerds > THREADS > 16 > posts > 2 > text
+[Nerds.THREADS.16.posts.2.text]
+My top one: the keyboard was on fire. Not figuratively.
+
+# Nerds > THREADS > 16 > answer
+[Nerds.THREADS.16.answer]
+Mine was a user who said the screen was dark. The monitor was off, and she had been pressing the power button on the speaker.
+
+# Nerds > THREADS > 17 > title
+[Nerds.THREADS.17.title]
+XP end of support: what are you telling clients?
+
+# Nerds > THREADS > 17 > posts > 0 > text
+[Nerds.THREADS.17.posts.0.text]
+How do you explain that XP will be unsafe after April 8 without scaring people?
+
+# Nerds > THREADS > 17 > posts > 1 > text
+[Nerds.THREADS.17.posts.1.text]
+Short and honest: no more security patches, so every new hole stays open. Give a date and a price. People move when it is a plan.
+
+# Nerds > THREADS > 17 > posts > 2 > text
+[Nerds.THREADS.17.posts.2.text]
+Photos help. Put the old machine next to a new one and quote the price of both.
+
+# Nerds > THREADS > 17 > answer
+[Nerds.THREADS.17.answer]
+Be honest, keep it short and bring a plan: no more patches after April 8, here is the list, here is the price, here is the date.
+
+# Nerds > THREADS > 18 > title
+[Nerds.THREADS.18.title]
+Plugin template that survives an upgrade
+
+# Nerds > THREADS > 18 > posts > 0 > text
+[Nerds.THREADS.18.posts.0.text]
+Every upgrade breaks my plugin. Is there a template with the right hooks so it survives?
+
+# Nerds > THREADS > 18 > posts > 1 > text
+[Nerds.THREADS.18.posts.1.text]
+Keep your code out of the vendor folders and keep the SQL in your own table. Version it. And test the upgrade on a copy.
+
+# Nerds > THREADS > 18 > posts > 2 > text
+[Nerds.THREADS.18.posts.2.text]
+I have said this for five years. Your own table. Your own folder.
+
+# Nerds > THREADS > 18 > answer
+[Nerds.THREADS.18.answer]
+Keep the files outside the vendor folders, use your own table, and test every upgrade on a copy first.
+
+# Nerds > THREADS > 19 > title
+[Nerds.THREADS.19.title]
+Plugin crashed the database after the upgrade
+
+# Nerds > THREADS > 19 > posts > 0 > text
+[Nerds.THREADS.19.posts.0.text]
+Upgraded last night, now CPU is at 100 percent on the DB. A plugin with a loop?
+
+# Nerds > THREADS > 19 > posts > 1 > text
+[Nerds.THREADS.19.posts.1.text]
+Disable plugins one by one and watch the CPU. The one that runs every minute is the usual suspect.
+
+# Nerds > THREADS > 19 > posts > 2 > text
+[Nerds.THREADS.19.posts.2.text]
+Mine was a plugin that ran a report on every agent check-in. 5,000 agents. Do the maths.
+
+# Nerds > THREADS > 19 > answer
+[Nerds.THREADS.19.answer]
+Turn the plugins off one by one and watch the CPU. Anything that runs on every check-in is the usual suspect.
+
+# Nerds > THREADS > 20 > title
+[Nerds.THREADS.20.title]
+Plugin Sandbox rules and how to submit
+
+# Nerds > THREADS > 20 > posts > 0 > text
+[Nerds.THREADS.20.posts.0.text]
+Post the plugin, a screenshot, what it changes and how to remove it. No plugin that phones home. Unknown binaries get deleted, and so do their authors.
+
+# Nerds > THREADS > 20 > posts > 1 > text
+[Nerds.THREADS.20.posts.1.text]
+Include a rollback. Always include a rollback.
+
+# Nerds > THREADS > 20 > posts > 2 > text
+[Nerds.THREADS.20.posts.2.text]
+CAN I SUBMIT A PLUGIN THAT MAKES THE PC GO FASTER???
+
+# Nerds > THREADS > 21 > title
+[Nerds.THREADS.21.title]
+Custom tab that shows the warranty date
+
+# Nerds > THREADS > 21 > posts > 0 > text
+[Nerds.THREADS.21.posts.0.text]
+Wanted a tab on each computer showing the warranty end. Anyone done this with the serial number?
+
+# Nerds > THREADS > 21 > posts > 1 > text
+[Nerds.THREADS.21.posts.1.text]
+Use a query on the BIOS serial and the vendor's page. Cache it in your own table or they will block you.
+
+# Nerds > THREADS > 21 > posts > 2 > text
+[Nerds.THREADS.21.posts.2.text]
+I do that for two vendors. Third one has a captcha. It wins.
+
+# Nerds > THREADS > 21 > answer
+[Nerds.THREADS.21.answer]
+Read the BIOS serial, look up the warranty on the vendor site, cache the answer in your own table and show it on the tab.
+
+# Nerds > THREADS > 22 > title
+[Nerds.THREADS.22.title]
+Tab with a ScreenConnect link per agent
+
+# Nerds > THREADS > 22 > posts > 0 > text
+[Nerds.THREADS.22.posts.0.text]
+A tab with one click remote control for each agent using ScreenConnect. How do I build the URL?
+
+# Nerds > THREADS > 22 > posts > 1 > text
+[Nerds.THREADS.22.posts.1.text]
+Each session name equals the machine name. Build the link from the name and open it in a new window.
+
+# Nerds > THREADS > 22 > posts > 2 > text
+[Nerds.THREADS.22.posts.2.text]
+Beware of machine names with spaces. Fun for the whole family.
+
+# Nerds > THREADS > 22 > answer
+[Nerds.THREADS.22.answer]
+Name the session after the machine, build the URL from the name, encode spaces, and open it in a new window.
+
+# Nerds > THREADS > 23 > title
+[Nerds.THREADS.23.title]
+Custom tab: last reboot and uptime
+
+# Nerds > THREADS > 23 > posts > 0 > text
+[Nerds.THREADS.23.posts.0.text]
+Boss wants to know which machines have not been rebooted in months. Is there a tab for uptime?
+
+# Nerds > THREADS > 23 > posts > 1 > text
+[Nerds.THREADS.23.posts.1.text]
+Read the last boot time from the machine, store the number of days, color the tab red after 30.
+
+# Nerds > THREADS > 23 > posts > 2 > text
+[Nerds.THREADS.23.posts.2.text]
+just reboot them all lol
+
+# Nerds > THREADS > 23 > answer
+[Nerds.THREADS.23.answer]
+Read the last boot time from each machine, save the days since, and show red after 30 days.
+
+# Nerds > THREADS > 24 > title
+[Nerds.THREADS.24.title]
+Dashboards: show us your office TV
+
+# Nerds > THREADS > 24 > posts > 0 > text
+[Nerds.THREADS.24.posts.0.text]
+Post a photo of your wall TV. No logos of clients, no passwords on screen. Yes, I can see them.
+
+# Nerds > THREADS > 24 > posts > 1 > text
+[Nerds.THREADS.24.posts.1.text]
+Ours is a big old TV with red and green tiles. Open tickets, missed SLAs, agents offline. The boss looks at it three times a day.
+
+# Nerds > THREADS > 24 > posts > 2 > text
+[Nerds.THREADS.24.posts.2.text]
+Mine just says: is it backed up? in green.
+
+# Nerds > THREADS > 25 > title
+[Nerds.THREADS.25.title]
+Red and green tiles for open tickets
+
+# Nerds > THREADS > 25 > posts > 0 > text
+[Nerds.THREADS.25.posts.0.text]
+How do I build a dashboard with big tiles: open tickets, closed today, missed? Needs to be readable from the door.
+
+# Nerds > THREADS > 25 > posts > 1 > text
+[Nerds.THREADS.25.posts.1.text]
+Three numbers per tile at most. Big fonts. Green under the target, red over it. No pie charts, nobody can read a pie from the door.
+
+# Nerds > THREADS > 25 > posts > 2 > text
+[Nerds.THREADS.25.posts.2.text]
+Add a number for the oldest ticket. Everyone looks at that one.
+
+# Nerds > THREADS > 25 > answer
+[Nerds.THREADS.25.answer]
+Keep it to a few big numbers, green under target and red over it, and add the age of the oldest ticket.
+
+# Nerds > THREADS > 26 > title
+[Nerds.THREADS.26.title]
+Dashboard for missed SLAs only
+
+# Nerds > THREADS > 26 > posts > 0 > text
+[Nerds.THREADS.26.posts.0.text]
+Boss only wants to see tickets that missed their SLA this week. Per tech. Is that mean?
+
+# Nerds > THREADS > 26 > posts > 1 > text
+[Nerds.THREADS.26.posts.1.text]
+Show it per client, not per tech. Then it is a service problem, not a blame game.
+
+# Nerds > THREADS > 26 > posts > 2 > text
+[Nerds.THREADS.26.posts.2.text]
+Per tech dashboards get people to close tickets badly. Ask me how I know.
+
+# Nerds > THREADS > 26 > answer
+[Nerds.THREADS.26.answer]
+Show misses per client and per cause rather than per person, so the team fixes the process.
+
+# Nerds > THREADS > 27 > title
+[Nerds.THREADS.27.title]
+Move the database to its own disk
+
+# Nerds > THREADS > 27 > posts > 0 > text
+[Nerds.THREADS.27.posts.0.text]
+The RMM database shares a disk with the OS and everything is slow. How do I move it safely?
+
+# Nerds > THREADS > 27 > posts > 1 > text
+[Nerds.THREADS.27.posts.1.text]
+Stop the services, back up, detach, move, attach. In that order. Then test it before you tell anyone.
+
+# Nerds > THREADS > 27 > posts > 2 > text
+[Nerds.THREADS.27.posts.2.text]
+Back up TWICE. Then back up.
+
+# Nerds > THREADS > 27 > answer
+[Nerds.THREADS.27.answer]
+Stop the services, take a backup, detach the database, move the files, attach it again, and test before you restart the agents.
+
+# Nerds > THREADS > 28 > title
+[Nerds.THREADS.28.title]
+Agent check-in interval: 5 minutes or 15?
+
+# Nerds > THREADS > 28 > posts > 0 > text
+[Nerds.THREADS.28.posts.0.text]
+We have 4,000 agents. Would a 15 minute check-in hurt monitoring?
+
+# Nerds > THREADS > 28 > posts > 1 > text
+[Nerds.THREADS.28.posts.1.text]
+Five for servers, fifteen for workstations. Your server will thank you.
+
+# Nerds > THREADS > 28 > posts > 2 > text
+[Nerds.THREADS.28.posts.2.text]
+We went to fifteen for everyone and nobody noticed for a year.
+
+# Nerds > THREADS > 28 > answer
+[Nerds.THREADS.28.answer]
+Use five minutes for servers and fifteen for workstations. It saves load and you will not miss anything.
+
+# Nerds > THREADS > 29 > title
+[Nerds.THREADS.29.title]
+Stop the nightly cleanup from deleting logs
+
+# Nerds > THREADS > 29 > posts > 0 > text
+[Nerds.THREADS.29.posts.0.text]
+The nightly cleanup is deleting the logs I need for audits. Hidden setting somewhere?
+
+# Nerds > THREADS > 29 > posts > 1 > text
+[Nerds.THREADS.29.posts.1.text]
+There is a retention value in the config table. Change it, restart the service, write down that you did.
+
+# Nerds > THREADS > 29 > posts > 2 > text
+[Nerds.THREADS.29.posts.2.text]
+just delete everything and say it was the hackers
+
+# Nerds > THREADS > 29 > answer
+[Nerds.THREADS.29.answer]
+Change the retention value in the config table, restart the service, and note it in the change log.
+
+# Nerds > THREADS > 30 > title
+[Nerds.THREADS.30.title]
+Cloud server access after the upgrade
+
+# Nerds > THREADS > 30 > posts > 0 > text
+[Nerds.THREADS.30.posts.0.text]
+After the upgrade nobody can reach the hosted server from the office. VPN is up but nothing comes through.
+
+# Nerds > THREADS > 30 > posts > 1 > text
+[Nerds.THREADS.30.posts.1.text]
+Check the routes. A new subnet on the cloud side that the office router does not know about, probably.
+
+# Nerds > THREADS > 30 > posts > 2 > text
+[Nerds.THREADS.30.posts.2.text]
+And the firewall rule. They often reset after an upgrade.
+
+# Nerds > THREADS > 30 > answer
+[Nerds.THREADS.30.answer]
+Look at the routes first, then the firewall rules. An upgrade often resets one of them.
+
+# Nerds > THREADS > 31 > title
+[Nerds.THREADS.31.title]
+Moving a hosted mailbox without losing the calendar
+
+# Nerds > THREADS > 31 > posts > 0 > text
+[Nerds.THREADS.31.posts.0.text]
+Migrating 20 mailboxes to hosted Exchange. How do I keep calendars and shared folders?
+
+# Nerds > THREADS > 31 > posts > 1 > text
+[Nerds.THREADS.31.posts.1.text]
+Export to PST is the worst way. Use the migration tool, do it in batches, and migrate on a Friday night.
+
+# Nerds > THREADS > 31 > posts > 2 > text
+[Nerds.THREADS.31.posts.2.text]
+Test with your own mailbox first, mate.
+
+# Nerds > THREADS > 31 > answer
+[Nerds.THREADS.31.answer]
+Use the migration tool in small batches on a Friday night, test with your own mailbox first, and check the shared folders.
+
+# Nerds > THREADS > 32 > title
+[Nerds.THREADS.32.title]
+Is it OK to host the RMM server in the cloud?
+
+# Nerds > THREADS > 32 > posts > 0 > text
+[Nerds.THREADS.32.posts.0.text]
+Boss wants to move our RMM server to a cloud box to save the hardware. Is that sane?
+
+# Nerds > THREADS > 32 > posts > 1 > text
+[Nerds.THREADS.32.posts.1.text]
+Works fine. Lock it down: only the agent port is open, admin through VPN, and test the backups.
+
+# Nerds > THREADS > 32 > posts > 2 > text
+[Nerds.THREADS.32.posts.2.text]
+It is a computer in somebody else's building. Treat it like one.
+
+# Nerds > THREADS > 32 > answer
+[Nerds.THREADS.32.answer]
+Fine, as long as only the agent port is open to the internet, admin goes through a VPN, and the backups are tested.
+
+# Nerds > THREADS > 33 > title
+[Nerds.THREADS.33.title]
+Disable Java auto-update on XP boxes
+
+# Nerds > THREADS > 33 > posts > 0 > text
+[Nerds.THREADS.33.posts.0.text]
+Java asks to update at every login on our XP machines and users click the wrong button.
+
+# Nerds > THREADS > 33 > posts > 1 > text
+[Nerds.THREADS.33.posts.1.text]
+Control panel, Java, Update tab, untick. Or push the setting by script and install it silently.
+
+# Nerds > THREADS > 33 > posts > 2 > text
+[Nerds.THREADS.33.posts.2.text]
+Better: remove Java where nothing needs it. Fewer holes.
+
+# Nerds > THREADS > 33 > answer
+[Nerds.THREADS.33.answer]
+Turn off the update prompt in the Java control panel, push the setting by script, and remove Java where it is not needed.
+
+# Nerds > THREADS > 34 > title
+[Nerds.THREADS.34.title]
+Set the power plan on every laptop
+
+# Nerds > THREADS > 34 > posts > 0 > text
+[Nerds.THREADS.34.posts.0.text]
+Laptops go to sleep during the nightly backup. How do I stop it?
+
+# Nerds > THREADS > 34 > posts > 1 > text
+[Nerds.THREADS.34.posts.1.text]
+Set the plan to never sleep on AC power by policy. Keep battery settings as they are.
+
+# Nerds > THREADS > 34 > posts > 2 > text
+[Nerds.THREADS.34.posts.2.text]
+Also wake the machines for the backup if the hardware allows.
+
+# Nerds > THREADS > 34 > answer
+[Nerds.THREADS.34.answer]
+Push a power plan by policy that never sleeps on AC power, and leave the battery settings alone.
+
+# Nerds > THREADS > 35 > title
+[Nerds.THREADS.35.title]
+Nightly robocopy with an email report
+
+# Nerds > THREADS > 35 > posts > 0 > text
+[Nerds.THREADS.35.posts.0.text]
+I want a nightly copy to a second box and an email if it fails. Without buying anything.
+
+# Nerds > THREADS > 35 > posts > 1 > text
+[Nerds.THREADS.35.posts.1.text]
+Robocopy with a log, a scheduled task, and a little script that mails the last lines of the log if the exit code is 8 or more.
+
+# Nerds > THREADS > 35 > posts > 2 > text
+[Nerds.THREADS.35.posts.2.text]
+Exit codes below 8 are fine. Read the manual.
+
+# Nerds > THREADS > 35 > answer
+[Nerds.THREADS.35.answer]
+Use robocopy with a log file in a scheduled task and mail the log if the exit code is 8 or more.
+
+# Nerds > THREADS > 36 > title
+[Nerds.THREADS.36.title]
+Ninite for all new installs
+
+# Nerds > THREADS > 36 > posts > 0 > text
+[Nerds.THREADS.36.posts.0.text]
+Rolling out 30 new PCs. Anyone using Ninite to install the basics?
+
+# Nerds > THREADS > 36 > posts > 1 > text
+[Nerds.THREADS.36.posts.1.text]
+Yes. Make an installer with the apps you need, run it silently, done in ten minutes. Works great with the RMM.
+
+# Nerds > THREADS > 36 > posts > 2 > text
+[Nerds.THREADS.36.posts.2.text]
+There is a paid version that updates too. Worth it for 100 machines or more.
+
+# Nerds > THREADS > 36 > answer
+[Nerds.THREADS.36.answer]
+Build a Ninite installer with your standard apps and run it silently from the RMM on every new PC.
+
+# Nerds > THREADS > 37 > title
+[Nerds.THREADS.37.title]
+Command line: find who has a file open
+
+# Nerds > THREADS > 37 > posts > 0 > text
+[Nerds.THREADS.37.posts.0.text]
+A user says a file is locked. Which command shows who has it open on the server?
+
+# Nerds > THREADS > 37 > posts > 1 > text
+[Nerds.THREADS.37.posts.1.text]
+net file shows the open files on a share. Close it with the /close switch. Or open the shared folders view.
+
+# Nerds > THREADS > 37 > posts > 2 > text
+[Nerds.THREADS.37.posts.2.text]
+turn the server off and on again
+
+# Nerds > THREADS > 37 > answer
+[Nerds.THREADS.37.answer]
+Run net file on the server to see who has it open, then close it with net file and the ID and ask the user to save first.
+
+# Nerds > THREADS > 38 > title
+[Nerds.THREADS.38.title]
+Free tool to read SMART data
+
+# Nerds > THREADS > 38 > posts > 0 > text
+[Nerds.THREADS.38.posts.0.text]
+Drive is making a noise. Anything free that shows the SMART status in a readable way?
+
+# Nerds > THREADS > 38 > posts > 1 > text
+[Nerds.THREADS.38.posts.1.text]
+There are a few free ones. Check reallocated and pending sectors. Any pending sectors and you replace the drive.
+
+# Nerds > THREADS > 38 > posts > 2 > text
+[Nerds.THREADS.38.posts.2.text]
+Replace it before it replaces you.
+
+# Nerds > THREADS > 38 > answer
+[Nerds.THREADS.38.answer]
+Use a free SMART viewer, check the reallocated and pending sector counts, and replace the drive if they are not zero.
+
+# Nerds > THREADS > 39 > title
+[Nerds.THREADS.39.title]
+Dataview: machines with no antivirus
+
+# Nerds > THREADS > 39 > posts > 0 > text
+[Nerds.THREADS.39.posts.0.text]
+Anyone have a dataview that lists every machine with no antivirus reporting?
+
+# Nerds > THREADS > 39 > posts > 1 > text
+[Nerds.THREADS.39.posts.1.text]
+Filter on missing product and last seen within 7 days, so retired machines do not show. Sort by client.
+
+# Nerds > THREADS > 39 > posts > 2 > text
+[Nerds.THREADS.39.posts.2.text]
+Exclude servers you handle differently. Add them back as a second view.
+
+# Nerds > THREADS > 39 > answer
+[Nerds.THREADS.39.answer]
+Filter on a missing antivirus product and last seen in the last seven days, so retired machines do not fill the list.
+
+# Nerds > THREADS > 40 > title
+[Nerds.THREADS.40.title]
+Dataview: laptops older than 4 years
+
+# Nerds > THREADS > 40 > posts > 0 > text
+[Nerds.THREADS.40.posts.0.text]
+Looking for a list of old laptops to build a refresh budget for a client.
+
+# Nerds > THREADS > 40 > posts > 1 > text
+[Nerds.THREADS.40.posts.1.text]
+Group by BIOS date. Anything before 2010 goes on the replace list.
+
+# Nerds > THREADS > 40 > posts > 2 > text
+[Nerds.THREADS.40.posts.2.text]
+Put the list in front of the owner in January. Not in June.
+
+# Nerds > THREADS > 40 > answer
+[Nerds.THREADS.40.answer]
+Group by BIOS date and put everything older than four years on the refresh list with a price per machine.
+
+# Nerds > THREADS > 41 > title
+[Nerds.THREADS.41.title]
+Dataview: servers with less than 10 percent free
+
+# Nerds > THREADS > 41 > posts > 0 > text
+[Nerds.THREADS.41.posts.0.text]
+A simple view for low disk space on servers. I want it on my homepage.
+
+# Nerds > THREADS > 41 > posts > 1 > text
+[Nerds.THREADS.41.posts.1.text]
+Filter servers only, the free percentage under 10 on any drive, sort by lowest. Works for me.
+
+# Nerds > THREADS > 41 > posts > 2 > text
+[Nerds.THREADS.41.posts.2.text]
+Add a second one for under 20 for the warning level.
+
+# Nerds > THREADS > 41 > answer
+[Nerds.THREADS.41.answer]
+Filter on servers, free space under ten percent on any drive, sorted lowest first, with a second view at twenty percent as a warning.
+
+# Nerds > THREADS > 42 > title
+[Nerds.THREADS.42.title]
+RAID monitoring on older servers (SNMP OID?)
+
+# Nerds > THREADS > 42 > posts > 0 > text
+[Nerds.THREADS.42.posts.0.text]
+Need the SNMP OID for RAID status on a pre-2010 server with the old controller. Vendor site has nothing.
+
+# Nerds > THREADS > 42 > posts > 1 > text
+[Nerds.THREADS.42.posts.1.text]
+Install the vendor agent so it exposes SNMP, then walk the tree and look for the logical disk status. Anything not 'ok' is an alert.
+
+# Nerds > THREADS > 42 > posts > 2 > text
+[Nerds.THREADS.42.posts.2.text]
+Walk it twice, once with a disk pulled. Then you know which number changes.
+
+# Nerds > THREADS > 42 > answer
+[Nerds.THREADS.42.answer]
+Install the controller's management agent so it exposes SNMP, then walk the tree and alert on any logical disk that is not ok.
+
+# Nerds > THREADS > 43 > title
+[Nerds.THREADS.43.title]
+UPS battery status over SNMP
+
+# Nerds > THREADS > 43 > posts > 0 > text
+[Nerds.THREADS.43.posts.0.text]
+Can I see the battery health of the small office UPS in the RMM? It beeps and nobody knows why.
+
+# Nerds > THREADS > 43 > posts > 1 > text
+[Nerds.THREADS.43.posts.1.text]
+Put a network card in the UPS, give it an address and poll the battery status and runtime. Alert under 5 minutes.
+
+# Nerds > THREADS > 43 > posts > 2 > text
+[Nerds.THREADS.43.posts.2.text]
+And replace the battery every three years. It is a consumable.
+
+# Nerds > THREADS > 43 > answer
+[Nerds.THREADS.43.answer]
+Add a network card to the UPS, poll the battery status and runtime over SNMP, and alert when the runtime drops under five minutes.
+
+# Nerds > THREADS > 44 > title
+[Nerds.THREADS.44.title]
+Switch port alerts: too noisy
+
+# Nerds > THREADS > 44 > posts > 0 > text
+[Nerds.THREADS.44.posts.0.text]
+Every time someone turns off a PC I get a port down alert. 200 a day. Help.
+
+# Nerds > THREADS > 44 > posts > 1 > text
+[Nerds.THREADS.44.posts.1.text]
+Alert only on uplink ports and server ports. Leave the user ports out.
+
+# Nerds > THREADS > 44 > posts > 2 > text
+[Nerds.THREADS.44.posts.2.text]
+Or alert when the port is down for more than an hour during working hours.
+
+# Nerds > THREADS > 44 > answer
+[Nerds.THREADS.44.answer]
+Only alert on uplink and server ports, and add a delay on the rest so a PC turned off for lunch does not page you.
+
+# Nerds > THREADS > 45 > title
+[Nerds.THREADS.45.title]
+Temperature sensor in the server closet
+
+# Nerds > THREADS > 45 > posts > 0 > text
+[Nerds.THREADS.45.posts.0.text]
+Closet has no AC. I want a temperature alert before the server cooks itself.
+
+# Nerds > THREADS > 45 > posts > 1 > text
+[Nerds.THREADS.45.posts.1.text]
+A cheap network sensor and an alert at 30 Celsius. And a fan. And tell the landlord.
+
+# Nerds > THREADS > 45 > posts > 2 > text
+[Nerds.THREADS.45.posts.2.text]
+Hot servers are the devil's work, mate.
+
+# Nerds > THREADS > 45 > answer
+[Nerds.THREADS.45.answer]
+Install a cheap network temperature sensor, alert at 30 degrees, add a fan and put the cost in the quote.
+
+# Nerds > THREADS > 46 > title
+[Nerds.THREADS.46.title]
+Feature request: bulk-close old tickets
+
+# Nerds > THREADS > 46 > posts > 0 > text
+[Nerds.THREADS.46.posts.0.text]
+Please add a way to close 500 stale tickets at once without opening each one.
+
+# Nerds > THREADS > 46 > posts > 1 > text
+[Nerds.THREADS.46.posts.1.text]
++1. Meanwhile use a report to export the IDs and close them with a script.
+
+# Nerds > THREADS > 46 > posts > 2 > text
+[Nerds.THREADS.46.posts.2.text]
+Open tickets are not an archive. Close them when they are done.
+
+# Nerds > THREADS > 46 > answer
+[Nerds.THREADS.46.answer]
+Voted for it. For now I export the IDs and close the old ones in batches.
+
+# Nerds > THREADS > 47 > title
+[Nerds.THREADS.47.title]
+Please add a dark mode
+
+# Nerds > THREADS > 47 > posts > 0 > text
+[Nerds.THREADS.47.posts.0.text]
+My eyes hurt at 2 a.m. Dark mode please. Even gray would help.
+
+# Nerds > THREADS > 47 > posts > 1 > text
+[Nerds.THREADS.47.posts.1.text]
++1. Night shift here, same.
+
+# Nerds > THREADS > 47 > posts > 2 > text
+[Nerds.THREADS.47.posts.2.text]
+just turn the monitor off
+
+# Nerds > THREADS > 47 > answer
+[Nerds.THREADS.47.answer]
+Voted for it. Night shift here too and the white screen hurts.
+
+# Nerds > THREADS > 48 > title
+[Nerds.THREADS.48.title]
+iFone 5 screen for the ticket app: please
+
+# Nerds > THREADS > 48 > posts > 0 > text
+[Nerds.THREADS.48.posts.0.text]
+Could the ticket page work on a phone? I am out of the office half the day and squinting at the full page.
+
+# Nerds > THREADS > 48 > posts > 1 > text
+[Nerds.THREADS.48.posts.1.text]
+A small screen with the ticket list and one button to take it. That is enough.
+
+# Nerds > THREADS > 48 > posts > 2 > text
+[Nerds.THREADS.48.posts.2.text]
+Vote and be patient. They read this forum.
+
+# Nerds > THREADS > 48 > answer
+[Nerds.THREADS.48.answer]
+Voted for it. A phone view with the list and a take button would save me a trip back to the office.
+
+# Nerds > THREADS > 49 > title
+[Nerds.THREADS.49.title]
+Vote: patch status on the home screen
+
+# Nerds > THREADS > 49 > posts > 0 > text
+[Nerds.THREADS.49.posts.0.text]
+Show the percent patched per client on the home screen. Boss keeps asking.
+
+# Nerds > THREADS > 49 > posts > 1 > text
+[Nerds.THREADS.49.posts.1.text]
+Voted. Meanwhile I made a dataview that counts missing patches per client.
+
+# Nerds > THREADS > 49 > posts > 2 > text
+[Nerds.THREADS.49.posts.2.text]
+I will pass it on. They said that in 2011. I am still here.
+
+# Nerds > THREADS > 49 > answer
+[Nerds.THREADS.49.answer]
+Voted for it. Until then I run a dataview and a report each Monday.
+
+# Nerds > THREADS > 50 > title
+[Nerds.THREADS.50.title]
+Moving off the old remote tool
+
+# Nerds > THREADS > 50 > posts > 0 > text
+[Nerds.THREADS.50.posts.0.text]
+Our old remote tool is being phased out. We need one that works through firewalls and works for both Mac and PC.
+
+# Nerds > THREADS > 50 > posts > 1 > text
+[Nerds.THREADS.50.posts.1.text]
+ScreenConnect is what we moved to. Self hosted, one port in, works behind most firewalls.
+
+# Nerds > THREADS > 50 > posts > 2 > text
+[Nerds.THREADS.50.posts.2.text]
+Pilot it on one client for two weeks before you roll it out to everybody.
+
+# Nerds > THREADS > 50 > answer
+[Nerds.THREADS.50.answer]
+Pick a tool that connects out through the firewall, pilot it on one client for two weeks, then move the rest.
+
+# Nerds > THREADS > 51 > title
+[Nerds.THREADS.51.title]
+VNC through the firewall: what port?
+
+# Nerds > THREADS > 51 > posts > 0 > text
+[Nerds.THREADS.51.posts.0.text]
+Client has VNC on 5900 and wants me to open the port on the firewall. Fine?
+
+# Nerds > THREADS > 51 > posts > 1 > text
+[Nerds.THREADS.51.posts.1.text]
+NO. Never open 5900 to the world. VPN, or a tunnel, or I will ban you myself.
+
+# Nerds > THREADS > 51 > posts > 2 > text
+[Nerds.THREADS.51.posts.2.text]
+Tunnel it over SSH or the remote tool. Do not expose it.
+
+# Nerds > THREADS > 51 > answer
+[Nerds.THREADS.51.answer]
+Do not open 5900. Use a VPN or a tunnel and keep VNC listening on the inside only.
+
+# Nerds > THREADS > 52 > title
+[Nerds.THREADS.52.title]
+Tunnel the remote tool through a proxy
+
+# Nerds > THREADS > 52 > posts > 0 > text
+[Nerds.THREADS.52.posts.0.text]
+One client forces all traffic through a proxy. The agent cannot connect out.
+
+# Nerds > THREADS > 52 > posts > 1 > text
+[Nerds.THREADS.52.posts.1.text]
+Set the proxy in the agent config or by script. And ask whether the proxy lets the port through at all.
+
+# Nerds > THREADS > 52 > posts > 2 > text
+[Nerds.THREADS.52.posts.2.text]
+Ours needed a whitelist for the server name. Send the IT person the address.
+
+# Nerds > THREADS > 52 > answer
+[Nerds.THREADS.52.answer]
+Set the proxy in the agent config, ask the client to whitelist the server name, and test from a lab machine first.
+
+# Nerds > THREADS > 53 > title
+[Nerds.THREADS.53.title]
+Count patching percentage per client
+
+# Nerds > THREADS > 53 > posts > 0 > text
+[Nerds.THREADS.53.posts.0.text]
+Need the percent of machines fully patched per client for the monthly report.
+
+# Nerds > THREADS > 53 > posts > 1 > text
+[Nerds.THREADS.53.posts.1.text]
+Count machines with zero missing patches and divide by active machines. Leave out retired ones.
+
+# Nerds > THREADS > 53 > posts > 2 > text
+[Nerds.THREADS.53.posts.2.text]
+Run it on the 15th, not on Patch Tuesday. Otherwise everyone is at zero.
+
+# Nerds > THREADS > 53 > answer
+[Nerds.THREADS.53.answer]
+Count machines with no missing patches, divide by the active machines, and run it mid month rather than on Patch Tuesday.
+
+# Nerds > THREADS > 54 > title
+[Nerds.THREADS.54.title]
+Bad performance percent in the health report
+
+# Nerds > THREADS > 54 > posts > 0 > text
+[Nerds.THREADS.54.posts.0.text]
+The health report gives one client 12 percent bad performance and I cannot find the cause.
+
+# Nerds > THREADS > 54 > posts > 1 > text
+[Nerds.THREADS.54.posts.1.text]
+It counts machines over 90 percent CPU for an hour. One broken backup job can do it for all of them.
+
+# Nerds > THREADS > 54 > posts > 2 > text
+[Nerds.THREADS.54.posts.2.text]
+Check what ran at that hour. Ours was an antivirus scan on all machines at 2 p.m.
+
+# Nerds > THREADS > 54 > answer
+[Nerds.THREADS.54.answer]
+Find what ran at the busy hour. A scheduled scan or a stuck backup on every machine is the usual cause.
+
+# Nerds > THREADS > 55 > title
+[Nerds.THREADS.55.title]
+Monthly report the owner will actually read
+
+# Nerds > THREADS > 55 > posts > 0 > text
+[Nerds.THREADS.55.posts.0.text]
+I send a 12 page report each month. The owner has never opened it.
+
+# Nerds > THREADS > 55 > posts > 1 > text
+[Nerds.THREADS.55.posts.1.text]
+One page. Three numbers. One sentence about what you did for them. Then a coffee.
+
+# Nerds > THREADS > 55 > posts > 2 > text
+[Nerds.THREADS.55.posts.2.text]
+I once mailed a blank page for three months. Nobody noticed.
+
+# Nerds > THREADS > 55 > answer
+[Nerds.THREADS.55.answer]
+Use one page with three numbers and one sentence about what you did for them, and bring it to the meeting.
+
+# Nerds > THREADS > 56 > title
+[Nerds.THREADS.56.title]
+SQL: tickets closed per tech per week
+
+# Nerds > THREADS > 56 > posts > 0 > text
+[Nerds.THREADS.56.posts.0.text]
+Need a query for tickets closed per tech per week for the last 12 weeks.
+
+# Nerds > THREADS > 56 > posts > 1 > text
+[Nerds.THREADS.56.posts.1.text]
+Group by tech and the week of the close date. Read only, on a copy of the database. Do not run it on the live one at 9 a.m.
+
+# Nerds > THREADS > 56 > posts > 2 > text
+[Nerds.THREADS.56.posts.2.text]
+Use a left join to the techs table or the techs with zero show nothing.
+
+# Nerds > THREADS > 56 > answer
+[Nerds.THREADS.56.answer]
+Group by tech and the week of the close date, join the techs table so zeroes show, and run it on a copy of the database.
+
+# Nerds > THREADS > 57 > title
+[Nerds.THREADS.57.title]
+How to post a script (read this first)
+
+# Nerds > THREADS > 57 > posts > 0 > text
+[Nerds.THREADS.57.posts.0.text]
+Title says what it does. Say what it was tested on. Put the script in code tags. Say how to undo it. Scripts with no undo get deleted. Not affiliated with the software vendor. Test on a lab system.
+
+# Nerds > THREADS > 57 > posts > 1 > text
+[Nerds.THREADS.57.posts.1.text]
+And comment your code. In a year you will be the stranger who needs help.
+
+# Nerds > THREADS > 57 > posts > 2 > text
+[Nerds.THREADS.57.posts.2.text]
+I POSTED MY SCRIPT AND IT HAS NO REPLIES WHY
+
+# Nerds > THREADS > 58 > title
+[Nerds.THREADS.58.title]
+Detect files with double extensions (invoice.pdf.exe)
+
+# Nerds > THREADS > 58 > posts > 0 > text
+[Nerds.THREADS.58.posts.0.text]
+Looking for a script that finds files like invoice.pdf.exe on the file shares.
+
+# Nerds > THREADS > 58 > posts > 1 > text
+[Nerds.THREADS.58.posts.1.text]
+Match names with a document extension followed by an executable one. Include .scr and .com. Log the paths, do not delete them.
+
+# Nerds > THREADS > 58 > posts > 2 > text
+[Nerds.THREADS.58.posts.2.text]
+Also check if the user's explorer hides known extensions. It does. That is why it works.
+
+# Nerds > THREADS > 58 > answer
+[Nerds.THREADS.58.answer]
+Search the shares for a document extension followed by exe, scr or com, log the paths, and turn on showing file extensions by policy.
+
+# Nerds > THREADS > 59 > title
+[Nerds.THREADS.59.title]
+Restart a stuck service remotely
+
+# Nerds > THREADS > 59 > posts > 0 > text
+[Nerds.THREADS.59.posts.0.text]
+A service hangs on stopping every few days. Need a script that kills it and starts it again.
+
+# Nerds > THREADS > 59 > posts > 1 > text
+[Nerds.THREADS.59.posts.1.text]
+Get the process ID of the service, stop the process if the stop times out, then start the service. Log it so you can prove it happened.
+
+# Nerds > THREADS > 59 > posts > 2 > text
+[Nerds.THREADS.59.posts.2.text]
+just reboot the whole server
+
+# Nerds > THREADS > 59 > answer
+[Nerds.THREADS.59.answer]
+Stop the service with a timeout, kill the process if it hangs, start it again and write a line to the log.
+
+# Nerds > THREADS > 60 > title
+[Nerds.THREADS.60.title]
+Find users with passwords that never expire
+
+# Nerds > THREADS > 60 > posts > 0 > text
+[Nerds.THREADS.60.posts.0.text]
+Audit time. I need a list of accounts with the password never expires flag.
+
+# Nerds > THREADS > 60 > posts > 1 > text
+[Nerds.THREADS.60.posts.1.text]
+Query the directory for the flag, sort by last password change, export a CSV. Exclude service accounts you have documented.
+
+# Nerds > THREADS > 60 > posts > 2 > text
+[Nerds.THREADS.60.posts.2.text]
+The CSV goes to the owner. The owner says 'oh'.
+
+# Nerds > THREADS > 60 > answer
+[Nerds.THREADS.60.answer]
+Query the directory for the never expires flag, sort by last password change, export it to a CSV and review the service accounts.
+
+# Nerds > THREADS > 61 > title
+[Nerds.THREADS.61.title]
+Script: list installed software to a CSV
+
+# Nerds > THREADS > 61 > posts > 0 > text
+[Nerds.THREADS.61.posts.0.text]
+Want an inventory of installed software for all machines at a client, in one CSV.
+
+# Nerds > THREADS > 61 > posts > 1 > text
+[Nerds.THREADS.61.posts.1.text]
+Read the uninstall keys in the registry, both the 32 bit and 64 bit locations. Add the machine name and run it from the RMM.
+
+# Nerds > THREADS > 61 > posts > 2 > text
+[Nerds.THREADS.61.posts.2.text]
+Do not use the slow WMI product class. It also triggers a repair on every MSI package.
+
+# Nerds > THREADS > 61 > answer
+[Nerds.THREADS.61.answer]
+Read the uninstall keys for both the 32 and 64 bit software, add the machine name, and export one CSV per client.
+
+# Nerds > THREADS > 62 > title
+[Nerds.THREADS.62.title]
+Welcome to the Vendor Lounge (approved vendors only)
+
+# Nerds > THREADS > 62 > posts > 0 > text
+[Nerds.THREADS.62.posts.0.text]
+Only approved vendors may post here. One post a week. No spam, no cold calls, no 'free' scanners that install a toolbar. Break this and I find your sales manager.
+
+# Nerds > THREADS > 62 > posts > 1 > text
+[Nerds.THREADS.62.posts.1.text]
+Be kind to the vendors. They have a hard job too.
+
+# Nerds > THREADS > 62 > posts > 2 > text
+[Nerds.THREADS.62.posts.2.text]
+CAN I SELL MY BROTHER'S USED LAPTOPS HERE
+
+# Nerds > THREADS > 63 > title
+[Nerds.THREADS.63.title]
+ShadowPoint Backup: forty percent off image backup
+
+# Nerds > THREADS > 63 > posts > 0 > text
+[Nerds.THREADS.63.posts.0.text]
+Image based backup with instant virtualization. Boot a dead server as a virtual machine in minutes. Forty percent off for forum members this month!
+
+# Nerds > THREADS > 63 > posts > 1 > text
+[Nerds.THREADS.63.posts.1.text]
+Tested it. The restore really is fast. The price per server is not small.
+
+# Nerds > THREADS > 63 > posts > 2 > text
+[Nerds.THREADS.63.posts.2.text]
+Vendors: one post. Brad: you used your one.
+
+# Nerds > THREADS > 64 > title
+[Nerds.THREADS.64.title]
+WebWoot Security: free scan for your clients
+
+# Nerds > THREADS > 64 > posts > 0 > text
+[Nerds.THREADS.64.posts.0.text]
+We scan your clients' websites for known holes, free for one month. See the weak spots before the bad guys do.
+
+# Nerds > THREADS > 64 > posts > 1 > text
+[Nerds.THREADS.64.posts.1.text]
+Free is fine. Ask what happens to the list of holes afterwards.
+
+# Nerds > THREADS > 64 > posts > 2 > text
+[Nerds.THREADS.64.posts.2.text]
+Get it in writing that the data stays yours.
+
+# Nerds > THREADS > 65 > title
+[Nerds.THREADS.65.title]
+SoftSwipe PSA: tired of your ticket system?
+
+# Nerds > THREADS > 65 > posts > 0 > text
+[Nerds.THREADS.65.posts.0.text]
+Our PSA does tickets, time, billing and quotes in one screen. Migrate in a weekend! Ask me about the console game raffle.
+
+# Nerds > THREADS > 65 > posts > 1 > text
+[Nerds.THREADS.65.posts.1.text]
+Does it migrate the ticket history or just the clients?
+
+# Nerds > THREADS > 65 > posts > 2 > text
+[Nerds.THREADS.65.posts.2.text]
+Great question. Let me get back to you after the weekend.
+
+# Nerds > THREADS > 66 > title
+[Nerds.THREADS.66.title]
+Rodent Nation 2014: thank you for stopping by
+
+# Nerds > THREADS > 66 > posts > 0 > text
+[Nerds.THREADS.66.posts.0.text]
+It was great to meet so many of you at the show! Slides from our session are in the usual place. The Rock Star Upgrade winner will be emailed this week.
+
+# Nerds > THREADS > 66 > posts > 1 > text
+[Nerds.THREADS.66.posts.1.text]
+Lovely booth. The pens were excellent.
+
+# Nerds > THREADS > 66 > posts > 2 > text
+[Nerds.THREADS.66.posts.2.text]
+Thank you all. The rat mascot says hello.
+
+# Nerds > THREADS > 67 > title
+[Nerds.THREADS.67.title]
+Re: Rodent Nation 2014 follow-up: your free trial
+
+# Nerds > THREADS > 67 > posts > 0 > text
+[Nerds.THREADS.67.posts.0.text]
+Hi everyone who scanned a badge at our booth: your free trial is ready! If you did not get my email, check your spam folder. And your other spam folder.
+
+# Nerds > THREADS > 67 > posts > 1 > text
+[Nerds.THREADS.67.posts.1.text]
+Three mails from one vendor in two days. That is a record.
+
+# Nerds > THREADS > 67 > posts > 2 > text
+[Nerds.THREADS.67.posts.2.text]
+i got 5 emails is that good
+
+# Nerds > THREADS > 68 > title
+[Nerds.THREADS.68.title]
+Plugin API: where are the docs?
+
+# Nerds > THREADS > 68 > posts > 0 > text
+[Nerds.THREADS.68.posts.0.text]
+I want to write a plugin. Is there any documentation on the API?
+
+# Nerds > THREADS > 68 > posts > 1 > text
+[Nerds.THREADS.68.posts.1.text]
+There is a wiki that is 70 percent accurate. The rest is in the forum posts of 2011.
+
+# Nerds > THREADS > 68 > posts > 2 > text
+[Nerds.THREADS.68.posts.2.text]
+The docs are the forum. Use the search. Buy me a coffee.
+
+# Nerds > THREADS > 68 > answer
+[Nerds.THREADS.68.answer]
+Start with the wiki, read the old forum posts, and keep a notes file on everything that turns out to be wrong.
+
+# Nerds > THREADS > 69 > title
+[Nerds.THREADS.69.title]
+Writing a plugin that reads SNMP
+
+# Nerds > THREADS > 69 > posts > 0 > text
+[Nerds.THREADS.69.posts.0.text]
+Want a plugin that reads SNMP from switches and shows port speeds in a tab.
+
+# Nerds > THREADS > 69 > posts > 1 > text
+[Nerds.THREADS.69.posts.1.text]
+Use a library, do not write the protocol yourself. Poll slowly. Cache the results.
+
+# Nerds > THREADS > 69 > posts > 2 > text
+[Nerds.THREADS.69.posts.2.text]
+And walk the tree on a lab switch first. Real switches have opinions.
+
+# Nerds > THREADS > 69 > answer
+[Nerds.THREADS.69.answer]
+Use an SNMP library, poll slowly, cache the results in your own table and test on a lab switch before production.
+
+# Nerds > THREADS > 70 > title
+[Nerds.THREADS.70.title]
+Unit testing a plugin without a lab
+
+# Nerds > THREADS > 70 > posts > 0 > text
+[Nerds.THREADS.70.posts.0.text]
+I have no lab. How do I test a plugin without breaking production?
+
+# Nerds > THREADS > 70 > posts > 1 > text
+[Nerds.THREADS.70.posts.1.text]
+Build a lab. A cheap box and a free hypervisor. A copy of the database. Half a day well spent.
+
+# Nerds > THREADS > 70 > posts > 2 > text
+[Nerds.THREADS.70.posts.2.text]
+The lab is not optional. The lab is the thing.
+
+# Nerds > THREADS > 70 > answer
+[Nerds.THREADS.70.answer]
+Build a small lab with a spare box and a free hypervisor and restore a copy of the database before testing.
 
 
 # ======================= Nerds > BLESSINGS =======================
@@ -9319,6 +10663,258 @@ she'll be right.
 # Nerds > BLESSINGS > 3
 [Nerds.BLESSINGS.3]
 no worries, and sin no more.
+
+
+# ======================= Nerds > GRUMBLES =======================
+# Nerds > GRUMBLES > 0
+[Nerds.GRUMBLES.0]
+read the FAQ next time.
+
+# Nerds > GRUMBLES > 1
+[Nerds.GRUMBLES.1]
+in my day we had a manual and we read it.
+
+# Nerds > GRUMBLES > 2
+[Nerds.GRUMBLES.2]
+this was solved in 2009. use the search.
+
+# Nerds > GRUMBLES > 3
+[Nerds.GRUMBLES.3]
+and get off my forum.
+
+
+# ======================= Nerds > CORRECTIONS =======================
+# Nerds > CORRECTIONS > 0
+[Nerds.CORRECTIONS.0]
+Re: Thanks for trying! That will not work here, read the replies above again.
+
+# Nerds > CORRECTIONS > 1
+[Nerds.CORRECTIONS.1]
+Re: Close, but test that on a lab box first. It breaks on this setup.
+
+# Nerds > CORRECTIONS > 2
+[Nerds.CORRECTIONS.2]
+Re: Nice try. Come back when you have done this one a few times.
+
+# Nerds > CORRECTIONS > 3
+[Nerds.CORRECTIONS.3]
+Re: I would not run that in production. Have a look at the earlier posts.
+
+
+# ======================= Nerds > TEXT =======================
+# Nerds > TEXT > title
+[Nerds.TEXT.title]
+LABRAT NERDS - AUTOMATING THE BURROW
+
+# Nerds > TEXT > disclaimer
+[Nerds.TEXT.disclaimer]
+This community is NOT affiliated with the software vendor. Information is provided as-is. Test all scripts on a lab system before production, including scripts from off duty vendor employees.
+
+# Nerds > TEXT > vip_locked
+[Nerds.TEXT.vip_locked]
+VIP AREA: VENDOR EMPLOYEES ONLY. THE DOOR HAS A BADGE READER AND YOU HAVE A LANYARD FULL OF STICKERS.
+
+# Nerds > TEXT > vip_guru
+[Nerds.TEXT.vip_guru]
+EVEN A GURU CANNOT GET IN. THE ADMIN SAYS THE SNACKS ARE NOT THAT GOOD.
+
+# Nerds > TEXT > vendor_closed
+[Nerds.TEXT.vendor_closed]
+Only approved vendors can post in the Vendor Lounge. You can read the offers.
+
+# Nerds > TEXT > sticky_locked
+[Nerds.TEXT.sticky_locked]
+STICKY THREAD: LOCKED, NO REPLIES.
+
+# Nerds > TEXT > solved
+[Nerds.TEXT.solved]
+SOLVED. THIS ONE IS CLOSED FOR REPLIES.
+
+# Nerds > TEXT > posted
+[Nerds.TEXT.posted]
+POSTED. +%d KARMA
+
+# Nerds > TEXT > no_karma_lost
+[Nerds.TEXT.no_karma_lost]
+ (NO KARMA LOST)
+
+# Nerds > TEXT > need_ps
+[Nerds.TEXT.need_ps]
+NEEDS POWERSHELL LEVEL %d
+
+# Nerds > TEXT > ps_note
+[Nerds.TEXT.ps_note]
+YOUR POWERSHELL IS LEVEL %d. SCRIPT: THIS CLIENT IS FOR LEVEL 2, SCRIPT: ALL CLIENTS FOR LEVEL 4.
+
+# Nerds > TEXT > ps_note_on
+[Nerds.TEXT.ps_note_on]
+YOUR POWERSHELL IS LEVEL %d. SCRIPT: THIS CLIENT IS UNLOCKED, AND SCRIPT THREADS EARN +1 KARMA.
+
+# Nerds > TEXT > dash_note
+[Nerds.TEXT.dash_note]
+TIP: THE BIGGEST NUMBER ON THE TV IS ALWAYS THE OLDEST TICKET.
+
+# Nerds > TEXT > vendor_note
+[Nerds.TEXT.vendor_note]
+%d VENDORS HAVE YOUR BADGE NUMBER FROM RODENT NATION.
+
+# Nerds > TEXT > open_note
+[Nerds.TEXT.open_note]
+OPEN = TODAY'S QUESTIONS. READ THEM FOR XP, REPLY FOR XP AND KARMA.
+
+# Nerds > TEXT > sig_regular
+[Nerds.TEXT.sig_regular]
+-- test it on a lab box first
+
+# Nerds > TEXT > sig_guru
+[Nerds.TEXT.sig_guru]
+-- GURU. I broke it before you did.
+
+
+# ======================= Nerds > BOARDS =======================
+# Nerds > BOARDS > 0 > label
+[Nerds.BOARDS.0.label]
+GENERAL SQUEAKS
+
+# Nerds > BOARDS > 0 > desc
+[Nerds.BOARDS.0.desc]
+Anything about LabRat that fits nowhere else
+
+# Nerds > BOARDS > 1 > label
+[Nerds.BOARDS.1.label]
+THE BURROW
+
+# Nerds > BOARDS > 1 > desc
+[Nerds.BOARDS.1.desc]
+Community: off topic, links, musings and war stories
+
+# Nerds > BOARDS > 2 > label
+[Nerds.BOARDS.2.label]
+PLUGIN SANDBOX
+
+# Nerds > BOARDS > 2 > desc
+[Nerds.BOARDS.2.desc]
+Plugins you wrote, plugins you broke
+
+# Nerds > BOARDS > 3 > label
+[Nerds.BOARDS.3.label]
+CUSTOM TABS
+
+# Nerds > BOARDS > 3 > desc
+[Nerds.BOARDS.3.desc]
+Sub-forum: tabs on the computer screen
+
+# Nerds > BOARDS > 4 > label
+[Nerds.BOARDS.4.label]
+DASHBOARDS
+
+# Nerds > BOARDS > 4 > desc
+[Nerds.BOARDS.4.desc]
+Sub-forum: tiles, wall TVs and big red numbers
+
+# Nerds > BOARDS > 5 > label
+[Nerds.BOARDS.5.label]
+ADVANCED CONFIGS
+
+# Nerds > BOARDS > 5 > desc
+[Nerds.BOARDS.5.desc]
+Crazy modifications and semi-hidden features
+
+# Nerds > BOARDS > 6 > label
+[Nerds.BOARDS.6.label]
+CLOUD BURROW
+
+# Nerds > BOARDS > 6 > desc
+[Nerds.BOARDS.6.desc]
+Hosted servers, hosted mail, other people's computers
+
+# Nerds > BOARDS > 7 > label
+[Nerds.BOARDS.7.label]
+CONFIG TIPS
+
+# Nerds > BOARDS > 7 > desc
+[Nerds.BOARDS.7.desc]
+Small settings that save a big headache
+
+# Nerds > BOARDS > 8 > label
+[Nerds.BOARDS.8.label]
+COOL TOOLS
+
+# Nerds > BOARDS > 8 > desc
+[Nerds.BOARDS.8.desc]
+Command line tools, scripts and PowerShell
+
+# Nerds > BOARDS > 9 > label
+[Nerds.BOARDS.9.label]
+DATAVIEW SWAP
+
+# Nerds > BOARDS > 9 > desc
+[Nerds.BOARDS.9.desc]
+Share and build dataviews
+
+# Nerds > BOARDS > 10 > label
+[Nerds.BOARDS.10.label]
+HARDWARE MONITORING
+
+# Nerds > BOARDS > 10 > desc
+[Nerds.BOARDS.10.desc]
+Tools and SNMP OIDs
+
+# Nerds > BOARDS > 11 > label
+[Nerds.BOARDS.11.label]
+FEATURE REQUESTS
+
+# Nerds > BOARDS > 11 > desc
+[Nerds.BOARDS.11.desc]
+Let us know what would make your job even easier
+
+# Nerds > BOARDS > 12 > label
+[Nerds.BOARDS.12.label]
+REMOTE CONTROL
+
+# Nerds > BOARDS > 12 > desc
+[Nerds.BOARDS.12.desc]
+Redirectors, tunnels and VNC
+
+# Nerds > BOARDS > 13 > label
+[Nerds.BOARDS.13.label]
+REPORTING
+
+# Nerds > BOARDS > 13 > desc
+[Nerds.BOARDS.13.desc]
+Reports, report ideas and some SQL
+
+# Nerds > BOARDS > 14 > label
+[Nerds.BOARDS.14.label]
+SCRIPT SWAP
+
+# Nerds > BOARDS > 14 > desc
+[Nerds.BOARDS.14.desc]
+Share your scripts: the biggest board
+
+# Nerds > BOARDS > 15 > label
+[Nerds.BOARDS.15.label]
+VENDOR LOUNGE
+
+# Nerds > BOARDS > 15 > desc
+[Nerds.BOARDS.15.desc]
+Approved vendors only can post. Everybody can read.
+
+# Nerds > BOARDS > 16 > label
+[Nerds.BOARDS.16.label]
+VIP AREA
+
+# Nerds > BOARDS > 16 > desc
+[Nerds.BOARDS.16.desc]
+For vendor employees ONLY
+
+# Nerds > BOARDS > 17 > label
+[Nerds.BOARDS.17.label]
+PLUGIN DEVELOPMENT
+
+# Nerds > BOARDS > 17 > desc
+[Nerds.BOARDS.17.desc]
+Writing plugins: API, SDK, and the lab you do not have
 
 
 # ======================= Lync > MESSAGES =======================
@@ -11251,6 +12847,102 @@ ASK ABOUT YOUR CREW
 # Expo > FORUM > 0 > options > 3 > text_free
 [Expo.FORUM.0.options.3.text_free]
 'Say thanks out loud, mate. It costs nothing and techs remember it.'
+
+# Expo > FORUM > 1 > speaker
+[Expo.FORUM.1.speaker]
+GrizzleAdmin (the forum admin since 2008)
+
+# Expo > FORUM > 1 > text
+[Expo.FORUM.1.text]
+Hmph. I run the boards. Been here since the forum was one box under a desk. Before you ask: yes, I read the FAQ, no, you did not, and no, I will not unban the guy who posted in capitals for a week.
+
+# Expo > FORUM > 1 > options > 0 > label
+[Expo.FORUM.1.options.0.label]
+ASK ABOUT THE OLD DAYS
+
+# Expo > FORUM > 1 > options > 0 > text
+[Expo.FORUM.1.options.0.text]
+He tells you about the first forum server: a desktop under a desk, the database on the same disk as the system. 'It died on a Friday. Separate the data from the system and back up both. Now go away.' (+4 servers XP)
+
+# Expo > FORUM > 1 > options > 1 > label
+[Expo.FORUM.1.options.1.label]
+SHOW HIM YOUR LAB NOTES
+
+# Expo > FORUM > 1 > options > 1 > text
+[Expo.FORUM.1.options.1.text]
+He reads your notes for a long, silent minute. 'You test before production. Good. Nobody does.' He almost smiles. Almost. (+3 security XP)
+
+# Expo > FORUM > 1 > options > 2 > label
+[Expo.FORUM.1.options.2.label]
+ASK ABOUT THE RULES
+
+# Expo > FORUM > 1 > options > 2 > text
+[Expo.FORUM.1.options.2.text]
+'Search first. Say what version. No capitals. Test on a lab box.' He nods. 'You follow them, which is why I have never banned you.' (+3 forum karma)
+
+# Expo > FORUM > 1 > options > 2 > text_free
+[Expo.FORUM.1.options.2.text_free]
+'Search first. Say what version. No capitals. Test on a lab box. That is all of it.'
+
+# Expo > FORUM > 1 > options > 3 > label
+[Expo.FORUM.1.options.3.label]
+OFFER HIM A COFFEE
+
+# Expo > FORUM > 1 > options > 3 > text
+[Expo.FORUM.1.options.3.text]
+'Black. No sugar. The cup is always too small.' He tells you the best thing a tech can do is bring the coffee when the server is down. You will try it. (coworkers like you a little more)
+
+# Expo > FORUM > 1 > options > 3 > text_free
+[Expo.FORUM.1.options.3.text_free]
+'Black. No sugar. Hmph. Thanks.'
+
+# Expo > FORUM > 2 > speaker
+[Expo.FORUM.2.speaker]
+HELPPLZ_Pip (forum newbie)
+
+# Expo > FORUM > 2 > text
+[Expo.FORUM.2.text]
+HI!!! I AM PIP!!! MY CAPS LOCK IS STUCK AND SO IS EVERYTHING ELSE!!! THE ADMIN SAYS I AM NOT ALLOWED TO TALK LIKE THIS!!! DO YOU HAVE A MINUTE???
+
+# Expo > FORUM > 2 > options > 0 > label
+[Expo.FORUM.2.options.0.label]
+HELP WITH HIS PROBLEM
+
+# Expo > FORUM > 2 > options > 0 > text
+[Expo.FORUM.2.options.0.text]
+His PC is slow. You ask what it does when it is slow: he has 40 toolbars and 3 antivirus programs. You teach him to take things away one at a time. 'WOW THANK YOU!!!' (+4 customer XP)
+
+# Expo > FORUM > 2 > options > 1 > label
+[Expo.FORUM.2.options.1.label]
+TEACH HIM THE SEARCH BOX
+
+# Expo > FORUM > 2 > options > 1 > text
+[Expo.FORUM.2.options.1.text]
+You show him the search box and how to say which version he has. His next post is in lower case. The admin pins it out of pure shock. (+3 forum karma)
+
+# Expo > FORUM > 2 > options > 1 > text_free
+[Expo.FORUM.2.options.1.text_free]
+You show him the search box. He says 'WHAT A BUTTON.'
+
+# Expo > FORUM > 2 > options > 2 > label
+[Expo.FORUM.2.options.2.label]
+ASK ABOUT THE CAPS
+
+# Expo > FORUM > 2 > options > 2 > text
+[Expo.FORUM.2.options.2.text]
+'IT IS ON SINCE 2011!!!' You press the key. He stares at the keyboard for a long time. 'MY WHOLE LIFE.' (+3 customer XP)
+
+# Expo > FORUM > 2 > options > 3 > label
+[Expo.FORUM.2.options.3.label]
+GIVE HIM YOUR TOTE BAG
+
+# Expo > FORUM > 2 > options > 3 > text
+[Expo.FORUM.2.options.3.text]
+He puts it on his head and tells everyone near the booth about you in capital letters. By Monday your coworkers have heard. (coworkers like you a little more)
+
+# Expo > FORUM > 2 > options > 3 > text_free
+[Expo.FORUM.2.options.3.text_free]
+He puts it on his head and tells everyone about you.
 
 
 # ======================= PrinterGame > TEXT =======================

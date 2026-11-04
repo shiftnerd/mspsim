@@ -32,6 +32,18 @@ local CHARS = {
     tufts = true, squint = {lid = "#9A583A"}, grin = true, burn = "#DC7458", goatee = "#7A5230",
     clerical = true, cross = "#B07A3E",
   },
+  expo_grizzle = {   -- GrizzleAdmin (LabRat Nerds forum admin since 2008): the grumpy old-timer, grey tufts, a squint, a grey goatee, faded red flannel
+    skin = {"#EDC4A4", "#D2A07E", "#B07E5E"}, hair = {"#B9B9C2", "#DADAE2", "#8E8E98"},
+    shirt = {"#8A2E34", "#64202A"}, pants = {"#6A6350", "#544E3E", "#403B2E"}, shoes = {"#5A4632", "#42331F"},
+    belt = "#3A2A1A", stubble = false, lips = "#9A5A48",
+    tufts = true, squint = {lid = "#B58868"}, goatee = "#9A9AA4",
+  },
+  expo_pip = {   -- HELPPLZ_Pip (the newbie who posts everything in capitals): bright green tee, wild hair, a big open mouth
+    skin = {"#F6C8A4", "#DE9E7A", "#BC7C58"}, hair = {"#2A2A34", "#44444F", "#1A1A22"},
+    shirt = {"#4ED03E", "#37A02C"}, pants = {"#3A5A9A", "#2A4478", "#1E3258"}, shoes = {"#E8E8EE", "#B8B8C4"},
+    belt = "#2A2A34", stubble = false, lips = "#B05A4A",
+    tufts = true, grin = true,
+  },
 }
 
 local function put(im, x, y, c)

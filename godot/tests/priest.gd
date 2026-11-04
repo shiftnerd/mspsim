@@ -153,10 +153,10 @@ func _init() -> void:
 	cards.pick(0)
 	c.active = true
 
-	# the IRC channel: seven nicks, four answer, and MPriest ends with a blessing
+	# the IRC channel: nine nicks, four answer, and MPriest ends with a blessing
 	_check(
-		nerds.NICKS.has("MPriest") and nerds.NICKS.size() == 7,
-		"MPriest is the seventh voice in #labratnerds"
+		nerds.NICKS.has("MPriest") and nerds.NICKS.size() == 9,
+		"MPriest is one of nine voices in #labratnerds"
 	)
 	var blessed := 0
 	for i in 40:
