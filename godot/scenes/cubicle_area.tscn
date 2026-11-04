@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://scripts/port.gd" id="port"]
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
-[ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_office_side.png" id="prop_chair_office_side"]
 [ext_resource type="Texture2D" path="res://assets/props/cooler.png" id="prop_cooler"]
 [ext_resource type="Texture2D" path="res://assets/props/copier.png" id="prop_copier"]
 [ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_74.png" id="prop_desk_cubicle_74"]
@@ -221,11 +221,11 @@ kind = "tv"
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
 
-[node name="chair_office_0" type="Sprite2D" parent="Actors"]
+[node name="chair_office_side_0" type="Sprite2D" parent="Actors"]
 position = Vector2(44, 95)
 centered = false
 offset = Vector2(0, -30)
-texture = ExtResource("prop_chair_office")
+texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_1" type="Sprite2D" parent="Actors"]
 position = Vector2(46, 108)
@@ -286,11 +286,11 @@ kind = "desk_phone"
 seed_offset = 6
 desk = 4
 
-[node name="chair_office_7" type="Sprite2D" parent="Actors"]
+[node name="chair_office_side_7" type="Sprite2D" parent="Actors"]
 position = Vector2(128, 95)
 centered = false
 offset = Vector2(0, -30)
-texture = ExtResource("prop_chair_office")
+texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_8" type="Sprite2D" parent="Actors"]
 position = Vector2(130, 108)

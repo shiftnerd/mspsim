@@ -46,6 +46,15 @@ function L.piece(w, h, fn)
 end
 
 -- filled box with highlight on top/left and shade on bottom/right
+-- horizontal mirror of an image (left-facing version of a right-facing side view)
+function L.flipH(img)
+  local o = Image(img.width, img.height, ColorMode.RGB)
+  for y = 0, img.height - 1 do
+    for x = 0, img.width - 1 do o:putPixel(img.width - 1 - x, y, img:getPixel(x, y)) end
+  end
+  return o
+end
+
 function L.box(R, x, y, w, h, base, hi, sh)
   R(x, y, w, h, base)
   R(x + w - 1, y, 1, h, sh)
@@ -398,12 +407,22 @@ function P.keyboardSide()
   end)
 end
 
+-- an office task chair from the side, facing RIGHT (mirror it for a left-facing sitter with L.flipH): a thick backrest at the
+-- back (left) with a lumbar notch, a cushioned seat with a rounded front edge, a gas lift on a slim hub, a five-star base seen
+-- from the side (two long legs and a short one) with casters. Same box as the front chair: 18x33, seat top 15 px, wheels at 31..33.
 function P.chairSide(base, hi, sh)
   base = base or "#2A2A33"; hi = hi or "#4A4A56"; sh = sh or "#1C1C24"
   return L.piece(18, 33, function(R)
-    L.box(R, 0, 0, 3, 15, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
+    L.box(R, 0, 1, 4, 13, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
+    R(1, 0, 2, 1, base); R(1, 0, 2, 1, hi)                   -- rounded top
+    R(1, 2, 1, 8, hi)                                        -- lit edge on the back
+    R(3, 8, 1, 3, sh)                                        -- lumbar notch
+    R(1, 14, 3, 2, sh)                                       -- back post into the seat
     L.box(R, 0, 15, 18, 4, base, hi, sh)                     -- seat
-    R(8, 19, 2, 10, sh)                                      -- gas post
+    R(1, 15, 14, 1, hi)                                      -- lit top of the cushion
+    R(17, 15, 1, 1, sh)                                      -- rounded front edge
+    R(5, 19, 8, 2, sh)                                       -- seat mechanism
+    R(8, 21, 2, 8, sh)                                       -- gas lift
     R(1, 29, 16, 2, base)                                    -- star base
     R(0, 31, 3, 2, sh); R(15, 31, 3, 2, sh); R(7, 31, 3, 2, sh)
   end)

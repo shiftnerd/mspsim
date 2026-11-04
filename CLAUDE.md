@@ -308,7 +308,15 @@ New characters start as a copy of an existing one, then change only what differs
 - Every piece in `tools/lib.lua` now has a `side` frame: builders are `P.*Side` in `lib.lua` (desk phone, desks, bookshelf, monitor,
   keyboard, chair) and `tools/side_views.lua` (everything else). `tools/build_angles.lua` rebuilds all piece files (new files:
   copier, cooler, toilet, bath_sink, mirror, plant_floor, whiteboard). Wall items are thin edge-on slabs, doors are a slab + knob/handle.
-- The sets still use the `front` frames; side frames are not exported to Godot yet (planned: a per-prop `angle` setting).
+- Chairs are the exception: every chair someone sits in uses the `side` frame (`P.chairSide`: backrest at the back, cushioned seat, gas lift,
+  five-star base; same 18x33 box as the front chair, so seat top, feet y 101/89, `cup_dx` and the chair roll are unchanged). Left-facing
+  seats mirror it with `L.flipH` (pieces `*_side_l`; only the conference FRONT row uses it, the sitters all face right). Pieces are named
+  `chair_office_side`, `chair_office_brown_side`, `chair_exec_side`, `chair_conference_side[_l]`, `chair_karaoke_side`, `chair_gold_side`,
+  `chair_wood_side`, `chair_velvet_side`, `chair_blue_side` (the old front PNGs are gone except `chair_office.png`, which the chair race
+  puppets still draw). Placement rule: chair left edge = seat x - 15 (desk chairs, what `chair_roll.gd` `SEAT_DX` expects) or about seat x - 14
+  for the other rooms, so the backrest stands right behind the sitter's back. Test `tests/side_chairs.gd` checks every non-lounge seat in a room
+  with chairs has one; screenshots with `tests/seat_chair_shots.gd` (`SC_TAG`, `SC_ONLY` env, `-- --format=wide|h|v`, renderer needed).
+  Other furniture (couch, booth backs, bar stools, benches) still uses the `front` frames or its own art.
 
 ### Taller sets: ceiling + floor extension (for 16:9 and 9:16 video)
 - Set backgrounds are now **W x 320** (100 ceiling + the old 128 + 92 floor extension). Builders keep their old 0..128

@@ -1,8 +1,8 @@
 [
 {"piece":"lab_table","x":43,"y":57,"sort":92},
 {"piece":"lab_table","x":113,"y":57,"sort":92},
-{"piece":"chair_blue","x":75,"y":79,"sort":98},
-{"piece":"chair_blue","x":105,"y":79,"sort":98},
-{"piece":"chair_blue","x":135,"y":79,"sort":98},
+{"piece":"chair_blue_side","x":70,"y":79,"sort":98},
+{"piece":"chair_blue_side","x":100,"y":79,"sort":98},
+{"piece":"chair_blue_side","x":130,"y":79,"sort":98},
 {"piece":"plant_floor","x":5,"y":73,"sort":101}
 ]

@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://scripts/port.gd" id="port"]
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
-[ext_resource type="Texture2D" path="res://assets/props/chair_blue.png" id="prop_chair_blue"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_blue_side.png" id="prop_chair_blue_side"]
 [ext_resource type="Texture2D" path="res://assets/props/lab_table.png" id="prop_lab_table"]
 [ext_resource type="Texture2D" path="res://assets/props/plant_floor.png" id="prop_plant_floor"]
 
@@ -140,23 +140,23 @@ centered = false
 offset = Vector2(0, -35)
 texture = ExtResource("prop_lab_table")
 
-[node name="chair_blue_2" type="Sprite2D" parent="Actors"]
-position = Vector2(139, 98)
+[node name="chair_blue_side_2" type="Sprite2D" parent="Actors"]
+position = Vector2(134, 98)
 centered = false
 offset = Vector2(0, -19)
-texture = ExtResource("prop_chair_blue")
+texture = ExtResource("prop_chair_blue_side")
 
-[node name="chair_blue_3" type="Sprite2D" parent="Actors"]
-position = Vector2(169, 98)
+[node name="chair_blue_side_3" type="Sprite2D" parent="Actors"]
+position = Vector2(164, 98)
 centered = false
 offset = Vector2(0, -19)
-texture = ExtResource("prop_chair_blue")
+texture = ExtResource("prop_chair_blue_side")
 
-[node name="chair_blue_4" type="Sprite2D" parent="Actors"]
-position = Vector2(199, 98)
+[node name="chair_blue_side_4" type="Sprite2D" parent="Actors"]
+position = Vector2(194, 98)
 centered = false
 offset = Vector2(0, -19)
-texture = ExtResource("prop_chair_blue")
+texture = ExtResource("prop_chair_blue_side")
 
 [node name="plant_floor_5" type="Sprite2D" parent="Actors"]
 position = Vector2(69, 101)

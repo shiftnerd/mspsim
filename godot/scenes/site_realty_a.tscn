@@ -10,7 +10,7 @@
 [ext_resource type="Script" path="res://scripts/port.gd" id="port"]
 [ext_resource type="Script" path="res://scripts/rack_zone.gd" id="rack_zone"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="npc"]
-[ext_resource type="Texture2D" path="res://assets/props/chair_office.png" id="prop_chair_office"]
+[ext_resource type="Texture2D" path="res://assets/props/chair_office_side.png" id="prop_chair_office_side"]
 [ext_resource type="Texture2D" path="res://assets/props/coffee_bar_a.png" id="prop_coffee_bar_a"]
 [ext_resource type="Texture2D" path="res://assets/props/desk_cubicle_74.png" id="prop_desk_cubicle_74"]
 [ext_resource type="Texture2D" path="res://assets/props/keyboard.png" id="prop_keyboard"]
@@ -199,11 +199,11 @@ centered = false
 offset = Vector2(0, -41)
 texture = ExtResource("prop_coffee_bar_a")
 
-[node name="chair_office_1" type="Sprite2D" parent="Actors"]
+[node name="chair_office_side_1" type="Sprite2D" parent="Actors"]
 position = Vector2(136, 95)
 centered = false
 offset = Vector2(0, -30)
-texture = ExtResource("prop_chair_office")
+texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_2" type="Sprite2D" parent="Actors"]
 position = Vector2(138, 108)
@@ -249,11 +249,11 @@ centered = false
 offset = Vector2(0, -29)
 texture = ExtResource("prop_mouse")
 
-[node name="chair_office_7" type="Sprite2D" parent="Actors"]
+[node name="chair_office_side_7" type="Sprite2D" parent="Actors"]
 position = Vector2(210, 95)
 centered = false
 offset = Vector2(0, -30)
-texture = ExtResource("prop_chair_office")
+texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_8" type="Sprite2D" parent="Actors"]
 position = Vector2(212, 108)
