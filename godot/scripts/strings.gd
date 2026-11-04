@@ -21,7 +21,7 @@ const ROOTS := {
 	"ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
 	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
 	"Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
-	"Nerds": ["JOKES", "THREADS"],
+	"Nerds": ["JOKES", "THREADS", "BLESSINGS"],
 	"Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
 	"Review": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"],
 	"Social": ["THANKS"],
@@ -30,7 +30,7 @@ const ROOTS := {
 	"Hints": ["DAY1"],
 	"Career": ["MEDALS", "UNLOCKS"],
 	"Growth": ["STRETCH"],
-	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS"],
+	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
 	"PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
 	"Onsite":
 	["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],

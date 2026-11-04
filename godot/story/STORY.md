@@ -1030,6 +1030,15 @@ or the owner (owner campaign, 20 weeks).
 - Windows XP end of support: migration list? `[Nerds.THREADS.8.title]`
 - Script to clean temp files on every client `[Nerds.THREADS.9.title]`
 
+### LabRat Nerds regulars at Rodent Nation (the forum people in the crowd)
+
+- **MPriest (Priest Michael, forum mod, Australia)** `[Expo.FORUM.0.speaker]`
+  - G'day! Michael. On the forum I am MPriest, and the collar is a long story. Half my private messages start with: Forgive me, father, for I rebooted production at 3 p.m. So, what is weighing on you? `[Expo.FORUM.0.text]`
+  - **CONFESS A SYSADMIN SIN** `[Expo.FORUM.0.options.0.label]`: You admit you never tested a restore. He sighs like a man who has heard it before. A green tick on the report is a rumour, mate, not a restore. Test one every month and go and sin no more. (+4 servers XP) `[Expo.FORUM.0.options.0.text]`
+  - **BLESS MY FRESH BACKUP** `[Expo.FORUM.0.options.1.label]`: He lays two fingers on your laptop. 'In the name of the full, the differential and the offsite copy.' Then he grins. 'It only counts once you have restored it. She'll be right.' (+3 security XP) `[Expo.FORUM.0.options.1.text]`
+  - **ASK ABOUT THE FORUM** `[Expo.FORUM.0.options.2.label]`: 'Your answers are decent. Plain and polite, and nobody ever got banned for polite.' He pins one of your posts to the top of the thread. (+3 forum karma) `[Expo.FORUM.0.options.2.text]`
+  - **ASK ABOUT YOUR CREW** `[Expo.FORUM.0.options.3.label]`: 'Say thanks out loud. It costs nothing and techs remember it longer than the raise.' You decide to try it on Monday. (coworkers like you a little more) `[Expo.FORUM.0.options.3.text]`
+
 ### Instant messages from coworkers (Lync)
 
 - **lunch**: Lunch? A few of us are grabbing sandwiches. `[Lync.MESSAGES.lunch.text]`

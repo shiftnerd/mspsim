@@ -515,6 +515,58 @@ const DEFAULT_CHATS := [
 	},
 ]
 var CHATS: Array = DEFAULT_CHATS.duplicate(true)
+# LabRat Nerds forum regulars at the conference: each stands in the crowd with the role forum:<id> and has one short chat per trip
+# (nobody is shuffled into a slot: they are fixed people). Option fields: skill + xp, karma (forum karma) and social (every coworker's
+# opinion) only count in a campaign, text_free is what the option says in Free Play instead of text.
+const DEFAULT_FORUM := [
+	{
+		"id": "priest",
+		"speaker": "MPriest (Priest Michael, forum mod, Australia)",
+		"text":
+		"G'day! Michael. On the forum I am MPriest, and the collar is a long story. Half my private messages start with: Forgive me, father, for I rebooted production at 3 p.m. So, what is weighing on you?",
+		"options":
+		[
+			{
+				"id": "confess",
+				"label": "CONFESS A SYSADMIN SIN",
+				"skill": "servers",
+				"xp": 4,
+				"text":
+				"You admit you never tested a restore. He sighs like a man who has heard it before. A green tick on the report is a rumour, mate, not a restore. Test one every month and go and sin no more. (+4 servers XP)"
+			},
+			{
+				"id": "bless",
+				"label": "BLESS MY FRESH BACKUP",
+				"skill": "security",
+				"xp": 3,
+				"text":
+				"He lays two fingers on your laptop. 'In the name of the full, the differential and the offsite copy.' Then he grins. 'It only counts once you have restored it. She'll be right.' (+3 security XP)"
+			},
+			{
+				"id": "forum",
+				"label": "ASK ABOUT THE FORUM",
+				"skill": "",
+				"xp": 0,
+				"karma": 3,
+				"text":
+				"'Your answers are decent. Plain and polite, and nobody ever got banned for polite.' He pins one of your posts to the top of the thread. (+3 forum karma)",
+				"text_free":
+				"'Good bunch, the forum. Plain answers and no flame wars on my watch. Come back when you have a real job on.'"
+			},
+			{
+				"id": "crew",
+				"label": "ASK ABOUT YOUR CREW",
+				"skill": "",
+				"xp": 0,
+				"social": 1,
+				"text":
+				"'Say thanks out loud. It costs nothing and techs remember it longer than the raise.' You decide to try it on Monday. (coworkers like you a little more)",
+				"text_free": "'Say thanks out loud, mate. It costs nothing and techs remember it.'"
+			},
+		],
+	},
+]
+var FORUM: Array = DEFAULT_FORUM.duplicate(true)
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
 const SPEAKERS := {
 	"ps101": ["GARY NOVAK", "LABRAT TRAINING"],
@@ -576,6 +628,13 @@ const CROWD := {
 			"x": 280,
 			"facing": "left",
 			"routine": ["wait:4", "say:2"]
+		},
+		{
+			"who": "expo_priest",
+			"role": "forum:priest",
+			"x": 224,
+			"facing": "left",
+			"routine": ["wait:5", "talk:4", "wait:3", "say:2"]
 		},
 	],
 	"ballroom":
@@ -1334,6 +1393,8 @@ func npc_use(npc: Node, _body: Node) -> void:
 		_pitch(role.substr(7))
 	elif role.begins_with("att:"):
 		_chat(int(role.substr(4)) % CHATS.size())
+	elif role.begins_with("forum:"):
+		_forum(role.substr(6))
 
 
 func _checkin() -> void:
@@ -1421,6 +1482,56 @@ func _chat(index: int) -> void:
 func _greeting() -> String:
 	var line := str(TEXT.get("greet_" + Nerds.rank().to_lower(), ""))
 	return line + " " if line != "" else ""
+
+
+# a forum regular from Expo.FORUM (role forum:<id>): one chat per trip, an option can give XP, forum karma and coworker opinion
+func forum_def(id: String) -> Dictionary:
+	for f in FORUM:
+		if str(f.id) == id:
+			return f
+	return {}
+
+
+func _forum(id: String) -> void:
+	var c := forum_def(id)
+	if c.is_empty():
+		return
+	if _talked.has("forum:" + id):
+		Cards.ask(
+			str(c.speaker),
+			str(TEXT.chat_again),
+			[{"label": "OK", "id": "ok"}],
+			func(_id: String) -> void: pass
+		)
+		return
+	var options := []
+	for o in c.options:
+		options.append({"label": str(o.label), "id": str(o.id)})
+	Cards.ask(
+		str(c.speaker),
+		_greeting() + str(c.text),
+		options,
+		func(oid: String) -> void: _forum_answer(id, oid)
+	)
+
+
+func _forum_answer(id: String, oid: String) -> void:
+	var c := forum_def(id)
+	var text := ""
+	for o in c.options:
+		if str(o.id) != oid:
+			continue
+		text = str(o.text)
+		if int(o.xp) > 0 and str(o.skill) != "":
+			Skills.add_xp(str(o.skill), int(o.xp))
+		if Campaign.active:
+			Nerds.karma += int(o.get("karma", 0))
+			if int(o.get("social", 0)) != 0:
+				Social.change_all(int(o.social))
+		elif o.has("text_free"):
+			text = str(o.text_free)
+	_talked["forum:" + id] = true
+	Cards.ask(str(c.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 
 
 func _chat_answer(index: int, oid: String) -> void:

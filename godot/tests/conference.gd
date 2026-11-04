@@ -103,6 +103,11 @@ func _check_crowd_clean() -> void:
 		if str(entry.role) == "checkin":
 			clerk = str(entry.who)
 	_check(clerk == "expo_regdesk", "the check-in clerk is the conference staffer (%s)" % clerk)
+	# Priest Michael, the LabRat Nerds forum regular (tests/priest.gd has the rest), stands in the hall
+	var priest := 0
+	for entry in cf.CROWD.resort_hall:
+		priest += 1 if str(entry.who) == "expo_priest" and str(entry.role) == "forum:priest" else 0
+	_check(priest == 1, "Priest Michael stands in the hall")
 	for room in ["breakout_a", "breakout_b", "breakout_c", "breakout_d"]:
 		var speakers := 0
 		for entry in cf.CROWD[room]:
