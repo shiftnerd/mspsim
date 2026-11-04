@@ -5,40 +5,23 @@ Sections: the two campaigns, the shared systems, the world and the characters, p
 Items marked **(real story)** came from the /r/msp research (see `docs/msp-research.md`).
 Open bugs and polish live in `docs/BACKLOG.md`; the long replayability write-up is `docs/replayability-ideas.md` (effort S/M/L and code hooks for every item).
 
-## Replayability and variety (approved, in roadmap order)
-All of it follows the same rules: data tables (patchable, in `strings.txt` style) not code, numbers in one `TIERS` table, every game reads a seeded `Difficulty.rng(stream)` so runs and tests are reproducible, parody names only, 2013-14 only, and never punish the player for family or health reasons.
-1. **Difficulty and seeds** (easy / normal / hard on the title menu, run seed shown and saved, saved settings): *building now.*
-2. **Printer variety**: 28+ error questions, models (laser, inkjet, plotter, multifunction, receipt, dot matrix), tier-scaled question count, escalating jam chains, a boss-level server-room line printer, parts bag, "no-prayer streak" medal, seeded practice.
-3. **Karaoke songs**: four invented-title songs (a 2013 pop hit, a country singalong, an 80s classic, a fast rap), tempo / hold notes / double notes by tier, crowd-mood meter, duets with a coworker, set lists, pager chime on on-call weeks (cosmetic, never a hidden penalty).
-4. **Escape room**: clue recipes (sum, roman numeral, letter-to-number), randomised clue spots, a 4-digit code on hard, red herrings, timer scaling, friend-specific hints; later themed rooms (server room, 1990s arcade, vault).
-5. **Who comes along**: an `Outings.roster()` and per-person tables so Maya and Vic join, bowling personalities (steady, streaky, wild, precise, show-off), dinner tastes that shift per save.
-6. **Dinner**: 16+ topics with tags, mood of the day, dietary quirks (affectionate), a client or prospect at the table, "the owner pays" budget, table events, post-dinner one-on-ones.
-7. **Career screen and medals** (GUTTER GURU, PRINTER WHISPERER, DUCK WHISPERER, NEVER RESTARTED...), cosmetic unlocks (outfit skins, desk toys, wallpapers), nerf-war scoring (most ducked, sniper, friendly fire).
-8. **Event deck (40 cards) and vignette deck (24)** using the existing vignette `fx` resolver.
-9. **Mutators** (Heartbleed week, XP end of life, flu season, printer apocalypse, tax season, hardware recall...) and **starting conditions** (inherit a messy MSP, the only tech, a rival wants your client).
-10. **Year 2 / New Game+** (new clients active, shifted story beats, harder SLAs) and a **daily seed**; a Free Play toolbox (pick any game, song, printer model, arena, seed) for filming.
-Later: bowling lane oil / spin / alleys / league night / handicaps, nerf modes (capture the monitor, VIP defence, scarce ammo, arenas), conference-trip randomisation, onsite job parameter variance and a dispatch roulette.
+## Replayability and variety (built)
+The ten approved replayability items are built: difficulty and seeds, printer variety, karaoke songs, the escape room recipes, who comes along, dinner variety, the career screen and medals, the event and vignette decks, mutators and starting conditions, Year 2 and the daily seed with the Free Play toolbox, plus bowling, nerf, trip and onsite variety. What is left from them is tracked in `docs/ROADMAP.md` (rows R1 to R12) and described in `docs/replayability-ideas.md`.
+The rules stay: data tables (patchable, in `strings.txt` style) not code, numbers in one `TIERS` table, every game reads a seeded `Difficulty.rng(stream)` so runs and tests are reproducible, parody names only, 2013-14 only, and never punish the player for family or health reasons.
 
-## New campaign paths (user direction)
-**Canon (user, latest): Alan and Garrison are the two owners of Pixel IT Partners.** Alan is the technical owner, Garrison the sales-and-culture owner (Office 1 and Office 2 are theirs). Morgan Reyes stays the manager, Marge the bookkeeper, Vic the account manager. This changes the cast roles the game uses today (Alan "senior tech", Garrison "security-minded tech"): a text pass is in `docs/BACKLOG.md`.
-Consequences and ideas that follow:
-- **Owner campaign as Alan or Garrison** (decided): instead of an anonymous owner you play one of the two partners, with the other as your co-owner NPC. Alan = the tech-forward owner (stack, security, hiring techs, projects, the closet); Garrison = the sales-and-culture owner (marketing, pricing, outings, morale, clients). Different starting stats and different card weighting; the partner pushes back from the other side ("we need another tech" vs "we need a bigger marketing budget"). This also settles "play as a cast member" for the owner campaign, since both owners are cast members.
-- **Service manager campaign, played as Dan** (decided): you own the process, not the company (operator idea, item 44 below). Dan, the quiet network tech who labels everything, is promoted into running the desk; Morgan Reyes is his manager and the two owners, Alan (tech-forward) and Garrison (sales-and-culture-forward), supply the pressure from both sides.
-- **Sales / account manager, played as Vic**: close deals, run client visits and business reviews, quotes and projects, the sales-to-service handover, over-promising versus delivery, commission and quota, renewals and churn. Reuses `Sales`, `Onsite` visits, the project quote cards and the client roster. Garrison, as the sales-forward owner, is the natural mentor and rival for Vic.
-- **Tech campaign, owners as a last resort** (decided): Alan and Garrison are busy with owner work, but when the queue is badly backed up, an SLA is about to breach or a client escalates they jump in and answer phones or clients themselves. They talk like owners (payroll, clients, culture).
-- **Point-buy stats at character select** (user direction): a third step after character and phone where you spend a budget of points on starting stats (tech: PowerShell, networking, servers, security, customer; other paths get their own set), with presets and a custom build, and perhaps a trait or two that give extra points. The difficulty tier can scale the budget (easy more, hard fewer). Needs guards against degenerate builds and a saved build (old saves default to the standard build).
-- All of these need the "play as a cast member" work first (the chosen cast member's NPC copy must be removed and the team handled without them). The design write-up (systems to reuse, loops, metrics, story arc, phasing, point-buy model) is `docs/campaign-paths.md`; its service-manager chapter assumes Garrison and must be revised for the new canon.
+## New campaign paths (built)
+**Canon (user): Alan and Garrison are the two owners of Pixel IT Partners.** Alan is the technical owner, Garrison the sales-and-culture owner (Office 1 and Office 2 are theirs). Morgan Reyes is the manager, Marge the bookkeeper, Vic the account manager.
+Built from it: the owner campaign played as Alan or Garrison (the other is the co-owner NPC), the service manager campaign played as Dan, the sales campaign played as Vic, the owners as a last resort in the tech campaign, and point-buy stats at character select. Design write-up: `docs/campaign-paths.md`; what exists: `CLAUDE.md`.
 
 ## Tech campaign
 - A real conference-room scene for the yearly review (Morgan, with the team visible behind).
-- More story days for the quiet days (6, 8, 11, 14, 17, 19): the weeks between the big jobs need small human beats.
-- Phone: a camera app, text replies that do something (the dialer, lock screen and notification banner are built, R37).
+- More story days for the quiet days: the weeks between the big jobs still need small human beats.
+- Dialer / calling clients from the phone app, replies that do something, a notification buzz and banner on the HUD, a lock screen, a camera app.
 - NPCs noticing and reporting outages themselves (a coworker calls it in before the monitoring does).
 - A labelled patch panel and cable tracing in the closet, a spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
-- Phone: more ticket types, a day-end score screen with a "best moment" recap.
-- Coworkers invite you to things (lunch, a beer after a hard night), react to the clock themselves ("lunch?"), weekends and holidays, the day-20 review quoting what they said.
-- A settings and credits screen, music, an animated logo. (The character-select / first-day screen with the phone pick is done: see CLAUDE.md "Logo + title screen".)
-- More characters that can be played (Vic is now selectable as the 7th).
+- Phone: more ticket types, a "best moment" recap on the day report.
+- Coworkers invite you to things beyond the Lynk lunch messages (a beer after a hard night), weekends and holidays.
+- A settings and credits screen, an animated logo.
 
 ## Owner campaign
 - Client QBR as a real conference-room scene with a client character (not only a card).
@@ -84,7 +67,7 @@ The game is set in 2013-14: Outlookish 2013, an iFone 5 or a Nexxus 5, Windows 7
 - **Already period-safe:** ransomware (CryptoLocker era), PowerShell 4, Windows 7 / 8.1 / XP, Exchange, VLANs, NAS, Cat5e / Cat6, Bitcoin ransom notes.
 
 ## Team outings (all modes)
-**Built (first pass)** as four mini-games: bowling, karaoke, escape room and dinner, with invitations in the tech and owner campaigns and the O key in Free Play (see `CLAUDE.md`, "Team outings"). **Rooms built:** bowling alley, karaoke bar, escape room and a restaurant (dinner) as real sets with the cast in them (see `CLAUDE.md`, "The outing rooms"). **In-room games built** (you bowl on the lane, sing at the mic, search the escape room, sit at the booth). Still open from the list below: the pager going off mid-karaoke, Vic bringing a client, the annual off-site / holiday party, outings that take a struggling hire aside, and morale drifting down when outings are skipped for months.
+**Built:** bowling, karaoke, escape room, dinner, cornhole, the cookout and the chair race, as real rooms with the cast in them and in-room games, with invitations in the tech and owner campaigns and the O key in Free Play (see `CLAUDE.md`, "Team outings", "The outing rooms" and the warehouse sections). Still open from the list below: the pager going off mid-karaoke, Vic bringing a client, the annual off-site / holiday party, outings that take a struggling hire aside, and morale drifting down when outings are skipped for months.
 
 Bowling, karaoke, an escape room, dinner. A way for the team to be people, not just a queue. Works in every mode because it plugs into systems that already exist.
 
@@ -117,6 +100,7 @@ The LabTech community (LabTech Geek: a forum plus an IRC channel) was where tech
 Presence (available, away, in a meeting, with a client) and instant messages between coworkers; the friendly ones warn you before an SLA breaches; lunch invites and "can you cover my phones" come in as short chats; Morgan or Marge for advice. See `CLAUDE.md` for what is built.
 
 ## Hour management: commute, being late, the phone queue, staying late, on-call
+**Built** (see `CLAUDE.md`, "Hour management"): energy, the commute and being late, the on-call pager, staying late, owner hours. The rest of this section is the original design; what is still open is listed under "Status update" below.
 A big missing piece of a tech's real day. It is about time, not tickets, and it feeds directly into burnout, mistakes and efficiency.
 
 - **The commute (tech campaign):** a morning decision and a small mini-flow: how early do you leave? Leaving early costs sleep and personal time; leaving late risks traffic (random, weather, an accident), and arriving late means the day starts behind.
@@ -146,8 +130,8 @@ Tags: **[gap]** the game has nothing like it, **[deepen]** a piece exists and co
 - **Rodent Nation 2014** (tech, day 17): the KPI-gated conference trip with a resort venue, session picks, a vendor hall with badge-scan spam, forum regulars as attendees.
 - **Onsite visits** (tech): onsite tickets, a front-door "where to" menu, drive times with traffic, six client site types (two looks each), the client's own PC, mishaps, a printer mini-game.
 - **People and props:** eleven new women characters plus 14 more for client staff, ducking, a rubber duck, the sales bell, the petting zoo at the vet.
-- **Maya** (Tier 1 tech) is a real coworker at main floor desk 2 in the tech campaign and Free Play (talk, tips, Lync, opinions, all-hands, outings).
-- *Still open from this pass:* Maya in the owner campaign as the first hire; sales and owner visits to the client sites; an owner-campaign Rodent Nation; sitting in the conference sessions; more onsite jobs and onsite projects.
+- **Maya** (Tier 1 tech) is a real coworker at main floor desk 2 in the tech campaign and Free Play, and on the crew in the owner campaign (talk, tips, Lync, opinions, all-hands, outings).
+- *Still open from this pass:* walking the owner-campaign Rodent Nation trip in the venue; sitting in the conference sessions; more onsite jobs and onsite projects.
 
 ### Status: what from this list is built (owner campaign), what is still open
 Built in the owner campaign (see `CLAUDE.md`, "Owner campaign, third pass"):
@@ -159,15 +143,14 @@ Built in the owner campaign (see `CLAUDE.md`, "Owner campaign, third pass"):
 - **6 sales-to-service handover** (the first-90-days churn window itself is still open).
 - **17 maturity level badge**: counted from real habits, shown in the Boardroom, +0.5 valuation multiple at level 4+.
 - **27b accountability goal**: the peer group sets and checks a goal each quarter (weeks 5, 11, 17).
-Still open from the top of the list: 7 documentation and bus factor, 8 BEC / wire fraud, 9 revenue mix, 10 post-incident review, the tech-campaign versions above, 18 desk design, 19-26 pricing models and stack categories,
-and the peer-group meeting overhaul (33-38).
+Still open from the top of the list: 9 revenue mix, 10 post-incident review, 19-26 pricing models and stack categories, and the peer-group meeting overhaul (33-38). Documentation and bus factor (7), business email compromise / wire fraud (8) and desk design (18) are built in the tech, owner and service campaigns.
 
 ### Status update: built in the 2013-14 pass
 Also built now (see `CLAUDE.md`, "2013-14 realism pass"): the day-4 **Windows XP end-of-support** story; **RDP open to the internet** (tech playbook and owner card, auto-blocking firewall as a real fix); **CryptoLocker options** with and without a backup
 (restore, pay, shadow copies); **competitor poaching** (gaps vs the rarer price-only poach, patch debt, winback with a price rise, health check); **Lync 2013** on the desktop; **LabRat Nerds** (forum plus the IRC call-a-friend poll).
 Built after that: **hour management** (energy, the morning commute and being late, the on-call pager, staying late, owner on-call and flexible-hours cards) and the **Tier 1 to Tier 2 growth plan** with the owner-hours resource (see `CLAUDE.md`).
 Still open from the hour-management idea: the phone-queue shift rotation, comp time vs unpaid overtime, different commutes per character, remote days as a mechanic, coffee/lunch restoring energy, kids/sick-day events.
-Still open: the tech-campaign versions of vendor breach / burnout pager / "client said no"; the LabRat Nerds later ideas (community scripts, meetups); BEC / wire fraud; documentation and bus factor; revenue mix; team outings; hour management and on-call.
+Still open: the tech-campaign vendor breach night; the LabRat Nerds later ideas (community scripts, meetups); revenue mix.
 
 ### Gaps (build these first)
 1. **[gap]** Client profitability and scope creep: hours per client vs fee, unbilled "quick requests", change orders, auditing a new client's tickets weekly, turning recurring one-offs into billable services.
@@ -303,9 +286,4 @@ Tag **[empath]**. Training as a *system* with time, owners and measurable effect
 
 ## Difficulty and seeds (built; see CLAUDE.md "Difficulty and seeds")
 - Exists: a `Difficulty` autoload with an easy / normal / hard tier (chosen with Up / Down on the character select screen, remembered in `user://mspsim_settings.cfg`, saved with the campaign together with the run seed; old saves load as normal), one seeded random stream per system (`Difficulty.rng("karaoke")`, `seed_run(n)` for tests), and a single table of numbers for printer, karaoke, bowling, escape room, dinner and the nerf war. Normal equals the old behaviour.
-- Next (roadmap items 2-10 in `docs/replayability-ideas.md`): printer models and a bigger question pool; a karaoke song table; escape clue recipes and a 4-digit hard mode; `Outings.roster()` with per-person tables (Maya and Vic join); a bigger dinner pool with a mood of the day; career screen and medals; an event deck; mutators and starting conditions; year 2 / New Game+ and a daily seed. Small leftovers: a seed field on the new-game screen, a `level()` that also mixes progress and skill, tiers for the main sim (`Msp`, `Owner`).
-
-## Clients who know your name (R36, user idea, Nov 2026)
-- **Direct texts.** Once a client's contact trusts you (high satisfaction, you fixed their big problem), they start texting your cell instead of calling the desk: "quick question, printer again?" It is work that never enters ConnectWhy: no ticket, no SLA, no credit. Options per text: do it now and log a ticket later (credit and a little risk), tell them to call the desk (their mood dips a little, Morgan is pleased), or ignore it until morning. Late-night texts cost energy. Too many and Morgan raises the policy question in a 1:1. Owner campaign: it is unbilled work and a key-person risk.
-- **Asked for by name.** A client says "can the new guy do this one?". The ticket arrives pre-assigned to you with a client-mood bonus on success and a bigger penalty on failure. A pile-up burns you out; a coworker may grumble; Vic uses it in a pitch. Owner campaign: a client follows a tech who leaves (non-solicit card); service manager: your techs get requested and the crew gets lopsided.
-- Needs a design pass before a build; see ROADMAP R36.
+- Left: a `level()` that also mixes progress and skill (the tier alone is used). Everything else from roadmap items 2-10 is built.

@@ -47,14 +47,11 @@ Decisions already made are in `docs/ROADMAP.md`. Still open:
 - Dialogue Manager (skip for now), Gitot (optional): parked in the roadmap.
 
 ## Known gaps
-All tracked as items in `docs/ROADMAP.md`: audio, year 2, Maya in the outing logic, heavy fixes and onsite, ransomware alternatives, owner campaign leftovers, balance by playthrough. Details of the old reviewer findings and playthrough results are above and in `CLAUDE.md`.
+Everything still open is listed in `docs/ROADMAP.md` section 2 (Open).
 
 ## Housekeeping
-- `tools/make_godot.py` was edited by hand in lockstep with the generated scripts in several rounds and never re-run. Run it once in a scratch copy and diff against `godot/` to confirm it reproduces the checked-in output, then fix whatever differs.
-- Opening the project in Godot rewrites about 270 tracked `.import` files (a Godot version difference). Decide whether to commit them once, or add them to `.gitignore` / `.gitattributes`.
-- Git reports "LF will be replaced by CRLF" on every touch: add a `.gitattributes` (`* text=auto eol=lf`) so line endings stay stable.
-- Worktrees: the Claude Code hooks in `D:/Creative/.claude/` create `D:/Creative/pixelproject-wt/<name>` on branch `wt/<name>`; they go live after opening `/hooks` once. Agents' worktrees are kept after a subagent finishes: remove them with `git worktree remove`.
-- Tests that use `user://test_*` saves share files: run one at a time (giving each test its own save prefix is in `IDEAS.md`).
+- Generator: never run `tools/make_godot.py` in the real tree; `python -I tools/check_generator.py` runs it in a scratch copy and diffs (see CLAUDE.md "Test runner and generator check").
+- Worktrees: the Claude Code hooks in `D:/Creative/.claude/` create `D:/Creative/pixelproject-wt/<name>` on branch `wt/<name>`. Agents' worktrees are kept after a subagent finishes and should be removed when done.
 
 ## Visual QA sweep (Q3 + Q4, branch q3)
 Method: every `*_shots.gd` test at wide, h and v (screenshots viewed for the newer screens), then all 37 shots tests again with `LAYOUT_AUDIT=1` (Game prints `OFFSCREEN` / `OVERLAP` lines from `PixelFont.audit`), plus the new `tests/layout_audit.gd` (163 screens: title, charselect, build, career, toolbox, cards, day reports, computer and phone apps, boardroom, CRM, quote builder, Dispatch, Knowledge, hiring cards; fails on any text rect outside the viewport).

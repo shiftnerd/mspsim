@@ -14,15 +14,18 @@ You are the person who keeps other companies' computers alive: the dentist whose
 CryptoLocker, the brewery whose email server dies at midnight. Between tickets you get coffee, argue about the thermostat, answer the phone,
 and (because it is that kind of office) have nerf gun fights.
 
-Think *Code Monkeys* crossed with *Papers, Please* and *Overcooked*: a small, funny office that is secretly a pressure cooker.
+Think *Papers, Please* crossed with *Overcooked*, set in a tiny, grimy, very funny office that is secretly a pressure cooker.
 The jokes come from real MSP life; the stakes come from real MSP life too (a backup you forgot to check, a firewall that is wide open).
 
-**Two ways to play, one office:**
+**Several ways to play, one office:**
 - **Tech campaign** (the main game): 20 working days as a service-desk tech. Close tickets, fix things remotely, learn PowerShell,
   keep your coworkers and clients happy, survive the big jobs, and decide your future at the yearly review.
 - **Owner campaign**: 20 weeks as the owner of the company. Pricing, hiring, tools, marketing, collections, a competitor poaching your clients,
   and a valuation at the end.
-- **Free Play / Film Mode**: the office as a sandbox with no scoring, for filming scenes and wandering around.
+- **Service manager campaign** (you are Dan): run the service desk crew, the Dispatch board, runbooks and the owners' pressure.
+- **Sales campaign** (you are Vic): leads, quotes, deals, handovers and keeping clients.
+- **Free Play / Film Mode**: the office as a sandbox with no scoring, for filming scenes, wandering around and playing dress-up.
+- **Career and Year 2**: medals and records follow you across runs; finish a campaign and a harder second year opens up.
 
 **Why it should be fun:** the work is a real puzzle with real consequences, the people are specific and funny, and the world is full of things
 to poke (a coffee machine, a rack of network cables you can unplug, a foam dart gun).
@@ -39,7 +42,7 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 - **Voice:** warm, dry, a little absurd, never mean. Jargon is used correctly and explained by context. Every character has a way of speaking
   (Alan is the gruff-but-kind technical owner, Garrison is the excitable sales-and-culture owner with a security scare story for everything, Dan is quiet and obsessive about labelling cables, Vic is a salesman who
   over-promises). Emails and texts are short, human and slightly panicked, like real clients.
-- **Look:** blocky pixel characters with big heads and flat colours, inspired by *Code Monkeys*. Rooms are slightly grimy 2010s offices:
+- **Look:** blocky pixel characters with big heads and flat colours. Rooms are slightly grimy 2010s offices:
   stained ceiling tiles, blue carpet, a green hallway. Outing rooms (bowling, karaoke, escape room, a neighbourhood grill) are dark and neon.
 - **Real brands are parodied:** the PSA is **ConnectWhy**, the RMM is **LabRat RMM**, the mail client is **Outlookish 2013**, the community forum is **LabRat Nerds**.
 
@@ -47,9 +50,9 @@ to poke (a coffee machine, a rack of network cables you can unplug, a foam dart 
 
 ## 3. The world
 
-**Pixel IT Partners**, a six-room office: main floor, two offices, a kitchenette (with a fridge and a coffee machine that has opinions), a bathroom,
-a cubicle area, a conference room, and a network closet with a real rack you can plug and unplug. After work you can go bowling, sing karaoke,
-solve an escape room or eat at the restaurant.
+**Pixel IT Partners**: main floor, two offices, a kitchenette (with a fridge and a coffee machine that has opinions) and two restrooms,
+a cubicle area, a conference room, a warehouse with a parking lot, and behind the warehouse a network closet with a real rack you can plug and unplug.
+After work you can go bowling, sing karaoke, solve an escape room, eat at the restaurant, play cornhole and have a cookout, or race office chairs.
 
 **The people** (canon: **Alan and Garrison are the two owners** of Pixel IT Partners. Alan leans technical, Garrison leans sales and culture; Office 1 and Office 2 are theirs. They are not ticket techs: they talk about payroll, clients, the van, vendors, hiring and the next outing, and in the tech campaign only jump in as a last resort. Morgan manages the floor for them.)
 | Who | Role | Personality | What they do for you |
@@ -61,7 +64,7 @@ solve an escape room or eat at the restaurant.
 | **Vic Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
 | **Morgan Reyes** | Your manager (reports to the two owners) | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
 | **Marge** | Bookkeeper (owner mode) | Practical | Reads you the numbers |
-| **Maya** | Tier 1 tech (tech campaign and Free Play) | Friendly, ponytail, always has a granola bar | Customer skills; warns you when a ticket is about to breach; the first woman on the team |
+| **Maya** | Tier 1 tech (tech campaign, owner crew and Free Play) | Friendly, ponytail, always has a granola bar | Customer skills; warns you when a ticket is about to breach; the first woman on the team |
 
 **The clients** (eleven, each with a contact and a personality; eight can be signed at once): Acme Dental Group (Dr. Patel), Brightside Realty, Gnarly Gnomes Landscaping,
 Hoot and Holler Law (Atty. Spence), Soggy Bottom Brewing, Piedmont Pediatrics, Rusty Anchor Marine Supply, Zen Garden Yoga, and three newer prospects: Paws and Claws
@@ -107,18 +110,18 @@ business from your client. Medical and vet offices are staffed mostly by women; 
 | 5 | A client's backup quietly breaks. On-call rota announced. First team outing. | Plant the ransomware |
 | 6 | Growth plan with Morgan (pick a skill and a helper). First weekly all-hands. | Progression |
 | 7 | **Remote access break-in** at Brightside: RDP open to the internet. Close the door properly (VPN, auto-blocking firewall) or suffer. | Period-correct security |
-| 8 | Stretch ticket with your helper | Growth |
+| 8 | **Wire request from the boss:** a paralegal forwards an email that looks like Atty. Spence asking for a $38,000 wire. Spot the fake and contain it. Also a stretch ticket with your helper. | Period-correct fraud |
 | 9 | **CryptoLocker** hits the law firm. With a good backup you are a hero; with none you shop for options (shadow copies, paying, praying). | The payoff of day 5 |
 | 10 | **A client's network rack falls off the wall.** Photograph first, remount, recable, verify. | A hands-on crisis |
 | 11 | Dr. Patel writes about how the install went; all-hands | Consequences |
 | 12 | **Server migration** at Brightside (check the backups first or the cutover is a disaster) | A planning job |
 | 13 | **24x7 email outage** at the brewery: a long night with a vendor call that runs past midnight | Overtime and endurance |
-| 14 | The law firm writes about the ransomware | Consequences |
+| 14 | **The client who said no:** Lucy refuses stronger logins. Also, the law firm writes about the ransomware. | Persuasion and consequences |
 | 15 | Pager mail; second outing | Hours |
 | 16 | **Network install** at the law firm (survey, cable, certify, VLANs, Wi-Fi, document it); all-hands | Craft |
 | 17 | Growth protected time | |
 | 18 | Review warning; stretch ticket | Rising pressure |
-| 19 | Quiet before the review | |
+| 19 | **The only person who knows:** the firewall fix needs Alan, who is out sick. | Documentation and bus factor |
 | 20 | Morgan names your roughest job. **Yearly review**: your reputation, your coworkers' quotes, your best client. | The ending |
 
 **The yearly review offers three futures:** become the **team lead** (more pay, a pager, three people who come to you with everything), take an
@@ -138,6 +141,7 @@ points; sloppy ones leave consequences that return next morning as follow-up tic
 - **Server migration** (day 12)
 - **24x7 email outage** (day 13, runs into the night)
 - **Network install** (day 16)
+- **Wire request from the boss** (day 8), **The client who said no** (day 14), **The only person who knows** (day 19)
 
 *Review question: are the choices interesting? Is there ever an obviously right answer with no tension? Are the consequences funny and fair?*
 
@@ -203,7 +207,5 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 
 ## 11. Not built yet (ideas on the list)
 
-Sound (none yet), Maya in the owner campaign (she is not on that payroll), sales and owner visits to the client sites (check-ins and prospect pitches), sitting in the Rodent Nation sessions, a Rodent Nation
-trip for the owner campaign, a Friday nerf war event, BEC / wire-fraud scam story, vendor-breach storyline for the tech campaign, a "client says no" story for the tech campaign,
-documentation and bus-factor story (what if the person who knows everything is out?), a year-2 mode that keeps your skills, more quiet-day stories (days 6, 8, 11, 14, 17, 19),
-pricing models and a revenue-mix story, desk design and triage tiers. See `IDEAS.md` for the long list.
+Sitting in the Rodent Nation sessions, walking the owner campaign's Rodent Nation trip in the venue, a Friday nerf war event, a vendor-breach storyline for the tech campaign,
+pricing models and a revenue-mix story. See `IDEAS.md` for the long list and `docs/ROADMAP.md` for what is queued.

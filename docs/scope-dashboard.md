@@ -1,5 +1,7 @@
 # Scope: metrics dashboard screen (roadmap R20)
 
+**STATUS: built** (all five steps, see "Status (built)" below and CLAUDE.md "PIXEL IT METRICS").
+
 Read-only scoping pass (Nov 2026) from the code, not play-tested. Items marked (inferred) are readings of the code. Reference: `archive/metrics.jpg` (a 2014 wall dashboard: ten tiles of 14-segment LED digits in orange / green / yellow / red, a green "hours worked by tech today" bar chart, a green and yellow opened / resolved tickets chart for the prior three weeks).
 
 **Owner decision:** a computer app AND a wall TV, showing the same data.
