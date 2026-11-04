@@ -13,6 +13,7 @@ signal ticket_added(ticket: Dictionary)
 signal text_received(message: Dictionary)
 
 const COMPANY := "Pixel IT Partners"
+const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): tickets opened, closed and missed per day
 const MORGAN_FROM := "Morgan Reyes - Manager <morgan@pixelit.example>"
 const CLIENTS := [
 	{
@@ -530,6 +531,7 @@ func reset() -> void:
 	closed_ok = 0
 	breached = 0
 	reopened = 0
+	Dash.reset()
 	pace = 1.0
 	_next_id = 10421
 	_next_mail = 1
@@ -750,6 +752,7 @@ func create_problem(
 	}
 	_next_id += 1
 	tickets.append(t)
+	Dash.note_opened()
 	_mail(contact + " <" + CLIENTS[client].mail + ">", t.summary, t.body, t.id)
 	ticket_added.emit(t)
 	if t.pri <= 2:
@@ -817,6 +820,7 @@ func create_internal(desk: int, summary: String, body: String) -> void:
 	}
 	_next_id += 1
 	tickets.append(t)
+	Dash.note_opened()
 	_internal[desk] = t.id
 	Social.note_outage(desk)
 	_mail("Staff - " + str(DESK_NAMES.get(desk, "?")), summary, body, t.id)
@@ -870,6 +874,7 @@ func close_ticket(id: int) -> String:
 		return "REOPENED - NOT FIXED YET"
 	t.status = "Closed"
 	t.notes.append("Ticket closed.")
+	Dash.note_closed()
 	if t.internal:
 		_internal.erase(t.desk)
 	if str(t.get("outcome", "")) == "lost":
@@ -1612,6 +1617,7 @@ func _process(delta: float) -> void:
 			if t.sla_left <= 0.0 and not t.breached:
 				t.breached = true
 				breached += 1
+				Dash.note_missed()
 				Sfx.play("sla_breach")
 				score -= 5
 				if int(t.pri) == 1 and not Difficulty.cozy_on():

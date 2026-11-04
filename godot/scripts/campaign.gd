@@ -8,6 +8,7 @@ extends Node
 signal day_started(day_number: int)
 
 const PLAYER := preload("res://scripts/player.gd")
+const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20), saved in its own "dash" section
 const TOTAL_DAYS := 20
 const FREE := "free"
 # the campaigns you can start today (title menu, character select); must equal the MODE_DEFS rows with "selectable"
@@ -404,6 +405,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 	Mutators.from_dict(cfg.get_value("campaign", "mutators", {}))
 	Yeartwo.from_dict(cfg.get_value("campaign", "yeartwo", {}))
 	SalesCampaign.from_dict(cfg.get_value("campaign", "sales_campaign", {}))
+	Dash.from_dict(cfg.get_value("campaign", "dash", {}))  # an old save has none: empty charts
 	if for_mode == "sales":
 		SalesCampaign.begin_run()
 	Lync.reset()
@@ -468,6 +470,7 @@ func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "yeartwo", Yeartwo.to_dict())
 	cfg.set_value("campaign", "sales_campaign", SalesCampaign.to_dict())
 	cfg.set_value("campaign", "backups", Msp.backups)
+	cfg.set_value("campaign", "dash", Dash.to_dict())
 
 
 # ---- the mid-day resume point (R16, docs/scope-cozy-and-resume.md B) -------------------------------------------
@@ -579,6 +582,7 @@ func quit_to_title() -> void:
 
 
 func _begin_day() -> void:
+	Dash.begin_day(day)
 	_base = {
 		"score": Msp.score,
 		"closed": Msp.closed_ok,

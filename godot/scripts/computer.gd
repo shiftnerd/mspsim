@@ -23,6 +23,7 @@ const RMM_GREY := Color("3b424d")
 const ALT_TINTS := {"quick": Color("f2e2a0"), "heavy": Color("e9b1a8"), "clever": Color("a9e0b0")}
 const ORANGE := Color("e07b22")
 const Crm := preload("res://scripts/crm.gd")  # the SalesHound CRM app (sales campaign)
+const Dashboard := preload("res://scripts/dashboard.gd")  # PIXEL IT METRICS (R20): the METRICS app and the wall TV takeover
 const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
 const AMBER := Color("e0a030")
@@ -62,6 +63,9 @@ var learn_pick := -1
 var learn_done := false
 var learn_opts: Array = []
 var dispatch = DISPATCH.new()  # the Dispatch app state (service campaign)
+var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, red tiles pulse)
+var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
+var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 
 var _canvas: Node2D
 var _hits: Array = []
@@ -96,6 +100,7 @@ func open_site(info: Dictionary) -> void:
 func open(from_desk: int) -> void:
 	desk = from_desk
 	app = "desktop"
+	tv_mode = false
 	mail_view = false
 	psa_detail = false
 	close_ask = false
@@ -112,6 +117,15 @@ func open(from_desk: int) -> void:
 	_mouse = get_viewport().get_mouse_position()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	create_tween().tween_method(_set_fade, _fade, 1.0, 0.2)
+
+
+# the wall TV (E in front of it): the board full size, read only
+func open_tv() -> void:
+	open(0)
+	tv_mode = true
+	app = "dash"
+	dash_t = 0.0
+	dash_chart = -1
 
 
 func close() -> void:
@@ -149,6 +163,9 @@ func _process(delta: float) -> void:
 		return
 	_tick += delta
 	_toast_t = maxf(0.0, _toast_t - delta)
+	if app == "dash":
+		dash_t += delta
+		_canvas.queue_redraw()
 	if not _job.is_empty():
 		_job.left -= delta
 		_canvas.queue_redraw()
@@ -319,6 +336,8 @@ func enter() -> void:
 		activate("tk:%d" % psa_sel)
 	elif app == "crm":
 		Crm.enter(self)
+	elif app == "dash":
+		activate("dash:chart")
 
 
 func activate(id: String) -> void:
@@ -327,10 +346,15 @@ func activate(id: String) -> void:
 	match parts[0]:
 		"app":
 			app = parts[1]
+			if app == "dash":
+				dash_t = 0.0
+				dash_chart = -1
 		"wall":
 			Career.cycle_pick("wallpaper")
 		"close_app":
-			if app == "site":
+			if tv_mode:
+				close()
+			elif app == "site":
 				site_view = "desktop"
 			else:
 				app = "desktop"
@@ -368,6 +392,8 @@ func activate(id: String) -> void:
 			board_tab = parts[1]
 		"crm":
 			Crm.action(self, parts)
+		"dash":  # a wide board shows one chart: swap it
+			dash_chart = 1 - (dash_chart if dash_chart >= 0 else int(dash_t / 6.0) % 2)
 		"lync":
 			_lync_action(parts)
 		"nerds":
@@ -734,6 +760,8 @@ func _paint() -> void:
 			_paint_boardroom()
 		"crm":
 			Crm.paint(self)
+		"dash":
+			Dashboard.paint_app(self)
 		"dispatch":
 			_paint_dispatch()
 		"knowledge":
@@ -750,7 +778,8 @@ func _paint() -> void:
 			_paint_site()
 		_:
 			_paint_desktop()
-	_paint_taskbar()
+	if not (tv_mode and app == "dash"):
+		_paint_taskbar()
 	if _toast_t > 0.0:
 		var msg := _clip(_toast, int((size.x - 8) / 4.0))
 		var tx := floorf((size.x - _tw(msg)) * 0.5)
@@ -792,6 +821,7 @@ func _paint_taskbar() -> void:
 			["app:stats", "PROFILE"],
 			["app:lync", "LYNK"],
 			["app:nerds", "NERDS"],
+			["app:dash", "METRICS"],
 			["logoff", "LOG OFF"],
 		]
 		if Campaign.mode == "sales":
@@ -801,10 +831,13 @@ func _paint_taskbar() -> void:
 		if Campaign.mode == "service":
 			items.insert(4, ["app:dispatch", "DISPATCH"])
 			items.insert(5, ["app:knowledge", "KNOWLEDGE"])
+		var rows := items.size()
+		if rows * 9 > int(y - _area.position.y):  # a long menu (service) goes in two columns
+			rows = (items.size() + 1) / 2
 		for i in items.size():
 			_button(
 				items[i][0],
-				Rect2(1, y - (items.size() - i) * 9, 54, 9),
+				Rect2(1 + (i / rows) * 55, y - (rows - i % rows) * 9, 54, 9),
 				items[i][1],
 				true,
 				Color("e9ecf1")
@@ -872,6 +905,15 @@ func _icon(kind: String, p: Vector2) -> void:
 			_fill(Rect2(p + Vector2(1, 0), Vector2(3, 12)), Color("2f6e5a"))
 			for i in 4:
 				_fill(Rect2(p.x + 6, p.y + 2 + i * 3, 8, 1), Color("5aa07a") if i != 2 else AMBER)
+		"dash":
+			_fill(Rect2(p + Vector2(0, 1), Vector2(16, 11)), Color("0a0d14"))
+			_fill(Rect2(p + Vector2(2, 3), Vector2(3, 3)), Color("3ddc55"))
+			_fill(Rect2(p + Vector2(7, 3), Vector2(3, 3)), Color("ff9a1f"))
+			_fill(Rect2(p + Vector2(12, 3), Vector2(2, 3)), Color("f2e84a"))
+			_fill(Rect2(p + Vector2(2, 8), Vector2(2, 3)), Color("7fe34a"))
+			_fill(Rect2(p + Vector2(5, 7), Vector2(2, 4)), Color("f2e84a"))
+			_fill(Rect2(p + Vector2(8, 9), Vector2(2, 2)), Color("7fe34a"))
+			_fill(Rect2(p + Vector2(11, 6), Vector2(2, 5)), Color("f2e84a"))
 		"stats":
 			_fill(Rect2(p, Vector2(15, 12)), Color("e8ecf2"))
 			_fill(Rect2(p.x + 2, p.y + 6, 3, 5), GREEN)
@@ -1046,6 +1088,7 @@ func _paint_desktop() -> void:
 		["stats", "PROFILE", 0],
 		["lync", "LYNK", Lync.unread_total()],
 		["nerds", "NERDS", 0],
+		["dash", "METRICS", Dashboard.red_tiles(Dashboard.mode_now()).size()],
 	]
 	if Campaign.mode == "sales":
 		icons.append(["crm", "SALESHOUND", 0])

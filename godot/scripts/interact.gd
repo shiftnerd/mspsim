@@ -60,6 +60,9 @@ func use(body: Node) -> void:
 			return
 		Hints.toast("TOO HIGH TO REACH. MAYBE A FOAM DART?", 2.5)
 		return
+	if fx.kind == "tv":  # the wall TV: the metrics board full size, read only (Esc closes)
+		Computer.open_tv()
+		return
 	if fx.style == "computer":
 		Computer.open(fx.desk)
 		return

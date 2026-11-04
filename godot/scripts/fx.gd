@@ -7,6 +7,7 @@ signal finished
 signal handed  # the item is ready to hand over (mid-effect for the fridge)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Dashboard := preload("res://scripts/dashboard.gd")  # the wall TV's micro channel and the glance hint (R20)
 const STEP := 1.0 / 12.0
 const ITEMS := {"coffee": "coffee", "cooler": "water", "nerf_rack": "nerf"}
 const LYRICS := [
@@ -83,6 +84,8 @@ var _scroll := 0.0
 var _start := -100.0
 var _level := 0.0
 var _channel := 0
+var _glance_t := 0.0  # the TV checks the board once a second
+var _glance_col := Color(0, 0, 0, 0)  # the colour the TV frame flashes (clear = nothing red)
 var _next_channel := 7.0
 var _static_until := 0.0
 var _player: Node = null
@@ -182,12 +185,14 @@ func play() -> void:
 		World.toggle_lights(_room)
 	if kind == "tv":
 		_next_channel = _time + 7.0
-		_channel = (_channel + 1) % 3
+		_channel = (_channel + 1) % 4
 		_static_until = _time + 0.4
 
 
 func _process(delta: float) -> void:
 	_time += delta
+	if kind == "tv":
+		_tv_tick(delta)
 	if kind == "roll_door":
 		_door_tick(delta)
 	if kind == "rubber_duck":
@@ -1085,8 +1090,13 @@ func _draw_panel_error(rc: Rect2, state: String) -> void:
 func _draw_tv() -> void:
 	if _time > _next_channel:
 		_next_channel = _time + 7.0
-		_channel = (_channel + 1) % 3
+		_channel = (_channel + 1) % 4
 		_static_until = _time + 0.4
+	if _glance_col.a > 0.0 and int(_time * 2.0) % 2 == 0:  # something on the metrics board is red: the frame flashes
+		_r(1, 1, 36, 1, _glance_col)
+		_r(1, 19, 36, 1, _glance_col)
+		_r(1, 1, 1, 19, _glance_col)
+		_r(36, 1, 1, 19, _glance_col)
 	var sx := 3.0
 	var sy := 3.0
 	var w := 32.0
@@ -1102,8 +1112,23 @@ func _draw_tv() -> void:
 			_tv_sheet(sx, sy, w, h)
 		1:
 			_tv_bars(sx, sy, w, h)
-		_:
+		2:
 			_tv_news(sx, sy, w, h)
+		_:
+			Dashboard.paint_micro(self, sx, sy, w, h)
+
+
+# once a second: is a tile of the metrics board red? (the frame flashes; a toast says which, once a day)
+func _tv_tick(delta: float) -> void:
+	_glance_t -= delta
+	if _glance_t > 0.0:
+		return
+	_glance_t = 1.0
+	_glance_col = Dashboard.glance_color()
+	if _glance_col.a > 0.0 and not Game.ui_open and World.time_scale > 0.0:
+		var text: String = Dashboard.glance_toast()
+		if text != "":
+			Hints.toast(text, 3.5)
 
 
 func _tv_sheet(sx: float, sy: float, w: float, h: float) -> void:

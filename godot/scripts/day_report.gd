@@ -1,4 +1,6 @@
 extends CanvasLayer
+const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the day report's sparkline
+const SPARK_H := 15.0
 # gdlint:disable=class-definitions-order
 # The end-of-day report for the campaigns: a dimmed screen with a dark panel: a big grade and the
 # score / paycheck / reputation / cash on one side (or on top in narrow formats), the details
@@ -312,6 +314,43 @@ func _hero_block(x: float, y: float, w: float, big: bool, draw: bool) -> float:
 	return maxf(gh, rh)
 
 
+# R20: the last 14 days of opened (green) and resolved (yellow) tickets from the metrics record; nothing at all when none is recorded.
+# Returns the height it used (SPARK_H, or 0).
+func _spark(x: float, y: float, w: float, draw: bool) -> float:
+	var rows: Array = Dash.recent(Dash.SHOWN)
+	var peak := 0.0
+	for e in rows:
+		peak = maxf(peak, maxf(float(e.opened), float(e.closed)))
+	if peak <= 0.0:
+		return 0.0
+	if draw:
+		_t("OPENED / RESOLVED", x + 2.0, y, LABEL)
+		var step := floorf((w - 4.0) / float(rows.size()))
+		var base := y + SPARK_H - 1.0
+		_r(x + 2.0, base, step * float(rows.size()), 1.0, LINE)
+		for k in rows.size():
+			var oh := floorf(8.0 * float(rows[k].opened) / peak)
+			var ch := floorf(8.0 * float(rows[k].closed) / peak)
+			_r(x + 2.0 + float(k) * step, base - oh, 1.0, oh, Color("7fe34a"))
+			_r(x + 3.0 + float(k) * step, base - ch, 1.0, ch, Color("f2e84a"))
+	return SPARK_H
+
+
+# R20: the same 14 days as 28 pixels of bars in the title bar (always fits, even on the fullest report); nothing when none is recorded
+func _spark_mini(x: float, y: float) -> void:
+	var rows: Array = Dash.recent(Dash.SHOWN)
+	var peak := 0.0
+	for e in rows:
+		peak = maxf(peak, maxf(float(e.opened), float(e.closed)))
+	if peak <= 0.0:
+		return
+	for k in rows.size():
+		var oh := maxf(1.0, floorf(7.0 * float(rows[k].opened) / peak))
+		var ch := maxf(1.0, floorf(7.0 * float(rows[k].closed) / peak))
+		_r(x + float(k) * 2.0, y + 8.0 - oh, 1.0, oh, Color("7fe34a"))
+		_r(x + 1.0 + float(k) * 2.0, y + 8.0 - ch, 1.0, ch, Color("f2e84a"))
+
+
 func _panel_w(sc: int, size: Vector2) -> float:
 	return minf(size.x / float(sc) - 8.0, 300.0)
 
@@ -337,6 +376,8 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 		var hh := _hero_block(4.0, y, hero_w, true, draw)
 		var lx := 4.0 + hero_w + 6.0
 		var lh := _list(lx, y, pw - lx - 4.0, groups, draw)
+		if left.is_empty() and hh + 3.0 + SPARK_H <= lh:  # R20: the opened / resolved sparkline fills the spare room under the grade
+			_spark(4.0, y + hh + 3.0, hero_w, draw)
 		if not left.is_empty():
 			hh += 3.0 + _list(4.0, y + hh + 3.0, hero_w, left, draw)
 		if draw:
@@ -346,6 +387,8 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 		groups = groups + left
 		y += _hero_block(4.0, y, inner, big, draw) + 3.0
 		y += _list(4.0, y, inner, groups, draw)
+		if size.y / float(sc) - y >= 62.0:  # (narrow screens: only when there is room left for the rest)
+			y += 3.0 + _spark(4.0, y + 3.0, inner, draw)
 	for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
 		y += 3.0
 		for line in _wrap(str(note), int(inner / 4.0)):
@@ -408,6 +451,8 @@ func _paint() -> void:
 	if _tw(title) + 8.0 > pw:
 		title = title.replace(" COMPLETE", "")
 	_t(title, 4.0, 2.5, WHITE)
+	if pw - _tw(title) - 8.0 >= 28.0:
+		_spark_mini(pw - 30.0, 1.0)
 	_stack(sc, size, true)
 	var m := _mouse.floor()
 	for i in 6:

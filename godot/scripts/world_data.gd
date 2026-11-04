@@ -96,7 +96,7 @@ const SCENES := {
 			{"name": "ToConference", "x": 340, "to": "conference", "spawn": "from_cubicles"}
 		],
 		"seats": {"Seat1": 59, "Seat2": 143},
-		"uses": {"switch": 34, "nerf_rack": 227, "copier": 238, "cooler": 268},
+		"uses": {"switch": 34, "nerf_rack": 227, "tv": 324, "copier": 238, "cooler": 268},
 		"outside_x": -1
 	},
 	"network_closet":
