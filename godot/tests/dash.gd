@@ -262,6 +262,53 @@ func _init() -> void:
 			kp += 1
 	_check(kp == 3, "owner: three KPI ticks (W-2, A/R, client mood)")
 
+	# ---- the escalations trend arrow (tech: five-day weeks, pace adjusted; owner: week on week)
+	_fresh("tech")
+	var gr := root.get_node("Growth")
+	var et: Dictionary = {}
+	for et_t in Board.tiles("tech"):
+		if et_t.id == "esc":
+			et = et_t
+	_check(not et.is_empty() and int(et.value) == 0 and int(et.trend) == 0, "tech: ESCALATIONS tile, zero and flat at the start")
+	var tp: int = gr.period()
+	gr.esc[tp - 1] = 5
+	gr.esc[tp] = 0
+	_check(gr.esc_trend() == -1, "tech day 1: nothing yet against 5 last week is down (good)")
+	gr.esc[tp] = 1
+	_check(gr.esc_trend() == 0, "tech day 1: 1 against a pace of 1 is flat")
+	gr.esc[tp] = 3
+	_check(gr.esc_trend() == 1, "tech day 1: 3 against a pace of 1 is up (bad)")
+	for et_t in Board.tiles("tech"):
+		if et_t.id == "esc":
+			et = et_t
+	_check(int(et.value) == 3 and int(et.trend) == 1 and et.status == "o", "the tile carries the count and the up trend")
+	gr.esc.clear()
+	_check(gr.esc_trend() == 0, "no history and no escalations: flat")
+	_fresh("owner")
+	gr = root.get_node("Growth")
+	gr.esc[gr.period() - 1] = 4
+	gr.esc[gr.period()] = 1
+	_check(gr.esc_trend() == -1, "owner: 1 this week against 4 is down")
+	gr.esc[gr.period()] = 6
+	_check(gr.esc_trend() == 1, "owner: 6 against 4 is up")
+	var oe := 0
+	for et_t in Board.tiles("owner"):
+		if et_t.id == "esc" and et_t.has("trend"):
+			oe += 1
+	_check(oe == 1 and Board.tiles("owner").size() == 10, "owner board: one ESCALATIONS tile with a trend, still ten tiles")
+	var tnode := Node2D.new()
+	root.add_child(tnode)
+	tnode.draw.connect(
+		func() -> void:
+			for tr in [-1, 0, 1]:
+				Board._arrow(tnode, 0.0, 0.0, tr, false)
+				Board._arrow(tnode, 0.0, 0.0, tr, true)
+	)
+	tnode.queue_redraw()
+	await process_frame
+	_check(true, "all three arrows draw (normal and cozy) without errors")
+	tnode.queue_free()
+
 	# ---- layouts
 	_check(Board.layout_kind(Vector2(368, 128)) == "wide" and Board.layout_kind(Vector2(368, 84)) == "wide", "368 wide = the wide layout")
 	_check(Board.layout_kind(Vector2(320, 180)) == "h" and Board.layout_kind(Vector2(320, 144)) == "h", "320x180 = the h layout")
