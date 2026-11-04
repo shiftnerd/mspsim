@@ -48,7 +48,7 @@ const MIN_STEP := 0.045  # the least a shade differs from its base in value
 #   3 pixels straight below it is a sleeve over a forearm). The shader only matches colours, so skin, outline, face, belt,
 #   buckle and shoes are untouched by construction.
 # shorts: pants pixels (all three tones) at or below the hem row of the frame (HEMS, the first pants row plus 9, baked per
-#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated, only
+#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated (hem 79, the sole row), only
 #   the thighs show, so the trousers stay; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
 const PATTERNS := ["none", "stripes", "plaid", "checks"]
 const SHORTS := ["none", "shorts"]
@@ -78,10 +78,10 @@ const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
 const HEMS := [
 	67, 68, 68, 68, 68, 68, 67, 67, 68, 68, 67, 67, 69, 68, 64, 69, 68, 64, 70, 63, 55, 61, 71, 69, 67, 67, 67, 67, 67,
-	255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
-	67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
-	80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
-	80, 80, 80, 80, 80, 80,
+	255, 255, 255, 255, 255, 255, 70, 79, 79, 79, 79, 79, 79, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
+	67, 67, 68, 68, 67, 67, 67, 67, 67, 79, 79, 79, 67, 67, 79, 79, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 79, 79,
+	79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79, 79,
+	79, 79, 79, 79, 79, 79,
 	68, 69, 68, 67, 67, 67
 ]
 const SOURCES := [

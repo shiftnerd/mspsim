@@ -2,8 +2,8 @@
 {"piece":"podium","x":231,"y":39,"sort":100},
 {"piece":"row_backs","x":39,"y":69,"sort":90},
 {"piece":"av_desk","x":249,"y":73,"sort":108},
-{"piece":"chair_gold","x":67,"y":75,"sort":94},
-{"piece":"chair_gold","x":107,"y":75,"sort":94},
-{"piece":"chair_gold","x":147,"y":75,"sort":94},
-{"piece":"chair_gold","x":187,"y":75,"sort":94}
+{"piece":"chair_gold_side","x":62,"y":59,"sort":94},
+{"piece":"chair_gold_side","x":102,"y":59,"sort":94},
+{"piece":"chair_gold_side","x":142,"y":59,"sort":94},
+{"piece":"chair_gold_side","x":182,"y":59,"sort":94}
 ]

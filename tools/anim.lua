@@ -285,18 +285,30 @@ function E.render(an, pose, f)
   local rootDx = round((pose.rx or 0) * f)
   local bobDy = (pose.bob or 0) + (pose.crouch or 0)
   local legs = legParts(an, f, pose)
-  local lg = {N = {pose.lN or 0, pose.lNl or 0, pose.lNr or 0}, F = {pose.lF or 0, pose.lFl or 0, pose.lFr or 0}}
-  local function drawLeg(O, M, p, dy0)
-    local g = lg[p.role]
-    limbRot(O, M, p.cx, 47, p.cx, pose.kn or 54, g[1] * f, g[3] * f, rootDx, dy0 - g[2] + (pose.legDy or 0))
+  local function drawLegOf(P, O, M, p, dy0)
+    local g = p.role == "N" and {P.lN or 0, P.lNl or 0, P.lNr or 0} or {P.lF or 0, P.lFl or 0, P.lFr or 0}
+    limbRot(O, M, p.cx, 47, p.cx, P.kn or 54, g[1] * f, g[3] * f, rootDx + round(((P.legDx or 0) + ((p.role == "N" and P.lNx or p.role == "F" and P.lFx) or 0)) * f), dy0 - g[2] + (P.legDy or 0))
   end
-  -- auto ground: render shoes only and measure the lowest row
+  local adj = {N = 0, F = 0}   -- pose.floor: per-leg lift/drop that puts each sole on the ground row (set below)
+  local function drawLeg(O, M, p, dy0) drawLegOf(pose, O, M, p, dy0 + adj[p.role]) end
+  -- auto ground: render shoes only and measure the lowest row. pose.legRef (a table of leg fields) is the leg setup the ground
+  -- is measured with: the seated poses bend the knee (legDy / kn) but keep the body exactly where the old straight-shin sit put it
   local rootDy = pose.ry or 0
   if pose.ground ~= false then
     local T = Image(CW, CH, ColorMode.RGB)
-    for _, p in ipairs(legs) do drawLeg(T, p.shoes, p, 0) end
+    for _, p in ipairs(legs) do drawLegOf(pose.legRef or pose, T, p.shoes, p, 0) end
     local _, _, _, y1 = bbox(T)
     if y1 then rootDy = rootDy + (GROUND - y1) end
+  end
+  -- pose.floor (the seated poses): the body stays where legRef put it, then each leg is moved up or down so ITS shoe sole is on the
+  -- ground row, whatever the knee height / thigh angle (a bent knee with the foot flat on the floor)
+  if pose.floor then
+    for _, p in ipairs(legs) do
+      local T = Image(CW, CH, ColorMode.RGB)
+      drawLegOf(pose, T, p.shoes, p, rootDy)
+      local _, _, _, y1 = bbox(T)
+      if y1 then adj[p.role] = GROUND - y1 end
+    end
   end
   local out = {}
   local function torsoDx(y) return round(lean * clamp((38 - y) / 14, 0, 1)) + rootDx end

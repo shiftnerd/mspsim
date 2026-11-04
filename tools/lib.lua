@@ -46,6 +46,15 @@ function L.piece(w, h, fn)
 end
 
 -- filled box with highlight on top/left and shade on bottom/right
+-- horizontal mirror of an image (left-facing version of a right-facing side view)
+function L.flipH(img)
+  local o = Image(img.width, img.height, ColorMode.RGB)
+  for y = 0, img.height - 1 do
+    for x = 0, img.width - 1 do o:putPixel(img.width - 1 - x, y, img:getPixel(x, y)) end
+  end
+  return o
+end
+
 function L.box(R, x, y, w, h, base, hi, sh)
   R(x, y, w, h, base)
   R(x + w - 1, y, 1, h, sh)
@@ -398,14 +407,23 @@ function P.keyboardSide()
   end)
 end
 
+-- an office task chair from the side, facing RIGHT (mirror it for a left-facing sitter with L.flipH). The sitting pose has its
+-- thigh bottom 2 px above the sitter's feet line, so the chair is LOW: a backrest from the shoulder blades down, a cushioned seat
+-- (row 33, put the art at seat_y - 35 so the seat top is 2 px above the feet line), a short gas lift, a five-star base and casters
+-- 4 px below the feet line. Art 18x40 (the old front chair is 18x33, P.chair, still used by the chair race).
 function P.chairSide(base, hi, sh)
   base = base or "#2A2A33"; hi = hi or "#4A4A56"; sh = sh or "#1C1C24"
-  return L.piece(18, 33, function(R)
-    L.box(R, 0, 0, 3, 15, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
-    L.box(R, 0, 15, 18, 4, base, hi, sh)                     -- seat
-    R(8, 19, 2, 10, sh)                                      -- gas post
-    R(1, 29, 16, 2, base)                                    -- star base
-    R(0, 31, 3, 2, sh); R(15, 31, 3, 2, sh); R(7, 31, 3, 2, sh)
+  return L.piece(18, 40, function(R)
+    L.box(R, 0, 1, 4, 32, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
+    R(1, 0, 2, 1, hi)                                        -- rounded top
+    R(1, 3, 1, 24, hi)                                       -- lit edge on the back
+    R(3, 20, 1, 6, sh)                                       -- lumbar notch
+    L.box(R, 0, 33, 18, 3, base, hi, sh)                     -- seat cushion
+    R(1, 33, 14, 1, hi)                                      -- lit top of the cushion
+    R(17, 33, 1, 1, sh)                                      -- rounded front edge
+    R(8, 36, 2, 1, sh)                                       -- gas lift
+    R(1, 37, 16, 1, base)                                    -- star base
+    R(0, 38, 3, 2, sh); R(15, 38, 3, 2, sh); R(7, 38, 3, 2, sh)   -- casters
   end)
 end
 

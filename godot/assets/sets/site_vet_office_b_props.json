@@ -1,6 +1,6 @@
 [
 {"piece":"office_sofa_b","x":175,"y":79,"sort":108},
-{"piece":"chair_exec","x":79,"y":65,"sort":95},
+{"piece":"chair_exec_side","x":79,"y":65,"sort":95},
 {"piece":"exec_desk_b","x":69,"y":75,"sort":108},
 {"piece":"monitor","x":95,"y":53,"sort":96},
 {"piece":"plant_floor","x":25,"y":79,"sort":108},
