@@ -12062,6 +12062,22 @@ OLD TREE
 [Career.MEDALS.39.desc]
 FIND THE TREE IN THE WAREHOUSE
 
+# Career > MEDALS > 40 > title
+[Career.MEDALS.40.title]
+LUNCH BUNCH
+
+# Career > MEDALS > 40 > desc
+[Career.MEDALS.40.desc]
+TAKE 5 LUNCH BREAKS
+
+# Career > MEDALS > 41 > title
+[Career.MEDALS.41.title]
+DOG DAYS
+
+# Career > MEDALS > 41 > desc
+[Career.MEDALS.41.desc]
+SERVE 20 HOT DOGS
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

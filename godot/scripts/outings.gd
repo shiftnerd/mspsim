@@ -78,7 +78,7 @@ const GAMES := {
 		"label": "COOKOUT",
 		"cost": 150,
 		"blurb":
-		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS IN TIME, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND KEEP THE FLARE-UPS UNDER CONTROL.",
+		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
 		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
 	},
 }
@@ -499,6 +499,13 @@ const SPOTS := {
 	"grill": [1262, 1230, 1198, 1166, 1134, 1102],  # the queue to the left of the cook, nearest first
 }
 const TECH_DAYS := [5, 10, 15]
+# the lunch break (R29): days (weeks in the owner campaign) with a midday cookout or cornhole in the warehouse, between 12:00 and
+# 13:30 on the clock, taking LUNCH_LEN hours; Cozy Easy offers it every day that has no evening outing and ages no ticket
+const LUNCH_TECH := [3, 7, 12, 17]
+const LUNCH_OWNER := [2, 7, 12, 17]
+const LUNCH_FROM := 12.0
+const LUNCH_UNTIL := 13.5
+const LUNCH_LEN := 0.75
 const OWNER_WEEKS := [4, 9, 14, 19]
 
 var enabled := false
@@ -534,6 +541,9 @@ var _caption := ""
 var _caption_t := 0.0
 var _marks := {}  # speech bubbles to hide: node -> seconds left
 var _offered := false
+var lunches := 0  # lunch breaks taken (a campaign's midday cookout or cornhole, R29)
+var lunch_skips := 0
+var _lunch_offered := false  # today's lunch card has been shown (saved in the resume point)
 
 
 func _ready() -> void:
@@ -542,7 +552,11 @@ func _ready() -> void:
 	_canvas.visible = false
 	add_child(_canvas)
 	_canvas.draw.connect(_paint)
-	Campaign.day_started.connect(func(_d: int) -> void: _offered = false)
+	Campaign.day_started.connect(
+		func(_d: int) -> void:
+			_offered = false
+			_lunch_offered = false
+	)
 	reset()
 
 
@@ -556,6 +570,9 @@ func reset() -> void:
 	chair_best = {}
 	league = BowlVariety.new_league()
 	_offered = false
+	_lunch_offered = false
+	lunches = 0
+	lunch_skips = 0
 
 
 # version 2 saves the dinner tastes and the best star count per song; an older save has neither
@@ -573,6 +590,8 @@ func to_dict() -> Dictionary:
 		"songs": song_best,
 		"league": league,
 		"chair": chair_best,
+		"lunches": lunches,
+		"lunch_skips": lunch_skips,
 	}
 
 
@@ -584,6 +603,8 @@ func from_dict(data: Dictionary) -> void:
 	known = data.get("known", {})
 	song_best = data.get("songs", {})
 	chair_best = data.get("chair", {})
+	lunches = int(data.get("lunches", 0))
+	lunch_skips = int(data.get("lunch_skips", 0))
 	league = BowlVariety.new_league()
 	for key in data.get("league", {}):
 		league[key] = data.league[key]
@@ -758,6 +779,76 @@ func maybe_invite() -> void:
 	)
 
 
+# ---- the lunch break (R29) -----------------------------------------------------------------------------------------------
+func lunch_day() -> bool:
+	if not Campaign.active or Campaign.mode == "sales" or invite_day():
+		return false
+	if Difficulty.cozy_on():
+		return true
+	return (LUNCH_OWNER if Campaign.mode == "owner" else LUNCH_TECH).has(Campaign.day)
+
+
+# a lunch break is playing (or was the last thing played): the options of the outing carry `lunch`
+func lunch_on() -> bool:
+	return bool(opts.get("lunch", false))
+
+
+func lunch_due() -> bool:
+	if not enabled or _lunch_offered or is_open or busy() or Cards.is_open or Cards.waiting() > 0 or Game.title_mode or Game.busy:
+		return false
+	if World.time_scale <= 0.0 or Story.overtime or Onsite.busy or Onsite.active or Net.carrying != "" or Playbook.is_active():
+		return false
+	if Expo.away or Expo.is_trip_day(Campaign.day) or not lunch_day():
+		return false
+	return World.clock >= LUNCH_FROM and World.clock < LUNCH_UNTIL
+
+
+func maybe_lunch() -> void:
+	if not lunch_due():
+		return
+	_lunch_offered = true
+	party_set = false
+	draw_party()
+	var text := "It is lunch time and the grill is going in the warehouse dock, with the cornhole boards out. A short break, about an hour on the clock, and nobody will mind if you skip it."
+	if Difficulty.cozy_on():
+		text += " Nothing in the queue will mind either."
+	if Campaign.mode == "owner":
+		text += " Lunch is on the company."
+	text += " " + coming_text()
+	Cards.ask(
+		_host(),
+		text,
+		[
+			{"label": "COOKOUT: BURGERS AND DOGS", "id": "grill"},
+			{"label": "CORNHOLE", "id": "cornhole"},
+			{"label": "SKIP LUNCH", "id": "no"},
+		],
+		func(id: String) -> void: _lunch_answer(id)
+	)
+
+
+func _lunch_answer(id: String) -> void:
+	if id == "no":
+		lunch_skips += 1
+		return
+	for n in World.chars:  # nobody walks off to eat again
+		World.chars[n].lunched = true
+	start(id, false, {"party": party.duplicate(), "lunch": true})
+
+
+# back at work: the break took LUNCH_LEN hours (the queue aged at half the onsite rate, not at all on Cozy Easy)
+func _lunch_after() -> void:
+	if stars >= 0:
+		lunches += 1
+	World.clock = minf(World.DAY_END - 0.25, World.clock + LUNCH_LEN)
+	if not Difficulty.cozy_on():
+		var scale := World.day_len / 600.0
+		for t in Msp.tickets:
+			if t.status != "Closed":
+				t.sla_left = maxf(float(t.sla_total) * 0.35, float(t.sla_left) - LUNCH_LEN * Onsite.SLA_PER_HOUR * 0.5 * scale)
+	Hints.toast("BACK FROM LUNCH. THE QUEUE WAITED." if Difficulty.cozy_on() else "BACK FROM LUNCH. THE QUEUE KEPT TICKING A LITTLE.", 3.0)
+
+
 # the owner pays for the night: "$120 TO $300" (shown on the invitation before the game pick)
 func cost_range() -> String:
 	var lo := 100000
@@ -877,7 +968,7 @@ func _open(id: String, from_invite: bool) -> void:
 	is_open = true
 	Game.ui_open = true
 	_canvas.visible = true
-	if Campaign.mode == "owner":
+	if Campaign.mode == "owner" and not lunch_on():
 		Owner.cash -= int(GAMES[id].cost)
 	if id == "chair":
 		_chair_setup()
@@ -923,8 +1014,11 @@ func close() -> void:
 		World.end_outing()
 		Game.pending_x = _return_x
 		Game.go(_return_scene, "start")
+	if lunch_on() and Campaign.active:
+		_lunch_after()
 	_traveled = false
 	_peek = false
+	opts["lunch"] = false
 	finished.emit(game, stars)
 
 
@@ -947,6 +1041,7 @@ func _process(delta: float) -> void:
 		_canvas.queue_redraw()
 		return
 	maybe_invite()
+	maybe_lunch()
 
 
 func tick(dt: float) -> void:
@@ -1037,7 +1132,7 @@ func _press_page(key: int) -> void:
 		else:
 			begin_play()
 	elif key == KEY_ESCAPE:
-		if Campaign.mode == "owner":
+		if Campaign.mode == "owner" and not lunch_on():
 			Owner.cash += int(GAMES[game].cost)
 		_finish(-1)
 
@@ -1073,7 +1168,9 @@ func _finish(result: int) -> void:
 	stars = result
 	phase = "result"
 	lines = []
-	if result < 0:
+	if result < 0 and lunch_on():
+		lines.append("YOU HEAD BACK TO YOUR DESK. NOBODY MINDS A SHORT LUNCH.")
+	elif result < 0:
 		lines.append("YOU LEFT EARLY. NOBODY SAYS ANYTHING. EVERYBODY NOTICES.")
 		Social.change_all(-1)
 	else:
@@ -1088,10 +1185,13 @@ func _finish(result: int) -> void:
 				"score": int(g.get("score", 0)),
 				"holes": int(g.game.holes) if game == "cornhole" and g.has("game") else 0,
 				"served": int(g.game.served) if game == "grill" and g.has("game") else 0,
-				"clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2
+				"clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2,
+				"dogs": int(g.game.dogs_plated) if game == "grill" and g.has("game") else 0,
+				"lunch": lunch_on()
 			}
 		)
-		Social.change_all(1 + result)
+		var liking := (2 if result >= 3 else 1) if lunch_on() else 1 + result
+		Social.change_all(liking)
 		if game == "chair":
 			lines.append_array(_chair_lines())
 		if game == "cornhole":
@@ -1101,11 +1201,11 @@ func _finish(result: int) -> void:
 		if Campaign.mode == "sales":
 			lines.append_array(SalesCampaign.outing_done(game, result))
 		if Campaign.active:
-			lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
+			lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % liking)
 		else:
 			lines.append("A GOOD NIGHT OUT. (FREE PLAY: NOTHING IS SCORED.)")
 		if Campaign.mode == "owner":
-			var relief := 5.0 + 3.0 * float(result)
+			var relief := (2.0 + float(result)) if lunch_on() else 5.0 + 3.0 * float(result)
 			Owner.burnout = clampf(Owner.burnout - relief, 0.0, 100.0)
 			Owner.flags["outings"] = int(Owner.flags.get("outings", 0)) + 1
 			lines.append("BURNOUT DOWN %d POINTS. THE CREW FEELS SEEN." % int(relief))
@@ -1113,10 +1213,10 @@ func _finish(result: int) -> void:
 				Owner.speed += 0.02
 				lines.append("THEY WORK BETTER TOGETHER NOW: TEAM SPEED UP.")
 		elif Campaign.active and Campaign.mode != "sales":
-			var gain := 4.0 + 2.0 * float(result)
+			var gain := (2.0 + float(result)) if lunch_on() else 4.0 + 2.0 * float(result)
 			Shift.add_energy(gain)
-			lines.append("ENERGY +%d. A NIGHT OUT HELPS." % int(gain))
-		if result >= 3:
+			lines.append("ENERGY +%d. %s" % [int(gain), "A GOOD LUNCH HELPS." if lunch_on() else "A NIGHT OUT HELPS."])
+		if result >= 3 and not lunch_on():
 			Campaign.adjust_rep(1)
 			if Campaign.active:
 				lines.append("WORD GETS AROUND ABOUT THIS ONE: REPUTATION +1.")
@@ -2941,7 +3041,7 @@ func cornholers() -> Array:
 
 func _corn_params() -> Dictionary:
 	return {
-		"to": Difficulty.i("corn.to"),
+		"to": mini(Difficulty.i("corn.to"), 11) if lunch_on() else Difficulty.i("corn.to"),
 		"opp_skill": Difficulty.f("corn.opp_skill"),
 		"aim_speed": Difficulty.f("corn.aim_speed"),
 		"power_speed": Difficulty.f("corn.power_speed"),
@@ -2994,7 +3094,7 @@ func _corn_cues(cg: RefCounted) -> void:
 		var mine: bool = str(cg.flying.get("who", "")) == "you"
 		var node := _actor("Player") if mine else _actor(str(cg.opp))
 		if room_mode():
-			_pose(node, "reach", 0.7, _x0() + (CORN_B if mine else CORN_A))
+			_pose(node, "toss", 0.9, _x0() + (CORN_B if mine else CORN_A))
 	g.last_phase = cg.phase
 	if room_mode():
 		_corn_keep_held(cg)
@@ -3155,14 +3255,19 @@ func grill_crew() -> Array:
 
 
 func _grill_params() -> Dictionary:
-	return {
+	var p := {
 		"cook_rate": Difficulty.f("grill.cook_rate"),
 		"window": Difficulty.f("grill.window"),
 		"tickets": Difficulty.i("grill.tickets"),
 		"time": Difficulty.f("grill.time"),
 		"flare": Difficulty.f("grill.flare"),
+		"dogs": Difficulty.f("grill.dogs"),
 		"cozy": Difficulty.cozy_on(),
 	}
+	if lunch_on():  # a short lunch: two tickets fewer, a fifth less time
+		p["tickets"] = maxi(4, int(p.tickets) - 2)
+		p["time"] = float(p.time) * 0.8
+	return p
 
 
 func _grill_setup() -> void:
@@ -3197,7 +3302,7 @@ func _grill_cues(gg: RefCounted) -> void:
 			"flip":
 				Sfx.play("grill_sizzle")
 				if p != null and room_mode():
-					p.start_emote("reach", 0.5, _x0() + GRILL_X + 60.0)
+					p.start_emote("toss", 0.9, _x0() + GRILL_X + 60.0)
 			"flare":
 				Sfx.play("grill_flare")
 			"bell":
@@ -3294,25 +3399,30 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
 	for i in rows.size():
 		var t: Dictionary = rows[i]
 		var ry := tbox.position.y + 3.0 + 9.0 * float(i)
-		var codes := ""
+		var parts := []
 		var left_w := int(t.need.well) - int(t.have.well)
 		var left_m := int(t.need.medium) - int(t.have.medium)
+		var left_d := int(t.need.dog) - int(t.have.dog)
 		if left_w > 0:
-			codes += "%dW" % left_w
+			parts.append("%dW" % left_w)
 		if left_m > 0:
-			codes += (" " if codes != "" else "") + "%dM" % left_m
+			parts.append("%dM" % left_m)
+		if left_d > 0:
+			parts.append("%dD" % left_d)
+		var codes := (" " if parts.size() < 3 else "").join(parts)
 		_t(str(t.who).to_upper().substr(0, 6), tbox.position.x + 3.0, ry, WHITE)
 		_t(codes, tbox.position.x + 28.0, ry, AMBER)
 		var frac := clampf(float(t.left) / GrillGame.PATIENCE, 0.0, 1.0) if not gg.cozy else 1.0
-		_canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0, 3.0), UiStyle.MUTED)
-		_canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0 * frac, 3.0), GREEN if frac > 0.5 else (AMBER if frac > 0.25 else RED))
+		_canvas.draw_rect(Rect2(tbox.position.x + 54.0, ry + 1.0, 20.0, 3.0), UiStyle.MUTED)
+		_canvas.draw_rect(Rect2(tbox.position.x + 54.0, ry + 1.0, 20.0 * frac, 3.0), GREEN if frac > 0.5 else (AMBER if frac > 0.25 else RED))
 	# the grate, right: four patties, the up side's colour, the down side's progress under it
 	var gbox := Rect2(size.x - 4.0 - 90.0, s.position.y - tall - 1.0, 90.0, tall)
 	UiStyle.box(_canvas, gbox)
-	var win: Vector2 = gg.flip_range()
 	for i in GrillGame.SLOTS:
 		var cell := Rect2(gbox.position.x + 3.0 + 21.0 * float(i), gbox.position.y + 3.0, 20.0, 25.0)
 		var slot: Dictionary = gg.slots[i]
+		var dog: bool = slot.kind == "dog"
+		var win: Vector2 = gg.flip_range(str(slot.kind))
 		if i == gg.sel:
 			_canvas.draw_rect(cell, AMBER)
 			_canvas.draw_rect(Rect2(cell.position + Vector2.ONE, cell.size - Vector2(2, 2)), UiStyle.DARK)
@@ -3321,19 +3431,24 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
 			continue
 		var up: float = float(slot.c[1 - int(slot.down)])
 		var down_v: float = float(slot.c[int(slot.down)])
-		_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 3.0, 17.0, 10.0), _cook_color(up))
-		_canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 4.0, 15.0, 1.0), Color(1, 1, 1, 0.18))
+		if dog:  # a hot dog: a long, thin body with rounded ends
+			_canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 5.0, 15.0, 6.0), _dog_color(up))
+			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 6.0, 17.0, 4.0), _dog_color(up))
+			_canvas.draw_rect(Rect2(cell.position.x + 4.0, cell.position.y + 6.0, 13.0, 1.0), Color(1, 1, 1, 0.2))
+		else:
+			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 3.0, 17.0, 10.0), _cook_color(up))
+			_canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 4.0, 15.0, 1.0), Color(1, 1, 1, 0.18))
 		var bar := Rect2(cell.position.x + 2.0, cell.position.y + 15.0, 16.0, 3.0)
 		_canvas.draw_rect(bar, UiStyle.MUTED)
 		_canvas.draw_rect(Rect2(bar.position.x + 17.0 * win.x, bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
 		_canvas.draw_rect(Rect2(bar.position.x + 17.0 * minf(win.y, 1.0), bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
-		_canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 17.0 * clampf(down_v, 0.0, 1.0), 3.0), _cook_color(down_v))
+		_canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 17.0 * clampf(down_v, 0.0, 1.0), 3.0), _dog_color(down_v) if dog else _cook_color(down_v))
 		var tag := str(gg.doneness(i))
 		if slot.cool:
 			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("5aa0e8"))
 		elif float(slot.flare) > 0.0:
 			_canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("f08a30") if int(float(Time.get_ticks_msec()) / 120.0) % 2 == 0 else RED)
-		_t({"raw": "R", "medium": "M", "well": "W", "burnt": "X"}.get(tag, "-"), cell.position.x + 9.0, cell.position.y + 6.0, INK if tag == "raw" else WHITE)
+		_t({"raw": "R", "medium": "M", "well": "W", "dog": "D", "burnt": "X"}.get(tag, "-"), cell.position.x + 9.0, cell.position.y + 6.0, INK if tag == "raw" else WHITE)
 
 
 func _cook_color(v: float) -> Color:
@@ -3344,6 +3459,15 @@ func _cook_color(v: float) -> Color:
 	if v < 0.55:
 		return Color("c9704f").lerp(Color("8f5233"), (v - 0.35) / 0.2)
 	return Color("8f5233").lerp(Color("4a2c1c"), clampf((v - 0.55) / 0.35, 0.0, 1.0))
+
+
+# a hot dog's colour for a side: pink, then red-brown, then dark
+func _dog_color(v: float) -> Color:
+	if v > GrillGame.DOG_BURN:
+		return Color("2a1c18")
+	if v < GrillGame.DOG_RAW:
+		return Color("e58a8a").lerp(Color("c9503a"), v / GrillGame.DOG_RAW)
+	return Color("c9503a").lerp(Color("7a2f1f"), clampf((v - GrillGame.DOG_RAW) / 0.4, 0.0, 1.0))
 
 
 # the overlay version (no room): the numbers

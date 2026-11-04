@@ -1,6 +1,6 @@
 # Scope: warehouse activities (roadmap R21): the grill, cornhole, the overhead door
 
-**Built (Nov 2026): A (the grill / cookout) and B (cornhole)**, see CLAUDE.md "Cornhole and the cookout". Differences from this plan: both are drawn by `fx.gd` in code (no sprite art, `warehouse_set.lua` untouched), the cornhole boards are at set x 1140 and 1236 with you and the crew member of the round at the two ends (bags fly both ways), the grate is a HUD box because the grill sprite is only 32 x 36, hot dogs and the toss pose are not built, `Career.GAMES` was left as the four classic games (FULL HOUSE keeps its meaning). C (the overhead door) is another agent's.
+**Built (Nov 2026): A (the grill / cookout) and B (cornhole)**, see CLAUDE.md "Cornhole and the cookout". Differences from this plan: both are drawn by `fx.gd` in code (no sprite art, `warehouse_set.lua` untouched), the cornhole boards are at set x 1140 and 1236 with you and the crew member of the round at the two ends (bags fly both ways), the grate is a HUD box because the grill sprite is only 32 x 36, hot dogs and the toss pose were left for R29 (**now built**, Nov 2026: the `toss` pose, hot dogs on the grate with one flip, and a campaign lunch break, see CLAUDE.md "Hot dogs and the lunch break"), `Career.GAMES` was left as the four classic games (FULL HOUSE keeps its meaning). C (the overhead door) is another agent's.
 
 Read-only scoping pass (Nov 2026) from the code and docs, nothing was run. Line numbers drift. The warehouse itself (R18 phase 1) is built: `tools/warehouse_set.lua`, `godot/scenes/warehouse.tscn`, `tests/warehouse.gd`.
 
@@ -17,13 +17,13 @@ Read-only scoping pass (Nov 2026) from the code and docs, nothing was run. Line 
 - A round is 6 tickets in 75 s ("2 WELL, 1 MEDIUM", "NO CHEESE") from named coworkers who queue with bubbles. Stars: 3 = at least 5 of 6 correct with nothing burnt, 2 = at least 4, 1 = at least 2.
 - Tier keys (inferred): `grill.cook_rate`, `grill.window`, `grill.tickets`, `grill.time`, `grill.flare`. Cozy Easy: no flare-ups, no timer penalty, burnt burgers are "crispy, the crew eats them", floor of 1 star.
 - Art: patties, smoke and flames drawn by the fx in code (rects), generic names only ("BURGER", "DOG", "SMOKY SAUCE"); procedural Sfx for sizzle, flare whoosh and a bell. Player uses `reach` to flip and `hold` to serve.
-- Rewards via `_finish`; a campaign lunch bonus is new design (outings are tied to the campaign outing days), so v1 is Free Play plus the normal outing results.
+- Rewards via `_finish`; a campaign lunch break (R29, built) is its own card at noon on lunch days, not an evening outing day.
 
 ## B. Cornhole (`cornhole`)
 - Like bowling: E stops an aim marker (sideways lane), E stops a power bar (distance). Board = 1, hole = 3, bags cancel, four bags a turn, play to 21 (tier keys `corn.to` 11 / 15 / 21), you against one crew member a round; skill tables per person: Alan precise, Garrison streaky, Dan wild, Maya steady, Vic show-off with an audience bonus; reuse `CREW_LINES`.
 - Flight arc: a new fx kind `cornhole_bag` (side-view parabola). Stars: win by 7+ = 3, win = 2, loss = 1 on cozy Easy (with a short-miss slide assist).
 - **Where:** boards at set x about 1125 and 1275 between the FINISH line (1100) and the dock, low and non-colliding, so the walkway stays clear. The chair race ends at 1100 so it does not need that stretch. Fallback: park them off-lane like the race props and move them in only while playing.
-- Throw pose: reuse `reach` in v1; a proper toss pose needs a `poses.lua` edit and a rebuild of every character's animation files (M, later).
+- Throw pose: `reach` in v1, **the `toss` pose since R29**; (it needed a `poses.lua` edit and a rebuild of every character's animation files).
 - Tier keys: `corn.opp_skill`, `corn.aim_speed`, `corn.power_speed`, `corn.to`.
 
 ## C. Overhead door and the outside

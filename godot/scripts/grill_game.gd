@@ -13,6 +13,10 @@ extends RefCounted
 # seconds. A flare-up (seeded) makes one patty cook 2.4 times as fast for a few seconds until it is moved. Cozy Easy: no
 # flare-ups, tickets never walk off, the round has twice the time, and a burnt patty is "crispy" (served as well done).
 # Stars: 3 = all but one ticket served and nothing burnt, 2 = all but two, 1 = at least a third (2 or more).
+# HOT DOGS (R29, `params.dogs` = the share of the items that are dogs, 0 = none as before): a slot is a burger or a dog. A dog
+#   cooks 1.3x as fast, reads raw (a side under DOG_RAW), done (both sides from DOG_RAW) or burnt (a side over DOG_BURN), needs
+#   one flip only (window DOG_WIN_LO to DOG_WIN_LO + DOG_WIN_W x window: early or late just spoils a side, it never tears) and
+#   serves a "dog" line of a ticket ("1 DOG"). A fresh slot is a dog when the open orders want more dogs than the grate has.
 
 const SLOTS := 4
 const RAW := 0.35
@@ -28,12 +32,18 @@ const REFILL := 1.6
 const LEAD := 1.0  # the first ticket
 const SPREAD := 0.6  # the last ticket arrives at this share of the round
 const PATIENCE := 40.0
+const DOG_RAW := 0.3
+const DOG_BURN := 0.85
+const DOG_RATE := 1.3
+const DOG_WIN_LO := 0.25
+const DOG_WIN_W := 0.45
 const NOTES := ["", "", "NO CHEESE", "SMOKY SAUCE", "EXTRA PICKLES", "NO ONIONS", "LOTS OF KETCHUP"]
 
 var cook_rate := 1.0
 var window := 1.0
 var time := 75.0
 var flare_scale := 1.0
+var dog_share := 0.0
 var cozy := false
 var rng: RandomNumberGenerator
 var names: Array = []
@@ -45,6 +55,7 @@ var tickets: Array = []
 var served := 0
 var lost := 0
 var burnt := 0
+var dogs_plated := 0
 var tossed := 0
 var wasted := 0
 var flips := 0
@@ -62,14 +73,16 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 	window = float(params.get("window", 1.0))
 	time = float(params.get("time", 75.0))
 	flare_scale = float(params.get("flare", 1.0))
+	dog_share = clampf(float(params.get("dogs", 0.0)), 0.0, 0.9)
 	cozy = bool(params.get("cozy", false))
 	if cozy:
 		flare_scale = 0.0
 	rng = r
 	names = who.duplicate() if not who.is_empty() else ["A COWORKER"]
 	slots = []
+	var n_dogs := roundi(float(SLOTS) * dog_share)
 	for i in SLOTS:
-		slots.append(_fresh())
+		slots.append(_fresh("dog" if i >= SLOTS - n_dogs else "burger"))
 	tickets = []
 	var n := int(params.get("tickets", 6))
 	var gap := (time * SPREAD - LEAD) / float(maxi(1, n - 1))
@@ -80,6 +93,7 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 	served = 0
 	lost = 0
 	burnt = 0
+	dogs_plated = 0
 	tossed = 0
 	wasted = 0
 	flips = 0
@@ -90,20 +104,46 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
 	msg = "SIX HUNGRY COWORKERS. FIRE UP THE GRILL." if n == 6 else "HUNGRY COWORKERS. FIRE UP THE GRILL."
 
 
-func _fresh() -> Dictionary:
-	return {"on": true, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+func _fresh(kind := "burger") -> Dictionary:
+	return {"on": true, "kind": kind, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+
+
+# what a new slot holds: a dog when the open orders want more dogs than the grate has (and nothing else is missing more)
+func _next_kind() -> String:
+	if dog_share <= 0.0:
+		return "burger"
+	var want_dog := 0
+	var want_burger := 0
+	for t in tickets:
+		if t.state == "open":
+			want_dog += int(t.need.get("dog", 0)) - int(t.have.get("dog", 0))
+			want_burger += int(t.need.well) + int(t.need.medium) - int(t.have.well) - int(t.have.medium)
+	var on_dog := 0
+	var on_burger := 0
+	for s in slots:
+		if s.on:
+			if s.kind == "dog":
+				on_dog += 1
+			else:
+				on_burger += 1
+	var d := want_dog - on_dog
+	var b := want_burger - on_burger
+	return "dog" if d > b or (d == b and on_dog == 0) else "burger"
 
 
 func _ticket(i: int, at: float) -> Dictionary:
 	var count := 1 + int(rng.randf() < 0.55) + int(i % 3 == 2 and rng.randf() < 0.3)
-	var need := {"medium": 0, "well": 0}
+	var need := {"medium": 0, "well": 0, "dog": 0}
 	for k in count:
-		need["well" if rng.randf() < 0.55 else "medium"] += 1
+		if dog_share > 0.0 and rng.randf() < dog_share:
+			need["dog"] += 1
+		else:
+			need["well" if rng.randf() < 0.55 else "medium"] += 1
 	return {
 		"id": i,
 		"who": str(names[i % names.size()]),
 		"need": need,
-		"have": {"medium": 0, "well": 0},
+		"have": {"medium": 0, "well": 0, "dog": 0},
 		"at": at,
 		"left": PATIENCE,
 		"note": str(NOTES[rng.randi() % NOTES.size()]),
@@ -122,6 +162,9 @@ func lines(t: Dictionary) -> Array:
 		out.append("%d WELL" % int(t.need.well))
 	if int(t.need.medium) > 0:
 		out.append("%d MEDIUM" % int(t.need.medium))
+	var dogs := int(t.need.get("dog", 0))
+	if dogs > 0:
+		out.append("%d DOG%s" % [dogs, "S" if dogs > 1 else ""])
 	return out
 
 
@@ -139,15 +182,27 @@ static func band(c0: float, c1: float) -> String:
 	return "medium" if lo < WELL else "well"
 
 
+# a dog is raw, "dog" (done) or burnt
+static func dog_band(c0: float, c1: float) -> String:
+	if maxf(c0, c1) > DOG_BURN:
+		return "burnt"
+	return "raw" if minf(c0, c1) < DOG_RAW else "dog"
+
+
 func doneness(i: int) -> String:
 	var s: Dictionary = slots[i]
 	if not s.on:
 		return "empty"
+	if s.kind == "dog":
+		var d := dog_band(float(s.c[0]), float(s.c[1]))
+		return "dog" if d == "burnt" and cozy else d
 	var b := band(float(s.c[0]), float(s.c[1]))
 	return "well" if b == "burnt" and cozy else b
 
 
-func flip_range() -> Vector2:
+func flip_range(kind := "burger") -> Vector2:
+	if kind == "dog":
+		return Vector2(DOG_WIN_LO, DOG_WIN_LO + DOG_WIN_W * window)
 	return Vector2(WIN_LO, WIN_LO + WIN_W * window)
 
 
@@ -167,20 +222,21 @@ func flip(i: int = -1) -> String:
 		return ""
 	var down: int = s.down
 	var v := float(s.c[down])
-	var r := flip_range()
+	var is_dog: bool = s.kind == "dog"
+	var r := flip_range(str(s.kind))
 	var res := "sear"
 	if v < r.x:
-		s.c[down] = v * 0.5
+		s.c[down] = v * (0.7 if is_dog else 0.5)
 		s.torn = true
 		res = "stick"
-		msg = "STUCK TO THE GRATE. IT TORE."
+		msg = "ROLLED TOO SOON. THAT SIDE IS PALE." if is_dog else "STUCK TO THE GRATE. IT TORE."
 	elif v > r.y:
 		s.c[down] = v + 0.06
 		res = "char"
 		msg = "FLIPPED LATE. THAT SIDE IS CHARRED."
 	else:
 		good_flips += 1
-		msg = "NICE SEAR."
+		msg = "NICE GRILL MARKS." if is_dog else "NICE SEAR."
 	s.down = 1 - down
 	s.flipped = int(s.flipped) + 1
 	flips += 1
@@ -209,6 +265,7 @@ func pull(i: int = -1) -> String:
 		return ""
 	var d := doneness(at)
 	var out := "wasted"
+	var is_dog: bool = s.kind == "dog"
 	if d == "raw" or d == "burnt":
 		tossed += 1
 		out = "tossed"
@@ -217,7 +274,7 @@ func pull(i: int = -1) -> String:
 	else:
 		var hit := {}
 		for t in tickets:
-			if t.state == "open" and int(t.have[d]) < int(t.need[d]):
+			if t.state == "open" and int(t.have.get(d, 0)) < int(t.need.get(d, 0)):
 				hit = t
 				break
 		if hit.is_empty():
@@ -225,11 +282,13 @@ func pull(i: int = -1) -> String:
 			msg = "NOBODY ORDERED THAT ONE."
 			events.append({"e": "toss", "slot": at})
 		else:
-			hit.have[d] += 1
+			hit.have[d] = int(hit.have.get(d, 0)) + 1
 			out = "plated"
-			msg = "%s GETS A %s BURGER." % [str(hit.who).to_upper(), d.to_upper()]
+			if is_dog:
+				dogs_plated += 1
+			msg = "%s GETS A %s." % [str(hit.who).to_upper(), "HOT DOG" if is_dog else d.to_upper() + " BURGER"]
 			events.append({"e": "plate", "slot": at, "who": hit.who})
-			if int(hit.have.well) >= int(hit.need.well) and int(hit.have.medium) >= int(hit.need.medium):
+			if int(hit.have.well) >= int(hit.need.well) and int(hit.have.medium) >= int(hit.need.medium) and int(hit.have.get("dog", 0)) >= int(hit.need.get("dog", 0)):
 				hit.state = "served"
 				served += 1
 				out = "served"
@@ -280,16 +339,17 @@ func _cook(i: int, dt: float) -> void:
 	if not s.on:
 		s.refill = float(s.refill) - dt
 		if float(s.refill) <= 0.0:
-			slots[i] = _fresh()
+			slots[i] = _fresh(_next_kind())
 		return
+	var is_dog: bool = s.kind == "dog"
 	var mul := COOL_MUL if s.cool else 1.0
 	if float(s.flare) > 0.0:
 		s.flare = float(s.flare) - dt
 		if not s.cool:
 			mul *= FLARE_MUL
 	var down: int = s.down
-	s.c[down] = minf(1.3, float(s.c[down]) + BASE_RATE * cook_rate * mul * dt)
-	if not s.burnt and maxf(float(s.c[0]), float(s.c[1])) > BURN:
+	s.c[down] = minf(1.3, float(s.c[down]) + BASE_RATE * cook_rate * mul * (DOG_RATE if is_dog else 1.0) * dt)
+	if not s.burnt and maxf(float(s.c[0]), float(s.c[1])) > (DOG_BURN if is_dog else BURN):
 		s.burnt = true
 		burnt += 1
 		events.append({"e": "burnt", "slot": i})

@@ -54,9 +54,11 @@ func _bot_step(g: RefCounted, react: float, cool_until: Dictionary, seen: Dictio
 	for i in 4:
 		var nw := 0
 		var nm := 0
+		var nd := 0
 		for t in g.open_tickets():
 			nw += int(t.need.well) - int(t.have.well)
 			nm += int(t.need.medium) - int(t.have.medium)
+			nd += int(t.need.get("dog", 0)) - int(t.have.get("dog", 0))
 		var s: Dictionary = g.slots[i]
 		if not s.on:
 			continue
@@ -72,6 +74,12 @@ func _bot_step(g: RefCounted, react: float, cool_until: Dictionary, seen: Dictio
 		if s.cool:
 			continue
 		var c: Array = s.c
+		if s.kind == "dog":  # one flip at 0.4, off the grate when done and somebody wants it
+			if int(s.flipped) == 0 and float(c[s.down]) >= 0.4:
+				g.flip(i)
+			elif int(s.flipped) >= 1 and ((g.doneness(i) == "dog" and nd > 0 and minf(float(c[0]), float(c[1])) >= 0.34) or maxf(float(c[0]), float(c[1])) > 0.8):
+				g.pull(i)
+			continue
 		if int(s.flipped) == 0 and float(c[s.down]) >= (0.58 if nw > nm else 0.4):
 			g.flip(i)
 			continue
@@ -353,6 +361,7 @@ func _init() -> void:
 	o.press(KEY_LEFT)
 	_check(gg.sel == 3, "LEFT picks the one before (wrapping)")
 	o.tick(1.5)
+	gg.slots[3].kind = "burger"  # the tier's dog share makes slot 4 a dog; this part is about the burger keys
 	gg.slots[3].c = [0.5, 0.0]
 	o.press(KEY_E)
 	_check(gg.slots[3].down == 1 and sfx.played.has("grill_sizzle"), "E flips the selected patty (and it sizzles)")
@@ -399,5 +408,105 @@ func _init() -> void:
 	_check(o.phase == "result" and o.stars == 1, "Cozy Easy: serving nobody is still 1 star (%d)" % o.stars)
 	o.press(KEY_ENTER)
 	d.set_tier("normal")
+	_dogs(d, o, career)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)
+
+# ---- hot dogs (R29)
+func _dogs(d: Node, o: Node, career: Node) -> void:
+	_check(d.TABLE.has("grill.dogs") and d.TABLE["grill.dogs"].size() == 3, "grill.dogs has three tiers")
+	var g := _game("normal", 5, {"dogs": 0.5})
+	_check(g.slots.filter(func(s: Dictionary) -> bool: return s.kind == "dog").size() == 2, "half dogs: two of the four slots start as dogs")
+	_check(_game("normal", 5).slots.all(func(s: Dictionary) -> bool: return s.kind == "burger"), "no dogs param: a burger-only grate, as before")
+	var plain := _game("normal", 9)
+	var with := _game("normal", 9, {"dogs": 0.4})
+	_check(plain.tickets.all(func(t: Dictionary) -> bool: return int(t.need.get("dog", 0)) == 0), "no dogs param: no order asks for a dog")
+	var dog_lines := 0
+	for k in 6:
+		for t in _game("normal", 100 + k, {"dogs": 0.4}).tickets:
+			dog_lines += int(t.need.dog)
+	_check(dog_lines >= 4, "orders mix burgers and dogs (%d dogs on 36 orders' lines)" % dog_lines)
+	_check(with.tickets.any(func(t: Dictionary) -> bool: return with.lines(t).any(func(l: String) -> bool: return l.contains("DOG"))) or dog_lines > 0, "an order line reads 1 DOG")
+	# the bands
+	_check(Grill.dog_band(0.0, 0.0) == "raw" and Grill.dog_band(0.29, 0.6) == "raw", "a dog side under 0.3 is raw")
+	_check(Grill.dog_band(0.3, 0.3) == "dog" and Grill.dog_band(0.85, 0.5) == "dog", "both sides from 0.3 and none over 0.85 is done")
+	_check(Grill.dog_band(0.3, 0.86) == "burnt", "a side over 0.85 is burnt")
+	# cooking: dogs cook faster than burgers, and one flip does it
+	var cook := _game("normal", 3, {"dogs": 0.5})
+	var dog_i := 3
+	var burger_i := 0
+	for k in 100:
+		cook.step(0.1)
+	_check(float(cook.slots[dog_i].c[0]) > float(cook.slots[burger_i].c[0]) * 1.2, "a dog cooks faster than a burger (%.2f vs %.2f)" % [cook.slots[dog_i].c[0], cook.slots[burger_i].c[0]])
+	_check(is_equal_approx(cook.flip_range("dog").x, 0.25) and cook.flip_range("dog").y > cook.flip_range().y - 0.01, "the dog flip window is wider and earlier")
+	var one := _game("normal", 3, {"dogs": 0.5})
+	one.slots[3].c = [0.4, 0.0]
+	_check(one.flip(3) == "sear" and one.slots[3].down == 1, "a dog flip at 0.4 sears")
+	one.slots[3].c = [0.4, 0.34]
+	_check(one.doneness(3) == "dog", "after one flip both sides are done")
+	var early := _game("normal", 3, {"dogs": 0.5})
+	early.slots[3].c = [0.1, 0.0]
+	_check(early.flip(3) == "stick" and is_equal_approx(float(early.slots[3].c[0]), 0.07), "flipped too soon the side is pale (0.7 kept), not torn in half")
+	# serving a dog fills only a dog line
+	var sv := _game("normal", 4, {"dogs": 0.5})
+	sv.step(1.1)
+	sv.tickets[0].need = {"medium": 0, "well": 1, "dog": 1}
+	sv.tickets[0].have = {"medium": 0, "well": 0, "dog": 0}
+	sv.tickets[0].state = "open"
+	sv.slots[3].c = [0.5, 0.5]
+	_check(sv.pull(3) == "plated" and sv.tickets[0].have.dog == 1 and sv.dogs_plated == 1, "a done dog goes onto the dog line of the oldest ticket")
+	sv.slots[0].c = [0.7, 0.7]
+	sv.slots[0].kind = "burger"
+	_check(sv.pull(0) == "served" and sv.served == 1, "the order is served when the burger and the dog are both plated")
+	var raw := _game("normal", 4, {"dogs": 0.5})
+	raw.slots[3].c = [0.1, 0.2]
+	_check(raw.pull(3) == "tossed" and raw.tossed == 1, "a raw dog is tossed")
+	var burnt := _game("normal", 4, {"dogs": 0.5})
+	burnt.slots[3].c = [0.9, 0.3]
+	_check(burnt.doneness(3) == "burnt", "a burnt dog reads burnt")
+	var cz := _game("easy", 4, {"dogs": 0.5, "cozy": true})
+	cz.slots[3].c = [0.9, 0.5]
+	_check(cz.doneness(3) == "dog", "Cozy Easy: a burnt dog is crispy and serves as done")
+	# a fresh slot follows the orders: a dog when the open orders want more dogs
+	var f := _game("normal", 6, {"dogs": 0.4})
+	f.tickets[0].need = {"medium": 0, "well": 0, "dog": 2}
+	f.tickets[0].have = {"medium": 0, "well": 0, "dog": 0}
+	f.tickets[0].state = "open"
+	f.slots[0].on = false
+	f.slots[0].refill = 0.05
+	f.step(0.1)
+	_check(f.slots[0].kind == "dog", "a refilled slot is a dog when the open orders want dogs")
+	f.tickets[0].need = {"medium": 0, "well": 3, "dog": 0}
+	f.slots[1].on = false
+	f.slots[1].refill = 0.05
+	f.step(0.1)
+	_check(f.slots[1].kind == "burger", "and a burger when they want burgers")
+	# a bot plays a full round with dogs on every tier and still gets stars; determinism
+	for tier in TIERS:
+		var stars_sum := 0
+		var served_sum := 0
+		var dog_sum := 0
+		for k in 6:
+			var bg := _game(tier, 40 + k, {"dogs": 0.35, "cozy": tier == "easy"})
+			_bot(bg, 0.6)
+			stars_sum += bg.stars()
+			served_sum += bg.served
+			dog_sum += bg.dogs_plated
+		_check(stars_sum >= 6 and dog_sum >= 3, "%s: a bot cooks burgers and dogs (stars %d over 6 rounds, %d dogs plated, %d served)" % [tier, stars_sum, dog_sum, served_sum])
+	var a := _game("normal", 77, {"dogs": 0.4})
+	var b2 := _game("normal", 77, {"dogs": 0.4})
+	_bot(a, 0.6)
+	_bot(b2, 0.6)
+	_check(a.served == b2.served and a.dogs_plated == b2.dogs_plated and a.tickets.map(func(t: Dictionary) -> String: return str(t.need)) == b2.tickets.map(func(t: Dictionary) -> String: return str(t.need)), "the same seed gives the same dogs")
+	# the outing passes the tier's dog share and counts dogs for the career
+	d.set_tier("normal")
+	o.opts = {}
+	_check(is_equal_approx(float(o._grill_params().dogs), 0.35), "the outing hands the tier's dog share to the game")
+	_check(career.has_method("value"), "career is there")
+	career.reset_all()
+	career.note_outing("grill", 2, {"served": 4, "dogs": 3, "clean": false})
+	_check(career.value("dogs_served") == 3 and career.value("burgers_served") == 4, "hot dogs are counted apart from the burgers")
+	career.note_outing("grill", 2, {"served": 4, "dogs": 17})
+	_check(career.has_medal("dog_days"), "DOG DAYS at 20 hot dogs")
+	career.note_outing("grill", 1, {"served": 2, "lunch": true})
+	_check(career.value("lunches") == 1 and career.value("outings") == 2, "a lunch counts as a lunch, not as a team outing")

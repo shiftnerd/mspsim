@@ -3,13 +3,13 @@ extends SceneTree
 # Character creator, level 1 (R15, Look + the create step of charselect.gd): the palette table maps every colour of the
 # intern sheet and leaves the outline alone, a look is saved and restored with the campaign (an old save loads as before),
 # the MAKE YOUR OWN step is reachable by keys, pad and mouse, and RANDOM is deterministic from the run seed.
-# Level 2 (hairstyles, prebaked sheets custom_intern_<style>): every shipped style plays all 123 frames in both facings, differs
+# Level 2 (hairstyles, prebaked sheets custom_intern_<style>): every shipped style plays all 129 frames in both facings, differs
 # from the intern sheet only around the head, never covers the eyes, is saved and restored, and an old save wears `side`.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/creator.gd
 
 const SHEET_W := 64
 const SHEET_H := 80
-const NFRAMES := 123
+const NFRAMES := 129
 const EYES := [Color8(255, 255, 255), Color8(58, 36, 24)]  # eye white and pupil
 # colours that locate the head in a frame: hair, its highlight, the brows and the eyes (and their hurt flash mixes)
 const HEAD_COLORS := [
@@ -135,7 +135,7 @@ func _check_style(look: Node, style: String) -> void:
 		var b := _rgba("%s_%s" % [sheet, facing])
 		_check(
 			b.get_width() == NFRAMES * SHEET_W and b.get_height() == SHEET_H,
-			"%s %s: the sheet is 123 frames of 64x80" % [style, facing]
+			"%s %s: the sheet is 129 frames of 64x80" % [style, facing]
 		)
 		var da := a.get_data()
 		var db := b.get_data()
@@ -929,7 +929,7 @@ func _check_masks(look: Node) -> void:
 	]
 	for facing in ["right", "left"]:
 		var img := _rgba("office_intern_%s" % facing)
-		var every3: Array = range(0, NFRAMES, 3) + [25, 28, 29, 30, 32, 34, 35, 36, 86, 95, 100, 104, 110, 115, 122]
+		var every3: Array = range(0, NFRAMES, 3) + [25, 28, 29, 30, 32, 34, 35, 36, 86, 95, 100, 104, 110, 115, 122, 124, 127, 128]
 		var subset := [0, 4, 12, 18, 20, 26, 28, 31, 37, 40, 43, 64, 78, 90, 107, 120]
 		for combo in combos:
 			if facing == "left" and combo[0] != "plaid":
@@ -985,7 +985,7 @@ func _check_masks(look: Node) -> void:
 								shorts_skin_bad += 1
 						else:
 							stray += 1
-				if combo[1] == "shorts" and facing == "right" and not f in [25, 28, 29, 30, 31, 32, 33, 34] and f < 123:
+				if combo[1] == "shorts" and facing == "right" and not f in [25, 28, 29, 30, 31, 32, 33, 34] and f < 129:
 					if min_pants != 999 and look.HEMS[f] != min_pants + 9:
 						hem_bad += 1
 			var tag := "%s %s %s %s" % [facing, combo[0], combo[1], combo[2]]

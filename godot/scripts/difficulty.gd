@@ -127,6 +127,8 @@ const TABLE := {
 	"grill.tickets": [5, 6, 6],
 	"grill.time": [85, 75, 68],
 	"grill.flare": [0.5, 1.0, 1.5],
+	# hot dogs (R29): the share of the items on the orders that are dogs (0 = a burger-only cookout)
+	"grill.dogs": [0.3, 0.35, 0.4],
 	# Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
 	# SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
 	# (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).

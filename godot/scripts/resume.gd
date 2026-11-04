@@ -99,7 +99,7 @@ func day_dict() -> Dictionary:
 		"social": {"day_delta": Social.day_delta, "reopen_loss": Social._reopen_loss, "closed": Social._closed},
 		"events": Events.pending.duplicate(true),
 		"onsite": {"spawn_at": Onsite._spawn_at, "pet_energy": Onsite._pet_energy},
-		"outings": {"offered": Outings._offered},
+		"outings": {"offered": Outings._offered, "lunch": Outings._lunch_offered},
 		"meeting": Meeting.state,
 	}
 
@@ -136,6 +136,7 @@ func apply_day(d: Dictionary) -> void:
 	Onsite._spawn_at = float(on.get("spawn_at", -1.0))
 	Onsite._pet_energy = int(on.get("pet_energy", 0))
 	Outings._offered = bool(d.get("outings", {}).get("offered", false))
+	Outings._lunch_offered = bool(d.get("outings", {}).get("lunch", false))
 	Meeting.state = str(d.get("meeting", ""))
 
 

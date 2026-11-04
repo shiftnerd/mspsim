@@ -53,8 +53,8 @@ const MIN_STEP := 0.045  # the least a shade differs from its base in value
 const PATTERNS := ["none", "stripes", "plaid", "checks"]
 const SHORTS := ["none", "shorts"]
 const CHOICES := {"hair_style": HAIR_STYLES, "pattern": PATTERNS, "shorts": SHORTS}  # the list rows of the create step
-const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 123 frames
-const FRAMES := 123
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 129 frames
+const FRAMES := 129
 const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
 const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
@@ -63,7 +63,8 @@ const HEMS := [
 	255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
 	67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
 	80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
-	80, 80, 80, 80, 80, 80
+	80, 80, 80, 80, 80, 80,
+	68, 69, 68, 67, 67, 67
 ]
 const SOURCES := [
 	["f3b488", "skin", 0],

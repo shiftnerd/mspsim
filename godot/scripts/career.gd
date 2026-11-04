@@ -60,6 +60,8 @@ const DEFAULT_MEDALS := [
 	{"id": "bag_man", "title": "BAG MAN", "desc": "10 BAGS IN THE HOLE", "rules": [["bags_in_hole", ">=", 10]]},
 	{"id": "grill_sergeant", "title": "GRILL SERGEANT", "desc": "A COOKOUT, NOTHING BURNT", "rules": [["grill_clean", ">=", 1]]},
 	{"id": "old_tree", "title": "OLD TREE", "desc": "FIND THE TREE IN THE WAREHOUSE", "rules": [["old_tree", ">=", 1]]},
+	{"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
+	{"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -123,6 +125,8 @@ const COUNTERS := [
 	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
 	["", "COOKOUT BEST", "stars.grill", "stars"],
 	["", "BURGERS SERVED", "burgers_served", "n"],
+	["", "HOT DOGS SERVED", "dogs_served", "n"],
+	["", "LUNCH BREAKS", "lunches", "n"],
 	["", "STRIKES", "bowl_strikes", "n"],
 	["", "GUTTER BALLS", "bowl_gutters", "n"],
 	["", "HOOK STRIKES", "bowl_hook_strikes", "n"],
@@ -294,7 +298,10 @@ func note_ticket(fix: String) -> void:
 func note_outing(game: String, result: int, info := {}) -> void:
 	if result < 0:
 		return
-	add("outings")
+	if bool(info.get("lunch", false)):
+		add("lunches")  # a lunch break is not a team outing (PEOPLE PERSON counts those)
+	else:
+		add("outings")
 	best("stars." + game, result)
 	match game:
 		"karaoke":
@@ -308,6 +315,7 @@ func note_outing(game: String, result: int, info := {}) -> void:
 			add("bags_in_hole", int(info.get("holes", 0)))
 		"grill":
 			add("burgers_served", int(info.get("served", 0)))
+			add("dogs_served", int(info.get("dogs", 0)))
 			if bool(info.get("clean", false)):
 				best("grill_clean", 1)
 
