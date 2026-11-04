@@ -137,6 +137,104 @@ func _init() -> void:
 		_check(cp.global_position.x > 150.0, "%s: back in the kitchenette beside the steel door (x %d)" % [fmt, int(cp.global_position.x)])
 	game.set_format("wide")
 
+	# ---- R21c: the overhead door, the switch and the outside
+	change_scene_to_file("res://scenes/warehouse.tscn")
+	await _wait_scene("warehouse")
+	room = current_scene
+	for c in room.get_node("Actors").get_children():
+		if "routine" in c:
+			c.queue_free()
+	var sfx := root.get_node("Sfx")
+	var outside_script := load("res://scripts/outside.gd")
+	var hints := root.get_node("Hints")
+	var bd: Node = room.get_node_or_null("Backdrop")
+	_check(bd != null and room.get_node_or_null("Daylight") != null, "a Backdrop and a Daylight node")
+	_check(bd != null and bd.get_index() < room.get_node("Background").get_index(), "the Backdrop is drawn behind the Background")
+	_check(room.get_node("Background").texture.get_image().get_pixel(1300, 130).a == 0.0, "the doorway is a transparent hole in the baked art")
+	_check(not room.get_node("Interactables/UseDoor").low_priority and not room.get_node("Interactables/UseDoorSwitch").low_priority, "the door and its switch are normal priority zones")
+	var door: Node = room.get_node("Fx/Door")
+	var plate: Node = room.get_node("Fx/DoorSwitch")
+	var slats: Sprite2D = room.get_node("Actors/overhead_door_0")
+	_check(door.open == 0.0 and door.goal == 0.0 and world.door_open == 0.0, "the door starts closed")
+	_check(slats.region_enabled and slats.visible and int(slats.region_rect.size.y) == 82, "closed: the whole door sprite shows")
+	_check(not bd.visible, "closed: the backdrop does not draw")
+	# zone priority (the interact.gd nearest rule, like tests/prio.gd)
+	var pl: CharacterBody2D = room.get_node("Actors/Player")
+	var names := {}
+	for at in [1347, 1422, 1047]:
+		pl.global_position = Vector2(x0 + at, 118.0)
+		pl._pick = null
+		for i in 12:
+			await process_frame
+		var n: Node = pl.nearest()
+		names[at] = "" if n == null else str(n.name)
+	_check(names[1347] == "UseDoor" and names[1422] == "UseDoorSwitch" and names[1047] == "UseDartBoard", "E at the door, the switch and the dart board picks each one: %s" % str(names))
+	# the switch opens it: 3 s, the rattle and the thunk, a toast
+	sfx.clear_log()
+	room.get_node("Interactables/UseDoorSwitch").use(pl)
+	_check(door.goal == 1.0 and world.door_open == 1.0, "the switch asks for OPEN and the world remembers it")
+	_check(hints.toast_text == "OPENING", "a toast says OPENING")
+	for i in 60:
+		await process_frame
+	_check(door.open > 0.1 and door.open < 0.9 and slats.region_rect.size.y < 82.0 and slats.visible, "half way: the slats rise (open %.2f)" % door.open)
+	_check(bd.visible and "door_rattle" in sfx.played, "while it moves the backdrop shows and the slats rattle")
+	# pressing again while it moves reverses it
+	room.get_node("Interactables/UseDoor").use(pl)
+	_check(door.goal == 0.0 and world.door_open == 0.0 and hints.toast_text == "CLOSING", "pressing while it moves reverses it (CLOSING)")
+	var guard := 0
+	while door.open > 0.0 and guard < 600:
+		await process_frame
+		guard += 1
+	_check(door.open == 0.0 and int(slats.region_rect.size.y) == 82 and slats.visible and "door_thunk" in sfx.played, "closed again: clip 82, thunk heard")
+	# open all the way
+	plate.door_press()
+	guard = 0
+	while door.open < 1.0 and guard < 600:
+		await process_frame
+		guard += 1
+	_check(door.open == 1.0 and int(slats.region_rect.size.y) == 0 and not slats.visible, "open: the slats are gone from the doorway (clip 0)")
+	_check(abs(guard - 180) < 40, "it takes about 3 s (%d frames at 60 fps)" % guard)
+	for i in 4:
+		await process_frame
+	_check(room.get_node("Daylight").visible and room.get_node("Daylight").open == 1.0, "open: the daylight spill is on")
+	# the lights switched off: the spill and the backdrop stay untinted
+	world.set_lights("warehouse", false)
+	for i in 30:
+		await process_frame
+	var plain: bool = room.get_node("Backdrop").modulate == Color(1, 1, 1, 1) and room.get_node("Daylight").modulate == Color(1, 1, 1, 1)
+	_check(room.get_node("Background").modulate.r < 0.6 and plain and room.get_node("Daylight").visible, "lights out: the room goes dark, the outside and the daylight do not")
+	world.set_lights("warehouse", true)
+	# the walkway stays clear and the door sprite stays on its sort line
+	_check(slats.position.y == 92.0 and room.get_node("Actors/Player").global_position.y >= 100.0, "the door does not touch the walkway")
+	# darts: the closed door is a prop to stick into, the open one lets a dart out
+	var nerf := root.get_node("Nerf")
+	var mid := Vector2(x0 + 1347, 60.0)
+	_check(nerf.door_gap(mid) and nerf.stick_target(mid) == null, "open: a dart at the doorway flies out")
+	door.open = 0.0
+	door.goal = 0.0
+	door.door_apply()
+	_check(not nerf.door_gap(mid) and nerf.stick_target(mid) == slats, "closed: a dart sticks into the door")
+	# the sky follows the clock
+	var morning: Dictionary = outside_script.phase(9.0)
+	var noon: Dictionary = outside_script.phase(12.5)
+	var dusk: Dictionary = outside_script.phase(17.0)
+	var night: Dictionary = outside_script.phase(19.0)
+	_check(morning.top != noon.top and noon.top != dusk.top and dusk.top != night.top, "the sky colour changes from morning to noon, dusk and night")
+	var lum_noon: float = noon.top.get_luminance()
+	_check(lum_noon > dusk.top.get_luminance() and dusk.top.get_luminance() > night.top.get_luminance(), "and gets darker toward closing")
+	_check(dusk.bottom.r > dusk.bottom.b, "dusk is orange at the horizon")
+	_check(outside_script.phase(8.0).top == outside_script.phase(8.5).top and outside_script.phase(23.0).top == night.top, "the clock is clamped at both ends")
+	# the state is saved with the resume point and a new day starts closed
+	world.door_open = 1.0
+	var rs := root.get_node("Resume")
+	var saved: Dictionary = rs.world_dict()
+	_check(float(saved.get("door", -1.0)) == 1.0, "the resume point records the door")
+	world.door_open = 0.0
+	rs.apply_world(saved)
+	_check(world.door_open == 1.0, "a resumed day keeps the door open")
+	world.begin_next_day(world.day + 1)
+	_check(world.door_open == 0.0, "a new day starts with the door closed")
+
 	# ---- the cast: the map still routes as before, and nobody routes through the warehouse
 	var data := load("res://scripts/world_data.gd")
 	_check(data.SCENES.has("warehouse"), "the warehouse is in the world data")

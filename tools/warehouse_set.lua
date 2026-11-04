@@ -328,6 +328,86 @@ return function(L, builders)
     end)
   end
 
+  -- R21c: the parking lot seen through the opening: 120 x 76, transparent above the tree line (the sky is drawn in code)
+  function P.warehouseLot()
+    local im = Image(120, 76, ColorMode.RGB)
+    local function Rr(x, y, w, h, c) L.fill(im, x, y, w, h, c) end
+    local function blit(p, x, y) im:drawImage(p, Point(x - 1, y - 1)) end
+    -- distant trees: discs on a base line at y 34
+    local greens = {"#2F5230", "#3E6B3A", "#4F7F45"}
+    for i = 0, 8 do
+      local cx = i * 14 + (hash(i, 1, 201) % 6) - 2
+      local r = 6 + hash(i, 2, 202) % 4
+      for y = -r, r do for x = -r, r do
+        if x * x + y * y <= r * r and 34 + y - 4 < 36 then
+          local g = (y < -r // 3 and x < 0) and 3 or ((y > 0) and 1 or 2)
+          if hash(cx + x, y, 203) % 9 == 0 then g = math.max(1, g - 1) end
+          Rr(cx + x, 30 + y, 1, 1, greens[g])
+        end
+      end end
+    end
+    Rr(0, 31, 120, 4, "#2F5230")                                                       -- the shadowed base of the tree line
+    -- asphalt
+    Rr(0, 42, 120, 34, "#4A4D55")
+    for y = 42, 75 do for x = 0, 119 do
+      local h = hash(x, y, 205) % 23
+      if h == 0 then Rr(x, y, 1, 1, "#43464E") elseif h == 1 then Rr(x, y, 1, 1, "#575A63") end
+    end end
+    Rr(0, 42, 120, 1, "#34363D"); Rr(0, 43, 120, 1, "#3C3F47")                        -- the dark edge under the fence
+    for x = 14, 40 do Rr(x, 66 + (x // 9) % 2, 1, 1, "#3A3D44") end                    -- a crack
+    Rr(0, 35, 120, 7, "#3F6038")
+    for x = 0, 119 do if hash(x, 1, 209) % 3 == 0 then Rr(x, 36 + hash(x, 2, 210) % 5, 1, 1, "#4F7545") end end   -- grass behind the fence
+    -- chain-link fence: posts, rails and a see-through diamond mesh
+    for y = 35, 41 do for x = 0, 119 do if (x + y) % 2 == 0 then Rr(x, y, 1, 1, "#9AA3A8") end end end
+    Rr(0, 34, 120, 1, "#B4BCC0"); Rr(0, 42, 120, 1, "#6A737A")
+    for x = 6, 119, 24 do Rr(x, 31, 2, 12, "#6A737A"); Rr(x, 31, 1, 12, "#8A9399") end
+    -- painted lines (worn white): far stalls, near stalls
+    for _, x in ipairs({32, 78}) do for y = 45, 55 do if hash(x, y, 206) % 7 ~= 0 then Rr(x + (55 - y) // 5, y, 1, 1, "#D8D8D0") end end end
+    for _, x in ipairs({50, 94}) do for y = 57, 75 do if hash(x, y, 207) % 8 ~= 0 then Rr(x + (75 - y) // 6, y, 2, 1, "#E4E4DC") end end end
+    Rr(0, 56, 120, 1, "#6B6D70")                                                       -- a faint seam
+    -- contact shadows
+    local function shadow(x, y, w) Rr(x, y, w, 2, "#2A2C33"); Rr(x + 1, y + 2, w - 2, 1, "#33353C") end
+    shadow(34, 52, 42); shadow(2, 47, 28); shadow(6, 70, 44); shadow(56, 70, 36)
+    -- the light pole
+    blit(L.piece(10, 52, function(R)
+      R(8, 4, 2, 46, "#6A737A"); R(8, 4, 1, 46, "#8A9399"); R(1, 2, 9, 2, "#6A737A")
+      R(0, 4, 4, 2, "#F2E8B0"); R(0, 4, 4, 1, "#FFF8D0"); R(5, 48, 6, 4, "#8C8D88"); R(5, 48, 6, 1, "#A5A6A0")
+    end), 104, 4)
+    -- the dumpster
+    blit(L.piece(24, 16, function(R)
+      R(1, 4, 22, 12, "#2F6B4A"); R(1, 4, 22, 1, "#4A8A62"); R(1, 14, 22, 2, "#1F4A33")
+      for x = 6, 18, 6 do R(x, 5, 1, 9, "#245A3C") end
+      R(0, 1, 24, 4, "#33473B"); R(0, 1, 24, 1, "#55705F"); R(0, 4, 24, 1, "#1F2E26"); R(3, 15, 3, 1, "#17121F"); R(18, 15, 3, 1, "#17121F")
+    end), 4, 33)
+    -- a sedan (blue-grey)
+    blit(L.piece(38, 14, function(R)
+      local body, hi, sh = "#7A8FA6", "#9CB0C4", "#566B82"
+      for r = 0, 4 do R(12 - r, r, 14 + 2 * r, 1, r == 0 and hi or body) end
+      R(0, 5, 38, 6, body); R(0, 5, 38, 1, hi); R(0, 9, 38, 2, sh)
+      for r = 1, 4 do R(12 - r + 2, r, 6, 1, "#A8CCE0"); R(20, r, 6 + r - 1, 1, "#A8CCE0") end
+      R(19, 1, 1, 4, body); R(0, 7, 1, 2, "#C23B2E"); R(37, 7, 1, 2, "#F2E080"); R(0, 10, 3, 1, "#59596A"); R(35, 10, 3, 1, "#59596A")
+      for _, wx in ipairs({8, 29}) do R(wx - 3, 8, 7, 5, "#17121F"); R(wx - 2, 9, 5, 4, "#2A2A33"); R(wx - 1, 10, 3, 2, "#8A8F9A") end
+    end), 36, 41)
+    -- the company's white service van (plain, no lettering: a blue stripe only)
+    blit(L.piece(40, 21, function(R)
+      R(0, 2, 36, 15, "#E8E8E2"); R(0, 1, 36, 1, "#F6F6F0"); R(36, 9, 4, 8, "#E8E8E2"); R(30, 3, 6, 6, "#E8E8E2")
+      R(31, 4, 6, 5, "#8FB5CC"); R(32, 3, 4, 1, "#8FB5CC"); R(25, 4, 5, 5, "#8FB5CC")
+      R(0, 15, 40, 2, "#B8BAB6"); R(0, 11, 38, 1, "#2F6FB8"); R(0, 12, 38, 1, "#2F6FB8"); R(14, 3, 1, 12, "#B8BAB6")
+      R(0, 6, 1, 3, "#C23B2E"); R(39, 11, 1, 2, "#F2E080"); R(0, 15, 3, 2, "#59596A"); R(37, 15, 3, 2, "#59596A")
+      for _, wx in ipairs({8, 32}) do R(wx - 3, 14, 7, 6, "#17121F"); R(wx - 2, 15, 5, 5, "#2A2A33"); R(wx - 1, 17, 3, 2, "#8A8F9A") end
+    end), 6, 52)
+    -- a hatchback (red)
+    blit(L.piece(32, 13, function(R)
+      local body, hi, sh = "#B8402F", "#D8604A", "#8A2E22"
+      R(5, 0, 16, 1, hi); R(4, 1, 19, 1, body); R(4, 2, 21, 1, body); R(4, 3, 23, 1, body); R(4, 4, 25, 1, body)
+      R(0, 5, 32, 6, body); R(0, 5, 32, 1, hi); R(0, 9, 32, 2, sh)
+      R(6, 1, 8, 3, "#A8CCE0"); R(16, 1, 5, 3, "#A8CCE0"); R(22, 3, 4, 1, "#A8CCE0"); R(14, 1, 2, 4, body)
+      R(0, 7, 1, 2, "#C23B2E"); R(31, 7, 1, 2, "#F2E080"); R(0, 10, 3, 1, "#59596A"); R(29, 10, 3, 1, "#59596A")
+      for _, wx in ipairs({7, 25}) do R(wx - 3, 8, 7, 5, "#17121F"); R(wx - 2, 9, 5, 4, "#2A2A33"); R(wx - 1, 10, 3, 2, "#8A8F9A") end
+    end), 58, 60)
+    return im
+  end
+
   -- the e-waste corner ------------------------------------------------------------------
   function P.ewasteTowers()
     return L.piece(48, 64, function(R)
@@ -744,10 +824,13 @@ return function(L, builders)
     storageRoom(s)
     -- the dock door frame and the opening (the door itself is a separate sprite: overhead_door)
     local wl = s.layer("Wall")
-    F(wl, 1281, 4, 134, 8, "#7A838B"); F(wl, 1281, 4, 134, 1, "#A8B0B4"); F(wl, 1281, 11, 134, 1, "#4A525A")   -- the housing box
-    F(wl, 1284, 12, 3, 78, "#4A525A"); F(wl, 1410, 12, 3, 78, "#4A525A")                                         -- the tracks
-    F(wl, 1287, 12, 123, 78, "#BFD8E6"); F(wl, 1287, 60, 123, 30, "#9A9F9A"); F(wl, 1287, 58, 123, 2, "#6A6E6A")
-    F(wl, 1296, 40, 40, 20, "#7FA0B8"); F(wl, 1350, 30, 30, 30, "#7FA0B8")
+    F(wl, 1281, 4, 132, 8, "#7A838B"); F(wl, 1281, 4, 132, 1, "#A8B0B4"); F(wl, 1281, 11, 132, 1, "#4A525A")   -- the housing box
+    F(wl, 1284, 12, 3, 78, "#4A525A"); F(wl, 1407, 12, 3, 78, "#4A525A")                                         -- the tracks
+    -- R21c: the opening (x 1287..1406, y 12..87) is a TRANSPARENT HOLE in the baked art: Godot draws the sky and the parking lot
+    -- (backdrop.gd, warehouse_lot.png) behind the Background, and the door sprite closes it. A concrete sill under it.
+    local clear = Color{r = 0, g = 0, b = 0, a = 0}
+    for y = 12, 87 do for x = 1287, 1406 do wl:putPixel(x + L.XOFF, y + L.YOFF, clear) end end
+    F(wl, 1287, 88, 120, 2, "#8C8D88"); F(wl, 1287, 88, 120, 1, "#A5A6A0")
 
     -- wall decor
     local D = "Decor"
@@ -808,6 +891,12 @@ return function(L, builders)
     s.putS("Loose", P.smallPallet(), 774, 99, 108, "race_pallet_small")
     s.putS("Loose", P.oilPuddle(), 806, 99, 103, "race_oil_puddle")
     s.putS("Loose", P.boxStack(), 862, 80, 108, "race_box_stack")
+    -- the hole stays clear in every layer down to y 79 (a stray roof or decor pixel would float over the sky); below that the
+    -- e-waste boxes may stand in front of the doorway
+    local clr = Color{r = 0, g = 0, b = 0, a = 0}
+    for _, im in pairs(s.exportMode and s.imgs or {}) do
+      for y = 12, 79 do for x = 1287, 1406 do im:putPixel(x + L.XOFF, y + L.YOFF, clr) end end
+    end
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 220, 56) end
   end}
 end

@@ -299,11 +299,23 @@ func stick_target(pos: Vector2) -> Node:
 	):
 		return scene
 	for child in scene.get_node("Actors").get_children():
-		if child is Sprite2D and child.texture != null:
+		if child is Sprite2D and child.texture != null and child.visible:
 			var origin: Vector2 = child.global_position + child.offset
-			if Rect2(origin, child.texture.get_size()).has_point(pos):
+			var size: Vector2 = child.region_rect.size if child.region_enabled else child.texture.get_size()
+			if Rect2(origin, size).has_point(pos):
 				return child
 	return null
+
+
+# the clear part of the dock doorway (R21c): the open door lets a dart out into the parking lot
+func door_gap(pos: Vector2) -> bool:
+	var door := get_tree().get_first_node_in_group("roll_door")
+	if door == null:
+		return false
+	var local: Vector2 = pos - door.global_position
+	var rows := (1.0 - float(door.open)) * float(door.DOOR_TEX_H)
+	return local.x >= 0.0 and local.x <= 120.0 and local.y >= rows and local.y <= 75.0
+
 
 
 func dart_hit(dart: Node, victim: Node) -> void:

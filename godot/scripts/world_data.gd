@@ -127,7 +127,7 @@ const SCENES := {
 			{"name": "ToKitchenette", "x": -552, "to": "kitchenette", "spawn": "from_warehouse"}
 		],
 		"seats": {},
-		"uses": {"switch": -508, "dart_board": 491},
+		"uses": {"switch": -508, "dart_board": 491, "roll_door": 791, "door_switch": 866},
 		"outside_x": -1
 	},
 	"bowling_alley":

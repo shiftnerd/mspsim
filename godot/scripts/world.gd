@@ -63,6 +63,7 @@ var hud_visible := true
 var chat_count := 0
 var chat_chance := 0.8
 var lights := {}  # room -> bool (a missing room is lit)
+var door_open := 0.0  # the dock door (0 closed, 1 open): kept for the day and in the resume point
 var lights_by_npc := false  # a cast member is flipping a switch (nobody reacts to that)
 var _outage_t := 0.0  # seconds the network has been down somewhere
 var _closet_sent := false
@@ -502,6 +503,7 @@ func begin_next_day(number: int) -> void:
 		st.held = ""
 		st.sips = 0
 	lights.clear()
+	door_open = 0.0  # the crew rolls the door down overnight
 	day = number - 1
 	_new_day()
 

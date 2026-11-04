@@ -69,7 +69,7 @@ func world_dict() -> Dictionary:
 			held = str(node.held)
 			sips = int(node.sips)
 		cast[n] = {"scene": st.scene, "held": held, "sips": sips, "lunched": st.lunched}
-	return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "cast": cast}
+	return {"clock": World.clock, "day": World.day, "lights": World.lights.duplicate(), "door": World.door_open, "cast": cast}
 
 
 func player_dict() -> Dictionary:
@@ -145,6 +145,7 @@ func apply_world(d: Dictionary) -> void:
 	World.day = int(d.get("day", Campaign.day))
 	World.clock = float(d.get("clock", World.DAY_START))
 	World.lights.clear()
+	World.door_open = clampf(float(d.get("door", 0.0)), 0.0, 1.0)
 	var lights: Variant = d.get("lights", {})
 	if lights is Dictionary:
 		for room in lights:

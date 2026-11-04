@@ -25,6 +25,7 @@ Read-only scoping pass (Nov 2026) from the code and docs, nothing was run. Line 
 - Tier keys: `corn.opp_skill`, `corn.aim_speed`, `corn.power_speed`, `corn.to`.
 
 ## C. Overhead door and the outside
+**BUILT (Nov 2026, R21 part c):** see CLAUDE.md "The warehouse" (R21c). Left for later: a walkable `warehouse_lot` scene, the chair race rolling the door up at the start.
 - The door is already its own 120x80 sprite (set x 1287); the doorway is drawn into the baked background.
 - **Outside:** a separate backdrop node behind the Background, with a transparent hole in the baked art, so the sky can follow the game clock (morning, noon, late afternoon, dusk) with a gradient and clouds drawn in code. One ~120x80 pixel lot image (asphalt, painted lines, two 2013-14 cars, the company van, a light pole, a dumpster, a fence).
 - **Door:** an fx kind `roll_door` with `open` 0..1 in 12 fps steps (the slats rise, clipped). A wall switch prop beside it with a normal-priority interact zone (so it beats the dart board), rattle and thunk sounds; warm daylight spill on the floor when open; door state kept as a field and saved with the scene; independent of `World.lights`.

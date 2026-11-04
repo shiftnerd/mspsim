@@ -44,6 +44,9 @@ func _fly(delta: float) -> void:
 		position.x -= signf(vel.x) * 4.0
 		_land()
 		return
+	if Nerf.door_gap(global_position):  # out through the open dock door: gone for good
+		queue_free()
+		return
 	var target := Nerf.stick_target(global_position)
 	if target != null:
 		state = "stuck"
