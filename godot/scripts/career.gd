@@ -11,13 +11,14 @@ extends Node
 #   Career.ringtone_name()           the phone ringtone you picked
 #
 # MEDALS rules are lists of [counter, op, number] that must all hold; op is ">=" or "<=" (a "<=" counter must be
-# set, 0 means never done). Derived counters: printer_models, stars3, days_total, tk_other.
+# set, 0 means never done). Derived counters: printer_models, stars3, wh_stars3, days_total, tk_other.
 # MEDALS and UNLOCKS are patchable text tables (story/strings.txt): title and desc are the text. Keep a desc under
 # 31 characters so it fits one line on the career screen.
 
 const SCREEN := preload("res://scripts/career_screen.gd")
 const VERSION := 1
-const GAMES := ["bowling", "karaoke", "escape", "dinner"]
+const GAMES := ["bowling", "karaoke", "escape", "dinner"]  # the four classic games: FULL HOUSE counts only these
+const WAREHOUSE_GAMES := ["cornhole", "grill", "chair"]  # warehouse games: own count (wh_stars3), WAREHOUSE ALL-STAR
 const KNOWN_FIXES := ["password", "spooler", "clear_temp", "reboot", "av", "restore", "adobe", "network", "project"]
 const DEFAULT_MEDALS := [
 	{"id": "ticket_machine", "title": "TICKET MACHINE", "desc": "CLOSE 50 TICKETS", "rules": [["tickets", ">=", 50]]},
@@ -62,6 +63,7 @@ const DEFAULT_MEDALS := [
 	{"id": "old_tree", "title": "OLD TREE", "desc": "FIND THE TREE IN THE WAREHOUSE", "rules": [["old_tree", ">=", 1]]},
 	{"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
 	{"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
+	{"id": "warehouse_all_star", "title": "WAREHOUSE ALL-STAR", "desc": "3 STARS IN EACH WAREHOUSE GAME", "rules": [["wh_stars3", ">=", 3]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -136,6 +138,7 @@ const COUNTERS := [
 	["", "CORNHOLE BEST", "stars.cornhole", "stars"],
 	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
 	["", "COOKOUT BEST", "stars.grill", "stars"],
+	["", "CHAIR RACE BEST", "stars.chair", "stars"],
 	["", "BURGERS SERVED", "burgers_served", "n"],
 	["", "HOT DOGS SERVED", "dogs_served", "n"],
 	["", "LUNCH BREAKS", "lunches", "n"],
@@ -263,6 +266,12 @@ func value(key: String) -> int:
 		"stars3":
 			var n := 0
 			for g in GAMES:
+				if int(counters.get("stars." + g, 0)) >= 3:
+					n += 1
+			return n
+		"wh_stars3":
+			var n := 0
+			for g in WAREHOUSE_GAMES:
 				if int(counters.get("stars." + g, 0)) >= 3:
 					n += 1
 			return n

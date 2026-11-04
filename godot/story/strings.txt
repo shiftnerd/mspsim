@@ -12078,6 +12078,14 @@ DOG DAYS
 [Career.MEDALS.41.desc]
 SERVE 20 HOT DOGS
 
+# Career > MEDALS > 42 > title
+[Career.MEDALS.42.title]
+WAREHOUSE ALL-STAR
+
+# Career > MEDALS > 42 > desc
+[Career.MEDALS.42.desc]
+3 STARS IN EACH WAREHOUSE GAME
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

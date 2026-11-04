@@ -36,6 +36,11 @@ func put(key: String, v: int) -> void:
 			for g in c.GAMES:
 				c.counters["stars." + g] = 3 if i < v else 0
 				i += 1
+		"wh_stars3":
+			var i := 0
+			for g in c.WAREHOUSE_GAMES:
+				c.counters["stars." + g] = 3 if i < v else 0
+				i += 1
 		"days_total":
 			c.counters["days.tech"] = v
 		"tk_other":
@@ -268,6 +273,33 @@ func _run() -> void:
 	var titles: Array = nerf.war_titles({"hits": 6, "taken": 0, "dodged": 4, "missed": 0, "ff": 3, "assists": 0, "longest": 170})
 	_check(titles.has("MOST DUCKED") and titles.has("SNIPER") and titles.has("FRIENDLY FIRE") and titles.has("UNTOUCHABLE"), "war titles: " + str(titles))
 	_check(nerf.war_titles({"hits": 1, "taken": 1, "dodged": 2, "missed": 0, "ff": 2, "assists": 0, "longest": 149}).is_empty(), "no titles just below the thresholds")
+
+	# ---- warehouse games: own best stars, own count, FULL HOUSE untouched -----------------------------------
+	_fresh()
+	_check(c.WAREHOUSE_GAMES == ["cornhole", "grill", "chair"] and c.GAMES.size() == 4 and not ("chair" in c.GAMES), "classic and warehouse game lists are separate")
+	_check(c.value("wh_stars3") == 0 and not c.has_medal("warehouse_all_star"), "old data: no warehouse stars")
+	for g in ["cornhole", "grill", "chair"]:
+		c.note_outing(g, 3)  # Outings._finish calls this for every game (cornhole.gd, grill.gd, chair_race.gd check the real finish)
+	_check(c.value("stars.cornhole") == 3 and c.value("stars.grill") == 3 and c.value("stars.chair") == 3, "each warehouse game records its best stars")
+	_check(c.value("wh_stars3") == 3 and c.has_medal("warehouse_all_star"), "3 stars in all three earns WAREHOUSE ALL-STAR")
+	_check(c.value("stars3") == 0 and not c.has_medal("full_house"), "FULL HOUSE ignores the warehouse games")
+	c.note_outing("chair", 1)
+	_check(c.value("stars.chair") == 3, "a worse chair race keeps the best")
+	_fresh()
+	c.counters["stars.cornhole"] = 3
+	c.counters["stars.grill"] = 3
+	c.counters["stars.chair"] = 2
+	c.check_medals()
+	_check(c.value("wh_stars3") == 2 and not c.has_medal("warehouse_all_star"), "two of three is not enough")
+	c.save_file()
+	c.counters = {}
+	c.load_file()
+	_check(c.value("stars.chair") == 2 and c.value("stars.cornhole") == 3, "warehouse stars are saved and loaded")
+	var rows_have := {}
+	for r in c.COUNTERS:
+		rows_have[str(r[2])] = true
+	_check(rows_have.has("stars.cornhole") and rows_have.has("stars.grill") and rows_have.has("stars.chair"), "the career screen shows all three")
+	_fresh()
 
 	# ---- save / load outside the campaign slot -----------------------------------------------------------
 	_fresh()
