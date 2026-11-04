@@ -67,7 +67,8 @@ const DEFAULT_MEDALS := [
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
 # hat, glasses and beard (value = the accessory id of Look.ACC_STYLES; the title is the name the create row shows; Look.sanitize_acc
 # turns a locked one into none, a style with no entry is free). Hats: the hard hat is the warehouse's BAG MAN medal, the Santa hat is
-# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings.
+# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings. The clothes kinds shirt,
+# bottom and shoes (value = the garment id of Look.SHIRT_STYLES / BOTTOM_STYLES / SHOE_STYLES) work the same way; only the work boots are earned (FIELD TECH).
 # medal "" = always available; the first entry of a kind is its default.
 const DEFAULT_UNLOCKS := [
 	{"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
@@ -98,6 +99,17 @@ const DEFAULT_UNLOCKS := [
 	{"id": "hat_santa", "kind": "hat", "title": "SANTA HAT", "medal": "old_tree", "value": "santa"},
 	{"id": "hat_bucket", "kind": "hat", "title": "BUCKET HAT", "medal": "", "value": "bucket"},
 	{"id": "hat_party", "kind": "hat", "title": "PARTY HAT", "medal": "people_person", "value": "party"},
+	{"id": "shirt_polo", "kind": "shirt", "title": "POLO", "medal": "", "value": "polo"},
+	{"id": "shirt_tee", "kind": "shirt", "title": "TEE", "medal": "", "value": "tee"},
+	{"id": "shirt_button", "kind": "shirt", "title": "BUTTON-DOWN", "medal": "", "value": "button"},
+	{"id": "shirt_sweater", "kind": "shirt", "title": "SWEATER", "medal": "", "value": "sweater"},
+	{"id": "bottom_trousers", "kind": "bottom", "title": "TROUSERS", "medal": "", "value": "trousers"},
+	{"id": "bottom_jeans", "kind": "bottom", "title": "JEANS", "medal": "", "value": "jeans"},
+	{"id": "bottom_shorts", "kind": "bottom", "title": "SHORTS", "medal": "", "value": "shorts"},
+	{"id": "bottom_skirt", "kind": "bottom", "title": "SKIRT", "medal": "", "value": "skirt"},
+	{"id": "shoes_dress", "kind": "shoes", "title": "DRESS SHOES", "medal": "", "value": "dress"},
+	{"id": "shoes_sneakers", "kind": "shoes", "title": "SNEAKERS", "medal": "", "value": "sneakers"},
+	{"id": "shoes_boots", "kind": "shoes", "title": "WORK BOOTS", "medal": "field_tech", "value": "boots"},
 ]
 # what the career screen lists: [section, label, counter, format]
 const COUNTERS := [

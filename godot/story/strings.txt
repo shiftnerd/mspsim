@@ -10736,7 +10736,7 @@ POSTED. +%d KARMA
 
 # Nerds > TEXT > no_karma_lost
 [Nerds.TEXT.no_karma_lost]
- (NO KARMA LOST)
+(NO KARMA LOST)
 
 # Nerds > TEXT > need_ps
 [Nerds.TEXT.need_ps]
@@ -12191,6 +12191,50 @@ BUCKET HAT
 # Career > UNLOCKS > 27 > title
 [Career.UNLOCKS.27.title]
 PARTY HAT
+
+# Career > UNLOCKS > 28 > title
+[Career.UNLOCKS.28.title]
+POLO
+
+# Career > UNLOCKS > 29 > title
+[Career.UNLOCKS.29.title]
+TEE
+
+# Career > UNLOCKS > 30 > title
+[Career.UNLOCKS.30.title]
+BUTTON-DOWN
+
+# Career > UNLOCKS > 31 > title
+[Career.UNLOCKS.31.title]
+SWEATER
+
+# Career > UNLOCKS > 32 > title
+[Career.UNLOCKS.32.title]
+TROUSERS
+
+# Career > UNLOCKS > 33 > title
+[Career.UNLOCKS.33.title]
+JEANS
+
+# Career > UNLOCKS > 34 > title
+[Career.UNLOCKS.34.title]
+SHORTS
+
+# Career > UNLOCKS > 35 > title
+[Career.UNLOCKS.35.title]
+SKIRT
+
+# Career > UNLOCKS > 36 > title
+[Career.UNLOCKS.36.title]
+DRESS SHOES
+
+# Career > UNLOCKS > 37 > title
+[Career.UNLOCKS.37.title]
+SNEAKERS
+
+# Career > UNLOCKS > 38 > title
+[Career.UNLOCKS.38.title]
+WORK BOOTS
 
 
 # ======================= Growth > STRETCH =======================

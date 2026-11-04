@@ -25,7 +25,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
-                    "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky"]
+                    "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky", "custom_bare"]
 
 # frame durations (ms), 42 frames, matching tools/poses.lua
 DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 90, 110] + [80, 120, 110]
@@ -3685,6 +3685,142 @@ func _process(_delta: float) -> void:
     if _sig != _signature():  # the player's look (or acc) changed under us
         _rebuild()
     _sync()
+''')
+
+
+write("scripts/clothes_gear.gd", '''extends Node2D
+# REAL CLOTHES (roadmap R15 level 3 step f): the custom person's shirt, belt, trousers or skirt, shoes and hair drawn as OVERLAY sheets over
+# the bare-skin base character (characters/custom_bare, made by tools/make_clothes.lua and tools/make_clothes_sheets.lua). Like HeadGear it
+# NEVER plays an animation: each frame it reads the body sprite's `animation` and `frame`, maps them to the sheet index with the same START
+# table (HeadGear.frame_index) and shows that 64x80 cell of assets/clothes/<piece>_<facing>.png at the body sprite's own top left (the clothes
+# sheets are full body frames, so there is no origin table). Backwards sitdown, one-shots, pause(), the select preview's scale all just work.
+# Z ORDER: the shoes and the trousers sit BEHIND the body sprite (show_behind_parent, so they are direct children of the body sprite), the far
+# sleeve, shirt, belt, near sleeve and hair in front of it, in that order (the sheets are cut where the baked body layers cover a piece, see
+# tools/make_clothes_sheets.lua). The node is a child of the body AnimatedSprite2D added by Look.apply BEFORE the HeadGear, so the hat,
+# glasses and beard draw over the hair. It is only on while the person wears something other than the stock polo, trousers and dress shoes
+# (those use the prebaked hairstyle sheets, so old looks and saves are unchanged).
+# Colours: every sprite uses the body's palette shader; only the shirt body gets the PATTERN (sleeves, like on the prebaked sheet, stay plain).
+
+const HEAD_GEAR := preload("res://scripts/head_gear.gd")
+const DIR := "res://assets/clothes/"
+const CELL := Vector2i(64, 80)
+const FRAMES := 129
+# [slot, behind the body]: drawing order, lowest first
+const SLOTS := [["shoes", true], ["bottom", true], ["far", false], ["torso", false], ["belt", false], ["near", false], ["hair", false]]
+const BELTED := ["trousers", "jeans"]  # the bottoms that have a belt over the shirt hem
+
+var _sprite: AnimatedSprite2D = null
+var _on := false
+var _look: Dictionary = {}
+var _sig := 0
+var _files := {}
+var _slots := {}
+
+
+# Look.apply calls this: on = the sprite shows the custom person in non-stock clothes, look_dict = the look to wear (empty = the player's own)
+func configure(on: bool, look_dict: Dictionary) -> void:
+    _sprite = get_parent() as AnimatedSprite2D
+    _on = on
+    _look = look_dict
+    if _sprite != null and not _sprite.frame_changed.is_connected(_sync):
+        _sprite.frame_changed.connect(_sync)
+        _sprite.animation_changed.connect(_sync)
+    _rebuild()
+    _sync()
+
+
+func _signature() -> int:
+    return hash([_on, _look if not _look.is_empty() else [Look.look, Look.acc]])
+
+
+# the file stem (without _<facing>.png) of each slot for a look ("" = nothing drawn)
+static func stems(lk: Dictionary, ac: Dictionary) -> Dictionary:
+    var shirt := str(lk.get("shirt_style", "polo"))
+    var bottom := str(lk.get("bottom", "trousers"))
+    var hair := Look.hair_shown(lk, ac)
+    return {
+        "shoes": "shoes_" + str(lk.get("shoe_style", "dress")),
+        "bottom": "bottom_" + bottom,
+        "far": "shirt_%s_far" % shirt,
+        "torso": "shirt_%s_torso" % shirt,
+        "belt": "belt_belt" if bottom in BELTED else "",
+        "near": "shirt_%s_near" % shirt,
+        "hair": "" if hair == "bald" else "hair_" + hair,
+    }
+
+
+func _slot_sprite(slot: String, behind: bool) -> Sprite2D:
+    if not _slots.has(slot):
+        var s := Sprite2D.new()
+        s.name = "Clothes_" + slot
+        s.centered = false
+        s.region_enabled = true
+        if behind:
+            s.show_behind_parent = true
+            _sprite.add_child(s)  # behind the body: it has to be a direct child of the body sprite
+        else:
+            add_child(s)
+        _slots[slot] = s
+    return _slots[slot]
+
+
+func _rebuild() -> void:
+    _sig = _signature()
+    if _sprite == null:
+        return
+    var lk: Dictionary = _look if not _look.is_empty() else Look.look
+    var ac: Dictionary = Look.acc_of(_look)
+    var st := stems(lk, ac)
+    for row in SLOTS:
+        var slot: String = row[0]
+        var stem := str(st[slot]) if _on else ""
+        _files[slot] = stem
+        var s := _slot_sprite(slot, bool(row[1]))
+        s.visible = stem != ""
+        s.material = Look.make_piece_material(lk, ac, slot == "torso") if stem != "" else null
+        s.set_meta("path", "")
+
+
+func _sync() -> void:
+    if _sprite == null:
+        return
+    var anim := String(_sprite.animation)
+    var idx := HEAD_GEAR.frame_index(anim, _sprite.frame) if _on and _sprite.sprite_frames != null else -1
+    var ok := idx >= 0 and idx < FRAMES and _sprite.sprite_frames.has_animation(anim)
+    visible = ok
+    var facing := "right" if anim.ends_with("_right") else "left"
+    var top_left := _sprite.offset
+    if ok and _sprite.centered:
+        var tex := _sprite.sprite_frames.get_frame_texture(anim, _sprite.frame)
+        top_left -= tex.get_size() * 0.5 if tex != null else Vector2(32, 40)
+    for row in SLOTS:
+        var slot: String = row[0]
+        var stem := str(_files.get(slot, ""))
+        if not _slots.has(slot):
+            continue
+        var s: Sprite2D = _slots[slot]
+        if stem == "" or not ok:
+            s.visible = false
+            continue
+        s.visible = true
+        var path := "%s%s_%s.png" % [DIR, stem, facing]
+        if str(s.get_meta("path", "")) != path:
+            s.texture = load(path)
+            s.set_meta("path", path)
+        s.position = top_left
+        s.region_rect = Rect2(idx * CELL.x, 0, CELL.x, CELL.y)
+
+
+func _process(_delta: float) -> void:
+    if _sig != _signature():  # the player's look changed under us
+        _rebuild()
+    _sync()
+
+
+func _exit_tree() -> void:
+    for row in SLOTS:
+        if bool(row[1]) and _slots.has(row[0]) and is_instance_valid(_slots[row[0]]):
+            (_slots[row[0]] as Node).queue_free()
 ''')
 
 write("scripts/desk_cup.gd", '''extends Node2D
@@ -46094,11 +46230,20 @@ const CREATE_PAGES := [
         "label": "CLOTHES",
         "rows":
         [
+            {"kind": "choice", "id": "shirt_style", "label": "TOP"},
             {"kind": "swatch", "id": "shirt", "label": "SHIRT"},
             {"kind": "choice", "id": "pattern", "label": "PATTERN"},
+            {"kind": "choice", "id": "bottom", "label": "BOTTOM"},
             {"kind": "swatch", "id": "pants", "label": "PANTS"},
-            {"kind": "choice", "id": "shorts", "label": "BOTTOM"},
-            {"kind": "swatch", "id": "shoes", "label": "SHOES"},
+        ],
+    },
+    {
+        "id": "shoes",
+        "label": "SHOES",
+        "rows":
+        [
+            {"kind": "choice", "id": "shoe_style", "label": "SHOES"},
+            {"kind": "swatch", "id": "shoes", "label": "COLOR"},
         ],
     },
     {
@@ -46893,6 +47038,8 @@ func _choice_text(row: Dictionary) -> String:
     if str(row.kind) == "acc":
         return Look.acc_title(str(row.id), str(Look.acc.get(row.id, "")))
     var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+    if Look.CLOTHES_KINDS.has(str(row.id)):
+        st = Look.clothes_title(str(row.id), str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]))
     if str(row.id) == "hair_style":
         var shown := Look.hair_shown(Look.look, Look.acc)
         if shown != str(Look.look.get("hair_style", "")):
@@ -47412,6 +47559,8 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
                 _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
                 if kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
                     _txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+                elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
+                    _txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
             _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
             _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
         else:
@@ -51679,7 +51828,7 @@ const SCREEN := preload("res://scripts/career_screen.gd")
 const VERSION := 1
 const GAMES := ["bowling", "karaoke", "escape", "dinner"]
 const KNOWN_FIXES := ["password", "spooler", "clear_temp", "reboot", "av", "restore", "adobe", "network", "project"]
-const MEDALS := [
+const DEFAULT_MEDALS := [
     {"id": "ticket_machine", "title": "TICKET MACHINE", "desc": "CLOSE 50 TICKETS", "rules": [["tickets", ">=", 50]]},
     {"id": "help_desk_hero", "title": "HELP DESK HERO", "desc": "CLOSE 250 TICKETS", "rules": [["tickets", ">=", 250]]},
     {"id": "sticky_savior", "title": "STICKY NOTES SAVIOR", "desc": "CLOSE 10 PASSWORD TICKETS", "rules": [["tk.password", ">=", 10]]},
@@ -51727,9 +51876,10 @@ const MEDALS := [
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
 # hat, glasses and beard (value = the accessory id of Look.ACC_STYLES; the title is the name the create row shows; Look.sanitize_acc
 # turns a locked one into none, a style with no entry is free). Hats: the hard hat is the warehouse's BAG MAN medal, the Santa hat is
-# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings.
+# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings. The clothes kinds shirt,
+# bottom and shoes (value = the garment id of Look.SHIRT_STYLES / BOTTOM_STYLES / SHOE_STYLES) work the same way; only the work boots are earned (FIELD TECH).
 # medal "" = always available; the first entry of a kind is its default.
-const UNLOCKS := [
+const DEFAULT_UNLOCKS := [
     {"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
     {"id": "wall_sunset", "kind": "wallpaper", "title": "SUNSET ORANGE", "medal": "ticket_machine", "value": "b8683a"},
     {"id": "wall_graphite", "kind": "wallpaper", "title": "GRAPHITE", "medal": "help_desk_hero", "value": "454b58"},
@@ -51758,6 +51908,17 @@ const UNLOCKS := [
     {"id": "hat_santa", "kind": "hat", "title": "SANTA HAT", "medal": "old_tree", "value": "santa"},
     {"id": "hat_bucket", "kind": "hat", "title": "BUCKET HAT", "medal": "", "value": "bucket"},
     {"id": "hat_party", "kind": "hat", "title": "PARTY HAT", "medal": "people_person", "value": "party"},
+    {"id": "shirt_polo", "kind": "shirt", "title": "POLO", "medal": "", "value": "polo"},
+    {"id": "shirt_tee", "kind": "shirt", "title": "TEE", "medal": "", "value": "tee"},
+    {"id": "shirt_button", "kind": "shirt", "title": "BUTTON-DOWN", "medal": "", "value": "button"},
+    {"id": "shirt_sweater", "kind": "shirt", "title": "SWEATER", "medal": "", "value": "sweater"},
+    {"id": "bottom_trousers", "kind": "bottom", "title": "TROUSERS", "medal": "", "value": "trousers"},
+    {"id": "bottom_jeans", "kind": "bottom", "title": "JEANS", "medal": "", "value": "jeans"},
+    {"id": "bottom_shorts", "kind": "bottom", "title": "SHORTS", "medal": "", "value": "shorts"},
+    {"id": "bottom_skirt", "kind": "bottom", "title": "SKIRT", "medal": "", "value": "skirt"},
+    {"id": "shoes_dress", "kind": "shoes", "title": "DRESS SHOES", "medal": "", "value": "dress"},
+    {"id": "shoes_sneakers", "kind": "shoes", "title": "SNEAKERS", "medal": "", "value": "sneakers"},
+    {"id": "shoes_boots", "kind": "shoes", "title": "WORK BOOTS", "medal": "field_tech", "value": "boots"},
 ]
 # what the career screen lists: [section, label, counter, format]
 const COUNTERS := [
@@ -51824,6 +51985,9 @@ const COUNTERS := [
     ["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
 ]
 const FLUSH_SECS := 3.0
+
+var MEDALS: Array = DEFAULT_MEDALS.duplicate(true)
+var UNLOCKS: Array = DEFAULT_UNLOCKS.duplicate(true)
 
 var counters := {}
 var earned := {}  # medal id -> true
@@ -57191,7 +57355,25 @@ const MIN_STEP := 0.045  # the least a shade differs from its base in value
 #   the thighs show, so the trousers stay; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
 const PATTERNS := ["none", "stripes", "plaid", "checks"]
 const SHORTS := ["none", "shorts"]
-const CHOICES := {"hair_style": HAIR_STYLES, "pattern": PATTERNS, "shorts": SHORTS}  # the list rows of the create step
+# ---- LEVEL 3 STEP (f): real clothes on a bare-skin base (scripts/clothes_gear.gd, tools/make_clothes.lua) ----
+# shirt_style / bottom / shoe_style in the look dict pick the cut; the colours stay the shirt, pants and shoes roles. The stock look
+# (polo, trousers, dress shoes) keeps the prebaked hairstyle sheets, so old looks, saves and NPC copies are unchanged; anything else is the
+# bare sheet BARE plus the ClothesGear overlay (shirt, belt, bottoms, shoes and the hairstyle as sheets). `shorts` (the old shader hack) is
+# still read and written but no row offers it any more: BOTTOM shorts is a real garment now.
+const SHIRT_STYLES := ["polo", "tee", "button", "sweater"]
+const BOTTOM_STYLES := ["trousers", "jeans", "shorts", "skirt"]
+const SHOE_STYLES := ["dress", "sneakers", "boots"]
+const BARE := "custom_bare"  # the bare-skin base sheet (characters/custom_bare)
+const CLOTHES_KINDS := {"shirt_style": "shirt", "bottom": "bottom", "shoe_style": "shoes"}  # look key -> Career.UNLOCKS kind
+const CLOTHES_GEAR := preload("res://scripts/clothes_gear.gd")
+const CHOICES := {
+    "hair_style": HAIR_STYLES,
+    "pattern": PATTERNS,
+    "shorts": SHORTS,
+    "shirt_style": SHIRT_STYLES,
+    "bottom": BOTTOM_STYLES,
+    "shoe_style": SHOE_STYLES
+}  # the list rows of the create step
 const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 129 frames
 const FRAMES := 129
 const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
@@ -57355,7 +57537,11 @@ func default_look() -> Dictionary:
         "shoes": "5a3522",
         # level 3 step (a)
         "pattern": "none",
-        "shorts": "none"
+        "shorts": "none",
+        # level 3 step (f): real clothes
+        "shirt_style": SHIRT_STYLES[0],
+        "bottom": BOTTOM_STYLES[0],
+        "shoe_style": SHOE_STYLES[0]
     }
 
 
@@ -57583,6 +57769,15 @@ void fragment() {
     return _shader
 
 
+# the material of a clothes overlay sprite: the body's palette, no shorts hem, and the pattern only on the shirt body
+func make_piece_material(look_dict: Dictionary, acc_dict: Dictionary, with_pattern: bool) -> ShaderMaterial:
+    var lk := look_dict.duplicate()
+    lk["shorts"] = "none"
+    if not with_pattern:
+        lk["pattern"] = "none"
+    return make_material(lk, acc_dict)
+
+
 func make_material(look_dict: Dictionary, acc_dict: Dictionary = {}) -> ShaderMaterial:
     var m := ShaderMaterial.new()
     m.shader = shader()
@@ -57620,8 +57815,43 @@ func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> S
     if not custom or character != BASE:
         return character
     var lk := look_dict if not look_dict.is_empty() else look
+    if not stock_clothes(lk):
+        return BARE  # real clothes: the bare base plus the ClothesGear overlay (which draws the hairstyle too)
     var style := hair_shown(lk, acc_of(look_dict))
     return BASE if style == HAIR_STYLES[0] else "custom_intern_" + style
+
+
+# the polo, trousers and dress shoes the prebaked sheets wear
+func stock_clothes(lk: Dictionary) -> bool:
+    return (
+        str(lk.get("shirt_style", SHIRT_STYLES[0])) == SHIRT_STYLES[0]
+        and str(lk.get("bottom", BOTTOM_STYLES[0])) == BOTTOM_STYLES[0]
+        and str(lk.get("shoe_style", SHOE_STYLES[0])) == SHOE_STYLES[0]
+    )
+
+
+# is this garment free, or is its Career.UNLOCKS entry (kind shirt / bottom / shoes, value = the id) earned? No entry = free
+func clothes_unlocked(key: String, id: String) -> bool:
+    for u in Career.UNLOCKS:
+        if str(u.kind) == str(CLOTHES_KINDS.get(key, "")) and str(u.value) == id:
+            return Career.unlocked(str(u.id))
+    return true
+
+
+# the name a clothes row shows (the patchable UNLOCKS title, or the id)
+func clothes_title(key: String, id: String) -> String:
+    for u in Career.UNLOCKS:
+        if str(u.kind) == str(CLOTHES_KINDS.get(key, "")) and str(u.value) == id:
+            return str(u.title)
+    return id.to_upper()
+
+
+func clothes_locked(key: String) -> Array:
+    var out: Array = []
+    for id in CHOICES.get(key, []):
+        if not clothes_unlocked(key, str(id)):
+            out.append(id)
+    return out
 
 
 func frames_for(character: String, custom: bool, look_dict: Dictionary = {}) -> SpriteFrames:
@@ -57675,6 +57905,11 @@ func set_choice(id: String, index: int) -> void:
 
 func cycle_choice(id: String, step: int) -> void:
     set_choice(id, choice_index(id) + step)
+    if CLOTHES_KINDS.has(id):  # a locked garment is skipped
+        var guard := 0
+        while not clothes_unlocked(id, str(look[id])) and guard < 8:
+            set_choice(id, choice_index(id) + (1 if step >= 0 else -1))
+            guard += 1
 
 
 # one hairstyle forward or back (the STYLE row)
@@ -57696,6 +57931,10 @@ func sanitize(d: Dictionary) -> Dictionary:
     for key in ["pattern", "shorts"]:  # level 3 step (a): an old look has none
         if str(d.get(key, "")) in CHOICES[key]:
             out[key] = str(d.get(key))
+    for key in CLOTHES_KINDS:  # level 3 step (f): an old look has none; an unknown or locked garment is the stock one
+        var id := str(d.get(key, ""))
+        if id in CHOICES[key] and clothes_unlocked(key, id):
+            out[key] = id
     return out
 
 
@@ -57718,8 +57957,15 @@ func randomize_look() -> void:
     look["name"] = NAMES[r.randi() % NAMES.size()]
     look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
     look["pattern"] = PATTERNS[r.randi() % PATTERNS.size()]  # level 3 step (a): drawn after everything above
-    look["shorts"] = SHORTS[r.randi() % SHORTS.size()]
+    r.randi()  # the old shorts draw (kept so a seed gives the same later draws); BOTTOM shorts is a garment now
+    look["shorts"] = "none"
     _randomize_acc(r)  # level 3 steps b to d: drawn after everything above, so the same seed keeps the old draws
+    for key in CLOTHES_KINDS:  # level 3 step (f): the garments, drawn last (a locked one is never picked)
+        var ids: Array = []
+        for id in CHOICES[key]:
+            if clothes_unlocked(key, str(id)):
+                ids.append(id)
+        look[key] = ids[r.randi() % ids.size()]
 
 
 # ---- save, load, settings ------------------------------------------------------------
@@ -57960,6 +58206,18 @@ func _role_base(look_dict: Dictionary, acc_dict: Dictionary, role: String) -> Co
 func _attach_gear(sprite: CanvasItem, on: bool, look_dict: Dictionary) -> void:
     if not sprite is AnimatedSprite2D:
         return
+    var lk := look_dict if not look_dict.is_empty() else look
+    var wear := on and not stock_clothes(lk)  # real clothes: the overlay draws shirt, trousers, shoes and hair over the bare sheet
+    var clothes := sprite.get_node_or_null("ClothesGear")
+    if clothes == null and wear:
+        clothes = CLOTHES_GEAR.new()
+        clothes.name = "ClothesGear"
+        sprite.add_child(clothes)
+        var hg := sprite.get_node_or_null("HeadGear")
+        if hg != null:
+            sprite.move_child(clothes, hg.get_index())  # the hat, glasses and beard draw over the hair
+    if clothes != null:
+        clothes.configure(wear, look_dict)
     var gear := sprite.get_node_or_null("HeadGear")
     if gear == null:
         if not on:

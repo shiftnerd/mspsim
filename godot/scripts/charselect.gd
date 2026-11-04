@@ -45,11 +45,20 @@ const CREATE_PAGES := [
 		"label": "CLOTHES",
 		"rows":
 		[
+			{"kind": "choice", "id": "shirt_style", "label": "TOP"},
 			{"kind": "swatch", "id": "shirt", "label": "SHIRT"},
 			{"kind": "choice", "id": "pattern", "label": "PATTERN"},
+			{"kind": "choice", "id": "bottom", "label": "BOTTOM"},
 			{"kind": "swatch", "id": "pants", "label": "PANTS"},
-			{"kind": "choice", "id": "shorts", "label": "BOTTOM"},
-			{"kind": "swatch", "id": "shoes", "label": "SHOES"},
+		],
+	},
+	{
+		"id": "shoes",
+		"label": "SHOES",
+		"rows":
+		[
+			{"kind": "choice", "id": "shoe_style", "label": "SHOES"},
+			{"kind": "swatch", "id": "shoes", "label": "COLOR"},
 		],
 	},
 	{
@@ -844,6 +853,8 @@ func _choice_text(row: Dictionary) -> String:
 	if str(row.kind) == "acc":
 		return Look.acc_title(str(row.id), str(Look.acc.get(row.id, "")))
 	var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+	if Look.CLOTHES_KINDS.has(str(row.id)):
+		st = Look.clothes_title(str(row.id), str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]))
 	if str(row.id) == "hair_style":
 		var shown := Look.hair_shown(Look.look, Look.acc)
 		if shown != str(Look.look.get("hair_style", "")):
@@ -1363,6 +1374,8 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 				_txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
 				if kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
 					_txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+				elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
+					_txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
 			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
 			_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
 		else:

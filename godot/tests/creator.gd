@@ -492,12 +492,12 @@ func _init() -> void:
 	await process_frame
 	var target: Rect2 = Rect2()
 	for r in cs._rects:
-		if r[1] == "sw" and int(r[2]) == 3:
+		if r[1] == "sw" and int(r[2]) == 103:
 			target = r[0]
 	_check(target.size.x > 0.0, "the shirt swatches are on screen for the mouse")
 	cs._unhandled_input(_click(target.get_center()))
 	_check(
-		look.look.shirt == look.SWATCHES.shirt[3] and cs.create_row == 0,
+		look.look.shirt == look.SWATCHES.shirt[3] and cs.create_row == 1,
 		"a click picks that shirt colour"
 	)
 	cs._unhandled_input(_pad(JOY_BUTTON_LEFT_SHOULDER))
@@ -509,6 +509,9 @@ func _init() -> void:
 	look.look["name"] = "ZOE"
 	look.look["skin"] = "8d5524"
 	look.look["hair_style"] = "receding"
+	look.look["shirt_style"] = "polo"  # RANDOM above may have drawn other garments: the prebaked hairstyle sheet needs the stock clothes
+	look.look["bottom"] = "trousers"
+	look.look["shoe_style"] = "dress"
 	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "phone", "the tech campaign asks for the phone after the create step")
 	_check(
@@ -691,13 +694,13 @@ func _level3(look: Node, d: Node, player) -> void:
 	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "create", "level 3: the create step is open")
 	# pages and rows
-	_check(cs._pages().size() == 4, "four pages with tabs: LOOK, CLOTHES, EXTRAS, WORK (%d pages)" % cs._pages().size())
+	_check(cs._pages().size() == 5, "five pages with tabs: LOOK, CLOTHES, SHOES, EXTRAS, WORK (%d pages)" % cs._pages().size())
 	_check(_page_labels(cs, 0) == ["NAME", "STYLE", "SKIN", "HAIR"], "the LOOK page rows: %s" % str(_page_labels(cs, 0)))
 	_check(
-		_page_labels(cs, 1) == ["SHIRT", "PATTERN", "PANTS", "BOTTOM", "SHOES"],
+		_page_labels(cs, 1) == ["TOP", "SHIRT", "PATTERN", "BOTTOM", "PANTS"] and _page_labels(cs, 2) == ["SHOES", "COLOR"],
 		"the CLOTHES page rows: %s" % str(_page_labels(cs, 1))
 	)
-	_check(_page_labels(cs, 2) == ["GLASSES", "BEARD", "HAT"] and _page_labels(cs, 3) == ["NAMETAG", "LANYARD", "WATCH"], "the EXTRAS and WORK page rows: %s %s" % [str(_page_labels(cs, 2)), str(_page_labels(cs, 3))])
+	_check(_page_labels(cs, 3) == ["GLASSES", "BEARD", "HAT"] and _page_labels(cs, 4) == ["NAMETAG", "LANYARD", "WATCH"], "the EXTRAS and WORK page rows: %s %s" % [str(_page_labels(cs, 3)), str(_page_labels(cs, 4))])
 	# keys: Q and E turn the page except as letters on the NAME row
 	cs.create_row = 2
 	cs._unhandled_input(_key(KEY_E))
@@ -715,28 +718,26 @@ func _level3(look: Node, d: Node, player) -> void:
 	_check(cs.create_page == 2, "a pad's right shoulder button turns the page")
 	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
 	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
+	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
 	_check(cs.create_page == 0, "and it wraps after the last page")
 	cs.create_row = cs._page_rows().size()
 	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
 	_check(cs.create_row == cs._page_rows().size() and cs.create_row == 5, "the bottom row stays the bottom row across pages")
 	# values: pattern and shorts rows
-	cs.create_row = 1
+	cs.create_row = 2
 	cs._unhandled_input(_key(KEY_RIGHT))
 	_check(look.look.pattern == "stripes", "Right on PATTERN picks stripes")
 	cs.create_row = 3
 	cs._unhandled_input(_key(KEY_RIGHT))
-	_check(look.look.shorts == "shorts", "Right on BOTTOM picks shorts")
+	_check(look.look.bottom == "jeans" and look.sheet_for("office_intern", true) == "custom_bare", "Right on BOTTOM picks jeans (a real garment: the bare sheet)")
 	var mat: ShaderMaterial = cs._sprites[0].material
-	_check(
-		mat != null and int(mat.get_shader_parameter("pattern")) == 1 and float(mat.get_shader_parameter("hems")[0]) == 67.0,
-		"the preview material carries the pattern and the hem rows"
-	)
-	cs._unhandled_input(_key(KEY_RIGHT))
-	_check(look.look.shorts == "none", "BOTTOM wraps")
+	_check(mat != null and int(mat.get_shader_parameter("pattern")) == 1, "the preview material carries the pattern")
+	cs._unhandled_input(_key(KEY_LEFT))
+	_check(look.look.bottom == "trousers" and look.look.shorts == "none", "Left on BOTTOM goes back to trousers (the stock sheet)")
 	mat = cs._sprites[0].material
-	_check(float(mat.get_shader_parameter("hems")[0]) == 255.0, "no shorts: the hems are off")
+	_check(float(mat.get_shader_parameter("hems")[0]) == 255.0, "no shorts shader: the hems are off")
 	# the layout of every page keeps its rects on screen
-	for page in 4:
+	for page in 5:
 		cs.set_page(page)
 		cs.queue_redraw()
 		await process_frame
@@ -878,7 +879,7 @@ func _level3(look: Node, d: Node, player) -> void:
 	rr.randi()
 	rr.randi()
 	_check(
-		got.pattern == look.PATTERNS[rr.randi() % look.PATTERNS.size()] and got.shorts == look.SHORTS[rr.randi() % look.SHORTS.size()],
+		got.pattern == look.PATTERNS[rr.randi() % look.PATTERNS.size()] and got.shorts == "none",
 		"RANDOM draws pattern and shorts after the colours, the name and the style"
 	)
 	var pats := {}
@@ -887,8 +888,8 @@ func _level3(look: Node, d: Node, player) -> void:
 		d.seed_run(s)
 		look.randomize_look()
 		pats[look.look.pattern] = true
-		shs[look.look.shorts] = true
-	_check(pats.size() == look.PATTERNS.size() and shs.size() == look.SHORTS.size(), "RANDOM reaches every pattern and both bottoms")
+		shs[look.look.bottom] = true
+	_check(pats.size() == look.PATTERNS.size() and shs.size() == look.BOTTOM_STYLES.size(), "RANDOM reaches every pattern and every bottom")
 	# sanitize, saves
 	_check(look.sanitize({}).pattern == "none" and look.sanitize({}).shorts == "none", "an old look has no pattern and no shorts")
 	_check(look.sanitize({"pattern": "plaid", "shorts": "shorts"}).pattern == "plaid", "a pattern is kept")
