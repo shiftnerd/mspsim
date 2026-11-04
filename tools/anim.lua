@@ -239,9 +239,18 @@ end
 -- the body. Add it after the character's own layers (the same idea as an.ghost, which is measured but not drawn).
 -- Always a head layer (headBlit). acc = false only means it IS measured, like Glasses or Hair: the one-off reference characters of
 -- the golden test are built that way (an accessory as a real layer of a prebaked character).
-function E.addLayer(an, name, S, acc)
-  local rec = {name = name, vis = true, S = S, head = true, acc = acc and true or nil}
-  an.layers[#an.layers + 1] = rec
+function E.addLayer(an, name, S, acc, opts)
+  opts = opts or {}
+  -- opts.kind: "head" (default: rotated like the head), "torso" (shifted like the shirt: lanyard, name sticker) or "wrist"
+  -- (rides on an arm like the watch does: opts.arm "N" near arm or "F" far arm; opts.reftop draws it on the Arm Top layer when the arm is
+  -- there, as the intern's own Watch layer is, for the golden reference characters only); opts.before = the name of a layer to go under
+  local kind = opts.kind or "head"
+  local rec = {name = name, vis = true, S = S, head = kind == "head", acc = acc and true or nil, arm = kind == "wrist" and opts.arm or nil, reftop = opts.reftop}
+  local at = #an.layers + 1
+  if opts.before then
+    for i, L in ipairs(an.layers) do if L.name == opts.before then at = i; break end end
+  end
+  table.insert(an.layers, at, rec)
   an.by[name] = rec
   return rec
 end
@@ -341,6 +350,10 @@ function E.render(an, pose, f)
     elseif n == "Body" then
       headBlit(O, mask(S, function(x, y) return y <= 22 end))
       blitShift(O, mask(S, function(x, y) return y >= 23 end), torsoDx, torsoDy)
+    elseif L.arm then   -- a wrist accessory (watch): follows the near ("N") or far ("F") arm like the Watch layer does
+      local near = L.arm == "N"
+      limbRot((near and L.reftop and pose.armTop) and top or O, S, near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, ((near and pose.aN or pose.aF) or 0) * f,
+        ((near and pose.aNr or pose.aFr) or 0) * f, armDx, torsoDy)
     elseif HEAD[n] or L.head then
       headBlit(O, S)
     else

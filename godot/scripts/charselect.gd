@@ -23,9 +23,10 @@ const DIM := Color("9aa8c0")
 const FREE_MODE := "free"
 const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
 # The create step's pages and rows are DATA (R15 level 3): a page is {id, label, rows}, a row {kind, label, id}. Kinds:
-# "name" (the text box: typed, or the pad's letter grid), "choice" (a list in Look.CHOICES[id], < > chips) and "swatch" (the
-# colours of Look.SWATCHES[id]). A new option, say the extras glasses, is ONE line here plus its Look.CHOICES list; a page
-# with no rows has no tab (EXTRAS shows its `empty` text only if it is ever reached).
+# "name" (the text box: typed, or the pad's letter grid), "choice" (a list in Look.CHOICES[id], < > chips), "swatch" (the
+# colours of Look.SWATCHES[id]) and "acc" (an accessory slot of Look.ACC_STYLES: none first, only the styles that are unlocked,
+# "N LOCKED" beside the chips; Look.cycle_acc). A new option is ONE line here plus its list; a page with no rows has no tab
+# (a page's `empty` text shows only if one is ever reached). Wide fits tabs + 5 rows + the bottom row, so EXTRAS and WORK hold three each.
 const CREATE_PAGES := [
 	{
 		"id": "look",
@@ -50,7 +51,28 @@ const CREATE_PAGES := [
 			{"kind": "swatch", "id": "shoes", "label": "SHOES"},
 		],
 	},
-	{"id": "extras", "label": "EXTRAS", "empty": "ACCESSORIES COME SOON", "rows": []},
+	{
+		"id": "extras",
+		"label": "EXTRAS",
+		"empty": "NOTHING HERE YET",
+		"rows":
+		[
+			{"kind": "acc", "id": "glasses", "label": "GLASSES"},
+			{"kind": "acc", "id": "beard", "label": "BEARD"},
+			{"kind": "acc", "id": "hat", "label": "HAT"},
+		],
+	},
+	{
+		"id": "work",
+		"label": "WORK",
+		"empty": "NOTHING HERE YET",
+		"rows":
+		[
+			{"kind": "acc", "id": "badge", "label": "NAMETAG"},
+			{"kind": "acc", "id": "lanyard", "label": "LANYARD"},
+			{"kind": "acc", "id": "watch", "label": "WATCH"},
+		],
+	},
 ]
 const CREATE_ACTIONS := ["random", "presets", "done"]  # the bottom row: RANDOM | PRESETS | DONE
 const GRID_COLS := 9  # the pad's letter grid
@@ -500,6 +522,8 @@ func _create_change(delta: int) -> void:
 			Look.cycle_name(delta)
 		"choice":
 			Look.cycle_choice(str(row.id), delta)
+		"acc":
+			Look.cycle_acc(str(row.id), delta)
 		"swatch":
 			Look.set_swatch(str(row.id), maxi(0, Look.swatch_index(str(row.id))) + delta)
 	_refresh_look()
@@ -691,6 +715,18 @@ func _preset_press(row: int, col: int) -> void:
 func roll_look() -> void:
 	Look.randomize_look()
 	_refresh_look()
+
+
+# the text of a choice row's box: the style (a hairstyle a hat replaces shows as SPIKY>SHORT), or the accessory's name
+func _choice_text(row: Dictionary) -> String:
+	if str(row.kind) == "acc":
+		return Look.acc_title(str(row.id), str(Look.acc.get(row.id, "")))
+	var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+	if str(row.id) == "hair_style":
+		var shown := Look.hair_shown(Look.look, Look.acc)
+		if shown != str(Look.look.get("hair_style", "")):
+			st += ">" + shown.to_upper()
+	return st
 
 
 # the preview cards wear the look
@@ -1178,7 +1214,7 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 			draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
 		_txt(str(row.label), Vector2(x0, ty), GOLD if hot else DIM)
 		var kind := str(row.kind)
-		if kind == "name" or kind == "choice":
+		if kind == "name" or kind == "choice" or kind == "acc":
 			var box := Rect2(sx + 8.0, sy, 49.0, sw)
 			draw_rect(box, INK)
 			draw_rect(box, GOLD if hot else DIM, false, 1.0)
@@ -1189,8 +1225,10 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 				_txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
 				_rects.append([box, "name_box", i])
 			else:
-				var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+				var st := _choice_text(row)
 				_txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
+				if kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
+					_txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
 			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
 			_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
 		else:

@@ -44,6 +44,14 @@ const DART_LINES := [
 	"THREE DARTS. ONE IN THE WOOD.",
 	"SOMEONE KEEPS SCORE ON THE SHEET.",
 ]
+# the old Christmas tree at the end of the warehouse (E): the first time there is a Santa hat in the box of ornaments (the OLD TREE
+# medal unlocks it in the character creator), after that the tree just stands there
+const TREE_FIRST := "A BOX OF ORNAMENTS. A SANTA HAT, STILL GOOD. YOURS NOW."
+const TREE_LINES := [
+	"NOBODY HAS TAKEN THE TREE DOWN SINCE DECEMBER.",
+	"ONE STRING OF BULBS STILL WORKS. GOOD ENOUGH.",
+	"A TREE IN A WAREHOUSE. IT FITS.",
+]
 const TREE_BULBS := [
 	Vector2(17, 10),
 	Vector2(12, 18),
@@ -162,6 +170,9 @@ func play() -> void:
 		_dart_n += 1
 		Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
 		return
+	if kind == "old_tree":
+		_tree_press()
+		return
 	if kind.begins_with("booth_"):
 		Expo.booth(kind.substr(6))
 		return
@@ -187,6 +198,14 @@ func play() -> void:
 		_next_channel = _time + 7.0
 		_channel = (_channel + 1) % 4
 		_static_until = _time + 0.4
+
+
+# E on the old tree: the first time it counts for the OLD TREE medal (the Santa hat of the character creator), later it is a remark
+func _tree_press() -> void:
+	var first := not Career.has_medal("old_tree")
+	Career.add("old_tree")
+	_dart_n += 1
+	Hints.toast(TREE_FIRST if first else TREE_LINES[(_dart_n - 1) % TREE_LINES.size()], 3.0)
 
 
 func _process(delta: float) -> void:

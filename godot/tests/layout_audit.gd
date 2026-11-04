@@ -208,6 +208,24 @@ func _title_phase() -> void:
 			cs.queue_redraw()
 			await _end("creator %s %s" % [page_name, mode])
 		var lk := root.get_node("Look")
+		# level 3 steps b to d: the EXTRAS and WORK pages with the longest names (a bucket hat leaves three hats locked), and the
+		# STYLE row of a hairstyle a hat replaces (CURLY>SHORT)
+		lk.acc = {"glasses": "aviator", "beard": "moustache", "hat": "bucket", "badge": "name", "lanyard": "conference", "watch": "silver", "beard_color": "", "frame_color": ""}
+		lk.look["hair_style"] = "curly"
+		_begin()
+		cs.set_page(0)
+		cs.create_row = 1
+		cs.queue_redraw()
+		await _end("creator style hat " + mode)
+		for pg in [2, 3]:
+			for rr in [0, 2]:
+				_begin()
+				cs.set_page(pg)
+				cs.create_row = rr
+				cs.queue_redraw()
+				await _end("creator page %d row %d %s" % [pg, rr, mode])
+		lk.acc = lk.default_acc()
+		lk.look["hair_style"] = "side"
 		lk.look["name"] = "WWWWWWWWWW"
 		lk.presets = [lk.look.duplicate(), {}, lk.look.duplicate()]
 		_begin()

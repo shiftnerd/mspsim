@@ -191,6 +191,14 @@ target = NodePath("../../Fx/Grill")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseGrill"]
 shape = SubResource("shape_fx")
 
+[node name="UseTree" type="Area2D" parent="Interactables"]
+position = Vector2(896, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Tree")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseTree"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Daylight" type="Node2D" parent="."]
@@ -238,6 +246,11 @@ kind = "cornhole_tray"
 position = Vector2(753, 71)
 script = ExtResource("fx")
 kind = "grill"
+
+[node name="Tree" type="Node2D" parent="Fx"]
+position = Vector2(890, 66)
+script = ExtResource("fx")
+kind = "old_tree"
 
 [node name="FlickerLamp" type="Node2D" parent="Fx"]
 position = Vector2(304, -19)

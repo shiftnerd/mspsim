@@ -86,7 +86,34 @@ const SOURCES := [
 	["e0a07a", "stubble", 0],
 ]
 # never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
-const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33", "2f3d44"]  # the last one: sunglasses lens
+const KEEPS := [
+	"17121f",
+	"ffffff",
+	"3a2418",
+	"6b3416",
+	"8a4a2e",
+	"c8ccd8",
+	"2a2a33",
+	"2f3d44",  # sunglasses lens
+	# level 3 steps c and d: the colours of the hats, lanyard, name sticker and watches (drawn by tools/make_accessories.lua), never recoloured
+	"e8b820",  # hard hat, gold watch, party hat pom: yellow, shade, highlight
+	"b88a14",
+	"f6d860",
+	"c8283a",  # santa hat, sport watch, name sticker: red and shade
+	"9a1c2c",
+	"2f6b3a",  # beanie: green, dark, light
+	"1f4d28",
+	"4a8a54",
+	"2c4a7a",  # ball cap: navy and dark
+	"1f3556",
+	"b9a574",  # bucket hat: khaki and dark
+	"8c7a52",
+	"d0409a",  # party hat: pink and cyan
+	"40b8d0",
+	"1f9a96",  # the conference lanyard: teal and dark
+	"16706f",
+	"c8c0b0",  # santa fur shade
+]
 const SWATCHES := {
 	"skin": ["fbd7bc", "f3b488", "e3a272", "c68642", "a8683a", "8d5524", "6b3e22", "4a2a18"],
 	"hair":
@@ -140,16 +167,28 @@ const NAMES := [
 
 # ---- LEVEL 3 STEP B: head accessories (the block is separate on purpose: the create-step UI rows come later) --------------
 const HEAD_GEAR := preload("res://scripts/head_gear.gd")
-# every slot of `acc`; only the ones with art have styles (the others are reserved: hats, nametag, lanyard and watch are later steps)
+# every slot of `acc` and its styles (ids of the sheets assets/accessories/<slot>_<id>_<facing>.png). The slots glasses, beard and hat
+# can be LOCKED (Career.UNLOCKS entries of that kind, value = the id; an id with no entry is free); badge (the HELLO name sticker),
+# lanyard (the conference lanyard with its pass) and watch (it replaces the intern's own black watch) are always free.
 const ACC_SLOTS := ["glasses", "beard", "hat", "badge", "lanyard", "watch"]
 const ACC_STYLES := {
 	"glasses": ["thin", "thick", "round", "aviator"],
 	"beard": ["stubble", "goatee", "full", "moustache"],
-	"hat": [],
-	"badge": [],
-	"lanyard": [],
-	"watch": [],
+	"hat": ["beanie", "cap", "hardhat", "santa", "bucket", "party"],
+	"badge": ["name"],
+	"lanyard": ["conference"],
+	"watch": ["silver", "gold", "sport"],
 }
+# the names the create rows show for the slots that have no Career.UNLOCKS entry (the others use the entry's patchable title)
+const ACC_TITLES := {
+	"badge": {"name": "HELLO TAG"},
+	"lanyard": {"conference": "CONFERENCE"},
+	"watch": {"silver": "SILVER", "gold": "GOLD", "sport": "SPORT"},
+}
+# while a hat is worn a tall hairstyle shows as another one (the hat covers the crown): the sheet is the substitute's, the look keeps
+# the chosen style. long, bob and ponytail hang below the brim and stay.
+const HAT_HAIR := {"spiky": "short", "curly": "short", "bun": "ponytail"}
+const RANDOM_SHARE := {"glasses": 0.35, "beard": 0.3, "hat": 0.3, "badge": 0.2, "lanyard": 0.15, "watch": 0.25}  # RANDOM's chance per slot
 const FRAME_DEFAULT := "1e1e26"  # glasses frame colour when acc.frame_color is empty (the art colour)
 const FRAME_STYLE := {"round": "8c6a1e", "aviator": "b8bcc4"}  # wire frames default to metal
 const STUBBLE_MIX := 0.4  # stubble = the skin colour mixed this far to the beard colour
@@ -441,7 +480,7 @@ func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> S
 	if not custom or character != BASE:
 		return character
 	var lk := look_dict if not look_dict.is_empty() else look
-	var style := str(lk.get("hair_style", HAIR_STYLES[0]))
+	var style := hair_shown(lk, acc_of(look_dict))
 	return BASE if style == HAIR_STYLES[0] else "custom_intern_" + style
 
 
@@ -540,6 +579,7 @@ func randomize_look() -> void:
 	look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
 	look["pattern"] = PATTERNS[r.randi() % PATTERNS.size()]  # level 3 step (a): drawn after everything above
 	look["shorts"] = SHORTS[r.randi() % SHORTS.size()]
+	_randomize_acc(r)  # level 3 steps b to d: drawn after everything above, so the same seed keeps the old draws
 
 
 # ---- save, load, settings ------------------------------------------------------------
@@ -646,7 +686,7 @@ func sanitize_acc(d: Variant) -> Dictionary:
 		return out
 	for slot in ACC_SLOTS:
 		var id := str(d.get(slot, ""))
-		if id in ACC_STYLES[slot]:
+		if id in ACC_STYLES[slot] and acc_unlocked(slot, id):  # a locked hat (an old save, a copied file) becomes none
 			out[slot] = id
 	for key in ["beard_color", "frame_color"]:
 		var hex := str(d.get(key, "")).to_lower().trim_prefix("#")
@@ -655,11 +695,46 @@ func sanitize_acc(d: Variant) -> Dictionary:
 	return out
 
 
-# the ids of a slot, none ("") first: the create step's rows will cycle through these
+# is this style free, or is its Career.UNLOCKS entry (kind = the slot, value = the id) earned? A style with no entry is free.
+func acc_unlocked(slot: String, id: String) -> bool:
+	for u in Career.UNLOCKS:
+		if str(u.kind) == slot and str(u.value) == id:
+			return Career.unlocked(str(u.id))
+	return true
+
+
+# the styles of a slot that are still locked (the create step says how many)
+func acc_locked(slot: String) -> Array:
+	var out: Array = []
+	for id in ACC_STYLES.get(slot, []):
+		if not acc_unlocked(slot, id):
+			out.append(id)
+	return out
+
+
+# the name a row shows for a style ("NONE" for "")
+func acc_title(slot: String, id: String) -> String:
+	if id == "":
+		return "NONE"
+	for u in Career.UNLOCKS:
+		if str(u.kind) == slot and str(u.value) == id:
+			return str(u.title)
+	return str(ACC_TITLES.get(slot, {}).get(id, id.to_upper()))
+
+
+# the ids of a slot the player may wear, none ("") first: the create step's rows cycle through these
 func acc_ids(slot: String) -> Array:
 	var ids: Array = [""]
-	ids.append_array(ACC_STYLES.get(slot, []))
+	for id in ACC_STYLES.get(slot, []):
+		if acc_unlocked(slot, id):
+			ids.append(id)
 	return ids
+
+
+# the hairstyle whose sheet is drawn: the chosen one, or its HAT_HAIR substitute while a hat is worn
+func hair_shown(look_dict: Dictionary, acc_dict: Dictionary) -> String:
+	var style := str(look_dict.get("hair_style", HAIR_STYLES[0]))
+	return str(HAT_HAIR.get(style, style)) if str(acc_dict.get("hat", "")) != "" else style
 
 
 # the helper tests and the UI use: false (nothing changes) for an unknown slot or id
@@ -674,6 +749,16 @@ func cycle_acc(slot: String, step: int) -> void:
 	var ids := acc_ids(slot)
 	var i := maxi(ids.find(str(acc.get(slot, ""))), 0)
 	acc[slot] = ids[(i + step + ids.size()) % ids.size()]
+
+
+# RANDOM's accessory draws (the player's Look.acc): a share of people wear each, only styles that are unlocked
+func _randomize_acc(r: RandomNumberGenerator) -> void:
+	for slot in ACC_SLOTS:
+		var ids := acc_ids(slot)
+		ids.remove_at(0)
+		var roll := r.randf()
+		var pick := r.randi()
+		acc[slot] = "" if ids.is_empty() or roll >= float(RANDOM_SHARE[slot]) else str(ids[pick % ids.size()])
 
 
 # the accessories a look dict wears: an empty dict is the player's own (Look.acc), a copy's dict carries its own "acc"

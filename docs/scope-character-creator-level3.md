@@ -1,6 +1,6 @@
 # Scope: character creator level 3 (roadmap R15)
 
-**Status: step (b), the overlay pipeline with glasses (4) and facial hair (4), is BUILT (Nov 2026; see CLAUDE.md, Character creator level 3 step b). Steps (a), (c), (d), (e), (f) are open.** Read-only scoping pass (Nov 2026) from the code, nothing was run. Items marked (inference) are unverified. Levels 1 (colours) and 2 (ten prebaked hairstyles, each a complete character) are done.
+**Status: steps (a), (b) (overlay pipeline, glasses (4), facial hair (4)), (b-UI) (the EXTRAS and WORK create pages), (c) (six hats, the hat hair rule, the unlock kinds, the old tree) and (d) (nametag, conference lanyard, three watches) are BUILT (Nov 2026; see CLAUDE.md, Character creator level 3 steps b to d). Steps (e) and (f) are open.** Read-only scoping pass (Nov 2026) from the code, nothing was run. Items marked (inference) are unverified. Levels 1 (colours) and 2 (ten prebaked hairstyles, each a complete character) are done.
 
 ## Recommendation: a hybrid, head-only overlay sheets (approach C)
 Hair stays prebaked. Accessories (glasses, facial hair, hats, and later a nametag, lanyard and watch) are small overlay sheets drawn by a sibling `Sprite2D` that does NOT play its own animation: each frame it reads the body sprite's current `animation` and `frame`, adds a `START` offset and looks up a per-frame table, exactly like `held_item.gd` already does for the held cup and headset. It cannot drift (no second timeline), so backwards `sitdown`, one-shots, `pause()` and `_switch_character` are not a problem.

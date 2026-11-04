@@ -12054,6 +12054,14 @@ GRILL SERGEANT
 [Career.MEDALS.38.desc]
 A COOKOUT, NOTHING BURNT
 
+# Career > MEDALS > 39 > title
+[Career.MEDALS.39.title]
+OLD TREE
+
+# Career > MEDALS > 39 > desc
+[Career.MEDALS.39.desc]
+FIND THE TREE IN THE WAREHOUSE
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title
@@ -12111,6 +12119,62 @@ STRESS BALL
 # Career > UNLOCKS > 13 > title
 [Career.UNLOCKS.13.title]
 DESK PENDULUM
+
+# Career > UNLOCKS > 14 > title
+[Career.UNLOCKS.14.title]
+THIN
+
+# Career > UNLOCKS > 15 > title
+[Career.UNLOCKS.15.title]
+THICK
+
+# Career > UNLOCKS > 16 > title
+[Career.UNLOCKS.16.title]
+ROUND
+
+# Career > UNLOCKS > 17 > title
+[Career.UNLOCKS.17.title]
+AVIATOR
+
+# Career > UNLOCKS > 18 > title
+[Career.UNLOCKS.18.title]
+STUBBLE
+
+# Career > UNLOCKS > 19 > title
+[Career.UNLOCKS.19.title]
+GOATEE
+
+# Career > UNLOCKS > 20 > title
+[Career.UNLOCKS.20.title]
+FULL BEARD
+
+# Career > UNLOCKS > 21 > title
+[Career.UNLOCKS.21.title]
+MOUSTACHE
+
+# Career > UNLOCKS > 22 > title
+[Career.UNLOCKS.22.title]
+BEANIE
+
+# Career > UNLOCKS > 23 > title
+[Career.UNLOCKS.23.title]
+BALL CAP
+
+# Career > UNLOCKS > 24 > title
+[Career.UNLOCKS.24.title]
+HARD HAT
+
+# Career > UNLOCKS > 25 > title
+[Career.UNLOCKS.25.title]
+SANTA HAT
+
+# Career > UNLOCKS > 26 > title
+[Career.UNLOCKS.26.title]
+BUCKET HAT
+
+# Career > UNLOCKS > 27 > title
+[Career.UNLOCKS.27.title]
+PARTY HAT
 
 
 # ======================= Growth > STRETCH =======================

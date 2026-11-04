@@ -59,9 +59,13 @@ const DEFAULT_MEDALS := [
 	{"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
 	{"id": "bag_man", "title": "BAG MAN", "desc": "10 BAGS IN THE HOLE", "rules": [["bags_in_hole", ">=", 10]]},
 	{"id": "grill_sergeant", "title": "GRILL SERGEANT", "desc": "A COOKOUT, NOTHING BURNT", "rules": [["grill_clean", ">=", 1]]},
+	{"id": "old_tree", "title": "OLD TREE", "desc": "FIND THE TREE IN THE WAREHOUSE", "rules": [["old_tree", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
-# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
+# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
+# hat, glasses and beard (value = the accessory id of Look.ACC_STYLES; the title is the name the create row shows; Look.sanitize_acc
+# turns a locked one into none, a style with no entry is free). Hats: the hard hat is the warehouse's BAG MAN medal, the Santa hat is
+# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings.
 # medal "" = always available; the first entry of a kind is its default.
 const DEFAULT_UNLOCKS := [
 	{"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
@@ -78,6 +82,20 @@ const DEFAULT_UNLOCKS := [
 	{"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
 	{"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
 	{"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
+	{"id": "glasses_thin", "kind": "glasses", "title": "THIN", "medal": "", "value": "thin"},
+	{"id": "glasses_thick", "kind": "glasses", "title": "THICK", "medal": "", "value": "thick"},
+	{"id": "glasses_round", "kind": "glasses", "title": "ROUND", "medal": "", "value": "round"},
+	{"id": "glasses_aviator", "kind": "glasses", "title": "AVIATOR", "medal": "", "value": "aviator"},
+	{"id": "beard_stubble", "kind": "beard", "title": "STUBBLE", "medal": "", "value": "stubble"},
+	{"id": "beard_goatee", "kind": "beard", "title": "GOATEE", "medal": "", "value": "goatee"},
+	{"id": "beard_full", "kind": "beard", "title": "FULL BEARD", "medal": "", "value": "full"},
+	{"id": "beard_moustache", "kind": "beard", "title": "MOUSTACHE", "medal": "", "value": "moustache"},
+	{"id": "hat_beanie", "kind": "hat", "title": "BEANIE", "medal": "", "value": "beanie"},
+	{"id": "hat_cap", "kind": "hat", "title": "BALL CAP", "medal": "", "value": "cap"},
+	{"id": "hat_hardhat", "kind": "hat", "title": "HARD HAT", "medal": "bag_man", "value": "hardhat"},
+	{"id": "hat_santa", "kind": "hat", "title": "SANTA HAT", "medal": "old_tree", "value": "santa"},
+	{"id": "hat_bucket", "kind": "hat", "title": "BUCKET HAT", "medal": "", "value": "bucket"},
+	{"id": "hat_party", "kind": "hat", "title": "PARTY HAT", "medal": "people_person", "value": "party"},
 ]
 # what the career screen lists: [section, label, counter, format]
 const COUNTERS := [

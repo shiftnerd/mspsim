@@ -796,6 +796,14 @@ const DART_LINES := [
     "THREE DARTS. ONE IN THE WOOD.",
     "SOMEONE KEEPS SCORE ON THE SHEET.",
 ]
+# the old Christmas tree at the end of the warehouse (E): the first time there is a Santa hat in the box of ornaments (the OLD TREE
+# medal unlocks it in the character creator), after that the tree just stands there
+const TREE_FIRST := "A BOX OF ORNAMENTS. A SANTA HAT, STILL GOOD. YOURS NOW."
+const TREE_LINES := [
+    "NOBODY HAS TAKEN THE TREE DOWN SINCE DECEMBER.",
+    "ONE STRING OF BULBS STILL WORKS. GOOD ENOUGH.",
+    "A TREE IN A WAREHOUSE. IT FITS.",
+]
 const TREE_BULBS := [
     Vector2(17, 10),
     Vector2(12, 18),
@@ -895,6 +903,9 @@ func play() -> void:
         _dart_n += 1
         Hints.toast(DART_LINES[(_dart_n - 1) % DART_LINES.size()], 2.5)
         return
+    if kind == "old_tree":
+        _tree_press()
+        return
     if kind.begins_with("booth_"):
         Expo.booth(kind.substr(6))
         return
@@ -920,6 +931,14 @@ func play() -> void:
         _next_channel = _time + 7.0
         _channel = (_channel + 1) % 4
         _static_until = _time + 0.4
+
+
+# E on the old tree: the first time it counts for the OLD TREE medal (the Santa hat of the character creator), later it is a remark
+func _tree_press() -> void:
+    var first := not Career.has_medal("old_tree")
+    Career.add("old_tree")
+    _dart_n += 1
+    Hints.toast(TREE_FIRST if first else TREE_LINES[(_dart_n - 1) % TREE_LINES.size()], 3.0)
 
 
 func _process(delta: float) -> void:
@@ -3512,7 +3531,10 @@ func _draw() -> void:
 
 
 write("scripts/head_gear.gd", '''extends Node2D
-# THE HEAD OVERLAY (roadmap R15 level 3 step b): glasses and facial hair drawn over a custom person's head by one Sprite2D per slot.
+# THE ACCESSORY OVERLAY (roadmap R15 level 3 steps b, c, d): glasses, facial hair, hats, a name sticker, a lanyard and a watch drawn over
+# a custom person by one Sprite2D per slot. Each slot has a KIND that says which part of the body its cell follows (tools/make_head_sheets.lua
+# renders the cells and one origin table per kind): head (glasses, beard), hat (a bigger cell, a hat stands above the face), torso (badge,
+# lanyard: the near arm is cut out of the cell) and wrist (the watch rides on the arm; a 16 px cell).
 # A child of the body's AnimatedSprite2D (so it sits above the body and below the held items and the headset, which are siblings
 # added later, and it follows the sprite's transform and visibility): the player, an NPC copy (custom_look) and the select preview
 # all get one from Look.apply. It NEVER plays an animation of its own: it reads the body sprite's current `animation` and `frame`,
@@ -3526,8 +3548,9 @@ write("scripts/head_gear.gd", '''extends Node2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
-const SLOTS := ["beard", "glasses"]  # drawing order, lowest first (hats and the rest are later steps)
-const CELL := 32
+const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
+const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
+const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
 const FRAMES := 123
 
 static var _origins := {}
@@ -3540,12 +3563,13 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 123 [x, y] pairs
-static func origins(facing: String) -> Array:
-    if not _origins.has(facing):
-        var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "head_origin_%s.json" % facing))
-        _origins[facing] = parsed if parsed is Array else []
-    return _origins[facing]
+# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 123 [x, y] pairs
+static func origins(facing: String, kind := "head") -> Array:
+    var key := kind + "_" + facing
+    if not _origins.has(key):
+        var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "%s_origin_%s.json" % [kind, facing]))
+        _origins[key] = parsed if parsed is Array else []
+    return _origins[key]
 
 
 # the sheet index of an animation frame (the body sheet is 123 frames; the overlay sheets have the same 123 cells), -1 = none
@@ -3604,8 +3628,7 @@ func _sync() -> void:
     var anim := String(_sprite.animation)
     var idx := frame_index(anim, _sprite.frame)
     var facing := "right" if anim.ends_with("_right") else "left"
-    var table := origins(facing)
-    if idx < 0 or idx >= table.size() or not _sprite.sprite_frames.has_animation(anim):
+    if idx < 0 or idx >= FRAMES or not _sprite.sprite_frames.has_animation(anim):
         visible = false
         return
     visible = true
@@ -3613,18 +3636,21 @@ func _sync() -> void:
     if _sprite.centered:
         var tex := _sprite.sprite_frames.get_frame_texture(anim, _sprite.frame)
         top_left -= tex.get_size() * 0.5 if tex != null else Vector2(32, 40)
-    var at := top_left + Vector2(float(table[idx][0]), float(table[idx][1]))
     for slot in SLOTS:
         var id := str(_ids.get(slot, ""))
         if id == "":
             continue
+        var table := origins(facing, str(KIND[slot]))
+        if idx >= table.size():
+            continue
         var s: Sprite2D = _slots[slot]
+        var cell: int = CELLS[KIND[slot]]
         var path := "%s%s_%s_%s.png" % [DIR, slot, id, facing]
         if str(s.get_meta("path", "")) != path:
             s.texture = load(path)
             s.set_meta("path", path)
-        s.position = at
-        s.region_rect = Rect2(idx * CELL, 0, CELL, CELL)
+        s.position = top_left + Vector2(float(table[idx][0]), float(table[idx][1]))
+        s.region_rect = Rect2(idx * cell, 0, cell, cell)
 
 
 func _process(_delta: float) -> void:
@@ -45680,9 +45706,10 @@ const DIM := Color("9aa8c0")
 const FREE_MODE := "free"
 const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
 # The create step's pages and rows are DATA (R15 level 3): a page is {id, label, rows}, a row {kind, label, id}. Kinds:
-# "name" (the text box: typed, or the pad's letter grid), "choice" (a list in Look.CHOICES[id], < > chips) and "swatch" (the
-# colours of Look.SWATCHES[id]). A new option, say the extras glasses, is ONE line here plus its Look.CHOICES list; a page
-# with no rows has no tab (EXTRAS shows its `empty` text only if it is ever reached).
+# "name" (the text box: typed, or the pad's letter grid), "choice" (a list in Look.CHOICES[id], < > chips), "swatch" (the
+# colours of Look.SWATCHES[id]) and "acc" (an accessory slot of Look.ACC_STYLES: none first, only the styles that are unlocked,
+# "N LOCKED" beside the chips; Look.cycle_acc). A new option is ONE line here plus its list; a page with no rows has no tab
+# (a page's `empty` text shows only if one is ever reached). Wide fits tabs + 5 rows + the bottom row, so EXTRAS and WORK hold three each.
 const CREATE_PAGES := [
     {
         "id": "look",
@@ -45707,7 +45734,28 @@ const CREATE_PAGES := [
             {"kind": "swatch", "id": "shoes", "label": "SHOES"},
         ],
     },
-    {"id": "extras", "label": "EXTRAS", "empty": "ACCESSORIES COME SOON", "rows": []},
+    {
+        "id": "extras",
+        "label": "EXTRAS",
+        "empty": "NOTHING HERE YET",
+        "rows":
+        [
+            {"kind": "acc", "id": "glasses", "label": "GLASSES"},
+            {"kind": "acc", "id": "beard", "label": "BEARD"},
+            {"kind": "acc", "id": "hat", "label": "HAT"},
+        ],
+    },
+    {
+        "id": "work",
+        "label": "WORK",
+        "empty": "NOTHING HERE YET",
+        "rows":
+        [
+            {"kind": "acc", "id": "badge", "label": "NAMETAG"},
+            {"kind": "acc", "id": "lanyard", "label": "LANYARD"},
+            {"kind": "acc", "id": "watch", "label": "WATCH"},
+        ],
+    },
 ]
 const CREATE_ACTIONS := ["random", "presets", "done"]  # the bottom row: RANDOM | PRESETS | DONE
 const GRID_COLS := 9  # the pad's letter grid
@@ -46157,6 +46205,8 @@ func _create_change(delta: int) -> void:
             Look.cycle_name(delta)
         "choice":
             Look.cycle_choice(str(row.id), delta)
+        "acc":
+            Look.cycle_acc(str(row.id), delta)
         "swatch":
             Look.set_swatch(str(row.id), maxi(0, Look.swatch_index(str(row.id))) + delta)
     _refresh_look()
@@ -46348,6 +46398,18 @@ func _preset_press(row: int, col: int) -> void:
 func roll_look() -> void:
     Look.randomize_look()
     _refresh_look()
+
+
+# the text of a choice row's box: the style (a hairstyle a hat replaces shows as SPIKY>SHORT), or the accessory's name
+func _choice_text(row: Dictionary) -> String:
+    if str(row.kind) == "acc":
+        return Look.acc_title(str(row.id), str(Look.acc.get(row.id, "")))
+    var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+    if str(row.id) == "hair_style":
+        var shown := Look.hair_shown(Look.look, Look.acc)
+        if shown != str(Look.look.get("hair_style", "")):
+            st += ">" + shown.to_upper()
+    return st
 
 
 # the preview cards wear the look
@@ -46835,7 +46897,7 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
             draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
         _txt(str(row.label), Vector2(x0, ty), GOLD if hot else DIM)
         var kind := str(row.kind)
-        if kind == "name" or kind == "choice":
+        if kind == "name" or kind == "choice" or kind == "acc":
             var box := Rect2(sx + 8.0, sy, 49.0, sw)
             draw_rect(box, INK)
             draw_rect(box, GOLD if hot else DIM, false, 1.0)
@@ -46846,8 +46908,10 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
                 _txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
                 _rects.append([box, "name_box", i])
             else:
-                var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+                var st := _choice_text(row)
                 _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
+                if kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
+                    _txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
             _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
             _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
         else:
@@ -48704,6 +48768,8 @@ BGFX = {
 # the warehouse games (R21): cornhole boards A and B and the bag tray (drawn by fx.gd, the art is code), the BBQ grill sprite's effects
 BGFX["warehouse"] += [("BoardA", "cornhole_a", 1140, 0, 1152), ("BoardB", "cornhole_b", 1236, 0, 1248),
                       ("BagTray", "cornhole_tray", 1100, 0, 1107), ("Grill", "grill", 1309, 71, 1325)]
+# R15 level 3 step c: E on the old Christmas tree (x 1446, the tree_lights effect above) gives the OLD TREE medal, which unlocks the Santa hat
+BGFX["warehouse"] += [("Tree", "old_tree", 1446, 66, 1452)]
 
 for _t in SITE_TYPES:
     for _s in ("a", "b"):
@@ -51106,9 +51172,13 @@ const MEDALS := [
     {"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
     {"id": "bag_man", "title": "BAG MAN", "desc": "10 BAGS IN THE HOLE", "rules": [["bags_in_hole", ">=", 10]]},
     {"id": "grill_sergeant", "title": "GRILL SERGEANT", "desc": "A COOKOUT, NOTHING BURNT", "rules": [["grill_clean", ">=", 1]]},
+    {"id": "old_tree", "title": "OLD TREE", "desc": "FIND THE TREE IN THE WAREHOUSE", "rules": [["old_tree", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
-# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
+# ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
+# hat, glasses and beard (value = the accessory id of Look.ACC_STYLES; the title is the name the create row shows; Look.sanitize_acc
+# turns a locked one into none, a style with no entry is free). Hats: the hard hat is the warehouse's BAG MAN medal, the Santa hat is
+# the old tree's OLD TREE medal (E on the tree at the end of the warehouse), the party hat comes with the team outings.
 # medal "" = always available; the first entry of a kind is its default.
 const UNLOCKS := [
     {"id": "wall_standard", "kind": "wallpaper", "title": "STANDARD BLUE", "medal": "", "value": "2d6ca8"},
@@ -51125,6 +51195,20 @@ const UNLOCKS := [
     {"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
     {"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
     {"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
+    {"id": "glasses_thin", "kind": "glasses", "title": "THIN", "medal": "", "value": "thin"},
+    {"id": "glasses_thick", "kind": "glasses", "title": "THICK", "medal": "", "value": "thick"},
+    {"id": "glasses_round", "kind": "glasses", "title": "ROUND", "medal": "", "value": "round"},
+    {"id": "glasses_aviator", "kind": "glasses", "title": "AVIATOR", "medal": "", "value": "aviator"},
+    {"id": "beard_stubble", "kind": "beard", "title": "STUBBLE", "medal": "", "value": "stubble"},
+    {"id": "beard_goatee", "kind": "beard", "title": "GOATEE", "medal": "", "value": "goatee"},
+    {"id": "beard_full", "kind": "beard", "title": "FULL BEARD", "medal": "", "value": "full"},
+    {"id": "beard_moustache", "kind": "beard", "title": "MOUSTACHE", "medal": "", "value": "moustache"},
+    {"id": "hat_beanie", "kind": "hat", "title": "BEANIE", "medal": "", "value": "beanie"},
+    {"id": "hat_cap", "kind": "hat", "title": "BALL CAP", "medal": "", "value": "cap"},
+    {"id": "hat_hardhat", "kind": "hat", "title": "HARD HAT", "medal": "bag_man", "value": "hardhat"},
+    {"id": "hat_santa", "kind": "hat", "title": "SANTA HAT", "medal": "old_tree", "value": "santa"},
+    {"id": "hat_bucket", "kind": "hat", "title": "BUCKET HAT", "medal": "", "value": "bucket"},
+    {"id": "hat_party", "kind": "hat", "title": "PARTY HAT", "medal": "people_person", "value": "party"},
 ]
 # what the career screen lists: [section, label, counter, format]
 const COUNTERS := [
@@ -56586,7 +56670,34 @@ const SOURCES := [
     ["e0a07a", "stubble", 0],
 ]
 # never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
-const KEEPS := ["17121f", "ffffff", "3a2418", "6b3416", "8a4a2e", "c8ccd8", "2a2a33", "2f3d44"]  # the last one: sunglasses lens
+const KEEPS := [
+    "17121f",
+    "ffffff",
+    "3a2418",
+    "6b3416",
+    "8a4a2e",
+    "c8ccd8",
+    "2a2a33",
+    "2f3d44",  # sunglasses lens
+    # level 3 steps c and d: the colours of the hats, lanyard, name sticker and watches (drawn by tools/make_accessories.lua), never recoloured
+    "e8b820",  # hard hat, gold watch, party hat pom: yellow, shade, highlight
+    "b88a14",
+    "f6d860",
+    "c8283a",  # santa hat, sport watch, name sticker: red and shade
+    "9a1c2c",
+    "2f6b3a",  # beanie: green, dark, light
+    "1f4d28",
+    "4a8a54",
+    "2c4a7a",  # ball cap: navy and dark
+    "1f3556",
+    "b9a574",  # bucket hat: khaki and dark
+    "8c7a52",
+    "d0409a",  # party hat: pink and cyan
+    "40b8d0",
+    "1f9a96",  # the conference lanyard: teal and dark
+    "16706f",
+    "c8c0b0",  # santa fur shade
+]
 const SWATCHES := {
     "skin": ["fbd7bc", "f3b488", "e3a272", "c68642", "a8683a", "8d5524", "6b3e22", "4a2a18"],
     "hair":
@@ -56640,16 +56751,28 @@ const NAMES := [
 
 # ---- LEVEL 3 STEP B: head accessories (the block is separate on purpose: the create-step UI rows come later) --------------
 const HEAD_GEAR := preload("res://scripts/head_gear.gd")
-# every slot of `acc`; only the ones with art have styles (the others are reserved: hats, nametag, lanyard and watch are later steps)
+# every slot of `acc` and its styles (ids of the sheets assets/accessories/<slot>_<id>_<facing>.png). The slots glasses, beard and hat
+# can be LOCKED (Career.UNLOCKS entries of that kind, value = the id; an id with no entry is free); badge (the HELLO name sticker),
+# lanyard (the conference lanyard with its pass) and watch (it replaces the intern's own black watch) are always free.
 const ACC_SLOTS := ["glasses", "beard", "hat", "badge", "lanyard", "watch"]
 const ACC_STYLES := {
     "glasses": ["thin", "thick", "round", "aviator"],
     "beard": ["stubble", "goatee", "full", "moustache"],
-    "hat": [],
-    "badge": [],
-    "lanyard": [],
-    "watch": [],
+    "hat": ["beanie", "cap", "hardhat", "santa", "bucket", "party"],
+    "badge": ["name"],
+    "lanyard": ["conference"],
+    "watch": ["silver", "gold", "sport"],
 }
+# the names the create rows show for the slots that have no Career.UNLOCKS entry (the others use the entry's patchable title)
+const ACC_TITLES := {
+    "badge": {"name": "HELLO TAG"},
+    "lanyard": {"conference": "CONFERENCE"},
+    "watch": {"silver": "SILVER", "gold": "GOLD", "sport": "SPORT"},
+}
+# while a hat is worn a tall hairstyle shows as another one (the hat covers the crown): the sheet is the substitute's, the look keeps
+# the chosen style. long, bob and ponytail hang below the brim and stay.
+const HAT_HAIR := {"spiky": "short", "curly": "short", "bun": "ponytail"}
+const RANDOM_SHARE := {"glasses": 0.35, "beard": 0.3, "hat": 0.3, "badge": 0.2, "lanyard": 0.15, "watch": 0.25}  # RANDOM's chance per slot
 const FRAME_DEFAULT := "1e1e26"  # glasses frame colour when acc.frame_color is empty (the art colour)
 const FRAME_STYLE := {"round": "8c6a1e", "aviator": "b8bcc4"}  # wire frames default to metal
 const STUBBLE_MIX := 0.4  # stubble = the skin colour mixed this far to the beard colour
@@ -56941,7 +57064,7 @@ func sheet_for(character: String, custom: bool, look_dict: Dictionary = {}) -> S
     if not custom or character != BASE:
         return character
     var lk := look_dict if not look_dict.is_empty() else look
-    var style := str(lk.get("hair_style", HAIR_STYLES[0]))
+    var style := hair_shown(lk, acc_of(look_dict))
     return BASE if style == HAIR_STYLES[0] else "custom_intern_" + style
 
 
@@ -57040,6 +57163,7 @@ func randomize_look() -> void:
     look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
     look["pattern"] = PATTERNS[r.randi() % PATTERNS.size()]  # level 3 step (a): drawn after everything above
     look["shorts"] = SHORTS[r.randi() % SHORTS.size()]
+    _randomize_acc(r)  # level 3 steps b to d: drawn after everything above, so the same seed keeps the old draws
 
 
 # ---- save, load, settings ------------------------------------------------------------
@@ -57146,7 +57270,7 @@ func sanitize_acc(d: Variant) -> Dictionary:
         return out
     for slot in ACC_SLOTS:
         var id := str(d.get(slot, ""))
-        if id in ACC_STYLES[slot]:
+        if id in ACC_STYLES[slot] and acc_unlocked(slot, id):  # a locked hat (an old save, a copied file) becomes none
             out[slot] = id
     for key in ["beard_color", "frame_color"]:
         var hex := str(d.get(key, "")).to_lower().trim_prefix("#")
@@ -57155,11 +57279,46 @@ func sanitize_acc(d: Variant) -> Dictionary:
     return out
 
 
-# the ids of a slot, none ("") first: the create step's rows will cycle through these
+# is this style free, or is its Career.UNLOCKS entry (kind = the slot, value = the id) earned? A style with no entry is free.
+func acc_unlocked(slot: String, id: String) -> bool:
+    for u in Career.UNLOCKS:
+        if str(u.kind) == slot and str(u.value) == id:
+            return Career.unlocked(str(u.id))
+    return true
+
+
+# the styles of a slot that are still locked (the create step says how many)
+func acc_locked(slot: String) -> Array:
+    var out: Array = []
+    for id in ACC_STYLES.get(slot, []):
+        if not acc_unlocked(slot, id):
+            out.append(id)
+    return out
+
+
+# the name a row shows for a style ("NONE" for "")
+func acc_title(slot: String, id: String) -> String:
+    if id == "":
+        return "NONE"
+    for u in Career.UNLOCKS:
+        if str(u.kind) == slot and str(u.value) == id:
+            return str(u.title)
+    return str(ACC_TITLES.get(slot, {}).get(id, id.to_upper()))
+
+
+# the ids of a slot the player may wear, none ("") first: the create step's rows cycle through these
 func acc_ids(slot: String) -> Array:
     var ids: Array = [""]
-    ids.append_array(ACC_STYLES.get(slot, []))
+    for id in ACC_STYLES.get(slot, []):
+        if acc_unlocked(slot, id):
+            ids.append(id)
     return ids
+
+
+# the hairstyle whose sheet is drawn: the chosen one, or its HAT_HAIR substitute while a hat is worn
+func hair_shown(look_dict: Dictionary, acc_dict: Dictionary) -> String:
+    var style := str(look_dict.get("hair_style", HAIR_STYLES[0]))
+    return str(HAT_HAIR.get(style, style)) if str(acc_dict.get("hat", "")) != "" else style
 
 
 # the helper tests and the UI use: false (nothing changes) for an unknown slot or id
@@ -57174,6 +57333,16 @@ func cycle_acc(slot: String, step: int) -> void:
     var ids := acc_ids(slot)
     var i := maxi(ids.find(str(acc.get(slot, ""))), 0)
     acc[slot] = ids[(i + step + ids.size()) % ids.size()]
+
+
+# RANDOM's accessory draws (the player's Look.acc): a share of people wear each, only styles that are unlocked
+func _randomize_acc(r: RandomNumberGenerator) -> void:
+    for slot in ACC_SLOTS:
+        var ids := acc_ids(slot)
+        ids.remove_at(0)
+        var roll := r.randf()
+        var pick := r.randi()
+        acc[slot] = "" if ids.is_empty() or roll >= float(RANDOM_SHARE[slot]) else str(ids[pick % ids.size()])
 
 
 # the accessories a look dict wears: an empty dict is the player's own (Look.acc), a copy's dict carries its own "acc"

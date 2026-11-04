@@ -574,6 +574,7 @@ func _init() -> void:
 	cs.queue_free()
 
 	# ---- the campaign save
+	look.acc = look.default_acc()  # (RANDOM above may have rolled a hat, and a hat turns curly into short)
 	look.look = bright.duplicate()
 	look.active = true
 	player.current_character = "office_intern"
@@ -690,13 +691,13 @@ func _level3(look: Node, d: Node, player) -> void:
 	cs._unhandled_input(_key(KEY_ENTER))
 	_check(cs.step == "create", "level 3: the create step is open")
 	# pages and rows
-	_check(cs._pages().size() == 2, "the empty EXTRAS page has no tab (%d pages)" % cs._pages().size())
+	_check(cs._pages().size() == 4, "four pages with tabs: LOOK, CLOTHES, EXTRAS, WORK (%d pages)" % cs._pages().size())
 	_check(_page_labels(cs, 0) == ["NAME", "STYLE", "SKIN", "HAIR"], "the LOOK page rows: %s" % str(_page_labels(cs, 0)))
 	_check(
 		_page_labels(cs, 1) == ["SHIRT", "PATTERN", "PANTS", "BOTTOM", "SHOES"],
 		"the CLOTHES page rows: %s" % str(_page_labels(cs, 1))
 	)
-	_check(cs.CREATE_PAGES[2].id == "extras" and cs.CREATE_PAGES[2].rows.is_empty(), "EXTRAS exists, empty, with its own text")
+	_check(_page_labels(cs, 2) == ["GLASSES", "BEARD", "HAT"] and _page_labels(cs, 3) == ["NAMETAG", "LANYARD", "WATCH"], "the EXTRAS and WORK page rows: %s %s" % [str(_page_labels(cs, 2)), str(_page_labels(cs, 3))])
 	# keys: Q and E turn the page except as letters on the NAME row
 	cs.create_row = 2
 	cs._unhandled_input(_key(KEY_E))
@@ -711,7 +712,10 @@ func _level3(look: Node, d: Node, player) -> void:
 	cs._unhandled_input(_key(KEY_PAGEDOWN))
 	_check(cs.create_page == 1, "Page Down turns the page even on the NAME row")
 	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
-	_check(cs.create_page == 0, "a pad's right shoulder button turns the page (wraps)")
+	_check(cs.create_page == 2, "a pad's right shoulder button turns the page")
+	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
+	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
+	_check(cs.create_page == 0, "and it wraps after the last page")
 	cs.create_row = cs._page_rows().size()
 	cs._unhandled_input(_pad(JOY_BUTTON_RIGHT_SHOULDER))
 	_check(cs.create_row == cs._page_rows().size() and cs.create_row == 5, "the bottom row stays the bottom row across pages")
@@ -732,7 +736,7 @@ func _level3(look: Node, d: Node, player) -> void:
 	mat = cs._sprites[0].material
 	_check(float(mat.get_shader_parameter("hems")[0]) == 255.0, "no shorts: the hems are off")
 	# the layout of every page keeps its rects on screen
-	for page in 2:
+	for page in 4:
 		cs.set_page(page)
 		cs.queue_redraw()
 		await process_frame
