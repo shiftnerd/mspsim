@@ -79,9 +79,15 @@ add("death", {
   {face = "hurt", rotBody = 90, rx = -5, hrot = -14, aN = -100, aNr = 20, aF = 40, aFr = 70, lN = 8, lNr = -10, lF = -4, lFr = 0, ground = false, dur = 600},
 })
 
--- seated: long thigh (kn = knee row 60) horizontal, shin down, so the hips drop to chair-seat height
+-- seated: the thigh runs forward (a hair above horizontal), the knee bends and the shin drops straight down so both shoes stand flat on the
+-- floor row. The body (hips, belt, torso, arms, head) is exactly where the old straight-shin sit put it: `legRef` is the old leg setup
+-- (kn 60, thigh 85 / 80, shin straight down) the engine measures the ground with, `floor` then moves each leg so its sole is on that row,
+-- `legDy` lifts the thighs 3 px off the pelvis block so a shin shows under them, lNx / lFx slide the hip pivots forward (the near leg starts
+-- behind the far one, 9 px apart in the still) so both knees clear the pelvis block and the near foot ends up a little behind the far one.
+local SEAT_REF = {kn = 60, lN = 85, lNr = -85, lF = 80, lFr = -80}
 local function seat(extra)
-  local p = {kn = 60, bob = 4, lN = 85, lNr = -85, lF = 80, lFr = -80, aN = 60, aNr = 25, aF = 65, aFr = 22, dur = 120}
+  local p = {kn = 55, legDy = -3, lNx = 8, lFx = 3, lN = 90, lNr = -90, lF = 88, lFr = -88, legRef = SEAT_REF, floor = true,
+             bob = 4, aN = 60, aNr = 25, aF = 65, aFr = 22, dur = 120}
   for k, v in pairs(extra or {}) do p[k] = v end
   return p
 end
