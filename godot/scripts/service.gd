@@ -8,6 +8,7 @@ extends Node
 # 0, or when both owners' trust is under 20). Hands-on still works: your desk's PSA / RMM are the normal computer apps.
 # V1 uses Cards and the PSA ticket list; the Dispatch board, Capacity view, runbooks and hiring are C5 / C6.
 
+const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): hours worked per tech per day
 const START_CONFIDENCE := 55
 const OWNERS := ["Alan", "Garrison"]
 const TRUST_START := 50
@@ -1174,6 +1175,7 @@ func _work_tech(who: String, list: Array, cap_units: float, seconds: float) -> v
 		var dt := minf(time_left, need / rate)
 		var progress := dt * rate
 		Owner.client_work[int(t.client)] = float(Owner.client_work.get(int(t.client), 0.0)) + progress
+		Dash.add_hours(who, dt)
 		need -= progress
 		time_left -= dt
 		Owner._work[id] = need

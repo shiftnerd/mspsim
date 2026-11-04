@@ -42,3 +42,6 @@ Read-only scoping pass (Nov 2026) from the code, not play-tested. Items marked (
 - Per-tech hours mean nothing with one player.
 - Brand rule: our own title ("PIXEL IT METRICS"); the photo's tile names include real vendor names, use invented ones.
 - A save format change needs an old-save default.
+
+## Status (built)
+All five steps are built. Deviations from the plan above: `Dash` is a static script (no autoload, so Msp can use it while it loads); the owner board has CLIENT MOOD in place of TEAM SPEED (so the three KPI ticks W-2 under 55, A/R under $1,500 and mood 75+ each sit on a tile); the owner left chart is EBITDA by week, the tech and cozy-service left chart is open tickets by client, the sales one the pipeline by stage; owner hours are recorded as one "CREW" total; the wide layout shows one chart at a time (rotates every 6 s, Enter or a click swaps it); the TV has four channels (the micro one is the fourth); the cubicle-area TV replaced the framed notice position (the notice moved left). The growth ESCALATIONS trend arrow was not built (the service board has an ESCALATIONS tile). Details: CLAUDE.md, section PIXEL IT METRICS.

@@ -3,10 +3,10 @@
 --   export  -> godot/assets/sets/<set>.png (background only), godot/assets/props/<piece>.png,
 --              godot/assets/sets/<set>_props.json (y-sorted prop placements for Godot)
 -- Run with run_lua_script. Needs tools/lib.lua next to this file.
-local TOOLS = "D:/creative/pixelproject/tools/"
+local TOOLS = (ROOT or "D:/creative/pixelproject/") .. "tools/"  -- ROOT: set the global ROOT = "<checkout>/" to build in a worktree
 local L = dofile(TOOLS .. "lib.lua")
 local P = L.P
-local GODOT = "D:/creative/pixelproject/godot/assets/"
+local GODOT = (ROOT or "D:/creative/pixelproject/") .. "godot/assets/"
 
 -- the rubber duck that sits on the player's desk (it squeaks when you press E on it)
 function P.rubberDuck()
@@ -134,7 +134,8 @@ builders.cubicle_area = {W = 320, H = 128, fn = function(s)
   s.putS("Plant", P.floorPlant(), 262, 78, 108, "plant_floor")
   -- R24: the closet door that stood here (set x 282..316) moved into the warehouse; a filing cabinet and a framed notice fill the wall
   s.putS("Cabinet", P.filingCabinet(), 292, 78, 108, "filing_cabinet")
-  s.put("Frames", P.frame(14, 18, "#E8B070", "#7A4A8A"), 292, 34)
+  s.put("Frames", P.frame(14, 18, "#E8B070", "#7A4A8A"), 264, 34)
+  s.put("TV", P.tv(), 282, 30)   -- R20: the metrics TV (fx kind tv, E opens the board), the same prop as the main floor's
   s.put("Wall plates", P.nerfRack(), 190, 34)
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
 end}

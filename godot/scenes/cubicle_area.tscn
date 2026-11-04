@@ -193,6 +193,14 @@ target = NodePath("../../Fx/NerfRack")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseNerfRack"]
 shape = SubResource("shape_fx")
 
+[node name="UseTV" type="Area2D" parent="Interactables"]
+position = Vector2(324, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/TV")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseTV"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Switch" type="Node2D" parent="Fx"]
@@ -204,6 +212,11 @@ kind = "switch"
 position = Vector2(214, 34)
 script = ExtResource("fx")
 kind = "nerf_rack"
+
+[node name="TV" type="Node2D" parent="Fx"]
+position = Vector2(305, 29)
+script = ExtResource("fx")
+kind = "tv"
 
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true

@@ -8,6 +8,7 @@ extends Node
 # Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
+const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -1494,6 +1495,7 @@ func _work_queue(seconds: float) -> void:
 		var need: float = float(_work.get(int(t.id), WORK[int(t.pri)]))
 		var take := minf(need, capacity)
 		client_work[int(t.client)] = float(client_work.get(int(t.client), 0.0)) + take
+		Dash.add_hours("CREW", take)
 		capacity -= take
 		need -= take
 		_work[int(t.id)] = need

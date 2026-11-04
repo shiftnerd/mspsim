@@ -1,7 +1,7 @@
 -- Shared drawing library for the office stage art (10 px = 1 ft, outline #17121F, light from top-left)
 local L = {}
 local OUT = "#17121F"
-L.BASE = "D:/creative/pixelproject/office/"
+L.BASE = (ROOT or "D:/creative/pixelproject/") .. "office/"  -- set the global ROOT = "<checkout>/" to build in a worktree
 
 local function C(h)
   return Color{r=tonumber(h:sub(2,3),16), g=tonumber(h:sub(4,5),16), b=tonumber(h:sub(6,7),16), a=255}
@@ -1012,11 +1012,11 @@ function L.writeRackLayout(path)
 end
 
 -- side views for the remaining pieces live in side_views.lua
-dofile("D:/creative/pixelproject/tools/side_views.lua")(L, P)
+dofile((ROOT or "D:/creative/pixelproject/") .. "tools/side_views.lua")(L, P)
 
 -- flattened character: returns an Image (no padding)
 function L.char(name)
-  local cs = Sprite{fromFile = dofile("D:/creative/pixelproject/tools/sprite_path.lua")("D:/creative/pixelproject/", name)}
+  local cs = Sprite{fromFile = dofile((ROOT or "D:/creative/pixelproject/") .. "tools/sprite_path.lua")(ROOT or "D:/creative/pixelproject/", name)}
   local img = Image(cs.width, cs.height, ColorMode.RGB)
   img:drawSprite(cs, 1)
   cs:close()
