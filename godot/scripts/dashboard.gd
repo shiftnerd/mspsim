@@ -85,6 +85,14 @@ static func _day_score() -> int:
 	return maxi(0, s) if Difficulty.cozy_on() else s
 
 
+# ESCALATIONS (SLA breaches + reopens this week) with the trend arrow against last week
+static func _esc_tile() -> Dictionary:
+	var n: int = Growth.esc_now() if Campaign.active else 0
+	var tl := _tile("esc", "ESCALATIONS", n, _hi(n, 2, 4), 2)
+	tl["trend"] = Growth.esc_trend()
+	return tl
+
+
 # the ten tiles of a mode: [{id, label, value, text, status g|o|y|r, digits, kpi}]
 static func tiles(mode: String) -> Array:
 	match mode:
@@ -103,7 +111,6 @@ static func _tech_tiles() -> Array:
 	var hot := _count(func(t: Dictionary) -> bool: return int(t.pri) <= 2)
 	var onsite := _count(func(t: Dictionary) -> bool: return str(t.fix).begins_with("onsite"))
 	var missed := int(Dash.today().missed)
-	var reopened: int = Msp.reopened - _base("reopened")
 	var energy := int(round(Shift.energy))
 	var score := _day_score()
 	return [
@@ -114,7 +121,7 @@ static func _tech_tiles() -> Array:
 		_tile("hot", "P1/P2 OPEN", hot, _hi(hot, 1, 2)),
 		_tile("bkp", "BACKUPS DOWN", _failing_backups(), "r" if _failing_backups() > 0 else "g"),
 		_tile("site", "WAITING ONSITE", onsite, "o" if onsite > 0 else "g"),
-		_tile("reop", "REOPENED", maxi(0, reopened), _hi(reopened, 1, 2)),
+		_esc_tile(),
 		_tile("nrg", "ENERGY", energy, _lo(energy, 55, 35)),
 		_tile("score", "DAY SCORE", score, "g" if score >= 10 else ("y" if score >= 0 else "r"), 3),
 	]
@@ -138,7 +145,7 @@ static func _owner_tiles() -> Array:
 		_tile("w2", "W-2 %", w2, _hi(w2, 55, 62), 3, {"met": w2 <= 55, "goal": str(Owner.goal.get("id", "")) == "w2"}),
 		_tile("cli", "CLIENTS", Sales.active.size(), "g", 2),
 		_tile("ar", "A/R OWED $", ar, _hi(ar, 1500, 3000), 4, {"met": ar < 1500, "goal": str(Owner.goal.get("id", "")) == "ar"}),
-		_tile("open", "OPEN TICKETS", open, _hi(open, 3, 5)),
+		_esc_tile(),
 		_tile("burn", "BURNOUT", int(Owner.burnout), _hi(Owner.burnout, 50, 75)),
 		_tile("mood", "CLIENT MOOD", mood, _lo(mood, 60, 40), 3, {"met": mood >= 75, "goal": str(Owner.goal.get("id", "")) == "mood"}),
 		_tile("mult", "VALUE MULTIPLE", "%.1f" % mult, "g" if mult >= 4.0 else ("y" if mult >= 3.0 else "o"), 3),
@@ -477,6 +484,24 @@ static func _tick(c: CanvasItem, x: float, y: float, met: bool) -> void:
 		_r(c, x, y + 2, 5, 1, AMBER)
 
 
+# the trend arrow (5 px wide, 7 tall): up is bad (red, amber on cozy Easy), flat is yellow, down is good (green)
+const ARROWS := {
+	1: [[2, 0, 1, 1], [1, 1, 3, 1], [0, 2, 5, 1], [2, 3, 1, 4]],
+	0: [[0, 3, 3, 1], [3, 1, 1, 5], [4, 2, 1, 3], [5, 3, 1, 1]],
+	-1: [[2, 0, 1, 4], [0, 4, 5, 1], [1, 5, 3, 1], [2, 6, 1, 1]],
+}
+
+
+static func _arrow(c: CanvasItem, x: float, y: float, trend: int, cozy: bool) -> void:
+	var col: Color = COLORS.y
+	if trend > 0:
+		col = AMBER if cozy else COLORS.r
+	elif trend < 0:
+		col = COLORS.g
+	for p in ARROWS[clampi(trend, -1, 1)]:
+		_r(c, x + float(p[0]), y + float(p[1]), float(p[2]), float(p[3]), col)
+
+
 static func _paint_tile(c: CanvasItem, r: Rect2, tl: Dictionary, t: float, cozy: bool) -> void:
 	var goal: bool = tl.kpi is Dictionary and bool(tl.kpi.get("goal", false))
 	var edge: Color = COLORS.y if goal else BEZEL
@@ -514,6 +539,8 @@ static func _paint_tile(c: CanvasItem, r: Rect2, tl: Dictionary, t: float, cozy:
 				i += 1
 		digit(c, ch, x0 + float(cell) * (cw + gap), y0, cw, dh, col, dp and cw >= 5.0)
 		cell += 1
+	if tl.has("trend") and r.size.y >= 18.0:
+		_arrow(c, r.position.x + 3.0, r.position.y + 2.0, int(tl.trend), cozy)
 	if tl.kpi is Dictionary and tl.kpi.has("met"):
 		_tick(c, r.end.x - 8.0, r.position.y + 2.0, bool(tl.kpi.met))
 

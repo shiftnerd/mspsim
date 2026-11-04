@@ -80,6 +80,20 @@ func esc_before() -> int:
 	return int(esc.get(period() - 1, 0))
 
 
+# escalation trend for the dashboard arrow: this period against the last one, pace-adjusted while a tech
+# week (five days) is still in progress; an owner period is one step. 1 worse, 0 flat, -1 better
+func esc_trend() -> int:
+	if not Campaign.active:
+		return 0
+	var frac := 1.0
+	if Campaign.mode != "owner":
+		frac = float((Campaign.day - 1) % 5 + 1) / 5.0
+	var diff := float(esc_now()) - float(esc_before()) * frac
+	if diff >= 1.0:
+		return 1
+	return -1 if diff <= -1.0 else 0
+
+
 func has_plan() -> bool:
 	return focus != "" and (learner != "" or helper != "")
 

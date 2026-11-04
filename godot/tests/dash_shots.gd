@@ -56,6 +56,9 @@ func _fill(mode: String) -> void:
 		rows.append({"d": k + 1, "opened": op, "closed": maxi(2, op + seed_v % 7 - 3), "missed": seed_v % 3, "hours": {}})
 	Dash.from_dict({"days": rows})
 	c.day = 17
+	var gr := root.get_node("Growth")
+	var pe: int = gr.period()
+	gr.esc = {pe - 1: 6, pe: 1 if mode == "owner" else 7}  # tech day 17 is day 2 of a week: pace 2.4, so 7 is up; owner 1 of 6 is down
 	Dash.begin_day(17)
 	Dash.today().opened = 6
 	Dash.today().closed = 4
