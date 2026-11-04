@@ -157,25 +157,25 @@ texture = ExtResource("prop_av_desk")
 [node name="chair_gold_side_3" type="Sprite2D" parent="Actors"]
 position = Vector2(86, 94)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_gold_side")
 
 [node name="chair_gold_side_4" type="Sprite2D" parent="Actors"]
 position = Vector2(126, 94)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_gold_side")
 
 [node name="chair_gold_side_5" type="Sprite2D" parent="Actors"]
 position = Vector2(166, 94)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_gold_side")
 
 [node name="chair_gold_side_6" type="Sprite2D" parent="Actors"]
 position = Vector2(206, 94)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_gold_side")
 
 [node name="Player" parent="Actors" instance=ExtResource("player")]

@@ -407,23 +407,44 @@ function P.keyboardSide()
   end)
 end
 
--- an office task chair from the side, facing RIGHT (mirror it for a left-facing sitter with L.flipH). A real seated height: the
--- sitting pose has its thigh bottom on frame row 72 (feet row 79), so the cushion top is art row 24 (put the art at feet_y - 31,
--- the cushion top then is feet_y - 7, right under the thighs), a short gas lift, a five-star base and casters that end ON the
--- feet line (art row 31). The backrest rises behind the shoulder blades. Art 18x32 (the front chair P.chair is 18x33, chair race).
+-- an office task chair from the side, facing RIGHT (mirror it for a left-facing sitter with L.flipH). Art 18x39. The seat top is art
+-- row 28 = frame row 72, right under the thighs (put the art at feet_y - 35, so the sitter's sole row is art row 35); everything
+-- under the seat is drawn a little nearer the camera than the sitter's feet, so the base and casters end 3 px below the sole row:
+-- a leaning backrest that rises above the shoulder blades with a lumbar bulge and a light edge, a cushion with a lit top and a
+-- visible thickness, a chrome gas lift 4 px tall, a five-star base seen as a flat ellipse with its legs and round casters.
+-- (The old front chair P.chair is 18x33, still used by the chair race.)
+local function lighter(hex, n)
+  local r, g, b = tonumber(hex:sub(2, 3), 16), tonumber(hex:sub(4, 5), 16), tonumber(hex:sub(6, 7), 16)
+  return string.format("#%02X%02X%02X", math.min(255, r + n), math.min(255, g + n), math.min(255, b + n))
+end
 function P.chairSide(base, hi, sh)
   base = base or "#2A2A33"; hi = hi or "#4A4A56"; sh = sh or "#1C1C24"
-  return L.piece(18, 32, function(R)
-    L.box(R, 0, 1, 4, 23, base, hi, sh)                      -- backrest (faces right, so it is at the back/left)
-    R(1, 0, 2, 1, hi)                                        -- rounded top
-    R(1, 3, 1, 16, hi)                                       -- lit edge on the back
-    R(3, 13, 1, 5, sh)                                       -- lumbar notch
-    L.box(R, 0, 24, 18, 3, base, hi, sh)                     -- seat cushion
-    R(1, 24, 14, 1, hi)                                      -- lit top of the cushion
-    R(17, 24, 1, 1, sh)                                      -- rounded front edge
-    R(8, 27, 2, 2, sh)                                       -- gas lift
-    R(1, 29, 16, 1, base)                                    -- star base
-    R(0, 30, 3, 2, sh); R(15, 30, 3, 2, sh); R(7, 30, 3, 2, sh)   -- casters, on the floor line
+  local top = lighter(hi, 34)
+  local chrome, chromeSh = "#B8BEC9", "#7C8290"
+  return L.piece(18, 39, function(R)
+    -- backrest: outline, light edge, two body tones; it leans back at the top, bulges forward at the lumbar
+    local function slab(y0, y1, x0)
+      for y = y0, y1 do
+        R(x0, y, 1, 1, sh); R(x0 + 1, y, 1, 1, top); R(x0 + 2, y, 1, 1, hi); R(x0 + 3, y, 1, 1, base); R(x0 + 4, y, 1, 1, sh)
+      end
+    end
+    R(1, 0, 3, 1, sh)                                           -- rounded top
+    slab(1, 9, 0); slab(10, 17, 1); slab(18, 24, 2)
+    R(2, 25, 3, 3, sh); R(3, 25, 1, 3, base)                    -- post into the seat
+    -- seat: lit top edge, cushion, shadowed underside, rounded front
+    R(1, 28, 16, 1, top); R(0, 28, 1, 1, sh); R(17, 28, 1, 1, sh)
+    R(0, 29, 18, 1, sh); R(1, 29, 15, 1, hi)
+    R(0, 30, 18, 1, sh); R(1, 30, 16, 1, base); R(1, 31, 16, 1, sh)
+    R(4, 31, 9, 1, base)                                        -- seat plate
+    -- gas lift: chrome column
+    R(7, 32, 1, 4, sh); R(8, 32, 1, 4, chrome); R(9, 32, 1, 4, chromeSh); R(10, 32, 1, 4, sh)
+    -- star base: a flat ellipse, two legs out to the sides and one toward the viewer, a hub
+    R(3, 35, 12, 1, sh); R(2, 36, 14, 1, base); R(1, 36, 1, 1, sh); R(16, 36, 1, 1, sh)
+    R(7, 36, 4, 1, hi)
+    -- casters
+    for _, cx in ipairs({0, 7, 15}) do
+      R(cx, 37, 3, 2, sh); R(cx + 1, 37, 1, 1, hi)
+    end
   end)
 end
 

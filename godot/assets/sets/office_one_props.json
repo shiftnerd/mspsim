@@ -1,6 +1,6 @@
 [
 {"piece":"chair_slipper_green_side","x":39,"y":67,"sort":99},
-{"piece":"chair_office_side","x":65,"y":69,"sort":95},
+{"piece":"chair_office_side","x":65,"y":65,"sort":95},
 {"piece":"desk_cubicle_74","x":67,"y":82,"sort":108},
 {"piece":"monitor_a","x":88,"y":64,"sort":96},
 {"piece":"monitor_b","x":107,"y":65,"sort":96},

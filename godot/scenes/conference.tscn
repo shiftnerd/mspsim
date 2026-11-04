@@ -190,37 +190,37 @@ y_sort_enabled = true
 [node name="chair_conference_side_0" type="Sprite2D" parent="Actors"]
 position = Vector2(74, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="chair_conference_side_1" type="Sprite2D" parent="Actors"]
 position = Vector2(106, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="chair_conference_side_2" type="Sprite2D" parent="Actors"]
 position = Vector2(138, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="chair_conference_side_3" type="Sprite2D" parent="Actors"]
 position = Vector2(170, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="chair_conference_side_4" type="Sprite2D" parent="Actors"]
 position = Vector2(202, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="chair_conference_side_5" type="Sprite2D" parent="Actors"]
 position = Vector2(234, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_conference_side")
 
 [node name="conference_table_wide_6" type="Sprite2D" parent="Actors"]
@@ -232,25 +232,25 @@ texture = ExtResource("prop_conference_table_wide")
 [node name="chair_conference_side_l_7" type="Sprite2D" parent="Actors"]
 position = Vector2(95, 112)
 centered = false
-offset = Vector2(0, -25)
+offset = Vector2(0, -29)
 texture = ExtResource("prop_chair_conference_side_l")
 
 [node name="chair_conference_side_l_8" type="Sprite2D" parent="Actors"]
 position = Vector2(143, 112)
 centered = false
-offset = Vector2(0, -25)
+offset = Vector2(0, -29)
 texture = ExtResource("prop_chair_conference_side_l")
 
 [node name="chair_conference_side_l_9" type="Sprite2D" parent="Actors"]
 position = Vector2(191, 112)
 centered = false
-offset = Vector2(0, -25)
+offset = Vector2(0, -29)
 texture = ExtResource("prop_chair_conference_side_l")
 
 [node name="chair_conference_side_l_10" type="Sprite2D" parent="Actors"]
 position = Vector2(239, 112)
 centered = false
-offset = Vector2(0, -25)
+offset = Vector2(0, -29)
 texture = ExtResource("prop_chair_conference_side_l")
 
 [node name="plant_floor_11" type="Sprite2D" parent="Actors"]

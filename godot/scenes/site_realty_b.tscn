@@ -202,7 +202,7 @@ texture = ExtResource("prop_coffee_bar_b")
 [node name="chair_office_side_1" type="Sprite2D" parent="Actors"]
 position = Vector2(136, 95)
 centered = false
-offset = Vector2(0, -26)
+offset = Vector2(0, -30)
 texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_2" type="Sprite2D" parent="Actors"]
@@ -252,7 +252,7 @@ texture = ExtResource("prop_mouse")
 [node name="chair_office_side_7" type="Sprite2D" parent="Actors"]
 position = Vector2(210, 95)
 centered = false
-offset = Vector2(0, -26)
+offset = Vector2(0, -30)
 texture = ExtResource("prop_chair_office_side")
 
 [node name="desk_cubicle_74_8" type="Sprite2D" parent="Actors"]

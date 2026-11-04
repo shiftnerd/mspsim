@@ -294,10 +294,15 @@ New characters start as a copy of an existing one, then change only what differs
   hand is lifted with the head. The hands json therefore moved by 0 to 1 px for typing and by the lift for the gestures. Test `tests/seated_legs.gd`.
   The clothes sheets, the head / accessory sheets (their golden refs hold the legs and the head rows), the head origin tables and every anim were
   rebuilt; `Look.HEMS` did not change (seated frames are 79 = trousers stay).
-- **Chair** (`P.chairSide`, 18x32): seat top is art row 24 = frame row 72 (right under the thighs), cushion 3 rows, a 2 row gas lift, a 1 row star base and
-  casters on art row 31, so with the art at `feet_y - 31` (desk chairs y 70 for feet y 101, conference and karaoke 58 for 89, venue 64 / 68) the casters
-  stand ON the feet line and the seat top is 7 px above the floor; the backrest (rows 1 to 23) rises behind the shoulder blades. Scene offsets are
-  `y - sort_y` as always (they come from the `*_props.json`).
+- **Chair** (`P.chairSide`, art 18x39, PNG 20x41 with the 1 px margin): drawn to read as a real task chair, not a slab. Art row 28 is the seat top = frame
+  row 72, right under the thighs; the art goes at `feet_y - 35` (desk chairs y 66 for feet y 101, conference and karaoke 54 for 89, venue 60 / 64), so
+  the sitter's sole row is art row 35. Parts: a 5 px wide backrest (rows 0-24: dark outline, a lighter highlight edge, two body tones, leaning back at
+  the top and bulging forward at the lumbar, rising above the shoulder blades), a post into the seat, a cushion 3 rows thick with a LIGHT top edge
+  (`lighter(hi, 34)`), a seat plate, a chrome gas lift 4 rows tall (`#B8BEC9` / `#7C8290`), and a flat ellipse five-star base with three round
+  casters. The column, base and casters are drawn a little NEARER the camera than the sitter's feet: the casters end 3 px below the sole row (art row
+  38), which is what makes the base read (squeezing it above the soles made a black slab). Colours stay per room (`P.chairSide(base, hi, sh)`:
+  desk grey, conference grey, karaoke purple, gold, wood, velvet, blue, brown, exec). No armrest (it would be hidden behind the sitter, who is drawn
+  in front of the chair). Scene offsets are `y - sort_y` as always (they come from the `*_props.json`); `chair_roll.gd` only uses the width.
 - Older geometry (history): before the lift the seated poses used `kn = 60`, hips about 19 px under the standing hips and the pelvis block on rows 71-78
   (sitting on the floor); chair art was 18x33 (seat top 15 px above the wheels), desk chairs sit at y=66, seat feet y=101, sitter at the desk's LEFT end
   (seat = desk_left+12), keyboard seat+12, monitor seat+18.
@@ -328,7 +333,7 @@ New characters start as a copy of an existing one, then change only what differs
   keyboard, chair) and `tools/side_views.lua` (everything else). `tools/build_angles.lua` rebuilds all piece files (new files:
   copier, cooler, toilet, bath_sink, mirror, plant_floor, whiteboard). Wall items are thin edge-on slabs, doors are a slab + knob/handle.
 - Chairs are the exception: every chair someone sits in uses the `side` frame (`P.chairSide`: backrest at the back, cushioned seat, gas lift,
-  five-star base). **It is 18x32 at a real seated height** (see "Seated geometry": seat top 7 px above the floor, casters on the feet line, art at `feet_y - 31`; the desk chairs are y 70, conference and karaoke 58, venue 64 / 68; `cup_dx` and the chair roll are unchanged). Left-facing
+  five-star base). **It is 18x39 with a readable gas lift and star base** (see "Seated geometry": seat top 7 px above the floor, base 3 px below the soles, art at `feet_y - 35`; the desk chairs are y 66, conference and karaoke 54, venue 60 / 64; `cup_dx` and the chair roll are unchanged). Left-facing
   seats mirror it with `L.flipH` (pieces `*_side_l`; only the conference FRONT row uses it, the sitters all face right). Pieces are named
   `chair_office_side`, `chair_office_brown_side`, `chair_exec_side`, `chair_conference_side[_l]`, `chair_karaoke_side`, `chair_gold_side`,
   `chair_wood_side`, `chair_velvet_side`, `chair_blue_side` (the old front PNGs are gone except `chair_office.png`, which the chair race

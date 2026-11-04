@@ -355,7 +355,7 @@ return function(L, builders)
     s.putS("RowA", P.rowBacks(244), 40, 70, 90, "row_backs")
     s.putS("AV", P.avDesk(), 250, 74, 108, "av_desk")
     for _, x in ipairs({63, 103, 143, 183}) do   -- seat x - 14
-      s.putS("Seats", P.chairSide("#B8943A", "#D8B84A", "#8A6A24"), x, 64, 94, "chair_gold_side")
+      s.putS("Seats", P.chairSide("#B8943A", "#D8B84A", "#8A6A24"), x, 60, 94, "chair_gold_side")
     end
     s.put("Doors", P.hallDoor("EXIT"), 292, 18)
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
@@ -537,10 +537,10 @@ return function(L, builders)
     s.put("Sconce", P.sconce(), 66, 34); s.put("Sconce", P.sconce(), 228, 34)
     s.put("Chandelier", P.chandelier(), 40, -26); s.put("Chandelier", P.chandelier(), 150, -26)
     for _, x in ipairs({85, 115, 140}) do
-      s.putS("BackRow", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 59, 94, "chair_conference_side")
+      s.putS("BackRow", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 55, 94, "chair_conference_side")
     end
     for _, x in ipairs({65, 95, 125}) do
-      s.putS("Seats", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 68, 98, "chair_conference_side")
+      s.putS("Seats", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 64, 98, "chair_conference_side")
     end
     s.putS("Water", P.waterTable(), 36, 78, 108, "water_table")
     s.putS("Flip", P.flipChart(), 160, 50, 101, "flip_chart")
@@ -560,10 +560,10 @@ return function(L, builders)
     s.put("Screen", P.roomScreen("b", 100, 56), 136, 6)
     s.put("Clock", P.clock(), 70, 20)
     for _, x in ipairs({80, 108}) do
-      s.putS("BackRow", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 59, 94, "chair_wood_side")
+      s.putS("BackRow", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 55, 94, "chair_wood_side")
     end
     for _, x in ipairs({57, 85, 113}) do
-      s.putS("Seats", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 68, 98, "chair_wood_side")
+      s.putS("Seats", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 64, 98, "chair_wood_side")
     end
     s.putS("Coffee", P.coffeeStation(), 22, 62, 100, "coffee_station")
     s.putS("Table", P.presenterTable(60, "#2E6A5A", "#F2C94C"), 148, 65, 100, "presenter_table")
@@ -594,8 +594,8 @@ return function(L, builders)
     s.put("Sconce", P.sconce(), 70, 30)
     s.put("Chandelier", P.chandelier(), 30, -26)
     for _, x in ipairs({45, 77, 109}) do
-      s.putS("BackRow", P.chairSide("#8A2434", "#B03A4C", "#5E1622"), x + 21, 59, 94, "chair_velvet_side")
-      s.putS("Seats", P.chairSide("#8A2434", "#B03A4C", "#5E1622"), x, 68, 98, "chair_velvet_side")
+      s.putS("BackRow", P.chairSide("#8A2434", "#B03A4C", "#5E1622"), x + 21, 55, 94, "chair_velvet_side")
+      s.putS("Seats", P.chairSide("#8A2434", "#B03A4C", "#5E1622"), x, 64, 98, "chair_velvet_side")
     end
     s.putS("StoolA", P.barStool("#3A3F4A"), 146, 70, 100, "stool_panel")
     s.putS("StoolB", P.barStool("#3A3F4A"), 166, 70, 100, "stool_panel")
@@ -617,7 +617,7 @@ return function(L, builders)
     s.putS("Lab1", P.labTable(), 44, 58, 92, "lab_table")
     s.putS("Lab2", P.labTable(), 114, 58, 92, "lab_table")
     for _, x in ipairs({71, 101, 131}) do
-      s.putS("Seats", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 68, 98, "chair_blue_side")
+      s.putS("Seats", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 64, 98, "chair_blue_side")
     end
     s.putS("Plant", P.floorPlant(), 6, 74, 101, "plant_floor")
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
