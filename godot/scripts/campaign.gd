@@ -315,6 +315,7 @@ func new_game(for_mode: String) -> void:
 	PrinterGame.reset()
 	Talk.reset()
 	Meeting.reset()
+	Phone.reset()
 	Projects.reset()
 	Expo.reset()
 	Onsite.reset()
@@ -397,6 +398,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 	PrinterGame.from_dict(cfg.get_value("campaign", "printer", {}))
 	Difficulty.from_dict(cfg.get_value("campaign", "difficulty", {}))
 	Meeting.from_dict(cfg.get_value("campaign", "meeting", {}))
+	Phone.from_dict(cfg.get_value("campaign", "phone", {}))  # R37: call cooldowns and counts; an old save has none
 	Projects.from_dict(cfg.get_value("campaign", "projects", {}))
 	Expo.from_dict(cfg.get_value("campaign", "conference", {}))
 	Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
@@ -461,6 +463,7 @@ func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "printer", PrinterGame.to_dict())
 	cfg.set_value("campaign", "difficulty", Difficulty.to_dict())
 	cfg.set_value("campaign", "meeting", Meeting.to_dict())
+	cfg.set_value("campaign", "phone", Phone.to_dict())
 	cfg.set_value("campaign", "projects", Projects.to_dict())
 	cfg.set_value("campaign", "conference", Expo.to_dict())
 	cfg.set_value("campaign", "onsite", Onsite.to_dict())

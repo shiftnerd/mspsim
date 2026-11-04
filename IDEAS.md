@@ -32,7 +32,7 @@ Consequences and ideas that follow:
 ## Tech campaign
 - A real conference-room scene for the yearly review (Morgan, with the team visible behind).
 - More story days for the quiet days (6, 8, 11, 14, 17, 19): the weeks between the big jobs need small human beats.
-- Dialer / calling clients from the phone app, replies that do something, a notification buzz and banner on the HUD, a lock screen, a camera app.
+- Phone: a camera app, text replies that do something (the dialer, lock screen and notification banner are built, R37).
 - NPCs noticing and reporting outages themselves (a coworker calls it in before the monitoring does).
 - A labelled patch panel and cable tracing in the closet, a spare laptop you can plug in, LEDs glowing through a pitch-black closet, a side view of the rack.
 - Phone: more ticket types, a day-end score screen with a "best moment" recap.

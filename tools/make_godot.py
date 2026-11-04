@@ -8892,6 +8892,289 @@ func _paint_stats() -> void:
         y += 7
 ''')
 
+write("scripts/phone_calls.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,max-returns
+# The phone's dialer rules (no drawing): who is in the contacts list, what a call offers and what it does. Calls are
+# text only. State (cooldowns, call counts) lives in the Phone autoload (`call_cd`, `call_n`) so it can be saved.
+#   PhoneCalls.contacts()            -> [{id, name, sub, kind, num, client?, who?}]
+#   PhoneCalls.open_call(contact)    -> {say, opts: [{id, label}], voicemail}
+#   PhoneCalls.act(contact, opt_id)  -> {say}   applies the effect, costs time / energy, starts the cooldown
+# Free Play: no time or energy cost and no cooldown (opinion and mood changes are no-ops outside a campaign anyway).
+
+const CLIENT_GAP := 3.0  # game hours before the same client takes another call
+const CO_GAP := 2.0  # game hours before the same coworker takes another chat
+const PIZZA_GAP := 8.0
+const REFERRAL_GAP := 24.0
+const REFERRAL_ODDS := 0.35
+const REFERRAL_MOOD := 80
+const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
+const CHAT_COST := 0.05
+const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
+const HANG := {"id": "hang", "label": "HANG UP"}
+const CHAT_REPLIES := {
+    "talk":
+    {
+        "good": ["HA, YOU TOO. COFFEE LATER?", "ANYTIME. HOW IS YOUR DAY GOING?"],
+        "neutral": ["YEAH, ALL GOOD HERE. BACK TO IT.", "FINE, THANKS. BUSY ONE."],
+        "cold": ["UH HUH. I AM BUSY.", "OK. BYE."],
+    },
+    "thanks":
+    {
+        "good": ["NO PROBLEM! ANYTIME.", "ANY TIME. WE ARE A TEAM."],
+        "neutral": ["SURE. NO PROBLEM.", "OK, THANKS FOR SAYING."],
+        "cold": ["MM. OK.", "SURE."],
+    },
+    "lunch":
+    {
+        "good": ["YES! I WILL BRING MY COUPONS.", "SANDWICHES AT NOON? DEAL."],
+        "neutral": ["MAYBE. TEXT ME AT NOON.", "I MIGHT EAT AT MY DESK."],
+        "cold": ["I HAVE PLANS.", "NOT TODAY."],
+    },
+}
+
+
+static func now_hours() -> float:
+    return float(Campaign.day) * 24.0 + World.clock
+
+
+static func number_text(num: String) -> String:
+    return num.substr(0, 3) + "-" + num.substr(3)
+
+
+static func contacts() -> Array:
+    var out := []
+    var wanted := range(Msp.CLIENTS.size())
+    if Campaign.active:
+        var live := []
+        for c in wanted:
+            if Sales.is_active(int(c)):
+                live.append(c)
+        if not live.is_empty():
+            wanted = live
+    for c in wanted:
+        var cl: Dictionary = Msp.CLIENTS[int(c)]
+        out.append(
+            {
+                "id": "c:%d" % int(c),
+                "name": str(cl.contact).to_upper(),
+                "sub": str(cl.short),
+                "kind": "client",
+                "client": int(c),
+                "num": "55501%02d" % (10 + int(c)),
+            }
+        )
+    var team: Array = Lync.contacts()
+    for i in team.size():
+        var who := str(team[i])
+        var sub := Social.role(who)
+        if sub == "":
+            sub = "OFFICE MANAGER" if who == Lync.boss() else "TEAM"
+        out.append(
+            {
+                "id": "w:" + who,
+                "name": who.to_upper(),
+                "sub": sub,
+                "kind": "coworker",
+                "who": who,
+                "num": "55502%02d" % (10 + i),
+            }
+        )
+    out.append(PIZZA.duplicate())
+    return out
+
+
+static func find(id: String) -> Dictionary:
+    for c in contacts():
+        if str(c.id) == id:
+            return c
+    return {}
+
+
+static func by_number(digits: String) -> Dictionary:
+    for c in contacts():
+        if str(c.num) == digits:
+            return c
+    return {}
+
+
+static func gap_of(contact: Dictionary) -> float:
+    match str(contact.get("kind", "")):
+        "client":
+            return CLIENT_GAP
+        "pizza":
+            return PIZZA_GAP
+    return CO_GAP
+
+
+# game hours left before this contact takes another call (0 = ready; Free Play is always ready)
+static func wait_left(contact: Dictionary) -> float:
+    if not Campaign.active:
+        return 0.0
+    return maxf(0.0, float(Phone.call_cd.get(str(contact.get("id", "")), -1000.0)) - now_hours())
+
+
+static func ready(contact: Dictionary) -> bool:
+    return wait_left(contact) <= 0.0
+
+
+static func client_tickets(client: int) -> Array:
+    var out := []
+    for t in Msp.open_tickets():
+        if int(t.client) == client:
+            out.append(t)
+    return out
+
+
+static func late_ticket(client: int) -> Dictionary:
+    for t in client_tickets(client):
+        if bool(t.breached) or float(t.sla_left) < 90.0:
+            return t
+    return {}
+
+
+static func _mmss(secs: float) -> String:
+    var s := maxi(0, int(secs))
+    return "%d:%02d" % [s / 60, s % 60]
+
+
+# what the client tells you about their most urgent ticket (the hint a check-in earns)
+static func ticket_hint(t: Dictionary) -> String:
+    var ep: Dictionary = Msp.endpoint(str(t.endpoint))
+    var line := "#%d IS %s." % [int(t.id), str(t.endpoint)]
+    if not ep.is_empty() and bool(ep.get("unsaved", false)) and not bool(ep.get("asked", false)):
+        line += " DOCUMENTS ARE OPEN ON IT: ASK FIRST."
+    elif bool(t.breached):
+        line += " IT IS LATE AND THEY ARE ANGRY."
+    else:
+        line += " THEY NEED IT WITHIN %s." % _mmss(float(t.sla_left))
+    return line
+
+
+static func _tier(mood: int) -> String:
+    if mood >= 70:
+        return "good"
+    return "neutral" if mood >= 40 else "cold"
+
+
+static func open_call(contact: Dictionary) -> Dictionary:
+    var kind := str(contact.get("kind", "none"))
+    match kind:
+        "client":
+            var c := int(contact.client)
+            var who := str(Msp.CLIENTS[c].contact)
+            if World.clock >= World.DAY_END:
+                return _mail_box("OFFICE CLOSED. YOU GET %s'S VOICEMAIL." % who.to_upper())
+            var mood := Sales.mood(c)
+            var say: String = {
+                "good": "HEY, GOOD TO HEAR FROM YOU!",
+                "neutral": "PIXEL IT? WHAT IS UP?",
+                "cold": "I HOPE THIS IS GOOD NEWS.",
+            }[_tier(mood)]
+            var opts := [{"id": "check", "label": "CHECK IN"}]
+            if not late_ticket(c).is_empty():
+                opts.append({"id": "sorry", "label": "APOLOGISE"})
+            if mood >= REFERRAL_MOOD or not Campaign.active:
+                opts.append({"id": "refer", "label": "REFERRAL?"})
+            opts.append(HANG)
+            return {"say": say, "opts": opts, "voicemail": false}
+        "coworker":
+            var who := str(contact.who)
+            if Lync.presence(who)[0] != "AVAILABLE":
+                return _mail_box("%s IS %s. YOU LEAVE A MESSAGE." % [who.to_upper(), str(Lync.presence(who)[0])])
+            return {
+                "say": "HELLO?",
+                "opts":
+                [
+                    {"id": "talk", "label": "SMALL TALK"},
+                    {"id": "thanks", "label": "THANK THEM"},
+                    {"id": "lunch", "label": "LUNCH PLANS"},
+                    HANG,
+                ],
+                "voicemail": false,
+            }
+        "pizza":
+            return {
+                "say": "TONY'S: PIXEL IT? THE USUAL LARGE PEPPERONI?",
+                "opts": [{"id": "pizza", "label": "ORDER LUNCH"}, HANG],
+                "voicemail": false,
+            }
+    return _mail_box("THE NUMBER YOU HAVE DIALED IS NOT IN SERVICE.")
+
+
+static func _mail_box(say: String) -> Dictionary:
+    return {"say": say, "opts": [HANG], "voicemail": true}
+
+
+static func _cost(hours: float, energy: float) -> void:
+    if not Campaign.active:
+        return
+    World.clock = minf(World.DAY_END - 0.05, World.clock + hours)
+    if Shift.active():
+        Shift.add_energy(-energy)
+
+
+static func _cooldown(contact: Dictionary, hours: float) -> void:
+    if Campaign.active:
+        Phone.call_cd[str(contact.id)] = now_hours() + hours
+
+
+static func act(contact: Dictionary, opt: String) -> Dictionary:
+    var id := str(contact.get("id", ""))
+    var n := int(Phone.call_n.get(id, 0))
+    Phone.call_n[id] = n + 1
+    match opt:
+        "check", "sorry", "refer":
+            return _client_act(contact, opt, n)
+        "talk", "thanks", "lunch":
+            var who := str(contact.who)
+            var tier: String = {"FRIEND": "good", "FRIENDLY": "good", "NEUTRAL": "neutral"}.get(Social.mood(who), "cold")
+            var lines: Array = CHAT_REPLIES[opt][tier]
+            if Social.mood(who) != "HOSTILE":
+                Social.change(who, 1)
+            _cost(CHAT_COST, 0.0)
+            _cooldown(contact, CO_GAP)
+            return {"say": str(lines[n % lines.size()])}
+        "pizza":
+            _cost(CHAT_COST, 0.0)
+            _cooldown(contact, PIZZA_GAP)
+            if Campaign.active and Shift.active():
+                Shift.add_energy(2.0)
+            return {"say": "LARGE PEPPERONI. 25 MINUTES. THEY SAY THANKS FOR CALLING."}
+    return {"say": ""}
+
+
+static func _client_act(contact: Dictionary, opt: String, n: int) -> Dictionary:
+    var c := int(contact.client)
+    _cost(CHECK_COST, 1.0)
+    var gap := CLIENT_GAP
+    var say := ""
+    match opt:
+        "check":
+            var list := client_tickets(c)
+            if list.is_empty():
+                Sales.adjust(c, 1)
+                say = "NOTHING WRONG. NICE OF YOU TO CHECK IN!"
+            else:
+                Sales.adjust(c, 2)
+                say = ticket_hint(list[0])
+        "sorry":
+            Sales.adjust(c, 4)
+            say = "I APPRECIATE THAT. JUST GET IT DONE."
+        "refer":
+            gap = REFERRAL_GAP
+            var rng := Difficulty.rng_for("phone.referral", Campaign.day * 100 + c * 7 + n)
+            if rng.randf() < REFERRAL_ODDS:
+                Campaign.adjust_rep(1)
+                if Campaign.active:
+                    Skills.add_xp("people", 3)
+                say = "I WILL PASS YOUR NUMBER TO A FRIEND."
+            else:
+                say = "NOT RIGHT NOW. I WILL KEEP YOU IN MIND."
+    _cooldown(contact, gap)
+    return {"say": say}
+''')
+
+
 write("scripts/phone.gd", '''extends CanvasLayer
 # gdlint:disable=class-definitions-order
 # The cell phone (2013): press P. The first time you pick iFone 5 (slate phone, iOS-style look) or Nexxus 5
@@ -8901,7 +9184,11 @@ write("scripts/phone.gd", '''extends CanvasLayer
 # and the boss text you about urgent tickets) and Settings. The phone is on cellular, so it still
 # works when the office network is down. Everything is drawn in code with the pixel font.
 
+# R37: a lock screen (slide to unlock), a PHONE app (contacts, keypad, text-only calls) and notification banners
+# on the HUD while the phone is closed (the banner is drawn by hud.gd from `banner` / `banner_slide()`).
+
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Calls := preload("res://scripts/phone_calls.gd")
 var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
@@ -8915,8 +9202,42 @@ var app := "home"
 var mail_sel := -1
 var tk_sel := -1
 var txt_open := false
-var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings)
-const HOME_APPS := ["mail", "tickets", "texts", "settings"]
+var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings, 4 the dock's PHONE)
+const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone"]
+const KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"]
+const DIAL_SECS := 1.2  # ringing before they pick up
+const UNLOCK_SECS := 0.3
+const BANNER_IN := 0.25
+const BANNER_HOLD := 2.0
+const BANNER_OUT := 0.25
+const BANNER_MAX_QUEUE := 4
+const FEED_MAX := 6
+const KIND_COLORS := {
+    "TEXT": Color("3cc15a"), "MAIL": Color("3b8df0"), "IM": Color("33b5e5"), "SLA": Color("e0463c")
+}
+
+var locked := false  # the lock screen shows until you slide to unlock (set on every open)
+var unlock_t := -1.0  # 0..1 while the slide runs, -1 when idle
+var ph_view := "contacts"  # the PHONE app: contacts | keypad (a call in progress is `dialog`)
+var ph_sel := 0
+var ph_scroll := 0
+var kp_text := ""
+var kp_sel := 4
+var dialog: Dictionary = {}  # the call in progress: {contact, stage dial | talk | done, t, say, opts, voicemail}
+var call_sel := 0
+var call_cd: Dictionary = {}  # contact id -> game hour (day * 24 + clock) it takes calls again; saved
+var call_n: Dictionary = {}  # contact id -> calls made; saved
+var calls_made := 0
+var feed: Array = []  # the latest notifications, newest first: {kind, who, body}
+var banner: Dictionary = {}  # the banner on screen: {kind, who, body, t}
+var buzz_count := 0
+
+var _bq: Array = []
+var _poll := 0.0
+var _primed := false
+var _mail_seen := -1
+var _im_seen := {}
+var _buzz_ms := -100000
 
 var _canvas: Node2D
 var _hits: Array = []
@@ -8935,6 +9256,7 @@ func _ready() -> void:
     add_child(_canvas)
     _canvas.draw.connect(_paint)
     Msp.changed.connect(_refresh)
+    Msp.text_received.connect(_on_text)
     var cfg := ConfigFile.new()
     if cfg.load(save_path) == OK:
         os = str(cfg.get_value("phone", "os", ""))
@@ -8952,13 +9274,41 @@ func set_os(value: String) -> void:
     _save()
 
 
+# a new campaign starts with fresh call cooldowns (the campaign save keeps them in its `phone` section)
+func reset() -> void:
+    call_cd = {}
+    call_n = {}
+    calls_made = 0
+    dialog = {}
+    feed = []
+    banner = {}
+    _bq = []
+    _primed = false
+
+
+func to_dict() -> Dictionary:
+    return {"cd": call_cd.duplicate(), "n": call_n.duplicate(), "calls": calls_made}
+
+
+func from_dict(data: Dictionary) -> void:
+    call_cd = (data.get("cd", {}) as Dictionary).duplicate()
+    call_n = (data.get("n", {}) as Dictionary).duplicate()
+    calls_made = int(data.get("calls", 0))
+
+
 func open() -> void:
     if is_open or Game.ui_open or Game.busy or Game.title_mode:
         return
     app = "home" if os != "" else "choose"
+    locked = os != ""
+    unlock_t = -1.0
     mail_sel = -1
     tk_sel = -1
     txt_open = false
+    ph_view = "contacts"
+    dialog = {}
+    banner = {}  # the phone is in your hand now: the lock screen lists what came in
+    _toast_t = 0.0
     is_open = true
     Sfx.play("ui_open")
     Game.ui_open = true
@@ -8970,6 +9320,7 @@ func open() -> void:
 
 func close() -> void:
     is_open = false
+    dialog = {}  # closing the phone hangs up
     Game.ui_open = false
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     var tween := create_tween()
@@ -8991,9 +9342,121 @@ func _refresh() -> void:
 func _process(delta: float) -> void:
     _blink += delta
     _toast_t = maxf(0.0, _toast_t - delta)
-    if is_open and _blink > 0.4:
+    _poll += delta
+    if _poll >= 0.2:
+        _poll = 0.0
+        poll_notifications()
+    step_banner(delta)
+    var moving := false
+    if unlock_t >= 0.0:
+        moving = true
+        unlock_t += delta / UNLOCK_SECS
+        if unlock_t >= 1.0:
+            unlock_t = -1.0
+            locked = false
+    if not dialog.is_empty():
+        moving = true
+        step_call(delta)
+    if is_open and (moving or _blink > 0.4):
         _blink = 0.0
         _canvas.queue_redraw()
+
+
+# ---- notifications (banner on the HUD while the phone is closed) --------------------------------
+func _on_text(m: Dictionary) -> void:
+    var body := str(m.body)
+    notify("SLA" if body.contains("SLA") else "TEXT", str(m.from), body)
+
+
+# new mail and new Lynk messages have no signal: look for them a few times a second
+func poll_notifications() -> void:
+    var top := -1 if Msp.emails.is_empty() else int(Msp.emails[0].id)
+    var chats_now: Dictionary = Lync.unread
+    if not _primed or Game.title_mode:
+        _primed = not Game.title_mode
+        _mail_seen = top
+        _im_seen = chats_now.duplicate()
+        return
+    if top < _mail_seen:
+        _mail_seen = top  # a new game emptied the inbox
+    var fresh := []
+    for m in Msp.emails:
+        if int(m.id) <= _mail_seen:
+            break
+        fresh.append(m)
+    _mail_seen = top
+    fresh.reverse()
+    for m in fresh:
+        notify("MAIL", str(m.from).split(" <")[0], str(m.subject))
+    for who in chats_now:
+        if int(chats_now[who]) > int(_im_seen.get(who, 0)):
+            var lines: Array = Lync.chats.get(who, [])
+            var last := "" if lines.is_empty() else str(lines[lines.size() - 1][1])
+            notify("SLA" if last.contains("SLA") else "IM", str(who), last)
+    _im_seen = chats_now.duplicate()
+
+
+# something arrived: remember it for the lock screen and show the banner if the phone is closed
+func notify(kind: String, who: String, body: String) -> void:
+    feed.push_front({"kind": kind, "who": who, "body": body})
+    while feed.size() > FEED_MAX:
+        feed.pop_back()
+    if is_open or Game.title_mode:
+        return
+    _bq.append({"kind": kind, "who": who, "body": body, "t": 0.0})
+    while _bq.size() > BANNER_MAX_QUEUE:
+        _bq.pop_front()
+
+
+# a modal that owns the top of the screen is up (cards, the day report...): banners wait their turn
+func banner_blocked() -> bool:
+    if Game.busy or Game.ui_open or Game.title_mode or not World.hud_visible:
+        return true
+    if DayReport.is_open or Cards.is_open or Review.is_open or PrinterGame.is_open:
+        return true
+    return Outings.is_open and not (Outings.room_mode() and Outings.phase == "play")
+
+
+func banner_total() -> float:
+    return BANNER_IN + BANNER_HOLD + BANNER_OUT
+
+
+func step_banner(delta: float) -> void:
+    if banner_blocked() or is_open:
+        return
+    if banner.is_empty():
+        if _bq.is_empty():
+            return
+        banner = _bq.pop_front()
+        buzz()
+    banner.t = float(banner.t) + delta
+    if float(banner.t) >= banner_total():
+        banner = {}
+
+
+# 0 = hidden above the screen, 1 = fully slid in
+func banner_slide() -> float:
+    if banner.is_empty():
+        return 0.0
+    var t := float(banner.t)
+    if t < BANNER_IN:
+        return t / BANNER_IN
+    if t > BANNER_IN + BANNER_HOLD:
+        return maxf(0.0, 1.0 - (t - BANNER_IN - BANNER_HOLD) / BANNER_OUT)
+    return 1.0
+
+
+# the vibrate buzz: quiet in the dark and after hours, and cozy Easy buzzes far less often
+func buzz() -> void:
+    var now := Time.get_ticks_msec()
+    var gap := 15000 if Difficulty.cozy_on() else 2500
+    if now - _buzz_ms < gap:
+        return
+    _buzz_ms = now
+    if not World.lights_on(World._scene) or World.clock >= World.DAY_END:
+        return
+    buzz_count += 1
+    Sfx.play("buzz", 0.6 if Difficulty.cozy_on() else 1.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -9009,9 +9472,19 @@ func _input(event: InputEvent) -> void:
     if event is InputEventMouseMotion:
         _mouse = event.position
         _canvas.queue_redraw()
-    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+    elif (
+        event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+    ):
         _mouse = event.position
         click(_mouse)
+    elif (
+        event is InputEventMouseButton
+        and event.pressed
+        and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN)
+    ):
+        move(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+    elif _dial_key(event):
+        pass
     elif Controls.pressed(event):
         var dir := Controls.nav(event, false)
         if Controls.back(event, false):
@@ -9025,10 +9498,12 @@ func _input(event: InputEvent) -> void:
         elif dir == "left" or dir == "right":
             if app == "choose":
                 activate("os:" + ("android" if dir == "right" else "ios"))
-            elif app == "home":
+            elif app == "home" and not locked:
                 home_move(1 if dir == "right" else -1)
             elif app == "settings":
                 activate("ring")
+            elif app == "phone" and ph_view == "keypad":
+                kp_move(1 if dir == "right" else -1)
         elif Controls.confirm(event, false, false):
             enter()
     else:
@@ -9046,8 +9521,15 @@ func click(at: Vector2) -> void:
 
 
 func back() -> void:
-    if app == "home" or app == "choose":
+    if locked or app == "home" or app == "choose":
         close()
+    elif app == "phone":
+        if not dialog.is_empty():
+            hang_up()
+        elif ph_view != "contacts":
+            ph_view = "contacts"
+        else:
+            app = "home"
     elif app == "mail" and mail_sel >= 0:
         mail_sel = -1
     elif app == "tickets" and tk_sel >= 0:
@@ -9065,8 +9547,23 @@ func home_move(step: int) -> void:
 
 
 func move(step: int) -> void:
+    if locked:
+        if step < 0 and not _is_ios():
+            activate("unlock")  # Nexxus: swipe up
+        return
     if app == "home":
         home_move(step * 2)  # two icons per row
+        return
+    if app == "phone":
+        if not dialog.is_empty():
+            call_sel = clampi(call_sel + step, 0, maxi(0, (dialog.opts as Array).size() - 1))
+        elif ph_view == "keypad":
+            kp_move(step * 3)
+        else:
+            var n := Calls.contacts().size()
+            ph_sel = clampi(ph_sel + step, 0, maxi(0, n - 1))
+            ph_scroll = clampi(ph_scroll, ph_sel - 20, ph_sel)  # _paint_contacts trims it to the rows that fit
+        _canvas.queue_redraw()
         return
     if app == "mail":
         mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
@@ -9082,8 +9579,17 @@ func move(step: int) -> void:
 
 
 func enter() -> void:
-    if app == "choose":
+    if locked and app != "choose":
+        activate("unlock")
+    elif app == "choose":
         activate("os:ios")
+    elif app == "phone":
+        if not dialog.is_empty():
+            activate("opt:%d" % call_sel)
+        elif ph_view == "keypad":
+            activate("key:%d" % kp_sel if kp_sel < 12 else ("del" if kp_sel == 12 else "dial"))
+        else:
+            activate("call:%d" % ph_sel)
     elif app == "home":
         activate("app:" + str(HOME_APPS[home_sel]))
     elif app == "settings":
@@ -9094,7 +9600,13 @@ func enter() -> void:
 
 func activate(id: String) -> void:
     var parts := id.split(":")
+    if parts[0] != "none" and parts[0] != "unlock":
+        locked = false  # anything you do wakes the phone past the lock screen
     match parts[0]:
+        "unlock":
+            if locked and unlock_t < 0.0:
+                unlock_t = 0.0
+                Sfx.play("ui_open", 0.5)
         "os":
             os = parts[1]
             _save()
@@ -9104,9 +9616,27 @@ func activate(id: String) -> void:
             mail_sel = -1
             tk_sel = -1
             txt_open = false
+            if app == "phone":
+                ph_view = "contacts"
+                dialog = {}
             if app == "texts":
                 for m in Msp.texts:
                     m.unread = false
+        "call":
+            start_call(Calls.contacts()[clampi(int(parts[1]), 0, Calls.contacts().size() - 1)])
+        "opt":
+            choose(int(parts[1]))
+        "keypad":
+            ph_view = "keypad"
+            kp_sel = 4
+        "contacts":
+            ph_view = "contacts"
+        "key":
+            press_key(KEYS[clampi(int(parts[1]), 0, KEYS.size() - 1)])
+        "del":
+            kp_text = kp_text.substr(0, maxi(0, kp_text.length() - 1))
+        "dial":
+            dial_number()
         "home":
             app = "home"
         "ring":
@@ -9139,6 +9669,119 @@ func activate(id: String) -> void:
 func _say(text: String) -> void:
     _toast = text
     _toast_t = 2.5
+
+
+# ---- the PHONE app: keypad and text-only calls ---------------------------------------------------
+func kp_move(step: int) -> void:
+    if absi(step) == 3:
+        if step > 0:
+            kp_sel = 12 if kp_sel in [9, 10] else (13 if kp_sel == 11 else mini(kp_sel + 3, 13))
+        else:
+            kp_sel = 9 if kp_sel == 12 else (11 if kp_sel == 13 else maxi(kp_sel - 3, 0))
+    else:
+        kp_sel = clampi(kp_sel + step, 0, 13)
+    _dialog_redraw()
+
+
+func press_key(key: String) -> void:
+    if kp_text.length() < 10:
+        kp_text += key
+    Sfx.play("ui_tick", 0.6)
+
+
+func _dial_key(event: InputEvent) -> bool:
+    if not (event is InputEventKey and event.pressed and app == "phone" and ph_view == "keypad" and dialog.is_empty()):
+        return false
+    var code: int = event.keycode
+    if code >= KEY_0 and code <= KEY_9:
+        press_key(str(code - KEY_0))
+    elif code >= KEY_KP_0 and code <= KEY_KP_9:
+        press_key(str(code - KEY_KP_0))
+    elif code == KEY_BACKSPACE:
+        activate("del")
+    else:
+        return false
+    _dialog_redraw()
+    return true
+
+
+func _dialog_redraw() -> void:
+    if _canvas != null:
+        _canvas.queue_redraw()
+
+
+func dial_number() -> void:
+    if kp_text == "":
+        return
+    var found: Dictionary = Calls.by_number(kp_text)
+    if found.is_empty():
+        found = {"id": "none", "name": Calls.number_text(kp_text) if kp_text.length() > 3 else kp_text, "sub": "", "kind": "none", "num": kp_text}
+    start_call(found)
+
+
+func start_call(contact: Dictionary) -> void:
+    if not dialog.is_empty():
+        return
+    if not Calls.ready(contact):
+        _say("CALLED THEM LATELY - TRY LATER")
+        return
+    dialog = {"contact": contact, "stage": "dial", "t": 0.0, "say": "", "opts": [Calls.HANG], "voicemail": false}
+    call_sel = 0
+    calls_made += 1
+    Sfx.play("ui_pick", 0.7)
+    _dialog_redraw()
+
+
+# the other end picks up (after DIAL_SECS of ringing, or right away in tests)
+func pick_up() -> void:
+    if dialog.is_empty() or dialog.stage != "dial":
+        return
+    var opened: Dictionary = Calls.open_call(dialog.contact)
+    dialog.stage = "talk"
+    dialog.t = 0.0
+    dialog.say = opened.say
+    dialog.opts = opened.opts
+    dialog.voicemail = opened.voicemail
+    Sfx.play("headset", 0.6)
+    call_sel = 0
+    _dialog_redraw()
+
+
+func step_call(delta: float) -> void:
+    dialog.t = float(dialog.t) + delta
+    if dialog.stage == "dial" and float(dialog.t) >= DIAL_SECS:
+        pick_up()
+
+
+func choose(index: int) -> void:
+    if dialog.is_empty():
+        return
+    if dialog.stage == "dial":
+        hang_up()
+        return
+    var opts: Array = dialog.opts
+    var opt: Dictionary = opts[clampi(index, 0, opts.size() - 1)]
+    if opt.id == "hang":
+        hang_up()
+        return
+    if dialog.stage != "talk":
+        return
+    var result: Dictionary = Calls.act(dialog.contact, str(opt.id))
+    dialog.say = result.say
+    dialog.stage = "done"
+    dialog.opts = [Calls.HANG]
+    call_sel = 0
+    _dialog_redraw()
+
+
+func hang_up() -> void:
+    if dialog.is_empty():
+        return
+    var secs := float(dialog.t) if dialog.stage != "dial" else 0.0
+    dialog = {}
+    call_sel = 0
+    _say("CALL ENDED " + _mmss(secs) if secs >= 1.0 else "HUNG UP")
+    _dialog_redraw()
 
 
 # ---- drawing helpers ---------------------------------------------------------
@@ -9211,13 +9854,18 @@ func _paint() -> void:
     var avail := size.y - ptop - 6.0
     var pw := minf(avail * 0.68, size.x - 8.0)
     var ph := minf(avail, pw / 0.68)
-    var body := Rect2(floorf((size.x - pw) * 0.5), ptop + 3.0 + floorf((avail - ph) * 0.5), floorf(pw), floorf(ph))
+    var body := Rect2(
+        floorf((size.x - pw) * 0.5), ptop + 3.0 + floorf((avail - ph) * 0.5), floorf(pw), floorf(ph)
+    )
     _sc = 2 if body.size.x >= 118.0 else 1
     var screen := _skin(body)
     _paint_screen(screen)
     if _toast_t > 0.0:
         var tx := screen.position.x + floorf((screen.size.x - _tw(_toast)) * 0.5)
-        _fill(Rect2(tx - 3, screen.end.y - 22 * _sc, _tw(_toast) + 6, 7 * _sc + 2), Color(0, 0, 0, 0.8))
+        _fill(
+            Rect2(tx - 3, screen.end.y - 22 * _sc, _tw(_toast) + 6, 7 * _sc + 2),
+            Color(0, 0, 0, 0.8)
+        )
         _text(_toast, Vector2(tx, screen.end.y - 21 * _sc), WHITE)
     _cursor()
 
@@ -9235,8 +9883,13 @@ func _skin(b: Rect2) -> Rect2:
     if _is_ios():
         _round(b, Color("9aa0a8"))  # aluminium edge
         _round(Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)), Color("1c1e23"))  # slate front
-        _fill(Rect2(b.position.x + floorf(b.size.x * 0.5) - 5, b.position.y + 3, 10, 1), Color("55595f"))  # speaker
-        _disc(Vector2(b.position.x + floorf(b.size.x * 0.5) + 8, b.position.y + 3), 1, Color("2e3138"))
+        _fill(
+            Rect2(b.position.x + floorf(b.size.x * 0.5) - 5, b.position.y + 3, 10, 1),
+            Color("55595f")
+        )  # speaker
+        _disc(
+            Vector2(b.position.x + floorf(b.size.x * 0.5) + 8, b.position.y + 3), 1, Color("2e3138")
+        )
         var hc := Vector2(b.position.x + floorf(b.size.x * 0.5), b.end.y - 6)
         _disc(hc, 3, Color("55595f"))
         _disc(hc, 2, Color("1c1e23"))
@@ -9253,13 +9906,21 @@ func _bar_h() -> float:
 
 
 func _paint_screen(s: Rect2) -> void:
-    var bg := _wallpaper(s) if app == "home" else _app_bg(s)
+    var in_call: bool = app == "phone" and not dialog.is_empty()
+    var bg := _wallpaper(s) if (app == "home" or locked) else (_call_bg(s) if in_call else _app_bg(s))
     _hits.append({"r": s, "id": "none"})
     var content := Rect2(s.position.x, s.position.y + _bar_h(), s.size.x, s.size.y - _bar_h())
     if not _is_ios():
         content.size.y -= 9.0 * _sc  # android nav bar
     _status_bar(s, bg)
+    if locked:
+        _paint_lock(content)
+        if not _is_ios():
+            _nav_bar(Rect2(s.position.x, s.end.y - 9.0 * _sc, s.size.x, 9.0 * _sc))
+        return
     match app:
+        "phone":
+            _paint_phone(content)
         "mail":
             _paint_mail(content)
         "tickets":
@@ -9278,11 +9939,27 @@ func _wallpaper(s: Rect2) -> bool:
     if _is_ios():
         for i in 12:
             var t := float(i) / 11.0
-            _fill(Rect2(s.position.x, s.position.y + s.size.y * i / 12.0, s.size.x, s.size.y / 12.0 + 1.0), Color("2d6fd6").lerp(Color("a259c9"), t))
+            _fill(
+                Rect2(
+                    s.position.x,
+                    s.position.y + s.size.y * i / 12.0,
+                    s.size.x,
+                    s.size.y / 12.0 + 1.0
+                ),
+                Color("2d6fd6").lerp(Color("a259c9"), t)
+            )
     else:
         for i in 12:
             var t := float(i) / 11.0
-            _fill(Rect2(s.position.x, s.position.y + s.size.y * i / 12.0, s.size.x, s.size.y / 12.0 + 1.0), Color("0b2742").lerp(Color("03060d"), t))
+            _fill(
+                Rect2(
+                    s.position.x,
+                    s.position.y + s.size.y * i / 12.0,
+                    s.size.x,
+                    s.size.y / 12.0 + 1.0
+                ),
+                Color("0b2742").lerp(Color("03060d"), t)
+            )
         _fill(Rect2(s.position.x, s.position.y + s.size.y * 0.55, s.size.x, 1), Color("1d4f7a"))
     return true
 
@@ -9304,7 +9981,11 @@ func _status_bar(s: Rect2, over_wallpaper: bool) -> void:
     var y := r.position.y + _sc
     if _is_ios():
         for i in 5:
-            _disc(Vector2(r.position.x + 3 + i * 2 * _sc, y + 2 * _sc), 0 if _sc == 1 else 1, col if i < 4 else Color(col, 0.4))
+            _disc(
+                Vector2(r.position.x + 3 + i * 2 * _sc, y + 2 * _sc),
+                0 if _sc == 1 else 1,
+                col if i < 4 else Color(col, 0.4)
+            )
         _text(clock, Vector2(r.position.x + floorf((r.size.x - _tw(clock)) * 0.5), y), col)
         _fill(Rect2(r.end.x - 9 * _sc, y + _sc, 7 * _sc, 3 * _sc), col)
     else:
@@ -9338,7 +10019,11 @@ func _paint_choose(a: Rect2) -> void:
     var t := "PICK YOUR PHONE"
     _text(t, Vector2(floorf(a.position.x + (a.size.x - _tw(t)) * 0.5), a.position.y + 6), WHITE)
     var sub := "(YOU CAN CHANGE IT IN SETTINGS)"
-    _text(sub, Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), a.position.y + 14), Color("9aa8c0"))
+    _text(
+        sub,
+        Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), a.position.y + 14),
+        Color("9aa8c0")
+    )
     var h := minf(a.size.y - 40.0, 90.0)
     var w := floorf(h * 0.52)
     for i in 2:
@@ -9346,10 +10031,21 @@ func _paint_choose(a: Rect2) -> void:
         var x: float = floorf(a.position.x + a.size.x * 0.5) + (-w - 14 if ios else 14)
         var b := Rect2(x, a.position.y + 24, w, h)
         var hot := b.has_point(_mouse) or (_blink < 0.2 and false)
-        _round(Rect2(b.position - Vector2(2, 2), b.size + Vector2(4, 4)), Color("e8c34a") if hot else Color(0, 0, 0, 0))
+        _round(
+            Rect2(b.position - Vector2(2, 2), b.size + Vector2(4, 4)),
+            Color("e8c34a") if hot else Color(0, 0, 0, 0)
+        )
         _round(b, Color("9aa0a8") if ios else Color("3a3d44"))
-        _round(Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)), Color("1c1e23") if ios else Color("0e0f12"))
-        var scr := Rect2(b.position.x + 3, b.position.y + (7 if ios else 5), b.size.x - 6, b.size.y - (19 if ios else 9))
+        _round(
+            Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)),
+            Color("1c1e23") if ios else Color("0e0f12")
+        )
+        var scr := Rect2(
+            b.position.x + 3,
+            b.position.y + (7 if ios else 5),
+            b.size.x - 6,
+            b.size.y - (19 if ios else 9)
+        )
         _fill(scr, Color("4a78d6") if ios else Color("0b2742"))
         _fill(Rect2(scr.position.x + 2, scr.position.y + 3, scr.size.x - 4, 3), Color(1, 1, 1, 0.5))
         if ios:
@@ -9358,16 +10054,28 @@ func _paint_choose(a: Rect2) -> void:
             _fill(Rect2(scr.position.x, scr.end.y - 3, scr.size.x, 3), Color("000000"))
         var label: String = "IFONE 5" if ios else "NEXXUS 5"
         _text(label, Vector2(floorf(x + (w - _tw(label)) * 0.5), b.end.y + 5), WHITE)
-        _region("os:" + ("ios" if ios else "android"), Rect2(b.position - Vector2(4, 4), Vector2(w + 8, h + 20)))
+        _region(
+            "os:" + ("ios" if ios else "android"),
+            Rect2(b.position - Vector2(4, 4), Vector2(w + 8, h + 20))
+        )
 
 
 # ---- home --------------------------------------------------------------------
 func _icon(kind: String, r: Rect2) -> void:
-    var cols := {"mail": Color("3b8df0"), "tickets": Color("f0a030"), "texts": Color("3cc15a"), "settings": Color("8b919c")}
+    var cols := {
+        "mail": Color("3b8df0"),
+        "tickets": Color("f0a030"),
+        "texts": Color("3cc15a"),
+        "settings": Color("8b919c"),
+        "phone": Color("34b84f")
+    }
     if _is_ios():
         _round(r, cols[kind])
     else:
-        _fill(Rect2(r.position.x + 1, r.position.y + 1, r.size.x - 2, r.size.y - 2), Color(cols[kind], 0.9))
+        _fill(
+            Rect2(r.position.x + 1, r.position.y + 1, r.size.x - 2, r.size.y - 2),
+            Color(cols[kind], 0.9)
+        )
     var c := r.get_center()
     var u := float(_sc)
     match kind:
@@ -9383,13 +10091,25 @@ func _icon(kind: String, r: Rect2) -> void:
         "texts":
             _fill(Rect2(c.x - 4 * u, c.y - 3 * u, 8 * u, 5 * u), WHITE)
             _fill(Rect2(c.x - 3 * u, c.y + 2 * u, 2 * u, 2 * u), WHITE)
+        "phone":
+            # a handset: ear piece top left, mouth piece bottom right, a curved arm between them
+            var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
+            for ry in rows.size():
+                for rx in 9:
+                    if str(rows[ry])[rx] == "X":
+                        _fill(Rect2(c.x + (rx - 4.5) * u, c.y + (ry - 4.5) * u, u, u), WHITE)
         _:
             _disc(c, int(3 * u), WHITE)
             _disc(c, int(u), cols["settings"])
 
 
 func _paint_home(a: Rect2) -> void:
-    var items := [["mail", "MAIL", Msp.unread()], ["tickets", "TICKETS", Msp.open_tickets().size()], ["texts", "TEXTS", Msp.unread_texts()], ["settings", "SETTINGS", 0]]
+    var items := [
+        ["mail", "MAIL", Msp.unread()],
+        ["tickets", "TICKETS", Msp.open_tickets().size()],
+        ["texts", "TEXTS", Msp.unread_texts()],
+        ["settings", "SETTINGS", 0]
+    ]
     var isz := 12.0 * _sc
     var cell_w := floorf(a.size.x / 2.0)
     for i in items.size():
@@ -9407,14 +10127,25 @@ func _paint_home(a: Rect2) -> void:
             _disc(Vector2(r.end.x, r.position.y), 2 * _sc + 1, RED)
             if _sc == 1:
                 _text(str(mini(9, items[i][2])), Vector2(r.end.x - 1, r.position.y - 2), WHITE)
-        _region("app:" + items[i][0], Rect2(r.position - Vector2(4, 3), Vector2(isz + 8, isz + 13 * _sc)))
+        _region(
+            "app:" + items[i][0],
+            Rect2(r.position - Vector2(4, 3), Vector2(isz + 8, isz + 13 * _sc))
+        )
     # dock (iOS) or search bar (Android)
+    var psz := 10.0 * _sc
     if _is_ios():
         _fill(Rect2(a.position.x, a.end.y - 14 * _sc, a.size.x, 14 * _sc), Color(1, 1, 1, 0.22))
-        var label := "PIXEL IT PARTNERS" if _chars(a.size.x - 4) >= 17 else "PIXEL IT"
-        _text(_clip(label, _chars(a.size.x - 4)), Vector2(a.position.x + 3, a.end.y - 9 * _sc), WHITE)
+        var pr := Rect2(a.position.x + 3, a.end.y - 12 * _sc, psz, psz)
+        _dock_phone(pr)
+        var tx := pr.end.x + 4.0
+        var label := "PIXEL IT PARTNERS" if _chars(a.end.x - tx - 2) >= 17 else "PIXEL IT"
+        _text(
+            _clip(label, _chars(a.end.x - tx - 2)), Vector2(tx, a.end.y - 9 * _sc), WHITE
+        )
     else:
-        var bar := Rect2(a.position.x + 3, a.end.y - 12 * _sc, a.size.x - 6, 8 * _sc)
+        var pr := Rect2(a.position.x + 3, a.end.y - 12 * _sc, psz, psz)
+        _dock_phone(pr)
+        var bar := Rect2(pr.end.x + 3, a.end.y - 12 * _sc + _sc, a.end.x - pr.end.x - 6, 8 * _sc)
         _fill(bar, Color("eeeeee"))
         _text("GOOGOL", bar.position + Vector2(3, 1.5 * _sc), Color("4a7bd0"))
 
@@ -9427,7 +10158,21 @@ func _header(a: Rect2, title: String, can_back: bool) -> Rect2:
     if _is_ios():
         _fill(Rect2(bar.position.x, bar.end.y - 1, bar.size.x, 1), Color("c8c8cc"))
     var col := INK if _is_ios() else WHITE
-    _text(_clip(title, _chars(a.size.x - 24 * _sc)), Vector2(bar.position.x + floorf((bar.size.x - _tw(_clip(title, _chars(a.size.x - 24 * _sc)))) * 0.5) if _is_ios() else bar.position.x + 3 + (6 * _sc if can_back else 0), bar.position.y + 2 * _sc), col)
+    _text(
+        _clip(title, _chars(a.size.x - 24 * _sc)),
+        Vector2(
+            (
+                (
+                    bar.position.x
+                    + floorf((bar.size.x - _tw(_clip(title, _chars(a.size.x - 24 * _sc)))) * 0.5)
+                )
+                if _is_ios()
+                else bar.position.x + 3 + (6 * _sc if can_back else 0)
+            ),
+            bar.position.y + 2 * _sc
+        ),
+        col
+    )
     if can_back:
         if _is_ios():
             _text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), Color("2b79f0"))
@@ -9437,9 +10182,11 @@ func _header(a: Rect2, title: String, can_back: bool) -> Rect2:
     return Rect2(a.position.x, a.position.y + h, a.size.x, a.size.y - h)
 
 
-func _row(r: Rect2, alt: bool) -> void:
+func _row(r: Rect2, alt: bool, sel := false) -> void:
     var col := WHITE if not alt else Color("f1f1f4")
-    if r.has_point(_mouse):
+    if sel:
+        col = Color("cfe0fb")
+    elif r.has_point(_mouse):
         col = Color("dce8fa")
     _fill(r, col)
     _fill(Rect2(r.position.x, r.end.y - 1, r.size.x, 1), Color("d8d8dc"))
@@ -9453,7 +10200,11 @@ func _paint_mail(a: Rect2) -> void:
         var chars := _chars(body.size.x - 6)
         _fill(body, WHITE)
         var sender := str(m.from).split(" <")[0]
-        _text(_clip(sender, chars), body.position + Vector2(3, 3 * _sc), Color("2b79f0") if _is_ios() else Color("0a7ea4"))
+        _text(
+            _clip(sender, chars),
+            body.position + Vector2(3, 3 * _sc),
+            Color("2b79f0") if _is_ios() else Color("0a7ea4")
+        )
         var subject := _wrap(str(m.subject), chars)
         var n := mini(2, subject.size())
         for i in n:
@@ -9504,7 +10255,11 @@ func _paint_tickets(a: Rect2) -> void:
         var late: bool = k.breached or k.sla_left < 30.0
         var left := "LATE" if k.breached else _mmss(k.sla_left)
         var who := "PITP" if k.client < 0 else str(Msp.CLIENTS[k.client].short)
-        _text(who + " " + left, rr.position + Vector2(5, 2 * _sc + 7 * _sc), RED if late else Color("7d8595"))
+        _text(
+            who + " " + left,
+            rr.position + Vector2(5, 2 * _sc + 7 * _sc),
+            RED if late else Color("7d8595")
+        )
         _region("tk:%d" % k.id, rr)
     if list.is_empty():
         _fill(body, WHITE)
@@ -9516,7 +10271,11 @@ func _paint_ticket(body: Rect2, t: Dictionary) -> void:
     var chars := _chars(body.size.x - 6)
     var y := body.position.y + 3 * _sc
     _fill(Rect2(body.position.x, body.position.y, body.size.x, 2), _pri_color(t.pri))
-    var info := [_clip(Msp.client_text(t), chars), "P%d  %s" % [t.pri, str(t.status).to_upper()], "SLA " + ("LATE" if t.breached else _mmss(t.sla_left))]
+    var info := [
+        _clip(Msp.client_text(t), chars),
+        "P%d  %s" % [t.pri, str(t.status).to_upper()],
+        "SLA " + ("LATE" if t.breached else _mmss(t.sla_left))
+    ]
     for s in info:
         _text(s, Vector2(body.position.x + 3, y), Color("2b79f0") if s == info[0] else INK)
         y += 7 * _sc
@@ -9556,7 +10315,9 @@ func _paint_texts(a: Rect2) -> void:
             lines = lines.slice(0, maxi(1, room))
             h = (lines.size() * 7 + 11) * _sc
         _text(_clip(m.from, chars), Vector2(body.position.x + 3, y), Color("7d8595"))
-        var r := Rect2(body.position.x + 3, y + 7 * _sc, body.size.x - 6, lines.size() * 7 * _sc + 2)
+        var r := Rect2(
+            body.position.x + 3, y + 7 * _sc, body.size.x - 6, lines.size() * 7 * _sc + 2
+        )
         _round(r, Color("e5e5ea") if _is_ios() else Color("dcdcdc"))
         for j in lines.size():
             _text(lines[j], r.position + Vector2(2, 1 + j * 7 * _sc), INK)
@@ -9602,6 +10363,252 @@ func _paint_settings(a: Rect2) -> void:
     _fill(cr, Color("dce8fa"))
     _text("CAREER", cr.position + Vector2(3, 2 * _sc), INK)
     _region("career", cr)
+
+
+# ---- the dock's PHONE icon -----------------------------------------------------------------------
+func _dock_phone(r: Rect2) -> void:
+    if home_sel == HOME_APPS.size() - 1:
+        _fill(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), Color(1, 1, 1, 0.45))
+    _icon("phone", r)
+    _region("app:phone", Rect2(r.position - Vector2(3, 3), r.size + Vector2(6, 6)))
+
+
+# ---- lock screen ---------------------------------------------------------------------------------
+func _paint_lock(a: Rect2) -> void:
+    var u := float(_sc)
+    var x0 := a.position.x
+    var hour := int(World.clock)  # the same truncation as the status bar, so the two clocks agree
+    var minute := int((World.clock - float(hour)) * 60.0)
+    var hm := "%d:%02d" % [(hour + 11) % 12 + 1, minute]
+    var big := 3 * _sc
+    var y := a.position.y + 3.0 * u
+    var tint := WHITE if _is_ios() else Color("dff3ff")
+    _text(hm, Vector2(x0 + floorf((a.size.x - PixelFont.width(hm, big)) * 0.5), y), tint, big)
+    y += 17.0 * u
+    var date: String = Nerds.date_text(maxi(1, Campaign.day))
+    if _tw(date) > a.size.x - 4.0:
+        date = date.split(",")[0]
+    _text(date, Vector2(x0 + floorf((a.size.x - _tw(date)) * 0.5), y), Color(1, 1, 1, 0.85))
+    y += 8.0 * u
+    var fresh := unread_total()
+    var count := "%d NEW" % fresh if fresh > 0 else "NOTHING NEW"
+    _text(count, Vector2(x0 + floorf((a.size.x - _tw(count)) * 0.5), y), Color(1, 1, 1, 0.6))
+    y += 8.0 * u
+    var slider_h := 9.0 * u
+    var sy := a.end.y - slider_h - 2.0 * u
+    var rh := 15.0 * u
+    var rows := clampi(int((sy - y) / (rh + u)), 0, mini(3, feed.size()))
+    for i in rows:
+        var f: Dictionary = feed[i]
+        var r := Rect2(x0 + 2, y + i * (rh + u), a.size.x - 4, rh)
+        if _is_ios():
+            _round(r, Color(0.04, 0.05, 0.12, 0.5))
+        else:
+            _fill(r, Color(0, 0, 0, 0.5))
+            _fill(Rect2(r.position.x, r.position.y, 1, rh), KIND_COLORS.get(f.kind, WHITE))
+        _fill(Rect2(r.position.x + 2 * u, r.position.y + 2 * u, 3 * u, 3 * u), KIND_COLORS.get(f.kind, WHITE))
+        var chars := _chars(r.size.x - 8 * u)
+        var head := "%s %s" % [f.kind, str(f.who)]
+        _text(_clip(head, chars), r.position + Vector2(7 * u, u), WHITE)
+        _text(_clip(str(f.body), chars + 1), r.position + Vector2(2 * u, 8 * u), Color(1, 1, 1, 0.8))
+    var slide := maxf(unlock_t, 0.0)
+    var bar := Rect2(x0 + 3, sy, a.size.x - 6, slider_h)
+    if _is_ios():
+        _round(bar, Color(0, 0, 0, 0.35))
+        var kw := 10.0 * u
+        var kx := bar.position.x + 1 + (bar.size.x - kw - 2) * slide
+        _round(Rect2(kx, bar.position.y + 1, kw, slider_h - 2), Color(1, 1, 1, 0.85))
+        _text(">", Vector2(kx + floorf((kw - 3 * u) * 0.5), bar.position.y + 2 * u), INK)
+        var label := "SLIDE TO UNLOCK" if _chars(bar.size.x - kw - 6) >= 15 else "UNLOCK"
+        var shimmer := 0.45 + 0.3 * (1.0 if _blink < 0.2 else 0.0)
+        _text(label, Vector2(bar.position.x + kw + 5, bar.position.y + 2 * u), Color(1, 1, 1, shimmer * (1.0 - slide)))
+    else:
+        var cx := floorf(x0 + a.size.x * 0.5)
+        var ay := sy - 3.0 * u - slide * 10.0 * u
+        for row in int(3 * u):
+            _fill(Rect2(cx - row, ay + row, row * 2 + 1, 1), Color("33b5e5"))
+        var label := "SWIPE UP"
+        _text(label, Vector2(cx - floorf(_tw(label) * 0.5), sy + 4 * u), Color(1, 1, 1, 0.7))
+    _region("unlock", a)
+
+
+func unread_total() -> int:
+    return Msp.unread() + Msp.unread_texts() + Lync.unread_total()
+
+
+# ---- the PHONE app ---------------------------------------------------------------------------------
+func _call_bg(s: Rect2) -> bool:
+    if _is_ios():
+        for i in 12:
+            _fill(
+                Rect2(s.position.x, s.position.y + s.size.y * i / 12.0, s.size.x, s.size.y / 12.0 + 1.0),
+                Color("2f3846").lerp(Color("101216"), float(i) / 11.0)
+            )
+    else:
+        _fill(s, Color("000000"))
+    return true
+
+
+func _accent() -> Color:
+    return Color("2b79f0") if _is_ios() else Color("33b5e5")
+
+
+func _paint_phone(a: Rect2) -> void:
+    if not dialog.is_empty():
+        _paint_call(a)
+        return
+    var body := _header(a, "CONTACTS" if ph_view == "contacts" else "KEYPAD", true)
+    if ph_view == "keypad":
+        _paint_keypad(body)
+    else:
+        _paint_contacts(body)
+
+
+func _paint_contacts(body: Rect2) -> void:
+    _fill(body, WHITE)
+    var list: Array = Calls.contacts()
+    var bar_h := 10.0 * _sc
+    var rh := 15.0 * _sc
+    var rows := maxi(1, int((body.size.y - bar_h) / rh))
+    ph_sel = clampi(ph_sel, 0, list.size() - 1)
+    if ph_sel < ph_scroll:
+        ph_scroll = ph_sel
+    elif ph_sel >= ph_scroll + rows:
+        ph_scroll = ph_sel - rows + 1
+    ph_scroll = clampi(ph_scroll, 0, maxi(0, list.size() - rows))
+    for k in rows:
+        var i := ph_scroll + k
+        if i >= list.size():
+            break
+        var c: Dictionary = list[i]
+        var rr := Rect2(body.position.x, body.position.y + k * rh, body.size.x, rh)
+        _row(rr, i % 2 == 1, i == ph_sel)
+        _fill(Rect2(rr.position.x, rr.position.y, 2, rh - 1), _kind_color(str(c.kind)))
+        var chars := _chars(rr.size.x - 12)
+        _text(_clip(str(c.name), chars), rr.position + Vector2(5, 2 * _sc), INK)
+        var wait: float = Calls.wait_left(c)
+        var sub := str(c.sub) if wait <= 0.0 else "LATER"
+        _text(_clip(sub, chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+        if c.kind == "client" and Campaign.active:
+            var m := Sales.mood(int(c.client))
+            _disc(
+                Vector2(rr.end.x - 5, rr.position.y + rh * 0.5),
+                maxi(1, _sc),
+                GREEN if m >= 70 else (Color("e0a030") if m >= 40 else RED)
+            )
+        _region("call:%d" % i, rr)
+    if list.size() > rows:
+        var track := body.size.y - bar_h
+        var th := maxf(4.0, track * float(rows) / float(list.size()))
+        var ty := body.position.y + (track - th) * float(ph_scroll) / float(maxi(1, list.size() - rows))
+        _fill(Rect2(body.end.x - 1, ty, 1, th), Color("9aa0a8"))
+    var kb := Rect2(body.position.x, body.end.y - bar_h, body.size.x, bar_h)
+    _fill(kb, _accent())
+    _text("KEYPAD", kb.position + Vector2(floorf((kb.size.x - _tw("KEYPAD")) * 0.5), 2.5 * _sc), WHITE)
+    _region("keypad", kb)
+
+
+func _paint_keypad(body: Rect2) -> void:
+    var u := float(_sc)
+    _fill(body, WHITE if _is_ios() else Color("f2f2f2"))
+    var shown := Calls.number_text(kp_text) if kp_text.length() > 3 else kp_text
+    var found: Dictionary = Calls.by_number(kp_text) if kp_text != "" else {}
+    var caret := "_" if _blink < 0.25 else ""
+    _text(shown + caret, Vector2(body.position.x + floorf((body.size.x - _tw(shown + "_")) * 0.5), body.position.y + 2 * u), INK)
+    var who: String = "" if found.is_empty() else str(found.name)
+    _text(_clip(who, _chars(body.size.x - 4)), body.position + Vector2(3, 8 * u), _accent())
+    var bottom_h := 9.0 * u
+    var ky0 := body.position.y + 14.0 * u
+    var kh := floorf((body.end.y - bottom_h - 2 - ky0) / 4.0)
+    var kw := floorf((body.size.x - 4) / 3.0)
+    var ks := _sc * (2 if kh >= 12.0 * u else 1)
+    for i in 12:
+        var r := Rect2(body.position.x + 2 + (i % 3) * kw, ky0 + (i / 3) * kh, kw - 1, kh - 1)
+        var hot := kp_sel == i or r.has_point(_mouse)
+        _round(r, Color("cfe0fb") if hot else (Color("e4e6ea") if _is_ios() else WHITE))
+        if not _is_ios():
+            _fill(Rect2(r.position.x, r.end.y - 1, r.size.x, 1), Color("c4c8cf"))
+        var k: String = KEYS[i]
+        _text(
+            k,
+            Vector2(
+                r.position.x + floorf((r.size.x - PixelFont.width(k, ks)) * 0.5),
+                r.position.y + floorf((r.size.y - 5.0 * ks) * 0.5)
+            ),
+            INK,
+            ks
+        )
+        _region("key:%d" % i, r)
+    var by := body.end.y - bottom_h - 1
+    var half := floorf((body.size.x - 6) / 2.0)
+    for j in 2:
+        var r := Rect2(body.position.x + 2 + j * (half + 2), by, half, bottom_h)
+        var hot := kp_sel == 12 + j or r.has_point(_mouse)
+        var base := Color("9aa0a8") if j == 0 else Color("34b84f")
+        _fill(r, base.lightened(0.25) if hot else base)
+        var label := "DEL" if j == 0 else "CALL"
+        _text(label, r.position + Vector2(floorf((half - _tw(label)) * 0.5), 2 * u), WHITE)
+        _region("del" if j == 0 else "dial", r)
+
+
+func _kind_color(kind: String) -> Color:
+    return {"client": Color("2b79f0"), "coworker": Color("3cc15a"), "pizza": Color("f0a030")}.get(kind, Color("8b93a1"))
+
+
+# the in-call screen: avatar, name, ringing / timer, what they say and the things you can say back
+func _paint_call(a: Rect2) -> void:
+    var u := float(_sc)
+    var contact: Dictionary = dialog.contact
+    var x0 := a.position.x
+    var y := a.position.y + 3.0 * u
+    var cy := y + 2.5 * u
+    _disc(Vector2(x0 + 6 * u, cy), int(3 * u), _kind_color(str(contact.get("kind", ""))))
+    var initial := str(contact.get("name", "?")).substr(0, 1)
+    _text(initial, Vector2(x0 + 6 * u - floorf(1.5 * u), cy - floorf(2.5 * u)), WHITE)
+    var chars := _chars(a.size.x - 13 * u)
+    _text(_clip(str(contact.get("name", "")), chars), Vector2(x0 + 12 * u, y), WHITE)
+    var status := ""
+    if dialog.stage == "dial":
+        status = "CALLING" + ".".repeat(int(float(dialog.t) * 3.0) % 4)
+    else:
+        status = _mmss(float(dialog.t))
+        if dialog.voicemail:
+            status += " VOICEMAIL"
+        elif str(contact.get("sub", "")) != "":
+            status += " " + str(contact.sub)
+    _text(_clip(status, chars), Vector2(x0 + 12 * u, y + 8 * u), Color("9fd8a8") if dialog.stage != "dial" else Color("9fb0c8"))
+    var line_y := y + 15.0 * u
+    if not _is_ios():
+        _fill(Rect2(x0 + 2, line_y, a.size.x - 4, 1), Color("33b5e5"))
+    var opts: Array = dialog.opts
+    var oh := 8.0 * u
+    var opt_top := a.end.y - opts.size() * (oh + 1.0) - 1.0
+    var say: String = Calls.number_text(str(contact.get("num", ""))) if dialog.stage == "dial" else str(dialog.say)
+    var lines := _wrap(say, _chars(a.size.x - 6))
+    var room := maxi(1, int((opt_top - line_y - 3.0 * u) / (7.0 * u)))
+    if lines.size() > room:
+        lines = lines.slice(0, room)
+        lines[room - 1] = _clip(str(lines[room - 1]) + "..", str(lines[room - 1]).length())
+    for i in lines.size():
+        _text(str(lines[i]), Vector2(x0 + 3, line_y + 3 * u + i * 7 * u), WHITE if dialog.stage != "dial" else Color("c8d0de"))
+    for i in opts.size():
+        var o: Dictionary = opts[i]
+        var r := Rect2(x0 + 2, opt_top + i * (oh + 1.0), a.size.x - 4, oh)
+        var hang: bool = o.id == "hang"
+        var sel: bool = i == call_sel
+        var alpha := 0.5 if sel else (0.35 if r.has_point(_mouse) else 0.2)
+        var col: Color = RED if hang else Color(1, 1, 1, alpha)
+        if hang and (sel or r.has_point(_mouse)):
+            col = col.lightened(0.2)
+        if _is_ios():
+            _round(r, col)
+        else:
+            _fill(r, col)
+            if sel and not hang:
+                _fill(Rect2(r.position.x, r.position.y, 1, oh), Color("33b5e5"))
+        var label := str(o.label)
+        _text(label, r.position + Vector2(floorf((r.size.x - _tw(label)) * 0.5), floorf((oh - 5.0 * u) * 0.5)), WHITE)
+        _region("opt:%d" % i, r)
 ''')
 
 write("scripts/campaign.gd", '''extends Node
@@ -9921,6 +10928,7 @@ func new_game(for_mode: String) -> void:
     PrinterGame.reset()
     Talk.reset()
     Meeting.reset()
+    Phone.reset()
     Projects.reset()
     Expo.reset()
     Onsite.reset()
@@ -10003,6 +11011,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
     PrinterGame.from_dict(cfg.get_value("campaign", "printer", {}))
     Difficulty.from_dict(cfg.get_value("campaign", "difficulty", {}))
     Meeting.from_dict(cfg.get_value("campaign", "meeting", {}))
+    Phone.from_dict(cfg.get_value("campaign", "phone", {}))  # R37: call cooldowns and counts; an old save has none
     Projects.from_dict(cfg.get_value("campaign", "projects", {}))
     Expo.from_dict(cfg.get_value("campaign", "conference", {}))
     Onsite.from_dict(cfg.get_value("campaign", "onsite", {}))
@@ -10067,6 +11076,7 @@ func _write_sections(cfg: ConfigFile) -> void:
     cfg.set_value("campaign", "printer", PrinterGame.to_dict())
     cfg.set_value("campaign", "difficulty", Difficulty.to_dict())
     cfg.set_value("campaign", "meeting", Meeting.to_dict())
+    cfg.set_value("campaign", "phone", Phone.to_dict())
     cfg.set_value("campaign", "projects", Projects.to_dict())
     cfg.set_value("campaign", "conference", Expo.to_dict())
     cfg.set_value("campaign", "onsite", Onsite.to_dict())
@@ -10190,7 +11200,10 @@ func quit_to_title() -> void:
 func _begin_day() -> void:
     Dash.begin_day(day)
     _base = {
-        "score": Msp.score, "closed": Msp.closed_ok, "missed": Msp.breached, "reopened": Msp.reopened,
+        "score": Msp.score,
+        "closed": Msp.closed_ok,
+        "missed": Msp.breached,
+        "reopened": Msp.reopened,
     }
     # owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate (registry "pace")
     Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
@@ -10224,7 +11237,11 @@ func _process(_delta: float) -> void:
     if Cards.is_open or Outings.busy():
         return  # the week report waits until every card and outing is finished
     var late: bool = World.clock >= 23.5
-    if World.clock >= World.DAY_END and (not Story.overtime or late) and (late or (Shift.can_end_day() and not Outings.invite_due())):
+    if (
+        World.clock >= World.DAY_END
+        and (not Story.overtime or late)
+        and (late or (Shift.can_end_day() and not Outings.invite_due()))
+    ):
         if late and Story.overtime:
             Story.overtime = false
             Story.ot_hours = World.clock - World.DAY_END
@@ -10248,8 +11265,27 @@ func _make_report() -> Dictionary:
     var points: int = Msp.score - int(_base.score)
     var overtime: float = Story.ot_hours
     var cozy := Difficulty.cozy_on()  # cozy Easy: misses, reopens and open tickets cost no pay and no reputation
-    var pay := maxi(0, (100 + closed * 20 - (0 if cozy else missed * 25 + reopened * 10) + int(overtime * 30.0) + Shift.pay_extra()))
-    var rep_delta := clampi(closed * 2 - (0 if cozy else missed * 3 + reopened * 2 + open_left) + Social.rep_bonus() + Sales.rep_effect() + Shift.rep_delta(), -10, daily_cap())
+    var pay := maxi(
+        0,
+        (
+            100
+            + closed * 20
+            - (0 if cozy else missed * 25 + reopened * 10)
+            + int(overtime * 30.0)
+            + Shift.pay_extra()
+        )
+    )
+    var rep_delta := clampi(
+        (
+            closed * 2
+            - (0 if cozy else missed * 3 + reopened * 2 + open_left)
+            + Social.rep_bonus()
+            + Sales.rep_effect()
+            + Shift.rep_delta()
+        ),
+        -10,
+        daily_cap()
+    )
     var grade := "D"
     if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
         grade = "S"
@@ -10260,10 +11296,21 @@ func _make_report() -> Dictionary:
     elif points >= 0:
         grade = "C"
     return {
-        "day": day, "closed": closed, "missed": missed, "reopened": reopened, "open_left": open_left,
-        "points": points, "pay": pay, "rep_delta": rep_delta, "grade": grade, "social": Social.day_delta,
-        "overtime": snappedf(overtime + Shift.stay_hours, 0.1), "clients": int(Sales.average()),
-        "energy": int(Shift.energy) if Shift.active() else -1, "late": Shift.late_min, "oncall": Shift.oncall_pay(),
+        "day": day,
+        "closed": closed,
+        "missed": missed,
+        "reopened": reopened,
+        "open_left": open_left,
+        "points": points,
+        "pay": pay,
+        "rep_delta": rep_delta,
+        "grade": grade,
+        "social": Social.day_delta,
+        "overtime": snappedf(overtime + Shift.stay_hours, 0.1),
+        "clients": int(Sales.average()),
+        "energy": int(Shift.energy) if Shift.active() else -1,
+        "late": Shift.late_min,
+        "oncall": Shift.oncall_pay(),
     }
 
 
@@ -25492,6 +26539,14 @@ const SOUNDS := {
     ],
     "text": [{"w": "sq", "seq": [88, 93], "step": 0.07, "t": 0.07, "v": 0.2, "duty": 0.125}],
     "mail": [{"w": "tri", "seq": [76, 81, 84], "step": 0.08, "t": 0.14, "v": 0.3, "k": 2.5}],
+    # the phone's vibrate buzz for a banner: two short low pulses with a rattle of noise (R37)
+    "buzz":
+    [
+        {"w": "sq", "f": 160.0, "t": 0.08, "v": 0.2, "duty": 0.5, "k": 0.5},
+        {"w": "noise", "f": 900.0, "t": 0.08, "v": 0.08, "k": 1.0},
+        {"w": "sq", "f": 160.0, "t": 0.08, "v": 0.2, "duty": 0.5, "k": 0.5, "at": 0.12},
+        {"w": "noise", "f": 900.0, "t": 0.08, "v": 0.08, "k": 1.0, "at": 0.12}
+    ],
     "bell":
     [
         {"w": "sine", "f": 1760.0, "t": 1.0, "v": 0.34, "k": 4.5},
@@ -47008,6 +48063,8 @@ func _process(delta: float) -> void:
     # the card header sits over the HUD text, so hide it while a card or any panel is up
     visible = World.hud_visible and not modal_open()
     _acc += delta
+    if not Phone.banner.is_empty():
+        queue_redraw()  # the notification banner slides every frame
     if _acc > 0.25:
         _acc = 0.0
         queue_redraw()
@@ -47026,7 +48083,9 @@ func _draw() -> void:
             for y in 5:
                 for x in 3:
                     if String(rows[y])[x] == "X":
-                        draw_rect(Rect2(origin + offset + Vector2(i * 4 + x, y), Vector2.ONE), color)
+                        draw_rect(
+                            Rect2(origin + offset + Vector2(i * 4 + x, y), Vector2.ONE), color
+                        )
     if not Game.title_mode:
         var counts := "TKT %d MAIL %d" % [Msp.open_tickets().size(), mini(Msp.unread(), 99)]
         if Campaign.active and Campaign.prop("hud", "day_rep") == "week_cash":
@@ -47040,11 +48099,17 @@ func _draw() -> void:
             if Campaign.prop("hud", "day_rep") == "week_quota":
                 lines.append("WEEK %d/%d %s %d%% HRS %d" % [Campaign.day, Campaign.total_days(), SalesCampaign.quarter_label(), SalesCampaign.quota_pct(), SalesCampaign.slots_left()])
             elif Campaign.prop("hud", "day_rep") == "week_cash":
-                lines.append("%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash])
+                lines.append(
+                    "%s %d/%d CASH $%d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Owner.cash]
+                )
             else:
-                var day_line := "%s %d/%d %s %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.prop("rep_label", "REP"), Campaign.rep]
+                var day_line := (
+                    "%s %d/%d %s %d" % [Campaign.prop("unit", "DAY"), Campaign.day, Campaign.total_days(), Campaign.prop("rep_label", "REP"), Campaign.rep]
+                )
                 if Shift.active():
-                    day_line += " NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
+                    day_line += (
+                        " NRG %d%s" % [int(Shift.energy), " ON CALL" if Shift.is_on_call() else ""]
+                    )
                 lines.append(day_line)
         if Yeartwo.active():
             lines.append("YEAR 2")
@@ -47070,6 +48135,38 @@ func _draw() -> void:
             _draw_hint(Hints.text)
         elif Hints.objective != "" and not Game.ui_open:
             _draw_hint(Hints.objective)
+        if not Phone.banner.is_empty():
+            _draw_banner()
+
+
+# R37: a phone notification slides in from the top for about two and a half seconds (iFone: rounded grey card; Nexxus:
+# flat black card with a teal edge). Phone queues them while a card, the day report or any panel is up.
+func _draw_banner() -> void:
+    var size := get_viewport_rect().size
+    var b: Dictionary = Phone.banner
+    var ios: bool = Phone.os != "android"
+    var h := 15.0
+    var w := minf(size.x - 8.0, 150.0)
+    var x := floorf((size.x - w) * 0.5)
+    var y := floorf(-h - 1.0 + (h + 3.0) * Phone.banner_slide())
+    var kind_color: Color = Phone.KIND_COLORS.get(b.kind, Color.WHITE)
+    if ios:
+        draw_rect(Rect2(x + 1.0, y, w - 2.0, h), Color(0.11, 0.12, 0.15, 0.94))
+        draw_rect(Rect2(x, y + 1.0, w, h - 2.0), Color(0.11, 0.12, 0.15, 0.94))
+        draw_rect(Rect2(x + 1.0, y + h - 1.0, w - 2.0, 1.0), Color(1, 1, 1, 0.15))
+    else:
+        draw_rect(Rect2(x, y, w, h), Color(0.03, 0.03, 0.04, 0.96))
+        draw_rect(Rect2(x, y + h - 1.0, w, 1.0), Color("33b5e5"))
+    draw_rect(Rect2(x + 3.0, y + 3.0, 5.0, 5.0), kind_color)
+    var chars := int((w - 14.0) / 4.0)
+    var head := "%s  %s" % [b.kind, str(b.who)]
+    var body := str(b.body)
+    if head.length() > chars:
+        head = head.substr(0, chars - 1) + "."
+    if body.length() > chars:
+        body = body.substr(0, chars - 1) + "."
+    PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
+    PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
 
 
 func _draw_hint(text: String) -> void:
@@ -47088,7 +48185,9 @@ func _draw_hint(text: String) -> void:
     var h := float(rows.size()) * 7.0 + 5.0
     draw_rect(Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.8))
     for i in rows.size():
-        PixelFont.draw(self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a"))
+        PixelFont.draw(
+            self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a")
+        )
 ''')
 
 write("scripts/toolbox.gd", '''extends CanvasLayer

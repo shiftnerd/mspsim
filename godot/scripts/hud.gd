@@ -31,6 +31,8 @@ func _process(delta: float) -> void:
 	# the card header sits over the HUD text, so hide it while a card or any panel is up
 	visible = World.hud_visible and not modal_open()
 	_acc += delta
+	if not Phone.banner.is_empty():
+		queue_redraw()  # the notification banner slides every frame
 	if _acc > 0.25:
 		_acc = 0.0
 		queue_redraw()
@@ -101,6 +103,38 @@ func _draw() -> void:
 			_draw_hint(Hints.text)
 		elif Hints.objective != "" and not Game.ui_open:
 			_draw_hint(Hints.objective)
+		if not Phone.banner.is_empty():
+			_draw_banner()
+
+
+# R37: a phone notification slides in from the top for about two and a half seconds (iFone: rounded grey card; Nexxus:
+# flat black card with a teal edge). Phone queues them while a card, the day report or any panel is up.
+func _draw_banner() -> void:
+	var size := get_viewport_rect().size
+	var b: Dictionary = Phone.banner
+	var ios: bool = Phone.os != "android"
+	var h := 15.0
+	var w := minf(size.x - 8.0, 150.0)
+	var x := floorf((size.x - w) * 0.5)
+	var y := floorf(-h - 1.0 + (h + 3.0) * Phone.banner_slide())
+	var kind_color: Color = Phone.KIND_COLORS.get(b.kind, Color.WHITE)
+	if ios:
+		draw_rect(Rect2(x + 1.0, y, w - 2.0, h), Color(0.11, 0.12, 0.15, 0.94))
+		draw_rect(Rect2(x, y + 1.0, w, h - 2.0), Color(0.11, 0.12, 0.15, 0.94))
+		draw_rect(Rect2(x + 1.0, y + h - 1.0, w - 2.0, 1.0), Color(1, 1, 1, 0.15))
+	else:
+		draw_rect(Rect2(x, y, w, h), Color(0.03, 0.03, 0.04, 0.96))
+		draw_rect(Rect2(x, y + h - 1.0, w, 1.0), Color("33b5e5"))
+	draw_rect(Rect2(x + 3.0, y + 3.0, 5.0, 5.0), kind_color)
+	var chars := int((w - 14.0) / 4.0)
+	var head := "%s  %s" % [b.kind, str(b.who)]
+	var body := str(b.body)
+	if head.length() > chars:
+		head = head.substr(0, chars - 1) + "."
+	if body.length() > chars:
+		body = body.substr(0, chars - 1) + "."
+	PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
+	PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
 
 
 func _draw_hint(text: String) -> void:

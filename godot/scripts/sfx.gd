@@ -87,6 +87,14 @@ const SOUNDS := {
 	],
 	"text": [{"w": "sq", "seq": [88, 93], "step": 0.07, "t": 0.07, "v": 0.2, "duty": 0.125}],
 	"mail": [{"w": "tri", "seq": [76, 81, 84], "step": 0.08, "t": 0.14, "v": 0.3, "k": 2.5}],
+	# the phone's vibrate buzz for a banner: two short low pulses with a rattle of noise (R37)
+	"buzz":
+	[
+		{"w": "sq", "f": 160.0, "t": 0.08, "v": 0.2, "duty": 0.5, "k": 0.5},
+		{"w": "noise", "f": 900.0, "t": 0.08, "v": 0.08, "k": 1.0},
+		{"w": "sq", "f": 160.0, "t": 0.08, "v": 0.2, "duty": 0.5, "k": 0.5, "at": 0.12},
+		{"w": "noise", "f": 900.0, "t": 0.08, "v": 0.08, "k": 1.0, "at": 0.12}
+	],
 	"bell":
 	[
 		{"w": "sine", "f": 1760.0, "t": 1.0, "v": 0.34, "k": 4.5},
