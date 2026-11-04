@@ -74,6 +74,7 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | R34 | **Couch co-op, phases 2 to 8**: the shared camera and tether, group door transitions, split-screen takeovers, Free Play co-op with a second look, campaign co-op, two-player outings; see `docs/scope-coop.md` | XL |
 | R36 | **Clients who know your name**: direct texts to your cell and by-name ticket requests (ideas in `IDEAS.md`); needs a design pass first | M-L |
 | R37 | **Later bundle, what is left**: a phone camera app. (Built: owner wire fraud, the tech day 17 invoice scam, post-incident reviews, cable tracing and the labelled patch panel, the phone dialer / lock screen / banner, the dashboard escalation arrow.) | M |
+| R38 | Rival habits and good habits (scoped): a sleazy rival MSP with a rap sheet, takeover jobs, 14 good habits, temptation cards with delayed bills, sales displacement; see `docs/scope-bad-habits.md` | L |
 | R30 | Ramping dinner (it has no continuous numbers) | S |
 | Q3 | The live-window part of the visual check | S |
 | Q6 | More seeds per balance cell, owner hard, tech hard still wins with a careful bot (results in `docs/balance-notes.md`) | M |
