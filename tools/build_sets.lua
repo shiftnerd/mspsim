@@ -90,11 +90,11 @@ builders.conference = {W = 320, H = 128, fn = function(s)
   s.put("Frames", P.clock(), 226, 28)
   s.put("Frames", P.frame(14, 18, "#E8B070", "#7A4A8A"), 252, 24)
   for _, x in ipairs({51, 83, 115, 147, 179, 211}) do   -- seat x - 14: the backrest right behind the sitter
-    s.putS("ChairsBack", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 58, 88, "chair_conference_side")
+    s.putS("ChairsBack", P.chairSide("#4A4D55", "#6A6E78", "#35373E"), x, 54, 88, "chair_conference_side")
   end
   s.putS("Table", P.confTableWide(220), 40, 78, 108, "conference_table_wide")
   for _, x in ipairs({72, 120, 168, 216}) do
-    s.putS("ChairsFront", L.flipH(P.chairSide("#4A4D55", "#6A6E78", "#35373E")), x, 86, 112, "chair_conference_side_l")   -- across the table: faces left
+    s.putS("ChairsFront", L.flipH(P.chairSide("#4A4D55", "#6A6E78", "#35373E")), x, 84, 112, "chair_conference_side_l")   -- across the table: faces left
   end
   s.putS("PlantL", P.floorPlant(), 10, 80, 108, "plant_floor")
   s.putS("PlantR", P.floorPlant(), 262, 80, 108, "plant_floor")

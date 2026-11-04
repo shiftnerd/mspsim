@@ -1,6 +1,6 @@
 extends SceneTree
 # Screenshots of people sitting in chairs (renderer needed). Sits the player in a seat of each listed scene and saves the
-# whole frame plus a 4x crop around the seat to user://seatchair_<tag>_<scene>_<seat>[_crop].png.
+# whole frame plus a 8x crop around the seat to user://seatchair_<tag>_<scene>_<seat>[_crop].png.
 #   Godot --path godot -s res://tests/seat_chair_shots.gd -- --format=wide|h|v
 # Env SC_TAG names the run (default "x"); SC_ONLY = "scene/Seat1,scene/Seat2" limits the list.
 
@@ -44,11 +44,11 @@ func _shot(name: String, center: Vector2) -> void:
 	var sc := img.get_width() / vs.x
 	var xf := root.get_viewport().get_canvas_transform()
 	var c: Vector2 = xf * center * sc
-	var half := Vector2(60, 48) * sc
+	var half := Vector2(44, 34) * sc
 	var r := Rect2i(Vector2i((c - half).max(Vector2.ZERO)), Vector2i(half * 2.0))
 	r = r.intersection(Rect2i(Vector2i.ZERO, img.get_size()))
 	var crop := img.get_region(r)
-	crop.resize(crop.get_width() * 4, crop.get_height() * 4, Image.INTERPOLATE_NEAREST)
+	crop.resize(crop.get_width() * 8, crop.get_height() * 8, Image.INTERPOLATE_NEAREST)
 	crop.save_png("user://seatchair_%s_%s_crop.png" % [tag, name])
 
 
@@ -86,5 +86,13 @@ func _process(_delta: float) -> bool:
 				var cx := float(entries[k][2]) if entries[k].size() > 2 else 160.0
 				_shot("%s_%s" % [scene_name, seat_name], Vector2(cx, 70))
 			else:
-				_shot("%s_%s" % [scene_name, seat_name], seat.global_position + Vector2(0, -30))
+				_shot("%s_%s" % [scene_name, seat_name], seat.global_position + Vector2(0, -24))
+	if t >= 40 and t < 58 and OS.get_environment("SC_ROLL") != "":
+		var pl: Node = current_scene.get_node_or_null("Actors/Player")
+		if pl != null and pl.state == "sitting" and pl._roll != null and pl._roll.bind(pl.seat) and absf(pl._roll.off) < 1.0:
+			pl._roll.lo = -60.0
+			pl._roll.off = -float(OS.get_environment("SC_ROLL"))
+			pl._roll._place()
+			pl.global_position.x = pl.seat.global_position.x
+			pl._roll._pose(pl)
 	return false

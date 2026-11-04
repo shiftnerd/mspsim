@@ -143,19 +143,19 @@ texture = ExtResource("prop_lab_table")
 [node name="chair_blue_side_2" type="Sprite2D" parent="Actors"]
 position = Vector2(134, 98)
 centered = false
-offset = Vector2(0, -19)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_blue_side")
 
 [node name="chair_blue_side_3" type="Sprite2D" parent="Actors"]
 position = Vector2(164, 98)
 centered = false
-offset = Vector2(0, -19)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_blue_side")
 
 [node name="chair_blue_side_4" type="Sprite2D" parent="Actors"]
 position = Vector2(194, 98)
 centered = false
-offset = Vector2(0, -19)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_blue_side")
 
 [node name="plant_floor_5" type="Sprite2D" parent="Actors"]

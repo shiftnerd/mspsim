@@ -215,19 +215,19 @@ texture = ExtResource("prop_bar_stool")
 [node name="chair_karaoke_side_4" type="Sprite2D" parent="Actors"]
 position = Vector2(130, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_karaoke_side")
 
 [node name="chair_karaoke_side_5" type="Sprite2D" parent="Actors"]
 position = Vector2(150, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_karaoke_side")
 
 [node name="chair_karaoke_side_6" type="Sprite2D" parent="Actors"]
 position = Vector2(182, 88)
 centered = false
-offset = Vector2(0, -31)
+offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_karaoke_side")
 
 [node name="round_table_7" type="Sprite2D" parent="Actors"]

@@ -309,7 +309,11 @@ New characters start as a copy of an existing one, then change only what differs
   keyboard, chair) and `tools/side_views.lua` (everything else). `tools/build_angles.lua` rebuilds all piece files (new files:
   copier, cooler, toilet, bath_sink, mirror, plant_floor, whiteboard). Wall items are thin edge-on slabs, doors are a slab + knob/handle.
 - Chairs are the exception: every chair someone sits in uses the `side` frame (`P.chairSide`: backrest at the back, cushioned seat, gas lift,
-  five-star base; same 18x33 box as the front chair, so seat top, feet y 101/89, `cup_dx` and the chair roll are unchanged). Left-facing
+  five-star base). **It is a LOW chair, 18x40**: the sit pose's thigh bottom is only ~2 px above the feet line (hips ~9 px off the floor), so a
+  chair with the front chair's 18 px seat height leaves the sitter looking like they sit on the floor as soon as the chair rolls away from the desk
+  (the desk hides the lower body otherwise). Art row 33 is the seat top: put the art at `seat_y - 35` (desk chairs y 66 for seat y 101, conference and
+  karaoke 54 for seat y 89, venue 64 / 60), casters end 4 px below the feet line, `cup_dx` and the chair roll are unchanged; decorative chairs
+  use their old y minus 7. Left-facing
   seats mirror it with `L.flipH` (pieces `*_side_l`; only the conference FRONT row uses it, the sitters all face right). Pieces are named
   `chair_office_side`, `chair_office_brown_side`, `chair_exec_side`, `chair_conference_side[_l]`, `chair_karaoke_side`, `chair_gold_side`,
   `chair_wood_side`, `chair_velvet_side`, `chair_blue_side` (the old front PNGs are gone except `chair_office.png`, which the chair race
