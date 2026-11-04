@@ -221,7 +221,7 @@ func _process(delta: float) -> void:
 		_bell_t = maxf(0.0, _bell_t - delta)
 		queue_redraw()
 	if _player == null and get_tree().current_scene != null:
-		_player = get_tree().current_scene.get_node_or_null("Actors/Player")
+		_player = Players.player0()
 	if busy and not _handed and _time - _start >= float(HAND_AT.get(kind, 99.0)):
 		_handed = true
 		handed.emit()

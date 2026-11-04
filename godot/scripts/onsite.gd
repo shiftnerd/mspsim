@@ -1870,7 +1870,7 @@ func _meeting_answer(id: String) -> void:
 
 # the realty coffee bar (a cup of coffee), the sign-in clipboard and the architects' reception desk (a line, no game effect)
 func _site_line(kind: String) -> void:
-	var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+	var p := Players.player0()
 	var key := kind
 	if kind == "coffeebar" and p != null and str(p.held) == "coffee":
 		key = "coffeebar_full"
@@ -1895,7 +1895,7 @@ func _pet(kind: String) -> void:
 	pets += 1
 	Career.add("pets")
 	Hints.toast(str(lines[randi() % lines.size()]), 3.0)
-	var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+	var p := Players.player0()
 	if p != null and p.has_method("start_emote") and kind != "fish":
 		p.start_emote(
 			"reach", 2.8, p.global_position.x + (10.0 if p.facing == "right" else -10.0), "heart"

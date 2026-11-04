@@ -11,7 +11,7 @@ extends Area2D
 @export var arrow_offset := Vector2(0, -36)
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone (two players can stand at one door)
 
 
 func _ready() -> void:
@@ -33,7 +33,8 @@ func _on_body_entered(body: Node) -> void:
 	if auto:
 		use(body)
 	else:
-		_player = body
+		if body not in _bodies:
+			_bodies.append(body)
 		body.add_near(self)
 
 
@@ -41,8 +42,8 @@ func _on_body_exited(body: Node) -> void:
 	if auto or not body.has_method("sit"):
 		return
 	body.remove_near(self)
-	_player = null
-	_arrow.visible = false
+	_bodies.erase(body)
+	_arrow.visible = _watched()
 
 
 func is_locked() -> bool:
@@ -55,11 +56,17 @@ func _dock_open() -> bool:
 	return door != null and float(door.open) >= 0.999 and float(door.goal) > 0.5
 
 
+# does any player inside the zone have this door as the thing to use (and is not sitting)?
+func _watched() -> bool:
+	for body in _bodies:
+		if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+			return true
+	return false
+
+
 func _process(_delta: float) -> void:
 	if _arrow != null:
-		_arrow.visible = (
-			_player != null and _player.nearest() == self and _player.state != "sitting"
-		)
+		_arrow.visible = _watched()
 		if (occupancy != "" or special == "dock") and not _arrow.shaking():
 			_arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 

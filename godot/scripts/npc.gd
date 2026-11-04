@@ -44,7 +44,7 @@ var _gen := 0
 var _key := ""
 var _hold := 0.0
 var _hold_len := 0.0
-var _inside: Node = null
+var _inside: Array[Node] = []  # every player body in the talk zone
 var _player: Node = null
 var _greeted := false
 var _bubble: Node2D
@@ -220,15 +220,24 @@ func _clamp_x(x: float) -> float:
 
 func _on_body_entered(body: Node) -> void:
 	if body.has_method("sit"):
-		_inside = body
+		if body not in _inside:
+			_inside.append(body)
 		body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
 	if body.has_method("sit"):
 		body.remove_near(self)
-		_inside = null
+		_inside.erase(body)
 	_arrow.visible = false
+
+
+# does any player in the talk zone have this person as the thing to use?
+func _inside_near() -> bool:
+	for body in _inside:
+		if is_instance_valid(body) and body.nearest() == self:
+			return true
+	return false
 
 
 # standing people duck under a dart that is flying at them (about 6 times in 10)
@@ -367,9 +376,7 @@ func _process(delta: float) -> void:
 	_update_greeting()
 	_update_reactions(delta)
 	_update_gesture(delta)
-	_arrow.visible = (
-		_inside != null and _inside.nearest() == self and _can_chat() and _hold <= 0.0
-	)
+	_arrow.visible = _inside_near() and _can_chat() and _hold <= 0.0
 	if _hold > 0.0:
 		_hold -= delta
 		if _chat_slide != INF:
@@ -427,7 +434,7 @@ func _follow_tick(delta: float) -> bool:
 	if _hold > 0.0 or seat != null:
 		return false
 	if _player == null:
-		_player = _stage.get_node_or_null("Actors/Player")
+		_player = Players.player0(_stage)
 		return false
 	var px: float = _player.global_position.x
 	var behind := -1.0 if _player.facing == "right" else 1.0
@@ -583,7 +590,7 @@ func _ringing_phone() -> Node:
 
 func _update_greeting() -> void:
 	if _player == null:
-		_player = _stage.get_node_or_null("Actors/Player")
+		_player = Players.player0(_stage)
 		return
 	var d := absf(_player.global_position.x - global_position.x)
 	if d > GREET_RANGE * 2.0:

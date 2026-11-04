@@ -383,6 +383,7 @@ config/quit_on_go_back=false
 
 Game="*res://scripts/game.gd"
 Controls="*res://scripts/controls.gd"
+Players="*res://scripts/players.gd"
 World="*res://scripts/world.gd"
 Net="*res://scripts/net.gd"
 Msp="*res://scripts/msp.gd"
@@ -656,7 +657,7 @@ write("scripts/door.gd", '''extends Area2D
 @export var arrow_offset := Vector2(0, -36)
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone (two players can stand at one door)
 
 
 func _ready() -> void:
@@ -678,7 +679,8 @@ func _on_body_entered(body: Node) -> void:
     if auto:
         use(body)
     else:
-        _player = body
+        if body not in _bodies:
+            _bodies.append(body)
         body.add_near(self)
 
 
@@ -686,8 +688,8 @@ func _on_body_exited(body: Node) -> void:
     if auto or not body.has_method("sit"):
         return
     body.remove_near(self)
-    _player = null
-    _arrow.visible = false
+    _bodies.erase(body)
+    _arrow.visible = _watched()
 
 
 func is_locked() -> bool:
@@ -700,9 +702,17 @@ func _dock_open() -> bool:
     return door != null and float(door.open) >= 0.999 and float(door.goal) > 0.5
 
 
+# does any player inside the zone have this door as the thing to use (and is not sitting)?
+func _watched() -> bool:
+    for body in _bodies:
+        if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+            return true
+    return false
+
+
 func _process(_delta: float) -> void:
     if _arrow != null:
-        _arrow.visible = _player != null and _player.nearest() == self and _player.state != "sitting"
+        _arrow.visible = _watched()
         if (occupancy != "" or special == "dock") and not _arrow.shaking():
             _arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
@@ -739,7 +749,7 @@ write("scripts/seat.gd", '''extends Area2D
 var occupied := false
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone
 
 
 func _ready() -> void:
@@ -754,25 +764,29 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
     if body.has_method("sit"):
-        _player = body
+        if body not in _bodies:
+            _bodies.append(body)
         body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
     if body.has_method("sit"):
         body.remove_near(self)
-        _player = null
-    _arrow.visible = false
+        _bodies.erase(body)
+    _arrow.visible = _watched()
+
+
+func _watched() -> bool:
+    if occupied:
+        return false
+    for body in _bodies:
+        if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+            return true
+    return false
 
 
 func _process(_delta: float) -> void:
-    var active: bool = (
-        _player != null
-        and _player.nearest() == self
-        and _player.state != "sitting"
-        and not occupied
-    )
-    _arrow.visible = active
+    _arrow.visible = _watched()
 
 
 func use(body: Node) -> void:
@@ -780,6 +794,8 @@ func use(body: Node) -> void:
         _arrow.shake()
         return
     _arrow.visible = false
+    if Players.coop:  # two bodies can reach a chair: the first one in owns it (single player never sets this: NPC seating is unchanged)
+        occupied = true
     body.sit(self)
 ''')
 
@@ -972,7 +988,7 @@ func _process(delta: float) -> void:
         _bell_t = maxf(0.0, _bell_t - delta)
         queue_redraw()
     if _player == null and get_tree().current_scene != null:
-        _player = get_tree().current_scene.get_node_or_null("Actors/Player")
+        _player = Players.player0()
     if busy and not _handed and _time - _start >= float(HAND_AT.get(kind, 99.0)):
         _handed = true
         handed.emit()
@@ -2310,7 +2326,7 @@ write("scripts/interact.gd", '''extends Area2D
 @export var low_priority := false  # loses to nearby things (the duck must not steal the monitor)
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone
 
 
 func _ready() -> void:
@@ -2327,26 +2343,28 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
     if body.has_method("sit"):
-        _player = body
+        if body not in _bodies:
+            _bodies.append(body)
         body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
     if body.has_method("sit"):
         body.remove_near(self)
-        _player = null
+        _bodies.erase(body)
     _arrow.visible = false
+
+
+func _watched() -> bool:
+    for body in _bodies:
+        if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+            return true
+    return false
 
 
 func _process(_delta: float) -> void:
     var fx := get_node(target)
-    _arrow.visible = (
-        _player != null
-        and _player.nearest() == self
-        and _player.state != "sitting"
-        and not fx.busy
-        and (fx.kind != "bell" or SalesCampaign.bell_ready)
-    )
+    _arrow.visible = _watched() and not fx.busy and (fx.kind != "bell" or SalesCampaign.bell_ready)
 
 
 func _hand_over(body: Node, fx: Node) -> void:
@@ -2594,7 +2612,7 @@ var _gen := 0
 var _key := ""
 var _hold := 0.0
 var _hold_len := 0.0
-var _inside: Node = null
+var _inside: Array[Node] = []  # every player body in the talk zone
 var _player: Node = null
 var _greeted := false
 var _bubble: Node2D
@@ -2770,15 +2788,24 @@ func _clamp_x(x: float) -> float:
 
 func _on_body_entered(body: Node) -> void:
     if body.has_method("sit"):
-        _inside = body
+        if body not in _inside:
+            _inside.append(body)
         body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
     if body.has_method("sit"):
         body.remove_near(self)
-        _inside = null
+        _inside.erase(body)
     _arrow.visible = false
+
+
+# does any player in the talk zone have this person as the thing to use?
+func _inside_near() -> bool:
+    for body in _inside:
+        if is_instance_valid(body) and body.nearest() == self:
+            return true
+    return false
 
 
 # standing people duck under a dart that is flying at them (about 6 times in 10)
@@ -2917,9 +2944,7 @@ func _process(delta: float) -> void:
     _update_greeting()
     _update_reactions(delta)
     _update_gesture(delta)
-    _arrow.visible = (
-        _inside != null and _inside.nearest() == self and _can_chat() and _hold <= 0.0
-    )
+    _arrow.visible = _inside_near() and _can_chat() and _hold <= 0.0
     if _hold > 0.0:
         _hold -= delta
         if _chat_slide != INF:
@@ -2977,7 +3002,7 @@ func _follow_tick(delta: float) -> bool:
     if _hold > 0.0 or seat != null:
         return false
     if _player == null:
-        _player = _stage.get_node_or_null("Actors/Player")
+        _player = Players.player0(_stage)
         return false
     var px: float = _player.global_position.x
     var behind := -1.0 if _player.facing == "right" else 1.0
@@ -3133,7 +3158,7 @@ func _ringing_phone() -> Node:
 
 func _update_greeting() -> void:
     if _player == null:
-        _player = _stage.get_node_or_null("Actors/Player")
+        _player = Players.player0(_stage)
         return
     var d := absf(_player.global_position.x - global_position.x)
     if d > GREET_RANGE * 2.0:
@@ -4710,7 +4735,7 @@ func send_vic_to_player() -> void:
         Sales.pending = {}
         return
     var px := 150.0
-    var player: Node = _stage.get_node_or_null("Actors/Player") if is_instance_valid(_stage) else null
+    var player: Node = Players.player0(_stage) if is_instance_valid(_stage) else null
     if player != null:
         px = player.global_position.x
     var info: Dictionary = DATA.SCENES[_scene]
@@ -30097,7 +30122,7 @@ func start(id: String, from_invite := false, options := {}) -> void:
     var in_room := use_rooms and not bool(opts.get("panel", false))
     if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
         _return_scene = here.scene_file_path.get_file().get_basename()
-        var me := here.get_node_or_null("Actors/Player")
+        var me := Players.player0(here)
         _return_x = me.global_position.x if me != null else -1.0
         _traveled = true
         _wait_id = id
@@ -33499,7 +33524,7 @@ func start(who: String, npc: Node) -> void:
 
 func _player() -> Node:
     var scene := get_tree().current_scene
-    return scene.get_node_or_null("Actors/Player") if scene != null else null
+    return Players.player0(scene) if scene != null else null
 
 
 func _bubble(glyph: String) -> void:
@@ -34179,7 +34204,7 @@ func _scene() -> Node:
 
 func _player() -> Node:
     var scene := _scene()
-    return scene.get_node_or_null("Actors/Player") if scene != null else null
+    return Players.player0(scene) if scene != null else null
 
 
 func holding() -> bool:
@@ -45205,7 +45230,7 @@ func _meeting_answer(id: String) -> void:
 
 # the realty coffee bar (a cup of coffee), the sign-in clipboard and the architects' reception desk (a line, no game effect)
 func _site_line(kind: String) -> void:
-    var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+    var p := Players.player0()
     var key := kind
     if kind == "coffeebar" and p != null and str(p.held) == "coffee":
         key = "coffeebar_full"
@@ -45230,7 +45255,7 @@ func _pet(kind: String) -> void:
     pets += 1
     Career.add("pets")
     Hints.toast(str(lines[randi() % lines.size()]), 3.0)
-    var p := get_tree().current_scene.get_node_or_null("Actors/Player")
+    var p := Players.player0()
     if p != null and p.has_method("start_emote") and kind != "fish":
         p.start_emote("reach", 2.8, p.global_position.x + (10.0 if p.facing == "right" else -10.0), "heart")
     if Campaign.active and Shift.active() and _pet_energy < 3:
@@ -47246,7 +47271,7 @@ func open_tools(from_title := false, on_close := Callable()) -> void:
 # ---- the Free Play outfit swap (R15 level 3 step e) ---------------------------------------------------
 func _player() -> Node:
     var scene := get_tree().current_scene
-    return scene.get_node_or_null("Actors/Player") if scene != null else null
+    return Players.player0(scene) if scene != null else null
 
 
 func can_outfit() -> bool:
@@ -50122,6 +50147,8 @@ const SETS := [
     "network_closet"
 ]
 
+const PLAYER_SCENE := preload("res://scenes/player.tscn")
+
 var barriers := {}  # npc sync points: key -> {arrived, gen}
 
 var _cam: Camera2D
@@ -50170,6 +50197,36 @@ func _ready() -> void:
     if Net.carrying != "" and _room != "network_closet":
         Net.drop_carry()  # a cable end cannot leave the closet
         _player.give("")
+    if Players.coop and Players.slot(1).joined:
+        spawn_player2()  # co-op: the second player is already in (a room change keeps the roster)
+
+
+# Co-op phase 1 (docs/scope-coop.md): the second player's body, next to the first. The position is set BEFORE add_child: a body
+# added at (0, 0) would overlap the edge exit in the corner and fire Game.go on spawn. The two bodies pass through each other
+# (collision exceptions both ways): nobody can block the other in a doorway or trap them against a wall. Both bodies use the
+# one camera, which follows slot 0 only in phase 1.
+func spawn_player2() -> Node:
+    var actors := get_node_or_null("Actors")
+    if Game.title_mode or _player == null or actors == null:
+        return null
+    var existing := get_node_or_null("Actors/Player2")
+    if existing != null:
+        return existing
+    var p2: CharacterBody2D = PLAYER_SCENE.instantiate()
+    p2.name = "Player2"
+    p2.slot = 1
+    var side := -1.0 if _player.facing == "left" else 1.0
+    var at: Vector2 = _player.global_position + Vector2(24.0 * side, 0.0)
+    var left := get_node_or_null("WallLeft")
+    var right := get_node_or_null("WallRight")
+    if left != null and right != null:
+        at.x = clampf(at.x, left.position.x + 14.0, right.position.x - 14.0)
+    p2.position = actors.to_local(at)
+    actors.add_child(p2)
+    p2.face(_player.facing)
+    (_player as CollisionObject2D).add_collision_exception_with(p2)
+    p2.add_collision_exception_with(_player)
+    return p2
 
 
 # the first room of a run as a cast member: you are already sitting at your desk
@@ -50329,6 +50386,7 @@ const CHARACTERS := [
 
 static var current_character := "office_adult"
 
+var slot := 0  # co-op: 0 = the first player (today's keyboard / pad 0 actions), 1 = Players.slot(1) (the p2_ actions of its own pad)
 var facing := "right"
 var state := "idle"   # idle walk run crouch jump land hurt death sitdown sitting standup
 var grounded_once := false   # no "airborne" until first floor contact (spawning on the floor)
@@ -50360,8 +50418,11 @@ var _gesture := ""  # the seated gesture playing now
 
 func _ready() -> void:
     _add_inputs()
-    held = str(Game.vars.get("held", ""))
-    sips = int(Game.vars.get("sips", 0))
+    if slot == 0:
+        held = str(Game.vars.get("held", ""))
+        sips = int(Game.vars.get("sips", 0))
+    else:
+        Controls.ensure_slot(slot, Players.slot(slot).device)
     _item = HELD_ITEM.new()
     _item.item = held
     add_child(_item)
@@ -50371,9 +50432,19 @@ func _ready() -> void:
     _roll = CHAIR_ROLL.new()
     add_child(_roll)
     add_to_group("player")
-    _load_character(current_character)
+    _load_character(current_character if slot == 0 else Players.slot(slot).character)
     sprite.animation_finished.connect(_on_animation_finished)
     _play("idle")
+
+
+# the InputMap name of an action for this player: the plain name for slot 0, the p2_ copy for slot 1
+func _a(action: String) -> String:
+    return action if slot == 0 else Controls.action_for(slot, action)
+
+
+func _exit_tree() -> void:
+    if Players.coop and seat != null and is_instance_valid(seat) and seat.get("occupied") == true:
+        seat.occupied = false  # a player who leaves the room (or the game) frees the chair they held
 
 
 func add_near(n: Node) -> void:
@@ -50434,9 +50505,14 @@ func _add_inputs() -> void:
 
 
 func _load_character(name: String) -> void:
-    current_character = name
-    sprite.sprite_frames = Look.frames_for(name, Look.is_custom())  # the custom person: the sheet of their hairstyle
-    Look.apply(sprite, name, Look.is_custom())  # the custom person is the intern sheet in the player's colours (R15)
+    var custom := false
+    if slot == 0:
+        current_character = name
+        custom = Look.is_custom()
+    else:
+        Players.slot(slot).character = name  # slot 1 is always a stock person for now
+    sprite.sprite_frames = Look.frames_for(name, custom)  # the custom person: the sheet of their hairstyle
+    Look.apply(sprite, name, custom)  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
@@ -50467,6 +50543,8 @@ func _reload_sheet(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+    if slot != 0:
+        return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
     if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
         Nerf.charge_release(self)
         return
@@ -50504,7 +50582,7 @@ func _play(action: String) -> void:
 
 
 func character_id() -> String:
-    return current_character
+    return current_character if slot == 0 else Players.slot(slot).character
 
 
 func give(item: String) -> void:
@@ -50512,8 +50590,9 @@ func give(item: String) -> void:
         Nerf.on_given()
     held = item
     sips = 0
-    Game.vars["held"] = held
-    Game.vars["sips"] = sips
+    if slot == 0:
+        Game.vars["held"] = held
+        Game.vars["sips"] = sips
     _item.item = held
     if state in ["idle", "walk", "run"]:
         _play(state)
@@ -50625,6 +50704,8 @@ func sit(s: Node) -> void:
 # the first frame of a run as a cast member: already at your desk
 func sit_now(s: Node) -> void:
     seat = s
+    if Players.coop:
+        s.occupied = true
     _life = null
     state = "sitting"
     velocity = Vector2.ZERO
@@ -50686,7 +50767,7 @@ func _dance_tick(delta: float, wants_out: bool) -> bool:
     velocity = Vector2.ZERO
     _dance_t += delta
     _bubble.visible = int(_dance_t / 0.9) % 2 == 0
-    if wants_out or Input.is_action_just_pressed("dance"):
+    if wants_out or Input.is_action_just_pressed(_a("dance")):
         _stop_dance()
     return true
 
@@ -50696,13 +50777,13 @@ func _try_gesture(locked: bool) -> bool:
     if locked or not is_on_floor():
         return false
     var did := true
-    if Input.is_action_just_pressed("dance"):
+    if Input.is_action_just_pressed(_a("dance")):
         _start_dance()
-    elif Input.is_action_just_pressed("wave"):
+    elif Input.is_action_just_pressed(_a("wave")):
         start_emote("wave", 1.3)
-    elif Input.is_action_just_pressed("drink") and held != "" and not held.begins_with("plug_") and held != "nerf":
+    elif Input.is_action_just_pressed(_a("drink")) and held != "" and not held.begins_with("plug_") and held != "nerf":
         drink()
-    elif Input.is_action_just_pressed("follow"):
+    elif Input.is_action_just_pressed(_a("follow")):
         did = _ask_follow()
     else:
         did = false
@@ -50739,10 +50820,12 @@ func _end_emote() -> void:
     if _sip_pending:
         _sip_pending = false
         sips += 1
-        Game.vars["sips"] = sips
+        if slot == 0:
+            Game.vars["sips"] = sips
         if sips >= (6 if seat != null else 3):
             held = ""
-            Game.vars["held"] = ""
+            if slot == 0:
+                Game.vars["held"] = ""
             _item.item = ""
             if _desk != null:
                 _desk.item = ""
@@ -50766,10 +50849,10 @@ func _physics_process(delta: float) -> void:
     _call_tick(delta)
     _roll.update(self, delta)
     var locked: bool = Game.busy
-    var dir := 0.0 if locked else Input.get_axis("move_left", "move_right")
-    var running := Input.is_action_pressed("run")
-    var interact := (not locked) and Input.is_action_just_pressed("interact") and not Outings.blocks_interact()
-    var jump := (not locked) and Input.is_action_just_pressed("jump")
+    var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
+    var running := Input.is_action_pressed(_a("run"))
+    var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
+    var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 
     if state in ["use", "emote"]:
         velocity = Vector2.ZERO
@@ -50798,7 +50881,7 @@ func _physics_process(delta: float) -> void:
             _ringing_phone().use(self)
         elif state == "sitting" and interact and _seat_computer() != null:
             _seat_computer().use(self)
-        elif state == "sitting" and held != "" and held != "nerf" and Input.is_action_just_pressed("drink"):
+        elif state == "sitting" and held != "" and held != "nerf" and Input.is_action_just_pressed(_a("drink")):
             drink()
         elif state == "sitting" and (interact or jump or dir != 0.0):
             _stand_up()
@@ -50808,16 +50891,16 @@ func _physics_process(delta: float) -> void:
         velocity.y += GRAVITY * delta
 
     if not locked and not Campaign.active:
-        if Input.is_action_just_pressed("die") and state != "death":
+        if Input.is_action_just_pressed(_a("die")) and state != "death":
             _set_state("death")
             velocity.x = -60.0 * (1 if facing == "right" else -1)
-        elif Input.is_action_just_pressed("hurt") and state not in ["death", "hurt"]:
+        elif Input.is_action_just_pressed(_a("hurt")) and state not in ["death", "hurt"]:
             _set_state("hurt")
             velocity.x = -50.0 * (1 if facing == "right" else -1)
-        elif Input.is_action_just_pressed("revive") and state == "death":
+        elif Input.is_action_just_pressed(_a("revive")) and state == "death":
             _set_state("idle")
 
-    var duck_held := (not locked) and Input.is_action_pressed("duck")
+    var duck_held := (not locked) and Input.is_action_pressed(_a("duck"))
     if state == "duck" and (not duck_held or not is_on_floor()):
         _set_state("idle")
     elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.charging:
@@ -50921,6 +51004,8 @@ func _on_animation_finished() -> void:
             _unstash()
             global_position = Vector2(seat.global_position.x, seat.stand_y)
             body_shape.set_deferred("disabled", false)
+            if Players.coop:
+                seat.occupied = false
             seat = null
             velocity = Vector2.ZERO
             state = "idle"
@@ -59851,6 +59936,203 @@ if shutil.which("gdformat"):
     subprocess.run(["gdformat", os.path.join(ROOT, "scripts")], check=False)
     print("formatted scripts with gdformat")
 # Godot only re-imports changed PNGs in the editor or an import pass; a stale import makes new sheet frames blank
+write("scripts/players.gd", '''extends Node
+# gdlint:disable=class-definitions-order,max-returns
+# Autoload (registered right after Controls): who is playing. Co-op phase 1 (docs/scope-coop.md, section 5.1).
+#   Players.coop            the feature flag. false = single player, byte for byte (the default). `-- --coop` on the
+#                           command line or Players.enable_coop(true) turns it on; nothing else changes until then.
+#   Players.slot(i)         the Slot record of player i (0 or 1): device, character, look, held, joined
+#   Players.node(i)         the Player body of slot i in the current scene (Actors/Player, Actors/Player2) or null
+#   Players.player0(scene)  the slot 0 body of `scene` (default: the current scene) or null: the safe replacement for
+#                           get_node_or_null("Actors/Player")
+#   Players.join(1, device) slot 1 joins (coop only): registers its p2_ actions and spawns Actors/Player2 in a stage
+#   Players.slot_of(event)  which slot owns an input event (keys and pad 0 = slot 0, pad N = the slot that joined on N)
+# Slot 0 is a read-through mirror of today's globals (Player.current_character, Look.look, Game.vars.held): it holds
+# no copy of its own, so nothing can drift. Slot 1 owns its own character and held item.
+# NOT per slot yet (phase 3+): Game.ui_open and Game.busy stay ONE global freeze for both bodies, the camera follows
+# slot 0 only, a door or auto exit still takes only the player who used it, Skills / Shift / Growth / Campaign are slot 0.
+
+signal roster_changed
+
+const MAX_SLOTS := 2
+const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
+const P2_FALLBACK := "office_intern"
+
+var coop := false
+var slots: Array = []
+
+
+class Slot:
+    extends RefCounted
+    const PLAYER_SCRIPT := preload("res://scripts/player.gd")
+    var index := 0
+    var device := -1  # -1 keyboard (slot 0 also owns pad 0), 1.. the joypad slot 1 joined with
+    var joined := false
+    var stored_character := ""
+    var stored_held := ""
+
+    var character: String:
+        get:
+            return PLAYER_SCRIPT.current_character if index == 0 else stored_character
+        set(value):
+            if index == 0:
+                PLAYER_SCRIPT.current_character = value
+            else:
+                stored_character = value
+
+    # a Look dictionary: slot 0 is the custom person of the Look autoload, slot 1 always a stock character for now
+    var look: Dictionary:
+        get:
+            return Look.look if index == 0 else {}
+
+    var held: String:
+        get:
+            var body: Node = Players.node(index)
+            if body != null:
+                return str(body.held)
+            return str(Game.vars.get("held", "")) if index == 0 else stored_held
+        set(value):
+            if index == 0:
+                Game.vars["held"] = value
+            else:
+                stored_held = value
+
+    func _init(i := 0) -> void:
+        index = i
+        joined = i == 0
+
+
+func _init() -> void:
+    for i in MAX_SLOTS:
+        slots.append(Slot.new(i))
+
+
+func _ready() -> void:
+    if "--coop" in OS.get_cmdline_user_args():
+        enable_coop(true)
+
+
+func slot(i: int) -> Slot:
+    return slots[clampi(i, 0, MAX_SLOTS - 1)]
+
+
+# how many players are in
+func count() -> int:
+    var n := 0
+    for s in slots:
+        if s.joined:
+            n += 1
+    return n
+
+
+# the Player body of slot i in `scene` (default: the current scene), or null
+func node(i: int, scene: Node = null) -> Node:
+    var sc: Node = scene if scene != null else get_tree().current_scene
+    if sc == null or i < 0 or i >= MAX_SLOTS:
+        return null
+    return sc.get_node_or_null("Actors/Player" if i == 0 else "Actors/Player%d" % (i + 1))
+
+
+func player0(scene: Node = null) -> Node:
+    return node(0, scene)
+
+
+# every Player body in the current scene, slot order
+func nodes(scene: Node = null) -> Array:
+    var out := []
+    for i in MAX_SLOTS:
+        var body := node(i, scene)
+        if body != null:
+            out.append(body)
+    return out
+
+
+# the body closest to x (what an NPC should look at once it cares about both)
+func nearest_to(x: float, scene: Node = null) -> Node:
+    var best: Node = null
+    var best_d := INF
+    for body in nodes(scene):
+        var d := absf(body.global_position.x - x)
+        if d < best_d:
+            best_d = d
+            best = body
+    return best
+
+
+func enable_coop(on := true) -> void:
+    coop = on
+    if on:
+        Controls.ensure_slot(1, 1)
+    else:
+        leave(1)
+
+
+# Free Play only for phase 1, and only in a room (not the title, not under a card or a takeover)
+func can_join() -> bool:
+    var sc := get_tree().current_scene
+    return (
+        coop
+        and not slots[1].joined
+        and sc != null
+        and sc.has_method("spawn_player2")
+        and not Game.title_mode
+        and not Campaign.active
+        and not Game.ui_open
+        and not Game.busy
+    )
+
+
+# slot i joins on joypad `device` (pad 0 is slot 0's). Returns false when co-op is off or the slot is taken by another pad
+func join(i: int, device := 1) -> bool:
+    if not coop or i != 1 or device < 1:
+        return false
+    var s: Slot = slots[i]
+    if s.joined:
+        return s.device == device
+    s.device = device
+    s.joined = true
+    if s.stored_character == "":
+        s.stored_character = P2_CHARACTER if Slot.PLAYER_SCRIPT.current_character != P2_CHARACTER else P2_FALLBACK
+    Controls.ensure_slot(i, device)
+    var sc := get_tree().current_scene
+    if sc != null and sc.has_method("spawn_player2"):
+        sc.spawn_player2()
+    roster_changed.emit()
+    return true
+
+
+func leave(i: int) -> void:
+    if i != 1 or not slots[1].joined:
+        return
+    var body := node(1)
+    slots[1].joined = false
+    slots[1].stored_held = ""
+    if body != null:
+        body.get_parent().remove_child(body)
+        body.queue_free()
+    roster_changed.emit()
+
+
+# which slot an input event belongs to: keys and mouse are slot 0, a pad is the slot that joined on its device (pad 0 is
+# slot 0's); -1 for a pad nobody has joined with
+func slot_of(event: InputEvent) -> int:
+    if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+        for s in slots:
+            if s.index > 0 and s.joined and s.device == event.device:
+                return s.index
+        return 0 if event.device == 0 else -1
+    return 0
+
+
+# A on an unclaimed pad joins slot 1 (co-op only)
+func _input(event: InputEvent) -> void:
+    if not coop or slots[1].joined:
+        return
+    if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
+        if can_join() and join(1, event.device):
+            get_viewport().set_input_as_handled()
+''')
+
 write("scripts/controls.gd", '''extends Node
 # gdlint:disable=max-line-length,max-returns
 # Autoload: the one place that says which key (and which gamepad button) does what (roadmap R14, portability).
@@ -59861,6 +60143,8 @@ write("scripts/controls.gd", '''extends Node
 #   Controls.confirm(event) / back(event)  Enter, Space or E / Esc or Backspace, or the ui_accept / ui_cancel actions
 #   Controls.pressed(event)             a fresh key, pad button, action or stick push (guards the menu handlers)
 #   Controls.nav(event) / step(...)     "up" "down" "left" "right" from arrows, W A S D, the D-pad or the stick
+# Co-op (Players.coop, off by default): confirm_for(event, slot) / back_for(event, slot), action_for(slot, "jump"),
+# slot_of(event); slot 1 reads a p2_ copy of the table bound to its own pad (ensure_slot).
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
@@ -59946,6 +60230,7 @@ const HELP := [
 
 
 var _stick := {}
+var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
 var _stick_frame := -1
 var _stick_result := false
@@ -59981,6 +60266,79 @@ func ensure() -> void:
             motion.axis = ax[0]
             motion.axis_value = ax[1]
             InputMap.action_add_event(action, motion)
+
+
+# co-op (docs/scope-coop.md 5.1): slot 0 keeps the plain action names, slot 1 uses a p2_ copy of the whole table that only
+# listens to its own joypad device. "" for slot 0, "p2_" for slot 1.
+func prefix(slot: int) -> String:
+    return "" if slot <= 0 else "p%d_" % (slot + 1)
+
+
+# the action name that slot `slot` reads: action_for(1, "jump") = "p2_jump"
+func action_for(slot: int, action: String) -> String:
+    return prefix(slot) + action
+
+
+# register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on
+# (Players.enable_coop / join), so single player never sees a p2_ action. Pad 2 needs its own confirm and cancel: the
+# built-in ui_accept / ui_cancel listen to device 0 only, so p2_ui_accept / p2_ui_cancel carry A and B for the device.
+func ensure_slot(slot: int, device: int) -> void:
+    if slot <= 0 or _slot_device.get(slot, -2) == device:
+        return
+    _slot_device[slot] = device
+    var pfx := prefix(slot)
+    for action in ACTIONS:
+        var spec: Array = ACTIONS[action]
+        var events := []
+        for button in spec[1]:
+            var pad := InputEventJoypadButton.new()
+            pad.button_index = button
+            pad.device = device
+            events.append(pad)
+        for ax in spec[2]:
+            var motion := InputEventJoypadMotion.new()
+            motion.axis = ax[0]
+            motion.axis_value = ax[1]
+            motion.device = device
+            events.append(motion)
+        _rebind(pfx + action, events)
+    for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+        var btn := InputEventJoypadButton.new()
+        btn.button_index = pair[1]
+        btn.device = device
+        _rebind(pfx + pair[0], [btn])
+
+
+func _rebind(name: String, events: Array) -> void:
+    if InputMap.has_action(name):
+        InputMap.action_erase_events(name)
+    else:
+        InputMap.add_action(name, 0.5)
+    for ev in events:
+        InputMap.action_add_event(name, ev)
+
+
+# which player an event belongs to (see Players.slot_of): keys are slot 0, a pad is the slot that joined on its device
+func slot_of(event: InputEvent) -> int:
+    return Players.slot_of(event)
+
+
+# confirm / back for a slot: slot 0 is the plain confirm() / back() (Enter, Space, E or its pad A), slot 1 is the A / B of
+# its own pad only. An event that belongs to another slot is never a confirm.
+func confirm_for(event: InputEvent, slot: int, with_e: bool = true, with_space: bool = true) -> bool:
+    if slot_of(event) != slot:
+        return false
+    if slot <= 0:
+        return confirm(event, with_e, with_space)
+    return event.is_action(prefix(slot) + "ui_accept")
+
+
+func back_for(event: InputEvent, slot: int, with_backspace: bool = true) -> bool:
+    if slot_of(event) != slot:
+        return false
+    if slot <= 0:
+        return back(event, with_backspace)
+    return event.is_action(prefix(slot) + "ui_cancel")
 
 
 func _has_button(action: String, button: int) -> bool:
@@ -60159,7 +60517,7 @@ func world_dict() -> Dictionary:
 
 func player_dict() -> Dictionary:
     var scene := get_tree().current_scene
-    var p: Node = scene.get_node_or_null("Actors/Player") if scene != null else null
+    var p: Node = Players.player0(scene) if scene != null else null
     if p == null:
         return {}
     var seat := ""
@@ -60320,7 +60678,7 @@ func _ready() -> void:
 # true when there is a room with a player in it and nothing else has the screen
 func can_open(strict := true) -> bool:
     var scene := get_tree().current_scene
-    if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or scene.get_node_or_null("Actors/Player") == null:
+    if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or Players.player0(scene) == null:
         return false
     if not strict:
         return true

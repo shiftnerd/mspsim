@@ -192,7 +192,7 @@ func open_tools(from_title := false, on_close := Callable()) -> void:
 # ---- the Free Play outfit swap (R15 level 3 step e) ---------------------------------------------------
 func _player() -> Node:
 	var scene := get_tree().current_scene
-	return scene.get_node_or_null("Actors/Player") if scene != null else null
+	return Players.player0(scene) if scene != null else null
 
 
 func can_outfit() -> bool:

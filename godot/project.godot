@@ -12,6 +12,7 @@ config/quit_on_go_back=false
 
 Game="*res://scripts/game.gd"
 Controls="*res://scripts/controls.gd"
+Players="*res://scripts/players.gd"
 World="*res://scripts/world.gd"
 Net="*res://scripts/net.gd"
 Msp="*res://scripts/msp.gd"

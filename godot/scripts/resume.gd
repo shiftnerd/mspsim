@@ -74,7 +74,7 @@ func world_dict() -> Dictionary:
 
 func player_dict() -> Dictionary:
 	var scene := get_tree().current_scene
-	var p: Node = scene.get_node_or_null("Actors/Player") if scene != null else null
+	var p: Node = Players.player0(scene) if scene != null else null
 	if p == null:
 		return {}
 	var seat := ""

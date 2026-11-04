@@ -115,7 +115,7 @@ func _scene() -> Node:
 
 func _player() -> Node:
 	var scene := _scene()
-	return scene.get_node_or_null("Actors/Player") if scene != null else null
+	return Players.player0(scene) if scene != null else null
 
 
 func holding() -> bool:

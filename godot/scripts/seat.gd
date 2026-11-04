@@ -13,7 +13,7 @@ extends Area2D
 var occupied := false
 
 var _arrow: Node2D
-var _player: Node = null
+var _bodies: Array[Node] = []  # every player body inside the zone
 
 
 func _ready() -> void:
@@ -28,25 +28,29 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.has_method("sit"):
-		_player = body
+		if body not in _bodies:
+			_bodies.append(body)
 		body.add_near(self)
 
 
 func _on_body_exited(body: Node) -> void:
 	if body.has_method("sit"):
 		body.remove_near(self)
-		_player = null
-	_arrow.visible = false
+		_bodies.erase(body)
+	_arrow.visible = _watched()
+
+
+func _watched() -> bool:
+	if occupied:
+		return false
+	for body in _bodies:
+		if is_instance_valid(body) and body.nearest() == self and body.state != "sitting":
+			return true
+	return false
 
 
 func _process(_delta: float) -> void:
-	var active: bool = (
-		_player != null
-		and _player.nearest() == self
-		and _player.state != "sitting"
-		and not occupied
-	)
-	_arrow.visible = active
+	_arrow.visible = _watched()
 
 
 func use(body: Node) -> void:
@@ -54,4 +58,6 @@ func use(body: Node) -> void:
 		_arrow.shake()
 		return
 	_arrow.visible = false
+	if Players.coop:  # two bodies can reach a chair: the first one in owns it (single player never sets this: NPC seating is unchanged)
+		occupied = true
 	body.sit(self)

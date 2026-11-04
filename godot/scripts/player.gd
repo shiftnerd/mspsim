@@ -21,6 +21,7 @@ const CHARACTERS := [
 
 static var current_character := "office_adult"
 
+var slot := 0  # co-op: 0 = the first player (today's keyboard / pad 0 actions), 1 = Players.slot(1) (the p2_ actions of its own pad)
 var facing := "right"
 var state := "idle"  # idle walk run crouch jump land hurt death sitdown sitting standup
 var grounded_once := false  # no "airborne" until first floor contact (spawning on the floor)
@@ -52,8 +53,11 @@ var _gesture := ""  # the seated gesture playing now
 
 func _ready() -> void:
 	_add_inputs()
-	held = str(Game.vars.get("held", ""))
-	sips = int(Game.vars.get("sips", 0))
+	if slot == 0:
+		held = str(Game.vars.get("held", ""))
+		sips = int(Game.vars.get("sips", 0))
+	else:
+		Controls.ensure_slot(slot, Players.slot(slot).device)
 	_item = HELD_ITEM.new()
 	_item.item = held
 	add_child(_item)
@@ -63,9 +67,19 @@ func _ready() -> void:
 	_roll = CHAIR_ROLL.new()
 	add_child(_roll)
 	add_to_group("player")
-	_load_character(current_character)
+	_load_character(current_character if slot == 0 else Players.slot(slot).character)
 	sprite.animation_finished.connect(_on_animation_finished)
 	_play("idle")
+
+
+# the InputMap name of an action for this player: the plain name for slot 0, the p2_ copy for slot 1
+func _a(action: String) -> String:
+	return action if slot == 0 else Controls.action_for(slot, action)
+
+
+func _exit_tree() -> void:
+	if Players.coop and seat != null and is_instance_valid(seat) and seat.get("occupied") == true:
+		seat.occupied = false  # a player who leaves the room (or the game) frees the chair they held
 
 
 func add_near(n: Node) -> void:
@@ -126,9 +140,14 @@ func _add_inputs() -> void:
 
 
 func _load_character(name: String) -> void:
-	current_character = name
-	sprite.sprite_frames = Look.frames_for(name, Look.is_custom())  # the custom person: the sheet of their hairstyle
-	Look.apply(sprite, name, Look.is_custom())  # the custom person is the intern sheet in the player's colours (R15)
+	var custom := false
+	if slot == 0:
+		current_character = name
+		custom = Look.is_custom()
+	else:
+		Players.slot(slot).character = name  # slot 1 is always a stock person for now
+	sprite.sprite_frames = Look.frames_for(name, custom)  # the custom person: the sheet of their hairstyle
+	Look.apply(sprite, name, custom)  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
@@ -159,6 +178,8 @@ func _reload_sheet(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if slot != 0:
+		return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
 	if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
 		Nerf.charge_release(self)
 		return
@@ -196,7 +217,7 @@ func _play(action: String) -> void:
 
 
 func character_id() -> String:
-	return current_character
+	return current_character if slot == 0 else Players.slot(slot).character
 
 
 func give(item: String) -> void:
@@ -204,8 +225,9 @@ func give(item: String) -> void:
 		Nerf.on_given()
 	held = item
 	sips = 0
-	Game.vars["held"] = held
-	Game.vars["sips"] = sips
+	if slot == 0:
+		Game.vars["held"] = held
+		Game.vars["sips"] = sips
 	_item.item = held
 	if state in ["idle", "walk", "run"]:
 		_play(state)
@@ -317,6 +339,8 @@ func sit(s: Node) -> void:
 # the first frame of a run as a cast member: already at your desk
 func sit_now(s: Node) -> void:
 	seat = s
+	if Players.coop:
+		s.occupied = true
 	_life = null
 	state = "sitting"
 	velocity = Vector2.ZERO
@@ -378,7 +402,7 @@ func _dance_tick(delta: float, wants_out: bool) -> bool:
 	velocity = Vector2.ZERO
 	_dance_t += delta
 	_bubble.visible = int(_dance_t / 0.9) % 2 == 0
-	if wants_out or Input.is_action_just_pressed("dance"):
+	if wants_out or Input.is_action_just_pressed(_a("dance")):
 		_stop_dance()
 	return true
 
@@ -388,18 +412,18 @@ func _try_gesture(locked: bool) -> bool:
 	if locked or not is_on_floor():
 		return false
 	var did := true
-	if Input.is_action_just_pressed("dance"):
+	if Input.is_action_just_pressed(_a("dance")):
 		_start_dance()
-	elif Input.is_action_just_pressed("wave"):
+	elif Input.is_action_just_pressed(_a("wave")):
 		start_emote("wave", 1.3)
 	elif (
-		Input.is_action_just_pressed("drink")
+		Input.is_action_just_pressed(_a("drink"))
 		and held != ""
 		and not held.begins_with("plug_")
 		and held != "nerf"
 	):
 		drink()
-	elif Input.is_action_just_pressed("follow"):
+	elif Input.is_action_just_pressed(_a("follow")):
 		did = _ask_follow()
 	else:
 		did = false
@@ -436,10 +460,12 @@ func _end_emote() -> void:
 	if _sip_pending:
 		_sip_pending = false
 		sips += 1
-		Game.vars["sips"] = sips
+		if slot == 0:
+			Game.vars["sips"] = sips
 		if sips >= (6 if seat != null else 3):
 			held = ""
-			Game.vars["held"] = ""
+			if slot == 0:
+				Game.vars["held"] = ""
 			_item.item = ""
 			if _desk != null:
 				_desk.item = ""
@@ -463,10 +489,10 @@ func _physics_process(delta: float) -> void:
 	_call_tick(delta)
 	_roll.update(self, delta)
 	var locked: bool = Game.busy
-	var dir := 0.0 if locked else Input.get_axis("move_left", "move_right")
-	var running := Input.is_action_pressed("run")
-	var interact := (not locked) and Input.is_action_just_pressed("interact") and not Outings.blocks_interact()
-	var jump := (not locked) and Input.is_action_just_pressed("jump")
+	var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
+	var running := Input.is_action_pressed(_a("run"))
+	var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
+	var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 
 	if state in ["use", "emote"]:
 		velocity = Vector2.ZERO
@@ -499,7 +525,7 @@ func _physics_process(delta: float) -> void:
 			state == "sitting"
 			and held != ""
 			and held != "nerf"
-			and Input.is_action_just_pressed("drink")
+			and Input.is_action_just_pressed(_a("drink"))
 		):
 			drink()
 		elif state == "sitting" and (interact or jump or dir != 0.0):
@@ -510,16 +536,16 @@ func _physics_process(delta: float) -> void:
 		velocity.y += GRAVITY * delta
 
 	if not locked and not Campaign.active:
-		if Input.is_action_just_pressed("die") and state != "death":
+		if Input.is_action_just_pressed(_a("die")) and state != "death":
 			_set_state("death")
 			velocity.x = -60.0 * (1 if facing == "right" else -1)
-		elif Input.is_action_just_pressed("hurt") and state not in ["death", "hurt"]:
+		elif Input.is_action_just_pressed(_a("hurt")) and state not in ["death", "hurt"]:
 			_set_state("hurt")
 			velocity.x = -50.0 * (1 if facing == "right" else -1)
-		elif Input.is_action_just_pressed("revive") and state == "death":
+		elif Input.is_action_just_pressed(_a("revive")) and state == "death":
 			_set_state("idle")
 
-	var duck_held := (not locked) and Input.is_action_pressed("duck")
+	var duck_held := (not locked) and Input.is_action_pressed(_a("duck"))
 	if state == "duck" and (not duck_held or not is_on_floor()):
 		_set_state("idle")
 	elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.charging:
@@ -623,6 +649,8 @@ func _on_animation_finished() -> void:
 			_unstash()
 			global_position = Vector2(seat.global_position.x, seat.stand_y)
 			body_shape.set_deferred("disabled", false)
+			if Players.coop:
+				seat.occupied = false
 			seat = null
 			velocity = Vector2.ZERO
 			state = "idle"

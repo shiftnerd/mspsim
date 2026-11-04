@@ -14,6 +14,8 @@ const SETS := [
 	"network_closet"
 ]
 
+const PLAYER_SCENE := preload("res://scenes/player.tscn")
+
 var barriers := {}  # npc sync points: key -> {arrived, gen}
 
 var _cam: Camera2D
@@ -62,6 +64,36 @@ func _ready() -> void:
 	if Net.carrying != "" and _room != "network_closet":
 		Net.drop_carry()  # a cable end cannot leave the closet
 		_player.give("")
+	if Players.coop and Players.slot(1).joined:
+		spawn_player2()  # co-op: the second player is already in (a room change keeps the roster)
+
+
+# Co-op phase 1 (docs/scope-coop.md): the second player's body, next to the first. The position is set BEFORE add_child: a body
+# added at (0, 0) would overlap the edge exit in the corner and fire Game.go on spawn. The two bodies pass through each other
+# (collision exceptions both ways): nobody can block the other in a doorway or trap them against a wall. Both bodies use the
+# one camera, which follows slot 0 only in phase 1.
+func spawn_player2() -> Node:
+	var actors := get_node_or_null("Actors")
+	if Game.title_mode or _player == null or actors == null:
+		return null
+	var existing := get_node_or_null("Actors/Player2")
+	if existing != null:
+		return existing
+	var p2: CharacterBody2D = PLAYER_SCENE.instantiate()
+	p2.name = "Player2"
+	p2.slot = 1
+	var side := -1.0 if _player.facing == "left" else 1.0
+	var at: Vector2 = _player.global_position + Vector2(24.0 * side, 0.0)
+	var left := get_node_or_null("WallLeft")
+	var right := get_node_or_null("WallRight")
+	if left != null and right != null:
+		at.x = clampf(at.x, left.position.x + 14.0, right.position.x - 14.0)
+	p2.position = actors.to_local(at)
+	actors.add_child(p2)
+	p2.face(_player.facing)
+	(_player as CollisionObject2D).add_collision_exception_with(p2)
+	p2.add_collision_exception_with(_player)
+	return p2
 
 
 # the first room of a run as a cast member: you are already sitting at your desk
