@@ -590,8 +590,16 @@ func _init() -> void:
 	_check(o.hint() == "ENTER = START  ESC = SKIP  TAB = LOOK", "intro hint in the room: %s" % o.hint())
 	await process_frame
 	_check(absf(me.global_position.x - (-556.0 + Race.world_x(0.0))) < 80.0, "the camera target waits at the start line (%.0f)" % me.global_position.x)
+	var dock: Node = scene.get_node("Fx/Door")
+	_check(dock.goal == 0.0 and dock.open == 0.0 and world.door_open == 0.0, "the overhead door is shut while the grid is set up")
 	o.press(KEY_ENTER)
 	_check(o.phase == "play" and game.ui_open and not me.visible, "ENTER starts the countdown; the player stays frozen")
+	_check(dock.goal == 1.0 and world.door_open == 1.0, "the start rolls the overhead door up (the roll_door fx goal)")
+	for i in 200:  # the door takes 3 s of real frames
+		await process_frame
+		if dock.open >= 1.0:
+			break
+	_check(dock.open >= 1.0 and dock._door != null and dock._door.visible == false, "and it gets all the way up (open %.2f)" % dock.open)
 	o.tick(3.1)
 	_check(o.hint() == "ARROWS = LANE  Z X = PUSH  ESC = LEAVE", "the hint bar says what the keys do")
 	_check(o._room_wants(KEY_Z) and o._room_wants(KEY_UP) and o._room_wants(KEY_ESCAPE) and not o._room_wants(KEY_E), "Z X and the arrows belong to the race, E does not")
@@ -617,8 +625,10 @@ func _init() -> void:
 		if pr.marked:
 			downs += 1
 	_check(o.phase == "result" and o.stars >= 2 and o.g.race.crashes == 0, "the bot wins the race in the warehouse (%d stars, %.1f s)" % [o.stars, o.g.race.total()])
+	_check(dock.goal == 0.0 and world.door_open == 0.0, "the finish rolls the door down again")
 	o.press(KEY_ENTER)
 	await _settle("main_floor")
+	_check(world.door_open == 0.0, "the door is closed for the day after the race")
 	_check(not o.is_open and not game.ui_open and _scene_name() == "main_floor", "closing goes back to where the outing started")
 	_check(not is_instance_valid(track) or track.is_queued_for_deletion(), "and the track is cleared")
 	await process_frame

@@ -33,6 +33,7 @@ func _init() -> void:
 	o.enabled = true
 	c.new_game("tech")
 	world.time_scale = 1.0
+	root.get_node("Difficulty").seed_run(4240)  # pinned: the run seed must not change the order of the dependent outings
 
 	# ---- bowling
 	o.start("bowling")
@@ -152,6 +153,7 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 
 	# ---- dinner
+	root.get_node("Difficulty").seed_run(4241)
 	social.rel["Alan"] = 0
 	var best_score := 0
 	o.start("dinner")

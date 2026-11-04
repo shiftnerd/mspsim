@@ -105,6 +105,7 @@ var goal := 0.0  # roll_door: the state asked for (World.door_open)
 var _door: Sprite2D = null
 var _door_acc := 0.0
 var _door_snd := 0.0
+var _door_loud := false  # the rattle is heard everywhere (the chair race start), not by distance
 
 
 func _ready() -> void:
@@ -1371,6 +1372,23 @@ func door_toggle() -> void:
 	_door_snd = _time + 0.9
 
 
+# the chair race rolls the door up for its start and down again after (the rattle plays at full volume, the door is far
+# from the starting line); a door that was already open is left alone
+func door_set(want: float, loud := false) -> void:
+	goal = clampf(want, 0.0, 1.0)
+	World.door_open = goal
+	_door_loud = loud
+	_door_rattle()
+	_door_snd = _time + 0.9
+
+
+func _door_rattle() -> void:
+	if _door_loud:
+		Sfx.play("door_rattle")
+	else:
+		Sfx.play_near("door_rattle", self)
+
+
 func _door_ready() -> void:
 	add_to_group("roll_door")
 	goal = clampf(World.door_open, 0.0, 1.0)
@@ -1399,7 +1417,7 @@ func _door_tick(delta: float) -> void:
 		return
 	open = move_toward(open, goal, delta / DOOR_SECS)
 	if _time >= _door_snd:
-		Sfx.play_near("door_rattle", self)
+		_door_rattle()
 		_door_snd = _time + 0.9
 	_door_acc += delta
 	var done := is_equal_approx(open, goal)
@@ -1409,7 +1427,11 @@ func _door_tick(delta: float) -> void:
 		_door_acc = 0.0
 		door_apply()
 	if done:
-		Sfx.play_near("door_thunk", self)
+		if _door_loud:
+			Sfx.play("door_thunk")
+		else:
+			Sfx.play_near("door_thunk", self)
+		_door_loud = false
 
 
 # the wall plate: an up button (open, green) and a down button (close, amber); a red light blinks while it rolls
