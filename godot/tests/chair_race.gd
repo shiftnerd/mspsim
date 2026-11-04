@@ -477,6 +477,7 @@ func _init() -> void:
 	_check(o.chair_best.has("normal") and absf(float(o.chair_best.normal) - o.g.race.total()) < 0.02, "the best time is saved (%.2f)" % float(o.chair_best.get("normal", 0.0)))
 	_check(o.g.new_best and not o.lines.is_empty(), "NEW BEST is on the result page: %s" % str(o.lines))
 	_check(o.best["chair"] == o.stars and o.count == 1, "stars and count are recorded like the other games")
+	_check(root.get_node("Career").value("stars.chair") == o.stars, "the career keeps the best chair race stars")
 	_check(social.value("Alan") > before_rel or not c.active, "a good night out makes friends in a campaign")
 	var detail_ok: bool = int(o.g.place) >= 1 and int(o.g.place) <= 4
 	_check(detail_ok, "place %d of %d" % [o.g.place, o.g.race.rivals.size() + 1])
