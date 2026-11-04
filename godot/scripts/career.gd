@@ -18,7 +18,7 @@ extends Node
 const SCREEN := preload("res://scripts/career_screen.gd")
 const VERSION := 1
 const GAMES := ["bowling", "karaoke", "escape", "dinner"]  # the four classic games: FULL HOUSE counts only these
-const WAREHOUSE_GAMES := ["cornhole", "grill", "chair"]  # warehouse games: own count (wh_stars3), WAREHOUSE ALL-STAR
+const WAREHOUSE_GAMES := ["cornhole", "grill", "chair"]  # warehouse games: own count (wh_stars3), WAREHOUSE ALL-STAR (darts is a casual extra: its own stars.darts and the BULLSEYE medal)
 const KNOWN_FIXES := ["password", "spooler", "clear_temp", "reboot", "av", "restore", "adobe", "network", "project"]
 const DEFAULT_MEDALS := [
 	{"id": "ticket_machine", "title": "TICKET MACHINE", "desc": "CLOSE 50 TICKETS", "rules": [["tickets", ">=", 50]]},
@@ -64,6 +64,7 @@ const DEFAULT_MEDALS := [
 	{"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
 	{"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
 	{"id": "warehouse_all_star", "title": "WAREHOUSE ALL-STAR", "desc": "3 STARS IN EACH WAREHOUSE GAME", "rules": [["wh_stars3", ">=", 3]]},
+	{"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -139,6 +140,8 @@ const COUNTERS := [
 	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
 	["", "COOKOUT BEST", "stars.grill", "stars"],
 	["", "CHAIR RACE BEST", "stars.chair", "stars"],
+	["", "DARTS BEST", "stars.darts", "stars"],
+	["", "BULLSEYES", "bulls", "n"],
 	["", "BURGERS SERVED", "burgers_served", "n"],
 	["", "HOT DOGS SERVED", "dogs_served", "n"],
 	["", "LUNCH BREAKS", "lunches", "n"],
@@ -321,6 +324,8 @@ func note_outing(game: String, result: int, info := {}) -> void:
 		return
 	if bool(info.get("lunch", false)):
 		add("lunches")  # a lunch break is not a team outing (PEOPLE PERSON counts those)
+	elif bool(info.get("casual", false)):
+		add("casual_games")  # a quick round at the dart board is not a team outing either
 	else:
 		add("outings")
 	best("stars." + game, result)
@@ -335,6 +340,9 @@ func note_outing(game: String, result: int, info := {}) -> void:
 			best("dinner_best", int(info.get("score", 0)))
 		"cornhole":
 			add("bags_in_hole", int(info.get("holes", 0)))
+		"darts":
+			add("bulls", int(info.get("bulls", 0)))
+			best("darts_best", int(info.get("score", 0)))
 		"grill":
 			add("burgers_served", int(info.get("served", 0)))
 			add("dogs_served", int(info.get("dogs", 0)))

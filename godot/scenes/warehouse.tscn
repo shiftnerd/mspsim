@@ -140,6 +140,32 @@ auto = true
 [node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToKitchenette"]
 shape = SubResource("shape_exit")
 
+[node name="Usechair_rack_1" type="Area2D" parent="Interactables"]
+position = Vector2(-366, 70)
+script = ExtResource("interact")
+target = NodePath("../../Actors/chair_rack_1/Fx")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usechair_rack_1"]
+shape = SubResource("shape_fx")
+
+[node name="Usevending_machine_2" type="Area2D" parent="Interactables"]
+position = Vector2(-277, 70)
+script = ExtResource("interact")
+target = NodePath("../../Actors/vending_machine_2/Fx")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usevending_machine_2"]
+shape = SubResource("shape_fx")
+
+[node name="Usefloor_fan_4" type="Area2D" parent="Interactables"]
+position = Vector2(-192, 70)
+script = ExtResource("interact")
+target = NodePath("../../Actors/floor_fan_4/Fx")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Usefloor_fan_4"]
+shape = SubResource("shape_fx")
+
 [node name="UseSwitch" type="Area2D" parent="Interactables"]
 position = Vector2(-508, 70)
 script = ExtResource("interact")
@@ -213,6 +239,42 @@ target = NodePath("../../Fx/Tree")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseTree"]
 shape = SubResource("shape_fx")
 
+[node name="UsePartsCage" type="Area2D" parent="Interactables"]
+position = Vector2(136, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/PartsCage")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UsePartsCage"]
+shape = SubResource("shape_fx")
+
+[node name="UseBenchPC" type="Area2D" parent="Interactables"]
+position = Vector2(406, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/BenchPC")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseBenchPC"]
+shape = SubResource("shape_fx")
+
+[node name="UseLampChain" type="Area2D" parent="Interactables"]
+position = Vector2(304, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/LampChain")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseLampChain"]
+shape = SubResource("shape_fx")
+
+[node name="UseRadio" type="Area2D" parent="Interactables"]
+position = Vector2(381, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Radio")
+low_priority = true
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseRadio"]
+shape = SubResource("shape_fx")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Daylight" type="Node2D" parent="."]
@@ -266,6 +328,26 @@ position = Vector2(890, 66)
 script = ExtResource("fx")
 kind = "old_tree"
 
+[node name="PartsCage" type="Node2D" parent="Fx"]
+position = Vector2(136, 56)
+script = ExtResource("fx")
+kind = "cage"
+
+[node name="BenchPC" type="Node2D" parent="Fx"]
+position = Vector2(406, 90)
+script = ExtResource("fx")
+kind = "bench_pc"
+
+[node name="LampChain" type="Node2D" parent="Fx"]
+position = Vector2(304, -19)
+script = ExtResource("fx")
+kind = "lamp_chain"
+
+[node name="Radio" type="Node2D" parent="Fx"]
+position = Vector2(374, 86)
+script = ExtResource("fx")
+kind = "radio"
+
 [node name="FlickerLamp" type="Node2D" parent="Fx"]
 position = Vector2(304, -19)
 script = ExtResource("fx")
@@ -296,11 +378,23 @@ centered = false
 offset = Vector2(0, -55)
 texture = ExtResource("prop_chair_rack")
 
+[node name="Fx" type="Node2D" parent="Actors/chair_rack_1"]
+position = Vector2(0, -55)
+script = ExtResource("fx")
+kind = "chair_rack"
+seed_offset = 1
+
 [node name="vending_machine_2" type="Sprite2D" parent="Actors"]
 position = Vector2(-291, 108)
 centered = false
 offset = Vector2(0, -45)
 texture = ExtResource("prop_vending_machine")
+
+[node name="Fx" type="Node2D" parent="Actors/vending_machine_2"]
+position = Vector2(0, -45)
+script = ExtResource("fx")
+kind = "vending_machine"
+seed_offset = 2
 
 [node name="pallet_stack_3" type="Sprite2D" parent="Actors"]
 position = Vector2(-243, 108)
@@ -313,6 +407,12 @@ position = Vector2(-203, 108)
 centered = false
 offset = Vector2(0, -35)
 texture = ExtResource("prop_floor_fan")
+
+[node name="Fx" type="Node2D" parent="Actors/floor_fan_4"]
+position = Vector2(0, -35)
+script = ExtResource("fx")
+kind = "floor_fan"
+seed_offset = 4
 
 [node name="pallet_jack_5" type="Sprite2D" parent="Actors"]
 position = Vector2(107, 108)

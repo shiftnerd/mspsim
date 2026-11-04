@@ -139,7 +139,11 @@ const SCENES := {
 			"cornhole_b": 692,
 			"cornhole_tray": 551,
 			"grill": 769,
-			"old_tree": 896
+			"old_tree": 896,
+			"cage": 136,
+			"bench_pc": 406,
+			"lamp_chain": 304,
+			"radio": 381
 		},
 		"outside_x": -1
 	},

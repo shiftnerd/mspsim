@@ -80,7 +80,14 @@ You can probably guess most of these by looking. Here is the short list of what 
 | **A coworker** | `E` to talk. `C` to ask them to follow you. |
 | **The rubber duck on a monitor** | It squeaks. It stares. It listens. |
 | **The bell on the main floor wall** | Belongs to the sales team. Hands off. |
-| **The dart board** | Throws a dart. It has a comment about your aim. |
+| **The dart board** | Offers a quick round of darts: see [Chapter 6](06-after-work.md#darts). If a round cannot start right now, it just makes a comment about your aim. |
+| **The vending machine** | Takes a coin, clunks, and hands you a soda or a bottle of water. Now and then it eats the quarter. Press `E` again and thump it. |
+| **The chair rack** | Rolls a chair out across the front, squeaking, and takes it back after a while. |
+| **The parts cage** | A peek inside with a flashlight. It is mostly junk. Sometimes it is not. |
+| **The bench PC** | Says how far along the image is. Press `E` again soon after and you restart it. Somebody will notice. |
+| **The pull chain** | Hangs from the high bay light over the back of the warehouse. Pulling it makes the light think about it. |
+| **The radio** | On the bench. Each press tunes the next of three stations, and the fourth turns it off. |
+| **The floor fan** | Starts or stops. It moves the heat around. |
 | **The old Christmas tree** | Look, but also press `E`. Once. See what you find. |
 | **The overhead door and its switch** | Rolls the big door up or down, which is how the lot opens. |
 | **The sink and the toilet** | They work. We will not go into it. |
@@ -110,7 +117,9 @@ Stand anywhere in the closet and every plug in the rack is within reach. Use `Ta
 
 The warehouse is the longest room in the game, so in the wider shapes the camera scrolls to follow you. Walk right and you pass the
 staging racks, the parts cage, a bench with a PC being imaged, the dart board, the cornhole boards, the grill at the dock and the old
-tree at the far end.
+tree at the far end. Most of it can be poked: the vending machine, the chair rack, the parts cage, the bench PC, the pull chain of the light over the back
+room, the radio, the fan, and the tree's lights (the first press on the tree is the one that matters, after that it switches the lights on and off, and now and
+then a bulb pops). None of these ever takes `E` away from a door.
 
 The **overhead door** at the dock is controlled by a switch on the wall and by the door itself. Roll it up and the **doorway to the lot** opens.
 Leave it down and the doorway is locked, and the game says `THE DOOR IS SHUT. ROLL IT UP FIRST.`

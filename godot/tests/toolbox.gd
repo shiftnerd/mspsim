@@ -191,7 +191,7 @@ func _run() -> void:
 	_check(tb.game_id() == "bowling", "right on GAME steps to the next game")
 	_key(tb, KEY_LEFT)
 	_key(tb, KEY_LEFT)
-	_check(tb.game_id() == "grill", "left wraps to the last game")
+	_check(tb.game_id() == "darts", "left wraps to the last game")
 	tb.game_i = 0
 	_key(tb, KEY_ESCAPE)
 	_check(not tb.is_open and not root.get_node("Game").ui_open, "Esc closes")
