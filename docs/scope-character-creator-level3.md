@@ -1,6 +1,6 @@
 # Scope: character creator level 3 (roadmap R15)
 
-Read-only scoping pass (Nov 2026) from the code, nothing was run. Items marked (inference) are unverified. Levels 1 (colours) and 2 (ten prebaked hairstyles, each a complete character) are done.
+**Status: step (b), the overlay pipeline with glasses (4) and facial hair (4), is BUILT (Nov 2026; see CLAUDE.md, Character creator level 3 step b). Steps (a), (c), (d), (e), (f) are open.** Read-only scoping pass (Nov 2026) from the code, nothing was run. Items marked (inference) are unverified. Levels 1 (colours) and 2 (ten prebaked hairstyles, each a complete character) are done.
 
 ## Recommendation: a hybrid, head-only overlay sheets (approach C)
 Hair stays prebaked. Accessories (glasses, facial hair, hats, and later a nametag, lanyard and watch) are small overlay sheets drawn by a sibling `Sprite2D` that does NOT play its own animation: each frame it reads the body sprite's current `animation` and `frame`, adds a `START` offset and looks up a per-frame table, exactly like `held_item.gd` already does for the held cup and headset. It cannot drift (no second timeline), so backwards `sitdown`, one-shots, `pause()` and `_switch_character` are not a problem.
@@ -50,4 +50,4 @@ Hair stays prebaked. Accessories (glasses, facial hair, hats, and later a nameta
 1. **Approach:** head-only overlay sheets (C), with the no-art stopgap (presets, RANDOM, pages, shader patterns, hoodie colour, shorts, pad name grid) first.
 2. **First-release accessories (proposed list, accepted as a starting point):** GLASSES (4): thin rectangular (Dan's), thick black rectangular, round wire, aviator sunglasses. FACIAL HAIR (4): stubble, goatee, full beard, moustache. HATS (6): knit beanie, ball cap, hard hat (a warehouse medal unlock), Santa hat (unlocked from the old Christmas tree), bucket hat, party hat (an outing unlock). EXTRAS: a nametag, a conference-teal lanyard, a watch.
 3. **Clothes:** REAL clothes are wanted (step 6 is in, not optional): shirts (polo, tee, button-down, sweater), bottoms (trousers, jeans, shorts, skirt), shoes (sneakers, boots, dress shoes), on a bare-skin base character, after the overlay accessories ship.
-4. **Order:** (a) no-art stopgap and the page layout; (b) the overlay pipeline with glasses and facial hair; (c) hats with the hair fallback rule and the unlock kinds; (d) nametag, lanyard, watch; (e) mirror preview, Free Play swap, NPC copies; (f) real clothes.
+4. **Order:** (a) no-art stopgap and the page layout; (b) the overlay pipeline with glasses and facial hair (BUILT); (c) hats with the hair fallback rule and the unlock kinds; (d) nametag, lanyard, watch; (e) mirror preview, Free Play swap, NPC copies; (f) real clothes.
