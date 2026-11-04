@@ -180,7 +180,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			Game.go("escape_room" if event.shift_pressed else "bowling_alley", "start")
 			return
 		if event.keycode == KEY_F12 and event.ctrl_pressed:
-			var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_room", "vendor_hall"]
+			var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_a", "breakout_b", "breakout_c", "breakout_d", "vendor_hall"]
 			var here := get_tree().current_scene.scene_file_path.get_file().get_basename()
 			Game.go(venue[(venue.find(here) + 1) % venue.size()], "start")
 			return

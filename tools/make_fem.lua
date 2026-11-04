@@ -2,7 +2,7 @@
 -- blazer, cardigan, skirt, tights), lips and skin tones. The left-facing file is a mirror of the right one.
 -- Run:  dofile("D:/creative/pixelproject/tools/make_fem.lua")  via run_lua_script.
 -- Set the global ONLY = {"office_maya"} before dofile to build a subset.
-local R = "D:/creative/pixelproject/"
+local R = ROOT or "D:/creative/pixelproject/"  -- set the global ROOT = "<checkout>/" to work in a worktree
 local SP = dofile(R .. "tools/sprite_path.lua")  -- character files live in sprites/<group>/
 local OUT = "#17121F"
 local W, H = 40, 64
@@ -73,6 +73,12 @@ local CHARS = {
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#B8BCC4", "#D8DCE4", "#8A8F9A"}, style = "curly",
     shirt = {"#1F5E6E", "#154452", "#E8F0F2"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",
     shoes = {"#3A3A44", "#2A2A33"}, lips = "#B8505A", blouse = "#E8F0F2",
+  },
+
+  expo_regdesk = {   -- the check-in desk: blonde-brown bun, navy blazer over a white blouse, trousers, conference-teal lanyard and badge
+    skin = {"#E8A87C", "#C98458", "#A8643C"}, hair = {"#B88A52", "#D8AC6E", "#8A6234"}, style = "bun",
+    shirt = {"#2E3A58", "#222C44", "#F2F2EA"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",
+    shoes = {"#2A2A33", "#1C1C24"}, lips = "#B8404A", blouse = "#F2F2EA", lanyard = "#1FB6B0",
   },
 
   -- ---- more clients' staff: medical and vet offices have mostly women; the b skins (competitors) are different people
@@ -246,6 +252,21 @@ local function build(name, c)
       local p = col:getPixel(x, y)
       if app.pixelColor.rgbaA(p) > 0 and p ~= hex(OUT) and p ~= hex(c.skin[1]) and p ~= hex(c.skin[2]) then put(col, x, y, hex(c.blouse)) end
     end end
+  end
+
+  -- a conference lanyard: two straps from the neck to the chest and a white name badge with a coloured stripe
+  if c.lanyard then
+    local col = layer(spr, "Collar"):cel(1).image
+    local strap, strap2 = hex(c.lanyard), hex("#0F8A86")
+    local pts = {{17, 24, 1}, {18, 25, 1}, {18, 26, 1}, {19, 27, 1}, {19, 28, 1}, {20, 29, 1}, {20, 30, 1},
+                 {25, 24, 2}, {24, 25, 2}, {24, 26, 2}, {23, 27, 2}, {23, 28, 2}, {22, 29, 2}, {22, 30, 2}}
+    for _, p in ipairs(pts) do put(col, p[1], p[2], p[3] == 1 and strap or strap2) end
+    put(col, 21, 30, strap); put(col, 21, 29, strap)
+    for y = 31, 36 do for x = 18, 24 do put(col, x, y, hex(OUT)) end end          -- badge outline
+    for y = 32, 35 do for x = 19, 23 do put(col, x, y, hex("#F6F6EE")) end end
+    for x = 19, 23 do put(col, x, 32, strap) end                                   -- the stripe
+    put(col, 19, 34, hex("#5A606C")); put(col, 20, 34, hex("#5A606C")); put(col, 21, 34, hex("#5A606C"))
+    put(col, 19, 35, hex("#9AA0AE")); put(col, 20, 35, hex("#9AA0AE"))
   end
 
   -- glasses (copied from Dan's file: same canvas)

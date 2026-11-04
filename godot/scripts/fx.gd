@@ -109,7 +109,8 @@ func _ready() -> void:
 				"sports_tv",
 				"bowl_score",
 				"bench_screen",
-				"tree_lights"
+				"tree_lights",
+				"session_screen"
 			]
 		)
 		or kind.begins_with("neon")
@@ -284,6 +285,8 @@ func _draw() -> void:
 			_draw_lamp()
 		"session_sign":
 			_draw_session_sign()
+		"session_screen":
+			_draw_session_screen()
 		"bell":
 			_draw_bell()
 		"rubber_duck":
@@ -738,6 +741,36 @@ func _draw_session_sign() -> void:
 	for line in lines:
 		PixelFont.draw(self, str(line), Vector2(2.0, y), Color("14566e"), 1)
 		y += 6.0
+
+
+# the screen of a breakout room (SALON A to D) shows the session of that door: round and time, the title, the speaker
+func _draw_session_screen() -> void:
+	var letter := _room.right(1)
+	var st := _screen_style(letter)
+	var info: Dictionary = Expo.room_info("abcd".find(letter), int(st.chars))
+	if info.is_empty():
+		return
+	PixelFont.draw(self, "ROUND %d  %s" % [int(info.round), str(info.time)], Vector2(2, 1), st.head, 1)
+	var lines: Array = info.title
+	var y := 9.0
+	for i in mini(lines.size(), int(st.lines)):
+		PixelFont.draw(self, str(lines[i]), Vector2(2, y), st.title, 1)
+		y += 6.0
+	var who: Array = info.speaker
+	PixelFont.draw(self, str(who[0]), Vector2(2, float(st.h) - 12.0), st.who, 1)
+	PixelFont.draw(self, str(who[1]), Vector2(2, float(st.h) - 6.0), st.head, 1)
+
+
+# text area, letters per line, title lines and colours of each room's screen (blue wall screen, white pull-down, gold display, whiteboard)
+func _screen_style(letter: String) -> Dictionary:
+	match letter:
+		"b":
+			return {"h": 44, "chars": 24, "lines": 3, "head": Color("6a6f7a"), "title": Color("14566e"), "who": Color("8a2434")}
+		"c":
+			return {"h": 40, "chars": 23, "lines": 3, "head": Color("8a93a8"), "title": Color("f2d878"), "who": Color("ffffff")}
+		"d":
+			return {"h": 36, "chars": 25, "lines": 2, "head": Color("6a6f7a"), "title": Color("2a4fb8"), "who": Color("c03030")}
+	return {"h": 40, "chars": 22, "lines": 3, "head": Color("bfe4f8"), "title": Color("ffffff"), "who": Color("f2c94c")}
 
 
 func _draw_lamp() -> void:

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dywo4fa1gtvy3"
-path="res://.godot/imported/row_backs_small.png-267401dd389cb06029b843f68adaaf3c.ctex"
+uid="uid://c2ovukxw5y7ok"
+path="res://.godot/imported/breakout_d.png-e5d22e1c4461ea17af9e00cfc1f9763f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/props/row_backs_small.png"
-dest_files=["res://.godot/imported/row_backs_small.png-267401dd389cb06029b843f68adaaf3c.ctex"]
+source_file="res://assets/sets/breakout_d.png"
+dest_files=["res://.godot/imported/breakout_d.png-e5d22e1c4461ea17af9e00cfc1f9763f.ctex"]
 
 [params]
 

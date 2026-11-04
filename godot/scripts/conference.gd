@@ -515,11 +515,32 @@ const DEFAULT_CHATS := [
 	},
 ]
 var CHATS: Array = DEFAULT_CHATS.duplicate(true)
+# who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
+const SPEAKERS := {
+	"ps101": ["GARY NOVAK", "LABRAT TRAINING"],
+	"ps201": ["GARY NOVAK", "LABRAT TRAINING"],
+	"monitor": ["RAJ PATEL", "BRIGHTLINE IT"],
+	"patch": ["LINDA CHO", "UPTIME PARTNERS"],
+	"oml": ["HAL BRENNER", "DESK COACH LLC"],
+	"docs": ["PAM OKAFOR", "RUNBOOK CO"],
+	"macs": ["TED LOWRY", "ODD MACHINE IT"],
+	"security": ["DEE MARCHETTI", "WEBWOOT SECURITY"],
+	"bdr": ["BRAD LUND", "SHADOWPOINT BACKUP"],
+	"panel": ["FOUR MSP OWNERS", "MODERATED PANEL"],
+	"hipaa": ["RUTH ANSELM", "HEALTHSAFE IT LAW"],
+	"managed": ["STU KAPLAN", "TWO MAN MSP FOUNDER"],
+	"spam": ["IVAN ROSE", "MAILGUARD"],
+	"virt": ["CARL WEBB", "BOXES AND BYTES"],
+	"hood": ["LABRAT ENGINEERS", "PRODUCT TEAM"],
+	"stay": ["FOUR TECHS", "FROM OTHER MSPS"],
+	"qbr": ["NINA FLORES", "CLIENT FIRST IT"],
+	"ransom": ["OMAR SAYED", "DISASTER DRILL"],
+}
 const CROWD := {
 	"resort_lobby":
 	[
 		{
-			"who": "client_dentrec_b",
+			"who": "expo_regdesk",
 			"role": "checkin",
 			"x": 100,
 			"facing": "right",
@@ -583,8 +604,15 @@ const CROWD := {
 			"routine": ["wait:6", "say:2"]
 		},
 	],
-	"breakout_room":
+	"breakout_a":
 	[
+		{
+			"who": "expo_vendj",
+			"role": "speaker",
+			"x": 204,
+			"facing": "left",
+			"routine": ["wait:8", "say:2"]
+		},
 		{
 			"who": "expo_attd",
 			"role": "att:2",
@@ -596,7 +624,85 @@ const CROWD := {
 		{
 			"who": "expo_priya",
 			"role": "att:1",
-			"x": 159,
+			"x": 139,
+			"facing": "right",
+			"seat": "Seat3",
+			"routine": ["wait:8"]
+		},
+	],
+	"breakout_b":
+	[
+		{
+			"who": "expo_dee",
+			"role": "speaker",
+			"x": 214,
+			"facing": "left",
+			"routine": ["wait:8", "say:2"]
+		},
+		{
+			"who": "expo_attb",
+			"role": "att:4",
+			"x": 71,
+			"facing": "right",
+			"seat": "Seat1",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_atta",
+			"role": "att:0",
+			"x": 127,
+			"facing": "right",
+			"seat": "Seat3",
+			"routine": ["wait:8"]
+		},
+	],
+	"breakout_c":
+	[
+		{
+			"who": "expo_vendp",
+			"role": "speaker",
+			"x": 192,
+			"facing": "left",
+			"routine": ["wait:8", "say:2"]
+		},
+		{
+			"who": "expo_tina",
+			"role": "att:3",
+			"x": 91,
+			"facing": "right",
+			"seat": "Seat2",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_attc",
+			"role": "att:5",
+			"x": 123,
+			"facing": "right",
+			"seat": "Seat3",
+			"routine": ["wait:8"]
+		},
+	],
+	"breakout_d":
+	[
+		{
+			"who": "expo_vendg",
+			"role": "speaker",
+			"x": 204,
+			"facing": "left",
+			"routine": ["wait:8", "say:2"]
+		},
+		{
+			"who": "expo_priya",
+			"role": "att:1",
+			"x": 85,
+			"facing": "right",
+			"seat": "Seat1",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_atta",
+			"role": "att:0",
+			"x": 145,
 			"facing": "right",
 			"seat": "Seat3",
 			"routine": ["wait:8"]
@@ -635,7 +741,7 @@ const CROWD := {
 		{
 			"who": "expo_attc",
 			"role": "att:5",
-			"x": 280,
+			"x": 238,
 			"facing": "left",
 			"routine": ["wait:5", "talk:3"]
 		},
@@ -664,6 +770,7 @@ var _met := {}
 var _booths := {}
 var _talked := {}
 var _sign_cache := {}
+var _shown := {}  # the session on the screen of the breakout room you are in (kept until you leave)
 
 
 func _ready() -> void:
@@ -692,6 +799,7 @@ func reset() -> void:
 	_met = {}
 	_booths = {}
 	_talked = {}
+	_shown = {}
 
 
 func to_dict() -> Dictionary:
@@ -883,6 +991,8 @@ func _trip_tick() -> void:
 		Game.vars["conf_booth"] = ""
 		_hall_answer(booth)
 		return
+	if not scene.begins_with("breakout_"):
+		_shown = {}
 	if scene == _seen:
 		return
 	_seen = scene
@@ -900,7 +1010,7 @@ func _trip_tick() -> void:
 						func(_id: String) -> void: Game.go("resort_lobby", "from_ballroom")
 					)
 		"round":
-			if scene == "breakout_room":
+			if scene.begins_with("breakout_"):
 				_enter_breakout()
 		"raffle":
 			if scene == "ballroom":
@@ -947,7 +1057,52 @@ func _enter_breakout() -> void:
 	var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
 	var sessions: Array = menu(rnd)
 	var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
+	_shown = {"door": idx, "round": rnd, "id": str(found.id)}
 	_session(rnd, str(found.id))
+
+
+# the session on the screen of breakout room `door` (0 = A to 3 = D): the one you walked in on, else the round that is on now
+func session_at(door: int) -> Dictionary:
+	if not _shown.is_empty() and int(_shown.door) == door:
+		return _shown
+	var r := clampi(rnd, 0, ROUNDS.size() - 1)
+	var sessions: Array = menu(r)
+	var s: Dictionary = sessions[mini(door, sessions.size() - 1)]
+	return {"door": door, "round": r, "id": str(s.id)}
+
+
+# what the room's screen and sign show: round, time, the title wrapped to `chars` letters, the speaker (name, company)
+func room_info(door: int, chars := 22) -> Dictionary:
+	var at := session_at(door)
+	var found := {}
+	for s in pool(int(at.round)):
+		if str(s.id) == str(at.id):
+			found = s
+	if found.is_empty():
+		return {}
+	var clock := float(CLOCKS[int(at.round)])
+	var hour := int(clock)
+	var minutes := int((clock - float(hour)) * 60.0)
+	return {
+		"id": str(at.id),
+		"round": int(at.round) + 1,
+		"time": "%d:%02d %s" % [hour if hour <= 12 else hour - 12, minutes, "AM" if hour < 12 else "PM"],
+		"title": _wrap(str(found.get("short", found.label)), chars),
+		"speaker": SPEAKERS.get(str(at.id), ["GUEST SPEAKER", "RODENT NATION"]),
+	}
+
+
+func _wrap(text: String, limit: int) -> Array:
+	var lines := []
+	var cur := ""
+	for w in text.split(" "):
+		if cur != "" and cur.length() + 1 + str(w).length() > limit:
+			lines.append(cur)
+			cur = str(w)
+		else:
+			cur = (cur + " " + str(w)).strip_edges()
+	lines.append(cur)
+	return lines
 
 
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
@@ -955,17 +1110,7 @@ func sign_lines(door: int) -> Array:
 	if away and _stage == "round" and rnd < ROUNDS.size():
 		var sessions: Array = menu(rnd)
 		if door < sessions.size():
-			var words := str(sessions[door].get("short", sessions[door].label)).split(" ")
-			var lines := []
-			var cur := ""
-			for w in words:
-				if cur != "" and cur.length() + 1 + str(w).length() > 9:
-					lines.append(cur)
-					cur = str(w)
-				else:
-					cur = (cur + " " + str(w)).strip_edges()
-			lines.append(cur)
-			return lines
+			return _wrap(str(sessions[door].get("short", sessions[door].label)), 9)
 	return []
 
 
@@ -1179,6 +1324,8 @@ func npc_use(npc: Node, _body: Node) -> void:
 		)
 	elif role == "checkin":
 		_checkin()
+	elif role == "speaker":
+		Hints.toast("SHH. THE SPEAKER IS MID-SENTENCE. TAKE A SEAT.", 3.0)
 	elif role == "site:owner":
 		Onsite.interact("owner")
 	elif role.begins_with("site:"):

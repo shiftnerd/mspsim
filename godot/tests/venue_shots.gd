@@ -1,8 +1,10 @@
 extends SceneTree
-# Screenshots of the Rodent Nation venue rooms (renderer needed): user://venue_<room>.png
+# Screenshots of the Rodent Nation venue rooms (renderer needed): user://venue_<room>.png (all four breakout rooms)
 
 var frame := 0
-var rooms := ["resort_lobby", "resort_hall", "ballroom", "breakout_room", "vendor_hall"]
+var rooms := [
+	"resort_lobby", "resort_hall", "ballroom", "breakout_a", "breakout_b", "breakout_c", "breakout_d", "vendor_hall"
+]
 
 
 func _initialize() -> void:
@@ -20,6 +22,12 @@ func _process(_delta: float) -> bool:
 		quit()
 		return false
 	if t == 0:
+		# the trip is on (round 1 to 3 by room) so the easels and screens show real sessions; _seen keeps the session card away
+		var expo := root.get_node("Expo")
+		expo.away = true
+		expo._stage = "round"
+		expo.rnd = i % 3
+		expo._seen = rooms[i]
 		root.get_node("Game").go(rooms[i], "start")
 	elif t == 55:
 		var img := root.get_viewport().get_texture().get_image()
