@@ -328,7 +328,7 @@ func _init() -> void:
 	cg.power = 0.6
 	o.press(KEY_E)
 	o.tick(0.1)
-	_check(cg.phase == "flight" and wp.state == "emote", "E throws: the bag flies and you reach")
+	_check(cg.phase == "flight" and wp.state == "emote" and str(wp.sprite.animation).begins_with("toss_"), "E throws: the bag flies and you toss (the toss pose)")
 	o.tick(1.0)
 	_check(cg.landed.size() == 1 and cg.landed[0].who == "you", "the bag lands on board B")
 	var fxa := current_scene.get_node("Fx/BoardA")
@@ -373,7 +373,8 @@ func _init() -> void:
 	_check(gg.sel == 1, "RIGHT picks the next patty")
 	gg.slots[1].c = [0.45, 0.0]
 	o.press(KEY_E)
-	_check(gg.slots[1].down == 1 and wp.state == "emote", "E flips (you reach)")
+	o.tick(0.05)
+	_check(gg.slots[1].down == 1 and wp.state == "emote" and str(wp.sprite.animation).begins_with("toss_"), "E flips (the toss pose)")
 	var guard3 := 0
 	while o.phase == "play" and guard3 < 4000:
 		guard3 += 1

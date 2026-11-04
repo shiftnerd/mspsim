@@ -36,9 +36,11 @@ DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 
         + [200, 160, 200, 240, 240, 240, 200, 200, 240, 200, 200, 160]
         # seated life (86-123): stretch, scratch, look, yawn, slump, mouse, phone, nod
         + [130, 130, 280, 450, 140] + [140, 160, 150, 150, 150, 140] + [200, 420, 420, 140, 200]
-        + [160, 200, 520, 200, 160] + [260, 400, 700, 300] + [200] * 4 + [180, 200, 420, 420, 180] + [150, 150, 140, 150])
+        + [160, 200, 520, 200, 160] + [260, 400, 700, 300] + [200] * 4 + [180, 200, 420, 420, 180] + [150, 150, 140, 150]
+        # toss (124-129, R29): an underhand throw, the near arm back, through and up
+        + [140, 200, 70, 120, 220, 140])
 NFRAMES = len(DURS)
-assert NFRAMES == 123
+assert NFRAMES == 129
 # animation name -> (first frame, last frame, 1-based, loop)
 ANIMS = {
     "idle": (1, 4, True), "walk": (5, 12, True), "run": (13, 18, True),
@@ -47,7 +49,7 @@ ANIMS = {
     "reach": (43, 45, False), "wave": (46, 49, True), "talk": (50, 53, True),
     "hold": (54, 55, True), "walkhold": (56, 63, True), "sip": (64, 66, False), "sitsip": (67, 69, False), "call": (70, 71, True), "sitcall": (72, 73, True), "dance": (74, 85, True),
     "sitstretch": (86, 90, False), "sitscratch": (91, 96, False), "sitlook": (97, 101, False), "sityawn": (102, 106, False),
-    "sitslump": (107, 110, False), "sitmouse": (111, 114, False), "sitphone": (115, 119, False), "sitnod": (120, 123, False),
+    "sitslump": (107, 110, False), "sitmouse": (111, 114, False), "sitphone": (115, 119, False), "sitnod": (120, 123, False), "toss": (124, 129, False),
     "sitdown": (36, 37, False), "sit": (38, 39, True), "type": (40, 42, True),
 }
 
@@ -3500,7 +3502,7 @@ const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
 const SLOTS := ["beard", "glasses"]  # drawing order, lowest first (hats and the rest are later steps)
 const CELL := 32
-const FRAMES := 123
+const FRAMES := 129
 
 static var _origins := {}
 
@@ -3512,7 +3514,7 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 123 [x, y] pairs
+# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 129 [x, y] pairs
 static func origins(facing: String) -> Array:
     if not _origins.has(facing):
         var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "head_origin_%s.json" % facing))
@@ -3520,7 +3522,7 @@ static func origins(facing: String) -> Array:
     return _origins[facing]
 
 
-# the sheet index of an animation frame (the body sheet is 123 frames; the overlay sheets have the same 123 cells), -1 = none
+# the sheet index of an animation frame (the body sheet is 129 frames; the overlay sheets have the same 129 cells), -1 = none
 static func frame_index(anim: String, frame: int) -> int:
     var parts := anim.rsplit("_", true, 1)
     if parts.size() < 2 or not HELD_ITEM.START.has(parts[0]):
@@ -20191,6 +20193,8 @@ const TABLE := {
     "grill.tickets": [5, 6, 6],
     "grill.time": [85, 75, 68],
     "grill.flare": [0.5, 1.0, 1.5],
+    # hot dogs (R29): the share of the items on the orders that are dogs (0 = a burger-only cookout)
+    "grill.dogs": [0.3, 0.35, 0.4],
     # Q6, the campaigns (read through cf(): only while a campaign runs). tech.*: random ticket interval x (hard = more tickets),
     # SLA window x, chance a quick workaround comes back x. tech.gain / loss and rep.gain / loss: the day report's reputation move x
     # (gains / losses; the tech campaign has its own pair because its reputation climbs fastest).
@@ -22859,6 +22863,10 @@ write("scripts/grill_game.gd", '''extends RefCounted
 # seconds. A flare-up (seeded) makes one patty cook 2.4 times as fast for a few seconds until it is moved. Cozy Easy: no
 # flare-ups, tickets never walk off, the round has twice the time, and a burnt patty is "crispy" (served as well done).
 # Stars: 3 = all but one ticket served and nothing burnt, 2 = all but two, 1 = at least a third (2 or more).
+# HOT DOGS (R29, `params.dogs` = the share of the items that are dogs, 0 = none as before): a slot is a burger or a dog. A dog
+#   cooks 1.3x as fast, reads raw (a side under DOG_RAW), done (both sides from DOG_RAW) or burnt (a side over DOG_BURN), needs
+#   one flip only (window DOG_WIN_LO to DOG_WIN_LO + DOG_WIN_W x window: early or late just spoils a side, it never tears) and
+#   serves a "dog" line of a ticket ("1 DOG"). A fresh slot is a dog when the open orders want more dogs than the grate has.
 
 const SLOTS := 4
 const RAW := 0.35
@@ -22874,12 +22882,18 @@ const REFILL := 1.6
 const LEAD := 1.0  # the first ticket
 const SPREAD := 0.6  # the last ticket arrives at this share of the round
 const PATIENCE := 40.0
+const DOG_RAW := 0.3
+const DOG_BURN := 0.85
+const DOG_RATE := 1.3
+const DOG_WIN_LO := 0.25
+const DOG_WIN_W := 0.45
 const NOTES := ["", "", "NO CHEESE", "SMOKY SAUCE", "EXTRA PICKLES", "NO ONIONS", "LOTS OF KETCHUP"]
 
 var cook_rate := 1.0
 var window := 1.0
 var time := 75.0
 var flare_scale := 1.0
+var dog_share := 0.0
 var cozy := false
 var rng: RandomNumberGenerator
 var names: Array = []
@@ -22891,6 +22905,7 @@ var tickets: Array = []
 var served := 0
 var lost := 0
 var burnt := 0
+var dogs_plated := 0
 var tossed := 0
 var wasted := 0
 var flips := 0
@@ -22908,14 +22923,16 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
     window = float(params.get("window", 1.0))
     time = float(params.get("time", 75.0))
     flare_scale = float(params.get("flare", 1.0))
+    dog_share = clampf(float(params.get("dogs", 0.0)), 0.0, 0.9)
     cozy = bool(params.get("cozy", false))
     if cozy:
         flare_scale = 0.0
     rng = r
     names = who.duplicate() if not who.is_empty() else ["A COWORKER"]
     slots = []
+    var n_dogs := roundi(float(SLOTS) * dog_share)
     for i in SLOTS:
-        slots.append(_fresh())
+        slots.append(_fresh("dog" if i >= SLOTS - n_dogs else "burger"))
     tickets = []
     var n := int(params.get("tickets", 6))
     var gap := (time * SPREAD - LEAD) / float(maxi(1, n - 1))
@@ -22926,6 +22943,7 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
     served = 0
     lost = 0
     burnt = 0
+    dogs_plated = 0
     tossed = 0
     wasted = 0
     flips = 0
@@ -22936,20 +22954,46 @@ func setup(params: Dictionary, who: Array, r: RandomNumberGenerator) -> void:
     msg = "SIX HUNGRY COWORKERS. FIRE UP THE GRILL." if n == 6 else "HUNGRY COWORKERS. FIRE UP THE GRILL."
 
 
-func _fresh() -> Dictionary:
-    return {"on": true, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+func _fresh(kind := "burger") -> Dictionary:
+    return {"on": true, "kind": kind, "c": [0.0, 0.0], "down": 0, "cool": false, "flare": 0.0, "burnt": false, "refill": 0.0, "torn": false, "flipped": 0}
+
+
+# what a new slot holds: a dog when the open orders want more dogs than the grate has (and nothing else is missing more)
+func _next_kind() -> String:
+    if dog_share <= 0.0:
+        return "burger"
+    var want_dog := 0
+    var want_burger := 0
+    for t in tickets:
+        if t.state == "open":
+            want_dog += int(t.need.get("dog", 0)) - int(t.have.get("dog", 0))
+            want_burger += int(t.need.well) + int(t.need.medium) - int(t.have.well) - int(t.have.medium)
+    var on_dog := 0
+    var on_burger := 0
+    for s in slots:
+        if s.on:
+            if s.kind == "dog":
+                on_dog += 1
+            else:
+                on_burger += 1
+    var d := want_dog - on_dog
+    var b := want_burger - on_burger
+    return "dog" if d > b or (d == b and on_dog == 0) else "burger"
 
 
 func _ticket(i: int, at: float) -> Dictionary:
     var count := 1 + int(rng.randf() < 0.55) + int(i % 3 == 2 and rng.randf() < 0.3)
-    var need := {"medium": 0, "well": 0}
+    var need := {"medium": 0, "well": 0, "dog": 0}
     for k in count:
-        need["well" if rng.randf() < 0.55 else "medium"] += 1
+        if dog_share > 0.0 and rng.randf() < dog_share:
+            need["dog"] += 1
+        else:
+            need["well" if rng.randf() < 0.55 else "medium"] += 1
     return {
         "id": i,
         "who": str(names[i % names.size()]),
         "need": need,
-        "have": {"medium": 0, "well": 0},
+        "have": {"medium": 0, "well": 0, "dog": 0},
         "at": at,
         "left": PATIENCE,
         "note": str(NOTES[rng.randi() % NOTES.size()]),
@@ -22968,6 +23012,9 @@ func lines(t: Dictionary) -> Array:
         out.append("%d WELL" % int(t.need.well))
     if int(t.need.medium) > 0:
         out.append("%d MEDIUM" % int(t.need.medium))
+    var dogs := int(t.need.get("dog", 0))
+    if dogs > 0:
+        out.append("%d DOG%s" % [dogs, "S" if dogs > 1 else ""])
     return out
 
 
@@ -22985,15 +23032,27 @@ static func band(c0: float, c1: float) -> String:
     return "medium" if lo < WELL else "well"
 
 
+# a dog is raw, "dog" (done) or burnt
+static func dog_band(c0: float, c1: float) -> String:
+    if maxf(c0, c1) > DOG_BURN:
+        return "burnt"
+    return "raw" if minf(c0, c1) < DOG_RAW else "dog"
+
+
 func doneness(i: int) -> String:
     var s: Dictionary = slots[i]
     if not s.on:
         return "empty"
+    if s.kind == "dog":
+        var d := dog_band(float(s.c[0]), float(s.c[1]))
+        return "dog" if d == "burnt" and cozy else d
     var b := band(float(s.c[0]), float(s.c[1]))
     return "well" if b == "burnt" and cozy else b
 
 
-func flip_range() -> Vector2:
+func flip_range(kind := "burger") -> Vector2:
+    if kind == "dog":
+        return Vector2(DOG_WIN_LO, DOG_WIN_LO + DOG_WIN_W * window)
     return Vector2(WIN_LO, WIN_LO + WIN_W * window)
 
 
@@ -23013,20 +23072,21 @@ func flip(i: int = -1) -> String:
         return ""
     var down: int = s.down
     var v := float(s.c[down])
-    var r := flip_range()
+    var is_dog: bool = s.kind == "dog"
+    var r := flip_range(str(s.kind))
     var res := "sear"
     if v < r.x:
-        s.c[down] = v * 0.5
+        s.c[down] = v * (0.7 if is_dog else 0.5)
         s.torn = true
         res = "stick"
-        msg = "STUCK TO THE GRATE. IT TORE."
+        msg = "ROLLED TOO SOON. THAT SIDE IS PALE." if is_dog else "STUCK TO THE GRATE. IT TORE."
     elif v > r.y:
         s.c[down] = v + 0.06
         res = "char"
         msg = "FLIPPED LATE. THAT SIDE IS CHARRED."
     else:
         good_flips += 1
-        msg = "NICE SEAR."
+        msg = "NICE GRILL MARKS." if is_dog else "NICE SEAR."
     s.down = 1 - down
     s.flipped = int(s.flipped) + 1
     flips += 1
@@ -23055,6 +23115,7 @@ func pull(i: int = -1) -> String:
         return ""
     var d := doneness(at)
     var out := "wasted"
+    var is_dog: bool = s.kind == "dog"
     if d == "raw" or d == "burnt":
         tossed += 1
         out = "tossed"
@@ -23063,7 +23124,7 @@ func pull(i: int = -1) -> String:
     else:
         var hit := {}
         for t in tickets:
-            if t.state == "open" and int(t.have[d]) < int(t.need[d]):
+            if t.state == "open" and int(t.have.get(d, 0)) < int(t.need.get(d, 0)):
                 hit = t
                 break
         if hit.is_empty():
@@ -23071,11 +23132,13 @@ func pull(i: int = -1) -> String:
             msg = "NOBODY ORDERED THAT ONE."
             events.append({"e": "toss", "slot": at})
         else:
-            hit.have[d] += 1
+            hit.have[d] = int(hit.have.get(d, 0)) + 1
             out = "plated"
-            msg = "%s GETS A %s BURGER." % [str(hit.who).to_upper(), d.to_upper()]
+            if is_dog:
+                dogs_plated += 1
+            msg = "%s GETS A %s." % [str(hit.who).to_upper(), "HOT DOG" if is_dog else d.to_upper() + " BURGER"]
             events.append({"e": "plate", "slot": at, "who": hit.who})
-            if int(hit.have.well) >= int(hit.need.well) and int(hit.have.medium) >= int(hit.need.medium):
+            if int(hit.have.well) >= int(hit.need.well) and int(hit.have.medium) >= int(hit.need.medium) and int(hit.have.get("dog", 0)) >= int(hit.need.get("dog", 0)):
                 hit.state = "served"
                 served += 1
                 out = "served"
@@ -23126,16 +23189,17 @@ func _cook(i: int, dt: float) -> void:
     if not s.on:
         s.refill = float(s.refill) - dt
         if float(s.refill) <= 0.0:
-            slots[i] = _fresh()
+            slots[i] = _fresh(_next_kind())
         return
+    var is_dog: bool = s.kind == "dog"
     var mul := COOL_MUL if s.cool else 1.0
     if float(s.flare) > 0.0:
         s.flare = float(s.flare) - dt
         if not s.cool:
             mul *= FLARE_MUL
     var down: int = s.down
-    s.c[down] = minf(1.3, float(s.c[down]) + BASE_RATE * cook_rate * mul * dt)
-    if not s.burnt and maxf(float(s.c[0]), float(s.c[1])) > BURN:
+    s.c[down] = minf(1.3, float(s.c[down]) + BASE_RATE * cook_rate * mul * (DOG_RATE if is_dog else 1.0) * dt)
+    if not s.burnt and maxf(float(s.c[0]), float(s.c[1])) > (DOG_BURN if is_dog else BURN):
         s.burnt = true
         burnt += 1
         events.append({"e": "burnt", "slot": i})
@@ -24314,7 +24378,7 @@ const GAMES := {
         "label": "COOKOUT",
         "cost": 150,
         "blurb":
-        "RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS IN TIME, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND KEEP THE FLARE-UPS UNDER CONTROL.",
+        "RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
         "keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
     },
 }
@@ -24728,6 +24792,13 @@ const SPOTS := {
     "grill": [1262, 1230, 1198, 1166, 1134, 1102],  # the queue to the left of the cook, nearest first
 }
 const TECH_DAYS := [5, 10, 15]
+# the lunch break (R29): days (weeks in the owner campaign) with a midday cookout or cornhole in the warehouse, between 12:00 and
+# 13:30 on the clock, taking LUNCH_LEN hours; Cozy Easy offers it every day that has no evening outing and ages no ticket
+const LUNCH_TECH := [3, 7, 12, 17]
+const LUNCH_OWNER := [2, 7, 12, 17]
+const LUNCH_FROM := 12.0
+const LUNCH_UNTIL := 13.5
+const LUNCH_LEN := 0.75
 const OWNER_WEEKS := [4, 9, 14, 19]
 
 var enabled := false
@@ -24763,6 +24834,9 @@ var _caption := ""
 var _caption_t := 0.0
 var _marks := {}  # speech bubbles to hide: node -> seconds left
 var _offered := false
+var lunches := 0  # lunch breaks taken (a campaign's midday cookout or cornhole, R29)
+var lunch_skips := 0
+var _lunch_offered := false  # today's lunch card has been shown (saved in the resume point)
 
 
 func _ready() -> void:
@@ -24771,7 +24845,11 @@ func _ready() -> void:
     _canvas.visible = false
     add_child(_canvas)
     _canvas.draw.connect(_paint)
-    Campaign.day_started.connect(func(_d: int) -> void: _offered = false)
+    Campaign.day_started.connect(
+        func(_d: int) -> void:
+            _offered = false
+            _lunch_offered = false
+    )
     reset()
 
 
@@ -24785,6 +24863,9 @@ func reset() -> void:
     chair_best = {}
     league = BowlVariety.new_league()
     _offered = false
+    _lunch_offered = false
+    lunches = 0
+    lunch_skips = 0
 
 
 # version 2 saves the dinner tastes and the best star count per song; an older save has neither
@@ -24802,6 +24883,8 @@ func to_dict() -> Dictionary:
         "songs": song_best,
         "league": league,
         "chair": chair_best,
+        "lunches": lunches,
+        "lunch_skips": lunch_skips,
     }
 
 
@@ -24813,6 +24896,8 @@ func from_dict(data: Dictionary) -> void:
     known = data.get("known", {})
     song_best = data.get("songs", {})
     chair_best = data.get("chair", {})
+    lunches = int(data.get("lunches", 0))
+    lunch_skips = int(data.get("lunch_skips", 0))
     league = BowlVariety.new_league()
     for key in data.get("league", {}):
         league[key] = data.league[key]
@@ -24987,6 +25072,76 @@ func maybe_invite() -> void:
     )
 
 
+# ---- the lunch break (R29) -----------------------------------------------------------------------------------------------
+func lunch_day() -> bool:
+    if not Campaign.active or Campaign.mode == "sales" or invite_day():
+        return false
+    if Difficulty.cozy_on():
+        return true
+    return (LUNCH_OWNER if Campaign.mode == "owner" else LUNCH_TECH).has(Campaign.day)
+
+
+# a lunch break is playing (or was the last thing played): the options of the outing carry `lunch`
+func lunch_on() -> bool:
+    return bool(opts.get("lunch", false))
+
+
+func lunch_due() -> bool:
+    if not enabled or _lunch_offered or is_open or busy() or Cards.is_open or Cards.waiting() > 0 or Game.title_mode or Game.busy:
+        return false
+    if World.time_scale <= 0.0 or Story.overtime or Onsite.busy or Onsite.active or Net.carrying != "" or Playbook.is_active():
+        return false
+    if Expo.away or Expo.is_trip_day(Campaign.day) or not lunch_day():
+        return false
+    return World.clock >= LUNCH_FROM and World.clock < LUNCH_UNTIL
+
+
+func maybe_lunch() -> void:
+    if not lunch_due():
+        return
+    _lunch_offered = true
+    party_set = false
+    draw_party()
+    var text := "It is lunch time and the grill is going in the warehouse dock, with the cornhole boards out. A short break, about an hour on the clock, and nobody will mind if you skip it."
+    if Difficulty.cozy_on():
+        text += " Nothing in the queue will mind either."
+    if Campaign.mode == "owner":
+        text += " Lunch is on the company."
+    text += " " + coming_text()
+    Cards.ask(
+        _host(),
+        text,
+        [
+            {"label": "COOKOUT: BURGERS AND DOGS", "id": "grill"},
+            {"label": "CORNHOLE", "id": "cornhole"},
+            {"label": "SKIP LUNCH", "id": "no"},
+        ],
+        func(id: String) -> void: _lunch_answer(id)
+    )
+
+
+func _lunch_answer(id: String) -> void:
+    if id == "no":
+        lunch_skips += 1
+        return
+    for n in World.chars:  # nobody walks off to eat again
+        World.chars[n].lunched = true
+    start(id, false, {"party": party.duplicate(), "lunch": true})
+
+
+# back at work: the break took LUNCH_LEN hours (the queue aged at half the onsite rate, not at all on Cozy Easy)
+func _lunch_after() -> void:
+    if stars >= 0:
+        lunches += 1
+    World.clock = minf(World.DAY_END - 0.25, World.clock + LUNCH_LEN)
+    if not Difficulty.cozy_on():
+        var scale := World.day_len / 600.0
+        for t in Msp.tickets:
+            if t.status != "Closed":
+                t.sla_left = maxf(float(t.sla_total) * 0.35, float(t.sla_left) - LUNCH_LEN * Onsite.SLA_PER_HOUR * 0.5 * scale)
+    Hints.toast("BACK FROM LUNCH. THE QUEUE WAITED." if Difficulty.cozy_on() else "BACK FROM LUNCH. THE QUEUE KEPT TICKING A LITTLE.", 3.0)
+
+
 # the owner pays for the night: "$120 TO $300" (shown on the invitation before the game pick)
 func cost_range() -> String:
     var lo := 100000
@@ -25106,7 +25261,7 @@ func _open(id: String, from_invite: bool) -> void:
     is_open = true
     Game.ui_open = true
     _canvas.visible = true
-    if Campaign.mode == "owner":
+    if Campaign.mode == "owner" and not lunch_on():
         Owner.cash -= int(GAMES[id].cost)
     if id == "chair":
         _chair_setup()
@@ -25152,8 +25307,11 @@ func close() -> void:
         World.end_outing()
         Game.pending_x = _return_x
         Game.go(_return_scene, "start")
+    if lunch_on() and Campaign.active:
+        _lunch_after()
     _traveled = false
     _peek = false
+    opts["lunch"] = false
     finished.emit(game, stars)
 
 
@@ -25176,6 +25334,7 @@ func _process(delta: float) -> void:
         _canvas.queue_redraw()
         return
     maybe_invite()
+    maybe_lunch()
 
 
 func tick(dt: float) -> void:
@@ -25266,7 +25425,7 @@ func _press_page(key: int) -> void:
         else:
             begin_play()
     elif key == KEY_ESCAPE:
-        if Campaign.mode == "owner":
+        if Campaign.mode == "owner" and not lunch_on():
             Owner.cash += int(GAMES[game].cost)
         _finish(-1)
 
@@ -25302,7 +25461,9 @@ func _finish(result: int) -> void:
     stars = result
     phase = "result"
     lines = []
-    if result < 0:
+    if result < 0 and lunch_on():
+        lines.append("YOU HEAD BACK TO YOUR DESK. NOBODY MINDS A SHORT LUNCH.")
+    elif result < 0:
         lines.append("YOU LEFT EARLY. NOBODY SAYS ANYTHING. EVERYBODY NOTICES.")
         Social.change_all(-1)
     else:
@@ -25317,10 +25478,13 @@ func _finish(result: int) -> void:
                 "score": int(g.get("score", 0)),
                 "holes": int(g.game.holes) if game == "cornhole" and g.has("game") else 0,
                 "served": int(g.game.served) if game == "grill" and g.has("game") else 0,
-                "clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2
+                "clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2,
+                "dogs": int(g.game.dogs_plated) if game == "grill" and g.has("game") else 0,
+                "lunch": lunch_on()
             }
         )
-        Social.change_all(1 + result)
+        var liking := (2 if result >= 3 else 1) if lunch_on() else 1 + result
+        Social.change_all(liking)
         if game == "chair":
             lines.append_array(_chair_lines())
         if game == "cornhole":
@@ -25330,11 +25494,11 @@ func _finish(result: int) -> void:
         if Campaign.mode == "sales":
             lines.append_array(SalesCampaign.outing_done(game, result))
         if Campaign.active:
-            lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % (1 + result))
+            lines.append("EVERYONE ON THE TEAM LIKES YOU %d MORE." % liking)
         else:
             lines.append("A GOOD NIGHT OUT. (FREE PLAY: NOTHING IS SCORED.)")
         if Campaign.mode == "owner":
-            var relief := 5.0 + 3.0 * float(result)
+            var relief := (2.0 + float(result)) if lunch_on() else 5.0 + 3.0 * float(result)
             Owner.burnout = clampf(Owner.burnout - relief, 0.0, 100.0)
             Owner.flags["outings"] = int(Owner.flags.get("outings", 0)) + 1
             lines.append("BURNOUT DOWN %d POINTS. THE CREW FEELS SEEN." % int(relief))
@@ -25342,10 +25506,10 @@ func _finish(result: int) -> void:
                 Owner.speed += 0.02
                 lines.append("THEY WORK BETTER TOGETHER NOW: TEAM SPEED UP.")
         elif Campaign.active and Campaign.mode != "sales":
-            var gain := 4.0 + 2.0 * float(result)
+            var gain := (2.0 + float(result)) if lunch_on() else 4.0 + 2.0 * float(result)
             Shift.add_energy(gain)
-            lines.append("ENERGY +%d. A NIGHT OUT HELPS." % int(gain))
-        if result >= 3:
+            lines.append("ENERGY +%d. %s" % [int(gain), "A GOOD LUNCH HELPS." if lunch_on() else "A NIGHT OUT HELPS."])
+        if result >= 3 and not lunch_on():
             Campaign.adjust_rep(1)
             if Campaign.active:
                 lines.append("WORD GETS AROUND ABOUT THIS ONE: REPUTATION +1.")
@@ -27170,7 +27334,7 @@ func cornholers() -> Array:
 
 func _corn_params() -> Dictionary:
     return {
-        "to": Difficulty.i("corn.to"),
+        "to": mini(Difficulty.i("corn.to"), 11) if lunch_on() else Difficulty.i("corn.to"),
         "opp_skill": Difficulty.f("corn.opp_skill"),
         "aim_speed": Difficulty.f("corn.aim_speed"),
         "power_speed": Difficulty.f("corn.power_speed"),
@@ -27223,7 +27387,7 @@ func _corn_cues(cg: RefCounted) -> void:
         var mine: bool = str(cg.flying.get("who", "")) == "you"
         var node := _actor("Player") if mine else _actor(str(cg.opp))
         if room_mode():
-            _pose(node, "reach", 0.7, _x0() + (CORN_B if mine else CORN_A))
+            _pose(node, "toss", 0.9, _x0() + (CORN_B if mine else CORN_A))
     g.last_phase = cg.phase
     if room_mode():
         _corn_keep_held(cg)
@@ -27384,14 +27548,19 @@ func grill_crew() -> Array:
 
 
 func _grill_params() -> Dictionary:
-    return {
+    var p := {
         "cook_rate": Difficulty.f("grill.cook_rate"),
         "window": Difficulty.f("grill.window"),
         "tickets": Difficulty.i("grill.tickets"),
         "time": Difficulty.f("grill.time"),
         "flare": Difficulty.f("grill.flare"),
+        "dogs": Difficulty.f("grill.dogs"),
         "cozy": Difficulty.cozy_on(),
     }
+    if lunch_on():  # a short lunch: two tickets fewer, a fifth less time
+        p["tickets"] = maxi(4, int(p.tickets) - 2)
+        p["time"] = float(p.time) * 0.8
+    return p
 
 
 func _grill_setup() -> void:
@@ -27426,7 +27595,7 @@ func _grill_cues(gg: RefCounted) -> void:
             "flip":
                 Sfx.play("grill_sizzle")
                 if p != null and room_mode():
-                    p.start_emote("reach", 0.5, _x0() + GRILL_X + 60.0)
+                    p.start_emote("toss", 0.9, _x0() + GRILL_X + 60.0)
             "flare":
                 Sfx.play("grill_flare")
             "bell":
@@ -27523,25 +27692,30 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
     for i in rows.size():
         var t: Dictionary = rows[i]
         var ry := tbox.position.y + 3.0 + 9.0 * float(i)
-        var codes := ""
+        var parts := []
         var left_w := int(t.need.well) - int(t.have.well)
         var left_m := int(t.need.medium) - int(t.have.medium)
+        var left_d := int(t.need.dog) - int(t.have.dog)
         if left_w > 0:
-            codes += "%dW" % left_w
+            parts.append("%dW" % left_w)
         if left_m > 0:
-            codes += (" " if codes != "" else "") + "%dM" % left_m
+            parts.append("%dM" % left_m)
+        if left_d > 0:
+            parts.append("%dD" % left_d)
+        var codes := (" " if parts.size() < 3 else "").join(parts)
         _t(str(t.who).to_upper().substr(0, 6), tbox.position.x + 3.0, ry, WHITE)
         _t(codes, tbox.position.x + 28.0, ry, AMBER)
         var frac := clampf(float(t.left) / GrillGame.PATIENCE, 0.0, 1.0) if not gg.cozy else 1.0
-        _canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0, 3.0), UiStyle.MUTED)
-        _canvas.draw_rect(Rect2(tbox.position.x + 50.0, ry + 1.0, 24.0 * frac, 3.0), GREEN if frac > 0.5 else (AMBER if frac > 0.25 else RED))
+        _canvas.draw_rect(Rect2(tbox.position.x + 54.0, ry + 1.0, 20.0, 3.0), UiStyle.MUTED)
+        _canvas.draw_rect(Rect2(tbox.position.x + 54.0, ry + 1.0, 20.0 * frac, 3.0), GREEN if frac > 0.5 else (AMBER if frac > 0.25 else RED))
     # the grate, right: four patties, the up side's colour, the down side's progress under it
     var gbox := Rect2(size.x - 4.0 - 90.0, s.position.y - tall - 1.0, 90.0, tall)
     UiStyle.box(_canvas, gbox)
-    var win: Vector2 = gg.flip_range()
     for i in GrillGame.SLOTS:
         var cell := Rect2(gbox.position.x + 3.0 + 21.0 * float(i), gbox.position.y + 3.0, 20.0, 25.0)
         var slot: Dictionary = gg.slots[i]
+        var dog: bool = slot.kind == "dog"
+        var win: Vector2 = gg.flip_range(str(slot.kind))
         if i == gg.sel:
             _canvas.draw_rect(cell, AMBER)
             _canvas.draw_rect(Rect2(cell.position + Vector2.ONE, cell.size - Vector2(2, 2)), UiStyle.DARK)
@@ -27550,19 +27724,24 @@ func _hud_grill(s: Rect2, size: Vector2) -> void:
             continue
         var up: float = float(slot.c[1 - int(slot.down)])
         var down_v: float = float(slot.c[int(slot.down)])
-        _canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 3.0, 17.0, 10.0), _cook_color(up))
-        _canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 4.0, 15.0, 1.0), Color(1, 1, 1, 0.18))
+        if dog:  # a hot dog: a long, thin body with rounded ends
+            _canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 5.0, 15.0, 6.0), _dog_color(up))
+            _canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 6.0, 17.0, 4.0), _dog_color(up))
+            _canvas.draw_rect(Rect2(cell.position.x + 4.0, cell.position.y + 6.0, 13.0, 1.0), Color(1, 1, 1, 0.2))
+        else:
+            _canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y + 3.0, 17.0, 10.0), _cook_color(up))
+            _canvas.draw_rect(Rect2(cell.position.x + 3.0, cell.position.y + 4.0, 15.0, 1.0), Color(1, 1, 1, 0.18))
         var bar := Rect2(cell.position.x + 2.0, cell.position.y + 15.0, 16.0, 3.0)
         _canvas.draw_rect(bar, UiStyle.MUTED)
         _canvas.draw_rect(Rect2(bar.position.x + 17.0 * win.x, bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
         _canvas.draw_rect(Rect2(bar.position.x + 17.0 * minf(win.y, 1.0), bar.position.y - 1.0, 1.0, 5.0), UiStyle.SOFT)
-        _canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 17.0 * clampf(down_v, 0.0, 1.0), 3.0), _cook_color(down_v))
+        _canvas.draw_rect(Rect2(bar.position.x, bar.position.y, 17.0 * clampf(down_v, 0.0, 1.0), 3.0), _dog_color(down_v) if dog else _cook_color(down_v))
         var tag := str(gg.doneness(i))
         if slot.cool:
             _canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("5aa0e8"))
         elif float(slot.flare) > 0.0:
             _canvas.draw_rect(Rect2(cell.position.x + 2.0, cell.position.y, 17.0, 2.0), Color("f08a30") if int(float(Time.get_ticks_msec()) / 120.0) % 2 == 0 else RED)
-        _t({"raw": "R", "medium": "M", "well": "W", "burnt": "X"}.get(tag, "-"), cell.position.x + 9.0, cell.position.y + 6.0, INK if tag == "raw" else WHITE)
+        _t({"raw": "R", "medium": "M", "well": "W", "dog": "D", "burnt": "X"}.get(tag, "-"), cell.position.x + 9.0, cell.position.y + 6.0, INK if tag == "raw" else WHITE)
 
 
 func _cook_color(v: float) -> Color:
@@ -27573,6 +27752,15 @@ func _cook_color(v: float) -> Color:
     if v < 0.55:
         return Color("c9704f").lerp(Color("8f5233"), (v - 0.35) / 0.2)
     return Color("8f5233").lerp(Color("4a2c1c"), clampf((v - 0.55) / 0.35, 0.0, 1.0))
+
+
+# a hot dog's colour for a side: pink, then red-brown, then dark
+func _dog_color(v: float) -> Color:
+    if v > GrillGame.DOG_BURN:
+        return Color("2a1c18")
+    if v < GrillGame.DOG_RAW:
+        return Color("e58a8a").lerp(Color("c9503a"), v / GrillGame.DOG_RAW)
+    return Color("c9503a").lerp(Color("7a2f1f"), clampf((v - GrillGame.DOG_RAW) / 0.4, 0.0, 1.0))
 
 
 # the overlay version (no room): the numbers
@@ -47959,6 +48147,8 @@ const MEDALS := [
     {"id": "all_sites", "title": "JACK OF ALL SITES", "desc": "FIX JOBS AT 4 SITE TYPES", "rules": [["site_types", ">=", 4]]},
     {"id": "bag_man", "title": "BAG MAN", "desc": "10 BAGS IN THE HOLE", "rules": [["bags_in_hole", ">=", 10]]},
     {"id": "grill_sergeant", "title": "GRILL SERGEANT", "desc": "A COOKOUT, NOTHING BURNT", "rules": [["grill_clean", ">=", 1]]},
+    {"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
+    {"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet).
@@ -48005,6 +48195,8 @@ const COUNTERS := [
     ["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
     ["", "COOKOUT BEST", "stars.grill", "stars"],
     ["", "BURGERS SERVED", "burgers_served", "n"],
+    ["", "HOT DOGS SERVED", "dogs_served", "n"],
+    ["", "LUNCH BREAKS", "lunches", "n"],
     ["", "STRIKES", "bowl_strikes", "n"],
     ["", "GUTTER BALLS", "bowl_gutters", "n"],
     ["", "HOOK STRIKES", "bowl_hook_strikes", "n"],
@@ -48173,7 +48365,10 @@ func note_ticket(fix: String) -> void:
 func note_outing(game: String, result: int, info := {}) -> void:
     if result < 0:
         return
-    add("outings")
+    if bool(info.get("lunch", false)):
+        add("lunches")  # a lunch break is not a team outing (PEOPLE PERSON counts those)
+    else:
+        add("outings")
     best("stars." + game, result)
     match game:
         "karaoke":
@@ -48187,6 +48382,7 @@ func note_outing(game: String, result: int, info := {}) -> void:
             add("bags_in_hole", int(info.get("holes", 0)))
         "grill":
             add("burgers_served", int(info.get("served", 0)))
+            add("dogs_served", int(info.get("dogs", 0)))
             if bool(info.get("clean", false)):
                 best("grill_clean", 1)
 
@@ -52652,8 +52848,8 @@ const MIN_STEP := 0.045  # the least a shade differs from its base in value
 const PATTERNS := ["none", "stripes", "plaid", "checks"]
 const SHORTS := ["none", "shorts"]
 const CHOICES := {"hair_style": HAIR_STYLES, "pattern": PATTERNS, "shorts": SHORTS}  # the list rows of the create step
-const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 123 frames
-const FRAMES := 123
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 129 frames
+const FRAMES := 129
 const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
 const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
@@ -52662,7 +52858,8 @@ const HEMS := [
     255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
     67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
     80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
-    80, 80, 80, 80, 80, 80
+    80, 80, 80, 80, 80, 80,
+    68, 69, 68, 67, 67, 67
 ]
 const SOURCES := [
     ["f3b488", "skin", 0],
@@ -53651,7 +53848,7 @@ func day_dict() -> Dictionary:
         "social": {"day_delta": Social.day_delta, "reopen_loss": Social._reopen_loss, "closed": Social._closed},
         "events": Events.pending.duplicate(true),
         "onsite": {"spawn_at": Onsite._spawn_at, "pet_energy": Onsite._pet_energy},
-        "outings": {"offered": Outings._offered},
+        "outings": {"offered": Outings._offered, "lunch": Outings._lunch_offered},
         "meeting": Meeting.state,
     }
 
@@ -53688,6 +53885,7 @@ func apply_day(d: Dictionary) -> void:
     Onsite._spawn_at = float(on.get("spawn_at", -1.0))
     Onsite._pet_energy = int(on.get("pet_energy", 0))
     Outings._offered = bool(d.get("outings", {}).get("offered", false))
+    Outings._lunch_offered = bool(d.get("outings", {}).get("lunch", false))
     Meeting.state = str(d.get("meeting", ""))
 
 

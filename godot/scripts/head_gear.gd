@@ -15,7 +15,7 @@ const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
 const SLOTS := ["beard", "glasses"]  # drawing order, lowest first (hats and the rest are later steps)
 const CELL := 32
-const FRAMES := 123
+const FRAMES := 129
 
 static var _origins := {}
 
@@ -27,7 +27,7 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 123 [x, y] pairs
+# the cell origins (top left of the 32x32 cell in the 64x80 body frame) of a facing, 129 [x, y] pairs
 static func origins(facing: String) -> Array:
 	if not _origins.has(facing):
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DIR + "head_origin_%s.json" % facing))
@@ -35,7 +35,7 @@ static func origins(facing: String) -> Array:
 	return _origins[facing]
 
 
-# the sheet index of an animation frame (the body sheet is 123 frames; the overlay sheets have the same 123 cells), -1 = none
+# the sheet index of an animation frame (the body sheet is 129 frames; the overlay sheets have the same 129 cells), -1 = none
 static func frame_index(anim: String, frame: int) -> int:
 	var parts := anim.rsplit("_", true, 1)
 	if parts.size() < 2 or not HELD_ITEM.START.has(parts[0]):

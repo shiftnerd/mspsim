@@ -10458,6 +10458,22 @@ GRILL SERGEANT
 [Career.MEDALS.38.desc]
 A COOKOUT, NOTHING BURNT
 
+# Career > MEDALS > 39 > title
+[Career.MEDALS.39.title]
+LUNCH BUNCH
+
+# Career > MEDALS > 39 > desc
+[Career.MEDALS.39.desc]
+TAKE 5 LUNCH BREAKS
+
+# Career > MEDALS > 40 > title
+[Career.MEDALS.40.title]
+DOG DAYS
+
+# Career > MEDALS > 40 > desc
+[Career.MEDALS.40.desc]
+SERVE 20 HOT DOGS
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

@@ -2,14 +2,14 @@ extends SceneTree
 # gdlint:disable=max-line-length
 # Character creator level 3, step b: the head overlay (glasses and facial hair; scripts/head_gear.gd, tools/make_head_sheets.lua,
 # assets/accessories/). Checks: the style list and files; a golden comparison (the overlay composited on the intern body sheet
-# equals a one-off prebaked reference character with the accessory as a real layer, all 123 frames, both facings, two
+# equals a one-off prebaked reference character with the accessory as a real layer, all 129 frames, both facings, two
 # accessories); every accessory pixel fits its 32x32 cell (including the death frames); sync with the body sprite (index and
 # position for every animation frame, backwards sitdown, pause() and a frame set while jumping, a character switch on the real
 # player, an NPC copy's own look); the hurt flash frames 25 and 28 with overlay colours; eyes and brows stay visible under the
 # frames; save and restore of Look.acc through the campaign and the settings file, and old files without it.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/accessories.gd
 
-const NFRAMES := 123
+const NFRAMES := 129
 const CELL := 32
 const FW := 64
 const FH := 80
@@ -143,10 +143,10 @@ func _init() -> void:
 			for facing in ["right", "left"]:
 				var img := _raw("res://assets/accessories/%s_%s_%s.png" % [slot, id, facing])
 				files_ok = files_ok and img.get_width() == CELL * NFRAMES and img.get_height() == CELL
-	_check(files_ok, "every style has a 123 cell sheet per facing (32x32 cells)")
-	_check(_origins("right").size() == NFRAMES and _origins("left").size() == NFRAMES, "one origin table per facing, 123 pairs")
+	_check(files_ok, "every style has a 129 cell sheet per facing (32x32 cells)")
+	_check(_origins("right").size() == NFRAMES and _origins("left").size() == NFRAMES, "one origin table per facing, 129 pairs")
 	_check(gear_script.frame_index("idle_right", 0) == 0 and gear_script.frame_index("hurt_right", 0) == 25 and gear_script.frame_index("death_left", 0) == 28 and gear_script.frame_index("nope_right", 0) == -1, "the START table maps animations to sheet indexes")
-	_check(gear_script.frame_index("sitnod_left", 3) == 122 and gear_script.frame_index("sitnod_left", 4) == -1, "the last frame is 122 and past it hides")
+	_check(gear_script.frame_index("toss_left", 5) == 128 and gear_script.frame_index("toss_left", 6) == -1, "the last frame is 128 and past it hides")
 	# sanitize and the helpers
 	var bad: Dictionary = look.sanitize_acc({"glasses": "monocle", "beard": "full", "hat": "beanie", "beard_color": "#3A5FB0", "frame_color": "red", "junk": 1})
 	_check(bad.glasses == "" and bad.beard == "full" and bad.hat == "" and bad.beard_color == "3a5fb0" and bad.frame_color == "" and not bad.has("junk"), "sanitize_acc drops unknown ids, hats before they exist and bad colours")
@@ -189,7 +189,7 @@ func _init() -> void:
 		for id in look.ACC_STYLES[slot]:
 			for facing in ["right", "left"]:
 				fit = fit and _ring_clear(slot, id, facing)
-	_check(fit, "every accessory pixel is inside its cell with a free border, in all 123 frames (death included)")
+	_check(fit, "every accessory pixel is inside its cell with a free border, in all 129 frames (death included)")
 
 	# ---- the frames sit on the face: eyes and brows stay (sunglasses cover the eyes on purpose)
 	for facing in ["right", "left"]:

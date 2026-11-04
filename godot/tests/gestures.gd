@@ -1,6 +1,6 @@
 extends SceneTree
 # Seated life (R26): every character sheet has the eight seated gestures in both facings (hands json and sheet width match the
-# 123 frames), a seated NPC does a gesture within 18 s and goes back to type, never during a call / a chat / Game.busy, with a
+# 129 frames), a seated NPC does a gesture within 18 s and goes back to type, never during a call / a chat / Game.busy, with a
 # drink only head gestures and the sip, the picker is deterministic from the seed, and the player gestures when seated and idle.
 
 const COUNTS := {
@@ -12,8 +12,9 @@ const COUNTS := {
 	"sitmouse": 4,
 	"sitphone": 5,
 	"sitnod": 4,
+	"toss": 6,
 }
-const NFRAMES := 123
+const NFRAMES := 129
 
 var failures := 0
 var seat_life: GDScript = null  # loaded in _initialize: the autoloads exist by then (preload would compile first)
@@ -69,7 +70,7 @@ func _static_checks() -> void:
 			var tex: Texture2D = load("res://assets/characters/%s_%s.png" % [name, side])
 			if tex.get_width() != NFRAMES * 64:
 				bad += "%s %s sheet width %d; " % [name, side, tex.get_width()]
-	_check(chars >= 56 and bad == "", "all %d characters: 8 gestures x 2 facings, 123 frames, hands json (%s)" % [chars, bad.left(200)])
+	_check(chars >= 56 and bad == "", "all %d characters: 8 gestures and the toss x 2 facings, 129 frames, hands json (%s)" % [chars, bad.left(200)])
 
 
 func _picker_checks() -> void:

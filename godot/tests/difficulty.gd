@@ -129,6 +129,7 @@ func _init() -> void:
 		"grill.tickets": 6.0,
 		"grill.time": 75.0,
 		"grill.flare": 1.0,
+		"grill.dogs": 0.35,
 		"crew.pace": 1.0,
 		"crew.sla": 1.0,
 		"tech.pace": 1.0,

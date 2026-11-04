@@ -237,4 +237,14 @@ add("sitnod", {
   seat({aN = 20, aNr = 60, aF = 25, aFr = 65, hrot = 9, hy = 1, dur = 150}),
 })
 
+-- ---- toss (frames 124-129, R29): an underhand throw for cornhole and the grill flip. The near arm swings back, forward and up ----
+add("toss", {
+  {lean = -1, crouch = 1, aN = -35, aNr = 10, aF = 10, aFr = 20, dur = 140},
+  {lean = -2, crouch = 2, aN = -62, aNr = 6, aF = 14, aFr = 22, hrot = -3, dur = 200},
+  {lean = 1, crouch = 1, aN = 25, aNr = 0, aF = 12, aFr = 20, dur = 70},
+  {lean = 2, aN = 80, aNr = -4, aF = 12, aFr = 20, dur = 120},
+  {lean = 2, aN = 104, aNr = -8, aF = 12, aFr = 20, dur = 220},
+  {lean = 1, aN = 45, aNr = 10, aF = 10, aFr = 20, dur = 140},
+})
+
 return poses, tags
