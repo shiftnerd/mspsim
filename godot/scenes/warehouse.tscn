@@ -78,12 +78,12 @@ shape = SubResource("shape_wall")
 position = Vector2(-496, 118)
 metadata/facing = "right"
 
-[node name="from_main" type="Marker2D" parent="Spawns"]
+[node name="from_kitchenette" type="Marker2D" parent="Spawns"]
 position = Vector2(-496, 118)
 metadata/facing = "right"
 
 [node name="from_closet" type="Marker2D" parent="Spawns"]
-position = Vector2(-496, 118)
+position = Vector2(208, 118)
 metadata/facing = "right"
 
 [node name="from_outing" type="Marker2D" parent="Spawns"]
@@ -92,8 +92,17 @@ metadata/facing = "right"
 
 [node name="Interactables" type="Node2D" parent="."]
 
-[node name="DoorToCloset" type="Area2D" parent="Interactables"]
+[node name="DoorToKitchenette" type="Area2D" parent="Interactables"]
 position = Vector2(-535, 70)
+script = ExtResource("door")
+target_scene = "kitchenette"
+target_spawn = "from_warehouse"
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToKitchenette"]
+shape = SubResource("shape_door")
+
+[node name="DoorToCloset" type="Area2D" parent="Interactables"]
+position = Vector2(173, 70)
 script = ExtResource("door")
 target_scene = "network_closet"
 target_spawn = "from_warehouse"
@@ -101,14 +110,14 @@ target_spawn = "from_warehouse"
 [node name="Shape" type="CollisionShape2D" parent="Interactables/DoorToCloset"]
 shape = SubResource("shape_door")
 
-[node name="ExitToCloset" type="Area2D" parent="Interactables"]
+[node name="ExitToKitchenette" type="Area2D" parent="Interactables"]
 position = Vector2(-552, 60)
 script = ExtResource("door")
-target_scene = "network_closet"
+target_scene = "kitchenette"
 target_spawn = "from_warehouse"
 auto = true
 
-[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToCloset"]
+[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToKitchenette"]
 shape = SubResource("shape_exit")
 
 [node name="UseSwitch" type="Area2D" parent="Interactables"]
@@ -189,7 +198,7 @@ offset = Vector2(0, -35)
 texture = ExtResource("prop_floor_fan")
 
 [node name="pallet_jack_5" type="Sprite2D" parent="Actors"]
-position = Vector2(169, 108)
+position = Vector2(107, 108)
 centered = false
 offset = Vector2(0, -19)
 texture = ExtResource("prop_pallet_jack")
@@ -219,7 +228,7 @@ offset = Vector2(0, -23)
 texture = ExtResource("prop_race_trash_can")
 
 [node name="race_wet_sign_10" type="Sprite2D" parent="Actors" groups=["race_prop"]]
-position = Vector2(153, 108)
+position = Vector2(67, 108)
 centered = false
 offset = Vector2(0, -21)
 texture = ExtResource("prop_race_wet_sign")

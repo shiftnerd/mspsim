@@ -64,39 +64,34 @@ const SCENES := {
 	},
 	"kitchenette":
 	{
-		"x0": 96,
-		"W": 176,
+		"x0": 32,
+		"W": 304,
 		"spawns":
 		{
-			"start": [156, "right"],
-			"from_main": [236, "left"],
-			"from_bath_left": [156, "right"],
-			"from_bath_right": [216, "left"]
+			"start": [92, "right"],
+			"from_main": [308, "left"],
+			"from_bath_left": [92, "right"],
+			"from_bath_right": [152, "left"],
+			"from_warehouse": [222, "left"]
 		},
 		"links":
 		[
-			{"name": "BathLeft", "x": 117, "to": "bathroom_1", "spawn": "from_kitchenette"},
-			{"name": "BathRight", "x": 249, "to": "bathroom_2", "spawn": "from_kitchenette"},
-			{"name": "ToMain", "x": 268, "to": "main_floor", "spawn": "from_kitchen"}
+			{"name": "BathLeft", "x": 53, "to": "bathroom_1", "spawn": "from_kitchenette"},
+			{"name": "BathRight", "x": 185, "to": "bathroom_2", "spawn": "from_kitchenette"},
+			{"name": "ToWarehouse", "x": 258, "to": "warehouse", "spawn": "from_kitchenette"},
+			{"name": "ToMain", "x": 332, "to": "main_floor", "spawn": "from_kitchen"}
 		],
 		"seats": {},
-		"uses": {"coffee": 186, "fridge": 174, "switch": 138},
+		"uses": {"coffee": 122, "fridge": 110, "switch": 74},
 		"outside_x": -1
 	},
 	"cubicle_area":
 	{
 		"x0": 24,
 		"W": 320,
-		"spawns":
-		{
-			"start": [104, "right"],
-			"from_main": [52, "right"],
-			"from_conf": [294, "left"],
-			"from_closet": [323, "left"]
-		},
+		"spawns": {"start": [104, "right"], "from_main": [52, "right"], "from_conf": [294, "left"]},
 		"links":
 		[
-			{"name": "Closet", "x": 323, "to": "network_closet", "spawn": "from_cubicles"},
 			{"name": "ToMain", "x": 28, "to": "main_floor", "spawn": "from_cubicles"},
 			{"name": "ToConference", "x": 340, "to": "conference", "spawn": "from_cubicles"}
 		],
@@ -108,13 +103,8 @@ const SCENES := {
 	{
 		"x0": 112,
 		"W": 144,
-		"spawns":
-		{"start": [182, "right"], "from_cubicles": [172, "right"], "from_warehouse": [230, "left"]},
-		"links":
-		[
-			{"name": "ToCubicles", "x": 133, "to": "cubicle_area", "spawn": "from_closet"},
-			{"name": "ToWarehouse", "x": 252, "to": "warehouse", "spawn": "from_closet"}
-		],
+		"spawns": {"start": [182, "right"], "from_warehouse": [172, "right"]},
+		"links": [{"name": "ToWarehouse", "x": 133, "to": "warehouse", "spawn": "from_closet"}],
 		"seats": {},
 		"uses": {"switch": 154},
 		"outside_x": -1
@@ -126,14 +116,15 @@ const SCENES := {
 		"spawns":
 		{
 			"start": [-496, "right"],
-			"from_main": [-496, "right"],
-			"from_closet": [-496, "right"],
+			"from_kitchenette": [-496, "right"],
+			"from_closet": [208, "right"],
 			"from_outing": [-386, "right"]
 		},
 		"links":
 		[
-			{"name": "ToCloset", "x": -535, "to": "network_closet", "spawn": "from_warehouse"},
-			{"name": "ToCloset", "x": -552, "to": "network_closet", "spawn": "from_warehouse"}
+			{"name": "ToKitchenette", "x": -535, "to": "kitchenette", "spawn": "from_warehouse"},
+			{"name": "ToCloset", "x": 173, "to": "network_closet", "spawn": "from_warehouse"},
+			{"name": "ToKitchenette", "x": -552, "to": "kitchenette", "spawn": "from_warehouse"}
 		],
 		"seats": {},
 		"uses": {"switch": -508, "dart_board": 491},
