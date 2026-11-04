@@ -2639,6 +2639,10 @@ func _ready() -> void:
 
 
 func use(body: Node) -> void:
+    if role == "twin":  # Free Play's copy of the player (World.toggle_twin): no cast chat, no desk
+        _face(body.global_position.x)
+        Hints.toast("SAME LOOK, SAME PERSON", 1.5)
+        return
     if role != "":
         if seat == null:
             _face(body.global_position.x)
@@ -3796,6 +3800,8 @@ var chat_chance := 0.8
 var lights := {}  # room -> bool (a missing room is lit)
 var door_open := 0.0  # the dock door (0 closed, 1 open): kept for the day and in the resume point
 var lights_by_npc := false  # a cast member is flipping a switch (nobody reacts to that)
+var twin_on := false  # Free Play: the TWIN row of the pause menu
+var twin: Node = null  # the twin's NPC in the room (null when off, or between rooms)
 var _outage_t := 0.0  # seconds the network has been down somewhere
 var _closet_sent := false
 
@@ -3962,6 +3968,52 @@ func populate(stage: Node) -> void:
         chars[n].node = null
         if chars[n].scene == _scene:
             _spawn(n)
+    if twin_on:
+        _spawn_twin()
+
+
+# Free Play TWIN (R15 level 3 step e): an NPC copy of the player's custom look, accessories included (npc.gd custom_look, built by
+# Look.copy_look), standing near you in whatever room you are in. The pause menu's TWIN row turns it on and off; an outfit swap makes a new one.
+func toggle_twin() -> void:
+    twin_on = not twin_on
+    remove_twin()
+    if twin_on:
+        _spawn_twin()
+
+
+func remove_twin() -> void:
+    if twin != null and is_instance_valid(twin):
+        if twin.get_parent() != null:
+            twin.get_parent().remove_child(twin)  # at once, so the new twin can take the name
+        twin.queue_free()
+    twin = null
+
+
+func refresh_twin() -> void:
+    if twin_on:
+        remove_twin()
+        _spawn_twin()
+
+
+func _spawn_twin() -> void:
+    if _stage == null or not is_instance_valid(_stage):
+        return
+    var actors := _stage.get_node_or_null("Actors")
+    if actors == null:
+        return
+    var npc: Node = NPC_SCENE.instantiate()
+    npc.name = "Twin"
+    npc.character = Look.BASE
+    npc.custom = true
+    npc.custom_look = Look.copy_look()
+    npc.role = "twin"
+    npc.routine = PackedStringArray(["wait:4", "say:2"])
+    var who := actors.get_node_or_null("Player")
+    var px := float(who.position.x) if who != null else 160.0
+    npc.facing = "left" if px > 160.0 else "right"
+    npc.position = Vector2(clampf(px + (-40.0 if px > 160.0 else 40.0), 24.0, 360.0), FLOOR_Y)
+    actors.add_child(npc)
+    twin = npc
 
 
 func _spawn(n: String) -> void:
@@ -16256,7 +16308,7 @@ func pick(index: int) -> void:
     Sfx.play("ui_pick")
     is_open = false
     _canvas.visible = false
-    Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open
+    Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
     Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
     if id != "__none" and _callback.is_valid():
         _callback.call(id)
@@ -45355,6 +45407,7 @@ write("scripts/toolbox.gd", '''extends CanvasLayer
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
+const CharSelect := preload("res://scripts/charselect.gd")
 const GAMES := ["", "bowling", "karaoke", "escape", "dinner", "printer", "nerf", "chair", "cornhole", "grill"]
 const GAME_LABELS := {
     "": "NONE",
@@ -45375,6 +45428,7 @@ const SETS := 9
 const MAX_TEXT := 12
 
 var is_open := false
+var outfit_open := false  # the Free Play outfit overlay (open_outfit): the create step over the room
 var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
@@ -45394,6 +45448,10 @@ var _on_close := Callable()
 var _canvas: Node2D
 var _rects: Array = []  # [Rect2, kind, index]
 var _was_ui := false
+var _outfit: Node = null  # the CharSelect in overlay mode
+var _outfit_was_ui := false
+var _outfit_was_custom := false  # the player was the custom person when the overlay opened
+var _outfit_char := ""  # ... and this character otherwise
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
@@ -45514,6 +45572,72 @@ func open_tools(from_title := false, on_close := Callable()) -> void:
     mutator = Mutators.forced if not from_title else mutator
     _show("tools", on_close)
     sel = clampi(sel, 0, rows().size() - 1)
+
+
+# ---- the Free Play outfit swap (R15 level 3 step e) ---------------------------------------------------
+func _player() -> Node:
+    var scene := get_tree().current_scene
+    return scene.get_node_or_null("Actors/Player") if scene != null else null
+
+
+func can_outfit() -> bool:
+    return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and _player() != null
+
+
+# Free Play only: Y (not F8: the debug builds jump to a room on it) or the pause menu's OUTFIT row. The create step opens over the room, the preview and the player wear every
+# change live, DONE keeps the look (saved as the default look in the settings file), Esc puts the old person back. Game.ui_open holds
+# the player and the pause menu off meanwhile, and is given back as it was.
+func open_outfit() -> bool:
+    if not can_outfit():
+        return false
+    var who := _player()
+    _outfit_was_custom = Look.is_custom()
+    _outfit_char = str(who.current_character)
+    _outfit_was_ui = Game.ui_open
+    Game.ui_open = true
+    outfit_open = true
+    _outfit = CharSelect.new()
+    add_child(_outfit)
+    _outfit.setup_overlay()
+    _outfit.look_changed.connect(_outfit_live)
+    _outfit.done.connect(_outfit_done)
+    _outfit.cancelled.connect(_outfit_cancelled)
+    _outfit_live()
+    return true
+
+
+# every change in the overlay is worn by the player at once (sheet, palette, HeadGear)
+func _outfit_live() -> void:
+    var who := _player()
+    if who != null:
+        who.wear_look()
+
+
+func _close_outfit() -> void:
+    outfit_open = false
+    Game.ui_open = _outfit_was_ui
+    if _outfit != null:
+        _outfit.queue_free()
+        _outfit = null
+
+
+func _outfit_done(_result: Dictionary) -> void:
+    _close_outfit()
+    _outfit_live()
+    Campaign.refresh_free()  # the cast member you were walks back to their desk
+    World.refresh_twin()
+    Hints.toast("NEW LOOK", 1.5)
+
+
+func _outfit_cancelled() -> void:
+    _close_outfit()
+    var who := _player()
+    if who != null:
+        if _outfit_was_custom:
+            who.wear_look()  # Look.restore already put the old look back
+        else:
+            who._switch_character(_outfit_char)
+    World.refresh_twin()
 
 
 func open_seed(on_close := Callable()) -> void:
@@ -45701,9 +45825,16 @@ func _unhandled_input(event: InputEvent) -> void:
         if can_open() and Campaign.mode == Campaign.FREE:
             open_tools()
             get_viewport().set_input_as_handled()
+    elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
+        if open_outfit():
+            get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:
+    if _outfit != null:  # the outfit overlay owns every key and click (nothing reaches the room behind it)
+        _outfit._unhandled_input(event)
+        get_viewport().set_input_as_handled()
+        return
     if not is_open:
         return
     if Controls.pressed(event):
@@ -45930,6 +46061,7 @@ write("scripts/charselect.gd", '''extends Node2D
 
 signal done(result: Dictionary)
 signal cancelled
+signal look_changed  # the create step changed the look (the outfit overlay wears it on the player at once)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
@@ -45993,6 +46125,27 @@ const CREATE_PAGES := [
     },
 ]
 const CREATE_ACTIONS := ["random", "presets", "done"]  # the bottom row: RANDOM | PRESETS | DONE
+# The mirror preview (R15 level 3 step e): the preview person cycles these poses [animation, label], POSE_SECS each, so every overlay
+# (glasses, beard, hat, nametag, lanyard, watch) and the palette can be judged in motion and seated. TAB (pad Y) holds the pose, < > or
+# , . step it (and hold it), a click on the person holds it, a click on the label chips steps it. The seated gestures are one-shots: a
+# held or long pose replays them.
+const POSES := [
+    ["idle", "IDLE"],
+    ["walk", "WALK"],
+    ["wave", "WAVE"],
+    ["sit", "SIT"],
+    ["type", "TYPE"],
+    ["sitstretch", "STRETCH"],
+    ["sitscratch", "SCRATCH"],
+    ["sitlook", "LOOK"],
+    ["sityawn", "YAWN"],
+    ["sitnod", "NOD"],
+    ["sitphone", "PHONE"],
+    ["sitmouse", "MOUSE"],
+    ["sitslump", "SLUMP"],
+    ["toss", "TOSS"],
+]
+const POSE_SECS := 2.4
 const GRID_COLS := 9  # the pad's letter grid
 const CUSTOM_BLURB := "CHOOSE LOOK AND CLOTHES ON THE PAGES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
@@ -46059,6 +46212,11 @@ var create_row := 0  # the row of the create step: an index into the page's rows
 var create_page := 0  # the page of the create step (_pages())
 var create_col := 0  # the button on the bottom row (CREATE_ACTIONS)
 var create_modal := ""  # "", "presets" (the slot chooser) or "name" (the pad's letter grid)
+var overlay := false  # the Free Play outfit swap (Toolbox.open_outfit): only the create step, over the running room
+var pose_i := 0  # the mirror preview's pose: an index into POSES
+var pose_hold := false  # the pose stays until released
+var _pose_t := 0.0
+var _backup := {}  # Look.snapshot() when the overlay opened: Esc puts it back
 var _pre_row := 0
 var _pre_col := 0
 var _grid_i := 0
@@ -46169,6 +46327,86 @@ func setup(for_mode: String, year2 := false) -> void:
     queue_redraw()
 
 
+# the Free Play outfit swap: the create step alone, editing the player's own look live (Esc restores it, DONE keeps it)
+func setup_overlay() -> void:
+    overlay = true
+    mode = FREE_MODE
+    step = "create"
+    ids = [CUSTOM]
+    sel = 0
+    create_row = 0
+    create_page = 0
+    create_col = 0
+    create_modal = ""
+    pose_i = 0
+    pose_hold = false
+    _pose_t = 0.0
+    facing = "right"
+    _backup = Look.snapshot()
+    Look.active = true  # the preview wears the look even when the player is a stock person right now
+    for spr in _sprites:
+        spr.queue_free()
+    _sprites.clear()
+    var spr := AnimatedSprite2D.new()
+    spr.sprite_frames = Look.frames_for(Look.BASE, true)
+    Look.apply(spr, Look.BASE, true)
+    spr.play("idle_right")
+    add_child(spr)
+    _sprites.append(spr)
+    queue_redraw()
+
+
+func _finish_overlay(keep: bool) -> void:
+    if keep:
+        Look.look["name"] = Look.final_name()
+        Look.save_settings(true)
+        done.emit({"look": Look.look.duplicate(), "acc": Look.acc.duplicate()})
+    else:
+        Look.restore(_backup)
+        cancelled.emit()
+
+
+# ---- the mirror preview's poses
+func pose_anim() -> String:
+    return "%s_%s" % [POSES[pose_i][0], facing]
+
+
+func set_pose(index: int, hold := false) -> void:
+    pose_i = posmod(index, POSES.size())
+    pose_hold = pose_hold or hold
+    _pose_t = 0.0
+    _apply_pose()
+    queue_redraw()
+
+
+func toggle_hold() -> void:
+    pose_hold = not pose_hold
+    _pose_t = 0.0
+    queue_redraw()
+
+
+# the custom card plays the pose (a one-shot gesture that has finished starts again)
+func _apply_pose() -> void:
+    if step != "create" or sel >= _sprites.size():
+        return
+    var spr: AnimatedSprite2D = _sprites[sel]
+    var anim := pose_anim()
+    if spr.sprite_frames == null or not spr.sprite_frames.has_animation(anim):
+        return
+    if spr.animation != anim or not spr.is_playing():
+        spr.play(anim)
+
+
+func _process(delta: float) -> void:
+    if step != "create":
+        return
+    _pose_t += delta
+    if _pose_t >= POSE_SECS and not pose_hold and create_modal == "":
+        set_pose(pose_i + 1)
+        return
+    _apply_pose()
+
+
 func current_id() -> String:
     if is_custom():
         return Look.BASE
@@ -46239,11 +46477,15 @@ func change_tier(delta_tier: int) -> void:
 
 # X (or a click on the SEED chip): type, paste, roll or pick today's seed
 func open_seed() -> void:
+    if overlay:
+        return
     Toolbox.open_seed(func(_go: bool) -> void: queue_redraw())
 
 
 # T (Free Play): the toolbox; GO there starts Free Play and launches the chosen game
 func open_tools() -> void:
+    if overlay:
+        return
     if mode != "free":
         return
     Toolbox.open_tools(true, _tools_closed)
@@ -46267,6 +46509,9 @@ func move(delta_sel: int) -> void:
 
 
 func confirm() -> void:
+    if overlay:
+        _finish_overlay(true)
+        return
     if step == "char" and is_custom():
         step = "create"
         queue_redraw()
@@ -46306,6 +46551,8 @@ func confirm() -> void:
 func back() -> void:
     if step == "create" and create_modal != "":
         close_modal(false)
+    elif overlay:
+        _finish_overlay(false)
     elif step == "build":
         step = "phone" if needs_phone() else ("create" if is_custom() else "char")
         queue_redraw()
@@ -46395,6 +46642,12 @@ func _build_key(event: InputEvent, dir: String) -> bool:
 func _create_input(event: InputEvent) -> bool:
     if create_modal != "":
         return _modal_input(event)
+    if Controls.matches(event, "hold_pose"):
+        toggle_hold()
+        return true
+    if Controls.matches(event, "pose_prev") or Controls.matches(event, "pose_next"):
+        set_pose(pose_i + (-1 if Controls.matches(event, "pose_prev") else 1), true)
+        return true
     var rows := _page_rows()
     var on_name := create_row < rows.size() and str(rows[create_row].kind) == "name"
     if on_name and _type_key(event):
@@ -46657,6 +46910,7 @@ func _refresh_look() -> void:
                 var anim: StringName = _sprites[i].animation
                 _sprites[i].sprite_frames = fr
                 _sprites[i].play(anim)
+    look_changed.emit()
     queue_redraw()
 
 
@@ -46717,6 +46971,10 @@ func _click(at: Vector2) -> void:
             queue_redraw()
         return
     match str(r[1]):
+        "pose":
+            toggle_hold()
+        "pose_prev", "pose_next":
+            set_pose(pose_i + (-1 if str(r[1]) == "pose_prev" else 1), true)
         "tab":
             set_page(int(r[2]))
         "sw":
@@ -46827,15 +47085,16 @@ func _draw() -> void:
     var size := _size()
     var narrow := size.x < 250.0
     _rects.clear()
-    draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.9))
-    var heading: String = {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE"}.get(step, "BUILD YOUR CHARACTER")
+    draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.78 if overlay else 0.9))  # the outfit overlay lets the room show through
+    var heading: String = {"char": "CHOOSE YOUR CHARACTER", "create": "CHANGE YOUR LOOK" if overlay else "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE"}.get(step, "BUILD YOUR CHARACTER")
     _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
     var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
     draw_rect(back_r, PANEL)
     _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
     _rects.append([back_r, "back", 0])
-    _draw_tier(size, narrow)
-    _draw_seed(size, narrow)
+    if not overlay:
+        _draw_tier(size, narrow)
+        _draw_seed(size, narrow)
     if is_campaign() and step == "char":
         _draw_start(size, narrow)
         if Yeartwo.pending:
@@ -46851,16 +47110,20 @@ func _draw() -> void:
     else:
         _place_sprites(size, narrow)
         _draw_phones(size, narrow)
-    _draw_summary(size, narrow)
+    if not overlay:
+        _draw_summary(size, narrow)
     var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
     if step == "create":
         if create_modal != "":
             _ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
         elif narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("Q E PAGE  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _ctxt("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0, DIM)
         else:
-            _ctxt("Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TYPE NAME  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+            var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
+            if float(PixelFont.width(keys)) > size.x - 4.0:
+                keys = "Q E PAGE  ARROWS  TAB HOLD POSE  ENTER GO  ESC BACK"
+            _ctxt(keys, size.y - 9.0, DIM)
         return
     if step == "build":
         if narrow:
@@ -47005,8 +47268,8 @@ func _place_sprites(size: Vector2, narrow: bool) -> void:
             cs.visible = i == sel
             cs.scale = Vector2.ONE
             cs.position = Vector2(float(lay.cx), float(lay.feet) - 40.0)
-            if i == sel and cs.animation != "idle_" + facing:
-                cs.play("idle_" + facing)
+            if i == sel:
+                _apply_pose()
         return
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
     var feet := 83.0 if size.y <= 130.0 else 104.0
@@ -47073,7 +47336,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 # chips take the first row (y0), the page's rows and the RANDOM | PRESETS | DONE row follow
 func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
     if narrow:
-        return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 128.0, "pitch": 14.0}
+        return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 134.0, "pitch": 14.0}
     if size.y <= 130.0:
         return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
     return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
@@ -47104,6 +47367,8 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
     var who := str(Look.look.get("name", ""))
     var cap := who if who != "" else "?"
     _txt(cap, Vector2(floorf(float(lay.cx) - float(PixelFont.width(cap)) * 0.5), float(lay.feet) + 3.0), GOLD)
+    _draw_pose_chips(lay)
+    _draw_chair(lay)
     var rows := _page_rows()
     # the tab chips
     var tx := x0 - 3.0
@@ -47168,6 +47433,42 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
         var rr := Rect2(bx, by + floorf((pitch - 9.0) * 0.5), widths[a], 9.0)
         _chip(rr, str(CREATE_ACTIONS[a]).to_upper(), hot_a, "act", a)
         bx += float(widths[a]) + 4.0
+
+
+# a small office chair under the seated poses (the sheet draws the person sitting on nothing: the rooms bring the chair)
+func _draw_chair(lay: Dictionary) -> void:
+    var anim := str(POSES[pose_i][0])
+    if create_modal != "" or not (anim.begins_with("sit") or anim == "type"):
+        return
+    var dir := 1.0 if facing == "right" else -1.0
+    var cx: float = lay.cx
+    var oy: float = float(lay.feet) - 80.0
+    var dark := Color("2a2f3a")
+    var mid := Color("46506a")
+    for part in [[-14.0, -12.0, 50.0, 24.0, mid], [-12.0, 10.0, 71.0, 3.0, mid], [-2.0, 0.0, 74.0, 4.0, dark], [-9.0, 7.0, 78.0, 2.0, dark]]:
+        var xa: float = cx + dir * float(part[0])
+        var xb: float = cx + dir * float(part[1])
+        draw_rect(Rect2(minf(xa, xb), oy + float(part[2]), absf(xb - xa), float(part[3])), part[4])
+
+
+# the mirror preview's pose line under the name: < POSE > (HOLD in front while it is held); a click on the person holds it
+func _draw_pose_chips(lay: Dictionary) -> void:
+    if create_modal != "":
+        return
+    var cx: float = lay.cx
+    var y: float = float(lay.feet) + 10.0
+    var label := str(POSES[pose_i][1])
+    if pose_hold:
+        label = "HOLD " + label
+    var w := float(PixelFont.width(label))
+    _txt(label, Vector2(floorf(cx - w * 0.5), y), GOLD if pose_hold else DIM)
+    var left := Rect2(floorf(cx - w * 0.5) - 12.0, y - 2.0, 10.0, 9.0)
+    var right := Rect2(floorf(cx + w * 0.5) + 2.0, y - 2.0, 10.0, 9.0)
+    _txt("<", left.position + Vector2(2, 2), GOLD)
+    _txt(">", right.position + Vector2(2, 2), GOLD)
+    _rects.append([left, "pose_prev", 0])
+    _rects.append([right, "pose_next", 0])
+    _rects.append([Rect2(cx - 22.0, float(lay.feet) - 66.0, 44.0, 68.0), "pose", 0])
 
 
 # the presets chooser: three slots with a name and a swatch strip, SAVE HERE / LOAD each, CANCEL
@@ -48453,6 +48754,17 @@ func _load_character(name: String) -> void:
 # hurt would otherwise never emit animation_finished and the state machine would hang)
 func _switch_character(name: String) -> void:
     Look.active = false  # the number keys pick the stock people
+    _reload_sheet(name)
+
+
+# the outfit overlay (Toolbox.open_outfit) is done: wear Look.look and Look.acc now (the sheet of the hairstyle, the palette
+# material, the HeadGear overlay), whoever you were before, without losing the running animation
+func wear_look() -> void:
+    Look.active = true
+    _reload_sheet(Look.BASE)
+
+
+func _reload_sheet(name: String) -> void:
     var anim := sprite.animation
     var frame := sprite.frame
     var progress := sprite.frame_progress
@@ -48483,7 +48795,7 @@ func _unhandled_input(event: InputEvent) -> void:
             give("")
             return
         var i: int = event.keycode - KEY_1
-        if i >= 0 and i < CHARACTERS.size() and not Campaign.active:
+        if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
             _switch_character(CHARACTERS[i])
             Campaign.refresh_free()
 
@@ -57458,7 +57770,7 @@ func _read_presets(cfg: ConfigFile) -> void:
     presets = []
     for i in PRESET_SLOTS:
         var v: Variant = cfg.get_value("looks", "slot%d" % (i + 1), {}) if cfg.has_section("looks") else {}
-        presets.append(sanitize(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
+        presets.append(sanitize_preset(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
 
 
 func load_presets() -> void:
@@ -57483,7 +57795,8 @@ func save_preset(slot: int) -> void:
         presets.append({})
     var keep := look.duplicate()
     keep["name"] = final_name()
-    presets[slot] = sanitize(keep)
+    keep["acc"] = acc.duplicate()  # level 3 step e: a preset keeps the accessories too
+    presets[slot] = sanitize_preset(keep)
     var cfg := ConfigFile.new()
     cfg.load(Difficulty.settings_path)
     cfg.set_value("looks", "slot%d" % (slot + 1), presets[slot])
@@ -57495,8 +57808,36 @@ func load_preset(slot: int) -> bool:
     var p := preset(slot)
     if p.is_empty():
         return false
-    look = p.duplicate()
+    look = sanitize(p)  # the look fields only; the accessories come from the preset's own `acc` (none for an old preset)
+    acc = sanitize_acc(p.get("acc", {}))
     return true
+
+
+# a preset or an NPC copy: the look fields plus its `acc` (checked, locked styles demoted); sanitize() itself leaves `acc` out of Look.look
+func sanitize_preset(d: Dictionary) -> Dictionary:
+    var out := sanitize(d)
+    out["acc"] = sanitize_acc(d.get("acc", {}))
+    return out
+
+
+# the player's look as an NPC copy wears it (npc.gd custom_look, tests/npc_twin.gd): the look fields and the accessories, `over` wins
+func copy_look(over: Dictionary = {}) -> Dictionary:
+    var out := look.duplicate()
+    out["acc"] = acc.duplicate()
+    for key in over:
+        out[key] = over[key]
+    return sanitize_preset(out)
+
+
+# the player's whole look, kept while the outfit overlay edits it live (Esc puts it back)
+func snapshot() -> Dictionary:
+    return {"look": look.duplicate(), "acc": acc.duplicate(), "active": active}
+
+
+func restore(snap: Dictionary) -> void:
+    look = (snap.get("look", look) as Dictionary).duplicate()
+    acc = (snap.get("acc", acc) as Dictionary).duplicate()
+    active = bool(snap.get("active", active))
 # ---- LEVEL 3 STEP B: head accessories ------------------------------------------------------------------
 func default_acc() -> Dictionary:
     var out := {}
@@ -57671,6 +58012,10 @@ const ACTIONS := {
     "pick_prev": [[], [JOY_BUTTON_LEFT_SHOULDER], []],
     "page_prev": [[KEY_Q, KEY_PAGEUP], [JOY_BUTTON_LEFT_SHOULDER], []],  # the create step's pages (R15 level 3)
     "page_next": [[KEY_E, KEY_PAGEDOWN], [JOY_BUTTON_RIGHT_SHOULDER], []],
+    "hold_pose": [[KEY_TAB], [JOY_BUTTON_Y], []],  # the create step's mirror preview: hold the pose / let it cycle (R15 level 3 step e)
+    "pose_prev": [[KEY_COMMA], [], []],
+    "pose_next": [[KEY_PERIOD], [], []],
+    "outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
     "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
     "give_item": [[KEY_G], [], []],
     "phone": [[KEY_P], [JOY_BUTTON_BACK], []],
@@ -57720,7 +58065,7 @@ const HELP := [
             ["CHAIR RACE STEER", "ARROWS"],
             ["BOWLING AND ESCAPE", "E"],
             ["KARAOKE LANES", "ARROWS"],
-            ["SCREEN SHAPE", "F9"],
+            ["SHAPE, OUTFIT", "F9, Y (FREE PLAY)"],
         ],
     ],
 ]
@@ -58101,7 +58446,7 @@ func _ready() -> void:
 # true when there is a room with a player in it and nothing else has the screen
 func can_open(strict := true) -> bool:
     var scene := get_tree().current_scene
-    if scene == null or Game.title_mode or Game.busy or scene.get_node_or_null("Actors/Player") == null:
+    if scene == null or Game.title_mode or Game.busy or Toolbox.outfit_open or scene.get_node_or_null("Actors/Player") == null:
         return false
     if not strict:
         return true
@@ -58154,8 +58499,22 @@ func _labels() -> Array:
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+    elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look, and a copy of it beside you
+        rows.append("OUTFIT")
+        rows.append("TWIN: %s" % ("ON" if World.twin_on else "OFF"))
     rows.append("QUIT TO TITLE")
     return rows
+
+
+# the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "twin", "quit"
+func _row_id(i: int) -> String:
+    var ids := ["resume", "controls", "shape"]
+    if Campaign.active:
+        ids.append("day")
+    elif Campaign.mode == Campaign.FREE:
+        ids.append_array(["outfit", "twin"])
+    ids.append("quit")
+    return ids[clampi(i, 0, ids.size() - 1)]
 
 
 func _activate() -> void:
@@ -58168,8 +58527,16 @@ func _activate() -> void:
             _sel = _labels().size() - 1
         _canvas.queue_redraw()
         return
-    if Campaign.active and _sel == 3:
+    if _row_id(_sel) == "day":
         Difficulty.cycle_day_scale(1)
+        _canvas.queue_redraw()
+        return
+    if _row_id(_sel) == "outfit":
+        close()
+        Toolbox.open_outfit.call_deferred()
+        return
+    if _row_id(_sel) == "twin":
+        World.toggle_twin()
         _canvas.queue_redraw()
         return
     if _sel == _labels().size() - 1:
@@ -58189,7 +58556,7 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    var h := 76.0 + (12.0 if Campaign.active else 0.0)
+    var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -58265,8 +58632,10 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
-        elif not _confirm and _sel == 3 and Campaign.active:
+        elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
+        elif not _confirm and _row_id(_sel) == "twin":
+            World.toggle_twin()
     elif Controls.confirm(event):
         _activate()
         return
@@ -58294,7 +58663,7 @@ func _paint() -> void:
             c.draw_rect(rr, UiStyle.HEAD)
         UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
     var foot := "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME"
-    if not _confirm and Campaign.active and _sel == 3:
+    if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
     UiStyle.footer(c, r, foot)
 

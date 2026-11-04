@@ -22,6 +22,7 @@ extends CanvasLayer
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
+const CharSelect := preload("res://scripts/charselect.gd")
 const GAMES := ["", "bowling", "karaoke", "escape", "dinner", "printer", "nerf", "chair", "cornhole", "grill"]
 const GAME_LABELS := {
 	"": "NONE",
@@ -42,6 +43,7 @@ const SETS := 9
 const MAX_TEXT := 12
 
 var is_open := false
+var outfit_open := false  # the Free Play outfit overlay (open_outfit): the create step over the room
 var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
@@ -61,6 +63,10 @@ var _on_close := Callable()
 var _canvas: Node2D
 var _rects: Array = []  # [Rect2, kind, index]
 var _was_ui := false
+var _outfit: Node = null  # the CharSelect in overlay mode
+var _outfit_was_ui := false
+var _outfit_was_custom := false  # the player was the custom person when the overlay opened
+var _outfit_char := ""  # ... and this character otherwise
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
@@ -181,6 +187,72 @@ func open_tools(from_title := false, on_close := Callable()) -> void:
 	mutator = Mutators.forced if not from_title else mutator
 	_show("tools", on_close)
 	sel = clampi(sel, 0, rows().size() - 1)
+
+
+# ---- the Free Play outfit swap (R15 level 3 step e) ---------------------------------------------------
+func _player() -> Node:
+	var scene := get_tree().current_scene
+	return scene.get_node_or_null("Actors/Player") if scene != null else null
+
+
+func can_outfit() -> bool:
+	return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and _player() != null
+
+
+# Free Play only: Y (not F8: the debug builds jump to a room on it) or the pause menu's OUTFIT row. The create step opens over the room, the preview and the player wear every
+# change live, DONE keeps the look (saved as the default look in the settings file), Esc puts the old person back. Game.ui_open holds
+# the player and the pause menu off meanwhile, and is given back as it was.
+func open_outfit() -> bool:
+	if not can_outfit():
+		return false
+	var who := _player()
+	_outfit_was_custom = Look.is_custom()
+	_outfit_char = str(who.current_character)
+	_outfit_was_ui = Game.ui_open
+	Game.ui_open = true
+	outfit_open = true
+	_outfit = CharSelect.new()
+	add_child(_outfit)
+	_outfit.setup_overlay()
+	_outfit.look_changed.connect(_outfit_live)
+	_outfit.done.connect(_outfit_done)
+	_outfit.cancelled.connect(_outfit_cancelled)
+	_outfit_live()
+	return true
+
+
+# every change in the overlay is worn by the player at once (sheet, palette, HeadGear)
+func _outfit_live() -> void:
+	var who := _player()
+	if who != null:
+		who.wear_look()
+
+
+func _close_outfit() -> void:
+	outfit_open = false
+	Game.ui_open = _outfit_was_ui
+	if _outfit != null:
+		_outfit.queue_free()
+		_outfit = null
+
+
+func _outfit_done(_result: Dictionary) -> void:
+	_close_outfit()
+	_outfit_live()
+	Campaign.refresh_free()  # the cast member you were walks back to their desk
+	World.refresh_twin()
+	Hints.toast("NEW LOOK", 1.5)
+
+
+func _outfit_cancelled() -> void:
+	_close_outfit()
+	var who := _player()
+	if who != null:
+		if _outfit_was_custom:
+			who.wear_look()  # Look.restore already put the old look back
+		else:
+			who._switch_character(_outfit_char)
+	World.refresh_twin()
 
 
 func open_seed(on_close := Callable()) -> void:
@@ -368,9 +440,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if can_open() and Campaign.mode == Campaign.FREE:
 			open_tools()
 			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
+		if open_outfit():
+			get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:
+	if _outfit != null:  # the outfit overlay owns every key and click (nothing reaches the room behind it)
+		_outfit._unhandled_input(event)
+		get_viewport().set_input_as_handled()
+		return
 	if not is_open:
 		return
 	if Controls.pressed(event):
