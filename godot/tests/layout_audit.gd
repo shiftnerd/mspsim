@@ -119,6 +119,14 @@ func _run() -> void:
 
 
 func _title_phase() -> void:
+	# the career and meta files of an earlier format's pass (medals, a finished year) would add CONTINUE entries to the
+	# tech submenu and the second and third format would never reach the character select
+	DirAccess.remove_absolute(root.get_node("Career").path())
+	DirAccess.remove_absolute(root.get_node("Yeartwo").meta_path())
+	for m in ["tech", "owner", "sales", "service"]:  # and so would the saves and resume files the floor phase wrote
+		for slot in 3:
+			DirAccess.remove_absolute(root.get_node("Campaign").save_path(m, slot))
+			DirAccess.remove_absolute(root.get_node("Campaign").resume_path(m, slot))
 	await _scene("res://scenes/title.tscn")
 	var t := current_scene
 	_begin()
@@ -181,7 +189,7 @@ func _title_phase() -> void:
 		root.get_node("Look").look["name"] = "WWWWWWWWWW"
 		await _end("creator " + mode)
 		_begin()
-		cs.create_row = cs.CREATE_ROWS.size() - 1
+		cs.create_row = cs._page_rows().size()
 		cs.queue_redraw()
 		await _end("creator random row " + mode)
 		_begin()
@@ -190,6 +198,32 @@ func _title_phase() -> void:
 		cs.queue_redraw()
 		await _end("creator style row " + mode)
 		root.get_node("Look").look["hair_style"] = "side"
+		# level 3: the CLOTHES page (the longest values), the bottom row on it, the presets chooser, the pad's name grid
+		root.get_node("Look").look["pattern"] = "stripes"
+		root.get_node("Look").look["shorts"] = "shorts"
+		for page_name in ["clothes", "clothes bottom row"]:
+			_begin()
+			cs.set_page(1)
+			cs.create_row = 1 if page_name == "clothes" else cs._page_rows().size()
+			cs.queue_redraw()
+			await _end("creator %s %s" % [page_name, mode])
+		var lk := root.get_node("Look")
+		lk.look["name"] = "WWWWWWWWWW"
+		lk.presets = [lk.look.duplicate(), {}, lk.look.duplicate()]
+		_begin()
+		cs.open_presets()
+		lk.presets = [lk.look.duplicate(), {}, lk.look.duplicate()]
+		cs.queue_redraw()
+		await _end("creator presets " + mode)
+		cs.close_modal()
+		_begin()
+		cs.open_name_grid()
+		cs._grid_i = 29
+		await _end("creator name grid " + mode)
+		cs.close_modal()
+		cs.set_page(0)
+		lk.look["pattern"] = "none"
+		lk.look["shorts"] = "none"
 	t._close_select()
 	await _wait(3)
 	# career screen

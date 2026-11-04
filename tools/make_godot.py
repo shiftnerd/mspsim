@@ -42409,8 +42409,39 @@ const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
 const FREE_MODE := "free"
 const CUSTOM := "custom"  # the MAKE YOUR OWN card: the Look.BASE sheet in the player's own colours (R15, level 1)
-const CREATE_ROWS := ["name", "style", "skin", "hair", "shirt", "pants", "shoes", "random"]
-const CUSTOM_BLURB := "CHOOSE SKIN, HAIR, SHIRT, PANTS AND SHOES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
+# The create step's pages and rows are DATA (R15 level 3): a page is {id, label, rows}, a row {kind, label, id}. Kinds:
+# "name" (the text box: typed, or the pad's letter grid), "choice" (a list in Look.CHOICES[id], < > chips) and "swatch" (the
+# colours of Look.SWATCHES[id]). A new option, say the extras glasses, is ONE line here plus its Look.CHOICES list; a page
+# with no rows has no tab (EXTRAS shows its `empty` text only if it is ever reached).
+const CREATE_PAGES := [
+    {
+        "id": "look",
+        "label": "LOOK",
+        "rows":
+        [
+            {"kind": "name", "label": "NAME"},
+            {"kind": "choice", "id": "hair_style", "label": "STYLE"},
+            {"kind": "swatch", "id": "skin", "label": "SKIN"},
+            {"kind": "swatch", "id": "hair", "label": "HAIR"},
+        ],
+    },
+    {
+        "id": "clothes",
+        "label": "CLOTHES",
+        "rows":
+        [
+            {"kind": "swatch", "id": "shirt", "label": "SHIRT"},
+            {"kind": "choice", "id": "pattern", "label": "PATTERN"},
+            {"kind": "swatch", "id": "pants", "label": "PANTS"},
+            {"kind": "choice", "id": "shorts", "label": "BOTTOM"},
+            {"kind": "swatch", "id": "shoes", "label": "SHOES"},
+        ],
+    },
+    {"id": "extras", "label": "EXTRAS", "empty": "ACCESSORIES COME SOON", "rows": []},
+]
+const CREATE_ACTIONS := ["random", "presets", "done"]  # the bottom row: RANDOM | PRESETS | DONE
+const GRID_COLS := 9  # the pad's letter grid
+const CUSTOM_BLURB := "CHOOSE LOOK AND CLOTHES ON THE PAGES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
 const PEOPLE := {
     "office_intern":
     {
@@ -42471,7 +42502,14 @@ var ids: Array = []
 var sel := 0
 var phone_sel := 0
 var facing := "right"
-var create_row := 0  # the row of the create step (CREATE_ROWS)
+var create_row := 0  # the row of the create step: an index into the page's rows, one past the last = the RANDOM | PRESETS | DONE row
+var create_page := 0  # the page of the create step (_pages())
+var create_col := 0  # the button on the bottom row (CREATE_ACTIONS)
+var create_modal := ""  # "", "presets" (the slot chooser) or "name" (the pad's letter grid)
+var _pre_row := 0
+var _pre_col := 0
+var _grid_i := 0
+var _name_backup := ""
 var _sprites: Array = []
 var _rects: Array = []  # [Rect2, kind, index] for the mouse
 var _born := -1
@@ -42555,6 +42593,9 @@ func setup(for_mode: String, year2 := false) -> void:
     if offers_custom(mode) and Look.active:
         sel = 0  # the last new run was a custom person
     create_row = 0
+    create_page = 0
+    create_col = 0
+    create_modal = ""
     phone_sel = 1 if Phone.os == "android" else 0
     _panel = null
     _confirmed = false
@@ -42710,7 +42751,9 @@ func confirm() -> void:
 
 
 func back() -> void:
-    if step == "build":
+    if step == "create" and create_modal != "":
+        close_modal(false)
+    elif step == "build":
         step = "phone" if needs_phone() else ("create" if is_custom() else "char")
         queue_redraw()
     elif step == "phone":
@@ -42797,23 +42840,36 @@ func _build_key(event: InputEvent, dir: String) -> bool:
 
 
 func _create_input(event: InputEvent) -> bool:
-    if create_row == 0 and _type_key(event):
+    if create_modal != "":
+        return _modal_input(event)
+    var rows := _page_rows()
+    var on_name := create_row < rows.size() and str(rows[create_row].kind) == "name"
+    if on_name and _type_key(event):
         queue_redraw()
         return true
+    if Controls.matches(event, "page_prev") or Controls.matches(event, "page_next"):
+        var letter: bool = event is InputEventKey and event.keycode in [KEY_Q, KEY_E]
+        if not (letter and on_name):  # Q and E are letters on the NAME row (a pad's shoulder buttons always turn the page)
+            _turn_page(-1 if Controls.matches(event, "page_prev") else 1)
+            return true
     return _create_key(event, Controls.nav(event))
 
 
-# the create step: Up / Down pick a row, Left / Right change it (the NAME row steps through suggested names, RANDOM rolls a
-# person), Enter on RANDOM rolls, Enter on any other row goes on
+# the create step: Up / Down pick a row (the last one is the RANDOM | PRESETS | DONE row), Left / Right change it (on the last
+# row they pick the button), Enter or a pad's A presses the button, on the NAME row a pad opens the letter grid, Enter on any
+# other row goes on
 func _create_key(event: InputEvent, dir: String) -> bool:
+    var n := _page_rows().size() + 1
     if dir == "up":
-        create_row = (create_row + CREATE_ROWS.size() - 1) % CREATE_ROWS.size()
+        create_row = (create_row + n - 1) % n
     elif dir == "down":
-        create_row = (create_row + 1) % CREATE_ROWS.size()
+        create_row = (create_row + 1) % n
     elif dir == "left" or dir == "right":
         _create_change(-1 if dir == "left" else 1)
-    elif Controls.confirm(event) and CREATE_ROWS[create_row] == "random":
-        roll_look()
+    elif Controls.confirm(event) and create_row == n - 1:
+        _press_action(CREATE_ACTIONS[create_col])
+    elif Controls.confirm(event) and not event is InputEventKey and str(_page_rows()[create_row].kind) == "name":
+        open_name_grid()
     else:
         return false
     queue_redraw()
@@ -42821,16 +42877,57 @@ func _create_key(event: InputEvent, dir: String) -> bool:
 
 
 func _create_change(delta: int) -> void:
-    var role: String = CREATE_ROWS[create_row]
-    if role == "name":
-        Look.cycle_name(delta)
-    elif role == "style":
-        Look.cycle_style(delta)
-    elif role == "random":
-        roll_look()
-    else:
-        Look.set_swatch(role, maxi(0, Look.swatch_index(role)) + delta)
+    var rows := _page_rows()
+    if create_row >= rows.size():
+        create_col = (create_col + delta + CREATE_ACTIONS.size()) % CREATE_ACTIONS.size()
+        return
+    var row: Dictionary = rows[create_row]
+    match str(row.kind):
+        "name":
+            Look.cycle_name(delta)
+        "choice":
+            Look.cycle_choice(str(row.id), delta)
+        "swatch":
+            Look.set_swatch(str(row.id), maxi(0, Look.swatch_index(str(row.id))) + delta)
     _refresh_look()
+
+
+func _press_action(action: String) -> void:
+    match action:
+        "random":
+            roll_look()
+        "presets":
+            open_presets()
+        "done":
+            confirm()
+
+
+# ---- pages ----
+# the pages with rows (an empty EXTRAS page has no tab until its rows land)
+func _pages() -> Array:
+    var out: Array = []
+    for p in CREATE_PAGES:
+        if not (p.rows as Array).is_empty():
+            out.append(p)
+    return out
+
+
+func _page_rows() -> Array:
+    var pages := _pages()
+    create_page = clampi(create_page, 0, pages.size() - 1)
+    return pages[create_page].rows
+
+
+func _turn_page(delta: int) -> void:
+    set_page(create_page + delta)
+
+
+func set_page(index: int) -> void:
+    var n := _pages().size()
+    var was_bottom := create_row >= _page_rows().size()
+    create_page = (index % n + n) % n
+    create_row = _page_rows().size() if was_bottom else mini(create_row, _page_rows().size())
+    queue_redraw()
 
 
 # typing on the NAME row: letters, digits, space and dash are added, Backspace deletes (an empty name lets Backspace go back)
@@ -42858,6 +42955,124 @@ func _type_key(event: InputEvent) -> bool:
         Look.look["name"] = buf + ch.to_upper()
     _refresh_look()
     return true
+
+
+# ---- the two small modals: the presets chooser and the pad's letter grid ----
+func open_presets() -> void:
+    Look.load_presets()
+    create_modal = "presets"
+    _pre_row = 0
+    _pre_col = 0
+    queue_redraw()
+
+
+func open_name_grid() -> void:
+    create_modal = "name"
+    _name_backup = str(Look.look.get("name", ""))
+    _grid_i = 0
+    queue_redraw()
+
+
+func close_modal(keep := true) -> void:
+    if create_modal == "name" and not keep:
+        Look.look["name"] = _name_backup
+        _refresh_look()
+    create_modal = ""
+    queue_redraw()
+
+
+# the letter grid: A to Z and the dash in 3 rows of 9, then SPACE, DEL and DONE across the bottom row
+func grid_cells() -> Array:
+    var out: Array = []
+    var letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
+    for i in letters.length():
+        out.append({"label": letters[i], "ch": letters[i], "row": floori(float(i) / GRID_COLS), "col": i % GRID_COLS, "span": 1})
+    out.append({"label": "SP", "ch": " ", "row": 3, "col": 0, "span": 2})
+    out.append({"label": "DEL", "ch": "del", "row": 3, "col": 2, "span": 3})
+    out.append({"label": "DONE", "ch": "done", "row": 3, "col": 5, "span": 4})
+    return out
+
+
+func _grid_press(i: int) -> void:
+    var ch := str(grid_cells()[i].ch)
+    var buf := str(Look.look.get("name", ""))
+    if ch == "done":
+        Look.look["name"] = Look.final_name()
+        close_modal()
+        _refresh_look()
+        return
+    if ch == "del":
+        Look.look["name"] = buf.left(maxi(0, buf.length() - 1))
+    elif buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
+        Look.look["name"] = buf + ch
+    _refresh_look()
+
+
+func _grid_move(dir: String) -> void:
+    var cells := grid_cells()
+    var cur: Dictionary = cells[_grid_i]
+    var row := int(cur.row)
+    if dir == "left" or dir == "right":
+        var same: Array = []
+        for i in cells.size():
+            if int(cells[i].row) == row:
+                same.append(i)
+        _grid_i = same[(same.find(_grid_i) + (1 if dir == "right" else -1) + same.size()) % same.size()]
+        return
+    var target := (row + (1 if dir == "down" else 3)) % 4
+    var cx := float(cur.col) + float(cur.span) * 0.5
+    var best := -1
+    var best_d := 1000.0
+    for i in cells.size():
+        if int(cells[i].row) == target:
+            var d := absf(float(cells[i].col) + float(cells[i].span) * 0.5 - cx)
+            if d < best_d:
+                best = i
+                best_d = d
+    _grid_i = best
+
+
+# every key while a modal is open (the rest of the step is out of reach)
+func _modal_input(event: InputEvent) -> bool:
+    var dir := Controls.nav(event)
+    if create_modal == "name":
+        if _type_key(event):  # a keyboard still types
+            queue_redraw()
+            return true
+        if Controls.back(event):
+            close_modal(false)
+        elif dir != "":
+            _grid_move(dir)
+        elif Controls.confirm(event):
+            _grid_press(_grid_i)
+        queue_redraw()
+        return true
+    if Controls.back(event):
+        close_modal()
+    elif dir == "up":
+        _pre_row = (_pre_row + 3) % (Look.PRESET_SLOTS + 1)
+    elif dir == "down":
+        _pre_row = (_pre_row + 1) % (Look.PRESET_SLOTS + 1)
+    elif dir == "left" or dir == "right":
+        _pre_col = 1 - _pre_col
+    elif Controls.confirm(event):
+        _preset_press(_pre_row, _pre_col)
+    queue_redraw()
+    return true
+
+
+# SAVE HERE (col 0) or LOAD (col 1) on a slot row, CANCEL on the last
+func _preset_press(row: int, col: int) -> void:
+    if row >= Look.PRESET_SLOTS:
+        close_modal()
+    elif col == 0:
+        Look.save_preset(row)
+    elif Look.load_preset(row):
+        close_modal()
+        _refresh_look()  # the look is worn live in the preview
+    else:
+        Hints.toast("THAT SLOT IS EMPTY", 1.5)
+    queue_redraw()
 
 
 func roll_look() -> void:
@@ -42894,11 +43109,8 @@ func _hover(at: Vector2) -> void:
         if step == "build":
             _panel.hover(kind, int(r[2]))
             queue_redraw()
-    elif step == "create" and kind in ["sw", "row", "name_prev", "name_next", "style_prev", "style_next", "random"]:
-        var row := _create_row_of(r)
-        if row != create_row:
-            create_row = row
-            queue_redraw()
+    elif step == "create" and kind in ["sw", "row", "name_box", "ch_prev", "ch_next", "act", "pre_save", "pre_load", "pre_cancel", "gcell"]:
+        _create_hover(r)
     elif kind == "item" and step == "char" and sel != int(r[2]):
         sel = int(r[2])
         queue_redraw()
@@ -42907,18 +43119,25 @@ func _hover(at: Vector2) -> void:
         queue_redraw()
 
 
-# the create row a mouse rect belongs to
-func _create_row_of(r: Array) -> int:
-    match str(r[1]):
-        "sw":
-            return floori(float(r[2]) / 100.0)
-        "row":
-            return int(r[2])
-        "random":
-            return CREATE_ROWS.size() - 1
-        "style_prev", "style_next":
-            return CREATE_ROWS.find("style")
-    return 0
+# a mouse move over a create rect picks that row, button or modal cell
+func _create_hover(r: Array) -> void:
+    var kind := str(r[1])
+    var index := int(r[2])
+    if kind == "pre_save" or kind == "pre_load":
+        _pre_row = index
+        _pre_col = 0 if kind == "pre_save" else 1
+    elif kind == "pre_cancel":
+        _pre_row = Look.PRESET_SLOTS
+    elif kind == "gcell":
+        _grid_i = index
+    elif kind == "act":
+        create_row = _page_rows().size()
+        create_col = index
+    elif kind == "sw":
+        create_row = floori(float(index) / 100.0)
+    else:
+        create_row = index
+    queue_redraw()
 
 
 func _click(at: Vector2) -> void:
@@ -42931,24 +43150,34 @@ func _click(at: Vector2) -> void:
             queue_redraw()
         return
     match str(r[1]):
+        "tab":
+            set_page(int(r[2]))
         "sw":
             create_row = floori(float(r[2]) / 100.0)
-            Look.set_swatch(str(CREATE_ROWS[create_row]), int(r[2]) % 100)
+            Look.set_swatch(str(_page_rows()[create_row].id), int(r[2]) % 100)
             _refresh_look()
         "row":
             create_row = int(r[2])
             queue_redraw()
-        "name_prev", "name_next":
-            create_row = 0
-            Look.cycle_name(-1 if str(r[1]) == "name_prev" else 1)
-            _refresh_look()
-        "style_prev", "style_next":
-            create_row = CREATE_ROWS.find("style")
-            Look.cycle_style(-1 if str(r[1]) == "style_prev" else 1)
-            _refresh_look()
-        "random":
-            create_row = CREATE_ROWS.size() - 1
-            roll_look()
+        "name_box":
+            create_row = int(r[2])
+            open_name_grid()
+        "ch_prev", "ch_next":
+            create_row = int(r[2])
+            _create_change(-1 if str(r[1]) == "ch_prev" else 1)
+        "act":
+            create_row = _page_rows().size()
+            create_col = int(r[2])
+            _press_action(CREATE_ACTIONS[create_col])
+        "pre_save", "pre_load":
+            _pre_row = int(r[2])
+            _pre_col = 0 if str(r[1]) == "pre_save" else 1
+            _preset_press(_pre_row, _pre_col)
+        "pre_cancel":
+            close_modal()
+        "gcell":
+            _grid_i = int(r[2])
+            _grid_press(_grid_i)
         "go":
             confirm()
         "back":
@@ -43058,11 +43287,13 @@ func _draw() -> void:
     _draw_summary(size, narrow)
     var extra := "T TOOLS" if mode == "free" else ("TAB START M MUT B BAN" if Yeartwo.pending else "TAB START")
     if step == "create":
-        if narrow:
+        if create_modal != "":
+            _ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+        elif narrow:
             _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("TYPE NAME  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _ctxt("Q E PAGE  ENTER GO  ESC BACK", size.y - 12.0, DIM)
         else:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  TYPE NAME  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+            _ctxt("Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TYPE NAME  ENTER GO  ESC BACK", size.y - 9.0, DIM)
         return
     if step == "build":
         if narrow:
@@ -43105,7 +43336,9 @@ func _draw_summary(size: Vector2, narrow: bool) -> void:
 func _draw_tier(size: Vector2, narrow: bool) -> void:
     var text := "LEVEL  %s" % Difficulty.label()
     var w := float(PixelFont.width("LEVEL  HARD")) + 24.0
-    var r := Rect2(floorf((size.x - w) * 0.5) if narrow else size.x - w - 3.0, 30.0 if narrow else 3.0, w, 9.0)
+    var r := Rect2(
+        floorf((size.x - w) * 0.5) if narrow else size.x - w - 3.0, 30.0 if narrow else 3.0, w, 9.0
+    )
     draw_rect(r, PANEL)
     draw_rect(r, GOLD if Difficulty.tier != "normal" else DIM, false, 1.0)
     _txt("<", r.position + Vector2(3, 2), GOLD)
@@ -43269,7 +43502,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
             _para(note, end_y + 2.0, DIM, 2)
 
 
-# where the create step puts the preview (cx, feet) and the rows (x0, y0, pitch): wide 368x128, h 320x180, v 180x320
+# where the create step puts the preview (cx, feet) and the rows (x0, y0, pitch): wide 368x128, h 320x180, v 180x320. The tab
+# chips take the first row (y0), the page's rows and the RANDOM | PRESETS | DONE row follow
 func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
     if narrow:
         return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 128.0, "pitch": 14.0}
@@ -43278,7 +43512,21 @@ func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
     return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
 
 
-# the create step (R15): a name row, one swatch row per colour, and a RANDOM / DONE row; the preview is live
+func _row_y(lay: Dictionary, i: int) -> float:
+    return float(lay.y0) + float(i + 1) * float(lay.pitch)
+
+
+# a boxed chip with a centred label; the mouse rect is added when kind is given
+func _chip(r: Rect2, text: String, hot: bool, kind := "", index := 0, fill := PANEL) -> void:
+    draw_rect(r, fill)
+    draw_rect(r, GOLD if hot else DIM, false, 1.0)
+    var tw := float(PixelFont.width(text))
+    _txt(text, Vector2(r.position.x + floorf((r.size.x - tw) * 0.5), r.position.y + floorf((r.size.y - 5.0) * 0.5)), Color.WHITE if hot else DIM)
+    if kind != "":
+        _rects.append([r, kind, index])
+
+
+# the create step (R15, level 3): tab chips, the current page's rows, then RANDOM | PRESETS | DONE; the preview is live
 func _draw_create(size: Vector2, narrow: bool) -> void:
     var lay := _create_layout(size, narrow)
     var x0: float = lay.x0
@@ -43289,58 +43537,112 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
     var who := str(Look.look.get("name", ""))
     var cap := who if who != "" else "?"
     _txt(cap, Vector2(floorf(float(lay.cx) - float(PixelFont.width(cap)) * 0.5), float(lay.feet) + 3.0), GOLD)
-    for i in CREATE_ROWS.size():
-        var role: String = CREATE_ROWS[i]
-        var y: float = float(lay.y0) + float(i) * pitch
+    var rows := _page_rows()
+    # the tab chips
+    var tx := x0 - 3.0
+    var pages := _pages()
+    if create_modal == "":
+        for p in pages.size():
+            var label := str(pages[p].label)
+            var tw := float(PixelFont.width(label)) + 10.0
+            _chip(Rect2(tx, float(lay.y0), tw, pitch - 2.0), label, p == create_page, "tab", p)
+            tx += tw + 3.0
+    if create_modal == "presets":
+        _draw_presets(lay, size)
+        return
+    if create_modal == "name":
+        _draw_name_grid(lay, size)
+        return
+    if rows.is_empty():
+        _ctxt(str(pages[create_page].get("empty", "")), _row_y(lay, 1), DIM)
+    for i in rows.size():
+        var row: Dictionary = rows[i]
+        var y := _row_y(lay, i)
         var hot := i == create_row
         var sy := y + floorf((pitch - sw) * 0.5)
         var ty := sy + floorf((sw - 5.0) * 0.5)
         if hot:
             draw_rect(Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch - 1.0), PANEL)
-        if role == "name":
-            _txt("NAME", Vector2(x0, ty), GOLD if hot else DIM)
+        _txt(str(row.label), Vector2(x0, ty), GOLD if hot else DIM)
+        var kind := str(row.kind)
+        if kind == "name" or kind == "choice":
             var box := Rect2(sx + 8.0, sy, 49.0, sw)
             draw_rect(box, INK)
             draw_rect(box, GOLD if hot else DIM, false, 1.0)
-            var shown := who + ("_" if hot and who.length() < Look.MAX_NAME else "")
-            _txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
             _txt("<", Vector2(sx, ty), GOLD)
             _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
-            _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "name_prev", 0])
-            _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "name_next", 0])
-        elif role == "style":
-            _txt("STYLE", Vector2(x0, ty), GOLD if hot else DIM)
-            var sbox := Rect2(sx + 8.0, sy, 49.0, sw)
-            draw_rect(sbox, INK)
-            draw_rect(sbox, GOLD if hot else DIM, false, 1.0)
-            var st := str(Look.look.get("hair_style", Look.HAIR_STYLES[0])).to_upper()
-            _txt(st, Vector2(floorf(sbox.position.x + (sbox.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
-            _txt("<", Vector2(sx, ty), GOLD)
-            _txt(">", Vector2(sbox.end.x + 3.0, ty), GOLD)
-            _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "style_prev", 0])
-            _rects.append([Rect2(sbox.end.x + 1.0, y, 9.0, pitch), "style_next", 0])
-        elif role == "random":
-            var rr := Rect2(x0, sy - 1.0, 44.0, 9.0)
-            draw_rect(rr, PANEL)
-            draw_rect(rr, GOLD if hot else DIM, false, 1.0)
-            _txt("RANDOM", Vector2(rr.position.x + 10.0, rr.position.y + 2.0), Color.WHITE)
-            _rects.append([rr, "random", 0])
-            var gr := Rect2(x0 + 50.0, sy - 1.0, 32.0, 9.0)
-            draw_rect(gr, PANEL)
-            draw_rect(gr, GOLD, false, 1.0)
-            _txt("DONE", Vector2(gr.position.x + 8.0, gr.position.y + 2.0), GOLD)
-            _rects.append([gr, "go", 0])
+            if kind == "name":
+                var shown := who + ("_" if hot and who.length() < Look.MAX_NAME else "")
+                _txt(shown, Vector2(box.position.x + 4.0, ty), Color.WHITE)
+                _rects.append([box, "name_box", i])
+            else:
+                var st := str(Look.CHOICES[row.id][Look.choice_index(str(row.id))]).to_upper()
+                _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
+            _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
+            _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
         else:
-            _txt(role.to_upper(), Vector2(x0, ty), GOLD if hot else DIM)
-            var list: Array = Look.SWATCHES[role]
+            var list: Array = Look.SWATCHES[row.id]
             for j in list.size():
                 var r := Rect2(sx + float(j) * cell, sy, sw, sw)
                 draw_rect(r, Color.html(str(list[j])))
                 draw_rect(r, Color(1, 1, 1, 0.25), false, 1.0)
-                if list[j] == Look.look[role]:
+                if list[j] == Look.look[row.id]:
                     draw_rect(r.grow(1.0), GOLD, false, 1.0)
                 _rects.append([Rect2(r.position.x - 1.0, y, cell, pitch), "sw", i * 100 + j])
         _rects.append([Rect2(x0 - 3.0, y, sx + cell * 12.0 - x0 + 3.0, pitch), "row", i])
+    # the bottom row: RANDOM | PRESETS | DONE
+    var by := _row_y(lay, rows.size())
+    var widths := [44.0, 48.0, 32.0]
+    var bx := x0
+    for a in CREATE_ACTIONS.size():
+        var hot_a := create_row == rows.size() and create_col == a
+        var rr := Rect2(bx, by + floorf((pitch - 9.0) * 0.5), widths[a], 9.0)
+        _chip(rr, str(CREATE_ACTIONS[a]).to_upper(), hot_a, "act", a)
+        bx += float(widths[a]) + 4.0
+
+
+# the presets chooser: three slots with a name and a swatch strip, SAVE HERE / LOAD each, CANCEL
+func _draw_presets(lay: Dictionary, size: Vector2) -> void:
+    var x0: float = lay.x0
+    var pitch: float = lay.pitch
+    draw_rect(Rect2(x0 - 4.0, float(lay.y0) - 1.0, size.x - x0 - 4.0, pitch * float(Look.PRESET_SLOTS + 3) + 1.0), PANEL)
+    _txt("PRESETS", Vector2(x0, float(lay.y0) + floorf((pitch - 5.0) * 0.5)), GOLD)
+    for s in Look.PRESET_SLOTS:
+        var y := _row_y(lay, s)
+        var p: Dictionary = Look.preset(s)
+        var hot := _pre_row == s
+        var ty := y + floorf((pitch - 5.0) * 0.5)
+        _txt(str(s + 1), Vector2(x0, ty), GOLD if hot else DIM)
+        var box := Rect2(x0 + 8.0, y + 1.0, 50.0, pitch - 3.0)
+        draw_rect(box, INK)
+        draw_rect(box, GOLD if hot else DIM, false, 1.0)
+        _txt(str(p.get("name", "EMPTY")), Vector2(box.position.x + 3.0, ty), Color.WHITE if not p.is_empty() else DIM)
+        if not p.is_empty():
+            for k in Look.ROLES.size():
+                var role: String = Look.ROLES[k]
+                draw_rect(Rect2(x0 + 62.0 + float(k) * 6.0, ty - 1.0, 5.0, 7.0), Color.html(str(p[role])))
+        _chip(Rect2(x0 + 98.0, y + 1.0, 22.0, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
+        _chip(Rect2(x0 + 122.0, y + 1.0, 22.0, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
+    var cy := _row_y(lay, Look.PRESET_SLOTS)
+    _chip(Rect2(x0, cy + 1.0, 44.0, pitch - 3.0), "CANCEL", _pre_row == Look.PRESET_SLOTS, "pre_cancel", 0)
+
+
+# the pad's letter grid
+func _draw_name_grid(lay: Dictionary, size: Vector2) -> void:
+    var x0: float = lay.x0
+    var pitch: float = lay.pitch
+    var cw := minf(26.0, floorf((size.x - x0 - 8.0) / float(GRID_COLS)))
+    draw_rect(Rect2(x0 - 4.0, float(lay.y0) - 1.0, cw * float(GRID_COLS) + 8.0, pitch * 5.0 + 1.0), PANEL)
+    var who := str(Look.look.get("name", ""))
+    var box := Rect2(x0, float(lay.y0) + 1.0, 62.0, pitch - 3.0)
+    draw_rect(box, INK)
+    draw_rect(box, GOLD, false, 1.0)
+    _txt(who + ("_" if who.length() < Look.MAX_NAME else ""), Vector2(box.position.x + 4.0, box.position.y + floorf((box.size.y - 5.0) * 0.5)), Color.WHITE)
+    var cells := grid_cells()
+    for i in cells.size():
+        var c: Dictionary = cells[i]
+        var r := Rect2(x0 + float(c.col) * cw, _row_y(lay, int(c.row)) + 1.0, float(c.span) * cw - 2.0, pitch - 3.0)
+        _chip(r, str(c.label), i == _grid_i, "gcell", i, Color(0.1, 0.13, 0.2, 0.9) if i == _grid_i else PANEL)
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:
@@ -52198,16 +52500,44 @@ write("scripts/look.gd", '''extends Node
 # the outline), so the palette shader above works on every sheet unchanged. A new style is data only: build its stills and
 # sheets, add custom_intern_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
 
+# LEVEL 3 STEP (a) adds `pattern` and `shorts` to the look (shader only, see the block below), three preset slots (presets,
+# settings section [looks]) and the list-row helpers (CHOICES, choice_index, cycle_choice) the create step's rows read.
+
 const PLAYER := preload("res://scripts/player.gd")
 const BASE := "office_intern"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
+const PRESET_SLOTS := 3
 const HAIR_STYLES := ["side", "short", "receding", "curly", "long", "bob", "ponytail", "bun", "bald", "spiky"]  # the shipped styles, in the order of the STYLE row
 const HAIR_PLANNED: Array = []  # styles not drawn yet; tests and the UI skip them (all ten are shipped)
 const FLASH := 0.7  # the hurt frames mix every colour this far to white
 const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
 const FLASH_TOL := 0.01
 const MIN_STEP := 0.045  # the least a shade differs from its base in value
+# ---- LEVEL 3 STEP (a): shader patterns and shorts (no art) ----
+# pattern: none / stripes / plaid / checks. A second tone of the shirt colour (darker for a light shirt, lighter otherwise) is
+#   drawn by the shader from the pixel position inside the 64x80 frame cell, on the shirt's base and shade pixels only (never
+#   the button tint of the collar / placket, never the hurt flash frames) and not on a sleeve (a shirt pixel with skin within
+#   3 pixels straight below it is a sleeve over a forearm). The shader only matches colours, so skin, outline, face, belt,
+#   buckle and shoes are untouched by construction.
+# shorts: pants pixels (all three tones) at or below the hem row of the frame (HEMS, the first pants row plus 9, baked per
+#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated, only
+#   the thighs show, so the trousers stay; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
+const PATTERNS := ["none", "stripes", "plaid", "checks"]
+const SHORTS := ["none", "shorts"]
+const CHOICES := {"hair_style": HAIR_STYLES, "pattern": PATTERNS, "shorts": SHORTS}  # the list rows of the create step
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 123 frames
+const FRAMES := 123
+const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
+const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
+# per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
+const HEMS := [
+    67, 68, 68, 68, 68, 68, 67, 67, 68, 68, 67, 67, 69, 68, 64, 69, 68, 64, 70, 63, 55, 61, 71, 69, 67, 67, 67, 67, 67,
+    255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
+    67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
+    80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
+    80, 80, 80, 80, 80, 80
+]
 const SOURCES := [
     ["f3b488", "skin", 0],
     ["d88a62", "skin", 1],
@@ -52278,7 +52608,10 @@ const NAMES := [
 
 var active := false
 var look: Dictionary = default_look()
+var presets: Array = [{}, {}, {}]  # PRESET_SLOTS look dicts, {} = empty (level 3 step a)
 var _shader: Shader = null
+var _src_cache := PackedColorArray()
+var _flash_cache := PackedColorArray()
 
 
 func default_look() -> Dictionary:
@@ -52289,7 +52622,10 @@ func default_look() -> Dictionary:
         "hair": "9a5124",
         "shirt": "4f7fd0",
         "pants": "3a3f66",
-        "shoes": "5a3522"
+        "shoes": "5a3522",
+        # level 3 step (a)
+        "pattern": "none",
+        "shorts": "none"
     }
 
 
@@ -52334,12 +52670,12 @@ func palette(look_dict: Dictionary) -> PackedColorArray:
 
 
 func sources() -> PackedColorArray:
-    var out := PackedColorArray()
-    for row in SOURCES:
-        out.append(Color.html(str(row[0])))
-    for hex in KEEPS:
-        out.append(Color.html(str(hex)))
-    return out
+    if _src_cache.is_empty():
+        for row in SOURCES:
+            _src_cache.append(Color.html(str(row[0])))
+        for hex in KEEPS:
+            _src_cache.append(Color.html(str(hex)))
+    return _src_cache
 
 
 func _dist(a: Color, b: Color) -> float:
@@ -52349,36 +52685,117 @@ func _dist(a: Color, b: Color) -> float:
 # the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the INTERN sheet
 # turns into for this look (an unknown colour comes back unchanged)
 func map_color(c: Color, look_dict: Dictionary) -> Color:
-    var src := sources()
+    var m := _match(c)
+    if m[0] < 0:
+        return c
     var dst := palette(look_dict)
+    var out: Color = dst[m[0]].lerp(Color.WHITE, FLASH) if m[1] else dst[m[0]]
+    return Color(out.r, out.g, out.b, c.a)
+
+
+# [index into sources() or -1, is it the hurt flash mix] of a colour: the shader's nearest-colour match
+func _match(c: Color) -> Array:
+    var src := sources()
+    if _flash_cache.is_empty():
+        for col in src:
+            _flash_cache.append(col.lerp(Color.WHITE, FLASH))
     var best := -1
-    var best_d := 1000.0
+    var best_d := 1000000.0
     var best_flash := false
+    var tol2 := TOL * TOL
+    var ftol2 := FLASH_TOL * FLASH_TOL
     for i in src.size():
-        var d := _dist(c, src[i])
-        if d < TOL and d < best_d:
+        var s: Color = src[i]
+        var d := (c.r - s.r) * (c.r - s.r) + (c.g - s.g) * (c.g - s.g) + (c.b - s.b) * (c.b - s.b)
+        if d < tol2 and d < best_d:
             best = i
             best_d = d
             best_flash = false
-        var f := _dist(c, src[i].lerp(Color.WHITE, FLASH))
-        if f < FLASH_TOL and f < best_d:
+        var f: Color = _flash_cache[i]
+        var fd := (c.r - f.r) * (c.r - f.r) + (c.g - f.g) * (c.g - f.g) + (c.b - f.b) * (c.b - f.b)
+        if fd < ftol2 and fd < best_d:
             best = i
-            best_d = f
+            best_d = fd
             best_flash = true
-    if best < 0:
+    return [best, best_flash]
+
+
+# ---- level 3 step (a): the pattern and shorts, GDScript twin of the shader ------------------------------
+func _first(role: String) -> int:
+    for i in SOURCES.size():
+        if SOURCES[i][1] == role:
+            return i
+    return -1
+
+
+# the pattern's tone at a frame-cell pixel: 0 = the shirt colour, 1 or 2 = the second tone (stronger)
+func pattern_tone(pattern: String, px: int, py: int) -> int:
+    match pattern:
+        "stripes":
+            return (py >> 1) % 2
+        "plaid":
+            return (1 if px % 6 < 2 else 0) + (1 if py % 6 < 2 else 0)
+        "checks":
+            return ((px >> 1) + (py >> 1)) % 2
+    return 0
+
+
+# a shirt colour with the pattern's second tone at strength m (1 or 2)
+func tone_of(c: Color, m: int) -> Color:
+    if m <= 0:
         return c
-    var out: Color = dst[best].lerp(Color.WHITE, FLASH) if best_flash else dst[best]
-    return Color(out.r, out.g, out.b, c.a)
+    if maxf(c.r, maxf(c.g, c.b)) > PATTERN_LIGHT:
+        return Color(c.r * (1.0 - 0.2 * m), c.g * (1.0 - 0.2 * m), c.b * (1.0 - 0.2 * m), c.a)
+    return c.lerp(Color.WHITE, 0.25 * m)
+
+
+# the colour pixel (x, y) of a sheet image (CELL wide frames, 80 tall) turns into for this look: map_color plus the pattern
+# and the shorts. This is the shader's algorithm; tests run it over every frame.
+# (pal: palette(look_dict) when the caller maps many pixels)
+func map_pixel(img: Image, x: int, y: int, look_dict: Dictionary, pal := PackedColorArray()) -> Color:
+    var c := img.get_pixel(x, y)
+    var m := _match(c) if c.a > 0.0 else [-1, false]
+    if m[0] < 0:
+        return c
+    var dst := pal if not pal.is_empty() else palette(look_dict)
+    var out: Color = dst[m[0]].lerp(Color.WHITE, FLASH) if m[1] else dst[m[0]]
+    out.a = c.a
+    if m[1]:
+        return out  # the hurt flash frames take neither
+    var best: int = m[0]
+    var px := x % CELL
+    var py := y
+    var p0 := _first("pants")
+    if best >= p0 and best < p0 + 3 and str(look_dict.get("shorts", "none")) == "shorts" and py >= HEMS[x >> 6]:
+        out = Color(dst[best - p0].r, dst[best - p0].g, dst[best - p0].b, c.a)
+    var s0 := _first("shirt")
+    var pat := str(look_dict.get("pattern", "none"))
+    if pat != "none" and (best == s0 or best == s0 + 1):
+        var sleeve := false
+        for k in range(1, SLEEVE_REACH + 1):
+            if y + k < img.get_height():
+                var t := img.get_pixel(x, y + k)
+                if t.a > 0.0:
+                    for i in 3:
+                        if _dist(t, sources()[i]) < TOL:
+                            sleeve = true
+        if not sleeve:
+            out = tone_of(out, pattern_tone(pat, px, py))
+    return out
 
 
 func shader() -> Shader:
     if _shader == null:
         var n := SOURCES.size() + KEEPS.size()
+        var s0 := _first("shirt")
+        var p0 := _first("pants")
         _shader = Shader.new()
         _shader.code = (
             """shader_type canvas_item;
 uniform vec4 src[%d];
 uniform vec4 dst[%d];
+uniform int pattern = 0;
+uniform float hems[%d];
 varying vec4 vcol;
 void vertex() {
   vcol = COLOR;
@@ -52399,12 +52816,39 @@ void fragment() {
   }
   if (best >= 0) {
     o = dst[best].rgb;
-    if (best_flash) { o = mix(o, vec3(1.0), %f); }
+    if (best_flash) {
+      o = mix(o, vec3(1.0), %f);
+    } else {
+      vec2 pc = floor(UV / TEXTURE_PIXEL_SIZE);
+      float fr = floor(pc.x / %f);
+      float px = pc.x - fr * %f;
+      float py = pc.y;
+      if (best >= %d && best < %d && py >= hems[int(fr)]) { o = dst[best - %d].rgb; }
+      if (pattern > 0 && (best == %d || best == %d)) {
+        bool sleeve = false;
+        for (int k = 1; k <= %d; k++) {
+          vec4 t = texture(TEXTURE, UV + vec2(0.0, float(k) * TEXTURE_PIXEL_SIZE.y));
+          for (int i = 0; i < 3; i++) {
+            if (t.a > 0.0 && distance(t.rgb, src[i].rgb) < %f) { sleeve = true; }
+          }
+        }
+        if (!sleeve) {
+          float m = 0.0;
+          if (pattern == 1) { m = mod(floor(py / 2.0), 2.0); }
+          else if (pattern == 2) { m = (mod(px, 6.0) < 2.0 ? 1.0 : 0.0) + (mod(py, 6.0) < 2.0 ? 1.0 : 0.0); }
+          else { m = mod(floor(px / 2.0) + floor(py / 2.0), 2.0); }
+          if (m > 0.5) {
+            float v = max(o.r, max(o.g, o.b));
+            o = v > %f ? o * (1.0 - 0.2 * m) : mix(o, vec3(1.0), 0.25 * m);
+          }
+        }
+      }
+    }
   }
   COLOR = vec4(o, c.a) * vcol;
 }
 """
-            % [n, n, n, TOL, FLASH, FLASH_TOL, FLASH]
+            % [n, n, FRAMES, n, TOL, FLASH, FLASH_TOL, FLASH, float(CELL), float(CELL), p0, p0 + 3, p0, s0, s0 + 1, SLEEVE_REACH, TOL, PATTERN_LIGHT]
         )
     return _shader
 
@@ -52414,6 +52858,11 @@ func make_material(look_dict: Dictionary) -> ShaderMaterial:
     m.shader = shader()
     m.set_shader_parameter("src", sources())
     m.set_shader_parameter("dst", palette(look_dict))
+    m.set_shader_parameter("pattern", maxi(0, PATTERNS.find(str(look_dict.get("pattern", "none")))))
+    var hems := PackedFloat32Array()
+    for h in HEMS:
+        hems.append(float(h) if str(look_dict.get("shorts", "none")) == "shorts" else 255.0)
+    m.set_shader_parameter("hems", hems)
     return m
 
 
@@ -52482,6 +52931,21 @@ func cycle_name(step: int) -> void:
     look["name"] = NAMES[(maxi(i, 0) + step + NAMES.size()) % NAMES.size()]
 
 
+# ---- list rows (hairstyle, pattern, shorts and later the extras): data-driven, one id per CHOICES entry ----
+func choice_index(id: String) -> int:
+    var list: Array = CHOICES[id]
+    return maxi(0, list.find(str(look.get(id, list[0]))))
+
+
+func set_choice(id: String, index: int) -> void:
+    var list: Array = CHOICES[id]
+    look[id] = list[(index % list.size() + list.size()) % list.size()]
+
+
+func cycle_choice(id: String, step: int) -> void:
+    set_choice(id, choice_index(id) + step)
+
+
 # one hairstyle forward or back (the STYLE row)
 func cycle_style(step: int) -> void:
     var i := HAIR_STYLES.find(str(look.get("hair_style", HAIR_STYLES[0])))
@@ -52498,6 +52962,9 @@ func sanitize(d: Dictionary) -> Dictionary:
             out[role] = hex
     var nm := clean_name(str(d.get("name", "")))
     out["name"] = nm if nm != "" else NAMES[0]
+    for key in ["pattern", "shorts"]:  # level 3 step (a): an old look has none
+        if str(d.get(key, "")) in CHOICES[key]:
+            out[key] = str(d.get(key))
     return out
 
 
@@ -52519,6 +52986,8 @@ func randomize_look() -> void:
         look[role] = list[r.randi() % list.size()]
     look["name"] = NAMES[r.randi() % NAMES.size()]
     look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
+    look["pattern"] = PATTERNS[r.randi() % PATTERNS.size()]  # level 3 step (a): drawn after everything above
+    look["shorts"] = SHORTS[r.randi() % SHORTS.size()]
 
 
 # ---- save, load, settings ------------------------------------------------------------
@@ -52538,7 +53007,10 @@ func from_dict(d: Dictionary) -> void:
 
 func load_settings() -> void:
     var cfg := ConfigFile.new()
-    if cfg.load(Difficulty.settings_path) != OK or not cfg.has_section("look"):
+    if cfg.load(Difficulty.settings_path) != OK:
+        return
+    _read_presets(cfg)
+    if not cfg.has_section("look"):
         return
     var d := {}
     for key in cfg.get_section_keys("look"):
@@ -52555,6 +53027,52 @@ func save_settings(custom_run: bool) -> void:
         cfg.set_value("look", key, look[key])
     cfg.set_value("look", "custom", custom_run)
     cfg.save(Difficulty.settings_path)
+
+
+# ---- presets (level 3 step a): PRESET_SLOTS looks kept for every run in the settings file, section [looks] slot1 .. slot3 ----
+func _read_presets(cfg: ConfigFile) -> void:
+    presets = []
+    for i in PRESET_SLOTS:
+        var v: Variant = cfg.get_value("looks", "slot%d" % (i + 1), {}) if cfg.has_section("looks") else {}
+        presets.append(sanitize(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
+
+
+func load_presets() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(Difficulty.settings_path) == OK:
+        _read_presets(cfg)
+        return
+    presets = []
+    for i in PRESET_SLOTS:
+        presets.append({})
+
+
+func preset(slot: int) -> Dictionary:
+    return presets[slot] if slot >= 0 and slot < presets.size() else {}
+
+
+# keep the current look in a slot (and in the settings file)
+func save_preset(slot: int) -> void:
+    if slot < 0 or slot >= PRESET_SLOTS:
+        return
+    while presets.size() < PRESET_SLOTS:
+        presets.append({})
+    var keep := look.duplicate()
+    keep["name"] = final_name()
+    presets[slot] = sanitize(keep)
+    var cfg := ConfigFile.new()
+    cfg.load(Difficulty.settings_path)
+    cfg.set_value("looks", "slot%d" % (slot + 1), presets[slot])
+    cfg.save(Difficulty.settings_path)
+
+
+# wear a slot's look; false when the slot is empty
+func load_preset(slot: int) -> bool:
+    var p := preset(slot)
+    if p.is_empty():
+        return false
+    look = p.duplicate()
+    return true
 ''')
 
 # format the generated scripts if gdtoolkit is installed (pip install gdtoolkit)
@@ -52597,6 +53115,8 @@ const ACTIONS := {
     "push_b": [[KEY_X], [JOY_BUTTON_B], []],
     "pick_next": [[KEY_TAB], [JOY_BUTTON_RIGHT_SHOULDER], []],
     "pick_prev": [[], [JOY_BUTTON_LEFT_SHOULDER], []],
+    "page_prev": [[KEY_Q, KEY_PAGEUP], [JOY_BUTTON_LEFT_SHOULDER], []],  # the create step's pages (R15 level 3)
+    "page_next": [[KEY_E, KEY_PAGEDOWN], [JOY_BUTTON_RIGHT_SHOULDER], []],
     "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
     "give_item": [[KEY_G], [], []],
     "phone": [[KEY_P], [JOY_BUTTON_BACK], []],

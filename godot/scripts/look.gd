@@ -24,16 +24,44 @@ extends Node
 # the outline), so the palette shader above works on every sheet unchanged. A new style is data only: build its stills and
 # sheets, add custom_intern_<style> to EXTRA_CHARACTERS in make_godot.py and the id to HAIR_STYLES (and out of HAIR_PLANNED).
 
+# LEVEL 3 STEP (a) adds `pattern` and `shorts` to the look (shader only, see the block below), three preset slots (presets,
+# settings section [looks]) and the list-row helpers (CHOICES, choice_index, cycle_choice) the create step's rows read.
+
 const PLAYER := preload("res://scripts/player.gd")
 const BASE := "office_intern"
 const ROLES := ["skin", "hair", "shirt", "pants", "shoes"]
 const MAX_NAME := 10
+const PRESET_SLOTS := 3
 const HAIR_STYLES := ["side", "short", "receding", "curly", "long", "bob", "ponytail", "bun", "bald", "spiky"]  # the shipped styles, in the order of the STYLE row
 const HAIR_PLANNED: Array = []  # styles not drawn yet; tests and the UI skip them (all ten are shipped)
 const FLASH := 0.7  # the hurt frames mix every colour this far to white
 const TOL := 0.03  # nearest-colour tolerance (RGB distance, 0..1)
 const FLASH_TOL := 0.01
 const MIN_STEP := 0.045  # the least a shade differs from its base in value
+# ---- LEVEL 3 STEP (a): shader patterns and shorts (no art) ----
+# pattern: none / stripes / plaid / checks. A second tone of the shirt colour (darker for a light shirt, lighter otherwise) is
+#   drawn by the shader from the pixel position inside the 64x80 frame cell, on the shirt's base and shade pixels only (never
+#   the button tint of the collar / placket, never the hurt flash frames) and not on a sleeve (a shirt pixel with skin within
+#   3 pixels straight below it is a sleeve over a forearm). The shader only matches colours, so skin, outline, face, belt,
+#   buckle and shoes are untouched by construction.
+# shorts: pants pixels (all three tones) at or below the hem row of the frame (HEMS, the first pants row plus 9, baked per
+#   frame from the sheet; 255 = none: the lying death frames 29 to 34) become the skin tone of the same level. Seated, only
+#   the thighs show, so the trousers stay; crouch, run, jump and the hurt frames hem right because the row follows the pelvis.
+const PATTERNS := ["none", "stripes", "plaid", "checks"]
+const SHORTS := ["none", "shorts"]
+const CHOICES := {"hair_style": HAIR_STYLES, "pattern": PATTERNS, "shorts": SHORTS}  # the list rows of the create step
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 123 frames
+const FRAMES := 123
+const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
+const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
+# per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
+const HEMS := [
+	67, 68, 68, 68, 68, 68, 67, 67, 68, 68, 67, 67, 69, 68, 64, 69, 68, 64, 70, 63, 55, 61, 71, 69, 67, 67, 67, 67, 67,
+	255, 255, 255, 255, 255, 255, 70, 80, 80, 81, 80, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 68, 67, 68, 67, 68, 68, 68,
+	67, 67, 68, 68, 67, 67, 67, 67, 67, 80, 80, 80, 67, 67, 80, 80, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 80, 80,
+	80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 81, 81, 80, 80, 80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80
+]
 const SOURCES := [
 	["f3b488", "skin", 0],
 	["d88a62", "skin", 1],
@@ -104,7 +132,10 @@ const NAMES := [
 
 var active := false
 var look: Dictionary = default_look()
+var presets: Array = [{}, {}, {}]  # PRESET_SLOTS look dicts, {} = empty (level 3 step a)
 var _shader: Shader = null
+var _src_cache := PackedColorArray()
+var _flash_cache := PackedColorArray()
 
 
 func default_look() -> Dictionary:
@@ -115,7 +146,10 @@ func default_look() -> Dictionary:
 		"hair": "9a5124",
 		"shirt": "4f7fd0",
 		"pants": "3a3f66",
-		"shoes": "5a3522"
+		"shoes": "5a3522",
+		# level 3 step (a)
+		"pattern": "none",
+		"shorts": "none"
 	}
 
 
@@ -160,12 +194,12 @@ func palette(look_dict: Dictionary) -> PackedColorArray:
 
 
 func sources() -> PackedColorArray:
-	var out := PackedColorArray()
-	for row in SOURCES:
-		out.append(Color.html(str(row[0])))
-	for hex in KEEPS:
-		out.append(Color.html(str(hex)))
-	return out
+	if _src_cache.is_empty():
+		for row in SOURCES:
+			_src_cache.append(Color.html(str(row[0])))
+		for hex in KEEPS:
+			_src_cache.append(Color.html(str(hex)))
+	return _src_cache
 
 
 func _dist(a: Color, b: Color) -> float:
@@ -175,36 +209,117 @@ func _dist(a: Color, b: Color) -> float:
 # the same algorithm as the shader, for tests and any code that needs the answer: the colour a pixel of the INTERN sheet
 # turns into for this look (an unknown colour comes back unchanged)
 func map_color(c: Color, look_dict: Dictionary) -> Color:
-	var src := sources()
+	var m := _match(c)
+	if m[0] < 0:
+		return c
 	var dst := palette(look_dict)
+	var out: Color = dst[m[0]].lerp(Color.WHITE, FLASH) if m[1] else dst[m[0]]
+	return Color(out.r, out.g, out.b, c.a)
+
+
+# [index into sources() or -1, is it the hurt flash mix] of a colour: the shader's nearest-colour match
+func _match(c: Color) -> Array:
+	var src := sources()
+	if _flash_cache.is_empty():
+		for col in src:
+			_flash_cache.append(col.lerp(Color.WHITE, FLASH))
 	var best := -1
-	var best_d := 1000.0
+	var best_d := 1000000.0
 	var best_flash := false
+	var tol2 := TOL * TOL
+	var ftol2 := FLASH_TOL * FLASH_TOL
 	for i in src.size():
-		var d := _dist(c, src[i])
-		if d < TOL and d < best_d:
+		var s: Color = src[i]
+		var d := (c.r - s.r) * (c.r - s.r) + (c.g - s.g) * (c.g - s.g) + (c.b - s.b) * (c.b - s.b)
+		if d < tol2 and d < best_d:
 			best = i
 			best_d = d
 			best_flash = false
-		var f := _dist(c, src[i].lerp(Color.WHITE, FLASH))
-		if f < FLASH_TOL and f < best_d:
+		var f: Color = _flash_cache[i]
+		var fd := (c.r - f.r) * (c.r - f.r) + (c.g - f.g) * (c.g - f.g) + (c.b - f.b) * (c.b - f.b)
+		if fd < ftol2 and fd < best_d:
 			best = i
-			best_d = f
+			best_d = fd
 			best_flash = true
-	if best < 0:
+	return [best, best_flash]
+
+
+# ---- level 3 step (a): the pattern and shorts, GDScript twin of the shader ------------------------------
+func _first(role: String) -> int:
+	for i in SOURCES.size():
+		if SOURCES[i][1] == role:
+			return i
+	return -1
+
+
+# the pattern's tone at a frame-cell pixel: 0 = the shirt colour, 1 or 2 = the second tone (stronger)
+func pattern_tone(pattern: String, px: int, py: int) -> int:
+	match pattern:
+		"stripes":
+			return (py >> 1) % 2
+		"plaid":
+			return (1 if px % 6 < 2 else 0) + (1 if py % 6 < 2 else 0)
+		"checks":
+			return ((px >> 1) + (py >> 1)) % 2
+	return 0
+
+
+# a shirt colour with the pattern's second tone at strength m (1 or 2)
+func tone_of(c: Color, m: int) -> Color:
+	if m <= 0:
 		return c
-	var out: Color = dst[best].lerp(Color.WHITE, FLASH) if best_flash else dst[best]
-	return Color(out.r, out.g, out.b, c.a)
+	if maxf(c.r, maxf(c.g, c.b)) > PATTERN_LIGHT:
+		return Color(c.r * (1.0 - 0.2 * m), c.g * (1.0 - 0.2 * m), c.b * (1.0 - 0.2 * m), c.a)
+	return c.lerp(Color.WHITE, 0.25 * m)
+
+
+# the colour pixel (x, y) of a sheet image (CELL wide frames, 80 tall) turns into for this look: map_color plus the pattern
+# and the shorts. This is the shader's algorithm; tests run it over every frame.
+# (pal: palette(look_dict) when the caller maps many pixels)
+func map_pixel(img: Image, x: int, y: int, look_dict: Dictionary, pal := PackedColorArray()) -> Color:
+	var c := img.get_pixel(x, y)
+	var m := _match(c) if c.a > 0.0 else [-1, false]
+	if m[0] < 0:
+		return c
+	var dst := pal if not pal.is_empty() else palette(look_dict)
+	var out: Color = dst[m[0]].lerp(Color.WHITE, FLASH) if m[1] else dst[m[0]]
+	out.a = c.a
+	if m[1]:
+		return out  # the hurt flash frames take neither
+	var best: int = m[0]
+	var px := x % CELL
+	var py := y
+	var p0 := _first("pants")
+	if best >= p0 and best < p0 + 3 and str(look_dict.get("shorts", "none")) == "shorts" and py >= HEMS[x >> 6]:
+		out = Color(dst[best - p0].r, dst[best - p0].g, dst[best - p0].b, c.a)
+	var s0 := _first("shirt")
+	var pat := str(look_dict.get("pattern", "none"))
+	if pat != "none" and (best == s0 or best == s0 + 1):
+		var sleeve := false
+		for k in range(1, SLEEVE_REACH + 1):
+			if y + k < img.get_height():
+				var t := img.get_pixel(x, y + k)
+				if t.a > 0.0:
+					for i in 3:
+						if _dist(t, sources()[i]) < TOL:
+							sleeve = true
+		if not sleeve:
+			out = tone_of(out, pattern_tone(pat, px, py))
+	return out
 
 
 func shader() -> Shader:
 	if _shader == null:
 		var n := SOURCES.size() + KEEPS.size()
+		var s0 := _first("shirt")
+		var p0 := _first("pants")
 		_shader = Shader.new()
 		_shader.code = (
 			"""shader_type canvas_item;
 uniform vec4 src[%d];
 uniform vec4 dst[%d];
+uniform int pattern = 0;
+uniform float hems[%d];
 varying vec4 vcol;
 void vertex() {
   vcol = COLOR;
@@ -225,12 +340,39 @@ void fragment() {
   }
   if (best >= 0) {
     o = dst[best].rgb;
-    if (best_flash) { o = mix(o, vec3(1.0), %f); }
+    if (best_flash) {
+      o = mix(o, vec3(1.0), %f);
+    } else {
+      vec2 pc = floor(UV / TEXTURE_PIXEL_SIZE);
+      float fr = floor(pc.x / %f);
+      float px = pc.x - fr * %f;
+      float py = pc.y;
+      if (best >= %d && best < %d && py >= hems[int(fr)]) { o = dst[best - %d].rgb; }
+      if (pattern > 0 && (best == %d || best == %d)) {
+        bool sleeve = false;
+        for (int k = 1; k <= %d; k++) {
+          vec4 t = texture(TEXTURE, UV + vec2(0.0, float(k) * TEXTURE_PIXEL_SIZE.y));
+          for (int i = 0; i < 3; i++) {
+            if (t.a > 0.0 && distance(t.rgb, src[i].rgb) < %f) { sleeve = true; }
+          }
+        }
+        if (!sleeve) {
+          float m = 0.0;
+          if (pattern == 1) { m = mod(floor(py / 2.0), 2.0); }
+          else if (pattern == 2) { m = (mod(px, 6.0) < 2.0 ? 1.0 : 0.0) + (mod(py, 6.0) < 2.0 ? 1.0 : 0.0); }
+          else { m = mod(floor(px / 2.0) + floor(py / 2.0), 2.0); }
+          if (m > 0.5) {
+            float v = max(o.r, max(o.g, o.b));
+            o = v > %f ? o * (1.0 - 0.2 * m) : mix(o, vec3(1.0), 0.25 * m);
+          }
+        }
+      }
+    }
   }
   COLOR = vec4(o, c.a) * vcol;
 }
 """
-			% [n, n, n, TOL, FLASH, FLASH_TOL, FLASH]
+			% [n, n, FRAMES, n, TOL, FLASH, FLASH_TOL, FLASH, float(CELL), float(CELL), p0, p0 + 3, p0, s0, s0 + 1, SLEEVE_REACH, TOL, PATTERN_LIGHT]
 		)
 	return _shader
 
@@ -240,6 +382,11 @@ func make_material(look_dict: Dictionary) -> ShaderMaterial:
 	m.shader = shader()
 	m.set_shader_parameter("src", sources())
 	m.set_shader_parameter("dst", palette(look_dict))
+	m.set_shader_parameter("pattern", maxi(0, PATTERNS.find(str(look_dict.get("pattern", "none")))))
+	var hems := PackedFloat32Array()
+	for h in HEMS:
+		hems.append(float(h) if str(look_dict.get("shorts", "none")) == "shorts" else 255.0)
+	m.set_shader_parameter("hems", hems)
 	return m
 
 
@@ -308,6 +455,21 @@ func cycle_name(step: int) -> void:
 	look["name"] = NAMES[(maxi(i, 0) + step + NAMES.size()) % NAMES.size()]
 
 
+# ---- list rows (hairstyle, pattern, shorts and later the extras): data-driven, one id per CHOICES entry ----
+func choice_index(id: String) -> int:
+	var list: Array = CHOICES[id]
+	return maxi(0, list.find(str(look.get(id, list[0]))))
+
+
+func set_choice(id: String, index: int) -> void:
+	var list: Array = CHOICES[id]
+	look[id] = list[(index % list.size() + list.size()) % list.size()]
+
+
+func cycle_choice(id: String, step: int) -> void:
+	set_choice(id, choice_index(id) + step)
+
+
 # one hairstyle forward or back (the STYLE row)
 func cycle_style(step: int) -> void:
 	var i := HAIR_STYLES.find(str(look.get("hair_style", HAIR_STYLES[0])))
@@ -324,6 +486,9 @@ func sanitize(d: Dictionary) -> Dictionary:
 			out[role] = hex
 	var nm := clean_name(str(d.get("name", "")))
 	out["name"] = nm if nm != "" else NAMES[0]
+	for key in ["pattern", "shorts"]:  # level 3 step (a): an old look has none
+		if str(d.get(key, "")) in CHOICES[key]:
+			out[key] = str(d.get(key))
 	return out
 
 
@@ -345,6 +510,8 @@ func randomize_look() -> void:
 		look[role] = list[r.randi() % list.size()]
 	look["name"] = NAMES[r.randi() % NAMES.size()]
 	look["hair_style"] = HAIR_STYLES[r.randi() % HAIR_STYLES.size()]  # drawn last: the colours above are unchanged
+	look["pattern"] = PATTERNS[r.randi() % PATTERNS.size()]  # level 3 step (a): drawn after everything above
+	look["shorts"] = SHORTS[r.randi() % SHORTS.size()]
 
 
 # ---- save, load, settings ------------------------------------------------------------
@@ -364,7 +531,10 @@ func from_dict(d: Dictionary) -> void:
 
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(Difficulty.settings_path) != OK or not cfg.has_section("look"):
+	if cfg.load(Difficulty.settings_path) != OK:
+		return
+	_read_presets(cfg)
+	if not cfg.has_section("look"):
 		return
 	var d := {}
 	for key in cfg.get_section_keys("look"):
@@ -381,3 +551,49 @@ func save_settings(custom_run: bool) -> void:
 		cfg.set_value("look", key, look[key])
 	cfg.set_value("look", "custom", custom_run)
 	cfg.save(Difficulty.settings_path)
+
+
+# ---- presets (level 3 step a): PRESET_SLOTS looks kept for every run in the settings file, section [looks] slot1 .. slot3 ----
+func _read_presets(cfg: ConfigFile) -> void:
+	presets = []
+	for i in PRESET_SLOTS:
+		var v: Variant = cfg.get_value("looks", "slot%d" % (i + 1), {}) if cfg.has_section("looks") else {}
+		presets.append(sanitize(v) if v is Dictionary and not (v as Dictionary).is_empty() else {})
+
+
+func load_presets() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(Difficulty.settings_path) == OK:
+		_read_presets(cfg)
+		return
+	presets = []
+	for i in PRESET_SLOTS:
+		presets.append({})
+
+
+func preset(slot: int) -> Dictionary:
+	return presets[slot] if slot >= 0 and slot < presets.size() else {}
+
+
+# keep the current look in a slot (and in the settings file)
+func save_preset(slot: int) -> void:
+	if slot < 0 or slot >= PRESET_SLOTS:
+		return
+	while presets.size() < PRESET_SLOTS:
+		presets.append({})
+	var keep := look.duplicate()
+	keep["name"] = final_name()
+	presets[slot] = sanitize(keep)
+	var cfg := ConfigFile.new()
+	cfg.load(Difficulty.settings_path)
+	cfg.set_value("looks", "slot%d" % (slot + 1), presets[slot])
+	cfg.save(Difficulty.settings_path)
+
+
+# wear a slot's look; false when the slot is empty
+func load_preset(slot: int) -> bool:
+	var p := preset(slot)
+	if p.is_empty():
+		return false
+	look = p.duplicate()
+	return true
