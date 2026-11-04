@@ -428,10 +428,10 @@ func _floor_phase() -> void:
 	out.tick(0.5)
 	await _end("chair race countdown")
 	out.tick(2.6)
-	out.g.race.pos = Vector2(300.0, 88.0)
-	out.g.race.seg = 3
+	out.g.race.pos = 300.0
+	out.g.race.cp_next = 1
 	out.g.race.speed = 30.0
-	out.g.race._say("CHECKPOINT 1 OF 4", 5.0)
+	out.g.race._say("CONE! +0.5S", 5.0)
 	out.tick(0.5)
 	_begin()
 	await _end("chair race racing")

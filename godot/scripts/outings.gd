@@ -14,6 +14,7 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const ChairRace := preload("res://scripts/chair_race.gd")
+const ChairTrack := preload("res://scripts/chair_track.gd")
 const INK := UiStyle.INK
 const WHITE := UiStyle.WHITE
 const PANEL := UiStyle.PANEL
@@ -59,8 +60,8 @@ const GAMES := {
 		"label": "CHAIR RACE",
 		"cost": 120,
 		"blurb":
-		"RACE THE CREW ON ROLLING OFFICE CHAIRS. STEER WITH LEFT AND RIGHT, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. WALLS AND CONES COST TIME.",
-		"keys": "ARROWS = STEER  Z X = PUSH  ESC = LEAVE"
+		"RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
+		"keys": "ARROWS = LANE  Z X = PUSH  ESC = LEAVE"
 	},
 }
 const DINERS := ["Alan", "Garrison", "Dan"]
@@ -165,8 +166,11 @@ const ROOM_INTRO := {
 	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
 	"dinner":
 	"WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
+	"chair":
+	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
+const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
 const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 # karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
@@ -423,7 +427,8 @@ const ROOMS := {
 	"bowling": "bowling_alley",
 	"karaoke": "karaoke_bar",
 	"escape": "escape_room",
-	"dinner": "restaurant"
+	"dinner": "restaurant",
+	"chair": "warehouse"
 }
 # where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
@@ -432,6 +437,7 @@ const SPOTS := {
 	"karaoke": [236, 262, 282, 130, 160, 100],
 	"escape": [118, 175, 205, 305, 325, 14],  # clear of the clue zones (shelf 52, clock 86, painting 149, board 238, keypad 276)
 	"dinner": [34, 62, 106, 140, 175, 205],
+	"chair": [1135, 1160, 1185, 1210, 1235, 1260],  # whoever is not racing watches from beyond the finish line
 }
 const TECH_DAYS := [5, 10, 15]
 const OWNER_WEEKS := [4, 9, 14, 19]
@@ -791,6 +797,8 @@ func start(id: String, from_invite := false, options := {}) -> void:
 		var away := []
 		if opts.has("party"):  # whoever did not come stays out of the building
 			away = roster().filter(func(n: String) -> bool: return not opts.party.has(n))
+		if id == "chair":  # the racers are puppets on the floor, the rest of the party watches from the finish line
+			away.append_array(racers().filter(func(n: String) -> bool: return not away.has(n)))
 		World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}), away)
 		Game.go(str(ROOMS[id]), "from_outing")
 		return
@@ -812,6 +820,8 @@ func _open(id: String, from_invite: bool) -> void:
 	_canvas.visible = true
 	if Campaign.mode == "owner":
 		Owner.cash -= int(GAMES[id].cost)
+	if id == "chair":
+		_chair_setup()
 	_canvas.queue_redraw()
 
 
@@ -827,7 +837,7 @@ func begin_play(pick := "") -> void:
 			if room_mode():
 				_escape_room_setup()
 		"chair":
-			_chair_setup()
+			pass  # set up when the page opened: the race is on the floor, the countdown starts now
 		_:
 			_dinner_setup()
 	if room_mode():
@@ -838,6 +848,7 @@ func close() -> void:
 	if not is_open:
 		return
 	is_open = false
+	_chair_clear()
 	_canvas.visible = false
 	Game.ui_open = false
 	World.time_scale = _prev_scale
@@ -2139,7 +2150,7 @@ func _bubble(node: Node, glyph: String, secs := 1.2) -> void:
 
 
 func _room_begin() -> void:
-	Game.ui_open = false
+	Game.ui_open = game == "chair"  # the race has the keys: the real player stays put (hidden) until it is over
 	match game:
 		"karaoke":
 			var mic := _x0() + MIC_X
@@ -2171,7 +2182,7 @@ func _room_process(delta: float) -> void:
 
 # keys the in-room game wants (the rest still move you around)
 func _room_wants(key: int) -> bool:
-	if key == KEY_ESCAPE:
+	if key == KEY_ESCAPE or (game == "chair" and key in CHAIR_KEYS):
 		return true
 	match game:
 		"bowling":
@@ -2224,6 +2235,8 @@ func _room_hint() -> String:
 			text = _bowl_hint(str(g.get("stage", "")))
 		"karaoke":
 			text = "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+		"chair":
+			text = _chair_hint()
 		"escape":
 			if g.get("entry", false):
 				text = "ARROWS  ENTER = TRY  ESC = BACK"
@@ -2524,13 +2537,15 @@ func _dinner_react() -> void:
 func _paint_hud(size: Vector2) -> void:
 	UiStyle.hint_bar(_canvas, size, hint())
 	var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
-	var strip_w := 176.0 if game == "dinner" else 164.0  # five faces need the room
+	var strip_w := 176.0 if game == "dinner" else (232.0 if game == "chair" and size.x > 300.0 else 164.0)  # five faces need the room
 	var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
 	match game:
 		"bowling":
 			_hud_bowling(strip)
 		"karaoke":
 			_hud_karaoke(strip, size)
+		"chair":
+			_hud_chair(strip)
 		"escape":
 			_hud_escape(strip)
 		_:
@@ -2641,7 +2656,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
 
 
 # ---- drawing ------------------------------------------------------------------------------------
-# ---- chair race (R12): the rules, the course and the drawing are in chair_race.gd ----------------------------
+# ---- chair race (R12, side-on in R18): the rules are in chair_race.gd, the drawing in chair_track.gd ------------
 # who races: the party (or the whole roster when nobody was invited), those with a personality in ChairRace.RACERS
 func racers() -> Array:
 	var pool := present() if opts.has("party") else roster()
@@ -2658,27 +2673,89 @@ func _chair_params() -> Dictionary:
 	}
 
 
+# the race is set up as soon as its page opens (so the room can show the racers on the grid); the countdown starts with ENTER
 func _chair_setup() -> void:
 	var race := ChairRace.new()
 	race.setup(_chair_params(), racers(), Difficulty.rng("chair"))
-	g = {"race": race, "place": 0, "new_best": false}
+	g = {"race": race, "place": 0, "new_best": false, "count": 4}
+	var scene := get_tree().current_scene
+	if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
+		var me := _actor("Player")
+		var specs := [
+			{
+				"key": "You",
+				"character": me.character_id() if me != null else "office_adult",
+				"custom": Look.is_custom(),
+				"color": Color.WHITE,
+				"label": "YOU",
+			}
+		]
+		for r in race.rivals:
+			specs.append({"key": r.n, "character": str(World.row(r.n).character), "custom": false, "color": r.color, "label": str(r.n).substr(0, 1)})
+		var track := ChairTrack.new()
+		track.setup(scene, race, _x0(), specs)
+		g["track"] = track
+
+
+# the racers and the copied props leave the floor, the real player is shown again
+func _chair_clear() -> void:
+	var track: Variant = g.get("track")
+	if track != null and is_instance_valid(track):
+		track.clear()
+	g.erase("track")
 
 
 func _chair_tick(dt: float) -> void:
 	var race: RefCounted = g.race
-	var steer := 0.0
-	steer = Input.get_axis("move_left", "move_right")
-	race.step(dt, float(g.get("steer", steer)))
+	if g.has("lane"):  # tests steer without the keyboard
+		race.go_lane(int(g.lane))
+	race.step(dt)
+	_chair_cues(race)
 	if race.phase == "done" and race.end_t >= 1.2:
 		_chair_end()
 
 
+# sounds for what just happened, and the line in the caption bar (the countdown, a toast, how the push felt, or where the next checkpoint is)
+func _chair_cues(race: RefCounted) -> void:
+	for e in race.events:
+		match str(e):
+			"crash":
+				Sfx.play("clunk")
+			"cone", "oil", "false":
+				Sfx.play("squeak")
+			"go", "finish":
+				Sfx.play("bell")
+			"check":
+				Sfx.play("ui_tick")
+	race.events.clear()
+	var line := ""
+	if race.clock < 0.0:
+		line = "READY... %s" % race.countdown_text()
+		if int(g.count) != int(ceilf(-race.clock)):
+			g.count = int(ceilf(-race.clock))
+			Sfx.play("ui_tick")
+	elif race.msg_t > 0.0:
+		line = race.msg
+	elif race.feel_t > 0.0:
+		line = race.feel
+	elif race.cp_next < ChairRace.CHECK_NAMES.size():
+		line = "NEXT: %s" % ChairRace.CHECK_NAMES[race.cp_next]
+	else:
+		line = "THE FINISH LINE!"
+	caption(line, 0.3)
+
+
 func _chair_press(key: int) -> void:
 	var race: RefCounted = g.race
-	if key == KEY_Z:
-		race.push(0)
-	elif key == KEY_X:
-		race.push(1)
+	match key:
+		KEY_Z:
+			race.push(0)
+		KEY_X:
+			race.push(1)
+		KEY_UP, KEY_W:
+			race.change_lane(-1)
+		KEY_DOWN, KEY_S:
+			race.change_lane(1)
 
 
 func _chair_hint() -> String:
@@ -2702,7 +2779,7 @@ func _chair_lines() -> Array:
 	var race: RefCounted = g.race
 	var out := []
 	if race.dnf:
-		out.append("THE CHAIR NEVER MADE IT PAST THE LAST TURN. (80 SECOND LIMIT.)")
+		out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
 	else:
 		out.append(race.comment())
 	if g.new_best:
@@ -2710,11 +2787,48 @@ func _chair_lines() -> Array:
 	return out
 
 
+# without the room (the overlay page) there is only the numbers
 func _paint_chair(b: Rect2) -> void:
 	var race: RefCounted = g.race
-	var board := Rect2(b.position, Vector2(b.size.x, b.size.y - 12.0))
-	race.paint(_canvas, board)
-	race.paint_strip(_canvas, Rect2(b.position.x, board.end.y + 1.0, b.size.x, 11.0))
+	var y := b.position.y
+	var head := "READY... %s" % race.countdown_text() if race.clock < 0.0 else "TIME %.1fS" % race.total()
+	_t("%s  PLACE %d OF %d" % [head, race.place_now(), race.rivals.size() + 1], b.position.x, y)
+	_t("CHECKPOINT %d OF %d" % [race.cp_next, ChairRace.CHECK_NAMES.size()], b.position.x, y + 9.0)
+	_t("STAMINA %d" % int(race.stam), b.position.x, y + 18.0, BLUE)
+	if race.msg_t > 0.0:
+		_t(race.msg, b.position.x, y + 27.0, RED if race.msg.contains("+") else INK)
+
+
+# the strip at the bottom of the room: the Z and X keys, the clock, your place, everybody's progress, your stamina
+func _hud_chair(s: Rect2) -> void:
+	var race: RefCounted = g.race
+	var o := UiStyle.strip(_canvas, s)
+	var keys := ["Z", "X"]
+	for k in 2:
+		var lit: bool = race.lit(k)
+		var kx := o.x + 9.0 * float(k)
+		_canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 8.0), AMBER if lit else UiStyle.MUTED)
+		_t(keys[k], kx + 2.0, s.position.y + 4.0, INK if lit else WHITE)
+	_t("READY" if race.clock < 0.0 else "%.1fS" % race.total(), o.x + 21.0, o.y, WHITE)
+	_t("P%d/%d" % [race.place_now(), race.rivals.size() + 1], o.x + 47.0, o.y, UiStyle.SOFT)
+	var bw := 30.0
+	var bx := s.end.x - bw - 5.0
+	var stam_col := GREEN if race.stam > 40.0 else (AMBER if race.stam > 15.0 else RED)
+	_canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
+	_canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(race.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+	var rx := o.x + 68.0
+	var rw := bx - rx - 6.0
+	var ry := s.position.y + 6.0
+	_canvas.draw_rect(Rect2(rx, ry, rw, 1.0), UiStyle.SOFT)
+	for i in ChairRace.CHECK_FRAC.size():
+		_canvas.draw_rect(Rect2(rx + rw * float(ChairRace.CHECK_FRAC[i]), ry - 2.0, 1.0, 5.0), UiStyle.SOFT)
+	_canvas.draw_rect(Rect2(rx + rw, ry - 3.0, 2.0, 7.0), WHITE)
+	for who in race.rivals:
+		var fx := rx + rw * clampf(float(who.s) / ChairRace.LEN, 0.0, 1.0)
+		_canvas.draw_rect(Rect2(fx - 1.0, ry - 1.0, 3.0, 3.0), who.color)
+	var mx := rx + rw * clampf(race.pos / ChairRace.LEN, 0.0, 1.0)
+	_canvas.draw_rect(Rect2(mx - 2.0, ry - 2.0, 5.0, 5.0), INK)
+	_canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
 
 
 func _t(s: String, x: float, y: float, color := INK) -> void:
@@ -2764,8 +2878,6 @@ func _paint() -> void:
 		Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
 	)
 	var panel := UiStyle.panel_rect(size, 250.0, 112.0)
-	if game == "chair" and phase == "play":
-		panel = ChairRace.panel_rect(size)
 	var title := str(GAMES[game].label) + ("  TEAM OUTING" if phase != "result" else "  RESULT")
 	var body := UiStyle.panel(_canvas, panel, title, "", 0.88 if _traveled else 1.0)
 	match phase:

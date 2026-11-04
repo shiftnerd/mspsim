@@ -136,7 +136,12 @@ const SCENES := {
 		"x0": -556,
 		"W": 1480,
 		"spawns":
-		{"start": [-496, "right"], "from_main": [-496, "right"], "from_closet": [-496, "right"]},
+		{
+			"start": [-496, "right"],
+			"from_main": [-496, "right"],
+			"from_closet": [-496, "right"],
+			"from_outing": [-386, "right"]
+		},
 		"links":
 		[
 			{"name": "ToCloset", "x": -535, "to": "network_closet", "spawn": "from_warehouse"},
