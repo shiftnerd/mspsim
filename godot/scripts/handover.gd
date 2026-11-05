@@ -70,7 +70,7 @@ static func start(deal: Dictionary) -> void:
 		return
 	Cards.ask(
 		"{ops}",
-		"Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it." % [str(deal.name), int(deal.mrr), list.size()],
+		"Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it.%s" % [str(deal.name), int(deal.mrr), list.size(), SalesCampaign.SalesRival.takeover_line(deal)],
 		[{"label": "LET'S GO THROUGH THE LIST", "id": "go"}],
 		func(_id: String) -> void: ask_promise(deal, 0)
 	)
@@ -151,6 +151,8 @@ static func finish(deal: Dictionary, show_card: bool) -> void:
 	deal["complain"] = left >= 0.5
 	deal["resolved"] = false
 	deal["churn"] = clampi(int(round(10.0 + 12.0 * left + 4.0 * float(dropped))), 0, 100)
+	deal["mood"] = clampi(int(deal.mood) + SalesCampaign.SalesRival.mood_adjust(deal), 25, 90)
+	deal["churn"] = clampi(int(deal.churn) + SalesCampaign.SalesRival.churn_adjust(deal), 0, 100)
 	deal["state"] = "active"
 	deal["onboarded"] = false
 	deal["onboard_due"] = int(deal.week) + int(Deals.ONBOARD[str(deal.get("onboard", "std"))].weeks)

@@ -129,7 +129,7 @@ func _init() -> void:
 	# ---- the steppers
 	sc.leads = [l]
 	qb.begin(l)
-	_check(sc.crm_view == "build" and qb.ROWS.size() == 8 and int(sc.qb.row) == 0, "begin opens the builder on the first row")
+	_check(sc.crm_view == "build" and qb.ROWS.size() == 9 and int(sc.qb.row) == 0, "begin opens the builder on the first row")
 	qb.change("method", 1)
 	qb.change("promise", 1)
 	qb.change("promise", 1)

@@ -182,6 +182,7 @@ func _init() -> void:
 	sc.book = []
 	c.day = 4
 	lead.stage = "QUOTED"
+	lead["incumbent"] = "none"  # a Big Cheese client would bring its inherited mess to the handover (tests/sales_rival.gd)
 	lead["site"] = false
 	sc.leads.append(lead)
 	var deal: Dictionary = sc.close_deal(lead, deals.norm(q))

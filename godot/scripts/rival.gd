@@ -307,6 +307,16 @@ static func defect_exit(_rival: String, _client: int) -> void:
 
 
 # the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids from the rap sheet
-static func assessment(_rival: String) -> Array:
-	# TODO(sales agent): choose 3 to 5 habits of this rival, honest list
-	return []
+static func assessment(rival: String) -> Array:
+	var pool: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
+	if pool.is_empty():  # nobody on file (in-house, no incumbent, Plumb Line): the usual mess of a small office
+		pool = ["R01", "R02", "R04", "R12", "R14", "R15"]
+	var r: RandomNumberGenerator = Difficulty.rng_for("assess", int(SalesCampaign.flags.get("assess_n", 0)) * 17 + Campaign.day)
+	for i in range(pool.size() - 1, 0, -1):
+		var j := r.randi() % (i + 1)
+		var t: Variant = pool[i]
+		pool[i] = pool[j]
+		pool[j] = t
+	var picked := pool.slice(0, mini(pool.size(), 3 + r.randi() % 3))
+	picked.sort()
+	return picked
