@@ -16262,7 +16262,7 @@ THE FORTY-INCH PLOTTER CHEWS ITS ROLL
 
 # PrinterGame > MODEL_TEXT > plotter > intro2
 [PrinterGame.MODEL_TEXT.plotter.intro2]
-AND SAYS MEDIA JAM. A PRINT DUE AT NOON.
+A FORTY-FOOT ROLL. MEDIA JAM. DUE AT NOON.
 
 # PrinterGame > MODEL_TEXT > plotter > jam_help
 [PrinterGame.MODEL_TEXT.plotter.jam_help]

@@ -1014,12 +1014,12 @@ const CAST_AT := {
 	{
 		"a":
 		{
-			"main": [["client_designer_a", 160, "staff"], ["expo_atte", 214, "staff"]],
+			"main": [["client_designer_a", 184, "staff"], ["expo_atte", 214, "staff"]],
 			"office": [["expo_vendp", 162, "owner"]]
 		},
 		"b":
 		{
-			"main": [["client_designer_b", 160, "staff"], ["expo_atta", 214, "staff"]],
+			"main": [["client_designer_b", 184, "staff"], ["expo_atta", 214, "staff"]],
 			"office": [["client_mina", 162, "owner"]]
 		},
 	},
