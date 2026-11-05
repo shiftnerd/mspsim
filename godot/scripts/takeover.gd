@@ -38,6 +38,7 @@ static func set_inherit(client: int, value: int) -> void:
 
 # a takeover starts: the risk is the number of open findings times PER_FINDING (T1-T6 unless told otherwise)
 static func begin(client: int, open_findings := 6) -> void:
+	Career.add("takeovers")  # R38 P6
 	set_inherit(client, open_findings * PER_FINDING)
 
 

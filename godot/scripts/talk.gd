@@ -7,6 +7,7 @@ extends Node
 # Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: lines about the rival and the Standard
 const SPECIALTY := {
 	"Alan": "servers",
 	"Garrison": "security",
@@ -504,6 +505,8 @@ func tip() -> String:
 	if Campaign.mode == "service" and ServiceArc.tip(_who) != "":
 		text = ServiceArc.tip(_who)
 	if text == "":
+		text = RivalTouches.freezer_tip(_who, Campaign.mode, randf())  # R38: backups in freezer bags (tech)
+	if text == "":
 		var pool: Array = TIPS_GENERIC[voice(_who)]
 		text = pool[randi() % pool.size()]
 	if tier(_who) == "cold":
@@ -718,4 +721,7 @@ func owner_idea() -> String:
 					break
 		_:
 			text = "The pipeline is thin. A team night would not hurt either; the crew has not had one."
+	var touch := RivalTouches.talk_line(_who)  # R38: the rival, the Standard and the folder (words only)
+	if touch != "" and randf() < 0.6:
+		text = touch
 	return text

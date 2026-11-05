@@ -62,6 +62,7 @@ off at five.
 | **Coffee machine** | Opinions are its own |
 | **Quality assurance** | The coworkers, who have never once agreed with each other |
 | **Special thanks** | Every IT person who has ever said "have you tried turning it off and on again", and meant it kindly |
+| **Special thanks** | The satirical MSP blog that made us think about backups in freezer bags |
 
 ---
 

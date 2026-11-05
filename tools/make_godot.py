@@ -12004,6 +12004,7 @@ write("scripts/yeartwo.gd", '''extends Node
 # A new mode (service, sales) plugs in by getting `"year2": true` in Campaign.MODE_DEFS and rows in YEAR2.beats /
 # YEAR2.shuffle / YEAR2.endings and TEXT; nothing else in this file names a mode except the day tables of `_base`.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: the Standard carry-over and the Year 2 rival
 const VERSION := 1
 const YEAR := 2
 const CARRY := {
@@ -12111,6 +12112,15 @@ const TEXT := {
             "desc": "TWO SHOPS IN OTHER TOWNS RUN ON YOUR BINDERS AND PAY YOU A FEE. THE BRAND GOES REGIONAL.",
         },
     },
+    "habits": {
+        "carry": "YOUR GOOD HABITS COME OVER AT 60 PERCENT OF LAST YEAR'S STANDARD.",
+        "rival_note": "BIG CHEESE IS GONE. HARD RIND IT HAS THE SAME FLYERS AND THE SAME HABITS.",
+        "rival": {
+            "name": "HARD RIND IT",
+            "owner": "LYLE PRUITT",
+            "blurb": "Hard Rind IT Services. Everything included, $41 a seat. Same flyers, new paint. Booked solid.",
+        },
+    },
     "endings": {
         "head": "YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.",
         "clientbuy": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
@@ -12132,6 +12142,7 @@ func reset() -> void:
     moves = []
     carried = {}
     prev = {}
+    RivalTouches.rival_year(1)
 
 
 # ---- the meta record (unlock) ---------------------------------------------------------------------------------
@@ -12168,6 +12179,9 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
     meta.set_value(mode, "value", Owner.valuation() if books else 0)
     meta.set_value(mode, "cash", Owner.cash if books else Campaign.cash)
     meta.set_value(mode, "trust", Partner.trust)
+    meta.set_value(mode, "standard", RivalTouches.standard_now() if books else 0)  # R38: the Standard comes over at 60 percent
+    if books:
+        RivalTouches.note_year_end()
     if Campaign.year >= YEAR:
         Career.add("year2_done")
 
@@ -12354,6 +12368,8 @@ func begin_run(mode: String) -> void:
     else:
         Owner.cash += int(carried.cash)
         Partner.trust = clampi(int(carried.trust) + Build.trust_bonus(), 0, 100)
+        RivalTouches.rival_year(2)
+        carried["habits"] = RivalTouches.year2_begin(prev)
     for cname in YEAR2.clients.client:
         var idx := client_index(str(cname))
         if idx >= 0 and not Sales.active.has(idx):
@@ -12387,6 +12403,9 @@ func intro_text() -> String:
             if not bits.is_empty():
                 s += ", " + ", ".join(bits)
         parts.append(s + ".")
+        if Campaign.books_active() and not (carried.get("habits", []) as Array).is_empty():
+            parts.append(str(TEXT.habits.carry))
+            parts.append(str(TEXT.habits.rival_note))
     return " ".join(parts)
 
 
@@ -12689,6 +12708,7 @@ func from_dict(data: Dictionary) -> void:
     prev = data.get("prev", {}) if data.get("prev", {}) is Dictionary else {}
     pick = str(data.get("pick", ""))
     ban = str(data.get("ban", ""))
+    RivalTouches.rival_year(Campaign.year)  # a saved Year 2 run keeps the new rival name
 ''')
 
 
@@ -22169,6 +22189,7 @@ write("scripts/lync.gd", '''extends Node
 
 signal changed
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6
 const COLORS := {"green": Color("3cc15a"), "amber": Color("e0a030"), "red": Color("d23c3c"), "grey": Color("8b93a1")}
 const KIND_PRESENCE := {
     "meeting": ["IN A MEETING", "red"], "lunch": ["AWAY - LUNCH", "amber"], "coffee": ["AWAY", "amber"],
@@ -22536,6 +22557,11 @@ func incoming(forced_kind := "") -> void:
     if Campaign.mode == "service" and forced_kind == "":
         ServiceArc.lynk_incoming()  # C7: the service cast has its own voices
         return
+    if Campaign.mode == "owner" and forced_kind == "" and randf() < 0.2:
+        var touch := RivalTouches.lynk_note(Social.people(), boss(), randi())  # R38: the rival, the Standard, the folder
+        if not touch.is_empty():
+            _push(str(touch[0]), str(touch[0]), str(touch[1]))
+            return
     var pool := []
     for who in Social.people():
         if presence(who)[0] == "AVAILABLE" and not pending.has(who):
@@ -22658,6 +22684,9 @@ func _boss_reply(who: String) -> String:
     if who == "Marge":
         var est: Dictionary = Owner.weekly_estimate()
         text = "Cash is $%d. We make about $%d a week before one-offs. Receivables are $%d." % [Owner.cash, int(est.ebitda), Owner.ar_total()]
+        var touch := RivalTouches.marge_line()
+        if touch != "":
+            text += " " + touch
     elif Campaign.mode != "service":
         var unchecked := false
         for c in Sales.active:
@@ -22698,6 +22727,7 @@ write("scripts/nerds.gd", '''extends Node
 
 signal changed
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: rap: gating of forum threads and IRC lines
 const NICKS := {
     "rodent_rick": {"acc": 0.85, "color": Color("5aa0e8")},
     "gnawer": {"acc": 0.75, "color": Color("3cc15a")},
@@ -24655,6 +24685,181 @@ const THREADS := [
         "answer":
         "Build a small lab with a spare box and a free hypervisor and restore a copy of the database before testing.",
     },
+    {
+        "title": "Who is doing the cheap flat rate thing in my county?",
+        "board": "general",
+        "skill": "people",
+        "level": 0,
+        "needs": "rap:bigcheese:R11",
+        "posts":
+        [
+            {
+                "by": "sysadmin_sue",
+                "text":
+                "A flyer showed up at three of my clients: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Anybody know who it is and what they actually do for $39?"
+            },
+            {"by": "wrench_rob", "text": "Big Cheese something. A man in a nice jacket at every Chamber lunch. Never seen a van with a ladder on it."},
+            {"by": "old_hand", "text": "Ask for the list. If there is no list, the list is: a person shows up, they are nice, nothing else is promised."},
+            {"by": "cable_cat", "text": "Seen it. Everything included until it is not. Then it is a project."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Flat per seat price: what is NOT in it?",
+        "board": "burrow",
+        "skill": "people",
+        "level": 0,
+        "needs": "rap:bigcheese:R11",
+        "posts":
+        [
+            {
+                "by": "bytes_n_bagels",
+                "text":
+                "Not a vent, a real question. If a shop charges one flat price per seat and nothing is itemized, how does the client know what they are not getting?"
+            },
+            {"by": "packet_pam", "text": "They do not. That is the point of the flat price. Itemize it: backups, patching, after hours calls, and what is not covered."},
+            {"by": "tcp_tim", "text": "A one page list of what you do each week sells better than a low price. Try it on one client."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Backup on a USB drive in a freezer bag?",
+        "board": "burrow",
+        "skill": "servers",
+        "level": 0,
+        "needs": "rap:bigcheese:R01",
+        "posts":
+        [
+            {
+                "by": "dbl_click_dave",
+                "text":
+                "Heard a story at the supplier counter: a shop that keeps the only backup of a client on one USB drive in a freezer bag in the owner's trunk. I thought he was joking."
+            },
+            {"by": "GrizzleAdmin", "text": "I wish I could say it was the first time I had heard it. A freezer bag protects it from spilled coffee. That is all it protects it from."},
+            {"by": "rodent_rick", "text": "The drive has a light. The light is on. The light is a promise, not a restore."},
+            {"by": "PS_wizard", "text": "Restore one file somewhere else. Every quarter. Write the date down. That is the whole trick."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Is a green light on the backup box a backup?",
+        "board": "tips",
+        "skill": "servers",
+        "level": 1,
+        "needs": "rap:bigcheese:R01",
+        "posts":
+        [
+            {"by": "HELPPLZ_Pip", "text": "my backup box has a green light. it has had a green light since 2011. is it ok??"},
+            {"by": "old_hand", "text": "Pip, a light tells you it has power. It does not tell you the data is there. Restore a file today."},
+            {"by": "MPriest", "text": "Green is a color, not a test result."},
+            {"by": "wrench_rob", "text": "Test the restore, then test it again after you change anything. Put the date on the box."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "One admin password for every client. Tell me I am wrong.",
+        "board": "tips",
+        "skill": "security",
+        "level": 1,
+        "needs": "rap:bigcheese:R02",
+        "posts":
+        [
+            {
+                "by": "xX_n00b_Xx",
+                "text":
+                "My boss uses the same admin password at every client so we never get locked out. It is easy to remember. Is that bad?"
+            },
+            {"by": "LAN_lord", "text": "It is bad. One leaked laptop and every client you have is open. Give each client its own, in a safe place."},
+            {"by": "sysadmin_sue", "text": "And not on a yellow note at the front desk. I have seen that too. The note was in the photo on the company page."},
+            {"by": "GrizzleAdmin", "text": "Unique passwords per client, one sealed copy in a safe, and a way in that is not the same one every day."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Yellow sticky note or a password vault?",
+        "board": "tools",
+        "skill": "security",
+        "level": 1,
+        "needs": "rap:bigcheese:R02",
+        "posts":
+        [
+            {"by": "cable_cat", "text": "Front desk has the admin password on a sticky note on the monitor. The tech says it is fine because it is behind the desk. Is it?"},
+            {"by": "old_hand", "text": "It is behind the desk until a visitor leans over the desk."},
+            {"by": "packet_pam", "text": "A password manager and a sealed envelope in a safe. The sticky note goes in the shredder."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Vendor seat true-up: report the real number or take the discount?",
+        "board": "burrow",
+        "skill": "people",
+        "level": 0,
+        "needs": "rap:bigcheese:R06",
+        "posts":
+        [
+            {
+                "by": "tcp_tim",
+                "text":
+                "Quarterly true-up form from the antivirus vendor. Someone told me a shop in the next county just types a smaller number every quarter and nobody checks. Tempting?"
+            },
+            {"by": "WebWoot_Dee", "text": "We do check. Eventually. And a true-up after an audit costs more than the discount ever saved."},
+            {"by": "old_hand", "text": "Report the real number, then ask for a volume tier. The rep would rather keep a straight client."},
+            {"by": "gnawer", "text": "Not tempting once you picture the audit letter."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Anyone else get a seat count audit letter?",
+        "board": "cloud",
+        "skill": "people",
+        "level": 0,
+        "needs": "rap:bigcheese:R06",
+        "posts":
+        [
+            {"by": "wrench_rob", "text": "A vendor audit letter landed at a client of a client. Sixty three seats installed, forty one paid. The client is furious and it is not even their fault."},
+            {"by": "dbl_click_dave", "text": "That is awful. Who is going to explain it to the owner?"},
+            {"by": "LAN_lord", "text": "The shop that signed the form. Which is why you keep your own count and your own folder."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Cyber insurance questionnaire: how honest do I have to be?",
+        "board": "general",
+        "skill": "security",
+        "level": 1,
+        "needs": "rap:bigcheese:R05",
+        "posts":
+        [
+            {
+                "by": "sysadmin_sue",
+                "text":
+                "A client forwarded me the insurer's security questionnaire. Question 9: is two-factor login on for email? It is not. The last IT company ticked yes. Now what?"
+            },
+            {"by": "GrizzleAdmin", "text": "Answer what is true and turn it on before the form goes back. A wrong answer is the first thing a claim reviewer looks for."},
+            {"by": "old_hand", "text": "A yes that is not true is a bigger problem than a no. Fix it, then say yes."},
+            {"by": "PS_wizard", "text": "Keep a signed copy of what you answered. Dated."},
+        ],
+        "answer": "",
+    },
+    {
+        "title": "Green dashboard, nothing watching",
+        "board": "tools",
+        "skill": "servers",
+        "level": 1,
+        "needs": "rap:bigcheese:R04",
+        "posts":
+        [
+            {
+                "by": "bytes_n_bagels",
+                "text":
+                "Took over a site where the monitoring tool shows all green. Turns out nobody ever set up the alerts. The agents are installed and the dashboard has never been configured."
+            },
+            {"by": "rodent_rick", "text": "Installed is not the same as configured. The dashboard is green because it has nothing to compare against."},
+            {"by": "GrizzleAdmin", "text": "Set a baseline, set the alerts, then break something on purpose and see if it tells you."},
+            {"by": "old_hand", "text": "If your dashboard has never been red, either you are perfect or it is not looking."},
+        ],
+        "answer": "",
+    },
 ]
 # ---- IRC social chat (R30): topics, what each nick says per topic, replies, greetings and the channel's own conversations ----
 # TOPICS: id, the button text, and the friendship level it needs (0 stranger, 2 friend, 3 buddy). Every topic is answered by every nick.
@@ -25320,7 +25525,7 @@ const GREETINGS := {
     "trollbot": ["oh no. FreshRat. my least favourite. in a nice way.", "FreshRat is here. i'll behave. for four minutes."],
 }
 # the channel talks to itself. needs: "" always, "am" / "pm" by the clock, "fri" on a Friday, "day:N" from day N on, "before:N" until day N,
-# "backup" while a client backup is failing, "went" after Rodent Nation. {day} {date} {time} are filled in.
+# "backup" while a client backup is failing, "went" after Rodent Nation, "rap:<rival>:<habit>" once the rap sheet knows it (R38). {day} {date} {time} are filled in.
 const AMBIENT := [
     {"id": "snow", "needs": "", "lines": [
         ["GrizzleAdmin", "snow. in April. I want a refund on this spring."],
@@ -25490,6 +25695,28 @@ const AMBIENT := [
         ["old_hand", "the resort. the buffet. the lanyards. never again. maybe next year."],
         ["PS_wizard", "the badge scanners had better uptime than most of my clients."],
     ]},
+    {"id": "rival_flat", "needs": "rap:bigcheese:R11", "lines": [
+        ["gnawer", "anyone know who is handing out the $39 a seat flyers? EVERYTHING INCLUDED."],
+        ["old_hand", "ask what everything is. I'll wait."],
+        ["trollbot", "everything is a cheese, gnawer. it's always a cheese."],
+    ]},
+    {"id": "rival_bag", "needs": "rap:bigcheese:R01", "lines": [
+        ["rodent_rick", "story from the supplier counter: a whole client backed up on one usb stick in a freezer bag."],
+        ["GrizzleAdmin", "a freezer bag. of course."],
+        ["MPriest", "keeps the coffee out. nothing else."],
+        ["PS_wizard", "restore one file. then you may call it a backup."],
+    ]},
+    {"id": "rival_password", "needs": "rap:bigcheese:R02", "lines": [
+        ["gnawer", "saw a yellow sticky note with an admin password on a monitor today. in a PHOTO on the company page."],
+        ["old_hand", "unique password per client. every client. no exceptions."],
+        ["HELPPLZ_Pip", "wait is one password for everything bad???"],
+        ["rodent_rick", "yes pip."],
+    ]},
+    {"id": "rival_seats", "needs": "rap:bigcheese:R06", "lines": [
+        ["PS_wizard", "vendor seat true-up season again. report the real number. the audit letter is worse."],
+        ["MPriest", "i have a shop in the next county who types forty one every quarter. i hope he is well."],
+        ["GrizzleAdmin", "the audit is coming. it always comes."],
+    ]},
 ]
 
 const COOLDOWN := 45.0
@@ -25570,7 +25797,10 @@ func is_sticky(i: int) -> bool:
 
 # a vendor thread only shows after Rodent Nation ("went") or after you gave a vendor your badge ("scan")
 func thread_visible(i: int) -> bool:
-    match str(THREADS[i].get("needs", "")):
+    var need := str(THREADS[i].get("needs", ""))
+    if need.begins_with("rap:"):
+        return RivalTouches.needs_ok(need)  # R38: a rival rumour thread needs a rap sheet entry
+    match need:
         "went":
             return Expo.went
         "scan":
@@ -26359,6 +26589,8 @@ func _eligible(needs: String) -> bool:
         return date_text(Campaign.day).begins_with("FRI")
     if needs == "went":
         return Expo.went
+    if needs.begins_with("rap:"):
+        return RivalTouches.needs_ok(needs)
     if needs == "backup":
         for b in Msp.backups:
             if not bool(b.ok):
@@ -36260,6 +36492,7 @@ write("scripts/talk.gd", '''extends Node
 # Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: lines about the rival and the Standard
 const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people", "Morgan": "people", "Sam": "servers", "Terry": "security"}
 const LESSON_XP := 6
 const GREETINGS := {
@@ -36708,6 +36941,8 @@ func tip() -> String:
     if Campaign.mode == "service" and ServiceArc.tip(_who) != "":
         text = ServiceArc.tip(_who)
     if text == "":
+        text = RivalTouches.freezer_tip(_who, Campaign.mode, randf())  # R38: backups in freezer bags (tech)
+    if text == "":
         var pool: Array = TIPS_GENERIC[voice(_who)]
         text = pool[randi() % pool.size()]
     if tier(_who) == "cold":
@@ -36907,6 +37142,9 @@ func owner_idea() -> String:
                     break
         _:
             text = "The pipeline is thin. A team night would not hurt either; the crew has not had one."
+    var touch := RivalTouches.talk_line(_who)  # R38: the rival, the Standard and the folder (words only)
+    if touch != "" and randf() < 0.6:
+        text = touch
     return text
 ''')
 
@@ -44303,6 +44541,7 @@ write("scripts/knowledge.gd", '''extends RefCounted
 # the training budget). Keys: Left / Right change tab, Up / Down pick, Enter does the next step, [ / ] page, H hires, T cycles
 # the training budget. Everything is a public function so the tests can drive it; paint() only draws.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: the green dashboard note
 const NONE := 0
 const DRAFT := 1
 const DOCUMENTED := 2
@@ -44873,6 +45112,9 @@ func info_for(id: String) -> String:
         parts.append("ONLY %s CAN DO IT." % (str(who[0]).to_upper() if not who.is_empty() else "NOBODY"))
     if str(cost.act) in ["draft", "publish", "refresh", "train"]:
         parts.append("%s: %.1fH OF YOURS%s." % [str(cost.verb), float(cost.dan), " AND 1H OF A TECH" if float(cost.tech) > 0.0 else ""])
+    var rb_note := RivalTouches.runbook_note(id)
+    if rb_note != "":
+        parts.append(rb_note)
     return " ".join(parts)
 
 
@@ -45083,9 +45325,10 @@ const ROOTS := {
     "Rival": ["HABITS", "RIVALS"],
     "Habits": ["HABITS"],
     "RivalCards": ["CARDS"],
+    "RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
-const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd"}
+const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -57214,6 +57457,10 @@ const DEFAULT_MEDALS := [
     {"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
     {"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
     {"id": "warehouse_all_star", "title": "WAREHOUSE ALL-STAR", "desc": "3 STARS IN EACH WAREHOUSE GAME", "rules": [["wh_stars3", ">=", 3]]},
+    {"id": "habit_forming", "title": "HABIT FORMING", "desc": "ADOPT 5 GOOD HABITS", "rules": [["habits_adopted", ">=", 5]]},
+    {"id": "spring_cleaning", "title": "SPRING CLEANING", "desc": "PAY OFF 3 SKELETONS", "rules": [["skeletons_paid", ">=", 3]]},
+    {"id": "cleanup_crew", "title": "CLEAN UP CREW", "desc": "FINISH 3 TAKEOVERS", "rules": [["takeovers", ">=", 3]]},
+    {"id": "clean_sheet", "title": "CLEAN SHEET", "desc": "END A YEAR WITH CLEAN BOOKS", "rules": [["clean_sheets", ">=", 1]]},
     {"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
@@ -57330,6 +57577,10 @@ const COUNTERS := [
     ["", "UPSELLS SOLD", "upsells", "n"],
     ["", "DUCK CHATS", "duck_squeaks", "n"],
     ["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
+    ["HABITS", "HABITS ADOPTED", "habits_adopted", "n"],
+    ["", "SKELETONS PAID", "skeletons_paid", "n"],
+    ["", "TAKEOVERS", "takeovers", "n"],
+    ["", "CLEAN SHEETS", "clean_sheets", "n"],
 ]
 const FLUSH_SECS := 3.0
 
@@ -65527,6 +65778,8 @@ static func start(id: String) -> bool:
 		return false
 	if state(id) == ADOPTED:
 		return false
+	if not Owner.habits.has(id):
+		Career.add("habits_adopted")  # R38 P6
 	var e := entry(id)
 	e["start"] = int(e.get("start", Campaign.day))
 	e["last"] = Campaign.day
@@ -65866,6 +66119,7 @@ static func come_clean(id: String) -> bool:
 	var cost := clean_cost(id)
 	Owner.cash -= cost
 	Owner.skel.remove_at(i)
+	Career.add("skeletons_paid")  # R38 P6
 	change_consc(1, true)
 	return true
 
@@ -65873,6 +66127,7 @@ static func come_clean(id: String) -> bool:
 # the bill arrives: cash, reputation, client mood, a card or a toast. TODO(temptation agent): per-class extras (vendor mood, client leaves,
 # forum friends lost, insurer branch of bec_loss) and the card bill_<id> from RivalCards when it exists.
 static func bill(owner: Node, sk: Dictionary) -> void:
+	Career.add("skeletons_paid")  # R38 P6
 	var b: Dictionary = BILLS.get(str(sk.get("id", "")), {})
 	var cost := bill_size(sk)
 	if cost > 0:
@@ -65957,6 +66212,7 @@ static func set_inherit(client: int, value: int) -> void:
 
 # a takeover starts: the risk is the number of open findings times PER_FINDING (T1-T6 unless told otherwise)
 static func begin(client: int, open_findings := 6) -> void:
+	Career.add("takeovers")  # R38 P6
 	set_inherit(client, open_findings * PER_FINDING)
 
 
@@ -66025,6 +66281,245 @@ static func merged_days(base: Dictionary) -> Dictionary:
 	for day in DAYS:
 		out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
 	return out
+''')
+
+write("scripts/rival_touches.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P6: the light touches (docs/scope-bad-habits.md section 1, phase P6). A static helper like Rival and Habits, no state of its own.
+# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, Vic and Marge react to the rival and to the player's Standard band and conscience band.
+#   Words only: no numbers, no scores. state_key() picks which line applies; talk_line / lynk_note / marge_line read the tables.
+# - Forum and IRC gating: needs strings of the form "rap:<rival>:<habit>" (optional ":<level>", default 1 = RUMOUR) read the rap sheet.
+# - The tech campaign freezer bag tip, the service campaign green dashboard note (Knowledge), Year 2 (the Standard at 60 percent and a new rival).
+# Ideas only from the blog series the doc credits: no names, scenes or lines from it. Text: the 3x5 font charset, 2013-14, no AI, no MFA.
+
+const Rival := preload("res://scripts/rival.gd")
+const Habits := preload("res://scripts/habits.gd")
+const Temptation := preload("res://scripts/temptation.gd")
+
+const RIVAL := "bigcheese"
+const SAME_AGAIN_DAYS := 4  # a coworker does not repeat a note for this many owner weeks
+const YEAR2_STANDARD := 0.6  # the share of last year's Standard that comes over
+
+# who -> state key -> what they say at their desk (Talk: ANY IDEAS? in the owner campaign). Keys: rival (the rival is known), bare (rival known
+# and the Standard is BARE or PATCHY), solid, showcase, loose (a few loose ends), closet (skeletons or a closet full).
+const DEFAULT_TALK := {
+	"Alan":
+	{
+		"rival": "That Big Cheese flyer is on every windshield in the lot. Everything included, no list of what everything is. A restore test is not free, and he does not price it.",
+		"bare": "Big Cheese is the loud one, I know. But our own checklist has more empty boxes than ticks. Fix that first and then go fight him.",
+		"solid": "The checklist is mostly ticked and the restores pass. Boring is good. Boring is what I get paid for.",
+		"showcase": "Every box ticked, a restore tested, the change notes written. I would not say it out loud, but I am proud of this shop.",
+		"loose": "Marge has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.",
+		"closet": "I did not sleep. That folder has our name on every page. Pick one, pay it, then pick the next. I will help.",
+	},
+	"Garrison":
+	{
+		"rival": "Rex Calloway shook my hand for ten whole seconds at the Chamber lunch. A man who shakes that long is selling something. Find out what.",
+		"bare": "We talk about trust all day and our own house is half built. A client who asks for proof should get a page, not a speech.",
+		"solid": "Clients are noticing the one page reports. Nobody has ever called me to say thank you for the invoice, and two did this month.",
+		"showcase": "Rex has a billboard. We have a Standard people can read in one page. I know which one I would rather defend at the Chamber.",
+		"loose": "People remember a shortcut longer than a favour. Whatever is in that folder, I would rather we told them first.",
+		"closet": "I cannot look a client in the eye this week. The deals are good and the books are not. We fix the books. Not negotiable.",
+	},
+	"Dan":
+	{
+		"rival": "I drove past a Big Cheese van. Ladder on the roof, nothing in the back. I count that as information.",
+		"bare": "I cannot find half of our own cable labels. Before you judge a rival's closet, let me show you ours.",
+		"solid": "Every rack I touch now has a label and a map. It takes a day to set up and saves three.",
+		"showcase": "I took a photo of every closet this quarter. If I fall off the ladder, someone else can find the switch.",
+		"loose": "I found a default password on a camera and told Marge. I wrote it down so it counts.",
+		"closet": "There is a lot we did not write down. I have started a list. It is longer than I would like.",
+	},
+	"Maya":
+	{
+		"rival": "Clients keep asking me if we are the more expensive ones. I say we are the ones who can tell them what is not in the price.",
+		"bare": "I like it when we can hand a client a page and say, here is what we do. We cannot do that yet. I would like to.",
+		"solid": "The quarterly page is working. People used to ask what they were paying for. Now they ask what is next.",
+		"showcase": "A client told me we are the only ones who tell her about the bad news first. I wrote that on a sticky note and kept it.",
+		"loose": "A couple of clients have gone quiet. The quiet ones are the ones to call. Start with the ones we shortchanged.",
+		"closet": "If one of these comes out, it will not be the money that hurts. It will be the phone calls. Let me help you make them.",
+	},
+	"Vic":
+	{
+		"rival": "Rex told three prospects we are the expensive option. I told them to ask him what a restore costs. They went quiet. I like quiet.",
+		"bare": "I cannot sell what we do not do. Every habit you add is a line I can say out loud at a meeting.",
+		"solid": "Prospects love the one page. It makes me look organized. Do not tell Garrison I said so.",
+		"showcase": "I used the Standard in a pitch today. The owner asked if she could keep the page. She did not ask about price once.",
+		"loose": "I am not saying anything. I am just saying that if a client asks me about a bill, I will tell the truth.",
+		"closet": "I was going to bring a deal over the line today. I looked at that folder and went for a coffee instead.",
+	},
+}
+static var TALK: Dictionary = DEFAULT_TALK.duplicate(true)
+
+# who -> state key -> a text they send you (Lynk, owner campaign). Marge is the bookkeeper and has no desk talk, only these.
+const DEFAULT_LYNK := {
+	"Alan": {"rival": "Saw the Big Cheese van at the diner again. Eating well. Wonder who pays.", "solid": "Restores passed again. I am not smiling. That is just my face.", "loose": "Marge showed me the folder. We should talk. Not now. Soon.", "closet": "Tell me which one you want fixed first. I will bring the clipboard."},
+	"Garrison": {"rival": "Rex sent me a basket of cheese. I am not eating it. Do you think it is bugged?", "solid": "A client praised the one page report. Frame it. I mean it.", "loose": "Quick question. Is there anything in the books I should hear from you first?", "closet": "Whatever the folder says, I want to hear it from you today."},
+	"Dan": {"rival": "Another Big Cheese client asked me for a spare key. I did not give it. I thought about it.", "solid": "All the closets are labelled. I took photos. I may have a problem.", "loose": "I found an old shortcut in a closet. Writing it up now, no judgment.", "closet": "I made a list of what we skipped. It has a second page. Sorry."},
+	"Maya": {"rival": "A client says Big Cheese told her we are not bonded. We are. Can I send her the paper?", "solid": "She loved the quarterly page. She asked for two copies.", "loose": "Three clients sounded off today. I think it is about the things we did not tell them.", "closet": "I can call the worried ones tomorrow. I would rather tell them than have them find out."},
+	"Vic": {"rival": "Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.", "solid": "Closed a deal with the one page. The owner said it was the first time anyone showed her what she bought.", "loose": "If anyone asks about a bill, I am telling the truth. Just so you know.", "closet": "I have two deals ready and I am holding them. Say when."},
+	"Marge": {"rival": "I cannot find a single Big Cheese invoice that says what it is for. I do not think that is an accident.", "solid": "The books are tidy this week and so is my desk. I am nervous. Is that normal?", "loose": "There is a folder in my bottom drawer. It is not thick. It is not thin either.", "closet": "The folder does not close any more. We should sit down before the board does it for us."},
+}
+static var LYNK: Dictionary = DEFAULT_LYNK.duplicate(true)
+
+# tech campaign: a tip about the freezer bag backup (Talk, ANY TIPS?; rarely; Alan and Dan)
+const DEFAULT_TIPS := {
+	"Alan": "A backup on a USB drive in a freezer bag in the trunk of a car is not a backup. It is a hope. Restore one file somewhere else, then you know.",
+	"Dan": "Never trust the little green light on the backup box. Restore one file from every client once a quarter and write down the date.",
+}
+static var TIPS: Dictionary = DEFAULT_TIPS.duplicate(true)
+
+# service campaign: a note under the runbook (Knowledge): runbook id -> the line added to its footer
+const DEFAULT_NOTES := {
+	"restore": "A GREEN LIGHT IS NOT PROOF. RESTORE ONE FILE.",
+	"av": "A GREEN DASHBOARD IS NOT A CHECK. LOOK AT IT.",
+}
+static var NOTES: Dictionary = DEFAULT_NOTES.duplicate(true)
+
+# the medal and counter ids this file adds to Career (the text guard checks them)
+const COUNTERS := ["habits_adopted", "skeletons_paid", "takeovers", "clean_sheets"]
+
+static var _orig_rival: Dictionary = {}
+
+
+# ---- forum and IRC gating --------------------------------------------------------------------------------------------
+# needs "rap:bigcheese:R05" (RUMOUR or better), "rap:bigcheese:R05:2" (SEEN or better). False for anything else.
+static func needs_ok(needs: String) -> bool:
+	var p := needs.split(":")
+	if p.size() < 3 or p[0] != "rap":
+		return false
+	var level := int(p[3]) if p.size() > 3 else Rival.RUMOUR
+	return Rival.rap(str(p[1]), str(p[2])) >= level
+
+
+# ---- which line applies ------------------------------------------------------------------------------------------------
+# "" (nothing to say), "rival", "bare", "solid", "showcase", "loose" or "closet". The conscience speaks first, then the Standard, then the rival.
+static func state_key() -> String:
+	var band := Temptation.band()
+	if band == "SKELETONS" or band == "A CLOSET FULL":
+		return "closet"
+	if band == "A FEW LOOSE ENDS":
+		return "loose"
+	var std := Habits.band()
+	if std == "SHOWCASE":
+		return "showcase"
+	if std == "SOLID":
+		return "solid"
+	if Rival.known(RIVAL):
+		return "bare" if Habits.standard() < 35 else "rival"
+	return ""
+
+
+# ANY IDEAS? at a desk: "" while there is nothing to say
+static func talk_line(who: String) -> String:
+	var key := state_key()
+	if key == "":
+		return ""
+	return str(TALK.get(who, {}).get(key, ""))
+
+
+# a text from a coworker: [who, text] or [] (nobody has anything new). Remembers who said what, so notes do not repeat for a while.
+static func lynk_note(people: Array, boss: String, roll: int) -> Array:
+	var key := state_key()
+	if key == "bare":
+		key = "rival"
+	if key == "":
+		return []
+	var who_list := []
+	for p in people + [boss]:
+		var w := str(p)
+		if LYNK.has(w) and LYNK[w].has(key) and not who_list.has(w) and not _recent(w, key):
+			who_list.append(w)
+	if who_list.is_empty():
+		return []
+	var who := str(who_list[abs(roll) % who_list.size()])
+	Owner.flags["tl_%s_%s" % [who, key]] = Campaign.day
+	return [who, str(LYNK[who][key])]
+
+
+static func _recent(who: String, key: String) -> bool:
+	var seen := int(Owner.flags.get("tl_%s_%s" % [who, key], -999))
+	return Campaign.day - seen < SAME_AGAIN_DAYS
+
+
+# Marge's reply to HOW ARE WE DOING? gets a sentence added (words only) when the habits or the folder matter
+static func marge_line() -> String:
+	var key := state_key()
+	if key == "bare":
+		key = "rival"
+	return str(LYNK.get("Marge", {}).get(key, ""))
+
+
+# tech campaign, ANY TIPS?: now and then Alan or Dan talks about backups in freezer bags
+static func freezer_tip(who: String, mode: String, roll: float) -> String:
+	if mode != "tech" or roll >= 0.25:
+		return ""
+	return str(TIPS.get(who, ""))
+
+
+# service campaign, Knowledge footer: "" for most runbooks
+static func runbook_note(id: String) -> String:
+	return str(NOTES.get(id, ""))
+
+
+# ---- Year 2 --------------------------------------------------------------------------------------------------------------
+# the Standard of the finished run, kept in the meta record (Yeartwo.record)
+static func standard_now() -> int:
+	return Habits.standard()
+
+
+# start habits (free, fresh from day 1) until about YEAR2_STANDARD of last year's score is back; the heaviest habits first, ties by id
+static func carry_habits(prev_standard: int) -> Array:
+	var target := int(round(float(prev_standard) * YEAR2_STANDARD))
+	var ids: Array = Habits.HABITS.keys()
+	ids.sort_custom(
+		func(a: Variant, b: Variant) -> bool:
+			var wa := int(Habits.HABITS[a].get("weight", 0))
+			var wb := int(Habits.HABITS[b].get("weight", 0))
+			return wa > wb or (wa == wb and str(a) < str(b))
+	)
+	var out := []
+	var total := 0
+	for id in ids:
+		var w := int(Habits.HABITS[id].get("weight", 0))
+		if w > 0 and total + w <= target:
+			total += w
+			out.append(str(id))
+	return out
+
+
+# Yeartwo.begin_run (owner campaign): the carried habits are started now
+static func year2_begin(prev: Dictionary) -> Array:
+	var ids := carry_habits(int(prev.get("standard", 0)))
+	var counted := Career.value("habits_adopted")  # a carried habit is not a new adoption
+	for id in ids:
+		Habits.start(str(id))
+	Career.counters["habits_adopted"] = counted
+	return ids
+
+
+# the rap sheet shows the Year 2 rival (Yeartwo.TEXT.habits.rival) under a new name while Campaign.year is 2, the original otherwise
+static func rival_year(year: int) -> void:
+	if not Rival.RIVALS.has(RIVAL):
+		return
+	if year >= 2:
+		if _orig_rival.is_empty():
+			_orig_rival = (Rival.RIVALS[RIVAL] as Dictionary).duplicate(true)
+		var row: Dictionary = Yeartwo.TEXT.habits.rival
+		for k in row:
+			Rival.RIVALS[RIVAL][k] = row[k]
+	elif not _orig_rival.is_empty():
+		for k in _orig_rival:
+			Rival.RIVALS[RIVAL][k] = _orig_rival[k]
+		_orig_rival = {}
+
+
+# the end of an owner year with nothing in Marge's folder and clean books: a CLEAN SHEET for the career
+static func note_year_end() -> bool:
+	if Temptation.folder_count() == 0 and Temptation.band() == "CLEAN BOOKS" and Habits.any():
+		Career.add("clean_sheets")
+		return true
+	return false
 ''')
 
 write("scripts/habits_view.gd", '''extends RefCounted

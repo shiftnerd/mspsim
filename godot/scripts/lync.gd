@@ -10,6 +10,7 @@ extends Node
 
 signal changed
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6
 const COLORS := {
 	"green": Color("3cc15a"),
 	"amber": Color("e0a030"),
@@ -405,6 +406,11 @@ func incoming(forced_kind := "") -> void:
 	if Campaign.mode == "service" and forced_kind == "":
 		ServiceArc.lynk_incoming()  # C7: the service cast has its own voices
 		return
+	if Campaign.mode == "owner" and forced_kind == "" and randf() < 0.2:
+		var touch := RivalTouches.lynk_note(Social.people(), boss(), randi())  # R38: the rival, the Standard, the folder
+		if not touch.is_empty():
+			_push(str(touch[0]), str(touch[0]), str(touch[1]))
+			return
 	var pool := []
 	for who in Social.people():
 		if presence(who)[0] == "AVAILABLE" and not pending.has(who):
@@ -542,6 +548,9 @@ func _boss_reply(who: String) -> String:
 			"Cash is $%d. We make about $%d a week before one-offs. Receivables are $%d."
 			% [Owner.cash, int(est.ebitda), Owner.ar_total()]
 		)
+		var touch := RivalTouches.marge_line()
+		if touch != "":
+			text += " " + touch
 	elif Campaign.mode != "service":
 		var unchecked := false
 		for c in Sales.active:

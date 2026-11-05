@@ -14,6 +14,7 @@ extends RefCounted
 # the training budget). Keys: Left / Right change tab, Up / Down pick, Enter does the next step, [ / ] page, H hires, T cycles
 # the training budget. Everything is a public function so the tests can drive it; paint() only draws.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: the green dashboard note
 const NONE := 0
 const DRAFT := 1
 const DOCUMENTED := 2
@@ -584,6 +585,9 @@ func info_for(id: String) -> String:
 		parts.append("ONLY %s CAN DO IT." % (str(who[0]).to_upper() if not who.is_empty() else "NOBODY"))
 	if str(cost.act) in ["draft", "publish", "refresh", "train"]:
 		parts.append("%s: %.1fH OF YOURS%s." % [str(cost.verb), float(cost.dan), " AND 1H OF A TECH" if float(cost.tech) > 0.0 else ""])
+	var rb_note := RivalTouches.runbook_note(id)
+	if rb_note != "":
+		parts.append(rb_note)
 	return " ".join(parts)
 
 

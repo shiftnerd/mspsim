@@ -194,6 +194,7 @@ static func come_clean(id: String) -> bool:
 	var cost := clean_cost(id)
 	Owner.cash -= cost
 	Owner.skel.remove_at(i)
+	Career.add("skeletons_paid")  # R38 P6
 	change_consc(1, true)
 	return true
 
@@ -201,6 +202,7 @@ static func come_clean(id: String) -> bool:
 # the bill arrives: cash, reputation, client mood, a card or a toast. TODO(temptation agent): per-class extras (vendor mood, client leaves,
 # forum friends lost, insurer branch of bec_loss) and the card bill_<id> from RivalCards when it exists.
 static func bill(owner: Node, sk: Dictionary) -> void:
+	Career.add("skeletons_paid")  # R38 P6
 	var b: Dictionary = BILLS.get(str(sk.get("id", "")), {})
 	var cost := bill_size(sk)
 	if cost > 0:

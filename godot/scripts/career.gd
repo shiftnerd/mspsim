@@ -64,6 +64,10 @@ const DEFAULT_MEDALS := [
 	{"id": "lunch_bunch", "title": "LUNCH BUNCH", "desc": "TAKE 5 LUNCH BREAKS", "rules": [["lunches", ">=", 5]]},
 	{"id": "dog_days", "title": "DOG DAYS", "desc": "SERVE 20 HOT DOGS", "rules": [["dogs_served", ">=", 20]]},
 	{"id": "warehouse_all_star", "title": "WAREHOUSE ALL-STAR", "desc": "3 STARS IN EACH WAREHOUSE GAME", "rules": [["wh_stars3", ">=", 3]]},
+	{"id": "habit_forming", "title": "HABIT FORMING", "desc": "ADOPT 5 GOOD HABITS", "rules": [["habits_adopted", ">=", 5]]},
+	{"id": "spring_cleaning", "title": "SPRING CLEANING", "desc": "PAY OFF 3 SKELETONS", "rules": [["skeletons_paid", ">=", 3]]},
+	{"id": "cleanup_crew", "title": "CLEAN UP CREW", "desc": "FINISH 3 TAKEOVERS", "rules": [["takeovers", ">=", 3]]},
+	{"id": "clean_sheet", "title": "CLEAN SHEET", "desc": "END A YEAR WITH CLEAN BOOKS", "rules": [["clean_sheets", ">=", 1]]},
 	{"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
@@ -180,6 +184,10 @@ const COUNTERS := [
 	["", "UPSELLS SOLD", "upsells", "n"],
 	["", "DUCK CHATS", "duck_squeaks", "n"],
 	["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
+	["HABITS", "HABITS ADOPTED", "habits_adopted", "n"],
+	["", "SKELETONS PAID", "skeletons_paid", "n"],
+	["", "TAKEOVERS", "takeovers", "n"],
+	["", "CLEAN SHEETS", "clean_sheets", "n"],
 ]
 const FLUSH_SECS := 3.0
 
