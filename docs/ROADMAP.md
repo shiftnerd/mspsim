@@ -75,6 +75,7 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | R36 | **Clients who know your name**: direct texts to your cell and by-name ticket requests (ideas in `IDEAS.md`); needs a design pass first | M-L |
 | R37 | **Later bundle, what is left**: a phone camera app. (Built: owner wire fraud, the tech day 17 invoice scam, post-incident reviews, cable tracing and the labelled patch panel, the phone dialer / lock screen / banner, the dashboard escalation arrow.) | M |
 | R38 | Rival habits and good habits (scoped): a sleazy rival MSP with a rap sheet, takeover jobs, 14 good habits, temptation cards with delayed bills, sales displacement; see `docs/scope-bad-habits.md` | L |
+| R38 P0 | **Rival habits scaffold, built** (`Rival`, `Habits`, `Temptation`, `Takeover` static helpers, `RivalCards` data, Owner hooks and saved state, the HABITS and RIVALS tabs, `tests/rival.gd` `habits.gd` `temptation.gd`). Next, in parallel: P1 beats (`rival.gd`, `rival_cards.gd`), P2 habits (`habits.gd`, `habits_view.gd`), P3 temptations (`temptation.gd`, temp cards), P4 takeover (`takeover.gd`, onsite, playbook), P5 sales. API: `docs/dev/rival-habits-api.md` | S |
 | R30 | Ramping dinner (it has no continuous numbers) | S |
 | Q3 | The live-window part of the visual check | S |
 | Q6 | More seeds per balance cell, owner hard, tech hard still wins with a careful bot (results in `docs/balance-notes.md`) | M |

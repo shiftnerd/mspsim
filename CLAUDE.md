@@ -229,6 +229,7 @@ Everything below used to be in this file. It is now in `docs/dev/` (verbatim, re
 - `docs/dev/campaigns-5.md`: Hot dogs and the lunch break (roadmap R29; `grill_game.g ... Darts and the warehouse's odds and ends (roadmap R38; `d
 - `docs/dev/tools-tests.md`: layout audit, bot balance, test runner, generator check, P6
 - `docs/dev/audio-creator.md`: audio, character creator (levels 1-3), resume, pause menu, cozy Easy, METRICS
+- `docs/dev/rival-habits-api.md`: R38 rival habits and good habits, the P0 scaffold API (`Rival`, `Habits`, `Temptation`, `Takeover`, `RivalCards`), fx keys, file ownership
 
 Other docs: `docs/GAME_BIBLE.md`, `docs/ROADMAP.md`, `docs/BACKLOG.md`, `docs/manual/`, `godot/story/README.md`.
 
