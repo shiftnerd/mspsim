@@ -43,6 +43,29 @@ there is a coffee machine you will want to find.
 
 ---
 
+## SCREENSHOTS
+
+<table>
+<tr>
+<td width="50%"><img src="docs/manual/img/title-menu.png" alt="Pick a campaign: tech, owner, service manager, sales, or free play."><br><sub>Pick a campaign: tech, owner, service manager, sales, or free play.</sub></td>
+<td width="50%"><img src="docs/manual/img/psa.png" alt="The service board: tickets, SLA timers, and a computer frozen on a blue screen."><br><sub>The service board: tickets, SLA timers, and a computer frozen on a blue screen.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/manual/img/cubicles.png" alt="The office, in cartoon pixels. Everyone has a desk and an opinion."><br><sub>The office, in cartoon pixels. Everyone has a desk and an opinion.</sub></td>
+<td width="50%"><img src="docs/manual/img/rmm.png" alt="The remote monitoring console: endpoints, backups and projects."><br><sub>The remote monitoring console: endpoints, backups and projects.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/manual/img/conference.png" alt="The conference room, where handovers, reviews and bad news happen."><br><sub>The conference room, where handovers, reviews and bad news happen.</sub></td>
+<td width="50%"><img src="docs/manual/img/warehouse.png" alt="The warehouse: racks, a drinks machine and a very large START sign."><br><sub>The warehouse: racks, a drinks machine and a very large START sign.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/manual/img/bowling.png" alt="After work: bowling night, one of four outings."><br><sub>After work: bowling night, one of four outings.</sub></td>
+<td width="50%"><img src="docs/manual/img/creator.png" alt="Make your own person: look, clothes, shoes, extras."><br><sub>Make your own person: look, clothes, shoes, extras.</sub></td>
+</tr>
+</table>
+
+---
+
 ## CONTENTS
 
 | | PAGE |
