@@ -8,6 +8,7 @@ extends Node
 #  - firing a client costs you a little word of mouth.
 # A buyer values recurring earnings, so project profit is left out of the valuation (take_week_income).
 
+const Habits := preload("res://scripts/habits.gd")  # R38: change requests with rollback, the scorecard
 const SEC_PER_HOUR := 15.0  # one tech-hour = 15 tech-seconds of the simulation (a tech-second costs Owner.COST_PER_SEC)
 const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
@@ -356,6 +357,7 @@ func _quoted(q: Dictionary, method: String) -> void:
 		Msp.send_text("Vic", "I told them we are too busy. They were not thrilled.")
 		return
 	start_project(q, method)
+	Habits.project()  # R38: H3
 	var text := "Project signed: %s." % str(TYPES[str(q.type)].label).to_lower()
 	if method == "scope":
 		text += (
@@ -416,7 +418,7 @@ func _projects_week() -> void:
 			and not bool(p.creep)
 			and not bool(p.scoped)
 			and int(p.weeks) >= 1
-			and randf() < 0.30
+			and randf() < Habits.creep(0.30)
 		):
 			p.creep = true
 			p.est = float(p.est) * (1.0 + SCOPE_CREEP)
@@ -616,7 +618,7 @@ func change_order_amount(client: int) -> int:
 # X9: a change order is a gamble. A happy client, a pricing-minded owner and an early week help; a late-game squeeze hurts
 func change_order_odds(client: int) -> float:
 	return clampf(
-		0.22 + float(Sales.mood(client) - 40) / 200.0 + float(Owner.edge("fee_accept")) - Owner.pressure() * 0.15,
+		0.22 + float(Sales.mood(client) - 40) / 200.0 + float(Owner.edge("fee_accept")) - Owner.pressure() * 0.15 + Habits.change_odds(),
 		0.1,
 		0.7
 	)

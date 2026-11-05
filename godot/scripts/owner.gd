@@ -2065,6 +2065,7 @@ func apply(fx: Dictionary) -> void:
 	if fx.has("gone_clear"):
 		gone.erase(int(fx.gone_clear))
 	if fx.has("ransom_end"):
+		cash += int(float(fx.get("cash", 0)) * (Habits.ransom_mult() - 1.0))  # R38: H1, a tested restore halves the bill
 		_ransom_finish(str(fx.ransom_end))
 	if fx.has("fire"):
 		var told: String = Projects.fire_client(int(fx.fire.client), str(fx.fire.how))
@@ -2087,6 +2088,7 @@ func apply(fx: Dictionary) -> void:
 		leak_found = true
 	if fx.has("risk_choice"):
 		risk_choice = str(fx.risk_choice)
+		Habits.refusal(risk_choice)  # R38: H4, a refusal on paper
 	if fx.has("goal"):
 		goal = {"id": str(fx.goal), "week": Campaign.day}
 	if fx.has("stack"):
@@ -2138,6 +2140,8 @@ func apply(fx: Dictionary) -> void:
 		Partner.change(int((fx.trust as Dictionary).get(Roles.partner(), 0)))
 	if fx.get("sign", false):
 		var signed: int = Sales.sign_client(int(fx.get("client", -1)))
+		if signed >= 0:
+			Habits.new_client(signed)  # R38: H10, a client who was told the truth starts happier
 		if signed >= 0 and fx.has("sign_bonus"):
 			# the owner closed it in person: better first-month mood and a better fee
 			Sales.satisfaction[signed] = clampi(Sales.mood(signed) + int(fx.sign_bonus.mood), 0, 100)
@@ -2164,6 +2168,8 @@ func apply(fx: Dictionary) -> void:
 		Habits.apply_touch(str(fx.habit))
 	if fx.has("habit_start"):
 		Habits.apply_start(fx.habit_start)
+	if fx.has("habit_adopt"):
+		Habits.apply_adopt(str(fx.habit_adopt))  # R38: a card from Marge or Alan, paid for
 	if fx.has("consc"):
 		Temptation.change_consc(int(fx.consc))
 	if fx.has("skel"):
@@ -2434,13 +2440,16 @@ func _staff_week() -> void:
 			extra_staff.erase(hire)
 			hire_quits += 1
 			Msp.send_text("Marge", "%s quit." % hire.name)
+			Habits.departure(str(hire.name))  # R38: H6, the offboarding checklist
 	if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.08:
 		lost_techs += 1
 		Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
+		Habits.departure("The tech")
 	if flags.get("oncall_one", false) and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.05:
 		lost_techs += 1
 		flags["oncall_one"] = false
 		Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
+		Habits.departure("Dan")
 
 
 # ---- the crew complains about bad tools ---------------------------------------------------------------
@@ -2603,6 +2612,7 @@ func drop_client(client: int, reason := "") -> void:
 	Projects.client_gone(client)
 	if client == risk_client:
 		risk_client = -1
+	Habits.loss(client)  # R38: H5, the lost account review
 	Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
 
 
@@ -2625,6 +2635,7 @@ func _qbr() -> void:
 	if pick < 0:
 		return
 	_qbr_done[pick] = Campaign.day
+	Habits.qbr(pick)  # R38: H2, the one page scorecard goes out with the review
 	var key := str(pick)
 	var odds := clampf(
 		(
@@ -3100,7 +3111,7 @@ func _vendor_breach() -> void:
 				[
 					[
 						hit,
-						{"cash": -3500, "mood_all": -10, "rep": -4},
+						{"cash": -int(3500.0 * Habits.breach_mult()), "mood_all": -10, "rep": -4},
 						"Two clients were hit before the vendor said a word. Lawyers are involved."
 					],
 					[1.0 - hit, {}, "Nothing happened, this time."]
@@ -3174,7 +3185,7 @@ func _client_breach() -> void:
 				% name
 			)
 		"waiver":
-			apply({"cash": -500, "mood": {key: -4}})
+			apply({"cash": -500 + Habits.refusal_save(), "mood": {key: -4}})
 			text = (
 				"An account at %s was taken over and a $12,000 payment redirected. Your signed waiver shows you warned them. You help them recover, and their insurer denies the claim."
 				% name
@@ -3595,7 +3606,11 @@ func _ransom() -> void:
 	if t.is_empty():
 		return
 	_ransom_ticket = int(t.id)
-	if not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
+	var restore_fail := Habits.restore_fail()  # R38: H1, a backup nobody ever test restored may not restore
+	var untested_fail := restore_fail > 0.0 and randf() < restore_fail
+	if untested_fail:
+		Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
+	if untested_fail or not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
 		show_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
 		return
 	Msp.rmm_action(str(t.endpoint), "restore")
@@ -4232,6 +4247,8 @@ func review_lines(page: int, ending: String) -> Array:
 				]
 			)
 			lines.append(["A/R OWED $%d   MATURITY: %s" % [ar_total(), OML_NAMES[oml() - 1]], ink])
+			if Habits.any():
+				lines.append(["THE STANDARD: %s" % Habits.standard_text(), good])  # R38
 			lines.append(
 				[
 					"RANSOMWARE: %s" % str(Msp.RANSOM_LABELS.get(str(Story.flags.get("ransom", "")), "-")),

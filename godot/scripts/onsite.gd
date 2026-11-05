@@ -10,6 +10,7 @@ extends Node
 const DRIVE_MINUTES := {0: 20, 1: 35, 3: 25, 8: 50, 9: 30, 10: 70}  # the usual drive to each client site
 const DEFAULT_DRIVE := 45
 const Variety := preload("res://scripts/onsite_variety.gd")
+const Habits := preload("res://scripts/habits.gd")  # R38: runbooks and a network map shorten the job; the front desk log
 const SLA_PER_HOUR := 45.0  # seconds taken off the other tickets' clocks for each hour you are away
 const SITES := {
 	0: {"type": "dental", "skin": "a"},
@@ -1724,7 +1725,7 @@ func inspect(obj: String) -> void:
 		return
 	_inspected[obj] = true
 	var pool: Array = FINDINGS.get(obj, [])
-	var chance := 0.7 if visit_kind != "" else 0.3
+	var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
 	if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
 		Hints.toast(str(TEXT.fine), 2.0)
 		return
@@ -1932,7 +1933,7 @@ func _chose(id: String) -> void:
 			{"onsite": true}
 		)
 		return
-	_away(float(opt.hours), ticket_id)
+	_away(float(opt.hours) * Habits.onsite_mult(client), ticket_id)  # R38: H11
 	var ok := Difficulty.rng("onsite").randf() < float(opt.chance)
 	var text := str(opt.text)
 	if float(opt.chance) <= 0.0:
@@ -2059,7 +2060,7 @@ func _event_answer(ev: Dictionary, id: String) -> void:
 	var text := ""
 	for o in ev.options:
 		if str(o.id) == id:
-			_away(float(o.hours), ticket_id)
+			_away(float(o.hours) * Habits.onsite_mult(client), ticket_id)
 			Sales.adjust(client, int(o.mood))
 			text = str(o.text)
 	Cards.ask("Onsite", text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)

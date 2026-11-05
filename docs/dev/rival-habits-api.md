@@ -54,8 +54,8 @@ All of it is in `Owner.to_dict()` / `from_dict()` / `reset()`; an old save loads
   the code has always had 0.25.
 - `Owner.poach_gaps()` adds "no restore proof" when `Habits.gap_restore()`; `poach_risk()` adds `Habits.poach_adjust(client)`;
   `_rdp_week()` multiplies by `Habits.rdp_mult(weak)`; `Incident.miss_share()` multiplies by `Habits.bec_mult()`.
-- Not hooked yet (the habits agent adds a one-line call at the site, with the same neutral default): `Habits.ransom_mult()` in the ransom bill,
-  `Habits.restore_fail()` in `_ransom`, `Habits.breach_mult()` in `_vendor_breach`, `Habits.creep()` in `Projects`.
+- Hooked by the habits agent (R38 P2): `Habits.ransom_mult()` in the `ransom_end` fx, `Habits.restore_fail()` in `_ransom`, `Habits.breach_mult()` in
+  `_vendor_breach`, `Habits.creep()` in `Projects`; see the `Habits` section below for the rest.
 
 ## fx keys (read by `Owner.apply`)
 
@@ -89,12 +89,32 @@ States `NONE ADOPTED STALE LAPSED`; `HABITS` (H1-H14: name, cost{cash,hours,mora
   `maturity_bonus(oml)`, `week(owner)`
 - Queries other systems call (all neutral while the habit is not adopted): `gap_restore()`, `poach_adjust(client)`, `bec_mult()`,
   `rdp_mult(weak)`, `restore_fail()`, `ransom_mult()`, `breach_mult()`, `creep(base)`
-- TODO(habits agent): morale cost in `adopt`, the lapse nudge card, all real effects from doc section 4 (H2 scorecard at `_qbr`, H3 creep in
-  `Projects`, H4/H5/H6/H12/H13 hooks, H9 week 19 card, H10/H11/H14 with the sales and onsite agents), the cards `habit_*` in `RivalCards`.
+- BUILT (R38 P2, habits agent): `adopt` charges the morale cost (back after two weeks), `redo_cost(id)`, `touch_if(id)` (a real event only counts
+  while ADOPTED or STALE), `action(id) -> {label, enabled}` and `act(id) -> String` (the tab button: adopt, re-adopt or do it now; H1 needs a working
+  backup), `progress(id)`, `mapped_count()`, `apply_adopt(id)` (fx `habit_adopt`, a card pays and starts it). `Habits.CARDS` (`habit_offer`,
+  `habit_lapsed`, `habit_clocks`, `habit_revenge`, `habit_ports`) and `Habits.TEXT` are patchable tables (ROOTS `Habits: HABITS TEXT CARDS`); the cards
+  are shown as copies in `Owner._dynamic` (key `<card>_<id>`), so they are NOT in `Owner.CARDS`.
+- Touch rules (real events, each one line in its system, all no-ops while the habit is not working): H1 `act` (restore test: $150, 3 h, needs a client
+  with a working backup), H2 `qbr(client)` in `Owner._qbr` (mood +2, 1 h; STALE +1), H3 `project()` in `Projects._quoted`, H4 `refusal(choice)` when the
+  waiver is chosen (`risk_choice`), H5 `loss(client)` in `Owner.drop_client`, H6 `departure(who)` on a quit (a LAPSED/STALE H6 may bring the revenge
+  card), H7/H8/H9/H10/H11/H12/H13/H14 by `act`. H8 also starts `rdp_safe` and, once stale, re-opens it (3% a week per client). H11 maps one client per `act`
+  (6 h). Week 19: the clocks card (H9). One pitch every 2 weeks from week 3 (`OFFER_ORDER`), declined by default (NOT NOW is option 0).
+- Effect queries and where they are read: `ransom_mult()` (`apply` with `ransom_end`: cash back), `restore_fail()` (`_ransom`), `breach_mult()`
+  (`_vendor_breach`), `creep(base)` (`Projects.week`), `change_odds()` (`Projects.change_order_odds`), `refusal_save()` (`_client_breach`),
+  `new_client(c)` (H10 mood +6, in the `sign` fx), `onsite_mult(client)` (`Onsite._chose`, `_event_answer`), `walk_mult()` (`Onsite.inspect`),
+  `drifting(client)` (CLIENTS chip), `assess_win_adj()` (H10 -3 points: NOT read yet, for the sales agent), `site_share()`.
+- Balance (`tests/owner_balance.gd`, `SEED=n ... -- smart|honest`; `honest` is smart's answers plus one `Habits.act` a week; runs are NOT bit-for-bit
+  repeatable even with a seed, smart seed 1 gave $467k, $475k and $398k): smart seeds 1-3 end at cash $14k/$25k/$28k, value $476k/$552k/$649k (before
+  the habits: $13k/$24k/$4k, $467k/$329k/$543k), Standard 0. honest ends at cash $7k/$15k/$17k, value $324k/$277k/$635k, Standard 100: the habits cost
+  a few thousand dollars and owner hours and buy fewer incidents; the difference is inside the run to run noise.
+- Not done: H9 night job failure rate (card only), H3 failed cutover costs half, H13 blame halving in `bec_loss` (it is in `bec_mult` only), the
+  default password walk-around finding (H14 gives a small breach cut only), a TESTED date on the RMM backups tab, the `rival_cards` sales hooks.
 
 ### `HabitsView` (`habits_view.gd`)
-- `tabs() -> Array` (`[["habits","HABITS"],["rivals","RIVALS"]]`, empty until `live()`), `live() -> bool`, `paint(c, area, tab)`. The Computer
-  only registers the tabs and calls `paint`. Read-only; add detail, never new Computer code.
+- `tabs()`, `live()` (also true from week 3 of the owner campaign so the tab can be found), `paint(c, area, tab)`, `act(c, parts)` (clicks `hab:sel:Hn` and
+  `hab:do:Hn`; computer.gd forwards `hab`), `books_rows()` (STANDARD row, ", ENVELOPE" while H7 works), `chip(client)` ("SLIPPING" for the CLIENTS tab).
+  HABITS: two columns of 7 rows from 300 px wide, one below; the selected row shows what it earns (a one line summary from `TEXT.short_Hn` on a short
+  screen), its progress line and the ADOPT / RE-ADOPT / DO IT NOW button. Checked at 368x128, 320x180 and 180x320 (`tests/habits_shots.gd`).
 
 ### `Temptation` (`temptation.gd`)
 `BILLS` (temp_seats, temp_reboot, temp_quest, temp_review, temp_launder, temp_price, temp_2fa, temp_restore: class, lo, hi, size, rep, mood, text),

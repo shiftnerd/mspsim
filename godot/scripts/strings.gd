@@ -98,7 +98,7 @@ const ROOTS := {
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
 	"SalesCampaign": ["BEAT_TEXT"],
 	"Rival": ["HABITS", "RIVALS"],
-	"Habits": ["HABITS"],
+	"Habits": ["HABITS", "TEXT", "CARDS"],
 	"RivalCards": ["CARDS"],
 	"RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
 }

@@ -413,6 +413,8 @@ func activate(id: String) -> void:
 			Service.kb.act(parts)
 		"btab":
 			board_tab = parts[1]
+		"hab":
+			HABITS_VIEW.act(self, parts)  # R38: pick a habit, adopt it or do it now
 		"crm":
 			Crm.action(self, parts)
 		"dash":  # a wide board shows one chart: swap it
@@ -2524,6 +2526,7 @@ func _board_books(a: Rect2) -> void:
 		["MATURITY", "%d %s" % [Owner.oml(), Owner.OML_NAMES[Owner.oml() - 1]], Color("6b421c")],
 	]
 	right.append(["PATH", Owner.path_label(), Color("6b421c")])
+	right.append_array(HABITS_VIEW.books_rows())  # R38: the Standard and the sealed envelope
 	if Campaign.day >= 6 and not Owner.flags.get("rdp_safe", false):
 		right.append(
 			["RDP", "WEAK" if Owner.flags.get("rdp_weak", false) else "OPEN TO THE INTERNET", RED]
@@ -2577,7 +2580,7 @@ func _board_clients(a: Rect2) -> void:
 		var due := Owner.review_due(c)
 		var shown := tag
 		if shown == "":
-			shown = "AT RISK" if Owner.poach_risk(c) >= 0.12 else ("REVIEW DUE" if due else "")
+			shown = "AT RISK" if Owner.poach_risk(c) >= 0.12 else ("REVIEW DUE" if due else HABITS_VIEW.chip(c))  # R38: H12
 		var letters := (
 			("B" if not Msp.backups[c].ok else "")
 			+ ("P" if float(Owner.patch_debt.get(c, 0.0)) >= 4.0 else "")
