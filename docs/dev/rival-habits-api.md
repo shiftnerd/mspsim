@@ -237,9 +237,10 @@ Files: `scripts/rival_touches.gd` (`RivalTouches`, a static helper, owner: this 
 - Balance (`SEED=n ... owner_balance.gd -- smart|shortcuts`). First pass (bills about 6x the shortcut gains): shortcuts ended $36k (fired, week 16) to $250k against
   smart $675k-$1.03M. Tuned (Nov 2026): `BILLS` seats 1100, reboot 200, quest 1800, 2fa 1200, restore 800 (price 600 unchanged), `temp_review` rep 4,
   `VENDOR_COLD` 8, `temp_launder` still always loses the client. Now shortcuts end $248k (seed 1, rep 44) and $90k (seed 2, rep 83), nobody is fired,
-  folder 1, consc -10 to -11; smart seed 1 is $675k. The remaining gap is structural (the launder departure, the 25 percent discount client, lost
-  margin/payroll multiple thresholds), not bill size; judge by the shape, run to run noise is large. Seed 3 was not re-run.
-- Not done: the vendor partner rebate on a clean record, the H1 link (a skipped restore does not raise `Habits.restore_fail()`; the backup bill is its own
+  folder 1, consc -10 to -11; smart ends $675k / $1.01M / $1.08M (seeds 1-3) and shortcuts seed 3 $169k (9-37 percent of smart). The remaining gap is structural (the launder departure, the 25 percent discount client, lost
+  margin/payroll multiple thresholds), not bill size; judge by the shape, run to run noise is large.
+- Vendor rebate (built): `Temptation.vendor_rebate` from week `REBATE_FROM` 16 gives `REBATE` $400 once (flag `vendor_rebate`) when the conscience is not below 0, the folder is empty and the vendor never went cold; called from `week()`.
+- Not done: the H1 link (a skipped restore does not raise `Habits.restore_fail()`; the backup bill is its own
   event), a `temp_restore` bill that is a real ransom, the sales-campaign twins (`SalesRival` has its own lies).
 ## Takeover / inherited messes (P4, built: `scripts/takeover.gd`, hunks in `onsite.gd`, `playbook.gd`, `owner.gd`, `incident.gd`, `tests/takeover.gd`)
 

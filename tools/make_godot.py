@@ -67802,6 +67802,8 @@ const MAX_DEDUCTION := 1.5  # due diligence: -0.5 of the multiple per open skele
 const PER_SKELETON := 0.5
 const WEEKLY_HONEST := 1  # honest choices raise the conscience by at most this much a week
 const VENDOR_COLD := 8  # a vendor that caught you stops the partner discount: this much more a week
+const REBATE := 400  # a clean record earns a vendor partner rebate (one time, cash)
+const REBATE_FROM := 16  # ... from the week the shortcut would have been audited
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
@@ -68154,6 +68156,7 @@ static func week(owner: Node) -> void:
 		if int(sk.get("due", NO_DATE)) <= Campaign.day:
 			owner.skel.erase(sk)
 			bill(owner, sk)
+	vendor_rebate(owner)
 	if (
 		folder_count() >= 2
 		and Campaign.day - int(owner.flags.get("clean_offer", -99)) >= CLEAN_EVERY
@@ -68164,6 +68167,19 @@ static func week(owner: Node) -> void:
 		if not q.has(CLEAN_CARD):
 			q.append(CLEAN_CARD)
 		owner.flags["arc_queue"] = q
+
+
+# a clean record (conscience not below zero, nothing in the folder, the vendor never caught you) earns one partner rebate from week
+# REBATE_FROM on. The honest side of the vendor audit that temp_seats would have caused.
+static func vendor_rebate(owner: Node) -> bool:
+	if Campaign.day < REBATE_FROM or owner.flags.has("vendor_rebate") or owner.flags.has("vendor_cold"):
+		return false
+	if consc() < 0 or folder_count() > 0:
+		return false
+	owner.flags["vendor_rebate"] = Campaign.day
+	owner.cash += REBATE
+	Hints.toast("WEBWOOT PARTNER REBATE: %s. Clean seat counts, clean books." % owner.money(REBATE), 5.0)
+	return true
 
 
 # due diligence from week 16 on (the board review): -0.5 of the multiple per open skeleton, at most MAX_DEDUCTION

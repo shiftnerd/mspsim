@@ -269,5 +269,25 @@ func _init() -> void:
 	t.week(o)
 	_check(not o.flags.get("arc_queue", []).has("temp_come_clean"), "and nothing is queued again the same week")
 
+	# ---- the vendor rebate on a clean record: week 16 on, once, never with a skeleton, bad conscience or a cold vendor
+	_fresh(c, cards, 15)
+	o.consc = 0
+	var cash3: int = o.cash
+	_check(not t.vendor_rebate(o) and o.cash == cash3, "no rebate before week 16")
+	c.day = 16
+	_check(t.vendor_rebate(o) and o.cash == cash3 + t.REBATE, "a clean record earns the rebate in week 16")
+	_check(not t.vendor_rebate(o) and o.cash == cash3 + t.REBATE, "and only once")
+	_clear(cards)
+	_fresh(c, cards, 16)
+	t.add_skeleton("temp_price", 6)
+	_check(not t.vendor_rebate(o), "a skeleton in the folder: no rebate")
+	_fresh(c, cards, 16)
+	o.consc = -2
+	_check(not t.vendor_rebate(o), "a bad conscience: no rebate")
+	_fresh(c, cards, 16)
+	o.flags["vendor_cold"] = 12
+	_check(not t.vendor_rebate(o), "a vendor that caught you: no rebate")
+	_clear(cards)
+
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)
