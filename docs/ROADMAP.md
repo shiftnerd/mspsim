@@ -84,6 +84,7 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | P6 | Tuning of the heavy fixes and ransomware exits by bot playthrough (Q6) | S |
 | H5 | Open `/hooks` once so the worktree hooks in `D:/Creative/.claude/` go live; clean up subagent worktrees (they are kept after an agent finishes) | S |
 | H7 | Answer the open questions in `docs/campaign-paths.md` section 14 (crew size, day lengths, hires, parody names, Growth helper, walk-in scene). The game runs on the defaults as built | S |
+| S1 | **The shop (tech campaign)**: the tech earns a paycheck every day (`Campaign.cash`) but cannot spend it. A catalogue of desk upgrades bought from a computer app or the phone (mechanical keyboard, vertical mouse, standing desk, RGB lighting, speakers...), each with a visible change at the player's desk and a small real effect. Scoped in `docs/scope-shop.md`, not built; open questions there | M |
 
 ## 3. Parked (decision or dependency needed)
 | # | Item | Waiting on |
