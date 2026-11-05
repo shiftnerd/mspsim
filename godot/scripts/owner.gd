@@ -3088,7 +3088,7 @@ func _credit_squeeze() -> void:
 
 # ---- a vendor breach: the RMM you chose ---------------------------------------------------------------------------
 func _vendor_breach() -> void:
-	var hit := clampf(0.35 * security_risk() * Incident.lesson_mult("email"), 0.05, 0.8)
+	var hit := clampf(0.35 * security_risk() * Incident.lesson_mult("email") * Takeover.worst_mult(), 0.05, 0.8)
 	var vendor: String = str(stack_option("rmm").name)
 	_dynamic["vendor_breach"] = {
 		"speaker": "{tech}",
@@ -3606,7 +3606,7 @@ func _ransom() -> void:
 	if t.is_empty():
 		return
 	_ransom_ticket = int(t.id)
-	var restore_fail := Habits.restore_fail()  # R38: H1, a backup nobody ever test restored may not restore
+	var restore_fail := maxf(Habits.restore_fail(), Takeover.restore_fail(Story.RANSOM_CLIENT))  # R38 P4: an unfixed freezer bag. R38: H1, a backup nobody ever test restored may not restore
 	var untested_fail := restore_fail > 0.0 and randf() < restore_fail
 	if untested_fail:
 		Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
@@ -3653,10 +3653,10 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
 	if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
 		return
-	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom") * Habits.rdp_mult(bool(flags.get("rdp_weak", false)))
+	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom") * Habits.rdp_mult(bool(flags.get("rdp_weak", false))) * Takeover.worst_mult()
 	if randf() >= chance:
 		return
-	var victim: int = Sales.active[randi() % Sales.active.size()]
+	var victim: int = Takeover.victim(Sales.active[randi() % Sales.active.size()])  # R38 P4: an inherited mess is the likelier door
 	var cost := 1200 if flags.get("backup_service", false) else 2500
 	if flags.get("pm_ransom", "") in ["runbook", "check"]:
 		cost = int(cost * 0.75)  # the runbook: the team knows what to do

@@ -10,6 +10,8 @@ extends Node
 
 signal changed
 
+const Takeover := preload("res://scripts/takeover.gd")  # R38 P4: the six takeover books
+
 const DEFAULT_BOOKS := {
 	"rack":
 	{
@@ -1305,6 +1307,13 @@ var active := {}  # the job in progress: {id, tickets, step, pts, flags, log, do
 var last_note := ""
 
 
+# R38 P4: the six takeover jobs join the books (their text lives in takeover.gd)
+func _ready() -> void:
+	for id in Takeover.BOOKS:
+		BOOKS[id] = (Takeover.BOOKS[id] as Dictionary).duplicate(true)
+		PROBLEMS[id] = (Takeover.PROBLEMS[id] as Array).duplicate(true)
+
+
 func reset() -> void:
 	active = {}
 	last_note = ""
@@ -1329,7 +1338,9 @@ func max_points(id: String) -> int:
 
 
 # open the tickets for a job and start it; returns the main ticket id
-func start(id: String, source := "email") -> int:
+func start(id: String, source := "email", client := -1) -> int:
+	if client >= 0:
+		BOOKS[id]["client"] = client  # R38 P4: a takeover job runs at whichever client was taken over
 	var ids := []
 	for prob in PROBLEMS[id]:
 		var t := Msp.create_problem(int(BOOKS[id].client), prob, source, true)
@@ -1464,6 +1475,8 @@ func finish() -> void:
 
 # what the flags cost or earn: returns {rep, score, mail, follow: [{client, summary, body}]}
 func _outcome(id: String, flags: Dictionary, client: int) -> Dictionary:
+	if id.begins_with("tk_"):
+		return Takeover.outcome(id, flags, client)
 	var out := {"rep": 0, "score": 0, "mail": "Thank you, that was handled well.", "follow": []}
 	match id:
 		"rack":

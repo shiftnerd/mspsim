@@ -550,6 +550,193 @@ or the owner (owner campaign, 20 weeks).
 - **SKIP THE PAPERWORK** `[Playbook.BOOKS.netinstall.steps.5.choices.1.label]` (0 points, remembers: undocumented)
   - Result: No documentation. Future you will suffer. `[Playbook.BOOKS.netinstall.steps.5.choices.1.note]`
 
+### The Freezer Bag
+
+- Ticket: *Backup is a drive in a freezer bag* `[Playbook.PROBLEMS.tk_backup.0.summary]`
+  > We just learned our backup is one drive in a freezer bag. Please fix it. - [name] `[Playbook.PROBLEMS.tk_backup.0.body]`
+
+**Step 1: FIND IT** `[Playbook.BOOKS.tk_backup.steps.0.title]`
+> The whole backup is one USB drive in a freezer bag. What do you do with it first? `[Playbook.BOOKS.tk_backup.steps.0.text]`
+- **PHOTOGRAPH THE BAG AND THE LIGHT** `[Playbook.BOOKS.tk_backup.steps.0.choices.0.label]` (15 points, remembers: photo)
+  - Result: Photographed. That is evidence. `[Playbook.BOOKS.tk_backup.steps.0.choices.0.note]`
+- **UNPLUG IT AND LOOK** `[Playbook.BOOKS.tk_backup.steps.0.choices.1.label]` (5 points)
+  - Result: A drive with a label from 2011. `[Playbook.BOOKS.tk_backup.steps.0.choices.1.note]`
+
+**Step 2: TEST THE RESTORE** `[Playbook.BOOKS.tk_backup.steps.1.title]`
+> Does anything come back off that drive? There is a spare PC in the corner. `[Playbook.BOOKS.tk_backup.steps.1.text]`
+- **RESTORE TO THE SPARE PC** `[Playbook.BOOKS.tk_backup.steps.1.choices.0.label]` (25 points, remembers: tested)
+  - Result: The restore failed halfway. Now you know. `[Playbook.BOOKS.tk_backup.steps.1.choices.0.note]`
+- **TRUST THE LIGHT** `[Playbook.BOOKS.tk_backup.steps.1.choices.1.label]` (0 points, remembers: trust)
+  - Result: The light is on. That is all you know. `[Playbook.BOOKS.tk_backup.steps.1.choices.1.note]`
+
+**Step 3: PUT IT RIGHT** `[Playbook.BOOKS.tk_backup.steps.2.title]`
+> What replaces the freezer bag? `[Playbook.BOOKS.tk_backup.steps.2.text]`
+- **BACKUP SERVICE WITH AN OFFSITE COPY** `[Playbook.BOOKS.tk_backup.steps.2.choices.0.label]` (35 points, needs earlier: tested, remembers: offsite)
+  - Result: Nightly backup, copied offsite. `[Playbook.BOOKS.tk_backup.steps.2.choices.0.note]`
+- **REPLACE THE DRIVE, CALL IT DONE** `[Playbook.BOOKS.tk_backup.steps.2.choices.1.label]` (10 points, remembers: swapped)
+  - Result: A newer bag, a newer drive. `[Playbook.BOOKS.tk_backup.steps.2.choices.1.note]`
+- **LEAVE THE BAG, ADD A NOTE** `[Playbook.BOOKS.tk_backup.steps.2.choices.2.label]` (0 points, remembers: open)
+  - Result: The bag stays. The note will not help. `[Playbook.BOOKS.tk_backup.steps.2.choices.2.note]`
+
+**Step 4: WRITE THE TIME DOWN** `[Playbook.BOOKS.tk_backup.steps.3.title]`
+> How long to get this office back after a bad day? Nobody knows. `[Playbook.BOOKS.tk_backup.steps.3.text]`
+- **WRITE DOWN THE RECOVERY TIME** `[Playbook.BOOKS.tk_backup.steps.3.choices.0.label]` (15 points, remembers: rto)
+  - Result: One page, taped inside the closet door. `[Playbook.BOOKS.tk_backup.steps.3.choices.0.note]`
+- **SKIP THE PAPER** `[Playbook.BOOKS.tk_backup.steps.3.choices.1.label]` (0 points)
+  - Result: No paper. They will ask again. `[Playbook.BOOKS.tk_backup.steps.3.choices.1.note]`
+
+### Sticky Notes
+
+- Ticket: *One password opens everything* `[Playbook.PROBLEMS.tk_creds.0.summary]`
+  > The password for everything is on a sticky note. Please sort it out. - [name] `[Playbook.PROBLEMS.tk_creds.0.body]`
+
+**Step 1: AUDIT THE PASSWORD** `[Playbook.BOOKS.tk_creds.steps.0.title]`
+> One admin password, written on a note. Where else does it work? `[Playbook.BOOKS.tk_creds.steps.0.text]`
+- **LIST EVERY PLACE IT WORKS** `[Playbook.BOOKS.tk_creds.steps.0.choices.0.label]` (20 points, remembers: audited)
+  - Result: It opens the server, the router, the mail and a second company's file share. `[Playbook.BOOKS.tk_creds.steps.0.choices.0.note]`
+- **CHANGE JUST THIS ONE** `[Playbook.BOOKS.tk_creds.steps.0.choices.1.label]` (5 points, remembers: partial)
+  - Result: Fixed one door of many. `[Playbook.BOOKS.tk_creds.steps.0.choices.1.note]`
+
+**Step 2: ROTATE IT ALL** `[Playbook.BOOKS.tk_creds.steps.1.title]`
+> Every login gets a new password. Where do the new ones live? `[Playbook.BOOKS.tk_creds.steps.1.text]`
+- **UNIQUE PASSWORDS, KEPT IN A VAULT** `[Playbook.BOOKS.tk_creds.steps.1.choices.0.label]` (30 points)
+  - Result: A password manager. One master phrase on paper in the owner's safe. `[Playbook.BOOKS.tk_creds.steps.1.choices.0.note]`
+- **A NEW PASSWORD, SAME NOTE** `[Playbook.BOOKS.tk_creds.steps.1.choices.1.label]` (0 points, remembers: noted)
+  - Result: The note is back on the monitor by lunch. `[Playbook.BOOKS.tk_creds.steps.1.choices.1.note]`
+
+**Step 3: BREAK-GLASS ACCOUNT** `[Playbook.BOOKS.tk_creds.steps.2.title]`
+> If you are not reachable, can the owner still get in? `[Playbook.BOOKS.tk_creds.steps.2.text]`
+- **A SEALED BREAK-GLASS ACCOUNT** `[Playbook.BOOKS.tk_creds.steps.2.choices.0.label]` (20 points, remembers: breakglass)
+  - Result: One sealed envelope, one account, one log entry the day it is used. `[Playbook.BOOKS.tk_creds.steps.2.choices.0.note]`
+- **SKIP IT** `[Playbook.BOOKS.tk_creds.steps.2.choices.1.label]` (0 points)
+  - Result: No spare key. `[Playbook.BOOKS.tk_creds.steps.2.choices.1.note]`
+
+**Step 4: TELL THE CLIENT** `[Playbook.BOOKS.tk_creds.steps.3.title]`
+> That password was in use at two other companies. Do you say what was exposed? `[Playbook.BOOKS.tk_creds.steps.3.text]`
+- **TELL THEM WHAT WAS EXPOSED** `[Playbook.BOOKS.tk_creds.steps.3.choices.0.label]` (15 points, remembers: told)
+  - Result: A hard talk. Then a thank you. `[Playbook.BOOKS.tk_creds.steps.3.choices.0.note]`
+- **STAY QUIET ABOUT IT** `[Playbook.BOOKS.tk_creds.steps.3.choices.1.label]` (0 points, remembers: quiet)
+  - Result: You say nothing. It may come out anyway. `[Playbook.BOOKS.tk_creds.steps.3.choices.1.note]`
+
+### The Open Door
+
+- Ticket: *Firewall hole open since 2012* `[Playbook.PROBLEMS.tk_firewall.0.summary]`
+  > We heard the firewall has had a hole in it for years. Please close it. - [name] `[Playbook.PROBLEMS.tk_firewall.0.body]`
+
+**Step 1: READ THE RULES** `[Playbook.BOOKS.tk_firewall.steps.0.title]`
+> Remote desktop and file transfer are forwarded to the server. The note says TEMP, 2012. `[Playbook.BOOKS.tk_firewall.steps.0.text]`
+- **READ EVERY RULE AND THE LOG** `[Playbook.BOOKS.tk_firewall.steps.0.choices.0.label]` (20 points, remembers: read)
+  - Result: Thousands of failed logins from far away. The door has been tried every night. `[Playbook.BOOKS.tk_firewall.steps.0.choices.0.note]`
+- **GLANCE AT THE LIST** `[Playbook.BOOKS.tk_firewall.steps.0.choices.1.label]` (5 points)
+  - Result: A quick look. Plenty you did not read. `[Playbook.BOOKS.tk_firewall.steps.0.choices.1.note]`
+
+**Step 2: CLOSE THE DOOR** `[Playbook.BOOKS.tk_firewall.steps.1.title]`
+> How do you shut it? `[Playbook.BOOKS.tk_firewall.steps.1.text]`
+- **CLOSE THE PORTS, ADD A VPN** `[Playbook.BOOKS.tk_firewall.steps.1.choices.0.label]` (35 points, needs networking level 2)
+  - Result: Nothing is open. Staff come in through the VPN. `[Playbook.BOOKS.tk_firewall.steps.1.choices.0.note]`
+- **TURN ON AUTO-BLOCKING** `[Playbook.BOOKS.tk_firewall.steps.1.choices.1.label]` (25 points)
+  - Result: Bad guesses get blocked. The door is still there. `[Playbook.BOOKS.tk_firewall.steps.1.choices.1.note]`
+- **MOVE IT TO ANOTHER PORT** `[Playbook.BOOKS.tk_firewall.steps.1.choices.2.label]` (8 points, remembers: hole)
+  - Result: Same door, new number. `[Playbook.BOOKS.tk_firewall.steps.1.choices.2.note]`
+- **LEAVE IT** `[Playbook.BOOKS.tk_firewall.steps.1.choices.3.label]` (0 points, remembers: hole)
+  - Result: The door stays open. `[Playbook.BOOKS.tk_firewall.steps.1.choices.3.note]`
+
+**Step 3: THE FORMER REP** `[Playbook.BOOKS.tk_firewall.steps.2.title]`
+> The rule was made for a vendor rep who left in 2013. His account is still on the router. `[Playbook.BOOKS.tk_firewall.steps.2.text]`
+- **REMOVE HIS ACCOUNT AND LOG IT** `[Playbook.BOOKS.tk_firewall.steps.2.choices.0.label]` (15 points)
+  - Result: Removed. One line in the change log. `[Playbook.BOOKS.tk_firewall.steps.2.choices.0.note]`
+- **LEAVE HIS ACCOUNT** `[Playbook.BOOKS.tk_firewall.steps.2.choices.1.label]` (0 points)
+  - Result: He may still have the password. `[Playbook.BOOKS.tk_firewall.steps.2.choices.1.note]`
+
+### Green And Empty
+
+- Ticket: *Monitoring was never configured* `[Playbook.PROBLEMS.tk_dashboard.0.summary]`
+  > Our monitoring says all green but you said it watches nothing. Can you set it up? - [name] `[Playbook.PROBLEMS.tk_dashboard.0.body]`
+
+**Step 1: NOTICE** `[Playbook.BOOKS.tk_dashboard.steps.0.title]`
+> The dashboard is green. Why? `[Playbook.BOOKS.tk_dashboard.steps.0.text]`
+- **COUNT THE ALERTS OF THE LAST 14 MONTHS** `[Playbook.BOOKS.tk_dashboard.steps.0.choices.0.label]` (20 points, remembers: counted)
+  - Result: Zero alerts. No alert policy was ever made. `[Playbook.BOOKS.tk_dashboard.steps.0.choices.0.note]`
+- **TRUST THE GREEN** `[Playbook.BOOKS.tk_dashboard.steps.0.choices.1.label]` (0 points, remembers: trust)
+  - Result: Green is green. `[Playbook.BOOKS.tk_dashboard.steps.0.choices.1.note]`
+
+**Step 2: SET A BASELINE** `[Playbook.BOOKS.tk_dashboard.steps.1.title]`
+> Which agents do you set up? `[Playbook.BOOKS.tk_dashboard.steps.1.text]`
+- **ANTIVIRUS, PATCH WINDOW AND BACKUP ALERT** `[Playbook.BOOKS.tk_dashboard.steps.1.choices.0.label]` (40 points)
+  - Result: Three policies. Everything old suddenly turns red. `[Playbook.BOOKS.tk_dashboard.steps.1.choices.0.note]`
+- **JUST THE ANTIVIRUS** `[Playbook.BOOKS.tk_dashboard.steps.1.choices.1.label]` (10 points, remembers: partial)
+  - Result: One policy. The rest stays blind. `[Playbook.BOOKS.tk_dashboard.steps.1.choices.1.note]`
+
+**Step 3: WARN THE TEAM** `[Playbook.BOOKS.tk_dashboard.steps.2.title]`
+> The first week of real alerts will be loud. `[Playbook.BOOKS.tk_dashboard.steps.2.text]`
+- **WARN THE TEAM AND THE OWNER** `[Playbook.BOOKS.tk_dashboard.steps.2.choices.0.label]` (15 points)
+  - Result: A short note: it will look worse before it looks better. `[Playbook.BOOKS.tk_dashboard.steps.2.choices.0.note]`
+- **SAY NOTHING** `[Playbook.BOOKS.tk_dashboard.steps.2.choices.1.label]` (0 points, remembers: flood)
+  - Result: Nobody is ready for the flood. `[Playbook.BOOKS.tk_dashboard.steps.2.choices.1.note]`
+
+### Default Passwords
+
+- Ticket: *Devices still on default passwords* `[Playbook.PROBLEMS.tk_defaults.0.summary]`
+  > The printer and the camera have the factory password. Please change them. - [name] `[Playbook.PROBLEMS.tk_defaults.0.body]`
+
+**Step 1: FIND THEM** `[Playbook.BOOKS.tk_defaults.steps.0.title]`
+> The printer, the camera and the wireless box all use factory settings. `[Playbook.BOOKS.tk_defaults.steps.0.text]`
+- **WALK THE PRINTER, CAMERA AND WIRELESS** `[Playbook.BOOKS.tk_defaults.steps.0.choices.0.label]` (20 points, remembers: walked)
+  - Result: Three devices, all admin and admin. `[Playbook.BOOKS.tk_defaults.steps.0.choices.0.note]`
+- **TRY JUST THE PRINTER** `[Playbook.BOOKS.tk_defaults.steps.0.choices.1.label]` (5 points)
+  - Result: The printer opens right up. `[Playbook.BOOKS.tk_defaults.steps.0.choices.1.note]`
+
+**Step 2: CHANGE THEM** `[Playbook.BOOKS.tk_defaults.steps.1.title]`
+> What do you do with the passwords? `[Playbook.BOOKS.tk_defaults.steps.1.text]`
+- **NEW PASSWORD ON ALL THREE, IN THE VAULT** `[Playbook.BOOKS.tk_defaults.steps.1.choices.0.label]` (40 points)
+  - Result: Three new passwords. Three more things on the device list. `[Playbook.BOOKS.tk_defaults.steps.1.choices.0.note]`
+- **ONLY THE PRINTER** `[Playbook.BOOKS.tk_defaults.steps.1.choices.1.label]` (15 points, remembers: camera)
+  - Result: The camera still waves hello to anyone. `[Playbook.BOOKS.tk_defaults.steps.1.choices.1.note]`
+- **SKIP IT** `[Playbook.BOOKS.tk_defaults.steps.1.choices.2.label]` (0 points, remembers: default)
+  - Result: Default is default. `[Playbook.BOOKS.tk_defaults.steps.1.choices.2.note]`
+
+**Step 3: THE DEVICE LIST** `[Playbook.BOOKS.tk_defaults.steps.2.title]`
+> Where do you write down what you changed? `[Playbook.BOOKS.tk_defaults.steps.2.text]`
+- **ADD THEM TO THE DEVICE LIST** `[Playbook.BOOKS.tk_defaults.steps.2.choices.0.label]` (15 points)
+  - Result: Every device, a name and a date. `[Playbook.BOOKS.tk_defaults.steps.2.choices.0.note]`
+- **KEEP IT IN YOUR HEAD** `[Playbook.BOOKS.tk_defaults.steps.2.choices.1.label]` (0 points)
+  - Result: Your head is not a backup. `[Playbook.BOOKS.tk_defaults.steps.2.choices.1.note]`
+
+### Who Has A Key
+
+- Ticket: *Old employees still have logins* `[Playbook.PROBLEMS.tk_keys.0.summary]`
+  > Somebody who left last year can still log in. Please close those accounts. - [name] `[Playbook.PROBLEMS.tk_keys.0.body]`
+
+**Step 1: LIST THE ACCOUNTS** `[Playbook.BOOKS.tk_keys.steps.0.title]`
+> Four people who left, one old vendor rep, one odd mail rule. `[Playbook.BOOKS.tk_keys.steps.0.text]`
+- **LIST EVERY ACCOUNT AND MAIL RULE** `[Playbook.BOOKS.tk_keys.steps.0.choices.0.label]` (20 points, remembers: listed)
+  - Result: Six logins to question and a rule that copies every message outside. `[Playbook.BOOKS.tk_keys.steps.0.choices.0.note]`
+- **SKIM THE LIST** `[Playbook.BOOKS.tk_keys.steps.0.choices.1.label]` (5 points)
+  - Result: You catch the obvious ones. `[Playbook.BOOKS.tk_keys.steps.0.choices.1.note]`
+
+**Step 2: TURN THEM OFF** `[Playbook.BOOKS.tk_keys.steps.1.title]`
+> Which logins do you disable? `[Playbook.BOOKS.tk_keys.steps.1.text]`
+- **DISABLE ALL OF THEM AND THE MAIL RULE** `[Playbook.BOOKS.tk_keys.steps.1.choices.0.label]` (30 points)
+  - Result: Everything off. A short note in each file. `[Playbook.BOOKS.tk_keys.steps.1.choices.0.note]`
+- **EX-EMPLOYEES ONLY** `[Playbook.BOOKS.tk_keys.steps.1.choices.1.label]` (15 points, remembers: repkey)
+  - Result: The rep and the mail rule are still there. `[Playbook.BOOKS.tk_keys.steps.1.choices.1.note]`
+- **LEAVE THEM, ASK LATER** `[Playbook.BOOKS.tk_keys.steps.1.choices.2.label]` (0 points, remembers: open)
+  - Result: Nothing changed. `[Playbook.BOOKS.tk_keys.steps.1.choices.2.note]`
+
+**Step 3: TELL THE OWNER** `[Playbook.BOOKS.tk_keys.steps.2.title]`
+> Do you tell the owner what you found? `[Playbook.BOOKS.tk_keys.steps.2.text]`
+- **TELL THE OWNER EVERYTHING** `[Playbook.BOOKS.tk_keys.steps.2.choices.0.label]` (15 points)
+  - Result: Awkward. Honest. `[Playbook.BOOKS.tk_keys.steps.2.choices.0.note]`
+- **KEEP IT TO YOURSELF** `[Playbook.BOOKS.tk_keys.steps.2.choices.1.label]` (0 points)
+  - Result: You will have to explain it later. `[Playbook.BOOKS.tk_keys.steps.2.choices.1.note]`
+
+**Step 4: THE CHECKLIST** `[Playbook.BOOKS.tk_keys.steps.3.title]`
+> The next person who leaves should not leave a key behind. `[Playbook.BOOKS.tk_keys.steps.3.text]`
+- **WRITE A LEAVER CHECKLIST** `[Playbook.BOOKS.tk_keys.steps.3.choices.0.label]` (20 points, remembers: offboard)
+  - Result: One page: accounts, mail, keys, phones. `[Playbook.BOOKS.tk_keys.steps.3.choices.0.note]`
+- **SKIP THE PAPER** `[Playbook.BOOKS.tk_keys.steps.3.choices.1.label]` (0 points)
+  - Result: It will happen again. `[Playbook.BOOKS.tk_keys.steps.3.choices.1.note]`
+
 ## 3. Owner campaign, week by week
 
 ### Week 1
