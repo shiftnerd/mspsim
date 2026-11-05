@@ -88,3 +88,11 @@ Not done: no hand-played karaoke runs (hit rate by a human unknown); no HUD chec
 
 ## Q4: why clicks missed in a hidden / headless window (FIXED)
 Cause: the UI scripts read `get_viewport().get_mouse_position()` inside `_input`. For a synthetic `Input.parse_input_event` that is the real OS cursor (or stale), not the click, and `parse_input_event` also expects window pixels (the 4x window), not logical pixels; headless has a 64x64 window with a 1x transform. Fix: the 19 `_input` handlers (cards, computer, phone, day report, review, title, charselect, career screen, toolbox) use `event.position`; `Game.click_at(ui_point)` / `hover_at` send the event through `Input.parse_input_event` with the window's content-scale transform. `tests/click_harness.gd` clicks the title menu, a card option and a Computer app button (works headless and in a real window at wide / h / v). Note: Cards and the day report ignore clicks for 0.45 s of real time, so wait on `Time.get_ticks_msec()`, not frames, under `--fixed-fps`.
+
+## Client site leftovers (Nov 2026)
+- [x] Realty: coffee bar (counter, pot, cups, tip jar), sign-in clipboard, SOLD plaque on the wall, UseObj zones working.
+- [x] Architects: reception desk, draft table / plotter at the wall, SITE_MAIN[arch] zones and CAST_AT x (designer 160 to 184) clear.
+- [x] Plotter printer-game text for arch sites (roll, ink tank, forty-foot roll), patchable and in strings.txt.
+- [x] Per-business door plates (PLATES / EXAM_PLATES in client_sets.lua), both skins.
+- [x] Site signs show the full business names (a: Msp.CLIENTS, b: SITE_PROSPECT), widths from the text.
+Test: tests/site_leftovers.gd.

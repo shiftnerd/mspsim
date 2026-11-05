@@ -47541,8 +47541,8 @@ const CAST_AT := {   # [character, x, role] per site type, skin and room (main o
         "b": {"main": [["expo_attf", 170, "staff"], ["client_paralegal_b", 190, "staff"]], "office": [["client_attorney_b", 162, "owner"]]},
     },
     "arch": {
-        "a": {"main": [["client_designer_a", 160, "staff"], ["expo_atte", 214, "staff"]], "office": [["expo_vendp", 162, "owner"]]},
-        "b": {"main": [["client_designer_b", 160, "staff"], ["expo_atta", 214, "staff"]], "office": [["client_mina", 162, "owner"]]},
+        "a": {"main": [["client_designer_a", 184, "staff"], ["expo_atte", 214, "staff"]], "office": [["expo_vendp", 162, "owner"]]},
+        "b": {"main": [["client_designer_b", 184, "staff"], ["expo_atta", 214, "staff"]], "office": [["client_mina", 162, "owner"]]},
     },
     "realty": {
         "a": {"main": [["client_agent_a", 100, "staff"], ["expo_vendp", 230, "staff"]], "office": [["client_karen", 162, "owner"]]},
@@ -48759,7 +48759,7 @@ const MODEL_TEXT := {
     {
         "title": "PLOTTER REPAIR",
         "intro1": "THE FORTY-INCH PLOTTER CHEWS ITS ROLL",
-        "intro2": "AND SAYS MEDIA JAM. A PRINT DUE AT NOON.",
+        "intro2": "A FORTY-FOOT ROLL. MEDIA JAM. DUE AT NOON.",
         "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
         "jam_clean": "A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.",
         "jam_hold": "THE ROLL HOLDS. NOT QUITE: TRY AGAIN.",
