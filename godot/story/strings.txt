@@ -21995,3 +21995,627 @@ A GREEN LIGHT IS NOT PROOF. RESTORE ONE FILE.
 # RivalTouches > NOTES > av
 [RivalTouches.NOTES.av]
 A GREEN DASHBOARD IS NOT A CHECK. LOOK AT IT.
+
+
+# ======================= Playbook > BOOKS =======================
+# job: THE FREEZER BAG
+[Playbook.BOOKS.tk_backup.title]
+THE FREEZER BAG
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.title]
+FIND IT
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.text]
+The whole backup is one USB drive in a freezer bag. What do you do with it first?
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.choices.0.label]
+PHOTOGRAPH THE BAG AND THE LIGHT
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.choices.0.note]
+Photographed. That is evidence.
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.choices.1.label]
+UNPLUG IT AND LOOK
+
+# job: THE FREEZER BAG, step 1
+[Playbook.BOOKS.tk_backup.steps.0.choices.1.note]
+A drive with a label from 2011.
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.title]
+TEST THE RESTORE
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.text]
+Does anything come back off that drive? There is a spare PC in the corner.
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.choices.0.label]
+RESTORE TO THE SPARE PC
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.choices.0.note]
+The restore failed halfway. Now you know.
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.choices.1.label]
+TRUST THE LIGHT
+
+# job: THE FREEZER BAG, step 2
+[Playbook.BOOKS.tk_backup.steps.1.choices.1.note]
+The light is on. That is all you know.
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.title]
+PUT IT RIGHT
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.text]
+What replaces the freezer bag?
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.0.label]
+BACKUP SERVICE WITH AN OFFSITE COPY
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.0.needs_label]
+NEEDS A TEST FIRST
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.0.note]
+Nightly backup, copied offsite.
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.1.label]
+REPLACE THE DRIVE, CALL IT DONE
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.1.note]
+A newer bag, a newer drive.
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.2.label]
+LEAVE THE BAG, ADD A NOTE
+
+# job: THE FREEZER BAG, step 3
+[Playbook.BOOKS.tk_backup.steps.2.choices.2.note]
+The bag stays. The note will not help.
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.title]
+WRITE THE TIME DOWN
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.text]
+How long to get this office back after a bad day? Nobody knows.
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.choices.0.label]
+WRITE DOWN THE RECOVERY TIME
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.choices.0.note]
+One page, taped inside the closet door.
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.choices.1.label]
+SKIP THE PAPER
+
+# job: THE FREEZER BAG, step 4
+[Playbook.BOOKS.tk_backup.steps.3.choices.1.note]
+No paper. They will ask again.
+
+# job: STICKY NOTES
+[Playbook.BOOKS.tk_creds.title]
+STICKY NOTES
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.title]
+AUDIT THE PASSWORD
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.text]
+One admin password, written on a note. Where else does it work?
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.choices.0.label]
+LIST EVERY PLACE IT WORKS
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.choices.0.note]
+It opens the server, the router, the mail and a second company's file share.
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.choices.1.label]
+CHANGE JUST THIS ONE
+
+# job: STICKY NOTES, step 1
+[Playbook.BOOKS.tk_creds.steps.0.choices.1.note]
+Fixed one door of many.
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.title]
+ROTATE IT ALL
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.text]
+Every login gets a new password. Where do the new ones live?
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.choices.0.label]
+UNIQUE PASSWORDS, KEPT IN A VAULT
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.choices.0.note]
+A password manager. One master phrase on paper in the owner's safe.
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.choices.1.label]
+A NEW PASSWORD, SAME NOTE
+
+# job: STICKY NOTES, step 2
+[Playbook.BOOKS.tk_creds.steps.1.choices.1.note]
+The note is back on the monitor by lunch.
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.title]
+BREAK-GLASS ACCOUNT
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.text]
+If you are not reachable, can the owner still get in?
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.choices.0.label]
+A SEALED BREAK-GLASS ACCOUNT
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.choices.0.note]
+One sealed envelope, one account, one log entry the day it is used.
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.choices.1.label]
+SKIP IT
+
+# job: STICKY NOTES, step 3
+[Playbook.BOOKS.tk_creds.steps.2.choices.1.note]
+No spare key.
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.title]
+TELL THE CLIENT
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.text]
+That password was in use at two other companies. Do you say what was exposed?
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.choices.0.label]
+TELL THEM WHAT WAS EXPOSED
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.choices.0.note]
+A hard talk. Then a thank you.
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.choices.1.label]
+STAY QUIET ABOUT IT
+
+# job: STICKY NOTES, step 4
+[Playbook.BOOKS.tk_creds.steps.3.choices.1.note]
+You say nothing. It may come out anyway.
+
+# job: THE OPEN DOOR
+[Playbook.BOOKS.tk_firewall.title]
+THE OPEN DOOR
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.title]
+READ THE RULES
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.text]
+Remote desktop and file transfer are forwarded to the server. The note says TEMP, 2012.
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.choices.0.label]
+READ EVERY RULE AND THE LOG
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.choices.0.note]
+Thousands of failed logins from far away. The door has been tried every night.
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.choices.1.label]
+GLANCE AT THE LIST
+
+# job: THE OPEN DOOR, step 1
+[Playbook.BOOKS.tk_firewall.steps.0.choices.1.note]
+A quick look. Plenty you did not read.
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.title]
+CLOSE THE DOOR
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.text]
+How do you shut it?
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.0.label]
+CLOSE THE PORTS, ADD A VPN
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.0.note]
+Nothing is open. Staff come in through the VPN.
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.1.label]
+TURN ON AUTO-BLOCKING
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.1.note]
+Bad guesses get blocked. The door is still there.
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.2.label]
+MOVE IT TO ANOTHER PORT
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.2.note]
+Same door, new number.
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.3.label]
+LEAVE IT
+
+# job: THE OPEN DOOR, step 2
+[Playbook.BOOKS.tk_firewall.steps.1.choices.3.note]
+The door stays open.
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.title]
+THE FORMER REP
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.text]
+The rule was made for a vendor rep who left in 2013. His account is still on the router.
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.choices.0.label]
+REMOVE HIS ACCOUNT AND LOG IT
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.choices.0.note]
+Removed. One line in the change log.
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.choices.1.label]
+LEAVE HIS ACCOUNT
+
+# job: THE OPEN DOOR, step 3
+[Playbook.BOOKS.tk_firewall.steps.2.choices.1.note]
+He may still have the password.
+
+# job: GREEN AND EMPTY
+[Playbook.BOOKS.tk_dashboard.title]
+GREEN AND EMPTY
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.title]
+NOTICE
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.text]
+The dashboard is green. Why?
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.choices.0.label]
+COUNT THE ALERTS OF THE LAST 14 MONTHS
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.choices.0.note]
+Zero alerts. No alert policy was ever made.
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.choices.1.label]
+TRUST THE GREEN
+
+# job: GREEN AND EMPTY, step 1
+[Playbook.BOOKS.tk_dashboard.steps.0.choices.1.note]
+Green is green.
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.title]
+SET A BASELINE
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.text]
+Which agents do you set up?
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.choices.0.label]
+ANTIVIRUS, PATCH WINDOW AND BACKUP ALERT
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.choices.0.note]
+Three policies. Everything old suddenly turns red.
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.choices.1.label]
+JUST THE ANTIVIRUS
+
+# job: GREEN AND EMPTY, step 2
+[Playbook.BOOKS.tk_dashboard.steps.1.choices.1.note]
+One policy. The rest stays blind.
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.title]
+WARN THE TEAM
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.text]
+The first week of real alerts will be loud.
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.choices.0.label]
+WARN THE TEAM AND THE OWNER
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.choices.0.note]
+A short note: it will look worse before it looks better.
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.choices.1.label]
+SAY NOTHING
+
+# job: GREEN AND EMPTY, step 3
+[Playbook.BOOKS.tk_dashboard.steps.2.choices.1.note]
+Nobody is ready for the flood.
+
+# job: DEFAULT PASSWORDS
+[Playbook.BOOKS.tk_defaults.title]
+DEFAULT PASSWORDS
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.title]
+FIND THEM
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.text]
+The printer, the camera and the wireless box all use factory settings.
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.choices.0.label]
+WALK THE PRINTER, CAMERA AND WIRELESS
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.choices.0.note]
+Three devices, all admin and admin.
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.choices.1.label]
+TRY JUST THE PRINTER
+
+# job: DEFAULT PASSWORDS, step 1
+[Playbook.BOOKS.tk_defaults.steps.0.choices.1.note]
+The printer opens right up.
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.title]
+CHANGE THEM
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.text]
+What do you do with the passwords?
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.0.label]
+NEW PASSWORD ON ALL THREE, IN THE VAULT
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.0.note]
+Three new passwords. Three more things on the device list.
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.1.label]
+ONLY THE PRINTER
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.1.note]
+The camera still waves hello to anyone.
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.2.label]
+SKIP IT
+
+# job: DEFAULT PASSWORDS, step 2
+[Playbook.BOOKS.tk_defaults.steps.1.choices.2.note]
+Default is default.
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.title]
+THE DEVICE LIST
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.text]
+Where do you write down what you changed?
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.choices.0.label]
+ADD THEM TO THE DEVICE LIST
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.choices.0.note]
+Every device, a name and a date.
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.choices.1.label]
+KEEP IT IN YOUR HEAD
+
+# job: DEFAULT PASSWORDS, step 3
+[Playbook.BOOKS.tk_defaults.steps.2.choices.1.note]
+Your head is not a backup.
+
+# job: WHO HAS A KEY
+[Playbook.BOOKS.tk_keys.title]
+WHO HAS A KEY
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.title]
+LIST THE ACCOUNTS
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.text]
+Four people who left, one old vendor rep, one odd mail rule.
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.choices.0.label]
+LIST EVERY ACCOUNT AND MAIL RULE
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.choices.0.note]
+Six logins to question and a rule that copies every message outside.
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.choices.1.label]
+SKIM THE LIST
+
+# job: WHO HAS A KEY, step 1
+[Playbook.BOOKS.tk_keys.steps.0.choices.1.note]
+You catch the obvious ones.
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.title]
+TURN THEM OFF
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.text]
+Which logins do you disable?
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.0.label]
+DISABLE ALL OF THEM AND THE MAIL RULE
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.0.note]
+Everything off. A short note in each file.
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.1.label]
+EX-EMPLOYEES ONLY
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.1.note]
+The rep and the mail rule are still there.
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.2.label]
+LEAVE THEM, ASK LATER
+
+# job: WHO HAS A KEY, step 2
+[Playbook.BOOKS.tk_keys.steps.1.choices.2.note]
+Nothing changed.
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.title]
+TELL THE OWNER
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.text]
+Do you tell the owner what you found?
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.choices.0.label]
+TELL THE OWNER EVERYTHING
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.choices.0.note]
+Awkward. Honest.
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.choices.1.label]
+KEEP IT TO YOURSELF
+
+# job: WHO HAS A KEY, step 3
+[Playbook.BOOKS.tk_keys.steps.2.choices.1.note]
+You will have to explain it later.
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.title]
+THE CHECKLIST
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.text]
+The next person who leaves should not leave a key behind.
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.choices.0.label]
+WRITE A LEAVER CHECKLIST
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.choices.0.note]
+One page: accounts, mail, keys, phones.
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.choices.1.label]
+SKIP THE PAPER
+
+# job: WHO HAS A KEY, step 4
+[Playbook.BOOKS.tk_keys.steps.3.choices.1.note]
+It will happen again.
+
+
+# ======================= Playbook > PROBLEMS =======================
+# Playbook > PROBLEMS > tk_backup > 0 > summary
+[Playbook.PROBLEMS.tk_backup.0.summary]
+Backup is a drive in a freezer bag
+
+# Playbook > PROBLEMS > tk_backup > 0 > body
+[Playbook.PROBLEMS.tk_backup.0.body]
+We just learned our backup is one drive in a freezer bag. Please fix it. - %s
+
+# Playbook > PROBLEMS > tk_creds > 0 > summary
+[Playbook.PROBLEMS.tk_creds.0.summary]
+One password opens everything
+
+# Playbook > PROBLEMS > tk_creds > 0 > body
+[Playbook.PROBLEMS.tk_creds.0.body]
+The password for everything is on a sticky note. Please sort it out. - %s
+
+# Playbook > PROBLEMS > tk_firewall > 0 > summary
+[Playbook.PROBLEMS.tk_firewall.0.summary]
+Firewall hole open since 2012
+
+# Playbook > PROBLEMS > tk_firewall > 0 > body
+[Playbook.PROBLEMS.tk_firewall.0.body]
+We heard the firewall has had a hole in it for years. Please close it. - %s
+
+# Playbook > PROBLEMS > tk_dashboard > 0 > summary
+[Playbook.PROBLEMS.tk_dashboard.0.summary]
+Monitoring was never configured
+
+# Playbook > PROBLEMS > tk_dashboard > 0 > body
+[Playbook.PROBLEMS.tk_dashboard.0.body]
+Our monitoring says all green but you said it watches nothing. Can you set it up? - %s
+
+# Playbook > PROBLEMS > tk_defaults > 0 > summary
+[Playbook.PROBLEMS.tk_defaults.0.summary]
+Devices still on default passwords
+
+# Playbook > PROBLEMS > tk_defaults > 0 > body
+[Playbook.PROBLEMS.tk_defaults.0.body]
+The printer and the camera have the factory password. Please change them. - %s
+
+# Playbook > PROBLEMS > tk_keys > 0 > summary
+[Playbook.PROBLEMS.tk_keys.0.summary]
+Old employees still have logins
+
+# Playbook > PROBLEMS > tk_keys > 0 > body
+[Playbook.PROBLEMS.tk_keys.0.body]
+Somebody who left last year can still log in. Please close those accounts. - %s

@@ -45423,6 +45423,12 @@ func entries() -> Array:
             var data: Variant = _defaults(str(root), str(name))
             if data != null:
                 _walk(data, [str(root), str(name)], "", out)
+    # R38 P4: the six takeover books are merged into Playbook.BOOKS / PROBLEMS at startup, so their text is edited under those keys
+    var tk: Script = load("res://scripts/takeover.gd")
+    var consts: Dictionary = tk.get_script_constant_map()
+    for name in ["BOOKS", "PROBLEMS"]:
+        if consts.has(name):
+            _walk(consts[name], ["Playbook", name], "", out)
     return out
 
 
