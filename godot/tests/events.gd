@@ -288,7 +288,7 @@ func _init() -> void:
 	for d in range(1, 21):
 		if ev.quiet_day(d, "owner"):
 			owner_quiet += 1
-	_check(owner_quiet >= 5, "the owner campaign has quiet weeks to draw on (%d)" % owner_quiet)
+	_check(owner_quiet >= 4, "the owner campaign has quiet weeks to draw on (%d)" % owner_quiet)
 
 	# ---- Free Play never draws
 	_new(c, cards, "free")

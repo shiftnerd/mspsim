@@ -23,6 +23,12 @@ const JOBS := [
 	["ceofraud", "WIRE FRAUD EMAIL"],
 	["no2fa", "TWO-STEP LOGINS"],
 	["bus", "THE ONE WHO KNEW"],
+	["tk_backup", "THE FREEZER BAG"],
+	["tk_creds", "STICKY NOTES"],
+	["tk_firewall", "THE OPEN DOOR"],
+	["tk_dashboard", "GREEN AND EMPTY"],
+	["tk_defaults", "DEFAULT PASSWORDS"],
+	["tk_keys", "WHO HAS A KEY"],
 ]
 const CLIENT_OF := {
 	"rack": "Gnarly Gnomes",
@@ -33,6 +39,12 @@ const CLIENT_OF := {
 	"ceofraud": "Hoot and Holler",
 	"no2fa": "Soggy Bottom Brewing",
 	"bus": "Acme Dental",
+	"tk_backup": "Acme Dental",
+	"tk_creds": "Acme Dental",
+	"tk_firewall": "Acme Dental",
+	"tk_dashboard": "Acme Dental",
+	"tk_defaults": "Acme Dental",
+	"tk_keys": "Acme Dental",
 }
 const DEFAULT_QUOTES := {
 	"FRIEND": "WORKING WITH YOU IS THE BEST PART OF MY DAY.",

@@ -18203,11 +18203,15 @@ const JOBS := [
     ["install", "NEW DESKTOP"], ["ransom", "RANSOMWARE"], ["rack", "RACK FELL OFF"], ["migration", "SERVER MIGRATION"],
     ["email24", "EMAIL OUTAGE"], ["netinstall", "NETWORK INSTALL"], ["rdp", "RDP BREAK-IN"],
     ["ceofraud", "WIRE FRAUD EMAIL"], ["no2fa", "TWO-STEP LOGINS"], ["bus", "THE ONE WHO KNEW"],
+    ["tk_backup", "THE FREEZER BAG"], ["tk_creds", "STICKY NOTES"], ["tk_firewall", "THE OPEN DOOR"],
+    ["tk_dashboard", "GREEN AND EMPTY"], ["tk_defaults", "DEFAULT PASSWORDS"], ["tk_keys", "WHO HAS A KEY"],
 ]
 const CLIENT_OF := {
     "rack": "Gnarly Gnomes", "migration": "Brightside Realty", "email24": "Soggy Bottom Brewing",
     "netinstall": "Hoot and Holler", "rdp": "Brightside Realty", "ceofraud": "Hoot and Holler",
     "no2fa": "Soggy Bottom Brewing", "bus": "Acme Dental",
+    "tk_backup": "Acme Dental", "tk_creds": "Acme Dental", "tk_firewall": "Acme Dental",
+    "tk_dashboard": "Acme Dental", "tk_defaults": "Acme Dental", "tk_keys": "Acme Dental",
 }
 const QUOTES := {
     "FRIEND": "WORKING WITH YOU IS THE BEST PART OF MY DAY.", "FRIENDLY": "SOLID TEAMMATE. I WOULD WORK WITH YOU AGAIN.",
