@@ -10,6 +10,11 @@ extends Node
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
+const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
+const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
+const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
+const Takeover := preload("res://scripts/takeover.gd")  # R38: inherited messes
+const RivalCards := preload("res://scripts/rival_cards.gd")  # R38: the rival arc and temptation cards (data)
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -1430,6 +1435,10 @@ var gone := {}  # clients lost to the competitor: client -> {week, reason, mood}
 var discount := {}  # client -> {mult, weeks}
 var income_extra := 0  # one-off income / costs this week (jobs)
 var history: Array = []
+var habits := {}  # R38: good habits: id -> {start, last, uses} (Habits)
+var consc := 0  # R38: the conscience, 0 clean and negative below (shown as words only; Temptation)
+var skel: Array = []  # R38: open skeletons {id, due, class, size} (Temptation)
+var inherit := {}  # R38: client -> inherited risk 0-100 after a takeover (Takeover)
 
 var _dynamic := {}  # cards built at run time (the consultant's advice, inbound leads)
 var _advised := false
@@ -1450,6 +1459,11 @@ var _winback_queue: Array = []  # lost clients asking to come back
 var _poach_cool := 0
 var _poach_wave := 0  # weeks the competitor is running a campaign (double the risk)
 var _ransom_ticket := 0
+
+
+func _ready() -> void:
+	for id in RivalCards.CARDS:  # R38: the rival arc and temptation cards are data in rival_cards.gd (shared with story/strings.txt)
+		CARDS[id] = RivalCards.CARDS[id]
 
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
@@ -1503,6 +1517,10 @@ func reset() -> void:
 	discount = {}
 	income_extra = 0
 	history = []
+	habits = {}
+	consc = 0
+	skel = []
+	inherit = {}
 	_work = {}
 	_tick = 0.0
 	_fired = {}
@@ -1656,6 +1674,7 @@ func practices() -> int:
 	n += 1 if flags.get("practice_callback", false) else 0  # a call-back rule on payment changes
 	n += 1 if flags.get("practice_postmortem", false) else 0  # a blameless post-incident review
 	n += 1 if int(flags.get("outings", 0)) >= 2 else 0
+	n += Habits.practice_count()  # R38: adopted habits count (at most 3)
 	return n
 
 
@@ -1735,7 +1754,7 @@ func _process(delta: float) -> void:
 
 # the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
-	return Yeartwo.events_on("owner", day, DAYS)
+	return Yeartwo.events_on("owner", day, RivalCards.merged_days(DAYS))
 
 
 func _work_queue(seconds: float) -> void:
@@ -1808,6 +1827,7 @@ func begin_day(day: int) -> void:
 	if not _winback_queue.is_empty():
 		_winback_card(int(_winback_queue.pop_front()))
 	Incident.morning()
+	Rival.morning(self)
 	Projects.begin_week()
 
 
@@ -2138,6 +2158,20 @@ func apply(fx: Dictionary) -> void:
 		cash += int(q.cash) - int(q.cost)
 		income_extra += int(q.cash) - int(q.cost)
 		Campaign.adjust_rep(int(q.rep))
+	if fx.has("rap"):
+		Rival.apply_rap(fx.rap)
+	if fx.has("habit"):
+		Habits.apply_touch(str(fx.habit))
+	if fx.has("habit_start"):
+		Habits.apply_start(fx.habit_start)
+	if fx.has("consc"):
+		Temptation.change_consc(int(fx.consc))
+	if fx.has("skel"):
+		Temptation.apply_skel(fx.skel)
+	if fx.has("visit"):
+		Takeover.visit(self, str(fx.visit))
+	if fx.has("lead"):
+		_leads += int(fx.lead)
 	Msp.changed.emit()
 
 
@@ -3266,6 +3300,8 @@ func poach_gaps(client: int) -> Array:
 		out.append("months of missing updates")
 	if Sales.mood(client) < 50:
 		out.append("unhappy users")
+	if Habits.gap_restore():
+		out.append("no restore proof")  # R38: H1 started and gone stale
 	return out
 
 
@@ -3286,6 +3322,7 @@ func poach_risk(client: int) -> float:
 	if price >= 1.15:
 		r += 0.03
 	r += float(Mutators.hook("price_pressure", 0.0))
+	r += Habits.poach_adjust(client)  # R38: a fresh restore test, listening to the front desk
 	if _poach_wave > 0:
 		r *= 2.0
 	return minf(r, 0.6) * Difficulty.cz("poach", 1.0)  # cozy Easy: the rival calls half as often
@@ -3596,7 +3633,7 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
 	if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
 		return
-	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom")
+	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom") * Habits.rdp_mult(bool(flags.get("rdp_weak", false)))
 	if randf() >= chance:
 		return
 	var victim: int = Sales.active[randi() % Sales.active.size()]
@@ -3725,8 +3762,7 @@ func multiple() -> float:
 		m += 0.25
 	if Campaign.rep >= 70:
 		m += 0.25
-	if oml() >= 4:
-		m += 0.25  # an optimizing, innovating company is worth more
+	m += Habits.maturity_bonus(oml())  # an optimizing, innovating company is worth more (R38: replaces the old +0.25, never stacks)
 	# a buyer discounts unhappy clients, a poor name and slow collections
 	if Sales.average() < 35.0:
 		m -= 2.0
@@ -3736,6 +3772,7 @@ func multiple() -> float:
 		m -= 0.5
 	if ar_total() > int(float(est.revenue) * 3.0):
 		m -= 0.5
+	m -= Temptation.diligence()  # R38: due diligence checks Marge's folder
 	return maxf(2.0, m)
 
 
@@ -3795,6 +3832,10 @@ func settle() -> Dictionary:
 	_burnout_week()
 	_rdp_week()
 	Incident.week()
+	if Campaign.mode == "owner":  # R38: the rival arc, the habits' decay and the skeleton bills (fixed order)
+		Rival.arc_week(self, Campaign.day)
+		Habits.week(self)
+		Temptation.week(self)
 	_poach_week()
 	_staff_week()
 	_owner_week(profit)
@@ -3867,6 +3908,13 @@ func settle() -> Dictionary:
 				Color("8fe3a0") if Incident.risk_word() == "LOW" else Color("ffd27a")
 			]
 		)
+	if Campaign.mode == "owner":  # R38
+		if Habits.any():
+			rows.append(["STANDARD", Habits.standard_text(), Color("8fe3a0") if Habits.standard() >= 60 else Color("ffd27a")])
+		if Temptation.folder_count() > 0:
+			rows.append(["FOLDER", Temptation.folder_text(), Color("ffd27a")])
+		for rap_line in Rival.lines():
+			rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
 	rows.append(partner_row())
 	rows.append(goal_row())
 	if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():
@@ -4302,6 +4350,10 @@ func to_dict() -> Dictionary:
 		"winback": _winback_queue,
 		"poach_cool": _poach_cool,
 		"poach_wave": _poach_wave,
+		"habits": habits,
+		"consc": consc,
+		"skel": skel,
+		"inherit": inherit,
 	}
 
 
@@ -4372,3 +4424,9 @@ func from_dict(data: Dictionary) -> void:
 	_winback_queue = data.get("winback", [])
 	_poach_cool = int(data.get("poach_cool", 0))
 	_poach_wave = int(data.get("poach_wave", 0))
+	habits = data.get("habits", {})
+	consc = int(data.get("consc", 0))
+	skel = data.get("skel", [])
+	var inherited: Dictionary = data.get("inherit", {})
+	for key in inherited:
+		inherit[int(key)] = int(inherited[key])

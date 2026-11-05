@@ -10,6 +10,7 @@ extends CanvasLayer
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const DISPATCH := preload("res://scripts/dispatch.gd")
 const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
+const HABITS_VIEW := preload("res://scripts/habits_view.gd")  # R38: the Boardroom HABITS and RIVALS tabs (read only)
 const TB := 11.0  # taskbar height
 const TXT := Color("20242c")
 const WHITE := Color("ffffff")
@@ -2416,11 +2417,14 @@ func _paint_boardroom() -> void:
 		["team", "TEAM"],
 		["stack", "STACK"]
 	]
+	tabs.append_array(HABITS_VIEW.tabs())  # R38: hidden until the rival arc or a habit is live
 	var tab_w := minf(42.0, (body.size.x - 4.0) / float(tabs.size()))
 	_fill(Rect2(body.position, Vector2(body.size.x, 9)), Color("e4d9c9"))
 	for i in tabs.size():
 		var tint := BTN_HI if board_tab == tabs[i][0] else BTN
 		var tab_label: String = tabs[i][1] if tab_w >= 40.0 or tabs[i][0] != "projects" else "PROJ"
+		if tabs.size() > 5 and tab_w < 40.0:
+			tab_label = tab_label.substr(0, 4)  # R38: seven tabs on a narrow screen
 		_button(
 			"btab:" + tabs[i][0],
 			Rect2(body.position.x + 2 + float(i) * tab_w, body.position.y + 1, tab_w - 2.0, 8),
@@ -2438,6 +2442,8 @@ func _paint_boardroom() -> void:
 			_board_team(area)
 		"stack":
 			_board_stack(area)
+		"habits", "rivals":
+			HABITS_VIEW.paint(self, area, board_tab)  # R38
 		_:
 			_board_books(area)
 

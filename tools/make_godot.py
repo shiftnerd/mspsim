@@ -7094,6 +7094,7 @@ write("scripts/computer.gd", '''extends CanvasLayer
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const DISPATCH := preload("res://scripts/dispatch.gd")
 const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
+const HABITS_VIEW := preload("res://scripts/habits_view.gd")  # R38: the Boardroom HABITS and RIVALS tabs (read only)
 const TB := 11.0  # taskbar height
 const TXT := Color("20242c")
 const WHITE := Color("ffffff")
@@ -9133,11 +9134,14 @@ func _paint_boardroom() -> void:
     var body := _window("BOARDROOM - " + Msp.COMPANY, Color("6b421c"))
     _fill(body, Color("f3f6fb"))
     var tabs := [["books", "BOOKS"], ["clients", "CLIENTS"], ["projects", "PROJECTS"], ["team", "TEAM"], ["stack", "STACK"]]
+    tabs.append_array(HABITS_VIEW.tabs())  # R38: hidden until the rival arc or a habit is live
     var tab_w := minf(42.0, (body.size.x - 4.0) / float(tabs.size()))
     _fill(Rect2(body.position, Vector2(body.size.x, 9)), Color("e4d9c9"))
     for i in tabs.size():
         var tint := BTN_HI if board_tab == tabs[i][0] else BTN
         var tab_label: String = tabs[i][1] if tab_w >= 40.0 or tabs[i][0] != "projects" else "PROJ"
+        if tabs.size() > 5 and tab_w < 40.0:
+            tab_label = tab_label.substr(0, 4)  # R38: seven tabs on a narrow screen
         _button("btab:" + tabs[i][0], Rect2(body.position.x + 2 + float(i) * tab_w, body.position.y + 1, tab_w - 2.0, 8), tab_label, true, tint)
     var area := Rect2(body.position + Vector2(0, 9), body.size - Vector2(0, 9))
     match board_tab:
@@ -9149,6 +9153,8 @@ func _paint_boardroom() -> void:
             _board_team(area)
         "stack":
             _board_stack(area)
+        "habits", "rivals":
+            HABITS_VIEW.paint(self, area, board_tab)  # R38
         _:
             _board_books(area)
 
@@ -19088,6 +19094,11 @@ write("scripts/owner.gd", '''extends Node
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
+const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
+const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
+const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
+const Takeover := preload("res://scripts/takeover.gd")  # R38: inherited messes
+const RivalCards := preload("res://scripts/rival_cards.gd")  # R38: the rival arc and temptation cards (data)
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -19870,6 +19881,10 @@ var gone := {}  # clients lost to the competitor: client -> {week, reason, mood}
 var discount := {}  # client -> {mult, weeks}
 var income_extra := 0  # one-off income / costs this week (jobs)
 var history: Array = []
+var habits := {}  # R38: good habits: id -> {start, last, uses} (Habits)
+var consc := 0  # R38: the conscience, 0 clean and negative below (shown as words only; Temptation)
+var skel: Array = []  # R38: open skeletons {id, due, class, size} (Temptation)
+var inherit := {}  # R38: client -> inherited risk 0-100 after a takeover (Takeover)
 
 var _dynamic := {}  # cards built at run time (the consultant's advice, inbound leads)
 var _advised := false
@@ -19890,6 +19905,11 @@ var _winback_queue: Array = []  # lost clients asking to come back
 var _poach_cool := 0
 var _poach_wave := 0  # weeks the competitor is running a campaign (double the risk)
 var _ransom_ticket := 0
+
+
+func _ready() -> void:
+    for id in RivalCards.CARDS:  # R38: the rival arc and temptation cards are data in rival_cards.gd (shared with story/strings.txt)
+        CARDS[id] = RivalCards.CARDS[id]
 
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
@@ -19943,6 +19963,10 @@ func reset() -> void:
     discount = {}
     income_extra = 0
     history = []
+    habits = {}
+    consc = 0
+    skel = []
+    inherit = {}
     _work = {}
     _tick = 0.0
     _fired = {}
@@ -20083,6 +20107,7 @@ func practices() -> int:
     n += 1 if flags.get("practice_callback", false) else 0  # a call-back rule on payment changes
     n += 1 if flags.get("practice_postmortem", false) else 0  # a blameless post-incident review
     n += 1 if int(flags.get("outings", 0)) >= 2 else 0
+    n += Habits.practice_count()  # R38: adopted habits count (at most 3)
     return n
 
 
@@ -20149,7 +20174,7 @@ func _process(delta: float) -> void:
 
 # the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
-    return Yeartwo.events_on("owner", day, DAYS)
+    return Yeartwo.events_on("owner", day, RivalCards.merged_days(DAYS))
 
 
 func _work_queue(seconds: float) -> void:
@@ -20222,6 +20247,7 @@ func begin_day(day: int) -> void:
     if not _winback_queue.is_empty():
         _winback_card(int(_winback_queue.pop_front()))
     Incident.morning()
+    Rival.morning(self)
     Projects.begin_week()
 
 
@@ -20547,6 +20573,20 @@ func apply(fx: Dictionary) -> void:
         cash += int(q.cash) - int(q.cost)
         income_extra += int(q.cash) - int(q.cost)
         Campaign.adjust_rep(int(q.rep))
+    if fx.has("rap"):
+        Rival.apply_rap(fx.rap)
+    if fx.has("habit"):
+        Habits.apply_touch(str(fx.habit))
+    if fx.has("habit_start"):
+        Habits.apply_start(fx.habit_start)
+    if fx.has("consc"):
+        Temptation.change_consc(int(fx.consc))
+    if fx.has("skel"):
+        Temptation.apply_skel(fx.skel)
+    if fx.has("visit"):
+        Takeover.visit(self, str(fx.visit))
+    if fx.has("lead"):
+        _leads += int(fx.lead)
     Msp.changed.emit()
 
 
@@ -21331,6 +21371,8 @@ func poach_gaps(client: int) -> Array:
         out.append("months of missing updates")
     if Sales.mood(client) < 50:
         out.append("unhappy users")
+    if Habits.gap_restore():
+        out.append("no restore proof")  # R38: H1 started and gone stale
     return out
 
 
@@ -21351,6 +21393,7 @@ func poach_risk(client: int) -> float:
     if price >= 1.15:
         r += 0.03
     r += float(Mutators.hook("price_pressure", 0.0))
+    r += Habits.poach_adjust(client)  # R38: a fresh restore test, listening to the front desk
     if _poach_wave > 0:
         r *= 2.0
     return minf(r, 0.6) * Difficulty.cz("poach", 1.0)  # cozy Easy: the rival calls half as often
@@ -21514,7 +21557,7 @@ func _ransom_finish(kind: String) -> void:
 func _rdp_week() -> void:
     if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
         return
-    var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom")
+    var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom") * Habits.rdp_mult(bool(flags.get("rdp_weak", false)))
     if randf() >= chance:
         return
     var victim: int = Sales.active[randi() % Sales.active.size()]
@@ -21628,8 +21671,7 @@ func multiple() -> float:
         m += 0.25
     if Campaign.rep >= 70:
         m += 0.25
-    if oml() >= 4:
-        m += 0.25  # an optimizing, innovating company is worth more
+    m += Habits.maturity_bonus(oml())  # an optimizing, innovating company is worth more (R38: replaces the old +0.25, never stacks)
     # a buyer discounts unhappy clients, a poor name and slow collections
     if Sales.average() < 35.0:
         m -= 2.0
@@ -21639,6 +21681,7 @@ func multiple() -> float:
         m -= 0.5
     if ar_total() > int(float(est.revenue) * 3.0):
         m -= 0.5
+    m -= Temptation.diligence()  # R38: due diligence checks Marge's folder
     return maxf(2.0, m)
 
 
@@ -21693,6 +21736,10 @@ func settle() -> Dictionary:
     _burnout_week()
     _rdp_week()
     Incident.week()
+    if Campaign.mode == "owner":  # R38: the rival arc, the habits' decay and the skeleton bills (fixed order)
+        Rival.arc_week(self, Campaign.day)
+        Habits.week(self)
+        Temptation.week(self)
     _poach_week()
     _staff_week()
     _owner_week(profit)
@@ -21739,6 +21786,13 @@ func settle() -> Dictionary:
     rows.append(hours_row)
     if Incident.armed():
         rows.append(["WIRE FRAUD RISK", "%s (%d CAUGHT, %d LOST)" % [Incident.risk_word(), int(flags.get("bec_caught", 0)), Incident.losses()], Color("8fe3a0") if Incident.risk_word() == "LOW" else Color("ffd27a")])
+    if Campaign.mode == "owner":  # R38
+        if Habits.any():
+            rows.append(["STANDARD", Habits.standard_text(), Color("8fe3a0") if Habits.standard() >= 60 else Color("ffd27a")])
+        if Temptation.folder_count() > 0:
+            rows.append(["FOLDER", Temptation.folder_text(), Color("ffd27a")])
+        for rap_line in Rival.lines():
+            rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
     rows.append(partner_row())
     rows.append(goal_row())
     if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():
@@ -22025,6 +22079,7 @@ func to_dict() -> Dictionary:
         "leak_found": leak_found, "risk_client": risk_client, "risk_choice": risk_choice, "goal": goal,
         "handover": _handover, "burn_warned": _burn_warned, "patch_debt": patch_debt, "gone": gone,
         "poach_queue": _poach_queue, "winback": _winback_queue, "poach_cool": _poach_cool, "poach_wave": _poach_wave,
+        "habits": habits, "consc": consc, "skel": skel, "inherit": inherit,
     }
 
 
@@ -22095,6 +22150,12 @@ func from_dict(data: Dictionary) -> void:
     _winback_queue = data.get("winback", [])
     _poach_cool = int(data.get("poach_cool", 0))
     _poach_wave = int(data.get("poach_wave", 0))
+    habits = data.get("habits", {})
+    consc = int(data.get("consc", 0))
+    skel = data.get("skel", [])
+    var inherited: Dictionary = data.get("inherit", {})
+    for key in inherited:
+        inherit[int(key)] = int(inherited[key])
 ''')
 
 write("scripts/lync.gd", '''extends Node
@@ -45019,7 +45080,12 @@ const ROOTS := {
     "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
     "SalesCampaign": ["BEAT_TEXT"],
+    "Rival": ["HABITS", "RIVALS"],
+    "Habits": ["HABITS"],
+    "RivalCards": ["CARDS"],
 }
+# roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
+const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -45037,7 +45103,9 @@ func _ready() -> void:
 
 
 # ---- the data tables ---------------------------------------------------------------------------
-func _node(root: String) -> Node:
+func _node(root: String) -> Object:
+    if SCRIPTS.has(root):
+        return load(str(SCRIPTS[root]))
     return get_node_or_null("/root/" + root)
 
 
@@ -45045,7 +45113,8 @@ func _defaults(root: String, name: String) -> Variant:
     var node := _node(root)
     if node == null:
         return null
-    var map: Dictionary = node.get_script().get_script_constant_map()
+    var script: Script = node if node is Script else node.get_script()
+    var map: Dictionary = script.get_script_constant_map()
     return map.get("DEFAULT_" + name, null)
 
 
@@ -64537,6 +64606,7 @@ write("scripts/incident.gd", '''extends RefCounted
 #   Tech: Story.POSTMORTEMS (Morgan runs a blameless review: what happened, the root cause, two action items).
 # Everything here is 2013-14: phone calls, a hosted spam filter, a funds transfer fraud rider on a crime policy.
 
+const Habits := preload("res://scripts/habits.gd")  # R38: signed forms, unique logins and written OK make a scam harder
 const FILTER := "mailfilter"  # the recurring service (Projects.SERVICES)
 const FIRST_WEEK := 13
 const BASE := 0.035  # chance per client per week that a scammer tries
@@ -64574,7 +64644,7 @@ static func miss_share(client: int) -> float:
         miss *= 0.7
     if Projects.has_service(client, FILTER):
         miss *= 0.5
-    return miss * lesson_mult("bec")
+    return miss * lesson_mult("bec") * Habits.bec_mult()
 
 
 # the sum over clients: what the weekly report calls the wire fraud risk
@@ -64911,6 +64981,1184 @@ static func fix_bonus() -> float:
 # read by Msp.next_spawn_gap: patch policy and monitoring mean a few fewer tickets
 static func ticket_gap() -> float:
     return 1.05 if pm_has("pace") else 1.0
+''')
+
+write("scripts/rival.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: the rap sheet of the rival MSPs (docs/scope-bad-habits.md section 2). A static helper (no state of its own, like Incident):
+# what the player has learned lives in Owner.flags["rap_<rival>_<habit>"] (int 0-3, saved with the campaign) and only ever goes UP.
+# Levels: 0 UNKNOWN, 1 RUMOUR (heard, cannot be used), 2 SEEN (you saw it yourself), 3 PROVEN (a document, photo, log or vendor letter).
+# The beats of the 20 week arc are cards in RivalCards.CARDS. arc_week() queues them, morning() shows them.
+# Ideas only from the blog series the doc credits: no names, scenes or lines from it. 2013-14 text rules apply (3x5 font charset).
+# OWNER OF THIS FILE: the rival/beats agent. Public signatures below are FINAL; fill the TODO bodies.
+
+const LEVELS := ["UNKNOWN", "RUMOUR", "SEEN", "PROVEN"]
+const UNKNOWN := 0
+const RUMOUR := 1
+const SEEN := 2
+const PROVEN := 3
+
+# the 17 habits: name (short, for the tab), text (our wording), twin (the matching good habit of the player, Habits.HABITS)
+const DEFAULT_HABITS := {
+	"R01":
+	{
+		"name": "FREEZER BAG BACKUP",
+		"text":
+		"The only backup is one USB drive in a freezer bag in the owner's trunk, trusted because the light is on.",
+		"twin": "H1"
+	},
+	"R02":
+	{
+		"name": "ONE ADMIN PASSWORD",
+		"text": "One admin password for every client, and the front desk has it on a yellow note.",
+		"twin": "H7"
+	},
+	"R03":
+	{
+		"name": "TWO-FACTOR LOGIN OFF",
+		"text": "Two-factor login switched off for convenience on the hosted email.",
+		"twin": "H4"
+	},
+	"R04":
+	{
+		"name": "GREEN DASHBOARD",
+		"text":
+		"Antivirus, backup and monitoring agents are installed but never configured: a green dashboard and nothing watching.",
+		"twin": "H11"
+	},
+	"R05":
+	{
+		# the 17 habits: name (short, for the tab), text (our wording), twin (the matching good habit of the player, Habits.HABITS)
+		"name": "FALSE QUESTIONNAIRES",
+		"text": "False answers on the client's and the insurer's security questionnaire.",
+		"twin": "H10"
+	},
+	"R06":
+	{
+		"name": "SEAT COUNT LIES",
+		"text": "Lies to the vendor about seat counts for a discount.",
+		"twin": "H10"
+	},
+	"R07":
+	{
+		"name": "REBOOT AS DIAGNOSTICS",
+		"text": "Bills a reboot as advanced diagnostics and invents fees.",
+		"twin": "H2"
+	},
+	"R08":
+	{
+		"name": "FAKE FIXES",
+		"text": "Fakes a fix on the phone to calm a nervous client.",
+		"twin": "H13"
+	},
+	"R09":
+	{
+		"name": "FAKE REVIEWS",
+		"text":
+		"Fake Yowl reviews and forum personas, and whispers that you are not bonded or HIPAA safe.",
+		"twin": "H10"
+	},
+	"R10":
+	{
+		"name": "LAUNDERED LEADS",
+		"text":
+		"Uses leads that came from reading your tickets in a shared mailbox, then launders them through a referral.",
+		"twin": "H13"
+	},
+	"R11":
+	{
+		"name": "FLAT PRICE",
+		"text":
+		"One flat per-seat price and nothing itemized, so the client cannot see what is not included.",
+		"twin": "H2"
+	},
+	"R12":
+	{
+		"name": "NO DOCUMENTATION",
+		"text": "Undocumented work: no scope, no change ticket, three photos as documentation.",
+		"twin": "H3"
+	},
+	"R13":
+	{
+		"name": "ARCHIVING OFF",
+		"text": "Email archiving switched off so a partner can delete messages.",
+		"twin": "H4"
+	},
+	"R14":
+	{
+		"name": "OLD LOGINS ALIVE",
+		"text": "Ex-employees and an ex-vendor rep still have working logins.",
+		"twin": "H6"
+	},
+	"R15":
+	{
+		"name": "OPEN DOOR AND DEFAULTS",
+		"text":
+		"A temporary firewall exception open since 2012, and default camera and printer passwords.",
+		"twin": "H8"
+	},
+	"R16":
+	{
+		"name": "CLOCK CHANGE WINDOW",
+		"text":
+		"A 2:30 a.m. maintenance window that the clock change eats, and root cause recorded as Unknown.",
+		"twin": "H9"
+	},
+	"R17":
+	{
+		"name": "IGNORES THE FRONT DESK",
+		"text": "Ignores the one person at the client who sees the symptoms first.",
+		"twin": "H12"
+	},
+}
+static var HABITS: Dictionary = DEFAULT_HABITS.duplicate(true)
+
+# the rivals: name (for lines and tabs), owner, habits (the rap sheet), blurb (tab text)
+const DEFAULT_RIVALS := {
+	"bytebrothers":
+	{
+		"name": "BYTEBROTHERS",
+		"owner": "THE BROTHERS",
+		"habits": ["R04", "R11", "R12", "R16", "R17"],
+		"blurb": "The discount shop. Twenty percent under, twenty percent less delivered."
+	},
+	"bigcheese":
+	{
+		"name": "BIG CHEESE",
+		"owner": "REX CALLOWAY",
+		"habits":
+		[
+			"R01",
+			"R02",
+			"R03",
+			"R04",
+			"R05",
+			"R06",
+			"R07",
+			"R08",
+			"R09",
+			"R10",
+			"R11",
+			"R12",
+			"R13",
+			"R14",
+			"R15",
+			"R16",
+			"R17"
+		],
+		"blurb": "Big Cheese Technology Group. We do it all for $39 a seat. Booked solid."
+	},
+	"plumbline":
+	{
+		"name": "PLUMB LINE",
+		"owner": "HOLLIS GRADY",
+		"habits": [],
+		"blurb": "The careful one who cannot sell. Nine page proposals."
+	},
+}
+static var RIVALS: Dictionary = DEFAULT_RIVALS.duplicate(true)
+
+# the arc: the week a beat card should be SEEN -> its card id in RivalCards.CARDS (docs section 2.4). Skipped while the card does not exist.
+const ARC := {
+	3: "rival_flat",
+	5: "rival_wall",
+	7: "rival_defect",
+	8: "temp_seats",
+	9: "temp_reboot",
+	10: "rival_notebook",
+	11: "rival_takeover",
+	12: "temp_review",
+	13: "rival_2fa",
+	15: "rival_vendor_audit",
+	16: "temp_quest",
+	17: "rival_exposed",
+	18: "rival_blitz",
+	19: "rival_badday",
+}
+const QUEUE_KEY := "arc_queue"  # Owner.flags: card ids waiting for the next morning
+
+
+# ---- the rap sheet ----------------------------------------------------------------------------------------------
+static func key(rival: String, habit: String) -> String:
+	return "rap_%s_%s" % [rival, habit]
+
+
+# 0-3 (see LEVELS)
+static func rap(rival: String, habit: String) -> int:
+	return clampi(int(Owner.flags.get(key(rival, habit), 0)), 0, 3)
+
+
+# raise the level; evidence never goes down. True when it went up.
+static func set_rap(rival: String, habit: String, level: int) -> bool:
+	level = clampi(level, 0, 3)
+	if level <= rap(rival, habit):
+		return false
+	Owner.flags[key(rival, habit)] = level
+	return true
+
+
+# how many habits of this rival are known at exactly this level
+static func count(rival: String, level: int) -> int:
+	var n := 0
+	for h in RIVALS.get(rival, {}).get("habits", []):
+		n += 1 if rap(rival, str(h)) == level else 0
+	return n
+
+
+# true when anything at all is known about the rival
+static func known(rival: String) -> bool:
+	for level in [RUMOUR, SEEN, PROVEN]:
+		if count(rival, level) > 0:
+			return true
+	return false
+
+
+# the weekly report line: BIG CHEESE: 3 PROVEN, 2 SEEN, 1 RUMOUR ("" while nothing is known)
+static func line(rival: String) -> String:
+	var parts := []
+	for level in [PROVEN, SEEN, RUMOUR]:
+		var n := count(rival, level)
+		if n > 0:
+			parts.append("%d %s" % [n, LEVELS[level]])
+	if parts.is_empty():
+		return ""
+	return "%s: %s" % [str(RIVALS.get(rival, {}).get("name", rival.to_upper())), ", ".join(parts)]
+
+
+# every known line, for the weekly report and the RIVALS tab
+static func lines() -> Array:
+	var out := []
+	for r in RIVALS:
+		var l := line(str(r))
+		if l != "":
+			out.append(l)
+	return out
+
+
+# the best level the player holds on a habit across all rivals (the warning options need SEEN or better)
+static func best(habit: String) -> int:
+	var top := 0
+	for r in RIVALS:
+		top = maxi(top, rap(str(r), habit))
+	return top
+
+
+# the evidence fx: rap [rival, habit, level], or a list of those
+static func apply_rap(fx: Array) -> void:
+	if not fx.is_empty() and fx[0] is Array:
+		for one in fx:
+			apply_rap(one)
+		return
+	if fx.size() >= 3:
+		set_rap(str(fx[0]), str(fx[1]), int(fx[2]))
+
+
+# ---- the arc (weeks 3-20) ---------------------------------------------------------------------------------------
+# called from Owner.settle() with the week just finished: queue the beat for NEXT week (so the card comes up in the morning).
+# Only cards that exist are queued; a queued card is shown once (flag arc_<id>).
+static func arc_week(owner: Node, week: int) -> void:
+	var id: String = str(ARC.get(week + 1, ""))
+	if id == "" or owner.flags.has("arc_" + id) or owner.card_data(id).is_empty():
+		return
+	# TODO(rival agent): conditions per beat (needs a client for rival_defect, only while the habit is unknown, jitter from Difficulty.rng("rival"))
+	var q: Array = owner.flags.get(QUEUE_KEY, [])
+	if not q.has(id):
+		q.append(id)
+	owner.flags[QUEUE_KEY] = q
+
+
+# called from Owner.begin_day() next to Incident.morning(): show one queued beat card
+static func morning(owner: Node) -> void:
+	var q: Array = owner.flags.get(QUEUE_KEY, [])
+	if q.is_empty():
+		return
+	var id := str(q.pop_front())
+	owner.flags[QUEUE_KEY] = q
+	owner.flags["arc_" + id] = Campaign.day
+	owner.show_card(id)
+
+
+# ---- channels (other files call these) ----------------------------------------------------------------------------
+# Vic hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
+static func intel(_rival: String) -> String:
+	# TODO(rival agent): pick an unknown habit with Difficulty.rng("rival"), colour it by Owner.vic_plan, set RUMOUR
+	return ""
+
+
+# the defect / winback channel: what a client who left for the rival tells you (SEEN) about R11 and friends
+static func defect_exit(_rival: String, _client: int) -> void:
+	# TODO(rival agent): set_rap(rival, "R11", SEEN) and queue the inherited mess for the winback card
+	pass
+
+
+# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids from the rap sheet
+static func assessment(_rival: String) -> Array:
+	# TODO(sales agent): choose 3 to 5 habits of this rival, honest list
+	return []
+''')
+
+write("scripts/habits.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: the good habits of the player's own MSP (docs/scope-bad-habits.md section 4). A static helper like Incident.
+# State is Owner.habits: {"H1": {"start": week, "last": week, "uses": n}} (saved with the campaign). A habit that is not in it is NONE.
+# Freshness: age = Campaign.day - last. ADOPTED while age < every, STALE (half the effect) until age < 2 x every, then LAPSED (no effect).
+# every = 0 means it never lapses by time (H10). Touching it again (the real action: a restore test, a QBR with a value page) resets it,
+# and re-adopting a STALE or LAPSED habit costs half. Effects are read through fresh() / factor() by the other systems, and every query
+# returns the NEUTRAL value (1.0, 0.0, false) while the habit is not adopted, so a game without habits plays exactly as before.
+# OWNER OF THIS FILE: the habits agent (habits.gd + habits_view.gd). Public signatures below are FINAL; fill the TODO bodies.
+
+const NONE := "NONE"
+const ADOPTED := "ADOPTED"
+const STALE := "STALE"
+const LAPSED := "LAPSED"
+const STALE_FACTOR := 0.5
+
+# id -> name, cost (what adopting costs: cash, owner hours, morale), every (weeks between touches, 0 = never lapses by time),
+# weight (points of the 100 point Standard), earns (the tab text: what it earns), shown (where the player sees it)
+const DEFAULT_HABITS := {
+	"H1":
+	{
+		# weight (points of the 100 point Standard), earns (the tab text: what it earns), shown (where the player sees it)
+		"name": "TESTED RESTORE EACH QUARTER",
+		"cost": {"cash": 150, "hours": 3, "morale": 0},
+		"every": 13,
+		"weight": 12,
+		"earns":
+		"A passed restore test means a ransom restores 100 percent and the bill is halved.",
+		"shown": "RMM BACKUPS TESTED DATE"
+	},
+	"H2":
+	{
+		"name": "ITEMIZED PRICING AND VALUE PAGE",
+		"cost": {"cash": 200, "hours": 1, "morale": 0},
+		"every": 8,
+		"weight": 10,
+		"earns": "A one page scorecard at each review: mood +2, scope held, renewals up.",
+		"shown": "SCORECARD AT QBR"
+	},
+	"H3":
+	{
+		"name": "CHANGE REQUESTS WITH ROLLBACK",
+		"cost": {"cash": 0, "hours": 2, "morale": -1},
+		"every": 10,
+		"weight": 6,
+		"earns": "Fixed price creep 30 to 18 percent, a failed cutover costs half.",
+		"shown": "PROJECT QUOTE LINE"
+	},
+	"H4":
+	{
+		"name": "SIGNED RISK FORMS",
+		"cost": {"cash": 0, "hours": 1, "morale": 0},
+		"every": 13,
+		"weight": 6,
+		"earns": "A refusal on paper makes blame cheaper.",
+		"shown": "OPEN REFUSALS"
+	},
+	"H5":
+	{
+		"name": "LOST ACCOUNT REVIEW",
+		"cost": {"cash": 0, "hours": 2, "morale": 0},
+		"every": 13,
+		"weight": 6,
+		"earns": "The real cause lowers that risk for 8 weeks.",
+		"shown": "REVIEW AFTER A LOSS"
+	},
+	"H6":
+	{
+		"name": "OFFBOARDING CHECKLIST",
+		"cost": {"cash": 0, "hours": 1, "morale": 0},
+		"every": 13,
+		"weight": 8,
+		"earns": "No revenge mail from a departed tech, vendor breach odds down.",
+		"shown": "CHECKED WHEN SOMEONE LEAVES"
+	},
+	"H7":
+	{
+		"name": "BREAK-GLASS AND UNIQUE ADMIN LOGINS",
+		"cost": {"cash": 240, "hours": 1, "morale": -1},
+		"every": 26,
+		"weight": 10,
+		"earns": "Vendor breach damage halved, weak password break-ins rarer.",
+		"shown": "SEALED ENVELOPE (BOOKS)"
+	},
+	"H8":
+	{
+		"name": "VPN AND EXPIRING FIREWALL EXCEPTIONS",
+		"cost": {"cash": 1200, "hours": 2, "morale": 0},
+		"every": 13,
+		"weight": 8,
+		"earns": "A quarterly review closes forgotten open ports.",
+		"shown": "HABITS ROW"
+	},
+	"H9":
+	{
+		"name": "CALENDAR-AWARE WINDOWS",
+		"cost": {"cash": 0, "hours": 1, "morale": 0},
+		"every": 26,
+		"weight": 3,
+		"earns": "Fewer failed overnight jobs, and a card before the clocks change in November.",
+		"shown": "WEEK 19 CARD"
+	},
+	"H10":
+	{
+		"name": "HONEST ASSESSMENT",
+		"cost": {"cash": 0, "hours": 2, "morale": 0},
+		"every": 0,
+		"weight": 8,
+		"earns": "Win chance -3 points, start mood +6, referrals up.",
+		"shown": "CRM ASSESS COUNT"
+	},
+	"H11":
+	{
+		"name": "RUNBOOKS AND A NETWORK MAP",
+		"cost": {"cash": 0, "hours": 6, "morale": 0},
+		"every": 26,
+		"weight": 8,
+		"earns": "Onsite jobs 20 percent faster, no only-person-who-knows event.",
+		"shown": "CLIENTS MAPPED"
+	},
+	"H12":
+	{
+		"name": "LISTEN TO THE FRONT DESK",
+		"cost": {"cash": 15, "hours": 1, "morale": 0},
+		"every": 13,
+		"weight": 7,
+		"earns": "Mood drift seen 2 weeks earlier, more walk-around findings.",
+		"shown": "CLIENTS COVERED"
+	},
+	"H13":
+	{
+		"name": "WRITTEN OK, EVEN IN AN EMERGENCY",
+		"cost": {"cash": 0, "hours": 0, "morale": 0},
+		"every": 13,
+		"weight": 4,
+		"earns": "Blame halved in disputes about emergency changes.",
+		"shown": "EMERGENCY COUNT"
+	},
+	"H14":
+	{
+		"name": "DEFAULT DEVICE PASSWORDS CHANGED",
+		"cost": {"cash": 0, "hours": 3, "morale": 0},
+		"every": 52,
+		"weight": 4,
+		"earns": "No default password finding, a small breach reduction.",
+		"shown": "SITES DONE"
+	},
+}
+static var HABITS: Dictionary = DEFAULT_HABITS.duplicate(true)
+
+# the Standard (0-100) band words: lowest score of each band
+const BANDS := [[80, "SHOWCASE"], [60, "SOLID"], [35, "PATCHY"], [0, "BARE"]]
+const PRACTICE_CAP := 3  # Owner.practices() counts adopted habits up to this many
+const VALUATION_STANDARD := 70  # Standard at or above this (with oml 4+) is worth the maturity bonus
+const MATURITY_BONUS := 0.25  # what oml 4+ has always added to the multiple (code value; the doc says 0.5)
+const STANDARD_BONUS := 0.5  # the replacement bonus at Standard 70+ (never stacks with MATURITY_BONUS)
+
+
+# ---- state --------------------------------------------------------------------------------------------------------
+static func all() -> Array:
+	return HABITS.keys()
+
+
+static func entry(id: String) -> Dictionary:
+	return Owner.habits.get(id, {})
+
+
+# true once any habit has ever been started (the weekly report shows the STANDARD row from then on)
+static func any() -> bool:
+	return not Owner.habits.is_empty()
+
+
+# weeks since the last touch (-1 while NONE)
+static func age(id: String) -> int:
+	var e := entry(id)
+	if e.is_empty():
+		return -1
+	return maxi(0, Campaign.day - int(e.get("last", 0)))
+
+
+# NONE / ADOPTED / STALE / LAPSED
+static func state(id: String) -> String:
+	var a := age(id)
+	if a < 0:
+		return NONE
+	var every := int(HABITS.get(id, {}).get("every", 0))
+	if every <= 0 or a < every:
+		return ADOPTED
+	if a < 2 * every:
+		return STALE
+	return LAPSED
+
+
+# true only for a FRESH (ADOPTED) habit: the full effect
+static func fresh(id: String) -> bool:
+	return state(id) == ADOPTED
+
+
+# the share of the effect that counts now: 1.0 ADOPTED, 0.5 STALE, 0.0 LAPSED or NONE
+static func factor(id: String) -> float:
+	match state(id):
+		ADOPTED:
+			return 1.0
+		STALE:
+			return STALE_FACTOR
+	return 0.0
+
+
+# what adopting it costs now: full price when NONE, half when STALE or LAPSED (re-adopt), nothing more when fresh
+static func cost(id: String) -> Dictionary:
+	var c: Dictionary = HABITS.get(id, {}).get("cost", {})
+	var scale := 1.0
+	match state(id):
+		STALE, LAPSED:
+			scale = 0.5
+		ADOPTED:
+			scale = 0.0
+	return {
+		"cash": int(float(c.get("cash", 0)) * scale),
+		"hours": float(c.get("hours", 0)) * scale,
+		"morale": int(float(c.get("morale", 0)) * scale)
+	}
+
+
+# start it without paying (a card already charged for it: fx habit_start). Does not reset a habit that is already fresh.
+static func start(id: String) -> bool:
+	if not HABITS.has(id):
+		return false
+	if state(id) == ADOPTED:
+		return false
+	var e := entry(id)
+	e["start"] = int(e.get("start", Campaign.day))
+	e["last"] = Campaign.day
+	e["uses"] = int(e.get("uses", 0))
+	Owner.habits[id] = e
+	return true
+
+
+# adopt (or re-adopt) and pay cost(id). False when it cannot be paid or the habit is unknown.
+static func adopt(id: String) -> bool:
+	if not HABITS.has(id):
+		return false
+	var c := cost(id)
+	if int(c.cash) > Owner.cash:
+		return false
+	Owner.cash -= int(c.cash)
+	Growth.owner_used += float(c.hours)
+	# TODO(habits agent): morale cost (Social / burnout) for two weeks
+	return start(id)
+
+
+# the real thing was done again (a restore test, a QBR with a value page): resets freshness for free and counts a use. False while NONE.
+static func touch(id: String) -> bool:
+	var e := entry(id)
+	if e.is_empty():
+		return false
+	e["last"] = Campaign.day
+	e["uses"] = int(e.get("uses", 0)) + 1
+	Owner.habits[id] = e
+	return true
+
+
+# ---- the Standard -------------------------------------------------------------------------------------------------
+# 0-100: the weights of all habits, each times its factor
+static func standard() -> int:
+	var total := 0.0
+	for id in HABITS:
+		total += float(HABITS[id].get("weight", 0)) * factor(str(id))
+	return clampi(int(round(total)), 0, 100)
+
+
+static func band(score := -1) -> String:
+	if score < 0:
+		score = standard()
+	for b in BANDS:
+		if score >= int(b[0]):
+			return str(b[1])
+	return "BARE"
+
+
+# the weekly report row text: 64 (SOLID)
+static func standard_text() -> String:
+	return "%d (%s)" % [standard(), band()]
+
+
+# how many habits are ADOPTED or STALE (Owner.practices() counts them, capped)
+static func practice_count() -> int:
+	var n := 0
+	for id in HABITS:
+		var s := state(str(id))
+		n += 1 if s == ADOPTED or s == STALE else 0
+	return mini(n, PRACTICE_CAP)
+
+
+# the multiple's maturity bonus: replaces the +0.25 of oml 4+ (never stacks). With no habits it equals the old rule exactly.
+static func maturity_bonus(oml: int) -> float:
+	if oml < 4:
+		return 0.0
+	return STANDARD_BONUS if standard() >= VALUATION_STANDARD else MATURITY_BONUS
+
+
+# called from Owner.settle(): decay, the lapse nudge (once per habit), nothing when no habit is started
+static func week(owner: Node) -> void:
+	for id in HABITS:
+		if state(str(id)) == LAPSED and not owner.flags.has("lapsed_" + str(id)):
+			owner.flags["lapsed_" + str(id)] = Campaign.day
+			# TODO(habits agent): the Marge nudge card once (THE CHECKLIST HAS ONE EMPTY BOX), via owner.show_card("habit_lapsed")
+		elif state(str(id)) == ADOPTED:
+			owner.flags.erase("lapsed_" + str(id))
+
+
+# the fx habit_start forwarder: one id or a list of ids
+static func apply_start(ids: Variant) -> void:
+	if ids is Array:
+		for one in ids:
+			start(str(one))
+	else:
+		start(str(ids))
+
+
+# the fx habit forwarder
+static func apply_touch(id: String) -> void:
+	if not touch(id):
+		start(id)  # first time: doing the real thing counts as adopting it
+
+
+# ---- queries the other systems call (neutral while the habit is not fresh) ---------------------------------------------
+# poach_gaps: the third gap, "no restore proof", only for a player who started H1 and let it go stale
+static func gap_restore() -> bool:
+	return Owner.habits.has("H1") and not fresh("H1")
+
+
+# poach_risk: a fresh restore test lowers the failing-backup risk from 7 to 3 percent; TODO(habits agent): H5 and H12 terms
+static func poach_adjust(client: int) -> float:
+	var r := 0.0
+	if not bool(Msp.backups[client].ok):
+		r -= 0.04 * factor("H1")
+	return r
+
+
+# Incident.miss_share multiplier (H4, H7, H13 together make a scam harder)
+static func bec_mult() -> float:
+	return 1.0 - 0.15 * factor("H7") - 0.05 * factor("H13")
+
+
+# _rdp_week: a unique admin login makes a guessed password rarer (4 percent -> 1 percent when weak)
+static func rdp_mult(weak: bool) -> float:
+	return 1.0 - 0.75 * factor("H7") if weak else 1.0
+
+
+# ransom restore: the share of ransoms that fail to restore when the client HAS the backup service (untested 15 percent)
+static func restore_fail() -> float:
+	# TODO(habits agent): wire into _ransom (neutral until then)
+	if not Owner.habits.has("H1") or fresh("H1"):
+		return 0.0
+	return 0.15
+
+
+# ransom bill multiplier (H1 fresh: x0.5)
+static func ransom_mult() -> float:
+	return 1.0 - 0.5 * factor("H1")
+
+
+# vendor breach damage multiplier (H7: x0.5)
+static func breach_mult() -> float:
+	return 1.0 - 0.5 * factor("H7")
+
+
+# fixed-price creep (H3: 30 percent -> 18 percent)
+static func creep(base: float) -> float:
+	return base - (base - 0.18) * factor("H3") if base > 0.18 else base
+''')
+
+write("scripts/temptation.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: temptation cards, skeletons and the conscience (docs/scope-bad-habits.md section 5). A static helper like Incident.
+# A shortcut card seeds a SKELETON in Owner.skel: {id, due, class, size}. When Campaign.day reaches due the bill arrives (week()), unless
+# the player comes clean first (come_clean(): cheaper than the bill, conscience +1). due 99 means no date: a trigger fires it (TODO).
+# Conscience (Owner.consc, int, 0 clean to negative) is shown ONLY as a band word and as Marge's folder (folder_count()), never a number.
+# The cards themselves are data in RivalCards.CARDS (fx keys: skel [id, weeks], consc n). Cozy Easy halves every bill.
+# OWNER OF THIS FILE: the temptation agent (temptation.gd + the temp_* cards). Public signatures below are FINAL; fill the TODO bodies.
+
+const NO_DATE := 99
+const CLEAN_SHARE := 0.4  # coming clean costs this share of the bill (never less than CLEAN_MIN)
+const CLEAN_MIN := 50
+const DILIGENCE_FROM := 16  # buyers start looking at the folder in week 16
+const MAX_DEDUCTION := 1.5  # due diligence: -0.5 of the multiple per open skeleton, at most this
+const PER_SKELETON := 0.5
+const WEEKLY_HONEST := 1  # honest choices raise the conscience by at most this much a week
+const BANDS := [
+	[0, "CLEAN BOOKS"], [-3, "A FEW LOOSE ENDS"], [-6, "SKELETONS"], [-999, "A CLOSET FULL"]
+]
+
+# id -> class, lo / hi (weeks until the bill), size (the bill in cash), rep (reputation lost), mood (all clients), text (the toast / card line)
+# Numbers follow docs section 5; the agent tunes them with the `shortcuts` bot (a bill is 2 to 3 times the gain).
+const BILLS := {
+	"temp_seats":
+	{
+		"class": "vendor",
+		"lo": 6,
+		"hi": 8,
+		"size": 1900,
+		"rep": 0,
+		"mood": 0,
+		"text": "The vendor audited the seat count. Back bill plus a 25 percent penalty."
+	},
+	"temp_reboot":
+	{
+		"class": "client",
+		"lo": 4,
+		"hi": 6,
+		"size": 255,
+		"rep": 1,
+		"mood": 10,
+		"text": "A bookkeeper audited one invoice. Refund, and the client is not happy."
+	},
+	"temp_quest":
+	{
+		"class": "insurer",
+		"lo": NO_DATE,
+		"hi": NO_DATE,
+		"size": 4000,
+		"rep": 2,
+		"mood": 0,
+		"text": "The insurer refused the claim because the questionnaire answers were false."
+	},
+	"temp_review":
+	{
+		"class": "reputation",
+		"lo": 4,
+		"hi": 5,
+		"size": 0,
+		"rep": 6,
+		"mood": 0,
+		"text": "A forum thread traced the writing style of the fake reviews."
+	},
+	"temp_launder":
+	{
+		"class": "client",
+		"lo": 5,
+		"hi": 7,
+		"size": 0,
+		"rep": 3,
+		"mood": 20,
+		"text": "The contact asked how you knew. The client whose mailbox it was leaves."
+	},
+	"temp_price":
+	{
+		"class": "margin",
+		"lo": 2,
+		"hi": 3,
+		"size": 600,
+		"rep": 0,
+		"mood": 0,
+		"text": "The profit review shows a client under 20 percent of the fee."
+	},
+	"temp_2fa":
+	{
+		"class": "client",
+		"lo": 9,
+		"hi": 10,
+		"size": 2400,
+		"rep": 3,
+		"mood": 0,
+		"text": "The breach hit and your recommendation was never on paper."
+	},
+	"temp_restore":
+	{
+		"class": "backup",
+		"lo": 2,
+		"hi": 7,
+		"size": 1200,
+		"rep": 2,
+		"mood": 0,
+		"text": "The backup would not restore. The light was on. It was not enough."
+	},
+}
+
+
+# ---- conscience -----------------------------------------------------------------------------------------------------
+static func consc() -> int:
+	return int(Owner.consc)
+
+
+# change the conscience. A rise is capped at WEEKLY_HONEST a week (flag consc_week); a fall is not.
+static func change_consc(n: int, force := false) -> void:
+	if n > 0 and not force:
+		if int(Owner.flags.get("consc_week", -1)) == Campaign.day:
+			return
+		n = mini(n, WEEKLY_HONEST)
+		Owner.flags["consc_week"] = Campaign.day
+	Owner.consc += n
+
+
+# CLEAN BOOKS / A FEW LOOSE ENDS / SKELETONS / A CLOSET FULL
+static func band() -> String:
+	var c := consc()
+	for b in BANDS:
+		if c >= int(b[0]):
+			return str(b[1])
+	return "A CLOSET FULL"
+
+
+# ---- skeletons ------------------------------------------------------------------------------------------------------
+# the number of open skeletons: what Marge's folder holds
+static func folder_count() -> int:
+	return Owner.skel.size()
+
+
+static func find(id: String) -> int:
+	for i in Owner.skel.size():
+		if str(Owner.skel[i].get("id", "")) == id:
+			return i
+	return -1
+
+
+# seed a skeleton. weeks < 0: draw 3 to 9 weeks (or the BILLS range) from Difficulty.rng("skeleton"). One of each id at a time.
+static func add_skeleton(id: String, weeks := -1) -> bool:
+	if find(id) >= 0:
+		return false
+	var b: Dictionary = BILLS.get(id, {})
+	if weeks < 0:
+		var lo := int(b.get("lo", 3))
+		var hi := int(b.get("hi", 9))
+		weeks = lo if lo >= NO_DATE else Difficulty.rng("skeleton").randi_range(lo, hi)  # TODO(temptation agent): jitter
+	var due := NO_DATE if weeks >= NO_DATE else Campaign.day + weeks
+	Owner.skel.append(
+		{
+			"id": id,
+			"due": due,
+			"class": str(b.get("class", "other")),
+			"size": int(b.get("size", 500))
+		}
+	)
+	return true
+
+
+# the fx skel [id, weeks], or a list of those
+static func apply_skel(fx: Array) -> void:
+	if not fx.is_empty() and fx[0] is Array:
+		for one in fx:
+			apply_skel(one)
+	elif not fx.is_empty():
+		add_skeleton(str(fx[0]), int(fx[1]) if fx.size() > 1 else -1)
+
+
+# the bill for a skeleton (cozy Easy halves it)
+static func bill_size(sk: Dictionary) -> int:
+	var size := int(sk.get("size", 0))
+	return size / 2 if Difficulty.cozy_on() else size
+
+
+# what coming clean costs
+static func clean_cost(id: String) -> int:
+	var i := find(id)
+	if i < 0:
+		return 0
+	var full := bill_size(Owner.skel[i])
+	return maxi(CLEAN_MIN, int(float(full) * CLEAN_SHARE)) if full > 0 else 0
+
+
+# own up before the bill: pay clean_cost(), remove the skeleton, conscience +1. False if there is no such skeleton.
+static func come_clean(id: String) -> bool:
+	var i := find(id)
+	if i < 0:
+		return false
+	var cost := clean_cost(id)
+	Owner.cash -= cost
+	Owner.skel.remove_at(i)
+	change_consc(1, true)
+	return true
+
+
+# the bill arrives: cash, reputation, client mood, a card or a toast. TODO(temptation agent): per-class extras (vendor mood, client leaves,
+# forum friends lost, insurer branch of bec_loss) and the card bill_<id> from RivalCards when it exists.
+static func bill(owner: Node, sk: Dictionary) -> void:
+	var b: Dictionary = BILLS.get(str(sk.get("id", "")), {})
+	var cost := bill_size(sk)
+	if cost > 0:
+		owner.cash -= cost
+	if int(b.get("rep", 0)) > 0:
+		Campaign.adjust_rep(-int(b.rep))
+	if int(b.get("mood", 0)) > 0:
+		for c in Sales.active:
+			Sales.adjust(int(c), -int(b.mood) / 4)  # TODO(temptation agent): the one client it hit, not everybody
+	var card := "bill_" + str(sk.get("id", ""))
+	if not owner.card_data(card).is_empty():
+		owner.show_card(card)
+	else:
+		Hints.toast(
+			"A BILL FROM THE FOLDER: " + str(b.get("text", "A SHORTCUT CAUGHT UP WITH YOU.")), 5.0
+		)
+
+
+# called from Owner.settle() (after Rival.arc_week and Habits.week): fire the bills that are due
+static func week(owner: Node) -> void:
+	for sk in owner.skel.duplicate():
+		if int(sk.get("due", NO_DATE)) <= Campaign.day:
+			owner.skel.erase(sk)
+			bill(owner, sk)
+	# TODO(temptation agent): offer the COME CLEAN card (temp_come_clean) from the second open skeleton on, once per 4 weeks
+
+
+# due diligence from week 16 on (the board review): -0.5 of the multiple per open skeleton, at most MAX_DEDUCTION
+static func diligence() -> float:
+	if Campaign.day < DILIGENCE_FROM:
+		return 0.0
+	return minf(MAX_DEDUCTION, PER_SKELETON * float(folder_count()))
+
+
+# the lines for the review: FOUND IN DILIGENCE: n
+static func diligence_line() -> String:
+	return "FOUND IN DILIGENCE: %d" % folder_count()
+
+
+# Marge's folder as a line for the weekly report (a count, never the conscience number)
+static func folder_text() -> String:
+	return "%d IN THE FOLDER, %s" % [folder_count(), band()]
+''')
+
+write("scripts/takeover.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: inherited messes (docs/scope-bad-habits.md section 3). A static helper like Incident.
+# A client that switches to you from a rival is a takeover onboarding: an onsite visit of the kind "takeover". The state is
+# Owner.inherit: client -> inherited risk 0-100 (starts at the unresolved findings x 15, each fixed finding drops it, saved with the campaign).
+# FINDINGS_TAKEOVER (the six walk-around findings, same shape as Onsite.FINDINGS) is empty until the onsite agent fills it.
+# The visit itself is NOT wired yet: ENABLED stays false until Onsite knows the kind "takeover" (meeting row, findings, grade).
+# OWNER OF THIS FILE: the takeover agent (takeover.gd + onsite.gd hooks + the Playbook books). Public signatures below are FINAL.
+
+const ENABLED := false  # TODO(takeover agent): true when Onsite.start_visit(c, "takeover") works end to end
+const KIND := "takeover"
+const PER_FINDING := 15  # inherited risk per unresolved finding
+const FINDINGS_TAKEOVER: Array = []  # TODO(takeover agent): six entries, one per job below
+
+# the six jobs: name (card text), rap (the habit that becomes PROVEN when it is done), twin (the good habit it teaches)
+const JOBS := {
+	"T1": {"name": "THE FREEZER BAG", "rap": "R01", "twin": "H1"},
+	"T2": {"name": "STICKY NOTES AND THE ONE PASSWORD", "rap": "R02", "twin": "H7"},
+	"T3": {"name": "THE DOOR THAT WAS ALWAYS OPEN", "rap": "R15", "twin": "H8"},
+	"T4": {"name": "GREEN AND EMPTY", "rap": "R04", "twin": "H11"},
+	"T5": {"name": "DEFAULT PASSWORDS", "rap": "R15", "twin": "H14"},
+	"T6": {"name": "WHO STILL HAS A KEY", "rap": "R14", "twin": "H6"},
+}
+
+
+# the inherited risk of a client (0 = none)
+static func inherit(client: int) -> int:
+	return clampi(int(Owner.inherit.get(client, 0)), 0, 100)
+
+
+static func set_inherit(client: int, value: int) -> void:
+	value = clampi(value, 0, 100)
+	if value <= 0:
+		Owner.inherit.erase(client)
+	else:
+		Owner.inherit[client] = value
+
+
+# a takeover starts: the risk is the number of open findings times PER_FINDING (T1-T6 unless told otherwise)
+static func begin(client: int, open_findings := 6) -> void:
+	set_inherit(client, open_findings * PER_FINDING)
+
+
+# a finding was fixed: the risk drops by PER_FINDING. Returns the new risk.
+static func fixed(client: int, _job := "") -> int:
+	set_inherit(client, inherit(client) - PER_FINDING)
+	return inherit(client)
+
+
+# clients that still carry an inherited mess
+static func open_clients() -> Array:
+	var out := []
+	for c in Owner.inherit:
+		if inherit(int(c)) > 0:
+			out.append(int(c))
+	return out
+
+
+# weekly effect of the unfixed mess on a client's incident chances (1.0 = none). TODO(takeover agent): ransom, breach, outage hooks
+static func risk_mult(client: int) -> float:
+	return 1.0 + float(inherit(client)) / 200.0
+
+
+# the fx visit <kind>: start a takeover visit for the most recently returned client. A no-op until ENABLED.
+static func visit(owner: Node, kind: String) -> void:
+	if kind != KIND or not ENABLED:
+		return
+	var client := -1
+	for c in owner.gone:
+		client = int(c)
+	if client < 0 and not Sales.active.is_empty():
+		client = int(Sales.active[0])
+	if client >= 0:
+		begin(client, FINDINGS_TAKEOVER.size())
+		Onsite.start_visit(client, KIND)
+
+
+# the walk-around hook (Onsite.inspect calls it with the object): record the evidence a job proves. TODO(takeover agent)
+static func on_inspect(_client: int, _obj: String) -> void:
+	pass
+''')
+
+write("scripts/rival_cards.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: the story cards of the rival arc and the temptations, as DATA (docs/scope-bad-habits.md sections 2.4, 5 and 7).
+# CARDS has the same shape as Owner.CARDS (speaker, text, options with label, optional need, fx, text) and is merged into Owner.CARDS when
+# the Owner autoload starts (the card dictionaries are shared, so story/strings.txt edits to RivalCards.* show up in both).
+# DAYS places cards like Owner.DAYS: {week: [{"at": 9.5, "card": "id"}]} and Owner.events_on() merges it. Beat cards that Rival.ARC queues
+# need NO DAYS entry; use DAYS only for cards that appear on a fixed morning or time of day.
+# New fx keys (Owner.apply): rap [rival, habit, level], habit id, habit_start id, consc n, skel [id, weeks], visit kind, lead n.
+# The text is editable in story/strings.txt under [RivalCards.CARDS...]. Charset: the 3x5 font, 2013-14, no AI, "two-factor login", no MFA.
+# OWNERS: rival.gd agent (rival_*), temptation agent (temp_*, bill_*), habits agent (habit_*). Add entries, do not change other files.
+
+const DEFAULT_CARDS := {}
+static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
+
+const DEFAULT_DAYS := {}
+static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
+
+
+# the Owner.DAYS table plus the placements of this file (the owner's events_on reads it)
+static func merged_days(base: Dictionary) -> Dictionary:
+	if DAYS.is_empty():
+		return base
+	var out := base.duplicate()
+	for day in DAYS:
+		out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
+	return out
+''')
+
+write("scripts/habits_view.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R38 P0: the read-only HABITS and RIVALS tabs of the Boardroom, drawn inside the Computer (model: forum_view.gd). computer.gd only
+# registers the tabs (tabs()) and forwards the paint call (paint()); everything else lives here.
+# HABITS: the 14 good habits as a checklist (status word, weeks since last done, name) and the STANDARD score with its band word, the
+# conscience as WORDS and Marge's folder count (never a number). Two columns from 300 px wide, one below.
+# RIVALS: each rival with its rap sheet line and the habits the player knows about, best evidence first.
+# The tabs stay hidden until the feature is live (a habit started, something learned, or rival cards exist from week 3).
+# OWNER OF THIS FILE: the habits agent (polish: details of a selected row, what it earns). Signatures below are FINAL.
+
+const Habits := preload("res://scripts/habits.gd")
+const Rival := preload("res://scripts/rival.gd")
+const Temptation := preload("res://scripts/temptation.gd")
+const RivalCards := preload("res://scripts/rival_cards.gd")
+
+const INK := Color("20242c")
+const MUTED := Color("6b7586")
+const GOOD := Color("2fa84f")
+const AMBER := Color("c98a10")
+const BAD := Color("d23c3c")
+const HEAD := Color("6b421c")
+const LH := 7.0  # one text line
+
+
+# the tabs to add to the Boardroom: [[id, label]] or empty while the feature is not live
+static func tabs() -> Array:
+	if live():
+		return [["habits", "HABITS"], ["rivals", "RIVALS"]]
+	return []
+
+
+static func live() -> bool:
+	return (
+		Habits.any()
+		or not Rival.lines().is_empty()
+		or (not RivalCards.CARDS.is_empty() and Campaign.day >= 3)
+	)
+
+
+# draw the tab "habits" or "rivals" into the body area
+static func paint(c: Node, a: Rect2, tab: String) -> void:
+	if tab == "rivals":
+		_rivals(c, a)
+	else:
+		_habits(c, a)
+
+
+static func _state_color(s: String) -> Color:
+	match s:
+		Habits.ADOPTED:
+			return GOOD
+		Habits.STALE:
+			return AMBER
+		Habits.LAPSED:
+			return BAD
+	return MUTED
+
+
+static func _habits(c: Node, a: Rect2) -> void:
+	var x := a.position.x + 4.0
+	var y := a.position.y + 3.0
+	var chars := int((a.size.x - 8.0) / 4.0)
+	if Habits.any():
+		c._text(c._clip("STANDARD %s" % Habits.standard_text(), chars), Vector2(x, y), HEAD)
+	else:
+		c._text(c._clip("STANDARD: NOTHING STARTED YET", chars), Vector2(x, y), MUTED)
+	y += LH
+	c._text(
+		c._clip(
+			"CONSCIENCE: %s  FOLDER: %d" % [Temptation.band(), Temptation.folder_count()], chars
+		),
+		Vector2(x, y),
+		MUTED
+	)
+	y += LH + 2.0
+	var two: bool = a.size.x >= 300.0
+	var col_w: float = (a.size.x - 8.0) * (0.5 if two else 1.0)
+	var ids: Array = Habits.all()
+	var per_col: int = int(ceil(float(ids.size()) / 2.0)) if two else ids.size()
+	for i in ids.size():
+		var id := str(ids[i])
+		var cx: float = x + (col_w if i >= per_col else 0.0)
+		var cy: float = y + float(i % per_col if two else i) * LH
+		if cy + LH > a.end.y:
+			break
+		var s: String = Habits.state(id)
+		var name_chars := int((col_w - 62.0) / 4.0)
+		c._text(id, Vector2(cx, cy), INK)
+		c._text(s, Vector2(cx + 14.0, cy), _state_color(s))
+		var ag: int = Habits.age(id)
+		c._text("%dW" % ag if ag >= 0 else "-", Vector2(cx + 46.0, cy), MUTED)
+		c._text(
+			c._clip(str(Habits.HABITS[id].name), name_chars),
+			Vector2(cx + 62.0, cy),
+			INK if s != Habits.NONE else MUTED
+		)
+
+
+static func _rivals(c: Node, a: Rect2) -> void:
+	var x := a.position.x + 4.0
+	var y := a.position.y + 3.0
+	var chars := int((a.size.x - 8.0) / 4.0)
+	var room := int((a.end.y - y) / LH)
+	var out: Array = []  # [text, color]
+	for r in Rival.RIVALS:
+		var rival := str(r)
+		var info: Dictionary = Rival.RIVALS[rival]
+		if rival == "plumbline" and not Rival.known(rival):
+			continue
+		out.append(["%s (%s)" % [info.name, info.owner], HEAD])
+		var l := Rival.line(rival)
+		out.append([l if l != "" else "NOTHING KNOWN YET.", INK if l != "" else MUTED])
+		for level in [Rival.PROVEN, Rival.SEEN, Rival.RUMOUR]:
+			for h in info.habits:
+				if Rival.rap(rival, str(h)) == level:
+					out.append(
+						[
+							"  %s %s" % [Rival.LEVELS[level], Rival.HABITS[h].name],
+							(
+								GOOD
+								if level == Rival.PROVEN
+								else (AMBER if level == Rival.SEEN else MUTED)
+							)
+						]
+					)
+	for i in out.size():
+		if i >= room:
+			break
+		var text: String = out[i][0]
+		if i == room - 1 and out.size() > room:
+			text = "+%d MORE" % (out.size() - room + 1)
+		c._text(c._clip(text, chars), Vector2(x, y + float(i) * LH), out[i][1])
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

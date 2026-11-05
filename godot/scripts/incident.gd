@@ -7,6 +7,7 @@ extends RefCounted
 #   Tech: Story.POSTMORTEMS (Morgan runs a blameless review: what happened, the root cause, two action items).
 # Everything here is 2013-14: phone calls, a hosted spam filter, a funds transfer fraud rider on a crime policy.
 
+const Habits := preload("res://scripts/habits.gd")  # R38: signed forms, unique logins and written OK make a scam harder
 const FILTER := "mailfilter"  # the recurring service (Projects.SERVICES)
 const FIRST_WEEK := 13
 const BASE := 0.035  # chance per client per week that a scammer tries
@@ -44,7 +45,7 @@ static func miss_share(client: int) -> float:
 		miss *= 0.7
 	if Projects.has_service(client, FILTER):
 		miss *= 0.5
-	return miss * lesson_mult("bec")
+	return miss * lesson_mult("bec") * Habits.bec_mult()
 
 
 # the sum over clients: what the weekly report calls the wire fraud risk

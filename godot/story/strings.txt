@@ -19555,3 +19555,289 @@ SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LE
 # SalesCampaign > BEAT_TEXT > endings > let_go
 [SalesCampaign.BEAT_TEXT.endings.let_go]
 YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.
+
+
+# ======================= Rival > HABITS =======================
+# Rival > HABITS > R01 > name
+[Rival.HABITS.R01.name]
+FREEZER BAG BACKUP
+
+# Rival > HABITS > R01 > text
+[Rival.HABITS.R01.text]
+The only backup is one USB drive in a freezer bag in the owner's trunk, trusted because the light is on.
+
+# Rival > HABITS > R02 > name
+[Rival.HABITS.R02.name]
+ONE ADMIN PASSWORD
+
+# Rival > HABITS > R02 > text
+[Rival.HABITS.R02.text]
+One admin password for every client, and the front desk has it on a yellow note.
+
+# Rival > HABITS > R03 > name
+[Rival.HABITS.R03.name]
+TWO-FACTOR LOGIN OFF
+
+# Rival > HABITS > R03 > text
+[Rival.HABITS.R03.text]
+Two-factor login switched off for convenience on the hosted email.
+
+# Rival > HABITS > R04 > name
+[Rival.HABITS.R04.name]
+GREEN DASHBOARD
+
+# Rival > HABITS > R04 > text
+[Rival.HABITS.R04.text]
+Antivirus, backup and monitoring agents are installed but never configured: a green dashboard and nothing watching.
+
+# Rival > HABITS > R05 > name
+[Rival.HABITS.R05.name]
+FALSE QUESTIONNAIRES
+
+# Rival > HABITS > R05 > text
+[Rival.HABITS.R05.text]
+False answers on the client's and the insurer's security questionnaire.
+
+# Rival > HABITS > R06 > name
+[Rival.HABITS.R06.name]
+SEAT COUNT LIES
+
+# Rival > HABITS > R06 > text
+[Rival.HABITS.R06.text]
+Lies to the vendor about seat counts for a discount.
+
+# Rival > HABITS > R07 > name
+[Rival.HABITS.R07.name]
+REBOOT AS DIAGNOSTICS
+
+# Rival > HABITS > R07 > text
+[Rival.HABITS.R07.text]
+Bills a reboot as advanced diagnostics and invents fees.
+
+# Rival > HABITS > R08 > text
+[Rival.HABITS.R08.text]
+Fakes a fix on the phone to calm a nervous client.
+
+# Rival > HABITS > R09 > text
+[Rival.HABITS.R09.text]
+Fake Yowl reviews and forum personas, and whispers that you are not bonded or HIPAA safe.
+
+# Rival > HABITS > R10 > name
+[Rival.HABITS.R10.name]
+LAUNDERED LEADS
+
+# Rival > HABITS > R10 > text
+[Rival.HABITS.R10.text]
+Uses leads that came from reading your tickets in a shared mailbox, then launders them through a referral.
+
+# Rival > HABITS > R11 > text
+[Rival.HABITS.R11.text]
+One flat per-seat price and nothing itemized, so the client cannot see what is not included.
+
+# Rival > HABITS > R12 > name
+[Rival.HABITS.R12.name]
+NO DOCUMENTATION
+
+# Rival > HABITS > R12 > text
+[Rival.HABITS.R12.text]
+Undocumented work: no scope, no change ticket, three photos as documentation.
+
+# Rival > HABITS > R13 > text
+[Rival.HABITS.R13.text]
+Email archiving switched off so a partner can delete messages.
+
+# Rival > HABITS > R14 > name
+[Rival.HABITS.R14.name]
+OLD LOGINS ALIVE
+
+# Rival > HABITS > R14 > text
+[Rival.HABITS.R14.text]
+Ex-employees and an ex-vendor rep still have working logins.
+
+# Rival > HABITS > R15 > name
+[Rival.HABITS.R15.name]
+OPEN DOOR AND DEFAULTS
+
+# Rival > HABITS > R15 > text
+[Rival.HABITS.R15.text]
+A temporary firewall exception open since 2012, and default camera and printer passwords.
+
+# Rival > HABITS > R16 > name
+[Rival.HABITS.R16.name]
+CLOCK CHANGE WINDOW
+
+# Rival > HABITS > R16 > text
+[Rival.HABITS.R16.text]
+A 2:30 a.m. maintenance window that the clock change eats, and root cause recorded as Unknown.
+
+# Rival > HABITS > R17 > name
+[Rival.HABITS.R17.name]
+IGNORES THE FRONT DESK
+
+# Rival > HABITS > R17 > text
+[Rival.HABITS.R17.text]
+Ignores the one person at the client who sees the symptoms first.
+
+
+# ======================= Rival > RIVALS =======================
+# Rival > RIVALS > bytebrothers > blurb
+[Rival.RIVALS.bytebrothers.blurb]
+The discount shop. Twenty percent under, twenty percent less delivered.
+
+# Rival > RIVALS > bigcheese > blurb
+[Rival.RIVALS.bigcheese.blurb]
+Big Cheese Technology Group. We do it all for $39 a seat. Booked solid.
+
+# Rival > RIVALS > plumbline > blurb
+[Rival.RIVALS.plumbline.blurb]
+The careful one who cannot sell. Nine page proposals.
+
+
+# ======================= Habits > HABITS =======================
+# Habits > HABITS > H1 > name
+[Habits.HABITS.H1.name]
+TESTED RESTORE EACH QUARTER
+
+# Habits > HABITS > H1 > earns
+[Habits.HABITS.H1.earns]
+A passed restore test means a ransom restores 100 percent and the bill is halved.
+
+# Habits > HABITS > H1 > shown
+[Habits.HABITS.H1.shown]
+RMM BACKUPS TESTED DATE
+
+# Habits > HABITS > H2 > name
+[Habits.HABITS.H2.name]
+ITEMIZED PRICING AND VALUE PAGE
+
+# Habits > HABITS > H2 > earns
+[Habits.HABITS.H2.earns]
+A one page scorecard at each review: mood +2, scope held, renewals up.
+
+# Habits > HABITS > H2 > shown
+[Habits.HABITS.H2.shown]
+SCORECARD AT QBR
+
+# Habits > HABITS > H3 > name
+[Habits.HABITS.H3.name]
+CHANGE REQUESTS WITH ROLLBACK
+
+# Habits > HABITS > H3 > earns
+[Habits.HABITS.H3.earns]
+Fixed price creep 30 to 18 percent, a failed cutover costs half.
+
+# Habits > HABITS > H3 > shown
+[Habits.HABITS.H3.shown]
+PROJECT QUOTE LINE
+
+# Habits > HABITS > H4 > name
+[Habits.HABITS.H4.name]
+SIGNED RISK FORMS
+
+# Habits > HABITS > H4 > earns
+[Habits.HABITS.H4.earns]
+A refusal on paper makes blame cheaper.
+
+# Habits > HABITS > H5 > name
+[Habits.HABITS.H5.name]
+LOST ACCOUNT REVIEW
+
+# Habits > HABITS > H5 > earns
+[Habits.HABITS.H5.earns]
+The real cause lowers that risk for 8 weeks.
+
+# Habits > HABITS > H5 > shown
+[Habits.HABITS.H5.shown]
+REVIEW AFTER A LOSS
+
+# Habits > HABITS > H6 > name
+[Habits.HABITS.H6.name]
+OFFBOARDING CHECKLIST
+
+# Habits > HABITS > H6 > earns
+[Habits.HABITS.H6.earns]
+No revenge mail from a departed tech, vendor breach odds down.
+
+# Habits > HABITS > H6 > shown
+[Habits.HABITS.H6.shown]
+CHECKED WHEN SOMEONE LEAVES
+
+# Habits > HABITS > H7 > name
+[Habits.HABITS.H7.name]
+BREAK-GLASS AND UNIQUE ADMIN LOGINS
+
+# Habits > HABITS > H7 > earns
+[Habits.HABITS.H7.earns]
+Vendor breach damage halved, weak password break-ins rarer.
+
+# Habits > HABITS > H7 > shown
+[Habits.HABITS.H7.shown]
+SEALED ENVELOPE (BOOKS)
+
+# Habits > HABITS > H8 > name
+[Habits.HABITS.H8.name]
+VPN AND EXPIRING FIREWALL EXCEPTIONS
+
+# Habits > HABITS > H8 > earns
+[Habits.HABITS.H8.earns]
+A quarterly review closes forgotten open ports.
+
+# Habits > HABITS > H9 > name
+[Habits.HABITS.H9.name]
+CALENDAR-AWARE WINDOWS
+
+# Habits > HABITS > H9 > earns
+[Habits.HABITS.H9.earns]
+Fewer failed overnight jobs, and a card before the clocks change in November.
+
+# Habits > HABITS > H10 > name
+[Habits.HABITS.H10.name]
+HONEST ASSESSMENT
+
+# Habits > HABITS > H10 > earns
+[Habits.HABITS.H10.earns]
+Win chance -3 points, start mood +6, referrals up.
+
+# Habits > HABITS > H10 > shown
+[Habits.HABITS.H10.shown]
+CRM ASSESS COUNT
+
+# Habits > HABITS > H11 > name
+[Habits.HABITS.H11.name]
+RUNBOOKS AND A NETWORK MAP
+
+# Habits > HABITS > H11 > earns
+[Habits.HABITS.H11.earns]
+Onsite jobs 20 percent faster, no only-person-who-knows event.
+
+# Habits > HABITS > H12 > name
+[Habits.HABITS.H12.name]
+LISTEN TO THE FRONT DESK
+
+# Habits > HABITS > H12 > earns
+[Habits.HABITS.H12.earns]
+Mood drift seen 2 weeks earlier, more walk-around findings.
+
+# Habits > HABITS > H12 > shown
+[Habits.HABITS.H12.shown]
+CLIENTS COVERED
+
+# Habits > HABITS > H13 > name
+[Habits.HABITS.H13.name]
+WRITTEN OK, EVEN IN AN EMERGENCY
+
+# Habits > HABITS > H13 > earns
+[Habits.HABITS.H13.earns]
+Blame halved in disputes about emergency changes.
+
+# Habits > HABITS > H13 > shown
+[Habits.HABITS.H13.shown]
+EMERGENCY COUNT
+
+# Habits > HABITS > H14 > name
+[Habits.HABITS.H14.name]
+DEFAULT DEVICE PASSWORDS CHANGED
+
+# Habits > HABITS > H14 > earns
+[Habits.HABITS.H14.earns]
+No default password finding, a small breach reduction.

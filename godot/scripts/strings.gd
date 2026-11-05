@@ -97,6 +97,13 @@ const ROOTS := {
 	["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
 	"SalesCampaign": ["BEAT_TEXT"],
+	"Rival": ["HABITS", "RIVALS"],
+	"Habits": ["HABITS"],
+	"RivalCards": ["CARDS"],
+}
+# roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
+const SCRIPTS := {
+	"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd"
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [
@@ -168,7 +175,9 @@ func _ready() -> void:
 
 
 # ---- the data tables ---------------------------------------------------------------------------
-func _node(root: String) -> Node:
+func _node(root: String) -> Object:
+	if SCRIPTS.has(root):
+		return load(str(SCRIPTS[root]))
 	return get_node_or_null("/root/" + root)
 
 
@@ -176,7 +185,8 @@ func _defaults(root: String, name: String) -> Variant:
 	var node := _node(root)
 	if node == null:
 		return null
-	var map: Dictionary = node.get_script().get_script_constant_map()
+	var script: Script = node if node is Script else node.get_script()
+	var map: Dictionary = script.get_script_constant_map()
 	return map.get("DEFAULT_" + name, null)
 
 
