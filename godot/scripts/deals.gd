@@ -49,6 +49,7 @@ static func norm(q: Dictionary) -> Dictionary:
 	n["promise"] = str(q.get("promise", "std"))
 	n["extras"] = q.get("extras", [])
 	n["onboard"] = str(q.get("onboard", "std"))
+	n["present"] = SalesCampaign.SalesRival.present_of(q)
 	return n
 
 
@@ -77,7 +78,7 @@ static func margin(q: Dictionary, lead: Dictionary = {}) -> float:
 	var base: float = float(SalesCampaign.METHODS[str(n.method)].base)
 	var rev: float = (list + float(extras_fee(n))) * price_mult(n)
 	var cost: float = (1.0 - base) * list + float(extras_cost(n))
-	return 1.0 - cost / maxf(1.0, rev)
+	return 1.0 - cost / maxf(1.0, rev) - SalesCampaign.SalesRival.margin_delta(n)
 
 
 static func price(lead: Dictionary, q: Dictionary) -> int:
@@ -108,6 +109,7 @@ static func win(lead: Dictionary, q: Dictionary) -> float:
 		p += 0.04 if pain_match(lead, str(e)) else -0.015
 	p += float(ONBOARD[str(n.onboard)].win)
 	p += Build.sales_fx("win")
+	p += SalesCampaign.SalesRival.win_delta(lead, n)
 	return clampf(p, 0.05, 0.92)
 
 
@@ -121,8 +123,9 @@ static func gap_parts(lead: Dictionary, q: Dictionary) -> Dictionary:
 	for e in n.extras:
 		extras += float(EXTRAS[str(e)].pts)
 	var onboard: float = float(ONBOARD[str(n.onboard)].pts)
-	var total: float = maxf(0.0, sla + extras + onboard + Build.sales_fx("gap"))
-	return {"sla": sla, "extras": extras, "onboard": onboard, "total": snappedf(total, 0.1)}
+	var rival: float = SalesCampaign.SalesRival.gap_delta(lead, n)
+	var total: float = maxf(0.0, sla + extras + onboard + rival + Build.sales_fx("gap"))
+	return {"sla": sla, "extras": extras, "onboard": onboard, "rival": rival, "total": snappedf(total, 0.1)}
 
 
 static func gap(lead: Dictionary, q: Dictionary) -> float:
@@ -162,7 +165,9 @@ static func gauges(lead: Dictionary, q: Dictionary) -> Dictionary:
 		can_send = false
 	if g >= 1.5:
 		blocks.append({"who": "MORGAN", "text": "GAP %.1f: DAN AND I CANNOT CARRY THAT TODAY." % g, "hard": false})
+	blocks.append_array(SalesCampaign.SalesRival.form_blocks(lead, n))
 	return {
+		"rival": SalesCampaign.SalesRival.rival_price(lead),
 		"win": win(lead, n),
 		"margin": m,
 		"gap": g,
@@ -306,6 +311,7 @@ static func promise_list(lead: Dictionary, q: Dictionary) -> Array:
 		items.append({"id": "x_" + str(e), "kind": "SCOPE", "label": str(EXTRAS[str(e)].label), "raw": float(EXTRAS[str(e)].pts)})
 	var ob: Dictionary = ONBOARD[str(n.onboard)]
 	items.append({"id": "onboard", "kind": "ONBOARDING", "label": str(ob.label), "raw": maxf(0.0, float(ob.pts))})
+	items.append_array(SalesCampaign.SalesRival.promise_items(lead, n))
 	var sum := 0.0
 	for it in items:
 		sum += float(it.raw)

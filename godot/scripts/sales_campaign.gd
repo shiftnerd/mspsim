@@ -20,6 +20,7 @@ const Retention := preload("res://scripts/retention.gd")
 const Handover := preload("res://scripts/handover.gd")
 const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SalesRival := preload("res://scripts/sales_rival.gd")  # R38 P5: incumbent, ASSESS, the quote form, lies
 const CASH_CAP := 30000  # the owners draw what the company holds above this: the sales campaign is not about a bank balance
 const QBR_TYPE := {2: "realty", 4: "law"}  # book clients with no site of their own meet you in a b skin office of this kind
 const SLOTS := 8
@@ -348,6 +349,113 @@ const DEFAULT_BEAT_TEXT := {
 		"rollup": "SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LEAD WITH AN EARN-OUT OF $%d TIED TO HOW MANY OF YOUR CLIENTS STAY. KEEP THE PROMISES YOU MADE.",
 		"let_go": "YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.",
 	},
+	# R38 P5: the rival and good-habit beats (sales_rival.gd; docs/scope-bad-habits.md sections 2.5 and 6)
+	"incumbent": {
+		"lynk": {"from": "Garrison", "text": "First question on every call: who is your IT person now? Write the answer in SalesHound. It tells you who you are really up against."},
+		"found": {"speaker": "Dr. Pine", "text": "We use Big Cheese Technology Group. A man named Rex Calloway. He is very friendly and everything is included at $39 a seat, so I never see a bill I understand. Why do you ask?", "ok": "WRITE IT DOWN"},
+	},
+	"rex": {
+		"lynk": {"from": "Garrison", "text": "Rex Calloway was at the Chamber lunch. Big Cheese Technology Group, the billboard on the county road. Everybody likes him."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "Rex Calloway from Big Cheese sat at the next table and told everyone business is booming. He has forty-one five-star reviews on Yowl, and I hear most of them come from accounts that review nothing else. Do something with that, or do not.",
+			"options": [{"id": "flyer", "label": "READ HIS FLYER, ASK AROUND (1 HOUR)"}, {"id": "friend", "label": "SHAKE HIS HAND, HE SEEMS NICE"}, {"id": "ignore", "label": "IGNORE HIM"}],
+		},
+		"res_flyer": {"speaker": "Vic", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
+		"res_friend": {"speaker": "Rex Calloway", "text": "Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a cookie. Garrison thinks it was good manners. Alan thinks you have just met the competition.", "ok": "OK"},
+		"res_ignore": {"speaker": "Vic", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
+	},
+	"flat": {
+		"lynk": {"from": "Garrison", "text": "A prospect says Big Cheese quoted a flat price and our quote looks complicated. Call them back before they sign it."},
+		"card": {
+			"speaker": "Prospect",
+			"text": "Big Cheese quoted me $39 a seat, all in. You sent me a page with thirty-one lines. I don't understand half of them. I just want to know what I'm getting.",
+			"options": [
+				{"id": "tiers", "label": "ONE PAGE, THREE CHOICES"},
+				{"id": "match", "label": "MATCH THE FLAT PRICE"},
+				{"id": "lines", "label": "GO LINE BY LINE (AN HOUR)"},
+				{"id": "walk", "label": "WALK, THEY'LL BE BACK IN 6 MONTHS"},
+			],
+		},
+		"res_tiers": {"speaker": "Prospect", "text": "GOOD, BETTER, BEST, one line each, and a box for what is NOT included. She circles BETTER. Set PRESENTED AS to 3 TIERS in the quote builder.", "ok": "GOOD"},
+		"res_match": {"speaker": "Prospect", "text": "She signs in a day, if you send it. Alan shows you the margin. Nothing is in writing about what is left out, and you both know it.", "ok": "OK"},
+		"res_lines": {"speaker": "Prospect", "text": "You read thirty-one lines. By line fourteen you both agree the list is the problem. She trusts you a little more.", "ok": "OK"},
+		"res_walk": {"speaker": "Vic", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
+	},
+	"assess": {
+		"lynk": {"from": "Garrison", "text": "A dental office on Pine Road is unhappy with Big Cheese. Call them, then press ASSESS in SalesHound. An hour in their closet finds what Rex left out."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "Dr. Marlowe is a Big Cheese client and he wants a second opinion before he renews. Use ASSESS on him: an hour, an honest list, and every item you write down is a promise you are on the hook for.",
+			"options": [{"id": "take", "label": "ADD HIM TO THE PIPELINE"}, {"id": "pass", "label": "PASS"}],
+		},
+		"res_take": {"speaker": "Dr. Marlowe", "text": "Rex says it is all included. Nobody can show me where it says so. Come and look at the closet.", "ok": "ON MY WAY"},
+	},
+	"laundered": {
+		"lynk": {"from": "Garrison", "text": "A woman called Gwen phoned for you. She knows our rates and our dispatcher's name. Odd."},
+		"card": {
+			"speaker": "Vic's phone",
+			"text": "A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP at the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us.",
+			"options": [
+				{"id": "take", "label": "TAKE THE MEETING, SHE IS A GOOD LEAD"},
+				{"id": "ask", "label": "ASK HER HOW SHE HEARD"},
+				{"id": "tell", "label": "WARN THE DENTAL OFFICE, FOR FREE"},
+			],
+		},
+		"res_take": {"speaker": "Vic", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
+		"res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
+		"res_tell": {"speaker": "Vic", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
+	},
+	"plumb": {
+		"lynk": {"from": "Garrison", "text": "Plumb Line Technology has been sitting on a proposal for six weeks. The prospect wants a second opinion from us. Hollis Grady is a careful man."},
+		"card": {
+			"speaker": "Ms. Cedar",
+			"text": "I asked Hollis Grady at Plumb Line for a quote six weeks ago. Nine pages, thirty-one line items, a binder and all. I like him. I trust him. I cannot tell which of the thirty-one I need. Would you give me a second opinion?",
+			"options": [
+				{"id": "tiers", "label": "SHOW HER THE THREE TIER PAGE"},
+				{"id": "undercut", "label": "JUST UNDERCUT HIM"},
+				{"id": "honest", "label": "SAY HE IS GOOD, SEND HER BACK"},
+			],
+		},
+		"res_tiers": {"speaker": "Ms. Cedar", "text": "Three choices and a box for what is not included. She says it is the first time anyone has told her what she gets. Hollis is good. He just cannot sell it.", "ok": "OK"},
+		"res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
+		"res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
+	},
+	"rumour": {
+		"lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
+		"card": {
+			"speaker": "Prospect",
+			"text": "Quick question before we go further. Are you bonded? And HIPAA safe? Somebody at the Chamber lunch told me you are not.",
+			"options": [
+				{"id": "paper", "label": "SHOW THE BOND AND THE BAA (1 HOUR)"},
+				{"id": "back", "label": "BADMOUTH BIG CHEESE BACK"},
+				{"id": "ignore", "label": "LAUGH IT OFF AND MOVE ON"},
+			],
+		},
+		"res_paper": {"speaker": "Prospect", "text": "Two documents and a coffee. She is satisfied, though you looked a little defensive. The rumour will fade in about four weeks.", "ok": "OK"},
+		"res_back": {"speaker": "Prospect", "text": "She leans in. It works, today. You say things about Rex you cannot prove, and Garrison will hear them back.", "ok": "OK"},
+		"res_ignore": {"speaker": "Prospect", "text": "She nods and writes something down. The rumour stands for about four weeks.", "ok": "OK"},
+		"counter": {"speaker": "{sales_owner}", "text": "Rex heard what you said about him. He is telling the whole lunch table you are the one who cannot be trusted. Reputation takes a dent.", "ok": "OK"},
+	},
+	"audit": {
+		"lynk": {"from": "Morgan", "text": "Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry."},
+		"info": {"speaker": "{sales_owner}", "text": "WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.", "ok": "SHOW ME THE LEADS"},
+	},
+	"scorecard": {
+		"lynk": {"from": "Garrison", "text": "Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "Renewal season. The clients we show a one page scorecard (tickets closed, hours saved, and what is NOT included) renew more often. The rest renew on price alone, and Rex is cheaper.",
+			"options": [
+				{"id": "all", "label": "SEND ONE TO EVERY CLIENT (2 HOURS)"},
+				{"id": "top", "label": "SEND TO THE BIGGEST 3 (1 HOUR)"},
+				{"id": "skip", "label": "SKIP IT"},
+			],
+		},
+		"res_all": {"speaker": "Marge", "text": "One page each: what we did, what it cost, what is not included. Two clients put it on the fridge.", "ok": "OK"},
+		"res_top": {"speaker": "Marge", "text": "Three pages to the three biggest accounts. The others will get theirs next quarter, maybe.", "ok": "OK"},
+		"res_skip": {"speaker": "Marge", "text": "Renewals will have to stand on their own, then.", "ok": "OK"},
+	},
 }
 var BEAT_TEXT: Dictionary = DEFAULT_BEAT_TEXT.duplicate(true)
 
@@ -589,7 +697,7 @@ func names_for(type: String) -> Array:
 	return [str(Onsite.SITE_PROSPECT[type])] + TYPES[type].names
 
 
-# one lead from the stream: always six draws, so a seed repeats
+# one lead from the stream: always seven draws (the last one is the incumbent), so a seed repeats
 func make_lead(r: RandomNumberGenerator) -> Dictionary:
 	var type: String = TYPE_ORDER[r.randi() % TYPE_ORDER.size()]
 	var info: Dictionary = TYPES[type]
@@ -607,6 +715,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 	var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead"))) + int(Difficulty.cf("sales.lead"))
 	var pain: String = info.pains[r.randi() % info.pains.size()]
 	var who: String = info.who[r.randi() % info.who.size()]
+	var inc: String = SalesRival.incumbent_for(r.randf())
 	var lead := {
 		"id": next_id,
 		"name": pick,
@@ -626,6 +735,8 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 		"touch": Campaign.day,
 		"notes": [],
 		"follow": 0,
+		"incumbent": inc,
+		"inc_seen": false,
 	}
 	next_id += 1
 	return lead
@@ -738,6 +849,7 @@ func _beat_cards(day: int) -> void:
 	elif day >= 2:
 		_review_card(day)
 	SalesBeats.week(day)
+	SalesRival.week(day)
 
 
 func _review_card(day: int) -> void:
@@ -851,6 +963,7 @@ func capacity() -> float:
 	var cap := 3.0 - 0.15 * maxf(0.0, float(open) - 3.0) - 0.5 * float(recent) - 0.05 * float(book.size()) + 0.4 * float(Owner.extra_staff.size())
 	if Campaign.day <= team_until:
 		cap += 0.3  # a good team night
+	cap -= SalesRival.takeover_load()
 	return clampf(cap, 0.5, 3.5)
 
 
@@ -991,6 +1104,7 @@ func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
 		"kept": 0,
 		"broken": 0,
 	}
+	SalesRival.stamp(deal, l)
 	book.append(deal)
 	l.stage = "WON"
 	l["promises"] = promises
@@ -1078,6 +1192,7 @@ func call_lead(id: int) -> String:
 	l.called = true
 	l.stage = "MEETING"
 	l.quality = mini(100, int(l.quality) + 5)
+	SalesRival.on_call(l)
 	Deals.touch(l, "CALLED")
 	week_calls += 1
 	changed.emit()
@@ -1162,6 +1277,7 @@ func _go(l: Dictionary, key: int) -> void:
 	if Computer.is_open:
 		Computer.close()
 	visit_lead = int(l.id)
+	SalesRival.on_visit(l)
 	week_visits += 1
 	Onsite.start_visit(key, "discovery" if str(l.get("story", "")) == "paws" else "pitch")
 
@@ -1522,6 +1638,7 @@ func director_ok() -> bool:
 		and client_mood() >= 60.0
 		and Campaign.rep >= 55
 		and SalesBeats.churn_low()
+		and SalesRival.conscience_ok()
 	)
 
 
@@ -1576,6 +1693,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
 			lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
 			lines.append(["STORY: " + story_summary(), ink])
+			lines.append([SalesRival.lies_line(), bad if (SalesRival.lies() > 0 or not SalesRival.conscience_ok()) else ink])
 			if not Build.is_flat(Build.cur()):
 				lines.append([Build.describe(Build.cur(), "sales", "Vic"), ink])
 			lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])

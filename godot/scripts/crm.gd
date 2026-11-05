@@ -134,25 +134,28 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
 	var stage: String = str(l.stage)
 	var open: bool = ["LEAD", "MEETING"].has(stage)
 	var live: bool = open or stage == "QUOTED"
-	var n := 6
-	var bw: float = (r.size.x - 6.0) / float(n)
-	var by: float = r.end.y - 18.0
+	var by: float = r.end.y - 28.0  # two rows of buttons: CALL VISIT QUOTE ASSESS, then CHASE DROP INFO
+	var by2: float = r.end.y - 18.0
+	var bw: float = (r.size.x - 6.0) / 4.0
+	var bw2: float = (r.size.x - 6.0) / 3.0
 	var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
 	var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
 	var can_quote: bool = open and SalesCampaign.slots_left() >= 1
 	var can_chase: bool = live and SalesCampaign.slots_left() >= 1
+	var can_assess: bool = stage == "MEETING" and SalesCampaign.SalesRival.can_assess(l) == ""
 	var can_up: bool = stage == "WON" and SalesCampaign.slots_left() >= 1 and not Deals.book_deal(int(l.id)).is_empty()
 	cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
 	cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
 	cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
-	cp._button("crm:follow", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "CHASE", can_chase)
+	cp._button("crm:assess", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "ASSESS", can_assess, Color("f0d9a0"))
+	cp._button("crm:follow", Rect2(r.position.x + 3.0, by2, bw2 - 1.0, 9), "CHASE", can_chase)
 	if stage == "WON":
-		cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
+		cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
 	else:
-		cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
-	cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
+		cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "DROP", live, Color("e9b1a8"))
+	cp._button("crm:more", Rect2(r.position.x + 3.0 + bw2 * 2.0, by2, bw2 - 1.0, 9), "INFO", true, Color("e4d9c9"))
 	var keys := ""
-	for item in ["C CALL", "V VISIT", "Q QUOTE", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+	for item in ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
 		if (keys + "  " + item).strip_edges().length() <= chars:
 			keys = (keys + "  " + item).strip_edges()
 		else:
@@ -164,6 +167,12 @@ static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, ch
 	var y: float = y0
 	var info := "%s  %d USERS  $%d/WK" % [str(SalesCampaign.TYPES[str(l.type)].label), int(l.users), int(l.fee)]
 	cp._text(cp._clip(info, chars), Vector2(x, y), INK)
+	y += 7.0
+	var rv: String = SalesCampaign.SalesRival.rival_line(l)
+	var found: int = SalesCampaign.SalesRival.findings(l).size()
+	if found > 0:
+		rv = "%s  %d FINDINGS" % [rv, found]
+	cp._text(cp._clip(rv, chars), Vector2(x, y), STAGE_TINT["QUOTED"] if SalesCampaign.SalesRival.is_seen(l) else MUTED)
 	y += 7.0
 	var pain_lines: Array = cp._wrap("PAIN: " + str(l.pain).to_upper(), chars)
 	for pl in pain_lines.slice(0, 2):
@@ -219,7 +228,7 @@ static func _paint_record(cp, r: Rect2, l: Dictionary, x: float, y0: float, char
 	if promises.is_empty():
 		cp._text(cp._clip("NO PROMISES YET. THEY COME WITH THE QUOTE.", chars), Vector2(x, y), MUTED)
 		y += 7.0
-	var room: int = int((r.end.y - 19.0 - y) / 7.0)
+	var room: int = int((r.end.y - 29.0 - y) / 7.0)
 	var notes: Array = l.get("notes", [])
 	var show_note: bool = not notes.is_empty() and room >= promises.size() + 1
 	if show_note:
@@ -284,6 +293,8 @@ static func key(cp, code: int) -> void:
 			action(cp, ["crm", "quote"])
 		KEY_D:
 			action(cp, ["crm", "drop"])
+		KEY_A:
+			action(cp, ["crm", "assess"])
 		KEY_F:
 			action(cp, ["crm", "follow"])
 		KEY_U:
@@ -327,6 +338,9 @@ static func action(cp, parts: PackedStringArray) -> void:
 		"call":
 			if not l.is_empty():
 				cp._say(SalesCampaign.call_lead(int(l.id)))
+		"assess":
+			if not l.is_empty():
+				cp._say(SalesCampaign.SalesRival.assess(int(l.id)))
 		"visit":
 			if not l.is_empty():
 				var why := SalesCampaign.can_visit(l)

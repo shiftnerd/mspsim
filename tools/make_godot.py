@@ -57916,6 +57916,7 @@ const Retention := preload("res://scripts/retention.gd")
 const Handover := preload("res://scripts/handover.gd")
 const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SalesRival := preload("res://scripts/sales_rival.gd")  # R38 P5: incumbent, ASSESS, the quote form, lies
 const CASH_CAP := 30000  # the owners draw what the company holds above this: the sales campaign is not about a bank balance
 const QBR_TYPE := {2: "realty", 4: "law"}  # book clients with no site of their own meet you in a b skin office of this kind
 const SLOTS := 8
@@ -58244,6 +58245,113 @@ const BEAT_TEXT := {
         "rollup": "SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LEAD WITH AN EARN-OUT OF $%d TIED TO HOW MANY OF YOUR CLIENTS STAY. KEEP THE PROMISES YOU MADE.",
         "let_go": "YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.",
     },
+    # R38 P5: the rival and good-habit beats (sales_rival.gd; docs/scope-bad-habits.md sections 2.5 and 6)
+    "incumbent": {
+        "lynk": {"from": "Garrison", "text": "First question on every call: who is your IT person now? Write the answer in SalesHound. It tells you who you are really up against."},
+        "found": {"speaker": "Dr. Pine", "text": "We use Big Cheese Technology Group. A man named Rex Calloway. He is very friendly and everything is included at $39 a seat, so I never see a bill I understand. Why do you ask?", "ok": "WRITE IT DOWN"},
+    },
+    "rex": {
+        "lynk": {"from": "Garrison", "text": "Rex Calloway was at the Chamber lunch. Big Cheese Technology Group, the billboard on the county road. Everybody likes him."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "Rex Calloway from Big Cheese sat at the next table and told everyone business is booming. He has forty-one five-star reviews on Yowl, and I hear most of them come from accounts that review nothing else. Do something with that, or do not.",
+            "options": [{"id": "flyer", "label": "READ HIS FLYER, ASK AROUND (1 HOUR)"}, {"id": "friend", "label": "SHAKE HIS HAND, HE SEEMS NICE"}, {"id": "ignore", "label": "IGNORE HIM"}],
+        },
+        "res_flyer": {"speaker": "Vic", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
+        "res_friend": {"speaker": "Rex Calloway", "text": "Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a cookie. Garrison thinks it was good manners. Alan thinks you have just met the competition.", "ok": "OK"},
+        "res_ignore": {"speaker": "Vic", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
+    },
+    "flat": {
+        "lynk": {"from": "Garrison", "text": "A prospect says Big Cheese quoted a flat price and our quote looks complicated. Call them back before they sign it."},
+        "card": {
+            "speaker": "Prospect",
+            "text": "Big Cheese quoted me $39 a seat, all in. You sent me a page with thirty-one lines. I don't understand half of them. I just want to know what I'm getting.",
+            "options": [
+                {"id": "tiers", "label": "ONE PAGE, THREE CHOICES"},
+                {"id": "match", "label": "MATCH THE FLAT PRICE"},
+                {"id": "lines", "label": "GO LINE BY LINE (AN HOUR)"},
+                {"id": "walk", "label": "WALK, THEY'LL BE BACK IN 6 MONTHS"},
+            ],
+        },
+        "res_tiers": {"speaker": "Prospect", "text": "GOOD, BETTER, BEST, one line each, and a box for what is NOT included. She circles BETTER. Set PRESENTED AS to 3 TIERS in the quote builder.", "ok": "GOOD"},
+        "res_match": {"speaker": "Prospect", "text": "She signs in a day, if you send it. Alan shows you the margin. Nothing is in writing about what is left out, and you both know it.", "ok": "OK"},
+        "res_lines": {"speaker": "Prospect", "text": "You read thirty-one lines. By line fourteen you both agree the list is the problem. She trusts you a little more.", "ok": "OK"},
+        "res_walk": {"speaker": "Vic", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
+    },
+    "assess": {
+        "lynk": {"from": "Garrison", "text": "A dental office on Pine Road is unhappy with Big Cheese. Call them, then press ASSESS in SalesHound. An hour in their closet finds what Rex left out."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "Dr. Marlowe is a Big Cheese client and he wants a second opinion before he renews. Use ASSESS on him: an hour, an honest list, and every item you write down is a promise you are on the hook for.",
+            "options": [{"id": "take", "label": "ADD HIM TO THE PIPELINE"}, {"id": "pass", "label": "PASS"}],
+        },
+        "res_take": {"speaker": "Dr. Marlowe", "text": "Rex says it is all included. Nobody can show me where it says so. Come and look at the closet.", "ok": "ON MY WAY"},
+    },
+    "laundered": {
+        "lynk": {"from": "Garrison", "text": "A woman called Gwen phoned for you. She knows our rates and our dispatcher's name. Odd."},
+        "card": {
+            "speaker": "Vic's phone",
+            "text": "A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP at the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us.",
+            "options": [
+                {"id": "take", "label": "TAKE THE MEETING, SHE IS A GOOD LEAD"},
+                {"id": "ask", "label": "ASK HER HOW SHE HEARD"},
+                {"id": "tell", "label": "WARN THE DENTAL OFFICE, FOR FREE"},
+            ],
+        },
+        "res_take": {"speaker": "Vic", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
+        "res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
+        "res_tell": {"speaker": "Vic", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
+    },
+    "plumb": {
+        "lynk": {"from": "Garrison", "text": "Plumb Line Technology has been sitting on a proposal for six weeks. The prospect wants a second opinion from us. Hollis Grady is a careful man."},
+        "card": {
+            "speaker": "Ms. Cedar",
+            "text": "I asked Hollis Grady at Plumb Line for a quote six weeks ago. Nine pages, thirty-one line items, a binder and all. I like him. I trust him. I cannot tell which of the thirty-one I need. Would you give me a second opinion?",
+            "options": [
+                {"id": "tiers", "label": "SHOW HER THE THREE TIER PAGE"},
+                {"id": "undercut", "label": "JUST UNDERCUT HIM"},
+                {"id": "honest", "label": "SAY HE IS GOOD, SEND HER BACK"},
+            ],
+        },
+        "res_tiers": {"speaker": "Ms. Cedar", "text": "Three choices and a box for what is not included. She says it is the first time anyone has told her what she gets. Hollis is good. He just cannot sell it.", "ok": "OK"},
+        "res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
+        "res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
+    },
+    "rumour": {
+        "lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
+        "card": {
+            "speaker": "Prospect",
+            "text": "Quick question before we go further. Are you bonded? And HIPAA safe? Somebody at the Chamber lunch told me you are not.",
+            "options": [
+                {"id": "paper", "label": "SHOW THE BOND AND THE BAA (1 HOUR)"},
+                {"id": "back", "label": "BADMOUTH BIG CHEESE BACK"},
+                {"id": "ignore", "label": "LAUGH IT OFF AND MOVE ON"},
+            ],
+        },
+        "res_paper": {"speaker": "Prospect", "text": "Two documents and a coffee. She is satisfied, though you looked a little defensive. The rumour will fade in about four weeks.", "ok": "OK"},
+        "res_back": {"speaker": "Prospect", "text": "She leans in. It works, today. You say things about Rex you cannot prove, and Garrison will hear them back.", "ok": "OK"},
+        "res_ignore": {"speaker": "Prospect", "text": "She nods and writes something down. The rumour stands for about four weeks.", "ok": "OK"},
+        "counter": {"speaker": "{sales_owner}", "text": "Rex heard what you said about him. He is telling the whole lunch table you are the one who cannot be trusted. Reputation takes a dent.", "ok": "OK"},
+    },
+    "audit": {
+        "lynk": {"from": "Morgan", "text": "Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry."},
+        "info": {"speaker": "{sales_owner}", "text": "WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.", "ok": "SHOW ME THE LEADS"},
+    },
+    "scorecard": {
+        "lynk": {"from": "Garrison", "text": "Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "Renewal season. The clients we show a one page scorecard (tickets closed, hours saved, and what is NOT included) renew more often. The rest renew on price alone, and Rex is cheaper.",
+            "options": [
+                {"id": "all", "label": "SEND ONE TO EVERY CLIENT (2 HOURS)"},
+                {"id": "top", "label": "SEND TO THE BIGGEST 3 (1 HOUR)"},
+                {"id": "skip", "label": "SKIP IT"},
+            ],
+        },
+        "res_all": {"speaker": "Marge", "text": "One page each: what we did, what it cost, what is not included. Two clients put it on the fridge.", "ok": "OK"},
+        "res_top": {"speaker": "Marge", "text": "Three pages to the three biggest accounts. The others will get theirs next quarter, maybe.", "ok": "OK"},
+        "res_skip": {"speaker": "Marge", "text": "Renewals will have to stand on their own, then.", "ok": "OK"},
+    },
 }
 
 var leads: Array = []  # {id, name, type, who, users, pain, quality, fee, site, week, stage, called, visited, moon, why}
@@ -58484,7 +58592,7 @@ func names_for(type: String) -> Array:
     return [str(Onsite.SITE_PROSPECT[type])] + TYPES[type].names
 
 
-# one lead from the stream: always six draws, so a seed repeats
+# one lead from the stream: always seven draws (the last one is the incumbent), so a seed repeats
 func make_lead(r: RandomNumberGenerator) -> Dictionary:
     var type: String = TYPE_ORDER[r.randi() % TYPE_ORDER.size()]
     var info: Dictionary = TYPES[type]
@@ -58502,6 +58610,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
     var quality := 20 + r.randi() % 46 + int(round(Build.sales_fx("lead"))) + int(Difficulty.cf("sales.lead"))
     var pain: String = info.pains[r.randi() % info.pains.size()]
     var who: String = info.who[r.randi() % info.who.size()]
+    var inc: String = SalesRival.incumbent_for(r.randf())
     var lead := {
         "id": next_id,
         "name": pick,
@@ -58521,6 +58630,8 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
         "touch": Campaign.day,
         "notes": [],
         "follow": 0,
+        "incumbent": inc,
+        "inc_seen": false,
     }
     next_id += 1
     return lead
@@ -58633,6 +58744,7 @@ func _beat_cards(day: int) -> void:
     elif day >= 2:
         _review_card(day)
     SalesBeats.week(day)
+    SalesRival.week(day)
 
 
 func _review_card(day: int) -> void:
@@ -58746,6 +58858,7 @@ func capacity() -> float:
     var cap := 3.0 - 0.15 * maxf(0.0, float(open) - 3.0) - 0.5 * float(recent) - 0.05 * float(book.size()) + 0.4 * float(Owner.extra_staff.size())
     if Campaign.day <= team_until:
         cap += 0.3  # a good team night
+    cap -= SalesRival.takeover_load()
     return clampf(cap, 0.5, 3.5)
 
 
@@ -58886,6 +58999,7 @@ func close_deal(l: Dictionary, q_in: Dictionary) -> Dictionary:
         "kept": 0,
         "broken": 0,
     }
+    SalesRival.stamp(deal, l)
     book.append(deal)
     l.stage = "WON"
     l["promises"] = promises
@@ -58973,6 +59087,7 @@ func call_lead(id: int) -> String:
     l.called = true
     l.stage = "MEETING"
     l.quality = mini(100, int(l.quality) + 5)
+    SalesRival.on_call(l)
     Deals.touch(l, "CALLED")
     week_calls += 1
     changed.emit()
@@ -59057,6 +59172,7 @@ func _go(l: Dictionary, key: int) -> void:
     if Computer.is_open:
         Computer.close()
     visit_lead = int(l.id)
+    SalesRival.on_visit(l)
     week_visits += 1
     Onsite.start_visit(key, "discovery" if str(l.get("story", "")) == "paws" else "pitch")
 
@@ -59417,6 +59533,7 @@ func director_ok() -> bool:
         and client_mood() >= 60.0
         and Campaign.rep >= 55
         and SalesBeats.churn_low()
+        and SalesRival.conscience_ok()
     )
 
 
@@ -59471,6 +59588,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
             lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
             lines.append(["STORY: " + story_summary(), ink])
+            lines.append([SalesRival.lies_line(), bad if (SalesRival.lies() > 0 or not SalesRival.conscience_ok()) else ink])
             if not Build.is_flat(Build.cur()):
                 lines.append([Build.describe(Build.cur(), "sales", "Vic"), ink])
             lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
@@ -60328,6 +60446,823 @@ static func bb_signed() -> bool:
     return str(flag("bb", "")) == "leave"
 ''')
 
+write("scripts/sales_rival.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# R38 P5: the rival and good-habit hooks of Vic's sales campaign (docs/scope-bad-habits.md sections 2.5 and 6). A static helper (no state
+# of its own): the state lives on the lead dictionaries (incumbent, inc_seen, findings, assessed, rumour, lie ...), on the book entries
+# (honest, lie, takeover, scorecard) and in SalesCampaign.flags, so it saves with the campaign. Conscience is Owner.consc through
+# Temptation (words only, never a number). The text of the beats is SalesCampaign.BEAT_TEXT (patchable in story/strings.txt).
+#   incumbent: none / bytebrothers / bigcheese / plumbline / inhouse, drawn for every lead from Difficulty.rng("leads"); the discovery
+#     call shows it 85% of the time, a visit always (hidden in the CRM until then).
+#   ASSESS (CRM, one selling hour, needs the MEETING stage): 3 to 5 findings from Rival.assessment(incumbent); the honest list becomes
+#     promises of the quote and the handover, the cheap one ("it looks fine") wins a little now and breaks later.
+#   PRESENTED AS (quote builder): ITEMIZED / FLAT / THREE TIERS with a one page value page, and the RIVAL PRICE gauge.
+#   lie flag on a deal won by a shortcut: 90 day churn +8, a LIES line in the week 20 verdict, SALES DIRECTOR needs a clean enough book.
+
+const Habits := preload("res://scripts/habits.gd")
+const Rival := preload("res://scripts/rival.gd")
+const Temptation := preload("res://scripts/temptation.gd")
+
+const INCUMBENTS := ["none", "bytebrothers", "bigcheese", "plumbline", "inhouse"]
+const CUM := [0.30, 0.55, 0.75, 0.85, 1.0]  # the cumulative odds of each incumbent above
+const NAMES := {
+	"none": "NONE",
+	"bytebrothers": "BYTEBROTHERS",
+	"bigcheese": "BIG CHEESE",
+	"plumbline": "PLUMB LINE",
+	"inhouse": "IN-HOUSE"
+}
+const FLAT_RIVALS := ["bigcheese", "bytebrothers"]
+const SEEN_ON_CALL := 0.85
+const PRESENT := ["itemized", "flat", "tiers"]
+const PRESENT_SHORT := {"itemized": "ITEMIZED", "flat": "FLAT", "tiers": "3 TIERS"}
+const WIN_ITEMIZED := -0.04  # thirty-one lines are thirty-one doors to cut (against a flat price, without the scorecard)
+const WIN_FLAT := 0.03
+const MARGIN_FLAT := 0.08
+const GAP_FLAT := 0.5  # nothing in writing on what is left out
+const WIN_TIERS := 0.02
+const WIN_GUESS := -0.02  # a three tier page made up without the habit behind it
+const WIN_HONEST := -0.03
+const WIN_CHEAP := 0.03
+const GAP_CHEAP := 0.5
+const FINDING_GAP := 0.2
+const HONEST_MOOD := 6
+const HONEST_CHURN := -8
+const LIE_CHURN := 8
+const RUMOUR_WEEKS := 4
+const SCORECARD := 0.06
+const TAKEOVER_LOAD := 0.2  # a won Big Cheese client costs Dan and Morgan this much capacity for six weeks
+const TAKEOVER_WEEKS := 6
+const WEEKS := {
+	2: "incumbent",
+	3: "rex",
+	5: "flat",
+	7: "assess",
+	9: "laundered",
+	11: "plumb",
+	13: "rumour",
+	15: "audit",
+	17: "scorecard"
+}
+const COUNTER_AFTER := 2  # weeks until Rex answers a badmouthing
+
+
+# ---- the incumbent -------------------------------------------------------------------------------------
+# one draw per lead (always drawn, so seeds repeat)
+static func incumbent_for(roll: float) -> String:
+	for i in INCUMBENTS.size():
+		if roll < float(CUM[i]):
+			return str(INCUMBENTS[i])
+	return "none"
+
+
+static func incumbent(l: Dictionary) -> String:
+	return str(l.get("incumbent", "none"))
+
+
+static func is_seen(l: Dictionary) -> bool:
+	return bool(l.get("inc_seen", false))
+
+
+static func name_of(key: String) -> String:
+	return str(NAMES.get(key, key.to_upper()))
+
+
+static func flat_rival(l: Dictionary) -> bool:
+	return FLAT_RIVALS.has(incumbent(l))
+
+
+# the discovery call ("who is your IT person now?"): 85% of the time they tell you
+static func on_call(l: Dictionary) -> bool:
+	var r: RandomNumberGenerator = Difficulty.rng_for("incumbent", int(l.id) * 100 + Campaign.day)
+	if r.randf() < SEEN_ON_CALL:
+		return reveal(l)
+	return false
+
+
+# a visit always shows it
+static func on_visit(l: Dictionary) -> bool:
+	return reveal(l)
+
+
+static func reveal(l: Dictionary) -> bool:
+	if is_seen(l):
+		return false
+	l["inc_seen"] = true
+	if incumbent(l) != "none":
+		SalesCampaign.Deals.note(l, "INCUMBENT: " + name_of(incumbent(l)))
+	return true
+
+
+# the CRM line: hidden until the first call
+static func rival_line(l: Dictionary) -> String:
+	if not is_seen(l):
+		return "RIVAL: UNKNOWN. CALL THEM FIRST"
+	if incumbent(l) == "none":
+		return "RIVAL: NOBODY (FIRST MSP)"
+	return "RIVAL: " + name_of(incumbent(l))
+
+
+# the RIVAL PRICE gauge: what the incumbent charges for this lead a week
+static func rival_price(l: Dictionary) -> Dictionary:
+	var fee := float(l.get("fee", 600))
+	var key := incumbent(l)
+	var out := {"key": key, "known": is_seen(l), "name": name_of(key), "week": 0, "note": ""}
+	match key:
+		"bigcheese":
+			out["week"] = int(round(fee * 0.85))
+			out["note"] = "$39 A SEAT FLAT"
+		"bytebrothers":
+			out["week"] = int(round(fee * 0.80))
+			out["note"] = "20% UNDER LIST"
+		"plumbline":
+			out["week"] = int(round(fee * 1.15))
+			out["note"] = "31 LINES"
+		"inhouse":
+			out["note"] = "THEIR NEPHEW"
+	return out
+
+
+# ---- PRESENTED AS and the effects on the quote ----------------------------------------------------------
+static func present_of(n: Dictionary) -> String:
+	var p := str(n.get("present", "itemized"))
+	return p if PRESENT.has(p) else "itemized"
+
+
+static func win_delta(l: Dictionary, n: Dictionary) -> float:
+	var d := 0.0
+	match present_of(n):
+		"flat":
+			d += WIN_FLAT
+		"tiers":
+			d += WIN_TIERS if Habits.fresh("H2") else WIN_GUESS
+		_:
+			if flat_rival(l) and not Habits.fresh("H2"):
+				d += WIN_ITEMIZED
+	match str(l.get("assessed", "")):
+		"honest":
+			d += WIN_HONEST
+		"cheap":
+			d += WIN_CHEAP
+	return d + float(l.get("pts", 0.0)) + rumour_delta(l)
+
+
+static func margin_delta(n: Dictionary) -> float:
+	return MARGIN_FLAT if present_of(n) == "flat" else 0.0
+
+
+# promise points the pricing form and the assessment add to the quote's gap
+static func gap_delta(l: Dictionary, n: Dictionary) -> float:
+	var d := GAP_FLAT if present_of(n) == "flat" else 0.0
+	if str(l.get("assessed", "")) == "cheap":
+		d += GAP_CHEAP
+	return d + FINDING_GAP * float(findings(l).size())
+
+
+# extra promise entries for Deals.promise_list: the form, the cheap assessment and one per honest finding
+static func promise_items(l: Dictionary, n: Dictionary) -> Array:
+	var items := []
+	if present_of(n) == "flat":
+		items.append(
+			{
+				"id": "flat",
+				"kind": "PRICING",
+				"label": "FLAT PRICE: NOTHING IN WRITING ON WHAT IS OUT",
+				"raw": GAP_FLAT
+			}
+		)
+	if str(l.get("assessed", "")) == "cheap":
+		items.append(
+			{
+				"id": "cheap",
+				"kind": "ASSESSMENT",
+				"label": "WE SAID IT LOOKED FINE",
+				"raw": GAP_CHEAP
+			}
+		)
+	for h in findings(l):
+		items.append(
+			{
+				"id": "f_" + str(h),
+				"kind": "FIX",
+				"label": "FIX: " + str(Rival.HABITS.get(str(h), {}).get("name", str(h))),
+				"raw": FINDING_GAP
+			}
+		)
+	return items
+
+
+# true when the builder block lines apply (the form against a flat rival)
+static func form_blocks(l: Dictionary, n: Dictionary) -> Array:
+	var out := []
+	match present_of(n):
+		"itemized":
+			if flat_rival(l) and not Habits.fresh("H2"):
+				out.append(
+					{
+						"who": "VIC",
+						"text": "THIRTY-ONE LINES ARE THIRTY-ONE DOORS TO CUT. TRY THREE TIERS.",
+						"hard": false
+					}
+				)
+		"flat":
+			out.append(
+				{
+					"who": "ALAN",
+					"text": "FLAT TAKES 8 POINTS OFF THE MARGIN AND LEAVES WHAT IS OUT UNWRITTEN.",
+					"hard": false
+				}
+			)
+		"tiers":
+			if not Habits.fresh("H2"):
+				out.append(
+					{
+						"who": "VIC",
+						"text": "NO SCORECARD BEHIND THE PAGE YET. IT IS GUESSWORK.",
+						"hard": false
+					}
+				)
+	return out
+
+
+# ---- ASSESS ----------------------------------------------------------------------------------------------
+static func findings(l: Dictionary) -> Array:
+	return l.get("findings", [])
+
+
+static func finding_names(ids: Array) -> String:
+	var out := []
+	for h in ids:
+		out.append(str(Rival.HABITS.get(str(h), {}).get("name", str(h))))
+	return ", ".join(out)
+
+
+static func can_assess(l: Dictionary) -> String:
+	if l.is_empty() or str(l.stage) != "MEETING":
+		return "NEEDS A MEETING. CALL THEM FIRST."
+	if str(l.get("assessed", "")) != "":
+		return "ALREADY ASSESSED."
+	if SalesCampaign.slots_left() < 1:
+		return "NO SELLING HOURS LEFT."
+	return ""
+
+
+# the CRM button: one selling hour, 3 to 5 findings, then the choice between the honest list and the cheap answer
+static func assess(id: int) -> String:
+	var l: Dictionary = SalesCampaign.lead_by_id(id)
+	var why := can_assess(l)
+	if why != "":
+		return why
+	if not SalesCampaign.spend(1):
+		return "NO SELLING HOURS LEFT."
+	reveal(l)
+	var n := int(SalesCampaign.flags.get("assess_n", 0))
+	SalesCampaign.flags["assess_n"] = n + 1
+	var ids: Array = Rival.assessment(incumbent(l))
+	if str(l.get("story", "")) == "assess_bc":  # week 7: the clean, honest list the doc names
+		var first := ["R02", "R04", "R12"]
+		for h in ids:
+			if not first.has(h) and first.size() < 5:
+				first.append(h)
+		ids = first
+	l["findings"] = ids
+	l["assessed"] = "open"
+	SalesCampaign.Deals.touch(l, "ASSESSED: %d FINDINGS" % ids.size())
+	var text := (
+		"I walked %s's office and checked their closet. %d findings: %s. Do I write up the honest list, or tell them it looks fine?"
+		% [str(l.name), ids.size(), finding_names(ids)]
+	)
+	Cards.ask(
+		"Vic (your notes)",
+		text,
+		[
+			{"label": "WRITE UP THE HONEST LIST", "id": "honest"},
+			{"label": "TELL THEM IT LOOKS FINE", "id": "cheap"},
+		],
+		func(pick: String) -> void: assess_pick(l, pick)
+	)
+	SalesCampaign.changed.emit()
+	return "ASSESSING %s" % str(l.name).to_upper()
+
+
+static func assess_pick(l: Dictionary, pick: String) -> void:
+	if pick == "cheap":
+		l["assessed"] = "cheap"
+		l["hidden"] = findings(l)
+		l["findings"] = []
+		mark_lie(l, "TOLD THEM IT LOOKS FINE")
+	else:
+		l["assessed"] = "honest"
+		Habits.apply_touch("H10")
+		Temptation.change_consc(1)
+		SalesCampaign.Deals.note(l, "HONEST LIST: %d FIXES" % findings(l).size())
+	SalesCampaign.changed.emit()
+
+
+# ---- lies and conscience ----------------------------------------------------------------------------------
+# a shortcut: the lead is flagged, the conscience falls (words only for the player)
+static func mark_lie(l: Dictionary, why: String) -> void:
+	l["lie"] = true
+	SalesCampaign.Deals.note(l, why)
+	Temptation.change_consc(-2)
+
+
+static func lies() -> int:
+	return int(SalesCampaign.flags.get("lies", 0))
+
+
+static func conscience_ok() -> bool:
+	return Temptation.consc() > -3
+
+
+static func lies_line() -> String:
+	var n := lies()
+	if n == 0 and conscience_ok():
+		return "NO DEALS WON BY A SHORTCUT. CONSCIENCE: " + Temptation.band()
+	var tail := "" if conscience_ok() else ". THE DIRECTOR JOB WANTS CLEAN BOOKS"
+	return (
+		"LIES: %d DEAL%s WON BY A SHORTCUT. CONSCIENCE: %s%s"
+		% [n, "" if n == 1 else "S", Temptation.band(), tail]
+	)
+
+
+# the book entry of a deal that has just closed (SalesCampaign.close_deal): what the handover and the churn meter read
+static func stamp(deal: Dictionary, l: Dictionary) -> void:
+	deal["incumbent"] = incumbent(l)
+	deal["honest"] = str(l.get("assessed", "")) == "honest"
+	deal["lie"] = bool(l.get("lie", false))
+	if bool(deal.lie):
+		SalesCampaign.flags["lies"] = lies() + 1
+	if incumbent(l) == "bigcheese":
+		deal["takeover"] = true
+		if findings(l).is_empty():  # nobody looked: the mess shows up at the handover
+			var promises: Array = deal.get("promises", [])
+			var ids: Array = Rival.assessment("bigcheese").slice(0, 2)
+			for h in ids:
+				promises.append(
+					{
+						"id": "f_" + str(h),
+						"kind": "INHERITED",
+						"label":
+						"INHERITED: " + str(Rival.HABITS.get(str(h), {}).get("name", str(h))),
+						"gap": 0.3,
+						"state": "open"
+					}
+				)
+			deal["promises"] = promises
+
+
+static func mood_adjust(deal: Dictionary) -> int:
+	return HONEST_MOOD if bool(deal.get("honest", false)) else 0
+
+
+static func churn_adjust(deal: Dictionary) -> int:
+	return (
+		(HONEST_CHURN if bool(deal.get("honest", false)) else 0)
+		+ (LIE_CHURN if bool(deal.get("lie", false)) else 0)
+	)
+
+
+# the handover meeting for a client who came from Big Cheese
+static func takeover_line(deal: Dictionary) -> String:
+	if not bool(deal.get("takeover", false)):
+		return ""
+	return " This one comes from Big Cheese. Whatever Rex left behind is ours now."
+
+
+static func takeover_load() -> float:
+	var n := 0
+	for d in SalesCampaign.book:
+		if bool(d.get("takeover", false)) and Campaign.day - int(d.week) <= TAKEOVER_WEEKS:
+			n += 1
+	return TAKEOVER_LOAD * float(n)
+
+
+# ---- rumours (they expire after four weeks) ----------------------------------------------------------------
+static func rumour_delta(l: Dictionary) -> float:
+	var r: Dictionary = l.get("rumour", {})
+	if r.is_empty() or Campaign.day - int(r.week) >= RUMOUR_WEEKS:
+		return 0.0
+	return float(r.mod)
+
+
+static func set_rumour(l: Dictionary, mod: float) -> void:
+	l["rumour"] = {"week": Campaign.day, "mod": mod}
+
+
+# the scorecard of the week 17 beat: a renewal chance bonus on the book entry
+static func scorecard_bonus(e: Dictionary) -> float:
+	return float(e.get("scorecard", 0.0))
+
+
+static func value_ready() -> bool:
+	return Habits.fresh("H2") or bool(SalesCampaign.flags.get("value_page", false))
+
+
+# ---- the beats -----------------------------------------------------------------------------------------------
+static func week(day: int) -> void:
+	_expire(day)
+	match str(WEEKS.get(day, "")):
+		"incumbent":
+			beat_incumbent()
+		"rex":
+			beat_rex()
+		"flat":
+			beat_flat()
+		"assess":
+			beat_assess()
+		"laundered":
+			beat_laundered()
+		"plumb":
+			beat_plumb()
+		"rumour":
+			beat_rumour()
+		"audit":
+			beat_audit()
+		"scorecard":
+			beat_scorecard()
+	if int(SalesCampaign.flags.get("counter_wk", 0)) == day:
+		beat_counter()
+
+
+# a rumour that has run its four weeks is dropped from the lead
+static func _expire(day: int) -> void:
+	for l in SalesCampaign.leads:
+		var r: Dictionary = l.get("rumour", {})
+		if not r.is_empty() and day - int(r.week) >= RUMOUR_WEEKS:
+			l.erase("rumour")
+
+
+static func _best_open() -> Dictionary:
+	var best := {}
+	for l in SalesCampaign.leads:
+		if SalesCampaign.is_open(l) and (best.is_empty() or int(l.quality) > int(best.quality)):
+			best = l
+	return best
+
+
+static func _room() -> bool:
+	return SalesCampaign.open_leads().size() < SalesCampaign.MAX_OPEN
+
+
+static func _story(
+	name: String,
+	type: String,
+	who: String,
+	users: int,
+	pain: String,
+	quality: int,
+	story: String,
+	inc: String
+) -> Dictionary:
+	var l: Dictionary = SalesCampaign.SalesBeats.story_lead(
+		name, type, who, users, pain, quality, false, story
+	)
+	l["incumbent"] = inc
+	l["inc_seen"] = inc != "none"
+	return l
+
+
+# week 2: the first call shows who the incumbent is
+static func beat_incumbent() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("incumbent")
+	var l := {}
+	for x in SalesCampaign.leads:  # the best open lead you have not asked yet
+		if (
+			SalesCampaign.is_open(x)
+			and not is_seen(x)
+			and (l.is_empty() or int(x.quality) > int(l.quality))
+		):
+			l = x
+	if l.is_empty():
+		if not _room():
+			return
+		l = _story(
+			"Pinecrest Orthodontics",
+			"dental",
+			"Dr. Pine",
+			14,
+			"the IT guy is the owner's cousin and nobody can reach him",
+			44,
+			"incumbent",
+			"bigcheese"
+		)
+		SalesCampaign.accept_lead(l)
+	else:
+		l["incumbent"] = "bigcheese"
+		l["inc_seen"] = true
+	if not bool(l.get("called", false)):
+		l["called"] = true
+		l["stage"] = "MEETING"
+	SalesCampaign.Deals.note(l, "INCUMBENT: BIG CHEESE")
+	sb.set_flag("incumbent", int(l.id))
+	sb.say("incumbent", "found", [], Callable(), str(l.who))
+
+
+# week 3: Rex at the next table at the Chamber lunch
+static func beat_rex() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("rex")
+	sb.ask(
+		"rex",
+		"card",
+		func(id: String) -> void: _rex_pick(id),
+		[],
+		{"flyer": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+	)
+
+
+static func _rex_pick(id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("rex", id)
+	match id:
+		"flyer":
+			SalesCampaign.spend(1)
+			for l in SalesCampaign.leads:
+				if incumbent(l) == "bigcheese":
+					reveal(l)
+		"friend":
+			Social.change("Garrison", 1)
+	sb.say("rex", "res_" + id)
+
+
+# week 5: sales_flat, the price objection (a flat price against your itemized quote)
+static func beat_flat() -> void:
+	var sb := SalesCampaign.SalesBeats
+	var l := _best_open()
+	if l.is_empty():
+		sb.set_flag("flat", "none")
+		return
+	sb.lynk("flat")
+	sb.ask(
+		"flat",
+		"card",
+		func(id: String) -> void: _flat_pick(l, id),
+		[],
+		{"lines": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}},
+		str(l.who)
+	)
+
+
+static func _flat_pick(l: Dictionary, id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("flat", id)
+	match id:
+		"tiers":
+			l["present_pref"] = "tiers"
+			SalesCampaign.flags["value_page"] = true
+			l["pts"] = float(l.get("pts", 0.0)) + (0.02 if Habits.fresh("H2") else -0.02)
+			SalesCampaign.Deals.note(l, "OFFERED THREE CHOICES")
+		"match":
+			l["present_pref"] = "flat"
+			mark_lie(l, "MATCHED THE FLAT PRICE")
+		"lines":
+			SalesCampaign.spend(1)
+			l["pts"] = float(l.get("pts", 0.0)) + 0.05
+			SalesCampaign.Deals.note(l, "WENT LINE BY LINE")
+		_:
+			sb.lose_lead(l, "YOU WALKED AWAY")
+	sb.say("flat", "res_" + id, [], Callable(), str(l.who))
+
+
+# week 7: a Big Cheese client wants a second opinion: use ASSESS
+static func beat_assess() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("assess")
+	sb.ask(
+		"assess",
+		"card",
+		func(id: String) -> void: _assess_pick(id),
+		[],
+		{"take": {"enabled": _room(), "hint": "PIPELINE FULL"}}
+	)
+
+
+static func _assess_pick(id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("assess", id)
+	if id != "take":
+		return
+	var l := _story(
+		"Marlowe Family Dental",
+		"dental",
+		"Dr. Marlowe",
+		19,
+		"Big Cheese says everything is included and nobody can say what",
+		52,
+		"assess_bc",
+		"bigcheese"
+	)
+	l["called"] = true
+	l["stage"] = "MEETING"
+	SalesCampaign.accept_lead(l)
+	sb.say("assess", "res_take", [], Callable(), str(l.who))
+
+
+# week 9: sales_laundered, a referral that knows too much
+static func beat_laundered() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("laundered")
+	sb.ask("laundered", "card", func(id: String) -> void: _laundered_pick(id))
+
+
+static func _laundered_pick(id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("laundered", id)
+	var l := _story(
+		"Tillman Surveying",
+		"arch",
+		"Gwen Tillman",
+		14,
+		"slow server, XP at the front desk, an IT person who never calls back",
+		62,
+		"laundered",
+		"bigcheese"
+	)
+	match id:
+		"take":
+			l["quality"] = 70
+			mark_lie(l, "TOOK A LAUNDERED LEAD")
+		"ask":
+			l["quality"] = 52
+			Temptation.change_consc(1)
+		_:
+			l["quality"] = 58
+			Temptation.change_consc(2)
+			var e: Dictionary = sb.best_base()
+			if not e.is_empty():
+				SalesCampaign.Retention.adjust_mood(e, 8)
+	if _room():
+		SalesCampaign.accept_lead(l)
+	sb.say("laundered", "res_" + id)
+
+
+# week 11: the Plumb Line mirror beat with Hollis Grady
+static func beat_plumb() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("plumb")
+	sb.ask("plumb", "card", func(id: String) -> void: _plumb_pick(id), [], {}, "Ms. Cedar")
+
+
+static func _plumb_pick(id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("plumb", id)
+	var l := _story(
+		"Cedar Point Realty",
+		"realty",
+		"Ms. Cedar",
+		17,
+		"six weeks and still no signed proposal",
+		55,
+		"plumb",
+		"plumbline"
+	)
+	match id:
+		"tiers":
+			l["quality"] = 68 if value_ready() else 60
+			l["present_pref"] = "tiers"
+			SalesCampaign.Deals.note(l, "PLUMB LINE LOST HER ON THE LIST")
+		"undercut":
+			l["quality"] = 74
+			mark_lie(l, "UNDERCUT PLUMB LINE")
+		_:
+			sb.set_flag("hollis_favour", true)
+			Temptation.change_consc(1)
+			sb.say("plumb", "res_honest", [], Callable(), "Ms. Cedar")
+			return
+	if _room():
+		SalesCampaign.accept_lead(l)
+	sb.say("plumb", "res_" + id, [], Callable(), "Ms. Cedar")
+
+
+# week 13: Big Cheese badmouths us (bonded? HIPAA safe?); the rumour lasts four weeks
+static func beat_rumour() -> void:
+	var sb := SalesCampaign.SalesBeats
+	var l := _best_open()
+	if l.is_empty():
+		sb.set_flag("rumour", "none")
+		return
+	sb.lynk("rumour")
+	sb.ask(
+		"rumour",
+		"card",
+		func(id: String) -> void: _rumour_pick(l, id),
+		[],
+		{"paper": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}},
+		str(l.who)
+	)
+
+
+static func _rumour_pick(l: Dictionary, id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("rumour", id)
+	match id:
+		"paper":
+			SalesCampaign.spend(1)
+			set_rumour(l, -0.03)
+			SalesCampaign.Deals.note(l, "ANSWERED WITH THE PAPER")
+		"back":
+			set_rumour(l, 0.06)
+			mark_lie(l, "BADMOUTHED REX BACK")
+			SalesCampaign.flags["counter_wk"] = Campaign.day + COUNTER_AFTER
+		_:
+			set_rumour(l, -0.05)
+			SalesCampaign.Deals.note(l, "LET THE RUMOUR STAND")
+	sb.say("rumour", "res_" + id, [], Callable(), str(l.who))
+
+
+# two weeks after a badmouthing Rex answers in kind
+static func beat_counter() -> void:
+	SalesCampaign.flags.erase("counter_wk")
+	Campaign.adjust_rep(-1)
+	SalesCampaign.SalesBeats.say("rumour", "counter")
+
+
+# week 15: Big Cheese's vendor audit sends three prospects, quiet and then calling (capacity against the promise gap)
+static func beat_audit() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("audit")
+	var fresh := []
+	var types := ["dental", "law", "vet"]
+	var pains := [
+		"our antivirus was switched off over the weekend and nobody told us",
+		"a letter from the vendor and a man who does not return calls",
+		"the dashboard was green and the server was not"
+	]
+	var r := sb.rng(150)
+	for i in 3:
+		var pool := []
+		for n in SalesCampaign.TYPES[types[i]].names:
+			if not SalesCampaign.used_names.has(n):
+				pool.append(n)
+		if pool.is_empty():
+			continue
+		var who: String = SalesCampaign.TYPES[types[i]].who[r.randi() % 3]
+		var l := _story(
+			str(pool[r.randi() % pool.size()]),
+			types[i],
+			who,
+			10 + r.randi() % 10,
+			pains[i],
+			48 + r.randi() % 12,
+			"audit",
+			"bigcheese"
+		)
+		fresh.append(l)
+	sb.set_flag("audit", fresh.size())
+	sb.say("audit", "info", [], func() -> void: _audit_cards(fresh))
+
+
+static func _audit_cards(fresh: Array) -> void:
+	for l in fresh:
+		SalesCampaign._lead_card(l)
+
+
+# week 17: scorecards at renewal (+0.06 renew chance for a client who saw one)
+static func beat_scorecard() -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.lynk("scorecard")
+	sb.ask(
+		"scorecard",
+		"card",
+		func(id: String) -> void: _scorecard_pick(id),
+		[],
+		{
+			"all": {"enabled": SalesCampaign.slots_left() >= 2, "hint": "NEEDS 2 HOURS"},
+			"top": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"},
+		}
+	)
+
+
+static func _entries() -> Array:
+	var out := []
+	for e in SalesCampaign.base_book:
+		out.append(e)
+	for d in SalesCampaign.book:
+		if str(d.get("state", "active")) != "handover":
+			out.append(d)
+	return out
+
+
+static func _scorecard_pick(id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("scorecard", id)
+	var bonus := SCORECARD if value_ready() else SCORECARD * 0.5
+	var list := _entries()
+	if id == "top":
+		list.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool:
+				return int(a.get("mrr", 0)) > int(b.get("mrr", 0))
+		)
+		list = list.slice(0, 3)
+	if id != "skip":
+		SalesCampaign.spend(2 if id == "all" else 1)
+		for e in list:
+			e["scorecard"] = bonus
+	sb.say("scorecard", "res_" + id)
+''')
+
 write("scripts/deals.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
 # Deals as records (sales campaign, roadmap C2; docs/campaign-paths.md section 5): a deal is the lead dictionary that lives in
@@ -60379,6 +61314,7 @@ static func norm(q: Dictionary) -> Dictionary:
     n["promise"] = str(q.get("promise", "std"))
     n["extras"] = q.get("extras", [])
     n["onboard"] = str(q.get("onboard", "std"))
+    n["present"] = SalesCampaign.SalesRival.present_of(q)
     return n
 
 
@@ -60407,7 +61343,7 @@ static func margin(q: Dictionary, lead: Dictionary = {}) -> float:
     var base: float = float(SalesCampaign.METHODS[str(n.method)].base)
     var rev: float = (list + float(extras_fee(n))) * price_mult(n)
     var cost: float = (1.0 - base) * list + float(extras_cost(n))
-    return 1.0 - cost / maxf(1.0, rev)
+    return 1.0 - cost / maxf(1.0, rev) - SalesCampaign.SalesRival.margin_delta(n)
 
 
 static func price(lead: Dictionary, q: Dictionary) -> int:
@@ -60438,6 +61374,7 @@ static func win(lead: Dictionary, q: Dictionary) -> float:
         p += 0.04 if pain_match(lead, str(e)) else -0.015
     p += float(ONBOARD[str(n.onboard)].win)
     p += Build.sales_fx("win")
+    p += SalesCampaign.SalesRival.win_delta(lead, n)
     return clampf(p, 0.05, 0.92)
 
 
@@ -60451,8 +61388,9 @@ static func gap_parts(lead: Dictionary, q: Dictionary) -> Dictionary:
     for e in n.extras:
         extras += float(EXTRAS[str(e)].pts)
     var onboard: float = float(ONBOARD[str(n.onboard)].pts)
-    var total: float = maxf(0.0, sla + extras + onboard + Build.sales_fx("gap"))
-    return {"sla": sla, "extras": extras, "onboard": onboard, "total": snappedf(total, 0.1)}
+    var rival: float = SalesCampaign.SalesRival.gap_delta(lead, n)
+    var total: float = maxf(0.0, sla + extras + onboard + rival + Build.sales_fx("gap"))
+    return {"sla": sla, "extras": extras, "onboard": onboard, "rival": rival, "total": snappedf(total, 0.1)}
 
 
 static func gap(lead: Dictionary, q: Dictionary) -> float:
@@ -60492,7 +61430,9 @@ static func gauges(lead: Dictionary, q: Dictionary) -> Dictionary:
         can_send = false
     if g >= 1.5:
         blocks.append({"who": "MORGAN", "text": "GAP %.1f: DAN AND I CANNOT CARRY THAT TODAY." % g, "hard": false})
+    blocks.append_array(SalesCampaign.SalesRival.form_blocks(lead, n))
     return {
+        "rival": SalesCampaign.SalesRival.rival_price(lead),
         "win": win(lead, n),
         "margin": m,
         "gap": g,
@@ -60636,6 +61576,7 @@ static func promise_list(lead: Dictionary, q: Dictionary) -> Array:
         items.append({"id": "x_" + str(e), "kind": "SCOPE", "label": str(EXTRAS[str(e)].label), "raw": float(EXTRAS[str(e)].pts)})
     var ob: Dictionary = ONBOARD[str(n.onboard)]
     items.append({"id": "onboard", "kind": "ONBOARDING", "label": str(ob.label), "raw": maxf(0.0, float(ob.pts))})
+    items.append_array(SalesCampaign.SalesRival.promise_items(lead, n))
     var sum := 0.0
     for it in items:
         sum += float(it.raw)
@@ -60741,7 +61682,7 @@ static func renew_chance(e: Dictionary, bonus := 0.0, raise_price := false) -> f
     var p: float = 0.40 + float(entry_mood(e)) / 250.0 + 0.04 * float(kept_count(e)) - 0.06 * float(broken_count(e)) + bonus
     if raise_price:
         p -= 0.15
-    p += Build.sales_fx("renew") + SalesBeats.rise_penalty(e, raise_price) + float(e.get("qbr_bonus", 0.0))
+    p += Build.sales_fx("renew") + SalesBeats.rise_penalty(e, raise_price) + float(e.get("qbr_bonus", 0.0)) + SalesCampaign.SalesRival.scorecard_bonus(e)
     return clampf(p, 0.10, 0.95)
 
 
@@ -61111,7 +62052,7 @@ static func start(deal: Dictionary) -> void:
         return
     Cards.ask(
         "{ops}",
-        "Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it." % [str(deal.name), int(deal.mrr), list.size()],
+        "Handover for %s with Dan and me. $%d a week. You made %d promises; we go through them one by one. Keep it, renegotiate it with the client, or drop it.%s" % [str(deal.name), int(deal.mrr), list.size(), SalesCampaign.SalesRival.takeover_line(deal)],
         [{"label": "LET'S GO THROUGH THE LIST", "id": "go"}],
         func(_id: String) -> void: ask_promise(deal, 0)
     )
@@ -61192,6 +62133,8 @@ static func finish(deal: Dictionary, show_card: bool) -> void:
     deal["complain"] = left >= 0.5
     deal["resolved"] = false
     deal["churn"] = clampi(int(round(10.0 + 12.0 * left + 4.0 * float(dropped))), 0, 100)
+    deal["mood"] = clampi(int(deal.mood) + SalesCampaign.SalesRival.mood_adjust(deal), 25, 90)
+    deal["churn"] = clampi(int(deal.churn) + SalesCampaign.SalesRival.churn_adjust(deal), 0, 100)
     deal["state"] = "active"
     deal["onboarded"] = false
     deal["onboard_due"] = int(deal.week) + int(Deals.ONBOARD[str(deal.get("onboard", "std"))].weeks)
@@ -61295,7 +62238,7 @@ write("scripts/quote_builder.gd", '''extends RefCounted
 # gauges. The maths is Deals.gauges(); this script only paints and routes input. State: SalesCampaign.qb {id, q, row, page}.
 
 const Deals := preload("res://scripts/deals.gd")
-const ROWS := ["method", "price", "discount", "promise", "backup", "patching", "security", "onboard"]
+const ROWS := ["method", "price", "discount", "promise", "backup", "patching", "security", "onboard", "present"]
 const LABEL := {
     "method": "METHOD",
     "price": "PRICE",
@@ -61305,6 +62248,7 @@ const LABEL := {
     "patching": "UPDATES+AV",
     "security": "SECURITY",
     "onboard": "ONBOARDING",
+    "present": "PRESENTED AS",
 }
 const GOOD := Color("2f7d46")
 const WARN := Color("b8791a")
@@ -61315,11 +62259,13 @@ const TRACK := Color("c9d2e0")
 
 
 static func default_quote() -> Dictionary:
-    return {"method": "fixed", "promise": "std", "price": "list", "discount": 0, "extras": [], "onboard": "std"}
+    return {"method": "fixed", "promise": "std", "price": "list", "discount": 0, "extras": [], "onboard": "std", "present": "itemized"}
 
 
 static func begin(l: Dictionary) -> void:
-    SalesCampaign.qb = {"id": int(l.id), "q": default_quote(), "row": 0, "page": 0}
+    var q := default_quote()
+    q["present"] = str(l.get("present_pref", "itemized"))
+    SalesCampaign.qb = {"id": int(l.id), "q": q, "row": 0, "page": 0}
     SalesCampaign.crm_view = "build"
 
 
@@ -61351,6 +62297,8 @@ static func value_text(field: String) -> String:
             return str(Deals.TIER_NAME[str(q.promise)])
         "onboard":
             return str(Deals.ONBOARD[str(q.onboard)].short)
+        "present":
+            return str(SalesCampaign.SalesRival.PRESENT_SHORT[SalesCampaign.SalesRival.present_of(q)])
     return ("ON $%d" % int(Deals.EXTRAS[field].fee)) if q.extras.has(field) else "OFF"
 
 
@@ -61372,6 +62320,9 @@ static func change(field: String, dir: int) -> void:
         "onboard":
             var i: int = Deals.ONBOARD_ORDER.find(str(q.onboard))
             q["onboard"] = Deals.ONBOARD_ORDER[clampi(i + dir, 0, Deals.ONBOARD_ORDER.size() - 1)]
+        "present":
+            var order: Array = SalesCampaign.SalesRival.PRESENT
+            q["present"] = order[posmod(order.find(SalesCampaign.SalesRival.present_of(q)) + dir, order.size())]
         _:
             var ex: Array = q.extras
             if ex.has(field):
@@ -61464,7 +62415,7 @@ static func _paint_gauges(cp, r: Rect2, g: Dictionary, with_buttons: bool) -> vo
     var bw: float = r.size.x - 8.0
     var y: float = r.position.y + 2.0
     var tall: bool = not with_buttons
-    var step: float = 14.0 if tall else 11.0
+    var step: float = 14.0 if tall else 10.0
     var chars: int = int(bw / 4.0)
     var win: float = float(g.win)
     var m: float = float(g.margin)
@@ -61487,8 +62438,26 @@ static func _paint_gauges(cp, r: Rect2, g: Dictionary, with_buttons: bool) -> vo
     cp._text(cp._clip("CASH 4 WEEKS %s$%d" % ["-" if cash < 0 else "+", absi(cash)], chars), Vector2(x, y), INK)
     _bar(cp, Rect2(x, y + 6, bw, 3), absf(float(cash)) / 3000.0, _tone(cash >= 500, cash >= 0))
     y += step
-    cp._text(cp._clip("PRICE $%d/WK  HOURS %d" % [int(g.price), int(g.hours)], chars), Vector2(x, y), MUTED)
-    y += 7.0
+    # RIVAL PRICE: the incumbent's weekly price against ours (hidden until you have asked who they use now)
+    var rv: Dictionary = g.rival
+    var rp: int = int(rv.week)
+    var price_line := true
+    if not bool(rv.known):
+        cp._text(cp._clip("RIVAL PRICE: ASK WHO THEY USE", chars), Vector2(x, y), MUTED)
+        y += 7.0
+    elif rp <= 0:
+        cp._text(cp._clip(("RIVAL: %s (%s)" % [str(rv.name), str(rv.note)]) if str(rv.note) != "" else "RIVAL: NOBODY YET", chars), Vector2(x, y), MUTED)
+        y += 7.0
+    else:
+        var ours: float = float(g.price)
+        var top: float = maxf(1.0, maxf(ours, float(rp)) * 1.25)
+        cp._text(cp._clip("RIVAL %s $%d  YOU $%d" % [str(rv.name), rp, int(ours)], chars), Vector2(x, y), INK)
+        _bar(cp, Rect2(x, y + 6, bw, 3), float(rp) / top, MUTED, ours / top)
+        y += step
+        price_line = tall  # the roomy layout adds the hours line below, the small one gives the line to the owners
+    if price_line:
+        cp._text(cp._clip("PRICE $%d/WK  HOURS %d  %s" % [int(g.price), int(g.hours), str(rv.note) if bool(rv.known) else ""], chars), Vector2(x, y), MUTED)
+        y += 7.0
     # the owners' lines
     var line_h := 7.0
     var room: int = int((r.end.y - y - (11.0 if with_buttons else 12.0)) / line_h)
@@ -62490,25 +63459,28 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
     var stage: String = str(l.stage)
     var open: bool = ["LEAD", "MEETING"].has(stage)
     var live: bool = open or stage == "QUOTED"
-    var n := 6
-    var bw: float = (r.size.x - 6.0) / float(n)
-    var by: float = r.end.y - 18.0
+    var by: float = r.end.y - 28.0  # two rows of buttons: CALL VISIT QUOTE ASSESS, then CHASE DROP INFO
+    var by2: float = r.end.y - 18.0
+    var bw: float = (r.size.x - 6.0) / 4.0
+    var bw2: float = (r.size.x - 6.0) / 3.0
     var can_call: bool = open and not bool(l.called) and SalesCampaign.slots_left() >= 1
     var can_visit: bool = open and SalesCampaign.can_visit(l) == ""
     var can_quote: bool = open and SalesCampaign.slots_left() >= 1
     var can_chase: bool = live and SalesCampaign.slots_left() >= 1
+    var can_assess: bool = stage == "MEETING" and SalesCampaign.SalesRival.can_assess(l) == ""
     var can_up: bool = stage == "WON" and SalesCampaign.slots_left() >= 1 and not Deals.book_deal(int(l.id)).is_empty()
     cp._button("crm:call", Rect2(r.position.x + 3.0, by, bw - 1.0, 9), "CALL", can_call)
     cp._button("crm:visit", Rect2(r.position.x + 3.0 + bw, by, bw - 1.0, 9), "VISIT", can_visit)
     cp._button("crm:quote", Rect2(r.position.x + 3.0 + bw * 2.0, by, bw - 1.0, 9), "QUOTE", can_quote, Color("a9e0b0"))
-    cp._button("crm:follow", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "CHASE", can_chase)
+    cp._button("crm:assess", Rect2(r.position.x + 3.0 + bw * 3.0, by, bw - 1.0, 9), "ASSESS", can_assess, Color("f0d9a0"))
+    cp._button("crm:follow", Rect2(r.position.x + 3.0, by2, bw2 - 1.0, 9), "CHASE", can_chase)
     if stage == "WON":
-        cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
+        cp._button("crm:upsell", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "UPSELL", can_up, Color("a9c4e8"))
     else:
-        cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw * 4.0, by, bw - 1.0, 9), "DROP", live, Color("e9b1a8"))
-    cp._button("crm:more", Rect2(r.position.x + 3.0 + bw * 5.0, by, bw - 1.0, 9), "INFO", true, Color("e4d9c9"))
+        cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "DROP", live, Color("e9b1a8"))
+    cp._button("crm:more", Rect2(r.position.x + 3.0 + bw2 * 2.0, by2, bw2 - 1.0, 9), "INFO", true, Color("e4d9c9"))
     var keys := ""
-    for item in ["C CALL", "V VISIT", "Q QUOTE", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+    for item in ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
         if (keys + "  " + item).strip_edges().length() <= chars:
             keys = (keys + "  " + item).strip_edges()
         else:
@@ -62520,6 +63492,12 @@ static func _paint_summary(cp, _r: Rect2, l: Dictionary, x: float, y0: float, ch
     var y: float = y0
     var info := "%s  %d USERS  $%d/WK" % [str(SalesCampaign.TYPES[str(l.type)].label), int(l.users), int(l.fee)]
     cp._text(cp._clip(info, chars), Vector2(x, y), INK)
+    y += 7.0
+    var rv: String = SalesCampaign.SalesRival.rival_line(l)
+    var found: int = SalesCampaign.SalesRival.findings(l).size()
+    if found > 0:
+        rv = "%s  %d FINDINGS" % [rv, found]
+    cp._text(cp._clip(rv, chars), Vector2(x, y), STAGE_TINT["QUOTED"] if SalesCampaign.SalesRival.is_seen(l) else MUTED)
     y += 7.0
     var pain_lines: Array = cp._wrap("PAIN: " + str(l.pain).to_upper(), chars)
     for pl in pain_lines.slice(0, 2):
@@ -62575,7 +63553,7 @@ static func _paint_record(cp, r: Rect2, l: Dictionary, x: float, y0: float, char
     if promises.is_empty():
         cp._text(cp._clip("NO PROMISES YET. THEY COME WITH THE QUOTE.", chars), Vector2(x, y), MUTED)
         y += 7.0
-    var room: int = int((r.end.y - 19.0 - y) / 7.0)
+    var room: int = int((r.end.y - 29.0 - y) / 7.0)
     var notes: Array = l.get("notes", [])
     var show_note: bool = not notes.is_empty() and room >= promises.size() + 1
     if show_note:
@@ -62640,6 +63618,8 @@ static func key(cp, code: int) -> void:
             action(cp, ["crm", "quote"])
         KEY_D:
             action(cp, ["crm", "drop"])
+        KEY_A:
+            action(cp, ["crm", "assess"])
         KEY_F:
             action(cp, ["crm", "follow"])
         KEY_U:
@@ -62683,6 +63663,9 @@ static func action(cp, parts: PackedStringArray) -> void:
         "call":
             if not l.is_empty():
                 cp._say(SalesCampaign.call_lead(int(l.id)))
+        "assess":
+            if not l.is_empty():
+                cp._say(SalesCampaign.SalesRival.assess(int(l.id)))
         "visit":
             if not l.is_empty():
                 var why := SalesCampaign.can_visit(l)
@@ -65603,22 +66586,24 @@ static func on_winback(owner: Node, client: int) -> void:
 		card["text"] = str(card.text).replace(owner.COMPETITOR, "Big Cheese")
 
 
-# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids, the ones you know first
+# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids from the rap sheet
 static func assessment(rival: String) -> Array:
-	var all: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
-	var out := []
-	for level in [PROVEN, SEEN, RUMOUR]:
-		for h in all:
-			if rap(rival, str(h)) == level and out.size() < 5:
-				out.append(str(h))
-	var rest := []
-	for h in all:
-		if not out.has(h):
-			rest.append(str(h))
-	Difficulty.shuffle(rest, "rival_assess")
-	while out.size() < mini(3, all.size()) and not rest.is_empty():
-		out.append(rest.pop_front())
-	return out
+	var pool: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
+	if pool.is_empty():  # nobody on file (in-house, no incumbent, Plumb Line): the usual mess of a small office
+		pool = ["R01", "R02", "R04", "R12", "R14", "R15"]
+	var r: RandomNumberGenerator = Difficulty.rng_for("assess", int(SalesCampaign.flags.get("assess_n", 0)) * 17 + Campaign.day)
+	for i in range(pool.size() - 1, 0, -1):
+		var j := r.randi() % (i + 1)
+		var t: Variant = pool[i]
+		pool[i] = pool[j]
+		pool[j] = t
+	var count := mini(pool.size(), 3 + r.randi() % 3)
+	var ordered := []  # what you already know about this rival comes first (proven, seen, rumour), the rest in the shuffled order
+	for level in [PROVEN, SEEN, RUMOUR, 0]:
+		for h in pool:
+			if rap(rival, str(h)) == level and ordered.size() < count:
+				ordered.append(h)
+	return ordered
 ''')
 
 write("scripts/habits.gd", '''extends RefCounted

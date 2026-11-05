@@ -19556,6 +19556,406 @@ SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS. YOU STAY ON AS REGIONAL SALES LE
 [SalesCampaign.BEAT_TEXT.endings.let_go]
 YOU BOX UP THE DESK. GARRISON SHAKES YOUR HAND AND SAYS IT WAS NOT PERSONAL. THE BELL STAYS ON THE WALL.
 
+# SalesCampaign > BEAT_TEXT > incumbent > lynk > from
+[SalesCampaign.BEAT_TEXT.incumbent.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > incumbent > lynk > text
+[SalesCampaign.BEAT_TEXT.incumbent.lynk.text]
+First question on every call: who is your IT person now? Write the answer in SalesHound. It tells you who you are really up against.
+
+# SalesCampaign > BEAT_TEXT > incumbent > found > speaker
+[SalesCampaign.BEAT_TEXT.incumbent.found.speaker]
+Dr. Pine
+
+# SalesCampaign > BEAT_TEXT > incumbent > found > text
+[SalesCampaign.BEAT_TEXT.incumbent.found.text]
+We use Big Cheese Technology Group. A man named Rex Calloway. He is very friendly and everything is included at $39 a seat, so I never see a bill I understand. Why do you ask?
+
+# SalesCampaign > BEAT_TEXT > rex > lynk > from
+[SalesCampaign.BEAT_TEXT.rex.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > rex > lynk > text
+[SalesCampaign.BEAT_TEXT.rex.lynk.text]
+Rex Calloway was at the Chamber lunch. Big Cheese Technology Group, the billboard on the county road. Everybody likes him.
+
+# SalesCampaign > BEAT_TEXT > rex > card > speaker
+[SalesCampaign.BEAT_TEXT.rex.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > rex > card > text
+[SalesCampaign.BEAT_TEXT.rex.card.text]
+Rex Calloway from Big Cheese sat at the next table and told everyone business is booming. He has forty-one five-star reviews on Yowl, and I hear most of them come from accounts that review nothing else. Do something with that, or do not.
+
+# SalesCampaign > BEAT_TEXT > rex > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.rex.card.options.0.label]
+READ HIS FLYER, ASK AROUND (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > rex > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.rex.card.options.1.label]
+SHAKE HIS HAND, HE SEEMS NICE
+
+# SalesCampaign > BEAT_TEXT > rex > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.rex.card.options.2.label]
+IGNORE HIM
+
+# SalesCampaign > BEAT_TEXT > rex > res_flyer > speaker
+[SalesCampaign.BEAT_TEXT.rex.res_flyer.speaker]
+Vic
+
+# SalesCampaign > BEAT_TEXT > rex > res_flyer > text
+[SalesCampaign.BEAT_TEXT.rex.res_flyer.text]
+EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.
+
+# SalesCampaign > BEAT_TEXT > rex > res_friend > speaker
+[SalesCampaign.BEAT_TEXT.rex.res_friend.speaker]
+Rex Calloway
+
+# SalesCampaign > BEAT_TEXT > rex > res_friend > text
+[SalesCampaign.BEAT_TEXT.rex.res_friend.text]
+Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a cookie. Garrison thinks it was good manners. Alan thinks you have just met the competition.
+
+# SalesCampaign > BEAT_TEXT > rex > res_ignore > speaker
+[SalesCampaign.BEAT_TEXT.rex.res_ignore.speaker]
+Vic
+
+# SalesCampaign > BEAT_TEXT > rex > res_ignore > text
+[SalesCampaign.BEAT_TEXT.rex.res_ignore.text]
+He will not be gone by July. You were warned by the cookie crumbs on the flyer.
+
+# SalesCampaign > BEAT_TEXT > flat > lynk > from
+[SalesCampaign.BEAT_TEXT.flat.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > flat > lynk > text
+[SalesCampaign.BEAT_TEXT.flat.lynk.text]
+A prospect says Big Cheese quoted a flat price and our quote looks complicated. Call them back before they sign it.
+
+# SalesCampaign > BEAT_TEXT > flat > card > speaker
+[SalesCampaign.BEAT_TEXT.flat.card.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > flat > card > text
+[SalesCampaign.BEAT_TEXT.flat.card.text]
+Big Cheese quoted me $39 a seat, all in. You sent me a page with thirty-one lines. I don't understand half of them. I just want to know what I'm getting.
+
+# SalesCampaign > BEAT_TEXT > flat > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.flat.card.options.0.label]
+ONE PAGE, THREE CHOICES
+
+# SalesCampaign > BEAT_TEXT > flat > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.flat.card.options.1.label]
+MATCH THE FLAT PRICE
+
+# SalesCampaign > BEAT_TEXT > flat > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.flat.card.options.2.label]
+GO LINE BY LINE (AN HOUR)
+
+# SalesCampaign > BEAT_TEXT > flat > card > options > 3 > label
+[SalesCampaign.BEAT_TEXT.flat.card.options.3.label]
+WALK, THEY'LL BE BACK IN 6 MONTHS
+
+# SalesCampaign > BEAT_TEXT > flat > res_tiers > speaker
+[SalesCampaign.BEAT_TEXT.flat.res_tiers.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > flat > res_tiers > text
+[SalesCampaign.BEAT_TEXT.flat.res_tiers.text]
+GOOD, BETTER, BEST, one line each, and a box for what is NOT included. She circles BETTER. Set PRESENTED AS to 3 TIERS in the quote builder.
+
+# SalesCampaign > BEAT_TEXT > flat > res_match > speaker
+[SalesCampaign.BEAT_TEXT.flat.res_match.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > flat > res_match > text
+[SalesCampaign.BEAT_TEXT.flat.res_match.text]
+She signs in a day, if you send it. Alan shows you the margin. Nothing is in writing about what is left out, and you both know it.
+
+# SalesCampaign > BEAT_TEXT > flat > res_lines > speaker
+[SalesCampaign.BEAT_TEXT.flat.res_lines.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > flat > res_lines > text
+[SalesCampaign.BEAT_TEXT.flat.res_lines.text]
+You read thirty-one lines. By line fourteen you both agree the list is the problem. She trusts you a little more.
+
+# SalesCampaign > BEAT_TEXT > flat > res_walk > speaker
+[SalesCampaign.BEAT_TEXT.flat.res_walk.speaker]
+Vic
+
+# SalesCampaign > BEAT_TEXT > flat > res_walk > text
+[SalesCampaign.BEAT_TEXT.flat.res_walk.text]
+You are right about the six months. You are wrong about it helping.
+
+# SalesCampaign > BEAT_TEXT > assess > lynk > from
+[SalesCampaign.BEAT_TEXT.assess.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > assess > lynk > text
+[SalesCampaign.BEAT_TEXT.assess.lynk.text]
+A dental office on Pine Road is unhappy with Big Cheese. Call them, then press ASSESS in SalesHound. An hour in their closet finds what Rex left out.
+
+# SalesCampaign > BEAT_TEXT > assess > card > speaker
+[SalesCampaign.BEAT_TEXT.assess.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > assess > card > text
+[SalesCampaign.BEAT_TEXT.assess.card.text]
+Dr. Marlowe is a Big Cheese client and he wants a second opinion before he renews. Use ASSESS on him: an hour, an honest list, and every item you write down is a promise you are on the hook for.
+
+# SalesCampaign > BEAT_TEXT > assess > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.assess.card.options.0.label]
+ADD HIM TO THE PIPELINE
+
+# SalesCampaign > BEAT_TEXT > assess > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.assess.card.options.1.label]
+PASS
+
+# SalesCampaign > BEAT_TEXT > assess > res_take > speaker
+[SalesCampaign.BEAT_TEXT.assess.res_take.speaker]
+Dr. Marlowe
+
+# SalesCampaign > BEAT_TEXT > assess > res_take > text
+[SalesCampaign.BEAT_TEXT.assess.res_take.text]
+Rex says it is all included. Nobody can show me where it says so. Come and look at the closet.
+
+# SalesCampaign > BEAT_TEXT > laundered > lynk > from
+[SalesCampaign.BEAT_TEXT.laundered.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > laundered > lynk > text
+[SalesCampaign.BEAT_TEXT.laundered.lynk.text]
+A woman called Gwen phoned for you. She knows our rates and our dispatcher's name. Odd.
+
+# SalesCampaign > BEAT_TEXT > laundered > card > speaker
+[SalesCampaign.BEAT_TEXT.laundered.card.speaker]
+Vic's phone
+
+# SalesCampaign > BEAT_TEXT > laundered > card > text
+[SalesCampaign.BEAT_TEXT.laundered.card.text]
+A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP at the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us.
+
+# SalesCampaign > BEAT_TEXT > laundered > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.laundered.card.options.0.label]
+TAKE THE MEETING, SHE IS A GOOD LEAD
+
+# SalesCampaign > BEAT_TEXT > laundered > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.laundered.card.options.1.label]
+ASK HER HOW SHE HEARD
+
+# SalesCampaign > BEAT_TEXT > laundered > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.laundered.card.options.2.label]
+WARN THE DENTAL OFFICE, FOR FREE
+
+# SalesCampaign > BEAT_TEXT > laundered > res_take > speaker
+[SalesCampaign.BEAT_TEXT.laundered.res_take.speaker]
+Vic
+
+# SalesCampaign > BEAT_TEXT > laundered > res_take > text
+[SalesCampaign.BEAT_TEXT.laundered.res_take.text]
+She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.
+
+# SalesCampaign > BEAT_TEXT > laundered > res_ask > speaker
+[SalesCampaign.BEAT_TEXT.laundered.res_ask.speaker]
+Gwen
+
+# SalesCampaign > BEAT_TEXT > laundered > res_ask > text
+[SalesCampaign.BEAT_TEXT.laundered.res_ask.text]
+She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.
+
+# SalesCampaign > BEAT_TEXT > laundered > res_tell > speaker
+[SalesCampaign.BEAT_TEXT.laundered.res_tell.speaker]
+Vic
+
+# SalesCampaign > BEAT_TEXT > laundered > res_tell > text
+[SalesCampaign.BEAT_TEXT.laundered.res_tell.text]
+They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.
+
+# SalesCampaign > BEAT_TEXT > plumb > lynk > from
+[SalesCampaign.BEAT_TEXT.plumb.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > plumb > lynk > text
+[SalesCampaign.BEAT_TEXT.plumb.lynk.text]
+Plumb Line Technology has been sitting on a proposal for six weeks. The prospect wants a second opinion from us. Hollis Grady is a careful man.
+
+# SalesCampaign > BEAT_TEXT > plumb > card > speaker
+[SalesCampaign.BEAT_TEXT.plumb.card.speaker]
+Ms. Cedar
+
+# SalesCampaign > BEAT_TEXT > plumb > card > text
+[SalesCampaign.BEAT_TEXT.plumb.card.text]
+I asked Hollis Grady at Plumb Line for a quote six weeks ago. Nine pages, thirty-one line items, a binder and all. I like him. I trust him. I cannot tell which of the thirty-one I need. Would you give me a second opinion?
+
+# SalesCampaign > BEAT_TEXT > plumb > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.plumb.card.options.0.label]
+SHOW HER THE THREE TIER PAGE
+
+# SalesCampaign > BEAT_TEXT > plumb > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.plumb.card.options.1.label]
+JUST UNDERCUT HIM
+
+# SalesCampaign > BEAT_TEXT > plumb > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.plumb.card.options.2.label]
+SAY HE IS GOOD, SEND HER BACK
+
+# SalesCampaign > BEAT_TEXT > plumb > res_tiers > speaker
+[SalesCampaign.BEAT_TEXT.plumb.res_tiers.speaker]
+Ms. Cedar
+
+# SalesCampaign > BEAT_TEXT > plumb > res_tiers > text
+[SalesCampaign.BEAT_TEXT.plumb.res_tiers.text]
+Three choices and a box for what is not included. She says it is the first time anyone has told her what she gets. Hollis is good. He just cannot sell it.
+
+# SalesCampaign > BEAT_TEXT > plumb > res_undercut > speaker
+[SalesCampaign.BEAT_TEXT.plumb.res_undercut.speaker]
+Ms. Cedar
+
+# SalesCampaign > BEAT_TEXT > plumb > res_undercut > text
+[SalesCampaign.BEAT_TEXT.plumb.res_undercut.text]
+Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.
+
+# SalesCampaign > BEAT_TEXT > plumb > res_honest > speaker
+[SalesCampaign.BEAT_TEXT.plumb.res_honest.speaker]
+Ms. Cedar
+
+# SalesCampaign > BEAT_TEXT > plumb > res_honest > text
+[SalesCampaign.BEAT_TEXT.plumb.res_honest.text]
+She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.
+
+# SalesCampaign > BEAT_TEXT > rumour > lynk > from
+[SalesCampaign.BEAT_TEXT.rumour.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > rumour > lynk > text
+[SalesCampaign.BEAT_TEXT.rumour.lynk.text]
+Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch.
+
+# SalesCampaign > BEAT_TEXT > rumour > card > speaker
+[SalesCampaign.BEAT_TEXT.rumour.card.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > rumour > card > text
+[SalesCampaign.BEAT_TEXT.rumour.card.text]
+Quick question before we go further. Are you bonded? And HIPAA safe? Somebody at the Chamber lunch told me you are not.
+
+# SalesCampaign > BEAT_TEXT > rumour > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.rumour.card.options.0.label]
+SHOW THE BOND AND THE BAA (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > rumour > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.rumour.card.options.1.label]
+BADMOUTH BIG CHEESE BACK
+
+# SalesCampaign > BEAT_TEXT > rumour > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.rumour.card.options.2.label]
+LAUGH IT OFF AND MOVE ON
+
+# SalesCampaign > BEAT_TEXT > rumour > res_paper > speaker
+[SalesCampaign.BEAT_TEXT.rumour.res_paper.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > rumour > res_paper > text
+[SalesCampaign.BEAT_TEXT.rumour.res_paper.text]
+Two documents and a coffee. She is satisfied, though you looked a little defensive. The rumour will fade in about four weeks.
+
+# SalesCampaign > BEAT_TEXT > rumour > res_back > speaker
+[SalesCampaign.BEAT_TEXT.rumour.res_back.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > rumour > res_back > text
+[SalesCampaign.BEAT_TEXT.rumour.res_back.text]
+She leans in. It works, today. You say things about Rex you cannot prove, and Garrison will hear them back.
+
+# SalesCampaign > BEAT_TEXT > rumour > res_ignore > speaker
+[SalesCampaign.BEAT_TEXT.rumour.res_ignore.speaker]
+Prospect
+
+# SalesCampaign > BEAT_TEXT > rumour > res_ignore > text
+[SalesCampaign.BEAT_TEXT.rumour.res_ignore.text]
+She nods and writes something down. The rumour stands for about four weeks.
+
+# SalesCampaign > BEAT_TEXT > rumour > counter > speaker
+[SalesCampaign.BEAT_TEXT.rumour.counter.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > rumour > counter > text
+[SalesCampaign.BEAT_TEXT.rumour.counter.text]
+Rex heard what you said about him. He is telling the whole lunch table you are the one who cannot be trusted. Reputation takes a dent.
+
+# SalesCampaign > BEAT_TEXT > audit > lynk > from
+[SalesCampaign.BEAT_TEXT.audit.lynk.from]
+Morgan
+
+# SalesCampaign > BEAT_TEXT > audit > lynk > text
+[SalesCampaign.BEAT_TEXT.audit.lynk.text]
+Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry.
+
+# SalesCampaign > BEAT_TEXT > audit > info > speaker
+[SalesCampaign.BEAT_TEXT.audit.info.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > audit > info > text
+[SalesCampaign.BEAT_TEXT.audit.info.text]
+WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.
+
+# SalesCampaign > BEAT_TEXT > audit > info > ok
+[SalesCampaign.BEAT_TEXT.audit.info.ok]
+SHOW ME THE LEADS
+
+# SalesCampaign > BEAT_TEXT > scorecard > lynk > from
+[SalesCampaign.BEAT_TEXT.scorecard.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > scorecard > lynk > text
+[SalesCampaign.BEAT_TEXT.scorecard.lynk.text]
+Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January.
+
+# SalesCampaign > BEAT_TEXT > scorecard > card > speaker
+[SalesCampaign.BEAT_TEXT.scorecard.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > scorecard > card > text
+[SalesCampaign.BEAT_TEXT.scorecard.card.text]
+Renewal season. The clients we show a one page scorecard (tickets closed, hours saved, and what is NOT included) renew more often. The rest renew on price alone, and Rex is cheaper.
+
+# SalesCampaign > BEAT_TEXT > scorecard > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.scorecard.card.options.0.label]
+SEND ONE TO EVERY CLIENT (2 HOURS)
+
+# SalesCampaign > BEAT_TEXT > scorecard > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.scorecard.card.options.1.label]
+SEND TO THE BIGGEST 3 (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > scorecard > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.scorecard.card.options.2.label]
+SKIP IT
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_all > speaker
+[SalesCampaign.BEAT_TEXT.scorecard.res_all.speaker]
+Marge
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_all > text
+[SalesCampaign.BEAT_TEXT.scorecard.res_all.text]
+One page each: what we did, what it cost, what is not included. Two clients put it on the fridge.
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_top > speaker
+[SalesCampaign.BEAT_TEXT.scorecard.res_top.speaker]
+Marge
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_top > text
+[SalesCampaign.BEAT_TEXT.scorecard.res_top.text]
+Three pages to the three biggest accounts. The others will get theirs next quarter, maybe.
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_skip > speaker
+[SalesCampaign.BEAT_TEXT.scorecard.res_skip.speaker]
+Marge
+
+# SalesCampaign > BEAT_TEXT > scorecard > res_skip > text
+[SalesCampaign.BEAT_TEXT.scorecard.res_skip.text]
+Renewals will have to stand on their own, then.
+
 
 # ======================= Rival > HABITS =======================
 # Rival > HABITS > R01 > name

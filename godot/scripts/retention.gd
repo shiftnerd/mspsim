@@ -75,7 +75,7 @@ static func renew_chance(e: Dictionary, bonus := 0.0, raise_price := false) -> f
 	var p: float = 0.40 + float(entry_mood(e)) / 250.0 + 0.04 * float(kept_count(e)) - 0.06 * float(broken_count(e)) + bonus
 	if raise_price:
 		p -= 0.15
-	p += Build.sales_fx("renew") + SalesBeats.rise_penalty(e, raise_price) + float(e.get("qbr_bonus", 0.0))
+	p += Build.sales_fx("renew") + SalesBeats.rise_penalty(e, raise_price) + float(e.get("qbr_bonus", 0.0)) + SalesCampaign.SalesRival.scorecard_bonus(e)
 	return clampf(p, 0.10, 0.95)
 
 

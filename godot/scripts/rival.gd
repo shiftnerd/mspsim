@@ -613,19 +613,21 @@ static func on_winback(owner: Node, client: int) -> void:
 		card["text"] = str(card.text).replace(owner.COMPETITOR, "Big Cheese")
 
 
-# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids, the ones you know first
+# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids from the rap sheet
 static func assessment(rival: String) -> Array:
-	var all: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
-	var out := []
-	for level in [PROVEN, SEEN, RUMOUR]:
-		for h in all:
-			if rap(rival, str(h)) == level and out.size() < 5:
-				out.append(str(h))
-	var rest := []
-	for h in all:
-		if not out.has(h):
-			rest.append(str(h))
-	Difficulty.shuffle(rest, "rival_assess")
-	while out.size() < mini(3, all.size()) and not rest.is_empty():
-		out.append(rest.pop_front())
-	return out
+	var pool: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
+	if pool.is_empty():  # nobody on file (in-house, no incumbent, Plumb Line): the usual mess of a small office
+		pool = ["R01", "R02", "R04", "R12", "R14", "R15"]
+	var r: RandomNumberGenerator = Difficulty.rng_for("assess", int(SalesCampaign.flags.get("assess_n", 0)) * 17 + Campaign.day)
+	for i in range(pool.size() - 1, 0, -1):
+		var j := r.randi() % (i + 1)
+		var t: Variant = pool[i]
+		pool[i] = pool[j]
+		pool[j] = t
+	var count := mini(pool.size(), 3 + r.randi() % 3)
+	var ordered := []  # what you already know about this rival comes first (proven, seen, rumour), the rest in the shuffled order
+	for level in [PROVEN, SEEN, RUMOUR, 0]:
+		for h in pool:
+			if rap(rival, str(h)) == level and ordered.size() < count:
+				ordered.append(h)
+	return ordered

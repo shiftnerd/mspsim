@@ -23,7 +23,7 @@ The jokes come from real MSP life; the stakes come from real MSP life too (a bac
 - **Owner campaign**: 20 weeks as the owner of the company. Pricing, hiring, tools, marketing, collections, a competitor poaching your clients,
   and a valuation at the end.
 - **Service manager campaign** (you are Dan): run the service desk crew, the Dispatch board, runbooks and the owners' pressure.
-- **Sales campaign** (you are Vic): leads, quotes, deals, handovers and keeping clients.
+- **Sales campaign** (you are Vic): leads, quotes, deals, handovers and keeping clients. Every lead has an incumbent (nobody, ByteBrothers, Big Cheese, Plumb Line or an in-house nephew) that a discovery call or a visit reveals; ASSESS spends an hour to list what the incumbent left out (each item becomes a promise); the quote builder shows the RIVAL PRICE and a PRESENTED AS choice (itemized, flat, or three tiers with a one page value page). Shortcuts (a laundered lead, badmouthing a rival, telling a client it looks fine) win deals that churn faster and show up in the week 20 verdict as LIES, and the SALES DIRECTOR job needs a clean conscience. Rival beats run in weeks 2, 3, 5, 7, 9, 11, 13, 15 and 17 (`scripts/sales_rival.gd`, `docs/dev/rival-habits-api.md`).
 - **Free Play / Film Mode**: the office as a sandbox with no scoring, for filming scenes, wandering around and playing dress-up.
 - **Career and Year 2**: medals and records follow you across runs; finish a campaign and a harder second year opens up.
 

@@ -8,7 +8,7 @@ extends RefCounted
 # gauges. The maths is Deals.gauges(); this script only paints and routes input. State: SalesCampaign.qb {id, q, row, page}.
 
 const Deals := preload("res://scripts/deals.gd")
-const ROWS := ["method", "price", "discount", "promise", "backup", "patching", "security", "onboard"]
+const ROWS := ["method", "price", "discount", "promise", "backup", "patching", "security", "onboard", "present"]
 const LABEL := {
 	"method": "METHOD",
 	"price": "PRICE",
@@ -18,6 +18,7 @@ const LABEL := {
 	"patching": "UPDATES+AV",
 	"security": "SECURITY",
 	"onboard": "ONBOARDING",
+	"present": "PRESENTED AS",
 }
 const GOOD := Color("2f7d46")
 const WARN := Color("b8791a")
@@ -28,11 +29,13 @@ const TRACK := Color("c9d2e0")
 
 
 static func default_quote() -> Dictionary:
-	return {"method": "fixed", "promise": "std", "price": "list", "discount": 0, "extras": [], "onboard": "std"}
+	return {"method": "fixed", "promise": "std", "price": "list", "discount": 0, "extras": [], "onboard": "std", "present": "itemized"}
 
 
 static func begin(l: Dictionary) -> void:
-	SalesCampaign.qb = {"id": int(l.id), "q": default_quote(), "row": 0, "page": 0}
+	var q := default_quote()
+	q["present"] = str(l.get("present_pref", "itemized"))
+	SalesCampaign.qb = {"id": int(l.id), "q": q, "row": 0, "page": 0}
 	SalesCampaign.crm_view = "build"
 
 
@@ -64,6 +67,8 @@ static func value_text(field: String) -> String:
 			return str(Deals.TIER_NAME[str(q.promise)])
 		"onboard":
 			return str(Deals.ONBOARD[str(q.onboard)].short)
+		"present":
+			return str(SalesCampaign.SalesRival.PRESENT_SHORT[SalesCampaign.SalesRival.present_of(q)])
 	return ("ON $%d" % int(Deals.EXTRAS[field].fee)) if q.extras.has(field) else "OFF"
 
 
@@ -85,6 +90,9 @@ static func change(field: String, dir: int) -> void:
 		"onboard":
 			var i: int = Deals.ONBOARD_ORDER.find(str(q.onboard))
 			q["onboard"] = Deals.ONBOARD_ORDER[clampi(i + dir, 0, Deals.ONBOARD_ORDER.size() - 1)]
+		"present":
+			var order: Array = SalesCampaign.SalesRival.PRESENT
+			q["present"] = order[posmod(order.find(SalesCampaign.SalesRival.present_of(q)) + dir, order.size())]
 		_:
 			var ex: Array = q.extras
 			if ex.has(field):
@@ -177,7 +185,7 @@ static func _paint_gauges(cp, r: Rect2, g: Dictionary, with_buttons: bool) -> vo
 	var bw: float = r.size.x - 8.0
 	var y: float = r.position.y + 2.0
 	var tall: bool = not with_buttons
-	var step: float = 14.0 if tall else 11.0
+	var step: float = 14.0 if tall else 10.0
 	var chars: int = int(bw / 4.0)
 	var win: float = float(g.win)
 	var m: float = float(g.margin)
@@ -200,8 +208,26 @@ static func _paint_gauges(cp, r: Rect2, g: Dictionary, with_buttons: bool) -> vo
 	cp._text(cp._clip("CASH 4 WEEKS %s$%d" % ["-" if cash < 0 else "+", absi(cash)], chars), Vector2(x, y), INK)
 	_bar(cp, Rect2(x, y + 6, bw, 3), absf(float(cash)) / 3000.0, _tone(cash >= 500, cash >= 0))
 	y += step
-	cp._text(cp._clip("PRICE $%d/WK  HOURS %d" % [int(g.price), int(g.hours)], chars), Vector2(x, y), MUTED)
-	y += 7.0
+	# RIVAL PRICE: the incumbent's weekly price against ours (hidden until you have asked who they use now)
+	var rv: Dictionary = g.rival
+	var rp: int = int(rv.week)
+	var price_line := true
+	if not bool(rv.known):
+		cp._text(cp._clip("RIVAL PRICE: ASK WHO THEY USE", chars), Vector2(x, y), MUTED)
+		y += 7.0
+	elif rp <= 0:
+		cp._text(cp._clip(("RIVAL: %s (%s)" % [str(rv.name), str(rv.note)]) if str(rv.note) != "" else "RIVAL: NOBODY YET", chars), Vector2(x, y), MUTED)
+		y += 7.0
+	else:
+		var ours: float = float(g.price)
+		var top: float = maxf(1.0, maxf(ours, float(rp)) * 1.25)
+		cp._text(cp._clip("RIVAL %s $%d  YOU $%d" % [str(rv.name), rp, int(ours)], chars), Vector2(x, y), INK)
+		_bar(cp, Rect2(x, y + 6, bw, 3), float(rp) / top, MUTED, ours / top)
+		y += step
+		price_line = tall  # the roomy layout adds the hours line below, the small one gives the line to the owners
+	if price_line:
+		cp._text(cp._clip("PRICE $%d/WK  HOURS %d  %s" % [int(g.price), int(g.hours), str(rv.note) if bool(rv.known) else ""], chars), Vector2(x, y), MUTED)
+		y += 7.0
 	# the owners' lines
 	var line_h := 7.0
 	var room: int = int((r.end.y - y - (11.0 if with_buttons else 12.0)) / line_h)
