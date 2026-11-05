@@ -103,9 +103,9 @@ const POLICIES := {
 	},
 }
 
-var Habits: Script  # loaded in _init: habits.gd names autoloads, so it cannot compile before they exist
 const HONEST_ORDER := ["H1", "H7", "H2", "H6", "H12", "H3", "H4", "H5", "H13", "H11", "H10", "H9", "H14", "H8"]
 
+var habits: Script  # loaded in _init: habits.gd names autoloads, so it cannot compile before they exist
 var policy: Dictionary = {}
 
 
@@ -113,22 +113,22 @@ var policy: Dictionary = {}
 func _honest_week(day: int) -> void:
 	var o := root.get_node("Owner")
 	for id in HONEST_ORDER:
-		var st: String = Habits.state(id)
-		var every := int(Habits.HABITS[id].every)
-		var due: bool = st == Habits.STALE or st == Habits.LAPSED or (st == Habits.ADOPTED and every > 0 and Habits.age(id) >= every - 1)
-		if st != Habits.NONE and due and (Habits.DOABLE.has(id) or st != Habits.ADOPTED) and o.cash > 1500:
-			Habits.act(id)
+		var st: String = habits.state(id)
+		var every := int(habits.HABITS[id].every)
+		var due: bool = st == habits.STALE or st == habits.LAPSED or (st == habits.ADOPTED and every > 0 and habits.age(id) >= every - 1)
+		if st != habits.NONE and due and (habits.DOABLE.has(id) or st != habits.ADOPTED) and o.cash > 1500:
+			habits.act(id)
 	if o.cash < 3000:
 		return
 	for id in HONEST_ORDER:
-		if Habits.state(id) == Habits.NONE and (id != "H8" or o.cash > 5000):
-			Habits.act(id)
+		if habits.state(id) == habits.NONE and (id != "H8" or o.cash > 5000):
+			habits.act(id)
 			return
 	# every client mapped, every site done
-	if Habits.mapped_count() < root.get_node("Sales").active.size():
-		Habits.act("H11")
+	if habits.mapped_count() < root.get_node("Sales").active.size():
+		habits.act("H11")
 	elif day > 0:
-		Habits.act("H14")
+		habits.act("H14")
 
 
 func _answer(cards: Node, ids: Dictionary) -> void:
@@ -150,7 +150,7 @@ func _answer(cards: Node, ids: Dictionary) -> void:
 
 func _init() -> void:
 	await process_frame
-	Habits = load("res://scripts/habits.gd")
+	habits = load("res://scripts/habits.gd")
 	var c := root.get_node("Campaign")
 	var o := root.get_node("Owner")
 	var cards := root.get_node("Cards")
@@ -229,7 +229,7 @@ func _init() -> void:
 					o.multiple(),
 					str(report.report.get("fired", false)),
 					frames_total,
-					Habits.standard()
+					habits.standard()
 				]
 			)
 		)

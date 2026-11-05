@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # R38 P2: the words of the good habits stay in the 3x5 pixel font charset and in 2013-14 (no AI, no MFA, no long dashes, no brackets).
 
 const OK_CHARS := ".,:;!?-_/()'@#%&+=$<> *"
