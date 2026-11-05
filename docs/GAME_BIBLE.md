@@ -162,6 +162,8 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 
 **Rival habits and good habits (scoped, R38, not built):** see `docs/scope-bad-habits.md`.
 
+**The Big Cheese story arc (R38, built):** Rex Calloway's Big Cheese Technology Group is the story rival. From week 3 to 20 eleven beat cards play in the morning: the Chamber lunch flyer (3), the five-star wall (5), a client gives notice (7), Delia's notebook (10), the client comes back with an inherited mess (11), a bookkeeper's mailbox with two-factor login off (13), the vendor seat audit (15), FIVE STARS FROM NOBODY (17), the free assessment blitz (18), the bad day when the freezer-bag backup fails (19) and Rex selling the book (20). What you learn goes on the rap sheet at four levels (UNKNOWN, RUMOUR, SEEN, PROVEN) and never goes down; it shows on the weekly report and the RIVALS tab. Vic hears rumours at the Chamber lunch, a leaving client tells you the price when you ask who their new IT person is, and from week 6 half of the price and gap poaches are Big Cheese (a new label, never another roll). A letter, a notebook photo or a vendor letter makes a habit PROVEN. Each big discovery ends in the same four-option decision: WIN THE CLIENT, WARN ETHICALLY (a factual letter; on a rumour it is slander: reputation -2 and a counter-rumour card), REPORT TO THE VENDOR (needs PROVEN, pays a credit, Rex retaliates for a few weeks) or IGNORE IT (a later you knew card). In the blitz week a proven item and a Standard of 60 unlock SHOW THE SHEET. Conscience is shown only in words.
+
 **The numbers** that matter: EBITDA, the W-2 ratio (payroll vs revenue), client happiness, reputation. Week 20 is a board review with a valuation: sell, open a second office, or stay independent.
 
 ---

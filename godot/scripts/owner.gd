@@ -2172,6 +2172,8 @@ func apply(fx: Dictionary) -> void:
 		Takeover.visit(self, str(fx.visit))
 	if fx.has("lead"):
 		_leads += int(fx.lead)
+	if fx.has("rival"):
+		Rival.apply_fx(self, fx.rival)
 	Msp.changed.emit()
 
 
@@ -3416,6 +3418,7 @@ func _poach_card(item: Dictionary) -> void:
 				},
 			],
 		}
+		Rival.relabel(self, "poach_price", client)
 		show_card("poach_price")
 		return
 	var gaps := poach_gaps(client)
@@ -3475,6 +3478,7 @@ func _poach_card(item: Dictionary) -> void:
 			{"label": "LET THEM GO", "fx": {"drop_client": client, "left_for": "gaps"}},
 		],
 	}
+	Rival.relabel(self, "poach_gaps", client)
 	show_card("poach_gaps")
 
 
@@ -3568,6 +3572,7 @@ func _winback_card(client: int) -> void:
 			},
 		],
 	}
+	Rival.on_winback(self, client)
 	show_card("winback")
 
 

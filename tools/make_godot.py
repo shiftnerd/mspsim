@@ -20587,6 +20587,8 @@ func apply(fx: Dictionary) -> void:
         Takeover.visit(self, str(fx.visit))
     if fx.has("lead"):
         _leads += int(fx.lead)
+    if fx.has("rival"):
+        Rival.apply_fx(self, fx.rival)
     Msp.changed.emit()
 
 
@@ -21443,6 +21445,7 @@ func _poach_card(item: Dictionary) -> void:
                 {"label": "WISH THEM WELL", "fx": {"drop_client": client, "left_for": "price", "rep": 1}, "text": "You part on good terms. If the cheap service disappoints, they know where to find you."},
             ],
         }
+        Rival.relabel(self, "poach_price", client)
         show_card("poach_price")
         return
     var gaps := poach_gaps(client)
@@ -21456,6 +21459,7 @@ func _poach_card(item: Dictionary) -> void:
             {"label": "LET THEM GO", "fx": {"drop_client": client, "left_for": "gaps"}},
         ],
     }
+    Rival.relabel(self, "poach_gaps", client)
     show_card("poach_gaps")
 
 
@@ -21498,6 +21502,7 @@ func _winback_card(client: int) -> void:
             {"label": "NOT AGAIN, THANKS", "fx": {"gone_clear": client}, "text": "You wish them luck."},
         ],
     }
+    Rival.on_winback(self, client)
     show_card("winback")
 
 
@@ -64990,7 +64995,12 @@ write("scripts/rival.gd", '''extends RefCounted
 # Levels: 0 UNKNOWN, 1 RUMOUR (heard, cannot be used), 2 SEEN (you saw it yourself), 3 PROVEN (a document, photo, log or vendor letter).
 # The beats of the 20 week arc are cards in RivalCards.CARDS. arc_week() queues them, morning() shows them.
 # Ideas only from the blog series the doc credits: no names, scenes or lines from it. 2013-14 text rules apply (3x5 font charset).
-# OWNER OF THIS FILE: the rival/beats agent. Public signatures below are FINAL; fill the TODO bodies.
+# OWNER OF THIS FILE: the rival/beats agent. Public signatures below are FINAL.
+# The beat cards are shown as a COPY (Owner._dynamic["rv_<id>"]) so {rc} (the client of the arc), {rh} (the habit decided) can be filled and
+# gated options (SHOW THE SHEET, REPORT TO THE VENDOR) left out. Their fx key `rival` is applied by apply_fx() (called from Owner.apply).
+
+const Habits := preload("res://scripts/habits.gd")
+const Temptation := preload("res://scripts/temptation.gd")
 
 const LEVELS := ["UNKNOWN", "RUMOUR", "SEEN", "PROVEN"]
 const UNKNOWN := 0
@@ -65174,6 +65184,7 @@ const ARC := {
 	17: "rival_exposed",
 	18: "rival_blitz",
 	19: "rival_badday",
+	20: "rival_end",
 }
 const QUEUE_KEY := "arc_queue"  # Owner.flags: card ids waiting for the next morning
 
@@ -65254,47 +65265,360 @@ static func apply_rap(fx: Array) -> void:
 
 
 # ---- the arc (weeks 3-20) ---------------------------------------------------------------------------------------
+# the evidence a beat card gives by being shown at all (a document, a letter, a forwarded email): rival, habit, level
+const ON_SHOW := {
+	"rival_2fa": [["bigcheese", "R03", 2]],
+	"rival_vendor_audit": [["bigcheese", "R06", 3]],
+	"rival_exposed": [["bigcheese", "R09", 3]],
+}
+# a beat that is followed, the same morning, by the four option decision about this habit
+const DECIDES := {"rival_2fa": "R03", "rival_vendor_audit": "R06", "rival_exposed": "R09"}
+# habits a vendor can act on (REPORT TO THE VENDOR needs PROVEN)
+const VENDOR_HABITS := ["R04", "R06"]
+# habits Vic can hear about at the Chamber lunch (the rest come from visits, notebooks and letters)
+const INTEL_POOL := ["R09", "R10", "R08", "R07", "R06", "R05", "R03", "R01"]
+const INTEL_WEEKS := [3, 6, 9, 12, 14]
+const RELABEL_FROM := 6  # from this week half the price and gap poaches are Big Cheese (the label changes, never the number of rolls)
+const KNEW_AFTER := 4  # weeks after ignoring a SEEN habit that the "you knew" card can come
+const BC := "bigcheese"
+
+
+# true when this client left for Big Cheese (flag set when it was dropped)
+static func defected(client: int) -> bool:
+	return Owner.flags.has("rival_def_%d" % client)
+
+
+# the client the arc is about (Delia's office), -1 until one defects
+static func arc_client() -> int:
+	return int(Owner.flags.get("rival_client", -1))
+
+
+# the client who is least happy and was not called by a rival lately: the one who gives notice in week 7
+static func pick_client() -> int:
+	var best_client := -1
+	var worst := 1000
+	for c in Sales.active:
+		if Campaign.day - int(Owner.flags.get("poached_%d" % int(c), -99)) < 3:
+			continue
+		var m: int = Sales.mood(int(c))
+		if m < worst:
+			worst = m
+			best_client = int(c)
+	return best_client
+
+
 # called from Owner.settle() with the week just finished: queue the beat for NEXT week (so the card comes up in the morning).
-# Only cards that exist are queued; a queued card is shown once (flag arc_<id>).
+# Only cards that exist are queued; a queued beat is shown once (flag arc_<id>). Also runs the slow consequences.
 static func arc_week(owner: Node, week: int) -> void:
+	_consequences(owner, week)
+	if INTEL_WEEKS.has(week):
+		intel(BC)
 	var id: String = str(ARC.get(week + 1, ""))
 	if id == "" or owner.flags.has("arc_" + id) or owner.card_data(id).is_empty():
 		return
-	# TODO(rival agent): conditions per beat (needs a client for rival_defect, only while the habit is unknown, jitter from Difficulty.rng("rival"))
+	if id == "rival_defect" and Sales.active.size() < 2:
+		return  # never take the last clients (the beat is skipped, the arc goes on)
+	_queue(owner, id)
+
+
+static func _queue(owner: Node, entry: String) -> void:
 	var q: Array = owner.flags.get(QUEUE_KEY, [])
-	if not q.has(id):
-		q.append(id)
+	if not q.has(entry):
+		q.append(entry)
 	owner.flags[QUEUE_KEY] = q
 
 
-# called from Owner.begin_day() next to Incident.morning(): show one queued beat card
+# retaliation of the vendor report, the "you knew" card of an ignored habit
+static func _consequences(owner: Node, week: int) -> void:
+	var r := int(owner.flags.get("rival_retaliate", 0))
+	if r > 0 and (week == r + 1 or week == r + 3):
+		Campaign.adjust_rep(-1)
+		Msp.send_text(
+			"Marge",
+			"Someone at the Chamber lunch is telling people we cannot be trusted. Rex, I think."
+		)
+	var keys := []
+	for k in owner.flags:
+		if str(k).begins_with("rival_knew_"):
+			keys.append(str(k))
+	keys.sort()
+	for k in keys:
+		var since := int(owner.flags[k])
+		var habit: String = k.substr("rival_knew_".length())
+		if since <= 0 or week - since < KNEW_AFTER or owner.flags.has("knewdone_" + habit):
+			continue
+		owner.flags["knewdone_" + habit] = week
+		if Difficulty.rng("rival").randf() < 0.6 or week - since >= KNEW_AFTER + 3:
+			_queue(owner, "rival_knew|" + habit)
+
+
+# called from Owner.begin_day() next to Incident.morning(): show one queued beat card (and the decision that follows some of them)
 static func morning(owner: Node) -> void:
 	var q: Array = owner.flags.get(QUEUE_KEY, [])
 	if q.is_empty():
 		return
-	var id := str(q.pop_front())
+	var entry := str(q.pop_front())
 	owner.flags[QUEUE_KEY] = q
+	var parts := entry.split("|")
+	var id := str(parts[0])
+	var arg := str(parts[1]) if parts.size() > 1 else ""
+	if not ARC.values().has(id):
+		show(owner, id, arg)  # a counter-rumour, a "you knew"
+		return
 	owner.flags["arc_" + id] = Campaign.day
-	owner.show_card(id)
+	if not _ready(owner, id):
+		return
+	for rec in ON_SHOW.get(id, []):
+		set_rap(str(rec[0]), str(rec[1]), int(rec[2]))
+	show(owner, id, "")
+	if DECIDES.has(id):
+		show(owner, "rival_decide", str(DECIDES[id]))
+
+
+# the conditions of the client beats; a beat that does not apply is dropped
+static func _ready(owner: Node, id: String) -> bool:
+	var rc := arc_client()
+	match id:
+		"rival_defect":
+			if rc >= 0 and defected(rc):
+				return false  # a Big Cheese poach already took a client: that is this beat
+			rc = pick_client()
+			if rc < 0 or Sales.active.size() < 2:
+				return false
+			owner.flags["rival_client"] = rc
+		"rival_notebook":
+			return rc >= 0 and owner.gone.has(rc) and defected(rc)
+		"rival_takeover":
+			return rc >= 0 and owner.gone.has(rc) and not Sales.active.has(rc)
+	return true
+
+
+# show a card of this file as a copy with the names filled in and the gated options left out
+static func show(owner: Node, id: String, arg: String) -> void:
+	var card: Dictionary = owner.card_data(id).duplicate(true)
+	if card.is_empty():
+		return
+	var names := {"{rc}": "THE OFFICE", "{rh}": "", "{rl}": ""}
+	var rc := arc_client()
+	if rc >= 0 and rc < Msp.CLIENTS.size():
+		names["{rc}"] = str(Msp.CLIENTS[rc].name)
+	if id == "rival_decide" or id == "rival_knew":
+		owner.flags["rival_dh"] = arg
+		names["{rh}"] = str(HABITS.get(arg, {}).get("name", arg)).to_lower()
+		names["{rl}"] = str(HABITS.get(arg, {}).get("text", ""))
+	card = _fill(card, names)
+	var options: Array = card.options
+	for i in range(options.size() - 1, -1, -1):
+		if not _allowed(id, i, arg):
+			options.remove_at(i)
+	card["beat"] = true
+	owner._dynamic["rv_" + id] = card
+	owner.show_card("rv_" + id)
+
+
+static func _fill(v: Variant, names: Dictionary) -> Variant:
+	if v is String:
+		var s: String = v
+		for k in names:
+			s = s.replace(str(k), str(names[k]))
+		return s
+	if v is Array:
+		for i in v.size():
+			v[i] = _fill(v[i], names)
+	elif v is Dictionary:
+		for k in v:
+			v[k] = _fill(v[k], names)
+	return v
+
+
+# which options of a card exist: SHOW THE SHEET needs a proven item and a Standard of 60; REPORT TO THE VENDOR needs PROVEN
+static func _allowed(id: String, index: int, arg: String) -> bool:
+	if id == "rival_blitz" and index == 1:
+		return count(BC, PROVEN) > 0 and Habits.standard() >= 60
+	if id == "rival_decide" and index == 2:
+		return VENDOR_HABITS.has(arg) and best(arg) >= PROVEN
+	return true
+
+
+# ---- fx key `rival` (Owner.apply) ----------------------------------------------------------------------------------
+# ops: tag n / defect (the client leaves for Big Cheese), exit (the exit chat: R11 SEEN), return (back from Big Cheese, takeover pending),
+# scope, mood n, discount [mult, weeks], sign n, ignore habit, decide win|warn|vendor|ignore
+static func apply_fx(owner: Node, ops: Dictionary) -> void:
+	var rc := arc_client()
+	if ops.has("defect") and rc >= 0 and Sales.active.has(rc):
+		owner.drop_client(rc, "price")
+		_tag(owner, rc)
+	if ops.has("tag"):
+		_tag(owner, int(ops.tag))
+	if ops.has("exit"):
+		defect_exit(BC, int(ops.exit) if ops.exit is int or ops.exit is float else rc)
+	if ops.get("return", false) and rc >= 0 and owner.gone.has(rc) and not Sales.active.has(rc):
+		owner.apply({"rejoin": rc, "mood": {str(rc): int(ops.get("mood", 0))}})
+		owner.flags["takeover_pending_%d" % rc] = Campaign.day
+		owner.flags["rival_returned"] = Campaign.day
+	elif ops.has("mood") and rc >= 0 and Sales.active.has(rc):
+		Sales.adjust(rc, int(ops.mood))
+	if ops.get("scope", false) and Sales.active.has(rc):
+		owner.scope_fixed[rc] = true
+	if ops.has("discount") and rc >= 0 and Sales.active.has(rc):
+		owner.discount[rc] = {"mult": float(ops.discount[0]), "weeks": int(ops.discount[1])}
+	if ops.has("sign"):
+		for _i in int(ops.sign):
+			Sales.sign_client(-1)
+	if ops.has("ignore"):
+		_ignore(owner, str(ops.ignore))
+	if ops.has("decide"):
+		_decide(owner, str(ops.decide), str(owner.flags.get("rival_dh", "")))
+
+
+static func _tag(owner: Node, client: int) -> void:
+	owner.flags["bc_%d" % client] = Campaign.day
+	owner.flags["rival_def_%d" % client] = Campaign.day
+	if arc_client() < 0:
+		owner.flags["rival_client"] = client
+	if owner.gone.has(client):
+		owner.gone[client]["rival"] = BC
+
+
+static func _ignore(owner: Node, habit: String) -> void:
+	if habit != "" and best(habit) >= SEEN and not owner.flags.has("rival_knew_" + habit):
+		owner.flags["rival_knew_" + habit] = Campaign.day
+
+
+static func _decide(owner: Node, kind: String, habit: String) -> void:
+	var level := best(habit)
+	owner.flags["rival_decided_" + habit] = kind
+	match kind:
+		"warn":
+			if level >= SEEN:
+				Temptation.change_consc(1)
+				Campaign.adjust_rep(1)
+				owner._leads += 1
+			else:
+				Campaign.adjust_rep(-2)
+				Temptation.change_consc(-1)
+				_queue(owner, "rival_counter")
+				(
+					Msp
+					. send_text(
+						"Marge",
+						"That letter was only a rumour, not something we saw. It reads as slander, and Rex will say so."
+					)
+				)
+		"vendor":
+			owner.flags["rival_retaliate"] = Campaign.day
+		"ignore":
+			_ignore(owner, habit)
 
 
 # ---- channels (other files call these) ----------------------------------------------------------------------------
 # Vic hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
-static func intel(_rival: String) -> String:
-	# TODO(rival agent): pick an unknown habit with Difficulty.rng("rival"), colour it by Owner.vic_plan, set RUMOUR
-	return ""
+# Always draws the same two numbers, so the stream stays in step whatever the player did.
+static func intel(rival: String) -> String:
+	var r := Difficulty.rng("rival")
+	var roll := r.randf()
+	var pick := r.randi()
+	var chance := Sales.vic_skill() - Growth.vic_penalty()
+	chance += (
+		0.1 if Owner.vic_plan == "commission" else (-0.05 if Owner.vic_plan == "salary" else 0.0)
+	)
+	var pool := []
+	for h in INTEL_POOL:
+		if RIVALS.get(rival, {}).get("habits", []).has(h) and rap(rival, str(h)) == UNKNOWN:
+			pool.append(str(h))
+	if pool.is_empty() or roll >= clampf(chance + 0.15, 0.2, 0.9):
+		return ""
+	var habit: String = pool[pick % pool.size()]
+	set_rap(rival, habit, RUMOUR)
+	Msp.send_text(
+		"Vic",
+		(
+			"Heard at the Chamber lunch, only a rumour: %s. %s."
+			% [str(RIVALS[rival].name), str(HABITS[habit].name)]
+		)
+	)
+	return habit
 
 
 # the defect / winback channel: what a client who left for the rival tells you (SEEN) about R11 and friends
-static func defect_exit(_rival: String, _client: int) -> void:
-	# TODO(rival agent): set_rap(rival, "R11", SEEN) and queue the inherited mess for the winback card
-	pass
+static func defect_exit(rival: String, client: int) -> void:
+	set_rap(rival, "R11", SEEN)
+	if rival == BC and client >= 0:
+		Owner.flags["bc_%d" % client] = Campaign.day
 
 
-# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids from the rap sheet
-static func assessment(_rival: String) -> Array:
-	# TODO(sales agent): choose 3 to 5 habits of this rival, honest list
-	return []
+# Owner._poach_card: from week 6 half of the price and gap poaches are Big Cheese (a new label, never another roll), and the exit chat
+# gains ASK WHO THEIR NEW IT PERSON IS. The generator draws once either way, so the stream does not depend on the answer.
+static func relabel(owner: Node, card_id: String, client: int) -> void:
+	if Campaign.day < RELABEL_FROM or Campaign.mode != "owner":
+		return
+	if Difficulty.rng("rival").randf() >= 0.5:
+		return
+	var card: Dictionary = owner._dynamic.get(card_id, {})
+	if card.is_empty():
+		return
+	card["text"] = str(card.text).replace(owner.COMPETITOR, "Big Cheese")
+	var reason := "price" if card_id == "poach_price" else "gaps"
+	for opt in card.options:
+		for fx in _fx_of(opt):
+			if fx.has("drop_client"):
+				fx["rival"] = {"tag": client}
+	(
+		card
+		. options
+		. append(
+			{
+				"label": "WISH THEM WELL AND ASK WHO THEIR NEW IT PERSON IS",
+				"fx":
+				{
+					"drop_client": client,
+					"left_for": reason,
+					"consc": 1,
+					"rival": {"tag": client, "exit": client}
+				},
+				"text":
+				"You ask kindly. The owner tells you, a little proud, and shows you the flyer: EVERYTHING INCLUDED."
+			}
+		)
+	)
+
+
+# every fx dictionary of an option (its fx and the fx of each roll entry)
+static func _fx_of(opt: Dictionary) -> Array:
+	var out := []
+	if opt.has("fx"):
+		out.append(opt.fx)
+	for entry in opt.get("roll", []):
+		out.append(entry[1])
+	return out
+
+
+# Owner._winback_card: a client that left for Big Cheese comes back with the inherited mess (flag takeover_pending_<client>)
+static func on_winback(owner: Node, client: int) -> void:
+	if str(owner.gone.get(client, {}).get("rival", "")) != BC:
+		return
+	owner.flags["takeover_pending_%d" % client] = Campaign.day
+	var card: Dictionary = owner._dynamic.get("winback", {})
+	if not card.is_empty():
+		card["text"] = str(card.text).replace(owner.COMPETITOR, "Big Cheese")
+
+
+# the findings of an assessment of a lead's incumbent (the sales campaign P5 uses it): 3 to 5 habit ids, the ones you know first
+static func assessment(rival: String) -> Array:
+	var all: Array = RIVALS.get(rival, {}).get("habits", []).duplicate()
+	var out := []
+	for level in [PROVEN, SEEN, RUMOUR]:
+		for h in all:
+			if rap(rival, str(h)) == level and out.size() < 5:
+				out.append(str(h))
+	var rest := []
+	for h in all:
+		if not out.has(h):
+			rest.append(str(h))
+	Difficulty.shuffle(rest, "rival_assess")
+	while out.size() < mini(3, all.size()) and not rest.is_empty():
+		out.append(rest.pop_front())
+	return out
 ''')
 
 write("scripts/habits.gd", '''extends RefCounted
@@ -66006,11 +66330,477 @@ write("scripts/rival_cards.gd", '''extends RefCounted
 # the Owner autoload starts (the card dictionaries are shared, so story/strings.txt edits to RivalCards.* show up in both).
 # DAYS places cards like Owner.DAYS: {week: [{"at": 9.5, "card": "id"}]} and Owner.events_on() merges it. Beat cards that Rival.ARC queues
 # need NO DAYS entry; use DAYS only for cards that appear on a fixed morning or time of day.
-# New fx keys (Owner.apply): rap [rival, habit, level], habit id, habit_start id, consc n, skel [id, weeks], visit kind, lead n.
+# New fx keys (Owner.apply): rap [rival, habit, level], habit id, habit_start id, consc n, skel [id, weeks], visit kind, lead n, and
+# rival {ops} (the rival arc: Rival.apply_fx, ops in rival.gd: defect, exit, return, scope, mood, discount, decide, ignore, sign).
+# Rival beat cards are shown by Rival.morning as a copy: {rc} = the client of the arc (Delia's office), {rh} = the habit being decided.
 # The text is editable in story/strings.txt under [RivalCards.CARDS...]. Charset: the 3x5 font, 2013-14, no AI, "two-factor login", no MFA.
 # OWNERS: rival.gd agent (rival_*), temptation agent (temp_*, bill_*), habits agent (habit_*). Add entries, do not change other files.
 
-const DEFAULT_CARDS := {}
+const DEFAULT_CARDS := {
+	"rival_flat":
+	{
+		"speaker": "{sales_owner}",
+		"text":
+		"{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal.",
+		"options":
+		[
+			{
+				"label": "LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)",
+				"fx": {"rap": ["bigcheese", "R11", 1]},
+				"text":
+				"Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
+			},
+			{
+				"label": "PRINT A ONE PAGE COMPARISON ($120)",
+				"need": 120,
+				"fx": {"cash": -120, "habit_start": "H2"},
+				"text":
+				"Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
+			},
+			{
+				"label": "DROP YOUR PRICE TO MATCH",
+				"fx": {"price": -0.10, "skel": ["temp_price", 6], "consc": -2},
+				"text":
+				"Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
+			},
+			{
+				"label": "IGNORE HIM, HE WILL BE GONE BY JULY",
+				"fx": {},
+				"text": "Garrison says he has met a hundred Rexes. Rex is not gone by July."
+			},
+		],
+	},
+	"rival_wall":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"Look at Big Cheese on Yowl. Forty-one five-star reviews. I clicked through them: thirty-eight come from accounts that have never reviewed anything else, and four were posted the same afternoon. There is a new billboard on the county road too: WE DO IT ALL FOR $39 A SEAT. BOOKED SOLID.",
+		"options":
+		[
+			{
+				"label": "HAVE VIC LOOK AT WHO WROTE THEM",
+				"fx": {"rap": ["bigcheese", "R09", 1]},
+				"text":
+				"Vic asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour."
+			},
+			{
+				"label": "ASK THREE HAPPY CLIENTS FOR A REAL REVIEW",
+				"fx": {"rap": ["bigcheese", "R09", 1], "rep": 1, "consc": 1, "owner_hours": 1},
+				"text":
+				"Three honest reviews arrive in a week. They are not five stars every time. They mention names and dates, which is how you can tell."
+			},
+			{
+				"label": "PAINT A BILLBOARD OF YOUR OWN ($600)",
+				"need": 600,
+				"fx": {"cash": -600, "lead": 2},
+				"text":
+				"The sign painter asks what to write. You say: WE TEST OUR BACKUPS. He asks if that is all. It is all."
+			},
+			{
+				"label": "IGNORE IT, REVIEWS DO NOT PAY THE BILLS",
+				"fx": {},
+				"text": "Garrison nods. Vic frowns at the billboard every time he drives past it."
+			},
+		],
+	},
+	"rival_defect":
+	{
+		"speaker": "Marge",
+		"text":
+		"{rc} gave notice this morning. They are moving to Big Cheese. Their owner liked the $39 a seat and the free pizza on Fridays. Delia, the office manager, did not look at me when she handed me the letter.",
+		"options":
+		[
+			{
+				"label": "MATCH THE PRICE FOR 8 WEEKS (15 PERCENT OFF)",
+				"fx":
+				{
+					"consc": -1,
+					"skel": ["temp_price", 8],
+					"rival": {"discount": [0.85, 8], "mood": 6}
+				},
+				"text": "They stay. You now run their office at a loss and everyone knows it."
+			},
+			{
+				"label": "SHOW THEM WHAT IS NOT IN THE FLAT PRICE ($250)",
+				"need": 250,
+				"roll":
+				[
+					[
+						0.45,
+						{"cash": -250, "rival": {"mood": 10}},
+						"You build the page with them: backups, patching, the 2 a.m. calls. The owner nods and says he will keep you."
+					],
+					[
+						0.55,
+						{"cash": -250, "rival": {"defect": true}},
+						"You build the page with them: backups, patching, the 2 a.m. calls. The owner nods and says he will think about it. He thinks about it all the way to Big Cheese."
+					],
+				],
+			},
+			{
+				"label": "WISH THEM WELL AND ASK FOR AN EXIT CHAT",
+				"fx":
+				{
+					"consc": 1,
+					"rap": ["bigcheese", "R11", 2],
+					"rival": {"defect": true, "exit": true}
+				},
+				"text":
+				"You hand over a clean folder of passwords and diagrams and say the door stays open. Delia puts your card in her notebook."
+			},
+			{
+				"label": "FIRE BACK: TELL THEM BIG CHEESE LOSES CLIENTS",
+				"fx": {"rep": -2, "consc": -1, "rival": {"defect": true}},
+				"text":
+				"It is true as far as you know, which is not very far. The owner stops listening."
+			},
+		],
+	},
+	"rival_notebook":
+	{
+		"speaker": "Delia Pruitt",
+		"text":
+		"It's Delia from {rc}. I have a notebook. Since April the server went slow on the 3rd, the 11th, the 17th, and twice on a Monday. I wrote it all down with the date. Rex says I should stop worrying. Would you like to see it?",
+		"options":
+		[
+			{
+				"label": "YES. COME IN AND BRING THE NOTEBOOK",
+				"fx":
+				{
+					"rap": [["bigcheese", "R17", 2], ["bigcheese", "R16", 2]],
+					"habit_start": "H12",
+					"consc": 1
+				},
+				"text":
+				"She reads you fourteen entries. Three of them line up with a backup job that ran at 2:30 on the night the clocks moved. She is the only person in that office who has noticed anything."
+			},
+			{
+				"label": "ASK HER TO PHOTOGRAPH IT FOR YOUR FILE",
+				"fx": {"rap": [["bigcheese", "R16", 3], ["bigcheese", "R17", 3]]},
+				"text": "Eight photos arrive by text. Your file is now a lot bigger than Rex's."
+			},
+			{
+				"label": "TELL HER TO CANCEL BIG CHEESE NOW",
+				"fx": {"rep": -1, "consc": -1},
+				"text":
+				"You are not their IT person. Delia pauses, then says she will let you know."
+			},
+			{
+				"label": "THANK HER AND STAY OUT OF IT",
+				"fx": {"rap": ["bigcheese", "R17", 2], "rival": {"ignore": "R17"}},
+				"text": "Probably wise. Delia thanks you and goes back to writing."
+			},
+		],
+	},
+	"rival_takeover":
+	{
+		"speaker": "{tech}",
+		"text":
+		"{rc} wants to come back. Delia says Rex has not returned a call in nine days and the owner has a bad feeling about the black box in the closet. I say: before we say yes, I want to see what they left behind.",
+		"options":
+		[
+			{
+				"label": "SEND DAN FOR A TAKEOVER ASSESSMENT ($300, 4 HOURS)",
+				"need": 300,
+				"fx":
+				{
+					"cash": -300,
+					"owner_hours": 4,
+					"habit_start": "H10",
+					"visit": "takeover",
+					"rival": {"return": true, "mood": 4}
+				},
+				"text":
+				"Dan takes a camera, a flashlight and a clipboard. He is very quiet on the drive back."
+			},
+			{
+				"label": "QUOTE A FIXED PRICE CLEANUP ($1,800)",
+				"roll":
+				[
+					[
+						0.7,
+						{"cash": 900, "rival": {"return": true}},
+						"They accept the number. The mess turns out to be about the size you guessed. You clear nine hundred dollars and a long weekend."
+					],
+					[
+						0.3,
+						{"cash": -600, "rival": {"return": true}},
+						"Fixed price on an unknown mess. Behind the closet door is a second mess. I stare at you like you walked into a river."
+					],
+				],
+			},
+			{
+				"label": "ONLY SIGN WITH A CLEAN CONTRACT AND A TWO WEEK SCOPE FIRST",
+				"fx": {"consc": 1, "rival": {"return": true, "scope": true}},
+				"text": "They sign. You spend the first two weeks on what is actually there."
+			},
+			{
+				"label": "PASS, WE ARE FULL",
+				"fx": {},
+				"text": "Delia says she understands. Her voice says she hoped."
+			},
+		],
+	},
+	"rival_2fa":
+	{
+		"speaker": "Marge",
+		"text":
+		"A bookkeeper at one of Big Cheese's clients forwarded us a fraud email by mistake. Her owner's mailbox was read for days because two-factor login was switched off for convenience. Rex told them it was a nuisance. She has the sent folder to prove it, and she is not happy.",
+		"options":
+		[
+			{
+				"label": "CHECK TWO-FACTOR LOGIN FOR OUR OWN CLIENTS ($200)",
+				"need": 200,
+				"fx": {"cash": -200, "habit_start": "H4", "consc": 1},
+				"text":
+				"Alan makes a list: who has it on, who has it off, who said it was too much trouble. Eleven names. Nine are fixed by Friday."
+			},
+			{
+				"label": "CALL THE BOOKKEEPER AND OFFER A FREE LOOK",
+				"fx": {"lead": 1, "owner_hours": 2},
+				"text":
+				"She does not switch yet, but she keeps your number on the monitor frame. Rex's number is in a drawer."
+			},
+			{
+				"label": "WRITE IT ON THE RAP SHEET AND MOVE ON",
+				"fx": {},
+				"text": "Marge puts the date next to the line. She underlines it twice."
+			},
+		],
+	},
+	"rival_vendor_audit":
+	{
+		"speaker": "Marge",
+		"text":
+		"A letter from WebWoot Security landed in a client's inbox by mistake, and the client forwarded it to us. Big Cheese was billed for 212 seats it never reported, and its antivirus is suspended until the weekend. Our phone started ringing at 6 tonight. Three of them are Big Cheese clients.",
+		"options":
+		[
+			{
+				"label": "ANSWER EVERY CALL TONIGHT, NO SALES PITCH",
+				"fx": {"owner_hours": 4, "rep": 1, "consc": 1, "mood_all": 3},
+				"text":
+				"You tell each one the same thing: turn it off, do not click anything, call your own IT person. Two of them say thank you in a tone you remember."
+			},
+			{
+				"label": "OFFER A FREE SECURITY CHECK TO THE CALLERS ($300)",
+				"need": 300,
+				"fx": {"cash": -300, "lead": 3, "owner_hours": 3},
+				"text":
+				"Dan and Alan split the checks across Saturday. Three offices now have a list in their hands, and it is not a long list."
+			},
+			{
+				"label": "KEEP QUIET, THIS IS NOT OUR FIGHT",
+				"fx": {},
+				"text":
+				"The phone stops by nine. Marge puts the letter in the folder labelled RAP SHEET."
+			},
+		],
+	},
+	"rival_exposed":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"A LabRat Nerds thread went up overnight called FIVE STARS FROM NOBODY, and the county paper has a blurb on page six: forty-one reviews, thirty-eight from accounts with no other history. Rex deleted the thread by noon. The Chamber lunch was very quiet today.",
+		"options":
+		[
+			{
+				"label": "STAY OUT OF IT AND LET THE PAPER DO ITS JOB",
+				"fx": {"consc": 1},
+				"text":
+				"Garrison says that is the grown up answer. Vic says it is also the boring one."
+			},
+			{
+				"label": "SEND THE REPORTER OUR OWN HONEST REVIEWS",
+				"fx": {"rep": 2, "owner_hours": 1},
+				"text":
+				"Six real reviews, with names and dates and one complaint about parking. The reporter prints the parking one and it does you a lot of good."
+			},
+			{
+				"label": "QUOTE THE PAPER TO EVERY PROSPECT",
+				"fx": {"lead": 2, "consc": -1},
+				"text":
+				"It works. It works a little too well, and Alan says he is not comfortable being the second loudest voice in the room."
+			},
+		],
+	},
+	"rival_blitz":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. Vic has three prospects who have already heard it, and two of our clients got the flyer.",
+		"options":
+		[
+			{
+				"label": "CALL EVERY CLIENT BEFORE THEY CALL YOU",
+				"fx": {"owner_hours": 4, "mood_all": 4},
+				"text":
+				"You make eleven calls in one afternoon. Nine are short. Two want to talk about everything else, which is what you hoped for."
+			},
+			{
+				"label": "SHOW THE SHEET: WHAT YOU CAN PROVE, WITH DATES, NO GOSSIP",
+				"fx": {"owner_hours": 2, "mood_all": 6, "rep": 2, "consc": 1},
+				"text":
+				"Three pages. Each line says what, when, and where the paper is. No names but his. Rex's rumour dies at the first meeting that has paper in it."
+			},
+			{
+				"label": "OFFER A LOYALTY PRICE FOR 12 WEEKS (10 PERCENT OFF)",
+				"fx": {"discount": {"mult": 0.9, "weeks": 12}, "mood_all": 3},
+				"text":
+				"Most of them stay. Marge sighs at the margin and says that is what she gets for asking."
+			},
+			{
+				"label": "RELY ON YOUR REPUTATION",
+				"fx": {},
+				"text":
+				"Garrison says we are good enough that we do not need to do anything. That is the sentence people say before they find out."
+			},
+		],
+	},
+	"rival_badday":
+	{
+		"speaker": "Marge",
+		"text":
+		"Our phone has not stopped. Five Big Cheese clients called between 6 and 8. One had a machine encrypted, the freezer bag was found with a dead drive, and Rex's own phone rings out. They all want to know if we can take them tomorrow.",
+		"options":
+		[
+			{
+				"label": "TAKE THEM ALL TOMORROW",
+				"fx": {"burnout": 12, "social_all": -1, "rival": {"sign": 5}},
+				"text": "You say yes five times. Dan stares at the whiteboard for a while."
+			},
+			{
+				"label": "ASSESS EACH ONE FIRST AND TAKE THE BEST THREE",
+				"fx": {"burnout": 4, "consc": 1, "visit": "takeover", "rival": {"sign": 3}},
+				"text":
+				"Three signed, two sent to a friendly MSP in the next county with a handshake. Alan calls it triage."
+			},
+			{
+				"label": "HELP THEM RECOVER WITHOUT TAKING THEM ($600)",
+				"need": 600,
+				"fx": {"cash": -600, "rep": 3, "consc": 2, "owner_hours": 6},
+				"text":
+				"You spend a Saturday recovering what you can. Word gets around the Chamber of Commerce by Monday."
+			},
+			{
+				"label": "PASS, WE HAVE OUR OWN PROBLEMS",
+				"fx": {},
+				"text": "The phones stop eventually."
+			},
+		],
+	},
+	"rival_decide":
+	{
+		"speaker": "Marge",
+		"text":
+		"You now know something about Big Cheese: {rh}. {rl} A client of theirs, and a few prospects who sit at the same Chamber lunch, would want to hear it. What do you do with it?",
+		"options":
+		[
+			{
+				"label": "WIN THE CLIENT: USE IT IN YOUR OWN TALK, HONESTLY",
+				"roll":
+				[
+					[
+						0.7,
+						{"owner_hours": 2, "lead": 2, "rep": 1, "rival": {"decide": "win"}},
+						"You do not name Rex. You print a page: here is what I would check in your office. Two owners take the page home. One calls on Thursday."
+					],
+					[
+						0.3,
+						{"owner_hours": 2, "rival": {"decide": "win"}},
+						"The owner is loyal to a friendly man who sponsors the Little League shirts. He thanks you for the page and uses it as a coaster."
+					],
+				],
+			},
+			{
+				"label": "WARN THEM: A FACTUAL LETTER, ONLY WHAT YOU SAW",
+				"fx": {"owner_hours": 1, "rival": {"decide": "warn"}},
+				"text":
+				"The letter goes out to that one client only. It says what, when and how you know."
+			},
+			{
+				"label": "REPORT IT TO THE VENDOR",
+				"roll":
+				[
+					[
+						0.7,
+						{"cash": 300, "rep": 1, "rival": {"decide": "vendor"}},
+						"The vendor's compliance desk writes back in four days. A credit lands on your account and an invitation to the partner breakfast."
+					],
+					[
+						0.3,
+						{"rival": {"decide": "vendor"}},
+						"The vendor thanks you for your concern. Nothing else happens, which Alan says is the usual result."
+					],
+				],
+			},
+			{
+				"label": "IGNORE IT",
+				"fx": {"rival": {"decide": "ignore"}},
+				"text": "Marge puts it in the folder. The folder is getting thick."
+			},
+		],
+	},
+	"rival_counter":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"Rex told the whole Chamber lunch you are going around saying things about him. It is half true, which is why it travels. Two prospects went quiet this week.",
+		"options":
+		[
+			{
+				"label": "WRITE A SHORT, POLITE CORRECTION",
+				"fx": {"owner_hours": 1, "consc": 1},
+				"text":
+				"Four lines, signed with your name. It does not undo the damage, but it stops it growing."
+			},
+			{
+				"label": "SAY NOTHING, IT WILL PASS",
+				"fx": {"rep": -1},
+				"text": "It passes, slowly, and takes a prospect or two with it."
+			},
+		],
+	},
+	"rival_knew":
+	{
+		"speaker": "Marge",
+		"text":
+		"One of Big Cheese's clients was hurt by exactly the thing you had written down: {rh}. Somebody at the Chamber lunch says you knew. I did not say anything. I just looked at the folder.",
+		"options":
+		[
+			{
+				"label": "I SHOULD HAVE SAID SOMETHING",
+				"fx": {"rep": -1, "consc": -1},
+				"text": "Marge nods once. It is the worst possible answer and the true one."
+			},
+			{
+				"label": "SEND THEM A FREE CHECK NOW ($200)",
+				"need": 200,
+				"fx": {"cash": -200, "rep": -1},
+				"text":
+				"It is late, but it is something. They do not mention it again, which is a kind of thanks."
+			},
+		],
+	},
+	"rival_end":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"Big Cheese sold the book to an outfit from out of town. Rex shook every hand at the Chamber lunch and said he was going to spend more time with his family. A painter was on the county road billboard by Tuesday. It says COMING SOON.",
+		"options":
+		[
+			{
+				"label": "RAISE A COFFEE TO REX",
+				"fx": {"consc": 1},
+				"text": "Garrison says every town needs one. Alan says every town only needs one."
+			},
+			{
+				"label": "PUT HIS FLYER IN THE DRAWER",
+				"fx": {},
+				"text": "EVERYTHING INCLUDED. You still do not know what everything was."
+			},
+		],
+	},
+}
 static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 
 const DEFAULT_DAYS := {}
