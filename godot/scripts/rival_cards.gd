@@ -495,11 +495,11 @@ const DEFAULT_CARDS := {
 				"The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true."
 			},
 			{
-				"label": "CHANGE VENDORS, THIS IS ANNOYING ($800)",
+				"label": "CHANGE VENDORS, INTRO RATE ($800 TO SWITCH)",
 				"need": 800,
-				"fx": {"cash": -800, "weekly": -15, "consc": 1},
+				"fx": {"cash": -800, "vendor_switch": true, "consc": 1},
 				"text":
-				"Switching costs a week of grumbling. The new vendor audits you too, but kindly."
+				"The new rep is delighted. $35 a week off for the first three months, then list price. The paperwork starts Monday."
 			},
 		],
 	},

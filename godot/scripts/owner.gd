@@ -2176,6 +2176,8 @@ func apply(fx: Dictionary) -> void:
 		Temptation.apply_skel(fx.skel)
 	if fx.has("come_clean"):
 		Temptation.come_clean(str(fx.come_clean))  # R38: own up to a skeleton before its bill
+	if fx.get("vendor_switch", false):
+		Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
 	if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
 		Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
 	if fx.has("visit"):

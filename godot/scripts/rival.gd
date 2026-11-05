@@ -419,6 +419,8 @@ static func show(owner: Node, id: String, arg: String) -> void:
 	card = _fill(card, names)
 	if id == Temptation.CLEAN_CARD:
 		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
+	if id == "temp_seats":
+		card = Temptation.dress_seats(owner, card)  # Marge warns after the first vendor switch
 	var options: Array = card.options
 	for i in range(options.size() - 1, -1, -1):
 		if not _allowed(id, i, arg):

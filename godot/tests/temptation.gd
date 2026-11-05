@@ -53,7 +53,7 @@ func _init() -> void:
 	c.day = 15
 	t.week(o)
 	_check(t.folder_count() == 0, "the bill leaves the folder on week 15")
-	_check(o.cash == cash0 - 1100, "and costs $1900")
+	_check(o.cash == cash0 - 1100, "and costs $1100")
 	_clear(cards)
 
 	# ---- a drawn due date stays in the documented range and is deterministic with the seed
@@ -143,7 +143,7 @@ func _init() -> void:
 	_fresh(c, cards, 8)
 	t.add_skeleton("temp_seats", 1)
 	var normal: int = t.bill_size(o.skel[0])
-	_check(normal == 1100, "the normal bill is 1900")
+	_check(normal == 1100, "the normal bill is 1100")
 
 	# ---- the eight cards and their bills exist, and the shortcut seeds the skeleton
 	var ids: Array = t.BILLS.keys()
@@ -183,7 +183,7 @@ func _init() -> void:
 	c.day = int(o.skel[0].due)
 	var cash1: int = o.cash
 	t.week(o)
-	_check(o.cash == cash1 - 1100 and o.weekly_extra == w0 + 8, "the bill: $1900 and the saving gone plus a cold vendor")
+	_check(o.cash == cash1 - 1100 and o.weekly_extra == w0 + 8, "the bill: $1100 and the saving gone plus a cold vendor")
 	_check(cards.is_open and not cards.text.contains("{") and cards.text.contains("$1,100"), "the bill card is filled in: " + cards.text.substr(0, 60))
 	cards.pick(0)
 	_check(t.consc() == -1, "owning up to the bill gives a point back")
@@ -288,6 +288,28 @@ func _init() -> void:
 	o.flags["vendor_cold"] = 12
 	_check(not t.vendor_rebate(o), "a vendor that caught you: no rebate")
 	_clear(cards)
+
+	# ---- a vendor switch: the intro rate now, the overlapping invoice next week, list price after 13 weeks, Marge warns the second time
+	_fresh(c, cards, 10)
+	var seats_card := {"text": "WebWoot sent the form."}
+	_check(not str(t.dress_seats(o, seats_card.duplicate()).text).contains("Marge"), "no warning before the first switch")
+	var wv: int = o.weekly_extra
+	var cash4: int = o.cash
+	t.switch_vendor(o)
+	_clear(cards)
+	_check(o.weekly_extra == wv - t.PROMO_SAVE and int(o.flags.switches) == 1 and o.flags.timed.size() == 2, "the intro rate saves %d a week and two costs are queued" % t.PROMO_SAVE)
+	c.day = 11
+	t.week(o)
+	_check(o.cash == cash4 - t.OVERLAP and o.flags.timed.size() == 1, "next week both vendors bill")
+	_clear(cards)
+	c.day = 10 + t.PROMO_WEEKS - 1
+	t.week(o)
+	_check(o.weekly_extra == wv - t.PROMO_SAVE, "the intro rate still runs in week 12 of it")
+	c.day = 10 + t.PROMO_WEEKS
+	t.week(o)
+	_check(o.weekly_extra == wv + t.FULL_EXTRA and o.flags.timed.is_empty(), "after 13 weeks the price is list price, above the old one")
+	_clear(cards)
+	_check(str(t.dress_seats(o, seats_card.duplicate()).text).contains("Marge:"), "Marge warns on the next vendor card")
 
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

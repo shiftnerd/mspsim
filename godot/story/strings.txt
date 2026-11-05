@@ -21274,11 +21274,11 @@ The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it 
 
 # RivalCards > CARDS > temp_seats > options > 2 > label
 [RivalCards.CARDS.temp_seats.options.2.label]
-CHANGE VENDORS, THIS IS ANNOYING ($800)
+CHANGE VENDORS, INTRO RATE ($800 TO SWITCH)
 
 # RivalCards > CARDS > temp_seats > options > 2 > text
 [RivalCards.CARDS.temp_seats.options.2.text]
-Switching costs a week of grumbling. The new vendor audits you too, but kindly.
+The new rep is delighted. $35 a week off for the first three months, then list price. The paperwork starts Monday.
 
 # RivalCards > CARDS > temp_reboot > speaker
 [RivalCards.CARDS.temp_reboot.speaker]

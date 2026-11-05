@@ -20631,6 +20631,8 @@ func apply(fx: Dictionary) -> void:
         Temptation.apply_skel(fx.skel)
     if fx.has("come_clean"):
         Temptation.come_clean(str(fx.come_clean))  # R38: own up to a skeleton before its bill
+    if fx.get("vendor_switch", false):
+        Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
     if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
         Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
     if fx.has("visit"):
@@ -66705,6 +66707,8 @@ static func show(owner: Node, id: String, arg: String) -> void:
 	card = _fill(card, names)
 	if id == Temptation.CLEAN_CARD:
 		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
+	if id == "temp_seats":
+		card = Temptation.dress_seats(owner, card)  # Marge warns after the first vendor switch
 	var options: Array = card.options
 	for i in range(options.size() - 1, -1, -1):
 		if not _allowed(id, i, arg):
@@ -67804,6 +67808,12 @@ const WEEKLY_HONEST := 1  # honest choices raise the conscience by at most this 
 const VENDOR_COLD := 8  # a vendor that caught you stops the partner discount: this much more a week
 const REBATE := 400  # a clean record earns a vendor partner rebate (one time, cash)
 const REBATE_FROM := 16  # ... from the week the shortcut would have been audited
+const PROMO_WEEKS := 13  # a new vendor's intro rate lasts this long (about three months), then list price
+const PROMO_SAVE := 35  # weekly saving while the intro rate runs
+const FULL_EXTRA := 10  # list price is this much a week above what the old vendor charged
+const OVERLAP := 300  # the old and the new invoice both come in the first month
+const SWITCH_HOURS := 3  # the owner's migration time
+const SWITCH_MOOD := -3  # the agents go back on every PC
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
@@ -68156,7 +68166,8 @@ static func week(owner: Node) -> void:
 		if int(sk.get("due", NO_DATE)) <= Campaign.day:
 			owner.skel.erase(sk)
 			bill(owner, sk)
-	vendor_rebate(owner)
+    _timed(owner)
+    vendor_rebate(owner)
 	if (
 		folder_count() >= 2
 		and Campaign.day - int(owner.flags.get("clean_offer", -99)) >= CLEAN_EVERY
@@ -68167,6 +68178,38 @@ static func week(owner: Node) -> void:
 		if not q.has(CLEAN_CARD):
 			q.append(CLEAN_CARD)
 		owner.flags["arc_queue"] = q
+
+
+# a vendor switch (fx vendor_switch): the pitch is the intro rate; the migration, the overlapping invoice and the day the intro rate ends are
+# not on the card. They come later through Owner.flags["timed"] (see _timed). Marge warns after the first time (dress_seats).
+static func switch_vendor(owner: Node) -> void:
+    owner.flags["switches"] = int(owner.flags.get("switches", 0)) + 1
+    owner.weekly_extra -= PROMO_SAVE
+    var timed: Array = owner.flags.get("timed", [])
+    var overlap := OVERLAP / 2 if Difficulty.cozy_on() else OVERLAP
+    timed.append({"due": Campaign.day + 1, "cash": -overlap, "text": "BOTH VENDORS BILLED THIS MONTH: %s. Nobody cancelled the old seats in time." % owner.money(overlap)})
+    timed.append({"due": Campaign.day + PROMO_WEEKS, "weekly": PROMO_SAVE + FULL_EXTRA, "text": "THE INTRO RATE ENDED. The new vendor is on list price, a little above the old one."})
+    owner.flags["timed"] = timed
+    owner.apply({"owner_hours": SWITCH_HOURS, "mood_all": SWITCH_MOOD})
+
+
+# the timed adjustments that have come due: {due, cash, weekly, text}
+static func _timed(owner: Node) -> void:
+    var timed: Array = owner.flags.get("timed", [])
+    for t in timed.duplicate():
+        if int(t.get("due", NO_DATE)) <= Campaign.day:
+            timed.erase(t)
+            owner.cash += int(t.get("cash", 0))
+            owner.weekly_extra += int(t.get("weekly", 0))
+            Hints.toast(str(t.get("text", "")), 5.0)
+    owner.flags["timed"] = timed
+
+
+# Marge warns once the player has switched vendors before: the card text gets her line
+static func dress_seats(owner: Node, card: Dictionary) -> Dictionary:
+    if int(owner.flags.get("switches", 0)) > 0:
+        card["text"] = str(card.text) + " Marge: Last time we switched it ate a week of your time, two invoices at once, and the cheap rate ended. Do the whole sum first."
+    return card
 
 
 # a clean record (conscience not below zero, nothing in the folder, the vendor never caught you) earns one partner rebate from week
@@ -69447,11 +69490,11 @@ const DEFAULT_CARDS := {
 				"The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true."
 			},
 			{
-				"label": "CHANGE VENDORS, THIS IS ANNOYING ($800)",
+				"label": "CHANGE VENDORS, INTRO RATE ($800 TO SWITCH)",
 				"need": 800,
-				"fx": {"cash": -800, "weekly": -15, "consc": 1},
+				"fx": {"cash": -800, "vendor_switch": true, "consc": 1},
 				"text":
-				"Switching costs a week of grumbling. The new vendor audits you too, but kindly."
+				"The new rep is delighted. $35 a week off for the first three months, then list price. The paperwork starts Monday."
 			},
 		],
 	},
