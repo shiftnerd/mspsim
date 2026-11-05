@@ -186,6 +186,19 @@ func _init() -> void:
 	_check(not s._music.playing, "stop_music stops it")
 	s.silent = true
 
+	# ---- muting cuts a sound that is already playing, not only the new ones
+	var ringing := AudioStreamPlayer.new()
+	s.add_child(ringing)
+	s._players.append(ringing)
+	ringing.stream = s.stream("ui_pick")
+	ringing.play()
+	_check(ringing.playing, "a sound is playing before the mute")
+	s.set_muted(true)
+	_check(not ringing.playing, "muting stops the sound that was already playing")
+	s.muted = false
+	s._players.erase(ringing)
+	ringing.queue_free()
+
 	# ---- settings file
 	s.volume = 0.4
 	s.music_volume = 0.1

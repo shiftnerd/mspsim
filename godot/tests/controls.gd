@@ -105,5 +105,13 @@ func _init() -> void:
 	await process_frame
 	await process_frame
 	_check(seen == ["down", "up"], "events sent through Input reach a handler as nav: %s" % str(seen))
+	# ---- run is bound to Shift both as a physical key and as a logical key (macOS reports modifiers by their logical key)
+	var phys := false
+	var logical := false
+	for ev in InputMap.action_get_events("run"):
+		if ev is InputEventKey:
+			phys = phys or (ev.physical_keycode == KEY_SHIFT and ev.keycode == KEY_NONE)
+			logical = logical or (ev.keycode == KEY_SHIFT and ev.physical_keycode == KEY_NONE)
+	_check(phys and logical, "run listens for Shift by physical and by logical key")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

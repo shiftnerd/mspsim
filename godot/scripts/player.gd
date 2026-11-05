@@ -490,7 +490,7 @@ func _physics_process(delta: float) -> void:
 	_roll.update(self, delta)
 	var locked: bool = Game.busy
 	var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
-	var running := Input.is_action_pressed(_a("run"))
+	var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Input.is_key_pressed(KEY_SHIFT))  # the second test is for macOS
 	var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
 	var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 

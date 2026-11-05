@@ -408,6 +408,9 @@ func clear_log() -> void:
 # ---- settings --------------------------------------------------------------------------------------------------
 func set_muted(on: bool) -> void:
 	muted = on
+	if on:
+		for p: AudioStreamPlayer in _players:  # a sound already playing is cut too, not only the new ones
+			p.stop()
 	_apply_music()
 	save_settings()
 	settings_changed.emit()

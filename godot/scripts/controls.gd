@@ -122,6 +122,10 @@ func ensure() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = code
 			InputMap.action_add_event(action, ev)
+			if code == KEY_SHIFT:  # macOS reports the modifier keys by their logical key: bind that too (either shift, any layout)
+				var logical := InputEventKey.new()
+				logical.keycode = code
+				InputMap.action_add_event(action, logical)
 		for button in spec[1]:
 			var pad := InputEventJoypadButton.new()
 			pad.button_index = button

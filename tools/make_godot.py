@@ -28331,6 +28331,9 @@ func clear_log() -> void:
 # ---- settings --------------------------------------------------------------------------------------------------
 func set_muted(on: bool) -> void:
     muted = on
+    if on:
+        for p: AudioStreamPlayer in _players:  # a sound already playing is cut too, not only the new ones
+            p.stop()
     _apply_music()
     save_settings()
     settings_changed.emit()
@@ -54806,7 +54809,7 @@ func _physics_process(delta: float) -> void:
     _roll.update(self, delta)
     var locked: bool = Game.busy
     var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
-    var running := Input.is_action_pressed(_a("run"))
+    var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Input.is_key_pressed(KEY_SHIFT))  # the second test is for macOS
     var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
     var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 
@@ -65394,6 +65397,10 @@ func ensure() -> void:
             var ev := InputEventKey.new()
             ev.physical_keycode = code
             InputMap.action_add_event(action, ev)
+            if code == KEY_SHIFT:  # macOS reports the modifier keys by their logical key: bind that too (either shift, any layout)
+                var logical := InputEventKey.new()
+                logical.keycode = code
+                InputMap.action_add_event(action, logical)
         for button in spec[1]:
             var pad := InputEventJoypadButton.new()
             pad.button_index = button
