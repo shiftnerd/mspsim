@@ -43,8 +43,8 @@ func _init() -> void:
 	)
 	var sk: Dictionary = o.skel[0]
 	_check(
-		int(sk.due) == 15 and str(sk.class) == "vendor" and int(sk.size) == 1900,
-		"due week 15, class vendor, size 1900"
+		int(sk.due) == 15 and str(sk.class) == "vendor" and int(sk.size) == 1100,
+		"due week 15, class vendor, size 1100"
 	)
 	var cash0: int = o.cash
 	c.day = 14
@@ -53,7 +53,7 @@ func _init() -> void:
 	c.day = 15
 	t.week(o)
 	_check(t.folder_count() == 0, "the bill leaves the folder on week 15")
-	_check(o.cash == cash0 - 1900, "and costs $1900")
+	_check(o.cash == cash0 - 1100, "and costs $1900")
 	_clear(cards)
 
 	# ---- a drawn due date stays in the documented range and is deterministic with the seed
@@ -143,7 +143,7 @@ func _init() -> void:
 	_fresh(c, cards, 8)
 	t.add_skeleton("temp_seats", 1)
 	var normal: int = t.bill_size(o.skel[0])
-	_check(normal == 1900, "the normal bill is 1900")
+	_check(normal == 1100, "the normal bill is 1900")
 
 	# ---- the eight cards and their bills exist, and the shortcut seeds the skeleton
 	var ids: Array = t.BILLS.keys()
@@ -183,8 +183,8 @@ func _init() -> void:
 	c.day = int(o.skel[0].due)
 	var cash1: int = o.cash
 	t.week(o)
-	_check(o.cash == cash1 - 1900 and o.weekly_extra == w0 + 15, "the bill: $1900 and the saving gone plus a cold vendor")
-	_check(cards.is_open and not cards.text.contains("{") and cards.text.contains("$1,900"), "the bill card is filled in: " + cards.text.substr(0, 60))
+	_check(o.cash == cash1 - 1100 and o.weekly_extra == w0 + 8, "the bill: $1900 and the saving gone plus a cold vendor")
+	_check(cards.is_open and not cards.text.contains("{") and cards.text.contains("$1,100"), "the bill card is filled in: " + cards.text.substr(0, 60))
 	cards.pick(0)
 	_check(t.consc() == -1, "owning up to the bill gives a point back")
 	_clear(cards)
@@ -241,7 +241,7 @@ func _init() -> void:
 	_check(int(o.skel[0].due) == 99 and o.weekly_extra == w1 - 27, "yes to everything: premium down, no date")
 	t.claim(o)
 	_check(t.folder_count() == 0 and o.weekly_extra == w1, "a claim fires the bill and the premium is true again")
-	_check(cards.is_open and cards.text.contains("$4,000"), "the insurer card quotes the bill")
+	_check(cards.is_open and cards.text.contains("$1,800"), "the insurer card quotes the bill")
 	_clear(cards)
 	t.claim(o)
 	_check(not cards.is_open, "no skeleton, no bill")
@@ -261,10 +261,10 @@ func _init() -> void:
 	_check(o.flags.get("arc_queue", []).has("temp_come_clean"), "two skeletons: the offer is queued")
 	rv.morning(o)
 	_check(cards.is_open and cards.text.contains("2 things") and cards.options.size() == 3, "the card shows with both choices")
-	_check(str(cards.options[0].label).contains("$240") and str(cards.options[1].label).contains("$760"), "with the costs: %s / %s" % [cards.options[0].label, cards.options[1].label])
+	_check(str(cards.options[0].label).contains("$240") and str(cards.options[1].label).contains("$440"), "with the costs: %s / %s" % [cards.options[0].label, cards.options[1].label])
 	var cash2: int = o.cash
 	cards.pick(1)
-	_check(t.find("temp_seats") < 0 and t.find("temp_price") >= 0 and o.cash == cash2 - 760, "owning up to the biggest removes it for $760")
+	_check(t.find("temp_seats") < 0 and t.find("temp_price") >= 0 and o.cash == cash2 - 440, "owning up to the biggest removes it for $440")
 	_clear(cards)
 	t.week(o)
 	_check(not o.flags.get("arc_queue", []).has("temp_come_clean"), "and nothing is queued again the same week")

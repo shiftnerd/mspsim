@@ -234,12 +234,11 @@ Files: `scripts/rival_touches.gd` (`RivalTouches`, a static helper, owner: this 
   `ransom_end: "insured"` (the ransom insurance line) and `bec: "claim"` (the wire fraud claim). Without a claim the skeleton stays and due diligence counts it.
 - **Tests / tuning.** `tests/temptation.gd` (cards, DAYS, vendor/client/launder/reputation/margin/insurer bills, come clean). `owner_balance.gd` has the
   strategy `shortcuts` (smart's answers with every temptation taken) and `smart` now answers the temptations honestly; it prints `folder=` and `consc=`.
-- Balance (`SEED=n ... owner_balance.gd -- smart|shortcuts`, seeds 1-3): smart ends value $1.03M / $869k / $805k (5.5x, rep 100, folder 0, cash $12-13k),
-  shortcuts $115k / $250k / $153k (3.5-4.3x, rep 78-95, folder 1, consc -10 to -11, cash $2k-8k). Weekly (seed 1): shortcuts are ahead on cash and rep
-  from week 4 to 14 (cash $7.5k vs $4.1k at w14), the bills land in weeks 15-18 and smart pulls away. The gap is large because shortcuts also lose a
-  client (`temp_launder`), carry a 25 percent discount client and lose the margin/payroll multiple thresholds; the knobs are `BILLS` sizes, `VENDOR_COLD`
-  and the launder departure in `_extras`. Smart is also higher than the P2 numbers ($476-649k): the honest answers give leads, free habit starts and one
-  maybe-client; run to run noise is large, so judge by the shape.
+- Balance (`SEED=n ... owner_balance.gd -- smart|shortcuts`). First pass (bills about 6x the shortcut gains): shortcuts ended $36k (fired, week 16) to $250k against
+  smart $675k-$1.03M. Tuned (Nov 2026): `BILLS` seats 1100, reboot 200, quest 1800, 2fa 1200, restore 800 (price 600 unchanged), `temp_review` rep 4,
+  `VENDOR_COLD` 8, `temp_launder` still always loses the client. Now shortcuts end $248k (seed 1, rep 44) and $90k (seed 2, rep 83), nobody is fired,
+  folder 1, consc -10 to -11; smart seed 1 is $675k. The remaining gap is structural (the launder departure, the 25 percent discount client, lost
+  margin/payroll multiple thresholds), not bill size; judge by the shape, run to run noise is large. Seed 3 was not re-run.
 - Not done: the vendor partner rebate on a clean record, the H1 link (a skipped restore does not raise `Habits.restore_fail()`; the backup bill is its own
   event), a `temp_restore` bill that is a real ransom, the sales-campaign twins (`SalesRival` has its own lies).
 ## Takeover / inherited messes (P4, built: `scripts/takeover.gd`, hunks in `onsite.gd`, `playbook.gd`, `owner.gd`, `incident.gd`, `tests/takeover.gd`)

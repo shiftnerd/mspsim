@@ -67795,7 +67795,7 @@ const DILIGENCE_FROM := 16  # buyers start looking at the folder in week 16
 const MAX_DEDUCTION := 1.5  # due diligence: -0.5 of the multiple per open skeleton, at most this
 const PER_SKELETON := 0.5
 const WEEKLY_HONEST := 1  # honest choices raise the conscience by at most this much a week
-const VENDOR_COLD := 15  # a vendor that caught you stops the partner discount: this much more a week
+const VENDOR_COLD := 8  # a vendor that caught you stops the partner discount: this much more a week
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
@@ -67811,7 +67811,7 @@ const BILLS := {
 		"class": "vendor",
 		"lo": 6,
 		"hi": 8,
-		"size": 1900,
+		"size": 1100,
 		"weekly": 71,
 		"rep": 0,
 		"mood": 0,
@@ -67822,7 +67822,7 @@ const BILLS := {
 		"class": "client",
 		"lo": 4,
 		"hi": 6,
-		"size": 255,
+		"size": 200,
 		"weekly": 25,
 		"rep": 1,
 		"mood": 10,
@@ -67833,7 +67833,7 @@ const BILLS := {
 		"class": "insurer",
 		"lo": NO_DATE,
 		"hi": NO_DATE,
-		"size": 4000,
+		"size": 1800,
 		"weekly": 27,
 		"rep": 2,
 		"mood": 0,
@@ -67845,7 +67845,7 @@ const BILLS := {
 		"lo": 4,
 		"hi": 5,
 		"size": 0,
-		"rep": 6,
+		"rep": 4,
 		"mood": 0,
 		"text": "A forum thread traced the writing style of the fake reviews."
 	},
@@ -67874,7 +67874,7 @@ const BILLS := {
 		"class": "client",
 		"lo": 9,
 		"hi": 10,
-		"size": 2400,
+		"size": 1200,
 		"rep": 3,
 		"mood": 12,
 		"text": "The breach hit and your recommendation was never on paper."
@@ -67884,7 +67884,7 @@ const BILLS := {
 		"class": "backup",
 		"lo": 2,
 		"hi": 7,
-		"size": 1200,
+		"size": 800,
 		"rep": 2,
 		"mood": 8,
 		"text": "The backup would not restore. The light was on. It was not enough."
