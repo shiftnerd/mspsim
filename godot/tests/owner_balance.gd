@@ -103,7 +103,7 @@ const POLICIES := {
 	},
 }
 
-var Habits: Script = load("res://scripts/habits.gd")
+var Habits: Script  # loaded in _init: habits.gd names autoloads, so it cannot compile before they exist
 const HONEST_ORDER := ["H1", "H7", "H2", "H6", "H12", "H3", "H4", "H5", "H13", "H11", "H10", "H9", "H14", "H8"]
 
 var policy: Dictionary = {}
@@ -150,6 +150,7 @@ func _answer(cards: Node, ids: Dictionary) -> void:
 
 func _init() -> void:
 	await process_frame
+	Habits = load("res://scripts/habits.gd")
 	var c := root.get_node("Campaign")
 	var o := root.get_node("Owner")
 	var cards := root.get_node("Cards")

@@ -105,6 +105,10 @@ States `NONE ADOPTED STALE LAPSED`; `HABITS` (H1-H14: name, cost{cash,hours,mora
   (`_vendor_breach`), `creep(base)` (`Projects.week`), `change_odds()` (`Projects.change_order_odds`), `refusal_save()` (`_client_breach`),
   `new_client(c)` (H10 mood +6, in the `sign` fx), `onsite_mult(client)` (`Onsite._chose`, `_event_answer`), `walk_mult()` (`Onsite.inspect`),
   `drifting(client)` (CLIENTS chip), `assess_win_adj()` (H10 -3 points: NOT read yet, for the sales agent), `site_share()`.
+- Balance (`tests/owner_balance.gd`, `SEED=n ... -- smart|honest`; `honest` is smart's answers plus one `Habits.act` a week; runs are NOT bit-for-bit
+  repeatable even with a seed, smart seed 1 gave $467k, $475k and $398k): smart seeds 1-3 end at cash $14k/$25k/$28k, value $476k/$552k/$649k (before
+  the habits: $13k/$24k/$4k, $467k/$329k/$543k), Standard 0. honest ends at cash $7k/$15k/$17k, value $324k/$277k/$635k, Standard 100: the habits cost
+  a few thousand dollars and owner hours and buy fewer incidents; the difference is inside the run to run noise.
 - Not done: H9 night job failure rate (card only), H3 failed cutover costs half, H13 blame halving in `bec_loss` (it is in `bec_mult` only), the
   default password walk-around finding (H14 gives a small breach cut only), a TESTED date on the RMM backups tab, the `rival_cards` sales hooks.
 
