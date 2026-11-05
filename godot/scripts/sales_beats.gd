@@ -661,7 +661,7 @@ static func diligence_score() -> int:
 	var broken := 0
 	for d in SalesCampaign.book:
 		broken += Retention.broken_count(d)
-	return SalesCampaign.clawbacks * 2 + SalesCampaign.churned.size() + broken + SalesCampaign.at_risk()
+	return SalesCampaign.clawbacks * 2 + SalesCampaign.churned.size() + broken + SalesCampaign.at_risk() + SalesCampaign.SalesRival.open_bills().size()  # the folder: what Summit finds
 
 
 static func diligence_clean() -> bool:

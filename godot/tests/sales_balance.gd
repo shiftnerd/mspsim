@@ -9,6 +9,7 @@ extends SceneTree
 const PREFS := {
 	"careful": ["standard", "balanced", "work", "go", "honest", "take", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
 	"pushy": ["stretch", "commission", "loose", "work", "go", "moon", "take", "yes", "match", "blame", "report", "renew", "bluff", "all", "garrison", "refuse", "both", "shade", "raise", "project", "numbers", "ok"],
+	"shady": ["match", "cheap", "take", "undercut", "back", "standard", "balanced", "work", "go", "honest", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
 	"lazy": ["safe", "salary", "standard", "work", "skip", "no", "same", "report", "wait", "none", "refuse", "decline", "pass", "ok"],
 }
 var strategy := "careful"
@@ -49,7 +50,7 @@ func _answer(cards: Node, handover_gap: float) -> int:
 				best = i
 		if is_handover:
 			var want := "dropped" if strategy == "pushy" else ("kept" if strategy == "lazy" else "kept")
-			if strategy == "careful":
+			if strategy in ["careful", "shady"]:
 				var g := 0.0
 				var rx := RegEx.new()
 				rx.compile("gap ([0-9.]+)")
@@ -68,6 +69,10 @@ func _answer(cards: Node, handover_gap: float) -> int:
 		cards.pick(maxi(best, 0))
 		n += 1
 	return n
+
+
+func o_consc() -> int:
+	return int(root.get_node("Owner").consc)
 
 
 func _quote_for(sc: Node, l: Dictionary) -> Dictionary:
@@ -105,7 +110,7 @@ func _act(sc: Node, world: Node, day: int, hour: float) -> void:
 			break
 		if str(l.stage) not in ["LEAD", "MEETING"]:
 			continue
-		if strategy == "careful" and int(l.quality) < 28:
+		if strategy in ["careful", "shady"] and int(l.quality) < 28:
 			continue
 		sc.call_lead(int(l.id))
 		world.clock = maxf(world.clock, hour)
@@ -113,7 +118,7 @@ func _act(sc: Node, world: Node, day: int, hour: float) -> void:
 			l["moon"] = true  # promised the moon at the office
 		sc.send_quote(l, _quote_for(sc, l))
 		sent += 1
-	if strategy == "careful":
+	if strategy in ["careful", "shady"]:
 		for l in sc.open_leads():
 			if sc.slots_left() < 1:
 				break
@@ -204,6 +209,9 @@ func _run(seed_value: int) -> Dictionary:
 	for o in sc.offers():
 		ids.append(str(o.id))
 	out["verdict"] = ",".join(ids) if not out.fired else "FIRED"
+	out["lies"] = sc.SalesRival.lies()
+	out["folder"] = sc.SalesRival.open_bills().size()
+	out["consc"] = o_consc()
 	out["bb"] = str(sc.flags.get("bb", "-"))
 	out["dd"] = str(sc.flags.get("dd", "-"))
 	if report.is_open:
@@ -240,7 +248,7 @@ func _init() -> void:
 	for s in seeds:
 		var r: Dictionary = await _run(int(s))
 		results.append(r)
-		print("seed %d: Q2 %d%% Q3 %d%% (%s) wins %d lost %d commission $%d claw %d churn %d renew %s mood %d rep %d cash $%d book $%d bb=%s audit=%s -> %s" % [r.seed, r.q2, r.q3, r.res, r.wins, r.losses, r.commission, r.claw, r.churn, r.renew, r.mood, r.rep, r.cash, r.book, r.bb, r.dd, r.verdict])
+		print("seed %d: Q2 %d%% Q3 %d%% (%s) wins %d lost %d commission $%d claw %d churn %d renew %s mood %d rep %d cash $%d book $%d bb=%s audit=%s lies %d folder %d consc %d -> %s" % [r.seed, r.q2, r.q3, r.res, r.wins, r.losses, r.commission, r.claw, r.churn, r.renew, r.mood, r.rep, r.cash, r.book, r.bb, r.dd, r.lies, r.folder, r.consc, r.verdict])
 		for k in tot:
 			tot[k] += int(r[k])
 		hit += str(r.res).count("HIT")

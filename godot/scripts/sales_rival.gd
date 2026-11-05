@@ -302,7 +302,7 @@ static func assess_pick(l: Dictionary, pick: String) -> void:
 		l["assessed"] = "cheap"
 		l["hidden"] = findings(l)
 		l["findings"] = []
-		mark_lie(l, "TOLD THEM IT LOOKS FINE")
+		mark_lie(l, "TOLD THEM IT LOOKS FINE", "cheap")
 	else:
 		l["assessed"] = "honest"
 		Habits.apply_touch("H10")
@@ -313,10 +313,151 @@ static func assess_pick(l: Dictionary, pick: String) -> void:
 
 # ---- lies and conscience ----------------------------------------------------------------------------------
 # a shortcut: the lead is flagged, the conscience falls (words only for the player)
-static func mark_lie(l: Dictionary, why: String) -> void:
+static func mark_lie(l: Dictionary, why: String, kind := "") -> void:
 	l["lie"] = true
 	SalesCampaign.Deals.note(l, why)
 	Temptation.change_consc(-2)
+	if BILLS.has(kind):
+		seed_bill(l, kind)
+
+
+# ---- dated bills (the sales twins of the owner temptations) -----------------------------------------------------------
+# A lie also goes in Marge's folder (Owner.skel, class "sales", with the lead's name). When its week comes and the deal is on the book the
+# bill lands: mood and churn on the client, reputation, or the client leaves (a laundered lead). A deal that is still open waits; one that
+# never closed drops out (BILL_PATIENCE weeks). COME CLEAN costs a share of the commission and clears the lie flag. Cozy halves the hurt and
+# the laundered client stays.
+const BILLS := {
+	"cheap": {"lo": 4, "hi": 6, "mood": 10, "churn": 10, "rep": 1, "claw": 2.5, "leave": false, "text": "THE FIXES YOU TOLD THEM WERE NOT NEEDED TURNED INTO OUTAGES."},
+	"flat": {"lo": 3, "hi": 5, "mood": 8, "churn": 6, "rep": 1, "claw": 2.0, "leave": false, "text": "THEY ASKED FOR THE SETUP THEY ASSUMED WAS INCLUDED. NOTHING WAS IN WRITING."},
+	"launder": {"lo": 5, "hi": 7, "mood": 0, "churn": 0, "rep": 3, "leave": true, "text": "THE CONTACT ASKED HOW YOU KNEW ABOUT THEIR MAILBOX."},
+	"undercut": {"lo": 4, "hi": 6, "mood": 6, "churn": 8, "rep": 1, "claw": 2.0, "leave": false, "text": "THE UNDERCUT PRICE CAME WITH UNDERCUT SERVICE. THEY NOTICED."}
+}
+const BILL_PATIENCE := 8
+const CLEAN_FLOOR := 50
+
+
+static func seed_bill(l: Dictionary, kind: String) -> void:
+	var b: Dictionary = BILLS[kind]
+	var id := kind + ":" + str(l.name)
+	if Temptation.find(id) >= 0:
+		return
+	var weeks := Difficulty.rng("skeleton").randi_range(int(b.lo), int(b.hi))
+	var size := maxi(CLEAN_FLOOR * 2, int(round(float(l.get("fee", 100)) * float(SalesCampaign.PLAN_RATE.get(SalesCampaign.plan, 2.0)))))
+	Owner.skel.append({"id": id, "due": Campaign.day + weeks, "class": "sales", "size": size, "lead": str(l.name), "kind": kind})
+
+
+# the open sales entries of the folder
+static func open_bills() -> Array:
+	var out := []
+	for sk in Owner.skel:
+		if sk.has("lead"):
+			out.append(sk)
+	return out
+
+
+static func _deal_named(lead: String) -> Dictionary:
+	for d in SalesCampaign.book:
+		if str(d.name) == lead:
+			return d
+	return {}
+
+
+static func _lead_named(lead: String) -> Dictionary:
+	for l in SalesCampaign.leads:
+		if str(l.name) == lead:
+			return l
+	return {}
+
+
+# the bills that are due this week
+static func bills_week(day: int) -> void:
+	for sk in open_bills():
+		if int(sk.due) > day:
+			continue
+		var d := _deal_named(str(sk.lead))
+		if d.is_empty():
+			var l := _lead_named(str(sk.lead))
+			if str(l.get("stage", "")) == "LOST" or day > int(sk.due) + BILL_PATIENCE:
+				Owner.skel.erase(sk)
+			continue
+		Owner.skel.erase(sk)
+		_bill(d, sk)
+
+
+static func _bill(d: Dictionary, sk: Dictionary) -> void:
+	var b: Dictionary = BILLS.get(str(sk.kind), {})
+	var cozy := Difficulty.cozy_on()
+	Career.add("skeletons_paid")
+	if int(b.get("rep", 0)) > 0:
+		Campaign.adjust_rep(-int(b.rep))
+	var text := str(b.get("text", "A SHORTCUT CAUGHT UP WITH YOU."))
+	if bool(b.get("leave", false)) and not cozy:
+		SalesCampaign.Retention.leave(d, text)
+		return
+	var mood := int(b.get("mood", 0)) / (2 if cozy else 1)
+	var churn := int(b.get("churn", 0)) / (2 if cozy else 1)
+	SalesCampaign.Retention.adjust_mood(d, -mood)
+	d["churn"] = clampi(int(d.get("churn", 10)) + churn, 0, 100)
+	var claw := int(round(float(d.get("commission", 0)) * float(b.get("claw", 0.0)))) / (2 if cozy else 1)
+	SalesCampaign.commission_total -= claw
+	SalesCampaign.week_clawback += claw
+	SalesCampaign.clawed_total += claw
+	Cards.ask(
+		"{sales_owner}",
+		"A BILL FROM THE FOLDER, %s: %s THE COMMISSION COMES BACK WITH A PENALTY: -$%d." % [str(d.name).to_upper(), text, claw],
+		[{"label": "UNDERSTOOD", "id": "ok"}],
+		func(_id: String) -> void: pass
+	)
+
+
+# own up before the bill: the cost comes out of the commission, the lie flag is cleared, the conscience rises
+static func come_clean_sales(id: String) -> bool:
+	var i := Temptation.find(id)
+	if i < 0:
+		return false
+	var sk: Dictionary = Owner.skel[i]
+	SalesCampaign.commission_total -= Temptation.clean_cost(id)
+	var l := _lead_named(str(sk.get("lead", "")))
+	if not l.is_empty():
+		l["lie"] = false
+	var d := _deal_named(str(sk.get("lead", "")))
+	if not d.is_empty() and bool(d.get("lie", false)):
+		d["lie"] = false
+		SalesCampaign.flags["lies"] = maxi(0, lies() - 1)
+	Owner.skel.remove_at(i)
+	Career.add("skeletons_paid")
+	Temptation.change_consc(1, true)
+	return true
+
+
+# from the second open entry on, Garrison offers to phone the clients first (at most once in CLEAN_EVERY weeks)
+static func clean_offer(day: int) -> void:
+	var open := open_bills()
+	if open.size() < 2 or day - int(SalesCampaign.flags.get("clean_offer", -99)) < Temptation.CLEAN_EVERY:
+		return
+	SalesCampaign.flags["clean_offer"] = day
+	var oldest: Dictionary = open[0]
+	var biggest: Dictionary = open[0]
+	for sk in open:
+		if int(sk.due) < int(oldest.due):
+			oldest = sk
+		if int(sk.size) > int(biggest.size):
+			biggest = sk
+	var options := []
+	options.append({"label": "OWN UP TO %s ($%d)" % [str(oldest.lead).to_upper(), Temptation.clean_cost(str(oldest.id))], "id": "oldest"})
+	if str(biggest.id) != str(oldest.id):
+		options.append({"label": "OWN UP TO %s ($%d)" % [str(biggest.lead).to_upper(), Temptation.clean_cost(str(biggest.id))], "id": "biggest"})
+	options.append({"label": "NOT YET", "id": "no"})
+	Cards.ask(
+		"{sales_owner}",
+		"We have %d deals that could still come back on us. I can phone the clients and tell them the truth before they find it. It costs less out of your commission than the bill would." % open.size(),
+		options,
+		func(pick: String) -> void:
+			if pick == "oldest":
+				come_clean_sales(str(oldest.id))
+			elif pick == "biggest":
+				come_clean_sales(str(biggest.id))
+	)
 
 
 static func lies() -> int:
@@ -414,6 +555,8 @@ static func value_ready() -> bool:
 # ---- the beats -----------------------------------------------------------------------------------------------
 static func week(day: int) -> void:
 	_expire(day)
+	bills_week(day)
+	clean_offer(day)
 	match str(WEEKS.get(day, "")):
 		"incumbent":
 			beat_incumbent()
@@ -568,7 +711,7 @@ static func _flat_pick(l: Dictionary, id: String) -> void:
 			SalesCampaign.Deals.note(l, "OFFERED THREE CHOICES")
 		"match":
 			l["present_pref"] = "flat"
-			mark_lie(l, "MATCHED THE FLAT PRICE")
+			mark_lie(l, "MATCHED THE FLAT PRICE", "flat")
 		"lines":
 			SalesCampaign.spend(1)
 			l["pts"] = float(l.get("pts", 0.0)) + 0.05
@@ -635,7 +778,7 @@ static func _laundered_pick(id: String) -> void:
 	match id:
 		"take":
 			l["quality"] = 70
-			mark_lie(l, "TOOK A LAUNDERED LEAD")
+			mark_lie(l, "TOOK A LAUNDERED LEAD", "launder")
 		"ask":
 			l["quality"] = 52
 			Temptation.change_consc(1)
@@ -677,7 +820,7 @@ static func _plumb_pick(id: String) -> void:
 			SalesCampaign.Deals.note(l, "PLUMB LINE LOST HER ON THE LIST")
 		"undercut":
 			l["quality"] = 74
-			mark_lie(l, "UNDERCUT PLUMB LINE")
+			mark_lie(l, "UNDERCUT PLUMB LINE", "undercut")
 		_:
 			sb.set_flag("hollis_favour", true)
 			Temptation.change_consc(1)
