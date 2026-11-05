@@ -19841,3 +19841,219 @@ DEFAULT DEVICE PASSWORDS CHANGED
 # Habits > HABITS > H14 > earns
 [Habits.HABITS.H14.earns]
 No default password finding, a small breach reduction.
+
+
+# ======================= Habits > TEXT =======================
+# Habits > TEXT > short_H1
+[Habits.TEXT.short_H1]
+RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK
+
+# Habits > TEXT > short_H2
+[Habits.TEXT.short_H2]
+SCORECARD AT EACH REVIEW: MOOD +2, CHANGE ORDERS +10
+
+# Habits > TEXT > short_H3
+[Habits.TEXT.short_H3]
+CREEP CHANCE 30% TO 18% ON FIXED PRICE JOBS
+
+# Habits > TEXT > short_H4
+[Habits.TEXT.short_H4]
+A REFUSAL ON PAPER MAKES BLAME CHEAPER
+
+# Habits > TEXT > short_H5
+[Habits.TEXT.short_H5]
+THE REAL CAUSE CUTS THAT RISK FOR 8 WEEKS
+
+# Habits > TEXT > short_H6
+[Habits.TEXT.short_H6]
+NO REVENGE MAIL, VENDOR BREACH ODDS DOWN
+
+# Habits > TEXT > short_H7
+[Habits.TEXT.short_H7]
+BREACH DAMAGE HALVED, WEAK PASSWORD BREAK-INS RARER
+
+# Habits > TEXT > short_H8
+[Habits.TEXT.short_H8]
+A REVIEW CLOSES FORGOTTEN OPEN PORTS
+
+# Habits > TEXT > short_H9
+[Habits.TEXT.short_H9]
+FEWER FAILED NIGHT JOBS, CLOCKS CARD IN WEEK 19
+
+# Habits > TEXT > short_H10
+[Habits.TEXT.short_H10]
+WIN CHANCE -3 POINTS, NEW CLIENTS START 6 HAPPIER
+
+# Habits > TEXT > short_H11
+[Habits.TEXT.short_H11]
+ONSITE JOBS 20% FASTER AT MAPPED CLIENTS
+
+# Habits > TEXT > short_H12
+[Habits.TEXT.short_H12]
+SEE MOOD DRIFT EARLY, MORE WALK-AROUND FINDINGS
+
+# Habits > TEXT > short_H13
+[Habits.TEXT.short_H13]
+BLAME HALVED FOR EMERGENCY CHANGES
+
+# Habits > TEXT > short_H14
+[Habits.TEXT.short_H14]
+NO DEFAULT PASSWORD FINDING, SMALL BREACH CUT
+
+# Habits > TEXT > started
+[Habits.TEXT.started]
+%s STARTED. IT KEEPS ITS EDGE ONLY IF YOU KEEP DOING IT.
+
+# Habits > TEXT > nocash
+[Habits.TEXT.nocash]
+NOT ENOUGH CASH.
+
+# Habits > TEXT > uptodate
+[Habits.TEXT.uptodate]
+ALREADY FRESH. IT COUNTS WHEN THE REAL THING HAPPENS.
+
+# Habits > TEXT > nobackup
+[Habits.TEXT.nobackup]
+NO WORKING BACKUP TO TEST. GET ONE RUNNING FIRST.
+
+# Habits > TEXT > h1
+[Habits.TEXT.h1]
+RESTORE TEST PASSED AT %s. A SPARE PC CAME BACK FROM LAST NIGHT.
+
+# Habits > TEXT > h7
+[Habits.TEXT.h7]
+NEW ADMIN LOGINS ARE IN THE SEALED ENVELOPE. THE OLD ONES ARE DEAD.
+
+# Habits > TEXT > h8
+[Habits.TEXT.h8]
+FIREWALL EXCEPTIONS REVIEWED AND THE OLD ONES CLOSED.
+
+# Habits > TEXT > h9
+[Habits.TEXT.h9]
+THE JOB WINDOWS FOLLOW THE CALENDAR NOW.
+
+# Habits > TEXT > h10
+[Habits.TEXT.h10]
+AN HONEST ASSESSMENT IS ON FILE. THE GAPS ARE LISTED, ALL OF THEM.
+
+# Habits > TEXT > h11
+[Habits.TEXT.h11]
+%s IS MAPPED: RUNBOOK, NETWORK MAP AND LABELLED GEAR.
+
+# Habits > TEXT > h11all
+[Habits.TEXT.h11all]
+EVERY CLIENT IS MAPPED ALREADY.
+
+# Habits > TEXT > h12
+[Habits.TEXT.h12]
+COFFEE RUN DONE. THE FRONT DESK TOLD YOU WHAT THE TICKETS DO NOT.
+
+# Habits > TEXT > h13
+[Habits.TEXT.h13]
+THE RULE IS ON THE WALL: NO EMERGENCY CHANGE WITHOUT A WRITTEN OK.
+
+# Habits > TEXT > h14
+[Habits.TEXT.h14]
+DEFAULT PASSWORDS CHANGED AT %s: CAMERAS, PRINTERS, WIRELESS.
+
+# Habits > TEXT > h14all
+[Habits.TEXT.h14all]
+EVERY SITE IS DONE ALREADY.
+
+# Habits > TEXT > scorecard
+[Habits.TEXT.scorecard]
+The one page scorecard went to %s: tickets closed, backups tested, what we fixed. Mood up.
+
+# Habits > TEXT > review
+[Habits.TEXT.review]
+Lost account review done. The real cause is written down, and the same mistake will cost less for eight weeks.
+
+# Habits > TEXT > offboard
+[Habits.TEXT.offboard]
+%s's logins and keys are closed. The checklist is signed.
+
+
+# ======================= Habits > CARDS =======================
+# Habits > CARDS > habit_offer > speaker
+[Habits.CARDS.habit_offer.speaker]
+Marge (Bookkeeper)
+
+# Habits > CARDS > habit_offer > text
+[Habits.CARDS.habit_offer.text]
+Idea for the shop: %s. %s It would cost %s. Start it?
+
+# Habits > CARDS > habit_offer > options > 0 > label
+[Habits.CARDS.habit_offer.options.0.label]
+NOT NOW
+
+# Habits > CARDS > habit_offer > options > 1 > label
+[Habits.CARDS.habit_offer.options.1.label]
+START IT
+
+# Habits > CARDS > habit_offer > options > 1 > text
+[Habits.CARDS.habit_offer.options.1.text]
+Good. Now keep doing it.
+
+# Habits > CARDS > habit_lapsed > speaker
+[Habits.CARDS.habit_lapsed.speaker]
+Marge (Bookkeeper)
+
+# Habits > CARDS > habit_lapsed > text
+[Habits.CARDS.habit_lapsed.text]
+THE CHECKLIST HAS ONE EMPTY BOX. %s has not been done in a long while, so it has stopped helping. Doing it again costs half.
+
+# Habits > CARDS > habit_lapsed > options > 0 > label
+[Habits.CARDS.habit_lapsed.options.0.label]
+DO IT AGAIN (HALF PRICE)
+
+# Habits > CARDS > habit_lapsed > options > 1 > label
+[Habits.CARDS.habit_lapsed.options.1.label]
+LET IT GO
+
+# Habits > CARDS > habit_clocks > speaker
+[Habits.CARDS.habit_clocks.speaker]
+Alan (Co-owner)
+
+# Habits > CARDS > habit_clocks > text
+[Habits.CARDS.habit_clocks.text]
+The clocks change on Sunday, November 2. Anything that runs at 2 in the morning will run twice or not at all, including the backups. Move the windows?
+
+# Habits > CARDS > habit_clocks > options > 0 > label
+[Habits.CARDS.habit_clocks.options.0.label]
+MOVE THE WINDOWS (1 HOUR)
+
+# Habits > CARDS > habit_clocks > options > 0 > text
+[Habits.CARDS.habit_clocks.options.0.text]
+Done. The jobs now start at 4, clear of the change.
+
+# Habits > CARDS > habit_clocks > options > 1 > label
+[Habits.CARDS.habit_clocks.options.1.label]
+WE WILL WING IT
+
+# Habits > CARDS > habit_revenge > speaker
+[Habits.CARDS.habit_revenge.speaker]
+Marge (Bookkeeper)
+
+# Habits > CARDS > habit_revenge > text
+[Habits.CARDS.habit_revenge.text]
+%s left on bad terms and nobody closed their logins. This morning a nasty mail went out to three of our clients from an account that should be dead. Cleanup and apologies cost $1,500.
+
+# Habits > CARDS > habit_revenge > options > 0 > label
+[Habits.CARDS.habit_revenge.options.0.label]
+CLOSE EVERY LOGIN NOW
+
+# Habits > CARDS > habit_ports > speaker
+[Habits.CARDS.habit_ports.speaker]
+Alan (Co-owner)
+
+# Habits > CARDS > habit_ports > text
+[Habits.CARDS.habit_ports.text]
+The last job left a firewall exception open and nobody reviewed it. Remote desktop is open to the internet again at one client. Close it now?
+
+# Habits > CARDS > habit_ports > options > 0 > label
+[Habits.CARDS.habit_ports.options.0.label]
+CLOSE IT AND REVIEW THEM ALL (2 HOURS)
+
+# Habits > CARDS > habit_ports > options > 1 > label
+[Habits.CARDS.habit_ports.options.1.label]
+LEAVE IT

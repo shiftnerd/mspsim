@@ -98,7 +98,7 @@ const ROOTS := {
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
 	"SalesCampaign": ["BEAT_TEXT"],
 	"Rival": ["HABITS", "RIVALS"],
-	"Habits": ["HABITS"],
+	"Habits": ["HABITS", "TEXT", "CARDS"],
 	"RivalCards": ["CARDS"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants

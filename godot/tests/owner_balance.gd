@@ -103,7 +103,32 @@ const POLICIES := {
 	},
 }
 
+var Habits: Script = load("res://scripts/habits.gd")
+const HONEST_ORDER := ["H1", "H7", "H2", "H6", "H12", "H3", "H4", "H5", "H13", "H11", "H10", "H9", "H14", "H8"]
+
 var policy: Dictionary = {}
+
+
+# the honest owner: one new habit a week while the bank can take it, and every habit redone before it goes stale
+func _honest_week(day: int) -> void:
+	var o := root.get_node("Owner")
+	for id in HONEST_ORDER:
+		var st: String = Habits.state(id)
+		var every := int(Habits.HABITS[id].every)
+		var due: bool = st == Habits.STALE or st == Habits.LAPSED or (st == Habits.ADOPTED and every > 0 and Habits.age(id) >= every - 1)
+		if st != Habits.NONE and due and (Habits.DOABLE.has(id) or st != Habits.ADOPTED) and o.cash > 1500:
+			Habits.act(id)
+	if o.cash < 3000:
+		return
+	for id in HONEST_ORDER:
+		if Habits.state(id) == Habits.NONE and (id != "H8" or o.cash > 5000):
+			Habits.act(id)
+			return
+	# every client mapped, every site done
+	if Habits.mapped_count() < root.get_node("Sales").active.size():
+		Habits.act("H11")
+	elif day > 0:
+		Habits.act("H14")
 
 
 func _answer(cards: Node, ids: Dictionary) -> void:
@@ -141,12 +166,12 @@ func _init() -> void:
 			cut = brace
 		ids[key] = card_text.substr(0, 40 if cut < 0 else mini(40, cut))
 	c.save_prefix = (
-		"user://bal_%s_"
-		% (
+		"user://bal_%s_%s_"
+		% [OS.get_environment("SEED"), (
 			"-".join(OS.get_cmdline_user_args())
 			if not OS.get_cmdline_user_args().is_empty()
 			else "all"
-		)
+		)]
 	)
 	root.get_node("Game").title_mode = false
 	if OS.get_environment("NOPROJ") != "":
@@ -159,14 +184,20 @@ func _init() -> void:
 			as_who = arg
 			wanted.erase(arg)
 	load("res://scripts/player.gd").current_character = "office_alan" if as_who == "alan" else "casual_garrison"
-	for policy_name in POLICIES:
+	for policy_name in POLICIES.keys() + ["honest"]:  # R38: honest = smart's answers plus the good habits
 		if not wanted.is_empty() and not wanted.has(policy_name):
 			continue
-		policy = POLICIES[policy_name]
+		policy = POLICIES["smart" if policy_name == "honest" else policy_name]
+		if OS.get_environment("SEED") != "":  # R38: the same seed for the same strategy (global randf too)
+			var run_seed := int(OS.get_environment("SEED"))
+			root.get_node("Difficulty").seed_run(run_seed)
+			seed(run_seed)
 		c.new_game("owner")
 		var last := 0
 		var frames_total := 0
 		for day in range(1, 21):
+			if policy_name == "honest":
+				_honest_week(day)
 			var frames := 0
 			while not report.is_open and frames < 40000:
 				await process_frame
@@ -191,12 +222,13 @@ func _init() -> void:
 		print(
 			line,
 			(
-				" value $%d (%.1fx) fired=%s frames=%d"
+				" value $%d (%.1fx) fired=%s frames=%d standard=%d"
 				% [
 					o.valuation(),
 					o.multiple(),
 					str(report.report.get("fired", false)),
-					frames_total
+					frames_total,
+					Habits.standard()
 				]
 			)
 		)
