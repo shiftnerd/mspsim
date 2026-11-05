@@ -11,6 +11,7 @@ const DRIVE_MINUTES := {0: 20, 1: 35, 3: 25, 8: 50, 9: 30, 10: 70}  # the usual 
 const DEFAULT_DRIVE := 45
 const Variety := preload("res://scripts/onsite_variety.gd")
 const Habits := preload("res://scripts/habits.gd")  # R38: runbooks and a network map shorten the job; the front desk log
+const Takeover := preload("res://scripts/takeover.gd")  # R38 P4: the visit kind "takeover"
 const SLA_PER_HOUR := 45.0  # seconds taken off the other tickets' clocks for each hour you are away
 const SITES := {
 	0: {"type": "dental", "skin": "a"},
@@ -1501,6 +1502,8 @@ func start_visit(c: int, kind: String, stand_in := false) -> void:
 
 # the owner meeting of this visit: a discovery visit (the sales campaign's Paws and Claws) talks like a pitch
 func _meeting_row() -> Dictionary:
+	if visit_kind == Takeover.KIND:
+		return Takeover.MEETING
 	return MEETINGS.get("pitch" if visit_kind == "discovery" else visit_kind, {})
 
 
@@ -1724,6 +1727,9 @@ func inspect(obj: String) -> void:
 		Hints.toast(str(TEXT.inspected), 2.0)
 		return
 	_inspected[obj] = true
+	if visit_kind == Takeover.KIND:
+		Takeover.on_inspect(_site_client(), obj)  # R38 P4: what the last shop left behind
+		return
 	var pool: Array = FINDINGS.get(obj, [])
 	var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
 	if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
@@ -1820,6 +1826,9 @@ func _meeting_answer(id: String) -> void:
 		if str(o.id) == id:
 			text = str(o.text)
 	_met = true
+	if visit_kind == Takeover.KIND:
+		Takeover.meeting_answer(c, id, text)
+		return
 	if visit_kind == "qbr" and Campaign.mode == "sales":
 		SalesCampaign.qbr_answer(id, text)  # the sales campaign scores the review of a book client itself
 		return
@@ -2223,6 +2232,8 @@ func _go_home(dropped: bool) -> void:
 		Msp.add_note(ticket_id, "Technician left before the problem was fixed.")
 		Hints.toast(str(TEXT.dropped), 3.0)
 	_back_min = _trip_minutes(client)
+	if visit_kind == Takeover.KIND:
+		Takeover.finish_visit(client)  # R38 P4: the walk-around grade
 	_away(float(_back_min) / 60.0)
 	active = false
 	busy = false

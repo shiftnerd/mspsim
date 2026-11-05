@@ -7,6 +7,7 @@ extends RefCounted
 #   Tech: Story.POSTMORTEMS (Morgan runs a blameless review: what happened, the root cause, two action items).
 # Everything here is 2013-14: phone calls, a hosted spam filter, a funds transfer fraud rider on a crime policy.
 
+const Takeover := preload("res://scripts/takeover.gd")  # R38 P4: an inherited mess makes a scam likelier
 const Habits := preload("res://scripts/habits.gd")  # R38: signed forms, unique logins and written OK make a scam harder
 const FILTER := "mailfilter"  # the recurring service (Projects.SERVICES)
 const FIRST_WEEK := 13
@@ -33,7 +34,7 @@ static func attempt_chance(client: int) -> float:
 		p *= 1.5
 	if Sales.mood(client) < 40:
 		p *= 1.4
-	return p
+	return p * Takeover.risk_mult(client)
 
 
 # the share of attempts that get through (the rest are caught by a call-back or the filter)
