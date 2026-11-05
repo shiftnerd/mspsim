@@ -475,10 +475,483 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"temp_seats":
+	{
+		"speaker": "Marge",
+		"text":
+		"WebWoot sent the quarterly seat true-up form. We run their antivirus on 63 seats. If we write 41, the invoice drops $308 a month and nobody checks. Rex told Garrison he does it every quarter.",
+		"options":
+		[
+			{
+				"label": "REPORT 41 AND KEEP THE $308 A MONTH",
+				"fx": {"weekly": -71, "skel": ["temp_seats", -1], "consc": -2},
+				"text":
+				"Marge types 41 and does not look up. The invoice drops. She puts the original form in the folder."
+			},
+			{
+				"label": "REPORT 63 AND ASK FOR A VOLUME TIER",
+				"fx": {"weekly": -21, "consc": 1},
+				"text":
+				"The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true."
+			},
+			{
+				"label": "CHANGE VENDORS, THIS IS ANNOYING ($800)",
+				"need": 800,
+				"fx": {"cash": -800, "weekly": -15, "consc": 1},
+				"text":
+				"Switching costs a week of grumbling. The new vendor audits you too, but kindly."
+			},
+		],
+	},
+	"temp_reboot":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"The printer at {client} needed a reboot. Eight minutes. Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and their clients never ask what it is. I think we could do the same.",
+		"options":
+		[
+			{
+				"label": "BILL IT AS ADVANCED DIAGNOSTICS ($85)",
+				"fx": {"cash": 85, "weekly": -25, "skel": ["temp_reboot", -1], "consc": -2},
+				"text":
+				"The invoice goes out with the long phrase. Vic grins. Somewhere a bookkeeper reaches for her glasses."
+			},
+			{
+				"label": "BILL THE EIGHT MINUTES ($20)",
+				"fx": {"cash": 20, "consc": 1},
+				"text":
+				"Twenty dollars and a short note: the printer needed a restart, and here is the setting that stops it. The client keeps the note."
+			},
+			{
+				"label": "OFFER A MONTHLY PRINTER CHECK ($40 A WEEK)",
+				"fx": {"cash": 20, "weekly": -10, "consc": 1},
+				"text":
+				"Now the reboot is part of something. Marge calls it recurring revenue with a stapler."
+			},
+		],
+	},
+	"temp_launder":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.",
+		"options":
+		[
+			{
+				"label": "TAKE THE MEETING, SHE IS A HOT LEAD",
+				"fx": {"lead": 2, "skel": ["temp_launder", -1], "consc": -2},
+				"text":
+				"She is a great lead. She is a great lead because someone read our tickets and sold her the story."
+			},
+			{
+				"label": "ASK HER HOW SHE HEARD ABOUT US",
+				"fx": {"rap": ["bigcheese", "R10", 2], "consc": 1},
+				"text":
+				"She mentions a shared mailbox at the dental office. Vic goes quiet, then says he will make a call."
+			},
+			{
+				"label": "TELL THE CLIENT THEIR MAILBOX IS OPEN, FOR FREE",
+				"fx": {"habit_start": "H12", "consc": 2, "rep": 1, "owner_hours": 1},
+				"text":
+				"They fix the mailbox that afternoon. Mrs. Dunning becomes a client three weeks later, and she tells everyone why."
+			},
+		],
+	},
+	"temp_review":
+	{
+		"speaker": "{sales_owner}",
+		"text":
+		"A prospect asked Vic if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.",
+		"options":
+		[
+			{
+				"label": "POST THREE REVIEWS AS CUSTOMERS",
+				"fx": {"rep": 4, "lead": 3, "skel": ["temp_review", -1], "consc": -2},
+				"text":
+				"Three glowing reviews from a happy dental office manager. Alan reads them and does not speak for the rest of the day."
+			},
+			{
+				"label": "SHOW HER THE BOND CERTIFICATE AND THE BAA",
+				"fx": {"lead": 1, "owner_hours": 1, "consc": 1},
+				"text":
+				"Two documents and a coffee. She signs the following week and apologises for asking."
+			},
+			{
+				"label": "ASK TWO HAPPY CLIENTS FOR A REAL REVIEW",
+				"fx": {"rep": 1, "consc": 1},
+				"text": "Delia writes the best one. She mentions the printer."
+			},
+			{
+				"label": "SAY NOTHING",
+				"fx": {"rep": -1},
+				"text": "The rumour spreads, as rumours do at Chamber lunches."
+			},
+		],
+	},
+	"temp_restore":
+	{
+		"speaker": "{tech}",
+		"text":
+		"It has been a quarter. The restore test is due: pull one machine off the backup and bring it back on a spare. About three hours. Everything is green. Everything has been green for three months.",
+		"options":
+		[
+			{
+				"label": "SKIP IT, THE LIGHT IS ON",
+				"fx": {"skel": ["temp_restore", -1], "consc": -1},
+				"text":
+				"The light is on. You decide that is good enough, which is a sentence you will remember."
+			},
+			{
+				"label": "RUN THE TEST ($150, 3 HOURS)",
+				"need": 150,
+				"roll":
+				[
+					[
+						0.3,
+						{"cash": -150, "owner_hours": 3, "habit": "H1", "consc": 1, "rep": 1},
+						"It works. It also finds one machine that was never in the job. Alan fixes it before lunch."
+					],
+					[
+						0.7,
+						{"cash": -150, "owner_hours": 3, "habit": "H1", "consc": 1},
+						"The machine comes back from the backup, boots, and opens the right files. Alan writes the date on the spare PC with a marker."
+					],
+				],
+			},
+			{
+				"label": "HAND IT TO DAN AND TRUST HIM",
+				"roll":
+				[
+					[
+						0.75,
+						{"owner_hours": 1, "habit": "H1", "consc": 1},
+						"Dan runs it. He labels the spare PC and the drive. He is slightly happy about the label."
+					],
+					[
+						0.25,
+						{"owner_hours": 1, "skel": ["temp_restore", -1]},
+						"Dan was pulled onto a printer halfway through. The test sits in his notes as almost done."
+					],
+				],
+			},
+		],
+	},
+	"temp_price":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"I found a dental office that is shopping for IT. Big Cheese quoted them $39 a seat. If we go 25 percent under our price I can sign them tomorrow. Alan did the math on a napkin: the work costs us about 80 percent of what we would charge.",
+		"options":
+		[
+			{
+				"label": "CUT 25 PERCENT AND SIGN THEM",
+				"fx":
+				{
+					"sign": true,
+					"discount_new": {"mult": 0.75, "weeks": 30},
+					"skel": ["temp_price", -1],
+					"consc": -2
+				},
+				"text":
+				"They sign before lunch. Alan folds the napkin into quarters and puts it in the drawer with the other one."
+			},
+			{
+				"label": "SELL THE VALUE PAGE, AT OUR PRICE ($250)",
+				"need": 250,
+				"roll":
+				[
+					[
+						0.4,
+						{"cash": -250, "sign": true, "consc": 1},
+						"You walk them through what is not in the flat price. They sign at your number and ask for the page again."
+					],
+					[
+						0.6,
+						{"cash": -250, "consc": 1},
+						"They like the page and keep the cheaper quote. The page stays on their fridge anyway."
+					],
+				],
+			},
+			{
+				"label": "LET THEM GO",
+				"fx": {},
+				"text": "Vic shrugs. Alan says a client you lose money on is not a client."
+			},
+		],
+	},
+	"temp_2fa":
+	{
+		"speaker": "{tech}",
+		"text":
+		"The partner at {client} says two-factor login makes him late for lunch. His office manager asks if we can switch it off for him alone, so he stops calling me. It takes two minutes, and I have nothing on paper saying we ever warned him.",
+		"options":
+		[
+			{
+				"label": "SWITCH IT OFF FOR HIM, JUST HIM",
+				"fx": {"skel": ["temp_2fa", -1], "consc": -2, "mood_all": 1, "owner_hours": -1},
+				"text":
+				"The calls stop. The partner shakes your hand at the door. Nothing in writing says why."
+			},
+			{
+				"label": "GET A SIGNED RISK FORM FIRST",
+				"fx": {"habit": "H4", "consc": 1, "mood_all": -1},
+				"text":
+				"He signs without reading. The paper goes in the right folder, which is a different one."
+			},
+			{
+				"label": "INSIST: NO EXCEPTIONS",
+				"fx": {"consc": 1, "mood_all": -2, "owner_hours": 1},
+				"text":
+				"He grumbles for a week and then forgets about it. His office manager sends a thank-you email."
+			},
+		],
+	},
+	"temp_quest":
+	{
+		"speaker": "Marge",
+		"text":
+		"Granite Mutual's renewal came in. Question 14: is two-factor login on for every administrator account? Question 19: are restores tested at least quarterly? Answer yes to both and the premium is $38 a week. Answer true and it is $65.",
+		"options":
+		[
+			{
+				"label": "ANSWER YES TO EVERYTHING",
+				"fx": {"weekly": -27, "skel": ["temp_quest", 99], "consc": -2},
+				"text":
+				"The broker smiles and says it is a very common answer. The premium drops. A folder in Marge's cabinet gets thicker."
+			},
+			{
+				"label": "ANSWER TRUTHFULLY, PROMISE TWO FIXES BY JULY",
+				"fx": {"habit_start": ["H1", "H7"], "consc": 1},
+				"text":
+				"The broker writes a note: IMPROVING. The policy renews at $65. You have two things to do before July."
+			},
+			{
+				"label": "ASK THE BROKER FOR A CHEAPER CARRIER",
+				"roll":
+				[
+					[
+						0.4,
+						{"weekly": -11, "consc": 1},
+						"He grumbles. Two phone calls later: $54 a week, with a one page list of what they need to see."
+					],
+					[
+						0.6,
+						{"consc": 1},
+						"He tries three carriers. Nobody beats $65 for an honest answer. He tells you so, which you respect."
+					],
+				],
+			},
+		],
+	},
+	"temp_come_clean":
+	{
+		"speaker": "Marge",
+		"text":
+		"I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT. There are {n} things in it now. Buyers read that folder, and so do insurers. I can phone the people involved and tell them the truth before they find it. It costs less than the bill would.",
+		"options":
+		[
+			{
+				"label": "OWN UP TO THE OLDEST ONE ({costa})",
+				"fx": {},
+				"text":
+				"Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
+			},
+			{
+				"label": "OWN UP TO THE BIGGEST ONE ({costb})",
+				"fx": {},
+				"text":
+				"Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
+			},
+			{
+				"label": "NOT YET",
+				"fx": {},
+				"text": "Marge closes the cabinet. She does not say anything. She does not have to."
+			},
+		],
+	},
+	"bill_temp_seats":
+	{
+		"speaker": "Marge",
+		"text":
+		"WebWoot audited the seat count: 63 seats, not 41. A back bill plus a 25 percent penalty, {bill} out of the account, and list price with no partner discount from now on. The rep was polite about it, which was worse.",
+		"options":
+		[
+			{
+				"label": "PAY IT AND KEEP A PROPER SEAT LIST",
+				"fx": {"consc": 1, "owner_hours": 1},
+				"text":
+				"Marge builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true."
+			},
+			{
+				"label": "ARGUE WITH THE REP",
+				"fx": {"rep": -1, "consc": -1},
+				"text":
+				"You argue about the count. The rep reads the old form back to you, slowly. You stop arguing."
+			},
+		],
+	},
+	"bill_temp_reboot":
+	{
+		"speaker": "Marge",
+		"text":
+		"A bookkeeper at {vname} went through one invoice and asked what ADVANCED DIAGNOSTICS means. The honest answer was a reboot. We refund {bill} and the owner wants a word.",
+		"options":
+		[
+			{
+				"label": "GO THERE AND SAY SORRY IN PERSON",
+				"fx": {"consc": 1, "owner_hours": 1, "mood": {"{v}": 6}},
+				"text":
+				"You say it plainly. The owner is quiet, then asks if you do printer checks. You do."
+			},
+			{
+				"label": "CALL IT A BILLING MIX-UP",
+				"fx": {"consc": -1, "rep": -1},
+				"text":
+				"Marge reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up."
+			},
+		],
+	},
+	"bill_temp_launder":
+	{
+		"speaker": "Vic Marlowe",
+		"text":
+		"Mrs. Dunning asked me, kindly, how we knew about her server before she called. The answer is the open mailbox at {vname}, and now {vname} knows. {vleave} The Chamber lunch heard about it by noon.",
+		"options":
+		[
+			{
+				"label": "TELL THEM THE WHOLE TRUTH",
+				"fx": {"consc": 1, "owner_hours": 2, "mood": {"{v}": 6}},
+				"text":
+				"It is a long, bad conversation. At the end of it they still have your number, which is more than you earned."
+			},
+			{
+				"label": "DENY IT",
+				"fx": {"consc": -1, "rep": -1},
+				"text": "Nobody believes you. Vic stops coming to the Chamber lunch for a week."
+			},
+		],
+	},
+	"bill_temp_review":
+	{
+		"speaker": "{sales_owner}",
+		"text":
+		"A thread on LabRat Nerds called FIVE STARS FROM ONE KEYBOARD matched our three reviews to my nephew's writing: the same odd phrase, three times. Two forum regulars who liked us have gone quiet, and the Chamber lunch is very polite today.",
+		"options":
+		[
+			{
+				"label": "POST ONE SHORT, TRUE APOLOGY",
+				"fx": {"consc": 1, "owner_hours": 1, "rep": 1},
+				"text":
+				"Four lines, under your own name. It does not undo anything, but it is the last thing in the thread."
+			},
+			{
+				"label": "DELETE THE FAKE ACCOUNTS AND SAY NOTHING",
+				"fx": {"consc": -1, "rep": -1},
+				"text": "The accounts go away. The screenshots do not."
+			},
+		],
+	},
+	"bill_temp_quest":
+	{
+		"speaker": "Marge",
+		"text":
+		"The claim came back. The insurer put our renewal answers next to the logs: no two-factor login for administrators, no restore test on file. They want {bill} back and the broker has stopped returning calls. Next year's premium is a different number.",
+		"options":
+		[
+			{
+				"label": "FIX BOTH ITEMS AND WRITE THEM DOWN",
+				"fx": {"habit_start": ["H1", "H7"], "consc": 1},
+				"text":
+				"Alan makes the list. Two things get done by Friday and dated. The folder has a page that says so."
+			},
+			{
+				"label": "BLAME THE BROKER",
+				"fx": {"rep": -1, "consc": -1},
+				"text": "The broker has a copy of the form. It has your signature on it."
+			},
+		],
+	},
+	"bill_temp_price":
+	{
+		"speaker": "Marge",
+		"text":
+		"The profit review is out. {vname} costs us more than it pays: the 25 percent we gave away was the margin. We have been working there at a loss for weeks, about {bill} by my count.",
+		"options":
+		[
+			{
+				"label": "ASK FOR A 20 PERCENT RISE",
+				"roll":
+				[
+					[
+						0.55,
+						{"fee_boost": {"client": "{v}", "mult": 1.2}, "consc": 1},
+						"They grumble and sign the new number. The napkin comes out of the drawer to be framed."
+					],
+					[
+						0.45,
+						{"drop_client": "{v}"},
+						"They say Big Cheese never asked for more. They leave at the end of the month."
+					],
+				],
+			},
+			{
+				"label": "KEEP THEM AND EAT THE MARGIN",
+				"fx": {"consc": -1},
+				"text": "Marge puts the review in the folder, next to the napkin."
+			},
+		],
+	},
+	"bill_temp_2fa":
+	{
+		"speaker": "Marge",
+		"text":
+		"An account at {vname} was taken over. Their owner asks what we told him about two-factor login. We told him on the phone. Nothing is on paper and he says he never agreed to switch it off. Cleanup and a settlement came to {bill}.",
+		"options":
+		[
+			{
+				"label": "WRITE EVERY WARNING DOWN FROM NOW ON",
+				"fx": {"habit_start": "H13", "consc": 1},
+				"text":
+				"Alan starts a one line email after every warning. It takes thirty seconds and the folder gets a section."
+			},
+			{
+				"label": "SAY IT WAS HIS CHOICE",
+				"fx": {"rep": -1, "consc": -1},
+				"text": "It was, but you cannot prove it. He tells his lawyer, who tells him to be calm."
+			},
+		],
+	},
+	"bill_temp_restore":
+	{
+		"speaker": "{tech}",
+		"text":
+		"The restore failed at {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. We rebuilt from paper copies and old drives. {bill} in hours and parts.",
+		"options":
+		[
+			{
+				"label": "RUN A RESTORE TEST ON EVERY CLIENT NOW",
+				"fx": {"habit": "H1", "owner_hours": 3, "consc": 1},
+				"text":
+				"It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday."
+			},
+			{
+				"label": "CALL IT BAD LUCK",
+				"fx": {"consc": -1},
+				"text":
+				"It was not luck. Alan does not say so. Alan just looks at the green light for a long time."
+			},
+		],
+	},
 }
 static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 
-const DEFAULT_DAYS := {}
+# the temptation cards that come on a fixed morning; temp_seats, temp_reboot, temp_review and temp_quest are placed by Rival.ARC
+const DEFAULT_DAYS := {
+	6: [{"at": 13.5, "card": "temp_2fa"}],
+	10: [{"at": 14.5, "card": "temp_launder"}],
+	12: [{"at": 13.5, "card": "temp_restore"}],
+	14: [{"at": 12.0, "card": "temp_price"}],
+}
 static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
 
 

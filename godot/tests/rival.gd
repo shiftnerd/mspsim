@@ -174,8 +174,8 @@ func _init() -> void:
 
 	# ---- the cards file is merged and the Strings roots work on static tables
 	_check(
-		o.RivalCards.CARDS.has("rival_flat") and o.RivalCards.merged_days({1: []}) == {1: []},
-		"the rival cards exist and no placements yet"
+		o.RivalCards.CARDS.has("rival_flat") and o.RivalCards.merged_days({1: []}).has(6),
+		"the rival cards exist and the temptation cards are placed (R38 P3)"
 	)
 	var entries: Array = strings.entries()
 	var keys := {}

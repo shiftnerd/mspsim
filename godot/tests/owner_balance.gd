@@ -34,6 +34,14 @@ const POLICIES := {
 		"bec_scare": 0,
 		"bec_marge": 0,
 		"pm_ransom": 0,
+		"temp_seats": 1,  # R38 P3: the honest answer of every temptation (the shortcut is option 0)
+		"temp_reboot": 1,
+		"temp_launder": 1,
+		"temp_review": 1,
+		"temp_restore": 1,
+		"temp_price": 1,
+		"temp_2fa": 1,
+		"temp_quest": 1,
 	},
 	"cheap":
 	{
@@ -103,6 +111,8 @@ const POLICIES := {
 	},
 }
 
+# the shortcut owner: smart's answers, but every temptation card takes its shortcut (option 0) and the price war is matched
+const SHORTCUT_PICKS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "temp_review": 0, "temp_restore": 0, "temp_price": 0, "temp_2fa": 0, "temp_quest": 0, "rival_flat": 2}
 const HONEST_ORDER := ["H1", "H7", "H2", "H6", "H12", "H3", "H4", "H5", "H13", "H11", "H10", "H9", "H14", "H8"]
 
 var habits: Script  # loaded in _init: habits.gd names autoloads, so it cannot compile before they exist
@@ -185,10 +195,13 @@ func _init() -> void:
 			as_who = arg
 			wanted.erase(arg)
 	load("res://scripts/player.gd").current_character = "office_alan" if as_who == "alan" else "casual_garrison"
-	for policy_name in POLICIES.keys() + ["honest"]:  # R38: honest = smart's answers plus the good habits
+	for policy_name in POLICIES.keys() + ["honest", "shortcuts"]:  # R38: honest = smart plus the good habits, shortcuts = smart plus every temptation
 		if not wanted.is_empty() and not wanted.has(policy_name):
 			continue
-		policy = POLICIES["smart" if policy_name == "honest" else policy_name]
+		policy = POLICIES["smart" if policy_name in ["honest", "shortcuts"] else policy_name]
+		if policy_name == "shortcuts":
+			policy = policy.duplicate()
+			policy.merge(SHORTCUT_PICKS, true)
 		if OS.get_environment("SEED") != "":  # R38: the same seed for the same strategy (global randf too)
 			var run_seed := int(OS.get_environment("SEED"))
 			root.get_node("Difficulty").seed_run(run_seed)
@@ -223,13 +236,15 @@ func _init() -> void:
 		print(
 			line,
 			(
-				" value $%d (%.1fx) fired=%s frames=%d standard=%d"
+				" value $%d (%.1fx) fired=%s frames=%d standard=%d folder=%d consc=%d"
 				% [
 					o.valuation(),
 					o.multiple(),
 					str(report.report.get("fired", false)),
 					frames_total,
-					habits.standard()
+					habits.standard(),
+					o.skel.size(),
+					o.consc
 				]
 			)
 		)

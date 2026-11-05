@@ -145,5 +145,129 @@ func _init() -> void:
 	var normal: int = t.bill_size(o.skel[0])
 	_check(normal == 1900, "the normal bill is 1900")
 
+	# ---- the eight cards and their bills exist, and the shortcut seeds the skeleton
+	var ids: Array = t.BILLS.keys()
+	_check(ids.size() == 8, "eight temptations")
+	for id in ids:
+		var card: Dictionary = o.CARDS.get(id, {})
+		_check(not card.is_empty(), "card %s is in Owner.CARDS" % id)
+		_check(not o.CARDS.get("bill_" + id, {}).is_empty(), "card bill_%s exists" % id)
+		var seeds := 0
+		var honest := 0
+		for opt in card.get("options", []):
+			var branches: Array = [opt.get("fx", {})]
+			for entry in opt.get("roll", []):
+				branches.append(entry[1])
+			var seeded := false
+			for fx in branches:
+				seeded = seeded or JSON.stringify((fx as Dictionary).get("skel", "")).contains(id)
+			if seeded and not opt.has("roll"):
+				seeds += 1
+			elif not seeded and int((opt.get("fx", {}) as Dictionary).get("consc", 0)) > 0 or opt.has("roll") and not seeded:
+				honest += 1
+		_check(seeds >= 1 and honest >= 1, "%s has a shortcut and an honest answer" % id)
+	for id in ["temp_2fa", "temp_launder", "temp_restore", "temp_price"]:
+		var placed := false
+		for ev in o.events_on(int({"temp_2fa": 6, "temp_launder": 10, "temp_restore": 12, "temp_price": 14}[id])):
+			placed = placed or str(ev.get("card", "")) == id
+		_check(placed, "%s has a fixed morning" % id)
+	var rv: Script = load("res://scripts/rival.gd")
+	for id in ["temp_seats", "temp_reboot", "temp_review", "temp_quest"]:
+		_check(rv.ARC.values().has(id), "%s is placed by the arc" % id)
+
+	# ---- the vendor bill: the saving ends, list price from then on, the card text is filled in
+	_fresh(c, cards, 8)
+	var w0: int = o.weekly_extra
+	o.apply(o.CARDS.temp_seats.options[0].fx)
+	_check(o.weekly_extra == w0 - 71 and t.folder_count() == 1 and t.consc() == -2, "the 41 seats shortcut saves $71 a week and costs the conscience")
+	c.day = int(o.skel[0].due)
+	var cash1: int = o.cash
+	t.week(o)
+	_check(o.cash == cash1 - 1900 and o.weekly_extra == w0 + 15, "the bill: $1900 and the saving gone plus a cold vendor")
+	_check(cards.is_open and not cards.text.contains("{") and cards.text.contains("$1,900"), "the bill card is filled in: " + cards.text.substr(0, 60))
+	cards.pick(0)
+	_check(t.consc() == -1, "owning up to the bill gives a point back")
+	_clear(cards)
+
+	# ---- a client bill falls on one client; the launder bill makes them leave
+	_fresh(c, cards, 8)
+	var n0: int = root.get_node("Sales").active.size()
+	var moods: Dictionary = {}
+	for cl in root.get_node("Sales").active:
+		moods[cl] = root.get_node("Sales").mood(cl)
+	t.add_skeleton("temp_reboot", 1)
+	c.day = 9
+	t.week(o)
+	var hurt := 0
+	for cl in moods:
+		if root.get_node("Sales").mood(cl) < int(moods[cl]):
+			hurt += 1
+	_check(hurt == 1, "the reboot bill hurts exactly one client (%d)" % hurt)
+	_check(cards.is_open and cards.text.contains("ADVANCED DIAGNOSTICS") and not cards.text.contains("{"), "the reboot card names the client")
+	_clear(cards)
+	t.add_skeleton("temp_launder", 1)
+	c.day = 10
+	t.week(o)
+	_check(root.get_node("Sales").active.size() == n0 - 1, "the client whose mailbox it was leaves")
+	_clear(cards)
+
+	# ---- reputation: the forum friends go quiet
+	_fresh(c, cards, 12)
+	var nerds := root.get_node("Nerds")
+	nerds.friend = {"rodent_rick": 60, "gnawer": 45, "other": 10}
+	var rep0: int = c.rep
+	t.add_skeleton("temp_review", 1)
+	c.day = 13
+	t.week(o)
+	_check(int(nerds.friend.rodent_rick) == 30 and int(nerds.friend.gnawer) == 15 and int(nerds.friend.other) == 10, "the two best regulars lose 30")
+	_check(c.rep < rep0, "and the reputation falls")
+	_clear(cards)
+	nerds.friend = {}
+
+	# ---- the margin bill picks the discounted client and offers a rise
+	_fresh(c, cards, 10)
+	var cheap: int = root.get_node("Sales").active[0]
+	o.discount[cheap] = {"mult": 0.75, "weeks": 20}
+	t.add_skeleton("temp_price", 1)
+	c.day = 11
+	t.week(o)
+	_check(cards.is_open and cards.options.size() == 2 and cards.text.contains(str(root.get_node("Msp").CLIENTS[cheap].name)), "the margin bill names the discounted client")
+	_clear(cards)
+
+	# ---- the insurer bill waits for a claim, then reads the renewal answers
+	_fresh(c, cards, 16)
+	var w1: int = o.weekly_extra
+	o.apply(o.CARDS.temp_quest.options[0].fx)
+	_check(int(o.skel[0].due) == 99 and o.weekly_extra == w1 - 27, "yes to everything: premium down, no date")
+	t.claim(o)
+	_check(t.folder_count() == 0 and o.weekly_extra == w1, "a claim fires the bill and the premium is true again")
+	_check(cards.is_open and cards.text.contains("$4,000"), "the insurer card quotes the bill")
+	_clear(cards)
+	t.claim(o)
+	_check(not cards.is_open, "no skeleton, no bill")
+	_fresh(c, cards, 16)
+	o.apply({"skel": ["temp_quest", 99]})
+	o.apply({"bec": "claim"})
+	_check(t.folder_count() == 0, "a wire fraud claim fires it too")
+	_clear(cards)
+
+	# ---- COME CLEAN from the second skeleton, once in four weeks, with the costs filled in
+	_fresh(c, cards, 9)
+	t.add_skeleton("temp_price", 6)
+	t.week(o)
+	_check(not o.flags.get("arc_queue", []).has("temp_come_clean"), "one skeleton: no offer")
+	t.add_skeleton("temp_seats", 8)
+	t.week(o)
+	_check(o.flags.get("arc_queue", []).has("temp_come_clean"), "two skeletons: the offer is queued")
+	rv.morning(o)
+	_check(cards.is_open and cards.text.contains("2 things") and cards.options.size() == 3, "the card shows with both choices")
+	_check(str(cards.options[0].label).contains("$240") and str(cards.options[1].label).contains("$760"), "with the costs: %s / %s" % [cards.options[0].label, cards.options[1].label])
+	var cash2: int = o.cash
+	cards.pick(1)
+	_check(t.find("temp_seats") < 0 and t.find("temp_price") >= 0 and o.cash == cash2 - 760, "owning up to the biggest removes it for $760")
+	_clear(cards)
+	t.week(o)
+	_check(not o.flags.get("arc_queue", []).has("temp_come_clean"), "and nothing is queued again the same week")
+
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

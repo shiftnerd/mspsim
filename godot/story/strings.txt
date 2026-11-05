@@ -21248,6 +21248,514 @@ PUT HIS FLYER IN THE DRAWER
 [RivalCards.CARDS.rival_end.options.1.text]
 EVERYTHING INCLUDED. You still do not know what everything was.
 
+# RivalCards > CARDS > temp_seats > speaker
+[RivalCards.CARDS.temp_seats.speaker]
+Marge
+
+# RivalCards > CARDS > temp_seats > text
+[RivalCards.CARDS.temp_seats.text]
+WebWoot sent the quarterly seat true-up form. We run their antivirus on 63 seats. If we write 41, the invoice drops $308 a month and nobody checks. Rex told Garrison he does it every quarter.
+
+# RivalCards > CARDS > temp_seats > options > 0 > label
+[RivalCards.CARDS.temp_seats.options.0.label]
+REPORT 41 AND KEEP THE $308 A MONTH
+
+# RivalCards > CARDS > temp_seats > options > 0 > text
+[RivalCards.CARDS.temp_seats.options.0.text]
+Marge types 41 and does not look up. The invoice drops. She puts the original form in the folder.
+
+# RivalCards > CARDS > temp_seats > options > 1 > label
+[RivalCards.CARDS.temp_seats.options.1.label]
+REPORT 63 AND ASK FOR A VOLUME TIER
+
+# RivalCards > CARDS > temp_seats > options > 1 > text
+[RivalCards.CARDS.temp_seats.options.1.text]
+The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true.
+
+# RivalCards > CARDS > temp_seats > options > 2 > label
+[RivalCards.CARDS.temp_seats.options.2.label]
+CHANGE VENDORS, THIS IS ANNOYING ($800)
+
+# RivalCards > CARDS > temp_seats > options > 2 > text
+[RivalCards.CARDS.temp_seats.options.2.text]
+Switching costs a week of grumbling. The new vendor audits you too, but kindly.
+
+# RivalCards > CARDS > temp_reboot > speaker
+[RivalCards.CARDS.temp_reboot.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > temp_reboot > text
+[RivalCards.CARDS.temp_reboot.text]
+The printer at {client} needed a reboot. Eight minutes. Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and their clients never ask what it is. I think we could do the same.
+
+# RivalCards > CARDS > temp_reboot > options > 0 > label
+[RivalCards.CARDS.temp_reboot.options.0.label]
+BILL IT AS ADVANCED DIAGNOSTICS ($85)
+
+# RivalCards > CARDS > temp_reboot > options > 0 > text
+[RivalCards.CARDS.temp_reboot.options.0.text]
+The invoice goes out with the long phrase. Vic grins. Somewhere a bookkeeper reaches for her glasses.
+
+# RivalCards > CARDS > temp_reboot > options > 1 > label
+[RivalCards.CARDS.temp_reboot.options.1.label]
+BILL THE EIGHT MINUTES ($20)
+
+# RivalCards > CARDS > temp_reboot > options > 1 > text
+[RivalCards.CARDS.temp_reboot.options.1.text]
+Twenty dollars and a short note: the printer needed a restart, and here is the setting that stops it. The client keeps the note.
+
+# RivalCards > CARDS > temp_reboot > options > 2 > label
+[RivalCards.CARDS.temp_reboot.options.2.label]
+OFFER A MONTHLY PRINTER CHECK ($40 A WEEK)
+
+# RivalCards > CARDS > temp_reboot > options > 2 > text
+[RivalCards.CARDS.temp_reboot.options.2.text]
+Now the reboot is part of something. Marge calls it recurring revenue with a stapler.
+
+# RivalCards > CARDS > temp_launder > speaker
+[RivalCards.CARDS.temp_launder.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > temp_launder > text
+[RivalCards.CARDS.temp_launder.text]
+A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.
+
+# RivalCards > CARDS > temp_launder > options > 0 > label
+[RivalCards.CARDS.temp_launder.options.0.label]
+TAKE THE MEETING, SHE IS A HOT LEAD
+
+# RivalCards > CARDS > temp_launder > options > 0 > text
+[RivalCards.CARDS.temp_launder.options.0.text]
+She is a great lead. She is a great lead because someone read our tickets and sold her the story.
+
+# RivalCards > CARDS > temp_launder > options > 1 > label
+[RivalCards.CARDS.temp_launder.options.1.label]
+ASK HER HOW SHE HEARD ABOUT US
+
+# RivalCards > CARDS > temp_launder > options > 1 > text
+[RivalCards.CARDS.temp_launder.options.1.text]
+She mentions a shared mailbox at the dental office. Vic goes quiet, then says he will make a call.
+
+# RivalCards > CARDS > temp_launder > options > 2 > label
+[RivalCards.CARDS.temp_launder.options.2.label]
+TELL THE CLIENT THEIR MAILBOX IS OPEN, FOR FREE
+
+# RivalCards > CARDS > temp_launder > options > 2 > text
+[RivalCards.CARDS.temp_launder.options.2.text]
+They fix the mailbox that afternoon. Mrs. Dunning becomes a client three weeks later, and she tells everyone why.
+
+# RivalCards > CARDS > temp_review > speaker
+[RivalCards.CARDS.temp_review.speaker]
+{sales_owner}
+
+# RivalCards > CARDS > temp_review > text
+[RivalCards.CARDS.temp_review.text]
+A prospect asked Vic if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.
+
+# RivalCards > CARDS > temp_review > options > 0 > label
+[RivalCards.CARDS.temp_review.options.0.label]
+POST THREE REVIEWS AS CUSTOMERS
+
+# RivalCards > CARDS > temp_review > options > 0 > text
+[RivalCards.CARDS.temp_review.options.0.text]
+Three glowing reviews from a happy dental office manager. Alan reads them and does not speak for the rest of the day.
+
+# RivalCards > CARDS > temp_review > options > 1 > label
+[RivalCards.CARDS.temp_review.options.1.label]
+SHOW HER THE BOND CERTIFICATE AND THE BAA
+
+# RivalCards > CARDS > temp_review > options > 1 > text
+[RivalCards.CARDS.temp_review.options.1.text]
+Two documents and a coffee. She signs the following week and apologises for asking.
+
+# RivalCards > CARDS > temp_review > options > 2 > label
+[RivalCards.CARDS.temp_review.options.2.label]
+ASK TWO HAPPY CLIENTS FOR A REAL REVIEW
+
+# RivalCards > CARDS > temp_review > options > 2 > text
+[RivalCards.CARDS.temp_review.options.2.text]
+Delia writes the best one. She mentions the printer.
+
+# RivalCards > CARDS > temp_review > options > 3 > label
+[RivalCards.CARDS.temp_review.options.3.label]
+SAY NOTHING
+
+# RivalCards > CARDS > temp_review > options > 3 > text
+[RivalCards.CARDS.temp_review.options.3.text]
+The rumour spreads, as rumours do at Chamber lunches.
+
+# RivalCards > CARDS > temp_restore > speaker
+[RivalCards.CARDS.temp_restore.speaker]
+{tech}
+
+# RivalCards > CARDS > temp_restore > text
+[RivalCards.CARDS.temp_restore.text]
+It has been a quarter. The restore test is due: pull one machine off the backup and bring it back on a spare. About three hours. Everything is green. Everything has been green for three months.
+
+# RivalCards > CARDS > temp_restore > options > 0 > label
+[RivalCards.CARDS.temp_restore.options.0.label]
+SKIP IT, THE LIGHT IS ON
+
+# RivalCards > CARDS > temp_restore > options > 0 > text
+[RivalCards.CARDS.temp_restore.options.0.text]
+The light is on. You decide that is good enough, which is a sentence you will remember.
+
+# RivalCards > CARDS > temp_restore > options > 1 > label
+[RivalCards.CARDS.temp_restore.options.1.label]
+RUN THE TEST ($150, 3 HOURS)
+
+# RivalCards > CARDS > temp_restore > options > 1 > roll > 0 > 2
+[RivalCards.CARDS.temp_restore.options.1.roll.0.2]
+It works. It also finds one machine that was never in the job. Alan fixes it before lunch.
+
+# RivalCards > CARDS > temp_restore > options > 1 > roll > 1 > 2
+[RivalCards.CARDS.temp_restore.options.1.roll.1.2]
+The machine comes back from the backup, boots, and opens the right files. Alan writes the date on the spare PC with a marker.
+
+# RivalCards > CARDS > temp_restore > options > 2 > label
+[RivalCards.CARDS.temp_restore.options.2.label]
+HAND IT TO DAN AND TRUST HIM
+
+# RivalCards > CARDS > temp_restore > options > 2 > roll > 0 > 2
+[RivalCards.CARDS.temp_restore.options.2.roll.0.2]
+Dan runs it. He labels the spare PC and the drive. He is slightly happy about the label.
+
+# RivalCards > CARDS > temp_restore > options > 2 > roll > 1 > 2
+[RivalCards.CARDS.temp_restore.options.2.roll.1.2]
+Dan was pulled onto a printer halfway through. The test sits in his notes as almost done.
+
+# RivalCards > CARDS > temp_price > speaker
+[RivalCards.CARDS.temp_price.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > temp_price > text
+[RivalCards.CARDS.temp_price.text]
+I found a dental office that is shopping for IT. Big Cheese quoted them $39 a seat. If we go 25 percent under our price I can sign them tomorrow. Alan did the math on a napkin: the work costs us about 80 percent of what we would charge.
+
+# RivalCards > CARDS > temp_price > options > 0 > label
+[RivalCards.CARDS.temp_price.options.0.label]
+CUT 25 PERCENT AND SIGN THEM
+
+# RivalCards > CARDS > temp_price > options > 0 > text
+[RivalCards.CARDS.temp_price.options.0.text]
+They sign before lunch. Alan folds the napkin into quarters and puts it in the drawer with the other one.
+
+# RivalCards > CARDS > temp_price > options > 1 > label
+[RivalCards.CARDS.temp_price.options.1.label]
+SELL THE VALUE PAGE, AT OUR PRICE ($250)
+
+# RivalCards > CARDS > temp_price > options > 1 > roll > 0 > 2
+[RivalCards.CARDS.temp_price.options.1.roll.0.2]
+You walk them through what is not in the flat price. They sign at your number and ask for the page again.
+
+# RivalCards > CARDS > temp_price > options > 1 > roll > 1 > 2
+[RivalCards.CARDS.temp_price.options.1.roll.1.2]
+They like the page and keep the cheaper quote. The page stays on their fridge anyway.
+
+# RivalCards > CARDS > temp_price > options > 2 > label
+[RivalCards.CARDS.temp_price.options.2.label]
+LET THEM GO
+
+# RivalCards > CARDS > temp_price > options > 2 > text
+[RivalCards.CARDS.temp_price.options.2.text]
+Vic shrugs. Alan says a client you lose money on is not a client.
+
+# RivalCards > CARDS > temp_2fa > speaker
+[RivalCards.CARDS.temp_2fa.speaker]
+{tech}
+
+# RivalCards > CARDS > temp_2fa > text
+[RivalCards.CARDS.temp_2fa.text]
+The partner at {client} says two-factor login makes him late for lunch. His office manager asks if we can switch it off for him alone, so he stops calling me. It takes two minutes, and I have nothing on paper saying we ever warned him.
+
+# RivalCards > CARDS > temp_2fa > options > 0 > label
+[RivalCards.CARDS.temp_2fa.options.0.label]
+SWITCH IT OFF FOR HIM, JUST HIM
+
+# RivalCards > CARDS > temp_2fa > options > 0 > text
+[RivalCards.CARDS.temp_2fa.options.0.text]
+The calls stop. The partner shakes your hand at the door. Nothing in writing says why.
+
+# RivalCards > CARDS > temp_2fa > options > 1 > label
+[RivalCards.CARDS.temp_2fa.options.1.label]
+GET A SIGNED RISK FORM FIRST
+
+# RivalCards > CARDS > temp_2fa > options > 1 > text
+[RivalCards.CARDS.temp_2fa.options.1.text]
+He signs without reading. The paper goes in the right folder, which is a different one.
+
+# RivalCards > CARDS > temp_2fa > options > 2 > label
+[RivalCards.CARDS.temp_2fa.options.2.label]
+INSIST: NO EXCEPTIONS
+
+# RivalCards > CARDS > temp_2fa > options > 2 > text
+[RivalCards.CARDS.temp_2fa.options.2.text]
+He grumbles for a week and then forgets about it. His office manager sends a thank-you email.
+
+# RivalCards > CARDS > temp_quest > speaker
+[RivalCards.CARDS.temp_quest.speaker]
+Marge
+
+# RivalCards > CARDS > temp_quest > text
+[RivalCards.CARDS.temp_quest.text]
+Granite Mutual's renewal came in. Question 14: is two-factor login on for every administrator account? Question 19: are restores tested at least quarterly? Answer yes to both and the premium is $38 a week. Answer true and it is $65.
+
+# RivalCards > CARDS > temp_quest > options > 0 > label
+[RivalCards.CARDS.temp_quest.options.0.label]
+ANSWER YES TO EVERYTHING
+
+# RivalCards > CARDS > temp_quest > options > 0 > text
+[RivalCards.CARDS.temp_quest.options.0.text]
+The broker smiles and says it is a very common answer. The premium drops. A folder in Marge's cabinet gets thicker.
+
+# RivalCards > CARDS > temp_quest > options > 1 > label
+[RivalCards.CARDS.temp_quest.options.1.label]
+ANSWER TRUTHFULLY, PROMISE TWO FIXES BY JULY
+
+# RivalCards > CARDS > temp_quest > options > 1 > text
+[RivalCards.CARDS.temp_quest.options.1.text]
+The broker writes a note: IMPROVING. The policy renews at $65. You have two things to do before July.
+
+# RivalCards > CARDS > temp_quest > options > 2 > label
+[RivalCards.CARDS.temp_quest.options.2.label]
+ASK THE BROKER FOR A CHEAPER CARRIER
+
+# RivalCards > CARDS > temp_quest > options > 2 > roll > 0 > 2
+[RivalCards.CARDS.temp_quest.options.2.roll.0.2]
+He grumbles. Two phone calls later: $54 a week, with a one page list of what they need to see.
+
+# RivalCards > CARDS > temp_quest > options > 2 > roll > 1 > 2
+[RivalCards.CARDS.temp_quest.options.2.roll.1.2]
+He tries three carriers. Nobody beats $65 for an honest answer. He tells you so, which you respect.
+
+# RivalCards > CARDS > temp_come_clean > speaker
+[RivalCards.CARDS.temp_come_clean.speaker]
+Marge
+
+# RivalCards > CARDS > temp_come_clean > text
+[RivalCards.CARDS.temp_come_clean.text]
+I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT. There are {n} things in it now. Buyers read that folder, and so do insurers. I can phone the people involved and tell them the truth before they find it. It costs less than the bill would.
+
+# RivalCards > CARDS > temp_come_clean > options > 0 > label
+[RivalCards.CARDS.temp_come_clean.options.0.label]
+OWN UP TO THE OLDEST ONE ({costa})
+
+# RivalCards > CARDS > temp_come_clean > options > 0 > text
+[RivalCards.CARDS.temp_come_clean.options.0.text]
+Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
+
+# RivalCards > CARDS > temp_come_clean > options > 1 > label
+[RivalCards.CARDS.temp_come_clean.options.1.label]
+OWN UP TO THE BIGGEST ONE ({costb})
+
+# RivalCards > CARDS > temp_come_clean > options > 1 > text
+[RivalCards.CARDS.temp_come_clean.options.1.text]
+Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
+
+# RivalCards > CARDS > temp_come_clean > options > 2 > label
+[RivalCards.CARDS.temp_come_clean.options.2.label]
+NOT YET
+
+# RivalCards > CARDS > temp_come_clean > options > 2 > text
+[RivalCards.CARDS.temp_come_clean.options.2.text]
+Marge closes the cabinet. She does not say anything. She does not have to.
+
+# RivalCards > CARDS > bill_temp_seats > speaker
+[RivalCards.CARDS.bill_temp_seats.speaker]
+Marge
+
+# RivalCards > CARDS > bill_temp_seats > text
+[RivalCards.CARDS.bill_temp_seats.text]
+WebWoot audited the seat count: 63 seats, not 41. A back bill plus a 25 percent penalty, {bill} out of the account, and list price with no partner discount from now on. The rep was polite about it, which was worse.
+
+# RivalCards > CARDS > bill_temp_seats > options > 0 > label
+[RivalCards.CARDS.bill_temp_seats.options.0.label]
+PAY IT AND KEEP A PROPER SEAT LIST
+
+# RivalCards > CARDS > bill_temp_seats > options > 0 > text
+[RivalCards.CARDS.bill_temp_seats.options.0.text]
+Marge builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true.
+
+# RivalCards > CARDS > bill_temp_seats > options > 1 > label
+[RivalCards.CARDS.bill_temp_seats.options.1.label]
+ARGUE WITH THE REP
+
+# RivalCards > CARDS > bill_temp_seats > options > 1 > text
+[RivalCards.CARDS.bill_temp_seats.options.1.text]
+You argue about the count. The rep reads the old form back to you, slowly. You stop arguing.
+
+# RivalCards > CARDS > bill_temp_reboot > speaker
+[RivalCards.CARDS.bill_temp_reboot.speaker]
+Marge
+
+# RivalCards > CARDS > bill_temp_reboot > text
+[RivalCards.CARDS.bill_temp_reboot.text]
+A bookkeeper at {vname} went through one invoice and asked what ADVANCED DIAGNOSTICS means. The honest answer was a reboot. We refund {bill} and the owner wants a word.
+
+# RivalCards > CARDS > bill_temp_reboot > options > 0 > label
+[RivalCards.CARDS.bill_temp_reboot.options.0.label]
+GO THERE AND SAY SORRY IN PERSON
+
+# RivalCards > CARDS > bill_temp_reboot > options > 0 > text
+[RivalCards.CARDS.bill_temp_reboot.options.0.text]
+You say it plainly. The owner is quiet, then asks if you do printer checks. You do.
+
+# RivalCards > CARDS > bill_temp_reboot > options > 1 > label
+[RivalCards.CARDS.bill_temp_reboot.options.1.label]
+CALL IT A BILLING MIX-UP
+
+# RivalCards > CARDS > bill_temp_reboot > options > 1 > text
+[RivalCards.CARDS.bill_temp_reboot.options.1.text]
+Marge reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up.
+
+# RivalCards > CARDS > bill_temp_launder > speaker
+[RivalCards.CARDS.bill_temp_launder.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > bill_temp_launder > text
+[RivalCards.CARDS.bill_temp_launder.text]
+Mrs. Dunning asked me, kindly, how we knew about her server before she called. The answer is the open mailbox at {vname}, and now {vname} knows. {vleave} The Chamber lunch heard about it by noon.
+
+# RivalCards > CARDS > bill_temp_launder > options > 0 > label
+[RivalCards.CARDS.bill_temp_launder.options.0.label]
+TELL THEM THE WHOLE TRUTH
+
+# RivalCards > CARDS > bill_temp_launder > options > 0 > text
+[RivalCards.CARDS.bill_temp_launder.options.0.text]
+It is a long, bad conversation. At the end of it they still have your number, which is more than you earned.
+
+# RivalCards > CARDS > bill_temp_launder > options > 1 > label
+[RivalCards.CARDS.bill_temp_launder.options.1.label]
+DENY IT
+
+# RivalCards > CARDS > bill_temp_launder > options > 1 > text
+[RivalCards.CARDS.bill_temp_launder.options.1.text]
+Nobody believes you. Vic stops coming to the Chamber lunch for a week.
+
+# RivalCards > CARDS > bill_temp_review > speaker
+[RivalCards.CARDS.bill_temp_review.speaker]
+{sales_owner}
+
+# RivalCards > CARDS > bill_temp_review > text
+[RivalCards.CARDS.bill_temp_review.text]
+A thread on LabRat Nerds called FIVE STARS FROM ONE KEYBOARD matched our three reviews to my nephew's writing: the same odd phrase, three times. Two forum regulars who liked us have gone quiet, and the Chamber lunch is very polite today.
+
+# RivalCards > CARDS > bill_temp_review > options > 0 > label
+[RivalCards.CARDS.bill_temp_review.options.0.label]
+POST ONE SHORT, TRUE APOLOGY
+
+# RivalCards > CARDS > bill_temp_review > options > 0 > text
+[RivalCards.CARDS.bill_temp_review.options.0.text]
+Four lines, under your own name. It does not undo anything, but it is the last thing in the thread.
+
+# RivalCards > CARDS > bill_temp_review > options > 1 > label
+[RivalCards.CARDS.bill_temp_review.options.1.label]
+DELETE THE FAKE ACCOUNTS AND SAY NOTHING
+
+# RivalCards > CARDS > bill_temp_review > options > 1 > text
+[RivalCards.CARDS.bill_temp_review.options.1.text]
+The accounts go away. The screenshots do not.
+
+# RivalCards > CARDS > bill_temp_quest > speaker
+[RivalCards.CARDS.bill_temp_quest.speaker]
+Marge
+
+# RivalCards > CARDS > bill_temp_quest > text
+[RivalCards.CARDS.bill_temp_quest.text]
+The claim came back. The insurer put our renewal answers next to the logs: no two-factor login for administrators, no restore test on file. They want {bill} back and the broker has stopped returning calls. Next year's premium is a different number.
+
+# RivalCards > CARDS > bill_temp_quest > options > 0 > label
+[RivalCards.CARDS.bill_temp_quest.options.0.label]
+FIX BOTH ITEMS AND WRITE THEM DOWN
+
+# RivalCards > CARDS > bill_temp_quest > options > 0 > text
+[RivalCards.CARDS.bill_temp_quest.options.0.text]
+Alan makes the list. Two things get done by Friday and dated. The folder has a page that says so.
+
+# RivalCards > CARDS > bill_temp_quest > options > 1 > label
+[RivalCards.CARDS.bill_temp_quest.options.1.label]
+BLAME THE BROKER
+
+# RivalCards > CARDS > bill_temp_quest > options > 1 > text
+[RivalCards.CARDS.bill_temp_quest.options.1.text]
+The broker has a copy of the form. It has your signature on it.
+
+# RivalCards > CARDS > bill_temp_price > speaker
+[RivalCards.CARDS.bill_temp_price.speaker]
+Marge
+
+# RivalCards > CARDS > bill_temp_price > text
+[RivalCards.CARDS.bill_temp_price.text]
+The profit review is out. {vname} costs us more than it pays: the 25 percent we gave away was the margin. We have been working there at a loss for weeks, about {bill} by my count.
+
+# RivalCards > CARDS > bill_temp_price > options > 0 > label
+[RivalCards.CARDS.bill_temp_price.options.0.label]
+ASK FOR A 20 PERCENT RISE
+
+# RivalCards > CARDS > bill_temp_price > options > 0 > roll > 0 > 2
+[RivalCards.CARDS.bill_temp_price.options.0.roll.0.2]
+They grumble and sign the new number. The napkin comes out of the drawer to be framed.
+
+# RivalCards > CARDS > bill_temp_price > options > 0 > roll > 1 > 2
+[RivalCards.CARDS.bill_temp_price.options.0.roll.1.2]
+They say Big Cheese never asked for more. They leave at the end of the month.
+
+# RivalCards > CARDS > bill_temp_price > options > 1 > label
+[RivalCards.CARDS.bill_temp_price.options.1.label]
+KEEP THEM AND EAT THE MARGIN
+
+# RivalCards > CARDS > bill_temp_price > options > 1 > text
+[RivalCards.CARDS.bill_temp_price.options.1.text]
+Marge puts the review in the folder, next to the napkin.
+
+# RivalCards > CARDS > bill_temp_2fa > speaker
+[RivalCards.CARDS.bill_temp_2fa.speaker]
+Marge
+
+# RivalCards > CARDS > bill_temp_2fa > text
+[RivalCards.CARDS.bill_temp_2fa.text]
+An account at {vname} was taken over. Their owner asks what we told him about two-factor login. We told him on the phone. Nothing is on paper and he says he never agreed to switch it off. Cleanup and a settlement came to {bill}.
+
+# RivalCards > CARDS > bill_temp_2fa > options > 0 > label
+[RivalCards.CARDS.bill_temp_2fa.options.0.label]
+WRITE EVERY WARNING DOWN FROM NOW ON
+
+# RivalCards > CARDS > bill_temp_2fa > options > 0 > text
+[RivalCards.CARDS.bill_temp_2fa.options.0.text]
+Alan starts a one line email after every warning. It takes thirty seconds and the folder gets a section.
+
+# RivalCards > CARDS > bill_temp_2fa > options > 1 > label
+[RivalCards.CARDS.bill_temp_2fa.options.1.label]
+SAY IT WAS HIS CHOICE
+
+# RivalCards > CARDS > bill_temp_2fa > options > 1 > text
+[RivalCards.CARDS.bill_temp_2fa.options.1.text]
+It was, but you cannot prove it. He tells his lawyer, who tells him to be calm.
+
+# RivalCards > CARDS > bill_temp_restore > speaker
+[RivalCards.CARDS.bill_temp_restore.speaker]
+{tech}
+
+# RivalCards > CARDS > bill_temp_restore > text
+[RivalCards.CARDS.bill_temp_restore.text]
+The restore failed at {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. We rebuilt from paper copies and old drives. {bill} in hours and parts.
+
+# RivalCards > CARDS > bill_temp_restore > options > 0 > label
+[RivalCards.CARDS.bill_temp_restore.options.0.label]
+RUN A RESTORE TEST ON EVERY CLIENT NOW
+
+# RivalCards > CARDS > bill_temp_restore > options > 0 > text
+[RivalCards.CARDS.bill_temp_restore.options.0.text]
+It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday.
+
+# RivalCards > CARDS > bill_temp_restore > options > 1 > label
+[RivalCards.CARDS.bill_temp_restore.options.1.label]
+CALL IT BAD LUCK
+
+# RivalCards > CARDS > bill_temp_restore > options > 1 > text
+[RivalCards.CARDS.bill_temp_restore.options.1.text]
+It was not luck. Alan does not say so. Alan just looks at the green light for a long time.
+
 
 # ======================= RivalTouches > TALK =======================
 # RivalTouches > TALK > Alan > rival

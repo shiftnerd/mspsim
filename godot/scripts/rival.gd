@@ -417,6 +417,8 @@ static func show(owner: Node, id: String, arg: String) -> void:
 		names["{rh}"] = str(HABITS.get(arg, {}).get("name", arg)).to_lower()
 		names["{rl}"] = str(HABITS.get(arg, {}).get("text", ""))
 	card = _fill(card, names)
+	if id == Temptation.CLEAN_CARD:
+		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
 	var options: Array = card.options
 	for i in range(options.size() - 1, -1, -1):
 		if not _allowed(id, i, arg):

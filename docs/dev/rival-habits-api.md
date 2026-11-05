@@ -123,8 +123,7 @@ States `NONE ADOPTED STALE LAPSED`; `HABITS` (H1-H14: name, cost{cash,hours,mora
 - `folder_count() -> int`, `find(id) -> int`, `add_skeleton(id, weeks := -1) -> bool`, `apply_skel(fx)`, `bill_size(sk)` (cozy halves),
   `clean_cost(id) -> int` (40% of the bill, at least $50), `come_clean(id) -> bool` (+1 conscience), `bill(owner, sk)`, `week(owner)`
 - `diligence() -> float` (0.5 per open skeleton, max 1.5, from week 16), `diligence_line()`, `folder_text()`
-- TODO(temptation agent): the eight `temp_*` cards and their `bill_*` cards, per-class bill extras, the COME CLEAN card from the second
-  skeleton, triggers for the dateless insurer bill, tuning with the `shortcuts` bot.
+- BUILT (R38 P3, see the Temptation section below): the eight `temp_*` cards, their `bill_*` cards, per-class bill extras, COME CLEAN, the insurer trigger.
 
 ### `Takeover` (`takeover.gd`)
 `ENABLED` (false), `KIND` ("takeover"), `PER_FINDING` (15), `FINDINGS_TAKEOVER` (empty, six entries to come), `JOBS` (T1-T6: name, rap, twin).
@@ -211,3 +210,35 @@ Files: `scripts/rival_touches.gd` (`RivalTouches`, a static helper, owner: this 
   `story/banned_names.txt` (one per line, # comments; the user seeds it with the series' character names, it ships empty). A new table needs no
   change to the test: carry `R38` in the script header or add the path to `REGISTRY`.
 - After merging all R38 branches run `story_export.gd -- --sync` once (the strings.txt hunks of the branches will collide).
+
+## Temptation (R38 P3: `temptation.gd`, `temp_*` and `bill_*` cards of `rival_cards.gd`, `tests/temptation.gd`)
+
+- **Where the eight cards appear.** `Rival.ARC` already placed four (shown as beat copies): `temp_seats` w8, `temp_reboot` w9, `temp_review` w12,
+  `temp_quest` w16. The other four are in `RivalCards.DEFAULT_DAYS`: `temp_2fa` w6 13.5, `temp_launder` w10 14.5, `temp_restore` w12 13.5,
+  `temp_price` w14 12.0. `rival_flat` and `rival_defect` still seed `temp_price` themselves. In every card the SHORTCUT is option 0 (the tempting
+  place), the honest answers follow; the bot picks by index (`tests/owner_balance.gd` has `SHORTCUT_PICKS`).
+- **Seeding.** The shortcut option carries `skel [id, weeks]` (`-1` draws the BILLS range from `Difficulty.rng("skeleton")`, `99` waits for a trigger),
+  `consc -2` (`-1` for the restore skip) and its gain (`weekly -71` seats, `weekly -25` + `cash 85` reboot, `weekly -27` insurer premium, `lead`,
+  `rep 4`, `sign` + `discount_new 0.75`). Honest options have `consc +1` (the cap of +1 a week applies), a `habit` or `habit_start` where one fits.
+- **The bill** (`Temptation.bill`): cash (`bill_size`, halved on cozy), reputation, then `_extras` by class: the saving ends (`BILLS.weekly` is added back
+  to `Owner.weekly_extra`), vendor goes cold (+`VENDOR_COLD` a week, flag `vendor_cold`), the client classes hurt ONE client (`_victim`: the margin
+  bill the one on the deepest discount, backup the ransom client, client the `bec_client` of the story or one drawn from the `skeleton` stream) by
+  `BILLS.mood`, `temp_launder` makes that client leave (not on cozy), reputation bills take `FRIEND_LOSS` of friendship from the two best `Nerds.friend`
+  regulars. Then `bill_<id>` is shown as a copy in `Owner._dynamic["tb_<id>"]` (beat card): `{vname}` the client, `{bill}` the amount, `{vleave}`,
+  and `{v}` (the client index, also inside fx keys and values: a RISE option for `temp_price` and an apology for the others). Options that need `{v}` are
+  dropped when there is no client. A card without a `bill_` entry falls back to the toast.
+- **Come clean.** `come_clean` also adds the saving back. From the second open skeleton `week()` queues `temp_come_clean` in `flags.arc_queue` (at most
+  every `CLEAN_EVERY` = 4 weeks, flag `clean_offer`); `Rival.show` calls `Temptation.dress(card)` (one-line hook) to fill `{n}`, `{costa}`, `{costb}`
+  and set the fx `come_clean <id>` for the OLDEST and the BIGGEST skeleton. New fx key `come_clean <id>` (Owner.apply, one line).
+- **Dateless insurer bill.** `Temptation.claim(owner)` fires `temp_quest` (removes it, runs `bill`). `Owner.apply` calls it for an insurer claim:
+  `ransom_end: "insured"` (the ransom insurance line) and `bec: "claim"` (the wire fraud claim). Without a claim the skeleton stays and due diligence counts it.
+- **Tests / tuning.** `tests/temptation.gd` (cards, DAYS, vendor/client/launder/reputation/margin/insurer bills, come clean). `owner_balance.gd` has the
+  strategy `shortcuts` (smart's answers with every temptation taken) and `smart` now answers the temptations honestly; it prints `folder=` and `consc=`.
+- Balance (`SEED=n ... owner_balance.gd -- smart|shortcuts`, seeds 1-3): smart ends value $1.03M / $869k / $805k (5.5x, rep 100, folder 0, cash $12-13k),
+  shortcuts $115k / $250k / $153k (3.5-4.3x, rep 78-95, folder 1, consc -10 to -11, cash $2k-8k). Weekly (seed 1): shortcuts are ahead on cash and rep
+  from week 4 to 14 (cash $7.5k vs $4.1k at w14), the bills land in weeks 15-18 and smart pulls away. The gap is large because shortcuts also lose a
+  client (`temp_launder`), carry a 25 percent discount client and lose the margin/payroll multiple thresholds; the knobs are `BILLS` sizes, `VENDOR_COLD`
+  and the launder departure in `_extras`. Smart is also higher than the P2 numbers ($476-649k): the honest answers give leads, free habit starts and one
+  maybe-client; run to run noise is large, so judge by the shape.
+- Not done: the vendor partner rebate on a clean record, the H1 link (a skipped restore does not raise `Habits.restore_fail()`; the backup bill is its own
+  event), a `temp_restore` bill that is a real ransom, the sales-campaign twins (`SalesRival` has its own lies).
