@@ -19841,3 +19841,509 @@ DEFAULT DEVICE PASSWORDS CHANGED
 # Habits > HABITS > H14 > earns
 [Habits.HABITS.H14.earns]
 No default password finding, a small breach reduction.
+
+
+# ======================= RivalCards > CARDS =======================
+# RivalCards > CARDS > rival_flat > speaker
+[RivalCards.CARDS.rival_flat.speaker]
+{sales_owner}
+
+# RivalCards > CARDS > rival_flat > text
+[RivalCards.CARDS.rival_flat.text]
+{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal.
+
+# RivalCards > CARDS > rival_flat > options > 0 > label
+[RivalCards.CARDS.rival_flat.options.0.label]
+LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)
+
+# RivalCards > CARDS > rival_flat > options > 0 > text
+[RivalCards.CARDS.rival_flat.options.0.text]
+Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it.
+
+# RivalCards > CARDS > rival_flat > options > 1 > label
+[RivalCards.CARDS.rival_flat.options.1.label]
+PRINT A ONE PAGE COMPARISON ($120)
+
+# RivalCards > CARDS > rival_flat > options > 1 > text
+[RivalCards.CARDS.rival_flat.options.1.text]
+Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge.
+
+# RivalCards > CARDS > rival_flat > options > 2 > label
+[RivalCards.CARDS.rival_flat.options.2.label]
+DROP YOUR PRICE TO MATCH
+
+# RivalCards > CARDS > rival_flat > options > 2 > text
+[RivalCards.CARDS.rival_flat.options.2.text]
+Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer.
+
+# RivalCards > CARDS > rival_flat > options > 3 > label
+[RivalCards.CARDS.rival_flat.options.3.label]
+IGNORE HIM, HE WILL BE GONE BY JULY
+
+# RivalCards > CARDS > rival_flat > options > 3 > text
+[RivalCards.CARDS.rival_flat.options.3.text]
+Garrison says he has met a hundred Rexes. Rex is not gone by July.
+
+# RivalCards > CARDS > rival_wall > speaker
+[RivalCards.CARDS.rival_wall.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > rival_wall > text
+[RivalCards.CARDS.rival_wall.text]
+Look at Big Cheese on Yowl. Forty-one five-star reviews. I clicked through them: thirty-eight come from accounts that have never reviewed anything else, and four were posted the same afternoon. There is a new billboard on the county road too: WE DO IT ALL FOR $39 A SEAT. BOOKED SOLID.
+
+# RivalCards > CARDS > rival_wall > options > 0 > label
+[RivalCards.CARDS.rival_wall.options.0.label]
+HAVE VIC LOOK AT WHO WROTE THEM
+
+# RivalCards > CARDS > rival_wall > options > 0 > text
+[RivalCards.CARDS.rival_wall.options.0.text]
+Vic asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour.
+
+# RivalCards > CARDS > rival_wall > options > 1 > label
+[RivalCards.CARDS.rival_wall.options.1.label]
+ASK THREE HAPPY CLIENTS FOR A REAL REVIEW
+
+# RivalCards > CARDS > rival_wall > options > 1 > text
+[RivalCards.CARDS.rival_wall.options.1.text]
+Three honest reviews arrive in a week. They are not five stars every time. They mention names and dates, which is how you can tell.
+
+# RivalCards > CARDS > rival_wall > options > 2 > label
+[RivalCards.CARDS.rival_wall.options.2.label]
+PAINT A BILLBOARD OF YOUR OWN ($600)
+
+# RivalCards > CARDS > rival_wall > options > 2 > text
+[RivalCards.CARDS.rival_wall.options.2.text]
+The sign painter asks what to write. You say: WE TEST OUR BACKUPS. He asks if that is all. It is all.
+
+# RivalCards > CARDS > rival_wall > options > 3 > label
+[RivalCards.CARDS.rival_wall.options.3.label]
+IGNORE IT, REVIEWS DO NOT PAY THE BILLS
+
+# RivalCards > CARDS > rival_wall > options > 3 > text
+[RivalCards.CARDS.rival_wall.options.3.text]
+Garrison nods. Vic frowns at the billboard every time he drives past it.
+
+# RivalCards > CARDS > rival_defect > speaker
+[RivalCards.CARDS.rival_defect.speaker]
+Marge
+
+# RivalCards > CARDS > rival_defect > text
+[RivalCards.CARDS.rival_defect.text]
+{rc} gave notice this morning. They are moving to Big Cheese. Their owner liked the $39 a seat and the free pizza on Fridays. Delia, the office manager, did not look at me when she handed me the letter.
+
+# RivalCards > CARDS > rival_defect > options > 0 > label
+[RivalCards.CARDS.rival_defect.options.0.label]
+MATCH THE PRICE FOR 8 WEEKS (15 PERCENT OFF)
+
+# RivalCards > CARDS > rival_defect > options > 0 > text
+[RivalCards.CARDS.rival_defect.options.0.text]
+They stay. You now run their office at a loss and everyone knows it.
+
+# RivalCards > CARDS > rival_defect > options > 1 > label
+[RivalCards.CARDS.rival_defect.options.1.label]
+SHOW THEM WHAT IS NOT IN THE FLAT PRICE ($250)
+
+# RivalCards > CARDS > rival_defect > options > 1 > roll > 0 > 2
+[RivalCards.CARDS.rival_defect.options.1.roll.0.2]
+You build the page with them: backups, patching, the 2 a.m. calls. The owner nods and says he will keep you.
+
+# RivalCards > CARDS > rival_defect > options > 1 > roll > 1 > 2
+[RivalCards.CARDS.rival_defect.options.1.roll.1.2]
+You build the page with them: backups, patching, the 2 a.m. calls. The owner nods and says he will think about it. He thinks about it all the way to Big Cheese.
+
+# RivalCards > CARDS > rival_defect > options > 2 > label
+[RivalCards.CARDS.rival_defect.options.2.label]
+WISH THEM WELL AND ASK FOR AN EXIT CHAT
+
+# RivalCards > CARDS > rival_defect > options > 2 > text
+[RivalCards.CARDS.rival_defect.options.2.text]
+You hand over a clean folder of passwords and diagrams and say the door stays open. Delia puts your card in her notebook.
+
+# RivalCards > CARDS > rival_defect > options > 3 > label
+[RivalCards.CARDS.rival_defect.options.3.label]
+FIRE BACK: TELL THEM BIG CHEESE LOSES CLIENTS
+
+# RivalCards > CARDS > rival_defect > options > 3 > text
+[RivalCards.CARDS.rival_defect.options.3.text]
+It is true as far as you know, which is not very far. The owner stops listening.
+
+# RivalCards > CARDS > rival_notebook > speaker
+[RivalCards.CARDS.rival_notebook.speaker]
+Delia Pruitt
+
+# RivalCards > CARDS > rival_notebook > text
+[RivalCards.CARDS.rival_notebook.text]
+It's Delia from {rc}. I have a notebook. Since April the server went slow on the 3rd, the 11th, the 17th, and twice on a Monday. I wrote it all down with the date. Rex says I should stop worrying. Would you like to see it?
+
+# RivalCards > CARDS > rival_notebook > options > 0 > label
+[RivalCards.CARDS.rival_notebook.options.0.label]
+YES. COME IN AND BRING THE NOTEBOOK
+
+# RivalCards > CARDS > rival_notebook > options > 0 > text
+[RivalCards.CARDS.rival_notebook.options.0.text]
+She reads you fourteen entries. Three of them line up with a backup job that ran at 2:30 on the night the clocks moved. She is the only person in that office who has noticed anything.
+
+# RivalCards > CARDS > rival_notebook > options > 1 > label
+[RivalCards.CARDS.rival_notebook.options.1.label]
+ASK HER TO PHOTOGRAPH IT FOR YOUR FILE
+
+# RivalCards > CARDS > rival_notebook > options > 1 > text
+[RivalCards.CARDS.rival_notebook.options.1.text]
+Eight photos arrive by text. Your file is now a lot bigger than Rex's.
+
+# RivalCards > CARDS > rival_notebook > options > 2 > label
+[RivalCards.CARDS.rival_notebook.options.2.label]
+TELL HER TO CANCEL BIG CHEESE NOW
+
+# RivalCards > CARDS > rival_notebook > options > 2 > text
+[RivalCards.CARDS.rival_notebook.options.2.text]
+You are not their IT person. Delia pauses, then says she will let you know.
+
+# RivalCards > CARDS > rival_notebook > options > 3 > label
+[RivalCards.CARDS.rival_notebook.options.3.label]
+THANK HER AND STAY OUT OF IT
+
+# RivalCards > CARDS > rival_notebook > options > 3 > text
+[RivalCards.CARDS.rival_notebook.options.3.text]
+Probably wise. Delia thanks you and goes back to writing.
+
+# RivalCards > CARDS > rival_takeover > speaker
+[RivalCards.CARDS.rival_takeover.speaker]
+{tech}
+
+# RivalCards > CARDS > rival_takeover > text
+[RivalCards.CARDS.rival_takeover.text]
+{rc} wants to come back. Delia says Rex has not returned a call in nine days and the owner has a bad feeling about the black box in the closet. I say: before we say yes, I want to see what they left behind.
+
+# RivalCards > CARDS > rival_takeover > options > 0 > label
+[RivalCards.CARDS.rival_takeover.options.0.label]
+SEND DAN FOR A TAKEOVER ASSESSMENT ($300, 4 HOURS)
+
+# RivalCards > CARDS > rival_takeover > options > 0 > text
+[RivalCards.CARDS.rival_takeover.options.0.text]
+Dan takes a camera, a flashlight and a clipboard. He is very quiet on the drive back.
+
+# RivalCards > CARDS > rival_takeover > options > 1 > label
+[RivalCards.CARDS.rival_takeover.options.1.label]
+QUOTE A FIXED PRICE CLEANUP ($1,800)
+
+# RivalCards > CARDS > rival_takeover > options > 1 > roll > 0 > 2
+[RivalCards.CARDS.rival_takeover.options.1.roll.0.2]
+They accept the number. The mess turns out to be about the size you guessed. You clear nine hundred dollars and a long weekend.
+
+# RivalCards > CARDS > rival_takeover > options > 1 > roll > 1 > 2
+[RivalCards.CARDS.rival_takeover.options.1.roll.1.2]
+Fixed price on an unknown mess. Behind the closet door is a second mess. I stare at you like you walked into a river.
+
+# RivalCards > CARDS > rival_takeover > options > 2 > label
+[RivalCards.CARDS.rival_takeover.options.2.label]
+ONLY SIGN WITH A CLEAN CONTRACT AND A TWO WEEK SCOPE FIRST
+
+# RivalCards > CARDS > rival_takeover > options > 2 > text
+[RivalCards.CARDS.rival_takeover.options.2.text]
+They sign. You spend the first two weeks on what is actually there.
+
+# RivalCards > CARDS > rival_takeover > options > 3 > label
+[RivalCards.CARDS.rival_takeover.options.3.label]
+PASS, WE ARE FULL
+
+# RivalCards > CARDS > rival_takeover > options > 3 > text
+[RivalCards.CARDS.rival_takeover.options.3.text]
+Delia says she understands. Her voice says she hoped.
+
+# RivalCards > CARDS > rival_2fa > speaker
+[RivalCards.CARDS.rival_2fa.speaker]
+Marge
+
+# RivalCards > CARDS > rival_2fa > text
+[RivalCards.CARDS.rival_2fa.text]
+A bookkeeper at one of Big Cheese's clients forwarded us a fraud email by mistake. Her owner's mailbox was read for days because two-factor login was switched off for convenience. Rex told them it was a nuisance. She has the sent folder to prove it, and she is not happy.
+
+# RivalCards > CARDS > rival_2fa > options > 0 > label
+[RivalCards.CARDS.rival_2fa.options.0.label]
+CHECK TWO-FACTOR LOGIN FOR OUR OWN CLIENTS ($200)
+
+# RivalCards > CARDS > rival_2fa > options > 0 > text
+[RivalCards.CARDS.rival_2fa.options.0.text]
+Alan makes a list: who has it on, who has it off, who said it was too much trouble. Eleven names. Nine are fixed by Friday.
+
+# RivalCards > CARDS > rival_2fa > options > 1 > label
+[RivalCards.CARDS.rival_2fa.options.1.label]
+CALL THE BOOKKEEPER AND OFFER A FREE LOOK
+
+# RivalCards > CARDS > rival_2fa > options > 1 > text
+[RivalCards.CARDS.rival_2fa.options.1.text]
+She does not switch yet, but she keeps your number on the monitor frame. Rex's number is in a drawer.
+
+# RivalCards > CARDS > rival_2fa > options > 2 > label
+[RivalCards.CARDS.rival_2fa.options.2.label]
+WRITE IT ON THE RAP SHEET AND MOVE ON
+
+# RivalCards > CARDS > rival_2fa > options > 2 > text
+[RivalCards.CARDS.rival_2fa.options.2.text]
+Marge puts the date next to the line. She underlines it twice.
+
+# RivalCards > CARDS > rival_vendor_audit > speaker
+[RivalCards.CARDS.rival_vendor_audit.speaker]
+Marge
+
+# RivalCards > CARDS > rival_vendor_audit > text
+[RivalCards.CARDS.rival_vendor_audit.text]
+A letter from WebWoot Security landed in a client's inbox by mistake, and the client forwarded it to us. Big Cheese was billed for 212 seats it never reported, and its antivirus is suspended until the weekend. Our phone started ringing at 6 tonight. Three of them are Big Cheese clients.
+
+# RivalCards > CARDS > rival_vendor_audit > options > 0 > label
+[RivalCards.CARDS.rival_vendor_audit.options.0.label]
+ANSWER EVERY CALL TONIGHT, NO SALES PITCH
+
+# RivalCards > CARDS > rival_vendor_audit > options > 0 > text
+[RivalCards.CARDS.rival_vendor_audit.options.0.text]
+You tell each one the same thing: turn it off, do not click anything, call your own IT person. Two of them say thank you in a tone you remember.
+
+# RivalCards > CARDS > rival_vendor_audit > options > 1 > label
+[RivalCards.CARDS.rival_vendor_audit.options.1.label]
+OFFER A FREE SECURITY CHECK TO THE CALLERS ($300)
+
+# RivalCards > CARDS > rival_vendor_audit > options > 1 > text
+[RivalCards.CARDS.rival_vendor_audit.options.1.text]
+Dan and Alan split the checks across Saturday. Three offices now have a list in their hands, and it is not a long list.
+
+# RivalCards > CARDS > rival_vendor_audit > options > 2 > label
+[RivalCards.CARDS.rival_vendor_audit.options.2.label]
+KEEP QUIET, THIS IS NOT OUR FIGHT
+
+# RivalCards > CARDS > rival_vendor_audit > options > 2 > text
+[RivalCards.CARDS.rival_vendor_audit.options.2.text]
+The phone stops by nine. Marge puts the letter in the folder labelled RAP SHEET.
+
+# RivalCards > CARDS > rival_exposed > speaker
+[RivalCards.CARDS.rival_exposed.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > rival_exposed > text
+[RivalCards.CARDS.rival_exposed.text]
+A LabRat Nerds thread went up overnight called FIVE STARS FROM NOBODY, and the county paper has a blurb on page six: forty-one reviews, thirty-eight from accounts with no other history. Rex deleted the thread by noon. The Chamber lunch was very quiet today.
+
+# RivalCards > CARDS > rival_exposed > options > 0 > label
+[RivalCards.CARDS.rival_exposed.options.0.label]
+STAY OUT OF IT AND LET THE PAPER DO ITS JOB
+
+# RivalCards > CARDS > rival_exposed > options > 0 > text
+[RivalCards.CARDS.rival_exposed.options.0.text]
+Garrison says that is the grown up answer. Vic says it is also the boring one.
+
+# RivalCards > CARDS > rival_exposed > options > 1 > label
+[RivalCards.CARDS.rival_exposed.options.1.label]
+SEND THE REPORTER OUR OWN HONEST REVIEWS
+
+# RivalCards > CARDS > rival_exposed > options > 1 > text
+[RivalCards.CARDS.rival_exposed.options.1.text]
+Six real reviews, with names and dates and one complaint about parking. The reporter prints the parking one and it does you a lot of good.
+
+# RivalCards > CARDS > rival_exposed > options > 2 > label
+[RivalCards.CARDS.rival_exposed.options.2.label]
+QUOTE THE PAPER TO EVERY PROSPECT
+
+# RivalCards > CARDS > rival_exposed > options > 2 > text
+[RivalCards.CARDS.rival_exposed.options.2.text]
+It works. It works a little too well, and Alan says he is not comfortable being the second loudest voice in the room.
+
+# RivalCards > CARDS > rival_blitz > speaker
+[RivalCards.CARDS.rival_blitz.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > rival_blitz > text
+[RivalCards.CARDS.rival_blitz.text]
+Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. Vic has three prospects who have already heard it, and two of our clients got the flyer.
+
+# RivalCards > CARDS > rival_blitz > options > 0 > label
+[RivalCards.CARDS.rival_blitz.options.0.label]
+CALL EVERY CLIENT BEFORE THEY CALL YOU
+
+# RivalCards > CARDS > rival_blitz > options > 0 > text
+[RivalCards.CARDS.rival_blitz.options.0.text]
+You make eleven calls in one afternoon. Nine are short. Two want to talk about everything else, which is what you hoped for.
+
+# RivalCards > CARDS > rival_blitz > options > 1 > label
+[RivalCards.CARDS.rival_blitz.options.1.label]
+SHOW THE SHEET: WHAT YOU CAN PROVE, WITH DATES, NO GOSSIP
+
+# RivalCards > CARDS > rival_blitz > options > 1 > text
+[RivalCards.CARDS.rival_blitz.options.1.text]
+Three pages. Each line says what, when, and where the paper is. No names but his. Rex's rumour dies at the first meeting that has paper in it.
+
+# RivalCards > CARDS > rival_blitz > options > 2 > label
+[RivalCards.CARDS.rival_blitz.options.2.label]
+OFFER A LOYALTY PRICE FOR 12 WEEKS (10 PERCENT OFF)
+
+# RivalCards > CARDS > rival_blitz > options > 2 > text
+[RivalCards.CARDS.rival_blitz.options.2.text]
+Most of them stay. Marge sighs at the margin and says that is what she gets for asking.
+
+# RivalCards > CARDS > rival_blitz > options > 3 > label
+[RivalCards.CARDS.rival_blitz.options.3.label]
+RELY ON YOUR REPUTATION
+
+# RivalCards > CARDS > rival_blitz > options > 3 > text
+[RivalCards.CARDS.rival_blitz.options.3.text]
+Garrison says we are good enough that we do not need to do anything. That is the sentence people say before they find out.
+
+# RivalCards > CARDS > rival_badday > speaker
+[RivalCards.CARDS.rival_badday.speaker]
+Marge
+
+# RivalCards > CARDS > rival_badday > text
+[RivalCards.CARDS.rival_badday.text]
+Our phone has not stopped. Five Big Cheese clients called between 6 and 8. One had a machine encrypted, the freezer bag was found with a dead drive, and Rex's own phone rings out. They all want to know if we can take them tomorrow.
+
+# RivalCards > CARDS > rival_badday > options > 0 > label
+[RivalCards.CARDS.rival_badday.options.0.label]
+TAKE THEM ALL TOMORROW
+
+# RivalCards > CARDS > rival_badday > options > 0 > text
+[RivalCards.CARDS.rival_badday.options.0.text]
+You say yes five times. Dan stares at the whiteboard for a while.
+
+# RivalCards > CARDS > rival_badday > options > 1 > label
+[RivalCards.CARDS.rival_badday.options.1.label]
+ASSESS EACH ONE FIRST AND TAKE THE BEST THREE
+
+# RivalCards > CARDS > rival_badday > options > 1 > text
+[RivalCards.CARDS.rival_badday.options.1.text]
+Three signed, two sent to a friendly MSP in the next county with a handshake. Alan calls it triage.
+
+# RivalCards > CARDS > rival_badday > options > 2 > label
+[RivalCards.CARDS.rival_badday.options.2.label]
+HELP THEM RECOVER WITHOUT TAKING THEM ($600)
+
+# RivalCards > CARDS > rival_badday > options > 2 > text
+[RivalCards.CARDS.rival_badday.options.2.text]
+You spend a Saturday recovering what you can. Word gets around the Chamber of Commerce by Monday.
+
+# RivalCards > CARDS > rival_badday > options > 3 > label
+[RivalCards.CARDS.rival_badday.options.3.label]
+PASS, WE HAVE OUR OWN PROBLEMS
+
+# RivalCards > CARDS > rival_badday > options > 3 > text
+[RivalCards.CARDS.rival_badday.options.3.text]
+The phones stop eventually.
+
+# RivalCards > CARDS > rival_decide > speaker
+[RivalCards.CARDS.rival_decide.speaker]
+Marge
+
+# RivalCards > CARDS > rival_decide > text
+[RivalCards.CARDS.rival_decide.text]
+You now know something about Big Cheese: {rh}. {rl} A client of theirs, and a few prospects who sit at the same Chamber lunch, would want to hear it. What do you do with it?
+
+# RivalCards > CARDS > rival_decide > options > 0 > label
+[RivalCards.CARDS.rival_decide.options.0.label]
+WIN THE CLIENT: USE IT IN YOUR OWN TALK, HONESTLY
+
+# RivalCards > CARDS > rival_decide > options > 0 > roll > 0 > 2
+[RivalCards.CARDS.rival_decide.options.0.roll.0.2]
+You do not name Rex. You print a page: here is what I would check in your office. Two owners take the page home. One calls on Thursday.
+
+# RivalCards > CARDS > rival_decide > options > 0 > roll > 1 > 2
+[RivalCards.CARDS.rival_decide.options.0.roll.1.2]
+The owner is loyal to a friendly man who sponsors the Little League shirts. He thanks you for the page and uses it as a coaster.
+
+# RivalCards > CARDS > rival_decide > options > 1 > label
+[RivalCards.CARDS.rival_decide.options.1.label]
+WARN THEM: A FACTUAL LETTER, ONLY WHAT YOU SAW
+
+# RivalCards > CARDS > rival_decide > options > 1 > text
+[RivalCards.CARDS.rival_decide.options.1.text]
+The letter goes out to that one client only. It says what, when and how you know.
+
+# RivalCards > CARDS > rival_decide > options > 2 > label
+[RivalCards.CARDS.rival_decide.options.2.label]
+REPORT IT TO THE VENDOR
+
+# RivalCards > CARDS > rival_decide > options > 2 > roll > 0 > 2
+[RivalCards.CARDS.rival_decide.options.2.roll.0.2]
+The vendor's compliance desk writes back in four days. A credit lands on your account and an invitation to the partner breakfast.
+
+# RivalCards > CARDS > rival_decide > options > 2 > roll > 1 > 2
+[RivalCards.CARDS.rival_decide.options.2.roll.1.2]
+The vendor thanks you for your concern. Nothing else happens, which Alan says is the usual result.
+
+# RivalCards > CARDS > rival_decide > options > 3 > label
+[RivalCards.CARDS.rival_decide.options.3.label]
+IGNORE IT
+
+# RivalCards > CARDS > rival_decide > options > 3 > text
+[RivalCards.CARDS.rival_decide.options.3.text]
+Marge puts it in the folder. The folder is getting thick.
+
+# RivalCards > CARDS > rival_counter > speaker
+[RivalCards.CARDS.rival_counter.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > rival_counter > text
+[RivalCards.CARDS.rival_counter.text]
+Rex told the whole Chamber lunch you are going around saying things about him. It is half true, which is why it travels. Two prospects went quiet this week.
+
+# RivalCards > CARDS > rival_counter > options > 0 > label
+[RivalCards.CARDS.rival_counter.options.0.label]
+WRITE A SHORT, POLITE CORRECTION
+
+# RivalCards > CARDS > rival_counter > options > 0 > text
+[RivalCards.CARDS.rival_counter.options.0.text]
+Four lines, signed with your name. It does not undo the damage, but it stops it growing.
+
+# RivalCards > CARDS > rival_counter > options > 1 > label
+[RivalCards.CARDS.rival_counter.options.1.label]
+SAY NOTHING, IT WILL PASS
+
+# RivalCards > CARDS > rival_counter > options > 1 > text
+[RivalCards.CARDS.rival_counter.options.1.text]
+It passes, slowly, and takes a prospect or two with it.
+
+# RivalCards > CARDS > rival_knew > speaker
+[RivalCards.CARDS.rival_knew.speaker]
+Marge
+
+# RivalCards > CARDS > rival_knew > text
+[RivalCards.CARDS.rival_knew.text]
+One of Big Cheese's clients was hurt by exactly the thing you had written down: {rh}. Somebody at the Chamber lunch says you knew. I did not say anything. I just looked at the folder.
+
+# RivalCards > CARDS > rival_knew > options > 0 > label
+[RivalCards.CARDS.rival_knew.options.0.label]
+I SHOULD HAVE SAID SOMETHING
+
+# RivalCards > CARDS > rival_knew > options > 0 > text
+[RivalCards.CARDS.rival_knew.options.0.text]
+Marge nods once. It is the worst possible answer and the true one.
+
+# RivalCards > CARDS > rival_knew > options > 1 > label
+[RivalCards.CARDS.rival_knew.options.1.label]
+SEND THEM A FREE CHECK NOW ($200)
+
+# RivalCards > CARDS > rival_knew > options > 1 > text
+[RivalCards.CARDS.rival_knew.options.1.text]
+It is late, but it is something. They do not mention it again, which is a kind of thanks.
+
+# RivalCards > CARDS > rival_end > speaker
+[RivalCards.CARDS.rival_end.speaker]
+Vic Marlowe
+
+# RivalCards > CARDS > rival_end > text
+[RivalCards.CARDS.rival_end.text]
+Big Cheese sold the book to an outfit from out of town. Rex shook every hand at the Chamber lunch and said he was going to spend more time with his family. A painter was on the county road billboard by Tuesday. It says COMING SOON.
+
+# RivalCards > CARDS > rival_end > options > 0 > label
+[RivalCards.CARDS.rival_end.options.0.label]
+RAISE A COFFEE TO REX
+
+# RivalCards > CARDS > rival_end > options > 0 > text
+[RivalCards.CARDS.rival_end.options.0.text]
+Garrison says every town needs one. Alan says every town only needs one.
+
+# RivalCards > CARDS > rival_end > options > 1 > label
+[RivalCards.CARDS.rival_end.options.1.label]
+PUT HIS FLYER IN THE DRAWER
+
+# RivalCards > CARDS > rival_end > options > 1 > text
+[RivalCards.CARDS.rival_end.options.1.text]
+EVERYTHING INCLUDED. You still do not know what everything was.

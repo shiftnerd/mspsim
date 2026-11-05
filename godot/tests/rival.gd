@@ -151,6 +151,8 @@ func _init() -> void:
 
 	# ---- the arc: queues only cards that exist, shows each once
 	_start(c, cards, 5)
+	var real_flat: Dictionary = o.CARDS["rival_flat"]  # R38 rival agent: the real card exists now
+	o.CARDS.erase("rival_flat")
 	rival.arc_week(o, 2)
 	_check(
 		(o.flags.get("arc_queue", []) as Array).is_empty(),
@@ -168,12 +170,12 @@ func _init() -> void:
 	_clear(cards)
 	rival.arc_week(o, 2)
 	_check((o.flags.get("arc_queue", []) as Array).is_empty(), "a shown beat is never queued again")
-	o.CARDS.erase("rival_flat")
+	o.CARDS["rival_flat"] = real_flat
 
 	# ---- the cards file is merged and the Strings roots work on static tables
 	_check(
-		o.RivalCards.CARDS.is_empty() and o.RivalCards.merged_days({1: []}) == {1: []},
-		"no cards and no placements yet"
+		o.RivalCards.CARDS.has("rival_flat") and o.RivalCards.merged_days({1: []}) == {1: []},
+		"the rival cards exist and no placements yet"
 	)
 	var entries: Array = strings.entries()
 	var keys := {}

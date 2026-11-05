@@ -78,9 +78,7 @@ habits, blurb), `ARC` (week -> card id). `HABITS` and `RIVALS` are `static var` 
 - `key(rival, habit) -> String` ; `rap(rival, habit) -> int` ; `set_rap(rival, habit, level) -> bool` (true if it went up)
 - `count(rival, level) -> int` ; `known(rival) -> bool` ; `line(rival) -> String` ; `lines() -> Array` ; `best(habit) -> int`
 - `apply_rap(fx: Array)` ; `arc_week(owner, week)` (queues the beat of week+1 if its card exists) ; `morning(owner)`
-- TODO(rival agent): `intel(rival) -> String`, `defect_exit(rival, client)`, `assessment(rival) -> Array` (sales P5), the per-beat conditions in
-  `arc_week`, the cards `rival_flat rival_wall rival_defect rival_notebook rival_takeover rival_2fa rival_vendor_audit rival_exposed rival_blitz
-  rival_badday` (ids already in `ARC`), the forum/Vic/winback channels (hooks into `Nerds`, `_winback_card`, `_poach_card`, `Owner.on_deal`).
+- DONE (rival agent): `intel`, `defect_exit`, `assessment`, `relabel`, `on_winback`, `apply_fx`, `show`, the beat conditions and all `rival_*` cards (see the Rival arc section). Not done: the forum threads and ambient lines in `Nerds` (RUMOUR channel), left to a later pass.
 
 ### `Habits` (`habits.gd`)
 States `NONE ADOPTED STALE LAPSED`; `HABITS` (H1-H14: name, cost{cash,hours,morale}, every, weight, earns, shown; patchable), `BANDS`.
@@ -119,6 +117,28 @@ States `NONE ADOPTED STALE LAPSED`; `HABITS` (H1-H14: name, cost{cash,hours,mora
 `CARDS` and `DAYS` (`static var` copies of `DEFAULT_CARDS` / `DEFAULT_DAYS`, empty now), `merged_days(base)`. Add cards to `DEFAULT_CARDS` in the
 shape of `Owner.CARDS` and they appear in `Owner.CARDS` and as `[RivalCards.CARDS.<id>...]` in `story/strings.txt` (run
 `story_export.gd -- --sync` after adding). Beat cards in `Rival.ARC` need no `DAYS` entry.
+
+## Rival arc (built by the rival agent: `rival.gd`, `rival_*` cards of `rival_cards.gd`, `tests/rival_arc.gd`)
+
+- Beats: `Rival.ARC` now also has `20: rival_end` (Rex sells the book). `arc_week` queues next week's beat; `morning` shows ONE queued entry. An entry is
+  a card id or `"id|arg"` (`rival_decide|R06`, `rival_knew|R03`, `rival_counter`). Beat cards are shown as a COPY in `Owner._dynamic["rv_<id>"]`:
+  `{rc}` = the client of the arc (`flags.rival_client`, Delia's office), `{rh}`/`{rl}` = the habit name/text of a decision; options a gate removes are
+  left out (`SHOW THE SHEET` needs a PROVEN item and `Habits.standard() >= 60`; `REPORT IT TO THE VENDOR` needs PROVEN and a `VENDOR_HABITS` habit).
+- Client beats are dropped quietly when they do not apply (`_ready`): `rival_defect` (a Big Cheese poach already took a client, or fewer than 2 clients),
+  `rival_notebook` / `rival_takeover` (the arc client is not gone). `ON_SHOW` gives the evidence of a beat by showing it (2fa SEEN, vendor letter and
+  exposed reviews PROVEN); `DECIDES` chains the four option decision (`rival_decide`) the same morning.
+- New fx key `rival {ops}` -> `Rival.apply_fx(owner, ops)` (one hook in `Owner.apply`, after `lead`): `defect`, `tag n`, `exit`, `return`, `scope`, `mood n`,
+  `discount [mult, weeks]`, `sign n`, `ignore habit`, `decide win|warn|vendor|ignore`.
+- Evidence channels: `Rival.intel(rival)` (Vic, weeks 3 6 9 12 14, RUMOUR only, uses `Difficulty.rng("rival")`), `Rival.defect_exit` (R11 SEEN), `Rival.relabel`
+  (hook in `Owner._poach_card`: from week 6 half of the price and gap poaches are Big Cheese; uses ONE draw of the `rival` stream and no global roll; a relabelled
+  card names Big Cheese, every drop is tagged and an option ASK WHO THEIR NEW IT PERSON IS is added), `Rival.on_winback` (hook in `Owner._winback_card`:
+  a tagged leaver gets `flags["takeover_pending_<client>"] = week`, and `gone[client].rival == "bigcheese"`), `Rival.assessment(rival)` (3 to 5 habit ids, known ones first).
+- For the takeover agent: `rival_takeover` (week 11) rejoins the client (`Owner.apply({"rejoin"})`, patch debt 4) and sets `takeover_pending_<client>` and
+  `flags.rival_returned`; its first option carries `fx visit "takeover"`, which `Owner.apply` runs AFTER the rejoin, so `Takeover.visit` finds the client via
+  `flags.rival_client` (use `Rival.arc_client()`), not via `Owner.gone`. The week 19 card also calls `visit takeover` (three signed clients).
+- Flags written: `rival_client`, `rival_def_<c>`, `bc_<c>`, `rival_returned`, `rival_dh`, `rival_decided_<habit>`, `rival_knew_<habit>` / `knewdone_<habit>`,
+  `rival_retaliate` (week of a vendor report), `arc_<id>`. A flag `takeover_pending_<c>` is the hand-off to the takeover agent.
+- Cards set but do not own: `habit_start` H2 H4 H10 H12 (the habits agent may rename), `skel temp_price` (the temptation agent owns `temp_price`).
 
 ## Strings
 
