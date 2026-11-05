@@ -3112,6 +3112,18 @@ LICENSE THE PIXEL IT NAME
 [Yeartwo.TEXT.offers.franchise.desc]
 TWO SHOPS IN OTHER TOWNS RUN ON YOUR BINDERS AND PAY YOU A FEE. THE BRAND GOES REGIONAL.
 
+# Yeartwo > TEXT > habits > carry
+[Yeartwo.TEXT.habits.carry]
+YOUR GOOD HABITS COME OVER AT 60 PERCENT OF LAST YEAR'S STANDARD.
+
+# Yeartwo > TEXT > habits > rival_note
+[Yeartwo.TEXT.habits.rival_note]
+BIG CHEESE IS GONE. HARD RIND IT HAS THE SAME FLYERS AND THE SAME HABITS.
+
+# Yeartwo > TEXT > habits > rival > blurb
+[Yeartwo.TEXT.habits.rival.blurb]
+Hard Rind IT Services. Everything included, $41 a seat. Same flyers, new paint. Booked solid.
+
 # Yeartwo > TEXT > endings > head
 [Yeartwo.TEXT.endings.head]
 YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.
@@ -11412,6 +11424,194 @@ The lab is not optional. The lab is the thing.
 [Nerds.THREADS.70.answer]
 Build a small lab with a spare box and a free hypervisor and restore a copy of the database before testing.
 
+# Nerds > THREADS > 71 > title
+[Nerds.THREADS.71.title]
+Who is doing the cheap flat rate thing in my county?
+
+# Nerds > THREADS > 71 > posts > 0 > text
+[Nerds.THREADS.71.posts.0.text]
+A flyer showed up at three of my clients: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Anybody know who it is and what they actually do for $39?
+
+# Nerds > THREADS > 71 > posts > 1 > text
+[Nerds.THREADS.71.posts.1.text]
+Big Cheese something. A man in a nice jacket at every Chamber lunch. Never seen a van with a ladder on it.
+
+# Nerds > THREADS > 71 > posts > 2 > text
+[Nerds.THREADS.71.posts.2.text]
+Ask for the list. If there is no list, the list is: a person shows up, they are nice, nothing else is promised.
+
+# Nerds > THREADS > 71 > posts > 3 > text
+[Nerds.THREADS.71.posts.3.text]
+Seen it. Everything included until it is not. Then it is a project.
+
+# Nerds > THREADS > 72 > title
+[Nerds.THREADS.72.title]
+Flat per seat price: what is NOT in it?
+
+# Nerds > THREADS > 72 > posts > 0 > text
+[Nerds.THREADS.72.posts.0.text]
+Not a vent, a real question. If a shop charges one flat price per seat and nothing is itemized, how does the client know what they are not getting?
+
+# Nerds > THREADS > 72 > posts > 1 > text
+[Nerds.THREADS.72.posts.1.text]
+They do not. That is the point of the flat price. Itemize it: backups, patching, after hours calls, and what is not covered.
+
+# Nerds > THREADS > 72 > posts > 2 > text
+[Nerds.THREADS.72.posts.2.text]
+A one page list of what you do each week sells better than a low price. Try it on one client.
+
+# Nerds > THREADS > 73 > title
+[Nerds.THREADS.73.title]
+Backup on a USB drive in a freezer bag?
+
+# Nerds > THREADS > 73 > posts > 0 > text
+[Nerds.THREADS.73.posts.0.text]
+Heard a story at the supplier counter: a shop that keeps the only backup of a client on one USB drive in a freezer bag in the owner's trunk. I thought he was joking.
+
+# Nerds > THREADS > 73 > posts > 1 > text
+[Nerds.THREADS.73.posts.1.text]
+I wish I could say it was the first time I had heard it. A freezer bag protects it from spilled coffee. That is all it protects it from.
+
+# Nerds > THREADS > 73 > posts > 2 > text
+[Nerds.THREADS.73.posts.2.text]
+The drive has a light. The light is on. The light is a promise, not a restore.
+
+# Nerds > THREADS > 73 > posts > 3 > text
+[Nerds.THREADS.73.posts.3.text]
+Restore one file somewhere else. Every quarter. Write the date down. That is the whole trick.
+
+# Nerds > THREADS > 74 > title
+[Nerds.THREADS.74.title]
+Is a green light on the backup box a backup?
+
+# Nerds > THREADS > 74 > posts > 0 > text
+[Nerds.THREADS.74.posts.0.text]
+my backup box has a green light. it has had a green light since 2011. is it ok??
+
+# Nerds > THREADS > 74 > posts > 1 > text
+[Nerds.THREADS.74.posts.1.text]
+Pip, a light tells you it has power. It does not tell you the data is there. Restore a file today.
+
+# Nerds > THREADS > 74 > posts > 2 > text
+[Nerds.THREADS.74.posts.2.text]
+Green is a color, not a test result.
+
+# Nerds > THREADS > 74 > posts > 3 > text
+[Nerds.THREADS.74.posts.3.text]
+Test the restore, then test it again after you change anything. Put the date on the box.
+
+# Nerds > THREADS > 75 > title
+[Nerds.THREADS.75.title]
+One admin password for every client. Tell me I am wrong.
+
+# Nerds > THREADS > 75 > posts > 0 > text
+[Nerds.THREADS.75.posts.0.text]
+My boss uses the same admin password at every client so we never get locked out. It is easy to remember. Is that bad?
+
+# Nerds > THREADS > 75 > posts > 1 > text
+[Nerds.THREADS.75.posts.1.text]
+It is bad. One leaked laptop and every client you have is open. Give each client its own, in a safe place.
+
+# Nerds > THREADS > 75 > posts > 2 > text
+[Nerds.THREADS.75.posts.2.text]
+And not on a yellow note at the front desk. I have seen that too. The note was in the photo on the company page.
+
+# Nerds > THREADS > 75 > posts > 3 > text
+[Nerds.THREADS.75.posts.3.text]
+Unique passwords per client, one sealed copy in a safe, and a way in that is not the same one every day.
+
+# Nerds > THREADS > 76 > title
+[Nerds.THREADS.76.title]
+Yellow sticky note or a password vault?
+
+# Nerds > THREADS > 76 > posts > 0 > text
+[Nerds.THREADS.76.posts.0.text]
+Front desk has the admin password on a sticky note on the monitor. The tech says it is fine because it is behind the desk. Is it?
+
+# Nerds > THREADS > 76 > posts > 1 > text
+[Nerds.THREADS.76.posts.1.text]
+It is behind the desk until a visitor leans over the desk.
+
+# Nerds > THREADS > 76 > posts > 2 > text
+[Nerds.THREADS.76.posts.2.text]
+A password manager and a sealed envelope in a safe. The sticky note goes in the shredder.
+
+# Nerds > THREADS > 77 > title
+[Nerds.THREADS.77.title]
+Vendor seat true-up: report the real number or take the discount?
+
+# Nerds > THREADS > 77 > posts > 0 > text
+[Nerds.THREADS.77.posts.0.text]
+Quarterly true-up form from the antivirus vendor. Someone told me a shop in the next county just types a smaller number every quarter and nobody checks. Tempting?
+
+# Nerds > THREADS > 77 > posts > 1 > text
+[Nerds.THREADS.77.posts.1.text]
+We do check. Eventually. And a true-up after an audit costs more than the discount ever saved.
+
+# Nerds > THREADS > 77 > posts > 2 > text
+[Nerds.THREADS.77.posts.2.text]
+Report the real number, then ask for a volume tier. The rep would rather keep a straight client.
+
+# Nerds > THREADS > 77 > posts > 3 > text
+[Nerds.THREADS.77.posts.3.text]
+Not tempting once you picture the audit letter.
+
+# Nerds > THREADS > 78 > title
+[Nerds.THREADS.78.title]
+Anyone else get a seat count audit letter?
+
+# Nerds > THREADS > 78 > posts > 0 > text
+[Nerds.THREADS.78.posts.0.text]
+A vendor audit letter landed at a client of a client. Sixty three seats installed, forty one paid. The client is furious and it is not even their fault.
+
+# Nerds > THREADS > 78 > posts > 1 > text
+[Nerds.THREADS.78.posts.1.text]
+That is awful. Who is going to explain it to the owner?
+
+# Nerds > THREADS > 78 > posts > 2 > text
+[Nerds.THREADS.78.posts.2.text]
+The shop that signed the form. Which is why you keep your own count and your own folder.
+
+# Nerds > THREADS > 79 > title
+[Nerds.THREADS.79.title]
+Cyber insurance questionnaire: how honest do I have to be?
+
+# Nerds > THREADS > 79 > posts > 0 > text
+[Nerds.THREADS.79.posts.0.text]
+A client forwarded me the insurer's security questionnaire. Question 9: is two-factor login on for email? It is not. The last IT company ticked yes. Now what?
+
+# Nerds > THREADS > 79 > posts > 1 > text
+[Nerds.THREADS.79.posts.1.text]
+Answer what is true and turn it on before the form goes back. A wrong answer is the first thing a claim reviewer looks for.
+
+# Nerds > THREADS > 79 > posts > 2 > text
+[Nerds.THREADS.79.posts.2.text]
+A yes that is not true is a bigger problem than a no. Fix it, then say yes.
+
+# Nerds > THREADS > 79 > posts > 3 > text
+[Nerds.THREADS.79.posts.3.text]
+Keep a signed copy of what you answered. Dated.
+
+# Nerds > THREADS > 80 > title
+[Nerds.THREADS.80.title]
+Green dashboard, nothing watching
+
+# Nerds > THREADS > 80 > posts > 0 > text
+[Nerds.THREADS.80.posts.0.text]
+Took over a site where the monitoring tool shows all green. Turns out nobody ever set up the alerts. The agents are installed and the dashboard has never been configured.
+
+# Nerds > THREADS > 80 > posts > 1 > text
+[Nerds.THREADS.80.posts.1.text]
+Installed is not the same as configured. The dashboard is green because it has nothing to compare against.
+
+# Nerds > THREADS > 80 > posts > 2 > text
+[Nerds.THREADS.80.posts.2.text]
+Set a baseline, set the alerts, then break something on purpose and see if it tells you.
+
+# Nerds > THREADS > 80 > posts > 3 > text
+[Nerds.THREADS.80.posts.3.text]
+If your dashboard has never been red, either you are perfect or it is not looking.
+
 
 # ======================= Nerds > BLESSINGS =======================
 # Nerds > BLESSINGS > 0
@@ -13358,6 +13558,58 @@ the resort. the buffet. the lanyards. never again. maybe next year.
 [Nerds.AMBIENT.31.lines.1.1]
 the badge scanners had better uptime than most of my clients.
 
+# Nerds > AMBIENT > 32 > lines > 0 > 1
+[Nerds.AMBIENT.32.lines.0.1]
+anyone know who is handing out the $39 a seat flyers? EVERYTHING INCLUDED.
+
+# Nerds > AMBIENT > 32 > lines > 1 > 1
+[Nerds.AMBIENT.32.lines.1.1]
+ask what everything is. I'll wait.
+
+# Nerds > AMBIENT > 32 > lines > 2 > 1
+[Nerds.AMBIENT.32.lines.2.1]
+everything is a cheese, gnawer. it's always a cheese.
+
+# Nerds > AMBIENT > 33 > lines > 0 > 1
+[Nerds.AMBIENT.33.lines.0.1]
+story from the supplier counter: a whole client backed up on one usb stick in a freezer bag.
+
+# Nerds > AMBIENT > 33 > lines > 1 > 1
+[Nerds.AMBIENT.33.lines.1.1]
+a freezer bag. of course.
+
+# Nerds > AMBIENT > 33 > lines > 2 > 1
+[Nerds.AMBIENT.33.lines.2.1]
+keeps the coffee out. nothing else.
+
+# Nerds > AMBIENT > 33 > lines > 3 > 1
+[Nerds.AMBIENT.33.lines.3.1]
+restore one file. then you may call it a backup.
+
+# Nerds > AMBIENT > 34 > lines > 0 > 1
+[Nerds.AMBIENT.34.lines.0.1]
+saw a yellow sticky note with an admin password on a monitor today. in a PHOTO on the company page.
+
+# Nerds > AMBIENT > 34 > lines > 1 > 1
+[Nerds.AMBIENT.34.lines.1.1]
+unique password per client. every client. no exceptions.
+
+# Nerds > AMBIENT > 34 > lines > 2 > 1
+[Nerds.AMBIENT.34.lines.2.1]
+wait is one password for everything bad???
+
+# Nerds > AMBIENT > 35 > lines > 0 > 1
+[Nerds.AMBIENT.35.lines.0.1]
+vendor seat true-up season again. report the real number. the audit letter is worse.
+
+# Nerds > AMBIENT > 35 > lines > 1 > 1
+[Nerds.AMBIENT.35.lines.1.1]
+i have a shop in the next county who types forty one every quarter. i hope he is well.
+
+# Nerds > AMBIENT > 35 > lines > 2 > 1
+[Nerds.AMBIENT.35.lines.2.1]
+the audit is coming. it always comes.
+
 
 # ======================= Lync > MESSAGES =======================
 # Lync > MESSAGES > lunch > text
@@ -14530,10 +14782,42 @@ WAREHOUSE ALL-STAR
 
 # Career > MEDALS > 43 > title
 [Career.MEDALS.43.title]
-BULLSEYE
+HABIT FORMING
 
 # Career > MEDALS > 43 > desc
 [Career.MEDALS.43.desc]
+ADOPT 5 GOOD HABITS
+
+# Career > MEDALS > 44 > title
+[Career.MEDALS.44.title]
+SPRING CLEANING
+
+# Career > MEDALS > 44 > desc
+[Career.MEDALS.44.desc]
+PAY OFF 3 SKELETONS
+
+# Career > MEDALS > 45 > title
+[Career.MEDALS.45.title]
+CLEAN UP CREW
+
+# Career > MEDALS > 45 > desc
+[Career.MEDALS.45.desc]
+FINISH 3 TAKEOVERS
+
+# Career > MEDALS > 46 > title
+[Career.MEDALS.46.title]
+CLEAN SHEET
+
+# Career > MEDALS > 46 > desc
+[Career.MEDALS.46.desc]
+END A YEAR WITH CLEAN BOOKS
+
+# Career > MEDALS > 47 > title
+[Career.MEDALS.47.title]
+BULLSEYE
+
+# Career > MEDALS > 47 > desc
+[Career.MEDALS.47.desc]
 HIT THE BULL AT DARTS
 
 
@@ -20747,3 +21031,243 @@ PUT HIS FLYER IN THE DRAWER
 # RivalCards > CARDS > rival_end > options > 1 > text
 [RivalCards.CARDS.rival_end.options.1.text]
 EVERYTHING INCLUDED. You still do not know what everything was.
+
+
+# ======================= RivalTouches > TALK =======================
+# RivalTouches > TALK > Alan > rival
+[RivalTouches.TALK.Alan.rival]
+That Big Cheese flyer is on every windshield in the lot. Everything included, no list of what everything is. A restore test is not free, and he does not price it.
+
+# RivalTouches > TALK > Alan > bare
+[RivalTouches.TALK.Alan.bare]
+Big Cheese is the loud one, I know. But our own checklist has more empty boxes than ticks. Fix that first and then go fight him.
+
+# RivalTouches > TALK > Alan > solid
+[RivalTouches.TALK.Alan.solid]
+The checklist is mostly ticked and the restores pass. Boring is good. Boring is what I get paid for.
+
+# RivalTouches > TALK > Alan > showcase
+[RivalTouches.TALK.Alan.showcase]
+Every box ticked, a restore tested, the change notes written. I would not say it out loud, but I am proud of this shop.
+
+# RivalTouches > TALK > Alan > loose
+[RivalTouches.TALK.Alan.loose]
+Marge has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.
+
+# RivalTouches > TALK > Alan > closet
+[RivalTouches.TALK.Alan.closet]
+I did not sleep. That folder has our name on every page. Pick one, pay it, then pick the next. I will help.
+
+# RivalTouches > TALK > Garrison > rival
+[RivalTouches.TALK.Garrison.rival]
+Rex Calloway shook my hand for ten whole seconds at the Chamber lunch. A man who shakes that long is selling something. Find out what.
+
+# RivalTouches > TALK > Garrison > bare
+[RivalTouches.TALK.Garrison.bare]
+We talk about trust all day and our own house is half built. A client who asks for proof should get a page, not a speech.
+
+# RivalTouches > TALK > Garrison > solid
+[RivalTouches.TALK.Garrison.solid]
+Clients are noticing the one page reports. Nobody has ever called me to say thank you for the invoice, and two did this month.
+
+# RivalTouches > TALK > Garrison > showcase
+[RivalTouches.TALK.Garrison.showcase]
+Rex has a billboard. We have a Standard people can read in one page. I know which one I would rather defend at the Chamber.
+
+# RivalTouches > TALK > Garrison > loose
+[RivalTouches.TALK.Garrison.loose]
+People remember a shortcut longer than a favour. Whatever is in that folder, I would rather we told them first.
+
+# RivalTouches > TALK > Garrison > closet
+[RivalTouches.TALK.Garrison.closet]
+I cannot look a client in the eye this week. The deals are good and the books are not. We fix the books. Not negotiable.
+
+# RivalTouches > TALK > Dan > rival
+[RivalTouches.TALK.Dan.rival]
+I drove past a Big Cheese van. Ladder on the roof, nothing in the back. I count that as information.
+
+# RivalTouches > TALK > Dan > bare
+[RivalTouches.TALK.Dan.bare]
+I cannot find half of our own cable labels. Before you judge a rival's closet, let me show you ours.
+
+# RivalTouches > TALK > Dan > solid
+[RivalTouches.TALK.Dan.solid]
+Every rack I touch now has a label and a map. It takes a day to set up and saves three.
+
+# RivalTouches > TALK > Dan > showcase
+[RivalTouches.TALK.Dan.showcase]
+I took a photo of every closet this quarter. If I fall off the ladder, someone else can find the switch.
+
+# RivalTouches > TALK > Dan > loose
+[RivalTouches.TALK.Dan.loose]
+I found a default password on a camera and told Marge. I wrote it down so it counts.
+
+# RivalTouches > TALK > Dan > closet
+[RivalTouches.TALK.Dan.closet]
+There is a lot we did not write down. I have started a list. It is longer than I would like.
+
+# RivalTouches > TALK > Maya > rival
+[RivalTouches.TALK.Maya.rival]
+Clients keep asking me if we are the more expensive ones. I say we are the ones who can tell them what is not in the price.
+
+# RivalTouches > TALK > Maya > bare
+[RivalTouches.TALK.Maya.bare]
+I like it when we can hand a client a page and say, here is what we do. We cannot do that yet. I would like to.
+
+# RivalTouches > TALK > Maya > solid
+[RivalTouches.TALK.Maya.solid]
+The quarterly page is working. People used to ask what they were paying for. Now they ask what is next.
+
+# RivalTouches > TALK > Maya > showcase
+[RivalTouches.TALK.Maya.showcase]
+A client told me we are the only ones who tell her about the bad news first. I wrote that on a sticky note and kept it.
+
+# RivalTouches > TALK > Maya > loose
+[RivalTouches.TALK.Maya.loose]
+A couple of clients have gone quiet. The quiet ones are the ones to call. Start with the ones we shortchanged.
+
+# RivalTouches > TALK > Maya > closet
+[RivalTouches.TALK.Maya.closet]
+If one of these comes out, it will not be the money that hurts. It will be the phone calls. Let me help you make them.
+
+# RivalTouches > TALK > Vic > rival
+[RivalTouches.TALK.Vic.rival]
+Rex told three prospects we are the expensive option. I told them to ask him what a restore costs. They went quiet. I like quiet.
+
+# RivalTouches > TALK > Vic > bare
+[RivalTouches.TALK.Vic.bare]
+I cannot sell what we do not do. Every habit you add is a line I can say out loud at a meeting.
+
+# RivalTouches > TALK > Vic > solid
+[RivalTouches.TALK.Vic.solid]
+Prospects love the one page. It makes me look organized. Do not tell Garrison I said so.
+
+# RivalTouches > TALK > Vic > showcase
+[RivalTouches.TALK.Vic.showcase]
+I used the Standard in a pitch today. The owner asked if she could keep the page. She did not ask about price once.
+
+# RivalTouches > TALK > Vic > loose
+[RivalTouches.TALK.Vic.loose]
+I am not saying anything. I am just saying that if a client asks me about a bill, I will tell the truth.
+
+# RivalTouches > TALK > Vic > closet
+[RivalTouches.TALK.Vic.closet]
+I was going to bring a deal over the line today. I looked at that folder and went for a coffee instead.
+
+
+# ======================= RivalTouches > LYNK =======================
+# RivalTouches > LYNK > Alan > rival
+[RivalTouches.LYNK.Alan.rival]
+Saw the Big Cheese van at the diner again. Eating well. Wonder who pays.
+
+# RivalTouches > LYNK > Alan > solid
+[RivalTouches.LYNK.Alan.solid]
+Restores passed again. I am not smiling. That is just my face.
+
+# RivalTouches > LYNK > Alan > loose
+[RivalTouches.LYNK.Alan.loose]
+Marge showed me the folder. We should talk. Not now. Soon.
+
+# RivalTouches > LYNK > Alan > closet
+[RivalTouches.LYNK.Alan.closet]
+Tell me which one you want fixed first. I will bring the clipboard.
+
+# RivalTouches > LYNK > Garrison > rival
+[RivalTouches.LYNK.Garrison.rival]
+Rex sent me a basket of cheese. I am not eating it. Do you think it is bugged?
+
+# RivalTouches > LYNK > Garrison > solid
+[RivalTouches.LYNK.Garrison.solid]
+A client praised the one page report. Frame it. I mean it.
+
+# RivalTouches > LYNK > Garrison > loose
+[RivalTouches.LYNK.Garrison.loose]
+Quick question. Is there anything in the books I should hear from you first?
+
+# RivalTouches > LYNK > Garrison > closet
+[RivalTouches.LYNK.Garrison.closet]
+Whatever the folder says, I want to hear it from you today.
+
+# RivalTouches > LYNK > Dan > rival
+[RivalTouches.LYNK.Dan.rival]
+Another Big Cheese client asked me for a spare key. I did not give it. I thought about it.
+
+# RivalTouches > LYNK > Dan > solid
+[RivalTouches.LYNK.Dan.solid]
+All the closets are labelled. I took photos. I may have a problem.
+
+# RivalTouches > LYNK > Dan > loose
+[RivalTouches.LYNK.Dan.loose]
+I found an old shortcut in a closet. Writing it up now, no judgment.
+
+# RivalTouches > LYNK > Dan > closet
+[RivalTouches.LYNK.Dan.closet]
+I made a list of what we skipped. It has a second page. Sorry.
+
+# RivalTouches > LYNK > Maya > rival
+[RivalTouches.LYNK.Maya.rival]
+A client says Big Cheese told her we are not bonded. We are. Can I send her the paper?
+
+# RivalTouches > LYNK > Maya > solid
+[RivalTouches.LYNK.Maya.solid]
+She loved the quarterly page. She asked for two copies.
+
+# RivalTouches > LYNK > Maya > loose
+[RivalTouches.LYNK.Maya.loose]
+Three clients sounded off today. I think it is about the things we did not tell them.
+
+# RivalTouches > LYNK > Maya > closet
+[RivalTouches.LYNK.Maya.closet]
+I can call the worried ones tomorrow. I would rather tell them than have them find out.
+
+# RivalTouches > LYNK > Vic > rival
+[RivalTouches.LYNK.Vic.rival]
+Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.
+
+# RivalTouches > LYNK > Vic > solid
+[RivalTouches.LYNK.Vic.solid]
+Closed a deal with the one page. The owner said it was the first time anyone showed her what she bought.
+
+# RivalTouches > LYNK > Vic > loose
+[RivalTouches.LYNK.Vic.loose]
+If anyone asks about a bill, I am telling the truth. Just so you know.
+
+# RivalTouches > LYNK > Vic > closet
+[RivalTouches.LYNK.Vic.closet]
+I have two deals ready and I am holding them. Say when.
+
+# RivalTouches > LYNK > Marge > rival
+[RivalTouches.LYNK.Marge.rival]
+I cannot find a single Big Cheese invoice that says what it is for. I do not think that is an accident.
+
+# RivalTouches > LYNK > Marge > solid
+[RivalTouches.LYNK.Marge.solid]
+The books are tidy this week and so is my desk. I am nervous. Is that normal?
+
+# RivalTouches > LYNK > Marge > loose
+[RivalTouches.LYNK.Marge.loose]
+There is a folder in my bottom drawer. It is not thick. It is not thin either.
+
+# RivalTouches > LYNK > Marge > closet
+[RivalTouches.LYNK.Marge.closet]
+The folder does not close any more. We should sit down before the board does it for us.
+
+
+# ======================= RivalTouches > TIPS =======================
+# RivalTouches > TIPS > Alan
+[RivalTouches.TIPS.Alan]
+A backup on a USB drive in a freezer bag in the trunk of a car is not a backup. It is a hope. Restore one file somewhere else, then you know.
+
+# RivalTouches > TIPS > Dan
+[RivalTouches.TIPS.Dan]
+Never trust the little green light on the backup box. Restore one file from every client once a quarter and write down the date.
+
+
+# ======================= RivalTouches > NOTES =======================
+# RivalTouches > NOTES > restore
+[RivalTouches.NOTES.restore]
+A GREEN LIGHT IS NOT PROOF. RESTORE ONE FILE.
+
+# RivalTouches > NOTES > av
+[RivalTouches.NOTES.av]
+A GREEN DASHBOARD IS NOT A CHECK. LOOK AT IT.

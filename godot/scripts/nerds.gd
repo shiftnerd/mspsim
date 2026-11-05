@@ -13,6 +13,7 @@ extends Node
 
 signal changed
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: rap: gating of forum threads and IRC lines
 const NICKS := {
 	"rodent_rick": {"acc": 0.85, "color": Color("5aa0e8")},
 	"gnawer": {"acc": 0.75, "color": Color("3cc15a")},
@@ -1976,6 +1977,181 @@ const DEFAULT_THREADS := [
 		"answer":
 		"Build a small lab with a spare box and a free hypervisor and restore a copy of the database before testing.",
 	},
+	{
+		"title": "Who is doing the cheap flat rate thing in my county?",
+		"board": "general",
+		"skill": "people",
+		"level": 0,
+		"needs": "rap:bigcheese:R11",
+		"posts":
+		[
+			{
+				"by": "sysadmin_sue",
+				"text":
+				"A flyer showed up at three of my clients: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Anybody know who it is and what they actually do for $39?"
+			},
+			{"by": "wrench_rob", "text": "Big Cheese something. A man in a nice jacket at every Chamber lunch. Never seen a van with a ladder on it."},
+			{"by": "old_hand", "text": "Ask for the list. If there is no list, the list is: a person shows up, they are nice, nothing else is promised."},
+			{"by": "cable_cat", "text": "Seen it. Everything included until it is not. Then it is a project."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Flat per seat price: what is NOT in it?",
+		"board": "burrow",
+		"skill": "people",
+		"level": 0,
+		"needs": "rap:bigcheese:R11",
+		"posts":
+		[
+			{
+				"by": "bytes_n_bagels",
+				"text":
+				"Not a vent, a real question. If a shop charges one flat price per seat and nothing is itemized, how does the client know what they are not getting?"
+			},
+			{"by": "packet_pam", "text": "They do not. That is the point of the flat price. Itemize it: backups, patching, after hours calls, and what is not covered."},
+			{"by": "tcp_tim", "text": "A one page list of what you do each week sells better than a low price. Try it on one client."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Backup on a USB drive in a freezer bag?",
+		"board": "burrow",
+		"skill": "servers",
+		"level": 0,
+		"needs": "rap:bigcheese:R01",
+		"posts":
+		[
+			{
+				"by": "dbl_click_dave",
+				"text":
+				"Heard a story at the supplier counter: a shop that keeps the only backup of a client on one USB drive in a freezer bag in the owner's trunk. I thought he was joking."
+			},
+			{"by": "GrizzleAdmin", "text": "I wish I could say it was the first time I had heard it. A freezer bag protects it from spilled coffee. That is all it protects it from."},
+			{"by": "rodent_rick", "text": "The drive has a light. The light is on. The light is a promise, not a restore."},
+			{"by": "PS_wizard", "text": "Restore one file somewhere else. Every quarter. Write the date down. That is the whole trick."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Is a green light on the backup box a backup?",
+		"board": "tips",
+		"skill": "servers",
+		"level": 1,
+		"needs": "rap:bigcheese:R01",
+		"posts":
+		[
+			{"by": "HELPPLZ_Pip", "text": "my backup box has a green light. it has had a green light since 2011. is it ok??"},
+			{"by": "old_hand", "text": "Pip, a light tells you it has power. It does not tell you the data is there. Restore a file today."},
+			{"by": "MPriest", "text": "Green is a color, not a test result."},
+			{"by": "wrench_rob", "text": "Test the restore, then test it again after you change anything. Put the date on the box."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "One admin password for every client. Tell me I am wrong.",
+		"board": "tips",
+		"skill": "security",
+		"level": 1,
+		"needs": "rap:bigcheese:R02",
+		"posts":
+		[
+			{
+				"by": "xX_n00b_Xx",
+				"text":
+				"My boss uses the same admin password at every client so we never get locked out. It is easy to remember. Is that bad?"
+			},
+			{"by": "LAN_lord", "text": "It is bad. One leaked laptop and every client you have is open. Give each client its own, in a safe place."},
+			{"by": "sysadmin_sue", "text": "And not on a yellow note at the front desk. I have seen that too. The note was in the photo on the company page."},
+			{"by": "GrizzleAdmin", "text": "Unique passwords per client, one sealed copy in a safe, and a way in that is not the same one every day."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Yellow sticky note or a password vault?",
+		"board": "tools",
+		"skill": "security",
+		"level": 1,
+		"needs": "rap:bigcheese:R02",
+		"posts":
+		[
+			{"by": "cable_cat", "text": "Front desk has the admin password on a sticky note on the monitor. The tech says it is fine because it is behind the desk. Is it?"},
+			{"by": "old_hand", "text": "It is behind the desk until a visitor leans over the desk."},
+			{"by": "packet_pam", "text": "A password manager and a sealed envelope in a safe. The sticky note goes in the shredder."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Vendor seat true-up: report the real number or take the discount?",
+		"board": "burrow",
+		"skill": "people",
+		"level": 0,
+		"needs": "rap:bigcheese:R06",
+		"posts":
+		[
+			{
+				"by": "tcp_tim",
+				"text":
+				"Quarterly true-up form from the antivirus vendor. Someone told me a shop in the next county just types a smaller number every quarter and nobody checks. Tempting?"
+			},
+			{"by": "WebWoot_Dee", "text": "We do check. Eventually. And a true-up after an audit costs more than the discount ever saved."},
+			{"by": "old_hand", "text": "Report the real number, then ask for a volume tier. The rep would rather keep a straight client."},
+			{"by": "gnawer", "text": "Not tempting once you picture the audit letter."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Anyone else get a seat count audit letter?",
+		"board": "cloud",
+		"skill": "people",
+		"level": 0,
+		"needs": "rap:bigcheese:R06",
+		"posts":
+		[
+			{"by": "wrench_rob", "text": "A vendor audit letter landed at a client of a client. Sixty three seats installed, forty one paid. The client is furious and it is not even their fault."},
+			{"by": "dbl_click_dave", "text": "That is awful. Who is going to explain it to the owner?"},
+			{"by": "LAN_lord", "text": "The shop that signed the form. Which is why you keep your own count and your own folder."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Cyber insurance questionnaire: how honest do I have to be?",
+		"board": "general",
+		"skill": "security",
+		"level": 1,
+		"needs": "rap:bigcheese:R05",
+		"posts":
+		[
+			{
+				"by": "sysadmin_sue",
+				"text":
+				"A client forwarded me the insurer's security questionnaire. Question 9: is two-factor login on for email? It is not. The last IT company ticked yes. Now what?"
+			},
+			{"by": "GrizzleAdmin", "text": "Answer what is true and turn it on before the form goes back. A wrong answer is the first thing a claim reviewer looks for."},
+			{"by": "old_hand", "text": "A yes that is not true is a bigger problem than a no. Fix it, then say yes."},
+			{"by": "PS_wizard", "text": "Keep a signed copy of what you answered. Dated."},
+		],
+		"answer": "",
+	},
+	{
+		"title": "Green dashboard, nothing watching",
+		"board": "tools",
+		"skill": "servers",
+		"level": 1,
+		"needs": "rap:bigcheese:R04",
+		"posts":
+		[
+			{
+				"by": "bytes_n_bagels",
+				"text":
+				"Took over a site where the monitoring tool shows all green. Turns out nobody ever set up the alerts. The agents are installed and the dashboard has never been configured."
+			},
+			{"by": "rodent_rick", "text": "Installed is not the same as configured. The dashboard is green because it has nothing to compare against."},
+			{"by": "GrizzleAdmin", "text": "Set a baseline, set the alerts, then break something on purpose and see if it tells you."},
+			{"by": "old_hand", "text": "If your dashboard has never been red, either you are perfect or it is not looking."},
+		],
+		"answer": "",
+	},
 ]
 var THREADS: Array = DEFAULT_THREADS.duplicate(true)
 # ---- IRC social chat (R30): topics, what each nick says per topic, replies, greetings and the channel's own conversations ----
@@ -2647,7 +2823,7 @@ const DEFAULT_GREETINGS := {
 }
 var GREETINGS: Dictionary = DEFAULT_GREETINGS.duplicate(true)
 # the channel talks to itself. needs: "" always, "am" / "pm" by the clock, "fri" on a Friday, "day:N" from day N on, "before:N" until day N,
-# "backup" while a client backup is failing, "went" after Rodent Nation. {day} {date} {time} are filled in.
+# "backup" while a client backup is failing, "went" after Rodent Nation, "rap:<rival>:<habit>" once the rap sheet knows it (R38). {day} {date} {time} are filled in.
 const DEFAULT_AMBIENT := [
 	{"id": "snow", "needs": "", "lines": [
 		["GrizzleAdmin", "snow. in April. I want a refund on this spring."],
@@ -2817,6 +2993,28 @@ const DEFAULT_AMBIENT := [
 		["old_hand", "the resort. the buffet. the lanyards. never again. maybe next year."],
 		["PS_wizard", "the badge scanners had better uptime than most of my clients."],
 	]},
+	{"id": "rival_flat", "needs": "rap:bigcheese:R11", "lines": [
+		["gnawer", "anyone know who is handing out the $39 a seat flyers? EVERYTHING INCLUDED."],
+		["old_hand", "ask what everything is. I'll wait."],
+		["trollbot", "everything is a cheese, gnawer. it's always a cheese."],
+	]},
+	{"id": "rival_bag", "needs": "rap:bigcheese:R01", "lines": [
+		["rodent_rick", "story from the supplier counter: a whole client backed up on one usb stick in a freezer bag."],
+		["GrizzleAdmin", "a freezer bag. of course."],
+		["MPriest", "keeps the coffee out. nothing else."],
+		["PS_wizard", "restore one file. then you may call it a backup."],
+	]},
+	{"id": "rival_password", "needs": "rap:bigcheese:R02", "lines": [
+		["gnawer", "saw a yellow sticky note with an admin password on a monitor today. in a PHOTO on the company page."],
+		["old_hand", "unique password per client. every client. no exceptions."],
+		["HELPPLZ_Pip", "wait is one password for everything bad???"],
+		["rodent_rick", "yes pip."],
+	]},
+	{"id": "rival_seats", "needs": "rap:bigcheese:R06", "lines": [
+		["PS_wizard", "vendor seat true-up season again. report the real number. the audit letter is worse."],
+		["MPriest", "i have a shop in the next county who types forty one every quarter. i hope he is well."],
+		["GrizzleAdmin", "the audit is coming. it always comes."],
+	]},
 ]
 var AMBIENT: Array = DEFAULT_AMBIENT.duplicate(true)
 
@@ -2898,7 +3096,10 @@ func is_sticky(i: int) -> bool:
 
 # a vendor thread only shows after Rodent Nation ("went") or after you gave a vendor your badge ("scan")
 func thread_visible(i: int) -> bool:
-	match str(THREADS[i].get("needs", "")):
+	var need := str(THREADS[i].get("needs", ""))
+	if need.begins_with("rap:"):
+		return RivalTouches.needs_ok(need)  # R38: a rival rumour thread needs a rap sheet entry
+	match need:
 		"went":
 			return Expo.went
 		"scan":
@@ -3687,6 +3888,8 @@ func _eligible(needs: String) -> bool:
 		return date_text(Campaign.day).begins_with("FRI")
 	if needs == "went":
 		return Expo.went
+	if needs.begins_with("rap:"):
+		return RivalTouches.needs_ok(needs)
 	if needs == "backup":
 		for b in Msp.backups:
 			if not bool(b.ok):

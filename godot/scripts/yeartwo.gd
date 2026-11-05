@@ -23,6 +23,7 @@ extends Node
 # A new mode (service, sales) plugs in by getting `"year2": true` in Campaign.MODE_DEFS and rows in YEAR2.beats /
 # YEAR2.shuffle / YEAR2.endings and TEXT; nothing else in this file names a mode except the day tables of `_base`.
 
+const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: the Standard carry-over and the Year 2 rival
 const VERSION := 1
 const YEAR := 2
 const DEFAULT_CARRY := {
@@ -132,6 +133,15 @@ const DEFAULT_TEXT := {
 			"desc": "TWO SHOPS IN OTHER TOWNS RUN ON YOUR BINDERS AND PAY YOU A FEE. THE BRAND GOES REGIONAL.",
 		},
 	},
+	"habits": {
+		"carry": "YOUR GOOD HABITS COME OVER AT 60 PERCENT OF LAST YEAR'S STANDARD.",
+		"rival_note": "BIG CHEESE IS GONE. HARD RIND IT HAS THE SAME FLYERS AND THE SAME HABITS.",
+		"rival": {
+			"name": "HARD RIND IT",
+			"owner": "LYLE PRUITT",
+			"blurb": "Hard Rind IT Services. Everything included, $41 a seat. Same flyers, new paint. Booked solid.",
+		},
+	},
 	"endings": {
 		"head": "YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.",
 		"clientbuy": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
@@ -154,6 +164,7 @@ func reset() -> void:
 	moves = []
 	carried = {}
 	prev = {}
+	RivalTouches.rival_year(1)
 
 
 # ---- the meta record (unlock) ---------------------------------------------------------------------------------
@@ -190,6 +201,9 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
 	meta.set_value(mode, "value", Owner.valuation() if books else 0)
 	meta.set_value(mode, "cash", Owner.cash if books else Campaign.cash)
 	meta.set_value(mode, "trust", Partner.trust)
+	meta.set_value(mode, "standard", RivalTouches.standard_now() if books else 0)  # R38: the Standard comes over at 60 percent
+	if books:
+		RivalTouches.note_year_end()
 	if Campaign.year >= YEAR:
 		Career.add("year2_done")
 
@@ -376,6 +390,8 @@ func begin_run(mode: String) -> void:
 	else:
 		Owner.cash += int(carried.cash)
 		Partner.trust = clampi(int(carried.trust) + Build.trust_bonus(), 0, 100)
+		RivalTouches.rival_year(2)
+		carried["habits"] = RivalTouches.year2_begin(prev)
 	for cname in YEAR2.clients.client:
 		var idx := client_index(str(cname))
 		if idx >= 0 and not Sales.active.has(idx):
@@ -409,6 +425,9 @@ func intro_text() -> String:
 			if not bits.is_empty():
 				s += ", " + ", ".join(bits)
 		parts.append(s + ".")
+		if Campaign.books_active() and not (carried.get("habits", []) as Array).is_empty():
+			parts.append(str(TEXT.habits.carry))
+			parts.append(str(TEXT.habits.rival_note))
 	return " ".join(parts)
 
 
@@ -711,3 +730,4 @@ func from_dict(data: Dictionary) -> void:
 	prev = data.get("prev", {}) if data.get("prev", {}) is Dictionary else {}
 	pick = str(data.get("pick", ""))
 	ban = str(data.get("ban", ""))
+	RivalTouches.rival_year(Campaign.year)  # a saved Year 2 run keeps the new rival name

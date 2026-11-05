@@ -162,3 +162,32 @@ A static helper (`SalesCampaign.SalesRival`, preloaded const in `sales_campaign.
 - **Takeover.** Winning a Big Cheese client sets `deal.takeover`; with no ASSESS done two `INHERITED` promises (gap 0.3 each) show up in the handover, whose intro names Big Cheese. `capacity()` loses 0.2 per takeover deal for six weeks (`takeover_load`).
 - **Beats** (`SalesRival.WEEKS`, called from `SalesCampaign._beat_cards` after `SalesBeats.week`, text in `BEAT_TEXT` keys `incumbent rex flat assess laundered plumb rumour audit scorecard`): w2 incumbent reveal, w3 Rex at the Chamber lunch (flag `rex`), w5 `sales_flat` (flags `flat`, `value_page`, lead `present_pref` / `pts`), w7 ASSESS on a Big Cheese client (Marlowe Family Dental), w9 `sales_laundered`, w11 Plumb Line mirror beat with Hollis Grady (flag `hollis_favour`), w13 rumour (lead `rumour {week, mod}`, -3 paper / +6 badmouth / -5 ignore, gone after 4 weeks, `counter_wk` card two weeks after a badmouth), w15 vendor-audit surge (three Big Cheese leads), w17 scorecard (`entry.scorecard` +0.06 renew chance, half without a value page or H2).
 - Not done / for later: the rap sheet (`Owner.flags rap_*`) is not written by sales findings (they live on the lead); the Hollis favour is a flag only (no Mastermind consumer yet); strings.txt was synced with `story_export.gd -- --sync`, re-run it after merging the other agents' text.
+
+## P6 light touches and guards (light-touches agent)
+
+Files: `scripts/rival_touches.gd` (`RivalTouches`, a static helper, owner: this agent), `tests/habits_text.gd`, `tests/rival_touches.gd`,
+`story/banned_names.txt`. Shared files got one-line edits only (nerds, talk, lync, knowledge, career, yeartwo, strings, habits, temptation, takeover).
+
+- **Rap gating.** A forum thread (`Nerds.THREADS`) or IRC exchange (`Nerds.AMBIENT`) with `"needs": "rap:<rival>:<habit>"` shows once
+  `Rival.rap(rival, habit)` is RUMOUR or better; `rap:<rival>:<habit>:2` asks for SEEN, `:3` for PROVEN. `RivalTouches.needs_ok(needs)` is the
+  one test; `Nerds.thread_visible` and `Nerds._eligible` call it. Ten threads and four exchanges exist (habits R01, R02, R04, R05, R06, R11).
+  They are never daily questions. Other agents may add more with the same needs string.
+- **Talk and Lynk.** `state_key()` is `""`, `rival`, `bare`, `solid`, `showcase`, `loose` or `closet` (conscience first, then the Standard band,
+  then the rival). `TALK[who][key]` is read by `Talk.owner_idea` (60%), `LYNK[who][key]` by `Lync.incoming` (20% of messages in the owner
+  campaign, never the same person and key within 4 weeks) and `LYNK.Marge` is added to Marge's HOW ARE WE DOING reply. Words only, no numbers.
+- **Tech and service.** `freezer_tip(who, mode, roll)` (Alan, Dan, tech campaign, 25%) is a `Talk.tip` fallback. `runbook_note(id)` adds one line
+  to the Knowledge footer for the restore and antivirus runbooks (the green dashboard note).
+- **Career.** Counters `habits_adopted` (first start of each habit), `skeletons_paid` (come clean or a bill that arrives), `takeovers`
+  (`Takeover.begin`) and `clean_sheets` (`RivalTouches.note_year_end`, called from `Yeartwo.record` for the books campaigns when no skeleton is
+  open, the conscience is CLEAN BOOKS and a habit exists). Medals HABIT FORMING (5), SPRING CLEANING (3), CLEAN UP CREW (3), CLEAN SHEET (1).
+- **Year 2.** `Yeartwo.record` saves `standard` in the meta record. `Yeartwo.begin_run` (books campaigns) calls `RivalTouches.year2_begin(prev)`:
+  habits are started (free, fresh) heaviest first until about 60% of the old Standard is back, listed in `carried.habits`, and
+  `RivalTouches.rival_year(2)` renames `Rival.RIVALS.bigcheese` to HARD RIND IT (the id and every rap key stay the same). `Yeartwo.reset()` puts the
+  name back and `Yeartwo.from_dict` re-applies it for a saved Year 2 run. The text is `Yeartwo.TEXT.habits` (carry, rival_note, rival).
+- **Text guard.** `tests/habits_text.gd` scans every constant of the scripts in its `REGISTRY` plus any script under `scripts/` that has `R38` in
+  its first 15 lines, the rap: threads and exchanges, sales `BEAT_TEXT` keys containing rival / incumbent / flat, `Yeartwo.TEXT.habits`, the R38
+  career entries, and the `Rival. RivalCards. RivalTouches. Habits. Temptation. Takeover.` keys of `story/strings.txt`. Rules: 3x5 charset (the
+  `{token}` placeholders are removed first, no double quotes), no AI / MFA / Teams / Slack / Windows 10 / Windows 11 and similar, and no name from
+  `story/banned_names.txt` (one per line, # comments; the user seeds it with the series' character names, it ships empty). A new table needs no
+  change to the test: carry `R38` in the script header or add the path to `REGISTRY`.
+- After merging all R38 branches run `story_export.gd -- --sync` once (the strings.txt hunks of the branches will collide).

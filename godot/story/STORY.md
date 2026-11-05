@@ -1149,6 +1149,16 @@ or the owner (owner campaign, 20 weeks).
 - Plugin API: where are the docs? `[Nerds.THREADS.68.title]`
 - Writing a plugin that reads SNMP `[Nerds.THREADS.69.title]`
 - Unit testing a plugin without a lab `[Nerds.THREADS.70.title]`
+- Who is doing the cheap flat rate thing in my county? `[Nerds.THREADS.71.title]`
+- Flat per seat price: what is NOT in it? `[Nerds.THREADS.72.title]`
+- Backup on a USB drive in a freezer bag? `[Nerds.THREADS.73.title]`
+- Is a green light on the backup box a backup? `[Nerds.THREADS.74.title]`
+- One admin password for every client. Tell me I am wrong. `[Nerds.THREADS.75.title]`
+- Yellow sticky note or a password vault? `[Nerds.THREADS.76.title]`
+- Vendor seat true-up: report the real number or take the discount? `[Nerds.THREADS.77.title]`
+- Anyone else get a seat count audit letter? `[Nerds.THREADS.78.title]`
+- Cyber insurance questionnaire: how honest do I have to be? `[Nerds.THREADS.79.title]`
+- Green dashboard, nothing watching `[Nerds.THREADS.80.title]`
 
 ### LabRat Nerds IRC: topics you can talk about (each nick answers in its own voice)
 
@@ -1199,6 +1209,10 @@ or the owner (owner campaign, 20 weeks).
 - rodent_rick: FreshRat! saw you at Rodent Nation. you owe me a sticker. `[Nerds.AMBIENT.29.lines.0.1]`
 - gnawer: I wasn't there. somebody send me the swag. `[Nerds.AMBIENT.30.lines.0.1]`
 - old_hand: the resort. the buffet. the lanyards. never again. maybe next year. `[Nerds.AMBIENT.31.lines.0.1]`
+- gnawer: anyone know who is handing out the $39 a seat flyers? EVERYTHING INCLUDED. `[Nerds.AMBIENT.32.lines.0.1]`
+- rodent_rick: story from the supplier counter: a whole client backed up on one usb stick in a freezer bag. `[Nerds.AMBIENT.33.lines.0.1]`
+- gnawer: saw a yellow sticky note with an admin password on a monitor today. in a PHOTO on the company page. `[Nerds.AMBIENT.34.lines.0.1]`
+- PS_wizard: vendor seat true-up season again. report the real number. the audit letter is worse. `[Nerds.AMBIENT.35.lines.0.1]`
 
 ### LabRat Nerds regulars at Rodent Nation (the forum people in the crowd)
 

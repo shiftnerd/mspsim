@@ -1,0 +1,9 @@
+# Names and phrases that must never appear in the R38 rival and good-habit text (tests/habits_text.gd reads this file).
+#
+# The rival MSP arc was inspired by a satirical blog series. We took IDEAS only (types of bad habit): no character names, no plot
+# beats, no scenes, no lines (docs/scope-bad-habits.md section 0). The owner of the project seeds this list with the series'
+# character names and any distinctive phrases, one per line, so the test can prove none of them slipped in.
+#
+# Rules: one name or phrase per line. Blank lines and lines that start with # are ignored. Matching is case-insensitive and
+# looks for the text anywhere in a string. The file ships EMPTY of real names on purpose: do not commit the names to a public repo
+# if you do not want them in it; the test reads this file when it exists and passes when it is empty.

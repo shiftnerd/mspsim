@@ -228,6 +228,8 @@ static func start(id: String) -> bool:
 		return false
 	if state(id) == ADOPTED:
 		return false
+	if not Owner.habits.has(id):
+		Career.add("habits_adopted")  # R38 P6
 	var e := entry(id)
 	e["start"] = int(e.get("start", Campaign.day))
 	e["last"] = Campaign.day
