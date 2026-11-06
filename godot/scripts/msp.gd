@@ -482,7 +482,9 @@ const FIX_DONE_TEXT := {
 }
 const SLA_SECS := {1: 120.0, 2: 200.0, 3: 300.0, 4: 480.0}
 # gentle first days: random tickets allowed per day in the tech campaign (day -> cap)
-const DAY_CAPS := {1: 1, 2: 3, 3: 5}
+const DAY_CAPS := {1: 1, 2: 3, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11, 10: 12}  # a ramp, not a cliff after day 3
+# open tickets at which the timed spawns pause (tech campaign): few timers at once for a new player, six from day 10
+const OPEN_CAPS := {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5}
 const OS_NAMES := ["Windows 7 Pro", "Windows 7 Pro", "Windows 8.1", "Windows XP SP3"]
 const USERS := ["front desk", "office manager", "owner", "bookkeeper", "intern"]
 const DESK_NAMES := {
@@ -776,6 +778,12 @@ func day_cap() -> int:
 	if Campaign.active and Campaign.mode == "tech":
 		return int(DAY_CAPS.get(Campaign.day, 99))
 	return 99
+
+
+func open_cap() -> int:
+	if Campaign.active and Campaign.mode == "tech":
+		return int(OPEN_CAPS.get(Campaign.day, 6))
+	return 6
 
 
 func _random_ticket(source: String) -> Dictionary:
@@ -1612,7 +1620,7 @@ func _process(delta: float) -> void:
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
 		_spawn_t = next_spawn_gap()
-		if open_tickets().size() < 6 and World.clock < World.DAY_END:
+		if open_tickets().size() < open_cap() and World.clock < World.DAY_END:
 			_random_ticket("email")
 			# Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
 			var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0

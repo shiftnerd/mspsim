@@ -34,7 +34,7 @@ func _best(pb: Node) -> int:
 
 func _work(msp: Node, pb: Node, day: int) -> void:
 	var careful: bool = kind == "good" or (kind == "mixed" and day % 2 == 0)
-	if msp.day_cap() > 50 and not seen.has("ticket"):
+	if msp.spawned_today < msp.day_cap() and not seen.has("ticket"):
 		msp._random_ticket("test")
 	if careful:
 		for client in msp.backups.size():

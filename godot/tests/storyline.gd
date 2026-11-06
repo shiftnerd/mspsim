@@ -34,7 +34,7 @@ func _best(pb: Node) -> int:
 
 # do the work the way a good tech would
 func _work(msp: Node, pb: Node) -> void:
-	if msp.day_cap() > 50 and not seen.has("ticket"):
+	if msp.spawned_today < msp.day_cap() and not seen.has("ticket"):
 		msp._random_ticket("test")  # the first days are capped
 	for client in msp.backups.size():
 		msp.backup_rerun(client)  # a good tech keeps the backups green
