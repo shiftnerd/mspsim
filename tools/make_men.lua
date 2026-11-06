@@ -21,9 +21,18 @@ local base = {
   skin = {"#F3B488", "#D88A62", "#B8663F"}, mouth = "#8A4A2E", belt = "#5A3A22", stubble = "#D69A72",
 }
 
+-- the colours of office Dan, the donor for a man in a long-sleeve button-down (donor = "office_dan")
+local base_dan = {
+  shirt = {"#3C55C0", "#2C3F96"}, hair = {"#4A3222", "#6B4B34", "#3A2A1E"},
+  pants = {"#8A6A42", "#6F5434", "#5A4328"}, shoes = {"#3A3A44", "#2A2A33"},
+  skin = {"#F3B488", "#D88A62", "#B8663F"}, mouth = "#8A4A2E", undershirt = "#EDEDED", buttons = "#DDE3F5",
+}
+
 -- Entry fields: skin / hair {base, highlight, brow} / shirt {main, shade} / pants {main, far, shade} / shoes {near, far},
 -- belt, stubble (a colour, or false for no shadow), lips; options: tufts, squint {lid, cheek}, grin, burn (colour),
--- goatee (colour), clerical (the collar tab), cross (the wood colour), lanyard (a conference-teal strap and badge).
+-- goatee (colour), clerical (the collar tab), cross (the wood colour), lanyard (a conference-teal strap and badge),
+-- glasses (Dan's frames), cap {main, shade} (a ball cap over the hair with a brim on the facing side), sleeves {main, shade}
+-- (the arms in another colour than the shirt), patch (a small logo badge on the chest), donor = "office_dan" (long sleeves).
 local CHARS = {
   expo_priest = {   -- Priest Michael (LabRat Nerds forum, MPriest): clerical black, an Australian face
     skin = {"#E6A47A", "#CC8058", "#A8603E"}, hair = {"#A07A4A", "#C49A62", "#7C5834"},
@@ -43,6 +52,23 @@ local CHARS = {
     shirt = {"#4ED03E", "#37A02C"}, pants = {"#3A5A9A", "#2A4478", "#1E3258"}, shoes = {"#E8E8EE", "#B8B8C4"},
     belt = "#2A2A34", stubble = false, lips = "#B05A4A",
     tufts = true, grin = true,
+  },
+  office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
+    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
+    shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},
+    belt = "#3A2A1A", stubble = "#D69A72", lips = "#8A4A2E", glasses = true, bald = true,
+  },
+  office_john = {   -- sales: an olive ball cap, a goatee, a red fleece with grey sleeves, grey cargo pants
+    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#4A3222", "#6B4B34", "#3A2A1E"},
+    shirt = {"#B8342E", "#8A2420"}, pants = {"#6A6F78", "#50545C", "#3A3D44"}, shoes = {"#3A3A44", "#2A2A33"},
+    belt = "#2A2A33", stubble = "#D69A72", lips = "#8A4A2E", goatee = "#2E2018", cap = {"#6E7A4A", "#55603A"},
+    sleeves = {"#7A7F88", "#5E626A"},
+  },
+  office_michael = {   -- a tech: a bright blue long-sleeve button-down with a logo badge, black trousers and shoes
+    donor = "office_dan",
+    skin = {"#7A4A30", "#623A24", "#4A2A18"}, hair = {"#1E1A1A", "#2E2828", "#1A1414"},
+    shirt = {"#4A86D8", "#3566B0"}, pants = {"#24252C", "#1B1C22", "#131419"}, shoes = {"#1E1E24", "#14141A"},
+    lips = "#5A2E22", buttons = "#CFE0F6", patch = true,
   },
 }
 
@@ -78,19 +104,39 @@ local function newLayer(spr, name)
 end
 
 local function build(name, c)
-  local spr = Sprite{fromFile = SP(R, "site_alan_right")}
+  local donor = c.donor or "site_alan"
+  local base = donor == "office_dan" and base_dan or base
+  local spr = Sprite{fromFile = SP(R, donor .. "_right")}
   local map = {}
   for i = 1, 3 do
     map[hex(base.hair[i])] = hex(c.hair[i]); map[hex(base.pants[i])] = hex(c.pants[i]); map[hex(base.skin[i])] = hex(c.skin[i])
   end
   map[hex(base.shirt[1])] = hex(c.shirt[1]); map[hex(base.shirt[2])] = hex(c.shirt[2])
   map[hex(base.shoes[1])] = hex(c.shoes[1]); map[hex(base.shoes[2])] = hex(c.shoes[2])
-  map[hex(base.mouth)] = hex(c.lips); map[hex(base.belt)] = hex(c.belt)
-  if c.stubble then map[hex(base.stubble)] = hex(c.stubble) else spr:deleteLayer(layer(spr, "Stubble")) end
+  map[hex(base.mouth)] = hex(c.lips)
+  if base.belt then map[hex(base.belt)] = hex(c.belt) end
+  if base.undershirt then map[hex(base.undershirt)] = hex(c.shirt[1]) end   -- a closed collar: no white tee showing
+  if base.buttons and c.buttons then map[hex(base.buttons)] = hex(c.buttons) end
+  local sl = layer(spr, "Stubble")
+  if sl then
+    if c.stubble then map[hex(base.stubble)] = hex(c.stubble) else spr:deleteLayer(sl) end
+  end
+  if donor == "office_dan" and not c.glasses then spr:deleteLayer(layer(spr, "Glasses")) end
   recolor(spr, map)
   local face = layer(spr, "Face"):cel(1).image
   local hair = layer(spr, "Hair"):cel(1).image
   local col = layer(spr, "Collar"):cel(1).image
+
+  -- bald: no hair layer at all; the head outline underneath (the Body layer) is the whole skull
+  if c.bald then
+    hair:clear()
+    local body = layer(spr, "Body"):cel(1).image   -- round the two top corners of the skull
+    for y = 0, H - 1 do
+      local x0, x1
+      for x = 0, W - 1 do if app.pixelColor.rgbaA(body:getPixel(x, y)) > 0 then x0 = x0 or x; x1 = x end end
+      if x0 then body:putPixel(x0, y, 0); body:putPixel(x1, y, 0); break end
+    end
+  end
 
   -- messy hair: short tufts stick up from the top row (an outlined bump, 2 or 3 px wide)
   if c.tufts then
@@ -130,6 +176,35 @@ local function build(name, c)
     end
   end
 
+  -- a ball cap: the top of the hair layer becomes the crown, and a brim sticks out over the brow on the facing side
+  if c.cap then
+    local hi, sh, k = hex(c.cap[1]), hex(c.cap[2]), hex(OUT)
+    for y = 1, 9 do for x = 0, W - 1 do
+      local p = hair:getPixel(x, y)
+      if app.pixelColor.rgbaA(p) > 0 and p ~= k then put(hair, x, y, (y <= 2 or y >= 8) and sh or hi) end
+    end end
+    for y = 9, 10 do for x = 22, 33 do put(hair, x, y, y == 9 and sh or hi) end end   -- the brim
+    for x = 22, 34 do put(hair, x, 11, k) end
+    put(hair, 34, 9, k); put(hair, 34, 10, k); put(hair, 22, 10, k)
+  end
+
+  -- sleeves in their own colour (a fleece with grey sleeves)
+  if c.sleeves then
+    for _, ln in ipairs({"Near Arm", "Back Arm"}) do
+      local im = layer(spr, ln):cel(1).image
+      for y = 0, im.height - 1 do for x = 0, im.width - 1 do
+        local p = im:getPixel(x, y)
+        if p == hex(c.shirt[1]) then im:putPixel(x, y, hex(c.sleeves[1])) elseif p == hex(c.shirt[2]) then im:putPixel(x, y, hex(c.sleeves[2])) end
+      end end
+    end
+  end
+
+  -- a small logo badge on the chest (white card, a green and blue mark)
+  if c.patch then
+    for y = 29, 31 do for x = 24, 27 do put(col, x, y, hex("#F2F2EA")) end end
+    put(col, 24, 30, hex("#3E9E4E")); put(col, 25, 30, hex("#3E9E4E")); put(col, 26, 30, hex("#2E6EB8")); put(col, 27, 30, hex("#2E6EB8"))
+  end
+
   -- goatee on its own Beard layer (the technique of casual_garrison): a moustache over the mouth and a chin patch
   if c.goatee then
     local bd = newLayer(spr, "Beard")
@@ -161,6 +236,12 @@ local function build(name, c)
     -- the cross hangs on the centre line x 20
   end
 
+  if c.glasses and donor ~= "office_dan" then
+    local dan = Sprite{fromFile = SP(R, "office_dan_right")}
+    local gnew = spr:newLayer(); gnew.name = "Glasses"
+    spr:newCel(gnew, 1, layer(dan, "Glasses"):cel(1).image:clone(), Point(0, 0))
+    dan:close()
+  end
   spr:saveAs(SP(R, name .. "_right"))
 
   -- the left-facing file is the mirror: flip every cel, move it to the mirrored position

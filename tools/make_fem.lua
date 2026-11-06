@@ -34,6 +34,16 @@ local CHARS = {
     shirt = {"#C8A03A", "#A07E2A", "#7A5A1E"}, pants = {"#6A4A38", "#523626", "#3E281A"}, bottom = "skirt",
     tights = {"#D8A07A", "#B8805A"}, shoes = {"#5A3522", "#4A2C1C"}, lips = "#B8505A", glasses = true, blouse = "#F2E6DA",
   },
+  office_jen = {   -- the office manager: shoulder-length strawberry-blonde hair, glasses, a coral and pink striped sweater, dark jeans
+    skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#C98A5A", "#E0AA7C", "#A8683F"}, style = "bob",
+    shirt = {"#E0806A", "#BC5E4C", "#7A3A30"}, pants = {"#34456A", "#26334F", "#1C253A"}, bottom = "trousers",
+    shoes = {"#6A4A38", "#523626"}, lips = "#C0505A", glasses = true, stripes = "#E9A9B4",
+  },
+  office_christy = {   -- finance and controller: shoulder-length blonde hair, a red top, a leopard print scarf, black trousers
+    skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#C8A064", "#E0BE84", "#A07A44"}, style = "long",
+    shirt = {"#D03A32", "#A82A24", "#6A1814"}, pants = {"#26262E", "#1C1C24", "#14141A"}, bottom = "trousers",
+    shoes = {"#2A2A33", "#1C1C24"}, lips = "#B8303A", scarf = {"#C8A068", "#4A2E1A"},
+  },
   client_karen = {   -- Brightside Realty: long blonde hair, red blazer, grey skirt
     skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#D8B060", "#EBD088", "#B8904A"}, style = "long",
     shirt = {"#B8333F", "#8A2430", "#F2E6E6"}, pants = {"#6A6F7A", "#4A4F5A", "#34383F"}, bottom = "skirt",
@@ -267,6 +277,29 @@ local function build(name, c)
     for x = 19, 23 do put(col, x, 32, strap) end                                   -- the stripe
     put(col, 19, 34, hex("#5A606C")); put(col, 20, 34, hex("#5A606C")); put(col, 21, 34, hex("#5A606C"))
     put(col, 19, 35, hex("#9AA0AE")); put(col, 20, 35, hex("#9AA0AE"))
+  end
+
+  -- stripes: a 1 px lighter line every third row across the sweater and its sleeves
+  if c.stripes then
+    local sc = hex(c.stripes)
+    for _, ln in ipairs({"Shirt", "Near Arm", "Back Arm"}) do
+      local im = layer(spr, ln):cel(1).image
+      for y = 26, 36, 3 do for x = 0, W - 1 do
+        local p = im:getPixel(x, y)
+        if app.pixelColor.rgbaA(p) > 0 and p == hex(c.shirt[1]) then im:putPixel(x, y, sc) end
+      end end
+    end
+  end
+
+  -- a leopard print scarf: a band around the neck and a short tail down the chest, tan with dark spots
+  if c.scarf then
+    local col = layer(spr, "Collar"):cel(1).image
+    local base_c, spot = hex(c.scarf[1]), hex(c.scarf[2])
+    for y = 24, 26 do for x = 15, 26 do put(col, x, y, base_c) end end
+    for _, p in ipairs({{16, 24}, {19, 25}, {22, 24}, {25, 25}, {17, 26}, {21, 26}, {24, 26}}) do put(col, p[1], p[2], spot) end
+    for y = 27, 31 do for x = 21, 24 do put(col, x, y, base_c) end end
+    for _, p in ipairs({{22, 27}, {24, 28}, {21, 29}, {23, 30}, {22, 31}}) do put(col, p[1], p[2], spot) end
+    for x = 21, 24 do put(col, x, 32, hex(OUT)) end
   end
 
   -- glasses (copied from Dan's file: same canvas)
