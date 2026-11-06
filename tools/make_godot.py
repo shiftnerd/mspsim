@@ -11580,7 +11580,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
         # the day is already under way: no Msp.reset, Story.reset or World.begin_next_day, and none of the day-begin
         # hooks (Mutators, Events, Yeartwo, Story, Shift cards, the day_started listeners) may run a second time
         Resume.apply(cfg)
-        Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
+        Msp.pace = maxf(0.5, 1.0 - (0.015 if mode == "tech" else 0.025) * float(day - 1)) * float(prop("pace", 1.0))
         _last_hour = int(World.clock)
         _snap_due = false
         Sfx.play_music("day")
@@ -11752,7 +11752,7 @@ func _begin_day() -> void:
         "reopened": Msp.reopened,
     }
     # owner weeks are 4 minutes long: tickets arrive faster so the team can actually saturate (registry "pace")
-    Msp.pace = maxf(0.5, 1.0 - 0.025 * float(day - 1)) * float(prop("pace", 1.0))
+    Msp.pace = maxf(0.5, 1.0 - (0.015 if mode == "tech" else 0.025) * float(day - 1)) * float(prop("pace", 1.0))
     Social.begin_day()
     Story.begin_day(day)
     if cards_active():
