@@ -334,6 +334,7 @@ func _init() -> void:
 		world.time_scale = 1.0
 		world.day_len = 600.0 * s
 		var made := 0
+		msp.spawned_today = 0  # the daily cap (12 from day 10 to 20) counts per day, and each size is one day
 		var next_id: int = msp._next_id
 		var steps := int(world.day_len / 0.5)
 		for i in steps:

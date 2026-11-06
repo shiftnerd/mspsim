@@ -1,6 +1,6 @@
 extends SceneTree
 # gdlint:disable=max-line-length
-# R38 P5: the rival and good-habit hooks of Vic's sales campaign (scripts/sales_rival.gd). The incumbent drawn for every lead (seeds
+# R38 P5: the rival and good-habit hooks of John's sales campaign (scripts/sales_rival.gd). The incumbent drawn for every lead (seeds
 # repeat), revealed 85% on a discovery call and always on a visit; ASSESS (a selling hour, needs MEETING, 3 to 5 findings from
 # Rival.assessment that become promises, or the cheap answer that is a lie); the quote builder PRESENTED AS field and the RIVAL PRICE
 # gauge with the win-point effects of section 6; rumours that expire after four weeks; the lie flag (90 day churn +8, a LIES line, the
@@ -312,12 +312,12 @@ func _init() -> void:
 	owner.habits.erase("H2")
 	g = deals.gauges(bc, itemized)
 	_check(
-		g.blocks.any(func(x: Dictionary) -> bool: return str(x.who) == "VIC"),
-		"and Vic suggests three tiers against a flat rival"
+		g.blocks.any(func(x: Dictionary) -> bool: return str(x.who) == "JOHN"),
+		"and John suggests three tiers against a flat rival"
 	)
 	_check(
 		not deals.gauges(nn, itemized).blocks.any(
-			func(x: Dictionary) -> bool: return str(x.who) == "VIC"
+			func(x: Dictionary) -> bool: return str(x.who) == "JOHN"
 		),
 		"but not when nobody flat is in the picture"
 	)

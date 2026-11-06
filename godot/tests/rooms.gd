@@ -80,11 +80,11 @@ func _init() -> void:
 		"the karaoke outing opens inside the karaoke bar"
 	)
 	var here := 0
-	for who in ["Alan", "Garrison", "Dan", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "John"]:
 		here += 1 if world.chars[who].scene == "karaoke_bar" else 0
 	_check(here == 4, "the whole cast is at the bar")
 	var seen := 0
-	for who in ["Alan", "Garrison", "Dan", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "John"]:
 		seen += 1 if current_scene.get_node_or_null("Actors/" + who) != null else 0
 	_check(seen == 4, "and they are standing in the room (%d of 4)" % seen)
 	o.press(KEY_ENTER)
@@ -96,7 +96,7 @@ func _init() -> void:
 	_check(not o.is_open, "the outing is over")
 	_check(await _wait_scene("main_floor"), "free play: back at the office")
 	var outside := 0
-	for who in ["Alan", "Garrison", "Dan", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "John"]:
 		outside += 1 if world.chars[who].scene == world.OUTSIDE else 0
 	_check(outside == 4, "the cast walks back in through the front door")
 
@@ -131,7 +131,7 @@ func _init() -> void:
 		guard += 1
 	_check(_scene_name() == "restaurant" and o.is_open, "dinner opens inside the restaurant")
 	var diners := 0
-	for who in ["Alan", "Garrison", "Dan", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "John"]:
 		diners += 1 if current_scene.get_node_or_null("Actors/" + who) != null else 0
 	_check(diners == 4, "the whole team is at the restaurant (%d of 4)" % diners)
 	o.press(KEY_ESCAPE)

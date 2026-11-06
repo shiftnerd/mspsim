@@ -9,7 +9,7 @@ extends Node2D
 # phone (tech only), "options" (LEVEL, START, SEED, TOOLS, MUT) and the point-buy "build". Left / Right change,
 # Enter / E / Space go on, Esc goes back one page (Esc on the first emits cancelled), mouse hover and click work like
 # the title menu. Confirming applies the choice (Player.current_character, Phone.os) and emits done(result).
-# In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at their desks as NPCs, so the tech
+# In the campaigns the cast members (Alan, Garrison, Dan, John ...) are already at their desks as NPCs, so the tech
 # campaign offers only the people who are not in World.CAST; the owner campaign offers Alan or Garrison (the other
 # owner becomes your partner NPC); Free Play offers everyone. Whoever you pick as a cast member leaves the cast and
 # sits at their own desk (Campaign.player_as).
@@ -164,14 +164,15 @@ const STOCK_LOOKS := {
 		"pattern": "plaid",
 		"acc": {"beard": "goatee"}
 	},
-	"sales_vic":
+	"office_john":
 	{
-		"name": "VIC",
+		"name": "JOHN",
 		"hair_style": "short",
-		"hair": "8a6a3a",
-		"shirt": "2b3a5e",
-		"pants": "3a3f4a",
-		"shoes": "2a2a33"
+		"hair": "4a3222",
+		"shirt": "b8342e",
+		"pants": "6a6f78",
+		"shoes": "3a3a44",
+		"acc": {"beard": "goatee"}
 	},
 }
 const CUSTOM_BLURB := "CHOOSE LOOK AND CLOTHES ON THE PAGES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
@@ -197,10 +198,10 @@ const PEOPLE := {
 		"name": "GARRISON",
 		"blurb": "CO-OWNER IN TEAL PLAID AND A GOATEE. CLIENTS AND CULTURE, ALWAYS TIME FOR A CHAT."
 	},
-	"sales_vic":
+	"office_john":
 	{
-		"name": "VIC",
-		"blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
+		"name": "JOHN",
+		"blurb": "ACCOUNT MANAGER IN A BALL CAP, A GOATEE AND A RED FLEECE. A DEAL IS ALWAYS ABOUT TO CLOSE."
 	},
 }
 # the owner campaign shows these instead of the Free Play blurbs
@@ -210,7 +211,7 @@ const OWNER_BLURBS := {
 	"casual_garrison":
 	"SALES OWNER: CLIENTS, PRICING, MORALE. ALAN KEEPS THE SERVERS ALIVE.",
 }
-# the sales campaign offers Vic only
+# the sales campaign offers John only
 const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
 # the service manager campaign offers Dan only
 const SERVICE_BLURBS := {
@@ -274,7 +275,7 @@ func needs_phone() -> bool:
 
 
 # MAKE YOUR OWN is offered where the player is nobody from the cast: the tech campaign and Free Play (the owner, sales and
-# service campaigns play Alan / Garrison / Vic / Dan)
+# service campaigns play Alan / Garrison / John / Dan)
 func offers_custom(for_mode: String) -> bool:
 	return for_mode == "tech" or for_mode == FREE_MODE
 
@@ -384,7 +385,7 @@ func choices(for_mode: String) -> Array:
 	if for_mode == "owner":
 		return ["office_alan", "casual_garrison"]
 	if for_mode == "sales":
-		return ["sales_vic"]
+		return ["office_john"]
 	if for_mode == "service":
 		return ["office_dan"]
 	var cast: Array = []

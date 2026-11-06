@@ -283,7 +283,7 @@ func _init() -> void:
 	dif.seed_run(77)
 	o.start("escape")
 	o.press(KEY_ENTER)
-	for friend in ["Alan", "Garrison", "Dan", "Maya", "Vic"]:
+	for friend in ["Alan", "Garrison", "Dan", "Maya", "John"]:
 		for who in social.people():
 			social.rel[who] = 0
 		social.rel[friend] = 60

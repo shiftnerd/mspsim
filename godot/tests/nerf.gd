@@ -28,8 +28,8 @@ func _init() -> void:
 	c.new_game("tech")
 	c.day = 3
 	world.time_scale = 1.0
-	world.chars["Vic"].scene = "cubicle_area"
-	world.force_activity("Vic", "work")
+	world.chars["John"].scene = "cubicle_area"
+	world.force_activity("John", "work")
 	change_scene_to_file("res://scenes/cubicle_area.tscn")
 	await _wait(40)
 	var scene := current_scene
@@ -45,29 +45,29 @@ func _init() -> void:
 	_check(player.held == "nerf" and nerf.ammo == 6 and nerf.holding(), "a blaster with 6 darts")
 	player.global_position.x = 192.0
 	player.facing = "right"
-	var vic := scene.get_node_or_null("Actors/Vic")
+	var vic := scene.get_node_or_null("Actors/John")
 	if vic == null:
-		world.chars["Vic"].scene = "cubicle_area"
-	_check(vic != null, "Vic is in the room")
+		world.chars["John"].scene = "cubicle_area"
+	_check(vic != null, "John is in the room")
 	vic.global_position.x = 232.0
 	if vic.seat != null:
 		vic.seat.occupied = false
 		vic.seat = null
 	vic._hold = 0.0
-	social.rel["Vic"] = 40
+	social.rel["John"] = 40
 
 	# ---- fire at him
 	_check(nerf.fire_player(player) and nerf.ammo == 5, "Z fires a dart (5 left)")
 	var darts := get_nodes_in_group("darts")
 	_check(darts.size() == 1, "a dart is in the air")
-	var rel0: int = social.value("Vic")
+	var rel0: int = social.value("John")
 	var steps := 0
 	while is_instance_valid(darts[0]) and darts[0].state == "fly" and steps < 200:
 		darts[0]._process(0.02)
 		steps += 1
 	_check(
-		nerf.hits == 1 and social.value("Vic") > rel0,
-		"the dart hits Vic: a friend laughs (%d hits)" % nerf.hits
+		nerf.hits == 1 and social.value("John") > rel0,
+		"the dart hits John: a friend laughs (%d hits)" % nerf.hits
 	)
 	_check(vic._bubble.visible and vic._bubble.glyph == "heart", "and he shows it")
 	_check(darts[0].state == "floor", "the dart drops to the floor")
@@ -80,25 +80,25 @@ func _init() -> void:
 	_check(nerf.ammo == ammo0 + 1, "walking over a dart picks it up")
 
 	# ---- a hit on a cold coworker costs goodwill
-	social.rel["Vic"] = -30
+	social.rel["John"] = -30
 	nerf._cool = 0.0
 	player.state = "idle"
 	nerf.war_t = 0.0
 	player.global_position.x = 192.0
 	nerf.fire_player(player)
 	var d2 := get_nodes_in_group("darts")
-	var rel1: int = social.value("Vic")
+	var rel1: int = social.value("John")
 	steps = 0
 	while is_instance_valid(d2[-1]) and d2[-1].state == "fly" and steps < 200:
 		d2[-1]._process(0.02)
 		steps += 1
-	_check(social.value("Vic") < rel1, "hitting someone who does not like you makes it worse")
+	_check(social.value("John") < rel1, "hitting someone who does not like you makes it worse")
 
 	# ---- the war: they fire back
 	nerf.start_war()
-	_check(nerf.war_t > 0.0 and vic.held == "nerf", "a nerf war: Vic grabs a blaster")
+	_check(nerf.war_t > 0.0 and vic.held == "nerf", "a nerf war: John grabs a blaster")
 	var before := get_nodes_in_group("darts").size()
-	nerf._shot_t["Vic"] = 0.0
+	nerf._shot_t["John"] = 0.0
 	nerf._process(0.1)
 	_check(get_nodes_in_group("darts").size() == before + 1, "and fires back")
 	# a dart hits the player
@@ -106,7 +106,7 @@ func _init() -> void:
 	var back = get_nodes_in_group("darts")[-1]
 	back.global_position = player.global_position + Vector2(10.0, -40.0)  # closer than the desk phone (R25 moved it right)
 	back.vel = Vector2(-175.0, 0.0)
-	back.shooter = "Vic"
+	back.shooter = "John"
 	steps = 0
 	while is_instance_valid(back) and back.state == "fly" and steps < 100:
 		back._process(0.02)

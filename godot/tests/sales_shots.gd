@@ -1,5 +1,5 @@
 extends SceneTree
-# Screenshot: Vic walks in with a client complaint (needs a renderer): user://sales_card.png
+# Screenshot: John walks in with a client complaint (needs a renderer): user://sales_card.png
 
 var frame := 0
 var shot := false
@@ -21,7 +21,7 @@ func _process(_delta: float) -> bool:
 		root.get_node("Campaign").new_game("free")
 		var t: Dictionary = msp.create_ticket(0, 1, "test")
 		msp.ticket(t.id).sla_left = 20.0
-		world.chars["Vic"].scene = "cubicle_area"
+		world.chars["John"].scene = "cubicle_area"
 		sales.pending = {"ticket": t.id, "client": 0}
 		world.send_vic_to_player()
 	if cards.is_open and not shot:

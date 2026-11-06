@@ -97,10 +97,10 @@ func _init() -> void:
 	social.rel["Garrison"] = 0
 	tip = talk.tip()
 	_check(tip.contains("good side"), "a neutral coworker tips but will not teach")
-	talk._who = "Vic"
-	social.rel["Vic"] = 40
+	talk._who = "John"
+	social.rel["John"] = 40
 	sales.satisfaction[0] = 30
-	_check(talk.tip().contains(msp.CLIENTS[0].name), "Vic tells you who is unhappy")
+	_check(talk.tip().contains(msp.CLIENTS[0].name), "John tells you who is unhappy")
 	talk._who = "Dan"
 	social.rel["Dan"] = 0
 	var net := root.get_node("Net")

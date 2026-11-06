@@ -132,23 +132,23 @@ const DEFAULT_BEATS := {
 	},
 	"vic":
 	{
-		"speaker": "Vic (Account Manager)",
+		"speaker": "John (Account Manager)",
 		"text": "I promised Brightside a two hour response on everything. They loved it. Your crew can do that, right?",
 		"options":
 		[
-			{"id": "h", "label": "HOLD VIC TO IT", "text": "We can do it if the P3s wait. I wrote the exceptions on the board.", "fx": {"social": {"Vic": 2}, "trust": {"Alan": 0, "Garrison": 3}, "morale": -2}},
-			{"id": "r", "label": "RE-QUOTE IT WITH VIC", "text": "Four hours, with two hours for urgent. Vic will call them. He did not enjoy it.", "fx": {"social": {"Vic": -2}, "trust": {"Alan": 3, "Garrison": -2}}},
+			{"id": "h", "label": "HOLD JOHN TO IT", "text": "We can do it if the P3s wait. I wrote the exceptions on the board.", "fx": {"social": {"John": 2}, "trust": {"Alan": 0, "Garrison": 3}, "morale": -2}},
+			{"id": "r", "label": "RE-QUOTE IT WITH JOHN", "text": "Four hours, with two hours for urgent. John will call them. He did not enjoy it.", "fx": {"social": {"John": -2}, "trust": {"Alan": 3, "Garrison": -2}}},
 			{"id": "t", "label": "ASK GARRISON", "text": "Garrison says to do it and we sort the staffing later. I am not sure that is a plan.", "fx": {"trust": {"Alan": -2, "Garrison": 4}, "morale": -3, "mood": 3}},
 		],
 	},
 	"nosale":
 	{
-		"speaker": "Vic (Account Manager)",
+		"speaker": "John (Account Manager)",
 		"text": "A new prospect wants fifty seats at half our price, with a four-hour response. Garrison likes the logo. The numbers look thin to me. Do we take them?",
 		"options":
 		[
 			{"id": "y", "label": "TAKE THEM", "text": "We take them. I will plan the capacity before they start.", "fx": {"trust": {"Alan": -3, "Garrison": 5}, "morale": -3, "buff": ["issues", 1.06, 4]}},
-			{"id": "n", "label": "SAY NO, POLITELY", "text": "No. I wrote down why: price, scope and response time do not fit. Vic will say it nicely.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "social": {"Vic": -1}}},
+			{"id": "n", "label": "SAY NO, POLITELY", "text": "No. I wrote down why: price, scope and response time do not fit. John will say it nicely.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "social": {"John": -1}}},
 			{"id": "c", "label": "COUNTER-OFFER", "text": "Counter-offer: full price, a longer response time, a signed scope. They may walk.", "fx": {"trust": {"Alan": 2, "Garrison": 1}}},
 		],
 	},
@@ -208,7 +208,7 @@ const DEFAULT_INCIDENT_OPTIONS := {
 }
 var INCIDENT_OPTIONS: Dictionary = DEFAULT_INCIDENT_OPTIONS.duplicate(true)
 
-# 1:1 cards. Decks: Maya, Tech ({name} is Sam or Terry), Vic. Each option: label, reply, fx (morale / retain / social / trust).
+# 1:1 cards. Decks: Maya, Tech ({name} is Sam or Terry), John. Each option: label, reply, fx (morale / retain / social / trust).
 const DEFAULT_ONE_ON_ONES := {
 	"Maya":
 	[
@@ -288,42 +288,42 @@ const DEFAULT_ONE_ON_ONES := {
 			],
 		},
 	],
-	"Vic":
+	"John":
 	[
 		{
 			"text": "I have a prospect who wants a handshake deal. No contract until next month. Come on, Dan.",
 			"options":
 			[
-				{"label": "ASK FOR A ONE-PAGE SCOPE", "reply": "One page. What we do, what we do not, how fast. You can say it is for the crew.", "fx": {"social": {"Vic": 1}, "trust": {"Alan": 2, "Garrison": 0}}},
-				{"label": "LET HIM HAVE THE HANDSHAKE", "reply": "Fine. But I log every hour they use.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": -1, "Garrison": 2}, "mood": 1}},
-				{"label": "REFUSE UNTIL SIGNED", "reply": "No work without a signature.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
+				{"label": "ASK FOR A ONE-PAGE SCOPE", "reply": "One page. What we do, what we do not, how fast. You can say it is for the crew.", "fx": {"social": {"John": 1}, "trust": {"Alan": 2, "Garrison": 0}}},
+				{"label": "LET HIM HAVE THE HANDSHAKE", "reply": "Fine. But I log every hour they use.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 2}, "mood": 1}},
+				{"label": "REFUSE UNTIL SIGNED", "reply": "No work without a signature.", "fx": {"social": {"John": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
 			],
 		},
 		{
 			"text": "My clients say tickets take forever. I tell them you are working on it. Are you?",
 			"options":
 			[
-				{"label": "SHOW HIM THE BOARD", "reply": "Here is the queue, by age. Tell them the real number. Honest is better.", "fx": {"social": {"Vic": 2}, "mood": 1}},
-				{"label": "GIVE HIM A PHONE NUMBER", "reply": "Give them my desk line for P1s. I will pick up.", "fx": {"social": {"Vic": 3}, "morale": -2}},
-				{"label": "TELL HIM TO BE PATIENT", "reply": "We are working on it.", "fx": {"social": {"Vic": -2}}},
+				{"label": "SHOW HIM THE BOARD", "reply": "Here is the queue, by age. Tell them the real number. Honest is better.", "fx": {"social": {"John": 2}, "mood": 1}},
+				{"label": "GIVE HIM A PHONE NUMBER", "reply": "Give them my desk line for P1s. I will pick up.", "fx": {"social": {"John": 3}, "morale": -2}},
+				{"label": "TELL HIM TO BE PATIENT", "reply": "We are working on it.", "fx": {"social": {"John": -2}}},
 			],
 		},
 		{
 			"text": "Garrison wants a client dinner on Thursday. Can the crew cover the phones?",
 			"options":
 			[
-				{"label": "COVER IT MYSELF", "reply": "I cover the phones. Go. Bring the client back happy.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 0, "Garrison": 2}, "morale": 1}},
-				{"label": "ASK MAYA FIRST", "reply": "I will ask Maya. If she says yes, there is a bonus.", "fx": {"social": {"Vic": 1}, "morale_who": {"Maya": 2}}},
-				{"label": "SAY NO", "reply": "Not Thursday. The queue is too long.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
+				{"label": "COVER IT MYSELF", "reply": "I cover the phones. Go. Bring the client back happy.", "fx": {"social": {"John": 3}, "trust": {"Alan": 0, "Garrison": 2}, "morale": 1}},
+				{"label": "ASK MAYA FIRST", "reply": "I will ask Maya. If she says yes, there is a bonus.", "fx": {"social": {"John": 1}, "morale_who": {"Maya": 2}}},
+				{"label": "SAY NO", "reply": "Not Thursday. The queue is too long.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
 			],
 		},
 		{
 			"text": "I know I over-promise. Garrison says it is how we win. You say it is how we lose. Who is right?",
 			"options":
 			[
-				{"label": "SPLIT IT: PROMISE LESS, SELL BETTER", "reply": "Both. Promise what we can do and sell why it matters. I will help you write the lines.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 1, "Garrison": 1}}},
-				{"label": "TELL HIM HE IS RIGHT", "reply": "Garrison is right about the win. I will find a way to do the work.", "fx": {"social": {"Vic": 4}, "trust": {"Alan": -1, "Garrison": 2}, "morale": -2}},
-				{"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"Vic": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
+				{"label": "SPLIT IT: PROMISE LESS, SELL BETTER", "reply": "Both. Promise what we can do and sell why it matters. I will help you write the lines.", "fx": {"social": {"John": 3}, "trust": {"Alan": 1, "Garrison": 1}}},
+				{"label": "TELL HIM HE IS RIGHT", "reply": "Garrison is right about the win. I will find a way to do the work.", "fx": {"social": {"John": 4}, "trust": {"Alan": -1, "Garrison": 2}, "morale": -2}},
+				{"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"John": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
 			],
 		},
 	],
@@ -1501,15 +1501,15 @@ func _delegate_ransom(quality: float, who: String) -> Dictionary:
 
 # ---- 1:1s ------------------------------------------------------------------------------------------------------
 func has_one_on_one(who: String) -> bool:
-	return Campaign.mode == "service" and (who == "Maya" or who == "Vic" or Crew.has(who))
+	return Campaign.mode == "service" and (who == "Maya" or who == "John" or Crew.has(who))
 
 
 func _deck_of(who: String) -> String:
-	return who if who == "Maya" or who == "Vic" else "Tech"
+	return who if who == "Maya" or who == "John" else "Tech"
 
 
 func one_on_one(who: String, after := Callable()) -> void:
-	var label := Roles.label(who) if who == "Maya" or who == "Vic" else "%s (Tier 1)" % who
+	var label := Roles.label(who) if who == "Maya" or who == "John" else "%s (Tier 1)" % who
 	if int(oto_day.get(who, -1)) == Campaign.day:
 		Cards.ask(label, str(ONE_TEXT.already), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
 		return

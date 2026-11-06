@@ -34,7 +34,7 @@ const REACT := {
 	"Garrison": {"base": 0, "line": "GARRISON: NICE WHEELS. WATCH THE KNEES."},
 	"Maya": {"base": 0, "line": "MAYA: HEY! MY GRANOLA BAR!"},
 	"Dan": {"base": 0, "line": "DAN: OKAY, THAT WAS A GOOD ROLL."},
-	"Vic": {"base": 0, "line": "VIC: CAREFUL, I HAVE A CALL AT TWO!"},
+	"John": {"base": 0, "line": "JOHN: CAREFUL, I HAVE A CALL AT TWO!"},
 	"Morgan": {"base": 0, "line": "MORGAN: I WILL PRETEND I DID NOT SEE THAT."},
 }
 

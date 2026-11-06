@@ -63,9 +63,9 @@ func _init() -> void:
 		"cold: question mark, no wave"
 	)
 	_check(so.is_hostile("Alan") and so.mood("Alan") == "HOSTILE", "hostile")
-	so.rel = {"Alan": 70, "Garrison": 50, "Dan": 40, "Vic": 40, "Maya": 40}
+	so.rel = {"Alan": 70, "Garrison": 50, "Dan": 40, "John": 40, "Maya": 40}
 	_check(so.rep_bonus() == 1 and so.mood("Alan") == "FRIEND", "friends: +1 reputation a day")
-	so.rel = {"Alan": -40, "Garrison": -20, "Dan": 0, "Vic": -30, "Maya": -30}
+	so.rel = {"Alan": -40, "Garrison": -20, "Dan": 0, "John": -30, "Maya": -30}
 	_check(so.rep_bonus() == -1, "average dislike: -1 reputation a day")
 
 	# the end of day report shows the coworker change
@@ -75,7 +75,7 @@ func _init() -> void:
 	_check(r.social == 3, "report has the coworker delta")
 
 	# saved with the campaign
-	so.rel = {"Alan": 12, "Garrison": -8, "Dan": 33, "Vic": 5}
+	so.rel = {"Alan": 12, "Garrison": -8, "Dan": 33, "John": 5}
 	so.calls_answered = 7
 	c.save()
 	c.new_game("free")

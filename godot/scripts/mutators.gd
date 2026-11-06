@@ -84,7 +84,7 @@ const START_KEYS := [
 	"stack_fee",
 	"texts"
 ]
-const OUT_POOL := {"tech": ["Dan", "Vic", "Maya"], "owner": ["Dan", "Vic"]}
+const OUT_POOL := {"tech": ["Dan", "John", "Maya"], "owner": ["Dan", "John"]}
 
 # duration = [tech days, owner weeks]; fix names are the RMM actions of Msp.FIXES
 const DEFAULT_MUTATORS := {
@@ -136,7 +136,7 @@ const DEFAULT_MUTATORS := {
 		"event_boost": {"xp_panic": 4.0},
 		"offer":
 		{
-			"speaker": "Vic Marlowe",
+			"speaker": "John Marlowe",
 			"text":
 			"Three of our clients still have XP desktops. Want me to send them a replacement quote? It is a real project, but the deadline helps us.",
 			"options":
@@ -145,13 +145,13 @@ const DEFAULT_MUTATORS := {
 					"id": "quote",
 					"label": "YES, SEND THE UPGRADE QUOTES",
 					"text":
-					"Vic sends tidy quotes with a date on them. Two clients say yes to a few new PCs.",
+					"John sends tidy quotes with a date on them. Two clients say yes to a few new PCs.",
 					"fx": {"xp": ["people", 3], "rep": 1, "hours": 0.4}
 				},
 				{
 					"id": "later",
 					"label": "LATER, WE ARE BUSY",
-					"text": "Vic shrugs. The deadline will not move, so he will ask again.",
+					"text": "John shrugs. The deadline will not move, so he will ask again.",
 					"fx": {}
 				}
 			]
@@ -377,7 +377,7 @@ const DEFAULT_STARTS := {
 		"texts":
 		[
 			{
-				"from": "Vic",
+				"from": "John",
 				"body":
 				"Heads up: a rival shop is handing out flyers to our clients. Keep them happy this month."
 			}

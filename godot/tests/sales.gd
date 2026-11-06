@@ -1,6 +1,6 @@
 extends SceneTree
 # The account manager: clients and satisfaction, workload, deals, complaints and the walk-in.
-# cards) and Vic walking across the building to deliver one.
+# cards) and John walking across the building to deliver one.
 
 var frame := 0
 var failures := 0
@@ -32,7 +32,7 @@ func _model() -> void:
 		new_client >= 5 and sales.active.size() == 6 and sales.workload() > 1.1,
 		"signing a client adds work"
 	)
-	_check(msp.texts.size() >= 1 and msp.emails.size() >= 2, "Vic tells you about it")
+	_check(msp.texts.size() >= 1 and msp.emails.size() >= 2, "John tells you about it")
 	sales.active = [new_client]
 	var t: Dictionary = msp._random_ticket("test")
 	_check(int(t.client) == new_client, "tickets only come from active clients")
@@ -53,7 +53,7 @@ func _model() -> void:
 	var installs: int = sales.sell_install()
 	_check(
 		installs > 0 and msp.project_busy() and msp.ticket(installs).source == "sales",
-		"Vic sells an install"
+		"John sells an install"
 	)
 	_check(sales.sell_install() == -1, "only one install project at a time")
 
@@ -84,30 +84,30 @@ func _model() -> void:
 	sales.deliver()
 	_check(
 		cards.is_open and cards.options.size() == 3 and cards.text.contains("Dr. Patel"),
-		"Vic asks what to do: " + cards.text
+		"John asks what to do: " + cards.text
 	)
 	var mood0: int = sales.mood(0)
-	var vic0: int = social.value("Vic")
+	var vic0: int = social.value("John")
 	cards.pick(0)
 	_check(
 		(
 			not cards.is_open
 			and msp.ticket(late.id).pri == 1
 			and sales.mood(0) == mood0 + 6
-			and social.value("Vic") == vic0 + 1
+			and social.value("John") == vic0 + 1
 		),
-		"prioritizing helps the client and Vic"
+		"prioritizing helps the client and John"
 	)
 	msp.ticket(late.id).sla_left = 10.0
 	sales.pending = sales.find_complaint()
 	sales.deliver()
 	cards.pick(1)
 	_check(
-		sales.mood(0) == mood0 + 6 - 6 and social.value("Vic") == vic0 - 1,
+		sales.mood(0) == mood0 + 6 - 6 and social.value("John") == vic0 - 1,
 		"brushing them off costs both"
 	)
 
-	# a ticket closed before Vic arrives is not complained about, and a card answered after closing does nothing
+	# a ticket closed before John arrives is not complained about, and a card answered after closing does nothing
 	sales.reset()
 	msp.reset()
 	var gone: Dictionary = msp.create_ticket(0, 1, "test")
@@ -117,7 +117,7 @@ func _model() -> void:
 	msp.close_ticket(gone.id)
 	_check(sales.complaint_text() == "", "no complaint text for a closed ticket")
 	sales.deliver()
-	_check(not cards.is_open and sales.pending.is_empty(), "Vic says nothing about a closed ticket")
+	_check(not cards.is_open and sales.pending.is_empty(), "John says nothing about a closed ticket")
 	var gone2: Dictionary = msp.create_ticket(0, 1, "test")
 	msp.ticket(gone2.id).sla_left = 10.0
 	sales.pending = sales.find_complaint()
@@ -151,26 +151,26 @@ func _process(_delta: float) -> bool:
 	match frame:
 		5:
 			_model()
-			# walk-in test in free play: Vic crosses the building to tell the player
+			# walk-in test in free play: John crosses the building to tell the player
 			root.get_node("Campaign").new_game("free")
 			var t: Dictionary = msp.create_ticket(0, 0, "test")
 			msp.ticket(t.id).sla_left = 5.0
 			t_id = t.id
-			world.chars["Vic"].scene = "cubicle_area"
+			world.chars["John"].scene = "cubicle_area"
 			sales.pending = {"ticket": t.id, "client": 0}
 			world.send_vic_to_player()
 			_check(
-				world.chars["Vic"].legs.size() >= 2 and world.chars["Vic"].legs[-1].kind == "news",
-				"Vic is sent over (%d legs)" % world.chars["Vic"].legs.size()
+				world.chars["John"].legs.size() >= 2 and world.chars["John"].legs[-1].kind == "news",
+				"John is sent over (%d legs)" % world.chars["John"].legs.size()
 			)
 		_:
 			if frame > 5 and cards.is_open and not vic_near:
-				var vic: Node = current_scene.get_node_or_null("Actors/Vic")
+				var vic: Node = current_scene.get_node_or_null("Actors/John")
 				var player: Node = current_scene.get_node("Actors/Player")
 				vic_near = (
 					vic != null and absf(vic.global_position.x - player.global_position.x) < 60.0
 				)
-				_check(vic_near, "the card opens with Vic standing next to you (frame %d)" % frame)
+				_check(vic_near, "the card opens with John standing next to you (frame %d)" % frame)
 				cards.pick(0)
 				_check(msp.ticket(t_id).pri == 1, "your answer is applied")
 			if frame > 6 and vic_near and frame % 1 == 0:
@@ -180,6 +180,6 @@ func _process(_delta: float) -> bool:
 				print("failures=", failures)
 				quit(1 if failures > 0 else 0)
 			if frame > 6000:
-				_check(false, "Vic never arrived")
+				_check(false, "John never arrived")
 				quit(1)
 	return false

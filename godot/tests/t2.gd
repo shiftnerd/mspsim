@@ -328,7 +328,7 @@ func _unit() -> void:
 	_check(story._vignette_text("donuts", v).contains("Nobody wrote down"), "donuts when nothing was written down")
 	story.flags = {}
 
-	# --- small things: Spence, Morgan, a queued Vic card for a closed ticket, the RMM labels
+	# --- small things: Spence, Morgan, a queued John card for a closed ticket, the RMM labels
 	var all_text := ""
 	for prob in pb.PROBLEMS.ceofraud:
 		all_text += str(prob.body)
@@ -341,7 +341,7 @@ func _unit() -> void:
 	var later_ran := [false, ""]
 	cards.ask("Someone", "first", [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 	cards.ask(
-		"Vic Marlowe",
+		"John Marlowe",
 		"complaint",
 		[{"label": "OK", "id": "ok"}],
 		func(id: String) -> void:

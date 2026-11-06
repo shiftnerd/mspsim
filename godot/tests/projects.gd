@@ -118,7 +118,7 @@ func _init() -> void:
 		)
 	)
 	pr.wom_weeks = 6
-	_check(pr.vic_penalty() > 0.0, "while it lasts Vic closes less")
+	_check(pr.vic_penalty() > 0.0, "while it lasts John closes less")
 	pr._queue = [{"kind": "wom", "client": 1}]
 	pr.begin_week()
 	_check(cards.is_open and cards.text.contains("hard to work with"), "a prospect mentions it")
@@ -241,7 +241,7 @@ func _init() -> void:
 	pr.begin_week()
 	_check(
 		cards.is_open and cards.options.size() == 4 and cards.text.contains("quote"),
-		"Vic brings a project: four ways to quote it"
+		"John brings a project: four ways to quote it"
 	)
 	cards.pick(1)
 	_drain(cards)

@@ -7,7 +7,7 @@ extends SceneTree
 var frame := 0
 var tag := "x"
 var cases := ["bowl4", "bowl4_panel", "dinner5", "dinner5_panel"]
-var party := ["Morgan", "Maya", "Vic", "Dan", "Garrison", "Alan"]
+var party := ["Morgan", "Maya", "John", "Dan", "Garrison", "Alan"]
 
 
 func _initialize() -> void:

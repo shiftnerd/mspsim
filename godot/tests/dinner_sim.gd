@@ -17,7 +17,7 @@ func _check(ok: bool, what: String) -> void:
 
 
 func _table(d: Node, seed_n: int, size: int) -> Array:
-	var names := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]
+	var names := ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]
 	d.shuffle(names, "sim_table")
 	return names.slice(0, size)
 

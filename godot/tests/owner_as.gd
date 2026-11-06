@@ -64,7 +64,7 @@ func _init() -> void:
 		)
 		_check(o.crew_names() == ["Dan", "Maya"] and absf(partner.hands() - 0.5) < 0.001, "%s: crew Dan and Maya, the partner works at 0.5" % who)
 		var est: Dictionary = o.weekly_estimate()
-		_check(est.payroll == 2700, "%s: payroll covers Dan, Maya, Morgan and Vic, no owners (%d)" % [who, int(est.payroll)])
+		_check(est.payroll == 2700, "%s: payroll covers Dan, Maya, Morgan and John, no owners (%d)" % [who, int(est.payroll)])
 		var speed: float = o.team_speed()
 		_check(speed > 2.2 and speed < 3.4, "%s: team speed %.2f stays close to the old three-tech crew" % [who, speed])
 		o.lost_techs = 1

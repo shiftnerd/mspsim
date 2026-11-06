@@ -130,7 +130,7 @@ func _init() -> void:
 	var ct: Dictionary = msp.create_ticket(1, 0, "test")
 	sales.pending = {"ticket": ct.id, "client": 1}
 	o._pending_age = 10.0
-	_check(o.check().is_empty(), "a fresh complaint is left to Vic and you")
+	_check(o.check().is_empty(), "a fresh complaint is left to John and you")
 	o._pending_age = 50.0
 	var m0: int = sales.mood(1)
 	d = o.check()

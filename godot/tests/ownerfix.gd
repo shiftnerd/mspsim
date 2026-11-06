@@ -1,6 +1,6 @@
 extends SceneTree
 # Owner play-through fixes: the clock waits for cards and outings, the final week settles once,
-# project payouts in the valuation history, Vic's install is a job, the named prospect, the phone.
+# project payouts in the valuation history, John's install is a job, the named prospect, the phone.
 
 var failures := 0
 
@@ -127,7 +127,7 @@ func _init() -> void:
 	)
 	_clear(cards)
 
-	# 4. Vic's sold install is a job, not a dead ticket, and never blocks the next sale
+	# 4. John's sold install is a job, not a dead ticket, and never blocks the next sale
 	c.new_game("owner")
 	var tickets_before: int = msp.tickets.size()
 	var cash0: int = o.cash

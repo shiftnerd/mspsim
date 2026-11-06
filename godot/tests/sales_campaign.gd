@@ -1,6 +1,6 @@
 extends SceneTree
 # gdlint:disable=class-definitions-order,expression-not-assigned,max-line-length
-# The sales campaign as Vic (C1, slice S1): the registry row, character select, a new game and continue, seeded leads, selling
+# The sales campaign as John (C1, slice S1): the registry row, character select, a new game and continue, seeded leads, selling
 # slots, the quote maths (win chance, margin, floor, discount approval), a visit to a prospect, the handover gap and the
 # complaint it queues, the player ringing the bell, quota verdicts and commission, and a full 20-week run through the real
 # week loop with every card answered, ending in the review. Headless; saves in user://test_*.
@@ -40,7 +40,7 @@ func _clear(cards: Node, choice := 0) -> int:
 
 
 func _start(seed_value := 4242, clear := true) -> void:
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
 	root.get_node("Difficulty").seed_run(seed_value)
@@ -90,22 +90,22 @@ func _init() -> void:
 	_check(row.day_len == 240.0 and row.total_days == 20 and row.unit == "WEEK" and row.review == "sales", "240 s weeks, 20 of them, a sales review")
 	var cs_script := load("res://scripts/charselect.gd")
 	var cs = cs_script.new()
-	_check(cs.choices("sales") == ["sales_vic"], "character select offers only Vic")
+	_check(cs.choices("sales") == ["office_john"], "character select offers only John")
 	cs.setup("sales")
-	_check(cs.ids == ["sales_vic"] and "SELL" in str(cs.info("sales_vic").blurb) and "ACCOUNT MANAGER" in str(cs.info("sales_vic").blurb), "Vic has a sales blurb")
-	_check(cs.summary(false) == "SALES CAMPAIGN - VIC", "the summary says SALES CAMPAIGN - VIC (" + cs.summary(false) + ")")
+	_check(cs.ids == ["office_john"] and "SELL" in str(cs.info("office_john").blurb) and "ACCOUNT MANAGER" in str(cs.info("office_john").blurb), "John has a sales blurb")
+	_check(cs.summary(false) == "SALES CAMPAIGN - JOHN", "the summary says SALES CAMPAIGN - JOHN (" + cs.summary(false) + ")")
 	cs.free()
-	_check(c.derive_player_as("sales") == "Vic", "the sales campaign is always played as Vic")
+	_check(c.derive_player_as("sales") == "John", "the sales campaign is always played as John")
 
 	# ---- a new game
 	_start()
-	_check(c.active and c.mode == "sales" and c.player_as == "Vic" and world.day_len == 240.0, "a new sales run: active, played as Vic, 240 s weeks")
+	_check(c.active and c.mode == "sales" and c.player_as == "John" and world.day_len == 240.0, "a new sales run: active, played as John, 240 s weeks")
 	_check(c.crew_active() and c.books_active() and c.cards_active(), "crew, books and cards gates are open")
-	_check(not world.chars.has("Vic"), "Vic's NPC copy is gone (World.roster_gone)")
+	_check(not world.chars.has("John"), "John's NPC copy is gone (World.roster_gone)")
 	_check(world.chars.has("Dan") and world.chars.has("Maya") and world.chars.has("Morgan") and world.chars.has("Alan") and world.chars.has("Garrison"), "everyone else is in the building")
-	_check(player_script.current_character == "sales_vic" and not social.people().has("Vic"), "you are Vic and Vic is not your coworker")
+	_check(player_script.current_character == "office_john" and not social.people().has("John"), "you are John and John is not your coworker")
 	_check(not root.get_node("Outings").enabled, "outings follow the title menu (off in a direct start)")
-	_check(owner_node.vic_plan == sc.plan, "the pay plan is the company's Vic wage")
+	_check(owner_node.vic_plan == sc.plan, "the pay plan is the company's John wage")
 	_check(not cards.is_open and sc.open_leads().size() >= 2 and sc.open_leads().size() <= 3, "week 1 brings 2-3 leads (%d)" % sc.open_leads().size())
 
 	# ---- the week 1 cards in order: quota, pay plan, leads
@@ -411,7 +411,7 @@ func _init() -> void:
 	_clear(cards)
 	c.day = 1
 
-	# ---- the player rings the bell (Vic only)
+	# ---- the player rings the bell (John only)
 	game.go("main_floor", "start")
 	await _wait(1.2)
 	var bell: Node = null
@@ -510,7 +510,7 @@ func _init() -> void:
 	game.title_mode = false
 	_check(c.continue_game("sales"), "the run continues")
 	_clear(cards)
-	_check(c.mode == "sales" and c.day == 7 and c.player_as == "Vic" and not world.chars.has("Vic"), "continue: week 7, played as Vic, Vic's copy gone")
+	_check(c.mode == "sales" and c.day == 7 and c.player_as == "John" and not world.chars.has("John"), "continue: week 7, played as John, John's copy gone")
 	_check(sc.quota_level == "safe" and sc.plan == "salary" and absf(sc.margin_floor - 0.47) < 0.0001 and sc.commission_total >= 1234 and sc.wins == 3, "continue keeps quota, plan, floor, commission and wins (a renewal due that week may add to it)")
 	_check(sc.q_signed[0] == 900 and sc.bell_ready, "and the quarter's MRR and the waiting bell")
 	_check(names_now.all(func(n: String) -> bool: return _lead_names(sc).has(n)), "and the pipeline")

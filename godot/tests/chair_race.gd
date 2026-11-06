@@ -8,7 +8,7 @@ extends SceneTree
 # Headless: the race runs through its public functions (ChairRace.step / push / change_lane), the outing through Outings.press / tick.
 
 const Race := preload("res://scripts/chair_race.gd")
-const CREW := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const CREW := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const TIERS := {
 	"easy": {"crash": 0.7, "stamina": 0.9, "slick": 0.8, "par": 1.2, "skill": -0.08},
 	"normal": {"crash": 1.0, "stamina": 1.0, "slick": 1.0, "par": 1.0, "skill": 0.0},
@@ -381,8 +381,8 @@ func _init() -> void:
 	for x in mayas.rivals:
 		if x.n == "Maya":
 			_check(float(x.fade) > 0.0, "Maya is a sprinter: she fades")
-		if x.n == "Vic":
-			_check(x.stalls.size() == 1 and int(x.stalls[0].o) < 0, "Vic spins out once for the crowd, at a checkpoint")
+		if x.n == "John":
+			_check(x.stalls.size() == 1 and int(x.stalls[0].o) < 0, "John spins out once for the crowd, at a checkpoint")
 		if x.n == "Alan":
 			_check(x.stalls.is_empty(), "Alan never crashes")
 	var seen_stall := false

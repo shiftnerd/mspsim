@@ -43,12 +43,12 @@ func _process(_delta: float) -> bool:
 		var c := root.get_node("Campaign")
 		c.new_game(c.FREE)
 		root.get_node("Game").title_mode = false
-		world.chars["Vic"].scene = "cubicle_area"
-		world.force_activity("Vic", "work")
+		world.chars["John"].scene = "cubicle_area"
+		world.force_activity("John", "work")
 		change_scene_to_file("res://scenes/cubicle_area.tscn")
 		return false
 	var player := current_scene.get_node_or_null("Actors/Player")
-	var vic := current_scene.get_node_or_null("Actors/Vic")
+	var vic := current_scene.get_node_or_null("Actors/John")
 	if player == null or frame < 50:
 		return false
 	if phase == 0:
@@ -56,28 +56,28 @@ func _process(_delta: float) -> bool:
 			return false
 		if vic.seat == null:
 			vic._occupy("Seat1", true)
-		_check(vic.seat != null, "Vic is sitting at his desk")
+		_check(vic.seat != null, "John is sitting at his desk")
 		player.give("nerf")
 		player.global_position.x = vic.global_position.x - 14.0
 		player.facing = "right"
 		player.velocity = Vector2.ZERO
-		root.get_node("Social").rel["Vic"] = 30
+		root.get_node("Social").rel["John"] = 30
 		_key(KEY_Z, true)
 		_key(KEY_Z, false)
 		phase = 1
 		t0 = frame
 	elif phase == 1:
 		if frame == t0 + 40:
-			_check(nerf.hits == 1, "the dart hit seated Vic (%d hits)" % nerf.hits)
+			_check(nerf.hits == 1, "the dart hit seated John (%d hits)" % nerf.hits)
 			_check(nerf.war_t > 0.0, "a nerf war started")
-			_check(vic.held == "nerf", "Vic has a blaster, even sitting down")
+			_check(vic.held == "nerf", "John has a blaster, even sitting down")
 		for d in get_nodes_in_group("darts"):
-			if d.shooter == "Vic":
+			if d.shooter == "John":
 				if not seen_vic_dart:
 					_shot("vic_fires")
 				seen_vic_dart = true
 		if frame > t0 + 420:
-			_check(seen_vic_dart, "Vic fired back from his desk")
+			_check(seen_vic_dart, "John fired back from his desk")
 			_check(
 				nerf.taken >= 1 or seen_vic_dart, "his darts head for you (%d taken)" % nerf.taken
 			)

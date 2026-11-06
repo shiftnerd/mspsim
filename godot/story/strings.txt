@@ -2608,7 +2608,7 @@ A prospect hands you a card. The raffle prize is a pen. The prospect is better t
 
 # Events > DECK > chamber_lunch > options > 1 > label
 [Events.DECK.chamber_lunch.options.1.label]
-SEND VIC
+SEND JOHN
 
 # Events > DECK > chamber_lunch > options > 1 > text
 [Events.DECK.chamber_lunch.options.1.text]
@@ -2726,7 +2726,7 @@ Support for Windows XP ends on April 8 and every client suddenly remembers the o
 
 # Mutators > MUTATORS > xp_eol > offer > speaker
 [Mutators.MUTATORS.xp_eol.offer.speaker]
-Vic Marlowe
+John Marlowe
 
 # Mutators > MUTATORS > xp_eol > offer > text
 [Mutators.MUTATORS.xp_eol.offer.text]
@@ -2738,7 +2738,7 @@ YES, SEND THE UPGRADE QUOTES
 
 # Mutators > MUTATORS > xp_eol > offer > options > 0 > text
 [Mutators.MUTATORS.xp_eol.offer.options.0.text]
-Vic sends tidy quotes with a date on them. Two clients say yes to a few new PCs.
+John sends tidy quotes with a date on them. Two clients say yes to a few new PCs.
 
 # Mutators > MUTATORS > xp_eol > offer > options > 1 > label
 [Mutators.MUTATORS.xp_eol.offer.options.1.label]
@@ -2746,7 +2746,7 @@ LATER, WE ARE BUSY
 
 # Mutators > MUTATORS > xp_eol > offer > options > 1 > text
 [Mutators.MUTATORS.xp_eol.offer.options.1.text]
-Vic shrugs. The deadline will not move, so he will ask again.
+John shrugs. The deadline will not move, so he will ask again.
 
 # Mutators > MUTATORS > flu_season > text
 [Mutators.MUTATORS.flu_season.text]
@@ -2904,7 +2904,7 @@ A competitor is already calling your clients. Keep them happy from the first day
 
 # Mutators > STARTS > rival > texts > 0 > from
 [Mutators.STARTS.rival.texts.0.from]
-Vic
+John
 
 # Mutators > STARTS > rival > texts > 0 > body
 [Mutators.STARTS.rival.texts.0.body]
@@ -4408,11 +4408,11 @@ Marge (Bookkeeper)
 
 # owner card: welcome
 [Owner.CARDS.welcome.text]
-Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?
+Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?
 
 # owner card: welcome
 [Owner.CARDS.welcome.options.0.label]
-VOLUME PRICING (-15% FEES, VIC SELLS MORE)
+VOLUME PRICING (-15% FEES, JOHN SELLS MORE)
 
 # owner card: welcome
 [Owner.CARDS.welcome.options.1.label]
@@ -4440,7 +4440,7 @@ NO, WE WILL CHECK THEM BY HAND
 
 # owner card: queue
 [Owner.CARDS.queue.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: queue
 [Owner.CARDS.queue.text]
@@ -4460,7 +4460,7 @@ NEITHER, WE WILL COPE
 
 # owner card: desktop
 [Owner.CARDS.desktop.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: desktop
 [Owner.CARDS.desktop.text]
@@ -4504,7 +4504,7 @@ He is insulted and says so.
 
 # owner card: prospect
 [Owner.CARDS.prospect.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: prospect
 [Owner.CARDS.prospect.text]
@@ -4516,7 +4516,7 @@ OFFER THE DISCOUNT
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.0.text]
-Signed! Vic is thrilled. Their tickets start tomorrow.
+Signed! John is thrilled. Their tickets start tomorrow.
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.1.label]
@@ -4524,11 +4524,11 @@ HOLD THE PRICE
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.1.roll.0.2]
-They sign at full price. Vic looks smug.
+They sign at full price. John looks smug.
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.1.roll.1.2]
-They pass. Vic sulks.
+They pass. John sulks.
 
 # owner card: prospect
 [Owner.CARDS.prospect.options.2.label]
@@ -4560,7 +4560,7 @@ The migration drags and clients notice.
 
 # owner card: rack
 [Owner.CARDS.rack.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: rack
 [Owner.CARDS.rack.text]
@@ -4604,7 +4604,7 @@ Gnarly Gnomes cancels the contract.
 
 # owner card: migration
 [Owner.CARDS.migration.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: migration
 [Owner.CARDS.migration.text]
@@ -4708,7 +4708,7 @@ Dan hands in his notice. The team is stretched thin.
 
 # owner card: bid
 [Owner.CARDS.bid.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: bid
 [Owner.CARDS.bid.text]
@@ -4748,7 +4748,7 @@ They balk, walk, and mention it to people they know.
 
 # owner card: poach
 [Owner.CARDS.poach.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: poach
 [Owner.CARDS.poach.text]
@@ -4892,11 +4892,11 @@ HOLD PRICES
 
 # owner card: marketing
 [Owner.CARDS.marketing.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: marketing
 [Owner.CARDS.marketing.text]
-Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)
+John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)
 
 # owner card: marketing
 [Owner.CARDS.marketing.options.0.label]
@@ -5048,7 +5048,7 @@ Upgraded. Alerts start catching things early.
 
 # owner card: stack_hw
 [Owner.CARDS.stack_hw.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: stack_hw
 [Owner.CARDS.stack_hw.text]
@@ -5064,7 +5064,7 @@ BUDGETBYTE (+12% SALES, MORE TICKETS)
 
 # owner card: stack_hw
 [Owner.CARDS.stack_hw.options.1.text]
-Vic grins. Expect more calls about broken laptops.
+John grins. Expect more calls about broken laptops.
 
 # owner card: stack_hw
 [Owner.CARDS.stack_hw.options.2.label]
@@ -5076,7 +5076,7 @@ Fewer fires, fatter margins, a slower sell.
 
 # owner card: rn_invite
 [Owner.CARDS.rn_invite.speaker]
-Vic Marlowe
+John Marlowe
 
 # owner card: rn_invite
 [Owner.CARDS.rn_invite.text]
@@ -5184,11 +5184,11 @@ DellightCo Rep
 
 # owner card: rn_hw
 [Owner.CARDS.rn_hw.text]
-We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.
+We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which John would have to hit, and he will sell less of the cheap stuff.
 
 # owner card: rn_hw
 [Owner.CARDS.rn_hw.options.0.label]
-SIGN AT THE SHOW (FREE, VIC SELLS LESS)
+SIGN AT THE SHOW (FREE, JOHN SELLS LESS)
 
 # owner card: rn_hw
 [Owner.CARDS.rn_hw.options.1.label]
@@ -5216,7 +5216,7 @@ Marge (Bookkeeper)
 
 # owner card: vic_plan
 [Owner.CARDS.vic_plan.text]
-How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.
+How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.
 
 # owner card: vic_plan
 [Owner.CARDS.vic_plan.options.0.label]
@@ -5496,7 +5496,7 @@ OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)
 
 # owner card: bec_scare
 [Owner.CARDS.bec_scare.options.1.text]
-Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do.
+John and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do.
 
 # owner card: bec_scare
 [Owner.CARDS.bec_scare.options.2.label]
@@ -6106,7 +6106,7 @@ Maya takes the XP list. I will check her notes at the end of the day.
 
 # Service > BEATS > vic > speaker
 [Service.BEATS.vic.speaker]
-Vic (Account Manager)
+John (Account Manager)
 
 # Service > BEATS > vic > text
 [Service.BEATS.vic.text]
@@ -6114,7 +6114,7 @@ I promised Brightside a two hour response on everything. They loved it. Your cre
 
 # Service > BEATS > vic > options > 0 > label
 [Service.BEATS.vic.options.0.label]
-HOLD VIC TO IT
+HOLD JOHN TO IT
 
 # Service > BEATS > vic > options > 0 > text
 [Service.BEATS.vic.options.0.text]
@@ -6122,11 +6122,11 @@ We can do it if the P3s wait. I wrote the exceptions on the board.
 
 # Service > BEATS > vic > options > 1 > label
 [Service.BEATS.vic.options.1.label]
-RE-QUOTE IT WITH VIC
+RE-QUOTE IT WITH JOHN
 
 # Service > BEATS > vic > options > 1 > text
 [Service.BEATS.vic.options.1.text]
-Four hours, with two hours for urgent. Vic will call them. He did not enjoy it.
+Four hours, with two hours for urgent. John will call them. He did not enjoy it.
 
 # Service > BEATS > vic > options > 2 > label
 [Service.BEATS.vic.options.2.label]
@@ -6138,7 +6138,7 @@ Garrison says to do it and we sort the staffing later. I am not sure that is a p
 
 # Service > BEATS > nosale > speaker
 [Service.BEATS.nosale.speaker]
-Vic (Account Manager)
+John (Account Manager)
 
 # Service > BEATS > nosale > text
 [Service.BEATS.nosale.text]
@@ -6158,7 +6158,7 @@ SAY NO, POLITELY
 
 # Service > BEATS > nosale > options > 1 > text
 [Service.BEATS.nosale.options.1.text]
-No. I wrote down why: price, scope and response time do not fit. Vic will say it nicely.
+No. I wrote down why: price, scope and response time do not fit. John will say it nicely.
 
 # Service > BEATS > nosale > options > 2 > label
 [Service.BEATS.nosale.options.2.label]
@@ -6582,116 +6582,116 @@ SAY CLIENTS ARE LIKE THAT
 [Service.ONE_ON_ONES.Tech.3.options.2.reply]
 That happens.
 
-# Service > ONE_ON_ONES > Vic > 0 > text
-[Service.ONE_ON_ONES.Vic.0.text]
+# Service > ONE_ON_ONES > John > 0 > text
+[Service.ONE_ON_ONES.John.0.text]
 I have a prospect who wants a handshake deal. No contract until next month. Come on, Dan.
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 0 > label
-[Service.ONE_ON_ONES.Vic.0.options.0.label]
+# Service > ONE_ON_ONES > John > 0 > options > 0 > label
+[Service.ONE_ON_ONES.John.0.options.0.label]
 ASK FOR A ONE-PAGE SCOPE
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 0 > reply
-[Service.ONE_ON_ONES.Vic.0.options.0.reply]
+# Service > ONE_ON_ONES > John > 0 > options > 0 > reply
+[Service.ONE_ON_ONES.John.0.options.0.reply]
 One page. What we do, what we do not, how fast. You can say it is for the crew.
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 1 > label
-[Service.ONE_ON_ONES.Vic.0.options.1.label]
+# Service > ONE_ON_ONES > John > 0 > options > 1 > label
+[Service.ONE_ON_ONES.John.0.options.1.label]
 LET HIM HAVE THE HANDSHAKE
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 1 > reply
-[Service.ONE_ON_ONES.Vic.0.options.1.reply]
+# Service > ONE_ON_ONES > John > 0 > options > 1 > reply
+[Service.ONE_ON_ONES.John.0.options.1.reply]
 Fine. But I log every hour they use.
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 2 > label
-[Service.ONE_ON_ONES.Vic.0.options.2.label]
+# Service > ONE_ON_ONES > John > 0 > options > 2 > label
+[Service.ONE_ON_ONES.John.0.options.2.label]
 REFUSE UNTIL SIGNED
 
-# Service > ONE_ON_ONES > Vic > 0 > options > 2 > reply
-[Service.ONE_ON_ONES.Vic.0.options.2.reply]
+# Service > ONE_ON_ONES > John > 0 > options > 2 > reply
+[Service.ONE_ON_ONES.John.0.options.2.reply]
 No work without a signature.
 
-# Service > ONE_ON_ONES > Vic > 1 > text
-[Service.ONE_ON_ONES.Vic.1.text]
+# Service > ONE_ON_ONES > John > 1 > text
+[Service.ONE_ON_ONES.John.1.text]
 My clients say tickets take forever. I tell them you are working on it. Are you?
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 0 > label
-[Service.ONE_ON_ONES.Vic.1.options.0.label]
+# Service > ONE_ON_ONES > John > 1 > options > 0 > label
+[Service.ONE_ON_ONES.John.1.options.0.label]
 SHOW HIM THE BOARD
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 0 > reply
-[Service.ONE_ON_ONES.Vic.1.options.0.reply]
+# Service > ONE_ON_ONES > John > 1 > options > 0 > reply
+[Service.ONE_ON_ONES.John.1.options.0.reply]
 Here is the queue, by age. Tell them the real number. Honest is better.
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 1 > label
-[Service.ONE_ON_ONES.Vic.1.options.1.label]
+# Service > ONE_ON_ONES > John > 1 > options > 1 > label
+[Service.ONE_ON_ONES.John.1.options.1.label]
 GIVE HIM A PHONE NUMBER
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 1 > reply
-[Service.ONE_ON_ONES.Vic.1.options.1.reply]
+# Service > ONE_ON_ONES > John > 1 > options > 1 > reply
+[Service.ONE_ON_ONES.John.1.options.1.reply]
 Give them my desk line for P1s. I will pick up.
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 2 > label
-[Service.ONE_ON_ONES.Vic.1.options.2.label]
+# Service > ONE_ON_ONES > John > 1 > options > 2 > label
+[Service.ONE_ON_ONES.John.1.options.2.label]
 TELL HIM TO BE PATIENT
 
-# Service > ONE_ON_ONES > Vic > 1 > options > 2 > reply
-[Service.ONE_ON_ONES.Vic.1.options.2.reply]
+# Service > ONE_ON_ONES > John > 1 > options > 2 > reply
+[Service.ONE_ON_ONES.John.1.options.2.reply]
 We are working on it.
 
-# Service > ONE_ON_ONES > Vic > 2 > text
-[Service.ONE_ON_ONES.Vic.2.text]
+# Service > ONE_ON_ONES > John > 2 > text
+[Service.ONE_ON_ONES.John.2.text]
 Garrison wants a client dinner on Thursday. Can the crew cover the phones?
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 0 > label
-[Service.ONE_ON_ONES.Vic.2.options.0.label]
+# Service > ONE_ON_ONES > John > 2 > options > 0 > label
+[Service.ONE_ON_ONES.John.2.options.0.label]
 COVER IT MYSELF
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 0 > reply
-[Service.ONE_ON_ONES.Vic.2.options.0.reply]
+# Service > ONE_ON_ONES > John > 2 > options > 0 > reply
+[Service.ONE_ON_ONES.John.2.options.0.reply]
 I cover the phones. Go. Bring the client back happy.
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 1 > label
-[Service.ONE_ON_ONES.Vic.2.options.1.label]
+# Service > ONE_ON_ONES > John > 2 > options > 1 > label
+[Service.ONE_ON_ONES.John.2.options.1.label]
 ASK MAYA FIRST
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 1 > reply
-[Service.ONE_ON_ONES.Vic.2.options.1.reply]
+# Service > ONE_ON_ONES > John > 2 > options > 1 > reply
+[Service.ONE_ON_ONES.John.2.options.1.reply]
 I will ask Maya. If she says yes, there is a bonus.
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 2 > label
-[Service.ONE_ON_ONES.Vic.2.options.2.label]
+# Service > ONE_ON_ONES > John > 2 > options > 2 > label
+[Service.ONE_ON_ONES.John.2.options.2.label]
 SAY NO
 
-# Service > ONE_ON_ONES > Vic > 2 > options > 2 > reply
-[Service.ONE_ON_ONES.Vic.2.options.2.reply]
+# Service > ONE_ON_ONES > John > 2 > options > 2 > reply
+[Service.ONE_ON_ONES.John.2.options.2.reply]
 Not Thursday. The queue is too long.
 
-# Service > ONE_ON_ONES > Vic > 3 > text
-[Service.ONE_ON_ONES.Vic.3.text]
+# Service > ONE_ON_ONES > John > 3 > text
+[Service.ONE_ON_ONES.John.3.text]
 I know I over-promise. Garrison says it is how we win. You say it is how we lose. Who is right?
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 0 > label
-[Service.ONE_ON_ONES.Vic.3.options.0.label]
+# Service > ONE_ON_ONES > John > 3 > options > 0 > label
+[Service.ONE_ON_ONES.John.3.options.0.label]
 SPLIT IT: PROMISE LESS, SELL BETTER
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 0 > reply
-[Service.ONE_ON_ONES.Vic.3.options.0.reply]
+# Service > ONE_ON_ONES > John > 3 > options > 0 > reply
+[Service.ONE_ON_ONES.John.3.options.0.reply]
 Both. Promise what we can do and sell why it matters. I will help you write the lines.
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 1 > label
-[Service.ONE_ON_ONES.Vic.3.options.1.label]
+# Service > ONE_ON_ONES > John > 3 > options > 1 > label
+[Service.ONE_ON_ONES.John.3.options.1.label]
 TELL HIM HE IS RIGHT
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 1 > reply
-[Service.ONE_ON_ONES.Vic.3.options.1.reply]
+# Service > ONE_ON_ONES > John > 3 > options > 1 > reply
+[Service.ONE_ON_ONES.John.3.options.1.reply]
 Garrison is right about the win. I will find a way to do the work.
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 2 > label
-[Service.ONE_ON_ONES.Vic.3.options.2.label]
+# Service > ONE_ON_ONES > John > 3 > options > 2 > label
+[Service.ONE_ON_ONES.John.3.options.2.label]
 TELL HIM HE IS WRONG
 
-# Service > ONE_ON_ONES > Vic > 3 > options > 2 > reply
-[Service.ONE_ON_ONES.Vic.3.options.2.reply]
+# Service > ONE_ON_ONES > John > 3 > options > 2 > reply
+[Service.ONE_ON_ONES.John.3.options.2.reply]
 You are the one the clients blame.
 
 
@@ -7744,7 +7744,7 @@ EMAIL THE CLIENTS NOW
 
 # ServiceArc > ARC > heartbleed > options > 1 > text
 [ServiceArc.ARC.heartbleed.options.1.text]
-The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to Vic.
+The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to John.
 
 # ServiceArc > ARC > heartbleed > options > 2 > label
 [ServiceArc.ARC.heartbleed.options.2.label]
@@ -7760,7 +7760,7 @@ Morgan Reyes (Manager)
 
 # ServiceArc > ARC > heartbleed2 > text > hb_patch
 [ServiceArc.ARC.heartbleed2.text.hb_patch]
-Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. Vic is apologising on the phone. Garrison would like you to know he said so.
+Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. John is apologising on the phone. Garrison would like you to know he said so.
 
 # ServiceArc > ARC > heartbleed2 > text > hb_email
 [ServiceArc.ARC.heartbleed2.text.hb_email]
@@ -7944,7 +7944,7 @@ STANDARD SLA, STANDARD RULES
 
 # ServiceArc > ARC > margin > options > 1 > text
 [ServiceArc.ARC.margin.options.1.text]
-Standard response, standard rules. The discount buys the logo, not the queue. Vic will tell them kindly.
+Standard response, standard rules. The discount buys the logo, not the queue. John will tell them kindly.
 
 # ServiceArc > ARC > margin > options > 2 > label
 [ServiceArc.ARC.margin.options.2.label]
@@ -7976,7 +7976,7 @@ NO CUTS: BRING THE REVENUE
 
 # ServiceArc > ARC > cutcost > options > 1 > text
 [ServiceArc.ARC.cutcost.options.1.text]
-No cuts this month. Vic and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.
+No cuts this month. John and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.
 
 # ServiceArc > ARC > cutcost > options > 2 > label
 [ServiceArc.ARC.cutcost.options.2.label]
@@ -8134,7 +8134,7 @@ DISCOVERY
 
 # ServiceArc > JOB_BOOKS > onboard > steps > 0 > text
 [ServiceArc.JOB_BOOKS.onboard.steps.0.text]
-Iron Mule Demolition has two trailers, nine users and no documentation at all. Vic promised them they would be live in a day. Where do you start?
+Iron Mule Demolition has two trailers, nine users and no documentation at all. John promised them they would be live in a day. Where do you start?
 
 # ServiceArc > JOB_BOOKS > onboard > steps > 0 > choices > 0 > label
 [ServiceArc.JOB_BOOKS.onboard.steps.0.choices.0.label]
@@ -8588,7 +8588,7 @@ The numbers are always fine. Then someone leaves.
 
 # ServiceArc > QUESTIONS > Garrison > 1 > text
 [ServiceArc.QUESTIONS.Garrison.1.text]
-If Vic brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.
+If John brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.
 
 # ServiceArc > QUESTIONS > Garrison > 1 > options > 0 > label
 [ServiceArc.QUESTIONS.Garrison.1.options.0.label]
@@ -8792,20 +8792,20 @@ I do not want to be the new guy twice. Can I take a ticket on my own today?
 [ServiceArc.VOICES.small.hire.3]
 Everyone here says please. It is unsettling.
 
-# ServiceArc > VOICES > small > Vic > 0
-[ServiceArc.VOICES.small.Vic.0]
+# ServiceArc > VOICES > small > John > 0
+[ServiceArc.VOICES.small.John.0]
 Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?
 
-# ServiceArc > VOICES > small > Vic > 1
-[ServiceArc.VOICES.small.Vic.1]
+# ServiceArc > VOICES > small > John > 1
+[ServiceArc.VOICES.small.John.1]
 I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.
 
-# ServiceArc > VOICES > small > Vic > 2
-[ServiceArc.VOICES.small.Vic.2]
+# ServiceArc > VOICES > small > John > 2
+[ServiceArc.VOICES.small.John.2]
 Between us: I promise what I think you can deliver. Mostly.
 
-# ServiceArc > VOICES > small > Vic > 3
-[ServiceArc.VOICES.small.Vic.3]
+# ServiceArc > VOICES > small > John > 3
+[ServiceArc.VOICES.small.John.3]
 If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it.
 
 # ServiceArc > VOICES > small > Morgan > 0
@@ -8888,12 +8888,12 @@ The first week I was afraid to ask. A runbook is somebody saying it is okay to n
 [ServiceArc.VOICES.tips.hire.1]
 I do my best work when I know who to ask. Tell me who to ask.
 
-# ServiceArc > VOICES > tips > Vic > 0
-[ServiceArc.VOICES.tips.Vic.0]
+# ServiceArc > VOICES > tips > John > 0
+[ServiceArc.VOICES.tips.John.0]
 Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.
 
-# ServiceArc > VOICES > tips > Vic > 1
-[ServiceArc.VOICES.tips.Vic.1]
+# ServiceArc > VOICES > tips > John > 1
+[ServiceArc.VOICES.tips.John.1]
 Tell me what the desk can really take. I would rather lose a deal than lie to a client.
 
 # ServiceArc > VOICES > tips > Morgan > 0
@@ -8960,44 +8960,44 @@ LET ME DO IT TONIGHT
 [ServiceArc.VOICES.lync.Maya.1.options.1.reply]
 Okay, I will leave it.
 
-# ServiceArc > VOICES > lync > Vic > 0 > text
-[ServiceArc.VOICES.lync.Vic.0.text]
+# ServiceArc > VOICES > lync > John > 0 > text
+[ServiceArc.VOICES.lync.John.0.text]
 Garrison wants me to promise the prospect a two hour response. Can the desk do two hours?
 
-# ServiceArc > VOICES > lync > Vic > 0 > options > 0 > label
-[ServiceArc.VOICES.lync.Vic.0.options.0.label]
+# ServiceArc > VOICES > lync > John > 0 > options > 0 > label
+[ServiceArc.VOICES.lync.John.0.options.0.label]
 FOUR HOURS, TWO FOR URGENT
 
-# ServiceArc > VOICES > lync > Vic > 0 > options > 0 > reply
-[ServiceArc.VOICES.lync.Vic.0.options.0.reply]
+# ServiceArc > VOICES > lync > John > 0 > options > 0 > reply
+[ServiceArc.VOICES.lync.John.0.options.0.reply]
 Four and two. I will make it sound like a feature.
 
-# ServiceArc > VOICES > lync > Vic > 0 > options > 1 > label
-[ServiceArc.VOICES.lync.Vic.0.options.1.label]
+# ServiceArc > VOICES > lync > John > 0 > options > 1 > label
+[ServiceArc.VOICES.lync.John.0.options.1.label]
 ASK ME AFTER THE AUDIT
 
-# ServiceArc > VOICES > lync > Vic > 0 > options > 1 > reply
-[ServiceArc.VOICES.lync.Vic.0.options.1.reply]
+# ServiceArc > VOICES > lync > John > 0 > options > 1 > reply
+[ServiceArc.VOICES.lync.John.0.options.1.reply]
 After the audit. Noted.
 
-# ServiceArc > VOICES > lync > Vic > 1 > text
-[ServiceArc.VOICES.lync.Vic.1.text]
+# ServiceArc > VOICES > lync > John > 1 > text
+[ServiceArc.VOICES.lync.John.1.text]
 Heads up: a client is unhappy and has my number on speed dial. I am sending them to you.
 
-# ServiceArc > VOICES > lync > Vic > 1 > options > 0 > label
-[ServiceArc.VOICES.lync.Vic.1.options.0.label]
+# ServiceArc > VOICES > lync > John > 1 > options > 0 > label
+[ServiceArc.VOICES.lync.John.1.options.0.label]
 SEND THEM, I WILL CALL BACK
 
-# ServiceArc > VOICES > lync > Vic > 1 > options > 0 > reply
-[ServiceArc.VOICES.lync.Vic.1.options.0.reply]
+# ServiceArc > VOICES > lync > John > 1 > options > 0 > reply
+[ServiceArc.VOICES.lync.John.1.options.0.reply]
 You are a good man, Dan.
 
-# ServiceArc > VOICES > lync > Vic > 1 > options > 1 > label
-[ServiceArc.VOICES.lync.Vic.1.options.1.label]
+# ServiceArc > VOICES > lync > John > 1 > options > 1 > label
+[ServiceArc.VOICES.lync.John.1.options.1.label]
 WRITE IT DOWN, I WILL CHECK
 
-# ServiceArc > VOICES > lync > Vic > 1 > options > 1 > reply
-[ServiceArc.VOICES.lync.Vic.1.options.1.reply]
+# ServiceArc > VOICES > lync > John > 1 > options > 1 > reply
+[ServiceArc.VOICES.lync.John.1.options.1.reply]
 I wrote it on a napkin. It is fine.
 
 # ServiceArc > VOICES > lync > Morgan > 0 > text
@@ -9332,16 +9332,16 @@ Hey. Need something?
 [Talk.GREETINGS.Dan.cold]
 I am kind of in the middle of something.
 
-# Talk > GREETINGS > Vic > friend
-[Talk.GREETINGS.Vic.friend]
+# Talk > GREETINGS > John > friend
+[Talk.GREETINGS.John.friend]
 My favourite tech! Talk to me.
 
-# Talk > GREETINGS > Vic > neutral
-[Talk.GREETINGS.Vic.neutral]
+# Talk > GREETINGS > John > neutral
+[Talk.GREETINGS.John.neutral]
 Hey there. Quick one, I have a call at three.
 
-# Talk > GREETINGS > Vic > cold
-[Talk.GREETINGS.Vic.cold]
+# Talk > GREETINGS > John > cold
+[Talk.GREETINGS.John.cold]
 Can this wait? I am on the phone in five.
 
 # Talk > GREETINGS > Maya > friend
@@ -9454,20 +9454,20 @@ The best network is the one nobody talks about. The worst one is every one of ou
 [Talk.SMALL.Dan.3]
 I have been reading about Heartbleed. It is going to be a long April.
 
-# Talk > SMALL > Vic > 0
-[Talk.SMALL.Vic.0]
+# Talk > SMALL > John > 0
+[Talk.SMALL.John.0]
 Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy?
 
-# Talk > SMALL > Vic > 1
-[Talk.SMALL.Vic.1]
+# Talk > SMALL > John > 1
+[Talk.SMALL.John.1]
 I told a prospect we are the Apple of managed services. I do not know what that means either.
 
-# Talk > SMALL > Vic > 2
-[Talk.SMALL.Vic.2]
+# Talk > SMALL > John > 2
+[Talk.SMALL.John.2]
 Golf on Friday. A good relationship is built on the fifth hole.
 
-# Talk > SMALL > Vic > 3
-[Talk.SMALL.Vic.3]
+# Talk > SMALL > John > 3
+[Talk.SMALL.John.3]
 Clients love you. I just say you are the best in the building. It is only a little bit a lie.
 
 # Talk > SMALL > Maya > 0
@@ -9542,7 +9542,7 @@ Between us: Morgan has been in the owners' office since nine. Never a good sign.
 
 # Talk > GOSSIP > 1
 [Talk.GOSSIP.1]
-I heard Vic is already negotiating next year's commission. Good for him.
+I heard John is already negotiating next year's commission. Good for him.
 
 # Talk > GOSSIP > 2
 [Talk.GOSSIP.2]
@@ -9598,16 +9598,16 @@ No link on a desk? Check the patch cable in the closet before you blame the swit
 [Talk.TIPS_GENERIC.Dan.2]
 The UPS gives you about ninety seconds. Plan the shutdown, do not improvise it.
 
-# Talk > TIPS_GENERIC > Vic > 0
-[Talk.TIPS_GENERIC.Vic.0]
+# Talk > TIPS_GENERIC > John > 0
+[Talk.TIPS_GENERIC.John.0]
 Clients forgive a slow fix. They do not forgive silence. Call before they call you.
 
-# Talk > TIPS_GENERIC > Vic > 1
-[Talk.TIPS_GENERIC.Vic.1]
+# Talk > TIPS_GENERIC > John > 1
+[Talk.TIPS_GENERIC.John.1]
 A happy client brings me a referral. An unhappy client brings me a competitor.
 
-# Talk > TIPS_GENERIC > Vic > 2
-[Talk.TIPS_GENERIC.Vic.2]
+# Talk > TIPS_GENERIC > John > 2
+[Talk.TIPS_GENERIC.John.2]
 If you can fix it before they notice, do. If you cannot, tell them early.
 
 # Talk > TIPS_GENERIC > Maya > 0
@@ -9672,7 +9672,7 @@ I am burning out. I am not going to lie to you.
 # ======================= Talk > VIC_GREETINGS =======================
 # Talk > VIC_GREETINGS > Alan > friend
 [Talk.VIC_GREETINGS.Alan.friend]
-Vic. Sit. Give me the number first and the story after.
+John. Sit. Give me the number first and the story after.
 
 # Talk > VIC_GREETINGS > Alan > neutral
 [Talk.VIC_GREETINGS.Alan.neutral]
@@ -9688,7 +9688,7 @@ There he is, my favourite closer! Tell me something good. Actually, tell me the 
 
 # Talk > VIC_GREETINGS > Garrison > neutral
 [Talk.VIC_GREETINGS.Garrison.neutral]
-Vic! Quick one, I have a client in five. How is the pipeline?
+John! Quick one, I have a client in five. How is the pipeline?
 
 # Talk > VIC_GREETINGS > Garrison > cold
 [Talk.VIC_GREETINGS.Garrison.cold]
@@ -9696,7 +9696,7 @@ Mm. Is this about a quote or about a discount?
 
 # Talk > VIC_GREETINGS > Dan > friend
 [Talk.VIC_GREETINGS.Dan.friend]
-Hey Vic. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.
+Hey John. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.
 
 # Talk > VIC_GREETINGS > Dan > neutral
 [Talk.VIC_GREETINGS.Dan.neutral]
@@ -9708,7 +9708,7 @@ If it is a new client, I am not taking it.
 
 # Talk > VIC_GREETINGS > Morgan > friend
 [Talk.VIC_GREETINGS.Morgan.friend]
-Come in, Vic. I read your handover binder last night. It was almost accurate.
+Come in, John. I read your handover binder last night. It was almost accurate.
 
 # Talk > VIC_GREETINGS > Morgan > neutral
 [Talk.VIC_GREETINGS.Morgan.neutral]
@@ -9720,7 +9720,7 @@ Mm. Are we talking about what you sold, or what we can do?
 
 # Talk > VIC_GREETINGS > Maya > friend
 [Talk.VIC_GREETINGS.Maya.friend]
-Hi Vic! Your clients are so nice. Well, most of them. Want half a granola bar?
+Hi John! Your clients are so nice. Well, most of them. Want half a granola bar?
 
 # Talk > VIC_GREETINGS > Maya > neutral
 [Talk.VIC_GREETINGS.Maya.neutral]
@@ -9940,7 +9940,7 @@ You are at {pct} percent of quota with {weeks} weeks left in the quarter. The nu
 
 # Talk > VIC_STATE > Garrison > ahead
 [Talk.VIC_STATE.Garrison.ahead]
-{pct} percent with {weeks} weeks to go? Vic, I may cry. Keep the margin where Alan can see it.
+{pct} percent with {weeks} weeks to go? John, I may cry. Keep the margin where Alan can see it.
 
 # Talk > VIC_STATE > Alan > claw
 [Talk.VIC_STATE.Alan.claw]
@@ -10010,7 +10010,7 @@ PIPELINE UPDATE
 
 # Talk > VIC_ASK > Garrison > ahead
 [Talk.VIC_ASK.Garrison.ahead]
-{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.
+{pct} percent and {leads} leads in the pipe! John, you are making me look smart. Keep going.
 
 # Talk > VIC_ASK > Garrison > behind
 [Talk.VIC_ASK.Garrison.behind]
@@ -13972,7 +13972,7 @@ I DON'T QUOTE UNTIL I KNOW THE SCOPE
 
 # Lync > VIC_MESSAGES > phones_Garrison > options > 1 > reply
 [Lync.VIC_MESSAGES.phones_Garrison.options.1.reply]
-Fair, Vic. Fair. I will step out.
+Fair, John. Fair. I will step out.
 
 # Lync > VIC_MESSAGES > help_Garrison > text
 [Lync.VIC_MESSAGES.help_Garrison.text]
@@ -14116,7 +14116,7 @@ That is even better. Call her before lunch.
 
 # Lync > VIC_MESSAGES > warn > text
 [Lync.VIC_MESSAGES.warn.text]
-Heads up: #%d (%s) is about to breach its SLA. That client has your number, Vic.
+Heads up: #%d (%s) is about to breach its SLA. That client has your number, John.
 
 
 # ======================= Lync > VIC_PRESENCE =======================
@@ -14318,7 +14318,7 @@ The numbers have us all nervous, but the doors are open and the lights are on. C
 
 # Difficulty > COZY_TEXT > probation_sales
 [Difficulty.COZY_TEXT.probation_sales]
-Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - Vic
+Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - John
 
 # Difficulty > COZY_TEXT > probation_note
 [Difficulty.COZY_TEXT.probation_note]
@@ -18318,24 +18318,24 @@ THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.
 [Outings.FRIEND_HINTS.Maya.keypad]
 THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.
 
-# Outings > FRIEND_HINTS > Vic > board
-[Outings.FRIEND_HINTS.Vic.board]
+# Outings > FRIEND_HINTS > John > board
+[Outings.FRIEND_HINTS.John.board]
 I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.
 
-# Outings > FRIEND_HINTS > Vic > clock
-[Outings.FRIEND_HINTS.Vic.clock]
+# Outings > FRIEND_HINTS > John > clock
+[Outings.FRIEND_HINTS.John.clock]
 I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.
 
-# Outings > FRIEND_HINTS > Vic > plaque
-[Outings.FRIEND_HINTS.Vic.plaque]
+# Outings > FRIEND_HINTS > John > plaque
+[Outings.FRIEND_HINTS.John.plaque]
 I SAW SOMETHING UNDER THE PAINTING. A PLAQUE, MAYBE.
 
-# Outings > FRIEND_HINTS > Vic > shelf
-[Outings.FRIEND_HINTS.Vic.shelf]
+# Outings > FRIEND_HINTS > John > shelf
+[Outings.FRIEND_HINTS.John.shelf]
 THE BOOKSHELF IS A GREAT CLOSER. LOOK AT IT.
 
-# Outings > FRIEND_HINTS > Vic > keypad
-[Outings.FRIEND_HINTS.Vic.keypad]
+# Outings > FRIEND_HINTS > John > keypad
+[Outings.FRIEND_HINTS.John.keypad]
 YOU HAVE IT ALL. CLOSE THE DEAL AT THE KEYPAD.
 
 # Outings > FRIEND_HINTS > Morgan > board
@@ -18432,9 +18432,9 @@ Garrison is sitting this one out.
 [Outings.GUESTS.Dan.line]
 Dan has a thing tonight.
 
-# Outings > GUESTS > Vic > line
-[Outings.GUESTS.Vic.line]
-Vic is on a call with a client.
+# Outings > GUESTS > John > line
+[Outings.GUESTS.John.line]
+John is on a call with a client.
 
 # Outings > GUESTS > Maya > line
 [Outings.GUESTS.Maya.line]
@@ -18634,68 +18634,68 @@ MY BURGER IS IN THE QUEUE.
 [Outings.CREW_LINES.Dan.wait.1]
 I FILED THIS ORDER TWICE.
 
-# Outings > CREW_LINES > Vic > cheer > 0
-[Outings.CREW_LINES.Vic.cheer.0]
+# Outings > CREW_LINES > John > cheer > 0
+[Outings.CREW_LINES.John.cheer.0]
 I TOLD YOU. I TOLD EVERYONE.
 
-# Outings > CREW_LINES > Vic > cheer > 1
-[Outings.CREW_LINES.Vic.cheer.1]
+# Outings > CREW_LINES > John > cheer > 1
+[Outings.CREW_LINES.John.cheer.1]
 THAT IS A WINNING ROLL.
 
-# Outings > CREW_LINES > Vic > groan > 0
-[Outings.CREW_LINES.Vic.groan.0]
+# Outings > CREW_LINES > John > groan > 0
+[Outings.CREW_LINES.John.groan.0]
 THE PINS WERE LOOSE.
 
-# Outings > CREW_LINES > Vic > groan > 1
-[Outings.CREW_LINES.Vic.groan.1]
+# Outings > CREW_LINES > John > groan > 1
+[Outings.CREW_LINES.John.groan.1]
 THAT DOES NOT COUNT, RIGHT?
 
-# Outings > CREW_LINES > Vic > talk > 0
-[Outings.CREW_LINES.Vic.talk.0]
+# Outings > CREW_LINES > John > talk > 0
+[Outings.CREW_LINES.John.talk.0]
 WATCH AND LEARN.
 
-# Outings > CREW_LINES > Vic > talk > 1
-[Outings.CREW_LINES.Vic.talk.1]
+# Outings > CREW_LINES > John > talk > 1
+[Outings.CREW_LINES.John.talk.1]
 I HAVE A GUY AT THIS ALLEY.
 
-# Outings > CREW_LINES > Vic > sing > 0
-[Outings.CREW_LINES.Vic.sing.0]
+# Outings > CREW_LINES > John > sing > 0
+[Outings.CREW_LINES.John.sing.0]
 I KNEW YOU HAD IT!
 
-# Outings > CREW_LINES > Vic > sing > 1
-[Outings.CREW_LINES.Vic.sing.1]
+# Outings > CREW_LINES > John > sing > 1
+[Outings.CREW_LINES.John.sing.1]
 I HAVE A GUY FOR RECORDING.
 
-# Outings > CREW_LINES > Vic > hole > 0
-[Outings.CREW_LINES.Vic.hole.0]
+# Outings > CREW_LINES > John > hole > 0
+[Outings.CREW_LINES.John.hole.0]
 TOLD YOU. I TOLD THE WHOLE ROOM.
 
-# Outings > CREW_LINES > Vic > hole > 1
-[Outings.CREW_LINES.Vic.hole.1]
+# Outings > CREW_LINES > John > hole > 1
+[Outings.CREW_LINES.John.hole.1]
 THAT IS HOW YOU CLOSE A DEAL.
 
-# Outings > CREW_LINES > Vic > miss > 0
-[Outings.CREW_LINES.Vic.miss.0]
+# Outings > CREW_LINES > John > miss > 0
+[Outings.CREW_LINES.John.miss.0]
 LET'S CALL THAT A WARM-UP.
 
-# Outings > CREW_LINES > Vic > miss > 1
-[Outings.CREW_LINES.Vic.miss.1]
+# Outings > CREW_LINES > John > miss > 1
+[Outings.CREW_LINES.John.miss.1]
 THE BOARD IS TILTED, RIGHT?
 
-# Outings > CREW_LINES > Vic > cook > 0
-[Outings.CREW_LINES.Vic.cook.0]
+# Outings > CREW_LINES > John > cook > 0
+[Outings.CREW_LINES.John.cook.0]
 THIS BURGER IS A WIN WIN.
 
-# Outings > CREW_LINES > Vic > cook > 1
-[Outings.CREW_LINES.Vic.cook.1]
+# Outings > CREW_LINES > John > cook > 1
+[Outings.CREW_LINES.John.cook.1]
 I KNOW A GUY WHO COOKS. YOU.
 
-# Outings > CREW_LINES > Vic > wait > 0
-[Outings.CREW_LINES.Vic.wait.0]
+# Outings > CREW_LINES > John > wait > 0
+[Outings.CREW_LINES.John.wait.0]
 I HAVE A CLIENT CALL SOON.
 
-# Outings > CREW_LINES > Vic > wait > 1
-[Outings.CREW_LINES.Vic.wait.1]
+# Outings > CREW_LINES > John > wait > 1
+[Outings.CREW_LINES.John.wait.1]
 CAN I EXPENSE WAITING?
 
 # Outings > CREW_LINES > Maya > cheer > 1
@@ -18890,7 +18890,7 @@ YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS.
 
 # Build > PRESETS > owner_garrison > 0 > text
 [Build.PRESETS.owner_garrison.0.text]
-MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE.
+MARKETING WORKS HARD FOR YOU AND JOHN CLOSES MORE.
 
 # Build > PRESETS > owner_garrison > 1 > text
 [Build.PRESETS.owner_garrison.1.text]
@@ -18964,7 +18964,7 @@ FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER.
 
 # Build > INFO > owner > sales > text
 [Build.INFO.owner.sales.text]
-MARKETING WORKS BETTER AND VIC CLOSES MORE.
+MARKETING WORKS BETTER AND JOHN CLOSES MORE.
 
 # Build > INFO > owner > culture > text
 [Build.INFO.owner.culture.text]
@@ -19210,7 +19210,7 @@ You matched them. Twenty percent off. I hope somebody enjoys the logo, because t
 
 # SalesCampaign > BEAT_TEXT > undercut > res_value_win > text
 [SalesCampaign.BEAT_TEXT.undercut.res_value_win.text]
-You walked them through the backups and the response numbers and they signed at the full fee. That is the Vic I hired.
+You walked them through the backups and the response numbers and they signed at the full fee. That is the John I hired.
 
 # SalesCampaign > BEAT_TEXT > undercut > res_value_lose > speaker
 [SalesCampaign.BEAT_TEXT.undercut.res_value_lose.speaker]
@@ -19498,7 +19498,7 @@ I saw the Harborview numbers. I do not sign deals that lose money on the first i
 
 # SalesCampaign > BEAT_TEXT > logo > garrison > text
 [SalesCampaign.BEAT_TEXT.logo.garrison.text]
-Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, Vic. A logo opens doors.
+Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, John. A logo opens doors.
 
 # SalesCampaign > BEAT_TEXT > logo > garrison > ok
 [SalesCampaign.BEAT_TEXT.logo.garrison.ok]
@@ -19518,7 +19518,7 @@ I HEAR YOU BOTH
 
 # SalesCampaign > BEAT_TEXT > logo > pick > speaker
 [SalesCampaign.BEAT_TEXT.logo.pick.speaker]
-Vic Marlowe
+John Marlowe
 
 # SalesCampaign > BEAT_TEXT > logo > pick > text
 [SalesCampaign.BEAT_TEXT.logo.pick.text]
@@ -19634,7 +19634,7 @@ Trent Dagmar
 
 # SalesCampaign > BEAT_TEXT > recruit > card > text
 [SalesCampaign.BEAT_TEXT.recruit.card.text]
-Vic. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.
+John. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.
 
 # SalesCampaign > BEAT_TEXT > recruit > card > options > 0 > label
 [SalesCampaign.BEAT_TEXT.recruit.card.options.0.label]
@@ -19690,7 +19690,7 @@ Trent Dagmar mentioned at the Chamber breakfast that you were on his shortlist. 
 
 # SalesCampaign > BEAT_TEXT > recruit > res_decline > text
 [SalesCampaign.BEAT_TEXT.recruit.res_decline.text]
-You said no to ByteBrothers? To their face? Vic, I will not forget that. Neither will Alan, though he will never say so.
+You said no to ByteBrothers? To their face? John, I will not forget that. Neither will Alan, though he will never say so.
 
 # SalesCampaign > BEAT_TEXT > diligence > lynk > from
 [SalesCampaign.BEAT_TEXT.diligence.lynk.from]
@@ -19886,7 +19886,7 @@ IGNORE HIM
 
 # SalesCampaign > BEAT_TEXT > rex > res_flyer > speaker
 [SalesCampaign.BEAT_TEXT.rex.res_flyer.speaker]
-Vic
+John
 
 # SalesCampaign > BEAT_TEXT > rex > res_flyer > text
 [SalesCampaign.BEAT_TEXT.rex.res_flyer.text]
@@ -19902,7 +19902,7 @@ Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a co
 
 # SalesCampaign > BEAT_TEXT > rex > res_ignore > speaker
 [SalesCampaign.BEAT_TEXT.rex.res_ignore.speaker]
-Vic
+John
 
 # SalesCampaign > BEAT_TEXT > rex > res_ignore > text
 [SalesCampaign.BEAT_TEXT.rex.res_ignore.text]
@@ -19966,7 +19966,7 @@ You read thirty-one lines. By line fourteen you both agree the list is the probl
 
 # SalesCampaign > BEAT_TEXT > flat > res_walk > speaker
 [SalesCampaign.BEAT_TEXT.flat.res_walk.speaker]
-Vic
+John
 
 # SalesCampaign > BEAT_TEXT > flat > res_walk > text
 [SalesCampaign.BEAT_TEXT.flat.res_walk.text]
@@ -20014,7 +20014,7 @@ A woman called Gwen phoned for you. She knows our rates and our dispatcher's nam
 
 # SalesCampaign > BEAT_TEXT > laundered > card > speaker
 [SalesCampaign.BEAT_TEXT.laundered.card.speaker]
-Vic's phone
+John's phone
 
 # SalesCampaign > BEAT_TEXT > laundered > card > text
 [SalesCampaign.BEAT_TEXT.laundered.card.text]
@@ -20034,7 +20034,7 @@ WARN THE DENTAL OFFICE, FOR FREE
 
 # SalesCampaign > BEAT_TEXT > laundered > res_take > speaker
 [SalesCampaign.BEAT_TEXT.laundered.res_take.speaker]
-Vic
+John
 
 # SalesCampaign > BEAT_TEXT > laundered > res_take > text
 [SalesCampaign.BEAT_TEXT.laundered.res_take.text]
@@ -20046,11 +20046,11 @@ Gwen
 
 # SalesCampaign > BEAT_TEXT > laundered > res_ask > text
 [SalesCampaign.BEAT_TEXT.laundered.res_ask.text]
-She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.
+She mentions the shared mailbox at the dental office. John goes quiet, then says he will make a call. She is still a lead, just a more honest one.
 
 # SalesCampaign > BEAT_TEXT > laundered > res_tell > speaker
 [SalesCampaign.BEAT_TEXT.laundered.res_tell.speaker]
-Vic
+John
 
 # SalesCampaign > BEAT_TEXT > laundered > res_tell > text
 [SalesCampaign.BEAT_TEXT.laundered.res_tell.text]
@@ -20750,15 +20750,15 @@ LEAVE IT
 
 # RivalCards > CARDS > rival_flat > text
 [RivalCards.CARDS.rival_flat.text]
-{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal.
+{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. John ate two of his cookies and says the price is a steal.
 
 # RivalCards > CARDS > rival_flat > options > 0 > label
 [RivalCards.CARDS.rival_flat.options.0.label]
-LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)
+LOOK UP WHAT $39 A SEAT BUYS ($0, JOHN ASKS AROUND)
 
 # RivalCards > CARDS > rival_flat > options > 0 > text
 [RivalCards.CARDS.rival_flat.options.0.text]
-Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it.
+John calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it.
 
 # RivalCards > CARDS > rival_flat > options > 1 > label
 [RivalCards.CARDS.rival_flat.options.1.label]
@@ -20774,7 +20774,7 @@ DROP YOUR PRICE TO MATCH
 
 # RivalCards > CARDS > rival_flat > options > 2 > text
 [RivalCards.CARDS.rival_flat.options.2.text]
-Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer.
+John is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer.
 
 # RivalCards > CARDS > rival_flat > options > 3 > label
 [RivalCards.CARDS.rival_flat.options.3.label]
@@ -20786,7 +20786,7 @@ Garrison says he has met a hundred Rexes. Rex is not gone by July.
 
 # RivalCards > CARDS > rival_wall > speaker
 [RivalCards.CARDS.rival_wall.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > rival_wall > text
 [RivalCards.CARDS.rival_wall.text]
@@ -20794,11 +20794,11 @@ Look at Big Cheese on Yowl. Forty-one five-star reviews. I clicked through them:
 
 # RivalCards > CARDS > rival_wall > options > 0 > label
 [RivalCards.CARDS.rival_wall.options.0.label]
-HAVE VIC LOOK AT WHO WROTE THEM
+HAVE JOHN LOOK AT WHO WROTE THEM
 
 # RivalCards > CARDS > rival_wall > options > 0 > text
 [RivalCards.CARDS.rival_wall.options.0.text]
-Vic asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour.
+John asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour.
 
 # RivalCards > CARDS > rival_wall > options > 1 > label
 [RivalCards.CARDS.rival_wall.options.1.label]
@@ -20822,7 +20822,7 @@ IGNORE IT, REVIEWS DO NOT PAY THE BILLS
 
 # RivalCards > CARDS > rival_wall > options > 3 > text
 [RivalCards.CARDS.rival_wall.options.3.text]
-Garrison nods. Vic frowns at the billboard every time he drives past it.
+Garrison nods. John frowns at the billboard every time he drives past it.
 
 # RivalCards > CARDS > rival_defect > speaker
 [RivalCards.CARDS.rival_defect.speaker]
@@ -21018,7 +21018,7 @@ The phone stops by nine. Marge puts the letter in the folder labelled RAP SHEET.
 
 # RivalCards > CARDS > rival_exposed > speaker
 [RivalCards.CARDS.rival_exposed.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > rival_exposed > text
 [RivalCards.CARDS.rival_exposed.text]
@@ -21030,7 +21030,7 @@ STAY OUT OF IT AND LET THE PAPER DO ITS JOB
 
 # RivalCards > CARDS > rival_exposed > options > 0 > text
 [RivalCards.CARDS.rival_exposed.options.0.text]
-Garrison says that is the grown up answer. Vic says it is also the boring one.
+Garrison says that is the grown up answer. John says it is also the boring one.
 
 # RivalCards > CARDS > rival_exposed > options > 1 > label
 [RivalCards.CARDS.rival_exposed.options.1.label]
@@ -21050,11 +21050,11 @@ It works. It works a little too well, and Alan says he is not comfortable being 
 
 # RivalCards > CARDS > rival_blitz > speaker
 [RivalCards.CARDS.rival_blitz.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > rival_blitz > text
 [RivalCards.CARDS.rival_blitz.text]
-Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. Vic has three prospects who have already heard it, and two of our clients got the flyer.
+Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. John has three prospects who have already heard it, and two of our clients got the flyer.
 
 # RivalCards > CARDS > rival_blitz > options > 0 > label
 [RivalCards.CARDS.rival_blitz.options.0.label]
@@ -21178,7 +21178,7 @@ Marge puts it in the folder. The folder is getting thick.
 
 # RivalCards > CARDS > rival_counter > speaker
 [RivalCards.CARDS.rival_counter.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > rival_counter > text
 [RivalCards.CARDS.rival_counter.text]
@@ -21226,7 +21226,7 @@ It is late, but it is something. They do not mention it again, which is a kind o
 
 # RivalCards > CARDS > rival_end > speaker
 [RivalCards.CARDS.rival_end.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > rival_end > text
 [RivalCards.CARDS.rival_end.text]
@@ -21282,7 +21282,7 @@ The new rep is delighted. $35 a week off for the first three months, then list p
 
 # RivalCards > CARDS > temp_reboot > speaker
 [RivalCards.CARDS.temp_reboot.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > temp_reboot > text
 [RivalCards.CARDS.temp_reboot.text]
@@ -21294,7 +21294,7 @@ BILL IT AS ADVANCED DIAGNOSTICS ($85)
 
 # RivalCards > CARDS > temp_reboot > options > 0 > text
 [RivalCards.CARDS.temp_reboot.options.0.text]
-The invoice goes out with the long phrase. Vic grins. Somewhere a bookkeeper reaches for her glasses.
+The invoice goes out with the long phrase. John grins. Somewhere a bookkeeper reaches for her glasses.
 
 # RivalCards > CARDS > temp_reboot > options > 1 > label
 [RivalCards.CARDS.temp_reboot.options.1.label]
@@ -21314,7 +21314,7 @@ Now the reboot is part of something. Marge calls it recurring revenue with a sta
 
 # RivalCards > CARDS > temp_launder > speaker
 [RivalCards.CARDS.temp_launder.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > temp_launder > text
 [RivalCards.CARDS.temp_launder.text]
@@ -21334,7 +21334,7 @@ ASK HER HOW SHE HEARD ABOUT US
 
 # RivalCards > CARDS > temp_launder > options > 1 > text
 [RivalCards.CARDS.temp_launder.options.1.text]
-She mentions a shared mailbox at the dental office. Vic goes quiet, then says he will make a call.
+She mentions a shared mailbox at the dental office. John goes quiet, then says he will make a call.
 
 # RivalCards > CARDS > temp_launder > options > 2 > label
 [RivalCards.CARDS.temp_launder.options.2.label]
@@ -21350,7 +21350,7 @@ They fix the mailbox that afternoon. Mrs. Dunning becomes a client three weeks l
 
 # RivalCards > CARDS > temp_review > text
 [RivalCards.CARDS.temp_review.text]
-A prospect asked Vic if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.
+A prospect asked John if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.
 
 # RivalCards > CARDS > temp_review > options > 0 > label
 [RivalCards.CARDS.temp_review.options.0.label]
@@ -21426,7 +21426,7 @@ Dan was pulled onto a printer halfway through. The test sits in his notes as alm
 
 # RivalCards > CARDS > temp_price > speaker
 [RivalCards.CARDS.temp_price.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > temp_price > text
 [RivalCards.CARDS.temp_price.text]
@@ -21458,7 +21458,7 @@ LET THEM GO
 
 # RivalCards > CARDS > temp_price > options > 2 > text
 [RivalCards.CARDS.temp_price.options.2.text]
-Vic shrugs. Alan says a client you lose money on is not a client.
+John shrugs. Alan says a client you lose money on is not a client.
 
 # RivalCards > CARDS > temp_2fa > speaker
 [RivalCards.CARDS.temp_2fa.speaker]
@@ -21610,7 +21610,7 @@ Marge reads it back to you in the voice she uses for tax notices. Nobody believe
 
 # RivalCards > CARDS > bill_temp_launder > speaker
 [RivalCards.CARDS.bill_temp_launder.speaker]
-Vic Marlowe
+John Marlowe
 
 # RivalCards > CARDS > bill_temp_launder > text
 [RivalCards.CARDS.bill_temp_launder.text]
@@ -21630,7 +21630,7 @@ DENY IT
 
 # RivalCards > CARDS > bill_temp_launder > options > 1 > text
 [RivalCards.CARDS.bill_temp_launder.options.1.text]
-Nobody believes you. Vic stops coming to the Chamber lunch for a week.
+Nobody believes you. John stops coming to the Chamber lunch for a week.
 
 # RivalCards > CARDS > bill_temp_review > speaker
 [RivalCards.CARDS.bill_temp_review.speaker]
@@ -21854,28 +21854,28 @@ A couple of clients have gone quiet. The quiet ones are the ones to call. Start 
 [RivalTouches.TALK.Maya.closet]
 If one of these comes out, it will not be the money that hurts. It will be the phone calls. Let me help you make them.
 
-# RivalTouches > TALK > Vic > rival
-[RivalTouches.TALK.Vic.rival]
+# RivalTouches > TALK > John > rival
+[RivalTouches.TALK.John.rival]
 Rex told three prospects we are the expensive option. I told them to ask him what a restore costs. They went quiet. I like quiet.
 
-# RivalTouches > TALK > Vic > bare
-[RivalTouches.TALK.Vic.bare]
+# RivalTouches > TALK > John > bare
+[RivalTouches.TALK.John.bare]
 I cannot sell what we do not do. Every habit you add is a line I can say out loud at a meeting.
 
-# RivalTouches > TALK > Vic > solid
-[RivalTouches.TALK.Vic.solid]
+# RivalTouches > TALK > John > solid
+[RivalTouches.TALK.John.solid]
 Prospects love the one page. It makes me look organized. Do not tell Garrison I said so.
 
-# RivalTouches > TALK > Vic > showcase
-[RivalTouches.TALK.Vic.showcase]
+# RivalTouches > TALK > John > showcase
+[RivalTouches.TALK.John.showcase]
 I used the Standard in a pitch today. The owner asked if she could keep the page. She did not ask about price once.
 
-# RivalTouches > TALK > Vic > loose
-[RivalTouches.TALK.Vic.loose]
+# RivalTouches > TALK > John > loose
+[RivalTouches.TALK.John.loose]
 I am not saying anything. I am just saying that if a client asks me about a bill, I will tell the truth.
 
-# RivalTouches > TALK > Vic > closet
-[RivalTouches.TALK.Vic.closet]
+# RivalTouches > TALK > John > closet
+[RivalTouches.TALK.John.closet]
 I was going to bring a deal over the line today. I looked at that folder and went for a coffee instead.
 
 
@@ -21944,20 +21944,20 @@ Three clients sounded off today. I think it is about the things we did not tell 
 [RivalTouches.LYNK.Maya.closet]
 I can call the worried ones tomorrow. I would rather tell them than have them find out.
 
-# RivalTouches > LYNK > Vic > rival
-[RivalTouches.LYNK.Vic.rival]
+# RivalTouches > LYNK > John > rival
+[RivalTouches.LYNK.John.rival]
 Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.
 
-# RivalTouches > LYNK > Vic > solid
-[RivalTouches.LYNK.Vic.solid]
+# RivalTouches > LYNK > John > solid
+[RivalTouches.LYNK.John.solid]
 Closed a deal with the one page. The owner said it was the first time anyone showed her what she bought.
 
-# RivalTouches > LYNK > Vic > loose
-[RivalTouches.LYNK.Vic.loose]
+# RivalTouches > LYNK > John > loose
+[RivalTouches.LYNK.John.loose]
 If anyone asks about a bill, I am telling the truth. Just so you know.
 
-# RivalTouches > LYNK > Vic > closet
-[RivalTouches.LYNK.Vic.closet]
+# RivalTouches > LYNK > John > closet
+[RivalTouches.LYNK.John.closet]
 I have two deals ready and I am holding them. Say when.
 
 # RivalTouches > LYNK > Marge > rival

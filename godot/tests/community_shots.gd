@@ -27,7 +27,7 @@ func _process(_delta: float) -> bool:
 		10:
 			c.save_prefix = "user://test_%d_" % OS.get_process_id()
 			c.new_game("tech")
-			for n in ["Alan", "Garrison", "Dan", "Vic"]:
+			for n in ["Alan", "Garrison", "Dan", "John"]:
 				root.get_node("World").chars[n].scene = root.get_node("World").CAST[n].home
 				root.get_node("World").chars[n].legs = [{"kind": "work"}]
 			root.get_node("World").chars["Dan"].legs = [{"kind": "meeting"}]

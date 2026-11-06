@@ -67,7 +67,7 @@ func _run() -> void:
 		float(o.BOWLERS.Garrison.streak) > 0.0 and float(o.BOWLERS.Dan.noise) > float(o.BOWLERS.Alan.noise) * 2.0,
 		"Garrison is streaky, Dan is wild, Alan is steady"
 	)
-	_check(float(o.BOWLERS.Vic.show) > 0.0 and float(o.BOWLERS.Vic.gutter) >= 0.05, "Vic shows off and sometimes gutters")
+	_check(float(o.BOWLERS.John.show) > 0.0 and float(o.BOWLERS.John.gutter) >= 0.05, "John shows off and sometimes gutters")
 	_check(int(o.BOWLERS.Morgan.late) >= 1 and float(o.BOWLERS.Maya.noise) <= float(o.BOWLERS.Alan.noise), "Morgan joins late, Maya is precise")
 	_check(float(o.GUESTS.Morgan.comes) <= 0.35, "Morgan comes to a minority of outings")
 
@@ -100,9 +100,9 @@ func _run() -> void:
 	_check(o.bowlers().size() == 4, "six come: four bowl")
 	_check(o.diners().size() == 5, "six come: five at the table")
 	_check(o.present().size() == 6 and o.crowd().size() == 6, "and all six are in the karaoke crowd")
-	o.opts = {"party": ["Maya", "Vic", "Morgan"]}
-	_check(o.bowlers() == ["Vic", "Maya", "Morgan"], "bowlers come back in cast order")
-	_check(o.diners() == ["Vic", "Maya", "Morgan"], "so does the table")
+	o.opts = {"party": ["Maya", "John", "Morgan"]}
+	_check(o.bowlers() == ["John", "Maya", "Morgan"], "bowlers come back in cast order")
+	_check(o.diners() == ["John", "Maya", "Morgan"], "so does the table")
 	o.opts = {"party": ["Morgan", "Dan"], "table": ["Dan"]}
 	_check(o.diners() == ["Dan"], "the toolbox can still narrow the table")
 	o.opts = {}
@@ -130,7 +130,7 @@ func _run() -> void:
 	_check(seen.size() > 15, "300 seeds give %d different parties" % seen.size())
 	_check(counts.Morgan < 120 and counts.Morgan > 20, "Morgan comes to a minority of outings (%d of 300)" % counts.Morgan)
 	_check(counts.Alan > 230 and counts.Garrison > 230, "Alan and Garrison nearly always come")
-	_check(counts.Vic > 100 and counts.Maya > 100, "Vic and Maya come often enough to matter")
+	_check(counts.John > 100 and counts.Maya > 100, "John and Maya come often enough to matter")
 	# a friend is more likely than a cold coworker
 	c.new_game("tech")
 	var hits := {"warm": 0, "cold": 0}
@@ -178,8 +178,8 @@ func _run() -> void:
 	o.is_open = false
 	o.reset()
 
-	# ---- the escape-room friend comes from the party; Morgan and Vic have their own voice
-	for who in ["Vic", "Morgan", "Maya"]:
+	# ---- the escape-room friend comes from the party; Morgan and John have their own voice
+	for who in ["John", "Morgan", "Maya"]:
 		o.opts = {"party": [who, "Alan"]}
 		social.rel[who] = 40
 		social.rel["Alan"] = 0
@@ -187,7 +187,7 @@ func _run() -> void:
 		o.opts = {"party": ["Alan", "Dan"]}
 		_check(o._friend() != who, "%s is not asked when they stayed home" % who)
 		social.rel[who] = 0
-	_check(str(o.FRIEND_HINTS.Vic.board).contains("GUY") or str(o.FRIEND_HINTS.Vic.clock).contains("GUY"), "Vic over-promises")
+	_check(str(o.FRIEND_HINTS.John.board).contains("GUY") or str(o.FRIEND_HINTS.John.clock).contains("GUY"), "John over-promises")
 	o.opts = {"party": ["Morgan", "Dan"]}
 	social.rel["Morgan"] = 40
 	o.start("escape", false, {"party": ["Morgan", "Dan"]})
@@ -200,7 +200,7 @@ func _run() -> void:
 	# ---- personalities: the numbers behave the way the table says
 	c.new_game("free")
 	d.seed_run(123)
-	o.opts = {"party": ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]}
+	o.opts = {"party": ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]}
 	o.g = {"frame": 2, "knocked": 0}
 	var stats := {}
 	for who in o.BOWLERS:
@@ -225,7 +225,7 @@ func _run() -> void:
 	_check(stats.Alan.sd < stats.Dan.sd * 0.7, "Alan is steady, Dan is wild")
 	_check(stats.Maya.sd <= stats.Alan.sd + 0.3, "Maya is precise")
 	_check(stats.Dan.strike > stats.Alan.strike, "Dan throws the occasional turkey")
-	_check(stats.Vic.gutter >= 600 * 0.03, "Vic has a few gutter balls (%d of 600)" % stats.Vic.gutter)
+	_check(stats.John.gutter >= 600 * 0.03, "John has a few gutter balls (%d of 600)" % stats.John.gutter)
 	var hot := 0.0
 	var cold := 0.0
 	for k in 600:
@@ -252,9 +252,9 @@ func _run() -> void:
 	for s in 12:
 		d.seed_run(700 + s)
 		o.reset()
-		o.start("bowling", false, {"party": ["Morgan", "Maya", "Vic", "Dan", "Alan", "Garrison"]})
+		o.start("bowling", false, {"party": ["Morgan", "Maya", "John", "Dan", "Alan", "Garrison"]})
 		o.press(KEY_ENTER)
-		_check(o.bowlers() == ["Alan", "Dan", "Vic", "Maya"] or o.bowlers().size() == 4, "four opponents at most") if s == 0 else null
+		_check(o.bowlers() == ["Alan", "Dan", "John", "Maya"] or o.bowlers().size() == 4, "four opponents at most") if s == 0 else null
 		for frame in 5:
 			o.g.marker = 0.5
 			o.g.power = 0.85
@@ -278,7 +278,7 @@ func _run() -> void:
 		_check(o.stars >= 1 and o.stars <= 3, "a full game with four opponents ends with 1-3 stars (%d)" % o.stars) if s < 2 else null
 		o.press(KEY_ENTER)
 	_check(o.g.size() >= 0, "bowling games finish")
-	o.start("dinner", false, {"party": ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]})
+	o.start("dinner", false, {"party": ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]})
 	o.press(KEY_ENTER)
 	_check(o.diners().size() == 5 and o.dinner_targets().size() == 3, "a table of five")
 	var cut: Array = o.dinner_targets()
@@ -288,15 +288,15 @@ func _run() -> void:
 		o.tick(2.0)
 	_check(o.phase == "result" and o.stars >= 0, "five rounds with five faces end")
 	o.press(KEY_ENTER)
-	_check(o.known.has("Vic") or o.known.has("Maya") or o.known.has("Morgan"), "you learn about the new faces")
+	_check(o.known.has("John") or o.known.has("Maya") or o.known.has("Morgan"), "you learn about the new faces")
 
 	# ---- karaoke: the crowd cheers by name
-	o.opts = {"party": ["Vic", "Maya"]}
+	o.opts = {"party": ["John", "Maya"]}
 	o.use_rooms = true
 	o.g = {"dance": false}
 	o._caption = ""
 	o._cheer()
-	_check(o._caption.begins_with("VIC") or o._caption.begins_with("MAYA"), "the crowd cheers by name: " + o._caption)
+	_check(o._caption.begins_with("JOHN") or o._caption.begins_with("MAYA"), "the crowd cheers by name: " + o._caption)
 	o.use_rooms = false
 	o.opts = {}
 
@@ -304,7 +304,7 @@ func _run() -> void:
 	o.reset()
 	o.use_rooms = true
 	o.start("escape", false, {"party": ["Alan", "Dan"]})
-	_check(world.chars.Maya.scene == world.OUTSIDE and world.chars.Vic.scene == world.OUTSIDE, "the ones who stayed home are outside")
+	_check(world.chars.Maya.scene == world.OUTSIDE and world.chars.John.scene == world.OUTSIDE, "the ones who stayed home are outside")
 	_check(world.chars.Alan.scene == "escape_room" and world.chars.Dan.scene == "escape_room", "the guests are in the room")
 	o.use_rooms = false
 	o.is_open = false

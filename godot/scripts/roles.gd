@@ -10,7 +10,7 @@ const LABELS := {
 	"Alan": "Alan (Co-owner)",
 	"Garrison": "Garrison (Co-owner)",
 	"Dan": "Dan (Network Tech)",
-	"Vic": "Vic (Account Manager)",
+	"John": "John (Account Manager)",
 	"Maya": "Maya (Tier 1)",
 	"Morgan": "Morgan (Manager)",
 }
@@ -20,7 +20,7 @@ const JOBS := {
 	"sales owner": "Garrison",
 	"manager": "Morgan",
 	"network": "Dan",
-	"accounts": "Vic",
+	"accounts": "John",
 	"tier1": "Maya",
 }
 

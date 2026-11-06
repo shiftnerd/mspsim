@@ -7,7 +7,7 @@ extends SceneTree
 # Headless: the rules run through GrillGame.step / flip / pull / cool, the outing through Outings.press / tick.
 
 const Grill := preload("res://scripts/grill_game.gd")
-const NAMES := ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+const NAMES := ["Alan", "Garrison", "Dan", "John", "Maya"]
 const TIERS := {
 	"easy": {"cook_rate": 0.85, "window": 1.3, "tickets": 5, "time": 85.0, "flare": 0.5},
 	"normal": {"cook_rate": 1.0, "window": 1.0, "tickets": 6, "time": 75.0, "flare": 1.0},
@@ -326,7 +326,7 @@ func _init() -> void:
 	_check(o.GAMES.has("grill") and o.GAMES.grill.label == "COOKOUT" and o.GAMES.grill.cost == 150, "the outing list has the cookout at $150")
 	_check(o.ROOMS.grill == "warehouse" and o.SPOTS.grill.size() == 6, "it is played in the warehouse with a spot for each cast member")
 	var texts: Array = [str(o.GAMES.grill.blurb), str(o.ROOM_INTRO.grill), str(o.GAMES.grill.keys), str(Grill.NOTES), str(o.GAMES.grill.label)]
-	for who in ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]:
+	for who in ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]:
 		for kind in ["cook", "wait"]:
 			var lines: Array = o.CREW_LINES[who].get(kind, [])
 			_check(lines.size() >= 2, "%s: two %s lines" % [who, kind])

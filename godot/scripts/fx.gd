@@ -162,7 +162,7 @@ func play() -> void:
 		Outings.interact(kind)
 		return
 	if kind == "bell":
-		ring("vic")  # only Vic reaches that high (the player's use is blocked in interact.gd)
+		ring("vic")  # only John reaches that high (the player's use is blocked in interact.gd)
 		return
 	if kind == "rubber_duck":
 		_duck_press()
@@ -834,7 +834,7 @@ func _draw_redlight() -> void:
 	_r(2, 1, 8, 6, Color(1, 0.25, 0.2, a))
 
 
-# the sales bell, hung high on the wall: Vic rings it after a deal, and a foam dart can ring it too
+# the sales bell, hung high on the wall: John rings it after a deal, and a foam dart can ring it too
 var _bell_t := 0.0
 var _bell_msg := ""
 
@@ -849,7 +849,7 @@ func ring(cause := "vic") -> void:
 		Hints.toast("DING! A DART HIT THE SALES BELL.", 2.5)
 		if int(Game.vars.get("bell_day", -1)) != World.day:
 			Game.vars["bell_day"] = World.day
-			Social.change("Vic", 1)
+			Social.change("John", 1)
 	else:
 		Hints.toast("DING DING! " + str(Sales.last_deal), 4.0)
 

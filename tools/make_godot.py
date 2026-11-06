@@ -13,7 +13,7 @@ MIN_W = 320      # rooms narrower than this get an off-stage margin on each side
 SET_TOP = 100   # ceiling band above the old 128px art: backgrounds are 100 + 128 + 92 tall and sit at y = -100
 FW, FH = 64, 80
 
-CHARACTERS = ["office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"]
+CHARACTERS = ["office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "office_john"]
 # background crowd (recolours of site Alan: attendees and vendors at Rodent Nation); they are never playable
 EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo_attb", "expo_attc",
                     # women (tools/make_fem.lua): the manager, the bookkeeper, a Tier 1 tech, client staff, vendors and attendees
@@ -23,8 +23,8 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
                     "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip",
-                    # the second cast (photos in C:/sns): the senior tech, the office manager, sales, a tech, the controller
-                    "office_adam", "office_jen", "office_john", "office_michael", "office_christy",
+                    # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
+                    "office_adam", "office_jen", "office_michael", "office_christy",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky", "custom_bare"]
@@ -930,7 +930,7 @@ func play() -> void:
         Outings.interact(kind)
         return
     if kind == "bell":
-        ring("vic")  # only Vic reaches that high (the player's use is blocked in interact.gd)
+        ring("vic")  # only John reaches that high (the player's use is blocked in interact.gd)
         return
     if kind == "rubber_duck":
         _duck_press()
@@ -1586,7 +1586,7 @@ func _draw_redlight() -> void:
     _r(2, 1, 8, 6, Color(1, 0.25, 0.2, a))
 
 
-# the sales bell, hung high on the wall: Vic rings it after a deal, and a foam dart can ring it too
+# the sales bell, hung high on the wall: John rings it after a deal, and a foam dart can ring it too
 var _bell_t := 0.0
 var _bell_msg := ""
 
@@ -1601,7 +1601,7 @@ func ring(cause := "vic") -> void:
         Hints.toast("DING! A DART HIT THE SALES BELL.", 2.5)
         if int(Game.vars.get("bell_day", -1)) != World.day:
             Game.vars["bell_day"] = World.day
-            Social.change("Vic", 1)
+            Social.change("John", 1)
     else:
         Hints.toast("DING DING! " + str(Sales.last_deal), 4.0)
 
@@ -2873,7 +2873,7 @@ func _hand_over(body: Node, fx: Node) -> void:
 func use(body: Node) -> void:
     var fx := get_node(target)
     if fx.kind == "bell":
-        if SalesCampaign.ring_bell(fx):  # Vic can reach his own bell (sales campaign only)
+        if SalesCampaign.ring_bell(fx):  # John can reach his own bell (sales campaign only)
             body.reach(global_position.x)
             return
         Hints.toast("TOO HIGH TO REACH. MAYBE A FOAM DART?", 2.5)
@@ -2987,13 +2987,13 @@ const BASE := {
     "sitnod": 3.0,
     "sip": 1.5,
 }
-# personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, Vic checks his phone,
+# personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
     "Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
     "Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
     "Dan": {"sitscratch": 4.0, "sitlook": 1.0},
-    "Vic": {"sitphone": 5.0, "sitstretch": 1.5},
+    "John": {"sitphone": 5.0, "sitstretch": 1.5},
     "Maya": {"sitmouse": 4.0, "sitlook": 3.5},
 }
 # the player's character ids (and any NPC that is not a named cast member) map to the same personalities
@@ -3002,7 +3002,7 @@ const CHARACTER_KEY := {
     "site_alan": "Alan",
     "casual_garrison": "Garrison",
     "office_dan": "Dan",
-    "sales_vic": "Vic",
+    "office_john": "John",
     "office_maya": "Maya",
 }
 const NONE := {}
@@ -3082,7 +3082,7 @@ const TALK_GAP := 32.0
 const GREET_RANGE := 56.0
 const GLYPHS := ["dots", "!", "?", "heart", "dots"]
 const CHATTY := ["walk", "wait", "sync", "usewait", "await"]
-const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "Vic": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
+const DESKS := {"Alan": 6, "Garrison": 7, "Dan": 3, "John": 4, "Maya": 2, "Morgan": 5, "Sam": 1}
 
 @export var character := "office_dan"
 var custom := false  # a copy of the player's custom person (Look): the intern sheet in their colours
@@ -4436,7 +4436,7 @@ const CAST := {
     "Alan": {"character": "office_alan", "home": "office_one", "seat": "Seat1"},
     "Garrison": {"character": "casual_garrison", "home": "office_two", "seat": "Seat1"},
     "Dan": {"character": "office_dan", "home": "main_floor", "seat": "Seat3"},
-    "Vic": {"character": "sales_vic", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
+    "John": {"character": "office_john", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
     "Maya": {"character": "office_maya", "home": "main_floor", "seat": "Seat2"},
     # the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
     "Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
@@ -4772,7 +4772,7 @@ func _watch_outage(delta: float) -> void:
     _outage_t += delta
     if _outage_t < 8.0 or _closet_sent or clock >= DAY_END - 0.3:
         return
-    for who in ["Dan", "Alan", "Garrison", "Maya", "Vic"]:
+    for who in ["Dan", "Alan", "Garrison", "Maya", "John"]:
         if not chars.has(who):
             continue
         var st: Dictionary = chars[who]
@@ -5229,16 +5229,16 @@ func _visit_plan(n: String, secs: float) -> Array:
     return legs
 
 
-# a client complained to Vic: he walks over to wherever you are and tells you
+# a client complained to John: he walks over to wherever you are and tells you
 func send_vic_to_player() -> void:
-    if not chars.has("Vic") or _scene == "":
+    if not chars.has("John") or _scene == "":
         Sales.pending = {}
         return
-    var st: Dictionary = chars["Vic"]
+    var st: Dictionary = chars["John"]
     if st.scene == OUTSIDE or st.following:
         var said := Sales.complaint_text()
         if said != "":
-            Msp.send_text("Vic", said)
+            Msp.send_text("John", said)
             Sales.adjust(int(Sales.pending.get("client", 0)), -2)
         Sales.pending = {}
         return
@@ -5247,7 +5247,7 @@ func send_vic_to_player() -> void:
     if player != null:
         px = player.global_position.x
     var info: Dictionary = DATA.SCENES[_scene]
-    var from_x := _hint_x("Vic")
+    var from_x := _hint_x("John")
     var stand := clampf(px - 34.0 if from_x < px else px + 34.0, float(info.x0) + 16.0, float(info.x0 + info.W) - 16.0)
     var legs := []
     if st.scene != _scene:
@@ -6627,14 +6627,14 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
-    # a desktop sitting in its box: Vic reminds you where the job is, for a few days
+    # a desktop sitting in its box: John reminds you where the job is, for a few days
     if Campaign.active and project_busy() and int(project.get("since", day)) < day:
         if int(project.get("nagged", 0)) < 3:
             project["nagged"] = int(project.get("nagged", 0)) + 1
             var waiting := ticket(int(project.ticket))
             if not waiting.is_empty() and waiting.status != "Closed":
                 send_text(
-                    "Vic",
+                    "John",
                     (
                         "%s is still waiting on the new desktop. Ticket #%d, RMM PROJECT tab on %s."
                         % [CLIENTS[int(project.client)].contact, int(waiting.id), waiting.endpoint]
@@ -9303,7 +9303,7 @@ func _board_projects(a: Rect2) -> void:
         y += 7
         shown += 1
     if Projects.projects.is_empty():
-        _text(_clip("NO PROJECTS YET. VIC BRINGS THEM IN: DESKTOPS, NETWORKS, SERVERS, SECURITY.", limit), Vector2(x, y), Color("46506a"))
+        _text(_clip("NO PROJECTS YET. JOHN BRINGS THEM IN: DESKTOPS, NETWORKS, SERVERS, SECURITY.", limit), Vector2(x, y), Color("46506a"))
         y += 7
     y += 3
     var drag := int(Projects.drag() * 100.0)
@@ -9328,9 +9328,9 @@ func _board_team(a: Rect2) -> void:
         var tag := str(Owner.TRAITS[hire.get("trait", "steady")].label)
         rows.append(["%s  %.2f  $%d/WK  %s" % [str(hire.name).to_upper(), float(hire.skill), Owner.hire_wage(hire), tag], TXT])
     var plan: Dictionary = Owner.VIC_PLANS[Owner.vic_plan]
-    rows.append(["VIC  %s  $%d/WK + $%d A DEAL" % [plan.label, int(plan.wage), int(plan.per_deal)], Color("6b421c")])
+    rows.append(["JOHN  %s  $%d/WK + $%d A DEAL" % [plan.label, int(plan.wage), int(plan.per_deal)], Color("6b421c")])
     var moods := Owner.vic_new_client_mood()
-    rows.append(["VIC DEALS %d  NEW CLIENT MOOD %s" % [Owner.vic_deals, "-" if moods < 0 else "%d%%" % moods], TXT])
+    rows.append(["JOHN DEALS %d  NEW CLIENT MOOD %s" % [Owner.vic_deals, "-" if moods < 0 else "%d%%" % moods], TXT])
     var morale := Owner.stack_sum("morale")
     rows.append(["MORALE FROM TOOLS %+d%%" % int(morale), GREEN if morale >= 0.0 else RED])
     rows.append(["BURNOUT %d%%" % int(Owner.burnout), GREEN if Owner.burnout < 40.0 else (AMBER if Owner.burnout < 70.0 else RED)])
@@ -11214,7 +11214,7 @@ const MODE_DEFS := {
         "ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
         "rep_label": "CONF",
     },
-    # campaign-paths 5 (C1, slice S1): Vic sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
+    # campaign-paths 5 (C1, slice S1): John sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
     "sales": {
         "label": "SALES CAMPAIGN", "selectable": true, "year2": false,
         "crew": true, "books": true, "cards": true, "books_lite": true,
@@ -11415,7 +11415,7 @@ func derive_player_as(for_mode: String) -> String:
     if for_mode == "owner":
         return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
     if for_mode == "sales":
-        return "Vic"  # the sales campaign is always played as Vic (C1)
+        return "John"  # the sales campaign is always played as John (C1)
     if for_mode == "service":
         return "Dan"  # the service manager campaign is always played as Dan (C4)
     if who == "":
@@ -11451,7 +11451,7 @@ func new_game(for_mode: String) -> void:
     active = is_selectable(for_mode)
     player_as = derive_player_as(for_mode)
     if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
-        PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or Vic (sales)
+        PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or John (sales)
     if for_mode == "service":
         PLAYER.current_character = str(World.CAST["Dan"].character)
     Game.vars["start_seated"] = player_as != ""
@@ -11537,8 +11537,8 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
         player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
         PLAYER.current_character = "office_alan"
     if for_mode == "sales":
-        player_as = "Vic"
-        PLAYER.current_character = "sales_vic"
+        player_as = "John"
+        PLAYER.current_character = "office_john"
     if for_mode == "service":
         player_as = "Dan"
         PLAYER.current_character = str(World.CAST["Dan"].character)
@@ -11936,7 +11936,7 @@ func _cozy_close(r: Dictionary) -> void:
     if rep < floor_rep:
         rep = floor_rep
         notes.append(Difficulty.ct("probation_note"))
-        var sender := {"owner": "Marge", "sales": "Vic"}.get(mode, "Morgan") as String
+        var sender := {"owner": "Marge", "sales": "John"}.get(mode, "Morgan") as String
         Msp.send_text(sender, Difficulty.ct("probation_" + mode))
     if not notes.is_empty():
         r["notes"] = notes
@@ -13438,10 +13438,10 @@ const FX_BOUNDS := {
 }
 const OWNER_ONLY := ["cash", "burnout"]
 const TECH_ONLY := ["xp", "energy"]
-const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "Vic", "Maya"]
+const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "John", "Maya"]
 const NAMES_FOR := {
-    "tech": ["Alan", "Garrison", "Morgan", "Dan", "Vic", "Maya"],
-    "owner": ["Alan", "Garrison", "Marge", "Dan", "Vic"],
+    "tech": ["Alan", "Garrison", "Morgan", "Dan", "John", "Maya"],
+    "owner": ["Alan", "Garrison", "Marge", "Dan", "John"],
 }
 const OWNERS := ["Alan", "Garrison"]
 const BUSY_KINDS := ["vignette", "ransomware", "callback_worst"]
@@ -15373,7 +15373,7 @@ const DEFAULT_DECK := {
             },
             {
                 "id": "send",
-                "label": "SEND VIC",
+                "label": "SEND JOHN",
                 "text": "He comes back with three business cards and a story.",
                 "fx": {
                     "cash": -35,
@@ -17437,18 +17437,18 @@ write("scripts/social.gd", '''extends Node
 
 signal changed
 
-const ALL := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
+const ALL := ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
 # Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
 const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
     "Alan": "CO-OWNER",
     "Garrison": "CO-OWNER",
     "Dan": "NETWORK TECH",
-    "Vic": "ACCOUNT MANAGER",
+    "John": "ACCOUNT MANAGER",
     "Maya": "TIER 1",
     "Morgan": "MANAGER"
 }
-const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya", 5: "Morgan"}
+const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const THANKS := [
     "thanks for grabbing the phones earlier!", "you are a lifesaver on the phones", "hey, appreciate the phone coverage",
@@ -18546,7 +18546,7 @@ write("scripts/cards.gd", '''extends CanvasLayer
 # Decision cards: a modal dialog with a speaker, some text and 2-4 options. Used when the
 # account manager walks in with a client complaint, and for the owner campaign's business
 # decisions. Up/Down + Enter, number keys 1-4, or click.
-#   Cards.ask("Vic", "text...", [{"label": "I WILL PRIORITIZE IT", "id": "a"}, ...], on_pick)
+#   Cards.ask("John", "text...", [{"label": "I WILL PRIORITIZE IT", "id": "a"}, ...], on_pick)
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
@@ -18642,7 +18642,7 @@ func pick(index: int) -> void:
     _show_next()
 
 
-# the next queued card whose reason still holds (a Vic complaint for a ticket that closed meanwhile is dropped)
+# the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
     while not _queue.is_empty() and not is_open and not DayReport.is_open:
         var next: Array = _queue.pop_front()
@@ -18813,10 +18813,10 @@ func _paint() -> void:
 ''')
 
 write("scripts/sales.gd", '''extends Node
-# The sales side: the account manager (Vic) brings in the work. Clients each have a
+# The sales side: the account manager (John) brings in the work. Clients each have a
 # satisfaction (0-100) that moves with how their tickets go; the number of ACTIVE clients sets
-# how many tickets come in (Msp.pace), and Vic's visits can sign new clients or sell desktop
-# installs. When a client is unhappy and has an open ticket that is late, they complain to Vic,
+# how many tickets come in (Msp.pace), and John's visits can sign new clients or sell desktop
+# installs. When a client is unhappy and has an open ticket that is late, they complain to John,
 # who walks in and tells you (a Cards decision). Everything here only runs inside a campaign.
 
 signal changed
@@ -18826,16 +18826,16 @@ const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
 const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
-const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to Vic at most every other week
+const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to John at most every other week
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
 var active: Array = START_CLIENTS.duplicate()
 var satisfaction := {}  # client -> 0..100
 var deals := 0
-var last_deal := 'VIC CLOSED A DEAL!'  # what the sales bell says
+var last_deal := 'JOHN CLOSED A DEAL!'  # what the sales bell says
 var installs_sold := 0
-var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
-var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
+var pending: Dictionary = {}  # a complaint waiting for John to deliver it
+var signed_day := {}  # client -> campaign day John signed them: no tickets until the next day
 var complained_day := {}  # client -> campaign day of their last complaint (the owner's weeks spread them out)
 
 var _cool := 40.0
@@ -18925,32 +18925,32 @@ func workload() -> float:
     return float(active.size()) / 5.0 + SalesCampaign.extra_load()
 
 
-# ---- Vic's skill ----------------------------------------------------------------------------
+# ---- John's skill ----------------------------------------------------------------------------
 func vic_skill() -> float:
     var skill := 0.45 + float(Campaign.rep) / 250.0 + Owner.vic_extra()
-    if Social.is_friendly("Vic"):
+    if Social.is_friendly("John"):
         skill += 0.1
-    if Social.is_cold("Vic"):
+    if Social.is_cold("John"):
         skill -= 0.15
     return clampf(skill, 0.15, 0.95)
 
 
-# Vic is back from a client visit: maybe he closed something
+# John is back from a client visit: maybe he closed something
 func visit_done() -> bool:
     if not Campaign.active or not Msp.enabled:
         return false
     if Difficulty.rng("sales").randf() > vic_skill():
-        Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
+        Msp.send_text("John", "Client meeting went nowhere. Next time.")
         return false
     var dealt := -1
     if active.size() < max_clients() and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
         dealt = sign_client()
         if dealt >= 0:
-            last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
+            last_deal = "JOHN CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
     else:
         dealt = sell_install()
         if dealt >= 0:
-            last_deal = "VIC SOLD A DESKTOP INSTALL!"
+            last_deal = "JOHN SOLD A DESKTOP INSTALL!"
     return dealt >= 0
 
 
@@ -18969,10 +18969,10 @@ func sign_client(wanted := -1) -> int:
     satisfaction[client] = Owner.new_client_mood() if Campaign.cards_active() else 75
     deals += 1
     Owner.on_deal("client", client)
-    Msp.send_text("Vic", SIGN_TEXT % Msp.CLIENTS[client].name)
+    Msp.send_text("John", SIGN_TEXT % Msp.CLIENTS[client].name)
     Msp.mail(
-        "Vic Marlowe - Sales", "New client: " + str(Msp.CLIENTS[client].name),
-        "Signed %s today. Contact is %s. Expect their tickets from tomorrow. - Vic" % [Msp.CLIENTS[client].name, Msp.CLIENTS[client].contact]
+        "John Marlowe - Sales", "New client: " + str(Msp.CLIENTS[client].name),
+        "Signed %s today. Contact is %s. Expect their tickets from tomorrow. - John" % [Msp.CLIENTS[client].name, Msp.CLIENTS[client].contact]
     )
     client_signed.emit(client)
     changed.emit()
@@ -18989,7 +18989,7 @@ func sell_install() -> int:
         Owner.cash += INSTALL_JOB
         Owner.income_extra += INSTALL_JOB
         Msp.send_text(
-            "Vic", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
+            "John", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
         )
         changed.emit()
         return who
@@ -19005,13 +19005,13 @@ func sell_install() -> int:
     Msp.start_project(int(t.id))
     installs_sold += 1
     Owner.on_deal("install", client)
-    Msp.send_text("Vic", "Sold %s a new desktop. It is in your queue." % Msp.CLIENTS[client].name)
+    Msp.send_text("John", "Sold %s a new desktop. It is in your queue." % Msp.CLIENTS[client].name)
     changed.emit()
     return int(t.id)
 
 
 # ---- complaints -----------------------------------------------------------------------------
-# the client with a late open ticket and low satisfaction complains to Vic
+# the client with a late open ticket and low satisfaction complains to John
 func complaint_cooling(client: int) -> bool:
     return (
         Campaign.cards_active()
@@ -19047,8 +19047,8 @@ func _process(delta: float) -> void:
     _cool = COMPLAINT_GAP
     pending = found
     complained_day[int(found.client)] = Campaign.day
-    if Campaign.player_as == "Vic":
-        deliver()  # you are Vic: the client phones you directly
+    if Campaign.player_as == "John":
+        deliver()  # you are John: the client phones you directly
     else:
         World.send_vic_to_player()
 
@@ -19059,12 +19059,12 @@ func complaint_text() -> String:
         return ""
     var contact: String = Msp.CLIENTS[int(t.client)].contact
     var late := "is past its SLA" if t.breached else "has %s left" % Msp.mmss(float(t.sla_left))
-    if Campaign.player_as == "Vic":
+    if Campaign.player_as == "John":
         return "Ticket #%d (%s) %s and my staff are not happy. Is anyone working on it?" % [int(t.id), t.summary, late]
     return "%s from %s called me directly. Ticket #%d (%s) %s and they are not happy." % [contact, Msp.CLIENTS[int(t.client)].name, int(t.id), t.summary, late]
 
 
-# Vic reached you with the news: ask what you want to do
+# John reached you with the news: ask what you want to do
 func deliver() -> void:
     if pending.is_empty():
         return
@@ -19073,17 +19073,17 @@ func deliver() -> void:
         pending = {}
         return
     Career.add("vic_calls")
-    var vic_friend := Social.is_friendly("Vic")
+    var vic_friend := Social.is_friendly("John")
     var options := [
         {"label": "I WILL PRIORITIZE IT", "id": "prio"},
         {"label": "TELL THEM IT IS IN THE QUEUE", "id": "queue"},
         {"label": "CAN YOU CALM THEM DOWN?", "id": "calm"},
     ]
     if vic_friend:
-        options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
+        options[2]["label"] = "CAN YOU CALM THEM DOWN? (JOHN OWES YOU)"
     var ticket_id := int(pending.get("ticket", 0))
-    var speaker := "Vic Marlowe"
-    if Campaign.player_as == "Vic":
+    var speaker := "John Marlowe"
+    if Campaign.player_as == "John":
         speaker = str(Msp.CLIENTS[int(pending.get("client", 0))].contact)
         options[2]["label"] = "I WILL CALL THEM AND CALM THEM DOWN"
     Cards.ask(
@@ -19108,16 +19108,16 @@ func resolve(choice: String) -> void:
             t.breached = false if float(t.sla_left) > 0.0 else t.breached
             t.notes.append("Escalated by the account manager.")
             adjust(client, 6)
-            Social.change("Vic", 1)
+            Social.change("John", 1)
             Skills.add_xp("people", 3)
         "queue":
             adjust(client, -6)
-            Social.change("Vic", -2)
+            Social.change("John", -2)
         _:
             t.sla_left = float(t.sla_left) + 60.0
             t.notes.append("Account manager managed the client.")
             adjust(client, 2)
-            Social.change("Vic", 0 if Social.is_friendly("Vic") else -1)
+            Social.change("John", 0 if Social.is_friendly("John") else -1)
     Msp.changed.emit()
 
 
@@ -19143,7 +19143,7 @@ write("scripts/owner.gd", '''extends Node
 # plus anyone you hire; Morgan manages the desk and your partner helps at half speed) works the ticket queue on their own at a speed set by the team; you make the
 # business decisions as Cards (pricing, backups, hiring, quotes, vendors, crises) and watch cash, clients and
 # reputation. Each week ends with a P&L report; week 20 is the board review (sell, expand or stay independent).
-# Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
+# Clients' moods (Sales) still drive churn, John still signs clients and brings complaints, and the same story beats
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
@@ -19165,7 +19165,7 @@ const HIRE_RAMP_WEEKS := 3  # a new hire costs 60% of the wage for the first wee
 const TOOLS := 0  # tool costs now come from the stack
 const DEFAULT_STACK := {"psa": "connectwhy", "rmm": "labrat", "hardware": "hewlitt"}
 # What you run and sell. cost = weekly, speed = tech speed, morale = % effect on the crew, issues = ticket volume
-# multiplier (bad hardware = more tickets), sales = Vic's close rate, margin = hardware resale profit per deal.
+# multiplier (bad hardware = more tickets), sales = John's close rate, margin = hardware resale profit per deal.
 const STACK := {
     "psa": {"label": "PSA", "options": {
         "connectwhy": {"name": "ConnectWhy PSA", "cost": 60, "speed": 0.0, "morale": 0, "note": "THE STANDARD"},
@@ -19258,9 +19258,9 @@ const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 const CARDS := {
     "welcome": {
         "speaker": "Marge (Bookkeeper)",
-        "text": "Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
+        "text": "Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
         "options": [
-            {"label": "VOLUME PRICING (-15% FEES, VIC SELLS MORE)", "fx": {"price": -0.15, "vic": 0.15}},
+            {"label": "VOLUME PRICING (-15% FEES, JOHN SELLS MORE)", "fx": {"price": -0.15, "vic": 0.15}},
             {"label": "STANDARD PRICING", "fx": {}},
             {"label": "PREMIUM PRICING (+20% FEES, HARDER SELL)", "fx": {"price": 0.2, "vic": -0.1}},
         ],
@@ -19274,7 +19274,7 @@ const CARDS := {
         ],
     },
     "queue": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "The queue is getting long and clients are noticing. We either need more hands or faster hands.",
         "options": [
             {"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}},
@@ -19283,7 +19283,7 @@ const CARDS := {
         ],
     },
     "desktop": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Dr. Patel wants a new desktop set up and migrated. What do I quote? Cheap closes easily, premium might scare him off. The job costs us about $400 of tech time.",
         "options": [
             {"label": "$600 (ALMOST SURE)", "roll": [[0.95, {"quote": {"cash": 600, "cost": 400, "rep": 1}}, "He accepts. The install goes smoothly."], [0.05, {}, "He shops around instead."]]},
@@ -19292,11 +19292,11 @@ const CARDS := {
         ],
     },
     "prospect": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "New prospect %s wants us but asks for 20%% off for the first 6 weeks to sign. They are a good-sized account.",
         "options": [
-            {"label": "OFFER THE DISCOUNT", "fx": {"sign": true, "discount_new": {"mult": 0.8, "weeks": 6}}, "text": "Signed! Vic is thrilled. Their tickets start tomorrow."},
-            {"label": "HOLD THE PRICE", "roll": [[0.5, {"sign": true}, "They sign at full price. Vic looks smug."], [0.5, {}, "They pass. Vic sulks."]]},
+            {"label": "OFFER THE DISCOUNT", "fx": {"sign": true, "discount_new": {"mult": 0.8, "weeks": 6}}, "text": "Signed! John is thrilled. Their tickets start tomorrow."},
+            {"label": "HOLD THE PRICE", "roll": [[0.5, {"sign": true}, "They sign at full price. John looks smug."], [0.5, {}, "They pass. John sulks."]]},
             {"label": "PASS", "fx": {}},
         ],
     },
@@ -19309,7 +19309,7 @@ const CARDS := {
         ],
     },
     "rack": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send?",
         "options": [
             {"label": "SEND {tech} NOW ($300)", "need": 300, "roll": [[0.85, {"cash": -300, "mood": {"2": 10}, "rep": 2}, "{tech} rebuilds it properly. Bob buys them lunch."], [0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]]},
@@ -19318,7 +19318,7 @@ const CARDS := {
         ],
     },
     "migration": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?",
         "options": [
             {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}}, "The job overran. You ate $1,200."]],
@@ -19344,7 +19344,7 @@ const CARDS := {
         ],
     },
     "bid": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Hoot and Holler is opening a branch and wants a network install. This is a big job.",
         "options": [
             {"label": "BID LOW $2,500", "risk": {"client": 3, "base": 0.0, "late": 0.08}, "roll": [[0.78, {"cash": 2500, "cost": 0, "rep": 1, "burnout": 3}, "They accept. The crew grumbles about the margin."], [0.12, {"cash": 1300, "burnout": 6}, "They accept, then the job runs long. After the overtime you clear $1,300."], [0.1, {}, "They go with someone else."]]},
@@ -19352,7 +19352,7 @@ const CARDS := {
         ],
     },
     "poach": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "ByteBrothers is calling our clients with a cheaper quote and a free 'IT assessment'. Word is they already talked to a couple of ours.",
         "options": [
             {"label": "LOYALTY DISCOUNT: -10% FOR 4 WEEKS", "fx": {"discount": {"mult": 0.9, "weeks": 4}, "mood_all": 8}},
@@ -19410,8 +19410,8 @@ const CARDS := {
         ],
     },
     "marketing": {
-        "speaker": "Vic Marlowe",
-        "text": "Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)",
+        "speaker": "John Marlowe",
+        "text": "John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)",
         "options": [
             {"label": "NO MARKETING ($0)", "fx": {"marketing": 0}},
             {"label": "LIGHT ($150/WEEK)", "fx": {"marketing": 150}},
@@ -19458,16 +19458,16 @@ const CARDS := {
         ],
     },
     "stack_hw": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Which hardware vendor do we recommend and resell? Hewlitt Packerd is the standard ($200 margin a deal). BudgetByte is cheap, so I sell more, but their machines fail more. DellightCo is premium and rock solid, but harder to sell.",
         "options": [
             {"label": "HEWLITT PACKERD (THE STANDARD)", "fx": {"stack": {"hardware": "hewlitt"}}},
-            {"label": "BUDGETBYTE (+12% SALES, MORE TICKETS)", "fx": {"stack": {"hardware": "budgetbyte"}}, "text": "Vic grins. Expect more calls about broken laptops."},
+            {"label": "BUDGETBYTE (+12% SALES, MORE TICKETS)", "fx": {"stack": {"hardware": "budgetbyte"}}, "text": "John grins. Expect more calls about broken laptops."},
             {"label": "DELLIGHTCO (SOLID, $350 MARGIN)", "fx": {"stack": {"hardware": "dellight"}}, "text": "Fewer fires, fatter margins, a slower sell."},
         ],
     },
     "rn_invite": {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue?",
         "options": [
             {"label": "GO YOURSELF ($450)", "need": 450, "fx": {"cash": -450, "trip": true, "show": "rn_session"}},
@@ -19512,9 +19512,9 @@ const CARDS := {
     },
     "rn_hw": {
         "speaker": "DellightCo Rep",
-        "text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.",
+        "text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which John would have to hit, and he will sell less of the cheap stuff.",
         "options": [
-            {"label": "SIGN AT THE SHOW (FREE, VIC SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
+            {"label": "SIGN AT THE SHOW (FREE, JOHN SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
             {"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_hw", "show": "rn_hall"}},
         ],
     },
@@ -19527,7 +19527,7 @@ const CARDS := {
     },
     "vic_plan": {
         "speaker": "Marge (Bookkeeper)",
-        "text": "How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
+        "text": "How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
         "options": [
             {"label": "SALARY ONLY ($750/WK)", "fx": {"vic_plan": "salary"}},
             {"label": "BALANCED ($550/WK + $150 A DEAL)", "fx": {"vic_plan": "balanced"}},
@@ -19638,7 +19638,7 @@ const CARDS := {
                 "need": 250,
                 "fx": {"cash": -250, "bec": "filter"},
                 "text":
-                "Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
+                "John and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
             },
             {
                 "label": "DO BOTH ($550)",
@@ -20170,7 +20170,7 @@ func oml() -> int:
     return clampi(mini(1 + (practices() * 2) / 5, 1 + Campaign.day / 4), 1, 5)
 
 
-# everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
+# everything that makes John better or worse at selling (pay plan, marketing, price, hardware)
 func vic_extra() -> float:
     if not Campaign.books_active():
         return 0.0
@@ -20185,7 +20185,7 @@ func new_client_mood() -> int:
     return int(VIC_PLANS[vic_plan].start_mood) + int(edge("new_mood"))
 
 
-# Vic closed something: pay his commission, bank the hardware resale margin
+# John closed something: pay his commission, bank the hardware resale margin
 func on_deal(kind: String, client: int) -> void:
     if not Campaign.books_active():
         return
@@ -20711,7 +20711,7 @@ func advice() -> void:
         if not training_open():
             options.pop_back()
     elif key == "healthy":
-        text = "Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind Vic." % int(100.0 * float(est.margin))
+        text = "Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind John." % int(100.0 * float(est.margin))
         options = [{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}}, {"label": "KEEP DOING WHAT WORKS", "fx": {}}]
     elif key == "train":
         text = "Whatever else is going on, the crew is the product. A week of training pays back in faster tickets and fewer reopens."
@@ -20726,7 +20726,7 @@ func advice() -> void:
             {"label": "NOT NOW", "fx": {}}
         ]
     else:
-        text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind Vic whatever the month looks like." % int(100.0 * float(est.margin))
+        text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind John whatever the month looks like." % int(100.0 * float(est.margin))
         options = [
             {"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}},
             {"label": "NOT NOW", "fx": {}}
@@ -20758,7 +20758,7 @@ func _prospect_card() -> void:
     show_card("prospect_live")
 
 
-# marketing brought in a prospect: you can take the meeting or hand it to Vic
+# marketing brought in a prospect: you can take the meeting or hand it to John
 func _inbound_lead() -> void:
     if not Mutators.chance("lead_mult"):
         return
@@ -20773,11 +20773,11 @@ func _inbound_lead() -> void:
     var prospect: String = Msp.CLIENTS[lead].name
     var vic_odds := clampf(Sales.vic_skill() + 0.25, 0.3, 0.95)
     _dynamic["lead"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "An inbound lead from our marketing: %s found us online and wants a meeting." % prospect,
         "options": [
             {"label": "TAKE THE MEETING YOURSELF (60%: HAPPIER, +10% FEE)", "roll": [[0.6, {"sign": true, "client": lead, "sign_bonus": {"mood": 15, "fee": 1.1}}, "You charm them. %s signs at a better rate and starts happy." % prospect], [0.4, {}, "They say they will think about it."]]},
-            {"label": "LET VIC CLOSE IT (%d%%)" % int(vic_odds * 100.0), "roll": [[vic_odds, {"sign": true, "client": lead}, "Vic closes it. %s signs." % prospect], [1.0 - vic_odds, {}, "Vic fumbles it. They go quiet."]]},
+            {"label": "LET JOHN CLOSE IT (%d%%)" % int(vic_odds * 100.0), "roll": [[vic_odds, {"sign": true, "client": lead}, "John closes it. %s signs." % prospect], [1.0 - vic_odds, {}, "John fumbles it. They go quiet."]]},
         ],
     }
     if Onsite.has_site(lead):
@@ -20954,7 +20954,7 @@ func drop_client(client: int, reason := "") -> void:
     if client == risk_client:
         risk_client = -1
     Habits.loss(client)  # R38: H5, the lost account review
-    Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
+    Msp.send_text("John", "%s is gone." % Msp.CLIENTS[client].name)
 
 
 # a client is due a business review from week 6 on, 8 weeks after the last one (never at the start)
@@ -20982,10 +20982,10 @@ func _qbr() -> void:
     # X9: a full review also puts the numbers on the table: an unhappy client uses it to ask for a discount
     var backfire := clampf(0.08 + pressure() * 0.12 + float(60 - Sales.mood(pick)) / 300.0, 0.05, 0.35)
     _dynamic["qbr"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Business review time with %s (mood %d%%, they pay $%d a week). How much do we prepare?" % [Msp.CLIENTS[pick].name, Sales.mood(pick), client_fee(pick)],
         "options": [
-            {"label": "FULL REVIEW WITH VIC ($250)", "need": 250, "roll": [[odds, {"cash": -250, "mood": {key: 12}, "fee_boost": {"client": pick, "mult": 1.1}}, "A great review: they add premium support. Their fee goes up 10%."], [maxf(0.0, 1.0 - odds - backfire), {"cash": -250, "mood": {key: 6}}, "A solid review. They feel heard."], [backfire, {"cash": -250, "mood": {key: -6}, "discount_set": [[pick, 0.9, 6]]}, "The review goes badly: the numbers show how many tickets they were unhappy about. They ask for 10% off for six weeks to stay."]]},
+            {"label": "FULL REVIEW WITH JOHN ($250)", "need": 250, "roll": [[odds, {"cash": -250, "mood": {key: 12}, "fee_boost": {"client": pick, "mult": 1.1}}, "A great review: they add premium support. Their fee goes up 10%."], [maxf(0.0, 1.0 - odds - backfire), {"cash": -250, "mood": {key: 6}}, "A solid review. They feel heard."], [backfire, {"cash": -250, "mood": {key: -6}, "discount_set": [[pick, 0.9, 6]]}, "The review goes badly: the numbers show how many tickets they were unhappy about. They ask for 10% off for six weeks to stay."]]},
             {"label": "QUICK CHECK-IN (FREE)", "roll": [[0.6, {"mood": {key: 4}}, "A friendly check-in."], [0.4, {"mood": {key: 1}}, "They seem distracted."]]},
             {"label": "JUST SEND A REPORT", "fx": {"mood": {key: 1}}},
         ],
@@ -21019,10 +21019,10 @@ func _vic_report() -> void:
         if avg < 60:
             text += " A few of them did say I over-promised."
     _dynamic["vic_report"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": text,
         "options": [
-            {"label": "GIVE HIM A BONUS ($300)", "need": 300, "fx": {"cash": -300, "vic": 0.05}, "text": "Vic puts the bonus toward a very nice watch."},
+            {"label": "GIVE HIM A BONUS ($300)", "need": 300, "fx": {"cash": -300, "vic": 0.05}, "text": "John puts the bonus toward a very nice watch."},
             {"label": "CHANGE HIS PAY PLAN", "fx": {"show": "vic_plan"}},
             {"label": "NO CHANGES", "fx": {}},
         ],
@@ -21369,7 +21369,7 @@ func _handover_card(client: int) -> void:
         return
     var key := str(client)
     _dynamic["handover"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "Before we onboard %s: a proper handover between me and the lead tech (what I promised, their environment, their SLAs), or do we just start?" % Msp.CLIENTS[client].name,
         "options": [
             {"label": "FULL HANDOVER MEETING ($150)", "need": 150, "fx": {"cash": -150, "mood": {key: 8}, "flag": "practice_handover"}, "text": "No surprises on day one. They start off happier."},
@@ -21508,7 +21508,7 @@ func _poach_card(item: Dictionary) -> void:
         var saving := int(float(client_fee(client)) * 0.2)
         var odds := clampf(0.4 + float(Sales.mood(client)) / 200.0 + Sales.vic_skill() * 0.2, 0.3, 0.9)
         _dynamic["poach_price"] = {
-            "speaker": "Vic Marlowe",
+            "speaker": "John Marlowe",
             "text": "%s likes us and everything is in order, but %s offered them a price we cannot easily match: about $%d a week less. 'It is just IT,' they said." % [name, COMPETITOR, saving],
             "options": [
                 {"label": "SHOW THEM THE VALUE (REVIEW, $250)", "need": 250, "roll": [[odds, {"cash": -250, "mood": {key: 8}}, "You walk them through the uptime, the backups, the patching. They stay."], [1.0 - odds, {"cash": -250, "drop_client": client, "left_for": "price"}, "They liked you, but cheap won. They leave on good terms."]]},
@@ -21522,7 +21522,7 @@ func _poach_card(item: Dictionary) -> void:
     var gaps := poach_gaps(client)
     var save := clampf(0.8 - 0.12 * float(gaps.size()) + (0.1 if Sales.mood(client) >= 60 else 0.0), 0.3, 0.9)
     _dynamic["poach_gaps"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "%s contact says %s walked in with a free 'IT assessment' that listed: %s. They are offering about 20%% less." % [poss(name), COMPETITOR, ", ".join(gaps)],
         "options": [
             {"label": "FIX THE GAPS, PRESENT A PLAN ($400)", "need": 400, "roll": [[save, {"cash": -400, "remediate": client, "mood": {key: 15}}, "You fix everything within a week and present the plan. They stay."], [1.0 - save, {"cash": -400, "remediate": client, "drop_client": client, "left_for": "gaps"}, "You fixed it, but too late. They signed with the other MSP."]]},
@@ -21564,7 +21564,7 @@ func _winback_card(client: int) -> void:
         why = "%s did not fix their problems either." % COMPETITOR
     var odds := 0.7 if int(info.mood) >= 60 else 0.5
     _dynamic["winback"] = {
-        "speaker": "Vic Marlowe",
+        "speaker": "John Marlowe",
         "text": "%s called. %s They would like to come back." % [name, why],
         "options": [
             {"label": "WELCOME THEM BACK AT THEIR OLD PRICE", "fx": {"rejoin": client, "mood": {key: 10}, "rep": 1}, "text": "They are back, a little embarrassed. Everyone is happier."},
@@ -21583,7 +21583,7 @@ func drop_random_client() -> void:
     var pick: int = Sales.active[randi() % Sales.active.size()]
     Sales.active.erase(pick)
     discount.erase(pick)
-    Msp.send_text("Vic", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
+    Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
 
 
 func _ransom() -> void:
@@ -21656,7 +21656,7 @@ func _rdp_week() -> void:
 func _ask_leaving(client: int) -> void:
     var name: String = Msp.CLIENTS[client].name
     Cards.ask(
-        "Vic Marlowe",
+        "John Marlowe",
         "%s is unhappy and talking about leaving. We can offer a 20%% discount for 4 weeks to keep them." % name,
         [{"label": "OFFER THE DISCOUNT", "id": "keep"}, {"label": "LET THEM GO", "id": "go"}],
         func(pick: String) -> void: _leaving_answer(client, pick)
@@ -21670,7 +21670,7 @@ func _leaving_answer(client: int, pick: String) -> void:
     else:
         Sales.active.erase(client)
         discount.erase(client)
-        Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
+        Msp.send_text("John", "%s is gone." % Msp.CLIENTS[client].name)
 
 
 # ---- the books ---------------------------------------------------------------------------------
@@ -22418,7 +22418,7 @@ func _ready() -> void:
     reset()
 
 
-# ---- Vic's Lynk (sales campaign, C3): the coworkers write to the account manager --------------------------------
+# ---- John's Lynk (sales campaign, C3): the coworkers write to the account manager --------------------------------
 const VIC_MESSAGES := {
     "lunch": {
         "text": "Lunch? A few of us are grabbing sandwiches. No shop talk. Okay, a little shop talk.",
@@ -22453,7 +22453,7 @@ const VIC_MESSAGES := {
         "text": "A prospect wants a call back and I am stuck in a meeting. Say we are on it and give them a number that sounds like a price.",
         "options": [
             {"label": "SURE", "social": 2, "reply": "Thanks, you are the best."},
-            {"label": "I DON'T QUOTE UNTIL I KNOW THE SCOPE", "social": -1, "reply": "Fair, Vic. Fair. I will step out."},
+            {"label": "I DON'T QUOTE UNTIL I KNOW THE SCOPE", "social": -1, "reply": "Fair, John. Fair. I will step out."},
         ],
     },
     "help_Garrison": {
@@ -22505,7 +22505,7 @@ const VIC_MESSAGES := {
             {"label": "NO, I WILL CALL HER", "social": 1, "reply": "That is even better. Call her before lunch."},
         ],
     },
-    "warn": {"text": "Heads up: #%d (%s) is about to breach its SLA. That client has your number, Vic."},
+    "warn": {"text": "Heads up: #%d (%s) is about to breach its SLA. That client has your number, John."},
 }
 const VIC_PRESENCE := {
     "meeting": ["IN A CLIENT CALL", "red"],
@@ -27452,7 +27452,7 @@ const COZY_TEXT := {
     "probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
     "probation_service": "Nobody is going anywhere. The owners are a little worried, so call it a friendly probation. Same desk tomorrow, same coffee. - Morgan",
     "probation_owner": "The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge",
-    "probation_sales": "Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - Vic",
+    "probation_sales": "Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - John",
     "probation_note": "ON PROBATION, THE FRIENDLY KIND. SEE YOU TOMORROW.",
     "bailout_title": "THE BANK",
     "bailout_owner": "I got on the phone with the bank myself. They will cover $%d so we can make payroll, but they only do this the one time. Please spend it wisely.",
@@ -29651,7 +29651,7 @@ const REACT := {
     "Garrison": {"base": 0, "line": "GARRISON: NICE WHEELS. WATCH THE KNEES."},
     "Maya": {"base": 0, "line": "MAYA: HEY! MY GRANOLA BAR!"},
     "Dan": {"base": 0, "line": "DAN: OKAY, THAT WAS A GOOD ROLL."},
-    "Vic": {"base": 0, "line": "VIC: CAREFUL, I HAVE A CALL AT TWO!"},
+    "John": {"base": 0, "line": "JOHN: CAREFUL, I HAVE A CALL AT TWO!"},
     "Morgan": {"base": 0, "line": "MORGAN: I WILL PRETEND I DID NOT SEE THAT."},
 }
 
@@ -29949,10 +29949,10 @@ write("scripts/cornhole_game.gd", '''extends RefCounted
 # Where a bag lands (inches on the board, 48 long and 24 wide, the hole 9 in from the far end):
 #   in the HOLE (within HOLE_R of the hole, or on the lip with a coin flip) = 3, on the BOARD = 1, off it = 0.
 # Cancellation scoring: at the end of a round the lower side is taken off the higher side and only the difference scores.
-# You play a different crew member every round in the order Alan, Garrison, Dan, Maya, Vic (only the ones who came), first
+# You play a different crew member every round in the order Alan, Garrison, Dan, Maya, John (only the ones who came), first
 # to `to` points wins. Stars: win by 7 or more = 3, win = 2, loss = 0 (1 on cozy Easy, set by the caller through `floor`).
 
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const BAGS := 4
 const BOARD_LEN := 48.0
 const BOARD_W := 24.0
@@ -29978,7 +29978,7 @@ const TEMPERS := {
     "Garrison": {"skill": 0.52, "precise": 1.0, "streak": 0.12, "wild": 0.0, "show": 0.0},
     "Dan": {"skill": 0.45, "precise": 1.0, "streak": 0.0, "wild": 0.14, "show": 0.0},
     "Maya": {"skill": 0.58, "precise": 0.9, "streak": 0.0, "wild": 0.0, "show": 0.0},
-    "Vic": {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.12},
+    "John": {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.12},
 }
 const HOUSE := {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.0}
 
@@ -30304,7 +30304,7 @@ write("scripts/darts_game.gd", '''extends RefCounted
 # The crew throw at a target (the treble 20 for the good ones, the bull for the rest) with an error that falls with their skill.
 # Stars: win by BIG_WIN or more = 3, win = 2, a tie or a loss by less than CLOSE = 1, else 0 (1 at least on cozy Easy, `floor`).
 
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const ROUNDS := 3
 const DARTS := 3
 const BOARD_R := 170.0
@@ -30332,7 +30332,7 @@ const TEMPERS := {
     "Garrison": {"skill": 0.5, "streak": 0.12, "wild": 0.0, "show": 0.0},
     "Dan": {"skill": 0.44, "streak": 0.0, "wild": 0.14, "show": 0.0},
     "Maya": {"skill": 0.56, "streak": 0.0, "wild": 0.0, "show": 0.0},
-    "Vic": {"skill": 0.48, "streak": 0.0, "wild": 0.0, "show": 0.12},
+    "John": {"skill": 0.48, "streak": 0.0, "wild": 0.0, "show": 0.12},
 }
 const HOUSE := {"skill": 0.5, "streak": 0.0, "wild": 0.0, "show": 0.0}
 
@@ -31116,7 +31116,7 @@ write("scripts/chair_race.gd", '''extends RefCounted
 #   a steady rhythm (about 0.28 to 0.55 s between pushes) is full power; mashing, or the same key twice, is weak
 #   and tires you out; a tired chair (stamina low) gets a weak push, rest while you coast and it comes back.
 #   Props cost seconds (and speed) when you hit them. The finish time is the clock plus the penalties.
-# Rivals (Alan, Garrison, Dan, Maya, Vic) roll down their own lane with a seeded skill and a personality; they dodge the
+# Rivals (Alan, Garrison, Dan, Maya, John) roll down their own lane with a seeded skill and a personality; they dodge the
 # props (or crash into them on purpose, if that is who they are) and never block you.
 
 # ---- the course -----------------------------------------------------------------------------------
@@ -31202,17 +31202,17 @@ const RACERS := {
         "lose": "MAYA: I WAS AHEAD FOR A WHOLE HALLWAY!",
         "start": "MAYA STRETCHES HER CALVES.",
     },
-    "Vic":
+    "John":
     {
         "skill": 0.52,
         "color": Color("d8c040"),
         "style": "showboat",
-        "win": "VIC WINS AND SPINS TWICE FOR THE CROWD.",
-        "lose": "VIC: I LET YOU WIN. IT IS GOOD FOR RELATIONSHIPS.",
-        "start": "VIC SPINS ONCE FOR THE CROWD.",
+        "win": "JOHN WINS AND SPINS TWICE FOR THE CROWD.",
+        "lose": "JOHN: I LET YOU WIN. IT IS GOOD FOR RELATIONSHIPS.",
+        "start": "JOHN SPINS ONCE FOR THE CROWD.",
     },
 }
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 # the grid: [lane, rows behind the front row] for the five rivals (you start in the middle lane of the front row)
 const GRID := [[0, 0], [2, 0], [1, 1], [0, 1], [2, 1]]
 const ROW_GAP := 26.0
@@ -32002,7 +32002,7 @@ const STYLES := {
     "Alan": "straight",
     "Garrison": "hooker",
     "Dan": "power",
-    "Vic": "show",
+    "John": "show",
     "Maya": "precise",
     "Morgan": "precise",
 }
@@ -32271,7 +32271,7 @@ const PEOPLE := {
     "Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
     "Dan":
     {"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
-    "Vic":
+    "John":
     {
         "loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"],
         "hates": ["VENDOR STORIES"],
@@ -32306,13 +32306,13 @@ const BUDGETS := {
 }
 # bowling personalities (R5, B1): skill = how many pins the average roll takes, noise = how far a roll swings from it,
 # streak = hot / cold swing on alternating frames (Garrison), turkey = chance of a strike on a frame (Dan is wild),
-# show = bonus when there is an audience of three or more (Vic), gutter = chance of a gutter ball, late = frames sat out
+# show = bonus when there is an audience of three or more (John), gutter = chance of a gutter ball, late = frames sat out
 # at the start (Morgan joins the game late). A person without a row does not bowl.
 const BOWLERS := {
     "Alan": {"skill": 0.62, "noise": 0.15, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
     "Garrison": {"skill": 0.55, "noise": 0.2, "streak": 0.14, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
     "Dan": {"skill": 0.48, "noise": 0.4, "streak": 0.0, "turkey": 0.1, "show": 0.0, "gutter": 0.06, "late": 0},
-    "Vic": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
+    "John": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
     "Maya": {"skill": 0.6, "noise": 0.1, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
     "Morgan": {"skill": 0.66, "noise": 0.12, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 1},
 }
@@ -32325,7 +32325,7 @@ const TABLE_MAX := 5  # faces at the table
 const CORE := ["Alan", "Garrison", "Dan"]
 const SEATS := {
     "dinner":
-    {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
+    {"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "John": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
 }
 const PLAYER_SEAT := "Seat2"
 const LANE_NEAR := [152.0, 252.0]
@@ -32540,7 +32540,7 @@ const FRIEND_HINTS := {
         "shelf": "THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.",
         "keypad": "THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.",
     },
-    "Vic":
+    "John":
     {
         "board": "I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.",
         "clock": "I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.",
@@ -32566,7 +32566,7 @@ const GUESTS := {
     "Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
     "Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
     "Dan": {"comes": 0.8, "code": "DA", "line": "Dan has a thing tonight."},
-    "Vic": {"comes": 0.65, "code": "VI", "line": "Vic is on a call with a client."},
+    "John": {"comes": 0.65, "code": "VI", "line": "John is on a call with a client."},
     "Maya": {"comes": 0.7, "code": "MA", "line": "Maya has plans tonight."},
     "Morgan": {"comes": 0.25, "code": "MO", "line": "Morgan is staying behind to catch up."},
 }
@@ -32604,7 +32604,7 @@ const CREW_LINES := {
         "cook": ["MEDIUM. EXACTLY AS FILED.", "NO TICKET NEEDED FOR THIS."],
         "wait": ["MY BURGER IS IN THE QUEUE.", "I FILED THIS ORDER TWICE."],
     },
-    "Vic":
+    "John":
     {
         "cheer": ["I TOLD YOU. I TOLD EVERYONE.", "THAT IS A WINNING ROLL."],
         "groan": ["THE PINS WERE LOOSE.", "THAT DOES NOT COUNT, RIGHT?"],
@@ -32649,7 +32649,7 @@ const ROOMS := {
     "grill": "warehouse",
     "darts": "warehouse"
 }
-# where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
+# where Alan, Garrison, Dan, John, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
     "bowling": [114, 186, 214, 250, 140, 165],
@@ -32858,7 +32858,7 @@ func draw_party() -> Array:
     return party
 
 
-# "Coming: Alan, Dan and Vic. Garrison is sitting this one out." (the invitation card)
+# "Coming: Alan, Dan and John. Garrison is sitting this one out." (the invitation card)
 func coming_text() -> String:
     if not party_set:
         draw_party()
@@ -32909,13 +32909,13 @@ func bowlers() -> Array:
     return _by_cast(crew().filter(func(n: String) -> bool: return BOWLERS.has(n)).slice(0, LANE_MAX))
 
 
-# the karaoke audience: the party, or (no invitation) the table plus Vic as before
+# the karaoke audience: the party, or (no invitation) the table plus John as before
 func crowd() -> Array:
     if opts.has("party"):
         return present()
     var out := diners()
-    if roster().has("Vic"):
-        out.append("Vic")
+    if roster().has("John"):
+        out.append("John")
     return out
 
 
@@ -35074,7 +35074,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
         fx_x += 4.0 * float(tag.length())
         _t(face, fx_x, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
         fx_x += 4.0 * float(face.length()) + 3.0
-    var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
+    var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of John at the bar in the 320x180 format
     var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
     UiStyle.box(_canvas, box)
     for i in 4:
@@ -36554,11 +36554,11 @@ write("scripts/talk.gd", '''extends Node
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.
-# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
+# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, John sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
 const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: lines about the rival and the Standard
-const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "Vic": "people", "Maya": "people", "Morgan": "people", "Sam": "servers", "Terry": "security"}
+const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "John": "people", "Maya": "people", "Morgan": "people", "Sam": "servers", "Terry": "security"}
 const LESSON_XP := 6
 const GREETINGS := {
     "Alan": {
@@ -36576,7 +36576,7 @@ const GREETINGS := {
         "neutral": "Hey. Need something?",
         "cold": "I am kind of in the middle of something.",
     },
-    "Vic": {
+    "John": {
         "friend": "My favourite tech! Talk to me.",
         "neutral": "Hey there. Quick one, I have a call at three.",
         "cold": "Can this wait? I am on the phone in five.",
@@ -36626,7 +36626,7 @@ const SMALL := {
         "The best network is the one nobody talks about. The worst one is every one of our clients.",
         "I have been reading about Heartbleed. It is going to be a long April.",
     ],
-    "Vic": [
+    "John": [
         "Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy?",
         "I told a prospect we are the Apple of managed services. I do not know what that means either.",
         "Golf on Friday. A good relationship is built on the fifth hole.",
@@ -36661,7 +36661,7 @@ const SMALL := {
 }
 const GOSSIP := [
     "Between us: Morgan has been in the owners' office since nine. Never a good sign.",
-    "I heard Vic is already negotiating next year's commission. Good for him.",
+    "I heard John is already negotiating next year's commission. Good for him.",
     "Somebody microwaved fish in the kitchenette again. We are not saying who.",
     "I heard the printer on the main floor jammed again. Nobody will own up to it.",
 ]
@@ -36683,7 +36683,7 @@ const TIPS_GENERIC := {
         "No link on a desk? Check the patch cable in the closet before you blame the switch.",
         "The UPS gives you about ninety seconds. Plan the shutdown, do not improvise it.",
     ],
-    "Vic": [
+    "John": [
         "Clients forgive a slow fix. They do not forgive silence. Call before they call you.",
         "A happy client brings me a referral. An unhappy client brings me a competitor.",
         "If you can fix it before they notice, do. If you cannot, tell them early.",
@@ -36716,32 +36716,32 @@ const OWNER_HOLD := {
     "high": "I am burning out. I am not going to lie to you.",
 }
 
-# ---- Vic's talk (sales campaign, C3): what the coworkers say to the account manager ------------------------------
+# ---- John's talk (sales campaign, C3): what the coworkers say to the account manager ------------------------------
 # tokens: {cap} crew capacity, {open} open tickets, {pct} quota %, {weeks} weeks left in the quarter, {leads} open leads,
 # {client} / {mood} the unhappiest client, {deal} a deal with a promise gap, {floor} margin floor %, {claw} clawbacks
 const VIC_GREETINGS := {
     "Alan": {
-        "friend": "Vic. Sit. Give me the number first and the story after.",
+        "friend": "John. Sit. Give me the number first and the story after.",
         "neutral": "Pipeline. Go. I have the books open.",
         "cold": "...What did you promise this time?",
     },
     "Garrison": {
         "friend": "There he is, my favourite closer! Tell me something good. Actually, tell me the number. Then something good.",
-        "neutral": "Vic! Quick one, I have a client in five. How is the pipeline?",
+        "neutral": "John! Quick one, I have a client in five. How is the pipeline?",
         "cold": "Mm. Is this about a quote or about a discount?",
     },
     "Dan": {
-        "friend": "Hey Vic. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.",
+        "friend": "Hey John. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.",
         "neutral": "Hey. Is this about a new client? Because I have {open} tickets open.",
         "cold": "If it is a new client, I am not taking it.",
     },
     "Morgan": {
-        "friend": "Come in, Vic. I read your handover binder last night. It was almost accurate.",
+        "friend": "Come in, John. I read your handover binder last night. It was almost accurate.",
         "neutral": "Yes? I have a budget call in five minutes. Is this a promise or a question?",
         "cold": "Mm. Are we talking about what you sold, or what we can do?",
     },
     "Maya": {
-        "friend": "Hi Vic! Your clients are so nice. Well, most of them. Want half a granola bar?",
+        "friend": "Hi John! Your clients are so nice. Well, most of them. Want half a granola bar?",
         "neutral": "Hey! Sorry, I have someone on hold. What is up?",
         "cold": "Oh. Hi. I am just finishing a ticket for one of your clients.",
     },
@@ -36824,7 +36824,7 @@ const VIC_STATE := {
     "Maya": {"mood": "{client} sounded annoyed when I called. They are {mood} percent happy and the number is going the wrong way. Call them before they start shopping around."},
     "Garrison": {
         "behind": "You are at {pct} percent of quota with {weeks} weeks left in the quarter. The number is the number. Get me two more logos.",
-        "ahead": "{pct} percent with {weeks} weeks to go? Vic, I may cry. Keep the margin where Alan can see it.",
+        "ahead": "{pct} percent with {weeks} weeks to go? John, I may cry. Keep the margin where Alan can see it.",
     },
     "Alan": {"claw": "You have lost {claw} in clawbacks. Go and find out why before you sell the next one.", "floor": "The floor is {floor} percent. Anything under it comes to me first and I say no."},
 }
@@ -36852,7 +36852,7 @@ const VIC_ASK := {
     },
     "Garrison": {
         "label": "PIPELINE UPDATE",
-        "ahead": "{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.",
+        "ahead": "{pct} percent and {leads} leads in the pipe! John, you are making me look smart. Keep going.",
         "behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let's talk about the hot ones.",
     },
 }
@@ -37033,7 +37033,7 @@ func _state_tip() -> String:
             for d in range(1, 9):
                 if Net.desk_state(d) != "ok":
                     return "%s has no network. Look at the patch panel in the closet first." % str(Msp.DESK_NAMES.get(d, "A desk"))
-        "Vic":
+        "John":
             var worst := -1
             for c in Sales.active:
                 if worst < 0 or Sales.mood(int(c)) < Sales.mood(worst):
@@ -37055,7 +37055,7 @@ func _state_tip() -> String:
     return ""
 
 
-# ---- sales campaign (C3): you are Vic ------------------------------------------------------------
+# ---- sales campaign (C3): you are John ------------------------------------------------------------
 func _greeting(who: String) -> String:
     if Campaign.mode == "sales" and VIC_GREETINGS.has(who):
         return _fill(str(VIC_GREETINGS[who][tier(who)]))
@@ -37514,7 +37514,7 @@ const REACT := {
         "mood": "dots"
     },
     "Dan": {"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
-    "Vic": {"base": 1, "friendly": "heart", "line": "Vic: Careful, I have a client call at two!", "mood": "!"},
+    "John": {"base": 1, "friendly": "heart", "line": "John: Careful, I have a client call at two!", "mood": "!"},
 }
 
 var ammo := 0
@@ -38783,7 +38783,7 @@ write("scripts/owners.gd", '''extends Node
 #             (the call is handled, a client is a little happier)
 #   sla       a P1 / P2 about to breach: +45 seconds on its clock
 #   backlog   six or more open tickets: the soonest one to breach gets +45 seconds
-#   complaint Vic's complaint has waited too long (Sales.pending): Garrison calms the client (mood +4)
+#   complaint John's complaint has waited too long (Sales.pending): Garrison calms the client (mood +4)
 # Stepping in is FREE: no reputation, no opinion loss, no grade effect. It only shows a toast in the owner's own voice
 # and a row in the day report (OWNERS STEPPED IN). Limits: not on days 1-2, a per-day limit for each owner, a cooldown
 # in game minutes, and the Difficulty tier (easy a bit more help, hard none). Random choices come from the `owners`
@@ -39089,7 +39089,7 @@ const LABELS := {
     "Alan": "Alan (Co-owner)",
     "Garrison": "Garrison (Co-owner)",
     "Dan": "Dan (Network Tech)",
-    "Vic": "Vic (Account Manager)",
+    "John": "John (Account Manager)",
     "Maya": "Maya (Tier 1)",
     "Morgan": "Morgan (Manager)",
 }
@@ -39099,7 +39099,7 @@ const JOBS := {
     "sales owner": "Garrison",
     "manager": "Morgan",
     "network": "Dan",
-    "accounts": "Vic",
+    "accounts": "John",
     "tier1": "Maya",
 }
 
@@ -39336,23 +39336,23 @@ const DEFAULT_BEATS := {
     },
     "vic":
     {
-        "speaker": "Vic (Account Manager)",
+        "speaker": "John (Account Manager)",
         "text": "I promised Brightside a two hour response on everything. They loved it. Your crew can do that, right?",
         "options":
         [
-            {"id": "h", "label": "HOLD VIC TO IT", "text": "We can do it if the P3s wait. I wrote the exceptions on the board.", "fx": {"social": {"Vic": 2}, "trust": {"Alan": 0, "Garrison": 3}, "morale": -2}},
-            {"id": "r", "label": "RE-QUOTE IT WITH VIC", "text": "Four hours, with two hours for urgent. Vic will call them. He did not enjoy it.", "fx": {"social": {"Vic": -2}, "trust": {"Alan": 3, "Garrison": -2}}},
+            {"id": "h", "label": "HOLD JOHN TO IT", "text": "We can do it if the P3s wait. I wrote the exceptions on the board.", "fx": {"social": {"John": 2}, "trust": {"Alan": 0, "Garrison": 3}, "morale": -2}},
+            {"id": "r", "label": "RE-QUOTE IT WITH JOHN", "text": "Four hours, with two hours for urgent. John will call them. He did not enjoy it.", "fx": {"social": {"John": -2}, "trust": {"Alan": 3, "Garrison": -2}}},
             {"id": "t", "label": "ASK GARRISON", "text": "Garrison says to do it and we sort the staffing later. I am not sure that is a plan.", "fx": {"trust": {"Alan": -2, "Garrison": 4}, "morale": -3, "mood": 3}},
         ],
     },
     "nosale":
     {
-        "speaker": "Vic (Account Manager)",
+        "speaker": "John (Account Manager)",
         "text": "A new prospect wants fifty seats at half our price, with a four-hour response. Garrison likes the logo. The numbers look thin to me. Do we take them?",
         "options":
         [
             {"id": "y", "label": "TAKE THEM", "text": "We take them. I will plan the capacity before they start.", "fx": {"trust": {"Alan": -3, "Garrison": 5}, "morale": -3, "buff": ["issues", 1.06, 4]}},
-            {"id": "n", "label": "SAY NO, POLITELY", "text": "No. I wrote down why: price, scope and response time do not fit. Vic will say it nicely.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "social": {"Vic": -1}}},
+            {"id": "n", "label": "SAY NO, POLITELY", "text": "No. I wrote down why: price, scope and response time do not fit. John will say it nicely.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "social": {"John": -1}}},
             {"id": "c", "label": "COUNTER-OFFER", "text": "Counter-offer: full price, a longer response time, a signed scope. They may walk.", "fx": {"trust": {"Alan": 2, "Garrison": 1}}},
         ],
     },
@@ -39412,7 +39412,7 @@ const DEFAULT_INCIDENT_OPTIONS := {
 }
 var INCIDENT_OPTIONS: Dictionary = DEFAULT_INCIDENT_OPTIONS.duplicate(true)
 
-# 1:1 cards. Decks: Maya, Tech ({name} is Sam or Terry), Vic. Each option: label, reply, fx (morale / retain / social / trust).
+# 1:1 cards. Decks: Maya, Tech ({name} is Sam or Terry), John. Each option: label, reply, fx (morale / retain / social / trust).
 const DEFAULT_ONE_ON_ONES := {
     "Maya":
     [
@@ -39492,42 +39492,42 @@ const DEFAULT_ONE_ON_ONES := {
             ],
         },
     ],
-    "Vic":
+    "John":
     [
         {
             "text": "I have a prospect who wants a handshake deal. No contract until next month. Come on, Dan.",
             "options":
             [
-                {"label": "ASK FOR A ONE-PAGE SCOPE", "reply": "One page. What we do, what we do not, how fast. You can say it is for the crew.", "fx": {"social": {"Vic": 1}, "trust": {"Alan": 2, "Garrison": 0}}},
-                {"label": "LET HIM HAVE THE HANDSHAKE", "reply": "Fine. But I log every hour they use.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": -1, "Garrison": 2}, "mood": 1}},
-                {"label": "REFUSE UNTIL SIGNED", "reply": "No work without a signature.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
+                {"label": "ASK FOR A ONE-PAGE SCOPE", "reply": "One page. What we do, what we do not, how fast. You can say it is for the crew.", "fx": {"social": {"John": 1}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "LET HIM HAVE THE HANDSHAKE", "reply": "Fine. But I log every hour they use.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 2}, "mood": 1}},
+                {"label": "REFUSE UNTIL SIGNED", "reply": "No work without a signature.", "fx": {"social": {"John": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
             ],
         },
         {
             "text": "My clients say tickets take forever. I tell them you are working on it. Are you?",
             "options":
             [
-                {"label": "SHOW HIM THE BOARD", "reply": "Here is the queue, by age. Tell them the real number. Honest is better.", "fx": {"social": {"Vic": 2}, "mood": 1}},
-                {"label": "GIVE HIM A PHONE NUMBER", "reply": "Give them my desk line for P1s. I will pick up.", "fx": {"social": {"Vic": 3}, "morale": -2}},
-                {"label": "TELL HIM TO BE PATIENT", "reply": "We are working on it.", "fx": {"social": {"Vic": -2}}},
+                {"label": "SHOW HIM THE BOARD", "reply": "Here is the queue, by age. Tell them the real number. Honest is better.", "fx": {"social": {"John": 2}, "mood": 1}},
+                {"label": "GIVE HIM A PHONE NUMBER", "reply": "Give them my desk line for P1s. I will pick up.", "fx": {"social": {"John": 3}, "morale": -2}},
+                {"label": "TELL HIM TO BE PATIENT", "reply": "We are working on it.", "fx": {"social": {"John": -2}}},
             ],
         },
         {
             "text": "Garrison wants a client dinner on Thursday. Can the crew cover the phones?",
             "options":
             [
-                {"label": "COVER IT MYSELF", "reply": "I cover the phones. Go. Bring the client back happy.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 0, "Garrison": 2}, "morale": 1}},
-                {"label": "ASK MAYA FIRST", "reply": "I will ask Maya. If she says yes, there is a bonus.", "fx": {"social": {"Vic": 1}, "morale_who": {"Maya": 2}}},
-                {"label": "SAY NO", "reply": "Not Thursday. The queue is too long.", "fx": {"social": {"Vic": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
+                {"label": "COVER IT MYSELF", "reply": "I cover the phones. Go. Bring the client back happy.", "fx": {"social": {"John": 3}, "trust": {"Alan": 0, "Garrison": 2}, "morale": 1}},
+                {"label": "ASK MAYA FIRST", "reply": "I will ask Maya. If she says yes, there is a bonus.", "fx": {"social": {"John": 1}, "morale_who": {"Maya": 2}}},
+                {"label": "SAY NO", "reply": "Not Thursday. The queue is too long.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
             ],
         },
         {
             "text": "I know I over-promise. Garrison says it is how we win. You say it is how we lose. Who is right?",
             "options":
             [
-                {"label": "SPLIT IT: PROMISE LESS, SELL BETTER", "reply": "Both. Promise what we can do and sell why it matters. I will help you write the lines.", "fx": {"social": {"Vic": 3}, "trust": {"Alan": 1, "Garrison": 1}}},
-                {"label": "TELL HIM HE IS RIGHT", "reply": "Garrison is right about the win. I will find a way to do the work.", "fx": {"social": {"Vic": 4}, "trust": {"Alan": -1, "Garrison": 2}, "morale": -2}},
-                {"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"Vic": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
+                {"label": "SPLIT IT: PROMISE LESS, SELL BETTER", "reply": "Both. Promise what we can do and sell why it matters. I will help you write the lines.", "fx": {"social": {"John": 3}, "trust": {"Alan": 1, "Garrison": 1}}},
+                {"label": "TELL HIM HE IS RIGHT", "reply": "Garrison is right about the win. I will find a way to do the work.", "fx": {"social": {"John": 4}, "trust": {"Alan": -1, "Garrison": 2}, "morale": -2}},
+                {"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"John": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
             ],
         },
     ],
@@ -40705,15 +40705,15 @@ func _delegate_ransom(quality: float, who: String) -> Dictionary:
 
 # ---- 1:1s ------------------------------------------------------------------------------------------------------
 func has_one_on_one(who: String) -> bool:
-    return Campaign.mode == "service" and (who == "Maya" or who == "Vic" or Crew.has(who))
+    return Campaign.mode == "service" and (who == "Maya" or who == "John" or Crew.has(who))
 
 
 func _deck_of(who: String) -> String:
-    return who if who == "Maya" or who == "Vic" else "Tech"
+    return who if who == "Maya" or who == "John" else "Tech"
 
 
 func one_on_one(who: String, after := Callable()) -> void:
-    var label := Roles.label(who) if who == "Maya" or who == "Vic" else "%s (Tier 1)" % who
+    var label := Roles.label(who) if who == "Maya" or who == "John" else "%s (Tier 1)" % who
     if int(oto_day.get(who, -1)) == Campaign.day:
         Cards.ask(label, str(ONE_TEXT.already), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
         return
@@ -41597,7 +41597,7 @@ const DEFAULT_ARC := {
         "options":
         [
             {"id": "patch", "label": "PATCH FIRST, EMAIL AFTER", "text": "Servers first. The email goes out when the patch list is green. Garrison asked how long that is. I said the afternoon.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "side": "Alan", "mood_c": -2, "flag": "hb_patch", "buff": ["miss", -0.02, 3]}},
-            {"id": "email", "label": "EMAIL THE CLIENTS NOW", "text": "The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to Vic.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "mood_c": 3, "flag": "hb_email"}},
+            {"id": "email", "label": "EMAIL THE CLIENTS NOW", "text": "The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to John.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "mood_c": 3, "flag": "hb_email"}},
             {"id": "both", "label": "HOLDING EMAIL AND ORDER", "need": ["hours:1"], "text": "Two lines to the clients: we are checking, you will hear from us by five. And a patch order for Alan: servers, then websites, then desktops. It took an hour. Both of them initialled it.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "side": "both", "hours": 1, "morale": -2, "flag": "hb_both"}},
         ],
     },
@@ -41605,7 +41605,7 @@ const DEFAULT_ARC := {
     {
         "speaker": "Morgan Reyes (Manager)",
         "text": {
-            "hb_patch": "Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. Vic is apologising on the phone. Garrison would like you to know he said so.",
+            "hb_patch": "Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. John is apologising on the phone. Garrison would like you to know he said so.",
             "hb_email": "After the email, {n} clients called to ask whether we had patched yet. The honest answer was: not yet. Alan has been quiet about the email, which is worse than loud.",
             "hb_both": "The holding email worked. The clients got the patch report at five and two of them said thank you. Alan and Garrison both asked for a copy of the template.",
             "none": "Heartbleed week is a long one. The certificate checks are still coming in. Keep writing down what you checked.",
@@ -41665,7 +41665,7 @@ const DEFAULT_ARC := {
         "options":
         [
             {"id": "full", "label": "HONOUR IT: FULL SERVICE", "text": "Two hours, full service, the logo goes on the wall. I added their tickets to the board and I will report the hours every Friday.", "fx": {"trust": {"Garrison": 6, "Alan": -5}, "side": "Garrison", "mood_c": 4, "buff": ["issues", 1.05, 4], "morale": -2, "flag": "logo_full"}},
-            {"id": "std", "label": "STANDARD SLA, STANDARD RULES", "text": "Standard response, standard rules. The discount buys the logo, not the queue. Vic will tell them kindly.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "side": "Alan", "mood_c": -3, "flag": "logo_std"}},
+            {"id": "std", "label": "STANDARD SLA, STANDARD RULES", "text": "Standard response, standard rules. The discount buys the logo, not the queue. John will tell them kindly.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "side": "Alan", "mood_c": -3, "flag": "logo_std"}},
             {"id": "broker", "label": "BROKER A TWO YEAR DEAL", "need": ["trust2:40", "hours:1"], "text": "The discount stands if they sign two years and a scope page. Garrison keeps the logo, Alan keeps the margin. Both of them asked me to write it down.", "fx": {"trust": {"Alan": 3, "Garrison": 3}, "side": "both", "hours": 1, "flag": "logo_broker"}},
         ],
     },
@@ -41676,7 +41676,7 @@ const DEFAULT_ARC := {
         "options":
         [
             {"id": "cut", "label": "CUT TRAINING AND EXTRA HOURS", "text": "Training stops and the extra hours are by approval only. I told the crew myself, before the rumour.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "side": "Alan", "training": "none", "morale": -4, "retain_all": -1, "flag": "cut_training"}},
-            {"id": "keep", "label": "NO CUTS: BRING THE REVENUE", "text": "No cuts this month. Vic and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "morale": 2, "conf": -1, "flag": "no_cut"}},
+            {"id": "keep", "label": "NO CUTS: BRING THE REVENUE", "text": "No cuts this month. John and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "morale": 2, "conf": -1, "flag": "no_cut"}},
             {"id": "small", "label": "A SMALLER, FAIR CUT", "need": ["doc:25", "hours:1"], "text": "Training drops to light, the pod stipends stay, and I attached the cost per ticket to the proposal. Alan and Garrison each lost something.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "side": "both", "hours": 1, "training": "light", "flag": "cut_small"}},
         ],
     },
@@ -41743,7 +41743,7 @@ const DEFAULT_JOB_BOOKS := {
         [
             {
                 "title": "DISCOVERY",
-                "text": "Iron Mule Demolition has two trailers, nine users and no documentation at all. Vic promised them they would be live in a day. Where do you start?",
+                "text": "Iron Mule Demolition has two trailers, nine users and no documentation at all. John promised them they would be live in a day. Where do you start?",
                 "choices":
                 [
                     {"label": "WALK THE SITE WITH THE FOREMAN", "secs": 8.0, "pts": 20, "hours": 1.0, "flag": "walked", "note": "Two trailers, a hub under a desk and a printer nobody owns. Everything is on your clipboard."},
@@ -41856,7 +41856,7 @@ const DEFAULT_QUESTIONS := {
     "Garrison":
     [
         {"text": "How are our clients feeling this week? Not the dashboard. The real answer. Mood is {mood} on the sheet and I know it is not the same thing.", "options": [{"label": "BIG THREE HAPPY, ONE WATCHING", "reply": "Which one is watching? I will take them to lunch.", "fx": {"trust": {"Garrison": 2}}}, {"label": "THEY WANT FASTER ANSWERS", "reply": "Faster is a feeling. I can sell a feeling.", "fx": {"trust": {"Garrison": 1}}}, {"label": "THE NUMBERS ARE FINE", "reply": "The numbers are always fine. Then someone leaves.", "fx": {"trust": {"Garrison": -1}}}]},
-        {"text": "If Vic brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.", "options": [{"label": "ONE MORE CLIENT, NOT TWO", "reply": "One. I will pick the good one.", "fx": {"trust": {"Garrison": 2}}}, {"label": "ASK ME FIRST, ALWAYS", "reply": "Ask first. Fine. I will try.", "fx": {"trust": {"Garrison": -1, "Alan": 1}}}, {"label": "YES, AND WE FIND THE HOURS", "reply": "That is what I like about you, Dan. Mostly.", "fx": {"trust": {"Garrison": 2, "Alan": -1}}}]},
+        {"text": "If John brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.", "options": [{"label": "ONE MORE CLIENT, NOT TWO", "reply": "One. I will pick the good one.", "fx": {"trust": {"Garrison": 2}}}, {"label": "ASK ME FIRST, ALWAYS", "reply": "Ask first. Fine. I will try.", "fx": {"trust": {"Garrison": -1, "Alan": 1}}}, {"label": "YES, AND WE FIND THE HOURS", "reply": "That is what I like about you, Dan. Mostly.", "fx": {"trust": {"Garrison": 2, "Alan": -1}}}]},
         {"text": "The team is the company. Are they happy? When did you last do a one on one?", "options": [{"label": "THIS WEEK, WITH EVERYONE", "reply": "Good. Keep it up. People remember being asked.", "fx": {"trust": {"Garrison": 2}}}, {"label": "MAYA YES, THE REST NOT YET", "reply": "Do the rest. Today if you can.", "fx": {}}, {"label": "THE BOARD TAKES MY DAY", "reply": "The board will still be there tomorrow. People will not always be.", "fx": {"trust": {"Garrison": -1}}}]},
     ],
     "Morgan":
@@ -41876,7 +41876,7 @@ const DEFAULT_VOICES := {
         "Sam": ["The password resets are fine. It is when they call twice that I get nervous.", "I read the runbook for spooler problems on the train. I did not know you could do that.", "Terry lent me his good headset. Now I have to be good.", "Do you think I could do tier two one day? Not now. One day."],
         "Terry": ["I have been doing this for eleven years. I have never had a manager who asked what I thought.", "The pager is not the problem. It is the not knowing when.", "Somebody should label that rack at Gnarly. I would. If anyone asked me.", "Quiet day. I do not trust quiet days."],
         "hire": ["Is it always this busy? I am not complaining. I am just taking notes.", "The runbooks are good. At my last job we had a binder. Nobody knew where it was.", "I do not want to be the new guy twice. Can I take a ticket on my own today?", "Everyone here says please. It is unsettling."],
-        "Vic": ["Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?", "I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.", "Between us: I promise what I think you can deliver. Mostly.", "If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it."],
+        "John": ["Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?", "I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.", "Between us: I promise what I think you can deliver. Mostly.", "If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it."],
         "Morgan": ["Alan and Garrison were in my office again. They wanted me to settle something. I told them to ask you.", "Your scorecard is the first one I read in the morning. Do not let that go to your head.", "If you need something, ask on Friday. If it is on fire, ask now.", "I was a tech once. I miss the part where nobody asked me about budgets."],
         "Alan": ["I had a client ask if we were 'doing the Heartbleed thing'. I said no. We were doing the whole thing.", "Documentation is the only part of this job that is still there on Monday.", "When this desk is quiet I know it is working. Do not tell Garrison.", "A good process is boring. I am trying to get everything boring."],
         "Garrison": ["I brought donuts to Brightside this morning. They asked about the SLA. Then they ate the donuts.", "People remember how fast you answered, not how right you were. I am half joking.", "Alan thinks I only care about logos. I care about clients. The logo is just where they put their name.", "If you ever want a bigger desk, bring me a number and a plan."],
@@ -41887,7 +41887,7 @@ const DEFAULT_VOICES := {
         "Sam": ["I wait too long before I tell you I am stuck. Ask me at noon, not at four.", "Terry is stuck on the pager more than anyone says. He will not tell you. You have to ask."],
         "Terry": ["Never assign Sam a server ticket on a Monday. He doubts himself. Give him a password reset first.", "The best runbooks are the ones the author did not want to write. Ask who hated a ticket."],
         "hire": ["The first week I was afraid to ask. A runbook is somebody saying it is okay to not know.", "I do my best work when I know who to ask. Tell me who to ask."],
-        "Vic": ["Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.", "Tell me what the desk can really take. I would rather lose a deal than lie to a client."],
+        "John": ["Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.", "Tell me what the desk can really take. I would rather lose a deal than lie to a client."],
         "Morgan": ["Both owners trust you when you tell them no with a number. Neither trusts you when you say yes with a feeling.", "Bring me a plan on Friday, not a problem."],
         "Alan": ["If a page in the knowledge base is more than a month old, assume it is wrong. Systems change.", "A tech who is stuck does not need rescue. They need a page."],
         "Garrison": ["Clients like to hear a name. Give them one tech who knows them.", "Do something nice for the crew this week. It always shows in the numbers a month later."],
@@ -41898,7 +41898,7 @@ const DEFAULT_VOICES := {
             {"text": "Dan, can I take the next server ticket? I have been reading about it.", "options": [{"label": "YES, I WILL WATCH", "social": 2, "morale": 3, "reply": "Thanks! I will write down what I did."}, {"label": "NOT TODAY, THE QUEUE IS HOT", "social": 0, "reply": "Okay. Tomorrow?"}]},
             {"text": "The reset runbook is out of date. The new rules say twelve characters. Do you want me to fix it?", "options": [{"label": "YES, PLEASE", "social": 2, "reply": "On it. I will tag you for the review."}, {"label": "LET ME DO IT TONIGHT", "social": 0, "reply": "Okay, I will leave it."}]},
         ],
-        "Vic": [
+        "John": [
             {"text": "Garrison wants me to promise the prospect a two hour response. Can the desk do two hours?", "options": [{"label": "FOUR HOURS, TWO FOR URGENT", "social": 1, "reply": "Four and two. I will make it sound like a feature."}, {"label": "ASK ME AFTER THE AUDIT", "social": 0, "reply": "After the audit. Noted."}]},
             {"text": "Heads up: a client is unhappy and has my number on speed dial. I am sending them to you.", "options": [{"label": "SEND THEM, I WILL CALL BACK", "social": 2, "reply": "You are a good man, Dan."}, {"label": "WRITE IT DOWN, I WILL CHECK", "social": 0, "reply": "I wrote it on a napkin. It is fine."}]},
         ],
@@ -42497,11 +42497,11 @@ func _onboard_card() -> void:
     var d := _details("onboard")
     d["client_i"] = client
     d["client"] = str(Msp.CLIENTS[client].name)
-    var promise := "Vic promised them they would be live in a day, and Garrison repeated it at the handshake."
+    var promise := "John promised them they would be live in a day, and Garrison repeated it at the handshake."
     if str(picks.get("m2", "")) == "a":
         promise = "You told Garrison yes to one day in the memo, and it is on the contract."
     elif str(picks.get("m2", "")) == "b":
-        promise = "You asked for a survey first. Vic had already promised a day, so he is nervous."
+        promise = "You asked for a survey first. John had already promised a day, so he is nervous."
     var inc: Dictionary = Service.INCIDENTS.onboard
     var text := "%s signs today. %s They have no network diagram, no passwords list and a server nobody has named. Who takes the onboarding?" % [str(d.client), promise]
     var options := [
@@ -45668,7 +45668,7 @@ const PLATFORM_WEEKLY := 100
 var projects: Array = []  # {id, client, type, method, price, hw, est, done, weeks, total, creep, scoped, delay, status, net, profit}
 var services := {}  # client -> [service ids]
 var hours_hist := {}  # client -> their last weekly hours
-var wom_weeks := 0  # weeks of bad word of mouth left (Vic's close rate drops)
+var wom_weeks := 0  # weeks of bad word of mouth left (John's close rate drops)
 var enabled := true  # false in the balance harness to measure the campaign without projects and services
 var completed_count := 0
 var completed_profit := 0
@@ -45871,7 +45871,7 @@ func _quote_card(item: Dictionary) -> void:
         blurb = blurb.replace(" before April 8", " that are out of warranty")  # X9: the XP deadline has passed
     var text := "%s: %s. Project: %s. About %d hours and $%d of hardware over %d weeks. At $%d fixed that is about %s profit if nothing creeps. How do we quote it?" % [
         name, blurb, str(t.label).to_lower(), int(q.est), int(q.hw), int(q.weeks), int(q.price), Owner.money(quote_profit(q))]
-    Cards.ask("Vic Marlowe", text, [
+    Cards.ask("John Marlowe", text, [
         {"label": "FIXED PRICE ($%d)" % int(q.price), "id": "fixed"},
         {"label": "SCOPE IT FIRST ($%d DISCOVERY, SAFER)" % DISCOVERY_FEE, "id": "scope"},
         {"label": "TIME AND MATERIALS ($%d/HOUR)" % BILL_RATE, "id": "tm"},
@@ -45881,7 +45881,7 @@ func _quote_card(item: Dictionary) -> void:
 
 func _quoted(q: Dictionary, method: String) -> void:
     if method == "pass":
-        Msp.send_text("Vic", "I told them we are too busy. They were not thrilled.")
+        Msp.send_text("John", "I told them we are too busy. They were not thrilled.")
         return
     start_project(q, method)
     Habits.project()  # R38: H3
@@ -45890,7 +45890,7 @@ func _quoted(q: Dictionary, method: String) -> void:
         text += " We bill $%d for discovery now and start next week with real numbers." % DISCOVERY_FEE
     elif method == "tm":
         text += " Time and materials: they pay for what it takes, and they know it."
-    Msp.send_text("Vic", text)
+    Msp.send_text("John", text)
 
 
 func start_project(q: Dictionary, method: String) -> Dictionary:
@@ -46014,7 +46014,7 @@ func _service_card(item: Dictionary) -> void:
     var options := [{"label": "SELL IT ($%d/WEEK)" % int(s.price), "id": "sell"}, {"label": "NOT NOW", "id": "no"}]
     if platform_missing:
         options[0] = {"label": "BUY THE PLATFORM ($%d) AND SELL IT" % PLATFORM_SETUP, "id": "sell", "enabled": Owner.cash >= PLATFORM_SETUP, "hint": "NEED $%d" % PLATFORM_SETUP}
-    Cards.ask("Vic Marlowe", text, options, func(choice: String) -> void: _service_answer(client, id, choice, platform_missing))
+    Cards.ask("John Marlowe", text, options, func(choice: String) -> void: _service_answer(client, id, choice, platform_missing))
 
 
 func _service_answer(client: int, id: String, choice: String, platform_missing: bool) -> void:
@@ -46025,7 +46025,7 @@ func _service_answer(client: int, id: String, choice: String, platform_missing: 
         Owner.weekly_extra += PLATFORM_WEEKLY
         Owner.flags["backup_service"] = true
     sell_service(client, id)
-    Msp.send_text("Vic", "Signed: %s for %s. Recurring revenue!" % [str(SERVICES[id].label).to_lower(), str(Msp.CLIENTS[client].name)])
+    Msp.send_text("John", "Signed: %s for %s. Recurring revenue!" % [str(SERVICES[id].label).to_lower(), str(Msp.CLIENTS[client].name)])
 
 
 # an opportunity found on a visit: the quote card comes up the next morning
@@ -46101,7 +46101,7 @@ func fire_client(client: int, how: String) -> String:
 
 func _wom_card(item: Dictionary) -> void:
     var name: String = Msp.CLIENTS[int(item.client)].name
-    Cards.ask("Vic Marlowe", "A prospect says %s told them we are hard to work with. It is going around the local business crowd. What do we do?" % name, [
+    Cards.ask("John Marlowe", "A prospect says %s told them we are hard to work with. It is going around the local business crowd. What do we do?" % name, [
         {"label": "CALL THE PROSPECT AND TELL OUR SIDE", "id": "call"},
         {"label": "OFFER A FREE HEALTH CHECK ($300)", "id": "check", "enabled": Owner.cash >= 300, "hint": "NEED $300"},
         {"label": "LET IT BLOW OVER", "id": "wait"},
@@ -46113,14 +46113,14 @@ func _wom_answer(id: String) -> void:
         "call":
             if randf() < 0.5:
                 wom_weeks = maxi(0, wom_weeks - 3)
-                Msp.send_text("Vic", "The prospect heard me out. Not everybody believes the other side.")
+                Msp.send_text("John", "The prospect heard me out. Not everybody believes the other side.")
             else:
-                Msp.send_text("Vic", "The prospect was polite and went with someone else.")
+                Msp.send_text("John", "The prospect was polite and went with someone else.")
         "check":
             Owner.cash -= 300
             wom_weeks = 0
             Owner._leads += 1
-            Msp.send_text("Vic", "The health check impressed them. They want to talk.")
+            Msp.send_text("John", "The health check impressed them. They want to talk.")
 
 
 func vic_penalty() -> float:
@@ -51216,7 +51216,7 @@ write("scripts/charselect.gd", '''extends Node2D
 # phone (tech only), "options" (LEVEL, START, SEED, TOOLS, MUT) and the point-buy "build". Left / Right change,
 # Enter / E / Space go on, Esc goes back one page (Esc on the first emits cancelled), mouse hover and click work like
 # the title menu. Confirming applies the choice (Player.current_character, Phone.os) and emits done(result).
-# In the campaigns the cast members (Alan, Garrison, Dan, Vic ...) are already at their desks as NPCs, so the tech
+# In the campaigns the cast members (Alan, Garrison, Dan, John ...) are already at their desks as NPCs, so the tech
 # campaign offers only the people who are not in World.CAST; the owner campaign offers Alan or Garrison (the other
 # owner becomes your partner NPC); Free Play offers everyone. Whoever you pick as a cast member leaves the cast and
 # sits at their own desk (Campaign.player_as).
@@ -51371,14 +51371,15 @@ const STOCK_LOOKS := {
         "pattern": "plaid",
         "acc": {"beard": "goatee"}
     },
-    "sales_vic":
+    "office_john":
     {
-        "name": "VIC",
+        "name": "JOHN",
         "hair_style": "short",
-        "hair": "8a6a3a",
-        "shirt": "2b3a5e",
-        "pants": "3a3f4a",
-        "shoes": "2a2a33"
+        "hair": "4a3222",
+        "shirt": "b8342e",
+        "pants": "6a6f78",
+        "shoes": "3a3a44",
+        "acc": {"beard": "goatee"}
     },
 }
 const CUSTOM_BLURB := "CHOOSE LOOK AND CLOTHES ON THE PAGES, THEN A NAME. A NEW HIRE, NOT ONE OF THE TEAM."
@@ -51404,10 +51405,10 @@ const PEOPLE := {
         "name": "GARRISON",
         "blurb": "CO-OWNER IN TEAL PLAID AND A GOATEE. CLIENTS AND CULTURE, ALWAYS TIME FOR A CHAT."
     },
-    "sales_vic":
+    "office_john":
     {
-        "name": "VIC",
-        "blurb": "ACCOUNT MANAGER IN A JACKET AND RED TIE. A DEAL IS ALWAYS ABOUT TO CLOSE."
+        "name": "JOHN",
+        "blurb": "ACCOUNT MANAGER IN A BALL CAP, A GOATEE AND A RED FLEECE. A DEAL IS ALWAYS ABOUT TO CLOSE."
     },
 }
 # the owner campaign shows these instead of the Free Play blurbs
@@ -51417,7 +51418,7 @@ const OWNER_BLURBS := {
     "casual_garrison":
     "SALES OWNER: CLIENTS, PRICING, MORALE. ALAN KEEPS THE SERVERS ALIVE.",
 }
-# the sales campaign offers Vic only
+# the sales campaign offers John only
 const SALES_BLURB := "THE ACCOUNT MANAGER. YOU SELL, DAN AND MORGAN DELIVER. SELL ONLY WHAT THEY CAN DELIVER AND HIT QUOTA BY JUNE 30."
 # the service manager campaign offers Dan only
 const SERVICE_BLURBS := {
@@ -51481,7 +51482,7 @@ func needs_phone() -> bool:
 
 
 # MAKE YOUR OWN is offered where the player is nobody from the cast: the tech campaign and Free Play (the owner, sales and
-# service campaigns play Alan / Garrison / Vic / Dan)
+# service campaigns play Alan / Garrison / John / Dan)
 func offers_custom(for_mode: String) -> bool:
     return for_mode == "tech" or for_mode == FREE_MODE
 
@@ -51591,7 +51592,7 @@ func choices(for_mode: String) -> Array:
     if for_mode == "owner":
         return ["office_alan", "casual_garrison"]
     if for_mode == "sales":
-        return ["sales_vic"]
+        return ["office_john"]
     if for_mode == "service":
         return ["office_dan"]
     var cast: Array = []
@@ -53582,7 +53583,7 @@ const PATCH_COLORS := ["#4f7fd0", "#4f9c8e", "#e0a030", "#9a60c8"]
 # R37 cable tracing: the patch panel's jack labels, a loose cable and the toner and probe (see "Network closet" in CLAUDE.md)
 const DAN_JACKS := [1, 3, 8]  # printed label-maker tags (Dan is proud of them): always right
 const DRIFT_JACKS := [2, 4, 5, 6, 7]  # hand-written tape that drifts when somebody re-plugs things
-const WHO := {1: "DESK 1", 2: "MAYA", 3: "DAN", 4: "VIC", 5: "MORGAN", 6: "ALAN", 7: "GARRISON", 8: "COPIER"}
+const WHO := {1: "DESK 1", 2: "MAYA", 3: "DAN", 4: "JOHN", 5: "MORGAN", 6: "ALAN", 7: "GARRISON", 8: "COPIER"}
 const FLAP_SECS := 6.0  # a healthy jack you re-seat drops its desk this long
 const TRACE_XP := 6  # networking XP for finding a loose cable by tracing instead of trusting a bad label
 const FAULT_FROM_DAY := 3  # tech campaign: from this day a cable may work loose
@@ -54354,7 +54355,7 @@ const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
 const CHARACTERS := [
-    "office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "sales_vic"
+    "office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "office_john"
 ]
 
 static var current_character := "office_adult"
@@ -55597,7 +55598,7 @@ const START_KEYS := [
     "stack_fee",
     "texts"
 ]
-const OUT_POOL := {"tech": ["Dan", "Vic", "Maya"], "owner": ["Dan", "Vic"]}
+const OUT_POOL := {"tech": ["Dan", "John", "Maya"], "owner": ["Dan", "John"]}
 
 # duration = [tech days, owner weeks]; fix names are the RMM actions of Msp.FIXES
 const MUTATORS := {
@@ -55649,7 +55650,7 @@ const MUTATORS := {
         "event_boost": {"xp_panic": 4.0},
         "offer":
         {
-            "speaker": "Vic Marlowe",
+            "speaker": "John Marlowe",
             "text":
             "Three of our clients still have XP desktops. Want me to send them a replacement quote? It is a real project, but the deadline helps us.",
             "options":
@@ -55658,13 +55659,13 @@ const MUTATORS := {
                     "id": "quote",
                     "label": "YES, SEND THE UPGRADE QUOTES",
                     "text":
-                    "Vic sends tidy quotes with a date on them. Two clients say yes to a few new PCs.",
+                    "John sends tidy quotes with a date on them. Two clients say yes to a few new PCs.",
                     "fx": {"xp": ["people", 3], "rep": 1, "hours": 0.4}
                 },
                 {
                     "id": "later",
                     "label": "LATER, WE ARE BUSY",
-                    "text": "Vic shrugs. The deadline will not move, so he will ask again.",
+                    "text": "John shrugs. The deadline will not move, so he will ask again.",
                     "fx": {}
                 }
             ]
@@ -55889,7 +55890,7 @@ const STARTS := {
         "texts":
         [
             {
-                "from": "Vic",
+                "from": "John",
                 "body":
                 "Heads up: a rival shop is handing out flyers to our clients. Keep them happy this month."
             }
@@ -56582,7 +56583,7 @@ write("scripts/build.gd", '''extends Node
 # are unchanged. Every stat is a 0-5 level read through `Build.level(stat)`.
 #
 #   Stat sets   PATHS: tech (the five Skills), owner (TECHNICAL FINANCE SALES CULTURE CLIENTS, read through
-#               Owner.edges_for), service (Dan) and sales (Vic) as data rows (not selectable yet).
+#               Owner.edges_for), service (Dan) and sales (John) as data rows (not selectable yet).
 #   Bias        BIAS[cast name]: free floors and creation caps that cost no points, so a cast member stays himself.
 #   Budget      BUDGET by Difficulty tier (12 normal, 15 easy, 9 hard), cumulative COST 1/2/4/7/11 per level, at most 4
 #               at creation and only one stat at 4, MAX_TOTAL levels in all. Quirks give or cost points.
@@ -56609,7 +56610,7 @@ const BIAS := {
     "Alan": {"floor": {"technical": 2}, "cap": {"sales": 2, "culture": 2}},
     "Garrison": {"floor": {"sales": 2, "culture": 2}, "cap": {"technical": 2}},
     "Dan": {"floor": {"process": 2, "dispatch": 1}, "cap": {"people": 2, "relations": 2}, "skills": {"networking": 3, "servers": 1}},
-    "Vic": {"floor": {"pitch": 2}, "cap": {}},
+    "John": {"floor": {"pitch": 2}, "cap": {}},
 }
 # owner stat -> what one level above the free floor adds to Owner.edges_for (see the key list in owner.gd)
 const OWNER_FX := {
@@ -56619,7 +56620,7 @@ const OWNER_FX := {
     "culture": {"morale": 1.0, "outing_relief": 0.1},
     "clients": {"qbr": 0.03, "new_mood": 1.0, "poach": -0.004},
 }
-# sales stat -> what one level above Vic's free floor adds (C3). win: win chance; gap: promise gap points (negative = fewer promises
+# sales stat -> what one level above John's free floor adds (C3). win: win chance; gap: promise gap points (negative = fewer promises
 # to keep); price: weekly fee multiplier; renew: renewal chance; churn: weekly churn-meter change after a sale; lead: lead quality
 const SALES_FX := {
     "pitch": {"win": 0.02},
@@ -56659,7 +56660,7 @@ const INFO := {
     "owner": {
         "technical": {"name": "TECHNICAL", "text": "FEWER REOPENED TICKETS AND BREAK-INS. FAILING BACKUPS GET NOTICED SOONER."},
         "finance": {"name": "FINANCE", "text": "FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER."},
-        "sales": {"name": "SALES", "text": "MARKETING WORKS BETTER AND VIC CLOSES MORE."},
+        "sales": {"name": "SALES", "text": "MARKETING WORKS BETTER AND JOHN CLOSES MORE."},
         "culture": {"name": "CULTURE", "text": "A HAPPIER CREW, BIGGER RELIEF FROM OUTINGS AND MORE TRUST FROM YOUR PARTNER."},
         "clients": {"name": "CLIENTS", "text": "BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED."},
     },
@@ -56692,7 +56693,7 @@ const PRESETS := {
         {"id": "hirer", "name": "HIRER", "quirks": [], "steps": ["clients", "clients", "culture", "culture", "technical", "technical", "clients", "finance", "technical", "finance"], "text": "YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS."},
     ],
     "owner_garrison": [
-        {"id": "brand", "name": "BRAND BUILDER", "quirks": [], "steps": ["sales", "sales", "sales", "clients", "clients", "finance", "technical", "finance", "clients", "technical"], "text": "MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE."},
+        {"id": "brand", "name": "BRAND BUILDER", "quirks": [], "steps": ["sales", "sales", "sales", "clients", "clients", "finance", "technical", "finance", "clients", "technical"], "text": "MARKETING WORKS HARD FOR YOU AND JOHN CLOSES MORE."},
         {"id": "people_first", "name": "PEOPLE FIRST", "quirks": [], "steps": ["culture", "culture", "culture", "clients", "clients", "finance", "technical", "clients", "finance", "technical"], "text": "A HAPPY CREW AND A TRUSTING PARTNER. THE NUMBERS FOLLOW, MAYBE."},
         {"id": "closer", "name": "CLOSER", "quirks": [], "steps": ["clients", "clients", "clients", "finance", "finance", "sales", "sales", "technical", "finance", "clients"], "text": "REVIEWS GO WELL, FEES GO UP, NEW CLIENTS START HAPPY."},
     ],
@@ -57046,14 +57047,14 @@ func _owner_up(stat: String) -> int:
     return level_of(b, stat, Campaign.player_as) - floor_of(stat, Campaign.player_as)
 
 
-# levels of one sales stat above Vic's free floor (0 for a flat build and outside the sales campaign)
+# levels of one sales stat above John's free floor (0 for a flat build and outside the sales campaign)
 func sales_up(stat: String) -> int:
     if Campaign.mode != "sales":
         return 0
     var b := cur()
     if is_flat(b):
         return 0
-    return level_of(b, stat, "Vic") - floor_of(stat, "Vic")
+    return level_of(b, stat, "John") - floor_of(stat, "John")
 
 
 # the sum of one sales effect key: every stat's levels above the floor plus the quirks (0.0 for the flat build, so old runs are unchanged)
@@ -58228,7 +58229,7 @@ func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float)
 
 write("scripts/sales_campaign.gd", '''extends Node
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
-# The sales campaign as Vic (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
+# The sales campaign as John (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
 # April to August 2014, 4 real minutes a week. The company runs on autopilot behind you (the crew works the queue, light books);
 # you sell. A week has SLOTS selling hours (the clock hours 9:00-17:00): a call or a quote costs an hour, a visit costs the drive
 # plus the meeting. Leads arrive as cards from a seeded stream (Difficulty.rng("leads")), live in a small pipeline (the SalesHound
@@ -58398,7 +58399,7 @@ const BEAT_TEXT := {
             ],
         },
         "res_match": {"speaker": "{tech_owner}", "text": "You matched them. Twenty percent off. I hope somebody enjoys the logo, because the margin is gone."},
-        "res_value_win": {"speaker": "{sales_owner}", "text": "You walked them through the backups and the response numbers and they signed at the full fee. That is the Vic I hired."},
+        "res_value_win": {"speaker": "{sales_owner}", "text": "You walked them through the backups and the response numbers and they signed at the full fee. That is the John I hired."},
         "res_value_lose": {"speaker": "{sales_owner}", "text": "They like you, but the price won. ByteBrothers took %s. It happens."},
         "res_walk": {"speaker": "{tech_owner}", "text": "Good. A deal that loses money is worse than a deal we lose. Next one."},
     },
@@ -58487,10 +58488,10 @@ const BEAT_TEXT := {
     "logo": {
         "lynk": {"from": "Garrison", "text": "Harborview Dental Partners has eleven offices and wants one provider. That is the biggest logo we have ever seen. Please do not mess this up."},
         "lynk_alan": {"from": "Alan", "text": "I saw the Harborview numbers. I do not sign deals that lose money on the first invoice."},
-        "garrison": {"speaker": "{sales_owner}", "text": "Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, Vic. A logo opens doors.", "ok": "WHAT DOES ALAN SAY?"},
+        "garrison": {"speaker": "{sales_owner}", "text": "Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, John. A logo opens doors.", "ok": "WHAT DOES ALAN SAY?"},
         "alan": {"speaker": "{tech_owner}", "text": "Thirty percent off puts that account at %d percent margin. My floor is %d. I will not sign a deal that costs us money to deliver. It is a logo, not a living.", "ok": "I HEAR YOU BOTH"},
         "pick": {
-            "speaker": "Vic Marlowe",
+            "speaker": "John Marlowe",
             "text": "Two owners, one account, and a prospect who wants an answer by Friday. Whose side are you on?",
             "options": [
                 {"id": "garrison", "label": "GARRISON: TAKE THE LOGO AT 30% OFF"},
@@ -58522,7 +58523,7 @@ const BEAT_TEXT := {
     "recruit": {
         "card": {
             "speaker": "Trent Dagmar",
-            "text": "Vic. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
+            "text": "John. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
             "options": [
                 {"id": "leave", "label": "GIVE NOTICE: I AM TAKING THE JOB"},
                 {"id": "counter", "label": "TELL GARRISON, ASK FOR A RAISE"},
@@ -58534,7 +58535,7 @@ const BEAT_TEXT := {
         "res_counter_yes": {"speaker": "{sales_owner}", "text": "ByteBrothers called you? Of course they did. You have been the best thing to happen to this company in a year. I can do one hundred more a week and a title. Stay."},
         "res_counter_no": {"speaker": "{sales_owner}", "text": "I would love to match them. I cannot, not this quarter. I hope you understand. The door is not locked."},
         "res_both_caught": {"speaker": "{sales_owner}", "text": "Trent Dagmar mentioned at the Chamber breakfast that you were on his shortlist. He thought I knew. I did not know. We will talk about trust."},
-        "res_decline": {"speaker": "{sales_owner}", "text": "You said no to ByteBrothers? To their face? Vic, I will not forget that. Neither will Alan, though he will never say so."},
+        "res_decline": {"speaker": "{sales_owner}", "text": "You said no to ByteBrothers? To their face? John, I will not forget that. Neither will Alan, though he will never say so."},
     },
     "diligence": {
         "lynk": {"from": "Garrison", "text": "Summit Managed Holdings is looking at buying us. Their auditor comes Thursday. Be charming and be accurate, in that order if you must."},
@@ -58588,9 +58589,9 @@ const BEAT_TEXT := {
             "text": "Rex Calloway from Big Cheese sat at the next table and told everyone business is booming. He has forty-one five-star reviews on Yowl, and I hear most of them come from accounts that review nothing else. Do something with that, or do not.",
             "options": [{"id": "flyer", "label": "READ HIS FLYER, ASK AROUND (1 HOUR)"}, {"id": "friend", "label": "SHAKE HIS HAND, HE SEEMS NICE"}, {"id": "ignore", "label": "IGNORE HIM"}],
         },
-        "res_flyer": {"speaker": "Vic", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
+        "res_flyer": {"speaker": "John", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
         "res_friend": {"speaker": "Rex Calloway", "text": "Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a cookie. Garrison thinks it was good manners. Alan thinks you have just met the competition.", "ok": "OK"},
-        "res_ignore": {"speaker": "Vic", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
+        "res_ignore": {"speaker": "John", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
     },
     "flat": {
         "lynk": {"from": "Garrison", "text": "A prospect says Big Cheese quoted a flat price and our quote looks complicated. Call them back before they sign it."},
@@ -58607,7 +58608,7 @@ const BEAT_TEXT := {
         "res_tiers": {"speaker": "Prospect", "text": "GOOD, BETTER, BEST, one line each, and a box for what is NOT included. She circles BETTER. Set PRESENTED AS to 3 TIERS in the quote builder.", "ok": "GOOD"},
         "res_match": {"speaker": "Prospect", "text": "She signs in a day, if you send it. Alan shows you the margin. Nothing is in writing about what is left out, and you both know it.", "ok": "OK"},
         "res_lines": {"speaker": "Prospect", "text": "You read thirty-one lines. By line fourteen you both agree the list is the problem. She trusts you a little more.", "ok": "OK"},
-        "res_walk": {"speaker": "Vic", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
+        "res_walk": {"speaker": "John", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
     },
     "assess": {
         "lynk": {"from": "Garrison", "text": "A dental office on Pine Road is unhappy with Big Cheese. Call them, then press ASSESS in SalesHound. An hour in their closet finds what Rex left out."},
@@ -58621,7 +58622,7 @@ const BEAT_TEXT := {
     "laundered": {
         "lynk": {"from": "Garrison", "text": "A woman called Gwen phoned for you. She knows our rates and our dispatcher's name. Odd."},
         "card": {
-            "speaker": "Vic's phone",
+            "speaker": "John's phone",
             "text": "A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP at the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us.",
             "options": [
                 {"id": "take", "label": "TAKE THE MEETING, SHE IS A GOOD LEAD"},
@@ -58629,9 +58630,9 @@ const BEAT_TEXT := {
                 {"id": "tell", "label": "WARN THE DENTAL OFFICE, FOR FREE"},
             ],
         },
-        "res_take": {"speaker": "Vic", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
-        "res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
-        "res_tell": {"speaker": "Vic", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
+        "res_take": {"speaker": "John", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
+        "res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. John goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
+        "res_tell": {"speaker": "John", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
     },
     "plumb": {
         "lynk": {"from": "Garrison", "text": "Plumb Line Technology has been sitting on a proposal for six weeks. The prospect wants a second opinion from us. Hollis Grady is a careful man."},
@@ -59699,7 +59700,7 @@ func outing_done(game: String, stars: int) -> Array:
 
 # ---- the sales bell ----------------------------------------------------------------------------------
 func ring_bell(fx: Node) -> bool:
-    if not (in_mode() and Campaign.player_as == "Vic"):
+    if not (in_mode() and Campaign.player_as == "John"):
         return false
     if not bell_ready:
         Hints.toast("NO DEAL TO CELEBRATE YET. CLOSE ONE.", 2.5)
@@ -59921,7 +59922,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["STORY: " + story_summary(), ink])
             lines.append([SalesRival.lies_line(), bad if (SalesRival.lies() > 0 or not SalesRival.conscience_ok()) else ink])
             if not Build.is_flat(Build.cur()):
-                lines.append([Build.describe(Build.cur(), "sales", "Vic"), ink])
+                lines.append([Build.describe(Build.cur(), "sales", "John"), ink])
             lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
         1:
             lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])
@@ -60036,10 +60037,10 @@ func from_dict(data: Dictionary) -> void:
 write("scripts/sales_beats.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
 # The story beats of the sales campaign (roadmap C3; docs/campaign-paths.md section 5.5). One beat a week on a few weeks: a chain of
-# Cards with Vic's choices, each one using an engine the campaign already has (cards, the quote close, the handover, the QBR visit,
+# Cards with John's choices, each one using an engine the campaign already has (cards, the quote close, the handover, the QBR visit,
 # Lynk, outings, Social). Static functions; the state is SalesCampaign.flags (saved) and the text is SalesCampaign.BEAT_TEXT (patchable in
 # story/strings.txt). Voices: Garrison is charming and wants the logo, Alan is gruff and wants the margin, Morgan and Dan are the
-# delivery gate, Vic (you) is the salesman with the tie whose choices over-promise or do not.
+# delivery gate, John (you) is the salesman with the tie whose choices over-promise or do not.
 
 const Deals := preload("res://scripts/deals.gd")
 const Retention := preload("res://scripts/retention.gd")
@@ -60779,7 +60780,7 @@ static func bb_signed() -> bool:
 
 write("scripts/sales_rival.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
-# R38 P5: the rival and good-habit hooks of Vic's sales campaign (docs/scope-bad-habits.md sections 2.5 and 6). A static helper (no state
+# R38 P5: the rival and good-habit hooks of John's sales campaign (docs/scope-bad-habits.md sections 2.5 and 6). A static helper (no state
 # of its own): the state lives on the lead dictionaries (incumbent, inc_seen, findings, assessed, rumour, lie ...), on the book entries
 # (honest, lie, takeover, scorecard) and in SalesCampaign.flags, so it saves with the campaign. Conscience is Owner.consc through
 # Temptation (words only, never a number). The text of the beats is SalesCampaign.BEAT_TEXT (patchable in story/strings.txt).
@@ -60991,7 +60992,7 @@ static func form_blocks(l: Dictionary, n: Dictionary) -> Array:
 			if flat_rival(l) and not Habits.fresh("H2"):
 				out.append(
 					{
-						"who": "VIC",
+						"who": "JOHN",
 						"text": "THIRTY-ONE LINES ARE THIRTY-ONE DOORS TO CUT. TRY THREE TIERS.",
 						"hard": false
 					}
@@ -61008,7 +61009,7 @@ static func form_blocks(l: Dictionary, n: Dictionary) -> Array:
 			if not Habits.fresh("H2"):
 				out.append(
 					{
-						"who": "VIC",
+						"who": "JOHN",
 						"text": "NO SCORECARD BEHIND THE PAGE YET. IT IS GUESSWORK.",
 						"hard": false
 					}
@@ -61064,7 +61065,7 @@ static func assess(id: int) -> String:
 		% [str(l.name), ids.size(), finding_names(ids)]
 	)
 	Cards.ask(
-		"Vic (your notes)",
+		"John (your notes)",
 		text,
 		[
 			{"label": "WRITE UP THE HONEST LIST", "id": "honest"},
@@ -63799,7 +63800,7 @@ static func paint_app(cp) -> void:
 
 write("scripts/crm.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
-# The SalesHound CRM (sales campaign, slice S1): a desktop app for Vic that lists the pipeline and lets you work a lead. It is a
+# The SalesHound CRM (sales campaign, slice S1): a desktop app for John that lists the pipeline and lets you work a lead. It is a
 # simple read-and-move list: the tabs filter by stage (LEAD / MEETING / QUOTED / WON / LOST), Up / Down pick a lead, and the
 # buttons (or C / V / Q / D) call, visit, quote or drop it. A call and a quote cost one selling hour each (SalesCampaign.spend),
 # a visit drives you to their office. C2 adds: F (CHASE) follows a deal up, U (UPSELL) sells a service to a won client, I (INFO) flips
@@ -64326,7 +64327,7 @@ const SWATCHES := {
     "pants": ["3a3f66", "2b3550", "3f5e8e", "8a6a42", "2a2a33", "6a6f7a", "5a4a3a", "7a3030"],
     "shoes": ["5a3522", "2a2a33", "8a8f9a", "cfc8b5", "3a3a44", "7a2020", "2f4a73", "6e7a68"],
 }
-# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, Vic, Maya, Morgan) or the crew (Sam, Terry)
+# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, John, Maya, Morgan) or the crew (Sam, Terry)
 const NAMES := [
     "JAMIE",
     "CASEY",
@@ -66737,7 +66738,7 @@ const ON_SHOW := {
 const DECIDES := {"rival_2fa": "R03", "rival_vendor_audit": "R06", "rival_exposed": "R09"}
 # habits a vendor can act on (REPORT TO THE VENDOR needs PROVEN)
 const VENDOR_HABITS := ["R04", "R06"]
-# habits Vic can hear about at the Chamber lunch (the rest come from visits, notebooks and letters)
+# habits John can hear about at the Chamber lunch (the rest come from visits, notebooks and letters)
 const INTEL_POOL := ["R09", "R10", "R08", "R07", "R06", "R05", "R03", "R01"]
 const INTEL_WEEKS := [3, 6, 9, 12, 14]
 const RELABEL_FROM := 6  # from this week half the price and gap poaches are Big Cheese (the label changes, never the number of rolls)
@@ -66978,7 +66979,7 @@ static func _decide(owner: Node, kind: String, habit: String) -> void:
 
 
 # ---- channels (other files call these) ----------------------------------------------------------------------------
-# Vic hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
+# John hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
 # Always draws the same two numbers, so the stream stays in step whatever the player did.
 static func intel(rival: String) -> String:
 	var r := Difficulty.rng("rival")
@@ -66997,7 +66998,7 @@ static func intel(rival: String) -> String:
 	var habit: String = pool[pick % pool.size()]
 	set_rap(rival, habit, RUMOUR)
 	Msp.send_text(
-		"Vic",
+		"John",
 		(
 			"Heard at the Chamber lunch, only a rumour: %s. %s."
 			% [str(RIVALS[rival].name), str(HABITS[habit].name)]
@@ -69175,14 +69176,14 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "{sales_owner}",
 		"text":
-		"{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal.",
+		"{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. John ate two of his cookies and says the price is a steal.",
 		"options":
 		[
 			{
-				"label": "LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)",
+				"label": "LOOK UP WHAT $39 A SEAT BUYS ($0, JOHN ASKS AROUND)",
 				"fx": {"rap": ["bigcheese", "R11", 1]},
 				"text":
-				"Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
+				"John calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
 			},
 			{
 				"label": "PRINT A ONE PAGE COMPARISON ($120)",
@@ -69195,7 +69196,7 @@ const DEFAULT_CARDS := {
 				"label": "DROP YOUR PRICE TO MATCH",
 				"fx": {"price": -0.10, "skel": ["temp_price", 6], "consc": -2},
 				"text":
-				"Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
+				"John is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
 			},
 			{
 				"label": "IGNORE HIM, HE WILL BE GONE BY JULY",
@@ -69206,16 +69207,16 @@ const DEFAULT_CARDS := {
 	},
 	"rival_wall":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Look at Big Cheese on Yowl. Forty-one five-star reviews. I clicked through them: thirty-eight come from accounts that have never reviewed anything else, and four were posted the same afternoon. There is a new billboard on the county road too: WE DO IT ALL FOR $39 A SEAT. BOOKED SOLID.",
 		"options":
 		[
 			{
-				"label": "HAVE VIC LOOK AT WHO WROTE THEM",
+				"label": "HAVE JOHN LOOK AT WHO WROTE THEM",
 				"fx": {"rap": ["bigcheese", "R09", 1]},
 				"text":
-				"Vic asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour."
+				"John asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour."
 			},
 			{
 				"label": "ASK THREE HAPPY CLIENTS FOR A REAL REVIEW",
@@ -69233,7 +69234,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "IGNORE IT, REVIEWS DO NOT PAY THE BILLS",
 				"fx": {},
-				"text": "Garrison nods. Vic frowns at the billboard every time he drives past it."
+				"text": "Garrison nods. John frowns at the billboard every time he drives past it."
 			},
 		],
 	},
@@ -69432,7 +69433,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_exposed":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"A LabRat Nerds thread went up overnight called FIVE STARS FROM NOBODY, and the county paper has a blurb on page six: forty-one reviews, thirty-eight from accounts with no other history. Rex deleted the thread by noon. The Chamber lunch was very quiet today.",
 		"options":
@@ -69441,7 +69442,7 @@ const DEFAULT_CARDS := {
 				"label": "STAY OUT OF IT AND LET THE PAPER DO ITS JOB",
 				"fx": {"consc": 1},
 				"text":
-				"Garrison says that is the grown up answer. Vic says it is also the boring one."
+				"Garrison says that is the grown up answer. John says it is also the boring one."
 			},
 			{
 				"label": "SEND THE REPORTER OUR OWN HONEST REVIEWS",
@@ -69459,9 +69460,9 @@ const DEFAULT_CARDS := {
 	},
 	"rival_blitz":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
-		"Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. Vic has three prospects who have already heard it, and two of our clients got the flyer.",
+		"Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. John has three prospects who have already heard it, and two of our clients got the flyer.",
 		"options":
 		[
 			{
@@ -69576,7 +69577,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_counter":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Rex told the whole Chamber lunch you are going around saying things about him. It is half true, which is why it travels. Two prospects went quiet this week.",
 		"options":
@@ -69617,7 +69618,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_end":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Big Cheese sold the book to an outfit from out of town. Rex shook every hand at the Chamber lunch and said he was going to spend more time with his family. A painter was on the county road billboard by Tuesday. It says COMING SOON.",
 		"options":
@@ -69664,7 +69665,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_reboot":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"The printer at {client} needed a reboot. Eight minutes. Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and their clients never ask what it is. I think we could do the same.",
 		"options":
@@ -69673,7 +69674,7 @@ const DEFAULT_CARDS := {
 				"label": "BILL IT AS ADVANCED DIAGNOSTICS ($85)",
 				"fx": {"cash": 85, "weekly": -25, "skel": ["temp_reboot", -1], "consc": -2},
 				"text":
-				"The invoice goes out with the long phrase. Vic grins. Somewhere a bookkeeper reaches for her glasses."
+				"The invoice goes out with the long phrase. John grins. Somewhere a bookkeeper reaches for her glasses."
 			},
 			{
 				"label": "BILL THE EIGHT MINUTES ($20)",
@@ -69691,7 +69692,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_launder":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.",
 		"options":
@@ -69706,7 +69707,7 @@ const DEFAULT_CARDS := {
 				"label": "ASK HER HOW SHE HEARD ABOUT US",
 				"fx": {"rap": ["bigcheese", "R10", 2], "consc": 1},
 				"text":
-				"She mentions a shared mailbox at the dental office. Vic goes quiet, then says he will make a call."
+				"She mentions a shared mailbox at the dental office. John goes quiet, then says he will make a call."
 			},
 			{
 				"label": "TELL THE CLIENT THEIR MAILBOX IS OPEN, FOR FREE",
@@ -69720,7 +69721,7 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "{sales_owner}",
 		"text":
-		"A prospect asked Vic if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.",
+		"A prospect asked John if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.",
 		"options":
 		[
 			{
@@ -69797,7 +69798,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_price":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"I found a dental office that is shopping for IT. Big Cheese quoted them $39 a seat. If we go 25 percent under our price I can sign them tomorrow. Alan did the math on a napkin: the work costs us about 80 percent of what we would charge.",
 		"options":
@@ -69834,7 +69835,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "LET THEM GO",
 				"fx": {},
-				"text": "Vic shrugs. Alan says a client you lose money on is not a client."
+				"text": "John shrugs. Alan says a client you lose money on is not a client."
 			},
 		],
 	},
@@ -69972,7 +69973,7 @@ const DEFAULT_CARDS := {
 	},
 	"bill_temp_launder":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Mrs. Dunning asked me, kindly, how we knew about her server before she called. The answer is the open mailbox at {vname}, and now {vname} knows. {vleave} The Chamber lunch heard about it by noon.",
 		"options":
@@ -69986,7 +69987,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "DENY IT",
 				"fx": {"consc": -1, "rep": -1},
-				"text": "Nobody believes you. Vic stops coming to the Chamber lunch for a week."
+				"text": "Nobody believes you. John stops coming to the Chamber lunch for a week."
 			},
 		],
 	},
@@ -70127,7 +70128,7 @@ static func merged_days(base: Dictionary) -> Dictionary:
 write("scripts/rival_touches.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # R38 P6: the light touches (docs/scope-bad-habits.md section 1, phase P6). A static helper like Rival and Habits, no state of its own.
-# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, Vic and Marge react to the rival and to the player's Standard band and conscience band.
+# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, John and Marge react to the rival and to the player's Standard band and conscience band.
 #   Words only: no numbers, no scores. state_key() picks which line applies; talk_line / lynk_note / marge_line read the tables.
 # - Forum and IRC gating: needs strings of the form "rap:<rival>:<habit>" (optional ":<level>", default 1 = RUMOUR) read the rap sheet.
 # - The tech campaign freezer bag tip, the service campaign green dashboard note (Knowledge), Year 2 (the Standard at 60 percent and a new rival).
@@ -70180,7 +70181,7 @@ const DEFAULT_TALK := {
 		"loose": "A couple of clients have gone quiet. The quiet ones are the ones to call. Start with the ones we shortchanged.",
 		"closet": "If one of these comes out, it will not be the money that hurts. It will be the phone calls. Let me help you make them.",
 	},
-	"Vic":
+	"John":
 	{
 		"rival": "Rex told three prospects we are the expensive option. I told them to ask him what a restore costs. They went quiet. I like quiet.",
 		"bare": "I cannot sell what we do not do. Every habit you add is a line I can say out loud at a meeting.",
@@ -70198,7 +70199,7 @@ const DEFAULT_LYNK := {
 	"Garrison": {"rival": "Rex sent me a basket of cheese. I am not eating it. Do you think it is bugged?", "solid": "A client praised the one page report. Frame it. I mean it.", "loose": "Quick question. Is there anything in the books I should hear from you first?", "closet": "Whatever the folder says, I want to hear it from you today."},
 	"Dan": {"rival": "Another Big Cheese client asked me for a spare key. I did not give it. I thought about it.", "solid": "All the closets are labelled. I took photos. I may have a problem.", "loose": "I found an old shortcut in a closet. Writing it up now, no judgment.", "closet": "I made a list of what we skipped. It has a second page. Sorry."},
 	"Maya": {"rival": "A client says Big Cheese told her we are not bonded. We are. Can I send her the paper?", "solid": "She loved the quarterly page. She asked for two copies.", "loose": "Three clients sounded off today. I think it is about the things we did not tell them.", "closet": "I can call the worried ones tomorrow. I would rather tell them than have them find out."},
-	"Vic": {"rival": "Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.", "solid": "Closed a deal with the one page. The owner said it was the first time anyone showed her what she bought.", "loose": "If anyone asks about a bill, I am telling the truth. Just so you know.", "closet": "I have two deals ready and I am holding them. Say when."},
+	"John": {"rival": "Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.", "solid": "Closed a deal with the one page. The owner said it was the first time anyone showed her what she bought.", "loose": "If anyone asks about a bill, I am telling the truth. Just so you know.", "closet": "I have two deals ready and I am holding them. Say when."},
 	"Marge": {"rival": "I cannot find a single Big Cheese invoice that says what it is for. I do not think that is an accident.", "solid": "The books are tidy this week and so is my desk. I am nervous. Is that normal?", "loose": "There is a folder in my bottom drawer. It is not thick. It is not thin either.", "closet": "The folder does not close any more. We should sit down before the board does it for us."},
 }
 static var LYNK: Dictionary = DEFAULT_LYNK.duplicate(true)

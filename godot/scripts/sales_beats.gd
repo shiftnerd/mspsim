@@ -1,10 +1,10 @@
 extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
 # The story beats of the sales campaign (roadmap C3; docs/campaign-paths.md section 5.5). One beat a week on a few weeks: a chain of
-# Cards with Vic's choices, each one using an engine the campaign already has (cards, the quote close, the handover, the QBR visit,
+# Cards with John's choices, each one using an engine the campaign already has (cards, the quote close, the handover, the QBR visit,
 # Lynk, outings, Social). Static functions; the state is SalesCampaign.flags (saved) and the text is SalesCampaign.BEAT_TEXT (patchable in
 # story/strings.txt). Voices: Garrison is charming and wants the logo, Alan is gruff and wants the margin, Morgan and Dan are the
-# delivery gate, Vic (you) is the salesman with the tie whose choices over-promise or do not.
+# delivery gate, John (you) is the salesman with the tie whose choices over-promise or do not.
 
 const Deals := preload("res://scripts/deals.gd")
 const Retention := preload("res://scripts/retention.gd")

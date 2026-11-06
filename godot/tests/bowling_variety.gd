@@ -151,7 +151,7 @@ func _init() -> void:
 		avg["leagueMorgan"] > avg["rentalMorgan"] + 0.1,
 		"Morgan the precise bowler likes the sport shot (%.2f vs %.2f)" % [avg["leagueMorgan"], avg["rentalMorgan"]]
 	)
-	_check(BV.style_of("Dan") == "power" and BV.style_of("Vic") == "show", "every bowler has a style")
+	_check(BV.style_of("Dan") == "power" and BV.style_of("John") == "show", "every bowler has a style")
 	o.press(KEY_ESCAPE)
 	o.press(KEY_ENTER)
 

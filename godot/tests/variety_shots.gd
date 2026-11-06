@@ -43,7 +43,7 @@ func _process(_delta: float) -> bool:
 			o.enabled = true
 			o.use_rooms = false
 			d.seed_run(12)
-			o.start("bowling", false, {"alley": "league" if c == "bowl_league" else "rental", "party": ["Alan", "Garrison", "Dan", "Vic"]})
+			o.start("bowling", false, {"alley": "league" if c == "bowl_league" else "rental", "party": ["Alan", "Garrison", "Dan", "John"]})
 		elif t == 60 and c == "bowl_intro":
 			_shot(c)
 		elif t == 80 and c != "bowl_intro":

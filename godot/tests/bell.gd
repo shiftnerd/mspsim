@@ -1,5 +1,5 @@
 extends SceneTree
-# The sales bell: a dart rings it, the player cannot reach it, Vic rings it.
+# The sales bell: a dart rings it, the player cannot reach it, John rings it.
 
 var frame := 0
 var failures := 0
@@ -51,24 +51,24 @@ func _process(_delta: float) -> bool:
 	elif phase == 1 and frame == t0 + 40:
 		_check(bell._bell_t > 0.0, "a foam dart rings the bell")
 		var zone := current_scene.get_node_or_null("Interactables/UseSalesBell")
-		_check(zone != null, "Vic can walk up to it (an interact zone)")
+		_check(zone != null, "John can walk up to it (an interact zone)")
 		root.get_node("Hints").toast_text = ""
 		if zone != null:
 			zone.use(player)
 		_check(
 			root.get_node("Hints").toast_text.begins_with("TOO HIGH"), "the player cannot reach it"
 		)
-		root.get_node("Sales").last_deal = "VIC CLOSED ACME DENTAL GROUP!"
+		root.get_node("Sales").last_deal = "JOHN CLOSED ACME DENTAL GROUP!"
 		bell._bell_t = 0.0
 		bell.play()
 		_check(
 			bell._bell_t > 0.0 and root.get_node("Hints").toast_text.contains("ACME"),
-			"Vic's ring says what he sold"
+			"John's ring says what he sold"
 		)
-		# Vic walks up to it and rings it
+		# John walks up to it and rings it
 		bell._bell_t = 0.0
 		var vic: Node = load("res://scenes/npc.tscn").instantiate()
-		vic.character = "sales_vic"
+		vic.character = "office_john"
 		vic.routine = PackedStringArray(["walk:132", "use:salesbell", "wait:2"])
 		vic.position = Vector2(70.0, 118.0)
 		current_scene.get_node("Actors").add_child(vic)
@@ -76,7 +76,7 @@ func _process(_delta: float) -> bool:
 		t0 = frame
 	elif phase == 2:
 		if bell._bell_t > 0.0 or frame > t0 + 600:
-			_check(bell._bell_t > 0.0, "Vic walked over and rang the bell himself")
+			_check(bell._bell_t > 0.0, "John walked over and rang the bell himself")
 			print("failures=", failures)
 			quit(1 if failures > 0 else 0)
 	return false

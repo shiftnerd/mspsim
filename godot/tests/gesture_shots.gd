@@ -46,7 +46,7 @@ func _process(_delta: float) -> bool:
 		return false
 	if frame == 5:
 		var who := [
-			"office_dan", "office_alan", "office_maya", "casual_garrison", "sales_vic", "office_adult"
+			"office_dan", "office_alan", "office_maya", "casual_garrison", "office_john", "office_adult"
 		]
 		var seats := {
 			"main_floor": ["Seat1", "Seat2", "Seat3"],

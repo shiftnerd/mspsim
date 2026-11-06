@@ -156,7 +156,7 @@ func _init() -> void:
 	cards.pick(0)
 	_check(
 		o.stack.hardware == "dellight" and is_equal_approx(vic0 - o.vic_bonus, 0.03),
-		"the hardware special is free, and Vic sells less"
+		"the hardware special is free, and John sells less"
 	)
 	# a brochure changes nothing
 	o.stack.hardware = "hewlitt"

@@ -1213,14 +1213,14 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
 	spawned_today = 0
-	# a desktop sitting in its box: Vic reminds you where the job is, for a few days
+	# a desktop sitting in its box: John reminds you where the job is, for a few days
 	if Campaign.active and project_busy() and int(project.get("since", day)) < day:
 		if int(project.get("nagged", 0)) < 3:
 			project["nagged"] = int(project.get("nagged", 0)) + 1
 			var waiting := ticket(int(project.ticket))
 			if not waiting.is_empty() and waiting.status != "Closed":
 				send_text(
-					"Vic",
+					"John",
 					(
 						"%s is still waiting on the new desktop. Ticket #%d, RMM PROJECT tab on %s."
 						% [CLIENTS[int(project.client)].contact, int(waiting.id), waiting.endpoint]

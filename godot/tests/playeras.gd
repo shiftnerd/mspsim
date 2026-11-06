@@ -100,7 +100,7 @@ func _run() -> void:
 	_check(desk.scene == "office_one" and desk.seat == "Seat1" and c.start_scene() == "office_one", "Alan's desk is Office 1")
 	_check(roles.partner() == "Garrison", "the partner is Garrison")
 	_check(roles.speaker("Alan (Co-owner)") == "Garrison (Co-owner)", "Alan (Co-owner) cards come from the partner")
-	_check(roles.speaker("Vic") == "Vic", "other speakers are unchanged")
+	_check(roles.speaker("John") == "John", "other speakers are unchanged")
 	cards.ask("Alan (Co-owner)", "test", [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 	_check(cards.speaker == "Garrison (Co-owner)", "a card that names you is spoken by the partner")
 	_clear_cards(cards)
@@ -170,9 +170,9 @@ func _run() -> void:
 	_check(not c.active and c.player_as == "Dan", "Free Play as Dan: player_as = Dan")
 	_check(not world.chars.has("Dan") and not social.people().has("Dan"), "the NPC copy is gone, not hidden")
 	_check(world.chars.size() == 5 and outings.roster().size() == 5, "five coworkers remain")
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	c.refresh_free()
-	_check(world.chars.has("Dan") and not world.chars.has("Vic"), "switching character brings Dan back and removes Vic")
+	_check(world.chars.has("Dan") and not world.chars.has("John"), "switching character brings Dan back and removes John")
 	_check(world.chars.has("Maya"), "and Maya is still there")
 	player_script.current_character = "office_intern"
 	c.refresh_free()

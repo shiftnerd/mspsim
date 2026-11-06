@@ -27,10 +27,10 @@ const FX_BOUNDS := {
 }
 const OWNER_ONLY := ["cash", "burnout"]
 const TECH_ONLY := ["xp", "energy"]
-const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "Vic", "Maya"]
+const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "John", "Maya"]
 const NAMES_FOR := {
-	"tech": ["Alan", "Garrison", "Morgan", "Dan", "Vic", "Maya"],
-	"owner": ["Alan", "Garrison", "Marge", "Dan", "Vic"],
+	"tech": ["Alan", "Garrison", "Morgan", "Dan", "John", "Maya"],
+	"owner": ["Alan", "Garrison", "Marge", "Dan", "John"],
 }
 const OWNERS := ["Alan", "Garrison"]
 const BUSY_KINDS := ["vignette", "ransomware", "callback_worst"]
@@ -1962,7 +1962,7 @@ const DEFAULT_DECK := {
 			},
 			{
 				"id": "send",
-				"label": "SEND VIC",
+				"label": "SEND JOHN",
 				"text": "He comes back with three business cards and a story.",
 				"fx": {
 					"cash": -35,

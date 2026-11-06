@@ -327,7 +327,7 @@ func _init() -> void:
 	var out: Array = mu.absent()
 	_check(out.size() == 2, "flu season: two coworkers are out (%s)" % str(out))
 	for who in out:
-		_check(["Dan", "Vic", "Maya"].has(who), "%s is a coworker, never an owner or the manager" % who)
+		_check(["Dan", "John", "Maya"].has(who), "%s is a coworker, never an owner or the manager" % who)
 	world.apply_roster()
 	for who in out:
 		_check(not world.chars.has(who), "%s is not in the building" % who)

@@ -10,18 +10,18 @@ extends Node
 
 signal changed
 
-const ALL := ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
+const ALL := ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]  # everyone who has a row (World.CAST order)
 # Canon: Alan and Garrison are the two OWNERS of Pixel IT Partners (labels only; opinions work the same for everyone)
 const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
 	"Alan": "CO-OWNER",
 	"Garrison": "CO-OWNER",
 	"Dan": "NETWORK TECH",
-	"Vic": "ACCOUNT MANAGER",
+	"John": "ACCOUNT MANAGER",
 	"Maya": "TIER 1",
 	"Morgan": "MANAGER"
 }
-const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "Vic", 2: "Maya", 5: "Morgan"}
+const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const DEFAULT_THANKS := [
 	"thanks for grabbing the phones earlier!",

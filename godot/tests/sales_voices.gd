@@ -1,6 +1,6 @@
 extends SceneTree
 # gdlint:disable=max-line-length
-# Vic's voices in the sales campaign (C3): Talk (greeting, small talk, tips and the "ask" question of each coworker as seen by a salesman)
+# John's voices in the sales campaign (C3): Talk (greeting, small talk, tips and the "ask" question of each coworker as seen by a salesman)
 # and Lynk (messages from the coworkers, presence lines, NEED A HAND). Headless; saves in user://test_*.
 
 var failures := 0
@@ -33,7 +33,7 @@ func _init() -> void:
 	var player_script: GDScript = load("res://scripts/player.gd")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	game.title_mode = false
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	game.busy = false
 	root.get_node("Difficulty").seed_run(31)
 	c.new_game("sales")
@@ -42,7 +42,7 @@ func _init() -> void:
 	sc.book.clear()
 
 	var people := ["Alan", "Garrison", "Dan", "Morgan", "Maya"]
-	_check(people.all(func(p: String) -> bool: return social.people().has(p)) and not social.people().has("Vic"), "you talk to Alan, Garrison, Dan, Morgan and Maya, not to Vic")
+	_check(people.all(func(p: String) -> bool: return social.people().has(p)) and not social.people().has("John"), "you talk to Alan, Garrison, Dan, Morgan and Maya, not to John")
 
 	# ---- greetings in each mood, with the live numbers filled in
 	var tiers := {"friend": 80, "neutral": 0, "cold": -30}
@@ -124,7 +124,7 @@ func _init() -> void:
 	_check("clawbacks" in talk.sales_tip(), "Alan asks why you lost a commission")
 	sc.clawbacks = 0
 
-	# ---- small talk is in Vic's world, not about Vic
+	# ---- small talk is in John's world, not about John
 	talk._who = "Garrison"
 	var pools_ok := true
 	for p in people:
@@ -132,9 +132,9 @@ func _init() -> void:
 		social.rel[p] = 30
 		for _i in 6:
 			var line: String = talk.small_talk()
-			if "I heard Vic" in line:
+			if "I heard John" in line:
 				pools_ok = false
-	_check(pools_ok, "no coworker gossips to Vic about Vic")
+	_check(pools_ok, "no coworker gossips to John about John")
 	var small_ok := true
 	for p in people:
 		var fresh := 0

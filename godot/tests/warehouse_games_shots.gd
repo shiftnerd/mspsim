@@ -37,7 +37,7 @@ func _process(_delta: float) -> bool:
 		campaign.new_game(campaign.FREE)
 		o.enabled = true
 		o.use_rooms = true
-		o.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+		o.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
 	elif t == 150:
 		_shot(id + "_intro")
 		o.press(KEY_ENTER)

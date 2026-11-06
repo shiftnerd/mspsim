@@ -109,7 +109,7 @@ const PLATFORM_WEEKLY := 100
 var projects: Array = []  # {id, client, type, method, price, hw, est, done, weeks, total, creep, scoped, delay, status, net, profit}
 var services := {}  # client -> [service ids]
 var hours_hist := {}  # client -> their last weekly hours
-var wom_weeks := 0  # weeks of bad word of mouth left (Vic's close rate drops)
+var wom_weeks := 0  # weeks of bad word of mouth left (John's close rate drops)
 var enabled := true  # false in the balance harness to measure the campaign without projects and services
 var completed_count := 0
 var completed_profit := 0
@@ -340,7 +340,7 @@ func _quote_card(item: Dictionary) -> void:
 		]
 	)
 	Cards.ask(
-		"Vic Marlowe",
+		"John Marlowe",
 		text,
 		[
 			{"label": "FIXED PRICE ($%d)" % int(q.price), "id": "fixed"},
@@ -354,7 +354,7 @@ func _quote_card(item: Dictionary) -> void:
 
 func _quoted(q: Dictionary, method: String) -> void:
 	if method == "pass":
-		Msp.send_text("Vic", "I told them we are too busy. They were not thrilled.")
+		Msp.send_text("John", "I told them we are too busy. They were not thrilled.")
 		return
 	start_project(q, method)
 	Habits.project()  # R38: H3
@@ -365,7 +365,7 @@ func _quoted(q: Dictionary, method: String) -> void:
 		)
 	elif method == "tm":
 		text += " Time and materials: they pay for what it takes, and they know it."
-	Msp.send_text("Vic", text)
+	Msp.send_text("John", text)
 
 
 func start_project(q: Dictionary, method: String) -> Dictionary:
@@ -573,7 +573,7 @@ func _service_card(item: Dictionary) -> void:
 			"hint": "NEED $%d" % PLATFORM_SETUP
 		}
 	Cards.ask(
-		"Vic Marlowe",
+		"John Marlowe",
 		text,
 		options,
 		func(choice: String) -> void: _service_answer(client, id, choice, platform_missing)
@@ -589,7 +589,7 @@ func _service_answer(client: int, id: String, choice: String, platform_missing: 
 		Owner.flags["backup_service"] = true
 	sell_service(client, id)
 	Msp.send_text(
-		"Vic",
+		"John",
 		(
 			"Signed: %s for %s. Recurring revenue!"
 			% [str(SERVICES[id].label).to_lower(), str(Msp.CLIENTS[client].name)]
@@ -681,7 +681,7 @@ func fire_client(client: int, how: String) -> String:
 func _wom_card(item: Dictionary) -> void:
 	var name: String = Msp.CLIENTS[int(item.client)].name
 	Cards.ask(
-		"Vic Marlowe",
+		"John Marlowe",
 		(
 			"A prospect says %s told them we are hard to work with. It is going around the local business crowd. What do we do?"
 			% name
@@ -706,15 +706,15 @@ func _wom_answer(id: String) -> void:
 			if randf() < 0.5:
 				wom_weeks = maxi(0, wom_weeks - 3)
 				Msp.send_text(
-					"Vic", "The prospect heard me out. Not everybody believes the other side."
+					"John", "The prospect heard me out. Not everybody believes the other side."
 				)
 			else:
-				Msp.send_text("Vic", "The prospect was polite and went with someone else.")
+				Msp.send_text("John", "The prospect was polite and went with someone else.")
 		"check":
 			Owner.cash -= 300
 			wom_weeks = 0
 			Owner._leads += 1
-			Msp.send_text("Vic", "The health check impressed them. They want to talk.")
+			Msp.send_text("John", "The health check impressed them. They want to talk.")
 
 
 func vic_penalty() -> float:

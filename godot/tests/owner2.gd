@@ -168,8 +168,8 @@ func _init() -> void:
 	_check(o._handover.has(signed), "a new client queues a handover decision")
 	o.begin_day(3)
 	_check(
-		cards.is_open and cards.speaker.begins_with("Vic") and cards.text.contains("handover"),
-		"Vic asks about the handover"
+		cards.is_open and cards.speaker.begins_with("John") and cards.text.contains("handover"),
+		"John asks about the handover"
 	)
 	cash0 = o.cash
 	var mood0: int = sales.mood(signed)

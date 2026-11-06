@@ -36,7 +36,7 @@ func _process(delta: float) -> bool:
 				nd.queue_free()
 	if frame == 30 and phase == 0:
 		world.time_scale = 1.0
-		for who in ["Vic", "Morgan", "Dan", "Maya"]:
+		for who in ["John", "Morgan", "Dan", "Maya"]:
 			if world.chars.has(who):
 				var nd: Node = world.chars[who].node
 				if nd != null and is_instance_valid(nd):

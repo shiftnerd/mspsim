@@ -153,7 +153,7 @@ These only work in **Free Play** (not during a campaign):
 
 | KEY | WHAT IT DOES |
 |---|---|
-| `1` to `7` | Swap to one of the stock people: intern, adult, Dan, Alan, Alan on site, Garrison, Vic. |
+| `1` to `7` | Swap to one of the stock people: intern, adult, Dan, Alan, Alan on site, Garrison, John. |
 | `Y` | Change your outfit (the creator opens over the room). |
 | `O` | Take the team out ([Chapter 6](06-after-work.md)). |
 | `` ` `` (backtick) | Cycle a "twist" in the world, such as a themed week. The HUD tags it with a `*`. |

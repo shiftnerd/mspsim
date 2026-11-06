@@ -12,7 +12,7 @@ extends RefCounted
 # The crew throw at a target (the treble 20 for the good ones, the bull for the rest) with an error that falls with their skill.
 # Stars: win by BIG_WIN or more = 3, win = 2, a tie or a loss by less than CLOSE = 1, else 0 (1 at least on cozy Easy, `floor`).
 
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const ROUNDS := 3
 const DARTS := 3
 const BOARD_R := 170.0
@@ -40,7 +40,7 @@ const TEMPERS := {
 	"Garrison": {"skill": 0.5, "streak": 0.12, "wild": 0.0, "show": 0.0},
 	"Dan": {"skill": 0.44, "streak": 0.0, "wild": 0.14, "show": 0.0},
 	"Maya": {"skill": 0.56, "streak": 0.0, "wild": 0.0, "show": 0.0},
-	"Vic": {"skill": 0.48, "streak": 0.0, "wild": 0.0, "show": 0.12},
+	"John": {"skill": 0.48, "streak": 0.0, "wild": 0.0, "show": 0.12},
 }
 const HOUSE := {"skill": 0.5, "streak": 0.0, "wild": 0.0, "show": 0.0}
 

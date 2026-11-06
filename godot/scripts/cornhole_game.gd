@@ -9,10 +9,10 @@ extends RefCounted
 # Where a bag lands (inches on the board, 48 long and 24 wide, the hole 9 in from the far end):
 #   in the HOLE (within HOLE_R of the hole, or on the lip with a coin flip) = 3, on the BOARD = 1, off it = 0.
 # Cancellation scoring: at the end of a round the lower side is taken off the higher side and only the difference scores.
-# You play a different crew member every round in the order Alan, Garrison, Dan, Maya, Vic (only the ones who came), first
+# You play a different crew member every round in the order Alan, Garrison, Dan, Maya, John (only the ones who came), first
 # to `to` points wins. Stars: win by 7 or more = 3, win = 2, loss = 0 (1 on cozy Easy, set by the caller through `floor`).
 
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const BAGS := 4
 const BOARD_LEN := 48.0
 const BOARD_W := 24.0
@@ -38,7 +38,7 @@ const TEMPERS := {
 	"Garrison": {"skill": 0.52, "precise": 1.0, "streak": 0.12, "wild": 0.0, "show": 0.0},
 	"Dan": {"skill": 0.45, "precise": 1.0, "streak": 0.0, "wild": 0.14, "show": 0.0},
 	"Maya": {"skill": 0.58, "precise": 0.9, "streak": 0.0, "wild": 0.0, "show": 0.0},
-	"Vic": {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.12},
+	"John": {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.12},
 }
 const HOUSE := {"skill": 0.5, "precise": 1.0, "streak": 0.0, "wild": 0.0, "show": 0.0}
 

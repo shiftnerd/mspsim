@@ -1,7 +1,7 @@
 extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # R38 P6: the light touches (docs/scope-bad-habits.md section 1, phase P6). A static helper like Rival and Habits, no state of its own.
-# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, Vic and Marge react to the rival and to the player's Standard band and conscience band.
+# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, John and Marge react to the rival and to the player's Standard band and conscience band.
 #   Words only: no numbers, no scores. state_key() picks which line applies; talk_line / lynk_note / marge_line read the tables.
 # - Forum and IRC gating: needs strings of the form "rap:<rival>:<habit>" (optional ":<level>", default 1 = RUMOUR) read the rap sheet.
 # - The tech campaign freezer bag tip, the service campaign green dashboard note (Knowledge), Year 2 (the Standard at 60 percent and a new rival).
@@ -78,7 +78,7 @@ const DEFAULT_TALK := {
 		"closet":
 		"If one of these comes out, it will not be the money that hurts. It will be the phone calls. Let me help you make them.",
 	},
-	"Vic":
+	"John":
 	{
 		"rival":
 		"Rex told three prospects we are the expensive option. I told them to ask him what a restore costs. They went quiet. I like quiet.",
@@ -131,7 +131,7 @@ const DEFAULT_LYNK := {
 		"I can call the worried ones tomorrow. I would rather tell them than have them find out."
 		# who -> state key -> a text they send you (Lynk, owner campaign). Marge is the bookkeeper and has no desk talk, only these.
 	},
-	"Vic":
+	"John":
 	{
 		"rival":
 		"Rex was at the lunch again. Said he is booked solid. Funny, he asked me for a lead.",

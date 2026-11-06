@@ -2670,7 +2670,7 @@ func _board_projects(a: Rect2) -> void:
 	if Projects.projects.is_empty():
 		_text(
 			_clip(
-				"NO PROJECTS YET. VIC BRINGS THEM IN: DESKTOPS, NETWORKS, SERVERS, SECURITY.", limit
+				"NO PROJECTS YET. JOHN BRINGS THEM IN: DESKTOPS, NETWORKS, SERVERS, SECURITY.", limit
 			),
 			Vector2(x, y),
 			Color("46506a")
@@ -2734,7 +2734,7 @@ func _board_team(a: Rect2) -> void:
 	var plan: Dictionary = Owner.VIC_PLANS[Owner.vic_plan]
 	rows.append(
 		[
-			"VIC  %s  $%d/WK + $%d A DEAL" % [plan.label, int(plan.wage), int(plan.per_deal)],
+			"JOHN  %s  $%d/WK + $%d A DEAL" % [plan.label, int(plan.wage), int(plan.per_deal)],
 			Color("6b421c")
 		]
 	)
@@ -2742,7 +2742,7 @@ func _board_team(a: Rect2) -> void:
 	rows.append(
 		[
 			(
-				"VIC DEALS %d  NEW CLIENT MOOD %s"
+				"JOHN DEALS %d  NEW CLIENT MOOD %s"
 				% [Owner.vic_deals, "-" if moods < 0 else "%d%%" % moods]
 			),
 			TXT

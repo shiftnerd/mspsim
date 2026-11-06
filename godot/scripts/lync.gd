@@ -199,7 +199,7 @@ func _ready() -> void:
 	reset()
 
 
-# ---- Vic's Lynk (sales campaign, C3): the coworkers write to the account manager --------------------------------
+# ---- John's Lynk (sales campaign, C3): the coworkers write to the account manager --------------------------------
 const DEFAULT_VIC_MESSAGES := {
 	"lunch": {
 		"text": "Lunch? A few of us are grabbing sandwiches. No shop talk. Okay, a little shop talk.",
@@ -234,7 +234,7 @@ const DEFAULT_VIC_MESSAGES := {
 		"text": "A prospect wants a call back and I am stuck in a meeting. Say we are on it and give them a number that sounds like a price.",
 		"options": [
 			{"label": "SURE", "social": 2, "reply": "Thanks, you are the best."},
-			{"label": "I DON'T QUOTE UNTIL I KNOW THE SCOPE", "social": -1, "reply": "Fair, Vic. Fair. I will step out."},
+			{"label": "I DON'T QUOTE UNTIL I KNOW THE SCOPE", "social": -1, "reply": "Fair, John. Fair. I will step out."},
 		],
 	},
 	"help_Garrison": {
@@ -286,7 +286,7 @@ const DEFAULT_VIC_MESSAGES := {
 			{"label": "NO, I WILL CALL HER", "social": 1, "reply": "That is even better. Call her before lunch."},
 		],
 	},
-	"warn": {"text": "Heads up: #%d (%s) is about to breach its SLA. That client has your number, Vic."},
+	"warn": {"text": "Heads up: #%d (%s) is about to breach its SLA. That client has your number, John."},
 }
 var VIC_MESSAGES: Dictionary = DEFAULT_VIC_MESSAGES.duplicate(true)
 const DEFAULT_VIC_PRESENCE := {

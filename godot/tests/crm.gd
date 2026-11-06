@@ -1,5 +1,5 @@
 extends SceneTree
-# The SalesHound CRM app (sales campaign, S1): it is on Vic's desktop and start menu (and the Boardroom is not), the stage tabs
+# The SalesHound CRM app (sales campaign, S1): it is on John's desktop and start menu (and the Boardroom is not), the stage tabs
 # filter the pipeline, Up / Down / click pick a lead, the buttons and the C / V / Q / D keys call, visit, quote and drop, Enter
 # does the next sensible thing, and the app paints without errors at every format size. Headless; saves in user://test_*.
 

@@ -8,7 +8,7 @@ extends RefCounted
 #   a steady rhythm (about 0.28 to 0.55 s between pushes) is full power; mashing, or the same key twice, is weak
 #   and tires you out; a tired chair (stamina low) gets a weak push, rest while you coast and it comes back.
 #   Props cost seconds (and speed) when you hit them. The finish time is the clock plus the penalties.
-# Rivals (Alan, Garrison, Dan, Maya, Vic) roll down their own lane with a seeded skill and a personality; they dodge the
+# Rivals (Alan, Garrison, Dan, Maya, John) roll down their own lane with a seeded skill and a personality; they dodge the
 # props (or crash into them on purpose, if that is who they are) and never block you.
 
 # ---- the course -----------------------------------------------------------------------------------
@@ -94,17 +94,17 @@ const RACERS := {
 		"lose": "MAYA: I WAS AHEAD FOR A WHOLE HALLWAY!",
 		"start": "MAYA STRETCHES HER CALVES.",
 	},
-	"Vic":
+	"John":
 	{
 		"skill": 0.52,
 		"color": Color("d8c040"),
 		"style": "showboat",
-		"win": "VIC WINS AND SPINS TWICE FOR THE CROWD.",
-		"lose": "VIC: I LET YOU WIN. IT IS GOOD FOR RELATIONSHIPS.",
-		"start": "VIC SPINS ONCE FOR THE CROWD.",
+		"win": "JOHN WINS AND SPINS TWICE FOR THE CROWD.",
+		"lose": "JOHN: I LET YOU WIN. IT IS GOOD FOR RELATIONSHIPS.",
+		"start": "JOHN SPINS ONCE FOR THE CROWD.",
 	},
 }
-const ORDER := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const ORDER := ["Alan", "Garrison", "Dan", "Maya", "John"]
 # the grid: [lane, rows behind the front row] for the five rivals (you start in the middle lane of the front row)
 const GRID := [[0, 0], [2, 0], [1, 1], [0, 1], [2, 1]]
 const ROW_GAP := 26.0

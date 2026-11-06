@@ -45,7 +45,7 @@ const DEFAULT_ARC := {
 		"options":
 		[
 			{"id": "patch", "label": "PATCH FIRST, EMAIL AFTER", "text": "Servers first. The email goes out when the patch list is green. Garrison asked how long that is. I said the afternoon.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "side": "Alan", "mood_c": -2, "flag": "hb_patch", "buff": ["miss", -0.02, 3]}},
-			{"id": "email", "label": "EMAIL THE CLIENTS NOW", "text": "The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to Vic.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "mood_c": 3, "flag": "hb_email"}},
+			{"id": "email", "label": "EMAIL THE CLIENTS NOW", "text": "The email went out before eleven, signed by the desk: we are aware, we are checking, we will report. Garrison forwarded it to John.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "mood_c": 3, "flag": "hb_email"}},
 			{"id": "both", "label": "HOLDING EMAIL AND ORDER", "need": ["hours:1"], "text": "Two lines to the clients: we are checking, you will hear from us by five. And a patch order for Alan: servers, then websites, then desktops. It took an hour. Both of them initialled it.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "side": "both", "hours": 1, "morale": -2, "flag": "hb_both"}},
 		],
 	},
@@ -53,7 +53,7 @@ const DEFAULT_ARC := {
 	{
 		"speaker": "Morgan Reyes (Manager)",
 		"text": {
-			"hb_patch": "Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. Vic is apologising on the phone. Garrison would like you to know he said so.",
+			"hb_patch": "Alan's patch list is green. {n} clients wrote this morning to ask why they heard nothing for a day. John is apologising on the phone. Garrison would like you to know he said so.",
 			"hb_email": "After the email, {n} clients called to ask whether we had patched yet. The honest answer was: not yet. Alan has been quiet about the email, which is worse than loud.",
 			"hb_both": "The holding email worked. The clients got the patch report at five and two of them said thank you. Alan and Garrison both asked for a copy of the template.",
 			"none": "Heartbleed week is a long one. The certificate checks are still coming in. Keep writing down what you checked.",
@@ -113,7 +113,7 @@ const DEFAULT_ARC := {
 		"options":
 		[
 			{"id": "full", "label": "HONOUR IT: FULL SERVICE", "text": "Two hours, full service, the logo goes on the wall. I added their tickets to the board and I will report the hours every Friday.", "fx": {"trust": {"Garrison": 6, "Alan": -5}, "side": "Garrison", "mood_c": 4, "buff": ["issues", 1.05, 4], "morale": -2, "flag": "logo_full"}},
-			{"id": "std", "label": "STANDARD SLA, STANDARD RULES", "text": "Standard response, standard rules. The discount buys the logo, not the queue. Vic will tell them kindly.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "side": "Alan", "mood_c": -3, "flag": "logo_std"}},
+			{"id": "std", "label": "STANDARD SLA, STANDARD RULES", "text": "Standard response, standard rules. The discount buys the logo, not the queue. John will tell them kindly.", "fx": {"trust": {"Alan": 6, "Garrison": -5}, "side": "Alan", "mood_c": -3, "flag": "logo_std"}},
 			{"id": "broker", "label": "BROKER A TWO YEAR DEAL", "need": ["trust2:40", "hours:1"], "text": "The discount stands if they sign two years and a scope page. Garrison keeps the logo, Alan keeps the margin. Both of them asked me to write it down.", "fx": {"trust": {"Alan": 3, "Garrison": 3}, "side": "both", "hours": 1, "flag": "logo_broker"}},
 		],
 	},
@@ -124,7 +124,7 @@ const DEFAULT_ARC := {
 		"options":
 		[
 			{"id": "cut", "label": "CUT TRAINING AND EXTRA HOURS", "text": "Training stops and the extra hours are by approval only. I told the crew myself, before the rumour.", "fx": {"trust": {"Alan": 5, "Garrison": -4}, "side": "Alan", "training": "none", "morale": -4, "retain_all": -1, "flag": "cut_training"}},
-			{"id": "keep", "label": "NO CUTS: BRING THE REVENUE", "text": "No cuts this month. Vic and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "morale": 2, "conf": -1, "flag": "no_cut"}},
+			{"id": "keep", "label": "NO CUTS: BRING THE REVENUE", "text": "No cuts this month. John and Garrison bring a signed deal, or the list comes back. Morgan wrote the date in her notebook.", "fx": {"trust": {"Garrison": 5, "Alan": -4}, "side": "Garrison", "morale": 2, "conf": -1, "flag": "no_cut"}},
 			{"id": "small", "label": "A SMALLER, FAIR CUT", "need": ["doc:25", "hours:1"], "text": "Training drops to light, the pod stipends stay, and I attached the cost per ticket to the proposal. Alan and Garrison each lost something.", "fx": {"trust": {"Alan": 2, "Garrison": 2}, "side": "both", "hours": 1, "training": "light", "flag": "cut_small"}},
 		],
 	},
@@ -191,7 +191,7 @@ const DEFAULT_JOB_BOOKS := {
 		[
 			{
 				"title": "DISCOVERY",
-				"text": "Iron Mule Demolition has two trailers, nine users and no documentation at all. Vic promised them they would be live in a day. Where do you start?",
+				"text": "Iron Mule Demolition has two trailers, nine users and no documentation at all. John promised them they would be live in a day. Where do you start?",
 				"choices":
 				[
 					{"label": "WALK THE SITE WITH THE FOREMAN", "secs": 8.0, "pts": 20, "hours": 1.0, "flag": "walked", "note": "Two trailers, a hub under a desk and a printer nobody owns. Everything is on your clipboard."},
@@ -304,7 +304,7 @@ const DEFAULT_QUESTIONS := {
 	"Garrison":
 	[
 		{"text": "How are our clients feeling this week? Not the dashboard. The real answer. Mood is {mood} on the sheet and I know it is not the same thing.", "options": [{"label": "BIG THREE HAPPY, ONE WATCHING", "reply": "Which one is watching? I will take them to lunch.", "fx": {"trust": {"Garrison": 2}}}, {"label": "THEY WANT FASTER ANSWERS", "reply": "Faster is a feeling. I can sell a feeling.", "fx": {"trust": {"Garrison": 1}}}, {"label": "THE NUMBERS ARE FINE", "reply": "The numbers are always fine. Then someone leaves.", "fx": {"trust": {"Garrison": -1}}}]},
-		{"text": "If Vic brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.", "options": [{"label": "ONE MORE CLIENT, NOT TWO", "reply": "One. I will pick the good one.", "fx": {"trust": {"Garrison": 2}}}, {"label": "ASK ME FIRST, ALWAYS", "reply": "Ask first. Fine. I will try.", "fx": {"trust": {"Garrison": -1, "Alan": 1}}}, {"label": "YES, AND WE FIND THE HOURS", "reply": "That is what I like about you, Dan. Mostly.", "fx": {"trust": {"Garrison": 2, "Alan": -1}}}]},
+		{"text": "If John brings me a deal tomorrow that needs a yes in an hour, can I say yes? Tell me honestly what the desk can carry.", "options": [{"label": "ONE MORE CLIENT, NOT TWO", "reply": "One. I will pick the good one.", "fx": {"trust": {"Garrison": 2}}}, {"label": "ASK ME FIRST, ALWAYS", "reply": "Ask first. Fine. I will try.", "fx": {"trust": {"Garrison": -1, "Alan": 1}}}, {"label": "YES, AND WE FIND THE HOURS", "reply": "That is what I like about you, Dan. Mostly.", "fx": {"trust": {"Garrison": 2, "Alan": -1}}}]},
 		{"text": "The team is the company. Are they happy? When did you last do a one on one?", "options": [{"label": "THIS WEEK, WITH EVERYONE", "reply": "Good. Keep it up. People remember being asked.", "fx": {"trust": {"Garrison": 2}}}, {"label": "MAYA YES, THE REST NOT YET", "reply": "Do the rest. Today if you can.", "fx": {}}, {"label": "THE BOARD TAKES MY DAY", "reply": "The board will still be there tomorrow. People will not always be.", "fx": {"trust": {"Garrison": -1}}}]},
 	],
 	"Morgan":
@@ -324,7 +324,7 @@ const DEFAULT_VOICES := {
 		"Sam": ["The password resets are fine. It is when they call twice that I get nervous.", "I read the runbook for spooler problems on the train. I did not know you could do that.", "Terry lent me his good headset. Now I have to be good.", "Do you think I could do tier two one day? Not now. One day."],
 		"Terry": ["I have been doing this for eleven years. I have never had a manager who asked what I thought.", "The pager is not the problem. It is the not knowing when.", "Somebody should label that rack at Gnarly. I would. If anyone asked me.", "Quiet day. I do not trust quiet days."],
 		"hire": ["Is it always this busy? I am not complaining. I am just taking notes.", "The runbooks are good. At my last job we had a binder. Nobody knew where it was.", "I do not want to be the new guy twice. Can I take a ticket on my own today?", "Everyone here says please. It is unsettling."],
-		"Vic": ["Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?", "I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.", "Between us: I promise what I think you can deliver. Mostly.", "If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it."],
+		"John": ["Dan, buddy. The prospect wants a two hour response. I said we are flexible. Are we flexible?", "I told them you are the most careful man in the building. They did not hear 'careful'. They heard 'expensive'.", "Between us: I promise what I think you can deliver. Mostly.", "If you ever want to sit in on a pitch, you can be the quiet one. You would be good at it."],
 		"Morgan": ["Alan and Garrison were in my office again. They wanted me to settle something. I told them to ask you.", "Your scorecard is the first one I read in the morning. Do not let that go to your head.", "If you need something, ask on Friday. If it is on fire, ask now.", "I was a tech once. I miss the part where nobody asked me about budgets."],
 		"Alan": ["I had a client ask if we were 'doing the Heartbleed thing'. I said no. We were doing the whole thing.", "Documentation is the only part of this job that is still there on Monday.", "When this desk is quiet I know it is working. Do not tell Garrison.", "A good process is boring. I am trying to get everything boring."],
 		"Garrison": ["I brought donuts to Brightside this morning. They asked about the SLA. Then they ate the donuts.", "People remember how fast you answered, not how right you were. I am half joking.", "Alan thinks I only care about logos. I care about clients. The logo is just where they put their name.", "If you ever want a bigger desk, bring me a number and a plan."],
@@ -335,7 +335,7 @@ const DEFAULT_VOICES := {
 		"Sam": ["I wait too long before I tell you I am stuck. Ask me at noon, not at four.", "Terry is stuck on the pager more than anyone says. He will not tell you. You have to ask."],
 		"Terry": ["Never assign Sam a server ticket on a Monday. He doubts himself. Give him a password reset first.", "The best runbooks are the ones the author did not want to write. Ask who hated a ticket."],
 		"hire": ["The first week I was afraid to ask. A runbook is somebody saying it is okay to not know.", "I do my best work when I know who to ask. Tell me who to ask."],
-		"Vic": ["Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.", "Tell me what the desk can really take. I would rather lose a deal than lie to a client."],
+		"John": ["Garrison cares about the clients who threaten to leave. Alan about the ones who never complain. They are not the same list.", "Tell me what the desk can really take. I would rather lose a deal than lie to a client."],
 		"Morgan": ["Both owners trust you when you tell them no with a number. Neither trusts you when you say yes with a feeling.", "Bring me a plan on Friday, not a problem."],
 		"Alan": ["If a page in the knowledge base is more than a month old, assume it is wrong. Systems change.", "A tech who is stuck does not need rescue. They need a page."],
 		"Garrison": ["Clients like to hear a name. Give them one tech who knows them.", "Do something nice for the crew this week. It always shows in the numbers a month later."],
@@ -346,7 +346,7 @@ const DEFAULT_VOICES := {
 			{"text": "Dan, can I take the next server ticket? I have been reading about it.", "options": [{"label": "YES, I WILL WATCH", "social": 2, "morale": 3, "reply": "Thanks! I will write down what I did."}, {"label": "NOT TODAY, THE QUEUE IS HOT", "social": 0, "reply": "Okay. Tomorrow?"}]},
 			{"text": "The reset runbook is out of date. The new rules say twelve characters. Do you want me to fix it?", "options": [{"label": "YES, PLEASE", "social": 2, "reply": "On it. I will tag you for the review."}, {"label": "LET ME DO IT TONIGHT", "social": 0, "reply": "Okay, I will leave it."}]},
 		],
-		"Vic": [
+		"John": [
 			{"text": "Garrison wants me to promise the prospect a two hour response. Can the desk do two hours?", "options": [{"label": "FOUR HOURS, TWO FOR URGENT", "social": 1, "reply": "Four and two. I will make it sound like a feature."}, {"label": "ASK ME AFTER THE AUDIT", "social": 0, "reply": "After the audit. Noted."}]},
 			{"text": "Heads up: a client is unhappy and has my number on speed dial. I am sending them to you.", "options": [{"label": "SEND THEM, I WILL CALL BACK", "social": 2, "reply": "You are a good man, Dan."}, {"label": "WRITE IT DOWN, I WILL CHECK", "social": 0, "reply": "I wrote it on a napkin. It is fine."}]},
 		],
@@ -945,11 +945,11 @@ func _onboard_card() -> void:
 	var d := _details("onboard")
 	d["client_i"] = client
 	d["client"] = str(Msp.CLIENTS[client].name)
-	var promise := "Vic promised them they would be live in a day, and Garrison repeated it at the handshake."
+	var promise := "John promised them they would be live in a day, and Garrison repeated it at the handshake."
 	if str(picks.get("m2", "")) == "a":
 		promise = "You told Garrison yes to one day in the memo, and it is on the contract."
 	elif str(picks.get("m2", "")) == "b":
-		promise = "You asked for a survey first. Vic had already promised a day, so he is nervous."
+		promise = "You asked for a survey first. John had already promised a day, so he is nervous."
 	var inc: Dictionary = Service.INCIDENTS.onboard
 	var text := "%s signs today. %s They have no network diagram, no passwords list and a server nobody has named. Who takes the onboarding?" % [str(d.client), promise]
 	var options := [

@@ -45,7 +45,7 @@ func _pick_id(cards: Node, id: String, rest := true) -> bool:
 
 
 func _start(seed_value := 4242) -> void:
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
 	root.get_node("Difficulty").seed_run(seed_value)
@@ -537,23 +537,23 @@ func _init() -> void:
 	var gap0: float = sc.promise_gap(lead_p, qq)
 	var price0: int = sc.quote_price(lead_p, qq)
 	_check(is_zero_approx(build.sales_fx("win")) and is_zero_approx(build.sales_fx("gap")), "a flat build changes nothing")
-	var smooth: Dictionary = build.apply_preset("sales", "Vic", "normal", "smooth")
+	var smooth: Dictionary = build.apply_preset("sales", "John", "normal", "smooth")
 	c.build = smooth
-	_check(build.sales_up("negotiation") >= 2 and build.sales_up("pitch") >= 1, "SMOOTH TALKER: negotiation %d, pitch +%d" % [build.level_of(smooth, "negotiation", "Vic"), build.sales_up("pitch")])
+	_check(build.sales_up("negotiation") >= 2 and build.sales_up("pitch") >= 1, "SMOOTH TALKER: negotiation %d, pitch +%d" % [build.level_of(smooth, "negotiation", "John"), build.sales_up("pitch")])
 	_check(sc.win_chance(lead_p, qq) > win0 + 0.03, "higher pitch and negotiation raise the win chance (%d%% to %d%%)" % [int(win0 * 100), int(sc.win_chance(lead_p, qq) * 100)])
 	_check(sc.quote_price(lead_p, qq) > price0, "negotiation closes at a better price ($%d to $%d)" % [price0, sc.quote_price(lead_p, qq)])
 	var qh := qq.duplicate()
 	qh["promise"] = "high"
 	c.build = {}
 	gap0 = sc.promise_gap(lead_p, qh)
-	var farmer: Dictionary = build.apply_preset("sales", "Vic", "normal", "farmer")
+	var farmer: Dictionary = build.apply_preset("sales", "John", "normal", "farmer")
 	c.build = farmer
 	_check(build.sales_fx("renew") > 0.05 and build.sales_fx("churn") < 0.0 and sc.promise_gap(lead_p, qh) < gap0, "FARMER: renewals easier, churn meter slower, a smaller promise gap (%.1f to %.1f)" % [gap0, sc.promise_gap(lead_p, qh)])
 	var ent := {"id": -9, "name": "E", "client": -1, "mrr": 500, "renew_at": 12, "kept": 0, "broken": 0, "mood": 70}
 	var rc_f: float = sc.Retention.renew_chance(ent)
 	c.build = {}
 	_check(rc_f > sc.Retention.renew_chance(ent) + 0.05, "the renewal chance reads RELATIONSHIPS")
-	var cons: Dictionary = build.apply_preset("sales", "Vic", "normal", "hunter")
+	var cons: Dictionary = build.apply_preset("sales", "John", "normal", "hunter")
 	cons["quirks"] = ["overpromise"]
 	c.build = cons
 	_check(build.sales_fx("gap") > 0.0 - 0.0001 or true, "OVER-PROMISER adds win chance and promise gap")

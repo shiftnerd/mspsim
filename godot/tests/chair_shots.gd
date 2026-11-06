@@ -104,7 +104,7 @@ func _process(_delta: float) -> bool:
 			o.enabled = true
 			o.use_rooms = true
 			d.seed_run(12)
-			o.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+			o.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
 			wait = 120
 		1:
 			_shot("intro")

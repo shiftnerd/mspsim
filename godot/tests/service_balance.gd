@@ -165,7 +165,7 @@ func _morning() -> void:
 			if not did:
 				break
 		# one on ones: two people a day, in turn, and the quiet ones first
-		var who := ["Maya", "Vic"]
+		var who := ["Maya", "John"]
 		for n in crew.names():
 			if n != "Maya":
 				who.append(str(n))

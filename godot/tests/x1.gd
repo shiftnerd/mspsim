@@ -1,5 +1,5 @@
 extends SceneTree
-# Roadmap X1: owner-campaign round 2 (deterministic parts): the Vic complaint spread, Dana's advice
+# Roadmap X1: owner-campaign round 2 (deterministic parts): the John complaint spread, Dana's advice
 # without repeats, the billing leak in cash, REVIEW DUE at the start, one Esc closes the Computer,
 # the outing invitation states its cost, the meeting upside and the balance helpers.
 
@@ -56,7 +56,7 @@ func _init() -> void:
 	c.day = 14
 	_check(o.review_due(int(sales.active[0])), "and is due again after 8 weeks")
 
-	# 2. the same client does not complain to Vic every week
+	# 2. the same client does not complain to John every week
 	c.new_game("owner")
 	_clear(cards)
 	msp.reset()
@@ -67,7 +67,7 @@ func _init() -> void:
 	msp.ticket(tb.id).sla_left = 6.0
 	var first: Dictionary = sales.find_complaint()
 	_check(not first.is_empty(), "a late ticket makes a complaint")
-	sales.complained_day[int(first.client)] = c.day  # what _process records when Vic picks it up
+	sales.complained_day[int(first.client)] = c.day  # what _process records when John picks it up
 	var second: Dictionary = sales.find_complaint()
 	_check(
 		not second.is_empty() and int(second.client) != int(first.client),

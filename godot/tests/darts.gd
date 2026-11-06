@@ -162,8 +162,8 @@ func _init() -> void:
 	_check(mid.dart_i == 1 and mid.darts_now.size() == 1, "the dart stays in the board for the turn")
 	var solo := _game("normal", 6, [])
 	_check(solo.players == ["You", "THE HOUSE"], "nobody around: you against the house")
-	var cap := _game("normal", 6, ["Vic", "Dan", "Alan", "Maya", "Garrison"])
-	_check(cap.crew == ["Alan", "Garrison", "Dan", "Maya", "Vic"], "the crew keeps the table order")
+	var cap := _game("normal", 6, ["John", "Dan", "Alan", "Maya", "Garrison"])
+	_check(cap.crew == ["Alan", "Garrison", "Dan", "Maya", "John"], "the crew keeps the table order")
 
 	# ---- pulling the darts, and the turn counter
 	var pull := _game("normal", 8)
@@ -238,9 +238,9 @@ func _init() -> void:
 	_check(ra.totals != rc.totals, "another seed gives another game")
 
 	# ---- the crew: skills, tempers, targets
-	var crew_game := _game("normal", 31, ["Alan", "Garrison", "Dan", "Maya", "Vic"])
+	var crew_game := _game("normal", 31, ["Alan", "Garrison", "Dan", "Maya", "John"])
 	var skills := {}
-	for who in ["Alan", "Garrison", "Dan", "Maya", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "Maya", "John"]:
 		skills[who] = crew_game.sigma_of(who)
 	_check(skills.Alan < skills.Garrison and skills.Alan < skills.Dan and skills.Maya < skills.Dan, "Alan and Maya are the steadiest (error %.0f and %.0f mm), Dan the loosest (%.0f)" % [skills.Alan, skills.Maya, skills.Dan])
 	_check(crew_game.target_of("Alan") != Vector2.ZERO and crew_game.target_of("Dan") == Vector2.ZERO, "the good ones aim at the treble 20, the rest at the bull")
@@ -263,10 +263,10 @@ func _init() -> void:
 	hot._hot = -1.0
 	var cold_s2: float = hot.sigma_of("Garrison")
 	_check(hot_s < cold_s and cold_s2 > cold_s, "Garrison is streaky: tighter after a big dart (%.1f), looser after a miss (%.1f)" % [hot_s, cold_s2])
-	var vic := _game("normal", 44, ["Vic"])
-	var vic_plain: float = vic.sigma_of("Vic")
+	var vic := _game("normal", 44, ["John"])
+	var vic_plain: float = vic.sigma_of("John")
 	vic._you_big = true
-	_check(vic.sigma_of("Vic") < vic_plain, "Vic shows off when you throw well")
+	_check(vic.sigma_of("John") < vic_plain, "John shows off when you throw well")
 
 	# ---- the tiers: human timing wins most games on every tier, pressing anywhere loses
 	for tier in TIERS:
@@ -274,11 +274,11 @@ func _init() -> void:
 		var lost := 0
 		var tot := 0.0
 		for k in 20:
-			var hg := _game(tier, 500 + k, ["Dan", "Vic"])
+			var hg := _game(tier, 500 + k, ["Dan", "John"])
 			_play(hg, "human", 0.05, _rng(k))
 			wins += 1 if hg.stars() >= 2 else 0
 			tot += float(hg.totals["You"])
-			var rg := _game(tier, 600 + k, ["Dan", "Vic"])
+			var rg := _game(tier, 600 + k, ["Dan", "John"])
 			_play(rg, "random", 0.0, _rng(k))
 			lost += 0 if rg.stars() >= 2 else 1
 		_check(wins >= (12 if tier != "hard" else 9), "%s: a player with good timing wins most games (%d of 20, %.0f points on average)" % [tier, wins, tot / 20.0])

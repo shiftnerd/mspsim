@@ -16,7 +16,7 @@ const CHARACTERS := [
 	"office_alan",
 	"site_alan",
 	"casual_garrison",
-	"sales_vic"
+	"office_john"
 ]
 
 static var current_character := "office_adult"

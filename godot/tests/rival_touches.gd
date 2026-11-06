@@ -162,16 +162,16 @@ func _init() -> void:
 	)
 	rival.set_rap("bigcheese", "R11", 1)
 	_check(rt.state_key() == "bare", "the rival known and a bare Standard: bare")
-	for who in ["Alan", "Garrison", "Dan", "Maya", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "Maya", "John"]:
 		for key in ["rival", "bare", "solid", "showcase", "loose", "closet"]:
 			if str(rt.TALK.get(who, {}).get(key, "")) == "":
 				_check(false, "TALK has %s / %s" % [who, key])
-	for who in ["Alan", "Garrison", "Dan", "Maya", "Vic", "Marge"]:
+	for who in ["Alan", "Garrison", "Dan", "Maya", "John", "Marge"]:
 		for key in ["rival", "solid", "loose", "closet"]:
 			if str(rt.LYNK.get(who, {}).get(key, "")) == "":
 				_check(false, "LYNK has %s / %s" % [who, key])
 	_check(
-		rt.talk_line("Alan") != "" and rt.talk_line("Vic") != "" and rt.talk_line("Nobody") == "",
+		rt.talk_line("Alan") != "" and rt.talk_line("John") != "" and rt.talk_line("Nobody") == "",
 		"everyone at a desk has a line about the rival"
 	)
 	for id in habits.HABITS:
@@ -207,7 +207,7 @@ func _init() -> void:
 
 	# Lynk: a note from someone, once, then quiet for a while
 	o.flags = {}
-	var people: Array = ["Alan", "Garrison", "Dan", "Vic", "Maya"]
+	var people: Array = ["Alan", "Garrison", "Dan", "John", "Maya"]
 	var first: Array = rt.lynk_note(people, "Marge", 3)
 	_check(
 		first.size() == 2 and str(rt.LYNK[first[0]].loose) == str(first[1]),

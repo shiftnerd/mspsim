@@ -110,7 +110,7 @@ func _init() -> void:
 	_drain(cards)
 	_check(mu.absent() == ["Maya", "Dan"] or mu.absent().size() == 2, "only tech: Maya and Dan are not there yet %s" % str(mu.absent()))
 	_check(not world.chars.has("Dan") and not world.chars.has("Maya"), "only tech: neither is at a desk on day 1")
-	_check(world.chars.has("Alan") and world.chars.has("Garrison") and world.chars.has("Vic"), "only tech: the owners and Vic are")
+	_check(world.chars.has("Alan") and world.chars.has("Garrison") and world.chars.has("John"), "only tech: the owners and John are")
 	_check(_moods(sales) == std_tech_moods and mu.ticket_rate() == 1.0, "only tech changes nothing else")
 	c.day = 3
 	world.begin_next_day(3)
@@ -130,7 +130,7 @@ func _init() -> void:
 	var texts := ""
 	for t in msp.texts:
 		texts += str(t.body)
-	_check(texts.contains("rival shop"), "rival (tech): Vic warns you")
+	_check(texts.contains("rival shop"), "rival (tech): John warns you")
 	var before := _moods(sales)
 	c.day = 2
 	mu.begin_day(2)

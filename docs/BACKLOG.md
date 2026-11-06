@@ -13,12 +13,12 @@ High
 ~~2. Week 20 settles repeatedly: `campaign.gd:311` clears `_awaiting` before `Review.start()`, so `_end_day` fires again at 17:00 (about +$4,400 cash and -3 reputation each repeat, about 18 duplicate reports).~~ FIXED
 Medium
 ~~3. Valuation history wrong in project-payout weeks: `owner.gd:2745` snapshots profit before `Projects.week()` (line 2792) pays out, then `take_week_income()` subtracts the full payout (week 7 profit 774 but ebitda -4419); the board-review multiple reads value $0 in weeks 5-8 and 11.~~ FIXED
-~~4. Vic's sold install is a dead ticket: `sales.gd:147-162` creates a project ticket that `owner.gd:1240` skips, so nobody works it, it breaches its SLA and counts toward burnout; `Msp.project_busy()` then blocks further install sales.~~ FIXED
+~~4. John's sold install is a dead ticket: `sales.gd:147-162` creates a project ticket that `owner.gd:1240` skips, so nobody works it, it breaches its SLA and counts toward burnout; `Msp.project_busy()` then blocks further install sales.~~ FIXED
 ~~5. The "prospect" card (`owner.gd:271-293`) is hard-coded to Piedmont Pediatrics, signs a random client, and OFFER THE DISCOUNT never applies the promised 20%.~~ FIXED
 ~~6. Phone TEXTS list is blank on 368x128 (`phone.gd:713-732` lists oldest first and breaks when the first does not fit); the phone home screen has no keyboard selection (mouse only).~~ FIXED
 Balance
 ~~7. Early game is tight (about +$660 a week, W-2 67% vs a 55% target, hiring in week 3 drops EBITDA to about -$265, reputation 50 to 41 over weeks 1-5) and then far too easy after week 12 (weekly EBITDA $2.5k then $10k, cash $53k+, value over $1M by week 17); maturity 4 reached by week 7 from clicking through cards.~~ FIXED in X1 (see CLAUDE.md "Owner round 2")
-~~8. Vic complains about the same clients almost every week; Dana's Monday advice repeated the same card three times; "take the meeting yourself" (60%) is always worse than "let Vic close it" (95%); the billing leak lowers reported revenue but not collected cash (`owner.gd:2686` vs `:2754`).~~ FIXED
+~~8. John complains about the same clients almost every week; Dana's Monday advice repeated the same card three times; "take the meeting yourself" (60%) is always worse than "let John close it" (95%); the billing leak lowers reported revenue but not collected cash (`owner.gd:2686` vs `:2754`).~~ FIXED
 UX and text
 ~~9. HUD text draws over the card speaker bar and desktop icon labels (the tech-branch fix hides the HUD while a card is open: check the desktop labels); every client shows REVIEW DUE in week 1; Esc in the Computer needs a second press; cards do not freeze the clock mid-day; the outing invitation does not state costs until the game pick; at client sites the owner's desk PC steals E from the owner NPC.~~ FIXED (desktop labels checked: the HUD hides while Cards is open; cards freeze the clock since round 1)
 10. (Name mismatch FIXED: the pitch site uses the lead's client name.) The pitch lead said Lindqvist and Moss but the site sign and speaker read NORTHLIGHT DESIGN; owner character select offers "ALAN - ON SITE" (`site_alan`) though Alan is on the team (the filter at `charselect.gd:86` matches only `office_alan`; with the new canon the owner campaign should instead offer Alan or Garrison as the owner).
@@ -30,7 +30,7 @@ Not found: anachronisms, script errors, bankruptcy (cash stayed above $4,000). W
 3. The HUD (`DAY n/20 REP`) bleeds through every card header.
 4. Closing the computer mid-RMM-job silently cancels the job (`computer.gd`).
 5. Day-3 onsite P1 (120 s SLA) can never be met with a 40-minute drive; the drive warning counts the wrong number of at-risk tickets.
-6. Vic's mail says Rusty Anchor's tickets start "tomorrow" but one arrives on day 3.
+6. John's mail says Rusty Anchor's tickets start "tomorrow" but one arrives on day 3.
 7. RMM client list shows a green dot for a machine with an active AV alert.
 8. The Heartbleed vignette was scheduled for 10:30 but appeared around 12:40.
 9. The onsite event text about crawling under a desk shows during a printer job.

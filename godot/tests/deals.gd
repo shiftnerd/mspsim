@@ -29,7 +29,7 @@ func _clear(cards: Node, choice := 0) -> void:
 
 
 func _start(seed_value: int) -> void:
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
 	root.get_node("Difficulty").seed_run(seed_value)

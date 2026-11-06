@@ -5,7 +5,7 @@ extends Node
 # plus anyone you hire; Morgan manages the desk and your partner helps at half speed) works the ticket queue on their own at a speed set by the team; you make the
 # business decisions as Cards (pricing, backups, hiring, quotes, vendors, crises) and watch cash, clients and
 # reputation. Each week ends with a P&L report; week 20 is the board review (sell, expand or stay independent).
-# Clients' moods (Sales) still drive churn, Vic still signs clients and brings complaints, and the same story beats
+# Clients' moods (Sales) still drive churn, John still signs clients and brings complaints, and the same story beats
 # (backups, ransomware, the rack, the migration, the 24x7 email outage...) happen to you as decisions.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
@@ -27,11 +27,11 @@ const HIRE_RAMP_WEEKS := 3  # a new hire costs 60% of the wage for the first wee
 const TOOLS := 0  # tool costs now come from the stack
 const DEFAULT_STACK := {"psa": "connectwhy", "rmm": "labrat", "hardware": "hewlitt"}
 # What you run and sell. cost = weekly, speed = tech speed, morale = % effect on the crew, issues = ticket volume
-# multiplier (bad hardware = more tickets), sales = Vic's close rate, margin = hardware resale profit per deal.
+# multiplier (bad hardware = more tickets), sales = John's close rate, margin = hardware resale profit per deal.
 const STACK := {
 	"psa":
 	{
-		# multiplier (bad hardware = more tickets), sales = Vic's close rate, margin = hardware resale profit per deal.
+		# multiplier (bad hardware = more tickets), sales = John's close rate, margin = hardware resale profit per deal.
 		"label": "PSA",
 		"options":
 		{
@@ -229,11 +229,11 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "Marge (Bookkeeper)",
 		"text":
-		"Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
+		"Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
 		"options":
 		[
 			{
-				"label": "VOLUME PRICING (-15% FEES, VIC SELLS MORE)",
+				"label": "VOLUME PRICING (-15% FEES, JOHN SELLS MORE)",
 				"fx": {"price": -0.15, "vic": 0.15}
 			},
 			{"label": "STANDARD PRICING", "fx": {}},
@@ -260,7 +260,7 @@ const DEFAULT_CARDS := {
 	},
 	"queue":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"The queue is getting long and clients are noticing. We either need more hands or faster hands.",
 		"options":
@@ -276,7 +276,7 @@ const DEFAULT_CARDS := {
 	},
 	"desktop":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Dr. Patel wants a new desktop set up and migrated. What do I quote? Cheap closes easily, premium might scare him off. The job costs us about $400 of tech time.",
 		"options":
@@ -321,7 +321,7 @@ const DEFAULT_CARDS := {
 	},
 	"prospect":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"New prospect %s wants us but asks for 20%% off for the first 6 weeks to sign. They are a good-sized account.",
 		"options":
@@ -329,14 +329,14 @@ const DEFAULT_CARDS := {
 			{
 				"label": "OFFER THE DISCOUNT",
 				"fx": {"sign": true, "discount_new": {"mult": 0.8, "weeks": 6}},
-				"text": "Signed! Vic is thrilled. Their tickets start tomorrow."
+				"text": "Signed! John is thrilled. Their tickets start tomorrow."
 			},
 			{
 				"label": "HOLD THE PRICE",
 				"roll":
 				[
-					[0.5, {"sign": true}, "They sign at full price. Vic looks smug."],
-					[0.5, {}, "They pass. Vic sulks."]
+					[0.5, {"sign": true}, "They sign at full price. John looks smug."],
+					[0.5, {}, "They pass. John sulks."]
 				]
 			},
 			{"label": "PASS", "fx": {}},
@@ -371,7 +371,7 @@ const DEFAULT_CARDS := {
 	},
 	"rack":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send?",
 		"options":
@@ -414,7 +414,7 @@ const DEFAULT_CARDS := {
 	},
 	"migration":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?",
 		"options":
@@ -509,7 +509,7 @@ const DEFAULT_CARDS := {
 	},
 	"bid":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Hoot and Holler is opening a branch and wants a network install. This is a big job.",
 		"options":
@@ -550,7 +550,7 @@ const DEFAULT_CARDS := {
 	},
 	"poach":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"ByteBrothers is calling our clients with a cheaper quote and a free 'IT assessment'. Word is they already talked to a couple of ours.",
 		"options":
@@ -668,9 +668,9 @@ const DEFAULT_CARDS := {
 	},
 	"marketing":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
-		"Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)",
+		"John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.)",
 		"options":
 		[
 			{"label": "NO MARKETING ($0)", "fx": {"marketing": 0}},
@@ -745,7 +745,7 @@ const DEFAULT_CARDS := {
 	},
 	"stack_hw":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Which hardware vendor do we recommend and resell? Hewlitt Packerd is the standard ($200 margin a deal). BudgetByte is cheap, so I sell more, but their machines fail more. DellightCo is premium and rock solid, but harder to sell.",
 		"options":
@@ -754,7 +754,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "BUDGETBYTE (+12% SALES, MORE TICKETS)",
 				"fx": {"stack": {"hardware": "budgetbyte"}},
-				"text": "Vic grins. Expect more calls about broken laptops."
+				"text": "John grins. Expect more calls about broken laptops."
 			},
 			{
 				"label": "DELLIGHTCO (SOLID, $350 MARGIN)",
@@ -764,7 +764,7 @@ const DEFAULT_CARDS := {
 		],
 	},
 	"rn_invite": {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text": "LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue?",
 		"options": [
 			{"label": "GO YOURSELF ($450)", "need": 450, "fx": {"cash": -450, "trip": true, "show": "rn_session"}},
@@ -809,9 +809,9 @@ const DEFAULT_CARDS := {
 	},
 	"rn_hw": {
 		"speaker": "DellightCo Rep",
-		"text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which Vic would have to hit, and he will sell less of the cheap stuff.",
+		"text": "We want you on DellightCo Premium: fewer tickets, a $350 margin a deal, and the switch costs nothing. All we ask is a minimum order commitment, which John would have to hit, and he will sell less of the cheap stuff.",
 		"options": [
-			{"label": "SIGN AT THE SHOW (FREE, VIC SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
+			{"label": "SIGN AT THE SHOW (FREE, JOHN SELLS LESS)", "fx": {"vic": -0.03, "flag": "rn_hw", "stack": {"hardware": "dellight"}, "show": "rn_hall"}},
 			{"label": "TAKE THE BROCHURE", "fx": {"flag": "rn_hw", "show": "rn_hall"}},
 		],
 	},
@@ -826,7 +826,7 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "Marge (Bookkeeper)",
 		"text":
-		"How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
+		"How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
 		"options":
 		[
 			{"label": "SALARY ONLY ($750/WK)", "fx": {"vic_plan": "salary"}},
@@ -1065,7 +1065,7 @@ const DEFAULT_CARDS := {
 				"need": 250,
 				"fx": {"cash": -250, "bec": "filter"},
 				"text":
-				"Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
+				"John and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do."
 			},
 			{
 				"label": "DO BOTH ($550)",
@@ -1683,7 +1683,7 @@ func oml() -> int:
 	return clampi(mini(1 + (practices() * 2) / 5, 1 + Campaign.day / 4), 1, 5)
 
 
-# everything that makes Vic better or worse at selling (pay plan, marketing, price, hardware)
+# everything that makes John better or worse at selling (pay plan, marketing, price, hardware)
 func vic_extra() -> float:
 	if not Campaign.books_active():
 		return 0.0
@@ -1705,7 +1705,7 @@ func new_client_mood() -> int:
 	return int(VIC_PLANS[vic_plan].start_mood) + int(edge("new_mood"))
 
 
-# Vic closed something: pay his commission, bank the hardware resale margin
+# John closed something: pay his commission, bank the hardware resale margin
 func on_deal(kind: String, client: int) -> void:
 	if not Campaign.books_active():
 		return
@@ -2265,7 +2265,7 @@ func advice() -> void:
 			options.pop_back()
 	elif key == "healthy":
 		text = (
-			"Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind Vic."
+			"Things look healthy: your EBITDA margin is %d%%. This is the time to invest in growth and put money behind John."
 			% int(100.0 * float(est.margin))
 		)
 		options = [
@@ -2285,7 +2285,7 @@ func advice() -> void:
 			{"label": "NOT NOW", "fx": {}}
 		]
 	else:
-		text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind Vic whatever the month looks like." % int(100.0 * float(est.margin))
+		text = "Pipeline pays for next year. Your EBITDA margin is %d%%: put a little money behind John whatever the month looks like." % int(100.0 * float(est.margin))
 		options = [
 			{"label": "MARKETING PUSH ($500)", "need": 500, "fx": {"cash": -500, "vic": 0.1}},
 			{"label": "NOT NOW", "fx": {}}
@@ -2321,7 +2321,7 @@ func _prospect_card() -> void:
 	show_card("prospect_live")
 
 
-# marketing brought in a prospect: you can take the meeting or hand it to Vic
+# marketing brought in a prospect: you can take the meeting or hand it to John
 func _inbound_lead() -> void:
 	if not Mutators.chance("lead_mult"):
 		return
@@ -2338,7 +2338,7 @@ func _inbound_lead() -> void:
 	var prospect: String = Msp.CLIENTS[lead].name
 	var vic_odds := clampf(Sales.vic_skill() + 0.25, 0.3, 0.95)
 	_dynamic["lead"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"An inbound lead from our marketing: %s found us online and wants a meeting." % prospect,
 		"options":
@@ -2356,15 +2356,15 @@ func _inbound_lead() -> void:
 				]
 			},
 			{
-				"label": "LET VIC CLOSE IT (%d%%)" % int(vic_odds * 100.0),
+				"label": "LET JOHN CLOSE IT (%d%%)" % int(vic_odds * 100.0),
 				"roll":
 				[
 					[
 						vic_odds,
 						{"sign": true, "client": lead},
-						"Vic closes it. %s signs." % prospect
+						"John closes it. %s signs." % prospect
 					],
-					[1.0 - vic_odds, {}, "Vic fumbles it. They go quiet."]
+					[1.0 - vic_odds, {}, "John fumbles it. They go quiet."]
 				]
 			},
 		],
@@ -2619,7 +2619,7 @@ func drop_client(client: int, reason := "") -> void:
 	if client == risk_client:
 		risk_client = -1
 	Habits.loss(client)  # R38: H5, the lost account review
-	Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
+	Msp.send_text("John", "%s is gone." % Msp.CLIENTS[client].name)
 
 
 # a client is due a business review from week 6 on, 8 weeks after the last one (never at the start)
@@ -2657,7 +2657,7 @@ func _qbr() -> void:
 	# X9: a full review also puts the numbers on the table: an unhappy client uses it to ask for a discount
 	var backfire := clampf(0.08 + pressure() * 0.12 + float(60 - Sales.mood(pick)) / 300.0, 0.05, 0.35)
 	_dynamic["qbr"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		(
 			"Business review time with %s (mood %d%%, they pay $%d a week). How much do we prepare?"
@@ -2666,7 +2666,7 @@ func _qbr() -> void:
 		"options":
 		[
 			{
-				"label": "FULL REVIEW WITH VIC ($250)",
+				"label": "FULL REVIEW WITH JOHN ($250)",
 				"need": 250,
 				"roll":
 				[
@@ -2738,7 +2738,7 @@ func _vic_report() -> void:
 		if avg < 60:
 			text += " A few of them did say I over-promised."
 	_dynamic["vic_report"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text": text,
 		"options":
 		[
@@ -2746,7 +2746,7 @@ func _vic_report() -> void:
 				"label": "GIVE HIM A BONUS ($300)",
 				"need": 300,
 				"fx": {"cash": -300, "vic": 0.05},
-				"text": "Vic puts the bonus toward a very nice watch."
+				"text": "John puts the bonus toward a very nice watch."
 			},
 			{"label": "CHANGE HIS PAY PLAN", "fx": {"show": "vic_plan"}},
 			{"label": "NO CHANGES", "fx": {}},
@@ -3219,7 +3219,7 @@ func _handover_card(client: int) -> void:
 		return
 	var key := str(client)
 	_dynamic["handover"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		(
 			"Before we onboard %s: a proper handover between me and the lead tech (what I promised, their environment, their SLAs), or do we just start?"
@@ -3387,7 +3387,7 @@ func _poach_card(item: Dictionary) -> void:
 			0.4 + float(Sales.mood(client)) / 200.0 + Sales.vic_skill() * 0.2, 0.3, 0.9
 		)
 		_dynamic["poach_price"] = {
-			"speaker": "Vic Marlowe",
+			"speaker": "John Marlowe",
 			"text":
 			(
 				"%s likes us and everything is in order, but %s offered them a price we cannot easily match: about $%d a week less. 'It is just IT,' they said."
@@ -3443,7 +3443,7 @@ func _poach_card(item: Dictionary) -> void:
 		0.8 - 0.12 * float(gaps.size()) + (0.1 if Sales.mood(client) >= 60 else 0.0), 0.3, 0.9
 	)
 	_dynamic["poach_gaps"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		(
 			"%s contact says %s walked in with a free 'IT assessment' that listed: %s. They are offering about 20%% less."
@@ -3532,7 +3532,7 @@ func _winback_card(client: int) -> void:
 		why = "%s did not fix their problems either." % COMPETITOR
 	var odds := 0.7 if int(info.mood) >= 60 else 0.5
 	_dynamic["winback"] = {
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text": "%s called. %s They would like to come back." % [name, why],
 		"options":
 		[
@@ -3599,7 +3599,7 @@ func drop_random_client() -> void:
 	var pick: int = Sales.active[randi() % Sales.active.size()]
 	Sales.active.erase(pick)
 	discount.erase(pick)
-	Msp.send_text("Vic", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
+	Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
 
 
 func _ransom() -> void:
@@ -3682,7 +3682,7 @@ func _rdp_week() -> void:
 func _ask_leaving(client: int) -> void:
 	var name: String = Msp.CLIENTS[client].name
 	Cards.ask(
-		"Vic Marlowe",
+		"John Marlowe",
 		(
 			"%s is unhappy and talking about leaving. We can offer a 20%% discount for 4 weeks to keep them."
 			% name
@@ -3699,7 +3699,7 @@ func _leaving_answer(client: int, pick: String) -> void:
 	else:
 		Sales.active.erase(client)
 		discount.erase(client)
-		Msp.send_text("Vic", "%s is gone." % Msp.CLIENTS[client].name)
+		Msp.send_text("John", "%s is gone." % Msp.CLIENTS[client].name)
 
 
 # ---- the books ---------------------------------------------------------------------------------

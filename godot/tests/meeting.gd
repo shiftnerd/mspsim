@@ -66,7 +66,7 @@ func _init() -> void:
 		await process_frame
 		_drain(cards)
 	var seated := 0
-	for n in ["Alan", "Garrison", "Dan", "Vic", "Maya"]:
+	for n in ["Alan", "Garrison", "Dan", "John", "Maya"]:
 		var npc := current_scene.get_node_or_null("Actors/" + n)
 		seated += 1 if npc != null and npc.seat != null else 0
 	_check(seated >= 3, "the team sits down around the table (%d seated)" % seated)

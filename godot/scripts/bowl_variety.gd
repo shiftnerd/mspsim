@@ -71,7 +71,7 @@ const STYLES := {
 	"Alan": "straight",
 	"Garrison": "hooker",
 	"Dan": "power",
-	"Vic": "show",
+	"John": "show",
 	"Maya": "precise",
 	"Morgan": "precise",
 }

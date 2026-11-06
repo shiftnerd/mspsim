@@ -85,7 +85,7 @@ func _init() -> void:
 	await _wait_frames(200)
 	_check(dan._bubble.visible or dan._grumble_t > 0.0, "and grumbles")
 	world._outage_t = 15.0
-	for who in ["Dan", "Alan", "Garrison", "Vic", "Maya"]:
+	for who in ["Dan", "Alan", "Garrison", "John", "Maya"]:
 		world.chars[who].legs = [{"kind": "coffee", "dur": 30.0, "routine": PackedStringArray()}]
 	world.chars["Dan"].scene = "kitchenette"
 	world._closet_sent = false

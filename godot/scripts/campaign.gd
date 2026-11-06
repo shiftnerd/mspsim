@@ -49,7 +49,7 @@ const MODE_DEFS := {
 		"ending_final": "TWENTY DAYS DONE. YOUR REVIEW WITH MORGAN AND THE OWNERS IS NEXT.",
 		"rep_label": "CONF",
 	},
-	# campaign-paths 5 (C1, slice S1): Vic sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
+	# campaign-paths 5 (C1, slice S1): John sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
 	"sales": {
 		"label": "SALES CAMPAIGN", "selectable": true, "year2": false,
 		"crew": true, "books": true, "cards": true, "books_lite": true,
@@ -250,7 +250,7 @@ func derive_player_as(for_mode: String) -> String:
 	if for_mode == "owner":
 		return who if Roles.OWNERS.has(who) else "Alan"  # the owner campaign is always played as an owner (X4)
 	if for_mode == "sales":
-		return "Vic"  # the sales campaign is always played as Vic (C1)
+		return "John"  # the sales campaign is always played as John (C1)
 	if for_mode == "service":
 		return "Dan"  # the service manager campaign is always played as Dan (C4)
 	if who == "":
@@ -286,7 +286,7 @@ func new_game(for_mode: String) -> void:
 	active = is_selectable(for_mode)
 	player_as = derive_player_as(for_mode)
 	if for_mode in ["owner", "sales"] and World.cast_of(PLAYER.current_character) != player_as:
-		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or Vic (sales)
+		PLAYER.current_character = str(World.CAST[player_as].character)  # a direct start plays as Alan (owner) or John (sales)
 	if for_mode == "service":
 		PLAYER.current_character = str(World.CAST["Dan"].character)
 	Game.vars["start_seated"] = player_as != ""
@@ -372,8 +372,8 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 		player_as = "Alan"  # an old owner save: you were the boss, now you are Alan
 		PLAYER.current_character = "office_alan"
 	if for_mode == "sales":
-		player_as = "Vic"
-		PLAYER.current_character = "sales_vic"
+		player_as = "John"
+		PLAYER.current_character = "office_john"
 	if for_mode == "service":
 		player_as = "Dan"
 		PLAYER.current_character = str(World.CAST["Dan"].character)
@@ -771,7 +771,7 @@ func _cozy_close(r: Dictionary) -> void:
 	if rep < floor_rep:
 		rep = floor_rep
 		notes.append(Difficulty.ct("probation_note"))
-		var sender := {"owner": "Marge", "sales": "Vic"}.get(mode, "Morgan") as String
+		var sender := {"owner": "Marge", "sales": "John"}.get(mode, "Morgan") as String
 		Msp.send_text(sender, Difficulty.ct("probation_" + mode))
 	if not notes.is_empty():
 		r["notes"] = notes

@@ -178,7 +178,7 @@ for. Serve each order **the way it was asked**, and keep an eye out for flare-up
 ## DARTS
 
 Not an evening out: a quick round at the dart board in the warehouse, whenever you like. Press **`E`** at the board, choose **LET'S PLAY**, and
-one or two coworkers (Alan, Garrison, Dan, Maya or Vic, whoever is up for it) take turns with you. Three darts a turn, three rounds, highest total wins.
+one or two coworkers (Alan, Garrison, Dan, Maya or John, whoever is up for it) take turns with you. Three darts a turn, three rounds, highest total wins.
 
 1. A **reticle** drifts across the board. Press **`E`** and the dart goes wherever it is. There is a little scatter, so nobody is perfect.
 2. The wobble **settles for a moment** (about a second in) and then your arm tires, so there is a moment to wait for. Every dart has a **new sweet spot**: the loop's centre and speed move from dart to dart.

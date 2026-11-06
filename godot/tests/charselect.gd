@@ -63,7 +63,7 @@ func _flow_checks() -> void:
 	_check(cs.start_label("custom") == "MY LOOK" and cs.start_label("site_alan") == "SITE ALAN", "START labels")
 	cs.setup("free")
 	_check(cs.ids.size() == 8 and cs.ids[0] == "custom", "free START: MY LOOK + all seven")
-	for id in ["office_dan", "office_alan", "casual_garrison", "sales_vic", "office_adult", "office_intern", "site_alan"]:
+	for id in ["office_dan", "office_alan", "casual_garrison", "office_john", "office_adult", "office_intern", "site_alan"]:
 		_check(id in cs.ids, "free START has %s" % id)
 	for m in ["owner", "sales", "service"]:
 		cs.setup(m)
@@ -183,7 +183,7 @@ func _process(_delta: float) -> bool:
 			var free: Array = cs.choices("free")
 			var tech: Array = cs.choices("tech")
 			_check(
-				free.size() == 7 and "sales_vic" in free, "free play offers all 7 playable people"
+				free.size() == 7 and "office_john" in free, "free play offers all 7 playable people"
 			)
 			_check(
 				tech == ["office_intern", "office_adult", "site_alan"],
@@ -452,13 +452,13 @@ func _process(_delta: float) -> bool:
 			_check(cs.create_modal == "" and cs.step == "create", "Back closes the chooser first")
 			cs.set_page(0)
 			cs.set_start(7)
-			_check(cs.current_id() == "sales_vic" and cs.stock_pick(), "Vic is the 7th START entry")
+			_check(cs.current_id() == "office_john" and cs.stock_pick(), "John is the 7th START entry")
 			cs.confirm()
 			_check(cs.step == "options", "Enter on the creator goes to the options")
 			cs.confirm()
 		33:
 			_check(title._started and not campaign.active, "free play started without a campaign")
-			_check(player_script.current_character == "sales_vic", "playing as Vic")
+			_check(player_script.current_character == "office_john", "playing as John")
 			phone.set_os(old_os)
 			player_script.current_character = old_char
 			print("failures=", failures)

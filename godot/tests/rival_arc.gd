@@ -1,7 +1,7 @@
 extends SceneTree
 # R38 rival agent: the 20 week story arc of Big Cheese (rival.gd + the rival_* cards of rival_cards.gd). Headless, seeded.
 # Every beat is reachable by its week, evidence only goes up, the ethics gates (slander, vendor report, SHOW THE SHEET), the evidence
-# channels (exit chat, Vic, relabelled poaches, winback), save/load and a deterministic 20 week run.
+# channels (exit chat, John, relabelled poaches, winback), save/load and a deterministic 20 week run.
 
 const ALLOWED := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?-_/()'@#%&+=$<>*{}"
 const BEATS := {
@@ -182,7 +182,7 @@ func _init() -> void:
 		for n in 100:
 			c.day = week
 			o._dynamic["poach_price"] = {
-				"speaker": "Vic Marlowe",
+				"speaker": "John Marlowe",
 				"text": "A rival: %s." % o.COMPETITOR,
 				"options":
 				[
@@ -274,7 +274,7 @@ func _init() -> void:
 		"the tag, the flag and the rap sheet survive a JSON save"
 	)
 
-	# ---- Vic's intel: a rumour only, from the pool, never lowers anything
+	# ---- John's intel: a rumour only, from the pool, never lowers anything
 	_start(c, cards, o, 6)
 	d.seed_run(5)
 	var heard := ""
@@ -284,7 +284,7 @@ func _init() -> void:
 			break
 	_check(
 		heard != "" and rival.rap("bigcheese", heard) == rival.RUMOUR,
-		"Vic hears a rumour: %s" % heard
+		"John hears a rumour: %s" % heard
 	)
 	rival.set_rap("bigcheese", heard, rival.SEEN)
 	for n in 12:

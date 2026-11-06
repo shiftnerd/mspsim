@@ -98,7 +98,7 @@ func _init() -> void:
 	_check(o.issue_mult() == 1.0 and o.client_weight(0) == 1.0, "tech, crew sites: ticket volume and scope creep are neutral")
 	var deals: int = o.vic_deals
 	o.on_deal("client", 0)
-	_check(o.vic_deals == deals and o.vic_extra() == 0.0, "tech, books sites: no commission, no Vic bonus")
+	_check(o.vic_deals == deals and o.vic_extra() == 0.0, "tech, books sites: no commission, no John bonus")
 	_check(not pr.active() and not pa.active(), "tech, books and cards sites: Projects and Partner are off")
 	_check(o.edge("issues") == o.DEFAULT_EDGE["issues"], "tech, cards site: the profile edge is the default")
 	_check(c.prop("hud", "") == "day_rep" and c.total_days() == 20, "tech: HUD type and length from the registry")

@@ -103,7 +103,7 @@ func _init() -> void:
 		"factory-resetting the firewall brings the internet back down"
 	)
 
-	# Vic's sales: signing a client or selling an install both ring the bell text without errors
+	# John's sales: signing a client or selling an install both ring the bell text without errors
 	var signed := 0
 	var installs := 0
 	for i in 40:
@@ -115,7 +115,7 @@ func _init() -> void:
 			installs += 1 if "INSTALL" in str(sales.last_deal) else 0
 	_check(
 		signed + installs > 0 and sales.last_deal != "",
-		"Vic's sales record what he sold (%d signed, %d installs)" % [signed, installs]
+		"John's sales record what he sold (%d signed, %d installs)" % [signed, installs]
 	)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

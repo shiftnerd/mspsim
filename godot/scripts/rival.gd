@@ -285,7 +285,7 @@ const ON_SHOW := {
 const DECIDES := {"rival_2fa": "R03", "rival_vendor_audit": "R06", "rival_exposed": "R09"}
 # habits a vendor can act on (REPORT TO THE VENDOR needs PROVEN)
 const VENDOR_HABITS := ["R04", "R06"]
-# habits Vic can hear about at the Chamber lunch (the rest come from visits, notebooks and letters)
+# habits John can hear about at the Chamber lunch (the rest come from visits, notebooks and letters)
 const INTEL_POOL := ["R09", "R10", "R08", "R07", "R06", "R05", "R03", "R01"]
 const INTEL_WEEKS := [3, 6, 9, 12, 14]
 const RELABEL_FROM := 6  # from this week half the price and gap poaches are Big Cheese (the label changes, never the number of rolls)
@@ -526,7 +526,7 @@ static func _decide(owner: Node, kind: String, habit: String) -> void:
 
 
 # ---- channels (other files call these) ----------------------------------------------------------------------------
-# Vic hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
+# John hears it at the Chamber lunch: an unreliable RUMOUR about a habit of the rival. Returns the habit id learned ("" if none).
 # Always draws the same two numbers, so the stream stays in step whatever the player did.
 static func intel(rival: String) -> String:
 	var r := Difficulty.rng("rival")
@@ -545,7 +545,7 @@ static func intel(rival: String) -> String:
 	var habit: String = pool[pick % pool.size()]
 	set_rap(rival, habit, RUMOUR)
 	Msp.send_text(
-		"Vic",
+		"John",
 		(
 			"Heard at the Chamber lunch, only a rumour: %s. %s."
 			% [str(RIVALS[rival].name), str(HABITS[habit].name)]

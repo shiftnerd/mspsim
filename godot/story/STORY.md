@@ -742,8 +742,8 @@ or the owner (owner campaign, 20 weeks).
 ### Week 1
 
 **9:05 Card: welcome** — Marge (Bookkeeper) `[Owner.CARDS.welcome.speaker]`
-> Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, Vic in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
-- **VOLUME PRICING (-15% FEES, VIC SELLS MORE)** `[Owner.CARDS.welcome.options.0.label]`
+> Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
+- **VOLUME PRICING (-15% FEES, JOHN SELLS MORE)** `[Owner.CARDS.welcome.options.0.label]`
 - **STANDARD PRICING** `[Owner.CARDS.welcome.options.1.label]`
 - **PREMIUM PRICING (+20% FEES, HARDER SELL)** `[Owner.CARDS.welcome.options.2.label]`
 
@@ -775,7 +775,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 3
 
-**9:05 Card: queue** — Vic Marlowe `[Owner.CARDS.queue.speaker]`
+**9:05 Card: queue** — John Marlowe `[Owner.CARDS.queue.speaker]`
 > The queue is getting long and clients are noticing. We either need more hands or faster hands. `[Owner.CARDS.queue.text]`
 - **SEE HIRING CANDIDATES** `[Owner.CARDS.queue.options.0.label]`
 - **POWERSHELL TRAINING FOR THE CREW ($400)** `[Owner.CARDS.queue.options.1.label]`
@@ -783,8 +783,8 @@ or the owner (owner campaign, 20 weeks).
 
 **9:18** Event: leak_start (handled in code, it opens its own cards)
 
-**15:00 Card: marketing** — Vic Marlowe `[Owner.CARDS.marketing.speaker]`
-> Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
+**15:00 Card: marketing** — John Marlowe `[Owner.CARDS.marketing.speaker]`
+> John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
 - **NO MARKETING ($0)** `[Owner.CARDS.marketing.options.0.label]`
 - **LIGHT ($150/WEEK)** `[Owner.CARDS.marketing.options.1.label]`
 - **STANDARD ($400/WEEK)** `[Owner.CARDS.marketing.options.2.label]`
@@ -792,7 +792,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 4
 
-**9:30 Card: desktop** — Vic Marlowe `[Owner.CARDS.desktop.speaker]`
+**9:30 Card: desktop** — John Marlowe `[Owner.CARDS.desktop.speaker]`
 > Dr. Patel wants a new desktop set up and migrated. What do I quote? Cheap closes easily, premium might scare him off. The job costs us about $400 of tech time. `[Owner.CARDS.desktop.text]`
 - **$600 (ALMOST SURE)** `[Owner.CARDS.desktop.options.0.label]`
   - 95%: He accepts. The install goes smoothly. `[Owner.CARDS.desktop.options.0.roll.0.2]`
@@ -825,11 +825,11 @@ or the owner (owner campaign, 20 weeks).
 
 **8:35** Event: break_backup (handled in code, it opens its own cards)
 
-**11:00 Card: stack_hw** — Vic Marlowe `[Owner.CARDS.stack_hw.speaker]`
+**11:00 Card: stack_hw** — John Marlowe `[Owner.CARDS.stack_hw.speaker]`
 > Which hardware vendor do we recommend and resell? Hewlitt Packerd is the standard ($200 margin a deal). BudgetByte is cheap, so I sell more, but their machines fail more. DellightCo is premium and rock solid, but harder to sell. `[Owner.CARDS.stack_hw.text]`
 - **HEWLITT PACKERD (THE STANDARD)** `[Owner.CARDS.stack_hw.options.0.label]`
 - **BUDGETBYTE (+12% SALES, MORE TICKETS)** `[Owner.CARDS.stack_hw.options.1.label]`
-  - Vic grins. Expect more calls about broken laptops. `[Owner.CARDS.stack_hw.options.1.text]`
+  - John grins. Expect more calls about broken laptops. `[Owner.CARDS.stack_hw.options.1.text]`
 - **DELLIGHTCO (SOLID, $350 MARGIN)** `[Owner.CARDS.stack_hw.options.2.label]`
   - Fewer fires, fatter margins, a slower sell. `[Owner.CARDS.stack_hw.options.2.text]`
 
@@ -895,7 +895,7 @@ or the owner (owner campaign, 20 weeks).
   - 30%: The migration drags and clients notice. `[Owner.CARDS.license.options.1.roll.1.2]`
 
 **13:00 Card: vic_plan** — Marge (Bookkeeper) `[Owner.CARDS.vic_plan.speaker]`
-> How do we pay Vic? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard. `[Owner.CARDS.vic_plan.text]`
+> How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard. `[Owner.CARDS.vic_plan.text]`
 - **SALARY ONLY ($750/WK)** `[Owner.CARDS.vic_plan.options.0.label]`
 - **BALANCED ($550/WK + $150 A DEAL)** `[Owner.CARDS.vic_plan.options.1.label]`
 - **COMMISSION-HEAVY ($350/WK + $300 A DEAL)** `[Owner.CARDS.vic_plan.options.2.label]`
@@ -914,8 +914,8 @@ or the owner (owner campaign, 20 weeks).
 
 **10:30** Event: ransomware (handled in code, it opens its own cards)
 
-**14:30 Card: marketing** — Vic Marlowe `[Owner.CARDS.marketing.speaker]`
-> Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
+**14:30 Card: marketing** — John Marlowe `[Owner.CARDS.marketing.speaker]`
+> John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
 - **NO MARKETING ($0)** `[Owner.CARDS.marketing.options.0.label]`
 - **LIGHT ($150/WEEK)** `[Owner.CARDS.marketing.options.1.label]`
 - **STANDARD ($400/WEEK)** `[Owner.CARDS.marketing.options.2.label]`
@@ -923,7 +923,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 10
 
-**10:00 Card: rack** — Vic Marlowe `[Owner.CARDS.rack.speaker]`
+**10:00 Card: rack** — John Marlowe `[Owner.CARDS.rack.speaker]`
 > Gnarly Gnomes' network rack fell off their plywood wall. Everything there is down and Bob is shouting. Who do we send? `[Owner.CARDS.rack.text]`
 - **SEND {tech} NOW ($300)** `[Owner.CARDS.rack.options.0.label]`
   - 85%: {tech} rebuilds it properly. Bob buys them lunch. `[Owner.CARDS.rack.options.0.roll.0.2]`
@@ -949,7 +949,7 @@ or the owner (owner campaign, 20 weeks).
   - 50%: The crew is a different crew on Mondays. Clients barely notice. `[Owner.CARDS.flex_hours.options.2.roll.0.2]`
   - 50%: Clients notice the quiet Fridays. Some are not happy. `[Owner.CARDS.flex_hours.options.2.roll.1.2]`
 
-**16:00 Card: rn_invite** — Vic Marlowe `[Owner.CARDS.rn_invite.speaker]`
+**16:00 Card: rn_invite** — John Marlowe `[Owner.CARDS.rn_invite.speaker]`
 > LabRat's yearly user conference, RODENT NATION, is at the Orlando resort this June. Registration is $450 a head plus the flight, and every vendor you pay every month will be in the hall with a pen and a discount. Go yourself, send {tech} with a shopping list, or stay and mind the queue? `[Owner.CARDS.rn_invite.text]`
 - **GO YOURSELF ($450)** `[Owner.CARDS.rn_invite.options.0.label]`
 - **SEND {tech} ($300, HE BRINGS BACK ONE IDEA)** `[Owner.CARDS.rn_invite.options.1.label]`
@@ -1001,7 +1001,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 12
 
-**9:30 Card: migration** — Vic Marlowe `[Owner.CARDS.migration.speaker]`
+**9:30 Card: migration** — John Marlowe `[Owner.CARDS.migration.speaker]`
 > Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials? `[Owner.CARDS.migration.text]`
 - **FIXED PRICE $3,000** `[Owner.CARDS.migration.options.0.label]`
   - 60%: Smooth job, nice margin. `[Owner.CARDS.migration.options.0.roll.0.2]`
@@ -1026,7 +1026,7 @@ or the owner (owner campaign, 20 weeks).
 - **WARN EVERY CLIENT, START A CALL-BACK RULE ($350)** `[Owner.CARDS.bec_scare.options.0.label]`
   - A one page letter goes to every client: no payment and no bank change without a phone call to a number you already had. Two clients thank you. Their bookkeepers start calling back. `[Owner.CARDS.bec_scare.options.0.text]`
 - **OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)** `[Owner.CARDS.bec_scare.options.1.label]`
-  - Vic and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do. `[Owner.CARDS.bec_scare.options.1.text]`
+  - John and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do. `[Owner.CARDS.bec_scare.options.1.text]`
 - **DO BOTH ($550)** `[Owner.CARDS.bec_scare.options.2.label]`
   - The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books. `[Owner.CARDS.bec_scare.options.2.text]`
 - **IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES** `[Owner.CARDS.bec_scare.options.3.label]`
@@ -1052,8 +1052,8 @@ or the owner (owner campaign, 20 weeks).
 
 **11:00** Event: profit_review (handled in code, it opens its own cards)
 
-**15:00 Card: marketing** — Vic Marlowe `[Owner.CARDS.marketing.speaker]`
-> Vic wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
+**15:00 Card: marketing** — John Marlowe `[Owner.CARDS.marketing.speaker]`
+> John wants a marketing budget: a website refresh, local events, email campaigns. It raises his close rate and brings in inbound leads. How much per week? (It counts against EBITDA.) `[Owner.CARDS.marketing.text]`
 - **NO MARKETING ($0)** `[Owner.CARDS.marketing.options.0.label]`
 - **LIGHT ($150/WEEK)** `[Owner.CARDS.marketing.options.1.label]`
 - **STANDARD ($400/WEEK)** `[Owner.CARDS.marketing.options.2.label]`
@@ -1096,7 +1096,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 16
 
-**9:30 Card: bid** — Vic Marlowe `[Owner.CARDS.bid.speaker]`
+**9:30 Card: bid** — John Marlowe `[Owner.CARDS.bid.speaker]`
 > Hoot and Holler is opening a branch and wants a network install. This is a big job. `[Owner.CARDS.bid.text]`
 - **BID LOW $2,500** `[Owner.CARDS.bid.options.0.label]`
   - 78%: They accept. The crew grumbles about the margin. `[Owner.CARDS.bid.options.0.roll.0.2]`
@@ -1181,18 +1181,18 @@ or the owner (owner campaign, 20 weeks).
 - Tip: No link on a desk? Check the patch cable in the closet before you blame the switch. `[Talk.TIPS_GENERIC.Dan.1]`
 - Tip: The UPS gives you about ninety seconds. Plan the shutdown, do not improvise it. `[Talk.TIPS_GENERIC.Dan.2]`
 
-### Vic
+### John
 
-- Greeting (friend): My favourite tech! Talk to me. `[Talk.GREETINGS.Vic.friend]`
-- Greeting (neutral): Hey there. Quick one, I have a call at three. `[Talk.GREETINGS.Vic.neutral]`
-- Greeting (cold): Can this wait? I am on the phone in five. `[Talk.GREETINGS.Vic.cold]`
-- Small talk: Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy? `[Talk.SMALL.Vic.0]`
-- Small talk: I told a prospect we are the Apple of managed services. I do not know what that means either. `[Talk.SMALL.Vic.1]`
-- Small talk: Golf on Friday. A good relationship is built on the fifth hole. `[Talk.SMALL.Vic.2]`
-- Small talk: Clients love you. I just say you are the best in the building. It is only a little bit a lie. `[Talk.SMALL.Vic.3]`
-- Tip: Clients forgive a slow fix. They do not forgive silence. Call before they call you. `[Talk.TIPS_GENERIC.Vic.0]`
-- Tip: A happy client brings me a referral. An unhappy client brings me a competitor. `[Talk.TIPS_GENERIC.Vic.1]`
-- Tip: If you can fix it before they notice, do. If you cannot, tell them early. `[Talk.TIPS_GENERIC.Vic.2]`
+- Greeting (friend): My favourite tech! Talk to me. `[Talk.GREETINGS.John.friend]`
+- Greeting (neutral): Hey there. Quick one, I have a call at three. `[Talk.GREETINGS.John.neutral]`
+- Greeting (cold): Can this wait? I am on the phone in five. `[Talk.GREETINGS.John.cold]`
+- Small talk: Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy? `[Talk.SMALL.John.0]`
+- Small talk: I told a prospect we are the Apple of managed services. I do not know what that means either. `[Talk.SMALL.John.1]`
+- Small talk: Golf on Friday. A good relationship is built on the fifth hole. `[Talk.SMALL.John.2]`
+- Small talk: Clients love you. I just say you are the best in the building. It is only a little bit a lie. `[Talk.SMALL.John.3]`
+- Tip: Clients forgive a slow fix. They do not forgive silence. Call before they call you. `[Talk.TIPS_GENERIC.John.0]`
+- Tip: A happy client brings me a referral. An unhappy client brings me a competitor. `[Talk.TIPS_GENERIC.John.1]`
+- Tip: If you can fix it before they notice, do. If you cannot, tell them early. `[Talk.TIPS_GENERIC.John.2]`
 
 ### Maya
 
@@ -1248,7 +1248,7 @@ or the owner (owner campaign, 20 weeks).
 ### Gossip (anyone, now and then)
 
 - Between us: Morgan has been in the owners' office since nine. Never a good sign. `[Talk.GOSSIP.0]`
-- I heard Vic is already negotiating next year's commission. Good for him. `[Talk.GOSSIP.1]`
+- I heard John is already negotiating next year's commission. Good for him. `[Talk.GOSSIP.1]`
 - Somebody microwaved fish in the kitchenette again. We are not saying who. `[Talk.GOSSIP.2]`
 - I heard the printer on the main floor jammed again. Nobody will own up to it. `[Talk.GOSSIP.3]`
 

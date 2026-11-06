@@ -4,7 +4,7 @@ extends Node
 # Talking to people at their desks (campaigns). E on a coworker, seated or standing, opens a conversation:
 # SMALL TALK, ASK FOR HELP (they fix one of your tickets if they like you), ANY TIPS? (advice from the live game state,
 # and a short lesson from a friend once a day) and LEAVE (Esc). Owner campaign: HOW ARE YOU HOLDING UP? and ANY IDEAS?.
-# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, Vic sales. Alan and Garrison
+# Each person has a voice and a specialty: Alan servers, Garrison security, Dan networking, John sales. Alan and Garrison
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
 const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: lines about the rival and the Standard
@@ -12,7 +12,7 @@ const SPECIALTY := {
 	"Alan": "servers",
 	"Garrison": "security",
 	"Dan": "networking",
-	"Vic": "people",
+	"John": "people",
 	"Maya": "people",
 	"Morgan": "people",
 	"Sam": "servers",
@@ -38,7 +38,7 @@ const DEFAULT_GREETINGS := {
 		"neutral": "Hey. Need something?",
 		"cold": "I am kind of in the middle of something.",
 	},
-	"Vic":
+	"John":
 	{
 		"friend": "My favourite tech! Talk to me.",
 		"neutral": "Hey there. Quick one, I have a call at three.",
@@ -96,7 +96,7 @@ const DEFAULT_SMALL := {
 		"The best network is the one nobody talks about. The worst one is every one of our clients.",
 		"I have been reading about Heartbleed. It is going to be a long April.",
 	],
-	"Vic":
+	"John":
 	[
 		"Quarter is almost over and I need two more logos. Do you know anyone who hates their IT guy?",
 		"I told a prospect we are the Apple of managed services. I do not know what that means either.",
@@ -135,7 +135,7 @@ const DEFAULT_SMALL := {
 var SMALL: Dictionary = DEFAULT_SMALL.duplicate(true)
 const DEFAULT_GOSSIP := [
 	"Between us: Morgan has been in the owners' office since nine. Never a good sign.",
-	"I heard Vic is already negotiating next year's commission. Good for him.",
+	"I heard John is already negotiating next year's commission. Good for him.",
 	"Somebody microwaved fish in the kitchenette again. We are not saying who.",
 	"I heard the printer on the main floor jammed again. Nobody will own up to it.",
 ]
@@ -161,7 +161,7 @@ const DEFAULT_TIPS_GENERIC := {
 		"No link on a desk? Check the patch cable in the closet before you blame the switch.",
 		"The UPS gives you about ninety seconds. Plan the shutdown, do not improvise it.",
 	],
-	"Vic":
+	"John":
 	[
 		"Clients forgive a slow fix. They do not forgive silence. Call before they call you.",
 		"A happy client brings me a referral. An unhappy client brings me a competitor.",
@@ -199,32 +199,32 @@ const DEFAULT_OWNER_HOLD := {
 }
 var OWNER_HOLD: Dictionary = DEFAULT_OWNER_HOLD.duplicate(true)
 
-# ---- Vic's talk (sales campaign, C3): what the coworkers say to the account manager ------------------------------
+# ---- John's talk (sales campaign, C3): what the coworkers say to the account manager ------------------------------
 # tokens: {cap} crew capacity, {open} open tickets, {pct} quota %, {weeks} weeks left in the quarter, {leads} open leads,
 # {client} / {mood} the unhappiest client, {deal} a deal with a promise gap, {floor} margin floor %, {claw} clawbacks
 const DEFAULT_VIC_GREETINGS := {
 	"Alan": {
-		"friend": "Vic. Sit. Give me the number first and the story after.",
+		"friend": "John. Sit. Give me the number first and the story after.",
 		"neutral": "Pipeline. Go. I have the books open.",
 		"cold": "...What did you promise this time?",
 	},
 	"Garrison": {
 		"friend": "There he is, my favourite closer! Tell me something good. Actually, tell me the number. Then something good.",
-		"neutral": "Vic! Quick one, I have a client in five. How is the pipeline?",
+		"neutral": "John! Quick one, I have a client in five. How is the pipeline?",
 		"cold": "Mm. Is this about a quote or about a discount?",
 	},
 	"Dan": {
-		"friend": "Hey Vic. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.",
+		"friend": "Hey John. Mind the cables. If you are about to sell something, tell me first and I will tell you what I can actually do.",
 		"neutral": "Hey. Is this about a new client? Because I have {open} tickets open.",
 		"cold": "If it is a new client, I am not taking it.",
 	},
 	"Morgan": {
-		"friend": "Come in, Vic. I read your handover binder last night. It was almost accurate.",
+		"friend": "Come in, John. I read your handover binder last night. It was almost accurate.",
 		"neutral": "Yes? I have a budget call in five minutes. Is this a promise or a question?",
 		"cold": "Mm. Are we talking about what you sold, or what we can do?",
 	},
 	"Maya": {
-		"friend": "Hi Vic! Your clients are so nice. Well, most of them. Want half a granola bar?",
+		"friend": "Hi John! Your clients are so nice. Well, most of them. Want half a granola bar?",
 		"neutral": "Hey! Sorry, I have someone on hold. What is up?",
 		"cold": "Oh. Hi. I am just finishing a ticket for one of your clients.",
 	},
@@ -311,7 +311,7 @@ const DEFAULT_VIC_STATE := {
 	"Maya": {"mood": "{client} sounded annoyed when I called. They are {mood} percent happy and the number is going the wrong way. Call them before they start shopping around."},
 	"Garrison": {
 		"behind": "You are at {pct} percent of quota with {weeks} weeks left in the quarter. The number is the number. Get me two more logos.",
-		"ahead": "{pct} percent with {weeks} weeks to go? Vic, I may cry. Keep the margin where Alan can see it.",
+		"ahead": "{pct} percent with {weeks} weeks to go? John, I may cry. Keep the margin where Alan can see it.",
 	},
 	"Alan": {"claw": "You have lost {claw} in clawbacks. Go and find out why before you sell the next one.", "floor": "The floor is {floor} percent. Anything under it comes to me first and I say no."},
 }
@@ -340,7 +340,7 @@ const DEFAULT_VIC_ASK := {
 	},
 	"Garrison": {
 		"label": "PIPELINE UPDATE",
-		"ahead": "{pct} percent and {leads} leads in the pipe! Vic, you are making me look smart. Keep going.",
+		"ahead": "{pct} percent and {leads} leads in the pipe! John, you are making me look smart. Keep going.",
 		"behind": "{pct} percent, {weeks} weeks left, {leads} leads. It is not the end of the world. It is, however, the end of the quarter. Let's talk about the hot ones.",
 	},
 }
@@ -538,7 +538,7 @@ func _state_tip() -> String:
 						"%s has no network. Look at the patch panel in the closet first."
 						% str(Msp.DESK_NAMES.get(d, "A desk"))
 					)
-		"Vic":
+		"John":
 			var worst := -1
 			for c in Sales.active:
 				if worst < 0 or Sales.mood(int(c)) < Sales.mood(worst):
@@ -566,7 +566,7 @@ func _state_tip() -> String:
 	return ""
 
 
-# ---- sales campaign (C3): you are Vic ------------------------------------------------------------
+# ---- sales campaign (C3): you are John ------------------------------------------------------------
 func _greeting(who: String) -> String:
 	if Campaign.mode == "sales" and VIC_GREETINGS.has(who):
 		return _fill(str(VIC_GREETINGS[who][tier(who)]))

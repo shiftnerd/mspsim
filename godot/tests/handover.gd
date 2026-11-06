@@ -49,7 +49,7 @@ func _init() -> void:
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	diff.seed_run(88)
 	c.new_game("sales")
 	_clear(cards)

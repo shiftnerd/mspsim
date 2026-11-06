@@ -22,7 +22,7 @@ Read-only scoping pass (Nov 2026) from the code and docs, nothing was run. Line 
 - Rewards via `_finish`; a campaign lunch break (R29, built) is its own card at noon on lunch days, not an evening outing day.
 
 ## B. Cornhole (`cornhole`)
-- Like bowling: E stops an aim marker (sideways lane), E stops a power bar (distance). Board = 1, hole = 3, bags cancel, four bags a turn, play to 21 (tier keys `corn.to` 11 / 15 / 21), you against one crew member a round; skill tables per person: Alan precise, Garrison streaky, Dan wild, Maya steady, Vic show-off with an audience bonus; reuse `CREW_LINES`.
+- Like bowling: E stops an aim marker (sideways lane), E stops a power bar (distance). Board = 1, hole = 3, bags cancel, four bags a turn, play to 21 (tier keys `corn.to` 11 / 15 / 21), you against one crew member a round; skill tables per person: Alan precise, Garrison streaky, Dan wild, Maya steady, John show-off with an audience bonus; reuse `CREW_LINES`.
 - Flight arc: a new fx kind `cornhole_bag` (side-view parabola). Stars: win by 7+ = 3, win = 2, loss = 1 on cozy Easy (with a short-miss slide assist).
 - **Where:** boards at set x about 1125 and 1275 between the FINISH line (1100) and the dock, low and non-colliding, so the walkway stays clear. The chair race ends at 1100 so it does not need that stretch. Fallback: park them off-lane like the race props and move them in only while playing.
 - Throw pose: `reach` in v1, **the `toss` pose since R29**; (it needed a `poses.lua` edit and a rebuild of every character's animation files).

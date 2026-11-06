@@ -1,6 +1,6 @@
 extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
-# The SalesHound CRM (sales campaign, slice S1): a desktop app for Vic that lists the pipeline and lets you work a lead. It is a
+# The SalesHound CRM (sales campaign, slice S1): a desktop app for John that lists the pipeline and lets you work a lead. It is a
 # simple read-and-move list: the tabs filter by stage (LEAD / MEETING / QUOTED / WON / LOST), Up / Down pick a lead, and the
 # buttons (or C / V / Q / D) call, visit, quote or drop it. A call and a quote cost one selling hour each (SalesCampaign.spend),
 # a visit drives you to their office. C2 adds: F (CHASE) follows a deal up, U (UPSELL) sells a service to a won client, I (INFO) flips

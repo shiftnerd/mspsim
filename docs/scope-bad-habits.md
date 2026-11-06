@@ -14,7 +14,7 @@ House rules that apply to every line of text here: it is spring to summer 2014 (
 
 ## 1. Summary and phased plan
 
-The pitch in one paragraph: a sleazy local MSP, **Big Cheese Technology Group**, runs on shortcuts and says "business is booming" until the week it is not. The player meets its habits one piece at a time (a defecting client's assessment, a front-desk notebook, a takeover visit, Vic's intel, a forum thread, a vendor seat audit, an insurer's questionnaire). Each discovery is a small decision (win the client, warn them ethically, report to the vendor, or ignore it). Each habit has a good twin the player buys into on a new **HABITS** tab of the Boardroom. Eight **temptation cards** offer the same shortcuts to the player, with a seeded bill that arrives 3 to 9 weeks later. The careful rival (**Plumb Line Technology**) is the mirror lesson: right habits, cannot sell, so he loses clients; the player learns to show value (a one-page scorecard).
+The pitch in one paragraph: a sleazy local MSP, **Big Cheese Technology Group**, runs on shortcuts and says "business is booming" until the week it is not. The player meets its habits one piece at a time (a defecting client's assessment, a front-desk notebook, a takeover visit, John's intel, a forum thread, a vendor seat audit, an insurer's questionnaire). Each discovery is a small decision (win the client, warn them ethically, report to the vendor, or ignore it). Each habit has a good twin the player buys into on a new **HABITS** tab of the Boardroom. Eight **temptation cards** offer the same shortcuts to the player, with a seeded bill that arrives 3 to 9 weeks later. The careful rival (**Plumb Line Technology**) is the mirror lesson: right habits, cannot sell, so he loses clients; the player learns to show value (a one-page scorecard).
 
 Everything is data-driven and rides on systems that already exist: `Owner.CARDS` and `Owner.DAYS`, `_poach_week` / `poach_gaps`, `_winback_card`, `Owner.oml()` practices, `Projects`, `Onsite` visits and `FINDINGS`, `Playbook.BOOKS`, `Incident` (the post-incident review), `Deals` / `QuoteBuilder` / `Handover` / `Retention` in the sales campaign.
 
@@ -58,9 +58,9 @@ The rap sheet is a per-rival list of **habits** (`Rival.HABITS`). Each habit has
 | R05 | False answers on the client's and the insurer's security questionnaire | insurer claim letter (late), questionnaire copy | honest assessment (H10) |
 | R06 | Lies to the vendor about seat counts for a discount | vendor seat audit (late) | H10 / vendor honesty |
 | R07 | Bills a reboot as "advanced diagnostics" and invents fees | a client's itemized invoice, notebook | H2 itemized invoices |
-| R08 | Fakes a fix (a "trace" on the phone) to calm a nervous client | notebook, Vic intel | H13 written authorisation / H5 real root cause |
+| R08 | Fakes a fix (a "trace" on the phone) to calm a nervous client | notebook, John intel | H13 written authorisation / H5 real root cause |
 | R09 | Fake Yowl reviews and forum personas; whispers that you are "not bonded, not HIPAA safe" | forum gossip, a prospect repeating it | honesty plus proof (certificate, the BAA) |
-| R10 | Uses leads that came from reading your tickets (a client left a shared mailbox open) and "launders" them through a referral | Vic intel, a client's confession | H13 / H6 |
+| R10 | Uses leads that came from reading your tickets (a client left a shared mailbox open) and "launders" them through a referral | John intel, a client's confession | H13 / H6 |
 | R11 | One flat per-seat price, nothing itemized, so the client cannot see what is not included (ByteBrothers too) | the quote itself | H2 itemized pricing with a value page |
 | R12 | Undocumented work: no SOW, no change ticket, three photos as "documentation" (ByteBrothers too) | takeover visit | H3 change requests, H11 |
 | R13 | Email archiving switched off so a partner can delete messages (a law firm and a clinic) | assessment | H4 / H13 |
@@ -77,7 +77,7 @@ Each channel is an existing mechanism with a small hook. A habit can be reached 
 |---|---|---|---|
 | **Defect assessment** | `Owner._poach_card` (their "free IT assessment" lists your gaps) and `_winback_card` | when a client leaves for Big Cheese the exit chat card gains option ASK WHO THEIR NEW IT PERSON IS and, a few weeks later, the winback card carries the inherited mess | RUMOUR then SEEN |
 | **Takeover visit** | `Onsite.start_visit(client, "takeover")` (new visit kind next to `qbr` / `pitch`), `Onsite.inspect` and `FINDINGS` | six takeover jobs (section 3) | SEEN, PROVEN with a photo or log |
-| **Vic's intel** | owner campaign Vic cards (`Owner.on_deal`, `vic_report` week 10), sales campaign `lynk(...)` / `ask(...)` in `sales_beats.gd` | `Rival.intel(rival)`: Vic hears it at the Chamber lunch; unreliable (his `vic_penalty` and pay plan colour how much) | RUMOUR |
+| **John's intel** | owner campaign John cards (`Owner.on_deal`, `vic_report` week 10), sales campaign `lynk(...)` / `ask(...)` in `sales_beats.gd` | `Rival.intel(rival)`: John hears it at the Chamber lunch; unreliable (his `vic_penalty` and pay plan colour how much) | RUMOUR |
 | **Forum gossip** | `Nerds.THREADS` (71) and `AMBIENT` exchanges, `needs:` conditions | 8 threads (a "who is doing the cheap flat-rate thing in my county" thread, an off-topic vent about a vendor audit) and 4 ambient lines that need `rap_bigcheese_*` | RUMOUR |
 | **Front-desk notebook** | `Onsite.PETS` / site people, `STAFF` lines | the office manager's dated notebook is a prop-free card: she reads three entries | SEEN (becomes PROVEN with a photo) |
 | **Insurer or HIPAA questionnaire** | `Incident` cards, `no2fa` / `_client_breach`, `HIPAA` beat 14 in the sales campaign | a questionnaire copy that a client forwards (our own renewal in week 16 is also the temptation) | SEEN |
@@ -98,8 +98,8 @@ What a sensible player does with a discovery (this is the **decision**, the same
 
 | Week | Beat (habit) | What happens | Consequence that arrives later |
 |---|---|---|---|
-| 3 | **Chamber lunch** (R11) | Garrison and Vic meet Rex at the Chamber of Commerce lunch: a flyer, $39 a seat, "everything included". Vic is impressed. Card `rival_flat` | seeds the price objection cards and the winback story |
-| 5 | The billboard and the 5-star wall (R09) | Yowl (a Yelp-like review site) shows Big Cheese with 41 five-star reviews, 38 of them from accounts that review nothing else. Vic's intel RUMOUR | the reviews are exposed in week 12 |
+| 3 | **Chamber lunch** (R11) | Garrison and John meet Rex at the Chamber of Commerce lunch: a flyer, $39 a seat, "everything included". John is impressed. Card `rival_flat` | seeds the price objection cards and the winback story |
+| 5 | The billboard and the 5-star wall (R09) | Yowl (a Yelp-like review site) shows Big Cheese with 41 five-star reviews, 38 of them from accounts that review nothing else. John's intel RUMOUR | the reviews are exposed in week 12 |
 | 7 | **Client defects on price** (R11) | uses the existing price-only poach (4%) or a gaps poach: a client signs with Big Cheese. Card `rival_defect`. Exit chat option keeps the door open and starts the clock | week 11 winback with a mess |
 | 8 | Seat count (R06) | WebWoot's quarterly true-up to our own count, with Rex bragging at the lunch about his discount (the temptation `temp_seats` is offered to the player the same week) | the vendor audit in week 15 hits whoever lied |
 | 9 | Reboot billing (R07) | a client's bookkeeper shows Marge an invoice with "ADVANCED DIAGNOSTICS $85" on a rebooted printer; same week the player is offered `temp_reboot` | week 14 (player) or week 15 (Rex) |
@@ -116,9 +116,9 @@ What a sensible player does with a discovery (this is the **decision**, the same
 
 The Rex arc ends without a villain's prison scene: he sells the book to an out-of-town outfit, the billboard is repainted. We do not spell out where he goes (keeps it funny rather than mean).
 
-### 2.5 Sales weeks (Vic) over the 20 weeks
+### 2.5 Sales weeks (John) over the 20 weeks
 
-Vic's campaign already has 20 sales beats in `sales_beats.gd` (2 Chamber lunch, 6 ByteBrothers undercut, 14 HIPAA scare, 18 ByteBrothers recruits you, 19 Summit audits the book). The rival arc layers on top:
+John's campaign already has 20 sales beats in `sales_beats.gd` (2 Chamber lunch, 6 ByteBrothers undercut, 14 HIPAA scare, 18 ByteBrothers recruits you, 19 Summit audits the book). The rival arc layers on top:
 
 | Week | Beat | Habit | Notes |
 |---|---|---|---|
@@ -201,14 +201,14 @@ A temptation card offers a shortcut with a visible short-term gain, and the hone
 | `temp_reboot` | week 9 Marge | bill a reboot as ADVANCED DIAGNOSTICS ($85): +$85 x ~6 a month | week 14 a bookkeeper audits one invoice: refund + mood -10 at the client + rep -1; if several clients compare, a forum thread | bill the real minutes; or sell the client an actual monthly check |
 | `temp_quest` | week 16 insurer renewal | answer 'yes' to every control (two-factor login for admins, tested restores): premium $38 a week instead of $65 and a smooth renewal | if a claim ever happens (any ransom/BEC loss afterwards) the insurer refuses it: you eat the bill (`bec_loss` insurer branch fails, 100%); due diligence counts it | answer truthfully (the $65 premium) and promise the broker you will fix two items by Q3 (H1, H7) |
 | `temp_review` | week 12 rumour | open three fake accounts on Yowl and the forum to praise yourself and 'ask' about Big Cheese: +4 reputation, +1 lead a week for 3 weeks | week 17 a sleuth thread on LabRat Nerds traces the writing style: rep -6, lose your two friendliest forum regulars (`Nerds` friend -30) and a Chamber lunch card | reply once, politely, with the bond certificate and the BAA; ask two happy clients for a real review |
-| `temp_launder` | week 9 (sales beat `sales_laundered`; owner version via Vic) | a 'referral' arrives that can only have come from a client's open shared mailbox where Big Cheese read our tickets: a hot lead with a ready pain | the lead's contact eventually asks how you knew; rep -3, the client whose mailbox it was leaves (mood -20), and conscience falls two | turn it down and tell the client their mailbox is open (a small free favour; pays back as H12) |
+| `temp_launder` | week 9 (sales beat `sales_laundered`; owner version via John) | a 'referral' arrives that can only have come from a client's open shared mailbox where Big Cheese read our tickets: a hot lead with a ready pain | the lead's contact eventually asks how you knew; rep -3, the client whose mailbox it was leaves (mood -20), and conscience falls two | turn it down and tell the client their mailbox is open (a small free favour; pays back as H12) |
 | `temp_price` | any poach / price card | drop the price 25% to win the client from Big Cheese: +1 client | thin margin: the profit review (`_profit_review`) reports a client under 20% of fee two weeks later; a 20% rise is then refused (45% walk) | sell value (existing 'show them the value $250'), or let them go |
 | `temp_2fa` | week 6 (extends `_client_no`) and sales | switch two-factor login off 'just for the partner so he stops calling' | week 16 the existing `_client_breach` hits: your recommendation is not on paper, blame (no waiver!) $1,200-$4,000 and rep -2 to -4 | a signed waiver (H4) or insist (existing) |
 | `temp_restore` | week 12 (quarterly H1 due) | skip the restore test: saves $150 and 3 hours, 'the light is on' | week 14-19 the ransom card: 15% the restore fails (never a total loss of a backup service client; a no-service client already risks it); poach risk 'failing backup' stays; one time it is the player's own freezer-bag moment | run the test; it often finds a real problem while it is cheap |
 
 **Conscience:** each shortcut -2, each honest alternative +1 (max +1 a week), COME CLEAN +1. Bands: CLEAN BOOKS (0 or above), A FEW LOOSE ENDS (-1 to -3), SKELETONS (-4 to -6), A CLOSET FULL (-7 and below). It is felt, not graded: Marge says "I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT" and the count of open skeletons is the number of items in it. At the board review, **due diligence** (a real thing in MSP sales; sales beat 19 already has it) checks the folder: each unresolved skeleton cuts the multiple by 0.5 (max -1.5) and the review shows 'FOUND IN DILIGENCE: n'. Ending epilogues vary with the band (`Yeartwo` style `TEXT` table).
 
-## 6. Sales campaign hooks (Vic)
+## 6. Sales campaign hooks (John)
 
 Mapped to `Deals`, `QuoteBuilder`, `Handover`, `Retention`, `SalesBeats`.
 
@@ -216,7 +216,7 @@ Mapped to `Deals`, `QuoteBuilder`, `Handover`, `Retention`, `SalesBeats`.
 - **Discovery to assessment.** New CRM button ASSESS (key A, one selling hour, like CHASE): needs the lead at MEETING. Result is a list of findings (`Rival.assessment(lead)`: from the incumbent's rap sheet, 3-5 items) shown as a card and recorded in `notes`. Each item becomes a **promise** you can keep (adds promise points: a finding you point at is a fix you are on the hook for) or ignore; the quote builder shows them as scope suggestions (like `Deals.EXTRAS`). Honest assessment (H10) lists the real items, including ones that cost the client; the cheap version ('looks fine, we can do it') wins 3 points more now and breaks later (`promise_gap` +0.5).
 - **The flat price.** Quote builder gets a new gauge row `RIVAL PRICE` ($39 a seat from Big Cheese, flat; ByteBrothers 20% under list) and a new field `PRESENTED AS`: `ITEMIZED` (default, 31 lines, the Plumb Line mistake: each line is a door to cut: -4 win points and the client strikes the three lines that matter most), `FLAT` (matches the rival's form, +3 points, margin -8%, and nothing in writing on what is excluded, a promise-gap +0.5) and `THREE TIERS` plus a one-page VALUE PAGE (needs H2: removes the penalty, +2 points; asks for no more than three decisions). The price objection card (`sales_flat`, draft 11) is the explainer.
 - **Winning and losing.** A win from a Big Cheese client starts a **takeover handover**: the handover card already has KEEP / RENEGOTIATE / DROP per promise; the findings from ASSESS are the promises. The inherited mess lands on Dan and Morgan (`capacity()` falls, `Retention` unresolved gap). Losing: ByteBrothers' steal chance (`Deals.resolve_pending`) is unchanged; a Big Cheese loss costs `rival_wins` +1 as for ByteBrothers (CRM review shows RIVAL WINS).
-- **Plumb Line mirror beat** (week 11): the prospect picked Plumb Line (careful, nine-page proposal, 31 lines) and has not signed after six weeks; Hollis cannot answer 'which of these do I need?'. The prospect asks Vic for a second opinion. Options: SHOW THE THREE-TIER PAGE (needs the quote builder), JUST UNDERCUT HIM (temptation), or TELL THE PROSPECT HE IS GOOD AND SEND THEM BACK (honest, no deal; +conscience, +Hollis: a later Mastermind favour).
+- **Plumb Line mirror beat** (week 11): the prospect picked Plumb Line (careful, nine-page proposal, 31 lines) and has not signed after six weeks; Hollis cannot answer 'which of these do I need?'. The prospect asks John for a second opinion. Options: SHOW THE THREE-TIER PAGE (needs the quote builder), JUST UNDERCUT HIM (temptation), or TELL THE PROSPECT HE IS GOOD AND SEND THEM BACK (honest, no deal; +conscience, +Hollis: a later Mastermind favour).
 - **Rumours (reverse).** Big Cheese badmouths us: `sales_rumour` appears as a prospect asking if you are bonded and HIPAA safe. Honesty costs: answering with the paper (bond certificate, the BAA template) costs an hour and -3 win points on that deal (you looked defensive), badmouthing back wins +6 now (temptation, a counter-rumour card later), ignoring costs -5 points. All rumours expire after 4 weeks.
 - **Retention and renewal.** Scorecards sent at business review (`Retention` renewal card option RUN A BUSINESS REVIEW) add `renew_chance` +0.06; a client who left because of a lie by us is not winnable back (6%).
 - **Clawback and verdict.** A deal won by a lie (a temptation) is flagged `lie`; the 90-day churn gains +8; the week 20 verdict adds a LIES line; SALES DIRECTOR needs conscience above -3.
@@ -226,10 +226,10 @@ Mapped to `Deals`, `QuoteBuilder`, `Handover`, `Retention`, `SalesBeats`.
 Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `text`, `options` with `label`, optional `need`, `fx`, and `text` that is the result). Speaker tokens: `{me}`, `{tech}` (Alan or Dan), `{sales_owner}` (Garrison), `{ops}` (Morgan), `{client}` (filled by `Incident.fill` / `Owner.fill_text`). New `fx` keys are sketched in section 8: `rap [rival, habit, level]`, `consc n`, `skel [id, weeks]`, `habit id`, `rep`, `mood`, `cash`. Characters in the 3x5 font only; no AI, no "MFA".
 
 **1. `rival_flat` - owner week 3 (Garrison)**
-- text: "{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal."
-- opt `LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)`: fx `rap [bigcheese, R11, 1]`, `consc 0`. text: "Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
+- text: "{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. John ate two of his cookies and says the price is a steal."
+- opt `LOOK UP WHAT $39 A SEAT BUYS ($0, JOHN ASKS AROUND)`: fx `rap [bigcheese, R11, 1]`, `consc 0`. text: "John calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
 - opt `PRINT A ONE PAGE COMPARISON ($120)`: need 120, fx `cash -120`, `habit_start H2`. text: "Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
-- opt `DROP YOUR PRICE TO MATCH`: fx `price -0.10`, `skel [temp_price, 6]`, `consc -2`. text: "Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
+- opt `DROP YOUR PRICE TO MATCH`: fx `price -0.10`, `skel [temp_price, 6]`, `consc -2`. text: "John is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
 - opt `IGNORE HIM, HE WILL BE GONE BY JULY`: fx `rap [bigcheese, R11, 0]`. text: "Garrison says he has met a hundred Rexes. Rex is not gone by July."
 
 **2. `rival_defect` - owner week 7 (Marge)**
@@ -259,9 +259,9 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - opt `REPORT 63 AND ASK FOR A VOLUME TIER`: fx `consc +1`, `stack antivirus -0.08`. text: "The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true."
 - opt `CHANGE VENDORS BECAUSE THIS IS ANNOYING ($800)`: need 800, fx `stack switch`. text: "Switching costs a week of grumbling. The new vendor audits you too, kindly."
 
-**6. `temp_reboot` - owner week 9 (Vic)**
-- text: "The printer at {client} needed a reboot. Eight minutes. Vic says Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and the clients never ask what that is. He thinks you could do the same."
-- opt `BILL IT AS ADVANCED DIAGNOSTICS`: fx `cash +85`, `skel [temp_reboot, 5]`, `consc -2`. text: "The invoice goes out with the long phrase. Vic grins. A bookkeeper somewhere reaches for her glasses."
+**6. `temp_reboot` - owner week 9 (John)**
+- text: "The printer at {client} needed a reboot. Eight minutes. John says Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and the clients never ask what that is. He thinks you could do the same."
+- opt `BILL IT AS ADVANCED DIAGNOSTICS`: fx `cash +85`, `skel [temp_reboot, 5]`, `consc -2`. text: "The invoice goes out with the long phrase. John grins. A bookkeeper somewhere reaches for her glasses."
 - opt `BILL THE EIGHT MINUTES`: fx `cash +20`, `consc +1`. text: "Twenty dollars and a short note: the printer needed a restart; here is the setting that stops it. The client keeps the note."
 - opt `OFFER A MONTHLY PRINTER CHECK ($40/WEEK)`: fx `service printer`. text: "Now the reboot is part of something. Marge calls it recurring revenue with a stapler."
 
@@ -272,7 +272,7 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - opt `ASK THE BROKER IF THERE IS A CHEAPER CARRIER`: fx `roll`, 40% cheaper carrier with the same truth. text: "He grumbles. Two phone calls later: $54, with a one-page list of what they need to see."
 
 **8. `temp_review` - owner week 12 (Garrison)**
-- text: "A prospect asked Vic if we're bonded and HIPAA safe because somebody told her we aren't. Big Cheese again. Meanwhile their page on Yowl has forty reviews. Garrison's nephew says he can set up a few accounts for us in an afternoon."
+- text: "A prospect asked John if we're bonded and HIPAA safe because somebody told her we aren't. Big Cheese again. Meanwhile their page on Yowl has forty reviews. Garrison's nephew says he can set up a few accounts for us in an afternoon."
 - opt `POST THREE REVIEWS AS CUSTOMERS`: fx `rep +4`, `lead +3`, `skel [temp_review, 5]`, `consc -2`. text: "Three glowing reviews from 'a happy dental office manager'. Alan reads them and does not speak for the rest of the day."
 - opt `SHOW HER THE BOND CERTIFICATE AND THE BAA`: fx `consc +1`, `prospect +`. text: "Two documents and a coffee. She signs the following week and apologises for asking."
 - opt `ASK TWO HAPPY CLIENTS FOR A REAL REVIEW`: fx `consc +1`, `rep +1`. text: "Delia writes the best one. She mentions the printer."
@@ -298,10 +298,10 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - opt `GO LINE BY LINE ON THE PHONE (AN HOUR)`: fx `hours 1`, `win +0.05`. text: "You read thirty-one lines. By line fourteen you both agree the list is the problem."
 - opt `WALK, THEY WILL BE BACK IN SIX MONTHS`: fx `lose_lead`, `consc 0`. text: "You are right about the six months. You are wrong about it helping."
 
-**12. `sales_laundered` - sales week 9 (Vic's phone)**
+**12. `sales_laundered` - sales week 9 (John's phone)**
 - text: "A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP in the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us."
 - opt `TAKE THE MEETING, SHE IS A GOOD LEAD`: fx `lead hot`, `skel [temp_launder, 6]`, `consc -2`. text: "She is a great lead. She is a great lead because someone read our tickets and sold her the story."
-- opt `ASK HER HOW SHE HEARD`: fx `rap [bigcheese, R10, 2]`, `consc +1`. text: "She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call."
+- opt `ASK HER HOW SHE HEARD`: fx `rap [bigcheese, R10, 2]`, `consc +1`. text: "She mentions the shared mailbox at the dental office. John goes quiet, then says he will make a call."
 - opt `TELL THE DENTAL OFFICE THEIR MAILBOX IS OPEN, FOR FREE`: fx `mood +8 client`, `habit_start H12`, `consc +2`. text: "They fix the mailbox. Gwen becomes a client three weeks later, and she tells everyone why."
 
 Each card above is the complete `speaker` / `text` / options set; the build agent turns it into `Owner.CARDS.<key>` dictionaries and strings.txt keys (`[Owner.CARDS.rival_flat.options.0.label]`, etc., following `bec_scare`). Check each against the charset test and a banned-word list before commit.

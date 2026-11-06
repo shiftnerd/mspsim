@@ -42,8 +42,8 @@ func _init() -> void:
 	for who in ["Alan", "Dan"]:
 		world.chars[who].scene = "main_floor"
 		world.force_activity(who, "work")
-	# Maya owns Seat2 and Vic, Garrison have desks nearby: keep them at work elsewhere so nobody takes the chair mid-test
-	for who in ["Maya", "Garrison", "Vic"]:
+	# Maya owns Seat2 and John, Garrison have desks nearby: keep them at work elsewhere so nobody takes the chair mid-test
+	for who in ["Maya", "Garrison", "John"]:
 		if world.chars.has(who):
 			world.chars[who].scene = "office_two"
 			world.force_activity(who, "work")

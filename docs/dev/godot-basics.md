@@ -65,7 +65,7 @@
   (`sitstretch sitscratch sitlook sityawn sitslump sitmouse sitphone sitnod`, or `sip` = the existing `sitsip`) and goes back to `type` /
   `sit`. `SeatLife` (a `RefCounted`) only decides when and which: a stream from `Difficulty.rng_for("gesture", day * 1009 + name hash)`
   (deterministic per person per day, day 0 outside a campaign), `tick(delta, ready)` counts the gap, `pick(typing, held, cup)` chooses by
-  weight (`BASE`, `PERSONALITY`: Alan sips, Garrison stretches and slumps, Dan scratches / fixes his glasses, Vic checks his phone, Maya
+  weight (`BASE`, `PERSONALITY`: Alan sips, Garrison stretches and slumps, Dan scratches / fixes his glasses, John checks his phone, Maya
   drums the mouse and looks around; clients' staff use `BASE`; `CHARACTER_KEY` maps player character ids to the same personalities).
   `sitmouse` needs a desk (`seat.typing`), `sitnod` only away from desks (meetings, lunch, couches, booths, bench seats), `sip` only with a drink.
 - Never: during a call (`_call_stage`), a chat or talk (`_hold`), an outage grumble (`_offline`, `_grumble_t`, `flag_glyph`), a speech bubble,

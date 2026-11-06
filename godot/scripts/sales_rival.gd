@@ -1,6 +1,6 @@
 extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
-# R38 P5: the rival and good-habit hooks of Vic's sales campaign (docs/scope-bad-habits.md sections 2.5 and 6). A static helper (no state
+# R38 P5: the rival and good-habit hooks of John's sales campaign (docs/scope-bad-habits.md sections 2.5 and 6). A static helper (no state
 # of its own): the state lives on the lead dictionaries (incumbent, inc_seen, findings, assessed, rumour, lie ...), on the book entries
 # (honest, lie, takeover, scorecard) and in SalesCampaign.flags, so it saves with the campaign. Conscience is Owner.consc through
 # Temptation (words only, never a number). The text of the beats is SalesCampaign.BEAT_TEXT (patchable in story/strings.txt).
@@ -212,7 +212,7 @@ static func form_blocks(l: Dictionary, n: Dictionary) -> Array:
 			if flat_rival(l) and not Habits.fresh("H2"):
 				out.append(
 					{
-						"who": "VIC",
+						"who": "JOHN",
 						"text": "THIRTY-ONE LINES ARE THIRTY-ONE DOORS TO CUT. TRY THREE TIERS.",
 						"hard": false
 					}
@@ -229,7 +229,7 @@ static func form_blocks(l: Dictionary, n: Dictionary) -> Array:
 			if not Habits.fresh("H2"):
 				out.append(
 					{
-						"who": "VIC",
+						"who": "JOHN",
 						"text": "NO SCORECARD BEHIND THE PAGE YET. IT IS GUESSWORK.",
 						"hard": false
 					}
@@ -285,7 +285,7 @@ static func assess(id: int) -> String:
 		% [str(l.name), ids.size(), finding_names(ids)]
 	)
 	Cards.ask(
-		"Vic (your notes)",
+		"John (your notes)",
 		text,
 		[
 			{"label": "WRITE UP THE HONEST LIST", "id": "honest"},

@@ -144,7 +144,7 @@ func _init() -> void:
 
 	# ---- a coworker
 	var who := "Dan"
-	for w in ["Dan", "Vic", "Maya"]:
+	for w in ["Dan", "John", "Maya"]:
 		if social.people().has(w):
 			who = w
 			break
@@ -278,7 +278,7 @@ func _init() -> void:
 	phone.poll_notifications()
 	_check(phone._bq.size() == 1 and phone._bq[0].kind == "SLA", "a Lynk SLA warning is flagged SLA")
 	phone._bq.clear()
-	lync._push("Vic", "Vic", "Lunch?")
+	lync._push("John", "John", "Lunch?")
 	phone.poll_notifications()
 	_check(phone._bq.size() == 1 and phone._bq[0].kind == "IM", "a Lynk message makes an IM banner")
 	phone._bq.clear()

@@ -67,7 +67,7 @@ func _init() -> void:
 	_start()
 	_clear(cards)  # the huddle
 	_check(c.active and c.mode == "service" and c.player_as == "Dan", "new game: you are Dan")
-	_check(not world.chars.has("Dan") and world.chars.has("Maya") and world.chars.has("Vic") and world.chars.has("Morgan"), "Dan's NPC copy is gone, the rest are in")
+	_check(not world.chars.has("Dan") and world.chars.has("Maya") and world.chars.has("John") and world.chars.has("Morgan"), "Dan's NPC copy is gone, the rest are in")
 	_check(c.crew_active() and not c.books_active() and c.cards_active(), "crew true, books false, cards true")
 	_check(world.day_len == 360.0 and c.rep == 55, "day_len 360, confidence starts at 55")
 	_check(str(world.player_desk().scene) == "main_floor" and str(world.player_desk().seat) == "Seat3", "your desk is main floor Seat3")
@@ -122,12 +122,12 @@ func _init() -> void:
 	cards.pick(2)
 	_clear(cards)
 	_check(crew.morale("Sam") < low_before, "a curt answer to a tech hurts (%d -> %d)" % [low_before, crew.morale("Sam")])
-	var vic0: int = social.value("Vic")
-	sv.one_on_one("Vic")
+	var vic0: int = social.value("John")
+	sv.one_on_one("John")
 	cards.pick(1)
 	_clear(cards)
-	_check(social.value("Vic") > vic0, "a 1:1 with Vic moves his opinion")
-	_check(talk.has_method("start") and sv.has_one_on_one("Maya") and sv.has_one_on_one("Vic") and not sv.has_one_on_one("Alan"), "Talk offers a 1:1 for Maya and Vic")
+	_check(social.value("John") > vic0, "a 1:1 with John moves his opinion")
+	_check(talk.has_method("start") and sv.has_one_on_one("Maya") and sv.has_one_on_one("John") and not sv.has_one_on_one("Alan"), "Talk offers a 1:1 for Maya and John")
 	var deck_ok := true
 	for deck in sv.ONE_ON_ONES:
 		deck_ok = deck_ok and sv.ONE_ON_ONES[deck].size() >= 3

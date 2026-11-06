@@ -4,9 +4,9 @@ The one ordered list of what is built and what is still open. Detail lives elsew
 Row ids (R, X, C, T, Q, P, H) are stable: never renumber them. Effort: S under a day, M 1-3 days, L a week or more.
 
 ## Decisions so far (user)
-- Alan and Garrison are the two owners of Pixel IT Partners (Alan technical, Garrison sales and culture). Morgan Reyes is the manager and **a real cast member**. Marge bookkeeper, Vic account manager.
+- Alan and Garrison are the two owners of Pixel IT Partners (Alan technical, Garrison sales and culture). Morgan Reyes is the manager and **a real cast member**. Marge bookkeeper, John account manager.
 - Owner campaign is played as **Alan or Garrison**; the other is the co-owner NPC. Owners take a **weekly draw from the bank balance**.
-- Service manager campaign is played as **Dan**. Sales campaign is played as **Vic**.
+- Service manager campaign is played as **Dan**. Sales campaign is played as **John**.
 - In the tech campaign the owners are busy and jump in **as a last resort** (phones, clients); stepping in **costs no reputation**.
 - Difficulty tiers and seeded randomness are wanted; point-buy stats at character select are wanted. **Easy is the cozy tier** (never fired, nothing punishes you).
 - Parody names for products whose UI we imitate (Sugar Smash, Floppy Bat, iFone, Nexxus, Lynk, Googol); Apple, Windows, Exchange and PowerShell stay as era context. The game is set in 2013-14.
@@ -26,7 +26,7 @@ Detail for each is in the CLAUDE.md section named in brackets.
 - Q1 live tech playthrough, Q2 hand-played 20 owner weeks as Garrison, Q3 screenshot and audit sweep, Q4 real clicks in tests (`Game.click_at`), Q5 the Free Play ghost removed, Q8 worktree hooks tested.
 
 **Campaigns**
-- C1 to C3 sales campaign as Vic (skeleton, deep loop, story/voices/point-buy/balance). C4 to C7 service manager campaign as Dan (slice 1, crew and Dispatch, runbooks/desk design/hiring/retention, the 20-day arc and endings).
+- C1 to C3 sales campaign as John (skeleton, deep loop, story/voices/point-buy/balance). C4 to C7 service manager campaign as Dan (slice 1, crew and Dispatch, runbooks/desk design/hiring/retention, the 20-day arc and endings).
 
 **Replayability**
 - R1 difficulty and seeds (typed seed, daily seed, saved stream positions). R2 printer variety. R3 karaoke songs. R4 escape-room recipes. R5 who comes along. R6 dinner variety. R7 career screen and medals. R8 event deck and vignette deck. R9 mutators and starting conditions. R10 Year 2 / New Game+, daily seed and the Free Play toolbox. R11 bowling, nerf, trip and onsite variety. R30 mastery ramp and moving sweet spots.
@@ -48,13 +48,13 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | X6 | Owner help for onsite visits; a walk to the front desk for non-phone triggers; owner help counted by Career | S |
 | X7 | No balance run per build preset; a Free Play MAX preset has no menu entry (`Build.max_build()`); tier x seed coverage in `seeds.gd` | S |
 | X9 | A live screenshot check of the trust chips and the review crew lines; a manual 20-week replay | S |
-| C3 | The new-hire story for Vic's own deals; a sales-director second year; ByteBrothers as a rival walking the office; spoken lines for the beats in Lynk; a lead-flow difficulty knob; commission scaled to the weekly fee | M |
+| C3 | The new-hire story for John's own deals; a sales-director second year; ByteBrothers as a rival walking the office; spoken lines for the beats in Lynk; a lead-flow difficulty knob; commission scaled to the weekly fee | M |
 | C7 | Owners walking to Dan and a 1:1 from the Capacity tab; a design line on the Dispatch SCORE tab; Morgan and the Summit auditor as walking characters; Career medals for the service endings; a hand-played pass for card pacing; tiers other than normal for the arc | M |
 | R1 | `Owner` / `Shift` / `Projects` randomness is still global; hard-tier numbers checked by play; a separate tier step instead of the chip | S |
 | R2 | The boss line printer (P4) and the parts bag (P6) | S-M |
 | R3 | Karaoke hold notes (K2), duets (K5), set lists (K6), pager interrupt (K8) | M |
 | R4 | Random clue spots (E6), more red herrings (E3), hint-time penalty on easy (E4), themed rooms (E5) | M |
-| R5 | Vic's client in the owner campaign; karaoke and escape intros that name the party | S |
+| R5 | John's client in the owner campaign; karaoke and escape intros that name the party | S |
 | R6 | Dietary quirks and an ordering round (D4), a client at the table (D5), table events (D7), post-dinner talks (D8), an ASK HOW THEY ARE topic and `as of outing n` marks (D2), the boss picking up the tab in the tech campaign | M |
 | R7 | Art for the data-only unlocks (duck, desk toys), a real ringtone sound, a medal detail view, a Free Play hotkey for the career screen (today: phone Settings), a mastery row on the career screen | S |
 | R8 | Seasonal tags beyond the day windows, a Career counter of cards seen, art for the cards | S |

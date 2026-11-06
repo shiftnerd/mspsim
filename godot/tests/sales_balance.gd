@@ -4,7 +4,7 @@ extends SceneTree
 # (quota %, commission, clawbacks, churn, renewals, rep, cash and the verdict). One strategy per process:
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/sales_balance.gd -- careful 11 12 13
 #   strategies: careful (honest, safe promises, follows up), pushy (promises the moon, discounts, drops promises), lazy (one quote a
-#   week at most, never follows up, takes the paperwork). Add `smooth` / `farmer` / `overpromise` as a 2nd word to try a Vic build.
+#   week at most, never follows up, takes the paperwork). Add `smooth` / `farmer` / `overpromise` as a 2nd word to try a John build.
 
 const PREFS := {
 	"careful": ["standard", "balanced", "work", "go", "honest", "take", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
@@ -142,13 +142,13 @@ func _run(seed_value: int) -> Dictionary:
 	var onsite := root.get_node("Onsite")
 	var owner_node := root.get_node("Owner")
 	var player_script: GDScript = load("res://scripts/player.gd")
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	game.title_mode = false
 	game.busy = false
 	root.get_node("Difficulty").seed_run(seed_value)
 	root.get_node("Build").pending = {}
 	if build_name != "":
-		var b: Dictionary = root.get_node("Build").apply_preset("sales", "Vic", "normal", build_name) if build_name != "overpromise" else root.get_node("Build").apply_preset("sales", "Vic", "normal", "hunter")
+		var b: Dictionary = root.get_node("Build").apply_preset("sales", "John", "normal", build_name) if build_name != "overpromise" else root.get_node("Build").apply_preset("sales", "John", "normal", "hunter")
 		if build_name == "overpromise":
 			b["quirks"] = ["overpromise"]
 		root.get_node("Build").pending = b

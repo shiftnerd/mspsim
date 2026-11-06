@@ -7,7 +7,7 @@ extends Node
 #             (the call is handled, a client is a little happier)
 #   sla       a P1 / P2 about to breach: +45 seconds on its clock
 #   backlog   six or more open tickets: the soonest one to breach gets +45 seconds
-#   complaint Vic's complaint has waited too long (Sales.pending): Garrison calms the client (mood +4)
+#   complaint John's complaint has waited too long (Sales.pending): Garrison calms the client (mood +4)
 # Stepping in is FREE: no reputation, no opinion loss, no grade effect. It only shows a toast in the owner's own voice
 # and a row in the day report (OWNERS STEPPED IN). Limits: not on days 1-2, a per-day limit for each owner, a cooldown
 # in game minutes, and the Difficulty tier (easy a bit more help, hard none). Random choices come from the `owners`

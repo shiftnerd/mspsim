@@ -21,8 +21,8 @@ func _process(_delta: float) -> bool:
 	if frame == 5:
 		var c := root.get_node("Campaign")
 		c.new_game(c.FREE)
-		root.get_node("World").chars["Vic"].scene = "cubicle_area"
-		root.get_node("World").force_activity("Vic", "work")
+		root.get_node("World").chars["John"].scene = "cubicle_area"
+		root.get_node("World").force_activity("John", "work")
 		change_scene_to_file("res://scenes/cubicle_area.tscn")
 		return false
 	var nerf := root.get_node("Nerf")
@@ -35,7 +35,7 @@ func _process(_delta: float) -> bool:
 			player.give("nerf")
 			player.global_position.x = 192.0
 			player.facing = "right"
-			var vic := current_scene.get_node_or_null("Actors/Vic")
+			var vic := current_scene.get_node_or_null("Actors/John")
 			if vic != null:
 				vic.global_position.x = 250.0
 		100:

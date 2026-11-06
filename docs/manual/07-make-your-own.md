@@ -107,7 +107,7 @@ In **Free Play** you can open the creator over the room at any time:
 The person in the room wears each change live. **DONE** keeps the new look (and saves it as your default for the next run), and
 `Esc` puts your old look back.
 
-> **NOTE:** The `1` to `7` keys in Free Play swap you into one of the stock people instead, such as the intern or Vic. `Y` is for
+> **NOTE:** The `1` to `7` keys in Free Play swap you into one of the stock people instead, such as the intern or John. `Y` is for
 > your own custom person.
 
 ---

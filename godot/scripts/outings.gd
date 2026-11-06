@@ -125,7 +125,7 @@ const PEOPLE := {
 	"Garrison": {"loves": ["MOVIES", "WEEKEND PLANS", "KARAOKE"], "hates": ["SPORTS", "COMMUTE"]},
 	"Dan":
 	{"loves": ["KIDS AND PETS", "FOOD", "GARDENS"], "hates": ["MOVIES", "RAISES AND BONUSES"]},
-	"Vic":
+	"John":
 	{
 		"loves": ["THE BIG GAME", "A NEW PHONE", "ROAD TRIP"],
 		"hates": ["VENDOR STORIES"],
@@ -160,13 +160,13 @@ const BUDGETS := {
 }
 # bowling personalities (R5, B1): skill = how many pins the average roll takes, noise = how far a roll swings from it,
 # streak = hot / cold swing on alternating frames (Garrison), turkey = chance of a strike on a frame (Dan is wild),
-# show = bonus when there is an audience of three or more (Vic), gutter = chance of a gutter ball, late = frames sat out
+# show = bonus when there is an audience of three or more (John), gutter = chance of a gutter ball, late = frames sat out
 # at the start (Morgan joins the game late). A person without a row does not bowl.
 const BOWLERS := {
 	"Alan": {"skill": 0.62, "noise": 0.15, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
 	"Garrison": {"skill": 0.55, "noise": 0.2, "streak": 0.14, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
 	"Dan": {"skill": 0.48, "noise": 0.4, "streak": 0.0, "turkey": 0.1, "show": 0.0, "gutter": 0.06, "late": 0},
-	"Vic": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
+	"John": {"skill": 0.5, "noise": 0.24, "streak": 0.0, "turkey": 0.0, "show": 0.12, "gutter": 0.05, "late": 0},
 	"Maya": {"skill": 0.6, "noise": 0.1, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 0},
 	"Morgan": {"skill": 0.66, "noise": 0.12, "streak": 0.0, "turkey": 0.0, "show": 0.0, "gutter": 0.0, "late": 1},
 }
@@ -179,7 +179,7 @@ const TABLE_MAX := 5  # faces at the table
 const CORE := ["Alan", "Garrison", "Dan"]
 const SEATS := {
 	"dinner":
-	{"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "Vic": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
+	{"Alan": "Seat1", "Garrison": "Seat3", "Dan": "Seat4", "John": "Seat5", "Maya": "Seat6", "Morgan": "Seat7"}
 }
 const PLAYER_SEAT := "Seat2"
 const LANE_NEAR := [152.0, 252.0]
@@ -396,7 +396,7 @@ const DEFAULT_FRIEND_HINTS := {
 		"shelf": "THE BOOKSHELF HAS A LABEL ON IT. GO AND READ IT.",
 		"keypad": "THAT IS EVERYTHING. GO ENTER IT AT THE VAULT.",
 	},
-	"Vic":
+	"John":
 	{
 		"board": "I HAVE A GUY FOR THIS. UNTIL HE CALLS, TRUST ME ON THE CHALKBOARD.",
 		"clock": "I HAVE A GUY AT A CLOCK COMPANY. UNTIL THEN, LOOK AT THE CLOCK.",
@@ -424,7 +424,7 @@ const DEFAULT_GUESTS := {
 	"Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
 	"Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
 	"Dan": {"comes": 0.8, "code": "DA", "line": "Dan has a thing tonight."},
-	"Vic": {"comes": 0.65, "code": "VI", "line": "Vic is on a call with a client."},
+	"John": {"comes": 0.65, "code": "VI", "line": "John is on a call with a client."},
 	"Maya": {"comes": 0.7, "code": "MA", "line": "Maya has plans tonight."},
 	"Morgan": {"comes": 0.25, "code": "MO", "line": "Morgan is staying behind to catch up."},
 }
@@ -463,7 +463,7 @@ const DEFAULT_CREW_LINES := {
 		"cook": ["MEDIUM. EXACTLY AS FILED.", "NO TICKET NEEDED FOR THIS."],
 		"wait": ["MY BURGER IS IN THE QUEUE.", "I FILED THIS ORDER TWICE."],
 	},
-	"Vic":
+	"John":
 	{
 		"cheer": ["I TOLD YOU. I TOLD EVERYONE.", "THAT IS A WINNING ROLL."],
 		"groan": ["THE PINS WERE LOOSE.", "THAT DOES NOT COUNT, RIGHT?"],
@@ -510,7 +510,7 @@ const ROOMS := {
 	"grill": "warehouse",
 	"darts": "warehouse"
 }
-# where Alan, Garrison, Dan, Vic, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
+# where Alan, Garrison, Dan, John, Maya and Morgan stand in each room (set-pixel x, World.CAST order: a person who is
 # not there leaves their spot empty). The five standing spots are unchanged; the sixth is Morgan's.
 const SPOTS := {
 	"bowling": [114, 186, 214, 250, 140, 165],
@@ -719,7 +719,7 @@ func draw_party() -> Array:
 	return party
 
 
-# "Coming: Alan, Dan and Vic. Garrison is sitting this one out." (the invitation card)
+# "Coming: Alan, Dan and John. Garrison is sitting this one out." (the invitation card)
 func coming_text() -> String:
 	if not party_set:
 		draw_party()
@@ -770,13 +770,13 @@ func bowlers() -> Array:
 	return _by_cast(crew().filter(func(n: String) -> bool: return BOWLERS.has(n)).slice(0, LANE_MAX))
 
 
-# the karaoke audience: the party, or (no invitation) the table plus Vic as before
+# the karaoke audience: the party, or (no invitation) the table plus John as before
 func crowd() -> Array:
 	if opts.has("party"):
 		return present()
 	var out := diners()
-	if roster().has("Vic"):
-		out.append("Vic")
+	if roster().has("John"):
+		out.append("John")
 	return out
 
 
@@ -2935,7 +2935,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
 		fx_x += 4.0 * float(tag.length())
 		_t(face, fx_x, o.y, GREEN if shift > 0 else (AMBER if shift < 0 else WHITE))
 		fx_x += 4.0 * float(face.length()) + 3.0
-	var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of Vic at the bar in the 320x180 format
+	var w := minf(size.x - 8.0, 84.0)  # narrow, so it stays right of John at the bar in the 320x180 format
 	var box := Rect2(size.x - w - 4.0, s.position.y - 43.0, w, 42.0)
 	UiStyle.box(_canvas, box)
 	for i in 4:

@@ -338,7 +338,7 @@ func _init() -> void:
 	for who in o.DINERS:
 		_check(o.PEOPLE.has(who), "%s (at the table) has a personality" % who)
 	# R5: everybody in the cast has a bowling row, an invitation row, a taste row and lines in their own voice
-	for who in ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]:
+	for who in ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]:
 		_check(o.PEOPLE.has(who) and o.BOWLERS.has(who) and o.GUESTS.has(who), "%s: taste, bowling and invitation rows" % who)
 		for kind in ["cheer", "groan", "talk", "sing"]:
 			for line in o.CREW_LINES[who][kind]:

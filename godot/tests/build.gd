@@ -88,7 +88,7 @@ func _init() -> void:
 		_check(not (text.contains("family") or text.contains("health") or text.contains("sick") or text.contains("kid")), "quirk %s is kind (no family or health)" % key)
 
 	# ---- presets: every path, every tier
-	for path_info in [["tech", ""], ["owner", "Alan"], ["owner", "Garrison"], ["service", "Dan"], ["sales", "Vic"]]:
+	for path_info in [["tech", ""], ["owner", "Alan"], ["owner", "Garrison"], ["service", "Dan"], ["sales", "John"]]:
 		var path: String = path_info[0]
 		var who: String = path_info[1]
 		var list: Array = b.presets_for(path, who)
@@ -118,7 +118,7 @@ func _init() -> void:
 	_check(b.level_of(dan, "process", "Dan") == 2 and b.level_of(dan, "dispatch", "Dan") == 1 and not b.try_set(dan, "people", 3, "service", "Dan"), "Dan: PROCESS 2 and DISPATCH 1 free, PEOPLE capped at 2")
 	_check(b.BIAS.Dan.skills.networking == 3, "Dan's free NETWORKING 3 is kept as data for the service campaign")
 	var vic: Dictionary = b.new_build("normal")
-	_check(b.level_of(vic, "pitch", "Vic") == 2, "Vic: PITCH starts at 2")
+	_check(b.level_of(vic, "pitch", "John") == 2, "John: PITCH starts at 2")
 
 	# ---- the flat default is today's behaviour
 	var flat: Dictionary = b.from_dict({})

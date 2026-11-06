@@ -32,8 +32,8 @@ func _init() -> void:
 	c.day = 3
 	d.seed_run(31)
 	world.time_scale = 1.0
-	world.chars["Vic"].scene = "cubicle_area"
-	world.force_activity("Vic", "work")
+	world.chars["John"].scene = "cubicle_area"
+	world.force_activity("John", "work")
 
 	# ---- tables
 	_check(NM.MODES.size() == 3 and NM.ARENAS.size() == 3, "three modes and three arenas")
@@ -105,11 +105,11 @@ func _init() -> void:
 
 	# the crew can win it too
 	nerf.start_war("cup")
-	nerf.cup_down("Vic")
+	nerf.cup_down("John")
 	await _wait(80)
-	nerf.cup_down("Vic")
+	nerf.cup_down("John")
 	await _wait(80)
-	nerf.cup_down("Vic")
+	nerf.cup_down("John")
 	_check(nerf.mode_result.id == "cup" and not bool(nerf.mode_result.won) and int(nerf.mode_result.rival) == 3, "the crew can capture the cup")
 	_check(career.value("nerf_cups") == cups0 + 3, "their cups do not count for you")
 

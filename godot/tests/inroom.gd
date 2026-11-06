@@ -273,7 +273,7 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 	_check(o.g.stage == "sit", "dinner waits until you sit down")
 	var seated := 0
-	for who in ["Alan", "Garrison", "Dan", "Vic"]:
+	for who in ["Alan", "Garrison", "Dan", "John"]:
 		var npc := current_scene.get_node_or_null("Actors/" + who)
 		seated += 1 if npc != null and npc.seat != null else 0
 	_check(seated == 4, "the team is already in their seats (%d of 4)" % seated)

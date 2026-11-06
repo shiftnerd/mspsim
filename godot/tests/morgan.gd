@@ -81,7 +81,7 @@ func _run() -> void:
 	_check(lunch.size() == 1 and str(lunch[0].scene) == "cubicle_area", "lunch: she eats at her desk")
 	# the closet errand never picks her
 	var errand_src := FileAccess.get_file_as_string("res://scripts/world.gd")
-	_check("for who in [\"Dan\", \"Alan\", \"Garrison\", \"Maya\", \"Vic\"]" in errand_src, "the closet errand list has no Morgan")
+	_check("for who in [\"Dan\", \"Alan\", \"Garrison\", \"Maya\", \"John\"]" in errand_src, "the closet errand list has no Morgan")
 
 	# ---- seated at her desk in the room
 	world.clock = 10.0

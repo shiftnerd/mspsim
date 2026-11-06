@@ -32,11 +32,11 @@ const REACT := {
 	},
 	"Dan":
 	{"base": 1, "friendly": "heart", "line": "Dan: Okay, that was a good shot.", "mood": "dots"},
-	"Vic":
+	"John":
 	{
 		"base": 1,
 		"friendly": "heart",
-		"line": "Vic: Careful, I have a client call at two!",
+		"line": "John: Careful, I have a client call at two!",
 		"mood": "!"
 	},
 }

@@ -168,7 +168,7 @@ const SWATCHES := {
 	"pants": ["3a3f66", "2b3550", "3f5e8e", "8a6a42", "2a2a33", "6a6f7a", "5a4a3a", "7a3030"],
 	"shoes": ["5a3522", "2a2a33", "8a8f9a", "cfc8b5", "3a3a44", "7a2020", "2f4a73", "6e7a68"],
 }
-# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, Vic, Maya, Morgan) or the crew (Sam, Terry)
+# 2013-14 first names, none of them the cast (Alan, Garrison, Dan, John, Maya, Morgan) or the crew (Sam, Terry)
 const NAMES := [
 	"JAMIE",
 	"CASEY",

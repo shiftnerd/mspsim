@@ -31,13 +31,13 @@ const BASE := {
 	"sitnod": 3.0,
 	"sip": 1.5,
 }
-# personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, Vic checks his phone,
+# personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
 	"Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
 	"Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
 	"Dan": {"sitscratch": 4.0, "sitlook": 1.0},
-	"Vic": {"sitphone": 5.0, "sitstretch": 1.5},
+	"John": {"sitphone": 5.0, "sitstretch": 1.5},
 	"Maya": {"sitmouse": 4.0, "sitlook": 3.5},
 }
 # the player's character ids (and any NPC that is not a named cast member) map to the same personalities
@@ -46,7 +46,7 @@ const CHARACTER_KEY := {
 	"site_alan": "Alan",
 	"casual_garrison": "Garrison",
 	"office_dan": "Dan",
-	"sales_vic": "Vic",
+	"office_john": "John",
 	"office_maya": "Maya",
 }
 const NONE := {}

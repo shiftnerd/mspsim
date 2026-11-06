@@ -42,16 +42,16 @@ func _init() -> void:
 	_check(lync.presence("Alan")[0] == "AWAY", "fetching coffee: away")
 	world.chars["Alan"].scene = world.OUTSIDE
 	_check(lync.presence("Alan")[0] == "OFFLINE", "outside the building: offline")
-	world.chars["Vic"].scene = world.OUTSIDE
+	world.chars["John"].scene = world.OUTSIDE
 	world.clock = 11.0
-	_check(lync.presence("Vic")[0] == "WITH A CLIENT", "Vic out on a client visit")
+	_check(lync.presence("John")[0] == "WITH A CLIENT", "John out on a client visit")
 	world.chars["Alan"].scene = "office_one"
 	world.chars["Alan"].legs = [{"kind": "work"}]
-	world.chars["Vic"].scene = "cubicle_area"
-	world.chars["Vic"].legs = [{"kind": "work"}]
+	world.chars["John"].scene = "cubicle_area"
+	world.chars["John"].legs = [{"kind": "work"}]
 
 	# ---- incoming messages and your replies
-	for n in ["Alan", "Garrison", "Dan", "Vic"]:
+	for n in ["Alan", "Garrison", "Dan", "John"]:
 		world.chars[n].scene = world.CAST[n].home
 		world.chars[n].legs = [{"kind": "work"}]
 	lync.incoming("lunch")

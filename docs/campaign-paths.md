@@ -1,28 +1,28 @@
-# New campaign paths: Owner (as Alan or Garrison), Service Manager (as Dan), Sales (as Vic), plus owners in the tech campaign
+# New campaign paths: Owner (as Alan or Garrison), Service Manager (as Dan), Sales (as John), plus owners in the tech campaign
 
-**STATUS: built.** All four campaigns designed here (tech with the owners as a last resort, owner as Alan or Garrison, service manager as Dan, sales as Vic) are playable; this document is kept for the design rationale and the extension guide (section 8.1). Revision 2 (canon change). Read-only pass over CLAUDE.md, IDEAS.md (24-25, 40-52), GAME_BIBLE.md, msp-research.md,
+**STATUS: built.** All four campaigns designed here (tech with the owners as a last resort, owner as Alan or Garrison, service manager as Dan, sales as John) are playable; this document is kept for the design rationale and the extension guide (section 8.1). Revision 2 (canon change). Read-only pass over CLAUDE.md, IDEAS.md (24-25, 40-52), GAME_BIBLE.md, msp-research.md,
 replayability-ideas.md and `campaign, owner, sales, onsite, msp, world, story, playbook, social, cards, day_report, review, title, charselect,
 shift, growth, projects, talk, lync, skills` (`.gd`). Effort: S under a day, M 1-3 days, L a week or more.
 Parody names only; 2013-14 only (no AI, no Slack/Teams); never punish family or health.
 
 ## 0. Canon and the facts that shape the design
 **Canon (decided):** Pixel IT Partners has two owners. **Alan = technical owner** (servers, stack, security posture, resolution quality; Office 1).
-**Garrison = sales-and-culture owner** (marketing, pricing, morale, outings, client relationships, Vic's pipeline; Office 2). **Morgan Reyes** is the
-manager and reports to both. **Marge** is the bookkeeper, **Vic** the account manager, **Dan** and **Maya** the techs, plus hires.
+**Garrison = sales-and-culture owner** (marketing, pricing, morale, outings, client relationships, John's pipeline; Office 2). **Morgan Reyes** is the
+manager and reports to both. **Marge** is the bookkeeper, **John** the account manager, **Dan** and **Maya** the techs, plus hires.
 
 | Path | Played as | Reports to | Cast removed from `World.chars` |
 |---|---|---|---|
 | Tech (exists) | non-cast (intern/adult/site Alan) | Morgan; owners are the distant top | none (owners get a text/role pass, section 6) |
 | **Owner (new pick)** | **Alan or Garrison** | Marge/Morgan advise; the other owner is the partner NPC | the chosen owner |
 | **Service Manager** | **Dan** | Morgan, ultimately Alan and Garrison | Dan |
-| **Sales** | **Vic** | Garrison (quota/pricing), Alan (margin/delivery), Morgan (delivery gate) | Vic |
+| **Sales** | **John** | Garrison (quota/pricing), Alan (margin/delivery), Morgan (delivery gate) | John |
 
 Facts that shape everything:
 - `Difficulty`, `Events`, `Mutators` (replayability-ideas) are specified (the `difficulty` branch) but not in `godot/scripts/` here. Read seeds/tiers through `Difficulty.get()/rng()` with a `randf()` fallback.
 - The owner campaign has a **crew autopilot** (`Owner.team_speed()` + `_work_queue()`, tech-seconds WORK 180/140/100/72, 7% premature closes) gated by `Owner.active()` (`mode == "owner"`, 40+ call sites).
   Its base crew is hard-coded `3 - lost_techs` (Alan, Garrison, Dan); with the owners no longer on the payroll as techs, it needs a re-base (Dan, Maya, Sam, plus the partner's part-time hands-on).
 - Free Play offers all seven by ghosting the NPC copy (`npc.gd _process`: `_hidden`); the ghost likely still holds its seat and takes meetings (verify). Campaigns need the Maya pattern.
-- `Owner.CARDS` has 15 cards spoken by "Alan (Co-owner)", 16 by Vic, 9 by Marge: those speaker strings are the main text pass for the owner chapter.
+- `Owner.CARDS` has 15 cards spoken by "Alan (Co-owner)", 16 by John, 9 by Marge: those speaker strings are the main text pass for the owner chapter.
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -34,28 +34,28 @@ Facts that shape everything:
 | Tech / Owner | non-cast only (`charselect.choices`) | n/a. Owner mode erases Maya in `World.apply_roster()` ("not on your payroll"), restored elsewhere |
 
 ### 1.2 Minimal robust design: `Campaign.player_as`
-1. `Campaign.player_as` ("" default; "Alan"/"Garrison" for owner, "Dan" service, "Vic" sales), saved in `campaign` (old saves "" = unchanged).
+1. `Campaign.player_as` ("" default; "Alan"/"Garrison" for owner, "Dan" service, "John" sales), saved in `campaign` (old saves "" = unchanged).
 2. **`World.CAST` stays a const reference table.** Only `World.chars` changes: `apply_roster()` builds a `gone` list (`player_as`), frees nodes and erases them; everyone else is (re)created with `_make_char`.
    **Maya stays in owner mode** now (she is an employee under the new canon; the old exclusion goes away). `CAST` keeps `CAST.keys().find(n)` (lunch seat index), `Social.DESK_OWNER`, `npc.DESKS` valid.
-3. **Your desk** = `CAST[player_as].home/seat` via `World.player_desk()`: Alan office_one Seat1, Garrison office_two Seat1, Dan main_floor Seat3, Vic cubicle_area Seat1. New runs start seated there (`Game.vars.start_seated`, `stage.gd`).
+3. **Your desk** = `CAST[player_as].home/seat` via `World.player_desk()`: Alan office_one Seat1, Garrison office_two Seat1, Dan main_floor Seat3, John cubicle_area Seat1. New runs start seated there (`Game.vars.start_seated`, `stage.gd`).
    Desk phone (seat-left rule) and desk-outage internal ticket (desks 6/7/3/4) are generic and become yours.
 4. **Who covers their duties**: tickets are one shared queue, so nobody loses tickets. Roles are data: `Talk.SPECIALTY` fallback for tips; meeting/lunch seats stay empty; a role map `Roles.who("tech lead")` points cards that said
    "Alan (Co-owner)" at the right person (Dan, Morgan or the partner owner).
 5. **Address**: a `role` tag per campaign (`owner`, `manager`, `sales`) read by `Talk` and `Lync`: reports bring you problems, the partner owner talks business, Morgan talks operations.
 6. **Their agenda** is dropped, never simulated off-screen; their opinion row disappears (`Social.people()`).
-7. `charselect`: owner offers Alan and Garrison (two choices, normal carousel); service offers Dan only, sales Vic only (single card); phone step stays; then the build step (section 13).
+7. `charselect`: owner offers Alan and Garrison (two choices, normal carousel); service offers Dan only, sales John only (single card); phone step stays; then the build step (section 13).
 
 ### 1.3 Files and functions
 | File | Change |
 |---|---|
 | `campaign.gd` | `MODES` + `service`, `sales`; `player_as`; `new_game/continue_game/save`; per-mode day length (owner 240, service 360, sales 240); `_make_report/_end_day/_ending/report_continue`; reset on quit |
-| `world.gd` | `apply_roster` (generalised), `player_desk()`, `send_vic_to_player` -> `send_to_player(name, kind)`, Vic visit/bell legs only if present, `CAST` `role` tags |
+| `world.gd` | `apply_roster` (generalised), `player_desk()`, `send_vic_to_player` -> `send_to_player(name, kind)`, John visit/bell legs only if present, `CAST` `role` tags |
 | `social.gd` | `PEOPLE` const -> `people()` (readers: `lync.gd` 97/164/293, `computer.gd` 2210, `outings.gd` 753/840/1143, `owner.gd` 3014, `review.gd` 293) |
 | `charselect.gd`, `title.gd` | `choices(mode)`, cast note line, menu entries (CONTINUE SERVICE - DAY n), mode map, `_start` |
 | `stage.gd`, `hud.gd` | seated start; HUD strings per mode |
 | `lync.gd`, `talk.gd` | boss lookup (Morgan in all; Marge in owner), role decks, `_state_tip` per role (28 + 15 name refs) |
-| `outings.gd` | `DINERS/BOWL_SKILL/SEATS/totals` -> `roster()` (cast minus `player_as`, plus Maya/Vic); invitation speaker (section 6) |
-| `story.gd`, `sales.gd`, `owner.gd`, `msp.gd` | per-mode story tables; NPC-Vic automation off when `player_as == "Vic"`; `Owner.active()` split into `crew_active/books_active/cards_active`; "Dispatch" sender |
+| `outings.gd` | `DINERS/BOWL_SKILL/SEATS/totals` -> `roster()` (cast minus `player_as`, plus Maya/John); invitation speaker (section 6) |
+| `story.gd`, `sales.gd`, `owner.gd`, `msp.gd` | per-mode story tables; NPC-John automation off when `player_as == "John"`; `Owner.active()` split into `crew_active/books_active/cards_active`; "Dispatch" sender |
 | `day_report.gd`, `review.gd` | custom rows (already supported) and offers per mode |
 | `meeting.gd`, `conference.gd` | all-hands speech for owner mode; `_boss` shows Morgan in every mode |
 **P0 = M.** The **owner campaign is the cheapest proof** (section 3): it already exists end to end, the swap is the same one `apply_roster` does for Maya, and the partner is simply the other cast NPC.
@@ -75,10 +75,10 @@ You and your partner built this place. **Pitch: run Pixel IT Partners as one of 
 ### 3.2 Two owners, two playstyles
 | | **Alan (technical owner)** | **Garrison (sales-and-culture owner)** |
 |---|---|---|
-| Strong at | stack choices, security, hiring techs, projects, closet/rack, resolution quality | marketing, pricing, outings, morale, client relationships, Vic's pipeline |
+| Strong at | stack choices, security, hiring techs, projects, closet/rack, resolution quality | marketing, pricing, outings, morale, client relationships, John's pipeline |
 | Starting bias (`Build.BIAS`) | TECHNICAL floor 2; SALES/CULTURE cap 2 | SALES and CULTURE floor 2; TECHNICAL cap 2 |
 | Mechanical edge | premature closes 7% -> 4%; RDP/ransom odds lower (`_rdp_week`, backup health); stack `issues` x0.9; project estimates tighter | `marketing_bonus` +, `new_client_mood` +4, QBR odds +, burnout relief from outings x1.5, poach risk -2% |
-| Mechanical gap | marketing works at 70%; price rises and QBR odds -; Vic's morale drifts down | patch debt and backup health decay faster; premature closes 9%; security cards lean on advisers |
+| Mechanical gap | marketing works at 70%; price rises and QBR odds -; John's morale drifts down | patch debt and backup health decay faster; premature closes 9%; security cards lean on advisers |
 | Personal goal (card at week 1) | "the best technical shop": reopens under 8%, zero data loss, maturity 4 | "the shop clients love": 8+ clients, average mood 85, staff turnover 0 |
 | Partner (NPC) | Garrison | Alan |
 Valuation (`Owner.multiple/quality`) is unchanged; what changes is **which of its inputs you can move cheaply**. The week-20 board review adds a PARTNERSHIP page (your goal, theirs, trust).
@@ -97,10 +97,10 @@ Same week structure as today (a week = one 4-minute day: the weekly card deck, t
 - **Beats**: week 4 "the first disagreement" (stack/oncall policy), week 9 "ransomware aftermath" (who gets blamed), week 14 "profit versus people" (fee rise vs staff raise), week 19 "sell or stay" (valuation is the agenda).
 - **Endings**: existing offers (SELL / OPEN A SECOND OFFICE / STAY INDEPENDENT) plus BUY OUT YOUR PARTNER (trust < 30, cash >= 15k) and SELL TOGETHER (the best multiple needs both signatures).
 
-### 3.5 Marge, Morgan, Vic
+### 3.5 Marge, Morgan, John
 - **Marge** keeps the books (9 cards stay), now says "the partners" and shows each owner's **draw** as a line above EBITDA (adjusted EBITDA adds it back).
 - **Morgan** runs the desk day to day; he takes most of the 15 "Alan" cards that were operational (queue, hiring, burnout warning); technical cards go to Alan as owner or Dan.
-- **Vic** is a direct report of Garrison in canon: Garrison-as-owner gets Vic's weekly pipeline card and the pay-plan card; Alan-as-owner only sees Vic through numbers and the partner's views (a built-in friction).
+- **John** is a direct report of Garrison in canon: Garrison-as-owner gets John's weekly pipeline card and the pay-plan card; Alan-as-owner only sees John through numbers and the partner's views (a built-in friction).
 
 ### 3.6 Code changes (owner campaign)
 | Item | Change |
@@ -160,10 +160,10 @@ Dan arrives with `Build.BIAS["Dan"]`: **NETWORKING 3 free**, PROCESS 2 free, SER
 |---|---|---|
 | **Morgan** | Dan's manager | weekly 1:1, passes budget and owner memos; confidence meter (reuses `Campaign.rep`, start 55; 0 = fired) |
 | **Alan** | technical owner | wants quality, more seniors, the better stack, zero reopens, documented everything (loves Dan's labelling), grumbles at every miss; escalation target for hard tickets |
-| **Garrison** | sales-and-culture owner | wants fast onboarding of Vic's deals, happy clients, a happy team, outings, bigger SLAs promised; escalation target for client fires; may promise a client something over your head |
+| **Garrison** | sales-and-culture owner | wants fast onboarding of John's deals, happy clients, a happy team, outings, bigger SLAs promised; escalation target for client fires; may promise a client something over your head |
 | Maya | Tier 1 direct report | asks for help often, growth candidate |
 | Sam + a second hire | new Tier 1 direct reports | need runtime NPCs with desks and seats |
-| Vic | account manager, peer | signs deals Dan must deliver; over-promises; pushes Garrison's agenda |
+| John | account manager, peer | signs deals Dan must deliver; over-promises; pushes Garrison's agenda |
 | Marge | bookkeeper | cost per ticket, overtime pay |
 Two trust meters reuse `Social.rel["Alan"]` and `["Garrison"]`. Many choices are a **priority memo** card: both owners ask for opposite things ("patch the whole network first" vs "fix Dr. Patel's Wi-Fi before his lunch");
 siding shifts trust (+/-) and desk outcomes; pleasing both is possible but costs hours.
@@ -183,7 +183,7 @@ Endings (day 20 with Morgan and both owners, `Review`): **OPERATIONS MANAGER** (
 | 7 | **RDP exposed at Brightside** | `Playbook` rdp | hands-on or coach; Alan will ask for the audit |
 | 8 | **Seniors on password resets**: Alan himself is covering tier 1 calls | `Cards` + Capacity | tier the desk; owner time is a cost |
 | 9 | **CryptoLocker** at Hoot and Holler: incident commander | `Playbook` ransom | who restores, who talks; Garrison calls the client |
-| 11 | **Onboarding Iron Mule Demolition**, which Vic and Garrison promised in a day | `Playbook` (new `onboard`) + handover card | rush vs discovery; Garrison vs Alan |
+| 11 | **Onboarding Iron Mule Demolition**, which John and Garrison promised in a day | `Playbook` (new `onboard`) + handover card | rush vs discovery; Garrison vs Alan |
 | 13 | **24x7 email outage night** | `Playbook` email24, `Story.overtime` | roster, burnout, an owner offers to stay |
 | 14 | **After-hours policy** | `Cards` (`oncall_policy`) | Alan: rota; Garrison: bonus |
 | 16 | **Operationalizing No**: a bad-fit prospect and a scope-creep client | `Cards`, `Projects` change order | Garrison wants the sale |
@@ -197,9 +197,9 @@ Risks: the board must be prototyped before the story; three NPC lanes are thin (
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
-## 5. Campaign B: SALES / ACCOUNT MANAGER, played as Vic ("Quota")
+## 5. Campaign B: SALES / ACCOUNT MANAGER, played as John ("Quota")
 ### 5.1 Fantasy and pitch
-**Pitch: sell Pixel IT Partners a book of business big enough to hit quota by June 30, then keep it signed, without promising delivery something it cannot do.** Vic reports to **Garrison** (quota, pricing, marketing), **Alan** sets the margin floor and vetoes unsafe promises,
+**Pitch: sell Pixel IT Partners a book of business big enough to hit quota by June 30, then keep it signed, without promising delivery something it cannot do.** John reports to **Garrison** (quota, pricing, marketing), **Alan** sets the margin floor and vetoes unsafe promises,
 **Morgan** is the delivery gate, **Dan** feels it. 20 **weeks** (`day_len` 240), April-August 2014; Q2 closes week 12.
 
 ### 5.2 Core loop (a week, about 4 minutes; clock hours are selling slots)
@@ -247,7 +247,7 @@ Endings: SALES DIRECTOR / EQUITY OFFER (Garrison backs you; Alan signs off only 
 | 20 | review with Morgan, Garrison and Alan | `Review` | ending |
 ### 5.6 Cast, reuse, risks
 NPC AI is light: prospects are data drawn from a seeded stream (12-15 parody businesses; only 3 have sites, so visits reuse the six site types with a/b skins); the delivery autopilot reacts to promises (SLA tier changes ticket priority and mood);
-NPC-Vic automation (`visit_done`, complaint loop) is off; Morgan/Dan walk to you with `send_to_player`. A ByteBrothers rep is a new recolour character. Risks: cards-heavy loops need the van to carry fun; balance must apply `Owner.quality()` to your payout;
+NPC-John automation (`visit_done`, complaint loop) is off; Morgan/Dan walk to you with `send_to_player`. A ByteBrothers rep is a new recolour character. Risks: cards-heavy loops need the van to carry fun; balance must apply `Owner.quality()` to your payout;
 company numbers must not fork the owner economy.
 
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -258,9 +258,9 @@ Minimal changes so Alan and Garrison read as busy owners who still answer a phon
 **Roles and dialogue**
 | Area | Change |
 |---|---|
-| `World.CAST` | add `role`: Alan `owner_tech`, Garrison `owner_sales`; `_plan` kinds for owners: more `meeting`/`visit`/`coffee`, less desk time (Garrison visits like Vic) |
+| `World.CAST` | add `role`: Alan `owner_tech`, Garrison `owner_sales`; `_plan` kinds for owners: more `meeting`/`visit`/`coffee`, less desk time (Garrison visits like John) |
 | `Talk` | small talk: payroll, clients, culture, the building lease; specialities stay but in owner voice (Alan servers/backups as cost and risk, Garrison security as compliance and client trust). `_state_tip` rewritten: Alan warns about a failing backup by client name *as a business risk*, Garrison about a client who is cooling |
-| `Lync` | `MESSAGES`: "cover my phones" is sent by Dan, Maya or Vic only; owners send lunch/culture/thanks; boss lookup unchanged (Morgan) |
+| `Lync` | `MESSAGES`: "cover my phones" is sent by Dan, Maya or John only; owners send lunch/culture/thanks; boss lookup unchanged (Morgan) |
 | `Outings` | invitation speaker Garrison (culture owner, pays); Alan still attends (bowling/dinner tables unchanged) |
 | All-hands | Morgan briefs as before; day 11 one owner speaks (Garrison: culture/outing; Alan: backup service), day 16 the other |
 | `Growth` helper | candidates Dan, Maya, Alan (**availability 60%**: he catches fewer mistakes), Garrison off the list |
@@ -279,7 +279,7 @@ Tests: `talk.gd`, `community.gd`, `social.gd`, `growth.gd`, `meeting.gd`, `outin
 ---------------------------------------------------------------------------------------------------------------------------------
 
 ## 7. Plugging into Difficulty, seeds, events, mutators
-| Hook | Owner | Service (Dan) | Sales (Vic) |
+| Hook | Owner | Service (Dan) | Sales (John) |
 |---|---|---|---|
 | `Difficulty.tier` | start cash, partner patience, ticket volume | ticket volume, SLA clocks (`sla_mult`), quit odds | quota size, lead flow, rival aggression |
 | `rng(stream)` | `"owner"`, `"partner"`, `"events"` | `"dispatch"`, `"hire"`, `"events"` | `"pipeline"`, `"deals"`, `"events"` |
@@ -293,7 +293,7 @@ One **Crew** model (extracted from `Owner`): `autopilot` (today) and `assigned` 
 `Campaign.rep` is the manager's trust in service/sales and the company's reputation in owner mode. Saves: `service`, `pipeline`, `crew`, `partner`, `build` sections with defaults; one save per mode.
 
 ### 8.1 The mode registry as built (X8): what a new mode must provide
-`Campaign.MODE_DEFS` (campaign.gd) has one row per mode: `tech`, `owner`, `service`, `sales`. `Campaign.MODES` (the title / character-select list) must equal the rows with `selectable: true`; service is registered but `selectable: false`, so `new_game` / `continue_game` refuse it, `charselect.choices` offers nobody and `save()` never writes it (sales was flipped by C1 and also reads the extra row keys `settle: "sales"`, `hud: "week_quota"`, `review: "sales"`). Gates: `Campaign.crew_active()` (autopilot crew: `Owner.team_speed`, `_work_queue`, ticket volume, scope creep), `Campaign.books_active()` (cash, P&L, payroll, settle, valuation, Boardroom app, projects, deal income, Vic's commission), `Campaign.cards_active()` (Owner.DAYS / CARDS, `Owner.begin_day`, partner, player-profile edges, new-client mood, complaints). Rows: tech none; owner all; service crew + cards; sales crew + books (`books_lite`) + cards.
+`Campaign.MODE_DEFS` (campaign.gd) has one row per mode: `tech`, `owner`, `service`, `sales`. `Campaign.MODES` (the title / character-select list) must equal the rows with `selectable: true`; service is registered but `selectable: false`, so `new_game` / `continue_game` refuse it, `charselect.choices` offers nobody and `save()` never writes it (sales was flipped by C1 and also reads the extra row keys `settle: "sales"`, `hud: "week_quota"`, `review: "sales"`). Gates: `Campaign.crew_active()` (autopilot crew: `Owner.team_speed`, `_work_queue`, ticket volume, scope creep), `Campaign.books_active()` (cash, P&L, payroll, settle, valuation, Boardroom app, projects, deal income, John's commission), `Campaign.cards_active()` (Owner.DAYS / CARDS, `Owner.begin_day`, partner, player-profile edges, new-client mood, complaints). Rows: tech none; owner all; service crew + cards; sales crew + books (`books_lite`) + cards.
 Per-mode properties read from the row: `day_len`, `total_days`, `unit` (DAY / WEEK), `hud` (`day_rep` | `week_cash`), `report` (`day` | `pnl`: pnl runs `Owner.settle()`), `review` (`yearly` | `board` | "" for none), `review_heading`, `review_pages`, `pace` (ticket-rate scalar), `shift` (hour management), `scars` (tech reputation ceiling), `maya_in_events`, `ending_fired`, `ending_final`, `label`.
 To add a mode: (1) fill the row and flip `selectable` and `MODES` when the slice is playable; (2) provide its content tables (cards / days, story, report rows), a `Campaign.new_game` branch for `player_as` and `charselect.choices`, a title menu entry; (3) if it needs books or the crew without the owner content, call the gate, never `Campaign.mode == ...`; (4) extend `tests/modes.gd` (gate table) and keep tech / owner results identical. Not yet registry-driven (still `mode == "owner"` for content): Events pools, Mutators slots, Outings costs, Talk / Lync voices, Growth owner plan, Conference speeches. Events and Review still assume 20 days.
 
@@ -335,21 +335,21 @@ Order of value: P0, O1, T1 can share a week; Sales about 4 weeks after P0b, Serv
 | `build.gd`, `seeds.gd` | section 13; same seed -> same pipeline/queue/partner rolls |
 
 ## 12. Recommendation
-**Build order: P0 -> O1 (Owner as Alan/Garrison) -> T1 -> Sales (Vic) -> Service (Dan).**
+**Build order: P0 -> O1 (Owner as Alan/Garrison) -> T1 -> Sales (John) -> Service (Dan).**
 1. **Owner-as is the cheapest proof of player-as-cast-member.** The campaign, books, tests and balance harness exist; the swap is the one `apply_roster` already does for Maya; the partner is simply the other cast NPC; no new screens. It proves P0, the `Roles`/speaker pass and the point-buy bias in one M.
 2. **T1 is small** and fixes the canon in the campaign people already play.
-3. **Sales (Vic) stays the best second new campaign**: cards, project quotes and the Onsite van are the most reusable pieces, and the CRM is a bounded new app. It needs P0b, which Service needs too.
+3. **Sales (John) stays the best second new campaign**: cards, project quotes and the Onsite van are the most reusable pieces, and the CRM is a bounded new app. It needs P0b, which Service needs too.
 4. **Service (Dan) last**: it needs a new core screen and an assigned-crew simulation before there is anything to play; prototype the Dispatch board as a throwaway in parallel with Sales if you want a flagship sooner.
-5. The partner/owners canon makes Service and Sales better: owner conflict gives Dan his story engine, and Garrison/Alan as Vic's two bosses give Sales its approvals and tension.
+5. The partner/owners canon makes Service and Sales better: owner conflict gives Dan his story engine, and Garrison/Alan as John's two bosses give Sales its approvals and tension.
 
 ## 13. Point-buy stats at character select
 ### 13.1 Stats: existing and new
 | Path | Existing stats a build can set | New per-path stats |
 |---|---|---|
 | Tech | `Skills`: POWERSHELL (`ps_level`), NETWORKING, SERVERS, SECURITY, CUSTOMER (`people` in code), levels 0-5 from XP at 15/40/80/130/200 (`XP_AT`); `Shift.energy` start 80; `Social.rel`; `Growth.gaps()` derives from levels | none |
-| Owner | `START_CASH`, owner hours pool (40 minus 12 admin), `burnout`, Vic's plan | **TECHNICAL, FINANCE, SALES, CULTURE, CLIENTS**; Alan floors TECHNICAL 2, Garrison floors SALES and CULTURE 2 (section 3.2) |
+| Owner | `START_CASH`, owner hours pool (40 minus 12 admin), `burnout`, John's plan | **TECHNICAL, FINANCE, SALES, CULTURE, CLIENTS**; Alan floors TECHNICAL 2, Garrison floors SALES and CULTURE 2 (section 3.2) |
 | Service (Dan) | the five skills (Dan NETWORKING 3 free) | **DISPATCH, PROCESS, PEOPLE, ESCALATION JUDGEMENT, CLIENT RELATIONS** (Dan: PROCESS 2 free; PEOPLE and CLIENT RELATIONS capped at 2 at creation) |
-| Sales (Vic) | `Sales.vic_skill` inputs, `Owner.VIC_PLANS` | **PITCH, DISCOVERY, NEGOTIATION, RELATIONSHIPS** + **HONESTY** slider (PITCH floor 2) |
+| Sales (John) | `Sales.vic_skill` inputs, `Owner.VIC_PLANS` | **PITCH, DISCOVERY, NEGOTIATION, RELATIONSHIPS** + **HONESTY** slider (PITCH floor 2) |
 Every stat is a 0-5 level read through `Build.level(stat)`; `Build.BIAS[cast_name]` gives free floors and creation caps that do not spend points, so a cast member stays himself and the budget buys the tradeoff.
 ### 13.2 Model
 - **Budget** 12 at Normal, Easy 15, Hard 9 (from `Difficulty.tier`; the run seed is shown "RUN 4F2A9C" and saved; same seed + same build = same run).

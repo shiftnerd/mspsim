@@ -1,5 +1,5 @@
 extends SceneTree
-# C7 / V4: the Service-mode voices of Talk and Lynk. Small talk and tips for Maya, Sam, Terry, a hire, Vic, Morgan, Alan and
+# C7 / V4: the Service-mode voices of Talk and Lynk. Small talk and tips for Maya, Sam, Terry, a hire, John, Morgan, Alan and
 # Garrison come from ServiceArc.VOICES; Alan asks about quality, Garrison about clients and Morgan about the scorecard (a
 # question card Dan answers); Lynk messages come from the service cast with effects; the tech campaign keeps its own lines.
 
@@ -54,7 +54,7 @@ func _init() -> void:
 	_check(crew.is_hire(hire), "a hire is on the crew (%s)" % hire)
 
 	# ---- small talk and tips for everybody
-	var people := ["Maya", "Sam", "Terry", hire, "Vic", "Morgan", "Alan", "Garrison"]
+	var people := ["Maya", "Sam", "Terry", hire, "John", "Morgan", "Alan", "Garrison"]
 	var all_service := true
 	var all_tips := true
 	for who in people:
@@ -66,9 +66,9 @@ func _init() -> void:
 		var tip: String = talk.tip()
 		var base: String = tip.split(" (+")[0]
 		all_tips = all_tips and arc.VOICES.tips[key].has(base)
-	_check(all_service, "small talk is in the service voice for all eight (Maya, Sam, Terry, a hire, Vic, Morgan, Alan, Garrison)")
+	_check(all_service, "small talk is in the service voice for all eight (Maya, Sam, Terry, a hire, John, Morgan, Alan, Garrison)")
 	_check(all_tips, "tips are in the service voice too")
-	var owners_distinct: bool = arc.VOICES.small.Alan != arc.VOICES.small.Garrison and arc.VOICES.small.Morgan != arc.VOICES.small.Vic
+	var owners_distinct: bool = arc.VOICES.small.Alan != arc.VOICES.small.Garrison and arc.VOICES.small.Morgan != arc.VOICES.small.John
 	_check(owners_distinct, "each voice is its own")
 	social.rel["Alan"] = -50
 	talk._who = "Alan"

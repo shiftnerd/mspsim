@@ -54,7 +54,7 @@ Which knobs hang off it:
 | Nerf war length / NPC fire gap | 45 s / 2-4.5 s | 35 s / 3-6, 45 s / 2-4.5, 60 s / 1.5-3 |
 
 ### 1.2 Who comes along (the cheapest big variety win)
-`Outings.DINERS`, `BOWL_SKILL` and `SPOTS` (already 5 slots) hard-code three people. Add `Outings.roster()`: picks 3 or 4 from Alan, Garrison, Dan, Maya, Vic, plus an occasional guest (section 2.5), using `Social` opinion (cold people decline: "Dan has a thing tonight", never a family or health reason stated as a penalty). The roster feeds bowling opponents, dinner diners, karaoke audience and escape-room hint givers. `DINERS` and `BOWL_SKILL` become per-person data (section 3.1) so Maya and Vic need only a table row. Hook: `World.start_outing(room, spots, seats)` already takes spots.
+`Outings.DINERS`, `BOWL_SKILL` and `SPOTS` (already 5 slots) hard-code three people. Add `Outings.roster()`: picks 3 or 4 from Alan, Garrison, Dan, Maya, John, plus an occasional guest (section 2.5), using `Social` opinion (cold people decline: "Dan has a thing tonight", never a family or health reason stated as a penalty). The roster feeds bowling opponents, dinner diners, karaoke audience and escape-room hint givers. `DINERS` and `BOWL_SKILL` become per-person data (section 3.1) so Maya and John need only a table row. Hook: `World.start_outing(room, spots, seats)` already takes spots.
 
 ## 2. Mini-games: concrete ideas
 
@@ -92,7 +92,7 @@ Parody titles only; no real songs, bands or lyrics. Genres of 2013-14.
 
 | # | Idea | Hook | Effort | Risk |
 |---|---|---|---|---|
-| B1 | **Opponent personalities** in a table: Alan steady (low noise 0.15), Garrison streaky (alternates hot and cold), Dan wild (big noise, occasional turkey), Maya precise, Vic show-off (bonus when watched; 5% gutter). Replaces the shared +-0.28 noise. | `_bowl_roll_opp` reads `PEOPLE[who]` {skill, noise, streak} | S | Low. |
+| B1 | **Opponent personalities** in a table: Alan steady (low noise 0.15), Garrison streaky (alternates hot and cold), Dan wild (big noise, occasional turkey), Maya precise, John show-off (bonus when watched; 5% gutter). Replaces the shared +-0.28 noise. | `_bowl_roll_opp` reads `PEOPLE[who]` {skill, noise, streak} | S | Low. |
 | B2 | **Lane oil patterns**: each alley has a pattern: "house shot" (forgiving), "sport shot" (aim window narrow), "dry lane" (hook drifts right). Oil drifts the effective aim point so the best marker position is not exactly 0.5. | `bowl_strength`: `accuracy = 1 - abs(marker - (0.5 + oil_bias))` | S | Low. Show the bias on the intro page. |
 | B3 | **Spin**: after power, a short third key press (hold Left or Right) adds curve to reach corner pins on splits. | add stage `"spin"`; `_bowl_resolve` picks which pins by `_pins_fall` choice | M | Medium: pin layout and the lane fx. |
 | B4 | **Alleys**: three venues with different parameters (a cheap strip lane with a sticky return, a fancy glow-bowl night, a church-league alley). Same set art, different neon sign text and parameters. | `ROOMS["bowling"]` plus params | S | Low (no new art if only sign text changes; `neon_bowl` fx is text). |
@@ -122,7 +122,7 @@ Parody titles only; no real songs, bands or lyrics. Genres of 2013-14.
 | D2 | **Personality table** (`PEOPLE[name]`: loves (2-3), dislikes (1-2), quirks), with a per-save shuffle of two of the tastes so `known` is not a permanent cheat sheet; `known` keeps lines marked "as of outing n" and a "ASK HOW THEY ARE" topic reveals changes. | `LOVES`/`HATES` become data; `dinner_talk` unchanged | M | Medium: `Outings.known` save schema. Version the section. |
 | D3 | **Mood of the day** for each diner: tired / chatty / distracted: shifts points by +-1 per round, shown by face icons at the start. Learn who is in which mood before choosing. | `dinner_talk` adds `mood_bonus` | S | Low. |
 | D4 | **Dietary quirks** and ordering: before the topics, a short ordering round: who is vegetarian, who has a gluten allergy, who hates mushrooms (period-correct: no cauliflower-crust trend). Picking a shared plate that fits everyone = +2. Never joke at someone's health or religion. | new `g.stage = "order"` | M | Medium: tone; keep it affectionate and low-stakes. |
-| D5 | **A client or prospect at the table** (owner: Vic brings one; tech: a client who got invited to the team dinner). A sixth person with a topic list; they like TALKING SHOP up to a point, hate being pitched. In owner mode a good dinner raises mood and can sign a lead. | `Sales.pick_client`, `Onsite.OWNER_B` skins | M | Medium: owner economy interaction. |
+| D5 | **A client or prospect at the table** (owner: John brings one; tech: a client who got invited to the team dinner). A sixth person with a topic list; they like TALKING SHOP up to a point, hate being pitched. In owner mode a good dinner raises mood and can sign a lead. | `Sales.pick_client`, `Onsite.OWNER_B` skins | M | Medium: owner economy interaction. |
 | D6 | **The owner pays**: owner mode: choose the budget (cheap, normal, fancy) before dinner; fancy lifts everyone's base mood but costs cash. Tech mode: the boss picks up the tab on day 15 as a story card. | `GAMES.dinner.cost` | S | Low. |
 | D7 | **Table events**: a dropped glass, a long toast, someone's phone rings (a vendor call), a round of "pass the check". Each is a one-line card that changes the next round's topics. | `_dinner_tick` | S | Low. |
 | D8 | **Post-dinner talks** (the IDEAS "one-on-one with a struggling hire"): if the score is 3 stars, a follow-up card. | `_finish` | M | Medium: shares code with `Talk`. |
@@ -157,7 +157,7 @@ The war has no goal and no loser; modes require a goal first.
 ## 3. Meta-replayability across a whole run
 
 ### 3.1 Random event deck
-A new `Events` autoload (or a table inside `Story`): `DECK = [ {id, kinds, min_day, max_day, weight, cooldown, requires, card} ]`, drawn once per morning (`Campaign` start of day) using `Difficulty.rng("events")`. A card is the existing Cards format (speaker, text, options with `fx` keys: `xp`, `mood`, `mood_all`, `rep`, `social`, `energy`, `hours`: the same keys vignettes already use, so the vignette resolver is reused unchanged). Aim at 40 cards across tech and owner: client calls, supplier delays, a heat wave takes the AC down, a cousin of Vic's wants a website, a vendor sends free pizza, a cold snap (week-specific, there is `WEEK_TRAFFIC`), a lost phone. Period rules in section 5.
+A new `Events` autoload (or a table inside `Story`): `DECK = [ {id, kinds, min_day, max_day, weight, cooldown, requires, card} ]`, drawn once per morning (`Campaign` start of day) using `Difficulty.rng("events")`. A card is the existing Cards format (speaker, text, options with `fx` keys: `xp`, `mood`, `mood_all`, `rep`, `social`, `energy`, `hours`: the same keys vignettes already use, so the vignette resolver is reused unchanged). Aim at 40 cards across tech and owner: client calls, supplier delays, a heat wave takes the AC down, a cousin of John's wants a website, a vendor sends free pizza, a cold snap (week-specific, there is `WEEK_TRAFFIC`), a lost phone. Period rules in section 5.
 
 ### 3.2 Difficulty settings, mutators, starting conditions
 - **Tiers** (easy / normal / hard) applied by `Difficulty.get()` across `Msp.SLA_SECS`, `DAY_CAPS`, `Shift.DAY_DRAIN`, `Onsite.SLA_PER_HOUR`, owner `COST_PER_SEC`, `START_CASH`. Modes of the same table: `TIERS["msp"]["sla_mult"] = [1.25, 1.0, 0.8]`.
@@ -211,7 +211,7 @@ Status: item 1 is built (see CLAUDE.md, "Difficulty and seeds"). Differences fro
 | 2 | Printer: bigger `QUESTIONS` pool (28+), 2-3 models with their own text (laser, inkjet, plotter), parameters from `Difficulty` | S-M | Best content-per-hour; printer is used on every onsite; closes the plotter leftover |
 | 3 | Karaoke `SONGS` table (4 parody songs, tempo and note-type by tier) plus the 4-site constants cleanup | M | Biggest felt variety for the most-played outing |
 | 4 | Escape room clue recipes + randomised clue spots + 4-digit hard + timer scaling (existing study) | M | Re-solves each run without new art |
-| 5 | `Outings.roster()` and per-person tables (bowling personalities, dinner tastes, Maya and Vic join) | M | Reuses existing 5-slot `SPOTS`; makes every outing different people |
+| 5 | `Outings.roster()` and per-person tables (bowling personalities, dinner tastes, Maya and John join) | M | Reuses existing 5-slot `SPOTS`; makes every outing different people |
 | 6 | Dinner pool (16 topics), mood of the day, owner-pays budget card | S-M | Fixes the weakest game's solved-by-memory problem |
 | 7 | Career screen + medals (read from counters already kept) + nerf scoring | M | Cheap motivation to replay; nerf gets a goal |
 | 8 | Event deck (40 cards) and vignette deck (24) using the existing `fx` resolver | M | Largest run-to-run variety in the campaign |

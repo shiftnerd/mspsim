@@ -30,7 +30,7 @@ const PATCH_COLORS := ["#4f7fd0", "#4f9c8e", "#e0a030", "#9a60c8"]
 # R37 cable tracing: the patch panel's jack labels, a loose cable and the toner and probe (see "Network closet" in CLAUDE.md)
 const DAN_JACKS := [1, 3, 8]  # printed label-maker tags (Dan is proud of them): always right
 const DRIFT_JACKS := [2, 4, 5, 6, 7]  # hand-written tape that drifts when somebody re-plugs things
-const WHO := {1: "DESK 1", 2: "MAYA", 3: "DAN", 4: "VIC", 5: "MORGAN", 6: "ALAN", 7: "GARRISON", 8: "COPIER"}
+const WHO := {1: "DESK 1", 2: "MAYA", 3: "DAN", 4: "JOHN", 5: "MORGAN", 6: "ALAN", 7: "GARRISON", 8: "COPIER"}
 const FLAP_SECS := 6.0  # a healthy jack you re-seat drops its desk this long
 const TRACE_XP := 6  # networking XP for finding a loose cable by tracing instead of trusting a bad label
 const FAULT_FROM_DAY := 3  # tech campaign: from this day a cable may work loose

@@ -16,14 +16,14 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "{sales_owner}",
 		"text":
-		"{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. Vic ate two of his cookies and says the price is a steal.",
+		"{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. John ate two of his cookies and says the price is a steal.",
 		"options":
 		[
 			{
-				"label": "LOOK UP WHAT $39 A SEAT BUYS ($0, VIC ASKS AROUND)",
+				"label": "LOOK UP WHAT $39 A SEAT BUYS ($0, JOHN ASKS AROUND)",
 				"fx": {"rap": ["bigcheese", "R11", 1]},
 				"text":
-				"Vic calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
+				"John calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
 			},
 			{
 				"label": "PRINT A ONE PAGE COMPARISON ($120)",
@@ -36,7 +36,7 @@ const DEFAULT_CARDS := {
 				"label": "DROP YOUR PRICE TO MATCH",
 				"fx": {"price": -0.10, "skel": ["temp_price", 6], "consc": -2},
 				"text":
-				"Vic is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
+				"John is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
 			},
 			{
 				"label": "IGNORE HIM, HE WILL BE GONE BY JULY",
@@ -47,16 +47,16 @@ const DEFAULT_CARDS := {
 	},
 	"rival_wall":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Look at Big Cheese on Yowl. Forty-one five-star reviews. I clicked through them: thirty-eight come from accounts that have never reviewed anything else, and four were posted the same afternoon. There is a new billboard on the county road too: WE DO IT ALL FOR $39 A SEAT. BOOKED SOLID.",
 		"options":
 		[
 			{
-				"label": "HAVE VIC LOOK AT WHO WROTE THEM",
+				"label": "HAVE JOHN LOOK AT WHO WROTE THEM",
 				"fx": {"rap": ["bigcheese", "R09", 1]},
 				"text":
-				"Vic asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour."
+				"John asks around the Chamber. Nobody has met one of those reviewers. It is a rumour, and you cannot print a rumour."
 			},
 			{
 				"label": "ASK THREE HAPPY CLIENTS FOR A REAL REVIEW",
@@ -74,7 +74,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "IGNORE IT, REVIEWS DO NOT PAY THE BILLS",
 				"fx": {},
-				"text": "Garrison nods. Vic frowns at the billboard every time he drives past it."
+				"text": "Garrison nods. John frowns at the billboard every time he drives past it."
 			},
 		],
 	},
@@ -273,7 +273,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_exposed":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"A LabRat Nerds thread went up overnight called FIVE STARS FROM NOBODY, and the county paper has a blurb on page six: forty-one reviews, thirty-eight from accounts with no other history. Rex deleted the thread by noon. The Chamber lunch was very quiet today.",
 		"options":
@@ -282,7 +282,7 @@ const DEFAULT_CARDS := {
 				"label": "STAY OUT OF IT AND LET THE PAPER DO ITS JOB",
 				"fx": {"consc": 1},
 				"text":
-				"Garrison says that is the grown up answer. Vic says it is also the boring one."
+				"Garrison says that is the grown up answer. John says it is also the boring one."
 			},
 			{
 				"label": "SEND THE REPORTER OUR OWN HONEST REVIEWS",
@@ -300,9 +300,9 @@ const DEFAULT_CARDS := {
 	},
 	"rival_blitz":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
-		"Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. Vic has three prospects who have already heard it, and two of our clients got the flyer.",
+		"Big Cheese is back with a free IT assessment for every office on the county road, and this time Rex has a line: some people say the other guys are not bonded. John has three prospects who have already heard it, and two of our clients got the flyer.",
 		"options":
 		[
 			{
@@ -417,7 +417,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_counter":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Rex told the whole Chamber lunch you are going around saying things about him. It is half true, which is why it travels. Two prospects went quiet this week.",
 		"options":
@@ -458,7 +458,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_end":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Big Cheese sold the book to an outfit from out of town. Rex shook every hand at the Chamber lunch and said he was going to spend more time with his family. A painter was on the county road billboard by Tuesday. It says COMING SOON.",
 		"options":
@@ -505,7 +505,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_reboot":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"The printer at {client} needed a reboot. Eight minutes. Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and their clients never ask what it is. I think we could do the same.",
 		"options":
@@ -514,7 +514,7 @@ const DEFAULT_CARDS := {
 				"label": "BILL IT AS ADVANCED DIAGNOSTICS ($85)",
 				"fx": {"cash": 85, "weekly": -25, "skel": ["temp_reboot", -1], "consc": -2},
 				"text":
-				"The invoice goes out with the long phrase. Vic grins. Somewhere a bookkeeper reaches for her glasses."
+				"The invoice goes out with the long phrase. John grins. Somewhere a bookkeeper reaches for her glasses."
 			},
 			{
 				"label": "BILL THE EIGHT MINUTES ($20)",
@@ -532,7 +532,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_launder":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.",
 		"options":
@@ -547,7 +547,7 @@ const DEFAULT_CARDS := {
 				"label": "ASK HER HOW SHE HEARD ABOUT US",
 				"fx": {"rap": ["bigcheese", "R10", 2], "consc": 1},
 				"text":
-				"She mentions a shared mailbox at the dental office. Vic goes quiet, then says he will make a call."
+				"She mentions a shared mailbox at the dental office. John goes quiet, then says he will make a call."
 			},
 			{
 				"label": "TELL THE CLIENT THEIR MAILBOX IS OPEN, FOR FREE",
@@ -561,7 +561,7 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "{sales_owner}",
 		"text":
-		"A prospect asked Vic if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.",
+		"A prospect asked John if we're bonded and HIPAA safe, because somebody told her we aren't. Big Cheese again. Meanwhile their Yowl page has forty reviews. My nephew says he can set up a few accounts for us in an afternoon.",
 		"options":
 		[
 			{
@@ -638,7 +638,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_price":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"I found a dental office that is shopping for IT. Big Cheese quoted them $39 a seat. If we go 25 percent under our price I can sign them tomorrow. Alan did the math on a napkin: the work costs us about 80 percent of what we would charge.",
 		"options":
@@ -675,7 +675,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "LET THEM GO",
 				"fx": {},
-				"text": "Vic shrugs. Alan says a client you lose money on is not a client."
+				"text": "John shrugs. Alan says a client you lose money on is not a client."
 			},
 		],
 	},
@@ -813,7 +813,7 @@ const DEFAULT_CARDS := {
 	},
 	"bill_temp_launder":
 	{
-		"speaker": "Vic Marlowe",
+		"speaker": "John Marlowe",
 		"text":
 		"Mrs. Dunning asked me, kindly, how we knew about her server before she called. The answer is the open mailbox at {vname}, and now {vname} knows. {vleave} The Chamber lunch heard about it by noon.",
 		"options":
@@ -827,7 +827,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "DENY IT",
 				"fx": {"consc": -1, "rep": -1},
-				"text": "Nobody believes you. Vic stops coming to the Chamber lunch for a week."
+				"text": "Nobody believes you. John stops coming to the Chamber lunch for a week."
 			},
 		],
 	},

@@ -82,7 +82,7 @@ func _init() -> void:
 	check(not comp._ep_alert(ep), "a fixed one is green")
 
 	# mail: Enter works from the first press, and long subjects get an ellipsis
-	msp.mail("Vic", "Hello", "body")
+	msp.mail("John", "Hello", "body")
 	comp.open(1)
 	comp.activate("app:mail")
 	comp.mail_sel = -1

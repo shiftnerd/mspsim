@@ -1,7 +1,7 @@
 extends Node
 # gdlint:disable=class-definitions-order,class-variable-name
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
-# The sales campaign as Vic (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
+# The sales campaign as John (roadmap C1, phase S1; docs/campaign-paths.md section 5). You are the account manager: 20 weeks,
 # April to August 2014, 4 real minutes a week. The company runs on autopilot behind you (the crew works the queue, light books);
 # you sell. A week has SLOTS selling hours (the clock hours 9:00-17:00): a call or a quote costs an hour, a visit costs the drive
 # plus the meeting. Leads arrive as cards from a seeded stream (Difficulty.rng("leads")), live in a small pipeline (the SalesHound
@@ -171,7 +171,7 @@ const DEFAULT_BEAT_TEXT := {
 			],
 		},
 		"res_match": {"speaker": "{tech_owner}", "text": "You matched them. Twenty percent off. I hope somebody enjoys the logo, because the margin is gone."},
-		"res_value_win": {"speaker": "{sales_owner}", "text": "You walked them through the backups and the response numbers and they signed at the full fee. That is the Vic I hired."},
+		"res_value_win": {"speaker": "{sales_owner}", "text": "You walked them through the backups and the response numbers and they signed at the full fee. That is the John I hired."},
 		"res_value_lose": {"speaker": "{sales_owner}", "text": "They like you, but the price won. ByteBrothers took %s. It happens."},
 		"res_walk": {"speaker": "{tech_owner}", "text": "Good. A deal that loses money is worse than a deal we lose. Next one."},
 	},
@@ -260,10 +260,10 @@ const DEFAULT_BEAT_TEXT := {
 	"logo": {
 		"lynk": {"from": "Garrison", "text": "Harborview Dental Partners has eleven offices and wants one provider. That is the biggest logo we have ever seen. Please do not mess this up."},
 		"lynk_alan": {"from": "Alan", "text": "I saw the Harborview numbers. I do not sign deals that lose money on the first invoice."},
-		"garrison": {"speaker": "{sales_owner}", "text": "Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, Vic. A logo opens doors.", "ok": "WHAT DOES ALAN SAY?"},
+		"garrison": {"speaker": "{sales_owner}", "text": "Harborview Dental Partners: eleven offices, 38 users, $%d a week at list. The partners want 30 percent off to move all of them to us at once. It is a logo, John. A logo opens doors.", "ok": "WHAT DOES ALAN SAY?"},
 		"alan": {"speaker": "{tech_owner}", "text": "Thirty percent off puts that account at %d percent margin. My floor is %d. I will not sign a deal that costs us money to deliver. It is a logo, not a living.", "ok": "I HEAR YOU BOTH"},
 		"pick": {
-			"speaker": "Vic Marlowe",
+			"speaker": "John Marlowe",
 			"text": "Two owners, one account, and a prospect who wants an answer by Friday. Whose side are you on?",
 			"options": [
 				{"id": "garrison", "label": "GARRISON: TAKE THE LOGO AT 30% OFF"},
@@ -295,7 +295,7 @@ const DEFAULT_BEAT_TEXT := {
 	"recruit": {
 		"card": {
 			"speaker": "Trent Dagmar",
-			"text": "Vic. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
+			"text": "John. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
 			"options": [
 				{"id": "leave", "label": "GIVE NOTICE: I AM TAKING THE JOB"},
 				{"id": "counter", "label": "TELL GARRISON, ASK FOR A RAISE"},
@@ -307,7 +307,7 @@ const DEFAULT_BEAT_TEXT := {
 		"res_counter_yes": {"speaker": "{sales_owner}", "text": "ByteBrothers called you? Of course they did. You have been the best thing to happen to this company in a year. I can do one hundred more a week and a title. Stay."},
 		"res_counter_no": {"speaker": "{sales_owner}", "text": "I would love to match them. I cannot, not this quarter. I hope you understand. The door is not locked."},
 		"res_both_caught": {"speaker": "{sales_owner}", "text": "Trent Dagmar mentioned at the Chamber breakfast that you were on his shortlist. He thought I knew. I did not know. We will talk about trust."},
-		"res_decline": {"speaker": "{sales_owner}", "text": "You said no to ByteBrothers? To their face? Vic, I will not forget that. Neither will Alan, though he will never say so."},
+		"res_decline": {"speaker": "{sales_owner}", "text": "You said no to ByteBrothers? To their face? John, I will not forget that. Neither will Alan, though he will never say so."},
 	},
 	"diligence": {
 		"lynk": {"from": "Garrison", "text": "Summit Managed Holdings is looking at buying us. Their auditor comes Thursday. Be charming and be accurate, in that order if you must."},
@@ -361,9 +361,9 @@ const DEFAULT_BEAT_TEXT := {
 			"text": "Rex Calloway from Big Cheese sat at the next table and told everyone business is booming. He has forty-one five-star reviews on Yowl, and I hear most of them come from accounts that review nothing else. Do something with that, or do not.",
 			"options": [{"id": "flyer", "label": "READ HIS FLYER, ASK AROUND (1 HOUR)"}, {"id": "friend", "label": "SHAKE HIS HAND, HE SEEMS NICE"}, {"id": "ignore", "label": "IGNORE HIM"}],
 		},
-		"res_flyer": {"speaker": "Vic", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
+		"res_flyer": {"speaker": "John", "text": "EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. You ask around and three prospects say the same thing: they like him, and they cannot say what they are paying for. Now you know who to ask about on every call.", "ok": "NOTED"},
 		"res_friend": {"speaker": "Rex Calloway", "text": "Call me Rex, everyone does. He laughs at your tie and gives you a flyer and a cookie. Garrison thinks it was good manners. Alan thinks you have just met the competition.", "ok": "OK"},
-		"res_ignore": {"speaker": "Vic", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
+		"res_ignore": {"speaker": "John", "text": "He will not be gone by July. You were warned by the cookie crumbs on the flyer.", "ok": "OK"},
 	},
 	"flat": {
 		"lynk": {"from": "Garrison", "text": "A prospect says Big Cheese quoted a flat price and our quote looks complicated. Call them back before they sign it."},
@@ -380,7 +380,7 @@ const DEFAULT_BEAT_TEXT := {
 		"res_tiers": {"speaker": "Prospect", "text": "GOOD, BETTER, BEST, one line each, and a box for what is NOT included. She circles BETTER. Set PRESENTED AS to 3 TIERS in the quote builder.", "ok": "GOOD"},
 		"res_match": {"speaker": "Prospect", "text": "She signs in a day, if you send it. Alan shows you the margin. Nothing is in writing about what is left out, and you both know it.", "ok": "OK"},
 		"res_lines": {"speaker": "Prospect", "text": "You read thirty-one lines. By line fourteen you both agree the list is the problem. She trusts you a little more.", "ok": "OK"},
-		"res_walk": {"speaker": "Vic", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
+		"res_walk": {"speaker": "John", "text": "You are right about the six months. You are wrong about it helping.", "ok": "OK"},
 	},
 	"assess": {
 		"lynk": {"from": "Garrison", "text": "A dental office on Pine Road is unhappy with Big Cheese. Call them, then press ASSESS in SalesHound. An hour in their closet finds what Rex left out."},
@@ -394,7 +394,7 @@ const DEFAULT_BEAT_TEXT := {
 	"laundered": {
 		"lynk": {"from": "Garrison", "text": "A woman called Gwen phoned for you. She knows our rates and our dispatcher's name. Odd."},
 		"card": {
-			"speaker": "Vic's phone",
+			"speaker": "John's phone",
 			"text": "A woman named Gwen called, said a friend of hers recommended us. Her server is slow, she has XP at the front, and her IT person never calls back. She knows our rates and the name of our dispatcher. The friend is a client who has never mentioned us.",
 			"options": [
 				{"id": "take", "label": "TAKE THE MEETING, SHE IS A GOOD LEAD"},
@@ -402,9 +402,9 @@ const DEFAULT_BEAT_TEXT := {
 				{"id": "tell", "label": "WARN THE DENTAL OFFICE, FOR FREE"},
 			],
 		},
-		"res_take": {"speaker": "Vic", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
-		"res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. Vic goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
-		"res_tell": {"speaker": "Vic", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
+		"res_take": {"speaker": "John", "text": "She is a great lead. She is a great lead because someone read our tickets and sold her the story. You write it down in a folder you do not name.", "ok": "OK"},
+		"res_ask": {"speaker": "Gwen", "text": "She mentions the shared mailbox at the dental office. John goes quiet, then says he will make a call. She is still a lead, just a more honest one.", "ok": "OK"},
+		"res_tell": {"speaker": "John", "text": "They fix the mailbox in an afternoon. Gwen turns up as a lead a few weeks later, and she tells everyone why.", "ok": "OK"},
 	},
 	"plumb": {
 		"lynk": {"from": "Garrison", "text": "Plumb Line Technology has been sitting on a proposal for six weeks. The prospect wants a second opinion from us. Hollis Grady is a careful man."},
@@ -1473,7 +1473,7 @@ func outing_done(game: String, stars: int) -> Array:
 
 # ---- the sales bell ----------------------------------------------------------------------------------
 func ring_bell(fx: Node) -> bool:
-	if not (in_mode() and Campaign.player_as == "Vic"):
+	if not (in_mode() and Campaign.player_as == "John"):
 		return false
 	if not bell_ready:
 		Hints.toast("NO DEAL TO CELEBRATE YET. CLOSE ONE.", 2.5)
@@ -1695,7 +1695,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["STORY: " + story_summary(), ink])
 			lines.append([SalesRival.lies_line(), bad if (SalesRival.lies() > 0 or not SalesRival.conscience_ok()) else ink])
 			if not Build.is_flat(Build.cur()):
-				lines.append([Build.describe(Build.cur(), "sales", "Vic"), ink])
+				lines.append([Build.describe(Build.cur(), "sales", "John"), ink])
 			lines.append(["CLAWBACKS %d ($%d)  RENEWALS %d WON %d LOST  UPSELLS %d  RIVAL WINS %d" % [clawbacks, clawed_total, renewals_won, renewals_lost, upsells, rival_wins], bad if clawbacks > 0 else ink])
 		1:
 			lines.append(["WHAT THE OWNERS AND YOUR TEAM SAY", blue])

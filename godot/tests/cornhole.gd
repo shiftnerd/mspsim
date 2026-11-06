@@ -7,7 +7,7 @@ extends SceneTree
 # Headless: the rules run through CornholeGame.step / press, the outing through Outings.press / tick.
 
 const Corn := preload("res://scripts/cornhole_game.gd")
-const CREW := ["Alan", "Garrison", "Dan", "Maya", "Vic"]
+const CREW := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const TIERS := {
 	"easy": {"to": 11, "opp_skill": -0.08, "aim_speed": 1.0, "power_speed": 0.8, "assist": true},
 	"normal": {"to": 15, "opp_skill": 0.0, "aim_speed": 1.3, "power_speed": 1.1, "assist": false},
@@ -120,9 +120,9 @@ func _init() -> void:
 	_check(lip_in > 60 and lip_in < 140, "a bag on the lip falls in about half the time (%d of 200)" % lip_in)
 
 	# ---- the order of the round and the party
-	_check([g.opponent_for(1), g.opponent_for(2), g.opponent_for(3), g.opponent_for(4), g.opponent_for(5), g.opponent_for(6)] == ["Alan", "Garrison", "Dan", "Maya", "Vic", "Alan"], "Alan, Garrison, Dan, Maya, Vic, then round again")
-	var small := _game("normal", 1, ["Vic", "Dan", "Morgan"])
-	_check(small.crew == ["Dan", "Vic"] and small.opponent_for(1) == "Dan" and small.opponent_for(2) == "Vic", "a smaller party plays in the same order (Morgan has no cornhole row)")
+	_check([g.opponent_for(1), g.opponent_for(2), g.opponent_for(3), g.opponent_for(4), g.opponent_for(5), g.opponent_for(6)] == ["Alan", "Garrison", "Dan", "Maya", "John", "Alan"], "Alan, Garrison, Dan, Maya, John, then round again")
+	var small := _game("normal", 1, ["John", "Dan", "Morgan"])
+	_check(small.crew == ["Dan", "John"] and small.opponent_for(1) == "Dan" and small.opponent_for(2) == "John", "a smaller party plays in the same order (Morgan has no cornhole row)")
 	var alone := _game("normal", 1, [])
 	_check(alone.opponent_for(1) == "THE CREW", "nobody there: you play the house")
 
@@ -255,7 +255,7 @@ func _init() -> void:
 			n_in += 1 if kind == "hole" else 0
 		errs[who] = float(tot) / 400.0
 	_check(errs.Alan > errs.Dan, "Alan is a better thrower than Dan (%.2f against %.2f a bag)" % [errs.Alan, errs.Dan])
-	_check(errs.Alan > errs.Garrison and errs.Maya > errs.Dan and errs.Alan > 1.3, "the crew scores 1.3 to 2.3 a bag, Alan on top (Alan %.2f, Garrison %.2f, Maya %.2f, Vic %.2f)" % [errs.Alan, errs.Garrison, errs.Maya, errs.Vic])
+	_check(errs.Alan > errs.Garrison and errs.Maya > errs.Dan and errs.Alan > 1.3, "the crew scores 1.3 to 2.3 a bag, Alan on top (Alan %.2f, Garrison %.2f, Maya %.2f, John %.2f)" % [errs.Alan, errs.Garrison, errs.Maya, errs.John])
 	var h2 := _game("normal", 5)
 	h2.opp = "Alan"
 	var sa: Vector2 = h2.opp_sigma("Alan")
@@ -268,10 +268,10 @@ func _init() -> void:
 	var cold: Vector2 = h2.opp_sigma("Garrison")
 	_check(hot.x < cold.x, "Garrison is streaky: tighter after a hole (%.1f) than after a miss (%.1f)" % [hot.x, cold.x])
 	var vic_crowd := _game("normal", 5, CREW)
-	var vic_few := _game("normal", 5, ["Vic", "Alan"])
-	_check(vic_crowd.opp_sigma("Vic").x < vic_few.opp_sigma("Vic").x, "Vic is a show-off: better with an audience (%.1f against %.1f)" % [vic_crowd.opp_sigma("Vic").x, vic_few.opp_sigma("Vic").x])
+	var vic_few := _game("normal", 5, ["John", "Alan"])
+	_check(vic_crowd.opp_sigma("John").x < vic_few.opp_sigma("John").x, "John is a show-off: better with an audience (%.1f against %.1f)" % [vic_crowd.opp_sigma("John").x, vic_few.opp_sigma("John").x])
 	vic_few._you_hole_round = true
-	_check(is_equal_approx(vic_few.opp_sigma("Vic").x, vic_crowd.opp_sigma("Vic").x), "and when you just scored")
+	_check(is_equal_approx(vic_few.opp_sigma("John").x, vic_crowd.opp_sigma("John").x), "and when you just scored")
 	var wild := 0
 	var steady := 0
 	var dan := _game("normal", 9)
@@ -328,7 +328,7 @@ func _init() -> void:
 	_check(o.ROOMS.cornhole == "warehouse" and o.SPOTS.cornhole.size() == 6, "it is played in the warehouse with a spot for each cast member")
 	_check(o.ROOM_INTRO.has("cornhole") and str(o.GAMES.cornhole.blurb).length() > 40, "it has its intro text")
 	var texts: Array = [str(o.GAMES.cornhole.blurb), str(o.ROOM_INTRO.cornhole), str(o.GAMES.cornhole.keys)]
-	for who in ["Alan", "Garrison", "Dan", "Vic", "Maya", "Morgan"]:
+	for who in ["Alan", "Garrison", "Dan", "John", "Maya", "Morgan"]:
 		for kind in ["hole", "miss"]:
 			var lines: Array = o.CREW_LINES[who].get(kind, [])
 			_check(lines.size() >= 2, "%s: two %s lines" % [who, kind])

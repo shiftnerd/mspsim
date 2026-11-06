@@ -465,7 +465,7 @@ func sv_morning() -> void:
 			if not did:
 				break
 		# one on ones: two people a day, in turn, and the quiet ones first
-		var who := ["Maya", "Vic"]
+		var who := ["Maya", "John"]
 		for n in crew.names():
 			if n != "Maya":
 				who.append(str(n))
@@ -761,13 +761,13 @@ func sa_run(seed_value: int) -> Dictionary:
 	var onsite := root.get_node("Onsite")
 	var owner_node := root.get_node("Owner")
 	var player_script: GDScript = load("res://scripts/player.gd")
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	game.title_mode = false
 	game.busy = false
 	root.get_node("Difficulty").seed_run(seed_value)
 	root.get_node("Build").pending = {}
 	if build_name != "":
-		var b: Dictionary = root.get_node("Build").apply_preset("sales", "Vic", "normal", build_name) if build_name != "overpromise" else root.get_node("Build").apply_preset("sales", "Vic", "normal", "hunter")
+		var b: Dictionary = root.get_node("Build").apply_preset("sales", "John", "normal", build_name) if build_name != "overpromise" else root.get_node("Build").apply_preset("sales", "John", "normal", "hunter")
 		if build_name == "overpromise":
 			b["quirks"] = ["overpromise"]
 		root.get_node("Build").pending = b

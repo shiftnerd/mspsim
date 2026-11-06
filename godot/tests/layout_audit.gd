@@ -428,7 +428,7 @@ func _floor_phase() -> void:
 	_clear(cards)
 	# ---- sales campaign: CRM list, record, quote builder, handover
 	await _scene("res://scenes/main_floor.tscn")
-	await _new_game("sales", "sales_vic")
+	await _new_game("sales", "office_john")
 	var sc := root.get_node("SalesCampaign")
 	var deals = load("res://scripts/deals.gd")
 	sc.leads = []
@@ -507,7 +507,7 @@ func _floor_phase() -> void:
 	out.enabled = true
 	out.use_rooms = false
 	_begin()
-	out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+	out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
 	await _end("chair race intro")
 	out.press(KEY_ENTER)
 	_begin()
@@ -532,7 +532,7 @@ func _floor_phase() -> void:
 	# ---- R21: cornhole and the cookout (the overlay versions: intro, play, result)
 	for id in ["cornhole", "grill", "darts"]:
 		_begin()
-		out.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "Vic"]})
+		out.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
 		await _end("%s intro" % id)
 		out.press(KEY_ENTER)
 		out.tick(2.0)

@@ -56,7 +56,7 @@ func _init() -> void:
 	var deals = load("res://scripts/deals.gd")
 	var qb = load("res://scripts/quote_builder.gd")
 
-	player_script.current_character = "sales_vic"
+	player_script.current_character = "office_john"
 	game.busy = false
 	diff.seed_run(52)
 	c.new_game("sales")

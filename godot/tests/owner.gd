@@ -171,7 +171,7 @@ func _init() -> void:
 		"a hire raises the W-2 ratio and costs EBITDA"
 	)
 
-	# marketing: a weekly budget that helps Vic and brings leads
+	# marketing: a weekly budget that helps John and brings leads
 	c.new_game("owner")
 	var vic0: float = sales.vic_skill()
 	o.show_card("marketing")
@@ -179,7 +179,7 @@ func _init() -> void:
 	cards.pick(2)
 	_check(
 		o.marketing == 400 and sales.vic_skill() > vic0 and o.weekly_estimate().ebitda == 660 - 400,
-		"standard marketing: Vic closes more, EBITDA pays for it"
+		"standard marketing: John closes more, EBITDA pays for it"
 	)
 	_clear_cards(cards)
 	o._leads = 1
@@ -276,7 +276,7 @@ func _init() -> void:
 	o.apply({"stack": {"hardware": "budgetbyte"}})
 	_check(
 		o.issue_mult() > 1.25 and o.vic_extra() > 0.11 and o.hardware_margin() == 120,
-		"cheap hardware: more tickets, Vic sells more, thinner margin"
+		"cheap hardware: more tickets, John sells more, thinner margin"
 	)
 	o.fire({"event": "grumble"})
 	_check(
@@ -363,7 +363,7 @@ func _init() -> void:
 	o.apply({"fee_boost": {"client": 0, "mult": 1.1}})
 	_check(o.client_fee(0) == 880, "a successful review raised the client's fee 10%%")
 
-	# Vic's pay plan: commission sells more but oversells
+	# John's pay plan: commission sells more but oversells
 	c.new_game("owner")
 	_check(
 		o.new_client_mood() == 75 and o.weekly_estimate().payroll == 2700,
@@ -374,7 +374,7 @@ func _init() -> void:
 	_clear_cards(cards)
 	_check(
 		o.vic_plan == "commission" and o.new_client_mood() == 58 and o.vic_extra() >= 0.12,
-		"commission plan: Vic sells harder, new clients start unhappy"
+		"commission plan: John sells harder, new clients start unhappy"
 	)
 	var cash3: int = o.cash
 	var signed: int = sales.sign_client()
@@ -389,7 +389,7 @@ func _init() -> void:
 	o._vic_report()
 	_check(
 		cards.is_open and cards.text.contains("1 deals") and cards.text.contains("happiness"),
-		"Vic's report: deals and how happy his clients are"
+		"John's report: deals and how happy his clients are"
 	)
 	_clear_cards(cards, 2)
 	var comp := root.get_node("Computer")

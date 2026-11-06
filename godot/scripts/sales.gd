@@ -1,8 +1,8 @@
 extends Node
-# The sales side: the account manager (Vic) brings in the work. Clients each have a
+# The sales side: the account manager (John) brings in the work. Clients each have a
 # satisfaction (0-100) that moves with how their tickets go; the number of ACTIVE clients sets
-# how many tickets come in (Msp.pace), and Vic's visits can sign new clients or sell desktop
-# installs. When a client is unhappy and has an open ticket that is late, they complain to Vic,
+# how many tickets come in (Msp.pace), and John's visits can sign new clients or sell desktop
+# installs. When a client is unhappy and has an open ticket that is late, they complain to John,
 # who walks in and tells you (a Cards decision). Everything here only runs inside a campaign.
 
 signal changed
@@ -12,16 +12,16 @@ const START_CLIENTS := [0, 1, 2, 3, 4]
 const MAX_CLIENTS := 8
 const INSTALL_JOB := 150  # owner campaign: what a sold desktop install pays the company
 const COMPLAINT_GAP := 75.0  # game seconds between complaints
-const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to Vic at most every other week
+const CLIENT_COMPLAINT_WEEKS := 2  # owner campaign: the same client complains to John at most every other week
 const SIGN_TEXT := "Just signed %s! Their IT is a mess. Welcome them gently."
 
 var active: Array = START_CLIENTS.duplicate()
 var satisfaction := {}  # client -> 0..100
 var deals := 0
-var last_deal := "VIC CLOSED A DEAL!"  # what the sales bell says
+var last_deal := "JOHN CLOSED A DEAL!"  # what the sales bell says
 var installs_sold := 0
-var pending: Dictionary = {}  # a complaint waiting for Vic to deliver it
-var signed_day := {}  # client -> campaign day Vic signed them: no tickets until the next day
+var pending: Dictionary = {}  # a complaint waiting for John to deliver it
+var signed_day := {}  # client -> campaign day John signed them: no tickets until the next day
 var complained_day := {}  # client -> campaign day of their last complaint (the owner's weeks spread them out)
 
 var _cool := 40.0
@@ -111,32 +111,32 @@ func workload() -> float:
 	return float(active.size()) / 5.0 + SalesCampaign.extra_load()
 
 
-# ---- Vic's skill ----------------------------------------------------------------------------
+# ---- John's skill ----------------------------------------------------------------------------
 func vic_skill() -> float:
 	var skill := 0.45 + float(Campaign.rep) / 250.0 + Owner.vic_extra()
-	if Social.is_friendly("Vic"):
+	if Social.is_friendly("John"):
 		skill += 0.1
-	if Social.is_cold("Vic"):
+	if Social.is_cold("John"):
 		skill -= 0.15
 	return clampf(skill, 0.15, 0.95)
 
 
-# Vic is back from a client visit: maybe he closed something
+# John is back from a client visit: maybe he closed something
 func visit_done() -> bool:
 	if not Campaign.active or not Msp.enabled:
 		return false
 	if Difficulty.rng("sales").randf() > vic_skill():
-		Msp.send_text("Vic", "Client meeting went nowhere. Next time.")
+		Msp.send_text("John", "Client meeting went nowhere. Next time.")
 		return false
 	var dealt := -1
 	if active.size() < max_clients() and (Difficulty.rng("sales").randf() < 0.55 or Msp.project_busy()):
 		dealt = sign_client()
 		if dealt >= 0:
-			last_deal = "VIC CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
+			last_deal = "JOHN CLOSED " + str(Msp.CLIENTS[dealt].name).to_upper() + "!"
 	else:
 		dealt = sell_install()
 		if dealt >= 0:
-			last_deal = "VIC SOLD A DESKTOP INSTALL!"
+			last_deal = "JOHN SOLD A DESKTOP INSTALL!"
 	return dealt >= 0
 
 
@@ -155,12 +155,12 @@ func sign_client(wanted := -1) -> int:
 	satisfaction[client] = Owner.new_client_mood() if Campaign.cards_active() else 75
 	deals += 1
 	Owner.on_deal("client", client)
-	Msp.send_text("Vic", SIGN_TEXT % Msp.CLIENTS[client].name)
+	Msp.send_text("John", SIGN_TEXT % Msp.CLIENTS[client].name)
 	Msp.mail(
-		"Vic Marlowe - Sales",
+		"John Marlowe - Sales",
 		"New client: " + str(Msp.CLIENTS[client].name),
 		(
-			"Signed %s today. Contact is %s. Expect their tickets from tomorrow. - Vic"
+			"Signed %s today. Contact is %s. Expect their tickets from tomorrow. - John"
 			% [Msp.CLIENTS[client].name, Msp.CLIENTS[client].contact]
 		)
 	)
@@ -179,7 +179,7 @@ func sell_install() -> int:
 		Owner.cash += INSTALL_JOB
 		Owner.income_extra += INSTALL_JOB
 		Msp.send_text(
-			"Vic", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
+			"John", "Sold %s a new desktop. The crew sets it up between tickets." % Msp.CLIENTS[who].name
 		)
 		changed.emit()
 		return who
@@ -195,13 +195,13 @@ func sell_install() -> int:
 	Msp.start_project(int(t.id))
 	installs_sold += 1
 	Owner.on_deal("install", client)
-	Msp.send_text("Vic", "Sold %s a new desktop. It is in your queue." % Msp.CLIENTS[client].name)
+	Msp.send_text("John", "Sold %s a new desktop. It is in your queue." % Msp.CLIENTS[client].name)
 	changed.emit()
 	return int(t.id)
 
 
 # ---- complaints -----------------------------------------------------------------------------
-# the client with a late open ticket and low satisfaction complains to Vic
+# the client with a late open ticket and low satisfaction complains to John
 func complaint_cooling(client: int) -> bool:
 	return (
 		Campaign.cards_active()
@@ -239,8 +239,8 @@ func _process(delta: float) -> void:
 	_cool = COMPLAINT_GAP
 	pending = found
 	complained_day[int(found.client)] = Campaign.day
-	if Campaign.player_as == "Vic":
-		deliver()  # you are Vic: the client phones you directly
+	if Campaign.player_as == "John":
+		deliver()  # you are John: the client phones you directly
 	else:
 		World.send_vic_to_player()
 
@@ -251,7 +251,7 @@ func complaint_text() -> String:
 		return ""
 	var contact: String = Msp.CLIENTS[int(t.client)].contact
 	var late := "is past its SLA" if t.breached else "has %s left" % Msp.mmss(float(t.sla_left))
-	if Campaign.player_as == "Vic":
+	if Campaign.player_as == "John":
 		return "Ticket #%d (%s) %s and my staff are not happy. Is anyone working on it?" % [int(t.id), t.summary, late]
 	return (
 		"%s from %s called me directly. Ticket #%d (%s) %s and they are not happy."
@@ -259,7 +259,7 @@ func complaint_text() -> String:
 	)
 
 
-# Vic reached you with the news: ask what you want to do
+# John reached you with the news: ask what you want to do
 func deliver() -> void:
 	if pending.is_empty():
 		return
@@ -268,17 +268,17 @@ func deliver() -> void:
 		pending = {}
 		return
 	Career.add("vic_calls")
-	var vic_friend := Social.is_friendly("Vic")
+	var vic_friend := Social.is_friendly("John")
 	var options := [
 		{"label": "I WILL PRIORITIZE IT", "id": "prio"},
 		{"label": "TELL THEM IT IS IN THE QUEUE", "id": "queue"},
 		{"label": "CAN YOU CALM THEM DOWN?", "id": "calm"},
 	]
 	if vic_friend:
-		options[2]["label"] = "CAN YOU CALM THEM DOWN? (VIC OWES YOU)"
+		options[2]["label"] = "CAN YOU CALM THEM DOWN? (JOHN OWES YOU)"
 	var ticket_id := int(pending.get("ticket", 0))
-	var speaker := "Vic Marlowe"
-	if Campaign.player_as == "Vic":
+	var speaker := "John Marlowe"
+	if Campaign.player_as == "John":
 		speaker = str(Msp.CLIENTS[int(pending.get("client", 0))].contact)
 		options[2]["label"] = "I WILL CALL THEM AND CALM THEM DOWN"
 	Cards.ask(
@@ -303,16 +303,16 @@ func resolve(choice: String) -> void:
 			t.breached = false if float(t.sla_left) > 0.0 else t.breached
 			t.notes.append("Escalated by the account manager.")
 			adjust(client, 6)
-			Social.change("Vic", 1)
+			Social.change("John", 1)
 			Skills.add_xp("people", 3)
 		"queue":
 			adjust(client, -6)
-			Social.change("Vic", -2)
+			Social.change("John", -2)
 		_:
 			t.sla_left = float(t.sla_left) + 60.0
 			t.notes.append("Account manager managed the client.")
 			adjust(client, 2)
-			Social.change("Vic", 0 if Social.is_friendly("Vic") else -1)
+			Social.change("John", 0 if Social.is_friendly("John") else -1)
 	Msp.changed.emit()
 
 

@@ -20,7 +20,7 @@ const CAST := {
 	"Alan": {"character": "office_alan", "home": "office_one", "seat": "Seat1"},
 	"Garrison": {"character": "casual_garrison", "home": "office_two", "seat": "Seat1"},
 	"Dan": {"character": "office_dan", "home": "main_floor", "seat": "Seat3"},
-	"Vic": {"character": "sales_vic", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
+	"John": {"character": "office_john", "home": "cubicle_area", "seat": "Seat1", "role": "sales"},
 	"Maya": {"character": "office_maya", "home": "main_floor", "seat": "Seat2"},
 	# the manager: a desk in the cubicle area (desk 5), walks the floor, hosts the weekly all-hands. Not a tech.
 	"Morgan": {"character": "office_morgan", "home": "cubicle_area", "seat": "Seat2", "role": "manager"},
@@ -356,7 +356,7 @@ func _watch_outage(delta: float) -> void:
 	_outage_t += delta
 	if _outage_t < 8.0 or _closet_sent or clock >= DAY_END - 0.3:
 		return
-	for who in ["Dan", "Alan", "Garrison", "Maya", "Vic"]:
+	for who in ["Dan", "Alan", "Garrison", "Maya", "John"]:
 		if not chars.has(who):
 			continue
 		var st: Dictionary = chars[who]
@@ -871,16 +871,16 @@ func _visit_plan(n: String, secs: float) -> Array:
 	return legs
 
 
-# a client complained to Vic: he walks over to wherever you are and tells you
+# a client complained to John: he walks over to wherever you are and tells you
 func send_vic_to_player() -> void:
-	if not chars.has("Vic") or _scene == "":
+	if not chars.has("John") or _scene == "":
 		Sales.pending = {}
 		return
-	var st: Dictionary = chars["Vic"]
+	var st: Dictionary = chars["John"]
 	if st.scene == OUTSIDE or st.following:
 		var said := Sales.complaint_text()
 		if said != "":
-			Msp.send_text("Vic", said)
+			Msp.send_text("John", said)
 			Sales.adjust(int(Sales.pending.get("client", 0)), -2)
 		Sales.pending = {}
 		return
@@ -891,7 +891,7 @@ func send_vic_to_player() -> void:
 	if player != null:
 		px = player.global_position.x
 	var info: Dictionary = DATA.SCENES[_scene]
-	var from_x := _hint_x("Vic")
+	var from_x := _hint_x("John")
 	var stand := clampf(
 		px - 34.0 if from_x < px else px + 34.0,
 		float(info.x0) + 16.0,

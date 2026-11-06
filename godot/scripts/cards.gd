@@ -2,7 +2,7 @@ extends CanvasLayer
 # Decision cards: a modal dialog with a speaker, some text and 2-4 options. Used when the
 # account manager walks in with a client complaint, and for the owner campaign's business
 # decisions. Up/Down + Enter, number keys 1-4, or click.
-#   Cards.ask("Vic", "text...", [{"label": "I WILL PRIORITIZE IT", "id": "a"}, ...], on_pick)
+#   Cards.ask("John", "text...", [{"label": "I WILL PRIORITIZE IT", "id": "a"}, ...], on_pick)
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
@@ -105,7 +105,7 @@ func pick(index: int) -> void:
 	_show_next()
 
 
-# the next queued card whose reason still holds (a Vic complaint for a ticket that closed meanwhile is dropped)
+# the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
 	while not _queue.is_empty() and not is_open and not DayReport.is_open:
 		var next: Array = _queue.pop_front()

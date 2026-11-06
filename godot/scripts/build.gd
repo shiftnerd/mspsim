@@ -9,7 +9,7 @@ extends Node
 # are unchanged. Every stat is a 0-5 level read through `Build.level(stat)`.
 #
 #   Stat sets   PATHS: tech (the five Skills), owner (TECHNICAL FINANCE SALES CULTURE CLIENTS, read through
-#               Owner.edges_for), service (Dan) and sales (Vic) as data rows (not selectable yet).
+#               Owner.edges_for), service (Dan) and sales (John) as data rows (not selectable yet).
 #   Bias        BIAS[cast name]: free floors and creation caps that cost no points, so a cast member stays himself.
 #   Budget      BUDGET by Difficulty tier (12 normal, 15 easy, 9 hard), cumulative COST 1/2/4/7/11 per level, at most 4
 #               at creation and only one stat at 4, MAX_TOTAL levels in all. Quirks give or cost points.
@@ -36,7 +36,7 @@ const BIAS := {
 	"Alan": {"floor": {"technical": 2}, "cap": {"sales": 2, "culture": 2}},
 	"Garrison": {"floor": {"sales": 2, "culture": 2}, "cap": {"technical": 2}},
 	"Dan": {"floor": {"process": 2, "dispatch": 1}, "cap": {"people": 2, "relations": 2}, "skills": {"networking": 3, "servers": 1}},
-	"Vic": {"floor": {"pitch": 2}, "cap": {}},
+	"John": {"floor": {"pitch": 2}, "cap": {}},
 }
 # owner stat -> what one level above the free floor adds to Owner.edges_for (see the key list in owner.gd)
 const OWNER_FX := {
@@ -46,7 +46,7 @@ const OWNER_FX := {
 	"culture": {"morale": 1.0, "outing_relief": 0.1},
 	"clients": {"qbr": 0.03, "new_mood": 1.0, "poach": -0.004},
 }
-# sales stat -> what one level above Vic's free floor adds (C3). win: win chance; gap: promise gap points (negative = fewer promises
+# sales stat -> what one level above John's free floor adds (C3). win: win chance; gap: promise gap points (negative = fewer promises
 # to keep); price: weekly fee multiplier; renew: renewal chance; churn: weekly churn-meter change after a sale; lead: lead quality
 const SALES_FX := {
 	"pitch": {"win": 0.02},
@@ -87,7 +87,7 @@ const DEFAULT_INFO := {
 	"owner": {
 		"technical": {"name": "TECHNICAL", "text": "FEWER REOPENED TICKETS AND BREAK-INS. FAILING BACKUPS GET NOTICED SOONER."},
 		"finance": {"name": "FINANCE", "text": "FEE RISES ARE ACCEPTED MORE OFTEN AND THE BANK STARTS FATTER."},
-		"sales": {"name": "SALES", "text": "MARKETING WORKS BETTER AND VIC CLOSES MORE."},
+		"sales": {"name": "SALES", "text": "MARKETING WORKS BETTER AND JOHN CLOSES MORE."},
 		"culture": {"name": "CULTURE", "text": "A HAPPIER CREW, BIGGER RELIEF FROM OUTINGS AND MORE TRUST FROM YOUR PARTNER."},
 		"clients": {"name": "CLIENTS", "text": "BUSINESS REVIEWS GO BETTER, NEW CLIENTS START HAPPIER, FEWER ARE POACHED."},
 	},
@@ -121,7 +121,7 @@ const DEFAULT_PRESETS := {
 		{"id": "hirer", "name": "HIRER", "quirks": [], "steps": ["clients", "clients", "culture", "culture", "technical", "technical", "clients", "finance", "technical", "finance"], "text": "YOU PICK GOOD PEOPLE. CLIENTS LIKE THEM AND THE CREW STAYS."},
 	],
 	"owner_garrison": [
-		{"id": "brand", "name": "BRAND BUILDER", "quirks": [], "steps": ["sales", "sales", "sales", "clients", "clients", "finance", "technical", "finance", "clients", "technical"], "text": "MARKETING WORKS HARD FOR YOU AND VIC CLOSES MORE."},
+		{"id": "brand", "name": "BRAND BUILDER", "quirks": [], "steps": ["sales", "sales", "sales", "clients", "clients", "finance", "technical", "finance", "clients", "technical"], "text": "MARKETING WORKS HARD FOR YOU AND JOHN CLOSES MORE."},
 		{"id": "people_first", "name": "PEOPLE FIRST", "quirks": [], "steps": ["culture", "culture", "culture", "clients", "clients", "finance", "technical", "clients", "finance", "technical"], "text": "A HAPPY CREW AND A TRUSTING PARTNER. THE NUMBERS FOLLOW, MAYBE."},
 		{"id": "closer", "name": "CLOSER", "quirks": [], "steps": ["clients", "clients", "clients", "finance", "finance", "sales", "sales", "technical", "finance", "clients"], "text": "REVIEWS GO WELL, FEES GO UP, NEW CLIENTS START HAPPY."},
 	],
@@ -476,14 +476,14 @@ func _owner_up(stat: String) -> int:
 	return level_of(b, stat, Campaign.player_as) - floor_of(stat, Campaign.player_as)
 
 
-# levels of one sales stat above Vic's free floor (0 for a flat build and outside the sales campaign)
+# levels of one sales stat above John's free floor (0 for a flat build and outside the sales campaign)
 func sales_up(stat: String) -> int:
 	if Campaign.mode != "sales":
 		return 0
 	var b := cur()
 	if is_flat(b):
 		return 0
-	return level_of(b, stat, "Vic") - floor_of(stat, "Vic")
+	return level_of(b, stat, "John") - floor_of(stat, "John")
 
 
 # the sum of one sales effect key: every stat's levels above the floor plus the quirks (0.0 for the flat build, so old runs are unchanged)

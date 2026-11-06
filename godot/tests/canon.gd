@@ -85,7 +85,7 @@ func _init() -> void:
 		_check(social.role(who) == "CO-OWNER", "%s is labelled CO-OWNER" % who)
 		for kind in ["lunch", "phones", "help", "thanks"]:
 			_check(lync.MESSAGES.has(kind + "_" + who), "%s has an owner-style %s message" % [who, kind])
-	for who in ["Dan", "Vic", "Maya"]:
+	for who in ["Dan", "John", "Maya"]:
 		_check(not social.is_owner(who), "%s is staff, not an owner" % who)
 
 	# ---- owner Lynk asks keep the quick-reply structure and the effects of the generic ones

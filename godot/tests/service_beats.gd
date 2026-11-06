@@ -163,7 +163,7 @@ func _init() -> void:
 	var guard := 0
 	while cards.is_open and _opt(cards, "pull") < 0 and guard < 12:
 		guard += 1
-		cards.pick(0)  # the day's other cards (Vic's promise, the hire) come first
+		cards.pick(0)  # the day's other cards (John's promise, the hire) come first
 	_check(cards.is_open and _opt(cards, "pull") >= 0, "the mid-week adjustment asks how to spend the crew")
 	cards.pick(_opt(cards, "pull"))
 	_clear(cards)
