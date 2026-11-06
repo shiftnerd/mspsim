@@ -167,11 +167,11 @@ const REDO := {
 }
 # the habits the player can do on the spot from the HABITS tab (the others are touched by what happens: a review, a project, a loss)
 const DOABLE := ["H1", "H7", "H8", "H9", "H10", "H11", "H12", "H13", "H14"]
-# the order of the pitches from Marge or Alan: one every OFFER_GAP weeks from OFFER_FROM, for a habit nobody has started
+# the order of the pitches from Christy or Alan: one every OFFER_GAP weeks from OFFER_FROM, for a habit nobody has started
 const OFFER_ORDER := [
 	"H1", "H7", "H2", "H6", "H12", "H3", "H4", "H5", "H13", "H8", "H11", "H10", "H9", "H14"
 ]
-const ALAN := ["H3", "H5", "H9", "H11", "H12", "H14"]  # the others are pitched by Marge
+const ALAN := ["H3", "H5", "H9", "H11", "H12", "H14"]  # the others are pitched by Christy
 const OFFER_FROM := 3
 const OFFER_GAP := 2
 const H9_WEEK := 18  # the card comes in the week 19 morning (the clocks change in November)
@@ -220,7 +220,7 @@ static var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 const DEFAULT_CARDS := {
 	"habit_offer":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "Idea for the shop: %s. %s It would cost %s. Start it?",
 		"options":
 		[
@@ -230,7 +230,7 @@ const DEFAULT_CARDS := {
 	},
 	"habit_lapsed":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"THE CHECKLIST HAS ONE EMPTY BOX. %s has not been done in a long while, so it has stopped helping. Doing it again costs half.",
 		"options":
@@ -256,7 +256,7 @@ const DEFAULT_CARDS := {
 	},
 	"habit_revenge":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"%s left on bad terms and nobody closed their logins. This morning a nasty mail went out to three of our clients from an account that should be dead. Cleanup and apologies cost $1,500.",
 		"options": [{"label": "CLOSE EVERY LOGIN NOW", "fx": {"cash": -1500, "rep": -1}}]
@@ -651,7 +651,7 @@ static func _week_ports(owner: Node) -> void:
 			_card("habit_ports", "H8", [])
 
 
-# one pitch from Marge or Alan every OFFER_GAP weeks, in the order of the table, for a habit nobody has started yet
+# one pitch from Christy or Alan every OFFER_GAP weeks, in the order of the table, for a habit nobody has started yet
 static func _offer(owner: Node) -> void:
 	if (
 		Campaign.day < OFFER_FROM
@@ -721,7 +721,7 @@ static func qbr(client: int) -> void:
 	touch("H2")
 	Growth.owner_used += 1.0
 	Sales.adjust(client, int(round(2.0 * f)))
-	Msp.send_text("Marge", str(TEXT.scorecard) % str(Msp.CLIENTS[client].name))
+	Msp.send_text("Christy", str(TEXT.scorecard) % str(Msp.CLIENTS[client].name))
 
 
 # H2: extra odds for Projects.change_order (+10 points)
@@ -751,14 +751,14 @@ static func loss(_client: int) -> void:
 	if touch_if("H5"):
 		Growth.owner_used += 2.0
 		Owner.flags["h5_until"] = Campaign.day + 8
-		Msp.send_text("Marge", str(TEXT.review))
+		Msp.send_text("Christy", str(TEXT.review))
 
 
 # H6: someone left (a hire or a tech): the checklist closes their logins; without it a revenge mail may come (only for a habit let go)
 static func departure(who: String) -> void:
 	if touch_if("H6"):
 		Growth.owner_used += 1.0
-		Msp.send_text("Marge", str(TEXT.offboard) % who)
+		Msp.send_text("Christy", str(TEXT.offboard) % who)
 		return
 	var s := state("H6")
 	if (s == STALE or s == LAPSED) and randf() < REVENGE_CHANCE:

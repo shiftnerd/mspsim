@@ -322,7 +322,7 @@ static func mark_lie(l: Dictionary, why: String, kind := "") -> void:
 
 
 # ---- dated bills (the sales twins of the owner temptations) -----------------------------------------------------------
-# A lie also goes in Marge's folder (Owner.skel, class "sales", with the lead's name). When its week comes and the deal is on the book the
+# A lie also goes in Christy's folder (Owner.skel, class "sales", with the lead's name). When its week comes and the deal is on the book the
 # bill lands: mood and churn on the client, reputation, or the client leaves (a laundered lead). A deal that is still open waits; one that
 # never closed drops out (BILL_PATIENCE weeks). COME CLEAN costs a share of the commission and clears the lie flag. Cozy halves the hurt and
 # the laundered client stays.

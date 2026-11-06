@@ -527,7 +527,7 @@ func _complete(p: Dictionary) -> void:
 		"made $%d" % int(p.profit) if int(p.profit) >= 0 else "LOST $%d" % absi(int(p.profit))
 	)
 	Msp.send_text(
-		"Marge",
+		"Christy",
 		(
 			"%s finished at %s: we %s after labor."
 			% [str(TYPES[str(p.type)].label).capitalize(), str(Msp.CLIENTS[client].name), verdict]

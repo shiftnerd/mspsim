@@ -318,14 +318,14 @@ func _init() -> void:
 	_check(done.contains("DEFAULT PASSWORDS") and h.site_share() > 0.0, "H14: a site done")
 	_check(h.breach_mult() < 1.0, "a small breach reduction")
 
-	# ---- a card from Marge or Alan adopts a habit, and the lapse nudge
+	# ---- a card from Christy or Alan adopts a habit, and the lapse nudge
 	_fresh_game(c, cards, 4)
 	h.week(o)
 	_check(
 		cards.is_open and cards.text.begins_with("Idea for the shop"),
 		"week 4: the first pitch (a card)"
 	)
-	_check(cards.speaker.contains("Marge"), "H1 is pitched by Marge")
+	_check(cards.speaker.contains("Christy"), "H1 is pitched by Christy")
 	cash0 = o.cash
 	cards.pick(1)  # START IT
 	_check(
@@ -343,7 +343,7 @@ func _init() -> void:
 	c.day = 4 + 26
 	h.week(o)
 	_check(
-		cards.is_open and cards.text.contains("EMPTY BOX"), "a lapsed habit: Marge's empty box card"
+		cards.is_open and cards.text.contains("EMPTY BOX"), "a lapsed habit: Christy's empty box card"
 	)
 	cash0 = o.cash
 	cards.pick(0)

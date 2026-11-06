@@ -109,7 +109,7 @@ const DEFAULT_TEXT := {
 				"speaker": "Pat Okafor (Consultant)",
 				"text": "Your runbooks are better than most. Two shops in other towns would pay to use your name and your procedures. A pilot costs $1,500 for the binders and the signs.",
 				"options": [
-					{"label": "START A PILOT ($1500)", "id": "pilot", "reply": "Pat prints thirty binders. Marge frames the first invoice.", "fx": {"cash": -1500}, "need": 1500},
+					{"label": "START A PILOT ($1500)", "id": "pilot", "reply": "Pat prints thirty binders. Christy frames the first invoice.", "fx": {"cash": -1500}, "need": 1500},
 					{"label": "MAYBE LATER", "id": "later", "reply": "Pat leaves a folder on your desk. It stays there, glowing.", "fx": {}},
 				],
 			},
@@ -146,7 +146,7 @@ const DEFAULT_TEXT := {
 		"head": "YOU TAKE THE DEPARTMENT HEAD JOB. A DOOR WITH YOUR NAME ON IT, A BUDGET MEETING EVERY MONDAY AND A TEAM THAT LEARNED HOW TO RUN WITHOUT YOU WATCHING.",
 		"clientbuy": "IRON MULE PAYS PIXEL THE BUYOUT FEE. YOUR NEW OFFICE SMELLS OF SAWDUST AND COFFEE, AND TONY MARSH TELLS EVERYONE HE HIRED THE BEST TECH IN THE COUNTY.",
 		"merger": "THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SHOP WITH TWO LOGOS AND ONE VERY LONG ALL-HANDS. YOUR SIDE IS WORTH ABOUT ${value}.",
-		"franchise": "TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. MARGE ORDERS MORE FRAMES.",
+		"franchise": "TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. CHRISTY ORDERS MORE FRAMES.",
 	},
 }
 var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)

@@ -186,7 +186,7 @@ const MANAGER_BOOST := 1.1  # a manager who runs the desk makes the same crew ab
 const MAX_LOST := 1  # of the two employees at most one quits (hires can leave too)
 const DRAW := {"none": 0, "small": 300, "normal": 600, "generous": 1000}  # weekly, for both owners together
 const DRAW_START := 3  # the first week a draw is paid
-const DRAW_FLOOR := 2000  # a draw that leaves less cash than this upsets Marge and the partner
+const DRAW_FLOOR := 2000  # a draw that leaves less cash than this upsets Christy and the partner
 const OUTING_BURN := 3.0  # extra burnout relief an outing gives the owner whose edge is culture
 # what each owner is good and bad at (X4). Every number is read by an existing function through Owner.edge(key):
 #   close_miss  chance a finished ticket comes back (was 7%)      rdp / stack_risk  break-in and vendor-breach odds multipliers
@@ -227,7 +227,7 @@ const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
 const DEFAULT_CARDS := {
 	"welcome":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service?",
 		"options":
@@ -578,7 +578,7 @@ const DEFAULT_CARDS := {
 	},
 	"peer_invite":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"You were invited to the MSP Mastermind: a dozen non-competing MSP owners who meet regularly, compare their numbers (EBITDA, W-2 ratio) and warn each other about what is coming. Dues are $500 to join and $75 a week.",
 		"options":
@@ -680,23 +680,23 @@ const DEFAULT_CARDS := {
 		],
 	},
 	"draw_policy": {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take?",
 		"options": [
-			{"label": "NORMAL DRAW ($600/WEEK, BOTH OF YOU)", "fx": {"draw": "normal"}, "text": "Marge writes it in the ledger. The draw starts in week 3."},
-			{"label": "SMALL DRAW ($300/WEEK)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A small draw. Marge looks relieved and {partner} nods. The bank stays fat."},
-			{"label": "GENEROUS DRAW ($1,000/WEEK)", "fx": {"draw": "generous"}, "text": "A generous draw. Marge says nothing, which is how she says a lot."},
-			{"label": "NO DRAW (WE LIVE ON NOODLES)", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger."},
+			{"label": "NORMAL DRAW ($600/WEEK, BOTH OF YOU)", "fx": {"draw": "normal"}, "text": "Christy writes it in the ledger. The draw starts in week 3."},
+			{"label": "SMALL DRAW ($300/WEEK)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A small draw. Christy looks relieved and {partner} nods. The bank stays fat."},
+			{"label": "GENEROUS DRAW ($1,000/WEEK)", "fx": {"draw": "generous"}, "text": "A generous draw. Christy says nothing, which is how she says a lot."},
+			{"label": "NO DRAW (WE LIVE ON NOODLES)", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw at all. You and {partner} split a sleeve of crackers. Christy frames the ledger."},
 		],
 	},
 	"draw_review": {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "Quarterly look at the owners' draw. Same as before, more, less, or nothing for now?",
 		"options": [
 			{"label": "KEEP THE DRAW AS IT IS", "fx": {}},
 			{"label": "TAKE LESS (SMALL DRAW)", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "A smaller draw. The bank breathes easier."},
 			{"label": "TAKE MORE (GENEROUS DRAW)", "fx": {"draw": "generous"}, "text": "A bigger draw. It is a good quarter, you tell yourself."},
-			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw this quarter. Marge pins a gold star on the ledger."},
+			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "No draw this quarter. Christy pins a gold star on the ledger."},
 		],
 	},
 	"stack_psa":
@@ -824,7 +824,7 @@ const DEFAULT_CARDS := {
 	},
 	"vic_plan":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard.",
 		"options":
@@ -836,7 +836,7 @@ const DEFAULT_CARDS := {
 	},
 	"billing_audit":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"I have a hunch we are not billing for everything: extra hours, license price rises we never passed on. A one-time billing audit ($400) would check every invoice against what we pay vendors and the hours we really work.",
 		"options":
@@ -1026,7 +1026,7 @@ const DEFAULT_CARDS := {
 	},
 	"ransom_lost":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Hoot and Holler lost years of case files because our backup was not working. Their lawyers are talking about suing us.",
 		"options":
@@ -1072,7 +1072,7 @@ const DEFAULT_CARDS := {
 				"need": 550,
 				"fx": {"cash": -550, "bec": "both"},
 				"text":
-				"The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books."
+				"The letter goes out with the filter offer attached. Christy says it is the cheapest insurance on the books."
 			},
 			{
 				"label": "IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES",
@@ -1083,7 +1083,7 @@ const DEFAULT_CARDS := {
 	},
 	"bec_marge":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"{me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it.",
 		"options":
@@ -1092,14 +1092,14 @@ const DEFAULT_CARDS := {
 				"label": "CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE",
 				"fx": {"bec": "self_check", "owner_hours": 1},
 				"text":
-				"The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had."
+				"The rep never sent it. 'Good catch,' he says. Christy adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had."
 			},
 			{
 				"label": "PAY IT, WE ARE LATE ALREADY",
 				"roll":
 				[
-					[0.55, {"cash": -2400, "bec": "self_check"}, "It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down."],
-					[0.45, {}, "It was real. The distributor changed banks. You got lucky and Marge knows it."]
+					[0.55, {"cash": -2400, "bec": "self_check"}, "It was fake. The money is gone and the real invoice is still unpaid. Christy never wants to see that happen again and writes the call-back rule down."],
+					[0.45, {}, "It was real. The distributor changed banks. You got lucky and Christy knows it."]
 				]
 			},
 			{
@@ -1114,7 +1114,7 @@ const DEFAULT_CARDS := {
 	},
 	"bec_loss":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"{me}, {client} wired {amount} to a scammer this week. An email 'from' their owner told accounting to pay a new account and it worked. Their mailbox had been watched for days. Their owner is on the phone with the bank and his first question is what IT was doing. What do we say?",
 		"options":
@@ -1123,7 +1123,7 @@ const DEFAULT_CARDS := {
 				"label": "CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER",
 				"fx": {"bec": "credit"},
 				"text":
-				"Marge cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day."
+				"Christy cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day."
 			},
 			{
 				"label": "LET OUR LAWYER ANSWER THEIR LETTER ($600)",
@@ -1142,49 +1142,49 @@ const DEFAULT_CARDS := {
 	},
 	"bec_lawyer_ok":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Our lawyer reads the contract and the file. Email security is on the recommended list and payments are the client's own process. He writes a calm, short answer and points to the letter we sent. They drop the claim. The relationship is cooler, but it is alive.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_lawyer_bad":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Our lawyer finds no written warning and no call-back rule on file. Their lawyer says we ran their mail and should have seen it. We settle for half the loss to keep this out of court. Word gets around the building.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_claim_ok":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"The broker comes back with good news: the funds transfer fraud rider covers a client who is tricked into sending money. We credit the client and the insurer pays most of it back after the deductible. The client sees you stand behind your work.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_claim_no":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"The insurer says our policy covers a breach of our own systems, not money a client sent to a criminal by choice. That is a crime policy question and we do not have the rider. We credit the client ourselves.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_blame_left":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"You tell their owner it was their process. He agrees quietly, then sends a termination letter for the end of the month. Two other firms in the building hear about it.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_blame_stay":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"You tell their owner it was their process. He goes quiet, then says they will stay for now. The tone of every email from them has changed.",
 		"options": [{"label": "OK", "fx": {}}],
 	},
 	"bec_rider":
 	{
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Our broker called about the wire fraud. A funds transfer fraud rider on the crime policy would cover a client who is tricked into sending money and blames us, up to $25,000 a claim. It is $30 a week. Without it we pay out of pocket every time.",
 		"options":
@@ -1408,7 +1408,7 @@ var payroll_extra := 0  # X9: raises and retention pay: W-2 payroll, not "other 
 var lost_techs := 0
 var draw_policy := "normal"  # the owners' weekly draw: none / small / normal / generous (card on week 2)
 var draw_paid := 0  # total drawn so far
-var draw_warned := -9  # the week Marge last complained about an oversized draw
+var draw_warned := -9  # the week Christy last complained about an oversized draw
 var hire_quits := 0  # hires who left (for the Garrison goal: a team that stays)
 var incidents := 0  # break-ins through remote desktop (for the Alan goal: a clean year)
 var _outings_seen := 0
@@ -1889,11 +1889,11 @@ func fire(ev: Dictionary) -> void:
 			Growth.owner_stretch()
 
 
-# week 1: Marge tells you what you are here for (your personal goal, scored at the review)
+# week 1: Christy tells you what you are here for (your personal goal, scored at the review)
 func _goal_card() -> void:
 	var alan: bool = Campaign.player_as == "Alan"
 	_dynamic["owner_goal"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": (
 			"Every owner wants something out of this place. Yours is a clean year: no ransomware loss, no break-ins, and a stack documented well enough to hand to a stranger (maturity 3). It goes on the weekly report."
 			if alan
@@ -2069,7 +2069,7 @@ func apply(fx: Dictionary) -> void:
 		_ransom_finish(str(fx.ransom_end))
 	if fx.has("fire"):
 		var told: String = Projects.fire_client(int(fx.fire.client), str(fx.fire.how))
-		Msp.send_text("Marge", told)
+		Msp.send_text("Christy", told)
 		Hints.toast(told, 4.0)
 	if fx.has("squeeze"):
 		for c in fx.squeeze:
@@ -2079,7 +2079,7 @@ func apply(fx: Dictionary) -> void:
 			discount[int(d[0])] = {"mult": float(d[1]), "weeks": int(d[2])}
 	if fx.has("change_order"):
 		var result: String = Projects.change_order(int(fx.change_order))
-		Msp.send_text("Marge", result)
+		Msp.send_text("Christy", result)
 		Hints.toast(result, 4.0)
 	if fx.has("scope"):
 		scope_fixed[int(fx.scope)] = true
@@ -2169,7 +2169,7 @@ func apply(fx: Dictionary) -> void:
 	if fx.has("habit_start"):
 		Habits.apply_start(fx.habit_start)
 	if fx.has("habit_adopt"):
-		Habits.apply_adopt(str(fx.habit_adopt))  # R38: a card from Marge or Alan, paid for
+		Habits.apply_adopt(str(fx.habit_adopt))  # R38: a card from Christy or Alan, paid for
 	if fx.has("consc"):
 		Temptation.change_consc(int(fx.consc))
 	if fx.has("skel"):
@@ -2421,7 +2421,7 @@ func _hire_card() -> void:
 		)
 	options.append({"label": "NO ONE RIGHT NOW", "fx": {}})
 	_dynamic["hire"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"Three candidates came through the door. Skill is relative to a solid, experienced tech at 1.0; wages are weekly and count toward your W-2 ratio.",
 		"options": options,
@@ -2445,7 +2445,7 @@ func _staff_week() -> void:
 		if not Difficulty.cozy_on() and randf() < quit_chance:
 			extra_staff.erase(hire)
 			hire_quits += 1
-			Msp.send_text("Marge", "%s quit." % hire.name)
+			Msp.send_text("Christy", "%s quit." % hire.name)
 			Habits.departure(str(hire.name))  # R38: H6, the offboarding checklist
 	if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.08:
 		lost_techs += 1
@@ -2561,7 +2561,7 @@ func _collections(client: int) -> void:
 		return
 	var key := str(client)
 	_dynamic["collections"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		(
 			"%s owes us $%d and the invoices are weeks late. Their contact keeps saying the check is in the mail."
@@ -2597,7 +2597,7 @@ func _collections(client: int) -> void:
 			{
 				"label": "WRITE IT OFF",
 				"fx": {"writeoff": client},
-				"text": "Written off. Marge sighs and updates the books."
+				"text": "Written off. Christy sighs and updates the books."
 			},
 		],
 	}
@@ -2773,7 +2773,7 @@ func _profit_review() -> void:
 	var fee := client_fee(pick)
 	var profit := client_profit(pick)
 	_dynamic["profit"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		(
 			"%s pays $%d a week but the work costs us about $%d: %d hours a week against %d included. After labor we %s $%d a week on them. What do we do?"
@@ -2830,7 +2830,7 @@ func _profit_review() -> void:
 		],
 	}
 	_dynamic["profit_fire"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		(
 			"Firing %s is an option, but word travels in a small business crowd, especially if they leave angry. A polite exit with notice is safer than a sudden one."
@@ -2930,7 +2930,7 @@ func _vendor_rise() -> void:
 	var peer: bool = flags.get("peer_group", false)
 	var haggle := 0.75 if peer else 0.55
 	_dynamic["vendor_rise"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		(
 			"Our RMM and PSA vendors both announced per-seat pricing. With %d clients that is about $%d more every week from now on. The other MSPs got the same letter."
@@ -3019,7 +3019,7 @@ func _audit() -> void:
 	)
 	var prepared := minf(0.95, posture + 0.25)
 	_dynamic["audit"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		"A client's insurer wants proof of backups, patching and access control, and a lawyer for a client we lost has hinted the lost files were our fault. Somebody will read our paperwork next week. How do we meet it?",
 		"options":
@@ -3045,7 +3045,7 @@ func _audit() -> void:
 				"label": "SETTLE QUIETLY ($1,500)",
 				"need": 1500,
 				"fx": {"cash": -1500},
-				"text": "Marge writes the cheque. The lawyer never calls again; neither does the feeling that it was close."
+				"text": "Christy writes the cheque. The lawyer never calls again; neither does the feeling that it was close."
 			},
 		],
 	}
@@ -3065,7 +3065,7 @@ func _credit_squeeze() -> void:
 	var moods := {str(a): -4, str(b): -4}
 	var harsh := {str(a): -10, str(b): -10}
 	_dynamic["credit_squeeze"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text":
 		(
 			"%s and %s say accounting changed and they will pay on net-60 terms from now on. That is our two biggest invoices sitting out for two more weeks."
@@ -3210,7 +3210,7 @@ func _client_breach() -> void:
 					% name
 				)
 	risk_client = -1
-	Cards.ask("Marge (Bookkeeper)", text, OPTIONS_OK, func(_p: String) -> void: pass)
+	Cards.ask("Christy (Controller)", text, OPTIONS_OK, func(_p: String) -> void: pass)
 
 
 # ---- handing a new client from sales to service ---------------------------------------------------------------------
@@ -3669,7 +3669,7 @@ func _rdp_week() -> void:
 	incidents += 1
 	apply({"cash": -cost, "mood": {str(victim): -12}, "rep": -3})
 	Cards.ask(
-		"Marge (Bookkeeper)",
+		"Christy (Controller)",
 		(
 			"A guessed remote-desktop password at %s let someone in. They used the server to send spam and poke around the files. Cleanup and a very unhappy client cost $%d."
 			% [Msp.CLIENTS[victim].name, cost]
@@ -3798,7 +3798,7 @@ func multiple() -> float:
 		m -= 0.5
 	if ar_total() > int(float(est.revenue) * 3.0):
 		m -= 0.5
-	m -= Temptation.diligence()  # R38: due diligence checks Marge's folder
+	m -= Temptation.diligence()  # R38: due diligence checks Christy's folder
 	return maxf(2.0, m)
 
 
@@ -4017,7 +4017,7 @@ func draw_due() -> int:
 	return int(DRAW.get(draw_policy, 0)) if Campaign.day >= DRAW_START else 0
 
 
-# a draw that leaves the bank thin upsets the partner and Marge (at most once every three weeks)
+# a draw that leaves the bank thin upsets the partner and Christy (at most once every three weeks)
 func _draw_check(draw: int) -> void:
 	if draw <= 0 or cash >= DRAW_FLOOR or Campaign.day - draw_warned < 3:
 		return
@@ -4025,12 +4025,12 @@ func _draw_check(draw: int) -> void:
 	Partner.change(-3)
 	Social.change(Roles.partner(), -2)
 	_dynamic["draw_warn"] = {
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "We drew $%d this week and the bank is down to $%d. {partner} noticed too. Payroll comes out on Friday. Can the draw wait?" % [draw, cash],
 		"options":
 		[
-			{"label": "CUT THE DRAW TO SMALL", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "Marge writes it down in pen. {partner} exhales."},
-			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "Noodles for everybody. Marge looks almost cheerful."},
+			{"label": "CUT THE DRAW TO SMALL", "fx": {"draw": "small", "trust": {"Alan": 1, "Garrison": 1}}, "text": "Christy writes it down in pen. {partner} exhales."},
+			{"label": "SKIP THE DRAW FOR NOW", "fx": {"draw": "none", "trust": {"Alan": 2, "Garrison": 2}}, "text": "Noodles for everybody. Christy looks almost cheerful."},
 			{"label": "KEEP IT AS IT IS", "fx": {}},
 		],
 	}
@@ -4187,11 +4187,11 @@ func _ending_text(ending: String) -> String:
 	var p := Roles.partner().to_upper()
 	match ending:
 		"buyout":
-			return "YOU BUY OUT %s FOR $%d. THE DOOR SAYS ONLY YOUR NAME NOW. MARGE FRAMES THE CHEQUE." % [p, Partner.BUYOUT_COST]
+			return "YOU BUY OUT %s FOR $%d. THE DOOR SAYS ONLY YOUR NAME NOW. CHRISTY FRAMES THE CHEQUE." % [p, Partner.BUYOUT_COST]
 		"sellout":
 			return "YOU SELL YOUR HALF TO %s FOR $%d. YOU TAKE A LONG TRIP; THEY PROMISE NOT TO CHANGE THE COFFEE." % [p, valuation() / 2]
 		"left":
-			return "%s IS GONE. YOU RUN THE PLACE WITH MORGAN, MARGE AND TOO MANY SPREADSHEETS. THE PHONES KEEP RINGING." % p
+			return "%s IS GONE. YOU RUN THE PLACE WITH MORGAN, CHRISTY AND TOO MANY SPREADSHEETS. THE PHONES KEEP RINGING." % p
 	if Partner.trust >= 55:
 		return "YOU AND %s KEEP YOUR NAMES ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS, AND A PARTNER YOU TRUST." % p
 	return "YOU KEEP YOUR NAME ON THE DOOR. SAME TEAM, SAME PHONES, ONE MORE YEAR OF TICKETS. YOU AND %s DO NOT TALK ABOUT THE REVIEW." % p
@@ -4205,7 +4205,7 @@ func review_lines(page: int, ending: String) -> Array:
 	match page:
 		0:
 			var est := weekly_estimate()
-			lines.append(["MARGE (BOOKKEEPER) - BOARD REVIEW", blue])
+			lines.append(["CHRISTY (CONTROLLER) - BOARD REVIEW", blue])
 			lines.append(["TWENTY WEEKS DONE. HERE IS WHERE WE STAND.", ink])
 			lines.append(["CASH $%d   WEEKLY EBITDA ABOUT $%d" % [cash, int(ebitda_weekly())], ink])
 			lines.append(

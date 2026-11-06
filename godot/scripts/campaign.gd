@@ -771,7 +771,7 @@ func _cozy_close(r: Dictionary) -> void:
 	if rep < floor_rep:
 		rep = floor_rep
 		notes.append(Difficulty.ct("probation_note"))
-		var sender := {"owner": "Marge", "sales": "John"}.get(mode, "Morgan") as String
+		var sender := {"owner": "Christy", "sales": "John"}.get(mode, "Morgan") as String
 		Msp.send_text(sender, Difficulty.ct("probation_" + mode))
 	if not notes.is_empty():
 		r["notes"] = notes
@@ -780,7 +780,7 @@ func _cozy_close(r: Dictionary) -> void:
 func _bailout_card(amount: int) -> void:
 	var owner_mode := mode == "owner"
 	Cards.ask(
-		"Marge (Bookkeeper)" if owner_mode else "Dana Whitfield (Consultant)",
+		"Christy (Controller)" if owner_mode else "Dana Whitfield (Consultant)",
 		Difficulty.ct("bailout_owner" if owner_mode else "bailout_sales") % amount,
 		[{"label": Difficulty.ct("bailout_label"), "id": "ok"}],
 		func(_id: String) -> void: pass

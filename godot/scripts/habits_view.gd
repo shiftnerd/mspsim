@@ -3,7 +3,7 @@ extends RefCounted
 # R38 P0: the read-only HABITS and RIVALS tabs of the Boardroom, drawn inside the Computer (model: forum_view.gd). computer.gd only
 # registers the tabs (tabs()) and forwards the paint call (paint()); everything else lives here.
 # HABITS: the 14 good habits as a checklist (status word, weeks since last done, name) and the STANDARD score with its band word, the
-# conscience as WORDS and Marge's folder count (never a number). Two columns from 300 px wide, one below.
+# conscience as WORDS and Christy's folder count (never a number). Two columns from 300 px wide, one below.
 # RIVALS: each rival with its rap sheet line and the habits the player knows about, best evidence first.
 # The tabs stay hidden until the feature is live (a habit started, something learned, or rival cards exist from week 3).
 # R38 P2: rows are clickable (hab:sel), the selected habit shows what it earns and a button (hab:do: adopt, re-adopt or do it now).

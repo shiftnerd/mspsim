@@ -1,6 +1,6 @@
 extends SceneTree
 # R37: business email compromise (wire fraud), owner campaign: the scare card, the call-back rule, the email filter
-# service, the weekly exposure roll, the loss cards (credit, lawyer, insurer, blame), the rider, Marge's own invoice,
+# service, the weekly exposure roll, the loss cards (credit, lawyer, insurer, blame), the rider, Christy's own invoice,
 # saving, and the 2013-14 text rules. Also the tech chain on day 8 is still the BEC job. Headless, seeded.
 
 var failures := 0
@@ -60,7 +60,7 @@ func _init() -> void:
 				scare_week = int(day)
 			if str(ev.get("card", "")) == "bec_marge":
 				marge_week = int(day)
-	_check(scare_week == 13 and marge_week == 15, "scare on week 13, Marge's invoice on week 15")
+	_check(scare_week == 13 and marge_week == 15, "scare on week 13, Christy's invoice on week 15")
 	for id in ["bec_scare", "bec_marge", "bec_loss", "bec_rider", "bec_lawyer_ok", "bec_lawyer_bad", "bec_claim_ok", "bec_claim_no", "bec_blame_left", "bec_blame_stay"]:
 		_check(o.CARDS.has(id) and (o.CARDS[id].options as Array).size() >= 1, "card %s exists" % id)
 	_check((o.CARDS.bec_scare.options as Array).size() == 4, "the scare has four answers (policy, filter, both, ignore)")
@@ -237,7 +237,7 @@ func _init() -> void:
 	_clear(cards)
 	_check(o.flags.get("bec_rider", false) and o.weekly_extra == weekly0 + 30, "the rider is $30 a week")
 
-	# ---- Marge's own invoice
+	# ---- Christy's own invoice
 	_start(c, cards, 13)
 	cash0 = o.cash
 	o.show_card("bec_marge")

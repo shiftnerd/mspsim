@@ -136,7 +136,7 @@ const DEFAULT_ARC := {
 		[
 			{"id": "0", "label": "NOTHING: IT IS IN THE JOB", "text": "No stipend. I wrote the rota on the board and I will cover the first page myself.", "fx": {"trust": {"Alan": 1, "Garrison": -2}, "stipend": 0, "morale": -3}},
 			{"id": "40", "label": "$40 A NIGHT, ON THE BOARD", "text": "$40 a night, posted in the kitchen with the rota. Anyone can read the arithmetic.", "fx": {"stipend": 40, "morale": 2, "trust": {"Alan": 0, "Garrison": 1}}},
-			{"id": "80", "label": "$80 A NIGHT PLUS A MORNING OFF", "text": "$80 and a late start after a page. Garrison liked it. Marge asked me for the arithmetic.", "fx": {"stipend": 80, "morale": 4, "trust": {"Alan": -1, "Garrison": 2}}},
+			{"id": "80", "label": "$80 A NIGHT PLUS A MORNING OFF", "text": "$80 and a late start after a page. Garrison liked it. Christy asked me for the arithmetic.", "fx": {"stipend": 80, "morale": 4, "trust": {"Alan": -1, "Garrison": 2}}},
 		],
 	},
 	"psa":
@@ -310,7 +310,7 @@ const DEFAULT_QUESTIONS := {
 	"Morgan":
 	[
 		{"text": "Your scorecard grade yesterday was {grade}. SLA {sla} percent. If I took that to the owners this afternoon, what would you want me to add?", "options": [{"label": "THE CAUSE OF MISSES, IN WRITING", "reply": "Send it before four. I will attach it.", "fx": {"conf": 1}}, {"label": "THE GOOD DAYS COUNT TOO", "reply": "They do. Bring me the trend, not a single day.", "fx": {}}, {"label": "NOTHING, IT SPEAKS FOR ITSELF", "reply": "Scorecards do not speak. People do. Learn that.", "fx": {"conf": -1}}]},
-		{"text": "Cost per ticket is {cpt} and Marge is asking. What is the one thing that would lower it without hurting the team?", "options": [{"label": "MORE RUNBOOKS, FEWER ESCALATIONS", "reply": "That is the first answer that did not involve firing someone.", "fx": {"conf": 1}}, {"label": "A BETTER SENIOR AND JUNIOR MIX", "reply": "Show me the mix. I will bring it to the owners.", "fx": {}}, {"label": "I NEED TO CHECK THE NUMBERS", "reply": "Then check them. I will ask again on Friday.", "fx": {}}]},
+		{"text": "Cost per ticket is {cpt} and Christy is asking. What is the one thing that would lower it without hurting the team?", "options": [{"label": "MORE RUNBOOKS, FEWER ESCALATIONS", "reply": "That is the first answer that did not involve firing someone.", "fx": {"conf": 1}}, {"label": "A BETTER SENIOR AND JUNIOR MIX", "reply": "Show me the mix. I will bring it to the owners.", "fx": {}}, {"label": "I NEED TO CHECK THE NUMBERS", "reply": "Then check them. I will ask again on Friday.", "fx": {}}]},
 		{"text": "Alan and Garrison both asked me to ask you the same thing in different words. Who do you work for?", "options": [{"label": "THE DESK AND THE CLIENTS", "reply": "Say that to both of them. Separately. Same words.", "fx": {"conf": 1}}, {"label": "WHOEVER IS RIGHT THAT DAY", "reply": "That is how you end up working for nobody.", "fx": {"conf": -1}}, {"label": "YOU, MORGAN", "reply": "Flattering. Not an answer.", "fx": {}}]},
 	],
 }

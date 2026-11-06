@@ -102,7 +102,7 @@ static func _caught(client: int) -> void:
 	Sales.adjust(client, 3)
 	Owner.flags["bec_caught"] = int(Owner.flags.get("bec_caught", 0)) + 1
 	var msg := "%s CAUGHT A FAKE WIRE REQUEST." % str(Msp.CLIENTS[client].name).to_upper()
-	Msp.send_text("Marge", "%s They called back before paying. Nothing lost." % msg)
+	Msp.send_text("Christy", "%s They called back before paying. Nothing lost." % msg)
 	Hints.toast(msg, 4.0)
 
 

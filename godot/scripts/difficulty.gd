@@ -53,7 +53,7 @@ const COZY := {
 const DEFAULT_COZY_TEXT := {
 	"probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
 	"probation_service": "Nobody is going anywhere. The owners are a little worried, so call it a friendly probation. Same desk tomorrow, same coffee. - Morgan",
-	"probation_owner": "The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge",
+	"probation_owner": "The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Christy",
 	"probation_sales": "Rough stretch, I know. Garrison says it is a probation, but the friendly kind. Come in Monday and we will look at the pipeline together. - John",
 	"probation_note": "ON PROBATION, THE FRIENDLY KIND. SEE YOU TOMORROW.",
 	"bailout_title": "THE BANK",

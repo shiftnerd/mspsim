@@ -165,7 +165,7 @@ func _init() -> void:
 	)
 	cards.pick(5)
 	_check(
-		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Marge"),
+		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Christy"),
 		"accepting the loss leads to the lawsuit card"
 	)
 	_clear(cards)

@@ -13,7 +13,7 @@ Two read-only scoping passes (Nov 2026), from docs and targeted code reads, not 
 | Fired (tech, service) | `campaign.gd` `_end_day`, ~533-581 | rep <= 0 = fired, Review skipped, save deleted | rep floor 15 and a PROBATION line; `fired` never true |
 | Fired (sales quota) | `sales_campaign.gd` ~1458 | "YOU ARE OUT" | coaching line |
 | Fired (service trust) | `service.gd` ~1628 | low trust = -rep | skipped |
-| Bankruptcy (owner, sales) | `owner.gd` ~3612, `sales_campaign.gd` ~1488 | cash < -3000 ends the run | bailout card (Marge or Dana, +$2k, once per run); flag it so valuation does not count it |
+| Bankruptcy (owner, sales) | `owner.gd` ~3612, `sales_campaign.gd` ~1488 | cash < -3000 ends the run | bailout card (Christy or Dana, +$2k, once per run); flag it so valuation does not count it |
 | SLA breach | `msp.gd` ~1541 | -5 score, mood -8, scar on P1, boss text | mood -2, no scar, soft text; window x1.6 |
 | Reopens | `msp.gd` ~788 | score -3, mood -6, angry mail, social hit | mood -1, no social hit, friendly mail |
 | Pay and reputation losses | `campaign.gd` ~455-471 | -25 per miss, -10 per reopen, rep -3 / -2 / -1 | zero |

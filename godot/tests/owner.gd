@@ -57,7 +57,7 @@ func _init() -> void:
 	await process_frame
 	await process_frame
 	_check(
-		cards.is_open and cards.speaker.begins_with("Marge"),
+		cards.is_open and cards.speaker.begins_with("Christy"),
 		"day 1: the bookkeeper asks about pricing"
 	)
 	cards.pick(2)
@@ -122,7 +122,7 @@ func _init() -> void:
 	)
 	cards.pick(5)  # accept the loss
 	_check(
-		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Marge"),
+		story.flags.ransom == "lost" and cards.is_open and cards.speaker.begins_with("Christy"),
 		"no backup, accepted the loss: data lost and a lawsuit card"
 	)
 	var cash0: int = o.cash
@@ -335,7 +335,7 @@ func _init() -> void:
 	_check(o._late.has(6) or o.ar_total() > 0, "weeks later the invoice is long overdue")
 	var owed: int = o.ar_total(6)
 	o.begin_day(5)
-	_check(cards.is_open and cards.text.contains("owes us"), "Marge brings the collections problem")
+	_check(cards.is_open and cards.text.contains("owes us"), "Christy brings the collections problem")
 	var cash2: int = o.cash
 	cards.pick(1)
 	var cash_after: int = o.cash  # before any queued lead card can change the cash

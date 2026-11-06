@@ -139,7 +139,7 @@ func _init() -> void:
 	_start("office_alan")
 	c.day = 2
 	o.show_card("draw_policy")
-	_check(cards.is_open and cards.options.size() == 4, "week 2: Marge asks what the owners take")
+	_check(cards.is_open and cards.options.size() == 4, "week 2: Christy asks what the owners take")
 	var est_before: Dictionary = o.weekly_estimate()
 	cards.pick(2)
 	_clear(cards)
@@ -158,14 +158,14 @@ func _init() -> void:
 	_check(draw_row, "the weekly report has an OWNER DRAW line")
 	_check(o.draw_paid == 1000 and o.cash < cash0 + int(est_gen.revenue), "the draw leaves the bank (cash %d from %d)" % [o.cash, cash0])
 	_clear(cards)
-	# an oversized draw upsets Marge and the partner
+	# an oversized draw upsets Christy and the partner
 	_start("office_alan")
 	c.day = 5
 	o.draw_policy = "generous"
 	o.cash = 1500
 	var trust0: int = partner.trust
 	o.settle()
-	_check(partner.trust < trust0 and cards.is_open and cards.speaker.begins_with("Marge"), "a draw the bank cannot take costs partner trust and Marge speaks up")
+	_check(partner.trust < trust0 and cards.is_open and cards.speaker.begins_with("Christy"), "a draw the bank cannot take costs partner trust and Christy speaks up")
 	_clear(cards)
 	# no draw is allowed
 	_start("casual_garrison")

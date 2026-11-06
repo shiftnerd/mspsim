@@ -30,7 +30,7 @@ const DEFAULT_CARDS := {
 				"need": 120,
 				"fx": {"cash": -120, "habit_start": "H2"},
 				"text":
-				"Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
+				"Christy makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
 			},
 			{
 				"label": "DROP YOUR PRICE TO MATCH",
@@ -80,7 +80,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_defect":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"{rc} gave notice this morning. They are moving to Big Cheese. Their owner liked the $39 a seat and the free pizza on Fridays. Delia, the office manager, did not look at me when she handed me the letter.",
 		"options":
@@ -218,7 +218,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_2fa":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"A bookkeeper at one of Big Cheese's clients forwarded us a fraud email by mistake. Her owner's mailbox was read for days because two-factor login was switched off for convenience. Rex told them it was a nuisance. She has the sent folder to prove it, and she is not happy.",
 		"options":
@@ -239,13 +239,13 @@ const DEFAULT_CARDS := {
 			{
 				"label": "WRITE IT ON THE RAP SHEET AND MOVE ON",
 				"fx": {},
-				"text": "Marge puts the date next to the line. She underlines it twice."
+				"text": "Christy puts the date next to the line. She underlines it twice."
 			},
 		],
 	},
 	"rival_vendor_audit":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"A letter from WebWoot Security landed in a client's inbox by mistake, and the client forwarded it to us. Big Cheese was billed for 212 seats it never reported, and its antivirus is suspended until the weekend. Our phone started ringing at 6 tonight. Three of them are Big Cheese clients.",
 		"options":
@@ -267,7 +267,7 @@ const DEFAULT_CARDS := {
 				"label": "KEEP QUIET, THIS IS NOT OUR FIGHT",
 				"fx": {},
 				"text":
-				"The phone stops by nine. Marge puts the letter in the folder labelled RAP SHEET."
+				"The phone stops by nine. Christy puts the letter in the folder labelled RAP SHEET."
 			},
 		],
 	},
@@ -321,7 +321,7 @@ const DEFAULT_CARDS := {
 				"label": "OFFER A LOYALTY PRICE FOR 12 WEEKS (10 PERCENT OFF)",
 				"fx": {"discount": {"mult": 0.9, "weeks": 12}, "mood_all": 3},
 				"text":
-				"Most of them stay. Marge sighs at the margin and says that is what she gets for asking."
+				"Most of them stay. Christy sighs at the margin and says that is what she gets for asking."
 			},
 			{
 				"label": "RELY ON YOUR REPUTATION",
@@ -333,7 +333,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_badday":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"Our phone has not stopped. Five Big Cheese clients called between 6 and 8. One had a machine encrypted, the freezer bag was found with a dead drive, and Rex's own phone rings out. They all want to know if we can take them tomorrow.",
 		"options":
@@ -365,7 +365,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_decide":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"You now know something about Big Cheese: {rh}. {rl} A client of theirs, and a few prospects who sit at the same Chamber lunch, would want to hear it. What do you do with it?",
 		"options":
@@ -411,7 +411,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "IGNORE IT",
 				"fx": {"rival": {"decide": "ignore"}},
-				"text": "Marge puts it in the folder. The folder is getting thick."
+				"text": "Christy puts it in the folder. The folder is getting thick."
 			},
 		],
 	},
@@ -437,7 +437,7 @@ const DEFAULT_CARDS := {
 	},
 	"rival_knew":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"One of Big Cheese's clients was hurt by exactly the thing you had written down: {rh}. Somebody at the Chamber lunch says you knew. I did not say anything. I just looked at the folder.",
 		"options":
@@ -445,7 +445,7 @@ const DEFAULT_CARDS := {
 			{
 				"label": "I SHOULD HAVE SAID SOMETHING",
 				"fx": {"rep": -1, "consc": -1},
-				"text": "Marge nods once. It is the worst possible answer and the true one."
+				"text": "Christy nods once. It is the worst possible answer and the true one."
 			},
 			{
 				"label": "SEND THEM A FREE CHECK NOW ($200)",
@@ -477,7 +477,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_seats":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"WebWoot sent the quarterly seat true-up form. We run their antivirus on 63 seats. If we write 41, the invoice drops $308 a month and nobody checks. Rex told Garrison he does it every quarter.",
 		"options":
@@ -486,7 +486,7 @@ const DEFAULT_CARDS := {
 				"label": "REPORT 41 AND KEEP THE $308 A MONTH",
 				"fx": {"weekly": -71, "skel": ["temp_seats", -1], "consc": -2},
 				"text":
-				"Marge types 41 and does not look up. The invoice drops. She puts the original form in the folder."
+				"Christy types 41 and does not look up. The invoice drops. She puts the original form in the folder."
 			},
 			{
 				"label": "REPORT 63 AND ASK FOR A VOLUME TIER",
@@ -526,7 +526,7 @@ const DEFAULT_CARDS := {
 				"label": "OFFER A MONTHLY PRINTER CHECK ($40 A WEEK)",
 				"fx": {"cash": 20, "weekly": -10, "consc": 1},
 				"text":
-				"Now the reboot is part of something. Marge calls it recurring revenue with a stapler."
+				"Now the reboot is part of something. Christy calls it recurring revenue with a stapler."
 			},
 		],
 	},
@@ -534,7 +534,7 @@ const DEFAULT_CARDS := {
 	{
 		"speaker": "John Marlowe",
 		"text":
-		"A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.",
+		"A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Christy's name. The friend is a client who has never mentioned us to anybody.",
 		"options":
 		[
 			{
@@ -708,7 +708,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_quest":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"Granite Mutual's renewal came in. Question 14: is two-factor login on for every administrator account? Question 19: are restores tested at least quarterly? Answer yes to both and the premium is $38 a week. Answer true and it is $65.",
 		"options":
@@ -717,7 +717,7 @@ const DEFAULT_CARDS := {
 				"label": "ANSWER YES TO EVERYTHING",
 				"fx": {"weekly": -27, "skel": ["temp_quest", 99], "consc": -2},
 				"text":
-				"The broker smiles and says it is a very common answer. The premium drops. A folder in Marge's cabinet gets thicker."
+				"The broker smiles and says it is a very common answer. The premium drops. A folder in Christy's cabinet gets thicker."
 			},
 			{
 				"label": "ANSWER TRUTHFULLY, PROMISE TWO FIXES BY JULY",
@@ -745,7 +745,7 @@ const DEFAULT_CARDS := {
 	},
 	"temp_come_clean":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT. There are {n} things in it now. Buyers read that folder, and so do insurers. I can phone the people involved and tell them the truth before they find it. It costs less than the bill would.",
 		"options":
@@ -754,24 +754,24 @@ const DEFAULT_CARDS := {
 				"label": "OWN UP TO THE OLDEST ONE ({costa})",
 				"fx": {},
 				"text":
-				"Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
+				"Christy makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
 			},
 			{
 				"label": "OWN UP TO THE BIGGEST ONE ({costb})",
 				"fx": {},
 				"text":
-				"Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
+				"Christy makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter."
 			},
 			{
 				"label": "NOT YET",
 				"fx": {},
-				"text": "Marge closes the cabinet. She does not say anything. She does not have to."
+				"text": "Christy closes the cabinet. She does not say anything. She does not have to."
 			},
 		],
 	},
 	"bill_temp_seats":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"WebWoot audited the seat count: 63 seats, not 41. A back bill plus a 25 percent penalty, {bill} out of the account, and list price with no partner discount from now on. The rep was polite about it, which was worse.",
 		"options":
@@ -780,7 +780,7 @@ const DEFAULT_CARDS := {
 				"label": "PAY IT AND KEEP A PROPER SEAT LIST",
 				"fx": {"consc": 1, "owner_hours": 1},
 				"text":
-				"Marge builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true."
+				"Christy builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true."
 			},
 			{
 				"label": "ARGUE WITH THE REP",
@@ -792,7 +792,7 @@ const DEFAULT_CARDS := {
 	},
 	"bill_temp_reboot":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"A bookkeeper at {vname} went through one invoice and asked what ADVANCED DIAGNOSTICS means. The honest answer was a reboot. We refund {bill} and the owner wants a word.",
 		"options":
@@ -807,7 +807,7 @@ const DEFAULT_CARDS := {
 				"label": "CALL IT A BILLING MIX-UP",
 				"fx": {"consc": -1, "rep": -1},
 				"text":
-				"Marge reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up."
+				"Christy reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up."
 			},
 		],
 	},
@@ -853,7 +853,7 @@ const DEFAULT_CARDS := {
 	},
 	"bill_temp_quest":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"The claim came back. The insurer put our renewal answers next to the logs: no two-factor login for administrators, no restore test on file. They want {bill} back and the broker has stopped returning calls. Next year's premium is a different number.",
 		"options":
@@ -873,7 +873,7 @@ const DEFAULT_CARDS := {
 	},
 	"bill_temp_price":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"The profit review is out. {vname} costs us more than it pays: the 25 percent we gave away was the margin. We have been working there at a loss for weeks, about {bill} by my count.",
 		"options":
@@ -897,13 +897,13 @@ const DEFAULT_CARDS := {
 			{
 				"label": "KEEP THEM AND EAT THE MARGIN",
 				"fx": {"consc": -1},
-				"text": "Marge puts the review in the folder, next to the napkin."
+				"text": "Christy puts the review in the folder, next to the napkin."
 			},
 		],
 	},
 	"bill_temp_2fa":
 	{
-		"speaker": "Marge",
+		"speaker": "Christy",
 		"text":
 		"An account at {vname} was taken over. Their owner asks what we told him about two-factor login. We told him on the phone. Nothing is on paper and he says he never agreed to switch it off. Cleanup and a settlement came to {bill}.",
 		"options":

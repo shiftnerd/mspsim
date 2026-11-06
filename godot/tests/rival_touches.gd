@@ -166,7 +166,7 @@ func _init() -> void:
 		for key in ["rival", "bare", "solid", "showcase", "loose", "closet"]:
 			if str(rt.TALK.get(who, {}).get(key, "")) == "":
 				_check(false, "TALK has %s / %s" % [who, key])
-	for who in ["Alan", "Garrison", "Dan", "Maya", "John", "Marge"]:
+	for who in ["Alan", "Garrison", "Dan", "Maya", "John", "Christy"]:
 		for key in ["rival", "solid", "loose", "closet"]:
 			if str(rt.LYNK.get(who, {}).get(key, "")) == "":
 				_check(false, "LYNK has %s / %s" % [who, key])
@@ -201,21 +201,21 @@ func _init() -> void:
 	var text: String = rt.marge_line()
 	_check(
 		text != "" and not text.contains("-8") and not text.contains("8"),
-		"Marge says it in words, no number (%s)" % text.left(30)
+		"Christy says it in words, no number (%s)" % text.left(30)
 	)
 	o.consc = -2
 
 	# Lynk: a note from someone, once, then quiet for a while
 	o.flags = {}
 	var people: Array = ["Alan", "Garrison", "Dan", "John", "Maya"]
-	var first: Array = rt.lynk_note(people, "Marge", 3)
+	var first: Array = rt.lynk_note(people, "Christy", 3)
 	_check(
 		first.size() == 2 and str(rt.LYNK[first[0]].loose) == str(first[1]),
 		"a note is [who, the loose-ends line]"
 	)
 	var said := [str(first[0])]
 	for k in 10:
-		var more: Array = rt.lynk_note(people, "Marge", k)
+		var more: Array = rt.lynk_note(people, "Christy", k)
 		if more.is_empty():
 			break
 		_check(
@@ -223,12 +223,12 @@ func _init() -> void:
 		)
 		said.append(str(more[0]))
 	_check(
-		said.size() == 6 and rt.lynk_note(people, "Marge", 1).is_empty(),
+		said.size() == 6 and rt.lynk_note(people, "Christy", 1).is_empty(),
 		"six people spoke once, then nothing"
 	)
 	c.day += rt.SAME_AGAIN_DAYS + 1
 	_check(
-		not rt.lynk_note(people, "Marge", 1).is_empty(), "after a few weeks they may speak again"
+		not rt.lynk_note(people, "Christy", 1).is_empty(), "after a few weeks they may speak again"
 	)
 
 	# the live Lynk and Talk hooks
@@ -249,11 +249,11 @@ func _init() -> void:
 		if got:
 			break
 	_check(got, "Lync.incoming() in the owner campaign delivers a rival and habit note")
-	lync._boss_reply("Marge")
-	var last := str(lync.chats["Marge"][-1][1])
+	lync._boss_reply("Christy")
+	var last := str(lync.chats["Christy"][-1][1])
 	_check(
-		last.contains("Cash is") and last.contains(str(rt.LYNK.Marge.loose)),
-		"Marge adds a sentence about the folder to HOW ARE WE DOING"
+		last.contains("Cash is") and last.contains(str(rt.LYNK.Christy.loose)),
+		"Christy adds a sentence about the folder to HOW ARE WE DOING"
 	)
 
 	# the freezer bag tip, the runbook note

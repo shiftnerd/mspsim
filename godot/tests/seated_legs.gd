@@ -10,7 +10,7 @@ const FW := 64
 const FH := 80
 const FLOOR := 79
 const CHARS := [
-	"office_intern", "office_maya", "office_morgan", "office_dan", "office_marge", "office_adult", "office_john", "casual_garrison",
+	"office_intern", "office_maya", "office_morgan", "office_dan", "office_christy", "office_adult", "office_john", "casual_garrison",
 	"custom_intern_bob", "client_brandt", "expo_priya"
 ]
 # sheet cells of every seated pose: sitdown's seated frame, sit 37-38, type 39-41, sitsip, sitcall, and the gestures 85-122

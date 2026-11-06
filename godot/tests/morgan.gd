@@ -52,7 +52,7 @@ func _run() -> void:
 	_check(world.chars.has("Morgan") and social.people().has("Morgan"), "tech campaign: she is in the building and has an opinion row")
 	_check(lync.contacts().has("Morgan") and lync.boss() == "Morgan" and lync.contacts().count("Morgan") == 1, "Lync: one Morgan contact, the boss")
 	c.new_game("owner")
-	_check(world.chars.has("Morgan") and social.people().has("Morgan") and lync.contacts().has("Marge"), "owner campaign: Morgan is staff, Marge is the boss contact")
+	_check(world.chars.has("Morgan") and social.people().has("Morgan") and lync.contacts().has("Christy"), "owner campaign: Morgan is staff, Christy is the boss contact")
 	_check(lync.contacts().count("Morgan") == 1, "and is a Lync contact once")
 	c.new_game("tech")
 
@@ -130,7 +130,7 @@ func _run() -> void:
 	root.get_node("Expo").populate(current_scene)
 	for node in current_scene.get_node("Actors").get_children():
 		owner_boss = owner_boss or str(node.get("role")) == "boss:marge"
-	_check(owner_boss, "the owner campaign still has Marge at the whiteboard")
+	_check(owner_boss, "the owner campaign still has Christy at the whiteboard")
 	c.new_game("tech")
 
 	# ---- Talk deck

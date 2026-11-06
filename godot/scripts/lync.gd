@@ -5,7 +5,7 @@ extends Node
 # messages. Coworkers message you (lunch, "cover my phones", "how do you fix...", a thank-you) and you answer with quick
 # (the owners, Alan and Garrison, ask owner things instead: MESSAGES keys like "phones_Alan" win over "phones")
 # replies that move how they feel about you; you can message them (lunch?, need a hand, thanks) and ask the boss
-# (Morgan in the tech campaign, Marge in the owner campaign). Friends warn you before a ticket breaches its SLA.
+# (Morgan in the tech campaign, Christy in the owner campaign). Friends warn you before a ticket breaches its SLA.
 # Campaign only; in free play the app shows presence and nothing else happens.
 
 signal changed
@@ -313,13 +313,13 @@ func color_of(key: String) -> Color:
 
 
 func boss() -> String:
-	return "Marge" if Campaign.mode == "owner" else "Morgan"
+	return "Christy" if Campaign.mode == "owner" else "Morgan"
 
 
 func contacts() -> Array:
 	var out: Array = Social.people()
 	if not out.has(boss()):
-		out.append(boss())  # Marge in the owner campaign (Morgan is already a cast member)
+		out.append(boss())  # Christy in the owner campaign (Morgan is already a cast member)
 	if Campaign.mode == "service":
 		for n in Crew.names():
 			if not out.has(str(n)):
@@ -542,7 +542,7 @@ func _boss_reply(who: String) -> String:
 	var text := "You are doing fine."
 	if Campaign.mode == "service":
 		text = ServiceArc.boss_line()
-	if who == "Marge":
+	if who == "Christy":
 		var est: Dictionary = Owner.weekly_estimate()
 		text = (
 			"Cash is $%d. We make about $%d a week before one-offs. Receivables are $%d."

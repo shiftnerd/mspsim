@@ -3,7 +3,7 @@ extends RefCounted
 # R38 P0: temptation cards, skeletons and the conscience (docs/scope-bad-habits.md section 5). A static helper like Incident.
 # A shortcut card seeds a SKELETON in Owner.skel: {id, due, class, size}. When Campaign.day reaches due the bill arrives (week()), unless
 # the player comes clean first (come_clean(): cheaper than the bill, conscience +1). due 99 means no date: a trigger fires it (TODO).
-# Conscience (Owner.consc, int, 0 clean to negative) is shown ONLY as a band word and as Marge's folder (folder_count()), never a number.
+# Conscience (Owner.consc, int, 0 clean to negative) is shown ONLY as a band word and as Christy's folder (folder_count()), never a number.
 # The cards themselves are data in RivalCards.CARDS (fx keys: skel [id, weeks], consc n). Cozy Easy halves every bill.
 # OWNER OF THIS FILE: the temptation agent (temptation.gd + the temp_* cards). Public signatures below are FINAL; fill the TODO bodies.
 
@@ -144,7 +144,7 @@ static func band() -> String:
 
 
 # ---- skeletons ------------------------------------------------------------------------------------------------------
-# the number of open skeletons: what Marge's folder holds
+# the number of open skeletons: what Christy's folder holds
 static func folder_count() -> int:
 	return Owner.skel.size()
 
@@ -390,7 +390,7 @@ static func week(owner: Node) -> void:
 
 
 # a vendor switch (fx vendor_switch): the pitch is the intro rate; the migration, the overlapping invoice and the day the intro rate ends are
-# not on the card. They come later through Owner.flags["timed"] (see _timed). Marge warns after the first time (dress_seats).
+# not on the card. They come later through Owner.flags["timed"] (see _timed). Christy warns after the first time (dress_seats).
 static func switch_vendor(owner: Node) -> void:
 	owner.flags["switches"] = int(owner.flags.get("switches", 0)) + 1
 	owner.weekly_extra -= PROMO_SAVE
@@ -414,10 +414,10 @@ static func _timed(owner: Node) -> void:
 	owner.flags["timed"] = timed
 
 
-# Marge warns once the player has switched vendors before: the card text gets her line
+# Christy warns once the player has switched vendors before: the card text gets her line
 static func dress_seats(owner: Node, card: Dictionary) -> Dictionary:
 	if int(owner.flags.get("switches", 0)) > 0:
-		card["text"] = str(card.text) + " Marge: Last time we switched it ate a week of your time, two invoices at once, and the cheap rate ended. Do the whole sum first."
+		card["text"] = str(card.text) + " Christy: Last time we switched it ate a week of your time, two invoices at once, and the cheap rate ended. Do the whole sum first."
 	return card
 
 
@@ -446,6 +446,6 @@ static func diligence_line() -> String:
 	return "FOUND IN DILIGENCE: %d" % folder_count()
 
 
-# Marge's folder as a line for the weekly report (a count, never the conscience number)
+# Christy's folder as a line for the weekly report (a count, never the conscience number)
 static func folder_text() -> String:
 	return "%d IN THE FOLDER, %s" % [folder_count(), band()]

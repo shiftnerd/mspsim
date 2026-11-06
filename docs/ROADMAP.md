@@ -4,7 +4,7 @@ The one ordered list of what is built and what is still open. Detail lives elsew
 Row ids (R, X, C, T, Q, P, H) are stable: never renumber them. Effort: S under a day, M 1-3 days, L a week or more.
 
 ## Decisions so far (user)
-- Alan and Garrison are the two owners of Pixel IT Partners (Alan technical, Garrison sales and culture). Morgan Reyes is the manager and **a real cast member**. Marge bookkeeper, John account manager.
+- Alan and Garrison are the two owners of Pixel IT Partners (Alan technical, Garrison sales and culture). Morgan Reyes is the manager and **a real cast member**. Christy bookkeeper, John account manager.
 - Owner campaign is played as **Alan or Garrison**; the other is the co-owner NPC. Owners take a **weekly draw from the bank balance**.
 - Service manager campaign is played as **Dan**. Sales campaign is played as **John**.
 - In the tech campaign the owners are busy and jump in **as a last resort** (phones, clients); stepping in **costs no reputation**.

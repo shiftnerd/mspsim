@@ -27,10 +27,10 @@ const FX_BOUNDS := {
 }
 const OWNER_ONLY := ["cash", "burnout"]
 const TECH_ONLY := ["xp", "energy"]
-const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Marge", "Dan", "John", "Maya"]
+const ALL_NAMES := ["Alan", "Garrison", "Morgan", "Christy", "Dan", "John", "Maya"]
 const NAMES_FOR := {
 	"tech": ["Alan", "Garrison", "Morgan", "Dan", "John", "Maya"],
-	"owner": ["Alan", "Garrison", "Marge", "Dan", "John"],
+	"owner": ["Alan", "Garrison", "Christy", "Dan", "John"],
 }
 const OWNERS := ["Alan", "Garrison"]
 const BUSY_KINDS := ["vignette", "ransomware", "callback_worst"]
@@ -1696,7 +1696,7 @@ const DEFAULT_DECK := {
 		"weight": 1.0,
 		"cooldown": 12,
 		"requires": [],
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "The bank charged us for a payroll run twice. I found it, I called them, and I have a refund in writing. I need ten minutes of your time to sign something.",
 		"options": [
 			{
@@ -1739,7 +1739,7 @@ const DEFAULT_DECK := {
 		"requires": [
 			"client:2"
 		],
-		"speaker": "Marge (Bookkeeper)",
+		"speaker": "Christy (Controller)",
 		"text": "The company van has a flat tire in the parking lot of Gnarly Gnomes. The jack is missing. The spare is also a bit flat.",
 		"options": [
 			{
@@ -1810,7 +1810,7 @@ const DEFAULT_DECK := {
 			{
 				"id": "keep",
 				"label": "KEEP THE CARD FOR YOURSELF",
-				"text": "You get a very nice dinner. Marge does not mention it, and you hear her not mentioning it.",
+				"text": "You get a very nice dinner. Christy does not mention it, and you hear her not mentioning it.",
 				"fx": {
 					"cash": 60,
 					"burnout": 1

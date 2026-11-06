@@ -1,7 +1,7 @@
 extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # R38 P6: the light touches (docs/scope-bad-habits.md section 1, phase P6). A static helper like Rival and Habits, no state of its own.
-# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, John and Marge react to the rival and to the player's Standard band and conscience band.
+# - Talk and Lynk lines: Alan, Garrison, Dan, Maya, John and Christy react to the rival and to the player's Standard band and conscience band.
 #   Words only: no numbers, no scores. state_key() picks which line applies; talk_line / lynk_note / marge_line read the tables.
 # - Forum and IRC gating: needs strings of the form "rap:<rival>:<habit>" (optional ":<level>", default 1 = RUMOUR) read the rap sheet.
 # - The tech campaign freezer bag tip, the service campaign green dashboard note (Knowledge), Year 2 (the Standard at 60 percent and a new rival).
@@ -29,7 +29,7 @@ const DEFAULT_TALK := {
 		"showcase":
 		"Every box ticked, a restore tested, the change notes written. I would not say it out loud, but I am proud of this shop.",
 		"loose":
-		"Marge has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.",
+		"Christy has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.",
 		"closet":
 		"I did not sleep. That folder has our name on every page. Pick one, pay it, then pick the next. I will help.",
 	},
@@ -59,7 +59,7 @@ const DEFAULT_TALK := {
 		"showcase":
 		"I took a photo of every closet this quarter. If I fall off the ladder, someone else can find the switch.",
 		"loose":
-		"I found a default password on a camera and told Marge. I wrote it down so it counts.",
+		"I found a default password on a camera and told Christy. I wrote it down so it counts.",
 		"closet":
 		"There is a lot we did not write down. I have started a list. It is longer than I would like.",
 	},
@@ -96,13 +96,13 @@ const DEFAULT_TALK := {
 }
 static var TALK: Dictionary = DEFAULT_TALK.duplicate(true)
 
-# who -> state key -> a text they send you (Lynk, owner campaign). Marge is the bookkeeper and has no desk talk, only these.
+# who -> state key -> a text they send you (Lynk, owner campaign). Christy is the controller and has no desk talk, only these.
 const DEFAULT_LYNK := {
 	"Alan":
 	{
 		"rival": "Saw the Big Cheese van at the diner again. Eating well. Wonder who pays.",
 		"solid": "Restores passed again. I am not smiling. That is just my face.",
-		"loose": "Marge showed me the folder. We should talk. Not now. Soon.",
+		"loose": "Christy showed me the folder. We should talk. Not now. Soon.",
 		"closet": "Tell me which one you want fixed first. I will bring the clipboard."
 	},
 	"Garrison":
@@ -129,7 +129,7 @@ const DEFAULT_LYNK := {
 		"Three clients sounded off today. I think it is about the things we did not tell them.",
 		"closet":
 		"I can call the worried ones tomorrow. I would rather tell them than have them find out."
-		# who -> state key -> a text they send you (Lynk, owner campaign). Marge is the bookkeeper and has no desk talk, only these.
+		# who -> state key -> a text they send you (Lynk, owner campaign). Christy is the controller and has no desk talk, only these.
 	},
 	"John":
 	{
@@ -140,7 +140,7 @@ const DEFAULT_LYNK := {
 		"loose": "If anyone asks about a bill, I am telling the truth. Just so you know.",
 		"closet": "I have two deals ready and I am holding them. Say when."
 	},
-	"Marge":
+	"Christy":
 	{
 		"rival":
 		"I cannot find a single Big Cheese invoice that says what it is for. I do not think that is an accident.",
@@ -234,12 +234,12 @@ static func _recent(who: String, key: String) -> bool:
 	return Campaign.day - seen < SAME_AGAIN_DAYS
 
 
-# Marge's reply to HOW ARE WE DOING? gets a sentence added (words only) when the habits or the folder matter
+# Christy's reply to HOW ARE WE DOING? gets a sentence added (words only) when the habits or the folder matter
 static func marge_line() -> String:
 	var key := state_key()
 	if key == "bare":
 		key = "rival"
-	return str(LYNK.get("Marge", {}).get(key, ""))
+	return str(LYNK.get("Christy", {}).get(key, ""))
 
 
 # tech campaign, ANY TIPS?: now and then Alan or Dan talks about backups in freezer bags
@@ -306,7 +306,7 @@ static func rival_year(year: int) -> void:
 		_orig_rival = {}
 
 
-# the end of an owner year with nothing in Marge's folder and clean books: a CLEAN SHEET for the career
+# the end of an owner year with nothing in Christy's folder and clean books: a CLEAN SHEET for the career
 static func note_year_end() -> bool:
 	if Temptation.folder_count() == 0 and Temptation.band() == "CLEAN BOOKS" and Habits.any():
 		Career.add("clean_sheets")

@@ -1,6 +1,6 @@
 extends SceneTree
 # R38 P0: temptation (Temptation): a skeleton fires on its due week, coming clean is cheaper than the bill, the conscience bands and
-# the weekly honesty cap, Marge's folder count, and the due diligence deduction. Headless, seeded.
+# the weekly honesty cap, Christy's folder count, and the due diligence deduction. Headless, seeded.
 
 var failures := 0
 
@@ -289,10 +289,10 @@ func _init() -> void:
 	_check(not t.vendor_rebate(o), "a vendor that caught you: no rebate")
 	_clear(cards)
 
-	# ---- a vendor switch: the intro rate now, the overlapping invoice next week, list price after 13 weeks, Marge warns the second time
+	# ---- a vendor switch: the intro rate now, the overlapping invoice next week, list price after 13 weeks, Christy warns the second time
 	_fresh(c, cards, 10)
 	var seats_card := {"text": "WebWoot sent the form."}
-	_check(not str(t.dress_seats(o, seats_card.duplicate()).text).contains("Marge"), "no warning before the first switch")
+	_check(not str(t.dress_seats(o, seats_card.duplicate()).text).contains("Christy"), "no warning before the first switch")
 	var wv: int = o.weekly_extra
 	var cash4: int = o.cash
 	t.switch_vendor(o)
@@ -309,7 +309,7 @@ func _init() -> void:
 	t.week(o)
 	_check(o.weekly_extra == wv + t.FULL_EXTRA and o.flags.timed.is_empty(), "after 13 weeks the price is list price, above the old one")
 	_clear(cards)
-	_check(str(t.dress_seats(o, seats_card.duplicate()).text).contains("Marge:"), "Marge warns on the next vendor card")
+	_check(str(t.dress_seats(o, seats_card.duplicate()).text).contains("Christy:"), "Christy warns on the next vendor card")
 
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

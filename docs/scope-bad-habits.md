@@ -102,7 +102,7 @@ What a sensible player does with a discovery (this is the **decision**, the same
 | 5 | The billboard and the 5-star wall (R09) | Yowl (a Yelp-like review site) shows Big Cheese with 41 five-star reviews, 38 of them from accounts that review nothing else. John's intel RUMOUR | the reviews are exposed in week 12 |
 | 7 | **Client defects on price** (R11) | uses the existing price-only poach (4%) or a gaps poach: a client signs with Big Cheese. Card `rival_defect`. Exit chat option keeps the door open and starts the clock | week 11 winback with a mess |
 | 8 | Seat count (R06) | WebWoot's quarterly true-up to our own count, with Rex bragging at the lunch about his discount (the temptation `temp_seats` is offered to the player the same week) | the vendor audit in week 15 hits whoever lied |
-| 9 | Reboot billing (R07) | a client's bookkeeper shows Marge an invoice with "ADVANCED DIAGNOSTICS $85" on a rebooted printer; same week the player is offered `temp_reboot` | week 14 (player) or week 15 (Rex) |
+| 9 | Reboot billing (R07) | a client's bookkeeper shows Christy an invoice with "ADVANCED DIAGNOSTICS $85" on a rebooted printer; same week the player is offered `temp_reboot` | week 14 (player) or week 15 (Rex) |
 | 10 | **The notebook** (R17, R08, R16) | the defected client's office manager (Delia Pruitt) phones: her dated notebook has 14 entries since April. Card `rival_notebook`. Evidence SEEN, PROVEN if you ask her to photograph it | she becomes a referral source if you listen |
 | 11 | **The inherited mess** (R01, R02, R04, R12, R14, R15) | the defected client returns (existing `_winback_week`) with patch debt 4 and a takeover onboarding. Card `rival_takeover`, then the takeover jobs (section 3) | the player's fixes become the "case study" in week 18 |
 | 12 | Rumours (R09) | a prospect asks "are you bonded and HIPAA safe?" because Rex said you are not. Card `temp_review` (reply in kind with a fake Yowl account, or answer with the paper) | exposed fake reviews in week 17 if taken |
@@ -164,7 +164,7 @@ Tech campaign: one new vignette (`Story.VIGNETTES`, kind `vignette`) in P6 uses 
 
 A **habit** is a standing practice the player adopts once and has to keep doing. They live on a new **HABITS** tab of the Boardroom (next to BOOKS, CLIENTS, TEAM, STACK, PEERS, PROJECTS), drawn as a "STANDARD" checklist: 14 rows, a status word (NONE / ADOPTED / STALE / LAPSED), the weeks since last done, and what it earns. A **STANDARD** score (0-100) sums fresh habits; a band word shows in BOOKS and the board review (BARE under 35, PATCHY 35, SOLID 60, SHOWCASE 80).
 
-**Freshness and decay.** Each habit has `every` (weeks between touches). ADOPTED until `every` weeks pass with no touch, then STALE (half the effect, row turns amber) until `2 x every`, then LAPSED (no effect, row red, a Marge nudge card once: "THE CHECKLIST HAS ONE EMPTY BOX"). Touching it again resets to ADOPTED for a smaller price (re-adopt is half the cost). This echoes `Owner.oml()`'s calendar cap: habits take weeks to show. A habit is "touched" by doing the real thing (a restore test, a QBR with a value page), not by clicking a button.
+**Freshness and decay.** Each habit has `every` (weeks between touches). ADOPTED until `every` weeks pass with no touch, then STALE (half the effect, row turns amber) until `2 x every`, then LAPSED (no effect, row red, a Christy nudge card once: "THE CHECKLIST HAS ONE EMPTY BOX"). Touching it again resets to ADOPTED for a smaller price (re-adopt is half the cost). This echoes `Owner.oml()`'s calendar cap: habits take weeks to show. A habit is "touched" by doing the real thing (a restore test, a QBR with a value page), not by clicking a button.
 
 | Id | Habit | Cost (cash / owner hours / morale) | Effect and hook | Every | Shown how |
 |---|---|---|---|---|---|
@@ -193,12 +193,12 @@ A **habit** is a standing practice the player adopts once and has to keep doing.
 
 ## 5. Temptation cards
 
-A temptation card offers a shortcut with a visible short-term gain, and the honest alternative with an honest price. Taking the shortcut seeds a **skeleton**: a record `{id, due_week, class, size}` in `Owner.skel`. The bill arrives when the due week comes (3 to 9 weeks later, jittered from `Difficulty.rng("skeleton")`) unless the player comes clean first (a COME CLEAN card is offered from the second skeleton on; it costs less than the bill). A **conscience** counter `Owner.consc` (0 clean to -n) rises by honest choices and falls by shortcuts; it feeds the board review wording, the due diligence multiple and one Marge ambient line. See open question 1 (visible or hidden).
+A temptation card offers a shortcut with a visible short-term gain, and the honest alternative with an honest price. Taking the shortcut seeds a **skeleton**: a record `{id, due_week, class, size}` in `Owner.skel`. The bill arrives when the due week comes (3 to 9 weeks later, jittered from `Difficulty.rng("skeleton")`) unless the player comes clean first (a COME CLEAN card is offered from the second skeleton on; it costs less than the bill). A **conscience** counter `Owner.consc` (0 clean to -n) rises by honest choices and falls by shortcuts; it feeds the board review wording, the due diligence multiple and one Christy ambient line. See open question 1 (visible or hidden).
 
 | Id | Offered | Shortcut (gain) | Delayed consequence | Honest alternative |
 |---|---|---|---|---|
 | `temp_seats` | week 8 vendor true-up | report 41 seats instead of 63 to WebWoot: saves $308 a month for the rest of the run | week 15 vendor seat audit: back bill + 25% penalty ($1,900) and a mood hit with the vendor's rep (the stack option's `risk` +0.1); on a clean record WebWoot offers a partner rebate | pay the true-up ($308/month) and ask for a volume tier |
-| `temp_reboot` | week 9 Marge | bill a reboot as ADVANCED DIAGNOSTICS ($85): +$85 x ~6 a month | week 14 a bookkeeper audits one invoice: refund + mood -10 at the client + rep -1; if several clients compare, a forum thread | bill the real minutes; or sell the client an actual monthly check |
+| `temp_reboot` | week 9 Christy | bill a reboot as ADVANCED DIAGNOSTICS ($85): +$85 x ~6 a month | week 14 a bookkeeper audits one invoice: refund + mood -10 at the client + rep -1; if several clients compare, a forum thread | bill the real minutes; or sell the client an actual monthly check |
 | `temp_quest` | week 16 insurer renewal | answer 'yes' to every control (two-factor login for admins, tested restores): premium $38 a week instead of $65 and a smooth renewal | if a claim ever happens (any ransom/BEC loss afterwards) the insurer refuses it: you eat the bill (`bec_loss` insurer branch fails, 100%); due diligence counts it | answer truthfully (the $65 premium) and promise the broker you will fix two items by Q3 (H1, H7) |
 | `temp_review` | week 12 rumour | open three fake accounts on Yowl and the forum to praise yourself and 'ask' about Big Cheese: +4 reputation, +1 lead a week for 3 weeks | week 17 a sleuth thread on LabRat Nerds traces the writing style: rep -6, lose your two friendliest forum regulars (`Nerds` friend -30) and a Chamber lunch card | reply once, politely, with the bond certificate and the BAA; ask two happy clients for a real review |
 | `temp_launder` | week 9 (sales beat `sales_laundered`; owner version via John) | a 'referral' arrives that can only have come from a client's open shared mailbox where Big Cheese read our tickets: a hot lead with a ready pain | the lead's contact eventually asks how you knew; rep -3, the client whose mailbox it was leaves (mood -20), and conscience falls two | turn it down and tell the client their mailbox is open (a small free favour; pays back as H12) |
@@ -206,7 +206,7 @@ A temptation card offers a shortcut with a visible short-term gain, and the hone
 | `temp_2fa` | week 6 (extends `_client_no`) and sales | switch two-factor login off 'just for the partner so he stops calling' | week 16 the existing `_client_breach` hits: your recommendation is not on paper, blame (no waiver!) $1,200-$4,000 and rep -2 to -4 | a signed waiver (H4) or insist (existing) |
 | `temp_restore` | week 12 (quarterly H1 due) | skip the restore test: saves $150 and 3 hours, 'the light is on' | week 14-19 the ransom card: 15% the restore fails (never a total loss of a backup service client; a no-service client already risks it); poach risk 'failing backup' stays; one time it is the player's own freezer-bag moment | run the test; it often finds a real problem while it is cheap |
 
-**Conscience:** each shortcut -2, each honest alternative +1 (max +1 a week), COME CLEAN +1. Bands: CLEAN BOOKS (0 or above), A FEW LOOSE ENDS (-1 to -3), SKELETONS (-4 to -6), A CLOSET FULL (-7 and below). It is felt, not graded: Marge says "I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT" and the count of open skeletons is the number of items in it. At the board review, **due diligence** (a real thing in MSP sales; sales beat 19 already has it) checks the folder: each unresolved skeleton cuts the multiple by 0.5 (max -1.5) and the review shows 'FOUND IN DILIGENCE: n'. Ending epilogues vary with the band (`Yeartwo` style `TEXT` table).
+**Conscience:** each shortcut -2, each honest alternative +1 (max +1 a week), COME CLEAN +1. Bands: CLEAN BOOKS (0 or above), A FEW LOOSE ENDS (-1 to -3), SKELETONS (-4 to -6), A CLOSET FULL (-7 and below). It is felt, not graded: Christy says "I keep a folder called THINGS I WOULD RATHER NOT BE ASKED ABOUT" and the count of open skeletons is the number of items in it. At the board review, **due diligence** (a real thing in MSP sales; sales beat 19 already has it) checks the folder: each unresolved skeleton cuts the multiple by 0.5 (max -1.5) and the review shows 'FOUND IN DILIGENCE: n'. Ending epilogues vary with the band (`Yeartwo` style `TEXT` table).
 
 ## 6. Sales campaign hooks (John)
 
@@ -228,11 +228,11 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 **1. `rival_flat` - owner week 3 (Garrison)**
 - text: "{me}, I sat next to a man called Rex Calloway at the Chamber of Commerce lunch. Big Cheese Technology Group. He gave me a flyer: EVERYTHING INCLUDED, $39 A SEAT. No list of what everything is. John ate two of his cookies and says the price is a steal."
 - opt `LOOK UP WHAT $39 A SEAT BUYS ($0, JOHN ASKS AROUND)`: fx `rap [bigcheese, R11, 1]`, `consc 0`. text: "John calls two of Rex's clients. Both say the same thing: a person shows up, they are very nice, and nobody can say whether backups are in the price. You write EVERYTHING on a sticky note and put a question mark after it."
-- opt `PRINT A ONE PAGE COMPARISON ($120)`: need 120, fx `cash -120`, `habit_start H2`. text: "Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
+- opt `PRINT A ONE PAGE COMPARISON ($120)`: need 120, fx `cash -120`, `habit_start H2`. text: "Christy makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge."
 - opt `DROP YOUR PRICE TO MATCH`: fx `price -0.10`, `skel [temp_price, 6]`, `consc -2`. text: "John is thrilled. Alan does the margin on a napkin and puts the napkin in a drawer."
 - opt `IGNORE HIM, HE WILL BE GONE BY JULY`: fx `rap [bigcheese, R11, 0]`. text: "Garrison says he has met a hundred Rexes. Rex is not gone by July."
 
-**2. `rival_defect` - owner week 7 (Marge)**
+**2. `rival_defect` - owner week 7 (Christy)**
 - text: "{client} gave notice this morning. They are moving to Big Cheese. Their owner liked the $39 a seat and the free pizza on Fridays. Delia, the office manager, did not look at me when she handed me the letter."
 - opt `MATCH THE PRICE FOR 8 WEEKS (-15%)`: fx `fee -0.15 8w`, `consc -1`, `skel [temp_price, 8]`. text: "They stay. You now run their office at a loss and everyone knows it."
 - opt `SHOW THEM WHAT IS NOT IN THE FLAT PRICE ($250)`: need 250, roll 45% stay (`mood +10`), else leave. text: "You build the page with them: backups, patching, the 2 a.m. calls. The owner nods and says he will think about it."
@@ -253,9 +253,9 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - opt `ONLY SIGN WITH A CLEAN CONTRACT AND A TWO WEEK SCOPE FIRST`: fx `practice_scope`, `consc +1`. text: "They sign. You spend the first two weeks on what is actually there."
 - opt `PASS, WE ARE FULL`: fx `consc 0`. text: "Delia says she understands. Her voice says she hoped."
 
-**5. `temp_seats` - owner week 8 (Marge)**
+**5. `temp_seats` - owner week 8 (Christy)**
 - text: "WebWoot sent the quarterly seat true-up form. We have 63 users on the antivirus. If we put 41, the invoice drops $308 a month and nobody checks, Rex told Garrison he does it every quarter."
-- opt `REPORT 41 AND KEEP THE $308`: fx `cash +308 x4`, `skel [temp_seats, 7]`, `consc -2`. text: "Marge types 41 and does not look up. The invoice drops. She puts the original in the folder."
+- opt `REPORT 41 AND KEEP THE $308`: fx `cash +308 x4`, `skel [temp_seats, 7]`, `consc -2`. text: "Christy types 41 and does not look up. The invoice drops. She puts the original in the folder."
 - opt `REPORT 63 AND ASK FOR A VOLUME TIER`: fx `consc +1`, `stack antivirus -0.08`. text: "The rep sighs, then finds a tier that saves $90 a month. It is not $308, but it is true."
 - opt `CHANGE VENDORS BECAUSE THIS IS ANNOYING ($800)`: need 800, fx `stack switch`. text: "Switching costs a week of grumbling. The new vendor audits you too, kindly."
 
@@ -263,11 +263,11 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - text: "The printer at {client} needed a reboot. Eight minutes. John says Big Cheese bills that as ADVANCED DIAGNOSTICS, $85, and the clients never ask what that is. He thinks you could do the same."
 - opt `BILL IT AS ADVANCED DIAGNOSTICS`: fx `cash +85`, `skel [temp_reboot, 5]`, `consc -2`. text: "The invoice goes out with the long phrase. John grins. A bookkeeper somewhere reaches for her glasses."
 - opt `BILL THE EIGHT MINUTES`: fx `cash +20`, `consc +1`. text: "Twenty dollars and a short note: the printer needed a restart; here is the setting that stops it. The client keeps the note."
-- opt `OFFER A MONTHLY PRINTER CHECK ($40/WEEK)`: fx `service printer`. text: "Now the reboot is part of something. Marge calls it recurring revenue with a stapler."
+- opt `OFFER A MONTHLY PRINTER CHECK ($40/WEEK)`: fx `service printer`. text: "Now the reboot is part of something. Christy calls it recurring revenue with a stapler."
 
 **7. `temp_quest` - owner week 16 (broker)**
 - text: "Granite Mutual's renewal came in. Question 14: 'Is two-factor login enabled for every administrator account?' Question 19: 'Are restores tested at least quarterly?' Answer yes to both and the premium is $38 a week. Answer true and it's $65."
-- opt `ANSWER YES TO EVERYTHING`: fx `weekly -27`, `skel [temp_quest, 99]`, `consc -2`. text: "The broker smiles and says it is a very common answer. The premium drops. A folder in Marge's cabinet gets thicker."
+- opt `ANSWER YES TO EVERYTHING`: fx `weekly -27`, `skel [temp_quest, 99]`, `consc -2`. text: "The broker smiles and says it is a very common answer. The premium drops. A folder in Christy's cabinet gets thicker."
 - opt `ANSWER TRUTHFULLY AND PROMISE TWO FIXES BY JULY`: fx `weekly +0`, `habit_start H1`, `habit_start H7`, `consc +1`. text: "The broker writes a note: IMPROVING. The policy renews at $65. You have two things to do before July."
 - opt `ASK THE BROKER IF THERE IS A CHEAPER CARRIER`: fx `roll`, 40% cheaper carrier with the same truth. text: "He grumbles. Two phone calls later: $54, with a one-page list of what they need to see."
 
@@ -284,7 +284,7 @@ Style: the same as `story/strings.txt` entries and `Owner.CARDS` (`speaker`, `te
 - opt `SKIP IT, THE LIGHT IS ON`: fx `skel [temp_restore, 6]`, `consc -1`. text: "The light is on. You decide that is good enough, which is a sentence you will remember."
 - opt `HAND IT TO DAN AND TRUST HIM`: fx `owner_hours 1`, `dan_stress +`. text: "Dan runs it. He labels the spare PC and the drive. He is slightly happy about the label."
 
-**10. `rival_badday` - owner week 19 (Marge)**
+**10. `rival_badday` - owner week 19 (Christy)**
 - text: "Our phone has not stopped. Five Big Cheese clients called between 6 and 8. One had a machine encrypted, the freezer bag was found with a dead drive, and Rex's own phone rings out. They all want to know if we can take them tomorrow."
 - opt `TAKE THEM ALL TOMORROW`: fx `clients +5`, `promise_gap +`, `capacity -`. text: "You say yes five times. Dan stares at the whiteboard for a while."
 - opt `ASSESS EACH ONE FIRST AND TAKE THE BEST THREE`: fx `clients +3`, `visit takeover x3`, `consc +1`. text: "Three signed, two sent to a friendly MSP in the next county with a handshake. Alan calls it triage."
@@ -342,7 +342,7 @@ New: `tests/rival.gd` (rap sheet only goes up; each channel sets the intended le
 
 ## 11. Open questions for the user
 
-1. **Conscience: visible or hidden?** Recommendation: shown only as words and Marge's folder (open skeletons counted), never as a number; the review states the band. Alternative: a visible meter on the HABITS tab.
+1. **Conscience: visible or hidden?** Recommendation: shown only as words and Christy's folder (open skeletons counted), never as a number; the review states the band. Alternative: a visible meter on the HABITS tab.
 2. **Can consequences ever lose a campaign?** Recommendation: no hard fail beyond the existing rules (cash under -$3,000 or reputation 0); the worst stacked case costs about $6,000 and 8 reputation. Alternative: a lawsuit card ending the run on 3+ unresolved skeletons plus a loss.
 3. **How bad can Big Cheese get before it stops being funny?** Recommendation: fraud with a laugh (flat prices, freezer bag, fake reviews, seat lies), no violence, no endangering patients; the worst consequence is a dead drive and a denied claim. Do you want to keep the HIPAA jokes at the clinic or soften them?
 4. **Credit and permission:** a nod from the series' author, or a credit line in the manual, before release? (Section 0.)

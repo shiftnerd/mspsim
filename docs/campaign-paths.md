@@ -8,12 +8,12 @@ Parody names only; 2013-14 only (no AI, no Slack/Teams); never punish family or 
 ## 0. Canon and the facts that shape the design
 **Canon (decided):** Pixel IT Partners has two owners. **Alan = technical owner** (servers, stack, security posture, resolution quality; Office 1).
 **Garrison = sales-and-culture owner** (marketing, pricing, morale, outings, client relationships, John's pipeline; Office 2). **Morgan Reyes** is the
-manager and reports to both. **Marge** is the bookkeeper, **John** the account manager, **Dan** and **Maya** the techs, plus hires.
+manager and reports to both. **Christy** is the controller, **John** the account manager, **Dan** and **Maya** the techs, plus hires.
 
 | Path | Played as | Reports to | Cast removed from `World.chars` |
 |---|---|---|---|
 | Tech (exists) | non-cast (intern/adult/site Alan) | Morgan; owners are the distant top | none (owners get a text/role pass, section 6) |
-| **Owner (new pick)** | **Alan or Garrison** | Marge/Morgan advise; the other owner is the partner NPC | the chosen owner |
+| **Owner (new pick)** | **Alan or Garrison** | Christy/Morgan advise; the other owner is the partner NPC | the chosen owner |
 | **Service Manager** | **Dan** | Morgan, ultimately Alan and Garrison | Dan |
 | **Sales** | **John** | Garrison (quota/pricing), Alan (margin/delivery), Morgan (delivery gate) | John |
 
@@ -22,7 +22,7 @@ Facts that shape everything:
 - The owner campaign has a **crew autopilot** (`Owner.team_speed()` + `_work_queue()`, tech-seconds WORK 180/140/100/72, 7% premature closes) gated by `Owner.active()` (`mode == "owner"`, 40+ call sites).
   Its base crew is hard-coded `3 - lost_techs` (Alan, Garrison, Dan); with the owners no longer on the payroll as techs, it needs a re-base (Dan, Maya, Sam, plus the partner's part-time hands-on).
 - Free Play offers all seven by ghosting the NPC copy (`npc.gd _process`: `_hidden`); the ghost likely still holds its seat and takes meetings (verify). Campaigns need the Maya pattern.
-- `Owner.CARDS` has 15 cards spoken by "Alan (Co-owner)", 16 by John, 9 by Marge: those speaker strings are the main text pass for the owner chapter.
+- `Owner.CARDS` has 15 cards spoken by "Alan (Co-owner)", 16 by John, 9 by Christy: those speaker strings are the main text pass for the owner chapter.
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ Facts that shape everything:
 | `social.gd` | `PEOPLE` const -> `people()` (readers: `lync.gd` 97/164/293, `computer.gd` 2210, `outings.gd` 753/840/1143, `owner.gd` 3014, `review.gd` 293) |
 | `charselect.gd`, `title.gd` | `choices(mode)`, cast note line, menu entries (CONTINUE SERVICE - DAY n), mode map, `_start` |
 | `stage.gd`, `hud.gd` | seated start; HUD strings per mode |
-| `lync.gd`, `talk.gd` | boss lookup (Morgan in all; Marge in owner), role decks, `_state_tip` per role (28 + 15 name refs) |
+| `lync.gd`, `talk.gd` | boss lookup (Morgan in all; Christy in owner), role decks, `_state_tip` per role (28 + 15 name refs) |
 | `outings.gd` | `DINERS/BOWL_SKILL/SEATS/totals` -> `roster()` (cast minus `player_as`, plus Maya/John); invitation speaker (section 6) |
 | `story.gd`, `sales.gd`, `owner.gd`, `msp.gd` | per-mode story tables; NPC-John automation off when `player_as == "John"`; `Owner.active()` split into `crew_active/books_active/cards_active`; "Dispatch" sender |
 | `day_report.gd`, `review.gd` | custom rows (already supported) and offers per mode |
@@ -87,7 +87,7 @@ Valuation (`Owner.multiple/quality`) is unchanged; what changes is **which of it
 Same week structure as today (a week = one 4-minute day: the weekly card deck, the Boardroom, the books), plus three owner-specific verbs:
 1. **Walk and talk** with the staff in your own voice (Talk owner deck: HOW ARE YOU HOLDING UP? / ANY IDEAS? already exist), and with Morgan, who now brings the weekly "ops memo" instead of Alan's 15 cards.
 2. **Partner decisions**: for about a third of cards the partner has an opinion shown as a chip (AGREES / WARNS / OPPOSES) from `Partner.stance(card)`; you can follow, override or compromise (a third option on some cards).
-3. **Partner meeting beats** (weeks 4, 9, 14, 19; conference room scene with the partner NPC at the table; Marge brings the numbers).
+3. **Partner meeting beats** (weeks 4, 9, 14, 19; conference room scene with the partner NPC at the table; Christy brings the numbers).
 
 ### 3.4 Partner mechanics (`Partner` model, small)
 - **Trust** (0-100, stored in `Social.rel[partner]`, reused): +2 follow their stance, -3 override, -5 broken promise (you agreed at a partner meeting, then did otherwise), +1 per joint outing.
@@ -97,8 +97,8 @@ Same week structure as today (a week = one 4-minute day: the weekly card deck, t
 - **Beats**: week 4 "the first disagreement" (stack/oncall policy), week 9 "ransomware aftermath" (who gets blamed), week 14 "profit versus people" (fee rise vs staff raise), week 19 "sell or stay" (valuation is the agenda).
 - **Endings**: existing offers (SELL / OPEN A SECOND OFFICE / STAY INDEPENDENT) plus BUY OUT YOUR PARTNER (trust < 30, cash >= 15k) and SELL TOGETHER (the best multiple needs both signatures).
 
-### 3.5 Marge, Morgan, John
-- **Marge** keeps the books (9 cards stay), now says "the partners" and shows each owner's **draw** as a line above EBITDA (adjusted EBITDA adds it back).
+### 3.5 Christy, Morgan, John
+- **Christy** keeps the books (9 cards stay), now says "the partners" and shows each owner's **draw** as a line above EBITDA (adjusted EBITDA adds it back).
 - **Morgan** runs the desk day to day; he takes most of the 15 "Alan" cards that were operational (queue, hiring, burnout warning); technical cards go to Alan as owner or Dan.
 - **John** is a direct report of Garrison in canon: Garrison-as-owner gets John's weekly pipeline card and the pay-plan card; Alan-as-owner only sees John through numbers and the partner's views (a built-in friction).
 
@@ -164,7 +164,7 @@ Dan arrives with `Build.BIAS["Dan"]`: **NETWORKING 3 free**, PROCESS 2 free, SER
 | Maya | Tier 1 direct report | asks for help often, growth candidate |
 | Sam + a second hire | new Tier 1 direct reports | need runtime NPCs with desks and seats |
 | John | account manager, peer | signs deals Dan must deliver; over-promises; pushes Garrison's agenda |
-| Marge | bookkeeper | cost per ticket, overtime pay |
+| Christy | controller | cost per ticket, overtime pay |
 Two trust meters reuse `Social.rel["Alan"]` and `["Garrison"]`. Many choices are a **priority memo** card: both owners ask for opposite things ("patch the whole network first" vs "fix Dr. Patel's Wi-Fi before his lunch");
 siding shifts trust (+/-) and desk outcomes; pleasing both is possible but costs hours.
 

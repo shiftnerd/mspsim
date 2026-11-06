@@ -31,7 +31,7 @@ const SECURITY_FLAGS := ["backup_service", "rdp_safe"]
 const CULTURE_FLAGS := ["flex_hours", "four_day", "oncall_stipend", "after_hours_fee"]
 const WORDS := {"agree": "AGREES", "warn": "WARNS", "oppose": "OPPOSES"}
 
-# the four partner meetings: Marge brings the numbers, the partner brings an opinion. Texts differ per partner (their voice);
+# the four partner meetings: Christy brings the numbers, the partner brings an opinion. Texts differ per partner (their voice);
 # options carry real effects plus a trust change for each partner.
 const BEATS := {
 	"partner1":
@@ -40,15 +40,15 @@ const BEATS := {
 		"speaker": "{partner}",
 		"text":
 		{
-			"Alan": "Marge printed the quarter. We have some money. I want it in the rack and the tools, not in a banner. Where does it go?",
-			"Garrison": "Marge printed the quarter and I have IDEAS. A client lunch! A banner on the van! A bigger sign! Where does the money go?"
+			"Alan": "Christy printed the quarter. We have some money. I want it in the rack and the tools, not in a banner. Where does it go?",
+			"Garrison": "Christy printed the quarter and I have IDEAS. A client lunch! A banner on the van! A bigger sign! Where does the money go?"
 		},
 		"options":
 		[
 			{
 				"label": "INVEST IN THE STACK AND THE RACK ($400)", "need": 400,
 				"fx": {"cash": -400, "speed": 0.04, "trust": {"Alan": 4, "Garrison": -1}},
-				"text": "The money goes into the rack. {partner} and Marge agree on exactly one thing today: the invoice is correct."
+				"text": "The money goes into the rack. {partner} and Christy agree on exactly one thing today: the invoice is correct."
 			},
 			{
 				"label": "INVEST IN THE CLIENTS: A THANK-YOU LUNCH ($300)", "need": 300,
@@ -58,7 +58,7 @@ const BEATS := {
 			{
 				"label": "KEEP IT IN THE BANK",
 				"fx": {"trust": {"Alan": 1, "Garrison": 1}},
-				"text": "Marge approves. Nobody else gets excited, but nobody gets upset either."
+				"text": "Christy approves. Nobody else gets excited, but nobody gets upset either."
 			},
 		],
 	},
@@ -124,7 +124,7 @@ const BEATS := {
 		"speaker": "{partner}",
 		"text":
 		{
-			"Alan": "Marge says the valuation people are circling. Do we sell, or do we keep going? I want one answer from both of us.",
+			"Alan": "Christy says the valuation people are circling. Do we sell, or do we keep going? I want one answer from both of us.",
 			"Garrison": "Sell or stay! The review is almost here and I am excited and terrified. Are we selling? Or are we building?"
 		},
 		"options":
@@ -390,7 +390,7 @@ func leave() -> void:
 	World.apply_roster()
 	changed.emit()
 	Cards.ask(
-		"Marge (Bookkeeper)",
+		"Christy (Controller)",
 		"%s cleared out their desk this morning. They are leaving the company. We will sort out the share at the board review. Until then the work and the draw are all yours." % pname,
 		[{"label": "OK", "id": "ok"}],
 		func(_p: String) -> void: pass

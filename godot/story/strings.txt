@@ -2400,7 +2400,7 @@ He leaves a business card and a pen.
 
 # Events > DECK > payroll_error > speaker
 [Events.DECK.payroll_error.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # Events > DECK > payroll_error > text
 [Events.DECK.payroll_error.text]
@@ -2432,7 +2432,7 @@ A day late. The refund comes a day later too.
 
 # Events > DECK > van_tire > speaker
 [Events.DECK.van_tire.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # Events > DECK > van_tire > text
 [Events.DECK.van_tire.text]
@@ -2492,7 +2492,7 @@ KEEP THE CARD FOR YOURSELF
 
 # Events > DECK > referral_gift > options > 2 > text
 [Events.DECK.referral_gift.options.2.text]
-You get a very nice dinner. Marge does not mention it, and you hear her not mentioning it.
+You get a very nice dinner. Christy does not mention it, and you hear her not mentioning it.
 
 # Events > DECK > rebate_check > speaker
 [Events.DECK.rebate_check.speaker]
@@ -3070,7 +3070,7 @@ START A PILOT ($1500)
 
 # Yeartwo > TEXT > beats > owner > franchise > options > 0 > reply
 [Yeartwo.TEXT.beats.owner.franchise.options.0.reply]
-Pat prints thirty binders. Marge frames the first invoice.
+Pat prints thirty binders. Christy frames the first invoice.
 
 # Yeartwo > TEXT > beats > owner > franchise > options > 1 > label
 [Yeartwo.TEXT.beats.owner.franchise.options.1.label]
@@ -3138,7 +3138,7 @@ THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SH
 
 # Yeartwo > TEXT > endings > franchise
 [Yeartwo.TEXT.endings.franchise]
-TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. MARGE ORDERS MORE FRAMES.
+TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. CHRISTY ORDERS MORE FRAMES.
 
 
 # ======================= Playbook > BOOKS =======================
@@ -4404,7 +4404,7 @@ We open the new branch next week and need the network, phones and Wi-Fi set up. 
 # ======================= Owner > CARDS =======================
 # owner card: welcome
 [Owner.CARDS.welcome.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: welcome
 [Owner.CARDS.welcome.text]
@@ -4776,7 +4776,7 @@ A client switches to ByteBrothers.
 
 # owner card: peer_invite
 [Owner.CARDS.peer_invite.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: peer_invite
 [Owner.CARDS.peer_invite.text]
@@ -4916,7 +4916,7 @@ AGGRESSIVE ($900/WEEK)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.text]
@@ -4928,7 +4928,7 @@ NORMAL DRAW ($600/WEEK, BOTH OF YOU)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.0.text]
-Marge writes it in the ledger. The draw starts in week 3.
+Christy writes it in the ledger. The draw starts in week 3.
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.1.label]
@@ -4936,7 +4936,7 @@ SMALL DRAW ($300/WEEK)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.1.text]
-A small draw. Marge looks relieved and {partner} nods. The bank stays fat.
+A small draw. Christy looks relieved and {partner} nods. The bank stays fat.
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.2.label]
@@ -4944,7 +4944,7 @@ GENEROUS DRAW ($1,000/WEEK)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.2.text]
-A generous draw. Marge says nothing, which is how she says a lot.
+A generous draw. Christy says nothing, which is how she says a lot.
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.3.label]
@@ -4952,11 +4952,11 @@ NO DRAW (WE LIVE ON NOODLES)
 
 # owner card: draw_policy
 [Owner.CARDS.draw_policy.options.3.text]
-No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger.
+No draw at all. You and {partner} split a sleeve of crackers. Christy frames the ledger.
 
 # owner card: draw_review
 [Owner.CARDS.draw_review.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: draw_review
 [Owner.CARDS.draw_review.text]
@@ -4988,7 +4988,7 @@ SKIP THE DRAW FOR NOW
 
 # owner card: draw_review
 [Owner.CARDS.draw_review.options.3.text]
-No draw this quarter. Marge pins a gold star on the ledger.
+No draw this quarter. Christy pins a gold star on the ledger.
 
 # owner card: stack_psa
 [Owner.CARDS.stack_psa.speaker]
@@ -5212,7 +5212,7 @@ You tell the crew about the pens first. Then the ideas. (clients +1 mood)
 
 # owner card: vic_plan
 [Owner.CARDS.vic_plan.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: vic_plan
 [Owner.CARDS.vic_plan.text]
@@ -5232,7 +5232,7 @@ COMMISSION-HEAVY ($350/WK + $300 A DEAL)
 
 # owner card: billing_audit
 [Owner.CARDS.billing_audit.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: billing_audit
 [Owner.CARDS.billing_audit.text]
@@ -5452,7 +5452,7 @@ ACCEPT THE LOSS
 
 # owner card: ransom_lost
 [Owner.CARDS.ransom_lost.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: ransom_lost
 [Owner.CARDS.ransom_lost.text]
@@ -5504,7 +5504,7 @@ DO BOTH ($550)
 
 # owner card: bec_scare
 [Owner.CARDS.bec_scare.options.2.text]
-The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books.
+The letter goes out with the filter offer attached. Christy says it is the cheapest insurance on the books.
 
 # owner card: bec_scare
 [Owner.CARDS.bec_scare.options.3.label]
@@ -5516,7 +5516,7 @@ You file it under lucky. The next one may not come with a bookkeeper who asks fi
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.text]
@@ -5528,7 +5528,7 @@ CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.options.0.text]
-The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had.
+The rep never sent it. 'Good catch,' he says. Christy adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had.
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.options.1.label]
@@ -5536,11 +5536,11 @@ PAY IT, WE ARE LATE ALREADY
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.options.1.roll.0.2]
-It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down.
+It was fake. The money is gone and the real invoice is still unpaid. Christy never wants to see that happen again and writes the call-back rule down.
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.options.1.roll.1.2]
-It was real. The distributor changed banks. You got lucky and Marge knows it.
+It was real. The distributor changed banks. You got lucky and Christy knows it.
 
 # owner card: bec_marge
 [Owner.CARDS.bec_marge.options.2.label]
@@ -5556,7 +5556,7 @@ The real rep answers: yes, the bank changed. Nobody can tell you that was the ri
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.text]
@@ -5568,7 +5568,7 @@ CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.0.text]
-Marge cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day.
+Christy cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day.
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.1.label]
@@ -5584,7 +5584,7 @@ TELL THEM IT WAS THEIR OWN PROCESS
 
 # owner card: bec_lawyer_ok
 [Owner.CARDS.bec_lawyer_ok.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_lawyer_ok
 [Owner.CARDS.bec_lawyer_ok.text]
@@ -5596,7 +5596,7 @@ OK
 
 # owner card: bec_lawyer_bad
 [Owner.CARDS.bec_lawyer_bad.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_lawyer_bad
 [Owner.CARDS.bec_lawyer_bad.text]
@@ -5608,7 +5608,7 @@ OK
 
 # owner card: bec_claim_ok
 [Owner.CARDS.bec_claim_ok.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_claim_ok
 [Owner.CARDS.bec_claim_ok.text]
@@ -5620,7 +5620,7 @@ OK
 
 # owner card: bec_claim_no
 [Owner.CARDS.bec_claim_no.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_claim_no
 [Owner.CARDS.bec_claim_no.text]
@@ -5632,7 +5632,7 @@ OK
 
 # owner card: bec_blame_left
 [Owner.CARDS.bec_blame_left.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_blame_left
 [Owner.CARDS.bec_blame_left.text]
@@ -5644,7 +5644,7 @@ OK
 
 # owner card: bec_blame_stay
 [Owner.CARDS.bec_blame_stay.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_blame_stay
 [Owner.CARDS.bec_blame_stay.text]
@@ -5656,7 +5656,7 @@ OK
 
 # owner card: bec_rider
 [Owner.CARDS.bec_rider.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # owner card: bec_rider
 [Owner.CARDS.bec_rider.text]
@@ -8016,7 +8016,7 @@ $80 A NIGHT PLUS A MORNING OFF
 
 # ServiceArc > ARC > stipend > options > 2 > text
 [ServiceArc.ARC.stipend.options.2.text]
-$80 and a late start after a page. Garrison liked it. Marge asked me for the arithmetic.
+$80 and a late start after a page. Garrison liked it. Christy asked me for the arithmetic.
 
 # ServiceArc > ARC > psa > speaker
 [ServiceArc.ARC.psa.speaker]
@@ -8672,7 +8672,7 @@ Scorecards do not speak. People do. Learn that.
 
 # ServiceArc > QUESTIONS > Morgan > 1 > text
 [ServiceArc.QUESTIONS.Morgan.1.text]
-Cost per ticket is {cpt} and Marge is asking. What is the one thing that would lower it without hurting the team?
+Cost per ticket is {cpt} and Christy is asking. What is the one thing that would lower it without hurting the team?
 
 # ServiceArc > QUESTIONS > Morgan > 1 > options > 0 > label
 [ServiceArc.QUESTIONS.Morgan.1.options.0.label]
@@ -14314,7 +14314,7 @@ Nobody is going anywhere. The owners are a little worried, so call it a friendly
 
 # Difficulty > COZY_TEXT > probation_owner
 [Difficulty.COZY_TEXT.probation_owner]
-The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Marge
+The numbers have us all nervous, but the doors are open and the lights are on. Call it a probation of the friendly kind. See you Monday. - Christy
 
 # Difficulty > COZY_TEXT > probation_sales
 [Difficulty.COZY_TEXT.probation_sales]
@@ -20218,7 +20218,7 @@ SKIP IT
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_all > speaker
 [SalesCampaign.BEAT_TEXT.scorecard.res_all.speaker]
-Marge
+Christy
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_all > text
 [SalesCampaign.BEAT_TEXT.scorecard.res_all.text]
@@ -20226,7 +20226,7 @@ One page each: what we did, what it cost, what is not included. Two clients put 
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_top > speaker
 [SalesCampaign.BEAT_TEXT.scorecard.res_top.speaker]
-Marge
+Christy
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_top > text
 [SalesCampaign.BEAT_TEXT.scorecard.res_top.text]
@@ -20234,7 +20234,7 @@ Three pages to the three biggest accounts. The others will get theirs next quart
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_skip > speaker
 [SalesCampaign.BEAT_TEXT.scorecard.res_skip.speaker]
-Marge
+Christy
 
 # SalesCampaign > BEAT_TEXT > scorecard > res_skip > text
 [SalesCampaign.BEAT_TEXT.scorecard.res_skip.text]
@@ -20660,7 +20660,7 @@ Lost account review done. The real cause is written down, and the same mistake w
 # ======================= Habits > CARDS =======================
 # Habits > CARDS > habit_offer > speaker
 [Habits.CARDS.habit_offer.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # Habits > CARDS > habit_offer > text
 [Habits.CARDS.habit_offer.text]
@@ -20680,7 +20680,7 @@ Good. Now keep doing it.
 
 # Habits > CARDS > habit_lapsed > speaker
 [Habits.CARDS.habit_lapsed.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # Habits > CARDS > habit_lapsed > text
 [Habits.CARDS.habit_lapsed.text]
@@ -20716,7 +20716,7 @@ WE WILL WING IT
 
 # Habits > CARDS > habit_revenge > speaker
 [Habits.CARDS.habit_revenge.speaker]
-Marge (Bookkeeper)
+Christy (Controller)
 
 # Habits > CARDS > habit_revenge > text
 [Habits.CARDS.habit_revenge.text]
@@ -20766,7 +20766,7 @@ PRINT A ONE PAGE COMPARISON ($120)
 
 # RivalCards > CARDS > rival_flat > options > 1 > text
 [RivalCards.CARDS.rival_flat.options.1.text]
-Marge makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge.
+Christy makes a one page chart: what you do each week, what it costs, and what is NOT included. It is the first time a client has seen a list like that. Two clients keep it on the fridge.
 
 # RivalCards > CARDS > rival_flat > options > 2 > label
 [RivalCards.CARDS.rival_flat.options.2.label]
@@ -20826,7 +20826,7 @@ Garrison nods. John frowns at the billboard every time he drives past it.
 
 # RivalCards > CARDS > rival_defect > speaker
 [RivalCards.CARDS.rival_defect.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_defect > text
 [RivalCards.CARDS.rival_defect.text]
@@ -20954,7 +20954,7 @@ Delia says she understands. Her voice says she hoped.
 
 # RivalCards > CARDS > rival_2fa > speaker
 [RivalCards.CARDS.rival_2fa.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_2fa > text
 [RivalCards.CARDS.rival_2fa.text]
@@ -20982,11 +20982,11 @@ WRITE IT ON THE RAP SHEET AND MOVE ON
 
 # RivalCards > CARDS > rival_2fa > options > 2 > text
 [RivalCards.CARDS.rival_2fa.options.2.text]
-Marge puts the date next to the line. She underlines it twice.
+Christy puts the date next to the line. She underlines it twice.
 
 # RivalCards > CARDS > rival_vendor_audit > speaker
 [RivalCards.CARDS.rival_vendor_audit.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_vendor_audit > text
 [RivalCards.CARDS.rival_vendor_audit.text]
@@ -21014,7 +21014,7 @@ KEEP QUIET, THIS IS NOT OUR FIGHT
 
 # RivalCards > CARDS > rival_vendor_audit > options > 2 > text
 [RivalCards.CARDS.rival_vendor_audit.options.2.text]
-The phone stops by nine. Marge puts the letter in the folder labelled RAP SHEET.
+The phone stops by nine. Christy puts the letter in the folder labelled RAP SHEET.
 
 # RivalCards > CARDS > rival_exposed > speaker
 [RivalCards.CARDS.rival_exposed.speaker]
@@ -21078,7 +21078,7 @@ OFFER A LOYALTY PRICE FOR 12 WEEKS (10 PERCENT OFF)
 
 # RivalCards > CARDS > rival_blitz > options > 2 > text
 [RivalCards.CARDS.rival_blitz.options.2.text]
-Most of them stay. Marge sighs at the margin and says that is what she gets for asking.
+Most of them stay. Christy sighs at the margin and says that is what she gets for asking.
 
 # RivalCards > CARDS > rival_blitz > options > 3 > label
 [RivalCards.CARDS.rival_blitz.options.3.label]
@@ -21090,7 +21090,7 @@ Garrison says we are good enough that we do not need to do anything. That is the
 
 # RivalCards > CARDS > rival_badday > speaker
 [RivalCards.CARDS.rival_badday.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_badday > text
 [RivalCards.CARDS.rival_badday.text]
@@ -21130,7 +21130,7 @@ The phones stop eventually.
 
 # RivalCards > CARDS > rival_decide > speaker
 [RivalCards.CARDS.rival_decide.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_decide > text
 [RivalCards.CARDS.rival_decide.text]
@@ -21174,7 +21174,7 @@ IGNORE IT
 
 # RivalCards > CARDS > rival_decide > options > 3 > text
 [RivalCards.CARDS.rival_decide.options.3.text]
-Marge puts it in the folder. The folder is getting thick.
+Christy puts it in the folder. The folder is getting thick.
 
 # RivalCards > CARDS > rival_counter > speaker
 [RivalCards.CARDS.rival_counter.speaker]
@@ -21202,7 +21202,7 @@ It passes, slowly, and takes a prospect or two with it.
 
 # RivalCards > CARDS > rival_knew > speaker
 [RivalCards.CARDS.rival_knew.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > rival_knew > text
 [RivalCards.CARDS.rival_knew.text]
@@ -21214,7 +21214,7 @@ I SHOULD HAVE SAID SOMETHING
 
 # RivalCards > CARDS > rival_knew > options > 0 > text
 [RivalCards.CARDS.rival_knew.options.0.text]
-Marge nods once. It is the worst possible answer and the true one.
+Christy nods once. It is the worst possible answer and the true one.
 
 # RivalCards > CARDS > rival_knew > options > 1 > label
 [RivalCards.CARDS.rival_knew.options.1.label]
@@ -21250,7 +21250,7 @@ EVERYTHING INCLUDED. You still do not know what everything was.
 
 # RivalCards > CARDS > temp_seats > speaker
 [RivalCards.CARDS.temp_seats.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > temp_seats > text
 [RivalCards.CARDS.temp_seats.text]
@@ -21262,7 +21262,7 @@ REPORT 41 AND KEEP THE $308 A MONTH
 
 # RivalCards > CARDS > temp_seats > options > 0 > text
 [RivalCards.CARDS.temp_seats.options.0.text]
-Marge types 41 and does not look up. The invoice drops. She puts the original form in the folder.
+Christy types 41 and does not look up. The invoice drops. She puts the original form in the folder.
 
 # RivalCards > CARDS > temp_seats > options > 1 > label
 [RivalCards.CARDS.temp_seats.options.1.label]
@@ -21310,7 +21310,7 @@ OFFER A MONTHLY PRINTER CHECK ($40 A WEEK)
 
 # RivalCards > CARDS > temp_reboot > options > 2 > text
 [RivalCards.CARDS.temp_reboot.options.2.text]
-Now the reboot is part of something. Marge calls it recurring revenue with a stapler.
+Now the reboot is part of something. Christy calls it recurring revenue with a stapler.
 
 # RivalCards > CARDS > temp_launder > speaker
 [RivalCards.CARDS.temp_launder.speaker]
@@ -21318,7 +21318,7 @@ John Marlowe
 
 # RivalCards > CARDS > temp_launder > text
 [RivalCards.CARDS.temp_launder.text]
-A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Marge's name. The friend is a client who has never mentioned us to anybody.
+A Mrs. Dunning called, said a friend recommended us. Her server is slow, she runs XP in the front office, and her IT person never calls back. She knows our rates and Christy's name. The friend is a client who has never mentioned us to anybody.
 
 # RivalCards > CARDS > temp_launder > options > 0 > label
 [RivalCards.CARDS.temp_launder.options.0.label]
@@ -21494,7 +21494,7 @@ He grumbles for a week and then forgets about it. His office manager sends a tha
 
 # RivalCards > CARDS > temp_quest > speaker
 [RivalCards.CARDS.temp_quest.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > temp_quest > text
 [RivalCards.CARDS.temp_quest.text]
@@ -21506,7 +21506,7 @@ ANSWER YES TO EVERYTHING
 
 # RivalCards > CARDS > temp_quest > options > 0 > text
 [RivalCards.CARDS.temp_quest.options.0.text]
-The broker smiles and says it is a very common answer. The premium drops. A folder in Marge's cabinet gets thicker.
+The broker smiles and says it is a very common answer. The premium drops. A folder in Christy's cabinet gets thicker.
 
 # RivalCards > CARDS > temp_quest > options > 1 > label
 [RivalCards.CARDS.temp_quest.options.1.label]
@@ -21530,7 +21530,7 @@ He tries three carriers. Nobody beats $65 for an honest answer. He tells you so,
 
 # RivalCards > CARDS > temp_come_clean > speaker
 [RivalCards.CARDS.temp_come_clean.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > temp_come_clean > text
 [RivalCards.CARDS.temp_come_clean.text]
@@ -21542,7 +21542,7 @@ OWN UP TO THE OLDEST ONE ({costa})
 
 # RivalCards > CARDS > temp_come_clean > options > 0 > text
 [RivalCards.CARDS.temp_come_clean.options.0.text]
-Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
+Christy makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
 
 # RivalCards > CARDS > temp_come_clean > options > 1 > label
 [RivalCards.CARDS.temp_come_clean.options.1.label]
@@ -21550,7 +21550,7 @@ OWN UP TO THE BIGGEST ONE ({costb})
 
 # RivalCards > CARDS > temp_come_clean > options > 1 > text
 [RivalCards.CARDS.temp_come_clean.options.1.text]
-Marge makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
+Christy makes the call herself. The truth is cheaper than the bill, and the folder is a little lighter.
 
 # RivalCards > CARDS > temp_come_clean > options > 2 > label
 [RivalCards.CARDS.temp_come_clean.options.2.label]
@@ -21558,11 +21558,11 @@ NOT YET
 
 # RivalCards > CARDS > temp_come_clean > options > 2 > text
 [RivalCards.CARDS.temp_come_clean.options.2.text]
-Marge closes the cabinet. She does not say anything. She does not have to.
+Christy closes the cabinet. She does not say anything. She does not have to.
 
 # RivalCards > CARDS > bill_temp_seats > speaker
 [RivalCards.CARDS.bill_temp_seats.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > bill_temp_seats > text
 [RivalCards.CARDS.bill_temp_seats.text]
@@ -21574,7 +21574,7 @@ PAY IT AND KEEP A PROPER SEAT LIST
 
 # RivalCards > CARDS > bill_temp_seats > options > 0 > text
 [RivalCards.CARDS.bill_temp_seats.options.0.text]
-Marge builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true.
+Christy builds the seat list herself. Next quarter the form takes ten minutes and every number on it is true.
 
 # RivalCards > CARDS > bill_temp_seats > options > 1 > label
 [RivalCards.CARDS.bill_temp_seats.options.1.label]
@@ -21586,7 +21586,7 @@ You argue about the count. The rep reads the old form back to you, slowly. You s
 
 # RivalCards > CARDS > bill_temp_reboot > speaker
 [RivalCards.CARDS.bill_temp_reboot.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > bill_temp_reboot > text
 [RivalCards.CARDS.bill_temp_reboot.text]
@@ -21606,7 +21606,7 @@ CALL IT A BILLING MIX-UP
 
 # RivalCards > CARDS > bill_temp_reboot > options > 1 > text
 [RivalCards.CARDS.bill_temp_reboot.options.1.text]
-Marge reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up.
+Christy reads it back to you in the voice she uses for tax notices. Nobody believes the mix-up.
 
 # RivalCards > CARDS > bill_temp_launder > speaker
 [RivalCards.CARDS.bill_temp_launder.speaker]
@@ -21658,7 +21658,7 @@ The accounts go away. The screenshots do not.
 
 # RivalCards > CARDS > bill_temp_quest > speaker
 [RivalCards.CARDS.bill_temp_quest.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > bill_temp_quest > text
 [RivalCards.CARDS.bill_temp_quest.text]
@@ -21682,7 +21682,7 @@ The broker has a copy of the form. It has your signature on it.
 
 # RivalCards > CARDS > bill_temp_price > speaker
 [RivalCards.CARDS.bill_temp_price.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > bill_temp_price > text
 [RivalCards.CARDS.bill_temp_price.text]
@@ -21706,11 +21706,11 @@ KEEP THEM AND EAT THE MARGIN
 
 # RivalCards > CARDS > bill_temp_price > options > 1 > text
 [RivalCards.CARDS.bill_temp_price.options.1.text]
-Marge puts the review in the folder, next to the napkin.
+Christy puts the review in the folder, next to the napkin.
 
 # RivalCards > CARDS > bill_temp_2fa > speaker
 [RivalCards.CARDS.bill_temp_2fa.speaker]
-Marge
+Christy
 
 # RivalCards > CARDS > bill_temp_2fa > text
 [RivalCards.CARDS.bill_temp_2fa.text]
@@ -21776,7 +21776,7 @@ Every box ticked, a restore tested, the change notes written. I would not say it
 
 # RivalTouches > TALK > Alan > loose
 [RivalTouches.TALK.Alan.loose]
-Marge has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.
+Christy has a folder I do not love. Nothing is on fire. Yet. Clean up what you can before it clears its throat.
 
 # RivalTouches > TALK > Alan > closet
 [RivalTouches.TALK.Alan.closet]
@@ -21824,7 +21824,7 @@ I took a photo of every closet this quarter. If I fall off the ladder, someone e
 
 # RivalTouches > TALK > Dan > loose
 [RivalTouches.TALK.Dan.loose]
-I found a default password on a camera and told Marge. I wrote it down so it counts.
+I found a default password on a camera and told Christy. I wrote it down so it counts.
 
 # RivalTouches > TALK > Dan > closet
 [RivalTouches.TALK.Dan.closet]
@@ -21890,7 +21890,7 @@ Restores passed again. I am not smiling. That is just my face.
 
 # RivalTouches > LYNK > Alan > loose
 [RivalTouches.LYNK.Alan.loose]
-Marge showed me the folder. We should talk. Not now. Soon.
+Christy showed me the folder. We should talk. Not now. Soon.
 
 # RivalTouches > LYNK > Alan > closet
 [RivalTouches.LYNK.Alan.closet]
@@ -21960,20 +21960,20 @@ If anyone asks about a bill, I am telling the truth. Just so you know.
 [RivalTouches.LYNK.John.closet]
 I have two deals ready and I am holding them. Say when.
 
-# RivalTouches > LYNK > Marge > rival
-[RivalTouches.LYNK.Marge.rival]
+# RivalTouches > LYNK > Christy > rival
+[RivalTouches.LYNK.Christy.rival]
 I cannot find a single Big Cheese invoice that says what it is for. I do not think that is an accident.
 
-# RivalTouches > LYNK > Marge > solid
-[RivalTouches.LYNK.Marge.solid]
+# RivalTouches > LYNK > Christy > solid
+[RivalTouches.LYNK.Christy.solid]
 The books are tidy this week and so is my desk. I am nervous. Is that normal?
 
-# RivalTouches > LYNK > Marge > loose
-[RivalTouches.LYNK.Marge.loose]
+# RivalTouches > LYNK > Christy > loose
+[RivalTouches.LYNK.Christy.loose]
 There is a folder in my bottom drawer. It is not thick. It is not thin either.
 
-# RivalTouches > LYNK > Marge > closet
-[RivalTouches.LYNK.Marge.closet]
+# RivalTouches > LYNK > Christy > closet
+[RivalTouches.LYNK.Christy.closet]
 The folder does not close any more. We should sit down before the board does it for us.
 
 

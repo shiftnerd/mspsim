@@ -344,7 +344,7 @@ static func _consequences(owner: Node, week: int) -> void:
 	if r > 0 and (week == r + 1 or week == r + 3):
 		Campaign.adjust_rep(-1)
 		Msp.send_text(
-			"Marge",
+			"Christy",
 			"Someone at the Chamber lunch is telling people we cannot be trusted. Rex, I think."
 		)
 	var keys := []
@@ -420,7 +420,7 @@ static func show(owner: Node, id: String, arg: String) -> void:
 	if id == Temptation.CLEAN_CARD:
 		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
 	if id == "temp_seats":
-		card = Temptation.dress_seats(owner, card)  # Marge warns after the first vendor switch
+		card = Temptation.dress_seats(owner, card)  # Christy warns after the first vendor switch
 	var options: Array = card.options
 	for i in range(options.size() - 1, -1, -1):
 		if not _allowed(id, i, arg):
@@ -515,7 +515,7 @@ static func _decide(owner: Node, kind: String, habit: String) -> void:
 				(
 					Msp
 					. send_text(
-						"Marge",
+						"Christy",
 						"That letter was only a rumour, not something we saw. It reads as slander, and Rex will say so."
 					)
 				)

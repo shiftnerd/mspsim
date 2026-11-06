@@ -29,11 +29,6 @@ local CHARS = {
     shirt = {"#3A3F4A", "#2A2D36", "#F2F2EA"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",
     shoes = {"#2A2A33", "#1C1C24"}, lips = "#A8404A", blouse = "#F2F2EA",
   },
-  office_marge = {   -- the bookkeeper: short curly grey-brown hair, glasses, mustard cardigan, brown skirt
-    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#8A7A6A", "#B0A290", "#6A5A4A"}, style = "curly",
-    shirt = {"#C8A03A", "#A07E2A", "#7A5A1E"}, pants = {"#6A4A38", "#523626", "#3E281A"}, bottom = "skirt",
-    tights = {"#D8A07A", "#B8805A"}, shoes = {"#5A3522", "#4A2C1C"}, lips = "#B8505A", glasses = true, blouse = "#F2E6DA",
-  },
   office_jen = {   -- the office manager: shoulder-length strawberry-blonde hair, glasses, a coral and pink striped sweater, dark jeans
     skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#C98A5A", "#E0AA7C", "#A8683F"}, style = "bob",
     shirt = {"#E0806A", "#BC5E4C", "#7A3A30"}, pants = {"#34456A", "#26334F", "#1C253A"}, bottom = "trousers",

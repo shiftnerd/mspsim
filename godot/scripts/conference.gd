@@ -1457,7 +1457,7 @@ func populate(stage: Node) -> void:
 		return
 	var scene := stage.scene_file_path.get_file().get_basename()
 	if scene == "conference" and Campaign.active and Meeting.state in ["called", "done"]:
-		# Morgan is a real cast member now and hosts at the whiteboard herself; Marge still stands in for the owner campaign
+		# Morgan is a real cast member now and hosts at the whiteboard herself; Christy still stands in for the owner campaign
 		if Campaign.mode == "owner" or not World.chars.has("Morgan"):
 			_boss(stage)
 		return
@@ -1475,11 +1475,11 @@ func populate(stage: Node) -> void:
 		stage.get_node("Actors").add_child(npc)
 
 
-# during the all-hands the boss stands at the whiteboard: Morgan (tech campaign) or Marge, the bookkeeper (owner campaign)
+# during the all-hands the boss stands at the whiteboard: Morgan (tech campaign) or Christy, the controller (owner campaign)
 func _boss(stage: Node) -> void:
 	var owner_mode := Campaign.mode == "owner"
 	var npc: Node = NPC_SCENE.instantiate()
-	npc.character = "office_marge" if owner_mode else "office_morgan"
+	npc.character = "office_christy" if owner_mode else "office_morgan"
 	npc.facing = "right"
 	npc.role = "boss:marge" if owner_mode else "boss:morgan"
 	npc.routine = PackedStringArray(["wait:8", "talk:3"])
@@ -1492,7 +1492,7 @@ func npc_use(npc: Node, _body: Node) -> void:
 	if role.begins_with("boss:"):
 		var who := role.substr(5)
 		Cards.ask(
-			"Morgan (Manager)" if who == "morgan" else "Marge (Bookkeeper)",
+			"Morgan (Manager)" if who == "morgan" else "Christy (Controller)",
 			str(TEXT.get("boss_" + who, "Thanks for coming.")),
 			[{"label": "OK", "id": "ok"}],
 			func(_id: String) -> void: pass

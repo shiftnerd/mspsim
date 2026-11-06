@@ -5,7 +5,7 @@ var failures := 0
 var names := [
 	"office_maya",
 	"office_morgan",
-	"office_marge",
+	"office_christy",
 	"client_karen",
 	"client_mina",
 	"client_brandt",

@@ -452,9 +452,9 @@ const DEFAULT_BEAT_TEXT := {
 				{"id": "skip", "label": "SKIP IT"},
 			],
 		},
-		"res_all": {"speaker": "Marge", "text": "One page each: what we did, what it cost, what is not included. Two clients put it on the fridge.", "ok": "OK"},
-		"res_top": {"speaker": "Marge", "text": "Three pages to the three biggest accounts. The others will get theirs next quarter, maybe.", "ok": "OK"},
-		"res_skip": {"speaker": "Marge", "text": "Renewals will have to stand on their own, then.", "ok": "OK"},
+		"res_all": {"speaker": "Christy", "text": "One page each: what we did, what it cost, what is not included. Two clients put it on the fridge.", "ok": "OK"},
+		"res_top": {"speaker": "Christy", "text": "Three pages to the three biggest accounts. The others will get theirs next quarter, maybe.", "ok": "OK"},
+		"res_skip": {"speaker": "Christy", "text": "Renewals will have to stand on their own, then.", "ok": "OK"},
 	},
 }
 var BEAT_TEXT: Dictionary = DEFAULT_BEAT_TEXT.duplicate(true)

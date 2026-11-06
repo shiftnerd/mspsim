@@ -741,7 +741,7 @@ or the owner (owner campaign, 20 weeks).
 
 ### Week 1
 
-**9:05 Card: welcome** — Marge (Bookkeeper) `[Owner.CARDS.welcome.speaker]`
+**9:05 Card: welcome** — Christy (Controller) `[Owner.CARDS.welcome.speaker]`
 > Welcome to the owner side of the desk. Five clients, Dan and Maya on the crew, Morgan running the floor, John in sales and {cash} in the bank. Payroll and rent come out every week, and you and {partner} draw from what is left. How do you want to price our service? `[Owner.CARDS.welcome.text]`
 - **VOLUME PRICING (-15% FEES, JOHN SELLS MORE)** `[Owner.CARDS.welcome.options.0.label]`
 - **STANDARD PRICING** `[Owner.CARDS.welcome.options.1.label]`
@@ -756,18 +756,18 @@ or the owner (owner campaign, 20 weeks).
 - **BUY THE BACKUP SERVICE ($600 + $100/WEEK)** `[Owner.CARDS.backup.options.0.label]`
 - **NO, WE WILL CHECK THEM BY HAND** `[Owner.CARDS.backup.options.1.label]`
 
-**10:00 Card: draw_policy** — Marge (Bookkeeper) `[Owner.CARDS.draw_policy.speaker]`
+**10:00 Card: draw_policy** — Christy (Controller) `[Owner.CARDS.draw_policy.speaker]`
 > The owners' draw. You and {partner} pay yourselves out of the bank. It is not an expense, so it never shows in EBITDA, but it is real cash, and a bad week leaves the bank thin. What do we take? `[Owner.CARDS.draw_policy.text]`
 - **NORMAL DRAW ($600/WEEK, BOTH OF YOU)** `[Owner.CARDS.draw_policy.options.0.label]`
-  - Marge writes it in the ledger. The draw starts in week 3. `[Owner.CARDS.draw_policy.options.0.text]`
+  - Christy writes it in the ledger. The draw starts in week 3. `[Owner.CARDS.draw_policy.options.0.text]`
 - **SMALL DRAW ($300/WEEK)** `[Owner.CARDS.draw_policy.options.1.label]`
-  - A small draw. Marge looks relieved and {partner} nods. The bank stays fat. `[Owner.CARDS.draw_policy.options.1.text]`
+  - A small draw. Christy looks relieved and {partner} nods. The bank stays fat. `[Owner.CARDS.draw_policy.options.1.text]`
 - **GENEROUS DRAW ($1,000/WEEK)** `[Owner.CARDS.draw_policy.options.2.label]`
-  - A generous draw. Marge says nothing, which is how she says a lot. `[Owner.CARDS.draw_policy.options.2.text]`
+  - A generous draw. Christy says nothing, which is how she says a lot. `[Owner.CARDS.draw_policy.options.2.text]`
 - **NO DRAW (WE LIVE ON NOODLES)** `[Owner.CARDS.draw_policy.options.3.label]`
-  - No draw at all. You and {partner} split a sleeve of crackers. Marge frames the ledger. `[Owner.CARDS.draw_policy.options.3.text]`
+  - No draw at all. You and {partner} split a sleeve of crackers. Christy frames the ledger. `[Owner.CARDS.draw_policy.options.3.text]`
 
-**15:00 Card: peer_invite** — Marge (Bookkeeper) `[Owner.CARDS.peer_invite.speaker]`
+**15:00 Card: peer_invite** — Christy (Controller) `[Owner.CARDS.peer_invite.speaker]`
 > You were invited to the MSP Mastermind: a dozen non-competing MSP owners who meet regularly, compare their numbers (EBITDA, W-2 ratio) and warn each other about what is coming. Dues are $500 to join and $75 a week. `[Owner.CARDS.peer_invite.text]`
 - **JOIN THE PEER GROUP ($500 + $75/WEEK)** `[Owner.CARDS.peer_invite.options.0.label]`
   - You are in. The first meeting is in a few days. `[Owner.CARDS.peer_invite.options.0.text]`
@@ -833,7 +833,7 @@ or the owner (owner campaign, 20 weeks).
 - **DELLIGHTCO (SOLID, $350 MARGIN)** `[Owner.CARDS.stack_hw.options.2.label]`
   - Fewer fires, fatter margins, a slower sell. `[Owner.CARDS.stack_hw.options.2.text]`
 
-**14:00 Card: billing_audit** — Marge (Bookkeeper) `[Owner.CARDS.billing_audit.speaker]`
+**14:00 Card: billing_audit** — Christy (Controller) `[Owner.CARDS.billing_audit.speaker]`
 > I have a hunch we are not billing for everything: extra hours, license price rises we never passed on. A one-time billing audit ($400) would check every invoice against what we pay vendors and the hours we really work. `[Owner.CARDS.billing_audit.text]`
 - **DO THE BILLING AUDIT ($400)** `[Owner.CARDS.billing_audit.options.0.label]`
   - The audit finds unbilled work and vendor increases nobody passed through. Fixed from now on. `[Owner.CARDS.billing_audit.options.0.text]`
@@ -894,7 +894,7 @@ or the owner (owner campaign, 20 weeks).
   - 70%: The switch goes smoothly and weekly costs drop. `[Owner.CARDS.license.options.1.roll.0.2]`
   - 30%: The migration drags and clients notice. `[Owner.CARDS.license.options.1.roll.1.2]`
 
-**13:00 Card: vic_plan** — Marge (Bookkeeper) `[Owner.CARDS.vic_plan.speaker]`
+**13:00 Card: vic_plan** — Christy (Controller) `[Owner.CARDS.vic_plan.speaker]`
 > How do we pay John? Salesmen respond to incentives, but commission-driven reps over-promise and new clients start out unhappy. Salary is steady but he sells less hard. `[Owner.CARDS.vic_plan.text]`
 - **SALARY ONLY ($750/WK)** `[Owner.CARDS.vic_plan.options.0.label]`
 - **BALANCED ($550/WK + $150 A DEAL)** `[Owner.CARDS.vic_plan.options.1.label]`
@@ -987,7 +987,7 @@ or the owner (owner campaign, 20 weeks).
 
 **15:11** Event: leak_hint (handled in code, it opens its own cards)
 
-**9:35 Card: draw_review** — Marge (Bookkeeper) `[Owner.CARDS.draw_review.speaker]`
+**9:35 Card: draw_review** — Christy (Controller) `[Owner.CARDS.draw_review.speaker]`
 > Quarterly look at the owners' draw. Same as before, more, less, or nothing for now? `[Owner.CARDS.draw_review.text]`
 - **KEEP THE DRAW AS IT IS** `[Owner.CARDS.draw_review.options.0.label]`
 - **TAKE LESS (SMALL DRAW)** `[Owner.CARDS.draw_review.options.1.label]`
@@ -995,7 +995,7 @@ or the owner (owner campaign, 20 weeks).
 - **TAKE MORE (GENEROUS DRAW)** `[Owner.CARDS.draw_review.options.2.label]`
   - A bigger draw. It is a good quarter, you tell yourself. `[Owner.CARDS.draw_review.options.2.text]`
 - **SKIP THE DRAW FOR NOW** `[Owner.CARDS.draw_review.options.3.label]`
-  - No draw this quarter. Marge pins a gold star on the ledger. `[Owner.CARDS.draw_review.options.3.text]`
+  - No draw this quarter. Christy pins a gold star on the ledger. `[Owner.CARDS.draw_review.options.3.text]`
 
 **15:30** Event: peer_goal (handled in code, it opens its own cards)
 
@@ -1028,7 +1028,7 @@ or the owner (owner campaign, 20 weeks).
 - **OFFER THE HOSTED EMAIL FILTER ($250 SETUP, $45/WEEK EACH)** `[Owner.CARDS.bec_scare.options.1.label]`
   - John and {tech} call around. The filter holds mail from lookalike domains and flags a sender that does not match the name. It is a recurring service, so it sells itself the way backups do. `[Owner.CARDS.bec_scare.options.1.text]`
 - **DO BOTH ($550)** `[Owner.CARDS.bec_scare.options.2.label]`
-  - The letter goes out with the filter offer attached. Marge says it is the cheapest insurance on the books. `[Owner.CARDS.bec_scare.options.2.text]`
+  - The letter goes out with the filter offer attached. Christy says it is the cheapest insurance on the books. `[Owner.CARDS.bec_scare.options.2.text]`
 - **IGNORE IT, THEY CAUGHT THIS ONE THEMSELVES** `[Owner.CARDS.bec_scare.options.3.label]`
   - You file it under lucky. The next one may not come with a bookkeeper who asks first. `[Owner.CARDS.bec_scare.options.3.text]`
 
@@ -1070,13 +1070,13 @@ or the owner (owner campaign, 20 weeks).
 - **SKIP IT, WE ARE TIRED** `[Owner.CARDS.pm_email.options.2.label]`
   - Everyone goes home. The disk is still the same size. `[Owner.CARDS.pm_email.options.2.text]`
 
-**14:00 Card: bec_marge** — Marge (Bookkeeper) `[Owner.CARDS.bec_marge.speaker]`
+**14:00 Card: bec_marge** — Christy (Controller) `[Owner.CARDS.bec_marge.speaker]`
 > {me}, a note came in from our hardware distributor: their bank changed, please pay this week's invoice of $2,400 to the new account on the attached form. It has their logo and the rep's signature. The reply address is a little different from the one in my file. We are already late and they are touchy about it. `[Owner.CARDS.bec_marge.text]`
 - **CALL THE DISTRIBUTOR ON THE NUMBER IN OUR FILE** `[Owner.CARDS.bec_marge.options.0.label]`
-  - The rep never sent it. 'Good catch,' he says. Marge adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had. `[Owner.CARDS.bec_marge.options.0.text]`
+  - The rep never sent it. 'Good catch,' he says. Christy adds a rule to the books: any bank change gets a phone call first, from us, to a number we already had. `[Owner.CARDS.bec_marge.options.0.text]`
 - **PAY IT, WE ARE LATE ALREADY** `[Owner.CARDS.bec_marge.options.1.label]`
-  - 55%: It was fake. The money is gone and the real invoice is still unpaid. Marge never wants to see that happen again and writes the call-back rule down. `[Owner.CARDS.bec_marge.options.1.roll.0.2]`
-  - 45%: It was real. The distributor changed banks. You got lucky and Marge knows it. `[Owner.CARDS.bec_marge.options.1.roll.1.2]`
+  - 55%: It was fake. The money is gone and the real invoice is still unpaid. Christy never wants to see that happen again and writes the call-back rule down. `[Owner.CARDS.bec_marge.options.1.roll.0.2]`
+  - 45%: It was real. The distributor changed banks. You got lucky and Christy knows it. `[Owner.CARDS.bec_marge.options.1.roll.1.2]`
 - **REPLY TO THE EMAIL AND ASK IF IT IS REAL** `[Owner.CARDS.bec_marge.options.2.label]`
   - 70%: The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone. `[Owner.CARDS.bec_marge.options.2.roll.0.2]`
   - 30%: The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out. `[Owner.CARDS.bec_marge.options.2.roll.1.2]`

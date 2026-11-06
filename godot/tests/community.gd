@@ -140,11 +140,11 @@ func _init() -> void:
 	)
 	c.new_game("owner")
 	_check(
-		lync.boss() == "Marge" and lync.contacts().has("Marge"),
-		"owner campaign: Marge replaces Morgan"
+		lync.boss() == "Christy" and lync.contacts().has("Christy"),
+		"owner campaign: Christy replaces Morgan"
 	)
-	lync.send_action("Marge", "boss")
-	_check(lync.chats["Marge"][-1][1].contains("Cash is $"), "Marge reports the numbers")
+	lync.send_action("Christy", "boss")
+	_check(lync.chats["Christy"][-1][1].contains("Cash is $"), "Christy reports the numbers")
 
 	# ---- the desktop apps open and draw
 	var comp := root.get_node("Computer")

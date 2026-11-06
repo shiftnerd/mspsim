@@ -95,7 +95,7 @@ func _run() -> void:
 	_check(not social.people().has("Alan") and social.people().has("Garrison"), "Social.people() has no Alan")
 	_check(social.people().has("Maya"), "and she is one of your coworkers")
 	_check(not outings.roster().has("Alan") and outings.roster().has("Garrison"), "Outings.roster() has no Alan")
-	_check(not lync.contacts().has("Alan") and lync.contacts().has("Marge"), "Lync contacts: no Alan, Marge is the boss")
+	_check(not lync.contacts().has("Alan") and lync.contacts().has("Christy"), "Lync contacts: no Alan, Christy is the boss")
 	var desk: Dictionary = world.player_desk()
 	_check(desk.scene == "office_one" and desk.seat == "Seat1" and c.start_scene() == "office_one", "Alan's desk is Office 1")
 	_check(roles.partner() == "Garrison", "the partner is Garrison")
