@@ -42,9 +42,12 @@ func _init() -> void:
 	_check(msp.day_cap() == 12 and msp.open_cap() == 6, "day 10: twelve, six open")
 	c.day = 1
 	_check(msp.open_cap() == 3, "day 1: three open at most")
-	c.day = 11
-	msp.new_day(11)
-	_check(msp.day_cap() == 99 and msp.open_cap() == 6, "day 11 on: no cap")
+	c.day = 17
+	msp.new_day(17)
+	_check(msp.day_cap() == 12 and msp.open_cap() == 6, "day 17: still twelve")
+	c.day = 21
+	msp.new_day(21)
+	_check(msp.day_cap() == 99 and msp.open_cap() == 6, "past the campaign: no cap")
 	c.new_game(c.FREE)
 	_check(msp.day_cap() == 99, "free play is never capped")
 	c.new_game("owner")

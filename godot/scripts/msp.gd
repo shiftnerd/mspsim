@@ -482,7 +482,11 @@ const FIX_DONE_TEXT := {
 }
 const SLA_SECS := {1: 120.0, 2: 200.0, 3: 300.0, 4: 480.0}
 # gentle first days: random tickets allowed per day in the tech campaign (day -> cap)
-const DAY_CAPS := {1: 1, 2: 3, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11, 10: 12}  # a ramp, not a cliff after day 3
+# a ramp to day 10, then a ceiling of 12 random tickets a day to the end of the run
+const DAY_CAPS := {
+	1: 1, 2: 3, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11, 10: 12,
+	11: 12, 12: 12, 13: 12, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12, 19: 12, 20: 12,
+}
 # open tickets at which the timed spawns pause (tech campaign): few timers at once for a new player, six from day 10
 const OPEN_CAPS := {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5}
 const OS_NAMES := ["Windows 7 Pro", "Windows 7 Pro", "Windows 8.1", "Windows XP SP3"]
