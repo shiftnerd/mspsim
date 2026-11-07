@@ -267,6 +267,7 @@ const DEFAULT_SONGS := [
 		"rhythm": [1.0],
 		"pattern": "sweep",
 		"doubles": [0.0, 0.0, 0.1],
+		"holds": [0.15, 0.25, 0.35],
 		"win": 1.1,
 		"cuts": [0.7, 0.45, 0.2],
 		"speed": 45.0,
@@ -1114,6 +1115,9 @@ func tick(dt: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if is_open and game == "karaoke" and phase == "play" and event is InputEventKey and not event.pressed:
+		_kara_release(event.keycode)  # K2: hold notes
+		return
 	if not is_open or not Controls.pressed(event):
 		return
 	var key := _event_key(event)
@@ -1835,7 +1839,11 @@ func kara_chart(song: Dictionary, tier: String, r: RandomNumberGenerator) -> Dic
 					lane = (lane + 1) % 4
 			_:
 				lane = r.randi_range(0, 3)
-		notes.append({"lane": lane, "time": t, "state": ""})
+		var note := {"lane": lane, "time": t, "state": ""}
+		var hold_chance := float((song.get("holds", [0.0, 0.0, 0.0]) as Array)[maxi(0, Difficulty.TIERS.find(tier))])
+		if hold_chance > 0.0 and r.randf() < hold_chance:  # K2: a long note, held until it ends
+			note["len"] = snappedf(gap * float(rhythm[i % rhythm.size()]) * 0.7, 0.05)
+		notes.append(note)
 		if chance > 0.0 and r.randf() < chance:
 			notes.append({"lane": (lane + r.randi_range(1, 3)) % 4, "time": t, "state": ""})
 		t += gap * float(rhythm[i % rhythm.size()])
@@ -1945,6 +1953,11 @@ func _kara_tick(dt: float) -> void:
 		g.flash_t = 2.0
 		Sfx.play("text")
 	_duet_tick()
+	var held: Dictionary = g.get("held", {})
+	for lane in held.keys():
+		var hn: Dictionary = held[lane].note
+		if float(g.t) >= float(hn.time) + float(hn.len):
+			held.erase(lane)  # held to the end
 	for n in g.notes:
 		if n.state == "" and float(n.time) + _good_win() < float(g.t):
 			n.state = "miss"
@@ -1990,6 +2003,25 @@ func _mood_add(amount: float) -> void:
 			caption("THE WHOLE ROOM JOINS THE CHORUS!", 3.0)
 
 
+# K2: the key came up: a perfect hold let go before its end is only a good
+func _kara_release(key: int) -> void:
+	var lane := LANE_KEYS.find(key)
+	var held: Dictionary = g.get("held", {})
+	if lane < 0 or not held.has(lane):
+		return
+	var h: Dictionary = held[lane]
+	held.erase(lane)
+	var note: Dictionary = h.note
+	if float(g.t) < float(note.time) + float(note.len) - 0.2:
+		g.flash = "LET GO EARLY"
+		g.flash_t = 0.6
+		if bool(h.perfect):
+			note.state = "good"
+			g.score = int(g.score) - 1
+			g.perfect = int(g.perfect) - 1
+			g.good = int(g.good) + 1
+
+
 func _kara_press(key: int) -> void:
 	var lane := LANE_KEYS.find(key)
 	if lane < 0:
@@ -2014,6 +2046,10 @@ func kara_hit(lane: int) -> String:
 		return ""
 	var perfect := gap <= float(g.get("perfect_win", 0.12))
 	pick.state = "perfect" if perfect else "good"
+	if float(pick.get("len", 0.0)) > 0.0:  # a hold note: keep the key down until it ends or the perfect turns into a good
+		var held: Dictionary = g.get("held", {})
+		held[lane] = {"note": pick, "perfect": perfect}
+		g["held"] = held
 	Sfx.play("kara_perfect" if perfect else "kara_good")
 	g.score = int(g.score) + (2 if perfect else 1)
 	g.perfect = int(g.perfect) + (1 if perfect else 0)
@@ -4368,6 +4404,9 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 			col = Color(col, 0.35)
 		elif n.get("auto", false):
 			col = Color(col, 0.55)  # the partner's notes: fainter, they sing those
+		if float(n.get("len", 0.0)) > 0.0 and n.state != "miss":  # a hold note: the tail runs up the lane
+			var tail := minf(float(n.len) * float(g.get("speed", 45.0)) * squeeze, line_y - dy - top)
+			_canvas.draw_rect(Rect2(left + 20.0 * float(n.lane) + 8.0, line_y - dy - tail, 4.0, tail), Color(col, 0.6))
 		_arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
 	if float(g.flash_t) > 0.0 and not hud:
 		_tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
