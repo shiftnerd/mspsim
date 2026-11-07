@@ -34402,6 +34402,8 @@ func _pager_time(span: float) -> float:
 
 
 func _kara_tick(dt: float) -> void:
+    if g.get("wait", false):
+        return
     g.t = float(g.t) + dt
     g.flash_t = maxf(0.0, float(g.flash_t) - dt)
     if float(g.get("pager_at", -1.0)) > 0.0 and not g.get("paged", false) and float(g.t) >= float(g.pager_at):
@@ -34463,6 +34465,8 @@ func _kara_press(key: int) -> void:
 
 
 func kara_hit(lane: int) -> String:
+    if g.get("wait", false):
+        return ""
     var pick: Dictionary = {}
     var gap := 9.0
     for n in g.notes:
@@ -34507,7 +34511,53 @@ func _kara_end() -> void:
     if g.get("paged", false):  # the page you ignored is waiting as a ticket, and nobody minds
         var t: Dictionary = Msp._random_ticket("pager")
         Msp.send_text("Boss", "Your pager went off during the song. A client is waiting: it is in your queue%s." % ((" (#%d)" % int(t.id)) if not t.is_empty() else ""))
+    if g.get("encore", false):
+        result = (int(g.first) + result + 1) >> 1  # the night's stars are the two songs averaged, half rounded up
+    elif _set_break(result):
+        return
     _finish(result)
+
+
+# K6: in the owner campaign a karaoke night is a two song set with a decision at the bar between them
+const SET_TAB := 80  # a round for the room
+
+
+func _set_break(first: int) -> bool:
+    if not Campaign.active or Campaign.mode != "owner" or opts.has("song") or g.get("encore", false):
+        return false
+    g["wait"] = true  # the song is over: nothing ticks while the bar tab card is up
+    var tab := SET_TAB
+    Cards.ask(
+        "The bar",
+        "One song down. The room is warm, the second is yours if you want it. A round on you before it starts would not hurt.",
+        [
+            {"label": "BUY A ROUND (%s)" % Owner.money(tab), "id": "round", "enabled": Owner.cash >= tab},
+            {"label": "KEEP IT MOVING", "id": "skip"},
+            {"label": "CALL IT A NIGHT", "id": "stop"},
+        ],
+        func(id: String) -> void: _set_next(id, first, tab)
+    )
+    return true
+
+
+func _set_next(id: String, first: int, tab: int) -> void:
+    if id == "stop" or id == "__none":
+        _finish(first)
+        return
+    var warm := 50.0
+    if id == "round":
+        Owner.cash -= tab
+        warm = 80.0
+    var prev := str(g.song.id) if g.has("song") else ""
+    var next := prev
+    for song in SONGS:
+        if str(song.id) != prev and song_unlocked(str(song.id)):
+            next = str(song.id)
+            break
+    _kara_setup(next)
+    g["encore"] = true
+    g["first"] = first
+    g["mood"] = warm
 
 
 # ---- escape room --------------------------------------------------------------------------------
