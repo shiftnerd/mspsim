@@ -34,6 +34,11 @@ local CHARS = {
     shirt = {"#E0806A", "#BC5E4C", "#7A3A30"}, pants = {"#34456A", "#26334F", "#1C253A"}, bottom = "trousers",
     shoes = {"#6A4A38", "#523626"}, lips = "#C0505A", glasses = true, stripes = "#E9A9B4",
   },
+  office_pell = {   -- the Summit auditor (Ms. Pell): a tight bun, glasses, a navy blazer over a white blouse, grey trousers
+    skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#5A5A62", "#7E7E88", "#3E3E46"}, style = "bun",
+    shirt = {"#2E3E6A", "#202C4E", "#F2F2EA"}, pants = {"#5A5E68", "#444852", "#30333C"}, bottom = "trousers",
+    shoes = {"#2A2A33", "#1C1C24"}, lips = "#A8404A", blouse = "#F2F2EA", glasses = true,
+  },
   office_christy = {   -- finance and controller: shoulder-length blonde hair, a red top, a leopard print scarf, black trousers
     skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#C8A064", "#E0BE84", "#A07A44"}, style = "long",
     shirt = {"#D03A32", "#A82A24", "#6A1814"}, pants = {"#26262E", "#1C1C24", "#14141A"}, bottom = "trousers",
