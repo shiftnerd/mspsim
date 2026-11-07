@@ -15138,6 +15138,14 @@ BULLSEYE
 [Career.MEDALS.47.desc]
 HIT THE BULL AT DARTS
 
+# Career > MEDALS > 48 > title
+[Career.MEDALS.48.title]
+SECOND YEAR
+
+# Career > MEDALS > 48 > desc
+[Career.MEDALS.48.desc]
+FINISH A YEAR 2 RUN
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

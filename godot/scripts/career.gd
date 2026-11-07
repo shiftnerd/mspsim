@@ -69,6 +69,7 @@ const DEFAULT_MEDALS := [
 	{"id": "cleanup_crew", "title": "CLEAN UP CREW", "desc": "FINISH 3 TAKEOVERS", "rules": [["takeovers", ">=", 3]]},
 	{"id": "clean_sheet", "title": "CLEAN SHEET", "desc": "END A YEAR WITH CLEAN BOOKS", "rules": [["clean_sheets", ">=", 1]]},
 	{"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
+	{"id": "year_two", "title": "SECOND YEAR", "desc": "FINISH A YEAR 2 RUN", "rules": [["year2_done", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's

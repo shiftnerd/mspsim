@@ -409,7 +409,8 @@ func _init() -> void:
 	for m in career.MEDALS:
 		if str(m.id) == "bullseye":
 			medal_text = str(m.title) + " " + str(m.desc)
-	_check(medal_text == "BULLSEYE HIT THE BULL AT DARTS" and str(career.MEDALS[career.MEDALS.size() - 1].id) == "bullseye", "the medal is at the end of the board with its text")
+	var ids: Array = career.MEDALS.map(func(m: Dictionary) -> String: return str(m.id))
+	_check(medal_text == "BULLSEYE HIT THE BULL AT DARTS" and ids.find("bullseye") == ids.size() - 2 and ids.back() == "year_two", "the medal comes after the earlier ones, with its text (SECOND YEAR was added after it)")
 	var rows_have := ""
 	for row in career.COUNTERS:
 		rows_have += str(row[2]) + " "
