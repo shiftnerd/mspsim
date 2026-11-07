@@ -92,7 +92,7 @@ func _init() -> void:
 	for wk in SB.WEEKS:
 		if not T.has(str(SB.WEEKS[wk])):
 			all_ok = false
-	_check(all_ok and SB.WEEKS.size() == 14, "every beat week has a BEAT_TEXT block (%d beats)" % SB.WEEKS.size())
+	_check(all_ok and SB.WEEKS.size() == 15, "every beat week has a BEAT_TEXT block (%d beats)" % SB.WEEKS.size())
 	var opts_ok := true
 	for beat in T:
 		for key in T[beat]:

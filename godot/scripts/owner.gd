@@ -3939,6 +3939,8 @@ func settle() -> Dictionary:
 			rows.append(["STANDARD", Habits.standard_text(), Color("8fe3a0") if Habits.standard() >= 60 else Color("ffd27a")])
 		if Temptation.folder_count() > 0:
 			rows.append(["FOLDER", Temptation.folder_text(), Color("ffd27a")])
+		if int(flags.get("switches", 0)) > 0:
+			rows.append(["SWITCHING COSTS", Temptation.switching_text(self), Color("ffd27a")])
 		for rap_line in Rival.lines():
 			rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
 	rows.append(partner_row())

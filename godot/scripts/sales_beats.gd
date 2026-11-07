@@ -15,6 +15,7 @@ const WEEKS := {
 	3: "paws",
 	4: "xpwave",
 	6: "undercut",
+	10: "shop",
 	7: "sla_p1",
 	8: "qbr",
 	9: "crypto",
@@ -190,6 +191,8 @@ static func week(day: int) -> void:
 			xpwave()
 		"undercut":
 			undercut()
+		"shop":
+			shop()
 		"sla_p1":
 			sla_p1()
 		"qbr":
@@ -348,6 +351,53 @@ static func _undercut_pick(l: Dictionary, id: String) -> void:
 			Social.change("Alan", 1)
 			lose_lead(l, "YOU WALKED AWAY")
 			say("undercut", "res_walk")
+
+
+# 10. a quoted client shops the hardware on a shopping site and asks you to match it: defend the value, match, sell the box only, or let go
+const BOX_SHARE := 0.45  # selling only the box earns this share of a week's fee, once, as commission
+const MATCH_MULT := 0.85
+
+
+static func shop() -> void:
+	var l := quoted_lead()
+	if l.is_empty():
+		set_flag("shop", "none")
+		return
+	lynk("shop")
+	ask(
+		"shop",
+		"card",
+		func(id: String) -> void: _shop_pick(l, id),
+		[str(l.name)],
+		{"defend": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+	)
+
+
+static func _shop_pick(l: Dictionary, id: String) -> void:
+	set_flag("shop", id)
+	var method := str(l.get("quote", {}).get("method", "fixed"))
+	match id:
+		"defend":
+			SalesCampaign.spend(1)
+			var p := 0.45 + 0.1 * float(mini(2, int(l.get("follow", 0)))) + Build.sales_fx("win")
+			if rng(70 + int(l.id)).randf() < p:
+				Social.change("Garrison", 1)
+				say("shop", "res_defend_win", [], func() -> void: close_at(l, method, 1.0))
+			else:
+				lose_lead(l, "BOUGHT THE BOX ON A SHOPPING SITE")
+				say("shop", "res_defend_lose", [str(l.name)])
+		"match":
+			Social.change("Alan", -1)
+			say("shop", "res_match", [], func() -> void: close_at(l, method, MATCH_MULT))
+		"box":
+			lose_lead(l, "SOLD THE BOX ONLY")
+			SalesCampaign.commission_total += int(round(float(l.fee) * BOX_SHARE))
+			set_flag("shop_box", int(l.id))
+			say("shop", "res_box", [str(l.name)])
+		_:
+			Social.change("Alan", 1)
+			lose_lead(l, "YOU LET THEM GO")
+			say("shop", "res_walk")
 
 
 # 7. a one hour promise meets a P1

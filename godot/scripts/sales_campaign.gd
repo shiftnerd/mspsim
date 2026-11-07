@@ -175,6 +175,24 @@ const DEFAULT_BEAT_TEXT := {
 		"res_value_lose": {"speaker": "{sales_owner}", "text": "They like you, but the price won. ByteBrothers took %s. It happens."},
 		"res_walk": {"speaker": "{tech_owner}", "text": "Good. A deal that loses money is worse than a deal we lose. Next one."},
 	},
+	"shop": {
+		"lynk": {"from": "Garrison", "text": "A quoted client has been looking at the hardware on a big shopping site. Do not panic. Do not match anything yet."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "%s called back about your quote. They found the same boxes on Amazon for a lot less and want you to match it. They are not counting the setup, the migration, the backups or the phone number that answers on a Saturday. Match it, defend the value, sell them the box only, or let it go?",
+			"options": [
+				{"id": "defend", "label": "DEFEND THE VALUE (1 HOUR)"},
+				{"id": "match", "label": "PRICE MATCH (15% OFF)"},
+				{"id": "box", "label": "SELL THEM THE BOX ONLY"},
+				{"id": "walk", "label": "LET THEM GO"},
+			],
+		},
+		"res_defend_win": {"speaker": "{sales_owner}", "text": "You put the setup, the migration and the Saturday phone number on one page next to the shopping cart. They signed at the full fee. Nobody prices a Saturday until the server is down."},
+		"res_defend_lose": {"speaker": "{sales_owner}", "text": "They heard you out and bought the box anyway. %s went with the cart. Some people have to find out what setup costs the hard way."},
+		"res_match": {"speaker": "{tech_owner}", "text": "You matched the cart. Fifteen percent off, and we still do the setup, the migration and the backups. I would like it noted that the margin is now mostly the logo."},
+		"res_box": {"speaker": "{sales_owner}", "text": "You sold %s the hardware at a fair margin and told them setup is optional. They will call when it does not come up. They always call. No monthly fee, but it was easy money."},
+		"res_walk": {"speaker": "{tech_owner}", "text": "Good. A client who prices us against a shopping cart will do it again at renewal. Next one."},
+	},
 	"sla_p1": {
 		"card": {
 			"speaker": "{ops}",

@@ -402,6 +402,21 @@ static func switch_vendor(owner: Node) -> void:
 	owner.apply({"owner_hours": SWITCH_HOURS, "mood_all": SWITCH_MOOD})
 
 
+# the weekly report line once you have changed vendors: what the changes still cost, so the hidden part is on paper after the fact
+static func switching_text(owner: Node) -> String:
+	var n := int(owner.flags.get("switches", 0))
+	if n <= 0:
+		return ""
+	var weeks := -1
+	for t in owner.flags.get("timed", []):
+		if int(t.get("weekly", 0)) > 0:
+			weeks = maxi(0, int(t.get("due", NO_DATE)) - Campaign.day) if weeks < 0 else mini(weeks, maxi(0, int(t.get("due", NO_DATE)) - Campaign.day))
+	var cost := "%d CHANGE%s, EACH ONE %s OF DOUBLE BILLING AND %d HOURS OF YOUR WEEK" % [n, "" if n == 1 else "S", owner.money(OVERLAP), SWITCH_HOURS]
+	if weeks > 0:
+		return "%s. THE INTRO RATE ENDS IN %d WK, THEN +%s/WK." % [cost, weeks, owner.money(PROMO_SAVE + FULL_EXTRA)]
+	return "%s. THE INTRO RATE HAS ENDED." % cost
+
+
 # the timed adjustments that have come due: {due, cash, weekly, text}
 static func _timed(owner: Node) -> void:
 	var timed: Array = owner.flags.get("timed", [])

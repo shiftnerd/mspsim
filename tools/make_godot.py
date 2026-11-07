@@ -22134,6 +22134,8 @@ func settle() -> Dictionary:
             rows.append(["STANDARD", Habits.standard_text(), Color("8fe3a0") if Habits.standard() >= 60 else Color("ffd27a")])
         if Temptation.folder_count() > 0:
             rows.append(["FOLDER", Temptation.folder_text(), Color("ffd27a")])
+        if int(flags.get("switches", 0)) > 0:
+            rows.append(["SWITCHING COSTS", Temptation.switching_text(self), Color("ffd27a")])
         for rap_line in Rival.lines():
             rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
     rows.append(partner_row())
@@ -58774,6 +58776,24 @@ const BEAT_TEXT := {
         "res_value_lose": {"speaker": "{sales_owner}", "text": "They like you, but the price won. ByteBrothers took %s. It happens."},
         "res_walk": {"speaker": "{tech_owner}", "text": "Good. A deal that loses money is worse than a deal we lose. Next one."},
     },
+    "shop": {
+        "lynk": {"from": "Garrison", "text": "A quoted client has been looking at the hardware on a big shopping site. Do not panic. Do not match anything yet."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "%s called back about your quote. They found the same boxes on Amazon for a lot less and want you to match it. They are not counting the setup, the migration, the backups or the phone number that answers on a Saturday. Match it, defend the value, sell them the box only, or let it go?",
+            "options": [
+                {"id": "defend", "label": "DEFEND THE VALUE (1 HOUR)"},
+                {"id": "match", "label": "PRICE MATCH (15% OFF)"},
+                {"id": "box", "label": "SELL THEM THE BOX ONLY"},
+                {"id": "walk", "label": "LET THEM GO"},
+            ],
+        },
+        "res_defend_win": {"speaker": "{sales_owner}", "text": "You put the setup, the migration and the Saturday phone number on one page next to the shopping cart. They signed at the full fee. Nobody prices a Saturday until the server is down."},
+        "res_defend_lose": {"speaker": "{sales_owner}", "text": "They heard you out and bought the box anyway. %s went with the cart. Some people have to find out what setup costs the hard way."},
+        "res_match": {"speaker": "{tech_owner}", "text": "You matched the cart. Fifteen percent off, and we still do the setup, the migration and the backups. I would like it noted that the margin is now mostly the logo."},
+        "res_box": {"speaker": "{sales_owner}", "text": "You sold %s the hardware at a fair margin and told them setup is optional. They will call when it does not come up. They always call. No monthly fee, but it was easy money."},
+        "res_walk": {"speaker": "{tech_owner}", "text": "Good. A client who prices us against a shopping cart will do it again at renewal. Next one."},
+    },
     "sla_p1": {
         "card": {
             "speaker": "{ops}",
@@ -60422,6 +60442,7 @@ const WEEKS := {
     3: "paws",
     4: "xpwave",
     6: "undercut",
+    10: "shop",
     7: "sla_p1",
     8: "qbr",
     9: "crypto",
@@ -60597,6 +60618,8 @@ static func week(day: int) -> void:
             xpwave()
         "undercut":
             undercut()
+        "shop":
+            shop()
         "sla_p1":
             sla_p1()
         "qbr":
@@ -60755,6 +60778,53 @@ static func _undercut_pick(l: Dictionary, id: String) -> void:
             Social.change("Alan", 1)
             lose_lead(l, "YOU WALKED AWAY")
             say("undercut", "res_walk")
+
+
+# 10. a quoted client shops the hardware on a shopping site and asks you to match it: defend the value, match, sell the box only, or let go
+const BOX_SHARE := 0.45  # selling only the box earns this share of a week's fee, once, as commission
+const MATCH_MULT := 0.85
+
+
+static func shop() -> void:
+    var l := quoted_lead()
+    if l.is_empty():
+        set_flag("shop", "none")
+        return
+    lynk("shop")
+    ask(
+        "shop",
+        "card",
+        func(id: String) -> void: _shop_pick(l, id),
+        [str(l.name)],
+        {"defend": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+    )
+
+
+static func _shop_pick(l: Dictionary, id: String) -> void:
+    set_flag("shop", id)
+    var method := str(l.get("quote", {}).get("method", "fixed"))
+    match id:
+        "defend":
+            SalesCampaign.spend(1)
+            var p := 0.45 + 0.1 * float(mini(2, int(l.get("follow", 0)))) + Build.sales_fx("win")
+            if rng(70 + int(l.id)).randf() < p:
+                Social.change("Garrison", 1)
+                say("shop", "res_defend_win", [], func() -> void: close_at(l, method, 1.0))
+            else:
+                lose_lead(l, "BOUGHT THE BOX ON A SHOPPING SITE")
+                say("shop", "res_defend_lose", [str(l.name)])
+        "match":
+            Social.change("Alan", -1)
+            say("shop", "res_match", [], func() -> void: close_at(l, method, MATCH_MULT))
+        "box":
+            lose_lead(l, "SOLD THE BOX ONLY")
+            SalesCampaign.commission_total += int(round(float(l.fee) * BOX_SHARE))
+            set_flag("shop_box", int(l.id))
+            say("shop", "res_box", [str(l.name)])
+        _:
+            Social.change("Alan", 1)
+            lose_lead(l, "YOU LET THEM GO")
+            say("shop", "res_walk")
 
 
 # 7. a one hour promise meets a P1
@@ -68727,6 +68797,21 @@ static func switch_vendor(owner: Node) -> void:
     timed.append({"due": Campaign.day + PROMO_WEEKS, "weekly": PROMO_SAVE + FULL_EXTRA, "text": "THE INTRO RATE ENDED. The new vendor is on list price, a little above the old one."})
     owner.flags["timed"] = timed
     owner.apply({"owner_hours": SWITCH_HOURS, "mood_all": SWITCH_MOOD})
+
+
+# the weekly report line once you have changed vendors: what the changes still cost, so the hidden part is on paper after the fact
+static func switching_text(owner: Node) -> String:
+    var n := int(owner.flags.get("switches", 0))
+    if n <= 0:
+        return ""
+    var weeks := -1
+    for t in owner.flags.get("timed", []):
+        if int(t.get("weekly", 0)) > 0:
+            weeks = maxi(0, int(t.get("due", NO_DATE)) - Campaign.day) if weeks < 0 else mini(weeks, maxi(0, int(t.get("due", NO_DATE)) - Campaign.day))
+    var cost := "%d CHANGE%s, EACH ONE %s OF DOUBLE BILLING AND %d HOURS OF YOUR WEEK" % [n, "" if n == 1 else "S", owner.money(OVERLAP), SWITCH_HOURS]
+    if weeks > 0:
+        return "%s. THE INTRO RATE ENDS IN %d WK, THEN +%s/WK." % [cost, weeks, owner.money(PROMO_SAVE + FULL_EXTRA)]
+    return "%s. THE INTRO RATE HAS ENDED." % cost
 
 
 # the timed adjustments that have come due: {due, cash, weekly, text}

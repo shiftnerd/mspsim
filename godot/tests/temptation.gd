@@ -293,11 +293,14 @@ func _init() -> void:
 	_fresh(c, cards, 10)
 	var seats_card := {"text": "WebWoot sent the form."}
 	_check(not str(t.dress_seats(o, seats_card.duplicate()).text).contains("Christy"), "no warning before the first switch")
+	_check(t.switching_text(o) == "", "no switching costs line before the first switch")
 	var wv: int = o.weekly_extra
 	var cash4: int = o.cash
 	t.switch_vendor(o)
 	_clear(cards)
 	_check(o.weekly_extra == wv - t.PROMO_SAVE and int(o.flags.switches) == 1 and o.flags.timed.size() == 2, "the intro rate saves %d a week and two costs are queued" % t.PROMO_SAVE)
+	var line1: String = t.switching_text(o)
+	_check(line1.contains("1 CHANGE,") and line1.contains("INTRO RATE ENDS IN 13 WK"), "the weekly report line after one switch: %s" % line1)
 	c.day = 11
 	t.week(o)
 	_check(o.cash == cash4 - t.OVERLAP and o.flags.timed.size() == 1, "next week both vendors bill")
@@ -308,6 +311,7 @@ func _init() -> void:
 	c.day = 10 + t.PROMO_WEEKS
 	t.week(o)
 	_check(o.weekly_extra == wv + t.FULL_EXTRA and o.flags.timed.is_empty(), "after 13 weeks the price is list price, above the old one")
+	_check(t.switching_text(o).contains("HAS ENDED"), "and the line says the intro rate has ended")
 	_clear(cards)
 	_check(str(t.dress_seats(o, seats_card.duplicate()).text).contains("Christy:"), "Christy warns on the next vendor card")
 
