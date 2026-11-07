@@ -3,8 +3,8 @@ extends SceneTree
 # not ordinary techs. Fails if the old tech-style role phrases come back in the player-facing text tables, and checks
 # the owners still have greetings, small talk and tips, owner-style Lynk messages and owner labels.
 
+# ("senior tech" is not banned any more: Adam is the senior tech; the owners still are not)
 const BANNED := [
-	"senior tech",
 	"security guy",
 	"security tech",
 	"(security)",

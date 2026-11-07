@@ -86,7 +86,7 @@ const ROOTS := {
 	"Social": ["THANKS"],
 	"Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
 	"Difficulty": ["COZY_TEXT"],
-	"Hints": ["DAY1"],
+	"Hints": ["DAY1", "MENTOR"],
 	"Career": ["MEDALS", "UNLOCKS"],
 	"Growth": ["STRETCH"],
 	"Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],

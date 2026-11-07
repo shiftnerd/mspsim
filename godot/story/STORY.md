@@ -14,10 +14,14 @@ or the owner (owner campaign, 20 weeks).
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Your first day* `[Story.DAYS.1.0.subject]`
 > Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan `[Story.DAYS.1.0.body]`
 
+**9:11 MENTOR**. A scripted event (mentor).
+
 ### Day 2
 
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Daily chore: verify backups* `[Story.DAYS.2.0.subject]`
 > Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan `[Story.DAYS.2.0.body]`
+
+**9:35 MENTOR**. A scripted event (mentor).
 
 **10:30 VIGNETTE**. A scripted event (vignette).
 
@@ -27,6 +31,10 @@ or the owner (owner campaign, 20 weeks).
 > The PowerShell Academy is on your desktop. Every lesson makes your remote fixes faster and more reliable, and later levels unlock scripts that fix a whole client at once. Study between tickets. - Morgan `[Story.DAYS.3.0.body]`
 
 **10:00 ADOBE**. An easy ticket: Adobe Reader will not print.
+
+**10:35 MENTOR**. A scripted event (mentor).
+
+**16:11 MENTOR**. A scripted event (mentor).
 
 ### Day 4
 
@@ -1081,7 +1089,7 @@ or the owner (owner campaign, 20 weeks).
   - 70%: The answer came back in two minutes: yes, very real, please hurry. The scammer was on the other end. The money is gone. `[Owner.CARDS.bec_marge.options.2.roll.0.2]`
   - 30%: The real rep answers: yes, the bank changed. Nobody can tell you that was the right way to find out. `[Owner.CARDS.bec_marge.options.2.roll.1.2]`
 
-**9:30 Card: raise** — Dan (Network Tech) `[Owner.CARDS.raise.speaker]`
+**9:30 Card: raise** — Dan (Service Manager) `[Owner.CARDS.raise.speaker]`
 > {me}, I have taken on the hardest jobs all year. I would like a $100 a week raise. `[Owner.CARDS.raise.text]`
 - **GIVE THE RAISE** `[Owner.CARDS.raise.options.0.label]`
 - **NOT NOW** `[Owner.CARDS.raise.options.1.label]`

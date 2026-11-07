@@ -229,7 +229,7 @@ PATCHABLE = {
     "scripts/talk.gd": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
     "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
-    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
+    "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1", "MENTOR"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
@@ -16237,6 +16237,38 @@ const POSTMORTEMS := {
     },
 }
 const VIGNETTES := {
+    "mentor_intro": {
+        "speaker": "Dan (Service Manager)",
+        "text": "Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?",
+        "options": [
+            {"id": "walk", "label": "WALK ME THROUGH IT", "text": "Good. I'll put little reminders on your screen for the first ticket, and I'll check in on days two and three. Start by sitting at your desk.", "fx": {"flag": ["mentor", "on"], "social": {"Dan": 2}}},
+            {"id": "alone", "label": "I'VE GOT THIS", "text": "Fair enough. The PSA is on your computer, and I'm in the Lync list if you want me. Do not close anything that is not really fixed.", "fx": {"flag": ["mentor", "off"]}},
+        ],
+    },
+    "mentor_triage": {
+        "speaker": "Dan (Service Manager)",
+        "text": "Two tickets in the queue. One has two minutes left on its SLA. The other is from your biggest client, but it has all morning. Which one first?",
+        "options": [
+            {"id": "sla", "label": "THE ONE ABOUT TO BREACH", "text": "Right. The clock is the contract. A big client can wait ten minutes, a breached SLA stays on the report. (+3 customer XP)", "fx": {"xp": ["people", 3], "social": {"Dan": 1}}},
+            {"id": "big", "label": "THE BIGGEST CLIENT", "text": "I get it, but the SLA timer does not care who is bigger. Look at the clocks first, then the names. (+1 customer XP)", "fx": {"xp": ["people", 1]}},
+        ],
+    },
+    "mentor_fix": {
+        "speaker": "Dan (Service Manager)",
+        "text": "That Adobe ticket will crash again tomorrow if you only restart it. You can do the two-click restart and move on, or spend half an hour finding out why. Your call.",
+        "options": [
+            {"id": "quick", "label": "RESTART IT AND MOVE ON", "text": "Quick, and it works today. It might come back tomorrow, and then it is your problem twice. (+1 servers XP)", "fx": {"xp": ["servers", 1]}},
+            {"id": "cause", "label": "FIND THE CAUSE", "text": "Slower now, but it stays fixed. That is the whole job in one decision. (+4 servers XP)", "fx": {"xp": ["servers", 4], "hours": 0.3, "social": {"Dan": 1}}},
+        ],
+    },
+    "mentor_debrief": {
+        "speaker": "Dan (Service Manager)",
+        "text": "You're on your own from tomorrow. If a ticket really stumps you, ask Adam, he's our senior tech. He also goes over the numbers on Fridays, so do not let the queue get old. Good first three days.",
+        "options": [
+            {"id": "thanks", "label": "THANKS, DAN", "text": "Anytime. Lync me if the printer wins.", "fx": {"social": {"Dan": 2}}},
+            {"id": "tips", "label": "ANY TIPS FOR THE QUEUE?", "text": "Triage by the clock, close only what is really fixed, and ask Adam before you guess. That is most of it. (+1 customer XP)", "fx": {"xp": ["people", 1]}},
+        ],
+    },
     "iphone": {
         "speaker": "Karen Whitfield (Brightside Realty)",
         "text": "I just got a new iFone 5S and all my email is gone! I have a showing in an hour. Can you please set it up?",
@@ -16502,7 +16534,7 @@ const VIGNETTES := {
     },
     "sticky_dan":
     {
-        "speaker": "Dan (Network tech)",
+        "speaker": "Dan (Service Manager)",
         "text": "I found the main router password on a sticky note in three different offices. It is 'admin' in all three. Do you want me to fix it or yell?",
         "min_day": 4,
         "max_day": 20,
@@ -16783,7 +16815,7 @@ const VIGNETTES := {
     },
     "charger_drawer":
     {
-        "speaker": "Dan (Network tech)",
+        "speaker": "Dan (Service Manager)",
         "text": "There is a drawer full of chargers and nobody knows what goes with what. I made a chart. It has color coding. Do you want a copy?",
         "min_day": 8,
         "max_day": 20,
@@ -17140,12 +17172,14 @@ const DAYS := {
          "body": "Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things "
          + "with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets "
          + "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"},
+        {"at": 9.2, "kind": "mentor", "id": "mentor_intro"},
     ],
     2: [
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Daily chore: verify backups",
          "body": "Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs "
          + "can fail silently and nobody notices until the day it really matters. It takes thirty "
          + "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"},
+        {"at": 9.6, "kind": "mentor", "id": "mentor_triage"},
         {"at": 10.5, "kind": "vignette", "id": "iphone"},
     ],
     3: [
@@ -17154,6 +17188,8 @@ const DAYS := {
          + "faster and more reliable, and later levels unlock scripts that fix a whole client at "
          + "once. Study between tickets. - Morgan"},
         {"at": 10.0, "kind": "adobe", "client": 1},
+        {"at": 10.6, "kind": "mentor", "id": "mentor_fix"},
+        {"at": 16.2, "kind": "mentor", "id": "mentor_debrief"},
     ],
     4: [
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Windows XP is going away",
@@ -17340,8 +17376,8 @@ func fire(ev: Dictionary) -> void:
         "playbook":
             Playbook.start(str(ev.book))
             Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
-        "vignette":
-            _vignette(str(ev.id))
+        "vignette", "mentor":
+            _vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
         "postmortem":
             Incident.tech_start(str(ev.cls))
         "adobe":
@@ -17371,6 +17407,8 @@ func fire(ev: Dictionary) -> void:
 
 # ---- small quiet-day moments: a short card with a few choices and small effects
 func _vignette(id: String) -> void:
+    if id.begins_with("mentor_") and id != "mentor_intro" and str(flags.get("mentor", "")) != "on":
+        return  # Dan only checks in on the days after you took his offer
     var v: Dictionary = VIGNETTES.get(id, {})
     if v.is_empty():
         return
@@ -17409,6 +17447,8 @@ func _vignette_answer(id: String, pick: String) -> void:
 
 
 func _vignette_fx(fx: Dictionary) -> void:
+    if fx.has("flag"):
+        flags[str(fx.flag[0])] = fx.flag[1]
     if fx.has("xp"):
         Skills.add_xp(str(fx.xp[0]), int(fx.xp[1]))
     if fx.has("mood"):
@@ -17520,7 +17560,7 @@ const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
     "Alan": "CO-OWNER",
     "Garrison": "CO-OWNER",
-    "Dan": "NETWORK TECH",
+    "Dan": "SERVICE MANAGER",
     "John": "ACCOUNT MANAGER",
     "Maya": "TIER 1",
     "Morgan": "MANAGER"
@@ -19413,7 +19453,7 @@ const CARDS := {
         ],
     },
     "raise": {
-        "speaker": "Dan (Network Tech)",
+        "speaker": "Dan (Service Manager)",
         "text": "{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
         "options": [
             {"label": "GIVE THE RAISE", "fx": {"payroll": 100, "speed": 0.1}},
@@ -36574,12 +36614,24 @@ const DAY1 := [
     {"at": 112.0, "text": "SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP."},
     {"at": 134.0, "text": "M MUTES OR RESTORES THE SOUND."},
 ]
+# Dan's ride-along on day 1 (when the player takes his offer on the first card): the bottom line follows what the player has done
+const MENTOR := {
+    "pc": "DAN: SIT AT YOUR DESK AND PRESS E ON THE MONITOR. THAT OPENS THE COMPUTER.",
+    "wait": "DAN: A TICKET WILL ARRIVE SOON. IT SHOWS UP IN THE PSA ON YOUR COMPUTER.",
+    "take": "DAN: OPEN THE PSA AND TAKE YOUR FIRST TICKET.",
+    "fix": "DAN: NOW OPEN THE RMM AND FIX IT. THE TICKET SAYS WHAT IS WRONG.",
+    "close": "DAN: THE FIX IS DONE. CLOSE THE TICKET IN THE PSA.",
+    "done": "DAN: THAT IS ONE CLOSED. YOU ARE ON YOUR WAY.",
+}
 
 var text := ""
 var toast_text := ""
 var objective := ""  # a standing reminder (the conference trip), shown when nothing else is
 
 var _t := 0.0
+var _pc_opened := false
+var _mentor_done := false
+var _mentor_obj := ""
 var _next := 0
 var _left := 0.0
 var _toast_t := 0.0
@@ -36591,6 +36643,8 @@ func _ready() -> void:
 
 func reset() -> void:
     text = ""
+    _pc_opened = false
+    _mentor_done = false
     _t = 0.0
     _next = 0
     _left = 0.0
@@ -36600,6 +36654,41 @@ func reset() -> void:
 func toast(message: String, secs := 2.5) -> void:
     toast_text = message
     _toast_t = secs
+
+
+# the step Dan is on, "" when he is not guiding (declined, not asked yet, or finished)
+func _mentor_step() -> String:
+    if str(Story.flags.get("mentor", "")) != "on" or _mentor_done:
+        return ""
+    if Computer.is_open:
+        _pc_opened = true
+    if Msp.closed_ok > 0:
+        _mentor_done = true
+        toast(str(MENTOR.done), 4.0)
+        return ""
+    var any := false
+    var taken := false
+    var fixed := false
+    for t in Msp.tickets:
+        if str(t.status) == "Closed":
+            continue
+        any = true
+        taken = taken or str(t.status) != "New"
+        fixed = fixed or bool(t.fix_done)
+    if not _pc_opened:
+        return str(MENTOR.pc)
+    if not any:
+        return str(MENTOR.wait)
+    if fixed:
+        return str(MENTOR.close)
+    return str(MENTOR.fix) if taken else str(MENTOR.take)
+
+
+func _mentor_update() -> void:
+    var step := _mentor_step()
+    if objective == "" or objective == _mentor_obj:
+        objective = step
+    _mentor_obj = step
 
 
 func active() -> bool:
@@ -36616,6 +36705,7 @@ func _process(delta: float) -> void:
         return
     if World.time_scale > 0.0:
         _t += delta
+    _mentor_update()
     if _left > 0.0:
         _left -= delta
         if _left <= 0.0:
@@ -39165,7 +39255,7 @@ const OWNERS := ["Alan", "Garrison"]
 const LABELS := {
     "Alan": "Alan (Co-owner)",
     "Garrison": "Garrison (Co-owner)",
-    "Dan": "Dan (Network Tech)",
+    "Dan": "Dan (Service Manager)",
     "John": "John (Account Manager)",
     "Maya": "Maya (Tier 1)",
     "Morgan": "Morgan (Manager)",
@@ -39267,7 +39357,7 @@ func _token(key: String) -> String:
     return ""
 
 
-# {tech} -> a name, or "Dan (Network Tech)" when the whole text is the token (a speaker line)
+# {tech} -> a name, or "Dan (Service Manager)" when the whole text is the token (a speaker line)
 func fill(text: String) -> String:
     if text.find("{") < 0:
         return text
@@ -45455,7 +45545,7 @@ const ROOTS := {
     "Social": ["THANKS"],
     "Shift": ["WEEK_TRAFFIC", "REASONS", "PAGES"],
     "Difficulty": ["COZY_TEXT"],
-    "Hints": ["DAY1"],
+    "Hints": ["DAY1", "MENTOR"],
     "Career": ["MEDALS", "UNLOCKS"],
     "Growth": ["STRETCH"],
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
@@ -62715,7 +62805,7 @@ static func finish(deal: Dictionary, show_card: bool) -> void:
             )
         )
         Cards.ask(
-            "Dan (Network Tech)",
+            "Dan (Service Manager)",
             "%s Starting mood %d%%, service risk %.1f." % [line, int(deal.mood), left],
             [{"label": "OK", "id": "ok"}],
             func(_id: String) -> void: _react("done", left)

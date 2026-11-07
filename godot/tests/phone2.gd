@@ -40,6 +40,9 @@ func _init() -> void:
 	c.new_game("tech")
 	phone.os = "ios"
 	world.clock = 10.0
+	var story := root.get_node("Story")
+	for k in story.events_on(c.day).size():
+		story._fired[k] = true  # day 1's own cards (Dan's intro at 9:20) are not what this test is about
 
 	# ---- contacts
 	var list: Array = Calls.contacts()

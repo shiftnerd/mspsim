@@ -20,10 +20,10 @@ func _init() -> void:
 	var scheduled := {}
 	for d in story.DAYS:
 		for ev in story.DAYS[d]:
-			if str(ev.get("kind", "")) == "vignette":
+			if str(ev.get("kind", "")) in ["vignette", "mentor"]:
 				scheduled[str(ev.id)] = d
-	_check(scheduled.size() == 8, "eight vignettes are on the calendar")
-	_check(story.VIGNETTES.size() == 25, "the vignette deck has 25 cards")
+	_check(scheduled.size() == 12, "twelve vignettes are on the calendar (eight and Dan's four)")
+	_check(story.VIGNETTES.size() == 29, "the vignette deck has 29 cards")
 	var drawn := 0
 	for id in story.VIGNETTES:
 		if story.VIGNETTES[id].has("min_day"):
@@ -40,6 +40,9 @@ func _init() -> void:
 		for i in v.options.size():
 			var o: Dictionary = v.options[i]
 			root.get_node("World").clock = 10.0  # the hours effects must not run the day out
+			for k in story.events_on(c.day).size():
+				story._fired[k] = true  # today's own scheduled cards (Dan's intro is at 9:20) must not come up on top
+			story.flags["mentor"] = "on"  # Dan's later cards only come up after you took his offer
 			story.fire({"kind": "vignette", "id": id})
 			await process_frame
 			_check(cards.is_open, "%s/%s opens a card" % [id, o.id])

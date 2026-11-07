@@ -9,7 +9,7 @@ const OWNERS := ["Alan", "Garrison"]
 const LABELS := {
 	"Alan": "Alan (Co-owner)",
 	"Garrison": "Garrison (Co-owner)",
-	"Dan": "Dan (Network Tech)",
+	"Dan": "Dan (Service Manager)",
 	"John": "John (Account Manager)",
 	"Maya": "Maya (Tier 1)",
 	"Morgan": "Morgan (Manager)",
@@ -111,7 +111,7 @@ func _token(key: String) -> String:
 	return ""
 
 
-# {tech} -> a name, or "Dan (Network Tech)" when the whole text is the token (a speaker line)
+# {tech} -> a name, or "Dan (Service Manager)" when the whole text is the token (a speaker line)
 func fill(text: String) -> String:
 	if text.find("{") < 0:
 		return text

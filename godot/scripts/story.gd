@@ -267,6 +267,96 @@ const DEFAULT_POSTMORTEMS := {
 }
 var POSTMORTEMS: Dictionary = DEFAULT_POSTMORTEMS.duplicate(true)
 const DEFAULT_VIGNETTES := {
+	"mentor_intro":
+	{
+		"speaker": "Dan (Service Manager)",
+		"text":
+		"Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?",
+		"options":
+		[
+			{
+				"id": "walk",
+				"label": "WALK ME THROUGH IT",
+				"text":
+				"Good. I'll put little reminders on your screen for the first ticket, and I'll check in on days two and three. Start by sitting at your desk.",
+				"fx": {"flag": ["mentor", "on"], "social": {"Dan": 2}}
+			},
+			{
+				"id": "alone",
+				"label": "I'VE GOT THIS",
+				"text":
+				"Fair enough. The PSA is on your computer, and I'm in the Lync list if you want me. Do not close anything that is not really fixed.",
+				"fx": {"flag": ["mentor", "off"]}
+			},
+		],
+	},
+	"mentor_triage":
+	{
+		"speaker": "Dan (Service Manager)",
+		"text":
+		"Two tickets in the queue. One has two minutes left on its SLA. The other is from your biggest client, but it has all morning. Which one first?",
+		"options":
+		[
+			{
+				"id": "sla",
+				"label": "THE ONE ABOUT TO BREACH",
+				"text":
+				"Right. The clock is the contract. A big client can wait ten minutes, a breached SLA stays on the report. (+3 customer XP)",
+				"fx": {"xp": ["people", 3], "social": {"Dan": 1}}
+			},
+			{
+				"id": "big",
+				"label": "THE BIGGEST CLIENT",
+				"text":
+				"I get it, but the SLA timer does not care who is bigger. Look at the clocks first, then the names. (+1 customer XP)",
+				"fx": {"xp": ["people", 1]}
+			},
+		],
+	},
+	"mentor_fix":
+	{
+		"speaker": "Dan (Service Manager)",
+		"text":
+		"That Adobe ticket will crash again tomorrow if you only restart it. You can do the two-click restart and move on, or spend half an hour finding out why. Your call.",
+		"options":
+		[
+			{
+				"id": "quick",
+				"label": "RESTART IT AND MOVE ON",
+				"text":
+				"Quick, and it works today. It might come back tomorrow, and then it is your problem twice. (+1 servers XP)",
+				"fx": {"xp": ["servers", 1]}
+			},
+			{
+				"id": "cause",
+				"label": "FIND THE CAUSE",
+				"text": "Slower now, but it stays fixed. That is the whole job in one decision. (+4 servers XP)",
+				"fx": {"xp": ["servers", 4], "hours": 0.3, "social": {"Dan": 1}}
+			},
+		],
+	},
+	"mentor_debrief":
+	{
+		"speaker": "Dan (Service Manager)",
+		"text":
+		"You're on your own from tomorrow. If a ticket really stumps you, ask Adam, he's our senior tech. He also goes over the numbers on Fridays, so do not let the queue get old. Good first three days.",
+		"options":
+		[
+			{
+				"id": "thanks",
+				"label": "THANKS, DAN",
+				"text": "Anytime. Lync me if the printer wins.",
+				"fx": {"social": {"Dan": 2}}
+			},
+			{
+				"id": "tips",
+				"label": "ANY TIPS FOR THE QUEUE?",
+				"text":
+				"Triage by the clock, close only what is really fixed, and ask Adam before you guess. That is most of it. (+1 customer XP)",
+				"fx": {"xp": ["people", 1]}
+			},
+		],
+	},
 	"iphone":
 	{
 		"speaker": "Karen Whitfield (Brightside Realty)",
@@ -666,7 +756,7 @@ const DEFAULT_VIGNETTES := {
 	},
 	"sticky_dan":
 	{
-		"speaker": "Dan (Network tech)",
+		"speaker": "Dan (Service Manager)",
 		"text": "I found the main router password on a sticky note in three different offices. It is 'admin' in all three. Do you want me to fix it or yell?",
 		"min_day": 4,
 		"max_day": 20,
@@ -947,7 +1037,7 @@ const DEFAULT_VIGNETTES := {
 	},
 	"charger_drawer":
 	{
-		"speaker": "Dan (Network tech)",
+		"speaker": "Dan (Service Manager)",
 		"text": "There is a drawer full of chargers and nobody knows what goes with what. I made a chart. It has color coding. Do you want a copy?",
 		"min_day": 8,
 		"max_day": 20,
@@ -1314,6 +1404,7 @@ const DEFAULT_DAYS := {
 				+ "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"
 			)
 		},
+		{"at": 9.2, "kind": "mentor", "id": "mentor_intro"},
 	],
 	2:
 	[
@@ -1329,6 +1420,7 @@ const DEFAULT_DAYS := {
 				+ "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"
 			)
 		},
+		{"at": 9.6, "kind": "mentor", "id": "mentor_triage"},
 		{"at": 10.5, "kind": "vignette", "id": "iphone"},
 	],
 	3:
@@ -1346,6 +1438,8 @@ const DEFAULT_DAYS := {
 			)
 		},
 		{"at": 10.0, "kind": "adobe", "client": 1},
+		{"at": 10.6, "kind": "mentor", "id": "mentor_fix"},
+		{"at": 16.2, "kind": "mentor", "id": "mentor_debrief"},
 	],
 	4:
 	[
@@ -1642,8 +1736,8 @@ func fire(ev: Dictionary) -> void:
 		"playbook":
 			Playbook.start(str(ev.book))
 			Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
-		"vignette":
-			_vignette(str(ev.id))
+		"vignette", "mentor":
+			_vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
 		"postmortem":
 			Incident.tech_start(str(ev.cls))
 		"adobe":
@@ -1683,6 +1777,8 @@ func fire(ev: Dictionary) -> void:
 
 # ---- small quiet-day moments: a short card with a few choices and small effects
 func _vignette(id: String) -> void:
+	if id.begins_with("mentor_") and id != "mentor_intro" and str(flags.get("mentor", "")) != "on":
+		return  # Dan only checks in on the days after you took his offer
 	var v: Dictionary = VIGNETTES.get(id, {})
 	if v.is_empty():
 		return
@@ -1726,6 +1822,8 @@ func _vignette_answer(id: String, pick: String) -> void:
 
 
 func _vignette_fx(fx: Dictionary) -> void:
+	if fx.has("flag"):
+		flags[str(fx.flag[0])] = fx.flag[1]
 	if fx.has("xp"):
 		Skills.add_xp(str(fx.xp[0]), int(fx.xp[1]))
 	if fx.has("mood"):

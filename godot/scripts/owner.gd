@@ -487,7 +487,7 @@ const DEFAULT_CARDS := {
 	},
 	"raise":
 	{
-		"speaker": "Dan (Network Tech)",
+		"speaker": "Dan (Service Manager)",
 		"text":
 		"{me}, I have taken on the hardest jobs all year. I would like a $100 a week raise.",
 		"options":

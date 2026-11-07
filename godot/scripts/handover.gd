@@ -180,7 +180,7 @@ static func finish(deal: Dictionary, show_card: bool) -> void:
 			)
 		)
 		Cards.ask(
-			"Dan (Network Tech)",
+			"Dan (Service Manager)",
 			"%s Starting mood %d%%, service risk %.1f." % [line, int(deal.mood), left],
 			[{"label": "OK", "id": "ok"}],
 			func(_id: String) -> void: _react("done", left)

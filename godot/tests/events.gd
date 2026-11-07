@@ -80,6 +80,10 @@ func _new(c: Node, cards: Node, mode: String) -> void:
 					break
 		else:
 			break
+	# the day's own scheduled cards (Dan's intro on day 1) are not what these checks are about, and the clock jumps past them
+	var story := root.get_node("Story")
+	for k in story.events_on(c.day).size():
+		story._fired[k] = true
 
 
 func _new_drain(cards: Node) -> void:
@@ -114,8 +118,8 @@ func _init() -> void:
 	var fixed_vignettes := []
 	for id in story.VIGNETTES:
 		(drawn_vignettes if story.VIGNETTES[id].has("min_day") else fixed_vignettes).append(id)
-	_check(story.VIGNETTES.size() == 25, "the vignette deck has 25 cards (%d)" % story.VIGNETTES.size())
-	_check(fixed_vignettes.size() == 8 and drawn_vignettes.size() == 17, "8 fixed and 17 drawn vignettes")
+	_check(story.VIGNETTES.size() == 29, "the vignette deck has 29 cards (%d)" % story.VIGNETTES.size())
+	_check(fixed_vignettes.size() == 12 and drawn_vignettes.size() == 17, "12 fixed (Dan's four) and 17 drawn vignettes")
 	for id in ["iphone", "heartbleed", "candy", "pizza", "win8", "selfreview", "donuts", "invoice"]:
 		_check(not story.VIGNETTES[id].has("min_day"), "%s stays on its fixed day" % id)
 	var ids := {}

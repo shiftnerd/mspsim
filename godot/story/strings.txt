@@ -158,6 +158,102 @@ We will sit down after close for your yearly review. There may be an offer or tw
 
 
 # ======================= Story > VIGNETTES =======================
+# Story > VIGNETTES > mentor_intro > speaker
+[Story.VIGNETTES.mentor_intro.speaker]
+Dan (Service Manager)
+
+# Story > VIGNETTES > mentor_intro > text
+[Story.VIGNETTES.mentor_intro.text]
+Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?
+
+# Story > VIGNETTES > mentor_intro > options > 0 > label
+[Story.VIGNETTES.mentor_intro.options.0.label]
+WALK ME THROUGH IT
+
+# Story > VIGNETTES > mentor_intro > options > 0 > text
+[Story.VIGNETTES.mentor_intro.options.0.text]
+Good. I'll put little reminders on your screen for the first ticket, and I'll check in on days two and three. Start by sitting at your desk.
+
+# Story > VIGNETTES > mentor_intro > options > 1 > label
+[Story.VIGNETTES.mentor_intro.options.1.label]
+I'VE GOT THIS
+
+# Story > VIGNETTES > mentor_intro > options > 1 > text
+[Story.VIGNETTES.mentor_intro.options.1.text]
+Fair enough. The PSA is on your computer, and I'm in the Lync list if you want me. Do not close anything that is not really fixed.
+
+# Story > VIGNETTES > mentor_triage > speaker
+[Story.VIGNETTES.mentor_triage.speaker]
+Dan (Service Manager)
+
+# Story > VIGNETTES > mentor_triage > text
+[Story.VIGNETTES.mentor_triage.text]
+Two tickets in the queue. One has two minutes left on its SLA. The other is from your biggest client, but it has all morning. Which one first?
+
+# Story > VIGNETTES > mentor_triage > options > 0 > label
+[Story.VIGNETTES.mentor_triage.options.0.label]
+THE ONE ABOUT TO BREACH
+
+# Story > VIGNETTES > mentor_triage > options > 0 > text
+[Story.VIGNETTES.mentor_triage.options.0.text]
+Right. The clock is the contract. A big client can wait ten minutes, a breached SLA stays on the report. (+3 customer XP)
+
+# Story > VIGNETTES > mentor_triage > options > 1 > label
+[Story.VIGNETTES.mentor_triage.options.1.label]
+THE BIGGEST CLIENT
+
+# Story > VIGNETTES > mentor_triage > options > 1 > text
+[Story.VIGNETTES.mentor_triage.options.1.text]
+I get it, but the SLA timer does not care who is bigger. Look at the clocks first, then the names. (+1 customer XP)
+
+# Story > VIGNETTES > mentor_fix > speaker
+[Story.VIGNETTES.mentor_fix.speaker]
+Dan (Service Manager)
+
+# Story > VIGNETTES > mentor_fix > text
+[Story.VIGNETTES.mentor_fix.text]
+That Adobe ticket will crash again tomorrow if you only restart it. You can do the two-click restart and move on, or spend half an hour finding out why. Your call.
+
+# Story > VIGNETTES > mentor_fix > options > 0 > label
+[Story.VIGNETTES.mentor_fix.options.0.label]
+RESTART IT AND MOVE ON
+
+# Story > VIGNETTES > mentor_fix > options > 0 > text
+[Story.VIGNETTES.mentor_fix.options.0.text]
+Quick, and it works today. It might come back tomorrow, and then it is your problem twice. (+1 servers XP)
+
+# Story > VIGNETTES > mentor_fix > options > 1 > label
+[Story.VIGNETTES.mentor_fix.options.1.label]
+FIND THE CAUSE
+
+# Story > VIGNETTES > mentor_fix > options > 1 > text
+[Story.VIGNETTES.mentor_fix.options.1.text]
+Slower now, but it stays fixed. That is the whole job in one decision. (+4 servers XP)
+
+# Story > VIGNETTES > mentor_debrief > speaker
+[Story.VIGNETTES.mentor_debrief.speaker]
+Dan (Service Manager)
+
+# Story > VIGNETTES > mentor_debrief > text
+[Story.VIGNETTES.mentor_debrief.text]
+You're on your own from tomorrow. If a ticket really stumps you, ask Adam, he's our senior tech. He also goes over the numbers on Fridays, so do not let the queue get old. Good first three days.
+
+# Story > VIGNETTES > mentor_debrief > options > 0 > label
+[Story.VIGNETTES.mentor_debrief.options.0.label]
+THANKS, DAN
+
+# Story > VIGNETTES > mentor_debrief > options > 0 > text
+[Story.VIGNETTES.mentor_debrief.options.0.text]
+Anytime. Lync me if the printer wins.
+
+# Story > VIGNETTES > mentor_debrief > options > 1 > label
+[Story.VIGNETTES.mentor_debrief.options.1.label]
+ANY TIPS FOR THE QUEUE?
+
+# Story > VIGNETTES > mentor_debrief > options > 1 > text
+[Story.VIGNETTES.mentor_debrief.options.1.text]
+Triage by the clock, close only what is really fixed, and ask Adam before you guess. That is most of it. (+1 customer XP)
+
 # Story > VIGNETTES > iphone > speaker
 [Story.VIGNETTES.iphone.speaker]
 Karen Whitfield (Brightside Realty)
@@ -540,7 +636,7 @@ A new machine is fine, but the document is still stuck.
 
 # Story > VIGNETTES > sticky_dan > speaker
 [Story.VIGNETTES.sticky_dan.speaker]
-Dan (Network tech)
+Dan (Service Manager)
 
 # Story > VIGNETTES > sticky_dan > text
 [Story.VIGNETTES.sticky_dan.text]
@@ -732,7 +828,7 @@ Half of them do. The other half do not read it.
 
 # Story > VIGNETTES > charger_drawer > speaker
 [Story.VIGNETTES.charger_drawer.speaker]
-Dan (Network tech)
+Dan (Service Manager)
 
 # Story > VIGNETTES > charger_drawer > text
 [Story.VIGNETTES.charger_drawer.text]
@@ -4684,7 +4780,7 @@ You make it worse before you make it better.
 
 # owner card: raise
 [Owner.CARDS.raise.speaker]
-Dan (Network Tech)
+Dan (Service Manager)
 
 # owner card: raise
 [Owner.CARDS.raise.text]
@@ -14433,6 +14529,28 @@ SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS
 # Hints > DAY1 > 6 > text
 [Hints.DAY1.6.text]
 M MUTES OR RESTORES THE SOUND.
+
+
+# ======================= Hints > MENTOR =======================
+# Hints > MENTOR > pc
+[Hints.MENTOR.pc]
+DAN: SIT AT YOUR DESK AND PRESS E ON THE MONITOR. THAT OPENS THE COMPUTER.
+
+# Hints > MENTOR > wait
+[Hints.MENTOR.wait]
+DAN: A TICKET WILL ARRIVE SOON. IT SHOWS UP IN THE PSA ON YOUR COMPUTER.
+
+# Hints > MENTOR > take
+[Hints.MENTOR.take]
+DAN: OPEN THE PSA AND TAKE YOUR FIRST TICKET.
+
+# Hints > MENTOR > close
+[Hints.MENTOR.close]
+DAN: THE FIX IS DONE. CLOSE THE TICKET IN THE PSA.
+
+# Hints > MENTOR > done
+[Hints.MENTOR.done]
+DAN: THAT IS ONE CLOSED. YOU ARE ON YOUR WAY.
 
 
 # ======================= Career > MEDALS =======================

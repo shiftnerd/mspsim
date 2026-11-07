@@ -16,7 +16,7 @@ const OWNERS := ["Alan", "Garrison"]
 const ROLES := {
 	"Alan": "CO-OWNER",
 	"Garrison": "CO-OWNER",
-	"Dan": "NETWORK TECH",
+	"Dan": "SERVICE MANAGER",
 	"John": "ACCOUNT MANAGER",
 	"Maya": "TIER 1",
 	"Morgan": "MANAGER"
