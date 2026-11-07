@@ -140,6 +140,32 @@ func _run() -> void:
 	host.close_all()
 	await _wait(30)
 
+	# cards: a personal card (scope player) shows in its owner's pane and holds only them
+	var cards: Node = root.get_node("Cards")
+	var picked := []
+	cards.ask("Someone", "Hello there.", [{"label": "HI", "id": "hi"}, {"label": "LEAVE", "id": "leave"}], func(id: String) -> void: picked.append(id), Callable(), 1)
+	await _wait(5)
+	var pc: Node = host.card_for(1)
+	ok(pc.is_open and pc.pane_slot == 1 and players.ui[1] and not players.ui[0], "a player-scope card opens in slot 1's pane and holds only slot 1")
+	ok(not cards.is_open and not game.ui_open, "the team card stays shut and the room is not frozen")
+	pc._opened = 0  # the early-confirm guard counts wall-clock ms, a headless run is faster
+	_pad(JOY_BUTTON_A, true)
+	await _wait(3)
+	_pad(JOY_BUTTON_A, false)
+	await _wait(3)
+	ok(picked == ["hi"] and not pc.is_open and not players.ui[1], "pad A on slot 1 picks the card and frees them")
+	# a team card (the old full-window one): pad 2's A confirms it too
+	var team := []
+	cards.ask("Boss", "Everyone listen.", [{"label": "OK", "id": "ok"}], func(id: String) -> void: team.append(id))
+	cards._opened = 0
+	ok(cards.is_open and game.ui_open, "a team card is the full-window freeze")
+	_pad(JOY_BUTTON_A, true)
+	await _wait(3)
+	_pad(JOY_BUTTON_A, false)
+	await _wait(3)
+	ok(team == ["ok"] and not cards.is_open, "player 2's A answers a team card (first to confirm wins)")
+	await _wait(5)
+
 	# a door refuses while the partner is at a screen; trying again makes them leave
 	host.open_computer(1, 3)
 	await _wait(10)

@@ -12,10 +12,11 @@ extends CanvasLayer
 
 const COMPUTER := preload("res://scripts/computer.gd")
 const PHONE := preload("res://scripts/phone.gd")
+const CARDS := preload("res://scripts/cards.gd")
 const CURSOR_SPEED := 150.0  # px / s at full stick
 const DEADZONE := 0.25
 
-var panes := {}  # slot -> {sv, view, comp, phone (made on first use), stick}
+var panes := {}  # slot -> {sv, view, comp, phone, card (both made on first use), stick}
 var _scene: Node = null
 
 
@@ -43,11 +44,31 @@ func is_open(slot: int) -> bool:
 	return active(slot) != null
 
 
-# the screen the player has open (computer or phone), or null
+# is a computer or phone pane open for the slot (a card on top does not count)
+func screen_open(slot: int) -> bool:
+	if not panes.has(slot):
+		return false
+	var p: Dictionary = panes[slot]
+	return p.comp.is_open or (p.phone != null and p.phone.is_open)
+
+
+# the player's personal card (co-op scope "player"): a Cards instance in their pane, over whatever else is open there
+func card_for(slot: int) -> Node:
+	var p := _pane(slot)
+	if p.card == null:
+		p.card = CARDS.new()
+		p.card.pane_slot = slot
+		p.sv.add_child(p.card)
+	return p.card
+
+
+# the screen the player has open (a card on top first, then the phone or computer), or null
 func active(slot: int) -> Node:
 	if not panes.has(slot):
 		return null
 	var p: Dictionary = panes[slot]
+	if p.card != null and p.card.is_open:
+		return p.card
 	if p.phone != null and p.phone.is_open:
 		return p.phone
 	return p.comp if p.comp.is_open else null
@@ -82,13 +103,15 @@ func close_slot(slot: int) -> void:
 	for c in [panes[slot].comp, panes[slot].phone]:
 		if c != null and c.is_open:
 			c.close()
+	var card: Node = panes[slot].card
+	if card != null and card.is_open:
+		card.pick(card.options.size() - 1)  # a card never traps: the last choice is the way out (leave / not now)
+	Players.set_ui(slot, false)
 
 
 func close_all() -> void:
 	for slot in panes:
-		for c in [panes[slot].comp, panes[slot].phone]:
-			if c != null and c.is_open:
-				c.close()
+		close_slot(slot)
 
 
 func _pane(slot: int) -> Dictionary:
@@ -113,7 +136,7 @@ func _pane(slot: int) -> Dictionary:
 	view.stretch_mode = TextureRect.STRETCH_SCALE
 	view.visible = false
 	add_child(view)
-	panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "stick": Vector2.ZERO}
+	panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "card": null, "stick": Vector2.ZERO}
 	_place(slot)
 	return panes[slot]
 
@@ -135,7 +158,7 @@ func _process(delta: float) -> void:
 	for slot in panes:
 		var p: Dictionary = panes[slot]
 		var comp: Node = active(slot)
-		var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible)
+		var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible) or (p.card != null and p.card._canvas.visible)
 		p.view.visible = shown
 		p.sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS if shown else SubViewport.UPDATE_DISABLED
 		if not shown:
@@ -196,9 +219,10 @@ func _pad_cursor(slot: int, event: InputEvent) -> bool:
 			return true
 		return false
 	if event.button_index == JOY_BUTTON_A:
+		var scr: Node = active(slot)
+		if scr == null or not scr.has_method("click"):
+			return false  # a card has no mouse: A goes through as ui_accept
 		if event.pressed:
-			var scr: Node = active(slot)
-			if scr != null:
-				scr.click(scr._mouse)
+			scr.click(scr._mouse)
 		return true
 	return false

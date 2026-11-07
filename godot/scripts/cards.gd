@@ -10,6 +10,7 @@ const INK := Color("17121f")
 const WHITE := Color("ffffff")
 
 var is_open := false
+var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
 var speaker := ""
 var text := ""
 var options: Array = []
@@ -35,8 +36,12 @@ func _ready() -> void:
 # `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
 # and on_pick gets "__none" so the asker can clean up
 func ask(
-	who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()
+	who: String, body: String, choices: Array, on_pick: Callable, valid := Callable(), slot := -1
 ) -> void:
+	if slot >= 0 and pane_slot < 0 and Players.coop and Players.slot(slot).joined:
+		# co-op scope "player": the card appears in that player's pane and only they are held (a team card, slot -1, is the old full-window one)
+		Players.takeover_host().card_for(slot).ask(who, body, choices, on_pick, valid)
+		return
 	# X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
 	# report covers the screen, or while older cards are still waiting joins the back of the queue.
 	if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
@@ -71,10 +76,13 @@ func ask(
 	Career.add("cards_seen")  # R8: the career screen counts the decisions put in front of you
 	_opened = Time.get_ticks_msec()
 	Sfx.play("ui_open")
-	Game.ui_open = true
+	if pane_slot < 0:
+		Game.ui_open = true
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	else:
+		Players.set_ui(pane_slot, true)
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	_canvas.queue_redraw()
 
 
@@ -99,8 +107,12 @@ func pick(index: int) -> void:
 	Sfx.play("ui_pick")
 	is_open = false
 	_canvas.visible = false
-	Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
+	if pane_slot >= 0:  # the player is still held while their computer or phone pane is under the card
+		var host: Node = Players.takeover_host()
+		Players.set_ui(pane_slot, host.screen_open(pane_slot))
+	else:
+		Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
 	if id != "__none" and _callback.is_valid():
 		_callback.call(id)
 	_show_next()
@@ -182,11 +194,11 @@ func _input(event: InputEvent) -> void:
 			_move(-1)
 		elif dir == "down":
 			_move(1)
-		elif Controls.back(event, false):
+		elif Controls.back_any(event, false):
 			_pick_leave()
 		elif Time.get_ticks_msec() - _opened < 450:
 			pass  # too soon: the card just appeared
-		elif Controls.confirm(event, false, false):
+		elif Controls.confirm_any(event, false, false):
 			pick(sel)
 		elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
 			pick(event.keycode - KEY_1)

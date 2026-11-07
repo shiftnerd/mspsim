@@ -19045,6 +19045,7 @@ const INK := Color("17121f")
 const WHITE := Color("ffffff")
 
 var is_open := false
+var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
 var speaker := ""
 var text := ""
 var options: Array = []
@@ -19069,7 +19070,11 @@ func _ready() -> void:
 
 # `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
 # and on_pick gets "__none" so the asker can clean up
-func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable()) -> void:
+func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable(), slot := -1) -> void:
+    if slot >= 0 and pane_slot < 0 and Players.coop and Players.slot(slot).joined:
+        # co-op scope "player": the card appears in that player's pane and only they are held (a team card, slot -1, is the old full-window one)
+        Players.takeover_host().card_for(slot).ask(who, body, choices, on_pick, valid)
+        return
     # X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
     # report covers the screen, or while older cards are still waiting joins the back of the queue.
     if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
@@ -19104,10 +19109,13 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
     Career.add("cards_seen")  # R8: the career screen counts the decisions put in front of you
     _opened = Time.get_ticks_msec()
     Sfx.play("ui_open")
-    Game.ui_open = true
+    if pane_slot < 0:
+        Game.ui_open = true
+        Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+    else:
+        Players.set_ui(pane_slot, true)
     _canvas.visible = true
     _mouse = get_viewport().get_mouse_position()
-    Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
     _canvas.queue_redraw()
 
 
@@ -19127,8 +19135,12 @@ func pick(index: int) -> void:
     Sfx.play("ui_pick")
     is_open = false
     _canvas.visible = false
-    Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
-    Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
+    if pane_slot >= 0:  # the player is still held while their computer or phone pane is under the card
+        var host: Node = Players.takeover_host()
+        Players.set_ui(pane_slot, host.screen_open(pane_slot))
+    else:
+        Game.ui_open = Computer.is_open or Phone.is_open or PrinterGame.is_open or Outings.is_open or Toolbox.outfit_open
+        Input.mouse_mode = Input.MOUSE_MODE_HIDDEN if Game.ui_open else Input.MOUSE_MODE_VISIBLE
     if id != "__none" and _callback.is_valid():
         _callback.call(id)
     _show_next()
@@ -19208,11 +19220,11 @@ func _input(event: InputEvent) -> void:
             _move(-1)
         elif dir == "down":
             _move(1)
-        elif Controls.back(event, false):
+        elif Controls.back_any(event, false):
             _pick_leave()
         elif Time.get_ticks_msec() - _opened < 450:
             pass  # too soon: the card just appeared
-        elif Controls.confirm(event, false, false):
+        elif Controls.confirm_any(event, false, false):
             pick(sel)
         elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
             pick(event.keycode - KEY_1)
@@ -65214,10 +65226,11 @@ write("scripts/panes.gd", '''extends CanvasLayer
 
 const COMPUTER := preload("res://scripts/computer.gd")
 const PHONE := preload("res://scripts/phone.gd")
+const CARDS := preload("res://scripts/cards.gd")
 const CURSOR_SPEED := 150.0  # px / s at full stick
 const DEADZONE := 0.25
 
-var panes := {}  # slot -> {sv, view, comp, phone (made on first use), stick}
+var panes := {}  # slot -> {sv, view, comp, phone, card (both made on first use), stick}
 var _scene: Node = null
 
 
@@ -65245,11 +65258,31 @@ func is_open(slot: int) -> bool:
     return active(slot) != null
 
 
-# the screen the player has open (computer or phone), or null
+# is a computer or phone pane open for the slot (a card on top does not count)
+func screen_open(slot: int) -> bool:
+    if not panes.has(slot):
+        return false
+    var p: Dictionary = panes[slot]
+    return p.comp.is_open or (p.phone != null and p.phone.is_open)
+
+
+# the player's personal card (co-op scope "player"): a Cards instance in their pane, over whatever else is open there
+func card_for(slot: int) -> Node:
+    var p := _pane(slot)
+    if p.card == null:
+        p.card = CARDS.new()
+        p.card.pane_slot = slot
+        p.sv.add_child(p.card)
+    return p.card
+
+
+# the screen the player has open (a card on top first, then the phone or computer), or null
 func active(slot: int) -> Node:
     if not panes.has(slot):
         return null
     var p: Dictionary = panes[slot]
+    if p.card != null and p.card.is_open:
+        return p.card
     if p.phone != null and p.phone.is_open:
         return p.phone
     return p.comp if p.comp.is_open else null
@@ -65284,13 +65317,15 @@ func close_slot(slot: int) -> void:
     for c in [panes[slot].comp, panes[slot].phone]:
         if c != null and c.is_open:
             c.close()
+    var card: Node = panes[slot].card
+    if card != null and card.is_open:
+        card.pick(card.options.size() - 1)  # a card never traps: the last choice is the way out (leave / not now)
+    Players.set_ui(slot, false)
 
 
 func close_all() -> void:
     for slot in panes:
-        for c in [panes[slot].comp, panes[slot].phone]:
-            if c != null and c.is_open:
-                c.close()
+        close_slot(slot)
 
 
 func _pane(slot: int) -> Dictionary:
@@ -65315,7 +65350,7 @@ func _pane(slot: int) -> Dictionary:
     view.stretch_mode = TextureRect.STRETCH_SCALE
     view.visible = false
     add_child(view)
-    panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "stick": Vector2.ZERO}
+    panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "card": null, "stick": Vector2.ZERO}
     _place(slot)
     return panes[slot]
 
@@ -65337,7 +65372,7 @@ func _process(delta: float) -> void:
     for slot in panes:
         var p: Dictionary = panes[slot]
         var comp: Node = active(slot)
-        var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible)
+        var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible) or (p.card != null and p.card._canvas.visible)
         p.view.visible = shown
         p.sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS if shown else SubViewport.UPDATE_DISABLED
         if not shown:
@@ -65398,10 +65433,11 @@ func _pad_cursor(slot: int, event: InputEvent) -> bool:
             return true
         return false
     if event.button_index == JOY_BUTTON_A:
+        var scr: Node = active(slot)
+        if scr == null or not scr.has_method("click"):
+            return false  # a card has no mouse: A goes through as ui_accept
         if event.pressed:
-            var scr: Node = active(slot)
-            if scr != null:
-                scr.click(scr._mouse)
+            scr.click(scr._mouse)
         return true
     return false
 ''')
@@ -67503,6 +67539,15 @@ func confirm(event: InputEvent, with_e: bool = true, with_space: bool = true) ->
             codes.append(KEY_E)
         return event.keycode in codes
     return event.is_action("ui_accept")
+
+
+# a team card in co-op: confirm / back from either player (slot 1's own pad A / B too), the first one wins
+func confirm_any(event: InputEvent, with_e: bool = true, with_space: bool = true) -> bool:
+    return confirm(event, with_e, with_space) or (Players.coop and event.is_action(prefix(1) + "ui_accept"))
+
+
+func back_any(event: InputEvent, with_backspace: bool = true) -> bool:
+    return back(event, with_backspace) or (Players.coop and event.is_action(prefix(1) + "ui_cancel"))
 
 
 # Esc or Backspace (a screen that only took Esc passes false), or the ui_cancel action from a pad

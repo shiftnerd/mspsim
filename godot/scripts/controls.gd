@@ -246,6 +246,15 @@ func confirm(event: InputEvent, with_e: bool = true, with_space: bool = true) ->
 	return event.is_action("ui_accept")
 
 
+# a team card in co-op: confirm / back from either player (slot 1's own pad A / B too), the first one wins
+func confirm_any(event: InputEvent, with_e: bool = true, with_space: bool = true) -> bool:
+	return confirm(event, with_e, with_space) or (Players.coop and event.is_action(prefix(1) + "ui_accept"))
+
+
+func back_any(event: InputEvent, with_backspace: bool = true) -> bool:
+	return back(event, with_backspace) or (Players.coop and event.is_action(prefix(1) + "ui_cancel"))
+
+
 # Esc or Backspace (a screen that only took Esc passes false), or the ui_cancel action from a pad
 func back(event: InputEvent, with_backspace: bool = true) -> bool:
 	if event is InputEventKey:
