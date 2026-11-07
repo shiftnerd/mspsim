@@ -483,7 +483,7 @@ func _face_toward(x: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if Game.ui_open:
+	if Game.ui_open or Players.ui[slot]:
 		velocity = Vector2.ZERO
 		return
 	_call_tick(delta)

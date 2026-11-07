@@ -69,7 +69,10 @@ func use(body: Node) -> void:
 	if fx.toner_use(body, look_x if look_x != 0.0 else global_position.x):  # R37: the tool case, or the toner at a desk
 		return
 	if fx.style == "computer":
-		Computer.open(fx.desk)
+		if Players.coop:  # co-op: the computer opens as the player's own half-window pane
+			Players.takeover_host().open_computer(body.slot, fx.desk)
+		else:
+			Computer.open(fx.desk)
 		return
 	if fx.busy or fx.offline():
 		_arrow.shake()

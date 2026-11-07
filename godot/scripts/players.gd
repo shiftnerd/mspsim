@@ -23,6 +23,9 @@ const P2_FALLBACK := "office_intern"
 
 var coop := false
 var slots: Array = []
+var ui := [false, false]  # per slot: this player has a takeover (a pane) open; Game.ui_open stays the global freeze
+var _fades := [0.0, 0.0]
+var _host: Node = null
 
 
 class Slot:
@@ -73,6 +76,24 @@ func _init() -> void:
 func _ready() -> void:
 	if "--coop" in OS.get_cmdline_user_args():
 		enable_coop(true)
+
+
+# co-op phase 3: the pane host (panes.gd), made the first time a pane opens
+func takeover_host() -> Node:
+	if _host == null:
+		_host = preload("res://scripts/panes.gd").new()
+		add_child(_host)
+	return _host
+
+
+func set_ui(i: int, on: bool) -> void:
+	ui[clampi(i, 0, MAX_SLOTS - 1)] = on
+
+
+# a pane fading in or out: the camera slides down (Game.ui_shift) by the deepest of the open panes
+func pane_fade(i: int, value: float) -> void:
+	_fades[clampi(i, 0, MAX_SLOTS - 1)] = value
+	Game.ui_shift = maxf(float(_fades[0]), float(_fades[1]))
 
 
 func slot(i: int) -> Slot:

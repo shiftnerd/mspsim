@@ -75,6 +75,7 @@ var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, r
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 
+var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
 var _canvas: Node2D
 var _hits: Array = []
 var _mouse := Vector2.ZERO
@@ -122,10 +123,11 @@ func open(from_desk: int) -> void:
 	_toast_t = 0.0
 	is_open = true
 	Sfx.play("ui_open")
-	Game.ui_open = true
+	_set_ui(true)
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	if pane_slot < 0:
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	create_tween().tween_method(_set_fade, _fade, 1.0, 0.2)
 
 
@@ -140,16 +142,28 @@ func open_tv() -> void:
 
 func close() -> void:
 	is_open = false
-	Game.ui_open = false
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_set_ui(false)
+	if pane_slot < 0:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var tween := create_tween()
 	tween.tween_method(_set_fade, _fade, 0.0, 0.15)
 	tween.tween_callback(func() -> void: _canvas.visible = is_open)
 
 
+# the global UI flag, or the pane owner's own (co-op: the other player keeps walking)
+func _set_ui(on: bool) -> void:
+	if pane_slot < 0:
+		Game.ui_open = on
+	else:
+		Players.set_ui(pane_slot, on)
+
+
 func _set_fade(value: float) -> void:
 	_fade = value
-	Game.ui_shift = value
+	if pane_slot < 0:
+		Game.ui_shift = value
+	else:
+		Players.pane_fade(pane_slot, value)
 	_canvas.modulate.a = value
 
 
@@ -779,7 +793,7 @@ func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_hits.clear()
 	_fill(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.62))  # the office, faded, behind
-	var top := maxf(12.0, floorf(size.y * Game.UI_STRIP))
+	var top := 0.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * Game.UI_STRIP))  # a pane sits below the strip of the office already
 	_area = Rect2(0, top, size.x, size.y - top)
 	match app:
 		"mail":
@@ -1109,18 +1123,19 @@ func _paint_desktop() -> void:
 	_fill(a, wall)
 	for i in 8:
 		_fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), wall.lightened(0.1))
-	var title := "PIXEL IT PARTNERS"
-	var scale := 2 if a.size.x >= 220.0 else 1
-	var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
-	var ty := a.position.y + a.size.y * 0.42
-	_text(title, Vector2(tx + 1, ty + 1), Color("17121f"), scale)
-	_text(title, Vector2(tx, ty), WHITE, scale)
-	var sub := "SERVICE DESK - SINCE 2013"
-	_text(
-		sub,
-		Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), ty + 6 + 5 * scale),
-		Color("bcd4f0")
-	)
+	if pane_slot < 0:  # a half-window pane has no room for the title between the icon columns
+		var title := "PIXEL IT PARTNERS"
+		var scale := 2 if a.size.x >= 220.0 else 1
+		var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
+		var ty := a.position.y + a.size.y * 0.42
+		_text(title, Vector2(tx + 1, ty + 1), Color("17121f"), scale)
+		_text(title, Vector2(tx, ty), WHITE, scale)
+		var sub := "SERVICE DESK - SINCE 2013"
+		_text(
+			sub,
+			Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), ty + 6 + 5 * scale),
+			Color("bcd4f0")
+		)
 	var icons := [
 		["mail", "OUTLOOKISH", Msp.unread()],
 		["psa", "CONNECTWHY", Msp.open_tickets().size()],

@@ -2902,7 +2902,10 @@ func use(body: Node) -> void:
     if fx.toner_use(body, look_x if look_x != 0.0 else global_position.x):  # R37: the tool case, or the toner at a desk
         return
     if fx.style == "computer":
-        Computer.open(fx.desk)
+        if Players.coop:  # co-op: the computer opens as the player's own half-window pane
+            Players.takeover_host().open_computer(body.slot, fx.desk)
+        else:
+            Computer.open(fx.desk)
         return
     if fx.busy or fx.offline():
         _arrow.shake()
@@ -7355,6 +7358,7 @@ var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, r
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 
+var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
 var _canvas: Node2D
 var _hits: Array = []
 var _mouse := Vector2.ZERO
@@ -7402,10 +7406,11 @@ func open(from_desk: int) -> void:
     _toast_t = 0.0
     is_open = true
     Sfx.play("ui_open")
-    Game.ui_open = true
+    _set_ui(true)
     _canvas.visible = true
     _mouse = get_viewport().get_mouse_position()
-    Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+    if pane_slot < 0:
+        Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
     create_tween().tween_method(_set_fade, _fade, 1.0, 0.2)
 
 
@@ -7420,16 +7425,28 @@ func open_tv() -> void:
 
 func close() -> void:
     is_open = false
-    Game.ui_open = false
-    Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+    _set_ui(false)
+    if pane_slot < 0:
+        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     var tween := create_tween()
     tween.tween_method(_set_fade, _fade, 0.0, 0.15)
     tween.tween_callback(func() -> void: _canvas.visible = is_open)
 
 
+# the global UI flag, or the pane owner's own (co-op: the other player keeps walking)
+func _set_ui(on: bool) -> void:
+    if pane_slot < 0:
+        Game.ui_open = on
+    else:
+        Players.set_ui(pane_slot, on)
+
+
 func _set_fade(value: float) -> void:
     _fade = value
-    Game.ui_shift = value
+    if pane_slot < 0:
+        Game.ui_shift = value
+    else:
+        Players.pane_fade(pane_slot, value)
     _canvas.modulate.a = value
 
 
@@ -8029,7 +8046,7 @@ func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
     _fill(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.62))  # the office, faded, behind
-    var top := maxf(12.0, floorf(size.y * Game.UI_STRIP))
+    var top := 0.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * Game.UI_STRIP))  # a pane sits below the strip of the office already
     _area = Rect2(0, top, size.x, size.y - top)
     match app:
         "mail":
@@ -8298,14 +8315,15 @@ func _paint_desktop() -> void:
     _fill(a, wall)
     for i in 8:
         _fill(Rect2(a.position.x, a.position.y + i * 6.0, a.size.x, 3), wall.lightened(0.1))
-    var title := "PIXEL IT PARTNERS"
-    var scale := 2 if a.size.x >= 220.0 else 1
-    var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
-    var ty := a.position.y + a.size.y * 0.42
-    _text(title, Vector2(tx + 1, ty + 1), Color("17121f"), scale)
-    _text(title, Vector2(tx, ty), WHITE, scale)
-    var sub := "SERVICE DESK - SINCE 2013"
-    _text(sub, Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), ty + 6 + 5 * scale), Color("bcd4f0"))
+    if pane_slot < 0:  # a half-window pane has no room for the title between the icon columns
+        var title := "PIXEL IT PARTNERS"
+        var scale := 2 if a.size.x >= 220.0 else 1
+        var tx := floorf(a.position.x + (a.size.x - _tw(title, scale)) * 0.5)
+        var ty := a.position.y + a.size.y * 0.42
+        _text(title, Vector2(tx + 1, ty + 1), Color("17121f"), scale)
+        _text(title, Vector2(tx, ty), WHITE, scale)
+        var sub := "SERVICE DESK - SINCE 2013"
+        _text(sub, Vector2(floorf(a.position.x + (a.size.x - _tw(sub)) * 0.5), ty + 6 + 5 * scale), Color("bcd4f0"))
     var icons := [
         ["mail", "OUTLOOKISH", Msp.unread()], ["psa", "CONNECTWHY", Msp.open_tickets().size()], ["rmm", "LABRAT", 0],
         ["learn", "POWERSHELL", 0], ["stats", "PROFILE", 0],
@@ -56003,7 +56021,7 @@ func _face_toward(x: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-    if Game.ui_open:
+    if Game.ui_open or Players.ui[slot]:
         velocity = Vector2.ZERO
         return
     _call_tick(delta)
@@ -65160,6 +65178,179 @@ static func paint_app(cp) -> void:
         cp._region("dash:chart", lay2.charts[0])
 ''')
 
+write("scripts/panes.gd", '''extends CanvasLayer
+# gdlint:disable=class-definitions-order,max-line-length,unsafe-method-access
+# Co-op phase 3a (docs/scope-coop.md): the takeover host. In co-op each player's computer opens as its own pane: a Computer
+# instance (computer.gd with pane_slot set) living in a SubViewport. The two panes share the bottom of the window, slot 0 on
+# the left and slot 1 on the right, under the strip of the office the single-player screens already leave at the top (the
+# camera slides down by Game.ui_shift, so both bodies stay visible there). A pane freezes only its own player
+# (Players.ui[slot]); the room, the other player and the sim keep going.
+# Input is routed by this host, never by the engine: a mouse event goes to the pane under it, keys to slot 0's pane and a
+# pad to the pane of the slot that joined on it. A pad player has no mouse, so the right stick moves a cursor in the pane
+# and A clicks where it is (the same Computer.click() a mouse uses); B and the D-pad / left stick go through as the usual
+# back and navigation. Pad A / B events of slot 1 are passed on as device 0 so ui_accept / ui_cancel match them.
+
+const COMPUTER := preload("res://scripts/computer.gd")
+const CURSOR_SPEED := 150.0  # px / s at full stick
+const DEADZONE := 0.25
+
+var panes := {}  # slot -> {sv, view, comp, stick}
+var _scene: Node = null
+
+
+func _ready() -> void:
+    layer = 60
+    process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+# the strip of the office kept above the panes, as Computer paints it for the full-window screen
+func region() -> Rect2:
+    var s := get_viewport().get_visible_rect().size
+    var top := maxf(12.0, floorf(s.y * Game.UI_STRIP))
+    return Rect2(0.0, top, s.x, s.y - top)
+
+
+func pane_rect(slot: int) -> Rect2:
+    var r := region()
+    var half := floorf(r.size.x * 0.5)
+    if slot <= 0:
+        return Rect2(r.position, Vector2(half, r.size.y))
+    return Rect2(r.position + Vector2(half, 0.0), Vector2(r.size.x - half, r.size.y))
+
+
+func is_open(slot: int) -> bool:
+    return panes.has(slot) and panes[slot].comp.is_open
+
+
+func computer(slot: int) -> Node:
+    return panes[slot].comp if panes.has(slot) else null
+
+
+func open_computer(slot: int, desk: int) -> Node:
+    var p := _pane(slot)
+    p.comp.open(desk)
+    p.comp._mouse = pane_rect(slot).size * 0.5 if slot > 0 else p.comp._mouse
+    return p.comp
+
+
+func close_all() -> void:
+    for slot in panes:
+        var c: Node = panes[slot].comp
+        if c.is_open:
+            c.close()
+
+
+func _pane(slot: int) -> Dictionary:
+    if panes.has(slot):
+        return panes[slot]
+    if _scene == null:
+        _scene = get_tree().current_scene
+    var rect := pane_rect(slot)
+    var sv := SubViewport.new()
+    sv.size = Vector2i(rect.size)
+    sv.transparent_bg = true
+    sv.render_target_update_mode = SubViewport.UPDATE_DISABLED
+    add_child(sv)
+    var comp: Node = COMPUTER.new()
+    comp.pane_slot = slot
+    sv.add_child(comp)
+    var view := TextureRect.new()
+    view.texture = sv.get_texture()
+    view.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    view.stretch_mode = TextureRect.STRETCH_SCALE
+    view.visible = false
+    add_child(view)
+    panes[slot] = {"sv": sv, "view": view, "comp": comp, "stick": Vector2.ZERO}
+    _place(slot)
+    return panes[slot]
+
+
+func _place(slot: int) -> void:
+    var p: Dictionary = panes[slot]
+    var rect := pane_rect(slot)
+    if Vector2i(rect.size) != p.sv.size:
+        p.sv.size = Vector2i(rect.size)
+    p.view.position = rect.position
+    p.view.size = rect.size
+
+
+func _process(delta: float) -> void:
+    var scene := get_tree().current_scene
+    if scene != _scene:  # a room change closes the panes (a door refusal for a busy partner is a later slice)
+        _scene = scene
+        close_all()
+    for slot in panes:
+        var p: Dictionary = panes[slot]
+        var comp: Node = p.comp
+        var shown: bool = comp._canvas.visible
+        p.view.visible = shown
+        p.sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS if shown else SubViewport.UPDATE_DISABLED
+        if not shown:
+            continue
+        _place(slot)
+        if comp.is_open and slot > 0 and p.stick != Vector2.ZERO:
+            var size := Vector2(p.sv.size)
+            comp._mouse = (comp._mouse + p.stick * CURSOR_SPEED * delta).clamp(Vector2.ZERO, size - Vector2.ONE)
+            comp._canvas.queue_redraw()
+
+
+func _input(event: InputEvent) -> void:
+    if panes.is_empty():
+        return
+    var slot := -1
+    var out: InputEvent = event
+    if event is InputEventMouse:
+        for s in panes:
+            if is_open(s) and pane_rect(s).has_point(event.position):
+                slot = s
+        if slot < 0:
+            return
+        out = event.duplicate()
+        out.position = event.position - pane_rect(slot).position
+        out.global_position = out.position
+    elif event is InputEventJoypadButton or event is InputEventJoypadMotion:
+        slot = Players.slot_of(event)
+        if slot < 0 or not is_open(slot):
+            return
+        if slot > 0 and _pad_cursor(slot, event):
+            get_viewport().set_input_as_handled()
+            return
+        if slot > 0 and event is InputEventJoypadButton:
+            out = event.duplicate()
+            out.device = 0  # the ui_accept / ui_cancel pad events are registered for pad 0
+    elif event is InputEventKey:
+        slot = 0
+        if not is_open(0):
+            return
+    else:
+        return
+    panes[slot].sv.push_input(out, true)
+    get_viewport().set_input_as_handled()
+
+
+# the right stick moves the cursor of a pad player's pane, A clicks where it is. True when the event was used up.
+func _pad_cursor(slot: int, event: InputEvent) -> bool:
+    var p: Dictionary = panes[slot]
+    if event is InputEventJoypadMotion:
+        if event.axis == JOY_AXIS_RIGHT_X or event.axis == JOY_AXIS_RIGHT_Y:
+            var v: Vector2 = p.stick
+            var val: float = event.axis_value if absf(event.axis_value) > DEADZONE else 0.0
+            if event.axis == JOY_AXIS_RIGHT_X:
+                v.x = val
+            else:
+                v.y = val
+            p.stick = v
+            return true
+        return false
+    if event.button_index == JOY_BUTTON_A:
+        if event.pressed:
+            p.comp.click(p.comp._mouse)
+        return true
+    return false
+''')
+
 write("scripts/shop.gd", '''extends Node
 # gdlint:disable=max-line-length
 # The shop (roadmap S1, docs/scope-shop.md): the tech campaign earns a paycheck every day (Campaign.cash) and can now spend it on desk
@@ -66767,6 +66958,9 @@ const P2_FALLBACK := "office_intern"
 
 var coop := false
 var slots: Array = []
+var ui := [false, false]  # per slot: this player has a takeover (a pane) open; Game.ui_open stays the global freeze
+var _fades := [0.0, 0.0]
+var _host: Node = null
 
 
 class Slot:
@@ -66817,6 +67011,24 @@ func _init() -> void:
 func _ready() -> void:
     if "--coop" in OS.get_cmdline_user_args():
         enable_coop(true)
+
+
+# co-op phase 3: the pane host (panes.gd), made the first time a pane opens
+func takeover_host() -> Node:
+    if _host == null:
+        _host = preload("res://scripts/panes.gd").new()
+        add_child(_host)
+    return _host
+
+
+func set_ui(i: int, on: bool) -> void:
+    ui[clampi(i, 0, MAX_SLOTS - 1)] = on
+
+
+# a pane fading in or out: the camera slides down (Game.ui_shift) by the deepest of the open panes
+func pane_fade(i: int, value: float) -> void:
+    _fades[clampi(i, 0, MAX_SLOTS - 1)] = value
+    Game.ui_shift = maxf(float(_fades[0]), float(_fades[1]))
 
 
 func slot(i: int) -> Slot:
