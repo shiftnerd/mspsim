@@ -27834,6 +27834,29 @@ write("scripts/difficulty.gd", '''extends Node
 
 const TIERS := ["easy", "normal", "hard"]
 const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
+# a line under the tier picker (R16): what the tier feels like in each campaign. Easy is the cozy tier, so its line says so.
+const TIER_NOTES := {
+    "tech": {
+        "easy": "COZY TECH: NOBODY GETS FIRED, THE USERS ARE PATIENT AND THE COFFEE IS ALWAYS HOT.",
+        "normal": "TECH AS ISSUED. THE PRINTER STILL HATES YOU AND THE USERS STILL CLICK EVERYTHING.",
+        "hard": "TECH ON FIRE. SHORT CLOCKS, LOUD USERS AND SOMEBODY ALWAYS HAS A DEADLINE.",
+    },
+    "service": {
+        "easy": "COZY DESK: A LOVELY CREW, GENTLE CLOCKS AND OWNERS WHO ONLY SIGH QUIETLY.",
+        "normal": "THE DESK AS IT IS. TWO OWNERS, TWO OPINIONS, ONE DAN.",
+        "hard": "THE OWNERS DISAGREE LOUDER AND THE CREW GETS STUCK AT THE WORST TIMES.",
+    },
+    "sales": {
+        "easy": "COZY SALES: FRIENDLY LEADS, A GENTLE QUOTA AND THE BELL RINGS A LOT.",
+        "normal": "THE USUAL PIPELINE. EVERYONE LOVES YOU UNTIL THEY SEE THE PRICE.",
+        "hard": "A THIN PIPELINE, CLIENTS WHO HAGGLE AND BYTEBROTHERS CIRCLING.",
+    },
+    "owner": {
+        "easy": "COZY OWNER: A KIND BANK, A KIND STAFF AND PAYROLL ALWAYS CLEARS.",
+        "normal": "RUNNING THE SHOP. EVERY DOLLAR HAS AN OPINION.",
+        "hard": "THIN MARGINS, TOUCHY CLIENTS AND A RIVAL ALWAYS ONE STEP AHEAD.",
+    },
+}
 const SEED_MASK := 0xFFFFFF
 const COZY_TIER := "easy"
 const DAY_SCALES := [0.5, 1.0, 1.5]  # the DAY LENGTH option: x on the mode's World.day_len (tech 300 / 600 / 900 s)
@@ -28028,6 +28051,11 @@ func set_tier(name: String) -> void:
 func cycle_tier(step: int) -> String:
     set_tier(TIERS[(tier_index() + step + TIERS.size()) % TIERS.size()])
     return tier
+
+
+# the tier picker's note for a campaign mode ("" for a mode without one, such as Free Play)
+func tier_note(mode_name: String) -> String:
+    return str(TIER_NOTES.get(mode_name, {}).get(tier, ""))
 
 
 func label() -> String:
@@ -53648,9 +53676,14 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
                 _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
                 _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
                 _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
-            if row_id == "level" and is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode
-                _txt("COZY", Vector2(box.end.x + 14.0, ty), GOLD)
         _rects.append([whole, "opt", i])
+    if str(rows[opt_row].id) == "level" and is_campaign() and Difficulty.tier_note(mode) != "":  # what the tier feels like here
+        var tnote := Difficulty.tier_note(mode)
+        var tchars := int((size.x - x0 - 6.0) / 4.0)
+        var tny := float(lay.y0) + float(rows.size()) * pitch + 3.0
+        for line in _wrap(tnote, tchars, 3):
+            _txt(str(line), Vector2(x0, tny), DIM)
+            tny += 8.0
     if str(rows[opt_row].id) == "start":  # what the starting condition does
         var note := str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", "")).to_upper()
         var chars := int((size.x - x0 - 6.0) / 4.0)

@@ -361,5 +361,16 @@ func _init() -> void:
 	_check(ok and d.tier == "normal" and d.run_seed >= 1, "an old save loads as normal with a seed")
 	DirAccess.remove_absolute(c.save_path("tech"))
 	d.set_tier("normal")
+	# R16: a note under the tier picker for every campaign and tier, and Easy's says cozy
+	var notes_ok := true
+	var cozy_ok := true
+	for m in ["tech", "service", "sales", "owner"]:
+		for t in ["easy", "normal", "hard"]:
+			var line := str(d.TIER_NOTES.get(m, {}).get(t, ""))
+			notes_ok = notes_ok and line != "" and line.length() <= 90
+			cozy_ok = cozy_ok and (t != "easy" or line.contains("COZY"))
+	_check(notes_ok, "every campaign has a short note for every tier")
+	_check(cozy_ok, "the Easy notes say cozy")
+	_check(d.tier_note("free") == "", "Free Play has no tier note")
 	print("failures=%d" % failures)
 	quit(failures)

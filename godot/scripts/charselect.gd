@@ -1434,9 +1434,14 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
 				_txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
 				_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
 				_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
-			if row_id == "level" and is_campaign() and Difficulty.cozy_chosen():  # R16: the Easy tier is the cozy mode
-				_txt("COZY", Vector2(box.end.x + 14.0, ty), GOLD)
 		_rects.append([whole, "opt", i])
+	if str(rows[opt_row].id) == "level" and is_campaign() and Difficulty.tier_note(mode) != "":  # what the tier feels like here
+		var tnote := Difficulty.tier_note(mode)
+		var tchars := int((size.x - x0 - 6.0) / 4.0)
+		var tny := float(lay.y0) + float(rows.size()) * pitch + 3.0
+		for line in _wrap(tnote, tchars, 3):
+			_txt(str(line), Vector2(x0, tny), DIM)
+			tny += 8.0
 	if str(rows[opt_row].id) == "start":  # what the starting condition does
 		var note := str(Mutators.STARTS.get(Mutators.pending_start, {}).get("text", "")).to_upper()
 		var chars := int((size.x - x0 - 6.0) / 4.0)

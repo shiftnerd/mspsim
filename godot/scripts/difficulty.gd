@@ -36,6 +36,29 @@ extends Node
 
 const TIERS := ["easy", "normal", "hard"]
 const LABELS := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
+# a line under the tier picker (R16): what the tier feels like in each campaign. Easy is the cozy tier, so its line says so.
+const TIER_NOTES := {
+	"tech": {
+		"easy": "COZY TECH: NOBODY GETS FIRED, THE USERS ARE PATIENT AND THE COFFEE IS ALWAYS HOT.",
+		"normal": "TECH AS ISSUED. THE PRINTER STILL HATES YOU AND THE USERS STILL CLICK EVERYTHING.",
+		"hard": "TECH ON FIRE. SHORT CLOCKS, LOUD USERS AND SOMEBODY ALWAYS HAS A DEADLINE.",
+	},
+	"service": {
+		"easy": "COZY DESK: A LOVELY CREW, GENTLE CLOCKS AND OWNERS WHO ONLY SIGH QUIETLY.",
+		"normal": "THE DESK AS IT IS. TWO OWNERS, TWO OPINIONS, ONE DAN.",
+		"hard": "THE OWNERS DISAGREE LOUDER AND THE CREW GETS STUCK AT THE WORST TIMES.",
+	},
+	"sales": {
+		"easy": "COZY SALES: FRIENDLY LEADS, A GENTLE QUOTA AND THE BELL RINGS A LOT.",
+		"normal": "THE USUAL PIPELINE. EVERYONE LOVES YOU UNTIL THEY SEE THE PRICE.",
+		"hard": "A THIN PIPELINE, CLIENTS WHO HAGGLE AND BYTEBROTHERS CIRCLING.",
+	},
+	"owner": {
+		"easy": "COZY OWNER: A KIND BANK, A KIND STAFF AND PAYROLL ALWAYS CLEARS.",
+		"normal": "RUNNING THE SHOP. EVERY DOLLAR HAS AN OPINION.",
+		"hard": "THIN MARGINS, TOUCHY CLIENTS AND A RIVAL ALWAYS ONE STEP AHEAD.",
+	},
+}
 const SEED_MASK := 0xFFFFFF
 const COZY_TIER := "easy"
 const DAY_SCALES := [0.5, 1.0, 1.5]  # the DAY LENGTH option: x on the mode's World.day_len (tech 300 / 600 / 900 s)
@@ -231,6 +254,11 @@ func set_tier(name: String) -> void:
 func cycle_tier(step: int) -> String:
 	set_tier(TIERS[(tier_index() + step + TIERS.size()) % TIERS.size()])
 	return tier
+
+
+# the tier picker's note for a campaign mode ("" for a mode without one, such as Free Play)
+func tier_note(mode_name: String) -> String:
+	return str(TIER_NOTES.get(mode_name, {}).get(tier, ""))
 
 
 func label() -> String:
