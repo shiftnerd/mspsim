@@ -297,6 +297,10 @@ func _init() -> void:
 	_check(crew.focus_of("Sam") == crew.focus_of("Sam"), "the focus cycles through the five areas and none")
 	dp.key("s")
 	_check(dp.view == "score" and dp.score_rows().size() >= 6, "S opens the score view")
+	var has_design := false
+	for r in dp.score_rows():
+		has_design = has_design or str(r[0]) == "DESK DESIGN"
+	_check(has_design, "the score view names the desk design")
 	_check(dp.back() and dp.view == "board", "Esc goes back to the board")
 	_check(not dp.back(), "Esc on the board itself closes the computer (not nested)")
 	# drag with the mouse

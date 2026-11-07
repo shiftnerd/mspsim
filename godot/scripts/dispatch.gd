@@ -752,6 +752,7 @@ func score_rows() -> Array:
 		["FIRST RESPONSE", Msp.mmss(float(td.frt))],
 		["UTILISATION", "%d%%" % int(round(util * 100.0))],
 		["OPEN NOW", str(int(td.open))],
+		["DESK DESIGN", Service.design_label()],
 		["CONFIDENCE", str(Campaign.rep)],
 		["ALAN / GARRISON", "%d / %d" % [Service.trust_of("Alan"), Service.trust_of("Garrison")]],
 	]
