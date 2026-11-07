@@ -55223,6 +55223,7 @@ func _ready() -> void:
     Onsite.populate(self)
     SalesBeats.auditor(self)
     SalesBeats.recruiter(self)
+    Shop.dress(self)
     _room = scene_file_path.get_file().get_basename()
     _set_dark(0.0 if World.lights_on(_room) else 1.0)
     World.lights_changed.connect(_on_lights)
@@ -65040,9 +65041,20 @@ write("scripts/shop.gd", '''extends Node
 # the old one is not refunded). Purchases are saved with the campaign and come over into Year 2. Free Play owns everything. The Easy tier
 # (cozy) takes a quarter off the price. The desk props that show what you bought are drawn by the stage (stage.gd, `Shop.owns`).
 
+signal changed
+
 const STORE := "NERDTHINK"
 const TAGLINE := "STUFF FOR GEEKS SINCE 2011"
 const COZY_OFF := 0.75
+# where each item sits on the player's open desk on the main floor: [top-left x, top-left y, y-sort]. The art is
+# assets/props/shop_<id>.png (tools/make_shop_props.py); a keyboard or a mouse covers the plain one exactly. The cushion has no art:
+# the chair is hidden by whoever sits in it.
+const DESK := {
+    "kb_blue": [93, 79, 109.0], "kb_brown": [93, 79, 109.0], "kb_red": [93, 79, 109.0],
+    "mouse": [116, 80, 109.0], "riser": [89, 83, 108.8], "rgb": [86, 81, 108.8],
+    "speakers": [89, 78, 109.0], "headset": [81, 79, 109.0], "plant": [73, 73, 109.0],
+    "toy": [89, 58, 109.0], "poster": [84, 44, 30.0],
+}
 # slot: one item per slot. fx: fix_secs and drain are multipliers, rest and people_xp are added. loud: coworkers near the desk hear it.
 const CATALOG := [
     {"id": "kb_blue", "name": "CLICKY BLUE KEYBOARD", "price": 90, "slot": "keyboard", "fx": {"fix_secs": 0.95}, "loud": true, "what": "FIXES TAKE 5 PERCENT LESS TIME. LOUD: COWORKERS NOTICE."},
@@ -65065,6 +65077,7 @@ var sel := 0  # the selected row in the app (not saved)
 
 func reset() -> void:
     owned = []
+    changed.emit()
 
 
 func to_dict() -> Dictionary:
@@ -65077,6 +65090,7 @@ func from_dict(d: Variant) -> void:
         for id in d.get("owned", []):
             if item(str(id)).size() > 0 and not owned.has(str(id)):
                 owned.append(str(id))
+    changed.emit()
 
 
 # a new run that keeps the desk (Year 2)
@@ -65144,6 +65158,7 @@ func buy(id: String) -> Dictionary:
     Campaign.cash -= price(id)
     owned.append(id)
     Career.add("shop_items")
+    changed.emit()
     var msg := "BOUGHT %s FOR $%d." % [str(it.name), price(id)]
     if old != "":
         msg += " THE OLD %s GOES IN THE DRAWER." % str(item(old).name)
@@ -65172,6 +65187,60 @@ func bonus(key: String) -> float:
 # somebody near the desk can hear a clicky keyboard
 func is_loud() -> bool:
     return Campaign.active and in_slot("keyboard") != "" and bool(item(in_slot("keyboard")).get("loud", false))
+
+
+# ---- the desk ----------------------------------------------------------------------------------------------------
+# the ids drawn at the desk: what you own in a campaign, everything (one keyboard) in Free Play
+func shown() -> Array:
+    var out := []
+    if Campaign.active:
+        out = owned.duplicate()
+    else:
+        for it in CATALOG:
+            if str(it.slot) != "keyboard" or str(it.id) == "kb_red":
+                out.append(str(it.id))
+    return out
+
+
+# the main floor's stage calls this: draw the props, and redraw them when something is bought
+func dress(stage: Node) -> void:
+    var scene := stage.scene_file_path.get_file().get_basename()
+    if scene != "main_floor" or Game.title_mode or not (available() or not Campaign.active):
+        return
+    _draw_props(stage)
+    var cb := func() -> void:
+        if is_instance_valid(stage):
+            _draw_props(stage)
+    changed.connect(cb)
+    stage.tree_exiting.connect(func() -> void: changed.disconnect(cb))
+
+
+func _draw_props(stage: Node) -> void:
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null:
+        return
+    for n in actors.get_children():
+        if n.is_in_group("shop_props"):
+            n.queue_free()
+    for id in shown():
+        if not DESK.has(id):
+            continue
+        var spot: Array = DESK[id]
+        var path := "res://assets/props/shop_%s.png" % id
+        if not ResourceLoader.exists(path):
+            continue
+        var tex: Texture2D = load(path)
+        for dx in ([0, 23] if id == "speakers" else [0]):
+            var sp := Sprite2D.new()
+            sp.texture = tex
+            sp.centered = false
+            sp.position = Vector2(float(spot[0]) + float(dx), float(spot[2]))
+            sp.offset = Vector2(0.0, float(spot[1]) - float(spot[2]))
+            sp.add_to_group("shop_props")
+            actors.add_child(sp)
+            if id == "rgb":
+                var tw := sp.create_tween().set_loops()
+                tw.tween_method(func(h: float) -> void: sp.self_modulate = Color.from_hsv(h, 0.75, 1.0), 0.0, 1.0, 6.0)
 ''')
 
 write("scripts/shop_app.gd", '''extends RefCounted

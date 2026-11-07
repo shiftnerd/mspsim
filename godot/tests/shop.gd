@@ -68,6 +68,26 @@ func _init() -> void:
 	shop.reset()
 	shop.restore(["mouse", "rgb"])
 	_check(shop.owns("mouse") and shop.owns("rgb"), "Year 2 restores the desk")
+	# the desk shows what you own
+	shop.reset()
+	shop.restore(["kb_red", "plant", "poster", "speakers"])
+	var st := Node.new()
+	st.scene_file_path = "res://scenes/main_floor.tscn"
+	var actors := Node.new()
+	actors.name = "Actors"
+	st.add_child(actors)
+	root.add_child(st)
+	shop.dress(st)
+	var drawn := 0
+	for n in actors.get_children():
+		drawn += 1 if n.is_in_group("shop_props") else 0
+	_check(drawn == 5, "the desk draws four items, two speakers among them (%d sprites)" % drawn)
+	shop.buy("mouse")
+	var after := 0
+	for n in actors.get_children():
+		after += 1 if n.is_in_group("shop_props") and not n.is_queued_for_deletion() else 0
+	_check(after == 6, "a purchase redraws the desk without piling up props (%d)" % after)
+	st.queue_free()
 	# the Easy tier is cheaper
 	var diff := root.get_node("Difficulty")
 	var normal_price: int = shop.price("riser")

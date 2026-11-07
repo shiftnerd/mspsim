@@ -61,6 +61,7 @@ func _ready() -> void:
 	Onsite.populate(self)
 	SalesBeats.auditor(self)
 	SalesBeats.recruiter(self)
+	Shop.dress(self)
 	_room = scene_file_path.get_file().get_basename()
 	_set_dark(0.0 if World.lights_on(_room) else 1.0)
 	World.lights_changed.connect(_on_lights)
