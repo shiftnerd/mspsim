@@ -71,6 +71,9 @@ const DEFAULT_MEDALS := [
 	{"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
 	{"id": "year_two", "title": "SECOND YEAR", "desc": "FINISH A YEAR 2 RUN", "rules": [["year2_done", ">=", 1]]},
 	{"id": "line_legend", "title": "LINE TAMER", "desc": "TAME THE LINE PRINTER", "rules": [["pr.line", ">=", 1]]},
+	{"id": "svc_ops", "title": "OPS MANAGER", "desc": "BECOME OPS MANAGER", "rules": [["svc_end.ops", ">=", 1]]},
+	{"id": "svc_hand", "title": "RIGHT HAND", "desc": "BACK ALAN OR GARRISON", "rules": [["svc_end_lead", ">=", 1]]},
+	{"id": "svc_summit", "title": "SUMMIT DIRECTOR", "desc": "TAKE SUMMIT'S ROLL-UP", "rules": [["svc_end.rollup_yes", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -405,8 +408,12 @@ func note_nerf_hit(reach: float) -> void:
 
 # a campaign year was finished. Cozy runs (the Easy tier) are counted apart: reputation, value and ending medals
 # count only for non-cozy runs, every other medal counts everywhere (R16).
-func note_ending() -> void:
+func note_ending(ending := "") -> void:
 	add("endings.cozy" if Difficulty.cozy_on() else "endings")
+	if Campaign.mode == "service" and ending != "" and not Difficulty.cozy_on():
+		add("svc_end." + ending)
+		if ending in ["alan", "garrison"]:
+			add("svc_end_lead")
 
 
 func _on_day(_d: int) -> void:

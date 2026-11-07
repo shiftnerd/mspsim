@@ -225,7 +225,7 @@ func finish() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_canvas.visible = false
 	_fade = 0.0
-	Career.note_ending()
+	Career.note_ending(ending)
 	Campaign.finish_campaign(ending)
 
 
