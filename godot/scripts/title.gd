@@ -310,7 +310,7 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
 # Esc / back / pad B: the slot and overwrite lists return to the submenu, a submenu returns to the top menu (cursor
 # kept), the top menu closes
 func _back() -> void:
-	if _level == "slot" or _level == "over":
+	if _level == "slot" or _level == "over" or _level == "del":
 		_show_sub(_sub_mode, _sub_sel)
 	elif _level == "sub":
 		_show_top(_top_sel)
@@ -361,14 +361,50 @@ func slot_label(mode: String, n: int, info: Dictionary, lead := "SLOT") -> Strin
 # NEW CAMPAIGN (the lowest empty slot, or a question which full slot to overwrite)
 func sub_items(mode: String) -> Array:
 	var out := []
+	var saved := 0
 	for n in range(1, Campaign.SLOTS + 1):
 		var info: Dictionary = Campaign.slot_info(mode, n)
 		if bool(info.exists):
+			saved += 1
 			out.append({"label": slot_label(mode, n, info), "id": "%s_slot%d" % [mode, n], "enabled": true})
 	if Yeartwo.available(mode):
-		out.append({"label": "START YEAR 2", "id": mode + "_y2", "enabled": true})
+		var carry := Yeartwo.carry_summary(mode)
+		out.append({"label": "START YEAR 2" + (" - " + carry if carry != "" else ""), "id": mode + "_y2", "enabled": true})  # R17
 	out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
+	if saved > 0:
+		out.append({"label": "DELETE A SLOT", "id": mode + "_delask", "enabled": true})  # R19
 	return out
+
+
+# R19: which slot to delete (a row opens the question; nothing is erased until YES)
+func del_items(mode: String) -> Array:
+	var out := []
+	for n in range(1, Campaign.SLOTS + 1):
+		var info: Dictionary = Campaign.slot_info(mode, n)
+		if bool(info.exists):
+			out.append({"label": slot_label(mode, n, info, "DELETE SLOT"), "id": "%s_del%d" % [mode, n], "enabled": true})
+	out.append({"label": "CANCEL", "id": "cancel", "enabled": true})
+	return out
+
+
+func _show_delete_list(mode: String) -> void:
+	_sub_sel = _sel
+	_level = "del"
+	_heading = "DELETE WHICH SLOT?"
+	_items = del_items(mode)
+	_sel = _items.size() - 1  # the cursor starts on CANCEL
+	_menu.queue_redraw()
+
+
+func _confirm_delete(mode: String, n: int) -> void:
+	_level = "del"
+	_heading = "ERASE SLOT %d FOR GOOD?" % n
+	_items = [
+		{"label": "YES, DELETE SLOT %d" % n, "id": "%s_delyes%d" % [mode, n], "enabled": true},
+		{"label": "KEEP IT", "id": "cancel", "enabled": true},
+	]
+	_sel = 1
+	_menu.queue_redraw()
 
 
 # the rows after picking a slot that holds both a mid-day resume point and a day-start save
@@ -477,6 +513,13 @@ func _choose(i: int) -> void:
 		return
 	if id == "cancel":
 		_back()
+	elif id.ends_with("_delask"):
+		_show_delete_list(id.get_slice("_", 0))
+	elif "_delyes" in id:
+		Campaign.delete_slot(id.get_slice("_", 0), int(id.get_slice("_delyes", 1)))
+		_show_sub(_sub_mode, 0)
+	elif "_del" in id:
+		_confirm_delete(id.get_slice("_", 0), int(id.get_slice("_del", 1)))
 	elif "_slot" in id:
 		_enter_slot(id.get_slice("_", 0), int(id.get_slice("_slot", 1)))
 	elif "_over" in id:

@@ -216,6 +216,25 @@ func available(mode: String) -> bool:
 	return int(rec.get("finished", 1 if str(rec.get("ending", "")) != "" else 0)) > 0
 
 
+# R17: what a START YEAR 2 run keeps from the finished one, as one short line for the title menu row
+func carry_summary(mode: String) -> String:
+	var rec := meta_get(mode)
+	if rec.is_empty():
+		return ""
+	var kept := carry_for(mode, rec)
+	var parts := ["REP %d" % int(kept.rep)]
+	if int(kept.cash) > 0:
+		parts.append("$%d CASH" % int(kept.cash))
+	if int(kept.trust) >= 0 and mode == "owner":
+		parts.append("TRUST %d" % int(kept.trust))
+	var levels := 0
+	for key in kept.skills:
+		levels += int(kept.skills[key])
+	if levels > 0 or int(kept.ps) > 0:
+		parts.append("SKILLS KEPT")
+	return ", ".join(parts)
+
+
 # the title menu rows (one per finished mode)
 func menu_items() -> Array:
 	var out := []

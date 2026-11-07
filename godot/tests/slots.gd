@@ -180,7 +180,7 @@ func _init() -> void:
 	_check(_ids().size() == 6, "six top lines")
 	title._show_top(0)
 	title._choose(0)
-	_check(title._level == "sub" and _ids() == ["tech_slot1", "tech_slot3", "tech_y2", "tech_new"], "submenu rows %s" % str(_ids()))
+	_check(title._level == "sub" and _ids() == ["tech_slot1", "tech_slot3", "tech_y2", "tech_new", "tech_delask"], "submenu rows %s" % str(_ids()))
 	_check(str(title._items[0].label).begins_with("SLOT 1 - DAY 4") and str(title._items[1].label).begins_with("SLOT 3 - DAY 9 (YEAR 2)"), "slot rows: %s" % str(_labels()))
 	title._sel = 3
 	title._choose(3)  # NEW CAMPAIGN with slot 2 empty
@@ -191,7 +191,7 @@ func _init() -> void:
 	title._close_select()
 	_put("tech", 2, 6)
 	title._show_sub("tech", 0)
-	title._sel = title._items.size() - 1
+	title._sel = _ids().find("tech_new")
 	title._choose(title._sel)  # NEW CAMPAIGN with all three full
 	_check(title._select == null and title._level == "over" and title._heading == "OVERWRITE WHICH SLOT?", "all full: the overwrite question")
 	_check(_ids() == ["tech_over1", "tech_over2", "tech_over3", "cancel"], "overwrite rows %s" % str(_ids()))
@@ -199,13 +199,13 @@ func _init() -> void:
 	title._choose(3)  # CANCEL
 	_check(title._level == "sub" and title._select == null, "CANCEL returns to the submenu")
 	_check(c.has_save("tech", 1) and c.has_save("tech", 2) and c.has_save("tech", 3) and c.saved_day("tech", 2) == 6, "cancel keeps all three saves")
-	title._choose(title._items.size() - 1)
+	title._choose(_ids().find("tech_new"))
 	var esc := InputEventKey.new()
 	esc.keycode = KEY_ESCAPE
 	esc.pressed = true
 	title._unhandled_input(esc)
 	_check(title._level == "sub" and c.has_save("tech", 1) and c.has_save("tech", 2) and c.has_save("tech", 3), "Esc also backs out and keeps all three")
-	title._choose(title._items.size() - 1)
+	title._choose(_ids().find("tech_new"))
 	title._choose(1)  # OVERWRITE SLOT 2
 	_check(title._select != null and title._slot == 2 and title._overwrite, "picking a slot opens the character select for it")
 	_check(c.has_save("tech", 2), "... nothing is deleted before the run starts")
@@ -241,6 +241,43 @@ func _init() -> void:
 	title._choose(1)  # FROM THE START
 	await process_frame
 	_check(c.active and c.slot == 3 and c.day == 9 and c.mode == "tech", "FROM THE START continues slot 3 at its day start")
+
+	# ---- R19: DELETE A SLOT (a list, then a question; nothing is erased until YES)
+	_wipe()
+	_put("tech", 1, 4)
+	_put("tech", 2, 6)
+	c.active = false
+	c.mode = ""
+	root.get_node("Game").title_mode = true
+	world.time_scale = 0.0
+	await _fresh_title()  # the last run started: a new title screen
+	title._show_top(0)
+	title._choose(0)
+	_check(_ids() == ["tech_slot1", "tech_slot2", "tech_new", "tech_delask"], "the submenu offers DELETE A SLOT when something is saved: %s" % str(_ids()))
+	title._choose(_ids().find("tech_delask"))
+	_check(title._level == "del" and title._heading == "DELETE WHICH SLOT?" and _ids() == ["tech_del1", "tech_del2", "cancel"], "the list names the saved slots and CANCEL: %s" % str(_ids()))
+	_check(str(title._items[1].label).begins_with("DELETE SLOT 2 - DAY 6") and title._items[title._sel].id == "cancel", "labels say what goes, the cursor starts on CANCEL: %s" % str(_labels()))
+	title._choose(1)  # DELETE SLOT 2
+	_check(title._level == "del" and title._heading == "ERASE SLOT 2 FOR GOOD?" and _ids() == ["tech_delyes2", "cancel"], "the question: %s" % str(_ids()))
+	_check(c.has_save("tech", 2) and title._items[title._sel].id == "cancel", "nothing is erased yet and the cursor starts on KEEP IT")
+	title._choose(1)  # KEEP IT
+	_check(title._level == "sub" and c.has_save("tech", 1) and c.has_save("tech", 2), "KEEP IT goes back with both saves")
+	title._choose(_ids().find("tech_delask"))
+	title._choose(1)
+	var esc2 := InputEventKey.new()
+	esc2.keycode = KEY_ESCAPE
+	esc2.pressed = true
+	title._menu_open = true
+	title._unhandled_input(esc2)
+	_check(title._level == "sub" and c.has_save("tech", 2), "Esc backs out of the question and keeps the slot")
+	title._choose(_ids().find("tech_delask"))
+	title._choose(1)
+	title._choose(0)  # YES, DELETE SLOT 2
+	_check(not c.has_save("tech", 2) and c.has_save("tech", 1) and title._level == "sub", "YES erases slot 2 only")
+	_check(_ids() == ["tech_slot1", "tech_new", "tech_delask"], "and the submenu no longer lists it: %s" % str(_ids()))
+	c.delete_slot("tech", 1)
+	title._show_sub("tech", 0)
+	_check(_ids() == ["tech_new"], "with nothing saved there is nothing to delete: %s" % str(_ids()))
 
 	_wipe()
 	print("failures=", failures)

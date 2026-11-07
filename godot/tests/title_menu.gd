@@ -81,7 +81,7 @@ func _init() -> void:
 	_check(title.sub_items("tech").map(func(i: Dictionary) -> String: return i.id) == ["tech_new"], "no save: NEW CAMPAIGN only")
 	_save("owner", 5, 1)
 	var rows: Array = title.sub_items("owner")
-	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["owner_slot1", "owner_new"], "a save: its SLOT row then NEW CAMPAIGN")
+	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["owner_slot1", "owner_new", "owner_delask"], "a save: its SLOT row then NEW CAMPAIGN")
 	_check(str(rows[0].label) == "SLOT 1 - WEEK 5 - ADULT" and str(rows[1].label) == "NEW CAMPAIGN", "labels: %s" % str(rows.map(func(i: Dictionary) -> String: return i.label)))
 	_save("owner", 5, 2)
 	_check(str(title.sub_items("owner")[0].label) == "SLOT 1 - WEEK 5 (YEAR 2) - ADULT", "a Year 2 save shows the tag")
@@ -91,8 +91,8 @@ func _init() -> void:
 	y.record(meta, "owner", "stay")
 	meta.save(y.meta_path())
 	rows = title.sub_items("owner")
-	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["owner_slot1", "owner_y2", "owner_new"], "save + finished year: SLOT 1, YEAR 2, NEW")
-	_check(str(rows[1].label) == "START YEAR 2", "the Year 2 row reads START YEAR 2")
+	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["owner_slot1", "owner_y2", "owner_new", "owner_delask"], "save + finished year: SLOT 1, YEAR 2, NEW")
+	_check(str(rows[1].label).begins_with("START YEAR 2 - REP "), "the Year 2 row says what carries over: %s" % str(rows[1].label))
 	DirAccess.remove_absolute(c.save_path("owner"))
 	_check(title.sub_items("owner").map(func(i: Dictionary) -> String: return i.id) == ["owner_y2", "owner_new"], "finished year without a save: YEAR 2, NEW")
 	_save("owner", 5, 1)
@@ -103,7 +103,7 @@ func _init() -> void:
 	_check(title._sel == 1 and _ids()[1] == "owner", "Down goes to OWNER CAMPAIGN")
 	_key(KEY_ENTER)
 	_check(title._level == "sub" and title._heading == "OWNER CAMPAIGN", "Enter opens the owner submenu with its heading")
-	_check(_ids() == ["owner_slot1", "owner_y2", "owner_new"] and title._sel == 0, "submenu rows %s, cursor on the first" % str(_ids()))
+	_check(_ids() == ["owner_slot1", "owner_y2", "owner_new", "owner_delask"] and title._sel == 0, "submenu rows %s, cursor on the first" % str(_ids()))
 	_key(KEY_DOWN)
 	_key(KEY_DOWN)
 	_check(_ids()[title._sel] == "owner_new", "Down walks the submenu")
@@ -194,7 +194,7 @@ func _init() -> void:
 	world.time_scale = 0.0
 	await _fresh_title()
 	rows = title.sub_items("tech")
-	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["tech_slot1", "tech_new"], "resume point only: its SLOT row and NEW")
+	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["tech_slot1", "tech_new", "tech_delask"], "resume point only: its SLOT row and NEW")
 	_check(str(rows[0].label).begins_with("SLOT 1 - DAY 1  12:") or str(rows[0].label).begins_with("SLOT 1 - DAY 1  11:"), "the slot row shows day and clock: %s" % str(rows[0].label))
 	title._choose(0)  # TECH CAMPAIGN -> submenu
 	title._choose(0)  # the slot row: only a resume point, so it resumes at once
@@ -207,7 +207,7 @@ func _init() -> void:
 	await _fresh_title()
 	_save("tech", 1, 1)
 	rows = title.sub_items("tech")
-	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["tech_slot1", "tech_new"], "resume + save: still one slot row")
+	_check(rows.map(func(i: Dictionary) -> String: return i.id) == ["tech_slot1", "tech_new", "tech_delask"], "resume + save: still one slot row")
 	title._choose(0)  # TECH CAMPAIGN -> submenu
 	_check(title._level == "sub" and title._select == null, "TECH with a save opens its submenu")
 	title._choose(0)  # the slot row: both kinds of save, so a second choice
