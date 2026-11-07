@@ -33680,6 +33680,8 @@ func _press_page(key: int) -> void:
             return
         if use_rooms and game == "karaoke" and not opts.has("song"):
             ask_song()  # the card at the mic picks the song, then the game begins
+        elif use_rooms and game == "bowling" and Campaign.active and not opts.get("alley_picked", false):
+            ask_alley()  # R11: tonight's draw is the suggestion, the card lets you pick the lanes
         elif use_rooms and game == "dinner" and Campaign.mode == "owner":
             ask_budget()
         else:
@@ -34297,6 +34299,24 @@ func kara_warning(song_id := "") -> String:
         if (song_id == "" or str(song.id) == song_id) and float(song.doubles[idx]) > 0.0:
             return str(KARAOKE_TEXT.doubles)
     return ""
+
+
+# R11: which lanes tonight; the seeded draw is marked as the pick of the evening and is what you get in the toolbox and in tests
+func ask_alley() -> void:
+    var options := []
+    for id in BowlVariety.ALLEY_ORDER:
+        var a: Dictionary = BowlVariety.alley(str(id))
+        options.append({"label": str(a.short) + ("  (TONIGHT'S PICK)" if str(id) == str(opts.get("alley", "strike_zone")) else ""), "id": str(id)})
+    var tonight: Dictionary = BowlVariety.alley(str(opts.get("alley", "strike_zone")))
+    Cards.ask(
+        "Bowling alley",
+        "Where to? Each place oils its lanes differently. " + str(tonight.line),
+        options,
+        func(id: String) -> void:
+            opts["alley"] = id
+            opts["alley_picked"] = true
+            begin_play()
+    )
 
 
 func ask_song() -> void:
