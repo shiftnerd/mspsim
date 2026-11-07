@@ -19,6 +19,7 @@ var root: Node
 var strategy := "careful"
 var ts := 20.0  # time compression: game seconds per real second at 60 fps = ts (World.time_scale)
 var build_name := ""
+var preset_build := {}  # a build set as the pending one for tech and service runs (sales uses build_name)
 var rng := RandomNumberGenerator.new()
 var _last_day := 0
 var _ticks := 0
@@ -47,7 +48,7 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	c.save_prefix = "user://bot_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
-	root.get_node("Build").pending = {}
+	root.get_node("Build").pending = preset_build.duplicate(true)
 	d.seed_run(seed_n)
 	seed(seed_n * 31 + 7)  # the owner campaign and the Shift cards still draw from the global generator
 	rng.seed = seed_n * 7919

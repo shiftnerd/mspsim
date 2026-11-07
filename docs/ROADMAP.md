@@ -46,7 +46,7 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 |---|---|---|
 | T2 | A live pass for the HUD and Review layout in all three formats; curves were measured on one seed; mixed play ends near 76 (target 55-75) | S-M |
 | X6 | Owner help for onsite visits; a walk to the front desk for non-phone triggers; owner help counted by Career | S |
-| X7 | No balance run per build preset; tier x seed coverage in `seeds.gd` | S |
+| X7 | Tier x seed coverage in `seeds.gd`. A balance run per build preset now exists (`tests/presets_balance.gd`, a careful bot at normal, seed 11: tech all four presets end at rep 100 and three of them score exactly the same, so the tech bot barely exercises the stats and a human play is the real test; sales 91 to 97, service 95 to 100, nobody fired) | S |
 | X9 | A live screenshot check of the trust chips and the review crew lines; a manual 20-week replay | S |
 | C7 | A hand-played pass for card pacing | M |
 | R1 | hard-tier numbers checked by play; a separate tier step instead of the chip | S |
