@@ -208,6 +208,8 @@ func _init() -> void:
 		"the printer job offers to fight it"
 	)
 	cards.pick(3)
+	_check(cards.is_open and cards.options.size() == 5 and cards.options[4].label == "NO BAG, JUST THE TOOLS", "P6: first the bag: four bags and no bag")
+	cards.pick(4)  # no bag: the stars are the plain count
 	_check(pg.is_open, "the mini-game opens")
 	_play_open(pg)
 	pg._result_t = 1.0

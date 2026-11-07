@@ -1936,10 +1936,15 @@ func _chose(id: String) -> void:
 		if str(o.id) == id:
 			opt = o
 	if str(opt.get("game", "")).begins_with("printer"):
-		PrinterGame.start(
-			func(stars: int) -> void: _printer_done(stars),
-			_printer_model(str(opt.get("game", "")), true),
-			{"onsite": true}
+		var fights := _printer_model(str(opt.get("game", "")), true)
+		var bags := PrinterGame.bag_options(fights)
+		bags.append({"label": "NO BAG, JUST THE TOOLS", "id": ""})
+		Cards.ask(
+			"Onsite",
+			"The %s. What goes in the bag?" % str(PrinterGame.MODELS[fights].label).to_lower(),
+			bags,
+			func(bag: String) -> void:
+				PrinterGame.start(func(stars: int) -> void: _printer_done(stars), fights, {"onsite": true, "bag": "" if bag == "__none" else bag})
 		)
 		return
 	_away(float(opt.hours) * Habits.onsite_mult(client), ticket_id)  # R38: H11

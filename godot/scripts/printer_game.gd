@@ -34,6 +34,9 @@ const PLOTTER_TRAY := ["24 BOND", "36 BOND", "MYLAR", "HIT IT"]
 const RECEIPT_TRAY := ["80 MM", "58 MM", "PLAIN", "HIT IT"]
 const DOT_TRAY := ["TRACTOR", "SINGLE", "LABELS", "HIT IT"]
 const LINE_TRAY := ["FAN-FOLD", "CONTINUOUS", "CARBON FORMS", "HIT IT"]
+# P6: the bag you carry in. The right one for the printer is worth a mistake (-1), a wrong one costs one (+1); no bag is neutral.
+const BAGS := {"paper": "A REAM OF PAPER", "fuser": "A FUSER KIT", "air": "COMPRESSED AIR", "cable": "A NETWORK CABLE"}
+const BAG_FOR := {"laser": "fuser", "inkjet": "air", "plotter": "paper", "mfp": "cable", "receipt": "paper", "dot": "air", "line": "fuser"}
 # the printer models. phases = the rounds in order (test is always last); tray / names / colors = what the tray and the
 # cartridge round offer (the right tray is always the first, the last one is the joke); look = how it is drawn.
 const MODELS := {
@@ -646,6 +649,7 @@ var is_open := false
 var model := "laser"
 var phase := ""
 var mistakes := 0
+var bag_adj := 0  # -1 the right bag, +1 a wrong one, 0 none (added to the mistakes when the stars are counted)
 var stars := 0
 var msg := ""
 var marker := 0.0
@@ -692,6 +696,8 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 	_callback = callback
 	model = flavour if MODELS.has(flavour) else "laser"
 	practice = bool(opts.get("practice", false))
+	var picked := str(opts.get("bag", ""))
+	bag_adj = 0 if picked == "" else (-1 if picked == str(BAG_FOR.get(model, "")) else 1)
 	practice_seed = clampi(int(opts.get("seed", 1)), 1, 99)
 	tired = 1.0
 	if bool(opts.get("onsite", false)):
@@ -732,13 +738,26 @@ func _finish() -> void:
 
 
 func _score() -> int:
-	if mistakes <= 1:
+	var m := mistakes + bag_adj
+	if m <= 1:
 		return 3
-	if mistakes <= 3:
+	if m <= 3:
 		return 2
-	if mistakes <= 5:
+	if m <= 5:
 		return 1
 	return 0
+
+
+# the four bags to choose from before an onsite printer job; with some servers know-how the right one is marked
+func bag_options(for_model: String) -> Array:
+	var out := []
+	var best := str(BAG_FOR.get(for_model, ""))
+	for id in BAGS:
+		var label := str(BAGS[id])
+		if id == best and Skills.level("servers") >= 2:
+			label += " (BEST)"
+		out.append({"label": label, "id": str(id)})
+	return out
 
 
 # ---- models, texts, randomness
@@ -1173,6 +1192,8 @@ func _paint() -> void:
 	_o = panel.position
 	_pw = panel.size.x
 	var note := "MISTAKES %d" % mistakes
+	if bag_adj != 0:
+		note += " (BAG %+d)" % bag_adj
 	if phase != "result":
 		note += "  PRAY %d" % faith
 	UiStyle.panel(_canvas, panel, _tx("title"), note)
