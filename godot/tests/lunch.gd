@@ -21,7 +21,7 @@ func _process(_delta: float) -> bool:
 		world._meeting_t = 9999.0
 		world.clock = 12.0
 		for n in world.chars:
-			if world.CAST[n].get("role", "") == "sales":
+			if world.row(n).get("role", "") == "sales":
 				continue  # the account manager lunches with a client
 			world.chars[n].lunched = true
 			world.chars[n].legs = world._lunch_plan(n)

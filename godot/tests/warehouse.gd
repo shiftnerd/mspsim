@@ -249,7 +249,7 @@ func _init() -> void:
 	var data := load("res://scripts/world_data.gd")
 	_check(data.SCENES.has("warehouse"), "the warehouse is in the world data")
 	var expect := {
-		["main_floor", "conference"]: ["cubicle_area", "conference"],
+		["main_floor", "conference"]: ["cubicle_area", "cubicle_two", "conference"],
 		["office_one", "kitchenette"]: ["main_floor", "kitchenette"],
 		["kitchenette", "bathroom_1"]: ["bathroom_1"],
 		["kitchenette", "bathroom_2"]: ["bathroom_2"],

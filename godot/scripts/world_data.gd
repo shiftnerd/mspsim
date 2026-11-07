@@ -55,7 +55,7 @@ const SCENES := {
 		"links":
 		[
 			{"name": "ToMain", "x": 323, "to": "main_floor", "spawn": "from_conf"},
-			{"name": "ToCubicles", "x": 28, "to": "cubicle_area", "spawn": "from_conf"}
+			{"name": "ToCubicles", "x": 28, "to": "cubicle_two", "spawn": "from_conf"}
 		],
 		"seats":
 		{"Seat1": 89, "Seat2": 121, "Seat3": 153, "Seat4": 185, "Seat5": 217, "Seat6": 249},
@@ -93,10 +93,25 @@ const SCENES := {
 		"links":
 		[
 			{"name": "ToMain", "x": 28, "to": "main_floor", "spawn": "from_cubicles"},
-			{"name": "ToConference", "x": 340, "to": "conference", "spawn": "from_cubicles"}
+			{"name": "ToCubicleTwo", "x": 340, "to": "cubicle_two", "spawn": "from_cubicles"}
 		],
 		"seats": {"Seat1": 59, "Seat2": 143},
 		"uses": {"switch": 34, "nerf_rack": 227, "tv": 324, "copier": 238, "cooler": 268},
+		"outside_x": -1
+	},
+	"cubicle_two":
+	{
+		"x0": 24,
+		"W": 320,
+		"spawns":
+		{"start": [104, "right"], "from_cubicles": [52, "right"], "from_conf": [294, "left"]},
+		"links":
+		[
+			{"name": "ToCubicles", "x": 28, "to": "cubicle_area", "spawn": "from_conf"},
+			{"name": "ToConference", "x": 340, "to": "conference", "spawn": "from_cubicles"}
+		],
+		"seats": {"Seat1": 59, "Seat2": 143, "Seat3": 227},
+		"uses": {"switch": 34},
 		"outside_x": -1
 	},
 	"network_closet":

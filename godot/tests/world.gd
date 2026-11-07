@@ -46,7 +46,7 @@ func _process(_delta: float) -> bool:
 		for n in world.chars:  # everybody back to their desks for part B
 			world.chars[n].legs = [world._work_leg(n, true, 600.0)]
 			world.chars[n].leg_t = 600.0
-			world.chars[n].scene = world.CAST[n].home
+			world.chars[n].scene = world.row(n).home
 		change_scene_to_file("res://scenes/kitchenette.tscn")
 	if frame == A_END + 30:
 		world.force_activity("Alan", "coffee")

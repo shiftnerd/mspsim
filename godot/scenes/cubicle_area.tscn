@@ -95,14 +95,14 @@ auto = true
 [node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToMain"]
 shape = SubResource("shape_exit")
 
-[node name="ExitToConference" type="Area2D" parent="Interactables"]
+[node name="ExitToCubicleTwo" type="Area2D" parent="Interactables"]
 position = Vector2(340, 60)
 script = ExtResource("door")
-target_scene = "conference"
+target_scene = "cubicle_two"
 target_spawn = "from_cubicles"
 auto = true
 
-[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToConference"]
+[node name="Shape" type="CollisionShape2D" parent="Interactables/ExitToCubicleTwo"]
 shape = SubResource("shape_exit")
 
 [node name="Seat1" type="Area2D" parent="Interactables"]

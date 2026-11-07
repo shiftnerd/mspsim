@@ -169,14 +169,14 @@ func _run() -> void:
 	c.new_game("free")
 	_check(not c.active and c.player_as == "Dan", "Free Play as Dan: player_as = Dan")
 	_check(not world.chars.has("Dan") and not social.people().has("Dan"), "the NPC copy is gone, not hidden")
-	_check(world.chars.size() == 5 and outings.roster().size() == 5, "five coworkers remain")
+	_check(world.chars.size() == 8 and outings.roster().size() == 5, "five coworkers and the three office staff remain")
 	player_script.current_character = "office_john"
 	c.refresh_free()
 	_check(world.chars.has("Dan") and not world.chars.has("John"), "switching character brings Dan back and removes John")
 	_check(world.chars.has("Maya"), "and Maya is still there")
 	player_script.current_character = "office_intern"
 	c.refresh_free()
-	_check(world.chars.size() == 6 and c.player_as == "", "a non-cast character removes nobody")
+	_check(world.chars.size() == 9 and c.player_as == "", "a non-cast character removes nobody")
 
 	# ---- the outing games with a smaller table
 	player_script.current_character = "office_dan"
@@ -202,6 +202,6 @@ func _run() -> void:
 	# restore for the other tests
 	player_script.current_character = "office_adult"
 	c.new_game("tech")
-	_check(world.chars.size() == 6, "back to the full cast")
+	_check(world.chars.size() == 9, "back to the full cast")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

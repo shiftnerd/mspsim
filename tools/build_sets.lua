@@ -142,6 +142,23 @@ builders.cubicle_area = {W = 320, H = 128, fn = function(s)
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
 end}
 
+-- ===== CUBICLE TWO 320x128: the second row of cubicles (the office staff: Jen, Michael, Christy), no copier corner =====
+builders.cubicle_two = {W = 320, H = 128, fn = function(s)
+  local W = 320
+  L.wall(s.layer("Wall"), W, "#8FC43A", "#79A82F"); L.carpet(s.layer("Floor"), W)
+  local shell, cal, note = P.cubicleShell(), P.calendar(), P.sticky()
+  for _, cx in ipairs({20, 104, 188}) do
+    s.put("CubicleShell", shell, cx, 52)
+    s.put("CubiclePropsBack", cal, cx + 56, 60); s.put("CubiclePropsBack", note, cx + 10, 64)
+    s.putS("CubicleChairs", P.chairSide(), cx + 1, 66, 95, "chair_office_side")
+    s.putS("CubicleDesks", P.desk(74), cx + 3, 83, 108, "desk_cubicle_74")
+    P.dualTop(s, "CubicleProps", cx + 3, true)
+  end
+  s.put("Whiteboard", P.whiteboard(), 276, 30)
+  s.putS("Plant", P.floorPlant(), 268, 78, 108, "plant_floor")
+  s.putS("Cabinet", P.filingCabinet(), 292, 78, 108, "filing_cabinet")
+end}
+
 -- ===== NETWORK CLOSET 144x128: a door, an outlet, the ISP jack and one rack =====
 builders.network_closet = {W = 144, H = 128, fn = function(s)
   L.wall(s.layer("Wall"), 144, "#9AA1AB", "#828994"); L.tiles(s.layer("Floor"), 144)
@@ -159,7 +176,7 @@ dofile(TOOLS .. "lot_set.lua")(L, builders)        -- the walkable parking lot o
 dofile(TOOLS .. "client_sets.lua")(L, builders)   -- client sites: site_<type>_<skin> (dental, law, vet, arch, realty, trailer x a, b)
 local exported = {}
 local T, B = L.CEIL_H, L.FLOOR_EXT
-local seeds = {main_floor = 3, office_one = 7, office_two = 8, conference = 11, kitchenette = 5, bathroom_1 = 13, bathroom_2 = 14, cubicle_area = 9,
+local seeds = {main_floor = 3, office_one = 7, office_two = 8, conference = 11, kitchenette = 5, bathroom_1 = 13, bathroom_2 = 14, cubicle_area = 9, cubicle_two = 16,
   network_closet = 15, bowling_alley = 21, karaoke_bar = 22, escape_room = 23, restaurant = 24,
   resort_lobby = 31, resort_hall = 32, ballroom = 33, breakout_a = 34, breakout_b = 36, breakout_c = 37, breakout_d = 38, vendor_hall = 35, warehouse = 41, warehouse_lot = 42}
 for name, b in pairs(builders) do

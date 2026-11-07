@@ -38,7 +38,7 @@ func _init() -> void:
 	player_script.current_character = "office_adult"
 	c.new_game("tech")
 	_clear(cards)
-	_check(not world.chars.has("Sam") and not world.chars.has("Terry") and world.chars.size() == 6, "tech campaign: still the six cast members (%d)" % world.chars.size())
+	_check(not world.chars.has("Sam") and not world.chars.has("Terry") and world.chars.size() == 9 and world.chars.has("Jen") and world.chars.has("Michael") and world.chars.has("Christy"), "tech campaign: the six cast members and the three office staff (%d)" % world.chars.size())
 	_check(world.CAST.size() == 6 and world.CREW_CAST.size() == 2, "CAST is untouched, the techs live in CREW_CAST")
 	c.new_game("owner")
 	_clear(cards)

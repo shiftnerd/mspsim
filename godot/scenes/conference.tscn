@@ -90,7 +90,7 @@ shape = SubResource("shape_door")
 [node name="ExitToCubicles" type="Area2D" parent="Interactables"]
 position = Vector2(28, 60)
 script = ExtResource("door")
-target_scene = "cubicle_area"
+target_scene = "cubicle_two"
 target_spawn = "from_conf"
 auto = true
 

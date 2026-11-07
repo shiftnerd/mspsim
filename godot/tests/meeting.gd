@@ -48,7 +48,7 @@ func _init() -> void:
 
 	# ---- the whole cast sits, and there are still seats for the player
 	for n in world.chars:
-		world.chars[n].scene = world.CAST[n].home
+		world.chars[n].scene = world.row(n).home
 		world.force_activity(n, "work")
 	change_scene_to_file("res://scenes/conference.tscn")
 	await _wait(20)
@@ -62,7 +62,7 @@ func _init() -> void:
 			legs += 1 if str(leg.get("kind", "")) == "meeting" else 0
 	_check(legs == 6, "everyone gets a meeting leg, Morgan hosts (%d of 6)" % legs)
 	# story events for the day fire as the clock jumps to 14:00; a decision card now freezes the day, so dismiss them
-	for i in 3200:
+	for i in 4400:  # the walk from the main floor is one room longer now (the second cubicle row)
 		await process_frame
 		_drain(cards)
 	var seated := 0

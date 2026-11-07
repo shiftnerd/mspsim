@@ -79,7 +79,10 @@ func _init() -> void:
 		if l.to == "network_closet":
 			links_to_closet += 1
 	_check(links_to_closet == 0, "no cubicle area link names the closet")
-	_check(inter.get_node_or_null("ExitToMain") != null and inter.get_node_or_null("ExitToConference") != null, "its left and right edges still lead out")
+	_check(
+		inter.get_node_or_null("ExitToMain") != null and inter.get_node_or_null("ExitToCubicleTwo") != null,
+		"its left and right edges still lead out (the right one goes to the second cubicle row)"
+	)
 
 	# ---- main floor -> kitchenette (left edge)
 	change_scene_to_file("res://scenes/main_floor.tscn")

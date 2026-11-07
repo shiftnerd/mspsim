@@ -31,6 +31,13 @@ const CREW_CAST := {
 	"Sam": {"character": "office_intern", "home": "main_floor", "seat": "Seat1", "role": "crew"},
 	"Terry": {"character": "office_adult", "home": "conference", "seat": "Seat6", "role": "crew"},
 }
+# the office staff (the second cast): real NPCs in the tech and owner campaigns and Free Play, not in the service campaign (Sam has
+# the front desk there). They are not in CAST, so the games, the lunch table and the all-hands never see them. Jen answers the phones.
+const STAFF_CAST := {
+	"Jen": {"character": "office_jen", "home": "cubicle_two", "seat": "Seat1", "role": "frontdesk"},
+	"Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
+	"Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
+}
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
 const FLOOR_Y := 118.0
@@ -78,6 +85,8 @@ var _pair_last := {}
 func _ready() -> void:
 	randomize()
 	for n in CAST:
+		chars[n] = _make_char(n)
+	for n in staff_names():
 		chars[n] = _make_char(n)
 	_meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
 	lights_changed.connect(_on_lights_changed)
@@ -374,12 +383,19 @@ func row(n: String) -> Dictionary:
 		return CAST[n]
 	if CREW_CAST.has(n):
 		return CREW_CAST[n]
+	if STAFF_CAST.has(n):
+		return STAFF_CAST[n]
 	return Crew.hire_row(n)  # a tech you hired (C6): hot-desks at the conference table
 
 
 # every name that can be a service tech: Sam and Terry, then the pool the hires are drawn from
 func crew_names() -> Array:
 	return CREW_CAST.keys() + Crew.HIRE_SHEETS.keys()
+
+
+# the office staff who are in the building in this campaign (all of them, except in the service campaign)
+func staff_names() -> Array:
+	return STAFF_CAST.keys()
 
 
 func _make_char(n: String) -> Dictionary:
@@ -413,6 +429,8 @@ func roster_gone() -> Array:
 	for n in crew_names():
 		if not (Campaign.active and Campaign.mode == "service" and Crew.has(n) and not Crew.is_gone(n)):
 			gone.append(n)
+	if Campaign.active and Campaign.mode == "service":
+		gone.append_array(staff_names())  # Sam has the front desk there
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
 	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
 		gone.append(Roles.partner())
@@ -447,7 +465,7 @@ func apply_roster() -> void:
 			if st.node != null and is_instance_valid(st.node):
 				st.node.queue_free()
 			chars.erase(n)
-	for n in CAST.keys() + crew_names():
+	for n in CAST.keys() + crew_names() + staff_names():
 		if not gone.has(n) and not chars.has(n):
 			chars[n] = _make_char(n)
 			if _stage != null and is_instance_valid(_stage) and chars[n].scene == _scene:
@@ -723,8 +741,8 @@ func _plan(n: String) -> Array:
 		match str(row(n).get("role", "")):
 			"sales":
 				return _visit_plan(n, 50.0)
-			"manager":
-				return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open
+			"manager", "frontdesk":
+				return [_work_leg(n, true, 56.0)]  # the manager eats at her desk with the door open, the front desk stays by the phones
 		return _lunch_plan(n)
 	var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
 	if Campaign.active and Campaign.mode == "service" and Crew.has(n):
@@ -733,6 +751,8 @@ func _plan(n: String) -> Array:
 		kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
 	elif row(n).get("role", "") == "manager":
 		kinds = ["work", "work", "floor", "floor", "floor", "coffee", "cooler"]
+	elif row(n).get("role", "") == "frontdesk":
+		kinds = ["work", "work", "work", "work", "coffee", "bathroom", "cooler"]
 	return plan_for(n, kinds[Difficulty.rng("world").randi() % kinds.size()])
 
 

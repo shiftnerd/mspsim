@@ -40,7 +40,7 @@ func _process(_delta: float) -> bool:
 		135:
 			_log("main RIGHT edge -> cubicle area (expect CubicleArea x=68)")
 		140:
-			_into_exit("ExitToConference")
+			_into_exit("ExitToCubicleTwo")
 		200:
 			_log("cubicle RIGHT edge -> conference (expect Conference x=116)")
 		205:
