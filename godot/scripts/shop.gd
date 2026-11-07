@@ -72,7 +72,7 @@ func item(id: String) -> Dictionary:
 
 
 func available() -> bool:
-	return Campaign.active and Campaign.mode == "tech"
+	return Campaign.active and Campaign.mode in ["tech", "service"]  # the campaigns where the paycheck is yours; owner and sales spend company cash
 
 
 # Free Play owns everything (for filming); a campaign owns what it bought
@@ -105,7 +105,7 @@ func why_not(id: String) -> String:
 	if it.is_empty():
 		return "NOT SOLD HERE"
 	if not available():
-		return "THE SHOP IS FOR THE TECH CAMPAIGN"
+		return "THE SHOP NEEDS A PAYCHECK: TECH AND SERVICE ONLY"
 	if owned.has(id):
 		return "YOU OWN IT"
 	if Campaign.cash < price(id):

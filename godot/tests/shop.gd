@@ -54,6 +54,11 @@ func _init() -> void:
 	shop.reset()
 	var plain: float = skills.fix_secs_for("reboot")
 	_check(base < plain or plain <= 0.0, "the keyboard shortens a real fix (%.2f vs %.2f)" % [base, plain])
+	# the service campaign has a paycheck too; owner and sales spend company cash
+	for m in ["service", "owner", "sales"]:
+		c.new_game(m)
+		_check(shop.available() == (m == "service"), "the shop is open in the %s campaign: %s" % [m, str(shop.available())])
+	c.new_game("tech")
 	# saved with the campaign
 	c.cash = 2000
 	shop.buy("kb_brown")

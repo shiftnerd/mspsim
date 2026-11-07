@@ -65118,7 +65118,7 @@ func item(id: String) -> Dictionary:
 
 
 func available() -> bool:
-    return Campaign.active and Campaign.mode == "tech"
+    return Campaign.active and Campaign.mode in ["tech", "service"]  # the campaigns where the paycheck is yours; owner and sales spend company cash
 
 
 # Free Play owns everything (for filming); a campaign owns what it bought
@@ -65151,7 +65151,7 @@ func why_not(id: String) -> String:
     if it.is_empty():
         return "NOT SOLD HERE"
     if not available():
-        return "THE SHOP IS FOR THE TECH CAMPAIGN"
+        return "THE SHOP NEEDS A PAYCHECK: TECH AND SERVICE ONLY"
     if owned.has(id):
         return "YOU OWN IT"
     if Campaign.cash < price(id):
@@ -65278,7 +65278,7 @@ static func paint(cp) -> void:
     cp._fill(Rect2(body.position, Vector2(w, 9)), Color("e8d9c0"))
     var strip := "CASH $%d   ITEMS %d OF %d" % [Campaign.cash, Shop.owned.size(), Shop.CATALOG.size()]
     if not Shop.available():
-        strip = "THE SHOP IS FOR THE TECH CAMPAIGN. FREE PLAY OWNS IT ALL."
+        strip = "THE SHOP NEEDS A PAYCHECK: TECH AND SERVICE ONLY. FREE PLAY OWNS IT ALL."
     cp._text(cp._clip(strip, int(w / 4.0) - 1), body.position + Vector2(3, 2), INK)
     var detail_h := 30.0
     var list := Rect2(body.position + Vector2(0, 10), Vector2(w, body.size.y - 10.0 - detail_h))
