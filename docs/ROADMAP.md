@@ -49,7 +49,7 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | X7 | No balance run per build preset; tier x seed coverage in `seeds.gd` | S |
 | X9 | A live screenshot check of the trust chips and the review crew lines; a manual 20-week replay | S |
 | C3 | The new-hire story for John's own deals; a sales-director second year; ByteBrothers as a rival walking the office | M |
-| C7 | A 1:1 from the Capacity tab; Morgan and the Summit auditor as walking characters; a hand-played pass for card pacing | M |
+| C7 | A 1:1 from the Capacity tab; the Summit auditor as a walking character (needs a new character sheet; Morgan already walks the floor in every mode); a hand-played pass for card pacing | M |
 | R1 | hard-tier numbers checked by play; a separate tier step instead of the chip | S |
 | R4 | themed rooms (E5) | M |
 | R6 | Dietary quirks and an ordering round (D4), a client at the table (D5), table events (D7), post-dinner talks (D8), an ASK HOW THEY ARE topic and `as of outing n` marks (D2), the boss picking up the tab in the tech campaign | M |
