@@ -38,11 +38,13 @@ func _init() -> void:
 	_check(_until_call(msp, 1) and not bool(msp.calls[0].voicemail), "a call comes in and she takes it")
 	_check(msp.front_desk() == "away", "on a call she cannot take another")
 	_check(_until_call(msp, 2) and bool(msp.calls[1].voicemail), "the second call goes to voicemail")
+	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
 	var before: int = msp.tickets.size()
 	msp._tick_calls(msp.CALL_SECS + 0.5)
 	_check(msp.calls.size() == 1 and msp.tickets.size() == before + 1, "her call becomes a ticket after a few seconds")
 	var taken: Dictionary = msp.tickets[msp.tickets.size() - 1]
 	_check(str(taken.source) == "phone call" and str(taken.notes).find("Taken by Jen") >= 0, "the ticket says Jen took it")
+	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
 	var texts_before: int = msp.texts.size()
 	msp._tick_calls(msp.VOICEMAIL_SECS)
 	_check(msp.calls.is_empty() and msp.tickets.size() == before + 2, "the voicemail is logged later")
@@ -52,6 +54,7 @@ func _init() -> void:
 	# a call that rolled over is answered by picking up: no voicemail, a ticket with a note, and the phones ring
 	msp.calls.clear()
 	msp.calls.append({"t": msp.VOICEMAIL_SECS, "voicemail": true})
+	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
 	var n0: int = msp.tickets.size()
 	msp._ring_rollover()  # no phones in this headless scene: it must not fail
 	msp.phone_call(0)

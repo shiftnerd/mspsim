@@ -40,7 +40,7 @@ const MODE_DEFS := {
 	},
 	# C4 / V1 (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day. rep = Morgan's confidence
 	"service": {
-		"label": "SERVICE CAMPAIGN", "selectable": true, "year2": false,
+		"label": "SERVICE CAMPAIGN", "selectable": true, "year2": true,
 		"crew": true, "books": false, "cards": true, "books_lite": false,
 		"day_len": 360.0, "total_days": 20, "unit": "DAY",
 		"hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
@@ -51,7 +51,7 @@ const MODE_DEFS := {
 	},
 	# campaign-paths 5 (C1, slice S1): John sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
 	"sales": {
-		"label": "SALES CAMPAIGN", "selectable": true, "year2": false,
+		"label": "SALES CAMPAIGN", "selectable": true, "year2": true,
 		"crew": true, "books": true, "cards": true, "books_lite": true,
 		"day_len": 240.0, "total_days": 20, "unit": "WEEK",
 		"hud": "week_quota", "report": "pnl", "settle": "sales", "review": "sales", "review_heading": "SALES REVIEW", "review_pages": 2,

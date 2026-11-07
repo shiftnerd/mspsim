@@ -3208,6 +3208,70 @@ MAYBE NEXT TIME
 [Yeartwo.TEXT.beats.tech.desk.options.1.reply]
 Morgan asks Dan instead and does not mention it again.
 
+# Yeartwo > TEXT > beats > service > headhunt > speaker
+[Yeartwo.TEXT.beats.service.headhunt.speaker]
+Terry Vance (Recruiter)
+
+# Yeartwo > TEXT > beats > service > headhunt > text
+[Yeartwo.TEXT.beats.service.headhunt.text]
+I recruit for a bigger MSP across town. I hear your desk runs itself now. Anyone on your crew who would take a call? I pay a finder's fee for names.
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 0 > label
+[Yeartwo.TEXT.beats.service.headhunt.options.0.label]
+NOT MY CREW
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 0 > reply
+[Yeartwo.TEXT.beats.service.headhunt.options.0.reply]
+Terry smiles. Everybody says that until the offer is bigger.
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 1 > label
+[Yeartwo.TEXT.beats.service.headhunt.options.1.label]
+ASK THEM ABOUT IT
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 1 > reply
+[Yeartwo.TEXT.beats.service.headhunt.options.1.reply]
+Your crew is flattered and a little nervous. Morgan hears about it by lunch.
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 2 > label
+[Yeartwo.TEXT.beats.service.headhunt.options.2.label]
+GIVE HIM A NAME
+
+# Yeartwo > TEXT > beats > service > headhunt > options > 2 > reply
+[Yeartwo.TEXT.beats.service.headhunt.options.2.reply]
+Terry writes it on a napkin. Somebody's phone buzzes before Friday.
+
+# Yeartwo > TEXT > beats > sales > poach > speaker
+[Yeartwo.TEXT.beats.sales.poach.speaker]
+Greg Pell (ByteBrothers)
+
+# Yeartwo > TEXT > beats > sales > poach > text
+[Yeartwo.TEXT.beats.sales.poach.text]
+You closed more than my whole team last year. ByteBrothers would pay you a signing bonus and a nicer tie. One lunch, no commitment.
+
+# Yeartwo > TEXT > beats > sales > poach > options > 0 > label
+[Yeartwo.TEXT.beats.sales.poach.options.0.label]
+TELL GARRISON
+
+# Yeartwo > TEXT > beats > sales > poach > options > 0 > reply
+[Yeartwo.TEXT.beats.sales.poach.options.0.reply]
+Garrison laughs, then asks what they offered. Then he matches half of it.
+
+# Yeartwo > TEXT > beats > sales > poach > options > 1 > label
+[Yeartwo.TEXT.beats.sales.poach.options.1.label]
+KEEP IT TO YOURSELF
+
+# Yeartwo > TEXT > beats > sales > poach > options > 1 > reply
+[Yeartwo.TEXT.beats.sales.poach.options.1.reply]
+Pell nods. The offer has a long shelf life, he says.
+
+# Yeartwo > TEXT > beats > sales > poach > options > 2 > label
+[Yeartwo.TEXT.beats.sales.poach.options.2.label]
+GO TO LUNCH
+
+# Yeartwo > TEXT > beats > sales > poach > options > 2 > reply
+[Yeartwo.TEXT.beats.sales.poach.options.2.reply]
+Pell buys lunch and a second dessert. Your phone shows a missed call from Garrison.
+
 # Yeartwo > TEXT > beats > owner > merger > speaker
 [Yeartwo.TEXT.beats.owner.merger.speaker]
 Walt Reiner (Tri-County Tech Group)

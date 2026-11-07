@@ -157,6 +157,13 @@ func _shuffle_ok(mode: String, moves: Array, plan: Array) -> bool:
 	return ok
 
 
+func _drain_cards(deck: Node) -> void:
+	var n := 0
+	while deck.is_open and n < 30:
+		deck.pick(0)
+		n += 1
+
+
 func _init() -> void:
 	await process_frame
 	c = root.get_node("Campaign")
@@ -190,7 +197,24 @@ func _init() -> void:
 		rec_other.set_value(m, "ending", "stay")
 		rec_other.set_value(m, "finished", 1)
 	rec_other.save(c.save_prefix + "meta.cfg")
-	_check(not y.available("sales") and not y.available("service") and y.menu_items().is_empty(), "sales and service never show a NEW GAME PLUS entry, even when finished")
+	_check(y.available("sales") and y.available("service") and y.menu_items().size() == 2, "sales and service show a NEW GAME PLUS entry once finished (R10)")
+	# a Year 2 run of each: the pending flag is taken, the year is 2, the intro card comes up and the beat card fires on its day
+	for m in ["sales", "service"]:
+		var row: Dictionary = y.YEAR2.beats.get(m, {})
+		_check(row.size() == 1 and y.TEXT.beats.get(m, {}).has(str(row.keys()[0])), "%s has one Year 2 beat with its text" % m)
+		y.begin_select(m, true)
+		_check(y.pending, "%s: Year 2 chosen on the select" % m)
+		c.new_game(m)
+		_check(c.year == 2 and y.active() and not y.pending, "%s: a Year 2 run starts (year %d)" % [m, c.year])
+		_drain_cards(cards)
+		var beat_id := str(row.keys()[0])
+		y.beat(beat_id)
+		_check(cards.is_open and str(cards.speaker) == str(y.TEXT.beats[m][beat_id].speaker), "%s: the beat card opens" % m)
+		cards.pick(0)
+		_drain_cards(cards)
+		_check(y.flag(beat_id) != "", "%s: your answer is kept as a flag (%s)" % [m, y.flag(beat_id)])
+	c.new_game("tech")  # back to a plain Year 1 run for the rest of the checks
+	_drain_cards(cards)
 	DirAccess.remove_absolute(_meta_path())
 	_check(build.budget("normal") == 12, "Year 1: the normal build budget is 12")
 

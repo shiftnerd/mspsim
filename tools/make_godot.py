@@ -11395,7 +11395,7 @@ const MODE_DEFS := {
     },
     # C4 / V1 (campaign-paths 4): Dan runs the desk; the crew works the queue, no books, a huddle card each day. rep = Morgan's confidence
     "service": {
-        "label": "SERVICE CAMPAIGN", "selectable": true, "year2": false,
+        "label": "SERVICE CAMPAIGN", "selectable": true, "year2": true,
         "crew": true, "books": false, "cards": true, "books_lite": false,
         "day_len": 360.0, "total_days": 20, "unit": "DAY",
         "hud": "day_rep", "report": "day", "review": "service", "review_heading": "ANNUAL REVIEW", "review_pages": 2,
@@ -11406,7 +11406,7 @@ const MODE_DEFS := {
     },
     # campaign-paths 5 (C1, slice S1): John sells; the crew delivers, light books (SalesCampaign.settle: MRR, commission), cards
     "sales": {
-        "label": "SALES CAMPAIGN", "selectable": true, "year2": false,
+        "label": "SALES CAMPAIGN", "selectable": true, "year2": true,
         "crew": true, "books": true, "cards": true, "books_lite": true,
         "day_len": 240.0, "total_days": 20, "unit": "WEEK",
         "hud": "week_quota", "report": "pnl", "settle": "sales", "review": "sales", "review_heading": "SALES REVIEW", "review_pages": 2,
@@ -12254,7 +12254,7 @@ const YEAR2 := {
             "fixed": ["ransomware", "poach_wave", "vendor_breach", "client_breach"],
         },
     },
-    "beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}},
+    "beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}, "service": {"headhunt": 8}, "sales": {"poach": 9}},
     "endings": {"tech": ["head", "clientbuy"], "owner": ["merger", "franchise"]},
 }
 const TEXT := {
@@ -12279,6 +12279,28 @@ const TEXT := {
                 "options": [
                     {"label": "I WILL RUN THE DESK", "id": "run", "reply": "Morgan hands over the clipboard and the good pen. The team behaves, mostly.", "fx": {"xp": ["people", 8], "social_all": 1}},
                     {"label": "MAYBE NEXT TIME", "id": "pass", "reply": "Morgan asks Dan instead and does not mention it again.", "fx": {}},
+                ],
+            },
+        },
+        "service": {
+            "headhunt": {
+                "speaker": "Terry Vance (Recruiter)",
+                "text": "I recruit for a bigger MSP across town. I hear your desk runs itself now. Anyone on your crew who would take a call? I pay a finder's fee for names.",
+                "options": [
+                    {"label": "NOT MY CREW", "id": "no", "reply": "Terry smiles. Everybody says that until the offer is bigger.", "fx": {"rep": 1}},
+                    {"label": "ASK THEM ABOUT IT", "id": "ask", "reply": "Your crew is flattered and a little nervous. Morgan hears about it by lunch.", "fx": {"social_all": 1}},
+                    {"label": "GIVE HIM A NAME", "id": "name", "reply": "Terry writes it on a napkin. Somebody's phone buzzes before Friday.", "fx": {"rep": -2, "social_all": -1}},
+                ],
+            },
+        },
+        "sales": {
+            "poach": {
+                "speaker": "Greg Pell (ByteBrothers)",
+                "text": "You closed more than my whole team last year. ByteBrothers would pay you a signing bonus and a nicer tie. One lunch, no commitment.",
+                "options": [
+                    {"label": "TELL GARRISON", "id": "told", "reply": "Garrison laughs, then asks what they offered. Then he matches half of it.", "fx": {"social": {"Garrison": 2}}},
+                    {"label": "KEEP IT TO YOURSELF", "id": "quiet", "reply": "Pell nods. The offer has a long shelf life, he says.", "fx": {}},
+                    {"label": "GO TO LUNCH", "id": "talk", "reply": "Pell buys lunch and a second dessert. Your phone shows a missed call from Garrison.", "fx": {"social": {"Garrison": -2}}},
                 ],
             },
         },
