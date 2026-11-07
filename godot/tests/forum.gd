@@ -303,8 +303,13 @@ func _init() -> void:
 	var q0: int = nerds.threads[0].id
 	nerds.threads[0].id = 2  # disk full: servers 0
 	var xp0: int = sk.xp.servers
+	var absent := -1  # an id that is not among today's questions (which ones are in the day depends on the run seed)
+	for cand in range(100, 400):
+		if nerds.today_index(cand) == -1:
+			absent = cand
+			break
 	_check(
-		nerds.today_index(2) == 0 and nerds.today_index(40) == -1,
+		nerds.today_index(2) == 0 and absent > 0,
 		"today_index finds today's questions"
 	)
 	nerds.open_thread(2)
@@ -583,6 +588,7 @@ func _init() -> void:
 		"Enter in a thread replies"
 	)
 	comp.forum.reset()
+	nerds.threads = nerds.threads.filter(func(t: Dictionary) -> bool: return int(t.id) != 7)  # thread 7 is not one of today's questions
 	comp.activate("nerds:thread:7")
 	comp.activate("nerds:reply")
 	_check(comp._toast.contains("SOLVED"), "a thread that is not an open question says SOLVED")

@@ -165,7 +165,7 @@ func ring_for(secs: float) -> void:
 
 
 func play() -> void:
-	if kind.begins_with("clue_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
+	if kind.begins_with("clue_") or kind.begins_with("herring_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
 		Outings.interact(kind)
 		return
 	if kind == "bell":

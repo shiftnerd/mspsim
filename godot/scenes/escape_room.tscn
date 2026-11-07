@@ -139,6 +139,30 @@ target = NodePath("../../Fx/Shelf")
 [node name="Shape" type="CollisionShape2D" parent="Interactables/UseShelf"]
 shape = SubResource("shape_clue")
 
+[node name="UseSafe" type="Area2D" parent="Interactables"]
+position = Vector2(246, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Safe")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseSafe"]
+shape = SubResource("shape_clue")
+
+[node name="UseTrunk" type="Area2D" parent="Interactables"]
+position = Vector2(74, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Trunk")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseTrunk"]
+shape = SubResource("shape_clue")
+
+[node name="UseGlobe" type="Area2D" parent="Interactables"]
+position = Vector2(214, 70)
+script = ExtResource("interact")
+target = NodePath("../../Fx/Globe")
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/UseGlobe"]
+shape = SubResource("shape_clue")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Switch" type="Node2D" parent="Fx"]
@@ -170,6 +194,21 @@ kind = "clue_painting"
 position = Vector2(38, 26)
 script = ExtResource("fx")
 kind = "clue_shelf"
+
+[node name="Safe" type="Node2D" parent="Fx"]
+position = Vector2(237, 72)
+script = ExtResource("fx")
+kind = "herring_safe"
+
+[node name="Trunk" type="Node2D" parent="Fx"]
+position = Vector2(63, 84)
+script = ExtResource("fx")
+kind = "herring_trunk"
+
+[node name="Globe" type="Node2D" parent="Fx"]
+position = Vector2(209, 72)
+script = ExtResource("fx")
+kind = "herring_globe"
 
 [node name="Timer" type="Node2D" parent="Fx"]
 position = Vector2(164, 4)

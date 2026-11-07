@@ -18691,6 +18691,20 @@ A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.
 ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.
 
 
+# ======================= Outings > HERRING_TEXT =======================
+# Outings > HERRING_TEXT > herring_safe
+[Outings.HERRING_TEXT.herring_safe]
+THE SAFE IS BOLTED SHUT. A STICKY NOTE SAYS: THE CODE IS NOT 1-2-3. SOMEBODY ALREADY TRIED.
+
+# Outings > HERRING_TEXT > herring_trunk
+[Outings.HERRING_TEXT.herring_trunk]
+A TRUNK OF OLD CABLES AND ONE CHRISTMAS LIGHT. NO NUMBERS, ONLY KNOTS.
+
+# Outings > HERRING_TEXT > herring_globe
+[Outings.HERRING_TEXT.herring_globe]
+THE GLOBE HAS A PIN IN IT AND A TAG: NOT HERE. THE COUNTRY HAS A NUMBER OF ITS OWN.
+
+
 # ======================= Outings > RECIPE_TIPS =======================
 # Outings > RECIPE_TIPS > sum
 [Outings.RECIPE_TIPS.sum]

@@ -230,7 +230,10 @@ const SCENES := {
 			"clue_board": 238,
 			"clue_clock": 86,
 			"clue_painting": 149,
-			"clue_shelf": 52
+			"clue_shelf": 52,
+			"herring_safe": 246,
+			"herring_trunk": 74,
+			"herring_globe": 214
 		},
 		"outside_x": -1
 	},

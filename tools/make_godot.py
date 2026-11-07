@@ -231,7 +231,7 @@ PATCHABLE = {
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1", "MENTOR"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
     "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
+    "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
     "scripts/difficulty.gd": ["COZY_TEXT"],
 }
@@ -939,7 +939,7 @@ func ring_for(secs: float) -> void:
 
 
 func play() -> void:
-    if kind.begins_with("clue_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
+    if kind.begins_with("clue_") or kind.begins_with("herring_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
         Outings.interact(kind)
         return
     if kind == "bell":
@@ -32891,6 +32891,13 @@ const HERRINGS := [
     "A DUSTY SHELF. THE LABEL SAYS: NOT THE CODE.",
     "ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
 ]
+# E3: the safe, the trunk and the globe can be read too; each look takes a couple of seconds off the clock and tells you nothing
+const HERRING_TEXT := {
+    "herring_safe": "THE SAFE IS BOLTED SHUT. A STICKY NOTE SAYS: THE CODE IS NOT 1-2-3. SOMEBODY ALREADY TRIED.",
+    "herring_trunk": "A TRUNK OF OLD CABLES AND ONE CHRISTMAS LIGHT. NO NUMBERS, ONLY KNOTS.",
+    "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: NOT HERE. THE COUNTRY HAS A NUMBER OF ITS OWN.",
+}
+const HERRING_COST := 2.0  # seconds a look at one of them takes off the clock
 const GUESTS := {
     "Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
     "Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
@@ -35342,6 +35349,10 @@ func interact(kind: String) -> void:
         _offer_here("grill" if kind == "grill" else "cornhole")
         return
     if not room_mode() or game != "escape" or phase != "play" or g.is_empty():
+        return
+    if kind.begins_with("herring_"):
+        g.time = float(g.time) - HERRING_COST
+        caption("%s (-%d S)" % [str(HERRING_TEXT.get(kind, HERRINGS[0])), int(HERRING_COST)], 4.0)
         return
     var index := CLUE_KINDS.find(kind)
     if index >= 0:
@@ -45986,7 +45997,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
     "SalesCampaign": ["BEAT_TEXT"],
     "Rival": ["HABITS", "RIVALS"],
@@ -55718,7 +55729,8 @@ BGFX = {
     "escape_room": [("Switch", "switch", 8, 54, 10), ("Keypad", "keypad", 244, 40, 252),
                     ("Board", "clue_board", 192, 14, 214), ("WallClock", "clue_clock", 54, 20, 62),
                     ("Painting", "clue_painting", 112, 10, 125),
-                    ("Shelf", "clue_shelf", 14, 26, 28)],
+                    ("Shelf", "clue_shelf", 14, 26, 28),
+                    ("Safe", "herring_safe", 213, 72, 222), ("Trunk", "herring_trunk", 39, 84, 50), ("Globe", "herring_globe", 185, 72, 190)],
     "restaurant": [("Switch", "switch", 8, 54, 10)],
     "warehouse": [("Switch", "switch", 46, 54, 48), ("DartBoard", "dart_board", 1047, 66, 1047),
                   ("Door", "roll_door", 1287, 12, 1347), ("DoorSwitch", "door_switch", 1419, 76, 1422)],
@@ -55929,7 +55941,7 @@ for fname, cfg in SETS.items():
                   *([f'look_x = {x0 + opt[0]}.0', f'arrow_offset = Vector2({opt[0] - ix}, {opt[1]})'] if len(opt) > 1 else []),
                   "",
                   f'[node name="Shape" type="CollisionShape2D" parent="Interactables/Use{name}"]',
-                  'shape = SubResource("shape_clue")' if fname == "escape_room" and (kind.startswith("clue_") or kind == "keypad") else 'shape = SubResource("shape_fx")', ""]
+                  'shape = SubResource("shape_clue")' if fname == "escape_room" and (kind.startswith("clue_") or kind.startswith("herring_") or kind == "keypad") else 'shape = SubResource("shape_fx")', ""]
     lines += ['[node name="Fx" type="Node2D" parent="."]', ""]
     if fname == "warehouse":   # R21c: warm daylight on the floor in front of the open door (additive, above the actors, not tinted by the lights)
         lines += ['[node name="Daylight" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'z_index = 1', 'script = ExtResource("outside")', 'mode = "spill"', ""]

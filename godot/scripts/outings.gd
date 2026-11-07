@@ -421,6 +421,14 @@ const DEFAULT_HERRINGS := [
 	"ODD BOOKS AND A FOLDED FLAG. NOTHING USEFUL.",
 ]
 var HERRINGS: Array = DEFAULT_HERRINGS.duplicate(true)
+# E3: the safe, the trunk and the globe can be read too; each look takes a couple of seconds off the clock and tells you nothing
+const DEFAULT_HERRING_TEXT := {
+	"herring_safe": "THE SAFE IS BOLTED SHUT. A STICKY NOTE SAYS: THE CODE IS NOT 1-2-3. SOMEBODY ALREADY TRIED.",
+	"herring_trunk": "A TRUNK OF OLD CABLES AND ONE CHRISTMAS LIGHT. NO NUMBERS, ONLY KNOTS.",
+	"herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: NOT HERE. THE COUNTRY HAS A NUMBER OF ITS OWN.",
+}
+var HERRING_TEXT: Dictionary = DEFAULT_HERRING_TEXT.duplicate(true)
+const HERRING_COST := 2.0  # seconds a look at one of them takes off the clock
 const DEFAULT_GUESTS := {
 	"Alan": {"comes": 0.9, "code": "AL", "line": "Alan has a thing tonight."},
 	"Garrison": {"comes": 0.9, "code": "GA", "line": "Garrison is sitting this one out."},
@@ -2875,6 +2883,10 @@ func interact(kind: String) -> void:
 		_offer_here("grill" if kind == "grill" else "cornhole")
 		return
 	if not room_mode() or game != "escape" or phase != "play" or g.is_empty():
+		return
+	if kind.begins_with("herring_"):
+		g.time = float(g.time) - HERRING_COST
+		caption("%s (-%d S)" % [str(HERRING_TEXT.get(kind, HERRINGS[0])), int(HERRING_COST)], 4.0)
 		return
 	var index := CLUE_KINDS.find(kind)
 	if index >= 0:
