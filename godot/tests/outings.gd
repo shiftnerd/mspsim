@@ -89,6 +89,8 @@ func _init() -> void:
 	# ---- karaoke
 	o.start("karaoke")
 	o.press(KEY_ENTER)
+	for n in o.g.notes:
+		n.erase("auto")  # these checks are about the classic song: a friendly party member would sing the right lanes (see karaoke_duet.gd)
 	_check(o.g.notes.size() == 24, "a 24 note song")
 	var perfect := 0
 	for n in o.g.notes:
@@ -102,6 +104,8 @@ func _init() -> void:
 	o.press(KEY_ENTER)
 	o.start("karaoke")
 	o.press(KEY_ENTER)
+	for n in o.g.notes:
+		n.erase("auto")
 	o.g.t = o.g.notes[0].time + 0.2
 	_check(o.kara_hit((o.g.notes[0].lane + 1) % 4) == "", "the wrong arrow does nothing")
 	o.g.t = o.g.notes[0].time + 0.2

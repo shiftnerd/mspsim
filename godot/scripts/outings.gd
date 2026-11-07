@@ -1868,12 +1868,81 @@ func _kara_setup(song_id := "") -> void:
 		"chorus": false,
 		"perfect_win": Difficulty.f("karaoke.perfect") * float(song.win),
 		"good_win": Difficulty.f("karaoke.good") * float(song.win),
+		"pager_at": _pager_time(float(chart.span)),
+		"paged": false,
 	}
+	_assign_duet()
+
+
+# K5: a friend from the party takes the two right lanes (a duet): their notes are resolved for them by a skill roll
+const DUET_LANES := 2  # lanes from this one up are the partner's
+const DUET_ODDS := [0.55, 0.30]  # perfect, then good; the rest are misses
+
+
+func _duet_partner() -> String:
+	for who in present():
+		if Social.is_friendly(str(who)):
+			return str(who)
+	return ""
+
+
+func _assign_duet() -> void:
+	_assign_duet_with(_duet_partner())
+
+
+func _assign_duet_with(who: String) -> void:
+	if who == "":
+		return
+	g["partner"] = who
+	for n in g.notes:
+		if int(n.lane) >= DUET_LANES:
+			n["auto"] = true
+
+
+# the partner's notes come due: perfect, good or miss by their roll (a miss cools the crowd a little but never breaks your streak)
+func _duet_tick() -> void:
+	for n in g.notes:
+		if n.state != "" or not n.get("auto", false) or float(n.time) > float(g.t):
+			continue
+		var roll := Difficulty.rng("karaoke.duet").randf()
+		if roll < float(DUET_ODDS[0]):
+			n.state = "perfect"
+			g.score = int(g.score) + 2
+			g.perfect = int(g.perfect) + 1
+			_mood_add(2.0)
+		elif roll < float(DUET_ODDS[0]) + float(DUET_ODDS[1]):
+			n.state = "good"
+			g.score = int(g.score) + 1
+			g.good = int(g.good) + 1
+			_mood_add(1.0)
+		else:
+			n.state = "miss"
+			g.miss = int(g.miss) + 1
+			_mood_add(-3.0)
+
+
+# K8: on a call week a pager chime can go off mid-song (a quarter of the songs). Ignoring it costs nothing: the call waits in your queue afterwards.
+const PAGER_CHANCE := 0.25
+
+
+func _pager_time(span: float) -> float:
+	if not Shift.is_on_call():
+		return -1.0
+	var r := Difficulty.rng("karaoke.pager")
+	if r.randf() >= PAGER_CHANCE:
+		return -1.0
+	return span * r.randf_range(0.25, 0.7)
 
 
 func _kara_tick(dt: float) -> void:
 	g.t = float(g.t) + dt
 	g.flash_t = maxf(0.0, float(g.flash_t) - dt)
+	if float(g.get("pager_at", -1.0)) > 0.0 and not g.get("paged", false) and float(g.t) >= float(g.pager_at):
+		g.paged = true
+		g.flash = "PAGER! IT CAN WAIT FOR THE SONG"
+		g.flash_t = 2.0
+		Sfx.play("text")
+	_duet_tick()
 	for n in g.notes:
 		if n.state == "" and float(n.time) + _good_win() < float(g.t):
 			n.state = "miss"
@@ -1930,7 +1999,7 @@ func kara_hit(lane: int) -> String:
 	var pick: Dictionary = {}
 	var gap := 9.0
 	for n in g.notes:
-		if n.state == "" and int(n.lane) == lane and absf(float(n.time) - float(g.t)) < gap:
+		if n.state == "" and not n.get("auto", false) and int(n.lane) == lane and absf(float(n.time) - float(g.t)) < gap:
 			gap = absf(float(n.time) - float(g.t))
 			pick = n
 	if pick.is_empty() or gap > _good_win():
@@ -1968,6 +2037,9 @@ func _kara_end() -> void:
 	if g.has("song"):
 		var id := str(g.song.id)
 		song_best[id] = maxi(int(song_best.get(id, 0)), result)
+	if g.get("paged", false):  # the page you ignored is waiting as a ticket, and nobody minds
+		var t: Dictionary = Msp._random_ticket("pager")
+		Msp.send_text("Boss", "Your pager went off during the song. A client is waiting: it is in your queue%s." % ((" (#%d)" % int(t.id)) if not t.is_empty() else ""))
 	_finish(result)
 
 
@@ -4244,6 +4316,8 @@ func _paint_karaoke(b: Rect2, hud := false) -> void:
 			col = Color("8a8f9a")
 		elif n.state != "":
 			col = Color(col, 0.35)
+		elif n.get("auto", false):
+			col = Color(col, 0.55)  # the partner's notes: fainter, they sing those
 		_arrow(int(n.lane), Vector2(left + 20.0 * float(n.lane) + 10.0, line_y - dy), 5.0, col)
 	if float(g.flash_t) > 0.0 and not hud:
 		_tc(str(g.flash), left + 80.0 + 24.0, y + 30.0, GREEN if g.flash != "MISS" else RED)
