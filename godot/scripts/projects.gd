@@ -253,7 +253,7 @@ func _pick_type(client: int) -> String:
 		pool.append("email_move")
 	if not Owner.flags.get("rdp_safe", false) and Campaign.day >= 7:
 		pool.append("security")
-	return pool[randi() % pool.size()]
+	return pool[Difficulty.rng("projects").randi() % pool.size()]
 
 
 func week() -> void:
@@ -265,12 +265,12 @@ func week() -> void:
 	if _queue.size() >= 2:
 		return
 	var chance := 0.22 + Sales.vic_skill() * 0.2 - (0.08 if wom_weeks > 0 else 0.0)
-	if randf() < chance and not Sales.active.is_empty():
-		var client := int(Sales.active[randi() % Sales.active.size()])
+	if Difficulty.rng("projects").randf() < chance and not Sales.active.is_empty():
+		var client := int(Sales.active[Difficulty.rng("projects").randi() % Sales.active.size()])
 		if Sales.mood(client) < 45:
 			return  # unhappy clients do not buy projects
 		if (
-			randf() < 0.35
+			Difficulty.rng("projects").randf() < 0.35
 			and (not has_service(client, "backup") or not has_service(client, "patching"))
 		):
 			_queue.append(
@@ -302,7 +302,7 @@ func begin_week() -> void:
 
 func make_quote(client: int, type_id: String) -> Dictionary:
 	var t: Dictionary = TYPES[type_id]
-	var price := int(round(randf_range(float(t.price[0]), float(t.price[1])) / 50.0)) * 50
+	var price := int(round(Difficulty.rng("projects").randf_range(float(t.price[0]), float(t.price[1])) / 50.0)) * 50
 	var hw := int(float(price) * float(t.hw))
 	return {
 		"client": client,
@@ -418,7 +418,7 @@ func _projects_week() -> void:
 			and not bool(p.creep)
 			and not bool(p.scoped)
 			and int(p.weeks) >= 1
-			and randf() < Habits.creep(0.30)
+			and Difficulty.rng("projects").randf() < Habits.creep(0.30)
 		):
 			p.creep = true
 			p.est = float(p.est) * (1.0 + SCOPE_CREEP)
@@ -471,7 +471,7 @@ func _creep_answer(id: int, choice: String, extra: int, odds: float) -> void:
 	var client := int(p.client)
 	match choice:
 		"co":
-			if randf() < odds:
+			if Difficulty.rng("projects").randf() < odds:
 				p.price = int(p.price) + extra
 				Sales.adjust(client, -2)
 				(
@@ -627,7 +627,7 @@ func change_order_odds(client: int) -> float:
 func change_order(client: int) -> String:
 	var amount := change_order_amount(client)
 	var odds := change_order_odds(client)
-	var roll := randf()
+	var roll := Difficulty.rng("projects").randf()
 	if roll < odds:
 		Owner.cash += amount
 		Owner.income_extra += amount
@@ -652,7 +652,7 @@ func change_order(client: int) -> String:
 			% half
 		)
 	Sales.adjust(client, -12)
-	if randf() < 0.5:
+	if Difficulty.rng("projects").randf() < 0.5:
 		Owner.discount[client] = {"mult": 0.9, "weeks": 4}
 	return "They refuse the bill outright and threaten to review their contract. Things are tense."
 
@@ -667,12 +667,12 @@ func fire_client(client: int, how: String) -> String:
 		risk *= 0.35
 	else:
 		Campaign.adjust_rep(-1)
-	if randf() < risk:
+	if Difficulty.rng("projects").randf() < risk:
 		wom_weeks = 6
 		Campaign.adjust_rep(-2)
 		_queue.append({"kind": "wom", "client": client})
 		return "%s is leaving angry and telling people. Expect to hear about it." % name
-	if how == "polite" and mood >= 70 and randf() < 0.3:
+	if how == "polite" and mood >= 70 and Difficulty.rng("projects").randf() < 0.3:
 		Owner._leads += 1
 		return "%s leaves on good terms and says they will recommend you. A lead may follow." % name
 	return "%s is gone. Word of mouth stays quiet, for now." % name
@@ -703,7 +703,7 @@ func _wom_card(item: Dictionary) -> void:
 func _wom_answer(id: String) -> void:
 	match id:
 		"call":
-			if randf() < 0.5:
+			if Difficulty.rng("projects").randf() < 0.5:
 				wom_weeks = maxi(0, wom_weeks - 3)
 				Msp.send_text(
 					"John", "The prospect heard me out. Not everybody believes the other side."

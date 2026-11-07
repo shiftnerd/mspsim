@@ -187,6 +187,7 @@ func _init() -> void:
 	# a sticky wheel is seeded: same chair, same day, same answer; some chairs on some days
 	var sticky := 0
 	var same := true
+	root.get_node("Difficulty").seed_run(4242)  # the roll hangs on the run's seed; an unseeded process would sometimes land outside 3..25
 	for d in range(1, 61):
 		c.day = d
 		roll._release()

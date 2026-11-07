@@ -1785,7 +1785,7 @@ func _work_queue(seconds: float) -> void:
 
 func _finish_ticket(t: Dictionary) -> void:
 	_work.erase(int(t.id))
-	if randf() < float(edge("close_miss")):
+	if Difficulty.rng("owner").randf() < float(edge("close_miss")):
 		Msp.close_ticket(int(t.id))  # closed too early: it comes back
 		return
 	Growth.owner_escalation(t)
@@ -1807,7 +1807,7 @@ func begin_day(day: int) -> void:
 			Msp.backups[c].good_day = day
 	else:
 		for c in Sales.active:
-			if not Msp.backups[int(c)].ok and randf() < float(edge("backup_check")):
+			if not Msp.backups[int(c)].ok and Difficulty.rng("owner").randf() < float(edge("backup_check")):
 				Msp.backup_rerun(int(c))  # a tech happened to check it
 	if Campaign.mode == "sales":
 		return  # no owner decisions for the account manager (SalesCampaign.begin_week deals the cards)
@@ -1997,7 +1997,7 @@ func _picked(id: String, index: int) -> void:
 		)
 	var text := str(opt.get("text", ""))
 	if opt.has("roll"):
-		var roll := randf()
+		var roll := Difficulty.rng("owner").randf()
 		var acc := 0.0
 		var table: Array = opt.roll
 		if opt.has("roll_scoped") and flags.get("scoped", false):
@@ -2307,7 +2307,7 @@ func _prospect_card() -> void:
 			pool.append(c)
 	if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
 		return
-	var who: int = pool[randi() % pool.size()]
+	var who: int = pool[Difficulty.rng("owner").randi() % pool.size()]
 	var card: Dictionary = CARDS.prospect.duplicate(true)
 	card.text = str(card.text) % Msp.CLIENTS[who].name
 	for opt in card.options:
@@ -2391,12 +2391,12 @@ func marketing_bonus() -> float:
 # ---- hiring: three named candidates with skills and quirks ----------------------------
 func make_candidates() -> Array:
 	var pool: Array = NAMES.duplicate()
-	pool.shuffle()
+	Difficulty.shuffle_with(pool, Difficulty.rng("owner"))
 	var trait_ids: Array = TRAITS.keys()
 	var out := []
 	for i in 3:
-		var skill := snappedf(randf_range(0.5, 1.3), 0.05)
-		var trait_id: String = trait_ids[randi() % trait_ids.size()]
+		var skill := snappedf(Difficulty.rng("owner").randf_range(0.5, 1.3), 0.05)
+		var trait_id: String = trait_ids[Difficulty.rng("owner").randi() % trait_ids.size()]
 		var wage := (
 			int(round((280.0 + 250.0 * skill) / 10.0)) * 10 + int(TRAITS[trait_id].get("wage", 0))
 		)
@@ -2442,16 +2442,16 @@ func _staff_week() -> void:
 		var quit_chance := (
 			float(trait_data.get("quit", 0.0)) + (0.08 if stack_sum("morale") <= -8.0 else 0.0)
 		)
-		if not Difficulty.cozy_on() and randf() < quit_chance:
+		if not Difficulty.cozy_on() and Difficulty.rng("owner").randf() < quit_chance:
 			extra_staff.erase(hire)
 			hire_quits += 1
 			Msp.send_text("Christy", "%s quit." % hire.name)
 			Habits.departure(str(hire.name))  # R38: H6, the offboarding checklist
-	if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.08:
+	if stack_sum("morale") <= -8.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and Difficulty.rng("owner").randf() < 0.08:
 		lost_techs += 1
 		Msp.send_text("Morgan", "One of the crew just quit over the tooling.")
 		Habits.departure("The tech")
-	if flags.get("oncall_one", false) and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.05:
+	if flags.get("oncall_one", false) and not Difficulty.cozy_on() and lost_techs < MAX_LOST and Difficulty.rng("owner").randf() < 0.05:
 		lost_techs += 1
 		flags["oncall_one"] = false
 		Msp.send_text("Dan", "I am done carrying the pager every week. I quit.")
@@ -2880,7 +2880,7 @@ func _burnout_week() -> void:
 			],
 		}
 		show_card("burnout")
-	if burnout >= 70.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and randf() < 0.18:
+	if burnout >= 70.0 and not Difficulty.cozy_on() and lost_techs < MAX_LOST and Difficulty.rng("owner").randf() < 0.18:
 		lost_techs += 1
 		burnout = maxf(0.0, burnout - 20.0)
 		Msp.send_text("Morgan", "One of the crew quit. Burned out.")
@@ -2965,7 +2965,7 @@ func _key_poach() -> void:
 		names.append(str(hire.name))
 	if names.is_empty():
 		return
-	var who: String = str(names[randi() % names.size()])
+	var who: String = str(names[Difficulty.rng("owner").randi() % names.size()])
 	_dynamic["key_poach"] = {
 		"speaker": "Morgan (Operations Manager)",
 		"text":
@@ -3141,7 +3141,7 @@ func _client_no() -> void:
 		pool.append(int(c))
 	if pool.is_empty():
 		return
-	var pick: int = pool[randi() % pool.size()]
+	var pick: int = pool[Difficulty.rng("owner").randi() % pool.size()]
 	risk_client = pick
 	risk_choice = ""
 	var key := str(pick)
@@ -3197,7 +3197,7 @@ func _client_breach() -> void:
 				% name
 			)
 		_:
-			if randf() < 0.5:
+			if Difficulty.rng("owner").randf() < 0.5:
 				apply({"cash": -4000, "rep": -4, "mood": {key: -15}})
 				text = (
 					"An account at %s was taken over and $12,000 was wired away. They blame you. A lawyer's letter arrives and you settle for $4,000."
@@ -3355,16 +3355,16 @@ func _poach_week() -> void:
 			# X9: the rival does not call the same client twice within six weeks (it varies the target)
 			if Campaign.day - int(flags.get("poached_%d" % int(c), -99)) < 6:
 				continue
-			if randf() < poach_risk(int(c)):
+			if Difficulty.rng("owner").randf() < poach_risk(int(c)):
 				target = int(c)
 				break
-		if target < 0 and randf() < 0.04:  # rarer: a lower price, even when you did everything right
+		if target < 0 and Difficulty.rng("owner").randf() < 0.04:  # rarer: a lower price, even when you did everything right
 			var clean := []
 			for c in Sales.active:
 				if poach_gaps(int(c)).is_empty() and Campaign.day - int(flags.get("poached_%d" % int(c), -99)) >= 6:
 					clean.append(int(c))
 			if not clean.is_empty():
-				target = clean[randi() % clean.size()]
+				target = clean[Difficulty.rng("owner").randi() % clean.size()]
 		if target >= 0:
 			_poach_queue.append(
 				{"client": target, "kind": "gaps" if not poach_gaps(target).is_empty() else "price"}
@@ -3513,7 +3513,7 @@ func _winback_week() -> void:
 		else:
 			chance = 0.06 if mood >= 45 else 0.0
 		chance = minf(0.35, chance + 0.04 * float(maxi(0, away - 5)))
-		if randf() < chance:
+		if Difficulty.rng("owner").randf() < chance:
 			_winback_queue.append(int(key))
 
 
@@ -3596,7 +3596,7 @@ func _winback_card(client: int) -> void:
 func drop_random_client() -> void:
 	if Sales.active.size() <= 3:
 		return
-	var pick: int = Sales.active[randi() % Sales.active.size()]
+	var pick: int = Sales.active[Difficulty.rng("owner").randi() % Sales.active.size()]
 	Sales.active.erase(pick)
 	discount.erase(pick)
 	Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
@@ -3613,7 +3613,7 @@ func _ransom() -> void:
 		return
 	_ransom_ticket = int(t.id)
 	var restore_fail := maxf(Habits.restore_fail(), Takeover.restore_fail(Story.RANSOM_CLIENT))  # R38 P4: an unfixed freezer bag. R38: H1, a backup nobody ever test restored may not restore
-	var untested_fail := restore_fail > 0.0 and randf() < restore_fail
+	var untested_fail := restore_fail > 0.0 and Difficulty.rng("owner").randf() < restore_fail
 	if untested_fail:
 		Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
 	if untested_fail or not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
@@ -3660,9 +3660,9 @@ func _rdp_week() -> void:
 	if Campaign.day < 6 or flags.get("rdp_safe", false) or Sales.active.is_empty():
 		return
 	var chance := (0.04 if flags.get("rdp_weak", false) else 0.10) * float(edge("rdp")) * Incident.lesson_mult("ransom") * Habits.rdp_mult(bool(flags.get("rdp_weak", false))) * Takeover.worst_mult()
-	if randf() >= chance:
+	if Difficulty.rng("owner").randf() >= chance:
 		return
-	var victim: int = Takeover.victim(Sales.active[randi() % Sales.active.size()])  # R38 P4: an inherited mess is the likelier door
+	var victim: int = Takeover.victim(Sales.active[Difficulty.rng("owner").randi() % Sales.active.size()])  # R38 P4: an inherited mess is the likelier door
 	var cost := 1200 if flags.get("backup_service", false) else 2500
 	if flags.get("pm_ransom", "") in ["runbook", "check"]:
 		cost = int(cost * 0.75)  # the runbook: the team knows what to do
@@ -3866,7 +3866,7 @@ func settle() -> Dictionary:
 	_staff_week()
 	_owner_week(profit)
 	var hours_row: Array = Growth.owner_week()
-	if randf() < 0.12 + float(marketing) / 2500.0:
+	if Difficulty.rng("owner").randf() < 0.12 + float(marketing) / 2500.0:
 		_leads += 1
 	for c in discount.keys():
 		discount[c].weeks = int(discount[c].weeks) - 1
@@ -3876,7 +3876,7 @@ func settle() -> Dictionary:
 	var drift := -4 if price >= 1.15 else (2 if price <= 0.9 else 0)
 	for c in Sales.active:
 		Sales.adjust(int(c), drift)
-		if Sales.mood(int(c)) < 35 and randf() < 0.6 and not _leaving.has(c):
+		if Sales.mood(int(c)) < 35 and Difficulty.rng("owner").randf() < 0.6 and not _leaving.has(c):
 			_leaving.append(c)
 	var grade := "D"
 	for entry in [[1500, "S"], [700, "A"], [0, "B"], [-1000, "C"]]:

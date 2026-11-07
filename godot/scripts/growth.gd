@@ -307,14 +307,14 @@ func success_chance() -> float:
 func stretch_result(id: String) -> void:
 	match id:
 		"try":
-			if randf() < success_chance():
+			if Difficulty.rng("growth").randf() < success_chance():
 				stretch_ok += 1
 				Social.change(helper, 2)
 				Campaign.adjust_rep(1)
 				Msp.score += 8
 				Msp.send_text(helper, "Nice. I would not have thought of that. Solid.")
 				_add_progress(30.0, 20)
-			elif randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95) * (0.6 if Social.is_owner(helper) else 1.0):
+			elif Difficulty.rng("growth").randf() < clampf(0.5 + float(Social.value(helper)) / 200.0, 0.3, 0.95) * (0.6 if Social.is_owner(helper) else 1.0):
 				stretch_caught += 1
 				Social.change(helper, 1)
 				Msp.send_text(
@@ -401,7 +401,7 @@ func capacity_loss() -> float:
 func owner_escalation(t: Dictionary) -> void:
 	if Campaign.mode != "owner":
 		return
-	if randf() < ESC_CHANCE * (1.0 - 0.25 * float(mini(3, tier2))):
+	if Difficulty.rng("growth").randf() < ESC_CHANCE * (1.0 - 0.25 * float(mini(3, tier2))):
 		owner_used += ESC_HOURS * (2.0 if int(t.pri) <= 2 else 1.0)
 		esc[period()] = esc_now() + 1
 
@@ -531,12 +531,12 @@ func owner_stretch() -> void:
 func owner_stretch_result(id: String, chance: float) -> void:
 	match id:
 		"stretch":
-			if randf() < chance:
+			if Difficulty.rng("growth").randf() < chance:
 				stretch_ok += 1
 				Sales.adjust(Sales.pick_client(), 3)
 				Msp.send_text(Roles.tech(), "%s nailed it. I barely had to say a word." % learner)
 				_add_progress(30.0, 0)
-			elif randf() < 0.6:
+			elif Difficulty.rng("growth").randf() < 0.6:
 				stretch_caught += 1
 				Msp.send_text(
 					Roles.tech(), "I caught it before the client saw. %s learned something." % learner
@@ -578,7 +578,7 @@ func _raise(id: String, who: String) -> void:
 	if id == "raise":
 		Owner.payroll_extra += 60
 		Msp.send_text(Roles.tech(), "%s is staying. The raise helped." % who)
-	elif randf() < 0.3:
+	elif Difficulty.rng("growth").randf() < 0.3:
 		if Owner.lost_techs < Owner.MAX_LOST:
 			Owner.lost_techs += 1
 		Msp.send_text(

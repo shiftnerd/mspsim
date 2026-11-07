@@ -179,7 +179,7 @@ func begin_day(day: int) -> void:
 	if Expo.is_trip_day(day):
 		return
 	World.time_scale = 0.0
-	if on_call(day - 1) and randf() < PAGE_CHANCE:
+	if on_call(day - 1) and Difficulty.rng("shift").randf() < PAGE_CHANCE:
 		_page_card()
 	else:
 		commute_card()
@@ -189,9 +189,9 @@ func begin_day(day: int) -> void:
 func _fresh(list: Array, last: String) -> String:
 	if list.size() < 2:
 		return str(list[0]) if not list.is_empty() else ""
-	var pick: String = str(list[randi() % list.size()])
+	var pick: String = str(list[Difficulty.rng("shift").randi() % list.size()])
 	while pick == last:
-		pick = str(list[randi() % list.size()])
+		pick = str(list[Difficulty.rng("shift").randi() % list.size()])
 	return pick
 
 
@@ -221,7 +221,7 @@ func _page_result(id: String, client: int, what: String) -> void:
 	match id:
 		"fix":
 			add_energy(-6.0 if Skills.ps_level >= 3 else -10.0)
-			if randf() < 0.9 + 0.02 * float(Skills.ps_level):
+			if Difficulty.rng("shift").randf() < 0.9 + 0.02 * float(Skills.ps_level):
 				pages_fixed += 1
 				Sales.adjust(client, 4)
 				Msp.score += 3
@@ -236,7 +236,7 @@ func _page_result(id: String, client: int, what: String) -> void:
 				Msp.send_text("Boss", "%s says last night's fix made things worse." % cname)
 		"triage":
 			var noise := clampf(0.4 + 0.08 * float(Skills.level("networking")), 0.4, 0.75)
-			if randf() < noise:
+			if Difficulty.rng("shift").randf() < noise:
 				add_energy(-2.0)
 				last_note = "FALSE ALARM."
 			else:
@@ -248,7 +248,7 @@ func _page_result(id: String, client: int, what: String) -> void:
 			pages_ignored += 1
 			if Difficulty.cozy_on():
 				last_note = Difficulty.ct("pager_ignored")  # cozy Easy: opt in, and nothing happens if you do not
-			elif randf() < 0.55:
+			elif Difficulty.rng("shift").randf() < 0.55:
 				Sales.adjust(client, -6)
 				Campaign.adjust_rep(-2)
 				last_note = "THE PAGE WAS REAL. THEY CALLED THE BOSS."
@@ -286,14 +286,14 @@ func commute_card() -> void:
 func commute(choice: String) -> void:
 	var c: Dictionary = COMMUTES[choice]
 	var extra: float = float(WEEK_TRAFFIC.get(week_of(Campaign.day), {}).get("extra", 0.0))
-	var traffic := randf() < float(c.p) + extra
+	var traffic := Difficulty.rng("shift").randf() < float(c.p) + extra
 	var delay := int(c.base)
 	if Difficulty.cozy_on():  # cozy Easy: the road is clear and nobody is ever late
 		traffic = false
 		delay = mini(delay, 0)
 	var reason := ""
 	if traffic:
-		delay += randi_range(15, 60)
+		delay += Difficulty.rng("shift").randi_range(15, 60)
 		reason = _fresh(REASONS, _last_reason)
 		_last_reason = reason
 		add_energy(-3.0)
@@ -339,7 +339,7 @@ func _arrive(reason: String) -> int:
 		if late_min >= 20:
 			var pool: Array = ["Alan", "Garrison", "Dan"].filter(func(n: String) -> bool: return Social.people().has(n))
 			if not pool.is_empty():
-				var who: String = pool[randi() % pool.size()]
+				var who: String = pool[Difficulty.rng("shift").randi() % pool.size()]
 				Social.change(who, -1)
 				Lync._push(who, who, "Phones were backing up and I picked up. I would rather not. Please be on time.")
 		if late_min >= 30:

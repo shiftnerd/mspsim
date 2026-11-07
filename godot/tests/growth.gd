@@ -124,6 +124,7 @@ func _init() -> void:
 	)
 	g.progress = 0.0
 	social.rel["Garrison"] = 80
+	root.get_node("Difficulty").seed_run(7)  # an owner helper catches 54% of the misses (0.9 x 0.6): near a coin flip, so the draws are seeded
 	caught = 0
 	slipped = 0
 	for i in 300:
