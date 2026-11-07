@@ -489,6 +489,11 @@ const DAY_CAPS := {
 }
 # open tickets at which the timed spawns pause (tech campaign): few timers at once for a new player, six from day 10
 const OPEN_CAPS := {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5}
+# the front desk: Jen takes some of the incoming calls and puts them in the queue as tickets. A call that finds her on another line or away
+# from her desk goes to voicemail instead and lands in your queue a little later, with some of its SLA already used
+const PHONE_SHARE := 0.4  # the share of the timed spawns that arrive by phone while Jen is in the building
+const CALL_SECS := 7.0  # how long Jen is on a call before its ticket shows up
+const VOICEMAIL_SECS := 18.0  # how long a call that found nobody waits before it is logged
 const OS_NAMES := ["Windows 7 Pro", "Windows 7 Pro", "Windows 8.1", "Windows XP SP3"]
 const USERS := ["front desk", "office manager", "owner", "bookkeeper", "intern"]
 const DESK_NAMES := {
@@ -515,6 +520,7 @@ var project := {}  # the install project in progress (see start_project)
 var enabled := true  # false = free play / film mode: no random tickets, texts or SLA pressure
 var pace := 1.0  # campaign difficulty: ticket spawn interval multiplier
 var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
+var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
 
 var _next_id := 10421
 var _next_mail := 1
@@ -531,6 +537,7 @@ func _ready() -> void:
 
 
 func reset() -> void:
+	calls.clear()
 	tickets.clear()
 	emails.clear()
 	texts.clear()
@@ -1614,6 +1621,49 @@ func next_spawn_gap() -> float:
 	return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
 
 
+# "ready" = Jen is at her desk and free, "away" = she is in the building but busy or out of her seat, "" = there is no front desk
+func front_desk() -> String:
+	if not Campaign.active or not World.chars.has("Jen"):
+		return ""
+	var st: Dictionary = World.chars["Jen"]
+	var at_desk: bool = str(st.scene) == str(World.row("Jen").home) and not st.legs.is_empty() and str(st.legs[0].get("kind", "")) == "work"
+	return "ready" if at_desk and calls.is_empty() else "away"
+
+
+# one timed spawn: by email, or a phone call that Jen takes (or that goes to voicemail when she cannot)
+func _incoming() -> void:
+	var desk := front_desk()
+	if desk == "" or Difficulty.rng("msp.tickets").randf() >= PHONE_SHARE:
+		_random_ticket("email")
+		return
+	if desk == "ready":
+		calls.append({"t": CALL_SECS, "voicemail": false})
+		var node: Node = World.chars["Jen"].node
+		if node != null and is_instance_valid(node):
+			node.desk_call()
+	else:
+		calls.append({"t": VOICEMAIL_SECS, "voicemail": true})
+
+
+func _tick_calls(dt: float) -> void:
+	for i in range(calls.size() - 1, -1, -1):
+		calls[i].t = float(calls[i].t) - dt
+		if float(calls[i].t) > 0.0:
+			continue
+		var voicemail: bool = bool(calls[i].voicemail)
+		calls.remove_at(i)
+		var t: Dictionary = _random_ticket("voicemail" if voicemail else "phone call")
+		if t.is_empty():
+			continue
+		if voicemail:
+			t["sla_left"] = float(t.sla_left) - VOICEMAIL_SECS
+			t.notes.append("Left on voicemail while Jen was busy or away from her desk. Nobody picked up for a while.")
+			send_text("Jen", "Sorry, I was on another line. %s left a voicemail, it is in your queue (#%d)." % [str(t.contact), int(t.id)])
+		else:
+			t.notes.append("Taken by Jen at the front desk.")
+	changed.emit()
+
+
 # ---- clock -------------------------------------------------------------------
 func _process(delta: float) -> void:
 	if Game.title_mode or not enabled:
@@ -1621,11 +1671,12 @@ func _process(delta: float) -> void:
 	var dt := delta * World.time_scale
 	if dt <= 0.0:
 		return
+	_tick_calls(dt)
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
 		_spawn_t = next_spawn_gap()
 		if open_tickets().size() < open_cap() and World.clock < World.DAY_END:
-			_random_ticket("email")
+			_incoming()
 			# Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
 			var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0
 			if pair > 0.0 and Difficulty.rng("msp.pair").randf() < pair:
