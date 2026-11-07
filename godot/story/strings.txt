@@ -3272,6 +3272,38 @@ GO TO LUNCH
 [Yeartwo.TEXT.beats.sales.poach.options.2.reply]
 Pell buys lunch and a second dessert. Your phone shows a missed call from Garrison.
 
+# Yeartwo > TEXT > beats > sales > director > speaker
+[Yeartwo.TEXT.beats.sales.director.speaker]
+Garrison (Owner)
+
+# Yeartwo > TEXT > beats > sales > director > text
+[Yeartwo.TEXT.beats.sales.director.text]
+Same quota, new title. I want you running the sales side, and Wes reports to you now. You still close your own deals. You also answer for his.
+
+# Yeartwo > TEXT > beats > sales > director > options > 0 > label
+[Yeartwo.TEXT.beats.sales.director.options.0.label]
+TAKE THE CHAIR
+
+# Yeartwo > TEXT > beats > sales > director > options > 0 > reply
+[Yeartwo.TEXT.beats.sales.director.options.0.reply]
+Garrison hands you a key to the good filing cabinet. Wes salutes, then sits down fast.
+
+# Yeartwo > TEXT > beats > sales > director > options > 1 > label
+[Yeartwo.TEXT.beats.sales.director.options.1.label]
+STAY A CLOSER
+
+# Yeartwo > TEXT > beats > sales > director > options > 1 > reply
+[Yeartwo.TEXT.beats.sales.director.options.1.reply]
+Garrison sighs, then grins. Somebody has to keep selling, he says.
+
+# Yeartwo > TEXT > beats > sales > director > options > 2 > label
+[Yeartwo.TEXT.beats.sales.director.options.2.label]
+RAISE FIRST
+
+# Yeartwo > TEXT > beats > sales > director > options > 2 > reply
+[Yeartwo.TEXT.beats.sales.director.options.2.reply]
+Alan hears about it from the hallway. A title is not a salary, he says.
+
 # Yeartwo > TEXT > beats > owner > merger > speaker
 [Yeartwo.TEXT.beats.owner.merger.speaker]
 Walt Reiner (Tri-County Tech Group)

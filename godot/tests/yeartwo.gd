@@ -201,7 +201,10 @@ func _init() -> void:
 	# a Year 2 run of each: the pending flag is taken, the year is 2, the intro card comes up and the beat card fires on its day
 	for m in ["sales", "service"]:
 		var row: Dictionary = y.YEAR2.beats.get(m, {})
-		_check(row.size() == 1 and y.TEXT.beats.get(m, {}).has(str(row.keys()[0])), "%s has one Year 2 beat with its text" % m)
+		var texted := row.size() >= 1
+		for k in row.keys():
+			texted = texted and y.TEXT.beats.get(m, {}).has(str(k))
+		_check(texted, "%s has its Year 2 beats with their text (%d)" % [m, row.size()])
 		y.begin_select(m, true)
 		_check(y.pending, "%s: Year 2 chosen on the select" % m)
 		c.new_game(m)

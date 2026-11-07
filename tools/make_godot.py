@@ -12269,7 +12269,7 @@ const YEAR2 := {
             "fixed": ["ransomware", "poach_wave", "vendor_breach", "client_breach"],
         },
     },
-    "beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}, "service": {"headhunt": 8}, "sales": {"poach": 9}},
+    "beats": {"tech": {"courted": 6, "desk": 11}, "owner": {"merger": 10, "franchise": 15}, "service": {"headhunt": 8}, "sales": {"poach": 9, "director": 14}},
     "endings": {"tech": ["head", "clientbuy"], "owner": ["merger", "franchise"]},
 }
 const TEXT := {
@@ -12316,6 +12316,15 @@ const TEXT := {
                     {"label": "TELL GARRISON", "id": "told", "reply": "Garrison laughs, then asks what they offered. Then he matches half of it.", "fx": {"social": {"Garrison": 2}}},
                     {"label": "KEEP IT TO YOURSELF", "id": "quiet", "reply": "Pell nods. The offer has a long shelf life, he says.", "fx": {}},
                     {"label": "GO TO LUNCH", "id": "talk", "reply": "Pell buys lunch and a second dessert. Your phone shows a missed call from Garrison.", "fx": {"social": {"Garrison": -2}}},
+                ],
+            },
+            "director": {
+                "speaker": "Garrison (Owner)",
+                "text": "Same quota, new title. I want you running the sales side, and Wes reports to you now. You still close your own deals. You also answer for his.",
+                "options": [
+                    {"label": "TAKE THE CHAIR", "id": "take", "reply": "Garrison hands you a key to the good filing cabinet. Wes salutes, then sits down fast.", "fx": {"xp": ["people", 8], "social": {"Garrison": 2}}},
+                    {"label": "STAY A CLOSER", "id": "closer", "reply": "Garrison sighs, then grins. Somebody has to keep selling, he says.", "fx": {"rep": 1}},
+                    {"label": "RAISE FIRST", "id": "raise", "reply": "Alan hears about it from the hallway. A title is not a salary, he says.", "fx": {"social": {"Alan": -1, "Garrison": 1}}},
                 ],
             },
         },
