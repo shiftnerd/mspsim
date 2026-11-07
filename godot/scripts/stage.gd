@@ -181,6 +181,26 @@ func _process(_delta: float) -> void:
 		_cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
 		if not f.follow and not _long:
 			_cam.global_position.x = 184.0
+		_coop_frame(f)
+
+
+# co-op phase 2: in a scrolling view the camera frames both players, and the tether keeps both of them on screen
+func _coop_frame(f: Dictionary) -> void:
+	if not Players.coop or not (f.follow or _long):
+		return
+	var bodies := Players.nodes(self)
+	if bodies.size() < 2:
+		return
+	var xs := []
+	for b in bodies:
+		xs.append(b.global_position.x)
+	var focus := Players.coop_focus(xs)
+	_cam.global_position.x = focus
+	var bg: Sprite2D = get_node("Background")
+	var view_w := get_viewport_rect().size.x / float(f.zoom)
+	var reach := Players.tether_range(focus, view_w, bg.position.x, bg.position.x + bg.texture.get_size().x)
+	for b in bodies:
+		b.global_position.x = clampf(b.global_position.x, reach.x, reach.y)
 
 
 # a UI covers all but a strip at the top: slide the camera down so the player shows there

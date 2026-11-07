@@ -17,6 +17,7 @@ extends Node
 signal roster_changed
 
 const MAX_SLOTS := 2
+const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
 
@@ -193,3 +194,26 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
 		if can_join() and join(1, event.device):
 			get_viewport().set_input_as_handled()
+
+
+# ---- the shared camera and the tether (co-op phase 2, docs/scope-coop.md) ---------------------------------------
+# the camera frames both bodies: the middle of the two (one body: its own x)
+func coop_focus(xs: Array) -> float:
+	if xs.is_empty():
+		return 0.0
+	var lo: float = xs[0]
+	var hi: float = xs[0]
+	for x in xs:
+		lo = minf(lo, float(x))
+		hi = maxf(hi, float(x))
+	return (lo + hi) * 0.5
+
+
+# the x range the bodies may stand in so both stay on screen: the view around the camera centre (the focus kept inside the
+# room, as the camera's limits do), less a margin. A room that fits the view has no tether (the range is the whole room).
+func tether_range(focus: float, view_w: float, room_l: float, room_r: float) -> Vector2:
+	if room_r - room_l <= view_w:
+		return Vector2(room_l, room_r)
+	var half := view_w * 0.5
+	var centre := clampf(focus, room_l + half, room_r - half)
+	return Vector2(centre - half + TETHER_MARGIN, centre + half - TETHER_MARGIN)

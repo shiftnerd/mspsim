@@ -55450,6 +55450,26 @@ func _process(_delta: float) -> void:
         _cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
         if not f.follow and not _long:
             _cam.global_position.x = 184.0
+        _coop_frame(f)
+
+
+# co-op phase 2: in a scrolling view the camera frames both players, and the tether keeps both of them on screen
+func _coop_frame(f: Dictionary) -> void:
+    if not Players.coop or not (f.follow or _long):
+        return
+    var bodies := Players.nodes(self)
+    if bodies.size() < 2:
+        return
+    var xs := []
+    for b in bodies:
+        xs.append(b.global_position.x)
+    var focus := Players.coop_focus(xs)
+    _cam.global_position.x = focus
+    var bg: Sprite2D = get_node("Background")
+    var view_w := get_viewport_rect().size.x / float(f.zoom)
+    var reach := Players.tether_range(focus, view_w, bg.position.x, bg.position.x + bg.texture.get_size().x)
+    for b in bodies:
+        b.global_position.x = clampf(b.global_position.x, reach.x, reach.y)
 
 
 # a UI covers all but a strip at the top: slide the camera down so the player shows there
@@ -66741,6 +66761,7 @@ write("scripts/players.gd", '''extends Node
 signal roster_changed
 
 const MAX_SLOTS := 2
+const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
 
@@ -66917,6 +66938,30 @@ func _input(event: InputEvent) -> void:
     if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
         if can_join() and join(1, event.device):
             get_viewport().set_input_as_handled()
+
+
+# ---- the shared camera and the tether (co-op phase 2, docs/scope-coop.md) ---------------------------------------
+# the camera frames both bodies: the middle of the two (one body: its own x)
+func coop_focus(xs: Array) -> float:
+    if xs.is_empty():
+        return 0.0
+    var lo: float = xs[0]
+    var hi: float = xs[0]
+    for x in xs:
+        lo = minf(lo, float(x))
+        hi = maxf(hi, float(x))
+    return (lo + hi) * 0.5
+
+
+# the x range the bodies may stand in so both stay on screen: the view around the camera centre (the focus kept inside the
+# room, as the camera's limits do), less a margin. A room that fits the view has no tether (the range is the whole room).
+func tether_range(focus: float, view_w: float, room_l: float, room_r: float) -> Vector2:
+    if room_r - room_l <= view_w:
+        return Vector2(room_l, room_r)
+    var half := view_w * 0.5
+    var centre := clampf(focus, room_l + half, room_r - half)
+    return Vector2(centre - half + TETHER_MARGIN, centre + half - TETHER_MARGIN)
+
 ''')
 
 write("scripts/controls.gd", '''extends Node
