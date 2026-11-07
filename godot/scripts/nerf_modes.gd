@@ -17,6 +17,12 @@ const MODES := {
 		"line": "EVERYONE HAS LIVES. A HIT TAKES ONE. LAST ONE STANDING WINS. DUCKING HELPS.",
 		"win": 0,
 	},
+	"team":
+	{
+		"label": "TEAM WAR",
+		"line": "BLUE VS RED. YOU AND ONE FRIEND AGAINST THE REST. A DART ON YOUR OWN TEAM COSTS NOBODY A LIFE. LAST TEAM STANDING WINS.",
+		"win": 0,
+	},
 	"hide":
 	{
 		"label": "HIDE AND SEEK LITE",
@@ -24,7 +30,7 @@ const MODES := {
 		"win": 0,
 	},
 }
-const MODE_ORDER := ["cup", "elim", "hide"]
+const MODE_ORDER := ["cup", "elim", "team", "hide"]
 # secs = round length, gap = x the crew's shot interval, lives = elimination lives, cups = where the cup can stand (share of the room width)
 const ARENAS := {
 	"main_floor": {"label": "THE OFFICE", "secs": 50.0, "gap": 1.0, "lives": 3, "cups": [0.25, 0.5, 0.78]},

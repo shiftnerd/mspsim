@@ -36,7 +36,7 @@ func _init() -> void:
 	world.force_activity("John", "work")
 
 	# ---- tables
-	_check(NM.MODES.size() == 3 and NM.ARENAS.size() == 3, "three modes and three arenas")
+	_check(NM.MODES.size() == 4 and NM.ARENAS.size() == 3, "four modes and three arenas")
 	for id in NM.ARENAS:
 		var a: Dictionary = NM.ARENAS[id]
 		_check(world.DATA.SCENES.has(id) and a.cups.size() >= 3 and float(a.secs) >= 30.0, "%s is a real room with cup spots" % id)
@@ -52,9 +52,9 @@ func _init() -> void:
 
 	# ---- the card
 	nerf.offer_war()
-	_check(cards.is_open and cards.options.size() == 5, "V opens the war card: three modes, free-for-all, never mind")
+	_check(cards.is_open and cards.options.size() == 6, "V opens the war card: four modes, free-for-all, never mind")
 	_check("CUBICLE AREA" in str(cards.text), "the card names the arena")
-	cards.pick(4)
+	cards.pick(5)
 	_check(nerf.war_t <= 0.0 and nerf.mode == "", "NEVER MIND starts nothing")
 
 	# ---- classic war is unchanged
@@ -129,6 +129,44 @@ func _init() -> void:
 		nerf._player_hit_mode()
 	_check(nerf.mode_result.id == "elim" and not bool(nerf.mode_result.won), "losing your lives ends the war")
 	_check(career.value("nerf_elim_wins") == elim0 + 1, "a loss is not counted as a win")
+
+	# ---- team war (R11): you and a friend against the rest; a dart on your own team costs nothing
+	var team0: int = career.value("nerf_team_wins")
+	nerf.start_war("team")
+	var blue: Array = nerf.teams.keys().filter(func(n: String) -> bool: return nerf.team_of(n) == "blue")
+	var red: Array = nerf.teams.keys().filter(func(n: String) -> bool: return nerf.team_of(n) == "red")
+	_check(nerf.mode == "team" and blue == ["Player"] and red.size() == 1, "one coworker in the room: you against them (blue %s, red %s)" % [str(blue), str(red)])
+	_check("BLUE LIVES" in nerf.hud_extra(), "the HUD shows the team lives")
+	nerf.teams["Mate"] = "blue"  # a friend on your side (the room only has John in it, so add one to the tables)
+	nerf.lives["Mate"] = 2
+	var mate := "Mate"
+	var mate_lives: int = nerf.lives[mate]
+	nerf._mode_hit(mate)
+	_check(int(nerf.lives[mate]) == mate_lives, "hitting your own teammate costs nobody a life")
+	var hurt_lives: int = nerf.lives["Player"]
+	nerf._player_hit_mode(mate)
+	_check(int(nerf.lives["Player"]) == hurt_lives, "and a dart from your teammate does not cost you one")
+	nerf.downed["Mate"] = false
+	nerf.downed.erase("Mate")
+	for who in red:
+		for i in int(nerf.lives[who]):
+			nerf._lose_life(who)
+	_check(nerf.mode_result.id == "team" and bool(nerf.mode_result.won) and nerf.war_t <= 0.0, "when every red is out your team wins")
+	_check(career.value("nerf_team_wins") == team0 + 1, "a team win is counted")
+	nerf.start_war("team")
+	for i in 3:
+		nerf._player_hit_mode("Dan" if nerf.team_of("Dan") == "red" else "")
+	_check(nerf.mode_result.id == "team" and not bool(nerf.mode_result.won), "losing all your lives loses the team war")
+
+	# the partner is the friendly one, and the rest are red with lives of their own
+	nerf.lives = {}
+	for who in ["Dan", "Maya", "Alan"]:
+		root.get_node("Social").rel[who] = 0
+	root.get_node("Social").rel["Maya"] = 60
+	nerf._pick_teams(["Dan", "Maya", "Alan"], 3)
+	_check(nerf.team_of("Maya") == "blue" and nerf.team_of("Dan") == "red" and nerf.team_of("Alan") == "red" and nerf.team_of("Player") == "blue", "a friendly coworker is your partner")
+	_check(int(nerf.lives["Dan"]) == 3 and int(nerf.lives["Player"]) == 3 and nerf.lives.size() == 4, "everybody gets the arena's lives")
+	nerf.start_war()  # leave the war as the next section expects it
 
 	# ---- hide and seek
 	var ghosts0: int = career.value("nerf_hide_wins")

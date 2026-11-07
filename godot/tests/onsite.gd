@@ -27,6 +27,12 @@ func _drain(cards: Node) -> void:
 		guard += 1
 
 
+# a road event with a choice can open a card on arrival; skip it
+func _skip_road(cards: Node) -> void:
+	if cards.is_open and str(cards.options[0].get("id", "")) == "help":
+		cards.pick(1)
+
+
 func _init() -> void:
 	await process_frame
 	var c := root.get_node("Campaign")
@@ -68,6 +74,7 @@ func _init() -> void:
 	_check(cards.is_open and cards.options.size() == 2, "dispatch asks if you want to drive out")
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	_check(_scene() == "site_dental_a" and on.active and on.busy, "you arrive at the dental office")
 	_check(
 		world.clock > clock0 and other.sla_left < sla0,
@@ -124,6 +131,7 @@ func _init() -> void:
 	on.offer(int(t2.id))
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	on.interact("door")
 	_check(
 		cards.is_open and cards.options[1].label == "LEAVE ANYWAY",
@@ -142,6 +150,7 @@ func _init() -> void:
 	on.offer(int(t3.id))
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	game.vars["exam_return"] = "from_exam1"
 	game.go("site_dental_exam_a", "from_office")
 	await _wait(1.0)
@@ -187,6 +196,7 @@ func _init() -> void:
 	_check(cards.is_open and cards.options[0].id == "go", "it asks to drive there")
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	_check(
 		_scene() == "site_law_a" and on.active and on.ticket_id == int(t4.id),
 		"the front door takes you to the law office with the ticket"
@@ -208,6 +218,7 @@ func _init() -> void:
 	)
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	_check(
 		on.active and on.job.is_empty() and _scene().begins_with("site_"),
 		"you can visit a client with nothing to fix"
@@ -311,6 +322,7 @@ func _init() -> void:
 	on.offer(int(t5.id))
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	on.interact("door")
 	_check(
 		cards.is_open and cards.options[0].id == "leave" and cards.options[1].id == "go",

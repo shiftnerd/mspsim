@@ -38120,6 +38120,12 @@ const MODES := {
         "line": "EVERYONE HAS LIVES. A HIT TAKES ONE. LAST ONE STANDING WINS. DUCKING HELPS.",
         "win": 0,
     },
+    "team":
+    {
+        "label": "TEAM WAR",
+        "line": "BLUE VS RED. YOU AND ONE FRIEND AGAINST THE REST. A DART ON YOUR OWN TEAM COSTS NOBODY A LIFE. LAST TEAM STANDING WINS.",
+        "win": 0,
+    },
     "hide":
     {
         "label": "HIDE AND SEEK LITE",
@@ -38127,7 +38133,7 @@ const MODES := {
         "win": 0,
     },
 }
-const MODE_ORDER := ["cup", "elim", "hide"]
+const MODE_ORDER := ["cup", "elim", "team", "hide"]
 # secs = round length, gap = x the crew's shot interval, lives = elimination lives, cups = where the cup can stand (share of the room width)
 const ARENAS := {
     "main_floor": {"label": "THE OFFICE", "secs": 50.0, "gap": 1.0, "lives": 3, "cups": [0.25, 0.5, 0.78]},
@@ -38245,6 +38251,7 @@ var cups := 0  # cups you knocked down
 var cups_rival := 0  # cups the crew knocked down
 var lives := {}  # elimination: name (or "Player") -> lives left
 var downed := {}  # elimination: who is out
+var teams := {}  # team war (R11): name (or "Player") -> "blue" or "red"
 var hide_t := 0.0  # hide and seek: seconds you were unseen
 var hide_found := false
 var seeker := ""
@@ -38537,7 +38544,8 @@ func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
             _shot_t[who] = 0.8
     else:
         npc.react_hit("!")
-        _lose_life(str(npc.cast_name))
+        if mode != "team" or team_of(who) != team_of(shooter):  # a dart between teammates costs nothing in a team war
+            _lose_life(str(npc.cast_name))
         if war_t > 0.0:
             war_ff += 1
             if Time.get_ticks_msec() - int(_hit_ms.get(who, -99999)) < 2500:
@@ -38546,7 +38554,7 @@ func _hit_npc(npc: Node, shooter: String, dart: Node = null) -> void:
 
 func _hit_player(p: Node, shooter: String) -> void:
     taken += 1
-    _player_hit_mode()
+    _player_hit_mode(shooter)
     war_taken += 1 if war_t > 0.0 else 0
     if p.state != "sitting" and p.state != "death":
         p.start_emote("hurt", 0.45)
@@ -38616,6 +38624,7 @@ func _clear_mode() -> void:
     mode = ""
     lives = {}
     downed = {}
+    teams = {}
     cups = 0
     cups_rival = 0
     hide_t = 0.0
@@ -38650,6 +38659,8 @@ func _begin_mode(id: String) -> void:
             lives["Player"] = int(a.lives)
             for n in names:
                 lives[n] = int(a.lives)
+        "team":
+            _pick_teams(names, int(a.lives))
         "hide":
             if not names.is_empty():
                 seeker = str(Difficulty.pick(names, "nerf"))
@@ -38725,15 +38736,45 @@ func _npc_fire_at(npc: Node, x: float) -> void:
     fire_npc(npc, dir, clampf((absf(dx) - 110.0) / 200.0, 0.0, 1.0))
 
 
+# team war: you and one friend (the first friendly coworker in the room, else whoever is first) are blue, everybody else red
+func _pick_teams(names: Array, life_count: int) -> void:
+    teams = {"Player": "blue"}
+    lives["Player"] = life_count
+    var partner := ""
+    for n in names:
+        if Social.is_friendly(str(n)):
+            partner = str(n)
+            break
+    if partner == "" and not names.is_empty():
+        partner = str(names[0])
+    if names.size() < 2:
+        partner = ""  # one coworker in the room: it is you against them
+    for n in names:
+        teams[str(n)] = "blue" if str(n) == partner else "red"
+        lives[str(n)] = life_count
+
+
+func team_of(who: String) -> String:
+    return str(teams.get(who, "red"))
+
+
 func _mode_hit(who: String) -> void:
-    if mode == "elim":
+    if mode == "team":
+        if team_of(who) == "blue":
+            Hints.toast("FRIENDLY FIRE! IT COSTS NOBODY A LIFE.", 2.0)
+        else:
+            _lose_life(who)
+    elif mode == "elim":
         _lose_life(who)
     elif mode == "hide" and who == seeker:
         stunned = Modes.HIDE_STUN
         Hints.toast("SEEKER STUNNED FOR %d SECONDS" % int(Modes.HIDE_STUN), 2.0)
 
 
-func _player_hit_mode() -> void:
+func _player_hit_mode(shooter := "") -> void:
+    if mode == "team" and team_of(shooter) == "blue" and shooter != "":
+        Hints.toast("YOUR OWN TEAMMATE. NO LIFE LOST.", 1.8)
+        return
     if mode == "hide" and war_t > 0.0:
         hide_found = true
         Hints.toast("FOUND!", 1.5)
@@ -38743,7 +38784,7 @@ func _player_hit_mode() -> void:
 
 
 func _lose_life(who: String) -> void:
-    if mode != "elim" or war_t <= 0.0 or not lives.has(who) or downed.has(who):
+    if (mode != "elim" and mode != "team") or war_t <= 0.0 or not lives.has(who) or downed.has(who):
         return
     lives[who] = int(lives[who]) - 1
     if int(lives[who]) > 0:
@@ -38760,7 +38801,7 @@ func _lose_life(who: String) -> void:
     _shot_t.erase(who)
     Hints.toast("%s IS OUT!" % who.to_upper(), 1.8)
     for n in lives:
-        if n != "Player" and not downed.has(n):
+        if n != "Player" and not downed.has(n) and (mode != "team" or team_of(str(n)) == "red"):
             return
     _end_war()
 
@@ -38771,6 +38812,8 @@ func hud_extra() -> String:
             return "  CUP %d/%d" % [cups, int(Modes.MODES.cup.win)]
         "elim":
             return "  LIVES %d" % int(lives.get("Player", 0))
+        "team":
+            return "  BLUE LIVES %d" % int(lives.get("Player", 0))
         "hide":
             return "  UNSEEN %d" % int(hide_t)
     return ""
@@ -38800,6 +38843,16 @@ func _end_mode() -> void:
             )
             if won:
                 Career.add("nerf_elim_wins")
+        "team":
+            won = not downed.has("Player")
+            for n in lives:
+                if n != "Player" and team_of(str(n)) == "red" and not downed.has(n):
+                    won = false
+            line = (
+                "TEAM WAR: " + ("BLUE WINS!" if won else ("YOU WERE OUT, SO RED TAKES IT." if downed.has("Player") else "TIME. RED STILL HAS PEOPLE STANDING."))
+            )
+            if won:
+                Career.add("nerf_team_wins")
         "hide":
             won = not hide_found and hide_t >= float(Modes.arena_for(arena).secs) - 1.5
             Career.best("nerf_hide_best", int(hide_t))
@@ -38901,6 +38954,13 @@ func _npc_shoots(npc: Node) -> void:
         return
     elif mode == "elim":
         targets = targets.filter(func(t: Node) -> bool: return not downed.has(str(t.get("cast_name"))))
+        if targets.is_empty():
+            return
+    elif mode == "team":  # shoot at the other team only (you are blue)
+        var mine := team_of(str(npc.cast_name))
+        targets = targets.filter(
+            func(t: Node) -> bool: return not downed.has(str(t.get("cast_name"))) and (("blue" if t == p else team_of(str(t.get("cast_name")))) != mine)
+        )
         if targets.is_empty():
             return
     var target: Node = Difficulty.pick(targets, "nerf")
