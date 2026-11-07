@@ -92,7 +92,7 @@ func _init() -> void:
 	for wk in SB.WEEKS:
 		if not T.has(str(SB.WEEKS[wk])):
 			all_ok = false
-	_check(all_ok and SB.WEEKS.size() == 15, "every beat week has a BEAT_TEXT block (%d beats)" % SB.WEEKS.size())
+	_check(all_ok and SB.WEEKS.size() == 16, "every beat week has a BEAT_TEXT block (%d beats)" % SB.WEEKS.size())
 	var opts_ok := true
 	for beat in T:
 		for key in T[beat]:
@@ -389,6 +389,25 @@ func _init() -> void:
 	_pick_id(cards, "refuse")
 	_check(int(bad2.mood) == 35 and int(bad2.churn) >= 35 and int(bad2.broken) == 1, "refusing: mood -15, churn +25")
 
+	# ---- week 12: the new hire shadows you
+	_start()
+	c.day = 12
+	SB.week(12)
+	_check(cards.is_open and str(cards.speaker) == "Wes Okafor" and cards.options.size() == 3, "week 12: the new hire asks how to start")
+	_pick_id(cards, "teach")
+	_check(sc.flags.newhire == "teach", "teaching him is remembered")
+	_start()
+	c.day = 12
+	SB.week(12)
+	var rep12: int = c.rep
+	_pick_id(cards, "pass")
+	_check(sc.flags.newhire == "pass" and c.rep == rep12, "sending him to Morgan costs only goodwill")
+	_start()
+	c.day = 12
+	SB.week(12)
+	_pick_id(cards, "copy")
+	_check(["copy", "overpromised"].has(str(sc.flags.newhire)), "letting him copy the pitch either works or overpromises")
+
 	# ---- week 18: ByteBrothers recruits you
 	_start()
 	c.day = 18
@@ -577,9 +596,9 @@ func _init() -> void:
 	_check(root.get_node("Owner").cash <= sc.CASH_CAP and sc.distributed > 0, "cash above the cap is distributed (cash $%d, taken $%d)" % [root.get_node("Owner").cash, sc.distributed])
 
 	var lynks := 0
-	for b in ["chamber", "paws", "xpwave", "undercut", "shop", "qbr", "crypto", "slip", "rise", "hipaa", "logo", "refund", "recruit", "diligence"]:
+	for b in ["chamber", "paws", "xpwave", "undercut", "shop", "qbr", "crypto", "slip", "newhire", "rise", "hipaa", "logo", "refund", "recruit", "diligence"]:
 		lynks += 1 if not SB.row(b, "lynk").is_empty() else 0
-	_check(lynks == 14, "the beats that arrive by Lynk each have a Lynk line (%d of 14)" % lynks)
+	_check(lynks == 15, "the beats that arrive by Lynk each have a Lynk line (%d of 15)" % lynks)
 
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

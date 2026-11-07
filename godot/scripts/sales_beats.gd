@@ -20,6 +20,7 @@ const WEEKS := {
 	8: "qbr",
 	9: "crypto",
 	11: "slip",
+	12: "newhire",
 	13: "rise",
 	14: "hipaa",
 	15: "logo",
@@ -201,6 +202,8 @@ static func week(day: int) -> void:
 			crypto()
 		"slip":
 			slip()
+		"newhire":
+			newhire()
 		"rise":
 			rise()
 		"hipaa":
@@ -672,6 +675,32 @@ static func _refund_pick(e: Dictionary, id: String) -> void:
 				e["churn"] = mini(100, int(e.get("churn", 10)) + 25)
 			Social.change("Alan", 1)
 			say("refund", "res_refuse", [], Callable(), who)
+
+
+# 12. the new hire shadows you
+static func newhire() -> void:
+	lynk("newhire")
+	ask("newhire", "card", func(id: String) -> void: _newhire_pick(id))
+
+
+static func _newhire_pick(id: String) -> void:
+	set_flag("newhire", id)
+	match id:
+		"teach":
+			Social.change("Garrison", 1)
+			Campaign.adjust_rep(1)
+			say("newhire", "res_teach")
+		"copy":
+			if rng(120).randf() < 0.4:
+				Campaign.adjust_rep(-1)
+				Social.change("Alan", -1)
+				set_flag("newhire", "overpromised")
+				say("newhire", "res_copy_bad")
+			else:
+				say("newhire", "res_copy_ok")
+		_:
+			Social.change("Garrison", -1)
+			say("newhire", "res_pass")
 
 
 # 18. ByteBrothers recruits you

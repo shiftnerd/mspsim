@@ -59582,6 +59582,22 @@ const BEAT_TEXT := {
         "res_credit_lose": {"speaker": "%s", "text": "A credit is not a refund. We will think about whether we renew. You have not heard the last of this."},
         "res_refuse": {"speaker": "%s", "text": "The contract says no refunds. It also says one hour response. Interesting. We will be calling our attorney."},
     },
+    "newhire": {
+        "lynk": {"from": "Garrison", "text": "The new kid starts Monday. Wes. He has a nice tie and no idea what a quote is. He is sitting with you this week."},
+        "card": {
+            "speaker": "Wes Okafor",
+            "text": "Hi, Mr. Marlowe. Garrison said to stick with you this week. I wrote down everything you said at the last quote. Can I try the next call on my own, or do you want me to watch first?",
+            "options": [
+                {"id": "teach", "label": "WATCH FIRST, THEN WE TALK IT THROUGH"},
+                {"id": "copy", "label": "USE MY PITCH, WORD FOR WORD"},
+                {"id": "pass", "label": "SEND HIM TO MORGAN, I AM BUSY"},
+            ],
+        },
+        "res_teach": {"speaker": "Wes Okafor", "text": "You told me to ask what hurts before I say what we sell. It sounds so obvious. I think I am going to be good at this because of you."},
+        "res_copy_ok": {"speaker": "Wes Okafor", "text": "It worked. Your whole speech, even the joke about the patch panel. The client laughed. I do not think they noticed it was yours."},
+        "res_copy_bad": {"speaker": "{sales_owner}", "text": "Your new kid promised a client the same ninety minute response you promised last month, in the same words. Delivery is not thrilled. Teach him the difference between a pitch and a promise."},
+        "res_pass": {"speaker": "{sales_owner}", "text": "You sent Wes to Morgan? She gave him a binder and a lecture about the ticket queue. He is a nice kid. He deserved a salesman."},
+    },
     "recruit": {
         "lynk": {"from": "Garrison", "text": "Odd thing: a recruiter from across town asked whether you were happy here. I told him to ask you. Are you?"},
         "card": {
@@ -61119,6 +61135,7 @@ const WEEKS := {
     8: "qbr",
     9: "crypto",
     11: "slip",
+    12: "newhire",
     13: "rise",
     14: "hipaa",
     15: "logo",
@@ -61300,6 +61317,8 @@ static func week(day: int) -> void:
             crypto()
         "slip":
             slip()
+        "newhire":
+            newhire()
         "rise":
             rise()
         "hipaa":
@@ -61771,6 +61790,32 @@ static func _refund_pick(e: Dictionary, id: String) -> void:
                 e["churn"] = mini(100, int(e.get("churn", 10)) + 25)
             Social.change("Alan", 1)
             say("refund", "res_refuse", [], Callable(), who)
+
+
+# 12. the new hire shadows you
+static func newhire() -> void:
+    lynk("newhire")
+    ask("newhire", "card", func(id: String) -> void: _newhire_pick(id))
+
+
+static func _newhire_pick(id: String) -> void:
+    set_flag("newhire", id)
+    match id:
+        "teach":
+            Social.change("Garrison", 1)
+            Campaign.adjust_rep(1)
+            say("newhire", "res_teach")
+        "copy":
+            if rng(120).randf() < 0.4:
+                Campaign.adjust_rep(-1)
+                Social.change("Alan", -1)
+                set_flag("newhire", "overpromised")
+                say("newhire", "res_copy_bad")
+            else:
+                say("newhire", "res_copy_ok")
+        _:
+            Social.change("Garrison", -1)
+            say("newhire", "res_pass")
 
 
 # 18. ByteBrothers recruits you
