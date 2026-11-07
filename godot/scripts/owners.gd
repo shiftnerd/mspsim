@@ -212,6 +212,7 @@ func step_in(who: String, reason: String, info := {}) -> void:
 			_help_ticket(int(info.get("ticket", 0)), who, SLA_BONUS, "%s stepped in: +45 s on the clock." % who)
 	used[who] = int(used[who]) + 1
 	stepped += 1
+	Career.add("owner_help")
 	last_clock = World.clock
 	log.append({"who": who, "reason": reason, "clock": World.clock})
 	if reason != "phones":

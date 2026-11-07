@@ -54,6 +54,7 @@ func _init() -> void:
 	o.step_in(d.who, d.reason, d)
 	_check(is_equal_approx(float(msp.ticket(t.id).sla_left), 65.0), "+45 seconds on the clock")
 	_check(o.used["Alan"] == 1 and o.stepped == 1, "counted: 1 use today")
+	_check(int(root.get_node("Career").value("owner_help")) >= 1, "Career counts the owner help")
 	_check(c.rep == rep0 and social.rel == soc0, "no reputation and no opinion change")
 
 	# ---- cooldown

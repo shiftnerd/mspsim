@@ -189,6 +189,7 @@ const COUNTERS := [
 	["", "RENEWALS WON", "renewals", "n"],
 	["", "UPSELLS SOLD", "upsells", "n"],
 	["", "DUCK CHATS", "duck_squeaks", "n"],
+	["", "OWNER HELP", "owner_help", "n"],
 	["SERVICE DESK", "TICKETS DISPATCHED", "dispatched", "n"],
 	["HABITS", "HABITS ADOPTED", "habits_adopted", "n"],
 	["", "SKELETONS PAID", "skeletons_paid", "n"],
