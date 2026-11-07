@@ -19858,11 +19858,11 @@ Fine, I dropped the printer job and drove over. %s is fixed. I am putting one ho
 
 # SalesCampaign > BEAT_TEXT > qbr > lynk > from
 [SalesCampaign.BEAT_TEXT.qbr.lynk.from]
-Garrison
+Alan
 
 # SalesCampaign > BEAT_TEXT > qbr > lynk > text
 [SalesCampaign.BEAT_TEXT.qbr.lynk.text]
-Quarterly business review time. Pick your best account and ask how it is really going. They are more honest in person.
+Quarter is nearly over. Your best account is due a business review. Renewals are won in the room, not on the phone.
 
 # SalesCampaign > BEAT_TEXT > qbr > card > speaker
 [SalesCampaign.BEAT_TEXT.qbr.card.speaker]
@@ -19886,11 +19886,11 @@ SEND THE REPORT, SKIP THE MEETING
 
 # SalesCampaign > BEAT_TEXT > crypto > lynk > from
 [SalesCampaign.BEAT_TEXT.crypto.lynk.from]
-Garrison
+Dan
 
 # SalesCampaign > BEAT_TEXT > crypto > lynk > text
 [SalesCampaign.BEAT_TEXT.crypto.lynk.text]
-A crypto exchange wants us as their IT. Their lawyer is already calling. Read everything before you say yes.
+Ransomware at the law office. Atty. Spence is on the phone and he asked for you by name. We will handle the tech side, you handle him.
 
 # SalesCampaign > BEAT_TEXT > crypto > card > speaker
 [SalesCampaign.BEAT_TEXT.crypto.card.speaker]
@@ -19930,11 +19930,11 @@ You want to talk renewal while my files are locked? ...Actually, yes. Let's do i
 
 # SalesCampaign > BEAT_TEXT > slip > lynk > from
 [SalesCampaign.BEAT_TEXT.slip.lynk.from]
-John
+Garrison
 
 # SalesCampaign > BEAT_TEXT > slip > lynk > text
 [SalesCampaign.BEAT_TEXT.slip.lynk.text]
-One of your quotes just got very quiet. Do not chase, but do not let it die either.
+A prospect likes the quote but their budget does not open until July. Hold the price or lose the deal. Think about it.
 
 # SalesCampaign > BEAT_TEXT > slip > card > speaker
 [SalesCampaign.BEAT_TEXT.slip.card.speaker]
@@ -20042,11 +20042,11 @@ Holding the line. Good for the renewals, I will take that. Alan will say somethi
 
 # SalesCampaign > BEAT_TEXT > hipaa > lynk > from
 [SalesCampaign.BEAT_TEXT.hipaa.lynk.from]
-Garrison
+Dan
 
 # SalesCampaign > BEAT_TEXT > hipaa > lynk > text
 [SalesCampaign.BEAT_TEXT.hipaa.lynk.text]
-A dental or vet client is nervous about their patient records. Give them a real answer, not a brochure.
+A dental client wants a straight yes or no on HIPAA. Check what we actually have on file before you answer.
 
 # SalesCampaign > BEAT_TEXT > hipaa > card > speaker
 [SalesCampaign.BEAT_TEXT.hipaa.card.speaker]
@@ -20194,11 +20194,11 @@ Two owners and no answer by Friday. They signed a deal with somebody who could s
 
 # SalesCampaign > BEAT_TEXT > refund > lynk > from
 [SalesCampaign.BEAT_TEXT.refund.lynk.from]
-John
+Alan
 
 # SalesCampaign > BEAT_TEXT > refund > lynk > text
 [SalesCampaign.BEAT_TEXT.refund.lynk.text]
-Someone wants their money back and they sound sure about it. Hear them out before you open the checkbook.
+A client says we missed the one hour response from your handover and wants last month back. Your handover, your call.
 
 # SalesCampaign > BEAT_TEXT > refund > card > speaker
 [SalesCampaign.BEAT_TEXT.refund.card.speaker]
@@ -20258,7 +20258,7 @@ Garrison
 
 # SalesCampaign > BEAT_TEXT > recruit > lynk > text
 [SalesCampaign.BEAT_TEXT.recruit.lynk.text]
-We can hire another body for the team. It costs money now and pays back later. Your call.
+Odd thing: a recruiter from across town asked whether you were happy here. I told him to ask you. Are you?
 
 # SalesCampaign > BEAT_TEXT > recruit > card > speaker
 [SalesCampaign.BEAT_TEXT.recruit.card.speaker]

@@ -59475,7 +59475,7 @@ const BEAT_TEXT := {
         "res_dan": {"speaker": "Dan", "text": "Fine, I dropped the printer job and drove over. %s is fixed. I am putting one hour response in the planning notes with your name next to it."},
     },
     "qbr": {
-        "lynk": {"from": "Garrison", "text": "Quarterly business review time. Pick your best account and ask how it is really going. They are more honest in person."},
+        "lynk": {"from": "Alan", "text": "Quarter is nearly over. Your best account is due a business review. Renewals are won in the room, not on the phone."},
         "card": {
             "speaker": "{sales_owner}",
             "text": "%s is your best account and they are %d%% happy. A business review is where renewals are won, and where I would sell them the backup service. Do it at their office if you can.",
@@ -59487,7 +59487,7 @@ const BEAT_TEXT := {
         },
     },
     "crypto": {
-        "lynk": {"from": "Garrison", "text": "A crypto exchange wants us as their IT. Their lawyer is already calling. Read everything before you say yes."},
+        "lynk": {"from": "Dan", "text": "Ransomware at the law office. Atty. Spence is on the phone and he asked for you by name. We will handle the tech side, you handle him."},
         "card": {
             "speaker": "Atty. Spence",
             "text": "It hit us at nine this morning. Every file on the paralegal's PC is locked and there is a countdown on the screen. I called you first, before my wife. Please tell me you are going to fix this.",
@@ -59501,7 +59501,7 @@ const BEAT_TEXT := {
         "res_renew": {"speaker": "Atty. Spence", "text": "You want to talk renewal while my files are locked? ...Actually, yes. Let's do it now, before I change my mind."},
     },
     "slip": {
-        "lynk": {"from": "John", "text": "One of your quotes just got very quiet. Do not chase, but do not let it die either."},
+        "lynk": {"from": "Garrison", "text": "A prospect likes the quote but their budget does not open until July. Hold the price or lose the deal. Think about it."},
         "card": {
             "speaker": "%s",
             "text": "My partners want to sign %s, but not before July 1. The budget year starts then. Can you hold the price?",
@@ -59532,7 +59532,7 @@ const BEAT_TEXT := {
         "res_none": {"speaker": "{sales_owner}", "text": "Holding the line. Good for the renewals, I will take that. Alan will say something about costs, let him."},
     },
     "hipaa": {
-        "lynk": {"from": "Garrison", "text": "A dental or vet client is nervous about their patient records. Give them a real answer, not a brochure."},
+        "lynk": {"from": "Dan", "text": "A dental client wants a straight yes or no on HIPAA. Check what we actually have on file before you answer."},
         "card": {
             "speaker": "%s",
             "text": "The HIPAA omnibus rule has been law since last September and our attorney says we must have a risk assessment on file. %s is in the paperwork. Are we compliant with you? Yes or no?",
@@ -59567,7 +59567,7 @@ const BEAT_TEXT := {
         "res_broker_lose": {"speaker": "{sales_owner}", "text": "Two owners and no answer by Friday. They signed a deal with somebody who could say yes. We lost the logo and the afternoon."},
     },
     "refund": {
-        "lynk": {"from": "John", "text": "Someone wants their money back and they sound sure about it. Hear them out before you open the checkbook."},
+        "lynk": {"from": "Alan", "text": "A client says we missed the one hour response from your handover and wants last month back. Your handover, your call."},
         "card": {
             "speaker": "%s",
             "text": "%s: your handover promised us a one hour response and we have waited two days. We want a refund of the last month, $%d, or we walk. I am not angry. I am done.",
@@ -59583,7 +59583,7 @@ const BEAT_TEXT := {
         "res_refuse": {"speaker": "%s", "text": "The contract says no refunds. It also says one hour response. Interesting. We will be calling our attorney."},
     },
     "recruit": {
-        "lynk": {"from": "Garrison", "text": "We can hire another body for the team. It costs money now and pays back later. Your call."},
+        "lynk": {"from": "Garrison", "text": "Odd thing: a recruiter from across town asked whether you were happy here. I told him to ask you. Are you?"},
         "card": {
             "speaker": "Trent Dagmar",
             "text": "John. Trent Dagmar, ByteBrothers. I watched you work the Chamber lunch. We have a book of two hundred seats and nobody who can close. $%d a week base, forty percent commission, a company car, and you bring your card file. Think about it, but not for long.",
