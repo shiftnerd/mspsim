@@ -118,8 +118,8 @@ func _init() -> void:
 	var fixed_vignettes := []
 	for id in story.VIGNETTES:
 		(drawn_vignettes if story.VIGNETTES[id].has("min_day") else fixed_vignettes).append(id)
-	_check(story.VIGNETTES.size() == 29, "the vignette deck has 29 cards (%d)" % story.VIGNETTES.size())
-	_check(fixed_vignettes.size() == 12 and drawn_vignettes.size() == 17, "12 fixed (Dan's four) and 17 drawn vignettes")
+	_check(story.VIGNETTES.size() == 32, "the vignette deck has 32 cards (%d)" % story.VIGNETTES.size())
+	_check(fixed_vignettes.size() == 15 and drawn_vignettes.size() == 17, "15 fixed (Dan and Adam) and 17 drawn vignettes")
 	for id in ["iphone", "heartbleed", "candy", "pizza", "win8", "selfreview", "donuts", "invoice"]:
 		_check(not story.VIGNETTES[id].has("min_day"), "%s stays on its fixed day" % id)
 	var ids := {}

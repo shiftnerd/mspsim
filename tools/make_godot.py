@@ -16237,6 +16237,31 @@ const POSTMORTEMS := {
     },
 }
 const VIGNETTES := {
+    "adam_friday_good": {
+        "speaker": "Adam (Senior Tech)",
+        "text": "Friday numbers. {closed} closed this week, {missed} missed, {backlog} still open. That is a clean board. I do not say that often.",
+        "options": [
+            {"id": "thanks", "label": "THANKS, ADAM", "text": "Do not thank me. Do it again next week. (reputation +1)", "fx": {"rep": 1}},
+            {"id": "how", "label": "WHAT WOULD YOU DO DIFFERENTLY?", "text": "Nothing yet. Keep an eye on the old tickets, they turn into the missed ones. (+2 customer XP)", "fx": {"xp": ["people", 2]}},
+        ],
+    },
+    "adam_friday_ok": {
+        "speaker": "Adam (Senior Tech)",
+        "text": "Friday numbers. {closed} closed, {missed} missed, {backlog} still open. Not bad, not great. Where did the week get away from you?",
+        "options": [
+            {"id": "tighten", "label": "I WILL TIGHTEN IT UP", "text": "Good. Look at the clock before you look at the client name. (+1 customer XP)", "fx": {"xp": ["people", 1]}},
+            {"id": "rough", "label": "IT WAS A ROUGH WEEK", "text": "It is a rough week for everybody. That is why we measure it. Come ask me when it turns red, not after.", "fx": {}},
+        ],
+    },
+    "adam_friday_bad": {
+        "speaker": "Adam (Senior Tech)",
+        "text": "Friday numbers. {closed} closed, {missed} missed, {backlog} still open. That is not where we want to be. Walk me through it. Why?",
+        "options": [
+            {"id": "triage", "label": "I GOT BEHIND ON TRIAGE", "text": "Fair. Honest is a good start. Tell me earlier next time and I can take a ticket off you. (+2 customer XP)", "fx": {"xp": ["people", 2]}},
+            {"id": "volume", "label": "THERE WERE TOO MANY TICKETS", "text": "The volume is the same for everyone. Show me which ones you could not have closed. (reputation -1)", "fx": {"rep": -1}},
+            {"id": "help", "label": "SOME OF THEM WERE OVER MY HEAD", "text": "Then ask me before they go red. That is what I am here for. (+2 servers XP)", "fx": {"xp": ["servers", 2]}},
+        ],
+    },
     "mentor_intro": {
         "speaker": "Dan (Service Manager)",
         "text": "Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?",
@@ -17210,6 +17235,7 @@ const DAYS := {
          + "On-call pay is $40 a day. Leave for work early enough, too: "
          + "Route 9 is down to one lane. - Morgan"},
         {"at": 10.5, "kind": "vignette", "id": "heartbleed"},
+        {"at": 15.8, "kind": "metrics"},
     ],
     6: [{"at": 9.8, "kind": "growth_plan"}],
     7: [
@@ -17230,6 +17256,7 @@ const DAYS := {
     10: [
         {"at": 10.0, "kind": "playbook", "book": "rack",
          "text": "Gnarly Gnomes says their network rack fell off the wall. Everything is down. Go. Photos first!"},
+        {"at": 15.8, "kind": "metrics"},
     ],
     11: [{"at": 10.0, "kind": "callback_install"}, {"at": 11.0, "kind": "postmortem", "cls": "bec"}, {"at": 14.0, "kind": "postmortem", "cls": "rack"}],
     12: [
@@ -17257,6 +17284,7 @@ const DAYS := {
         {"at": 9.2, "kind": "mail", "from": MANAGER, "subject": "Pager again",
          "body": "You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan"},
         {"at": 10.5, "kind": "postmortem", "cls": "email"},
+        {"at": 15.8, "kind": "metrics"},
     ],
     16: [
         {"at": 9.5, "kind": "playbook", "book": "netinstall",
@@ -17378,6 +17406,8 @@ func fire(ev: Dictionary) -> void:
             Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
         "vignette", "mentor":
             _vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
+        "metrics":
+            _friday()
         "postmortem":
             Incident.tech_start(str(ev.cls))
         "adobe":
@@ -17428,7 +17458,43 @@ func _vopts(id: String, v: Dictionary) -> Array:
 
 
 # Alan's donut card follows how the firewall day went: only a documented firewall has a page to praise
+# Adam's Friday review: the last five days from the metrics record, and one of three cards by how they went
+func week_stats() -> Dictionary:
+    var out := {"opened": 0, "closed": 0, "missed": 0, "backlog": Msp.open_tickets().size()}
+    for e in Msp.Dash.recent(5):
+        out.opened += int(e.opened)
+        out.closed += int(e.closed)
+        out.missed += int(e.missed)
+    return out
+
+
+func friday_card(stats: Dictionary) -> String:
+    if int(stats.missed) == 0 and int(stats.backlog) <= 3:
+        return "adam_friday_good"
+    if int(stats.missed) <= 2 and int(stats.backlog) <= 5:
+        return "adam_friday_ok"
+    return "adam_friday_bad"
+
+
+func _friday() -> void:
+    var stats := week_stats()
+    if int(stats.opened) == 0 and int(stats.closed) == 0:
+        return  # nothing on the board to read
+    _vignette(friday_card(stats))
+
+
+func _fill_week(text: String) -> String:
+    if not text.contains("{closed}"):
+        return text
+    var stats := week_stats()
+    return text.replace("{closed}", str(stats.closed)).replace("{missed}", str(stats.missed)).replace("{backlog}", str(stats.backlog))
+
+
 func _vignette_text(id: String, v: Dictionary) -> String:
+    return _fill_week(_vignette_text_raw(id, v))
+
+
+func _vignette_text_raw(id: String, v: Dictionary) -> String:
     if id == "invoice" and _checked(id):
         return str(v.text_checked)
     if id == "donuts" and not bool(flags.get("bus_doc", false)):

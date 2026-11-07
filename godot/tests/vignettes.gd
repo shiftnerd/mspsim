@@ -22,8 +22,10 @@ func _init() -> void:
 		for ev in story.DAYS[d]:
 			if str(ev.get("kind", "")) in ["vignette", "mentor"]:
 				scheduled[str(ev.id)] = d
-	_check(scheduled.size() == 12, "twelve vignettes are on the calendar (eight and Dan's four)")
-	_check(story.VIGNETTES.size() == 29, "the vignette deck has 29 cards")
+	for id in ["adam_friday_good", "adam_friday_ok", "adam_friday_bad"]:
+		scheduled[id] = 5  # Adam's Friday review picks one of these by the numbers (event kind metrics, days 5, 10, 15)
+	_check(scheduled.size() == 15, "fifteen vignettes are on the calendar (eight, Dan and Adam)")
+	_check(story.VIGNETTES.size() == 32, "the vignette deck has 32 cards")
 	var drawn := 0
 	for id in story.VIGNETTES:
 		if story.VIGNETTES[id].has("min_day"):

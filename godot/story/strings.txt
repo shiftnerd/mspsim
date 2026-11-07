@@ -158,6 +158,86 @@ We will sit down after close for your yearly review. There may be an offer or tw
 
 
 # ======================= Story > VIGNETTES =======================
+# Story > VIGNETTES > adam_friday_good > speaker
+[Story.VIGNETTES.adam_friday_good.speaker]
+Adam (Senior Tech)
+
+# Story > VIGNETTES > adam_friday_good > text
+[Story.VIGNETTES.adam_friday_good.text]
+Friday numbers. {closed} closed this week, {missed} missed, {backlog} still open. That is a clean board. I do not say that often.
+
+# Story > VIGNETTES > adam_friday_good > options > 0 > label
+[Story.VIGNETTES.adam_friday_good.options.0.label]
+THANKS, ADAM
+
+# Story > VIGNETTES > adam_friday_good > options > 0 > text
+[Story.VIGNETTES.adam_friday_good.options.0.text]
+Do not thank me. Do it again next week. (reputation +1)
+
+# Story > VIGNETTES > adam_friday_good > options > 1 > label
+[Story.VIGNETTES.adam_friday_good.options.1.label]
+WHAT WOULD YOU DO DIFFERENTLY?
+
+# Story > VIGNETTES > adam_friday_good > options > 1 > text
+[Story.VIGNETTES.adam_friday_good.options.1.text]
+Nothing yet. Keep an eye on the old tickets, they turn into the missed ones. (+2 customer XP)
+
+# Story > VIGNETTES > adam_friday_ok > speaker
+[Story.VIGNETTES.adam_friday_ok.speaker]
+Adam (Senior Tech)
+
+# Story > VIGNETTES > adam_friday_ok > text
+[Story.VIGNETTES.adam_friday_ok.text]
+Friday numbers. {closed} closed, {missed} missed, {backlog} still open. Not bad, not great. Where did the week get away from you?
+
+# Story > VIGNETTES > adam_friday_ok > options > 0 > label
+[Story.VIGNETTES.adam_friday_ok.options.0.label]
+I WILL TIGHTEN IT UP
+
+# Story > VIGNETTES > adam_friday_ok > options > 0 > text
+[Story.VIGNETTES.adam_friday_ok.options.0.text]
+Good. Look at the clock before you look at the client name. (+1 customer XP)
+
+# Story > VIGNETTES > adam_friday_ok > options > 1 > label
+[Story.VIGNETTES.adam_friday_ok.options.1.label]
+IT WAS A ROUGH WEEK
+
+# Story > VIGNETTES > adam_friday_ok > options > 1 > text
+[Story.VIGNETTES.adam_friday_ok.options.1.text]
+It is a rough week for everybody. That is why we measure it. Come ask me when it turns red, not after.
+
+# Story > VIGNETTES > adam_friday_bad > speaker
+[Story.VIGNETTES.adam_friday_bad.speaker]
+Adam (Senior Tech)
+
+# Story > VIGNETTES > adam_friday_bad > text
+[Story.VIGNETTES.adam_friday_bad.text]
+Friday numbers. {closed} closed, {missed} missed, {backlog} still open. That is not where we want to be. Walk me through it. Why?
+
+# Story > VIGNETTES > adam_friday_bad > options > 0 > label
+[Story.VIGNETTES.adam_friday_bad.options.0.label]
+I GOT BEHIND ON TRIAGE
+
+# Story > VIGNETTES > adam_friday_bad > options > 0 > text
+[Story.VIGNETTES.adam_friday_bad.options.0.text]
+Fair. Honest is a good start. Tell me earlier next time and I can take a ticket off you. (+2 customer XP)
+
+# Story > VIGNETTES > adam_friday_bad > options > 1 > label
+[Story.VIGNETTES.adam_friday_bad.options.1.label]
+THERE WERE TOO MANY TICKETS
+
+# Story > VIGNETTES > adam_friday_bad > options > 1 > text
+[Story.VIGNETTES.adam_friday_bad.options.1.text]
+The volume is the same for everyone. Show me which ones you could not have closed. (reputation -1)
+
+# Story > VIGNETTES > adam_friday_bad > options > 2 > label
+[Story.VIGNETTES.adam_friday_bad.options.2.label]
+SOME OF THEM WERE OVER MY HEAD
+
+# Story > VIGNETTES > adam_friday_bad > options > 2 > text
+[Story.VIGNETTES.adam_friday_bad.options.2.text]
+Then ask me before they go red. That is what I am here for. (+2 servers XP)
+
 # Story > VIGNETTES > mentor_intro > speaker
 [Story.VIGNETTES.mentor_intro.speaker]
 Dan (Service Manager)

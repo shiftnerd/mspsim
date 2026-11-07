@@ -54,6 +54,8 @@ or the owner (owner campaign, 20 weeks).
 
 **10:30 VIGNETTE**. A scripted event (vignette).
 
+**15:48 METRICS**. A scripted event (metrics).
+
 *Every day also has: a morning commute, random tickets, coworker chat. Today: team outing invitation at 16:00.*
 
 ### Day 6
@@ -95,6 +97,8 @@ or the owner (owner campaign, 20 weeks).
 
 **10:00 PLAYBOOK**. Morgan texts The job starts: **Rack Recovery**.
 > Gnarly Gnomes says their network rack fell off the wall. Everything is down. Go. Photos first! `[Story.DAYS.10.0.text]`
+
+**15:48 METRICS**. A scripted event (metrics).
 
 *Every day also has: a morning commute, random tickets, coworker chat. Today: on call tonight, team outing invitation at 16:00.*
 
@@ -144,6 +148,8 @@ or the owner (owner campaign, 20 weeks).
 > You are back on call from Monday. Storm season is here, so expect rain, traffic and worse. - Morgan `[Story.DAYS.15.0.body]`
 
 **10:30 POSTMORTEM**. A scripted event (postmortem).
+
+**15:48 METRICS**. A scripted event (metrics).
 
 *Every day also has: a morning commute, random tickets, coworker chat. Today: team outing invitation at 16:00.*
 
