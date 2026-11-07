@@ -29,6 +29,9 @@ func _init() -> void:
 	_check(not found.is_empty() and str(found.sub) == "SENIOR TECH", "Adam is on the phone list in the tech campaign")
 	_check(nums.size() == Calls.contacts().size(), "and he has a number of his own")
 	world.clock = 11.0
+	var adam: Dictionary = world.chars["Adam"]
+	adam.scene = "cubicle_two"
+	adam.legs = [world._work_leg("Adam", true, 300.0)]  # at his desk
 	var call: Dictionary = Calls.open_call(found)
 	_check(not bool(call.voicemail) and str(call.opts[0].id) == "stuck", "he picks up and takes the question")
 	msp.tickets.clear()
@@ -41,6 +44,9 @@ func _init() -> void:
 	_check(str(msp.ticket(int(t.id)).notes).contains("advice: on #"), "and his advice is noted on the ticket")
 	_check(world.clock > clock0, "the call takes a little game time")
 	_check(not Calls.ready(found), "he will not take another question for a couple of hours")
+	adam.legs = [{"kind": "coffee"}]  # away from his desk: a message
+	_check(bool(Calls.open_call(found).voicemail), "away from his desk it is his voicemail")
+	adam.legs = [world._work_leg("Adam", true, 300.0)]
 	world.clock = world.DAY_END
 	_check(bool(Calls.open_call(found).voicemail), "after hours it is his voicemail")
 	c.new_game("owner")

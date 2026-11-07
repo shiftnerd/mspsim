@@ -100,6 +100,8 @@ const TABLE := {
 	# escape room: seconds on the clock, seconds a wrong code takes off (in the room)
 	"escape.time": [150.0, 120.0, 105.0],
 	"escape.wrong_penalty": [5.0, 10.0, 15.0],
+	# seconds each hint after the first takes off the clock (easy only: a friend's help is not free there either)
+	"escape.hint_penalty": [5.0, 0.0, 0.0],
 	# digits in the code (a fourth clue appears on hard) and whether the dial lock tells you bulls and cows (1 = yes)
 	"escape.digits": [3, 3, 4],
 	"escape.dial": [1, 1, 0],

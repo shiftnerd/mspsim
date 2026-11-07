@@ -9753,6 +9753,8 @@ static func open_call(contact: Dictionary) -> Dictionary:
         "senior":
             if World.clock >= World.DAY_END:
                 return _mail_box("ADAM HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+            if Lync.presence("Adam")[0] != "AVAILABLE":
+                return _mail_box("ADAM IS %s. YOU LEAVE A MESSAGE." % str(Lync.presence("Adam")[0]))
             return {
                 "say": "ADAM. WHAT HAVE YOU GOT?",
                 "opts": [{"id": "stuck", "label": "STUCK ON A TICKET"}, HANG],
@@ -9761,6 +9763,8 @@ static func open_call(contact: Dictionary) -> Dictionary:
         "tech":
             if World.clock >= World.DAY_END:
                 return _mail_box("MICHAEL HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+            if Lync.presence("Michael")[0] != "AVAILABLE":
+                return _mail_box("MICHAEL IS %s. YOU LEAVE A MESSAGE." % str(Lync.presence("Michael")[0]))
             if Msp.handoffs_today >= HANDOFF_MAX:
                 return {"say": "I AM BURIED, I HAVE TAKEN TWO OF YOURS ALREADY. ASK ME TOMORROW.", "opts": [HANG], "voicemail": false}
             return {"say": "MICHAEL. YEAH?", "opts": [{"id": "handoff", "label": "TAKE A TICKET OFF ME"}, HANG], "voicemail": false}
@@ -27819,6 +27823,8 @@ const TABLE := {
     # escape room: seconds on the clock, seconds a wrong code takes off (in the room)
     "escape.time": [150.0, 120.0, 105.0],
     "escape.wrong_penalty": [5.0, 10.0, 15.0],
+    # seconds each hint after the first takes off the clock (easy only: a friend's help is not free there either)
+    "escape.hint_penalty": [5.0, 0.0, 0.0],
     # digits in the code (a fourth clue appears on hard) and whether the dial lock tells you bulls and cows (1 = yes)
     "escape.digits": [3, 3, 4],
     "escape.dial": [1, 1, 0],
@@ -34551,6 +34557,10 @@ func escape_hint() -> String:
     g.hints_used = int(g.hints_used) + 1
     g.cur[slot] = g.code[slot]
     g.msg = "%s: SLOT %d IS A %d" % [_friend().to_upper(), slot + 1, int(g.code[slot])]
+    var cost := Difficulty.f("escape.hint_penalty")  # E4: on easy every hint after the first costs a few seconds
+    if int(g.hints_used) >= 2 and cost > 0.0:
+        g.time = float(g.time) - cost
+        g.msg += " (-%d S)" % int(cost)
     return str(g.msg)
 
 

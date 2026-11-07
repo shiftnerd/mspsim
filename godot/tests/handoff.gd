@@ -25,6 +25,9 @@ func _init() -> void:
 			found = k
 	_check(not found.is_empty() and str(found.sub) == "TECH", "Michael is on the phone list")
 	world.clock = 11.0
+	var michael: Dictionary = world.chars["Michael"]
+	michael.scene = "cubicle_two"
+	michael.legs = [world._work_leg("Michael", true, 300.0)]  # at his desk
 	msp.tickets.clear()
 	_check(str(Calls.act(found, "handoff").say).contains("NOTHING I CAN TAKE"), "an empty queue: nothing to take")
 	# a story job and an ordinary one: he leaves the story job alone
@@ -48,6 +51,10 @@ func _init() -> void:
 	_check(not call.voicemail and call.opts.size() == 1 and str(call.say).contains("TOMORROW"), "after two he is buried")
 	msp.new_day(2)
 	_check(msp.handoffs_today == 0, "the count resets in the morning")
+	msp.handoffs_today = 0
+	michael.legs = [{"kind": "coffee"}]  # away from his desk: a message
+	_check(bool(Calls.open_call(found).voicemail), "away from his desk it is his voicemail")
+	michael.legs = [world._work_leg("Michael", true, 300.0)]
 	world.clock = world.DAY_END
 	_check(bool(Calls.open_call(found).voicemail), "after hours it is his voicemail")
 	print("failures=", failures)

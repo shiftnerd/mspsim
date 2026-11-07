@@ -213,6 +213,8 @@ static func open_call(contact: Dictionary) -> Dictionary:
 		"senior":
 			if World.clock >= World.DAY_END:
 				return _mail_box("ADAM HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+			if Lync.presence("Adam")[0] != "AVAILABLE":
+				return _mail_box("ADAM IS %s. YOU LEAVE A MESSAGE." % str(Lync.presence("Adam")[0]))
 			return {
 				"say": "ADAM. WHAT HAVE YOU GOT?",
 				"opts": [{"id": "stuck", "label": "STUCK ON A TICKET"}, HANG],
@@ -221,6 +223,8 @@ static func open_call(contact: Dictionary) -> Dictionary:
 		"tech":
 			if World.clock >= World.DAY_END:
 				return _mail_box("MICHAEL HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+			if Lync.presence("Michael")[0] != "AVAILABLE":
+				return _mail_box("MICHAEL IS %s. YOU LEAVE A MESSAGE." % str(Lync.presence("Michael")[0]))
 			if Msp.handoffs_today >= HANDOFF_MAX:
 				return {"say": "I AM BURIED, I HAVE TAKEN TWO OF YOURS ALREADY. ASK ME TOMORROW.", "opts": [HANG], "voicemail": false}
 			return {"say": "MICHAEL. YEAH?", "opts": [{"id": "handoff", "label": "TAKE A TICKET OFF ME"}, HANG], "voicemail": false}

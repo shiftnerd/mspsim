@@ -2090,6 +2090,10 @@ func escape_hint() -> String:
 	g.hints_used = int(g.hints_used) + 1
 	g.cur[slot] = g.code[slot]
 	g.msg = "%s: SLOT %d IS A %d" % [_friend().to_upper(), slot + 1, int(g.code[slot])]
+	var cost := Difficulty.f("escape.hint_penalty")  # E4: on easy every hint after the first costs a few seconds
+	if int(g.hints_used) >= 2 and cost > 0.0:
+		g.time = float(g.time) - cost
+		g.msg += " (-%d S)" % int(cost)
 	return str(g.msg)
 
 

@@ -106,6 +106,7 @@ func _init() -> void:
 		"bowl.spin_noise": 1.0,
 		"escape.time": 120.0,
 		"escape.wrong_penalty": 10.0,
+		"escape.hint_penalty": 0.0,
 		"dinner.reveal": 3.0,
 		"escape.digits": 3.0,
 		"escape.dial": 1.0,
@@ -226,6 +227,15 @@ func _init() -> void:
 			is_equal_approx(before - float(o.g.time), float(d.at("escape.wrong_penalty", t))),
 			"escape wrong-code penalty: " + t
 		)
+		# E4: the first hint is free, every one after it costs seconds on easy only
+		o._escape_room_setup()
+		o.g.hints = 3
+		o.g.hints_used = 0
+		o.escape_hint()
+		var after_first: float = o.g.time
+		o.escape_hint()
+		var cost: float = after_first - float(o.g.time)
+		_check(is_equal_approx(cost, float(d.at("escape.hint_penalty", t))), "escape hint cost after the first: %s (%d s)" % [t, int(cost)])
 		pg.start(Callable())
 		pg._begin_test()
 		_check(pg.asked.size() == int(d.at("printer.questions", t)), "test page questions: " + t)
