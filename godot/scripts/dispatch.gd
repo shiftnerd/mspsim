@@ -315,6 +315,9 @@ func key(name: String) -> bool:
 		"f":
 			if view == "capacity":
 				_cycle_focus()
+		"o":
+			if view == "capacity":
+				_one_on_one()
 		_:
 			return false
 	return true
@@ -347,6 +350,16 @@ func _cycle_focus() -> void:
 	var who := str(names[clampi(cap_sel, 0, names.size() - 1)])
 	var area := Crew.cycle_focus(who)
 	say("%s FOCUS: %s" % [who.to_upper(), "NONE" if area == "" else area.to_upper()])
+
+
+# a 1:1 with the person selected on the Capacity tab (the same cards as walking up to them)
+func _one_on_one() -> void:
+	var names := Crew.names()
+	if names.is_empty():
+		return
+	var who := str(names[clampi(cap_sel, 0, names.size() - 1)])
+	if Service.has_one_on_one(who):
+		Service.one_on_one(who)
 
 
 # ---- the mouse ---------------------------------------------------------------------------------------------------------
@@ -430,6 +443,8 @@ func act(parts: PackedStringArray) -> void:
 			cap_sel = int(parts[2])
 		"focus":
 			_cycle_focus()
+		"oto":
+			_one_on_one()
 
 
 # ---- drawing -------------------------------------------------------------------------------------------------------------
@@ -733,12 +748,13 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 	var bottom := Rect2(a.position.x, a.end.y - 10, a.size.x, 10)
 	c._fill(bottom, Color("cfd9e8"))
 	c._button("dsp:focus", Rect2(bottom.position.x + 2, bottom.position.y + 1, 52, 8), "FOCUS (F)", not names.is_empty())
+	c._button("dsp:oto", Rect2(bottom.position.x + 56, bottom.position.y + 1, 36, 8), "1:1 (O)", not names.is_empty())
 	var note := "SET A FOCUS: THAT AREA FITS HIM BETTER AND HE TRAINS IT"
 	if narrow:
 		note = "FOCUS TRAINS AN AREA"
 	if Time.get_ticks_msec() - msg_at < 3000 and msg != "":
 		note = msg
-	c._text(c._clip(note, int((a.size.x - 62.0) / 4.0)), Vector2(bottom.position.x + 58, bottom.position.y + 3), INK)
+	c._text(c._clip(note, int((a.size.x - 98.0) / 4.0)), Vector2(bottom.position.x + 96, bottom.position.y + 3), INK)
 
 
 # ---- score --------------------------------------------------------------------------------------------------------------

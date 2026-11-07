@@ -295,6 +295,11 @@ func _init() -> void:
 		dp.key("f")
 		f2 += 1
 	_check(crew.focus_of("Sam") == crew.focus_of("Sam"), "the focus cycles through the five areas and none")
+	var oto_cards: Node = root.get_node("Cards")
+	_clear(oto_cards)
+	dp.key("o")
+	_check(oto_cards.is_open, "O opens a 1:1 with the selected tech")
+	_clear(oto_cards)
 	dp.key("s")
 	_check(dp.view == "score" and dp.score_rows().size() >= 6, "S opens the score view")
 	var has_design := false
