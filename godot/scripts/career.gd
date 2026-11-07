@@ -132,6 +132,7 @@ const COUNTERS := [
 	["", "OWNER WEEKS RUN", "days.owner", "n"],
 	["", "YEARS FINISHED", "endings", "n"],
 	["", "ALL-HANDS ATTENDED", "meetings", "n"],
+	["", "DECISION CARDS SEEN", "cards_seen", "n"],
 	["", "MUTATOR WEEKS", "mut_days", "n"],
 	["", "STARTS FINISHED", "starts_done", "n"],
 	["", "DAILY SEEDS PLAYED", "daily_seeds", "n"],

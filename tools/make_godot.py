@@ -18892,6 +18892,7 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
             break
     _callback = on_pick
     is_open = true
+    Career.add("cards_seen")  # R8: the career screen counts the decisions put in front of you
     _opened = Time.get_ticks_msec()
     Sfx.play("ui_open")
     Game.ui_open = true
@@ -51377,6 +51378,10 @@ func _unhandled_input(event: InputEvent) -> void:
     elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
         if open_outfit():
             get_viewport().set_input_as_handled()
+    elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "career"):
+        if can_open() and not Game.busy:  # Free Play only (a campaign has the phone's Settings)
+            Career.open_screen()
+            get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:
@@ -51856,6 +51861,7 @@ var _mine := {}  # {look, acc}: the working custom look (MY LOOK); a ready-made 
 var _start_sig := ""  # the look a ready-made start loaded: while it is unchanged the original sprite is played
 var _panel: RefCounted = null  # the build step's working build
 var _confirmed := false
+var _free_max := false  # Free Play: Tab switches the MAX build preset (X7)
 
 
 func _ready() -> void:
@@ -51997,7 +52003,15 @@ func choices(for_mode: String) -> Array:
     return out
 
 
+# the build the run starts with: the build screen's, or Free Play's optional MAX preset
+func _pending_build() -> Dictionary:
+    if mode == FREE_MODE and _free_max:
+        return Build.max_build()
+    return _panel.build_out() if _confirmed else {}
+
+
 func setup(for_mode: String, year2 := false) -> void:
+    _free_max = false
     mode = for_mode
     direct = offers_custom(mode)
     overlay = false
@@ -52147,6 +52161,8 @@ func summary(with_tier := true) -> String:
         s += " - " + str(_panel.name_text())
     if Yeartwo.pending:
         s += " - YEAR 2"
+    if mode == FREE_MODE and _free_max:
+        s += " - MAX BUILD"
     if with_tier:
         s += " - " + Difficulty.label()
         if is_campaign() and Mutators.pending_start != Mutators.STANDARD:
@@ -52156,6 +52172,11 @@ func summary(with_tier := true) -> String:
 
 # Tab / Shift+Tab (or a click on the START chip arrows) pick the starting condition of the new run
 func change_start(step: int) -> void:
+    if mode == FREE_MODE:  # X7: Free Play has no build screen, so Tab only switches the MAX preset (every stat at 5, for filming)
+        _free_max = not _free_max
+        Hints.toast("MAX BUILD: EVERY STAT AT 5" if _free_max else "MAX BUILD OFF", 2.0)
+        queue_redraw()
+        return
     if not is_campaign():
         return
     var list: Array = Mutators.starts_for(mode)
@@ -52255,7 +52276,7 @@ func confirm() -> void:
         Hints.toast(str(_panel.errors()[0]), 2.0)
         return
     _confirmed = step == "build"
-    Build.pending = _panel.build_out() if _confirmed else {}
+    Build.pending = _pending_build()
     var custom := is_custom()
     if not custom:
         _restore_mine()  # a ready-made person is played as is: the settings keep the last custom look
@@ -58046,6 +58067,7 @@ const COUNTERS := [
     ["", "OWNER WEEKS RUN", "days.owner", "n"],
     ["", "YEARS FINISHED", "endings", "n"],
     ["", "ALL-HANDS ATTENDED", "meetings", "n"],
+    ["", "DECISION CARDS SEEN", "cards_seen", "n"],
     ["", "MUTATOR WEEKS", "mut_days", "n"],
     ["", "STARTS FINISHED", "starts_done", "n"],
     ["", "DAILY SEEDS PLAYED", "daily_seeds", "n"],
@@ -65832,6 +65854,7 @@ const ACTIONS := {
     "pose_prev": [[KEY_COMMA], [], []],
     "pose_next": [[KEY_PERIOD], [], []],
     "outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
+    "career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
     "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
     "give_item": [[KEY_G], [], []],
     "phone": [[KEY_P], [JOY_BUTTON_BACK], []],
@@ -65882,6 +65905,7 @@ const HELP := [
             ["BOWLING AND ESCAPE", "E"],
             ["KARAOKE LANES", "ARROWS"],
             ["SHAPE, OUTFIT", "F9, Y (FREE PLAY)"],
+            ["CAREER SCREEN", "J (FREE PLAY)"],
         ],
     ],
 ]

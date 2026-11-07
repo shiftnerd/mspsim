@@ -68,6 +68,7 @@ func ask(
 			break
 	_callback = on_pick
 	is_open = true
+	Career.add("cards_seen")  # R8: the career screen counts the decisions put in front of you
 	_opened = Time.get_ticks_msec()
 	Sfx.play("ui_open")
 	Game.ui_open = true

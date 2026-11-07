@@ -39,6 +39,7 @@ const ACTIONS := {
 	"pose_prev": [[KEY_COMMA], [], []],
 	"pose_next": [[KEY_PERIOD], [], []],
 	"outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
+	"career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
 	"give_item": [[KEY_G], [], []],
 	"phone": [[KEY_P], [JOY_BUTTON_BACK], []],
@@ -89,6 +90,7 @@ const HELP := [
 			["BOWLING AND ESCAPE", "E"],
 			["KARAOKE LANES", "ARROWS"],
 			["SHAPE, OUTFIT", "F9, Y (FREE PLAY)"],
+			["CAREER SCREEN", "J (FREE PLAY)"],
 		],
 	],
 ]

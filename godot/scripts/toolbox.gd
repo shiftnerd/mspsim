@@ -442,6 +442,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
 		if open_outfit():
 			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "career"):
+		if can_open() and not Game.busy:  # Free Play only (a campaign has the phone's Settings)
+			Career.open_screen()
+			get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:
