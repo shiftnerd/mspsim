@@ -419,6 +419,7 @@ Outings="*res://scripts/outings.gd"
 Hints="*res://scripts/hints.gd"
 Talk="*res://scripts/talk.gd"
 Meeting="*res://scripts/meeting.gd"
+Shop="*res://scripts/shop.gd"
 Nerf="*res://scripts/nerf.gd"
 Projects="*res://scripts/projects.gd"
 Expo="*res://scripts/conference.gd"
@@ -6408,7 +6409,7 @@ func close_ticket(id: int) -> String:
     if not bool(t.get("repeat", false)):
         closed_ok += 1
     Career.note_ticket(str(t.fix))
-    Skills.add_xp("networking" if t.internal else "people", 2)
+    Skills.add_xp("networking" if t.internal else "people", 2 + (0 if t.internal else int(Shop.bonus("people_xp"))))
     Social.note_ticket_closed(t)
     if not t.internal:
         Sales.adjust(int(t.client), 3 if t.breached else 5)
@@ -7247,6 +7248,7 @@ const RMM_GREY := Color("3b424d")
 const ALT_TINTS := {"quick": Color("f2e2a0"), "heavy": Color("e9b1a8"), "clever": Color("a9e0b0")}
 const ORANGE := Color("e07b22")
 const Crm := preload("res://scripts/crm.gd")  # the SalesHound CRM app (sales campaign)
+const ShopApp := preload("res://scripts/shop_app.gd")  # NERDTHINK (S1): the desk shop
 const Dashboard := preload("res://scripts/dashboard.gd")  # PIXEL IT METRICS (R20): the METRICS app and the wall TV takeover
 const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
@@ -7531,6 +7533,8 @@ func move(step: int) -> void:
             scroll_list(step)
         "crm":
             Crm.move(self, step)
+        "shop":
+            ShopApp.move(self, step)
     _canvas.queue_redraw()
 
 
@@ -7567,6 +7571,8 @@ func enter() -> void:
         Crm.enter(self)
     elif app == "dash":
         activate("dash:chart")
+    elif app == "shop":
+        ShopApp.enter(self)
 
 
 func activate(id: String) -> void:
@@ -7625,6 +7631,8 @@ func activate(id: String) -> void:
             HABITS_VIEW.act(self, parts)  # R38: pick a habit, adopt it or do it now
         "crm":
             Crm.action(self, parts)
+        "shop":
+            ShopApp.action(self, parts)
         "dash":  # a wide board shows one chart: swap it
             dash_chart = 1 - (dash_chart if dash_chart >= 0 else int(dash_t / 6.0) % 2)
         "lync":
@@ -7974,6 +7982,8 @@ func _paint() -> void:
             _paint_boardroom()
         "crm":
             Crm.paint(self)
+        "shop":
+            ShopApp.paint(self)
         "dash":
             Dashboard.paint_app(self)
         "dispatch":
@@ -8025,6 +8035,8 @@ func _paint_taskbar() -> void:
             ["app:mail", "OUTLOOKISH"], ["app:psa", "CONNECTWHY"], ["app:rmm", "LABRAT"], ["app:learn", "POWERSHELL"],
             ["app:stats", "PROFILE"], ["app:lync", "LYNK"], ["app:nerds", "NERDS"], ["app:dash", "METRICS"], ["logoff", "LOG OFF"],
         ]
+        if Shop.available():
+            items.insert(8, ["app:shop", Shop.STORE])
         if Campaign.mode == "sales":
             items.insert(4, ["app:crm", "SALESHOUND"])
         elif Campaign.books_active():
@@ -8098,6 +8110,11 @@ func _icon(kind: String, p: Vector2) -> void:
             _fill(Rect2(p + Vector2(1, 0), Vector2(3, 12)), Color("2f6e5a"))
             for i in 4:
                 _fill(Rect2(p.x + 6, p.y + 2 + i * 3, 8, 1), Color("5aa07a") if i != 2 else AMBER)
+        "shop":
+            _fill(Rect2(p + Vector2(1, 4), Vector2(14, 8)), Color("c0661f"))
+            _fill(Rect2(p + Vector2(1, 2), Vector2(14, 3)), Color("f2c36b"))
+            _fill(Rect2(p + Vector2(3, 6), Vector2(4, 4)), WHITE)
+            _fill(Rect2(p + Vector2(9, 6), Vector2(4, 4)), Color("17121f"))
         "dash":
             _fill(Rect2(p + Vector2(0, 1), Vector2(16, 11)), Color("0a0d14"))
             _fill(Rect2(p + Vector2(2, 3), Vector2(3, 3)), Color("3ddc55"))
@@ -8235,6 +8252,8 @@ func _paint_desktop() -> void:
         ["lync", "LYNK", Lync.unread_total()], ["nerds", "NERDS", 0],
         ["dash", "METRICS", Dashboard.red_tiles(Dashboard.mode_now()).size()],
     ]
+    if Shop.available():
+        icons.append(["shop", Shop.STORE, 0])
     if Campaign.mode == "sales":
         icons.append(["crm", "SALESHOUND", 0])
     elif Campaign.books_active():
@@ -11685,6 +11704,7 @@ func new_game(for_mode: String) -> void:
     PrinterGame.reset()
     Talk.reset()
     Meeting.reset()
+    Shop.reset()
     Phone.reset()
     Projects.reset()
     Expo.reset()
@@ -11768,6 +11788,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
     PrinterGame.from_dict(cfg.get_value("campaign", "printer", {}))
     Difficulty.from_dict(cfg.get_value("campaign", "difficulty", {}))
     Meeting.from_dict(cfg.get_value("campaign", "meeting", {}))
+    Shop.from_dict(cfg.get_value("campaign", "shop", {}))
     Phone.from_dict(cfg.get_value("campaign", "phone", {}))  # R37: call cooldowns and counts; an old save has none
     Projects.from_dict(cfg.get_value("campaign", "projects", {}))
     Expo.from_dict(cfg.get_value("campaign", "conference", {}))
@@ -11833,6 +11854,7 @@ func _write_sections(cfg: ConfigFile) -> void:
     cfg.set_value("campaign", "printer", PrinterGame.to_dict())
     cfg.set_value("campaign", "difficulty", Difficulty.to_dict())
     cfg.set_value("campaign", "meeting", Meeting.to_dict())
+    cfg.set_value("campaign", "shop", Shop.to_dict())
     cfg.set_value("campaign", "phone", Phone.to_dict())
     cfg.set_value("campaign", "projects", Projects.to_dict())
     cfg.set_value("campaign", "conference", Expo.to_dict())
@@ -12432,6 +12454,7 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
     meta.set_value(mode, "value", Owner.valuation() if books else 0)
     meta.set_value(mode, "cash", Owner.cash if books else Campaign.cash)
     meta.set_value(mode, "trust", Partner.trust)
+    meta.set_value(mode, "shop", Shop.owned.duplicate())
     meta.set_value(mode, "standard", RivalTouches.standard_now() if books else 0)  # R38: the Standard comes over at 60 percent
     if books:
         RivalTouches.note_year_end()
@@ -12631,6 +12654,7 @@ func begin_run(mode: String) -> void:
         return
     carried = carry_for(mode, prev)
     Campaign.rep = int(carried.rep)
+    Shop.restore(prev.get("shop", []))
     if not Campaign.books_active():
         for key in carried.skills:
             var lv := int(carried.skills[key])
@@ -13604,7 +13628,7 @@ func fix_secs_for(action: String) -> float:
         mult -= 0.06 * float(level(skill))
         if Campaign.mode == "tech" and Growth.graduated and Growth.focus == skill:
             mult *= 0.75  # Tier 2 in this skill
-    return base * mult
+    return base * mult * Shop.factor("fix_secs")
 
 
 # SECURITY level 3: the backup jobs tell you when they fail without a daily CHECK
@@ -29129,7 +29153,7 @@ func begin_day(day: int) -> void:
     if not active():
         return
     if day > 1:
-        energy = minf(100.0, energy + float(REST) + Build.fx("rest"))
+        energy = minf(100.0, energy + float(REST) + Build.fx("rest") + Shop.bonus("rest"))
     if day <= 1:
         return
     if Expo.is_trip_day(day):
@@ -29283,7 +29307,7 @@ func _process(delta: float) -> void:
     if not active() or World.time_scale <= 0.0 or Cards.is_open:
         return
     var dt := delta * World.time_scale
-    energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
+    energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Shop.factor("drain") * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
     if Difficulty.cozy_on():
         if _warned < 1 and energy < 35.0:
             _warned = 3
@@ -65005,6 +65029,227 @@ static func paint_app(cp) -> void:
     var lay2 := layout(body, false)
     if lay2.kind == "wide":
         cp._region("dash:chart", lay2.charts[0])
+''')
+
+write("scripts/shop.gd", '''extends Node
+# gdlint:disable=max-line-length
+# The shop (roadmap S1, docs/scope-shop.md): the tech campaign earns a paycheck every day (Campaign.cash) and can now spend it on desk
+# upgrades from the NERDTHINK app on the work computer (scripts/shop_app.gd paints it). Every item has a small real effect, read through
+# one place (factor / bonus) so each hook elsewhere is one line: Skills.fix_secs_for (fix_secs), Shift's daily drain (drain), the night's
+# rest (rest) and the ticket-close XP (people_xp). A slot holds one item (one keyboard at a time: buying another switch replaces it, and
+# the old one is not refunded). Purchases are saved with the campaign and come over into Year 2. Free Play owns everything. The Easy tier
+# (cozy) takes a quarter off the price. The desk props that show what you bought are drawn by the stage (stage.gd, `Shop.owns`).
+
+const STORE := "NERDTHINK"
+const TAGLINE := "STUFF FOR GEEKS SINCE 2011"
+const COZY_OFF := 0.75
+# slot: one item per slot. fx: fix_secs and drain are multipliers, rest and people_xp are added. loud: coworkers near the desk hear it.
+const CATALOG := [
+    {"id": "kb_blue", "name": "CLICKY BLUE KEYBOARD", "price": 90, "slot": "keyboard", "fx": {"fix_secs": 0.95}, "loud": true, "what": "FIXES TAKE 5 PERCENT LESS TIME. LOUD: COWORKERS NOTICE."},
+    {"id": "kb_brown", "name": "BROWN SWITCH KEYBOARD", "price": 100, "slot": "keyboard", "fx": {"fix_secs": 0.97}, "loud": false, "what": "FIXES TAKE 3 PERCENT LESS TIME. TACTILE AND QUIET."},
+    {"id": "kb_red", "name": "RED SWITCH KEYBOARD", "price": 110, "slot": "keyboard", "fx": {"fix_secs": 0.96}, "loud": false, "what": "FIXES TAKE 4 PERCENT LESS TIME. SMOOTH, LIGHT AND QUIET."},
+    {"id": "mouse", "name": "VERTICAL MOUSE", "price": 45, "slot": "mouse", "fx": {"drain": 0.95}, "what": "YOUR WRIST AND YOUR ENERGY LAST LONGER: 5 PERCENT LESS DRAIN."},
+    {"id": "riser", "name": "STANDING DESK RISER", "price": 180, "slot": "riser", "fx": {"drain": 0.90}, "what": "FEWER SLUMPS: 10 PERCENT LESS ENERGY DRAIN."},
+    {"id": "cushion", "name": "LUMBAR CUSHION", "price": 60, "slot": "chair", "fx": {"rest": 3}, "what": "A NIGHT'S SLEEP GIVES BACK 3 MORE ENERGY."},
+    {"id": "headset", "name": "WIRELESS HEADSET", "price": 110, "slot": "headset", "fx": {"people_xp": 1}, "what": "CLEARER CALLS: EVERY CLIENT TICKET YOU CLOSE GIVES 1 MORE CUSTOMER XP."},
+    {"id": "plant", "name": "DESK PLANT", "price": 20, "slot": "plant", "fx": {"rest": 1}, "what": "A LITTLE CALM: 1 MORE ENERGY BACK EACH NIGHT."},
+    {"id": "rgb", "name": "RGB DESK STRIP", "price": 70, "slot": "light", "fx": {}, "what": "A COLOUR CYCLING GLOW BEHIND THE MONITORS. LOOKS GREAT, DOES NOTHING."},
+    {"id": "speakers", "name": "DESK SPEAKERS", "price": 55, "slot": "speakers", "fx": {}, "what": "TWO SMALL SPEAKERS. FOR THE VIBE."},
+    {"id": "toy", "name": "NEWTON'S CRADLE", "price": 30, "slot": "toy", "fx": {}, "what": "CLICK, CLICK, CLICK. PURELY FOR THINKING."},
+    {"id": "poster", "name": "WALL POSTER", "price": 20, "slot": "poster", "fx": {}, "what": "SOMETHING TO LOOK AT BESIDE THE MONITORS."},
+]
+
+var owned: Array = []  # item ids, in the order bought
+var sel := 0  # the selected row in the app (not saved)
+
+
+func reset() -> void:
+    owned = []
+
+
+func to_dict() -> Dictionary:
+    return {"owned": owned.duplicate()}
+
+
+func from_dict(d: Variant) -> void:
+    owned = []
+    if d is Dictionary:
+        for id in d.get("owned", []):
+            if item(str(id)).size() > 0 and not owned.has(str(id)):
+                owned.append(str(id))
+
+
+# a new run that keeps the desk (Year 2)
+func restore(ids: Variant) -> void:
+    from_dict({"owned": ids if ids is Array else []})
+
+
+func item(id: String) -> Dictionary:
+    for it in CATALOG:
+        if str(it.id) == id:
+            return it
+    return {}
+
+
+func available() -> bool:
+    return Campaign.active and Campaign.mode == "tech"
+
+
+# Free Play owns everything (for filming); a campaign owns what it bought
+func owns(id: String) -> bool:
+    if not Campaign.active:
+        return not item(id).is_empty()
+    return owned.has(id)
+
+
+func price(id: String) -> int:
+    var it := item(id)
+    if it.is_empty():
+        return 0
+    var p := float(it.price)
+    if Difficulty.cozy_on():
+        p *= COZY_OFF
+    return int(round(p))
+
+
+func in_slot(slot: String) -> String:
+    for id in owned:
+        if str(item(str(id)).get("slot", "")) == slot:
+            return str(id)
+    return ""
+
+
+# can you buy it right now? "" = yes, otherwise the reason
+func why_not(id: String) -> String:
+    var it := item(id)
+    if it.is_empty():
+        return "NOT SOLD HERE"
+    if not available():
+        return "THE SHOP IS FOR THE TECH CAMPAIGN"
+    if owned.has(id):
+        return "YOU OWN IT"
+    if Campaign.cash < price(id):
+        return "NOT ENOUGH CASH ($%d)" % price(id)
+    return ""
+
+
+func buy(id: String) -> Dictionary:
+    var why := why_not(id)
+    if why != "":
+        return {"ok": false, "msg": why}
+    var it := item(id)
+    var old := in_slot(str(it.slot))
+    if old != "":
+        owned.erase(old)  # the new one takes its place (no refund)
+    Campaign.cash -= price(id)
+    owned.append(id)
+    Career.add("shop_items")
+    var msg := "BOUGHT %s FOR $%d." % [str(it.name), price(id)]
+    if old != "":
+        msg += " THE OLD %s GOES IN THE DRAWER." % str(item(old).name)
+    return {"ok": true, "msg": msg}
+
+
+# the effects: a multiplier (1.0 = none) and an added amount (0 = none)
+func factor(key: String) -> float:
+    var f := 1.0
+    for id in owned:
+        var fx: Dictionary = item(str(id)).get("fx", {})
+        if fx.has(key) and key in ["fix_secs", "drain"]:
+            f *= float(fx[key])
+    return f if Campaign.active else 1.0
+
+
+func bonus(key: String) -> float:
+    var b := 0.0
+    for id in owned:
+        var fx: Dictionary = item(str(id)).get("fx", {})
+        if fx.has(key) and key in ["rest", "people_xp"]:
+            b += float(fx[key])
+    return b if Campaign.active else 0.0
+
+
+# somebody near the desk can hear a clicky keyboard
+func is_loud() -> bool:
+    return Campaign.active and in_slot("keyboard") != "" and bool(item(in_slot("keyboard")).get("loud", false))
+''')
+
+write("scripts/shop_app.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length,unsafe-method-access
+# The NERDTHINK app (roadmap S1): the shop on the work computer. A list of the catalogue (Shop.CATALOG) with the price or OWNED, the
+# selected item's effect underneath and a BUY button. Up / Down pick an item, Enter buys it. The state lives in Shop (sel, msg);
+# this script only paints and routes input for the Computer (`cp` is the Computer autoload, same helpers as crm.gd).
+
+const INK := Color("20242c")
+const MUTED := Color("5a6a85")
+const GOOD := Color("2f7d46")
+const BAD := Color("a83a2e")
+
+
+static func selected() -> Dictionary:
+    return Shop.CATALOG[clampi(Shop.sel, 0, Shop.CATALOG.size() - 1)]
+
+
+static func paint(cp) -> void:
+    var body: Rect2 = cp._window("%s - %s" % [Shop.STORE, Shop.TAGLINE], Color("c0661f"))
+    cp._fill(body, Color("f6f1e8"))
+    var w: float = body.size.x
+    cp._fill(Rect2(body.position, Vector2(w, 9)), Color("e8d9c0"))
+    var strip := "CASH $%d   ITEMS %d OF %d" % [Campaign.cash, Shop.owned.size(), Shop.CATALOG.size()]
+    if not Shop.available():
+        strip = "THE SHOP IS FOR THE TECH CAMPAIGN. FREE PLAY OWNS IT ALL."
+    cp._text(cp._clip(strip, int(w / 4.0) - 1), body.position + Vector2(3, 2), INK)
+    var detail_h := 30.0
+    var list := Rect2(body.position + Vector2(0, 10), Vector2(w, body.size.y - 10.0 - detail_h))
+    cp._fill(list, Color("ffffff"))
+    var per: int = maxi(1, int(list.size.y / 7.0))
+    var top: int = clampi(Shop.sel - per + 1, 0, maxi(0, Shop.CATALOG.size() - per)) if Shop.sel >= per else 0
+    for k in per:
+        var i: int = top + k
+        if i >= Shop.CATALOG.size():
+            break
+        var it: Dictionary = Shop.CATALOG[i]
+        var row := Rect2(list.position.x, list.position.y + float(k) * 7.0, w, 7)
+        cp._row(row, i == Shop.sel, k % 2 == 1)
+        cp._region("shop:sel:%d" % i, row)
+        var mine: bool = Shop.owns(str(it.id))
+        cp._text(cp._clip(str(it.name), int((w - 44.0) / 4.0)), row.position + Vector2(2, 1), MUTED if mine else INK)
+        var tag := "OWNED" if mine else "$%d" % Shop.price(str(it.id))
+        cp._text(tag, row.position + Vector2(w - cp._tw(tag) - 3.0, 1), GOOD if mine else INK)
+    var d := Rect2(body.position + Vector2(0, body.size.y - detail_h), Vector2(w, detail_h))
+    cp._fill(d, Color("e8d9c0"))
+    var it := selected()
+    var lines: Array = cp._wrap(str(it.what), int((w - 52.0) / 4.0))
+    for j in mini(lines.size(), 3):
+        cp._text(str(lines[j]), d.position + Vector2(3, 2 + j * 7), INK)
+    var why := Shop.why_not(str(it.id))
+    var label := "BUY"
+    if Shop.owns(str(it.id)):
+        label = "OWNED"
+    elif Shop.in_slot(str(it.slot)) != "":
+        label = "SWAP"
+    cp._button("shop:buy", Rect2(d.end.x - 44.0, d.position.y + 2.0, 42, 9), label, why == "")
+    if why != "" and not Shop.owns(str(it.id)):
+        cp._text(cp._clip(why, int((w - 6.0) / 4.0)), d.position + Vector2(3, d.size.y - 8.0), BAD)
+
+
+static func move(cp, step: int) -> void:
+    Shop.sel = clampi(Shop.sel + step, 0, Shop.CATALOG.size() - 1)
+    cp._canvas.queue_redraw()
+
+
+static func enter(cp) -> void:
+    action(cp, ["shop", "buy"])
+
+
+static func action(cp, parts: PackedStringArray) -> void:
+    match parts[1]:
+        "sel":
+            Shop.sel = clampi(int(parts[2]), 0, Shop.CATALOG.size() - 1)
+        "buy":
+            var res := Shop.buy(str(selected().id))
+            cp._say(str(res.msg))
+    cp._canvas.queue_redraw()
 ''')
 
 write("scripts/crm.gd", '''extends RefCounted

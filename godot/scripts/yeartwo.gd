@@ -232,6 +232,7 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
 	meta.set_value(mode, "value", Owner.valuation() if books else 0)
 	meta.set_value(mode, "cash", Owner.cash if books else Campaign.cash)
 	meta.set_value(mode, "trust", Partner.trust)
+	meta.set_value(mode, "shop", Shop.owned.duplicate())
 	meta.set_value(mode, "standard", RivalTouches.standard_now() if books else 0)  # R38: the Standard comes over at 60 percent
 	if books:
 		RivalTouches.note_year_end()
@@ -431,6 +432,7 @@ func begin_run(mode: String) -> void:
 		return
 	carried = carry_for(mode, prev)
 	Campaign.rep = int(carried.rep)
+	Shop.restore(prev.get("shop", []))
 	if not Campaign.books_active():
 		for key in carried.skills:
 			var lv := int(carried.skills[key])

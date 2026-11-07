@@ -189,7 +189,7 @@ func fix_secs_for(action: String) -> float:
 		mult -= 0.06 * float(level(skill))
 		if Campaign.mode == "tech" and Growth.graduated and Growth.focus == skill:
 			mult *= 0.75  # Tier 2 in this skill
-	return base * mult
+	return base * mult * Shop.factor("fix_secs")
 
 
 # SECURITY level 3: the backup jobs tell you when they fail without a daily CHECK

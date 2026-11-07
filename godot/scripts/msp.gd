@@ -935,7 +935,7 @@ func close_ticket(id: int) -> String:
 	if not bool(t.get("repeat", false)):
 		closed_ok += 1
 	Career.note_ticket(str(t.fix))
-	Skills.add_xp("networking" if t.internal else "people", 2)
+	Skills.add_xp("networking" if t.internal else "people", 2 + (0 if t.internal else int(Shop.bonus("people_xp"))))
 	Social.note_ticket_closed(t)
 	if not t.internal:
 		Sales.adjust(int(t.client), 3 if t.breached else 5)

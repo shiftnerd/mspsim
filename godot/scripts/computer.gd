@@ -25,6 +25,7 @@ const RMM_GREY := Color("3b424d")
 const ALT_TINTS := {"quick": Color("f2e2a0"), "heavy": Color("e9b1a8"), "clever": Color("a9e0b0")}
 const ORANGE := Color("e07b22")
 const Crm := preload("res://scripts/crm.gd")  # the SalesHound CRM app (sales campaign)
+const ShopApp := preload("res://scripts/shop_app.gd")  # NERDTHINK (S1): the desk shop
 const Dashboard := preload("res://scripts/dashboard.gd")  # PIXEL IT METRICS (R20): the METRICS app and the wall TV takeover
 const GREEN := Color("2fa84f")
 const RED := Color("d23c3c")
@@ -323,6 +324,8 @@ func move(step: int) -> void:
 			scroll_list(step)
 		"crm":
 			Crm.move(self, step)
+		"shop":
+			ShopApp.move(self, step)
 	_canvas.queue_redraw()
 
 
@@ -359,6 +362,8 @@ func enter() -> void:
 		Crm.enter(self)
 	elif app == "dash":
 		activate("dash:chart")
+	elif app == "shop":
+		ShopApp.enter(self)
 
 
 func activate(id: String) -> void:
@@ -417,6 +422,8 @@ func activate(id: String) -> void:
 			HABITS_VIEW.act(self, parts)  # R38: pick a habit, adopt it or do it now
 		"crm":
 			Crm.action(self, parts)
+		"shop":
+			ShopApp.action(self, parts)
 		"dash":  # a wide board shows one chart: swap it
 			dash_chart = 1 - (dash_chart if dash_chart >= 0 else int(dash_t / 6.0) % 2)
 		"lync":
@@ -785,6 +792,8 @@ func _paint() -> void:
 			_paint_boardroom()
 		"crm":
 			Crm.paint(self)
+		"shop":
+			ShopApp.paint(self)
 		"dash":
 			Dashboard.paint_app(self)
 		"dispatch":
@@ -849,6 +858,8 @@ func _paint_taskbar() -> void:
 			["app:dash", "METRICS"],
 			["logoff", "LOG OFF"],
 		]
+		if Shop.available():
+			items.insert(8, ["app:shop", Shop.STORE])
 		if Campaign.mode == "sales":
 			items.insert(4, ["app:crm", "SALESHOUND"])
 		elif Campaign.books_active():
@@ -930,6 +941,11 @@ func _icon(kind: String, p: Vector2) -> void:
 			_fill(Rect2(p + Vector2(1, 0), Vector2(3, 12)), Color("2f6e5a"))
 			for i in 4:
 				_fill(Rect2(p.x + 6, p.y + 2 + i * 3, 8, 1), Color("5aa07a") if i != 2 else AMBER)
+		"shop":
+			_fill(Rect2(p + Vector2(1, 4), Vector2(14, 8)), Color("c0661f"))
+			_fill(Rect2(p + Vector2(1, 2), Vector2(14, 3)), Color("f2c36b"))
+			_fill(Rect2(p + Vector2(3, 6), Vector2(4, 4)), WHITE)
+			_fill(Rect2(p + Vector2(9, 6), Vector2(4, 4)), Color("17121f"))
 		"dash":
 			_fill(Rect2(p + Vector2(0, 1), Vector2(16, 11)), Color("0a0d14"))
 			_fill(Rect2(p + Vector2(2, 3), Vector2(3, 3)), Color("3ddc55"))
@@ -1115,6 +1131,8 @@ func _paint_desktop() -> void:
 		["nerds", "NERDS", 0],
 		["dash", "METRICS", Dashboard.red_tiles(Dashboard.mode_now()).size()],
 	]
+	if Shop.available():
+		icons.append(["shop", Shop.STORE, 0])
 	if Campaign.mode == "sales":
 		icons.append(["crm", "SALESHOUND", 0])
 	elif Campaign.books_active():

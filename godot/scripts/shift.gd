@@ -173,7 +173,7 @@ func begin_day(day: int) -> void:
 	if not active():
 		return
 	if day > 1:
-		energy = minf(100.0, energy + float(REST) + Build.fx("rest"))
+		energy = minf(100.0, energy + float(REST) + Build.fx("rest") + Shop.bonus("rest"))
 	if day <= 1:
 		return
 	if Expo.is_trip_day(day):
@@ -354,7 +354,7 @@ func _process(delta: float) -> void:
 	if not active() or World.time_scale <= 0.0 or Cards.is_open:
 		return
 	var dt := delta * World.time_scale
-	energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
+	energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Shop.factor("drain") * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
 	if Difficulty.cozy_on():
 		if _warned < 1 and energy < 35.0:
 			_warned = 3
