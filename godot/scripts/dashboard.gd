@@ -372,9 +372,9 @@ static func series(mode: String) -> Array:
 
 # ---- layout ------------------------------------------------------------------------------------------------------------
 static func layout_kind(size: Vector2) -> String:
-	if size.x < 230.0:
+	if size.x < 230.0 and size.y >= 130.0:  # the tall portrait board; a short narrow pane (co-op) uses the wide one
 		return "v"
-	return "h" if size.y >= 140.0 else "wide"
+	return "h" if size.x >= 230.0 and size.y >= 140.0 else "wide"
 
 
 # {kind, title, tiles: [Rect2 x10], charts: [Rect2]} for a rect; wide has ONE chart rect (it switches between the two series)

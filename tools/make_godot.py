@@ -7363,7 +7363,10 @@ var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, r
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 
+var board_scroll := 0.0  # the Boardroom books tab on a short pane: how far it is scrolled up (px)
 var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
+var _books_extra := 0.0  # how much of the books does not fit (px), measured when painted
+var _rows_clip := Rect2()  # while painting the books: rows outside it are skipped
 var _canvas: Node2D
 var _hits: Array = []
 var _mouse := Vector2.ZERO
@@ -7410,6 +7413,7 @@ func open(from_desk: int) -> void:
     _toast = ""  # the toast timer only runs while open, so drop one left from the last session
     _toast_t = 0.0
     is_open = true
+    board_scroll = 0.0
     Sfx.play("ui_open")
     _set_ui(true)
     _canvas.visible = true
@@ -7617,12 +7621,17 @@ func move(step: int) -> void:
             Crm.move(self, step)
         "shop":
             ShopApp.move(self, step)
+        "boardroom":
+            scroll_list(step)
     _canvas.queue_redraw()
 
 
 # the RMM endpoint tree scrolls three rows at a time
 func scroll_list(step: int) -> void:
-    if app == "rmm" and not rmm_session and rmm_tab == "endpoints":
+    if app == "boardroom" and board_tab == "books":
+        board_scroll = clampf(board_scroll + float(step) * 14.0, 0.0, _books_extra)
+        _canvas.queue_redraw()
+    elif app == "rmm" and not rmm_session and rmm_tab == "endpoints":
         rmm_scroll = maxi(0, rmm_scroll + step * 24)
         _canvas.queue_redraw()
     elif app == "nerds" and nerds_tab == "forum":
@@ -9406,25 +9415,34 @@ func _paint_boardroom() -> void:
 
 func _board_rows(rows: Array, x: float, y: float, value_x: float, limit: int) -> float:
     for row in rows:
-        _text(str(row[0]), Vector2(x, y), Color("46506a"))
+        if _row_shown(y):
+            _text(str(row[0]), Vector2(x, y), Color("46506a"))
         var line := ""
         for word in str(row[1]).split(" "):  # long values wrap under themselves instead of ending in ".."
             if line != "" and line.length() + 1 + word.length() > limit:
-                _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
+                if _row_shown(y):
+                    _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
                 y += 7
                 line = word
             else:
                 line = word if line == "" else line + " " + word
-        _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
+        if _row_shown(y):
+            _text(_clip(line, limit), Vector2(x + value_x, y), row[2])
         y += 7
     return y
+
+
+# the books scroll on a short pane: a row is only drawn while it sits inside the window
+func _row_shown(y: float) -> bool:
+    return _rows_clip.size == Vector2.ZERO or (y >= _rows_clip.position.y and y + 5.0 <= _rows_clip.end.y)
 
 
 func _board_books(a: Rect2) -> void:
     var est := Owner.weekly_estimate()
     var two := a.size.x >= 300.0
     var x := a.position.x + 4
-    var y := a.position.y + 3
+    var y := a.position.y + 3 - board_scroll
+    _rows_clip = a if not two else Rect2()
     var value_x := 58.0 if two else minf(104.0, a.size.x * 0.55)
     var room := int((a.size.x * (0.5 if two else 1.0) - value_x - 8.0) / 4.0)
     var w2_ok: bool = float(est.w2) <= Owner.W2_TARGET
@@ -9466,7 +9484,13 @@ func _board_books(a: Rect2) -> void:
     if two:
         _board_rows(right, a.position.x + a.size.x * 0.5 + 4, a.position.y + 3, 58.0, room)
     else:
-        _board_rows(right, x, y + 3, value_x, room)
+        var end_y := _board_rows(right, x, y + 3, value_x, room)
+        _books_extra = maxf(0.0, end_y + board_scroll - a.end.y)
+        board_scroll = minf(board_scroll, _books_extra)
+        if _books_extra > 0.0:  # a hint that the rest is below
+            _fill(Rect2(a.end.x - 50.0, a.end.y - 8.0, 50.0, 8.0), Color("f3f6fb"))
+            _text("UP/DN: MORE" if board_scroll < _books_extra else "UP: BACK", Vector2(a.end.x - 48.0, a.end.y - 7.0), Color("6b421c"))
+    _rows_clip = Rect2()
 
 
 func _board_clients(a: Rect2) -> void:
@@ -9610,13 +9634,14 @@ func _paint_stats() -> void:
     var two_cols := body.size.x >= 300.0
     var y := body.position.y + 4
     var bar_w := minf(70.0, body.size.x * 0.5 - 96.0) if two_cols else minf(70.0, body.size.x - 96.0)
+    var tight := not two_cols and body.size.y < 120.0  # a half-window pane: closer rows, and what still does not fit is left off
     for key in Skills.NAMES:
         _text(str(Skills.NAMES[key]), Vector2(body.position.x + 4, y), TXT)
         _text("LV %d" % Skills.level(key), Vector2(body.position.x + 60, y), ORANGE)
         var bar := Rect2(body.position.x + 84, y, bar_w, 5)
         _fill(bar, Color("c9d2e0"))
         _fill(Rect2(bar.position, Vector2(bar.size.x * Skills.progress(key), 5)), GREEN)
-        y += 9
+        y += 7 if tight else 9
     var x := body.position.x + 4
     if two_cols:
         x = body.position.x + body.size.x * 0.5 + 4
@@ -9626,12 +9651,14 @@ func _paint_stats() -> void:
     _text("OWNERS AND TEAM", Vector2(x, y), Color("2f6b4f"))
     y += 8
     for who in Social.people():
+        if y + 5.0 > body.end.y - 1.0:
+            break
         _text(who, Vector2(x, y), TXT)
         _text(Social.mood(who), Vector2(x + 44, y), _mood_color(who))
         var meter := Rect2(x + 92, y, 40, 5)
         _fill(meter, Color("c9d2e0"))
         _fill(Rect2(meter.position, Vector2(meter.size.x * float(Social.value(who) + 100) / 200.0, 5)), _mood_color(who))
-        y += 8
+        y += 7 if tight else 8
     y += 4
     var lines := []
     if Campaign.active:
@@ -64905,9 +64932,9 @@ static func series(mode: String) -> Array:
 
 # ---- layout ------------------------------------------------------------------------------------------------------------
 static func layout_kind(size: Vector2) -> String:
-    if size.x < 230.0:
+    if size.x < 230.0 and size.y >= 130.0:  # the tall portrait board; a short narrow pane (co-op) uses the wide one
         return "v"
-    return "h" if size.y >= 140.0 else "wide"
+    return "h" if size.x >= 230.0 and size.y >= 140.0 else "wide"
 
 
 # {kind, title, tiles: [Rect2 x10], charts: [Rect2]} for a rect; wide has ONE chart rect (it switches between the two series)

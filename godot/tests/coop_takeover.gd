@@ -187,6 +187,22 @@ func _run() -> void:
 	host.close_all()
 	await _wait(10)
 
+	# the short pane layouts: the metrics board falls back to the wide one, the Boardroom books scroll
+	var dash_script: GDScript = load("res://scripts/dashboard.gd")
+	var kinds := [dash_script.layout_kind(Vector2(184, 92)), dash_script.layout_kind(Vector2(180, 300)), dash_script.layout_kind(Vector2(368, 128))]
+	ok(kinds == ["wide", "v", "wide"], "metrics layout: a short narrow pane uses the wide board, a tall one still the portrait board")
+	host.open_computer(1, 3)
+	await _wait(5)
+	var pcomp: Node = host.computer(1)
+	pcomp.app = "boardroom"
+	pcomp.board_tab = "books"
+	pcomp._canvas.queue_redraw()
+	await _wait(5)
+	pcomp.scroll_list(1)
+	ok(pcomp.board_scroll == 0.0 or pcomp._books_extra > 0.0, "the books only scroll when they do not fit")
+	host.close_all()
+	await _wait(5)
+
 	# the room keeps ticking underneath
 	var before: float = root.get_node("World").clock
 	await _wait(30)
