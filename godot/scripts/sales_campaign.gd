@@ -762,7 +762,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 
 func draw_week(r: RandomNumberGenerator) -> Array:
 	var out := []
-	var n := 2 + (1 if r.randf() < 0.5 else 0)
+	var n := 2 + (1 if r.randf() < Difficulty.cf("sales.flow") else 0)
 	for _i in n:
 		out.append(make_lead(r))
 	return out

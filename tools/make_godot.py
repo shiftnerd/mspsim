@@ -27915,6 +27915,7 @@ const TABLE := {
     "rep.loss": [0.75, 1.0, 1.3],
     "owner.cost": [0.95, 1.0, 1.03],
     "sales.lead": [5, 0, -5],
+    "sales.flow": [0.65, 0.5, 0.3],  # chance of a third new lead in a week
     "service.trust": [0.7, 1.0, 1.6],
 }
 
@@ -59996,7 +59997,7 @@ func make_lead(r: RandomNumberGenerator) -> Dictionary:
 
 func draw_week(r: RandomNumberGenerator) -> Array:
     var out := []
-    var n := 2 + (1 if r.randf() < 0.5 else 0)
+    var n := 2 + (1 if r.randf() < Difficulty.cf("sales.flow") else 0)
     for _i in n:
         out.append(make_lead(r))
     return out
