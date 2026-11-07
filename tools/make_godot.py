@@ -37729,6 +37729,14 @@ func _leave() -> void:
 
 
 # ---- the topics --------------------------------------------------------------------------------
+# the blue switch keyboard (Shop.is_loud): what the room says about it
+const KEYBOARD_LINES := [
+    "Is that a mechanical keyboard? I can hear it from my desk. Every key.",
+    "Nice keyboard. Really. Could you maybe type a little softer?",
+    "Click, click, click. I have started to type along in my head.",
+]
+
+
 func small_talk() -> String:
     Social.note_chat(_who)
     if Campaign.mode == "service" and ServiceArc.small_talk(_who) != "":
@@ -37738,6 +37746,8 @@ func small_talk() -> String:
     var lines: Array = VIC_SMALL[_who] if (Campaign.mode == "sales" and VIC_SMALL.has(_who)) else SMALL[voice(_who)]
     var text: String = lines[randi() % lines.size()]
     _bubble(Social.glyph(_who))
+    if Shop.is_loud() and Difficulty.rng("shop.talk").randf() < 0.5:
+        return str(KEYBOARD_LINES[Difficulty.rng("shop.talk").randi() % KEYBOARD_LINES.size()])  # the clicky keyboard is heard across the room
     if tier(_who) == "cold":
         return "Mm. " + text.split(".")[0] + "."
     if randf() < 0.25:

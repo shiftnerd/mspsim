@@ -88,6 +88,20 @@ func _init() -> void:
 		after += 1 if n.is_in_group("shop_props") and not n.is_queued_for_deletion() else 0
 	_check(after == 6, "a purchase redraws the desk without piling up props (%d)" % after)
 	st.queue_free()
+	# a clicky keyboard is noticed in small talk; a quiet one is not
+	var talk := root.get_node("Talk")
+	talk._who = "Morgan"
+	shop.reset()
+	c.cash = 2000
+	shop.buy("kb_red")
+	var heard_red := false
+	for _i in 30:
+		heard_red = heard_red or talk.KEYBOARD_LINES.has(talk.small_talk())
+	shop.buy("kb_blue")
+	var heard_blue := false
+	for _i in 30:
+		heard_blue = heard_blue or talk.KEYBOARD_LINES.has(talk.small_talk())
+	_check(heard_blue and not heard_red, "only the blue switches draw a remark from a coworker")
 	# the Easy tier is cheaper
 	var diff := root.get_node("Difficulty")
 	var normal_price: int = shop.price("riser")
