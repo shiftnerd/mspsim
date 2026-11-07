@@ -1285,6 +1285,23 @@ func _remember(c: int, job_id: String) -> void:
 	seen_jobs[job_id] = int(seen_jobs.get(job_id, 0)) + 1
 
 
+# R11: the card for a road event with a choice (stop and help costs a quarter of an hour and earns a good word)
+func _road_choice(ev: Dictionary) -> void:
+	Cards.ask(
+		"On the road",
+		str(ev.ask),
+		[{"label": str(ev.help_label), "id": "help"}, {"label": str(ev.skip_label), "id": "skip"}],
+		func(id: String) -> void:
+			if id == "help":
+				World.clock = minf(World.DAY_END - 0.05, World.clock + 0.25)
+				Campaign.adjust_rep(1)
+				Career.add("road_helped")
+				Hints.toast(str(ev.help_text), 4.0)
+			else:
+				Hints.toast(str(ev.skip_text), 3.0)
+	)
+
+
 # the road to a site: sometimes something happens (campaign only; a free trip takes no time)
 func _roll_road(_c: int) -> Dictionary:
 	if not Campaign.active:
@@ -1587,6 +1604,8 @@ func _depart(id: int, forced := {}) -> void:
 	_pet_first = true
 	Game.go(site_scene(client), "from_van")
 	Hints.toast((str(TEXT.arrive) % [str(Msp.CLIENTS[client].name), mins]) + " " + str(road.get("text", "")), 5.0)
+	if bool(road.get("choice", false)):
+		_road_choice(road)
 
 
 # ---- at the site (E on the equipment, see fx kinds onsite_*)

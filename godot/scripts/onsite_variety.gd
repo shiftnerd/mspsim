@@ -13,6 +13,19 @@ const ROAD := [
 	{"id": "roadwork", "min": 10, "w": 1.5, "text": "ROAD WORK. ONE LANE AND A MAN WITH A SIGN: +10 MIN."},
 	{"id": "backroad", "min": -10, "w": 1.0, "text": "A BACK ROAD YOU HAD NEVER TRIED WORKS: -10 MIN."},
 	{"id": "green", "min": -5, "w": 1.0, "text": "GREEN LIGHTS ALL THE WAY: -5 MIN."},
+	# R11: a road event with a choice: nothing changes on the clock until you answer the card on arrival
+	{
+		"id": "stalled",
+		"min": 0,
+		"w": 1.0,
+		"choice": true,
+		"text": "A DRIVER IS STALLED ON THE SHOULDER.",
+		"ask": "A delivery driver is stalled on the shoulder with the hood up. You have jumper cables in the van. You could stop and help, or keep going and make your time.",
+		"help_label": "STOP AND JUMP-START IT (+15 MIN)",
+		"skip_label": "KEEP DRIVING",
+		"help_text": "FIFTEEN MINUTES LATER HE WAVES YOU OFF. A GOOD DEED, AND A STORY FOR THE CLIENT.",
+		"skip_text": "YOU WAVE AND KEEP GOING. THE CLIENT NEVER KNOWS.",
+	},
 ]
 const VARIANT_JOBS := [
 	{
@@ -133,6 +146,66 @@ const VARIANT_JOBS := [
 			{"id": "align", "label": "REALIGN THE BRIDGE AND RESET IT", "hours": 0.75, "chance": 0.9, "skill": "networking", "xp": 8, "text": "A ladder, a compass app and a firm hand. The light goes green and the yard trailer is back. (+8 networking XP)"},
 			{"id": "cable", "label": "RUN A LONG CABLE ACROSS THE YARD", "hours": 1.0, "chance": 0.4, "skill": "networking", "xp": 3, "text": "It works until the first truck drives over it. You tape up what is left."},
 			{"id": "skip", "label": "TELL THEM TO WALK FILES OVER", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "Nobody enjoys this suggestion. The foreman writes your name on a list."},
+		],
+	},
+	{
+		"id": "arch_render",
+		"sites": ["arch"],
+		"object": "pc",
+		"pri": 3,
+		"summary": "The drawing computer locks up on the big file",
+		"body": "Every time I open the hospital model the machine freezes for ten minutes and then the screen goes grey. I have a deadline Friday. - %s",
+		"intro": "The drawing workstation has 4 GB of RAM, a nearly full scratch disk and a 900 MB model open. The fan is doing its best.",
+		"options":
+		[
+			{"id": "scratch", "label": "CLEAR THE SCRATCH DISK AND THE TEMP FILES", "hours": 0.5, "chance": 0.9, "skill": "servers", "xp": 6, "text": "Forty gigabytes of old render caches go. The model opens in a minute and the grey screen is gone. (+6 servers XP)"},
+			{"id": "ram", "label": "ORDER MORE RAM", "hours": 0.3, "chance": 0.0, "skill": "", "xp": 0, "text": "The part comes on Thursday. The deadline does not wait for Thursday."},
+			{"id": "smaller", "label": "TELL THEM TO SPLIT THE MODEL", "hours": 0.2, "chance": 0.35, "skill": "servers", "xp": 2, "text": "They split it, grumbling. It opens faster, but the sections no longer line up."},
+		],
+	},
+	{
+		"id": "arch_scale",
+		"sites": ["arch"],
+		"object": "printer",
+		"pri": 2,
+		"summary": "The plotter prints every drawing at half size",
+		"body": "The plotter now prints the sheets at half scale. The contractor measured one and the walls are two feet thick. - %s",
+		"intro": "The plotter driver on the drawing PC was reset by an update. The page scale says 50 percent and nobody noticed until a wall came out two feet thick.",
+		"options":
+		[
+			{"id": "scale", "label": "RESET THE PAGE SCALE IN THE DRIVER", "hours": 0.4, "chance": 0.95, "skill": "servers", "xp": 6, "text": "100 percent, one test sheet, and the walls are walls again. (+6 servers XP)"},
+			{"id": "calibrate", "label": "RECALIBRATE THE PLOTTER", "hours": 0.75, "chance": 0.4, "skill": "servers", "xp": 3, "text": "A long calibration roll, and the scale is still wrong. The plotter was never the problem."},
+			{"id": "blame", "label": "SUGGEST THE DRAWINGS WERE WRONG", "hours": 0.1, "chance": 0.0, "skill": "", "xp": 0, "text": "Nobody enjoys that suggestion. The sheets are still half size."},
+		],
+	},
+	{
+		"id": "realty_photos",
+		"sites": ["realty"],
+		"object": "pc",
+		"pri": 3,
+		"summary": "Listing photos will not upload to the MLS",
+		"body": "I have eleven photos of the new listing and the site says upload failed on every one. The photographer is waiting for the invoice. - %s",
+		"intro": "The photos are 12 megabytes each straight off the camera. The listing site accepts three megabytes and says nothing useful about it.",
+		"options":
+		[
+			{"id": "shrink", "label": "SHRINK THE PHOTOS BEFORE UPLOADING", "hours": 0.4, "chance": 0.95, "skill": "servers", "xp": 6, "text": "A batch resize, eleven uploads, eleven green ticks. The listing goes live. (+6 servers XP)"},
+			{"id": "browser", "label": "TRY A DIFFERENT BROWSER", "hours": 0.2, "chance": 0.25, "skill": "servers", "xp": 2, "text": "The same error, in a nicer font."},
+			{"id": "support", "label": "CALL THE LISTING SITE", "hours": 0.5, "chance": 0.0, "skill": "", "xp": 0, "text": "Hold music and a ticket number. The photos stay on the camera."},
+		],
+	},
+	{
+		"id": "realty_signin",
+		"sites": ["realty"],
+		"object": "printer",
+		"pri": 2,
+		"summary": "The sign-in sheets print blank for the open house",
+		"body": "The open house is at two and the sign-in sheets come out blank. I have a stack of blank paper and a very nice sign. - %s",
+		"intro": "The printer prints the header and a white page. The template wants a font that was removed from this PC last week.",
+		"options":
+		[
+			{"id": "font", "label": "PUT THE FONT BACK AND REPRINT", "hours": 0.4, "chance": 0.9, "skill": "servers", "xp": 6, "text": "The font returns, the sheets print with every line and box, and the open house starts on time. (+6 servers XP)"},
+			{"id": "hand", "label": "WRITE THE SHEET BY HAND", "hours": 0.2, "chance": 0.0, "skill": "", "xp": 0, "text": "Eleven handwritten sheets. The agent says she will never mention this."},
+			{"id": "driver", "label": "REINSTALL THE PRINTER DRIVER", "hours": 0.6, "chance": 0.3, "skill": "servers", "xp": 2, "text": "A fresh driver, the same blank pages. Wrong end of the problem."},
 		],
 	},
 ]

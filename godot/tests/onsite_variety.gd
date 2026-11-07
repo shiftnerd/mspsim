@@ -65,7 +65,7 @@ func _init() -> void:
 			_check(float(o.hours) > 0.0 and str(o.text).length() > 30 and str(o.label).length() > 6, "%s / %s has time and text" % [j.id, o.id])
 		_check(best >= 0.85 and dud, "%s has a proper fix and a bad option" % j.id)
 		_check(str(j.body).count("%s") == 1 and int(j.pri) in [1, 2, 3], "%s body names the client once" % j.id)
-	for site in ["dental", "law", "vet", "trailer"]:
+	for site in ["dental", "law", "vet", "trailer", "arch", "realty"]:
 		_check(int(by_site.get(site, 0)) >= 2, "%s has at least two new jobs" % site)
 		_check(V.jobs_for(site).size() >= 2, "jobs_for(%s)" % site)
 	_check(V.jobs_for("dental").all(func(j: Dictionary) -> bool: return (j.sites as Array).has("dental")), "a site only gets its own variants")
@@ -74,7 +74,7 @@ func _init() -> void:
 	# ---- every variant played through
 	var fixed0: int = career.value("onsite_fixed")
 	var types0: int = career.value("site_types")
-	var client_of := {"dental": 0, "law": 3, "vet": 8, "trailer": 10}
+	var client_of := {"dental": 0, "law": 3, "vet": 8, "trailer": 10, "arch": 9, "realty": 1}
 	for j in V.VARIANT_JOBS:
 		var client: int = int(client_of[str(j.sites[0])])
 		var t: Dictionary = on.create_job(client, str(j.id))
@@ -96,7 +96,7 @@ func _init() -> void:
 		_check(on.done and str(t.status) == "Closed", "the proper fix closes %s" % j.id)
 		on.active = false
 	_check(career.value("onsite_fixed") == fixed0 + V.VARIANT_JOBS.size(), "every fix counts for the career")
-	_check(career.value("site_types") >= types0 + 4 and career.value("site_types") >= 4, "four site types fixed (%d)" % career.value("site_types"))
+	_check(career.value("site_types") >= types0 + 6 and career.value("site_types") >= 6, "six site types fixed (%d)" % career.value("site_types"))
 
 	# ---- the roulette
 	var rng := RandomNumberGenerator.new()
