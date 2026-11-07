@@ -1986,22 +1986,25 @@ func _paint_lync() -> void:
 	var narrow := body.size.x < 250.0
 	var list_w := body.size.x if (narrow and lync_sel == "") else (0.0 if narrow else 104.0)
 	if list_w > 0.0:
+		# a long roster (the second cast) tightens the rows so every contact stays on screen
+		var pitch := clampf(floorf(body.size.y / float(maxi(1, contacts.size()))), 8.0, 11.0)
+		var pad := floorf((pitch - 5.0) * 0.5)
 		for i in contacts.size():
 			var who: String = contacts[i]
 			var info: Array = Lync.presence(who)
-			var rr := Rect2(body.position.x, body.position.y + float(i) * 11.0, list_w, 11)
+			var rr := Rect2(body.position.x, body.position.y + float(i) * pitch, list_w, pitch)
 			_row(rr, who == lync_sel, i % 2 == 1)
-			_fill(Rect2(rr.position.x + 3, rr.position.y + 3, 5, 5), Lync.color_of(str(info[1])))
-			_text(who.to_upper(), rr.position + Vector2(11, 3), TXT)
+			_fill(Rect2(rr.position.x + 3, rr.position.y + pad, 5, 5), Lync.color_of(str(info[1])))
+			_text(who.to_upper(), rr.position + Vector2(11, pad), TXT)
 			_text(
 				_clip(str(info[0]), int((list_w - 56) / 4.0)),
-				rr.position + Vector2(50, 3),
+				rr.position + Vector2(50, pad),
 				Color("7d8595")
 			)
 			var n := int(Lync.unread.get(who, 0))
 			if n > 0:
-				_fill(Rect2(rr.end.x - 11, rr.position.y + 2, 9, 7), RED)
-				_text(str(mini(n, 9)), rr.position + Vector2(rr.size.x - 8, 3), WHITE)
+				_fill(Rect2(rr.end.x - 11, rr.position.y + maxf(0.0, pad - 1.0), 9, 7), RED)
+				_text(str(mini(n, 9)), rr.position + Vector2(rr.size.x - 8, pad), WHITE)
 			_region("lync:contact:" + who, rr)
 	if lync_sel == "" or list_w >= body.size.x:
 		if lync_sel == "" and not narrow:
