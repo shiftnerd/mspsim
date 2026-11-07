@@ -30,7 +30,9 @@ func _init() -> void:
 	var other: Array = _names(owner.make_candidates())
 	_check(a.size() > 0 and a == b, "the same seed gives the same hiring candidates")
 	_check(a != other, "another seed gives other candidates")
-	var src := FileAccess.get_file_as_string("res://scripts/owner.gd") + FileAccess.get_file_as_string("res://scripts/shift.gd") + FileAccess.get_file_as_string("res://scripts/projects.gd") + FileAccess.get_file_as_string("res://scripts/growth.gd")
+	var src := ""
+	for f in ["owner", "shift", "projects", "growth"]:
+		src += FileAccess.get_file_as_string("res://scripts/%s.gd" % f)
 	var raw := RegEx.create_from_string(r"(^|[^.\w])(randf|randi|randf_range|randi_range)\(")
 	_check(raw.search(src) == null, "no global randf / randi call is left in Owner, Shift, Projects or Growth")
 	print("failures=", failures)

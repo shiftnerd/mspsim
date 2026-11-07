@@ -95,12 +95,12 @@ SETS = {
         doors=[],     # R24: the closet door (set x 299) moved into the warehouse; a filing cabinet stands there now
         exits=[("ToMain", "left", "main_floor", "from_cubicles"), ("ToCubicleTwo", "right", "cubicle_two", "from_cubicles")],
         seats=[(35, 101, True), (119, 101, True)]),
-    # the second cubicle row (the office staff: Jen, Michael, Christy). Its desks are not on the patch panel (no desk = N), so they never lose a link.
-    "cubicle_two": dict(node="CubicleTwo", W=320,
-        spawns={"start": (80, "right"), "from_cubicles": (28, "right"), "from_conf": (270, "left")},
+    # the second cubicle row (the office staff: Jen, Michael, Christy, Adam). Its desks are not on the patch panel (no desk = N), so they never lose a link.
+    "cubicle_two": dict(node="CubicleTwo", W=368,
+        spawns={"start": (80, "right"), "from_cubicles": (28, "right"), "from_conf": (336, "left")},
         doors=[],
         exits=[("ToCubicles", "left", "cubicle_area", "from_conf"), ("ToConference", "right", "conference", "from_cubicles")],
-        seats=[(35, 101, True), (119, 101, True), (203, 101, True)]),
+        seats=[(23, 101, True), (107, 101, True), (191, 101, True), (275, 101, True)]),
     "network_closet": dict(node="NetworkCloset", W=144,
         spawns={"start": (70, "right"), "from_warehouse": (60, "right")},
         doors=[("ToWarehouse", 21, "warehouse", "from_closet", "")],     # R24: the blue steel door; the closet is reached through the warehouse
@@ -929,6 +929,13 @@ func _ready() -> void:
 # a foam dart hit this screen: it glitches for a moment
 func hit() -> void:
     _hit_until = _time + 1.4
+
+
+# a rolled-over call: this desk phone rings for a while (the player may pick it up)
+func ring_for(secs: float) -> void:
+    if kind == "desk_phone" and not busy:
+        ringing = true
+        _ring_until = _time + secs
 
 
 func play() -> void:
@@ -4459,6 +4466,7 @@ const STAFF_CAST := {
     "Jen": {"character": "office_jen", "home": "cubicle_two", "seat": "Seat1", "role": "frontdesk"},
     "Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
     "Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
+    "Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
@@ -6292,8 +6300,17 @@ func _random_ticket(source: String) -> Dictionary:
 # answering the phone at a desk: a client is on the line with a problem
 func phone_call(_desk: int) -> void:
     Social.note_call_answered()
-    if not Game.title_mode and enabled:
-        _random_ticket("phone call")
+    if Game.title_mode or not enabled:
+        return
+    # a call that rolled over is waiting: picking up a ringing phone answers it, so it does not go to voicemail
+    for i in calls.size():
+        if bool(calls[i].voicemail):
+            calls.remove_at(i)
+            var t: Dictionary = _random_ticket("phone call")
+            if not t.is_empty():
+                t.notes.append("Jen was busy or away, so you picked up the call yourself.")
+            return
+    _random_ticket("phone call")
 
 
 func create_internal(desk: int, summary: String, body: String) -> void:
@@ -7052,6 +7069,15 @@ func _incoming() -> void:
             node.desk_call()
     else:
         calls.append({"t": VOICEMAIL_SECS, "voicemail": true})
+        _ring_rollover()
+
+
+# the call that found Jen busy or away rings the idle desk phones in the room you are in
+func _ring_rollover() -> void:
+    for zone in get_tree().get_nodes_in_group("phones"):
+        var fx: Node = zone.get_node_or_null(zone.target)
+        if fx != null and fx.has_method("ring_for"):
+            fx.ring_for(VOICEMAIL_SECS)
 
 
 func _tick_calls(dt: float) -> void:
@@ -9592,6 +9618,8 @@ static func contacts() -> Array:
     var team: Array = Lync.contacts()
     for i in team.size():
         var who := str(team[i])
+        if who in ["Adam", "Michael"]:
+            continue  # they have their own numbers below (a stuck ticket, a hand-off)
         var sub := Social.role(who)
         if sub == "":
             sub = "OFFICE MANAGER" if who == Lync.boss() else "TEAM"
@@ -22818,8 +22846,17 @@ func boss() -> String:
     return "Christy" if Campaign.mode == "owner" else "Morgan"
 
 
+# the office staff who are in the building (Jen, Michael, Christy, Adam): chat contacts and senders like the cast
+func staff_present() -> Array:
+    var out := []
+    for n in World.staff_names():
+        if World.chars.has(n):
+            out.append(n)
+    return out
+
+
 func contacts() -> Array:
-    var out: Array = Social.people()
+    var out: Array = Social.people() + staff_present()
     if not out.has(boss()):
         out.append(boss())  # Christy in the owner campaign (Morgan is already a cast member)
     if Campaign.mode == "service":
@@ -22910,7 +22947,7 @@ func incoming(forced_kind := "") -> void:
             _push(str(touch[0]), str(touch[0]), str(touch[1]))
             return
     var pool := []
-    for who in Social.people():
+    for who in Social.people() + staff_present():
         if presence(who)[0] == "AVAILABLE" and not pending.has(who):
             pool.append(who)
     if pool.is_empty() or pending.size() >= 2:

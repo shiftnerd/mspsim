@@ -27,8 +27,8 @@ func _init() -> void:
 
 	# ---- Lync: presence comes from what the cast is doing
 	_check(
-		lync.boss() == "Morgan" and lync.contacts().has("Morgan") and lync.contacts().size() == 6,
-		"contacts: the cast plus Morgan"
+		lync.boss() == "Morgan" and lync.contacts().has("Morgan") and lync.contacts().size() == 10,
+		"contacts: the cast, Morgan and the four office staff"
 	)
 	world.chars["Alan"].legs = [{"kind": "work"}]
 	world.chars["Alan"].scene = "office_one"

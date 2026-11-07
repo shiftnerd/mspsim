@@ -316,8 +316,17 @@ func boss() -> String:
 	return "Christy" if Campaign.mode == "owner" else "Morgan"
 
 
+# the office staff who are in the building (Jen, Michael, Christy, Adam): chat contacts and senders like the cast
+func staff_present() -> Array:
+	var out := []
+	for n in World.staff_names():
+		if World.chars.has(n):
+			out.append(n)
+	return out
+
+
 func contacts() -> Array:
-	var out: Array = Social.people()
+	var out: Array = Social.people() + staff_present()
 	if not out.has(boss()):
 		out.append(boss())  # Christy in the owner campaign (Morgan is already a cast member)
 	if Campaign.mode == "service":
@@ -412,7 +421,7 @@ func incoming(forced_kind := "") -> void:
 			_push(str(touch[0]), str(touch[0]), str(touch[1]))
 			return
 	var pool := []
-	for who in Social.people():
+	for who in Social.people() + staff_present():
 		if presence(who)[0] == "AVAILABLE" and not pending.has(who):
 			pool.append(who)
 	if pool.is_empty() or pending.size() >= 2:

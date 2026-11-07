@@ -49,6 +49,16 @@ func _init() -> void:
 	var vm: Dictionary = msp.tickets[msp.tickets.size() - 1]
 	_check(str(vm.source) == "voicemail" and float(vm.sla_left) < float(vm.sla_total), "the voicemail has used up part of its SLA window")
 	_check(msp.texts.size() == texts_before + 1 and str(msp.texts[0].body).find("voicemail") >= 0, "Jen texts you about it")
+	# a call that rolled over is answered by picking up: no voicemail, a ticket with a note, and the phones ring
+	msp.calls.clear()
+	msp.calls.append({"t": msp.VOICEMAIL_SECS, "voicemail": true})
+	var n0: int = msp.tickets.size()
+	msp._ring_rollover()  # no phones in this headless scene: it must not fail
+	msp.phone_call(0)
+	_check(msp.calls.is_empty() and msp.tickets.size() == n0 + 1, "picking up a rolled-over call answers it (no voicemail later)")
+	_check(str(msp.tickets[msp.tickets.size() - 1].notes).contains("picked up the call yourself"), "and the ticket says you took it")
+	var fx_script: GDScript = load("res://scripts/fx.gd")
+	_check(fx_script.get_script_method_list().any(func(m: Dictionary) -> bool: return str(m.name) == "ring_for"), "desk phones can be told to ring for a rollover")
 	# away from her desk: everything goes to voicemail
 	jen.scene = "kitchenette"
 	_check(msp.front_desk() == "away", "out of her seat: away")

@@ -28,5 +28,18 @@ func _init() -> void:
 	while cards.is_open:
 		cards.pick(0)
 	_check(talk.available("Jen") and talk.available("Michael") and talk.available("Christy"), "all three can be talked to in the campaign")
+	# the Lync list and the phone list
+	var lync := root.get_node("Lync")
+	var contacts: Array = lync.contacts()
+	var four := ["Jen", "Michael", "Christy", "Adam"].all(func(n: String) -> bool: return contacts.has(n))
+	_check(four, "the four are on the Lync list (%s)" % str(contacts))
+	var Calls = load("res://scripts/phone_calls.gd")
+	var ids := []
+	for k in Calls.contacts():
+		ids.append(str(k.id))
+	var once: bool = ids.has("adam") and ids.has("michael") and not ids.has("w:Adam") and not ids.has("w:Michael")
+	_check(ids.has("w:Jen") and ids.has("w:Christy") and once, "the phone list: Jen and Christy as coworkers, Adam and Michael once each (%s)" % str(ids))
+	c.new_game("service")
+	_check(not lync.contacts().has("Jen") and not lync.contacts().has("Adam"), "none of them is on the service campaign's list")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

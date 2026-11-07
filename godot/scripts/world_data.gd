@@ -101,17 +101,17 @@ const SCENES := {
 	},
 	"cubicle_two":
 	{
-		"x0": 24,
-		"W": 320,
+		"x0": 0,
+		"W": 368,
 		"spawns":
-		{"start": [104, "right"], "from_cubicles": [52, "right"], "from_conf": [294, "left"]},
+		{"start": [80, "right"], "from_cubicles": [28, "right"], "from_conf": [336, "left"]},
 		"links":
 		[
-			{"name": "ToCubicles", "x": 28, "to": "cubicle_area", "spawn": "from_conf"},
-			{"name": "ToConference", "x": 340, "to": "conference", "spawn": "from_cubicles"}
+			{"name": "ToCubicles", "x": 4, "to": "cubicle_area", "spawn": "from_conf"},
+			{"name": "ToConference", "x": 364, "to": "conference", "spawn": "from_cubicles"}
 		],
-		"seats": {"Seat1": 59, "Seat2": 143, "Seat3": 227},
-		"uses": {"switch": 34},
+		"seats": {"Seat1": 23, "Seat2": 107, "Seat3": 191, "Seat4": 275},
+		"uses": {"switch": 10},
 		"outside_x": -1
 	},
 	"network_closet":

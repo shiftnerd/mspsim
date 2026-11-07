@@ -817,8 +817,17 @@ func _random_ticket(source: String) -> Dictionary:
 # answering the phone at a desk: a client is on the line with a problem
 func phone_call(_desk: int) -> void:
 	Social.note_call_answered()
-	if not Game.title_mode and enabled:
-		_random_ticket("phone call")
+	if Game.title_mode or not enabled:
+		return
+	# a call that rolled over is waiting: picking up a ringing phone answers it, so it does not go to voicemail
+	for i in calls.size():
+		if bool(calls[i].voicemail):
+			calls.remove_at(i)
+			var t: Dictionary = _random_ticket("phone call")
+			if not t.is_empty():
+				t.notes.append("Jen was busy or away, so you picked up the call yourself.")
+			return
+	_random_ticket("phone call")
 
 
 func create_internal(desk: int, summary: String, body: String) -> void:
@@ -1645,6 +1654,15 @@ func _incoming() -> void:
 			node.desk_call()
 	else:
 		calls.append({"t": VOICEMAIL_SECS, "voicemail": true})
+		_ring_rollover()
+
+
+# the call that found Jen busy or away rings the idle desk phones in the room you are in
+func _ring_rollover() -> void:
+	for zone in get_tree().get_nodes_in_group("phones"):
+		var fx: Node = zone.get_node_or_null(zone.target)
+		if fx != null and fx.has_method("ring_for"):
+			fx.ring_for(VOICEMAIL_SECS)
 
 
 func _tick_calls(dt: float) -> void:

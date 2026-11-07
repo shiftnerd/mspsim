@@ -78,6 +78,8 @@ static func contacts() -> Array:
 	var team: Array = Lync.contacts()
 	for i in team.size():
 		var who := str(team[i])
+		if who in ["Adam", "Michael"]:
+			continue  # they have their own numbers below (a stuck ticket, a hand-off)
 		var sub := Social.role(who)
 		if sub == "":
 			sub = "OFFICE MANAGER" if who == Lync.boss() else "TEAM"

@@ -37,6 +37,7 @@ const STAFF_CAST := {
 	"Jen": {"character": "office_jen", "home": "cubicle_two", "seat": "Seat1", "role": "frontdesk"},
 	"Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
 	"Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
+	"Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0

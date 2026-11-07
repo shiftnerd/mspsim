@@ -142,21 +142,20 @@ builders.cubicle_area = {W = 320, H = 128, fn = function(s)
   if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
 end}
 
--- ===== CUBICLE TWO 320x128: the second row of cubicles (the office staff: Jen, Michael, Christy), no copier corner =====
-builders.cubicle_two = {W = 320, H = 128, fn = function(s)
-  local W = 320
+-- ===== CUBICLE TWO 368x128: the second row of cubicles (the office staff: Jen, Michael, Christy, Adam), no copier corner =====
+builders.cubicle_two = {W = 368, H = 128, fn = function(s)
+  local W = 368
   L.wall(s.layer("Wall"), W, "#8FC43A", "#79A82F"); L.carpet(s.layer("Floor"), W)
   local shell, cal, note = P.cubicleShell(), P.calendar(), P.sticky()
-  for _, cx in ipairs({20, 104, 188}) do
+  for _, cx in ipairs({8, 92, 176, 260}) do
     s.put("CubicleShell", shell, cx, 52)
     s.put("CubiclePropsBack", cal, cx + 56, 60); s.put("CubiclePropsBack", note, cx + 10, 64)
     s.putS("CubicleChairs", P.chairSide(), cx + 1, 66, 95, "chair_office_side")
     s.putS("CubicleDesks", P.desk(74), cx + 3, 83, 108, "desk_cubicle_74")
     P.dualTop(s, "CubicleProps", cx + 3, true)
   end
-  s.put("Whiteboard", P.whiteboard(), 276, 30)
-  s.putS("Plant", P.floorPlant(), 268, 78, 108, "plant_floor")
-  s.putS("Cabinet", P.filingCabinet(), 292, 78, 108, "filing_cabinet")
+  s.put("Whiteboard", P.whiteboard(), 150, 22)
+  s.putS("Plant", P.floorPlant(), 348, 78, 108, "plant_floor")
 end}
 
 -- ===== NETWORK CLOSET 144x128: a door, an outlet, the ISP jack and one rack =====

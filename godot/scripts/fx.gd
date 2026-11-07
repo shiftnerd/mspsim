@@ -157,6 +157,13 @@ func hit() -> void:
 	_hit_until = _time + 1.4
 
 
+# a rolled-over call: this desk phone rings for a while (the player may pick it up)
+func ring_for(secs: float) -> void:
+	if kind == "desk_phone" and not busy:
+		ringing = true
+		_ring_until = _time + secs
+
+
 func play() -> void:
 	if kind.begins_with("clue_") or kind == "keypad" or kind.begins_with("cornhole_") or kind == "grill":
 		Outings.interact(kind)
