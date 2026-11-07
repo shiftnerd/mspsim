@@ -1938,7 +1938,7 @@ func _chose(id: String) -> void:
 	if str(opt.get("game", "")).begins_with("printer"):
 		PrinterGame.start(
 			func(stars: int) -> void: _printer_done(stars),
-			_printer_model(str(opt.get("game", ""))),
+			_printer_model(str(opt.get("game", "")), true),
 			{"onsite": true}
 		)
 		return
@@ -1964,6 +1964,10 @@ func _printer_done(stars: int) -> void:
 	if ok:
 		Skills.add_xp("servers", 4 * stars)
 		done = true
+		if PrinterGame.model == "line":  # the boss: a close of its own
+			Skills.add_xp("servers", 12)
+			Msp.add_note(ticket_id, "Server room line printer: the payroll forms are aligned and the ribbon is fresh.")
+			Hints.toast("THE LINE PRINTER IS TAMED. PAYROLL RUNS.", 4.0)
 	Cards.ask(
 		"Onsite",
 		str(TEXT.get("printer_stars%d" % stars, "")),
@@ -1975,10 +1979,13 @@ func _printer_done(stars: int) -> void:
 # which printer model fights back: the job's game field can force one ("printer:inkjet"), else the site decides
 # (architects: plotter, dentists: receipt or laser, law: multifunction, vets: inkjet, realty: laser or dot matrix,
 # the trailers: dot matrix); the either-or sites roll once per client and day from the printer stream
-func _printer_model(game := "printer") -> String:
+func _printer_model(game := "printer", boss_ok := false) -> String:
 	var forced := game.get_slice(":", 1) if game.contains(":") else ""
 	if PrinterGame.MODELS.has(forced):
 		return forced
+	# P4: once three ordinary models are beaten the server room line printer turns up on a quarter of the printer jobs
+	if boss_ok and Career.boss_ready() and Difficulty.rng_for("printer.boss", client * 100 + Campaign.day).randf() < 0.25:
+		return "line"
 	var either := ""
 	match site_type(client):
 		"arch":

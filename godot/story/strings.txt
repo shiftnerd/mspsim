@@ -15210,6 +15210,14 @@ SECOND YEAR
 [Career.MEDALS.48.desc]
 FINISH A YEAR 2 RUN
 
+# Career > MEDALS > 49 > title
+[Career.MEDALS.49.title]
+LINE TAMER
+
+# Career > MEDALS > 49 > desc
+[Career.MEDALS.49.desc]
+TAME THE LINE PRINTER
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title
@@ -17273,6 +17281,82 @@ FORM FEED ERROR
 # PrinterGame > MODEL_TEXT > dot > pray_help
 [PrinterGame.MODEL_TEXT.dot.pray_help]
 P: PRAY TO THE FORMS GODS
+
+# PrinterGame > MODEL_TEXT > line > title
+[PrinterGame.MODEL_TEXT.line.title]
+LINE PRINTER
+
+# PrinterGame > MODEL_TEXT > line > intro1
+[PrinterGame.MODEL_TEXT.line.intro1]
+THE SERVER ROOM LINE PRINTER IS JAMMED
+
+# PrinterGame > MODEL_TEXT > line > intro2
+[PrinterGame.MODEL_TEXT.line.intro2]
+ON PAYROLL FORMS. ONE LIFE, NO PRAYERS.
+
+# PrinterGame > MODEL_TEXT > line > jam_help
+[PrinterGame.MODEL_TEXT.line.jam_help]
+SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD
+
+# PrinterGame > MODEL_TEXT > line > jam_clean
+[PrinterGame.MODEL_TEXT.line.jam_clean]
+A CLEAN PULL. THE FAN-FOLD COMES OUT IN ITS CREASES.
+
+# PrinterGame > MODEL_TEXT > line > jam_tear
+[PrinterGame.MODEL_TEXT.line.jam_tear]
+RIP! A STRIP OF PAYROLL IS STILL INSIDE.
+
+# PrinterGame > MODEL_TEXT > line > toner_help
+[PrinterGame.MODEL_TEXT.line.toner_help]
+LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT
+
+# PrinterGame > MODEL_TEXT > line > toner_ok
+[PrinterGame.MODEL_TEXT.line.toner_ok]
+CLICK. THE RIBBON SEATS.
+
+# PrinterGame > MODEL_TEXT > line > toner_bad
+[PrinterGame.MODEL_TEXT.line.toner_bad]
+WRONG RIBBON. THE HAMMERS CLATTER IN THE DARK.
+
+# PrinterGame > MODEL_TEXT > line > hit
+[PrinterGame.MODEL_TEXT.line.hit]
+YOU THUMP THE CABINET. THE CARRIAGE SHUDDERS AND GOES.
+
+# PrinterGame > MODEL_TEXT > line > stars3
+[PrinterGame.MODEL_TEXT.line.stars3]
+PERFECT. EVERY FORM LINES UP AND PAYROLL RUNS ON TIME.
+
+# PrinterGame > MODEL_TEXT > line > stars2
+[PrinterGame.MODEL_TEXT.line.stars2]
+GOOD. A FEW PAYCHECKS ARE ONE LINE OFF.
+
+# PrinterGame > MODEL_TEXT > line > stars1
+[PrinterGame.MODEL_TEXT.line.stars1]
+IT PRINTS. HR WILL NOTICE THE SMUDGE.
+
+# PrinterGame > MODEL_TEXT > line > stars0
+[PrinterGame.MODEL_TEXT.line.stars0]
+YOU GIVE UP. THE LINE PRINTER WINS AGAIN.
+
+# PrinterGame > MODEL_TEXT > line > tray_help
+[PrinterGame.MODEL_TEXT.line.tray_help]
+THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, SPACE
+
+# PrinterGame > MODEL_TEXT > line > tray_ok
+[PrinterGame.MODEL_TEXT.line.tray_ok]
+THE FAN-FOLD RIDES THE SPROCKETS, SQUARE AT LAST.
+
+# PrinterGame > MODEL_TEXT > line > tray_bad
+[PrinterGame.MODEL_TEXT.line.tray_bad]
+WRONG FORMS. THE SPROCKETS CHEW THE EDGE.
+
+# PrinterGame > MODEL_TEXT > line > tray_screen
+[PrinterGame.MODEL_TEXT.line.tray_screen]
+FORM FEED ERROR
+
+# PrinterGame > MODEL_TEXT > line > pray_help
+[PrinterGame.MODEL_TEXT.line.pray_help]
+NO PRAYERS HERE. ONE LIFE.
 
 
 # ======================= Onsite > TEXT =======================

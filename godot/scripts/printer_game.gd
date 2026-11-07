@@ -33,6 +33,7 @@ const TRAY := ["LETTER", "LEGAL", "A4", "HIT IT"]
 const PLOTTER_TRAY := ["24 BOND", "36 BOND", "MYLAR", "HIT IT"]
 const RECEIPT_TRAY := ["80 MM", "58 MM", "PLAIN", "HIT IT"]
 const DOT_TRAY := ["TRACTOR", "SINGLE", "LABELS", "HIT IT"]
+const LINE_TRAY := ["FAN-FOLD", "CONTINUOUS", "CARBON FORMS", "HIT IT"]
 # the printer models. phases = the rounds in order (test is always last); tray / names / colors = what the tray and the
 # cartridge round offer (the right tray is always the first, the last one is the joke); look = how it is drawn.
 const MODELS := {
@@ -89,6 +90,16 @@ const MODELS := {
 		"names": RIBBON_NAMES,
 		"colors": RIBBON_COLORS,
 		"look": "dot",
+	},
+	"line":
+	{
+		"label": "LINE PRINTER",
+		"phases": ["jam", "tray", "toner", "shake", "test"],
+		"tray": LINE_TRAY,
+		"names": RIBBON_NAMES,
+		"colors": RIBBON_COLORS,
+		"look": "dot",
+		"boss": true,
 	},
 }
 const MODEL_ORDER := ["laser", "inkjet", "plotter", "mfp", "receipt", "dot"]
@@ -241,6 +252,29 @@ const DEFAULT_MODEL_TEXT := {
 		"tray_screen": "FORM FEED ERROR",
 		"tray_slot": "TRACTOR",
 		"pray_help": "P: PRAY TO THE FORMS GODS",
+	},
+	"line":
+	{
+		"title": "LINE PRINTER",
+		"intro1": "THE SERVER ROOM LINE PRINTER IS JAMMED",
+		"intro2": "ON PAYROLL FORMS. ONE LIFE, NO PRAYERS.",
+		"jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD",
+		"jam_clean": "A CLEAN PULL. THE FAN-FOLD COMES OUT IN ITS CREASES.",
+		"jam_tear": "RIP! A STRIP OF PAYROLL IS STILL INSIDE.",
+		"toner_help": "LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT",
+		"toner_ok": "CLICK. THE RIBBON SEATS.",
+		"toner_bad": "WRONG RIBBON. THE HAMMERS CLATTER IN THE DARK.",
+		"hit": "YOU THUMP THE CABINET. THE CARRIAGE SHUDDERS AND GOES.",
+		"stars3": "PERFECT. EVERY FORM LINES UP AND PAYROLL RUNS ON TIME.",
+		"stars2": "GOOD. A FEW PAYCHECKS ARE ONE LINE OFF.",
+		"stars1": "IT PRINTS. HR WILL NOTICE THE SMUDGE.",
+		"stars0": "YOU GIVE UP. THE LINE PRINTER WINS AGAIN.",
+		"tray_help": "THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, SPACE",
+		"tray_ok": "THE FAN-FOLD RIDES THE SPROCKETS, SQUARE AT LAST.",
+		"tray_bad": "WRONG FORMS. THE SPROCKETS CHEW THE EDGE.",
+		"tray_screen": "FORM FEED ERROR",
+		"tray_slot": "SPROCKETS",
+		"pray_help": "NO PRAYERS HERE. ONE LIFE.",
 	},
 }
 var MODEL_TEXT: Dictionary = DEFAULT_MODEL_TEXT.duplicate(true)
@@ -673,12 +707,12 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 	stars = 0
 	msg = ""
 	spot = 0
-	jam_len = 3
+	jam_len = 5 if bool(MODELS[model].get("boss", false)) else 3  # the boss line printer: a longer chain
 	combo = 0
 	step = 0
 	sel = 0
 	qi = 0
-	faith = 3
+	faith = 0 if bool(MODELS[model].get("boss", false)) else 3  # the boss has one life bar: no prayers
 	blessed = 0
 	tray_sel = 0
 	fast = false

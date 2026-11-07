@@ -49349,7 +49349,7 @@ func _chose(id: String) -> void:
     if str(opt.get("game", "")).begins_with("printer"):
         PrinterGame.start(
             func(stars: int) -> void: _printer_done(stars),
-            _printer_model(str(opt.get("game", ""))),
+            _printer_model(str(opt.get("game", "")), true),
             {"onsite": true}
         )
         return
@@ -49375,16 +49375,23 @@ func _printer_done(stars: int) -> void:
     if ok:
         Skills.add_xp("servers", 4 * stars)
         done = true
+        if PrinterGame.model == "line":  # the boss: a close of its own
+            Skills.add_xp("servers", 12)
+            Msp.add_note(ticket_id, "Server room line printer: the payroll forms are aligned and the ribbon is fresh.")
+            Hints.toast("THE LINE PRINTER IS TAMED. PAYROLL RUNS.", 4.0)
     Cards.ask("Onsite", str(TEXT.get("printer_stars%d" % stars, "")), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _after(ok))
 
 
 # which printer model fights back: the job's game field can force one ("printer:inkjet"), else the site decides
 # (architects: plotter, dentists: receipt or laser, law: multifunction, vets: inkjet, realty: laser or dot matrix,
 # the trailers: dot matrix); the either-or sites roll once per client and day from the printer stream
-func _printer_model(game := "printer") -> String:
+func _printer_model(game := "printer", boss_ok := false) -> String:
     var forced := game.get_slice(":", 1) if game.contains(":") else ""
     if PrinterGame.MODELS.has(forced):
         return forced
+    # P4: once three ordinary models are beaten the server room line printer turns up on a quarter of the printer jobs
+    if boss_ok and Career.boss_ready() and Difficulty.rng_for("printer.boss", client * 100 + Campaign.day).randf() < 0.25:
+        return "line"
     var either := ""
     match site_type(client):
         "arch":
@@ -49701,6 +49708,7 @@ const TRAY := ["LETTER", "LEGAL", "A4", "HIT IT"]
 const PLOTTER_TRAY := ["24 BOND", "36 BOND", "MYLAR", "HIT IT"]
 const RECEIPT_TRAY := ["80 MM", "58 MM", "PLAIN", "HIT IT"]
 const DOT_TRAY := ["TRACTOR", "SINGLE", "LABELS", "HIT IT"]
+const LINE_TRAY := ["FAN-FOLD", "CONTINUOUS", "CARBON FORMS", "HIT IT"]
 # the printer models. phases = the rounds in order (test is always last); tray / names / colors = what the tray and the
 # cartridge round offer (the right tray is always the first, the last one is the joke); look = how it is drawn.
 const MODELS := {
@@ -49757,6 +49765,16 @@ const MODELS := {
         "names": RIBBON_NAMES,
         "colors": RIBBON_COLORS,
         "look": "dot",
+    },
+    "line":
+    {
+        "label": "LINE PRINTER",
+        "phases": ["jam", "tray", "toner", "shake", "test"],
+        "tray": LINE_TRAY,
+        "names": RIBBON_NAMES,
+        "colors": RIBBON_COLORS,
+        "look": "dot",
+        "boss": true,
     },
 }
 const MODEL_ORDER := ["laser", "inkjet", "plotter", "mfp", "receipt", "dot"]
@@ -49908,6 +49926,29 @@ const MODEL_TEXT := {
         "tray_screen": "FORM FEED ERROR",
         "tray_slot": "TRACTOR",
         "pray_help": "P: PRAY TO THE FORMS GODS",
+    },
+    "line":
+    {
+        "title": "LINE PRINTER",
+        "intro1": "THE SERVER ROOM LINE PRINTER IS JAMMED",
+        "intro2": "ON PAYROLL FORMS. ONE LIFE, NO PRAYERS.",
+        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD",
+        "jam_clean": "A CLEAN PULL. THE FAN-FOLD COMES OUT IN ITS CREASES.",
+        "jam_tear": "RIP! A STRIP OF PAYROLL IS STILL INSIDE.",
+        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT",
+        "toner_ok": "CLICK. THE RIBBON SEATS.",
+        "toner_bad": "WRONG RIBBON. THE HAMMERS CLATTER IN THE DARK.",
+        "hit": "YOU THUMP THE CABINET. THE CARRIAGE SHUDDERS AND GOES.",
+        "stars3": "PERFECT. EVERY FORM LINES UP AND PAYROLL RUNS ON TIME.",
+        "stars2": "GOOD. A FEW PAYCHECKS ARE ONE LINE OFF.",
+        "stars1": "IT PRINTS. HR WILL NOTICE THE SMUDGE.",
+        "stars0": "YOU GIVE UP. THE LINE PRINTER WINS AGAIN.",
+        "tray_help": "THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, SPACE",
+        "tray_ok": "THE FAN-FOLD RIDES THE SPROCKETS, SQUARE AT LAST.",
+        "tray_bad": "WRONG FORMS. THE SPROCKETS CHEW THE EDGE.",
+        "tray_screen": "FORM FEED ERROR",
+        "tray_slot": "SPROCKETS",
+        "pray_help": "NO PRAYERS HERE. ONE LIFE.",
     },
 }
 # prayers: the laser (and anything without its own list) uses PRAYERS; the others have a faith of their own
@@ -50338,12 +50379,12 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
     stars = 0
     msg = ""
     spot = 0
-    jam_len = 3
+    jam_len = 5 if bool(MODELS[model].get("boss", false)) else 3  # the boss line printer: a longer chain
     combo = 0
     step = 0
     sel = 0
     qi = 0
-    faith = 3
+    faith = 0 if bool(MODELS[model].get("boss", false)) else 3  # the boss has one life bar: no prayers
     blessed = 0
     tray_sel = 0
     fast = false
@@ -58263,6 +58304,7 @@ const DEFAULT_MEDALS := [
     {"id": "clean_sheet", "title": "CLEAN SHEET", "desc": "END A YEAR WITH CLEAN BOOKS", "rules": [["clean_sheets", ">=", 1]]},
     {"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
     {"id": "year_two", "title": "SECOND YEAR", "desc": "FINISH A YEAR 2 RUN", "rules": [["year2_done", ">=", 1]]},
+    {"id": "line_legend", "title": "LINE TAMER", "desc": "TAME THE LINE PRINTER", "rules": [["pr.line", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -58465,7 +58507,7 @@ func value(key: String) -> int:
     match key:
         "printer_models":
             var n := 0
-            for m in PrinterGame.MODELS:
+            for m in PrinterGame.MODEL_ORDER:  # the six ordinary models; the server room boss is counted apart (pr.line)
                 if int(counters.get("pr." + str(m), 0)) > 0:
                     n += 1
             return n
@@ -58575,6 +58617,11 @@ func note_bowl(knocked: int, roll: int) -> void:
 func note_good(game: String, result: int) -> void:
     if result >= 2:
         add("good." + game)
+
+
+# P4: the server room line printer shows up on onsite printer jobs once you have won with three of the ordinary models
+func boss_ready() -> bool:
+    return value("printer_models") >= 3
 
 
 func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:

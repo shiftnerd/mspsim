@@ -70,6 +70,7 @@ const DEFAULT_MEDALS := [
 	{"id": "clean_sheet", "title": "CLEAN SHEET", "desc": "END A YEAR WITH CLEAN BOOKS", "rules": [["clean_sheets", ">=", 1]]},
 	{"id": "bullseye", "title": "BULLSEYE", "desc": "HIT THE BULL AT DARTS", "rules": [["bulls", ">=", 1]]},
 	{"id": "year_two", "title": "SECOND YEAR", "desc": "FINISH A YEAR 2 RUN", "rules": [["year2_done", ">=", 1]]},
+	{"id": "line_legend", "title": "LINE TAMER", "desc": "TAME THE LINE PRINTER", "rules": [["pr.line", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -272,7 +273,7 @@ func value(key: String) -> int:
 	match key:
 		"printer_models":
 			var n := 0
-			for m in PrinterGame.MODELS:
+			for m in PrinterGame.MODEL_ORDER:  # the six ordinary models; the server room boss is counted apart (pr.line)
 				if int(counters.get("pr." + str(m), 0)) > 0:
 					n += 1
 			return n
@@ -382,6 +383,11 @@ func note_bowl(knocked: int, roll: int) -> void:
 func note_good(game: String, result: int) -> void:
 	if result >= 2:
 		add("good." + game)
+
+
+# P4: the server room line printer shows up on onsite printer jobs once you have won with three of the ordinary models
+func boss_ready() -> bool:
+	return value("printer_models") >= 3
 
 
 func note_printer(model: String, stars: int, prayed: bool, streak: int) -> void:
