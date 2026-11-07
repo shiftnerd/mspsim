@@ -108,6 +108,11 @@ func _init() -> void:
 	_check(crew.glyph_of("Sam") == "?" and crew.plan_kinds("Sam") == ["work"], "a stuck tech sits and shows a ? bubble")
 	crew.stuck.clear()
 	_check(world.plan_for("Sam", "owner_alan").size() > 2, "a stuck tech can walk to Alan's office")
+	var dan_trip: Array = world.plan_for("Alan", "to_dan")
+	var at_dan := false
+	for leg in dan_trip:
+		at_dan = at_dan or (str(leg.get("kind", "")) == "to_dan" and str(leg.get("scene", "")) == "main_floor")
+	_check(dan_trip.size() > 2 and at_dan, "an owner can walk out to the service manager's desk")
 
 	# ---- the data
 	_check(crew.names() == ["Maya", "Sam", "Terry"], "the roster")

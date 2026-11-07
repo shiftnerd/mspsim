@@ -748,6 +748,8 @@ func _plan(n: String) -> Array:
 	var kinds := ["work", "work", "coffee", "coffee", "cooler", "bathroom"]
 	if Campaign.active and Campaign.mode == "service" and Crew.has(n):
 		kinds = Crew.plan_kinds(n)  # busy techs stay at the desk, idle ones wander (C5)
+	elif Campaign.active and Campaign.mode == "service" and n in ["Alan", "Garrison"]:
+		kinds = ["work", "work", "work", "coffee", "to_dan"]  # an owner now and then walks out to the service manager's desk
 	elif row(n).get("role", "") == "sales":
 		kinds = ["work", "work", "visit", "visit", "coffee", "bathroom"]
 	elif row(n).get("role", "") == "manager":
@@ -774,6 +776,8 @@ func plan_for(n: String, kind: String) -> Array:
 			legs = _trip(n, "office_two", _owner_leg("office_two"))
 		"floor":
 			legs = _trip(n, "main_floor", _floor_leg())
+		"to_dan":
+			legs = _trip(n, "main_floor", _dan_leg())
 		"bathroom":
 			legs = _bathroom_trip(n)
 		_:
@@ -1079,6 +1083,17 @@ func _owner_leg(scene: String) -> Dictionary:
 		"dur": 18.0,
 		"target_x": x,
 		"routine": PackedStringArray(["walk:%d" % int(x), "wait:2", "talk:6", "wait:5"]),
+	}
+
+
+# an owner walks out to the service manager's desk (Dan, main floor desk 3), stands by it for a word, and goes back
+func _dan_leg() -> Dictionary:
+	var x := float(DATA.SCENES["main_floor"].seats["Seat3"]) - 34.0
+	return {
+		"kind": "to_dan",
+		"dur": 18.0,
+		"target_x": x,
+		"routine": PackedStringArray(["walk:%d" % int(x), "wait:2", "talk:6", "wait:4"]),
 	}
 
 
