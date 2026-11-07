@@ -15218,6 +15218,30 @@ LINE TAMER
 [Career.MEDALS.49.desc]
 TAME THE LINE PRINTER
 
+# Career > MEDALS > 50 > title
+[Career.MEDALS.50.title]
+OPS MANAGER
+
+# Career > MEDALS > 50 > desc
+[Career.MEDALS.50.desc]
+BECOME OPS MANAGER
+
+# Career > MEDALS > 51 > title
+[Career.MEDALS.51.title]
+RIGHT HAND
+
+# Career > MEDALS > 51 > desc
+[Career.MEDALS.51.desc]
+BACK ALAN OR GARRISON
+
+# Career > MEDALS > 52 > title
+[Career.MEDALS.52.title]
+SUMMIT DIRECTOR
+
+# Career > MEDALS > 52 > desc
+[Career.MEDALS.52.desc]
+TAKE SUMMIT'S ROLL-UP
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title
@@ -19832,6 +19856,14 @@ Dan
 [SalesCampaign.BEAT_TEXT.sla_p1.res_dan.text]
 Fine, I dropped the printer job and drove over. %s is fixed. I am putting one hour response in the planning notes with your name next to it.
 
+# SalesCampaign > BEAT_TEXT > qbr > lynk > from
+[SalesCampaign.BEAT_TEXT.qbr.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > qbr > lynk > text
+[SalesCampaign.BEAT_TEXT.qbr.lynk.text]
+Quarterly business review time. Pick your best account and ask how it is really going. They are more honest in person.
+
 # SalesCampaign > BEAT_TEXT > qbr > card > speaker
 [SalesCampaign.BEAT_TEXT.qbr.card.speaker]
 {sales_owner}
@@ -19851,6 +19883,14 @@ RUN IT BY PHONE (1 HOUR)
 # SalesCampaign > BEAT_TEXT > qbr > card > options > 2 > label
 [SalesCampaign.BEAT_TEXT.qbr.card.options.2.label]
 SEND THE REPORT, SKIP THE MEETING
+
+# SalesCampaign > BEAT_TEXT > crypto > lynk > from
+[SalesCampaign.BEAT_TEXT.crypto.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > crypto > lynk > text
+[SalesCampaign.BEAT_TEXT.crypto.lynk.text]
+A crypto exchange wants us as their IT. Their lawyer is already calling. Read everything before you say yes.
 
 # SalesCampaign > BEAT_TEXT > crypto > card > speaker
 [SalesCampaign.BEAT_TEXT.crypto.card.speaker]
@@ -19887,6 +19927,14 @@ Atty. Spence
 # SalesCampaign > BEAT_TEXT > crypto > res_renew > text
 [SalesCampaign.BEAT_TEXT.crypto.res_renew.text]
 You want to talk renewal while my files are locked? ...Actually, yes. Let's do it now, before I change my mind.
+
+# SalesCampaign > BEAT_TEXT > slip > lynk > from
+[SalesCampaign.BEAT_TEXT.slip.lynk.from]
+John
+
+# SalesCampaign > BEAT_TEXT > slip > lynk > text
+[SalesCampaign.BEAT_TEXT.slip.lynk.text]
+One of your quotes just got very quiet. Do not chase, but do not let it die either.
 
 # SalesCampaign > BEAT_TEXT > slip > card > speaker
 [SalesCampaign.BEAT_TEXT.slip.card.speaker]
@@ -19991,6 +20039,14 @@ Only the ones who love us. I like that. We keep the logos and Alan keeps the mar
 # SalesCampaign > BEAT_TEXT > rise > res_none > text
 [SalesCampaign.BEAT_TEXT.rise.res_none.text]
 Holding the line. Good for the renewals, I will take that. Alan will say something about costs, let him.
+
+# SalesCampaign > BEAT_TEXT > hipaa > lynk > from
+[SalesCampaign.BEAT_TEXT.hipaa.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > hipaa > lynk > text
+[SalesCampaign.BEAT_TEXT.hipaa.lynk.text]
+A dental or vet client is nervous about their patient records. Give them a real answer, not a brochure.
 
 # SalesCampaign > BEAT_TEXT > hipaa > card > speaker
 [SalesCampaign.BEAT_TEXT.hipaa.card.speaker]
@@ -20136,6 +20192,14 @@ You put both of us in a room, scoped it first and they signed. Alan gave up thre
 [SalesCampaign.BEAT_TEXT.logo.res_broker_lose.text]
 Two owners and no answer by Friday. They signed a deal with somebody who could say yes. We lost the logo and the afternoon.
 
+# SalesCampaign > BEAT_TEXT > refund > lynk > from
+[SalesCampaign.BEAT_TEXT.refund.lynk.from]
+John
+
+# SalesCampaign > BEAT_TEXT > refund > lynk > text
+[SalesCampaign.BEAT_TEXT.refund.lynk.text]
+Someone wants their money back and they sound sure about it. Hear them out before you open the checkbook.
+
 # SalesCampaign > BEAT_TEXT > refund > card > speaker
 [SalesCampaign.BEAT_TEXT.refund.card.speaker]
 %s
@@ -20187,6 +20251,14 @@ A credit is not a refund. We will think about whether we renew. You have not hea
 # SalesCampaign > BEAT_TEXT > refund > res_refuse > text
 [SalesCampaign.BEAT_TEXT.refund.res_refuse.text]
 The contract says no refunds. It also says one hour response. Interesting. We will be calling our attorney.
+
+# SalesCampaign > BEAT_TEXT > recruit > lynk > from
+[SalesCampaign.BEAT_TEXT.recruit.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > recruit > lynk > text
+[SalesCampaign.BEAT_TEXT.recruit.lynk.text]
+We can hire another body for the team. It costs money now and pays back later. Your call.
 
 # SalesCampaign > BEAT_TEXT > recruit > card > speaker
 [SalesCampaign.BEAT_TEXT.recruit.card.speaker]

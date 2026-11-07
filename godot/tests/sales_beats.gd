@@ -576,6 +576,11 @@ func _init() -> void:
 	var rep: Dictionary = sc.settle()
 	_check(root.get_node("Owner").cash <= sc.CASH_CAP and sc.distributed > 0, "cash above the cap is distributed (cash $%d, taken $%d)" % [root.get_node("Owner").cash, sc.distributed])
 
+	var lynks := 0
+	for b in ["chamber", "paws", "xpwave", "undercut", "shop", "qbr", "crypto", "slip", "rise", "hipaa", "logo", "refund", "recruit", "diligence"]:
+		lynks += 1 if not SB.row(b, "lynk").is_empty() else 0
+	_check(lynks == 14, "the beats that arrive by Lynk each have a Lynk line (%d of 14)" % lynks)
+
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)
 

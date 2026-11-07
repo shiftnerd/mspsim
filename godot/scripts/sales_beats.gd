@@ -436,6 +436,7 @@ static func qbr() -> void:
 	if e.is_empty():
 		set_flag("qbr", "none")
 		return
+	lynk("qbr")
 	var why: String = SalesCampaign.can_qbr_visit(e)
 	ask(
 		"qbr",
@@ -464,6 +465,7 @@ static func crypto() -> void:
 	if e.is_empty():
 		set_flag("crypto", "none")
 		return
+	lynk("crypto")
 	ask("crypto", "card", func(id: String) -> void: _crypto_pick(e, id), [], {}, str(e.get("who", "Atty. Spence")))
 
 
@@ -487,6 +489,7 @@ static func slip() -> void:
 	if l.is_empty():
 		set_flag("slip", "none")
 		return
+	lynk("slip")
 	ask("slip", "card", func(id: String) -> void: _slip_pick(l, id), [str(l.name)], {}, str(l.who))
 
 
@@ -551,6 +554,7 @@ static func hipaa() -> void:
 	if e.is_empty():
 		set_flag("hipaa", "none")
 		return
+	lynk("hipaa")
 	ask("hipaa", "card", func(id: String) -> void: _hipaa_pick(e, id), [str(e.name)], {}, str(e.get("who", "Dr. Patel")))
 
 
@@ -626,6 +630,7 @@ static func refund() -> void:
 	if e.is_empty():
 		set_flag("refund", "none")
 		return
+	lynk("refund")
 	var fee := entry_fee(e)
 	ask(
 		"refund",
@@ -671,6 +676,7 @@ static func _refund_pick(e: Dictionary, id: String) -> void:
 
 # 18. ByteBrothers recruits you
 static func recruit() -> void:
+	lynk("recruit")
 	ask("recruit", "card", func(id: String) -> void: _recruit_pick(id), [400 + 15 * mini(SalesCampaign.wins, 12)])
 
 
