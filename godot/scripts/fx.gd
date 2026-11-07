@@ -647,7 +647,11 @@ func _escape_game() -> Dictionary:
 # the clue a zone shows: Outings.g.clues[index] (the shape of each recipe is in Outings.make_clue)
 func _clue(index: int) -> Dictionary:
 	var game := _escape_game()
-	if game.is_empty() or index >= game.clues.size():
+	if game.is_empty():
+		return {}
+	if game.has("spots"):
+		index = (game.spots as Array).find(index)  # the zone index to the clue that sits there
+	if index < 0 or index >= game.clues.size():
 		return {}
 	return game.clues[index]
 

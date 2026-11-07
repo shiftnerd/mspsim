@@ -1407,7 +1407,11 @@ func _escape_game() -> Dictionary:
 # the clue a zone shows: Outings.g.clues[index] (the shape of each recipe is in Outings.make_clue)
 func _clue(index: int) -> Dictionary:
     var game := _escape_game()
-    if game.is_empty() or index >= game.clues.size():
+    if game.is_empty():
+        return {}
+    if game.has("spots"):
+        index = (game.spots as Array).find(index)  # the zone index to the clue that sits there
+    if index < 0 or index >= game.clues.size():
         return {}
     return game.clues[index]
 
@@ -35303,9 +35307,13 @@ func _escape_room_setup() -> void:
     var n := escape_digits()
     var r := Difficulty.rng("escape")
     var wanted: Dictionary = opts.get("recipes", {})  # toolbox: a fixed recipe per clue zone
+    # E6: which spots hold the clues is drawn each run (the one left over is the red herring); the toolbox keeps the fixed layout
+    var spots := [0, 1, 2, 3]
+    if not opts.has("recipes") and not opts.has("fixed_spots"):
+        Difficulty.shuffle(spots, "escape.spots")
     var clues := []
     for i in n:
-        var zone: String = CLUE_ZONES[i]
+        var zone: String = CLUE_ZONES[int(spots[i])]
         var want := str(wanted.get(zone, ""))
         if want != "" and RECIPES[zone].has(want) and not recipe_fits(want, int(pool[i])):
             for j in range(i + 1, pool.size()):  # bring a digit this recipe can show
@@ -35336,6 +35344,7 @@ func _escape_room_setup() -> void:
         "entry": false,
         "wrong": 0,
         "clues": clues,
+        "spots": spots.slice(0, n),
         "dial": Difficulty.i("escape.dial") > 0,
         "eq": eq,
     }
@@ -35354,9 +35363,14 @@ func interact(kind: String) -> void:
         g.time = float(g.time) - HERRING_COST
         caption("%s (-%d S)" % [str(HERRING_TEXT.get(kind, HERRINGS[0])), int(HERRING_COST)], 4.0)
         return
-    var index := CLUE_KINDS.find(kind)
-    if index >= 0:
-        if index < g.clues.size():
+    var zone_index := CLUE_KINDS.find(kind)
+    var index := zone_index
+    if zone_index >= 0 and g.has("spots"):
+        index = (g.spots as Array).find(zone_index)  # which clue is on this spot (-1: a red herring)
+    elif zone_index >= g.clues.size():
+        index = -1
+    if zone_index >= 0:
+        if index >= 0:
             _found(index)
             caption(
                 (
@@ -35392,7 +35406,7 @@ func escape_nudge() -> String:
     var recipe := ""
     for i in g.clues.size():
         if not g.found.has(i):
-            zone = CLUE_ZONES[i]
+            zone = CLUE_ZONES[int(g.spots[i]) if g.has("spots") else i]
             recipe = str(g.clues[i].recipe)
             break
     var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])

@@ -175,20 +175,27 @@ func _init() -> void:
 	var code: Array = o.g.code
 	_check(code.size() == 3 and code[0] != code[1] and code[1] != code[2], "a hidden code")
 	_check(o.clue_answer(o.g.clues[0]) == code[0], "the chalkboard is the first digit")
-	current_scene.get_node("Fx/Board").play()
-	current_scene.get_node("Fx/WallClock").play()
-	current_scene.get_node("Fx/Painting").play()
-	_check(o.g.found.size() == 3, "all three clues are in the room")
-	current_scene.get_node("Fx/Shelf").play()
+	# E6: which three of the four spots hold the clues is drawn each run; the one left over is a red herring
+	var fx_nodes := ["Board", "WallClock", "Painting", "Shelf"]
+	var herring_zone := [0, 1, 2, 3].filter(func(z: int) -> bool: return not o.g.spots.has(z))[0] as int
+	for k in 4:
+		if k != herring_zone:
+			current_scene.get_node("Fx/" + str(fx_nodes[k])).play()
+	_check(o.g.found.size() == 3, "the three spots with clues give all three clues")
+	current_scene.get_node("Fx/" + str(fx_nodes[herring_zone])).play()
 	_check(
 		o.g.found.size() == 3 and o.HERRINGS.has(o._caption),
-		"on a three digit code the bookshelf is a red herring"
+		"on a three digit code the fourth spot (%s) is a red herring" % str(fx_nodes[herring_zone])
 	)
 	for zone in ["UseWallClock", "UsePainting", "UseBoard", "UseKeypad"]:
 		var shp: Shape2D = current_scene.get_node("Interactables/%s/Shape" % zone).shape
 		_check(shp.size.x >= 36.0, "%s zone is wide enough (%d px)" % [zone, int(shp.size.x)])
 	current_scene.get_node("Fx/Painting").play()
-	_check(o._caption.contains(str(o.g.clues[2].say)), "the plaque says " + o._caption)
+	var plaque_clue: int = o.g.spots.find(2)
+	_check(
+		(o._caption.contains(str(o.g.clues[plaque_clue].say)) if plaque_clue >= 0 else o.HERRINGS.has(o._caption)),
+		"the plaque says " + o._caption
+	)
 	var hints_before: int = o.g.hints
 	var said: String = o.escape_nudge()
 	_check(said.contains("ALAN") and o.g.hints == hints_before - 1, "N asks a friend: " + said)
@@ -227,7 +234,7 @@ func _init() -> void:
 	for node in ["Board", "WallClock", "Painting", "Shelf"]:
 		current_scene.get_node("Fx/" + node).play()
 	_check(o.g.found.size() == 4, "all four clues are in the room")
-	_check(o._caption.contains("DIGIT 4 OF 4"), "the bookshelf is digit four: " + o._caption)
+	_check(o._caption.contains("DIGIT %d OF 4" % (int(o.g.spots.find(3)) + 1)), "the bookshelf shows its digit: " + o._caption)
 	var zones := ["UseWallClock", "UsePainting", "UseBoard", "UseKeypad", "UseShelf"]
 	var clear := true
 	for zone in zones:

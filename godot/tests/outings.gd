@@ -294,14 +294,15 @@ func _init() -> void:
 		o._escape_room_setup()
 		o.g.hints = 3
 		var said: String = o.escape_nudge()
-		var line: String = o.FRIEND_HINTS[friend]["board"]
+		var line: String = o.FRIEND_HINTS[friend][o.CLUE_ZONES[int(o.g.spots[0])]]  # E6: the first clue's spot is drawn
 		_check(
 			said.begins_with(friend.to_upper() + ": ") and said.contains(line),
-			"%s's hint about the chalkboard: %s" % [friend, said]
+			"%s's hint about the first clue: %s" % [friend, said]
 		)
+		var first_zone: String = o.CLUE_ZONES[int(o.g.spots[0])]
 		_check(
-			(friend == "Alan") == said.contains(o.RECIPE_TIPS[o.g.clues[0].recipe]),
-			"only Alan adds the recipe tip (%s)" % friend
+			(str(o.SPECIALTY.get(friend, "")) == first_zone) == said.contains(o.RECIPE_TIPS[o.g.clues[0].recipe]),
+			"a friend adds the recipe tip only when the spot is their specialty (%s)" % friend
 		)
 		o.g.found = [0, 1, 2]
 		o.g.hints = 3
