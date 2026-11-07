@@ -4276,6 +4276,19 @@ func _paint() -> void:
 	UiStyle.footer(_canvas, panel, hint())
 
 
+# R5: who is in the room for a karaoke night or an escape room, in words ("" for the other games, which name their own crew)
+func _party_line(for_game: String) -> String:
+	if for_game != "karaoke" and for_game != "escape":
+		return ""
+	var here := present()
+	if here.is_empty():
+		return "JUST YOU." if for_game == "karaoke" else "NOBODY CAME, SO NO HINTS."
+	var text := ("IN THE ROOM: " if for_game == "karaoke" else "HELPING YOU: ") + join_names(here, true) + "."
+	if for_game == "karaoke" and _duet_partner() != "":
+		text += " %s WILL SING THE RIGHT LANES." % _duet_partner().to_upper()
+	return text
+
+
 func _paint_intro(b: Rect2) -> void:
 	var y := b.position.y + 2.0
 	var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
@@ -4300,6 +4313,11 @@ func _paint_intro(b: Rect2) -> void:
 		else:
 			who_text += ".  %d ORDERS IN %d SECONDS." % [Difficulty.i("grill.tickets"), roundi(Difficulty.f("grill.time"))]
 		for part in _wrap(who_text, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y)
+			y += 7.0
+	var party_text := _party_line(game)  # R5: the karaoke and escape intros name who came along
+	if party_text != "":
+		for part in _wrap(party_text, int(b.size.x / 4.0)):
 			_t(part, b.position.x, y)
 			y += 7.0
 	if game == "darts":

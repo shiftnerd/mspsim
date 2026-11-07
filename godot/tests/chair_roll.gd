@@ -126,9 +126,11 @@ func _init() -> void:
 	alan.global_position.y = seat.global_position.y  # a walking coworker may be off the desk row
 	dan.global_position.y = seat.global_position.y
 	roll._gap = 0.0
+	roll.bumps = 0  # a coworker wandering past during the frames above may already have been bumped
+	roll._who = {}
 	roll.vel = 40.0
 	roll.update(p, 0.001)
-	_check(roll.bumps == 1 and roll.vel < 0.0, "rolling into Alan bumps him and bounces back")
+	_check(roll.bumps == 1 and roll.vel < 0.0, "rolling into Alan bumps him and bounces back (bumps %d, vel %.1f, alan %.1f dan %.1f chair %.1f)" % [roll.bumps, roll.vel, alan.global_position.x, dan.global_position.x, roll.chair.position.x])
 	_check(social.value("Alan") == -1, "Alan: not at my desk (-1, now %d)" % social.value("Alan"))
 	roll.vel = 40.0
 	roll.update(p, 0.001)
