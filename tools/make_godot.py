@@ -33053,6 +33053,7 @@ var league: Dictionary = BowlVariety.new_league()  # bowling: the league season 
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
 var party_set := false
+var guest_client := -1  # owner campaign (R5): the client John brings along tonight (a client index), -1 for nobody
 
 var _canvas: Node2D
 var _prev_scale := 1.0
@@ -33217,6 +33218,10 @@ func draw_party() -> Array:
     party = ranked.map(func(e: Dictionary) -> String: return str(e.n))
     stayed = away
     party_set = true
+    guest_client = -1
+    if Campaign.mode == "owner" and party.has("John") and not Sales.active.is_empty():
+        var rg := Difficulty.rng_for("outings.guest", count)  # its own stream, so the party draw above keeps its numbers
+        guest_client = int(Sales.active[rg.randi() % Sales.active.size()])
     return party
 
 
@@ -33227,6 +33232,9 @@ func coming_text() -> String:
     var text := "Coming: %s." % join_names(_by_cast(party), false)
     if not stayed.is_empty():
         text += " " + str(GUESTS.get(stayed[0], {}).get("line", "%s cannot make it." % stayed[0]))
+    if guest_client >= 0:
+        var cl: Dictionary = Msp.CLIENTS[guest_client]
+        text += " John is bringing %s (%s)." % [str(cl.contact), str(cl.name)]
     return text
 
 
@@ -33763,6 +33771,10 @@ func _finish(result: int) -> void:
         )
         var liking := (2 if result >= 3 else 1) if lunch_on() else 1 + result
         Social.change_all(liking)
+        if guest_client >= 0 and Campaign.mode == "owner":  # R5: John's client had a good evening
+            Sales.adjust(guest_client, 2 + result)
+            lines.append("%s ENJOYED THE EVENING. (CLIENT MOOD +%d)" % [str(Msp.CLIENTS[guest_client].contact).to_upper(), 2 + result])
+            guest_client = -1
         if game == "chair":
             lines.append_array(_chair_lines())
         if game == "cornhole":
