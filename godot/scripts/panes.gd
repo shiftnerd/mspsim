@@ -76,6 +76,14 @@ func open_phone(slot: int) -> Node:
 	return p.phone
 
 
+func close_slot(slot: int) -> void:
+	if not panes.has(slot):
+		return
+	for c in [panes[slot].comp, panes[slot].phone]:
+		if c != null and c.is_open:
+			c.close()
+
+
 func close_all() -> void:
 	for slot in panes:
 		for c in [panes[slot].comp, panes[slot].phone]:

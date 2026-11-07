@@ -726,7 +726,7 @@ func _process(_delta: float) -> void:
             _arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
 
-func use(_body: Node) -> void:
+func use(body: Node) -> void:
     if special == "front":
         Onsite.offer_door()
         return
@@ -736,6 +736,11 @@ func use(_body: Node) -> void:
             Hints.toast("OCCUPIED")
         elif special == "dock":
             Hints.toast("THE DOOR IS SHUT. ROLL IT UP FIRST.", 2.2)
+        return
+    var partner: int = Players.busy_partner(body)
+    if partner >= 0 and not Players.force_door(partner):  # co-op: the partner is at a screen; the door asks twice before it drags them out
+        _arrow.shake()
+        Hints.toast("P%d IS AT THEIR SCREEN. TRY THE DOOR AGAIN TO MAKE THEM LEAVE." % (partner + 1), 2.5)
         return
     if remember != "":
         var kv := remember.split("=")
@@ -65273,6 +65278,14 @@ func open_phone(slot: int) -> Node:
     return p.phone
 
 
+func close_slot(slot: int) -> void:
+    if not panes.has(slot):
+        return
+    for c in [panes[slot].comp, panes[slot].phone]:
+        if c != null and c.is_open:
+            c.close()
+
+
 func close_all() -> void:
     for slot in panes:
         for c in [panes[slot].comp, panes[slot].phone]:
@@ -66994,6 +67007,7 @@ write("scripts/players.gd", '''extends Node
 signal roster_changed
 
 const MAX_SLOTS := 2
+const FORCE_WINDOW := 2.0  # s: a second try at a door this soon closes the partner's screen
 const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
@@ -67003,6 +67017,7 @@ var slots: Array = []
 var ui := [false, false]  # per slot: this player has a takeover (a pane) open; Game.ui_open stays the global freeze
 var _fades := [0.0, 0.0]
 var _host: Node = null
+var _refused_at := -1
 
 
 class Slot:
@@ -67061,6 +67076,25 @@ func takeover_host() -> Node:
         _host = preload("res://scripts/panes.gd").new()
         add_child(_host)
     return _host
+
+
+# co-op: the other player's slot when they have a screen (pane) open and `body` is about to use a door, else -1
+func busy_partner(body: Node) -> int:
+    if not coop or body == null or not "slot" in body:
+        return -1
+    var other: int = 1 - int(body.slot)
+    return other if other >= 0 and other < MAX_SLOTS and bool(ui[other]) and slots[other].joined else -1
+
+
+# the door refused once: a second try within FORCE_WINDOW closes the partner's pane (true), the first only notes the time
+func force_door(partner: int) -> bool:
+    var now := Time.get_ticks_msec()
+    if now - _refused_at <= int(FORCE_WINDOW * 1000.0) and _refused_at >= 0:
+        _refused_at = -1
+        takeover_host().close_slot(partner)
+        return true
+    _refused_at = now
+    return false
 
 
 func set_ui(i: int, on: bool) -> void:

@@ -140,6 +140,27 @@ func _run() -> void:
 	host.close_all()
 	await _wait(30)
 
+	# a door refuses while the partner is at a screen; trying again makes them leave
+	host.open_computer(1, 3)
+	await _wait(10)
+	var door: Node = null
+	for d in current_scene.find_children("*", "Area2D", true, false):
+		if d.has_method("is_locked") and not d.auto and d.special == "" and d.occupancy == "":
+			door = d
+	ok(door != null, "the room has a plain door")
+	ok(players.busy_partner(p1) == 1 and players.busy_partner(p2) == -1, "player 1 sees player 2 as busy, not the other way round")
+	var scene_before := current_scene
+	door.use(p1)
+	await _wait(5)
+	ok(players.ui[1] and current_scene == scene_before, "the first door try is refused and the pane stays")
+	door.use(p1)
+	await create_timer(1.5).timeout
+	ok(current_scene != scene_before, "the second try takes both through and closes the partner's pane")
+	ok(not players.ui[1], "the partner is free")
+	await _wait(10)
+	host.close_all()
+	await _wait(10)
+
 	# the room keeps ticking underneath
 	var before: float = root.get_node("World").clock
 	await _wait(30)

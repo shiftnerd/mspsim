@@ -71,7 +71,7 @@ func _process(_delta: float) -> void:
 			_arrow.modulate = Color(0.62, 0.62, 0.68) if is_locked() else Color.WHITE
 
 
-func use(_body: Node) -> void:
+func use(body: Node) -> void:
 	if special == "front":
 		Onsite.offer_door()
 		return
@@ -81,6 +81,11 @@ func use(_body: Node) -> void:
 			Hints.toast("OCCUPIED")
 		elif special == "dock":
 			Hints.toast("THE DOOR IS SHUT. ROLL IT UP FIRST.", 2.2)
+		return
+	var partner: int = Players.busy_partner(body)
+	if partner >= 0 and not Players.force_door(partner):  # co-op: the partner is at a screen; the door asks twice before it drags them out
+		_arrow.shake()
+		Hints.toast("P%d IS AT THEIR SCREEN. TRY THE DOOR AGAIN TO MAKE THEM LEAVE." % (partner + 1), 2.5)
 		return
 	if remember != "":
 		var kv := remember.split("=")
