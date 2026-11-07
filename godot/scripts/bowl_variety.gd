@@ -177,7 +177,7 @@ static func record(league: Dictionary, scores: Dictionary) -> Dictionary:
 		totals[who] = int(totals.get(who, 0)) + int(scores[who])
 		games[who] = int(games.get(who, 0)) + 1
 	league.night = int(league.night) + 1
-	var out := {"night": int(league.night), "done": false, "winner": "", "adjusted": adjusted}
+	var out := {"night": int(league.night), "done": false, "winner": "", "adjusted": adjusted, "standing": league_standing(league)}  # R11: the table as it stood tonight, even on the last night
 	if int(league.night) >= LEAGUE_NIGHTS:
 		var best := -1
 		for who in totals:
@@ -208,7 +208,9 @@ static func league_standing(league: Dictionary) -> Array:
 				"who": str(who),
 				"total": int(league.totals[who]),
 				"hcp": handicap(league, str(who)),
+				"games": int(league.get("games", {}).get(who, 0)),
+				"score": int(league.totals[who]) + handicap_total(league, str(who)),  # what the winner is picked by
 			}
 		)
-	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.total) + int(a.hcp) * 3 > int(b.total) + int(b.hcp) * 3)
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.score) > int(b.score))
 	return rows

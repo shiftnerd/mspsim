@@ -1715,6 +1715,12 @@ func _league_close() -> void:
 	lines.append(
 		"LEAGUE NIGHT %d OF %d: YOU PLACE %s WITH HANDICAPS." % [int(res.night), BowlVariety.LEAGUE_NIGHTS, places[mini(place - 1, 5)]]
 	)
+	var table := []  # R11: the season table after tonight (pins plus the handicaps, best first)
+	for i in mini(4, (res.standing as Array).size()):
+		var row: Dictionary = res.standing[i]
+		table.append("%d %s %d" % [i + 1, str(row.who).to_upper(), int(row.score)])
+	if not table.is_empty():
+		lines.append("STANDINGS: " + "  ".join(table))
 	if bool(res.done):
 		Career.add("league_seasons")
 		if str(res.winner) == "You":
