@@ -210,6 +210,11 @@ func slot_of(event: InputEvent) -> int:
 
 # A on an unclaimed pad joins slot 1 (co-op only)
 func _input(event: InputEvent) -> void:
+	if coop and slots[1].joined and Controls.pressed(event) and event.is_action(Controls.action_for(1, "phone")):
+		if not ui[1] and not Game.ui_open and not Game.busy:
+			takeover_host().open_phone(1)
+			get_viewport().set_input_as_handled()
+		return
 	if not coop or slots[1].joined:
 		return
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:

@@ -11,10 +11,11 @@ extends CanvasLayer
 # back and navigation. Pad A / B events of slot 1 are passed on as device 0 so ui_accept / ui_cancel match them.
 
 const COMPUTER := preload("res://scripts/computer.gd")
+const PHONE := preload("res://scripts/phone.gd")
 const CURSOR_SPEED := 150.0  # px / s at full stick
 const DEADZONE := 0.25
 
-var panes := {}  # slot -> {sv, view, comp, stick}
+var panes := {}  # slot -> {sv, view, comp, phone (made on first use), stick}
 var _scene: Node = null
 
 
@@ -39,7 +40,17 @@ func pane_rect(slot: int) -> Rect2:
 
 
 func is_open(slot: int) -> bool:
-	return panes.has(slot) and panes[slot].comp.is_open
+	return active(slot) != null
+
+
+# the screen the player has open (computer or phone), or null
+func active(slot: int) -> Node:
+	if not panes.has(slot):
+		return null
+	var p: Dictionary = panes[slot]
+	if p.phone != null and p.phone.is_open:
+		return p.phone
+	return p.comp if p.comp.is_open else null
 
 
 func computer(slot: int) -> Node:
@@ -53,11 +64,23 @@ func open_computer(slot: int, desk: int) -> Node:
 	return p.comp
 
 
+func open_phone(slot: int) -> Node:
+	var p := _pane(slot)
+	if Players.ui[slot] or Game.busy or Game.title_mode:
+		return null
+	if p.phone == null:
+		p.phone = PHONE.new()
+		p.phone.pane_slot = slot
+		p.sv.add_child(p.phone)
+	p.phone.open()
+	return p.phone
+
+
 func close_all() -> void:
 	for slot in panes:
-		var c: Node = panes[slot].comp
-		if c.is_open:
-			c.close()
+		for c in [panes[slot].comp, panes[slot].phone]:
+			if c != null and c.is_open:
+				c.close()
 
 
 func _pane(slot: int) -> Dictionary:
@@ -82,7 +105,7 @@ func _pane(slot: int) -> Dictionary:
 	view.stretch_mode = TextureRect.STRETCH_SCALE
 	view.visible = false
 	add_child(view)
-	panes[slot] = {"sv": sv, "view": view, "comp": comp, "stick": Vector2.ZERO}
+	panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "stick": Vector2.ZERO}
 	_place(slot)
 	return panes[slot]
 
@@ -103,14 +126,14 @@ func _process(delta: float) -> void:
 		close_all()
 	for slot in panes:
 		var p: Dictionary = panes[slot]
-		var comp: Node = p.comp
-		var shown: bool = comp._canvas.visible
+		var comp: Node = active(slot)
+		var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible)
 		p.view.visible = shown
 		p.sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS if shown else SubViewport.UPDATE_DISABLED
 		if not shown:
 			continue
 		_place(slot)
-		if comp.is_open and slot > 0 and p.stick != Vector2.ZERO:
+		if comp != null and slot > 0 and p.stick != Vector2.ZERO:
 			var size := Vector2(p.sv.size)
 			comp._mouse = (comp._mouse + p.stick * CURSOR_SPEED * delta).clamp(Vector2.ZERO, size - Vector2.ONE)
 			comp._canvas.queue_redraw()
@@ -166,6 +189,8 @@ func _pad_cursor(slot: int, event: InputEvent) -> bool:
 		return false
 	if event.button_index == JOY_BUTTON_A:
 		if event.pressed:
-			p.comp.click(p.comp._mouse)
+			var scr: Node = active(slot)
+			if scr != null:
+				scr.click(scr._mouse)
 		return true
 	return false

@@ -116,6 +116,30 @@ func _run() -> void:
 	await _wait(3)
 	ok(comp.app == other_before and comp.is_open, "keys reach slot 0's pane only")
 
+	# the phone is a pane too: each player's own, with its own freeze
+	host.close_all()
+	await _wait(30)
+	ok(not players.ui[0] and not players.ui[1], "both panes closed")
+	var ph: Node = host.open_phone(1)
+	await _wait(10)
+	ok(ph != null and ph.is_open and ph.pane_slot == 1 and players.ui[1] and not players.ui[0], "slot 1's phone opens as a pane and freezes only slot 1")
+	ok(not root.get_node("Phone").is_open and not game.ui_open, "the full-window phone autoload stays closed")
+	var ph0: Node = host.open_phone(0)
+	await _wait(10)
+	ok(ph0 != null and ph0 != ph and ph0.is_open and ph.is_open, "both players hold their own phone at once")
+	ok(host.open_phone(1) == null, "a player with a pane open cannot open another")
+	host.close_all()
+	await _wait(30)
+	ok(not host.is_open(0) and not host.is_open(1), "closing frees both")
+	var pev := InputEventAction.new()
+	pev.action = "p2_phone"
+	pev.pressed = true
+	Input.parse_input_event(pev)
+	await _wait(10)
+	ok(host.is_open(1) and host.active(1).pane_slot == 1, "player 2's phone key opens their phone pane")
+	host.close_all()
+	await _wait(30)
+
 	# the room keeps ticking underneath
 	var before: float = root.get_node("World").clock
 	await _wait(30)

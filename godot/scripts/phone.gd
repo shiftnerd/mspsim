@@ -20,6 +20,7 @@ const GREEN := Color("3cc15a")
 const NOTES := ["Texted the client back.", "On my way in.", "Looking at it from my phone."]
 
 var is_open := false
+var pane_slot := -1  # co-op: this instance is the pane of that player (panes.gd); -1 = the full-window autoload
 var os := ""  # "ios" or "android"; "" = not chosen yet
 var app := "home"
 var mail_sel := -1
@@ -121,7 +122,7 @@ func from_dict(data: Dictionary) -> void:
 
 
 func open() -> void:
-	if is_open or Game.ui_open or Game.busy or Game.title_mode:
+	if is_open or (Game.ui_open and pane_slot < 0) or Game.busy or Game.title_mode:
 		return
 	app = "home" if os != "" else "choose"
 	locked = os != ""
@@ -135,26 +136,39 @@ func open() -> void:
 	_toast_t = 0.0
 	is_open = true
 	Sfx.play("ui_open")
-	Game.ui_open = true
+	_set_ui(true)
 	_canvas.visible = true
 	_mouse = get_viewport().get_mouse_position()
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	if pane_slot < 0:
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	create_tween().tween_method(_set_fade, _fade, 1.0, 0.2)
 
 
 func close() -> void:
 	is_open = false
 	dialog = {}  # closing the phone hangs up
-	Game.ui_open = false
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_set_ui(false)
+	if pane_slot < 0:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var tween := create_tween()
 	tween.tween_method(_set_fade, _fade, 0.0, 0.15)
 	tween.tween_callback(func() -> void: _canvas.visible = is_open)
 
 
+# the global UI flag, or the pane owner's own (co-op, see computer.gd)
+func _set_ui(on: bool) -> void:
+	if pane_slot < 0:
+		Game.ui_open = on
+	else:
+		Players.set_ui(pane_slot, on)
+
+
 func _set_fade(value: float) -> void:
 	_fade = value
-	Game.ui_shift = value
+	if pane_slot < 0:
+		Game.ui_shift = value
+	else:
+		Players.pane_fade(pane_slot, value)
 	_canvas.modulate.a = value
 
 
@@ -286,7 +300,10 @@ func buzz() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_open and Controls.pressed(event):
 		if Controls.matches(event, "phone"):
-			open()
+			if Players.coop:  # co-op: the phone opens as the player's own pane
+				Players.takeover_host().open_phone(0)
+			else:
+				open()
 			get_viewport().set_input_as_handled()
 
 
@@ -670,14 +687,14 @@ func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_hits.clear()
 	_fill(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.7))
-	var top := maxf(12.0, floorf(size.y * Game.UI_STRIP))
+	var top := 0.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * Game.UI_STRIP))
 	_fill(Rect2(0, top - 1, size.x, 1), Color("0d1018"))
 	if app == "choose":
 		_paint_choose(Rect2(0, top, size.x, size.y - top))
 		_cursor()
 		return
 	# the phone gets as much screen as it can (a little wider than the real one) so text fits
-	var ptop := maxf(12.0, floorf(size.y * 0.17))
+	var ptop := 2.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * 0.17))
 	var avail := size.y - ptop - 6.0
 	var pw := minf(avail * 0.68, size.x - 8.0)
 	var ph := minf(avail, pw / 0.68)

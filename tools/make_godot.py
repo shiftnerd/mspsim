@@ -10043,6 +10043,7 @@ const GREEN := Color("3cc15a")
 const NOTES := ["Texted the client back.", "On my way in.", "Looking at it from my phone."]
 
 var is_open := false
+var pane_slot := -1  # co-op: this instance is the pane of that player (panes.gd); -1 = the full-window autoload
 var os := ""  # "ios" or "android"; "" = not chosen yet
 var app := "home"
 var mail_sel := -1
@@ -10144,7 +10145,7 @@ func from_dict(data: Dictionary) -> void:
 
 
 func open() -> void:
-    if is_open or Game.ui_open or Game.busy or Game.title_mode:
+    if is_open or (Game.ui_open and pane_slot < 0) or Game.busy or Game.title_mode:
         return
     app = "home" if os != "" else "choose"
     locked = os != ""
@@ -10158,26 +10159,39 @@ func open() -> void:
     _toast_t = 0.0
     is_open = true
     Sfx.play("ui_open")
-    Game.ui_open = true
+    _set_ui(true)
     _canvas.visible = true
     _mouse = get_viewport().get_mouse_position()
-    Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+    if pane_slot < 0:
+        Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
     create_tween().tween_method(_set_fade, _fade, 1.0, 0.2)
 
 
 func close() -> void:
     is_open = false
     dialog = {}  # closing the phone hangs up
-    Game.ui_open = false
-    Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+    _set_ui(false)
+    if pane_slot < 0:
+        Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
     var tween := create_tween()
     tween.tween_method(_set_fade, _fade, 0.0, 0.15)
     tween.tween_callback(func() -> void: _canvas.visible = is_open)
 
 
+# the global UI flag, or the pane owner's own (co-op, see computer.gd)
+func _set_ui(on: bool) -> void:
+    if pane_slot < 0:
+        Game.ui_open = on
+    else:
+        Players.set_ui(pane_slot, on)
+
+
 func _set_fade(value: float) -> void:
     _fade = value
-    Game.ui_shift = value
+    if pane_slot < 0:
+        Game.ui_shift = value
+    else:
+        Players.pane_fade(pane_slot, value)
     _canvas.modulate.a = value
 
 
@@ -10309,7 +10323,10 @@ func buzz() -> void:
 func _unhandled_input(event: InputEvent) -> void:
     if not is_open and Controls.pressed(event):
         if Controls.matches(event, "phone"):
-            open()
+            if Players.coop:  # co-op: the phone opens as the player's own pane
+                Players.takeover_host().open_phone(0)
+            else:
+                open()
             get_viewport().set_input_as_handled()
 
 
@@ -10693,14 +10710,14 @@ func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
     _fill(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.7))
-    var top := maxf(12.0, floorf(size.y * Game.UI_STRIP))
+    var top := 0.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * Game.UI_STRIP))
     _fill(Rect2(0, top - 1, size.x, 1), Color("0d1018"))
     if app == "choose":
         _paint_choose(Rect2(0, top, size.x, size.y - top))
         _cursor()
         return
     # the phone gets as much screen as it can (a little wider than the real one) so text fits
-    var ptop := maxf(12.0, floorf(size.y * 0.17))
+    var ptop := 2.0 if pane_slot >= 0 else maxf(12.0, floorf(size.y * 0.17))
     var avail := size.y - ptop - 6.0
     var pw := minf(avail * 0.68, size.x - 8.0)
     var ph := minf(avail, pw / 0.68)
@@ -65191,10 +65208,11 @@ write("scripts/panes.gd", '''extends CanvasLayer
 # back and navigation. Pad A / B events of slot 1 are passed on as device 0 so ui_accept / ui_cancel match them.
 
 const COMPUTER := preload("res://scripts/computer.gd")
+const PHONE := preload("res://scripts/phone.gd")
 const CURSOR_SPEED := 150.0  # px / s at full stick
 const DEADZONE := 0.25
 
-var panes := {}  # slot -> {sv, view, comp, stick}
+var panes := {}  # slot -> {sv, view, comp, phone (made on first use), stick}
 var _scene: Node = null
 
 
@@ -65219,7 +65237,17 @@ func pane_rect(slot: int) -> Rect2:
 
 
 func is_open(slot: int) -> bool:
-    return panes.has(slot) and panes[slot].comp.is_open
+    return active(slot) != null
+
+
+# the screen the player has open (computer or phone), or null
+func active(slot: int) -> Node:
+    if not panes.has(slot):
+        return null
+    var p: Dictionary = panes[slot]
+    if p.phone != null and p.phone.is_open:
+        return p.phone
+    return p.comp if p.comp.is_open else null
 
 
 func computer(slot: int) -> Node:
@@ -65233,11 +65261,23 @@ func open_computer(slot: int, desk: int) -> Node:
     return p.comp
 
 
+func open_phone(slot: int) -> Node:
+    var p := _pane(slot)
+    if Players.ui[slot] or Game.busy or Game.title_mode:
+        return null
+    if p.phone == null:
+        p.phone = PHONE.new()
+        p.phone.pane_slot = slot
+        p.sv.add_child(p.phone)
+    p.phone.open()
+    return p.phone
+
+
 func close_all() -> void:
     for slot in panes:
-        var c: Node = panes[slot].comp
-        if c.is_open:
-            c.close()
+        for c in [panes[slot].comp, panes[slot].phone]:
+            if c != null and c.is_open:
+                c.close()
 
 
 func _pane(slot: int) -> Dictionary:
@@ -65262,7 +65302,7 @@ func _pane(slot: int) -> Dictionary:
     view.stretch_mode = TextureRect.STRETCH_SCALE
     view.visible = false
     add_child(view)
-    panes[slot] = {"sv": sv, "view": view, "comp": comp, "stick": Vector2.ZERO}
+    panes[slot] = {"sv": sv, "view": view, "comp": comp, "phone": null, "stick": Vector2.ZERO}
     _place(slot)
     return panes[slot]
 
@@ -65283,14 +65323,14 @@ func _process(delta: float) -> void:
         close_all()
     for slot in panes:
         var p: Dictionary = panes[slot]
-        var comp: Node = p.comp
-        var shown: bool = comp._canvas.visible
+        var comp: Node = active(slot)
+        var shown: bool = p.comp._canvas.visible or (p.phone != null and p.phone._canvas.visible)
         p.view.visible = shown
         p.sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS if shown else SubViewport.UPDATE_DISABLED
         if not shown:
             continue
         _place(slot)
-        if comp.is_open and slot > 0 and p.stick != Vector2.ZERO:
+        if comp != null and slot > 0 and p.stick != Vector2.ZERO:
             var size := Vector2(p.sv.size)
             comp._mouse = (comp._mouse + p.stick * CURSOR_SPEED * delta).clamp(Vector2.ZERO, size - Vector2.ONE)
             comp._canvas.queue_redraw()
@@ -65346,7 +65386,9 @@ func _pad_cursor(slot: int, event: InputEvent) -> bool:
         return false
     if event.button_index == JOY_BUTTON_A:
         if event.pressed:
-            p.comp.click(p.comp._mouse)
+            var scr: Node = active(slot)
+            if scr != null:
+                scr.click(scr._mouse)
         return true
     return false
 ''')
@@ -67145,6 +67187,11 @@ func slot_of(event: InputEvent) -> int:
 
 # A on an unclaimed pad joins slot 1 (co-op only)
 func _input(event: InputEvent) -> void:
+    if coop and slots[1].joined and Controls.pressed(event) and event.is_action(Controls.action_for(1, "phone")):
+        if not ui[1] and not Game.ui_open and not Game.busy:
+            takeover_host().open_phone(1)
+            get_viewport().set_input_as_handled()
+        return
     if not coop or slots[1].joined:
         return
     if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
