@@ -6024,6 +6024,7 @@ var enabled := true  # false = free play / film mode: no random tickets, texts o
 var pace := 1.0  # campaign difficulty: ticket spawn interval multiplier
 var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
 var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
+var handoffs_today := 0  # tickets Michael took off you today (see PhoneCalls HANDOFF_MAX)
 
 var _next_id := 10421
 var _next_mail := 1
@@ -6660,6 +6661,7 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
+    handoffs_today = 0
     # a desktop sitting in its box: John reminds you where the job is, for a few days
     if Campaign.active and project_busy() and int(project.get("since", day)) < day:
         if int(project.get("nagged", 0)) < 3:
@@ -9529,6 +9531,12 @@ const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
 const CHAT_COST := 0.05
 const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
 const HANG := {"id": "hang", "label": "HANG UP"}
+const SENIOR := {"id": "adam", "name": "ADAM", "sub": "SENIOR TECH", "kind": "senior", "num": "5550333"}
+const SENIOR_GAP := 2.0  # game hours before he takes another question
+const TECH := {"id": "michael", "name": "MICHAEL", "sub": "TECH", "kind": "tech", "num": "5550334"}
+const HANDOFF_MAX := 2  # tickets he takes off you in a day
+const HANDOFF_GAP := 3.0  # game hours between two of them
+const HANDOFF_ODDS := 0.85  # the chance he fixes it for good; otherwise it comes back to you with a note
 const CHAT_REPLIES := {
     "talk":
     {
@@ -9597,6 +9605,10 @@ static func contacts() -> Array:
                 "num": "55502%02d" % (10 + i),
             }
         )
+    if Campaign.mode in ["tech", ""]:
+        out.append(SENIOR.duplicate())  # Adam, the senior tech: ask him about a ticket you are stuck on
+        if World.chars.has("Michael"):
+            out.append(TECH.duplicate())  # Michael: hand him an ordinary ticket
     out.append(PIZZA.duplicate())
     return out
 
@@ -9710,6 +9722,20 @@ static func open_call(contact: Dictionary) -> Dictionary:
                 ],
                 "voicemail": false,
             }
+        "senior":
+            if World.clock >= World.DAY_END:
+                return _mail_box("ADAM HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+            return {
+                "say": "ADAM. WHAT HAVE YOU GOT?",
+                "opts": [{"id": "stuck", "label": "STUCK ON A TICKET"}, HANG],
+                "voicemail": false,
+            }
+        "tech":
+            if World.clock >= World.DAY_END:
+                return _mail_box("MICHAEL HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+            if Msp.handoffs_today >= HANDOFF_MAX:
+                return {"say": "I AM BURIED, I HAVE TAKEN TWO OF YOURS ALREADY. ASK ME TOMORROW.", "opts": [HANG], "voicemail": false}
+            return {"say": "MICHAEL. YEAH?", "opts": [{"id": "handoff", "label": "TAKE A TICKET OFF ME"}, HANG], "voicemail": false}
         "pizza":
             return {
                 "say": "TONY'S: PIXEL IT? THE USUAL LARGE PEPPERONI?",
@@ -9752,6 +9778,10 @@ static func act(contact: Dictionary, opt: String) -> Dictionary:
             _cost(CHAT_COST, 0.0)
             _cooldown(contact, CO_GAP)
             return {"say": str(lines[n % lines.size()])}
+        "stuck":
+            return _senior_act(contact)
+        "handoff":
+            return _handoff_act(contact)
         "pizza":
             _cost(CHAT_COST, 0.0)
             _cooldown(contact, PIZZA_GAP)
@@ -9759,6 +9789,53 @@ static func act(contact: Dictionary, opt: String) -> Dictionary:
                 Shift.add_energy(2.0)
             return {"say": "LARGE PEPPERONI. 25 MINUTES. THEY SAY THANKS FOR CALLING."}
     return {"say": ""}
+
+
+# Michael takes the oldest ordinary ticket (no story job, nothing internal): usually he fixes it, now and then it comes back with a note
+static func _handoff_act(contact: Dictionary) -> Dictionary:
+    var pick := {}
+    for t in Msp.open_tickets():
+        if bool(t.get("internal", false)) or str(t.get("special", "")) != "":
+            continue
+        if pick.is_empty() or int(t.id) < int(pick.id):
+            pick = t
+    _cost(CHAT_COST, 0.0)
+    _cooldown(contact, HANDOFF_GAP)
+    if pick.is_empty():
+        return {"say": "THERE IS NOTHING I CAN TAKE. YOUR QUEUE IS CLEAR OR IT IS ALL YOURS."}
+    Msp.handoffs_today += 1
+    var id := int(pick.id)
+    if Difficulty.rng("msp.tickets").randf() < HANDOFF_ODDS:
+        pick["fix_done"] = true
+        Msp.add_note(id, "Handled by Michael.")
+        Msp.close_ticket(id)
+        return {"say": "GOT IT. #%d IS DONE." % id}
+    Msp.add_note(id, "Michael looked at it and it still needs you.")
+    return {"say": "I LOOKED AT #%d. IT NEEDS YOU, SORRY." % id}
+
+
+# Adam takes the oldest open ticket: the clever fix when there is one (it is slower now and saves a call-back), otherwise the careful routine
+static func _senior_act(contact: Dictionary) -> Dictionary:
+    var stuck := {}
+    for t in Msp.open_tickets():
+        if bool(t.get("internal", false)):
+            continue
+        if stuck.is_empty() or int(t.id) < int(stuck.id):
+            stuck = t
+    _cost(CHAT_COST * 3.0, 0.0)
+    _cooldown(contact, SENIOR_GAP)
+    if stuck.is_empty():
+        return {"say": "NOTHING IS STUCK. YOUR QUEUE IS EMPTY. GO GET A COFFEE."}
+    var ep: Dictionary = Msp.endpoint(str(stuck.endpoint))
+    var alts: Array = Msp.alts_for(ep) if not ep.is_empty() else []
+    var say := ""
+    if alts.is_empty():
+        say = "ON #%d: THE CAREFUL WAY. BACK IT UP, FIX IT, TEST IT BEFORE YOU CLOSE." % int(stuck.id)
+    else:
+        say = "ON #%d, TRY: %s. IT TAKES LONGER NOW AND IT STAYS FIXED." % [int(stuck.id), str(Msp.alt_label(ep, str(alts[0]))).to_upper()]
+    Msp.add_note(int(stuck.id), "Adam's advice: " + say.to_lower())
+    Skills.add_xp("servers", 1)
+    return {"say": say}
 
 
 static func _client_act(contact: Dictionary, opt: String, n: int) -> Dictionary:
@@ -17629,7 +17706,10 @@ const ROLES := {
     "Dan": "SERVICE MANAGER",
     "John": "ACCOUNT MANAGER",
     "Maya": "TIER 1",
-    "Morgan": "MANAGER"
+    "Morgan": "MANAGER",
+    "Jen": "OFFICE MANAGER",
+    "Michael": "TECH",
+    "Christy": "CONTROLLER"
 }
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
@@ -36791,7 +36871,7 @@ write("scripts/talk.gd", '''extends Node
 # are the two OWNERS (Alan technical, Garrison sales and culture): they talk about payroll, clients, the van and hiring.
 
 const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: lines about the rival and the Standard
-const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "John": "people", "Maya": "people", "Morgan": "people", "Sam": "servers", "Terry": "security"}
+const SPECIALTY := {"Alan": "servers", "Garrison": "security", "Dan": "networking", "John": "people", "Maya": "people", "Morgan": "people", "Jen": "people", "Michael": "servers", "Christy": "security", "Sam": "servers", "Terry": "security"}
 const LESSON_XP := 6
 const GREETINGS := {
     "Alan": {
@@ -36818,6 +36898,24 @@ const GREETINGS := {
         "friend": "Hi! Want half a granola bar? I have been saving it for someone nice.",
         "neutral": "Hey! Sorry, I have a user on hold. What is up?",
         "cold": "Oh. Hi. I am just finishing something.",
+    },
+    "Jen":
+    {
+        "friend": "Hi! Come here, I have the good candy. Also, two people called for you. Only two.",
+        "neutral": "Front desk. Do you need a ticket opened, or are you just walking past?",
+        "cold": "I have a line on hold. Is it urgent?",
+    },
+    "Michael":
+    {
+        "friend": "Hey. Need a hand? Pull up a chair, I have a spare headset and a lot of opinions.",
+        "neutral": "Hey. I am in the middle of something, but go ahead.",
+        "cold": "Can it wait? I have three of my own.",
+    },
+    "Christy":
+    {
+        "friend": "Hi! We are under budget on cables. Do not tell Alan, he will buy more.",
+        "neutral": "Finance. If it is an expense, there is a form. If it is a question, go ahead.",
+        "cold": "Is this about a receipt? I need the receipt.",
     },
     "Morgan":
     {
@@ -36871,6 +36969,27 @@ const SMALL := {
         "I just got a Galaxy S4 and I have not turned off the camera shutter sound yet. Sorry, Dan.",
         "Alan showed me how to read an event log. I felt like a detective. A tired one.",
         "I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.",
+    ],
+    "Jen":
+    [
+        "Somebody called to ask if we sell printers. I said we fix them. He said that is the same thing. I did not argue.",
+        "I keep a list of who calls on Mondays. It is always the same four people. I know their coffee orders by their voices.",
+        "A man asked for the IT. I said which one. He said the one who does the IT.",
+        "If I put the ticket in right the first time, you never have to call them back. That is my whole job and I am very good at it.",
+    ],
+    "Michael":
+    [
+        "I swapped a power supply this morning and it fixed a printer. I do not know why. I did not ask.",
+        "The best tool in my bag is the little flashlight. Everything breaks in a dark corner.",
+        "Adam says never trust a cable you did not label. I labelled mine. They are still wrong.",
+        "A client asked if the internet was down. It was the Wi-Fi. It was also his phone in airplane mode.",
+    ],
+    "Christy":
+    [
+        "I reconcile the bank account on Fridays. Every Friday it is off by eleven cents. I have never found the eleven cents.",
+        "Alan buys cables. Garrison buys lunches. I buy peace by setting limits.",
+        "We bill in tenths of an hour. A tenth is six minutes. Ask me how long a phone call really takes.",
+        "Somebody expensed a rubber duck. It was approved. I am not allowed to say who.",
     ],
     "Morgan":
     [
@@ -36926,6 +37045,24 @@ const TIPS_GENERIC := {
         "Be kind to the user first. Half of the problem is that they are scared they broke something.",
         "Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.",
         "Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.",
+    ],
+    "Jen":
+    [
+        "Tell me when you are leaving the desk. I can tell the caller you are on another call, which is true, in a way.",
+        "When a client rings twice in an hour, I mark the ticket. It is not rude. It is a signal.",
+        "Give me a minute to type the ticket properly. A bad ticket costs you ten minutes later.",
+    ],
+    "Michael":
+    [
+        "Reboot is a diagnosis, not a fix. Write down what it was before you reboot.",
+        "Test it as the user, not as you. You always have more rights than they do.",
+        "If it is not fixed in twenty minutes, call Adam. Nobody gives out medals for suffering.",
+    ],
+    "Christy":
+    [
+        "Log your hours the same day. If it is not on the ticket, it did not happen, and I cannot bill for it.",
+        "A wire change email always gets a phone call to the number we already have. Always.",
+        "Cost per ticket is my favorite number. Keep it low and I will not bother you.",
     ],
     "Morgan":
     [

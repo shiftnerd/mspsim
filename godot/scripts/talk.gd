@@ -15,6 +15,9 @@ const SPECIALTY := {
 	"John": "people",
 	"Maya": "people",
 	"Morgan": "people",
+	"Jen": "people",
+	"Michael": "servers",
+	"Christy": "security",
 	"Sam": "servers",
 	"Terry": "security"
 }
@@ -49,6 +52,24 @@ const DEFAULT_GREETINGS := {
 		"friend": "Hi! Want half a granola bar? I have been saving it for someone nice.",
 		"neutral": "Hey! Sorry, I have a user on hold. What is up?",
 		"cold": "Oh. Hi. I am just finishing something.",
+	},
+	"Jen":
+	{
+		"friend": "Hi! Come here, I have the good candy. Also, two people called for you. Only two.",
+		"neutral": "Front desk. Do you need a ticket opened, or are you just walking past?",
+		"cold": "I have a line on hold. Is it urgent?",
+	},
+	"Michael":
+	{
+		"friend": "Hey. Need a hand? Pull up a chair, I have a spare headset and a lot of opinions.",
+		"neutral": "Hey. I am in the middle of something, but go ahead.",
+		"cold": "Can it wait? I have three of my own.",
+	},
+	"Christy":
+	{
+		"friend": "Hi! We are under budget on cables. Do not tell Alan, he will buy more.",
+		"neutral": "Finance. If it is an expense, there is a form. If it is a question, go ahead.",
+		"cold": "Is this about a receipt? I need the receipt.",
 	},
 	"Morgan":
 	{
@@ -109,6 +130,27 @@ const DEFAULT_SMALL := {
 		"I just got a Galaxy S4 and I have not turned off the camera shutter sound yet. Sorry, Dan.",
 		"Alan showed me how to read an event log. I felt like a detective. A tired one.",
 		"I am trying to learn PowerShell on my lunch break. It is a lot like learning French, if French had brackets.",
+	],
+	"Jen":
+	[
+		"Somebody called to ask if we sell printers. I said we fix them. He said that is the same thing. I did not argue.",
+		"I keep a list of who calls on Mondays. It is always the same four people. I know their coffee orders by their voices.",
+		"A man asked for the IT. I said which one. He said the one who does the IT.",
+		"If I put the ticket in right the first time, you never have to call them back. That is my whole job and I am very good at it.",
+	],
+	"Michael":
+	[
+		"I swapped a power supply this morning and it fixed a printer. I do not know why. I did not ask.",
+		"The best tool in my bag is the little flashlight. Everything breaks in a dark corner.",
+		"Adam says never trust a cable you did not label. I labelled mine. They are still wrong.",
+		"A client asked if the internet was down. It was the Wi-Fi. It was also his phone in airplane mode.",
+	],
+	"Christy":
+	[
+		"I reconcile the bank account on Fridays. Every Friday it is off by eleven cents. I have never found the eleven cents.",
+		"Alan buys cables. Garrison buys lunches. I buy peace by setting limits.",
+		"We bill in tenths of an hour. A tenth is six minutes. Ask me how long a phone call really takes.",
+		"Somebody expensed a rubber duck. It was approved. I am not allowed to say who.",
 	],
 	"Morgan":
 	[
@@ -172,6 +214,24 @@ const DEFAULT_TIPS_GENERIC := {
 		"Be kind to the user first. Half of the problem is that they are scared they broke something.",
 		"Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared.",
 		"Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you.",
+	],
+	"Jen":
+	[
+		"Tell me when you are leaving the desk. I can tell the caller you are on another call, which is true, in a way.",
+		"When a client rings twice in an hour, I mark the ticket. It is not rude. It is a signal.",
+		"Give me a minute to type the ticket properly. A bad ticket costs you ten minutes later.",
+	],
+	"Michael":
+	[
+		"Reboot is a diagnosis, not a fix. Write down what it was before you reboot.",
+		"Test it as the user, not as you. You always have more rights than they do.",
+		"If it is not fixed in twenty minutes, call Adam. Nobody gives out medals for suffering.",
+	],
+	"Christy":
+	[
+		"Log your hours the same day. If it is not on the ticket, it did not happen, and I cannot bill for it.",
+		"A wire change email always gets a phone call to the number we already have. Always.",
+		"Cost per ticket is my favorite number. Keep it low and I will not bother you.",
 	],
 	"Morgan":
 	[

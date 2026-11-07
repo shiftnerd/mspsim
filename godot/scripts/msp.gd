@@ -521,6 +521,7 @@ var enabled := true  # false = free play / film mode: no random tickets, texts o
 var pace := 1.0  # campaign difficulty: ticket spawn interval multiplier
 var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
 var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
+var handoffs_today := 0  # tickets Michael took off you today (see PhoneCalls HANDOFF_MAX)
 
 var _next_id := 10421
 var _next_mail := 1
@@ -1220,6 +1221,7 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
 	spawned_today = 0
+	handoffs_today = 0
 	# a desktop sitting in its box: John reminds you where the job is, for a few days
 	if Campaign.active and project_busy() and int(project.get("since", day)) < day:
 		if int(project.get("nagged", 0)) < 3:

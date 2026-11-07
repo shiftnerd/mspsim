@@ -1221,6 +1221,45 @@ or the owner (owner campaign, 20 weeks).
 - Tip: Say what you are going to do before you do it. 'I am going to restart your printer, one second.' Nobody gets scared. `[Talk.TIPS_GENERIC.Maya.1]`
 - Tip: Write down every fix in the ticket. The next person at three in the morning will thank you. That might be you. `[Talk.TIPS_GENERIC.Maya.2]`
 
+### Jen
+
+- Greeting (friend): Hi! Come here, I have the good candy. Also, two people called for you. Only two. `[Talk.GREETINGS.Jen.friend]`
+- Greeting (neutral): Front desk. Do you need a ticket opened, or are you just walking past? `[Talk.GREETINGS.Jen.neutral]`
+- Greeting (cold): I have a line on hold. Is it urgent? `[Talk.GREETINGS.Jen.cold]`
+- Small talk: Somebody called to ask if we sell printers. I said we fix them. He said that is the same thing. I did not argue. `[Talk.SMALL.Jen.0]`
+- Small talk: I keep a list of who calls on Mondays. It is always the same four people. I know their coffee orders by their voices. `[Talk.SMALL.Jen.1]`
+- Small talk: A man asked for the IT. I said which one. He said the one who does the IT. `[Talk.SMALL.Jen.2]`
+- Small talk: If I put the ticket in right the first time, you never have to call them back. That is my whole job and I am very good at it. `[Talk.SMALL.Jen.3]`
+- Tip: Tell me when you are leaving the desk. I can tell the caller you are on another call, which is true, in a way. `[Talk.TIPS_GENERIC.Jen.0]`
+- Tip: When a client rings twice in an hour, I mark the ticket. It is not rude. It is a signal. `[Talk.TIPS_GENERIC.Jen.1]`
+- Tip: Give me a minute to type the ticket properly. A bad ticket costs you ten minutes later. `[Talk.TIPS_GENERIC.Jen.2]`
+
+### Michael
+
+- Greeting (friend): Hey. Need a hand? Pull up a chair, I have a spare headset and a lot of opinions. `[Talk.GREETINGS.Michael.friend]`
+- Greeting (neutral): Hey. I am in the middle of something, but go ahead. `[Talk.GREETINGS.Michael.neutral]`
+- Greeting (cold): Can it wait? I have three of my own. `[Talk.GREETINGS.Michael.cold]`
+- Small talk: I swapped a power supply this morning and it fixed a printer. I do not know why. I did not ask. `[Talk.SMALL.Michael.0]`
+- Small talk: The best tool in my bag is the little flashlight. Everything breaks in a dark corner. `[Talk.SMALL.Michael.1]`
+- Small talk: Adam says never trust a cable you did not label. I labelled mine. They are still wrong. `[Talk.SMALL.Michael.2]`
+- Small talk: A client asked if the internet was down. It was the Wi-Fi. It was also his phone in airplane mode. `[Talk.SMALL.Michael.3]`
+- Tip: Reboot is a diagnosis, not a fix. Write down what it was before you reboot. `[Talk.TIPS_GENERIC.Michael.0]`
+- Tip: Test it as the user, not as you. You always have more rights than they do. `[Talk.TIPS_GENERIC.Michael.1]`
+- Tip: If it is not fixed in twenty minutes, call Adam. Nobody gives out medals for suffering. `[Talk.TIPS_GENERIC.Michael.2]`
+
+### Christy
+
+- Greeting (friend): Hi! We are under budget on cables. Do not tell Alan, he will buy more. `[Talk.GREETINGS.Christy.friend]`
+- Greeting (neutral): Finance. If it is an expense, there is a form. If it is a question, go ahead. `[Talk.GREETINGS.Christy.neutral]`
+- Greeting (cold): Is this about a receipt? I need the receipt. `[Talk.GREETINGS.Christy.cold]`
+- Small talk: I reconcile the bank account on Fridays. Every Friday it is off by eleven cents. I have never found the eleven cents. `[Talk.SMALL.Christy.0]`
+- Small talk: Alan buys cables. Garrison buys lunches. I buy peace by setting limits. `[Talk.SMALL.Christy.1]`
+- Small talk: We bill in tenths of an hour. A tenth is six minutes. Ask me how long a phone call really takes. `[Talk.SMALL.Christy.2]`
+- Small talk: Somebody expensed a rubber duck. It was approved. I am not allowed to say who. `[Talk.SMALL.Christy.3]`
+- Tip: Log your hours the same day. If it is not on the ticket, it did not happen, and I cannot bill for it. `[Talk.TIPS_GENERIC.Christy.0]`
+- Tip: A wire change email always gets a phone call to the number we already have. Always. `[Talk.TIPS_GENERIC.Christy.1]`
+- Tip: Cost per ticket is my favorite number. Keep it low and I will not bother you. `[Talk.TIPS_GENERIC.Christy.2]`
+
 ### Morgan
 
 - Greeting (friend): Come in. Move the printouts, they are not load-bearing. What do you need? `[Talk.GREETINGS.Morgan.friend]`

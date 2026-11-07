@@ -17,6 +17,12 @@ const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
 const CHAT_COST := 0.05
 const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
 const HANG := {"id": "hang", "label": "HANG UP"}
+const SENIOR := {"id": "adam", "name": "ADAM", "sub": "SENIOR TECH", "kind": "senior", "num": "5550333"}
+const SENIOR_GAP := 2.0  # game hours before he takes another question
+const TECH := {"id": "michael", "name": "MICHAEL", "sub": "TECH", "kind": "tech", "num": "5550334"}
+const HANDOFF_MAX := 2  # tickets he takes off you in a day
+const HANDOFF_GAP := 3.0  # game hours between two of them
+const HANDOFF_ODDS := 0.85  # the chance he fixes it for good; otherwise it comes back to you with a note
 const CHAT_REPLIES := {
 	"talk":
 	{
@@ -85,6 +91,10 @@ static func contacts() -> Array:
 				"num": "55502%02d" % (10 + i),
 			}
 		)
+	if Campaign.mode in ["tech", ""]:
+		out.append(SENIOR.duplicate())  # Adam, the senior tech: ask him about a ticket you are stuck on
+		if World.chars.has("Michael"):
+			out.append(TECH.duplicate())  # Michael: hand him an ordinary ticket
 	out.append(PIZZA.duplicate())
 	return out
 
@@ -198,6 +208,20 @@ static func open_call(contact: Dictionary) -> Dictionary:
 				],
 				"voicemail": false,
 			}
+		"senior":
+			if World.clock >= World.DAY_END:
+				return _mail_box("ADAM HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+			return {
+				"say": "ADAM. WHAT HAVE YOU GOT?",
+				"opts": [{"id": "stuck", "label": "STUCK ON A TICKET"}, HANG],
+				"voicemail": false,
+			}
+		"tech":
+			if World.clock >= World.DAY_END:
+				return _mail_box("MICHAEL HAS GONE HOME. YOU GET HIS VOICEMAIL.")
+			if Msp.handoffs_today >= HANDOFF_MAX:
+				return {"say": "I AM BURIED, I HAVE TAKEN TWO OF YOURS ALREADY. ASK ME TOMORROW.", "opts": [HANG], "voicemail": false}
+			return {"say": "MICHAEL. YEAH?", "opts": [{"id": "handoff", "label": "TAKE A TICKET OFF ME"}, HANG], "voicemail": false}
 		"pizza":
 			return {
 				"say": "TONY'S: PIXEL IT? THE USUAL LARGE PEPPERONI?",
@@ -240,6 +264,10 @@ static func act(contact: Dictionary, opt: String) -> Dictionary:
 			_cost(CHAT_COST, 0.0)
 			_cooldown(contact, CO_GAP)
 			return {"say": str(lines[n % lines.size()])}
+		"stuck":
+			return _senior_act(contact)
+		"handoff":
+			return _handoff_act(contact)
 		"pizza":
 			_cost(CHAT_COST, 0.0)
 			_cooldown(contact, PIZZA_GAP)
@@ -247,6 +275,53 @@ static func act(contact: Dictionary, opt: String) -> Dictionary:
 				Shift.add_energy(2.0)
 			return {"say": "LARGE PEPPERONI. 25 MINUTES. THEY SAY THANKS FOR CALLING."}
 	return {"say": ""}
+
+
+# Michael takes the oldest ordinary ticket (no story job, nothing internal): usually he fixes it, now and then it comes back with a note
+static func _handoff_act(contact: Dictionary) -> Dictionary:
+	var pick := {}
+	for t in Msp.open_tickets():
+		if bool(t.get("internal", false)) or str(t.get("special", "")) != "":
+			continue
+		if pick.is_empty() or int(t.id) < int(pick.id):
+			pick = t
+	_cost(CHAT_COST, 0.0)
+	_cooldown(contact, HANDOFF_GAP)
+	if pick.is_empty():
+		return {"say": "THERE IS NOTHING I CAN TAKE. YOUR QUEUE IS CLEAR OR IT IS ALL YOURS."}
+	Msp.handoffs_today += 1
+	var id := int(pick.id)
+	if Difficulty.rng("msp.tickets").randf() < HANDOFF_ODDS:
+		pick["fix_done"] = true
+		Msp.add_note(id, "Handled by Michael.")
+		Msp.close_ticket(id)
+		return {"say": "GOT IT. #%d IS DONE." % id}
+	Msp.add_note(id, "Michael looked at it and it still needs you.")
+	return {"say": "I LOOKED AT #%d. IT NEEDS YOU, SORRY." % id}
+
+
+# Adam takes the oldest open ticket: the clever fix when there is one (it is slower now and saves a call-back), otherwise the careful routine
+static func _senior_act(contact: Dictionary) -> Dictionary:
+	var stuck := {}
+	for t in Msp.open_tickets():
+		if bool(t.get("internal", false)):
+			continue
+		if stuck.is_empty() or int(t.id) < int(stuck.id):
+			stuck = t
+	_cost(CHAT_COST * 3.0, 0.0)
+	_cooldown(contact, SENIOR_GAP)
+	if stuck.is_empty():
+		return {"say": "NOTHING IS STUCK. YOUR QUEUE IS EMPTY. GO GET A COFFEE."}
+	var ep: Dictionary = Msp.endpoint(str(stuck.endpoint))
+	var alts: Array = Msp.alts_for(ep) if not ep.is_empty() else []
+	var say := ""
+	if alts.is_empty():
+		say = "ON #%d: THE CAREFUL WAY. BACK IT UP, FIX IT, TEST IT BEFORE YOU CLOSE." % int(stuck.id)
+	else:
+		say = "ON #%d, TRY: %s. IT TAKES LONGER NOW AND IT STAYS FIXED." % [int(stuck.id), str(Msp.alt_label(ep, str(alts[0]))).to_upper()]
+	Msp.add_note(int(stuck.id), "Adam's advice: " + say.to_lower())
+	Skills.add_xp("servers", 1)
+	return {"say": say}
 
 
 static func _client_act(contact: Dictionary, opt: String, n: int) -> Dictionary:

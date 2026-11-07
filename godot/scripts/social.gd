@@ -19,7 +19,10 @@ const ROLES := {
 	"Dan": "SERVICE MANAGER",
 	"John": "ACCOUNT MANAGER",
 	"Maya": "TIER 1",
-	"Morgan": "MANAGER"
+	"Morgan": "MANAGER",
+	"Jen": "OFFICE MANAGER",
+	"Michael": "TECH",
+	"Christy": "CONTROLLER"
 }
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
