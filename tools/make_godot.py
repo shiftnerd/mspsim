@@ -6069,6 +6069,8 @@ func _ready() -> void:
 
 
 func reset() -> void:
+    named_day = {}
+    thanked_day = {}
     calls.clear()
     tickets.clear()
     emails.clear()
@@ -6301,6 +6303,62 @@ func open_cap() -> int:
     return 6
 
 
+# ---- clients who know your name (R36, tech campaign) ------------------------------------------------------------
+# a client who is happy with you (mood 75+) now and then asks for you by name: the ticket is marked, closing it in time earns a
+# mood bonus, a point of reputation and a medal counter, and letting its SLA run out costs more mood than usual. A client who is
+# very happy (80+) sometimes sends a thank-you text to your cell after a clean close. Each client does either at most every few days.
+const BYNAME_MOOD := 75
+const BYNAME_CHANCE := 0.15
+const THANKS_MOOD := 80
+const THANKS_CHANCE := 0.25
+const BYNAME_GAP_DAYS := 3
+const THANKS_GAP_DAYS := 4
+const THANKS_TEXTS := [
+    "Thanks again for sorting that out. Everyone here says you are the one to call.",
+    "Quick note: that fix is still holding. You are a lifesaver.",
+    "My staff asked who fixed it so fast. I said your name. Hope that is okay.",
+]
+var named_day := {}  # client -> the day of the last by-name request
+var thanked_day := {}  # client -> the day of the last thank-you text
+
+
+func _maybe_by_name(t: Dictionary) -> void:
+    if not Campaign.active or Campaign.mode != "tech" or bool(t.get("internal", false)):
+        return
+    var client := int(t.client)
+    if Sales.mood(client) < BYNAME_MOOD or int(named_day.get(client, -99)) > Campaign.day - BYNAME_GAP_DAYS:
+        return
+    if Difficulty.rng("msp.byname").randf() >= BYNAME_CHANCE:
+        return
+    named_day[client] = Campaign.day
+    t["asked_for"] = true
+    t.notes.append("%s asked for you by name." % str(CLIENTS[client].contact))
+    Hints.toast("%s ASKED FOR YOU BY NAME." % str(CLIENTS[client].contact).to_upper(), 3.5)
+
+
+# called when a client ticket closes: the by-name result, and now and then a thank-you text
+func _note_by_name_close(t: Dictionary) -> void:
+    if not Campaign.active or Campaign.mode != "tech" or bool(t.get("internal", false)):
+        return
+    var client := int(t.client)
+    if bool(t.get("asked_for", false)):
+        if bool(t.breached):
+            Sales.adjust(client, -4)
+            t.notes.append("They asked for you and you were late.")
+        else:
+            Sales.adjust(client, 3)
+            Campaign.adjust_rep(1)
+            Career.add("asked_for")
+            t.notes.append("They asked for you and you delivered.")
+        return
+    if bool(t.breached) or Sales.mood(client) < THANKS_MOOD or int(thanked_day.get(client, -99)) > Campaign.day - THANKS_GAP_DAYS:
+        return
+    var r := Difficulty.rng("msp.thanks")
+    if r.randf() < THANKS_CHANCE:
+        thanked_day[client] = Campaign.day
+        send_text(str(CLIENTS[client].contact), str(THANKS_TEXTS[r.randi() % THANKS_TEXTS.size()]))
+
+
 func _random_ticket(source: String) -> Dictionary:
     if spawned_today >= day_cap():
         return {}
@@ -6313,6 +6371,7 @@ func _random_ticket(source: String) -> Dictionary:
             t = create_problem(Sales.pick_client(), pick, source)
         if not t.is_empty():
             spawned_today += 1
+            _maybe_by_name(t)
             return t
     return {}
 
@@ -6413,6 +6472,7 @@ func close_ticket(id: int) -> String:
     Social.note_ticket_closed(t)
     if not t.internal:
         Sales.adjust(int(t.client), 3 if t.breached else 5)
+        _note_by_name_close(t)
     changed.emit()
     Sfx.play("ticket_closed")
     return "CLOSED +%d" % points
