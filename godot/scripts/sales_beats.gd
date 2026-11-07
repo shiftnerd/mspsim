@@ -12,6 +12,7 @@ const RISE_PCT := 0.08  # the price-rise letter of week 13
 const RISE_FROM := 15  # renewals from this week on are covered by the 60 day notice
 const NPC_SCENE := preload("res://scenes/npc.tscn")
 const DILIGENCE_DAY := 19
+const RECRUIT_DAY := 18
 const WEEKS := {
 	2: "chamber",
 	3: "paws",
@@ -705,19 +706,28 @@ static func _newhire_pick(id: String) -> void:
 			say("newhire", "res_pass")
 
 
-# the Summit auditor walks the main floor on the diligence day: a stop by John's desk, then by Dan's
+# the Summit auditor walks the main floor on the diligence day, the ByteBrothers recruiter on the day of his offer: a stop by
+# Dan's desk, then by John's
 static func auditor(stage: Node) -> void:
+	_visitor(stage, DILIGENCE_DAY, "office_pell", "visitor:auditor")
+
+
+static func recruiter(stage: Node) -> void:
+	_visitor(stage, RECRUIT_DAY, "office_trent", "visitor:recruiter")
+
+
+static func _visitor(stage: Node, day: int, character: String, role: String) -> void:
 	var scene := stage.scene_file_path.get_file().get_basename()
-	if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == DILIGENCE_DAY):
+	if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == day):
 		return
 	var info: Dictionary = World.DATA.SCENES[scene]
 	var x0 := float(info.x0)
 	var stop_a := x0 + float(info.seats["Seat3"]) - 34.0
 	var stop_b := x0 + float(info.seats["Seat1"]) + 30.0
 	var npc: Node = NPC_SCENE.instantiate()
-	npc.character = "office_pell"
+	npc.character = character
 	npc.facing = "right"
-	npc.role = "visitor:auditor"
+	npc.role = role
 	npc.routine = PackedStringArray(["wait:3", "walk:%d" % int(stop_a), "wait:2", "talk:6", "walk:%d" % int(stop_b), "wait:3", "talk:5"])
 	npc.position = Vector2(x0 + 24.0, 118.0)
 	var zone := RectangleShape2D.new()

@@ -1,5 +1,6 @@
 extends SceneTree
-# C7: the Summit auditor (Ms. Pell) walks the main floor on the diligence day of the sales campaign, and only then.
+# C7 / C3: the Summit auditor (Ms. Pell) walks the main floor on the diligence day of the sales campaign, and the ByteBrothers
+# recruiter (Trent Dagmar) on the day of his offer; neither shows up anywhere else.
 
 var failures := 0
 
@@ -20,10 +21,10 @@ func _stage() -> Node:
 	return st
 
 
-func _count(st: Node) -> int:
+func _count(st: Node, role := "visitor:auditor") -> int:
 	var n := 0
 	for a in st.get_node("Actors").get_children():
-		n += 1 if str(a.get("role")) == "visitor:auditor" else 0
+		n += 1 if str(a.get("role")) == role else 0
 	return n
 
 
@@ -43,6 +44,11 @@ func _init() -> void:
 	st = _stage()
 	sb.auditor(st)
 	_check(_count(st) == 1, "the auditor is on the main floor on the diligence day")
+	st.queue_free()
+	c.day = 18
+	st = _stage()
+	sb.recruiter(st)
+	_check(_count(st, "visitor:recruiter") == 1 and _count(st) == 0, "the ByteBrothers recruiter walks in on day 18, not the auditor")
 	st.queue_free()
 	c.new_game("tech")
 	c.day = 19

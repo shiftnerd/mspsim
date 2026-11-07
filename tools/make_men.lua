@@ -70,6 +70,12 @@ local CHARS = {
     shirt = {"#4A86D8", "#3566B0"}, pants = {"#24252C", "#1B1C22", "#131419"}, shoes = {"#1E1E24", "#14141A"},
     lips = "#5A2E22", buttons = "#CFE0F6", patch = true,
   },
+  office_trent = {   -- Trent Dagmar of ByteBrothers, the rival recruiter: slate button-down, slicked dark hair, grey trousers, sharp black shoes
+    donor = "office_dan",
+    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#241C18", "#3A2E28", "#1A1410"},
+    shirt = {"#3E4A5E", "#2C3646"}, pants = {"#4A4E58", "#383C46", "#2A2D36"}, shoes = {"#1E1E24", "#14141A"},
+    lips = "#8A4A2E", buttons = "#C8D0DC",
+  },
 }
 
 local function put(im, x, y, c)
