@@ -71,6 +71,14 @@ func _run() -> void:
 	ok(controls.key_of("move_left") == KEY_A, "the last row puts every key back")
 	pm._remap_key(_key(KEY_ESCAPE))
 	ok(pm._page == 0, "Escape goes back to the key list")
+	# the key list follows the remap
+	ok(controls.help_value("USE, SIT, DOORS", "E") == "E", "the key list prints the default while nothing is remapped")
+	controls.rebind("interact", KEY_G)
+	ok(controls.help_value("USE, SIT, DOORS", "E") == "G", "and the new key once it is")
+	controls.rebind("move_left", KEY_J)
+	ok(controls.help_value("MOVE", "A D OR ARROWS").begins_with("J "), "MOVE lists the new keys")
+	ok(controls.help_value("PAUSE, HELP", "ESC OR PAUSE") == "ESC OR PAUSE", "a row that is not remappable is untouched")
+	controls.reset_binds()
 	# the pad buttons
 	var pad_default: int = controls.button_of("interact")
 	ok(pad_default == JOY_BUTTON_X and controls.button_of("wave") == JOY_BUTTON_Y, "the default buttons (X interacts, Y waves)")

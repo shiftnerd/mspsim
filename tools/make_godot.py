@@ -67884,6 +67884,9 @@ const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave
 # the pad actions a player can put on another button (A / B / X / Y / shoulders and so on); the movement stays on the stick and D-pad
 const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "pick_next"]
 
+# the key list's rows that follow a remap (row label -> action)
+const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career"}
+
 const HELP := [
     [
         "MOVING AND USING",
@@ -68017,6 +68020,21 @@ func rebind(action: String, code: int) -> bool:
             _apply_key(other, old)
     _apply_key(action, code)
     return true
+
+
+# the name of a physical key
+func key_name(code: int) -> String:
+    return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(code)).to_upper()
+
+
+# what the key list prints for a row: the default text, or the key the action was remapped to
+func help_value(label: String, text: String) -> String:
+    if label == "MOVE" and (_overrides.has("move_left") or _overrides.has("move_right")):
+        return "%s %s" % [key_name(key_of("move_left")), key_name(key_of("move_right"))]
+    var action := str(HELP_ACTIONS.get(label, ""))
+    if action != "" and _overrides.has(action):
+        return key_name(key_of(action))
+    return text
 
 
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
@@ -68706,7 +68724,7 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
         else:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
-            var key_name := "..." if (_capture and i == _rsel) else OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(Controls.key_of(action))).to_upper()
+            var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
                 key_name += "  " + Controls.button_name(Controls.button_of(action))
             UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
@@ -68823,7 +68841,7 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
     var y := body.position.y + 2.0
     for row in page[1]:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-        UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
+        UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
         y += 9.0
     UiStyle.footer(c, r, "ARROWS = PAGE  R = REMAP  ESC = BACK")
 ''')

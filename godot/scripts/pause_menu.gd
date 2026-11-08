@@ -211,7 +211,7 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 		else:
 			var action := str(Controls.REMAPPABLE[i])
 			UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
-			var key_name := "..." if (_capture and i == _rsel) else OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(Controls.key_of(action))).to_upper()
+			var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
 			if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
 				key_name += "  " + Controls.button_name(Controls.button_of(action))
 			UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
@@ -328,6 +328,6 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
 	var y := body.position.y + 2.0
 	for row in page[1]:
 		UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-		UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
+		UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
 		y += 9.0
 	UiStyle.footer(c, r, "ARROWS = PAGE  R = REMAP  ESC = BACK")

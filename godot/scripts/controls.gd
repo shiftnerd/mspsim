@@ -59,6 +59,9 @@ const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave
 # the pad actions a player can put on another button (A / B / X / Y / shoulders and so on); the movement stays on the stick and D-pad
 const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "pick_next"]
 
+# the key list's rows that follow a remap (row label -> action)
+const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career"}
+
 const HELP := [
 	[
 		"MOVING AND USING",
@@ -192,6 +195,21 @@ func rebind(action: String, code: int) -> bool:
 			_apply_key(other, old)
 	_apply_key(action, code)
 	return true
+
+
+# the name of a physical key
+func key_name(code: int) -> String:
+	return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(code)).to_upper()
+
+
+# what the key list prints for a row: the default text, or the key the action was remapped to
+func help_value(label: String, text: String) -> String:
+	if label == "MOVE" and (_overrides.has("move_left") or _overrides.has("move_right")):
+		return "%s %s" % [key_name(key_of("move_left")), key_name(key_of("move_right"))]
+	var action := str(HELP_ACTIONS.get(label, ""))
+	if action != "" and _overrides.has(action):
+		return key_name(key_of(action))
+	return text
 
 
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
