@@ -132,6 +132,10 @@ const TECH_IDLE := {"careful": 0.0, "proper": 0.0, "shortcut": 0.0, "lazy": 55.0
 
 var _tj: Dictionary = {}
 var _tbusy := 0.0
+var coop := false  # co-op (R34 phase 5): a second bot works the same queue as player 2 (own skills, ticket pace x1.5)
+var _bot_state := [{"busy": 0.0, "tj": {}}, {"busy": 0.0, "tj": {}}]
+var _bot_k := 0
+var _other_tid := -1
 var _att: Dictionary = {}
 var tech_stats := {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0}
 
@@ -244,13 +248,14 @@ func _tech_tick(dt: float) -> void:
 			msp.close_ticket(int(t.id))
 		_tbusy = float(TECH_IDLE[strategy]) * rng.randf_range(0.5, 1.5)
 		return
-	_tech_story()
+	if _bot_k == 0:
+		_tech_story()
 	if _tbusy > 0.0:
 		return
 	var open: Array = msp.open_tickets()
 	var pool := []
 	for t in open:
-		if str(t.fix) in ["project", "network"] or t.status == "Waiting" or int(_att.get(int(t.id), 0)) >= 3:
+		if str(t.fix) in ["project", "network"] or t.status == "Waiting" or int(_att.get(int(t.id), 0)) >= 3 or int(t.id) == _other_tid:
 			continue
 		pool.append(t)
 	if pool.is_empty():
@@ -275,6 +280,34 @@ func _tech_tick(dt: float) -> void:
 	_tbusy = float(TECH_OVERHEAD[strategy]) * rng.randf_range(0.7, 1.3)
 
 
+# one bot's turn: its own busy timer and job, and (bot 1) its own skills through Players.run_as
+func _tick_bot(k: int, dt: float) -> void:
+	var players := root.get_node("Players")
+	var st: Dictionary = _bot_state[k]
+	var other: Dictionary = _bot_state[1 - k]
+	_bot_k = k
+	_tbusy = float(st.busy)
+	_tj = st.tj
+	_other_tid = int(other.tj.get("tid", -1)) if not other.tj.is_empty() else -1
+	if k == 0:
+		_tech_tick(dt)
+	else:
+		players.run_as(1, _tech_tick.bind(dt))
+	st.busy = _tbusy
+	st.tj = _tj
+	_bot_k = 0
+
+
+func _partner_morning() -> void:
+	var sk := root.get_node("Skills")
+	var st: Dictionary = _bot_state[1]
+	st.tj = {}
+	st.busy = 0.0
+	if strategy in ["careful", "proper", "shortcut"] and sk.can_study() and sk.ps_level < sk.LESSONS.size():
+		sk.pass_lesson(sk.ps_level)
+		st.busy = 45.0
+
+
 func tech_run(seed_n: int) -> Dictionary:
 	var c := root.get_node("Campaign")
 	var cards := root.get_node("Cards")
@@ -284,6 +317,11 @@ func tech_run(seed_n: int) -> Dictionary:
 	var review := root.get_node("Review")
 	var game := root.get_node("Game")
 	c.new_game("tech")
+	var players := root.get_node("Players")
+	_bot_state = [{"busy": 0.0, "tj": {}}, {"busy": 0.0, "tj": {}}]
+	if coop:
+		players.enable_coop(true)
+		players.join(1, 1)
 	_last_day = 0
 	_att = {}
 	tech_stats = {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0}
@@ -330,14 +368,26 @@ func tech_run(seed_n: int) -> Dictionary:
 		if c.day != _last_day:
 			_last_day = c.day
 			_tech_morning()
+			_bot_state[0] = {"busy": _tbusy, "tj": {}}
+			if coop:
+				players.run_as(1, _partner_morning)
 			continue
 		world.time_scale = ts
-		_tech_tick(ts / 60.0)
+		_tick_bot(0, ts / 60.0)
+		if coop:
+			_tick_bot(1, ts / 60.0)
 	if row.is_empty():
 		row = {"rep": c.rep, "score": msp.score, "fired": false, "ending": "TIMEOUT", "closed": msp.closed_ok, "missed": msp.breached, "reopened": msp.reopened}
 	row["cls"] = "bad" if (fired or c.rep < 45) else ("good" if str(row.ending) == "lead" else "mid")
 	row["info"] = "closed %d missed %d reopen %d scars %d ps %d quick %d proper %d clever %d returns %d curve %s" % [int(row.closed), int(row.missed), int(row.reopened), c.scars, root.get_node("Skills").ps_level, tech_stats.quick, tech_stats.proper, tech_stats.clever, tech_stats.returns, str(days)]
 	row["tech_stats"] = tech_stats.duplicate()
+	if coop:
+		var xp_total := 0
+		for k in players.slot(1).skills.get("xp", {}):
+			xp_total += int(players.slot(1).skills.xp[k])
+		row["info"] += " | p2 xp %d ps %d" % [xp_total, int(players.slot(1).skills.get("ps_level", 0))]
+		players.leave(1)
+		players.enable_coop(false)
 	return row
 
 

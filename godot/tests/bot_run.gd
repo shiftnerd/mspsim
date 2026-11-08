@@ -1,7 +1,7 @@
 extends SceneTree
 # Dev tool (Q6, not a test): the slow balance harness. One cell (or a few) per process:
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/bot_run.gd -- tech normal careful seeds=6 [first=1] [ts=20]
-# Words: mode (tech owner sales service), tier (easy normal hard), strategy (careful lazy chaotic shortcut); a word may be
+# Words: mode (tech owner sales service; "coop" runs the tech bot as a pair), tier (easy normal hard), strategy (careful lazy chaotic shortcut); a word may be
 # a comma list ("easy,normal,hard"). Prints one BOT line per run and a CELL summary per mode x tier x strategy.
 # Merge several processes with tools/ (see docs/balance-notes.md) or by eye.
 
@@ -13,12 +13,15 @@ func _init() -> void:
 	var seeds := 6
 	var first := 1
 	var ts := 20.0
+	var coop := false
 	for a in OS.get_cmdline_user_args():
 		var s := str(a)
 		if s.begins_with("seeds="):
 			seeds = int(s.substr(6))
 		elif s.begins_with("first="):
 			first = int(s.substr(6))
+		elif s == "coop":
+			coop = true
 		elif s.begins_with("ts="):
 			ts = float(s.substr(3))
 		else:
@@ -33,6 +36,7 @@ func _init() -> void:
 	await process_frame
 	var bots: RefCounted = load("res://tests/bot_lib.gd").new(self)
 	bots.ts = ts
+	bots.coop = coop
 	for mode in modes:
 		for tier in tiers:
 			for strat in strats:
