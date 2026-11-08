@@ -97,6 +97,7 @@ const HELP := [
 ]
 
 
+var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
 var _stick := {}
 var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
@@ -149,6 +150,18 @@ func prefix(slot: int) -> String:
 # the action name that slot `slot` reads: action_for(1, "jump") = "p2_jump"
 func action_for(slot: int, action: String) -> String:
 	return prefix(slot) + action
+
+
+# the joypad a slot's rumble goes to: slot 0 is pad 0, slot 1 the pad it joined with; -1 when there is none connected
+func rumble_device(slot: int) -> int:
+	var device := 0 if slot <= 0 else int(Players.slot(slot).device)
+	return device if device >= 0 and Input.get_connected_joypads().has(device) else -1
+
+
+func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
+	var device := rumble_device(slot)
+	if rumble_on and device >= 0:
+		Input.start_joy_vibration(device, clampf(strength * 0.6, 0.0, 1.0), clampf(strength, 0.0, 1.0), secs)
 
 
 # register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on

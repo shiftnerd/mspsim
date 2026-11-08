@@ -332,3 +332,7 @@ Tried: `Players.COOP_MODES` with `"owner"`, player 2 starting as the other owner
 **Phone and card pane audit (done, Nov 2026):** `tests/pane_shots.gd` (renderer needed, skipped by the runner) opens the phone and a long personal card in player 2's pane in the wide (184x103) and h (160x144) formats and runs the layout audit: 8 / 10 / 14 / 10 text draws logged, no OFFSCREEN or OVERLAP lines. This closes the "pane layout of the phone and cards" item of phase 3.
 
 **Pad navigation without the stick (done, Nov 2026):** in a Computer pane the shoulder buttons step the cursor through the screen's clickable regions (`Panes.snap_hit`, sorted top to bottom then left to right) and A clicks. The stick cursor stays for free pointing. Cards and the phone have no region list yet, so the shoulders pass through there. `tests/coop_pad_nav.gd`.
+
+## 16. Phase 8 status (polish; Nov 2026, first piece)
+- **Rumble:** `Controls.rumble(slot, strength, secs)` vibrates the slot's own pad (`rumble_device`: pad 0 for slot 0, the joined pad for slot 1; nothing when none is connected; `Controls.rumble_on` switches it off). Wired to a dart hitting a player, a bowling strike and a chair crash. The vibration itself is untested without a real pad. `tests/rumble.gd`.
+- **Not done:** a settings switch for rumble; key and button remap (the pause menu's Controls page is a read-only help list, so remap is a new screen); controller-only title and menus; frame-time and soak tests with two viewports; a Switch dry run.

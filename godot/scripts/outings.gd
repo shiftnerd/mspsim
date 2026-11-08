@@ -1505,6 +1505,7 @@ func _bowl_resolve() -> void:
 		_bowl_add(3)
 		g.msg = "STRIKE!"
 		Sfx.play("bowl_strike")
+		Controls.rumble(_pilot, 0.7, 0.3)
 	elif int(g.pins) == 0:
 		g.msg = "SPARE!"
 	elif knocked == 0:
@@ -3339,6 +3340,8 @@ func _chair_cues(race: RefCounted) -> void:
 		match str(e):
 			"crash":
 				Sfx.play("clunk")
+				for k in 2:
+					Controls.rumble(k, 0.9, 0.3)
 			"cone", "oil", "false":
 				Sfx.play("squeak")
 			"go", "finish":

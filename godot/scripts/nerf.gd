@@ -401,6 +401,7 @@ func _hit_player(p: Node, shooter: String) -> void:
 	war_taken += 1 if war_t > 0.0 else 0
 	if p.state != "sitting" and p.state != "death":
 		p.start_emote("hurt", 0.45)
+	Controls.rumble(int(p.slot), 0.8, 0.25)
 	p._ensure_bubble()
 	p._bubble.glyph = "!"
 	p._bubble.visible = true
