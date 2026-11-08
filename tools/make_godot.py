@@ -33955,6 +33955,8 @@ func _event_key(event: InputEvent) -> int:
 
 
 func _event_key_p2(event: InputEvent) -> int:
+    if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
+        return KEY_X  # the second pilot's push
     var dir := Controls.nav(event, false)
     if dir != "":
         return PAD_ARROWS[dir]
@@ -36107,11 +36109,14 @@ func _chair_cues(race: RefCounted) -> void:
 
 func _chair_press(key: int) -> void:
     var race: RefCounted = g.race
+    var duo: bool = Players.coop and Players.slots[1].joined  # co-op: one chair, two pilots: player 1 pushes Z, player 2 pushes X
     match key:
         KEY_Z:
-            race.push(0)
+            if not duo or _press_slot == 0:
+                race.push(0)
         KEY_X:
-            race.push(1)
+            if not duo or _press_slot == 1:
+                race.push(1)
         KEY_UP, KEY_W:
             race.change_lane(-1)
         KEY_DOWN, KEY_S:
@@ -36121,6 +36126,8 @@ func _chair_press(key: int) -> void:
 func _chair_hint() -> String:
     if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
         return "GET READY  ESC = LEAVE"
+    if Players.coop and Players.slots[1].joined:
+        return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
     return str(GAMES.chair.keys)
 
 
