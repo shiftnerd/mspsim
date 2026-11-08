@@ -42,7 +42,9 @@ func _wait(secs: float) -> void:
 # ---- the entry point ---------------------------------------------------------------------------------------------
 func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	strategy = strat
+	_purge_own_files()
 	var d := root.get_node("Difficulty")
+	d.settings_path = "user://bot_%d_settings.cfg" % OS.get_process_id()  # set_tier saves: never write the player's real settings file
 	d.set_tier(tier)
 	var c := root.get_node("Campaign")
 	c.save_prefix = "user://bot_%d_" % OS.get_process_id()
@@ -71,6 +73,17 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	row["seed"] = seed_n
 	d.set_tier("normal")
 	return row
+
+
+# process ids are reused: a bot must not inherit the career or campaign files an earlier run left under its pid
+func _purge_own_files() -> void:
+	var dir := DirAccess.open("user://")
+	if dir == null:
+		return
+	var prefix := "bot_%d_" % OS.get_process_id()
+	for f in dir.get_files():
+		if f.begins_with(prefix):
+			dir.remove(f)
 
 
 func line(r: Dictionary) -> String:

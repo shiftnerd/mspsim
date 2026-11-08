@@ -95,6 +95,9 @@ func _init() -> void:
 	var cards := root.get_node("Cards")
 	var game := root.get_node("Game")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
+	# the tier lives in a settings file the other tests (tiers_balance, the bots) also write: use a private one and the normal tier
+	root.get_node("Difficulty").settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
+	root.get_node("Difficulty").set_tier("normal")
 	game.title_mode = false
 	c.new_game("tech")
 	while cards.is_open:
