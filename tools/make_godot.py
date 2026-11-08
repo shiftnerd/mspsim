@@ -65714,6 +65714,26 @@ func _input(event: InputEvent) -> void:
     get_viewport().set_input_as_handled()
 
 
+# pad navigation without the stick: the shoulder buttons step the cursor through the screen's clickable regions (top to
+# bottom, left to right) and A clicks. True when the screen has regions to step through.
+func snap_hit(scr: Node, step: int) -> bool:
+    if scr == null or scr.get("_hits") == null or scr.get("_mouse") == null:
+        return false
+    var rects: Array = []
+    for h in scr._hits:
+        rects.append(h.r as Rect2)
+    if rects.is_empty():
+        return false
+    rects.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.y < b.position.y or (a.position.y == b.position.y and a.position.x < b.position.x))
+    var at := -1
+    for i in rects.size():
+        if rects[i].has_point(scr._mouse):
+            at = i
+    var next := posmod(at + step, rects.size()) if at >= 0 else (0 if step > 0 else rects.size() - 1)
+    scr._mouse = rects[next].get_center()
+    return true
+
+
 # the right stick moves the cursor of a pad player's pane, A clicks where it is. True when the event was used up.
 func _pad_cursor(slot: int, event: InputEvent) -> bool:
     var p: Dictionary = panes[slot]
@@ -65728,6 +65748,8 @@ func _pad_cursor(slot: int, event: InputEvent) -> bool:
             p.stick = v
             return true
         return false
+    if event.button_index == JOY_BUTTON_LEFT_SHOULDER or event.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+        return event.pressed and snap_hit(active(slot), 1 if event.button_index == JOY_BUTTON_RIGHT_SHOULDER else -1)
     if event.button_index == JOY_BUTTON_A:
         var scr: Node = active(slot)
         if scr == null or not scr.has_method("click"):
