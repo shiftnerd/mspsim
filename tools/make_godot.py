@@ -51793,6 +51793,7 @@ const MAX_TEXT := 12
 
 var is_open := false
 var outfit_open := false  # the Free Play outfit overlay (open_outfit): the create step over the room
+var outfit_slot := 0  # whose look the overlay edits (co-op: player 2 swaps Look's working copy for theirs while it is open)
 var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
@@ -51816,6 +51817,8 @@ var _outfit: Node = null  # the CharSelect in overlay mode
 var _outfit_was_ui := false
 var _outfit_was_custom := false  # the player was the custom person when the overlay opened
 var _outfit_char := ""  # ... and this character otherwise
+var _outfit_prev_look := {}  # co-op: slot 1's stored look when the overlay opened
+var _outfit_stash := {}  # co-op: player 1's Look snapshot while the overlay edits slot 1's
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
@@ -51944,24 +51947,35 @@ func _player() -> Node:
     return Players.player0(scene) if scene != null else null
 
 
-func can_outfit() -> bool:
-    return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and _player() != null
+func can_outfit(slot := 0) -> bool:
+    var who := _player() if slot == 0 else Players.node(slot)
+    return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and who != null
 
 
 # Free Play only: Y (not F8: the debug builds jump to a room on it) or the pause menu's OUTFIT row. The create step opens over the room, the preview and the player wear every
 # change live, DONE keeps the look (saved as the default look in the settings file), Esc puts the old person back. Game.ui_open holds
 # the player and the pause menu off meanwhile, and is given back as it was.
-func open_outfit() -> bool:
-    if not can_outfit():
+func open_outfit(slot := 0) -> bool:
+    if not can_outfit(slot):
         return false
-    var who := _player()
+    outfit_slot = slot
+    var who := _player() if slot == 0 else Players.node(slot)
     _outfit_was_custom = Look.is_custom()
     _outfit_char = str(who.current_character)
+    if slot > 0:
+        var s: Object = Players.slot(slot)
+        _outfit_was_custom = not s.look.is_empty()
+        _outfit_char = str(s.character)
+        _outfit_prev_look = s.look.duplicate()
+        _outfit_stash = Look.snapshot()
+        Look.look = Look.sanitize(s.look) if _outfit_was_custom else Look.default_look()
+        Look.acc = Look.sanitize_acc(s.look.get("acc", {})) if _outfit_was_custom else Look.default_acc()
     _outfit_was_ui = Game.ui_open
     Game.ui_open = true
     outfit_open = true
     _outfit = CharSelect.new()
     add_child(_outfit)
+    _outfit.slot = slot
     _outfit.setup_overlay()
     _outfit.look_changed.connect(_outfit_live)
     _outfit.done.connect(_outfit_done)
@@ -51972,13 +51986,17 @@ func open_outfit() -> bool:
 
 # every change in the overlay is worn by the player at once (sheet, palette, HeadGear)
 func _outfit_live() -> void:
-    var who := _player()
+    var who := _player() if outfit_slot == 0 else Players.node(outfit_slot)
     if who != null:
+        if outfit_slot > 0:
+            Players.slot(outfit_slot).look = Look.copy_look()
         who.wear_look()
 
 
 func _close_outfit() -> void:
     outfit_open = false
+    if outfit_slot > 0:
+        Look.restore(_outfit_stash)  # player 1's own look is back in the working copy
     Game.ui_open = _outfit_was_ui
     if _outfit != null:
         _outfit.queue_free()
@@ -51986,16 +52004,23 @@ func _close_outfit() -> void:
 
 
 func _outfit_done(_result: Dictionary) -> void:
+    _outfit_live()  # (player 2's look is stored from the working copy before it is swapped back)
     _close_outfit()
-    _outfit_live()
-    Campaign.refresh_free()  # the cast member you were walks back to their desk
+    if outfit_slot == 0:
+        Campaign.refresh_free()  # the cast member you were walks back to their desk
     Hints.toast("NEW LOOK", 1.5)
 
 
 func _outfit_cancelled() -> void:
     _close_outfit()
-    var who := _player()
-    if who != null:
+    var who := _player() if outfit_slot == 0 else Players.node(outfit_slot)
+    if outfit_slot > 0 and who != null:
+        Players.slot(outfit_slot).look = _outfit_prev_look
+        if _outfit_was_custom:
+            who.wear_look()
+        else:
+            who._reload_sheet(_outfit_char)
+    elif who != null:
         if _outfit_was_custom:
             who.wear_look()  # Look.restore already put the old look back
         else:
@@ -52657,6 +52682,7 @@ var create_row := 0  # the row of the create step: an index into the page's rows
 var create_page := 0  # the page of the create step (_pages())
 var create_col := 0  # the button on the bottom row (CREATE_ACTIONS)
 var create_modal := ""  # "", "presets" (the slot chooser) or "name" (the pad's letter grid)
+var slot := 0  # the overlay edits this player's look (slot 1 does not touch the saved default look)
 var overlay := false  # the Free Play outfit swap (Toolbox.open_outfit): only the create step, over the running room
 var pose_i := 0  # the mirror preview's pose: an index into POSES
 var pose_hold := false  # the pose stays until released
@@ -52896,7 +52922,8 @@ func setup_overlay() -> void:
 func _finish_overlay(keep: bool) -> void:
     if keep:
         Look.look["name"] = Look.final_name()
-        Look.save_settings(true)
+        if slot == 0:
+            Look.save_settings(true)
         done.emit({"look": Look.look.duplicate(), "acc": Look.acc.duplicate()})
     else:
         Look.restore(_backup)
@@ -55776,13 +55803,16 @@ func _add_inputs() -> void:
 
 func _load_character(name: String) -> void:
     var custom := false
+    var lk := {}
     if slot == 0:
         current_character = name
         custom = Look.is_custom()
     else:
-        Players.slot(slot).character = name  # slot 1 is always a stock person for now
-    sprite.sprite_frames = Look.frames_for(name, custom)  # the custom person: the sheet of their hairstyle
-    Look.apply(sprite, name, custom)  # the custom person is the intern sheet in the player's colours (R15)
+        Players.slot(slot).character = name
+        lk = Players.slot(slot).look  # slot 1's own custom look (copy_look form), {} = a stock person
+        custom = name == Look.BASE and not lk.is_empty()
+    sprite.sprite_frames = Look.frames_for(name, custom, lk)  # the custom person: the sheet of their hairstyle
+    Look.apply(sprite, name, custom, lk)  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
@@ -55795,6 +55825,9 @@ func _switch_character(name: String) -> void:
 # the outfit overlay (Toolbox.open_outfit) is done: wear Look.look and Look.acc now (the sheet of the hairstyle, the palette
 # material, the HeadGear overlay), whoever you were before, without losing the running animation
 func wear_look() -> void:
+    if slot != 0:
+        _reload_sheet(Look.BASE)  # slot 1 wears its own stored look
+        return
     Look.active = true
     _reload_sheet(Look.BASE)
 
@@ -55876,6 +55909,7 @@ func swap_character(step: int) -> void:
         _switch_character(CHARACTERS[i])
         Campaign.refresh_free()
     else:
+        Players.slot(slot).look = {}
         _reload_sheet(CHARACTERS[i])
 
 
@@ -67150,6 +67184,7 @@ class Slot:
     var joined := false
     var stored_character := ""
     var stored_held := ""
+    var stored_look := {}
 
     var character: String:
         get:
@@ -67163,7 +67198,10 @@ class Slot:
     # a Look dictionary: slot 0 is the custom person of the Look autoload, slot 1 always a stock character for now
     var look: Dictionary:
         get:
-            return Look.look if index == 0 else {}
+            return Look.look if index == 0 else stored_look
+        set(value):
+            if index != 0:
+                stored_look = value
 
     var held: String:
         get:
@@ -67343,6 +67381,13 @@ func slot_of(event: InputEvent) -> int:
 
 # A on an unclaimed pad joins slot 1 (co-op only)
 func _input(event: InputEvent) -> void:
+    if coop and slots[1].joined:
+        if _creator_pad(event):
+            return
+        if Controls.pressed(event) and event.is_action(Controls.action_for(1, "outfit")) and Toolbox.can_outfit(1):
+            Toolbox.open_outfit(1)
+            get_viewport().set_input_as_handled()
+            return
     if coop and slots[1].joined and Controls.pressed(event) and event.is_action(Controls.action_for(1, "phone")):
         if not ui[1] and not Game.ui_open and not Game.busy:
             takeover_host().open_phone(1)
@@ -67353,6 +67398,19 @@ func _input(event: InputEvent) -> void:
     if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
         if can_join() and join(1, event.device):
             get_viewport().set_input_as_handled()
+
+
+# while player 2 edits their look (the outfit overlay is a full-window modal driven by pad 0), their own pad drives it
+func _creator_pad(event: InputEvent) -> bool:
+    if not Toolbox.outfit_open or Toolbox.outfit_slot != 1:
+        return false
+    if not (event is InputEventJoypadButton or event is InputEventJoypadMotion) or event.device != slots[1].device:
+        return false
+    var copy: InputEvent = event.duplicate()
+    copy.device = 0
+    Input.parse_input_event(copy)
+    get_viewport().set_input_as_handled()
+    return true
 
 
 # ---- the shared camera and the tether (co-op phase 2, docs/scope-coop.md) ---------------------------------------
@@ -67419,7 +67477,7 @@ const ACTIONS := {
     "hold_pose": [[KEY_TAB], [JOY_BUTTON_Y], []],  # the create step's mirror preview: hold the pose / let it cycle (R15 level 3 step e)
     "pose_prev": [[KEY_COMMA], [], []],
     "pose_next": [[KEY_PERIOD], [], []],
-    "outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
+    "outfit": [[KEY_Y], [JOY_BUTTON_LEFT_STICK], []],  # Free Play: change your look (Toolbox.open_outfit)
     "career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
     "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
     "give_item": [[KEY_G], [], []],

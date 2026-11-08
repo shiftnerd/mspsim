@@ -38,7 +38,7 @@ const ACTIONS := {
 	"hold_pose": [[KEY_TAB], [JOY_BUTTON_Y], []],  # the create step's mirror preview: hold the pose / let it cycle (R15 level 3 step e)
 	"pose_prev": [[KEY_COMMA], [], []],
 	"pose_next": [[KEY_PERIOD], [], []],
-	"outfit": [[KEY_Y], [], []],  # Free Play: change your look (Toolbox.open_outfit)
+	"outfit": [[KEY_Y], [JOY_BUTTON_LEFT_STICK], []],  # Free Play: change your look (Toolbox.open_outfit)
 	"career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
 	"give_item": [[KEY_G], [], []],

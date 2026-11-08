@@ -38,6 +38,7 @@ class Slot:
 	var joined := false
 	var stored_character := ""
 	var stored_held := ""
+	var stored_look := {}
 
 	var character: String:
 		get:
@@ -51,7 +52,10 @@ class Slot:
 	# a Look dictionary: slot 0 is the custom person of the Look autoload, slot 1 always a stock character for now
 	var look: Dictionary:
 		get:
-			return Look.look if index == 0 else {}
+			return Look.look if index == 0 else stored_look
+		set(value):
+			if index != 0:
+				stored_look = value
 
 	var held: String:
 		get:
@@ -231,6 +235,13 @@ func slot_of(event: InputEvent) -> int:
 
 # A on an unclaimed pad joins slot 1 (co-op only)
 func _input(event: InputEvent) -> void:
+	if coop and slots[1].joined:
+		if _creator_pad(event):
+			return
+		if Controls.pressed(event) and event.is_action(Controls.action_for(1, "outfit")) and Toolbox.can_outfit(1):
+			Toolbox.open_outfit(1)
+			get_viewport().set_input_as_handled()
+			return
 	if coop and slots[1].joined and Controls.pressed(event) and event.is_action(Controls.action_for(1, "phone")):
 		if not ui[1] and not Game.ui_open and not Game.busy:
 			takeover_host().open_phone(1)
@@ -241,6 +252,19 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_A and event.device >= 1:
 		if can_join() and join(1, event.device):
 			get_viewport().set_input_as_handled()
+
+
+# while player 2 edits their look (the outfit overlay is a full-window modal driven by pad 0), their own pad drives it
+func _creator_pad(event: InputEvent) -> bool:
+	if not Toolbox.outfit_open or Toolbox.outfit_slot != 1:
+		return false
+	if not (event is InputEventJoypadButton or event is InputEventJoypadMotion) or event.device != slots[1].device:
+		return false
+	var copy: InputEvent = event.duplicate()
+	copy.device = 0
+	Input.parse_input_event(copy)
+	get_viewport().set_input_as_handled()
+	return true
 
 
 # ---- the shared camera and the tether (co-op phase 2, docs/scope-coop.md) ---------------------------------------

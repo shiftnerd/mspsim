@@ -45,6 +45,7 @@ const MAX_TEXT := 12
 
 var is_open := false
 var outfit_open := false  # the Free Play outfit overlay (open_outfit): the create step over the room
+var outfit_slot := 0  # whose look the overlay edits (co-op: player 2 swaps Look's working copy for theirs while it is open)
 var mode := "tools"  # "tools" or "seed"
 var in_title := false  # opened from the character select screen: GO starts Free Play
 var queued := false  # GO on the title: launch once Free Play is running
@@ -68,6 +69,8 @@ var _outfit: Node = null  # the CharSelect in overlay mode
 var _outfit_was_ui := false
 var _outfit_was_custom := false  # the player was the custom person when the overlay opened
 var _outfit_char := ""  # ... and this character otherwise
+var _outfit_prev_look := {}  # co-op: slot 1's stored look when the overlay opened
+var _outfit_stash := {}  # co-op: player 1's Look snapshot while the overlay edits slot 1's
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
@@ -196,24 +199,35 @@ func _player() -> Node:
 	return Players.player0(scene) if scene != null else null
 
 
-func can_outfit() -> bool:
-	return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and _player() != null
+func can_outfit(slot := 0) -> bool:
+	var who := _player() if slot == 0 else Players.node(slot)
+	return can_open() and not outfit_open and Campaign.mode == Campaign.FREE and not Game.busy and who != null
 
 
 # Free Play only: Y (not F8: the debug builds jump to a room on it) or the pause menu's OUTFIT row. The create step opens over the room, the preview and the player wear every
 # change live, DONE keeps the look (saved as the default look in the settings file), Esc puts the old person back. Game.ui_open holds
 # the player and the pause menu off meanwhile, and is given back as it was.
-func open_outfit() -> bool:
-	if not can_outfit():
+func open_outfit(slot := 0) -> bool:
+	if not can_outfit(slot):
 		return false
-	var who := _player()
+	outfit_slot = slot
+	var who := _player() if slot == 0 else Players.node(slot)
 	_outfit_was_custom = Look.is_custom()
 	_outfit_char = str(who.current_character)
+	if slot > 0:
+		var s: Object = Players.slot(slot)
+		_outfit_was_custom = not s.look.is_empty()
+		_outfit_char = str(s.character)
+		_outfit_prev_look = s.look.duplicate()
+		_outfit_stash = Look.snapshot()
+		Look.look = Look.sanitize(s.look) if _outfit_was_custom else Look.default_look()
+		Look.acc = Look.sanitize_acc(s.look.get("acc", {})) if _outfit_was_custom else Look.default_acc()
 	_outfit_was_ui = Game.ui_open
 	Game.ui_open = true
 	outfit_open = true
 	_outfit = CharSelect.new()
 	add_child(_outfit)
+	_outfit.slot = slot
 	_outfit.setup_overlay()
 	_outfit.look_changed.connect(_outfit_live)
 	_outfit.done.connect(_outfit_done)
@@ -224,13 +238,17 @@ func open_outfit() -> bool:
 
 # every change in the overlay is worn by the player at once (sheet, palette, HeadGear)
 func _outfit_live() -> void:
-	var who := _player()
+	var who := _player() if outfit_slot == 0 else Players.node(outfit_slot)
 	if who != null:
+		if outfit_slot > 0:
+			Players.slot(outfit_slot).look = Look.copy_look()
 		who.wear_look()
 
 
 func _close_outfit() -> void:
 	outfit_open = false
+	if outfit_slot > 0:
+		Look.restore(_outfit_stash)  # player 1's own look is back in the working copy
 	Game.ui_open = _outfit_was_ui
 	if _outfit != null:
 		_outfit.queue_free()
@@ -238,16 +256,23 @@ func _close_outfit() -> void:
 
 
 func _outfit_done(_result: Dictionary) -> void:
+	_outfit_live()  # (player 2's look is stored from the working copy before it is swapped back)
 	_close_outfit()
-	_outfit_live()
-	Campaign.refresh_free()  # the cast member you were walks back to their desk
+	if outfit_slot == 0:
+		Campaign.refresh_free()  # the cast member you were walks back to their desk
 	Hints.toast("NEW LOOK", 1.5)
 
 
 func _outfit_cancelled() -> void:
 	_close_outfit()
-	var who := _player()
-	if who != null:
+	var who := _player() if outfit_slot == 0 else Players.node(outfit_slot)
+	if outfit_slot > 0 and who != null:
+		Players.slot(outfit_slot).look = _outfit_prev_look
+		if _outfit_was_custom:
+			who.wear_look()
+		else:
+			who._reload_sheet(_outfit_char)
+	elif who != null:
 		if _outfit_was_custom:
 			who.wear_look()  # Look.restore already put the old look back
 		else:

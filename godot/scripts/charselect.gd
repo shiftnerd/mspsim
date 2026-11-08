@@ -242,6 +242,7 @@ var create_row := 0  # the row of the create step: an index into the page's rows
 var create_page := 0  # the page of the create step (_pages())
 var create_col := 0  # the button on the bottom row (CREATE_ACTIONS)
 var create_modal := ""  # "", "presets" (the slot chooser) or "name" (the pad's letter grid)
+var slot := 0  # the overlay edits this player's look (slot 1 does not touch the saved default look)
 var overlay := false  # the Free Play outfit swap (Toolbox.open_outfit): only the create step, over the running room
 var pose_i := 0  # the mirror preview's pose: an index into POSES
 var pose_hold := false  # the pose stays until released
@@ -481,7 +482,8 @@ func setup_overlay() -> void:
 func _finish_overlay(keep: bool) -> void:
 	if keep:
 		Look.look["name"] = Look.final_name()
-		Look.save_settings(true)
+		if slot == 0:
+			Look.save_settings(true)
 		done.emit({"look": Look.look.duplicate(), "acc": Look.acc.duplicate()})
 	else:
 		Look.restore(_backup)

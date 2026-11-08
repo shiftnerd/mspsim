@@ -141,13 +141,16 @@ func _add_inputs() -> void:
 
 func _load_character(name: String) -> void:
 	var custom := false
+	var lk := {}
 	if slot == 0:
 		current_character = name
 		custom = Look.is_custom()
 	else:
-		Players.slot(slot).character = name  # slot 1 is always a stock person for now
-	sprite.sprite_frames = Look.frames_for(name, custom)  # the custom person: the sheet of their hairstyle
-	Look.apply(sprite, name, custom)  # the custom person is the intern sheet in the player's colours (R15)
+		Players.slot(slot).character = name
+		lk = Players.slot(slot).look  # slot 1's own custom look (copy_look form), {} = a stock person
+		custom = name == Look.BASE and not lk.is_empty()
+	sprite.sprite_frames = Look.frames_for(name, custom, lk)  # the custom person: the sheet of their hairstyle
+	Look.apply(sprite, name, custom, lk)  # the custom person is the intern sheet in the player's colours (R15)
 
 
 # swap the sprite sheet without losing the running animation (one-shots like sitdown / land /
@@ -160,6 +163,9 @@ func _switch_character(name: String) -> void:
 # the outfit overlay (Toolbox.open_outfit) is done: wear Look.look and Look.acc now (the sheet of the hairstyle, the palette
 # material, the HeadGear overlay), whoever you were before, without losing the running animation
 func wear_look() -> void:
+	if slot != 0:
+		_reload_sheet(Look.BASE)  # slot 1 wears its own stored look
+		return
 	Look.active = true
 	_reload_sheet(Look.BASE)
 
@@ -241,6 +247,7 @@ func swap_character(step: int) -> void:
 		_switch_character(CHARACTERS[i])
 		Campaign.refresh_free()
 	else:
+		Players.slot(slot).look = {}
 		_reload_sheet(CHARACTERS[i])
 
 
