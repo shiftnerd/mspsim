@@ -86,6 +86,11 @@ const SOUNDS := {
 		{"w": "sine", "f": 1976.0, "t": 0.35, "v": 0.14, "k": 6.0}
 	],
 	"text": [{"w": "sq", "seq": [88, 93], "step": 0.07, "t": 0.07, "v": 0.2, "duty": 0.125}],
+	# the phone ringtones (R7): the one you picked in the phone's settings plays for a text (text itself is RING RING)
+	"ring_dial": [{"w": "sine", "f": 350.0, "t": 0.5, "v": 0.16, "k": 0.0}, {"w": "sine", "f": 440.0, "t": 0.5, "v": 0.16, "k": 0.0}],
+	"ring_chime": [{"w": "sine", "seq": [91, 88, 84, 79], "step": 0.14, "t": 0.55, "v": 0.2, "k": 3.0}],
+	"ring_marimba": [{"w": "tri", "seq": [72, 76, 79, 84, 79, 76], "step": 0.08, "t": 0.14, "v": 0.3, "k": 4.5}],
+	"ring_quack": [{"w": "saw", "f": 520.0, "f2": 300.0, "t": 0.11, "v": 0.2, "k": 0.8, "am": 45.0}, {"w": "saw", "f": 480.0, "f2": 280.0, "t": 0.11, "v": 0.2, "k": 0.8, "am": 45.0, "at": 0.17}],
 	"mail": [{"w": "tri", "seq": [76, 81, 84], "step": 0.08, "t": 0.14, "v": 0.3, "k": 2.5}],
 	# the phone's vibrate buzz for a banner: two short low pulses with a rattle of noise (R37)
 	"buzz":
@@ -311,7 +316,7 @@ func _ready() -> void:
 		settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
 	load_settings()
 	Msp.ticket_added.connect(func(_t: Dictionary) -> void: play("ticket"))
-	Msp.text_received.connect(func(_m: Dictionary) -> void: play("text"))
+	Msp.text_received.connect(func(_m: Dictionary) -> void: play(Career.ringtone_sfx()))
 	Campaign.day_started.connect(func(_d: int) -> void: play_music("day"))
 
 

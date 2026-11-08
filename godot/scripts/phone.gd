@@ -485,6 +485,7 @@ func activate(id: String) -> void:
 			app = "home"
 		"ring":
 			Career.cycle_pick("ringtone")
+			Sfx.play(Career.ringtone_sfx(), 0.8)  # a preview
 		"career":
 			close()
 			Career.open_screen()

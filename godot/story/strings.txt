@@ -15318,118 +15318,126 @@ QUACK QUACK
 
 # Career > UNLOCKS > 10 > title
 [Career.UNLOCKS.10.title]
-GOLD RUBBER DUCK
+RUBBER DUCK
 
 # Career > UNLOCKS > 11 > title
 [Career.UNLOCKS.11.title]
-PIRATE RUBBER DUCK
+GOLD RUBBER DUCK
 
 # Career > UNLOCKS > 12 > title
 [Career.UNLOCKS.12.title]
-STRESS BALL
+PIRATE RUBBER DUCK
 
 # Career > UNLOCKS > 13 > title
 [Career.UNLOCKS.13.title]
-DESK PENDULUM
+NO DESK TOY
 
 # Career > UNLOCKS > 14 > title
 [Career.UNLOCKS.14.title]
-THIN
+STRESS BALL
 
 # Career > UNLOCKS > 15 > title
 [Career.UNLOCKS.15.title]
-THICK
+DESK PENDULUM
 
 # Career > UNLOCKS > 16 > title
 [Career.UNLOCKS.16.title]
-ROUND
+THIN
 
 # Career > UNLOCKS > 17 > title
 [Career.UNLOCKS.17.title]
-AVIATOR
+THICK
 
 # Career > UNLOCKS > 18 > title
 [Career.UNLOCKS.18.title]
-STUBBLE
+ROUND
 
 # Career > UNLOCKS > 19 > title
 [Career.UNLOCKS.19.title]
-GOATEE
+AVIATOR
 
 # Career > UNLOCKS > 20 > title
 [Career.UNLOCKS.20.title]
-FULL BEARD
+STUBBLE
 
 # Career > UNLOCKS > 21 > title
 [Career.UNLOCKS.21.title]
-MOUSTACHE
+GOATEE
 
 # Career > UNLOCKS > 22 > title
 [Career.UNLOCKS.22.title]
-BEANIE
+FULL BEARD
 
 # Career > UNLOCKS > 23 > title
 [Career.UNLOCKS.23.title]
-BALL CAP
+MOUSTACHE
 
 # Career > UNLOCKS > 24 > title
 [Career.UNLOCKS.24.title]
-HARD HAT
+BEANIE
 
 # Career > UNLOCKS > 25 > title
 [Career.UNLOCKS.25.title]
-SANTA HAT
+BALL CAP
 
 # Career > UNLOCKS > 26 > title
 [Career.UNLOCKS.26.title]
-BUCKET HAT
+HARD HAT
 
 # Career > UNLOCKS > 27 > title
 [Career.UNLOCKS.27.title]
-PARTY HAT
+SANTA HAT
 
 # Career > UNLOCKS > 28 > title
 [Career.UNLOCKS.28.title]
-POLO
+BUCKET HAT
 
 # Career > UNLOCKS > 29 > title
 [Career.UNLOCKS.29.title]
-TEE
+PARTY HAT
 
 # Career > UNLOCKS > 30 > title
 [Career.UNLOCKS.30.title]
-BUTTON-DOWN
+POLO
 
 # Career > UNLOCKS > 31 > title
 [Career.UNLOCKS.31.title]
-SWEATER
+TEE
 
 # Career > UNLOCKS > 32 > title
 [Career.UNLOCKS.32.title]
-TROUSERS
+BUTTON-DOWN
 
 # Career > UNLOCKS > 33 > title
 [Career.UNLOCKS.33.title]
-JEANS
+SWEATER
 
 # Career > UNLOCKS > 34 > title
 [Career.UNLOCKS.34.title]
-SHORTS
+TROUSERS
 
 # Career > UNLOCKS > 35 > title
 [Career.UNLOCKS.35.title]
-SKIRT
+JEANS
 
 # Career > UNLOCKS > 36 > title
 [Career.UNLOCKS.36.title]
-DRESS SHOES
+SHORTS
 
 # Career > UNLOCKS > 37 > title
 [Career.UNLOCKS.37.title]
-SNEAKERS
+SKIRT
 
 # Career > UNLOCKS > 38 > title
 [Career.UNLOCKS.38.title]
+DRESS SHOES
+
+# Career > UNLOCKS > 39 > title
+[Career.UNLOCKS.39.title]
+SNEAKERS
+
+# Career > UNLOCKS > 40 > title
+[Career.UNLOCKS.40.title]
 WORK BOOTS
 
 

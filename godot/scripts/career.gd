@@ -93,8 +93,10 @@ const DEFAULT_UNLOCKS := [
 	{"id": "ring_chime", "kind": "ringtone", "title": "WIND CHIME", "medal": "people_person", "value": ""},
 	{"id": "ring_marimba", "kind": "ringtone", "title": "MARIMBA", "medal": "crowd_pleaser", "value": ""},
 	{"id": "ring_quack", "kind": "ringtone", "title": "QUACK QUACK", "medal": "duck_whisperer", "value": ""},
+	{"id": "duck_classic", "kind": "duck", "title": "RUBBER DUCK", "medal": "", "value": ""},
 	{"id": "duck_gold", "kind": "duck", "title": "GOLD RUBBER DUCK", "medal": "duck_whisperer", "value": ""},
 	{"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
+	{"id": "toy_none", "kind": "desk_toy", "title": "NO DESK TOY", "medal": "", "value": ""},
 	{"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
 	{"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
 	{"id": "glasses_thin", "kind": "glasses", "title": "THIN", "medal": "", "value": "thin"},
@@ -532,6 +534,12 @@ func cycle_pick(kind: String, step := 1) -> Dictionary:
 func wallpaper_color() -> Color:
 	var u := pick_of("wallpaper")
 	return Color(str(u.value)) if not u.is_empty() and str(u.value) != "" else Color("2d6ca8")
+
+
+# the Sfx id of the ringtone you picked (RING RING is the plain "text" blip)
+func ringtone_sfx() -> String:
+	var id := str(pick_of("ringtone").get("id", ""))
+	return id if id in ["ring_dial", "ring_chime", "ring_marimba", "ring_quack"] else "text"
 
 
 func ringtone_name() -> String:

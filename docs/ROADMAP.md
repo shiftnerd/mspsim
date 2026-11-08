@@ -52,11 +52,10 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | R1 | hard-tier numbers checked by play; a separate tier step instead of the chip | S |
 | R4 | themed rooms (E5) | M |
 | R6 | Dietary quirks and an ordering round (D4), a client at the table (D5), table events (D7), post-dinner talks (D8), an ASK HOW THEY ARE topic and `as of outing n` marks (D2), the boss picking up the tab in the tech campaign | M |
-| R7 | Art for the data-only unlocks (duck, desk toys), a real ringtone sound, a medal detail view, a mastery row on the career screen | S |
+| R7 | A medal detail view, a mastery row on the career screen (the duck skins, desk toys and ringtone sounds are built: `tests/desk_art`, `tests/ringtones`) | S |
 | R8 | Seasonal tags beyond the day windows, art for the cards | S |
 | R9 | A `cash_mult` hook, a Free Play menu entry (only the backtick key chooser exists), owner-only mutators beyond slow payers, mutator art and sound | S |
 | R10 | a Year 3, balance by hand play | M |
-| R11 | neon sign text per alley, cup art | M |
 | R12 | Standing-and-pushing someone else's chair, a spin-around chair fight, a second course, medals (`IDEAS.md` "Team outings") | M |
 | R14 | **Portability readiness** (user, Nov 2026: not porting yet, but do not paint the project into a corner). Done: the `Controls` autoload registers every action with keys and gamepad bindings; the menu-style screens use `Controls.pressed/nav/step/confirm/back`; the F-key room jumps are development builds only. Open, in order: (1b) the remaining raw keys (letter hotkeys in computer/crm/quote builder/dispatch/knowledge, outings' N and O keys, printer A/D/1-3/P, charselect X/T/M/B, toolbox seed typing, the 1-7 character switch); (2) check the feel of steering the chair race by pad; (3) a Roll button for seated chairs and a next-target button; (4) a touch overlay; (5) a text-size and tap-target pass for the `v` format (rows are 9-12 px, a thumb needs 19-24); (6) a seed picker instead of typing; (7) Android/iOS export presets and an aspect note; (8) Switch needs a licensed third-party port and a gamepad-only path | M |
 | R15 | (brows now follow the hair colour, test `brows`) The weakest art (the 4 to 7 px hats, the 4x3 watch, the mini skirt, the jeans detail, the flat long sleeves). Scope notes: `docs/scope-character-creator-level2.md`, `docs/scope-character-creator-level3.md` | S |

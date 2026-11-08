@@ -423,6 +423,10 @@ func activate(id: String) -> void:
 				_set_nerds_tab("irc")
 		"wall":
 			Career.cycle_pick("wallpaper")
+		"duck":
+			Career.cycle_pick("duck")
+		"toy":
+			Career.cycle_pick("desk_toy")
 		"close_app":
 			if tv_mode:
 				close()
@@ -1215,6 +1219,16 @@ func _paint_desktop() -> void:
 		_fill(cr, Color(0, 0, 0, 0.35) if not cr.has_point(_mouse) else Color(0, 0, 0, 0.6))
 		_text(chip, cr.position + Vector2(4, 2), WHITE)
 		_region("wall:next", cr)
+	# R7: the duck and the desk toy you unlocked, in two more chips under the wallpaper one
+	var chip_y := a.position.y + 14
+	for pair in [["duck", "DUCK: ", "duck:next"], ["desk_toy", "TOY: ", "toy:next"]]:
+		if Career.unlocked_of(str(pair[0])).size() > 1:
+			var label := str(pair[1]) + str(Career.pick_of(str(pair[0])).title)
+			var rr := Rect2(a.end.x - _tw(label) - 10, chip_y, _tw(label) + 8, 9)
+			_fill(rr, Color(0, 0, 0, 0.35) if not rr.has_point(_mouse) else Color(0, 0, 0, 0.6))
+			_text(label, rr.position + Vector2(4, 2), WHITE)
+			_region(str(pair[2]), rr)
+			chip_y += 11
 	var net := Net.desk_state(desk)
 	if net != "ok":
 		var note := "NETWORK CABLE UNPLUGGED" if net == "no_link" else "NO INTERNET ACCESS"

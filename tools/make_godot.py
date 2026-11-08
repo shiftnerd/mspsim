@@ -822,6 +822,11 @@ signal finished
 signal handed  # the item is ready to hand over (mid-effect for the fridge)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const BowlVariety := preload("res://scripts/bowl_variety.gd")
+const DUCK_SKINS := {
+    "duck_gold": preload("res://assets/props/rubber_duck_gold.png"),
+    "duck_pirate": preload("res://assets/props/rubber_duck_pirate.png"),
+}
 const Dashboard := preload("res://scripts/dashboard.gd")  # the wall TV's micro channel and the glance hint (R20)
 const STEP := 1.0 / 12.0
 const ITEMS := {"coffee": "coffee", "cooler": "water", "nerf_rack": "nerf"}
@@ -1182,11 +1187,32 @@ func _draw_neon() -> void:
     var size: Vector2 = info[0]
     var col: Color = info[1]
     var pulse := 0.10 + 0.06 * sin(_time * 2.4 + float(seed_offset))
+    if kind == "neon_bowl":
+        _draw_alley_sign(size, col)
     if _h(int(_time * 9.0)) % 31 == 0:
         _r(0, 0, size.x, size.y, Color(0.05, 0.04, 0.09, 0.55))  # a flicker
         return
     _r(0, 0, size.x, size.y, Color(col, pulse))
     _r(-2, size.y, size.x + 4, 1, Color(col, pulse * 1.6))
+
+
+# R11: the big sign over the lanes names tonight's alley (the baked art says BOWL): a dark panel and the short name in neon
+func _draw_alley_sign(size: Vector2, col: Color) -> void:
+    var key := "%d:%d" % [Outings.count, int(Outings.league.night)]
+    if key != _sign_key:
+        _sign_key = key
+        # the same seeded draw the game uses
+        _sign_text = str(BowlVariety.alley(str(Outings._game_options("bowling").alley)).short)
+    _r(1, 1, size.x - 2.0, size.y - 2.0, Color("120a1c"))
+    _r(1, 1, size.x - 2.0, 1, Color(col, 0.7))
+    _r(1, size.y - 2.0, size.x - 2.0, 1, Color(col, 0.7))
+    var words: PackedStringArray = _sign_text.split(" ")
+    var lines: Array = [_sign_text] if PixelFont.width(_sign_text, 1) <= size.x - 4.0 else [words[0], " ".join(words.slice(1))]
+    var y := floorf((size.y - 6.0 * float(lines.size()) + 1.0) * 0.5)
+    for ln in lines:
+        var w := PixelFont.width(str(ln), 1)
+        PixelFont.draw(self, str(ln), Vector2(floorf((size.x - w) * 0.5), y), col.lightened(0.35), 1)
+        y += 6.0
 
 
 func _bowl_game() -> Dictionary:
@@ -1698,6 +1724,17 @@ func _duck_tick(delta: float) -> void:
     var sprite := get_parent()
     if not (sprite is Sprite2D):
         return
+    # R7: the duck you picked (gold, pirate) and the desk toy beside it
+    if _duck_tex == null:
+        _duck_tex = sprite.texture
+    var skin := str(Career.pick_of("duck").get("id", "duck_classic"))
+    if skin != _duck_skin:
+        _duck_skin = skin
+        sprite.texture = DUCK_SKINS.get(skin, _duck_tex)
+    var toy := str(Career.pick_of("desk_toy").get("id", "toy_none"))
+    if toy != _duck_toy or toy == "toy_pendulum":
+        _duck_toy = toy
+        queue_redraw()
     if _duck_base == 0.0:
         _duck_base = sprite.offset.y
     if _duck_t > 0.0:
@@ -1711,7 +1748,34 @@ func _duck_tick(delta: float) -> void:
         sprite.offset.y = _duck_base
 
 
+# the desk toys on the desk phone next to the duck (this node sits at the duck's top-left corner, the phone's top is at y 20)
+func _draw_toy() -> void:
+    var dark := Color("17121f")
+    if _duck_toy == "toy_stress_ball":
+        draw_circle(Vector2(25, 15), 4.5, dark)
+        draw_circle(Vector2(25, 15), 3.5, Color("e0463c"))
+        _r(23, 13, 2, 1, Color("f27a6c"))
+    elif _duck_toy == "toy_pendulum":
+        _r(19, 9, 13, 1, dark)
+        _r(19, 9, 1, 11, dark)
+        _r(31, 9, 1, 11, dark)
+        var swing := sin(_time * 3.2)
+        var a := clampf(swing, -1.0, 1.0) * 0.75
+        for i in 4:
+            var anchor := Vector2(22.0 + 2.5 * float(i), 10.0)
+            var ang := 0.0
+            if i == 0 and swing < 0.0:
+                ang = a
+            elif i == 3 and swing > 0.0:
+                ang = a
+            var ball := anchor + Vector2(sin(ang), cos(ang)) * 6.0
+            draw_line(anchor, ball, Color("c8ccd8"), 1.0)
+            draw_circle(ball, 1.7, dark)
+            draw_circle(ball, 1.0, Color("e8e8ee"))
+
+
 func _draw_duck() -> void:
+    _draw_toy()
     if _duck_t <= 0.0:
         return
     var w := PixelFont.width(_duck_msg)
@@ -2557,6 +2621,11 @@ const TREE_ON := [
 const TREE_OFF := "LIGHTS OFF. THE TREE GOES BACK TO WAITING."
 const TREE_POP := "POP. A BULB GOES. ONE FEWER TO LOSE."
 
+var _duck_tex: Texture2D = null
+var _duck_skin := "duck_classic"
+var _duck_toy := "toy_none"
+var _sign_key := ""
+var _sign_text := ""
 static var fan_on := false  # the floor fan runs (kept while you are away from the room)
 static var radio_i := 0  # 0 off, else the station + 1
 static var tree_on := true  # the old tree's lights
@@ -7723,6 +7792,10 @@ func activate(id: String) -> void:
                 _set_nerds_tab("irc")
         "wall":
             Career.cycle_pick("wallpaper")
+        "duck":
+            Career.cycle_pick("duck")
+        "toy":
+            Career.cycle_pick("desk_toy")
         "close_app":
             if tv_mode:
                 close()
@@ -8424,6 +8497,16 @@ func _paint_desktop() -> void:
         _fill(cr, Color(0, 0, 0, 0.35) if not cr.has_point(_mouse) else Color(0, 0, 0, 0.6))
         _text(chip, cr.position + Vector2(4, 2), WHITE)
         _region("wall:next", cr)
+    # R7: the duck and the desk toy you unlocked, in two more chips under the wallpaper one
+    var chip_y := a.position.y + 14
+    for pair in [["duck", "DUCK: ", "duck:next"], ["desk_toy", "TOY: ", "toy:next"]]:
+        if Career.unlocked_of(str(pair[0])).size() > 1:
+            var label := str(pair[1]) + str(Career.pick_of(str(pair[0])).title)
+            var rr := Rect2(a.end.x - _tw(label) - 10, chip_y, _tw(label) + 8, 9)
+            _fill(rr, Color(0, 0, 0, 0.35) if not rr.has_point(_mouse) else Color(0, 0, 0, 0.6))
+            _text(label, rr.position + Vector2(4, 2), WHITE)
+            _region(str(pair[2]), rr)
+            chip_y += 11
     var net := Net.desk_state(desk)
     if net != "ok":
         var note := "NETWORK CABLE UNPLUGGED" if net == "no_link" else "NO INTERNET ACCESS"
@@ -10593,6 +10676,7 @@ func activate(id: String) -> void:
             app = "home"
         "ring":
             Career.cycle_pick("ringtone")
+            Sfx.play(Career.ringtone_sfx(), 0.8)  # a preview
         "career":
             close()
             Career.open_screen()
@@ -28651,6 +28735,11 @@ const SOUNDS := {
         {"w": "sine", "f": 1976.0, "t": 0.35, "v": 0.14, "k": 6.0}
     ],
     "text": [{"w": "sq", "seq": [88, 93], "step": 0.07, "t": 0.07, "v": 0.2, "duty": 0.125}],
+    # the phone ringtones (R7): the one you picked in the phone's settings plays for a text (text itself is RING RING)
+    "ring_dial": [{"w": "sine", "f": 350.0, "t": 0.5, "v": 0.16, "k": 0.0}, {"w": "sine", "f": 440.0, "t": 0.5, "v": 0.16, "k": 0.0}],
+    "ring_chime": [{"w": "sine", "seq": [91, 88, 84, 79], "step": 0.14, "t": 0.55, "v": 0.2, "k": 3.0}],
+    "ring_marimba": [{"w": "tri", "seq": [72, 76, 79, 84, 79, 76], "step": 0.08, "t": 0.14, "v": 0.3, "k": 4.5}],
+    "ring_quack": [{"w": "saw", "f": 520.0, "f2": 300.0, "t": 0.11, "v": 0.2, "k": 0.8, "am": 45.0}, {"w": "saw", "f": 480.0, "f2": 280.0, "t": 0.11, "v": 0.2, "k": 0.8, "am": 45.0, "at": 0.17}],
     "mail": [{"w": "tri", "seq": [76, 81, 84], "step": 0.08, "t": 0.14, "v": 0.3, "k": 2.5}],
     # the phone's vibrate buzz for a banner: two short low pulses with a rattle of noise (R37)
     "buzz":
@@ -28876,7 +28965,7 @@ func _ready() -> void:
         settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
     load_settings()
     Msp.ticket_added.connect(func(_t: Dictionary) -> void: play("ticket"))
-    Msp.text_received.connect(func(_m: Dictionary) -> void: play("text"))
+    Msp.text_received.connect(func(_m: Dictionary) -> void: play(Career.ringtone_sfx()))
     Campaign.day_started.connect(func(_d: int) -> void: play_music("day"))
 
 
@@ -38634,9 +38723,18 @@ func _draw() -> void:
     if fall_t > 0.0:
         var k := 1.0 - fall_t / 0.9
         draw_set_transform(Vector2(0, 0), k * 1.4, Vector2.ONE)
+    # the cup: a dark outline, the red body with a shaded side and a light edge, a white band with a little ring, a rim and a straw
+    draw_colored_polygon(PackedVector2Array([Vector2(-6, -11), Vector2(6, -11), Vector2(5, 3), Vector2(-5, 3)]), dark)
     draw_colored_polygon(PackedVector2Array([Vector2(-5, -10), Vector2(5, -10), Vector2(4, 2), Vector2(-4, 2)]), Color("e0463c"))
-    draw_rect(Rect2(-4.5, -6, 9, 2), Color("ffffff"))
-    draw_rect(Rect2(-5, -11, 10, 1), dark)
+    draw_colored_polygon(PackedVector2Array([Vector2(2, -10), Vector2(5, -10), Vector2(4, 2), Vector2(2.5, 2)]), Color("b8302a"))
+    draw_rect(Rect2(-4, -9, 1, 9), Color("f27a6c"))
+    draw_rect(Rect2(-4.5, -6, 9, 3), Color("ffffff"))
+    draw_rect(Rect2(2, -6, 2.5, 3), Color("d8d8e0"))
+    draw_rect(Rect2(-1, -5, 2, 1), Color("e0463c"))
+    draw_rect(Rect2(-6, -12, 12, 1), dark)
+    draw_rect(Rect2(-5, -12, 10, 1), Color("f4f4fa"))
+    draw_line(Vector2(1, -12), Vector2(3, -17), Color("3ee0e0"), 1.0)
+    draw_line(Vector2(3, -17), Vector2(5, -17), Color("3ee0e0"), 1.0)
 ''')
 
 write("scripts/nerf.gd", '''extends Node
@@ -59288,8 +59386,10 @@ const DEFAULT_UNLOCKS := [
     {"id": "ring_chime", "kind": "ringtone", "title": "WIND CHIME", "medal": "people_person", "value": ""},
     {"id": "ring_marimba", "kind": "ringtone", "title": "MARIMBA", "medal": "crowd_pleaser", "value": ""},
     {"id": "ring_quack", "kind": "ringtone", "title": "QUACK QUACK", "medal": "duck_whisperer", "value": ""},
+    {"id": "duck_classic", "kind": "duck", "title": "RUBBER DUCK", "medal": "", "value": ""},
     {"id": "duck_gold", "kind": "duck", "title": "GOLD RUBBER DUCK", "medal": "duck_whisperer", "value": ""},
     {"id": "duck_pirate", "kind": "duck", "title": "PIRATE RUBBER DUCK", "medal": "limbo_legend", "value": ""},
+    {"id": "toy_none", "kind": "desk_toy", "title": "NO DESK TOY", "medal": "", "value": ""},
     {"id": "toy_stress_ball", "kind": "desk_toy", "title": "STRESS BALL", "medal": "meeting_survivor", "value": ""},
     {"id": "toy_pendulum", "kind": "desk_toy", "title": "DESK PENDULUM", "medal": "full_house", "value": ""},
     {"id": "glasses_thin", "kind": "glasses", "title": "THIN", "medal": "", "value": "thin"},
@@ -59727,6 +59827,12 @@ func cycle_pick(kind: String, step := 1) -> Dictionary:
 func wallpaper_color() -> Color:
     var u := pick_of("wallpaper")
     return Color(str(u.value)) if not u.is_empty() and str(u.value) != "" else Color("2d6ca8")
+
+
+# the Sfx id of the ringtone you picked (RING RING is the plain "text" blip)
+func ringtone_sfx() -> String:
+    var id := str(pick_of("ringtone").get("id", ""))
+    return id if id in ["ring_dial", "ring_chime", "ring_marimba", "ring_quack"] else "text"
 
 
 func ringtone_name() -> String:

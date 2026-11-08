@@ -7,6 +7,11 @@ signal finished
 signal handed  # the item is ready to hand over (mid-effect for the fridge)
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const BowlVariety := preload("res://scripts/bowl_variety.gd")
+const DUCK_SKINS := {
+	"duck_gold": preload("res://assets/props/rubber_duck_gold.png"),
+	"duck_pirate": preload("res://assets/props/rubber_duck_pirate.png"),
+}
 const Dashboard := preload("res://scripts/dashboard.gd")  # the wall TV's micro channel and the glance hint (R20)
 const STEP := 1.0 / 12.0
 const ITEMS := {"coffee": "coffee", "cooler": "water", "nerf_rack": "nerf"}
@@ -407,11 +412,32 @@ func _draw_neon() -> void:
 	var size: Vector2 = info[0]
 	var col: Color = info[1]
 	var pulse := 0.10 + 0.06 * sin(_time * 2.4 + float(seed_offset))
+	if kind == "neon_bowl":
+		_draw_alley_sign(size, col)
 	if _h(int(_time * 9.0)) % 31 == 0:
 		_r(0, 0, size.x, size.y, Color(0.05, 0.04, 0.09, 0.55))  # a flicker
 		return
 	_r(0, 0, size.x, size.y, Color(col, pulse))
 	_r(-2, size.y, size.x + 4, 1, Color(col, pulse * 1.6))
+
+
+# R11: the big sign over the lanes names tonight's alley (the baked art says BOWL): a dark panel and the short name in neon
+func _draw_alley_sign(size: Vector2, col: Color) -> void:
+	var key := "%d:%d" % [Outings.count, int(Outings.league.night)]
+	if key != _sign_key:
+		_sign_key = key
+		# the same seeded draw the game uses
+		_sign_text = str(BowlVariety.alley(str(Outings._game_options("bowling").alley)).short)
+	_r(1, 1, size.x - 2.0, size.y - 2.0, Color("120a1c"))
+	_r(1, 1, size.x - 2.0, 1, Color(col, 0.7))
+	_r(1, size.y - 2.0, size.x - 2.0, 1, Color(col, 0.7))
+	var words: PackedStringArray = _sign_text.split(" ")
+	var lines: Array = [_sign_text] if PixelFont.width(_sign_text, 1) <= size.x - 4.0 else [words[0], " ".join(words.slice(1))]
+	var y := floorf((size.y - 6.0 * float(lines.size()) + 1.0) * 0.5)
+	for ln in lines:
+		var w := PixelFont.width(str(ln), 1)
+		PixelFont.draw(self, str(ln), Vector2(floorf((size.x - w) * 0.5), y), col.lightened(0.35), 1)
+		y += 6.0
 
 
 func _bowl_game() -> Dictionary:
@@ -945,6 +971,17 @@ func _duck_tick(delta: float) -> void:
 	var sprite := get_parent()
 	if not (sprite is Sprite2D):
 		return
+	# R7: the duck you picked (gold, pirate) and the desk toy beside it
+	if _duck_tex == null:
+		_duck_tex = sprite.texture
+	var skin := str(Career.pick_of("duck").get("id", "duck_classic"))
+	if skin != _duck_skin:
+		_duck_skin = skin
+		sprite.texture = DUCK_SKINS.get(skin, _duck_tex)
+	var toy := str(Career.pick_of("desk_toy").get("id", "toy_none"))
+	if toy != _duck_toy or toy == "toy_pendulum":
+		_duck_toy = toy
+		queue_redraw()
 	if _duck_base == 0.0:
 		_duck_base = sprite.offset.y
 	if _duck_t > 0.0:
@@ -958,7 +995,34 @@ func _duck_tick(delta: float) -> void:
 		sprite.offset.y = _duck_base
 
 
+# the desk toys on the desk phone next to the duck (this node sits at the duck's top-left corner, the phone's top is at y 20)
+func _draw_toy() -> void:
+	var dark := Color("17121f")
+	if _duck_toy == "toy_stress_ball":
+		draw_circle(Vector2(25, 15), 4.5, dark)
+		draw_circle(Vector2(25, 15), 3.5, Color("e0463c"))
+		_r(23, 13, 2, 1, Color("f27a6c"))
+	elif _duck_toy == "toy_pendulum":
+		_r(19, 9, 13, 1, dark)
+		_r(19, 9, 1, 11, dark)
+		_r(31, 9, 1, 11, dark)
+		var swing := sin(_time * 3.2)
+		var a := clampf(swing, -1.0, 1.0) * 0.75
+		for i in 4:
+			var anchor := Vector2(22.0 + 2.5 * float(i), 10.0)
+			var ang := 0.0
+			if i == 0 and swing < 0.0:
+				ang = a
+			elif i == 3 and swing > 0.0:
+				ang = a
+			var ball := anchor + Vector2(sin(ang), cos(ang)) * 6.0
+			draw_line(anchor, ball, Color("c8ccd8"), 1.0)
+			draw_circle(ball, 1.7, dark)
+			draw_circle(ball, 1.0, Color("e8e8ee"))
+
+
 func _draw_duck() -> void:
+	_draw_toy()
 	if _duck_t <= 0.0:
 		return
 	var w := PixelFont.width(_duck_msg)
@@ -1813,6 +1877,11 @@ const TREE_ON := [
 const TREE_OFF := "LIGHTS OFF. THE TREE GOES BACK TO WAITING."
 const TREE_POP := "POP. A BULB GOES. ONE FEWER TO LOSE."
 
+var _duck_tex: Texture2D = null
+var _duck_skin := "duck_classic"
+var _duck_toy := "toy_none"
+var _sign_key := ""
+var _sign_text := ""
 static var fan_on := false  # the floor fan runs (kept while you are away from the room)
 static var radio_i := 0  # 0 off, else the station + 1
 static var tree_on := true  # the old tree's lights
