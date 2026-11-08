@@ -328,6 +328,7 @@ func join(i: int, device := 1) -> bool:
 	var sc := get_tree().current_scene
 	if sc != null and sc.has_method("spawn_player2"):
 		sc.spawn_player2()
+	Campaign.refresh_free()  # the cast member player 2 plays as leaves their desk
 	roster_changed.emit()
 	return true
 
@@ -341,6 +342,7 @@ func leave(i: int) -> void:
 	if body != null:
 		body.get_parent().remove_child(body)
 		body.queue_free()
+	Campaign.refresh_free()
 	roster_changed.emit()
 
 

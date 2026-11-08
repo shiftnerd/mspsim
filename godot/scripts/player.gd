@@ -249,6 +249,7 @@ func swap_character(step: int) -> void:
 	else:
 		Players.slot(slot).look = {}
 		_reload_sheet(CHARACTERS[i])
+		Campaign.refresh_free()
 
 
 func character_id() -> String:
