@@ -141,6 +141,21 @@ func _swap_out(i: int) -> void:
 	active_slot = 0
 
 
+# a quarter of `amount` (at least 1) to `claimer` when someone else closed their ticket. The claimer's values may be the
+# swapped-out ones (the closer is slot 1) or another slot's stored dictionary, so it writes the xp dictionary directly
+func share_xp(claimer: int, skill: String, amount: int) -> void:
+	if not coop or claimer == active_slot or claimer < 0 or claimer >= slots.size() or not slots[claimer].joined:
+		return
+	var xp: Dictionary
+	if claimer == 0:
+		xp = _stash.xp if active_slot != 0 else Skills.xp
+	else:
+		if slots[claimer].skills.is_empty():
+			slots[claimer].skills = _blank_skills()
+		xp = slots[claimer].skills.xp
+	xp[skill] = int(xp.get(skill, 0)) + maxi(1, roundi(amount * 0.25))
+
+
 func busy_partner(body: Node) -> int:
 	if not coop or body == null or not "slot" in body:
 		return -1

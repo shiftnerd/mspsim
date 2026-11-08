@@ -63,6 +63,36 @@ func _run() -> void:
 	ok(again[0] == 8 and players.active_slot == 0, "a nested call stays in the same slot")
 	ok(players.run_as(0, func() -> int: return 42) == 42, "slot 0 and the return value pass straight through")
 
+
+	# a ticket is claimed by the first player to open it; the closer gets the full XP, the claimer a quarter
+	var msp := root.get_node("Msp")
+	msp.enabled = true
+	var t1: Dictionary = msp.create_ticket(0, 0, "phone")
+	var t2: Dictionary = msp.create_ticket(0, 0, "phone")
+	players.run_as(1, func() -> void: msp.claim_ticket(int(t1.id)))
+	msp.claim_ticket(int(t1.id))  # slot 0 is second: the claim stays with slot 1
+	ok(int(t1.get("claim", -1)) == 1, "the first opener keeps the claim")
+	t1["fix_done"] = true
+	t1["internal"] = false
+	var mine_before: int = skills.xp.get("people", 0)
+	var theirs_before: int = players.slot(1).skills.xp.get("people", 0)
+	msp.close_ticket(int(t1.id))  # player 1 closes player 2's ticket
+	ok(skills.xp.get("people", 0) > mine_before, "the closer is paid in full")
+	ok(players.slot(1).skills.xp.get("people", 0) == theirs_before + 1, "the claimer gets a quarter (at least 1)")
+	# the other way round, closed from inside slot 1's pane
+	msp.claim_ticket(int(t2.id))
+	ok(int(t2.get("claim", -1)) == 0, "player 1 claims the next one")
+	t2["fix_done"] = true
+	t2["internal"] = false
+	var m2: int = skills.xp.get("people", 0)
+	var closer := []
+	players.run_as(1, func() -> void:
+		msp.close_ticket(int(t2.id))
+		closer.append(skills.xp.get("people", 0))
+	)
+	ok(skills.xp.get("people", 0) == m2 + 1 and closer[0] > theirs_before + 1, "player 2 closes it: paid in full, player 1 gets the quarter")
+	ok(players.active_slot == 0, "and the swap is clean afterwards")
+
 	# a Computer pane of slot 1 acts as slot 1 in every entry point
 	var host: Node = players.takeover_host()
 	var comp: Node = host.open_computer(1, 3)

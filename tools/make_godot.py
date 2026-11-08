@@ -6435,6 +6435,16 @@ func add_note(id: int, text: String) -> void:
 
 
 # close a ticket: points if it was really fixed, otherwise it comes back with an angry email
+# co-op phase 5: the first player to open or work a ticket claims it; whoever closes it later gets the full XP and the claimer
+# a quarter of the people / networking XP (Players.share_xp)
+func claim_ticket(id: int) -> void:
+    if not Players.coop or Players.count() < 2:
+        return
+    var t := ticket(id)
+    if not t.is_empty() and not t.has("claim"):
+        t["claim"] = Players.active_slot
+
+
 func close_ticket(id: int) -> String:
     var t := ticket(id)
     if t.is_empty() or t.status == "Closed":
@@ -6476,7 +6486,9 @@ func close_ticket(id: int) -> String:
     if not bool(t.get("repeat", false)):
         closed_ok += 1
     Career.note_ticket(str(t.fix))
-    Skills.add_xp("networking" if t.internal else "people", 2 + (0 if t.internal else int(Shop.bonus("people_xp"))))
+    var close_xp := 2 + (0 if t.internal else int(Shop.bonus("people_xp")))
+    Skills.add_xp("networking" if t.internal else "people", close_xp)
+    Players.share_xp(int(t.get("claim", Players.active_slot)), "networking" if t.internal else "people", close_xp)
     Social.note_ticket_closed(t)
     if not t.internal:
         Sales.adjust(int(t.client), 3 if t.breached else 5)
@@ -6498,6 +6510,7 @@ func rmm_action(name: String, action: String) -> String:
         ep.problem = ""
         for t in tickets:
             if t.endpoint == name and t.status != "Closed" and t.fix == action:
+                claim_ticket(int(t.id))
                 t.fix_done = true
                 t.notes.append("Remote fix: " + FIXES[action].capitalize() + ".")
         Skills.add_xp(str(Skills.FIX_XP.get(action, "servers")), 4)
@@ -7782,7 +7795,9 @@ func _psa_action(parts: PackedStringArray) -> void:
         "tk":
             psa_sel = int(parts[1])
             psa_detail = true
+            Msp.claim_ticket(psa_sel)
         "take", "prog":
+            Msp.claim_ticket(psa_sel)
             Msp.set_status(psa_sel, "In Progress")
         "wait":
             Msp.set_status(psa_sel, "Waiting")
@@ -67313,6 +67328,21 @@ func _swap_out(i: int) -> void:
     Skills.lesson_day = int(_stash.lesson_day)
     Shift.energy = float(_stash.energy)
     active_slot = 0
+
+
+# a quarter of `amount` (at least 1) to `claimer` when someone else closed their ticket. The claimer's values may be the
+# swapped-out ones (the closer is slot 1) or another slot's stored dictionary, so it writes the xp dictionary directly
+func share_xp(claimer: int, skill: String, amount: int) -> void:
+    if not coop or claimer == active_slot or claimer < 0 or claimer >= slots.size() or not slots[claimer].joined:
+        return
+    var xp: Dictionary
+    if claimer == 0:
+        xp = _stash.xp if active_slot != 0 else Skills.xp
+    else:
+        if slots[claimer].skills.is_empty():
+            slots[claimer].skills = _blank_skills()
+        xp = slots[claimer].skills.xp
+    xp[skill] = int(xp.get(skill, 0)) + maxi(1, roundi(amount * 0.25))
 
 
 func busy_partner(body: Node) -> int:

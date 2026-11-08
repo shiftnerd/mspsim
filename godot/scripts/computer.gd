@@ -505,7 +505,9 @@ func _psa_action(parts: PackedStringArray) -> void:
 		"tk":
 			psa_sel = int(parts[1])
 			psa_detail = true
+			Msp.claim_ticket(psa_sel)
 		"take", "prog":
+			Msp.claim_ticket(psa_sel)
 			Msp.set_status(psa_sel, "In Progress")
 		"wait":
 			Msp.set_status(psa_sel, "Waiting")
