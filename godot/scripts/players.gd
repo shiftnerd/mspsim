@@ -165,9 +165,49 @@ func add_partner_energy(amount: float) -> void:
 	s.energy = clampf(cur + amount, 0.0, 100.0)
 
 
-func reset_partner_energy() -> void:
+func reset_partner_run() -> void:  # a new campaign: the partner starts from level 0 and a fresh day's energy
 	if slots.size() > 1:
 		slots[1].energy = -1.0
+		slots[1].skills = {}
+
+
+# the roster as a save holds it (the campaign's "coop" section): {} when nobody is playing as player 2
+func to_dict() -> Dictionary:
+	if not coop or slots.size() < 2 or not slots[1].joined:
+		return {}
+	var s: Slot = slots[1]
+	if s.skills.is_empty():
+		s.skills = _blank_skills()
+	return {
+		"device": s.device,
+		"character": s.character,
+		"look": s.stored_look.duplicate(true),
+		"skills": s.skills.duplicate(true),
+		"energy": s.energy,
+	}
+
+
+# a save with a "coop" section brings player 2 back (their body is spawned by the room that loads); with co-op off, or a save
+# without the section, nothing changes and the run is single player
+func from_dict(d: Dictionary) -> void:
+	if d.is_empty() or not coop or slots.size() < 2:
+		return
+	var s: Slot = slots[1]
+	s.device = maxi(1, int(d.get("device", 1)))
+	s.joined = true
+	s.stored_character = str(d.get("character", P2_CHARACTER))
+	s.stored_look = (d.get("look", {}) as Dictionary).duplicate(true)
+	var skills := _blank_skills()
+	var saved: Dictionary = d.get("skills", {})
+	var saved_xp: Dictionary = saved.get("xp", {})
+	for key in Skills.NAMES:
+		skills.xp[key] = int(saved_xp.get(key, 0))
+	skills.ps_level = int(saved.get("ps_level", 0))
+	skills.lesson_day = int(saved.get("lesson_day", -1))
+	s.skills = skills
+	s.energy = float(d.get("energy", -1.0))
+	Controls.ensure_slot(1, s.device)
+	roster_changed.emit()
 
 
 # co-op: more tickets for two people (the gap between arrivals shrinks)

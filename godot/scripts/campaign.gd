@@ -394,6 +394,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 	Owner.from_dict(cfg.get_value("campaign", "owner", {}))
 	Nerds.from_dict(cfg.get_value("campaign", "nerds", {}))
 	Shift.from_dict(cfg.get_value("campaign", "shift", {}))
+	Players.from_dict(cfg.get_value("campaign", "coop", {}))  # player 2, when the run was a co-op one
 	Growth.from_dict(cfg.get_value("campaign", "growth", {}))
 	Outings.from_dict(cfg.get_value("campaign", "outings", {}))
 	PrinterGame.from_dict(cfg.get_value("campaign", "printer", {}))
@@ -460,6 +461,7 @@ func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "owner", Owner.to_dict())
 	cfg.set_value("campaign", "nerds", Nerds.to_dict())
 	cfg.set_value("campaign", "shift", Shift.to_dict())
+	cfg.set_value("campaign", "coop", Players.to_dict())
 	cfg.set_value("campaign", "growth", Growth.to_dict())
 	cfg.set_value("campaign", "outings", Outings.to_dict())
 	cfg.set_value("campaign", "printer", PrinterGame.to_dict())

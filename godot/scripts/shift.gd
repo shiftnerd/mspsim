@@ -88,7 +88,7 @@ func _ready() -> void:
 
 
 func reset() -> void:
-	Players.reset_partner_energy()
+	Players.reset_partner_run()
 	energy = clampf(float(START_ENERGY) + Build.fx("energy"), 0.0, 100.0)  # CAFFEINE DEPENDENT / EARLY BIRD (X7)
 	late_min = 0
 	late_total = 0

@@ -102,13 +102,14 @@ func _run() -> void:
 	players.slot(1).energy = -1.0
 	players.add_partner_energy(-5.0)
 	ok(is_equal_approx(players.slot(1).energy, float(shift.START_ENERGY) - 5.0), "from a fresh day it starts at the usual energy")
-	shift.reset()
+	shift.reset()  # (reset_partner_run)
 	ok(players.slot(1).energy < 0.0, "a new run resets it")
 
 	# a Computer pane of slot 1 acts as slot 1 in every entry point
 	var host: Node = players.takeover_host()
 	var comp: Node = host.open_computer(1, 3)
 	await _wait(10)
+	players.run_as(1, func() -> void: skills.add_xp("networking", 8))  # (the run reset above cleared player 2)
 	var x_before: int = skills.xp.get("networking", 0)
 	var inside := []
 	comp._step(0.0)  # (the real entry is _process: the wrapper routes it)
