@@ -33340,6 +33340,7 @@ var guest_client := -1  # owner campaign (R5): the client John brings along toni
 
 var _canvas: Node2D
 var _press_slot := 0  # co-op: the slot of the input being handled (Players.slot_of)
+var _pilot := 0  # co-op: whose body "Player" means in the room games (the thrower, the roller)
 var _prev_scale := 1.0
 var _from_invite := false
 var _peek := false  # TAB hides the panel so you can look at the room
@@ -33839,6 +33840,7 @@ func close() -> void:
     if not is_open:
         return
     is_open = false
+    _set_pilot(0)
     _chair_clear()
     _reset_camera()
     _canvas.visible = false
@@ -34367,6 +34369,7 @@ func _bowl_next() -> void:
         _bowl_zone_roll()
         g.msg = ""
         g.up = [_all_up(), _all_up()]
+        _set_pilot(1)
         caption("P2: PRESS E TO STEP UP.", 99.0)
         return
     var frame := int(g.frame)
@@ -34388,6 +34391,7 @@ func _bowl_advance() -> void:
         return
     g.frame = int(g.frame) + 1
     g.turn = 0
+    _set_pilot(0)
     g.roll = 1
     g.pins = 10
     g.stage = "ready" if room_mode() else "aim"
@@ -35411,7 +35415,27 @@ func _x0() -> float:
 
 func _actor(who: String) -> Node:
     var scene := get_tree().current_scene
-    return scene.get_node_or_null("Actors/" + who) if scene != null else null
+    if scene == null:
+        return null
+    if who == "Player" and _pilot > 0 and scene.get_node_or_null("Actors/Player2") != null:
+        who = "Player2"  # co-op: player 2 is the one throwing / rolling this turn
+    return scene.get_node_or_null("Actors/" + who)
+
+
+# co-op: the room games' "Player" becomes player k's body; the old pilot steps aside and the new one takes the spot
+func _set_pilot(k: int) -> void:
+    if k == _pilot:
+        return
+    var old := _actor("Player")
+    _pilot = k
+    var fresh := _actor("Player")
+    if old == null or fresh == null or old == fresh:
+        return
+    if old.state == "emote":
+        old.start_emote("idle", 0.05)
+    fresh.global_position = Vector2(old.global_position.x, fresh.global_position.y)
+    fresh.velocity = Vector2.ZERO
+    old.global_position = Vector2(old.global_position.x - 26.0, old.global_position.y)
 
 
 func _place_player(x: float) -> void:
@@ -36293,6 +36317,9 @@ func _corn_seat(cg: RefCounted) -> void:
     if not room_mode() or int(g.round) == cg.round_no:
         return
     g.round = cg.round_no
+    if cg.players > 1:
+        _set_pilot(cg.thrower_slot())
+        _hold_player("idle", _x0() + CORN_B)
     var spots: Array = SPOTS.cornhole
     var cast := World.CAST.keys()
     for who in cg.crew:
