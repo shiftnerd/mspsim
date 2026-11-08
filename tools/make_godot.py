@@ -7145,7 +7145,7 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
     var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
-    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
+    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace()
 
 
 # "ready" = Jen is at her desk and free, "away" = she is in the building but busy or out of her seat, "" = there is no front desk
@@ -29281,6 +29281,7 @@ func _ready() -> void:
 
 
 func reset() -> void:
+    Players.reset_partner_energy()
     energy = clampf(float(START_ENERGY) + Build.fx("energy"), 0.0, 100.0)  # CAFFEINE DEPENDENT / EARLY BIRD (X7)
     late_min = 0
     late_total = 0
@@ -29366,7 +29367,9 @@ func begin_day(day: int) -> void:
     if not active():
         return
     if day > 1:
+        var rested := energy
         energy = minf(100.0, energy + float(REST) + Build.fx("rest") + Shop.bonus("rest"))
+        Players.add_partner_energy(energy - rested)  # co-op: and rests the same
     if day <= 1:
         return
     if Expo.is_trip_day(day):
@@ -29520,7 +29523,9 @@ func _process(delta: float) -> void:
     if not active() or World.time_scale <= 0.0 or Cards.is_open:
         return
     var dt := delta * World.time_scale
+    var energy_before := energy
     energy = maxf(0.0, energy - DAY_DRAIN * Difficulty.cf("tech.drain") * float(Mutators.hook("energy_drain", 1.0)) * (1.0 + Build.fx("drain")) * Shop.factor("drain") * Difficulty.cz("drain", 1.0) * dt / maxf(60.0, World.day_len))
+    Players.add_partner_energy(energy - energy_before)  # co-op: player 2 tires at the same rate
     if Difficulty.cozy_on():
         if _warned < 1 and energy < 35.0:
             _warned = 3
@@ -67343,6 +67348,25 @@ func share_xp(claimer: int, skill: String, amount: int) -> void:
             slots[claimer].skills = _blank_skills()
         xp = slots[claimer].skills.xp
     xp[skill] = int(xp.get(skill, 0)) + maxi(1, roundi(amount * 0.25))
+
+
+# co-op: the partner's energy follows slot 0's drain and rest (Shift keeps one live value, slot 1's is stored while swapped out)
+func add_partner_energy(amount: float) -> void:
+    if not coop or active_slot != 0 or amount == 0.0 or slots.size() < 2 or not slots[1].joined:
+        return
+    var s: Slot = slots[1]
+    var cur: float = s.energy if s.energy >= 0.0 else float(Shift.START_ENERGY)
+    s.energy = clampf(cur + amount, 0.0, 100.0)
+
+
+func reset_partner_energy() -> void:
+    if slots.size() > 1:
+        slots[1].energy = -1.0
+
+
+# co-op: more tickets for two people (the gap between arrivals shrinks)
+func pace() -> float:
+    return 1.5 if coop and slots.size() > 1 and slots[1].joined else 1.0
 
 
 func busy_partner(body: Node) -> int:

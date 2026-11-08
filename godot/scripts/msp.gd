@@ -1702,7 +1702,7 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
 	var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
-	return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor()
+	return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace()
 
 
 # "ready" = Jen is at her desk and free, "away" = she is in the building but busy or out of her seat, "" = there is no front desk

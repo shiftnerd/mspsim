@@ -93,6 +93,18 @@ func _run() -> void:
 	ok(skills.xp.get("people", 0) == m2 + 1 and closer[0] > theirs_before + 1, "player 2 closes it: paid in full, player 1 gets the quarter")
 	ok(players.active_slot == 0, "and the swap is clean afterwards")
 
+
+	# two people: more tickets, and the partner tires and rests with player 1
+	ok(players.pace() == 1.5, "two players raise the ticket pace")
+	players.slot(1).energy = 50.0
+	players.add_partner_energy(-10.0)
+	ok(is_equal_approx(players.slot(1).energy, 40.0), "the partner's energy follows player 1's drain")
+	players.slot(1).energy = -1.0
+	players.add_partner_energy(-5.0)
+	ok(is_equal_approx(players.slot(1).energy, float(shift.START_ENERGY) - 5.0), "from a fresh day it starts at the usual energy")
+	shift.reset()
+	ok(players.slot(1).energy < 0.0, "a new run resets it")
+
 	# a Computer pane of slot 1 acts as slot 1 in every entry point
 	var host: Node = players.takeover_host()
 	var comp: Node = host.open_computer(1, 3)
@@ -108,5 +120,6 @@ func _run() -> void:
 	host.close_all()
 	await _wait(10)
 	players.enable_coop(false)
+	ok(players.pace() == 1.0, "and one player is the old pace")
 	print("coop_campaign: %d failure(s)" % fails)
 	quit(1 if fails > 0 else 0)

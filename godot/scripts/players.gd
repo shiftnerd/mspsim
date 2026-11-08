@@ -156,6 +156,25 @@ func share_xp(claimer: int, skill: String, amount: int) -> void:
 	xp[skill] = int(xp.get(skill, 0)) + maxi(1, roundi(amount * 0.25))
 
 
+# co-op: the partner's energy follows slot 0's drain and rest (Shift keeps one live value, slot 1's is stored while swapped out)
+func add_partner_energy(amount: float) -> void:
+	if not coop or active_slot != 0 or amount == 0.0 or slots.size() < 2 or not slots[1].joined:
+		return
+	var s: Slot = slots[1]
+	var cur: float = s.energy if s.energy >= 0.0 else float(Shift.START_ENERGY)
+	s.energy = clampf(cur + amount, 0.0, 100.0)
+
+
+func reset_partner_energy() -> void:
+	if slots.size() > 1:
+		slots[1].energy = -1.0
+
+
+# co-op: more tickets for two people (the gap between arrivals shrinks)
+func pace() -> float:
+	return 1.5 if coop and slots.size() > 1 and slots[1].joined else 1.0
+
+
 func busy_partner(body: Node) -> int:
 	if not coop or body == null or not "slot" in body:
 		return -1
