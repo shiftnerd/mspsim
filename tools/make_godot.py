@@ -30618,6 +30618,7 @@ var assist := false  # a short bag slides up onto the board (easy)
 var floor_stars := 0  # 1 on cozy Easy
 var rng: RandomNumberGenerator
 var crew: Array = []  # the opponents, in order
+var players := 1  # co-op (R34 phase 6): 2 = the two players throw the "you" bags, taking the rounds in turn
 
 var phase := "ready"  # ready, aim, power, flight, settle, opp, round_end, done
 var round_no := 1
@@ -30657,6 +30658,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
     assist = bool(params.get("assist", false))
     floor_stars = int(params.get("floor", 0))
     rng = r
+    players = clampi(int(params.get("players", 1)), 1, 2)
     zone_rng = params.get("zone_rng", null)
     crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
     round_no = 0
@@ -30690,7 +30692,7 @@ func _new_round() -> void:
     _hot = 0.0
     phase = "ready"
     t = 0.0
-    msg = "ROUND %d: YOU AGAINST %s" % [round_no, opp]
+    msg = "ROUND %d: YOU AGAINST %s" % [round_no, opp] if players == 1 else "ROUND %d: P%d AGAINST %s" % [round_no, thrower_slot() + 1, opp]
     events.append({"e": "round", "who": opp})
 
 
@@ -30701,6 +30703,11 @@ func is_done() -> bool:
 # which of your four bags this is (1 to 4)
 func bag_no() -> int:
     return mini(BAGS, int(float(seq) * 0.5) + 1)
+
+
+# the slot that throws this round's bags (always 0 alone)
+func thrower_slot() -> int:
+    return maxi(0, round_no - 1) % players
 
 
 func your_turn() -> bool:
@@ -33332,6 +33339,7 @@ var party_set := false
 var guest_client := -1  # owner campaign (R5): the client John brings along tonight (a client index), -1 for nobody
 
 var _canvas: Node2D
+var _press_slot := 0  # co-op: the slot of the input being handled (Players.slot_of)
 var _prev_scale := 1.0
 var _from_invite := false
 var _peek := false  # TAB hides the panel so you can look at the room
@@ -33904,6 +33912,9 @@ func _input(event: InputEvent) -> void:
         return
     if not is_open or not Controls.pressed(event):
         return
+    _press_slot = Players.slot_of(event)
+    if _press_slot < 0:
+        return  # a pad nobody has joined with
     var key := _event_key(event)
     if key == KEY_NONE:
         return
@@ -33920,6 +33931,8 @@ func _input(event: InputEvent) -> void:
 func _event_key(event: InputEvent) -> int:
     if event is InputEventKey:
         return event.keycode
+    if _press_slot == 1 and (event is InputEventJoypadButton or event is InputEventJoypadMotion):
+        return _event_key_p2(event)  # co-op: player 2's pad (A and X do what Enter and E do, B leaves)
     var racing: bool = game == "chair" and phase == "play"
     var grilling: bool = game == "grill" and phase == "play"
     var dir := Controls.nav(event, false)
@@ -33939,6 +33952,19 @@ func _event_key(event: InputEvent) -> int:
     elif Controls.confirm(event):
         key = KEY_ENTER
     return key
+
+
+func _event_key_p2(event: InputEvent) -> int:
+    var dir := Controls.nav(event, false)
+    if dir != "":
+        return PAD_ARROWS[dir]
+    if Controls.back_any(event):
+        return KEY_ESCAPE
+    if event.is_action(Controls.action_for(1, "interact")):
+        return KEY_E
+    if Controls.confirm_any(event):
+        return KEY_ENTER
+    return KEY_NONE
 
 
 func press(key: int) -> void:
@@ -36152,6 +36178,7 @@ func _corn_params() -> Dictionary:
         "assist": Difficulty.i("corn.assist") > 0,
         "floor": 1 if Difficulty.cozy_on() else 0,
         "zone_rng": Difficulty.rng("cornhole_zone"),
+        "players": 2 if Players.coop and Players.slots[1].joined else 1,
     }
 
 
@@ -36279,16 +36306,20 @@ func _corn_press(key: int) -> void:
     if not cg.your_turn():
         caption("WAIT. IT IS NOT YOUR THROW.", 1.2)
         return
+    if cg.players > 1 and _press_slot != cg.thrower_slot():
+        caption("WAIT. IT IS P%d'S THROW." % (cg.thrower_slot() + 1), 1.2)
+        return
     if cg.press() == "aim":
         Sfx.play("ui_tick")
 
 
 func _corn_hint() -> String:
     var cg: RefCounted = g.game
+    var who := "P%d: " % (cg.thrower_slot() + 1) if cg.players > 1 else ""
     if cg.phase == "aim":
-        return "E = STOP THE AIM  ESC = LEAVE"
+        return who + "E = STOP THE AIM  ESC = LEAVE"
     if cg.phase == "power":
-        return "E = STOP THE POWER  ESC = LEAVE"
+        return who + "E = STOP THE POWER  ESC = LEAVE"
     return "WAIT FOR YOUR THROW  ESC = LEAVE"
 
 

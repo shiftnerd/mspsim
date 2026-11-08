@@ -50,6 +50,7 @@ var assist := false  # a short bag slides up onto the board (easy)
 var floor_stars := 0  # 1 on cozy Easy
 var rng: RandomNumberGenerator
 var crew: Array = []  # the opponents, in order
+var players := 1  # co-op (R34 phase 6): 2 = the two players throw the "you" bags, taking the rounds in turn
 
 var phase := "ready"  # ready, aim, power, flight, settle, opp, round_end, done
 var round_no := 1
@@ -89,6 +90,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
 	assist = bool(params.get("assist", false))
 	floor_stars = int(params.get("floor", 0))
 	rng = r
+	players = clampi(int(params.get("players", 1)), 1, 2)
 	zone_rng = params.get("zone_rng", null)
 	crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
 	round_no = 0
@@ -122,7 +124,7 @@ func _new_round() -> void:
 	_hot = 0.0
 	phase = "ready"
 	t = 0.0
-	msg = "ROUND %d: YOU AGAINST %s" % [round_no, opp]
+	msg = "ROUND %d: YOU AGAINST %s" % [round_no, opp] if players == 1 else "ROUND %d: P%d AGAINST %s" % [round_no, thrower_slot() + 1, opp]
 	events.append({"e": "round", "who": opp})
 
 
@@ -133,6 +135,11 @@ func is_done() -> bool:
 # which of your four bags this is (1 to 4)
 func bag_no() -> int:
 	return mini(BAGS, int(float(seq) * 0.5) + 1)
+
+
+# the slot that throws this round's bags (always 0 alone)
+func thrower_slot() -> int:
+	return maxi(0, round_no - 1) % players
 
 
 func your_turn() -> bool:
