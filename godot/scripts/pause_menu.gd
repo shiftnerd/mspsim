@@ -88,6 +88,7 @@ func _labels() -> Array:
 		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
 	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
 		rows.append("OUTFIT")
+		rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
 	rows.append("QUIT TO TITLE")
 	return rows
 
@@ -99,6 +100,7 @@ func _row_id(i: int) -> String:
 		ids.append("day")
 	elif Campaign.mode == Campaign.FREE:
 		ids.append("outfit")
+		ids.append("career")
 	ids.append("quit")
 	return ids[clampi(i, 0, ids.size() - 1)]
 
@@ -120,6 +122,10 @@ func _activate() -> void:
 	if _row_id(_sel) == "outfit":
 		close()
 		Toolbox.open_outfit.call_deferred()
+		return
+	if _row_id(_sel) == "career":
+		close()
+		Career.open_screen.call_deferred()
 		return
 	if _sel == _labels().size() - 1:
 		_confirm = true
