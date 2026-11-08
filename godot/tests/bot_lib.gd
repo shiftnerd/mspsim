@@ -62,6 +62,9 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 			row = await _sales_row(seed_n)
 		"service":
 			row = await _service_row(seed_n)
+	if coop and mode != "tech":
+		root.get_node("Players").leave(1)
+		root.get_node("Players").enable_coop(false)
 	row["mode"] = mode
 	row["tier"] = tier
 	row["strategy"] = strat
@@ -1074,6 +1077,9 @@ func ow_run(seed_n: int) -> Dictionary:
 	var policy_name: String = {"careful": "smart", "lazy": "cheap", "chaotic": "greedy"}[strategy]
 	policy = OW_POLICIES[policy_name]
 	c.new_game("owner")
+	if coop:
+		root.get_node("Players").enable_coop(true)
+		root.get_node("Players").join(1, 1)  # the other owner is player 2
 	var frames_total := 0
 	var last := 0
 	var row := {}
