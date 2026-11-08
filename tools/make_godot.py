@@ -38459,7 +38459,6 @@ const REACT := {
     "John": {"base": 1, "friendly": "heart", "line": "John: Careful, I have a client call at two!", "mood": "!"},
 }
 
-var ammo := 0
 var hits := 0  # total hits on coworkers
 var taken := 0
 var war_t := 0.0
@@ -38491,11 +38490,27 @@ var cup_node_index := -1
 var cup_x := 0.0
 var cup_node: Node2D = null
 
-var charge := 0.0
-var charging := false
-
-var _cool := 0.0
-var _preview: Node2D = null
+var ammo: int:
+    get:
+        return _ammo[0]
+    set(value):
+        _ammo[0] = value
+var charge: float:
+    get:
+        return _charges[0]
+    set(value):
+        _charges[0] = value
+var charging: bool:
+    get:
+        return _charging[0]
+    set(value):
+        _charging[0] = value
+# co-op phase 4: darts are per player. The plain names are slot 0's (every old caller), the arrays hold both slots.
+var _ammo := [0, 0]
+var _charges := [0.0, 0.0]
+var _charging := [false, false]
+var _cools := [0.0, 0.0]
+var _previews: Array = [null, null]
 var _energy_today := 0
 var _energy_day := -1
 var _shot_t := {}  # name -> seconds until the next war shot
@@ -38508,7 +38523,7 @@ func _ready() -> void:
 
 
 func reset() -> void:
-    ammo = 0
+    _ammo = [0, 0]
     hits = 0
     taken = 0
     war_t = 0.0
@@ -38542,22 +38557,23 @@ func holding() -> bool:
     return p != null and str(p.get("held")) == "nerf"
 
 
-func on_given() -> void:
-    ammo = MAX_AMMO
+func on_given(slot := 0) -> void:
+    _ammo[slot] = MAX_AMMO
     Hints.toast("Z FIRES, HOLD Z TO LOB, S TO DUCK, V PICKS A WAR GAME.", 4.0)
 
 
 # ---- firing ------------------------------------------------------------------------------------------
 func fire_player(p: Node, power := 0.0) -> bool:
-    if str(p.held) != "nerf" or ammo <= 0 or _cool > 0.0 or Game.ui_open or Game.busy:
-        if str(p.held) == "nerf" and ammo <= 0:
+    var k: int = p.slot
+    if str(p.held) != "nerf" or _ammo[k] <= 0 or _cools[k] > 0.0 or Game.ui_open or Game.busy:
+        if str(p.held) == "nerf" and _ammo[k] <= 0:
             Hints.toast("OUT OF DARTS. PICK THEM UP OR RELOAD AT THE RACK (E).", 2.5)
             Sfx.play("ui_error")
         return false
     if p.state not in ["idle", "walk", "run", "sitting", "emote"]:
         return false
-    _cool = FIRE_GAP
-    ammo -= 1
+    _cools[k] = FIRE_GAP
+    _ammo[k] -= 1
     var dir := 1.0 if p.facing == "right" else -1.0
     if p.state != "sitting":
         p.start_emote("reach", 0.22)
@@ -38567,31 +38583,32 @@ func fire_player(p: Node, power := 0.0) -> bool:
 
 # hold Z to aim: the longer you hold, the higher and further the dart goes; a tap is a quick shot
 func charge_start(p: Node) -> void:
-    if charging or str(p.held) != "nerf" or Game.ui_open or Game.busy:
+    var k: int = p.slot
+    if _charging[k] or str(p.held) != "nerf" or Game.ui_open or Game.busy:
         return
-    if ammo <= 0:
+    if _ammo[k] <= 0:
         fire_player(p)  # the "out of darts" message
         return
     if p.state not in ["idle", "walk", "run"]:
         return
-    charging = true
-    charge = 0.0
+    _charging[k] = true
+    _charges[k] = 0.0
     p.start_emote("hold", 100000.0)
-    _preview = AIM.new()
-    _preview.z_index = 30
-    _scene().get_node("Actors").add_child(_preview)
+    var prev := AIM.new()
+    prev.z_index = 30
+    _previews[k] = prev
+    _scene().get_node("Actors").add_child(prev)
 
 
 func charge_release(p: Node) -> void:
-    if not charging:
+    var k: int = p.slot
+    if not _charging[k]:
         return
-    charging = false
-    var power := charge if charge > 0.12 else 0.0
-    charge = 0.0
-    if _preview != null and is_instance_valid(_preview):
-        _preview.queue_free()
-    _preview = null
-    _cool = 0.0
+    _charging[k] = false
+    var power: float = _charges[k] if _charges[k] > 0.12 else 0.0
+    _charges[k] = 0.0
+    _drop_preview(k)
+    _cools[k] = 0.0
     fire_player(p, power)
 
 
@@ -38599,19 +38616,29 @@ func launch_velocity(dir: float, power: float) -> Vector2:
     return Vector2(dir * (SPEED + power * LOB_SPEED), -14.0 - power * LOB_LIFT)
 
 
-func _update_charge(delta: float) -> void:
-    var p := _player()
+func is_charging(k: int) -> bool:
+    return _charging[k]
+
+
+func _drop_preview(k: int) -> void:
+    var prev: Node = _previews[k]
+    if prev != null and is_instance_valid(prev):
+        prev.queue_free()
+    _previews[k] = null
+
+
+func _update_charge(k: int, delta: float) -> void:
+    var p := Players.node(k, _scene())
     if p == null or str(p.held) != "nerf" or Game.ui_open:
-        charging = false
-        charge = 0.0
-        if _preview != null and is_instance_valid(_preview):
-            _preview.queue_free()
-        _preview = null
+        _charging[k] = false
+        _charges[k] = 0.0
+        _drop_preview(k)
         return
-    charge = minf(1.0, charge + delta / CHARGE_SECS)
+    _charges[k] = minf(1.0, _charges[k] + delta / CHARGE_SECS)
     var dir := 1.0 if p.facing == "right" else -1.0
-    if _preview != null and is_instance_valid(_preview):
-        _preview.set_path(_muzzle(p, dir), launch_velocity(dir, charge))
+    var prev: Node = _previews[k]
+    if prev != null and is_instance_valid(prev):
+        prev.set_path(_muzzle(p, dir), launch_velocity(dir, _charges[k]))
 
 
 func fire_npc(npc: Node, dir: float, power := 0.0) -> void:
@@ -39142,9 +39169,10 @@ func war_titles(s: Dictionary) -> Array:
 
 
 func _process(delta: float) -> void:
-    _cool = maxf(0.0, _cool - delta)
-    if charging:
-        _update_charge(delta)
+    for k in 2:
+        _cools[k] = maxf(0.0, _cools[k] - delta)
+        if _charging[k]:
+            _update_charge(k, delta)
     if war_t <= 0.0:
         return
     war_t -= delta
@@ -55786,6 +55814,10 @@ func _unhandled_input(event: InputEvent) -> void:
         if can_swap():
             swap_character(1)
     if slot != 0:
+        if event.is_action_pressed(_a("aim")):
+            Nerf.charge_start(self)
+        elif event.is_action_released(_a("aim")):
+            Nerf.charge_release(self)
         return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
     if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
         Nerf.charge_release(self)
@@ -55850,7 +55882,7 @@ func character_id() -> String:
 
 func give(item: String) -> void:
     if item == "nerf":
-        Nerf.on_given()
+        Nerf.on_given(slot)
     held = item
     sips = 0
     if slot == 0:
@@ -56166,7 +56198,7 @@ func _physics_process(delta: float) -> void:
     var duck_held := (not locked) and Input.is_action_pressed(_a("duck"))
     if state == "duck" and (not duck_held or not is_on_floor()):
         _set_state("idle")
-    elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.charging:
+    elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.is_charging(slot):
         _set_state("duck")
     match state:
         "death", "hurt":

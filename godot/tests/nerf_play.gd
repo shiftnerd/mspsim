@@ -85,7 +85,7 @@ func _process(_delta: float) -> bool:
 			if frame == _t0 + 5:
 				player.global_position.x = 140.0
 				player.facing = "right"
-				nerf._cool = 0.0
+				nerf._cools[0] = 0.0
 				_key(KEY_Z, true)
 			if frame == _t0 + 40:
 				_check(

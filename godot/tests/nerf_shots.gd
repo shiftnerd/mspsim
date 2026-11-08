@@ -44,7 +44,7 @@ func _process(_delta: float) -> bool:
 		104:
 			_shot("flight")
 		160:
-			nerf._cool = 0.0
+			nerf._cools[0] = 0.0
 			player.state = "idle"
 			player.global_position.x = 100.0
 			nerf.fire_player(player)

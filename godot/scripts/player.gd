@@ -182,6 +182,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if can_swap():
 			swap_character(1)
 	if slot != 0:
+		if event.is_action_pressed(_a("aim")):
+			Nerf.charge_start(self)
+		elif event.is_action_released(_a("aim")):
+			Nerf.charge_release(self)
 		return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
 	if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
 		Nerf.charge_release(self)
@@ -246,7 +250,7 @@ func character_id() -> String:
 
 func give(item: String) -> void:
 	if item == "nerf":
-		Nerf.on_given()
+		Nerf.on_given(slot)
 	held = item
 	sips = 0
 	if slot == 0:
@@ -572,7 +576,7 @@ func _physics_process(delta: float) -> void:
 	var duck_held := (not locked) and Input.is_action_pressed(_a("duck"))
 	if state == "duck" and (not duck_held or not is_on_floor()):
 		_set_state("idle")
-	elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.charging:
+	elif duck_held and state in ["idle", "walk", "run"] and is_on_floor() and not Nerf.is_charging(slot):
 		_set_state("duck")
 	match state:
 		"death", "hurt":

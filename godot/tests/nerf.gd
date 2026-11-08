@@ -81,7 +81,7 @@ func _init() -> void:
 
 	# ---- a hit on a cold coworker costs goodwill
 	social.rel["John"] = -30
-	nerf._cool = 0.0
+	nerf._cools[0] = 0.0
 	player.state = "idle"
 	nerf.war_t = 0.0
 	player.global_position.x = 192.0
@@ -135,7 +135,7 @@ func _init() -> void:
 	# ---- empty, holster, controls
 	player.global_position.x = 192.0
 	nerf.ammo = 0
-	nerf._cool = 0.0
+	nerf._cools[0] = 0.0
 	_check(not nerf.fire_player(player), "no darts: it clicks")
 	player.give("")
 	_check(not nerf.holding(), "G puts it away")
