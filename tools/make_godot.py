@@ -30980,6 +30980,7 @@ var floor_stars := 0  # 1 on cozy Easy
 var rng: RandomNumberGenerator
 var zone_rng: RandomNumberGenerator = null
 var crew: Array = []  # the opponents, in order
+var humans := 1  # co-op (R34 phase 6): 2 = the two players throw the "You" turns, one round each in turn
 var players: Array = []  # "You" then the crew (or THE HOUSE)
 
 var phase := "ready"  # ready, aim, opp, flight, settle, pull, done
@@ -31016,6 +31017,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
     opp_skill = float(params.get("opp_skill", 0.0))
     floor_stars = int(params.get("floor", 0))
     rng = r
+    humans = clampi(int(params.get("humans", 1)), 1, 2)
     zone_rng = params.get("zone_rng", null)
     crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
     players = ["You"]
@@ -31116,6 +31118,11 @@ func round_no() -> int:
 
 func your_turn() -> bool:
     return thrower() == "You"
+
+
+# the slot that throws this round's "You" darts (always 0 alone)
+func thrower_slot() -> int:
+    return maxi(0, round_no() - 1) % humans
 
 
 func opponent() -> String:  # whoever throws now when it is not you ("" on your turn)
@@ -36526,6 +36533,7 @@ func _darts_params() -> Dictionary:
         "opp_skill": Difficulty.f("darts.opp_skill"),
         "floor": 1 if Difficulty.cozy_on() else 0,
         "zone_rng": Difficulty.rng("darts_zone"),
+        "humans": 2 if Players.coop and Players.slots[1].joined else 1,
     }
 
 
@@ -36566,6 +36574,8 @@ func _darts_seat(dg: RefCounted) -> void:
 
 func _darts_tick(dt: float) -> void:
     var dg: RefCounted = g.game
+    if dg.humans > 1 and dg.your_turn():
+        _set_pilot(dg.thrower_slot())  # co-op: this round's thrower is the one at the board
     dg.step(dt)
     g.remark_t = maxf(0.0, float(g.remark_t) - dt)
     _darts_cues(dg)
@@ -36647,12 +36657,16 @@ func _darts_press(key: int) -> void:
         if not dg.is_done():
             caption("WAIT. IT IS NOT YOUR THROW.", 1.2)
         return
+    if dg.humans > 1 and _press_slot != dg.thrower_slot():
+        caption("WAIT. IT IS P%d'S THROW." % (dg.thrower_slot() + 1), 1.2)
+        return
     dg.press()
 
 
 func _darts_hint() -> String:
     var dg: RefCounted = g.game
-    return "E = THROW  ESC = LEAVE" if dg.aiming() else "WAIT FOR YOUR THROW  ESC = LEAVE"
+    var who := "P%d: " % (dg.thrower_slot() + 1) if dg.humans > 1 else ""
+    return who + "E = THROW  ESC = LEAVE" if dg.aiming() else "WAIT FOR YOUR THROW  ESC = LEAVE"
 
 
 # the result of a round (a casual game): the records, a line or two about the game, the small campaign rewards

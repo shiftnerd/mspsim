@@ -53,6 +53,7 @@ var floor_stars := 0  # 1 on cozy Easy
 var rng: RandomNumberGenerator
 var zone_rng: RandomNumberGenerator = null
 var crew: Array = []  # the opponents, in order
+var humans := 1  # co-op (R34 phase 6): 2 = the two players throw the "You" turns, one round each in turn
 var players: Array = []  # "You" then the crew (or THE HOUSE)
 
 var phase := "ready"  # ready, aim, opp, flight, settle, pull, done
@@ -89,6 +90,7 @@ func setup(params: Dictionary, crew_names: Array, r: RandomNumberGenerator) -> v
 	opp_skill = float(params.get("opp_skill", 0.0))
 	floor_stars = int(params.get("floor", 0))
 	rng = r
+	humans = clampi(int(params.get("humans", 1)), 1, 2)
 	zone_rng = params.get("zone_rng", null)
 	crew = ORDER.filter(func(n: String) -> bool: return crew_names.has(n))
 	players = ["You"]
@@ -189,6 +191,11 @@ func round_no() -> int:
 
 func your_turn() -> bool:
 	return thrower() == "You"
+
+
+# the slot that throws this round's "You" darts (always 0 alone)
+func thrower_slot() -> int:
+	return maxi(0, round_no() - 1) % humans
 
 
 func opponent() -> String:  # whoever throws now when it is not you ("" on your turn)
