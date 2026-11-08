@@ -67878,6 +67878,9 @@ const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT
 const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 
 # the help page of the pause menu: pages of [what, keys]
+# the walking-around actions a player can put on another key (the menus and mini-games keep their own keys); one key per action
+const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave", "drink", "duck", "dance", "follow", "phone", "aim", "outfit", "career"]
+
 const HELP := [
     [
         "MOVING AND USING",
@@ -67923,6 +67926,8 @@ const HELP := [
 
 
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
+var binds_path := "user://controls.cfg"
+var _overrides := {}  # action -> the physical key code it was remapped to
 var _stick := {}
 var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
@@ -67932,6 +67937,7 @@ var _stick_result := false
 
 func _ready() -> void:
     ensure()
+    load_binds()
 
 
 # register every action that is missing (the player and the tests may also call this; it is safe to repeat)
@@ -67987,6 +67993,70 @@ func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
     var device := rumble_device(slot)
     if rumble_on and device >= 0:
         Input.start_joy_vibration(device, clampf(strength * 0.6, 0.0, 1.0), clampf(strength, 0.0, 1.0), secs)
+
+
+# the physical key an action answers to on the keyboard (its first default key until it is remapped); -1 for none
+func key_of(action: String) -> int:
+    if _overrides.has(action):
+        return int(_overrides[action])
+    var keys: Array = ACTIONS[action][0] if ACTIONS.has(action) else []
+    return int(keys[0]) if not keys.is_empty() else -1
+
+
+# put `action` on `code` (and swap: whoever had that key gets this action's old key). Only REMAPPABLE actions; true when done
+func rebind(action: String, code: int) -> bool:
+    if not REMAPPABLE.has(action) or code <= 0:
+        return false
+    var old := key_of(action)
+    for other in REMAPPABLE:
+        if other != action and key_of(other) == code:
+            _apply_key(other, old)
+    _apply_key(action, code)
+    return true
+
+
+func _apply_key(action: String, code: int) -> void:
+    for ev in InputMap.action_get_events(action):
+        if ev is InputEventKey:
+            InputMap.action_erase_event(action, ev)
+    if code > 0:
+        var key := InputEventKey.new()
+        key.physical_keycode = code
+        InputMap.action_add_event(action, key)
+    _overrides[action] = code
+
+
+# back to the default keys
+func reset_binds() -> void:
+    for action in _overrides.keys():
+        for ev in InputMap.action_get_events(action):
+            if ev is InputEventKey:
+                InputMap.action_erase_event(action, ev)
+        for code in ACTIONS[action][0]:
+            var key := InputEventKey.new()
+            key.physical_keycode = code
+            InputMap.action_add_event(action, key)
+    _overrides = {}
+
+
+func save_binds() -> void:
+    var cfg := ConfigFile.new()
+    for action in _overrides:
+        cfg.set_value("binds", action, int(_overrides[action]))
+    if _overrides.is_empty():
+        DirAccess.remove_absolute(ProjectSettings.globalize_path(binds_path))
+    else:
+        cfg.save(binds_path)
+
+
+func load_binds() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(binds_path) != OK:
+        return
+    if not cfg.has_section("binds"):
+        return
+    for action in cfg.get_section_keys("binds"):
+        rebind(str(action), int(cfg.get_value("binds", action, 0)))
 
 
 # register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on
@@ -68064,6 +68134,8 @@ func matches(event: InputEvent, action: String) -> bool:
         return false
     if event.is_action(action):
         return true
+    if _overrides.has(action):
+        return false  # a remapped action answers to its new key only
     if event is InputEventKey:
         if action == "pick_prev":
             return event.keycode == KEY_TAB and event.shift_pressed
@@ -68373,12 +68445,15 @@ write("scripts/pause_menu.gd", '''extends CanvasLayer
 const UiStyle := preload("res://scripts/ui_style.gd")
 
 const ROW_H := 12.0
+const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
 
 var is_open := false
 
 var _sel := 0
 var _confirm := false
-var _page := -1  # -1 = the menu, 0.. = a page of the controls list
+var _page := -1  # -1 = the menu, 0.. = a page of the controls list, REMAP_PAGE = the remap list
+var _rsel := 0
+var _capture := false  # waiting for the key to put on the selected action
 var _canvas: Control
 
 
@@ -68522,8 +68597,55 @@ func _row_rect(i: int) -> Rect2:
 
 
 func _turn_page(step: int) -> void:
+    if _page == REMAP_PAGE:
+        return
     _page = posmod(_page + step, Controls.HELP.size())
     _canvas.queue_redraw()
+
+
+# the remap list: up / down pick an action, Enter waits for a key (ESC cancels), the last row puts every key back
+func _remap_key(event: InputEvent) -> void:
+    var rows: int = Controls.REMAPPABLE.size() + 1
+    if _capture:
+        if event is InputEventKey:
+            if event.keycode != KEY_ESCAPE and Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode)):
+                Controls.save_binds()
+            _capture = false
+        return
+    var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
+    var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+    if Controls.back(event) or Controls.matches(event, "pause"):
+        _page = 0
+    elif up:
+        _rsel = (_rsel + rows - 1) % rows
+    elif down:
+        _rsel = (_rsel + 1) % rows
+    elif Controls.confirm(event):
+        if _rsel == rows - 1:
+            Controls.reset_binds()
+            Controls.save_binds()
+        else:
+            _capture = true
+
+
+func _paint_remap(c: CanvasItem, r: Rect2) -> void:
+    var rows: int = Controls.REMAPPABLE.size() + 1
+    var body := UiStyle.panel(c, r, "REMAP KEYS", "PRESS A KEY" if _capture else "")
+    var first := clampi(_rsel - 2, 0, maxi(0, rows - 6))
+    for k in mini(6, rows - first):
+        var i := first + k
+        var rr := Rect2(body.position.x, body.position.y + ROW_H * float(k) - 2.0, r.size.x - 8.0, ROW_H - 1.0)
+        if i == _rsel:
+            c.draw_rect(rr, UiStyle.HEAD)
+        var col: Color = UiStyle.WHITE if i == _rsel else UiStyle.INK
+        if i == rows - 1:
+            UiStyle.text(c, "PUT ALL KEYS BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
+        else:
+            var action := str(Controls.REMAPPABLE[i])
+            UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
+            var key_name := "..." if (_capture and i == _rsel) else OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(Controls.key_of(action))).to_upper()
+            UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
+    UiStyle.footer(c, r, "ENTER = CHANGE  ESC = BACK")
 
 
 func _input(event: InputEvent) -> void:
@@ -68559,6 +68681,10 @@ func _input(event: InputEvent) -> void:
 
 func _key(event: InputEvent) -> void:
     var n := _labels().size()
+    if _page == REMAP_PAGE:
+        _remap_key(event)
+        _canvas.queue_redraw()
+        return
     var left: bool = event.is_action("ui_left") or (event is InputEventKey and event.keycode in [KEY_LEFT, KEY_A])
     var right: bool = event.is_action("ui_right") or (event is InputEventKey and event.keycode in [KEY_RIGHT, KEY_D])
     var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
@@ -68572,6 +68698,10 @@ func _key(event: InputEvent) -> void:
             _sel = _labels().size() - 1
         else:
             close()
+    elif _page >= 0 and event is InputEventKey and event.keycode == KEY_R:
+        _page = REMAP_PAGE
+        _rsel = 0
+        _capture = false
     elif _page >= 0:
         if left or up:
             _turn_page(-1)
@@ -68599,6 +68729,9 @@ func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     c.draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.55))
     var r := _panel()
+    if _page == REMAP_PAGE:
+        _paint_remap(c, r)
+        return
     if _page >= 0:
         _paint_help(c, r)
         return
@@ -68627,7 +68760,7 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
         UiStyle.right(c, str(row[1]), body.end.x, y, UiStyle.HEAD)
         y += 9.0
-    UiStyle.footer(c, r, "LEFT RIGHT = PAGE  ESC = BACK")
+    UiStyle.footer(c, r, "ARROWS = PAGE  R = REMAP  ESC = BACK")
 ''')
 
 write("scripts/incident.gd", '''extends RefCounted

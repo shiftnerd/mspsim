@@ -53,6 +53,9 @@ const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT
 const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 
 # the help page of the pause menu: pages of [what, keys]
+# the walking-around actions a player can put on another key (the menus and mini-games keep their own keys); one key per action
+const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave", "drink", "duck", "dance", "follow", "phone", "aim", "outfit", "career"]
+
 const HELP := [
 	[
 		"MOVING AND USING",
@@ -98,6 +101,8 @@ const HELP := [
 
 
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
+var binds_path := "user://controls.cfg"
+var _overrides := {}  # action -> the physical key code it was remapped to
 var _stick := {}
 var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
@@ -107,6 +112,7 @@ var _stick_result := false
 
 func _ready() -> void:
 	ensure()
+	load_binds()
 
 
 # register every action that is missing (the player and the tests may also call this; it is safe to repeat)
@@ -162,6 +168,70 @@ func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
 	var device := rumble_device(slot)
 	if rumble_on and device >= 0:
 		Input.start_joy_vibration(device, clampf(strength * 0.6, 0.0, 1.0), clampf(strength, 0.0, 1.0), secs)
+
+
+# the physical key an action answers to on the keyboard (its first default key until it is remapped); -1 for none
+func key_of(action: String) -> int:
+	if _overrides.has(action):
+		return int(_overrides[action])
+	var keys: Array = ACTIONS[action][0] if ACTIONS.has(action) else []
+	return int(keys[0]) if not keys.is_empty() else -1
+
+
+# put `action` on `code` (and swap: whoever had that key gets this action's old key). Only REMAPPABLE actions; true when done
+func rebind(action: String, code: int) -> bool:
+	if not REMAPPABLE.has(action) or code <= 0:
+		return false
+	var old := key_of(action)
+	for other in REMAPPABLE:
+		if other != action and key_of(other) == code:
+			_apply_key(other, old)
+	_apply_key(action, code)
+	return true
+
+
+func _apply_key(action: String, code: int) -> void:
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			InputMap.action_erase_event(action, ev)
+	if code > 0:
+		var key := InputEventKey.new()
+		key.physical_keycode = code
+		InputMap.action_add_event(action, key)
+	_overrides[action] = code
+
+
+# back to the default keys
+func reset_binds() -> void:
+	for action in _overrides.keys():
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventKey:
+				InputMap.action_erase_event(action, ev)
+		for code in ACTIONS[action][0]:
+			var key := InputEventKey.new()
+			key.physical_keycode = code
+			InputMap.action_add_event(action, key)
+	_overrides = {}
+
+
+func save_binds() -> void:
+	var cfg := ConfigFile.new()
+	for action in _overrides:
+		cfg.set_value("binds", action, int(_overrides[action]))
+	if _overrides.is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(binds_path))
+	else:
+		cfg.save(binds_path)
+
+
+func load_binds() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(binds_path) != OK:
+		return
+	if not cfg.has_section("binds"):
+		return
+	for action in cfg.get_section_keys("binds"):
+		rebind(str(action), int(cfg.get_value("binds", action, 0)))
 
 
 # register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on
@@ -239,6 +309,8 @@ func matches(event: InputEvent, action: String) -> bool:
 		return false
 	if event.is_action(action):
 		return true
+	if _overrides.has(action):
+		return false  # a remapped action answers to its new key only
 	if event is InputEventKey:
 		if action == "pick_prev":
 			return event.keycode == KEY_TAB and event.shift_pressed
