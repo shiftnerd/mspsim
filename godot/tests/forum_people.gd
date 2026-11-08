@@ -33,7 +33,7 @@ func _init() -> void:
 	var total_intern := 0
 	for anim in intern.get_animation_names():
 		total_intern += intern.get_frame_count(anim)
-	for who in ["expo_grizzle", "expo_pip"]:
+	for who in ["expo_grizzle", "expo_pip", "expo_ray", "expo_rita"]:
 		var frames: SpriteFrames = load("res://characters/%s.tres" % who)
 		_check(frames != null, "%s has a SpriteFrames" % who)
 		var total := 0
@@ -194,5 +194,28 @@ func _init() -> void:
 				shouted += 1
 	_check(grumbled > 0, "Grizzle ends his answers with a grumble (%d)" % grumbled)
 	_check(shouted > 0, "Pip answers in capitals (%d)" % shouted)
+	# the next two regulars (R28): RTFM_Ray in the lobby, RegexRita in the hall; their chats pay out
+	_check(
+		spots.has("forum:ray") and spots["forum:ray"][0] == "resort_lobby" and spots.has("forum:rita") and spots["forum:rita"][0] == "resort_hall",
+		"Ray is in the lobby and Rita in the hall"
+	)
+	for door in [37, 100, 263, 301]:
+		_check(absf(float(spots["forum:ray"][1]) - float(door)) >= 25.0 or door == 100 and absf(float(spots["forum:ray"][1]) - 100.0) >= 25.0, "Ray is clear of x %d" % door)
+	for id in ["ray", "rita"]:
+		_check(not cf.forum_def(id).is_empty() and cf.forum_def(id).options.size() == 4, "%s has a chat with four options" % id)
+	cf.reset()
+	var n0: int = int(sk.xp.networking)
+	cf.npc_use(_fake("forum:ray"), null)
+	_check(cards.is_open and cards.speaker.begins_with("RTFM_Ray"), "E opens Ray's card")
+	cards.pick(0)
+	_check(int(sk.xp.networking) == n0 + 4, "Ray's page is +4 networking XP")
+	cards.pick(0)
+	cf.reset()
+	var ps0: int = int(sk.xp.servers)
+	cf.npc_use(_fake("forum:rita"), null)
+	_check(cards.is_open and cards.speaker.begins_with("RegexRita"), "E opens Rita's card")
+	cards.pick(0)
+	_check(int(sk.xp.servers) == ps0 + 4, "Rita's one-liner is +4 servers XP")
+	cards.pick(0)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

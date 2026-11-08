@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
@@ -47914,6 +47914,26 @@ const FORUM := [
             {"id": "bag", "label": "GIVE HIM YOUR TOTE BAG", "skill": "", "xp": 0, "social": 1, "text": "He puts it on his head and tells everyone near the booth about you in capital letters. By Monday your coworkers have heard. (coworkers like you a little more)", "text_free": "He puts it on his head and tells everyone about you."},
         ],
     },
+    {
+        "id": "ray", "speaker": "RTFM_Ray (forum regular)",
+        "text": "Ray. Everyone on the board knows me as the guy who replies with a link. Nine times out of ten the answer is on page 12 of the manual. The tenth time the manual is wrong, and that one is a good day.",
+        "options": [
+            {"id": "page", "label": "ASK WHICH PAGE", "skill": "networking", "xp": 4, "text": "'The one about DHCP scopes. People skip it, then wonder why two printers have the same address.' He is right. You write the page number on your hand. (+4 networking XP)"},
+            {"id": "wrong", "label": "ASK ABOUT THE WRONG MANUALS", "skill": "security", "xp": 3, "text": "'Vendor guides copy the default password into the example, and people copy the example.' You promise to change every default on day one. (+3 security XP)"},
+            {"id": "link", "label": "ASK HIM FOR THE LINK", "skill": "", "xp": 0, "karma": 3, "text": "He sends you the link before you finish the sentence, with the paragraph highlighted. You thank him on the forum, which he calls 'the correct use of the thread.' (+3 forum karma)", "text_free": "He sends you the link before you finish the sentence."},
+            {"id": "mug", "label": "COMPLIMENT THE MUG", "skill": "", "xp": 0, "social": 1, "text": "It says 'I READ THE FAQ SO YOU DON'T HAVE TO'. He lets you take a photo of it. It is in the team chat by Monday. (coworkers like you a little more)", "text_free": "It says 'I READ THE FAQ SO YOU DON'T HAVE TO'."},
+        ],
+    },
+    {
+        "id": "rita", "speaker": "RegexRita (forum regular)",
+        "text": "Rita. I answer the 'how do I rename 4,000 files' threads, mostly with one line nobody can read. I am told this is a problem. I disagree. What can I do for you?",
+        "options": [
+            {"id": "rename", "label": "ASK ABOUT RENAMING THE FILES", "skill": "servers", "xp": 4, "text": "She types it on a napkin: one line, three brackets, a dollar sign. 'Try it on a copy first.' You do. It works, and you do not know why. (+4 servers XP)"},
+            {"id": "explain", "label": "ASK HER TO EXPLAIN IT", "skill": "people", "xp": 3, "text": "She takes it apart one piece at a time, in plain words, with a drawing. 'Nobody explains it, that is the whole problem.' You see why the forum loves her. (+3 customer XP)"},
+            {"id": "karma", "label": "THANK HER ON THE FORUM", "skill": "", "xp": 0, "karma": 3, "text": "You post a thank-you under her answer. She replies with a link to a page about how to say thank you in fewer characters. (+3 forum karma)", "text_free": "You post a thank-you under her answer. She replies with a link."},
+            {"id": "hair", "label": "ASK ABOUT THE HAIR", "skill": "", "xp": 0, "social": 1, "text": "'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more)", "text_free": "'It matches my terminal theme.' It does."},
+        ],
+    },
 ]
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
 const SPEAKERS := {
@@ -47942,10 +47962,12 @@ const CROWD := {
         {"who": "expo_atta", "role": "att:0", "x": 215, "facing": "left", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_priya", "role": "att:1", "x": 243, "facing": "right", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
+        {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
+        {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]},
         {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
     ],
     "ballroom": [

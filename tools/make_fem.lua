@@ -85,6 +85,12 @@ local CHARS = {
     shoes = {"#3A3A44", "#2A2A33"}, lips = "#B8505A", blouse = "#E8F0F2",
   },
 
+  expo_rita = {      -- RegexRita (LabRat Nerds forum, patterns for everything): a teal ponytail, a black band tee, jeans, white sneakers
+    skin = {"#C98E66", "#A86C46", "#8A5636"}, hair = {"#2FA39A", "#56C8BC", "#1F7A72"}, style = "ponytail",
+    shirt = {"#2A2A33", "#1C1C24", "#E8E8EE"}, pants = {"#3F5E8E", "#2F4A73", "#243A5C"}, bottom = "trousers",
+    shoes = {"#E8E8EE", "#B8B8C4"}, lips = "#A8404A",
+  },
+
   expo_regdesk = {   -- the check-in desk: blonde-brown bun, navy blazer over a white blouse, trousers, conference-teal lanyard and badge
     skin = {"#E8A87C", "#C98458", "#A8643C"}, hair = {"#B88A52", "#D8AC6E", "#8A6234"}, style = "bun",
     shirt = {"#2E3A58", "#222C44", "#F2F2EA"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",

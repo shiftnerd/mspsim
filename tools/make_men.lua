@@ -53,6 +53,11 @@ local CHARS = {
     belt = "#2A2A34", stubble = false, lips = "#B05A4A",
     tufts = true, grin = true,
   },
+  expo_ray = {   -- RTFM_Ray (LabRat Nerds forum, the "read the manual" regular): black-framed glasses, an orange tee with a logo badge, khaki cargo trousers
+    skin = {"#E8B48C", "#C98E66", "#A86C46"}, hair = {"#5A3A22", "#7A5230", "#3E2616"},
+    shirt = {"#E0802A", "#B26018"}, pants = {"#8A7A5A", "#6E6044", "#544934"}, shoes = {"#3A3A44", "#2A2A33"},
+    belt = "#3A2A1A", stubble = "#D69A72", lips = "#8A4A2E", glasses = true, patch = true,
+  },
   office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
     shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},
