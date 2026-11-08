@@ -42,6 +42,7 @@ func _run() -> void:
 	change_scene_to_file("res://scenes/warehouse.tscn")
 	await create_timer(1.0).timeout
 	await _wait(10)
+	players.split_cam = false  # this test is about the tether; coop_split covers the second camera
 	players.enable_coop(true)
 	players.join(1, 1)
 	var stage := current_scene
@@ -63,6 +64,7 @@ func _run() -> void:
 				cam = c
 	var mid_x: float = (p1.global_position.x + p2.global_position.x) * 0.5
 	ok(cam != null and absf(cam.global_position.x - mid_x) < 200.0, "the camera sits near the middle of the two")
+	players.split_cam = true
 	players.enable_coop(false)
 	game.set_format("wide")
 	print("fails=", fails)

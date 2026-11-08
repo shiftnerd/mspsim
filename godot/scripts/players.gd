@@ -24,6 +24,7 @@ const P2_FALLBACK := "office_intern"
 const COOP_MODES := ["tech", "owner", "service", "sales"]  # the campaigns a second player can join (Free Play always can)
 
 var coop := false
+var split_cam := true  # the true second camera (phase 3b): when the players are a screen apart each gets half the window; off = the tether keeps them together
 var slots: Array = []
 var ui := [false, false]  # per slot: this player has a takeover (a pane) open; Game.ui_open stays the global freeze
 var _fades := [0.0, 0.0]
@@ -411,6 +412,14 @@ func coop_focus(xs: Array) -> float:
 		lo = minf(lo, float(x))
 		hi = maxf(hi, float(x))
 	return (lo + hi) * 0.5
+
+
+# co-op phase 3b: is it time to split the view? Splits once the two are too far apart for one screen (the tether's reach less
+# a body's width); joins again when they are within half a screen. Between the two it stays as it is.
+func split_wanted(sep: float, view_w: float, now: bool) -> bool:
+	if now:
+		return sep > view_w * 0.5 - 24.0
+	return sep > view_w - 2.0 * TETHER_MARGIN - 18.0
 
 
 # the x range the bodies may stand in so both stay on screen: the view around the camera centre (the focus kept inside the

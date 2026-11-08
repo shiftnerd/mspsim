@@ -55677,6 +55677,10 @@ var _player: Node2D
 var _room := ""
 var _dark_a := 0.0  # 0 = lit, 1 = lights out
 var _long := false  # a room wider than the screen (the warehouse) follows the player even in the wide format
+var _split_on := false  # co-op: the players are further apart than one screen shows, so each gets half the window
+var _split_vp: SubViewport = null
+var _split_cam: Camera2D = null
+var _split_layer: CanvasLayer = null
 
 
 func _ready() -> void:
@@ -55802,6 +55806,8 @@ func _lot_tint() -> void:
 func _apply_format() -> void:
     var f: Dictionary = Game.FORMATS[Game.format]
     _cam.zoom = Vector2.ONE * float(f.zoom)
+    if _split_on:
+        _split_set(false, f)  # the views are re-framed for the new format
     _cam.enabled = true
     if not f.follow and not _long:
         # classic 368x128 view: no camera movement, the room sits centred like before
@@ -55848,12 +55854,92 @@ func _coop_frame(f: Dictionary) -> void:
     for b in bodies:
         xs.append(b.global_position.x)
     var focus := Players.coop_focus(xs)
-    _cam.global_position.x = focus
     var bg: Sprite2D = get_node("Background")
     var view_w := get_viewport_rect().size.x / float(f.zoom)
+    if _split_update(bodies, view_w, bg, f):
+        return
+    _cam.global_position.x = focus
     var reach := Players.tether_range(focus, view_w, bg.position.x, bg.position.x + bg.texture.get_size().x)
     for b in bodies:
         b.global_position.x = clampf(b.global_position.x, reach.x, reach.y)
+
+
+# co-op phase 3b, the true second camera: when the two bodies are further apart than one screen shows, the window splits in
+# halves, the left one follows the player on the left and a second camera (a SubViewport sharing this world) the one on the
+# right. The tether is off while it is split; it joins again once the two are within half a screen of each other.
+func _split_update(bodies: Array, view_w: float, bg: Sprite2D, f: Dictionary) -> bool:
+    var lo: Node2D = bodies[0]
+    var hi: Node2D = bodies[0]
+    for b in bodies:
+        if b.global_position.x < lo.global_position.x:
+            lo = b
+        if b.global_position.x > hi.global_position.x:
+            hi = b
+    var sep: float = hi.global_position.x - lo.global_position.x
+    var room_w := bg.texture.get_size().x
+    var can: bool = Players.split_cam and room_w > view_w and Players.split_wanted(sep, view_w, _split_on)
+    if can != _split_on:
+        _split_set(can, f)
+    if not _split_on:
+        return false
+    var y := _cam.global_position.y
+    _cam.offset.x = view_w * 0.25
+    _cam.global_position = Vector2(lo.global_position.x, y)
+    _split_cam.global_position = Vector2(hi.global_position.x, y)
+    return true
+
+
+func _split_set(on: bool, f: Dictionary) -> void:
+    _split_on = on
+    if not on:
+        _cam.offset.x = 0.0
+        if _split_layer != null:
+            _split_layer.visible = false
+            _split_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+        return
+    var size := get_viewport_rect().size
+    if _split_vp == null:
+        _split_vp = SubViewport.new()
+        _split_vp.transparent_bg = false
+        _split_vp.disable_3d = true
+        _split_vp.world_2d = get_viewport().world_2d
+        _split_cam = Camera2D.new()
+        _split_cam.position_smoothing_enabled = false
+        _split_vp.add_child(_split_cam)
+        add_child(_split_vp)
+        _split_layer = CanvasLayer.new()
+        _split_layer.layer = 1
+        add_child(_split_layer)
+        var view := TextureRect.new()
+        view.name = "View"
+        view.texture = _split_vp.get_texture()
+        view.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+        view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+        view.stretch_mode = TextureRect.STRETCH_SCALE
+        _split_layer.add_child(view)
+        var line := ColorRect.new()
+        line.name = "Divider"
+        line.color = Color("17121F")
+        line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        _split_layer.add_child(line)
+    var half := Vector2(floorf(size.x * 0.5), size.y)
+    _split_vp.size = Vector2i(half)
+    _split_cam.zoom = Vector2.ONE * float(f.zoom)
+    _split_cam.limit_left = _cam.limit_left
+    _split_cam.limit_right = _cam.limit_right
+    _split_cam.limit_top = _cam.limit_top
+    _split_cam.limit_bottom = _cam.limit_bottom
+    _split_cam.make_current()
+    _cam.make_current()
+    var view_rect: TextureRect = _split_layer.get_node("View")
+    view_rect.position = Vector2(size.x - half.x, 0.0)
+    view_rect.size = half
+    var divider: ColorRect = _split_layer.get_node("Divider")
+    divider.position = Vector2(size.x - half.x - 1.0, 0.0)
+    divider.size = Vector2(2.0, size.y)
+    _split_layer.visible = true
+    _split_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 
 # a UI covers all but a strip at the top: slide the camera down so the player shows there
@@ -67440,6 +67526,7 @@ const P2_FALLBACK := "office_intern"
 const COOP_MODES := ["tech", "owner", "service", "sales"]  # the campaigns a second player can join (Free Play always can)
 
 var coop := false
+var split_cam := true  # the true second camera (phase 3b): when the players are a screen apart each gets half the window; off = the tether keeps them together
 var slots: Array = []
 var ui := [false, false]  # per slot: this player has a takeover (a pane) open; Game.ui_open stays the global freeze
 var _fades := [0.0, 0.0]
@@ -67827,6 +67914,14 @@ func coop_focus(xs: Array) -> float:
         lo = minf(lo, float(x))
         hi = maxf(hi, float(x))
     return (lo + hi) * 0.5
+
+
+# co-op phase 3b: is it time to split the view? Splits once the two are too far apart for one screen (the tether's reach less
+# a body's width); joins again when they are within half a screen. Between the two it stays as it is.
+func split_wanted(sep: float, view_w: float, now: bool) -> bool:
+    if now:
+        return sep > view_w * 0.5 - 24.0
+    return sep > view_w - 2.0 * TETHER_MARGIN - 18.0
 
 
 # the x range the bodies may stand in so both stay on screen: the view around the camera centre (the focus kept inside the

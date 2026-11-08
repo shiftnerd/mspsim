@@ -375,3 +375,9 @@ Not covered: pad buttons for the menus (A and B stay the pad's accept and cancel
 ## Addendum: the windowed soak (2026-11-08)
 
 `SOAK_MINUTES=180 Godot --windowed --resolution 960x540 --fixed-fps 60 -s res://tests/coop_soak.gd` (two players on a real GL window, NVIDIA RTX 3070): 7,901 rounds of opening and closing panes, changing rooms and swapping people in 180 minutes, 0 failures. Node count settled at 189 from minute 13 on (main_floor 247 first visit, 265 worst), static memory flat at 77 MB, 87 to 101 fps throughout. No leak. Still not done: a Switch dry run (needs the hardware).
+
+## Addendum: the true second camera (phase 3b, 2026-11-08)
+
+Built after all (the user asked for it). In a scrolling view (the `h` format, the warehouse and other long rooms) `Stage._split_update` splits the window when the two bodies are further apart than one screen shows (`Players.split_wanted`: splits at `view_w - 2 x margin - 18`, joins again below half a screen, so it does not flicker). The left half is the main camera shifted by `offset.x = view_w / 4` so the left body sits at a quarter of the window; the right half is a `SubViewport` sharing the world (`world_2d`) with its own `Camera2D` on a `CanvasLayer` (layer 1: under the HUD at 90 and the takeover panes at 60) with a 2 px divider. Whichever body is further left gets the left view. The tether is off while split. `Players.split_cam` (default on) turns the feature off, and the tether holds them together as before (the `coop_camera` test runs with it off). A format change drops the split and re-frames. Tests: `coop_split`; `tests/split_shot.gd` takes a windowed screenshot.
+
+Not done: a pause-menu switch for `split_cam` (it is a variable only), lights-out and the warehouse lot tint are world-side and show in both halves (checked by eye on the warehouse only), and takeover panes still cover half the window over a split.
