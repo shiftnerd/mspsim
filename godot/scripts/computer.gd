@@ -96,7 +96,7 @@ func _ready() -> void:
 	_canvas = Node2D.new()
 	_canvas.visible = false
 	add_child(_canvas)
-	_canvas.draw.connect(_paint)
+	_canvas.draw.connect(_paint_as)
 	Msp.changed.connect(_refresh)
 	Lync.changed.connect(_refresh)
 	Nerds.changed.connect(_refresh)
@@ -177,6 +177,13 @@ func _refresh() -> void:
 
 
 func _process(delta: float) -> void:
+	if pane_slot > 0:
+		Players.run_as(pane_slot, _step.bind(delta))  # a pane acts as its own player (own skills, own energy)
+	else:
+		_step(delta)
+
+
+func _step(delta: float) -> void:
 	if not is_open:
 		# an RMM fix keeps running with the computer closed (the result shows when you come back);
 		# anything else (playbook step, install project) is dropped
@@ -205,6 +212,13 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if pane_slot > 0:
+		Players.run_as(pane_slot, _route.bind(event))
+	else:
+		_route(event)
+
+
+func _route(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseMotion:
@@ -259,6 +273,13 @@ func _input(event: InputEvent) -> void:
 
 # ---- input actions (also used by the tests) ----------------------------------
 func click(at: Vector2) -> void:
+	if pane_slot > 0:
+		Players.run_as(pane_slot, _click_at.bind(at))
+	else:
+		_click_at(at)
+
+
+func _click_at(at: Vector2) -> void:
 	for i in range(_hits.size() - 1, -1, -1):
 		var h: Dictionary = _hits[i]
 		if h.r.has_point(at):
@@ -798,6 +819,13 @@ func _offline(message: String, body: Rect2) -> bool:
 
 
 # ---- the whole screen --------------------------------------------------------
+func _paint_as() -> void:
+	if pane_slot > 0:
+		Players.run_as(pane_slot, _paint)
+	else:
+		_paint()
+
+
 func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_hits.clear()

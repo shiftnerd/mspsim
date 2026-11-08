@@ -7384,7 +7384,7 @@ func _ready() -> void:
     _canvas = Node2D.new()
     _canvas.visible = false
     add_child(_canvas)
-    _canvas.draw.connect(_paint)
+    _canvas.draw.connect(_paint_as)
     Msp.changed.connect(_refresh)
     Lync.changed.connect(_refresh)
     Nerds.changed.connect(_refresh)
@@ -7465,6 +7465,13 @@ func _refresh() -> void:
 
 
 func _process(delta: float) -> void:
+    if pane_slot > 0:
+        Players.run_as(pane_slot, _step.bind(delta))  # a pane acts as its own player (own skills, own energy)
+    else:
+        _step(delta)
+
+
+func _step(delta: float) -> void:
     if not is_open:
         # an RMM fix keeps running with the computer closed (the result shows when you come back);
         # anything else (playbook step, install project) is dropped
@@ -7493,6 +7500,13 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+    if pane_slot > 0:
+        Players.run_as(pane_slot, _route.bind(event))
+    else:
+        _route(event)
+
+
+func _route(event: InputEvent) -> void:
     if not is_open:
         return
     if event is InputEventMouseMotion:
@@ -7536,6 +7550,13 @@ func _input(event: InputEvent) -> void:
 
 # ---- input actions (also used by the tests) ----------------------------------
 func click(at: Vector2) -> void:
+    if pane_slot > 0:
+        Players.run_as(pane_slot, _click_at.bind(at))
+    else:
+        _click_at(at)
+
+
+func _click_at(at: Vector2) -> void:
     for i in range(_hits.size() - 1, -1, -1):
         var h: Dictionary = _hits[i]
         if h.r.has_point(at):
@@ -8056,6 +8077,13 @@ func _offline(message: String, body: Rect2) -> bool:
 
 
 # ---- the whole screen --------------------------------------------------------
+func _paint_as() -> void:
+    if pane_slot > 0:
+        Players.run_as(pane_slot, _paint)
+    else:
+        _paint()
+
+
 func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
@@ -67167,6 +67195,7 @@ const FORCE_WINDOW := 2.0  # s: a second try at a door this soon closes the part
 const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
+const COOP_MODES := ["tech"]  # the campaigns a second player can join (Free Play always can)
 
 var coop := false
 var slots: Array = []
@@ -67174,6 +67203,8 @@ var ui := [false, false]  # per slot: this player has a takeover (a pane) open; 
 var _fades := [0.0, 0.0]
 var _host: Node = null
 var _refused_at := -1
+var active_slot := 0  # the slot whose Skills / Shift values are swapped into the autoloads right now (run_as)
+var _stash := {}
 
 
 class Slot:
@@ -67185,6 +67216,8 @@ class Slot:
     var stored_character := ""
     var stored_held := ""
     var stored_look := {}
+    var skills := {}  # co-op phase 5: {xp, ps_level, lesson_day} (slot 0's live in the Skills autoload)
+    var energy := -1.0  # Shift.energy while this slot is not the one swapped in (-1 = a fresh day's START_ENERGY)
 
     var character: String:
         get:
@@ -67239,6 +67272,49 @@ func takeover_host() -> Node:
 
 
 # co-op: the other player's slot when they have a screen (pane) open and `body` is about to use a door, else -1
+# co-op phase 5: run `call` as slot i. Skills and Shift keep one set of fields (200 call sites read them), so the slot's own
+# values are swapped in for the call and the slot 0 values put back after it. Slot 0, co-op off, or a call already inside
+# run_as just runs.
+func run_as(i: int, call: Callable) -> Variant:
+    if i <= 0 or not coop or i >= slots.size() or not slots[i].joined or active_slot != 0:
+        return call.call()
+    _swap_in(i)
+    var result: Variant = call.call()
+    _swap_out(i)
+    return result
+
+
+func _blank_skills() -> Dictionary:
+    var xp := {}
+    for key in Skills.NAMES:
+        xp[key] = 0
+    return {"xp": xp, "ps_level": 0, "lesson_day": -1}
+
+
+func _swap_in(i: int) -> void:
+    var s: Slot = slots[i]
+    if s.skills.is_empty():
+        s.skills = _blank_skills()
+    _stash = {"xp": Skills.xp, "ps_level": Skills.ps_level, "lesson_day": Skills.lesson_day, "energy": Shift.energy}
+    Skills.xp = s.skills.xp
+    Skills.ps_level = int(s.skills.ps_level)
+    Skills.lesson_day = int(s.skills.lesson_day)
+    Shift.energy = s.energy if s.energy >= 0.0 else float(Shift.START_ENERGY)
+    active_slot = i
+
+
+func _swap_out(i: int) -> void:
+    var s: Slot = slots[i]
+    s.skills.ps_level = Skills.ps_level
+    s.skills.lesson_day = Skills.lesson_day
+    s.energy = Shift.energy
+    Skills.xp = _stash.xp
+    Skills.ps_level = int(_stash.ps_level)
+    Skills.lesson_day = int(_stash.lesson_day)
+    Shift.energy = float(_stash.energy)
+    active_slot = 0
+
+
 func busy_partner(body: Node) -> int:
     if not coop or body == null or not "slot" in body:
         return -1
@@ -67331,7 +67407,7 @@ func can_join() -> bool:
         and sc != null
         and sc.has_method("spawn_player2")
         and not Game.title_mode
-        and not Campaign.active
+        and (not Campaign.active or Campaign.mode in COOP_MODES)
         and not Game.ui_open
         and not Game.busy
     )
