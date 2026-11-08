@@ -21,7 +21,7 @@ const FORCE_WINDOW := 2.0  # s: a second try at a door this soon closes the part
 const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
-const COOP_MODES := ["tech"]  # the campaigns a second player can join (Free Play always can)
+const COOP_MODES := ["tech", "owner"]  # the campaigns a second player can join (Free Play always can)
 
 var coop := false
 var slots: Array = []
@@ -212,7 +212,7 @@ func from_dict(d: Dictionary) -> void:
 
 # co-op: more tickets for two people (the gap between arrivals shrinks)
 func pace() -> float:
-	return 1.5 if coop and slots.size() > 1 and slots[1].joined else 1.0
+	return 1.5 if coop and slots.size() > 1 and slots[1].joined and Campaign.mode == "tech" else 1.0
 
 
 func busy_partner(body: Node) -> int:
@@ -324,13 +324,22 @@ func join(i: int, device := 1) -> bool:
 	s.joined = true
 	if s.stored_character == "":
 		s.stored_character = P2_CHARACTER if Slot.PLAYER_SCRIPT.current_character != P2_CHARACTER else P2_FALLBACK
+		if Campaign.active and Campaign.mode == "owner" and Roles.partner() != "":
+			s.stored_character = str(World.row(Roles.partner()).character)  # the owner campaign: player 2 is the other owner
 	Controls.ensure_slot(i, device)
 	var sc := get_tree().current_scene
 	if sc != null and sc.has_method("spawn_player2"):
 		sc.spawn_player2()
-	Campaign.refresh_free()  # the cast member player 2 plays as leaves their desk
+	_refresh_roster()  # the cast member player 2 plays as leaves their desk
 	roster_changed.emit()
 	return true
+
+
+func _refresh_roster() -> void:
+	if Campaign.active:
+		World.apply_roster()
+	else:
+		Campaign.refresh_free()
 
 
 func leave(i: int) -> void:
@@ -342,7 +351,7 @@ func leave(i: int) -> void:
 	if body != null:
 		body.get_parent().remove_child(body)
 		body.queue_free()
-	Campaign.refresh_free()
+	_refresh_roster()
 	roster_changed.emit()
 
 

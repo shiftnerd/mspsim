@@ -424,7 +424,7 @@ func roster_gone() -> Array:
 	if Campaign.player_as != "" and CAST.has(Campaign.player_as):
 		gone.append(Campaign.player_as)
 	# co-op Free Play: the cast member player 2 plays as is not also sitting at their desk
-	if Players.coop and Players.slots[1].joined and not Campaign.active:
+	if Players.coop and Players.slots[1].joined and (not Campaign.active or Campaign.mode == "owner"):
 		var second := cast_of(Players.slots[1].character)
 		if second != "" and not gone.has(second):
 			gone.append(second)
