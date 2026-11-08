@@ -103,13 +103,14 @@ const SOURCES := [
 	["7d5a3a", "beard", 0],
 	["55402c", "beard", 1],
 	["e0a07a", "stubble", 0],
+	# the brows follow the hair (see _role_base): the intern's brow 6b3416 is his hair 9a5124 a step darker
+	["6b3416", "brow", 0],
 ]
-# never recoloured: outline and belt, eye white, pupil, brows, mouth, buckle, watch
+# never recoloured: outline and belt, eye white, pupil, mouth, buckle, watch (the brows follow the hair, see SOURCES)
 const KEEPS := [
 	"17121f",
 	"ffffff",
 	"3a2418",
-	"6b3416",
 	"8a4a2e",
 	"c8ccd8",
 	"2a2a33",
@@ -890,6 +891,12 @@ func beard_color(look_dict: Dictionary, acc_dict: Dictionary) -> Color:
 
 # the colour a SOURCES role is recoloured from (roles of the look dict, and the accessory roles)
 func _role_base(look_dict: Dictionary, acc_dict: Dictionary, role: String) -> Color:
+	if role == "brow":
+		# the same step as the intern's own hair (9a5124) to brow (6b3416), applied to this hair, so the default look is exact
+		var hair := _color_of(look_dict, "hair")
+		var from_c := Color.html("9a5124")
+		var to_c := Color.html("6b3416")
+		return Color.from_hsv(fposmod(hair.h + to_c.h - from_c.h, 1.0), clampf(hair.s * to_c.s / from_c.s, 0.0, 1.0), clampf(hair.v * to_c.v / from_c.v, 0.0, 1.0))
 	if role == "frame":
 		return Color.html(frame_color(acc_dict))
 	if role == "beard":
