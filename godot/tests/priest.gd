@@ -30,7 +30,7 @@ func _init() -> void:
 	var nerds := root.get_node("Nerds")
 	var social := root.get_node("Social")
 
-	# the character: both facings, the standard animations, the sheet of 129 frames and the 129 hand rows
+	# the character: both facings, the standard animations, the sheet of 135 frames and the 135 hand rows
 	var frames: SpriteFrames = load("res://characters/expo_priest.tres")
 	_check(frames != null, "expo_priest has a SpriteFrames")
 	var intern: SpriteFrames = load("res://characters/office_intern.tres")
@@ -53,14 +53,14 @@ func _init() -> void:
 			ProjectSettings.globalize_path("res://assets/characters/expo_priest_%s.png" % side)
 		)
 		_check(
-			sheet != null and sheet.get_width() == 129 * 64 and sheet.get_height() == 80,
-			"the %s sheet is 129 frames of 64x80" % side
+			sheet != null and sheet.get_width() == 135 * 64 and sheet.get_height() == 80,
+			"the %s sheet is 135 frames of 64x80" % side
 		)
 		var f := FileAccess.open(
 			"res://assets/characters/expo_priest_%s_hands.json" % side, FileAccess.READ
 		)
 		var rows: Variant = JSON.parse_string(f.get_as_text()) if f != null else null
-		_check(rows is Array and rows.size() == 129, "the %s hands json has 129 rows" % side)
+		_check(rows is Array and rows.size() == 135, "the %s hands json has 135 rows" % side)
 
 	# the hall crowd: he stands clear of the four doors and the easels, and nobody from a client site is in the venue
 	var spot: Dictionary = {}

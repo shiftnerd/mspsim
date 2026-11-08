@@ -14,7 +14,7 @@ extends Node2D
 const HEAD_GEAR := preload("res://scripts/head_gear.gd")
 const DIR := "res://assets/clothes/"
 const CELL := Vector2i(64, 80)
-const FRAMES := 129
+const FRAMES := 135
 # [slot, behind the body]: drawing order, lowest first
 const SLOTS := [["shoes", true], ["bottom", true], ["far", false], ["torso", false], ["belt", false], ["near", false], ["hair", false]]
 const BELTED := ["trousers", "jeans"]  # the bottoms that have a belt over the shirt hem

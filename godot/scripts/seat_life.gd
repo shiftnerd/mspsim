@@ -14,6 +14,7 @@ const ALL := [
 	"sitphone",
 	"sitnod",
 	"sip",
+	"sitcouch",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -30,6 +31,7 @@ const BASE := {
 	"sitphone": 1.0,
 	"sitnod": 3.0,
 	"sip": 1.5,
+	"sitcouch": 3.0,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
@@ -54,6 +56,7 @@ const NONE := {}
 var who := ""
 var rng: RandomNumberGenerator
 var timer := 0.0
+var lounge := false  # the owner sits in a lounge seat (a couch or an armchair): sitcouch, the arm over the back, is for those
 var _mine: Dictionary = NONE
 
 
@@ -85,6 +88,8 @@ func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
 	if g == "sitmouse" and not typing:
 		return 0.0
 	if g == "sitnod" and typing:
+		return 0.0
+	if g == "sitcouch" and (typing or not lounge):
 		return 0.0
 	return float(_mine.get(g, BASE[g]))
 

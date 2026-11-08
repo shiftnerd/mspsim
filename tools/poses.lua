@@ -255,4 +255,14 @@ add("toss", {
   {lean = 1, aN = 45, aNr = 10, aF = 10, aFr = 20, dur = 140},
 })
 
+-- ---- sitcouch (frames 130-135, R26): on a couch the far arm goes up and back and lies along the top of the backrest, the near hand rests ----
+add("sitcouch", {
+  seat({keepN = false, keepF = false, aN = 10, aNr = 30, aF = 20, aFr = 40, lean = -1, dur = 160}),
+  seat({keepN = false, keepF = false, aN = 14, aNr = 34, aF = -50, aFr = 12, lean = -2, hrot = -2, dur = 160}),
+  seat({keepN = false, keepF = false, aN = 15, aNr = 35, aF = -96, aFr = 22, lean = -3, hrot = -4, dur = 420}),
+  seat({keepN = false, keepF = false, aN = 16, aNr = 36, aF = -100, aFr = 26, lean = -3, hrot = -8, hy = -1, dur = 620}),
+  seat({keepN = false, keepF = false, aN = 15, aNr = 35, aF = -98, aFr = 24, lean = -3, hrot = -7, hy = -1, face = "blink", dur = 140}),
+  seat({keepN = false, keepF = false, aN = 12, aNr = 32, aF = -40, aFr = 14, lean = -1, dur = 160}),
+})
+
 return poses, tags

@@ -1,6 +1,6 @@
 extends SceneTree
 # Seated life (R26): every character sheet has the eight seated gestures in both facings (hands json and sheet width match the
-# 129 frames), a seated NPC does a gesture within 18 s and goes back to type, never during a call / a chat / Game.busy, with a
+# 135 frames), a seated NPC does a gesture within 18 s and goes back to type, never during a call / a chat / Game.busy, with a
 # drink only head gestures and the sip, the picker is deterministic from the seed, and the player gestures when seated and idle.
 
 const COUNTS := {
@@ -13,8 +13,9 @@ const COUNTS := {
 	"sitphone": 5,
 	"sitnod": 4,
 	"toss": 6,
+	"sitcouch": 6,
 }
-const NFRAMES := 129
+const NFRAMES := 135
 
 var failures := 0
 var seat_life: GDScript = null  # loaded in _initialize: the autoloads exist by then (preload would compile first)
@@ -70,7 +71,7 @@ func _static_checks() -> void:
 			var tex: Texture2D = load("res://assets/characters/%s_%s.png" % [name, side])
 			if tex.get_width() != NFRAMES * 64:
 				bad += "%s %s sheet width %d; " % [name, side, tex.get_width()]
-	_check(chars >= 56 and bad == "", "all %d characters: 8 gestures and the toss x 2 facings, 129 frames, hands json (%s)" % [chars, bad.left(200)])
+	_check(chars >= 56 and bad == "", "all %d characters: 8 gestures, the toss and the couch pose x 2 facings, 135 frames, hands json (%s)" % [chars, bad.left(200)])
 
 
 func _picker_checks() -> void:
@@ -112,6 +113,17 @@ func _picker_checks() -> void:
 	_check(sips > 150, "Alan sips often (%d of 400 with a cup)" % sips)
 	_check(typing_ok, "no desk gesture away from a desk")
 	_check(nod_ok, "no meeting nod while typing")
+	# the couch pose (R26) is for lounge seats only
+	var couch_off := true
+	var couch_on := 0
+	var lounger: RefCounted = seat_life.new("Sam", 13)
+	for i in 300:
+		couch_off = couch_off and plain.pick(false, false, false) != "sitcouch" and plain.pick(true, false, false) != "sitcouch"
+		lounger.lounge = true
+		couch_off = couch_off and lounger.pick(true, false, false) != "sitcouch"
+		couch_on += 1 if lounger.pick(false, false, false) == "sitcouch" else 0
+	_check(couch_off, "no arm over the back at a desk or on an office chair")
+	_check(couch_on > 20, "on a couch the arm over the back shows up (%d of 300)" % couch_on)
 	_check(all.size() >= 7, "a plain sitter uses many gestures (%d)" % all.size())
 
 

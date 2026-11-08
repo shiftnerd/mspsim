@@ -44,8 +44,8 @@ func _initialize() -> void:
 	for c in CHARS:
 		for facing in ["right", "left"]:
 			var sheet := _raw("res://assets/characters/%s_%s.png" % [c, facing])
-			if sheet.get_width() != FW * 129:
-				_check(false, "%s %s sheet has 129 frames" % [c, facing])
+			if sheet.get_width() != FW * 135:
+				_check(false, "%s %s sheet has 135 frames" % [c, facing])
 				continue
 			for f in frames:
 				var low := -1

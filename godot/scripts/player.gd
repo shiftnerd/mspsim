@@ -648,6 +648,7 @@ func _gesture_tick(delta: float, locked: bool) -> void:
 	var rolling: bool = absf(_roll.off) > 3.0 or absf(_roll.vel) > 4.0
 	var idle := not locked and _call_stage == "" and not rolling and not _sip_pending
 	if _life.tick(delta, idle):
+		_life.lounge = not seat.stash
 		var g: String = _life.pick(seat.typing, held != "", false)
 		if g != "":
 			_gesture = g

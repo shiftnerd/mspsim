@@ -1,9 +1,9 @@
 -- Renders the character creator's CLOTHES overlay sheets (roadmap R15 level 3 step f) and the golden test's reference characters.
 -- Input: office/clothes.aseprite (tools/make_clothes.lua; right-facing pieces, the left sheets use the mirror), the bare base character
 -- sprites/custom/custom_bare_<facing>.aseprite and the Hair layer of every hairstyle's own still. Every piece goes through the real
--- animation engine (tools/anim.lua, all 129 poses of tools/poses.lua, both facings) as an unmeasured layer (E.addLayer, acc = true), so
+-- animation engine (tools/anim.lua, all 135 poses of tools/poses.lua, both facings) as an unmeasured layer (E.addLayer, acc = true), so
 -- it moves exactly like the body part it belongs to and the death frames shift the body as they do for the intern.
--- Output, in godot/assets/clothes/, full 64x80 frames, 129 wide (the same cells and indices as the body sheet; no origin tables):
+-- Output, in godot/assets/clothes/, full 64x80 frames, 135 wide (the same cells and indices as the body sheet; no origin tables):
 --   shirt_<id>_far_<facing>.png    the far sleeve   (rides on the far arm)
 --   shirt_<id>_torso_<facing>.png  the shirt body, collar included
 --   shirt_<id>_near_<facing>.png   the near sleeve  (rides on the near arm)
@@ -18,7 +18,7 @@
 -- arm it covers and the draw order far sleeve < shirt < belt < near sleeve < hair is the baked one.
 -- REF = {{name = "tee_jeans_sneakers_long", shirt = "tee", bottom = "jeans", shoes = "sneakers", hair = "long"}, ...} also writes the
 -- reference characters godot/tests/golden/ref_<name>_<facing>.png: the bare base with the outfit's pieces as ordinary layers at their baked
--- positions (129 frames of 64x80); tests/clothes.gd checks that the overlay sprites composited on the bare sheet give the same pixels.
+-- positions (135 frames of 64x80); tests/clothes.gd checks that the overlay sprites composited on the bare sheet give the same pixels.
 --   ROOT = "<checkout>/"; REF = {...}; dofile(ROOT .. "tools/make_clothes_sheets.lua")        (Aseprite.exe -b --script x.lua)
 local R = ROOT or "D:/creative/pixelproject/"
 local T = R .. "tools/"

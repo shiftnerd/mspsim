@@ -6,7 +6,7 @@ extends SceneTree
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/outfit.gd
 
 const POSE_NAMES := [
-	"idle", "walk", "wave", "sit", "type", "sitstretch", "sitscratch", "sitlook", "sityawn", "sitnod", "sitphone", "sitmouse", "sitslump", "toss"
+	"idle", "walk", "wave", "sit", "type", "sitstretch", "sitscratch", "sitlook", "sityawn", "sitnod", "sitphone", "sitmouse", "sitslump", "toss", "sitcouch"
 ]
 
 var failures := 0
@@ -93,11 +93,11 @@ func _init() -> void:
 	cs.setup("free")
 	_check(cs.step == "create" and cs.is_custom(), "Free Play opens straight in the create step on MY LOOK")
 	cs.ids = ["custom"]  # no START row here: the poses and the NAME row are what this test is about (charselect.gd covers START)
-	_check(cs_script.POSES.size() == 14, "fourteen poses")
+	_check(cs_script.POSES.size() == 15, "fifteen poses")
 	var names := []
 	for p in cs_script.POSES:
 		names.append(p[0])
-	_check(names == POSE_NAMES, "idle, walk, wave, sit, type, the eight seated gestures and toss, in that order")
+	_check(names == POSE_NAMES, "idle, walk, wave, sit, type, the eight seated gestures, toss and the couch pose, in that order")
 	var spr: AnimatedSprite2D = cs._sprites[0]
 	var all_there := true
 	var all_gear := true
@@ -126,10 +126,10 @@ func _init() -> void:
 	cs._process(0.5)
 	_check(cs.pose_i == 1, "and not before")
 	var seen := {}
-	for i in 14:
+	for i in 15:
 		seen[cs.pose_i] = true
 		cs._process(cs_script.POSE_SECS + 0.1)
-	_check(seen.size() == 14 and cs.pose_i == 1, "the cycle visits all fourteen and wraps")
+	_check(seen.size() == 15 and cs.pose_i == 1, "the cycle visits all fifteen and wraps")
 	# hold
 	cs._unhandled_input(_ev(KEY_TAB))
 	_check(cs.pose_hold, "TAB holds the pose")
@@ -169,7 +169,7 @@ func _init() -> void:
 	cs._unhandled_input(_click(right.get_center()))
 	cs._unhandled_input(_click(left.get_center()))
 	cs._unhandled_input(_click(left.get_center()))
-	_check(cs.pose_i == posmod(at - 1, 14), "a click on the arrows steps the pose")
+	_check(cs.pose_i == posmod(at - 1, 15), "a click on the arrows steps the pose")
 	# the pad
 	var pad := InputEventJoypadButton.new()
 	pad.button_index = JOY_BUTTON_Y

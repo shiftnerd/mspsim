@@ -71,8 +71,8 @@ const CHOICES := {
 	"bottom": BOTTOM_STYLES,
 	"shoe_style": SHOE_STYLES
 }  # the list rows of the create step
-const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 129 frames
-const FRAMES := 129
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 135 frames
+const FRAMES := 135
 const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
 const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
@@ -82,7 +82,8 @@ const HEMS := [
 	67, 67, 68, 68, 67, 67, 67, 67, 67, 74, 74, 74, 67, 67, 74, 74, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 74, 74,
 	74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 76, 76, 74, 74, 74, 74, 74, 74, 74, 74,
 	74, 74, 74, 74, 74, 74,
-	68, 69, 68, 67, 67, 67
+	68, 69, 68, 67, 67, 67,
+	74, 74, 74, 74, 74, 74
 ]
 const SOURCES := [
 	["f3b488", "skin", 0],

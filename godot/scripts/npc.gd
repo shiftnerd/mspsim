@@ -845,6 +845,7 @@ func _start_gesture() -> void:
 	if not seat.typing and _speaker_talking():
 		g = _life.pick_listen()  # a meeting: eyes on whoever is talking, a nod now and then
 	else:
+		_life.lounge = not seat.stash
 		g = _life.pick(seat.typing, held != "", held != "")
 	if g == "":
 		return

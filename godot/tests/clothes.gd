@@ -2,14 +2,14 @@ extends SceneTree
 # gdlint:disable=max-line-length
 # Character creator level 3 step (f): REAL CLOTHES (scripts/clothes_gear.gd, tools/make_clothes.lua, tools/make_clothes_sheets.lua,
 # assets/clothes/, characters/custom_bare). Checks: the style lists and files, the size budget; a golden comparison (the overlay sheets
-# composited in their z order on the bare sheet equal a one-off reference character with the garments as real layers, all 129 frames, both
+# composited in their z order on the bare sheet equal a one-off reference character with the garments as real layers, all 135 frames, both
 # facings, three outfits: tee + jeans + sneakers + long hair, sweater + skirt + boots + bob, button-down + shorts + dress shoes + curly);
 # the stock outfit rebuilt from overlays equals the prebaked intern sheet (one pixel of frame 70 aside); sanitize (an old look wears the
 # stock clothes, unknown and locked garments become stock), the unlock rule for the work boots, RANDOM, save and restore; the node (sync
 # with the body sprite for every animation frame, z order, belt, bald, pattern only on the shirt body, stock look has no overlay).
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/clothes.gd
 
-const NFRAMES := 129
+const NFRAMES := 135
 const FW := 64
 const FH := 80
 const OUTFITS := [
@@ -110,7 +110,7 @@ func _init() -> void:
 			var img := _raw(p)
 			files_ok = files_ok and img.get_width() == FW * NFRAMES and img.get_height() == FH
 			total += FileAccess.get_file_as_bytes(p).size()
-	_check(files_ok, "every garment and hair sheet has 129 full 64x80 frames per facing")
+	_check(files_ok, "every garment and hair sheet has 135 full 64x80 frames per facing")
 	_check(total < 2 * 1024 * 1024, "the clothes sheets stay small (%d KB of PNG, budget 2048)" % (total / 1024))
 	var bare := look.frames_for("office_intern", true, {"shirt_style": "tee"}) as SpriteFrames
 	_check(bare != null and bare.has_animation("idle_right") and bare.has_animation("toss_left"), "characters/custom_bare has every animation")

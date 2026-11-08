@@ -40,9 +40,11 @@ DURS = ([500, 320, 120, 320] + [90] * 8 + [70] * 6 + [140, 80, 130, 100] + [90, 
         + [130, 130, 280, 450, 140] + [140, 160, 150, 150, 150, 140] + [200, 420, 420, 140, 200]
         + [160, 200, 520, 200, 160] + [260, 400, 700, 300] + [200] * 4 + [180, 200, 420, 420, 180] + [150, 150, 140, 150]
         # toss (124-129, R29): an underhand throw, the near arm back, through and up
-        + [140, 200, 70, 120, 220, 140])
+        + [140, 200, 70, 120, 220, 140]
+        # sitcouch (130-135, R26): the far arm goes up and back along the backrest, holds, comes down
+        + [160, 160, 420, 620, 140, 160])
 NFRAMES = len(DURS)
-assert NFRAMES == 129
+assert NFRAMES == 135
 # animation name -> (first frame, last frame, 1-based, loop)
 ANIMS = {
     "idle": (1, 4, True), "walk": (5, 12, True), "run": (13, 18, True),
@@ -51,7 +53,7 @@ ANIMS = {
     "reach": (43, 45, False), "wave": (46, 49, True), "talk": (50, 53, True),
     "hold": (54, 55, True), "walkhold": (56, 63, True), "sip": (64, 66, False), "sitsip": (67, 69, False), "call": (70, 71, True), "sitcall": (72, 73, True), "dance": (74, 85, True),
     "sitstretch": (86, 90, False), "sitscratch": (91, 96, False), "sitlook": (97, 101, False), "sityawn": (102, 106, False),
-    "sitslump": (107, 110, False), "sitmouse": (111, 114, False), "sitphone": (115, 119, False), "sitnod": (120, 123, False), "toss": (124, 129, False),
+    "sitslump": (107, 110, False), "sitmouse": (111, 114, False), "sitphone": (115, 119, False), "sitnod": (120, 123, False), "toss": (124, 129, False), "sitcouch": (130, 135, False),
     "sitdown": (36, 37, False), "sit": (38, 39, True), "type": (40, 42, True),
 }
 
@@ -3065,6 +3067,7 @@ const ALL := [
     "sitphone",
     "sitnod",
     "sip",
+    "sitcouch",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -3081,6 +3084,7 @@ const BASE := {
     "sitphone": 1.0,
     "sitnod": 3.0,
     "sip": 1.5,
+    "sitcouch": 3.0,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
@@ -3105,6 +3109,7 @@ const NONE := {}
 var who := ""
 var rng: RandomNumberGenerator
 var timer := 0.0
+var lounge := false  # the owner sits in a lounge seat (a couch or an armchair): sitcouch, the arm over the back, is for those
 var _mine: Dictionary = NONE
 
 
@@ -3136,6 +3141,8 @@ func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
     if g == "sitmouse" and not typing:
         return 0.0
     if g == "sitnod" and typing:
+        return 0.0
+    if g == "sitcouch" and (typing or not lounge):
         return 0.0
     return float(_mine.get(g, BASE[g]))
 
@@ -4008,6 +4015,7 @@ func _start_gesture() -> void:
     if not seat.typing and _speaker_talking():
         g = _life.pick_listen()  # a meeting: eyes on whoever is talking, a nod now and then
     else:
+        _life.lounge = not seat.stash
         g = _life.pick(seat.typing, held != "", held != "")
     if g == "":
         return
@@ -4224,7 +4232,7 @@ const DIR := "res://assets/accessories/"
 const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
 const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
 const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
-const FRAMES := 129
+const FRAMES := 135
 
 static var _origins := {}
 
@@ -4236,7 +4244,7 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 129 [x, y] pairs
+# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 135 [x, y] pairs
 static func origins(facing: String, kind := "head") -> Array:
     var key := kind + "_" + facing
     if not _origins.has(key):
@@ -4245,7 +4253,7 @@ static func origins(facing: String, kind := "head") -> Array:
     return _origins[key]
 
 
-# the sheet index of an animation frame (the body sheet is 129 frames; the overlay sheets have the same 129 cells), -1 = none
+# the sheet index of an animation frame (the body sheet is 135 frames; the overlay sheets have the same 135 cells), -1 = none
 static func frame_index(anim: String, frame: int) -> int:
     var parts := anim.rsplit("_", true, 1)
     if parts.size() < 2 or not HELD_ITEM.START.has(parts[0]):
@@ -4349,7 +4357,7 @@ write("scripts/clothes_gear.gd", '''extends Node2D
 const HEAD_GEAR := preload("res://scripts/head_gear.gd")
 const DIR := "res://assets/clothes/"
 const CELL := Vector2i(64, 80)
-const FRAMES := 129
+const FRAMES := 135
 # [slot, behind the body]: drawing order, lowest first
 const SLOTS := [["shoes", true], ["bottom", true], ["far", false], ["torso", false], ["belt", false], ["near", false], ["hair", false]]
 const BELTED := ["trousers", "jeans"]  # the bottoms that have a belt over the shirt hem
@@ -52904,6 +52912,7 @@ const POSES := [
     ["sitmouse", "MOUSE"],
     ["sitslump", "SLUMP"],
     ["toss", "TOSS"],
+    ["sitcouch", "COUCH"],
 ]
 const POSE_SECS := 2.4
 const GRID_COLS := 9  # the pad's letter grid
@@ -56753,6 +56762,7 @@ func _gesture_tick(delta: float, locked: bool) -> void:
     var rolling: bool = absf(_roll.off) > 3.0 or absf(_roll.vel) > 4.0
     var idle := not locked and _call_stage == "" and not rolling and not _sip_pending
     if _life.tick(delta, idle):
+        _life.lounge = not seat.stash
         var g: String = _life.pick(seat.typing, held != "", false)
         if g != "":
             _gesture = g
@@ -66847,8 +66857,8 @@ const CHOICES := {
     "bottom": BOTTOM_STYLES,
     "shoe_style": SHOE_STYLES
 }  # the list rows of the create step
-const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 129 frames
-const FRAMES := 129
+const CELL := 64  # the frame cell of the sheets: 64 wide, 80 tall, 135 frames
+const FRAMES := 135
 const SLEEVE_REACH := 3  # a shirt pixel with skin this close below it (same column) is a sleeve: no pattern
 const PATTERN_LIGHT := 0.6  # a shirt with value above this gets a darker second tone, otherwise a lighter one
 # per frame of the sheet: the first pants row plus 9 (the hem of the shorts); 255 = no shorts in that frame
@@ -66858,7 +66868,8 @@ const HEMS := [
     67, 67, 68, 68, 67, 67, 67, 67, 67, 74, 74, 74, 67, 67, 74, 74, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 67, 74, 74,
     74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 74, 76, 76, 74, 74, 74, 74, 74, 74, 74, 74,
     74, 74, 74, 74, 74, 74,
-    68, 69, 68, 67, 67, 67
+    68, 69, 68, 67, 67, 67,
+    74, 74, 74, 74, 74, 74
 ]
 const SOURCES := [
     ["f3b488", "skin", 0],

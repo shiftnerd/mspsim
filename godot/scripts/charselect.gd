@@ -108,6 +108,7 @@ const POSES := [
 	["sitmouse", "MOUSE"],
 	["sitslump", "SLUMP"],
 	["toss", "TOSS"],
+	["sitcouch", "COUCH"],
 ]
 const POSE_SECS := 2.4
 const GRID_COLS := 9  # the pad's letter grid

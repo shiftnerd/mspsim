@@ -30,6 +30,7 @@ const START := {
 	"sitphone": 114,
 	"sitnod": 119,
 	"toss": 123,
+	"sitcouch": 129,
 	"sitdown": 35,
 	"sit": 37,
 	"type": 39

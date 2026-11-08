@@ -19,7 +19,7 @@ const DIR := "res://assets/accessories/"
 const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
 const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
 const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
-const FRAMES := 129
+const FRAMES := 135
 
 static var _origins := {}
 
@@ -31,7 +31,7 @@ var _ids := {}
 var _slots := {}
 
 
-# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 129 [x, y] pairs
+# the cell origins (top left of the cell in the 64x80 body frame) of a facing and a kind of accessory, 135 [x, y] pairs
 static func origins(facing: String, kind := "head") -> Array:
 	var key := kind + "_" + facing
 	if not _origins.has(key):
@@ -40,7 +40,7 @@ static func origins(facing: String, kind := "head") -> Array:
 	return _origins[key]
 
 
-# the sheet index of an animation frame (the body sheet is 129 frames; the overlay sheets have the same 129 cells), -1 = none
+# the sheet index of an animation frame (the body sheet is 135 frames; the overlay sheets have the same 135 cells), -1 = none
 static func frame_index(anim: String, frame: int) -> int:
 	var parts := anim.rsplit("_", true, 1)
 	if parts.size() < 2 or not HELD_ITEM.START.has(parts[0]):

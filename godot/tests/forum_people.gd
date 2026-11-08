@@ -45,15 +45,15 @@ func _init() -> void:
 				ProjectSettings.globalize_path("res://assets/characters/%s_%s.png" % [who, side])
 			)
 			_check(
-				sheet != null and sheet.get_width() == 129 * 64 and sheet.get_height() == 80,
-				"%s %s sheet is 129 frames of 64x80" % [who, side]
+				sheet != null and sheet.get_width() == 135 * 64 and sheet.get_height() == 80,
+				"%s %s sheet is 135 frames of 64x80" % [who, side]
 			)
 			var f := FileAccess.open(
 				"res://assets/characters/%s_%s_hands.json" % [who, side], FileAccess.READ
 			)
 			var rows: Variant = JSON.parse_string(f.get_as_text()) if f != null else null
 			_check(
-				rows is Array and rows.size() == 129, "%s %s hands json has 129 rows" % [who, side]
+				rows is Array and rows.size() == 135, "%s %s hands json has 135 rows" % [who, side]
 			)
 	# they look different from each other and from the priest (the sheets differ)
 	var a := Image.load_from_file(
