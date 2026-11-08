@@ -59874,9 +59874,13 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 const MEDAL_H := 16.0
 const ROW_H := 7.0
 const HEAD_ROW_H := 9.0
+# the mastery page: [label, the game id of Career "good.<game>"]
+const MASTERY_ROWS := [["BOWLING", "bowling"], ["KARAOKE", "karaoke"], ["ESCAPE ROOM", "escape"], ["CORNHOLE", "cornhole"], ["COOKOUT", "grill"], ["CHAIR RACE", "chair"], ["DARTS", "darts"], ["PRINTER", "printer"]]
 
 var page := 0
 var pages: Array = []
+var sel := 0  # the medal the cursor is on (an index into the page's medals)
+var detail := false  # the selected medal's detail panel is open
 var _built_for := Vector2.ZERO
 var _btns: Array = []  # [Rect2, id]
 var _hover := ""
@@ -59897,7 +59901,13 @@ func go(step: int) -> void:
     if pages.is_empty():
         return
     page = posmod(page + step, pages.size())
+    sel = 0
+    detail = false
     queue_redraw()
+
+
+func _medals_here() -> Array:
+    return pages[page].get("medals", []) if not pages.is_empty() else []
 
 
 func close() -> void:
@@ -59915,8 +59925,18 @@ func _input(event: InputEvent) -> void:
             go(-1)
         elif dir == "right":
             go(1)
+        elif (dir == "up" or dir == "down") and not detail and not _medals_here().is_empty():
+            sel = posmod(sel + (1 if dir == "down" else -1), _medals_here().size())
+            queue_redraw()
+        elif Controls.confirm(event) and not _medals_here().is_empty():
+            detail = not detail
+            queue_redraw()
         elif Controls.back(event):
-            close()
+            if detail:
+                detail = false
+                queue_redraw()
+            else:
+                close()
     elif event is InputEventMouseMotion:
         var h := _hit(event.position)
         if h != _hover:
@@ -59943,7 +59963,18 @@ func _hit(at: Vector2) -> String:
 
 
 func click(at: Vector2) -> void:
-    match _hit(at):
+    var hit := _hit(at)
+    if hit.begins_with("medal:"):
+        var i := int(hit.get_slice(":", 1))
+        detail = not (detail and i == sel)
+        sel = i
+        queue_redraw()
+        return
+    if detail:
+        detail = false
+        queue_redraw()
+        return
+    match hit:
         "prev":
             go(-1)
         "next":
@@ -59981,6 +60012,7 @@ func build(size: Vector2) -> void:
             chunk.pop_back()
         i += chunk.size()
         pages.append({"title": "CAREER - TOTALS", "items": chunk})
+    pages.append({"title": "CAREER - MASTERY", "mastery": true})
     var cap_m := maxi(1, int(body.size.y / MEDAL_H)) * cols
     var n_pages := int(ceil(float(Career.MEDALS.size()) / float(cap_m)))
     for p in n_pages:
@@ -60014,9 +60046,13 @@ func _draw() -> void:
     var colw := (body.size.x - gap * float(cols - 1)) / float(cols)
     if pg.has("items"):
         _draw_counters(pg.items, body, cols, colw, gap)
+    elif pg.has("mastery"):
+        _draw_mastery(body, cols, colw, gap)
     else:
         _draw_medals(pg.medals, body, cols, colw, gap)
-    UiStyle.footer(self, r, "ARROWS PAGE  ESC BACK")
+        if detail and sel < pg.medals.size():
+            _draw_detail(size, pg.medals[sel])
+    UiStyle.footer(self, r, "ARROWS PAGE  UP DOWN, ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK")
     _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
     _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
     _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -60043,6 +60079,46 @@ func _draw_counters(items: Array, body: Rect2, _cols: int, colw: float, gap: flo
         UiStyle.right(self, _fmt(v, str(it.fmt)), cx + colw, cy, UiStyle.GOLD.darkened(0.35) if v > 0 else UiStyle.MUTED)
 
 
+# the mastery ramp: ten good plays (2 or more stars) bring a game to full mastery, and the game gets a little tighter as it grows
+func _draw_mastery(body: Rect2, cols: int, colw: float, gap: float) -> void:
+    UiStyle.text(self, "A GOOD PLAY (2+ STARS) COUNTS. 10 = FULL MASTERY.", body.position.x, body.position.y, UiStyle.HEAD)
+    var per_col := maxi(1, int((body.size.y - 10.0) / 8.0))
+    var ramp := int(Difficulty.RAMP_PLAYS)
+    for i in MASTERY_ROWS.size():
+        var x := body.position.x + float(i / per_col) * (colw + gap)
+        var y := body.position.y + 10.0 + float(i % per_col) * 8.0
+        var n := mini(Career.value("good." + str(MASTERY_ROWS[i][1])), ramp)
+        UiStyle.text(self, str(MASTERY_ROWS[i][0]), x, y, UiStyle.INK)
+        var bx := x + colw - float(ramp) * 4.0 - 24.0 if cols > 1 else x + 70.0
+        for k in ramp:
+            draw_rect(Rect2(bx + float(k) * 4.0, y + 1.0, 3.0, 4.0), UiStyle.GOLD if k < n else UiStyle.SOFT)
+        UiStyle.right(self, "%d/%d" % [n, ramp], bx + float(ramp) * 4.0 + 22.0, y, UiStyle.MUTED if n == 0 else UiStyle.GOLD.darkened(0.35))
+
+
+# the open medal: the whole name and description, how far you are, and what it unlocks
+func _draw_detail(size: Vector2, m: Dictionary) -> void:
+    var r := UiStyle.panel_rect(size, 250.0, 70.0 if size.y < 150.0 else 110.0)
+    var body := UiStyle.panel(self, r, str(m.title), "EARNED" if Career.has_medal(str(m.id)) else "NOT YET")
+    var chars := int(body.size.x / 4.0)
+    var y := body.position.y
+    for line in UiStyle.wrap_text(str(m.desc), chars):
+        UiStyle.text(self, str(line), body.position.x, y, UiStyle.INK)
+        y += 7.0
+    var prog := Career.progress(m)
+    if prog != "" and not Career.has_medal(str(m.id)):
+        UiStyle.text(self, "PROGRESS " + prog, body.position.x, y + 2.0, UiStyle.HEAD)
+        y += 9.0
+    var gives: Array = []
+    for u in Career.UNLOCKS:
+        if str(u.medal) == str(m.id):
+            gives.append(str(u.title))
+    if not gives.is_empty():
+        for line in UiStyle.wrap_text("UNLOCKS: " + ", ".join(gives), chars):
+            UiStyle.text(self, str(line), body.position.x, y + 2.0, UiStyle.GOLD.darkened(0.35))
+            y += 7.0
+    UiStyle.footer(self, r, "ENTER OR ESC = CLOSE")
+
+
 func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
     var per_col := maxi(1, int(body.size.y / MEDAL_H))
     var chars := int((colw - 9.0) / 4.0)
@@ -60051,6 +60127,10 @@ func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float)
         var x := body.position.x + float(i / per_col) * (colw + gap)
         var y := body.position.y + float(i % per_col) * MEDAL_H
         var got := Career.has_medal(str(m.id))
+        var row := Rect2(x - 1.0, y - 1.0, colw + 2.0, MEDAL_H - 1.0)
+        _btns.append([row, "medal:%d" % i])
+        if i == sel:
+            draw_rect(row, Color(UiStyle.GOLD, 0.25))
         if got:
             UiStyle.star(self, Vector2(x + 3.5, y + 3.0), 4.0, UiStyle.GOLD)
         else:

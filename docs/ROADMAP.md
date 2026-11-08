@@ -52,7 +52,6 @@ What is really still open, by row id. Nothing here is scheduled; pick as the cam
 | R1 | hard-tier numbers checked by play; a separate tier step instead of the chip | S |
 | R4 | themed rooms (E5) | M |
 | R6 | Dietary quirks and an ordering round (D4), a client at the table (D5), table events (D7), post-dinner talks (D8), an ASK HOW THEY ARE topic and `as of outing n` marks (D2), the boss picking up the tab in the tech campaign | M |
-| R7 | A medal detail view, a mastery row on the career screen (the duck skins, desk toys and ringtone sounds are built: `tests/desk_art`, `tests/ringtones`) | S |
 | R8 | Seasonal tags beyond the day windows, art for the cards | S |
 | R9 | A `cash_mult` hook, a Free Play menu entry (only the backtick key chooser exists), owner-only mutators beyond slow payers, mutator art and sound | S |
 | R10 | a Year 3, balance by hand play | M |
