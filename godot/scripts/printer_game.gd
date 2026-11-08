@@ -963,15 +963,26 @@ func reset() -> void:
 
 
 # ---- input
+# co-op (R34 phase 6): the steps of the job go round the two players, one phase each (0 = player 1); -1 = either (intro, result)
+func turn_slot() -> int:
+	if not (Players.coop and Players.slots[1].joined):
+		return -1
+	var at := _phases().find(phase)
+	return at % 2 if at >= 0 else -1
+
+
 func _input(event: InputEvent) -> void:
 	if not is_open or not Controls.pressed(event):
+		return
+	var turn := turn_slot()
+	if turn >= 0 and Players.slot_of(event) != turn:
 		return
 	var dir := Controls.nav(event, false)
 	if dir != "":
 		press(dir)
-	elif Controls.confirm(event):
+	elif Controls.confirm_any(event):
 		press("confirm")
-	elif Controls.back(event, false):
+	elif Controls.back_any(event, false):
 		press("escape")
 	elif event is InputEventKey:
 		match event.keycode:
@@ -1196,6 +1207,8 @@ func _paint() -> void:
 		note += " (BAG %+d)" % bag_adj
 	if phase != "result":
 		note += "  PRAY %d" % faith
+	if turn_slot() >= 0:
+		note += "  P%d" % (turn_slot() + 1)
 	UiStyle.panel(_canvas, panel, _tx("title"), note)
 	if blessed > 0 and phase != "result":
 		_txt(str(TEXT.blessed_tag), PW - 32.0, 10, Color("1f7a3a"))
