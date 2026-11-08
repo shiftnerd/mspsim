@@ -34771,6 +34771,9 @@ func _assign_duet() -> void:
 
 
 func _assign_duet_with(who: String) -> void:
+    if Players.coop and Players.slots[1].joined:
+        g["human_duet"] = true  # co-op: player 2 sings the right lanes themselves (no friend's skill roll)
+        return
     if who == "":
         return
     g["partner"] = who
@@ -34904,6 +34907,8 @@ func _kara_press(key: int) -> void:
 func kara_hit(lane: int) -> String:
     if g.get("wait", false):
         return ""
+    if g.get("human_duet", false) and (0 if lane < DUET_LANES else 1) != _press_slot:
+        return ""  # the other singer's lane
     var pick: Dictionary = {}
     var gap := 9.0
     for n in g.notes:
@@ -35541,7 +35546,7 @@ func _room_hint() -> String:
         "bowling":
             text = _bowl_hint(str(g.get("stage", "")))
         "karaoke":
-            text = "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+            text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "ARROW KEYS = HIT NOTES  ESC = LEAVE"
         "chair":
             text = _chair_hint()
         "cornhole":
