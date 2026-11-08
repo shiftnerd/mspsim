@@ -34,6 +34,7 @@ var props: Array = []  # {o, node, kind, marked}
 var _tex := {}  # kind -> {tex, off}
 var _actors: Node = null
 var _player: Node2D = null
+var _player2: Node2D = null  # co-op: player 2's body, hidden while they ride the tandem
 var _cam: Camera2D = null
 var _tags: Node2D = null
 var _t := 0.0
@@ -45,6 +46,7 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
 	x0 = set_x0
 	_actors = scene.get_node("Actors")
 	_player = _actors.get_node_or_null("Player")
+	_player2 = _actors.get_node_or_null("Player2")
 	for n in scene.get_children():
 		if n is Camera2D:
 			_cam = n
@@ -66,6 +68,8 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
 			_add_prop(o)
 	if _player != null:
 		_player.visible = false
+	if _player2 != null and puppets.has("You2"):
+		_player2.visible = false
 	_sync()
 
 
@@ -80,10 +84,13 @@ func _add_puppet(spec: Dictionary) -> void:
 	if spec.color != Color.WHITE:
 		chair.modulate = Color.WHITE.lerp(spec.color, 0.55)  # each rival's chair is tinted in their colour
 	node.add_child(chair)
+	chair.visible = not bool(spec.get("rider", false))  # co-op: the second pilot rides the same chair
 	var body := AnimatedSprite2D.new()
-	body.sprite_frames = Look.frames_for(str(spec.character), bool(spec.custom))
-	Look.apply(body, str(spec.character), bool(spec.custom))
+	var look_dict: Dictionary = spec.get("look", {})  # co-op: the second pilot's own look
+	body.sprite_frames = Look.frames_for(str(spec.character), bool(spec.custom), look_dict)
+	Look.apply(body, str(spec.character), bool(spec.custom), look_dict)
 	body.offset = Vector2(0, -40)
+	body.position.x = -8.0 if bool(spec.get("rider", false)) else 0.0
 	body.play("sit_right")
 	node.add_child(body)
 	_actors.add_child(node)
@@ -118,7 +125,7 @@ func _sync() -> void:
 		var l: float
 		var flag := ""
 		var shake := 0.0
-		if key == "You":
+		if key == "You" or key == "You2":
 			s = race.pos
 			l = race.lane
 			shake = race.wobble
@@ -217,14 +224,17 @@ func _draw_tags() -> void:
 		var text := str(p.label)
 		var w := float(PixelFont.width(text, 1))
 		var at := node.position + Vector2(-w * 0.5 + 1.0, -50.0)
-		_tags.draw_rect(Rect2(at - Vector2(1, 1), Vector2(w + 2.0, 7.0)), p.color if key != "You" else GOLD)
-		PixelFont.draw(_tags, text, at, INK if key == "You" else Color.WHITE, 1)
+		var mine: bool = key == "You" or key == "You2"
+		_tags.draw_rect(Rect2(at - Vector2(1, 1), Vector2(w + 2.0, 7.0)), p.color if not mine else GOLD)
+		PixelFont.draw(_tags, text, at, INK if mine else Color.WHITE, 1)
 
 
 # the race is over: the props go back (they were copies), the player is shown again
 func clear() -> void:
 	if _player != null and is_instance_valid(_player):
 		_player.visible = true
+	if _player2 != null and is_instance_valid(_player2):
+		_player2.visible = true
 	if _cam != null and is_instance_valid(_cam):
 		_cam.offset = Vector2.ZERO
 	for key in puppets:

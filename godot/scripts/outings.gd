@@ -3290,6 +3290,9 @@ func _chair_setup() -> void:
 				"label": "YOU",
 			}
 		]
+		if Players.coop and Players.slots[1].joined:  # the tandem's second pilot rides behind
+			var p2: Dictionary = Players.slot(1).look
+			specs.append({"key": "You2", "character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "color": Color.WHITE, "label": "P2", "rider": true, "look": p2})
 		for r in race.rivals:
 			specs.append({"key": r.n, "character": str(World.row(r.n).character), "custom": false, "color": r.color, "label": str(r.n).substr(0, 1)})
 		var track := ChairTrack.new()
