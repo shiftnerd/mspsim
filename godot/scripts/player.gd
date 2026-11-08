@@ -178,6 +178,9 @@ func _reload_sheet(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if Players.coop and event.is_action_pressed(_a("character_next")):
+		if can_swap():
+			swap_character(1)
 	if slot != 0:
 		return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
 	if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
@@ -214,6 +217,27 @@ func _play(action: String) -> void:
 		elif action in ["walk", "run"]:
 			anim = "walkhold"
 	sprite.play("%s_%s" % [anim, facing])
+
+
+func can_swap() -> bool:
+	return not Campaign.active and not Game.ui_open and not Players.ui[slot]
+
+
+# co-op: step through the stock people, skipping the one the partner wears
+func swap_character(step: int) -> void:
+	var other := ""
+	if Players.count() > 1:
+		other = Players.slot(1 - slot).character
+	var i := CHARACTERS.find(character_id())
+	for n in CHARACTERS.size():
+		i = posmod(i + step, CHARACTERS.size())
+		if CHARACTERS[i] != other:
+			break
+	if slot == 0:
+		_switch_character(CHARACTERS[i])
+		Campaign.refresh_free()
+	else:
+		_reload_sheet(CHARACTERS[i])
 
 
 func character_id() -> String:

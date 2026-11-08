@@ -43,6 +43,7 @@ const ACTIONS := {
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
 	"give_item": [[KEY_G], [], []],
 	"phone": [[KEY_P], [JOY_BUTTON_BACK], []],
+	"character_next": [[], [JOY_BUTTON_RIGHT_STICK], []],  # co-op: the next stock person for this player (slot 0 has the 1-7 keys)
 	"mute": [[KEY_M], [], []],
 	"pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
 }
