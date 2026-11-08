@@ -35317,6 +35317,9 @@ func _dinner_tick(dt: float) -> void:
 func _dinner_press(key: int) -> void:
     if not g.react.is_empty() or str(g.get("stage", "")) == "sit":
         return
+    if Players.coop and Players.slots[1].joined and _press_slot != int(g.picked.size()) % 2:
+        caption("WAIT. IT IS P%d'S TURN TO PICK THE TOPIC." % (int(g.picked.size()) % 2 + 1), 1.2)  # co-op: the topics go round the table
+        return
     match key:
         KEY_UP:
             g.sel = (int(g.sel) + 3) % 4

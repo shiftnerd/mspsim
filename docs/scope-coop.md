@@ -343,3 +343,5 @@ First try failed: an owner bot with player 2 joined was FIRED in week 11 at rep 
 **Darts (Nov 2026):** `DartsGame.humans` (2 when player 2 has joined); the two players throw the "You" turns one round each in turn, only the thrower's press counts, and in a room the thrower's own body steps to the board (`Outings._set_pilot`). `tests/coop_darts.gd`. Dinner and the printer game are still single-stream (no obvious second seat).
 
 **NPC follow-me (Nov 2026):** `Npc.toggle_follow(body)` remembers the asking body's slot (`_follow_slot`) and `_follow_tick` trails that player, or player 1 when they are gone. `tests/coop_follow.gd`.
+
+**Dinner (Nov 2026):** with two players the topics go round the table: player 1 picks the first, player 2 the second and so on (`Outings._dinner_press` gates on `g.picked.size() % 2`); a press from the other player does nothing. `tests/coop_dinner.gd`. Only the printer game is still single-stream.
