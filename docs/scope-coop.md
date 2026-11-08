@@ -365,3 +365,9 @@ First try failed: an owner bot with player 2 joined was FIRED in week 11 at rep 
 **Pad button remap (Nov 2026):** `Controls.REMAPPABLE_PAD` (jump, run, interact, wave, drink, phone, pick_next) can be put on another pad button: `rebind_button` (a clash swaps; applied to both players' copies of the action, keeping each pad's device), saved in the same file (`[pad]`), put back by `reset_binds`. On the REMAP page a pad button pressed while waiting is taken (pad 0). Movement stays on the stick and D-pad. `tests/remap.gd`.
 
 The key list pages now print a remapped action's new key (`Controls.help_value`, `HELP_ACTIONS`).
+
+## Addendum: menu and mini-game keys (phase 8, the last remap piece)
+
+The menus and mini-games read fixed keys (Enter, Esc, the arrows, Z, X, Shift). `Controls.MENU_ROLES` names nine of them and the pause menu's REMAP page (R on the key list) now lists them under the walking actions. A role gets one **extra** key: the plain key keeps working, so nobody can lock themselves out. `Controls._input` (Controls is the first autoload) turns a pressed alias key into the plain key before any screen sees it. Not translated: while the REMAP page waits for a key (`capturing`), and while a screen in the group `typing_screen` answers `is_typing()` (the character creator's name row and the toolbox seed field), so letters still type. Refused: the plain menu keys, Space, E, Tab, Backspace, F1 to F12, and any key a game action already answers to. A walking remap onto an alias key frees the alias. Saved in the `menu` section of `controls.cfg`. Test: `remap_menu`.
+
+Not covered: pad buttons for the menus (A and B stay the pad's accept and cancel), on-screen hint text (it prints the plain keys), and the arrow-key-only mini-game hints.

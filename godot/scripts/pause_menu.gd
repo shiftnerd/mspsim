@@ -169,16 +169,25 @@ func _turn_page(step: int) -> void:
 
 # the remap list: up / down pick an action, Enter waits for a key (ESC cancels), the last row puts every key back
 func _remap_key(event: InputEvent) -> void:
-	var rows: int = Controls.REMAPPABLE.size() + 1
+	var walk: int = Controls.REMAPPABLE.size()
+	var rows: int = walk + Controls.MENU_ROLES.size() + 1
+	Controls.capturing = _capture
 	if _capture:
 		if event is InputEventKey:
-			if event.keycode != KEY_ESCAPE and Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode)):
-				Controls.save_binds()
+			if event.keycode != KEY_ESCAPE:
+				var done: bool
+				if _rsel < walk:
+					done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode))
+				else:
+					done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), int(event.physical_keycode))
+				if done:
+					Controls.save_binds()
 			_capture = false
-		elif event is InputEventJoypadButton and event.device == 0:
+		elif event is InputEventJoypadButton and event.device == 0 and _rsel < walk:
 			if Controls.rebind_button(str(Controls.REMAPPABLE[_rsel]), int(event.button_index)):
 				Controls.save_binds()
 			_capture = false
+		Controls.capturing = _capture
 		return
 	var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
 	var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
@@ -197,7 +206,8 @@ func _remap_key(event: InputEvent) -> void:
 
 
 func _paint_remap(c: CanvasItem, r: Rect2) -> void:
-	var rows: int = Controls.REMAPPABLE.size() + 1
+	var walk: int = Controls.REMAPPABLE.size()
+	var rows: int = walk + Controls.MENU_ROLES.size() + 1
 	var body := UiStyle.panel(c, r, "REMAP KEYS", "PRESS A KEY" if _capture else "")
 	var first := clampi(_rsel - 2, 0, maxi(0, rows - 6))
 	for k in mini(6, rows - first):
@@ -208,6 +218,12 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 		var col: Color = UiStyle.WHITE if i == _rsel else UiStyle.INK
 		if i == rows - 1:
 			UiStyle.text(c, "PUT ALL KEYS BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
+		elif i >= walk:
+			var role: Array = Controls.MENU_ROLES[i - walk]
+			UiStyle.text(c, str(role[2]), rr.position.x + 3.0, rr.position.y + 3.0, col)
+			var extra := Controls.menu_key_of(str(role[0]))
+			var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 else "-")
+			UiStyle.text(c, shown, rr.position.x + rr.size.x - 4.0 - float(shown.length() * 4), rr.position.y + 3.0, col)
 		else:
 			var action := str(Controls.REMAPPABLE[i])
 			UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)

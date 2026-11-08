@@ -74,7 +74,13 @@ var _outfit_stash := {}  # co-op: player 1's Look snapshot while the overlay edi
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
+# the seed field has the focus: letters type
+func is_typing() -> bool:
+	return is_open and mode == "seed" and seed_focus == 0
+
+
 func _ready() -> void:
+	add_to_group("typing_screen")
 	layer = 72
 	_canvas = Node2D.new()
 	_canvas.visible = false

@@ -52052,7 +52052,13 @@ var _outfit_stash := {}  # co-op: player 1's Look snapshot while the overlay edi
 var _under_tools := false  # the seed page was opened from the toolbox page
 
 
+# the seed field has the focus: letters type
+func is_typing() -> bool:
+    return is_open and mode == "seed" and seed_focus == 0
+
+
 func _ready() -> void:
+    add_to_group("typing_screen")
     layer = 72
     _canvas = Node2D.new()
     _canvas.visible = false
@@ -52932,7 +52938,18 @@ var _confirmed := false
 var _free_max := false  # Free Play: Tab switches the MAX build preset (X7)
 
 
+# the name row or the pad's letter grid is on: letters type (Controls leaves the keys alone)
+func is_typing() -> bool:
+    if not visible or step != "create":
+        return false
+    if create_modal == "name":
+        return true
+    var rows := _page_rows()
+    return create_row < rows.size() and str(rows[create_row].kind) == "name"
+
+
 func _ready() -> void:
+    add_to_group("typing_screen")
     _born = Engine.get_process_frames()
     Game.format_changed.connect(queue_redraw)
     queue_redraw()
@@ -67887,6 +67904,17 @@ const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "p
 # the key list's rows that follow a remap (row label -> action)
 const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career"}
 
+# the keys the menus and mini-games read as fixed keys: a player can put an extra key on each (the plain key keeps working too).
+# [role, the key the screens look for, the label]
+const MENU_ROLES := [
+    ["menu_confirm", KEY_ENTER, "MENU CONFIRM"], ["menu_back", KEY_ESCAPE, "MENU BACK"],
+    ["menu_up", KEY_UP, "MENU UP"], ["menu_down", KEY_DOWN, "MENU DOWN"],
+    ["menu_left", KEY_LEFT, "MENU LEFT"], ["menu_right", KEY_RIGHT, "MENU RIGHT"],
+    ["game_a", KEY_Z, "GAME A (Z)"], ["game_b", KEY_X, "GAME B (X)"], ["game_cool", KEY_SHIFT, "GAME COOL SIDE"],
+]
+# keys an alias may never take (the plain menu keys, pause, the debug keys)
+const MENU_RESERVED := [KEY_SPACE, KEY_E, KEY_TAB, KEY_BACKSPACE, KEY_KP_ENTER, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12]
+
 const HELP := [
     [
         "MOVING AND USING",
@@ -67933,8 +67961,10 @@ const HELP := [
 
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
 var binds_path := "user://controls.cfg"
+var capturing := false  # the remap page is waiting for a key: nothing is translated
 var _overrides := {}  # action -> the physical key code it was remapped to
 var _pad_overrides := {}  # action -> the joypad button it was remapped to
+var _alias := {}  # physical key -> the key a menu or mini-game screen looks for (MENU_ROLES)
 var _stick := {}
 var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
@@ -68002,6 +68032,61 @@ func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
         Input.start_joy_vibration(device, clampf(strength * 0.6, 0.0, 1.0), clampf(strength, 0.0, 1.0), secs)
 
 
+# a pressed alias key reaches the screens as the key they look for. Controls is the first autoload, so this runs before any
+# screen; the typing screens (the name row, the seed field) are left alone so letters still type.
+func _input(event: InputEvent) -> void:
+    if _alias.is_empty() or capturing or not event is InputEventKey:
+        return
+    var canon: int = _alias.get(int(event.physical_keycode), 0)
+    if canon == 0 or typing():
+        return
+    var key := event.duplicate() as InputEventKey
+    key.keycode = canon as Key
+    key.physical_keycode = canon as Key
+    key.unicode = 0
+    get_viewport().set_input_as_handled()
+    Input.parse_input_event(key)
+
+
+# a screen where letters are typed (nodes in the group "typing_screen" answer is_typing())
+func typing() -> bool:
+    for n in get_tree().get_nodes_in_group("typing_screen"):
+        if n.has_method("is_typing") and n.is_typing():
+            return true
+    return false
+
+
+# the extra key on a menu role (-1 for none)
+func menu_key_of(role: String) -> int:
+    for code in _alias:
+        for r in MENU_ROLES:
+            if r[0] == role and int(r[1]) == int(_alias[code]):
+                return int(code)
+    return -1
+
+
+# put an extra key on a menu role. False for the plain menu keys, a walking key, the debug keys or an unknown role. A key
+# another role had moves here.
+func rebind_menu(role: String, code: int) -> bool:
+    var canon := 0
+    for r in MENU_ROLES:
+        if r[0] == role:
+            canon = int(r[1])
+    if canon == 0 or code <= 0 or code in MENU_RESERVED:
+        return false
+    for r in MENU_ROLES:
+        if int(r[1]) == code:
+            return false
+    for action in ACTIONS:
+        if key_of(action) == code or code in ACTIONS[action][0]:
+            return false  # a key something else in the game already answers to
+    for old in _alias.keys():
+        if int(_alias[old]) == canon:
+            _alias.erase(old)
+    _alias[code] = canon
+    return true
+
+
 # the physical key an action answers to on the keyboard (its first default key until it is remapped); -1 for none
 func key_of(action: String) -> int:
     if _overrides.has(action):
@@ -68018,6 +68103,7 @@ func rebind(action: String, code: int) -> bool:
     for other in REMAPPABLE:
         if other != action and key_of(other) == code:
             _apply_key(other, old)
+    _alias.erase(code)  # a walking key is not also a menu alias
     _apply_key(action, code)
     return true
 
@@ -68110,15 +68196,18 @@ func reset_binds() -> void:
         if not buttons.is_empty():
             _apply_button(action, int(buttons[0]))
     _pad_overrides = {}
+    _alias = {}
 
 
 func save_binds() -> void:
     var cfg := ConfigFile.new()
+    for code in _alias:
+        cfg.set_value("menu", str(int(code)), int(_alias[code]))
     for action in _overrides:
         cfg.set_value("binds", action, int(_overrides[action]))
     for action in _pad_overrides:
         cfg.set_value("pad", action, int(_pad_overrides[action]))
-    if _overrides.is_empty() and _pad_overrides.is_empty():
+    if _overrides.is_empty() and _pad_overrides.is_empty() and _alias.is_empty():
         DirAccess.remove_absolute(ProjectSettings.globalize_path(binds_path))
     else:
         cfg.save(binds_path)
@@ -68131,6 +68220,12 @@ func load_binds() -> void:
     if cfg.has_section("binds"):
         for action in cfg.get_section_keys("binds"):
             rebind(str(action), int(cfg.get_value("binds", action, 0)))
+    if cfg.has_section("menu"):
+        for code in cfg.get_section_keys("menu"):
+            var canon: int = int(cfg.get_value("menu", code, 0))
+            for r in MENU_ROLES:
+                if int(r[1]) == canon:
+                    rebind_menu(str(r[0]), int(code))
     if cfg.has_section("pad"):
         for action in cfg.get_section_keys("pad"):
             rebind_button(str(action), int(cfg.get_value("pad", action, -1)))
@@ -68682,16 +68777,25 @@ func _turn_page(step: int) -> void:
 
 # the remap list: up / down pick an action, Enter waits for a key (ESC cancels), the last row puts every key back
 func _remap_key(event: InputEvent) -> void:
-    var rows: int = Controls.REMAPPABLE.size() + 1
+    var walk: int = Controls.REMAPPABLE.size()
+    var rows: int = walk + Controls.MENU_ROLES.size() + 1
+    Controls.capturing = _capture
     if _capture:
         if event is InputEventKey:
-            if event.keycode != KEY_ESCAPE and Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode)):
-                Controls.save_binds()
+            if event.keycode != KEY_ESCAPE:
+                var done: bool
+                if _rsel < walk:
+                    done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode))
+                else:
+                    done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), int(event.physical_keycode))
+                if done:
+                    Controls.save_binds()
             _capture = false
-        elif event is InputEventJoypadButton and event.device == 0:
+        elif event is InputEventJoypadButton and event.device == 0 and _rsel < walk:
             if Controls.rebind_button(str(Controls.REMAPPABLE[_rsel]), int(event.button_index)):
                 Controls.save_binds()
             _capture = false
+        Controls.capturing = _capture
         return
     var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
     var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
@@ -68710,7 +68814,8 @@ func _remap_key(event: InputEvent) -> void:
 
 
 func _paint_remap(c: CanvasItem, r: Rect2) -> void:
-    var rows: int = Controls.REMAPPABLE.size() + 1
+    var walk: int = Controls.REMAPPABLE.size()
+    var rows: int = walk + Controls.MENU_ROLES.size() + 1
     var body := UiStyle.panel(c, r, "REMAP KEYS", "PRESS A KEY" if _capture else "")
     var first := clampi(_rsel - 2, 0, maxi(0, rows - 6))
     for k in mini(6, rows - first):
@@ -68721,6 +68826,12 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
         var col: Color = UiStyle.WHITE if i == _rsel else UiStyle.INK
         if i == rows - 1:
             UiStyle.text(c, "PUT ALL KEYS BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
+        elif i >= walk:
+            var role: Array = Controls.MENU_ROLES[i - walk]
+            UiStyle.text(c, str(role[2]), rr.position.x + 3.0, rr.position.y + 3.0, col)
+            var extra := Controls.menu_key_of(str(role[0]))
+            var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 else "-")
+            UiStyle.text(c, shown, rr.position.x + rr.size.x - 4.0 - float(shown.length() * 4), rr.position.y + 3.0, col)
         else:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)

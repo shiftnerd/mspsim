@@ -66,7 +66,7 @@ func _run() -> void:
 	pm._remap_key(_key(KEY_ENTER))
 	pm._remap_key(_key(KEY_ESCAPE))
 	ok(not pm._capture and controls.key_of("move_right") == KEY_D, "Escape cancels the wait and changes nothing")
-	pm._rsel = controls.REMAPPABLE.size()
+	pm._rsel = controls.REMAPPABLE.size() + controls.MENU_ROLES.size()
 	pm._remap_key(_key(KEY_ENTER))
 	ok(controls.key_of("move_left") == KEY_A, "the last row puts every key back")
 	pm._remap_key(_key(KEY_ESCAPE))

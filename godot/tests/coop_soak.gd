@@ -66,6 +66,12 @@ func _run() -> void:
 			if first_main < 0:
 				first_main = counts[counts.size() - 1]
 			worst_main = maxi(worst_main, counts[counts.size() - 1])
+		if long_run and round_n % 10 == 0:
+			var mem := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
+			var t := float(Time.get_ticks_msec() - started) / 60000.0
+			var objs := int(Performance.get_monitor(Performance.OBJECT_COUNT))
+			var fps := int(Performance.get_monitor(Performance.TIME_FPS))
+			print("soak t=%.1fmin round %d nodes %d mem %.0fMB objs %d fps %d" % [t, round_n, counts[counts.size() - 1], mem, objs, fps])
 	ok(players.node(0) != null and players.node(1) != null, "both players are still in the room after the soak")
 	ok(not players.ui[0] and not players.ui[1], "and nobody is stuck at a screen")
 	# the same room gives the same count (the rooms alternate), so compare the last visit of each with the one before it

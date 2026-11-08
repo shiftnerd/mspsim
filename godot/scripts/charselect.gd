@@ -262,7 +262,18 @@ var _confirmed := false
 var _free_max := false  # Free Play: Tab switches the MAX build preset (X7)
 
 
+# the name row or the pad's letter grid is on: letters type (Controls leaves the keys alone)
+func is_typing() -> bool:
+	if not visible or step != "create":
+		return false
+	if create_modal == "name":
+		return true
+	var rows := _page_rows()
+	return create_row < rows.size() and str(rows[create_row].kind) == "name"
+
+
 func _ready() -> void:
+	add_to_group("typing_screen")
 	_born = Engine.get_process_frames()
 	Game.format_changed.connect(queue_redraw)
 	queue_redraw()
