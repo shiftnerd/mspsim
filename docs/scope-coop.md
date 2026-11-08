@@ -341,3 +341,5 @@ First try failed: an owner bot with player 2 joined was FIRED in week 11 at rep 
 **Controller-only gap (Nov 2026):** the career screen opened only with the J key and a pad has no free button for it, so the Free Play pause menu has a CAREER row after OUTFIT (`pause_menu.gd`, `tests/outfit.gd`). The title, character select, cards and pause menu already read `Controls.nav / confirm / back`, so they take a pad; this was the one Free Play screen found with no pad route.
 
 **Darts (Nov 2026):** `DartsGame.humans` (2 when player 2 has joined); the two players throw the "You" turns one round each in turn, only the thrower's press counts, and in a room the thrower's own body steps to the board (`Outings._set_pilot`). `tests/coop_darts.gd`. Dinner and the printer game are still single-stream (no obvious second seat).
+
+**NPC follow-me (Nov 2026):** `Npc.toggle_follow(body)` remembers the asking body's slot (`_follow_slot`) and `_follow_tick` trails that player, or player 1 when they are gone. `tests/coop_follow.gd`.

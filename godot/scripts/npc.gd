@@ -57,6 +57,7 @@ var _chat_slide := INF
 var _chat_check := 0.0
 var _hold_phase := 0
 var _follow_key := ""
+var _follow_slot := 0  # co-op: whose "C" asked them to follow
 var _hidden := false
 var _offline := false  # the network at my desk is down
 var _net_t := 0.0
@@ -425,6 +426,7 @@ func toggle_follow(body: Node) -> void:
 		_arrow.shake()
 		return
 	_face(body.global_position.x)
+	_follow_slot = int(body.slot) if body.get("slot") != null else 0
 	World.set_following(cast_name, not following)
 	_begin_hold("wave", 1.0)
 
@@ -436,8 +438,11 @@ func _follow_tick(delta: float) -> bool:
 	if _player == null:
 		_player = Players.player0(_stage)
 		return false
-	var px: float = _player.global_position.x
-	var behind := -1.0 if _player.facing == "right" else 1.0
+	var who: Node = Players.node(_follow_slot, _stage)  # co-op: the one who asked (the first player when they are gone)
+	if who == null:
+		who = _player
+	var px: float = who.global_position.x
+	var behind := -1.0 if who.facing == "right" else 1.0
 	var want := _clamp_x(px + behind * 30.0)
 	var gap := want - global_position.x
 	var moving := absf(gap) > 3.0
