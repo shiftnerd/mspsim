@@ -55,6 +55,9 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	seed(seed_n * 31 + 7)  # the owner campaign and the Shift cards still draw from the global generator
 	rng.seed = seed_n * 7919
 	var row: Dictionary = {}
+	if coop and mode in ["sales", "service"]:
+		root.get_node("Players").enable_coop(true)
+		root.get_node("Players").join(1, 1)  # player 2 is in the room (their sheet is the stock fallback person)
 	match mode:
 		"tech":
 			row = await tech_run(seed_n)

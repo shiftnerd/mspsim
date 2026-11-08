@@ -21,7 +21,7 @@ const FORCE_WINDOW := 2.0  # s: a second try at a door this soon closes the part
 const TETHER_MARGIN := 10.0  # px kept between a body and the edge of the view (co-op camera)
 const P2_CHARACTER := "office_dan"  # slot 1's stock person (the intern when slot 0 already is Dan)
 const P2_FALLBACK := "office_intern"
-const COOP_MODES := ["tech", "owner"]  # the campaigns a second player can join (Free Play always can)
+const COOP_MODES := ["tech", "owner", "service", "sales"]  # the campaigns a second player can join (Free Play always can)
 
 var coop := false
 var slots: Array = []
