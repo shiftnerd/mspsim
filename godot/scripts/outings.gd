@@ -1379,6 +1379,9 @@ func _bowl_setup() -> void:
 		"spin": 0,
 		"acc": 1.0,
 		"hcp": _league_hcp(str(opts.get("alley", "strike_zone"))),
+		"turn": 0,  # co-op (R34 phase 6): whose roll it is; 0 alone
+		"by": [0, 0],  # the pins each human has scored (totals.You is their average)
+		"players": 2 if Players.coop and Players.slots[1].joined else 1,
 	}
 	_bowl_zone_roll()
 	if room_mode():
@@ -1415,7 +1418,19 @@ func _bowl_tick(dt: float) -> void:
 		_bowl_others(dt)
 
 
+# co-op: the pins of the human whose roll it is; the scorecard's YOU is the pair's average
+func _bowl_add(pins: int) -> void:
+	if int(g.get("players", 1)) == 1:
+		g.totals["You"] = int(g.totals["You"]) + pins
+		return
+	g.by[int(g.turn)] += pins
+	g.totals["You"] = roundi(float(g.by[0] + g.by[1]) / float(g.players))
+
+
 func _bowl_press(key: int) -> void:
+	if int(g.get("players", 1)) > 1 and str(g.get("stage", "")) in ["ready", "aim", "power"] and _press_slot != int(g.turn):
+		caption("WAIT. IT IS P%d'S TURN." % (int(g.turn) + 1), 1.2)
+		return
 	if key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"]:
 		var want := -1 if key == KEY_LEFT else 1
 		g.spin = 0 if int(g.get("spin", 0)) == want else want
@@ -1477,11 +1492,11 @@ func _bowl_resolve() -> void:
 	knocked = _hook_adjust(knocked, left, strength)
 	g.knocked = knocked
 	g.pins = left - knocked
-	g.totals["You"] = int(g.totals["You"]) + knocked
+	_bowl_add(knocked)
 	Career.note_bowl(knocked, int(g.roll))
 	_note_hook(knocked)
 	if knocked == 10 and int(g.roll) == 1:
-		g.totals["You"] = int(g.totals["You"]) + 3
+		_bowl_add(3)
 		g.msg = "STRIKE!"
 		Sfx.play("bowl_strike")
 	elif int(g.pins) == 0:
@@ -1563,6 +1578,18 @@ func _bowl_next() -> void:
 		if room_mode():
 			caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
 		return
+	if int(g.get("players", 1)) > 1 and int(g.turn) == 0:  # co-op: player 2 bowls the same frame, then the crew
+		g.turn = 1
+		g.roll = 1
+		g.pins = 10
+		g.stage = "ready" if room_mode() else "aim"
+		g.marker = 0.0
+		g.dir = 1.0
+		_bowl_zone_roll()
+		g.msg = ""
+		g.up = [_all_up(), _all_up()]
+		caption("P2: PRESS E TO STEP UP.", 99.0)
+		return
 	var frame := int(g.frame)
 	var turn := bowlers().filter(func(n: String) -> bool: return bowls_in_frame(n, frame))
 	if room_mode():
@@ -1581,6 +1608,7 @@ func _bowl_advance() -> void:
 		_bowl_end()
 		return
 	g.frame = int(g.frame) + 1
+	g.turn = 0
 	g.roll = 1
 	g.pins = 10
 	g.stage = "ready" if room_mode() else "aim"
@@ -2753,13 +2781,14 @@ func _room_hint() -> String:
 
 func _bowl_hint(stage: String) -> String:
 	var text := "WAIT FOR YOUR TURN  ESC = LEAVE"
+	var who := "P%d: " % (int(g.turn) + 1) if int(g.get("players", 1)) > 1 else ""
 	match stage:
 		"ready":
-			text = "E = STEP UP  ESC = LEAVE"
+			text = who + "E = STEP UP  ESC = LEAVE"
 		"aim":
-			text = "E = STOP THE AIM  ESC = LEAVE"
+			text = who + "E = STOP THE AIM  ESC = LEAVE"
 		"power":
-			text = "E = STOP THE POWER  ESC = LEAVE"
+			text = who + "E = STOP THE POWER  ESC = LEAVE"
 	return text
 
 
