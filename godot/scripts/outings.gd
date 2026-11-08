@@ -2139,6 +2139,8 @@ func kara_hit(lane: int) -> String:
 		return ""
 	if g.get("human_duet", false) and (0 if lane < DUET_LANES else 1) != _press_slot:
 		return ""  # the other singer's lane
+	if g.get("human_duet", false):
+		_set_pilot(_press_slot)  # the dance and the pose are the singer's own body
 	var pick: Dictionary = {}
 	var gap := 9.0
 	for n in g.notes:
@@ -4149,6 +4151,7 @@ func _grill_press(key: int) -> void:
 		if not g.has("sels"):
 			g["sels"] = [0, int(gg.SLOTS / 2)]
 		gg.select(int(g.sels[_press_slot]))
+		_set_pilot(_press_slot)  # the serving animation is the body of whoever pressed
 	match key:
 		KEY_LEFT, KEY_A:
 			_grill_move(gg, -1, duo)

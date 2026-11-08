@@ -347,3 +347,5 @@ First try failed: an owner bot with player 2 joined was FIRED in week 11 at rep 
 **Dinner (Nov 2026):** with two players the topics go round the table: player 1 picks the first, player 2 the second and so on (`Outings._dinner_press` gates on `g.picked.size() % 2`); a press from the other player does nothing. `tests/coop_dinner.gd`. Only the printer game is still single-stream.
 
 **Printer game (Nov 2026):** with two players the steps of the job (jam, tray, toner, shake, test) go round the players one phase each, player 1 first (`PrinterGame.turn_slot`, shown as P1 / P2 in the panel title); the intro and result belong to either. The game now reads `Controls.confirm_any / back_any`, so pad 2 can answer. `tests/coop_printer.gd`. Every outing now has a second seat.
+
+**Bodies in the cookout and karaoke (Nov 2026):** the serving animation and the duet's dance and pose are now the body of whoever pressed (`Outings._set_pilot(_press_slot)`). The chair race is the one outing still drawn with player 1's body (its track draws one chair for "you").
