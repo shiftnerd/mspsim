@@ -315,3 +315,13 @@ Built in the worktree branch `wt/agent-a322ca88b323791bb`; single player is the 
 - **Save and resume:** the campaign's `coop` section (`Players.to_dict / from_dict`): pad, person, look, skills, energy. A save without it, or with co-op off, loads single player.
 - **Not done:** personal cards routing for the ~20 call sites (Talk is still one conversation); `Growth` and `Build` are shared; Career profiles; the co-op bot (`bot_run.gd` with two bots) and a balance run; panes for the phone's own state; owner / service / sales campaigns (phase 7).
 - **Tests:** `coop_campaign` (run_as, claim and share, pace, energy, a pane acts as slot 1), `coop_save` (round trip, co-op off, an old save).
+
+## 14. Phase 6 status (outings with two players; Nov 2026)
+The outings stay full-window modals driven by one input stream, so each game takes a small, separate form of two-player play. `Outings._press_slot` (`Players.slot_of(event)`) says who pressed; player 2's pad is turned into the game keys by `Outings._event_key_p2` (D-pad = arrows, A = Enter, X = E, B = Esc; in the chair race A / B are the second push, in the cookout B is the cool side).
+- **Cornhole:** `CornholeGame.players` (2 when player 2 has joined); the humans take the "you" rounds in turn (player 1 odd rounds), only the thrower's press counts, the banner says "ROUND n: P1 AGAINST ...". `tests/coop_cornhole.gd`.
+- **Bowling:** each frame player 1 rolls, then player 2 (fresh pins), then the crew; `g.by` holds each human's pins and `totals.You` the pair's average. Only the roller's press counts. `tests/coop_bowling.gd`.
+- **Chair race:** a tandem: one chair, player 1 pushes Z, player 2 pushes X (the race already wants alternating legs). `tests/coop_chair.gd`.
+- **Cookout:** the grill is split: player 1 works slots 0 and 1, player 2 slots 2 and 3, each with their own cursor (`g.sels`). `tests/coop_grill.gd`.
+- **Karaoke:** the duet lanes are real: player 1 sings the two left lanes, player 2 the two right ones; no friend's skill roll (`g.human_duet`). `tests/coop_karaoke.gd`.
+- **Escape room:** nothing to split: both bodies are in the room, the clues are on the walls for both, either can use the keypad and player 2's pad enters the code. `tests/coop_escape.gd`.
+- **Not done:** player 2's own body does not play any of the animations (player 1's body steps up, throws, serves and sings); the screen shows only the last-pressed cursor in the cookout; the league standings treat YOU as one bowler; darts, dinner and the printer game are untouched (no obvious second seat).
