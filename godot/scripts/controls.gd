@@ -56,6 +56,9 @@ const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 # the walking-around actions a player can put on another key (the menus and mini-games keep their own keys); one key per action
 const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave", "drink", "duck", "dance", "follow", "phone", "aim", "outfit", "career"]
 
+# the pad actions a player can put on another button (A / B / X / Y / shoulders and so on); the movement stays on the stick and D-pad
+const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "pick_next"]
+
 const HELP := [
 	[
 		"MOVING AND USING",
@@ -103,6 +106,7 @@ const HELP := [
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
 var binds_path := "user://controls.cfg"
 var _overrides := {}  # action -> the physical key code it was remapped to
+var _pad_overrides := {}  # action -> the joypad button it was remapped to
 var _stick := {}
 var _slot_device := {}  # slot -> the pad device its p2_ actions are registered for
 var _stick_event: InputEvent = null
@@ -190,6 +194,52 @@ func rebind(action: String, code: int) -> bool:
 	return true
 
 
+# a short name for a pad button (the Xbox-style layout the bindings are written for)
+func button_name(button: int) -> String:
+	var names := ["A", "B", "X", "Y", "BACK", "GUIDE", "START", "L3", "R3", "LB", "RB", "UP", "DOWN", "LEFT", "RIGHT"]
+	return names[button] if button >= 0 and button < names.size() else "BTN %d" % button
+
+
+# the pad button an action answers to (its first default button until it is remapped); -1 for none
+func button_of(action: String) -> int:
+	if _pad_overrides.has(action):
+		return int(_pad_overrides[action])
+	var buttons: Array = ACTIONS[action][1] if ACTIONS.has(action) else []
+	return int(buttons[0]) if not buttons.is_empty() else -1
+
+
+# put `action` on pad button `button` (a clash swaps), for the first player's pad and the second player's copy of the action
+func rebind_button(action: String, button: int) -> bool:
+	if not REMAPPABLE_PAD.has(action) or button < 0:
+		return false
+	var old := button_of(action)
+	for other in REMAPPABLE_PAD:
+		if other != action and button_of(other) == button:
+			_apply_button(other, old)
+	_apply_button(action, button)
+	return true
+
+
+func _apply_button(action: String, button: int) -> void:
+	for name in [action, "p2_" + action]:
+		if not InputMap.has_action(name):
+			continue
+		var device := 0
+		var seen := false
+		for ev in InputMap.action_get_events(name):
+			if ev is InputEventJoypadButton:
+				if not seen:
+					device = ev.device
+					seen = true
+				InputMap.action_erase_event(name, ev)
+		if button >= 0:
+			var pad := InputEventJoypadButton.new()
+			pad.button_index = button
+			pad.device = device
+			InputMap.action_add_event(name, pad)
+	_pad_overrides[action] = button
+
+
 func _apply_key(action: String, code: int) -> void:
 	for ev in InputMap.action_get_events(action):
 		if ev is InputEventKey:
@@ -212,13 +262,20 @@ func reset_binds() -> void:
 			key.physical_keycode = code
 			InputMap.action_add_event(action, key)
 	_overrides = {}
+	for action in _pad_overrides.keys():
+		var buttons: Array = ACTIONS[action][1]
+		if not buttons.is_empty():
+			_apply_button(action, int(buttons[0]))
+	_pad_overrides = {}
 
 
 func save_binds() -> void:
 	var cfg := ConfigFile.new()
 	for action in _overrides:
 		cfg.set_value("binds", action, int(_overrides[action]))
-	if _overrides.is_empty():
+	for action in _pad_overrides:
+		cfg.set_value("pad", action, int(_pad_overrides[action]))
+	if _overrides.is_empty() and _pad_overrides.is_empty():
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(binds_path))
 	else:
 		cfg.save(binds_path)
@@ -228,10 +285,12 @@ func load_binds() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(binds_path) != OK:
 		return
-	if not cfg.has_section("binds"):
-		return
-	for action in cfg.get_section_keys("binds"):
-		rebind(str(action), int(cfg.get_value("binds", action, 0)))
+	if cfg.has_section("binds"):
+		for action in cfg.get_section_keys("binds"):
+			rebind(str(action), int(cfg.get_value("binds", action, 0)))
+	if cfg.has_section("pad"):
+		for action in cfg.get_section_keys("pad"):
+			rebind_button(str(action), int(cfg.get_value("pad", action, -1)))
 
 
 # register slot's actions for joypad `device` (safe to repeat; a new device re-binds). Only called while co-op is on

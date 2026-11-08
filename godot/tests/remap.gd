@@ -71,6 +71,32 @@ func _run() -> void:
 	ok(controls.key_of("move_left") == KEY_A, "the last row puts every key back")
 	pm._remap_key(_key(KEY_ESCAPE))
 	ok(pm._page == 0, "Escape goes back to the key list")
+	# the pad buttons
+	var pad_default: int = controls.button_of("interact")
+	ok(pad_default == JOY_BUTTON_X and controls.button_of("wave") == JOY_BUTTON_Y, "the default buttons (X interacts, Y waves)")
+	ok(not controls.rebind_button("move_left", JOY_BUTTON_X) and not controls.rebind_button("interact", -1), "only the pad actions, and only a real button")
+	ok(controls.rebind_button("interact", JOY_BUTTON_Y), "interact onto Y, which wave holds")
+	ok(controls.button_of("interact") == JOY_BUTTON_Y and controls.button_of("wave") == JOY_BUTTON_X, "the two swap")
+	var held := []
+	for ev in InputMap.action_get_events("interact"):
+		if ev is InputEventJoypadButton:
+			held.append(ev.button_index)
+	ok(held == [JOY_BUTTON_Y], "the action holds the one new button (%s)" % [held])
+	controls.save_binds()
+	controls.reset_binds()
+	ok(controls.button_of("interact") == JOY_BUTTON_X and controls.button_of("wave") == JOY_BUTTON_Y, "put back: X and Y as before")
+	controls.load_binds()
+	ok(controls.button_of("interact") == JOY_BUTTON_Y, "loading brings the button remap back")
+	# the remap page takes a pad button
+	pm._page = pm.REMAP_PAGE
+	pm._rsel = controls.REMAPPABLE.find("jump")
+	pm._capture = true
+	var pad_ev := InputEventJoypadButton.new()
+	pad_ev.device = 0
+	pad_ev.button_index = JOY_BUTTON_RIGHT_SHOULDER
+	pad_ev.pressed = true
+	pm._remap_key(pad_ev)
+	ok(controls.button_of("jump") == JOY_BUTTON_RIGHT_SHOULDER and not pm._capture, "a pad button pressed while waiting is taken")
 	controls.reset_binds()
 	controls.save_binds()
 	print("remap: %d failure(s)" % fails)

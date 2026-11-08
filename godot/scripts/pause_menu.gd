@@ -175,6 +175,10 @@ func _remap_key(event: InputEvent) -> void:
 			if event.keycode != KEY_ESCAPE and Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode)):
 				Controls.save_binds()
 			_capture = false
+		elif event is InputEventJoypadButton and event.device == 0:
+			if Controls.rebind_button(str(Controls.REMAPPABLE[_rsel]), int(event.button_index)):
+				Controls.save_binds()
+			_capture = false
 		return
 	var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
 	var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
@@ -208,8 +212,10 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 			var action := str(Controls.REMAPPABLE[i])
 			UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
 			var key_name := "..." if (_capture and i == _rsel) else OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(Controls.key_of(action))).to_upper()
+			if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
+				key_name += "  " + Controls.button_name(Controls.button_of(action))
 			UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
-	UiStyle.footer(c, r, "ENTER = CHANGE  ESC = BACK")
+	UiStyle.footer(c, r, "ENTER, THEN KEY / BUTTON  ESC = BACK")
 
 
 func _input(event: InputEvent) -> void:
