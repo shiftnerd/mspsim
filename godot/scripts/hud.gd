@@ -94,6 +94,9 @@ func _draw() -> void:
 						lines.append(war)
 				else:
 					lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, ("  " + war) if war != "" else ""])
+		var p2 := Players.node(1) if Players.coop else null
+		if p2 != null and str(p2.held) == "nerf":
+			lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
 		for i in lines.size():
 			PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
 			PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
