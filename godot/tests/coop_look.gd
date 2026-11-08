@@ -83,6 +83,22 @@ func _run() -> void:
 	toolbox._outfit._finish_overlay(false)
 	await _wait(3)
 	ok(players.slot(1).look.get("name", "") == "PIP", "cancel restores player 2's previous look")
+	# player 2's own pad drives the overlay (remapped onto device 0): B leaves it
+	toolbox.open_outfit(1)
+	await _wait(8)
+	var bev := InputEventJoypadButton.new()
+	bev.device = 1
+	bev.button_index = JOY_BUTTON_B
+	bev.pressed = true
+	ok(players._creator_pad(bev), "the overlay takes player 2's pad event")  # (headless injection never reaches an autoload's _input)
+	await _wait(8)
+	bev = InputEventJoypadButton.new()
+	bev.device = 1
+	bev.button_index = JOY_BUTTON_B
+	bev.pressed = false
+	players._creator_pad(bev)
+	await _wait(8)
+	ok(not toolbox.outfit_open, "player 2's pad B closes the overlay")
 	p2.swap_character(1)
 	ok(players.slot(1).look.is_empty() and p2.sprite.material == null, "picking a stock person drops the custom look")
 	players.enable_coop(false)
