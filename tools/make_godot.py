@@ -33960,6 +33960,8 @@ func _event_key_p2(event: InputEvent) -> int:
     var dir := Controls.nav(event, false)
     if dir != "":
         return PAD_ARROWS[dir]
+    if game == "grill" and phase == "play" and event.is_action(Controls.action_for(1, "run")):
+        return KEY_SHIFT  # B on player 2's pad: the cool side, as on pad 1
     if Controls.back_any(event):
         return KEY_ESCAPE
     if event.is_action(Controls.action_for(1, "interact")):
@@ -36860,14 +36862,29 @@ func _grill_react(who: String, kind: String, glyph: String) -> void:
         g.remark_t = 2.4
 
 
+# co-op: the grill is split, player 1 works the left half and player 2 the right; each keeps their own cursor
+func _grill_move(gg: RefCounted, step: int, duo: bool) -> void:
+    if not duo:
+        gg.move_sel(step)
+        return
+    var half: int = int(gg.SLOTS / 2)
+    var lo := 0 if _press_slot == 0 else half
+    gg.select(clampi(int(gg.sel) + step, lo, lo + half - 1))
+
+
 func _grill_press(key: int) -> void:
     var gg: RefCounted = g.game
+    var duo: bool = Players.coop and Players.slots[1].joined
+    if duo:
+        if not g.has("sels"):
+            g["sels"] = [0, int(gg.SLOTS / 2)]
+        gg.select(int(g.sels[_press_slot]))
     match key:
         KEY_LEFT, KEY_A:
-            gg.move_sel(-1)
+            _grill_move(gg, -1, duo)
             Sfx.play("ui_tick")
         KEY_RIGHT, KEY_D:
-            gg.move_sel(1)
+            _grill_move(gg, 1, duo)
             Sfx.play("ui_tick")
         KEY_E:
             gg.flip()
@@ -36878,9 +36895,13 @@ func _grill_press(key: int) -> void:
                 p.start_emote("hold", 0.5, _x0() + GRILL_X + 60.0)
         KEY_SHIFT:
             gg.cool()
+    if duo:
+        g.sels[_press_slot] = int(gg.sel)
 
 
 func _grill_hint() -> String:
+    if Players.coop and Players.slots[1].joined:
+        return "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE"
     return "ARROWS = PICK  E = FLIP  SPACE = SERVE"
 
 
