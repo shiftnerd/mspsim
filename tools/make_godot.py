@@ -122,6 +122,11 @@ SETS = {
         spawns={"start": (90, "right"), "from_warehouse": (70, "right")},
         doors=[("ToWarehouse", 60, "warehouse", "from_lot", "")],
         exits=[("ToWarehouse", "left", "warehouse", "from_lot")], seats=[]),
+    # the PAINTBALL field (the western capture the flag outing): 700 px, no ceiling, the sky follows the game clock. Outing only: you are
+    # taken here by Outings (spawn from_outing at your flag), and walking off the left edge ends the visit at the main floor.
+    "paintball_field": dict(node="PaintballField", W=700,
+        spawns={"start": (90, "right"), "from_outing": (64, "right")},
+        doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")], seats=[]),
     "bowling_alley": dict(node="BowlingAlley", W=320,
         spawns={"start": (60, "right"), "from_outing": (40, "right")},
         doors=[], exits=[("ToMain", "left", "main_floor", "from_outside")],
@@ -57491,7 +57496,7 @@ for fname, cfg in SETS.items():
            ('Script', 'res://scripts/port.gd', 'port'), ('Script', 'res://scripts/rack_zone.gd', 'rack_zone'),
            ('PackedScene', 'res://scenes/npc.tscn', 'npc')]
     ext += [('Texture2D', f'res://assets/props/{p}.png', f'prop_{p}') for p in pieces]
-    if fname in ("warehouse", "warehouse_lot"):
+    if fname in ("warehouse", "warehouse_lot", "paintball_field"):
         ext.append(('Script', 'res://scripts/outside.gd', 'outside'))   # R21c: the sky and lot behind the dock doorway, and the daylight spill
     lines = [f'[ext_resource type="{t}" path="{path}" id="{i}"]' for t, path, i in ext]
     lines.append("")
@@ -57504,6 +57509,8 @@ for fname, cfg in SETS.items():
     if fname == "warehouse":   # R21c: the outside, BEHIND the Background (its doorway is a transparent hole), at the opening x 1287, y 12
         lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0 + 1287}, 12)', 'script = ExtResource("outside")', 'mode = "sky"', ""]
     if fname == "warehouse_lot":   # R21c: the sky of the lot, BEHIND the Background (the art has a transparent sky), from the top of the art down to the tree line
+        lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0}, {-SET_TOP})', 'script = ExtResource("outside")', 'mode = "lot"', f'view_w = {W}', 'view_h = 150', ""]
+    if fname == "paintball_field":   # the sky of the western street, BEHIND the Background (transparent sky), same drawing as the lot
         lines += ['[node name="Backdrop" type="Node2D" parent="."]', f'position = Vector2({x0}, {-SET_TOP})', 'script = ExtResource("outside")', 'mode = "lot"', f'view_w = {W}', 'view_h = 150', ""]
     lines += ['[node name="Background" type="Sprite2D" parent="."]', f'position = Vector2({x0 - max(0, (MIN_W - W) // 2)}, {-SET_TOP})',
               'centered = false', 'texture = ExtResource("bg")', ""]

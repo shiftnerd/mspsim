@@ -172,6 +172,7 @@ dofile(TOOLS .. "outing_sets.lua")(L, builders)   -- bowling alley, karaoke bar,
 dofile(TOOLS .. "venue_sets.lua")(L, builders)    -- Rodent Nation: resort lobby, hall, ballroom, four breakout rooms (SALON A-D), vendor hall
 dofile(TOOLS .. "warehouse_set.lua")(L, builders)  -- the warehouse (1480 px wide: staging and e-waste storage, chair race phase 1)
 dofile(TOOLS .. "lot_set.lua")(L, builders)        -- the walkable parking lot outside the dock (warehouse_lot, outdoor: no ceiling, transparent sky)
+dofile(TOOLS .. "paintball_set.lua")(L, builders)   -- the western main street for the paintball outing (paintball_field, outdoor: transparent sky)
 dofile(TOOLS .. "client_sets.lua")(L, builders)   -- client sites: site_<type>_<skin> (dental, law, vet, arch, realty, trailer x a, b)
 local exported = {}
 local T, B = L.CEIL_H, L.FLOOR_EXT

@@ -176,6 +176,16 @@ const SCENES := {
 		"uses": {},
 		"outside_x": -1
 	},
+	"paintball_field":
+	{
+		"x0": -166,
+		"W": 700,
+		"spawns": {"start": [-76, "right"], "from_outing": [-102, "right"]},
+		"links": [{"name": "ToMain", "x": -162, "to": "main_floor", "spawn": "from_outside"}],
+		"seats": {},
+		"uses": {},
+		"outside_x": -1
+	},
 	"bowling_alley":
 	{
 		"x0": 24,
