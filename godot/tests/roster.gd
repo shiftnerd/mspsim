@@ -168,7 +168,7 @@ func _run() -> void:
 	if not o.stayed.is_empty():
 		_check(cards.text.contains(str(o.GUESTS[o.stayed[0]].line)), "and why %s is not" % o.stayed[0])
 	cards.pick(0)
-	_check(cards.is_open and cards.options.size() == 7, "then the game card")
+	_check(cards.is_open and cards.options.size() == 8, "then the game card")
 	cards.pick(0)
 	_check(o.is_open and o.game == "bowling" and o.opts.party == coming, "the party plays")
 	var ppl: Array = o.bowlers()

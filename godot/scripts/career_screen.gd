@@ -13,7 +13,7 @@ const MEDAL_H := 16.0
 const ROW_H := 7.0
 const HEAD_ROW_H := 9.0
 # the mastery page: [label, the game id of Career "good.<game>"]
-const MASTERY_ROWS := [["BOWLING", "bowling"], ["KARAOKE", "karaoke"], ["ESCAPE ROOM", "escape"], ["CORNHOLE", "cornhole"], ["COOKOUT", "grill"], ["CHAIR RACE", "chair"], ["DARTS", "darts"], ["PRINTER", "printer"]]
+const MASTERY_ROWS := [["BOWLING", "bowling"], ["KARAOKE", "karaoke"], ["ESCAPE ROOM", "escape"], ["CORNHOLE", "cornhole"], ["COOKOUT", "grill"], ["CHAIR RACE", "chair"], ["PAINTBALL", "paintball"], ["DARTS", "darts"], ["PRINTER", "printer"]]
 
 var page := 0
 var pages: Array = []

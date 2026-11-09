@@ -1,6 +1,6 @@
 extends CanvasLayer
 # gdlint:disable=class-definitions-order,class-variable-name
-# gdlint:disable=max-line-length,max-returns
+# gdlint:disable=max-line-length,max-returns,max-file-lines
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
 #   teammates give hints), DINNER (conversation: learn what each person likes).
@@ -15,6 +15,8 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const ChairRace := preload("res://scripts/chair_race.gd")
 const ChairTrack := preload("res://scripts/chair_track.gd")
+const PaintGame := preload("res://scripts/paintball_game.gd")
+const PaintTrack := preload("res://scripts/paintball_track.gd")
 const CornholeGame := preload("res://scripts/cornhole_game.gd")
 const GrillGame := preload("res://scripts/grill_game.gd")
 const DartsGame := preload("res://scripts/darts_game.gd")
@@ -81,6 +83,14 @@ const GAMES := {
 		"blurb":
 		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
 		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
+	},
+	"paintball":
+	{
+		"label": "PAINTBALL",
+		"cost": 200,
+		"blurb":
+		"CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
+		"keys": "L R RUN  Z FIRE  DOWN DUCK  ESC LEAVE"
 	},
 	"darts":
 	{
@@ -217,6 +227,8 @@ const ROOM_INTRO := {
 	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
 	"cornhole":
 	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
+	"paintball":
+	"THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, Z FIRES A PAINTBALL THE WAY YOU FACE, DOWN DUCKS: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
 	"darts":
 	"THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
 	"grill":
@@ -515,6 +527,7 @@ const ROOMS := {
 	"escape": "escape_room",
 	"dinner": "restaurant",
 	"chair": "warehouse",
+	"paintball": "paintball_field",
 	"cornhole": "warehouse",
 	"grill": "warehouse",
 	"darts": "warehouse"
@@ -529,6 +542,7 @@ const SPOTS := {
 	"chair": [1135, 1160, 1185, 1210, 1235, 1260],  # whoever is not racing watches from beyond the finish line
 	"cornhole": [1096, 1080, 1064, 1048, 1032, 1016],  # the audience left of board A; the opponent of the round walks to board B
 	"grill": [1262, 1230, 1198, 1166, 1134, 1102],  # the queue to the left of the cook, nearest first
+	"paintball": [8, 22, 36, 50, 64, 78],  # whoever is not playing watches from the saloon porch
 	"darts": [962, 938, 914, 890, 866, 842],  # waiting their turn left of the throw line
 }
 const TECH_DAYS := [5, 10, 15]
@@ -1008,6 +1022,8 @@ func start(id: String, from_invite := false, options := {}) -> void:
 		var away := []
 		if opts.has("party"):  # whoever did not come stays out of the building
 			away = roster().filter(func(n: String) -> bool: return not opts.party.has(n))
+		if id == "paintball":  # the crew who play are puppets on the field
+			away.append_array(_paint_crew().filter(func(n: String) -> bool: return not away.has(n)))
 		if id == "chair":  # the racers are puppets on the floor, the rest of the party watches from the finish line
 			away.append_array(racers().filter(func(n: String) -> bool: return not away.has(n)))
 		World.start_outing(str(ROOMS[id]), SPOTS[id], SEATS.get(id, {}), away)
@@ -1053,6 +1069,8 @@ func begin_play(pick := "") -> void:
 			_grill_setup()
 		"darts":
 			_darts_setup()
+		"paintball":
+			_paint_setup()
 		"chair":
 			_chair_door(true)  # set up when the page opened: the race is on the floor, the countdown starts now
 		_:
@@ -1067,6 +1085,7 @@ func close() -> void:
 	is_open = false
 	_set_pilot(0)
 	_chair_clear()
+	_paint_clear()
 	_reset_camera()
 	_canvas.visible = false
 	Game.ui_open = false
@@ -1121,6 +1140,8 @@ func tick(dt: float) -> void:
 			_kara_tick(dt)
 		"escape":
 			_escape_tick(dt)
+		"paintball":
+			_paint_tick(dt)
 		"chair":
 			_chair_tick(dt)
 		"cornhole":
@@ -1168,6 +1189,8 @@ func _event_key(event: InputEvent) -> int:
 		key = KEY_Z
 	elif racing and Controls.matches(event, "push_b"):
 		key = KEY_X
+	elif game == "paintball" and phase == "play" and (Controls.matches(event, "push_a") or Controls.matches(event, "interact")):
+		key = KEY_Z  # A or X on a pad: fire
 	elif grilling and Controls.matches(event, "run"):
 		key = KEY_SHIFT  # B on a pad: the cool side
 	elif dir != "":
@@ -1249,6 +1272,8 @@ func _press_game(key: int) -> void:
 			_kara_press(key)
 		"escape":
 			_escape_press(key)
+		"paintball":
+			_paint_press(key)
 		"chair":
 			_chair_press(key)
 		"cornhole":
@@ -1308,6 +1333,8 @@ func _finish(result: int) -> void:
 			Sales.adjust(guest_client, 2 + result)
 			lines.append("%s ENJOYED THE EVENING. (CLIENT MOOD +%d)" % [str(Msp.CLIENTS[guest_client].contact).to_upper(), 2 + result])
 			guest_client = -1
+		if game == "paintball":
+			lines.append_array(_paint_lines())
 		if game == "chair":
 			lines.append_array(_chair_lines())
 		if game == "cornhole":
@@ -2706,7 +2733,7 @@ func _bubble(node: Node, glyph: String, secs := 1.2) -> void:
 
 
 func _room_begin() -> void:
-	Game.ui_open = game == "chair"  # the race has the keys: the real player stays put (hidden) until it is over
+	Game.ui_open = game in ["chair", "paintball"]  # the race has the keys: the real player stays put (hidden) until it is over
 	match game:
 		"karaoke":
 			var mic := _x0() + MIC_X
@@ -2750,6 +2777,8 @@ func _room_wants(key: int) -> bool:
 	match game:
 		"bowling":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
+		"paintball":
+			return key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
 		"cornhole", "darts":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
 		"grill":
@@ -2776,7 +2805,7 @@ func _room_press(key: int) -> bool:
 
 # E belongs to the bowling game while it runs (the crew should not answer it)
 func blocks_interact() -> bool:
-	return is_open and room_mode() and phase == "play" and game in ["bowling", "cornhole", "grill", "darts"]
+	return is_open and room_mode() and phase == "play" and game in ["bowling", "cornhole", "grill", "darts", "paintball"]
 
 
 # the one control hint line: pages show it as their footer, rooms in the bar at the bottom
@@ -2802,6 +2831,8 @@ func _room_hint() -> String:
 			text = _bowl_hint(str(g.get("stage", "")))
 		"karaoke":
 			text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+		"paintball":
+			text = "GET READY  ESC = LEAVE" if str(g.rules.phase) == "count" else str(GAMES.paintball.keys)
 		"chair":
 			text = _chair_hint()
 		"cornhole":
@@ -3138,6 +3169,8 @@ func _paint_hud(size: Vector2) -> void:
 			_hud_bowling(strip)
 		"karaoke":
 			_hud_karaoke(strip, size)
+		"paintball":
+			_hud_paint(strip)
 		"chair":
 			_hud_chair(strip)
 		"cornhole":
@@ -3464,6 +3497,111 @@ func _hud_chair(s: Rect2) -> void:
 	var mx := rx + rw * clampf(race.pos / ChairRace.LEN, 0.0, 1.0)
 	_canvas.draw_rect(Rect2(mx - 2.0, ry - 2.0, 5.0, 5.0), INK)
 	_canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
+
+
+# ---- paintball (the western capture the flag outing): the rules are in paintball_game.gd, the drawing in paintball_track.gd ----------
+# who plays: the party (or the whole roster when nobody was invited), those with a personality in PaintGame.STYLES
+func _paint_crew() -> Array:
+	var pool := present() if opts.has("party") else roster()
+	return PaintGame.NAMES.filter(func(n: String) -> bool: return pool.has(n))
+
+
+func _paint_params() -> Dictionary:
+	return {"skill": Difficulty.f("paint.skill"), "acc": Difficulty.f("paint.acc")}
+
+
+func _paint_setup() -> void:
+	var rules := PaintGame.new()
+	rules.setup(_paint_params(), _paint_crew(), Difficulty.rng("paint"))
+	g = {"rules": rules, "count": 4, "end_t": 0.0}
+	var scene := get_tree().current_scene
+	if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
+		var me := _actor("Player")
+		var specs := [{"character": me.character_id() if me != null else "office_adult", "custom": Look.is_custom(), "label": "YOU"}]
+		for k in range(1, rules.units.size()):
+			var who := str(rules.units[k].name)
+			specs.append({"character": str(World.row(who).character), "custom": false, "label": who.substr(0, 1)})
+		var track := PaintTrack.new()
+		track.setup(scene, rules, _x0(), specs)
+		g["track"] = track
+
+
+func _paint_clear() -> void:
+	var track: Variant = g.get("track")
+	if track != null and is_instance_valid(track):
+		track.clear()
+	g.erase("track")
+
+
+func _paint_tick(dt: float) -> void:
+	var rules: RefCounted = g.rules
+	var dir := 0
+	if Input.is_action_pressed(Controls.action_for(0, "move_left")):
+		dir -= 1
+	if Input.is_action_pressed(Controls.action_for(0, "move_right")):
+		dir += 1
+	rules.set_move(dir)
+	rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "duck")))
+	if Input.is_action_just_pressed(Controls.action_for(0, "aim")):
+		rules.fire_you()
+	rules.step(dt)
+	_paint_cues(rules)
+	if rules.phase == "over":
+		g.end_t = float(g.end_t) + dt
+		if float(g.end_t) >= 1.5:
+			_finish(rules.stars())
+
+
+func _paint_cues(rules: RefCounted) -> void:
+	var line := ""
+	if rules.phase == "count":
+		line = "READY... %d" % ceili(rules.count)
+		if int(g.count) != ceili(rules.count):
+			g.count = ceili(rules.count)
+			Sfx.play("ui_tick")
+	elif rules.phase == "over":
+		line = "TIME!" if rules.clock >= PaintGame.LIMIT else "THAT IS THE MATCH!"
+	elif rules.line_t > 0.0:
+		line = rules.line
+	elif rules.units[0].down > 0.0:
+		line = "YOU ARE OUT FOR %d..." % ceili(rules.units[0].down)
+	elif rules.units[0].flag:
+		line = "YOU HAVE THE FLAG! RUN HOME!"
+	else:
+		line = "THEIR FLAG IS AT THE JAIL END."
+	caption(line, 0.3)
+
+
+func _paint_press(key: int) -> void:
+	if key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
+		g.rules.fire_you()
+
+
+func _paint_lines() -> Array:
+	var rules: RefCounted = g.rules
+	return [rules.comment(), "FINAL SCORE %d TO %d. YOU SCORED %d AND TAGGED %d." % [rules.score[0], rules.score[1], rules.you_caps, rules.you_tags]]
+
+
+# without the room (the overlay page) there is only the numbers
+func _paint_paint(b: Rect2) -> void:
+	var rules: RefCounted = g.rules
+	_t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(PaintGame.LIMIT - rules.clock))], b.position.x, b.position.y)
+	_t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
+
+
+# the strip at the bottom of the room: the score, the clock, whether you hold the flag or are out
+func _hud_paint(s: Rect2) -> void:
+	var rules: RefCounted = g.rules
+	var o := UiStyle.strip(_canvas, s)
+	_canvas.draw_rect(Rect2(o.x, s.position.y + 2.0, 9.0, 8.0), RED)
+	_t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
+	_canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
+	_t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
+	_t("%d" % maxi(0, ceili(PaintGame.LIMIT - rules.clock)), o.x + 26.0, o.y, WHITE)
+	var you: Dictionary = rules.units[0]
+	var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
+	_t(state, o.x + 48.0, o.y, AMBER)
+	_t("TAGS %d" % rules.you_tags, s.end.x - 40.0, o.y, UiStyle.SOFT)
 
 
 # ---- cornhole (R21 a): two boards in the warehouse, you at A, the crew member of the round at B ------------------------
@@ -4413,6 +4551,8 @@ func _paint() -> void:
 					_paint_karaoke(body)
 				"escape":
 					_paint_escape(body)
+				"paintball":
+					_paint_paint(body)
 				"chair":
 					_paint_chair(body)
 				"cornhole":

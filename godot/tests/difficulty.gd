@@ -120,6 +120,8 @@ func _init() -> void:
 		"chair.slick": 1.0,
 		"chair.par": 1.0,
 		"chair.skill": 0.0,
+		"paint.skill": 1.0,
+		"paint.acc": 1.0,
 		"corn.to": 15.0,
 		"corn.opp_skill": 0.0,
 		"corn.aim_speed": 1.3,

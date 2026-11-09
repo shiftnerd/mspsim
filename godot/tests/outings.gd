@@ -566,7 +566,7 @@ func _init() -> void:
 	o._offered = false
 	o.maybe_invite()
 	cards.pick(0)
-	_check(cards.is_open and cards.options.size() == 7, "then the seven activities")
+	_check(cards.is_open and cards.options.size() == 8, "then the eight activities")
 	var energy0: float = shift.energy
 	cards.pick(0)
 	_check(o.is_open and o.game == "bowling" and o._from_invite, "off to bowling")

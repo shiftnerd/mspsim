@@ -136,7 +136,7 @@ room is up), or press **`Shift`+`F10`** at any time in Free Play.
 
 | ROW | WHAT IT DOES |
 |---|---|
-| **GAME** | `NONE`, `BOWLING`, `KARAOKE`, `ESCAPE ROOM`, `DINNER`, `PRINTER`, `NERF WAR`, `CHAIR RACE`, `CORNHOLE`, `COOKOUT`. |
+| **GAME** | `NONE`, `BOWLING`, `KARAOKE`, `ESCAPE ROOM`, `DINNER`, `PRINTER`, `NERF WAR`, `CHAIR RACE`, `PAINTBALL`, `CORNHOLE`, `COOKOUT`. |
 | *(settings for the chosen game)* | **KARAOKE:** which `SONG` (even one that is locked). **ESCAPE ROOM:** the number of `CODE DIGITS`, and which kind of clue each zone shows. **DINNER:** who is at the `TABLE`. **PRINTER:** which printer `MODEL`. |
 | **SEED** | Type or paste a seed, roll one, or use today's ([Chapter 1](01-getting-started.md#the-seed-and-the-daily-seed)). |
 | **FIXED TAKE** | `ON` makes every launch start again from the seed, with no random events and no twists, so a retake is **identical**. Handy for filming the same scene twice. |

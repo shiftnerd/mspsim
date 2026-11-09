@@ -23,7 +23,7 @@ extends CanvasLayer
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
 const CharSelect := preload("res://scripts/charselect.gd")
-const GAMES := ["", "bowling", "karaoke", "escape", "dinner", "printer", "nerf", "chair", "cornhole", "grill", "darts"]
+const GAMES := ["", "bowling", "karaoke", "escape", "dinner", "printer", "nerf", "chair", "paintball", "cornhole", "grill", "darts"]
 const GAME_LABELS := {
 	"": "NONE",
 	"bowling": "BOWLING",
@@ -33,6 +33,7 @@ const GAME_LABELS := {
 	"printer": "PRINTER",
 	"nerf": "NERF WAR",
 	"chair": "CHAIR RACE",
+	"paintball": "PAINTBALL",
 	"cornhole": "CORNHOLE",
 	"grill": "COOKOUT",
 	"darts": "DARTS",

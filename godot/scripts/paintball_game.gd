@@ -70,7 +70,7 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
 	events = []
 	barricades = []
 	for b in BARRICADES:
-		barricades.append(float(b) + rng.randf_range(-8.0, 8.0))
+		barricades.append(float(b))  # the set art has them at these places
 	var crew: Array = names.duplicate()
 	for n in NAMES:
 		if crew.size() >= 5:
@@ -244,17 +244,21 @@ func target_of(i: int) -> int:
 	return best
 
 
-# is unit `j` ducking right behind a barricade, as seen from where `from_x` stands?
-func covered(j: int, from_x: float) -> bool:
+# the x of the barricade unit `j` is ducking behind, as seen from where `from_x` stands (INF when there is no cover)
+func cover_x(j: int, from_x: float) -> float:
 	var v: Dictionary = units[j]
 	if not bool(v.duck):
-		return false
+		return INF
 	var side := signf(from_x - float(v.x))
 	for b in barricades:
 		var off: float = float(b) - float(v.x)
 		if absf(off) <= COVER and signf(off) == side:
-			return true
-	return false
+			return float(b)
+	return INF
+
+
+func covered(j: int, from_x: float) -> bool:
+	return cover_x(j, from_x) != INF
 
 
 func near_cover(x: float) -> bool:
@@ -271,15 +275,20 @@ func fire(i: int) -> bool:
 	u.cool = FIRE_GAP
 	var j := target_of(i)
 	var hit := -1
+	var to: float = clampf(float(u.x) + float(u.face) * RANGE, 0.0, LEN)  # where the paintball ends up
 	if j >= 0:
 		var v: Dictionary = units[j]
-		if not covered(j, float(u.x)):
+		to = float(v.x)
+		var shield := cover_x(j, float(u.x))
+		if shield != INF:
+			to = shield
+		else:
 			var d: float = absf(float(v.x) - float(u.x))
 			var acc: float = (YOU_ACC * float(params.acc)) if (bool(u.you) and not you_auto) else (float(u.skill) * AI_ACC * float(params.skill))
 			var chance := clampf(acc * (1.0 - 0.5 * d / RANGE) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0), 0.05, 0.95)
 			if rng.randf() < chance:
 				hit = j
-	events.append({"kind": "shot", "unit": i, "from": float(u.x), "face": int(u.face), "hit": hit, "target": j})
+	events.append({"kind": "shot", "unit": i, "from": float(u.x), "to": to, "face": int(u.face), "hit": hit, "target": j})
 	if hit >= 0:
 		_tag(hit, i)
 	return true

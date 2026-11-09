@@ -152,6 +152,7 @@ const COUNTERS := [
 	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
 	["", "COOKOUT BEST", "stars.grill", "stars"],
 	["", "CHAIR RACE BEST", "stars.chair", "stars"],
+	["", "PAINTBALL BEST", "stars.paintball", "stars"],
 	["", "DARTS BEST", "stars.darts", "stars"],
 	["", "BULLSEYES", "bulls", "n"],
 	["", "BURGERS SERVED", "burgers_served", "n"],

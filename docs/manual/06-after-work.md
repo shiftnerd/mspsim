@@ -20,6 +20,7 @@ In **Free Play** you can start one yourself: press **`O`**, answer **LET'S GO**,
 | **Escape Room** | The escape room | Puzzle: find clues, crack a code. |
 | **Dinner** | The neighbourhood grill | Conversation: learn what everybody likes. |
 | **Chair Race** | The warehouse | Rhythm: race the crew on rolling office chairs. |
+| **Paintball** | The old west main street | Action: capture the flag, three a side, with paintballs. |
 | **Cornhole** | The warehouse | Timing: toss bags at the boards. |
 | **Cookout** | The warehouse dock | Speed: run the grill and serve the orders. |
 
@@ -140,6 +141,23 @@ Race the crew down the length of the warehouse on rolling office chairs.
 Cones, signs and boxes cost time. The gamepad's `A` and `B` stand for `Z` and `X`.
 
 > **TIP:** Watch the rhythm, not the chair.
+
+---
+
+## PAINTBALL
+
+Capture the flag on a western main street, three a side: you and two of the crew against three more. Your flag stands in front of the saloon on the left, theirs in front of the jail on the right.
+
+| KEY | WHAT IT DOES |
+|---|---|
+| `Left` / `Right` (or `A` / `D`) | Run. You face the way you run. |
+| `Z` (or `E`, or the pad's `A` / `X`) | Fire a paintball the way you face. |
+| `Down` (or `S`) | Duck. Right behind a barricade, a ducking player cannot be hit from that side. |
+| `Esc` | Leave. |
+
+A tag puts a player out for four seconds and drops the flag they carried. Touch the other team's flag to pick it up, carry it back to your own end to score. Touch your own flag, if it was dropped, to send it home. First to three captures wins; at 2:30 the higher score wins. It costs $200 in the owner campaign.
+
+> **TIP:** A runner is harder to hit than somebody standing still, and a ducking player behind a barricade cannot be hit at all. Duck, wait for the shot, pop up.
 
 ---
 

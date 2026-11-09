@@ -145,6 +145,9 @@ const TABLE := {
 	"chair.slick": [0.8, 1.0, 1.3],
 	"chair.par": [1.2, 1.0, 0.9],
 	"chair.skill": [-0.08, 0.0, 0.08],
+	# paintball: x on the crew's aim and reflexes, x on your own aim
+	"paint.skill": [0.8, 1.0, 1.25],
+	"paint.acc": [1.1, 1.0, 0.9],
 	# cornhole (R21): points to win, added to the crew's skill, how fast the aim marker and the power bar bounce (a bar a second),
 	# 1 = a bag that lands just short slides up onto the board
 	"corn.to": [11, 15, 21],
@@ -197,7 +200,7 @@ const TABLE := {
 const RAMP_PLAYS := 10  # good plays that bring a game to full mastery
 const EASY_RAMP := 0.35  # the Easy tier (cozy included) only blends this share of the way toward the normal value
 const HARD_OVER := 0.25  # at full mastery Hard goes at most this share of the normal-to-hard step beyond its own value
-const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "corn": "cornhole", "darts": "darts"}
+const MASTERY_GAMES := {"karaoke": "karaoke", "bowl": "bowling", "escape": "escape", "dinner": "dinner", "printer": "printer", "grill": "grill", "chair": "chair", "paint": "paintball", "corn": "cornhole", "darts": "darts"}
 # the keys that tighten with mastery. Everything else stays fixed on purpose: counts and switches (karaoke.grace,
 # escape.digits / dial, dinner.reveal, printer.questions / chain, corn.to / assist, grill.tickets), random frequencies
 # (grill.flare, grill.dogs), prizes and thresholds (not in TABLE at all), the nerf war and the campaign dials.
@@ -207,7 +210,7 @@ const MASTERY_KEYS := [
 	"escape.time", "escape.wrong_penalty",
 	"printer.speed", "printer.zone",
 	"grill.cook_rate", "grill.window", "grill.time",
-	"chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill",
+	"chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill", "paint.skill",
 	"corn.opp_skill", "corn.aim_speed", "corn.power_speed",
 	"darts.drift", "darts.speed", "darts.opp_skill",
 ]
