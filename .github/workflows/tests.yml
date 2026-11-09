@@ -29,6 +29,10 @@ jobs:
         run: |
           pip install gdtoolkit
           cd godot && gdlint scripts tests
+      - name: Art lint
+        run: |
+          pip install pillow
+          python tools/art_lint.py --all
       - name: Generator check
         run: python -I tools/check_generator.py --scratch "$RUNNER_TEMP/gen"
       - name: Tests (a failing test is retried once and reported as flaky if it then passes)

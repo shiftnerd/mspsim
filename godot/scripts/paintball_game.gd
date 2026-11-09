@@ -386,5 +386,15 @@ func comment() -> String:
 	return str(st.get("win", "THEIR TEAM WINS."))
 
 
+# the blackboard of one unit as a line: what it is doing, where it is heading, who it is aiming at (the PAINT_DEBUG overlay)
+func debug_line(i: int) -> String:
+	var u: Dictionary = units[i]
+	if float(u.down) > 0.0:
+		return "DOWN %.1f" % float(u.down)
+	if bool(u.you) and not you_auto:
+		return "YOU"
+	return "%s %s goal %d tgt %d" % [str(u.role), "duck" if bool(u.duck) else "go", int(_goal(i)), target_of(i)]
+
+
 func carrier_of(team: int) -> int:  # the unit carrying `team`'s flag, or -1
 	return int(flags[team].carried)

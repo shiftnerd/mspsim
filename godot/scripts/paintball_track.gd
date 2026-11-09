@@ -29,6 +29,7 @@ var _player2: Node2D = null
 var _cam: Camera2D = null
 var _t := 0.0
 var _seen_down: Array = []
+var _debug := OS.get_environment("PAINT_DEBUG") == "1"
 
 
 func field_x(gx: float) -> float:
@@ -227,6 +228,8 @@ func _draw_top() -> void:
 		var mine: bool = bool(u.you)
 		_top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(w + 2.0, 7.0)), GOLD if mine else TEAM_COLOR[int(u.team)])
 		PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
+		if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
+			PixelFont.draw(_top, game.debug_line(i), at + Vector2(-14.0, 9.0 + 56.0), Color(1, 1, 1, 0.8), 1)
 		if float(u.down) > 0.0:  # the seconds until they are back in the game
 			PixelFont.draw(_top, str(ceili(float(u.down))), at + Vector2(w * 0.5 - 1.0, -8.0), Color.WHITE, 1)
 
