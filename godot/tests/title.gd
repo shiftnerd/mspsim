@@ -34,9 +34,12 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		50:
 			_check(
-				current_scene._menu_open and current_scene._items.size() == 6,
-				"Enter opens the menu"
+				current_scene._menu_open and current_scene._level == "home" and current_scene._items.size() == 2,
+				"Enter opens the home menu (PLAY and CAREER while nothing is saved)"
 			)
+			_press(KEY_ENTER)
+		52:
+			_check(current_scene._level == "top" and current_scene._items.size() == 5, "PLAY lists the four campaigns and Free Play")
 			_press(KEY_DOWN)
 		55:
 			_check(

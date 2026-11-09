@@ -58,6 +58,7 @@ func _fresh_title() -> void:
 	await process_frame
 	title = current_scene
 	title._open_menu()
+	title._show_top(0)
 
 
 func _init() -> void:
@@ -177,7 +178,7 @@ func _init() -> void:
 	_put("tech", 1, 4)
 	_put("tech", 3, 9, {"year": 2})
 	await _fresh_title()
-	_check(_ids().size() == 6, "six top lines")
+	_check(_ids().size() == 5, "five play lines")
 	title._show_top(0)
 	title._choose(0)
 	_check(title._level == "sub" and _ids() == ["tech_slot1", "tech_slot3", "tech_y2", "tech_new", "tech_delask"], "submenu rows %s" % str(_ids()))

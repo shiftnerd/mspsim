@@ -1,5 +1,5 @@
 extends SceneTree
-# The title menu's two levels (roadmap R17): six short top lines, a submenu per campaign (CONTINUE / START YEAR 2 /
+# The title menu (roadmap R17, R40): a home menu (CONTINUE / PLAY / CAREER), PLAY lists the campaigns, a submenu per campaign (CONTINUE / START YEAR 2 /
 # NEW CAMPAIGN by state), Esc backs out one level, a mode with nothing but NEW goes straight to the character select,
 # keyboard, pad and mouse. Events go straight to the title's _unhandled_input. Saves go to user://test_<pid>_*.
 
@@ -58,6 +58,7 @@ func _fresh_title() -> void:
 	await process_frame
 	title = current_scene
 	title._open_menu()
+	title._show_top(0)  # PLAY: the old top menu
 
 
 func _init() -> void:
@@ -70,9 +71,9 @@ func _init() -> void:
 	# ---- top menu
 	await _fresh_title()
 	_check(title._menu_open and title._level == "top", "Enter opens the top menu")
-	_check(_ids() == ["tech", "owner", "service", "sales", "free", "career"], "six top lines: %s" % str(_ids()))
+	_check(_ids() == ["tech", "owner", "service", "sales", "free"], "five play lines: %s" % str(_ids()))
 	_check(
-		_labels() == ["TECH CAMPAIGN", "OWNER CAMPAIGN", "SERVICE MANAGER", "SALES", "FREE PLAY", "CAREER"],
+		_labels() == ["TECH CAMPAIGN", "OWNER CAMPAIGN", "SERVICE MANAGER", "SALES", "FREE PLAY"],
 		"top labels %s" % str(_labels())
 	)
 	_check(title._items.all(func(i: Dictionary) -> bool: return i.enabled), "every campaign is playable")
@@ -110,10 +111,13 @@ func _init() -> void:
 	_key(KEY_ESCAPE)
 	_check(title._level == "top" and title._menu_open and title._sel == 1, "Esc returns to the top menu on OWNER CAMPAIGN")
 	_key(KEY_ESCAPE)
-	_check(not title._menu_open and not title._menu.visible, "Esc on the top menu closes it")
+	_check(title._level == "home" and title._menu_open, "Esc on PLAY returns to the home menu")
+	_key(KEY_ESCAPE)
+	_check(not title._menu_open and not title._menu.visible, "Esc on the home menu closes it")
 
 	# ---- a mode with only NEW goes straight to the character select
 	title._open_menu()
+	title._show_top(0)  # PLAY: the old top menu
 	_check(title._level == "top" and title._sel == 0, "reopening starts on the top menu")
 	_key(KEY_ENTER)  # TECH CAMPAIGN: no save, no finished year
 	_check(title._select != null and title._level == "top", "TECH with nothing saved skips the submenu")
@@ -141,10 +145,12 @@ func _init() -> void:
 	_pad(JOY_BUTTON_B)
 	_check(title._level == "top" and title._sel == 1, "pad: B backs out one level")
 	_pad(JOY_BUTTON_B)
-	_check(not title._menu_open, "pad: B on the top menu closes it")
+	_pad(JOY_BUTTON_B)
+	_check(not title._menu_open, "pad: B on PLAY then home closes the menu")
 
 	# ---- mouse: hover selects, click confirms, in both levels
 	title._open_menu()
+	title._show_top(0)  # PLAY: the old top menu
 	for i in title._items.size():
 		title._items[i]["rect"] = Rect2(100, 20 + i * 10, 100, 9)
 	var motion := InputEventMouseMotion.new()
@@ -164,8 +170,8 @@ func _init() -> void:
 	_check(_ids()[title._sel] == "owner_new", "mouse: hover selects NEW CAMPAIGN in the submenu")
 	title._show_top(4)
 	_check(title._items[title._sel].id == "free", "FREE PLAY stays on the top menu")
-	title._show_top(5)
-	_check(title._items[title._sel].id == "career", "CAREER stays on the top menu")
+	title._show_home(99)
+	_check(title._items[title._sel].id == "career", "CAREER is the last line of the home menu")
 
 	# ---- a tech run with a mid-day resume point and a day-start save
 	_wipe()
@@ -220,6 +226,42 @@ func _init() -> void:
 	title._choose(0)  # the resume row
 	await process_frame
 	_check(title._started and c.active and c.mode == "tech" and c.day == 1, "the resume row resumes the run")
+	c.active = false
+	c.mode = ""
+	root.get_node("Game").title_mode = true
+	world.time_scale = 0.0
+
+	# ---- R40: CONTINUE lists every save of every mode, newest first
+	_wipe()
+	await _fresh_title()
+	title._show_home(0)
+	_check(_ids() == ["play", "career"], "nothing saved: PLAY and CAREER only (%s)" % str(_ids()))
+	_save("tech", 4, 1)
+	OS.delay_msec(1100)
+	var cfg := ConfigFile.new()
+	cfg.set_value("campaign", "day", 2)
+	cfg.save(c.save_path("service", 2))
+	OS.delay_msec(1100)
+	_save("owner", 7, 1)
+	title._show_home(0)
+	_check(_ids() == ["continue", "play", "career"], "a save adds CONTINUE first (%s)" % str(_ids()))
+	var all: Array = c.all_slots()
+	var order := all.map(func(e: Dictionary) -> String: return str(e.mode))
+	_check(order == ["owner", "service", "tech"], "all_slots is newest first (%s)" % str(order))
+	title._choose(0)
+	_check(title._level == "cont" and title._heading == "CONTINUE", "CONTINUE opens the save list")
+	_check(_ids() == ["cont_owner_1", "cont_service_2", "cont_tech_1"], "rows are newest first: %s" % str(_ids()))
+	_check(str(title._items[1].label).begins_with("SERVICE SLOT 2 - DAY 2"), "each row names its campaign and slot: %s" % str(_labels()))
+	_key(KEY_ESCAPE)
+	_check(title._level == "home" and title._menu_open, "Esc returns to the home menu")
+	title._choose(1)  # PLAY
+	_check(title._level == "top" and _ids() == ["tech", "owner", "service", "sales", "free"], "PLAY lists the campaigns")
+	_key(KEY_ESCAPE)
+	_check(title._level == "home" and title._sel == 0, "Esc from PLAY returns home")
+	title._show_continue()
+	title._choose(2)  # tech slot 1 is a plain save: it starts straight away
+	await process_frame
+	_check(title._started and c.mode == "tech" and c.slot == 1, "a plain save from the list starts that run")
 	_wipe()
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

@@ -228,6 +228,20 @@ func slot_info(for_mode: String, for_slot: int) -> Dictionary:
 	return out
 
 
+# R40: every existing save of every campaign, newest first: [{mode, slot, info (slot_info), time (file modified time)}]
+func all_slots() -> Array:
+	var out := []
+	for mode in MODES:
+		for n in range(1, SLOTS + 1):
+			var info := slot_info(mode, n)
+			if not bool(info.exists):
+				continue
+			var t := maxi(FileAccess.get_modified_time(save_path(mode, n)), FileAccess.get_modified_time(resume_path(mode, n)))
+			out.append({"mode": mode, "slot": n, "info": info, "time": t})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.time) > int(b.time))
+	return out
+
+
 # the lowest slot with nothing in it (no end-of-day save and no resume point), 0 when all are full
 func first_empty_slot(for_mode: String) -> int:
 	for n in range(1, SLOTS + 1):

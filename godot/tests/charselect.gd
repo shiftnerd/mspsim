@@ -227,6 +227,7 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		1:
 			_check(title._menu_open, "Enter opens the title menu")
+			title._show_top(0)
 			_press(KEY_ENTER)  # first item: TECH CAMPAIGN (new)
 		2:
 			var cs: Node = title._select
@@ -411,6 +412,7 @@ func _process(_delta: float) -> bool:
 		26:
 			_press(KEY_ENTER)
 		27:
+			title._show_top(0)  # past the home menu
 			# the tech submenu has CONTINUE first: choosing it must not open the select screen
 			_check(title._items[0].id == "tech", "the top menu starts with TECH CAMPAIGN")
 			title._choose(0)
@@ -434,8 +436,9 @@ func _process(_delta: float) -> bool:
 		30:
 			_press(KEY_ENTER)
 		31:
-			title._sel = title._items.size() - 2  # CAREER is the last entry
-			_check(title._items[title._sel].id == "free", "FREE PLAY is the item before CAREER")
+			title._show_top(0)
+			title._sel = title._items.size() - 1  # FREE PLAY is the last entry of PLAY
+			_check(title._items[title._sel].id == "free", "FREE PLAY is the last PLAY line")
 			_press(KEY_ENTER)
 		32:
 			var cs: Node = title._select

@@ -53,6 +53,8 @@ func _run() -> void:
 	await _wait(10)
 	_check(title._menu_open, "a click on the title opens the menu")
 	await _wait(10)
+	title._show_top(0)  # past the home menu (PLAY / CAREER) to the campaigns
+	await _wait(3)
 	var first: Dictionary = title._items[0]
 	_check(first.has("rect"), "menu items carry their drawn rect")
 	var last_i: int = title._items.size() - 1

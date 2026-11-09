@@ -305,8 +305,9 @@ func _title_phase() -> void:
 	await _wait(3)
 	# toolbox rows
 	t._open_menu()
+	t._show_top(0)
 	await _wait(3)
-	t._choose(t._items.size() - 2)
+	t._choose(t._items.size() - 1)
 	await _wait(10)
 	if t._select != null:
 		var tb := root.get_node("Toolbox")

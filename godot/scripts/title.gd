@@ -21,6 +21,7 @@ const ROOMS := {
 	"conference": "conference"
 }
 
+const CONTINUE_ROWS := 6  # the CONTINUE list shows the newest saves of all modes, this many at most
 const MODE_NAMES := {
 	"tech": "TECH CAMPAIGN",
 	"owner": "OWNER CAMPAIGN",
@@ -41,7 +42,10 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
-var _level := "top"  # "top", "sub" (a campaign's submenu), "slot" (CONTINUE / FROM THE START of one slot) or "over" (which slot to overwrite)
+# "home" (CONTINUE / PLAY / CAREER), "cont" (every save, newest first), "top" (PLAY: the campaigns), "sub" (a campaign's submenu),
+# "slot" (CONTINUE / FROM THE START of one slot), "over" (which slot to overwrite) or "del"
+var _level := "home"
+var _from_cont := false  # the slot being opened was picked from the CONTINUE list, so back returns there
 var _sub_mode := ""
 var _top_sel := 0  # the top-menu cursor to come back to
 var _sub_sel := 0  # the submenu cursor to come back to
@@ -310,34 +314,77 @@ func _menu_key(event: InputEvent, confirm: bool) -> void:
 # Esc / back / pad B: the slot and overwrite lists return to the submenu, a submenu returns to the top menu (cursor
 # kept), the top menu closes
 func _back() -> void:
-	if _level == "slot" or _level == "over" or _level == "del":
+	if _level == "slot" and _from_cont:
+		_show_continue()
+	elif _level == "slot" or _level == "over" or _level == "del":
 		_show_sub(_sub_mode, _sub_sel)
 	elif _level == "sub":
 		_show_top(_top_sel)
+	elif _level == "cont" or _level == "top":
+		_show_home(0)
 	else:
 		_menu_open = false
 		_menu.visible = false
 
 
 func _open_menu() -> void:
-	_show_top(0)
+	_show_home(0)
 	_menu_open = true
 	_prompt.visible = false
 	_menu.visible = true
 	_menu.queue_redraw()
 
 
-# the six short top lines: four campaigns, Free Play, Career
-func _show_top(sel: int) -> void:
-	_level = "top"
+# R40: the home lines. CONTINUE (only when something is saved) lists every save of every mode, newest first; PLAY
+# opens the campaigns and free play; CAREER is the medals
+func _show_home(sel: int) -> void:
+	_level = "home"
+	_from_cont = false
 	_sub_mode = ""
 	_heading = ""
+	_items = []
+	if not Campaign.all_slots().is_empty():
+		_items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
+	_items.append({"label": "PLAY", "id": "play", "enabled": true})
+	_items.append({"label": "CAREER", "id": "career", "enabled": true})
+	_sel = clampi(sel, 0, _items.size() - 1)
+	_menu.queue_redraw()
+
+
+# PLAY: the four campaigns and Free Play
+func _show_top(sel: int) -> void:
+	_level = "top"
+	_from_cont = false
+	_sub_mode = ""
+	_heading = "PLAY"
 	_items = []
 	for mode in MODE_NAMES:
 		_items.append({"label": MODE_NAMES[mode], "id": mode, "enabled": Campaign.is_selectable(mode)})
 	_items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
-	_items.append({"label": "CAREER", "id": "career", "enabled": true})
 	_sel = clampi(sel, 0, _items.size() - 1)
+	_menu.queue_redraw()
+
+
+# "SALES - SLOT 2 - DAY 7  12:30 - JAMIE": one line per save, newest first (at most CONTINUE_ROWS; PLAY reaches the rest)
+func continue_items() -> Array:
+	var out := []
+	for entry in Campaign.all_slots():
+		if out.size() >= CONTINUE_ROWS:
+			break
+		var mode := str(entry.mode)
+		var n := int(entry.slot)
+		var label := slot_label(mode, n, entry.info as Dictionary, str(mode).to_upper() + " SLOT")
+		out.append({"label": label, "id": "cont_%s_%d" % [mode, n], "enabled": true})
+	return out
+
+
+func _show_continue() -> void:
+	_level = "cont"
+	_from_cont = false
+	_sub_mode = ""
+	_heading = "CONTINUE"
+	_items = continue_items()
+	_sel = 0
 	_menu.queue_redraw()
 
 
@@ -507,6 +554,20 @@ func _choose(i: int) -> void:
 	var id := str(_items[i].id)
 	if id == "career":
 		_open_career()
+		return
+	if id == "continue":
+		_top_sel = _sel
+		_show_continue()
+		return
+	if id == "play":
+		_top_sel = _sel
+		_show_top(0)
+		return
+	if id.begins_with("cont_"):
+		var mode := id.get_slice("_", 1)
+		_sub_mode = mode
+		_enter_slot(mode, int(id.get_slice("_", 2)))
+		_from_cont = _level == "slot"
 		return
 	if MODE_NAMES.has(id):
 		_enter_mode(id)
