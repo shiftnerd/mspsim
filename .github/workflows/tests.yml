@@ -1,0 +1,35 @@
+# The headless test suite, the linter and the generator check on every push and pull request.
+# NOT YET RUN: written from the local commands (docs/dev/tools-tests.md). The first run may need a fix or two (the Godot download
+# url below, Linux paths); the suite itself is cross-platform (run_tests.py reads $GODOT and falls back to ~/.local/share for user://).
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+env:
+  GODOT_VERSION: "4.7.2-stable"
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Godot
+        run: |
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          sudo mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
+          godot --version
+      - name: Import the project
+        run: godot --headless --path godot --import
+      - name: Lint
+        run: |
+          pip install gdtoolkit
+          cd godot && gdlint scripts tests
+      - name: Generator check
+        run: python -I tools/check_generator.py --scratch "$RUNNER_TEMP/gen"
+      - name: Tests (a failing test is retried once and reported as flaky if it then passes)
+        run: python tools/run_tests.py --godot /usr/local/bin/godot -j 4 --retry 1

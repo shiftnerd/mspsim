@@ -26,3 +26,10 @@
 - **Owner campaign** card `ransom_options` has six options now: pay $500, shadow copies, vendor support $150 (50%), isolate and rebuild $300 (sure, -2 rep, -8 law firm mood), the cyber-insurance line $250 deductible (65%, greyed with NO POLICY via the new option key `policy` when `cyber_insured(Story.RANSOM_CLIENT)` is false), accept the loss. New strings are in `story/strings.txt` (after changing a card's option order by hand, check the old keys: `--sync` keeps edited text by key, so a stale `options.N.label` overrides the code).
 - **Clever fixes in Free Play**: `Msp.alt_unlocked` uses `FREE_PLAY_LEVEL` (3, every gate is 3 or less) outside a campaign, so PRINT TO COPIER, UNLOCK-ADACCOUNT, CLEANUP SCRIPT, SPYHUNT, SAFE MODE and FIND HUNG SERVICE show in Free Play; campaigns still use the real levels. Free Play fixes take no time, so nothing else changed.
 - Tests: `tests/p6.gd`, `tests/altfix.gd`, `tests/difficulty.gd`.
+
+
+## Dev workflow tools (Nov 2026, from the multi-agent course review)
+
+- `tools/port_edit.py`: the dual edit (generator text + real file) in one atomic step. `edit SPEC.json [--dry-run]` takes `{"edits": [{"file": "scripts/x.gd", "old": "...", "new": "..."}]}` written in the generator's 4-space form; each `old` must match exactly once in the generator block and, after the tab conversion, once in the real file. `add FILE [--after scripts/y.gd]` embeds a new real file as a generator block, `resync FILE` replaces a block with the real file (only for files you created by hand), `check` runs `git add -N` and the generator check.
+- `tests/canon_text.gd`: scans every string literal in `godot/scripts/*.gd` (about 55 000) for `Strings.BANNED` (the 2013-14 era words, whole words only) and for real MSP vendors (its `BRANDS` list; `ALLOW` holds deliberate uses). `strings.gd` keeps scanning `story/strings.txt`.
+- `run_tests.py` no longer skips `layout_audit.gd` and `click_harness.gd`.

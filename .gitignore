@@ -13,3 +13,6 @@ archive/
 .vscode/
 Thumbs.db
 desktop.ini
+
+# Claude Code worktrees
+.claude/worktrees/

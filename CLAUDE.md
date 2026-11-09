@@ -216,6 +216,9 @@ New characters start as a copy of an existing one, then change only what differs
 - **Never run `tools/make_godot.py` in the real tree** (the committed scripts carry hand edits ported back into it). Use `python -I tools/check_generator.py --keep --scratch DIR` and copy over only the files you meant to change. Hand-edit a `.gd` and the same text in `make_godot.py` in the same commit.
 - Godot 4.7.2: `C:\Program Files\Godot\Godot.exe`. Headless test: `Godot.exe --headless --fixed-fps 60 --path godot -s res://tests/<name>.gd`; all tests: `python tools/run_tests.py -j 4`. After new art run `Godot.exe --headless --path godot --import`. Lint from `godot/`: `gdlint scripts tests`.
 - Tests must use their own save paths (`user://test_%d_...` with the process id).
+- **Edit generator and real file together with `tools/port_edit.py`** (`edit SPEC.json`, `add`, `resync`, `check`; see its docstring). It applies one change to the `make_godot.py` text (4-space) and the real file (tabs), atomically, keeping CRLF. Its `check` does `git add -N` first: `check_generator` only sees tracked files, so new art, scripts and scenes are invisible to it until they are at least intent-to-add.
+- Python on Windows does not see Git Bash's `/tmp` the same way for every tool: put helper scripts in the scratchpad directory and use full `C:/...` paths when a Python script reads them. A heredoc that contains `'''` is safer written with the Write tool than pasted into a shell command.
+- `layout_audit.gd` and `click_harness.gd` are in the default suite now (about 10 s each). New screens and HUDs need a block in `layout_audit.gd` (see the chair race and paintball ones); `canon_text.gd` fails on era words and real vendor names in any script string.
 
 # Where the rest lives
 
