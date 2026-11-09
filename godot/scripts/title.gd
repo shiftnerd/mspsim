@@ -347,6 +347,7 @@ func _show_home(sel: int) -> void:
 		_items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
 	_items.append({"label": "PLAY", "id": "play", "enabled": true})
 	_items.append({"label": "CAREER", "id": "career", "enabled": true})
+	_items.append({"label": "QUIT", "id": "quit", "enabled": true})
 	_sel = clampi(sel, 0, _items.size() - 1)
 	_menu.queue_redraw()
 
@@ -548,6 +549,26 @@ func _hover(at: Vector2) -> bool:
 	return false
 
 
+# the home menu and CONTINUE list rows; true when the id was one of them
+func _choose_home(id: String) -> bool:
+	if id == "quit":
+		get_tree().quit()
+	elif id == "continue":
+		_top_sel = _sel
+		_show_continue()
+	elif id == "play":
+		_top_sel = _sel
+		_show_top(0)
+	elif id.begins_with("cont_"):
+		var mode := id.get_slice("_", 1)
+		_sub_mode = mode
+		_enter_slot(mode, int(id.get_slice("_", 2)))
+		_from_cont = _level == "slot"
+	else:
+		return false
+	return true
+
+
 func _choose(i: int) -> void:
 	if i < 0 or i >= _items.size() or not _items[i].enabled:
 		return
@@ -555,19 +576,7 @@ func _choose(i: int) -> void:
 	if id == "career":
 		_open_career()
 		return
-	if id == "continue":
-		_top_sel = _sel
-		_show_continue()
-		return
-	if id == "play":
-		_top_sel = _sel
-		_show_top(0)
-		return
-	if id.begins_with("cont_"):
-		var mode := id.get_slice("_", 1)
-		_sub_mode = mode
-		_enter_slot(mode, int(id.get_slice("_", 2)))
-		_from_cont = _level == "slot"
+	if _choose_home(id):
 		return
 	if MODE_NAMES.has(id):
 		_enter_mode(id)

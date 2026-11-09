@@ -54936,6 +54936,7 @@ func _show_home(sel: int) -> void:
         _items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
     _items.append({"label": "PLAY", "id": "play", "enabled": true})
     _items.append({"label": "CAREER", "id": "career", "enabled": true})
+    _items.append({"label": "QUIT", "id": "quit", "enabled": true})
     _sel = clampi(sel, 0, _items.size() - 1)
     _menu.queue_redraw()
 
@@ -55137,6 +55138,26 @@ func _hover(at: Vector2) -> bool:
     return false
 
 
+# the home menu and CONTINUE list rows; true when the id was one of them
+func _choose_home(id: String) -> bool:
+    if id == "quit":
+        get_tree().quit()
+    elif id == "continue":
+        _top_sel = _sel
+        _show_continue()
+    elif id == "play":
+        _top_sel = _sel
+        _show_top(0)
+    elif id.begins_with("cont_"):
+        var mode := id.get_slice("_", 1)
+        _sub_mode = mode
+        _enter_slot(mode, int(id.get_slice("_", 2)))
+        _from_cont = _level == "slot"
+    else:
+        return false
+    return true
+
+
 func _choose(i: int) -> void:
     if i < 0 or i >= _items.size() or not _items[i].enabled:
         return
@@ -55144,19 +55165,7 @@ func _choose(i: int) -> void:
     if id == "career":
         _open_career()
         return
-    if id == "continue":
-        _top_sel = _sel
-        _show_continue()
-        return
-    if id == "play":
-        _top_sel = _sel
-        _show_top(0)
-        return
-    if id.begins_with("cont_"):
-        var mode := id.get_slice("_", 1)
-        _sub_mode = mode
-        _enter_slot(mode, int(id.get_slice("_", 2)))
-        _from_cont = _level == "slot"
+    if _choose_home(id):
         return
     if MODE_NAMES.has(id):
         _enter_mode(id)
@@ -60137,7 +60146,7 @@ func _draw() -> void:
         _draw_medals(pg.medals, body, cols, colw, gap)
         if detail and sel < pg.medals.size():
             _draw_detail(size, pg.medals[sel])
-    UiStyle.footer(self, r, "ARROWS PAGE  UP DOWN, ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK")
+    UiStyle.footer(self, r, "ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK")
     _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
     _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
     _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -60166,7 +60175,7 @@ func _draw_counters(items: Array, body: Rect2, _cols: int, colw: float, gap: flo
 
 # the mastery ramp: ten good plays (2 or more stars) bring a game to full mastery, and the game gets a little tighter as it grows
 func _draw_mastery(body: Rect2, cols: int, colw: float, gap: float) -> void:
-    UiStyle.text(self, "A GOOD PLAY (2+ STARS) COUNTS. 10 = FULL MASTERY.", body.position.x, body.position.y, UiStyle.HEAD)
+    UiStyle.text(self, "2+ STARS COUNT. 10 = MASTERY.", body.position.x, body.position.y, UiStyle.HEAD)
     var per_col := maxi(1, int((body.size.y - 10.0) / 8.0))
     var ramp := int(Difficulty.RAMP_PLAYS)
     for i in MASTERY_ROWS.size():

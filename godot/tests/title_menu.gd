@@ -171,7 +171,7 @@ func _init() -> void:
 	title._show_top(4)
 	_check(title._items[title._sel].id == "free", "FREE PLAY stays on the top menu")
 	title._show_home(99)
-	_check(title._items[title._sel].id == "career", "CAREER is the last line of the home menu")
+	_check(title._items[title._sel].id == "quit" and title._items[title._sel - 1].id == "career", "CAREER then QUIT end the home menu")
 
 	# ---- a tech run with a mid-day resume point and a day-start save
 	_wipe()
@@ -235,7 +235,7 @@ func _init() -> void:
 	_wipe()
 	await _fresh_title()
 	title._show_home(0)
-	_check(_ids() == ["play", "career"], "nothing saved: PLAY and CAREER only (%s)" % str(_ids()))
+	_check(_ids() == ["play", "career", "quit"], "nothing saved: PLAY, CAREER and QUIT only (%s)" % str(_ids()))
 	_save("tech", 4, 1)
 	OS.delay_msec(1100)
 	var cfg := ConfigFile.new()
@@ -244,7 +244,7 @@ func _init() -> void:
 	OS.delay_msec(1100)
 	_save("owner", 7, 1)
 	title._show_home(0)
-	_check(_ids() == ["continue", "play", "career"], "a save adds CONTINUE first (%s)" % str(_ids()))
+	_check(_ids() == ["continue", "play", "career", "quit"], "a save adds CONTINUE first (%s)" % str(_ids()))
 	var all: Array = c.all_slots()
 	var order := all.map(func(e: Dictionary) -> String: return str(e.mode))
 	_check(order == ["owner", "service", "tech"], "all_slots is newest first (%s)" % str(order))

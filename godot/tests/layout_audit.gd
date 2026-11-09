@@ -286,7 +286,7 @@ func _title_phase() -> void:
 	c.check_medals()
 	t._open_menu()
 	await _wait(3)
-	t._choose(t._items.size() - 1)
+	t._choose(t._items.size() - 2)  # CAREER (QUIT is last)
 	await _wait(10)
 	var screen: Node = t._career
 	if screen == null:

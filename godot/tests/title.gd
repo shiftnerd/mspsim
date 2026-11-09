@@ -34,8 +34,8 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		50:
 			_check(
-				current_scene._menu_open and current_scene._level == "home" and current_scene._items.size() == 2,
-				"Enter opens the home menu (PLAY and CAREER while nothing is saved)"
+				current_scene._menu_open and current_scene._level == "home" and current_scene._items.size() == 3,
+				"Enter opens the home menu (PLAY, CAREER and QUIT while nothing is saved)"
 			)
 			_press(KEY_ENTER)
 		52:
