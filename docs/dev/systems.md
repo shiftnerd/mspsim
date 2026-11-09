@@ -159,7 +159,8 @@
 
 ## Title screen home menu (R40)
 
-The title now opens on a short home menu: **CONTINUE** (only when something is saved), **PLAY**, **CAREER**.
-- CONTINUE (`Title._show_continue`, level `cont`) lists every save of every mode, one row each, `CONTINUE_ROWS` (6) visible at a time (`scroll_for` keeps the cursor in view) ("SALES SLOT 2 - DAY 7 12:30 - JAMIE"). The order comes from `Campaign.all_slots()`: every existing slot of every mode with its `slot_info` and the newest modified time of its save and resume files (there is no timestamp inside a save). A row goes through `_enter_slot`, so a slot with both a mid-day resume point and a day-start save still asks CONTINUE / FROM THE START, and Esc from that question returns to the CONTINUE list (`_from_cont`).
-- PLAY (level `top`, heading PLAY) is the old top menu without CAREER: the four campaigns and Free Play, each with its own submenu as before. Esc goes home, Esc again closes the menu.
-- Tests that want the campaign list call `_open_menu()` then `_show_top(0)`. `tests/title_menu.gd` covers the new levels. QUIT is the last home line. Not built: a SETTINGS line.
+The title opens on a home menu: **CONTINUE** (only when something is saved) / **NEW** / **FREE PLAY** / **SETTINGS** / **QUIT**.
+- CONTINUE (`Title._show_continue`, level `cont`) lists every save of every mode, one row each ("SALES SLOT 2 - DAY 7  12:30 - JAMIE"), `CONTINUE_ROWS` (6) visible at a time (`scroll_for` keeps the cursor in view). The order comes from `Campaign.all_slots()`: every existing slot of every mode with its `slot_info` and the newest modified time of its save and resume files (there is no timestamp inside a save). A row goes through `_enter_slot`, so a slot with both a mid-day resume point and a day-start save still asks CONTINUE / FROM THE START, and Esc from that question returns to the CONTINUE list (`_from_cont`).
+- NEW (id `play`, level `top`, heading NEW) is the four campaigns, each with its own submenu as before. Esc goes home, Esc again closes the menu. FREE PLAY (id `free`) goes straight to its character select.
+- SETTINGS calls `PauseMenu.open_settings()`: the pause menu in `settings_mode` (rows BACK, CONTROLS, SHAPE, SOUND, DAY LENGTH, CAREER; nothing is paused; no QUIT TO TITLE), so the key list, remap page and format cycling are the same code as in a run. The medals screen (CAREER) lives there now.
+- Tests that want the campaign list call `_open_menu()` then `_show_top(0)`. `tests/title_menu.gd` covers the levels.

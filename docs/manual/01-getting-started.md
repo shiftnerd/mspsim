@@ -28,26 +28,24 @@ a meeting in the conference room. They rotate every few seconds. Nobody is paid 
 
 **To begin, press `Enter`, `Space` or `E`, or click.** The home menu opens.
 
-![The home menu: Continue, Play, Career and Quit.](img/title-home.png)
+![The home menu: Continue, New, Free Play, Settings and Quit.](img/title-home.png)
 
 | HOME LINE | WHAT IT IS |
 |---|---|
 | **CONTINUE** | Only shown once you have a save. Lists your newest saves from every campaign, most recent first, and the list scrolls when there are more than six. |
-| **PLAY** | Opens the list of modes below. |
-| **CAREER** | Your medals, records and unlocks across every run. |
+| **NEW** | A fresh campaign: the four modes below. `Esc` goes back to the home menu. |
+| **FREE PLAY** | A sandbox with no scoring. |
+| **SETTINGS** | The pause menu's settings before you start a run: the key lists and remap, the screen shape, sound on/off and the day length. The last row, CAREER, opens your medals, records and unlocks across every run. |
 | **QUIT** | Leaves the game. |
 
-**PLAY** shows five lines. `Esc` goes back to the home menu.
+![The new-campaign menu with four lines: Tech Campaign, Owner Campaign, Service Manager, Sales.](img/title-menu.png)
 
-![The play menu with five lines: Tech Campaign, Owner Campaign, Service Manager, Sales, Free Play.](img/title-menu.png)
-
-| PLAY LINE | WHAT IT IS |
+| NEW LINE | WHAT IT IS |
 |---|---|
 | **TECH CAMPAIGN** | The main game: a service desk tech's working days. |
 | **OWNER CAMPAIGN** | The same office from the owner's chair. |
 | **SERVICE MANAGER** | Running the desk instead of working it. |
 | **SALES** | The account manager's side of the building. |
-| **FREE PLAY** | A sandbox with no scoring. |
 
 There is a one-paragraph tour of each in [Chapter 3: Game Modes](03-game-modes.md).
 

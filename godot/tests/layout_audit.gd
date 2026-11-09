@@ -286,7 +286,7 @@ func _title_phase() -> void:
 	c.check_medals()
 	t._open_menu()
 	await _wait(3)
-	t._choose(t._items.size() - 2)  # CAREER (QUIT is last)
+	t._open_career()
 	await _wait(10)
 	var screen: Node = t._career
 	if screen == null:
@@ -305,9 +305,8 @@ func _title_phase() -> void:
 	await _wait(3)
 	# toolbox rows
 	t._open_menu()
-	t._show_top(0)
 	await _wait(3)
-	t._choose(t._items.size() - 1)
+	t._choose(t._items.map(func(i: Dictionary) -> String: return i.id).find("free"))
 	await _wait(10)
 	if t._select != null:
 		var tb := root.get_node("Toolbox")

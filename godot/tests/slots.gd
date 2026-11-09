@@ -178,7 +178,7 @@ func _init() -> void:
 	_put("tech", 1, 4)
 	_put("tech", 3, 9, {"year": 2})
 	await _fresh_title()
-	_check(_ids().size() == 5, "five play lines")
+	_check(_ids().size() == 4, "four play lines")
 	title._show_top(0)
 	title._choose(0)
 	_check(title._level == "sub" and _ids() == ["tech_slot1", "tech_slot3", "tech_y2", "tech_new", "tech_delask"], "submenu rows %s" % str(_ids()))

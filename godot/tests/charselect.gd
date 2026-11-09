@@ -436,9 +436,9 @@ func _process(_delta: float) -> bool:
 		30:
 			_press(KEY_ENTER)
 		31:
-			title._show_top(0)
-			title._sel = title._items.size() - 1  # FREE PLAY is the last entry of PLAY
-			_check(title._items[title._sel].id == "free", "FREE PLAY is the last PLAY line")
+			title._show_home(0)
+			title._sel = title._items.map(func(i: Dictionary) -> String: return i.id).find("free")
+			_check(title._items[title._sel].id == "free", "FREE PLAY is a home line")
 			_press(KEY_ENTER)
 		32:
 			var cs: Node = title._select

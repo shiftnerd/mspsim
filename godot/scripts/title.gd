@@ -42,7 +42,7 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
-# "home" (CONTINUE / PLAY / CAREER), "cont" (every save, newest first), "top" (PLAY: the campaigns), "sub" (a campaign's submenu),
+# "home" (CONTINUE / NEW / FREE PLAY / SETTINGS / QUIT), "cont" (every save, newest first), "top" (NEW: the campaigns), "sub" (a campaign's submenu),
 # "slot" (CONTINUE / FROM THE START of one slot), "over" (which slot to overwrite) or "del"
 var _level := "home"
 var _from_cont := false  # the slot being opened was picked from the CONTINUE list, so back returns there
@@ -336,8 +336,9 @@ func _open_menu() -> void:
 	_menu.queue_redraw()
 
 
-# R40: the home lines. CONTINUE (only when something is saved) lists every save of every mode, newest first; PLAY
-# opens the campaigns and free play; CAREER is the medals
+# R40: the home lines. CONTINUE (only when something is saved) lists every save of every mode, newest first; NEW
+# opens the four campaigns; FREE PLAY goes straight to its character select; SETTINGS is the pause menu's pages (the medals
+# screen is a row there)
 func _show_home(sel: int) -> void:
 	_level = "home"
 	_from_cont = false
@@ -346,23 +347,23 @@ func _show_home(sel: int) -> void:
 	_items = []
 	if not Campaign.all_slots().is_empty():
 		_items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
-	_items.append({"label": "PLAY", "id": "play", "enabled": true})
-	_items.append({"label": "CAREER", "id": "career", "enabled": true})
+	_items.append({"label": "NEW", "id": "play", "enabled": true})
+	_items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
+	_items.append({"label": "SETTINGS", "id": "settings", "enabled": true})
 	_items.append({"label": "QUIT", "id": "quit", "enabled": true})
 	_sel = clampi(sel, 0, _items.size() - 1)
 	_menu.queue_redraw()
 
 
-# PLAY: the four campaigns and Free Play
+# NEW: the four campaigns (Free Play has its own home line)
 func _show_top(sel: int) -> void:
 	_level = "top"
 	_from_cont = false
 	_sub_mode = ""
-	_heading = "PLAY"
+	_heading = "NEW"
 	_items = []
 	for mode in MODE_NAMES:
 		_items.append({"label": MODE_NAMES[mode], "id": mode, "enabled": Campaign.is_selectable(mode)})
-	_items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
 	_sel = clampi(sel, 0, _items.size() - 1)
 	_menu.queue_redraw()
 
@@ -552,6 +553,8 @@ func _hover(at: Vector2) -> bool:
 func _choose_home(id: String) -> bool:
 	if id == "quit":
 		get_tree().quit()
+	elif id == "settings":
+		PauseMenu.open_settings()
 	elif id == "continue":
 		_top_sel = _sel
 		_show_continue()

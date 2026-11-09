@@ -71,9 +71,9 @@ func _init() -> void:
 	# ---- top menu
 	await _fresh_title()
 	_check(title._menu_open and title._level == "top", "Enter opens the top menu")
-	_check(_ids() == ["tech", "owner", "service", "sales", "free"], "five play lines: %s" % str(_ids()))
+	_check(_ids() == ["tech", "owner", "service", "sales"], "four play lines: %s" % str(_ids()))
 	_check(
-		_labels() == ["TECH CAMPAIGN", "OWNER CAMPAIGN", "SERVICE MANAGER", "SALES", "FREE PLAY"],
+		_labels() == ["TECH CAMPAIGN", "OWNER CAMPAIGN", "SERVICE MANAGER", "SALES"],
 		"top labels %s" % str(_labels())
 	)
 	_check(title._items.all(func(i: Dictionary) -> bool: return i.enabled), "every campaign is playable")
@@ -168,10 +168,10 @@ func _init() -> void:
 	motion.position = Vector2(120, 20 + 2 * 10 + 4)
 	title._unhandled_input(motion)
 	_check(_ids()[title._sel] == "owner_new", "mouse: hover selects NEW CAMPAIGN in the submenu")
-	title._show_top(4)
-	_check(title._items[title._sel].id == "free", "FREE PLAY stays on the top menu")
+	title._show_home(0)
+	_check(_ids().slice(0, 2) == ["play", "free"] or _ids().slice(1, 3) == ["play", "free"], "FREE PLAY is the home line right after PLAY (%s)" % str(_ids()))
 	title._show_home(99)
-	_check(title._items[title._sel].id == "quit" and title._items[title._sel - 1].id == "career", "CAREER then QUIT end the home menu")
+	_check(title._items[title._sel].id == "quit" and title._items[title._sel - 1].id == "settings", "SETTINGS then QUIT end the home menu")
 
 	# ---- a tech run with a mid-day resume point and a day-start save
 	_wipe()
@@ -235,7 +235,7 @@ func _init() -> void:
 	_wipe()
 	await _fresh_title()
 	title._show_home(0)
-	_check(_ids() == ["play", "career", "quit"], "nothing saved: PLAY, CAREER and QUIT only (%s)" % str(_ids()))
+	_check(_ids() == ["play", "free", "settings", "quit"], "nothing saved: NEW, FREE PLAY, SETTINGS and QUIT only (%s)" % str(_ids()))
 	_save("tech", 4, 1)
 	OS.delay_msec(1100)
 	var cfg := ConfigFile.new()
@@ -244,7 +244,7 @@ func _init() -> void:
 	OS.delay_msec(1100)
 	_save("owner", 7, 1)
 	title._show_home(0)
-	_check(_ids() == ["continue", "play", "career", "quit"], "a save adds CONTINUE first (%s)" % str(_ids()))
+	_check(_ids() == ["continue", "play", "free", "settings", "quit"], "a save adds CONTINUE first (%s)" % str(_ids()))
 	var all: Array = c.all_slots()
 	var order := all.map(func(e: Dictionary) -> String: return str(e.mode))
 	_check(order == ["owner", "service", "tech"], "all_slots is newest first (%s)" % str(order))
@@ -254,8 +254,26 @@ func _init() -> void:
 	_check(str(title._items[1].label).begins_with("SERVICE SLOT 2 - DAY 2"), "each row names its campaign and slot: %s" % str(_labels()))
 	_key(KEY_ESCAPE)
 	_check(title._level == "home" and title._menu_open, "Esc returns to the home menu")
+	title._choose(_ids().find("settings"))
+	var pm: Node = root.get_node("PauseMenu")
+	_check(pm.is_open and pm.settings_mode and not root.get_tree().paused, "SETTINGS opens the pause menu's pages without pausing")
+	var ids_ok: bool = pm._labels().size() == 6 and pm._row_id(3) == "sound" and pm._row_id(5) == "career"
+	_check(ids_ok and str(pm._labels()[1]) == "CONTROLS", "rows: back, controls, shape, sound, day length, career (%s)" % str(pm._labels()))
+	var was_muted: bool = root.get_node("Sfx").muted
+	pm._sel = 3
+	pm._activate()
+	_check(root.get_node("Sfx").muted != was_muted, "the SOUND row toggles mute")
+	pm._activate()
+	_check(root.get_node("Sfx").muted == was_muted, "and toggles it back")
+	pm._sel = 1
+	pm._activate()
+	_check(pm._page == 0, "CONTROLS opens the key list")
+	pm.back()
+	_check(pm.is_open and pm._page == -1, "back from the key list returns to the settings rows")
+	pm.back()
+	_check(not pm.is_open and not pm.settings_mode and title._menu_open, "back again closes SETTINGS and the home menu is still there")
 	title._choose(1)  # PLAY
-	_check(title._level == "top" and _ids() == ["tech", "owner", "service", "sales", "free"], "PLAY lists the campaigns")
+	_check(title._level == "top" and _ids() == ["tech", "owner", "service", "sales"], "PLAY lists the campaigns")
 	_key(KEY_ESCAPE)
 	_check(title._level == "home" and title._sel == 0, "Esc from PLAY returns home")
 	for k in [2, 3]:

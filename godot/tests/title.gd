@@ -34,12 +34,12 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		50:
 			_check(
-				current_scene._menu_open and current_scene._level == "home" and current_scene._items.size() == 3,
-				"Enter opens the home menu (PLAY, CAREER and QUIT while nothing is saved)"
+				current_scene._menu_open and current_scene._level == "home" and current_scene._items.size() == 4,
+				"Enter opens the home menu (NEW, FREE PLAY, SETTINGS and QUIT while nothing is saved)"
 			)
 			_press(KEY_ENTER)
 		52:
-			_check(current_scene._level == "top" and current_scene._items.size() == 5, "PLAY lists the four campaigns and Free Play")
+			_check(current_scene._level == "top" and current_scene._items.size() == 4, "NEW lists the four campaigns")
 			_press(KEY_DOWN)
 		55:
 			_check(
@@ -58,11 +58,13 @@ func _process(_delta: float) -> bool:
 				current_scene._items[current_scene._sel].id == "sales",
 				"Down again goes to the sales campaign"
 			)
+			_press(KEY_ESCAPE)
+		63:
 			_press(KEY_DOWN)
 		65:
 			_check(
-				current_scene._items[current_scene._sel].id == "free",
-				"and once more reaches Free Play"
+				current_scene._level == "home" and current_scene._items[current_scene._sel].id == "free",
+				"Esc goes home and Down reaches FREE PLAY, the line after NEW"
 			)
 			_press(KEY_ENTER)
 		80:

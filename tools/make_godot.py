@@ -54631,7 +54631,7 @@ var _hud_was := true
 var _menu_open := false
 var _sel := 0
 var _items: Array = []
-# "home" (CONTINUE / PLAY / CAREER), "cont" (every save, newest first), "top" (PLAY: the campaigns), "sub" (a campaign's submenu),
+# "home" (CONTINUE / NEW / FREE PLAY / SETTINGS / QUIT), "cont" (every save, newest first), "top" (NEW: the campaigns), "sub" (a campaign's submenu),
 # "slot" (CONTINUE / FROM THE START of one slot), "over" (which slot to overwrite) or "del"
 var _level := "home"
 var _from_cont := false  # the slot being opened was picked from the CONTINUE list, so back returns there
@@ -54925,8 +54925,9 @@ func _open_menu() -> void:
     _menu.queue_redraw()
 
 
-# R40: the home lines. CONTINUE (only when something is saved) lists every save of every mode, newest first; PLAY
-# opens the campaigns and free play; CAREER is the medals
+# R40: the home lines. CONTINUE (only when something is saved) lists every save of every mode, newest first; NEW
+# opens the four campaigns; FREE PLAY goes straight to its character select; SETTINGS is the pause menu's pages (the medals
+# screen is a row there)
 func _show_home(sel: int) -> void:
     _level = "home"
     _from_cont = false
@@ -54935,23 +54936,23 @@ func _show_home(sel: int) -> void:
     _items = []
     if not Campaign.all_slots().is_empty():
         _items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
-    _items.append({"label": "PLAY", "id": "play", "enabled": true})
-    _items.append({"label": "CAREER", "id": "career", "enabled": true})
+    _items.append({"label": "NEW", "id": "play", "enabled": true})
+    _items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
+    _items.append({"label": "SETTINGS", "id": "settings", "enabled": true})
     _items.append({"label": "QUIT", "id": "quit", "enabled": true})
     _sel = clampi(sel, 0, _items.size() - 1)
     _menu.queue_redraw()
 
 
-# PLAY: the four campaigns and Free Play
+# NEW: the four campaigns (Free Play has its own home line)
 func _show_top(sel: int) -> void:
     _level = "top"
     _from_cont = false
     _sub_mode = ""
-    _heading = "PLAY"
+    _heading = "NEW"
     _items = []
     for mode in MODE_NAMES:
         _items.append({"label": MODE_NAMES[mode], "id": mode, "enabled": Campaign.is_selectable(mode)})
-    _items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
     _sel = clampi(sel, 0, _items.size() - 1)
     _menu.queue_redraw()
 
@@ -55141,6 +55142,8 @@ func _hover(at: Vector2) -> bool:
 func _choose_home(id: String) -> bool:
     if id == "quit":
         get_tree().quit()
+    elif id == "settings":
+        PauseMenu.open_settings()
     elif id == "continue":
         _top_sel = _sel
         _show_continue()
@@ -69037,6 +69040,7 @@ const ROW_H := 12.0
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
 
 var is_open := false
+var settings_mode := false  # R40: opened from the title's SETTINGS line (nothing is paused, no QUIT TO TITLE)
 
 var _sel := 0
 var _confirm := false
@@ -69084,9 +69088,24 @@ func open() -> void:
     _canvas.queue_redraw()
 
 
+# R40: the pause menu's settings pages from the title screen: CONTROLS (key list and remap), SHAPE, SOUND, DAY LENGTH
+func open_settings() -> void:
+    if is_open:
+        return
+    settings_mode = true
+    is_open = true
+    _sel = 0
+    _confirm = false
+    _page = -1
+    visible = true
+    _canvas.mouse_filter = Control.MOUSE_FILTER_STOP
+    _canvas.queue_redraw()
+
+
 func close() -> void:
     if not is_open:
         return
+    settings_mode = false
     is_open = false
     visible = false
     _canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -69109,6 +69128,8 @@ func back() -> void:
 
 
 func _labels() -> Array:
+    if settings_mode:
+        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "SOUND: %s" % ("OFF" if Sfx.muted else "ON"), "DAY LENGTH: %s" % Difficulty.day_label(), "CAREER"]
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
@@ -69123,6 +69144,8 @@ func _labels() -> Array:
 
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
+    if settings_mode:
+        return ["resume", "controls", "shape", "sound", "day", "career"][clampi(i, 0, 5)]
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
@@ -69134,6 +69157,23 @@ func _row_id(i: int) -> String:
 
 
 func _activate() -> void:
+    if settings_mode:
+        match _row_id(_sel):
+            "resume":
+                close()
+            "controls":
+                _page = 0
+            "shape":
+                Game.cycle_format()
+            "sound":
+                Sfx.toggle_mute()
+            "day":
+                Difficulty.cycle_day_scale(1)
+            "career":
+                close()
+                Career.open_screen.call_deferred()
+        _canvas.queue_redraw()
+        return
     if _confirm:
         if _sel == 1:
             close()
@@ -69173,6 +69213,8 @@ func _activate() -> void:
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
     var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
+    if settings_mode:
+        h = 100.0
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -69325,6 +69367,8 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
+        elif settings_mode and _row_id(_sel) == "sound":
+            Sfx.toggle_mute()
         elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
     elif Controls.confirm(event):
@@ -69346,7 +69390,7 @@ func _paint() -> void:
     if _page >= 0:
         _paint_help(c, r)
         return
-    var body := UiStyle.panel(c, r, "PAUSED", "QUIT?" if _confirm else ("COZY" if Difficulty.cozy_on() else ""))
+    var body := UiStyle.panel(c, r, "SETTINGS" if settings_mode else "PAUSED", "QUIT?" if _confirm else ("COZY" if Difficulty.cozy_on() else ""))
     if _confirm:
         var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
         UiStyle.text(c, line, body.position.x, r.position.y + 14.0, UiStyle.MUTED)
@@ -69356,7 +69400,7 @@ func _paint() -> void:
         if i == _sel:
             c.draw_rect(rr, UiStyle.HEAD)
         UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
-    var foot := "ENTER = OK  ESC = BACK" if _confirm else "ENTER = OK  ESC = RESUME"
+    var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
     UiStyle.footer(c, r, foot)
