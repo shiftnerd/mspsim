@@ -21,7 +21,7 @@ const ROOMS := {
 	"conference": "conference"
 }
 
-const CONTINUE_ROWS := 6  # the CONTINUE list shows the newest saves of all modes, this many at most
+const CONTINUE_ROWS := 6  # the CONTINUE list shows this many saves at once and scrolls with the cursor
 const MODE_NAMES := {
 	"tech": "TECH CAMPAIGN",
 	"owner": "OWNER CAMPAIGN",
@@ -49,6 +49,7 @@ var _from_cont := false  # the slot being opened was picked from the CONTINUE li
 var _sub_mode := ""
 var _top_sel := 0  # the top-menu cursor to come back to
 var _sub_sel := 0  # the submenu cursor to come back to
+var _scroll := 0  # the first visible row of a long CONTINUE list (set while drawing)
 var _slot := 1  # the save slot the next start uses (R19)
 var _overwrite := false  # the next new run replaces a full slot (its save is deleted when the run starts)
 var _over_id := ""  # the new-run row (tech_new / tech_y2) waiting for the slot to overwrite
@@ -366,12 +367,10 @@ func _show_top(sel: int) -> void:
 	_menu.queue_redraw()
 
 
-# "SALES - SLOT 2 - DAY 7  12:30 - JAMIE": one line per save, newest first (at most CONTINUE_ROWS; PLAY reaches the rest)
+# "SALES SLOT 2 - DAY 7  12:30 - JAMIE": one line per save, newest first; the list scrolls past CONTINUE_ROWS rows
 func continue_items() -> Array:
 	var out := []
 	for entry in Campaign.all_slots():
-		if out.size() >= CONTINUE_ROWS:
-			break
 		var mode := str(entry.mode)
 		var n := int(entry.slot)
 		var label := slot_label(mode, n, entry.info as Dictionary, str(mode).to_upper() + " SLOT")
@@ -704,12 +703,22 @@ func _start(id: String, summary := "") -> void:
 		Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
+# the first visible row of a CONTINUE list that shows CONTINUE_ROWS at once and keeps the cursor on the last visible row
+func scroll_for(sel: int, count: int) -> int:
+	return clampi(sel - CONTINUE_ROWS + 1, 0, maxi(0, count - CONTINUE_ROWS))
+
+
 func _draw_menu() -> void:
 	var size := _size()
 	var y := _logo.position.y + float(_logo.texture.get_height()) + 7.0
 	# one column; the rows (and the heading of a submenu) squeeze to stay on screen
 	var avail := size.y - 1.0 - y
-	var rows := _items.size() + (1 if _heading != "" else 0)
+	var shown := _items.size()
+	_scroll = 0
+	if _level == "cont" and shown > CONTINUE_ROWS:
+		shown = CONTINUE_ROWS
+		_scroll = scroll_for(_sel, _items.size())
+	var rows := shown + (1 if _heading != "" else 0)
 	var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 10.0)
 	if _heading != "":
 		var hw := float(PixelFont.width(_heading)) + 12.0
@@ -719,9 +728,12 @@ func _draw_menu() -> void:
 		y += pitch
 	for i in _items.size():
 		var item: Dictionary = _items[i]
+		if i < _scroll or i >= _scroll + shown:
+			item["rect"] = Rect2()  # scrolled out of the window
+			continue
 		var label: String = item.label
 		var w := float(PixelFont.width(label)) + 12.0
-		var r := Rect2(floorf(size.x * 0.5 - w * 0.5), y + float(i) * pitch, w, pitch - 1.0)
+		var r := Rect2(floorf(size.x * 0.5 - w * 0.5), y + float(i - _scroll) * pitch, w, pitch - 1.0)
 		item["rect"] = r
 		var chosen: bool = i == _sel and item.enabled
 		var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)

@@ -26,18 +26,28 @@ The game starts at the title screen. If it does not, see [Chapter 8: Tips and Tr
 Behind the logo, the office puts on little scenes for you: a lineup by the desks, two people on the phones, the coffee machine,
 a meeting in the conference room. They rotate every few seconds. Nobody is paid to do this.
 
-**To begin, press `Enter`, `Space` or `E`, or click.** The menu opens.
+**To begin, press `Enter`, `Space` or `E`, or click.** The home menu opens.
 
-![The title menu with six lines: Tech Campaign, Owner Campaign, Service Manager, Sales, Free Play, Career.](img/title-menu.png)
+![The home menu: Continue, Play, Career and Quit.](img/title-home.png)
 
-| MENU LINE | WHAT IT IS |
+| HOME LINE | WHAT IT IS |
+|---|---|
+| **CONTINUE** | Only shown once you have a save. Lists your newest saves from every campaign, most recent first, and the list scrolls when there are more than six. |
+| **PLAY** | Opens the list of modes below. |
+| **CAREER** | Your medals, records and unlocks across every run. |
+| **QUIT** | Leaves the game. |
+
+**PLAY** shows five lines. `Esc` goes back to the home menu.
+
+![The play menu with five lines: Tech Campaign, Owner Campaign, Service Manager, Sales, Free Play.](img/title-menu.png)
+
+| PLAY LINE | WHAT IT IS |
 |---|---|
 | **TECH CAMPAIGN** | The main game: a service desk tech's working days. |
 | **OWNER CAMPAIGN** | The same office from the owner's chair. |
 | **SERVICE MANAGER** | Running the desk instead of working it. |
 | **SALES** | The account manager's side of the building. |
 | **FREE PLAY** | A sandbox with no scoring. |
-| **CAREER** | Your medals, records and unlocks across every run. |
 
 There is a one-paragraph tour of each in [Chapter 3: Game Modes](03-game-modes.md).
 

@@ -258,8 +258,18 @@ func _init() -> void:
 	_check(title._level == "top" and _ids() == ["tech", "owner", "service", "sales", "free"], "PLAY lists the campaigns")
 	_key(KEY_ESCAPE)
 	_check(title._level == "home" and title._sel == 0, "Esc from PLAY returns home")
+	for k in [2, 3]:
+		for m in ["tech", "owner", "service"]:
+			if not (m == "service" and k == 2):
+				var more := ConfigFile.new()
+				more.set_value("campaign", "day", k)
+				more.save(c.save_path(m, k))
 	title._show_continue()
-	title._choose(2)  # tech slot 1 is a plain save: it starts straight away
+	_check(title._items.size() == 8, "more than six saves all stay in the list (%d)" % title._items.size())
+	_check(title.scroll_for(0, 8) == 0 and title.scroll_for(5, 8) == 0 and title.scroll_for(7, 8) == 2, "the window follows the cursor down")
+	_check(title.scroll_for(3, 4) == 0, "a short list never scrolls")
+	title._show_continue()
+	title._choose(_ids().find("cont_tech_1"))  # tech slot 1 is a plain save: it starts straight away
 	await process_frame
 	_check(title._started and c.mode == "tech" and c.slot == 1, "a plain save from the list starts that run")
 	_wipe()
