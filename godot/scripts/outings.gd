@@ -89,8 +89,8 @@ const GAMES := {
 		"label": "PAINTBALL",
 		"cost": 200,
 		"blurb":
-		"CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
-		"keys": "L R RUN  Z FIRE  DOWN DUCK  ESC LEAVE"
+		"CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, SWITCH LANES, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
+		"keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK"
 	},
 	"darts":
 	{
@@ -228,7 +228,7 @@ const ROOM_INTRO := {
 	"cornhole":
 	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
 	"paintball":
-	"THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, Z FIRES A PAINTBALL THE WAY YOU FACE, DOWN DUCKS: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
+	"THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), Z FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD SHIFT TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
 	"darts":
 	"THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
 	"grill":
@@ -1183,6 +1183,7 @@ func _event_key(event: InputEvent) -> int:
 		return _event_key_p2(event)  # co-op: player 2's pad (A and X do what Enter and E do, B leaves)
 	var racing: bool = game == "chair" and phase == "play"
 	var grilling: bool = game == "grill" and phase == "play"
+	var paintballing: bool = game == "paintball" and phase == "play"
 	var dir := Controls.nav(event, false)
 	var key := KEY_NONE
 	if racing and Controls.matches(event, "push_a"):
@@ -1191,7 +1192,7 @@ func _event_key(event: InputEvent) -> int:
 		key = KEY_X
 	elif game == "paintball" and phase == "play" and (Controls.matches(event, "push_a") or Controls.matches(event, "interact")):
 		key = KEY_Z  # A or X on a pad: fire
-	elif grilling and Controls.matches(event, "run"):
+	elif (grilling or paintballing) and Controls.matches(event, "run"):
 		key = KEY_SHIFT  # B on a pad: the cool side
 	elif dir != "":
 		key = PAD_ARROWS[dir]
@@ -2778,7 +2779,7 @@ func _room_wants(key: int) -> bool:
 		"bowling":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
 		"paintball":
-			return key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+			return key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_UP, KEY_DOWN, KEY_W, KEY_S]
 		"cornhole", "darts":
 			return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
 		"grill":
@@ -3541,7 +3542,7 @@ func _paint_tick(dt: float) -> void:
 	if Input.is_action_pressed(Controls.action_for(0, "move_right")):
 		dir += 1
 	rules.set_move(dir)
-	rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "duck")))
+	rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "run")))  # SHIFT (a pad's B) held
 	if Input.is_action_just_pressed(Controls.action_for(0, "aim")):
 		rules.fire_you()
 	rules.step(dt)
@@ -3573,9 +3574,13 @@ func _paint_cues(rules: RefCounted) -> void:
 
 
 func _paint_press(key: int) -> void:
-	if key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
+	if key in [KEY_UP, KEY_W]:
+		g.rules.lane_you(-1)
+	elif key in [KEY_DOWN, KEY_S]:
+		g.rules.lane_you(1)
+	elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
 		if not g.rules.fire_you() and bool(g.rules.units[0].duck) and g.rules.phase == "play":
-			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF DOWN.", 0.8)
+			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
 
 
 func _paint_lines() -> Array:

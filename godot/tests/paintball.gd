@@ -97,6 +97,7 @@ func _run() -> void:
 	g.units[4].duck = true
 	ok(not g.covered(4, b - 100.0), "and ducking out in the open is no cover")
 	# a covered rival cannot be hit
+	g.units[4].lane = g.units[0].lane  # shots only find somebody in the same lane
 	g.units[0].x = b - 80.0
 	g.units[0].face = 1
 	g.units[4].x = b + 4.0
@@ -118,6 +119,49 @@ func _run() -> void:
 		if g.events[0].hit >= 0:
 			hits += 1
 	ok(hits > 15, "standing in the open they get hit (%d of 60)" % hits)
+
+	# lanes: three of them, a shot only finds somebody in your lane, a change takes a moment
+	g = _game()
+	_play(g)
+	g.units[0].x = 300.0
+	g.units[0].face = 1
+	g.units[4].x = 380.0
+	g.units[4].lane = (int(g.units[0].lane) + 1) % PB.LANES
+	ok(g.target_of(0) == -1, "somebody in the next lane is not a target")
+	g.units[4].lane = g.units[0].lane
+	ok(g.target_of(0) == 4, "in your own lane they are")
+	g.units[0].lane = 1
+	g.units[0].lane_cool = 0.0
+	ok(g.lane_you(-1) and g.units[0].lane == 0, "UP goes one lane up")
+	ok(not g.lane_you(-1) and g.units[0].lane == 0, "and there is no lane above the top one (and a change needs a moment)")
+	g.step(PB.LANE_GAP + 0.01)
+	ok(not g.lane_you(-1), "the top lane is the end of the street")
+	ok(g.lane_you(1) and g.units[0].lane == 1, "DOWN goes back")
+	g.units[0].down = 2.0
+	g.units[0].lane_cool = 0.0
+	ok(not g.lane_you(1), "you cannot change lane while you are down")
+	# the crew follows you into another lane after a beat
+	g = _game()
+	_play(g)
+	g.units[3].x = 380.0
+	g.units[3].face = -1
+	g.units[3].lane = 1
+	g.units[0].x = 300.0
+	g.units[0].lane = 2
+	g.units[3].down = 0.0
+	for k in 60:
+		g.step(0.02)
+	ok(g.units[3].lane == 2 or g.units[3].lane == 1, "(an enemy in another lane has not rushed over at once: lane %d)" % g.units[3].lane)
+	for k in 120:
+		g.step(0.02)
+	ok(g.units[3].lane == 2 or int(g.units[3].down) > 0 or g.units[3].x != 380.0, "and the crew follows into your lane or moves on (lane %d)" % g.units[3].lane)
+	# a shot fired between two steps keeps its event for the drawing
+	g = _game()
+	_play(g)
+	g.units[0].cool = 0.0
+	g.fire_you()
+	g.step(0.01)
+	ok(g.events.any(func(ev: Dictionary) -> bool: return ev.kind == "shot" and ev.unit == 0), "your shot's event survives the next step, so it is drawn")
 
 	# winning
 	g = _game()

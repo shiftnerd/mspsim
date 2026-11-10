@@ -16,7 +16,9 @@ const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
 # the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
-const LANES := [-2.0, -12.0, 8.0, 3.0, 13.0, -7.0]  # you in the middle of your team's three, theirs staggered between
+const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
+const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
+const LANE_SPEED := 70.0  # px/s a puppet slides from one lane to the next
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -39,7 +41,7 @@ func field_x(gx: float) -> float:
 
 
 func lane_y(i: int) -> float:
-	return FEET_Y + float(LANES[i % LANES.size()])
+	return FEET_Y + float(LANE_OFF[int(game.units[i].lane)]) + float(JIT[i % JIT.size()])
 
 
 # scene: the paintball_field room. specs: one per unit, in the game's order: {character, custom, label, look}
@@ -79,7 +81,7 @@ func _add_puppet(i: int, spec: Dictionary) -> void:
 	body.play("idle_right")
 	node.add_child(body)
 	_actors.add_child(node)
-	puppets.append({"node": node, "body": body, "label": str(spec.label), "splats": [], "state": "", "shoot_t": 0.0, "face": "right"})
+	puppets.append({"node": node, "body": body, "label": str(spec.label), "splats": [], "state": "", "shoot_t": 0.0, "face": "right", "y": lane_y(i)})
 
 
 func _process(delta: float) -> void:
@@ -97,14 +99,15 @@ func _sync() -> void:
 		var u: Dictionary = game.units[i]
 		var p: Dictionary = puppets[i]
 		var node: Node2D = p.node
-		node.position = Vector2(field_x(float(u.x)), lane_y(i))
+		p.y = move_toward(float(p.y), lane_y(i), LANE_SPEED * get_process_delta_time())
+		node.position = Vector2(field_x(float(u.x)), float(p.y))
 		p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
 		_animate(i, u, p)
 	_move_balls(get_process_delta_time())
 	var f: Dictionary = Game.FORMATS[Game.format]
 	var view := get_viewport_rect().size / float(f.zoom)
 	if _player != null:
-		_player.global_position = Vector2(field_x(float(game.units[0].x)), lane_y(0))
+		_player.global_position = Vector2(field_x(float(game.units[0].x)), float(puppets[0].y))
 	if _cam != null:  # a short screen looks lower down, so the floor is not under the HUD
 		var centre: float = float(f.cam_y) if f.follow else 64.0
 		_cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
@@ -141,7 +144,7 @@ func _event(ev: Dictionary) -> void:
 			var u: Dictionary = game.units[int(ev.unit)]
 			var p: Dictionary = puppets[int(ev.unit)]
 			p.shoot_t = 0.35
-			var y0 := lane_y(int(ev.unit)) - 32.0
+			var y0 := float(p.y) - 32.0
 			var y1 := lane_y(int(ev.target)) - 32.0 if int(ev.target) >= 0 else y0
 			balls.append(
 				{
@@ -198,6 +201,11 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
 	if game == null:
 		return
+	for l in LANE_OFF.size():  # the lanes, as dashes on the street
+		var gx := 6.0
+		while gx < float(game.LEN) - 6.0:
+			draw_rect(Rect2(Vector2(field_x(gx), FEET_Y + float(LANE_OFF[l]) + 1.0), Vector2(4, 1)), Color(1, 1, 1, 0.13))
+			gx += 12.0
 	for g in ground:
 		var at := Vector2(field_x(float(g.x)), float(g.y))
 		draw_rect(Rect2(at, Vector2(float(g.w), 1.0)), g.col)

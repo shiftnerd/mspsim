@@ -151,13 +151,14 @@ Capture the flag on a western main street, three a side: you and two of the crew
 | KEY | WHAT IT DOES |
 |---|---|
 | `Left` / `Right` (or `A` / `D`) | Run. You face the way you run. |
-| `Z` (or `E`, or the pad's `A` / `X`) | Fire a paintball the way you face. |
-| `Down` (or `S`) | Duck. Right behind a barricade, a ducking player cannot be hit from that side. |
+| `Up` / `Down` (or `W` / `S`) | Change lane. The street is three lanes wide and a shot only finds somebody in your own lane. |
+| `Z` (or `E`, or the pad's `A` / `X`) | Fire a paintball the way you face, at whoever is in your lane. |
+| Hold `Shift` (the pad's `B`) | Duck. Right behind a barricade, a ducking player cannot be hit from that side; in the open it only makes you a smaller target. You cannot fire while ducking. |
 | `Esc` | Leave. |
 
 A tag puts a player out for four seconds and drops the flag they carried. Touch the other team's flag to pick it up, carry it back to your own end to score. Touch your own flag, if it was dropped, to send it home. First to three captures wins; at 2:30 the higher score wins. It costs $200 in the owner campaign.
 
-> **TIP:** A runner is harder to hit than somebody standing still, and a ducking player behind a barricade cannot be hit at all. Duck, wait for the shot, pop up.
+> **TIP:** A runner is harder to hit than somebody standing still, and a ducking player behind a barricade cannot be hit at all. Duck, wait for the shot, pop up. Changing lane is a dodge: whoever was shooting at you has to notice and follow you over, and that takes them a moment.
 
 ---
 

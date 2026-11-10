@@ -33024,8 +33024,8 @@ const GAMES := {
         "label": "PAINTBALL",
         "cost": 200,
         "blurb":
-        "CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
-        "keys": "L R RUN  Z FIRE  DOWN DUCK  ESC LEAVE"
+        "CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, SWITCH LANES, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
+        "keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK"
     },
     "darts":
     {
@@ -33163,7 +33163,7 @@ const ROOM_INTRO := {
     "cornhole":
     "TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
     "paintball":
-    "THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, Z FIRES A PAINTBALL THE WAY YOU FACE, DOWN DUCKS: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
+    "THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), Z FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD SHIFT TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
     "darts":
     "THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
     "grill":
@@ -34110,6 +34110,7 @@ func _event_key(event: InputEvent) -> int:
         return _event_key_p2(event)  # co-op: player 2's pad (A and X do what Enter and E do, B leaves)
     var racing: bool = game == "chair" and phase == "play"
     var grilling: bool = game == "grill" and phase == "play"
+    var paintballing: bool = game == "paintball" and phase == "play"
     var dir := Controls.nav(event, false)
     var key := KEY_NONE
     if racing and Controls.matches(event, "push_a"):
@@ -34118,7 +34119,7 @@ func _event_key(event: InputEvent) -> int:
         key = KEY_X
     elif game == "paintball" and phase == "play" and (Controls.matches(event, "push_a") or Controls.matches(event, "interact")):
         key = KEY_Z  # A or X on a pad: fire
-    elif grilling and Controls.matches(event, "run"):
+    elif (grilling or paintballing) and Controls.matches(event, "run"):
         key = KEY_SHIFT  # B on a pad: the cool side
     elif dir != "":
         key = PAD_ARROWS[dir]
@@ -35705,7 +35706,7 @@ func _room_wants(key: int) -> bool:
         "bowling":
             return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER] or (key in [KEY_LEFT, KEY_RIGHT] and str(g.get("stage", "")) in ["aim", "power"])
         "paintball":
-            return key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
+            return key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_UP, KEY_DOWN, KEY_W, KEY_S]
         "cornhole", "darts":
             return key in [KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]
         "grill":
@@ -36468,7 +36469,7 @@ func _paint_tick(dt: float) -> void:
     if Input.is_action_pressed(Controls.action_for(0, "move_right")):
         dir += 1
     rules.set_move(dir)
-    rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "duck")))
+    rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "run")))  # SHIFT (a pad's B) held
     if Input.is_action_just_pressed(Controls.action_for(0, "aim")):
         rules.fire_you()
     rules.step(dt)
@@ -36500,9 +36501,13 @@ func _paint_cues(rules: RefCounted) -> void:
 
 
 func _paint_press(key: int) -> void:
-    if key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
+    if key in [KEY_UP, KEY_W]:
+        g.rules.lane_you(-1)
+    elif key in [KEY_DOWN, KEY_S]:
+        g.rules.lane_you(1)
+    elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
         if not g.rules.fire_you() and bool(g.rules.units[0].duck) and g.rules.phase == "play":
-            caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF DOWN.", 0.8)
+            caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
 
 
 func _paint_lines() -> Array:
@@ -38938,6 +38943,9 @@ const CARRY := 0.85  # x the speed with a flag
 const RANGE := 170.0
 const FIRE_GAP := 0.7  # your own reload
 const AI_GAP := 1.4  # the crew reloads slower than you (six people firing every 0.7 s was a wall of paint)
+const LANES := 3  # the street is three lanes wide: you can only tag somebody in your own lane
+const LANE_GAP := 0.4  # seconds before the next lane change
+const LANE_CHASE := 0.7  # the crew takes this long (less for the quick ones) to follow you into another lane
 const OPEN_DUCK := 0.55  # a ducking player with no barricade is a smaller target, not a safe one
 const RESPAWN := 4.0
 const TARGET := 3
@@ -39032,6 +39040,9 @@ func _add_unit(who: String, team: int, slot: int, you: bool) -> void:
             "you": you,
             "tags": 0,
             "duck_for": 0.0,
+            "lane": [1, 0, 2][slot % 3],
+            "lane_cool": 0.0,
+            "lane_t": 0.0,
         }
     )
 
@@ -39063,9 +39074,26 @@ func fire_you() -> bool:
     return phase == "play" and fire(0)
 
 
+# one lane up (-1) or down (+1); false when there is no lane there, you are down or you changed one a moment ago
+func change_lane(i: int, d: int) -> bool:
+    var u: Dictionary = units[i]
+    var to := clampi(int(u.lane) + d, 0, LANES - 1)
+    if phase != "play" or float(u.down) > 0.0 or float(u.lane_cool) > 0.0 or to == int(u.lane):
+        return false
+    u.lane = to
+    u.lane_cool = LANE_GAP
+    events.append({"kind": "lane", "unit": i, "lane": to})
+    return true
+
+
+func lane_you(d: int) -> bool:
+    return change_lane(0, d)
+
+
 # ---- one step ------------------------------------------------------------------------------------------
 func step(dt: float) -> void:
-    events = []
+    if events.size() > 64:  # the drawing empties it; without it (a test) it must not grow for ever. Keys pressed between two steps keep their events.
+        events = []
     line_t = maxf(0.0, line_t - dt)
     if phase == "over":
         return
@@ -39091,6 +39119,7 @@ func step(dt: float) -> void:
 func _tick_unit(i: int, dt: float) -> void:
     var u: Dictionary = units[i]
     u.cool = maxf(0.0, float(u.cool) - dt)
+    u.lane_cool = maxf(0.0, float(u.lane_cool) - dt)
     if float(u.down) > 0.0:
         u.down = float(u.down) - dt
         u.vx = 0.0
@@ -39158,7 +39187,7 @@ func target_of(i: int) -> int:
     var best_d := RANGE + 1.0
     for j in units.size():
         var v: Dictionary = units[j]
-        if int(v.team) == int(u.team) or float(v.down) > 0.0:
+        if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) != int(u.lane):
             continue
         var d: float = (float(v.x) - float(u.x)) * float(u.face)
         if d > 0.0 and d <= RANGE and d < best_d:
@@ -39254,8 +39283,31 @@ func _goal(i: int) -> float:
     return base_of(team) + (70.0 + float(i % 2) * 20.0) * (1.0 if team == 0 else -1.0)
 
 
+# nobody in my lane but somebody ahead of me in another one: after a beat, one lane towards them (so a lane change is a dodge, not a hiding place)
+func _ai_lane(i: int, dt: float) -> void:
+    var u: Dictionary = units[i]
+    var want := -1
+    var best := RANGE * 1.3
+    if target_of(i) < 0:
+        for v in units:
+            if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) == int(u.lane):
+                continue
+            var d: float = (float(v.x) - float(u.x)) * float(u.face)
+            if d > 0.0 and d < best:
+                best = d
+                want = int(v.lane)
+    if want < 0:
+        u.lane_t = 0.0
+        return
+    u.lane_t = float(u.lane_t) + dt
+    if float(u.lane_t) >= LANE_CHASE - 0.3 * float(u.skill):
+        u.lane_t = 0.0
+        change_lane(i, signi(want - int(u.lane)))
+
+
 func _ai(i: int, dt: float) -> void:
     var u: Dictionary = units[i]
+    _ai_lane(i, dt)
     var j := target_of(i)
     var cov := near_cover(float(u.x))
     if j >= 0:
@@ -39316,7 +39368,7 @@ func debug_line(i: int) -> String:
         return "DOWN %.1f" % float(u.down)
     if bool(u.you) and not you_auto:
         return "YOU"
-    return "%s %s goal %d tgt %d" % [str(u.role), "duck" if bool(u.duck) else "go", int(_goal(i)), target_of(i)]
+    return "%s %s L%d goal %d tgt %d" % [str(u.role), "duck" if bool(u.duck) else "go", int(u.lane), int(_goal(i)), target_of(i)]
 
 
 func carrier_of(team: int) -> int:  # the unit carrying `team`'s flag, or -1
@@ -39341,7 +39393,9 @@ const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
 # the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
-const LANES := [-2.0, -12.0, 8.0, 3.0, 13.0, -7.0]  # you in the middle of your team's three, theirs staggered between
+const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
+const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
+const LANE_SPEED := 70.0  # px/s a puppet slides from one lane to the next
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -39364,7 +39418,7 @@ func field_x(gx: float) -> float:
 
 
 func lane_y(i: int) -> float:
-    return FEET_Y + float(LANES[i % LANES.size()])
+    return FEET_Y + float(LANE_OFF[int(game.units[i].lane)]) + float(JIT[i % JIT.size()])
 
 
 # scene: the paintball_field room. specs: one per unit, in the game's order: {character, custom, label, look}
@@ -39404,7 +39458,7 @@ func _add_puppet(i: int, spec: Dictionary) -> void:
     body.play("idle_right")
     node.add_child(body)
     _actors.add_child(node)
-    puppets.append({"node": node, "body": body, "label": str(spec.label), "splats": [], "state": "", "shoot_t": 0.0, "face": "right"})
+    puppets.append({"node": node, "body": body, "label": str(spec.label), "splats": [], "state": "", "shoot_t": 0.0, "face": "right", "y": lane_y(i)})
 
 
 func _process(delta: float) -> void:
@@ -39422,14 +39476,15 @@ func _sync() -> void:
         var u: Dictionary = game.units[i]
         var p: Dictionary = puppets[i]
         var node: Node2D = p.node
-        node.position = Vector2(field_x(float(u.x)), lane_y(i))
+        p.y = move_toward(float(p.y), lane_y(i), LANE_SPEED * get_process_delta_time())
+        node.position = Vector2(field_x(float(u.x)), float(p.y))
         p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
         _animate(i, u, p)
     _move_balls(get_process_delta_time())
     var f: Dictionary = Game.FORMATS[Game.format]
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
-        _player.global_position = Vector2(field_x(float(game.units[0].x)), lane_y(0))
+        _player.global_position = Vector2(field_x(float(game.units[0].x)), float(puppets[0].y))
     if _cam != null:  # a short screen looks lower down, so the floor is not under the HUD
         var centre: float = float(f.cam_y) if f.follow else 64.0
         _cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
@@ -39466,7 +39521,7 @@ func _event(ev: Dictionary) -> void:
             var u: Dictionary = game.units[int(ev.unit)]
             var p: Dictionary = puppets[int(ev.unit)]
             p.shoot_t = 0.35
-            var y0 := lane_y(int(ev.unit)) - 32.0
+            var y0 := float(p.y) - 32.0
             var y1 := lane_y(int(ev.target)) - 32.0 if int(ev.target) >= 0 else y0
             balls.append(
                 {
@@ -39523,6 +39578,11 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
     if game == null:
         return
+    for l in LANE_OFF.size():  # the lanes, as dashes on the street
+        var gx := 6.0
+        while gx < float(game.LEN) - 6.0:
+            draw_rect(Rect2(Vector2(field_x(gx), FEET_Y + float(LANE_OFF[l]) + 1.0), Vector2(4, 1)), Color(1, 1, 1, 0.13))
+            gx += 12.0
     for g in ground:
         var at := Vector2(field_x(float(g.x)), float(g.y))
         draw_rect(Rect2(at, Vector2(float(g.w), 1.0)), g.col)
