@@ -10,6 +10,7 @@ extends Node
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
+const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
 const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
 const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
 const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
@@ -3002,6 +3003,9 @@ func _key_poach() -> void:
 			},
 		],
 	}
+	if Campaign.mode == "owner":  # R36: what losing this tech would put at risk
+		ByName.note_leaver(who)
+		_dynamic["key_poach"]["text"] = str(_dynamic["key_poach"].text) + ByName.risk_line(who)
 	show_card("key_poach")
 
 
@@ -3937,6 +3941,7 @@ func settle() -> Dictionary:
 		Rival.arc_week(self, Campaign.day)
 		Habits.week(self)
 		Temptation.week(self)
+		ByName.owner_week(self)  # R36: favourites, the lopsided crew, a client that follows a tech who left
 	_poach_week()
 	_staff_week()
 	_owner_week(profit)
@@ -4018,6 +4023,8 @@ func settle() -> Dictionary:
 			rows.append(["SWITCHING COSTS", Temptation.switching_text(self), Color("ffd27a")])
 		for rap_line in Rival.lines():
 			rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
+		if ByName.report_text() != "":
+			rows.append(["ASKED FOR BY NAME", ByName.report_text(), Color("8fe3a0")])  # R36
 	rows.append(partner_row())
 	rows.append(goal_row())
 	if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():

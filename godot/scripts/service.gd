@@ -9,6 +9,7 @@ extends Node
 # V1 uses Cards and the PSA ticket list; the Dispatch board, Capacity view, runbooks and hiring are C5 / C6.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): hours worked per tech per day
+const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
 const START_CONFIDENCE := 55
 const OWNERS := ["Alan", "Garrison"]
 const TRUST_START := 50
@@ -662,6 +663,7 @@ var interviewed := {}
 
 func _ready() -> void:
 	reset()
+	Msp.ticket_added.connect(ByName.on_ticket)  # R36: a client that knows a tech asks for him
 
 
 func active() -> bool:
@@ -1107,6 +1109,7 @@ func lane_name(who: String) -> String:
 
 # a tech quit: his tickets go back on the board
 func release_all(who: String) -> void:
+	ByName.on_quit(who)  # R36: the clients that asked for him
 	for t in Msp.tickets:
 		if str(t.status) != "Closed" and Crew.assignee_of(t) == who:
 			t["assignee"] = ""
@@ -1219,6 +1222,7 @@ func _finish(who: String, t: Dictionary) -> void:
 			Crew.note_reopen(who)
 		Msp.close_ticket(id)  # closed too early: it comes back to the same desk
 		return
+	ByName.on_done(who, t)  # R36: a real close counts for his name at that client (a ticket that bounces does not)
 	if Crew.has(who):
 		kb.note_closed(who, t)
 	Growth.owner_escalation(t)
@@ -1902,6 +1906,9 @@ func _best_in(t: Dictionary, lane_filter: String, max_load: int) -> String:
 
 # who the autopilot gives a ticket to under the chosen design ("" = nobody can take it now)
 func route_for(t: Dictionary) -> String:
+	var asked: String = ByName.route(t)  # R36: the tech they asked for takes it, even with a full desk
+	if asked != "":
+		return asked
 	match design:
 		"tiered":
 			var want := "L1" if Crew.need_of(t) <= 1 else "L2"
