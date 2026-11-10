@@ -47774,6 +47774,7 @@ const ROOTS := {
     "Habits": ["HABITS", "TEXT", "CARDS"],
     "RivalCards": ["CARDS"],
     "OwnerCast": ["CARDS"],
+    "Projects": ["TYPES"],
     "RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
@@ -48017,7 +48018,7 @@ func build(existing: Dictionary) -> String:
 ''')
 
 write("scripts/projects.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
 # Owner campaign: client profitability, projects and services. MSPs live on recurring revenue (the monthly fee, plus
 # services like managed backup), and projects (a desktop refresh, a network or server upgrade, a security cleanup) add
 # one-time money on top. Both compete for the same technicians' hours, and both can quietly lose money:
@@ -48032,7 +48033,7 @@ const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
 # extra hours when a fixed-price job creeps
 const SCOPE_CREEP := 0.25
-const TYPES := {
+const DEFAULT_TYPES := {
     "desktops": {"label": "DESKTOP REFRESH (XP REPLACEMENT)", "price": [1800, 3600], "hw": 0.62, "hours": 18, "weeks": 2, "blurb": "five or six Windows XP desktops need replacing before April 8"},
     "network": {"label": "NETWORK UPGRADE (SWITCHES AND WI-FI)", "price": [2800, 3800], "hw": 0.45, "hours": 26, "weeks": 3, "blurb": "their wireless is a guessing game and the switches are ten years old"},
     "server": {"label": "SERVER REPLACEMENT", "price": [6500, 8500], "hw": 0.5, "hours": 44, "weeks": 4, "blurb": "the file server is out of warranty and out of disk"},
@@ -48041,6 +48042,8 @@ const TYPES := {
     "backup_dr": {"label": "BACKUP AND RECOVERY SETUP", "price": [1200, 1600], "hw": 0.25, "hours": 12, "weeks": 2, "blurb": "they want to know they can recover when it all goes wrong"},
     "security": {"label": "SECURITY CLEANUP", "price": [900, 1300], "hw": 0.2, "hours": 14, "weeks": 2, "blurb": "remote access, passwords and the firewall all need attention"},
 }
+# P5: patchable from story/strings.txt (Projects.TYPES: label, blurb)
+var TYPES: Dictionary = DEFAULT_TYPES.duplicate(true)
 const SERVICES := {
     "backup": {"label": "MANAGED BACKUP", "price": 110, "cost": 35, "blurb": "we watch their backups every night and fix failures before they matter"},
     "patching": {"label": "MANAGED UPDATES AND AV", "price": 80, "cost": 25, "blurb": "we keep every machine patched and protected"},

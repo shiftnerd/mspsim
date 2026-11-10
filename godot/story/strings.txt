@@ -22855,6 +22855,64 @@ LEND HIM TO THEM ONE DAY A WEEK ($180/WK)
 Thursdays he works from their office, billed by the day. They get a door with his name on it. We get an invoice with ours.
 
 
+# ======================= Projects > TYPES =======================
+# Projects > TYPES > desktops > label
+[Projects.TYPES.desktops.label]
+DESKTOP REFRESH (XP REPLACEMENT)
+
+# Projects > TYPES > desktops > blurb
+[Projects.TYPES.desktops.blurb]
+five or six Windows XP desktops need replacing before April 8
+
+# Projects > TYPES > network > label
+[Projects.TYPES.network.label]
+NETWORK UPGRADE (SWITCHES AND WI-FI)
+
+# Projects > TYPES > network > blurb
+[Projects.TYPES.network.blurb]
+their wireless is a guessing game and the switches are ten years old
+
+# Projects > TYPES > server > label
+[Projects.TYPES.server.label]
+SERVER REPLACEMENT
+
+# Projects > TYPES > server > blurb
+[Projects.TYPES.server.blurb]
+the file server is out of warranty and out of disk
+
+# Projects > TYPES > voip > label
+[Projects.TYPES.voip.label]
+PHONE SYSTEM UPGRADE (HOSTED VOIP)
+
+# Projects > TYPES > voip > blurb
+[Projects.TYPES.voip.blurb]
+the phones are a tangle of analog lines and a box in the closet that nobody dares touch
+
+# Projects > TYPES > email_move > label
+[Projects.TYPES.email_move.label]
+EMAIL MIGRATION (HOSTED MAIL)
+
+# Projects > TYPES > email_move > blurb
+[Projects.TYPES.email_move.blurb]
+the mailboxes are full and the old mail server hums like a refrigerator
+
+# Projects > TYPES > backup_dr > label
+[Projects.TYPES.backup_dr.label]
+BACKUP AND RECOVERY SETUP
+
+# Projects > TYPES > backup_dr > blurb
+[Projects.TYPES.backup_dr.blurb]
+they want to know they can recover when it all goes wrong
+
+# Projects > TYPES > security > label
+[Projects.TYPES.security.label]
+SECURITY CLEANUP
+
+# Projects > TYPES > security > blurb
+[Projects.TYPES.security.blurb]
+remote access, passwords and the firewall all need attention
+
+
 # ======================= RivalTouches > TALK =======================
 # RivalTouches > TALK > Alan > rival
 [RivalTouches.TALK.Alan.rival]

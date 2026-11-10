@@ -1,9 +1,16 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Dev tool (Q6, not a test): the slow balance harness. One cell (or a few) per process:
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/bot_run.gd -- tech normal careful seeds=6 [first=1] [ts=20]
 # Words: mode (tech owner sales service; "coop" runs the tech bot as a pair), tier (easy normal hard), strategy (careful lazy chaotic shortcut); a word may be
 # a comma list ("easy,normal,hard"). Prints one BOT line per run and a CELL summary per mode x tier x strategy.
 # Merge several processes with tools/ (see docs/balance-notes.md) or by eye.
+# P5 (the newer owner content: temptations, takeover, the second cast's cards, by-name requests):
+#   ... bot_run.gd -- owner normal careful,shortcut seeds=3 ts=4
+# The owner "shortcut" strategy is careful's answers with every temptation taken. When both cells run in one process the run FAILS
+# unless shortcut ends clearly below careful (mean value under SHORTCUT_MAX of careful's) and is not fired every time.
+
+const SHORTCUT_MAX := 0.8
 
 
 func _init() -> void:
@@ -33,6 +40,7 @@ func _init() -> void:
 			else:
 				strats = Array(parts)
 	var failed := false
+	var cells := {}  # "mode tier strategy" -> {score, fired, n}
 	await process_frame
 	var bots: RefCounted = load("res://tests/bot_lib.gd").new(self)
 	bots.ts = ts
@@ -60,7 +68,21 @@ func _init() -> void:
 					fired += 1 if bool(r.fired) else 0
 				var n := float(rows.size())
 				print("CELL %s %s %s: n=%d good %d mid %d bad %d  rep %.1f score %.1f  fired %d" % [mode, tier, strat, rows.size(), good, mid, bad, rep / n, score / n, fired])
+				cells["%s %s %s" % [mode, tier, strat]] = {"score": score / n, "fired": fired, "n": rows.size()}
 				if str(tier) == "easy" and fired > 0:  # R16: easy is cozy, nobody is ever fired there
 					print("FAIL cozy: %s easy %s was fired %d time(s)" % [mode, strat, fired])
 					failed = true
+	for tier in tiers:  # P5: the shortcut owner against the careful one
+		var careful: Dictionary = cells.get("owner %s careful" % tier, {})
+		var shortcut: Dictionary = cells.get("owner %s shortcut" % tier, {})
+		if careful.is_empty() or shortcut.is_empty():
+			continue
+		var ratio := float(shortcut.score) / maxf(1.0, float(careful.score))
+		print("CHECK owner %s: shortcut value %.0f vs careful %.0f (%.0f%%), shortcut fired %d of %d" % [tier, float(shortcut.score), float(careful.score), ratio * 100.0, int(shortcut.fired), int(shortcut.n)])
+		if ratio >= SHORTCUT_MAX:
+			print("FAIL owner %s: the shortcut owner is not clearly worse than the careful one" % tier)
+			failed = true
+		if int(shortcut.fired) >= int(shortcut.n) and str(tier) != "hard":
+			print("FAIL owner %s: the shortcut owner is fired every time (the bills alone should not end the run)" % tier)
+			failed = true
 	quit(1 if failed else 0)
