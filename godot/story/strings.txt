@@ -15472,6 +15472,54 @@ LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The com
 [Expo.TEXT.progress]
 KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.
 
+# Expo > TEXT > seat_offer
+[Expo.TEXT.seat_offer]
+%s. On stage: %s, %s. The room is half full and there is a free chair in the middle.
+
+# Expo > TEXT > seat_no
+[Expo.TEXT.seat_no]
+TRY ANOTHER ROOM
+
+# Expo > TEXT > seat_hint
+[Expo.TEXT.seat_hint]
+PICK A CHAIR AND SIT DOWN (E). THE SESSION STARTS WHEN YOU DO.
+
+# Expo > TEXT > seat_done
+[Expo.TEXT.seat_done]
+THE SESSION LETS OUT. YOU STAND UP WITH A PAGE OF NOTES.
+
+# Expo > TEXT > owner_arrive
+[Expo.TEXT.owner_arrive]
+RODENT NATION. THE SESSIONS ARE DOWN THE HALL (RIGHT DOOR): THERE IS TIME FOR ONE. THE EXPO HALL IS OPEN ALL DAY.
+
+# Expo > TEXT > owner_early
+[Expo.TEXT.owner_early]
+THE BALLROOM IS BEING SET FOR THE CLOSING. SIT IN ON A SESSION FIRST.
+
+# Expo > TEXT > owner_one
+[Expo.TEXT.owner_one]
+ONE SESSION IS ALL THE DAY HAS ROOM FOR. THE EXPO HALL IS STILL OPEN, AND THE CLOSING IS IN THE BALLROOM.
+
+# Expo > TEXT > owner_closed
+[Expo.TEXT.owner_closed]
+Salon D is dark: stacked chairs, a projector on a cart and a sign that says the room is being set for tomorrow.
+
+# Expo > TEXT > owner_booth_done
+[Expo.TEXT.owner_booth_done]
+YOU HAVE HEARD THIS PITCH. THE REP WAVES A PEN AT YOU ANYWAY.
+
+# Expo > TEXT > owner_talk_0
+[Expo.TEXT.owner_talk_0]
+A consultant puts one number on the screen: your effective hourly rate. Half the room goes quiet. Three packages: good, better and best, and never show the cheap one first. You rewrite your price sheet on a napkin.
+
+# Expo > TEXT > owner_talk_1
+[Expo.TEXT.owner_talk_1]
+Four owners on bar stools admit they have not had a week off since 2011. Burnout is a staffing plan, says the moderator, not a flaw in your character. You write down two things to stop doing yourself.
+
+# Expo > TEXT > owner_talk_2
+[Expo.TEXT.owner_talk_2]
+No slides and no chairs in rows. Six owners trade the stories they would never put in a case study. You swap cards with two of them. One of them knows your biggest client.
+
 # Expo > TEXT > yes_subject
 [Expo.TEXT.yes_subject]
 Pack your bags: Rodent Nation
@@ -19486,10 +19534,6 @@ A PLATE TO SHARE: WHAT DO YOU ORDER?
 [Outings.DINNER_TEXT.order_clash]
 %s ARRIVES. %s. A SIDE SALAD IS ORDERED AND NOBODY MAKES IT A THING.
 
-# Outings > DINNER_TEXT > order_line
-[Outings.DINNER_TEXT.order_line]
-THE %s WENT ROUND THE WHOLE TABLE. (TABLE +%d)
-
 # Outings > DINNER_TEXT > ask
 [Outings.DINNER_TEXT.ask]
 YOU ASK HOW EVERYBODY IS DOING, AND LISTEN.
@@ -19532,19 +19576,19 @@ NOTHING NEW AT THE TABLE. WHAT YOU KNEW STILL HOLDS.
 
 # Outings > DINNER_TEXT > guest_good
 [Outings.DINNER_TEXT.guest_good]
-%s HAD A GOOD NIGHT AT YOUR TABLE. (CLIENT MOOD +%d)
+%s HAD A GOOD NIGHT. (MOOD +%d)
 
 # Outings > DINNER_TEXT > guest_bad
 [Outings.DINNER_TEXT.guest_bad]
-%s WENT HOME EARLY. (CLIENT MOOD %d)
+%s WENT HOME EARLY. (MOOD %d)
 
 # Outings > DINNER_TEXT > guest_ok
 [Outings.DINNER_TEXT.guest_ok]
-%s HAD A PERFECTLY FINE EVENING.
+%s HAD A FINE EVENING.
 
 # Outings > DINNER_TEXT > guest_referral
 [Outings.DINNER_TEXT.guest_referral]
-%s WILL MENTION YOU TO A FRIEND. JOHN'S NEXT PITCHES GO EASIER.
+A WARM REFERRAL FOR JOHN FROM %s.
 
 # Outings > DINNER_TEXT > tab
 [Outings.DINNER_TEXT.tab]
@@ -19564,11 +19608,11 @@ STEAKS FOR THE TABLE
 
 # Outings > DINNER_TEXT > tab_fancy_line
 [Outings.DINNER_TEXT.tab_fancy_line]
-%s PICKED UP THE TAB AND READ THE RECEIPT TWICE.
+%s PAID AND READ THE RECEIPT TWICE.
 
 # Outings > DINNER_TEXT > tab_modest_line
 [Outings.DINNER_TEXT.tab_modest_line]
-%s PICKED UP THE TAB AND NOTICED YOU WENT EASY ON IT.
+%s PAID. YOU WENT EASY ON THE TAB.
 
 # Outings > DINNER_TEXT > talk_listen
 [Outings.DINNER_TEXT.talk_listen]

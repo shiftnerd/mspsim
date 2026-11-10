@@ -253,7 +253,7 @@ func _init() -> void:
 	o.dinner_guest().mood = 3
 	var mood0: int = sales.mood(0)
 	o._finish(2)
-	_check(sales.mood(0) == mood0 + 4 and str(o.lines).contains("GOOD NIGHT AT YOUR TABLE"), "a good evening lifts the client's mood by up to 4 (%d to %d)" % [mood0, sales.mood(0)])
+	_check(sales.mood(0) == mood0 + 4 and str(o.lines).contains("HAD A GOOD NIGHT"), "a good evening lifts the client's mood by up to 4 (%d to %d)" % [mood0, sales.mood(0)])
 	o.press(KEY_ENTER)
 	var came := 0
 	for seed_n in range(500, 600):
@@ -333,7 +333,7 @@ func _init() -> void:
 	cards.pick(1)  # the steaks
 	_check(o.phase == "play" and str(o.g.budget) == "fancy" and o.diner_shift("Dan") >= 0 and social.value("Garrison") == garrison0 - 1, "steaks: the fancy table, and Garrison noticed")
 	o._finish(2)
-	_check(str(o.lines).contains("PICKED UP THE TAB AND READ THE RECEIPT"), "the result page says who paid")
+	_check(str(o.lines).contains("PAID AND READ THE RECEIPT"), "the result page says who paid")
 	o.press(KEY_ENTER)
 	o.start("dinner", false, {"party": ["Alan", "Garrison", "Dan"]})
 	_check(not o.tab_due(), "a dinner without the option has no tab card")

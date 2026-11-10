@@ -20,6 +20,33 @@ func _scene() -> String:
 	return "" if sc == null else sc.scene_file_path.get_file().get_basename()
 
 
+# R23: sit down on the free chair of the breakout room and stay for the whole session (the first line plays out on its timer, the
+# rest are skipped with the key's function); returns the number of lines the talk had
+func _sit_through(cf: Node) -> int:
+	var player: Node = current_scene.get_node("Actors/Player")
+	var seat: Node = cf._free_seat()
+	_check(seat != null and cf.seated.is_empty(), "%s has a free chair, and nothing starts before you sit" % _scene())
+	if seat == null:
+		return 0
+	player.global_position = seat.global_position
+	seat.use(player)
+	await _wait(1.5)
+	var game := root.get_node("Game")
+	_check(str(player.state) == "sitting" and not cf.seated.is_empty() and game.ui_open, "sitting down starts the session and keeps you in the chair")
+	var lines: int = cf.seated.lines.size()
+	_check(lines >= 2 and cf.talk_line() != "" and cf._canvas.visible, "the talk is %d lines, shown one at a time: %s" % [lines, cf.talk_line()])
+	var clock0: float = root.get_node("World").clock
+	await _wait(cf.LINE_SECS + 0.4)
+	_check(int(cf.seated.get("at", 0)) == 1 and root.get_node("World").clock > clock0, "a line lasts %.1f seconds and the clock runs" % cf.LINE_SECS)
+	var guard := 0
+	while not cf.seated.is_empty() and guard < 30:
+		cf.talk_skip()
+		guard += 1
+	await _wait(1.2)
+	_check(cf.seated.is_empty() and str(player.state) != "sitting" and not game.ui_open and not cf._canvas.visible, "when it is over you stand up")
+	return lines
+
+
 func _fake(role: String) -> Node:
 	var n := Node.new()
 	n.set_meta("x", 0)
@@ -201,7 +228,8 @@ func _init() -> void:
 	game.vars["conf_door"] = "from_a"
 	game.go("breakout_a", "from_hall")
 	await _wait(1.0)
-	_check(cards.is_open and cf.picks.size() == 1, "walking into room A starts that session")
+	_check(cards.is_open and cards.speaker == "SALON A" and cf.picks.size() == 0, "walking into room A offers the session: the card is the choice")
+	_check(str(cards.text).contains("SCRIPTING 101") and cards.options.size() == 2, "the card names the session and the speaker")
 	var info_a: Dictionary = cf.room_info(0)
 	_check(
 		str(info_a.id) == "ps101" and int(info_a.round) == 1 and str(info_a.time) == "10:00 AM",
@@ -209,8 +237,11 @@ func _init() -> void:
 	)
 	_check(info_a.title.size() > 0 and str(info_a.speaker[0]) != "", "the screen has a title and a speaker")
 	_check_speaker("breakout_a")
-	cards.pick(0)
-	_check(cf.room_info(0).id == "ps101", "the screen keeps your session after the card (the round moved on)")
+	cards.pick(0)  # take a seat
+	_check(not cards.is_open and cf.picks.size() == 0 and sk.ps_level == ps0, "TAKE A SEAT: nothing is learned until you have sat through it")
+	await _sit_through(cf)
+	_check(cf.picks.size() == 1 and not cards.is_open, "the session counts once it is over, without a card")
+	_check(cf.room_info(0).id == "ps101", "the screen keeps your session after the talk (the round moved on)")
 	_check(
 		sk.ps_level == ps0 + 1 and cf.rnd == 1,
 		"the scripting lab teaches PowerShell and round 2 opens"
@@ -231,20 +262,30 @@ func _init() -> void:
 		"rooms A and B show different sessions"
 	)
 	_check_speaker("breakout_b")
+	cards.pick(1)  # try another room
+	await _wait(1.0)
+	_check(_scene() == "resort_hall" and cf.picks.size() == 1 and cf.rnd == 1, "TRY ANOTHER ROOM: back in the hall, nothing picked")
+	game.go("breakout_b", "from_hall")
+	await _wait(1.0)
+	_check(cards.is_open and cards.speaker == "SALON B", "walking back in offers it again")
 	cards.pick(0)
+	await _sit_through(cf)
 	_check(int(sk.xp.security) > sec0 and cf.rnd == 2, "the security session gives experience")
+	_check(is_equal_approx(world.clock, cf.CLOCKS[2]), "and the clock is at the next round")
 	game.go("resort_hall", "from_b")
 	await _wait(1.0)
 	game.vars["conf_door"] = "from_d"
 	game.go("breakout_d", "from_hall")
 	await _wait(1.5)
 	_check(
-		_scene() == "breakout_d" and cards.is_open and cf.picks.size() == 3,
+		_scene() == "breakout_d" and cards.is_open and cards.speaker == "SALON D",
 		"room D of round 3 is a session now"
 	)
-	_check(cf.room_info(3).id == "stay" or cf.room_info(3).id == cf.picks[2], "room D's screen shows the session you picked")
 	_check_speaker("breakout_d")
 	cards.pick(0)
+	await _sit_through(cf)
+	_check(cf.picks.size() == 3, "three sessions sat through")
+	_check(cf.room_info(3).id == "stay" or cf.room_info(3).id == cf.picks[2], "room D's screen shows the session you picked")
 	await _check_rooms_distinct()
 	_check_crowd_clean()
 	_check(cf._stage == "raffle", "then it is time for the raffle")

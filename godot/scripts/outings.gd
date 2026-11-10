@@ -2940,7 +2940,6 @@ const DEFAULT_DINNER_TEXT := {
 	"order_head": "A PLATE TO SHARE: WHAT DO YOU ORDER?",
 	"order_fit": "%s FOR THE TABLE. EVERYBODY DIGS IN. (TABLE +%d)",
 	"order_clash": "%s ARRIVES. %s. A SIDE SALAD IS ORDERED AND NOBODY MAKES IT A THING.",
-	"order_line": "THE %s WENT ROUND THE WHOLE TABLE. (TABLE +%d)",
 	"ask": "YOU ASK HOW EVERYBODY IS DOING, AND LISTEN.",
 	"ask_same": "NOTHING NEW AT THE TABLE. WHAT YOU KNEW STILL HOLDS.",
 	"ask_learn": "%s MENTIONS A FAVOURITE SUBJECT: %s.",
@@ -2951,17 +2950,17 @@ const DEFAULT_DINNER_TEXT := {
 	"guest_pitch": "%s PUTS THE FORK DOWN. NOBODY CAME TO DINNER FOR A PITCH.",
 	"guest_business": "%s LIGHTS UP AND TALKS ABOUT THE BUSINESS FOR A WHILE.",
 	"guest_touchy": "%s STUDIES THE MENU WHILE THE TEAM AIRS ITS LAUNDRY.",
-	"guest_good": "%s HAD A GOOD NIGHT AT YOUR TABLE. (CLIENT MOOD +%d)",
-	"guest_bad": "%s WENT HOME EARLY. (CLIENT MOOD %d)",
-	"guest_ok": "%s HAD A PERFECTLY FINE EVENING.",
-	"guest_referral": "%s WILL MENTION YOU TO A FRIEND. JOHN'S NEXT PITCHES GO EASIER.",
+	"guest_good": "%s HAD A GOOD NIGHT. (MOOD +%d)",
+	"guest_bad": "%s WENT HOME EARLY. (MOOD %d)",
+	"guest_ok": "%s HAD A FINE EVENING.",
+	"guest_referral": "A WARM REFERRAL FOR JOHN FROM %s.",
 	"tab": "Tonight is on the company. You have earned it. Order what you like, within reason. I will be reading the receipt.",
 	"tab_usual": "THE USUAL, THANK YOU",
 	"tab_fancy": "STEAKS FOR THE TABLE",
 	"tab_modest": "KEEP IT MODEST",
 	"tab_line": "%s PICKED UP THE TAB.",
-	"tab_fancy_line": "%s PICKED UP THE TAB AND READ THE RECEIPT TWICE.",
-	"tab_modest_line": "%s PICKED UP THE TAB AND NOTICED YOU WENT EASY ON IT.",
+	"tab_fancy_line": "%s PAID AND READ THE RECEIPT TWICE.",
+	"tab_modest_line": "%s PAID. YOU WENT EASY ON THE TAB.",
 	"talk_listen": "STAY AND LISTEN",
 	"talk_advise": "OFFER SOME ADVICE",
 	"talk_leave": "CALL IT A NIGHT",
@@ -3470,8 +3469,6 @@ func _dinner_lines() -> Array:
 	var out := []
 	if g.is_empty() or not g.get("variety", false):
 		return out
-	if g.has("order") and bool(g.order.fit):
-		out.append(str(DINNER_TEXT.order_line) % [str(dish(str(g.order.pick)).label), ORDER_BONUS])
 	if g.has("tab"):
 		var key := "tab_fancy_line" if str(g.tab) == "fancy" else ("tab_modest_line" if str(g.tab) == "cheap" else "tab_line")
 		out.append(str(DINNER_TEXT[key]) % _host().get_slice(" ", 0).to_upper())

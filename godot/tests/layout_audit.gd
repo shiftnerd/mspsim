@@ -585,5 +585,52 @@ func _floor_phase() -> void:
 		_begin()
 		await _end("%s result" % id)
 		out.close()
+	# ---- R6: the variety dinner (overlay): the intro with what you know, the ordering round, a table event, the result page
+	var since := {"HOME BREWING": 2, "FANTASY FOOTBALL": 3, "RAISES AND BONUSES": 1}
+	var alan := {"likes": ["HOME BREWING", "FANTASY FOOTBALL"], "hates": ["RAISES AND BONUSES"], "since": since, "diet": "mushroom", "diet_since": 2}
+	out.known = {"Alan": alan}
+	_begin()
+	out.start("dinner", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"], "variety": true, "guest": 0})
+	await _end("dinner variety intro")
+	out.begin_play()
+	_begin()
+	await _end("dinner variety order")
+	out.dinner_order(0)
+	out.dinner_event("phone", "Garrison")
+	_begin()
+	await _end("dinner variety event")
+	out.g.score = 99
+	out.g.order.fit = true
+	out.g.order.pick = "flatbread"
+	out.g["tab"] = "fancy"
+	out.dinner_guest().mood = 3
+	out._dinner_end()
+	_begin()
+	await _end("dinner variety result")
+	out.close()
+	out.known = {}
+	# ---- R4: the intro page of every themed escape room (the room version carries the theme's own, longer intro)
+	for theme in out.THEME_ORDER:
+		out.start("escape", false, {"party": ["Alan", "Garrison", "Dan"], "theme": theme, "panel": true})
+		out._traveled = true  # the room's intro text without travelling there
+		_begin()
+		await _end("escape intro " + str(theme))
+		out._traveled = false
+		out.close()
+	# ---- R23: the caption of a conference session you are sitting in (the longest line of the agenda)
+	var expo := root.get_node("Expo")
+	var longest := ""
+	for round_i in expo.ROUNDS.size():
+		for session in expo.pool(round_i):
+			for line in expo.talk_lines(session):
+				if str(line).length() > longest.length():
+					longest = str(line)
+	expo.seated = {"index": 0, "id": "patch", "title": "PATCH MANAGEMENT BEST PRACTICES", "door": 3, "lines": [longest, "X"], "at": 0, "t": 0.0, "clock": 10.0, "hours": 0.0}
+	expo._canvas.visible = true
+	_begin()
+	await _end("session talk")
+	expo.seated = {}
+	expo._canvas.visible = false
+	root.get_node("Game").ui_open = false
 	out.enabled = false
 	print("floor phase done for ", fmt, " (crew ", crew.members.size(), ")")
