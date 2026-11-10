@@ -1,5 +1,7 @@
 # Scope: 2-player local couch co-op (roadmap R34)
 
+> Update 2026-11-10: a Switch port is dropped (not an approved developer for now). Read every Switch mention below as history; the pad work stands for PC.
+
 Read-only scoping pass (Nov 2026) from the code at commit 752a63f, not play-tested. Every claim below was checked by grep or by reading the file; line numbers drift, function names are the stable handle. One claim was checked by running Godot 4.7.2 on a scratch script outside the repo (the device-id behaviour in section 2.1, finding 5). Items marked (inferred) are readings of the code, not runs. Section 8 lists what I could not determine.
 
 **User design (decided):** optional 2-player local co-op, Mario style: ONE shared screen in the SAME room, the camera frames the group, a player cannot run out of the shared view (the other holds the group back), anyone who uses a door or room portal takes everyone with them. Takeover screens (computer, phone, cards, day report, mini-game pages) become NON-BLOCKING: the world keeps running, and the takeover is the only thing that splits the screen (one pane per player, the other player keeps playing in the room). Outings become genuinely two-player. Two gamepads, one each; keyboard plus pad for testing. Switch or PC later, never mobile; online is far off, so keep the architecture netcode-friendly. Single-player must stay byte-for-byte the default (a feature flag).
