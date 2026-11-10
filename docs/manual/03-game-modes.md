@@ -33,6 +33,10 @@ coffee machine.
 *You will use:* the [computer and phone](05-your-computer-and-phone.md), the [whole building](04-the-office.md), and the [after-work
 outings](06-after-work.md).
 
+> **NOTE:** Do well and the company sends you to a trade conference for a day (an owner can buy a ticket too). You walk the
+> resort. Each door in the hall is a session: the card asks whether you want a seat, then **sit on a free chair (`E`)** and the talk
+> plays line by line. **`E` or `Enter`** skips to the next line, and you stand up when it is over. The expo hall is open all day.
+
 ## OWNER CAMPAIGN
 
 Same company, same building, much worse sleep. You play one of the two owners, and the question changes from "how do I fix this?"
