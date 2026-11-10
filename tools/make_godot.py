@@ -30706,6 +30706,167 @@ func _forget() -> void:
     sticky = 0
 ''')
 
+write("scripts/chair_shove.gd", '''extends Node
+# gdlint:disable=max-line-length
+# CHAIR SHOVE (roadmap R12): standing up, you push a seated coworker's rolling chair. Stand next to their chair, HOLD SHIFT (run)
+# and press E (interact): the chair rolls away from you with them in it, coasts, stops at the wall, the desk and the props (the
+# rolling chair's own limits, chair_roll.gd), and after a moment they scoot back to the desk. They react like a coworker you
+# bumped with your own chair: a friend laughs (+1), a cold one glares (-2), Alan minds (-1), the rest have a line; at most one
+# opinion change per person every 25 s. Plain E still talks to them. Every push counts for the Career (PUSHY at 10).
+# The node lives under the seat while the chair is away from its desk and frees itself when it is home again or the coworker
+# stands up (then the chair snaps home, as an empty rolled chair does when somebody else takes it).
+
+const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
+const REACH := 30.0  # px between you and the seat
+const SHOVE := 64.0  # px/s the chair leaves your hands at
+const HOME_AFTER := 3.0  # seconds it stands still before they scoot back
+const HOME_SPEED := 38.0
+const WHO_MS := 25000  # one opinion change per person in this time
+const REACT := {
+    "Alan": {"base": -1, "line": "ALAN: I HAD A CHANGE WINDOW OPEN. IT IS CLOSED NOW."},
+    "Garrison": {"base": 0, "line": "GARRISON: AGAIN! FASTER THIS TIME!"},
+    "Maya": {"base": 0, "line": "MAYA: HEY! I WAS MID-SENTENCE!"},
+    "Dan": {"base": 0, "line": "DAN: ...AND I AM BACK. GOOD PUSH."},
+    "John": {"base": 0, "line": "JOHN: I AM ON A CALL! (HE IS NOT.)"},
+    "Morgan": {"base": 0, "line": "MORGAN: THIS IS GOING IN YOUR REVIEW."},
+}
+
+static var _who := {}  # cast name -> ticks of the last opinion change
+
+var seat: Node2D = null
+var npc: Node2D = null
+var roll: Node = null  # a chair_roll.gd bound to the seat: the chair, how far it may go, the walls
+var pushes := 0
+
+var _idle := 0.0
+
+
+# Shift + E next to an occupied rolling chair (player.gd). false = nothing to push here: the E goes on to whatever is nearest
+static func try_shove(p: Node) -> bool:
+    if not p.is_inside_tree():
+        return false
+    var best: Node2D = null
+    var best_d := REACH
+    for n in p._near:
+        if not is_instance_valid(n) or n.get("occupied") != true:
+            continue
+        var d: float = absf(n.global_position.x - p.global_position.x)
+        if d <= best_d:
+            best_d = d
+            best = n
+    if best == null:
+        return false
+    var sitter := _sitter(p.get_tree(), best)
+    if sitter == null:
+        return false
+    var node: Node = best.get_node_or_null("ChairShove")
+    if node == null:
+        node = new()
+        node.name = "ChairShove"
+        best.add_child(node)
+        if not node.begin(best, sitter):
+            best.remove_child(node)
+            node.queue_free()
+            return false
+    var dir := signf(best.global_position.x - p.global_position.x)
+    if dir == 0.0:
+        dir = 1.0 if str(p.facing) == "right" else -1.0
+    node.kick(dir)
+    _react(sitter)
+    Career.note_shove()
+    p.reach(best.global_position.x)
+    return true
+
+
+# the coworker in this seat (somebody on a call, in a conversation or hidden is left alone)
+static func _sitter(tree: SceneTree, s: Node) -> Node2D:
+    for n in tree.get_nodes_in_group("npcs"):
+        if n.get("seat") == s and n.visible and not bool(n.get("_hidden")) and float(n.get("_hold")) <= 0.0 and str(n.get("role")) == "":
+            return n
+    return null
+
+
+static func _react(n: Node) -> void:
+    var who := str(n.get("cast_name"))
+    var glyph := "!"
+    var line := "%s: HEY!" % (who.to_upper() if who != "" else "THEY")
+    if who == "":
+        n.react_hit(glyph)
+        Hints.toast("WHEELS. THEY DID NOT ASK FOR THAT.", 2.2)
+        return
+    var react: Dictionary = REACT.get(who, {"base": 0, "line": line})
+    var change := int(react.base)
+    line = str(react.line)
+    if Social.is_cold(who) or Social.is_hostile(who):
+        change = -2
+        line = "%s GLARES AT YOU FROM ACROSS THE ROOM." % who.to_upper()
+    elif Social.is_friendly(who):
+        change = 1
+        glyph = "heart"
+        line = "%s LAUGHS. WHEEE!" % who.to_upper()
+    var now := Time.get_ticks_msec()
+    if now - int(_who.get(who, -WHO_MS * 2)) >= WHO_MS:
+        _who[who] = now
+        Social.change(who, change)
+    n.react_hit(glyph)
+    Hints.toast(line, 2.6)
+
+
+# take hold of the seat's chair; false when this seat has no rolling chair (a couch, a booth)
+func begin(s: Node2D, sitter: Node2D) -> bool:
+    seat = s
+    npc = sitter
+    roll = CHAIR_ROLL.new()
+    add_child(roll)
+    return roll.bind(s)
+
+
+func kick(dir: float) -> void:
+    roll.vel = dir * SHOVE * (CHAIR_ROLL.STICKY_MAX if roll.sticky != 0 else 1.0)
+    pushes += 1
+    _idle = 0.0
+    Sfx.play("squeak")
+    if npc != null and npc.has_method("_play"):
+        npc._play("sit")  # hands off the keyboard while the chair is moving
+
+
+func rolling() -> bool:
+    return roll != null and (absf(roll.vel) > 1.0 or roll.off != 0.0)
+
+
+func _physics_process(delta: float) -> void:
+    if roll == null or not is_instance_valid(seat) or not is_instance_valid(roll.chair):
+        queue_free()
+        return
+    if not is_instance_valid(npc) or npc.get("seat") != seat:
+        _done(false)  # they stood up (or left): the chair is back at its desk
+        return
+    roll.vel = move_toward(roll.vel, 0.0, CHAIR_ROLL.FRICTION * delta)
+    roll._px = 0.0  # (rolling somebody else relieves nobody's stress)
+    roll._move(roll.vel * delta)
+    if absf(roll.vel) < 1.0:
+        _idle += delta
+        if _idle >= HOME_AFTER:
+            roll.off = move_toward(roll.off, 0.0, HOME_SPEED * delta)
+    else:
+        _idle = 0.0
+    roll._place()
+    npc.global_position.x = seat.global_position.x
+    if roll.off == 0.0 and absf(roll.vel) < 1.0:
+        _done(true)
+
+
+func _done(seated: bool) -> void:
+    roll.snap_home()
+    if seated and is_instance_valid(npc):
+        npc.global_position.x = seat.global_position.x
+        if npc.has_method("_refresh") and float(npc.get("_hold")) <= 0.0:
+            npc._refresh()  # back to typing
+    if get_parent() != null:
+        get_parent().remove_child(self)
+    queue_free()
+''')
+
 
 write("scripts/cornhole_game.gd", '''extends RefCounted
 # gdlint:disable=max-line-length,class-definitions-order
@@ -31947,6 +32108,17 @@ const SLICK_DIP := 0.18  # share of the speed a puddle takes (x chair.slick)
 # PAR (Difficulty "chair.par" scales both): total seconds for 3 and 2 stars
 const PAR3 := 22.0
 const PAR2 := 31.0
+# the courses (R12): THE STRAIGHT is the long room above. THE GAUNTLET is shorter (its line is drawn on the floor at THE BENCH)
+# and tighter: a zone every 56 px, two props in every one and the empty lane is always the one next to the last, so you weave.
+# `par` scales the star times (the length, plus a little for the weaving).
+const COURSE_ORDER := ["straight", "gauntlet"]
+const COURSES := {
+    "straight": {"label": "THE STRAIGHT", "len": LEN, "checks": CHECK_FRAC, "names": CHECK_NAMES, "par": 1.0, "blurb": "THE LONG ROOM, START TO FINISH."},
+    "gauntlet": {"label": "THE GAUNTLET", "len": 684.0, "checks": [0.34, 0.67], "names": ["THE RACKS", "THE PARTS CAGE"], "par": 0.76, "blurb": "SHORTER AND TIGHTER: EVERY GAP IS IN ANOTHER LANE."},
+}
+const G_ZONES := 11
+const G_FIRST := 96.0
+const G_GAP := 56.0
 # the five who race, with a personality (skill 0..1 is rolled around `skill` by the seed and the tier)
 const RACERS := {
     "Alan":
@@ -32025,6 +32197,10 @@ var slick := false  # in a puddle right now
 var oil_seen := false
 var obstacles: Array = []  # {x, lane, kind, down, hit}
 var rivals: Array = []  # {n, s, v, cur, fade, stalls, stall_t, hold, lane, pref, done, color, style, skill, flag}
+var course := "straight"  # a COURSES id
+var length := LEN  # pos of this course's FINISH line
+var checks: Array = CHECK_FRAC
+var check_names: Array = CHECK_NAMES
 var events: Array = []  # what just happened, for sounds (go, crash, cone, oil, check, finish, false); the owner clears it
 var params := {"crash": 1.0, "stamina": 1.0, "slick": 1.0, "par": 1.0}
 var pushes := 0
@@ -32064,15 +32240,26 @@ static func prop_ahead(kind: String) -> float:
     return prop_width(kind) * 0.5 + REACH
 
 
+# the pos of checkpoint i on this race's course
+func cp(i: int) -> float:
+    return length * float(checks[i])
+
+
 # ---- setup ---------------------------------------------------------------------------------------
 # params: crash (seconds a crash costs), stamina (x cost), slick (x puddle), par (x star times), skill (added to the rivals).
 # racers: the names that race (any of ORDER). rng: a seeded generator (the props, rival skill and mistakes).
 func setup(p: Dictionary, racers: Array, rng: RandomNumberGenerator) -> void:
     for k in p:
         params[k] = p[k]
+    course = str(p.get("course", "straight"))
+    if not COURSES.has(course):
+        course = "straight"
+    length = float(COURSES[course].len)
+    checks = COURSES[course].checks
+    check_names = COURSES[course].names
     _cp_pos = []
-    for i in CHECK_FRAC.size():
-        _cp_pos.append(check_pos(i))
+    for i in checks.size():
+        _cp_pos.append(cp(i))
     _lay_course(rng)
     pos = 0.0
     speed = 0.0
@@ -32141,6 +32328,9 @@ func _stall_at(index: int, secs: float) -> Dictionary:
 # (the early zones are cones and puddles, later ones add the signs, cans, boxes and pallets)
 func _lay_course(rng: RandomNumberGenerator) -> void:
     obstacles = []
+    if course == "gauntlet":
+        _lay_gauntlet(rng)
+        return
     for z in ZONES:
         var lanes := [0, 1, 2]
         for i: int in [2, 1]:  # shuffle
@@ -32162,13 +32352,26 @@ func _lay_course(rng: RandomNumberGenerator) -> void:
             )
 
 
+# THE GAUNTLET: two props in every zone, and the empty lane moves one lane over every time
+func _lay_gauntlet(rng: RandomNumberGenerator) -> void:
+    var free := 1
+    for z in G_ZONES:
+        var roll := rng.randi() % 2  # the gap moves one lane over (from the middle: either way)
+        free = (roll * 2) if free == 1 else 1
+        var pool: Array = SOFT_POOL if z < 2 else (MID_POOL if z < 6 else HARD_POOL)
+        var at := G_FIRST + G_GAP * float(z) + rng.randf_range(-4.0, 4.0)
+        for l in LANES:
+            if l != free:
+                obstacles.append({"x": at, "lane": l, "kind": str(pool[rng.randi() % pool.size()]), "down": false, "hit": false})
+
+
 # ---- the clock ------------------------------------------------------------------------------------
 func step(dt: float) -> void:
     if phase == "done":
         end_t += dt
         clock += dt
         speed *= exp(-1.6 * dt)  # coast over the line
-        pos = minf(pos + speed * dt, LEN + 70.0)
+        pos = minf(pos + speed * dt, length + 70.0)
         wobble = maxf(0.0, wobble - dt)
         _lane_move(dt)
         _advance(rivals, dt, clock)
@@ -32327,7 +32530,7 @@ func _drive(dt: float) -> void:
         cp_next += 1
         _say("CHECKPOINT %d OF %d" % [cp_next, _cp_pos.size()], 1.2)
         events.append("check")
-    if pos >= LEN:
+    if pos >= length:
         _say("FINISH!", 2.0)
         events.append("finish")
         _finish()
@@ -32372,7 +32575,7 @@ func _advance(list: Array, dt: float, at: float) -> void:
                 r.hold = -1
             continue
         r.flag = ""
-        var frac := float(r.s) / LEN
+        var frac := float(r.s) / length
         var target := float(r.v) * (1.0 + float(r.fade) * (0.5 - frac))
         r.cur = move_toward(float(r.cur), target, 34.0 * dt)
         r.s = float(r.s) + float(r.cur) * dt
@@ -32382,7 +32585,7 @@ func _advance(list: Array, dt: float, at: float) -> void:
             r.hold = int(obstacles[int(st.o)].lane) if int(st.o) >= 0 else -1
             r.flag = "spin" if int(st.o) < 0 else "!"
             r.stalls.remove_at(0)
-        if float(r.s) >= LEN:
+        if float(r.s) >= length:
             r.done = maxf(0.0, at)
 
 
@@ -32452,7 +32655,7 @@ func stars() -> int:
     if dnf or finish_t < 0.0:
         return 0
     var t := total()
-    var par := float(params.par)
+    var par := float(params.par) * float(COURSES[course].par)
     if t <= PAR3 * par:
         return 3
     if t <= PAR2 * par:
@@ -32469,6 +32672,433 @@ func comment() -> String:
             return str(RACERS[list[1].n].lose)
         return "NOBODY ELSE TURNED UP. YOU WIN BY DEFAULT."
     return str(RACERS[top.n].win) if RACERS.has(top.n) else ""
+''')
+
+write("scripts/chair_fight.gd", '''extends RefCounted
+# gdlint:disable=max-line-length,class-definitions-order
+# CHAIR FIGHT (roadmap R12): a duel on rolling chairs in the warehouse, the third event on the chair race card. A RefCounted with
+# no autoload references so tests can run it headless (the Difficulty numbers come in as `params`, see Outings._chair_setup);
+# chair_track.gd draws it with the race's own puppets (this class has the fields the track reads: pos, lane, wobble, rivals).
+# Two chairs face each other on a strip of the floor (`LO` to `HI`, the same course positions as the race) with three lanes.
+#   Z and X in turn push you off the way you face (the race's rhythm and stamina, to the number).
+#   LEFT / RIGHT spin the chair around to face that way (it takes a moment, and you cannot push while it turns).
+#   UP / DOWN change lane: in another lane the chairs roll past each other.
+# When the chairs meet in one lane, whoever rolls at the other clearly faster (by `EDGE`) lands a BUMP: the other chair is knocked
+# back and spins, dizzy, for a second (and cannot be bumped again for a moment). About the same speed is a CLASH: both bounce,
+# no point. Rolling into a chair that is dizzy, turning or looking the other way counts as soon as you are fast enough.
+# First to TARGET bumps wins; when the clock runs out the most bumps win. The opponent is one of the crew, drawn on the seeded
+# stream; the rest of the racers watch from the ends of the strip.
+
+const ChairRace := preload("res://scripts/chair_race.gd")
+const LANES := 3
+const LO := 250.0  # the strip, as course positions (ChairRace.world_x): the middle of the warehouse floor
+const HI := 510.0
+const TARGET := 3
+const LIMIT := 75.0  # seconds of play
+const COUNT := 3.0
+const HIT_X := 15.0  # the chairs touch when they are closer than this
+const HIT_LANE := 0.62
+const MIN_BUMP := 16.0  # px/s towards the other chair before a touch counts as a bump
+const EDGE := 7.0  # px/s you must be faster than the other chair to win a head-on
+const DIZZY := 1.3  # seconds a bumped chair spins
+const SAFE := 2.4  # seconds a bumped chair cannot be bumped again
+const TURN := 0.3  # seconds a spin-around takes
+const HIT_GAP := 0.45  # seconds before the two chairs can touch again
+const WALL_BOUNCE := 0.25
+const TIER_SKILL := 2.5  # x the tier's chair.skill (-0.08 / 0 / +0.08): in a duel the other chair's legs are all there is
+# the crew as fighters: how they push and what they say
+const STYLES := {
+    "Alan": {"skill": 0.46, "dodge": 0.7, "chase": 0.75, "win": "ALAN: I FILED THAT UNDER 'PREVENTIVE MAINTENANCE'.", "lose": "ALAN: THAT CHAIR IS NOT RATED FOR THIS."},
+    "Garrison": {"skill": 0.56, "dodge": 0.0, "chase": 0.3, "win": "GARRISON: UNDEFEATED. DO NOT CHECK THAT.", "lose": "GARRISON: REMATCH. NOW. SAME CHAIRS."},
+    "Dan": {"skill": 0.5, "dodge": 0.3, "chase": 0.55, "win": "DAN: I BARELY PUT MY COFFEE DOWN.", "lose": "DAN: GOOD BUMP. I FELT THAT IN MY TICKETS."},
+    "Maya": {"skill": 0.52, "dodge": 0.4, "chase": 0.4, "win": "MAYA: YOU NEVER SAW ME COMING. NOBODY DOES.", "lose": "MAYA: MY WHEELS WERE STICKY. WRITE THAT DOWN."},
+    "John": {"skill": 0.5, "dodge": 0.2, "chase": 0.6, "win": "JOHN: AND THAT IS HOW YOU CLOSE.", "lose": "JOHN: I WAS ON A CALL. IN MY HEAD."},
+}
+
+var params := {"stamina": 1.0, "skill": 0.0}
+var rng := RandomNumberGenerator.new()
+var chairs: Array = []  # [you, the opponent]: {n, x, s, v, lane, lane_to, face, stam, key, last, dizzy, safe, turn, bumps, flag, color, ...}
+var rivals: Array = []  # what the track draws beside you: the opponent (chairs[1]) and whoever watches
+var obstacles: Array = []  # (the track asks: there are none)
+var arena := [LO, HI]
+var fight := true
+var phase := "count"  # count, go, done
+var clock := -COUNT
+var end_t := 0.0
+var winner := -1  # 0 you, 1 them, 2 a draw
+var msg := ""
+var msg_t := 0.0
+var feel := ""
+var feel_t := 0.0
+var events: Array = []  # go, bump, ouch, clash, clunk, finish (for sounds; the owner clears it)
+var clashes := 0
+var you_auto := false  # tests and demos: the crew's driver has your chair too
+var cp_next := 0  # (the track asks: no checkpoints)
+var checks: Array = []
+var length := HI
+
+var _hit_cd := 0.0
+var _flash := {0: 0.0, 1: 0.0}
+
+# what chair_track.gd reads for "You"
+var pos: float:
+    get:
+        return float(chairs[0].x) if not chairs.is_empty() else LO
+var lane: float:
+    get:
+        return float(chairs[0].lane) if not chairs.is_empty() else 1.0
+var wobble: float:
+    get:
+        return float(chairs[0].dizzy) if not chairs.is_empty() else 0.0
+var face: int:
+    get:
+        return int(chairs[0].face) if not chairs.is_empty() else 1
+var stam: float:
+    get:
+        return float(chairs[0].stam) if not chairs.is_empty() else 100.0
+
+
+# params: stamina (x cost of your pushes), skill (added to the opponent's), opponent (a name, for tests and the toolbox).
+# names: the racers who came (any of ChairRace.ORDER): one fights, the rest watch.
+func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
+    for k in p:
+        params[k] = p[k]
+    rng = r
+    var pool: Array = names.filter(func(n: String) -> bool: return STYLES.has(n))
+    var who := str(params.get("opponent", ""))
+    if not STYLES.has(who):
+        who = str(pool[rng.randi() % pool.size()]) if not pool.is_empty() else "Garrison"
+    var st: Dictionary = STYLES[who]
+    chairs = [_chair("You", LO + 40.0, 1, Color.WHITE, 0.5), _chair(who, HI - 40.0, -1, ChairRace.RACERS[who].color, clampf(float(st.skill) + TIER_SKILL * float(params.get("skill", 0.0)) + (rng.randf() - 0.5) * 0.06, 0.1, 0.9))]
+    rivals = [chairs[1]]
+    var n := 0
+    for other in pool:
+        if other == who:
+            continue
+        var left := n % 2 == 0
+        var at := (LO - 26.0 - 22.0 * float(n >> 1)) if left else (HI + 26.0 + 22.0 * float(n >> 1))
+        rivals.append({"n": other, "s": at, "lane": float([0, 2][(n >> 1) % 2]), "flag": "", "face": 1 if left else -1, "color": ChairRace.RACERS[other].color, "watch": true})
+        n += 1
+    phase = "count"
+    clock = -COUNT
+    end_t = 0.0
+    winner = -1
+    msg = ""
+    msg_t = 0.0
+    clashes = 0
+    events = []
+
+
+func _chair(who: String, x: float, facing: int, color: Color, skill: float) -> Dictionary:
+    return {
+        "n": who,
+        "x": x,
+        "s": x,
+        "v": 0.0,
+        "lane": 1.0,
+        "lane_to": 1,
+        "face": facing,
+        "stam": 100.0,
+        "key": -1,
+        "last": -10.0,
+        "dizzy": 0.0,
+        "safe": 0.0,
+        "turn": 0.0,
+        "bumps": 0,
+        "flag": "",
+        "color": color,
+        "skill": skill,
+        "pushes": 0,
+        "good": 0,
+        # the driver's own notes (the crew, or the test bot)
+        "rest": false,
+        "gap": 0.4,
+        "see_t": 0.0,
+        "lane_t": 0.0,
+        "dodge_cd": 0.0,
+    }
+
+
+func opponent() -> String:
+    return str(chairs[1].n)
+
+
+func score() -> Array:
+    return [int(chairs[0].bumps), int(chairs[1].bumps)]
+
+
+func _say(text: String, secs := 1.2) -> void:
+    msg = text
+    msg_t = secs
+
+
+func countdown_text() -> String:
+    return "" if clock >= 0.0 else str(int(ceilf(-clock)))
+
+
+func time_left() -> int:
+    return maxi(0, ceili(LIMIT - maxf(clock, 0.0)))
+
+
+func lit(key: int) -> bool:
+    return float(_flash[key]) > 0.0
+
+
+# ---- the controls (chair 0 is you) ---------------------------------------------------------------------
+func push(key: int) -> bool:
+    return push_of(0, key)
+
+
+func change_lane(dir: int) -> void:
+    lane_of(0, dir)
+
+
+func spin(dir: int) -> bool:
+    return spin_of(0, dir)
+
+
+func lane_of(i: int, dir: int) -> void:
+    if phase == "done":
+        return
+    var c: Dictionary = chairs[i]
+    c.lane_to = clampi(int(c.lane_to) + dir, 0, LANES - 1)
+
+
+# face the other way: the chair spins around (TURN seconds without a push)
+func spin_of(i: int, dir: int) -> bool:
+    var c: Dictionary = chairs[i]
+    if phase != "go" or dir == 0 or signi(dir) == int(c.face) or float(c.dizzy) > 0.0 or float(c.turn) > 0.0:
+        return false
+    c.face = signi(dir)
+    c.turn = TURN
+    return true
+
+
+# one push off the floor, the way the chair faces: the race's rhythm and stamina (ChairRace.push)
+func push_of(i: int, key: int) -> bool:
+    var c: Dictionary = chairs[i]
+    if phase != "go" or float(c.dizzy) > 0.0 or float(c.turn) > 0.0:
+        return false
+    var gap: float = clock - float(c.last)
+    var same: bool = key == int(c.key)
+    var q := 1.0
+    var cost: float = ChairRace.STAM_COST
+    var how := "GOOD"
+    if int(c.key) < 0:
+        gap = (ChairRace.GAP_LO + ChairRace.GAP_HI) * 0.5
+        same = false
+    if same:
+        q = 0.25
+        cost = ChairRace.STAM_SAME
+        how = "SAME LEG"
+    elif gap < ChairRace.MASH_GAP:
+        q = 0.15
+        cost = ChairRace.STAM_MASH
+        how = "TOO FAST"
+    elif gap < ChairRace.GAP_LO:
+        var t: float = (gap - ChairRace.MASH_GAP) / (ChairRace.GAP_LO - ChairRace.MASH_GAP)
+        q = lerpf(0.3, 1.0, t)
+        cost = lerpf(ChairRace.STAM_MASH, ChairRace.STAM_COST, t)
+        how = "RUSHED"
+    elif gap > ChairRace.GAP_HI:
+        q = maxf(0.6, 1.0 - (gap - ChairRace.GAP_HI) * 0.5)
+        how = "SLOW"
+    else:
+        c.good = int(c.good) + 1
+    var f := 0.3 + 0.7 * clampf(float(c.stam) / 100.0, 0.0, 1.0)
+    if float(c.stam) < 15.0:
+        how = "TIRED"
+    c.v = float(c.v) + float(c.face) * ChairRace.IMPULSE * q * f
+    c.stam = maxf(0.0, float(c.stam) - cost * (float(params.stamina) if i == 0 else 1.0))
+    c.pushes = int(c.pushes) + 1
+    c.key = key
+    c.last = clock
+    if i == 0:
+        feel = how
+        feel_t = 0.8
+        _flash[key] = 0.25
+    return true
+
+
+# ---- the clock -----------------------------------------------------------------------------------------
+func step(dt: float) -> void:
+    msg_t = maxf(0.0, msg_t - dt)
+    feel_t = maxf(0.0, feel_t - dt)
+    for k in _flash:
+        _flash[k] = maxf(0.0, float(_flash[k]) - dt)
+    clock += dt
+    if phase == "done":
+        end_t += dt
+    elif clock < 0.0:
+        return
+    elif phase == "count":
+        phase = "go"
+        _say("GO!", 0.9)
+        events.append("go")
+    _hit_cd = maxf(0.0, _hit_cd - dt)
+    for i in 2:
+        if phase == "go" and (i == 1 or you_auto):
+            _drive(i, dt)
+        _roll(chairs[i], dt)
+    if phase != "go":
+        return
+    _meet()
+    if int(chairs[0].bumps) >= TARGET or int(chairs[1].bumps) >= TARGET or clock >= LIMIT:
+        _finish()
+
+
+func _roll(c: Dictionary, dt: float) -> void:
+    c.dizzy = maxf(0.0, float(c.dizzy) - dt)
+    c.safe = maxf(0.0, float(c.safe) - dt)
+    c.turn = maxf(0.0, float(c.turn) - dt)
+    c.flag = "spin" if (float(c.dizzy) > 0.0 or float(c.turn) > 0.0) else ""
+    c.lane = move_toward(float(c.lane), float(c.lane_to), ChairRace.LANE_RATE * dt)
+    var v: float = float(c.v) * exp(-ChairRace.DRAG * dt)
+    v = move_toward(v, 0.0, 1.5 * dt)
+    var x: float = float(c.x) + v * dt
+    if x < LO or x > HI:
+        x = clampf(x, LO, HI)
+        if absf(v) > 20.0:
+            events.append("clunk")
+            v = -v * WALL_BOUNCE
+        else:
+            v = 0.0
+    c.x = x
+    c.s = x
+    c.v = v
+    c.stam = minf(100.0, float(c.stam) + (ChairRace.STAM_REGEN if clock - float(c.last) > 0.45 else ChairRace.STAM_STEADY) * dt)
+
+
+# the two chairs touch
+func _meet() -> void:
+    var a: Dictionary = chairs[0]
+    var b: Dictionary = chairs[1]
+    var gap: float = float(b.x) - float(a.x)
+    if _hit_cd > 0.0 or absf(gap) >= HIT_X or absf(float(a.lane) - float(b.lane)) >= HIT_LANE:
+        return
+    var dir := 1.0 if gap >= 0.0 else -1.0  # from you to them
+    var ta: float = float(a.v) * dir  # how fast each rolls at the other
+    var tb: float = -float(b.v) * dir
+    if ta + tb <= 4.0:
+        return  # drifting apart, or barely moving
+    _hit_cd = HIT_GAP
+    # a chair that is dizzy, turning, or has its back to the other one is not attacking
+    var pa: float = ta if _attacks(a, dir) else 0.0
+    var pb: float = tb if _attacks(b, -dir) else 0.0
+    var closing := ta + tb
+    var kick := 16.0 + 0.3 * closing
+    var mid: float = (float(a.x) + float(b.x)) * 0.5
+    a.x = clampf(mid - dir * (HIT_X * 0.5 + 0.5), LO, HI)
+    b.x = clampf(mid + dir * (HIT_X * 0.5 + 0.5), LO, HI)
+    a.v = -dir * kick
+    b.v = dir * kick
+    if pa >= MIN_BUMP and pa - pb > EDGE and float(b.safe) <= 0.0:
+        _bump(0, 1, dir)
+    elif pb >= MIN_BUMP and pb - pa > EDGE and float(a.safe) <= 0.0:
+        _bump(1, 0, -dir)
+    elif maxf(pa, pb) >= MIN_BUMP:
+        clashes += 1
+        _say("CLASH! NOBODY GIVES.", 1.0)
+        events.append("clash")
+    else:
+        events.append("tap")
+
+
+func _attacks(c: Dictionary, toward: float) -> bool:
+    return float(c.dizzy) <= 0.0 and float(c.turn) <= 0.0 and float(c.face) * toward > 0.0
+
+
+func _bump(by: int, on: int, dir: float) -> void:
+    var w: Dictionary = chairs[by]
+    var l: Dictionary = chairs[on]
+    w.bumps = int(w.bumps) + 1
+    w.v = float(w.v) * 0.5
+    l.v = dir * (absf(float(l.v)) * 1.5 + 8.0)
+    l.dizzy = DIZZY
+    l.safe = SAFE
+    if by == 0:
+        _say("BUMP! %d TO %d" % score(), 1.4)
+        events.append("bump")
+    else:
+        _say("%s GOT YOU! %d TO %d" % [str(w.n).to_upper(), int(chairs[0].bumps), int(chairs[1].bumps)], 1.4)
+        events.append("ouch")
+
+
+func _finish() -> void:
+    phase = "done"
+    end_t = 0.0
+    var s := score()
+    winner = 0 if s[0] > s[1] else (1 if s[1] > s[0] else 2)
+    _say("THAT IS THE FIGHT!" if maxi(s[0], s[1]) >= TARGET else "TIME!", 2.0)
+    events.append("finish")
+
+
+# ---- the driver (the crew; with you_auto, your chair too) ------------------------------------------------
+# faces the other chair, pushes in a rhythm its skill allows, rests when it is out of breath, follows you into your lane after
+# a beat, and (the careful ones) ducks into another lane when it is about to lose a head-on
+func _drive(i: int, dt: float) -> void:
+    var c: Dictionary = chairs[i]
+    var o: Dictionary = chairs[1 - i]
+    var st: Dictionary = STYLES.get(str(c.n), {"dodge": 0.3, "chase": 0.5})
+    var skill: float = float(c.skill)
+    var gap: float = float(o.x) - float(c.x)
+    var toward := 1 if gap >= 0.0 else -1
+    c.dodge_cd = maxf(0.0, float(c.dodge_cd) - dt)
+    if float(c.dizzy) > 0.0:
+        return
+    if int(c.face) != toward:  # they are behind me: notice, then spin around
+        c.see_t = float(c.see_t) + dt
+        if float(c.see_t) >= 0.5 - 0.3 * skill:
+            c.see_t = 0.0
+            spin_of(i, toward)
+        return
+    c.see_t = 0.0
+    var mine: float = float(c.v) * float(toward)
+    var theirs: float = -float(o.v) * float(toward)
+    var same_lane: bool = int(c.lane_to) == int(o.lane_to)
+    if same_lane and absf(gap) < 70.0 and theirs - mine > EDGE and float(c.dodge_cd) <= 0.0 and float(c.safe) <= 0.0:
+        c.dodge_cd = 1.6
+        if rng.randf() < float(st.dodge) * (0.6 + 0.8 * skill):
+            var to := int(c.lane_to) + (1 if int(c.lane_to) == 0 else (-1 if int(c.lane_to) == LANES - 1 else (1 if rng.randf() < 0.5 else -1)))
+            c.lane_to = clampi(to, 0, LANES - 1)
+            c.lane_t = -0.6  # and stays there for a moment
+    elif not same_lane:
+        c.lane_t = float(c.lane_t) + dt
+        if float(c.lane_t) >= float(st.chase) * (1.3 - 0.6 * skill):
+            c.lane_t = 0.0
+            c.lane_to = int(c.lane_to) + signi(int(o.lane_to) - int(c.lane_to))
+    else:
+        c.lane_t = minf(float(c.lane_t), 0.0)
+    # the legs
+    if float(c.stam) < 22.0:
+        c.rest = true
+    elif float(c.stam) > 55.0 + 20.0 * skill:
+        c.rest = false
+    var wait: float = float(c.gap)
+    if bool(c.rest) or clock - float(c.last) < wait or mine > 62.0:
+        return
+    var key := 1 - int(c.key) if int(c.key) >= 0 else 0
+    if rng.randf() < 0.22 * (1.0 - skill):
+        key = int(c.key) if int(c.key) >= 0 else 0  # the wrong leg
+    push_of(i, key)
+    c.gap = lerpf(0.56, 0.36, skill) + rng.randf_range(-0.05, 0.07) * (1.2 - skill)
+
+
+# ---- the result ----------------------------------------------------------------------------------------
+func stars() -> int:
+    var s := score()
+    if winner == 0:
+        return 3 if s[1] <= 1 else 2
+    if winner == 2 or s[0] >= 2:
+        return 1
+    return 0
+
+
+func comment() -> String:
+    if winner == 2:
+        return "A DRAW. BOTH CHAIRS NEED A NEW WHEEL."
+    var st: Dictionary = STYLES.get(opponent(), {})
+    return str(st.get("lose" if winner == 0 else "win", ""))
 ''')
 
 write("scripts/chair_track.gd", '''extends Node2D
@@ -32598,10 +33228,14 @@ func _sync() -> void:
         var l: float
         var flag := ""
         var shake := 0.0
+        var facing := 1.0
         if key == "You" or key == "You2":
             s = race.pos
             l = race.lane
             shake = race.wobble
+            if _fight():  # the chair fight: you can face either way, and a bumped chair spins
+                facing = float(race.face)
+                flag = str(race.chairs[0].flag)
         else:
             var r := _rival(key)
             if r.is_empty():
@@ -32610,21 +33244,27 @@ func _sync() -> void:
             l = float(r.lane)
             flag = str(r.flag)
             shake = 0.5 if flag == "!" else 0.0
+            facing = float(r.get("face", 1))
         node.position = Vector2(x0 + ChairRace.world_x(s), ChairRace.lane_y(l))
         var spin: bool = flag == "spin"
-        node.scale.x = (1.0 if int(_t * 8.0) % 2 == 0 else -1.0) if spin else 1.0
+        node.scale.x = ((1.0 if int(_t * 8.0) % 2 == 0 else -1.0) if spin else 1.0) * facing
         node.rotation = sin(_t * 44.0) * 0.09 * minf(1.0, shake) if shake > 0.0 else 0.0
     for pr in props:
         _mark(pr)
     var f: Dictionary = Game.FORMATS[Game.format]
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
-        _player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + view.x * 0.1, 118.0)
+        _player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + (0.0 if _fight() else view.x * 0.1), 118.0)
     if _cam != null:  # a short screen (368x128, 320x180) looks lower down, so the floor is not under the HUD
         var centre: float = float(f.cam_y) if f.follow else 64.0
         _cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
     queue_redraw()
     _tags.queue_redraw()
+
+
+# the chair fight (chair_fight.gd) is drawn with the race's puppets: it has a strip of floor instead of a course
+func _fight() -> bool:
+    return race != null and race.get("fight") == true
 
 
 func _rival(key: String) -> Dictionary:
@@ -32659,8 +33299,8 @@ func _mark(pr: Dictionary) -> void:
 func _draw() -> void:
     if race == null:
         return
-    var a := x0 + ChairRace.world_x(0.0)
-    var b := x0 + ChairRace.world_x(ChairRace.LEN)
+    var a := x0 + ChairRace.world_x(float(race.arena[0]) - 14.0 if _fight() else 0.0)
+    var b := x0 + ChairRace.world_x(float(race.arena[1]) + 14.0 if _fight() else float(race.length))
     # lane marks: dashed lines between the three lanes
     for k in 2:
         var y := (float(ChairRace.LANE_Y[k]) + float(ChairRace.LANE_Y[k + 1])) * 0.5 + 0.5
@@ -32669,8 +33309,19 @@ func _draw() -> void:
             draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
             x += 12.0
     # the checkpoints: a stripe across the floor, a post at each end and its number
-    for i in ChairRace.CHECK_FRAC.size():
-        var cx := x0 + ChairRace.world_x(ChairRace.check_pos(i))
+    if _fight():  # the two ends of the strip: a red and white post line
+        for end_x: float in race.arena:
+            var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
+            for k in 6:
+                draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
+    elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
+        var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
+        for row in 12:
+            for col in 3:
+                draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
+        PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)
+    for i in race.checks.size():
+        var cx := x0 + ChairRace.world_x(race.cp(i))
         var col := GREEN if i < race.cp_next else GOLD
         draw_rect(Rect2(cx - 1.0, 107.0, 3.0, 24.0), Color(col, 0.85))
         for py in [104.0, 131.0]:
@@ -32711,14 +33362,22 @@ func clear() -> void:
     if _cam != null and is_instance_valid(_cam):
         _cam.offset = Vector2.ZERO
     for key in puppets:
-        if is_instance_valid(puppets[key].node):
-            puppets[key].node.queue_free()
+        _drop(puppets[key].node)
     for pr in props:
-        if is_instance_valid(pr.node):
-            pr.node.queue_free()
+        _drop(pr.node)
     puppets = {}
     props = []
-    queue_free()
+    _drop(self)
+
+
+# out of the tree at once (another event picked on the card puts a new track and new puppets in the room in the same frame, under
+# the same names), freed at the end of the frame
+func _drop(n: Node) -> void:
+    if not is_instance_valid(n):
+        return
+    if n.get_parent() != null:
+        n.get_parent().remove_child(n)
+    n.queue_free()
 ''')
 
 
@@ -32956,6 +33615,7 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const ChairRace := preload("res://scripts/chair_race.gd")
 const ChairTrack := preload("res://scripts/chair_track.gd")
+const ChairFight := preload("res://scripts/chair_fight.gd")
 const PaintGame := preload("res://scripts/paintball_game.gd")
 const PaintTrack := preload("res://scripts/paintball_track.gd")
 const CornholeGame := preload("res://scripts/cornhole_game.gd")
@@ -33176,7 +33836,8 @@ const ROOM_INTRO := {
     "THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
-const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
+const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
+const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
 const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 # karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
@@ -33503,7 +34164,9 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
-var chair_best := {}  # chair race: best time in seconds per difficulty tier
+var chair_best := {}  # chair race: best time in seconds per difficulty tier (THE GAUNTLET: "<tier>:gauntlet")
+var chair_event := "straight"  # the event picked on the chair race card (CHAIR_EVENTS), kept for the session
+var paint_night := false  # paintball: tonight's match is the night one (drawn on the seeded stream when the card opens, LEFT / RIGHT changes it)
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
@@ -33988,6 +34651,8 @@ func _open(id: String, from_invite: bool) -> void:
         Owner.cash -= int(GAMES[id].cost)
     if id == "chair":
         _chair_setup()
+    if id == "paintball":
+        paint_night = bool(opts.night) if opts.has("night") else Difficulty.rng_for("paint.night", count).randf() < 0.34
     _canvas.queue_redraw()
 
 
@@ -34147,6 +34812,8 @@ func _event_key(event: InputEvent) -> int:
 func _event_key_p2(event: InputEvent) -> int:
     if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
         return KEY_X  # the second pilot's push
+    if game == "paintball" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "interact"))):
+        return KEY_Z  # A or X on player 2's pad: fire (B, held, ducks: _paint_tick reads it)
     var dir := Controls.nav(event, false)
     if dir != "":
         return PAD_ARROWS[dir]
@@ -34193,6 +34860,8 @@ func _press_page(key: int) -> void:
             ask_budget()
         else:
             begin_play()
+    elif key in [KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]:
+        _page_pick(-1 if key in [KEY_LEFT, KEY_A] else 1)
     elif key == KEY_ESCAPE:
         if Campaign.mode == "owner" and not lunch_on() and not casual_on():
             Owner.cash += int(GAMES[game].cost)
@@ -34231,8 +34900,8 @@ func _press_game(key: int) -> void:
 
 # the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner ramps too (R30: dinner.expect / fits / hints).
 func _mastery_lines(result: int) -> Array:
-    if result < 2 or Difficulty.fixed_take:
-        return []
+    if result < 2 or Difficulty.fixed_take or _career_game() != game:
+        return []  # (the chair fight has no skill-check numbers to ramp)
     var n := mini(int(Career.value("good." + game)), Difficulty.RAMP_PLAYS)
     if n >= Difficulty.RAMP_PLAYS:
         return ["FULL MASTERY."]
@@ -34255,9 +34924,9 @@ func _finish(result: int) -> void:
         _darts_finish(result)
     else:
         count += 1
-        best[game] = maxi(int(best.get(game, 0)), result)
+        best[_career_game()] = maxi(int(best.get(_career_game(), 0)), result)
         Career.note_outing(
-            game,
+            _career_game(),
             result,
             {
                 "perfects": int(g.get("perfect", 0)),
@@ -34267,6 +34936,8 @@ func _finish(result: int) -> void:
                 "served": int(g.game.served) if game == "grill" and g.has("game") else 0,
                 "clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2,
                 "dogs": int(g.game.dogs_plated) if game == "grill" and g.has("game") else 0,
+                "chair": _chair_career(result) if game == "chair" else {},
+                "caps": int(g.rules.you_caps) + int(g.rules.p2_caps) if game == "paintball" and g.has("rules") else 0,
                 "lunch": lunch_on()
             }
         )
@@ -37155,8 +37826,46 @@ func racers() -> Array:
     return ChairRace.ORDER.filter(func(n: String) -> bool: return pool.has(n))
 
 
+# the event of this race: the Free Play toolbox and the tests name one (opts.event), otherwise the one picked on the card
+func _chair_event_now() -> String:
+    var id := str(opts.get("event", chair_event))
+    return id if id in CHAIR_EVENTS else "straight"
+
+
+# the Career id of what is being played: the chair fight keeps its own stars (the races share "chair")
+func _career_game() -> String:
+    return "chairfight" if game == "chair" and str(g.get("event", "")) == "fight" else game
+
+
+# LEFT / RIGHT on an intro page: the chair card's event, paintball's day or night
+func _page_pick(d: int) -> void:
+    if game == "chair" and not opts.has("event"):
+        chair_event = CHAIR_EVENTS[posmod(CHAIR_EVENTS.find(_chair_event_now()) + d, CHAIR_EVENTS.size())]
+        var keep: Variant = g.get("rng0")
+        _chair_clear()
+        g = {"rng0": keep} if keep != null else {}
+        _chair_setup()
+    elif game == "paintball" and not opts.has("night"):
+        paint_night = not paint_night
+    _canvas.queue_redraw()
+
+
+func _chair_best_key(course: String) -> String:
+    return Difficulty.tier if course == "straight" else "%s:%s" % [Difficulty.tier, course]
+
+
+# what the Career wants to know about a finished chair event (Career.note_outing, info.chair)
+func _chair_career(result: int) -> Dictionary:
+    var race: RefCounted = g.race
+    if str(g.get("event", "")) == "fight":
+        return {"fight": true, "won": race.winner == 0, "bumps": int(race.score()[0])}
+    return {"course": str(race.course), "won": not race.dnf and int(g.place) == 1 and not race.rivals.is_empty(), "clean": result >= 1 and race.crashes + race.cones == 0 and not race.false_started}
+
+
 func _chair_params() -> Dictionary:
     return {
+        "course": _chair_event_now(),
+        "opponent": str(opts.get("opponent", "")),
         "crash": Difficulty.f("chair.crash"),
         "stamina": Difficulty.f("chair.stamina"),
         "slick": Difficulty.f("chair.slick"),
@@ -37167,9 +37876,14 @@ func _chair_params() -> Dictionary:
 
 # the race is set up as soon as its page opens (so the room can show the racers on the grid); the countdown starts with ENTER
 func _chair_setup() -> void:
-    var race := ChairRace.new()
-    race.setup(_chair_params(), racers(), Difficulty.rng("chair"))
-    g = {"race": race, "place": 0, "new_best": false, "count": 4}
+    var stream := Difficulty.rng("chair")
+    if g.has("rng0"):
+        stream.state = int(g.rng0)  # another event was picked on the card: the same draw again, not the next one of the stream
+    var rng0 := stream.state
+    var event := _chair_event_now()
+    var race: RefCounted = ChairFight.new() if event == "fight" else ChairRace.new()
+    race.setup(_chair_params(), racers(), stream)
+    g = {"race": race, "place": 0, "new_best": false, "count": 4, "event": event, "rng0": rng0}
     var scene := get_tree().current_scene
     if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
         var me := _actor("Player")
@@ -37238,10 +37952,12 @@ func _chair_tick(dt: float) -> void:
 func _chair_cues(race: RefCounted) -> void:
     for e in race.events:
         match str(e):
-            "crash":
+            "crash", "ouch":
                 Sfx.play("clunk")
                 for k in 2:
                     Controls.rumble(k, 0.9, 0.3)
+            "bump", "clash", "clunk":
+                Sfx.play("clunk")
             "cone", "oil", "false":
                 Sfx.play("squeak")
             "go", "finish":
@@ -37259,8 +37975,10 @@ func _chair_cues(race: RefCounted) -> void:
         line = race.msg
     elif race.feel_t > 0.0:
         line = race.feel
-    elif race.cp_next < ChairRace.CHECK_NAMES.size():
-        line = "NEXT: %s" % ChairRace.CHECK_NAMES[race.cp_next]
+    elif str(g.get("event", "")) == "fight":
+        line = "YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
+    elif race.cp_next < race.checks.size():
+        line = "NEXT: %s" % race.check_names[race.cp_next]
     else:
         line = "THE FINISH LINE!"
     caption(line, 0.3)
@@ -37280,11 +37998,19 @@ func _chair_press(key: int) -> void:
             race.change_lane(-1)
         KEY_DOWN, KEY_S:
             race.change_lane(1)
+        KEY_LEFT, KEY_A:
+            if race.has_method("spin"):  # the chair fight: turn the chair around
+                race.spin(-1)
+        KEY_RIGHT, KEY_D:
+            if race.has_method("spin"):
+                race.spin(1)
 
 
 func _chair_hint() -> String:
     if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
         return "GET READY  ESC = LEAVE"
+    if str(g.get("event", "")) == "fight":
+        return "Z X = PUSH  L R = TURN  UP DN = LANE"
     if Players.coop and Players.slots[1].joined:
         return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
     return str(GAMES.chair.keys)
@@ -37293,11 +38019,17 @@ func _chair_hint() -> String:
 # the race is over: the best time of this tier, the stars from the time, then the usual result page
 func _chair_end() -> void:
     var race: RefCounted = g.race
+    if str(g.get("event", "")) == "fight":
+        g.place = 1 if race.winner == 0 else 2
+        _chair_door(false)
+        _finish(race.stars())
+        return
     var t: float = race.total()
+    var key := _chair_best_key(str(race.course))
     g.place = race.place()
-    g.new_best = not race.dnf and (not chair_best.has(Difficulty.tier) or t < float(chair_best[Difficulty.tier]))
+    g.new_best = not race.dnf and (not chair_best.has(key) or t < float(chair_best[key]))
     if g.new_best:
-        chair_best[Difficulty.tier] = snappedf(t, 0.01)
+        chair_best[key] = snappedf(t, 0.01)
     _chair_door(false)
     _finish(race.stars())
 
@@ -37305,6 +38037,8 @@ func _chair_end() -> void:
 func _chair_lines() -> Array:
     var race: RefCounted = g.race
     var out := []
+    if str(g.get("event", "")) == "fight":
+        return [race.comment(), "BUMPS: YOU %d, %s %d." % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1])]]
     if race.dnf:
         out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
     else:
@@ -37318,9 +38052,16 @@ func _chair_lines() -> Array:
 func _paint_chair(b: Rect2) -> void:
     var race: RefCounted = g.race
     var y := b.position.y
+    if str(g.get("event", "")) == "fight":
+        _t("READY... %s" % race.countdown_text() if race.clock < 0.0 else "TIME %d" % race.time_left(), b.position.x, y)
+        _t("YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET], b.position.x, y + 9.0)
+        _t("STAMINA %d" % int(race.stam), b.position.x, y + 18.0, BLUE)
+        if race.msg_t > 0.0:
+            _t(race.msg, b.position.x, y + 27.0, INK)
+        return
     var head := "READY... %s" % race.countdown_text() if race.clock < 0.0 else "TIME %.1fS" % race.total()
     _t("%s  PLACE %d OF %d" % [head, race.place_now(), race.rivals.size() + 1], b.position.x, y)
-    _t("CHECKPOINT %d OF %d" % [race.cp_next, ChairRace.CHECK_NAMES.size()], b.position.x, y + 9.0)
+    _t("CHECKPOINT %d OF %d" % [race.cp_next, race.checks.size()], b.position.x, y + 9.0)
     _t("STAMINA %d" % int(race.stam), b.position.x, y + 18.0, BLUE)
     if race.msg_t > 0.0:
         _t(race.msg, b.position.x, y + 27.0, RED if race.msg.contains("+") else INK)
@@ -37336,6 +38077,9 @@ func _hud_chair(s: Rect2) -> void:
         var kx := o.x + 9.0 * float(k)
         _canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 8.0), AMBER if lit else UiStyle.MUTED)
         _t(keys[k], kx + 2.0, s.position.y + 4.0, INK if lit else WHITE)
+    if str(g.get("event", "")) == "fight":
+        _hud_fight(s, o)
+        return
     _t("READY" if race.clock < 0.0 else "%.1fS" % race.total(), o.x + 21.0, o.y, WHITE)
     _t("P%d/%d" % [race.place_now(), race.rivals.size() + 1], o.x + 47.0, o.y, UiStyle.SOFT)
     var bw := 30.0
@@ -37347,15 +38091,46 @@ func _hud_chair(s: Rect2) -> void:
     var rw := bx - rx - 6.0
     var ry := s.position.y + 6.0
     _canvas.draw_rect(Rect2(rx, ry, rw, 1.0), UiStyle.SOFT)
-    for i in ChairRace.CHECK_FRAC.size():
-        _canvas.draw_rect(Rect2(rx + rw * float(ChairRace.CHECK_FRAC[i]), ry - 2.0, 1.0, 5.0), UiStyle.SOFT)
+    for i in race.checks.size():
+        _canvas.draw_rect(Rect2(rx + rw * float(race.checks[i]), ry - 2.0, 1.0, 5.0), UiStyle.SOFT)
     _canvas.draw_rect(Rect2(rx + rw, ry - 3.0, 2.0, 7.0), WHITE)
     for who in race.rivals:
-        var fx := rx + rw * clampf(float(who.s) / ChairRace.LEN, 0.0, 1.0)
+        var fx := rx + rw * clampf(float(who.s) / float(race.length), 0.0, 1.0)
         _canvas.draw_rect(Rect2(fx - 1.0, ry - 1.0, 3.0, 3.0), who.color)
-    var mx := rx + rw * clampf(race.pos / ChairRace.LEN, 0.0, 1.0)
+    var mx := rx + rw * clampf(race.pos / float(race.length), 0.0, 1.0)
     _canvas.draw_rect(Rect2(mx - 2.0, ry - 2.0, 5.0, 5.0), INK)
     _canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
+
+
+# the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
+# floor with both chairs on it, your stamina
+func _hud_fight(s: Rect2, o: Vector2) -> void:
+    var fight: RefCounted = g.race
+    _t("READY" if fight.clock < 0.0 else "%d" % fight.time_left(), o.x + 21.0, o.y, WHITE)
+    var px := o.x + 44.0
+    for side in 2:
+        for k in ChairFight.TARGET:
+            var on: bool = k < int(fight.score()[side])
+            var col: Color = (AMBER if side == 0 else fight.chairs[1].color) if on else UiStyle.MUTED
+            _canvas.draw_rect(Rect2(px, s.position.y + 4.0, 4.0, 5.0), col)
+            px += 5.0
+        px += 5.0
+    var bw := 30.0
+    var bx := s.end.x - bw - 5.0
+    var stam_col := GREEN if fight.stam > 40.0 else (AMBER if fight.stam > 15.0 else RED)
+    _canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
+    _canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(fight.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+    var rx := px + 4.0
+    var rw := bx - rx - 6.0
+    if rw < 12.0:
+        return
+    var ry := s.position.y + 6.0
+    _canvas.draw_rect(Rect2(rx, ry, rw, 1.0), UiStyle.SOFT)
+    for k in 2:
+        var c: Dictionary = fight.chairs[k]
+        var fx := rx + rw * clampf((float(c.x) - ChairFight.LO) / (ChairFight.HI - ChairFight.LO), 0.0, 1.0)
+        _canvas.draw_rect(Rect2(fx - 2.0, ry - 2.0, 5.0, 5.0), INK)
+        _canvas.draw_rect(Rect2(fx - 1.0, ry - 1.0, 3.0, 3.0), WHITE if k == 0 else c.color)
 
 
 # ---- paintball (the western capture the flag outing): the rules are in paintball_game.gd, the drawing in paintball_track.gd ----------
@@ -37366,12 +38141,13 @@ func _paint_crew() -> Array:
 
 
 func _paint_params() -> Dictionary:
-    return {"skill": Difficulty.f("paint.skill"), "acc": Difficulty.f("paint.acc")}
+    return {"skill": Difficulty.f("paint.skill"), "acc": Difficulty.f("paint.acc"), "night": paint_night}
 
 
 func _paint_setup() -> void:
     var rules := PaintGame.new()
-    rules.setup(_paint_params(), _paint_crew(), Difficulty.rng("paint"))
+    var duo: bool = Players.coop and Players.slots[1].joined  # co-op: player 2 pilots the first team mate
+    rules.setup(_paint_params(), _paint_crew(), Difficulty.rng("paint"), 2 if duo else 1)
     g = {"rules": rules, "count": 4, "end_t": 0.0}
     var scene := get_tree().current_scene
     if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
@@ -37379,6 +38155,10 @@ func _paint_setup() -> void:
         var specs := [{"character": me.character_id() if me != null else "office_adult", "custom": Look.is_custom(), "label": "YOU"}]
         for k in range(1, rules.units.size()):
             var who := str(rules.units[k].name)
+            if bool(rules.units[k].human):  # player 2, in their own look
+                var p2: Dictionary = Players.slot(1).look
+                specs.append({"character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "label": "P2", "look": p2})
+                continue
             specs.append({"character": str(World.row(who).character), "custom": false, "label": who.substr(0, 1)})
         var track := PaintTrack.new()
         track.setup(scene, rules, _x0(), specs)
@@ -37403,6 +38183,9 @@ func _paint_tick(dt: float) -> void:
     rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "run")))  # SHIFT (a pad's B) held
     if Input.is_action_just_pressed(Controls.action_for(0, "aim")):
         rules.fire_you()
+    if int(rules.pilots) == 2:  # co-op: player 2's own stick (or keys) and duck button
+        rules.set_move_of(1, int(Input.is_action_pressed(Controls.action_for(1, "move_right"))) - int(Input.is_action_pressed(Controls.action_for(1, "move_left"))))
+        rules.set_duck_of(1, Input.is_action_pressed(Controls.action_for(1, "run")))
     rules.step(dt)
     _paint_cues(rules)
     if rules.phase == "over":
@@ -37419,7 +38202,7 @@ func _paint_cues(rules: RefCounted) -> void:
             g.count = ceili(rules.count)
             Sfx.play("ui_tick")
     elif rules.phase == "over":
-        line = "TIME!" if rules.clock >= PaintGame.LIMIT else "THAT IS THE MATCH!"
+        line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
     elif rules.line_t > 0.0:
         line = rules.line
     elif rules.units[0].down > 0.0:
@@ -37432,24 +38215,28 @@ func _paint_cues(rules: RefCounted) -> void:
 
 
 func _paint_press(key: int) -> void:
+    var me := 1 if int(g.rules.pilots) == 2 and _press_slot == 1 else 0  # co-op: whoever pressed moves their own unit
     if key in [KEY_UP, KEY_W]:
-        g.rules.lane_you(-1)
+        g.rules.change_lane(me, -1)
     elif key in [KEY_DOWN, KEY_S]:
-        g.rules.lane_you(1)
+        g.rules.change_lane(me, 1)
     elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
-        if not g.rules.fire_you() and bool(g.rules.units[0].duck) and g.rules.phase == "play":
+        if not (g.rules.phase == "play" and g.rules.fire(me)) and bool(g.rules.units[me].duck) and g.rules.phase == "play":
             caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
 
 
 func _paint_lines() -> Array:
     var rules: RefCounted = g.rules
-    return [rules.comment(), "FINAL SCORE %d TO %d. YOU SCORED %d AND TAGGED %d." % [rules.score[0], rules.score[1], rules.you_caps, rules.you_tags]]
+    var out := [rules.comment(), "FINAL SCORE %d TO %d. YOU SCORED %d AND TAGGED %d." % [rules.score[0], rules.score[1], rules.you_caps, rules.you_tags]]
+    if int(rules.pilots) == 2:
+        out.append("PLAYER 2 SCORED %d AND TAGGED %d." % [rules.p2_caps, rules.p2_tags])
+    return out
 
 
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(PaintGame.LIMIT - rules.clock))], b.position.x, b.position.y)
+    _t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
     _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -37461,7 +38248,7 @@ func _hud_paint(s: Rect2) -> void:
     _t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
     _canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
     _t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-    _t("%d" % maxi(0, ceili(PaintGame.LIMIT - rules.clock)), o.x + 26.0, o.y, WHITE)
+    _t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
     var you: Dictionary = rules.units[0]
     var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
     _t(state, o.x + 48.0, o.y, AMBER)
@@ -38485,17 +39272,32 @@ func _paint_intro(b: Rect2) -> void:
             y += 7.0
     if game == "chair":
         var names := racers()
+        var event := _chair_event_now()
         var who := "RIVALS: " + join_names(names, true) if not names.is_empty() else "NO RIVALS TONIGHT: A TIME TRIAL."
+        var what := ""
+        if event == "fight":
+            who = "AGAINST %s. THE REST WATCH." % g.race.opponent().to_upper() if g.has("race") else ""
+            what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. Z X PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
+        else:
+            what = "< %s >  %s" % [str(ChairRace.COURSES[event].label), str(ChairRace.COURSES[event].blurb)]
+        if not opts.has("event"):
+            what += "  (LEFT / RIGHT: ANOTHER EVENT)"
+        for part in _wrap(what, int(b.size.x / 4.0)):
+            _t(part, b.position.x, y, BLUE)
+            y += 7.0
         for part in _wrap(who, int(b.size.x / 4.0)):
             _t(part, b.position.x, y)
             y += 7.0
-        if chair_best.has(Difficulty.tier):
-            _t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[Difficulty.tier])], b.position.x, y, GREEN)
+        if event != "fight" and chair_best.has(_chair_best_key(event)):
+            _t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[_chair_best_key(event)])], b.position.x, y, GREEN)
             y += 7.0
     if game == "dinner":
         y = _paint_dinner_notes(b, y)
-    if best.has(game):
-        _t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
+    if game == "paintball":
+        _t("< %s >%s" % ["A NIGHT MATCH: YOU SEE LESS FAR" if paint_night else "A DAY MATCH", "" if opts.has("night") else "  (LEFT / RIGHT)"], b.position.x, y, BLUE)
+        y += 7.0
+    if best.has(_career_game()):
+        _t("YOUR BEST: %d OF 3 STARS" % int(best[_career_game()]), b.position.x, y, GREEN)
 
 
 func _paint_result(b: Rect2) -> void:
@@ -38542,7 +39344,10 @@ func _paint_result(b: Rect2) -> void:
                         detail += "  %s %d" % [str(who).to_upper(), int(dg.totals[who])]
             "chair":
                 var race: RefCounted = g.race
-                detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
+                if str(g.get("event", "")) == "fight":
+                    detail = "YOU %d  %s %d  CLASHES %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), int(race.clashes)]
+                else:
+                    detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
     if detail != "":
         _t(detail, b.position.x, y + 3.0, BLUE)
 
@@ -39878,8 +40683,9 @@ write("scripts/paintball_game.gd", '''extends RefCounted
 const LEN := 640.0
 const BASE_X := [34.0, 606.0]  # where team 0 / team 1 start and where their flag stands
 const RUN := 40.0  # px/s
-const CARRY := 0.85  # x the speed with a flag
+const CARRY := 1.0  # x the speed with a flag (0.85 until the tuning run: a slowed carrier never got home and most matches ended level)
 const RANGE := 170.0
+const NIGHT_RANGE := 0.82  # x the range at night, for everybody: you see less of the street
 const FIRE_GAP := 0.7  # your own reload
 const AI_GAP := 1.4  # the crew reloads slower than you (six people firing every 0.7 s was a wall of paint)
 const LANES := 3  # the street is three lanes wide: you can only tag somebody in your own lane
@@ -39896,6 +40702,11 @@ const COVER := 14.0  # a ducking player this close behind a barricade is covered
 const BARRICADES := [150.0, 235.0, 320.0, 405.0, 490.0]
 const YOU_ACC := 0.8
 const AI_ACC := 0.18  # the crew's aim is this much of their skill
+# the tuning run (tests/paintball_tuning.gd: a scripted average player, 30+ seeded matches a tier) found the first version lopsided:
+# the player won 97 % and nobody else ever carried a flag home. Three numbers fix that:
+const RIVAL_EDGE := 2.3  # x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
+const COOP_EDGE := 1.4  # x that again with two pilots on your side
+const CARRY_DODGE := 0.8  # seconds (less for the quick ones) before a crew member with the flag steps out of a rival's lane
 const NAMES := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const STYLES := {
     "Alan": {"skill": 0.5, "role": "defend", "careful": true, "win": "ALAN: A CLEAN, WELL DOCUMENTED VICTORY.", "lose": "ALAN: NOBODY WILL READ THE POST-MORTEM ON THAT."},
@@ -39905,7 +40716,7 @@ const STYLES := {
     "John": {"skill": 0.5, "role": "defend", "careful": true, "win": "JOHN: WE DID IT. DOES THIS COUNT AS A TEAM BUILDING?", "lose": "JOHN: I REGRET NOTHING. I ALSO HIT NOTHING."},
 }
 
-var params := {"skill": 1.0, "acc": 1.0}  # Difficulty scales: skill = rival accuracy and reflexes, acc = your own aim
+var params := {"skill": 1.0, "acc": 1.0}  # Difficulty scales: skill = the other team's aim, acc = your own aim (night: true = the night match)
 var rng := RandomNumberGenerator.new()
 var units: Array = []  # {name, team, x, vx, face, role, careful, skill, flag, down, duck, cool, react, you, tags, duck_for}
 var flags: Array = []  # {team (whose flag), x, carried (unit index or -1), home}
@@ -39923,11 +40734,37 @@ var you_caps := 0
 var move_dir := 0  # the player's held direction
 var ticks := 0
 var you_auto := false  # tests and demos: the crew plays your unit too
+var night := false  # the night match (params.night): a shorter range for both sides, the field is drawn dark
+var reach := RANGE  # how far a paintball flies in this match
+var pilots := 1  # co-op: 2 = unit 1 (your team mate) is player 2's
+var p2_tags := 0
+var p2_caps := 0
+# the three tuning numbers of a match (the constants, unless params says otherwise: the tuning run sweeps them)
+var crew_acc := AI_ACC
+var target := TARGET
+var limit := LIMIT
+var rival_edge := RIVAL_EDGE
+var carry_dodge := CARRY_DODGE
+var respawn := RESPAWN
+var carry := CARRY
 
 
-func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
+# pilots: 1, or 2 in co-op: player 2 takes the first team mate's place (unit 1, named "P2") and one of the crew sits out
+func setup(p: Dictionary, names: Array, r: RandomNumberGenerator, humans := 1) -> void:
     params = p.duplicate()
     rng = r
+    pilots = clampi(humans, 1, 2)
+    night = bool(p.get("night", false))
+    reach = RANGE * (NIGHT_RANGE if night else 1.0)
+    crew_acc = float(p.get("crew_acc", AI_ACC))
+    target = int(p.get("target", TARGET))
+    limit = float(p.get("limit", LIMIT))
+    rival_edge = float(p.get("rival_edge", RIVAL_EDGE)) * (COOP_EDGE if pilots == 2 else 1.0)
+    carry_dodge = float(p.get("carry_dodge", CARRY_DODGE))
+    respawn = float(p.get("respawn", RESPAWN))
+    carry = float(p.get("carry", CARRY))
+    p2_tags = 0
+    p2_caps = 0
     units = []
     flags = []
     score = [0, 0]
@@ -39947,11 +40784,15 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
             break
         if not crew.has(n):
             crew.append(n)
+    if pilots == 2:
+        crew.push_front("P2")
     _add_unit("YOU", 0, 0, true)
     _add_unit(str(crew[0]), 0, 1, false)
     _add_unit(str(crew[1]), 0, 2, false)
     for k in 3:
         _add_unit(str(crew[2 + k]), 1, k, false)
+    if pilots == 2:
+        units[1].human = true
     for t in 2:
         flags.append({"team": t, "x": float(BASE_X[t]), "carried": -1, "home": true})
 
@@ -39977,6 +40818,8 @@ func _add_unit(who: String, team: int, slot: int, you: bool) -> void:
             "cool": 0.0,
             "react": 0.0,
             "you": you,
+            "human": you,  # somebody holds the controls of this unit (you, or player 2 in co-op)
+            "move": 0,  # a human's held direction
             "tags": 0,
             "duck_for": 0.0,
             "lane": [1, 0, 2][slot % 3],
@@ -40002,11 +40845,28 @@ func base_of(team: int) -> float:
 # ---- the player's controls -----------------------------------------------------------------------------
 func set_move(dir: int) -> void:
     move_dir = clampi(dir, -1, 1)
+    units[0].move = move_dir
 
 
 func set_duck(on: bool) -> void:
-    var u: Dictionary = units[0]
+    set_duck_of(0, on)
+
+
+# the same for any piloted unit (co-op: unit 1 is player 2's)
+func set_move_of(i: int, dir: int) -> void:
+    units[i].move = clampi(dir, -1, 1)
+    if i == 0:
+        move_dir = int(units[i].move)
+
+
+func set_duck_of(i: int, on: bool) -> void:
+    var u: Dictionary = units[i]
     u.duck = on and float(u.down) <= 0.0
+
+
+# true when a person, not the crew's AI, plays this unit
+func human(i: int) -> bool:
+    return bool(units[i].human) and not you_auto
 
 
 func fire_you() -> bool:
@@ -40051,7 +40911,7 @@ func step(dt: float) -> void:
         _tick_unit(i, dt)
     for i in order:
         _flags_for(i)
-    if score[0] >= TARGET or score[1] >= TARGET or clock >= LIMIT:
+    if score[0] >= target or score[1] >= target or clock >= limit:
         _end()
 
 
@@ -40068,13 +40928,13 @@ func _tick_unit(i: int, dt: float) -> void:
             u.x = base_of(int(u.team)) + 6.0 * float(1 - 2 * int(u.team)) * float(i % 3)
             u.face = 1 if int(u.team) == 0 else -1
         return
-    if bool(u.you) and not you_auto:
-        u.vx = 0.0 if bool(u.duck) else float(move_dir) * RUN
-        if move_dir != 0:
-            u.face = move_dir
+    if human(i):
+        u.vx = 0.0 if bool(u.duck) else float(int(u.move)) * RUN
+        if int(u.move) != 0:
+            u.face = int(u.move)
     else:
         _ai(i, dt)
-    var speed_mul: float = CARRY if bool(u.flag) else 1.0
+    var speed_mul: float = carry if bool(u.flag) else 1.0
     u.x = clampf(float(u.x) + float(u.vx) * speed_mul * dt, 8.0, LEN - 8.0)
 
 
@@ -40105,6 +40965,8 @@ func _flags_for(i: int) -> void:
         score[int(u.team)] += 1
         if bool(u.you):
             you_caps += 1
+        elif bool(u.human):
+            p2_caps += 1
         events.append({"kind": "capture", "unit": i, "team": int(u.team)})
         say("%s SCORES! %d TO %d" % [str(u.name), score[0], score[1]], 1.8)
 
@@ -40123,13 +40985,13 @@ func _end() -> void:
 func target_of(i: int) -> int:
     var u: Dictionary = units[i]
     var best := -1
-    var best_d := RANGE + 1.0
+    var best_d := reach + 1.0
     for j in units.size():
         var v: Dictionary = units[j]
         if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) != int(u.lane):
             continue
         var d: float = (float(v.x) - float(u.x)) * float(u.face)
-        if d > 0.0 and d <= RANGE and d < best_d:
+        if d > 0.0 and d <= reach and d < best_d:
             best_d = d
             best = j
     return best
@@ -40163,10 +41025,10 @@ func fire(i: int) -> bool:
     var u: Dictionary = units[i]
     if float(u.cool) > 0.0 or float(u.down) > 0.0 or bool(u.duck):
         return false
-    u.cool = FIRE_GAP if (bool(u.you) and not you_auto) else AI_GAP
+    u.cool = FIRE_GAP if human(i) else AI_GAP
     var j := target_of(i)
     var hit := -1
-    var to: float = clampf(float(u.x) + float(u.face) * RANGE, 0.0, LEN)  # where the paintball ends up
+    var to: float = clampf(float(u.x) + float(u.face) * reach, 0.0, LEN)  # where the paintball ends up
     if j >= 0:
         var v: Dictionary = units[j]
         to = float(v.x)
@@ -40175,8 +41037,8 @@ func fire(i: int) -> bool:
             to = shield
         else:
             var d: float = absf(float(v.x) - float(u.x))
-            var acc: float = (YOU_ACC * float(params.acc)) if (bool(u.you) and not you_auto) else (float(u.skill) * AI_ACC * float(params.skill))
-            var chance := clampf(acc * (1.0 - 0.5 * d / RANGE) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0) * (OPEN_DUCK if bool(v.duck) else 1.0), 0.05, 0.95)
+            var acc: float = (YOU_ACC * float(params.acc)) if human(i) else (float(u.skill) * crew_acc * (float(params.skill) * (1.0 if you_auto else rival_edge) if int(u.team) == 1 else 1.0))
+            var chance := clampf(acc * (1.0 - 0.5 * d / reach) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0) * (OPEN_DUCK if bool(v.duck) else 1.0), 0.05, 0.95)
             if rng.randf() < chance:
                 hit = j
     events.append({"kind": "shot", "unit": i, "from": float(u.x), "to": to, "face": int(u.face), "hit": hit, "target": j})
@@ -40187,12 +41049,14 @@ func fire(i: int) -> bool:
 
 func _tag(j: int, by: int) -> void:
     var v: Dictionary = units[j]
-    v.down = RESPAWN
+    v.down = respawn
     v.duck = false
     v.vx = 0.0
     units[by].tags = int(units[by].tags) + 1
     if bool(units[by].you):
         you_tags += 1
+    elif bool(units[by].human):
+        p2_tags += 1
     events.append({"kind": "tag", "unit": j, "by": by, "x": float(v.x)})
     if bool(v.flag):
         var f: Dictionary = flags[other(int(v.team))]
@@ -40201,7 +41065,7 @@ func _tag(j: int, by: int) -> void:
         v.flag = false
         events.append({"kind": "drop", "unit": j, "flag": int(f.team)})
         say("%s DROPPED THE FLAG!" % str(v.name), 1.4)
-    elif bool(units[by].you):
+    elif bool(units[by].human):
         say("TAGGED %s!" % str(v.name).to_upper(), 1.0)
 
 
@@ -40225,8 +41089,11 @@ func _goal(i: int) -> float:
 # nobody in my lane but somebody ahead of me in another one: after a beat, one lane towards them (so a lane change is a dodge, not a hiding place)
 func _ai_lane(i: int, dt: float) -> void:
     var u: Dictionary = units[i]
+    if bool(u.flag):
+        _ai_carry_lane(i, dt)
+        return
     var want := -1
-    var best := RANGE * 1.3
+    var best := reach * 1.3
     if target_of(i) < 0:
         for v in units:
             if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) == int(u.lane):
@@ -40242,6 +41109,30 @@ func _ai_lane(i: int, dt: float) -> void:
     if float(u.lane_t) >= LANE_CHASE - 0.3 * float(u.skill):
         u.lane_t = 0.0
         change_lane(i, signi(want - int(u.lane)))
+
+
+# with the flag in hand the crew keeps out of the line of fire: a rival in my lane within reach (in front or behind) and, after a
+# beat, I step into the emptier lane next to mine. Without it a carrier walked 500 px down one lane and nobody but you ever scored.
+func _ai_carry_lane(i: int, dt: float) -> void:
+    var u: Dictionary = units[i]
+    var counts := [0, 0, 0]
+    for v in units:
+        if int(v.team) != int(u.team) and float(v.down) <= 0.0 and absf(float(v.x) - float(u.x)) <= reach:
+            counts[int(v.lane)] += 1
+    var mine := int(u.lane)
+    if counts[mine] == 0:
+        u.lane_t = 0.0
+        return
+    u.lane_t = float(u.lane_t) + dt
+    if float(u.lane_t) < carry_dodge - 0.3 * float(u.skill):
+        return
+    u.lane_t = 0.0
+    var best := mine
+    for to: int in [mine - 1, mine + 1]:
+        if to >= 0 and to < LANES and counts[to] < counts[best]:
+            best = to
+    if best != mine:
+        change_lane(i, best - mine)
 
 
 func _ai(i: int, dt: float) -> void:
@@ -40280,7 +41171,7 @@ func _ai(i: int, dt: float) -> void:
 # ---- the result ----------------------------------------------------------------------------------------
 func stars() -> int:
     if winner == 0:
-        return 3 if score[0] - score[1] >= 2 and you_tags + you_caps >= 3 else 2
+        return 3 if score[0] - score[1] >= 2 and you_tags + you_caps + p2_tags + p2_caps >= 3 else 2
     if winner == 2:
         return 1
     return 0
@@ -40305,8 +41196,8 @@ func debug_line(i: int) -> String:
     var u: Dictionary = units[i]
     if float(u.down) > 0.0:
         return "DOWN %.1f" % float(u.down)
-    if bool(u.you) and not you_auto:
-        return "YOU"
+    if human(i):
+        return str(u.name)
     return "%s %s L%d goal %d tgt %d" % [str(u.role), "duck" if bool(u.duck) else "go", int(u.lane), int(_goal(i)), target_of(i)]
 
 
@@ -40335,6 +41226,14 @@ const LIFT_BOTTOM := 166.0
 const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
 const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
 const LANE_SPEED := 70.0  # px/s a puppet slides from one lane to the next
+# the night match (game.night): everything below is drawn in code over the same set, no new art
+const NIGHT := Color(0.04, 0.06, 0.2, 0.66)  # the dark laid over the set
+const NIGHT_ACTORS := Color(0.5, 0.56, 0.86)  # the tint of everybody and everything standing in the street
+const LAMP := Color("f2c94c")
+const SALOON_WINDOWS := [21.0, 45.0, 109.0, 133.0]  # set x of the four saloon windows (14 x 18 at y 37, paintball_set.lua)
+const JAIL_WINDOW := Rect2(661.0, 47.0, 22.0, 20.0)
+const SET_W := 700.0
+const FLASH := 0.11  # seconds a muzzle flash lasts
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -40350,6 +41249,8 @@ var _cam: Camera2D = null
 var _t := 0.0
 var _seen_down: Array = []
 var _debug := OS.get_environment("PAINT_DEBUG") == "1"
+var _flashes: Array = []  # night: {at, dir, t} muzzle flashes
+var _stars: Array = []  # night: [Vector2] in set pixels
 
 
 func field_x(gx: float) -> float:
@@ -40383,7 +41284,26 @@ func setup(scene: Node, the_game: RefCounted, set_x0: float, specs: Array) -> vo
         _player.visible = false
     if _player2 != null:
         _player2.visible = false
+    if night():
+        _actors.modulate = NIGHT_ACTORS
+        _make_stars()
     _sync()
+
+
+func night() -> bool:
+    return game != null and bool(game.night)
+
+
+# the same sky every night: a fixed scatter of stars above the roofs (none over the saloon front, the jail sign or the water tower)
+func _make_stars() -> void:
+    var r := RandomNumberGenerator.new()
+    r.seed = 4107
+    var roofs := [Rect2(20.0, -2.0, 126.0, 40.0), Rect2(540.0, 2.0, 160.0, 40.0), Rect2(318.0, 8.0, 56.0, 36.0)]
+    _stars = []
+    while _stars.size() < 70:
+        var at := Vector2(r.randf_range(2.0, SET_W - 2.0), r.randf_range(-70.0, 30.0))
+        if not roofs.any(func(box: Rect2) -> bool: return box.has_point(at)):
+            _stars.append(at)
 
 
 func _add_puppet(i: int, spec: Dictionary) -> void:
@@ -40423,7 +41343,10 @@ func _sync() -> void:
     var f: Dictionary = Game.FORMATS[Game.format]
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
-        _player.global_position = Vector2(field_x(float(game.units[0].x)), float(puppets[0].y))
+        var focus: float = float(game.units[0].x)
+        if int(game.pilots) == 2:  # co-op: the camera leans towards player 2, as far as a third of the screen
+            focus += clampf((float(game.units[1].x) - focus) * 0.5, -view.x * 0.3, view.x * 0.3)
+        _player.global_position = Vector2(field_x(focus), float(puppets[0].y))
     if _cam != null:  # a short screen looks lower down, so the floor is not under the HUD
         var centre: float = float(f.cam_y) if f.follow else 64.0
         _cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
@@ -40461,6 +41384,8 @@ func _event(ev: Dictionary) -> void:
             var p: Dictionary = puppets[int(ev.unit)]
             p.shoot_t = 0.35
             var y0 := float(p.y) - 32.0
+            if night():
+                _flashes.append({"at": Vector2(field_x(float(ev.from) + 9.0 * float(ev.face)), y0), "dir": float(ev.face), "t": FLASH})
             var y1 := lane_y(int(ev.target)) - 32.0 if int(ev.target) >= 0 else y0
             balls.append(
                 {
@@ -40488,6 +41413,9 @@ func _event(ev: Dictionary) -> void:
 
 
 func _move_balls(dt: float) -> void:
+    for fl in _flashes:
+        fl.t = float(fl.t) - dt
+    _flashes = _flashes.filter(func(fl: Dictionary) -> bool: return float(fl.t) > 0.0)
     var keep := []
     for b in balls:
         b.x = float(b.x) + float(b.dir) * BALL_SPEED * dt
@@ -40517,6 +41445,8 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
     if game == null:
         return
+    if night():
+        _draw_night()
     for l in LANE_OFF.size():  # the lanes, as dashes on the street
         var gx := 6.0
         while gx < float(game.LEN) - 6.0:
@@ -40526,6 +41456,35 @@ func _draw() -> void:
         var at := Vector2(field_x(float(g.x)), float(g.y))
         draw_rect(Rect2(at, Vector2(float(g.w), 1.0)), g.col)
         draw_rect(Rect2(at + Vector2(1, -1), Vector2(1, 3)), g.col)
+
+
+# the night: the dark over the whole set (this node is drawn over the art and under everybody), then the stars, a moon and the lit
+# windows of the saloon and the jail with the light they throw on the porch
+func _draw_night() -> void:
+    draw_rect(Rect2(x0 - 40.0, -140.0, SET_W + 80.0, 420.0), NIGHT)
+    for i in _stars.size():
+        var at: Vector2 = _stars[i]
+        var twinkle := 0.55 + 0.45 * sin(_t * (1.5 + float(i % 5) * 0.4) + float(i))
+        draw_rect(Rect2(Vector2(x0 + at.x, at.y), Vector2(1, 1)), Color(1, 1, 0.92, twinkle))
+    var moon := Vector2(x0 + 452.0, -34.0)
+    draw_circle(moon, 7.0, Color("f4f0d8"))
+    draw_circle(moon + Vector2(3.0, -2.0), 6.0, Color(0.09, 0.11, 0.26))  # a crescent: the night's own colour over the disc
+    for wx: float in SALOON_WINDOWS:
+        var box := Rect2(x0 + wx, 37.0, 14.0, 18.0)
+        draw_rect(box.grow(3.0), Color(LAMP, 0.1))
+        draw_rect(box.grow(1.0), Color(LAMP, 0.16))
+        draw_rect(box, LAMP)
+        draw_rect(Rect2(box.position + Vector2(6, 0), Vector2(1, 18)), INK)
+        draw_rect(Rect2(box.position + Vector2(0, 8), Vector2(14, 1)), INK)
+    draw_rect(Rect2(x0 + 67.0, 53.0, 34.0, 7.0), Color(LAMP, 0.7))  # the lamp inside, over the swinging doors
+    draw_rect(Rect2(x0 + 68.0, 60.0, 32.0, 28.0), Color(LAMP, 0.16))
+    draw_colored_polygon(PackedVector2Array([Vector2(x0 + 66.0, 88.0), Vector2(x0 + 102.0, 88.0), Vector2(x0 + 116.0, 104.0), Vector2(x0 + 52.0, 104.0)]), Color(LAMP, 0.13))
+    var jail := Rect2(JAIL_WINDOW.position + Vector2(x0, 0.0), JAIL_WINDOW.size)
+    draw_rect(jail.grow(2.0), Color(LAMP, 0.1))
+    draw_rect(jail, Color(LAMP, 0.6))
+    for k in 4:
+        draw_rect(Rect2(jail.position + Vector2(1.0 + 5.0 * float(k), 0.0), Vector2(2, 20)), Color("3a3d48"))
+    draw_rect(Rect2(x0 + 588.0, 70.0, 3.0, 3.0), LAMP)  # the door handle catches the light
 
 
 # flags, splats on people, the paintballs and the name tags: above everything
@@ -40553,6 +41512,15 @@ func _draw_top() -> void:
         _top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(3, 3)), INK)
         _top.draw_rect(Rect2(at, Vector2(2, 2)), col)
         _top.draw_rect(Rect2(at - Vector2(float(b.dir) * 4.0, 0.0), Vector2(2, 1)), Color(col, 0.5))
+        if night():  # a paintball is the brightest thing in the street
+            _top.draw_rect(Rect2(at - Vector2(2, 2), Vector2(5, 5)), Color(col, 0.22))
+    for fl in _flashes:  # night: the marker's puff lights up for a blink
+        var fa: Vector2 = fl.at
+        var k: float = clampf(float(fl.t) / FLASH, 0.0, 1.0)
+        _top.draw_circle(fa, 11.0, Color(1.0, 0.92, 0.6, 0.16 * k))
+        _top.draw_rect(Rect2(fa - Vector2(1, 1), Vector2(3, 3)), Color(1, 1, 0.85, k))
+        _top.draw_rect(Rect2(fa + Vector2(float(fl.dir) * 2.0, 0.0), Vector2(3, 1)), Color(1.0, 0.85, 0.4, k))
+        _top.draw_rect(Rect2(fa + Vector2(0, -3), Vector2(1, 7)), Color(1.0, 0.85, 0.4, 0.7 * k))
     for i in puppets.size():
         var p: Dictionary = puppets[i]
         var u: Dictionary = game.units[i]
@@ -40562,7 +41530,11 @@ func _draw_top() -> void:
         var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -50.0 if not bool(u.duck) else -36.0)
         if float(u.down) > 0.0:
             at.y = node.position.y - 14.0
-        var mine: bool = bool(u.you)
+        var mine: bool = bool(u.human)  # you, and player 2 in co-op
+        if mine and _cam != null:  # a pilot who is off the screen keeps a tag at its edge
+            var half: float = get_viewport_rect().size.x / _cam.zoom.x * 0.5
+            var mid: float = _cam.get_screen_center_position().x
+            at.x = clampf(at.x, mid - half + 2.0, mid + half - w - 3.0)
         _top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(w + 2.0, 7.0)), GOLD if mine else TEAM_COLOR[int(u.team)])
         PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
         if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
@@ -40591,6 +41563,9 @@ func clear() -> void:
         _player2.visible = true
     if _cam != null and is_instance_valid(_cam):
         _cam.offset = Vector2.ZERO
+    if _actors != null and is_instance_valid(_actors):
+        _actors.modulate = Color.WHITE
+    _flashes = []
     for p in puppets:
         if is_instance_valid(p.node):
             p.node.queue_free()
@@ -58426,6 +59401,7 @@ write("scripts/player.gd", '''extends CharacterBody2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
+const CHAIR_SHOVE := preload("res://scripts/chair_shove.gd")
 const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
@@ -59010,10 +59986,12 @@ func _physics_process(delta: float) -> void:
         if _try_gesture(locked):
             return
         var target := nearest()
-        if interact and target != null:
+        if interact and running and CHAIR_SHOVE.try_shove(self):
+            pass  # Shift + E by a seated coworker: their chair rolls off with them in it (chair_shove.gd); you reach out ("use")
+        elif interact and target != null:
             target.use(self)
-            if state in ["sitdown", "use", "emote"]:
-                return
+        if interact and state in ["sitdown", "use", "emote"]:
+            return
         if jump and is_on_floor():
             velocity.x = 0.0
             _set_state("crouch")
@@ -61671,6 +62649,12 @@ const DEFAULT_MEDALS := [
     {"id": "svc_ops", "title": "OPS MANAGER", "desc": "BECOME OPS MANAGER", "rules": [["svc_end.ops", ">=", 1]]},
     {"id": "svc_hand", "title": "RIGHT HAND", "desc": "BACK ALAN OR GARRISON", "rules": [["svc_end_lead", ">=", 1]]},
     {"id": "svc_summit", "title": "SUMMIT DIRECTOR", "desc": "TAKE SUMMIT'S ROLL-UP", "rules": [["svc_end.rollup_yes", ">=", 1]]},
+    {"id": "clean_lap", "title": "CLEAN LAP", "desc": "A CHAIR RACE, NOTHING HIT", "rules": [["chair_clean", ">=", 1]]},
+    {"id": "speed_demon", "title": "SPEED DEMON", "desc": "WIN 3 CHAIR RACES", "rules": [["chair_wins", ">=", 3]]},
+    {"id": "track_rat", "title": "TRACK RAT", "desc": "FINISH BOTH CHAIR COURSES", "rules": [["chair_courses", ">=", 2]]},
+    {"id": "bumper_king", "title": "BUMPER KING", "desc": "WIN 3 CHAIR FIGHTS", "rules": [["chairfight_wins", ">=", 3]]},
+    {"id": "pushy", "title": "PUSHY", "desc": "PUSH 10 COWORKER CHAIRS", "rules": [["chair_shoves", ">=", 10]]},
+    {"id": "flag_runner", "title": "FLAG RUNNER", "desc": "CARRY 5 FLAGS HOME", "rules": [["flag_caps", ">=", 5]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -61749,7 +62733,12 @@ const COUNTERS := [
     ["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
     ["", "COOKOUT BEST", "stars.grill", "stars"],
     ["", "CHAIR RACE BEST", "stars.chair", "stars"],
+    ["", "CHAIR RACES WON", "chair_wins", "n"],
+    ["", "CHAIR FIGHT BEST", "stars.chairfight", "stars"],
+    ["", "CHAIR FIGHTS WON", "chairfight_wins", "n"],
+    ["", "CHAIRS PUSHED", "chair_shoves", "n"],
     ["", "PAINTBALL BEST", "stars.paintball", "stars"],
+    ["", "FLAGS CARRIED HOME", "flag_caps", "n"],
     ["", "DARTS BEST", "stars.darts", "stars"],
     ["", "BULLSEYES", "bulls", "n"],
     ["", "BURGERS SERVED", "burgers_served", "n"],
@@ -61958,11 +62947,31 @@ func note_outing(game: String, result: int, info := {}) -> void:
         "darts":
             add("bulls", int(info.get("bulls", 0)))
             best("darts_best", int(info.get("score", 0)))
+        "chair":  # a race (info.chair: course, won, clean): CLEAN LAP, SPEED DEMON, TRACK RAT
+            var c: Dictionary = info.get("chair", {})
+            if result >= 1 and c.has("course"):
+                note_first("course", str(c.course), "chair_courses")
+            if bool(c.get("won", false)):
+                add("chair_wins")
+            if bool(c.get("clean", false)):
+                best("chair_clean", 1)
+        "chairfight":  # the chair fight (info.chair: won, bumps): BUMPER KING
+            var c: Dictionary = info.get("chair", {})
+            add("chair_bumps", int(c.get("bumps", 0)))
+            if bool(c.get("won", false)):
+                add("chairfight_wins")
+        "paintball":  # flags you carried home yourself (player 2's count too): FLAG RUNNER
+            add("flag_caps", int(info.get("caps", 0)))
         "grill":
             add("burgers_served", int(info.get("served", 0)))
             add("dogs_served", int(info.get("dogs", 0)))
             if bool(info.get("clean", false)):
                 best("grill_clean", 1)
+
+
+# a coworker's rolling chair pushed with them in it (chair_shove.gd): PUSHY
+func note_shove() -> void:
+    add("chair_shoves")
 
 
 # the first time an id of a kind is seen (an alley, an arena, a session, a site type) it counts once toward total

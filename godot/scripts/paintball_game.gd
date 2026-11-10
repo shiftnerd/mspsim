@@ -13,8 +13,9 @@ extends RefCounted
 const LEN := 640.0
 const BASE_X := [34.0, 606.0]  # where team 0 / team 1 start and where their flag stands
 const RUN := 40.0  # px/s
-const CARRY := 0.85  # x the speed with a flag
+const CARRY := 1.0  # x the speed with a flag (0.85 until the tuning run: a slowed carrier never got home and most matches ended level)
 const RANGE := 170.0
+const NIGHT_RANGE := 0.82  # x the range at night, for everybody: you see less of the street
 const FIRE_GAP := 0.7  # your own reload
 const AI_GAP := 1.4  # the crew reloads slower than you (six people firing every 0.7 s was a wall of paint)
 const LANES := 3  # the street is three lanes wide: you can only tag somebody in your own lane
@@ -31,6 +32,11 @@ const COVER := 14.0  # a ducking player this close behind a barricade is covered
 const BARRICADES := [150.0, 235.0, 320.0, 405.0, 490.0]
 const YOU_ACC := 0.8
 const AI_ACC := 0.18  # the crew's aim is this much of their skill
+# the tuning run (tests/paintball_tuning.gd: a scripted average player, 30+ seeded matches a tier) found the first version lopsided:
+# the player won 97 % and nobody else ever carried a flag home. Three numbers fix that:
+const RIVAL_EDGE := 2.3  # x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
+const COOP_EDGE := 1.4  # x that again with two pilots on your side
+const CARRY_DODGE := 0.8  # seconds (less for the quick ones) before a crew member with the flag steps out of a rival's lane
 const NAMES := ["Alan", "Garrison", "Dan", "Maya", "John"]
 const STYLES := {
 	"Alan": {"skill": 0.5, "role": "defend", "careful": true, "win": "ALAN: A CLEAN, WELL DOCUMENTED VICTORY.", "lose": "ALAN: NOBODY WILL READ THE POST-MORTEM ON THAT."},
@@ -40,7 +46,7 @@ const STYLES := {
 	"John": {"skill": 0.5, "role": "defend", "careful": true, "win": "JOHN: WE DID IT. DOES THIS COUNT AS A TEAM BUILDING?", "lose": "JOHN: I REGRET NOTHING. I ALSO HIT NOTHING."},
 }
 
-var params := {"skill": 1.0, "acc": 1.0}  # Difficulty scales: skill = rival accuracy and reflexes, acc = your own aim
+var params := {"skill": 1.0, "acc": 1.0}  # Difficulty scales: skill = the other team's aim, acc = your own aim (night: true = the night match)
 var rng := RandomNumberGenerator.new()
 var units: Array = []  # {name, team, x, vx, face, role, careful, skill, flag, down, duck, cool, react, you, tags, duck_for}
 var flags: Array = []  # {team (whose flag), x, carried (unit index or -1), home}
@@ -58,11 +64,37 @@ var you_caps := 0
 var move_dir := 0  # the player's held direction
 var ticks := 0
 var you_auto := false  # tests and demos: the crew plays your unit too
+var night := false  # the night match (params.night): a shorter range for both sides, the field is drawn dark
+var reach := RANGE  # how far a paintball flies in this match
+var pilots := 1  # co-op: 2 = unit 1 (your team mate) is player 2's
+var p2_tags := 0
+var p2_caps := 0
+# the three tuning numbers of a match (the constants, unless params says otherwise: the tuning run sweeps them)
+var crew_acc := AI_ACC
+var target := TARGET
+var limit := LIMIT
+var rival_edge := RIVAL_EDGE
+var carry_dodge := CARRY_DODGE
+var respawn := RESPAWN
+var carry := CARRY
 
 
-func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
+# pilots: 1, or 2 in co-op: player 2 takes the first team mate's place (unit 1, named "P2") and one of the crew sits out
+func setup(p: Dictionary, names: Array, r: RandomNumberGenerator, humans := 1) -> void:
 	params = p.duplicate()
 	rng = r
+	pilots = clampi(humans, 1, 2)
+	night = bool(p.get("night", false))
+	reach = RANGE * (NIGHT_RANGE if night else 1.0)
+	crew_acc = float(p.get("crew_acc", AI_ACC))
+	target = int(p.get("target", TARGET))
+	limit = float(p.get("limit", LIMIT))
+	rival_edge = float(p.get("rival_edge", RIVAL_EDGE)) * (COOP_EDGE if pilots == 2 else 1.0)
+	carry_dodge = float(p.get("carry_dodge", CARRY_DODGE))
+	respawn = float(p.get("respawn", RESPAWN))
+	carry = float(p.get("carry", CARRY))
+	p2_tags = 0
+	p2_caps = 0
 	units = []
 	flags = []
 	score = [0, 0]
@@ -82,11 +114,15 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
 			break
 		if not crew.has(n):
 			crew.append(n)
+	if pilots == 2:
+		crew.push_front("P2")
 	_add_unit("YOU", 0, 0, true)
 	_add_unit(str(crew[0]), 0, 1, false)
 	_add_unit(str(crew[1]), 0, 2, false)
 	for k in 3:
 		_add_unit(str(crew[2 + k]), 1, k, false)
+	if pilots == 2:
+		units[1].human = true
 	for t in 2:
 		flags.append({"team": t, "x": float(BASE_X[t]), "carried": -1, "home": true})
 
@@ -112,6 +148,8 @@ func _add_unit(who: String, team: int, slot: int, you: bool) -> void:
 			"cool": 0.0,
 			"react": 0.0,
 			"you": you,
+			"human": you,  # somebody holds the controls of this unit (you, or player 2 in co-op)
+			"move": 0,  # a human's held direction
 			"tags": 0,
 			"duck_for": 0.0,
 			"lane": [1, 0, 2][slot % 3],
@@ -137,11 +175,28 @@ func base_of(team: int) -> float:
 # ---- the player's controls -----------------------------------------------------------------------------
 func set_move(dir: int) -> void:
 	move_dir = clampi(dir, -1, 1)
+	units[0].move = move_dir
 
 
 func set_duck(on: bool) -> void:
-	var u: Dictionary = units[0]
+	set_duck_of(0, on)
+
+
+# the same for any piloted unit (co-op: unit 1 is player 2's)
+func set_move_of(i: int, dir: int) -> void:
+	units[i].move = clampi(dir, -1, 1)
+	if i == 0:
+		move_dir = int(units[i].move)
+
+
+func set_duck_of(i: int, on: bool) -> void:
+	var u: Dictionary = units[i]
 	u.duck = on and float(u.down) <= 0.0
+
+
+# true when a person, not the crew's AI, plays this unit
+func human(i: int) -> bool:
+	return bool(units[i].human) and not you_auto
 
 
 func fire_you() -> bool:
@@ -186,7 +241,7 @@ func step(dt: float) -> void:
 		_tick_unit(i, dt)
 	for i in order:
 		_flags_for(i)
-	if score[0] >= TARGET or score[1] >= TARGET or clock >= LIMIT:
+	if score[0] >= target or score[1] >= target or clock >= limit:
 		_end()
 
 
@@ -203,13 +258,13 @@ func _tick_unit(i: int, dt: float) -> void:
 			u.x = base_of(int(u.team)) + 6.0 * float(1 - 2 * int(u.team)) * float(i % 3)
 			u.face = 1 if int(u.team) == 0 else -1
 		return
-	if bool(u.you) and not you_auto:
-		u.vx = 0.0 if bool(u.duck) else float(move_dir) * RUN
-		if move_dir != 0:
-			u.face = move_dir
+	if human(i):
+		u.vx = 0.0 if bool(u.duck) else float(int(u.move)) * RUN
+		if int(u.move) != 0:
+			u.face = int(u.move)
 	else:
 		_ai(i, dt)
-	var speed_mul: float = CARRY if bool(u.flag) else 1.0
+	var speed_mul: float = carry if bool(u.flag) else 1.0
 	u.x = clampf(float(u.x) + float(u.vx) * speed_mul * dt, 8.0, LEN - 8.0)
 
 
@@ -240,6 +295,8 @@ func _flags_for(i: int) -> void:
 		score[int(u.team)] += 1
 		if bool(u.you):
 			you_caps += 1
+		elif bool(u.human):
+			p2_caps += 1
 		events.append({"kind": "capture", "unit": i, "team": int(u.team)})
 		say("%s SCORES! %d TO %d" % [str(u.name), score[0], score[1]], 1.8)
 
@@ -258,13 +315,13 @@ func _end() -> void:
 func target_of(i: int) -> int:
 	var u: Dictionary = units[i]
 	var best := -1
-	var best_d := RANGE + 1.0
+	var best_d := reach + 1.0
 	for j in units.size():
 		var v: Dictionary = units[j]
 		if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) != int(u.lane):
 			continue
 		var d: float = (float(v.x) - float(u.x)) * float(u.face)
-		if d > 0.0 and d <= RANGE and d < best_d:
+		if d > 0.0 and d <= reach and d < best_d:
 			best_d = d
 			best = j
 	return best
@@ -298,10 +355,10 @@ func fire(i: int) -> bool:
 	var u: Dictionary = units[i]
 	if float(u.cool) > 0.0 or float(u.down) > 0.0 or bool(u.duck):
 		return false
-	u.cool = FIRE_GAP if (bool(u.you) and not you_auto) else AI_GAP
+	u.cool = FIRE_GAP if human(i) else AI_GAP
 	var j := target_of(i)
 	var hit := -1
-	var to: float = clampf(float(u.x) + float(u.face) * RANGE, 0.0, LEN)  # where the paintball ends up
+	var to: float = clampf(float(u.x) + float(u.face) * reach, 0.0, LEN)  # where the paintball ends up
 	if j >= 0:
 		var v: Dictionary = units[j]
 		to = float(v.x)
@@ -310,8 +367,8 @@ func fire(i: int) -> bool:
 			to = shield
 		else:
 			var d: float = absf(float(v.x) - float(u.x))
-			var acc: float = (YOU_ACC * float(params.acc)) if (bool(u.you) and not you_auto) else (float(u.skill) * AI_ACC * float(params.skill))
-			var chance := clampf(acc * (1.0 - 0.5 * d / RANGE) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0) * (OPEN_DUCK if bool(v.duck) else 1.0), 0.05, 0.95)
+			var acc: float = (YOU_ACC * float(params.acc)) if human(i) else (float(u.skill) * crew_acc * (float(params.skill) * (1.0 if you_auto else rival_edge) if int(u.team) == 1 else 1.0))
+			var chance := clampf(acc * (1.0 - 0.5 * d / reach) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0) * (OPEN_DUCK if bool(v.duck) else 1.0), 0.05, 0.95)
 			if rng.randf() < chance:
 				hit = j
 	events.append({"kind": "shot", "unit": i, "from": float(u.x), "to": to, "face": int(u.face), "hit": hit, "target": j})
@@ -322,12 +379,14 @@ func fire(i: int) -> bool:
 
 func _tag(j: int, by: int) -> void:
 	var v: Dictionary = units[j]
-	v.down = RESPAWN
+	v.down = respawn
 	v.duck = false
 	v.vx = 0.0
 	units[by].tags = int(units[by].tags) + 1
 	if bool(units[by].you):
 		you_tags += 1
+	elif bool(units[by].human):
+		p2_tags += 1
 	events.append({"kind": "tag", "unit": j, "by": by, "x": float(v.x)})
 	if bool(v.flag):
 		var f: Dictionary = flags[other(int(v.team))]
@@ -336,7 +395,7 @@ func _tag(j: int, by: int) -> void:
 		v.flag = false
 		events.append({"kind": "drop", "unit": j, "flag": int(f.team)})
 		say("%s DROPPED THE FLAG!" % str(v.name), 1.4)
-	elif bool(units[by].you):
+	elif bool(units[by].human):
 		say("TAGGED %s!" % str(v.name).to_upper(), 1.0)
 
 
@@ -360,8 +419,11 @@ func _goal(i: int) -> float:
 # nobody in my lane but somebody ahead of me in another one: after a beat, one lane towards them (so a lane change is a dodge, not a hiding place)
 func _ai_lane(i: int, dt: float) -> void:
 	var u: Dictionary = units[i]
+	if bool(u.flag):
+		_ai_carry_lane(i, dt)
+		return
 	var want := -1
-	var best := RANGE * 1.3
+	var best := reach * 1.3
 	if target_of(i) < 0:
 		for v in units:
 			if int(v.team) == int(u.team) or float(v.down) > 0.0 or int(v.lane) == int(u.lane):
@@ -377,6 +439,30 @@ func _ai_lane(i: int, dt: float) -> void:
 	if float(u.lane_t) >= LANE_CHASE - 0.3 * float(u.skill):
 		u.lane_t = 0.0
 		change_lane(i, signi(want - int(u.lane)))
+
+
+# with the flag in hand the crew keeps out of the line of fire: a rival in my lane within reach (in front or behind) and, after a
+# beat, I step into the emptier lane next to mine. Without it a carrier walked 500 px down one lane and nobody but you ever scored.
+func _ai_carry_lane(i: int, dt: float) -> void:
+	var u: Dictionary = units[i]
+	var counts := [0, 0, 0]
+	for v in units:
+		if int(v.team) != int(u.team) and float(v.down) <= 0.0 and absf(float(v.x) - float(u.x)) <= reach:
+			counts[int(v.lane)] += 1
+	var mine := int(u.lane)
+	if counts[mine] == 0:
+		u.lane_t = 0.0
+		return
+	u.lane_t = float(u.lane_t) + dt
+	if float(u.lane_t) < carry_dodge - 0.3 * float(u.skill):
+		return
+	u.lane_t = 0.0
+	var best := mine
+	for to: int in [mine - 1, mine + 1]:
+		if to >= 0 and to < LANES and counts[to] < counts[best]:
+			best = to
+	if best != mine:
+		change_lane(i, best - mine)
 
 
 func _ai(i: int, dt: float) -> void:
@@ -415,7 +501,7 @@ func _ai(i: int, dt: float) -> void:
 # ---- the result ----------------------------------------------------------------------------------------
 func stars() -> int:
 	if winner == 0:
-		return 3 if score[0] - score[1] >= 2 and you_tags + you_caps >= 3 else 2
+		return 3 if score[0] - score[1] >= 2 and you_tags + you_caps + p2_tags + p2_caps >= 3 else 2
 	if winner == 2:
 		return 1
 	return 0
@@ -440,8 +526,8 @@ func debug_line(i: int) -> String:
 	var u: Dictionary = units[i]
 	if float(u.down) > 0.0:
 		return "DOWN %.1f" % float(u.down)
-	if bool(u.you) and not you_auto:
-		return "YOU"
+	if human(i):
+		return str(u.name)
 	return "%s %s L%d goal %d tgt %d" % [str(u.role), "duck" if bool(u.duck) else "go", int(u.lane), int(_goal(i)), target_of(i)]
 
 

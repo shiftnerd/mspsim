@@ -15,6 +15,7 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const BowlVariety := preload("res://scripts/bowl_variety.gd")
 const ChairRace := preload("res://scripts/chair_race.gd")
 const ChairTrack := preload("res://scripts/chair_track.gd")
+const ChairFight := preload("res://scripts/chair_fight.gd")
 const PaintGame := preload("res://scripts/paintball_game.gd")
 const PaintTrack := preload("res://scripts/paintball_track.gd")
 const CornholeGame := preload("res://scripts/cornhole_game.gd")
@@ -235,7 +236,8 @@ const ROOM_INTRO := {
 	"THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
-const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
+const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
+const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
 const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
 const LANE_COLORS := [Color("e0463c"), Color("5fd068"), Color("5aa0e8"), Color("f5d442")]
 # karaoke songs (invented titles and lyrics). gap = seconds between notes at the NORMAL tier (EASY and
@@ -570,7 +572,9 @@ var best := {}
 var known := {}  # dinner: who likes / dreads what, learned over time
 var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} (rolled on first use)
 var song_best := {}  # karaoke: best stars per song id
-var chair_best := {}  # chair race: best time in seconds per difficulty tier
+var chair_best := {}  # chair race: best time in seconds per difficulty tier (THE GAUNTLET: "<tier>:gauntlet")
+var chair_event := "straight"  # the event picked on the chair race card (CHAIR_EVENTS), kept for the session
+var paint_night := false  # paintball: tonight's match is the night one (drawn on the seeded stream when the card opens, LEFT / RIGHT changes it)
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
 var stayed: Array = []  # roster members who did not come
@@ -1055,6 +1059,8 @@ func _open(id: String, from_invite: bool) -> void:
 		Owner.cash -= int(GAMES[id].cost)
 	if id == "chair":
 		_chair_setup()
+	if id == "paintball":
+		paint_night = bool(opts.night) if opts.has("night") else Difficulty.rng_for("paint.night", count).randf() < 0.34
 	_canvas.queue_redraw()
 
 
@@ -1214,6 +1220,8 @@ func _event_key(event: InputEvent) -> int:
 func _event_key_p2(event: InputEvent) -> int:
 	if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
 		return KEY_X  # the second pilot's push
+	if game == "paintball" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "interact"))):
+		return KEY_Z  # A or X on player 2's pad: fire (B, held, ducks: _paint_tick reads it)
 	var dir := Controls.nav(event, false)
 	if dir != "":
 		return PAD_ARROWS[dir]
@@ -1260,6 +1268,8 @@ func _press_page(key: int) -> void:
 			ask_budget()
 		else:
 			begin_play()
+	elif key in [KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]:
+		_page_pick(-1 if key in [KEY_LEFT, KEY_A] else 1)
 	elif key == KEY_ESCAPE:
 		if Campaign.mode == "owner" and not lunch_on() and not casual_on():
 			Owner.cash += int(GAMES[game].cost)
@@ -1298,8 +1308,8 @@ func _press_game(key: int) -> void:
 
 # the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner ramps too (R30: dinner.expect / fits / hints).
 func _mastery_lines(result: int) -> Array:
-	if result < 2 or Difficulty.fixed_take:
-		return []
+	if result < 2 or Difficulty.fixed_take or _career_game() != game:
+		return []  # (the chair fight has no skill-check numbers to ramp)
 	var n := mini(int(Career.value("good." + game)), Difficulty.RAMP_PLAYS)
 	if n >= Difficulty.RAMP_PLAYS:
 		return ["FULL MASTERY."]
@@ -1322,9 +1332,9 @@ func _finish(result: int) -> void:
 		_darts_finish(result)
 	else:
 		count += 1
-		best[game] = maxi(int(best.get(game, 0)), result)
+		best[_career_game()] = maxi(int(best.get(_career_game(), 0)), result)
 		Career.note_outing(
-			game,
+			_career_game(),
 			result,
 			{
 				"perfects": int(g.get("perfect", 0)),
@@ -1334,6 +1344,8 @@ func _finish(result: int) -> void:
 				"served": int(g.game.served) if game == "grill" and g.has("game") else 0,
 				"clean": game == "grill" and g.has("game") and int(g.game.burnt) == 0 and result >= 2,
 				"dogs": int(g.game.dogs_plated) if game == "grill" and g.has("game") else 0,
+				"chair": _chair_career(result) if game == "chair" else {},
+				"caps": int(g.rules.you_caps) + int(g.rules.p2_caps) if game == "paintball" and g.has("rules") else 0,
 				"lunch": lunch_on()
 			}
 		)
@@ -4222,8 +4234,46 @@ func racers() -> Array:
 	return ChairRace.ORDER.filter(func(n: String) -> bool: return pool.has(n))
 
 
+# the event of this race: the Free Play toolbox and the tests name one (opts.event), otherwise the one picked on the card
+func _chair_event_now() -> String:
+	var id := str(opts.get("event", chair_event))
+	return id if id in CHAIR_EVENTS else "straight"
+
+
+# the Career id of what is being played: the chair fight keeps its own stars (the races share "chair")
+func _career_game() -> String:
+	return "chairfight" if game == "chair" and str(g.get("event", "")) == "fight" else game
+
+
+# LEFT / RIGHT on an intro page: the chair card's event, paintball's day or night
+func _page_pick(d: int) -> void:
+	if game == "chair" and not opts.has("event"):
+		chair_event = CHAIR_EVENTS[posmod(CHAIR_EVENTS.find(_chair_event_now()) + d, CHAIR_EVENTS.size())]
+		var keep: Variant = g.get("rng0")
+		_chair_clear()
+		g = {"rng0": keep} if keep != null else {}
+		_chair_setup()
+	elif game == "paintball" and not opts.has("night"):
+		paint_night = not paint_night
+	_canvas.queue_redraw()
+
+
+func _chair_best_key(course: String) -> String:
+	return Difficulty.tier if course == "straight" else "%s:%s" % [Difficulty.tier, course]
+
+
+# what the Career wants to know about a finished chair event (Career.note_outing, info.chair)
+func _chair_career(result: int) -> Dictionary:
+	var race: RefCounted = g.race
+	if str(g.get("event", "")) == "fight":
+		return {"fight": true, "won": race.winner == 0, "bumps": int(race.score()[0])}
+	return {"course": str(race.course), "won": not race.dnf and int(g.place) == 1 and not race.rivals.is_empty(), "clean": result >= 1 and race.crashes + race.cones == 0 and not race.false_started}
+
+
 func _chair_params() -> Dictionary:
 	return {
+		"course": _chair_event_now(),
+		"opponent": str(opts.get("opponent", "")),
 		"crash": Difficulty.f("chair.crash"),
 		"stamina": Difficulty.f("chair.stamina"),
 		"slick": Difficulty.f("chair.slick"),
@@ -4234,9 +4284,14 @@ func _chair_params() -> Dictionary:
 
 # the race is set up as soon as its page opens (so the room can show the racers on the grid); the countdown starts with ENTER
 func _chair_setup() -> void:
-	var race := ChairRace.new()
-	race.setup(_chair_params(), racers(), Difficulty.rng("chair"))
-	g = {"race": race, "place": 0, "new_best": false, "count": 4}
+	var stream := Difficulty.rng("chair")
+	if g.has("rng0"):
+		stream.state = int(g.rng0)  # another event was picked on the card: the same draw again, not the next one of the stream
+	var rng0 := stream.state
+	var event := _chair_event_now()
+	var race: RefCounted = ChairFight.new() if event == "fight" else ChairRace.new()
+	race.setup(_chair_params(), racers(), stream)
+	g = {"race": race, "place": 0, "new_best": false, "count": 4, "event": event, "rng0": rng0}
 	var scene := get_tree().current_scene
 	if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
 		var me := _actor("Player")
@@ -4305,10 +4360,12 @@ func _chair_tick(dt: float) -> void:
 func _chair_cues(race: RefCounted) -> void:
 	for e in race.events:
 		match str(e):
-			"crash":
+			"crash", "ouch":
 				Sfx.play("clunk")
 				for k in 2:
 					Controls.rumble(k, 0.9, 0.3)
+			"bump", "clash", "clunk":
+				Sfx.play("clunk")
 			"cone", "oil", "false":
 				Sfx.play("squeak")
 			"go", "finish":
@@ -4326,8 +4383,10 @@ func _chair_cues(race: RefCounted) -> void:
 		line = race.msg
 	elif race.feel_t > 0.0:
 		line = race.feel
-	elif race.cp_next < ChairRace.CHECK_NAMES.size():
-		line = "NEXT: %s" % ChairRace.CHECK_NAMES[race.cp_next]
+	elif str(g.get("event", "")) == "fight":
+		line = "YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
+	elif race.cp_next < race.checks.size():
+		line = "NEXT: %s" % race.check_names[race.cp_next]
 	else:
 		line = "THE FINISH LINE!"
 	caption(line, 0.3)
@@ -4347,11 +4406,19 @@ func _chair_press(key: int) -> void:
 			race.change_lane(-1)
 		KEY_DOWN, KEY_S:
 			race.change_lane(1)
+		KEY_LEFT, KEY_A:
+			if race.has_method("spin"):  # the chair fight: turn the chair around
+				race.spin(-1)
+		KEY_RIGHT, KEY_D:
+			if race.has_method("spin"):
+				race.spin(1)
 
 
 func _chair_hint() -> String:
 	if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
 		return "GET READY  ESC = LEAVE"
+	if str(g.get("event", "")) == "fight":
+		return "Z X = PUSH  L R = TURN  UP DN = LANE"
 	if Players.coop and Players.slots[1].joined:
 		return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
 	return str(GAMES.chair.keys)
@@ -4360,11 +4427,17 @@ func _chair_hint() -> String:
 # the race is over: the best time of this tier, the stars from the time, then the usual result page
 func _chair_end() -> void:
 	var race: RefCounted = g.race
+	if str(g.get("event", "")) == "fight":
+		g.place = 1 if race.winner == 0 else 2
+		_chair_door(false)
+		_finish(race.stars())
+		return
 	var t: float = race.total()
+	var key := _chair_best_key(str(race.course))
 	g.place = race.place()
-	g.new_best = not race.dnf and (not chair_best.has(Difficulty.tier) or t < float(chair_best[Difficulty.tier]))
+	g.new_best = not race.dnf and (not chair_best.has(key) or t < float(chair_best[key]))
 	if g.new_best:
-		chair_best[Difficulty.tier] = snappedf(t, 0.01)
+		chair_best[key] = snappedf(t, 0.01)
 	_chair_door(false)
 	_finish(race.stars())
 
@@ -4372,6 +4445,8 @@ func _chair_end() -> void:
 func _chair_lines() -> Array:
 	var race: RefCounted = g.race
 	var out := []
+	if str(g.get("event", "")) == "fight":
+		return [race.comment(), "BUMPS: YOU %d, %s %d." % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1])]]
 	if race.dnf:
 		out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
 	else:
@@ -4385,9 +4460,16 @@ func _chair_lines() -> Array:
 func _paint_chair(b: Rect2) -> void:
 	var race: RefCounted = g.race
 	var y := b.position.y
+	if str(g.get("event", "")) == "fight":
+		_t("READY... %s" % race.countdown_text() if race.clock < 0.0 else "TIME %d" % race.time_left(), b.position.x, y)
+		_t("YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET], b.position.x, y + 9.0)
+		_t("STAMINA %d" % int(race.stam), b.position.x, y + 18.0, BLUE)
+		if race.msg_t > 0.0:
+			_t(race.msg, b.position.x, y + 27.0, INK)
+		return
 	var head := "READY... %s" % race.countdown_text() if race.clock < 0.0 else "TIME %.1fS" % race.total()
 	_t("%s  PLACE %d OF %d" % [head, race.place_now(), race.rivals.size() + 1], b.position.x, y)
-	_t("CHECKPOINT %d OF %d" % [race.cp_next, ChairRace.CHECK_NAMES.size()], b.position.x, y + 9.0)
+	_t("CHECKPOINT %d OF %d" % [race.cp_next, race.checks.size()], b.position.x, y + 9.0)
 	_t("STAMINA %d" % int(race.stam), b.position.x, y + 18.0, BLUE)
 	if race.msg_t > 0.0:
 		_t(race.msg, b.position.x, y + 27.0, RED if race.msg.contains("+") else INK)
@@ -4403,6 +4485,9 @@ func _hud_chair(s: Rect2) -> void:
 		var kx := o.x + 9.0 * float(k)
 		_canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 8.0), AMBER if lit else UiStyle.MUTED)
 		_t(keys[k], kx + 2.0, s.position.y + 4.0, INK if lit else WHITE)
+	if str(g.get("event", "")) == "fight":
+		_hud_fight(s, o)
+		return
 	_t("READY" if race.clock < 0.0 else "%.1fS" % race.total(), o.x + 21.0, o.y, WHITE)
 	_t("P%d/%d" % [race.place_now(), race.rivals.size() + 1], o.x + 47.0, o.y, UiStyle.SOFT)
 	var bw := 30.0
@@ -4414,15 +4499,46 @@ func _hud_chair(s: Rect2) -> void:
 	var rw := bx - rx - 6.0
 	var ry := s.position.y + 6.0
 	_canvas.draw_rect(Rect2(rx, ry, rw, 1.0), UiStyle.SOFT)
-	for i in ChairRace.CHECK_FRAC.size():
-		_canvas.draw_rect(Rect2(rx + rw * float(ChairRace.CHECK_FRAC[i]), ry - 2.0, 1.0, 5.0), UiStyle.SOFT)
+	for i in race.checks.size():
+		_canvas.draw_rect(Rect2(rx + rw * float(race.checks[i]), ry - 2.0, 1.0, 5.0), UiStyle.SOFT)
 	_canvas.draw_rect(Rect2(rx + rw, ry - 3.0, 2.0, 7.0), WHITE)
 	for who in race.rivals:
-		var fx := rx + rw * clampf(float(who.s) / ChairRace.LEN, 0.0, 1.0)
+		var fx := rx + rw * clampf(float(who.s) / float(race.length), 0.0, 1.0)
 		_canvas.draw_rect(Rect2(fx - 1.0, ry - 1.0, 3.0, 3.0), who.color)
-	var mx := rx + rw * clampf(race.pos / ChairRace.LEN, 0.0, 1.0)
+	var mx := rx + rw * clampf(race.pos / float(race.length), 0.0, 1.0)
 	_canvas.draw_rect(Rect2(mx - 2.0, ry - 2.0, 5.0, 5.0), INK)
 	_canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
+
+
+# the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
+# floor with both chairs on it, your stamina
+func _hud_fight(s: Rect2, o: Vector2) -> void:
+	var fight: RefCounted = g.race
+	_t("READY" if fight.clock < 0.0 else "%d" % fight.time_left(), o.x + 21.0, o.y, WHITE)
+	var px := o.x + 44.0
+	for side in 2:
+		for k in ChairFight.TARGET:
+			var on: bool = k < int(fight.score()[side])
+			var col: Color = (AMBER if side == 0 else fight.chairs[1].color) if on else UiStyle.MUTED
+			_canvas.draw_rect(Rect2(px, s.position.y + 4.0, 4.0, 5.0), col)
+			px += 5.0
+		px += 5.0
+	var bw := 30.0
+	var bx := s.end.x - bw - 5.0
+	var stam_col := GREEN if fight.stam > 40.0 else (AMBER if fight.stam > 15.0 else RED)
+	_canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
+	_canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(fight.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+	var rx := px + 4.0
+	var rw := bx - rx - 6.0
+	if rw < 12.0:
+		return
+	var ry := s.position.y + 6.0
+	_canvas.draw_rect(Rect2(rx, ry, rw, 1.0), UiStyle.SOFT)
+	for k in 2:
+		var c: Dictionary = fight.chairs[k]
+		var fx := rx + rw * clampf((float(c.x) - ChairFight.LO) / (ChairFight.HI - ChairFight.LO), 0.0, 1.0)
+		_canvas.draw_rect(Rect2(fx - 2.0, ry - 2.0, 5.0, 5.0), INK)
+		_canvas.draw_rect(Rect2(fx - 1.0, ry - 1.0, 3.0, 3.0), WHITE if k == 0 else c.color)
 
 
 # ---- paintball (the western capture the flag outing): the rules are in paintball_game.gd, the drawing in paintball_track.gd ----------
@@ -4433,12 +4549,13 @@ func _paint_crew() -> Array:
 
 
 func _paint_params() -> Dictionary:
-	return {"skill": Difficulty.f("paint.skill"), "acc": Difficulty.f("paint.acc")}
+	return {"skill": Difficulty.f("paint.skill"), "acc": Difficulty.f("paint.acc"), "night": paint_night}
 
 
 func _paint_setup() -> void:
 	var rules := PaintGame.new()
-	rules.setup(_paint_params(), _paint_crew(), Difficulty.rng("paint"))
+	var duo: bool = Players.coop and Players.slots[1].joined  # co-op: player 2 pilots the first team mate
+	rules.setup(_paint_params(), _paint_crew(), Difficulty.rng("paint"), 2 if duo else 1)
 	g = {"rules": rules, "count": 4, "end_t": 0.0}
 	var scene := get_tree().current_scene
 	if room_mode() and scene != null and scene.get_node_or_null("Actors") != null:
@@ -4446,6 +4563,10 @@ func _paint_setup() -> void:
 		var specs := [{"character": me.character_id() if me != null else "office_adult", "custom": Look.is_custom(), "label": "YOU"}]
 		for k in range(1, rules.units.size()):
 			var who := str(rules.units[k].name)
+			if bool(rules.units[k].human):  # player 2, in their own look
+				var p2: Dictionary = Players.slot(1).look
+				specs.append({"character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "label": "P2", "look": p2})
+				continue
 			specs.append({"character": str(World.row(who).character), "custom": false, "label": who.substr(0, 1)})
 		var track := PaintTrack.new()
 		track.setup(scene, rules, _x0(), specs)
@@ -4470,6 +4591,9 @@ func _paint_tick(dt: float) -> void:
 	rules.set_duck(Input.is_action_pressed(Controls.action_for(0, "run")))  # SHIFT (a pad's B) held
 	if Input.is_action_just_pressed(Controls.action_for(0, "aim")):
 		rules.fire_you()
+	if int(rules.pilots) == 2:  # co-op: player 2's own stick (or keys) and duck button
+		rules.set_move_of(1, int(Input.is_action_pressed(Controls.action_for(1, "move_right"))) - int(Input.is_action_pressed(Controls.action_for(1, "move_left"))))
+		rules.set_duck_of(1, Input.is_action_pressed(Controls.action_for(1, "run")))
 	rules.step(dt)
 	_paint_cues(rules)
 	if rules.phase == "over":
@@ -4486,7 +4610,7 @@ func _paint_cues(rules: RefCounted) -> void:
 			g.count = ceili(rules.count)
 			Sfx.play("ui_tick")
 	elif rules.phase == "over":
-		line = "TIME!" if rules.clock >= PaintGame.LIMIT else "THAT IS THE MATCH!"
+		line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
 	elif rules.line_t > 0.0:
 		line = rules.line
 	elif rules.units[0].down > 0.0:
@@ -4499,24 +4623,28 @@ func _paint_cues(rules: RefCounted) -> void:
 
 
 func _paint_press(key: int) -> void:
+	var me := 1 if int(g.rules.pilots) == 2 and _press_slot == 1 else 0  # co-op: whoever pressed moves their own unit
 	if key in [KEY_UP, KEY_W]:
-		g.rules.lane_you(-1)
+		g.rules.change_lane(me, -1)
 	elif key in [KEY_DOWN, KEY_S]:
-		g.rules.lane_you(1)
+		g.rules.change_lane(me, 1)
 	elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
-		if not g.rules.fire_you() and bool(g.rules.units[0].duck) and g.rules.phase == "play":
+		if not (g.rules.phase == "play" and g.rules.fire(me)) and bool(g.rules.units[me].duck) and g.rules.phase == "play":
 			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
 
 
 func _paint_lines() -> Array:
 	var rules: RefCounted = g.rules
-	return [rules.comment(), "FINAL SCORE %d TO %d. YOU SCORED %d AND TAGGED %d." % [rules.score[0], rules.score[1], rules.you_caps, rules.you_tags]]
+	var out := [rules.comment(), "FINAL SCORE %d TO %d. YOU SCORED %d AND TAGGED %d." % [rules.score[0], rules.score[1], rules.you_caps, rules.you_tags]]
+	if int(rules.pilots) == 2:
+		out.append("PLAYER 2 SCORED %d AND TAGGED %d." % [rules.p2_caps, rules.p2_tags])
+	return out
 
 
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
 	var rules: RefCounted = g.rules
-	_t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(PaintGame.LIMIT - rules.clock))], b.position.x, b.position.y)
+	_t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
 	_t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -4528,7 +4656,7 @@ func _hud_paint(s: Rect2) -> void:
 	_t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
 	_canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
 	_t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-	_t("%d" % maxi(0, ceili(PaintGame.LIMIT - rules.clock)), o.x + 26.0, o.y, WHITE)
+	_t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
 	var you: Dictionary = rules.units[0]
 	var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
 	_t(state, o.x + 48.0, o.y, AMBER)
@@ -5552,17 +5680,32 @@ func _paint_intro(b: Rect2) -> void:
 			y += 7.0
 	if game == "chair":
 		var names := racers()
+		var event := _chair_event_now()
 		var who := "RIVALS: " + join_names(names, true) if not names.is_empty() else "NO RIVALS TONIGHT: A TIME TRIAL."
+		var what := ""
+		if event == "fight":
+			who = "AGAINST %s. THE REST WATCH." % g.race.opponent().to_upper() if g.has("race") else ""
+			what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. Z X PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
+		else:
+			what = "< %s >  %s" % [str(ChairRace.COURSES[event].label), str(ChairRace.COURSES[event].blurb)]
+		if not opts.has("event"):
+			what += "  (LEFT / RIGHT: ANOTHER EVENT)"
+		for part in _wrap(what, int(b.size.x / 4.0)):
+			_t(part, b.position.x, y, BLUE)
+			y += 7.0
 		for part in _wrap(who, int(b.size.x / 4.0)):
 			_t(part, b.position.x, y)
 			y += 7.0
-		if chair_best.has(Difficulty.tier):
-			_t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[Difficulty.tier])], b.position.x, y, GREEN)
+		if event != "fight" and chair_best.has(_chair_best_key(event)):
+			_t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[_chair_best_key(event)])], b.position.x, y, GREEN)
 			y += 7.0
 	if game == "dinner":
 		y = _paint_dinner_notes(b, y)
-	if best.has(game):
-		_t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
+	if game == "paintball":
+		_t("< %s >%s" % ["A NIGHT MATCH: YOU SEE LESS FAR" if paint_night else "A DAY MATCH", "" if opts.has("night") else "  (LEFT / RIGHT)"], b.position.x, y, BLUE)
+		y += 7.0
+	if best.has(_career_game()):
+		_t("YOUR BEST: %d OF 3 STARS" % int(best[_career_game()]), b.position.x, y, GREEN)
 
 
 func _paint_result(b: Rect2) -> void:
@@ -5609,7 +5752,10 @@ func _paint_result(b: Rect2) -> void:
 						detail += "  %s %d" % [str(who).to_upper(), int(dg.totals[who])]
 			"chair":
 				var race: RefCounted = g.race
-				detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
+				if str(g.get("event", "")) == "fight":
+					detail = "YOU %d  %s %d  CLASHES %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), int(race.clashes)]
+				else:
+					detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
 	if detail != "":
 		_t(detail, b.position.x, y + 3.0, BLUE)
 

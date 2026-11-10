@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 const HELD_ITEM := preload("res://scripts/held_item.gd")
 const CHAIR_ROLL := preload("res://scripts/chair_roll.gd")
+const CHAIR_SHOVE := preload("res://scripts/chair_shove.gd")
 const SEAT_LIFE := preload("res://scripts/seat_life.gd")
 const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
@@ -604,10 +605,12 @@ func _physics_process(delta: float) -> void:
 		if _try_gesture(locked):
 			return
 		var target := nearest()
-		if interact and target != null:
+		if interact and running and CHAIR_SHOVE.try_shove(self):
+			pass  # Shift + E by a seated coworker: their chair rolls off with them in it (chair_shove.gd); you reach out ("use")
+		elif interact and target != null:
 			target.use(self)
-			if state in ["sitdown", "use", "emote"]:
-				return
+		if interact and state in ["sitdown", "use", "emote"]:
+			return
 		if jump and is_on_floor():
 			velocity.x = 0.0
 			_set_state("crouch")
