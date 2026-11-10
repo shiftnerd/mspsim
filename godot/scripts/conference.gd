@@ -16,11 +16,31 @@ const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
 const MORGAN := "Morgan Reyes - Manager"
 const Trip := preload("res://scripts/trip_variety.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
+const LINE_SECS := 3.4  # R23: seconds a line of a talk stays up while you sit in a session (E or Enter skips to the next line)
+const SESSION_HOURS := 0.9  # game hours a session takes on the trip's clock
+# P5: the owner's trip is walked too. The three sessions of the Owner card rn_session are in salons A, B and C (D is closed), and the
+# three booths of the expo hall are the three vendor cards
+const OWNER_BOOTHS := {"swag": "rn_rmm", "nerds": "rn_psa", "vendor": "rn_hw"}
+const OWNER_SPEAKERS := [["DANA PRICE", "MARGIN CLINIC"], ["SAM OKORO", "MSP PEER GROUP"], ["WHOEVER SHOWS UP", "NO SLIDES"]]
 const DEFAULT_TEXT := {
 	"invite_subject": "Rodent Nation 2014: top performers go",
 	"invite_body":
 	"LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan",
 	"progress": "KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.",
+	"seat_offer": "%s. On stage: %s, %s. The room is half full and there is a free chair in the middle.",
+	"seat_yes": "TAKE A SEAT",
+	"seat_no": "TRY ANOTHER ROOM",
+	"seat_hint": "PICK A CHAIR AND SIT DOWN (E). THE SESSION STARTS WHEN YOU DO.",
+	"seat_done": "THE SESSION LETS OUT. YOU STAND UP WITH A PAGE OF NOTES.",
+	"owner_arrive": "RODENT NATION. THE SESSIONS ARE DOWN THE HALL (RIGHT DOOR): THERE IS TIME FOR ONE. THE EXPO HALL IS OPEN ALL DAY.",
+	"owner_early": "THE BALLROOM IS BEING SET FOR THE CLOSING. SIT IN ON A SESSION FIRST.",
+	"owner_one": "ONE SESSION IS ALL THE DAY HAS ROOM FOR. THE EXPO HALL IS STILL OPEN, AND THE CLOSING IS IN THE BALLROOM.",
+	"owner_closed": "Salon D is dark: stacked chairs, a projector on a cart and a sign that says the room is being set for tomorrow.",
+	"owner_booth_done": "YOU HAVE HEARD THIS PITCH. THE REP WAVES A PEN AT YOU ANYWAY.",
+	"owner_talk_0": "A consultant puts one number on the screen: your effective hourly rate. Half the room goes quiet. Three packages: good, better and best, and never show the cheap one first. You rewrite your price sheet on a napkin.",
+	"owner_talk_1": "Four owners on bar stools admit they have not had a week off since 2011. Burnout is a staffing plan, says the moderator, not a flaw in your character. You write down two things to stop doing yourself.",
+	"owner_talk_2": "No slides and no chairs in rows. Six owners trade the stories they would never put in a case study. You swap cards with two of them. One of them knows your biggest client.",
 	"yes_subject": "Pack your bags: Rodent Nation",
 	"yes_body":
 	"You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
@@ -1039,10 +1059,22 @@ var _booths := {}
 var _talked := {}
 var _sign_cache := {}
 var _shown := {}  # the session on the screen of the breakout room you are in (kept until you leave)
+var seated := {}  # R23: the session you are sitting in ({index, id, title, door, lines, at, t, clock}); empty when you are not
+var owner_walk := false  # P5: the owner campaign's trip is being walked through the venue
+var _pending := {}  # the session you chose on the room's card, until you sit down
+var _back := {}  # owner trip: where you came from (scene, x, time scale, Msp.enabled)
+var _canvas: Node2D  # the caption of the talk
 
 
 func _ready() -> void:
 	Campaign.day_started.connect(_on_day)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	_canvas = Node2D.new()
+	_canvas.visible = false
+	layer.add_child(_canvas)
+	_canvas.draw.connect(_paint_talk)
 
 
 func reset() -> void:
@@ -1068,6 +1100,12 @@ func reset() -> void:
 	_booths = {}
 	_talked = {}
 	_shown = {}
+	seated = {}
+	_pending = {}
+	owner_walk = false
+	_back = {}
+	if _canvas != null:
+		_canvas.visible = false
 
 
 func to_dict() -> Dictionary:
@@ -1147,7 +1185,8 @@ func is_trip_day(day: int) -> bool:
 
 
 # ---- the schedule
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_talk_tick(delta)
 	if away and _stage != "done" and not Game.title_mode:
 		_trip_tick()
 		return
@@ -1251,16 +1290,25 @@ func _trip_tick() -> void:
 			Hints.objective = "NEXT: PICK A SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
 		"raffle":
 			Hints.objective = "NEXT: THE CLOSING RAFFLE IN THE BALLROOM."
+		"o_session":
+			Hints.objective = "NEXT: SIT IN ON ONE SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
+		"o_free":
+			Hints.objective = "THE EXPO HALL HAS THREE BOOTHS. THE CLOSING IN THE BALLROOM (LEFT DOOR) IS THE WAY HOME."
 	if Cards.is_open or Game.ui_open or Game.busy:
 		return
+	if owner_walk and Owner.flags.has("card_rn_wrap"):
+		_owner_home()  # the closing card was answered: fly home
+		return
+	_watch_seat()
 	var scene := _scene_name()
 	if scene == "vendor_hall" and str(Game.vars.get("conf_booth", "")) != "":
 		var booth := str(Game.vars.get("conf_booth", ""))
 		Game.vars["conf_booth"] = ""
-		_hall_answer(booth)
+		booth_use(booth)
 		return
 	if not scene.begins_with("breakout_"):
 		_shown = {}
+		_pending = {}
 	if scene == _seen:
 		return
 	_seen = scene
@@ -1280,6 +1328,8 @@ func _trip_tick() -> void:
 		"round":
 			if scene.begins_with("breakout_"):
 				_enter_breakout()
+		"o_session", "o_free":
+			_owner_room(scene)
 		"raffle":
 			if scene == "ballroom":
 				World.clock = 16.5
@@ -1328,7 +1378,10 @@ func _enter_breakout() -> void:
 	var sessions: Array = menu(rnd)
 	var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
 	_shown = {"door": idx, "round": rnd, "id": str(found.id)}
-	_session(rnd, str(found.id))
+	if _free_seat() == null:
+		_session(rnd, str(found.id))  # no chair to sit on (a test that is not in the room): the session is the old card
+		return
+	_offer_seat({"index": rnd, "id": str(found.id), "title": str(found.get("short", found.label)), "door": idx})
 
 
 # the session on the screen of breakout room `door` (0 = A to 3 = D): the one you walked in on, else the round that is on now
@@ -1343,6 +1396,8 @@ func session_at(door: int) -> Dictionary:
 
 # what the room's screen and sign show: round, time, the title wrapped to `chars` letters, the speaker (name, company)
 func room_info(door: int, chars := 22) -> Dictionary:
+	if owner_walk:
+		return owner_room_info(door, chars)
 	var at := session_at(door)
 	var found := {}
 	for s in pool(int(at.round)):
@@ -1378,6 +1433,8 @@ func _wrap(text: String, limit: int) -> Array:
 
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
 func sign_lines(door: int) -> Array:
+	if owner_walk:
+		return _wrap(owner_title(door), 9) if door < owner_sessions().size() else ["CLOSED"]
 	if away and _stage == "round" and rnd < ROUNDS.size():
 		var sessions: Array = menu(rnd)
 		if door < sessions.size():
@@ -1436,6 +1493,8 @@ func _session(index: int, id: String) -> void:
 		Sales.adjust(0, 4)
 	elif skill != "":
 		Skills.add_xp(skill, int(found.xp))
+	if not seated.is_empty():
+		return  # R23: you sat through it, the talk itself was the text
 	Cards.ask(
 		"SESSION",
 		text,
@@ -1470,7 +1529,7 @@ func _hall() -> void:
 
 # a booth in the vendor hall (E on it): what it gives you, once each
 func booth(id: String) -> void:
-	_hall_answer(id)
+	booth_use(id)
 
 
 func _hall_answer(id: String) -> void:
@@ -1534,13 +1593,299 @@ func _finish() -> void:
 	World.clock = World.DAY_END
 
 
+# ---- R23: sitting in a session ------------------------------------------------------------------------------------------------
+# Walking into a breakout room no longer plays the session as a card. The card is now the choice (sit in on this one, or try
+# another room); the session starts when you sit down on a chair, plays its lines one by one as a caption while the trip's clock
+# runs, and you stand up when it is over (the reward is applied then). E / Enter skips to the next line.
+func _free_seat() -> Node:
+	var scene := get_tree().current_scene
+	if scene == null or not _scene_name().begins_with("breakout_"):
+		return null
+	var taken := {}
+	for n in get_tree().get_nodes_in_group("npcs"):
+		taken[str(n.get("start_seat"))] = true
+	var seats := scene.get_node_or_null("Interactables")
+	if seats == null:
+		return null
+	for s in seats.get_children():
+		if s.has_method("use") and s.get("occupied") != null and not taken.has(str(s.name)):
+			return s
+	return null
+
+
+func _offer_seat(what: Dictionary) -> void:
+	var info := room_info(int(what.door))
+	var who: Array = info.get("speaker", ["A GUEST SPEAKER", "RODENT NATION"])
+	Cards.ask(
+		"SALON %s" % "ABCD"[clampi(int(what.door), 0, 3)],
+		str(TEXT.seat_offer) % [str(what.title), str(who[0]), str(who[1])],
+		[{"label": str(TEXT.seat_yes), "id": "sit"}, {"label": str(TEXT.seat_no), "id": "leave"}],
+		func(id: String) -> void: _seat_answer(what, id)
+	)
+
+
+func _seat_answer(what: Dictionary, id: String) -> void:
+	if id == "sit":
+		_pending = what
+		Hints.toast(str(TEXT.seat_hint), 5.0)
+		return
+	_pending = {}
+	Game.go("resort_hall", str(Game.vars.get("conf_door", "from_a")))
+
+
+# you chose a session and sat down: it begins
+func _watch_seat() -> void:
+	if _pending.is_empty() or not seated.is_empty():
+		return
+	Hints.objective = "TAKE A FREE CHAIR (E). THE SESSION STARTS WHEN YOU SIT DOWN."
+	var me := Players.player0(get_tree().current_scene)
+	if me != null and str(me.state) == "sitting":
+		_begin_talk()
+
+
+# the lines of a talk: its own `lines`, else the sentences of its text (the reward in brackets is the last line)
+func talk_lines(found: Dictionary) -> Array:
+	var own: Array = found.get("lines", [])
+	if not own.is_empty():
+		return own
+	var out := []
+	for part in str(found.get("text", "")).replace(". (", ".|(").replace(". ", ".|").split("|"):
+		if str(part).strip_edges() != "":
+			out.append(str(part).strip_edges().to_upper())
+	return out
+
+
+func _session_def(index: int, id: String) -> Dictionary:
+	for s in pool(index):
+		if str(s.id) == id:
+			return s
+	return {}
+
+
+func _begin_talk() -> void:
+	seated = _pending.duplicate()
+	_pending = {}
+	var found: Dictionary = {"text": str(TEXT.get("owner_talk_%d" % int(seated.index), ""))} if seated.get("owner", false) else _session_def(int(seated.index), str(seated.id))
+	seated["lines"] = talk_lines(found)
+	seated["at"] = 0
+	seated["t"] = 0.0
+	seated["clock"] = World.clock
+	seated["hours"] = 0.0 if seated.get("owner", false) else SESSION_HOURS  # the owner's week keeps its own clock
+	Game.ui_open = true  # you stay in the chair until it is over
+	_canvas.visible = true
+	_nod()
+
+
+func talk_line() -> String:
+	if seated.is_empty() or int(seated.at) >= seated.lines.size():
+		return ""
+	return str(seated.lines[int(seated.at)])
+
+
+func _talk_tick(delta: float) -> void:
+	if seated.is_empty():
+		return
+	if Cards.is_open:
+		return
+	Game.ui_open = true
+	seated.t = float(seated.t) + delta
+	var n: int = maxi(1, seated.lines.size())
+	World.clock = float(seated.clock) + float(seated.hours) * minf(1.0, (float(seated.at) + float(seated.t) / LINE_SECS) / float(n))
+	if float(seated.t) >= LINE_SECS:
+		talk_skip()
+	_canvas.queue_redraw()
+
+
+# on to the next line (the timer, or E / Enter); after the last one the session is over
+func talk_skip() -> void:
+	if seated.is_empty():
+		return
+	seated.at = int(seated.at) + 1
+	seated.t = 0.0
+	if int(seated.at) >= seated.lines.size():
+		_end_talk()
+	else:
+		_nod()
+
+
+func _end_talk() -> void:
+	var done := seated.duplicate()
+	World.clock = float(done.clock) + float(done.hours)
+	if done.get("owner", false):
+		_owner_session_done(int(done.index))
+	else:
+		_session(int(done.index), str(done.id))  # the reward (no card: seated is still set)
+	seated = {}
+	_canvas.visible = false
+	Game.ui_open = false
+	var me := Players.player0(get_tree().current_scene)
+	if me != null and str(me.state) == "sitting" and me.has_method("_stand_up"):
+		me._stand_up()
+	if done.get("owner", false):
+		Hints.toast(str(TEXT.seat_done), 4.0)
+	else:
+		_after_session(int(done.index))
+
+
+# a nod at every new line (the meeting gesture), from you in your chair
+func _nod() -> void:
+	var me := Players.player0(get_tree().current_scene)
+	if me == null or str(me.state) != "sitting" or str(me.get("_gesture")) != "":
+		return
+	var anim := "sitnod_%s" % str(me.facing)
+	if me.sprite.sprite_frames != null and me.sprite.sprite_frames.has_animation(anim):
+		me._gesture = "sitnod"
+		me.sprite.play(anim)
+
+
+func _input(event: InputEvent) -> void:
+	if seated.is_empty() or Cards.is_open or not Controls.pressed(event):
+		return
+	if float(seated.t) > 0.35 and (Controls.confirm(event) or Controls.matches(event, "interact")):
+		talk_skip()
+		get_viewport().set_input_as_handled()
+
+
+# the talk on screen: a strip with the room and the title, the line as a caption, the key hint
+func _paint_talk() -> void:
+	if seated.is_empty():
+		return
+	var size := get_viewport().get_visible_rect().size
+	UiStyle.hint_bar(_canvas, size, "E = NEXT LINE")
+	var top := UiStyle.caption_bar(_canvas, size, talk_line())
+	var head := "SALON %s  %d/%d  %s" % ["ABCD"[clampi(int(seated.door), 0, 3)], mini(int(seated.at) + 1, seated.lines.size()), seated.lines.size(), str(seated.title)]
+	var wide := int((size.x - 12.0) / 4.0)
+	var o := UiStyle.strip(_canvas, Rect2(0.0, top - UiStyle.STRIP_H, size.x, UiStyle.STRIP_H))
+	UiStyle.text(_canvas, head.left(wide), o.x, o.y, UiStyle.WHITE)
+
+
+# ---- P5: the owner walks the venue (Owner card rn_invite, GO YOURSELF) ------------------------------------------------------------
+# Owner.apply asks here before it shows a chained card: with the real rooms in use (Outings.use_rooms) the session card rn_session
+# becomes the walk (the lobby, one session in a salon, the three booths of the expo hall, the closing in the ballroom = rn_wrap),
+# and the hub card rn_hall is not needed while you are standing in the venue. Without rooms the trip stays the old cards.
+func owner_show(id: String) -> bool:
+	if id == "rn_session":
+		if not Outings.use_rooms or Game.title_mode or Campaign.mode != "owner" or get_tree().current_scene == null:
+			return false
+		_owner_fly()
+		return true
+	return owner_walk and id == "rn_hall"
+
+
+func _owner_fly() -> void:
+	var here := get_tree().current_scene
+	var me := Players.player0(here)
+	_back = {
+		"scene": here.scene_file_path.get_file().get_basename(),
+		"x": me.global_position.x if me != null else -1.0,
+		"scale": World.time_scale if World.time_scale > 0.0 else 1.0,
+		"msp": Msp.enabled,
+	}
+	owner_walk = true
+	away = true
+	_stage = "o_session"
+	_seen = ""
+	_met = {}
+	_booths = {}
+	_talked = {}
+	_pending = {}
+	seated = {}
+	Owner.flags.erase("card_rn_wrap")
+	Msp.enabled = false
+	World.time_scale = 0.0
+	Game.go("resort_lobby", "from_taxi")
+	Hints.toast(str(TEXT.owner_arrive), 6.0)
+
+
+func owner_sessions() -> Array:
+	return Owner.card_data("rn_session").get("options", [])
+
+
+# "PRICING AND PACKAGING CLINIC" (the option's label without the effect in brackets)
+func owner_title(door: int) -> String:
+	var list := owner_sessions()
+	if door < 0 or door >= list.size():
+		return "CLOSED"
+	return str(list[door].label).get_slice(" (", 0)
+
+
+func owner_room_info(door: int, chars := 22) -> Dictionary:
+	if door < 0 or door >= owner_sessions().size():
+		return {}
+	return {"id": "owner%d" % door, "round": 1, "time": "2:00 PM", "title": _wrap(owner_title(door), chars), "speaker": OWNER_SPEAKERS[mini(door, OWNER_SPEAKERS.size() - 1)]}
+
+
+# the room the owner just walked into
+func _owner_room(scene: String) -> void:
+	if scene.begins_with("breakout_"):
+		var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
+		if _stage == "o_free":
+			Hints.toast(str(TEXT.owner_one), 5.0)
+		elif idx >= owner_sessions().size():
+			Cards.ask(
+				"SALON D",
+				str(TEXT.owner_closed),
+				[{"label": "BACK TO THE HALL", "id": "leave"}],
+				func(_id: String) -> void: Game.go("resort_hall", str(Game.vars.get("conf_door", "from_a")))
+			)
+		elif _free_seat() == null:
+			_owner_session_done(idx)  # no chair: the session counts as sat through
+		else:
+			_shown = {"door": idx, "round": 0, "id": "owner%d" % idx}
+			_offer_seat({"index": idx, "id": "owner%d" % idx, "title": owner_title(idx), "door": idx, "owner": true})
+	elif scene == "ballroom":
+		if _stage == "o_free":
+			Owner.show_card("rn_wrap")
+		else:
+			Hints.toast(str(TEXT.owner_early), 4.0)
+
+
+# the session is over: its effect is the Owner card's (without the chained hub card)
+func _owner_session_done(index: int) -> void:
+	var list := owner_sessions()
+	if index >= 0 and index < list.size():
+		var fx: Dictionary = (list[index].get("fx", {}) as Dictionary).duplicate()
+		fx.erase("show")
+		Owner.apply(fx)
+		Owner.flags["card_rn_session"] = index
+	_stage = "o_free"
+
+
+# a booth of the expo hall: the tech's freebies, or (owner) the vendor who sells you a better stack with a catch
+func booth_use(id: String) -> void:
+	if not owner_walk:
+		_hall_answer(id)
+		return
+	var card := str(OWNER_BOOTHS.get(id, ""))
+	if card == "":
+		return
+	if Owner.flags.get(card, false):
+		Hints.toast(str(TEXT.owner_booth_done), 3.0)
+	else:
+		Owner.show_card(card)
+
+
+func _owner_home() -> void:
+	owner_walk = false
+	away = false
+	_stage = ""
+	_pending = {}
+	seated = {}
+	Hints.objective = ""
+	Game.vars["conf_booth"] = ""
+	Msp.enabled = bool(_back.get("msp", true))
+	World.time_scale = float(_back.get("scale", 1.0))
+	Game.pending_x = float(_back.get("x", -1.0))
+	Game.go(str(_back.get("scene", "main_floor")), "start")
+
+
 # ---- the day report for the trip day
 func adjust_report(r: Dictionary) -> Dictionary:
 	if is_tech() and not away:
 		tot_closed += int(r.closed)
 		tot_missed += int(r.missed)
 		tot_reopened += int(r.reopened)
-	if away:
+	if away and not owner_walk:
 		r["closed"] = 0
 		r["missed"] = 0
 		r["reopened"] = 0

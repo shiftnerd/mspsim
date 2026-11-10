@@ -1463,7 +1463,7 @@ func _draw_clue_board() -> void:
     for line in lines:
         var scale := 2 if PixelFont.width(line, 2) <= 44 else 1
         var yy := y + (3.0 if scale == 1 and lines.size() == 1 else 0.0)
-        PixelFont.draw(self, line, Vector2(8, yy), Color("e8e8e0"), scale)
+        PixelFont.draw(self, line, Vector2(8, yy), Color(Outings.escape_ink()), scale)
         y += 12.0 if scale == 2 else 8.0
 
 
@@ -21275,7 +21275,7 @@ func apply(fx: Dictionary) -> void:
         Career.add("trips")
     if fx.get("candidates", false):
         _hire_card()
-    if fx.has("show"):
+    if fx.has("show") and not Expo.owner_show(str(fx.show)):  # P5: the trip can be walked instead (conference.gd)
         show_card(str(fx.show))
     if fx.get("check_backups", false):
         for c in Sales.active:
@@ -28235,6 +28235,11 @@ const TABLE := {
     "escape.dial": [1, 1, 0],
     # dinner: how many of the three faces show their reaction (the others stay hidden for that round)
     "dinner.reveal": [3, 3, 2],
+    # dinner ramp (R30): extra points per diner the table expects for 3 and 2 stars; and, at a dinner with the ordering round and the
+    # marked topic list (options.variety), how many of the four shared plates suit everybody and the share of your known tastes that is marked
+    "dinner.expect": [0.0, 0.0, 0.4],
+    "dinner.fits": [3.0, 2.0, 1.0],
+    "dinner.hints": [1.0, 1.0, 0.5],
     # printer: marker speed x, green zone width x, number of test-page questions
     "printer.speed": [0.8, 1.0, 1.25],
     "printer.zone": [1.3, 1.0, 0.95],
@@ -28313,6 +28318,7 @@ const MASTERY_KEYS := [
     "karaoke.gap", "karaoke.perfect", "karaoke.good",
     "bowl.opp_skill", "bowl.aim_speed", "bowl.power_speed", "bowl.oil", "bowl.spin_noise",
     "escape.time", "escape.wrong_penalty",
+    "dinner.expect", "dinner.fits", "dinner.hints",
     "printer.speed", "printer.zone",
     "grill.cook_rate", "grill.window", "grill.time",
     "chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill", "paint.skill",
@@ -32934,7 +32940,7 @@ static func league_standing(league: Dictionary) -> Array:
     return rows
 ''')
 
-write("scripts/outings.gd", '''extends CanvasLayer
+write("scripts/outings.gd", '''extends CanvasLayer  # gdlint:ignore=max-public-methods
 # gdlint:disable=max-line-length,max-returns,max-file-lines
 # Team outings: four little mini-games the crew goes out for, if you choose to go.
 #   BOWLING (timing: aim, then power), KARAOKE (rhythm: arrow keys), ESCAPE ROOM (a 3-digit code, bulls and cows,
@@ -33520,6 +33526,7 @@ var _marks := {}  # speech bubbles to hide: node -> seconds left
 var _offered := false
 var lunches := 0  # lunch breaks taken (a campaign's midday cookout or cornhole, R29)
 var lunch_skips := 0
+var talks := 0  # D8: talks had after a great dinner (saved)
 var _lunch_offered := false  # today's lunch card has been shown (saved in the resume point)
 var darts_plays := 0  # casual rounds at the dart board (saved)
 var darts_day := -1  # the campaign day of darts_today
@@ -33554,6 +33561,7 @@ func reset() -> void:
     lunches = 0
     lunch_skips = 0
     darts_plays = 0
+    talks = 0
     darts_day = -1
     darts_today = 0
 
@@ -33576,6 +33584,7 @@ func to_dict() -> Dictionary:
         "lunches": lunches,
         "lunch_skips": lunch_skips,
         "darts_plays": darts_plays,
+        "talks": talks,
         "darts_day": darts_day,
         "darts_today": darts_today,
     }
@@ -33594,6 +33603,7 @@ func from_dict(data: Dictionary) -> void:
     darts_plays = int(data.get("darts_plays", 0))
     darts_day = int(data.get("darts_day", -1))
     darts_today = int(data.get("darts_today", 0))
+    talks = int(data.get("talks", 0))
     league = BowlVariety.new_league()
     for key in data.get("league", {}):
         league[key] = data.league[key]
@@ -33868,7 +33878,7 @@ func _host() -> String:
 func _invite_answer(id: String) -> void:
     if id == "yes":
         if Campaign.mode == "sales" and SalesCampaign.outing_kind() == "client":
-            start("dinner", true, {"party": party.duplicate()})  # the client dinner: the restaurant, a prospect at the table
+            start("dinner", true, {"party": party.duplicate(), "variety": true})  # the client dinner: the restaurant, a prospect at the table
             return
         pick_game(true)
         return
@@ -33937,6 +33947,8 @@ func start(id: String, from_invite := false, options := {}) -> void:
         opts["casual"] = true  # the dart board is a casual game whoever starts it (the toolbox, a test)
     if Difficulty.fixed_take:
         Difficulty.take_reset()
+    if id == "escape":
+        _pick_theme()  # E5: the room of this run (drawn after the take reset, so a fixed take repeats it)
     var here := get_tree().current_scene
     var in_room := use_rooms and not bool(opts.get("panel", false))
     if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
@@ -34166,7 +34178,8 @@ func press(key: int) -> void:
 func _press_page(key: int) -> void:
     if phase == "result":
         if key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_ESCAPE]:
-            close()
+            if not _post_talk():  # D8: after a great dinner somebody stays behind for a word
+                close()
     elif key in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
         if Cards.is_open:
             return
@@ -34174,6 +34187,8 @@ func _press_page(key: int) -> void:
             ask_song()  # the card at the mic picks the song, then the game begins
         elif use_rooms and game == "bowling" and Campaign.active and not opts.get("alley_picked", false):
             ask_alley()  # R11: tonight's draw is the suggestion, the card lets you pick the lanes
+        elif tab_due():
+            ask_tab()  # D6: the boss picks up the tab
         elif use_rooms and game == "dinner" and Campaign.mode == "owner":
             ask_budget()
         else:
@@ -34214,9 +34229,9 @@ func _press_game(key: int) -> void:
             _dinner_press(key)
 
 
-# the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner has no skill-check numbers to ramp.
+# the mastery ramp on the result page: one short line after a good play (2+ stars). Dinner ramps too (R30: dinner.expect / fits / hints).
 func _mastery_lines(result: int) -> Array:
-    if result < 2 or game == "dinner" or Difficulty.fixed_take:
+    if result < 2 or Difficulty.fixed_take:
         return []
     var n := mini(int(Career.value("good." + game)), Difficulty.RAMP_PLAYS)
     if n >= Difficulty.RAMP_PLAYS:
@@ -34269,6 +34284,8 @@ func _finish(result: int) -> void:
             lines.append_array(_corn_lines())
         if game == "grill":
             lines.append_array(_grill_lines())
+        if game == "dinner":
+            lines.append_array(_dinner_lines())
         if Campaign.mode == "sales":
             lines.append_array(SalesCampaign.outing_done(game, result))
         if Campaign.active:
@@ -34746,6 +34763,10 @@ func _game_options(id: String) -> Dictionary:
     var o := {"party": party.duplicate()}
     if id == "bowling":
         o["alley"] = BowlVariety.pick_alley(Difficulty.rng_for("alley", count * 7 + int(league.night)), int(league.night))
+    if id == "dinner":
+        o["variety"] = true  # R6: the ordering round, table events, a guest, the talk afterwards
+    if id == "escape":
+        o["theme"] = "draw"  # E5: the themed room is drawn per run
     return o
 
 
@@ -35425,6 +35446,8 @@ func _dinner_setup() -> void:
     for who in diners():
         var pool: Array = PEOPLE.get(who, {}).get("moods", ids)  # a quirk: some moods come up more often
         g.moods[who] = pool[r.randi_range(0, pool.size() - 1)]
+    if bool(opts.get("variety", false)):
+        _dinner_variety_setup()
     _dinner_deal()
 
 
@@ -35467,7 +35490,7 @@ func _dinner_deal() -> void:
     Difficulty.shuffle(rest, "dinner")
     chosen.append_array(rest.slice(0, 4 - chosen.size()))
     Difficulty.shuffle(chosen, "dinner")
-    g.options = chosen
+    g.options = _dinner_dress(chosen, safe)
     g.sel = 0
     g.react = {}
     g.wait = 0.0
@@ -35481,6 +35504,7 @@ func _dinner_tick(dt: float) -> void:
                 _dinner_end()
             else:
                 g.round = int(g.round) + 1
+                _dinner_event()
                 _dinner_deal()
 
 
@@ -35496,10 +35520,12 @@ func _dinner_press(key: int) -> void:
         KEY_DOWN:
             g.sel = (int(g.sel) + 1) % 4
         KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-            dinner_talk(int(g.sel))
+            _dinner_pick(int(g.sel))
 
 
 func dinner_talk(index: int) -> int:
+    if dinner_ordering():
+        g.order.done = true  # driven straight to the topics: no plate was ordered
     var topic: String = g.options[index]
     var total := 0
     g.react = {}
@@ -35517,7 +35543,8 @@ func dinner_talk(index: int) -> int:
             entry.likes.append(topic)
         elif mood == "hate" and not entry.hates.has(topic):
             entry.hates.append(topic)
-        known[who] = entry
+        known[who] = _known_mark(entry, topic, mood)
+    total += _dinner_extras(topic)
     g.score = int(g.score) + total
     g.wait = 1.4
     if room_mode():
@@ -35577,9 +35604,10 @@ func dinner_targets() -> Array:
     var n := diners().size()
     var row: Array = TABLE_BARS[clampi(n, 1, TABLE_MAX)]
     var neutral := 5 * n  # five rounds of an indifferent answer from everyone
+    var more := roundi(Difficulty.f("dinner.expect") * float(n))  # R30: after good dinners the table expects more
     return [
-        roundi(neutral + int(row[0]) + 3 * shifts),
-        roundi(neutral + int(row[1]) + 3 * shifts),
+        roundi(neutral + int(row[0]) + 3 * shifts) + more,
+        roundi(neutral + int(row[1]) + 3 * shifts) + more,
         roundi(neutral - int(row[2]) + 3 * shifts)
     ]
 
@@ -35588,6 +35616,905 @@ func _dinner_end() -> void:
     var score := int(g.score)
     var cut := dinner_targets()
     _finish(3 if score >= cut[0] else (2 if score >= cut[1] else (1 if score >= cut[2] else 0)))
+
+
+# ---- themed escape rooms (R4, E5) ----------------------------------------------------------------------------------------------
+# The room is one set (the dark study). A theme changes its words (the name on the intro page, the intro, every clue's wording, the
+# red herrings, the opening and closing lines), the tint of the room and the colour of the writing on the board. The clue zones,
+# recipes and digits are the same in every theme, so every theme x recipe is solvable the same way. A run started from the invitation
+# (options.theme = "draw") draws the theme on its own stream "escape.theme"; a game started without the option (tests, the toolbox's
+# default) is the old study; the toolbox can name a theme as a fixed pick. A theme may leave "shelf" / "herring" out: the study uses
+# the older HERRINGS / HERRING_TEXT tables. Clue lines use {a} {b} {list} {hour} {n} {numeral} {letter}.
+const THEME_ORDER := ["study", "server", "detective", "lab"]
+const DEFAULT_ESCAPE_THEMES := {
+    "study": {
+        "title": "THE OLD STUDY",
+        "short": "OLD STUDY",
+        "tint": "ffffff",
+        "ink": "e8e8e0",
+        "intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
+        "start": "LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT",
+        "open": "THE VAULT OPENS!",
+        "say": {
+            "sum": "THE CHALKBOARD: {a} + {b} = ?",
+            "product": "THE CHALKBOARD: {a} X {b} = ?",
+            "missing": "THE CHALKBOARD LISTS 1 TO 9 WITH ONE LEFT OUT: {list}. WHICH ONE?",
+            "hour": "THE CLOCK HAS STOPPED AT {hour} O'CLOCK.",
+            "double": "THE CLOCK HAS STOPPED AT {hour} O'CLOCK. A NOTE ON THE FACE: TWICE THE HOUR.",
+            "number": "A BRASS PLAQUE UNDER THE PAINTING: NO. {n}.",
+            "roman": "THE PLAQUE UNDER THE PAINTING READS {numeral}. A ROMAN NUMERAL.",
+            "letter": "THE PLAQUE UNDER THE PAINTING SHOWS THE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE BOOK ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: {n}.",
+        },
+    },
+    "server": {
+        "title": "THE SERVER ROOM",
+        "short": "SERVER ROOM",
+        "tint": "9fd4e6",
+        "ink": "8ff0b0",
+        "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
+        "start": "THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT",
+        "open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
+        "say": {
+            "sum": "THE BOARD BY THE RACK: PORT {a} + PORT {b} = ?",
+            "product": "THE BOARD BY THE RACK: {a} SWITCHES X {b} UPLINKS = ?",
+            "missing": "THE PATCH LIST ON THE BOARD HAS PORTS 1 TO 9 WITH ONE UNPLUGGED: {list}. WHICH ONE?",
+            "hour": "THE WALL CLOCK DIED WITH THE UPS AT {hour} O'CLOCK.",
+            "double": "THE WALL CLOCK DIED AT {hour} O'CLOCK. A STICKY NOTE: THE BACKUP RUNS AT TWICE THE HOUR.",
+            "number": "AN ASSET TAG UNDER THE FRAMED NETWORK MAP: RACK NO. {n}.",
+            "roman": "THE TAG UNDER THE NETWORK MAP READS {numeral}. SOMEBODY LABELS RACKS WITH A ROMAN NUMERAL.",
+            "letter": "THE TAG UNDER THE NETWORK MAP SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE BINDER ON THE MANUAL SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "CABLE TIES HANG FROM THE MANUAL SHELF. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "MANUALS FOR SERVERS NOBODY OWNS ANY MORE. NO NUMBERS HERE THAT MATTER.",
+            "A SHELF OF DRIVER DISCS. THE LABEL SAYS: NOT THE CODE.",
+            "OLD TONER BOXES AND A LABEL MAKER. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE FIREPROOF SAFE HOLDS LAST YEAR'S BACKUP TAPES. THE LABEL SAYS: NOT THE CODE. SOMEBODY ALREADY TRIED.",
+            "herring_trunk": "A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.",
+            "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.",
+        },
+    },
+    "detective": {
+        "title": "THE DETECTIVE'S OFFICE",
+        "short": "DETECTIVE",
+        "tint": "e6c690",
+        "ink": "f0e2b8",
+        "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
+        "start": "THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT",
+        "open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
+        "say": {
+            "sum": "THE CASE BOARD: {a} SUSPECTS + {b} WITNESSES = ?",
+            "product": "THE CASE BOARD: {a} ROWS X {b} MUGSHOTS = ?",
+            "missing": "THE CASE BOARD NUMBERS THE SUSPECTS 1 TO 9 WITH ONE CROSSED OFF: {list}. WHICH ONE?",
+            "hour": "THE CLOCK STOPPED AT {hour} O'CLOCK. THE TIME OF THE CRIME.",
+            "double": "THE CLOCK STOPPED AT {hour} O'CLOCK. A NOTE IN PENCIL: THE ALIBI IS TWICE THE HOUR.",
+            "number": "A BRASS PLATE UNDER THE PORTRAIT: CASE NO. {n}.",
+            "roman": "THE PLATE UNDER THE PORTRAIT READS {numeral}. THE DETECTIVE LIKED A ROMAN NUMERAL.",
+            "letter": "THE PLATE UNDER THE PORTRAIT SHOWS THE FILE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE CASE FILE ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "RED STRINGS HANG FROM THE SHELF OF CASE FILES. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "A SHELF OF CLOSED CASES. NO NUMBERS HERE THAT MATTER.",
+            "PHONE BOOKS AND A HAT. THE LABEL SAYS: NOT THE CODE.",
+            "OLD NEWSPAPERS AND AN EMPTY BOTTLE. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE SAFE HOLDS A SANDWICH AND AN UNPAID BILL. A NOTE SAYS: THE CODE IS NOT THE BILL.",
+            "herring_trunk": "A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.",
+            "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.",
+        },
+    },
+    "lab": {
+        "title": "THE 1990S COMPUTER LAB",
+        "short": "COMPUTER LAB",
+        "tint": "d4e6c0",
+        "ink": "b8f0a0",
+        "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.",
+        "start": "THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT",
+        "open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
+        "say": {
+            "sum": "THE TEACHER'S BOARD: {a} FLOPPIES + {b} FLOPPIES = ?",
+            "product": "THE TEACHER'S BOARD: {a} ROWS X {b} BEIGE PCS = ?",
+            "missing": "THE BOARD NUMBERS THE WORKSTATIONS 1 TO 9 WITH ONE OUT OF ORDER: {list}. WHICH ONE?",
+            "hour": "THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. THE BELL NEVER RANG.",
+            "double": "THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. CHALKED UNDER IT: TWICE THE HOUR.",
+            "number": "A PLATE UNDER THE CLASS PHOTO: ROOM NO. {n}.",
+            "roman": "THE PLATE UNDER THE CLASS PHOTO READS {numeral}. A ROMAN NUMERAL, FOR EXTRA CREDIT.",
+            "letter": "THE PLATE UNDER THE CLASS PHOTO SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE TYPING TUTOR MANUAL ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "MOUSE CORDS HANG FROM THE SHELF. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "BOXES OF FLOPPIES LABELLED IN PENCIL. NO NUMBERS HERE THAT MATTER.",
+            "A SHELF OF TYPING TUTOR MANUALS. THE LABEL SAYS: NOT THE CODE.",
+            "A DOT MATRIX PRINTER AND A STACK OF FAN-FOLD PAPER. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE SAFE HOLDS THE GRADE BOOK. A NOTE SAYS: THE CODE IS NOT THE HALL PASS NUMBER.",
+            "herring_trunk": "A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.",
+            "herring_globe": "THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.",
+        },
+    },
+}
+var ESCAPE_THEMES: Dictionary = DEFAULT_ESCAPE_THEMES.duplicate(true)
+
+
+# options.theme: nothing = the old study, a theme id = that room (the toolbox's fixed pick), anything else ("draw") = drawn on the
+# run's "escape.theme" stream. The result is kept in opts.theme_id.
+func _pick_theme() -> void:
+    var want := str(opts.get("theme", ""))
+    if want == "":
+        opts["theme_id"] = "study"
+    elif ESCAPE_THEMES.has(want):
+        opts["theme_id"] = want
+    else:
+        opts["theme_id"] = str(THEME_ORDER[Difficulty.rng("escape.theme").randi_range(0, THEME_ORDER.size() - 1)])
+
+
+func theme_id() -> String:
+    var id := str(opts.get("theme_id", "study"))
+    return id if ESCAPE_THEMES.has(id) else "study"
+
+
+func escape_theme() -> Dictionary:
+    return ESCAPE_THEMES[theme_id()]
+
+
+# a line of the room's theme (the study's when a theme leaves it out)
+func escape_text(key: String) -> String:
+    return str(escape_theme().get(key, DEFAULT_ESCAPE_THEMES.study.get(key, "")))
+
+
+# the colour of the writing on the board (fx.gd)
+func escape_ink() -> String:
+    return escape_text("ink") if game == "escape" else str(DEFAULT_ESCAPE_THEMES.study.ink)
+
+
+# the intro page: a drawn or picked theme is named, and in the room its own intro replaces the study's
+func escape_intro(blurb: String) -> String:
+    if not opts.has("theme"):
+        return blurb
+    return "TONIGHT'S ROOM: %s. %s" % [escape_text("title"), escape_text("intro") if _traveled else blurb]
+
+
+# what the caption says about a clue, in the words of the theme
+func clue_say(clue: Dictionary) -> String:
+    var a: Dictionary = clue.args
+    var numbers: Array = a.get("list", [])
+    var fill := {
+        "a": a.get("a", 0),
+        "b": a.get("b", 0),
+        "hour": a.get("hour", 0),
+        "n": a.get("n", 0),
+        "numeral": a.get("numeral", ""),
+        "letter": a.get("letter", ""),
+        "list": " ".join(PackedStringArray(numbers.map(func(v): return str(v)))),
+    }
+    var lines: Dictionary = escape_theme().get("say", {})
+    return str(lines.get(str(clue.recipe), DEFAULT_ESCAPE_THEMES.study.say.get(str(clue.recipe), ""))).format(fill)
+
+
+func herring_text(kind: String) -> String:
+    var own: Dictionary = escape_theme().get("herring", {})
+    return str(own.get(kind, HERRING_TEXT.get(kind, HERRINGS[0])))
+
+
+func shelf_herring(index: int) -> String:
+    var own: Array = escape_theme().get("shelf", HERRINGS)
+    return str(own[index % own.size()])
+
+
+# the look: the theme's tint on the room (the background and its effects, not the people); a dark room keeps the lights-out tint
+func _theme_look() -> void:
+    if game != "escape" or not room_mode():
+        return
+    var scene := get_tree().current_scene
+    var tint := Color(escape_text("tint"))
+    if scene == null or tint == Color.WHITE:
+        return
+    var dark: Variant = scene.get("_dark_a")
+    if dark != null and float(dark) > 0.01:
+        return
+    for layer in ["Background", "Fx"]:
+        var node := scene.get_node_or_null(layer)
+        if node != null:
+            node.modulate = tint
+
+
+# ---- dinner variety (R6) and the dinner ramp (R30) ---------------------------------------------------------------------------
+# An ordering round (D4), a client at the table (D5), the boss picking up the tab (D6), table events (D7), a talk afterwards (D8),
+# ASK HOW THEY ARE and the "as of outing n" marks on what you know about people (D2). All of it is on only for a dinner started with
+# options.variety (the invitation, the Free Play O card, the sales client dinner); a dinner started without it (tests, the toolbox)
+# is the classic five rounds. Every draw has its own seeded stream (dinner.order, dinner.events, dinner.guest, dinner.drift,
+# dinner.hints), so the classic "dinner" stream keeps its sequence. The ramp (R30) is three Difficulty keys in MASTERY_KEYS:
+# dinner.expect (points per diner on the 3 and 2 star bars), dinner.fits (plates that suit everyone) and dinner.hints (how many of
+# the tastes you know are marked on the topic list).
+const ASK_TOPIC := "ASK HOW THEY ARE"
+const GUEST_TOPICS := ["TALKING SHOP", "HOW IS BUSINESS", "THE SALES PITCH"]
+const ORDER_BONUS := 2  # table points for a shared plate that suits everyone
+const EVENT_CHANCE := 0.5  # a table event between two rounds
+const EVENT_MAX := 2  # table events per dinner
+const TECH_GUEST := 0.4  # tech campaign: a client was invited to the team dinner
+const GUEST_SHOP_MAX := 2  # talking shop is welcome this many times
+const GUEST_GOOD := 3  # the guest's mood for a really good evening
+const DRIFT_CHANCE := 0.35  # somebody you know something about has changed since last time
+const TAB_DAY := 15  # tech campaign: the boss picks up the tab
+const TALK_STARS := 3  # a dinner this good ends with somebody staying behind for a word
+# what each person does not eat (a plate carries tags in DISHES.has); nobody is ever teased for it
+const DIETS := {"Alan": "mushroom", "Garrison": "meat", "Dan": "spicy", "John": "seafood", "Maya": "gluten", "Morgan": "onion"}
+const DIET_TEXT := {
+    "mushroom": "NO MUSHROOMS", "meat": "VEGETARIAN", "spicy": "NOTHING SPICY", "seafood": "NO SEAFOOD", "gluten": "A GLUTEN ALLERGY", "onion": "NO ONIONS",
+}
+# the shared plates of the grill (a 2014 menu); three of them suit any table
+const DISHES := [
+    {"id": "nachos", "label": "LOADED NACHOS", "has": ["meat", "spicy"]},
+    {"id": "wings", "label": "HOT WINGS", "has": ["meat", "spicy"]},
+    {"id": "caps", "label": "STUFFED MUSHROOMS", "has": ["mushroom"]},
+    {"id": "flatbread", "label": "MUSHROOM FLATBREAD", "has": ["mushroom", "gluten"]},
+    {"id": "calamari", "label": "FRIED CALAMARI", "has": ["seafood", "gluten"]},
+    {"id": "shrimp", "label": "SHRIMP COCKTAIL", "has": ["seafood"]},
+    {"id": "pretzels", "label": "SOFT PRETZELS", "has": ["gluten"]},
+    {"id": "rings", "label": "ONION RINGS", "has": ["onion", "gluten"]},
+    {"id": "sliders", "label": "MINI BURGERS", "has": ["meat", "gluten", "onion"]},
+    {"id": "salsa", "label": "CHIPS AND HOT SALSA", "has": ["spicy", "onion"]},
+    {"id": "veggies", "label": "VEGGIE PLATTER", "has": []},
+    {"id": "fries", "label": "BASKET OF FRIES", "has": []},
+    {"id": "spinach", "label": "SPINACH DIP", "has": []},
+]
+const DEFAULT_DINNER_TEXT := {
+    "order": "FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, ENTER).",
+    "order_strip": "ORDER FOR THE TABLE",
+    "order_head": "A PLATE TO SHARE: WHAT DO YOU ORDER?",
+    "order_fit": "%s FOR THE TABLE. EVERYBODY DIGS IN. (TABLE +%d)",
+    "order_clash": "%s ARRIVES. %s. A SIDE SALAD IS ORDERED AND NOBODY MAKES IT A THING.",
+    "ask": "YOU ASK HOW EVERYBODY IS DOING, AND LISTEN.",
+    "ask_same": "NOTHING NEW AT THE TABLE. WHAT YOU KNEW STILL HOLDS.",
+    "ask_learn": "%s MENTIONS A FAVOURITE SUBJECT: %s.",
+    "ask_drift": "%s HAS GONE OFF %s. THESE DAYS IT IS %s.",
+    "guest_in": "%s OF %s IS AT THE TABLE TONIGHT. SHOP TALK IS FINE IN SMALL DOSES. NOBODY CAME TO BE SOLD TO.",
+    "guest_shop": "%s JOINS IN: SHOP TALK, THE FUN KIND.",
+    "guest_shop_much": "%s CHECKS THE TIME. THAT IS ENOUGH SHOP TALK.",
+    "guest_pitch": "%s PUTS THE FORK DOWN. NOBODY CAME TO DINNER FOR A PITCH.",
+    "guest_business": "%s LIGHTS UP AND TALKS ABOUT THE BUSINESS FOR A WHILE.",
+    "guest_touchy": "%s STUDIES THE MENU WHILE THE TEAM AIRS ITS LAUNDRY.",
+    "guest_good": "%s HAD A GOOD NIGHT. (MOOD +%d)",
+    "guest_bad": "%s WENT HOME EARLY. (MOOD %d)",
+    "guest_ok": "%s HAD A FINE EVENING.",
+    "guest_referral": "A WARM REFERRAL FOR JOHN FROM %s.",
+    "tab": "Tonight is on the company. You have earned it. Order what you like, within reason. I will be reading the receipt.",
+    "tab_usual": "THE USUAL, THANK YOU",
+    "tab_fancy": "STEAKS FOR THE TABLE",
+    "tab_modest": "KEEP IT MODEST",
+    "tab_line": "%s PICKED UP THE TAB.",
+    "tab_fancy_line": "%s PAID AND READ THE RECEIPT TWICE.",
+    "tab_modest_line": "%s PAID. YOU WENT EASY ON THE TAB.",
+    "talk_listen": "STAY AND LISTEN",
+    "talk_advise": "OFFER SOME ADVICE",
+    "talk_leave": "CALL IT A NIGHT",
+    "know": "YOU KNOW: %s.",
+    "know_legend": "(N) = THE OUTING YOU LEARNED IT AT. THINGS CHANGE: ASK HOW THEY ARE.",
+    "expect": "AFTER %d GOOD DINNERS THE TABLE EXPECTS MORE OF YOU.",
+}
+var DINNER_TEXT: Dictionary = DEFAULT_DINNER_TEXT.duplicate(true)
+# D7: a one-line event between two rounds that changes the next round's topics. fx: notrap = no sore subject next round,
+# love = a subject the named person loves is on the list, topic = that subject is on the list
+const DEFAULT_TABLE_EVENTS := {
+    "glass": {"text": "A GLASS GOES OVER. EVERYBODY LAUGHS AND THE TABLE LOOSENS UP. NO SORE SUBJECTS NEXT ROUND.", "fx": "notrap"},
+    "toast": {"text": "%s STANDS UP FOR A LONG TOAST. A FAVOURITE SUBJECT IS COMING.", "fx": "love"},
+    "phone": {"text": "A PHONE BUZZES NEXT TO THE PLATE OF %s. A VENDOR, AT THIS HOUR.", "fx": "topic", "topic": "VENDOR STORIES"},
+    "check": {"text": "THE CHECK ARRIVES EARLY AND GOES ROUND THE TABLE. EVERYBODY DOES SOME MATH.", "fx": "topic", "topic": "RAISES AND BONUSES"},
+    "game": {"text": "THE BAR TV SHOWS THE LAST TWO MINUTES. HALF THE TABLE TURNS ROUND.", "fx": "topic", "topic": "THE BIG GAME"},
+}
+var TABLE_EVENTS: Dictionary = DEFAULT_TABLE_EVENTS.duplicate(true)
+# D8: after a three star dinner the person at the table who likes you least stays behind ("_" = anybody without a row)
+const DEFAULT_POST_TALKS := {
+    "Alan": {
+        "text": "Alan waits by the door while the others find their coats. 'Good night, that. I have been short with you lately. The servers have been keeping me up and I took it out on the room.'",
+        "listen": "ALAN TALKS ABOUT THE SERVERS FOR TEN MINUTES AND THANKS YOU FOR NOT FIXING ANYTHING.",
+        "advise": "YOU SUGGEST HE WRITES THE RUNBOOK DOWN. ALAN NODS LIKE A MAN WHO WILL THINK ABOUT IT.",
+    },
+    "Garrison": {
+        "text": "Garrison hangs back with the last of his drink. 'Can I ask you something? Do people like these nights, or do they come because I ask?'",
+        "listen": "GARRISON TALKS IT THROUGH OUT LOUD AND ANSWERS HIS OWN QUESTION. HE LOOKS LIGHTER.",
+        "advise": "YOU TELL HIM TO LET SOMEBODY ELSE PICK THE PLACE NEXT TIME. HE WRITES IT ON A NAPKIN.",
+    },
+    "Dan": {
+        "text": "Dan is still at the table folding the receipt into a small square. 'I am behind on the closet labels. I keep meaning to ask for a hand and then I do not ask.'",
+        "listen": "DAN LISTS EVERY UNLABELLED PORT FROM MEMORY. SAYING IT OUT LOUD SEEMS TO HELP.",
+        "advise": "YOU OFFER HIM FRIDAY AFTERNOON AND A LABEL MAKER. DAN ALMOST SMILES.",
+    },
+    "John": {
+        "text": "John catches you in the parking lot. 'Straight question. When I promise a client something, does the bench hate me for it?'",
+        "listen": "JOHN TALKS ABOUT QUOTA UNTIL THE LOT IS EMPTY. HE NEEDED SOMEBODY WHO WAS NOT BUYING.",
+        "advise": "YOU ASK HIM TO CHECK WITH THE BENCH BEFORE HE PROMISES A DATE. HE SAYS THAT IS FAIR.",
+    },
+    "Maya": {
+        "text": "Maya waits until the table is empty. 'I close a lot of tickets. I am not sure I am learning anything. Is that normal in the first year?'",
+        "listen": "MAYA WALKS THROUGH HER WEEK TICKET BY TICKET AND FINDS THREE THINGS SHE LEARNED.",
+        "advise": "YOU TELL HER TO KEEP ONE HARD TICKET A DAY FOR HERSELF. SHE PUTS IT IN HER PHONE.",
+    },
+    "Morgan": {
+        "text": "Morgan pays for her own coffee and stays seated. 'I am the one who says no all day. Nights like this I remember there are people under the numbers.'",
+        "listen": "MORGAN TALKS ABOUT THE SCHEDULE FOR A WHILE, THEN ABOUT ANYTHING ELSE. IT IS A GOOD SIGN.",
+        "advise": "YOU SUGGEST ONE YES A WEEK, ON PURPOSE. MORGAN SAYS SHE WILL PUT IT ON THE BOARD.",
+    },
+    "_": {
+        "text": "One of the crew stays behind while the others leave. 'Good night, that. Got a minute?'",
+        "listen": "YOU LISTEN UNTIL THE STAFF START STACKING CHAIRS. IT WAS WORTH THE MINUTE.",
+        "advise": "YOU SAY WHAT YOU WOULD DO. THEY SAY THEY WILL SLEEP ON IT.",
+    },
+}
+var POST_TALKS: Dictionary = DEFAULT_POST_TALKS.duplicate(true)
+
+
+# the number of the outing being played: the "as of outing n" mark on what you learn tonight
+func outing_no() -> int:
+    return count + 1
+
+
+func _known_entry(who: String) -> Dictionary:
+    var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
+    if not entry.has("since"):
+        entry["since"] = {}
+    return entry
+
+
+# D2: note when you learned it; a like that no longer gets a smile (people change) is struck off
+func _known_mark(entry: Dictionary, topic: String, mood: String) -> Dictionary:
+    if not entry.has("since"):
+        entry["since"] = {}
+    if mood != "love" and entry.likes.has(topic):
+        entry.likes.erase(topic)
+        entry.since.erase(topic)
+    if mood != "hate" and entry.hates.has(topic):
+        entry.hates.erase(topic)
+        entry.since.erase(topic)
+    if (mood == "love" and entry.likes.has(topic)) or (mood == "hate" and entry.hates.has(topic)):
+        entry.since[topic] = outing_no()
+    return entry
+
+
+# "FOOD (2)": a known taste with the outing you learned it at (no mark on a note from an old save)
+func _with_marks(entry: Dictionary, list: Array) -> Array:
+    var since: Dictionary = entry.get("since", {})
+    return list.map(func(t: String) -> String: return "%s (%d)" % [t, int(since[t])] if since.has(t) else t)
+
+
+# what you know about somebody, in full: ["LIKES FOOD, AS OF OUTING 2", "DREADS MOVIES, AS OF OUTING 1", "NO MUSHROOMS, AS OF OUTING 3"]
+func known_notes(who: String) -> Array:
+    var entry: Dictionary = known.get(who, {})
+    var since: Dictionary = entry.get("since", {})
+    var out := []
+    for t in entry.get("likes", []):
+        out.append("LIKES %s%s" % [t, ", AS OF OUTING %d" % int(since[t]) if since.has(t) else ""])
+    for t in entry.get("hates", []):
+        out.append("DREADS %s%s" % [t, ", AS OF OUTING %d" % int(since[t]) if since.has(t) else ""])
+    if entry.has("diet"):
+        out.append("%s, AS OF OUTING %d" % [str(DIET_TEXT.get(str(entry.diet), "")), int(entry.get("diet_since", 0))])
+    return out
+
+
+func _dinner_say(text: String, secs := 5.0) -> void:
+    g["line"] = text
+    caption(text, secs)
+
+
+func _dinner_variety_setup() -> void:
+    g["variety"] = true
+    g["bonus"] = 0
+    g["events"] = []
+    g["event"] = {}
+    g["asked"] = false
+    g["drift"] = {}
+    g["guest"] = {}
+    g["marks"] = {}
+    g["note"] = ""
+    g["line"] = ""
+    _dinner_drift()
+    _dinner_guest_setup()
+    _dinner_order_setup()
+
+
+# D2: now and then somebody you know something about has changed their mind since the last outing (the note you have goes stale)
+func _dinner_drift() -> void:
+    var r := Difficulty.rng("dinner.drift")
+    var roll := r.randf()
+    if count < 1 or roll >= DRIFT_CHANCE:
+        return
+    var stale := []
+    for who in diners():
+        for topic in known.get(who, {}).get("likes", []):
+            if taste(who).loves.has(topic):
+                stale.append([who, topic])
+    if stale.is_empty():
+        return
+    var pick: Array = stale[r.randi_range(0, stale.size() - 1)]
+    var who := str(pick[0])
+    var t: Dictionary = taste(who)
+    var fresh := topic_ids().filter(func(id: String) -> bool: return not t.loves.has(id) and not t.hates.has(id))
+    if fresh.is_empty():
+        return
+    var now := str(fresh[r.randi_range(0, fresh.size() - 1)])
+    t.loves[t.loves.find(str(pick[1]))] = now
+    g.drift[who] = {"old": str(pick[1]), "now": now}
+
+
+# ---- D4: the ordering round
+func diet_of(who: String) -> String:
+    return str(DIETS.get(who, ""))
+
+
+func dish(id: String) -> Dictionary:
+    for d in DISHES:
+        if str(d.id) == id:
+            return d
+    return {}
+
+
+# who at the table cannot eat this plate
+func dish_clash(id: String) -> Array:
+    var has: Array = dish(id).get("has", [])
+    return diners().filter(func(who: String) -> bool: return has.has(diet_of(who)))
+
+
+# four plates: dinner.fits of them suit everybody (3 on easy, 2 on normal, 1 on hard; fewer as the dinner ramps)
+func _dinner_order_setup() -> void:
+    var fit := []
+    var clash := []
+    for d in DISHES:
+        if dish_clash(str(d.id)).is_empty():
+            fit.append(str(d.id))
+        else:
+            clash.append(str(d.id))
+    var r := Difficulty.rng("dinner.order")
+    Difficulty.shuffle_with(fit, r)
+    Difficulty.shuffle_with(clash, r)
+    var want := clampi(roundi(Difficulty.f("dinner.fits")), 1, 3)
+    var plates: Array = fit.slice(0, want)
+    plates.append_array(clash.slice(0, 4 - plates.size()))
+    if plates.size() < 4:  # a table with few quirks: the rest suit everybody too
+        plates.append_array(fit.slice(want, want + 4 - plates.size()))
+    Difficulty.shuffle_with(plates, r)
+    g["order"] = {"plates": plates, "done": false, "pick": "", "fit": false}
+    g.sel = 0
+
+
+func dinner_ordering() -> bool:
+    return game == "dinner" and g.has("order") and not bool(g.order.done)
+
+
+# the list on screen: the plates while you order, the topics afterwards
+func dinner_rows() -> Array:
+    if dinner_ordering():
+        return g.order.plates.map(func(id: String) -> String: return str(dish(id).label))
+    return g.options
+
+
+func _dinner_pick(index: int) -> void:
+    if dinner_ordering():
+        dinner_order(index)
+    else:
+        dinner_talk(index)
+
+
+# order plate `index` for the table: +ORDER_BONUS when it suits everybody; otherwise you learn who it does not suit
+func dinner_order(index: int) -> int:
+    if not dinner_ordering():
+        return 0
+    var id := str(g.order.plates[clampi(index, 0, g.order.plates.size() - 1)])
+    var out: Array = dish_clash(id)
+    g.order.done = true
+    g.order.pick = id
+    g.order.fit = out.is_empty()
+    g.sel = 0
+    var label := str(dish(id).label)
+    if out.is_empty():
+        g.bonus = int(g.bonus) + ORDER_BONUS
+        g.score = int(g.score) + ORDER_BONUS
+        _dinner_say(str(DINNER_TEXT.order_fit) % [label, ORDER_BONUS], 4.0)
+        return ORDER_BONUS
+    var parts := []
+    for who in out:
+        var entry := _known_entry(who)
+        entry["diet"] = diet_of(who)
+        entry["diet_since"] = outing_no()
+        known[who] = entry
+        parts.append("%s: %s" % [who.to_upper(), str(DIET_TEXT[diet_of(who)])])
+        if room_mode():
+            _bubble(_actor(who), "dots", 1.5)
+    _dinner_say(str(DINNER_TEXT.order_clash) % [label, ", ".join(parts)], 5.0)
+    return 0
+
+
+# does a plate clash with a diet you already know about? (the red tick on the order list)
+func _dish_known_clash(id: String) -> bool:
+    var has: Array = dish(id).get("has", [])
+    for who in diners():
+        if has.has(str(known.get(who, {}).get("diet", "-"))):
+            return true
+    return false
+
+
+# ---- D5: a client (or the sales prospect) at the table
+func _dinner_guest_setup() -> void:
+    var client := -1
+    var who := ""
+    var firm := ""
+    if opts.has("guest"):
+        client = int(opts.guest)  # the toolbox, a test
+    elif Campaign.mode == "owner":
+        client = guest_client  # John brings one (draw_party)
+    elif Campaign.mode == "sales":
+        var lead: Dictionary = SalesCampaign.dinner_lead() if SalesCampaign.outing_kind() == "client" else {}
+        who = str(lead.get("name", ""))
+    elif Campaign.active and Campaign.mode == "tech" and not Sales.active.is_empty():
+        var r := Difficulty.rng("dinner.guest")
+        var roll := r.randf()
+        var at := r.randi_range(0, Sales.active.size() - 1)
+        if roll < TECH_GUEST:
+            client = int(Sales.active[at])
+    if client >= 0 and client < Msp.CLIENTS.size():
+        who = str(Msp.CLIENTS[client].contact)
+        firm = str(Msp.CLIENTS[client].name)
+    if who == "":
+        return
+    g.guest = {"client": client, "name": who, "firm": firm, "mood": 0, "shop": 0, "asked": false}
+
+
+func dinner_guest() -> Dictionary:
+    return g.get("guest", {})
+
+
+# the guest's reaction to a topic: shop talk is welcome twice, asking about the business once, a pitch never, and the team's
+# sore subjects are awkward in front of a client. The points join the table score.
+func _guest_react(topic: String) -> int:
+    var guest: Dictionary = g.get("guest", {})
+    if guest.is_empty():
+        return 0
+    var pts := 0
+    var line := ""
+    match topic:
+        "TALKING SHOP":
+            guest.shop = int(guest.shop) + 1
+            pts = 1 if int(guest.shop) <= GUEST_SHOP_MAX else -1
+            line = str(DINNER_TEXT.guest_shop if pts > 0 else DINNER_TEXT.guest_shop_much)
+        "THE SALES PITCH":
+            pts = -2
+            line = str(DINNER_TEXT.guest_pitch)
+        "HOW IS BUSINESS":
+            if not bool(guest.asked):
+                pts = 1
+                line = str(DINNER_TEXT.guest_business)
+            guest.asked = true
+        _:
+            if topic_tag(topic) == "touchy":
+                pts = -1
+                line = str(DINNER_TEXT.guest_touchy)
+    guest.mood = int(guest.mood) + pts
+    if line != "":
+        g.note = (str(g.note) + " " + line % str(guest.name).to_upper()).strip_edges()
+    return pts
+
+
+# ---- D2: ASK HOW THEY ARE (a topic of its own, once a dinner): what you know is confirmed or corrected
+func _dinner_ask() -> void:
+    g.asked = true
+    var now := outing_no()
+    var said := []
+    for who in diners():
+        var entry := _known_entry(who)
+        for topic in entry.since.keys():
+            entry.since[topic] = now  # still true as of tonight
+        if g.drift.has(who):
+            var d: Dictionary = g.drift[who]
+            entry.likes.erase(str(d.old))
+            entry.since.erase(str(d.old))
+            if not entry.likes.has(str(d.now)):
+                entry.likes.append(str(d.now))
+            entry.since[str(d.now)] = now
+            said.append(str(DINNER_TEXT.ask_drift) % [who.to_upper(), str(d.old), str(d.now)])
+        known[who] = entry
+    g.drift = {}
+    if said.is_empty():
+        var learned := _learn_one(diners())
+        said.append(str(DINNER_TEXT.ask_same) if learned.is_empty() else str(DINNER_TEXT.ask_learn) % [str(learned[0]).to_upper(), str(learned[1])])
+    g.note = (str(DINNER_TEXT.ask) + " " + " ".join(said)).strip_edges()
+
+
+# the person of `table` you know least about tells you one thing they love: [who, topic], [] when there is nothing left to learn
+func _learn_one(table: Array) -> Array:
+    var best_who := ""
+    var best_topic := ""
+    var fewest := 99
+    for who in table:
+        var entry := _known_entry(who)
+        var left: Array = taste(who).loves.filter(func(id: String) -> bool: return not entry.likes.has(id))
+        if not left.is_empty() and entry.likes.size() < fewest:
+            fewest = entry.likes.size()
+            best_who = who
+            best_topic = str(left[0])
+    if best_who == "":
+        return []
+    var mine := _known_entry(best_who)
+    mine.likes.append(best_topic)
+    mine.since[best_topic] = outing_no()
+    known[best_who] = mine
+    return [best_who, best_topic]
+
+
+# after a topic: the variety parts of the round (the note they leave is shown with the reactions)
+func _dinner_extras(topic: String) -> int:
+    if not g.get("variety", false):
+        return 0
+    g.note = ""
+    if topic == ASK_TOPIC:
+        _dinner_ask()
+    var pts := _guest_react(topic)
+    g.line = str(g.note)
+    return pts
+
+
+# ---- D7: table events
+func _dinner_event() -> void:
+    if not g.get("variety", false):
+        return
+    var r := Difficulty.rng("dinner.events")
+    var roll := r.randf()
+    var ids: Array = TABLE_EVENTS.keys().filter(func(id: String) -> bool: return not g.events.has(id))
+    if roll >= EVENT_CHANCE or g.events.size() >= EVENT_MAX or ids.is_empty():
+        return
+    var table := diners()
+    var id := str(ids[r.randi_range(0, ids.size() - 1)])
+    dinner_event(id, str(table[r.randi_range(0, table.size() - 1)]) if not table.is_empty() else "")
+
+
+# a table event happens now: a one-line caption, and the next deal of topics reads it
+func dinner_event(id: String, who := "") -> String:
+    var row: Dictionary = TABLE_EVENTS.get(id, {})
+    if row.is_empty() or game != "dinner" or g.is_empty():
+        return ""
+    var ev := {"id": id, "who": who, "fx": str(row.get("fx", "")), "topic": str(row.get("topic", ""))}
+    if str(ev.fx) == "love" and who != "":
+        var loves: Array = taste(who).loves.filter(func(t: String) -> bool: return not g.picked.has(t) and not is_trap(t))
+        ev.topic = str(loves[0]) if not loves.is_empty() else ""
+    if not g.has("events"):
+        g["events"] = []
+    g.events.append(id)
+    g["event"] = ev
+    var text := str(row.text)
+    if text.contains("%s"):
+        text = text % who.to_upper()
+    _dinner_say(text, 5.0)
+    if room_mode() and who != "":
+        _bubble(_actor(who), "!", 1.5)
+    return text
+
+
+# the dealt four, dressed for the round: the table event (slot 3), the guest's subject (slot 2) and ASK HOW THEY ARE (slot 1, rounds
+# 1 and 2 until you used it); then the marks on what you already know
+func _dinner_dress(chosen: Array, spare: Array) -> Array:
+    g["marks"] = {}
+    if not g.get("variety", false) or chosen.size() < 4:
+        return chosen
+    var ev: Dictionary = g.get("event", {})
+    if not ev.is_empty():
+        if str(ev.fx) == "notrap":
+            var free := spare.filter(func(id: String) -> bool: return not chosen.has(id) and not is_trap(id))
+            for i in chosen.size():
+                if is_trap(str(chosen[i])) and not free.is_empty():
+                    chosen[i] = free.pop_back()
+        else:
+            var want := str(ev.get("topic", ""))
+            if want != "" and not chosen.has(want) and not g.picked.has(want):
+                chosen[3] = want
+        g.event = {}
+    if not g.get("guest", {}).is_empty():
+        chosen[2] = GUEST_TOPICS[Difficulty.rng("dinner.guest").randi_range(0, GUEST_TOPICS.size() - 1)]
+    if not g.get("asked", false) and int(g.round) <= 2:
+        chosen[1] = ASK_TOPIC
+    _dinner_marks(chosen)
+    return chosen
+
+
+# R30 "fewer free hints": a topic somebody at the table is KNOWN to love (1) or dread (-1) is marked on the list; dinner.hints is the
+# share of those marks that show (1 on easy and normal, 0.5 on hard; it drops as the dinner ramps)
+func _dinner_marks(chosen: Array) -> void:
+    var share := Difficulty.f("dinner.hints")
+    var r := Difficulty.rng("dinner.hints")
+    for id in chosen:
+        var mark := 0
+        for who in diners():
+            var entry: Dictionary = known.get(who, {})
+            if entry.get("hates", []).has(id):
+                mark = -1
+                break
+            if entry.get("likes", []).has(id):
+                mark = 1
+        if mark != 0 and (share >= 1.0 or r.randf() < share):
+            g.marks[id] = mark
+
+
+# the small bar beside row i of the list: green = somebody here likes it as far as you know, red = somebody dreads it (or cannot eat it)
+func _dinner_mark(i: int, r: Rect2) -> void:
+    if not g.get("variety", false):
+        return
+    var mark := 0
+    if dinner_ordering():
+        mark = -1 if _dish_known_clash(str(g.order.plates[i])) else 0
+    else:
+        mark = int(g.get("marks", {}).get(str(g.options[i]), 0))
+    if mark != 0:
+        _canvas.draw_rect(r, GREEN if mark > 0 else RED)
+
+
+func _dinner_open_line() -> String:
+    if not g.get("variety", false):
+        return "%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text()
+    var text := dinner_mood_text() + "."
+    var guest: Dictionary = g.get("guest", {})
+    if not guest.is_empty() and str(guest.firm) != "":
+        text += " " + str(DINNER_TEXT.guest_in) % [str(guest.name).to_upper(), str(guest.firm).to_upper()]
+    g["line"] = str(DINNER_TEXT.order)
+    return text + " " + str(DINNER_TEXT.order)
+
+
+# ---- D6: the boss picks up the tab (tech campaign, day 15)
+func tab_due() -> bool:
+    return game == "dinner" and bool(opts.get("variety", false)) and Campaign.active and Campaign.mode == "tech" and Campaign.day == TAB_DAY and not Difficulty.fixed_take
+
+
+func ask_tab() -> void:
+    Cards.ask(
+        _host(),
+        str(DINNER_TEXT.tab),
+        [
+            {"label": str(DINNER_TEXT.tab_usual), "id": "normal"},
+            {"label": str(DINNER_TEXT.tab_fancy), "id": "fancy"},
+            {"label": str(DINNER_TEXT.tab_modest), "id": "cheap"},
+        ],
+        func(id: String) -> void:
+            begin_play()
+            set_tab(id)
+    )
+
+
+# the usual, the steaks (the whole table's mood +1, the boss notices) or a modest order (mood -1, the boss notices that too)
+func set_tab(id: String) -> void:
+    if game != "dinner" or g.is_empty() or not BUDGETS.has(id):
+        return
+    g.budget = id
+    g["tab"] = id
+    var boss := _host().get_slice(" ", 0)
+    if id == "fancy":
+        Social.change(boss, -1)
+    elif id == "cheap":
+        Social.change(boss, 2)
+
+
+# the result page of a variety dinner: the plate, the tab, the guest (whose evening moves the client's mood)
+func _dinner_lines() -> Array:
+    var out := []
+    if g.is_empty() or not g.get("variety", false):
+        return out
+    if g.has("tab"):
+        var key := "tab_fancy_line" if str(g.tab) == "fancy" else ("tab_modest_line" if str(g.tab) == "cheap" else "tab_line")
+        out.append(str(DINNER_TEXT[key]) % _host().get_slice(" ", 0).to_upper())
+    var guest: Dictionary = g.get("guest", {})
+    if guest.is_empty():
+        return out
+    var who := str(guest.name).to_upper()
+    var delta := clampi(int(guest.mood) * 2, -4, 4)
+    if int(guest.client) >= 0 and Campaign.active and delta != 0:
+        Sales.adjust(int(guest.client), delta)
+        out.append(str(DINNER_TEXT.guest_good if delta > 0 else DINNER_TEXT.guest_bad) % [who, delta])
+    else:
+        out.append(str(DINNER_TEXT.guest_ok) % who)
+    if Campaign.mode == "owner" and int(guest.mood) >= GUEST_GOOD:
+        Owner.vic_bonus += 0.02  # a warm referral
+        out.append(str(DINNER_TEXT.guest_referral) % who)
+    return out
+
+
+# ---- D8: the talk after a great dinner
+# who stays behind: the person at the table who likes you least (the first of them in table order)
+func talk_who() -> String:
+    var out := ""
+    var low := 9999
+    for who in diners():
+        if Social.value(who) < low:
+            low = Social.value(who)
+            out = who
+    return out
+
+
+func talk_due() -> bool:
+    if game != "dinner" or phase != "result" or stars < TALK_STARS or g.is_empty() or not g.get("variety", false):
+        return false
+    if not Campaign.active or Campaign.mode == "sales" or Difficulty.fixed_take or g.get("talked", false):
+        return false
+    return talk_who() != ""
+
+
+func _post_talk() -> bool:
+    if not talk_due():
+        return false
+    g["talked"] = true
+    var who := talk_who()
+    var row: Dictionary = POST_TALKS.get(who, POST_TALKS["_"])
+    Cards.ask(
+        who,
+        str(row.text),
+        [
+            {"label": str(DINNER_TEXT.talk_listen), "id": "listen"},
+            {"label": str(DINNER_TEXT.talk_advise), "id": "advise"},
+            {"label": str(DINNER_TEXT.talk_leave), "id": "leave"},
+        ],
+        func(id: String) -> void: talk_answer(who, id)
+    )
+    return true
+
+
+# LISTEN: they like you 2 more and tell you something they love (owner: burnout -3). ADVISE: 1 more and a little people XP
+# (owner: burnout -2). Either way the evening ends here.
+func talk_answer(who: String, id: String) -> void:
+    var row: Dictionary = POST_TALKS.get(who, POST_TALKS["_"])
+    if id == "listen":
+        talks += 1
+        Social.change(who, 2)
+        if Campaign.mode == "owner":
+            Owner.burnout = clampf(Owner.burnout - 3.0, 0.0, 100.0)
+        _learn_one([who])
+        Hints.toast(str(row.listen), 5.0)
+    elif id == "advise":
+        talks += 1
+        Social.change(who, 1)
+        if Campaign.mode == "owner":
+            Owner.burnout = clampf(Owner.burnout - 2.0, 0.0, 100.0)
+        else:
+            Skills.add_xp("people", 4)
+        Hints.toast(str(row.advise), 5.0)
+    close()
+
+
+# the intro page of a dinner: what you know about tonight's table (with the outing you learned it at), and the ramp
+func dinner_brief() -> Array:
+    var out := []
+    var parts := []
+    for who in diners():
+        var entry: Dictionary = known.get(who, {})
+        var bits := []
+        if not entry.get("likes", []).is_empty():
+            bits.append("LIKES " + ", ".join(_with_marks(entry, entry.likes)))
+        if not entry.get("hates", []).is_empty():
+            bits.append("NOT " + ", ".join(_with_marks(entry, entry.hates)))
+        if entry.has("diet"):
+            bits.append("%s (%d)" % [str(DIET_TEXT.get(str(entry.diet), "")), int(entry.get("diet_since", 0))])
+        if not bits.is_empty():
+            parts.append("%s %s" % [who.to_upper(), ", ".join(bits)])
+    if not parts.is_empty():
+        out.append(str(DINNER_TEXT.know) % "; ".join(parts))
+        out.append(str(DINNER_TEXT.know_legend))
+    var good := mini(int(Career.value("good.dinner")), Difficulty.RAMP_PLAYS)
+    if good > 0 and Difficulty.mastery("dinner") > 0.0:
+        out.append(str(DINNER_TEXT.expect) % good)
+    return out
+
+
+func _paint_dinner_notes(b: Rect2, y0: float) -> float:
+    var y := y0
+    for text in dinner_brief():
+        for part in _wrap(str(text), int(b.size.x / 4.0)):
+            if y + 7.0 > b.end.y - 8.0:
+                return y  # the page is full: the rest is on the table list
+            _t(part, b.position.x, y, UiStyle.MUTED)
+            y += 7.0
+    return y
 
 
 # ---- in the room: the games are played in the scene itself ---------------------------------------
@@ -35675,7 +36602,7 @@ func _room_begin() -> void:
         "darts":
             _darts_begin()
         "escape":
-            caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
+            caption(escape_text("start"), 6.0)
         "dinner":
             g.stage = "sit"
             caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
@@ -35684,6 +36611,7 @@ func _room_begin() -> void:
 func _room_process(delta: float) -> void:
     _caption_t = maxf(0.0, _caption_t - delta)
     _room_extras(delta)
+    _theme_look()
     for node in _marks.keys():
         _marks[node] = float(_marks[node]) - delta
         if float(_marks[node]) <= 0.0:
@@ -35695,7 +36623,7 @@ func _room_process(delta: float) -> void:
         if p != null and p.state == "sitting":
             g.stage = "talk"
             Game.ui_open = true
-            caption("%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text(), 6.0)
+            caption(_dinner_open_line(), 6.0)
 
 
 # keys the in-room game wants (the rest still move you around)
@@ -35888,6 +36816,7 @@ func make_clue(zone: String, recipe: String, digit: int, r: RandomNumberGenerato
             clue.args = {"n": digit}
             clue.show = str(digit)
             clue.say = "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: %d." % digit
+    clue.say = clue_say(clue)  # E5: the wording of the room's theme
     return clue
 
 
@@ -35975,7 +36904,7 @@ func interact(kind: String) -> void:
         return
     if kind.begins_with("herring_"):
         g.time = float(g.time) - HERRING_COST
-        caption("%s (-%d S)" % [str(HERRING_TEXT.get(kind, HERRINGS[0])), int(HERRING_COST)], 4.0)
+        caption("%s (-%d S)" % [herring_text(kind), int(HERRING_COST)], 4.0)
         return
     var zone_index := CLUE_KINDS.find(kind)
     var index := zone_index
@@ -35995,7 +36924,7 @@ func interact(kind: String) -> void:
             )
         else:
             caption(
-                str(HERRINGS[Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)]), 4.0
+                shelf_herring(Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)), 4.0
             )
     elif kind == "keypad":
         g.entry = true
@@ -36047,7 +36976,7 @@ func _room_submit() -> void:
         if int(g.hints_used) >= 2:
             result = maxi(1, result - 1)
         g.entry = false
-        g.msg = "THE VAULT OPENS!"
+        g.msg = escape_text("open")
         _finish(result)
         return
     g.wrong = int(g.wrong) + 1
@@ -36083,7 +37012,8 @@ func _dinner_react() -> void:
                 ]
             )
         )
-    caption(", ".join(parts), 2.0)
+    var note := str(g.get("note", ""))
+    caption(", ".join(parts) + ("  " + note if note != "" else ""), 2.0 if note == "" else 5.0)
 
 
 # ---- the in-room display (replaces the panel while you play)
@@ -36191,7 +37121,7 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
     if str(g.get("stage", "")) != "talk":
         _t("SIT AT THE BOOTH", o.x, o.y, UiStyle.SOFT)
         return
-    _t("ROUND %d/5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
+    _t(str(DINNER_TEXT.order_strip) if dinner_ordering() else "ROUND %d/5  SCORE %d" % [int(g.round), int(g.score)], o.x, o.y, WHITE)
     # the mood of the day, one face per diner (A = Alan ...; two letters when two names start alike)
     var fx_x := s.position.x + 88.0
     var table := diners()
@@ -36213,7 +37143,8 @@ func _hud_dinner(s: Rect2, size: Vector2) -> void:
         var ry := box.position.y + 4.0 + 9.0 * float(i)
         if on:
             _canvas.draw_rect(Rect2(box.position.x + 2.0, ry - 1.0, w - 4.0, 8.0), Color("ffe08a"))
-        _t(str(g.options[i]), box.position.x + 4.0, ry, INK if on else WHITE)
+        _t(str(dinner_rows()[i]), box.position.x + 4.0, ry, INK if on else WHITE)
+        _dinner_mark(i, Rect2(box.position.x + 1.0, ry - 1.0, 2.0, 8.0))
 
 
 # ---- drawing ------------------------------------------------------------------------------------
@@ -37515,6 +38446,8 @@ func _party_line(for_game: String) -> String:
 func _paint_intro(b: Rect2) -> void:
     var y := b.position.y + 2.0
     var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
+    if game == "escape":
+        blurb = escape_intro(blurb)
     if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
         blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
     if game == "karaoke":
@@ -37559,6 +38492,8 @@ func _paint_intro(b: Rect2) -> void:
         if chair_best.has(Difficulty.tier):
             _t("BEST TIME (%s): %.1f S" % [Difficulty.label(), float(chair_best[Difficulty.tier])], b.position.x, y, GREEN)
             y += 7.0
+    if game == "dinner":
+        y = _paint_dinner_notes(b, y)
     if best.has(game):
         _t("YOUR BEST: %d OF 3 STARS" % int(best[game]), b.position.x, y, GREEN)
 
@@ -37758,12 +38693,16 @@ func _paint_escape(b: Rect2) -> void:
 func _paint_dinner(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
-    _t("ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)], x, y)
+    _t(str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)], x, y)
+    var said := _wrap(str(g.get("line", "")), 21)  # the plate, the guest, a table event: what just happened
+    for i in mini(said.size(), 5):
+        _t(str(said[i]), x, y + 50.0 + 7.0 * float(i), BLUE)
     for i in 4:
         var on: bool = int(g.sel) == i and g.react.is_empty()
         if on:
             _canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
-        _t(str(g.options[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
+        _t(str(dinner_rows()[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
+        _dinner_mark(i, Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 2.0, 8.0))
     var rx := x + 92.0
     var table := diners()
     for i in table.size():
@@ -37788,9 +38727,9 @@ func _paint_dinner(b: Rect2) -> void:
         var entry: Dictionary = known.get(who, {"likes": [], "hates": []})
         var note := ""
         if not entry.likes.is_empty():
-            note += "LIKES " + ", ".join(entry.likes)
+            note += "LIKES " + ", ".join(_with_marks(entry, entry.likes))
         if not entry.hates.is_empty():
-            note += ("  " if note != "" else "") + "NOT " + ", ".join(entry.hates)
+            note += ("  " if note != "" else "") + "NOT " + ", ".join(_with_marks(entry, entry.hates))
         _t(note.substr(0, int((b.size.x - 92.0) / 4.0)), rx, ry + 7.0, Color("46506a"))
 ''')
 
@@ -47665,7 +48604,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT", "DINNER_TEXT", "TABLE_EVENTS", "POST_TALKS", "ESCAPE_THEMES"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
     "SalesCampaign": ["BEAT_TEXT"],
     "Rival": ["HABITS", "RIVALS"],
@@ -48738,10 +49677,30 @@ const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
 const MORGAN := "Morgan Reyes - Manager"
 const Trip := preload("res://scripts/trip_variety.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
+const LINE_SECS := 3.4  # R23: seconds a line of a talk stays up while you sit in a session (E or Enter skips to the next line)
+const SESSION_HOURS := 0.9  # game hours a session takes on the trip's clock
+# P5: the owner's trip is walked too. The three sessions of the Owner card rn_session are in salons A, B and C (D is closed), and the
+# three booths of the expo hall are the three vendor cards
+const OWNER_BOOTHS := {"swag": "rn_rmm", "nerds": "rn_psa", "vendor": "rn_hw"}
+const OWNER_SPEAKERS := [["DANA PRICE", "MARGIN CLINIC"], ["SAM OKORO", "MSP PEER GROUP"], ["WHOEVER SHOWS UP", "NO SLIDES"]]
 const TEXT := {
     "invite_subject": "Rodent Nation 2014: top performers go",
     "invite_body": "LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The company pays for one tech: whoever hits the KPIs by day 16. Reputation 55 or more, SLA misses under 20 percent of closes, reopens under 15 percent of closes, and PowerShell level 2. Hit three of the four and you go. - Morgan",
     "progress": "KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.",
+    "seat_offer": "%s. On stage: %s, %s. The room is half full and there is a free chair in the middle.",
+    "seat_yes": "TAKE A SEAT",
+    "seat_no": "TRY ANOTHER ROOM",
+    "seat_hint": "PICK A CHAIR AND SIT DOWN (E). THE SESSION STARTS WHEN YOU DO.",
+    "seat_done": "THE SESSION LETS OUT. YOU STAND UP WITH A PAGE OF NOTES.",
+    "owner_arrive": "RODENT NATION. THE SESSIONS ARE DOWN THE HALL (RIGHT DOOR): THERE IS TIME FOR ONE. THE EXPO HALL IS OPEN ALL DAY.",
+    "owner_early": "THE BALLROOM IS BEING SET FOR THE CLOSING. SIT IN ON A SESSION FIRST.",
+    "owner_one": "ONE SESSION IS ALL THE DAY HAS ROOM FOR. THE EXPO HALL IS STILL OPEN, AND THE CLOSING IS IN THE BALLROOM.",
+    "owner_closed": "Salon D is dark: stacked chairs, a projector on a cart and a sign that says the room is being set for tomorrow.",
+    "owner_booth_done": "YOU HAVE HEARD THIS PITCH. THE REP WAVES A PEN AT YOU ANYWAY.",
+    "owner_talk_0": "A consultant puts one number on the screen: your effective hourly rate. Half the room goes quiet. Three packages: good, better and best, and never show the cheap one first. You rewrite your price sheet on a napkin.",
+    "owner_talk_1": "Four owners on bar stools admit they have not had a week off since 2011. Burnout is a staffing plan, says the moderator, not a flaw in your character. You write down two things to stop doing yourself.",
+    "owner_talk_2": "No slides and no chairs in rows. Six owners trade the stories they would never put in a case study. You swap cards with two of them. One of them knows your biggest client.",
     "yes_subject": "Pack your bags: Rodent Nation",
     "yes_body": "You hit the KPIs (%s). You fly out tomorrow for a day of sessions: labs, panels, the vendor hall and the keynote. Dan will cover your queue. Come back smarter. - Morgan",
     "no_subject": "Rodent Nation: not this year",
@@ -49050,10 +50009,22 @@ var _booths := {}
 var _talked := {}
 var _sign_cache := {}
 var _shown := {}  # the session on the screen of the breakout room you are in (kept until you leave)
+var seated := {}  # R23: the session you are sitting in ({index, id, title, door, lines, at, t, clock}); empty when you are not
+var owner_walk := false  # P5: the owner campaign's trip is being walked through the venue
+var _pending := {}  # the session you chose on the room's card, until you sit down
+var _back := {}  # owner trip: where you came from (scene, x, time scale, Msp.enabled)
+var _canvas: Node2D  # the caption of the talk
 
 
 func _ready() -> void:
     Campaign.day_started.connect(_on_day)
+    var layer := CanvasLayer.new()
+    layer.layer = 60
+    add_child(layer)
+    _canvas = Node2D.new()
+    _canvas.visible = false
+    layer.add_child(_canvas)
+    _canvas.draw.connect(_paint_talk)
 
 
 func reset() -> void:
@@ -49079,6 +50050,12 @@ func reset() -> void:
     _booths = {}
     _talked = {}
     _shown = {}
+    seated = {}
+    _pending = {}
+    owner_walk = false
+    _back = {}
+    if _canvas != null:
+        _canvas.visible = false
 
 
 func to_dict() -> Dictionary:
@@ -49137,7 +50114,8 @@ func is_trip_day(day: int) -> bool:
 
 
 # ---- the schedule
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+    _talk_tick(delta)
     if away and _stage != "done" and not Game.title_mode:
         _trip_tick()
         return
@@ -49232,16 +50210,25 @@ func _trip_tick() -> void:
             Hints.objective = "NEXT: PICK A SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
         "raffle":
             Hints.objective = "NEXT: THE CLOSING RAFFLE IN THE BALLROOM."
+        "o_session":
+            Hints.objective = "NEXT: SIT IN ON ONE SESSION DOWN THE HALL (RIGHT DOOR). THE EXPO HALL IS OPEN TOO."
+        "o_free":
+            Hints.objective = "THE EXPO HALL HAS THREE BOOTHS. THE CLOSING IN THE BALLROOM (LEFT DOOR) IS THE WAY HOME."
     if Cards.is_open or Game.ui_open or Game.busy:
         return
+    if owner_walk and Owner.flags.has("card_rn_wrap"):
+        _owner_home()  # the closing card was answered: fly home
+        return
+    _watch_seat()
     var scene := _scene_name()
     if scene == "vendor_hall" and str(Game.vars.get("conf_booth", "")) != "":
         var booth := str(Game.vars.get("conf_booth", ""))
         Game.vars["conf_booth"] = ""
-        _hall_answer(booth)
+        booth_use(booth)
         return
     if not scene.begins_with("breakout_"):
         _shown = {}
+        _pending = {}
     if scene == _seen:
         return
     _seen = scene
@@ -49256,6 +50243,8 @@ func _trip_tick() -> void:
         "round":
             if scene.begins_with("breakout_"):
                 _enter_breakout()
+        "o_session", "o_free":
+            _owner_room(scene)
         "raffle":
             if scene == "ballroom":
                 World.clock = 16.5
@@ -49302,7 +50291,10 @@ func _enter_breakout() -> void:
     var sessions: Array = menu(rnd)
     var found: Dictionary = sessions[mini(idx, sessions.size() - 1)]
     _shown = {"door": idx, "round": rnd, "id": str(found.id)}
-    _session(rnd, str(found.id))
+    if _free_seat() == null:
+        _session(rnd, str(found.id))  # no chair to sit on (a test that is not in the room): the session is the old card
+        return
+    _offer_seat({"index": rnd, "id": str(found.id), "title": str(found.get("short", found.label)), "door": idx})
 
 
 # the session on the screen of breakout room `door` (0 = A to 3 = D): the one you walked in on, else the round that is on now
@@ -49317,6 +50309,8 @@ func session_at(door: int) -> Dictionary:
 
 # what the room's screen and sign show: round, time, the title wrapped to `chars` letters, the speaker (name, company)
 func room_info(door: int, chars := 22) -> Dictionary:
+    if owner_walk:
+        return owner_room_info(door, chars)
     var at := session_at(door)
     var found := {}
     for s in pool(int(at.round)):
@@ -49351,6 +50345,8 @@ func _wrap(text: String, limit: int) -> Array:
 
 # the easel outside each breakout room shows what is on in it (the sign effect reads this)
 func sign_lines(door: int) -> Array:
+    if owner_walk:
+        return _wrap(owner_title(door), 9) if door < owner_sessions().size() else ["CLOSED"]
     if away and _stage == "round" and rnd < ROUNDS.size():
         var sessions: Array = menu(rnd)
         if door < sessions.size():
@@ -49399,6 +50395,8 @@ func _session(index: int, id: String) -> void:
         Sales.adjust(0, 4)
     elif skill != "":
         Skills.add_xp(skill, int(found.xp))
+    if not seated.is_empty():
+        return  # R23: you sat through it, the talk itself was the text
     Cards.ask("SESSION", text, [{"label": "NEXT", "id": "ok"}], func(_id: String) -> void: _after_session(index))
 
 
@@ -49423,7 +50421,7 @@ func _hall() -> void:
 
 # a booth in the vendor hall (E on it): what it gives you, once each
 func booth(id: String) -> void:
-    _hall_answer(id)
+    booth_use(id)
 
 
 func _hall_answer(id: String) -> void:
@@ -49469,13 +50467,299 @@ func _finish() -> void:
     World.clock = World.DAY_END
 
 
+# ---- R23: sitting in a session ------------------------------------------------------------------------------------------------
+# Walking into a breakout room no longer plays the session as a card. The card is now the choice (sit in on this one, or try
+# another room); the session starts when you sit down on a chair, plays its lines one by one as a caption while the trip's clock
+# runs, and you stand up when it is over (the reward is applied then). E / Enter skips to the next line.
+func _free_seat() -> Node:
+    var scene := get_tree().current_scene
+    if scene == null or not _scene_name().begins_with("breakout_"):
+        return null
+    var taken := {}
+    for n in get_tree().get_nodes_in_group("npcs"):
+        taken[str(n.get("start_seat"))] = true
+    var seats := scene.get_node_or_null("Interactables")
+    if seats == null:
+        return null
+    for s in seats.get_children():
+        if s.has_method("use") and s.get("occupied") != null and not taken.has(str(s.name)):
+            return s
+    return null
+
+
+func _offer_seat(what: Dictionary) -> void:
+    var info := room_info(int(what.door))
+    var who: Array = info.get("speaker", ["A GUEST SPEAKER", "RODENT NATION"])
+    Cards.ask(
+        "SALON %s" % "ABCD"[clampi(int(what.door), 0, 3)],
+        str(TEXT.seat_offer) % [str(what.title), str(who[0]), str(who[1])],
+        [{"label": str(TEXT.seat_yes), "id": "sit"}, {"label": str(TEXT.seat_no), "id": "leave"}],
+        func(id: String) -> void: _seat_answer(what, id)
+    )
+
+
+func _seat_answer(what: Dictionary, id: String) -> void:
+    if id == "sit":
+        _pending = what
+        Hints.toast(str(TEXT.seat_hint), 5.0)
+        return
+    _pending = {}
+    Game.go("resort_hall", str(Game.vars.get("conf_door", "from_a")))
+
+
+# you chose a session and sat down: it begins
+func _watch_seat() -> void:
+    if _pending.is_empty() or not seated.is_empty():
+        return
+    Hints.objective = "TAKE A FREE CHAIR (E). THE SESSION STARTS WHEN YOU SIT DOWN."
+    var me := Players.player0(get_tree().current_scene)
+    if me != null and str(me.state) == "sitting":
+        _begin_talk()
+
+
+# the lines of a talk: its own `lines`, else the sentences of its text (the reward in brackets is the last line)
+func talk_lines(found: Dictionary) -> Array:
+    var own: Array = found.get("lines", [])
+    if not own.is_empty():
+        return own
+    var out := []
+    for part in str(found.get("text", "")).replace(". (", ".|(").replace(". ", ".|").split("|"):
+        if str(part).strip_edges() != "":
+            out.append(str(part).strip_edges().to_upper())
+    return out
+
+
+func _session_def(index: int, id: String) -> Dictionary:
+    for s in pool(index):
+        if str(s.id) == id:
+            return s
+    return {}
+
+
+func _begin_talk() -> void:
+    seated = _pending.duplicate()
+    _pending = {}
+    var found: Dictionary = {"text": str(TEXT.get("owner_talk_%d" % int(seated.index), ""))} if seated.get("owner", false) else _session_def(int(seated.index), str(seated.id))
+    seated["lines"] = talk_lines(found)
+    seated["at"] = 0
+    seated["t"] = 0.0
+    seated["clock"] = World.clock
+    seated["hours"] = 0.0 if seated.get("owner", false) else SESSION_HOURS  # the owner's week keeps its own clock
+    Game.ui_open = true  # you stay in the chair until it is over
+    _canvas.visible = true
+    _nod()
+
+
+func talk_line() -> String:
+    if seated.is_empty() or int(seated.at) >= seated.lines.size():
+        return ""
+    return str(seated.lines[int(seated.at)])
+
+
+func _talk_tick(delta: float) -> void:
+    if seated.is_empty():
+        return
+    if Cards.is_open:
+        return
+    Game.ui_open = true
+    seated.t = float(seated.t) + delta
+    var n: int = maxi(1, seated.lines.size())
+    World.clock = float(seated.clock) + float(seated.hours) * minf(1.0, (float(seated.at) + float(seated.t) / LINE_SECS) / float(n))
+    if float(seated.t) >= LINE_SECS:
+        talk_skip()
+    _canvas.queue_redraw()
+
+
+# on to the next line (the timer, or E / Enter); after the last one the session is over
+func talk_skip() -> void:
+    if seated.is_empty():
+        return
+    seated.at = int(seated.at) + 1
+    seated.t = 0.0
+    if int(seated.at) >= seated.lines.size():
+        _end_talk()
+    else:
+        _nod()
+
+
+func _end_talk() -> void:
+    var done := seated.duplicate()
+    World.clock = float(done.clock) + float(done.hours)
+    if done.get("owner", false):
+        _owner_session_done(int(done.index))
+    else:
+        _session(int(done.index), str(done.id))  # the reward (no card: seated is still set)
+    seated = {}
+    _canvas.visible = false
+    Game.ui_open = false
+    var me := Players.player0(get_tree().current_scene)
+    if me != null and str(me.state) == "sitting" and me.has_method("_stand_up"):
+        me._stand_up()
+    if done.get("owner", false):
+        Hints.toast(str(TEXT.seat_done), 4.0)
+    else:
+        _after_session(int(done.index))
+
+
+# a nod at every new line (the meeting gesture), from you in your chair
+func _nod() -> void:
+    var me := Players.player0(get_tree().current_scene)
+    if me == null or str(me.state) != "sitting" or str(me.get("_gesture")) != "":
+        return
+    var anim := "sitnod_%s" % str(me.facing)
+    if me.sprite.sprite_frames != null and me.sprite.sprite_frames.has_animation(anim):
+        me._gesture = "sitnod"
+        me.sprite.play(anim)
+
+
+func _input(event: InputEvent) -> void:
+    if seated.is_empty() or Cards.is_open or not Controls.pressed(event):
+        return
+    if float(seated.t) > 0.35 and (Controls.confirm(event) or Controls.matches(event, "interact")):
+        talk_skip()
+        get_viewport().set_input_as_handled()
+
+
+# the talk on screen: a strip with the room and the title, the line as a caption, the key hint
+func _paint_talk() -> void:
+    if seated.is_empty():
+        return
+    var size := get_viewport().get_visible_rect().size
+    UiStyle.hint_bar(_canvas, size, "E = NEXT LINE")
+    var top := UiStyle.caption_bar(_canvas, size, talk_line())
+    var head := "SALON %s  %d/%d  %s" % ["ABCD"[clampi(int(seated.door), 0, 3)], mini(int(seated.at) + 1, seated.lines.size()), seated.lines.size(), str(seated.title)]
+    var wide := int((size.x - 12.0) / 4.0)
+    var o := UiStyle.strip(_canvas, Rect2(0.0, top - UiStyle.STRIP_H, size.x, UiStyle.STRIP_H))
+    UiStyle.text(_canvas, head.left(wide), o.x, o.y, UiStyle.WHITE)
+
+
+# ---- P5: the owner walks the venue (Owner card rn_invite, GO YOURSELF) ------------------------------------------------------------
+# Owner.apply asks here before it shows a chained card: with the real rooms in use (Outings.use_rooms) the session card rn_session
+# becomes the walk (the lobby, one session in a salon, the three booths of the expo hall, the closing in the ballroom = rn_wrap),
+# and the hub card rn_hall is not needed while you are standing in the venue. Without rooms the trip stays the old cards.
+func owner_show(id: String) -> bool:
+    if id == "rn_session":
+        if not Outings.use_rooms or Game.title_mode or Campaign.mode != "owner" or get_tree().current_scene == null:
+            return false
+        _owner_fly()
+        return true
+    return owner_walk and id == "rn_hall"
+
+
+func _owner_fly() -> void:
+    var here := get_tree().current_scene
+    var me := Players.player0(here)
+    _back = {
+        "scene": here.scene_file_path.get_file().get_basename(),
+        "x": me.global_position.x if me != null else -1.0,
+        "scale": World.time_scale if World.time_scale > 0.0 else 1.0,
+        "msp": Msp.enabled,
+    }
+    owner_walk = true
+    away = true
+    _stage = "o_session"
+    _seen = ""
+    _met = {}
+    _booths = {}
+    _talked = {}
+    _pending = {}
+    seated = {}
+    Owner.flags.erase("card_rn_wrap")
+    Msp.enabled = false
+    World.time_scale = 0.0
+    Game.go("resort_lobby", "from_taxi")
+    Hints.toast(str(TEXT.owner_arrive), 6.0)
+
+
+func owner_sessions() -> Array:
+    return Owner.card_data("rn_session").get("options", [])
+
+
+# "PRICING AND PACKAGING CLINIC" (the option's label without the effect in brackets)
+func owner_title(door: int) -> String:
+    var list := owner_sessions()
+    if door < 0 or door >= list.size():
+        return "CLOSED"
+    return str(list[door].label).get_slice(" (", 0)
+
+
+func owner_room_info(door: int, chars := 22) -> Dictionary:
+    if door < 0 or door >= owner_sessions().size():
+        return {}
+    return {"id": "owner%d" % door, "round": 1, "time": "2:00 PM", "title": _wrap(owner_title(door), chars), "speaker": OWNER_SPEAKERS[mini(door, OWNER_SPEAKERS.size() - 1)]}
+
+
+# the room the owner just walked into
+func _owner_room(scene: String) -> void:
+    if scene.begins_with("breakout_"):
+        var idx := maxi(0, DOORS.find(str(Game.vars.get("conf_door", "from_a"))))
+        if _stage == "o_free":
+            Hints.toast(str(TEXT.owner_one), 5.0)
+        elif idx >= owner_sessions().size():
+            Cards.ask(
+                "SALON D",
+                str(TEXT.owner_closed),
+                [{"label": "BACK TO THE HALL", "id": "leave"}],
+                func(_id: String) -> void: Game.go("resort_hall", str(Game.vars.get("conf_door", "from_a")))
+            )
+        elif _free_seat() == null:
+            _owner_session_done(idx)  # no chair: the session counts as sat through
+        else:
+            _shown = {"door": idx, "round": 0, "id": "owner%d" % idx}
+            _offer_seat({"index": idx, "id": "owner%d" % idx, "title": owner_title(idx), "door": idx, "owner": true})
+    elif scene == "ballroom":
+        if _stage == "o_free":
+            Owner.show_card("rn_wrap")
+        else:
+            Hints.toast(str(TEXT.owner_early), 4.0)
+
+
+# the session is over: its effect is the Owner card's (without the chained hub card)
+func _owner_session_done(index: int) -> void:
+    var list := owner_sessions()
+    if index >= 0 and index < list.size():
+        var fx: Dictionary = (list[index].get("fx", {}) as Dictionary).duplicate()
+        fx.erase("show")
+        Owner.apply(fx)
+        Owner.flags["card_rn_session"] = index
+    _stage = "o_free"
+
+
+# a booth of the expo hall: the tech's freebies, or (owner) the vendor who sells you a better stack with a catch
+func booth_use(id: String) -> void:
+    if not owner_walk:
+        _hall_answer(id)
+        return
+    var card := str(OWNER_BOOTHS.get(id, ""))
+    if card == "":
+        return
+    if Owner.flags.get(card, false):
+        Hints.toast(str(TEXT.owner_booth_done), 3.0)
+    else:
+        Owner.show_card(card)
+
+
+func _owner_home() -> void:
+    owner_walk = false
+    away = false
+    _stage = ""
+    _pending = {}
+    seated = {}
+    Hints.objective = ""
+    Game.vars["conf_booth"] = ""
+    Msp.enabled = bool(_back.get("msp", true))
+    World.time_scale = float(_back.get("scale", 1.0))
+    Game.pending_x = float(_back.get("x", -1.0))
+    Game.go(str(_back.get("scene", "main_floor")), "start")
+
+
 # ---- the day report for the trip day
 func adjust_report(r: Dictionary) -> Dictionary:
     if is_tech() and not away:
         tot_closed += int(r.closed)
         tot_missed += int(r.missed)
         tot_reopened += int(r.reopened)
-    if away:
+    if away and not owner_walk:
         r["closed"] = 0
         r["missed"] = 0
         r["reopened"] = 0
@@ -53075,6 +54359,7 @@ var queued := false  # GO on the title: launch once Free Play is running
 var game_i := 0
 var song_i := 0  # 0 = the usual pick, else index + 1 into Outings.SONGS
 var digits := 0  # 0 = the tier's, else 3 or 4
+var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
 var model_i := 0
@@ -53131,6 +54416,8 @@ func outing_options() -> Dictionary:
         "escape":
             if digits > 0:
                 out["digits"] = digits
+            if theme_i > 0:
+                out["theme"] = str(Outings.THEME_ORDER[theme_i])
             var recipes := {}
             for zone in Outings.CLUE_ZONES:
                 var at := int(recipe_i.get(zone, 0))
@@ -53402,6 +54689,7 @@ func rows() -> Array:
             out.append({"id": "song", "label": "SONG", "value": title})
         "escape":
             out.append({"id": "digits", "label": "CODE DIGITS", "value": "TIER" if digits == 0 else str(digits)})
+            out.append({"id": "room", "label": "ROOM", "value": str(Outings.ESCAPE_THEMES[Outings.THEME_ORDER[theme_i]].short)})
             for zone in Outings.CLUE_ZONES.slice(0, digits if digits > 0 else maxi(3, Difficulty.i("escape.digits"))):
                 var at := int(recipe_i.get(zone, 0))
                 out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
@@ -53441,6 +54729,8 @@ func change(step: int) -> void:
             sel = 0
         "song":
             song_i = (song_i + step + Outings.SONGS.size() + 1) % (Outings.SONGS.size() + 1)
+        "room":
+            theme_i = (theme_i + step + Outings.THEME_ORDER.size()) % Outings.THEME_ORDER.size()
         "digits":
             digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":

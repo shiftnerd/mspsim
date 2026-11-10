@@ -104,6 +104,10 @@ Crack the code on the keypad before time runs out. The code is a few digits long
 
 > **TIP:** Your friends know more than they say. A hint from the right person is a good use of a nudge.
 
+> **NOTE:** The room is not always the same room. An invitation draws one of four: **the old study**, **the server room**, **the
+> detective's office** or **the 1990s computer lab**. The intro page names it. The clues sit in the same spots and work the same
+> way, but the words, the red herrings and the colour of the room change.
+
 ---
 
 ## DINNER
@@ -111,8 +115,20 @@ Crack the code on the keypad before time runs out. The code is a few digits long
 A booth at the neighbourhood grill. Everyone at the table loves something and dreads something else.
 
 1. Press **`E`** on the booth to sit with the team.
-2. Over five rounds, **pick a topic**: `Up` / `Down` then `Enter`.
-3. Watch their faces. A topic somebody likes goes well; one they dread does not. Remember who liked what.
+2. **Order a plate for the table** (`Up` / `Down`, `Enter`). A plate everybody can eat is worth two points. Somebody at the table
+   does not eat meat, somebody else cannot have gluten: if the plate does not suit a person you find out, and the game remembers.
+3. Over five rounds, **pick a topic**: `Up` / `Down` then `Enter`.
+4. Watch their faces. A topic somebody likes goes well; one they dread does not. Remember who liked what.
+
+What you learn is kept, with the outing you learned it at: `LIKES FOOD (2)` means "as of outing 2". People change. A green bar
+beside a topic means somebody here likes it as far as you know, a red bar means somebody dreads it. **ASK HOW THEY ARE** is a
+topic of its own, once a dinner: it scores like small talk, but it confirms what you know and corrects what has changed.
+
+Things happen at a table. A glass goes over, a phone rings, the check arrives early: each **table event** changes the topics of the
+next round. Sometimes **a client is at the table** (in the Owner campaign John brings one): a little shop talk is welcome, a sales
+pitch never is, and the team's sore subjects are awkward in front of a guest. A good evening lifts that client's mood.
+
+After a **three star** dinner the person who likes you least stays behind for a word. Listen, offer advice, or call it a night.
 
 | KEY | WHAT IT DOES |
 |---|---|
@@ -121,10 +137,11 @@ A booth at the neighbourhood grill. Everyone at the table loves something and dr
 | `Enter` | Say it. |
 | `Esc` | Leave. |
 
-> **TIP:** There is no skill check here, so no mastery. It is purely about listening. (You will find this harder than the
-> bowling.)
+> **TIP:** There is no timing here. It is purely about listening. (You will find this harder than the bowling.) Dinner still
+> has mastery: after good dinners the table expects a little more of you, fewer plates suit everybody and fewer topics are marked.
 
-> **NOTE:** In the Owner campaign you also set the budget for the evening before you sit down.
+> **NOTE:** In the Owner campaign you also set the budget for the evening before you sit down. In the Tech campaign the boss picks
+> up the tab on day 15, and how you order is noticed.
 
 ---
 
@@ -233,7 +250,7 @@ Every game also **gets sharper the more you play it well**:
 So your hundredth game of bowling is not the same as your first. Replays stay interesting because you keep getting better and the
 game keeps keeping up.
 
-> **NOTE:** Dinner has no skill check, so it has no mastery line. Toolbox games set to a "fixed take" are meant to repeat exactly, so they stay at the starting difficulty.
+> **NOTE:** Dinner has no timing to tighten, so its mastery raises what the table expects instead. Toolbox games set to a "fixed take" are meant to repeat exactly, so they stay at the starting difficulty.
 
 > **TIP:** The difficulty level (EASY, NORMAL, HARD) sets where the game starts. Mastery changes how it feels from there.
 

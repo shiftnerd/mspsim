@@ -387,6 +387,7 @@ func _init() -> void:
 		o.g.react.Alan == ("love" if base.Alan == 2 else ("hate" if base.Alan == 0 else "meh")),
 		"the face shows the taste, not the mood"
 	)
+	root.get_node("Career").counters.erase("good.dinner")  # R30: the bars below are the first-play ones (the dinner ramp raises them)
 	_check(
 		o.dinner_targets()[0] == 22,
 		"the 3 star bar follows the table's mood (chatty and tired cancel)"
@@ -487,6 +488,7 @@ func _init() -> void:
 	# the table is the roster minus you (in the owner campaign you are Alan or Garrison)
 	var table_n: int = o.diners().size()
 	var first: String = o.diners()[0]
+	root.get_node("Career").counters.erase("good.dinner")  # R30: the bars below are the first-play ones (the dinner ramp raises them)
 	_check(
 		o.diner_shift(first) == 1 and o.dinner_targets()[0] == 5 * table_n + int(o.TABLE_BARS[table_n][0]) + 3 * table_n,
 		"a fancy table lifts everyone's mood (and the bar)"

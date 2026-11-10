@@ -15472,6 +15472,54 @@ LabRat's yearly user conference, RODENT NATION, is in Orlando this June. The com
 [Expo.TEXT.progress]
 KPI check before the Rodent Nation trip: %s. Three of four wins the ticket.
 
+# Expo > TEXT > seat_offer
+[Expo.TEXT.seat_offer]
+%s. On stage: %s, %s. The room is half full and there is a free chair in the middle.
+
+# Expo > TEXT > seat_no
+[Expo.TEXT.seat_no]
+TRY ANOTHER ROOM
+
+# Expo > TEXT > seat_hint
+[Expo.TEXT.seat_hint]
+PICK A CHAIR AND SIT DOWN (E). THE SESSION STARTS WHEN YOU DO.
+
+# Expo > TEXT > seat_done
+[Expo.TEXT.seat_done]
+THE SESSION LETS OUT. YOU STAND UP WITH A PAGE OF NOTES.
+
+# Expo > TEXT > owner_arrive
+[Expo.TEXT.owner_arrive]
+RODENT NATION. THE SESSIONS ARE DOWN THE HALL (RIGHT DOOR): THERE IS TIME FOR ONE. THE EXPO HALL IS OPEN ALL DAY.
+
+# Expo > TEXT > owner_early
+[Expo.TEXT.owner_early]
+THE BALLROOM IS BEING SET FOR THE CLOSING. SIT IN ON A SESSION FIRST.
+
+# Expo > TEXT > owner_one
+[Expo.TEXT.owner_one]
+ONE SESSION IS ALL THE DAY HAS ROOM FOR. THE EXPO HALL IS STILL OPEN, AND THE CLOSING IS IN THE BALLROOM.
+
+# Expo > TEXT > owner_closed
+[Expo.TEXT.owner_closed]
+Salon D is dark: stacked chairs, a projector on a cart and a sign that says the room is being set for tomorrow.
+
+# Expo > TEXT > owner_booth_done
+[Expo.TEXT.owner_booth_done]
+YOU HAVE HEARD THIS PITCH. THE REP WAVES A PEN AT YOU ANYWAY.
+
+# Expo > TEXT > owner_talk_0
+[Expo.TEXT.owner_talk_0]
+A consultant puts one number on the screen: your effective hourly rate. Half the room goes quiet. Three packages: good, better and best, and never show the cheap one first. You rewrite your price sheet on a napkin.
+
+# Expo > TEXT > owner_talk_1
+[Expo.TEXT.owner_talk_1]
+Four owners on bar stools admit they have not had a week off since 2011. Burnout is a staffing plan, says the moderator, not a flaw in your character. You write down two things to stop doing yourself.
+
+# Expo > TEXT > owner_talk_2
+[Expo.TEXT.owner_talk_2]
+No slides and no chairs in rows. Six owners trade the stories they would never put in a case study. You swap cards with two of them. One of them knows your biggest client.
+
 # Expo > TEXT > yes_subject
 [Expo.TEXT.yes_subject]
 Pack your bags: Rodent Nation
@@ -19463,6 +19511,538 @@ TIMER IS RUNNING, YOU KNOW.
 # Outings > KARAOKE_TEXT > doubles
 [Outings.KARAOKE_TEXT.doubles]
 DOUBLES NEED BOTH KEYS AT ONCE.
+
+
+# ======================= Outings > DINNER_TEXT =======================
+# Outings > DINNER_TEXT > order
+[Outings.DINNER_TEXT.order]
+FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, ENTER).
+
+# Outings > DINNER_TEXT > order_strip
+[Outings.DINNER_TEXT.order_strip]
+ORDER FOR THE TABLE
+
+# Outings > DINNER_TEXT > order_head
+[Outings.DINNER_TEXT.order_head]
+A PLATE TO SHARE: WHAT DO YOU ORDER?
+
+# Outings > DINNER_TEXT > order_fit
+[Outings.DINNER_TEXT.order_fit]
+%s FOR THE TABLE. EVERYBODY DIGS IN. (TABLE +%d)
+
+# Outings > DINNER_TEXT > order_clash
+[Outings.DINNER_TEXT.order_clash]
+%s ARRIVES. %s. A SIDE SALAD IS ORDERED AND NOBODY MAKES IT A THING.
+
+# Outings > DINNER_TEXT > ask
+[Outings.DINNER_TEXT.ask]
+YOU ASK HOW EVERYBODY IS DOING, AND LISTEN.
+
+# Outings > DINNER_TEXT > ask_same
+[Outings.DINNER_TEXT.ask_same]
+NOTHING NEW AT THE TABLE. WHAT YOU KNEW STILL HOLDS.
+
+# Outings > DINNER_TEXT > ask_learn
+[Outings.DINNER_TEXT.ask_learn]
+%s MENTIONS A FAVOURITE SUBJECT: %s.
+
+# Outings > DINNER_TEXT > ask_drift
+[Outings.DINNER_TEXT.ask_drift]
+%s HAS GONE OFF %s. THESE DAYS IT IS %s.
+
+# Outings > DINNER_TEXT > guest_in
+[Outings.DINNER_TEXT.guest_in]
+%s OF %s IS AT THE TABLE TONIGHT. SHOP TALK IS FINE IN SMALL DOSES. NOBODY CAME TO BE SOLD TO.
+
+# Outings > DINNER_TEXT > guest_shop
+[Outings.DINNER_TEXT.guest_shop]
+%s JOINS IN: SHOP TALK, THE FUN KIND.
+
+# Outings > DINNER_TEXT > guest_shop_much
+[Outings.DINNER_TEXT.guest_shop_much]
+%s CHECKS THE TIME. THAT IS ENOUGH SHOP TALK.
+
+# Outings > DINNER_TEXT > guest_pitch
+[Outings.DINNER_TEXT.guest_pitch]
+%s PUTS THE FORK DOWN. NOBODY CAME TO DINNER FOR A PITCH.
+
+# Outings > DINNER_TEXT > guest_business
+[Outings.DINNER_TEXT.guest_business]
+%s LIGHTS UP AND TALKS ABOUT THE BUSINESS FOR A WHILE.
+
+# Outings > DINNER_TEXT > guest_touchy
+[Outings.DINNER_TEXT.guest_touchy]
+%s STUDIES THE MENU WHILE THE TEAM AIRS ITS LAUNDRY.
+
+# Outings > DINNER_TEXT > guest_good
+[Outings.DINNER_TEXT.guest_good]
+%s HAD A GOOD NIGHT. (MOOD +%d)
+
+# Outings > DINNER_TEXT > guest_bad
+[Outings.DINNER_TEXT.guest_bad]
+%s WENT HOME EARLY. (MOOD %d)
+
+# Outings > DINNER_TEXT > guest_ok
+[Outings.DINNER_TEXT.guest_ok]
+%s HAD A FINE EVENING.
+
+# Outings > DINNER_TEXT > guest_referral
+[Outings.DINNER_TEXT.guest_referral]
+A WARM REFERRAL FOR JOHN FROM %s.
+
+# Outings > DINNER_TEXT > tab
+[Outings.DINNER_TEXT.tab]
+Tonight is on the company. You have earned it. Order what you like, within reason. I will be reading the receipt.
+
+# Outings > DINNER_TEXT > tab_usual
+[Outings.DINNER_TEXT.tab_usual]
+THE USUAL, THANK YOU
+
+# Outings > DINNER_TEXT > tab_fancy
+[Outings.DINNER_TEXT.tab_fancy]
+STEAKS FOR THE TABLE
+
+# Outings > DINNER_TEXT > tab_line
+[Outings.DINNER_TEXT.tab_line]
+%s PICKED UP THE TAB.
+
+# Outings > DINNER_TEXT > tab_fancy_line
+[Outings.DINNER_TEXT.tab_fancy_line]
+%s PAID AND READ THE RECEIPT TWICE.
+
+# Outings > DINNER_TEXT > tab_modest_line
+[Outings.DINNER_TEXT.tab_modest_line]
+%s PAID. YOU WENT EASY ON THE TAB.
+
+# Outings > DINNER_TEXT > talk_listen
+[Outings.DINNER_TEXT.talk_listen]
+STAY AND LISTEN
+
+# Outings > DINNER_TEXT > talk_advise
+[Outings.DINNER_TEXT.talk_advise]
+OFFER SOME ADVICE
+
+# Outings > DINNER_TEXT > talk_leave
+[Outings.DINNER_TEXT.talk_leave]
+CALL IT A NIGHT
+
+# Outings > DINNER_TEXT > know_legend
+[Outings.DINNER_TEXT.know_legend]
+(N) = THE OUTING YOU LEARNED IT AT. THINGS CHANGE: ASK HOW THEY ARE.
+
+# Outings > DINNER_TEXT > expect
+[Outings.DINNER_TEXT.expect]
+AFTER %d GOOD DINNERS THE TABLE EXPECTS MORE OF YOU.
+
+
+# ======================= Outings > TABLE_EVENTS =======================
+# Outings > TABLE_EVENTS > glass > text
+[Outings.TABLE_EVENTS.glass.text]
+A GLASS GOES OVER. EVERYBODY LAUGHS AND THE TABLE LOOSENS UP. NO SORE SUBJECTS NEXT ROUND.
+
+# Outings > TABLE_EVENTS > toast > text
+[Outings.TABLE_EVENTS.toast.text]
+%s STANDS UP FOR A LONG TOAST. A FAVOURITE SUBJECT IS COMING.
+
+# Outings > TABLE_EVENTS > phone > text
+[Outings.TABLE_EVENTS.phone.text]
+A PHONE BUZZES NEXT TO THE PLATE OF %s. A VENDOR, AT THIS HOUR.
+
+# Outings > TABLE_EVENTS > check > text
+[Outings.TABLE_EVENTS.check.text]
+THE CHECK ARRIVES EARLY AND GOES ROUND THE TABLE. EVERYBODY DOES SOME MATH.
+
+# Outings > TABLE_EVENTS > check > topic
+[Outings.TABLE_EVENTS.check.topic]
+RAISES AND BONUSES
+
+# Outings > TABLE_EVENTS > game > text
+[Outings.TABLE_EVENTS.game.text]
+THE BAR TV SHOWS THE LAST TWO MINUTES. HALF THE TABLE TURNS ROUND.
+
+
+# ======================= Outings > POST_TALKS =======================
+# Outings > POST_TALKS > Alan > text
+[Outings.POST_TALKS.Alan.text]
+Alan waits by the door while the others find their coats. 'Good night, that. I have been short with you lately. The servers have been keeping me up and I took it out on the room.'
+
+# Outings > POST_TALKS > Alan > listen
+[Outings.POST_TALKS.Alan.listen]
+ALAN TALKS ABOUT THE SERVERS FOR TEN MINUTES AND THANKS YOU FOR NOT FIXING ANYTHING.
+
+# Outings > POST_TALKS > Alan > advise
+[Outings.POST_TALKS.Alan.advise]
+YOU SUGGEST HE WRITES THE RUNBOOK DOWN. ALAN NODS LIKE A MAN WHO WILL THINK ABOUT IT.
+
+# Outings > POST_TALKS > Garrison > text
+[Outings.POST_TALKS.Garrison.text]
+Garrison hangs back with the last of his drink. 'Can I ask you something? Do people like these nights, or do they come because I ask?'
+
+# Outings > POST_TALKS > Garrison > listen
+[Outings.POST_TALKS.Garrison.listen]
+GARRISON TALKS IT THROUGH OUT LOUD AND ANSWERS HIS OWN QUESTION. HE LOOKS LIGHTER.
+
+# Outings > POST_TALKS > Garrison > advise
+[Outings.POST_TALKS.Garrison.advise]
+YOU TELL HIM TO LET SOMEBODY ELSE PICK THE PLACE NEXT TIME. HE WRITES IT ON A NAPKIN.
+
+# Outings > POST_TALKS > Dan > text
+[Outings.POST_TALKS.Dan.text]
+Dan is still at the table folding the receipt into a small square. 'I am behind on the closet labels. I keep meaning to ask for a hand and then I do not ask.'
+
+# Outings > POST_TALKS > Dan > listen
+[Outings.POST_TALKS.Dan.listen]
+DAN LISTS EVERY UNLABELLED PORT FROM MEMORY. SAYING IT OUT LOUD SEEMS TO HELP.
+
+# Outings > POST_TALKS > Dan > advise
+[Outings.POST_TALKS.Dan.advise]
+YOU OFFER HIM FRIDAY AFTERNOON AND A LABEL MAKER. DAN ALMOST SMILES.
+
+# Outings > POST_TALKS > John > text
+[Outings.POST_TALKS.John.text]
+John catches you in the parking lot. 'Straight question. When I promise a client something, does the bench hate me for it?'
+
+# Outings > POST_TALKS > John > listen
+[Outings.POST_TALKS.John.listen]
+JOHN TALKS ABOUT QUOTA UNTIL THE LOT IS EMPTY. HE NEEDED SOMEBODY WHO WAS NOT BUYING.
+
+# Outings > POST_TALKS > John > advise
+[Outings.POST_TALKS.John.advise]
+YOU ASK HIM TO CHECK WITH THE BENCH BEFORE HE PROMISES A DATE. HE SAYS THAT IS FAIR.
+
+# Outings > POST_TALKS > Maya > text
+[Outings.POST_TALKS.Maya.text]
+Maya waits until the table is empty. 'I close a lot of tickets. I am not sure I am learning anything. Is that normal in the first year?'
+
+# Outings > POST_TALKS > Maya > listen
+[Outings.POST_TALKS.Maya.listen]
+MAYA WALKS THROUGH HER WEEK TICKET BY TICKET AND FINDS THREE THINGS SHE LEARNED.
+
+# Outings > POST_TALKS > Maya > advise
+[Outings.POST_TALKS.Maya.advise]
+YOU TELL HER TO KEEP ONE HARD TICKET A DAY FOR HERSELF. SHE PUTS IT IN HER PHONE.
+
+# Outings > POST_TALKS > Morgan > text
+[Outings.POST_TALKS.Morgan.text]
+Morgan pays for her own coffee and stays seated. 'I am the one who says no all day. Nights like this I remember there are people under the numbers.'
+
+# Outings > POST_TALKS > Morgan > listen
+[Outings.POST_TALKS.Morgan.listen]
+MORGAN TALKS ABOUT THE SCHEDULE FOR A WHILE, THEN ABOUT ANYTHING ELSE. IT IS A GOOD SIGN.
+
+# Outings > POST_TALKS > Morgan > advise
+[Outings.POST_TALKS.Morgan.advise]
+YOU SUGGEST ONE YES A WEEK, ON PURPOSE. MORGAN SAYS SHE WILL PUT IT ON THE BOARD.
+
+# Outings > POST_TALKS > _ > text
+[Outings.POST_TALKS._.text]
+One of the crew stays behind while the others leave. 'Good night, that. Got a minute?'
+
+# Outings > POST_TALKS > _ > listen
+[Outings.POST_TALKS._.listen]
+YOU LISTEN UNTIL THE STAFF START STACKING CHAIRS. IT WAS WORTH THE MINUTE.
+
+# Outings > POST_TALKS > _ > advise
+[Outings.POST_TALKS._.advise]
+YOU SAY WHAT YOU WOULD DO. THEY SAY THEY WILL SLEEP ON IT.
+
+
+# ======================= Outings > ESCAPE_THEMES =======================
+# Outings > ESCAPE_THEMES > study > title
+[Outings.ESCAPE_THEMES.study.title]
+THE OLD STUDY
+
+# Outings > ESCAPE_THEMES > study > intro
+[Outings.ESCAPE_THEMES.study.intro]
+THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.
+
+# Outings > ESCAPE_THEMES > study > start
+[Outings.ESCAPE_THEMES.study.start]
+LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT
+
+# Outings > ESCAPE_THEMES > study > open
+[Outings.ESCAPE_THEMES.study.open]
+THE VAULT OPENS!
+
+# Outings > ESCAPE_THEMES > study > say > sum
+[Outings.ESCAPE_THEMES.study.say.sum]
+THE CHALKBOARD: {a} + {b} = ?
+
+# Outings > ESCAPE_THEMES > study > say > product
+[Outings.ESCAPE_THEMES.study.say.product]
+THE CHALKBOARD: {a} X {b} = ?
+
+# Outings > ESCAPE_THEMES > study > say > missing
+[Outings.ESCAPE_THEMES.study.say.missing]
+THE CHALKBOARD LISTS 1 TO 9 WITH ONE LEFT OUT: {list}. WHICH ONE?
+
+# Outings > ESCAPE_THEMES > study > say > hour
+[Outings.ESCAPE_THEMES.study.say.hour]
+THE CLOCK HAS STOPPED AT {hour} O'CLOCK.
+
+# Outings > ESCAPE_THEMES > study > say > double
+[Outings.ESCAPE_THEMES.study.say.double]
+THE CLOCK HAS STOPPED AT {hour} O'CLOCK. A NOTE ON THE FACE: TWICE THE HOUR.
+
+# Outings > ESCAPE_THEMES > study > say > number
+[Outings.ESCAPE_THEMES.study.say.number]
+A BRASS PLAQUE UNDER THE PAINTING: NO. {n}.
+
+# Outings > ESCAPE_THEMES > study > say > roman
+[Outings.ESCAPE_THEMES.study.say.roman]
+THE PLAQUE UNDER THE PAINTING READS {numeral}. A ROMAN NUMERAL.
+
+# Outings > ESCAPE_THEMES > study > say > letter
+[Outings.ESCAPE_THEMES.study.say.letter]
+THE PLAQUE UNDER THE PAINTING SHOWS THE LETTER {letter}. WHERE IS IT IN THE ALPHABET?
+
+# Outings > ESCAPE_THEMES > study > say > spine
+[Outings.ESCAPE_THEMES.study.say.spine]
+ONE BOOK ON THE SHELF STICKS OUT: VOLUME {n}.
+
+# Outings > ESCAPE_THEMES > study > say > ribbons
+[Outings.ESCAPE_THEMES.study.say.ribbons]
+BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: {n}.
+
+# Outings > ESCAPE_THEMES > server > title
+[Outings.ESCAPE_THEMES.server.title]
+THE SERVER ROOM
+
+# Outings > ESCAPE_THEMES > server > intro
+[Outings.ESCAPE_THEMES.server.intro]
+SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.
+
+# Outings > ESCAPE_THEMES > server > start
+[Outings.ESCAPE_THEMES.server.start]
+THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT
+
+# Outings > ESCAPE_THEMES > server > open
+[Outings.ESCAPE_THEMES.server.open]
+THE TAPE VAULT OPENS! THE RESTORE CAN START.
+
+# Outings > ESCAPE_THEMES > server > say > sum
+[Outings.ESCAPE_THEMES.server.say.sum]
+THE BOARD BY THE RACK: PORT {a} + PORT {b} = ?
+
+# Outings > ESCAPE_THEMES > server > say > product
+[Outings.ESCAPE_THEMES.server.say.product]
+THE BOARD BY THE RACK: {a} SWITCHES X {b} UPLINKS = ?
+
+# Outings > ESCAPE_THEMES > server > say > missing
+[Outings.ESCAPE_THEMES.server.say.missing]
+THE PATCH LIST ON THE BOARD HAS PORTS 1 TO 9 WITH ONE UNPLUGGED: {list}. WHICH ONE?
+
+# Outings > ESCAPE_THEMES > server > say > hour
+[Outings.ESCAPE_THEMES.server.say.hour]
+THE WALL CLOCK DIED WITH THE UPS AT {hour} O'CLOCK.
+
+# Outings > ESCAPE_THEMES > server > say > double
+[Outings.ESCAPE_THEMES.server.say.double]
+THE WALL CLOCK DIED AT {hour} O'CLOCK. A STICKY NOTE: THE BACKUP RUNS AT TWICE THE HOUR.
+
+# Outings > ESCAPE_THEMES > server > say > number
+[Outings.ESCAPE_THEMES.server.say.number]
+AN ASSET TAG UNDER THE FRAMED NETWORK MAP: RACK NO. {n}.
+
+# Outings > ESCAPE_THEMES > server > say > roman
+[Outings.ESCAPE_THEMES.server.say.roman]
+THE TAG UNDER THE NETWORK MAP READS {numeral}. SOMEBODY LABELS RACKS WITH A ROMAN NUMERAL.
+
+# Outings > ESCAPE_THEMES > server > say > letter
+[Outings.ESCAPE_THEMES.server.say.letter]
+THE TAG UNDER THE NETWORK MAP SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?
+
+# Outings > ESCAPE_THEMES > server > say > spine
+[Outings.ESCAPE_THEMES.server.say.spine]
+ONE BINDER ON THE MANUAL SHELF STICKS OUT: VOLUME {n}.
+
+# Outings > ESCAPE_THEMES > server > say > ribbons
+[Outings.ESCAPE_THEMES.server.say.ribbons]
+CABLE TIES HANG FROM THE MANUAL SHELF. COUNT THEM: {n}.
+
+# Outings > ESCAPE_THEMES > server > shelf > 0
+[Outings.ESCAPE_THEMES.server.shelf.0]
+MANUALS FOR SERVERS NOBODY OWNS ANY MORE. NO NUMBERS HERE THAT MATTER.
+
+# Outings > ESCAPE_THEMES > server > shelf > 1
+[Outings.ESCAPE_THEMES.server.shelf.1]
+A SHELF OF DRIVER DISCS. THE LABEL SAYS: NOT THE CODE.
+
+# Outings > ESCAPE_THEMES > server > shelf > 2
+[Outings.ESCAPE_THEMES.server.shelf.2]
+OLD TONER BOXES AND A LABEL MAKER. NOTHING USEFUL.
+
+# Outings > ESCAPE_THEMES > server > herring > herring_safe
+[Outings.ESCAPE_THEMES.server.herring.herring_safe]
+THE FIREPROOF SAFE HOLDS LAST YEAR'S BACKUP TAPES. THE LABEL SAYS: NOT THE CODE. SOMEBODY ALREADY TRIED.
+
+# Outings > ESCAPE_THEMES > server > herring > herring_trunk
+[Outings.ESCAPE_THEMES.server.herring.herring_trunk]
+A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.
+
+# Outings > ESCAPE_THEMES > server > herring > herring_globe
+[Outings.ESCAPE_THEMES.server.herring.herring_globe]
+THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.
+
+# Outings > ESCAPE_THEMES > detective > title
+[Outings.ESCAPE_THEMES.detective.title]
+THE DETECTIVE'S OFFICE
+
+# Outings > ESCAPE_THEMES > detective > intro
+[Outings.ESCAPE_THEMES.detective.intro]
+THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.
+
+# Outings > ESCAPE_THEMES > detective > start
+[Outings.ESCAPE_THEMES.detective.start]
+THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT
+
+# Outings > ESCAPE_THEMES > detective > open
+[Outings.ESCAPE_THEMES.detective.open]
+THE EVIDENCE VAULT OPENS! CASE CLOSED.
+
+# Outings > ESCAPE_THEMES > detective > say > sum
+[Outings.ESCAPE_THEMES.detective.say.sum]
+THE CASE BOARD: {a} SUSPECTS + {b} WITNESSES = ?
+
+# Outings > ESCAPE_THEMES > detective > say > product
+[Outings.ESCAPE_THEMES.detective.say.product]
+THE CASE BOARD: {a} ROWS X {b} MUGSHOTS = ?
+
+# Outings > ESCAPE_THEMES > detective > say > missing
+[Outings.ESCAPE_THEMES.detective.say.missing]
+THE CASE BOARD NUMBERS THE SUSPECTS 1 TO 9 WITH ONE CROSSED OFF: {list}. WHICH ONE?
+
+# Outings > ESCAPE_THEMES > detective > say > hour
+[Outings.ESCAPE_THEMES.detective.say.hour]
+THE CLOCK STOPPED AT {hour} O'CLOCK. THE TIME OF THE CRIME.
+
+# Outings > ESCAPE_THEMES > detective > say > double
+[Outings.ESCAPE_THEMES.detective.say.double]
+THE CLOCK STOPPED AT {hour} O'CLOCK. A NOTE IN PENCIL: THE ALIBI IS TWICE THE HOUR.
+
+# Outings > ESCAPE_THEMES > detective > say > number
+[Outings.ESCAPE_THEMES.detective.say.number]
+A BRASS PLATE UNDER THE PORTRAIT: CASE NO. {n}.
+
+# Outings > ESCAPE_THEMES > detective > say > roman
+[Outings.ESCAPE_THEMES.detective.say.roman]
+THE PLATE UNDER THE PORTRAIT READS {numeral}. THE DETECTIVE LIKED A ROMAN NUMERAL.
+
+# Outings > ESCAPE_THEMES > detective > say > letter
+[Outings.ESCAPE_THEMES.detective.say.letter]
+THE PLATE UNDER THE PORTRAIT SHOWS THE FILE LETTER {letter}. WHERE IS IT IN THE ALPHABET?
+
+# Outings > ESCAPE_THEMES > detective > say > spine
+[Outings.ESCAPE_THEMES.detective.say.spine]
+ONE CASE FILE ON THE SHELF STICKS OUT: VOLUME {n}.
+
+# Outings > ESCAPE_THEMES > detective > say > ribbons
+[Outings.ESCAPE_THEMES.detective.say.ribbons]
+RED STRINGS HANG FROM THE SHELF OF CASE FILES. COUNT THEM: {n}.
+
+# Outings > ESCAPE_THEMES > detective > shelf > 0
+[Outings.ESCAPE_THEMES.detective.shelf.0]
+A SHELF OF CLOSED CASES. NO NUMBERS HERE THAT MATTER.
+
+# Outings > ESCAPE_THEMES > detective > shelf > 1
+[Outings.ESCAPE_THEMES.detective.shelf.1]
+PHONE BOOKS AND A HAT. THE LABEL SAYS: NOT THE CODE.
+
+# Outings > ESCAPE_THEMES > detective > shelf > 2
+[Outings.ESCAPE_THEMES.detective.shelf.2]
+OLD NEWSPAPERS AND AN EMPTY BOTTLE. NOTHING USEFUL.
+
+# Outings > ESCAPE_THEMES > detective > herring > herring_safe
+[Outings.ESCAPE_THEMES.detective.herring.herring_safe]
+THE SAFE HOLDS A SANDWICH AND AN UNPAID BILL. A NOTE SAYS: THE CODE IS NOT THE BILL.
+
+# Outings > ESCAPE_THEMES > detective > herring > herring_trunk
+[Outings.ESCAPE_THEMES.detective.herring.herring_trunk]
+A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.
+
+# Outings > ESCAPE_THEMES > detective > herring > herring_globe
+[Outings.ESCAPE_THEMES.detective.herring.herring_globe]
+THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.
+
+# Outings > ESCAPE_THEMES > lab > title
+[Outings.ESCAPE_THEMES.lab.title]
+THE 1990S COMPUTER LAB
+
+# Outings > ESCAPE_THEMES > lab > intro
+[Outings.ESCAPE_THEMES.lab.intro]
+DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.
+
+# Outings > ESCAPE_THEMES > lab > start
+[Outings.ESCAPE_THEMES.lab.start]
+THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT
+
+# Outings > ESCAPE_THEMES > lab > open
+[Outings.ESCAPE_THEMES.lab.open]
+THE VAULT OPENS! HALL PASSES FOR EVERYBODY.
+
+# Outings > ESCAPE_THEMES > lab > say > sum
+[Outings.ESCAPE_THEMES.lab.say.sum]
+THE TEACHER'S BOARD: {a} FLOPPIES + {b} FLOPPIES = ?
+
+# Outings > ESCAPE_THEMES > lab > say > product
+[Outings.ESCAPE_THEMES.lab.say.product]
+THE TEACHER'S BOARD: {a} ROWS X {b} BEIGE PCS = ?
+
+# Outings > ESCAPE_THEMES > lab > say > missing
+[Outings.ESCAPE_THEMES.lab.say.missing]
+THE BOARD NUMBERS THE WORKSTATIONS 1 TO 9 WITH ONE OUT OF ORDER: {list}. WHICH ONE?
+
+# Outings > ESCAPE_THEMES > lab > say > hour
+[Outings.ESCAPE_THEMES.lab.say.hour]
+THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. THE BELL NEVER RANG.
+
+# Outings > ESCAPE_THEMES > lab > say > double
+[Outings.ESCAPE_THEMES.lab.say.double]
+THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. CHALKED UNDER IT: TWICE THE HOUR.
+
+# Outings > ESCAPE_THEMES > lab > say > number
+[Outings.ESCAPE_THEMES.lab.say.number]
+A PLATE UNDER THE CLASS PHOTO: ROOM NO. {n}.
+
+# Outings > ESCAPE_THEMES > lab > say > roman
+[Outings.ESCAPE_THEMES.lab.say.roman]
+THE PLATE UNDER THE CLASS PHOTO READS {numeral}. A ROMAN NUMERAL, FOR EXTRA CREDIT.
+
+# Outings > ESCAPE_THEMES > lab > say > letter
+[Outings.ESCAPE_THEMES.lab.say.letter]
+THE PLATE UNDER THE CLASS PHOTO SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?
+
+# Outings > ESCAPE_THEMES > lab > say > spine
+[Outings.ESCAPE_THEMES.lab.say.spine]
+ONE TYPING TUTOR MANUAL ON THE SHELF STICKS OUT: VOLUME {n}.
+
+# Outings > ESCAPE_THEMES > lab > say > ribbons
+[Outings.ESCAPE_THEMES.lab.say.ribbons]
+MOUSE CORDS HANG FROM THE SHELF. COUNT THEM: {n}.
+
+# Outings > ESCAPE_THEMES > lab > shelf > 0
+[Outings.ESCAPE_THEMES.lab.shelf.0]
+BOXES OF FLOPPIES LABELLED IN PENCIL. NO NUMBERS HERE THAT MATTER.
+
+# Outings > ESCAPE_THEMES > lab > shelf > 1
+[Outings.ESCAPE_THEMES.lab.shelf.1]
+A SHELF OF TYPING TUTOR MANUALS. THE LABEL SAYS: NOT THE CODE.
+
+# Outings > ESCAPE_THEMES > lab > shelf > 2
+[Outings.ESCAPE_THEMES.lab.shelf.2]
+A DOT MATRIX PRINTER AND A STACK OF FAN-FOLD PAPER. NOTHING USEFUL.
+
+# Outings > ESCAPE_THEMES > lab > herring > herring_safe
+[Outings.ESCAPE_THEMES.lab.herring.herring_safe]
+THE SAFE HOLDS THE GRADE BOOK. A NOTE SAYS: THE CODE IS NOT THE HALL PASS NUMBER.
+
+# Outings > ESCAPE_THEMES > lab > herring > herring_trunk
+[Outings.ESCAPE_THEMES.lab.herring.herring_trunk]
+A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.
+
+# Outings > ESCAPE_THEMES > lab > herring > herring_globe
+[Outings.ESCAPE_THEMES.lab.herring.herring_globe]
+THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.
 
 
 # ======================= Build > QUIRKS =======================

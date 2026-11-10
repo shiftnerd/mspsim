@@ -53,6 +53,7 @@ var queued := false  # GO on the title: launch once Free Play is running
 var game_i := 0
 var song_i := 0  # 0 = the usual pick, else index + 1 into Outings.SONGS
 var digits := 0  # 0 = the tier's, else 3 or 4
+var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
 var model_i := 0
@@ -109,6 +110,8 @@ func outing_options() -> Dictionary:
 		"escape":
 			if digits > 0:
 				out["digits"] = digits
+			if theme_i > 0:
+				out["theme"] = str(Outings.THEME_ORDER[theme_i])
 			var recipes := {}
 			for zone in Outings.CLUE_ZONES:
 				var at := int(recipe_i.get(zone, 0))
@@ -380,6 +383,7 @@ func rows() -> Array:
 			out.append({"id": "song", "label": "SONG", "value": title})
 		"escape":
 			out.append({"id": "digits", "label": "CODE DIGITS", "value": "TIER" if digits == 0 else str(digits)})
+			out.append({"id": "room", "label": "ROOM", "value": str(Outings.ESCAPE_THEMES[Outings.THEME_ORDER[theme_i]].short)})
 			for zone in Outings.CLUE_ZONES.slice(0, digits if digits > 0 else maxi(3, Difficulty.i("escape.digits"))):
 				var at := int(recipe_i.get(zone, 0))
 				out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
@@ -419,6 +423,8 @@ func change(step: int) -> void:
 			sel = 0
 		"song":
 			song_i = (song_i + step + Outings.SONGS.size() + 1) % (Outings.SONGS.size() + 1)
+		"room":
+			theme_i = (theme_i + step + Outings.THEME_ORDER.size()) % Outings.THEME_ORDER.size()
 		"digits":
 			digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
 		"table":

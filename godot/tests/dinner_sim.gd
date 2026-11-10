@@ -25,6 +25,7 @@ func _table(d: Node, seed_n: int, size: int) -> Array:
 func _dinner(o: Node, d: Node, seed_n: int, best: bool, size := 3) -> int:
 	d.seed_run(seed_n)
 	o.reset()
+	root.get_node("Career").counters.erase("good.dinner")  # every simulated dinner is a first play (R30: good dinners raise the bars)
 	if size == 3:
 		o.start("dinner")
 	else:

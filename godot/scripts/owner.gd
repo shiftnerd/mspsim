@@ -2109,7 +2109,7 @@ func apply(fx: Dictionary) -> void:
 		Career.add("trips")
 	if fx.get("candidates", false):
 		_hire_card()
-	if fx.has("show"):
+	if fx.has("show") and not Expo.owner_show(str(fx.show)):  # P5: the trip can be walked instead (conference.gd)
 		show_card(str(fx.show))
 	if fx.get("check_backups", false):
 		for c in Sales.active:

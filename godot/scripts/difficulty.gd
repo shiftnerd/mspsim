@@ -130,6 +130,11 @@ const TABLE := {
 	"escape.dial": [1, 1, 0],
 	# dinner: how many of the three faces show their reaction (the others stay hidden for that round)
 	"dinner.reveal": [3, 3, 2],
+	# dinner ramp (R30): extra points per diner the table expects for 3 and 2 stars; and, at a dinner with the ordering round and the
+	# marked topic list (options.variety), how many of the four shared plates suit everybody and the share of your known tastes that is marked
+	"dinner.expect": [0.0, 0.0, 0.4],
+	"dinner.fits": [3.0, 2.0, 1.0],
+	"dinner.hints": [1.0, 1.0, 0.5],
 	# printer: marker speed x, green zone width x, number of test-page questions
 	"printer.speed": [0.8, 1.0, 1.25],
 	"printer.zone": [1.3, 1.0, 0.95],
@@ -208,6 +213,7 @@ const MASTERY_KEYS := [
 	"karaoke.gap", "karaoke.perfect", "karaoke.good",
 	"bowl.opp_skill", "bowl.aim_speed", "bowl.power_speed", "bowl.oil", "bowl.spin_noise",
 	"escape.time", "escape.wrong_penalty",
+	"dinner.expect", "dinner.fits", "dinner.hints",
 	"printer.speed", "printer.zone",
 	"grill.cook_rate", "grill.window", "grill.time",
 	"chair.crash", "chair.stamina", "chair.slick", "chair.par", "chair.skill", "paint.skill",
