@@ -227,3 +227,15 @@ that reads real time (`Cards` ignore input for 0.45 s of real time after they op
 4. Frame time on the Deck's APU.
 5. The native Linux export, or the Windows build under Proton.
 6. Deck Verified itself: Valve runs the review on a submitted build.
+
+## Windows handhelds (ROG Ally, Ally X and similar)
+
+Generally the same as the Deck, and simpler in one way:
+
+- **Build**: the ordinary Windows build runs natively. No Linux export, no Proton.
+- **Input**: the built-in controls are a standard XInput pad, which is what `Controls` already speaks. Everything in the pad-only tests (`tests/pad_only.gd`, `pad_only_games.gd`, `pad_reach.gd`) applies unchanged. The extra back paddles and the Armoury Crate / Command Center buttons are handled by the system, not the game.
+- **Screen**: 1920x1080, 16:9, 7 inch. The `deck` format (320x200) is for 16:10 and is not picked here. The `h` format (320x180) fills 1080p exactly at x6 (and 720p at x4), with glyphs 30 px tall; the default `wide` (368x128) gets x5 = 1840x640 with large bars. Today a 16:9 screen starts in `wide`, so on an Ally the player picks `h` once with SHAPE in SETTINGS (the choice is saved).
+- **Suspend and focus**: the same pause on focus loss, app pause and the 3 s frame-gap rule cover sleep and the overlay.
+- **Performance**: the Ally's Z1 Extreme is faster than the Deck's CPU, so the frame-time table above is the worse case.
+
+Open: start in `h` and full screen on a handheld 16:9 screen. Windows gives no reliable handheld flag; the practical signal is a pad connected at first launch with no saved format. Not built: it would also change what a desktop player with a pad plugged in sees first. Nothing here was run on an Ally.

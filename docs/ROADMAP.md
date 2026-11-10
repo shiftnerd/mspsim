@@ -13,6 +13,7 @@ Row ids (R, X, C, T, Q, P, H) are stable: never renumber them. Effort: S under a
 - Tests use their own save copy (a per-process `user://test_<pid>_...` prefix).
 - Dialogue Manager addon: skip for now. Gitot: optional.
 - **Steam Deck compatibility is a target** (user, 2026-11-10). Nothing may work against it: every screen must be playable with a pad alone (no keyboard text entry, no mouse-only control), text must read on a 7 inch 1280x800 screen, and button hints show pad glyphs. Tracked in row R42.
+- **Windows handhelds (ROG Ally and similar) are covered by the Steam Deck work** (user asked, 2026-11-10): same pad-only play, glyphs, pause on focus loss and suspend. Differences: the Windows build runs natively (no Linux or Proton question), and the screen is 1920x1080 (16:9), where the `h` format (320x180) fills it exactly at x6 while the default `wide` leaves bars. Open under R42: start in `h` and full screen on a handheld 16:9 screen (no reliable way to tell an Ally from a desktop monitor; a pad connected at first launch is the likely signal), and a check on the hardware.
 - **No Switch port** (user, 2026-11-10: not an approved developer for now). Targets are PC first, with the gamepad and portability work kept for PC pads and a possible mobile build. Older notes that mention a Switch port or dry run (`docs/scope-coop.md`, `docs/coop-risk-findings.md`) are history, not plans.
 - The canon text pass (Alan and Garrison recast as owners in dialogue, tips, Lynk, vignettes, review, outings) is done; see CLAUDE.md "Canon: the owners".
 
