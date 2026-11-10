@@ -373,7 +373,7 @@ static func pm_has(eff: String) -> bool:
 
 # read by Msp.new_day: the chance a backup quietly fails overnight
 static func backup_fail_chance() -> float:
-	return 0.04 if pm_has("backups") else 0.08
+	return (0.04 if pm_has("backups") else 0.08) * Habits.night_mult()  # R38: H9, 8 percent -> 6 percent
 
 
 # read by Growth.fail_adjust: a runbook makes fixes a little safer

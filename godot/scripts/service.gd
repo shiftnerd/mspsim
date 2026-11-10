@@ -1734,7 +1734,7 @@ func review_lines(page: int, ending: String) -> Array:
 			lines.append(["YOUR OPTIONS", blue])
 		_:
 			lines.append(["THE END", blue])
-			lines.append([str(REVIEW.endings[ending].text) if REVIEW.endings.has(ending) else "", ink])
+			lines.append([str(REVIEW.endings[ending].text) if REVIEW.endings.has(ending) else Yeartwo.ending_text(ending), ink])
 	return lines
 
 

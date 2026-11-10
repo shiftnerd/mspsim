@@ -36,6 +36,9 @@ var stop_day := 0  # tech: stop after this day's report (0 = play to the end); t
 var frame_hook := Callable()  # dev: called once per bot frame (tests/bot_det.gd traces state with it)
 
 
+var year := 1  # R10: 2 or 3 starts every run as START YEAR 2 / 3, from the record of a decent finished year before (_seed_year)
+
+
 func _init(t: SceneTree) -> void:
 	tree = t
 	root = t.root
@@ -66,10 +69,15 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 		await tree.process_frame
 	await tree.process_frame  # and at the same point of a frame (a caller that comes from a timer is half a frame off)
 	root.get_node("Build").pending = preset_build.duplicate(true)
-	root.get_node("Yeartwo").pending = year2  # taken by Campaign.new_game (needs the finished run's meta record)
+	if year2:
+		root.get_node("Yeartwo").begin_select(mode, true, 2)  # taken by Campaign.new_game (needs the finished run's meta record)
+	else:
+		root.get_node("Yeartwo").pending = false
 	d.seed_run(seed_n)
 	seed(seed_n * 31 + 7)  # the owner campaign and the Shift cards still draw from the global generator
 	rng.seed = seed_n * 7919
+	if year >= 2:
+		_seed_year(mode)
 	var row: Dictionary = {}
 	if coop and mode in ["sales", "service"]:
 		root.get_node("Players").enable_coop(true)
@@ -90,7 +98,7 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	row["tier"] = tier
 	row["strategy"] = strat
 	row["seed"] = seed_n
-	row["year"] = 2 if year2 else 1
+	row["year"] = 2 if year2 else year
 	row["last_day"] = int(c.day)
 	row["cards"] = card_log.duplicate(true)
 	strategy = strat
@@ -147,6 +155,25 @@ func _clean_slate() -> void:
 		pb.reset()
 	root.get_node("Game").ui_open = false
 	root.get_node("World").time_scale = 1.0
+
+
+# R10: the meta record a decent finished run of the year before leaves (reputation 70, skills at level 3, a company worth
+# $150,000), and the START YEAR 2 / 3 choice of the title row: the run's own new_game picks it up
+func _seed_year(mode: String) -> void:
+	var y := root.get_node("Yeartwo")
+	var skills := {}
+	for key in root.get_node("Skills").NAMES:
+		skills[key] = 3
+	var rec := {"ending": "stay", "rep": 70, "tier": "normal", "cozy": false, "seed": 1, "clients": 8, "skills": skills, "value": 150000, "cash": 15000, "trust": 60, "shop": [], "standard": 0}
+	var meta := ConfigFile.new()
+	for key in rec:
+		meta.set_value(mode, key, rec[key])
+	for key in ["finished", "year", "top_year"]:
+		meta.set_value(mode, key, year - 1)
+	if year >= 3:
+		meta.set_value(mode, "y2", rec)
+	meta.save(y.meta_path())
+	y.begin_select(mode, true, year)
 
 
 # process ids are reused: a bot must not inherit the career or campaign files an earlier run left under its pid
@@ -783,6 +810,8 @@ func sv_run(seed_n: int) -> Dictionary:
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
 	c.save_prefix = "user://bal_%d_" % OS.get_process_id()
+	if year >= 2:
+		_seed_year("service")  # R10: the record has to sit under this run's own prefix
 	rng.seed = seed_n * 7919
 	root.get_node("Difficulty").seed_run(seed_n)
 	c.new_game("service")

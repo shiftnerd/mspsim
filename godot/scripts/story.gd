@@ -340,6 +340,18 @@ const DEFAULT_VIGNETTES := {
 			},
 		],
 	},
+	# X10: the first-day choice, right after Dan's intro (`_vignette_after`). How you say hello to the room: a small, lasting
+	# flavour (flag `hello`), two opinions move a little, and whoever liked it texts you the next morning (`echo`, sent by the
+	# day 2 event `hello_echo`).
+	"hello": {
+		"speaker": "Garrison (Co-owner)",
+		"text": "Everybody, this is the new tech. New tech, this is everybody. Go on, say something to the room. Keep it short, Alan has a thing at ten.",
+		"options": [
+			{"id": "joke", "label": "I FIX THINGS. SOMETIMES ON PURPOSE.", "text": "Garrison laughs loud enough for two. Alan writes something down. It might be about you.", "fx": {"flag": ["hello", "joke"], "social": {"Garrison": 2, "Alan": -1}}, "echo": {"from": "Garrison", "body": "Still laughing about 'sometimes on purpose'. Alan asked me if it was a joke. I said mostly."}},
+			{"id": "keen", "label": "I READ THE RUNBOOKS LAST NIGHT.", "text": "Alan nods once, which from Alan is a parade. Garrison mouths the word 'runbooks' at Dan.", "fx": {"flag": ["hello", "keen"], "social": {"Alan": 2, "Garrison": -1}}, "echo": {"from": "Alan", "body": "You said you read the runbooks. Page 14 is out of date. Tell me what else is."}},
+			{"id": "quiet", "label": "HI. WHERE IS THE QUEUE?", "text": "Dan points at your desk. Maya gives you a small nod. One of us.", "fx": {"flag": ["hello", "quiet"], "social": {"Dan": 1, "Maya": 1}}, "echo": {"from": "Maya", "body": "Short intro. Good. The last new tech talked for six minutes. There is a granola bar in your top drawer."}},
+		],
+	},
 	"mentor_intro":
 	{
 		"speaker": "Dan (Service Manager)",
@@ -1495,6 +1507,7 @@ const DEFAULT_DAYS := {
 		},
 		{"at": 9.6, "kind": "mentor", "id": "mentor_triage"},
 		{"at": 10.5, "kind": "vignette", "id": "iphone"},
+		{"at": 9.05, "kind": "hello_echo"},
 	],
 	3:
 	[
@@ -1821,6 +1834,8 @@ func fire(ev: Dictionary) -> void:
 			Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
 		"vignette", "mentor":
 			_vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
+		"hello_echo":
+			_hello_echo()
 		"metrics":
 			_friday()
 		"postmortem":
@@ -1858,6 +1873,14 @@ func fire(ev: Dictionary) -> void:
 						"Acme lost their xray software in the migration. Always survey and back up first."
 					)
 				)
+
+
+# X10: the morning after the first-day hello, whoever liked it sends a text (nothing when the card was never answered)
+func _hello_echo() -> void:
+	var pick := str(flags.get("hello", ""))
+	for o in VIGNETTES.get("hello", {}).get("options", []):
+		if str(o.id) == pick and o.has("echo"):
+			Msp.send_text(str(o.echo.from), str(o.echo.body))
 
 
 # ---- small quiet-day moments: a short card with a few choices and small effects
@@ -1939,7 +1962,14 @@ func _vignette_answer(id: String, pick: String) -> void:
 		if str(o.id) == pick:
 			text = str(o.text)
 			_vignette_fx(o.get("fx", {}))
-	Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+	Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _vignette_after(id))
+
+
+# X10: Dan's intro is followed by the first-day hello. It is asked when his answer is closed, so the two cards never
+# interleave (on cozy Easy every day 1 event is due in the same second). Once a run, and not in a second year.
+func _vignette_after(id: String) -> void:
+	if id == "mentor_intro" and Campaign.day == 1 and not flags.has("hello") and not Yeartwo.active():
+		_vignette("hello")
 
 
 func _vignette_fx(fx: Dictionary) -> void:

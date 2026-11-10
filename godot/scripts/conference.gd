@@ -762,7 +762,27 @@ const DEFAULT_FORUM := [
 				"social": 1,
 				"text":
 				"'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more)",
-				"text_free": "'It matches my terminal theme.' It does."
+				"text_free": "'It matches my terminal theme.' It does."},
+		],
+	},
+	{
+		"id": "tony", "speaker": "TapeTony (forum regular)",
+		"text": "Tony. I answer the backup threads. Yes, I still run tape. A tape has never once asked me for a password reset. Sit down, I have opinions about your Friday rotation.",
+		"options": [
+			{"id": "rotate", "label": "ASK ABOUT THE ROTATION", "skill": "servers", "xp": 4, "text": "'Five dailies, four weeklies, twelve monthlies. Friday's tape leaves the building in somebody's bag.' He draws the calendar on your badge. You will not forget it now. (+4 servers XP)"},
+			{"id": "restore", "label": "ASK WHEN HE LAST RESTORED", "skill": "security", "xp": 3, "text": "'Tuesday. One file every week, to a different machine, and the date goes on the label.' A backup nobody has restored is a rumour. (+3 security XP)"},
+			{"id": "thread", "label": "QUOTE HIM IN THE BACKUP THREAD", "skill": "", "xp": 0, "karma": 3, "text": "You quote his rotation in the backup thread and give him the credit. He replies with a photo of a tape with your nick on the label. (+3 forum karma)", "text_free": "You quote his rotation in the backup thread. He replies with a photo of a tape."},
+			{"id": "pocket", "label": "ASK WHAT IS IN HIS POCKET", "skill": "", "xp": 0, "social": 1, "text": "It is a tape. 'Last Friday's. It goes where I go.' He lets you hold it. Your coworkers do not believe you until they see the photo. (coworkers like you a little more)", "text_free": "It is a tape. 'Last Friday's. It goes where I go.'"},
+		],
+	},
+	{
+		"id": "dot", "speaker": "DNS_Dot (forum regular)",
+		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
+		"options": [
+			{"id": "dns", "label": "ASK WHY IT IS ALWAYS DNS", "skill": "networking", "xp": 4, "text": "'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)"},
+			{"id": "labels", "label": "ASK ABOUT THE LABEL MAKER", "skill": "people", "xp": 3, "text": "'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)"},
+			{"id": "thread", "label": "MARK HER ANSWER AS SOLVED", "skill": "", "xp": 0, "karma": 3, "text": "You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)", "text_free": "You mark her answer as the one that fixed it. It was DNS."},
+			{"id": "badge", "label": "LET HER LABEL YOUR BADGE", "skill": "", "xp": 0, "social": 1, "text": "The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)", "text_free": "The label says 'ASK ME, I TESTED IT FIRST'."
 			},
 		],
 	},
@@ -849,7 +869,7 @@ const CROWD := {
 			"role": "forum:rita",
 			"x": 90,
 			"facing": "right",
-			"routine": ["talk:4", "wait:3", "say:2"]
+			"routine": ["talk:4", "wait:3", "say:2"]}, {"who": "expo_tony", "role": "forum:tony", "x": 178, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]
 		},
 		{
 			"who": "expo_priest",
@@ -1031,7 +1051,7 @@ const CROWD := {
 			"role": "forum:pip",
 			"x": 205,
 			"facing": "right",
-			"routine": ["wait:4", "talk:3", "wait:2", "say:2"]
+			"routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]
 		},
 	],
 }

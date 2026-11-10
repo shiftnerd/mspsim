@@ -7,6 +7,7 @@ extends CanvasLayer
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
@@ -282,9 +283,17 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 			var action := str(Controls.REMAPPABLE[i])
 			UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
 			var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
+			var end_x := rr.position.x + rr.size.x - 4.0
 			if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
-				key_name += "  " + Controls.button_name(Controls.button_of(action))
-			UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
+				var pad_name := Controls.button_name(Controls.button_of(action))
+				var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
+				if gi >= 0:  # the pad button as its glyph, right of the key
+					end_x -= float(PadGlyphs.WIDTHS[gi])
+					PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
+					end_x -= 6.0
+				else:
+					key_name += "  " + pad_name
+			UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
 	UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
@@ -406,6 +415,10 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
 	var y := body.position.y + 2.0
 	for row in page[1]:
 		UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-		UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
+		var value := Controls.help_value(str(row[0]), str(row[1]))
+		if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
+			var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
+			value = shown if shown != "" else value
+		PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
 		y += 9.0
 	UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))

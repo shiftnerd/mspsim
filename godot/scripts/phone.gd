@@ -986,6 +986,8 @@ func _icon(kind: String, r: Rect2) -> void:
 			_fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
 			_fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
 			_disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
+			_fill(Rect2(c.x - 0.5 * u, c.y - 0.5 * u, maxf(1.0, 0.5 * u), maxf(1.0, 0.5 * u)), Color("a8e0f5"))  # the lens glint
+			_fill(Rect2(c.x + 2.5 * u, c.y - 1.5 * u, u, maxf(1.0, 0.5 * u)), Color("f0a030"))  # the flash
 		"phone":
 			# a handset: ear piece top left, mouth piece bottom right, a curved arm between them
 			var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
@@ -1561,8 +1563,14 @@ func _paint_contacts(body: Rect2) -> void:
 		var chars := _chars(rr.size.x - 12)
 		_text(_clip(str(c.name), chars), rr.position + Vector2(5, 2 * _sc), INK)
 		var wait: float = Calls.wait_left(c)
-		var sub := str(c.sub) if wait <= 0.0 else "LATER"
-		_text(_clip(sub, chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+		var lv: int = Calls.level(c)  # R16: the relationship level (-1 = none): four pips, and the name of it on the selected row
+		var sub: String = Calls.row_sub(c, i == ph_sel)
+		var sub_chars := chars if lv < 0 else _chars(rr.size.x - 12 - Calls.LEVEL_PIPS * 3 * _sc)
+		_text(_clip(sub, sub_chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+		if lv >= 0:
+			for p in Calls.LEVEL_PIPS:
+				var pr := Rect2(rr.end.x - 3 - (Calls.LEVEL_PIPS - p) * 3 * _sc, rr.position.y + 10 * _sc, 2 * _sc, 3 * _sc)
+				_fill(pr, _accent() if p < lv else Color("c8ccd4"))
 		if c.kind == "client" and Campaign.active:
 			var m := Sales.mood(int(c.client))
 			_disc(

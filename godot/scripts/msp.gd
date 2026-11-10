@@ -1101,7 +1101,11 @@ func _maybe_favour(t: Dictionary) -> bool:
 
 
 # the text and its card (also called by tests)
-func ask_favour(client: int, k: int) -> void:
+# R34 (co-op): the ask is personal. It goes to the player who closed the ticket (`slot`, default the player acting now): the
+# card opens in that player's pane and the answer is applied as that player (their people XP, their energy).
+func ask_favour(client: int, k: int, slot := -1) -> void:
+	if slot < 0:
+		slot = Players.active_slot
 	favour_day[client] = Campaign.day
 	_favour_ask_day = Campaign.day
 	var f: Dictionary = FAVOURS[k]
@@ -1115,7 +1119,9 @@ func ask_favour(client: int, k: int) -> void:
 			{"label": str(FAVOUR_TEXT.desk_label), "id": "fav_desk"},
 			{"label": str(FAVOUR_TEXT.ignore_label), "id": "fav_ignore"},
 		],
-		func(pick: String) -> void: favour_answer(pick, client, k)
+		func(pick: String) -> void: Players.run_as(slot, favour_answer.bind(pick, client, k)),
+		Callable(),
+		slot
 	)
 
 

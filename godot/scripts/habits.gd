@@ -180,6 +180,8 @@ const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
 const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
 const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
+const NIGHT_CUT := 0.25  # H9: a quarter fewer failed overnight jobs (8 percent -> 6 percent)
+const OVERRUN_CUT := 0.5  # H3: the share of a failed cutover's overrun that a change request saves
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -215,7 +217,12 @@ const DEFAULT_TEXT := {
 	"The one page scorecard went to %s: tickets closed, backups tested, what we fixed. Mood up.",
 	"review":
 	"Lost account review done. The real cause is written down, and the same mistake will cost less for eight weeks.",
-	"offboard": "%s's logins and keys are closed. The checklist is signed."
+	"offboard": "%s's logins and keys are closed. The checklist is signed.",
+	"overrun": "THE CHANGE REQUEST HAD A ROLLBACK STEP. THE OVERRUN COST $%d LESS.",
+	"pw_text":
+	"The printer's admin page still answers to admin and admin. So does the ceiling camera. Nobody has changed either since the day they were unboxed.",
+	"pw_summary": "Default passwords on the printer and the camera",
+	"pw_body": "%s here: you said our printer and camera still have the factory passwords. Can you change them?"
 }
 static var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 
@@ -533,6 +540,7 @@ static func _perform(id: String) -> String:
 		"H1":
 			var c := _backup_client()
 			Msp.backup_check(c)
+			Msp.backups[c]["tested"] = Campaign.day  # the TESTED date on the RMM BACKUPS tab
 			e["tested"] = Campaign.day
 			Owner.habits[id] = e
 			return str(TEXT.h1) % _client_short(c)
@@ -889,3 +897,41 @@ static func site_share() -> float:
 # fixed-price creep (H3: 30 percent -> 18 percent)
 static func creep(base: float) -> float:
 	return base - (base - 0.18) * factor("H3") if base > 0.18 else base
+
+
+# H9: the share of the overnight job failures left once the windows follow the calendar (8 percent -> 6 percent fresh)
+static func night_mult() -> float:
+	return 1.0 - NIGHT_CUT * factor("H9")
+
+
+# H3: a failed cutover costs half with a change request on file. `eaten` is what the overrun cost; the part that comes back
+static func overrun_back(eaten: int) -> int:
+	var back := int(float(eaten) * OVERRUN_CUT * factor("H3"))
+	if back > 0:
+		touch("H3")
+		Hints.toast(str(TEXT.overrun) % back, 4.0)
+	return back
+
+
+# H14: the default password finding of the walk-around. Once per client, and never at a site whose passwords were changed
+static func default_pw(client: int) -> bool:
+	if Campaign.mode != "owner" or client < 0:
+		return false
+	if _listed(entry("H14").get("sites", []), client):
+		return false
+	return not _listed(Owner.flags.get("pw_seen", []), client)
+
+
+# the finding itself (the shape of an Onsite.FINDINGS entry); showing it marks the client as seen
+static func pw_finding(client: int) -> Dictionary:
+	var seen: Array = Owner.flags.get("pw_seen", [])
+	seen.append(client)
+	Owner.flags["pw_seen"] = seen
+	return {
+		"text": str(TEXT.pw_text),
+		"summary": str(TEXT.pw_summary),
+		"fix": "password",
+		"pri": 3,
+		"body": str(TEXT.pw_body),
+		"project": "security"
+	}

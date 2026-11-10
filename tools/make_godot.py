@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
@@ -237,7 +237,7 @@ PATCHABLE = {
     "scripts/nerds.gd": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"], "scripts/lync.gd": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
     "scripts/review.gd": ["QUOTES", "OWNER_QUOTES", "EPILOGUES"], "scripts/social.gd": ["THANKS"],
     "scripts/shift.gd": ["WEEK_TRAFFIC", "REASONS", "PAGES"], "scripts/hints.gd": ["DAY1", "MENTOR"], "scripts/career.gd": ["MEDALS", "UNLOCKS"],
-    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
+    "scripts/build.gd": ["QUIRKS", "PRESETS", "INFO"], "scripts/events.gd": ["DECK"], "scripts/mutators.gd": ["MUTATORS", "STARTS"], "scripts/yeartwo.gd": ["CARRY", "YEAR2", "TEXT", "YEAR3", "TEXT3"], "scripts/growth.gd": ["STRETCH"], "scripts/conference.gd": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"], "scripts/printer_game.gd": ["TEXT", "QUESTIONS", "MODEL_TEXT"], "scripts/onsite.gd": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "scripts/outings.gd": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT"],
     "scripts/sales_campaign.gd": ["BEAT_TEXT"],
     "scripts/difficulty.gd": ["COZY_TEXT"],
@@ -3073,6 +3073,7 @@ const ALL := [
     "sitnod",
     "sip",
     "sitcouch",
+    "sitcup",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -3090,11 +3091,12 @@ const BASE := {
     "sitnod": 3.0,
     "sip": 1.5,
     "sitcouch": 3.0,
+    "sitcup": 1.5,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
-    "Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
+    "Alan": {"sip": 5.0, "sitcup": 3.0, "sitscratch": 0.5, "sitstretch": 0.5},
     "Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
     "Dan": {"sitscratch": 4.0, "sitlook": 1.0},
     "John": {"sitphone": 5.0, "sitstretch": 1.5},
@@ -3139,8 +3141,10 @@ func tick(delta: float, ready: bool) -> bool:
 
 
 func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
-    if g == "sip":
-        return float(_mine.get(g, BASE[g])) if cup_in_reach else 0.0
+    if g == "sip" or g == "sitcup":
+        # the cup gestures need a cup in reach; the coffee-cup reach (sitcup, R26) only while typing, with the cup standing on
+        # the desk (it has no frames of its own: the owner plays sitmouse)
+        return float(_mine.get(g, BASE[g])) if cup_in_reach and (typing or g == "sip") else 0.0
     if held and not HEAD_ONLY.has(g):
         return 0.0
     if g == "sitmouse" and not typing:
@@ -3242,6 +3246,7 @@ var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+const CUP_REACH_FRAME := 1  # sitcup: the frame of the sitmouse slide on which the hand is at the cup
 var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -3988,6 +3993,8 @@ func _start_use() -> void:
 # grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
 func _update_gesture(delta: float) -> void:
     if _gesture != "":
+        if _gesture == "sitcup" and sprite.frame >= CUP_REACH_FRAME and _item.item == "" and held != "":
+            _unstash()  # the hand has reached the cup: it comes along for the rest of the slide (HeldItem follows the hand)
         return
     var idle := (
         seat != null
@@ -4031,6 +4038,9 @@ func _start_gesture() -> void:
             _desk.item = ""
         sprite.play("sitsip_%s" % facing)
         return
+    if g == "sitcup":  # R26: the coffee-cup reach while typing. The near hand slides over to the cup on the desk, pulls it
+        sprite.play("sitmouse_%s" % facing)  # closer and puts it back: no sip. The frames are sitmouse's, the cup is the held item.
+        return
     if g == "sitphone":
         _item.item = "phone"
     sprite.play("%s_%s" % [g, facing])
@@ -4051,7 +4061,7 @@ func gesturing() -> bool:
 func _cancel_gesture() -> void:
     var g := _gesture
     _gesture = ""
-    if g == "sip":
+    if g == "sip" or g == "sitcup":
         _stash()
     elif g == "sitphone":
         _item.item = ""
@@ -4067,6 +4077,8 @@ func _end_gesture() -> void:
             _item.item = ""
         else:
             _stash()
+    elif g == "sitcup":
+        _stash()  # the cup is back on the desk, nothing was drunk
     elif g == "sitphone":
         _item.item = ""
     _play(_rest_anim())
@@ -5801,6 +5813,107 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
         x += 4.0 * scale
 ''')
 
+write("scripts/pad_glyphs.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Pad button glyphs (roadmap R14): a hint line says "(A) PICK  (B) BACK  STICK = MOVE" on a pad (Controls.hint / label).
+# draw() prints such a line with the pixel font and puts a small sprite where a pad token stands, width() measures it.
+# The atlas is assets/ui/pad_glyphs.png (tools/make_icons.lua, source office/pieces/ui_pad_glyphs.aseprite): 12 cells of
+# 11 x 7, the font's five rows plus one above and one below. Without a pad in use (or without the atlas) both functions
+# are the plain PixelFont ones, so a caller can use them for every line.
+# Used by: the HUD hint (hud.gd), every panel footer (UiStyle.footer) and the pause menu's key lists.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const ATLAS := "res://assets/ui/pad_glyphs.png"
+const CELL := Vector2(11.0, 7.0)
+const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
+const TOKENS := {
+    "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
+    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+}
+
+static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var _tex: Texture2D
+static var _looked := false
+
+
+static func atlas() -> Texture2D:
+    if not _looked:
+        _looked = true
+        _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
+    return _tex
+
+
+static func active() -> bool:
+    if atlas() == null:
+        return false
+    if force >= 0:
+        return force == 1
+    # the autoload by path: this script is preloaded by UiStyle, which test scripts compile before the autoloads exist
+    var tree := Engine.get_main_loop() as SceneTree
+    var controls: Node = tree.root.get_node_or_null("Controls") if tree != null else null
+    return controls != null and bool(controls.pad_active)
+
+
+# the line cut into pieces: a String is text, an int is a glyph index
+static func parts(text: String) -> Array:
+    var out := []
+    var rest := text.to_upper()
+    while rest != "":
+        var at := -1
+        var hit := ""
+        for token in TOKENS:
+            var i := rest.find(token)
+            # STICK only as a whole word
+            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+                i = -1
+            if i >= 0 and (at < 0 or i < at):
+                at = i
+                hit = token
+        if at < 0:
+            out.append(rest)
+            break
+        if at > 0:
+            out.append(rest.substr(0, at))
+        out.append(NAMES.find(str(TOKENS[hit])))
+        rest = rest.substr(at + hit.length())
+    return out
+
+
+static func width(text: String, scale := 1) -> int:
+    if not active():
+        return PixelFont.width(text, scale)
+    var w := 0
+    for part in parts(text):
+        w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
+    return maxi(0, w - scale)
+
+
+# one glyph by name at its top-left corner (a 7 px cell: one row above the text line's top)
+static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> void:
+    var i := NAMES.find(id)
+    if i < 0 or atlas() == null:
+        return
+    var w := float(WIDTHS[i])
+    canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
+
+
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    if not active():
+        PixelFont.draw(canvas, text, pos, color, scale)
+        return
+    var x := pos.x
+    for part in parts(text):
+        if part is int:
+            glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
+            x += float((int(WIDTHS[part]) + 1) * scale)
+        else:
+            PixelFont.draw(canvas, str(part), Vector2(x, pos.y), color, scale)
+            x += float(str(part).length() * 4 * scale)
+''')
+
 write("scripts/msp.gd", '''extends Node
 # gdlint: ignore=max-line-length
 # Autoload: the managed-service-provider side of the game. Pixel IT Partners looks after a handful of silly
@@ -6745,7 +6858,11 @@ func _maybe_favour(t: Dictionary) -> bool:
 
 
 # the text and its card (also called by tests)
-func ask_favour(client: int, k: int) -> void:
+# R34 (co-op): the ask is personal. It goes to the player who closed the ticket (`slot`, default the player acting now): the
+# card opens in that player's pane and the answer is applied as that player (their people XP, their energy).
+func ask_favour(client: int, k: int, slot := -1) -> void:
+    if slot < 0:
+        slot = Players.active_slot
     favour_day[client] = Campaign.day
     _favour_ask_day = Campaign.day
     var f: Dictionary = FAVOURS[k]
@@ -6759,7 +6876,9 @@ func ask_favour(client: int, k: int) -> void:
             {"label": str(FAVOUR_TEXT.desk_label), "id": "fav_desk"},
             {"label": str(FAVOUR_TEXT.ignore_label), "id": "fav_ignore"},
         ],
-        func(pick: String) -> void: favour_answer(pick, client, k)
+        func(pick: String) -> void: Players.run_as(slot, favour_answer.bind(pick, client, k)),
+        Callable(),
+        slot
     )
 
 
@@ -9306,12 +9425,24 @@ func _paint_backups(body: Rect2) -> void:
             var ago := maxi(1, Campaign.day - int(b.good_day))
             status = "FAILED! LAST GOOD: %d DAY%s AGO" % [ago, "" if ago == 1 else "S"]
             color = RED
+        status = backup_status(status, b, compact)
         var at := rr.position + (Vector2(100, 2) if compact else Vector2(3, 8))
         _text(_clip(status, int((body.end.x - at.x - 34) / 4.0)), at, color)
         if not checked:
             _button("bkcheck:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "CHECK")
         elif not b.ok:
             _button("bkrerun:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "RERUN", true, Color("f0b27a"))
+
+
+# R38: H1, the status of a backup row with the date of the last restore test (the short form drops LAST GOOD)
+static func backup_status(status: String, b: Dictionary, compact: bool) -> String:
+    var tested := int(b.get("tested", -1))
+    if tested < 0:
+        return status
+    var head := status
+    if compact:
+        head = "OK" if status.begins_with("OK") else ("FAILED!" if status.begins_with("FAILED") else "NOT CHECKED")
+    return "%s - TESTED %s %d" % [head, "WK" if Campaign.books_active() else "DAY", tested]
 
 
 func _paint_playbook(body: Rect2) -> void:
@@ -10289,6 +10420,9 @@ const REFERRAL_ODDS := 0.35
 const REFERRAL_MOOD := 80
 const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
 const CHAT_COST := 0.05
+const Collection := preload("res://scripts/collection.gd")  # R16: relationship levels on the contacts
+const LEVEL_WHO := {"senior": "Adam", "tech": "Michael"}  # the contacts with their own numbers are cast members too
+const LEVEL_PIPS := 4  # one pip per level above NEW FACE
 const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
 const HANG := {"id": "hang", "label": "HANG UP"}
 const SENIOR := {"id": "adam", "name": "ADAM", "sub": "SENIOR TECH", "kind": "senior", "num": "5550333"}
@@ -10373,6 +10507,32 @@ static func contacts() -> Array:
             out.append(TECH.duplicate())  # Michael: hand him an ordinary ticket
     out.append(PIZZA.duplicate())
     return out
+
+
+# R16: the relationship level of a contact (Collection.LEVELS, 0-4); -1 for somebody who has none (clients, the pizza place,
+# a coworker outside the cast, no campaign running)
+static func level(contact: Dictionary) -> int:
+    var who := str(contact.get("who", ""))
+    if who == "":
+        who = str(LEVEL_WHO.get(str(contact.get("kind", "")), ""))
+    if who == "" or not Campaign.active or not Social.people().has(who):
+        return -1
+    return Collection.level(who)
+
+
+# "LV 2 LUNCH BUDDY" ("" without a level): the second line of the selected contact
+static func level_text(contact: Dictionary) -> String:
+    var lv := level(contact)
+    return "" if lv < 0 else "LV %d %s" % [lv, Collection.level_name(lv)]
+
+
+# the second line of a contact row: the role, LATER while they do not take calls, the level on the selected row
+static func row_sub(contact: Dictionary, selected: bool) -> String:
+    if wait_left(contact) > 0.0:
+        return "LATER"
+    if selected and level(contact) >= 0:
+        return level_text(contact)
+    return str(contact.get("sub", ""))
 
 
 static func find(id: String) -> Dictionary:
@@ -11624,6 +11784,8 @@ func _icon(kind: String, r: Rect2) -> void:
             _fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
             _fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
             _disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
+            _fill(Rect2(c.x - 0.5 * u, c.y - 0.5 * u, maxf(1.0, 0.5 * u), maxf(1.0, 0.5 * u)), Color("a8e0f5"))  # the lens glint
+            _fill(Rect2(c.x + 2.5 * u, c.y - 1.5 * u, u, maxf(1.0, 0.5 * u)), Color("f0a030"))  # the flash
         "phone":
             # a handset: ear piece top left, mouth piece bottom right, a curved arm between them
             var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
@@ -12199,8 +12361,14 @@ func _paint_contacts(body: Rect2) -> void:
         var chars := _chars(rr.size.x - 12)
         _text(_clip(str(c.name), chars), rr.position + Vector2(5, 2 * _sc), INK)
         var wait: float = Calls.wait_left(c)
-        var sub := str(c.sub) if wait <= 0.0 else "LATER"
-        _text(_clip(sub, chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+        var lv: int = Calls.level(c)  # R16: the relationship level (-1 = none): four pips, and the name of it on the selected row
+        var sub: String = Calls.row_sub(c, i == ph_sel)
+        var sub_chars := chars if lv < 0 else _chars(rr.size.x - 12 - Calls.LEVEL_PIPS * 3 * _sc)
+        _text(_clip(sub, sub_chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+        if lv >= 0:
+            for p in Calls.LEVEL_PIPS:
+                var pr := Rect2(rr.end.x - 3 - (Calls.LEVEL_PIPS - p) * 3 * _sc, rr.position.y + 10 * _sc, 2 * _sc, 3 * _sc)
+                _fill(pr, _accent() if p < lv else Color("c8ccd4"))
         if c.kind == "client" and Campaign.active:
             var m := Sales.mood(int(c.client))
             _disc(
@@ -12403,7 +12571,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
-var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b); saved, an old save loads as 1
+var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus, 3 = Year 3, the last chapter (Yeartwo, R10); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -12561,7 +12729,7 @@ func slot_info(for_mode: String, for_slot: int) -> Dictionary:
         out["text"] = str(snap.text)
         if not bool(out.has_save):
             out["day"] = int(snap.day)
-    out["tag"] = " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= Yeartwo.YEAR else ""
+    out["tag"] = Yeartwo.tag_of(int(cfg.get_value("campaign", "year", 1)))  # " (YEAR 2)" / " (YEAR 3)"
     var look: Variant = cfg.get_value("campaign", "look", {})
     var who := str(cfg.get_value("campaign", "player_as", ""))
     if look is Dictionary and bool(look.get("active", false)) and str(look.get("name", "")) != "":
@@ -12655,7 +12823,7 @@ func new_game(for_mode: String) -> void:
     history = []
     _awaiting = false
     Yeartwo.reset()
-    year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
+    year = Yeartwo.take_year(for_mode)  # New Game Plus (R10b): 2 or 3 when START YEAR 2 / 3 was chosen on the title menu, else 1
     Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
     World.new_run()
     build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
@@ -13238,10 +13406,17 @@ write("scripts/yeartwo.gd", '''extends Node
 #   TEXT    the intro card, the beat cards, the offers and the epilogues (patchable like the rest).
 # A new mode (service, sales) plugs in by getting `"year2": true` in Campaign.MODE_DEFS and rows in YEAR2.beats /
 # YEAR2.shuffle / YEAR2.endings and TEXT; nothing else in this file names a mode except the day tables of `_base`.
+#
+# YEAR 3 (R10) is the last chapter and runs on the same machinery: `Campaign.year` is 3, START YEAR 3 opens once a Year 2
+# run of that mode has been finished (`top_year` in the meta record; the Year 2 run's own record is kept under `y2` and is
+# what Year 3 carries over from). Everything a Year 2 run reads is read through `year_cfg(key)` / `year_txt(key)`: the YEAR3 / TEXT3
+# row where Year 3 has its own (the tighter clock, the closing beats, the endings that resolve the story), the Year 2 row
+# otherwise (ticket weights, the newer clients, the mutator tier, the shuffle). Year 3 beat cards set `Story.flags["y3"]`.
 
 const RivalTouches := preload("res://scripts/rival_touches.gd")  # R38 P6: the Standard carry-over and the Year 2 rival
 const VERSION := 1
 const YEAR := 2
+const LAST_YEAR := 3  # Year 3 is the last chapter: there is no START YEAR 4
 const CARRY := {
     "skills": {"offset": -1, "cap": 3, "text": "SKILLS CARRY OVER ONE LEVEL LOWER, NEVER ABOVE 3."},
     "powershell": {"offset": 0, "cap": 3, "text": "POWERSHELL LESSONS YOU PASSED COUNT AS YOUR LEVEL, UP TO 3."},
@@ -13395,7 +13570,187 @@ const TEXT := {
     },
 }
 
+# Year 3 (R10): only what differs from Year 2. `needs` are the thresholds of the endings (see _offer3_ok).
+const YEAR3 := {
+    "sla": {"mult": 0.76, "text": "SLA CLOCKS RUN ANOTHER NOTCH TIGHTER: A QUARTER SHORTER THAN IN YOUR FIRST YEAR."},
+    "beats": {
+        "tech": {"newhire": 3, "mentor": 11, "fork": 18},
+        "owner": {"summit": 6, "staff": 12, "handover": 17},
+        "service": {"deputy": 4, "terry": 10, "table": 16},
+        "sales": {"wes": 5, "split": 11, "chair": 16},
+    },
+    "endings": {
+        "tech": ["y3_chair", "y3_senior", "y3_farewell"],
+        "owner": ["y3_summit", "y3_staff", "y3_morgan"],
+        "service": ["y3_coo", "y3_partner", "y3_across"],
+        "sales": ["y3_director", "y3_wes", "y3_stake"],
+    },
+    "needs": {
+        "y3_chair": {"rep": 60}, "y3_senior": {"rep": 55}, "y3_farewell": {"rep": 50},
+        "y3_summit": {"rep": 55, "clients": 6}, "y3_staff": {"rep": 55}, "y3_morgan": {"rep": 55},
+        "y3_coo": {"rep": 60}, "y3_partner": {"rep": 60, "trust": 50}, "y3_across": {"rep": 50},
+        "y3_director": {"rep": 55}, "y3_wes": {"rep": 50}, "y3_stake": {"rep": 60},
+    },
+    # last year's endings in which you left Pixel IT: the intro card says how you came back
+    "left": ["internal", "clientbuy", "leave", "sell", "sellout", "merger", "rollup", "rollup_yes", "let_go"],
+}
+const TEXT3 := {
+    "intro": {
+        "speaker": "YEAR 3",
+        "text": "YOUR THIRD YEAR AT PIXEL IT PARTNERS, AND THE ONE WHERE YOU DECIDE HOW THIS ENDS. YOU KEEP WHAT YOU LEARNED. THE CLIENTS HAVE STOPPED BEING IMPRESSED.",
+        "back": "WHATEVER YOU SIGNED LAST YEAR DID NOT TAKE. PIXEL KEPT YOUR MUG.",
+    },
+    "beats": {
+        "tech": {
+            "newhire": {
+                "lynk": {"from": "Morgan", "text": "The new hire starts today. Quinn. First IT job, good attitude, has never seen a print spooler. I put the desk next to yours on purpose."},
+                "speaker": "Morgan (Manager)",
+                "text": "You are the senior tech on this desk now, whether or not anybody printed it on a card. Quinn needs somebody to learn from. I would like that to be you and not the forum.",
+                "options": [
+                    {"label": "SIT WITH QUINN EVERY MORNING", "id": "wing", "reply": "Quinn brings a notebook and writes down everything, including the jokes. Morgan pretends not to be pleased.", "fx": {"xp": ["people", 6], "social": {"Morgan": 2}}},
+                    {"label": "HAND OVER YOUR NOTES", "id": "notes", "reply": "Three years of notes in one text file. Quinn reads all of it and asks what 'DO NOT TRUST THE BLUE SWITCH' means.", "fx": {"social": {"Morgan": 1}}},
+                    {"label": "I HAVE A QUEUE", "id": "no", "reply": "Morgan sends Quinn to Dan. Dan hands over a label maker and says nothing for an hour.", "fx": {"social": {"Morgan": -1}}},
+                ],
+            },
+            "mentor": {
+                "speaker": "Quinn (New hire)",
+                "text": "I closed a ticket yesterday and it came back this morning, angry. I rebooted her PC and I did not ask her to save first. She lost a morning of invoices. Do I tell Morgan, or do you?",
+                "options": [
+                    {"label": "WE CALL THE CLIENT TOGETHER", "id": "teach", "reply": "Quinn apologises, badly and honestly. The client softens. Nobody will ever have to tell Quinn to ask first again.", "fx": {"xp": ["people", 6], "mood_all": 1}},
+                    {"label": "I WILL FIX IT, GO TO LUNCH", "id": "fix", "reply": "You recover most of the invoices from a temp folder. Quinn learns that you are good at this, which was not the lesson.", "fx": {"rep": 1}},
+                    {"label": "TELL MORGAN YOURSELF", "id": "report", "reply": "Quinn walks to Morgan's desk like it is a long hallway. Morgan is fair about it. Quinn is quiet all week.", "fx": {}},
+                ],
+            },
+            "fork": {
+                "lynk": {"from": "Dan", "text": "Alan wants me on projects full time from next year. Racks and cabling, no phones. Morgan will ask you something today. I labelled the drawer for whoever sits here next."},
+                "speaker": "Morgan (Manager)",
+                "text": "Dan is moving to projects. His chair comes with the schedule, the escalations and the label maker. The owners asked me who should sit in it and I said your name. Before the review: what do you want me to tell them?",
+                "options": [
+                    {"label": "I WANT THE CHAIR", "id": "chair", "reply": "Morgan writes it down and underlines it once. Dan nods at you across the room, which from Dan is a speech.", "fx": {"social": {"Dan": 1, "Morgan": 1}}},
+                    {"label": "KEEP ME ON THE HARD TICKETS", "id": "tech", "reply": "Morgan is not surprised. There is a job for that, she says, and it does not come with a schedule to fill.", "fx": {"xp": ["servers", 6]}},
+                    {"label": "I HAVE BEEN THINKING ABOUT MOVING ON", "id": "go", "reply": "Morgan puts the pen down. Then tell me early and leave it tidy, she says. That is all I ever ask of anyone.", "fx": {"social": {"Morgan": 1}}},
+                ],
+            },
+        },
+        "owner": {
+            "summit": {
+                "speaker": "Ross Calder (Summit Managed Holdings)",
+                "text": "Summit buys well-run shops and leaves the sign up for a year. Yours is on a short list. I would like to see three years of numbers. Looking costs you nothing.",
+                "options": [
+                    {"label": "SHOW HIM THE BOOKS", "id": "books", "reply": "Christy prints the reports and stays in the room while he reads them. He reads them twice.", "fx": {}},
+                    {"label": "LISTEN, SHOW NOTHING", "id": "listen", "reply": "He talks for an hour about multiples. You learn what the place is worth to a stranger. He leaves a card.", "fx": {}},
+                    {"label": "NOT FOR SALE", "id": "no", "reply": "He shakes your hand and says that everybody is for sale in October. The card stays on the front desk.", "fx": {"rep": 1}},
+                ],
+            },
+            "staff": {
+                "speaker": "Christy (Controller)",
+                "text": "Morgan and I saw the Summit man. If the company is ever for sale, we would like to be asked first. I ran it: the staff could buy it over five years out of the profit, if the owners carried the note.",
+                "options": [
+                    {"label": "PUT IT ON PAPER", "id": "yes", "reply": "Christy already has it on paper. Morgan tells the team nothing and somehow they all know by Friday.", "fx": {"social_all": 1}},
+                    {"label": "NOT WHILE I AM STILL HERE", "id": "no", "reply": "Christy closes the folder without an argument. She keeps the folder.", "fx": {}},
+                ],
+            },
+            "handover": {
+                "speaker": "Morgan (Manager)",
+                "text": "You have not taken a week off in three years and it shows in your emails. Give me the day-to-day for a month. Approvals, hiring, the Monday numbers. You keep the cheque book. If it goes badly you will know by the smell.",
+                "options": [
+                    {"label": "HAND MORGAN THE KEYS", "id": "trial", "reply": "You go fishing on a Tuesday. Nothing burns down. Morgan moves the stand-up fifteen minutes later and nobody tells you.", "fx": {"burnout": -2}},
+                    {"label": "NOT YET", "id": "no", "reply": "Morgan shrugs. The offer has no date on it, she says, but you do.", "fx": {}},
+                ],
+            },
+        },
+        "service": {
+            "deputy": {
+                "speaker": "Morgan Reyes - Manager",
+                "text": "Dan, the desk runs because you are standing at it. That is a compliment and a problem. Pick somebody on the crew to learn the board, so that it survives you taking a week off.",
+                "options": [
+                    {"label": "TRAIN A DEPUTY", "id": "train", "reply": "You pick the one who reads the runbooks without being asked. By Friday the board has a second set of initials on it.", "fx": {"social_all": 1}},
+                    {"label": "WRITE IT ALL DOWN INSTEAD", "id": "write", "reply": "Forty pages, tabbed and labelled. Nobody opens it, but everybody knows where it is.", "fx": {"rep": 1}},
+                    {"label": "I AM NOT GOING ANYWHERE", "id": "no", "reply": "Morgan says that is what the last three managers said. She does not say where they went.", "fx": {}},
+                ],
+            },
+            "terry": {
+                "speaker": "Terry Vance (Recruiter)",
+                "text": "Last year I asked you for names. This year I am calling about yours. Service director across town: forty techs, a real budget, and a patch panel nobody has ever labelled. One coffee.",
+                "options": [
+                    {"label": "ONE COFFEE", "id": "hear", "reply": "Terry brings an offer letter to a coffee. You fold it once and put it with the spare labels.", "fx": {}},
+                    {"label": "TELL MORGAN ABOUT THE CALL", "id": "told", "reply": "Morgan thanks you and goes straight to the owners' offices. Both doors close. That has not happened before.", "fx": {"rep": 2}},
+                    {"label": "NO, THANK YOU", "id": "no", "reply": "Terry says he will call again next year. He has said that before, and he did.", "fx": {"rep": 1}},
+                ],
+            },
+            "table": {
+                "speaker": "Alan and Garrison - Owners",
+                "text": "We agree on one thing this year, and it is you. Two ways to do it. Operations: Morgan's job and the back of the house, with a budget. Or a stake: five percent, your name on the paperwork, and you sign the line of credit with us. Which conversation are we having at the review?",
+                "options": [
+                    {"label": "OPERATIONS", "id": "ops", "reply": "Alan nods. Garrison is already drawing a new org chart on a napkin. Your box is in the middle of it.", "fx": {"social": {"Alan": 1}}},
+                    {"label": "THE STAKE", "id": "partner", "reply": "Garrison shakes your hand with both of his. Alan slides a very thick folder across the desk and says read all of it.", "fx": {"social": {"Garrison": 1}}},
+                    {"label": "LET ME THINK", "id": "think", "reply": "They let you think. Alan gives it until the review. Garrison gives it until lunch.", "fx": {}},
+                ],
+            },
+        },
+        "sales": {
+            "wes": {
+                "lynk": {"from": "Wes", "text": "Boss. I lost the dentist. Second quote in a row. Can you come along on my next call? I will not say anything stupid. I will try not to."},
+                "speaker": "Wes Okafor",
+                "text": "They said my quote was fine and then they signed with somebody else. I do not know what I am doing wrong and Garrison only tells me to smile more. Will you ride along on Thursday?",
+                "options": [
+                    {"label": "RIDE ALONG, LET HIM TALK", "id": "coach", "reply": "You say nothing for forty minutes, which is a personal record. In the car you tell him the two things. He writes them on his hand.", "fx": {"xp": ["people", 6], "social": {"Garrison": 1}}},
+                    {"label": "TAKE THE CALL YOURSELF", "id": "take", "reply": "You close it in twenty minutes. Wes watches the way people watch a card trick. The deal goes on your board.", "fx": {"rep": 1}},
+                    {"label": "SEND HIM YOUR SCRIPT", "id": "script", "reply": "He reads your script word for word, including the part that says PAUSE HERE.", "fx": {}},
+                ],
+            },
+            "split": {
+                "speaker": "Garrison (Owner)",
+                "text": "The territory is too big for one book. Split it with Wes. You draw the line, and I will know what kind of boss you would be by where you draw it.",
+                "options": [
+                    {"label": "GIVE HIM HALF THE WARM LEADS", "id": "fair", "reply": "Wes gets the north side and three leads that actually answer the phone. He buys you a coffee he cannot afford.", "fx": {"social": {"Garrison": 2}}},
+                    {"label": "GIVE HIM THE COLD SIDE", "id": "cold", "reply": "Wes gets the industrial park and a list of numbers that ring forever. He thanks you anyway. Garrison says nothing.", "fx": {"social": {"Garrison": -1}}},
+                    {"label": "KEEP THE BOOK WHOLE", "id": "keep", "reply": "Garrison lets it go. Somebody has to keep selling, he says, the same way he said it last year.", "fx": {}},
+                ],
+            },
+            "chair": {
+                "speaker": "Garrison (Owner)",
+                "text": "I am done carrying a bag. Somebody takes my chair at the review: the forecast, my client list and Wes. It can be you. It can be Wes, with you as the closer he calls when it matters. Or you tell me what you want instead.",
+                "options": [
+                    {"label": "I WANT THE CHAIR", "id": "chair", "reply": "Garrison takes his name plate off the desk and puts it in his pocket. Not yet, he says. But start reading the forecast.", "fx": {"social": {"Garrison": 1}}},
+                    {"label": "GIVE IT TO WES", "id": "wes", "reply": "Garrison looks at you for a long moment. You trained him that well, he says. It is not a question.", "fx": {}},
+                    {"label": "A SHARE, NOT A TITLE", "id": "stake", "reply": "Alan hears it through the wall and comes in with a calculator. That is a good sign. He only brings the calculator to things he takes seriously.", "fx": {"social": {"Alan": 1}}},
+                ],
+            },
+        },
+    },
+    "offers": {
+        "y3_chair": {"label": "TAKE DAN'S CHAIR", "desc": "THE SCHEDULE, THE ESCALATIONS AND THE LABEL MAKER. QUINN TAKES YOUR OLD DESK."},
+        "y3_senior": {"label": "STAY TECHNICAL: SENIOR ENGINEER", "desc": "NO SCHEDULE TO FILL. THE HARD TICKETS, THE BIG JOBS AND THE LAST WORD ON THE STACK."},
+        "y3_farewell": {"label": "LEAVE ON GOOD TERMS", "desc": "A MONTH OF NOTICE, A TIDY HANDOVER AND A DESK THAT RUNS WITHOUT YOU."},
+        "y3_summit": {"label": "SELL TO SUMMIT", "desc": "SUMMIT MANAGED HOLDINGS BUYS THE COMPANY FOR ABOUT ${value}. THE SIGN STAYS UP FOR A YEAR."},
+        "y3_staff": {"label": "SELL TO THE STAFF", "desc": "MORGAN, CHRISTY AND THE TEAM BUY IT OVER FIVE YEARS OUT OF THE PROFIT. YOU CARRY THE NOTE."},
+        "y3_morgan": {"label": "KEEP IT, MORGAN RUNS IT", "desc": "YOUR NAME STAYS ON THE DOOR. MORGAN TAKES THE DAY-TO-DAY, YOU TAKE TUESDAYS OFF."},
+        "y3_coo": {"label": "RUN OPERATIONS", "desc": "MORGAN'S JOB AND THE BACK OF THE HOUSE, WITH A BUDGET. YOUR DEPUTY TAKES THE BOARD."},
+        "y3_partner": {"label": "BECOME A PARTNER", "desc": "FIVE PERCENT, YOUR NAME ON THE PAPERWORK AND YOUR SIGNATURE ON THE LINE OF CREDIT."},
+        "y3_across": {"label": "TAKE THE JOB ACROSS TOWN", "desc": "TERRY VANCE'S OFFER: FORTY TECHS, A REAL BUDGET AND AN UNLABELLED PATCH PANEL."},
+        "y3_director": {"label": "TAKE GARRISON'S CHAIR", "desc": "THE FORECAST, HIS CLIENT LIST AND WES. YOU STILL CLOSE, AND YOU ANSWER FOR HIS NUMBER TOO."},
+        "y3_wes": {"label": "LET WES TAKE THE CHAIR", "desc": "WES RUNS THE TEAM. YOU KEEP THE BIG ACCOUNTS AND SKIP THE FORECAST MEETING."},
+        "y3_stake": {"label": "TAKE A SHARE OF THE SALES SIDE", "desc": "NO TITLE. A PERCENTAGE OF EVERYTHING YOU SIGNED, FOR AS LONG AS IT STAYS SIGNED."},
+    },
+    "endings": {
+        "y3_chair": "YOU TAKE DAN'S CHAIR. THE SCHEDULE IS YOURS, THE ESCALATIONS ARE YOURS, AND QUINN ANSWERS YOUR OLD PHONE ON THE SECOND RING. DAN LEFT A LABEL ON THE DRAWER. IT SAYS YOURS NOW.",
+        "y3_senior": "SENIOR ENGINEER. NO SCHEDULE, NO BUDGET MEETING. THE TICKETS NOBODY ELSE CAN CLOSE COME TO YOU, AND SO DOES QUINN, ABOUT ONCE A DAY, WITH A NOTEBOOK. YOU FOUND THE JOB YOU WERE ALREADY DOING.",
+        "y3_farewell": "YOU GIVE A MONTH OF NOTICE AND USE ALL OF IT. THE NOTES ARE WRITTEN, QUINN KNOWS ABOUT THE BLUE SWITCH, AND MORGAN SAYS THE DOOR OPENS BOTH WAYS. THE TEAM SIGNS A KEYBOARD. YOU TAKE THE MUG.",
+        "y3_summit": "SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS FOR ABOUT ${value}. THE SIGN STAYS UP FOR A YEAR AND THE TEAM KEEPS THEIR DESKS. YOU SIGN FOR AN HOUR. THEN, FOR THE FIRST TIME IN THREE YEARS, YOUR PHONE IS SOMEBODY ELSE'S PROBLEM.",
+        "y3_staff": "THE STAFF BUY THE COMPANY, A LITTLE EVERY MONTH FOR FIVE YEARS. CHRISTY RUNS THE NOTE TO THE PENNY. MORGAN GETS THE OFFICE WITH THE WINDOW. YOUR NAME COMES OFF THE DOOR SLOWLY, AND NOBODY HURRIES IT.",
+        "y3_morgan": "YOU KEEP THE COMPANY AND GIVE MORGAN THE KEYS. SHE RUNS THE DAYS. YOU COME IN FOR THE NUMBERS, THE BIG CLIENTS AND THE COOKOUT. THE PHONES STILL RING. THEY JUST RING FOR HER FIRST.",
+        "y3_coo": "YOU RUN OPERATIONS. THE DESK, THE WAREHOUSE AND THE BUDGET ALL REPORT TO ONE PERSON, AND THAT PERSON OWNS A LABEL MAKER. YOUR DEPUTY TAKES THE BOARD AND KEEPS YOUR COLOUR CODES.",
+        "y3_partner": "YOU SIGN. FIVE PERCENT OF PIXEL IT PARTNERS, A THIRD SIGNATURE AT THE BANK AND A SEAT WHERE ALAN AND GARRISON ARGUE. YOU ARE THE TIE-BREAKER NOW. YOU LABEL YOUR SIDE OF THE TABLE.",
+        "y3_across": "YOU TAKE THE JOB ACROSS TOWN AND LEAVE THE DESK BETTER THAN YOU FOUND IT. FORTY TECHS, ONE BUDGET, AND ON YOUR FIRST MORNING A PATCH PANEL WITH NOTHING WRITTEN ON IT. YOU BROUGHT YOUR OWN TAPE.",
+        "y3_director": "GARRISON HANDS YOU THE CHAIR AND THE NAME PLATE HOLDER, EMPTY. THE FORECAST IS YOURS AND SO IS WES, WHO CLOSES HIS FIRST BIG ONE IN MARCH AND RINGS THE BELL TWICE. YOU LET HIM.",
+        "y3_wes": "WES TAKES THE CHAIR. YOU TAUGHT HIM TO ASK WHAT HURTS FIRST, AND NOW HE ASKS YOU. YOU KEEP THE ACCOUNTS THAT MATTER AND NEVER SIT THROUGH A FORECAST MEETING AGAIN. HE STILL CALLS YOU BOSS.",
+        "y3_stake": "NO TITLE, NO TEAM, AND A PERCENTAGE OF EVERY CONTRACT YOU SIGNED FOR AS LONG AS THE CLIENT STAYS. ALAN WROTE THE FORMULA. IT PAYS YOU TO KEEP YOUR PROMISES, WHICH WAS HIS WHOLE POINT.",
+    },
+}
+
 var pending := false  # New Game Plus was chosen on the title menu: the next Campaign.new_game takes it
+var pending_year := YEAR  # which year that is: 2, or 3 (START YEAR 3)
 var pick := ""  # a mutator the plan must contain ("" = AUTO)
 var ban := ""  # a mutator the plan must not contain
 var mut_mode := "pick"  # what the character select chip does with the chosen mutator: "pick" or "ban"
@@ -13411,18 +13766,43 @@ func reset() -> void:
     RivalTouches.rival_year(1)
 
 
+# ---- the tables of the running year ---------------------------------------------------------------------------
+# Year 3 reads its own row where YEAR3 / TEXT3 has one and Year 2's otherwise; a Year 2 run only ever sees YEAR2 / TEXT
+func year_cfg(key: String) -> Variant:
+    if Campaign.year >= LAST_YEAR and YEAR3.has(key):
+        return YEAR3[key]
+    return YEAR2.get(key, {})
+
+
+func year_txt(key: String) -> Variant:
+    if Campaign.year >= LAST_YEAR and TEXT3.has(key):
+        return TEXT3[key]
+    return TEXT.get(key, {})
+
+
+# "YEAR 2" / "YEAR 3" for the HUD, the day report and the character select; "" in a first year
+func label(year := -1) -> String:
+    var n := Campaign.year if year < 0 else year
+    return "YEAR %d" % n if n >= YEAR else ""
+
+
+# the " (YEAR 2)" mark of a save
+func tag_of(year: int) -> String:
+    return " (%s)" % label(year) if year >= YEAR else ""
+
+
 # ---- the meta record (unlock) ---------------------------------------------------------------------------------
 func meta_path() -> String:
     return Campaign.save_prefix + "meta.cfg"
 
 
 func meta_get(mode: String) -> Dictionary:
-    var cfg := ConfigFile.new()
-    if cfg.load(meta_path()) != OK or not cfg.has_section(mode):
+    var file := ConfigFile.new()
+    if file.load(meta_path()) != OK or not file.has_section(mode):
         return {}
     var out := {}
-    for key in cfg.get_section_keys(mode):
-        out[key] = cfg.get_value(mode, key)
+    for key in file.get_section_keys(mode):
+        out[key] = file.get_value(mode, key)
     return out
 
 
@@ -13450,20 +13830,40 @@ func record(meta: ConfigFile, mode: String, ending: String) -> void:
     if books:
         RivalTouches.note_year_end()
     if Campaign.year >= YEAR:
-        Career.add("year2_done")
+        Career.add("year2_done" if Campaign.year == YEAR else "year%d_done" % Campaign.year)
+        # R10: the record of this year stays under its own key (the plain keys follow the LAST run, which may be a Year 1 again)
+        var snap := {"flags": (Story.flags.get(_bucket(), {}) as Dictionary).duplicate(true)}
+        for key in ["ending", "rep", "tier", "cozy", "seed", "clients", "skills", "value", "cash", "trust", "shop", "standard"]:
+            snap[key] = meta.get_value(mode, key, null)
+        meta.set_value(mode, "y%d" % Campaign.year, snap)
+    meta.set_value(mode, "top_year", maxi(int(meta.get_value(mode, "top_year", 1)), maxi(1, Campaign.year)))
 
 
 # can this mode start a Year 2? (the registry row allows it and a run of it has been finished)
-func available(mode: String) -> bool:
-    if not Campaign.is_selectable(mode) or not bool(Campaign.prop("year2", false, mode)):
+# Year 3: a Year 2 run of it has been finished (an old meta file has no `top_year`: its `year` is the last finished run's)
+func available(mode: String, year := YEAR) -> bool:
+    if not Campaign.is_selectable(mode) or not bool(Campaign.prop("year2", false, mode)) or year > LAST_YEAR:
         return false
     var rec := meta_get(mode)
-    return int(rec.get("finished", 1 if str(rec.get("ending", "")) != "" else 0)) > 0
+    if int(rec.get("finished", 1 if str(rec.get("ending", "")) != "" else 0)) <= 0:
+        return false
+    return year <= YEAR or int(rec.get("top_year", rec.get("year", 1))) >= year - 1
 
 
-# R17: what a START YEAR 2 run keeps from the finished one, as one short line for the title menu row
-func carry_summary(mode: String) -> String:
+# the finished run a new `year` follows: the last run for Year 2 (as always), the Year 2 run for Year 3
+func record_for(mode: String, year := YEAR) -> Dictionary:
     var rec := meta_get(mode)
+    if year <= YEAR:
+        return rec
+    var snap: Variant = rec.get("y%d" % (year - 1), {})
+    if snap is Dictionary and not (snap as Dictionary).is_empty():
+        return snap
+    return rec
+
+
+# R17: what a START YEAR 2 (or 3) run keeps from the finished one, as one short line for the title menu row
+func carry_summary(mode: String, year := YEAR) -> String:
+    var rec := record_for(mode, year)
     if rec.is_empty():
         return ""
     var kept := carry_for(mode, rec)
@@ -13480,37 +13880,44 @@ func carry_summary(mode: String) -> String:
     return ", ".join(parts)
 
 
-# the title menu rows (one per finished mode)
-func menu_items() -> Array:
+# the title menu rows of one year (one per mode that can start it); the title builds its own rows in Title.sub_items
+func menu_items(year := YEAR) -> Array:
     var out := []
     for mode in Campaign.MODE_DEFS:
-        if available(str(mode)):
-            out.append({"label": "NEW GAME PLUS - %s (YEAR 2)" % str(mode).to_upper(), "id": "%s_y2" % str(mode), "enabled": true})
+        if available(str(mode), year):
+            out.append({"label": "NEW GAME PLUS - %s (YEAR %d)" % [str(mode).to_upper(), year], "id": "%s_y%d" % [str(mode), year], "enabled": true})
     return out
 
 
 # the " - YEAR 2" mark of a saved run for the CONTINUE entries
 func saved_tag(mode: String, for_slot := 0) -> String:
-    var cfg := ConfigFile.new()
-    if cfg.load(Campaign.save_path(mode, for_slot)) != OK:
+    var file := ConfigFile.new()
+    if file.load(Campaign.save_path(mode, for_slot)) != OK:
         return ""
-    return " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= YEAR else ""
+    return tag_of(int(file.get_value("campaign", "year", 1)))
 
 
 # ---- choosing it on the character select ---------------------------------------------------------------------------
 # the screen opens (setup): remember the choice; a normal run clears it
-func begin_select(mode: String, year2: bool) -> void:
-    pending = year2 and available(mode)
+func begin_select(mode: String, year2: bool, year := YEAR) -> void:
+    pending = year2 and available(mode, year)
+    pending_year = clampi(year, YEAR, LAST_YEAR) if pending else YEAR
     pick = ""
     ban = ""
     mut_mode = "pick"
 
 
 func take_pending(mode: String) -> bool:
-    var yes := pending and available(mode)
+    return take_year(mode) >= YEAR
+
+
+# Campaign.new_game: the year of the run that starts now (1 unless START YEAR 2 / 3 was chosen), and what it follows
+func take_year(mode: String) -> int:
+    var year := pending_year if pending and available(mode, pending_year) else 1
     pending = false
-    prev = meta_get(mode) if yes else {}
-    return yes
+    pending_year = YEAR
+    prev = record_for(mode, year) if year >= YEAR else {}
+    return year
 
 
 func active() -> bool:
@@ -13557,7 +13964,7 @@ func chip_text() -> String:
 
 # ---- the numbers other scripts read ------------------------------------------------------------------------------
 func sla_mult() -> float:
-    return float(YEAR2.sla.mult) if active() else 1.0
+    return float((year_cfg("sla") as Dictionary).mult) if active() else 1.0
 
 
 func ticket_weights() -> Dictionary:
@@ -13655,14 +14062,14 @@ func begin_run(mode: String) -> void:
     else:
         Owner.cash += int(carried.cash)
         Partner.trust = clampi(int(carried.trust) + Build.trust_bonus(), 0, 100)
-        RivalTouches.rival_year(2)
+        RivalTouches.rival_year(Campaign.year)
         carried["habits"] = RivalTouches.year2_begin(prev)
     for cname in YEAR2.clients.client:
         var idx := client_index(str(cname))
         if idx >= 0 and not Sales.active.has(idx):
             Sales.active.append(idx)
     moves = story_shuffle(mode)
-    Career.add("year2_runs")
+    Career.add("year2_runs" if Campaign.year == YEAR else "year%d_runs" % Campaign.year)
 
 
 func client_index(cname: String) -> int:
@@ -13673,9 +14080,12 @@ func client_index(cname: String) -> int:
 
 
 func intro_text() -> String:
-    var parts: Array = [str(TEXT.intro.text)]
+    var intro: Dictionary = year_txt("intro")
+    var parts: Array = [str(intro.text)]
+    if Campaign.year >= LAST_YEAR and (YEAR3.left as Array).has(str(prev.get("ending", ""))) and intro.has("back"):
+        parts.append(str(intro.back))
     for key in ["sla", "tickets", "clients", "mutators", "shuffle"]:
-        parts.append(str(YEAR2[key].text))
+        parts.append(str((year_cfg(key) as Dictionary).text))
     if not carried.is_empty():
         var s := "YOU CARRY OVER: REPUTATION %d" % int(carried.rep)
         if Campaign.books_active():
@@ -13755,7 +14165,7 @@ func blocked_days(mode: String) -> Dictionary:
         out[int(d)] = true
     if mode == "tech":
         out[Expo.TRIP_DAY] = true
-    var beats: Dictionary = YEAR2.beats.get(mode, {})
+    var beats: Dictionary = (year_cfg("beats") as Dictionary).get(mode, {})
     for id in beats:
         out[int(beats[id])] = true
     for e in Mutators.plan:
@@ -13879,15 +14289,26 @@ func story_shuffle(mode: String, rng: RandomNumberGenerator = null) -> Array:
 
 
 # ---- the Year 2 beats (cards that set flags) ----------------------------------------------------------------------
+# the choices of this year's beats live in Story.flags under "y2" (Year 2) or "y3" (Year 3), saved with the campaign
+func _bucket() -> String:
+    return "y%d" % clampi(Campaign.year, YEAR, LAST_YEAR)
+
+
 func flag(key: String) -> String:
-    var f: Dictionary = Story.flags.get("y2", {})
+    var f: Dictionary = Story.flags.get(_bucket(), {})
     return str(f.get(key, ""))
 
 
 func set_flag(key: String, value: String) -> void:
-    var f: Dictionary = Story.flags.get("y2", {})
+    var f: Dictionary = Story.flags.get(_bucket(), {})
     f[key] = value
-    Story.flags["y2"] = f
+    Story.flags[_bucket()] = f
+
+
+# what you answered at a beat of the Year 2 run this one follows ("" in Year 2, or when that run is older than the record)
+func last_flag(key: String) -> String:
+    var f: Variant = prev.get("flags", {})
+    return str((f as Dictionary).get(key, "")) if f is Dictionary else ""
 
 
 # Campaign._begin_day
@@ -13895,17 +14316,24 @@ func begin_day(day: int) -> void:
     if not active() or Game.title_mode:
         return
     if day == 1:
-        Cards.ask(str(TEXT.intro.speaker), intro_text(), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
-    var beats: Dictionary = YEAR2.beats.get(Campaign.mode, {})
+        Cards.ask(str((year_txt("intro") as Dictionary).speaker), intro_text(), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+    var beats: Dictionary = (year_cfg("beats") as Dictionary).get(Campaign.mode, {})
     for id in beats:
         if int(beats[id]) == day:
             beat(str(id))
 
 
+# the card of a beat of the running year
+func beat_row(id: String) -> Dictionary:
+    return (year_txt("beats") as Dictionary).get(Campaign.mode, {}).get(id, {})
+
+
 func beat(id: String) -> void:
-    var row: Dictionary = TEXT.beats.get(Campaign.mode, {}).get(id, {})
+    var row: Dictionary = beat_row(id)
     if row.is_empty():
         return
+    if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
+        Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
     var options := []
     for o in row.options:
         var enabled := true
@@ -13916,7 +14344,7 @@ func beat(id: String) -> void:
 
 
 func answer(id: String, oid: String) -> void:
-    var row: Dictionary = TEXT.beats.get(Campaign.mode, {}).get(id, {})
+    var row: Dictionary = beat_row(id)
     for o in row.get("options", []):
         if str(o.id) != oid:
             continue
@@ -13939,7 +14367,49 @@ func _offer_ok(id: String) -> bool:
             return flag("merger") == "talks" and Campaign.rep >= 55 and Sales.active.size() >= 6 and Owner.cash >= 0
         "franchise":
             return flag("franchise") == "pilot" and Campaign.rep >= 60 and Sales.active.size() >= 6 and Owner.oml() >= 2
-    return false
+    return _offer3_ok(id)
+
+
+# an ending's threshold (YEAR3.needs, patchable)
+func need(id: String, key: String, fallback := 0) -> int:
+    return int(((YEAR3.needs as Dictionary).get(id, {}) as Dictionary).get(key, fallback))
+
+
+# The Year 3 endings: the last beat of each campaign asks what you want, the earlier two decide whether you have earned it.
+#   tech     the chair needs somebody trained to take your desk; leaving on good terms needs the team to like you
+#   owner    Summit needs the door left open, the staff sale and Morgan's keys need the yes you gave them
+#   service  operations and the stake are the owners' question; the job across town needs a desk that survives you
+#   sales    Garrison's chair needs a fair line and a rep you did not starve; Wes only gets it if you taught him
+func _offer3_ok(id: String) -> bool:
+    if Campaign.year < LAST_YEAR or Campaign.rep < need(id, "rep"):
+        return false
+    var ok := false
+    match id:
+        "y3_chair":
+            ok = flag("fork") == "chair" and (flag("newhire") != "no" or flag("mentor") == "teach") and Social.average() >= 0.0
+        "y3_senior":
+            ok = flag("fork") == "tech"
+        "y3_farewell":
+            ok = flag("fork") == "go" and Social.average() >= 0.0
+        "y3_summit":
+            ok = flag("summit") in ["books", "listen"] and Sales.active.size() >= need(id, "clients") and Owner.cash >= 0
+        "y3_staff":
+            ok = flag("staff") == "yes" and Owner.cash >= 0
+        "y3_morgan":
+            ok = flag("handover") == "trial" and Owner.cash >= 0
+        "y3_coo":
+            ok = flag("table") == "ops"
+        "y3_partner":
+            ok = flag("table") == "partner" and mini(Service.trust_of("Alan"), Service.trust_of("Garrison")) >= need(id, "trust")
+        "y3_across":
+            ok = flag("terry") == "hear" and flag("deputy") != "no"
+        "y3_director":
+            ok = flag("chair") == "chair" and flag("split") != "cold" and flag("wes") != "take"
+        "y3_wes":
+            ok = flag("chair") == "wes" and flag("wes") == "coach"
+        "y3_stake":
+            ok = flag("chair") == "stake"
+    return ok
 
 
 func _fill(text: String) -> String:
@@ -13954,17 +14424,19 @@ func extra_offers(out: Array) -> Array:
     if not active():
         return out
     var add := []
-    for id in YEAR2.endings.get(Campaign.mode, []):
+    for id in (year_cfg("endings") as Dictionary).get(Campaign.mode, []):
         if _offer_ok(str(id)):
-            var row: Dictionary = TEXT.offers.get(str(id), {})
+            var row: Dictionary = (year_txt("offers") as Dictionary).get(str(id), {})
             add.append({"id": str(id), "label": _fill(str(row.get("label", id))), "desc": _fill(str(row.get("desc", "")))})
     if add.is_empty():
         return out
-    var at := out.size()
+    var at := -1
     for i in out.size():
         if str(out[i].id) in ["stay", "left"]:
             at = i
             break
+    if at < 0:
+        return out  # nobody asked you to stay (let go, or notice already given): no promotion either
     var merged: Array = out.slice(0, at)
     merged.append_array(add)
     merged.append_array(out.slice(at))
@@ -13972,11 +14444,16 @@ func extra_offers(out: Array) -> Array:
 
 
 func ending_text(id: String) -> String:
-    return _fill(str(TEXT.endings.get(id, "")))
+    return _fill(str(TEXT.endings.get(id, TEXT3.endings.get(id, ""))))
 
 
+# an ending this file owns (Year 2's or Year 3's); the reviews ask it for the epilogue
 func is_year2_ending(id: String) -> bool:
-    return TEXT.endings.has(id)
+    return TEXT.endings.has(id) or TEXT3.endings.has(id)
+
+
+func is_year3_ending(id: String) -> bool:
+    return TEXT3.endings.has(id)
 
 
 # ---- saving ---------------------------------------------------------------------------------------------------
@@ -14444,7 +14921,7 @@ func _paint() -> void:
         report.get("title", "DAY %d OF %d COMPLETE" % [int(report.day), int(report.total_days)])
     )
     if int(report.get("year", 1)) >= 2:
-        title += " - YEAR 2"
+        title += " - YEAR %d" % int(report.year)
     if _tw(title) + 8.0 > pw:
         title = title.replace(" COMPLETE", "")
     _t(title, 4.0, 2.5, WHITE)
@@ -17477,6 +17954,18 @@ const VIGNETTES := {
             {"id": "help", "label": "SOME OF THEM WERE OVER MY HEAD", "text": "Then ask me before they go red. That is what I am here for. (+2 servers XP)", "fx": {"xp": ["servers", 2]}},
         ],
     },
+    # X10: the first-day choice, right after Dan's intro (`_vignette_after`). How you say hello to the room: a small, lasting
+    # flavour (flag `hello`), two opinions move a little, and whoever liked it texts you the next morning (`echo`, sent by the
+    # day 2 event `hello_echo`).
+    "hello": {
+        "speaker": "Garrison (Co-owner)",
+        "text": "Everybody, this is the new tech. New tech, this is everybody. Go on, say something to the room. Keep it short, Alan has a thing at ten.",
+        "options": [
+            {"id": "joke", "label": "I FIX THINGS. SOMETIMES ON PURPOSE.", "text": "Garrison laughs loud enough for two. Alan writes something down. It might be about you.", "fx": {"flag": ["hello", "joke"], "social": {"Garrison": 2, "Alan": -1}}, "echo": {"from": "Garrison", "body": "Still laughing about 'sometimes on purpose'. Alan asked me if it was a joke. I said mostly."}},
+            {"id": "keen", "label": "I READ THE RUNBOOKS LAST NIGHT.", "text": "Alan nods once, which from Alan is a parade. Garrison mouths the word 'runbooks' at Dan.", "fx": {"flag": ["hello", "keen"], "social": {"Alan": 2, "Garrison": -1}}, "echo": {"from": "Alan", "body": "You said you read the runbooks. Page 14 is out of date. Tell me what else is."}},
+            {"id": "quiet", "label": "HI. WHERE IS THE QUEUE?", "text": "Dan points at your desk. Maya gives you a small nod. One of us.", "fx": {"flag": ["hello", "quiet"], "social": {"Dan": 1, "Maya": 1}}, "echo": {"from": "Maya", "body": "Short intro. Good. The last new tech talked for six minutes. There is a granola bar in your top drawer."}},
+        ],
+    },
     "mentor_intro": {
         "speaker": "Dan (Service Manager)",
         "text": "Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?",
@@ -18421,6 +18910,7 @@ const DAYS := {
          + "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"},
         {"at": 9.6, "kind": "mentor", "id": "mentor_triage"},
         {"at": 10.5, "kind": "vignette", "id": "iphone"},
+        {"at": 9.05, "kind": "hello_echo"},
     ],
     3: [
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Get good at PowerShell",
@@ -18628,6 +19118,8 @@ func fire(ev: Dictionary) -> void:
             Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
         "vignette", "mentor":
             _vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
+        "hello_echo":
+            _hello_echo()
         "metrics":
             _friday()
         "postmortem":
@@ -18655,6 +19147,14 @@ func fire(ev: Dictionary) -> void:
             if flags.get("install", "") == "lost":
                 Msp.mail("Dr. Patel <patel@acmedental.example>", "XRAY STILL MISSING", "I spent the evening reloading the xray software from CDs. Never again. - Patel")
                 Msp.send_text("Boss", "Acme lost their xray software in the migration. Always survey and back up first.")
+
+
+# X10: the morning after the first-day hello, whoever liked it sends a text (nothing when the card was never answered)
+func _hello_echo() -> void:
+    var pick := str(flags.get("hello", ""))
+    for o in VIGNETTES.get("hello", {}).get("options", []):
+        if str(o.id) == pick and o.has("echo"):
+            Msp.send_text(str(o.echo.from), str(o.echo.body))
 
 
 # ---- small quiet-day moments: a short card with a few choices and small effects
@@ -18731,7 +19231,14 @@ func _vignette_answer(id: String, pick: String) -> void:
         if str(o.id) == pick:
             text = str(o.text)
             _vignette_fx(o.get("fx", {}))
-    Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+    Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _vignette_after(id))
+
+
+# X10: Dan's intro is followed by the first-day hello. It is asked when his answer is closed, so the two cards never
+# interleave (on cozy Easy every day 1 event is due in the same second). Once a run, and not in a second year.
+func _vignette_after(id: String) -> void:
+    if id == "mentor_intro" and Campaign.day == 1 and not flags.has("hello") and not Yeartwo.active():
+        _vignette("hello")
 
 
 func _vignette_fx(fx: Dictionary) -> void:
@@ -19733,9 +20240,9 @@ func make_offers() -> Array:
     if Campaign.prop("review", "") == "board":
         return Yeartwo.extra_offers(Owner.offers())
     if Campaign.prop("review", "") == "sales":
-        return SalesCampaign.offers()
+        return Yeartwo.extra_offers(SalesCampaign.offers())  # R10: the Year 3 endings
     if Campaign.prop("review", "") == "service":
-        return Service.review_offers()
+        return Yeartwo.extra_offers(Service.review_offers())
     var out := []
     if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
         out.append({
@@ -20750,8 +21257,8 @@ const CARDS := {
         "speaker": "John Marlowe",
         "text": "Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?",
         "options": [
-            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}}, "The job overran. You ate $1,200."]],
-             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400}, "A small overrun, nothing serious."]]},
+            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}, "overrun": 1200}, "The job overran. You ate $1,200."]],
+             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400, "overrun": 600}, "A small overrun, nothing serious."]]},
             {"label": "TIME AND MATERIALS (~$2,200)", "fx": {"cash": 2200}, "text": "Brightside grumbles about the open-ended bill but pays."},
         ],
     },
@@ -21925,6 +22432,8 @@ func _picked(id: String, index: int) -> void:
 
 func apply(fx: Dictionary) -> void:
     cash += int(fx.get("cash", 0))
+    if fx.has("overrun"):
+        cash += Habits.overrun_back(int(fx.overrun))  # R38: H3, a failed cutover costs half with a change request
     if fx.has("rep"):
         Campaign.adjust_rep(int(fx.rep))
     if fx.has("mood_all"):
@@ -22086,12 +22595,14 @@ func apply(fx: Dictionary) -> void:
         Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
     if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
         Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
-    if fx.has("visit"):
-        Takeover.visit(self, str(fx.visit))
     if fx.has("lead"):
         _leads += int(fx.lead)
     if fx.has("rival"):
         Rival.apply_fx(self, fx.rival)
+    if fx.has("visit"):
+        # after the rival ops: the week 11 card brings the client back (`return`) in the same fx, and the visit needs them back
+        # (X12: before this order the real trigger never started a visit, Takeover.target() found nobody)
+        Takeover.visit(self, str(fx.visit))
     Msp.changed.emit()
 
 
@@ -24351,7 +24862,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25290,6 +25801,7 @@ const THREADS := [
                 "Stop the services, back up, detach, move, attach. In that order. Then test it before you tell anyone."
             },
             {"by": "GrizzleAdmin", "text": "Back up TWICE. Then back up."},
+            {"by": "TapeTony", "text": "And one copy on tape, off site. Nothing has ever encrypted a tape on a shelf."},
         ],
         "answer":
         "Stop the services, take a backup, detach the database, move the files, attach it again, and test before you restart the agents.",
@@ -25357,6 +25869,7 @@ const THREADS := [
                 "Check the routes. A new subnet on the cloud side that the office router does not know about, probably."
             },
             {"by": "tcp_tim", "text": "And the firewall rule. They often reset after an upgrade."},
+            {"by": "DNS_Dot", "text": "Check the name first. It is DNS. It is always DNS."},
         ],
         "answer":
         "Look at the routes first, then the firewall rules. An upgrade often resets one of them.",
@@ -31109,6 +31622,7 @@ write("scripts/ui_style.gd", '''extends RefCounted
 # in screen pixels. Use UiStyle.panel() for pages, UiStyle.strip() / hint_bar() / caption_bar() in rooms.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -31188,7 +31702,7 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-    text(c, hint, r.position.x + 3.0, r.end.y - 7.0, MUTED)
+    PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
@@ -33547,6 +34061,7 @@ const SAFE := 2.4  # seconds a bumped chair cannot be bumped again
 const TURN := 0.3  # seconds a spin-around takes
 const HIT_GAP := 0.45  # seconds before the two chairs can touch again
 const WALL_BOUNCE := 0.25
+const P2_COLOR := Color("5fa8e8")  # player 2's chair in a co-op duel
 const TIER_SKILL := 2.5  # x the tier's chair.skill (-0.08 / 0 / +0.08): in a duel the other chair's legs are all there is
 # the crew as fighters: how they push and what they say
 const STYLES := {
@@ -33575,6 +34090,7 @@ var feel_t := 0.0
 var events: Array = []  # go, bump, ouch, clash, clunk, finish (for sounds; the owner clears it)
 var clashes := 0
 var you_auto := false  # tests and demos: the crew's driver has your chair too
+var duel := false  # co-op (params.duel): chairs[1] is player 2's chair, nobody drives it; the crew all watch
 var cp_next := 0  # (the track asks: no checkpoints)
 var checks: Array = []
 var length := HI
@@ -33610,8 +34126,11 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
     var who := str(params.get("opponent", ""))
     if not STYLES.has(who):
         who = str(pool[rng.randi() % pool.size()]) if not pool.is_empty() else "Garrison"
-    var st: Dictionary = STYLES[who]
-    chairs = [_chair("You", LO + 40.0, 1, Color.WHITE, 0.5), _chair(who, HI - 40.0, -1, ChairRace.RACERS[who].color, clampf(float(st.skill) + TIER_SKILL * float(params.get("skill", 0.0)) + (rng.randf() - 0.5) * 0.06, 0.1, 0.9))]
+    duel = bool(params.get("duel", false))
+    if duel:
+        who = "P2"
+    var st: Dictionary = STYLES.get(who, {"skill": 0.5})
+    chairs = [_chair("You", LO + 40.0, 1, Color.WHITE, 0.5), _chair(who, HI - 40.0, -1, P2_COLOR if duel else ChairRace.RACERS[who].color, 0.5 if duel else clampf(float(st.skill) + TIER_SKILL * float(params.get("skill", 0.0)) + (rng.randf() - 0.5) * 0.06, 0.1, 0.9))]
     rivals = [chairs[1]]
     var n := 0
     for other in pool:
@@ -33751,7 +34270,7 @@ func push_of(i: int, key: int) -> bool:
     if float(c.stam) < 15.0:
         how = "TIRED"
     c.v = float(c.v) + float(c.face) * ChairRace.IMPULSE * q * f
-    c.stam = maxf(0.0, float(c.stam) - cost * (float(params.stamina) if i == 0 else 1.0))
+    c.stam = maxf(0.0, float(c.stam) - cost * (float(params.stamina) if i == 0 or duel else 1.0))
     c.pushes = int(c.pushes) + 1
     c.key = key
     c.last = clock
@@ -33779,7 +34298,7 @@ func step(dt: float) -> void:
         events.append("go")
     _hit_cd = maxf(0.0, _hit_cd - dt)
     for i in 2:
-        if phase == "go" and (i == 1 or you_auto):
+        if phase == "go" and ((i == 1 and not duel) or you_auto):
             _drive(i, dt)
         _roll(chairs[i], dt)
     if phase != "go":
@@ -33929,6 +34448,8 @@ func _drive(i: int, dt: float) -> void:
 # ---- the result ----------------------------------------------------------------------------------------
 func stars() -> int:
     var s := score()
+    if duel:
+        return 1  # a friendly between the two of you: played, not a win over the crew (the Career keeps its chair fight stars)
     if winner == 0:
         return 3 if s[1] <= 1 else 2
     if winner == 2 or s[0] >= 2:
@@ -33939,6 +34460,8 @@ func stars() -> int:
 func comment() -> String:
     if winner == 2:
         return "A DRAW. BOTH CHAIRS NEED A NEW WHEEL."
+    if duel:
+        return "PLAYER %d WINS THE DUEL. THE CREW WANTS A REMATCH." % (winner + 1)
     var st: Dictionary = STYLES.get(opponent(), {})
     return str(st.get("lose" if winner == 0 else "win", ""))
 ''')
@@ -33977,6 +34500,7 @@ var puppets := {}  # "You" or a rival's name -> {node, body, chair, color, label
 var props: Array = []  # {o, node, kind, marked}
 
 var _tex := {}  # kind -> {tex, off}
+var _paint := {}  # floor paint sprites (assets/props/chair_<id>.png, tools/make_game_art.lua); null = missing, the old rectangles are drawn
 var _actors: Node = null
 var _player: Node2D = null
 var _player2: Node2D = null  # co-op: player 2's body, hidden while they ride the tandem
@@ -34013,7 +34537,7 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
             _add_prop(o)
     if _player != null:
         _player.visible = false
-    if _player2 != null and puppets.has("You2"):
+    if _player2 != null and (puppets.has("You2") or puppets.has("P2")):
         _player2.visible = false
     _sync()
 
@@ -34138,6 +34662,31 @@ func _mark(pr: Dictionary) -> void:
             s.position.x += 3.0
 
 
+func floor_paint(id: String) -> Texture2D:
+    if not _paint.has(id):
+        var path := "res://assets/props/chair_%s.png" % id
+        _paint[id] = load(path) if ResourceLoader.exists(path) else null
+    return _paint[id]
+
+
+# the fight's ring painted on the floor: a hazard bracket at each end, a dashed line along both edges, a spot in the middle
+func _ring() -> bool:
+    if floor_paint("ring_end") == null or floor_paint("ring_line") == null:
+        return false
+    var lx := x0 + ChairRace.world_x(float(race.arena[0])) - 13.0
+    var rx := x0 + ChairRace.world_x(float(race.arena[1])) + 13.0
+    var x := lx + 12.0
+    while x + 12.0 <= rx - 12.0:
+        draw_texture(floor_paint("ring_line"), Vector2(x, 105.0))
+        draw_texture(floor_paint("ring_line"), Vector2(x, 131.0))
+        x += 12.0
+    draw_texture(floor_paint("ring_end"), Vector2(lx, 105.0))
+    draw_texture_rect(floor_paint("ring_end"), Rect2(rx - 12.0, 105.0, -12.0, 28.0), false)  # the right end is the mirror
+    if floor_paint("ring_spot") != null:
+        draw_texture(floor_paint("ring_spot"), Vector2(roundf((lx + rx) * 0.5) - 15.0, 113.0))
+    return true
+
+
 func _draw() -> void:
     if race == null:
         return
@@ -34151,14 +34700,18 @@ func _draw() -> void:
             draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
             x += 12.0
     # the checkpoints: a stripe across the floor, a post at each end and its number
-    if _fight():  # the two ends of the strip: a red and white post line
+    if _fight() and _ring():
+        pass
+    elif _fight():  # the two ends of the strip: a red and white post line
         for end_x: float in race.arena:
             var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
             for k in 6:
                 draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
     elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
         var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
-        for row in 12:
+        if floor_paint("finish") != null:
+            draw_texture(floor_paint("finish"), Vector2(fx - 2.0, 107.0))
+        for row in (12 if floor_paint("finish") == null else 0):
             for col in 3:
                 draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
         PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)
@@ -35654,6 +36207,11 @@ func _event_key(event: InputEvent) -> int:
 
 
 func _event_key_p2(event: InputEvent) -> int:
+    if game == "chair" and phase == "play" and g.has("race") and g.race.get("duel") == true:
+        if event.is_action(Controls.action_for(1, "push_a")):
+            return KEY_Z  # the duel: player 2 has both legs, A and B
+        if event.is_action(Controls.action_for(1, "push_b")):
+            return KEY_X
     if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
         return KEY_X  # the second pilot's push
     if game == "paintball" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "interact"))):
@@ -37193,6 +37751,17 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.",
             "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.",
         },
+        "words": {
+            "A PLAQUE": "AN ASSET TAG",
+            "PLAQUE": "ASSET TAG",
+            "CHALKBOARD": "RACK BOARD",
+            "PAINTING": "NETWORK MAP",
+            "BOOKSHELF": "MANUAL SHELF",
+            "ONE BOOK ON": "ONE BINDER ON",
+            "NOT A BOOK": "NOT A BINDER",
+            "VAULT": "TAPE VAULT",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE BINDER IS THE DIGIT.", "ribbons": "COUNT THE CABLE TIES."},
     },
     "detective": {
         "title": "THE DETECTIVE'S OFFICE",
@@ -37224,6 +37793,16 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.",
             "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.",
         },
+        "words": {
+            "PLAQUE": "BRASS PLATE",
+            "CHALKBOARD": "CASE BOARD",
+            "PAINTING": "PORTRAIT",
+            "BOOKSHELF": "SHELF OF CASE FILES",
+            "ONE BOOK ON": "ONE CASE FILE ON",
+            "NOT A BOOK": "NOT A CASE FILE",
+            "VAULT": "EVIDENCE VAULT",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE CASE FILE IS THE DIGIT.", "ribbons": "COUNT THE RED STRINGS."},
     },
     "lab": {
         "title": "THE 1990S COMPUTER LAB",
@@ -37255,6 +37834,17 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.",
             "herring_globe": "THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.",
         },
+        "words": {
+            "PLAQUE": "PLATE",
+            "CHALKBOARD": "TEACHER'S BOARD",
+            "PAINTING": "CLASS PHOTO",
+            "BOOKSHELF": "MANUAL SHELF",
+            "ONE BOOK ON": "ONE MANUAL ON",
+            "NOT A BOOK": "NOT A MANUAL",
+            "OLD WALL CLOCK": "CLASSROOM CLOCK",
+            "WALL CLOCK": "CLASSROOM CLOCK",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE MANUAL IS THE DIGIT.", "ribbons": "COUNT THE MOUSE CORDS."},
     },
 }
 var ESCAPE_THEMES: Dictionary = DEFAULT_ESCAPE_THEMES.duplicate(true)
@@ -37313,6 +37903,20 @@ func clue_say(clue: Dictionary) -> String:
     }
     var lines: Dictionary = escape_theme().get("say", {})
     return str(lines.get(str(clue.recipe), DEFAULT_ESCAPE_THEMES.study.say.get(str(clue.recipe), ""))).format(fill)
+
+
+# a friend's hint in the room's own words (R4): the study's line with the theme's nouns put in (theme.words, in order)
+func friend_say(text: String) -> String:
+    var words: Dictionary = escape_theme().get("words", {})
+    for from in words:
+        text = text.replace(str(from), str(words[from]))
+    return text
+
+
+# the recipe tip of a friend's specialty, in the theme's words where the thing has another name (theme.tips)
+func recipe_tip(key: String) -> String:
+    var own: Dictionary = escape_theme().get("tips", {})
+    return str(own.get(key, RECIPE_TIPS.get(key, "")))
 
 
 func herring_text(kind: String) -> String:
@@ -38468,12 +39072,12 @@ func escape_nudge() -> String:
             recipe = str(g.clues[i].recipe)
             break
     var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])
-    var text := str(table.get(zone, ""))
+    var text := friend_say(str(table.get(zone, "")))  # R4: in the words of tonight's room
     if str(SPECIALTY.get(friend, "")) == zone:
         if zone == "keypad":
             text += " " + str(RECIPE_TIPS["dial" if g.get("dial", false) else "nodial"])
         else:
-            text += " " + str(RECIPE_TIPS.get(recipe, ""))
+            text += " " + recipe_tip(recipe)
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
     text = "%s: %s" % [friend.to_upper(), text]
@@ -38702,14 +39306,20 @@ func _chair_best_key(course: String) -> String:
 func _chair_career(result: int) -> Dictionary:
     var race: RefCounted = g.race
     if str(g.get("event", "")) == "fight":
-        return {"fight": true, "won": race.winner == 0, "bumps": int(race.score()[0])}
+        return {"fight": true, "duel": race.duel, "won": race.winner == 0 and not race.duel, "bumps": int(race.score()[0])}
     return {"course": str(race.course), "won": not race.dnf and int(g.place) == 1 and not race.rivals.is_empty(), "clean": result >= 1 and race.crashes + race.cones == 0 and not race.false_started}
+
+
+# co-op: the chair fight is a duel, player 1's chair against player 2's (the races stay a tandem)
+func _chair_duel() -> bool:
+    return _chair_event_now() == "fight" and Players.coop and Players.slots[1].joined
 
 
 func _chair_params() -> Dictionary:
     return {
         "course": _chair_event_now(),
         "opponent": str(opts.get("opponent", "")),
+        "duel": _chair_duel(),
         "crash": Difficulty.f("chair.crash"),
         "stamina": Difficulty.f("chair.stamina"),
         "slick": Difficulty.f("chair.slick"),
@@ -38740,10 +39350,14 @@ func _chair_setup() -> void:
                 "label": "YOU",
             }
         ]
-        if Players.coop and Players.slots[1].joined:  # the tandem's second pilot rides behind
+        if Players.coop and Players.slots[1].joined and not _chair_duel():  # the tandem's second pilot rides behind
             var p2: Dictionary = Players.slot(1).look
             specs.append({"key": "You2", "character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "color": Color.WHITE, "label": "P2", "rider": true, "look": p2})
         for r in race.rivals:
+            if str(r.n) == "P2":  # the duel: player 2 in their own chair, with their own look
+                var d2: Dictionary = Players.slot(1).look
+                specs.append({"key": "P2", "character": Look.BASE if not d2.is_empty() else str(Players.slot(1).character), "custom": not d2.is_empty(), "color": r.color, "label": "P2", "look": d2})
+                continue
             specs.append({"key": r.n, "character": str(World.row(r.n).character), "custom": false, "color": r.color, "label": str(r.n).substr(0, 1)})
         var track := ChairTrack.new()
         track.setup(scene, race, _x0(), specs)
@@ -38820,7 +39434,7 @@ func _chair_cues(race: RefCounted) -> void:
     elif race.feel_t > 0.0:
         line = race.feel
     elif str(g.get("event", "")) == "fight":
-        line = "YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
+        line = ("P1 %d  %s %d  FIRST TO %d" if race.duel else "YOU %d  %s %d  FIRST TO %d") % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
     elif race.cp_next < race.checks.size():
         line = "NEXT: %s" % race.check_names[race.cp_next]
     else:
@@ -38830,6 +39444,22 @@ func _chair_cues(race: RefCounted) -> void:
 
 func _chair_press(key: int) -> void:
     var race: RefCounted = g.race
+    if race.get("duel") == true:  # co-op duel: each player has a whole chair (both legs, the turn, the lanes)
+        var me := 1 if _press_slot == 1 else 0
+        match key:
+            KEY_Z:
+                race.push_of(me, 0)
+            KEY_X:
+                race.push_of(me, 1)
+            KEY_UP, KEY_W:
+                race.lane_of(me, -1)
+            KEY_DOWN, KEY_S:
+                race.lane_of(me, 1)
+            KEY_LEFT, KEY_A:
+                race.spin_of(me, -1)
+            KEY_RIGHT, KEY_D:
+                race.spin_of(me, 1)
+        return
     var duo: bool = Players.coop and Players.slots[1].joined  # co-op: one chair, two pilots: player 1 pushes Z, player 2 pushes X
     match key:
         KEY_Z:
@@ -38854,6 +39484,8 @@ func _chair_hint() -> String:
     if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
         return "GET READY  ESC = LEAVE"
     if str(g.get("event", "")) == "fight":
+        if g.has("race") and g.race.get("duel") == true:
+            return "P1 = Z X  P2 = A B  L R = TURN  UP DN = LANE"
         return "Z X = PUSH  L R = TURN  UP DN = LANE"
     if Players.coop and Players.slots[1].joined:
         return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
@@ -38882,6 +39514,8 @@ func _chair_lines() -> Array:
     var race: RefCounted = g.race
     var out := []
     if str(g.get("event", "")) == "fight":
+        if race.duel:
+            return [race.comment(), "BUMPS: PLAYER 1 %d, PLAYER 2 %d." % [int(race.score()[0]), int(race.score()[1])]]
         return [race.comment(), "BUMPS: YOU %d, %s %d." % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1])]]
     if race.dnf:
         out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
@@ -38961,9 +39595,14 @@ func _hud_fight(s: Rect2, o: Vector2) -> void:
         px += 5.0
     var bw := 30.0
     var bx := s.end.x - bw - 5.0
-    var stam_col := GREEN if fight.stam > 40.0 else (AMBER if fight.stam > 15.0 else RED)
-    _canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
-    _canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(fight.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+    var bars := 2 if fight.duel else 1  # the duel: a stamina bar each, player 1's first
+    for k in bars:
+        var cw := bw if bars == 1 else 14.0
+        var cx := bx + 16.0 * float(k)
+        var st: float = float(fight.chairs[k].stam)
+        var stam_col := GREEN if st > 40.0 else (AMBER if st > 15.0 else RED)
+        _canvas.draw_rect(Rect2(cx - 1.0, s.position.y + 2.0, cw + 2.0, 7.0), INK)
+        _canvas.draw_rect(Rect2(cx, s.position.y + 3.0, cw * clampf(st / 100.0, 0.0, 1.0), 5.0), stam_col)
     var rx := px + 4.0
     var rw := bx - rx - 6.0
     if rw < 12.0:
@@ -39046,11 +39685,15 @@ func _paint_cues(rules: RefCounted) -> void:
             g.count = ceili(rules.count)
             Sfx.play("ui_tick")
     elif rules.phase == "over":
-        line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
+        line = "TIME!" if rules.clock >= float(rules.limit) and rules.winner == 2 else "THAT IS THE MATCH!"
     elif rules.line_t > 0.0:
         line = rules.line
+    elif rules.is_out(0):
+        line = "YOU ARE OUT. IT IS UP TO THE OTHERS."
     elif rules.units[0].down > 0.0:
         line = "YOU ARE OUT FOR %d..." % ceili(rules.units[0].down)
+    elif rules.overtime and not rules.units[0].flag:
+        line = "OVERTIME: NEXT FLAG WINS. STAY ON YOUR FEET."
     elif rules.units[0].flag:
         line = "YOU HAVE THE FLAG! RUN HOME!"
     else:
@@ -39080,7 +39723,7 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
+    _t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
     _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -39092,9 +39735,13 @@ func _hud_paint(s: Rect2) -> void:
     _t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
     _canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
     _t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-    _t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
+    _t("%d" % rules.time_left(), o.x + 26.0, o.y, AMBER if rules.overtime else WHITE)
     var you: Dictionary = rules.units[0]
     var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
+    if rules.is_out(0):
+        state = "OUT"
+    elif rules.overtime and state == "":
+        state = "OT"
     _t(state, o.x + 48.0, o.y, AMBER)
     _t("TAGS %d" % rules.you_tags, s.end.x - 40.0, o.y, UiStyle.SOFT)
 
@@ -41539,6 +42186,8 @@ const OPEN_DUCK := 0.55  # a ducking player with no barricade is a smaller targe
 const RESPAWN := 4.0
 const TARGET := 3
 const LIMIT := 150.0  # seconds of play
+const OVERTIME := 45.0  # level when the time is up: sudden death for this long (nobody comes back; next flag or last team standing wins), then a draw
+const OUT := 9999.0  # the `down` of a unit tagged in overtime: out for the rest of the match
 const COUNT := 3.0
 const PICK := 7.0  # px to touch a flag
 const CAP := 10.0  # px of your own end that count as home
@@ -41548,7 +42197,7 @@ const YOU_ACC := 0.8
 const AI_ACC := 0.18  # the crew's aim is this much of their skill
 # the tuning run (tests/paintball_tuning.gd: a scripted average player, 30+ seeded matches a tier) found the first version lopsided:
 # the player won 97 % and nobody else ever carried a flag home. Three numbers fix that:
-const RIVAL_EDGE := 2.3  # x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
+const RIVAL_EDGE := 2.75  # (2.3 before the overtime rule, which turned most draws into your wins) x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
 const COOP_EDGE := 1.4  # x that again with two pilots on your side
 const CARRY_DODGE := 0.8  # seconds (less for the quick ones) before a crew member with the flag steps out of a rival's lane
 const NAMES := ["Alan", "Garrison", "Dan", "Maya", "John"]
@@ -41587,6 +42236,8 @@ var p2_caps := 0
 var crew_acc := AI_ACC
 var target := TARGET
 var limit := LIMIT
+var ot_len := OVERTIME  # params.overtime (0 = no overtime: time up level is a draw)
+var overtime := false  # sudden death is on
 var rival_edge := RIVAL_EDGE
 var carry_dodge := CARRY_DODGE
 var respawn := RESPAWN
@@ -41603,6 +42254,8 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator, humans := 1) -
     crew_acc = float(p.get("crew_acc", AI_ACC))
     target = int(p.get("target", TARGET))
     limit = float(p.get("limit", LIMIT))
+    ot_len = float(p.get("overtime", OVERTIME))
+    overtime = false
     rival_edge = float(p.get("rival_edge", RIVAL_EDGE)) * (COOP_EDGE if pilots == 2 else 1.0)
     carry_dodge = float(p.get("carry_dodge", CARRY_DODGE))
     respawn = float(p.get("respawn", RESPAWN))
@@ -41755,8 +42408,48 @@ func step(dt: float) -> void:
         _tick_unit(i, dt)
     for i in order:
         _flags_for(i)
-    if score[0] >= target or score[1] >= target or clock >= limit:
+    if score[0] >= target or score[1] >= target:
         _end()
+    elif overtime:
+        _overtime_step()
+    elif clock >= limit:
+        if score[0] == score[1] and ot_len > 0.0:
+            overtime = true
+            events.append({"kind": "overtime"})
+            say("OVERTIME! NOBODY COMES BACK. NEXT FLAG WINS.", 2.6)
+        else:
+            _end()
+
+
+# sudden death: the next flag home wins, a team with nobody left standing loses, and after ot_len seconds it is a draw after all
+func _overtime_step() -> void:
+    if score[0] != score[1]:
+        _end()
+        return
+    for t in 2:
+        if standing(t) == 0:
+            _end(other(t))
+            return
+    if clock >= limit + ot_len:
+        _end()
+
+
+# how many of a team are still in the match (a unit waiting to come back counts; one tagged in overtime does not)
+func standing(team: int) -> int:
+    var n := 0
+    for u in units:
+        if int(u.team) == team and float(u.down) < OUT * 0.5:
+            n += 1
+    return n
+
+
+func is_out(i: int) -> bool:
+    return float(units[i].down) >= OUT * 0.5
+
+
+# the seconds left of the match, or of the overtime
+func time_left() -> int:
+    return maxi(0, ceili(limit + (ot_len if overtime else 0.0) - clock))
 
 
 func _tick_unit(i: int, dt: float) -> void:
@@ -41764,6 +42457,9 @@ func _tick_unit(i: int, dt: float) -> void:
     u.cool = maxf(0.0, float(u.cool) - dt)
     u.lane_cool = maxf(0.0, float(u.lane_cool) - dt)
     if float(u.down) > 0.0:
+        if is_out(i):
+            u.vx = 0.0
+            return
         u.down = float(u.down) - dt
         u.vx = 0.0
         u.duck = false
@@ -41815,9 +42511,11 @@ func _flags_for(i: int) -> void:
         say("%s SCORES! %d TO %d" % [str(u.name), score[0], score[1]], 1.8)
 
 
-func _end() -> void:
+func _end(by_wipe := -1) -> void:
     phase = "over"
-    if score[0] > score[1]:
+    if by_wipe >= 0:
+        winner = by_wipe  # overtime: the last team standing
+    elif score[0] > score[1]:
         winner = 0
     elif score[1] > score[0]:
         winner = 1
@@ -41893,7 +42591,7 @@ func fire(i: int) -> bool:
 
 func _tag(j: int, by: int) -> void:
     var v: Dictionary = units[j]
-    v.down = respawn
+    v.down = OUT if overtime else respawn
     v.duck = false
     v.vx = 0.0
     units[by].tags = int(units[by].tags) + 1
@@ -42383,7 +43081,7 @@ func _draw_top() -> void:
         PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
         if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
             PixelFont.draw(_top, game.debug_line(i), at + Vector2(-14.0, 9.0 + 56.0), Color(1, 1, 1, 0.8), 1)
-        if float(u.down) > 0.0:  # the seconds until they are back in the game
+        if float(u.down) > 0.0 and not game.is_out(i):  # the seconds until they are back in the game
             PixelFont.draw(_top, str(ceili(float(u.down))), at + Vector2(w * 0.5 - 1.0, -8.0), Color.WHITE, 1)
 
 
@@ -46019,7 +46717,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["YOUR OPTIONS", blue])
         _:
             lines.append(["THE END", blue])
-            lines.append([str(REVIEW.endings[ending].text) if REVIEW.endings.has(ending) else "", ink])
+            lines.append([str(REVIEW.endings[ending].text) if REVIEW.endings.has(ending) else Yeartwo.ending_text(ending), ink])
     return lines
 
 
@@ -48884,6 +49582,7 @@ var msg_at := -99999
 
 var c: Node = null
 var _chips: Array = []
+var _star: Array = []  # [Texture2D or null]: the asked-for star (assets/ui/star_asked.png), looked up once
 var _lanes: Array = []
 var _drag := {}
 
@@ -49476,6 +50175,18 @@ func _board_narrow(a: Rect2) -> void:
     _footer(Rect2(a.position, a.size), 2)
 
 
+# a client asked for somebody by name on this ticket (Service.ByName marks it)
+func asked_for(t: Dictionary) -> bool:
+    return str(t.get("asked_tech", "")) != "" and str(t.get("status", "")) != "Closed"
+
+
+func star() -> Texture2D:
+    if _star.is_empty():
+        var path := "res://assets/ui/star_asked.png"
+        _star.append(load(path) if ResourceLoader.exists(path) else null)
+    return _star[0]
+
+
 func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
     var carried := int(t.id) == held and not ghost
     c._fill(r, Color("d4d9e2") if carried else (Color("fff7e0") if ghost else c.WHITE))
@@ -49496,13 +50207,19 @@ func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
         var st := sla_text(t)
         c._text(st, Vector2(r.end.x - 3 - c._tw(st), r.position.y + 13), c.RED if late else INK)
     else:
-        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0)), Vector2(x, r.position.y + 1), INK)
+        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0) - (2 if asked_for(t) else 0)), Vector2(x, r.position.y + 1), INK)
         var st2 := sla_text(t)
         var left: String = c._clip(cl, maxi(1, chars - st2.length() - 1))
         c._text(left, Vector2(x, r.position.y + 7), MUTED)
         c._text(st2, Vector2(r.end.x - 2 - c._tw(st2), r.position.y + 7), c.RED if late else INK)
     if stuck:
         c._text("?", Vector2(r.end.x - 5, r.position.y + 1), c.RED)
+    if asked_for(t):  # R36: a client asked for a tech by name: a star in the chip's corner
+        var at := Vector2(r.end.x - (11.0 if stuck else 7.0), r.position.y + 1)
+        if star() != null:
+            c._canvas.draw_texture(star(), at)
+        else:
+            c._text("*", at + Vector2(1, 0), ASKED)
     # the SLA bar
     var f := sla_frac(t)
     var by := r.end.y - 2.0
@@ -50492,7 +51209,7 @@ const ROOTS := {
     "Story": ["DAYS", "VIGNETTES", "POSTMORTEMS"],
     "Events": ["DECK"],
     "Mutators": ["MUTATORS", "STARTS"],
-    "Yeartwo": ["CARRY", "YEAR2", "TEXT"],
+    "Yeartwo": ["CARRY", "YEAR2", "TEXT", "YEAR3", "TEXT3"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
     "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
@@ -51828,6 +52545,26 @@ const FORUM := [
             {"id": "hair", "label": "ASK ABOUT THE HAIR", "skill": "", "xp": 0, "social": 1, "text": "'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more)", "text_free": "'It matches my terminal theme.' It does."},
         ],
     },
+    {
+        "id": "tony", "speaker": "TapeTony (forum regular)",
+        "text": "Tony. I answer the backup threads. Yes, I still run tape. A tape has never once asked me for a password reset. Sit down, I have opinions about your Friday rotation.",
+        "options": [
+            {"id": "rotate", "label": "ASK ABOUT THE ROTATION", "skill": "servers", "xp": 4, "text": "'Five dailies, four weeklies, twelve monthlies. Friday's tape leaves the building in somebody's bag.' He draws the calendar on your badge. You will not forget it now. (+4 servers XP)"},
+            {"id": "restore", "label": "ASK WHEN HE LAST RESTORED", "skill": "security", "xp": 3, "text": "'Tuesday. One file every week, to a different machine, and the date goes on the label.' A backup nobody has restored is a rumour. (+3 security XP)"},
+            {"id": "thread", "label": "QUOTE HIM IN THE BACKUP THREAD", "skill": "", "xp": 0, "karma": 3, "text": "You quote his rotation in the backup thread and give him the credit. He replies with a photo of a tape with your nick on the label. (+3 forum karma)", "text_free": "You quote his rotation in the backup thread. He replies with a photo of a tape."},
+            {"id": "pocket", "label": "ASK WHAT IS IN HIS POCKET", "skill": "", "xp": 0, "social": 1, "text": "It is a tape. 'Last Friday's. It goes where I go.' He lets you hold it. Your coworkers do not believe you until they see the photo. (coworkers like you a little more)", "text_free": "It is a tape. 'Last Friday's. It goes where I go.'"},
+        ],
+    },
+    {
+        "id": "dot", "speaker": "DNS_Dot (forum regular)",
+        "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
+        "options": [
+            {"id": "dns", "label": "ASK WHY IT IS ALWAYS DNS", "skill": "networking", "xp": 4, "text": "'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)"},
+            {"id": "labels", "label": "ASK ABOUT THE LABEL MAKER", "skill": "people", "xp": 3, "text": "'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)"},
+            {"id": "thread", "label": "MARK HER ANSWER AS SOLVED", "skill": "", "xp": 0, "karma": 3, "text": "You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)", "text_free": "You mark her answer as the one that fixed it. It was DNS."},
+            {"id": "badge", "label": "LET HER LABEL YOUR BADGE", "skill": "", "xp": 0, "social": 1, "text": "The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)", "text_free": "The label says 'ASK ME, I TESTED IT FIRST'."},
+        ],
+    },
 ]
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
 const SPEAKERS := {
@@ -51861,7 +52598,7 @@ const CROWD := {
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
-        {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]},
+        {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]}, {"who": "expo_tony", "role": "forum:tony", "x": 178, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
         {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
     ],
     "ballroom": [
@@ -51895,7 +52632,7 @@ const CROWD := {
         {"who": "expo_vendo", "role": "vendor:psa", "x": 272, "facing": "right", "routine": ["wait:6", "say:2"]},
         {"who": "expo_attb", "role": "att:4", "x": 150, "facing": "right", "routine": ["walk:100", "wait:3", "walk:270", "wait:3"]},
         {"who": "expo_attc", "role": "att:5", "x": 238, "facing": "left", "routine": ["wait:5", "talk:3"]},
-        {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]},
+        {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]},
     ],
 }
 
@@ -54127,6 +54864,9 @@ func inspect(obj: String) -> void:
     if visit_kind == Takeover.KIND:
         Takeover.on_inspect(_site_client(), obj)  # R38 P4: what the last shop left behind
         return
+    if obj == "printer" and Habits.default_pw(_site_client()):
+        _found(Habits.pw_finding(_site_client()))  # R38: H14, until the passwords at this site are changed
+        return
     var pool: Array = FINDINGS.get(obj, [])
     var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
     if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
@@ -56089,6 +56829,7 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a hint are small sprites
 const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
 const Micro := preload("res://scripts/micro.gd")
 
@@ -56156,7 +56897,7 @@ func _draw() -> void:
                     )
                 lines.append(day_line)
         if Yeartwo.active():
-            lines.append("YEAR 2")
+            lines.append(Yeartwo.label())  # YEAR 2 / YEAR 3
         if Mutators.tag() != "":
             lines.append("* " + Mutators.tag())
         if Nerf.holding():
@@ -56235,7 +56976,7 @@ func _draw_hint(raw: String) -> void:
     var h := float(rows.size()) * 7.0 + 5.0
     draw_rect(Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.8))
     for i in rows.size():
-        PixelFont.draw(
+        PadGlyphs.draw(
             self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a")
         )
 ''')
@@ -56282,6 +57023,8 @@ const GAME_LABELS := {
 }
 const TABLES := [[], ["Alan", "Garrison"], ["Alan", "Dan"], ["Garrison", "Dan"]]
 const TABLE_LABELS := ["ALL THREE", "ALAN GARRISON", "ALAN DAN", "GARRISON DAN"]
+const CHAIR_LABELS := ["PICK ON CARD", "THE STRAIGHT", "THE GAUNTLET", "CHAIR FIGHT"]  # 0, then Outings.CHAIR_EVENTS in order
+const NIGHT_LABELS := ["CARD'S DRAW", "DAY", "NIGHT"]
 const CHARTS := 4
 const SETS := 9
 const MAX_TEXT := 12
@@ -56298,6 +57041,8 @@ var digits := 0  # 0 = the tier's, else 3 or 4
 var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
+var chair_i := 0  # the chair card's event: 0 = picked on the card, else index + 1 into Outings.CHAIR_EVENTS (straight, gauntlet, fight)
+var night_i := 0  # paintball: 0 = the card's draw, 1 = a day match, 2 = the night match
 var model_i := 0
 var mutator := ""
 var sel := 0
@@ -56365,6 +57110,12 @@ func outing_options() -> Dictionary:
         "dinner":
             if table_i > 0:
                 out["table"] = TABLES[table_i].duplicate()
+        "chair":
+            if chair_i > 0:
+                out["event"] = str(Outings.CHAIR_EVENTS[chair_i - 1])
+        "paintball":
+            if night_i > 0:
+                out["night"] = night_i == 2
     return out
 
 
@@ -56681,6 +57432,10 @@ func rows() -> Array:
                 out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
         "dinner":
             out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
+        "chair":
+            out.append({"id": "event", "label": "EVENT", "value": str(CHAIR_LABELS[chair_i])})
+        "paintball":
+            out.append({"id": "night", "label": "MATCH", "value": str(NIGHT_LABELS[night_i])})
         "printer":
             out.append({"id": "model", "label": "MODEL", "value": str(PrinterGame.MODELS[model_id()].label)})
     var tag := "DAILY " + Difficulty.seed_text() if Difficulty.daily != "" else Difficulty.seed_text()
@@ -56721,6 +57476,10 @@ func change(step: int) -> void:
             digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":
             table_i = (table_i + step + TABLES.size()) % TABLES.size()
+        "event":
+            chair_i = (chair_i + step + CHAIR_LABELS.size()) % CHAIR_LABELS.size()
+        "night":
+            night_i = (night_i + step + NIGHT_LABELS.size()) % NIGHT_LABELS.size()
         "model":
             model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
         "take":
@@ -57412,7 +58171,7 @@ func _pending_build() -> Dictionary:
     return _panel.build_out() if _confirmed else {}
 
 
-func setup(for_mode: String, year2 := false) -> void:
+func setup(for_mode: String, year2 := false, year := 2) -> void:
     _free_max = false
     mode = for_mode
     direct = offers_custom(mode)
@@ -57439,7 +58198,7 @@ func setup(for_mode: String, year2 := false) -> void:
     _panel = null
     _confirmed = false
     Mutators.pending_start = Mutators.STANDARD
-    Yeartwo.begin_select(for_mode, year2)  # New Game Plus: the MUT chip and +2 build points
+    Yeartwo.begin_select(for_mode, year2, year)  # New Game Plus (Year 2 or 3): the MUT chip and +2 build points
     Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
     facing = "right"
     for spr in _sprites:
@@ -57563,7 +58322,7 @@ func summary(with_tier := true) -> String:
     if _panel != null and (step == "build" or _confirmed):
         s += " - " + str(_panel.name_text())
     if Yeartwo.pending:
-        s += " - YEAR 2"
+        s += " - " + Yeartwo.label(Yeartwo.pending_year)
     if mode == FREE_MODE and _free_max:
         s += " - MAX BUILD"
     if with_tier:
@@ -59246,6 +60005,9 @@ func sub_items(mode: String) -> Array:
     if Yeartwo.available(mode):
         var carry := Yeartwo.carry_summary(mode)
         out.append({"label": "START YEAR 2" + (" - " + carry if carry != "" else ""), "id": mode + "_y2", "enabled": true})  # R17
+    if Yeartwo.available(mode, 3):  # R10: the last chapter, after a finished Year 2
+        var carry3 := Yeartwo.carry_summary(mode, 3)
+        out.append({"label": "START YEAR 3" + (" - " + carry3 if carry3 != "" else ""), "id": mode + "_y3", "enabled": true})
     out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
     if saved > 0:
         out.append({"label": "DELETE A SLOT", "id": mode + "_delask", "enabled": true})  # R19
@@ -59431,7 +60193,7 @@ func _choose(i: int) -> void:
         _slot = int(id.get_slice("_over", 1))
         _overwrite = true
         _open_select(_over_id)
-    elif id.ends_with("_new") or id.ends_with("_y2"):
+    elif id.ends_with("_new") or id.ends_with("_y2") or id.ends_with("_y3"):
         _begin_new(id)
     elif id.ends_with("_continue") or id.ends_with("_resume"):
         _start(id)  # a saved run keeps its character: no select screen
@@ -59458,9 +60220,10 @@ func _close_career() -> void:
 func _open_select(id: String) -> void:
     if _select != null:
         return
-    var year2 := id.ends_with("_y2")  # New Game Plus (Yeartwo): the same screen with the MUT chip
+    var year := 3 if id.ends_with("_y3") else 2  # START YEAR 3 (R10): the same screen, the last chapter
+    var year2 := id.ends_with("_y2") or id.ends_with("_y3")  # New Game Plus (Yeartwo): the same screen with the MUT chip
     if year2:
-        id = id.trim_suffix("_y2") + "_new"
+        id = id.trim_suffix("_y2").trim_suffix("_y3") + "_new"
     var mode := Campaign.FREE
     if id == "tech_new":
         mode = "tech"
@@ -59471,7 +60234,7 @@ func _open_select(id: String) -> void:
     elif id == "sales_new":
         mode = "sales"
     _select = CharSelect.new()
-    _select.setup(mode, year2)
+    _select.setup(mode, year2, year)
     _select.done.connect(_on_select_done.bind(id))
     _select.cancelled.connect(_close_select)
     _front.add_child(_select)
@@ -60149,6 +60912,7 @@ const SETS := [
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SetDressing := preload("res://scripts/set_dressing.gd")
 const OfficeDecor := preload("res://scripts/office_decor.gd")  # R16: office growth and the seasonal dressing
 
 var barriers := {}  # npc sync points: key -> {arrived, gen}
@@ -60201,6 +60965,7 @@ func _ready() -> void:
     SalesBeats.recruiter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
+    SetDressing.dress(self)  # plates on the dinner table, Jen's headset
     _room = scene_file_path.get_file().get_basename()
     _set_dark(0.0 if World.lights_on(_room) else 1.0)
     World.lights_changed.connect(_on_lights)
@@ -63799,6 +64564,19 @@ const DEFAULT_MEDALS := [
     {"id": "bumper_king", "title": "BUMPER KING", "desc": "WIN 3 CHAIR FIGHTS", "rules": [["chairfight_wins", ">=", 3]]},
     {"id": "pushy", "title": "PUSHY", "desc": "PUSH 10 COWORKER CHAIRS", "rules": [["chair_shoves", ">=", 10]]},
     {"id": "flag_runner", "title": "FLAG RUNNER", "desc": "CARRY 5 FLAGS HOME", "rules": [["flag_caps", ">=", 5]]},
+    {"id": "year_three", "title": "THIRD YEAR", "desc": "FINISH A YEAR 3 RUN", "rules": [["year3_done", ">=", 1]]},
+    {"id": "y3_chair", "title": "DAN'S CHAIR", "desc": "YEAR 3: TAKE DAN'S CHAIR", "rules": [["end.y3_chair", ">=", 1]]},
+    {"id": "y3_senior", "title": "SENIOR ENGINEER", "desc": "YEAR 3: STAY TECHNICAL", "rules": [["end.y3_senior", ">=", 1]]},
+    {"id": "y3_farewell", "title": "GOOD TERMS", "desc": "YEAR 3: LEAVE IT TIDY", "rules": [["end.y3_farewell", ">=", 1]]},
+    {"id": "y3_summit", "title": "SOLD TO SUMMIT", "desc": "YEAR 3: SELL TO SUMMIT", "rules": [["end.y3_summit", ">=", 1]]},
+    {"id": "y3_staff", "title": "STAFF OWNED", "desc": "YEAR 3: SELL TO THE STAFF", "rules": [["end.y3_staff", ">=", 1]]},
+    {"id": "y3_morgan", "title": "TUESDAYS OFF", "desc": "YEAR 3: GIVE MORGAN THE KEYS", "rules": [["end.y3_morgan", ">=", 1]]},
+    {"id": "y3_coo", "title": "BACK OF HOUSE", "desc": "YEAR 3: RUN OPERATIONS", "rules": [["end.y3_coo", ">=", 1]]},
+    {"id": "y3_partner", "title": "THIRD SIGNATURE", "desc": "YEAR 3: BECOME A PARTNER", "rules": [["end.y3_partner", ">=", 1]]},
+    {"id": "y3_across", "title": "ACROSS TOWN", "desc": "YEAR 3: TAKE TERRY'S OFFER", "rules": [["end.y3_across", ">=", 1]]},
+    {"id": "y3_director", "title": "THE BIG CHAIR", "desc": "YEAR 3: TAKE GARRISON'S CHAIR", "rules": [["end.y3_director", ">=", 1]]},
+    {"id": "y3_wes", "title": "CALL ME BOSS", "desc": "YEAR 3: GIVE WES THE CHAIR", "rules": [["end.y3_wes", ">=", 1]]},
+    {"id": "y3_stake", "title": "A PERCENTAGE", "desc": "YEAR 3: TAKE THE SHARE", "rules": [["end.y3_stake", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -64172,6 +64950,8 @@ func note_ending(ending := "") -> void:
         add("svc_end." + ending)
         if ending in ["alan", "garrison"]:
             add("svc_end_lead")
+    if Yeartwo.is_year3_ending(ending) and not Difficulty.cozy_on():
+        add("end." + ending)  # R10: one medal per Year 3 ending
 
 
 func _on_day(_d: int) -> void:
@@ -65087,6 +65867,11 @@ const BEAT_TEXT := {
         "res_tiers": {"speaker": "Ms. Cedar", "text": "Three choices and a box for what is not included. She says it is the first time anyone has told her what she gets. Hollis is good. He just cannot sell it.", "ok": "OK"},
         "res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
         "res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
+    },
+    "favour": {
+        "lynk": {"from": "Garrison", "text": "Hollis Grady rang the front desk and asked for you by name. He was polite about it. He is always polite about it."},
+        "res_lead": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I answered it, and she signed. Tidewater Title rang me this week: nine people, too small for the way I work. I gave Mr. Whitlow your number and told him why.", "ok": "THANK HIM"},
+        "res_full": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I had a small office to pass on to you, but I hear your pipeline is full. I will keep you in mind. I do not forget.", "ok": "THANK HIM"},
     },
     "rumour": {
         "lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
@@ -66348,7 +67133,7 @@ func epilogue(ending: String) -> String:
         return str(t.leave_followed if (client_mood() >= 65.0 and clawbacks == 0) else (t.leave_alone if client_mood() < 50.0 else t.leave))
     if ending == "rollup":
         return str(t.rollup) % SalesBeats.earn_out()
-    return str(t.get(ending, ""))
+    return str(t.get(ending, Yeartwo.ending_text(ending)))  # R10: a Year 3 ending's epilogue is Yeartwo's
 const DEFAULT_QUOTE := "DOES THE JOB. HARD TO READ."
 
 
@@ -67404,12 +68189,14 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	14: "favour",
 	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
 }
 const COUNTER_AFTER := 2  # weeks until Rex answers a badmouthing
+const FAVOUR_QUALITY := 72  # the lead Hollis passes on in week 14 (a referral from a careful man is a warm one)
 
 
 # ---- the incumbent -------------------------------------------------------------------------------------
@@ -67930,6 +68717,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"favour":
+			beat_favour()
 		"intro":
 			beat_intro()
 		"rumour":
@@ -68191,6 +68980,36 @@ static func _plumb_pick(id: String) -> void:
 	if _room():
 		SalesCampaign.accept_lead(l)
 	sb.say("plumb", "res_" + id, [], Callable(), "Ms. Cedar")
+
+
+# week 14: Hollis Grady does not forget. If you sent Ms. Cedar back to him in week 11 he passes on a prospect that is too small for
+# Plumb Line: a warm lead with no incumbent (flag `favour` = "lead" / "full" / "none").
+static func beat_favour() -> void:
+	var sb := SalesCampaign.SalesBeats
+	if not bool(sb.flag("hollis_favour", false)):
+		sb.set_flag("favour", "none")
+		return
+	sb.set_flag("hollis_favour", false)
+	sb.lynk("favour")
+	if not _room():
+		sb.set_flag("favour", "full")
+		Temptation.change_consc(1)
+		sb.say("favour", "res_full")
+		return
+	var l := _story(
+		"Tidewater Title",
+		"law",
+		"Mr. Whitlow",
+		9,
+		"nine people and nobody to call",
+		FAVOUR_QUALITY,
+		"favour",
+		"none"
+	)
+	SalesCampaign.Deals.note(l, "SENT BY HOLLIS GRADY")
+	SalesCampaign.accept_lead(l)
+	sb.set_flag("favour", "lead")
+	sb.say("favour", "res_lead")
 
 
 # week 13: Big Cheese badmouths us (bonded? HIPAA safe?); the rumour lasts four weeks
@@ -73759,6 +74578,7 @@ write("scripts/pause_menu.gd", '''extends CanvasLayer
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
@@ -74034,9 +74854,17 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
             var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
+            var end_x := rr.position.x + rr.size.x - 4.0
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
-                key_name += "  " + Controls.button_name(Controls.button_of(action))
-            UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
+                var pad_name := Controls.button_name(Controls.button_of(action))
+                var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
+                if gi >= 0:  # the pad button as its glyph, right of the key
+                    end_x -= float(PadGlyphs.WIDTHS[gi])
+                    PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
+                    end_x -= 6.0
+                else:
+                    key_name += "  " + pad_name
+            UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
     UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
@@ -74158,7 +74986,11 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
     var y := body.position.y + 2.0
     for row in page[1]:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-        UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
+        var value := Controls.help_value(str(row[0]), str(row[1]))
+        if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
+            var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
+            value = shown if shown != "" else value
+        PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
         y += 9.0
     UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
 ''')
@@ -74538,7 +75370,7 @@ static func pm_has(eff: String) -> bool:
 
 # read by Msp.new_day: the chance a backup quietly fails overnight
 static func backup_fail_chance() -> float:
-    return 0.04 if pm_has("backups") else 0.08
+    return (0.04 if pm_has("backups") else 0.08) * Habits.night_mult()  # R38: H9, 8 percent -> 6 percent
 
 
 # read by Growth.fail_adjust: a runbook makes fixes a little safer
@@ -75374,6 +76206,8 @@ const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
 const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
 const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
+const NIGHT_CUT := 0.25  # H9: a quarter fewer failed overnight jobs (8 percent -> 6 percent)
+const OVERRUN_CUT := 0.5  # H3: the share of a failed cutover's overrun that a change request saves
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -75409,7 +76243,12 @@ const DEFAULT_TEXT := {
 	"The one page scorecard went to %s: tickets closed, backups tested, what we fixed. Mood up.",
 	"review":
 	"Lost account review done. The real cause is written down, and the same mistake will cost less for eight weeks.",
-	"offboard": "%s's logins and keys are closed. The checklist is signed."
+	"offboard": "%s's logins and keys are closed. The checklist is signed.",
+	"overrun": "THE CHANGE REQUEST HAD A ROLLBACK STEP. THE OVERRUN COST $%d LESS.",
+	"pw_text":
+	"The printer's admin page still answers to admin and admin. So does the ceiling camera. Nobody has changed either since the day they were unboxed.",
+	"pw_summary": "Default passwords on the printer and the camera",
+	"pw_body": "%s here: you said our printer and camera still have the factory passwords. Can you change them?"
 }
 static var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 
@@ -75727,6 +76566,7 @@ static func _perform(id: String) -> String:
 		"H1":
 			var c := _backup_client()
 			Msp.backup_check(c)
+			Msp.backups[c]["tested"] = Campaign.day  # the TESTED date on the RMM BACKUPS tab
 			e["tested"] = Campaign.day
 			Owner.habits[id] = e
 			return str(TEXT.h1) % _client_short(c)
@@ -76083,6 +76923,44 @@ static func site_share() -> float:
 # fixed-price creep (H3: 30 percent -> 18 percent)
 static func creep(base: float) -> float:
 	return base - (base - 0.18) * factor("H3") if base > 0.18 else base
+
+
+# H9: the share of the overnight job failures left once the windows follow the calendar (8 percent -> 6 percent fresh)
+static func night_mult() -> float:
+	return 1.0 - NIGHT_CUT * factor("H9")
+
+
+# H3: a failed cutover costs half with a change request on file. `eaten` is what the overrun cost; the part that comes back
+static func overrun_back(eaten: int) -> int:
+	var back := int(float(eaten) * OVERRUN_CUT * factor("H3"))
+	if back > 0:
+		touch("H3")
+		Hints.toast(str(TEXT.overrun) % back, 4.0)
+	return back
+
+
+# H14: the default password finding of the walk-around. Once per client, and never at a site whose passwords were changed
+static func default_pw(client: int) -> bool:
+	if Campaign.mode != "owner" or client < 0:
+		return false
+	if _listed(entry("H14").get("sites", []), client):
+		return false
+	return not _listed(Owner.flags.get("pw_seen", []), client)
+
+
+# the finding itself (the shape of an Onsite.FINDINGS entry); showing it marks the client as seen
+static func pw_finding(client: int) -> Dictionary:
+	var seen: Array = Owner.flags.get("pw_seen", [])
+	seen.append(client)
+	Owner.flags["pw_seen"] = seen
+	return {
+		"text": str(TEXT.pw_text),
+		"summary": str(TEXT.pw_summary),
+		"fix": "password",
+		"pri": 3,
+		"body": str(TEXT.pw_body),
+		"project": "security"
+	}
 ''')
 
 write("scripts/temptation.gd", '''extends RefCounted
@@ -77203,6 +78081,8 @@ static func visit(_owner: Node, kind: String) -> void:
 	var client := target()
 	if client < 0:
 		return
+	if not Onsite.has_site(client):
+		return  # X12: no office to walk around, so no visit and no inherited mess to carry (the findings only show on a visit)
 	Owner.flags.erase("takeover_pending_%d" % client)
 	Owner.flags["tk_%d" % client] = {"found": [], "acted": [], "done": []}
 	begin(client, JOBS.size())
@@ -79476,6 +80356,10 @@ const BTN := Vector2(26.0, 24.0)  # a thumb needs 19 to 24 px
 const INK := Color(0.06, 0.05, 0.1, 0.55)
 const FACE := Color(1.0, 1.0, 1.0, 0.28)
 const LIT := Color(1.0, 0.88, 0.54, 0.6)
+# the sprites (assets/ui/touch_*.png, tools/make_icons.lua): opaque white-and-ink pieces, drawn see-through
+const ART := "res://assets/ui/touch_%s.png"
+const SOFT := Color(1.0, 1.0, 1.0, 0.5)
+const PRESSED := Color(1.0, 0.88, 0.54, 0.8)
 
 var stick_touch := -1  # the finger on the stick (-1 = none)
 var stick_vec := Vector2.ZERO  # -1..1 on each axis, what the game sees
@@ -79484,6 +80368,7 @@ var held := {}  # finger index -> the id of the button under it
 var _canvas: Node2D
 var _sent := Vector2.ZERO  # the axis values last sent
 var _ctx := ""
+var _art := {}  # id -> Texture2D, or null when the file is missing (then the old circles and rectangles are drawn)
 
 
 func _ready() -> void:
@@ -79651,17 +80536,33 @@ func _process(_delta: float) -> void:
         _canvas.queue_redraw()
 
 
+func art(id: String) -> Texture2D:
+    if not _art.has(id):
+        var path := ART % id
+        _art[id] = load(path) if ResourceLoader.exists(path) else null
+    return _art[id]
+
+
 func _paint() -> void:
     var c := stick_center()
-    _canvas.draw_circle(c, STICK_R + 1.0, INK)
-    _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
-    _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
+    if art("stick") != null and art("knob") != null:
+        _canvas.draw_texture(art("stick"), c - Vector2(23.0, 23.0), Color(1.0, 1.0, 1.0, 0.35))
+        var knob_at := (c + stick_vec * (STICK_R - 8.0) - Vector2(9.5, 9.5)).round()
+        _canvas.draw_texture(art("knob"), knob_at, PRESSED if stick_touch >= 0 else SOFT)
+    else:
+        _canvas.draw_circle(c, STICK_R + 1.0, INK)
+        _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
+        _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
     var list := buttons()
     for id in list:
         var r: Rect2 = list[id]
         var down: bool = held.values().has(id)
-        _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
-        _canvas.draw_rect(r, LIT if down else FACE)
+        var face := art("round" if str(id) in ["a", "b"] else "pill")  # A and B / X are round, the small ones are pills
+        if face != null:
+            _canvas.draw_texture(face, (r.position + (r.size - face.get_size()) * 0.5).floor(), PRESSED if down else SOFT)
+        else:
+            _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
+            _canvas.draw_rect(r, LIT if down else FACE)
         var text := label_of(str(id))
         var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
         PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
@@ -79687,6 +80588,7 @@ write("scripts/seasons.gd", '''extends RefCounted
 
 const MONTHS := ["NOV", "DEC", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT"]
 const FIRST_YEAR := 2013
+const LAST_SHIFT := 1  # how many years the calendar may move on from 2013-14 (Year 2 does; Year 3 stays where Year 2 was)
 # id -> name, first and last unit, year (0 = every year, 1 = the first year only), dressing (what OfficeDecor draws)
 const SEASONS := {
     "holidays": {"name": "THE HOLIDAYS", "from": 3, "to": 4, "year": 0, "dressing": "lights"},
@@ -79970,15 +80872,16 @@ static func month(unit: int) -> String:
     return str(MONTHS[month_index(unit)])
 
 
-# "DEC 2013" (Year 2 runs a year later)
+# "DEC 2013" (Year 2 runs a year later). R10: Year 3 does not: the calendar stops at Year 2's (LAST_SHIFT), so the
+# date line never leaves the era the game is written in, and a third year is "another year at Pixel IT"
 static func date_text(unit := -1, year := -1) -> String:
     var u := Campaign.day if unit < 0 else unit
     var y := Campaign.year if year < 0 else year
     var m := month_index(u)
-    return "%s %d" % [MONTHS[m], FIRST_YEAR + (0 if m < 2 else 1) + maxi(0, y - 1)]
+    return "%s %d" % [MONTHS[m], FIRST_YEAR + (0 if m < 2 else 1) + clampi(y - 1, 0, LAST_SHIFT)]
 
 
-# the season tags of a unit (in SEASONS order); year 1 or 2
+# the season tags of a unit (in SEASONS order); year 1, 2 or 3 (a "first year only" season is in neither later year)
 static func tags(unit: int, year := 1) -> Array:
     var out := []
     for id in SEASONS:
@@ -80307,7 +81210,9 @@ static func tick() -> void:
 write("scripts/office_decor.gd", '''extends Node2D
 # gdlint:disable=max-line-length
 # R16 (cozy design review): OFFICE GROWTH and the seasonal dressing of the main floor.
-# Growth: decor unlocked by reputation, cash and career medals, drawn in code on the main floor (no art files). What a
+# Growth: decor unlocked by reputation, cash and career medals, drawn on the main floor from small sprites
+# (assets/props/decor_*.png and season_*.png, sources office/pieces/, built by tools/make_decor.lua; the rectangles
+# below each one are the fallback when a texture is missing). What a
 # run has unlocked is Story.flags["decor"] (ids, saved with the campaign), so it stays when the reputation dips. check()
 # unlocks what the numbers allow and toasts it; the stage calls dress() when the main floor loads (the morning after a
 # good report is when you see it) and the node checks again every few seconds. Free Play shows no decor.
@@ -80329,6 +81234,17 @@ const ITEMS := [
 ]
 const RULE_NAMES := {"rep": "REPUTATION", "cash": "CASH", "medals": "MEDALS"}
 const CHECK_SECS := 2.0
+const ART := "res://assets/props/%s.png"
+# every sprite the node draws: name -> size (tests/office_growth.gd checks the files)
+const SPRITES := {
+    "decor_plant": Vector2i(17, 39), "decor_rug": Vector2i(40, 9), "decor_certificate": Vector2i(15, 12),
+    "decor_shelf": Vector2i(34, 6), "decor_trophy_a": Vector2i(9, 11), "decor_trophy_b": Vector2i(8, 11),
+    "decor_trophy_c": Vector2i(9, 11), "decor_fish_tank": Vector2i(20, 15), "decor_fish": Vector2i(4, 3),
+    "decor_neon_on": Vector2i(37, 11), "decor_neon_off": Vector2i(37, 11), "season_lights": Vector2i(96, 21),
+    "season_tax_boxes": Vector2i(14, 22), "season_xp_poster": Vector2i(19, 17), "season_drive_box": Vector2i(13, 14),
+}
+
+static var _art := {}  # name -> Texture2D, or null when the file is missing
 
 var _t := 0.0
 var _check_t := 0.0
@@ -80391,6 +81307,14 @@ static func check(toast := true) -> Array:
     return fresh
 
 
+# a decor sprite, or null when the art is missing (the node then draws the old rectangles)
+static func art(id: String) -> Texture2D:
+    if not _art.has(id):
+        var path := ART % id
+        _art[id] = load(path) if ResourceLoader.exists(path) else null
+    return _art[id]
+
+
 # called by the stage for every room: only the main floor gets the node
 static func dress(stage: Node) -> Node:
     if stage.scene_file_path.get_file().get_basename() != "main_floor" or Game.title_mode:
@@ -80428,10 +81352,20 @@ func _box(r: Rect2, fill: Color) -> void:
     draw_rect(r, fill)
 
 
+# draws a sprite at its top-left corner; false when the art is missing
+func _put(id: String, at: Vector2) -> bool:
+    var tex := art(id)
+    if tex == null:
+        return false
+    draw_texture(tex, at)
+    return true
+
+
 func _draw() -> void:
     var have := unlocked()
     var blink := int(_t * 2.0)
-    for season in Seasons.dressing():
+    _decor(have, blink)
+    for season in Seasons.dressing():  # after the decor: the tax boxes stand in front of the plant
         match str(season):
             "lights":
                 _lights(blink)
@@ -80441,35 +81375,49 @@ func _draw() -> void:
                 _countdown()
             "drive":
                 _drive_box()
-    if have.has("rug"):
+
+
+func _decor(have: Array, blink: int) -> void:
+    if have.has("rug") and not _put("decor_rug", Vector2(12.0, 100.0)):
         _box(Rect2(14.0, 101.0, 36.0, 7.0), Color("8c2b40"))
         draw_rect(Rect2(16.0, 103.0, 32.0, 3.0), Color("c8a05a"))
         draw_rect(Rect2(18.0, 104.0, 28.0, 1.0), Color("8c2b40"))
-    if have.has("plant"):
+    if have.has("plant") and not _put("decor_plant", Vector2(147.0, 53.0)):
         _box(Rect2(142.0, 84.0, 5.0, 6.0), Color("a8643c"))
         draw_rect(Rect2(144.0, 72.0, 1.0, 12.0), Color("3f7a34"))
         for leaf in [[140, 70, 4, 3], [145, 67, 3, 3], [141, 63, 3, 4], [145, 73, 3, 3], [140, 76, 3, 2]]:
             _box(Rect2(float(leaf[0]), float(leaf[1]), float(leaf[2]), float(leaf[3])), Color("5fb04a"))
-    if have.has("certificate"):
+    if have.has("certificate") and not _put("decor_certificate", Vector2(97.0, 20.0)):
         _box(Rect2(99.0, 22.0, 11.0, 9.0), Color("c8a05a"))
         draw_rect(Rect2(100.0, 23.0, 9.0, 7.0), Color("f4f2ea"))
         draw_rect(Rect2(101.0, 24.0, 7.0, 1.0), Color("3a3f66"))
         draw_rect(Rect2(101.0, 26.0, 5.0, 1.0), Color("9aa0a8"))
         draw_rect(Rect2(106.0, 27.0, 2.0, 2.0), Color("f5d442"))
-    if have.has("fish"):
+    if have.has("fish") and _put("decor_fish_tank", Vector2(131.0, 31.0)):
+        var swim := blink % 20  # ten steps across the tank and back, the fish faces where it swims
+        var flip := swim >= 10
+        var at := Vector2(134.0 + float(absi(swim - 10)), 36.0 + float((blink >> 2) & 1))
+        if art("decor_fish") != null:
+            draw_texture_rect(art("decor_fish"), Rect2(at, Vector2(4.0 if flip else -4.0, 3.0)), false)
+    elif have.has("fish"):
         _box(Rect2(134.0, 44.0, 14.0, 1.0), Color("a8643c"))
         _box(Rect2(135.0, 35.0, 12.0, 8.0), Color("6fc3e8"))
         draw_rect(Rect2(135.0, 42.0, 12.0, 1.0), Color("d8c690"))
         draw_rect(Rect2(144.0, 39.0, 1.0, 3.0), Color("3f7a34"))
         var fx := 136.0 + float(absi((blink % 14) - 7))
         draw_rect(Rect2(fx, 38.0, 2.0, 1.0), Color("ff8a3c"))
-    if have.has("trophy") or have.has("trophies"):
+    if (have.has("trophy") or have.has("trophies")) and _put("decor_shelf", Vector2(304.0, 46.0)):
+        _put("decor_trophy_a", Vector2(308.0, 36.0))
+        if have.has("trophies"):
+            _put("decor_trophy_b", Vector2(318.0, 36.0))
+            _put("decor_trophy_c", Vector2(326.0, 36.0))
+    elif have.has("trophy") or have.has("trophies"):
         _box(Rect2(306.0, 47.0, 30.0, 1.0), Color("a8643c"))
         _trophy(310.0)
         if have.has("trophies"):
             _trophy(319.0)
             _trophy(328.0)
-    if have.has("neon"):
+    if have.has("neon") and not _put("decor_neon_on" if blink % 9 != 0 else "decor_neon_off", Vector2(164.0, 9.0)):
         var glow := Color("ff6fb5") if blink % 9 != 0 else Color("b84a80")
         _box(Rect2(165.0, 7.0, 35.0, 7.0), Color("241a2e"))  # over the first office door
         PixelFont.draw(self, "PIXEL IT", Vector2(167.0, 8.0), glow)
@@ -80482,6 +81430,14 @@ func _trophy(x: float) -> void:
 
 
 func _lights(blink: int) -> void:
+    var tex := art("season_lights")
+    if tex != null:  # a 96 px tile, three blink phases stacked
+        var tx := 82.0
+        while tx < 360.0:
+            var w := minf(96.0, 360.0 - tx)
+            draw_texture_rect_region(tex, Rect2(tx, 2.0, w, 7.0), Rect2(0.0, 7.0 * float(blink % 3), w, 7.0))
+            tx += 96.0
+        return
     var colors := [Color("e0463c"), Color("5fd068"), Color("f5d442"), Color("5aa0e8")]
     var i := 0
     var x := 82.0
@@ -80495,22 +81451,108 @@ func _lights(blink: int) -> void:
 
 
 func _tax_boxes() -> void:
+    if _put("season_tax_boxes", Vector2(150.0, 87.0)):
+        return
     for k in 3:
         _box(Rect2(151.0 + float(k % 2), 84.0 - float(k) * 7.0, 11.0, 6.0), Color("c8a878"))
         draw_rect(Rect2(155.0 + float(k % 2), 86.0 - float(k) * 7.0, 4.0, 2.0), Color("f4f2ea"))
 
 
 func _countdown() -> void:
+    if _put("season_xp_poster", Vector2(131.0, 13.0)):
+        return
     _box(Rect2(132.0, 14.0, 17.0, 15.0), Color("f4f2ea"))
     PixelFont.draw(self, "XP", Vector2(137.0, 16.0), Color("3a62a8"))
     PixelFont.draw(self, "APR8", Vector2(133.0, 23.0), Color("e0463c"))
 
 
 func _drive_box() -> void:
+    if _put("season_drive_box", Vector2(44.0, 74.0)):
+        return
     _box(Rect2(45.0, 80.0, 11.0, 7.0), Color("c8a878"))  # inside the entrance, by the door
     draw_rect(Rect2(47.0, 76.0, 1.0, 4.0), Color("f5d442"))
     draw_rect(Rect2(50.0, 75.0, 1.0, 5.0), Color("e0463c"))
     draw_rect(Rect2(53.0, 77.0, 1.0, 3.0), Color("5aa0e8"))
+''')
+
+write("scripts/set_dressing.gd", '''extends Node
+# gdlint:disable=max-line-length
+# Small props a room gets on top of its set, by what is going on (art: tools/make_game_art.lua, assets/props/):
+#   restaurant    plates on the two booth tables while a dinner is on and the table has ordered (Outings.game == "dinner")
+#   cubicle_two   a headset on its stand on Jen's desk (the front desk), where the second cast has a Jen
+# The stage calls dress() for every room. The sprites are children of the table / desk sprite, so they are drawn right
+# above it in the room's y-sort (in front of the people sitting behind it). No game logic, nothing is saved.
+
+const ART := "res://assets/props/%s.png"
+# room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
+const PLATES := {
+    "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+}
+const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
+const CHECK_SECS := 0.5
+
+var plates: Array = []  # the plate sprites (shown and hidden together)
+var _t := 0.0
+
+
+static func art(id: String) -> Texture2D:
+    var path := ART % id
+    return load(path) if ResourceLoader.exists(path) else null
+
+
+static func _put(host: Node, id: String, at: Vector2) -> Sprite2D:
+    var tex := art(id)
+    if host == null or tex == null:
+        return null
+    var s := Sprite2D.new()
+    s.name = "Dressing_" + id
+    s.texture = tex
+    s.centered = false
+    s.position = at
+    host.add_child(s)
+    return s
+
+
+# called by the stage for every room; returns the node it added (the restaurant) or null
+static func dress(stage: Node) -> Node:
+    var room := stage.scene_file_path.get_file().get_basename()
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null or Game.title_mode:
+        return null
+    if room == "cubicle_two" and World.chars.has("Jen"):
+        _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
+        return null
+    if room != "restaurant":
+        return null
+    var node: Node = load("res://scripts/set_dressing.gd").new()
+    node.name = "SetDressing"
+    stage.add_child(node)
+    for host in PLATES:
+        for row in PLATES[host]:
+            var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
+            if s != null:
+                node.plates.append(s)
+    node.refresh()
+    return node
+
+
+# the food is on the table once the dinner is past the ordering round
+static func plates_on() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_ordering()
+
+
+func refresh() -> void:
+    var on := plates_on()
+    for s in plates:
+        s.visible = on
+
+
+func _process(delta: float) -> void:
+    _t += delta
+    if _t >= CHECK_SECS:
+        _t = 0.0
+        refresh()
 ''')
 
 write("scripts/collection.gd", '''extends RefCounted

@@ -87,6 +87,13 @@ has been shuffled. The character screen gains a **MUT** chip: press `M` (or `Shi
 
 > **TIP:** Year 2 is not a victory lap. If your first year was cozy, you may want to leave the level on Easy.
 
+### YEAR 3
+
+Finish a Year 2 run and the same submenu gains **START YEAR 3**, the last chapter of that campaign. It carries over from your
+Year 2 run the same way, the clocks tighten one more notch, and three cards during the year ask how your story at Pixel IT
+should end. What you answer decides which extra choices the final review offers, next to the usual ones. Each of those endings
+has its own medal on the Career screen, and finishing the year earns **THIRD YEAR**. There is no Year 4.
+
 ---
 
 ## CHOOSING A MODE: A QUICK GUIDE

@@ -18,6 +18,8 @@ or the owner (owner campaign, 20 weeks).
 
 ### Day 2
 
+**9:03 HELLO ECHO**. A scripted event (hello_echo).
+
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Daily chore: verify backups* `[Story.DAYS.2.0.subject]`
 > Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan `[Story.DAYS.2.0.body]`
 
@@ -1486,6 +1488,18 @@ or the owner (owner campaign, 20 weeks).
   - **ASK HER TO EXPLAIN IT** `[Expo.FORUM.4.options.1.label]`: She takes it apart one piece at a time, in plain words, with a drawing. 'Nobody explains it, that is the whole problem.' You see why the forum loves her. (+3 customer XP) `[Expo.FORUM.4.options.1.text]`
   - **THANK HER ON THE FORUM** `[Expo.FORUM.4.options.2.label]`: You post a thank-you under her answer. She replies with a link to a page about how to say thank you in fewer characters. (+3 forum karma) `[Expo.FORUM.4.options.2.text]`
   - **ASK ABOUT THE HAIR** `[Expo.FORUM.4.options.3.label]`: 'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more) `[Expo.FORUM.4.options.3.text]`
+- **TapeTony (forum regular)** `[Expo.FORUM.5.speaker]`
+  - Tony. I answer the backup threads. Yes, I still run tape. A tape has never once asked me for a password reset. Sit down, I have opinions about your Friday rotation. `[Expo.FORUM.5.text]`
+  - **ASK ABOUT THE ROTATION** `[Expo.FORUM.5.options.0.label]`: 'Five dailies, four weeklies, twelve monthlies. Friday's tape leaves the building in somebody's bag.' He draws the calendar on your badge. You will not forget it now. (+4 servers XP) `[Expo.FORUM.5.options.0.text]`
+  - **ASK WHEN HE LAST RESTORED** `[Expo.FORUM.5.options.1.label]`: 'Tuesday. One file every week, to a different machine, and the date goes on the label.' A backup nobody has restored is a rumour. (+3 security XP) `[Expo.FORUM.5.options.1.text]`
+  - **QUOTE HIM IN THE BACKUP THREAD** `[Expo.FORUM.5.options.2.label]`: You quote his rotation in the backup thread and give him the credit. He replies with a photo of a tape with your nick on the label. (+3 forum karma) `[Expo.FORUM.5.options.2.text]`
+  - **ASK WHAT IS IN HIS POCKET** `[Expo.FORUM.5.options.3.label]`: It is a tape. 'Last Friday's. It goes where I go.' He lets you hold it. Your coworkers do not believe you until they see the photo. (coworkers like you a little more) `[Expo.FORUM.5.options.3.text]`
+- **DNS_Dot (forum regular)** `[Expo.FORUM.6.speaker]`
+  - Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet. `[Expo.FORUM.6.text]`
+  - **ASK WHY IT IS ALWAYS DNS** `[Expo.FORUM.6.options.0.label]`: 'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP) `[Expo.FORUM.6.options.0.text]`
+  - **ASK ABOUT THE LABEL MAKER** `[Expo.FORUM.6.options.1.label]`: 'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP) `[Expo.FORUM.6.options.1.text]`
+  - **MARK HER ANSWER AS SOLVED** `[Expo.FORUM.6.options.2.label]`: You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma) `[Expo.FORUM.6.options.2.text]`
+  - **LET HER LABEL YOUR BADGE** `[Expo.FORUM.6.options.3.label]`: The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more) `[Expo.FORUM.6.options.3.text]`
 
 ### Instant messages from coworkers (Lync)
 

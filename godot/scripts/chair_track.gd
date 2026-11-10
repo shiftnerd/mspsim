@@ -32,6 +32,7 @@ var puppets := {}  # "You" or a rival's name -> {node, body, chair, color, label
 var props: Array = []  # {o, node, kind, marked}
 
 var _tex := {}  # kind -> {tex, off}
+var _paint := {}  # floor paint sprites (assets/props/chair_<id>.png, tools/make_game_art.lua); null = missing, the old rectangles are drawn
 var _actors: Node = null
 var _player: Node2D = null
 var _player2: Node2D = null  # co-op: player 2's body, hidden while they ride the tandem
@@ -68,7 +69,7 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
 			_add_prop(o)
 	if _player != null:
 		_player.visible = false
-	if _player2 != null and puppets.has("You2"):
+	if _player2 != null and (puppets.has("You2") or puppets.has("P2")):
 		_player2.visible = false
 	_sync()
 
@@ -193,6 +194,31 @@ func _mark(pr: Dictionary) -> void:
 			s.position.x += 3.0
 
 
+func floor_paint(id: String) -> Texture2D:
+	if not _paint.has(id):
+		var path := "res://assets/props/chair_%s.png" % id
+		_paint[id] = load(path) if ResourceLoader.exists(path) else null
+	return _paint[id]
+
+
+# the fight's ring painted on the floor: a hazard bracket at each end, a dashed line along both edges, a spot in the middle
+func _ring() -> bool:
+	if floor_paint("ring_end") == null or floor_paint("ring_line") == null:
+		return false
+	var lx := x0 + ChairRace.world_x(float(race.arena[0])) - 13.0
+	var rx := x0 + ChairRace.world_x(float(race.arena[1])) + 13.0
+	var x := lx + 12.0
+	while x + 12.0 <= rx - 12.0:
+		draw_texture(floor_paint("ring_line"), Vector2(x, 105.0))
+		draw_texture(floor_paint("ring_line"), Vector2(x, 131.0))
+		x += 12.0
+	draw_texture(floor_paint("ring_end"), Vector2(lx, 105.0))
+	draw_texture_rect(floor_paint("ring_end"), Rect2(rx - 12.0, 105.0, -12.0, 28.0), false)  # the right end is the mirror
+	if floor_paint("ring_spot") != null:
+		draw_texture(floor_paint("ring_spot"), Vector2(roundf((lx + rx) * 0.5) - 15.0, 113.0))
+	return true
+
+
 func _draw() -> void:
 	if race == null:
 		return
@@ -206,14 +232,18 @@ func _draw() -> void:
 			draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
 			x += 12.0
 	# the checkpoints: a stripe across the floor, a post at each end and its number
-	if _fight():  # the two ends of the strip: a red and white post line
+	if _fight() and _ring():
+		pass
+	elif _fight():  # the two ends of the strip: a red and white post line
 		for end_x: float in race.arena:
 			var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
 			for k in 6:
 				draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
 	elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
 		var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
-		for row in 12:
+		if floor_paint("finish") != null:
+			draw_texture(floor_paint("finish"), Vector2(fx - 2.0, 107.0))
+		for row in (12 if floor_paint("finish") == null else 0):
 			for col in 3:
 				draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
 		PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)

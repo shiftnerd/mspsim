@@ -1734,6 +1734,7 @@ func _paint_backups(body: Rect2) -> void:
 			var ago := maxi(1, Campaign.day - int(b.good_day))
 			status = "FAILED! LAST GOOD: %d DAY%s AGO" % [ago, "" if ago == 1 else "S"]
 			color = RED
+		status = backup_status(status, b, compact)
 		var at := rr.position + (Vector2(100, 2) if compact else Vector2(3, 8))
 		_text(_clip(status, int((body.end.x - at.x - 34) / 4.0)), at, color)
 		if not checked:
@@ -1746,6 +1747,17 @@ func _paint_backups(body: Rect2) -> void:
 				true,
 				Color("f0b27a")
 			)
+
+
+# R38: H1, the status of a backup row with the date of the last restore test (the short form drops LAST GOOD)
+static func backup_status(status: String, b: Dictionary, compact: bool) -> String:
+	var tested := int(b.get("tested", -1))
+	if tested < 0:
+		return status
+	var head := status
+	if compact:
+		head = "OK" if status.begins_with("OK") else ("FAILED!" if status.begins_with("FAILED") else "NOT CHECKED")
+	return "%s - TESTED %s %d" % [head, "WK" if Campaign.books_active() else "DAY", tested]
 
 
 func _paint_playbook(body: Rect2) -> void:

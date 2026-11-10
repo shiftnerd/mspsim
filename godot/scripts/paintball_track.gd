@@ -332,7 +332,7 @@ func _draw_top() -> void:
 		PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
 		if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
 			PixelFont.draw(_top, game.debug_line(i), at + Vector2(-14.0, 9.0 + 56.0), Color(1, 1, 1, 0.8), 1)
-		if float(u.down) > 0.0:  # the seconds until they are back in the game
+		if float(u.down) > 0.0 and not game.is_out(i):  # the seconds until they are back in the game
 			PixelFont.draw(_top, str(ceili(float(u.down))), at + Vector2(w * 0.5 - 1.0, -8.0), Color.WHITE, 1)
 
 

@@ -137,7 +137,7 @@ room is up), or press **`Shift`+`F10`** at any time in Free Play.
 | ROW | WHAT IT DOES |
 |---|---|
 | **GAME** | `NONE`, `BOWLING`, `KARAOKE`, `ESCAPE ROOM`, `DINNER`, `PRINTER`, `NERF WAR`, `CHAIR RACE`, `PAINTBALL`, `CORNHOLE`, `COOKOUT`. |
-| *(settings for the chosen game)* | **KARAOKE:** which `SONG` (even one that is locked). **ESCAPE ROOM:** the number of `CODE DIGITS`, the `ROOM` (the old study, the server room, the detective's office or the computer lab) and which kind of clue each zone shows. **DINNER:** who is at the `TABLE`. **PRINTER:** which printer `MODEL`. |
+| *(settings for the chosen game)* | **KARAOKE:** which `SONG` (even one that is locked). **ESCAPE ROOM:** the number of `CODE DIGITS`, the `ROOM` (the old study, the server room, the detective's office or the computer lab) and which kind of clue each zone shows. **DINNER:** who is at the `TABLE`. **PRINTER:** which printer `MODEL`. **CHAIR RACE:** the `EVENT` (the straight, the gauntlet or the chair fight; `PICK ON CARD` leaves it to the card). **PAINTBALL:** the `MATCH` (`DAY`, `NIGHT`, or the card's draw). |
 | **SEED** | Type or paste a seed, roll one, or use today's ([Chapter 1](01-getting-started.md#the-seed-and-the-daily-seed)). |
 | **FIXED TAKE** | `ON` makes every launch start again from the seed, with no random events and no twists, so a retake is **identical**. Handy for filming the same scene twice. |
 | **MUTATOR** | A twist to run the world under (hidden while FIXED TAKE is on). |

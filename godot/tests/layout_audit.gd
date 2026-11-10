@@ -186,7 +186,7 @@ func _title_phase() -> void:
 	t._show_quick()
 	await _end("title quick play")
 	t._show_home(0)
-	# the tech submenu at its fullest: a save plus a finished year (CONTINUE, START YEAR 2, NEW CAMPAIGN)
+	# the tech submenu at its fullest: a save plus a finished Year 2 (SLOT 1, START YEAR 2, START YEAR 3, NEW CAMPAIGN, DELETE A SLOT)
 	var camp := root.get_node("Campaign")
 	var yt := root.get_node("Yeartwo")
 	var old_prefix: String = camp.save_prefix
@@ -197,6 +197,7 @@ func _title_phase() -> void:
 	save.save(camp.save_path("tech"))
 	var meta := ConfigFile.new()
 	yt.record(meta, "tech", "lead")
+	meta.set_value("tech", "top_year", 2)  # R10: and a finished Year 2, so the START YEAR 3 row is there too
 	meta.save(yt.meta_path())
 	_begin()
 	t._choose(0)
@@ -484,6 +485,30 @@ func _floor_phase() -> void:
 		await _end("phone " + app)
 		ph.close()
 		await _wait(2)
+	# R16: the contacts with relationship levels (four pips on a cast member's row, the level's name on the selected row)
+	var soc := root.get_node("Social")
+	var cast_at := 0
+	var contact_list: Array = load("res://scripts/phone_calls.gd").contacts()
+	for i in contact_list.size():
+		if str(contact_list[i].kind) == "coworker":
+			cast_at = i
+			break
+	for who in soc.people():
+		soc.rel[who] = 75
+	for skin in ["android", "ios"]:
+		_begin()
+		ph.os = skin
+		ph.open()
+		ph.app = "phone"
+		ph.ph_view = "contacts"
+		ph.ph_sel = cast_at
+		ph._canvas.queue_redraw()
+		await _end("phone contacts levels " + skin)
+		ph.close()
+		await _wait(2)
+	for who in soc.people():
+		soc.rel[who] = 0
+	ph.os = "android"
 	# R37: the camera app (viewfinder, the roll, a photo), on both phones
 	for skin in ["android", "ios"]:
 		ph.os = skin

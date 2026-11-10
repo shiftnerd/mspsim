@@ -434,6 +434,9 @@ func sub_items(mode: String) -> Array:
 	if Yeartwo.available(mode):
 		var carry := Yeartwo.carry_summary(mode)
 		out.append({"label": "START YEAR 2" + (" - " + carry if carry != "" else ""), "id": mode + "_y2", "enabled": true})  # R17
+	if Yeartwo.available(mode, 3):  # R10: the last chapter, after a finished Year 2
+		var carry3 := Yeartwo.carry_summary(mode, 3)
+		out.append({"label": "START YEAR 3" + (" - " + carry3 if carry3 != "" else ""), "id": mode + "_y3", "enabled": true})
 	out.append({"label": "NEW CAMPAIGN", "id": mode + "_new", "enabled": true})
 	if saved > 0:
 		out.append({"label": "DELETE A SLOT", "id": mode + "_delask", "enabled": true})  # R19
@@ -619,7 +622,7 @@ func _choose(i: int) -> void:
 		_slot = int(id.get_slice("_over", 1))
 		_overwrite = true
 		_open_select(_over_id)
-	elif id.ends_with("_new") or id.ends_with("_y2"):
+	elif id.ends_with("_new") or id.ends_with("_y2") or id.ends_with("_y3"):
 		_begin_new(id)
 	elif id.ends_with("_continue") or id.ends_with("_resume"):
 		_start(id)  # a saved run keeps its character: no select screen
@@ -646,9 +649,10 @@ func _close_career() -> void:
 func _open_select(id: String) -> void:
 	if _select != null:
 		return
-	var year2 := id.ends_with("_y2")  # New Game Plus (Yeartwo): the same screen with the MUT chip
+	var year := 3 if id.ends_with("_y3") else 2  # START YEAR 3 (R10): the same screen, the last chapter
+	var year2 := id.ends_with("_y2") or id.ends_with("_y3")  # New Game Plus (Yeartwo): the same screen with the MUT chip
 	if year2:
-		id = id.trim_suffix("_y2") + "_new"
+		id = id.trim_suffix("_y2").trim_suffix("_y3") + "_new"
 	var mode := Campaign.FREE
 	if id == "tech_new":
 		mode = "tech"
@@ -659,7 +663,7 @@ func _open_select(id: String) -> void:
 	elif id == "sales_new":
 		mode = "sales"
 	_select = CharSelect.new()
-	_select.setup(mode, year2)
+	_select.setup(mode, year2, year)
 	_select.done.connect(_on_select_done.bind(id))
 	_select.cancelled.connect(_close_select)
 	_front.add_child(_select)

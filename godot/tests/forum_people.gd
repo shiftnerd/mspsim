@@ -33,7 +33,7 @@ func _init() -> void:
 	var total_intern := 0
 	for anim in intern.get_animation_names():
 		total_intern += intern.get_frame_count(anim)
-	for who in ["expo_grizzle", "expo_pip", "expo_ray", "expo_rita"]:
+	for who in ["expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot"]:
 		var frames: SpriteFrames = load("res://characters/%s.tres" % who)
 		_check(frames != null, "%s has a SpriteFrames" % who)
 		var total := 0
@@ -217,5 +217,49 @@ func _init() -> void:
 	cards.pick(0)
 	_check(int(sk.xp.servers) == ps0 + 4, "Rita's one-liner is +4 servers XP")
 	cards.pick(0)
+	# two more regulars (R28): TapeTony in the breakout corridor between two doors, DNS_Dot in the vendor hall
+	_check(
+		spots.has("forum:tony") and spots["forum:tony"][0] == "resort_hall" and spots.has("forum:dot") and spots["forum:dot"][0] == "vendor_hall",
+		"Tony is in the breakout corridor and Dot in the vendor hall"
+	)
+	for door in [41, 73, 143, 213, 283]:
+		_check(absf(float(spots["forum:tony"][1]) - float(door)) >= 25.0, "Tony is clear of the door at x %d" % door)
+	_check(absf(float(spots["forum:dot"][1]) - 327.0) >= 25.0, "Dot is clear of the vendor hall's door")
+	for role in ["forum:tony", "forum:dot"]:
+		for entry in cf.CROWD[spots[role][0]]:
+			if str(entry.role) != role and not entry.has("seat") and not str(entry.routine).contains("walk"):
+				_check(absf(float(entry.x) - float(spots[role][1])) >= 14.0, "%s does not stand in %s" % [role, entry.role])
+	for id in ["tony", "dot"]:
+		var def: Dictionary = cf.forum_def(id)
+		_check(not def.is_empty() and def.options.size() == 4, "%s has a chat with four options" % id)
+		var pays := {"skill": 0, "karma": 0, "social": 0}
+		for o in def.get("options", []):
+			pays.skill += 1 if str(o.get("skill", "")) != "" and int(o.get("xp", 0)) > 0 else 0
+			pays.karma += 1 if int(o.get("karma", 0)) > 0 else 0
+			pays.social += 1 if int(o.get("social", 0)) > 0 else 0
+			_check(str(o.text) != "" and str(o.label) == str(o.label).to_upper(), "%s / %s has a label in capitals and a text" % [id, o.id])
+		_check(pays.skill == 2 and pays.karma == 1 and pays.social == 1, "%s pays like the other regulars: two skills, karma, a social point (%s)" % [id, str(pays)])
+	cf.reset()
+	var tony0: int = int(sk.xp.servers)
+	cf.npc_use(_fake("forum:tony"), null)
+	_check(cards.is_open and cards.speaker.begins_with("TapeTony"), "E opens Tony's card")
+	cards.pick(0)
+	_check(int(sk.xp.servers) == tony0 + 4, "Tony's rotation is +4 servers XP")
+	cards.pick(0)
+	cf.reset()
+	var dot0: int = int(sk.xp.networking)
+	cf.npc_use(_fake("forum:dot"), null)
+	_check(cards.is_open and cards.speaker.begins_with("DNS_Dot"), "E opens Dot's card")
+	cards.pick(0)
+	_check(int(sk.xp.networking) == dot0 + 4, "Dot's lookup is +4 networking XP")
+	cards.pick(0)
+	# they post on the forum too: a title under the nick and a reply each in an open thread
+	var posted := {"TapeTony": 0, "DNS_Dot": 0}
+	for th in nerds.THREADS:
+		for post in th.get("posts", []):
+			if posted.has(str(post.by)):
+				posted[str(post.by)] += 1
+	_check(nerds.POSTERS.has("TapeTony") and nerds.POSTERS.has("DNS_Dot"), "both have a forum title")
+	_check(posted.TapeTony >= 1 and posted.DNS_Dot >= 1, "both have a post on the forum (%s)" % str(posted))
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

@@ -78,7 +78,7 @@ var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
 var cash := 0
-var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus (Yeartwo, R10b); saved, an old save loads as 1
+var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus, 3 = Year 3, the last chapter (Yeartwo, R10); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
 var history: Array = []
 var save_prefix := "user://mspsim_"  # tests point this somewhere else
@@ -236,7 +236,7 @@ func slot_info(for_mode: String, for_slot: int) -> Dictionary:
 		out["text"] = str(snap.text)
 		if not bool(out.has_save):
 			out["day"] = int(snap.day)
-	out["tag"] = " (YEAR 2)" if int(cfg.get_value("campaign", "year", 1)) >= Yeartwo.YEAR else ""
+	out["tag"] = Yeartwo.tag_of(int(cfg.get_value("campaign", "year", 1)))  # " (YEAR 2)" / " (YEAR 3)"
 	var look: Variant = cfg.get_value("campaign", "look", {})
 	var who := str(cfg.get_value("campaign", "player_as", ""))
 	if look is Dictionary and bool(look.get("active", false)) and str(look.get("name", "")) != "":
@@ -330,7 +330,7 @@ func new_game(for_mode: String) -> void:
 	history = []
 	_awaiting = false
 	Yeartwo.reset()
-	year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
+	year = Yeartwo.take_year(for_mode)  # New Game Plus (R10b): 2 or 3 when START YEAR 2 / 3 was chosen on the title menu, else 1
 	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
 	World.new_run()
 	build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts

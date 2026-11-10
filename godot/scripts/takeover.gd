@@ -603,6 +603,8 @@ static func visit(_owner: Node, kind: String) -> void:
 	var client := target()
 	if client < 0:
 		return
+	if not Onsite.has_site(client):
+		return  # X12: no office to walk around, so no visit and no inherited mess to carry (the findings only show on a visit)
 	Owner.flags.erase("takeover_pending_%d" % client)
 	Owner.flags["tk_%d" % client] = {"found": [], "acted": [], "done": []}
 	begin(client, JOBS.size())
