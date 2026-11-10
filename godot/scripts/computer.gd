@@ -806,10 +806,12 @@ func _tw(s: String, scale := 1) -> float:
 
 
 func _clip(s: String, chars: int) -> String:
+	s = Controls.keys(s)  # R42: a key token is resolved before the text is cut (a cut token would show its braces)
 	return s if s.length() <= chars else s.substr(0, maxi(1, chars - 2)) + ".."
 
 
 func _wrap(s: String, chars: int) -> Array:
+	s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var lines := []
 	var line := ""
 	for word in s.split(" "):

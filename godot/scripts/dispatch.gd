@@ -142,7 +142,7 @@ func info_line() -> String:
 		return "%s %s %s ENTER=DROP ESC=CANCEL" % [s, f, w]
 	var id := selected_id()
 	if id < 0:
-		return "TAB=NEXT  ENTER=PICK UP  A=AUTO  C=CAPACITY"
+		return "TAB=NEXT  ENTER=PICK UP{  A=AUTO  C=CAPACITY|}"
 	var t2 := Msp.ticket(id)
 	var cl := "PITP" if int(t2.client) < 0 else str(Msp.CLIENTS[int(t2.client)].short)
 	var extra := ""
@@ -780,8 +780,8 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 	c._text(c._clip(summary, int((a.size.x - 6.0) / 4.0)), Vector2(a.position.x + 3, y + 1), MUTED)
 	var bottom := Rect2(a.position.x, a.end.y - 10, a.size.x, 10)
 	c._fill(bottom, Color("cfd9e8"))
-	c._button("dsp:focus", Rect2(bottom.position.x + 2, bottom.position.y + 1, 52, 8), "FOCUS (F)", not names.is_empty())
-	c._button("dsp:oto", Rect2(bottom.position.x + 56, bottom.position.y + 1, 36, 8), "1:1 (O)", not names.is_empty())
+	c._button("dsp:focus", Rect2(bottom.position.x + 2, bottom.position.y + 1, 52, 8), Controls.keys("FOCUS{ (F)|}"), not names.is_empty())
+	c._button("dsp:oto", Rect2(bottom.position.x + 56, bottom.position.y + 1, 36, 8), Controls.keys("1:1{ (O)|}"), not names.is_empty())
 	var note := "SET A FOCUS: THAT AREA FITS HIM BETTER AND HE TRAINS IT"
 	if narrow:
 		note = "FOCUS TRAINS AN AREA"

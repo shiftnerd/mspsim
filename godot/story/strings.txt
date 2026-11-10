@@ -14,7 +14,7 @@ Your first day
 
 # Day 1, 9:05, MAIL: body
 [Story.DAYS.1.0.body]
-Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan
+Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone ({P}) now and then. - Morgan
 
 # Day 2, 9:05, MAIL: from
 [Story.DAYS.2.0.from]
@@ -15564,7 +15564,7 @@ C IS A STEADY DAY. THE DESK KEPT RUNNING AND NOBODY IS KEEPING SCORE.
 # ======================= Hints > DAY1 =======================
 # Hints > DAY1 > 0 > text
 [Hints.DAY1.0.text]
-ARROWS OR A/D MOVE. HOLD SHIFT TO RUN. SPACE JUMPS.
+{ARROWS OR A/D MOVE|THE STICK MOVES YOU}. HOLD SHIFT TO RUN. SPACE JUMPS.
 
 # Hints > DAY1 > 1 > text
 [Hints.DAY1.1.text]
@@ -15572,11 +15572,11 @@ E USES WHAT IS NEAR: DOORS, THE COFFEE MACHINE, CHAIRS. TAB PICKS THE TARGET.
 
 # Hints > DAY1 > 2 > text
 [Hints.DAY1.2.text]
-SIT AT A DESK AND PRESS E ON THE MONITOR TO OPEN THE COMPUTER. ESC CLOSES IT.
+SIT AT A DESK AND PRESS {E} ON THE MONITOR TO OPEN THE COMPUTER. {ESC} CLOSES IT.
 
 # Hints > DAY1 > 3 > text
 [Hints.DAY1.3.text]
-P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLOW.
+P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, {C} ASKS A COWORKER TO FOLLOW.
 
 # Hints > DAY1 > 4 > text
 [Hints.DAY1.4.text]
@@ -15584,17 +15584,17 @@ TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA.
 
 # Hints > DAY1 > 5 > text
 [Hints.DAY1.5.text]
-SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP.
+SEATED? HOLD SHIFT AND {PRESS A OR D|PUSH THE STICK} TO ROLL YOUR CHAIR. E OR {ANY MOVE KEY|THE STICK ALONE} STANDS YOU UP.
 
 # Hints > DAY1 > 6 > text
 [Hints.DAY1.6.text]
-M MUTES OR RESTORES THE SOUND.
+{M} MUTES OR RESTORES THE SOUND.
 
 
 # ======================= Hints > MENTOR =======================
 # Hints > MENTOR > pc
 [Hints.MENTOR.pc]
-DAN: SIT AT YOUR DESK AND PRESS E ON THE MONITOR. THAT OPENS THE COMPUTER.
+DAN: SIT AT YOUR DESK AND PRESS {E} ON THE MONITOR. THAT OPENS THE COMPUTER.
 
 # Hints > MENTOR > wait
 [Hints.MENTOR.wait]
@@ -17448,7 +17448,7 @@ SPACE = START  ESC = SKIP
 
 # PrinterGame > TEXT > jam_help
 [PrinterGame.TEXT.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN
+{SPACE} WHEN THE MARKER IS IN THE GREEN
 
 # PrinterGame > TEXT > jam_clean
 [PrinterGame.TEXT.jam_clean]
@@ -17472,7 +17472,7 @@ THE SCRAP NEEDS ONE MORE PULL.
 
 # PrinterGame > TEXT > toner_help
 [PrinterGame.TEXT.toner_help]
-LEFT / RIGHT TO PICK, SPACE TO INSTALL
+LEFT / RIGHT TO PICK, {SPACE} TO INSTALL
 
 # PrinterGame > TEXT > toner_ok
 [PrinterGame.TEXT.toner_ok]
@@ -17484,7 +17484,7 @@ WRONG CARTRIDGE. THE PRINTER BEEPS.
 
 # PrinterGame > TEXT > shake_help
 [PrinterGame.TEXT.shake_help]
-SHAKE THE CARTRIDGE: A D A D A D
+SHAKE THE CARTRIDGE: {A D A D A D|(LB) (RB) (LB) (RB)}
 
 # PrinterGame > TEXT > shake_late
 [PrinterGame.TEXT.shake_late]
@@ -17516,7 +17516,7 @@ SPACE = CONTINUE
 
 # PrinterGame > TEXT > tray_help
 [PrinterGame.TEXT.tray_help]
-PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > TEXT > tray_ok
 [PrinterGame.TEXT.tray_ok]
@@ -17532,7 +17532,7 @@ YOU HIT THE PRINTER AND IT WORKS. DO NOT TELL ANYONE.
 
 # PrinterGame > TEXT > pray_help
 [PrinterGame.TEXT.pray_help]
-P: PRAY TO THE SYSADMIN GODS
+{P:pray}: PRAY TO THE SYSADMIN GODS
 
 # PrinterGame > TEXT > pray_none
 [PrinterGame.TEXT.pray_none]
@@ -18168,7 +18168,7 @@ A FORTY-FOOT ROLL. MEDIA JAM. DUE AT NOON.
 
 # PrinterGame > MODEL_TEXT > plotter > jam_help
 [PrinterGame.MODEL_TEXT.plotter.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
+{SPACE} WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT
 
 # PrinterGame > MODEL_TEXT > plotter > jam_clean
 [PrinterGame.MODEL_TEXT.plotter.jam_clean]
@@ -18184,7 +18184,7 @@ RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.
 
 # PrinterGame > MODEL_TEXT > plotter > toner_help
 [PrinterGame.MODEL_TEXT.plotter.toner_help]
-LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL
+LEFT / RIGHT TO PICK AN INK TANK, {SPACE} TO INSTALL
 
 # PrinterGame > MODEL_TEXT > plotter > toner_ok
 [PrinterGame.MODEL_TEXT.plotter.toner_ok]
@@ -18196,7 +18196,7 @@ WRONG INK TANK. THE PLOTTER BEEPS AT YOU.
 
 # PrinterGame > MODEL_TEXT > plotter > shake_help
 [PrinterGame.MODEL_TEXT.plotter.shake_help]
-ROCK THE INK TANK: A D A D A D
+ROCK THE INK TANK: {A D A D A D|(LB) (RB) (LB) (RB)}
 
 # PrinterGame > MODEL_TEXT > plotter > shake_late
 [PrinterGame.MODEL_TEXT.plotter.shake_late]
@@ -18224,7 +18224,7 @@ YOU GIVE UP. THE PLOTTER WINS.
 
 # PrinterGame > MODEL_TEXT > plotter > tray_help
 [PrinterGame.MODEL_TEXT.plotter.tray_help]
-MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > MODEL_TEXT > plotter > tray_ok
 [PrinterGame.MODEL_TEXT.plotter.tray_ok]
@@ -18240,7 +18240,7 @@ YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.
 
 # PrinterGame > MODEL_TEXT > plotter > pray_help
 [PrinterGame.MODEL_TEXT.plotter.pray_help]
-P: PRAY TO THE PLOTTER GODS
+{P:pray}: PRAY TO THE PLOTTER GODS
 
 # PrinterGame > MODEL_TEXT > inkjet > title
 [PrinterGame.MODEL_TEXT.inkjet.title]
@@ -18256,7 +18256,7 @@ AND A PAPER JAM LIGHT BLINKS. AGAIN.
 
 # PrinterGame > MODEL_TEXT > inkjet > jam_help
 [PrinterGame.MODEL_TEXT.inkjet.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET
+{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET
 
 # PrinterGame > MODEL_TEXT > inkjet > jam_clean
 [PrinterGame.MODEL_TEXT.inkjet.jam_clean]
@@ -18268,7 +18268,7 @@ RIP! A CORNER IS STILL UNDER THE ROLLER.
 
 # PrinterGame > MODEL_TEXT > inkjet > toner_help
 [PrinterGame.MODEL_TEXT.inkjet.toner_help]
-LEFT / RIGHT TO PICK AN INK TANK, SPACE TO FIT
+LEFT / RIGHT TO PICK AN INK TANK, {SPACE} TO FIT
 
 # PrinterGame > MODEL_TEXT > inkjet > toner_ok
 [PrinterGame.MODEL_TEXT.inkjet.toner_ok]
@@ -18300,7 +18300,7 @@ YOU GIVE UP. THE INKJET WINS.
 
 # PrinterGame > MODEL_TEXT > inkjet > pray_help
 [PrinterGame.MODEL_TEXT.inkjet.pray_help]
-P: PRAY TO THE INK GODS
+{P:pray}: PRAY TO THE INK GODS
 
 # PrinterGame > MODEL_TEXT > mfp > title
 [PrinterGame.MODEL_TEXT.mfp.title]
@@ -18316,7 +18316,7 @@ ADF MISFEED. PAPER EVERYWHERE.
 
 # PrinterGame > MODEL_TEXT > mfp > jam_help
 [PrinterGame.MODEL_TEXT.mfp.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET
+{SPACE} WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET
 
 # PrinterGame > MODEL_TEXT > mfp > jam_clean
 [PrinterGame.MODEL_TEXT.mfp.jam_clean]
@@ -18328,7 +18328,7 @@ RIP! HALF A LETTER IS STUCK IN THE FEEDER.
 
 # PrinterGame > MODEL_TEXT > mfp > toner_help
 [PrinterGame.MODEL_TEXT.mfp.toner_help]
-LEFT / RIGHT TO PICK A CARTRIDGE, SPACE TO FIT
+LEFT / RIGHT TO PICK A CARTRIDGE, {SPACE} TO FIT
 
 # PrinterGame > MODEL_TEXT > mfp > hit
 [PrinterGame.MODEL_TEXT.mfp.hit]
@@ -18348,7 +18348,7 @@ YOU GIVE UP. THE COPIER WINS.
 
 # PrinterGame > MODEL_TEXT > mfp > tray_help
 [PrinterGame.MODEL_TEXT.mfp.tray_help]
-TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > MODEL_TEXT > mfp > tray_ok
 [PrinterGame.MODEL_TEXT.mfp.tray_ok]
@@ -18360,7 +18360,7 @@ LOAD LETTER IN TRAY 1
 
 # PrinterGame > MODEL_TEXT > mfp > pray_help
 [PrinterGame.MODEL_TEXT.mfp.pray_help]
-P: PRAY TO THE COPIER GODS
+{P:pray}: PRAY TO THE COPIER GODS
 
 # PrinterGame > MODEL_TEXT > receipt > title
 [PrinterGame.MODEL_TEXT.receipt.title]
@@ -18376,7 +18376,7 @@ AT THE DESK GROWS. THE LIGHT IS RED.
 
 # PrinterGame > MODEL_TEXT > receipt > jam_help
 [PrinterGame.MODEL_TEXT.receipt.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER
+{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER
 
 # PrinterGame > MODEL_TEXT > receipt > jam_clean
 [PrinterGame.MODEL_TEXT.receipt.jam_clean]
@@ -18408,7 +18408,7 @@ YOU GIVE UP. THE LINE GROWS.
 
 # PrinterGame > MODEL_TEXT > receipt > tray_help
 [PrinterGame.MODEL_TEXT.receipt.tray_help]
-PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE
+PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > MODEL_TEXT > receipt > tray_ok
 [PrinterGame.MODEL_TEXT.receipt.tray_ok]
@@ -18424,7 +18424,7 @@ YOU HIT THE LID AND IT CLOSES. DO NOT TELL ANYONE.
 
 # PrinterGame > MODEL_TEXT > receipt > pray_help
 [PrinterGame.MODEL_TEXT.receipt.pray_help]
-P: PRAY TO THE REGISTER GODS
+{P:pray}: PRAY TO THE REGISTER GODS
 
 # PrinterGame > MODEL_TEXT > dot > title
 [PrinterGame.MODEL_TEXT.dot.title]
@@ -18440,7 +18440,7 @@ FORMS AND THE TRACTOR FEED IS CROOKED.
 
 # PrinterGame > MODEL_TEXT > dot > jam_help
 [PrinterGame.MODEL_TEXT.dot.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FORM
+{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE FORM
 
 # PrinterGame > MODEL_TEXT > dot > jam_clean
 [PrinterGame.MODEL_TEXT.dot.jam_clean]
@@ -18452,7 +18452,7 @@ RIP! A STRIP OF PINFEED HOLES IS STILL INSIDE.
 
 # PrinterGame > MODEL_TEXT > dot > toner_help
 [PrinterGame.MODEL_TEXT.dot.toner_help]
-LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT
+LEFT / RIGHT TO PICK THE RIBBON, {SPACE} TO FIT
 
 # PrinterGame > MODEL_TEXT > dot > toner_ok
 [PrinterGame.MODEL_TEXT.dot.toner_ok]
@@ -18484,7 +18484,7 @@ YOU GIVE UP. THE DOT MATRIX WINS.
 
 # PrinterGame > MODEL_TEXT > dot > tray_help
 [PrinterGame.MODEL_TEXT.dot.tray_help]
-FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE
+FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > MODEL_TEXT > dot > tray_ok
 [PrinterGame.MODEL_TEXT.dot.tray_ok]
@@ -18500,7 +18500,7 @@ FORM FEED ERROR
 
 # PrinterGame > MODEL_TEXT > dot > pray_help
 [PrinterGame.MODEL_TEXT.dot.pray_help]
-P: PRAY TO THE FORMS GODS
+{P:pray}: PRAY TO THE FORMS GODS
 
 # PrinterGame > MODEL_TEXT > line > title
 [PrinterGame.MODEL_TEXT.line.title]
@@ -18516,7 +18516,7 @@ ON PAYROLL FORMS. ONE LIFE, NO PRAYERS.
 
 # PrinterGame > MODEL_TEXT > line > jam_help
 [PrinterGame.MODEL_TEXT.line.jam_help]
-SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD
+{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD
 
 # PrinterGame > MODEL_TEXT > line > jam_clean
 [PrinterGame.MODEL_TEXT.line.jam_clean]
@@ -18528,7 +18528,7 @@ RIP! A STRIP OF PAYROLL IS STILL INSIDE.
 
 # PrinterGame > MODEL_TEXT > line > toner_help
 [PrinterGame.MODEL_TEXT.line.toner_help]
-LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT
+LEFT / RIGHT TO PICK THE RIBBON, {SPACE} TO FIT
 
 # PrinterGame > MODEL_TEXT > line > toner_ok
 [PrinterGame.MODEL_TEXT.line.toner_ok]
@@ -18560,7 +18560,7 @@ YOU GIVE UP. THE LINE PRINTER WINS AGAIN.
 
 # PrinterGame > MODEL_TEXT > line > tray_help
 [PrinterGame.MODEL_TEXT.line.tray_help]
-THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, SPACE
+THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, {SPACE}
 
 # PrinterGame > MODEL_TEXT > line > tray_ok
 [PrinterGame.MODEL_TEXT.line.tray_ok]
@@ -18646,7 +18646,7 @@ DRIVE THERE NOW
 
 # Onsite > TEXT > arrive
 [Onsite.TEXT.arrive]
-You arrive at %s after %d minutes on the road. Walk to the equipment and press E on it.
+You arrive at %s after %d minutes on the road. Walk to the equipment and press {E} on it.
 
 # Onsite > TEXT > nothing
 [Onsite.TEXT.nothing]
@@ -20522,13 +20522,13 @@ TIMER IS RUNNING, YOU KNOW.
 # ======================= Outings > KARAOKE_TEXT =======================
 # Outings > KARAOKE_TEXT > doubles
 [Outings.KARAOKE_TEXT.doubles]
-DOUBLES NEED BOTH KEYS AT ONCE.
+DOUBLES NEED BOTH {KEYS|DIRECTIONS} AT ONCE.
 
 
 # ======================= Outings > DINNER_TEXT =======================
 # Outings > DINNER_TEXT > order
 [Outings.DINNER_TEXT.order]
-FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, ENTER).
+FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, {ENTER}).
 
 # Outings > DINNER_TEXT > order_strip
 [Outings.DINNER_TEXT.order_strip]
@@ -20766,11 +20766,11 @@ THE OLD STUDY
 
 # Outings > ESCAPE_THEMES > study > intro
 [Outings.ESCAPE_THEMES.study.intro]
-THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.
+THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK ({E}), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. {N} ASKS A FRIEND. THE CLOCK IS RUNNING.
 
 # Outings > ESCAPE_THEMES > study > start
 [Outings.ESCAPE_THEMES.study.start]
-LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT
+LOOK AROUND. {E} ON THE CHALKBOARD, THE CLOCK, THE PAINTING. {N} = HINT
 
 # Outings > ESCAPE_THEMES > study > open
 [Outings.ESCAPE_THEMES.study.open]
@@ -20822,11 +20822,11 @@ THE SERVER ROOM
 
 # Outings > ESCAPE_THEMES > server > intro
 [Outings.ESCAPE_THEMES.server.intro]
-SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.
+SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.
 
 # Outings > ESCAPE_THEMES > server > start
 [Outings.ESCAPE_THEMES.server.start]
-THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT
+THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT
 
 # Outings > ESCAPE_THEMES > server > open
 [Outings.ESCAPE_THEMES.server.open]
@@ -20910,11 +20910,11 @@ THE DETECTIVE'S OFFICE
 
 # Outings > ESCAPE_THEMES > detective > intro
 [Outings.ESCAPE_THEMES.detective.intro]
-THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.
+THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.
 
 # Outings > ESCAPE_THEMES > detective > start
 [Outings.ESCAPE_THEMES.detective.start]
-THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT
+THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT
 
 # Outings > ESCAPE_THEMES > detective > open
 [Outings.ESCAPE_THEMES.detective.open]
@@ -21010,11 +21010,11 @@ THE 1990S COMPUTER LAB
 
 # Outings > ESCAPE_THEMES > lab > intro
 [Outings.ESCAPE_THEMES.lab.intro]
-DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.
+DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.
 
 # Outings > ESCAPE_THEMES > lab > start
 [Outings.ESCAPE_THEMES.lab.start]
-THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT
+THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT
 
 # Outings > ESCAPE_THEMES > lab > open
 [Outings.ESCAPE_THEMES.lab.open]

@@ -5944,7 +5944,18 @@ static func audit_report(fmt := "", overlaps := false) -> Array:
     return out
 
 
+# R42: the {E} style key tokens of a text (Controls.keys), for whoever draws or wraps a text that may carry them. The
+# autoload by path: this script is preloaded by test scripts before the autoloads exist.
+static func keys(text: String) -> String:
+    if text.find("{") < 0:
+        return text
+    var tree := Engine.get_main_loop() as SceneTree
+    var controls: Node = tree.root.get_node_or_null("Controls") if tree != null else null
+    return str(controls.keys(text)) if controls != null else text
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
     # only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
     if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
         var tf := canvas.get_global_transform_with_canvas()
@@ -5953,7 +5964,7 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
         audit.append({
             "canvas": "%s/%s" % [canvas.get_class(), canvas.name],
             "cid": canvas.get_instance_id(),
-            "frame": Engine.get_frames_drawn(),
+            "frame": Engine.get_process_frames(),  # (frames drawn stays 0 without a renderer)
             "text": text.strip_edges(),
             "rect": tf * Rect2(pos + Vector2(lead, 0), sz),
             "vp": canvas.get_viewport().get_visible_rect(),
@@ -6538,7 +6549,7 @@ func reset() -> void:
         "Welcome aboard! Open the PSA to see the ticket board, use the RMM to fix client PCs, and watch "
         + "your inbox. If your own computer says it has no network, check the closet. - HR", 0
     )
-    send_text("Dispatch", "Welcome! Press P for your phone. New tickets arrive as ConnectWhy PSA email; texts are for your boss and your coworkers.")
+    send_text("Dispatch", "Welcome! Press {P} for your phone. New tickets arrive as ConnectWhy PSA email; texts are for your boss and your coworkers.")
 
 
 # the resume point (Campaign.snapshot, R16): the whole service desk, so a mid-day continue puts every ticket,
@@ -8817,10 +8828,12 @@ func _tw(s: String, scale := 1) -> float:
 
 
 func _clip(s: String, chars: int) -> String:
+    s = Controls.keys(s)  # R42: a key token is resolved before the text is cut (a cut token would show its braces)
     return s if s.length() <= chars else s.substr(0, maxi(1, chars - 2)) + ".."
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines := []
     var line := ""
     for word in s.split(" "):
@@ -11692,10 +11705,12 @@ func _chars(width: float) -> int:
 
 
 func _clip(s: String, chars: int) -> String:
+    s = Controls.keys(s)  # R42: a key token is resolved before the text is cut (a cut token would show its braces)
     return s if s.length() <= chars else s.substr(0, maxi(1, chars - 1)) + "."
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines := []
     var line := ""
     for word in s.split(" "):
@@ -15062,7 +15077,7 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
     y += 2.0
     var label := _button_label()
     var bw := _tw(label) + 12.0
-    var hint := Controls.hint("ENTER OR CLICK")
+    var hint := Controls.hint("ENTER{ OR CLICK|}")
     if _tw(hint) + bw + 12.0 > pw:
         hint = Controls.hint("ENTER")
     if draw:
@@ -15116,6 +15131,7 @@ func _paint() -> void:
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines := []
     var line := ""
     for word in s.split(" "):
@@ -19081,7 +19097,7 @@ const DAYS := {
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Your first day",
          "body": "Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things "
          + "with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets "
-         + "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"},
+         + "make me sad. Clients also call and text, so check your phone ({P}) now and then. - Morgan"},
         {"at": 9.2, "kind": "mentor", "id": "mentor_intro"},
     ],
     2: [
@@ -20562,6 +20578,7 @@ func page_lines() -> Array:
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var out := []
     var line := ""
     for word in s.split(" "):
@@ -20842,6 +20859,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var out := []
     var line := ""
     for word in s.split(" "):
@@ -29484,7 +29502,7 @@ func _build_thread() -> void:
     elif k < 0:
         foot = str(Nerds.TEXT.solved)
     elif not bool(Nerds.threads[k].answered):
-        foot = "PRESS ENTER OR CLICK REPLY TO ANSWER."
+        foot = "PRESS {ENTER OR CLICK REPLY|(A)} TO ANSWER."
     if foot != "":
         for part in c._wrap(foot, _chars):
             _rows.append(_line(str(part), MUTED))
@@ -31831,6 +31849,7 @@ static func right(c: CanvasItem, s: String, rx: float, y: float, color := INK) -
 
 
 static func wrap_text(s: String, chars: int) -> Array:
+    s = PixelFont.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var out := []
     var line := ""
     for word in s.split(" "):
@@ -31901,7 +31920,7 @@ static func box(c: CanvasItem, r: Rect2) -> void:
 static func hint_bar(c: CanvasItem, size: Vector2, hint: String) -> void:
     var r := Rect2(0.0, size.y - HINT_H, size.x, HINT_H)
     c.draw_rect(r, Color(0.02, 0.02, 0.05, 0.92))
-    text(c, hint, 4.0, r.position.y + 2.0, SOFT)
+    PadGlyphs.draw(c, hint, Vector2(4.0, r.position.y + 2.0), SOFT)
 
 
 # the caption bar sits above the hint line; returns its top edge (the HUD strip goes above it)
@@ -33545,7 +33564,7 @@ func _flares() -> void:
         return
     var at: int = cands[rng.randi() % cands.size()]
     slots[at].flare = FLARE_LEN
-    msg = "FLARE-UP ON %d! SHIFT MOVES IT." % (at + 1)
+    msg = "FLARE-UP ON %d! {SHIFT} MOVES IT." % (at + 1)
     msg_t = 2.0
     events.append({"e": "flare", "slot": at})
 
@@ -35208,7 +35227,7 @@ const GAMES := {
         "label": "BOWLING",
         "cost": 120,
         "blurb":
-        "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
+        "FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS {SPACE} TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
         "keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"
     },
     "karaoke":
@@ -35217,7 +35236,7 @@ const GAMES := {
         "cost": 180,
         "blurb":
         "HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.",
-        "keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+        "keys": "{ARROW KEYS:move} = HIT NOTES  ESC = LEAVE"
     },
     "escape":
     {
@@ -35240,7 +35259,7 @@ const GAMES := {
         "label": "CHAIR RACE",
         "cost": 120,
         "blurb":
-        "RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
+        "RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH {Z} AND {X} IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
         "keys": "ARROWS = LANE  Z X = PUSH  ESC = LEAVE"
     },
     "cornhole":
@@ -35257,7 +35276,7 @@ const GAMES := {
         "cost": 150,
         "blurb":
         "RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
-        "keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
+        "keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL  ESC = LEAVE"
     },
     "paintball":
     {
@@ -35265,7 +35284,7 @@ const GAMES := {
         "cost": 200,
         "blurb":
         "CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, SWITCH LANES, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
-        "keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK"
+        "keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE"
     },
     "darts":
     {
@@ -35273,7 +35292,7 @@ const GAMES := {
         "cost": 0,
         "casual": true,
         "blurb":
-        "A QUICK ROUND AT THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD: PRESS E TO THROW AT IT. THREE DARTS A TURN, THREE ROUNDS, HIGHEST TOTAL WINS.",
+        "A QUICK ROUND AT THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD: PRESS {E} TO THROW AT IT. THREE DARTS A TURN, THREE ROUNDS, HIGHEST TOTAL WINS.",
         "keys": "E = THROW  ESC = LEAVE"
     },
 }
@@ -35391,25 +35410,32 @@ const GRILL_LIFT := 182.0
 const GRILL_PAN := -30.0
 const ROOM_INTRO := {
     "bowling":
-    "TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
+    "TAKE YOUR TURN ON THE LANE. PRESS {E} TO STEP UP, {E} TO STOP THE AIM, {E} AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
     "karaoke":
-    "YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
+    "YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE {ARROW KEYS|SAME DIRECTION} AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
     "escape":
-    "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
+    "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK ({E}), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. {N} ASKS A FRIEND. THE CLOCK IS RUNNING.",
     "dinner":
-    "WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
+    "WALK TO THE BOOTH AND SIT DOWN ({E}). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
     "chair":
-    "A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
+    "A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH {Z} AND {X} IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
     "cornhole":
-    "TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
+    "TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. {E} STOPS THE AIM, {E} AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
     "paintball":
-    "THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), Z FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD SHIFT TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
+    "THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), {Z} FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD {SHIFT} TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
     "darts":
-    "THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
+    "THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND {E} THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
     "grill":
-    "THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
+    "THE CREW LINES UP AT THE GRILL. {ARROWS} PICK A PATTY, {E} FLIPS IT (EARLY IT STICKS, LATE IT CHARS), {SPACE} SERVES IT TO THE OLDEST ORDER THAT WANTS IT, {SHIFT} MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
+# R42: the hint lines that say how to leave are too long for the narrow format: the same keys, shorter
+const NARROW_KEYS := {
+    "E = FLIP  SPACE = SERVE  SHIFT = COOL  ESC = LEAVE": "E FLIP  SPACE SERVE  SHIFT COOL  ESC OUT",
+    "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
+    "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+    "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+}
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
 const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
@@ -35688,7 +35714,7 @@ const CREW_LINES := {
         "wait": ["I DO NOT WAIT. I ABSORB.", "TIMER IS RUNNING, YOU KNOW."],
     },
 }
-const KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH KEYS AT ONCE."}
+const KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH {KEYS|DIRECTIONS} AT ONCE."}
 const ROOMS := {
     "bowling": "bowling_alley",
     "karaoke": "karaoke_bar",
@@ -36388,6 +36414,8 @@ func _event_key(event: InputEvent) -> int:
         key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
     elif (racing or grilling or paintballing) and not event is InputEventKey and Controls.matches(event, "phone"):
         key = KEY_ESCAPE  # R42: B is a game button in these three (push, the cool side, duck), so the pad's BACK button leaves
+    elif _traveled and (phase == "intro" or _peek) and Controls.matches(event, "pick_next"):
+        key = KEY_TAB  # R42: RB on a pad looks at the room from the intro page and comes back, as the hint line says
     elif dir != "":
         key = PAD_ARROWS[dir]
     elif Controls.back(event):
@@ -36630,7 +36658,7 @@ func _bowl_setup() -> void:
     _bowl_zone_roll()
     if room_mode():
         g.stage = "ready"
-        caption("YOUR TURN. PRESS E TO STEP UP.", 99.0)
+        caption("YOUR TURN. PRESS {E} TO STEP UP.", 99.0)
 
 
 func _bowl_tick(dt: float) -> void:
@@ -36690,7 +36718,7 @@ func _bowl_press(key: int) -> void:
     if key not in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E]:
         return
     if room_mode() and g.stage not in ["ready", "aim", "power"]:
-        caption("WAIT. E DOES NOTHING UNTIL IT IS YOUR TURN.", 1.5)
+        caption("WAIT. {E} DOES NOTHING UNTIL IT IS YOUR TURN.", 1.5)
         return
     if g.stage == "ready":
         _place_player(_x0() + float(LANE_NEAR[0]))
@@ -36699,12 +36727,12 @@ func _bowl_press(key: int) -> void:
         g.marker = 0.0
         g.dir = 1.0
         _bowl_zone_roll()
-        caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
+        caption("PRESS {E} TO STOP THE AIM IN THE GREEN. {ARROWS} = HOOK.", 99.0)
     elif g.stage == "aim":
         g.stage = "power"
         g.power = 0.0
         g.dir = 1.0
-        caption("PRESS E TO STOP THE POWER (STOP IN THE GREEN).", 99.0)
+        caption("PRESS {E} TO STOP THE POWER (STOP IN THE GREEN).", 99.0)
     elif g.stage == "power":
         g.stage = "roll"
         g.ball = 0.0
@@ -36821,7 +36849,7 @@ func _bowl_next() -> void:
         g.dir = 1.0
         _bowl_zone_roll()
         if room_mode():
-            caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
+            caption("SECOND ROLL. PRESS {E} TO STOP THE AIM.", 99.0)
         return
     if int(g.get("players", 1)) > 1 and int(g.turn) == 0:  # co-op: player 2 bowls the same frame, then the crew
         g.turn = 1
@@ -36834,7 +36862,7 @@ func _bowl_next() -> void:
         g.msg = ""
         g.up = [_all_up(), _all_up()]
         _set_pilot(1)
-        caption("P2: PRESS E TO STEP UP.", 99.0)
+        caption("P2: PRESS {E} TO STEP UP.", 99.0)
         return
     var frame := int(g.frame)
     var turn := bowlers().filter(func(n: String) -> bool: return bowls_in_frame(n, frame))
@@ -36865,7 +36893,7 @@ func _bowl_advance() -> void:
     g.msg = ""
     g.up = [_all_up(), _all_up()]
     if room_mode():
-        caption("FRAME %d. YOUR TURN: PRESS E TO STEP UP." % int(g.frame), 99.0)
+        caption("FRAME %d. YOUR TURN: PRESS {E} TO STEP UP." % int(g.frame), 99.0)
 
 
 # the crew takes its turn on the next lane, one at a time
@@ -37900,8 +37928,8 @@ const DEFAULT_ESCAPE_THEMES := {
         "short": "OLD STUDY",
         "tint": "ffffff",
         "ink": "e8e8e0",
-        "intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
-        "start": "LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT",
+        "intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK ({E}), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. {N} ASKS A FRIEND. THE CLOCK IS RUNNING.",
+        "start": "LOOK AROUND. {E} ON THE CHALKBOARD, THE CLOCK, THE PAINTING. {N} = HINT",
         "open": "THE VAULT OPENS!",
         "say": {
             "sum": "THE CHALKBOARD: {a} + {b} = ?",
@@ -37921,8 +37949,8 @@ const DEFAULT_ESCAPE_THEMES := {
         "short": "SERVER ROOM",
         "tint": "9fd4e6",
         "ink": "8ff0b0",
-        "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
-        "start": "THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT",
+        "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
+        "start": "THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT",
         "open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
         "say": {
             "sum": "THE BOARD BY THE RACK: PORT {a} + PORT {b} = ?",
@@ -37963,8 +37991,8 @@ const DEFAULT_ESCAPE_THEMES := {
         "short": "DETECTIVE",
         "tint": "e6c690",
         "ink": "f0e2b8",
-        "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
-        "start": "THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT",
+        "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
+        "start": "THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT",
         "open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
         "say": {
             "sum": "THE CASE BOARD: {a} SUSPECTS + {b} WITNESSES = ?",
@@ -38004,8 +38032,8 @@ const DEFAULT_ESCAPE_THEMES := {
         "short": "COMPUTER LAB",
         "tint": "d4e6c0",
         "ink": "b8f0a0",
-        "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.",
-        "start": "THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT",
+        "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.",
+        "start": "THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT",
         "open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
         "say": {
             "sum": "THE TEACHER'S BOARD: {a} FLOPPIES + {b} FLOPPIES = ?",
@@ -38182,7 +38210,7 @@ const DISHES := [
     {"id": "spinach", "label": "SPINACH DIP", "has": []},
 ]
 const DEFAULT_DINNER_TEXT := {
-    "order": "FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, ENTER).",
+    "order": "FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, {ENTER}).",
     "order_strip": "ORDER FOR THE TABLE",
     "order_head": "A PLATE TO SHARE: WHAT DO YOU ORDER?",
     "order_fit": "%s FOR THE TABLE. EVERYBODY DIGS IN. (TABLE +%d)",
@@ -38669,7 +38697,7 @@ func _dinner_mark(i: int, r: Rect2) -> void:
 
 func _dinner_open_line() -> String:
     if not g.get("variety", false):
-        return "%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text()
+        return "%s. PICK A TOPIC (UP / DOWN, {ENTER})." % dinner_mood_text()
     var text := dinner_mood_text() + "."
     var guest: Dictionary = g.get("guest", {})
     if not guest.is_empty() and str(guest.firm) != "":
@@ -38908,7 +38936,7 @@ func _room_begin() -> void:
             var mic := _x0() + MIC_X
             _place_player(mic)
             _hold_player("talk", mic + 60.0)
-            caption("%s. ARROW KEYS AT THE LINE. SING!" % str(g.song.title), 4.0)
+            caption("%s. {ARROW KEYS|STICK} AT THE LINE. SING!" % str(g.song.title), 4.0)
         "cornhole":
             _corn_begin()
         "grill":
@@ -38919,7 +38947,7 @@ func _room_begin() -> void:
             caption(escape_text("start"), 6.0)
         "dinner":
             g.stage = "sit"
-            caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
+            caption("SIT AT THE BOOTH WITH THE TEAM (PRESS {E} ON THE SEAT)", 99.0)
 
 
 func _room_process(delta: float) -> void:
@@ -38989,6 +39017,8 @@ func hint() -> String:
         text = _chair_hint() if game == "chair" else str(GAMES[game].keys)
     else:
         text = _room_hint()
+    if get_viewport().get_visible_rect().size.x < 260.0:
+        text = str(NARROW_KEYS.get(text, text))
     return text
 
 
@@ -39009,7 +39039,7 @@ func _room_hint() -> String:
         "bowling":
             text = _bowl_hint(str(g.get("stage", "")))
         "karaoke":
-            text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+            text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "{ARROW KEYS:move} = HIT NOTES  ESC = LEAVE"
         "paintball":
             text = "GET READY  ESC = LEAVE" if str(g.rules.phase) == "count" else str(GAMES.paintball.keys)
         "chair":
@@ -39024,7 +39054,7 @@ func _room_hint() -> String:
             if g.get("entry", false):
                 text = "ARROWS  ENTER = TRY  ESC = BACK"
             else:
-                text = "E = LOOK / USE  N = HINT  ESC = LEAVE"
+                text = "E = LOOK / USE  {N} = HINT  ESC = LEAVE"
     return text
 
 
@@ -39253,7 +39283,7 @@ func interact(kind: String) -> void:
         g.entry = true
         Game.ui_open = true
         caption(
-            "ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF",
+            "ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, {ENTER} TRIES IT, {ESC} BACKS OFF",
             6.0
         )
 
@@ -39689,10 +39719,10 @@ func _chair_hint() -> String:
         return "GET READY  ESC = LEAVE"
     if str(g.get("event", "")) == "fight":
         if g.has("race") and g.race.get("duel") == true:
-            return "P1 = Z X  P2 = A B  L R = TURN  UP DN = LANE"
+            return "P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE"
         return "Z X = PUSH  L R = TURN  UP DN = LANE"
     if Players.coop and Players.slots[1].joined:
-        return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
+        return "P1 = Z  P2 = {A / X|(A) / (X)}  ARROWS = LANE  ESC = LEAVE"
     return str(GAMES.chair.keys)
 
 
@@ -39758,6 +39788,11 @@ func _hud_chair(s: Rect2) -> void:
         var lit: bool = race.lit(k)
         var kx := o.x + 9.0 * float(k)
         _canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 8.0), AMBER if lit else UiStyle.MUTED)
+        if UiStyle.PadGlyphs.active():  # R42: on a pad the two pushes are the A and B buttons (the glyphs; the one to press is the bright one)
+            UiStyle.PadGlyphs.glyph(_canvas, "A" if k == 0 else "B", Vector2(kx, s.position.y + 2.0))
+            if not lit:
+                _canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 7.0), Color(0.02, 0.02, 0.05, 0.5))
+            continue
         _t(keys[k], kx + 2.0, s.position.y + 4.0, INK if lit else WHITE)
     if str(g.get("event", "")) == "fight":
         _hud_fight(s, o)
@@ -39913,7 +39948,7 @@ func _paint_press(key: int) -> void:
         g.rules.change_lane(me, 1)
     elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
         if not (g.rules.phase == "play" and g.rules.fire(me)) and bool(g.rules.units[me].duck) and g.rules.phase == "play":
-            caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
+            caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF {SHIFT}.", 0.8)
 
 
 func _paint_lines() -> Array:
@@ -40020,9 +40055,9 @@ func _corn_cues(cg: RefCounted) -> void:
     var line := ""
     match str(cg.phase):
         "aim":
-            line = "AIM: PRESS E WHEN THE MARKER IS IN THE GREEN."
+            line = "AIM: PRESS {E} WHEN THE MARKER IS IN THE GREEN."
         "power":
-            line = "POWER: PRESS E WHEN THE BAR IS IN THE GREEN."
+            line = "POWER: PRESS {E} WHEN THE BAR IS IN THE GREEN."
         "opp":
             line = "%s STEPS UP." % str(cg.opp).to_upper()
         _:
@@ -40256,7 +40291,7 @@ func _darts_setup() -> void:
 func _darts_begin() -> void:
     g["snap"] = 3
     _darts_seat(g.game)
-    caption("DARTS. THREE DARTS A TURN, THREE ROUNDS. E THROWS AT THE RETICLE.", 4.0)
+    caption("DARTS. THREE DARTS A TURN, THREE ROUNDS. {E} THROWS AT THE RETICLE.", 4.0)
 
 
 # the thrower of the turn stands at the line, everybody else waits to the left of it, facing the board
@@ -40320,7 +40355,7 @@ func _darts_cues(dg: RefCounted) -> void:
     var line := ""
     match str(dg.phase):
         "aim":
-            line = "AIM: PRESS E TO THROW AT THE RETICLE. THE WOBBLE SETTLES FOR A MOMENT."
+            line = "AIM: PRESS {E} TO THROW AT THE RETICLE. THE WOBBLE SETTLES FOR A MOMENT."
         "opp", "ready":
             line = str(dg.msg)
         _:
@@ -40559,7 +40594,7 @@ func _grill_begin() -> void:
     g["snap"] = 3
     _place_player(_x0() + GRILL_X)
     _hold_player("idle", _x0() + GRILL_X + 60.0)
-    caption("ARROWS PICK A PATTY. E FLIPS, SPACE SERVES, SHIFT = COOL SIDE.", 5.0)
+    caption("{ARROWS} PICK A PATTY. {E} FLIPS, {SPACE} SERVES, {SHIFT} = COOL SIDE.", 5.0)
 
 
 func _grill_tick(dt: float) -> void:
@@ -40604,7 +40639,7 @@ func _grill_cues(gg: RefCounted) -> void:
         Sfx.play("grill_sizzle", 0.4)
     if room_mode() and p != null and p.state != "emote" and phase == "play" and not gg.done:
         _hold_player("idle", _x0() + GRILL_X + 60.0)
-    var line := str(gg.msg) if float(gg.msg_t) > 0.0 else "ARROWS PICK A PATTY. E FLIPS IT, SPACE SERVES IT, SHIFT PARKS IT ON THE COOL SIDE."
+    var line := str(gg.msg) if float(gg.msg_t) > 0.0 else "{ARROWS} PICK A PATTY. {E} FLIPS IT, {SPACE} SERVES IT, {SHIFT} PARKS IT ON THE COOL SIDE."
     if float(g.remark_t) > 0.0:
         line = str(g.remark)
     caption(line, 0.3)
@@ -40661,8 +40696,8 @@ func _grill_press(key: int) -> void:
 
 func _grill_hint() -> String:
     if Players.coop and Players.slots[1].joined:
-        return "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE"
-    return "ARROWS = PICK  E = FLIP  SPACE = SERVE"
+        return "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE"
+    return "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE"
 
 
 func _grill_end() -> void:
@@ -40972,7 +41007,7 @@ func _paint_intro(b: Rect2) -> void:
         var what := ""
         if event == "fight":
             who = "AGAINST %s. THE REST WATCH." % g.race.opponent().to_upper() if g.has("race") else ""
-            what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. Z X PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
+            what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. {Z} {X} PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
         else:
             what = "< %s >  %s" % [str(ChairRace.COURSES[event].label), str(ChairRace.COURSES[event].blurb)]
         if not opts.has("event"):
@@ -41241,17 +41276,17 @@ write("scripts/hints.gd", '''extends Node
 
 const SHOW_SECS := 8.0
 const DAY1 := [
-    {"at": 4.0, "text": "ARROWS OR A/D MOVE. HOLD SHIFT TO RUN. SPACE JUMPS."},
+    {"at": 4.0, "text": "{ARROWS OR A/D MOVE|THE STICK MOVES YOU}. HOLD SHIFT TO RUN. SPACE JUMPS."},
     {"at": 24.0, "text": "E USES WHAT IS NEAR: DOORS, THE COFFEE MACHINE, CHAIRS. TAB PICKS THE TARGET."},
-    {"at": 46.0, "text": "SIT AT A DESK AND PRESS E ON THE MONITOR TO OPEN THE COMPUTER. ESC CLOSES IT."},
-    {"at": 68.0, "text": "P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLOW."},
+    {"at": 46.0, "text": "SIT AT A DESK AND PRESS {E} ON THE MONITOR TO OPEN THE COMPUTER. {ESC} CLOSES IT."},
+    {"at": 68.0, "text": "P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, {C} ASKS A COWORKER TO FOLLOW."},
     {"at": 90.0, "text": "TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA."},
-    {"at": 112.0, "text": "SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP."},
-    {"at": 134.0, "text": "M MUTES OR RESTORES THE SOUND."},
+    {"at": 112.0, "text": "SEATED? HOLD SHIFT AND {PRESS A OR D|PUSH THE STICK} TO ROLL YOUR CHAIR. E OR {ANY MOVE KEY|THE STICK ALONE} STANDS YOU UP."},
+    {"at": 134.0, "text": "{M} MUTES OR RESTORES THE SOUND."},
 ]
 # Dan's ride-along on day 1 (when the player takes his offer on the first card): the bottom line follows what the player has done
 const MENTOR := {
-    "pc": "DAN: SIT AT YOUR DESK AND PRESS E ON THE MONITOR. THAT OPENS THE COMPUTER.",
+    "pc": "DAN: SIT AT YOUR DESK AND PRESS {E} ON THE MONITOR. THAT OPENS THE COMPUTER.",
     "wait": "DAN: A TICKET WILL ARRIVE SOON. IT SHOWS UP IN THE PSA ON YOUR COMPUTER.",
     "take": "DAN: OPEN THE PSA AND TAKE YOUR FIRST TICKET.",
     "fix": "DAN: NOW OPEN THE RMM AND FIX IT. THE TICKET SAYS WHAT IS WRONG.",
@@ -41785,7 +41820,7 @@ func _menu(text: String) -> void:
         {"label": "SMALL TALK", "id": "small"},
         {"label": "ONE ON ONE" if service_mode else ("THEIR QUESTION" if q_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP"))), "id": "ask"},
         {"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
-        {"label": "LEAVE (ESC)", "id": "leave"},
+        {"label": "LEAVE ({ESC})", "id": "leave"},
     ], func(id: String) -> void: _pick(id))
 
 
@@ -41811,7 +41846,7 @@ func _pick(id: String) -> void:
 
 
 func _reply(text: String) -> void:
-    Cards.ask(_who, text, [{"label": "OK", "id": "ok"}, {"label": "LEAVE (ESC)", "id": "leave"}], func(id: String) -> void: _after(id))
+    Cards.ask(_who, text, [{"label": "OK", "id": "ok"}, {"label": "LEAVE ({ESC})", "id": "leave"}], func(id: String) -> void: _after(id))
 
 
 func _after(id: String) -> void:
@@ -41940,7 +41975,7 @@ func _sales_menu(text: String) -> void:
             {"label": "SMALL TALK", "id": "small"},
             {"label": str(row.get("label", "HOW ARE THINGS?")), "id": "ask"},
             {"label": "ANY TIPS?", "id": "tip"},
-            {"label": "LEAVE (ESC)", "id": "leave"},
+            {"label": "LEAVE ({ESC})", "id": "leave"},
         ],
         func(id: String) -> void: _pick(id)
     )
@@ -43459,7 +43494,7 @@ func holding() -> bool:
 
 func on_given(slot := 0) -> void:
     _ammo[slot] = MAX_AMMO
-    Hints.toast("Z FIRES, HOLD Z TO LOB, S TO DUCK, V PICKS A WAR GAME.", 4.0)
+    Hints.toast("Z FIRES, HOLD Z TO LOB, {S:duck} TO DUCK, {V} PICKS A WAR GAME.", 4.0)
 
 
 # ---- firing ------------------------------------------------------------------------------------------
@@ -49896,7 +49931,7 @@ func info_line() -> String:
         return "%s %s %s ENTER=DROP ESC=CANCEL" % [s, f, w]
     var id := selected_id()
     if id < 0:
-        return "TAB=NEXT  ENTER=PICK UP  A=AUTO  C=CAPACITY"
+        return "TAB=NEXT  ENTER=PICK UP{  A=AUTO  C=CAPACITY|}"
     var t2 := Msp.ticket(id)
     var cl := "PITP" if int(t2.client) < 0 else str(Msp.CLIENTS[int(t2.client)].short)
     var extra := ""
@@ -50534,8 +50569,8 @@ func _capacity(a: Rect2, narrow: bool) -> void:
     c._text(c._clip(summary, int((a.size.x - 6.0) / 4.0)), Vector2(a.position.x + 3, y + 1), MUTED)
     var bottom := Rect2(a.position.x, a.end.y - 10, a.size.x, 10)
     c._fill(bottom, Color("cfd9e8"))
-    c._button("dsp:focus", Rect2(bottom.position.x + 2, bottom.position.y + 1, 52, 8), "FOCUS (F)", not names.is_empty())
-    c._button("dsp:oto", Rect2(bottom.position.x + 56, bottom.position.y + 1, 36, 8), "1:1 (O)", not names.is_empty())
+    c._button("dsp:focus", Rect2(bottom.position.x + 2, bottom.position.y + 1, 52, 8), Controls.keys("FOCUS{ (F)|}"), not names.is_empty())
+    c._button("dsp:oto", Rect2(bottom.position.x + 56, bottom.position.y + 1, 36, 8), Controls.keys("1:1{ (O)|}"), not names.is_empty())
     var note := "SET A FOCUS: THAT AREA FITS HIM BETTER AND HE TRAINS IT"
     if narrow:
         note = "FOCUS TRAINS AN AREA"
@@ -51282,7 +51317,7 @@ func _books(a: Rect2, narrow: bool) -> void:
     var chars := int((a.size.x - 4.0) / 4.0)
     var foot := _footer(a, foot_h, info_for(sel_id()), chars)
     var cost := cost_of(sel_id())
-    var go_label := "%s (ENTER)" % str(cost.verb)
+    var go_label := Controls.keys("%s ({ENTER})" % str(cost.verb))
     if narrow:
         go_label = str(cost.verb)
     var can := str(cost.act) in ["draft", "publish", "refresh", "train"]
@@ -51389,7 +51424,7 @@ func _crew(a: Rect2, narrow: bool) -> void:
         c._text(("$%d A TICKET" % Service.cost_per_ticket()) if Service.cost_per_ticket() >= 0 else "NO TICKETS CLOSED", Vector2(a.position.x + a.size.x * 0.62, y + 2), INK)
     var bottom := Rect2(a.position.x, a.end.y - 12, a.size.x, 12)
     c._fill(bottom, Color("cfe0d8"))
-    var hire_label := "HIRE (H)" if Crew.can_hire() else "FULL"
+    var hire_label := Controls.keys("HIRE{ (H)|}") if Crew.can_hire() else "FULL"
     c._button("kb:hire", Rect2(bottom.position.x + 2, bottom.position.y + 1, 40, 10), hire_label, Crew.can_hire(), Color("b8e0c8") if Crew.can_hire() else c.BTN)
     var tl := "TRAINING: " + str(Service.TRAINING[Service.training].label)
     if narrow:
@@ -53187,6 +53222,7 @@ func room_info(door: int, chars := 22) -> Dictionary:
 
 
 func _wrap(text: String, limit: int) -> Array:
+    text = Controls.keys(text)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines := []
     var cur := ""
     for w in text.split(" "):
@@ -53481,7 +53517,7 @@ func _paint_talk() -> void:
     if seated.is_empty():
         return
     var size := get_viewport().get_visible_rect().size
-    UiStyle.hint_bar(_canvas, size, "E = NEXT LINE")
+    UiStyle.hint_bar(_canvas, size, Controls.hint("E = NEXT LINE", {"E": "interact"}))
     var top := UiStyle.caption_bar(_canvas, size, talk_line())
     var head := "SALON %s  %d/%d  %s" % ["ABCD"[clampi(int(seated.door), 0, 3)], mini(int(seated.at) + 1, seated.lines.size()), seated.lines.size(), str(seated.title)]
     var wide := int((size.x - 12.0) / 4.0)
@@ -54222,7 +54258,7 @@ const TEXT := {
     "offer": "%s needs you onsite: this cannot be fixed from the RMM. The drive takes about %d minutes each way and your other tickets keep ageing while you are out.",
     "go": "DRIVE THERE NOW",
     "later": "NOT YET",
-    "arrive": "You arrive at %s after %d minutes on the road. Walk to the equipment and press E on it.",
+    "arrive": "You arrive at %s after %d minutes on the road. Walk to the equipment and press {E} on it.",
     "nothing": "Nothing wrong with this one. Look for what the ticket describes.",
     "no_job": "Everything looks fine here.",
     "leave_unmet": "You have not met the owner yet. If you leave now the visit was a waste of a drive.",
@@ -55695,16 +55731,16 @@ const TEXT := {
     "intro1": "THE COPIER GRINDS AND THE DISPLAY SAYS",
     "intro2": "PAPER JAM 13.20.00. THEY ALWAYS SAY THAT.",
     "intro3": "SPACE = START  ESC = SKIP",
-    "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN",
+    "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN",
     "jam_clean": "A CLEAN PULL. THE SHEET COMES OUT WHOLE.",
     "jam_hold": "IT HOLDS. NOT QUITE: TRY AGAIN.",
     "jam_tear": "RIP! A SCRAP IS STILL INSIDE.",
     "jam_short": "TWO CLEAN PULLS: THE JAM EASES, ONE FEWER TO GO.",
     "jam_scrap": "THE SCRAP NEEDS ONE MORE PULL.",
-    "toner_help": "LEFT / RIGHT TO PICK, SPACE TO INSTALL",
+    "toner_help": "LEFT / RIGHT TO PICK, {SPACE} TO INSTALL",
     "toner_ok": "CLICK. IT SEATS.",
     "toner_bad": "WRONG CARTRIDGE. THE PRINTER BEEPS.",
-    "shake_help": "SHAKE THE CARTRIDGE: A D A D A D",
+    "shake_help": "SHAKE THE CARTRIDGE: {A D A D A D|(LB) (RB) (LB) (RB)}",
     "shake_late": "TOO SLOW. TONER DUST EVERYWHERE.",
     "test_help": "PICK 1, 2 OR 3",
     "right": "RIGHT.",
@@ -55715,13 +55751,13 @@ const TEXT := {
     "stars1": "IT PRINTS. MOSTLY.",
     "stars0": "YOU GIVE UP. THE PRINTER WINS.",
     "done": "SPACE = CONTINUE",
-    "tray_help": "PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
+    "tray_help": "PC LOAD LETTER. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}",
     "tray_ok": "LETTER PAPER IN TRAY 2. PC LOAD LETTER IS SOLVED. YOU ARE A HERO.",
     "tray_bad": "WRONG PAPER. THE PRINTER JAMS ON PRINCIPLE.",
     "tray_hit": "YOU HIT THE PRINTER AND IT WORKS. DO NOT TELL ANYONE.",
     "tray_screen": "PC LOAD LETTER",
     "tray_slot": "TRAY 2",
-    "pray_help": "P: PRAY TO THE SYSADMIN GODS",
+    "pray_help": "{P:pray}: PRAY TO THE SYSADMIN GODS",
     "pray_none": "THE GODS HAVE HEARD ENOUGH FROM YOU TODAY.",
     "blessed_tag": "BLESSED",
     "tired_tag": "TIRED",
@@ -55736,37 +55772,37 @@ const MODEL_TEXT := {
         "title": "PLOTTER REPAIR",
         "intro1": "THE FORTY-INCH PLOTTER CHEWS ITS ROLL",
         "intro2": "A FORTY-FOOT ROLL. MEDIA JAM. DUE AT NOON.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: EASE THE ROLL OUT",
         "jam_clean": "A CLEAN PULL. THE ROLL COMES OUT WHOLE AND FLAT.",
         "jam_hold": "THE ROLL HOLDS. NOT QUITE: TRY AGAIN.",
         "jam_tear": "RIP! A STRIP OF BOND IS STILL WRAPPED INSIDE.",
-        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO INSTALL",
+        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, {SPACE} TO INSTALL",
         "toner_ok": "CLICK. THE INK TANK SEATS.",
         "toner_bad": "WRONG INK TANK. THE PLOTTER BEEPS AT YOU.",
-        "shake_help": "ROCK THE INK TANK: A D A D A D",
+        "shake_help": "ROCK THE INK TANK: {A D A D A D|(LB) (RB) (LB) (RB)}",
         "shake_late": "TOO SLOW. INK ON THE FLOOR AND ON THE BLUEPRINTS.",
         "hit": "YOU SLAP THE PLOTTER. IT WORKS. DO NOT TELL THE ARCHITECTS.",
         "stars3": "PERFECT. A CRISP FORTY-INCH SITE PLAN.",
         "stars2": "GOOD ENOUGH. A FEW BANDING LINES.",
         "stars1": "IT PLOTS. THE SCALE BAR IS A LITTLE OFF.",
         "stars0": "YOU GIVE UP. THE PLOTTER WINS.",
-        "tray_help": "MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
+        "tray_help": "MEDIA MISMATCH. LOAD THE RIGHT ROLL. LEFT / RIGHT, {SPACE}",
         "tray_ok": "24 INCH BOND ROLL LOADED. THE JOB NUMBER 14-0312 PRINTS.",
         "tray_bad": "WRONG ROLL. THE PLOTTER CUTS IT SHORT.",
         "tray_hit": "YOU HIT THE PLOTTER AND IT WORKS. DO NOT TELL ANYONE.",
         "tray_screen": "MEDIA MISMATCH",
         "tray_slot": "ROLL 1",
-        "pray_help": "P: PRAY TO THE PLOTTER GODS",
+        "pray_help": "{P:pray}: PRAY TO THE PLOTTER GODS",
     },
     "inkjet":
     {
         "title": "INKJET REPAIR",
         "intro1": "THE INKJET PRINTS A PAGE OF WHITE LINES",
         "intro2": "AND A PAPER JAM LIGHT BLINKS. AGAIN.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE SHEET",
         "jam_clean": "A CLEAN PULL. THE SHEET COMES OUT FLAT.",
         "jam_tear": "RIP! A CORNER IS STILL UNDER THE ROLLER.",
-        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, SPACE TO FIT",
+        "toner_help": "LEFT / RIGHT TO PICK AN INK TANK, {SPACE} TO FIT",
         "toner_ok": "CLICK. THE INK TANK SEATS.",
         "toner_bad": "WRONG SLOT. THE INKJET BEEPS.",
         "hit": "YOU TAP THE INKJET. IT PRINTS. DO NOT TELL ANYONE.",
@@ -55774,33 +55810,33 @@ const MODEL_TEXT := {
         "stars2": "GOOD ENOUGH. A LITTLE BANDING.",
         "stars1": "IT PRINTS. THE BLACK IS A BIT GREEN.",
         "stars0": "YOU GIVE UP. THE INKJET WINS.",
-        "pray_help": "P: PRAY TO THE INK GODS",
+        "pray_help": "{P:pray}: PRAY TO THE INK GODS",
     },
     "mfp":
     {
         "title": "COPIER REPAIR",
         "intro1": "THE COPIER SCANS AND FAXES, THEN JAMS.",
         "intro2": "ADF MISFEED. PAPER EVERYWHERE.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: PULL THE SHEET",
         "jam_clean": "A CLEAN PULL. THE SHEET LEAVES THE FEEDER WHOLE.",
         "jam_tear": "RIP! HALF A LETTER IS STUCK IN THE FEEDER.",
-        "toner_help": "LEFT / RIGHT TO PICK A CARTRIDGE, SPACE TO FIT",
+        "toner_help": "LEFT / RIGHT TO PICK A CARTRIDGE, {SPACE} TO FIT",
         "hit": "YOU THUMP THE COPIER. IT WORKS. DO NOT TELL THE PARTNERS.",
         "stars3": "PERFECT. THE FAX GOES OUT AND THE COPIES ARE CLEAN.",
         "stars1": "IT COPIES. THE FAX STILL HISSES.",
         "stars0": "YOU GIVE UP. THE COPIER WINS.",
-        "tray_help": "TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
+        "tray_help": "TRAY MISMATCH. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}",
         "tray_ok": "LETTER PAPER IN TRAY 1. THE COPIER HUMS.",
         "tray_screen": "LOAD LETTER IN TRAY 1",
         "tray_slot": "TRAY 1",
-        "pray_help": "P: PRAY TO THE COPIER GODS",
+        "pray_help": "{P:pray}: PRAY TO THE COPIER GODS",
     },
     "receipt":
     {
         "title": "RECEIPT PRINTER",
         "intro1": "THE RECEIPT PRINTER BEEPS AND THE LINE",
         "intro2": "AT THE DESK GROWS. THE LIGHT IS RED.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE PAPER",
         "jam_clean": "A CLEAN PULL. THE PAPER FEEDS STRAIGHT.",
         "jam_tear": "RIP! A CURL OF THERMAL PAPER IS STUCK.",
         "hit": "YOU SMACK THE LID. IT CUTS A RECEIPT. DO NOT TELL ANYONE.",
@@ -55808,23 +55844,23 @@ const MODEL_TEXT := {
         "stars2": "GOOD ENOUGH. THE CUT IS A LITTLE CROOKED.",
         "stars1": "IT PRINTS. THE TOTAL IS FAINT.",
         "stars0": "YOU GIVE UP. THE LINE GROWS.",
-        "tray_help": "PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, SPACE",
+        "tray_help": "PAPER OUT LIGHT. LOAD THE RIGHT ROLL. LEFT / RIGHT, {SPACE}",
         "tray_ok": "THE 80 MM ROLL IS IN, HEAT SIDE UP. IT CUTS CLEANLY.",
         "tray_bad": "WRONG ROLL. THE LID WILL NOT CLOSE.",
         "tray_hit": "YOU HIT THE LID AND IT CLOSES. DO NOT TELL ANYONE.",
         "tray_screen": "PAPER OUT",
         "tray_slot": "ROLL BAY",
-        "pray_help": "P: PRAY TO THE REGISTER GODS",
+        "pray_help": "{P:pray}: PRAY TO THE REGISTER GODS",
     },
     "dot":
     {
         "title": "DOT MATRIX REPAIR",
         "intro1": "THE OLD DOT MATRIX SCREECHES THROUGH ITS",
         "intro2": "FORMS AND THE TRACTOR FEED IS CROOKED.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FORM",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE FORM",
         "jam_clean": "A CLEAN PULL. THE FORM COMES OUT WHOLE.",
         "jam_tear": "RIP! A STRIP OF PINFEED HOLES IS STILL INSIDE.",
-        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT",
+        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, {SPACE} TO FIT",
         "toner_ok": "CLICK. THE RIBBON SEATS.",
         "toner_bad": "WRONG RIBBON. THE HEAD GRINDS.",
         "hit": "YOU THUMP THE CASE. IT SCREECHES AND WORKS.",
@@ -55832,22 +55868,22 @@ const MODEL_TEXT := {
         "stars2": "GOOD ENOUGH. A FEW PALE LINES.",
         "stars1": "IT PRINTS. THE THIRD COPY IS A GHOST.",
         "stars0": "YOU GIVE UP. THE DOT MATRIX WINS.",
-        "tray_help": "FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, SPACE",
+        "tray_help": "FORMS OUT OF LINE. LOAD THE RIGHT PAPER. LEFT / RIGHT, {SPACE}",
         "tray_ok": "THE FORMS RIDE THE TRACTOR PINS, SQUARE AT LAST.",
         "tray_bad": "WRONG PAPER. THE PINS TEAR THE EDGE.",
         "tray_screen": "FORM FEED ERROR",
         "tray_slot": "TRACTOR",
-        "pray_help": "P: PRAY TO THE FORMS GODS",
+        "pray_help": "{P:pray}: PRAY TO THE FORMS GODS",
     },
     "line":
     {
         "title": "LINE PRINTER",
         "intro1": "THE SERVER ROOM LINE PRINTER IS JAMMED",
         "intro2": "ON PAYROLL FORMS. ONE LIFE, NO PRAYERS.",
-        "jam_help": "SPACE WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD",
+        "jam_help": "{SPACE} WHEN THE MARKER IS IN THE GREEN: FREE THE FAN-FOLD",
         "jam_clean": "A CLEAN PULL. THE FAN-FOLD COMES OUT IN ITS CREASES.",
         "jam_tear": "RIP! A STRIP OF PAYROLL IS STILL INSIDE.",
-        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, SPACE TO FIT",
+        "toner_help": "LEFT / RIGHT TO PICK THE RIBBON, {SPACE} TO FIT",
         "toner_ok": "CLICK. THE RIBBON SEATS.",
         "toner_bad": "WRONG RIBBON. THE HAMMERS CLATTER IN THE DARK.",
         "hit": "YOU THUMP THE CABINET. THE CARRIAGE SHUDDERS AND GOES.",
@@ -55855,7 +55891,7 @@ const MODEL_TEXT := {
         "stars2": "GOOD. A FEW PAYCHECKS ARE ONE LINE OFF.",
         "stars1": "IT PRINTS. HR WILL NOTICE THE SMUDGE.",
         "stars0": "YOU GIVE UP. THE LINE PRINTER WINS AGAIN.",
-        "tray_help": "THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, SPACE",
+        "tray_help": "THE SPROCKETS ARE OFF. LOAD THE RIGHT FORMS. LEFT / RIGHT, {SPACE}",
         "tray_ok": "THE FAN-FOLD RIDES THE SPROCKETS, SQUARE AT LAST.",
         "tray_bad": "WRONG FORMS. THE SPROCKETS CHEW THE EDGE.",
         "tray_screen": "FORM FEED ERROR",
@@ -56766,6 +56802,7 @@ func _txt(s: String, x: float, y: float, c: Color = INK, scale := 1) -> void:
 
 
 func _wrap(s: String, chars: int) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines := []
     var cur := ""
     for w in s.split(" "):
@@ -56837,7 +56874,7 @@ func _hint() -> String:
             return "A / D = SHAKE  P = PRAY  ESC = GIVE UP"
         "test":
             return (
-                "SPACE = NEXT  ESC = GIVE UP" if _answered else "1 / 2 / 3 = ANSWER  ESC = GIVE UP"
+                "SPACE = NEXT  ESC = GIVE UP" if _answered else "{1 / 2 / 3|UP DOWN (A)} = ANSWER  ESC = GIVE UP"
             )
     return _tx("done")
 
@@ -57108,15 +57145,15 @@ func _draw() -> void:
             lines.append("* " + Mutators.tag())
         if Nerf.holding():
             if Nerf.charging:
-                lines.append("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0))
+                lines.append(Controls.world_hint("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0)))
             else:
                 var war := ("WAR %d%s" % [int(Nerf.war_t), Nerf.hud_extra()]) if Nerf.war_t > 0.0 else ""
                 if get_viewport_rect().size.x < 260.0:  # narrow formats: the war status gets its own line
-                    lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY" % Nerf.ammo)
+                    lines.append(Controls.world_hint("DARTS %d  Z FIRE{ (HOLD = FAR)|}  {G} AWAY" % Nerf.ammo))
                     if war != "":
                         lines.append(war)
                 else:
-                    lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, ("  " + war) if war != "" else ""])
+                    lines.append(Controls.world_hint("DARTS %d  Z FIRE (HOLD = FAR)  {G} AWAY" % Nerf.ammo) + (("  " + war) if war != "" else ""))
         var p2 := Players.node(1) if Players.coop else null
         if p2 != null and str(p2.held) == "nerf":
             lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
@@ -57156,7 +57193,7 @@ func _draw_banner() -> void:
     draw_rect(Rect2(x + 3.0, y + 3.0, 5.0, 5.0), kind_color)
     var chars := int((w - 14.0) / 4.0)
     var head := "%s  %s" % [b.kind, str(b.who)]
-    var body := str(b.body)
+    var body := Controls.keys(str(b.body))  # R42: a text message may name a key ("Press {P} for your phone")
     if head.length() > chars:
         head = head.substr(0, chars - 1) + "."
     if body.length() > chars:
@@ -57887,7 +57924,7 @@ func _paint_tools(size: Vector2) -> void:
     var list := rows()
     var h := 12.0 + 9.0 * float(list.size()) + 12.0
     var r := UiStyle.panel_rect(size, 300.0, h)
-    var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", "SHIFT F10" if not in_title else "")
+    var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
     var label_w := 52.0
     for i in list.size():
         var row: Dictionary = list[i]
@@ -59266,6 +59303,7 @@ func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
 
 
 func _wrap(s: String, chars: int, max_lines := 4) -> Array:
+    s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines: Array = []
     var line := ""
     for word in s.split(" "):
@@ -60553,7 +60591,7 @@ func _draw_menu() -> void:
         var ink := Color("17121f") if chosen else (Color.WHITE if item.enabled else Color("7d8595"))
         _menu.draw_rect(r, back)
         PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
-    var sound := Sfx.status_text() + "  M"
+    var sound := Sfx.status_text() + Controls.keys("  {M}")
     PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))
 ''')
 
@@ -64597,6 +64635,7 @@ func message() -> Array:
 
 
 func _wrap(s: String, chars: int, max_lines: int) -> Array:
+    s = PixelFont.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
     var lines: Array = []
     var line := ""
     for word in s.split(" "):
@@ -65408,7 +65447,7 @@ func _input(event: InputEvent) -> void:
         var dir := Controls.nav(event)
         if Controls.word(event) == "f9":
             Game.cycle_format()
-        elif Controls.word(event) == "c":
+        elif Controls.word(event) == "c" or (event is InputEventJoypadButton and Controls.matches(event, "hold_pose")):
             go_collection()
         elif dir == "left":
             go(-1)
@@ -65557,7 +65596,7 @@ func _draw() -> void:
         _draw_medals(pg.medals, body, cols, colw, gap)
         if detail and sel < pg.medals.size():
             _draw_detail(size, pg.medals[sel])
-    UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC"))
+    UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC", {"C": "hold_pose"}))
     _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
     _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
     _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -72184,7 +72223,7 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
         cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "DROP", live, Color("e9b1a8"))
     cp._button("crm:more", Rect2(r.position.x + 3.0 + bw2 * 2.0, by2, bw2 - 1.0, 9), "INFO", true, Color("e4d9c9"))
     var keys := ""
-    for item in ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+    for item in ([] if Controls.pad_active else ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]):  # whole items only, no "U U.."
         if (keys + "  " + item).strip_edges().length() <= chars:
             keys = (keys + "  " + item).strip_edges()
         else:
@@ -73786,6 +73825,8 @@ write("scripts/controls.gd", '''extends Node
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
+signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
+
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
@@ -73847,9 +73888,12 @@ const HINT_ROLES := {"ENTER": "menu_confirm", "ESC": "menu_back", "UP": "menu_up
 const HINT_PAD := {"ENTER": "(A)", "SPACE": "(A)", "ESC": "(B)", "ARROWS": "STICK", "TAB": "(RB)", "Z": "(A)", "X": "(B)", "SHIFT": "(B)", "E": "(A)"}
 # the words of a walking-around prompt (the HUD hint, the room hints) -> the action
 const HINT_WORLD := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "SPACE": "jump", "SHIFT": "run", "TAB": "pick_next", "Z": "aim"}
+# R42 key tokens inside a sentence (keys()): the action a bare {LETTER} stands for when the screen gives no map of its own
+const TOKEN_ACTIONS := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "N": "nudge", "C": "follow", "M": "mute", "V": "offer_war", "G": "give_item"}
 
 # menu directions by key: the arrows always, the letters when a screen asks for them
 const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right"}
+const MOUSE_FLIP := 24.0  # px of mouse travel that hand the prompts back to the keyboard and mouse
 const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 
 # the help page of the pause menu: pages of [what, keys]
@@ -73862,13 +73906,34 @@ const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "p
 # the key list's rows that follow a remap (row label -> action)
 const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career", "MUTE SOUND": "mute"}
 
+# R42: the rows of the key list that read differently on a pad (key tokens: a remapped button shows where it is now)
+const HELP_PAD := {
+    "MOVE": "STICK",
+    "RUN": "HOLD {S:run}",
+    "PICK A TARGET": "{T:pick_next}, {T:pick_prev}",
+    "PAUSE, HELP": "{P:pause}",
+    "ROLL YOUR CHAIR": "{L:roll} + STICK (SEATED)",
+    "STAND UP": "STICK OR {E:interact}",
+    "DANCE": "{X:dance} (FREE PLAY ENDS IT)",
+    "FOLLOW ME": "{C:follow}, BY A COWORKER",
+    "TALK": "{E:interact}, NEXT TO A COWORKER",
+    "FIRE A DART": "TAP {Z:aim}",
+    "LONG SHOT": "HOLD {Z:aim}, RELEASE",
+    "CHAIR RACE PUSH": "(A) (B) IN TURN",
+    "CHAIR RACE STEER": "STICK",
+    "BOWLING AND ESCAPE": "{E:interact}",
+    "KARAOKE LANES": "STICK",
+    "SHAPE, OUTFIT": "PAUSE MENU, {Y:outfit}",
+    "CAREER SCREEN": "PAUSE MENU",
+}
+
 # the keys the menus and mini-games read as fixed keys: a player can put an extra key on each (the plain key keeps working too).
 # [role, the key the screens look for, the label]
 const MENU_ROLES := [
     ["menu_confirm", KEY_ENTER, "MENU CONFIRM"], ["menu_back", KEY_ESCAPE, "MENU BACK"],
     ["menu_up", KEY_UP, "MENU UP"], ["menu_down", KEY_DOWN, "MENU DOWN"],
     ["menu_left", KEY_LEFT, "MENU LEFT"], ["menu_right", KEY_RIGHT, "MENU RIGHT"],
-    ["game_a", KEY_Z, "GAME A (Z)"], ["game_b", KEY_X, "GAME B (X)"], ["game_cool", KEY_SHIFT, "GAME COOL SIDE"],
+    ["game_a", KEY_Z, "GAME A{ (Z)|}"], ["game_b", KEY_X, "GAME B{ (X)|}"], ["game_cool", KEY_SHIFT, "GAME COOL SIDE"],
 ]
 # keys an alias may never take (the plain menu keys, pause, the debug keys)
 const MENU_RESERVED := [KEY_SPACE, KEY_E, KEY_TAB, KEY_BACKSPACE, KEY_KP_ENTER, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12]
@@ -73931,11 +73996,17 @@ var _slot_device := {}  # slot -> the pad device its p2_ actions are registered 
 var _stick_event: InputEvent = null
 var _stick_frame := -1
 var _stick_result := false
+var _noted: InputEvent = null  # the last event _note_device looked at
+var _mouse_ms := 0
+var _mouse_run := 0.0  # how far the mouse has moved since the last pad press (a nudge of the desk does not flip the hints)
 
 
 func _ready() -> void:
     ensure()
     load_binds()
+    # R42: which device is in use is read from the window, before any screen can take the event and while the tree is
+    # paused (this node's _input comes after every screen's, and not at all behind the pause menu)
+    get_tree().root.window_input.connect(_note_device)
     touch_refresh.call_deferred()
 
 
@@ -74102,6 +74173,8 @@ func key_name(code: int) -> String:
 # what the key list prints for a row: the default text, or the key the action was remapped to
 func help_value(label: String, text: String) -> String:
     if pad_active:  # R42: the key list shows the pad's button for a row that has one
+        if HELP_PAD.has(label):
+            return keys(str(HELP_PAD[label]))
         if label == "START A WAR, GIVE":
             return "%s, %s" % [self.label("offer_war"), self.label("give_item")]
         var pad_action := str(HELP_ACTIONS.get(label, ""))
@@ -74501,6 +74574,11 @@ func typed(event: InputEvent) -> String:
 
 # ---- what the hint lines print (R34: a hint shows the key or pad button that works NOW, not the default letter) ----
 func _note_device(event: InputEvent) -> void:
+    if event == _noted:
+        return  # the window and _input both report an event
+    _noted = event
+    if touch != null and event is InputEventMouse:
+        return  # a touch screen sends its taps as mouse events too: the overlay's pad buttons decide there
     var pad := pad_active
     if event is InputEventJoypadButton:
         pad = pad or event.pressed
@@ -74508,7 +74586,29 @@ func _note_device(event: InputEvent) -> void:
         pad = pad or absf(event.axis_value) >= 0.5
     elif (event is InputEventKey or event is InputEventMouseButton) and event.pressed:
         pad = false
+    elif event is InputEventMouseMotion and pad:
+        var now := Time.get_ticks_msec()
+        if now - _mouse_ms > 400:
+            _mouse_run = 0.0  # one movement, not the bumps of ten minutes added up
+        _mouse_ms = now
+        _mouse_run += event.relative.length()
+        pad = _mouse_run < MOUSE_FLIP
+    if pad and not event is InputEventMouseMotion:
+        _mouse_run = 0.0
+    if pad != pad_active:
+        set_pad_active(pad)
+
+
+# R42: switch the prompts between the keyboard's names and the pad's glyphs, live: every canvas on screen is redrawn, so a
+# screen that only repaints on its own input shows the other set at once
+func set_pad_active(pad: bool) -> void:
+    _mouse_run = 0.0
+    if pad == pad_active:
+        return
     pad_active = pad
+    device_changed.emit(pad)
+    if is_inside_tree():
+        get_tree().root.propagate_call("queue_redraw")
 
 
 # the touch overlay is wanted: a touch screen (or the test override)
@@ -74520,22 +74620,12 @@ func touch_on() -> bool:
 
 # the current binding of an action or a menu role, as a hint prints it: the key's name, or "(A)" style for a pad button
 func label(action: String) -> String:
+    if action == "move":  # walking, and a menu's directions
+        return "STICK" if pad_active else "ARROWS"
     if pad_active:
-        for role in HINT_ROLES:
-            if HINT_ROLES[role] == action and HINT_PAD.has(role):
-                return str(HINT_PAD[role])
-        if ACTIONS.has(action):
-            var button := button_of(action)
-            if button >= 0:
-                return "(%s)" % button_name(button)
-            for ax in ACTIONS[action][2]:
-                if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
-                    return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
-                if ax[0] == JOY_AXIS_RIGHT_X:
-                    return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
-                if ax[0] == JOY_AXIS_RIGHT_Y:
-                    return "RS DOWN" if ax[1] > 0.0 else "RS UP"
-                return "STICK"
+        var on_pad := pad_label(action)
+        if on_pad != "":
+            return on_pad
     for r in MENU_ROLES:
         if r[0] == action:
             var extra := menu_key_of(action)
@@ -74544,21 +74634,104 @@ func label(action: String) -> String:
     return key_name(code) if code > 0 else ""
 
 
+# what a pad has for an action or a menu role ("(A)", "(LT)", "RS UP", "STICK"); "" when the pad has nothing for it
+func pad_label(action: String) -> String:
+    for role in HINT_ROLES:
+        if HINT_ROLES[role] == action and HINT_PAD.has(role):
+            return str(HINT_PAD[role])
+    if ACTIONS.has(action):
+        var button := button_of(action)
+        if button >= 0:
+            return "(%s)" % button_name(button)
+        for ax in ACTIONS[action][2]:
+            if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
+                return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+            if ax[0] == JOY_AXIS_RIGHT_X:
+                return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
+            if ax[0] == JOY_AXIS_RIGHT_Y:
+                return "RS DOWN" if ax[1] > 0.0 else "RS UP"
+            return "STICK"
+    return ""
+
+
 # a hint line with its key words swapped for what works now: a remapped menu key shows its new key, a pad shows its buttons.
 # `map` adds this screen's own letters ({"P": "pray"}: word -> action). With the default keys on a keyboard the text is unchanged.
 func hint(text: String, map: Dictionary = {}, roles: bool = true) -> String:
     if not pad_active and _overrides.is_empty() and _alias.is_empty():
-        return text
+        return text if text.find("{") < 0 else keys(text, map)
     var out := ""
     var token := ""
-    for i in text.length() + 1:
+    var i := 0
+    while i <= text.length():
         var ch := text[i] if i < text.length() else ""
+        if ch == "{":  # a key token: resolved here, and its answer is not read again as words
+            var end := text.find("}", i)
+            var got: Variant = _token(text.substr(i + 1, end - i - 1), map) if end > i else null
+            if got != null:
+                out += _hint_word(token, map, roles) + str(got)
+                token = ""
+                i = end + 1
+                continue
+        i += 1
         if ch != "" and ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
             token += ch
             continue
         out += _hint_word(token, map, roles) + ch
         token = ""
     return out.replace("((", "(").replace("))", ")")
+
+
+# R42: the key tokens of a sentence (story text, tips, captions, card labels), resolved when the text is drawn, so the same
+# string names the key on a keyboard and the button on a pad, and follows a remap. Every other word is left alone.
+#   {E}              a key by its letter or name: TOKEN_ACTIONS (E P Q F N C M V G are the walking actions), a screen's `map`,
+#                    or a menu word of hint() (ENTER ESC SPACE TAB ARROWS Z X SHIFT)
+#   {ESC:pause}      "ESC" on a keyboard, the binding of the action (or menu role, or "move") on a pad or after a remap
+#   {A OR D|STICK}   the text before the bar on a keyboard, the text after it on a pad
+# A {name} that is none of these (the story's own {me}, {c}, {closed}) stays as it is.
+func keys(text: String, map: Dictionary = {}) -> String:
+    if text.find("{") < 0:
+        return text
+    var out := ""
+    var i := 0
+    var swapped := false
+    while i < text.length():
+        var ch := text[i]
+        if ch == "{":
+            var end := text.find("}", i)
+            var got: Variant = _token(text.substr(i + 1, end - i - 1), map) if end > i else null
+            if got != null:
+                out += str(got)
+                swapped = true
+                i = end + 1
+                continue
+        out += ch
+        i += 1
+    return out.replace("((", "(").replace("))", ")") if swapped else out
+
+
+# what a key token prints now; null when the braces hold something else
+func _token(body: String, map: Dictionary) -> Variant:
+    var bar := body.find("|")
+    if bar >= 0:
+        return body.substr(bar + 1) if pad_active else body.substr(0, bar)
+    var word := body
+    var action := ""
+    var colon := body.find(":")
+    if colon >= 0:
+        word = body.substr(0, colon)
+        action = body.substr(colon + 1).to_lower()  # (a card label is upper-cased as a whole)
+        if not (ACTIONS.has(action) or action == "move" or HINT_ROLES.values().has(action)):
+            return null
+    if word == "" or word != word.to_upper() or word == word.to_lower():
+        return null  # {me}, {c}, {0}: not a key
+    if action == "":
+        action = str(map.get(word, TOKEN_ACTIONS.get(word, "")))
+    if action == "":
+        return _hint_word(word, {}, true)
+    if pad_active or _overrides.has(action) or (not ACTIONS.has(action) and menu_key_of(action) > 0):
+        var shown := label(action)
+        return shown if shown != "" else word
+    return word
 
 
 # the same for a walking-around prompt ("E: SIT", "P: PHONE"): the walking actions follow their remap
@@ -75117,7 +75290,7 @@ func _remap_key(event: InputEvent) -> void:
 func _paint_remap(c: CanvasItem, r: Rect2) -> void:
     var walk: int = Controls.REMAPPABLE.size()
     var rows: int = walk + Controls.MENU_ROLES.size() + 1
-    var body := UiStyle.panel(c, r, "REMAP KEYS", "PRESS A KEY" if _capture else "")
+    var body := UiStyle.panel(c, r, Controls.keys("REMAP {KEYS|BUTTONS}"), Controls.keys("PRESS A {KEY|BUTTON}") if _capture else "")
     var first := clampi(_rsel - 2, 0, maxi(0, rows - 6))
     for k in mini(6, rows - first):
         var i := first + k
@@ -75126,18 +75299,23 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
             c.draw_rect(rr, UiStyle.HEAD)
         var col: Color = UiStyle.WHITE if i == _rsel else UiStyle.INK
         if i == rows - 1:
-            UiStyle.text(c, "PUT ALL KEYS BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
+            UiStyle.text(c, "PUT ALL {KEYS|BUTTONS} BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
         elif i >= walk:
             var role: Array = Controls.MENU_ROLES[i - walk]
             UiStyle.text(c, str(role[2]), rr.position.x + 3.0, rr.position.y + 3.0, col)
             var extra := Controls.menu_key_of(str(role[0]))
-            var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 else "-")
+            var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 and not Controls.pad_active else "-")
             UiStyle.text(c, shown, rr.position.x + rr.size.x - 4.0 - float(shown.length() * 4), rr.position.y + 3.0, col)
         else:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
             var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
             var end_x := rr.position.x + rr.size.x - 4.0
+            if Controls.pad_active and not (_capture and i == _rsel):  # R42: on a pad the row shows what the pad has for it, no key
+                key_name = ""
+                if not Controls.REMAPPABLE_PAD.has(action):
+                    var shown_pad: String = Controls.pad_label(action) if Controls.pad_label(action) != "" else "-"
+                    PadGlyphs.draw(c, shown_pad, Vector2(end_x - float(PadGlyphs.width(shown_pad)), rr.position.y + 3.0), col)
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
                 var pad_name := Controls.button_name(Controls.button_of(action))
                 var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
@@ -75146,9 +75324,9 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
                     PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
                     end_x -= 6.0
                 else:
-                    key_name += "  " + pad_name
+                    key_name = (key_name + "  " + pad_name).strip_edges()
             UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
-    UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
+    UiStyle.footer(c, r, Controls.hint("ENTER, THEN {KEY / BUTTON|A BUTTON}  ESC = BACK"))
 
 
 func _input(event: InputEvent) -> void:
@@ -75203,7 +75381,7 @@ func _key(event: InputEvent) -> void:
             _sel = _labels().size() - 1
         else:
             close()
-    elif _page >= 0 and Controls.word(event) == "r":
+    elif _page >= 0 and (Controls.word(event) == "r" or (event is InputEventJoypadButton and Controls.matches(event, "hold_pose"))):
         _page = REMAP_PAGE
         _rsel = 0
         _capture = false
@@ -75273,13 +75451,10 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
     var y := body.position.y + 2.0
     for row in page[1]:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-        var value := Controls.help_value(str(row[0]), str(row[1]))
-        if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
-            var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
-            value = shown if shown != "" else value
+        var value := Controls.help_value(str(row[0]), str(row[1]))  # on a pad: the button that does it (drawn as a glyph)
         PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
         y += 9.0
-    UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
+    UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK", {"R": "hold_pose"}))
 ''')
 
 write("scripts/incident.gd", '''extends RefCounted
@@ -81369,6 +81544,7 @@ static func rows(max_chars: int, compact := false, limit := MAX_NEXT) -> Array:
 
 
 static func _fit(text: String, max_chars: int) -> String:
+    text = PixelFont.keys(text)  # R42: a key token is resolved before the text is cut
     return text if text.length() <= max_chars else text.substr(0, maxi(1, max_chars - 1)) + "."
 
 
@@ -81486,11 +81662,11 @@ static func tick() -> void:
         var secs := maxi(1, (Time.get_ticks_msec() - started_ms) / 1000)
         Career.add("micro_shifts")
         Career.fastest("micro_best", secs)
-        Hints.toast("SHIFT DONE: %d TICKETS IN %d:%02d. ESC FOR THE MENU, OR STAY A WHILE" % [TARGET, secs / 60, secs % 60], 7.0)
+        Hints.toast("SHIFT DONE: %d TICKETS IN %d:%02d. {ESC:pause} FOR THE MENU, OR STAY A WHILE" % [TARGET, secs / 60, secs % 60], 7.0)
         clear()
     elif kind == "outing" and Toolbox.last_launch.get("game", "") == game and not Toolbox.queued and not Outings.is_open and not Outings.busy():
         if Time.get_ticks_msec() - started_ms > 4000:
-            Hints.toast("THAT WAS ONE OUTING. ESC FOR THE MENU, OR STAY A WHILE", 6.0)
+            Hints.toast("THAT WAS ONE OUTING. {ESC:pause} FOR THE MENU, OR STAY A WHILE", 6.0)
             clear()
 ''')
 

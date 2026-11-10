@@ -355,7 +355,7 @@ const DEFAULT_TEXT := {
 	"go": "DRIVE THERE NOW",
 	"later": "NOT YET",
 	"arrive":
-	"You arrive at %s after %d minutes on the road. Walk to the equipment and press E on it.",
+	"You arrive at %s after %d minutes on the road. Walk to the equipment and press {E} on it.",
 	"nothing": "Nothing wrong with this one. Look for what the ticket describes.",
 	"no_job": "Everything looks fine here.",
 	"leave_unmet":

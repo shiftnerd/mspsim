@@ -478,7 +478,7 @@ func _menu(text: String) -> void:
 			{"label": "SMALL TALK", "id": "small"},
 			{"label": "ONE ON ONE" if service_mode else ("THEIR QUESTION" if q_mode else ("HOW ARE YOU HOLDING UP?" if owner_mode else ("ASK THE OWNER" if Owners.asks_owner(_who) else "ASK FOR HELP"))), "id": "ask"},
 			{"label": "ANY IDEAS?" if owner_mode else "ANY TIPS?", "id": "tip"},
-			{"label": "LEAVE (ESC)", "id": "leave"},
+			{"label": "LEAVE ({ESC})", "id": "leave"},
 		],
 		func(id: String) -> void: _pick(id)
 	)
@@ -509,7 +509,7 @@ func _reply(text: String) -> void:
 	Cards.ask(
 		_who,
 		text,
-		[{"label": "OK", "id": "ok"}, {"label": "LEAVE (ESC)", "id": "leave"}],
+		[{"label": "OK", "id": "ok"}, {"label": "LEAVE ({ESC})", "id": "leave"}],
 		func(id: String) -> void: _after(id)
 	)
 
@@ -652,7 +652,7 @@ func _sales_menu(text: String) -> void:
 			{"label": "SMALL TALK", "id": "small"},
 			{"label": str(row.get("label", "HOW ARE THINGS?")), "id": "ask"},
 			{"label": "ANY TIPS?", "id": "tip"},
-			{"label": "LEAVE (ESC)", "id": "leave"},
+			{"label": "LEAVE ({ESC})", "id": "leave"},
 		],
 		func(id: String) -> void: _pick(id)
 	)

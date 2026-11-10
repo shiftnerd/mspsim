@@ -138,7 +138,7 @@ func _init() -> void:
 		for recipe in recipes:
 			whole = whole and row.say.has(recipe)
 		_check(whole, "%s: a name, an intro, a tint, an ink and a line for all %d recipes" % [id, recipes.size()])
-		_check(str(row.short).length() <= 12 and str(row.title).length() <= 24 and str(row.start).length() <= 78, "%s: the name and the opening caption fit" % id)
+		_check(str(row.short).length() <= 12 and str(row.title).length() <= 24 and str(root.get_node("Controls").keys(str(row.start))).length() <= 78, "%s: the name and the opening caption fit" % id)
 		if id != "study":
 			_check(row.shelf.size() >= 3 and row.herring.size() == 3 and Color(str(row.tint)) != Color.WHITE, "%s: its own red herrings and a tint" % id)
 			_check(str(row.say.sum) != str(o.ESCAPE_THEMES.study.say.sum) and str(row.intro) != str(o.ESCAPE_THEMES.study.intro), "%s: its own wording" % id)

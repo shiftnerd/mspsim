@@ -119,7 +119,18 @@ static func audit_report(fmt := "", overlaps := false) -> Array:
 	return out
 
 
+# R42: the {E} style key tokens of a text (Controls.keys), for whoever draws or wraps a text that may carry them. The
+# autoload by path: this script is preloaded by test scripts before the autoloads exist.
+static func keys(text: String) -> String:
+	if text.find("{") < 0:
+		return text
+	var tree := Engine.get_main_loop() as SceneTree
+	var controls: Node = tree.root.get_node_or_null("Controls") if tree != null else null
+	return str(controls.keys(text)) if controls != null else text
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+	text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
 	# only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
 	if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
 		var tf := canvas.get_global_transform_with_canvas()
@@ -128,7 +139,7 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
 		audit.append({
 			"canvas": "%s/%s" % [canvas.get_class(), canvas.name],
 			"cid": canvas.get_instance_id(),
-			"frame": Engine.get_frames_drawn(),
+			"frame": Engine.get_process_frames(),  # (frames drawn stays 0 without a renderer)
 			"text": text.strip_edges(),
 			"rect": tf * Rect2(pos + Vector2(lead, 0), sz),
 			"vp": canvas.get_viewport().get_visible_rect(),

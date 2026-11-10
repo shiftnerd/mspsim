@@ -155,7 +155,7 @@ static func _paint_detail(cp, r: Rect2, l: Dictionary) -> void:
 		cp._button("crm:drop", Rect2(r.position.x + 3.0 + bw2, by2, bw2 - 1.0, 9), "DROP", live, Color("e9b1a8"))
 	cp._button("crm:more", Rect2(r.position.x + 3.0 + bw2 * 2.0, by2, bw2 - 1.0, 9), "INFO", true, Color("e4d9c9"))
 	var keys := ""
-	for item in ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]:  # whole items only, no "U U.."
+	for item in ([] if Controls.pad_active else ["C CALL", "V VISIT", "Q QUOTE", "A ASSESS", "F CHASE", "D DROP", "U UPSELL", "I INFO"]):  # whole items only, no "U U.."
 		if (keys + "  " + item).strip_edges().length() <= chars:
 			keys = (keys + "  " + item).strip_edges()
 		else:

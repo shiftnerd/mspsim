@@ -108,6 +108,7 @@ static func rows(max_chars: int, compact := false, limit := MAX_NEXT) -> Array:
 
 
 static func _fit(text: String, max_chars: int) -> String:
+	text = PixelFont.keys(text)  # R42: a key token is resolved before the text is cut
 	return text if text.length() <= max_chars else text.substr(0, maxi(1, max_chars - 1)) + "."
 
 

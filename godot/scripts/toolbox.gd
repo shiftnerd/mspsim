@@ -698,7 +698,7 @@ func _paint_tools(size: Vector2) -> void:
 	var list := rows()
 	var h := 12.0 + 9.0 * float(list.size()) + 12.0
 	var r := UiStyle.panel_rect(size, 300.0, h)
-	var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", "SHIFT F10" if not in_title else "")
+	var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
 	var label_w := 52.0
 	for i in list.size():
 		var row: Dictionary = list[i]

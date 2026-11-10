@@ -368,6 +368,7 @@ func page_lines() -> Array:
 
 
 func _wrap(s: String, chars: int) -> Array:
+	s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var out := []
 	var line := ""
 	for word in s.split(" "):
