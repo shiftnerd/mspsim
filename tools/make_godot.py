@@ -1463,7 +1463,7 @@ func _draw_clue_board() -> void:
     for line in lines:
         var scale := 2 if PixelFont.width(line, 2) <= 44 else 1
         var yy := y + (3.0 if scale == 1 and lines.size() == 1 else 0.0)
-        PixelFont.draw(self, line, Vector2(8, yy), Color("e8e8e0"), scale)
+        PixelFont.draw(self, line, Vector2(8, yy), Color(Outings.escape_ink()), scale)
         y += 12.0 if scale == 2 else 8.0
 
 
@@ -33947,6 +33947,8 @@ func start(id: String, from_invite := false, options := {}) -> void:
         opts["casual"] = true  # the dart board is a casual game whoever starts it (the toolbox, a test)
     if Difficulty.fixed_take:
         Difficulty.take_reset()
+    if id == "escape":
+        _pick_theme()  # E5: the room of this run (drawn after the take reset, so a fixed take repeats it)
     var here := get_tree().current_scene
     var in_room := use_rooms and not bool(opts.get("panel", false))
     if in_room and ROOMS.has(id) and here != null and not Game.title_mode:
@@ -34763,6 +34765,8 @@ func _game_options(id: String) -> Dictionary:
         o["alley"] = BowlVariety.pick_alley(Difficulty.rng_for("alley", count * 7 + int(league.night)), int(league.night))
     if id == "dinner":
         o["variety"] = true  # R6: the ordering round, table events, a guest, the talk afterwards
+    if id == "escape":
+        o["theme"] = "draw"  # E5: the themed room is drawn per run
     return o
 
 
@@ -35614,6 +35618,215 @@ func _dinner_end() -> void:
     _finish(3 if score >= cut[0] else (2 if score >= cut[1] else (1 if score >= cut[2] else 0)))
 
 
+# ---- themed escape rooms (R4, E5) ----------------------------------------------------------------------------------------------
+# The room is one set (the dark study). A theme changes its words (the name on the intro page, the intro, every clue's wording, the
+# red herrings, the opening and closing lines), the tint of the room and the colour of the writing on the board. The clue zones,
+# recipes and digits are the same in every theme, so every theme x recipe is solvable the same way. A run started from the invitation
+# (options.theme = "draw") draws the theme on its own stream "escape.theme"; a game started without the option (tests, the toolbox's
+# default) is the old study; the toolbox can name a theme as a fixed pick. A theme may leave "shelf" / "herring" out: the study uses
+# the older HERRINGS / HERRING_TEXT tables. Clue lines use {a} {b} {list} {hour} {n} {numeral} {letter}.
+const THEME_ORDER := ["study", "server", "detective", "lab"]
+const DEFAULT_ESCAPE_THEMES := {
+    "study": {
+        "title": "THE OLD STUDY",
+        "short": "OLD STUDY",
+        "tint": "ffffff",
+        "ink": "e8e8e0",
+        "intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
+        "start": "LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT",
+        "open": "THE VAULT OPENS!",
+        "say": {
+            "sum": "THE CHALKBOARD: {a} + {b} = ?",
+            "product": "THE CHALKBOARD: {a} X {b} = ?",
+            "missing": "THE CHALKBOARD LISTS 1 TO 9 WITH ONE LEFT OUT: {list}. WHICH ONE?",
+            "hour": "THE CLOCK HAS STOPPED AT {hour} O'CLOCK.",
+            "double": "THE CLOCK HAS STOPPED AT {hour} O'CLOCK. A NOTE ON THE FACE: TWICE THE HOUR.",
+            "number": "A BRASS PLAQUE UNDER THE PAINTING: NO. {n}.",
+            "roman": "THE PLAQUE UNDER THE PAINTING READS {numeral}. A ROMAN NUMERAL.",
+            "letter": "THE PLAQUE UNDER THE PAINTING SHOWS THE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE BOOK ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: {n}.",
+        },
+    },
+    "server": {
+        "title": "THE SERVER ROOM",
+        "short": "SERVER ROOM",
+        "tint": "9fd4e6",
+        "ink": "8ff0b0",
+        "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
+        "start": "THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT",
+        "open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
+        "say": {
+            "sum": "THE BOARD BY THE RACK: PORT {a} + PORT {b} = ?",
+            "product": "THE BOARD BY THE RACK: {a} SWITCHES X {b} UPLINKS = ?",
+            "missing": "THE PATCH LIST ON THE BOARD HAS PORTS 1 TO 9 WITH ONE UNPLUGGED: {list}. WHICH ONE?",
+            "hour": "THE WALL CLOCK DIED WITH THE UPS AT {hour} O'CLOCK.",
+            "double": "THE WALL CLOCK DIED AT {hour} O'CLOCK. A STICKY NOTE: THE BACKUP RUNS AT TWICE THE HOUR.",
+            "number": "AN ASSET TAG UNDER THE FRAMED NETWORK MAP: RACK NO. {n}.",
+            "roman": "THE TAG UNDER THE NETWORK MAP READS {numeral}. SOMEBODY LABELS RACKS WITH A ROMAN NUMERAL.",
+            "letter": "THE TAG UNDER THE NETWORK MAP SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE BINDER ON THE MANUAL SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "CABLE TIES HANG FROM THE MANUAL SHELF. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "MANUALS FOR SERVERS NOBODY OWNS ANY MORE. NO NUMBERS HERE THAT MATTER.",
+            "A SHELF OF DRIVER DISCS. THE LABEL SAYS: NOT THE CODE.",
+            "OLD TONER BOXES AND A LABEL MAKER. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE FIREPROOF SAFE HOLDS LAST YEAR'S BACKUP TAPES. THE LABEL SAYS: NOT THE CODE. SOMEBODY ALREADY TRIED.",
+            "herring_trunk": "A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.",
+            "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.",
+        },
+    },
+    "detective": {
+        "title": "THE DETECTIVE'S OFFICE",
+        "short": "DETECTIVE",
+        "tint": "e6c690",
+        "ink": "f0e2b8",
+        "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
+        "start": "THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT",
+        "open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
+        "say": {
+            "sum": "THE CASE BOARD: {a} SUSPECTS + {b} WITNESSES = ?",
+            "product": "THE CASE BOARD: {a} ROWS X {b} MUGSHOTS = ?",
+            "missing": "THE CASE BOARD NUMBERS THE SUSPECTS 1 TO 9 WITH ONE CROSSED OFF: {list}. WHICH ONE?",
+            "hour": "THE CLOCK STOPPED AT {hour} O'CLOCK. THE TIME OF THE CRIME.",
+            "double": "THE CLOCK STOPPED AT {hour} O'CLOCK. A NOTE IN PENCIL: THE ALIBI IS TWICE THE HOUR.",
+            "number": "A BRASS PLATE UNDER THE PORTRAIT: CASE NO. {n}.",
+            "roman": "THE PLATE UNDER THE PORTRAIT READS {numeral}. THE DETECTIVE LIKED A ROMAN NUMERAL.",
+            "letter": "THE PLATE UNDER THE PORTRAIT SHOWS THE FILE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE CASE FILE ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "RED STRINGS HANG FROM THE SHELF OF CASE FILES. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "A SHELF OF CLOSED CASES. NO NUMBERS HERE THAT MATTER.",
+            "PHONE BOOKS AND A HAT. THE LABEL SAYS: NOT THE CODE.",
+            "OLD NEWSPAPERS AND AN EMPTY BOTTLE. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE SAFE HOLDS A SANDWICH AND AN UNPAID BILL. A NOTE SAYS: THE CODE IS NOT THE BILL.",
+            "herring_trunk": "A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.",
+            "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.",
+        },
+    },
+    "lab": {
+        "title": "THE 1990S COMPUTER LAB",
+        "short": "COMPUTER LAB",
+        "tint": "d4e6c0",
+        "ink": "b8f0a0",
+        "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.",
+        "start": "THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT",
+        "open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
+        "say": {
+            "sum": "THE TEACHER'S BOARD: {a} FLOPPIES + {b} FLOPPIES = ?",
+            "product": "THE TEACHER'S BOARD: {a} ROWS X {b} BEIGE PCS = ?",
+            "missing": "THE BOARD NUMBERS THE WORKSTATIONS 1 TO 9 WITH ONE OUT OF ORDER: {list}. WHICH ONE?",
+            "hour": "THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. THE BELL NEVER RANG.",
+            "double": "THE CLASSROOM CLOCK STOPPED AT {hour} O'CLOCK. CHALKED UNDER IT: TWICE THE HOUR.",
+            "number": "A PLATE UNDER THE CLASS PHOTO: ROOM NO. {n}.",
+            "roman": "THE PLATE UNDER THE CLASS PHOTO READS {numeral}. A ROMAN NUMERAL, FOR EXTRA CREDIT.",
+            "letter": "THE PLATE UNDER THE CLASS PHOTO SHOWS THE DRIVE LETTER {letter}. WHERE IS IT IN THE ALPHABET?",
+            "spine": "ONE TYPING TUTOR MANUAL ON THE SHELF STICKS OUT: VOLUME {n}.",
+            "ribbons": "MOUSE CORDS HANG FROM THE SHELF. COUNT THEM: {n}.",
+        },
+        "shelf": [
+            "BOXES OF FLOPPIES LABELLED IN PENCIL. NO NUMBERS HERE THAT MATTER.",
+            "A SHELF OF TYPING TUTOR MANUALS. THE LABEL SAYS: NOT THE CODE.",
+            "A DOT MATRIX PRINTER AND A STACK OF FAN-FOLD PAPER. NOTHING USEFUL.",
+        ],
+        "herring": {
+            "herring_safe": "THE SAFE HOLDS THE GRADE BOOK. A NOTE SAYS: THE CODE IS NOT THE HALL PASS NUMBER.",
+            "herring_trunk": "A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.",
+            "herring_globe": "THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.",
+        },
+    },
+}
+var ESCAPE_THEMES: Dictionary = DEFAULT_ESCAPE_THEMES.duplicate(true)
+
+
+# options.theme: nothing = the old study, a theme id = that room (the toolbox's fixed pick), anything else ("draw") = drawn on the
+# run's "escape.theme" stream. The result is kept in opts.theme_id.
+func _pick_theme() -> void:
+    var want := str(opts.get("theme", ""))
+    if want == "":
+        opts["theme_id"] = "study"
+    elif ESCAPE_THEMES.has(want):
+        opts["theme_id"] = want
+    else:
+        opts["theme_id"] = str(THEME_ORDER[Difficulty.rng("escape.theme").randi_range(0, THEME_ORDER.size() - 1)])
+
+
+func theme_id() -> String:
+    var id := str(opts.get("theme_id", "study"))
+    return id if ESCAPE_THEMES.has(id) else "study"
+
+
+func escape_theme() -> Dictionary:
+    return ESCAPE_THEMES[theme_id()]
+
+
+# a line of the room's theme (the study's when a theme leaves it out)
+func escape_text(key: String) -> String:
+    return str(escape_theme().get(key, DEFAULT_ESCAPE_THEMES.study.get(key, "")))
+
+
+# the colour of the writing on the board (fx.gd)
+func escape_ink() -> String:
+    return escape_text("ink") if game == "escape" else str(DEFAULT_ESCAPE_THEMES.study.ink)
+
+
+# the intro page: a drawn or picked theme is named, and in the room its own intro replaces the study's
+func escape_intro(blurb: String) -> String:
+    if not opts.has("theme"):
+        return blurb
+    return "TONIGHT'S ROOM: %s. %s" % [escape_text("title"), escape_text("intro") if _traveled else blurb]
+
+
+# what the caption says about a clue, in the words of the theme
+func clue_say(clue: Dictionary) -> String:
+    var a: Dictionary = clue.args
+    var numbers: Array = a.get("list", [])
+    var fill := {
+        "a": a.get("a", 0),
+        "b": a.get("b", 0),
+        "hour": a.get("hour", 0),
+        "n": a.get("n", 0),
+        "numeral": a.get("numeral", ""),
+        "letter": a.get("letter", ""),
+        "list": " ".join(PackedStringArray(numbers.map(func(v): return str(v)))),
+    }
+    var lines: Dictionary = escape_theme().get("say", {})
+    return str(lines.get(str(clue.recipe), DEFAULT_ESCAPE_THEMES.study.say.get(str(clue.recipe), ""))).format(fill)
+
+
+func herring_text(kind: String) -> String:
+    var own: Dictionary = escape_theme().get("herring", {})
+    return str(own.get(kind, HERRING_TEXT.get(kind, HERRINGS[0])))
+
+
+func shelf_herring(index: int) -> String:
+    var own: Array = escape_theme().get("shelf", HERRINGS)
+    return str(own[index % own.size()])
+
+
+# the look: the theme's tint on the room (the background and its effects, not the people); a dark room keeps the lights-out tint
+func _theme_look() -> void:
+    if game != "escape" or not room_mode():
+        return
+    var scene := get_tree().current_scene
+    var tint := Color(escape_text("tint"))
+    if scene == null or tint == Color.WHITE:
+        return
+    var dark: Variant = scene.get("_dark_a")
+    if dark != null and float(dark) > 0.01:
+        return
+    for layer in ["Background", "Fx"]:
+        var node := scene.get_node_or_null(layer)
+        if node != null:
+            node.modulate = tint
+
+
 # ---- dinner variety (R6) and the dinner ramp (R30) ---------------------------------------------------------------------------
 # An ordering round (D4), a client at the table (D5), the boss picking up the tab (D6), table events (D7), a talk afterwards (D8),
 # ASK HOW THEY ARE and the "as of outing n" marks on what you know about people (D2). All of it is on only for a dinner started with
@@ -36392,7 +36605,7 @@ func _room_begin() -> void:
         "darts":
             _darts_begin()
         "escape":
-            caption("LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT", 6.0)
+            caption(escape_text("start"), 6.0)
         "dinner":
             g.stage = "sit"
             caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
@@ -36401,6 +36614,7 @@ func _room_begin() -> void:
 func _room_process(delta: float) -> void:
     _caption_t = maxf(0.0, _caption_t - delta)
     _room_extras(delta)
+    _theme_look()
     for node in _marks.keys():
         _marks[node] = float(_marks[node]) - delta
         if float(_marks[node]) <= 0.0:
@@ -36605,6 +36819,7 @@ func make_clue(zone: String, recipe: String, digit: int, r: RandomNumberGenerato
             clue.args = {"n": digit}
             clue.show = str(digit)
             clue.say = "BOOKMARK RIBBONS HANG FROM THE SHELF. COUNT THEM: %d." % digit
+    clue.say = clue_say(clue)  # E5: the wording of the room's theme
     return clue
 
 
@@ -36692,7 +36907,7 @@ func interact(kind: String) -> void:
         return
     if kind.begins_with("herring_"):
         g.time = float(g.time) - HERRING_COST
-        caption("%s (-%d S)" % [str(HERRING_TEXT.get(kind, HERRINGS[0])), int(HERRING_COST)], 4.0)
+        caption("%s (-%d S)" % [herring_text(kind), int(HERRING_COST)], 4.0)
         return
     var zone_index := CLUE_KINDS.find(kind)
     var index := zone_index
@@ -36712,7 +36927,7 @@ func interact(kind: String) -> void:
             )
         else:
             caption(
-                str(HERRINGS[Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)]), 4.0
+                shelf_herring(Difficulty.rng("escape").randi_range(0, HERRINGS.size() - 1)), 4.0
             )
     elif kind == "keypad":
         g.entry = true
@@ -36764,7 +36979,7 @@ func _room_submit() -> void:
         if int(g.hints_used) >= 2:
             result = maxi(1, result - 1)
         g.entry = false
-        g.msg = "THE VAULT OPENS!"
+        g.msg = escape_text("open")
         _finish(result)
         return
     g.wrong = int(g.wrong) + 1
@@ -38234,6 +38449,8 @@ func _party_line(for_game: String) -> String:
 func _paint_intro(b: Rect2) -> void:
     var y := b.position.y + 2.0
     var blurb := str(ROOM_INTRO[game]) if _traveled else str(GAMES[game].blurb)
+    if game == "escape":
+        blurb = escape_intro(blurb)
     if game == "bowling" and not bowlers().is_empty():  # the blurbs name the classic trio: say who is really here
         blurb = blurb.replace("ALAN, GARRISON AND DAN", join_names(bowlers(), true))
     if game == "karaoke":
@@ -48390,7 +48607,7 @@ const ROOTS := {
     "Expo": ["TEXT", "ROUNDS", "VENDORS", "CHATS", "FORUM"],
     "PrinterGame": ["TEXT", "QUESTIONS", "MODEL_TEXT"],
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
-    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT", "DINNER_TEXT", "TABLE_EVENTS", "POST_TALKS"],
+    "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT", "DINNER_TEXT", "TABLE_EVENTS", "POST_TALKS", "ESCAPE_THEMES"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
     "SalesCampaign": ["BEAT_TEXT"],
     "Rival": ["HABITS", "RIVALS"],
@@ -53800,6 +54017,7 @@ var queued := false  # GO on the title: launch once Free Play is running
 var game_i := 0
 var song_i := 0  # 0 = the usual pick, else index + 1 into Outings.SONGS
 var digits := 0  # 0 = the tier's, else 3 or 4
+var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
 var model_i := 0
@@ -53856,6 +54074,8 @@ func outing_options() -> Dictionary:
         "escape":
             if digits > 0:
                 out["digits"] = digits
+            if theme_i > 0:
+                out["theme"] = str(Outings.THEME_ORDER[theme_i])
             var recipes := {}
             for zone in Outings.CLUE_ZONES:
                 var at := int(recipe_i.get(zone, 0))
@@ -54127,6 +54347,7 @@ func rows() -> Array:
             out.append({"id": "song", "label": "SONG", "value": title})
         "escape":
             out.append({"id": "digits", "label": "CODE DIGITS", "value": "TIER" if digits == 0 else str(digits)})
+            out.append({"id": "room", "label": "ROOM", "value": str(Outings.ESCAPE_THEMES[Outings.THEME_ORDER[theme_i]].short)})
             for zone in Outings.CLUE_ZONES.slice(0, digits if digits > 0 else maxi(3, Difficulty.i("escape.digits"))):
                 var at := int(recipe_i.get(zone, 0))
                 out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
@@ -54166,6 +54387,8 @@ func change(step: int) -> void:
             sel = 0
         "song":
             song_i = (song_i + step + Outings.SONGS.size() + 1) % (Outings.SONGS.size() + 1)
+        "room":
+            theme_i = (theme_i + step + Outings.THEME_ORDER.size()) % Outings.THEME_ORDER.size()
         "digits":
             digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":

@@ -690,7 +690,7 @@ func _draw_clue_board() -> void:
 	for line in lines:
 		var scale := 2 if PixelFont.width(line, 2) <= 44 else 1
 		var yy := y + (3.0 if scale == 1 and lines.size() == 1 else 0.0)
-		PixelFont.draw(self, line, Vector2(8, yy), Color("e8e8e0"), scale)
+		PixelFont.draw(self, line, Vector2(8, yy), Color(Outings.escape_ink()), scale)
 		y += 12.0 if scale == 2 else 8.0
 
 
