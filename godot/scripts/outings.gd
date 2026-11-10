@@ -2764,6 +2764,17 @@ const DEFAULT_ESCAPE_THEMES := {
 			"herring_trunk": "A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.",
 			"herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.",
 		},
+		"words": {
+			"A PLAQUE": "AN ASSET TAG",
+			"PLAQUE": "ASSET TAG",
+			"CHALKBOARD": "RACK BOARD",
+			"PAINTING": "NETWORK MAP",
+			"BOOKSHELF": "MANUAL SHELF",
+			"ONE BOOK ON": "ONE BINDER ON",
+			"NOT A BOOK": "NOT A BINDER",
+			"VAULT": "TAPE VAULT",
+		},
+		"tips": {"spine": "THE VOLUME NUMBER ON THE BINDER IS THE DIGIT.", "ribbons": "COUNT THE CABLE TIES."},
 	},
 	"detective": {
 		"title": "THE DETECTIVE'S OFFICE",
@@ -2795,6 +2806,16 @@ const DEFAULT_ESCAPE_THEMES := {
 			"herring_trunk": "A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.",
 			"herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.",
 		},
+		"words": {
+			"PLAQUE": "BRASS PLATE",
+			"CHALKBOARD": "CASE BOARD",
+			"PAINTING": "PORTRAIT",
+			"BOOKSHELF": "SHELF OF CASE FILES",
+			"ONE BOOK ON": "ONE CASE FILE ON",
+			"NOT A BOOK": "NOT A CASE FILE",
+			"VAULT": "EVIDENCE VAULT",
+		},
+		"tips": {"spine": "THE VOLUME NUMBER ON THE CASE FILE IS THE DIGIT.", "ribbons": "COUNT THE RED STRINGS."},
 	},
 	"lab": {
 		"title": "THE 1990S COMPUTER LAB",
@@ -2826,6 +2847,17 @@ const DEFAULT_ESCAPE_THEMES := {
 			"herring_trunk": "A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.",
 			"herring_globe": "THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.",
 		},
+		"words": {
+			"PLAQUE": "PLATE",
+			"CHALKBOARD": "TEACHER'S BOARD",
+			"PAINTING": "CLASS PHOTO",
+			"BOOKSHELF": "MANUAL SHELF",
+			"ONE BOOK ON": "ONE MANUAL ON",
+			"NOT A BOOK": "NOT A MANUAL",
+			"OLD WALL CLOCK": "CLASSROOM CLOCK",
+			"WALL CLOCK": "CLASSROOM CLOCK",
+		},
+		"tips": {"spine": "THE VOLUME NUMBER ON THE MANUAL IS THE DIGIT.", "ribbons": "COUNT THE MOUSE CORDS."},
 	},
 }
 var ESCAPE_THEMES: Dictionary = DEFAULT_ESCAPE_THEMES.duplicate(true)
@@ -2884,6 +2916,20 @@ func clue_say(clue: Dictionary) -> String:
 	}
 	var lines: Dictionary = escape_theme().get("say", {})
 	return str(lines.get(str(clue.recipe), DEFAULT_ESCAPE_THEMES.study.say.get(str(clue.recipe), ""))).format(fill)
+
+
+# a friend's hint in the room's own words (R4): the study's line with the theme's nouns put in (theme.words, in order)
+func friend_say(text: String) -> String:
+	var words: Dictionary = escape_theme().get("words", {})
+	for from in words:
+		text = text.replace(str(from), str(words[from]))
+	return text
+
+
+# the recipe tip of a friend's specialty, in the theme's words where the thing has another name (theme.tips)
+func recipe_tip(key: String) -> String:
+	var own: Dictionary = escape_theme().get("tips", {})
+	return str(own.get(key, RECIPE_TIPS.get(key, "")))
 
 
 func herring_text(kind: String) -> String:
@@ -4039,12 +4085,12 @@ func escape_nudge() -> String:
 			recipe = str(g.clues[i].recipe)
 			break
 	var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])
-	var text := str(table.get(zone, ""))
+	var text := friend_say(str(table.get(zone, "")))  # R4: in the words of tonight's room
 	if str(SPECIALTY.get(friend, "")) == zone:
 		if zone == "keypad":
 			text += " " + str(RECIPE_TIPS["dial" if g.get("dial", false) else "nodial"])
 		else:
-			text += " " + str(RECIPE_TIPS.get(recipe, ""))
+			text += " " + recipe_tip(recipe)
 	g.hints = int(g.hints) - 1
 	g.hints_used = int(g.hints_used) + 1
 	text = "%s: %s" % [friend.to_upper(), text]
