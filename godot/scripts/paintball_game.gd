@@ -15,7 +15,9 @@ const BASE_X := [34.0, 606.0]  # where team 0 / team 1 start and where their fla
 const RUN := 40.0  # px/s
 const CARRY := 0.85  # x the speed with a flag
 const RANGE := 170.0
-const FIRE_GAP := 0.7
+const FIRE_GAP := 0.7  # your own reload
+const AI_GAP := 1.4  # the crew reloads slower than you (six people firing every 0.7 s was a wall of paint)
+const OPEN_DUCK := 0.55  # a ducking player with no barricade is a smaller target, not a safe one
 const RESPAWN := 4.0
 const TARGET := 3
 const LIMIT := 150.0  # seconds of play
@@ -272,7 +274,7 @@ func fire(i: int) -> bool:
 	var u: Dictionary = units[i]
 	if float(u.cool) > 0.0 or float(u.down) > 0.0 or bool(u.duck):
 		return false
-	u.cool = FIRE_GAP
+	u.cool = FIRE_GAP if (bool(u.you) and not you_auto) else AI_GAP
 	var j := target_of(i)
 	var hit := -1
 	var to: float = clampf(float(u.x) + float(u.face) * RANGE, 0.0, LEN)  # where the paintball ends up
@@ -285,7 +287,7 @@ func fire(i: int) -> bool:
 		else:
 			var d: float = absf(float(v.x) - float(u.x))
 			var acc: float = (YOU_ACC * float(params.acc)) if (bool(u.you) and not you_auto) else (float(u.skill) * AI_ACC * float(params.skill))
-			var chance := clampf(acc * (1.0 - 0.5 * d / RANGE) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0), 0.05, 0.95)
+			var chance := clampf(acc * (1.0 - 0.5 * d / RANGE) * (0.8 if absf(float(v.vx)) > 0.0 else 1.0) * (OPEN_DUCK if bool(v.duck) else 1.0), 0.05, 0.95)
 			if rng.randf() < chance:
 				hit = j
 	events.append({"kind": "shot", "unit": i, "from": float(u.x), "to": to, "face": int(u.face), "hit": hit, "target": j})
@@ -337,7 +339,7 @@ func _ai(i: int, dt: float) -> void:
 	var cov := near_cover(float(u.x))
 	if j >= 0:
 		u.react = float(u.react) + dt
-		var delay := 0.55 - 0.3 * float(u.skill)
+		var delay := 0.85 - 0.4 * float(u.skill)
 		if bool(u.careful) and cov and float(u.cool) > 0.0:
 			u.duck = true
 			u.duck_for = 0.8

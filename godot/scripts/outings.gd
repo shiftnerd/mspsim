@@ -3574,7 +3574,8 @@ func _paint_cues(rules: RefCounted) -> void:
 
 func _paint_press(key: int) -> void:
 	if key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
-		g.rules.fire_you()
+		if not g.rules.fire_you() and bool(g.rules.units[0].duck) and g.rules.phase == "play":
+			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF DOWN.", 0.8)
 
 
 func _paint_lines() -> Array:
