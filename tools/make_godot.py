@@ -34015,6 +34015,7 @@ var puppets := {}  # "You" or a rival's name -> {node, body, chair, color, label
 var props: Array = []  # {o, node, kind, marked}
 
 var _tex := {}  # kind -> {tex, off}
+var _paint := {}  # floor paint sprites (assets/props/chair_<id>.png, tools/make_game_art.lua); null = missing, the old rectangles are drawn
 var _actors: Node = null
 var _player: Node2D = null
 var _player2: Node2D = null  # co-op: player 2's body, hidden while they ride the tandem
@@ -34176,6 +34177,31 @@ func _mark(pr: Dictionary) -> void:
             s.position.x += 3.0
 
 
+func floor_paint(id: String) -> Texture2D:
+    if not _paint.has(id):
+        var path := "res://assets/props/chair_%s.png" % id
+        _paint[id] = load(path) if ResourceLoader.exists(path) else null
+    return _paint[id]
+
+
+# the fight's ring painted on the floor: a hazard bracket at each end, a dashed line along both edges, a spot in the middle
+func _ring() -> bool:
+    if floor_paint("ring_end") == null or floor_paint("ring_line") == null:
+        return false
+    var lx := x0 + ChairRace.world_x(float(race.arena[0])) - 13.0
+    var rx := x0 + ChairRace.world_x(float(race.arena[1])) + 13.0
+    var x := lx + 12.0
+    while x + 12.0 <= rx - 12.0:
+        draw_texture(floor_paint("ring_line"), Vector2(x, 105.0))
+        draw_texture(floor_paint("ring_line"), Vector2(x, 131.0))
+        x += 12.0
+    draw_texture(floor_paint("ring_end"), Vector2(lx, 105.0))
+    draw_texture_rect(floor_paint("ring_end"), Rect2(rx - 12.0, 105.0, -12.0, 28.0), false)  # the right end is the mirror
+    if floor_paint("ring_spot") != null:
+        draw_texture(floor_paint("ring_spot"), Vector2(roundf((lx + rx) * 0.5) - 15.0, 113.0))
+    return true
+
+
 func _draw() -> void:
     if race == null:
         return
@@ -34189,14 +34215,18 @@ func _draw() -> void:
             draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
             x += 12.0
     # the checkpoints: a stripe across the floor, a post at each end and its number
-    if _fight():  # the two ends of the strip: a red and white post line
+    if _fight() and _ring():
+        pass
+    elif _fight():  # the two ends of the strip: a red and white post line
         for end_x: float in race.arena:
             var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
             for k in 6:
                 draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
     elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
         var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
-        for row in 12:
+        if floor_paint("finish") != null:
+            draw_texture(floor_paint("finish"), Vector2(fx - 2.0, 107.0))
+        for row in (12 if floor_paint("finish") == null else 0):
             for col in 3:
                 draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
         PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)
@@ -48922,6 +48952,7 @@ var msg_at := -99999
 
 var c: Node = null
 var _chips: Array = []
+var _star: Array = []  # [Texture2D or null]: the asked-for star (assets/ui/star_asked.png), looked up once
 var _lanes: Array = []
 var _drag := {}
 
@@ -49514,6 +49545,18 @@ func _board_narrow(a: Rect2) -> void:
     _footer(Rect2(a.position, a.size), 2)
 
 
+# a client asked for somebody by name on this ticket (Service.ByName marks it)
+func asked_for(t: Dictionary) -> bool:
+    return str(t.get("asked_tech", "")) != "" and str(t.get("status", "")) != "Closed"
+
+
+func star() -> Texture2D:
+    if _star.is_empty():
+        var path := "res://assets/ui/star_asked.png"
+        _star.append(load(path) if ResourceLoader.exists(path) else null)
+    return _star[0]
+
+
 func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
     var carried := int(t.id) == held and not ghost
     c._fill(r, Color("d4d9e2") if carried else (Color("fff7e0") if ghost else c.WHITE))
@@ -49534,13 +49577,19 @@ func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
         var st := sla_text(t)
         c._text(st, Vector2(r.end.x - 3 - c._tw(st), r.position.y + 13), c.RED if late else INK)
     else:
-        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0)), Vector2(x, r.position.y + 1), INK)
+        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0) - (2 if asked_for(t) else 0)), Vector2(x, r.position.y + 1), INK)
         var st2 := sla_text(t)
         var left: String = c._clip(cl, maxi(1, chars - st2.length() - 1))
         c._text(left, Vector2(x, r.position.y + 7), MUTED)
         c._text(st2, Vector2(r.end.x - 2 - c._tw(st2), r.position.y + 7), c.RED if late else INK)
     if stuck:
         c._text("?", Vector2(r.end.x - 5, r.position.y + 1), c.RED)
+    if asked_for(t):  # R36: a client asked for a tech by name: a star in the chip's corner
+        var at := Vector2(r.end.x - (11.0 if stuck else 7.0), r.position.y + 1)
+        if star() != null:
+            c._canvas.draw_texture(star(), at)
+        else:
+            c._text("*", at + Vector2(1, 0), ASKED)
     # the SLA bar
     var f := sla_frac(t)
     var by := r.end.y - 2.0
@@ -60208,6 +60257,7 @@ const SETS := [
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SetDressing := preload("res://scripts/set_dressing.gd")
 const OfficeDecor := preload("res://scripts/office_decor.gd")  # R16: office growth and the seasonal dressing
 
 var barriers := {}  # npc sync points: key -> {arrived, gen}
@@ -60260,6 +60310,7 @@ func _ready() -> void:
     SalesBeats.recruiter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
+    SetDressing.dress(self)  # plates on the dinner table, Jen's headset
     _room = scene_file_path.get_file().get_basename()
     _set_dark(0.0 if World.lights_on(_room) else 1.0)
     World.lights_changed.connect(_on_lights)
@@ -80663,6 +80714,86 @@ func _drive_box() -> void:
     draw_rect(Rect2(47.0, 76.0, 1.0, 4.0), Color("f5d442"))
     draw_rect(Rect2(50.0, 75.0, 1.0, 5.0), Color("e0463c"))
     draw_rect(Rect2(53.0, 77.0, 1.0, 3.0), Color("5aa0e8"))
+''')
+
+write("scripts/set_dressing.gd", '''extends Node
+# gdlint:disable=max-line-length
+# Small props a room gets on top of its set, by what is going on (art: tools/make_game_art.lua, assets/props/):
+#   restaurant    plates on the two booth tables while a dinner is on and the table has ordered (Outings.game == "dinner")
+#   cubicle_two   a headset on its stand on Jen's desk (the front desk), where the second cast has a Jen
+# The stage calls dress() for every room. The sprites are children of the table / desk sprite, so they are drawn right
+# above it in the room's y-sort (in front of the people sitting behind it). No game logic, nothing is saved.
+
+const ART := "res://assets/props/%s.png"
+# room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
+const PLATES := {
+    "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+}
+const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
+const CHECK_SECS := 0.5
+
+var plates: Array = []  # the plate sprites (shown and hidden together)
+var _t := 0.0
+
+
+static func art(id: String) -> Texture2D:
+    var path := ART % id
+    return load(path) if ResourceLoader.exists(path) else null
+
+
+static func _put(host: Node, id: String, at: Vector2) -> Sprite2D:
+    var tex := art(id)
+    if host == null or tex == null:
+        return null
+    var s := Sprite2D.new()
+    s.name = "Dressing_" + id
+    s.texture = tex
+    s.centered = false
+    s.position = at
+    host.add_child(s)
+    return s
+
+
+# called by the stage for every room; returns the node it added (the restaurant) or null
+static func dress(stage: Node) -> Node:
+    var room := stage.scene_file_path.get_file().get_basename()
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null or Game.title_mode:
+        return null
+    if room == "cubicle_two" and World.chars.has("Jen"):
+        _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
+        return null
+    if room != "restaurant":
+        return null
+    var node: Node = load("res://scripts/set_dressing.gd").new()
+    node.name = "SetDressing"
+    stage.add_child(node)
+    for host in PLATES:
+        for row in PLATES[host]:
+            var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
+            if s != null:
+                node.plates.append(s)
+    node.refresh()
+    return node
+
+
+# the food is on the table once the dinner is past the ordering round
+static func plates_on() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_ordering()
+
+
+func refresh() -> void:
+    var on := plates_on()
+    for s in plates:
+        s.visible = on
+
+
+func _process(delta: float) -> void:
+    _t += delta
+    if _t >= CHECK_SECS:
+        _t = 0.0
+        refresh()
 ''')
 
 write("scripts/collection.gd", '''extends RefCounted

@@ -34,6 +34,7 @@ var msg_at := -99999
 
 var c: Node = null
 var _chips: Array = []
+var _star: Array = []  # [Texture2D or null]: the asked-for star (assets/ui/star_asked.png), looked up once
 var _lanes: Array = []
 var _drag := {}
 
@@ -626,6 +627,18 @@ func _board_narrow(a: Rect2) -> void:
 	_footer(Rect2(a.position, a.size), 2)
 
 
+# a client asked for somebody by name on this ticket (Service.ByName marks it)
+func asked_for(t: Dictionary) -> bool:
+	return str(t.get("asked_tech", "")) != "" and str(t.get("status", "")) != "Closed"
+
+
+func star() -> Texture2D:
+	if _star.is_empty():
+		var path := "res://assets/ui/star_asked.png"
+		_star.append(load(path) if ResourceLoader.exists(path) else null)
+	return _star[0]
+
+
 func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
 	var carried := int(t.id) == held and not ghost
 	c._fill(r, Color("d4d9e2") if carried else (Color("fff7e0") if ghost else c.WHITE))
@@ -646,13 +659,19 @@ func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
 		var st := sla_text(t)
 		c._text(st, Vector2(r.end.x - 3 - c._tw(st), r.position.y + 13), c.RED if late else INK)
 	else:
-		c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0)), Vector2(x, r.position.y + 1), INK)
+		c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0) - (2 if asked_for(t) else 0)), Vector2(x, r.position.y + 1), INK)
 		var st2 := sla_text(t)
 		var left: String = c._clip(cl, maxi(1, chars - st2.length() - 1))
 		c._text(left, Vector2(x, r.position.y + 7), MUTED)
 		c._text(st2, Vector2(r.end.x - 2 - c._tw(st2), r.position.y + 7), c.RED if late else INK)
 	if stuck:
 		c._text("?", Vector2(r.end.x - 5, r.position.y + 1), c.RED)
+	if asked_for(t):  # R36: a client asked for a tech by name: a star in the chip's corner
+		var at := Vector2(r.end.x - (11.0 if stuck else 7.0), r.position.y + 1)
+		if star() != null:
+			c._canvas.draw_texture(star(), at)
+		else:
+			c._text("*", at + Vector2(1, 0), ASKED)
 	# the SLA bar
 	var f := sla_frac(t)
 	var by := r.end.y - 2.0
