@@ -513,6 +513,13 @@ func _everyone_outside() -> bool:
 
 
 # campaign: send the whole cast home and start the morning of `number`
+# a new run (Campaign.new_game, after Difficulty.new_run): timers that were drawn before the run's seed existed are drawn again
+# from it, so the same seed gives the same office (the first meeting used to come at a boot-time random moment)
+func new_run() -> void:
+	_meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
+	_pair_last = {}
+
+
 func begin_next_day(number: int) -> void:
 	if Campaign.active:
 		Campaign.apply_day_length()  # the DAY LENGTH chosen in the pause menu starts this morning

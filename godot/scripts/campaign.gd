@@ -62,6 +62,13 @@ const MODE_DEFS := {
 	},
 }
 const START_REP := 50
+const CLEAN_REP := 58  # T2: from here on a day's reputation gain needs a clean day
+const CLEAN_PER := 6  # one loose end is forgiven for every six tickets closed
+const SLOPPY_REP := 62  # from here on a sloppy day costs SLOPPY_PER for every loose end over the allowance
+const SLOPPY_PER := 3
+const SLOPPY_MAX := 10
+const SLOPPY_NOTE := "LOOSE ENDS TODAY: NO REPUTATION GAIN."
+const SLOPPY_NOTE_LOSS := "TOO MANY LOOSE ENDS TODAY. THE CLIENTS NOTICED."
 const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
 var active := false  # a real campaign (not free play) is running
@@ -92,6 +99,17 @@ func gain_scale() -> float:
 	if rep >= 72:
 		return 0.3
 	return 0.6 if rep >= 60 else 1.0
+
+
+# T2: a day is clean enough when its loose ends (SLAs missed, reopens, plain tickets left in the queue: Msp.loose_open) are
+# at most one for every CLEAN_PER tickets closed
+func clean_day(closed: int, loose: int) -> bool:
+	return loose_excess(closed, loose) <= 0
+
+
+# the loose ends beyond the allowance (0 or less = a clean day)
+func loose_excess(closed: int, loose: int) -> int:
+	return loose - floori(float(closed) / float(CLEAN_PER))
 
 
 # the most the day report can add at this reputation
@@ -314,6 +332,7 @@ func new_game(for_mode: String) -> void:
 	Yeartwo.reset()
 	year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
 	Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+	World.new_run()
 	build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
 	Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
 	Msp.reset()
@@ -695,6 +714,15 @@ func _make_report() -> Dictionary:
 		-10,
 		daily_cap()
 	)
+	# T2: past CLEAN_REP the day report only adds reputation for a day that was clean enough (see clean_day); a sloppy day
+	# adds nothing, and from SLOPPY_REP on it costs SLOPPY_PER for every loose end too many (at most SLOPPY_MAX). Tech
+	# campaign, normal tier (Difficulty `tech.clean`).
+	var sloppy := false
+	if mode == "tech" and not cozy and rep >= CLEAN_REP and Difficulty.cf("tech.clean") > 0.0:
+		var excess := loose_excess(closed, missed + reopened + Msp.loose_open())
+		if excess > 0:
+			sloppy = true
+			rep_delta = mini(rep_delta, -clampi(SLOPPY_PER * excess, SLOPPY_PER, SLOPPY_MAX) if rep >= SLOPPY_REP else 0)
 	var grade := "D"
 	if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
 		grade = "S"
@@ -713,6 +741,7 @@ func _make_report() -> Dictionary:
 		"points": points,
 		"pay": pay,
 		"rep_delta": rep_delta,
+		"sloppy": sloppy,
 		"grade": grade,
 		"social": Social.day_delta,
 		"overtime": snappedf(overtime + Shift.stay_hours, 0.1),
@@ -757,6 +786,8 @@ func _end_day() -> void:
 			scars -= 1
 		r["rep_cap"] = rep_cap()
 	r["rep_delta"] = _tier_rep(int(r.rep_delta))
+	if bool(r.get("sloppy", false)):
+		r["notes"] = [SLOPPY_NOTE if int(r.rep_delta) >= 0 else SLOPPY_NOTE_LOSS]
 	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
 	if Difficulty.cozy_on():
 		_cozy_close(r)  # cozy Easy: nobody is fired, the books get one rescue

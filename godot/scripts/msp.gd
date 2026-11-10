@@ -713,6 +713,19 @@ func open_tickets() -> Array:
 	return out
 
 
+# T2: the tickets a tech could have finished today and left in the queue. Jobs that run over days (the install project, a
+# network or onsite job, a story ticket) and tickets whose clock already ran out (those are counted as missed) are not loose ends.
+func loose_open() -> int:
+	var n := 0
+	for t in tickets:
+		if t.status == "Closed" or bool(t.internal) or bool(t.breached) or str(t.special) != "":
+			continue
+		if str(t.fix) in ["project", "network"] or str(t.fix).begins_with("onsite_"):
+			continue
+		n += 1
+	return n
+
+
 func unread_texts() -> int:
 	var n := 0
 	for m in texts:
@@ -745,6 +758,17 @@ func create_ticket(client: int, problem: int, source: String) -> Dictionary:
 	return create_problem(client, PROBLEMS[problem], source)
 
 
+# A machine's problem is replaced by a bigger one (the ransomware lands on a server that already had a ticket): the open
+# tickets on it can no longer be fixed by their own fix, so they count as done and only want closing. Without this a P1
+# "server not responding" sat in the queue for the rest of the campaign (found by the bot runs, Q6).
+func supersede(ep_name: String) -> void:
+	for t in tickets:
+		if str(t.endpoint) == ep_name and t.status != "Closed" and not bool(t.fix_done):
+			t.fix_done = true
+			t.notes.append("Overtaken by a bigger problem on the same machine. Nothing left to fix here: close it.")
+	changed.emit()
+
+
 # force: a story job must always get its ticket, even when every machine of the client is already broken
 func create_problem(
 	client: int, prob: Dictionary, source: String, force := false
@@ -775,6 +799,8 @@ func create_problem(
 	var newclient: String = SalesCampaign.Retention.new_client_for(client, _next_id)  # C2: a new premium-SLA client's ticket goes first
 	if newclient != "":
 		pri = maxi(1, pri - 1)
+	if str(picked.problem) != "":
+		supersede(str(picked.name))  # a bigger job takes the machine over: the ticket that was on it has nothing left to fix
 	picked.problem = prob.fix
 	picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
 	picked["asked"] = false

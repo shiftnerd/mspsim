@@ -165,5 +165,39 @@ func _initialize() -> void:
 	var o1: int = root.get_node("Onsite")._trip_minutes(0)
 	d.seed_run(9)
 	_check(o1 == root.get_node("Onsite")._trip_minutes(0), "trip time roll repeats")
+	# ---- X7: tier x seed. On every tier a pinned seed gives the same start twice (fleet, mutator plan, first tickets, the
+	# office's first meeting), another seed gives another one, and the fleet of a seed does not depend on the tier
+	var world := root.get_node("World")
+	var fleets := {}
+	for tier in ["easy", "normal", "hard"]:
+		for mode in ["tech"]:  # (the other campaigns need the scene tree: tests/determinism.gd plays one of them twice)
+			var twice := []
+			for k in 3:
+				d.set_tier(tier)
+				d.seed_run(0xC0FFEE if k < 2 else 0xC0FFEF)
+				load("res://scripts/player.gd").current_character = {"tech": "office_intern", "service": "office_dan", "owner": "office_alan", "sales": "office_john"}[mode]
+				campaign.new_game(mode)
+				var names := []
+				for ep in msp.endpoints:
+					names.append(str(ep.user) + str(ep.os))
+				var snap := {"users": names, "plan": root.get_node("Mutators").plan.duplicate(true), "meeting": snappedf(float(world._meeting_t), 0.001)}
+				if mode == "tech":
+					snap["tickets"] = _tickets(msp, sales, 5)
+				twice.append(snap)
+				root.get_node("Cards").flush()
+			_check(twice[0] == twice[1] and not twice[0].users.is_empty(), "%s %s: the same seed starts the same run twice" % [mode, tier])
+			_check(twice[0] != twice[2], "%s %s: another seed starts another run" % [mode, tier])
+			if mode == "tech":
+				fleets[tier] = twice[0].users
+	_check(fleets.easy == fleets.normal and fleets.normal == fleets.hard, "the fleet of a seed is the same on every tier")
+	d.set_tier("normal")
+	# the office's meeting timer is drawn again from the run's seed (it used to keep a boot-time value, so one seed gave many games)
+	d.seed_run(77)
+	world.new_run()
+	var m1: float = world._meeting_t
+	world._meeting_t = 1.0
+	d.seed_run(77)
+	world.new_run()
+	_check(is_equal_approx(m1, world._meeting_t), "World.new_run: the meeting timer comes from the seed")
 	print("done, failures: %d" % failures)
 	quit(1 if failures > 0 else 0)

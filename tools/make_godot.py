@@ -5036,6 +5036,13 @@ func _everyone_outside() -> bool:
 
 
 # campaign: send the whole cast home and start the morning of `number`
+# a new run (Campaign.new_game, after Difficulty.new_run): timers that were drawn before the run's seed existed are drawn again
+# from it, so the same seed gives the same office (the first meeting used to come at a boot-time random moment)
+func new_run() -> void:
+    _meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
+    _pair_last = {}
+
+
 func begin_next_day(number: int) -> void:
     if Campaign.active:
         Campaign.apply_day_length()  # the DAY LENGTH chosen in the pause menu starts this morning
@@ -6367,6 +6374,19 @@ func open_tickets() -> Array:
     return out
 
 
+# T2: the tickets a tech could have finished today and left in the queue. Jobs that run over days (the install project, a
+# network or onsite job, a story ticket) and tickets whose clock already ran out (those are counted as missed) are not loose ends.
+func loose_open() -> int:
+    var n := 0
+    for t in tickets:
+        if t.status == "Closed" or bool(t.internal) or bool(t.breached) or str(t.special) != "":
+            continue
+        if str(t.fix) in ["project", "network"] or str(t.fix).begins_with("onsite_"):
+            continue
+        n += 1
+    return n
+
+
 func unread_texts() -> int:
     var n := 0
     for m in texts:
@@ -6399,6 +6419,17 @@ func create_ticket(client: int, problem: int, source: String) -> Dictionary:
     return create_problem(client, PROBLEMS[problem], source)
 
 
+# A machine's problem is replaced by a bigger one (the ransomware lands on a server that already had a ticket): the open
+# tickets on it can no longer be fixed by their own fix, so they count as done and only want closing. Without this a P1
+# "server not responding" sat in the queue for the rest of the campaign (found by the bot runs, Q6).
+func supersede(ep_name: String) -> void:
+    for t in tickets:
+        if str(t.endpoint) == ep_name and t.status != "Closed" and not bool(t.fix_done):
+            t.fix_done = true
+            t.notes.append("Overtaken by a bigger problem on the same machine. Nothing left to fix here: close it.")
+    changed.emit()
+
+
 # force: a story job must always get its ticket, even when every machine of the client is already broken
 func create_problem(client: int, prob: Dictionary, source: String, force := false) -> Dictionary:
     var contact: String = CLIENTS[client].contact
@@ -6427,6 +6458,8 @@ func create_problem(client: int, prob: Dictionary, source: String, force := fals
     var newclient: String = SalesCampaign.Retention.new_client_for(client, _next_id)  # C2: a new premium-SLA client's ticket goes first
     if newclient != "":
         pri = maxi(1, pri - 1)
+    if str(picked.problem) != "":
+        supersede(str(picked.name))  # a bigger job takes the machine over: the ticket that was on it has nothing left to fix
     picked.problem = prob.fix
     picked["unsaved"] = Difficulty.rng("msp.tickets").randf() < 0.65  # somebody is working on it: documents are open
     picked["asked"] = false
@@ -12354,6 +12387,13 @@ const MODE_DEFS := {
     },
 }
 const START_REP := 50
+const CLEAN_REP := 58  # T2: from here on a day's reputation gain needs a clean day
+const CLEAN_PER := 6  # one loose end is forgiven for every six tickets closed
+const SLOPPY_REP := 62  # from here on a sloppy day costs SLOPPY_PER for every loose end over the allowance
+const SLOPPY_PER := 3
+const SLOPPY_MAX := 10
+const SLOPPY_NOTE := "LOOSE ENDS TODAY: NO REPUTATION GAIN."
+const SLOPPY_NOTE_LOSS := "TOO MANY LOOSE ENDS TODAY. THE CLIENTS NOTICED."
 const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
 var active := false  # a real campaign (not free play) is running
@@ -12384,6 +12424,17 @@ func gain_scale() -> float:
     if rep >= 72:
         return 0.3
     return 0.6 if rep >= 60 else 1.0
+
+
+# T2: a day is clean enough when its loose ends (SLAs missed, reopens, plain tickets left in the queue: Msp.loose_open) are
+# at most one for every CLEAN_PER tickets closed
+func clean_day(closed: int, loose: int) -> bool:
+    return loose_excess(closed, loose) <= 0
+
+
+# the loose ends beyond the allowance (0 or less = a clean day)
+func loose_excess(closed: int, loose: int) -> int:
+    return loose - floori(float(closed) / float(CLEAN_PER))
 
 
 # the most the day report can add at this reputation
@@ -12606,6 +12657,7 @@ func new_game(for_mode: String) -> void:
     Yeartwo.reset()
     year = 2 if Yeartwo.take_pending(for_mode) else 1  # New Game Plus (R10b): chosen on the title menu
     Difficulty.new_run()  # first: the Msp fleet and every later draw come from the new seed
+    World.new_run()
     build = Build.take_pending(for_mode)  # the character select's point-buy build; the flat default for direct starts
     Difficulty.fixed_take = Difficulty.fixed_take and not active  # a fixed take is Free Play only
     Msp.reset()
@@ -12987,6 +13039,15 @@ func _make_report() -> Dictionary:
         -10,
         daily_cap()
     )
+    # T2: past CLEAN_REP the day report only adds reputation for a day that was clean enough (see clean_day); a sloppy day
+    # adds nothing, and from SLOPPY_REP on it costs SLOPPY_PER for every loose end too many (at most SLOPPY_MAX). Tech
+    # campaign, normal tier (Difficulty `tech.clean`).
+    var sloppy := false
+    if mode == "tech" and not cozy and rep >= CLEAN_REP and Difficulty.cf("tech.clean") > 0.0:
+        var excess := loose_excess(closed, missed + reopened + Msp.loose_open())
+        if excess > 0:
+            sloppy = true
+            rep_delta = mini(rep_delta, -clampi(SLOPPY_PER * excess, SLOPPY_PER, SLOPPY_MAX) if rep >= SLOPPY_REP else 0)
     var grade := "D"
     if points >= 20 and missed == 0 and open_left == 0 and closed >= 4:
         grade = "S"
@@ -13005,6 +13066,7 @@ func _make_report() -> Dictionary:
         "points": points,
         "pay": pay,
         "rep_delta": rep_delta,
+        "sloppy": sloppy,
         "grade": grade,
         "social": Social.day_delta,
         "overtime": snappedf(overtime + Shift.stay_hours, 0.1),
@@ -13049,6 +13111,8 @@ func _end_day() -> void:
             scars -= 1
         r["rep_cap"] = rep_cap()
     r["rep_delta"] = _tier_rep(int(r.rep_delta))
+    if bool(r.get("sloppy", false)):
+        r["notes"] = [SLOPPY_NOTE if int(r.rep_delta) >= 0 else SLOPPY_NOTE_LOSS]
     rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
     if Difficulty.cozy_on():
         _cozy_close(r)  # cozy Easy: nobody is fired, the books get one rescue
@@ -18759,6 +18823,7 @@ func _ransomware() -> void:
     if t.is_empty():
         for ep in Msp.endpoints:
             if ep.client == RANSOM_CLIENT and ep.name.contains("SRV"):
+                Msp.supersede(str(ep.name))
                 ep.problem = ""
         t = Msp.create_problem(RANSOM_CLIENT, Msp.RANSOM, "monitoring")
     flags["ransom_ticket"] = int(t.get("id", 0))
@@ -29053,6 +29118,9 @@ const TABLE := {
     "tech.alt_ret": [0.8, 1.0, 1.3],
     "tech.drain": [0.9, 1.0, 2.0],
     "tech.pair": [0.0, 0.0, 0.7],
+    # T2: 1 = past reputation 58 a day only adds reputation when it was clean enough (Campaign.clean_day). Off on easy (cozy
+    # ignores misses) and on hard (its short clocks make misses routine; tech.loss prices them there)
+    "tech.clean": [0.0, 1.0, 0.0],
     # P6 (a): a workstation heavy fix (reimage, rebuild profile) at a client with a site can be done in person. On the remote
     # version: tech.heavy_fail = chance it fails at the last step, tech.heavy_slow = time x. tech.onsite_mood = client mood the visit earns.
     "tech.heavy_fail": [0.0, 0.0, 0.25],

@@ -189,6 +189,9 @@ const TABLE := {
 	"tech.alt_ret": [0.8, 1.0, 1.3],
 	"tech.drain": [0.9, 1.0, 2.0],
 	"tech.pair": [0.0, 0.0, 0.7],
+	# T2: 1 = past reputation 58 a day only adds reputation when it was clean enough (Campaign.clean_day). Off on easy (cozy
+	# ignores misses) and on hard (its short clocks make misses routine; tech.loss prices them there)
+	"tech.clean": [0.0, 1.0, 0.0],
 	# P6 (a): a workstation heavy fix (reimage, rebuild profile) at a client with a site can be done in person. On the remote
 	# version: tech.heavy_fail = chance it fails at the last step, tech.heavy_slow = time x. tech.onsite_mood = client mood the visit earns.
 	"tech.heavy_fail": [0.0, 0.0, 0.25],

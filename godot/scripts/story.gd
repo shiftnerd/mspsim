@@ -2108,6 +2108,7 @@ func _ransomware() -> void:
 	if t.is_empty():
 		for ep in Msp.endpoints:
 			if ep.client == RANSOM_CLIENT and ep.name.contains("SRV"):
+				Msp.supersede(str(ep.name))
 				ep.problem = ""
 		t = Msp.create_problem(RANSOM_CLIENT, Msp.RANSOM, "monitoring")
 	flags["ransom_ticket"] = int(t.get("id", 0))
