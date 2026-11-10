@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-returns,max-line-length
 # Resume point step 5 (roadmap R16): save, quit, reload round trips that end in the same state for
 #  1. a Playbook job in progress (tech), 2. an onsite visit (standing at the client site, with the room loaded),
 #  3. the owner, service and sales campaigns in the middle of their day / week.
@@ -100,6 +101,8 @@ func _init() -> void:
 	var report := root.get_node("DayReport")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	game.title_mode = false
+	root.get_node("Difficulty").set_tier("normal")
+	root.get_node("Difficulty").seed_run(11)
 	_wipe()
 
 	# ---- 1. a Playbook job in progress ----
@@ -142,6 +145,7 @@ func _init() -> void:
 	game.go("main_floor", "start")
 	await _wait(1.0)
 	_drain()
+	world.clock = 10.0  # the gate wants office hours, and the drive adds its minutes
 	var other: Dictionary = msp.create_ticket(0, 0, "email")
 	var t: Dictionary = on.create_job(0, "switch")
 	on.offer(int(t.id))
@@ -247,18 +251,58 @@ func _init() -> void:
 		_check(d == "", "%s: every field of the mode's state is back %s" % [mode, d])
 		_check(c.mode == mode and c.active and not cards.is_open, "%s: running, no day-begin card a second time" % mode)
 		# and it plays on to the end of the unit
-		world.time_scale = 40.0
 		guard = 0
 		while not report.is_open and guard < 6000:
 			_drain()
+			if on.active and not cards.is_open:
+				on._go_home(false)  # a card of the week sent you to a client: the resume point was at their office
+			world.time_scale = 40.0
 			await process_frame
 			guard += 1
 		world.time_scale = 1.0
-		_check(report.is_open, "%s: the resumed unit ends in its report" % mode)
+		_check(report.is_open, "%s: the resumed unit ends in its report (clock %.2f, scale %.1f, card %s, ui %s, outing %s)" % [mode, world.clock, world.time_scale, str(cards.is_open), str(game.ui_open), str(root.get_node("Outings").busy())])
 		report.finish()
 		await _wait(0.8)
 		_drain()
 		_check(c.day == 3 and not FileAccess.file_exists(c.resume_path(mode)), "%s: the next unit starts and the resume point is gone" % mode)
+
+	# ---- 4. the title menu: a service slot with both saves offers CONTINUE (the resume point) and starts it
+	_wipe()
+	c.new_game("service")
+	_drain()
+	world.clock = world.DAY_END
+	guard = 0
+	while not report.is_open and guard < 600:
+		_drain()
+		await process_frame
+		guard += 1
+	report.finish()
+	await _wait(0.8)
+	_drain()
+	await _run_to(11.0)
+	guard = 0
+	while not c.can_snapshot() and guard < 200:
+		_drain()
+		await process_frame
+		guard += 1
+	_check(c.snapshot() and c.has_save("service"), "service day 2: an end-of-day save and a resume point")
+	var saved_clock: float = world.clock
+	game.title_mode = true
+	change_scene_to_file("res://scenes/title.tscn")
+	for i in 5:
+		await process_frame
+	var title: Node = current_scene
+	title._open_menu()
+	title._enter_slot("service", 1)
+	var ids: Array = title._items.map(func(i: Dictionary) -> String: return str(i.id))
+	_check(title._level == "slot" and ids == ["service_resume", "service_continue"], "the slot offers the resume point first: %s" % str(ids))
+	_check(str(title._items[0].label).begins_with("CONTINUE - DAY 2  11:"), "its label has the day and the time (%s)" % str(title._items[0].label))
+	c.new_game("free")
+	title._choose(0)
+	await _wait(1.0)
+	_drain()
+	_check(c.active and c.mode == "service" and c.day == 2 and world.clock >= saved_clock and world.clock < saved_clock + 0.5, "CONTINUE resumes the service day at %.2f (saved %.2f)" % [world.clock, saved_clock])
+	_check(_scene() != "title" and _scene() != "", "in a room (%s)" % _scene())
 
 	_wipe()
 	print("failures=%d" % failures)

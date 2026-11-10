@@ -25,6 +25,7 @@ const ROLES := {
 	"Christy": "CONTROLLER"
 }
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
+const Collection := preload("res://scripts/collection.gd")  # R16: relationship levels
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const DEFAULT_THANKS := [
 	"thanks for grabbing the phones earlier!",
@@ -93,6 +94,7 @@ func change(who: String, amount: int) -> void:
 	var before := value(who)
 	rel[who] = clampi(before + amount, -100, 100)
 	day_delta += value(who) - before
+	Collection.note_change(who, before, value(who))
 	changed.emit()
 
 
@@ -149,6 +151,7 @@ func rep_bonus() -> int:
 
 
 func note_chat(who: String) -> void:
+	Career.note_first("met", who, "cast_met")  # R16: the collection page
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - float(_last_chat.get(who, -999.0)) >= CHAT_GAP:
 		_last_chat[who] = now

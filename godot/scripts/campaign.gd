@@ -776,6 +776,8 @@ func _end_day() -> void:
 func _cozy_close(r: Dictionary) -> void:
 	r["cozy"] = true
 	var notes: Array = []
+	if str(r.get("grade", "")) == "D":
+		r["grade"] = "C"  # the grade floor: on Easy the worst day is a C
 	if bool(r.get("bankrupt", false)):
 		r["bankrupt"] = false
 		if Owner.bailout == 0:
@@ -793,6 +795,8 @@ func _cozy_close(r: Dictionary) -> void:
 		notes.append(Difficulty.ct("probation_note"))
 		var sender := {"owner": "Christy", "sales": "John"}.get(mode, "Morgan") as String
 		Msp.send_text(sender, Difficulty.ct("probation_" + mode))
+	if str(r.get("grade", "")) == "C":
+		notes.append(Difficulty.ct("grade_c"))  # a C comes with a calm line, so it does not read as failing
 	if not notes.is_empty():
 		r["notes"] = notes
 

@@ -66,6 +66,7 @@ phone, clothes and accessories in the character creator. Open it from the title 
 | KEY | WHAT IT DOES |
 |---|---|
 | `Left` / `Right` (or `A` / `D`) | Turn the page. |
+| `C` | Jump to the **collection** pages: the cast you have met and your level with each, karaoke songs sung, escape room clue types seen, printers beaten, and this run's office decor. |
 | `F9` | Change the picture shape. |
 | `Esc` or `Backspace` | Back out. |
 

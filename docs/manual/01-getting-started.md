@@ -35,6 +35,7 @@ a meeting in the conference room. They rotate every few seconds. Nobody is paid 
 | **CONTINUE** | Only shown once you have a save. Lists your newest saves from every campaign, most recent first, and the list scrolls when there are more than six. |
 | **NEW** | A fresh campaign: the four modes below. `Esc` goes back to the home menu. |
 | **FREE PLAY** | A sandbox with no scoring. |
+| **QUICK PLAY** | A few minutes of play on Free Play, nothing saved: **ONE OUTING** (one team game, a different one each time) or **ONE TICKET SHIFT** (five tickets at your desk, against your own best time). |
 | **SETTINGS** | The pause menu's settings before you start a run: the key lists and remap, the screen shape, sound on/off and the day length. The last row, CAREER, opens your medals, records and unlocks across every run. |
 | **QUIT** | Leaves the game. |
 

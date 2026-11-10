@@ -66,6 +66,31 @@ func _end(tag: String) -> void:
 	PixelFont.audit = null
 
 
+# the HUD node (World keeps it on its own CanvasLayer)
+func _hud() -> Node2D:
+	for ch in root.get_node("World").get_children():
+		if ch is CanvasLayer and ch.get_child_count() > 0 and ch.get_child(0).has_method("modal_open"):
+			return ch.get_child(0)
+	return null
+
+
+# one audited redraw of the HUD (the title leaves it hidden; a phone banner would hide the goal chip)
+func _hud_shot(tag: String) -> void:
+	var world := root.get_node("World")
+	var phone := root.get_node("Phone")
+	var was: bool = world.hud_visible
+	world.hud_visible = true
+	var guard := 0
+	while (not phone.banner.is_empty() or not phone._bq.is_empty()) and guard < 3000:
+		await process_frame
+		guard += 1
+	await _wait(2)
+	_begin()
+	_hud().queue_redraw()
+	await _end(tag)
+	world.hud_visible = was
+
+
 func _want(tag: String) -> bool:
 	return only.is_empty() or only.has(tag)
 
@@ -132,6 +157,11 @@ func _title_phase() -> void:
 	_begin()
 	t._open_menu()
 	await _end("title menu")
+	# R16: the QUICK PLAY rows (micro-sessions)
+	_begin()
+	t._show_quick()
+	await _end("title quick play")
+	t._show_home(0)
 	# the tech submenu at its fullest: a save plus a finished year (CONTINUE, START YEAR 2, NEW CAMPAIGN)
 	var camp := root.get_node("Campaign")
 	var yt := root.get_node("Yeartwo")
@@ -374,6 +404,10 @@ func _floor_phase() -> void:
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("tech", "office_intern")
 	world.clock = 11.0
+	# R16: the HUD's goal chip and next-up list, on the busiest day (an outing day in the on-call week)
+	c.day = 10
+	await _hud_shot("hud goal chip tech")
+	c.day = 1
 	_begin()
 	cards.ask("MORGAN (MANAGER)", "TWO OWNERS, ONE ACCOUNT, AND A PROSPECT WHO WANTS AN ANSWER BY FRIDAY. WHOSE SIDE ARE YOU ON? I NEED THIS DECISION BEFORE THE END OF THE DAY.", [
 		{"label": "GARRISON: TAKE THE LOGO AT 30% OFF AND HOPE THE MARGIN HOLDS UP", "id": "a", "trust_chip": "GARRISON +4", "trust_dir": 1},
@@ -411,6 +445,7 @@ func _floor_phase() -> void:
 	# ---- owner campaign: boardroom tabs, partner trust cards
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("owner", "office_alan")
+	await _hud_shot("hud goal chip owner")
 	var o := root.get_node("Owner")
 	o.flags["peer_group"] = true
 	o.apply({"hire": o.JUNIOR})

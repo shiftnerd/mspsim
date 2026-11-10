@@ -101,9 +101,11 @@ const ROOTS := {
 	"Habits": ["HABITS", "TEXT", "CARDS"],
 	"RivalCards": ["CARDS"],
 	"RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
+	"Seasons": ["CARDS", "EVENTS"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
 const SCRIPTS := {
+	"Seasons": "res://scripts/seasons.gd",
 	"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd",
 	"RivalTouches": "res://scripts/rival_touches.gd"
 }
