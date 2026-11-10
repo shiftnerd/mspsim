@@ -4612,11 +4612,15 @@ func _paint_cues(rules: RefCounted) -> void:
 			g.count = ceili(rules.count)
 			Sfx.play("ui_tick")
 	elif rules.phase == "over":
-		line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
+		line = "TIME!" if rules.clock >= float(rules.limit) and rules.winner == 2 else "THAT IS THE MATCH!"
 	elif rules.line_t > 0.0:
 		line = rules.line
+	elif rules.is_out(0):
+		line = "YOU ARE OUT. IT IS UP TO THE OTHERS."
 	elif rules.units[0].down > 0.0:
 		line = "YOU ARE OUT FOR %d..." % ceili(rules.units[0].down)
+	elif rules.overtime and not rules.units[0].flag:
+		line = "OVERTIME: NEXT FLAG WINS. STAY ON YOUR FEET."
 	elif rules.units[0].flag:
 		line = "YOU HAVE THE FLAG! RUN HOME!"
 	else:
@@ -4646,7 +4650,7 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
 	var rules: RefCounted = g.rules
-	_t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
+	_t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
 	_t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -4658,9 +4662,13 @@ func _hud_paint(s: Rect2) -> void:
 	_t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
 	_canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
 	_t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-	_t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
+	_t("%d" % rules.time_left(), o.x + 26.0, o.y, AMBER if rules.overtime else WHITE)
 	var you: Dictionary = rules.units[0]
 	var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
+	if rules.is_out(0):
+		state = "OUT"
+	elif rules.overtime and state == "":
+		state = "OT"
 	_t(state, o.x + 48.0, o.y, AMBER)
 	_t("TAGS %d" % rules.you_tags, s.end.x - 40.0, o.y, UiStyle.SOFT)
 

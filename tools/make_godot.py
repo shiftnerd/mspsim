@@ -38992,11 +38992,15 @@ func _paint_cues(rules: RefCounted) -> void:
             g.count = ceili(rules.count)
             Sfx.play("ui_tick")
     elif rules.phase == "over":
-        line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
+        line = "TIME!" if rules.clock >= float(rules.limit) and rules.winner == 2 else "THAT IS THE MATCH!"
     elif rules.line_t > 0.0:
         line = rules.line
+    elif rules.is_out(0):
+        line = "YOU ARE OUT. IT IS UP TO THE OTHERS."
     elif rules.units[0].down > 0.0:
         line = "YOU ARE OUT FOR %d..." % ceili(rules.units[0].down)
+    elif rules.overtime and not rules.units[0].flag:
+        line = "OVERTIME: NEXT FLAG WINS. STAY ON YOUR FEET."
     elif rules.units[0].flag:
         line = "YOU HAVE THE FLAG! RUN HOME!"
     else:
@@ -39026,7 +39030,7 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
+    _t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
     _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -39038,9 +39042,13 @@ func _hud_paint(s: Rect2) -> void:
     _t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
     _canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
     _t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-    _t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
+    _t("%d" % rules.time_left(), o.x + 26.0, o.y, AMBER if rules.overtime else WHITE)
     var you: Dictionary = rules.units[0]
     var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
+    if rules.is_out(0):
+        state = "OUT"
+    elif rules.overtime and state == "":
+        state = "OT"
     _t(state, o.x + 48.0, o.y, AMBER)
     _t("TAGS %d" % rules.you_tags, s.end.x - 40.0, o.y, UiStyle.SOFT)
 
@@ -41485,6 +41493,8 @@ const OPEN_DUCK := 0.55  # a ducking player with no barricade is a smaller targe
 const RESPAWN := 4.0
 const TARGET := 3
 const LIMIT := 150.0  # seconds of play
+const OVERTIME := 45.0  # level when the time is up: sudden death for this long (nobody comes back; next flag or last team standing wins), then a draw
+const OUT := 9999.0  # the `down` of a unit tagged in overtime: out for the rest of the match
 const COUNT := 3.0
 const PICK := 7.0  # px to touch a flag
 const CAP := 10.0  # px of your own end that count as home
@@ -41494,7 +41504,7 @@ const YOU_ACC := 0.8
 const AI_ACC := 0.18  # the crew's aim is this much of their skill
 # the tuning run (tests/paintball_tuning.gd: a scripted average player, 30+ seeded matches a tier) found the first version lopsided:
 # the player won 97 % and nobody else ever carried a flag home. Three numbers fix that:
-const RIVAL_EDGE := 2.3  # x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
+const RIVAL_EDGE := 2.75  # (2.3 before the overtime rule, which turned most draws into your wins) x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
 const COOP_EDGE := 1.4  # x that again with two pilots on your side
 const CARRY_DODGE := 0.8  # seconds (less for the quick ones) before a crew member with the flag steps out of a rival's lane
 const NAMES := ["Alan", "Garrison", "Dan", "Maya", "John"]
@@ -41533,6 +41543,8 @@ var p2_caps := 0
 var crew_acc := AI_ACC
 var target := TARGET
 var limit := LIMIT
+var ot_len := OVERTIME  # params.overtime (0 = no overtime: time up level is a draw)
+var overtime := false  # sudden death is on
 var rival_edge := RIVAL_EDGE
 var carry_dodge := CARRY_DODGE
 var respawn := RESPAWN
@@ -41549,6 +41561,8 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator, humans := 1) -
     crew_acc = float(p.get("crew_acc", AI_ACC))
     target = int(p.get("target", TARGET))
     limit = float(p.get("limit", LIMIT))
+    ot_len = float(p.get("overtime", OVERTIME))
+    overtime = false
     rival_edge = float(p.get("rival_edge", RIVAL_EDGE)) * (COOP_EDGE if pilots == 2 else 1.0)
     carry_dodge = float(p.get("carry_dodge", CARRY_DODGE))
     respawn = float(p.get("respawn", RESPAWN))
@@ -41701,8 +41715,48 @@ func step(dt: float) -> void:
         _tick_unit(i, dt)
     for i in order:
         _flags_for(i)
-    if score[0] >= target or score[1] >= target or clock >= limit:
+    if score[0] >= target or score[1] >= target:
         _end()
+    elif overtime:
+        _overtime_step()
+    elif clock >= limit:
+        if score[0] == score[1] and ot_len > 0.0:
+            overtime = true
+            events.append({"kind": "overtime"})
+            say("OVERTIME! NOBODY COMES BACK. NEXT FLAG WINS.", 2.6)
+        else:
+            _end()
+
+
+# sudden death: the next flag home wins, a team with nobody left standing loses, and after ot_len seconds it is a draw after all
+func _overtime_step() -> void:
+    if score[0] != score[1]:
+        _end()
+        return
+    for t in 2:
+        if standing(t) == 0:
+            _end(other(t))
+            return
+    if clock >= limit + ot_len:
+        _end()
+
+
+# how many of a team are still in the match (a unit waiting to come back counts; one tagged in overtime does not)
+func standing(team: int) -> int:
+    var n := 0
+    for u in units:
+        if int(u.team) == team and float(u.down) < OUT * 0.5:
+            n += 1
+    return n
+
+
+func is_out(i: int) -> bool:
+    return float(units[i].down) >= OUT * 0.5
+
+
+# the seconds left of the match, or of the overtime
+func time_left() -> int:
+    return maxi(0, ceili(limit + (ot_len if overtime else 0.0) - clock))
 
 
 func _tick_unit(i: int, dt: float) -> void:
@@ -41710,6 +41764,9 @@ func _tick_unit(i: int, dt: float) -> void:
     u.cool = maxf(0.0, float(u.cool) - dt)
     u.lane_cool = maxf(0.0, float(u.lane_cool) - dt)
     if float(u.down) > 0.0:
+        if is_out(i):
+            u.vx = 0.0
+            return
         u.down = float(u.down) - dt
         u.vx = 0.0
         u.duck = false
@@ -41761,9 +41818,11 @@ func _flags_for(i: int) -> void:
         say("%s SCORES! %d TO %d" % [str(u.name), score[0], score[1]], 1.8)
 
 
-func _end() -> void:
+func _end(by_wipe := -1) -> void:
     phase = "over"
-    if score[0] > score[1]:
+    if by_wipe >= 0:
+        winner = by_wipe  # overtime: the last team standing
+    elif score[0] > score[1]:
         winner = 0
     elif score[1] > score[0]:
         winner = 1
@@ -41839,7 +41898,7 @@ func fire(i: int) -> bool:
 
 func _tag(j: int, by: int) -> void:
     var v: Dictionary = units[j]
-    v.down = respawn
+    v.down = OUT if overtime else respawn
     v.duck = false
     v.vx = 0.0
     units[by].tags = int(units[by].tags) + 1
@@ -42329,7 +42388,7 @@ func _draw_top() -> void:
         PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
         if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
             PixelFont.draw(_top, game.debug_line(i), at + Vector2(-14.0, 9.0 + 56.0), Color(1, 1, 1, 0.8), 1)
-        if float(u.down) > 0.0:  # the seconds until they are back in the game
+        if float(u.down) > 0.0 and not game.is_out(i):  # the seconds until they are back in the game
             PixelFont.draw(_top, str(ceili(float(u.down))), at + Vector2(w * 0.5 - 1.0, -8.0), Color.WHITE, 1)
 
 
