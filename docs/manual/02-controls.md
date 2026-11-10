@@ -99,7 +99,8 @@ about ten pixels and the game goes back to choosing for you.
 
 ## GAMEPAD
 
-Plug it in and go. A gamepad covers walking, using things and the menus. For anything it does not cover, there is the keyboard.
+Plug it in and go. A gamepad covers the whole game: walking, using things, every menu, the Computer, the phone and all the
+mini-games. Nothing needs the keyboard or the mouse (that is how it is played on a Steam Deck).
 
 ### In the office
 
@@ -120,6 +121,14 @@ Plug it in and go. A gamepad covers walking, using things and the menus. For any
 | **Next person** (Free Play) | Click the right stick (`R3`) | The same as the `1` to `7` keys. |
 | **Free Play menu** | `Start`, then **FREE PLAY MENU** | The mutator, the toolbox, a team outing, the next person: what the keyboard has on the backtick key, `Shift+F10`, `O` and `1` to `7`. |
 | **Stand up** (seated) | Move, or press `A` | |
+| **Dance** | Push the right stick up | The same as `X`. Again (or walking off) ends it. |
+| **Follow me** | Push the right stick down, next to a coworker | The same as `C`. |
+| **Mute the sound** | Push the right stick right | The same as `M`. |
+| **Change your look** (Free Play) | Click the left stick (`L3`), or `Start`, then **OUTFIT** | The same as `Y`. |
+| **Nerf blaster: fire** | `RT` (hold it to lob, let go to fire) | The same as `Z`. |
+| **Nerf blaster: offer a war** | `Y` with the blaster in your hand | The same as `V`. |
+| **Nerf blaster: give it away** | Push the right stick left | The same as `G`. |
+| **Previous target** | `LB` (when you are not holding a drink) | The same as `Shift+Tab`. |
 
 ### In menus, cards and screens
 
@@ -130,7 +139,9 @@ Plug it in and go. A gamepad covers walking, using things and the menus. For any
 | **Back** | `B` |
 | **A computer app's letter keys** (CRM, Dispatch, Knowledge) | `Y` steps through them (the strip above the taskbar names the one you are on), `X` presses it |
 | **Printer: shake, pray, answer** | `LB` / `RB` shake, `Y` prays, `Up` / `Down` mark an answer and `A` gives it |
-| **Escape room: a nudge** | `Y` |
+| **Escape room: a nudge, or the hint of the page game** | `Y` |
+| **Any button of the Computer or the phone** | `RB` / `LB` step the cursor from button to button, `A` presses the one it is on. On the Computer the right stick also moves the cursor freely. Moving with the D-pad hands `A` back to the list. |
+| **Leave the chair race, the cookout or paintball** | `Back` / `Select` (`B` is a game button there). Everywhere else `B` leaves. |
 
 Hint lines follow your controls: with a gamepad in your hands they show `(A)`, `(B)` and so on instead of key names, and a key
 you remapped shows as the key it is now.
@@ -141,13 +152,19 @@ On a touch screen the game draws a stick (bottom left), `A` and `X` buttons (bot
 open), a **MENU** button (top right), **NEXT** (the next target) and, while you sit, **ROLL** (hold it and push the stick).
 They do exactly what the gamepad buttons of the same name do. Anything else on screen can be tapped like a mouse click.
 
-### Not on the pad (yet)
+### What still wants a keyboard
 
-These are keyboard-only today: **dance**, **follow**, **mute**, **the outfit swap**, **Tab**, and **aiming and firing the nerf blaster**. The pad has `RT` and `RB` marked for aiming and picking targets in the key map, but the player does
-not listen to them yet.
+Only two extras: putting a **keyboard key** on an action (the remap page; a pad can move its own buttons there), and
+typing a **word** as a run seed (the seed page has wheels for the pad). The debug keys are keyboard-only too.
 
-> **NOTE (COMING SOON):** The way the game reads its controls is being reworked so that more than one controller can be used at
-> once. When that lands, this table is going to grow.
+Answering a card or closing a screen with `A` never makes you jump or stand up: the press belongs to the card.
+
+### Steam Deck and other 16:10 screens
+
+On a 16:10 screen (a Steam Deck is 1280 x 800) the game starts in the **DECK** shape, which fills the screen with no black
+bars. The **SHAPE** row of the pause menu (or `F9`) still changes it, and your choice is remembered. When the game loses
+focus or the machine goes to sleep, it pauses by itself; **SETTINGS** on the title screen has an **UNFOCUSED** row
+(`PAUSE` / `RUN`) if you would rather keep it running in the background.
 
 ---
 

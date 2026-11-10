@@ -29,6 +29,7 @@ var tk_sel := -1
 var txt_open := false
 var txt_scroll := 0  # how many of the newest texts are scrolled past (Up / Down / the wheel)
 var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings, 4 the dock's PHONE)
+var pad_focus := false  # R42: RB / LB put the cursor on a button: A presses it (a D-pad move hands A back to the list)
 const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone", "camera"]
 const MAX_PHOTOS := 6  # the camera roll keeps the newest six (R37)
 const KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"]
@@ -147,6 +148,9 @@ func open() -> void:
 	dialog = {}
 	banner = {}  # the phone is in your hand now: the lock screen lists what came in
 	_toast_t = 0.0
+	pad_focus = false
+	if Controls.pad_active and pane_slot <= 0:
+		_say("(RB) NEXT BUTTON")
 	is_open = true
 	Sfx.play("ui_open")
 	_set_ui(true)
@@ -337,6 +341,8 @@ func _input(event: InputEvent) -> void:
 		and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN)
 	):
 		move(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+	elif pane_slot <= 0 and _pad_reach(event):
+		_canvas.queue_redraw()
 	elif _dial_key(event):
 		pass
 	elif Controls.pressed(event):
@@ -363,6 +369,26 @@ func _input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+# R42: a pad reaches every button of the phone: RB / LB step the cursor through the tap targets, A presses the one under it
+func _pad_reach(event: InputEvent) -> bool:
+	var used := false
+	var button: bool = event is InputEventJoypadButton and event.pressed
+	if button and (Controls.matches(event, "pick_next") or Controls.matches(event, "pick_prev")):
+		_mouse = Controls.focus_step(_hits, _mouse, 1 if Controls.matches(event, "pick_next") else -1)
+		pad_focus = true
+		used = true
+	elif button and pad_focus and Controls.confirm(event):
+		for h in _hits:
+			if not used and h.r.has_point(_mouse):
+				var from := app
+				click(_mouse)
+				pad_focus = app == from  # a new app: A is the list's again until RB picks a button there
+				used = true
+	if not used and (button or event is InputEventJoypadMotion) and Controls.nav(event, false) != "":
+		pad_focus = false
+	return used
 
 
 # ---- actions (also used by the tests) ----------------------------------------

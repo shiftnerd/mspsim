@@ -75,6 +75,7 @@ var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, r
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 var hot_i := 0  # the pad's hotkey strip: which letter hotkey Y has stepped to (hot_keys)
+var pad_focus := false  # R42: the pad has the cursor (RB / LB or the right stick put it on a button): A clicks under it
 
 var board_scroll := 0.0  # the Boardroom books tab on a short pane: how far it is scrolled up (px)
 var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
@@ -90,6 +91,7 @@ var _toast := ""
 var _toast_t := 0.0
 var _menu := false
 var _tick := 0.0
+var _stick := Vector2.ZERO  # R42: the right stick, moving the cursor
 
 
 func _ready() -> void:
@@ -125,6 +127,11 @@ func open(from_desk: int) -> void:
 	irc_view = "chat"
 	_toast = ""  # the toast timer only runs while open, so drop one left from the last session
 	_toast_t = 0.0
+	pad_focus = false
+	_stick = Vector2.ZERO
+	if Controls.pad_active and pane_slot <= 0:
+		_toast = "(RB) (LB) STEP THROUGH THE BUTTONS  (A) PRESS"
+		_toast_t = 4.0
 	is_open = true
 	board_scroll = 0.0
 	Sfx.play("ui_open")
@@ -140,6 +147,7 @@ func open(from_desk: int) -> void:
 func open_tv() -> void:
 	open(0)
 	tv_mode = true
+	_toast_t = 0.0
 	app = "dash"
 	dash_t = 0.0
 	dash_chart = -1
@@ -199,6 +207,9 @@ func _step(delta: float) -> void:
 		return
 	_tick += delta
 	_toast_t = maxf(0.0, _toast_t - delta)
+	if _stick != Vector2.ZERO:
+		_mouse = (_mouse + _stick * 150.0 * delta).clamp(Vector2.ZERO, get_viewport().get_visible_rect().size - Vector2.ONE)
+		_canvas.queue_redraw()
 	if app == "dash":
 		dash_t += delta
 		_canvas.queue_redraw()
@@ -250,6 +261,8 @@ func _route(event: InputEvent) -> void:
 		and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]
 	):
 		scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+	elif pane_slot <= 0 and _pad_reach(event):
+		_canvas.queue_redraw()
 	elif Controls.pressed(event):
 		Sfx.play("ui_tick")
 		var dir := Controls.nav(event, false)
@@ -270,6 +283,44 @@ func _route(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+# R42: a pad reaches every button on the screen. RB / LB step the cursor through the click regions in reading order, the
+# right stick moves it freely, and A presses what is under it. A D-pad or left stick move hands A back to the list.
+func _pad_reach(event: InputEvent) -> bool:
+	var used := false
+	var button: bool = event is InputEventJoypadButton and event.pressed
+	if event is InputEventJoypadMotion and (event.axis == JOY_AXIS_RIGHT_X or event.axis == JOY_AXIS_RIGHT_Y):
+		var val: float = event.axis_value if absf(event.axis_value) > 0.25 else 0.0
+		if event.axis == JOY_AXIS_RIGHT_X:
+			_stick.x = val
+		else:
+			_stick.y = val
+		pad_focus = pad_focus or val != 0.0
+		used = true
+	elif button and (Controls.matches(event, "pick_next") or Controls.matches(event, "pick_prev")):
+		_mouse = Controls.focus_step(_hits, _mouse, 1 if Controls.matches(event, "pick_next") else -1)
+		pad_focus = true
+		used = true
+	elif button and pad_focus and Controls.confirm(event):
+		used = _pad_click()
+	if not used and (button or event is InputEventJoypadMotion) and Controls.nav(event, false) != "":
+		pad_focus = false
+	return used
+
+
+# A with the pad's cursor on something: the click a mouse would make there. False when nothing is under it.
+func _pad_click() -> bool:
+	if app == "dispatch" and dispatch.mouse_down(_mouse):
+		dispatch.mouse_up(_mouse)
+		return true
+	for h in _hits:
+		if h.r.has_point(_mouse):
+			var from := app
+			click(_mouse)
+			pad_focus = app == from  # a new app: A is the list's again until RB picks a button there
+			return true
+	return false
 
 
 # ---- input actions (also used by the tests) ----------------------------------

@@ -504,10 +504,13 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 const FORMATS := {
 	"wide": {"size": Vector2i(368, 128), "zoom": 1.0, "cam_y": 64.0, "scale": 4, "follow": false},
 	"h": {"size": Vector2i(320, 180), "zoom": 1.0, "cam_y": 50.0, "scale": 4, "follow": true},
+	# R42: 16:10. x4 = 1280 x 800, the whole Steam Deck screen with no bars (h there is 1280 x 720 with 40 px bars)
+	"deck": {"size": Vector2i(320, 200), "zoom": 1.0, "cam_y": 50.0, "scale": 4, "follow": true},
 	"v": {"size": Vector2i(180, 320), "zoom": 1.0, "cam_y": 60.0, "scale": 3, "follow": true},
 	"vclose": {"size": Vector2i(180, 320), "zoom": 2.0, "cam_y": 92.0, "scale": 3, "follow": true},
 }
-const ORDER := ["wide", "h", "v", "vclose"]
+const ORDER := ["wide", "h", "deck", "v", "vclose"]
+const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
 
@@ -519,8 +522,143 @@ var format := "wide"
 var title_mode := false  # the title screen shows real rooms without the player or the cast
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
+var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
+var focus_force := false  # tests: act on focus notifications in a script run too
+var focus_lost := false  # the window is in the background (or the app is suspended) right now
+var auto_format := ""  # the format the screen asked for at start ("" = none: a test run, or a screen that is not 16:10)
+var _held_pause := false  # this script paused the tree for a focus loss (no pause menu could open): undo it on return
+var _last_ms := -1
 
 var _fade: ColorRect
+
+
+# ---- R42: the screen, focus and suspend ---------------------------------------------------------------------------
+# a test or a tool run (a -s script, a movie, headless): the screen is not asked, the saved shape is not loaded and a
+# focus change pauses nothing, so an existing test never changes with the monitor it runs on
+func dev_run() -> bool:
+	var args := OS.get_cmdline_args()
+	for flag in ["-s", "--script", "--write-movie", "--resolution"]:
+		if flag in args:
+			return true
+	return DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+
+
+# what a screen gets from a format with integer scaling: {scale, size (the picture in screen pixels), bars (left / right,
+# top / bottom), fill (share of the screen that is picture)}
+func fit(screen: Vector2i, name: String) -> Dictionary:
+	var size: Vector2i = FORMATS[name].size
+	var scale := maxi(1, mini(screen.x / size.x, screen.y / size.y))
+	var shown := size * scale
+	var fill := float(shown.x * shown.y) / float(maxi(1, screen.x * screen.y))
+	return {"scale": scale, "size": shown, "bars": (screen - shown) / 2, "fill": fill}
+
+
+# a Steam Deck (the environment says so in game mode, or the screen is its 1280 x 800)
+func on_deck(screen: Vector2i) -> bool:
+	return OS.get_environment("SteamDeck") == "1" or screen == Vector2i(1280, 800)
+
+
+# the format a screen starts in: a 16:10 screen gets "deck" (it fills it), anything else the classic "wide"
+func pick_format(screen: Vector2i) -> String:
+	if screen.x <= 0 or screen.y <= 0:
+		return "wide"
+	return "deck" if absf(float(screen.x) / float(screen.y) - 1.6) < 0.02 else "wide"
+
+
+# the saved choices (the pause menu's SHAPE row or F9, the UNFOCUSED row), kept in the settings file
+func load_display() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load(Difficulty.settings_path) != OK:
+		return ""
+	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	return str(cfg.get_value("display", "format", ""))
+
+
+func save_display(with_format: bool = true) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(Difficulty.settings_path)
+	if with_format:
+		cfg.set_value("display", "format", format)
+	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.save(Difficulty.settings_path)
+
+
+func set_focus_pause(on: bool) -> void:
+	focus_pause = on
+	save_display(false)
+
+
+# at start (deferred, so the settings path is known): the shape you chose last time, else the one that fits the screen.
+# A --format argument or PIXEL_FORMAT wins over both.
+func start_display(screen: Vector2i, forced: bool) -> void:
+	var saved := load_display()
+	auto_format = pick_format(screen)
+	if forced:
+		return
+	if FORMATS.has(saved):
+		set_format(saved)
+	elif auto_format != format:
+		set_format(auto_format)
+	if on_deck(screen) and DisplayServer.get_name() != "headless":
+		get_window().mode = Window.MODE_FULLSCREEN
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		focus_out()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED:
+		focus_in()
+	elif what == NOTIFICATION_UNPAUSED:
+		_last_ms = -1  # the time spent paused is not a suspend
+
+
+func _focus_on() -> bool:
+	return focus_pause and (focus_force or not dev_run())
+
+
+# the window went to the background, or the app is being suspended: stop the clock. With a player in a room that is the
+# pause menu (it also writes the resume point); anywhere else (title, character select) the tree is held until you return
+func focus_out() -> void:
+	if focus_lost or not _focus_on():
+		return
+	focus_lost = true
+	if get_tree().paused:
+		return  # already paused (the pause menu is up)
+	if is_instance_valid(PauseMenu) and PauseMenu.can_open(false):
+		PauseMenu.open()
+	else:
+		_held_pause = true
+		get_tree().paused = true
+
+
+func focus_in() -> void:
+	if not focus_lost:
+		return
+	focus_lost = false
+	_last_ms = Time.get_ticks_msec()
+	if _held_pause:
+		_held_pause = false
+		get_tree().paused = false
+
+
+# a frame that took seconds of real time: the machine slept without telling us (a Deck suspend freezes the process).
+# Called from the tree's process_frame signal, which comes before any node's _process of that frame: pausing here keeps
+# the room from taking that one enormous step. The pause menu is left up.
+func gap_check(now_ms: int) -> bool:
+	var gap := 0 if _last_ms == -1 else now_ms - _last_ms  # -1: no frame seen yet (the start, or just unpaused)
+	_last_ms = now_ms
+	if gap < GAP_MS or not _focus_on() or get_tree().paused:
+		return false
+	focus_out()
+	focus_lost = false  # nothing will send a focus-in: the menu (or the title) is simply there when you look
+	if _held_pause:
+		_held_pause = false
+		get_tree().paused = false
+	return true
+
+
+func _frame_start() -> void:
+	gap_check(Time.get_ticks_msec())
 
 
 func _process(_delta: float) -> void:
@@ -546,6 +684,9 @@ func _ready() -> void:
 		if arg.begins_with("--format="):
 			wanted = arg.substr(9)
 	set_format(wanted if FORMATS.has(wanted) else "wide")
+	get_tree().process_frame.connect(_frame_start)
+	if not dev_run():
+		start_display.call_deferred(DisplayServer.screen_get_size(), FORMATS.has(wanted))
 
 
 func set_format(name: String) -> void:
@@ -554,13 +695,15 @@ func set_format(name: String) -> void:
 	var size: Vector2i = f.size
 	var win := get_window()
 	win.content_scale_size = size
-	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless":
+	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless" and win.mode == Window.MODE_WINDOWED:
 		win.size = size * int(f.scale)
 	format_changed.emit()
 
 
 func cycle_format() -> void:
 	set_format(ORDER[(ORDER.find(format) + 1) % ORDER.size()])
+	if not dev_run() or focus_force:
+		save_display()  # your choice wins over the screen's at the next start
 
 
 # Test helper (Q4): a real mouse click at a LOGICAL UI point (0..size of the current format), sent through
@@ -7828,6 +7971,7 @@ var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, r
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
 var hot_i := 0  # the pad's hotkey strip: which letter hotkey Y has stepped to (hot_keys)
+var pad_focus := false  # R42: the pad has the cursor (RB / LB or the right stick put it on a button): A clicks under it
 
 var board_scroll := 0.0  # the Boardroom books tab on a short pane: how far it is scrolled up (px)
 var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
@@ -7843,6 +7987,7 @@ var _toast := ""
 var _toast_t := 0.0
 var _menu := false
 var _tick := 0.0
+var _stick := Vector2.ZERO  # R42: the right stick, moving the cursor
 
 
 func _ready() -> void:
@@ -7878,6 +8023,11 @@ func open(from_desk: int) -> void:
     irc_view = "chat"
     _toast = ""  # the toast timer only runs while open, so drop one left from the last session
     _toast_t = 0.0
+    pad_focus = false
+    _stick = Vector2.ZERO
+    if Controls.pad_active and pane_slot <= 0:
+        _toast = "(RB) (LB) STEP THROUGH THE BUTTONS  (A) PRESS"
+        _toast_t = 4.0
     is_open = true
     board_scroll = 0.0
     Sfx.play("ui_open")
@@ -7893,6 +8043,7 @@ func open(from_desk: int) -> void:
 func open_tv() -> void:
     open(0)
     tv_mode = true
+    _toast_t = 0.0
     app = "dash"
     dash_t = 0.0
     dash_chart = -1
@@ -7952,6 +8103,9 @@ func _step(delta: float) -> void:
         return
     _tick += delta
     _toast_t = maxf(0.0, _toast_t - delta)
+    if _stick != Vector2.ZERO:
+        _mouse = (_mouse + _stick * 150.0 * delta).clamp(Vector2.ZERO, get_viewport().get_visible_rect().size - Vector2.ONE)
+        _canvas.queue_redraw()
     if app == "dash":
         dash_t += delta
         _canvas.queue_redraw()
@@ -7992,6 +8146,8 @@ func _route(event: InputEvent) -> void:
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
         scroll_list(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+    elif pane_slot <= 0 and _pad_reach(event):
+        _canvas.queue_redraw()
     elif Controls.pressed(event):
         Sfx.play("ui_tick")
         var dir := Controls.nav(event, false)
@@ -8012,6 +8168,44 @@ func _route(event: InputEvent) -> void:
     else:
         return
     get_viewport().set_input_as_handled()
+
+
+# R42: a pad reaches every button on the screen. RB / LB step the cursor through the click regions in reading order, the
+# right stick moves it freely, and A presses what is under it. A D-pad or left stick move hands A back to the list.
+func _pad_reach(event: InputEvent) -> bool:
+    var used := false
+    var button: bool = event is InputEventJoypadButton and event.pressed
+    if event is InputEventJoypadMotion and (event.axis == JOY_AXIS_RIGHT_X or event.axis == JOY_AXIS_RIGHT_Y):
+        var val: float = event.axis_value if absf(event.axis_value) > 0.25 else 0.0
+        if event.axis == JOY_AXIS_RIGHT_X:
+            _stick.x = val
+        else:
+            _stick.y = val
+        pad_focus = pad_focus or val != 0.0
+        used = true
+    elif button and (Controls.matches(event, "pick_next") or Controls.matches(event, "pick_prev")):
+        _mouse = Controls.focus_step(_hits, _mouse, 1 if Controls.matches(event, "pick_next") else -1)
+        pad_focus = true
+        used = true
+    elif button and pad_focus and Controls.confirm(event):
+        used = _pad_click()
+    if not used and (button or event is InputEventJoypadMotion) and Controls.nav(event, false) != "":
+        pad_focus = false
+    return used
+
+
+# A with the pad's cursor on something: the click a mouse would make there. False when nothing is under it.
+func _pad_click() -> bool:
+    if app == "dispatch" and dispatch.mouse_down(_mouse):
+        dispatch.mouse_up(_mouse)
+        return true
+    for h in _hits:
+        if h.r.has_point(_mouse):
+            var from := app
+            click(_mouse)
+            pad_focus = app == from  # a new app: A is the list's again until RB picks a button there
+            return true
+    return false
 
 
 # ---- input actions (also used by the tests) ----------------------------------
@@ -10634,6 +10828,7 @@ var tk_sel := -1
 var txt_open := false
 var txt_scroll := 0  # how many of the newest texts are scrolled past (Up / Down / the wheel)
 var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings, 4 the dock's PHONE)
+var pad_focus := false  # R42: RB / LB put the cursor on a button: A presses it (a D-pad move hands A back to the list)
 const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone", "camera"]
 const MAX_PHOTOS := 6  # the camera roll keeps the newest six (R37)
 const KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"]
@@ -10752,6 +10947,9 @@ func open() -> void:
     dialog = {}
     banner = {}  # the phone is in your hand now: the lock screen lists what came in
     _toast_t = 0.0
+    pad_focus = false
+    if Controls.pad_active and pane_slot <= 0:
+        _say("(RB) NEXT BUTTON")
     is_open = true
     Sfx.play("ui_open")
     _set_ui(true)
@@ -10942,6 +11140,8 @@ func _input(event: InputEvent) -> void:
         and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN)
     ):
         move(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+    elif pane_slot <= 0 and _pad_reach(event):
+        _canvas.queue_redraw()
     elif _dial_key(event):
         pass
     elif Controls.pressed(event):
@@ -10968,6 +11168,26 @@ func _input(event: InputEvent) -> void:
     else:
         return
     get_viewport().set_input_as_handled()
+
+
+# R42: a pad reaches every button of the phone: RB / LB step the cursor through the tap targets, A presses the one under it
+func _pad_reach(event: InputEvent) -> bool:
+    var used := false
+    var button: bool = event is InputEventJoypadButton and event.pressed
+    if button and (Controls.matches(event, "pick_next") or Controls.matches(event, "pick_prev")):
+        _mouse = Controls.focus_step(_hits, _mouse, 1 if Controls.matches(event, "pick_next") else -1)
+        pad_focus = true
+        used = true
+    elif button and pad_focus and Controls.confirm(event):
+        for h in _hits:
+            if not used and h.r.has_point(_mouse):
+                var from := app
+                click(_mouse)
+                pad_focus = app == from  # a new app: A is the list's again until RB picks a button there
+                used = true
+    if not used and (button or event is InputEventJoypadMotion) and Controls.nav(event, false) != "":
+        pad_focus = false
+    return used
 
 
 # ---- actions (also used by the tests) ----------------------------------------
@@ -29930,6 +30150,8 @@ func _unhandled_input(event: InputEvent) -> void:
         and not event.ctrl_pressed
     ):
         toggle_mute()
+    elif event is InputEventJoypadMotion and Controls.pressed(event) and Controls.matches(event, "mute"):
+        toggle_mute()  # R42: the right stick pushed right
 
 
 # ---- synthesis -------------------------------------------------------------------------------------------------
@@ -35536,6 +35758,18 @@ func _input(event: InputEvent) -> void:
     if is_open and game == "karaoke" and phase == "play" and event is InputEventKey and not event.pressed:
         _kara_release(event.keycode)  # K2: hold notes
         return
+    if is_open and game == "karaoke" and phase == "play" and _press_slot <= 0:
+        # R42: a pad lets go of a hold note too (a D-pad button released, or the stick back in the middle)
+        if event is InputEventJoypadButton and not event.pressed:
+            for dir in PAD_ARROWS:
+                if event.is_action("ui_" + dir):
+                    _kara_release(PAD_ARROWS[dir])
+        elif event is InputEventJoypadMotion and absf(event.axis_value) < 0.5 and event.axis == JOY_AXIS_LEFT_X:
+            _kara_release(KEY_LEFT)
+            _kara_release(KEY_RIGHT)
+        elif event is InputEventJoypadMotion and absf(event.axis_value) < 0.5 and event.axis == JOY_AXIS_LEFT_Y:
+            _kara_release(KEY_UP)
+            _kara_release(KEY_DOWN)
     if not is_open or not Controls.pressed(event):
         return
     _press_slot = Players.slot_of(event)
@@ -35574,6 +35808,8 @@ func _event_key(event: InputEvent) -> int:
         key = KEY_SHIFT  # B on a pad: the cool side
     elif game == "escape" and Controls.matches(event, "nudge"):
         key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
+    elif (racing or grilling or paintballing) and not event is InputEventKey and Controls.matches(event, "phone"):
+        key = KEY_ESCAPE  # R42: B is a game button in these three (push, the cool side, duck), so the pad's BACK button leaves
     elif dir != "":
         key = PAD_ARROWS[dir]
     elif Controls.back(event):
@@ -36704,6 +36940,8 @@ func _escape_tick(dt: float) -> void:
 func _escape_press(key: int) -> void:
     var cur: Array = g.cur
     var n: int = cur.size()
+    if not room_mode() and key == Controls.key_of("nudge"):
+        key = KEY_H  # R42: the page game's hint key has a pad twin (Y, the nudge action; the N key too)
     match key:
         KEY_LEFT:
             g.cursor = (int(g.cursor) + n - 1) % n
@@ -38125,6 +38363,15 @@ func hint() -> String:
     return text
 
 
+# the letters of an outing's hint line -> the action (Controls.hint). On a pad B is a game button in the chair race, the
+# cookout and paintball, so there ESC is shown as the BACK button, which is what leaves (R42)
+func _hint_map() -> Dictionary:
+    var map := {"N": "nudge", "E": "interact", "H": "nudge"}
+    if Controls.pad_active and phase == "play" and game in ["chair", "grill", "paintball"]:
+        map["ESC"] = "phone"
+    return map
+
+
 func _room_hint() -> String:
     var text := "E = SIT DOWN  ESC = LEAVE"
     if str(g.get("stage", "")) == "talk":
@@ -38465,7 +38712,7 @@ func _dinner_react() -> void:
 
 # ---- the in-room display (replaces the panel while you play)
 func _paint_hud(size: Vector2) -> void:
-    UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
+    UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), _hint_map()))
     var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
     var strip_w := 176.0 if game == "dinner" else (232.0 if game == "chair" and size.x > 300.0 else 164.0)  # five faces need the room
     var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
@@ -39990,7 +40237,7 @@ func _paint() -> void:
                     _paint_darts(body)
                 _:
                     _paint_dinner(body)
-    UiStyle.footer(_canvas, panel, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
+    UiStyle.footer(_canvas, panel, Controls.hint(hint(), _hint_map()))
 
 
 # R5: who is in the room for a karaoke night or an escape room, in words ("" for the other games, which name their own crew)
@@ -56701,7 +56948,7 @@ func _unhandled_input(event: InputEvent) -> void:
         if can_open() and Campaign.mode == Campaign.FREE:
             open_tools()
             get_viewport().set_input_as_handled()
-    elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
+    elif Controls.pressed(event) and not event is InputEventJoypadMotion and Controls.matches(event, "outfit"):  # Y, or a pad's L3 (R42)
         if open_outfit():
             get_viewport().set_input_as_handled()
     elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "career"):
@@ -60449,6 +60696,8 @@ var _call_len := 0.0
 var _head_item: Node2D
 var _dance_t := 0.0
 var _slide_to := INF
+var _ui_hold := 0  # R42: physics frames left in which a press is not yours (it answered a card or closed a screen)
+var _phys_seen := 0
 var _desk: Node2D
 var _emote_t := 0.0
 var _emote_len := 0.0
@@ -60606,6 +60855,8 @@ func _unhandled_input(event: InputEvent) -> void:
         elif event.is_action_released(_a("aim")):
             Nerf.charge_release(self)
         return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
+    if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+        _pad_input(event)  # (the rest of this function is the keyboard's)
     if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
         Nerf.charge_release(self)
         return
@@ -60626,6 +60877,27 @@ func _unhandled_input(event: InputEvent) -> void:
         if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
             _switch_character(CHARACTERS[i])
             Campaign.refresh_free()
+
+
+# R42: the first player's pad does what the keys in _unhandled_input do: RT aims and fires, RB / LB move the arrow, and
+# with the blaster in hand Y offers a war and the right stick pushed left gives it away
+func _pad_input(event: InputEvent) -> void:
+    if event.is_action_pressed("aim"):
+        Nerf.charge_start(self)
+        return
+    if event.is_action_released("aim"):
+        Nerf.charge_release(self)
+        return
+    if not Controls.pressed(event) or Game.ui_open:
+        return
+    if Controls.matches(event, "pick_next"):
+        cycle_pick(1)
+    elif Controls.matches(event, "pick_prev") and (held == "" or held == "nerf" or held.begins_with("plug_")):
+        cycle_pick(-1)  # LB also sips the drink in your hand: then it only sips
+    elif Controls.matches(event, "offer_war") and held == "nerf":
+        Nerf.offer_war()
+    elif Controls.matches(event, "give_item") and held == "nerf":
+        give("")
 
 
 func _play(action: String) -> void:
@@ -60927,12 +61199,23 @@ func _face_toward(x: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+    # R42: a pad's A is jump and confirm, its X is use and the hotkey press, the D-pad walks and steps a menu. The press
+    # that answers a card, closes a screen or leaves the pause menu must not also make you hop, stand up or use a door:
+    # while a card is up, and for two frames after a card, a screen or a pause, the body takes no input.
+    var phys := Engine.get_physics_frames()
+    if phys - _phys_seen > 1:
+        _ui_hold = 2  # the tree was paused (the pause menu)
+    _phys_seen = phys
     if Game.ui_open or Players.ui[slot]:
         velocity = Vector2.ZERO
+        _ui_hold = 2
         return
+    if Cards.is_open:
+        _ui_hold = 2
     _call_tick(delta)
     _roll.update(self, delta)
-    var locked: bool = Game.busy
+    var locked: bool = Game.busy or _ui_hold > 0
+    _ui_hold = maxi(0, _ui_hold - 1)
     var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
     var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Controls.shift_held())  # the second test is for macOS
     var roll_held := Input.is_action_pressed(_a("roll"))  # R14 (3): a pad's Roll button (LT), the touch overlay's ROLL
@@ -72669,8 +72952,8 @@ const ACTIONS := {
     "revive": [[KEY_R], [], []],
     "wave": [[KEY_Q], [JOY_BUTTON_Y], []],
     "drink": [[KEY_F], [JOY_BUTTON_LEFT_SHOULDER], []],
-    "dance": [[KEY_X], [], []],
-    "follow": [[KEY_C], [], []],
+    "dance": [[KEY_X], [], [[JOY_AXIS_RIGHT_Y, -1.0]]],  # R42: the right stick is the pad's gesture stick (up dance, down follow, left give, right mute)
+    "follow": [[KEY_C], [], [[JOY_AXIS_RIGHT_Y, 1.0]]],
     "duck": [[KEY_S, KEY_DOWN], [JOY_BUTTON_DPAD_DOWN], [[JOY_AXIS_LEFT_Y, 1.0]]],
     "aim": [[KEY_Z], [], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]],
     "push_a": [[KEY_Z], [JOY_BUTTON_A], []],
@@ -72685,10 +72968,10 @@ const ACTIONS := {
     "outfit": [[KEY_Y], [JOY_BUTTON_LEFT_STICK], []],  # Free Play: change your look (Toolbox.open_outfit)
     "career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
     "offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
-    "give_item": [[KEY_G], [], []],
+    "give_item": [[KEY_G], [], [[JOY_AXIS_RIGHT_X, -1.0]]],
     "phone": [[KEY_P], [JOY_BUTTON_BACK], []],
     "character_next": [[], [JOY_BUTTON_RIGHT_STICK], []],  # co-op: the next stock person for this player (slot 0 has the 1-7 keys)
-    "mute": [[KEY_M], [], []],
+    "mute": [[KEY_M], [], [[JOY_AXIS_RIGHT_X, 1.0]]],
     "pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
     # R14 (1b): the last raw keys, as actions. A pad reaches each one by its button, or by a row on screen where noted
     "nudge": [[KEY_N], [JOY_BUTTON_Y], []],  # the escape room: ask for a nudge
@@ -72729,7 +73012,7 @@ const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave
 const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "pick_next"]
 
 # the key list's rows that follow a remap (row label -> action)
-const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career"}
+const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career", "MUTE SOUND": "mute"}
 
 # the keys the menus and mini-games read as fixed keys: a player can put an extra key on each (the plain key keeps working too).
 # [role, the key the screens look for, the label]
@@ -72970,6 +73253,12 @@ func key_name(code: int) -> String:
 
 # what the key list prints for a row: the default text, or the key the action was remapped to
 func help_value(label: String, text: String) -> String:
+    if pad_active:  # R42: the key list shows the pad's button for a row that has one
+        if label == "START A WAR, GIVE":
+            return "%s, %s" % [self.label("offer_war"), self.label("give_item")]
+        var pad_action := str(HELP_ACTIONS.get(label, ""))
+        if pad_action != "" and (button_of(pad_action) >= 0 or not (ACTIONS[pad_action][2] as Array).is_empty()):
+            return self.label(pad_action)
     if label == "MOVE" and (_overrides.has("move_left") or _overrides.has("move_right")):
         return "%s %s" % [key_name(key_of("move_left")), key_name(key_of("move_right"))]
     var action := str(HELP_ACTIONS.get(label, ""))
@@ -73159,6 +73448,8 @@ func _has_button(action: String, button: int) -> bool:
 func matches(event: InputEvent, action: String) -> bool:
     if not ACTIONS.has(action):
         return false
+    if event is InputEventJoypadMotion:
+        return event.is_action_pressed(action)  # is_action() is true for both ends of an axis: only the pushed side counts
     if event.is_action(action):
         return true
     if _overrides.has(action):
@@ -73239,6 +73530,25 @@ func step(event: InputEvent, vertical: bool, letters: bool = true) -> int:
     if vertical:
         return -1 if d == "up" else (1 if d == "down" else 0)
     return -1 if d == "left" else (1 if d == "right" else 0)
+
+
+# R42, a pad's focus cycle for a screen made of click regions (the computer, the phone): the centre of the next region
+# after the one under `at`, in reading order (top to bottom, left to right). `hits` are the screen's {r: Rect2, ...} rows.
+func focus_step(hits: Array, at: Vector2, step: int) -> Vector2:
+    var rects: Array = []
+    for h in hits:
+        var r: Rect2 = h.r
+        if r.size.x > 0.0 and r.size.y > 0.0 and not rects.has(r) and str(h.get("id", "")) != "none":  # ("none" only blocks a click)
+            rects.append(r)
+    if rects.is_empty():
+        return at
+    rects.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.y < b.position.y or (a.position.y == b.position.y and a.position.x < b.position.x))
+    var cur := -1
+    for i in rects.size():
+        if (rects[i] as Rect2).get_center().floor() == at.floor():
+            cur = i
+    var next := posmod(cur + step, rects.size()) if cur >= 0 else (0 if step > 0 else rects.size() - 1)
+    return (rects[next] as Rect2).get_center().floor()
 
 
 # stick events repeat on every wobble: only the move from inside the dead zone to past half way counts, and every
@@ -73373,6 +73683,10 @@ func label(action: String) -> String:
             for ax in ACTIONS[action][2]:
                 if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
                     return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+                if ax[0] == JOY_AXIS_RIGHT_X:
+                    return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
+                if ax[0] == JOY_AXIS_RIGHT_Y:
+                    return "RS DOWN" if ax[1] > 0.0 else "RS UP"
                 return "STICK"
     for r in MENU_ROLES:
         if r[0] == action:
@@ -73785,7 +74099,9 @@ func back() -> void:
 
 func _labels() -> Array:
     if settings_mode:
-        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "SOUND: %s" % ("OFF" if Sfx.muted else "ON"), "DAY LENGTH: %s" % Difficulty.day_label(), "CAREER"]
+        var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
+        var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
+        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
@@ -73804,7 +74120,7 @@ func _labels() -> Array:
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
     if settings_mode:
-        return ["resume", "controls", "shape", "sound", "day", "career"][clampi(i, 0, 5)]
+        return ["resume", "controls", "shape", "sound", "day", "focus", "career"][clampi(i, 0, 6)]
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
@@ -73831,6 +74147,8 @@ func _activate() -> void:
                 Sfx.toggle_mute()
             "day":
                 Difficulty.cycle_day_scale(1)
+            "focus":  # R42: pause when the window is in the background (a Deck suspend), or keep running
+                Game.set_focus_pause(not Game.focus_pause)
             "career":
                 close()
                 Career.open_screen.call_deferred()
@@ -73838,6 +74156,7 @@ func _activate() -> void:
         return
     if _confirm:
         if _sel == 1:
+            Campaign.snapshot()  # again: the resume point carries what this menu changed (day length, ticket pace)
             close()
             Game.go_title()
         else:
@@ -73885,7 +74204,7 @@ func _panel() -> Rect2:
     if Campaign.active and Campaign.mode == "tech":
         h += 12.0  # the TICKET PACE row
     if settings_mode:
-        h = 100.0
+        h = 112.0
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -74042,6 +74361,8 @@ func _key(event: InputEvent) -> void:
             Game.cycle_format()
         elif settings_mode and _row_id(_sel) == "sound":
             Sfx.toggle_mute()
+        elif settings_mode and _row_id(_sel) == "focus":
+            Game.set_focus_pause(not Game.focus_pause)
         elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
         elif not _confirm and _row_id(_sel) == "pace":

@@ -527,7 +527,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if can_open() and Campaign.mode == Campaign.FREE:
 			open_tools()
 			get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "outfit"):
+	elif Controls.pressed(event) and not event is InputEventJoypadMotion and Controls.matches(event, "outfit"):  # Y, or a pad's L3 (R42)
 		if open_outfit():
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and Controls.matches(event, "career"):

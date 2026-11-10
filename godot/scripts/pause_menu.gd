@@ -101,7 +101,9 @@ func back() -> void:
 
 func _labels() -> Array:
 	if settings_mode:
-		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), "SOUND: %s" % ("OFF" if Sfx.muted else "ON"), "DAY LENGTH: %s" % Difficulty.day_label(), "CAREER"]
+		var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
+		var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
+		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
 	if _confirm:
 		return ["NO, KEEP PLAYING", "YES, QUIT"]
 	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
@@ -120,7 +122,7 @@ func _labels() -> Array:
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
 	if settings_mode:
-		return ["resume", "controls", "shape", "sound", "day", "career"][clampi(i, 0, 5)]
+		return ["resume", "controls", "shape", "sound", "day", "focus", "career"][clampi(i, 0, 6)]
 	var ids := ["resume", "controls", "shape"]
 	if Campaign.active:
 		ids.append("day")
@@ -147,6 +149,8 @@ func _activate() -> void:
 				Sfx.toggle_mute()
 			"day":
 				Difficulty.cycle_day_scale(1)
+			"focus":  # R42: pause when the window is in the background (a Deck suspend), or keep running
+				Game.set_focus_pause(not Game.focus_pause)
 			"career":
 				close()
 				Career.open_screen.call_deferred()
@@ -154,6 +158,7 @@ func _activate() -> void:
 		return
 	if _confirm:
 		if _sel == 1:
+			Campaign.snapshot()  # again: the resume point carries what this menu changed (day length, ticket pace)
 			close()
 			Game.go_title()
 		else:
@@ -201,7 +206,7 @@ func _panel() -> Rect2:
 	if Campaign.active and Campaign.mode == "tech":
 		h += 12.0  # the TICKET PACE row
 	if settings_mode:
-		h = 100.0
+		h = 112.0
 	if _page >= 0:
 		h = 108.0
 	elif _confirm:
@@ -358,6 +363,8 @@ func _key(event: InputEvent) -> void:
 			Game.cycle_format()
 		elif settings_mode and _row_id(_sel) == "sound":
 			Sfx.toggle_mute()
+		elif settings_mode and _row_id(_sel) == "focus":
+			Game.set_focus_pause(not Game.focus_pause)
 		elif not _confirm and _row_id(_sel) == "day":
 			Difficulty.cycle_day_scale(1 if right else -1)
 		elif not _confirm and _row_id(_sel) == "pace":

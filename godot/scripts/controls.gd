@@ -27,8 +27,8 @@ const ACTIONS := {
 	"revive": [[KEY_R], [], []],
 	"wave": [[KEY_Q], [JOY_BUTTON_Y], []],
 	"drink": [[KEY_F], [JOY_BUTTON_LEFT_SHOULDER], []],
-	"dance": [[KEY_X], [], []],
-	"follow": [[KEY_C], [], []],
+	"dance": [[KEY_X], [], [[JOY_AXIS_RIGHT_Y, -1.0]]],  # R42: the right stick is the pad's gesture stick (up dance, down follow, left give, right mute)
+	"follow": [[KEY_C], [], [[JOY_AXIS_RIGHT_Y, 1.0]]],
 	"duck": [[KEY_S, KEY_DOWN], [JOY_BUTTON_DPAD_DOWN], [[JOY_AXIS_LEFT_Y, 1.0]]],
 	"aim": [[KEY_Z], [], [[JOY_AXIS_TRIGGER_RIGHT, 1.0]]],
 	"push_a": [[KEY_Z], [JOY_BUTTON_A], []],
@@ -43,10 +43,10 @@ const ACTIONS := {
 	"outfit": [[KEY_Y], [JOY_BUTTON_LEFT_STICK], []],  # Free Play: change your look (Toolbox.open_outfit)
 	"career": [[KEY_J], [], []],  # Free Play: the career screen (medals, unlocks)
 	"offer_war": [[KEY_V], [JOY_BUTTON_Y], []],
-	"give_item": [[KEY_G], [], []],
+	"give_item": [[KEY_G], [], [[JOY_AXIS_RIGHT_X, -1.0]]],
 	"phone": [[KEY_P], [JOY_BUTTON_BACK], []],
 	"character_next": [[], [JOY_BUTTON_RIGHT_STICK], []],  # co-op: the next stock person for this player (slot 0 has the 1-7 keys)
-	"mute": [[KEY_M], [], []],
+	"mute": [[KEY_M], [], [[JOY_AXIS_RIGHT_X, 1.0]]],
 	"pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
 	# R14 (1b): the last raw keys, as actions. A pad reaches each one by its button, or by a row on screen where noted
 	"nudge": [[KEY_N], [JOY_BUTTON_Y], []],  # the escape room: ask for a nudge
@@ -87,7 +87,7 @@ const REMAPPABLE := ["move_left", "move_right", "jump", "run", "interact", "wave
 const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "pick_next"]
 
 # the key list's rows that follow a remap (row label -> action)
-const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career"}
+const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career", "MUTE SOUND": "mute"}
 
 # the keys the menus and mini-games read as fixed keys: a player can put an extra key on each (the plain key keeps working too).
 # [role, the key the screens look for, the label]
@@ -328,6 +328,12 @@ func key_name(code: int) -> String:
 
 # what the key list prints for a row: the default text, or the key the action was remapped to
 func help_value(label: String, text: String) -> String:
+	if pad_active:  # R42: the key list shows the pad's button for a row that has one
+		if label == "START A WAR, GIVE":
+			return "%s, %s" % [self.label("offer_war"), self.label("give_item")]
+		var pad_action := str(HELP_ACTIONS.get(label, ""))
+		if pad_action != "" and (button_of(pad_action) >= 0 or not (ACTIONS[pad_action][2] as Array).is_empty()):
+			return self.label(pad_action)
 	if label == "MOVE" and (_overrides.has("move_left") or _overrides.has("move_right")):
 		return "%s %s" % [key_name(key_of("move_left")), key_name(key_of("move_right"))]
 	var action := str(HELP_ACTIONS.get(label, ""))
@@ -517,6 +523,8 @@ func _has_button(action: String, button: int) -> bool:
 func matches(event: InputEvent, action: String) -> bool:
 	if not ACTIONS.has(action):
 		return false
+	if event is InputEventJoypadMotion:
+		return event.is_action_pressed(action)  # is_action() is true for both ends of an axis: only the pushed side counts
 	if event.is_action(action):
 		return true
 	if _overrides.has(action):
@@ -597,6 +605,25 @@ func step(event: InputEvent, vertical: bool, letters: bool = true) -> int:
 	if vertical:
 		return -1 if d == "up" else (1 if d == "down" else 0)
 	return -1 if d == "left" else (1 if d == "right" else 0)
+
+
+# R42, a pad's focus cycle for a screen made of click regions (the computer, the phone): the centre of the next region
+# after the one under `at`, in reading order (top to bottom, left to right). `hits` are the screen's {r: Rect2, ...} rows.
+func focus_step(hits: Array, at: Vector2, step: int) -> Vector2:
+	var rects: Array = []
+	for h in hits:
+		var r: Rect2 = h.r
+		if r.size.x > 0.0 and r.size.y > 0.0 and not rects.has(r) and str(h.get("id", "")) != "none":  # ("none" only blocks a click)
+			rects.append(r)
+	if rects.is_empty():
+		return at
+	rects.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.position.y < b.position.y or (a.position.y == b.position.y and a.position.x < b.position.x))
+	var cur := -1
+	for i in rects.size():
+		if (rects[i] as Rect2).get_center().floor() == at.floor():
+			cur = i
+	var next := posmod(cur + step, rects.size()) if cur >= 0 else (0 if step > 0 else rects.size() - 1)
+	return (rects[next] as Rect2).get_center().floor()
 
 
 # stick events repeat on every wobble: only the move from inside the dead zone to past half way counts, and every
@@ -731,6 +758,10 @@ func label(action: String) -> String:
 			for ax in ACTIONS[action][2]:
 				if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
 					return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+				if ax[0] == JOY_AXIS_RIGHT_X:
+					return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
+				if ax[0] == JOY_AXIS_RIGHT_Y:
+					return "RS DOWN" if ax[1] > 0.0 else "RS UP"
 				return "STICK"
 	for r in MENU_ROLES:
 		if r[0] == action:

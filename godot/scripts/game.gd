@@ -14,10 +14,13 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 const FORMATS := {
 	"wide": {"size": Vector2i(368, 128), "zoom": 1.0, "cam_y": 64.0, "scale": 4, "follow": false},
 	"h": {"size": Vector2i(320, 180), "zoom": 1.0, "cam_y": 50.0, "scale": 4, "follow": true},
+	# R42: 16:10. x4 = 1280 x 800, the whole Steam Deck screen with no bars (h there is 1280 x 720 with 40 px bars)
+	"deck": {"size": Vector2i(320, 200), "zoom": 1.0, "cam_y": 50.0, "scale": 4, "follow": true},
 	"v": {"size": Vector2i(180, 320), "zoom": 1.0, "cam_y": 60.0, "scale": 3, "follow": true},
 	"vclose": {"size": Vector2i(180, 320), "zoom": 2.0, "cam_y": 92.0, "scale": 3, "follow": true},
 }
-const ORDER := ["wide", "h", "v", "vclose"]
+const ORDER := ["wide", "h", "deck", "v", "vclose"]
+const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
 
@@ -29,8 +32,143 @@ var format := "wide"
 var title_mode := false  # the title screen shows real rooms without the player or the cast
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
+var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
+var focus_force := false  # tests: act on focus notifications in a script run too
+var focus_lost := false  # the window is in the background (or the app is suspended) right now
+var auto_format := ""  # the format the screen asked for at start ("" = none: a test run, or a screen that is not 16:10)
+var _held_pause := false  # this script paused the tree for a focus loss (no pause menu could open): undo it on return
+var _last_ms := -1
 
 var _fade: ColorRect
+
+
+# ---- R42: the screen, focus and suspend ---------------------------------------------------------------------------
+# a test or a tool run (a -s script, a movie, headless): the screen is not asked, the saved shape is not loaded and a
+# focus change pauses nothing, so an existing test never changes with the monitor it runs on
+func dev_run() -> bool:
+	var args := OS.get_cmdline_args()
+	for flag in ["-s", "--script", "--write-movie", "--resolution"]:
+		if flag in args:
+			return true
+	return DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+
+
+# what a screen gets from a format with integer scaling: {scale, size (the picture in screen pixels), bars (left / right,
+# top / bottom), fill (share of the screen that is picture)}
+func fit(screen: Vector2i, name: String) -> Dictionary:
+	var size: Vector2i = FORMATS[name].size
+	var scale := maxi(1, mini(screen.x / size.x, screen.y / size.y))
+	var shown := size * scale
+	var fill := float(shown.x * shown.y) / float(maxi(1, screen.x * screen.y))
+	return {"scale": scale, "size": shown, "bars": (screen - shown) / 2, "fill": fill}
+
+
+# a Steam Deck (the environment says so in game mode, or the screen is its 1280 x 800)
+func on_deck(screen: Vector2i) -> bool:
+	return OS.get_environment("SteamDeck") == "1" or screen == Vector2i(1280, 800)
+
+
+# the format a screen starts in: a 16:10 screen gets "deck" (it fills it), anything else the classic "wide"
+func pick_format(screen: Vector2i) -> String:
+	if screen.x <= 0 or screen.y <= 0:
+		return "wide"
+	return "deck" if absf(float(screen.x) / float(screen.y) - 1.6) < 0.02 else "wide"
+
+
+# the saved choices (the pause menu's SHAPE row or F9, the UNFOCUSED row), kept in the settings file
+func load_display() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load(Difficulty.settings_path) != OK:
+		return ""
+	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	return str(cfg.get_value("display", "format", ""))
+
+
+func save_display(with_format: bool = true) -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(Difficulty.settings_path)
+	if with_format:
+		cfg.set_value("display", "format", format)
+	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.save(Difficulty.settings_path)
+
+
+func set_focus_pause(on: bool) -> void:
+	focus_pause = on
+	save_display(false)
+
+
+# at start (deferred, so the settings path is known): the shape you chose last time, else the one that fits the screen.
+# A --format argument or PIXEL_FORMAT wins over both.
+func start_display(screen: Vector2i, forced: bool) -> void:
+	var saved := load_display()
+	auto_format = pick_format(screen)
+	if forced:
+		return
+	if FORMATS.has(saved):
+		set_format(saved)
+	elif auto_format != format:
+		set_format(auto_format)
+	if on_deck(screen) and DisplayServer.get_name() != "headless":
+		get_window().mode = Window.MODE_FULLSCREEN
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		focus_out()
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN or what == NOTIFICATION_APPLICATION_RESUMED:
+		focus_in()
+	elif what == NOTIFICATION_UNPAUSED:
+		_last_ms = -1  # the time spent paused is not a suspend
+
+
+func _focus_on() -> bool:
+	return focus_pause and (focus_force or not dev_run())
+
+
+# the window went to the background, or the app is being suspended: stop the clock. With a player in a room that is the
+# pause menu (it also writes the resume point); anywhere else (title, character select) the tree is held until you return
+func focus_out() -> void:
+	if focus_lost or not _focus_on():
+		return
+	focus_lost = true
+	if get_tree().paused:
+		return  # already paused (the pause menu is up)
+	if is_instance_valid(PauseMenu) and PauseMenu.can_open(false):
+		PauseMenu.open()
+	else:
+		_held_pause = true
+		get_tree().paused = true
+
+
+func focus_in() -> void:
+	if not focus_lost:
+		return
+	focus_lost = false
+	_last_ms = Time.get_ticks_msec()
+	if _held_pause:
+		_held_pause = false
+		get_tree().paused = false
+
+
+# a frame that took seconds of real time: the machine slept without telling us (a Deck suspend freezes the process).
+# Called from the tree's process_frame signal, which comes before any node's _process of that frame: pausing here keeps
+# the room from taking that one enormous step. The pause menu is left up.
+func gap_check(now_ms: int) -> bool:
+	var gap := 0 if _last_ms == -1 else now_ms - _last_ms  # -1: no frame seen yet (the start, or just unpaused)
+	_last_ms = now_ms
+	if gap < GAP_MS or not _focus_on() or get_tree().paused:
+		return false
+	focus_out()
+	focus_lost = false  # nothing will send a focus-in: the menu (or the title) is simply there when you look
+	if _held_pause:
+		_held_pause = false
+		get_tree().paused = false
+	return true
+
+
+func _frame_start() -> void:
+	gap_check(Time.get_ticks_msec())
 
 
 func _process(_delta: float) -> void:
@@ -56,6 +194,9 @@ func _ready() -> void:
 		if arg.begins_with("--format="):
 			wanted = arg.substr(9)
 	set_format(wanted if FORMATS.has(wanted) else "wide")
+	get_tree().process_frame.connect(_frame_start)
+	if not dev_run():
+		start_display.call_deferred(DisplayServer.screen_get_size(), FORMATS.has(wanted))
 
 
 func set_format(name: String) -> void:
@@ -64,13 +205,15 @@ func set_format(name: String) -> void:
 	var size: Vector2i = f.size
 	var win := get_window()
 	win.content_scale_size = size
-	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless":
+	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless" and win.mode == Window.MODE_WINDOWED:
 		win.size = size * int(f.scale)
 	format_changed.emit()
 
 
 func cycle_format() -> void:
 	set_format(ORDER[(ORDER.find(format) + 1) % ORDER.size()])
+	if not dev_run() or focus_force:
+		save_display()  # your choice wins over the screen's at the next start
 
 
 # Test helper (Q4): a real mouse click at a LOGICAL UI point (0..size of the current format), sent through

@@ -6,7 +6,7 @@ extends SceneTree
 # Any other test can be audited too: set env LAYOUT_AUDIT=1 and Game prints OFFSCREEN / OVERLAP lines as they happen.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const FORMATS := ["wide", "h", "v"]
+const FORMATS := ["wide", "h", "deck", "v"]  # deck = 320 x 200, the Steam Deck's 16:10 (R42)
 const WHITE := Color.WHITE
 
 var failures := 0

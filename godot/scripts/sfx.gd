@@ -483,6 +483,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not event.ctrl_pressed
 	):
 		toggle_mute()
+	elif event is InputEventJoypadMotion and Controls.pressed(event) and Controls.matches(event, "mute"):
+		toggle_mute()  # R42: the right stick pushed right
 
 
 # ---- synthesis -------------------------------------------------------------------------------------------------
