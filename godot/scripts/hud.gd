@@ -16,6 +16,7 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a hint are small sprites
 const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
 const Micro := preload("res://scripts/micro.gd")
 
@@ -162,6 +163,6 @@ func _draw_hint(raw: String) -> void:
 	var h := float(rows.size()) * 7.0 + 5.0
 	draw_rect(Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.8))
 	for i in rows.size():
-		PixelFont.draw(
+		PadGlyphs.draw(
 			self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a")
 		)

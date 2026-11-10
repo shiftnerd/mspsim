@@ -986,6 +986,8 @@ func _icon(kind: String, r: Rect2) -> void:
 			_fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
 			_fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
 			_disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
+			_fill(Rect2(c.x - 0.5 * u, c.y - 0.5 * u, maxf(1.0, 0.5 * u), maxf(1.0, 0.5 * u)), Color("a8e0f5"))  # the lens glint
+			_fill(Rect2(c.x + 2.5 * u, c.y - 1.5 * u, u, maxf(1.0, 0.5 * u)), Color("f0a030"))  # the flash
 		"phone":
 			# a handset: ear piece top left, mouth piece bottom right, a curved arm between them
 			var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]

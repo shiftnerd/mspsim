@@ -6,6 +6,7 @@ extends RefCounted
 # in screen pixels. Use UiStyle.panel() for pages, UiStyle.strip() / hint_bar() / caption_bar() in rooms.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -85,7 +86,7 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-	text(c, hint, r.position.x + 3.0, r.end.y - 7.0, MUTED)
+	PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin

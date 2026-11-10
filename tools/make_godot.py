@@ -5794,6 +5794,107 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
         x += 4.0 * scale
 ''')
 
+write("scripts/pad_glyphs.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Pad button glyphs (roadmap R14): a hint line says "(A) PICK  (B) BACK  STICK = MOVE" on a pad (Controls.hint / label).
+# draw() prints such a line with the pixel font and puts a small sprite where a pad token stands, width() measures it.
+# The atlas is assets/ui/pad_glyphs.png (tools/make_icons.lua, source office/pieces/ui_pad_glyphs.aseprite): 12 cells of
+# 11 x 7, the font's five rows plus one above and one below. Without a pad in use (or without the atlas) both functions
+# are the plain PixelFont ones, so a caller can use them for every line.
+# Used by: the HUD hint (hud.gd), every panel footer (UiStyle.footer) and the pause menu's key lists.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const ATLAS := "res://assets/ui/pad_glyphs.png"
+const CELL := Vector2(11.0, 7.0)
+const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
+const TOKENS := {
+    "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
+    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+}
+
+static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var _tex: Texture2D
+static var _looked := false
+
+
+static func atlas() -> Texture2D:
+    if not _looked:
+        _looked = true
+        _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
+    return _tex
+
+
+static func active() -> bool:
+    if atlas() == null:
+        return false
+    if force >= 0:
+        return force == 1
+    # the autoload by path: this script is preloaded by UiStyle, which test scripts compile before the autoloads exist
+    var tree := Engine.get_main_loop() as SceneTree
+    var controls: Node = tree.root.get_node_or_null("Controls") if tree != null else null
+    return controls != null and bool(controls.pad_active)
+
+
+# the line cut into pieces: a String is text, an int is a glyph index
+static func parts(text: String) -> Array:
+    var out := []
+    var rest := text.to_upper()
+    while rest != "":
+        var at := -1
+        var hit := ""
+        for token in TOKENS:
+            var i := rest.find(token)
+            # STICK only as a whole word
+            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+                i = -1
+            if i >= 0 and (at < 0 or i < at):
+                at = i
+                hit = token
+        if at < 0:
+            out.append(rest)
+            break
+        if at > 0:
+            out.append(rest.substr(0, at))
+        out.append(NAMES.find(str(TOKENS[hit])))
+        rest = rest.substr(at + hit.length())
+    return out
+
+
+static func width(text: String, scale := 1) -> int:
+    if not active():
+        return PixelFont.width(text, scale)
+    var w := 0
+    for part in parts(text):
+        w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
+    return maxi(0, w - scale)
+
+
+# one glyph by name at its top-left corner (a 7 px cell: one row above the text line's top)
+static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> void:
+    var i := NAMES.find(id)
+    if i < 0 or atlas() == null:
+        return
+    var w := float(WIDTHS[i])
+    canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
+
+
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    if not active():
+        PixelFont.draw(canvas, text, pos, color, scale)
+        return
+    var x := pos.x
+    for part in parts(text):
+        if part is int:
+            glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
+            x += float((int(WIDTHS[part]) + 1) * scale)
+        else:
+            PixelFont.draw(canvas, str(part), Vector2(x, pos.y), color, scale)
+            x += float(str(part).length() * 4 * scale)
+''')
+
 write("scripts/msp.gd", '''extends Node
 # gdlint: ignore=max-line-length
 # Autoload: the managed-service-provider side of the game. Pixel IT Partners looks after a handful of silly
@@ -11591,6 +11692,8 @@ func _icon(kind: String, r: Rect2) -> void:
             _fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
             _fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
             _disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
+            _fill(Rect2(c.x - 0.5 * u, c.y - 0.5 * u, maxf(1.0, 0.5 * u), maxf(1.0, 0.5 * u)), Color("a8e0f5"))  # the lens glint
+            _fill(Rect2(c.x + 2.5 * u, c.y - 1.5 * u, u, maxf(1.0, 0.5 * u)), Color("f0a030"))  # the flash
         "phone":
             # a handset: ear piece top left, mouth piece bottom right, a curved arm between them
             var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
@@ -31041,6 +31144,7 @@ write("scripts/ui_style.gd", '''extends RefCounted
 # in screen pixels. Use UiStyle.panel() for pages, UiStyle.strip() / hint_bar() / caption_bar() in rooms.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -31120,7 +31224,7 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-    text(c, hint, r.position.x + 3.0, r.end.y - 7.0, MUTED)
+    PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
@@ -56021,6 +56125,7 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a hint are small sprites
 const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
 const Micro := preload("res://scripts/micro.gd")
 
@@ -56167,7 +56272,7 @@ func _draw_hint(raw: String) -> void:
     var h := float(rows.size()) * 7.0 + 5.0
     draw_rect(Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.8))
     for i in rows.size():
-        PixelFont.draw(
+        PadGlyphs.draw(
             self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a")
         )
 ''')
@@ -73691,6 +73796,7 @@ write("scripts/pause_menu.gd", '''extends CanvasLayer
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
@@ -73966,9 +74072,17 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
             var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
+            var end_x := rr.position.x + rr.size.x - 4.0
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
-                key_name += "  " + Controls.button_name(Controls.button_of(action))
-            UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
+                var pad_name := Controls.button_name(Controls.button_of(action))
+                var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
+                if gi >= 0:  # the pad button as its glyph, right of the key
+                    end_x -= float(PadGlyphs.WIDTHS[gi])
+                    PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
+                    end_x -= 6.0
+                else:
+                    key_name += "  " + pad_name
+            UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
     UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
@@ -74090,7 +74204,11 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
     var y := body.position.y + 2.0
     for row in page[1]:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-        UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
+        var value := Controls.help_value(str(row[0]), str(row[1]))
+        if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
+            var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
+            value = shown if shown != "" else value
+        PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
         y += 9.0
     UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
 ''')
@@ -79408,6 +79526,10 @@ const BTN := Vector2(26.0, 24.0)  # a thumb needs 19 to 24 px
 const INK := Color(0.06, 0.05, 0.1, 0.55)
 const FACE := Color(1.0, 1.0, 1.0, 0.28)
 const LIT := Color(1.0, 0.88, 0.54, 0.6)
+# the sprites (assets/ui/touch_*.png, tools/make_icons.lua): opaque white-and-ink pieces, drawn see-through
+const ART := "res://assets/ui/touch_%s.png"
+const SOFT := Color(1.0, 1.0, 1.0, 0.5)
+const PRESSED := Color(1.0, 0.88, 0.54, 0.8)
 
 var stick_touch := -1  # the finger on the stick (-1 = none)
 var stick_vec := Vector2.ZERO  # -1..1 on each axis, what the game sees
@@ -79416,6 +79538,7 @@ var held := {}  # finger index -> the id of the button under it
 var _canvas: Node2D
 var _sent := Vector2.ZERO  # the axis values last sent
 var _ctx := ""
+var _art := {}  # id -> Texture2D, or null when the file is missing (then the old circles and rectangles are drawn)
 
 
 func _ready() -> void:
@@ -79583,17 +79706,33 @@ func _process(_delta: float) -> void:
         _canvas.queue_redraw()
 
 
+func art(id: String) -> Texture2D:
+    if not _art.has(id):
+        var path := ART % id
+        _art[id] = load(path) if ResourceLoader.exists(path) else null
+    return _art[id]
+
+
 func _paint() -> void:
     var c := stick_center()
-    _canvas.draw_circle(c, STICK_R + 1.0, INK)
-    _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
-    _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
+    if art("stick") != null and art("knob") != null:
+        _canvas.draw_texture(art("stick"), c - Vector2(23.0, 23.0), Color(1.0, 1.0, 1.0, 0.35))
+        var knob_at := (c + stick_vec * (STICK_R - 8.0) - Vector2(9.5, 9.5)).round()
+        _canvas.draw_texture(art("knob"), knob_at, PRESSED if stick_touch >= 0 else SOFT)
+    else:
+        _canvas.draw_circle(c, STICK_R + 1.0, INK)
+        _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
+        _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
     var list := buttons()
     for id in list:
         var r: Rect2 = list[id]
         var down: bool = held.values().has(id)
-        _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
-        _canvas.draw_rect(r, LIT if down else FACE)
+        var face := art("round" if str(id) in ["a", "b"] else "pill")  # A and B / X are round, the small ones are pills
+        if face != null:
+            _canvas.draw_texture(face, (r.position + (r.size - face.get_size()) * 0.5).floor(), PRESSED if down else SOFT)
+        else:
+            _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
+            _canvas.draw_rect(r, LIT if down else FACE)
         var text := label_of(str(id))
         var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
         PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
