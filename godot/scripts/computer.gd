@@ -12,6 +12,7 @@ const DISPATCH := preload("res://scripts/dispatch.gd")
 const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
 const HABITS_VIEW := preload("res://scripts/habits_view.gd")  # R38: the Boardroom HABITS and RIVALS tabs (read only)
 const TB := 11.0  # taskbar height
+const DASH_REDRAW := 1.0 / 30.0  # R42: the metrics board is the costliest screen to paint (6 ms a frame on a fast desktop): it repaints 30 times a second, not 60
 const TXT := Color("20242c")
 const WHITE := Color("ffffff")
 const BTN := Color("d9dde6")
@@ -92,6 +93,7 @@ var _toast_t := 0.0
 var _menu := false
 var _tick := 0.0
 var _stick := Vector2.ZERO  # R42: the right stick, moving the cursor
+var _dash_wait := 0.0  # seconds since the metrics board was last painted
 
 
 func _ready() -> void:
@@ -212,7 +214,10 @@ func _step(delta: float) -> void:
 		_canvas.queue_redraw()
 	if app == "dash":
 		dash_t += delta
-		_canvas.queue_redraw()
+		_dash_wait += delta
+		if _dash_wait >= DASH_REDRAW - 0.001:
+			_dash_wait = 0.0
+			_canvas.queue_redraw()
 	if not _job.is_empty():
 		_job.left -= delta
 		_canvas.queue_redraw()

@@ -223,6 +223,8 @@ func _unhandled_input(event: InputEvent) -> void:
 # R42: the first player's pad does what the keys in _unhandled_input do: RT aims and fires, RB / LB move the arrow, and
 # with the blaster in hand Y offers a war and the right stick pushed left gives it away
 func _pad_input(event: InputEvent) -> void:
+	if Players.slot_of(event) != 0:
+		return  # co-op: the other player's pad
 	if event.is_action_pressed("aim"):
 		Nerf.charge_start(self)
 		return

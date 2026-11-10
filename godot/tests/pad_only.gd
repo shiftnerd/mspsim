@@ -324,15 +324,20 @@ func _day() -> void:
 	_note("after the card")
 	_check(not cards.is_open or str(cards.options[0].label) != "WALK ME THROUGH IT", "A answers it (%s)" % said)
 	await _answer_cards()
-	# ---- the first ticket
+	# ---- the first ticket that is fixed from the desk (a remote fix on a client's machine)
+	var tk: Dictionary = {}
 	n = 0
-	while msp.open_tickets().is_empty() and n < 20000:
+	while tk.is_empty() and n < 30000:
+		for t in msp.open_tickets():
+			if tk.is_empty() and not bool(t.internal) and str(t.endpoint) != "" and msp.FIXES.has(str(t.fix)) and not root.get_node("Onsite").is_onsite(t):
+				tk = t
 		await process_frame
 		n += 1
 		if cards.is_open:
 			await _answer_cards()
-	_check(not msp.open_tickets().is_empty(), "the first ticket of the day has come in")
-	var tk: Dictionary = msp.open_tickets()[0]
+	_check(not tk.is_empty(), "a ticket with a remote fix has come in")
+	if tk.is_empty():
+		return
 	print("     ticket #%d %s, endpoint %s, fix %s" % [tk.id, tk.summary, tk.endpoint, tk.fix])
 	_note("before the computer")
 	await _tap(JOY_BUTTON_X)
@@ -342,6 +347,10 @@ func _day() -> void:
 	_check(await _press_region(comp, "app:psa"), "RB steps to the service board's icon, A opens it")
 	_check(comp.app == "psa" and not comp.psa_detail, "the PSA board (%s)" % _state())
 	await _dpad("down")
+	var rows := 0
+	while comp.psa_sel != int(tk.id) and rows < 12:
+		await _dpad("down")
+		rows += 1
 	await _a()
 	_check(comp.psa_detail and comp.psa_sel == int(tk.id), "D-pad and A open the ticket (#%d)" % comp.psa_sel)
 	_check(await _press_region(comp, "take"), "RB to TAKE, A")
@@ -375,7 +384,11 @@ func _day() -> void:
 	_check(await _press_region(comp, "start"), "START again")
 	_check(await _press_region(comp, "app:psa"), "back to the PSA")
 	if not comp.psa_detail:
-		await _dpad("down")
+		await _dpad("up", 12)
+		rows = 0
+		while comp.psa_sel != int(tk.id) and rows < 12:
+			await _dpad("down")
+			rows += 1
 		await _a()
 	_check(comp.psa_detail and comp.psa_sel == int(tk.id), "the ticket is open again")
 	_check(await _press_region(comp, "close"), "RB to CLOSE, A")
