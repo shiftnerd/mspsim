@@ -101,7 +101,7 @@ func _picker_checks() -> void:
 	var plain: RefCounted = seat_life.new("Sam", 12)
 	for i in 400:
 		var g: String = alan.pick(true, true, true)
-		held_ok = held_ok and (g == "sip" or g in seat_life.HEAD_ONLY)
+		held_ok = held_ok and (g == "sip" or g == "sitcup" or g in seat_life.HEAD_ONLY)
 		sips += 1 if g == "sip" else 0
 		var h: String = plain.pick(false, false, false)
 		typing_ok = typing_ok and h != "sitmouse"
@@ -109,7 +109,7 @@ func _picker_checks() -> void:
 		nod_ok = nod_ok and t != "sitnod"
 		all[t] = true
 		all[h] = true
-	_check(held_ok, "with a drink: only the sip and head gestures")
+	_check(held_ok, "with a drink: only the sip, the cup reach (R26, tests/sitcup.gd) and head gestures")
 	_check(sips > 150, "Alan sips often (%d of 400 with a cup)" % sips)
 	_check(typing_ok, "no desk gesture away from a desk")
 	_check(nod_ok, "no meeting nod while typing")
@@ -219,10 +219,10 @@ func _process(_delta: float) -> bool:
 			_alan._start_gesture()
 			var g: String = _alan._gesture
 			kinds[g] = true
-			ok = ok and (g == "sip" or g in seat_life.HEAD_ONLY)
+			ok = ok and (g == "sip" or g == "sitcup" or g in seat_life.HEAD_ONLY)
 			_alan._gesture = ""
 		_alan._item.item = ""
-		_check(ok and kinds.has("sip"), "an NPC with a cup only sips or turns the head (%s)" % str(kinds.keys()))
+		_check(ok and kinds.has("sip"), "an NPC with a cup only sips, reaches for the cup or turns the head (%s)" % str(kinds.keys()))
 		_alan.queue_free()
 		_alan.seat.occupied = false
 		# the player

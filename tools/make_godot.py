@@ -3073,6 +3073,7 @@ const ALL := [
     "sitnod",
     "sip",
     "sitcouch",
+    "sitcup",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -3090,11 +3091,12 @@ const BASE := {
     "sitnod": 3.0,
     "sip": 1.5,
     "sitcouch": 3.0,
+    "sitcup": 1.5,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
-    "Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
+    "Alan": {"sip": 5.0, "sitcup": 3.0, "sitscratch": 0.5, "sitstretch": 0.5},
     "Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
     "Dan": {"sitscratch": 4.0, "sitlook": 1.0},
     "John": {"sitphone": 5.0, "sitstretch": 1.5},
@@ -3139,8 +3141,10 @@ func tick(delta: float, ready: bool) -> bool:
 
 
 func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
-    if g == "sip":
-        return float(_mine.get(g, BASE[g])) if cup_in_reach else 0.0
+    if g == "sip" or g == "sitcup":
+        # the cup gestures need a cup in reach; the coffee-cup reach (sitcup, R26) only while typing, with the cup standing on
+        # the desk (it has no frames of its own: the owner plays sitmouse)
+        return float(_mine.get(g, BASE[g])) if cup_in_reach and (typing or g == "sip") else 0.0
     if held and not HEAD_ONLY.has(g):
         return 0.0
     if g == "sitmouse" and not typing:
@@ -3242,6 +3246,7 @@ var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+const CUP_REACH_FRAME := 1  # sitcup: the frame of the sitmouse slide on which the hand is at the cup
 var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -3988,6 +3993,8 @@ func _start_use() -> void:
 # grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
 func _update_gesture(delta: float) -> void:
     if _gesture != "":
+        if _gesture == "sitcup" and sprite.frame >= CUP_REACH_FRAME and _item.item == "" and held != "":
+            _unstash()  # the hand has reached the cup: it comes along for the rest of the slide (HeldItem follows the hand)
         return
     var idle := (
         seat != null
@@ -4031,6 +4038,9 @@ func _start_gesture() -> void:
             _desk.item = ""
         sprite.play("sitsip_%s" % facing)
         return
+    if g == "sitcup":  # R26: the coffee-cup reach while typing. The near hand slides over to the cup on the desk, pulls it
+        sprite.play("sitmouse_%s" % facing)  # closer and puts it back: no sip. The frames are sitmouse's, the cup is the held item.
+        return
     if g == "sitphone":
         _item.item = "phone"
     sprite.play("%s_%s" % [g, facing])
@@ -4051,7 +4061,7 @@ func gesturing() -> bool:
 func _cancel_gesture() -> void:
     var g := _gesture
     _gesture = ""
-    if g == "sip":
+    if g == "sip" or g == "sitcup":
         _stash()
     elif g == "sitphone":
         _item.item = ""
@@ -4067,6 +4077,8 @@ func _end_gesture() -> void:
             _item.item = ""
         else:
             _stash()
+    elif g == "sitcup":
+        _stash()  # the cup is back on the desk, nothing was drunk
     elif g == "sitphone":
         _item.item = ""
     _play(_rest_anim())
