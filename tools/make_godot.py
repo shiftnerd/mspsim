@@ -7243,7 +7243,7 @@ func new_day(day: int) -> void:
                     )
                 )
     if Campaign.active and Campaign.mode == "tech" and day == 1:
-        _spawn_t = 75.0  # time to look around before the first ticket
+        _spawn_t = Difficulty.cz("first_ticket", 75.0)  # time to look around before the first ticket (cozy Easy: sooner)
     for c in backups.size():
         var b: Dictionary = backups[c]
         if not b.ok:
@@ -12798,11 +12798,11 @@ func resume_path(for_mode: String, for_slot := 0) -> String:
 
 # the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
 func can_snapshot() -> bool:
-    if not active or mode != "tech" or Game.title_mode or Game.busy or _awaiting:
+    if not active or not is_selectable(mode) or Game.title_mode or Game.busy or _awaiting:
         return false
     if World.clock < World.DAY_START or World.clock >= World.DAY_END:
         return false
-    if Story.overtime or Playbook.is_active() or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
+    if Story.overtime or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
         return false
     return not _something_open()
 
@@ -12813,7 +12813,8 @@ func _something_open() -> bool:
         return true
     if DayReport.is_open or Review.is_open or Toolbox.is_open:
         return true
-    return Outings.busy() or Outings.is_open or PrinterGame.is_open or Onsite.busy or Onsite.active
+    # step 5: standing at a client site is a safe moment (Resume keeps the visit); the drive itself is not
+    return Outings.busy() or Outings.is_open or PrinterGame.is_open or (Onsite.busy and not Onsite.active)
 
 
 # writes the resume point now; false (and the last good one stays) when it is not a safe moment or the write fails
@@ -13068,6 +13069,8 @@ func _end_day() -> void:
 func _cozy_close(r: Dictionary) -> void:
     r["cozy"] = true
     var notes: Array = []
+    if str(r.get("grade", "")) == "D":
+        r["grade"] = "C"  # the grade floor: on Easy the worst day is a C
     if bool(r.get("bankrupt", false)):
         r["bankrupt"] = false
         if Owner.bailout == 0:
@@ -13085,6 +13088,8 @@ func _cozy_close(r: Dictionary) -> void:
         notes.append(Difficulty.ct("probation_note"))
         var sender := {"owner": "Christy", "sales": "John"}.get(mode, "Morgan") as String
         Msp.send_text(sender, Difficulty.ct("probation_" + mode))
+    if str(r.get("grade", "")) == "C":
+        notes.append(Difficulty.ct("grade_c"))  # a C comes with a calm line, so it does not read as failing
     if not notes.is_empty():
         r["notes"] = notes
 
@@ -14623,6 +14628,7 @@ write("scripts/events.gd", '''extends Node
 # share the same draw. Keep every magnitude small: a card must never make the day unwinnable.
 
 const VERSION := 1
+const Seasons := preload("res://scripts/seasons.gd")  # R8: seasonal tags, seasonal cards, the calendar events
 const KINDS := ["tech", "owner", "both"]
 const SKILLS := ["networking", "servers", "security", "people"]
 const FX_KEYS := ["xp", "mood", "mood_all", "rep", "social", "social_all", "energy", "hours", "cash", "burnout"]
@@ -16964,15 +16970,26 @@ func pool(day: int, mode: String) -> Array:
             continue
         if _cooled(str(id), int(card.cooldown), day) or not _requires_ok(card):
             continue
+        if not Seasons.in_season(str(id), day, Campaign.year):
+            continue  # R8: a card with a seasonal tag is only in the pool in its season
         if _valid(str(id), card, false):
             out.append({"deck": "event", "id": str(id), "weight": float(card.weight) * Mutators.boost(str(id))})
+    for id in Seasons.CARDS:  # R8: the seasonal cards
+        var seasonal: Dictionary = Seasons.CARDS[id]
+        var s_kinds: Array = seasonal.get("kinds", [])
+        if not (s_kinds.has("tech" if mode == "service" else mode) or s_kinds.has("both")):
+            continue
+        if not Seasons.in_season(str(id), day, Campaign.year) or _cooled(str(id), int(seasonal.cooldown), day):
+            continue
+        if _requires_ok(seasonal) and _valid(str(id), seasonal, false):
+            out.append({"deck": "event", "id": str(id), "weight": float(seasonal.weight) * Mutators.boost(str(id))})
     if mode == "tech":
         for id in Story.VIGNETTES:
             var v: Dictionary = Story.VIGNETTES[id]
             if not v.has("min_day") or day < int(v.min_day) or day > int(v.get("max_day", 99)):
                 continue
-            if last.has(str(id)):
-                continue  # a vignette is shown once a run
+            if last.has(str(id)) or not Seasons.in_season(str(id), day, Campaign.year):
+                continue  # a vignette is shown once a run (and a tagged one only in its season)
             if _valid(str(id), v, true):
                 out.append({"deck": "vignette", "id": str(id), "weight": float(v.get("weight", 1.0))})
     return out
@@ -17019,6 +17036,7 @@ func begin_day(day: int) -> void:
 
 
 func _process(_delta: float) -> void:
+    Seasons.tick()  # the calendar event of the season, at its own time
     if pending.is_empty() or not Campaign.active or Game.title_mode:
         return
     if World.clock >= LATEST:
@@ -17041,7 +17059,7 @@ func show_draw(draw: Dictionary) -> void:
     if str(draw.deck) == "vignette":
         Story.fire({"kind": "vignette", "id": str(draw.id)})
         return
-    var card: Dictionary = DECK.get(str(draw.id), {})
+    var card: Dictionary = card_of(str(draw.id))
     if card.is_empty():
         return
     var c := resolve(card, str(draw.get("who", "")))
@@ -17049,6 +17067,11 @@ func show_draw(draw: Dictionary) -> void:
     for o in c.options:
         options.append({"label": str(o.label), "id": str(o.id)})
     Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
+
+
+# a deck card by id: the ordinary deck, or a seasonal card (Seasons.CARDS); {} when there is none
+func card_of(id: String) -> Dictionary:
+    return DECK.get(id, Seasons.CARDS.get(id, {}))
 
 
 # a copy of the card with {c} replaced by a coworker's name
@@ -18488,13 +18511,20 @@ func _process(_delta: float) -> void:
     var events: Array = events_on(Campaign.day)
     for i in events.size():
         var ev: Dictionary = events[i]
-        if not _fired.has(i) and World.clock >= float(ev.at):
+        if not _fired.has(i) and World.clock >= _at(ev, i):
             _fired[i] = true
             fire(ev)
     if not _followed and World.clock >= 9.4:
         _followed = true
         _spawn_followups()
         Incident.tech_morning()
+
+
+# cozy Easy, day 1: the welcome mail and Dan's offer come in the first seconds, not after the walk-in half hour
+func _at(ev: Dictionary, index: int) -> float:
+    if Campaign.day == 1 and Difficulty.cozy_on():
+        return minf(float(ev.at), World.DAY_START - 0.4 + 0.1 * float(index))
+    return float(ev.at)
 
 
 # trouble from sloppy jobs comes back the next morning
@@ -18761,6 +18791,7 @@ const ROLES := {
     "Christy": "CONTROLLER"
 }
 const DESK_OWNER := {6: "Alan", 7: "Garrison", 3: "Dan", 4: "John", 2: "Maya", 5: "Morgan"}
+const Collection := preload("res://scripts/collection.gd")  # R16: relationship levels
 const CHAT_GAP := 40.0  # seconds before another chat with the same person counts again
 const THANKS := [
     "thanks for grabbing the phones earlier!", "you are a lifesaver on the phones", "hey, appreciate the phone coverage",
@@ -18826,6 +18857,7 @@ func change(who: String, amount: int) -> void:
     var before := value(who)
     rel[who] = clampi(before + amount, -100, 100)
     day_delta += value(who) - before
+    Collection.note_change(who, before, value(who))
     changed.emit()
 
 
@@ -18882,6 +18914,7 @@ func rep_bonus() -> int:
 
 
 func note_chat(who: String) -> void:
+    Career.note_first("met", who, "cast_met")  # R16: the collection page
     var now := Time.get_ticks_msec() / 1000.0
     if now - float(_last_chat.get(who, -999.0)) >= CHAT_GAP:
         _last_chat[who] = now
@@ -28808,6 +28841,8 @@ const COZY := {
     "ransom_rep": -5,  # reputation lost when ransomware files are gone (15 normally)
     "drain": 0.5,  # x on the energy drain
     "poach": 0.5,  # x on the rival's poaching risk
+    "first_ticket": 20.0,  # seconds before the first ticket of day 1 (75 normally)
+    "page_chance": 0.25,  # the pager's chance on an on-call night (0.6 normally), and one page a week at most
 }
 const COZY_TEXT := {
     "probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
@@ -28839,6 +28874,7 @@ const COZY_TEXT := {
     "coach_first": ": A WORD WITH GARRISON",
     "coach_second": ": ANOTHER LOOK",
     "open_row": "STILL OPEN, CARRIED OVER",
+    "grade_c": "C IS A STEADY DAY. THE DESK KEPT RUNNING AND NOBODY IS KEEPING SCORE.",
 }
 const TABLE := {
     # karaoke: seconds between notes, perfect / good hit windows (a miss is a note older than the good window)
@@ -30052,6 +30088,7 @@ var _last_reason := ""
 var _stay_until := 0.0
 var _warned := 0
 var _oncall_pay := 0
+var _paged_week := -1  # cozy Easy: the on-call week that already had its page
 
 
 func _ready() -> void:
@@ -30069,6 +30106,7 @@ func reset() -> void:
     pages_fixed = 0
     pages_ignored = 0
     last_note = ""
+    _paged_week = -1
     _asked = false
     _stay_until = 0.0
     _warned = 0
@@ -30153,10 +30191,20 @@ func begin_day(day: int) -> void:
     if Expo.is_trip_day(day):
         return
     World.time_scale = 0.0
-    if on_call(day - 1) and Difficulty.rng("shift").randf() < PAGE_CHANCE:
+    if on_call(day - 1) and Difficulty.rng("shift").randf() < Difficulty.cz("page_chance", PAGE_CHANCE) and not _cozy_paged(day):
         _page_card()
     else:
         commute_card()
+
+
+# cozy Easy: one page at most in an on-call week (true = this week had its page already)
+func _cozy_paged(day: int) -> bool:
+    if not Difficulty.cozy_on():
+        return false
+    if _paged_week == week_of(day - 1):
+        return true
+    _paged_week = week_of(day - 1)
+    return false
 
 
 # a random line that is not the one used last time
@@ -30249,7 +30297,7 @@ func commute(choice: String) -> void:
         _last_reason = reason
         add_energy(-3.0)
     late_min = maxi(0, delay)
-    add_energy(float(c.energy))
+    add_energy(maxf(0.0, float(c.energy)) if Difficulty.cozy_on() else float(c.energy))  # cozy Easy: an early start costs nothing
     if late_min >= 10:
         late_total += 1
     var waiting := _arrive(reason)
@@ -50291,9 +50339,11 @@ const ROOTS := {
     "Habits": ["HABITS", "TEXT", "CARDS"],
     "RivalCards": ["CARDS"],
     "RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
+    "Seasons": ["CARDS", "EVENTS"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
-const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd"}
+const SCRIPTS := {
+    "Seasons": "res://scripts/seasons.gd","Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -55856,6 +55906,8 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
+const Micro := preload("res://scripts/micro.gd")
 
 var _acc := 0.0
 
@@ -55870,6 +55922,7 @@ func modal_open() -> bool:
 func _process(delta: float) -> void:
     # the card header sits over the HUD text, so hide it while a card or any panel is up
     visible = World.hud_visible and not modal_open()
+    Micro.tick()
     _acc += delta
     if not Phone.banner.is_empty():
         queue_redraw()  # the notification banner slides every frame
@@ -55940,6 +55993,8 @@ func _draw() -> void:
         for i in lines.size():
             PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
             PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
+        if Phone.banner.is_empty():
+            Goals.draw(self, lines.size())
         if Hints.toast_text != "" and not Game.ui_open:
             _draw_hint(Hints.toast_text)
         elif Hints.text != "" and not Game.ui_open:
@@ -58585,6 +58640,7 @@ const LOGO_SMALL := preload("res://assets/ui/mspsim_logo_s.png")
 const PROMPT := preload("res://assets/ui/press_start.png")
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const CharSelect := preload("res://scripts/charselect.gd")
+const Micro := preload("res://scripts/micro.gd")  # R16: the QUICK PLAY micro-sessions
 const FLOOR_Y := 118.0
 const SHOW_SECS := 9.0
 const VIGNETTES := ["lineup", "phones", "kitchen", "conference"]
@@ -58895,7 +58951,7 @@ func _back() -> void:
         _show_sub(_sub_mode, _sub_sel)
     elif _level == "sub":
         _show_top(_top_sel)
-    elif _level == "cont" or _level == "top":
+    elif _level == "cont" or _level == "top" or _level == "quick":
         _show_home(0)
     else:
         _menu_open = false
@@ -58923,9 +58979,24 @@ func _show_home(sel: int) -> void:
         _items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
     _items.append({"label": "NEW", "id": "play", "enabled": true})
     _items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
+    _items.append({"label": "QUICK PLAY", "id": "quick", "enabled": true})
     _items.append({"label": "SETTINGS", "id": "settings", "enabled": true})
     _items.append({"label": "QUIT", "id": "quit", "enabled": true})
     _sel = clampi(sel, 0, _items.size() - 1)
+    _menu.queue_redraw()
+
+
+# R16: QUICK PLAY, the micro-sessions (Micro): one outing or one short ticket shift on Free Play, no character select
+func _show_quick() -> void:
+    _level = "quick"
+    _from_cont = false
+    _sub_mode = ""
+    _heading = "QUICK PLAY"
+    _items = [
+        {"label": "ONE OUTING", "id": "micro_outing", "enabled": true},
+        {"label": "ONE TICKET SHIFT", "id": "micro_tickets", "enabled": true},
+    ]
+    _sel = 0
     _menu.queue_redraw()
 
 
@@ -59135,6 +59206,11 @@ func _choose_home(id: String) -> bool:
     elif id == "play":
         _top_sel = _sel
         _show_top(0)
+    elif id == "quick":
+        _top_sel = _sel
+        _show_quick()
+    elif id.begins_with("micro_"):
+        _start(id)
     elif id.begins_with("cont_"):
         var mode := id.get_slice("_", 1)
         _sub_mode = mode
@@ -59261,6 +59337,8 @@ func _start(id: String, summary := "") -> void:
             Campaign.continue_game("tech", true)
         "owner_new":
             Campaign.new_game("owner")
+        "owner_resume", "service_resume", "sales_resume":
+            Campaign.continue_game(run_mode, true)  # R16 step 5: every campaign has a mid-day / mid-week point
         "owner_continue":
             Campaign.continue_game("owner")
         "service_new":
@@ -59274,6 +59352,10 @@ func _start(id: String, summary := "") -> void:
         _:
             Campaign.new_game(Campaign.FREE)
     Game.go(Campaign.start_scene(), "start")
+    if id.begins_with("micro_"):
+        Micro.begin(id.trim_prefix("micro_"))  # sets up the toolbox launch or the ticket shift
+    else:
+        Micro.clear()
     Toolbox.after_start()
     if summary != "":
         var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
@@ -59884,6 +59966,7 @@ const SETS := [
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const OfficeDecor := preload("res://scripts/office_decor.gd")  # R16: office growth and the seasonal dressing
 
 var barriers := {}  # npc sync points: key -> {arrived, gen}
 
@@ -59934,6 +60017,7 @@ func _ready() -> void:
     SalesBeats.auditor(self)
     SalesBeats.recruiter(self)
     Shop.dress(self)
+    OfficeDecor.dress(self)
     _room = scene_file_path.get_file().get_basename()
     _set_dark(0.0 if World.lights_on(_room) else 1.0)
     World.lights_changed.connect(_on_lights)
@@ -59981,6 +60065,9 @@ func _seat_player() -> void:
         var chair := get_node_or_null("Interactables/%s" % resume_seat) if resume_seat != "" else null
         if chair != null and _player.has_method("sit_now"):
             _player.sit_now(chair)
+        elif Game.vars.has("resume_x"):
+            _player.position.x = float(Game.vars["resume_x"])  # step 5: standing where you stood
+        Game.vars.erase("resume_x")
         return
     if not Game.vars.get("start_seated", false):
         return
@@ -63811,9 +63898,13 @@ func note_outing(game: String, result: int, info := {}) -> void:
     match game:
         "karaoke":
             add("kara_perfects", int(info.get("perfects", 0)))
+            if Outings.g.has("song"):  # R16: the collection page lists the songs you have sung
+                note_first("song", str(Outings.g.song.id), "songs_sung")
         "escape":
             if result >= 1:
                 fastest("escape_best", int(info.get("secs", 0)))
+            for clue in Outings.g.get("clues", []):  # R16: and the clue recipes you have seen
+                note_first("recipe", str(clue.recipe), "recipes_seen")
         "dinner":
             best("dinner_best", int(info.get("score", 0)))
         "cornhole":
@@ -64059,6 +64150,7 @@ signal closed
 
 const UiStyle := preload("res://scripts/ui_style.gd")
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Collection := preload("res://scripts/collection.gd")  # R16: the collection pages
 const MEDAL_H := 16.0
 const ROW_H := 7.0
 const HEAD_ROW_H := 9.0
@@ -64109,6 +64201,8 @@ func _input(event: InputEvent) -> void:
         var dir := Controls.nav(event)
         if Controls.word(event) == "f9":
             Game.cycle_format()
+        elif Controls.word(event) == "c":
+            go_collection()
         elif dir == "left":
             go(-1)
         elif dir == "right":
@@ -64205,8 +64299,22 @@ func build(size: Vector2) -> void:
     var n_pages := int(ceil(float(Career.MEDALS.size()) / float(cap_m)))
     for p in n_pages:
         pages.append({"title": "CAREER - MEDALS %d/%d" % [Career.earned_count(), Career.MEDALS.size()], "medals": Career.MEDALS.slice(p * cap_m, (p + 1) * cap_m)})
+    for coll in Collection.pages(cap_c):
+        coll["title"] = "CAREER - COLLECTION"
+        pages.append(coll)
     page = clampi(page, 0, maxi(0, pages.size() - 1))
     _built_for = size
+
+
+# C: jump to the first collection page (cast, songs, clue recipes, printers, medals, the office)
+func go_collection() -> void:
+    for i in pages.size():
+        if pages[i].has("rows"):
+            page = i
+            sel = 0
+            detail = false
+            queue_redraw()
+            return
 
 
 func _fmt(v: int, fmt: String) -> String:
@@ -64236,11 +64344,13 @@ func _draw() -> void:
         _draw_counters(pg.items, body, cols, colw, gap)
     elif pg.has("mastery"):
         _draw_mastery(body, cols, colw, gap)
+    elif pg.has("rows"):
+        Collection.draw(self, pg.rows, body, colw, gap, ROW_H)
     else:
         _draw_medals(pg.medals, body, cols, colw, gap)
         if detail and sel < pg.medals.size():
             _draw_detail(size, pg.medals[sel])
-    UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK"))
+    UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC"))
     _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
     _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
     _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -73138,7 +73248,10 @@ write("scripts/resume.gd", '''extends Node
 #    ends and the per-day odds and ends of Shift, Social, Events, Onsite, Outings and Meeting
 #  - write(): temp file, check it reads back, keep the old one as .bak, rename into place
 
-const VERSION := 1
+const VERSION := 2
+# step 5: these singletons are saved whole (every plain-data script variable, not the patchable tables in capitals):
+# the Playbook job in progress, the onsite visit, and the owner / service / sales week under way
+const DEEP := ["Playbook", "Onsite", "Owner", "Partner", "Service", "ServiceArc", "SalesCampaign", "Crew", "Projects"]
 
 
 func _ready() -> void:
@@ -73183,6 +73296,7 @@ func capture(cfg: ConfigFile) -> void:
     cfg.set_value("world", "state", world_dict())
     cfg.set_value("player", "state", player_dict())
     cfg.set_value("day", "state", day_dict())
+    cfg.set_value("deep", "state", deep_dict())
     # last: a file cut short never has this section, so it never counts as a resume point
     var head := {"version": VERSION, "mode": Campaign.mode, "day": Campaign.day, "clock": World.clock}
     cfg.set_value("resume", "head", head)
@@ -73210,7 +73324,59 @@ func player_dict() -> Dictionary:
     var seat := ""
     if p.state == "sitting" and p.seat != null and is_instance_valid(p.seat):
         seat = str(p.seat.name)
-    return {"room": scene.scene_file_path.get_file().get_basename(), "held": str(p.held), "sips": int(p.sips), "seat": seat}
+    var room := scene.scene_file_path.get_file().get_basename()
+    return {"room": room, "held": str(p.held), "sips": int(p.sips), "seat": seat, "x": float(p.position.x)}
+
+
+# true for values a ConfigFile can hold and give back unchanged (no objects, callables or signals anywhere inside)
+func plain(v: Variant) -> bool:
+    match typeof(v):
+        TYPE_OBJECT, TYPE_CALLABLE, TYPE_SIGNAL, TYPE_RID:
+            return false
+        TYPE_ARRAY:
+            for item in v:
+                if not plain(item):
+                    return false
+        TYPE_DICTIONARY:
+            for k in v:
+                if not plain(k) or not plain(v[k]):
+                    return false
+    return true
+
+
+# every plain-data script variable of the DEEP singletons: {singleton: {variable: value}}
+func deep_dict() -> Dictionary:
+    var out := {}
+    for who in DEEP:
+        var node := get_node_or_null("/root/" + who)
+        if node == null:
+            continue
+        var vars := {}
+        for p in node.get_property_list():
+            var key := str(p.name)
+            if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) == 0 or key == key.to_upper():
+                continue
+            var v: Variant = node.get(key)
+            if plain(v):
+                vars[key] = v
+        out[who] = vars
+    return out
+
+
+func apply_deep(d: Dictionary) -> void:
+    for who in d:
+        var node := get_node_or_null("/root/" + str(who))
+        if node == null or not (d[who] is Dictionary) or not DEEP.has(str(who)):
+            continue
+        for key in d[who]:
+            if str(key) in node:
+                node.set(str(key), d[who][key])
+    if Onsite.active:  # resumed at a client site: the office stays frozen until you drive back
+        Onsite._prev_msp = true
+        Onsite._prev_scale = 1.0
+        Msp.enabled = false
+        World.time_scale = 0.0
+    Playbook.changed.emit()
 
 
 # the per-day state that the day-begin hooks set up and the end-of-day sections do not carry
@@ -73240,6 +73406,7 @@ func apply(cfg: ConfigFile) -> void:
     apply_day(cfg.get_value("day", "state", {}))
     apply_world(cfg.get_value("world", "state", {}))
     apply_player(cfg.get_value("player", "state", {}))
+    apply_deep(cfg.get_value("deep", "state", {}))
 
 
 func apply_day(d: Dictionary) -> void:
@@ -73325,6 +73492,8 @@ func apply_player(d: Dictionary) -> void:
     if room != "" and ResourceLoader.exists("res://scenes/%s.tscn" % room):
         Campaign._resume_scene = room
         Game.vars["resume_seat"] = str(d.get("seat", ""))
+    if d.has("x"):
+        Game.vars["resume_x"] = float(d.x)
     Game.vars["held"] = str(d.get("held", ""))
     Game.vars["sips"] = int(d.get("sips", 0))
 ''')
@@ -78481,6 +78650,1013 @@ func _paint() -> void:
         var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
         PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
         PixelFont.draw(_canvas, text, at, Color.WHITE)
+write("scripts/seasons.gd", '''extends RefCounted
+# gdlint:disable=class-definitions-order,class-variable-name,max-line-length
+# R8 / R16: the campaign's calendar and its seasons. A static helper (no state of its own: what was already shown is in
+# Story.flags["season_seen"], saved with the campaign).
+#
+# The calendar: a run is one year in 20 units (days or weeks), from NOVEMBER 2013 to OCTOBER 2014 (Year 2: 2014-15).
+# Unit u is month (u - 1) * 12 / 20 of that year: 1-2 NOV, 3-4 DEC, 5 JAN, 6-7 FEB, 8-9 MAR, 10 APR, 11-12 MAY,
+# 13-14 JUN, 15 JUL, 16-17 AUG, 18-19 SEP, 20 OCT. The story fits: Morgan's Windows XP mail of day 4 is a warning in
+# December, the old "tax season" deck card sits in February to April.
+#
+# A SEASON is a span of units with a tag. Tags do three things:
+#  - deck cards and vignettes with a tag are only in the event deck's pool in season (Events.pool asks in_season();
+#    the draw itself still uses the seeded `events` stream). CARDS below are seasonal cards; TAGS tags existing ones.
+#  - one CALENDAR EVENT per season (EVENTS): a card at a fixed unit and time, announced on the HUD's next-up list
+#  - small office dressing on the main floor while the season runs (OfficeDecor draws dressing())
+# Free Play has no calendar (no season, no dressing).
+
+const MONTHS := ["NOV", "DEC", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT"]
+const FIRST_YEAR := 2013
+# id -> name, first and last unit, year (0 = every year, 1 = the first year only), dressing (what OfficeDecor draws)
+const SEASONS := {
+    "holidays": {"name": "THE HOLIDAYS", "from": 3, "to": 4, "year": 0, "dressing": "lights"},
+    "tax": {"name": "TAX SEASON", "from": 6, "to": 10, "year": 0, "dressing": "boxes"},
+    "xp": {"name": "XP END OF SUPPORT", "from": 9, "to": 10, "year": 1, "dressing": "countdown"},
+    "school": {"name": "BACK TO SCHOOL", "from": 17, "to": 18, "year": 0, "dressing": "drive"},
+}
+# existing deck cards and vignettes that only make sense in a season: id -> season
+const TAGS := {"tax_season": "tax"}
+# the season of each card in CARDS and each event in EVENTS
+const CARD_SEASON := {
+    "xmas_ecard": "holidays", "holiday_phones": "holidays", "tax_printer": "tax", "tax_updates": "tax",
+    "xp_six": "xp", "xp_sticker": "xp", "school_laptops": "school", "school_talk": "school",
+    "potluck": "holidays", "tax_basket": "tax", "xp_day": "xp", "supply_drive": "school",
+}
+# the calendar events: id -> [unit, clock]
+const EVENT_AT := {"potluck": [4, 12.2], "tax_basket": [8, 11.0], "xp_day": [10, 11.0], "supply_drive": [18, 11.5]}
+const EVENT_NAMES := {"potluck": "HOLIDAY POTLUCK", "tax_basket": "A BASKET ARRIVES", "xp_day": "XP SUPPORT ENDS", "supply_drive": "SUPPLY DRIVE"}
+const DROP_AT := 15.5  # a calendar event still waiting at this time is dropped for the year
+
+# seasonal cards for the event deck (the same shape as Events.DECK cards; min_day / max_day equal the season)
+const DEFAULT_CARDS := {
+    "xmas_ecard":
+    {
+        "id": "xmas_ecard", "kinds": ["both"], "min_day": 3, "max_day": 4, "weight": 1.6, "cooldown": 99, "requires": [],
+        "speaker": "A receptionist at a client",
+        "text": "Somebody opened a dancing elf e-card and now every screen up front has a toolbar nobody ordered. She says the elf looked trustworthy.",
+        "options":
+        [
+            {
+                "id": "clean", "label": "CLEAN THE MACHINES AND LEAVE THE ELF OUT OF IT",
+                "text": "Forty minutes and three toolbars later they are computers again. The elf was from her sister.",
+                "fx": {"xp": ["security", 2], "mood_all": 1, "hours": 0.4}
+            },
+            {
+                "id": "block", "label": "BLOCK THE E-CARD SITES AT THE FIREWALL",
+                "text": "Nobody notices until Valentine's Day.",
+                "fx": {"xp": ["networking", 2]}
+            },
+        ]
+    },
+    "holiday_phones":
+    {
+        "id": "holiday_phones", "kinds": ["both"], "min_day": 3, "max_day": 4, "weight": 1.6, "cooldown": 99, "requires": [],
+        "speaker": "{c}",
+        "text": "Half our clients close between the holidays. Somebody still has to watch the phones on the 26th, and everybody is looking at their shoes.",
+        "options":
+        [
+            {
+                "id": "me", "label": "TAKE THE 26TH. IT WILL BE QUIET",
+                "text": "It is quiet. One call, about a printer, from a man who is also the only one in his building.",
+                "fx": {"social": {"{c}": 2}, "rep": 1}
+            },
+            {
+                "id": "split", "label": "SPLIT IT INTO HALF DAYS",
+                "text": "Fair, and everybody still gets leftovers.",
+                "fx": {"social_all": 1}
+            },
+            {
+                "id": "vm", "label": "LET THE VOICEMAIL WORK FOR ONCE",
+                "text": "The voicemail does fine. It has no family.",
+                "fx": {}
+            },
+        ]
+    },
+    "tax_printer":
+    {
+        "id": "tax_printer", "kinds": ["both"], "min_day": 6, "max_day": 10, "weight": 1.4, "cooldown": 99, "requires": [],
+        "speaker": "A bookkeeper at a client",
+        "text": "The check printer started printing every return one line too low. It is the worst week of the year for that, and I would like you to know that I know that.",
+        "options":
+        [
+            {
+                "id": "now", "label": "DROP EVERYTHING AND FIX IT NOW",
+                "text": "A tray setting. She watches you fix it like a hawk and then offers you a mint.",
+                "fx": {"mood_all": 2, "hours": 0.3}
+            },
+            {
+                "id": "talk", "label": "TALK HER THROUGH THE TRAY SETTINGS",
+                "text": "It takes twice as long and she learns where the setting is. That is worth something in April.",
+                "fx": {"xp": ["people", 2], "mood_all": 1}
+            },
+        ]
+    },
+    "tax_updates":
+    {
+        "id": "tax_updates", "kinds": ["both"], "min_day": 6, "max_day": 10, "weight": 1.4, "cooldown": 99, "requires": [],
+        "speaker": "The accountant at a client",
+        "text": "We file on the fifteenth and the server wants to install updates tonight. I am not asking a question. I am telling you how nervous I am.",
+        "options":
+        [
+            {
+                "id": "hold", "label": "HOLD THE UPDATES UNTIL THE 16TH",
+                "text": "Nothing restarts. He sends a one-word thank-you, which from him is a parade.",
+                "fx": {"mood_all": 1}
+            },
+            {
+                "id": "patch", "label": "PATCH TONIGHT, AFTER A GOOD BACKUP",
+                "text": "It goes fine, and you were awake to see it.",
+                "fx": {"xp": ["servers", 3], "hours": 0.5}
+            },
+        ]
+    },
+    "xp_six":
+    {
+        "id": "xp_six", "kinds": ["both"], "min_day": 9, "max_day": 10, "weight": 1.8, "cooldown": 99, "requires": [],
+        "speaker": "An office manager at a client",
+        "text": "The article says our old computers stop being safe on April 8. We have six. One of them runs the label printer and nobody remembers how.",
+        "options":
+        [
+            {
+                "id": "plan", "label": "WRITE A REPLACEMENT PLAN, OLDEST FIRST",
+                "text": "Five get a date. The label machine gets a firewall rule and a note that says DO NOT TOUCH.",
+                "fx": {"xp": ["security", 3], "mood_all": 1}
+            },
+            {
+                "id": "quote", "label": "SEND A QUOTE FOR SIX NEW MACHINES",
+                "text": "They buy four. The other two will think about it until they catch something.",
+                "fx": {"mood_all": 1}
+            },
+        ]
+    },
+    "xp_sticker":
+    {
+        "id": "xp_sticker", "kinds": ["both"], "min_day": 9, "max_day": 10, "weight": 1.4, "cooldown": 99, "requires": [],
+        "speaker": "{c}",
+        "text": "I found a roll of DESIGNED FOR WINDOWS XP stickers in the supply closet. I have been putting them on things that are not computers.",
+        "options":
+        [
+            {
+                "id": "join", "label": "PUT ONE ON THE COFFEE MACHINE",
+                "text": "It has never been more accurate. The coffee machine is also out of support.",
+                "fx": {"social": {"{c}": 2}}
+            },
+            {
+                "id": "save", "label": "SAVE ONE FOR THE LAST XP BOX",
+                "text": "A small ceremony is planned. Somebody will say a few words.",
+                "fx": {"social_all": 1}
+            },
+        ]
+    },
+    "school_laptops":
+    {
+        "id": "school_laptops", "kinds": ["both"], "min_day": 17, "max_day": 18, "weight": 1.6, "cooldown": 99, "requires": [],
+        "speaker": "A front desk manager at a client",
+        "text": "Three of us have kids starting school and three family laptops showed up at the office this morning. They are acting slow. One has a sticker of a horse on it.",
+        "options":
+        [
+            {
+                "id": "lunch", "label": "CLEAN THEM UP OVER LUNCH",
+                "text": "Fourteen toolbars between the three. The horse one was the cleanest.",
+                "fx": {"mood_all": 2, "hours": 0.5}
+            },
+            {
+                "id": "tips", "label": "SEND A SHORT LIST OF WHAT TO UNINSTALL",
+                "text": "Two of three follow it. The third laptop comes back in October.",
+                "fx": {"xp": ["people", 2]}
+            },
+            {
+                "id": "no", "label": "POLITELY POINT AT THE AGREEMENT",
+                "text": "They understand. They also remember.",
+                "fx": {"mood_all": -1}
+            },
+        ]
+    },
+    "school_talk":
+    {
+        "id": "school_talk", "kinds": ["both"], "min_day": 17, "max_day": 18, "weight": 1.4, "cooldown": 99, "requires": [],
+        "speaker": "{c}",
+        "text": "A school counselor called. They want somebody to tell a class what working with computers is like. I said you, because you still remember being confused.",
+        "options":
+        [
+            {
+                "id": "go", "label": "DO IT. TWENTY MINUTES, ONE SLIDE",
+                "text": "The kids ask if you have ever met a hacker. You say yes, in a print queue. Only the teacher laughs.",
+                "fx": {"rep": 1, "hours": 0.5}
+            },
+            {
+                "id": "send", "label": "SEND A BOX OF DEAD HARD DRIVES INSTEAD",
+                "text": "The drives are a hit. One comes back missing.",
+                "fx": {"social": {"{c}": 1}}
+            },
+        ]
+    },
+}
+static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
+
+# the calendar events (one per season, at EVENT_AT): the same card shape, shown by tick()
+const DEFAULT_EVENTS := {
+    "potluck":
+    {
+        "id": "potluck", "kinds": ["both"], "min_day": 4, "max_day": 4, "weight": 1.0, "cooldown": 99, "requires": [],
+        "speaker": "The office",
+        "text": "The holiday potluck is on the conference table. There are four trays of the same meatballs and one salad nobody will admit to.",
+        "options":
+        [
+            {
+                "id": "stay", "label": "FILL A PLATE AND STAY A WHILE",
+                "text": "You hear about a cruise from 2009 and the correct way to load a dishwasher. It is nice.",
+                "fx": {"social_all": 2, "hours": 0.5}
+            },
+            {
+                "id": "cookies", "label": "PUT OUT THE COOKIES YOU BROUGHT",
+                "text": "Gone in six minutes. Somebody asks for the recipe and you say it is from a box.",
+                "fx": {"social_all": 2}
+            },
+            {
+                "id": "desk", "label": "TAKE A PLATE BACK TO YOUR DESK",
+                "text": "The meatballs are fine. The queue does not care what day it is.",
+                "fx": {"social_all": 1}
+            },
+        ]
+    },
+    "tax_basket":
+    {
+        "id": "tax_basket", "kinds": ["both"], "min_day": 8, "max_day": 8, "weight": 1.0, "cooldown": 99, "requires": [],
+        "speaker": "A delivery",
+        "text": "A fruit basket arrived from an accounting client. The card says: for keeping us running in the worst month. Please do not let anything break until the 16th.",
+        "options":
+        [
+            {
+                "id": "share", "label": "PUT IT IN THE KITCHENETTE FOR EVERYONE",
+                "text": "The pears go first. The card goes on the fridge.",
+                "fx": {"social_all": 1, "mood_all": 1}
+            },
+            {
+                "id": "call", "label": "CALL AND SAY THANK YOU",
+                "text": "They are surprised anybody calls about fruit. It lands well.",
+                "fx": {"mood_all": 2}
+            },
+        ]
+    },
+    "xp_day":
+    {
+        "id": "xp_day", "kinds": ["both"], "min_day": 10, "max_day": 10, "weight": 1.0, "cooldown": 99, "requires": [],
+        "speaker": "The office",
+        "text": "April 8. Support for Windows XP ends today. Somebody printed a banner on the plotter and taped it over the oldest machine in the building: YOU HAD A GOOD RUN.",
+        "options":
+        [
+            {
+                "id": "words", "label": "SAY A FEW WORDS",
+                "text": "You thank it for starting every morning since 2003. People clap. It does not shut down properly, one last time.",
+                "fx": {"social_all": 2}
+            },
+            {
+                "id": "chase", "label": "USE THE DAY TO CHASE THE LAST XP MACHINES",
+                "text": "Three clients finally sign off on replacements. Fear works where reminders did not.",
+                "fx": {"xp": ["security", 3], "mood_all": 2}
+            },
+        ]
+    },
+    "supply_drive":
+    {
+        "id": "supply_drive", "kinds": ["both"], "min_day": 18, "max_day": 18, "weight": 1.0, "cooldown": 99, "requires": [],
+        "speaker": "The office",
+        "text": "There is a box by the door for the school supply drive. So far it holds one glue stick and a mouse pad from a vendor.",
+        "options":
+        [
+            {
+                "id": "buy", "label": "PICK UP A BAG OF SUPPLIES AT LUNCH",
+                "text": "Pencils, notebooks and the good scissors. The box looks respectable now.",
+                "fx": {"social_all": 2, "hours": 0.3}
+            },
+            {
+                "id": "swag", "label": "DONATE FROM THE VENDOR SWAG DRAWER",
+                "text": "Forty pens and nine stress balls. Some classroom is about to be very well branded.",
+                "fx": {"social_all": 1}
+            },
+        ]
+    },
+}
+static var EVENTS: Dictionary = DEFAULT_EVENTS.duplicate(true)
+
+
+# ---- the calendar -----------------------------------------------------------------------------------
+static func month_index(unit: int) -> int:
+    return clampi(int(float(maxi(unit, 1) - 1) * 12.0 / float(Campaign.TOTAL_DAYS)), 0, 11)
+
+
+static func month(unit: int) -> String:
+    return str(MONTHS[month_index(unit)])
+
+
+# "DEC 2013" (Year 2 runs a year later)
+static func date_text(unit := -1, year := -1) -> String:
+    var u := Campaign.day if unit < 0 else unit
+    var y := Campaign.year if year < 0 else year
+    var m := month_index(u)
+    return "%s %d" % [MONTHS[m], FIRST_YEAR + (0 if m < 2 else 1) + maxi(0, y - 1)]
+
+
+# the season tags of a unit (in SEASONS order); year 1 or 2
+static func tags(unit: int, year := 1) -> Array:
+    var out := []
+    for id in SEASONS:
+        var s: Dictionary = SEASONS[id]
+        if unit >= int(s.from) and unit <= int(s.to) and (int(s.year) == 0 or int(s.year) == year):
+            out.append(str(id))
+    return out
+
+
+# today's seasons; none outside a campaign
+static func current() -> Array:
+    if not Campaign.active:
+        return []
+    return tags(Campaign.day, Campaign.year)
+
+
+static func season_name(id: String) -> String:
+    return str(SEASONS.get(id, {}).get("name", ""))
+
+
+# the season a deck card or vignette belongs to ("" = all year)
+static func season_of(id: String) -> String:
+    return str(CARD_SEASON.get(id, TAGS.get(id, "")))
+
+
+# may this card be drawn on this unit? Untagged cards always, tagged ones only in their season
+static func in_season(id: String, unit: int, year := 1) -> bool:
+    var s := season_of(id)
+    return s == "" or tags(unit, year).has(s)
+
+
+# what OfficeDecor draws today: the dressing names of the running seasons
+static func dressing() -> Array:
+    var out := []
+    for id in current():
+        out.append(str(SEASONS[id].dressing))
+    return out
+
+
+# ---- the calendar events ------------------------------------------------------------------------------
+# today's calendar event that has not been shown yet: {id, at, name}, or {}
+static func event_today() -> Dictionary:
+    if not Campaign.active:
+        return {}
+    var seen: Dictionary = Story.flags.get("season_seen", {})
+    for id in EVENT_AT:
+        if int(EVENT_AT[id][0]) != Campaign.day or seen.has(id):
+            continue
+        if not tags(Campaign.day, Campaign.year).has(season_of(str(id))):
+            continue
+        return {"id": str(id), "at": float(EVENT_AT[id][1]), "name": str(EVENT_NAMES[id])}
+    return {}
+
+
+static func _mark(id: String) -> void:
+    var seen: Dictionary = Story.flags.get("season_seen", {})
+    seen[id] = Campaign.day
+    Story.flags["season_seen"] = seen
+
+
+# called every frame by Events._process: shows today's calendar event at its time, at a calm moment
+static func tick() -> void:
+    if not Campaign.active or Game.title_mode:
+        return
+    var ev := event_today()
+    if ev.is_empty() or World.clock < float(ev.at):
+        return
+    if World.clock >= DROP_AT:
+        _mark(str(ev.id))  # the day got away (a trip, a long job): not this year
+        return
+    if World.time_scale <= 0.0 or Cards.is_open or Cards.waiting() > 0 or Game.ui_open:
+        return
+    if Expo.away or Onsite.busy or Outings.busy() or DayReport.is_open:
+        return
+    _mark(str(ev.id))
+    show_event(str(ev.id))
+
+
+static func show_event(id: String) -> void:
+    var card: Dictionary = EVENTS.get(id, {})
+    if card.is_empty():
+        return
+    var people: Array = Events.roster()
+    var c: Dictionary = Events.resolve(card, "" if people.is_empty() else str(people[0]))
+    var options := []
+    for o in c.options:
+        options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: Events._answer(c, pick))
+''')
+
+write("scripts/goals.gd", '''extends RefCounted
+# gdlint:disable=max-line-length,max-returns
+# R16 (cozy design review): the HUD's TODAY'S GOAL chip and NEXT-UP list. A static helper with no state: goal() is one
+# line saying what the day wants from you, next_up() the next two or three things coming (things with a time first,
+# then tonight, then tomorrow). Only what the player may already know is listed: the schedule (lunch, the all-hands,
+# closing time, an outing after work, on call tonight, a calendar event of the season), never a surprise mail or card.
+# Hud._draw calls draw(); a quick-play session (Micro) supplies its own goal line. Free Play shows nothing.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const Seasons := preload("res://scripts/seasons.gd")
+const Micro := preload("res://scripts/micro.gd")
+const MAX_NEXT := 3
+const SHORT_NEXT := 2  # on the short wide screen (128 px): the chip stays above the wall TV
+const GOAL_COLOR := Color("ffe08a")
+const NEXT_COLOR := Color(0.86, 0.9, 0.96, 0.95)
+const SHADE := Color(0.09, 0.07, 0.12, 0.9)
+const BACK := Color(0.04, 0.03, 0.08, 0.5)
+const LUNCH_AT := 12.0
+
+
+static func shown() -> bool:
+    return (Campaign.active or Micro.active()) and not Game.title_mode
+
+
+# one line: what today wants from you
+static func goal() -> String:
+    if Micro.active():
+        return Micro.goal()
+    if not Campaign.active:
+        return ""
+    var open: int = Msp.open_tickets().size()
+    match Campaign.mode:
+        "tech":
+            if Playbook.is_active():
+                return "FINISH THE JOB: %s" % str(Playbook.BOOKS[str(Playbook.active.id)].title)
+            if Onsite.active:
+                return "FINISH UP HERE AND DRIVE BACK"
+            if Onsite.has_open_job():
+                return "VISIT A CLIENT: SEE THE PSA"
+            if Campaign.day == 1 and Msp.closed_ok == 0:
+                return "CLOSE YOUR FIRST TICKET" if open > 0 else "OPEN THE COMPUTER AT YOUR DESK"
+            if open > 0:
+                return "CLEAR THE QUEUE: %d OPEN" % open
+            return "QUEUE CLEAR. STUDY OR SAY HI"
+        "service":
+            if open > 0:
+                return "KEEP THE BOARD MOVING: %d OPEN" % open
+            return "BOARD CLEAR. CHECK ON THE CREW"
+        "sales":
+            return "%s QUOTA %d%%: WORK THE PIPELINE" % [SalesCampaign.quarter_label(), SalesCampaign.quota_pct()]
+        "owner":
+            if Owner.cash < 0:
+                return "GET THE CASH BACK ABOVE ZERO"
+            return Owner.goal_title()
+    return ""
+
+
+static func _clock(at: float) -> String:
+    return "%d:%02d" % [int(at), int(round((at - floorf(at)) * 60.0))]
+
+
+# the next things coming, soonest first: [{at (clock, 99 = tonight, 100 = tomorrow), text}]
+static func next_up(limit := MAX_NEXT) -> Array:
+    var out := []
+    if not Campaign.active or Micro.active():
+        return out
+    var now: float = World.clock
+    var day: int = Campaign.day
+    var weekly: bool = str(Campaign.prop("unit", "DAY")) == "WEEK"
+    if not weekly and now < LUNCH_AT:
+        out.append({"at": LUNCH_AT, "text": "%s LUNCH" % _clock(LUNCH_AT)})
+    var ev: Dictionary = Seasons.event_today()
+    if not ev.is_empty() and now < float(ev.at):
+        out.append({"at": float(ev.at), "text": "%s %s" % [_clock(float(ev.at)), str(ev.name)]})
+    if Meeting.is_meeting_day(day) and Meeting.done_day != day and now < Meeting.CALL_AT:
+        out.append({"at": Meeting.CALL_AT, "text": "%s ALL-HANDS" % _clock(Meeting.CALL_AT)})
+    if now < World.DAY_END:
+        var close_text := "THE BOOKS CLOSE" if bool(Campaign.prop("books", false)) else "CLOSING TIME"
+        out.append({"at": World.DAY_END, "text": "%s %s" % [_clock(World.DAY_END), close_text]})
+    if (Campaign.mode == "tech" and Outings.TECH_DAYS.has(day)) or (Campaign.mode == "owner" and Outings.OWNER_WEEKS.has(day)):
+        out.append({"at": 99.0, "text": "AFTER WORK: A TEAM OUTING"})
+    if Shift.is_on_call():
+        out.append({"at": 99.5, "text": "TONIGHT: ON CALL"})
+    if day < Campaign.total_days():
+        var unit := "WEEK" if weekly else "DAY"
+        if Campaign.mode == "tech" and day + 1 == Expo.TRIP_DAY and Expo.qualified:
+            out.append({"at": 100.0, "text": "TOMORROW: THE CONFERENCE TRIP"})
+        for id in Seasons.tags(day + 1, Campaign.year):
+            if not Seasons.tags(day, Campaign.year).has(id):
+                out.append({"at": 100.5, "text": "NEXT %s: %s" % [unit, Seasons.season_name(str(id))]})
+    out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.at) < float(b.at))
+    return out.slice(0, limit)
+
+
+# the chip's text rows: ["GOAL: ...", "NEXT: ...", "      ...", ...] cut to max_chars
+static func rows(max_chars: int, compact := false, limit := MAX_NEXT) -> Array:
+    var out := []
+    var g := goal()
+    if g != "":
+        out.append(_fit("GOAL: " + g, max_chars))
+    if compact:
+        return out
+    var first := true
+    for item in next_up(limit):
+        out.append(_fit(("NEXT: " if first else "      ") + str(item.text), max_chars))
+        first = false
+    return out
+
+
+static func _fit(text: String, max_chars: int) -> String:
+    return text if text.length() <= max_chars else text.substr(0, maxi(1, max_chars - 1)) + "."
+
+
+# Drawn by the HUD under its own lines. Wide screens: right-aligned under the clock (two next-up rows on the short
+# 128 px screen); narrow ones (portrait): stacked under the left lines. `left_lines` = how many lines the HUD already drew on the left. Returns the rects it used.
+static func draw(canvas: CanvasItem, left_lines: int) -> Array:
+    var used := []
+    if not shown():
+        return used
+    var size := canvas.get_viewport_rect().size
+    var narrow := size.x < 260.0
+    var max_chars := int((size.x - 8.0) / 4.0) if narrow else 38
+    var list := rows(max_chars, Game.ui_open, SHORT_NEXT if size.y < 150.0 else MAX_NEXT)
+    var y := 4.0 + float(left_lines) * 8.0 + 2.0 if narrow else 11.0
+    var widest := 0.0
+    for row in list:
+        widest = maxf(widest, float(PixelFont.width(str(row))))
+    if not list.is_empty():  # a soft dark plate, so the chip reads over the wall, the TV and the ceiling
+        var px := 3.0 if narrow else size.x - widest - 3.0
+        canvas.draw_rect(Rect2(px - 2.0, y - 2.0, widest + 4.0, float(list.size()) * 7.0 + 2.0), BACK)
+    for i in list.size():
+        var text := str(list[i])
+        var w := float(PixelFont.width(text))
+        var x := 3.0 if narrow else size.x - w - 3.0
+        var color := GOAL_COLOR if i == 0 and text.begins_with("GOAL") else NEXT_COLOR
+        PixelFont.draw(canvas, text, Vector2(x + 1.0, y + 1.0), SHADE)
+        PixelFont.draw(canvas, text, Vector2(x, y), color)
+        used.append(Rect2(x, y, w, 5.0))
+        y += 7.0
+    return used
+''')
+
+write("scripts/micro.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# R16 (cozy design review): micro-sessions, the QUICK PLAY rows of the title menu. Both run on Free Play (no campaign,
+# no save, your saved look):
+#  - "outing": ONE OUTING. The Free Play toolbox launches one team game (Toolbox.queued, the same path as its GO
+#    button); the game rotates with every quick outing played (career counter micro_outings).
+#  - "tickets": ONE TICKET SHIFT. TARGET tickets land in the queue at once (drawn on the run's seeded `micro` stream);
+#    Free Play fixes take no time, so it is a few minutes at the desk. The HUD goal chip counts them down and a toast
+#    with your time ends it (career counters micro_shifts, micro_best = the fastest shift in seconds).
+# State is static (a session lives only as long as the Free Play run): Campaign.new_game and the title clear it.
+
+const OUTINGS := ["bowling", "karaoke", "escape", "dinner", "cornhole", "darts"]
+const TARGET := 5
+
+static var kind := ""  # "", "outing" or "tickets"
+static var base_closed := 0
+static var started_ms := 0
+static var game := ""  # the outing that was launched
+
+
+static func active() -> bool:
+    return kind != "" and not Campaign.active and not Game.title_mode
+
+
+static func clear() -> void:
+    kind = ""
+    game = ""
+
+
+# the game the next quick outing plays: they take turns
+static func next_outing() -> String:
+    return str(OUTINGS[Career.value("micro_outings") % OUTINGS.size()])
+
+
+# called by the title right after Free Play has started (the room is loading)
+static func begin(which: String) -> void:
+    clear()
+    if Campaign.active:
+        return
+    kind = which
+    started_ms = Time.get_ticks_msec()
+    match which:
+        "outing":
+            game = next_outing()
+            Toolbox.game_i = Toolbox.GAMES.find(game)
+            Toolbox.queued = true  # Toolbox.after_start launches it once the room is up
+            Career.add("micro_outings")
+        "tickets":
+            var r: RandomNumberGenerator = Difficulty.rng("micro")
+            var made := 0
+            for i in TARGET * 6:
+                if made >= TARGET:
+                    break
+                var t: Dictionary = Msp.create_ticket(r.randi() % Msp.CLIENTS.size(), r.randi() % Msp.PROBLEMS.size(), "email")
+                made += 0 if t.is_empty() else 1
+            base_closed = Msp.closed_ok
+            Hints.toast("ONE TICKET SHIFT: CLOSE %d TICKETS AT YOUR DESK" % TARGET, 5.0)
+        _:
+            kind = ""
+
+
+static func closed() -> int:
+    return clampi(Msp.closed_ok - base_closed, 0, TARGET)
+
+
+static func goal() -> String:
+    match kind:
+        "tickets":
+            return "ONE SHIFT: %d OF %d TICKETS CLOSED" % [closed(), TARGET]
+        "outing":
+            return "ONE OUTING: %s" % str(Outings.GAMES.get(game, {}).get("label", game.to_upper()))
+    return ""
+
+
+# called every frame by the HUD: ends the session when its goal is met
+static func tick() -> void:
+    if kind == "":
+        return
+    if Campaign.active or Game.title_mode:
+        clear()
+        return
+    if kind == "tickets" and closed() >= TARGET:
+        var secs := maxi(1, (Time.get_ticks_msec() - started_ms) / 1000)
+        Career.add("micro_shifts")
+        Career.fastest("micro_best", secs)
+        Hints.toast("SHIFT DONE: %d TICKETS IN %d:%02d. ESC FOR THE MENU, OR STAY A WHILE" % [TARGET, secs / 60, secs % 60], 7.0)
+        clear()
+    elif kind == "outing" and Toolbox.last_launch.get("game", "") == game and not Toolbox.queued and not Outings.is_open and not Outings.busy():
+        if Time.get_ticks_msec() - started_ms > 4000:
+            Hints.toast("THAT WAS ONE OUTING. ESC FOR THE MENU, OR STAY A WHILE", 6.0)
+            clear()
+''')
+
+write("scripts/office_decor.gd", '''extends Node2D
+# gdlint:disable=max-line-length
+# R16 (cozy design review): OFFICE GROWTH and the seasonal dressing of the main floor.
+# Growth: decor unlocked by reputation, cash and career medals, drawn in code on the main floor (no art files). What a
+# run has unlocked is Story.flags["decor"] (ids, saved with the campaign), so it stays when the reputation dips. check()
+# unlocks what the numbers allow and toasts it; the stage calls dress() when the main floor loads (the morning after a
+# good report is when you see it) and the node checks again every few seconds. Free Play shows no decor.
+# Dressing: the Seasons that run today add a small thing each (holiday lights, tax boxes, the XP countdown, the school
+# supply drive box). The node is a child of the room's Fx layer, so the lights-out tint covers it.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const Seasons := preload("res://scripts/seasons.gd")
+const INK := Color("17121f")
+# in unlock order: id, name (the toast and the collection page), rule [what, at least]
+const ITEMS := [
+    {"id": "plant", "name": "A TALL PLANT", "rule": ["rep", 55]},
+    {"id": "rug", "name": "A RUG BY THE DOOR", "rule": ["cash", 400]},
+    {"id": "certificate", "name": "A FRAMED CERTIFICATE", "rule": ["rep", 65]},
+    {"id": "trophy", "name": "A TROPHY SHELF", "rule": ["medals", 3]},
+    {"id": "fish", "name": "A FISH TANK", "rule": ["rep", 75]},
+    {"id": "neon", "name": "A NEON SIGN", "rule": ["cash", 1500]},
+    {"id": "trophies", "name": "MORE TROPHIES", "rule": ["medals", 8]},
+]
+const RULE_NAMES := {"rep": "REPUTATION", "cash": "CASH", "medals": "MEDALS"}
+const CHECK_SECS := 2.0
+
+var _t := 0.0
+var _check_t := 0.0
+var _drawn := ""  # what the last draw showed (redraw when it changes)
+
+
+# ---- the rules (static: the collection page and the tests ask without a room) ------------------------
+# what a rule measures now. Cash: the pay you have banked (tech, service) or, where the company's books are yours
+# (owner, sales), a tenth of what the books gained since the start
+static func measure(what: String) -> int:
+    match what:
+        "rep":
+            return Campaign.rep
+        "medals":
+            return Career.earned_count()
+        "cash":
+            if bool(Campaign.prop("books", false)):
+                return maxi(0, (Owner.cash - Owner.START_CASH) / 10)
+            return Campaign.cash
+    return 0
+
+
+static func unlocked() -> Array:
+    if not Campaign.active:
+        return []
+    var have: Variant = Story.flags.get("decor", [])
+    return have if have is Array else []
+
+
+static func has(id: String) -> bool:
+    return unlocked().has(id)
+
+
+static func item(id: String) -> Dictionary:
+    for it in ITEMS:
+        if str(it.id) == id:
+            return it
+    return {}
+
+
+# "REPUTATION 65" : what unlocks an item
+static func rule_text(it: Dictionary) -> String:
+    return "%s %d" % [str(RULE_NAMES[str(it.rule[0])]), int(it.rule[1])]
+
+
+# unlock everything the numbers allow now; returns the new ids (and toasts the first)
+static func check(toast := true) -> Array:
+    var fresh := []
+    if not Campaign.active or Game.title_mode:
+        return fresh
+    var have: Array = unlocked().duplicate()
+    for it in ITEMS:
+        if not have.has(str(it.id)) and measure(str(it.rule[0])) >= int(it.rule[1]):
+            have.append(str(it.id))
+            fresh.append(str(it.id))
+    if not fresh.is_empty():
+        Story.flags["decor"] = have
+        if toast:
+            Hints.toast("NEW IN THE OFFICE: %s" % str(item(str(fresh[0])).name), 5.0)
+    return fresh
+
+
+# called by the stage for every room: only the main floor gets the node
+static func dress(stage: Node) -> Node:
+    if stage.scene_file_path.get_file().get_basename() != "main_floor" or Game.title_mode:
+        return null
+    var layer := stage.get_node_or_null("Fx")
+    if layer == null:
+        return null
+    var node: Node2D = load("res://scripts/office_decor.gd").new()
+    node.name = "OfficeDecor"
+    layer.add_child(node)
+    layer.move_child(node, 0)
+    return node
+
+
+# ---- the node ---------------------------------------------------------------------------------------
+func _ready() -> void:
+    check()
+    queue_redraw()
+
+
+func _process(delta: float) -> void:
+    _t += delta
+    _check_t += delta
+    if _check_t >= CHECK_SECS:
+        _check_t = 0.0
+        check()
+    var key := "%s|%s|%d" % [str(unlocked()), str(Seasons.dressing()), int(_t * 2.0)]
+    if key != _drawn:
+        _drawn = key
+        queue_redraw()
+
+
+func _box(r: Rect2, fill: Color) -> void:
+    draw_rect(r.grow(1.0), INK)
+    draw_rect(r, fill)
+
+
+func _draw() -> void:
+    var have := unlocked()
+    var blink := int(_t * 2.0)
+    for season in Seasons.dressing():
+        match str(season):
+            "lights":
+                _lights(blink)
+            "boxes":
+                _tax_boxes()
+            "countdown":
+                _countdown()
+            "drive":
+                _drive_box()
+    if have.has("rug"):
+        _box(Rect2(14.0, 101.0, 36.0, 7.0), Color("8c2b40"))
+        draw_rect(Rect2(16.0, 103.0, 32.0, 3.0), Color("c8a05a"))
+        draw_rect(Rect2(18.0, 104.0, 28.0, 1.0), Color("8c2b40"))
+    if have.has("plant"):
+        _box(Rect2(142.0, 84.0, 5.0, 6.0), Color("a8643c"))
+        draw_rect(Rect2(144.0, 72.0, 1.0, 12.0), Color("3f7a34"))
+        for leaf in [[140, 70, 4, 3], [145, 67, 3, 3], [141, 63, 3, 4], [145, 73, 3, 3], [140, 76, 3, 2]]:
+            _box(Rect2(float(leaf[0]), float(leaf[1]), float(leaf[2]), float(leaf[3])), Color("5fb04a"))
+    if have.has("certificate"):
+        _box(Rect2(99.0, 22.0, 11.0, 9.0), Color("c8a05a"))
+        draw_rect(Rect2(100.0, 23.0, 9.0, 7.0), Color("f4f2ea"))
+        draw_rect(Rect2(101.0, 24.0, 7.0, 1.0), Color("3a3f66"))
+        draw_rect(Rect2(101.0, 26.0, 5.0, 1.0), Color("9aa0a8"))
+        draw_rect(Rect2(106.0, 27.0, 2.0, 2.0), Color("f5d442"))
+    if have.has("fish"):
+        _box(Rect2(134.0, 44.0, 14.0, 1.0), Color("a8643c"))
+        _box(Rect2(135.0, 35.0, 12.0, 8.0), Color("6fc3e8"))
+        draw_rect(Rect2(135.0, 42.0, 12.0, 1.0), Color("d8c690"))
+        draw_rect(Rect2(144.0, 39.0, 1.0, 3.0), Color("3f7a34"))
+        var fx := 136.0 + float(absi((blink % 14) - 7))
+        draw_rect(Rect2(fx, 38.0, 2.0, 1.0), Color("ff8a3c"))
+    if have.has("trophy") or have.has("trophies"):
+        _box(Rect2(306.0, 47.0, 30.0, 1.0), Color("a8643c"))
+        _trophy(310.0)
+        if have.has("trophies"):
+            _trophy(319.0)
+            _trophy(328.0)
+    if have.has("neon"):
+        var glow := Color("ff6fb5") if blink % 9 != 0 else Color("b84a80")
+        _box(Rect2(165.0, 7.0, 35.0, 7.0), Color("241a2e"))  # over the first office door
+        PixelFont.draw(self, "PIXEL IT", Vector2(167.0, 8.0), glow)
+
+
+func _trophy(x: float) -> void:
+    _box(Rect2(x, 39.0, 5.0, 4.0), Color("f5d442"))
+    draw_rect(Rect2(x + 2.0, 43.0, 1.0, 2.0), Color("c8a05a"))
+    _box(Rect2(x + 1.0, 45.0, 3.0, 1.0), Color("c8a05a"))
+
+
+func _lights(blink: int) -> void:
+    var colors := [Color("e0463c"), Color("5fd068"), Color("f5d442"), Color("5aa0e8")]
+    var i := 0
+    var x := 82.0
+    while x < 360.0:
+        var sag := 1.0 if i % 2 == 0 else 2.0
+        draw_rect(Rect2(x, 2.0 + sag - 1.0, 8.0, 1.0), INK)
+        var lit := (i + blink) % 3 != 0
+        draw_rect(Rect2(x + 3.0, 2.0 + sag, 2.0, 2.0), colors[i % colors.size()] if lit else Color("4a4a55"))
+        x += 8.0
+        i += 1
+
+
+func _tax_boxes() -> void:
+    for k in 3:
+        _box(Rect2(151.0 + float(k % 2), 84.0 - float(k) * 7.0, 11.0, 6.0), Color("c8a878"))
+        draw_rect(Rect2(155.0 + float(k % 2), 86.0 - float(k) * 7.0, 4.0, 2.0), Color("f4f2ea"))
+
+
+func _countdown() -> void:
+    _box(Rect2(132.0, 14.0, 17.0, 15.0), Color("f4f2ea"))
+    PixelFont.draw(self, "XP", Vector2(137.0, 16.0), Color("3a62a8"))
+    PixelFont.draw(self, "APR8", Vector2(133.0, 23.0), Color("e0463c"))
+
+
+func _drive_box() -> void:
+    _box(Rect2(45.0, 80.0, 11.0, 7.0), Color("c8a878"))  # inside the entrance, by the door
+    draw_rect(Rect2(47.0, 76.0, 1.0, 4.0), Color("f5d442"))
+    draw_rect(Rect2(50.0, 75.0, 1.0, 5.0), Color("e0463c"))
+    draw_rect(Rect2(53.0, 77.0, 1.0, 3.0), Color("5aa0e8"))
+''')
+
+write("scripts/collection.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# R16 (cozy design review): the COLLECTION pages of the career screen and the cast RELATIONSHIP LEVELS. Static, no state:
+# everything shown comes from the Career counters (lifetime) plus, while a campaign runs, this run's numbers.
+#
+# Collection: the cast you have met and your level with each, the karaoke songs you have sung, the escape room clue
+# recipes you have seen, the printer models you have beaten, the medal count and the decor of this run's office.
+# Career keys: met.<name> / cast_met, rel.<name> (best level), song.<id> / songs_sung, recipe.<id> / recipes_seen
+# (Career.note_outing fills the last two), pr.<model> (PrinterGame).
+#
+# Relationship levels: Social.value(who) (-100..100, 0 at the start) read as a level 0-4 (LEVELS). Social.change calls
+# note_change(): the first time a run reaches a level with somebody you get a toast with their line, the career keeps
+# the best level, and from FRIEND up they leave a coffee on your desk (+COFFEE energy, the tech campaign's Shift only).
+# The levels this run has reached are Story.flags["rel_lv"] (saved with the campaign), so a level is announced once.
+
+const UiStyle := preload("res://scripts/ui_style.gd")
+const OfficeDecor := preload("res://scripts/office_decor.gd")
+const COFFEE := 3.0  # energy for the coffee at levels 3 and 4
+# level -> the Social value it starts at, its name, the line they say and the perk as shown on the page
+const LEVELS := [
+    {"at": -999, "name": "NEW FACE", "line": "", "perk": ""},
+    {"at": 10, "name": "COWORKER", "line": "YOU ARE ALRIGHT. I WILL STOP PRETENDING TO BE ON A CALL WHEN YOU WALK UP.", "perk": "A NOD IN THE HALLWAY"},
+    {"at": 25, "name": "LUNCH BUDDY", "line": "LUNCH? I AM BUYING THE FIRST ONE. AFTER THAT WE KEEP SCORE.", "perk": "A SEAT AT LUNCH"},
+    {"at": 45, "name": "FRIEND", "line": "I LEFT A COFFEE ON YOUR DESK. DO NOT MAKE IT WEIRD.", "perk": "A COFFEE ON YOUR DESK"},
+    {"at": 70, "name": "WORK FAMILY", "line": "IF YOU EVER LEAVE, TELL ME FIRST. I WILL NEED TIME TO UPDATE MY RESUME TOO.", "perk": "ANOTHER COFFEE, AND THEY MEAN IT"},
+]
+const PRINTERS := [["laser", "LASER"], ["inkjet", "INKJET"], ["plotter", "PLOTTER"], ["mfp", "COPIER"], ["receipt", "RECEIPT"], ["dot", "DOT MATRIX"], ["line", "THE LINE PRINTER"]]
+
+
+# ---- relationship levels ------------------------------------------------------------------------------
+static func level_of(value: int) -> int:
+    var lv := 0
+    for i in LEVELS.size():
+        if value >= int(LEVELS[i].at):
+            lv = i
+    return lv
+
+
+static func level_name(lv: int) -> String:
+    return str(LEVELS[clampi(lv, 0, LEVELS.size() - 1)].name)
+
+
+# this run's level with somebody (0 outside a campaign)
+static func level(who: String) -> int:
+    return level_of(Social.value(who)) if Campaign.active else 0
+
+
+# the best level ever reached with somebody, this run included
+static func best_level(who: String) -> int:
+    return maxi(Career.value("rel." + who), level(who))
+
+
+# the Social value still missing for the next level (0 at the top)
+static func to_next(who: String) -> int:
+    var lv := level(who)
+    if lv >= LEVELS.size() - 1:
+        return 0
+    return maxi(0, int(LEVELS[lv + 1].at) - Social.value(who))
+
+
+# Social.change calls this after every move; returns the level newly reached (0 = none)
+static func note_change(who: String, _before: int, after: int) -> int:
+    if not Campaign.active:
+        return 0
+    var lv := level_of(after)
+    var seen: Dictionary = Story.flags.get("rel_lv", {})
+    if lv <= int(seen.get(who, 0)):
+        return 0
+    seen[who] = lv
+    Story.flags["rel_lv"] = seen
+    Career.note_first("met", who, "cast_met")
+    Career.best("rel." + who, lv)
+    var perk := ""
+    if lv >= 3 and Shift.active():
+        Shift.add_energy(COFFEE)
+        perk = " +%d ENERGY." % int(COFFEE)
+    Hints.toast("%s, LEVEL %d: %s. \\"%s\\"%s" % [who.to_upper(), lv, level_name(lv), str(LEVELS[lv].line), perk], 7.0)
+    return lv
+
+
+# ---- the collection pages -------------------------------------------------------------------------------
+static func _seen(key: String) -> bool:
+    return Career.value(key) > 0
+
+
+# every row of the collection: {head} or {label, value, on}
+static func items() -> Array:
+    var out := []
+    var met := 0
+    var cast := []
+    for who in Social.ALL:
+        var known: bool = _seen("met." + who) or best_level(who) > 0
+        met += 1 if known else 0
+        var lv := best_level(who)
+        cast.append({"label": str(who).to_upper(), "value": ("LV %d %s" % [lv, level_name(lv)]) if known else "NOT MET", "on": known})
+    out.append({"head": "THE CAST %d/%d" % [met, Social.ALL.size()]})
+    out.append_array(cast)
+    var sung := 0
+    var songs := []
+    for s in Outings.SONGS:
+        var got := _seen("song." + str(s.id))
+        sung += 1 if got else 0
+        songs.append({"label": str(s.title), "value": "SUNG" if got else "-", "on": got})
+    out.append({"head": "KARAOKE SONGS %d/%d" % [sung, Outings.SONGS.size()]})
+    out.append_array(songs)
+    var seen_n := 0
+    var recipes := []
+    for zone in Outings.CLUE_ZONES:
+        for rc in Outings.RECIPES[zone]:
+            var got := _seen("recipe." + str(rc))
+            seen_n += 1 if got else 0
+            recipes.append({"label": "%s: %s" % [str(zone).to_upper(), str(rc).to_upper()], "value": "SEEN" if got else "-", "on": got})
+    out.append({"head": "ESCAPE CLUES %d/%d" % [seen_n, recipes.size()]})
+    out.append_array(recipes)
+    var beaten := 0
+    var printers := []
+    for p in PRINTERS:
+        var n := Career.value("pr." + str(p[0]))
+        beaten += 1 if n > 0 else 0
+        printers.append({"label": str(p[1]), "value": ("%d WIN%s" % [n, "" if n == 1 else "S"]) if n > 0 else "-", "on": n > 0})
+    out.append({"head": "PRINTERS BEATEN %d/%d" % [beaten, PRINTERS.size()]})
+    out.append_array(printers)
+    out.append({"head": "MEDALS"})
+    out.append({"label": "EARNED", "value": "%d/%d" % [Career.earned_count(), Career.MEDALS.size()], "on": Career.earned_count() > 0})
+    out.append({"head": "THE OFFICE (THIS RUN)"})
+    for it in OfficeDecor.ITEMS:
+        var here: bool = OfficeDecor.has(str(it.id))
+        out.append({"label": str(it.name), "value": "HERE" if here else OfficeDecor.rule_text(it), "on": here})
+    return out
+
+
+# the rows cut into pages of `cap` rows; a section title never sits alone at the bottom of a page
+static func pages(cap: int) -> Array:
+    var out := []
+    var all := items()
+    var i := 0
+    while i < all.size():
+        var chunk: Array = all.slice(i, i + maxi(2, cap))
+        if chunk.size() == maxi(2, cap) and chunk.back().has("head"):
+            chunk.pop_back()
+        i += chunk.size()
+        out.append({"title": "COLLECTION", "rows": chunk})
+    return out
+
+
+# drawn by the career screen inside its panel body, in columns of `colw`
+static func draw(canvas: CanvasItem, rows: Array, body: Rect2, colw: float, gap: float, row_h: float) -> void:
+    var per_col := maxi(1, int(body.size.y / row_h))
+    var chars := int(colw / 4.0)
+    for i in rows.size():
+        var it: Dictionary = rows[i]
+        var cx := body.position.x + float(i / per_col) * (colw + gap)
+        var cy := body.position.y + float(i % per_col) * row_h
+        if it.has("head"):
+            UiStyle.text(canvas, str(it.head), cx, cy, UiStyle.HEAD)
+            canvas.draw_rect(Rect2(cx, cy + 6.0, colw, 1.0), UiStyle.SOFT)
+            continue
+        var value := str(it.value)
+        var label := str(it.label).substr(0, maxi(4, chars - value.length() - 1))
+        var on: bool = bool(it.on)
+        UiStyle.text(canvas, label, cx, cy, UiStyle.INK if on else UiStyle.MUTED)
+        UiStyle.right(canvas, value, cx + colw, cy, UiStyle.GOLD.darkened(0.35) if on else UiStyle.MUTED)
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

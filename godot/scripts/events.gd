@@ -9,6 +9,7 @@ extends Node
 # share the same draw. Keep every magnitude small: a card must never make the day unwinnable.
 
 const VERSION := 1
+const Seasons := preload("res://scripts/seasons.gd")  # R8: seasonal tags, seasonal cards, the calendar events
 const KINDS := ["tech", "owner", "both"]
 const SKILLS := ["networking", "servers", "security", "people"]
 const FX_KEYS := ["xp", "mood", "mood_all", "rep", "social", "social_all", "energy", "hours", "cash", "burnout"]
@@ -2350,15 +2351,26 @@ func pool(day: int, mode: String) -> Array:
 			continue
 		if _cooled(str(id), int(card.cooldown), day) or not _requires_ok(card):
 			continue
+		if not Seasons.in_season(str(id), day, Campaign.year):
+			continue  # R8: a card with a seasonal tag is only in the pool in its season
 		if _valid(str(id), card, false):
 			out.append({"deck": "event", "id": str(id), "weight": float(card.weight) * Mutators.boost(str(id))})
+	for id in Seasons.CARDS:  # R8: the seasonal cards
+		var seasonal: Dictionary = Seasons.CARDS[id]
+		var s_kinds: Array = seasonal.get("kinds", [])
+		if not (s_kinds.has("tech" if mode == "service" else mode) or s_kinds.has("both")):
+			continue
+		if not Seasons.in_season(str(id), day, Campaign.year) or _cooled(str(id), int(seasonal.cooldown), day):
+			continue
+		if _requires_ok(seasonal) and _valid(str(id), seasonal, false):
+			out.append({"deck": "event", "id": str(id), "weight": float(seasonal.weight) * Mutators.boost(str(id))})
 	if mode == "tech":
 		for id in Story.VIGNETTES:
 			var v: Dictionary = Story.VIGNETTES[id]
 			if not v.has("min_day") or day < int(v.min_day) or day > int(v.get("max_day", 99)):
 				continue
-			if last.has(str(id)):
-				continue  # a vignette is shown once a run
+			if last.has(str(id)) or not Seasons.in_season(str(id), day, Campaign.year):
+				continue  # a vignette is shown once a run (and a tagged one only in its season)
 			if _valid(str(id), v, true):
 				out.append({"deck": "vignette", "id": str(id), "weight": float(v.get("weight", 1.0))})
 	return out
@@ -2405,6 +2417,7 @@ func begin_day(day: int) -> void:
 
 
 func _process(_delta: float) -> void:
+	Seasons.tick()  # the calendar event of the season, at its own time
 	if pending.is_empty() or not Campaign.active or Game.title_mode:
 		return
 	if World.clock >= LATEST:
@@ -2427,7 +2440,7 @@ func show_draw(draw: Dictionary) -> void:
 	if str(draw.deck) == "vignette":
 		Story.fire({"kind": "vignette", "id": str(draw.id)})
 		return
-	var card: Dictionary = DECK.get(str(draw.id), {})
+	var card: Dictionary = card_of(str(draw.id))
 	if card.is_empty():
 		return
 	var c := resolve(card, str(draw.get("who", "")))
@@ -2435,6 +2448,11 @@ func show_draw(draw: Dictionary) -> void:
 	for o in c.options:
 		options.append({"label": str(o.label), "id": str(o.id)})
 	Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
+
+
+# a deck card by id: the ordinary deck, or a seasonal card (Seasons.CARDS); {} when there is none
+func card_of(id: String) -> Dictionary:
+	return DECK.get(id, Seasons.CARDS.get(id, {}))
 
 
 # a copy of the card with {c} replaced by a coworker's name

@@ -9,6 +9,7 @@ signal closed
 
 const UiStyle := preload("res://scripts/ui_style.gd")
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Collection := preload("res://scripts/collection.gd")  # R16: the collection pages
 const MEDAL_H := 16.0
 const ROW_H := 7.0
 const HEAD_ROW_H := 9.0
@@ -59,6 +60,8 @@ func _input(event: InputEvent) -> void:
 		var dir := Controls.nav(event)
 		if Controls.word(event) == "f9":
 			Game.cycle_format()
+		elif Controls.word(event) == "c":
+			go_collection()
 		elif dir == "left":
 			go(-1)
 		elif dir == "right":
@@ -155,8 +158,22 @@ func build(size: Vector2) -> void:
 	var n_pages := int(ceil(float(Career.MEDALS.size()) / float(cap_m)))
 	for p in n_pages:
 		pages.append({"title": "CAREER - MEDALS %d/%d" % [Career.earned_count(), Career.MEDALS.size()], "medals": Career.MEDALS.slice(p * cap_m, (p + 1) * cap_m)})
+	for coll in Collection.pages(cap_c):
+		coll["title"] = "CAREER - COLLECTION"
+		pages.append(coll)
 	page = clampi(page, 0, maxi(0, pages.size() - 1))
 	_built_for = size
+
+
+# C: jump to the first collection page (cast, songs, clue recipes, printers, medals, the office)
+func go_collection() -> void:
+	for i in pages.size():
+		if pages[i].has("rows"):
+			page = i
+			sel = 0
+			detail = false
+			queue_redraw()
+			return
 
 
 func _fmt(v: int, fmt: String) -> String:
@@ -186,11 +203,13 @@ func _draw() -> void:
 		_draw_counters(pg.items, body, cols, colw, gap)
 	elif pg.has("mastery"):
 		_draw_mastery(body, cols, colw, gap)
+	elif pg.has("rows"):
+		Collection.draw(self, pg.rows, body, colw, gap, ROW_H)
 	else:
 		_draw_medals(pg.medals, body, cols, colw, gap)
 		if detail and sel < pg.medals.size():
 			_draw_detail(size, pg.medals[sel])
-	UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK"))
+	UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC"))
 	_button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))

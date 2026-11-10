@@ -8,7 +8,10 @@ extends Node
 #    ends and the per-day odds and ends of Shift, Social, Events, Onsite, Outings and Meeting
 #  - write(): temp file, check it reads back, keep the old one as .bak, rename into place
 
-const VERSION := 1
+const VERSION := 2
+# step 5: these singletons are saved whole (every plain-data script variable, not the patchable tables in capitals):
+# the Playbook job in progress, the onsite visit, and the owner / service / sales week under way
+const DEEP := ["Playbook", "Onsite", "Owner", "Partner", "Service", "ServiceArc", "SalesCampaign", "Crew", "Projects"]
 
 
 func _ready() -> void:
@@ -53,6 +56,7 @@ func capture(cfg: ConfigFile) -> void:
 	cfg.set_value("world", "state", world_dict())
 	cfg.set_value("player", "state", player_dict())
 	cfg.set_value("day", "state", day_dict())
+	cfg.set_value("deep", "state", deep_dict())
 	# last: a file cut short never has this section, so it never counts as a resume point
 	var head := {"version": VERSION, "mode": Campaign.mode, "day": Campaign.day, "clock": World.clock}
 	cfg.set_value("resume", "head", head)
@@ -80,7 +84,59 @@ func player_dict() -> Dictionary:
 	var seat := ""
 	if p.state == "sitting" and p.seat != null and is_instance_valid(p.seat):
 		seat = str(p.seat.name)
-	return {"room": scene.scene_file_path.get_file().get_basename(), "held": str(p.held), "sips": int(p.sips), "seat": seat}
+	var room := scene.scene_file_path.get_file().get_basename()
+	return {"room": room, "held": str(p.held), "sips": int(p.sips), "seat": seat, "x": float(p.position.x)}
+
+
+# true for values a ConfigFile can hold and give back unchanged (no objects, callables or signals anywhere inside)
+func plain(v: Variant) -> bool:
+	match typeof(v):
+		TYPE_OBJECT, TYPE_CALLABLE, TYPE_SIGNAL, TYPE_RID:
+			return false
+		TYPE_ARRAY:
+			for item in v:
+				if not plain(item):
+					return false
+		TYPE_DICTIONARY:
+			for k in v:
+				if not plain(k) or not plain(v[k]):
+					return false
+	return true
+
+
+# every plain-data script variable of the DEEP singletons: {singleton: {variable: value}}
+func deep_dict() -> Dictionary:
+	var out := {}
+	for who in DEEP:
+		var node := get_node_or_null("/root/" + who)
+		if node == null:
+			continue
+		var vars := {}
+		for p in node.get_property_list():
+			var key := str(p.name)
+			if (int(p.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE) == 0 or key == key.to_upper():
+				continue
+			var v: Variant = node.get(key)
+			if plain(v):
+				vars[key] = v
+		out[who] = vars
+	return out
+
+
+func apply_deep(d: Dictionary) -> void:
+	for who in d:
+		var node := get_node_or_null("/root/" + str(who))
+		if node == null or not (d[who] is Dictionary) or not DEEP.has(str(who)):
+			continue
+		for key in d[who]:
+			if str(key) in node:
+				node.set(str(key), d[who][key])
+	if Onsite.active:  # resumed at a client site: the office stays frozen until you drive back
+		Onsite._prev_msp = true
+		Onsite._prev_scale = 1.0
+		Msp.enabled = false
+		World.time_scale = 0.0
+	Playbook.changed.emit()
 
 
 # the per-day state that the day-begin hooks set up and the end-of-day sections do not carry
@@ -110,6 +166,7 @@ func apply(cfg: ConfigFile) -> void:
 	apply_day(cfg.get_value("day", "state", {}))
 	apply_world(cfg.get_value("world", "state", {}))
 	apply_player(cfg.get_value("player", "state", {}))
+	apply_deep(cfg.get_value("deep", "state", {}))
 
 
 func apply_day(d: Dictionary) -> void:
@@ -195,5 +252,7 @@ func apply_player(d: Dictionary) -> void:
 	if room != "" and ResourceLoader.exists("res://scenes/%s.tscn" % room):
 		Campaign._resume_scene = room
 		Game.vars["resume_seat"] = str(d.get("seat", ""))
+	if d.has("x"):
+		Game.vars["resume_x"] = float(d.x)
 	Game.vars["held"] = str(d.get("held", ""))
 	Game.vars["sips"] = int(d.get("sips", 0))

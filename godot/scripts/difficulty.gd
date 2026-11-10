@@ -72,6 +72,8 @@ const COZY := {
 	"ransom_rep": -5,  # reputation lost when ransomware files are gone (15 normally)
 	"drain": 0.5,  # x on the energy drain
 	"poach": 0.5,  # x on the rival's poaching risk
+	"first_ticket": 20.0,  # seconds before the first ticket of day 1 (75 normally)
+	"page_chance": 0.25,  # the pager's chance on an on-call night (0.6 normally), and one page a week at most
 }
 const DEFAULT_COZY_TEXT := {
 	"probation_tech": "Nobody is getting fired. The numbers are soft, so the owners are calling it a friendly probation. Just be here tomorrow and we will take it one ticket at a time. - Morgan",
@@ -103,6 +105,7 @@ const DEFAULT_COZY_TEXT := {
 	"coach_first": ": A WORD WITH GARRISON",
 	"coach_second": ": ANOTHER LOOK",
 	"open_row": "STILL OPEN, CARRIED OVER",
+	"grade_c": "C IS A STEADY DAY. THE DESK KEPT RUNNING AND NOBODY IS KEEPING SCORE.",
 }
 var COZY_TEXT: Dictionary = DEFAULT_COZY_TEXT.duplicate(true)
 const TABLE := {

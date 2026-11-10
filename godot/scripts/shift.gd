@@ -81,6 +81,7 @@ var _last_reason := ""
 var _stay_until := 0.0
 var _warned := 0
 var _oncall_pay := 0
+var _paged_week := -1  # cozy Easy: the on-call week that already had its page
 
 
 func _ready() -> void:
@@ -98,6 +99,7 @@ func reset() -> void:
 	pages_fixed = 0
 	pages_ignored = 0
 	last_note = ""
+	_paged_week = -1
 	_asked = false
 	_stay_until = 0.0
 	_warned = 0
@@ -182,10 +184,20 @@ func begin_day(day: int) -> void:
 	if Expo.is_trip_day(day):
 		return
 	World.time_scale = 0.0
-	if on_call(day - 1) and Difficulty.rng("shift").randf() < PAGE_CHANCE:
+	if on_call(day - 1) and Difficulty.rng("shift").randf() < Difficulty.cz("page_chance", PAGE_CHANCE) and not _cozy_paged(day):
 		_page_card()
 	else:
 		commute_card()
+
+
+# cozy Easy: one page at most in an on-call week (true = this week had its page already)
+func _cozy_paged(day: int) -> bool:
+	if not Difficulty.cozy_on():
+		return false
+	if _paged_week == week_of(day - 1):
+		return true
+	_paged_week = week_of(day - 1)
+	return false
 
 
 # a random line that is not the one used last time
@@ -301,7 +313,7 @@ func commute(choice: String) -> void:
 		_last_reason = reason
 		add_energy(-3.0)
 	late_min = maxi(0, delay)
-	add_energy(float(c.energy))
+	add_energy(maxf(0.0, float(c.energy)) if Difficulty.cozy_on() else float(c.energy))  # cozy Easy: an early start costs nothing
 	if late_min >= 10:
 		late_total += 1
 	var waiting := _arrive(reason)

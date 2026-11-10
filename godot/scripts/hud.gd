@@ -16,6 +16,8 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
+const Micro := preload("res://scripts/micro.gd")
 
 var _acc := 0.0
 
@@ -30,6 +32,7 @@ func modal_open() -> bool:
 func _process(delta: float) -> void:
 	# the card header sits over the HUD text, so hide it while a card or any panel is up
 	visible = World.hud_visible and not modal_open()
+	Micro.tick()
 	_acc += delta
 	if not Phone.banner.is_empty():
 		queue_redraw()  # the notification banner slides every frame
@@ -100,6 +103,8 @@ func _draw() -> void:
 		for i in lines.size():
 			PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
 			PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
+		if Phone.banner.is_empty():
+			Goals.draw(self, lines.size())
 		if Hints.toast_text != "" and not Game.ui_open:
 			_draw_hint(Hints.toast_text)
 		elif Hints.text != "" and not Game.ui_open:

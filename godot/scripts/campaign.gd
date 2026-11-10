@@ -506,11 +506,11 @@ func resume_path(for_mode: String, for_slot := 0) -> String:
 
 # the safe-moment gate: a campaign running, nothing open that holds a callable or a half-played game
 func can_snapshot() -> bool:
-	if not active or mode != "tech" or Game.title_mode or Game.busy or _awaiting:
+	if not active or not is_selectable(mode) or Game.title_mode or Game.busy or _awaiting:
 		return false
 	if World.clock < World.DAY_START or World.clock >= World.DAY_END:
 		return false
-	if Story.overtime or Playbook.is_active() or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
+	if Story.overtime or Net.carrying != "" or Expo.away or Expo.is_trip_day(day):
 		return false
 	return not _something_open()
 
@@ -521,7 +521,8 @@ func _something_open() -> bool:
 		return true
 	if DayReport.is_open or Review.is_open or Toolbox.is_open:
 		return true
-	return Outings.busy() or Outings.is_open or PrinterGame.is_open or Onsite.busy or Onsite.active
+	# step 5: standing at a client site is a safe moment (Resume keeps the visit); the drive itself is not
+	return Outings.busy() or Outings.is_open or PrinterGame.is_open or (Onsite.busy and not Onsite.active)
 
 
 # writes the resume point now; false (and the last good one stays) when it is not a safe moment or the write fails
@@ -776,6 +777,8 @@ func _end_day() -> void:
 func _cozy_close(r: Dictionary) -> void:
 	r["cozy"] = true
 	var notes: Array = []
+	if str(r.get("grade", "")) == "D":
+		r["grade"] = "C"  # the grade floor: on Easy the worst day is a C
 	if bool(r.get("bankrupt", false)):
 		r["bankrupt"] = false
 		if Owner.bailout == 0:
@@ -793,6 +796,8 @@ func _cozy_close(r: Dictionary) -> void:
 		notes.append(Difficulty.ct("probation_note"))
 		var sender := {"owner": "Christy", "sales": "John"}.get(mode, "Morgan") as String
 		Msp.send_text(sender, Difficulty.ct("probation_" + mode))
+	if str(r.get("grade", "")) == "C":
+		notes.append(Difficulty.ct("grade_c"))  # a C comes with a calm line, so it does not read as failing
 	if not notes.is_empty():
 		r["notes"] = notes
 

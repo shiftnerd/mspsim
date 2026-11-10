@@ -11,6 +11,7 @@ const LOGO_SMALL := preload("res://assets/ui/mspsim_logo_s.png")
 const PROMPT := preload("res://assets/ui/press_start.png")
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const CharSelect := preload("res://scripts/charselect.gd")
+const Micro := preload("res://scripts/micro.gd")  # R16: the QUICK PLAY micro-sessions
 const FLOOR_Y := 118.0
 const SHOW_SECS := 9.0
 const VIGNETTES := ["lineup", "phones", "kitchen", "conference"]
@@ -321,7 +322,7 @@ func _back() -> void:
 		_show_sub(_sub_mode, _sub_sel)
 	elif _level == "sub":
 		_show_top(_top_sel)
-	elif _level == "cont" or _level == "top":
+	elif _level == "cont" or _level == "top" or _level == "quick":
 		_show_home(0)
 	else:
 		_menu_open = false
@@ -349,9 +350,24 @@ func _show_home(sel: int) -> void:
 		_items.append({"label": "CONTINUE", "id": "continue", "enabled": true})
 	_items.append({"label": "NEW", "id": "play", "enabled": true})
 	_items.append({"label": "FREE PLAY", "id": "free", "enabled": true})
+	_items.append({"label": "QUICK PLAY", "id": "quick", "enabled": true})
 	_items.append({"label": "SETTINGS", "id": "settings", "enabled": true})
 	_items.append({"label": "QUIT", "id": "quit", "enabled": true})
 	_sel = clampi(sel, 0, _items.size() - 1)
+	_menu.queue_redraw()
+
+
+# R16: QUICK PLAY, the micro-sessions (Micro): one outing or one short ticket shift on Free Play, no character select
+func _show_quick() -> void:
+	_level = "quick"
+	_from_cont = false
+	_sub_mode = ""
+	_heading = "QUICK PLAY"
+	_items = [
+		{"label": "ONE OUTING", "id": "micro_outing", "enabled": true},
+		{"label": "ONE TICKET SHIFT", "id": "micro_tickets", "enabled": true},
+	]
+	_sel = 0
 	_menu.queue_redraw()
 
 
@@ -561,6 +577,11 @@ func _choose_home(id: String) -> bool:
 	elif id == "play":
 		_top_sel = _sel
 		_show_top(0)
+	elif id == "quick":
+		_top_sel = _sel
+		_show_quick()
+	elif id.begins_with("micro_"):
+		_start(id)
 	elif id.begins_with("cont_"):
 		var mode := id.get_slice("_", 1)
 		_sub_mode = mode
@@ -687,6 +708,8 @@ func _start(id: String, summary := "") -> void:
 			Campaign.continue_game("tech", true)
 		"owner_new":
 			Campaign.new_game("owner")
+		"owner_resume", "service_resume", "sales_resume":
+			Campaign.continue_game(run_mode, true)  # R16 step 5: every campaign has a mid-day / mid-week point
 		"owner_continue":
 			Campaign.continue_game("owner")
 		"service_new":
@@ -700,6 +723,10 @@ func _start(id: String, summary := "") -> void:
 		_:
 			Campaign.new_game(Campaign.FREE)
 	Game.go(Campaign.start_scene(), "start")
+	if id.begins_with("micro_"):
+		Micro.begin(id.trim_prefix("micro_"))  # sets up the toolbox launch or the ticket shift
+	else:
+		Micro.clear()
 	Toolbox.after_start()
 	if summary != "":
 		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300

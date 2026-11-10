@@ -1641,7 +1641,7 @@ func new_day(day: int) -> void:
 					)
 				)
 	if Campaign.active and Campaign.mode == "tech" and day == 1:
-		_spawn_t = 75.0  # time to look around before the first ticket
+		_spawn_t = Difficulty.cz("first_ticket", 75.0)  # time to look around before the first ticket (cozy Easy: sooner)
 	for c in backups.size():
 		var b: Dictionary = backups[c]
 		if not b.ok:

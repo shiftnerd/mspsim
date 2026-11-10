@@ -362,9 +362,13 @@ func note_outing(game: String, result: int, info := {}) -> void:
 	match game:
 		"karaoke":
 			add("kara_perfects", int(info.get("perfects", 0)))
+			if Outings.g.has("song"):  # R16: the collection page lists the songs you have sung
+				note_first("song", str(Outings.g.song.id), "songs_sung")
 		"escape":
 			if result >= 1:
 				fastest("escape_best", int(info.get("secs", 0)))
+			for clue in Outings.g.get("clues", []):  # R16: and the clue recipes you have seen
+				note_first("recipe", str(clue.recipe), "recipes_seen")
 		"dinner":
 			best("dinner_best", int(info.get("score", 0)))
 		"cornhole":

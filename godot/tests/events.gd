@@ -239,7 +239,7 @@ func _init() -> void:
 					continue
 				var id := str(ev.pending.id)
 				if ev.pending.deck == "event":
-					var card: Dictionary = ev.DECK[id]
+					var card: Dictionary = ev.card_of(id)  # the deck or a seasonal card (R8)
 					if seen_day.has(id) and d - int(seen_day[id]) < int(card.cooldown):
 						cool_ok = false
 					seen_day[id] = d

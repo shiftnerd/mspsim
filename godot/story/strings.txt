@@ -14936,6 +14936,10 @@ GARRISON WANTS TO WALK THROUGH THE PIPELINE WITH YOU. NO PRESSURE.
 [Difficulty.COZY_TEXT.open_row]
 STILL OPEN, CARRIED OVER
 
+# Difficulty > COZY_TEXT > grade_c
+[Difficulty.COZY_TEXT.grade_c]
+C IS A STEADY DAY. THE DESK KEPT RUNNING AND NOBODY IS KEEPING SCORE.
+
 
 # ======================= Hints > DAY1 =======================
 # Hints > DAY1 > 0 > text
@@ -23591,6 +23595,322 @@ A GREEN LIGHT IS NOT PROOF. RESTORE ONE FILE.
 # RivalTouches > NOTES > av
 [RivalTouches.NOTES.av]
 A GREEN DASHBOARD IS NOT A CHECK. LOOK AT IT.
+
+
+# ======================= Seasons > CARDS =======================
+# Seasons > CARDS > xmas_ecard > speaker
+[Seasons.CARDS.xmas_ecard.speaker]
+A receptionist at a client
+
+# Seasons > CARDS > xmas_ecard > text
+[Seasons.CARDS.xmas_ecard.text]
+Somebody opened a dancing elf e-card and now every screen up front has a toolbar nobody ordered. She says the elf looked trustworthy.
+
+# Seasons > CARDS > xmas_ecard > options > 0 > label
+[Seasons.CARDS.xmas_ecard.options.0.label]
+CLEAN THE MACHINES AND LEAVE THE ELF OUT OF IT
+
+# Seasons > CARDS > xmas_ecard > options > 0 > text
+[Seasons.CARDS.xmas_ecard.options.0.text]
+Forty minutes and three toolbars later they are computers again. The elf was from her sister.
+
+# Seasons > CARDS > xmas_ecard > options > 1 > label
+[Seasons.CARDS.xmas_ecard.options.1.label]
+BLOCK THE E-CARD SITES AT THE FIREWALL
+
+# Seasons > CARDS > xmas_ecard > options > 1 > text
+[Seasons.CARDS.xmas_ecard.options.1.text]
+Nobody notices until Valentine's Day.
+
+# Seasons > CARDS > holiday_phones > speaker
+[Seasons.CARDS.holiday_phones.speaker]
+{c}
+
+# Seasons > CARDS > holiday_phones > text
+[Seasons.CARDS.holiday_phones.text]
+Half our clients close between the holidays. Somebody still has to watch the phones on the 26th, and everybody is looking at their shoes.
+
+# Seasons > CARDS > holiday_phones > options > 0 > label
+[Seasons.CARDS.holiday_phones.options.0.label]
+TAKE THE 26TH. IT WILL BE QUIET
+
+# Seasons > CARDS > holiday_phones > options > 0 > text
+[Seasons.CARDS.holiday_phones.options.0.text]
+It is quiet. One call, about a printer, from a man who is also the only one in his building.
+
+# Seasons > CARDS > holiday_phones > options > 1 > label
+[Seasons.CARDS.holiday_phones.options.1.label]
+SPLIT IT INTO HALF DAYS
+
+# Seasons > CARDS > holiday_phones > options > 1 > text
+[Seasons.CARDS.holiday_phones.options.1.text]
+Fair, and everybody still gets leftovers.
+
+# Seasons > CARDS > holiday_phones > options > 2 > label
+[Seasons.CARDS.holiday_phones.options.2.label]
+LET THE VOICEMAIL WORK FOR ONCE
+
+# Seasons > CARDS > holiday_phones > options > 2 > text
+[Seasons.CARDS.holiday_phones.options.2.text]
+The voicemail does fine. It has no family.
+
+# Seasons > CARDS > tax_printer > speaker
+[Seasons.CARDS.tax_printer.speaker]
+A bookkeeper at a client
+
+# Seasons > CARDS > tax_printer > text
+[Seasons.CARDS.tax_printer.text]
+The check printer started printing every return one line too low. It is the worst week of the year for that, and I would like you to know that I know that.
+
+# Seasons > CARDS > tax_printer > options > 0 > label
+[Seasons.CARDS.tax_printer.options.0.label]
+DROP EVERYTHING AND FIX IT NOW
+
+# Seasons > CARDS > tax_printer > options > 0 > text
+[Seasons.CARDS.tax_printer.options.0.text]
+A tray setting. She watches you fix it like a hawk and then offers you a mint.
+
+# Seasons > CARDS > tax_printer > options > 1 > label
+[Seasons.CARDS.tax_printer.options.1.label]
+TALK HER THROUGH THE TRAY SETTINGS
+
+# Seasons > CARDS > tax_printer > options > 1 > text
+[Seasons.CARDS.tax_printer.options.1.text]
+It takes twice as long and she learns where the setting is. That is worth something in April.
+
+# Seasons > CARDS > tax_updates > speaker
+[Seasons.CARDS.tax_updates.speaker]
+The accountant at a client
+
+# Seasons > CARDS > tax_updates > text
+[Seasons.CARDS.tax_updates.text]
+We file on the fifteenth and the server wants to install updates tonight. I am not asking a question. I am telling you how nervous I am.
+
+# Seasons > CARDS > tax_updates > options > 0 > label
+[Seasons.CARDS.tax_updates.options.0.label]
+HOLD THE UPDATES UNTIL THE 16TH
+
+# Seasons > CARDS > tax_updates > options > 0 > text
+[Seasons.CARDS.tax_updates.options.0.text]
+Nothing restarts. He sends a one-word thank-you, which from him is a parade.
+
+# Seasons > CARDS > tax_updates > options > 1 > label
+[Seasons.CARDS.tax_updates.options.1.label]
+PATCH TONIGHT, AFTER A GOOD BACKUP
+
+# Seasons > CARDS > tax_updates > options > 1 > text
+[Seasons.CARDS.tax_updates.options.1.text]
+It goes fine, and you were awake to see it.
+
+# Seasons > CARDS > xp_six > speaker
+[Seasons.CARDS.xp_six.speaker]
+An office manager at a client
+
+# Seasons > CARDS > xp_six > text
+[Seasons.CARDS.xp_six.text]
+The article says our old computers stop being safe on April 8. We have six. One of them runs the label printer and nobody remembers how.
+
+# Seasons > CARDS > xp_six > options > 0 > label
+[Seasons.CARDS.xp_six.options.0.label]
+WRITE A REPLACEMENT PLAN, OLDEST FIRST
+
+# Seasons > CARDS > xp_six > options > 0 > text
+[Seasons.CARDS.xp_six.options.0.text]
+Five get a date. The label machine gets a firewall rule and a note that says DO NOT TOUCH.
+
+# Seasons > CARDS > xp_six > options > 1 > label
+[Seasons.CARDS.xp_six.options.1.label]
+SEND A QUOTE FOR SIX NEW MACHINES
+
+# Seasons > CARDS > xp_six > options > 1 > text
+[Seasons.CARDS.xp_six.options.1.text]
+They buy four. The other two will think about it until they catch something.
+
+# Seasons > CARDS > xp_sticker > speaker
+[Seasons.CARDS.xp_sticker.speaker]
+{c}
+
+# Seasons > CARDS > xp_sticker > text
+[Seasons.CARDS.xp_sticker.text]
+I found a roll of DESIGNED FOR WINDOWS XP stickers in the supply closet. I have been putting them on things that are not computers.
+
+# Seasons > CARDS > xp_sticker > options > 0 > label
+[Seasons.CARDS.xp_sticker.options.0.label]
+PUT ONE ON THE COFFEE MACHINE
+
+# Seasons > CARDS > xp_sticker > options > 0 > text
+[Seasons.CARDS.xp_sticker.options.0.text]
+It has never been more accurate. The coffee machine is also out of support.
+
+# Seasons > CARDS > xp_sticker > options > 1 > label
+[Seasons.CARDS.xp_sticker.options.1.label]
+SAVE ONE FOR THE LAST XP BOX
+
+# Seasons > CARDS > xp_sticker > options > 1 > text
+[Seasons.CARDS.xp_sticker.options.1.text]
+A small ceremony is planned. Somebody will say a few words.
+
+# Seasons > CARDS > school_laptops > speaker
+[Seasons.CARDS.school_laptops.speaker]
+A front desk manager at a client
+
+# Seasons > CARDS > school_laptops > text
+[Seasons.CARDS.school_laptops.text]
+Three of us have kids starting school and three family laptops showed up at the office this morning. They are acting slow. One has a sticker of a horse on it.
+
+# Seasons > CARDS > school_laptops > options > 0 > label
+[Seasons.CARDS.school_laptops.options.0.label]
+CLEAN THEM UP OVER LUNCH
+
+# Seasons > CARDS > school_laptops > options > 0 > text
+[Seasons.CARDS.school_laptops.options.0.text]
+Fourteen toolbars between the three. The horse one was the cleanest.
+
+# Seasons > CARDS > school_laptops > options > 1 > label
+[Seasons.CARDS.school_laptops.options.1.label]
+SEND A SHORT LIST OF WHAT TO UNINSTALL
+
+# Seasons > CARDS > school_laptops > options > 1 > text
+[Seasons.CARDS.school_laptops.options.1.text]
+Two of three follow it. The third laptop comes back in October.
+
+# Seasons > CARDS > school_laptops > options > 2 > label
+[Seasons.CARDS.school_laptops.options.2.label]
+POLITELY POINT AT THE AGREEMENT
+
+# Seasons > CARDS > school_laptops > options > 2 > text
+[Seasons.CARDS.school_laptops.options.2.text]
+They understand. They also remember.
+
+# Seasons > CARDS > school_talk > speaker
+[Seasons.CARDS.school_talk.speaker]
+{c}
+
+# Seasons > CARDS > school_talk > text
+[Seasons.CARDS.school_talk.text]
+A school counselor called. They want somebody to tell a class what working with computers is like. I said you, because you still remember being confused.
+
+# Seasons > CARDS > school_talk > options > 0 > label
+[Seasons.CARDS.school_talk.options.0.label]
+DO IT. TWENTY MINUTES, ONE SLIDE
+
+# Seasons > CARDS > school_talk > options > 0 > text
+[Seasons.CARDS.school_talk.options.0.text]
+The kids ask if you have ever met a hacker. You say yes, in a print queue. Only the teacher laughs.
+
+# Seasons > CARDS > school_talk > options > 1 > label
+[Seasons.CARDS.school_talk.options.1.label]
+SEND A BOX OF DEAD HARD DRIVES INSTEAD
+
+# Seasons > CARDS > school_talk > options > 1 > text
+[Seasons.CARDS.school_talk.options.1.text]
+The drives are a hit. One comes back missing.
+
+
+# ======================= Seasons > EVENTS =======================
+# Seasons > EVENTS > potluck > speaker
+[Seasons.EVENTS.potluck.speaker]
+The office
+
+# Seasons > EVENTS > potluck > text
+[Seasons.EVENTS.potluck.text]
+The holiday potluck is on the conference table. There are four trays of the same meatballs and one salad nobody will admit to.
+
+# Seasons > EVENTS > potluck > options > 0 > label
+[Seasons.EVENTS.potluck.options.0.label]
+FILL A PLATE AND STAY A WHILE
+
+# Seasons > EVENTS > potluck > options > 0 > text
+[Seasons.EVENTS.potluck.options.0.text]
+You hear about a cruise from 2009 and the correct way to load a dishwasher. It is nice.
+
+# Seasons > EVENTS > potluck > options > 1 > label
+[Seasons.EVENTS.potluck.options.1.label]
+PUT OUT THE COOKIES YOU BROUGHT
+
+# Seasons > EVENTS > potluck > options > 1 > text
+[Seasons.EVENTS.potluck.options.1.text]
+Gone in six minutes. Somebody asks for the recipe and you say it is from a box.
+
+# Seasons > EVENTS > potluck > options > 2 > label
+[Seasons.EVENTS.potluck.options.2.label]
+TAKE A PLATE BACK TO YOUR DESK
+
+# Seasons > EVENTS > potluck > options > 2 > text
+[Seasons.EVENTS.potluck.options.2.text]
+The meatballs are fine. The queue does not care what day it is.
+
+# Seasons > EVENTS > tax_basket > speaker
+[Seasons.EVENTS.tax_basket.speaker]
+A delivery
+
+# Seasons > EVENTS > tax_basket > text
+[Seasons.EVENTS.tax_basket.text]
+A fruit basket arrived from an accounting client. The card says: for keeping us running in the worst month. Please do not let anything break until the 16th.
+
+# Seasons > EVENTS > tax_basket > options > 0 > label
+[Seasons.EVENTS.tax_basket.options.0.label]
+PUT IT IN THE KITCHENETTE FOR EVERYONE
+
+# Seasons > EVENTS > tax_basket > options > 0 > text
+[Seasons.EVENTS.tax_basket.options.0.text]
+The pears go first. The card goes on the fridge.
+
+# Seasons > EVENTS > tax_basket > options > 1 > label
+[Seasons.EVENTS.tax_basket.options.1.label]
+CALL AND SAY THANK YOU
+
+# Seasons > EVENTS > tax_basket > options > 1 > text
+[Seasons.EVENTS.tax_basket.options.1.text]
+They are surprised anybody calls about fruit. It lands well.
+
+# Seasons > EVENTS > xp_day > speaker
+[Seasons.EVENTS.xp_day.speaker]
+The office
+
+# Seasons > EVENTS > xp_day > text
+[Seasons.EVENTS.xp_day.text]
+April 8. Support for Windows XP ends today. Somebody printed a banner on the plotter and taped it over the oldest machine in the building: YOU HAD A GOOD RUN.
+
+# Seasons > EVENTS > xp_day > options > 0 > label
+[Seasons.EVENTS.xp_day.options.0.label]
+SAY A FEW WORDS
+
+# Seasons > EVENTS > xp_day > options > 0 > text
+[Seasons.EVENTS.xp_day.options.0.text]
+You thank it for starting every morning since 2003. People clap. It does not shut down properly, one last time.
+
+# Seasons > EVENTS > xp_day > options > 1 > label
+[Seasons.EVENTS.xp_day.options.1.label]
+USE THE DAY TO CHASE THE LAST XP MACHINES
+
+# Seasons > EVENTS > xp_day > options > 1 > text
+[Seasons.EVENTS.xp_day.options.1.text]
+Three clients finally sign off on replacements. Fear works where reminders did not.
+
+# Seasons > EVENTS > supply_drive > speaker
+[Seasons.EVENTS.supply_drive.speaker]
+The office
+
+# Seasons > EVENTS > supply_drive > text
+[Seasons.EVENTS.supply_drive.text]
+There is a box by the door for the school supply drive. So far it holds one glue stick and a mouse pad from a vendor.
+
+# Seasons > EVENTS > supply_drive > options > 0 > label
+[Seasons.EVENTS.supply_drive.options.0.label]
+PICK UP A BAG OF SUPPLIES AT LUNCH
+
+# Seasons > EVENTS > supply_drive > options > 0 > text
+[Seasons.EVENTS.supply_drive.options.0.text]
+Pencils, notebooks and the good scissors. The box looks respectable now.
+
+# Seasons > EVENTS > supply_drive > options > 1 > label
+[Seasons.EVENTS.supply_drive.options.1.label]
+DONATE FROM THE VENDOR SWAG DRAWER
+
+# Seasons > EVENTS > supply_drive > options > 1 > text
+[Seasons.EVENTS.supply_drive.options.1.text]
+Forty pens and nine stress balls. Some classroom is about to be very well branded.
 
 
 # ======================= Playbook > BOOKS =======================

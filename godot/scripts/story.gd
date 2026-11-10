@@ -1770,13 +1770,20 @@ func _process(_delta: float) -> void:
 	var events: Array = events_on(Campaign.day)
 	for i in events.size():
 		var ev: Dictionary = events[i]
-		if not _fired.has(i) and World.clock >= float(ev.at):
+		if not _fired.has(i) and World.clock >= _at(ev, i):
 			_fired[i] = true
 			fire(ev)
 	if not _followed and World.clock >= 9.4:
 		_followed = true
 		_spawn_followups()
 		Incident.tech_morning()
+
+
+# cozy Easy, day 1: the welcome mail and Dan's offer come in the first seconds, not after the walk-in half hour
+func _at(ev: Dictionary, index: int) -> float:
+	if Campaign.day == 1 and Difficulty.cozy_on():
+		return minf(float(ev.at), World.DAY_START - 0.4 + 0.1 * float(index))
+	return float(ev.at)
 
 
 # trouble from sloppy jobs comes back the next morning
