@@ -6,7 +6,7 @@ extends SceneTree
 # Any other test can be audited too: set env LAYOUT_AUDIT=1 and Game prints OFFSCREEN / OVERLAP lines as they happen.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const FORMATS := ["wide", "h", "v"]
+const FORMATS := ["wide", "h", "deck", "v"]  # deck = 320 x 200, the Steam Deck's 16:10 (R42)
 const WHITE := Color.WHITE
 
 var failures := 0
@@ -162,6 +162,17 @@ func _title_phase() -> void:
 	t._show_quick()
 	await _end("title quick play")
 	t._show_home(0)
+	# R42: the SETTINGS rows (seven now, with UNFOCUSED: PAUSE / RUN), with the keyboard's footer and the pad's
+	var pm := root.get_node("PauseMenu")
+	for pad in [false, true]:
+		root.get_node("Controls").pad_active = pad
+		pm.open_settings()
+		pm._sel = 5
+		_begin()
+		pm._canvas.queue_redraw()
+		await _end("title settings%s" % (" pad" if pad else ""))
+		pm.close()
+	root.get_node("Controls").pad_active = false
 	# the tech submenu at its fullest: a save plus a finished Year 2 (SLOT 1, START YEAR 2, START YEAR 3, NEW CAMPAIGN, DELETE A SLOT)
 	var camp := root.get_node("Campaign")
 	var yt := root.get_node("Yeartwo")

@@ -37,6 +37,8 @@ var _call_len := 0.0
 var _head_item: Node2D
 var _dance_t := 0.0
 var _slide_to := INF
+var _ui_hold := 0  # R42: physics frames left in which a press is not yours (it answered a card or closed a screen)
+var _phys_seen := 0
 var _desk: Node2D
 var _emote_t := 0.0
 var _emote_len := 0.0
@@ -194,6 +196,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.is_action_released(_a("aim")):
 			Nerf.charge_release(self)
 		return  # the keyboard (pick, aim, war, give, the 1-6 character keys) is slot 0's
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		_pad_input(event)  # (the rest of this function is the keyboard's)
 	if event is InputEventKey and Controls.matches(event, "aim") and not event.pressed:
 		Nerf.charge_release(self)
 		return
@@ -214,6 +218,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
 			_switch_character(CHARACTERS[i])
 			Campaign.refresh_free()
+
+
+# R42: the first player's pad does what the keys in _unhandled_input do: RT aims and fires, RB / LB move the arrow, and
+# with the blaster in hand Y offers a war and the right stick pushed left gives it away
+func _pad_input(event: InputEvent) -> void:
+	if Players.slot_of(event) != 0:
+		return  # co-op: the other player's pad
+	if event.is_action_pressed("aim"):
+		Nerf.charge_start(self)
+		return
+	if event.is_action_released("aim"):
+		Nerf.charge_release(self)
+		return
+	if not Controls.pressed(event) or Game.ui_open:
+		return
+	if Controls.matches(event, "pick_next"):
+		cycle_pick(1)
+	elif Controls.matches(event, "pick_prev") and (held == "" or held == "nerf" or held.begins_with("plug_")):
+		cycle_pick(-1)  # LB also sips the drink in your hand: then it only sips
+	elif Controls.matches(event, "offer_war") and held == "nerf":
+		Nerf.offer_war()
+	elif Controls.matches(event, "give_item") and held == "nerf":
+		give("")
 
 
 func _play(action: String) -> void:
@@ -520,12 +547,23 @@ func _face_toward(x: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# R42: a pad's A is jump and confirm, its X is use and the hotkey press, the D-pad walks and steps a menu. The press
+	# that answers a card, closes a screen or leaves the pause menu must not also make you hop, stand up or use a door:
+	# while a card is up, and for two frames after a card, a screen or a pause, the body takes no input.
+	var phys := Engine.get_physics_frames()
+	if phys - _phys_seen > 1:
+		_ui_hold = 2  # the tree was paused (the pause menu)
+	_phys_seen = phys
 	if Game.ui_open or Players.ui[slot]:
 		velocity = Vector2.ZERO
+		_ui_hold = 2
 		return
+	if Cards.is_open:
+		_ui_hold = 2
 	_call_tick(delta)
 	_roll.update(self, delta)
-	var locked: bool = Game.busy
+	var locked: bool = Game.busy or _ui_hold > 0
+	_ui_hold = maxi(0, _ui_hold - 1)
 	var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
 	var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Controls.shift_held())  # the second test is for macOS
 	var roll_held := Input.is_action_pressed(_a("roll"))  # R14 (3): a pad's Roll button (LT), the touch overlay's ROLL

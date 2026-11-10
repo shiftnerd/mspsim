@@ -1170,6 +1170,18 @@ func _input(event: InputEvent) -> void:
 	if is_open and game == "karaoke" and phase == "play" and event is InputEventKey and not event.pressed:
 		_kara_release(event.keycode)  # K2: hold notes
 		return
+	if is_open and game == "karaoke" and phase == "play" and _press_slot <= 0:
+		# R42: a pad lets go of a hold note too (a D-pad button released, or the stick back in the middle)
+		if event is InputEventJoypadButton and not event.pressed:
+			for dir in PAD_ARROWS:
+				if event.is_action("ui_" + dir):
+					_kara_release(PAD_ARROWS[dir])
+		elif event is InputEventJoypadMotion and absf(event.axis_value) < 0.5 and event.axis == JOY_AXIS_LEFT_X:
+			_kara_release(KEY_LEFT)
+			_kara_release(KEY_RIGHT)
+		elif event is InputEventJoypadMotion and absf(event.axis_value) < 0.5 and event.axis == JOY_AXIS_LEFT_Y:
+			_kara_release(KEY_UP)
+			_kara_release(KEY_DOWN)
 	if not is_open or not Controls.pressed(event):
 		return
 	_press_slot = Players.slot_of(event)
@@ -1208,6 +1220,8 @@ func _event_key(event: InputEvent) -> int:
 		key = KEY_SHIFT  # B on a pad: the cool side
 	elif game == "escape" and Controls.matches(event, "nudge"):
 		key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
+	elif (racing or grilling or paintballing) and not event is InputEventKey and Controls.matches(event, "phone"):
+		key = KEY_ESCAPE  # R42: B is a game button in these three (push, the cool side, duck), so the pad's BACK button leaves
 	elif dir != "":
 		key = PAD_ARROWS[dir]
 	elif Controls.back(event):
@@ -2343,6 +2357,8 @@ func _escape_tick(dt: float) -> void:
 func _escape_press(key: int) -> void:
 	var cur: Array = g.cur
 	var n: int = cur.size()
+	if not room_mode() and key == Controls.key_of("nudge"):
+		key = KEY_H  # R42: the page game's hint key has a pad twin (Y, the nudge action; the N key too)
 	match key:
 		KEY_LEFT:
 			g.cursor = (int(g.cursor) + n - 1) % n
@@ -3810,6 +3826,15 @@ func hint() -> String:
 	return text
 
 
+# the letters of an outing's hint line -> the action (Controls.hint). On a pad B is a game button in the chair race, the
+# cookout and paintball, so there ESC is shown as the BACK button, which is what leaves (R42)
+func _hint_map() -> Dictionary:
+	var map := {"N": "nudge", "E": "interact", "H": "nudge"}
+	if Controls.pad_active and phase == "play" and game in ["chair", "grill", "paintball"]:
+		map["ESC"] = "phone"
+	return map
+
+
 func _room_hint() -> String:
 	var text := "E = SIT DOWN  ESC = LEAVE"
 	if str(g.get("stage", "")) == "talk":
@@ -4150,7 +4175,7 @@ func _dinner_react() -> void:
 
 # ---- the in-room display (replaces the panel while you play)
 func _paint_hud(size: Vector2) -> void:
-	UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
+	UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), _hint_map()))
 	var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
 	var strip_w := 176.0 if game == "dinner" else (232.0 if game == "chair" and size.x > 300.0 else 164.0)  # five faces need the room
 	var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
@@ -5718,7 +5743,7 @@ func _paint() -> void:
 					_paint_darts(body)
 				_:
 					_paint_dinner(body)
-	UiStyle.footer(_canvas, panel, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
+	UiStyle.footer(_canvas, panel, Controls.hint(hint(), _hint_map()))
 
 
 # R5: who is in the room for a karaoke night or an escape room, in words ("" for the other games, which name their own crew)

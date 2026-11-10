@@ -257,8 +257,8 @@ func _init() -> void:
 	title._choose(_ids().find("settings"))
 	var pm: Node = root.get_node("PauseMenu")
 	_check(pm.is_open and pm.settings_mode and not root.get_tree().paused, "SETTINGS opens the pause menu's pages without pausing")
-	var ids_ok: bool = pm._labels().size() == 6 and pm._row_id(3) == "sound" and pm._row_id(5) == "career"
-	_check(ids_ok and str(pm._labels()[1]) == "CONTROLS", "rows: back, controls, shape, sound, day length, career (%s)" % str(pm._labels()))
+	var ids_ok: bool = pm._labels().size() == 7 and pm._row_id(3) == "sound" and pm._row_id(5) == "focus" and pm._row_id(6) == "career"
+	_check(ids_ok and str(pm._labels()[1]) == "CONTROLS", "rows: back, controls, shape, sound, day length, unfocused, career (%s)" % str(pm._labels()))
 	var was_muted: bool = root.get_node("Sfx").muted
 	pm._sel = 3
 	pm._activate()
