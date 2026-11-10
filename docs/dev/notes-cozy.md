@@ -128,6 +128,16 @@ waiting, 3.42 pager cards a week.
 - An owner / sales card can send you on a client visit; a resume point written there opens at the client's office with the
   office frozen, like a tech visit (`tests/resume5.gd` drives home before it lets the week end).
 
+## Balance check (bots)
+
+- `tests/bot_run.gd -- tech hard careful seeds=4 first=11` on this branch: reputation 67, 73, 60, 71, all good endings
+  (the baseline cell for seed 11 is 70).
+- `tools/balance_baseline.py` (the `tiers_balance` smoke run, tech at time scale 120) was run twice while other agents were
+  using the machine: `tech hard careful seed 11` came out at reputation 12 and then 34 (baseline 70), and
+  `tech normal lazy seed 11` at 37 once (baseline 4); the other 21 to 23 cells were inside the tolerance. The two runs of the
+  same code disagree with each other by more than the tolerance, so this is the harness's known run-to-run spread, not a
+  measured effect of this batch. Worth one quiet rerun after the merge.
+
 ## Tests
 
 `resume5`, `quit_risks`, `seasons`, `goal_chip`, `collection`, `office_growth`, `micro` (new); blocks in `layout_audit`
