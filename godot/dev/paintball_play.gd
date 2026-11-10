@@ -4,6 +4,7 @@ extends SceneTree
 # Uses private save and settings files; the real ones are not touched.
 
 var speed := 1.0
+var starting := true
 
 
 func _init() -> void:
@@ -22,13 +23,24 @@ func _run() -> void:
 
 
 func _begin() -> void:
+	starting = true
 	var o := root.get_node("Outings")
 	o.use_rooms = true
 	o.start("paintball")
 	await create_timer(2.5).timeout
 	o.press(KEY_ENTER)
 	await physics_frame
+	starting = false
 	print("PAINT DEBUG: F1 restart, F2 auto-play, F3 speed x3, F4 print the state")
+
+
+# when the match is over and you are back at the office, a new match starts after a short wait
+func _process(_delta: float) -> bool:
+	if not starting and not root.get_node("Outings").is_open:
+		starting = true
+		await create_timer(1.5).timeout
+		_begin()
+	return false
 
 
 func _input(event: InputEvent) -> void:
@@ -53,6 +65,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _restart() -> void:
+	starting = true
 	var o := root.get_node("Outings")
 	if o.is_open:
 		o.press(KEY_ESCAPE)

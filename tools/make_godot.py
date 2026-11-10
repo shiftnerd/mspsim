@@ -39337,6 +39337,8 @@ const SET_X := 30.0  # the field starts this far into the set art (paintball_set
 const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
+# the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
+const LANES := [-2.0, -12.0, 8.0, 3.0, 13.0, -7.0]  # you in the middle of your team's three, theirs staggered between
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -39356,6 +39358,10 @@ var _debug := OS.get_environment("PAINT_DEBUG") == "1"
 
 func field_x(gx: float) -> float:
     return x0 + SET_X + gx
+
+
+func lane_y(i: int) -> float:
+    return FEET_Y + float(LANES[i % LANES.size()])
 
 
 # scene: the paintball_field room. specs: one per unit, in the game's order: {character, custom, label, look}
@@ -39413,14 +39419,14 @@ func _sync() -> void:
         var u: Dictionary = game.units[i]
         var p: Dictionary = puppets[i]
         var node: Node2D = p.node
-        node.position = Vector2(field_x(float(u.x)), FEET_Y)
+        node.position = Vector2(field_x(float(u.x)), lane_y(i))
         p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
         _animate(i, u, p)
     _move_balls(get_process_delta_time())
     var f: Dictionary = Game.FORMATS[Game.format]
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
-        _player.global_position = Vector2(field_x(float(game.units[0].x)), FEET_Y)
+        _player.global_position = Vector2(field_x(float(game.units[0].x)), lane_y(0))
     if _cam != null:  # a short screen looks lower down, so the floor is not under the HUD
         var centre: float = float(f.cam_y) if f.follow else 64.0
         _cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
@@ -39457,10 +39463,15 @@ func _event(ev: Dictionary) -> void:
             var u: Dictionary = game.units[int(ev.unit)]
             var p: Dictionary = puppets[int(ev.unit)]
             p.shoot_t = 0.35
+            var y0 := lane_y(int(ev.unit)) - 32.0
+            var y1 := lane_y(int(ev.target)) - 32.0 if int(ev.target) >= 0 else y0
             balls.append(
                 {
                     "x": float(ev.from) + 8.0 * float(ev.face),
-                    "y": FEET_Y - 32.0,
+                    "x0": float(ev.from) + 8.0 * float(ev.face),
+                    "y": y0,
+                    "y0": y0,
+                    "y1": y1,
                     "to": float(ev["to"]),
                     "dir": float(ev.face),
                     "team": int(u.team),
@@ -39483,6 +39494,8 @@ func _move_balls(dt: float) -> void:
     var keep := []
     for b in balls:
         b.x = float(b.x) + float(b.dir) * BALL_SPEED * dt
+        var span := absf(float(b.to) - float(b.x0))
+        b.y = lerpf(float(b.y0), float(b.y1), clampf(absf(float(b.x) - float(b.x0)) / maxf(span, 1.0), 0.0, 1.0))
         if (float(b.to) - float(b.x)) * float(b.dir) <= 0.0:
             _splat(b)
         else:
@@ -39499,7 +39512,7 @@ func _splat(b: Dictionary) -> void:
         if shapes.size() < 7:
             shapes.append({"dx": float(randi() % 9) - 4.0, "dy": -50.0 + float(randi() % 36), "col": pal[randi() % 3], "w": 2 + randi() % 3})
     else:
-        ground.append({"x": float(b.to), "y": FEET_Y - 8.0 + float(randi() % 14), "col": pal[randi() % 3], "w": 2 + randi() % 3})
+        ground.append({"x": float(b.to), "y": float(b.y1) + 32.0 - 8.0 + float(randi() % 14), "col": pal[randi() % 3], "w": 2 + randi() % 3})
         if ground.size() > 60:
             ground.pop_front()
 
@@ -39522,7 +39535,7 @@ func _draw_top() -> void:
         var col: Color = TEAM_COLOR[t]
         if int(f.carried) >= 0:
             var c: Dictionary = puppets[int(f.carried)]
-            _flag(Vector2(float(c.node.position.x) - 4.0, FEET_Y - 56.0), col, 10.0, true)
+            _flag(Vector2(float(c.node.position.x) - 4.0, float(c.node.position.y) - 56.0), col, 10.0, true)
         else:
             _flag(Vector2(field_x(float(f.x)), FEET_Y - 2.0), col, 26.0, bool(f.home))
     for i in puppets.size():
@@ -39546,7 +39559,7 @@ func _draw_top() -> void:
         var w := float(PixelFont.width(text, 1))
         var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -50.0 if not bool(u.duck) else -36.0)
         if float(u.down) > 0.0:
-            at.y = -14.0 + FEET_Y
+            at.y = node.position.y - 14.0
         var mine: bool = bool(u.you)
         _top.draw_rect(Rect2(at - Vector2(1, 1), Vector2(w + 2.0, 7.0)), GOLD if mine else TEAM_COLOR[int(u.team)])
         PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
