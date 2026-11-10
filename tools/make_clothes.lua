@@ -87,15 +87,19 @@ for y = 26, 38 do bd:putPixel(21, y, rgba(LEG.b)) end
 for _, y in ipairs({27, 30, 33, 36}) do bd:putPixel(21, y, rgba(LEG.w)) end
 rows(bd, 14, 28, {"bbbb", "b..b", "b..b", "bbbb"})
 add("shirt_button_torso", bd)
+-- long sleeves (R15 art pass): not a flat tube. A crease at the elbow (row 34, where the arm bends) and a shorter one above it on
+-- the near sleeve, a lit fold on the far one (it is the shade colour all the way down), then the three cuff rows
 local function longNear(cuff, rib)
   local im = band(L["Near Arm"], 23, 28)
   for y = 29, 37 do rows(im, 10, y, {"BBBb"}) end
+  rows(im, 10, 31, {"BBbb"}); rows(im, 10, 34, {"bbBb"}); rows(im, 10, 35, {"BbBb"})
   rows(im, 10, 38, {cuff[1]}); rows(im, 10, 39, {cuff[2]}); rows(im, 10, 40, {cuff[3]})
   return im
 end
 local function longFar(cuff)
   local im = band(L["Back Arm"], 23, 28)
   for y = 29, 37 do rows(im, 28, y, {"bbb"}) end
+  rows(im, 28, 33, {"Bbb"}); rows(im, 28, 34, {"BBb"})
   rows(im, 28, 38, {cuff[1]}); rows(im, 28, 39, {cuff[2]}); rows(im, 28, 40, {cuff[3]})
   return im
 end
@@ -121,6 +125,11 @@ local jeans = clone(L["Pants"])
 rows(jeans, 13, 40, {"q....", ".q...", "..qqq"})
 rows(jeans, 21, 40, {"q", "q", "q", "q"})
 rows(jeans, 13, 55, {"pppppp"}); rows(jeans, 22, 55, {"qqqqqq"})
+-- R15 art pass: a stitched waistband, the second front pocket, creases behind the knee and at the thigh
+rows(jeans, 13, 38, {"ppppppppppppp"})
+rows(jeans, 23, 40, {"..p", ".p.", "p.."})
+rows(jeans, 14, 47, {"pp"}); rows(jeans, 16, 51, {"ppp"}); rows(jeans, 13, 52, {"pp"})
+rows(jeans, 24, 51, {"qq"})
 add("bottom_jeans", jeans)
 
 -- skin legs for shorts and skirt: the trousers' silhouette below the hip in skin tones (near leg left of the gap, far leg right)
@@ -142,16 +151,20 @@ skinLegs(shorts, 51)
 rows(shorts, 13, 50, {"pppppp"}); rows(shorts, 22, 50, {"qqqqqq"})
 add("bottom_shorts", shorts)
 
--- skirt: a short A-line skirt on the hips (rows 36 to 46, so it moves with the torso and never splits) over bare legs
+-- skirt (R15 art pass: it was a mini skirt hidden by the shirt hem and the hands): an A-line skirt to above the knee, rows 36 to 50,
+-- flaring from 17 to 21 px, three pleats, a stitched hem. Rows 47 to 50 lie on the thighs right under the hip pivot, so each half
+-- follows its leg by a pixel at most and the skirt stays whole in a walk; seated it lies along the thighs
 local skirt = clone(L["Pants"])
 skinLegs(skirt, 47)
-for y = 36, 46 do for x = 0, W - 1 do skirt:putPixel(x, y, 0) end end
+for y = 36, 50 do for x = 0, W - 1 do skirt:putPixel(x, y, 0) end end
 rows(skirt, 13, 36, {"###############"})
-for y = 37, 42 do rows(skirt, 12, y, {"#PPPPPPPPPPPPPqq#"}) end
-for y = 43, 45 do rows(skirt, 11, y, {"#PPPPPPPPPPPPPPPqq#"}) end
-rows(skirt, 11, 46, {string.rep("#", 19)})
-for y = 40, 42 do rows(skirt, 17, y, {"p"}); rows(skirt, 21, y, {"p"}) end
-for y = 43, 45 do rows(skirt, 16, y, {"p"}); rows(skirt, 20, y, {"p"}); rows(skirt, 24, y, {"p"}) end
+for y = 37, 41 do rows(skirt, 12, y, {"#PPPPPPPPPPPPPqq#"}) end
+for y = 42, 44 do rows(skirt, 11, y, {"#PPPPPPPPPPPPPPPqq#"}) end
+for y = 45, 49 do rows(skirt, 10, y, {"#PPPPPPPPPPPPPPPPPqq#"}) end
+rows(skirt, 10, 50, {string.rep("#", 21)})
+rows(skirt, 13, 38, {"ppppppppppppp"})                              -- the waistband
+for y = 40, 48 do rows(skirt, 16, y, {"p"}); rows(skirt, 20, y, {"p"}); rows(skirt, 24, y, {"p"}) end
+rows(skirt, 11, 49, {"ppppppppppppppppp"})                          -- the hem
 add("bottom_skirt", skirt)
 
 -- ---- shoes -------------------------------------------------------------------------------------------------------------------
