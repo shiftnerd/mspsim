@@ -57,7 +57,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if Controls.pressed(event):
 		var dir := Controls.nav(event)
-		if event is InputEventKey and event.keycode == KEY_F9:
+		if Controls.word(event) == "f9":
 			Game.cycle_format()
 		elif dir == "left":
 			go(-1)
@@ -190,7 +190,7 @@ func _draw() -> void:
 		_draw_medals(pg.medals, body, cols, colw, gap)
 		if detail and sel < pg.medals.size():
 			_draw_detail(size, pg.medals[sel])
-	UiStyle.footer(self, r, "ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK")
+	UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK"))
 	_button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -254,7 +254,7 @@ func _draw_detail(size: Vector2, m: Dictionary) -> void:
 		for line in UiStyle.wrap_text("UNLOCKS: " + ", ".join(gives), chars):
 			UiStyle.text(self, str(line), body.position.x, y + 2.0, UiStyle.GOLD.darkened(0.35))
 			y += 7.0
-	UiStyle.footer(self, r, "ENTER OR ESC = CLOSE")
+	UiStyle.footer(self, r, Controls.hint("ENTER OR ESC = CLOSE"))
 
 
 func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:

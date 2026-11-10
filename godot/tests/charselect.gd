@@ -68,7 +68,7 @@ func _flow_checks() -> void:
 	for m in ["owner", "sales", "service"]:
 		cs.setup(m)
 		_check(cs.step == "char" and not cs.direct and not "custom" in cs.ids, "%s keeps its fixed people as cards (%s)" % [m, str(cs.ids)])
-	_check(cs.flow() == ["char", "options", "build"], "service: card, options, build")
+	_check(cs.flow() == ["char", "tier", "options", "build"], "service: card, the tier step (R1), options, build")
 	# a ready-made person, unedited: the stock sprite, Look untouched
 	cs.setup("free")
 	cs.set_start(2)  # the ADULT
@@ -205,15 +205,24 @@ func _process(_delta: float) -> bool:
 			_check(os.needs_build() and not os.needs_phone(), "owner: a build step, no phone step")
 			_check(os.step == "char" and not os.direct and os.ids == ["office_alan", "casual_garrison"], "owner: the two owners as cards, not the creator")
 			os.confirm()
-			_check(os.step == "options", "owner: the options page comes before the build")
+			_check(os.step == "tier" and os.flow() == ["char", "tier", "options", "build"], "owner: the tier step comes after the character (R1)")
+			os.pick_tier(2)
+			_check(root.get_node("Difficulty").tier == "hard", "the tier step picks HARD")
+			os.pick_tier(1)
+			_check(root.get_node("Difficulty").tier == "normal", "and NORMAL again")
+			os.confirm()
+			_check(os.step == "options" and os.options_rows()[0].id == "level" and os._options_text("level") == "NORMAL", "owner: then the options page, whose LEVEL row shows the choice")
 			os.confirm()
 			_check(os.step == "build" and os._panel.who == "Alan" and os._panel.path == "owner", "owner: the build step reads Alan's bias")
 			_check(os._panel.level("technical") >= 2 and os._panel.points_left() >= 0, "Alan's TECHNICAL shows its free 2")
 			os.back()
 			_check(os.step == "options", "Esc on the owner build step goes back to the options")
 			os.back()
-			_check(os.step == "char", "Esc on the options goes back to the character")
+			_check(os.step == "tier", "Esc on the options goes back to the tier step")
+			os.back()
+			_check(os.step == "char", "Esc on the tier step goes back to the character")
 			os.move(1)
+			os.confirm()
 			os.confirm()
 			os.confirm()
 			_check(os._panel.who == "Garrison" and os._panel.level("sales") >= 2, "Garrison: the panel is rebuilt for the other owner")
@@ -276,12 +285,12 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ENTER)
 		10:
 			var cs: Node = title._select
-			_check(cs.step == "options" and cs.options_rows()[0].id == "level", "the phone leads to the options page, LEVEL first")
+			_check(cs.step == "tier" and cs.flow() == ["create", "phone", "tier", "options", "build"], "the phone leads to the tier step (R1)")
 			_press(KEY_RIGHT)  # harder
 		11:
 			var cs: Node = title._select
 			var diff := root.get_node("Difficulty")
-			_check(diff.tier == "hard" and cs.summary().ends_with("HARD"), "Right on LEVEL makes it harder")
+			_check(diff.tier == "hard" and cs.summary().ends_with("HARD"), "Right on the tier step makes it harder")
 			var cfg := ConfigFile.new()
 			cfg.load("user://test_cs_%d_settings.cfg" % OS.get_process_id())
 			_check(
@@ -294,7 +303,7 @@ func _process(_delta: float) -> bool:
 			_press(KEY_ESCAPE)
 		12:
 			var cs: Node = title._select
-			_check(cs.step == "phone", "Esc on the options goes back to the phone")
+			_check(cs.step == "phone", "Esc on the tier step goes back to the phone")
 			_press(KEY_ESCAPE)
 		13:
 			var cs: Node = title._select
@@ -312,8 +321,10 @@ func _process(_delta: float) -> bool:
 		17:
 			_press(KEY_RIGHT)  # nexus
 		18:
-			_press(KEY_ENTER)  # options
+			_press(KEY_ENTER)  # the tier step
 		19:
+			_check(title._select.step == "tier", "Enter on the phone: the tier step")
+			_press(KEY_ENTER)  # options
 			_press(KEY_ENTER)  # build
 		20:
 			var cs: Node = title._select

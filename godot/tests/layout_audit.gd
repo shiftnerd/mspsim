@@ -151,8 +151,18 @@ func _title_phase() -> void:
 	DirAccess.remove_absolute(yt.meta_path())
 	camp.save_prefix = old_prefix
 	t._show_top(0)
-	t._choose(0)
+	var new_row := 0  # R40: the home menu may start with CONTINUE; NEW opens the list of campaigns, whose first row is the tech campaign
+	for i in t._items.size():
+		if str(t._items[i].get("id", "")) == "new":
+			new_row = i
+	t._choose(new_row)
 	await _wait(10)
+	if is_instance_valid(t) and t._select == null:
+		t._choose(0)
+		await _wait(10)
+	if not is_instance_valid(t) or t._select == null:
+		print("WARN %s title: the character select did not open (items %s), its pages are not audited" % [fmt, str(t._items) if is_instance_valid(t) else "scene gone"])
+		return
 	var cs: Node = t._select
 	for mode in ["free", "tech", "owner", "sales", "service"]:
 		_begin()
@@ -162,10 +172,14 @@ func _title_phase() -> void:
 		cs.setup(mode)
 		await _wait(3)
 		var guard := 0
-		while cs.step != "options" and guard < 4:
+		while cs.step != "options" and guard < 5:
 			if cs.step == "phone":
 				_begin()
 				await _end("phone " + mode)
+			if cs.step == "tier":  # R1: the difficulty step of a campaign
+				_begin()
+				cs.queue_redraw()
+				await _end("tier " + mode)
 			cs.confirm()
 			guard += 1
 		_begin()
@@ -408,6 +422,42 @@ func _floor_phase() -> void:
 		await _end("phone " + app)
 		ph.close()
 		await _wait(2)
+	# R37: the camera app (viewfinder, the roll, a photo), on both phones
+	for skin in ["android", "ios"]:
+		ph.os = skin
+		ph.photos = []
+		ph.open()
+		ph.locked = false
+		ph.app = "camera"
+		for view in ["finder", "roll", "photo"]:
+			if view == "roll":
+				ph.take_photo()
+				ph.take_photo()
+			ph.cam_view = view
+			ph.cam_sel = 0
+			_begin()
+			ph._canvas.queue_redraw()
+			await _end("phone camera %s %s" % [view, skin])
+		ph.close()
+		await _wait(2)
+	ph.os = "android"
+	ph.photos = []
+	# R14 (4): the touch overlay over the room, and over the pause menu
+	var ctl := root.get_node("Controls")
+	ctl.touch_override = 1
+	ctl.touch_refresh()
+	_begin()
+	await _end("touch overlay")
+	var pm := root.get_node("PauseMenu")
+	pm.open()
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("touch overlay pause menu")
+	pm.close()
+	ctl.touch_override = -1
+	ctl.touch_refresh()
+	ctl.pad_active = false
+	await _wait(2)
 	# ---- owner campaign: boardroom tabs, partner trust cards
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("owner", "office_alan")

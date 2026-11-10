@@ -56,6 +56,9 @@ func _process(_delta: float) -> bool:
 		150:
 			_shot("tech_phone")
 			cs.confirm()
+		155:
+			_shot("tech_tier")  # R1: the difficulty step
+			cs.confirm()
 		160:
 			_shot("tech_options")
 			cs.opt_row = 1
@@ -67,6 +70,7 @@ func _process(_delta: float) -> bool:
 			cs.setup("owner")
 		190:
 			_shot("owner_char")
+			cs.confirm()  # the tier step (R1)
 			cs.confirm()
 		200:
 			_shot("owner_options")

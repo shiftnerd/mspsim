@@ -618,6 +618,15 @@ func change_tier(delta_tier: int) -> void:
 	queue_redraw()
 
 
+# the tier step (R1): choose EASY / NORMAL / HARD by index; remembered in the settings file like the LEVEL row
+func pick_tier(index: int) -> void:
+	Difficulty.set_tier(str(Difficulty.TIERS[clampi(index, 0, Difficulty.TIERS.size() - 1)]))
+	Difficulty.save_settings()
+	if _panel != null:
+		_panel.refit()
+	queue_redraw()
+
+
 # X (or a click on the SEED chip): type, paste, roll or pick today's seed
 func open_seed() -> void:
 	if overlay:
@@ -656,6 +665,8 @@ func flow() -> Array:
 	var out: Array = ["create" if direct else "char"]
 	if needs_phone():
 		out.append("phone")
+	if is_campaign():
+		out.append("tier")  # R1: the difficulty is a step of its own in a campaign (Free Play keeps the LEVEL row of the options)
 	out.append("options")
 	if needs_build():
 		out.append("build")
@@ -740,6 +751,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if step == "options" and _options_key(event, dir):
 			get_viewport().set_input_as_handled()
 			return
+		if step == "tier" and dir != "":  # the tier step: any direction steps through EASY / NORMAL / HARD
+			pick_tier(clampi(Difficulty.tier_index() + (-1 if dir in ["up", "left"] else 1), 0, Difficulty.TIERS.size() - 1))
+			get_viewport().set_input_as_handled()
+			return
 		if dir == "left":
 			move(-1)
 		elif dir == "right":
@@ -750,7 +765,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			confirm()
 		elif Controls.back(event):
 			back()
-		elif event is InputEventKey and event.keycode == KEY_F9:
+		elif Controls.word(event) == "f9":
 			Game.cycle_format()
 		else:
 			return
@@ -821,15 +836,15 @@ func _options_key(event: InputEvent, dir: String) -> bool:
 		change_start(-1)
 	elif Controls.matches(event, "pick_next"):
 		change_start(1)
-	elif event is InputEventKey and event.keycode in [KEY_X, KEY_T, KEY_M, KEY_B]:
-		match event.keycode:
-			KEY_X:
+	elif Controls.word(event) in ["x", "t", "m", "b"]:
+		match Controls.word(event):
+			"x":
 				open_seed()
-			KEY_T:
+			"t":
 				open_tools()
-			KEY_M:
-				change_mut(-1 if event.shift_pressed else 1)
-			KEY_B:
+			"m":
+				change_mut(-1 if Controls.shift(event) else 1)
+			"b":
 				toggle_mut_mode()
 	else:
 		return false
@@ -847,7 +862,7 @@ func _build_key(event: InputEvent, dir: String) -> bool:
 		_panel.change(-1)
 	elif dir == "right":
 		_panel.change(1)
-	elif event is InputEventKey and event.keycode == KEY_P:
+	elif Controls.matches(event, "preset"):
 		_panel.cycle_preset(1)
 	else:
 		return false
@@ -870,7 +885,7 @@ func _create_input(event: InputEvent) -> bool:
 		queue_redraw()
 		return true
 	if Controls.matches(event, "page_prev") or Controls.matches(event, "page_next"):
-		var letter: bool = event is InputEventKey and event.keycode in [KEY_Q, KEY_E]
+		var letter: bool = Controls.word(event) in ["q", "e"]
 		if not (letter and on_name):  # Q and E are letters on the NAME row (a pad's shoulder buttons always turn the page)
 			_turn_page(-1 if Controls.matches(event, "page_prev") else 1)
 			return true
@@ -964,21 +979,17 @@ func set_page(index: int) -> void:
 func _type_key(event: InputEvent) -> bool:
 	if not event is InputEventKey:
 		return false
-	var code: int = event.keycode
+	var key_name := Controls.word(event)
 	var buf := str(Look.look.get("name", ""))
-	if code == KEY_BACKSPACE:
+	if key_name == "backspace":
 		if buf == "":
 			return false
 		Look.look["name"] = buf.left(buf.length() - 1)
 		_refresh_look()
 		return true
-	if code in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE, KEY_TAB]:
+	if key_name in ["enter", "esc", "tab"]:
 		return false
-	var ch := ""
-	if event.unicode > 0:
-		ch = char(event.unicode)
-	elif code >= KEY_A and code <= KEY_Z:
-		ch = char(code)
+	var ch := Controls.typed(event)
 	if not Look.name_char_ok(ch):
 		return false
 	if buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
@@ -1252,6 +1263,10 @@ func _click(at: Vector2) -> void:
 			move(-1)
 		"next":
 			move(1)
+		"tier_pick":
+			pick_tier(int(r[2]))
+		"tier_go":
+			confirm()
 		"tier_down":
 			change_tier(-1)
 		"tier_up":
@@ -1282,6 +1297,11 @@ func _size() -> Vector2:
 
 func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
 	PixelFont.draw(self, s, p, c)
+
+
+# a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
+func _keys_line(s: String, y: float) -> void:
+	_ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
 
 
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
@@ -1327,14 +1347,14 @@ func _draw() -> void:
 	var narrow := size.x < 250.0
 	_rects.clear()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.78 if overlay else 0.9))  # the outfit overlay lets the room show through
-	var titles := {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE", "options": "SET UP THE RUN"}
+	var titles := {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE", "options": "SET UP THE RUN", "tier": "HOW HARD?"}
 	if overlay:
 		titles["create"] = "CHANGE YOUR LOOK"
 	var heading: String = titles.get(step, "BUILD YOUR CHARACTER")
 	_ctxt(heading, 22.0 if narrow else 6.0, GOLD)
 	var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
 	draw_rect(back_r, PANEL)
-	_txt("< ESC", back_r.position + Vector2(2, 2), DIM)
+	_txt(Controls.hint("< ESC"), back_r.position + Vector2(2, 2), DIM)
 	_rects.append([back_r, "back", 0])
 	if step == "char":
 		_draw_chars(size, narrow)
@@ -1344,6 +1364,9 @@ func _draw() -> void:
 	elif step == "options":
 		_place_sprites(size, narrow)
 		_draw_options(size, narrow)
+	elif step == "tier":
+		_place_sprites(size, narrow)
+		_draw_tier(size, narrow)
 	elif step == "build":
 		_place_sprites(size, narrow)
 		_panel.draw(self, size, narrow, _rects)
@@ -1354,31 +1377,34 @@ func _draw() -> void:
 		_draw_summary(size, narrow)
 	if step == "create":
 		if create_modal != "":
-			_ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+			_keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 		elif narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
 			var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
 			if float(PixelFont.width(keys)) > size.x - 4.0:
 				keys = "Q E PAGE  ARROWS  TAB HOLD POSE  ENTER GO  ESC BACK"
-			_ctxt(keys, size.y - 9.0, DIM)
+			_keys_line(keys, size.y - 9.0)
 		return
 	if step == "build":
 		if narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("P PRESET  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("P PRESET  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0)
+		return
+	if step == "tier":
+		_keys_line("UP DOWN CHOOSE  ENTER GO  ESC BACK", size.y - (12.0 if narrow else 9.0))
 		return
 	if step == "options":
 		if narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("ENTER GO  ESC BACK", size.y - 12.0)
 		else:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0)
 		return
-	_ctxt("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+	_keys_line("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
@@ -1465,8 +1491,31 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
 			ny += 8.0
 
 
+# the tier step (R1): EASY / NORMAL / HARD as three rows, NEXT, and under them the campaign's own line about the chosen
+# tier (Difficulty.TIER_NOTES). The options page still shows the choice in its LEVEL row.
+func _draw_tier(size: Vector2, narrow: bool) -> void:
+	var lay := _create_layout(size, narrow)
+	var x0: float = lay.x0
+	var pitch: float = lay.pitch
+	var who := Look.final_name() if is_custom() else str(info(current_id()).name)
+	_txt(who, Vector2(floorf(float(lay.cx) - float(PixelFont.width(who)) * 0.5), float(lay.feet) + 3.0), GOLD)
+	for i in Difficulty.TIERS.size():
+		var id := str(Difficulty.TIERS[i])
+		var hot := id == Difficulty.tier
+		var box := Rect2(x0, float(lay.y0) + float(i) * pitch + 1.0, 84.0, pitch - 3.0)
+		_chip(box, str(Difficulty.LABELS[id]), hot, "tier_pick", i, PANEL if hot else INK)
+		if hot:
+			_txt("<", Vector2(box.end.x + 4.0, box.position.y + floorf((box.size.y - 5.0) * 0.5)), GOLD)
+	var go_y := float(lay.y0) + float(Difficulty.TIERS.size()) * pitch
+	_chip(Rect2(x0, go_y + 1.0, 56.0, pitch - 3.0), "NEXT", false, "tier_go")
+	var ny := go_y + pitch + 3.0
+	for line in _wrap(Difficulty.tier_note(mode), int((size.x - x0 - 6.0) / 4.0), 4):
+		_txt(str(line), Vector2(x0, ny), DIM)
+		ny += 8.0
+
+
 func _place_sprites(size: Vector2, narrow: bool) -> void:
-	if step == "create" or step == "options":  # the one person, big enough to see the colours, beside the rows
+	if step == "create" or step == "options" or step == "tier":  # the one person, big enough to see the colours, beside the rows
 		var lay := _create_layout(size, narrow)
 		var shown := _preview()
 		for spr in _sprites:

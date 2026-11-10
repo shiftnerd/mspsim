@@ -178,6 +178,7 @@ else. You can change your mind in **SETTINGS**.
 | **MAIL** | The same inbox as your computer. |
 | **TICKETS** | A small version of the service board: look, **TAKE**, add a **NOTE**. Closing a ticket needs a computer (`CLOSING TICKETS NEEDS A COMPUTER`). |
 | **TEXTS** | Messages from people who need you right now. Red badge when unread. |
+| **CAMERA** (in the dock) | Point it at what is in front of you and press **SNAP** (`Enter`). `Down` opens the roll of your last six photos. A photo of the **patch panel** in the network closet keeps the jack tags as they read that day: a "no link" ticket on the phone then quotes the tag for that desk from your photo, and says whether it is one of Dan's printed tags (trust it) or hand-written tape (it may have drifted). |
 | **SETTINGS** | Which phone you carry, the network (`CELLULAR 4G`: it works when the office network does not), a **TONE** row to change the ringtone, and **CAREER** to open your medals. |
 
 | ACTION | KEYBOARD | MOUSE |

@@ -282,17 +282,17 @@ static func enter(cp) -> void:
 	send(cp)
 
 
-static func key(cp, code: int) -> void:
-	match code:
-		KEY_LEFT:
+static func key(cp, name: String) -> void:
+	match name:
+		"left":
 			change(ROWS[int(SalesCampaign.qb.get("row", 0))], -1)
-		KEY_RIGHT:
+		"right":
 			change(ROWS[int(SalesCampaign.qb.get("row", 0))], 1)
-		KEY_TAB:
+		"tab":
 			SalesCampaign.qb["page"] = 1 - int(SalesCampaign.qb.get("page", 0))
-		KEY_S:
+		"s":
 			send(cp)
-		KEY_B:
+		"b":
 			close()
 	cp._canvas.queue_redraw()
 

@@ -278,7 +278,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var go := false
 	if Controls.pressed(event):
-		if event is InputEventKey and event.keycode == KEY_F9:
+		if Controls.word(event) == "f9":
 			Game.cycle_format()
 			_menu.queue_redraw()
 		go = Controls.confirm(event)
@@ -722,12 +722,14 @@ func _draw_menu() -> void:
 		shown = CONTINUE_ROWS
 		_scroll = scroll_for(_sel, _items.size())
 	var rows := shown + (1 if _heading != "" else 0)
-	var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 10.0)
+	# R14 (5): the tall format has the room for thumb-sized rows (19 px); the others keep the 8 to 10 px rows
+	var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 20.0 if size.y > size.x else 10.0)
+	var ty := floorf((pitch - 1.0 - 5.0) * 0.5)
 	if _heading != "":
 		var hw := float(PixelFont.width(_heading)) + 12.0
 		var hr := Rect2(floorf((size.x - hw) * 0.5), y, hw, pitch - 1.0)
 		_menu.draw_rect(hr, Color(0.05, 0.07, 0.12, 0.95))
-		PixelFont.draw(_menu, _heading, hr.position + Vector2(6, 2), Color("f5d442"))
+		PixelFont.draw(_menu, _heading, hr.position + Vector2(6, ty), Color("f5d442"))
 		y += pitch
 	for i in _items.size():
 		var item: Dictionary = _items[i]
@@ -742,6 +744,6 @@ func _draw_menu() -> void:
 		var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)
 		var ink := Color("17121f") if chosen else (Color.WHITE if item.enabled else Color("7d8595"))
 		_menu.draw_rect(r, back)
-		PixelFont.draw(_menu, label, r.position + Vector2(6, 2), ink)
+		PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
 	var sound := Sfx.status_text() + "  M"
 	PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))

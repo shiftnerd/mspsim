@@ -988,7 +988,7 @@ func pick_game(from_invite: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
 		return
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
+	if Controls.pressed(event) and Controls.matches(event, "outing"):
 		party_set = false
 		draw_party()
 		Cards.ask(
@@ -1206,6 +1206,8 @@ func _event_key(event: InputEvent) -> int:
 		key = KEY_Z  # A or X on a pad: fire
 	elif (grilling or paintballing) and Controls.matches(event, "run"):
 		key = KEY_SHIFT  # B on a pad: the cool side
+	elif game == "escape" and Controls.matches(event, "nudge"):
+		key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
 	elif dir != "":
 		key = PAD_ARROWS[dir]
 	elif Controls.back(event):
@@ -3723,7 +3725,7 @@ func _room_wants(key: int) -> bool:
 		"escape":
 			if g.get("entry", false):
 				return key in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER]
-			return key == KEY_N
+			return key == Controls.key_of("nudge")
 		_:
 			return (
 				str(g.get("stage", "")) == "talk"
@@ -3732,7 +3734,7 @@ func _room_wants(key: int) -> bool:
 
 
 func _room_press(key: int) -> bool:
-	if game == "escape" and key == KEY_N and not g.get("entry", false):
+	if game == "escape" and key == Controls.key_of("nudge") and not g.get("entry", false):
 		escape_nudge()
 		return true
 	return false
@@ -4097,7 +4099,7 @@ func _dinner_react() -> void:
 
 # ---- the in-room display (replaces the panel while you play)
 func _paint_hud(size: Vector2) -> void:
-	UiStyle.hint_bar(_canvas, size, hint())
+	UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
 	var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
 	var strip_w := 176.0 if game == "dinner" else (232.0 if game == "chair" and size.x > 300.0 else 164.0)  # five faces need the room
 	var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
@@ -5589,7 +5591,7 @@ func _paint() -> void:
 	if Cards.is_open:
 		return  # the song / budget card has the screen (the page comes back after it)
 	if _traveled and _peek:
-		UiStyle.hint_bar(_canvas, size, "TAB = BACK TO THE GAME")
+		UiStyle.hint_bar(_canvas, size, Controls.hint("TAB = BACK TO THE GAME"))
 		return
 	_canvas.draw_rect(
 		Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
@@ -5622,7 +5624,7 @@ func _paint() -> void:
 					_paint_darts(body)
 				_:
 					_paint_dinner(body)
-	UiStyle.footer(_canvas, panel, hint())
+	UiStyle.footer(_canvas, panel, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
 
 
 # R5: who is in the room for a karaoke night or an escape room, in words ("" for the other games, which name their own crew)

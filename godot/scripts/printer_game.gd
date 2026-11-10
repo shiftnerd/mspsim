@@ -681,6 +681,7 @@ var _dir := 1.0
 var _shake_t := 0.0
 var _last_shake := ""
 var _answered := false
+var ans_sel := -1  # the test page: the answer Up / Down marked (-1 = none; the 1 2 3 keys answer at once)
 var _result_t := 0.0
 
 
@@ -984,18 +985,14 @@ func _input(event: InputEvent) -> void:
 		press("confirm")
 	elif Controls.back_any(event, false):
 		press("escape")
-	elif event is InputEventKey:
-		match event.keycode:
-			KEY_A:
-				press("a")
-			KEY_D:
-				press("d")
-			KEY_1, KEY_2, KEY_3:
-				press(str(event.keycode - KEY_0))
-			KEY_P:
-				press("pray")
-			_:
-				return
+	elif Controls.matches(event, "shake_left"):
+		press("a")
+	elif Controls.matches(event, "shake_right"):
+		press("d")
+	elif Controls.digit(event) >= 1 and Controls.digit(event) <= 3:
+		press(str(Controls.digit(event)))
+	elif Controls.matches(event, "pray"):
+		press("pray")
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -1067,6 +1064,10 @@ func press(key: String) -> void:
 		"test":
 			if not _answered and key in ["1", "2", "3"]:
 				_answer(int(key) - 1)
+			elif not _answered and key in ["up", "down"]:  # a pad (R14): Up / Down mark an answer, confirm gives it
+				ans_sel = (0 if key == "down" else 2) if ans_sel < 0 else posmod(ans_sel + (1 if key == "down" else -1), 3)
+			elif not _answered and key == "confirm" and ans_sel >= 0:
+				_answer(ans_sel)
 			elif _answered and key == "confirm":
 				_next_question()
 		"result":
@@ -1128,6 +1129,7 @@ func _install() -> void:
 func _answer(choice: int) -> void:
 	var q: Dictionary = _qs()[int(asked[qi])]
 	_answered = true
+	ans_sel = -1
 	if choice == int(q.correct):
 		msg = _tx("right") + " " + str(q.why)
 	elif choice == int(q.hit) and _rng().randf() < 0.05:
@@ -1236,7 +1238,7 @@ func _paint() -> void:
 				panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0,
 				UiStyle.MUTED
 			)
-	UiStyle.footer(_canvas, panel, _hint())
+	UiStyle.footer(_canvas, panel, Controls.hint(_hint(), {"P": "pray", "A": "shake_left", "D": "shake_right"}))
 
 
 # the same KEY = ACTION hint line the outing pages use
@@ -1420,7 +1422,7 @@ func _paint_test() -> void:
 	_r(12, 16, 152, 18, Color("3a6a42"))
 	_txt(str(q.error), 16, 22, Color("d8f8d8"), 1)
 	for i in 3:
-		_txt("%d  %s" % [i + 1, str(q.options[i])], 10, 42.0 + float(i) * 8.0)
+		_txt("%d  %s" % [i + 1, str(q.options[i])], 10, 42.0 + float(i) * 8.0, UiStyle.HEAD if i == ans_sel and not _answered else INK)
 
 
 func _paint_result() -> void:

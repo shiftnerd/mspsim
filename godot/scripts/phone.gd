@@ -16,6 +16,7 @@ var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const RED := Color("e0463c")
+const TAP_H := 19.0  # the least height of a tap target on the big phone (R14 5)
 const GREEN := Color("3cc15a")
 const NOTES := ["Texted the client back.", "On my way in.", "Looking at it from my phone."]
 
@@ -28,7 +29,8 @@ var tk_sel := -1
 var txt_open := false
 var txt_scroll := 0  # how many of the newest texts are scrolled past (Up / Down / the wheel)
 var home_sel := 0  # keyboard selection on the home screen (0 mail, 1 tickets, 2 texts, 3 settings, 4 the dock's PHONE)
-const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone"]
+const HOME_APPS := ["mail", "tickets", "texts", "settings", "phone", "camera"]
+const MAX_PHOTOS := 6  # the camera roll keeps the newest six (R37)
 const KEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"]
 const DIAL_SECS := 1.2  # ringing before they pick up
 const UNLOCK_SECS := 0.3
@@ -53,6 +55,9 @@ var call_sel := 0
 var call_cd: Dictionary = {}  # contact id -> game hour (day * 24 + clock) it takes calls again; saved
 var call_n: Dictionary = {}  # contact id -> calls made; saved
 var calls_made := 0
+var photos: Array = []  # the camera roll, newest first: {kind, cap, lines, day, clock, scene, tags, epoch}; saved with the campaign
+var cam_view := "finder"  # the CAMERA app: finder | roll | photo
+var cam_sel := 0  # the photo picked in the roll
 var feed: Array = []  # the latest notifications, newest first: {kind, who, body}
 var banner: Dictionary = {}  # the banner on screen: {kind, who, body, t}
 var buzz_count := 0
@@ -105,6 +110,8 @@ func reset() -> void:
 	call_n = {}
 	calls_made = 0
 	dialog = {}
+	photos = []
+	cam_view = "finder"
 	feed = []
 	banner = {}
 	_bq = []
@@ -112,13 +119,19 @@ func reset() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"cd": call_cd.duplicate(), "n": call_n.duplicate(), "calls": calls_made}
+	return {"cd": call_cd.duplicate(), "n": call_n.duplicate(), "calls": calls_made, "photos": photos.duplicate(true)}
 
 
 func from_dict(data: Dictionary) -> void:
 	call_cd = (data.get("cd", {}) as Dictionary).duplicate()
 	call_n = (data.get("n", {}) as Dictionary).duplicate()
 	calls_made = int(data.get("calls", 0))
+	photos = []
+	var saved: Variant = data.get("photos", [])  # an old save has no camera roll
+	if saved is Array:
+		for ph in saved:
+			if ph is Dictionary and ph.has("cap"):
+				photos.append((ph as Dictionary).duplicate(true))
 
 
 func open() -> void:
@@ -371,6 +384,8 @@ func back() -> void:
 			ph_view = "contacts"
 		else:
 			app = "home"
+	elif app == "camera" and cam_view != "finder":
+		cam_view = "roll" if cam_view == "photo" else "finder"
 	elif app == "mail" and mail_sel >= 0:
 		mail_sel = -1
 	elif app == "tickets" and tk_sel >= 0:
@@ -406,6 +421,16 @@ func move(step: int) -> void:
 			ph_scroll = clampi(ph_scroll, ph_sel - 20, ph_sel)  # _paint_contacts trims it to the rows that fit
 		_canvas.queue_redraw()
 		return
+	if app == "camera":
+		if cam_view == "finder" and step > 0 and not photos.is_empty():
+			cam_view = "roll"  # Down from the viewfinder: the photos
+			cam_sel = 0
+		elif cam_view == "roll":
+			if step < 0 and cam_sel == 0:
+				cam_view = "finder"
+			cam_sel = clampi(cam_sel + step, 0, maxi(0, photos.size() - 1))
+		_canvas.queue_redraw()
+		return
 	if app == "mail":
 		mail_sel = clampi(mail_sel + step, 0, maxi(0, Msp.emails.size() - 1))
 	elif app == "texts":
@@ -437,6 +462,8 @@ func enter() -> void:
 		activate("app:" + str(HOME_APPS[home_sel]))
 	elif app == "settings":
 		activate("career")
+	elif app == "camera":
+		activate("shoot" if cam_view == "finder" else ("photo:%d" % cam_sel if cam_view == "roll" else "back"))
 	elif app == "mail" and mail_sel >= 0:
 		activate("mail:%d" % mail_sel)
 
@@ -463,6 +490,8 @@ func activate(id: String) -> void:
 			if app == "phone":
 				ph_view = "contacts"
 				dialog = {}
+			if app == "camera":
+				cam_view = "finder"
 			if app == "texts":
 				for m in Msp.texts:
 					m.unread = false
@@ -483,6 +512,14 @@ func activate(id: String) -> void:
 			dial_number()
 		"home":
 			app = "home"
+		"shoot":
+			take_photo()
+		"roll":
+			cam_view = "roll"
+			cam_sel = 0
+		"photo":
+			cam_sel = clampi(int(parts[1]), 0, maxi(0, photos.size() - 1))
+			cam_view = "photo" if not photos.is_empty() else "finder"
 		"ring":
 			Career.cycle_pick("ringtone")
 			Sfx.play(Career.ringtone_sfx(), 0.8)  # a preview
@@ -537,12 +574,10 @@ func press_key(key: String) -> void:
 func _dial_key(event: InputEvent) -> bool:
 	if not (event is InputEventKey and event.pressed and app == "phone" and ph_view == "keypad" and dialog.is_empty()):
 		return false
-	var code: int = event.keycode
-	if code >= KEY_0 and code <= KEY_9:
-		press_key(str(code - KEY_0))
-	elif code >= KEY_KP_0 and code <= KEY_KP_9:
-		press_key(str(code - KEY_KP_0))
-	elif code == KEY_BACKSPACE:
+	var d := Controls.digit(event, true)
+	if d >= 0:
+		press_key(str(d))
+	elif Controls.word(event) == "backspace":
 		activate("del")
 	else:
 		return false
@@ -663,7 +698,12 @@ func _wrap(s: String, chars: int) -> Array:
 	return lines
 
 
-func _region(id: String, r: Rect2) -> void:
+# R14 (5): on the big phone (the tall format, _sc 2) a target under TAP_H px grows to it (downwards, or upwards with `up`):
+# the hit rect only, the drawing stays
+func _region(id: String, r: Rect2, up: bool = false) -> void:
+	if _sc >= 2 and r.size.y < TAP_H:
+		var more := TAP_H - r.size.y
+		r = Rect2(r.position.x, r.position.y - (more if up else 0.0), r.size.x, TAP_H)
 	_hits.append({"r": r, "id": id})
 
 
@@ -738,7 +778,10 @@ func _skin(b: Rect2) -> Rect2:
 		var hc := Vector2(b.position.x + floorf(b.size.x * 0.5), b.end.y - 6)
 		_disc(hc, 3, Color("55595f"))
 		_disc(hc, 2, Color("1c1e23"))
-		_region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
+		if _sc >= 2:  # a thumb-sized target over the round button, down into the bezel
+			_region("home", Rect2(hc.x - 12.0, b.end.y - 12.0, 25.0, TAP_H))
+		else:
+			_region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
 		return Rect2(b.position.x + 3, b.position.y + 7, b.size.x - 6, b.size.y - 7 - 12)
 	_round(b, Color("3a3d44"))
 	_round(Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)), Color("0e0f12"))  # matte black
@@ -774,6 +817,8 @@ func _paint_screen(s: Rect2) -> void:
 			_paint_texts(content)
 		"settings":
 			_paint_settings(content)
+		"camera":
+			_paint_camera(content)
 		_:
 			_paint_home(content)
 	if not _is_ios():
@@ -912,7 +957,8 @@ func _icon(kind: String, r: Rect2) -> void:
 		"tickets": Color("f0a030"),
 		"texts": Color("3cc15a"),
 		"settings": Color("8b919c"),
-		"phone": Color("34b84f")
+		"phone": Color("34b84f"),
+		"camera": Color("5a5f6b")
 	}
 	if _is_ios():
 		_round(r, cols[kind])
@@ -936,6 +982,10 @@ func _icon(kind: String, r: Rect2) -> void:
 		"texts":
 			_fill(Rect2(c.x - 4 * u, c.y - 3 * u, 8 * u, 5 * u), WHITE)
 			_fill(Rect2(c.x - 3 * u, c.y + 2 * u, 2 * u, 2 * u), WHITE)
+		"camera":
+			_fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
+			_fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
+			_disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
 		"phone":
 			# a handset: ear piece top left, mouth piece bottom right, a curved arm between them
 			var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
@@ -983,16 +1033,20 @@ func _paint_home(a: Rect2) -> void:
 		var pr := Rect2(a.position.x + 3, a.end.y - 12 * _sc, psz, psz)
 		_dock_phone(pr)
 		var tx := pr.end.x + 4.0
-		var label := "PIXEL IT PARTNERS" if _chars(a.end.x - tx - 2) >= 17 else "PIXEL IT"
-		_text(
-			_clip(label, _chars(a.end.x - tx - 2)), Vector2(tx, a.end.y - 9 * _sc), WHITE
-		)
+		var cam_x := a.end.x - 3.0 - psz
+		_dock_camera(Rect2(cam_x, a.end.y - 12 * _sc, psz, psz))
+		var label := "PIXEL IT PARTNERS" if _chars(cam_x - tx - 3) >= 17 else "PIXEL IT"
+		if _chars(cam_x - tx - 3) >= 8:
+			_text(label, Vector2(tx, a.end.y - 9 * _sc), WHITE)
 	else:
 		var pr := Rect2(a.position.x + 3, a.end.y - 12 * _sc, psz, psz)
 		_dock_phone(pr)
-		var bar := Rect2(pr.end.x + 3, a.end.y - 12 * _sc + _sc, a.end.x - pr.end.x - 6, 8 * _sc)
+		var cam_x := a.end.x - 3.0 - psz
+		_dock_camera(Rect2(cam_x, a.end.y - 12 * _sc, psz, psz))
+		var bar := Rect2(pr.end.x + 3, a.end.y - 12 * _sc + _sc, cam_x - pr.end.x - 6, 8 * _sc)
 		_fill(bar, Color("eeeeee"))
-		_text("GOOGOL", bar.position + Vector2(3, 1.5 * _sc), Color("4a7bd0"))
+		if bar.size.x >= _tw("GOOGOL") + 6.0:
+			_text("GOOGOL", bar.position + Vector2(3, 1.5 * _sc), Color("4a7bd0"))
 
 
 # ---- shared app chrome -------------------------------------------------------
@@ -1023,7 +1077,7 @@ func _header(a: Rect2, title: String, can_back: bool) -> Rect2:
 			_text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), Color("2b79f0"))
 		else:
 			_text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), WHITE)
-		_region("back", Rect2(bar.position, Vector2(14 * _sc, h)))
+		_region("back", Rect2(bar.position, Vector2(14 * _sc, h)), true)
 	return Rect2(a.position.x, a.position.y + h, a.size.x, a.size.y - h)
 
 
@@ -1126,6 +1180,8 @@ func _paint_ticket(body: Rect2, t: Dictionary) -> void:
 		y += 7 * _sc
 	y += 2 * _sc
 	var lines := _wrap(t.body, chars)
+	if str(t.get("fix", "")) == "network" and panel_line(int(t.get("desk", 0))) != "":  # R37: your photo of the patch panel
+		lines = _wrap(panel_line(int(t.desk)), chars) + lines
 	var room := int((body.end.y - 24 * _sc - y) / (7.0 * _sc))
 	for i in mini(lines.size(), maxi(1, room)):
 		_text(lines[i], Vector2(body.position.x + 3, y), Color("46506a"))
@@ -1219,10 +1275,176 @@ func _paint_settings(a: Rect2) -> void:
 
 # ---- the dock's PHONE icon -----------------------------------------------------------------------
 func _dock_phone(r: Rect2) -> void:
-	if home_sel == HOME_APPS.size() - 1:
+	if home_sel == HOME_APPS.find("phone"):
 		_fill(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), Color(1, 1, 1, 0.45))
 	_icon("phone", r)
 	_region("app:phone", Rect2(r.position - Vector2(3, 3), r.size + Vector2(6, 6)))
+
+
+# ---- the CAMERA app (R37, a 2013 phone camera): a viewfinder on what is in front of you, a roll of the last six photos, and
+# one real use: a photo of the patch panel in the network closet keeps the jack tags as they read that day, so a "no link"
+# ticket on the phone tells you from your desk what the tag for that desk says and whether it is one of Dan's printed ones ----
+func _dock_camera(r: Rect2) -> void:
+	if home_sel == HOME_APPS.find("camera"):
+		_fill(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), Color(1, 1, 1, 0.45))
+	_icon("camera", r)
+	_region("app:camera", Rect2(r.position - Vector2(3, 3), r.size + Vector2(6, 6)))
+
+
+func _scene_id() -> String:
+	var scene := get_tree().current_scene
+	return scene.scene_file_path.get_file().get_basename() if scene != null else ""
+
+
+# what the camera sees: {kind panel | rack | person | room, cap, lines, tags}
+func camera_subject() -> Dictionary:
+	var here := _scene_id()
+	if here == "network_closet":
+		var tags := {}
+		var lines := []
+		for jack in range(1, 9):
+			var l: Dictionary = Net.label(jack)
+			tags[jack] = {"text": Net.label_text(jack), "n": int(l.n), "state": str(l.state)}
+			lines.append("PORT %d: %s" % [jack, Net.label_text(jack)])
+		return {"kind": "panel", "cap": "PATCH PANEL", "lines": lines, "tags": tags}
+	if here.begins_with("site_") and here.find("_closet") >= 0:
+		var site := here.trim_prefix("site_").split("_")[0].to_upper()
+		return {"kind": "rack", "cap": site + " RACK", "lines": ["ASSET TAG PX-%04d" % (hash(here) % 10000), "ONE SWITCH, ONE ROUTER, DUST."], "tags": {}}
+	var scene := get_tree().current_scene
+	var who: Node = Players.player0(scene) if scene != null else null
+	var near: Node = who.nearest() if who != null and who.has_method("nearest") else null
+	if near != null and World.chars.has(str(near.name)):
+		return {"kind": "person", "cap": str(near.name).to_upper(), "lines": ["THEY DID NOT ASK FOR THIS."], "tags": {}}
+	return {"kind": "room", "cap": here.replace("_", " ").to_upper() if here != "" else "NOWHERE", "lines": [], "tags": {}}
+
+
+# press the shutter: the subject goes on the roll with the day and the time (newest first, MAX_PHOTOS kept)
+func take_photo() -> Dictionary:
+	var shot := camera_subject()
+	shot["day"] = World.day
+	shot["clock"] = World.clock
+	shot["scene"] = _scene_id()
+	shot["epoch"] = World.day if Campaign.active else 0
+	photos.push_front(shot)
+	while photos.size() > MAX_PHOTOS:
+		photos.pop_back()
+	Sfx.play("ui_pick", 0.7)
+	_say("PHOTO SAVED")
+	return shot
+
+
+# the newest photo of the patch panel ({} for none)
+func panel_photo() -> Dictionary:
+	for ph in photos:
+		if str(ph.get("kind", "")) == "panel":
+			return ph
+	return {}
+
+
+# the real use: what your panel photo says about a desk's port, for a "no link" ticket read at your desk ("" without a photo)
+func panel_line(desk: int) -> String:
+	var ph := panel_photo()
+	if ph.is_empty() or desk < 1:
+		return ""
+	var tags: Dictionary = ph.get("tags", {})
+	var old := int(ph.get("epoch", 0)) != (World.day if Campaign.active else 0)
+	for jack in tags:  # the keys are ints in a fresh photo and strings in a loaded one
+		var tag: Dictionary = tags[jack]
+		if int(tag.get("n", 0)) == desk and not str(tag.get("state", "")) in ["blank", "faded"]:
+			var kind := "PRINTED" if str(tag.get("state", "")) in ["dan", "fixed"] else "TAPE"
+			return "PHOTO: PORT %d IS TAGGED %s (%s)%s" % [int(str(jack)), str(tag.get("text", "")), kind, ", OLD PHOTO" if old else ""]
+	return "PHOTO: NO TAG NAMES DESK %d%s" % [desk, ", OLD PHOTO" if old else ""]
+
+
+func _photo_time(ph: Dictionary) -> String:
+	var clock := float(ph.get("clock", 0.0))
+	return "DAY %d %d:%02d" % [int(ph.get("day", 0)), int(clock), int((clock - floorf(clock)) * 60.0)]
+
+
+# a photo, drawn from what it holds (no screen capture: it works the same on every renderer and in a save)
+func _paint_shot(r: Rect2, ph: Dictionary) -> void:
+	var kind := str(ph.get("kind", "room"))
+	var u := maxf(1.0, floorf(r.size.x / 40.0))
+	_fill(r, Color("2a2e3a") if kind in ["panel", "rack"] else Color("cfd6c4"))
+	if kind == "panel" or kind == "rack":
+		_fill(Rect2(r.position.x + 2 * u, r.position.y + 2 * u, r.size.x - 4 * u, r.size.y - 4 * u), Color("14161c"))
+		var n := 8
+		var step := (r.size.x - 8 * u) / float(n)
+		var tags: Dictionary = ph.get("tags", {})
+		var k := 0
+		for jack in tags:
+			var state := str(tags[jack].get("state", ""))
+			var x := r.position.x + 4 * u + float(k) * step
+			_fill(Rect2(x, r.position.y + r.size.y * 0.5, maxf(1.0, step - u), 2 * u), Color("8b919c"))
+			if state != "blank":
+				_fill(Rect2(x, r.position.y + r.size.y * 0.5 - 3 * u, maxf(1.0, step - u), 2 * u), WHITE if state in ["dan", "fixed"] else Color("e8d36a"))
+			k += 1
+		if tags.is_empty():
+			for i in 3:
+				_fill(Rect2(r.position.x + 4 * u, r.position.y + 4 * u + float(i) * 4 * u, r.size.x - 8 * u, 2 * u), Color("3f4654"))
+				_fill(Rect2(r.end.x - 7 * u, r.position.y + 4 * u + float(i) * 4 * u, u, u), Color("5fd06a"))
+	else:
+		_fill(Rect2(r.position.x, r.end.y - r.size.y * 0.3, r.size.x, r.size.y * 0.3), Color("8d8f7a"))
+		if kind == "person":
+			var cx := r.position.x + r.size.x * 0.5
+			_fill(Rect2(cx - 3 * u, r.end.y - 9 * u, 6 * u, 8 * u), Color("4f7fd0"))
+			_fill(Rect2(cx - 3 * u, r.end.y - 15 * u, 6 * u, 6 * u), Color("f3b488"))
+		else:
+			_fill(Rect2(r.position.x + 3 * u, r.end.y - r.size.y * 0.3 - 6 * u, 10 * u, 6 * u), Color("7a5a3c"))
+	_canvas.draw_rect(r, Color("17121f"), false, 1.0)
+
+
+func _paint_camera(a: Rect2) -> void:
+	var u := float(_sc)
+	if cam_view == "roll":
+		var list := _header(a, "PHOTOS", true)
+		_fill(list, WHITE)
+		var rh := 15.0 * u
+		for i in photos.size():
+			var rr := Rect2(list.position.x, list.position.y + float(i) * rh, list.size.x, rh)
+			if rr.end.y > list.end.y:
+				break
+			_row(rr, i % 2 == 1, i == cam_sel)
+			_paint_shot(Rect2(rr.position.x + 2, rr.position.y + 2 * u, 16 * u, 11 * u), photos[i])
+			var tx := rr.position.x + 16 * u + 6
+			_text(_clip(str(photos[i].cap), _chars(rr.end.x - tx - 2)), Vector2(tx, rr.position.y + 2 * u), INK)
+			_text(_clip(_photo_time(photos[i]), _chars(rr.end.x - tx - 2)), Vector2(tx, rr.position.y + 8 * u), Color("7d8595"))
+			_region("photo:%d" % i, rr)
+		if photos.is_empty():
+			_text("NO PHOTOS YET", list.position + Vector2(4, 6 * u), Color("8b93a1"))
+		return
+	if cam_view == "photo" and cam_sel < photos.size():
+		var ph: Dictionary = photos[cam_sel]
+		var page := _header(a, str(ph.cap), true)
+		_fill(page, WHITE)
+		var pic := Rect2(page.position.x + 3, page.position.y + 3 * u, page.size.x - 6, floorf((page.size.x - 6) * 0.45))
+		_paint_shot(pic, ph)
+		var y := pic.end.y + 3 * u
+		_text(_photo_time(ph), Vector2(page.position.x + 3, y), Color("7d8595"))
+		y += 8 * u
+		for line in ph.get("lines", []):
+			if y + 6 * u > page.end.y:
+				break
+			_text(_clip(str(line), _chars(page.size.x - 6)), Vector2(page.position.x + 3, y), INK)
+			y += 7 * u
+		return
+	# the viewfinder
+	var body := _header(a, "CAMERA", true)
+	_fill(body, Color("101216"))
+	var seen := camera_subject()
+	var view := Rect2(body.position.x + 3, body.position.y + 3 * u, body.size.x - 6, floorf((body.size.x - 6) * 0.6))
+	_paint_shot(view, seen)
+	_text(_clip(str(seen.cap), _chars(body.size.x - 6)), Vector2(body.position.x + 3, view.end.y + 3 * u), WHITE)
+	var by := body.end.y - 12 * u
+	var shut := Rect2(body.position.x + floorf((body.size.x - 22 * u) * 0.5), by, 22 * u, 10 * u)
+	_fill(shut, Color("e0463c"))
+	_text("SNAP", shut.position + Vector2(floorf((shut.size.x - _tw("SNAP")) * 0.5), 2.5 * u), WHITE)
+	_region("shoot", shut)
+	if not photos.is_empty():
+		var roll := Rect2(body.position.x + 2, by, 4 * u * 3 + 4, 10 * u)
+		_fill(roll, Color("3a3f4c"))
+		_text(str(photos.size()), roll.position + Vector2(floorf((roll.size.x - _tw(str(photos.size()))) * 0.5), 2.5 * u), WHITE)
+		_region("roll", roll)
 
 
 # ---- lock screen ---------------------------------------------------------------------------------

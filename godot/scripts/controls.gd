@@ -13,6 +13,8 @@ extends Node
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
+const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
 	"move_left": [[KEY_A, KEY_LEFT], [JOY_BUTTON_DPAD_LEFT], [[JOY_AXIS_LEFT_X, -1.0]]],
@@ -46,7 +48,32 @@ const ACTIONS := {
 	"character_next": [[], [JOY_BUTTON_RIGHT_STICK], []],  # co-op: the next stock person for this player (slot 0 has the 1-7 keys)
 	"mute": [[KEY_M], [], []],
 	"pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
+	# R14 (1b): the last raw keys, as actions. A pad reaches each one by its button, or by a row on screen where noted
+	"nudge": [[KEY_N], [JOY_BUTTON_Y], []],  # the escape room: ask for a nudge
+	"outing": [[KEY_O], [], []],  # Free Play: take the team out (a pad: the pause menu's FREE PLAY row)
+	"mutator": [[KEY_QUOTELEFT], [], []],  # Free Play: the next mutator (a pad: the pause menu's FREE PLAY row)
+	"preset": [[KEY_P], [JOY_BUTTON_Y], []],  # character select, the build step: the next preset
+	"pray": [[KEY_P], [JOY_BUTTON_Y], []],  # the printer game
+	"shake_left": [[KEY_A], [JOY_BUTTON_LEFT_SHOULDER], []],  # the printer game: shake the toner
+	"shake_right": [[KEY_D], [JOY_BUTTON_RIGHT_SHOULDER], []],
+	"hot_next": [[], [JOY_BUTTON_Y], []],  # the computer's letter hotkeys on a pad: Y steps through them ...
+	"hot_go": [[], [JOY_BUTTON_X], []],  # ... and X presses the chosen one (Computer.hot_keys)
+	"roll": [[], [], [[JOY_AXIS_TRIGGER_LEFT, 1.0]]],  # seated: hold to roll the chair with the stick (the keyboard holds Shift = run)
 }
+
+# the name of a key, for the screens that take keys by name (Controls.word): every other key is its letter, digit or F number
+const WORDS := {
+	KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter", KEY_KP_ENTER: "enter",
+	KEY_ESCAPE: "esc", KEY_BACKSPACE: "backspace", KEY_SPACE: "space", KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn",
+	KEY_BRACKETLEFT: "[", KEY_BRACKETRIGHT: "]", KEY_QUOTELEFT: "`", KEY_SHIFT: "shift",
+}
+
+# the words a hint line uses for the menu keys -> the menu role (MENU_ROLES) that key belongs to
+const HINT_ROLES := {"ENTER": "menu_confirm", "ESC": "menu_back", "UP": "menu_up", "DOWN": "menu_down", "LEFT": "menu_left", "RIGHT": "menu_right", "Z": "game_a", "X": "game_b", "SHIFT": "game_cool"}
+# what a pad shows for those words (the arrows stay: the D-pad has them)
+const HINT_PAD := {"ENTER": "(A)", "SPACE": "(A)", "ESC": "(B)", "ARROWS": "STICK", "TAB": "(RB)", "Z": "(A)", "X": "(B)", "SHIFT": "(B)", "E": "(A)"}
+# the words of a walking-around prompt (the HUD hint, the room hints) -> the action
+const HINT_WORLD := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "SPACE": "jump", "SHIFT": "run", "TAB": "pick_next", "Z": "aim"}
 
 # menu directions by key: the arrows always, the letters when a screen asks for them
 const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right"}
@@ -120,6 +147,9 @@ const HELP := [
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
 var binds_path := "user://controls.cfg"
 var capturing := false  # the remap page is waiting for a key: nothing is translated
+var pad_active := false  # the last press came from a pad (the hint lines then show pad buttons)
+var touch_override := -1  # -1 = ask the display server, 0 = never, 1 = always (tests): the touch overlay
+var touch: CanvasLayer = null  # the touch overlay (scripts/touch_overlay.gd); only exists on a touch screen
 var _overrides := {}  # action -> the physical key code it was remapped to
 var _pad_overrides := {}  # action -> the joypad button it was remapped to
 var _alias := {}  # physical key -> the key a menu or mini-game screen looks for (MENU_ROLES)
@@ -133,6 +163,28 @@ var _stick_result := false
 func _ready() -> void:
 	ensure()
 	load_binds()
+	touch_refresh.call_deferred()
+
+
+# make (or remove) the touch overlay to match touch_on(). It is the last child of the root so it sees a touch before any
+# screen does (input goes to the last nodes first) and stays last when a scene is swapped in.
+func touch_refresh() -> void:
+	var want := touch_on()
+	var root := get_tree().root
+	if want and touch == null:
+		touch = TOUCH_OVERLAY.new()
+		touch.name = "TouchOverlay"
+		root.add_child(touch)
+		root.child_entered_tree.connect(_keep_touch_last)
+	elif not want and touch != null:
+		root.child_entered_tree.disconnect(_keep_touch_last)
+		touch.queue_free()
+		touch = null
+
+
+func _keep_touch_last(node: Node) -> void:
+	if touch != null and node != touch:
+		get_tree().root.move_child.call_deferred(touch, -1)
 
 
 # register every action that is missing (the player and the tests may also call this; it is safe to repeat)
@@ -193,6 +245,7 @@ func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
 # a pressed alias key reaches the screens as the key they look for. Controls is the first autoload, so this runs before any
 # screen; the typing screens (the name row, the seed field) are left alone so letters still type.
 func _input(event: InputEvent) -> void:
+	_note_device(event)
 	if _alias.is_empty() or capturing or not event is InputEventKey:
 		return
 	var canon: int = _alias.get(int(event.physical_keycode), 0)
@@ -268,6 +321,8 @@ func rebind(action: String, code: int) -> bool:
 
 # the name of a physical key
 func key_name(code: int) -> String:
+	if DisplayServer.get_name() == "headless":  # no keyboard layout to ask (tests): the key as it is
+		return OS.get_keycode_string(code).to_upper()
 	return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(code)).to_upper()
 
 
@@ -560,3 +615,165 @@ func _stick_push(event: InputEventJoypadMotion) -> bool:
 	_stick[key] = now
 	_stick_result = now != 0 and now != was
 	return _stick_result
+
+
+# ---- keys by name (R14 1b): no script outside this file reads a raw key code (tests/raw_keys.gd) ----
+# the name of a key event or key code: "a".."z", "0".."9" ("kp0".."kp9" on the keypad), "f1".."f12", or a WORDS entry; "" else
+func word(what: Variant) -> String:
+	var code := 0
+	if what is InputEventKey:
+		code = what.keycode
+	elif typeof(what) == TYPE_INT:
+		code = what
+	if code >= KEY_A and code <= KEY_Z:
+		return char(code).to_lower()
+	if code >= KEY_0 and code <= KEY_9:
+		return str(code - KEY_0)
+	if code >= KEY_KP_0 and code <= KEY_KP_9:
+		return "kp%d" % (code - KEY_KP_0)
+	if code >= KEY_F1 and code <= KEY_F12:
+		return "f%d" % (code - KEY_F1 + 1)
+	return str(WORDS.get(code, ""))
+
+
+# 0..9 for a digit key (the keypad too when asked), -1 for anything else
+func digit(event: InputEvent, keypad: bool = false) -> int:
+	var w := word(event)
+	if w.length() == 1 and w >= "0" and w <= "9":
+		return int(w)
+	if keypad and w.begins_with("kp"):
+		return int(w.substr(2))
+	return -1
+
+
+# 1..12 for an F key, 0 for anything else
+func fkey(event: InputEvent) -> int:
+	var w := word(event)
+	return int(w.substr(1)) if w.length() >= 2 and w.begins_with("f") and w.substr(1).is_valid_int() else 0
+
+
+# the physical key of a key event (what a remap stores), 0 for anything else
+func physical(event: InputEvent) -> int:
+	return int(event.physical_keycode) if event is InputEventKey else 0
+
+
+# press an action from code (a menu row or the touch overlay standing in for its key): the screens that ask
+# Controls.pressed(event) and Controls.matches(event, action) take it like the key
+func tap(action: String) -> void:
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	var up := InputEventAction.new()
+	up.action = action
+	up.pressed = false
+	Input.parse_input_event(up)
+
+
+# the modifiers of a key event
+func shift(event: InputEvent) -> bool:
+	return event is InputEventKey and event.shift_pressed
+
+
+func ctrl(event: InputEvent) -> bool:
+	return event is InputEventKey and event.ctrl_pressed
+
+
+func alt(event: InputEvent) -> bool:
+	return event is InputEventKey and event.alt_pressed
+
+
+# either Shift is down right now (macOS reports the modifiers by their logical key, so the run action alone can miss it)
+func shift_held() -> bool:
+	return Input.is_key_pressed(KEY_SHIFT)
+
+
+# the character a key event types ("" for none): text entry (a name, a number)
+func typed(event: InputEvent) -> String:
+	if not event is InputEventKey:
+		return ""
+	if event.unicode > 0:
+		return char(event.unicode)
+	if event.keycode >= KEY_A and event.keycode <= KEY_Z:
+		return char(event.keycode)
+	return ""
+
+
+# ---- what the hint lines print (R34: a hint shows the key or pad button that works NOW, not the default letter) ----
+func _note_device(event: InputEvent) -> void:
+	var pad := pad_active
+	if event is InputEventJoypadButton:
+		pad = pad or event.pressed
+	elif event is InputEventJoypadMotion:
+		pad = pad or absf(event.axis_value) >= 0.5
+	elif (event is InputEventKey or event is InputEventMouseButton) and event.pressed:
+		pad = false
+	pad_active = pad
+
+
+# the touch overlay is wanted: a touch screen (or the test override)
+func touch_on() -> bool:
+	if touch_override >= 0:
+		return touch_override == 1
+	return DisplayServer.is_touchscreen_available()
+
+
+# the current binding of an action or a menu role, as a hint prints it: the key's name, or "(A)" style for a pad button
+func label(action: String) -> String:
+	if pad_active:
+		for role in HINT_ROLES:
+			if HINT_ROLES[role] == action and HINT_PAD.has(role):
+				return str(HINT_PAD[role])
+		if ACTIONS.has(action):
+			var button := button_of(action)
+			if button >= 0:
+				return "(%s)" % button_name(button)
+			for ax in ACTIONS[action][2]:
+				if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
+					return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+				return "STICK"
+	for r in MENU_ROLES:
+		if r[0] == action:
+			var extra := menu_key_of(action)
+			return key_name(extra) if extra > 0 else str(HINT_ROLES.find_key(action))
+	var code := key_of(action)
+	return key_name(code) if code > 0 else ""
+
+
+# a hint line with its key words swapped for what works now: a remapped menu key shows its new key, a pad shows its buttons.
+# `map` adds this screen's own letters ({"P": "pray"}: word -> action). With the default keys on a keyboard the text is unchanged.
+func hint(text: String, map: Dictionary = {}, roles: bool = true) -> String:
+	if not pad_active and _overrides.is_empty() and _alias.is_empty():
+		return text
+	var out := ""
+	var token := ""
+	for i in text.length() + 1:
+		var ch := text[i] if i < text.length() else ""
+		if ch != "" and ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
+			token += ch
+			continue
+		out += _hint_word(token, map, roles) + ch
+		token = ""
+	return out.replace("((", "(").replace("))", ")")
+
+
+# the same for a walking-around prompt ("E: SIT", "P: PHONE"): the walking actions follow their remap
+func world_hint(text: String) -> String:
+	return hint(text, HINT_WORLD, false)  # a sentence may say LEFT or UP as a plain word: the menu roles stay out of it
+
+
+func _hint_word(token: String, map: Dictionary, roles: bool) -> String:
+	if token == "":
+		return ""
+	if map.has(token):
+		var action := str(map[token])
+		if pad_active or _overrides.has(action):
+			var shown := label(action)
+			return shown if shown != "" else token
+		return token
+	if pad_active:
+		return str(HINT_PAD.get(token, token)) if roles or not token in ["Z", "X", "E", "SHIFT"] else token
+	if roles and HINT_ROLES.has(token):
+		var extra := menu_key_of(str(HINT_ROLES[token]))
+		return key_name(extra) if extra > 0 else token
+	return token

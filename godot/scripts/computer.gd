@@ -74,6 +74,7 @@ var dispatch = DISPATCH.new()  # the Dispatch app state (service campaign)
 var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, red tiles pulse)
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
+var hot_i := 0  # the pad's hotkey strip: which letter hotkey Y has stepped to (hot_keys)
 
 var board_scroll := 0.0  # the Boardroom books tab on a short pane: how far it is scrolled up (px)
 var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
@@ -252,7 +253,7 @@ func _route(event: InputEvent) -> void:
 	elif Controls.pressed(event):
 		Sfx.play("ui_tick")
 		var dir := Controls.nav(event, false)
-		if _app_key(event, dir):
+		if _hot_pad(event) or _app_key(event, dir):
 			_canvas.queue_redraw()
 			get_viewport().set_input_as_handled()
 			return
@@ -265,7 +266,7 @@ func _route(event: InputEvent) -> void:
 		elif Controls.confirm(event, false, false):
 			enter()
 		elif app == "crm" and event is InputEventKey:
-			Crm.key(self, event.keycode)
+			Crm.key(self, Controls.word(event))
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -871,6 +872,11 @@ func _paint() -> void:
 			_paint_desktop()
 	if not (tv_mode and app == "dash"):
 		_paint_taskbar()
+	if Controls.pad_active and _toast_t <= 0.0 and hot_text() != "":
+		var hot := _clip(hot_text(), int((size.x - 8) / 4.0))
+		var hx := floorf((size.x - _tw(hot)) * 0.5)
+		_fill(Rect2(hx - 3, _area.end.y - TB - 10, _tw(hot) + 6, 9), Color("20242c"))
+		_text(hot, Vector2(hx, _area.end.y - TB - 8), WHITE)
 	if _toast_t > 0.0:
 		var msg := _clip(_toast, int((size.x - 8) / 4.0))
 		var tx := floorf((size.x - _tw(msg)) * 0.5)
@@ -1986,29 +1992,59 @@ func _app_key(event: InputEvent, dir: String) -> bool:
 
 
 func _dispatch_key(event: InputEventKey) -> bool:
-	var names := {
-		KEY_TAB: "tab",
-		KEY_LEFT: "left",
-		KEY_RIGHT: "right",
-		KEY_UP: "up",
-		KEY_DOWN: "down",
-		KEY_ENTER: "enter",
-		KEY_KP_ENTER: "enter",
-		KEY_A: "a",
-		KEY_T: "t",
-		KEY_E: "e",
-		KEY_U: "u",
-		KEY_C: "c",
-		KEY_B: "b",
-		KEY_S: "s",
-		KEY_F: "f",
-	}
-	if not names.has(event.keycode):
-		return false
-	var key_name: String = names[event.keycode]
-	if key_name == "tab" and event.shift_pressed:
+	var key_name := Controls.word(event)
+	if key_name == "tab" and Controls.shift(event):
 		key_name = "shift_tab"
 	return dispatch.key(key_name)
+
+
+# ---- the letter hotkeys on a pad (R14 1b): Y steps through the open app's hotkeys, X presses the chosen one ----
+# [key name, label] of every letter hotkey the open app takes now
+func hot_keys() -> Array:
+	match app:
+		"crm":
+			return Crm.hot_keys()
+		"dispatch":
+			return dispatch.hot_keys()
+		"knowledge":
+			return Service.kb.hot_keys()
+	return []
+
+
+# press a hotkey by name, exactly as its letter key does
+func hot_press(key_name: String) -> void:
+	match app:
+		"crm":
+			Crm.key(self, key_name)
+		"dispatch":
+			dispatch.key(key_name)
+		"knowledge":
+			Service.kb.key(key_name)
+	_canvas.queue_redraw()
+
+
+func _hot_pad(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		return false
+	var keys := hot_keys()
+	if keys.is_empty():
+		return false
+	hot_i = posmod(hot_i, keys.size())
+	if Controls.matches(event, "hot_next"):
+		hot_i = (hot_i + 1) % keys.size()
+		return true
+	if Controls.matches(event, "hot_go"):
+		hot_press(str(keys[hot_i][0]))
+		return true
+	return false
+
+
+# the strip a pad sees above the taskbar: the hotkey Y has stepped to
+func hot_text() -> String:
+	var keys := hot_keys()
+	if keys.is_empty():
+		return ""
+	return "%s < %s >  %s GO" % [Controls.label("hot_next"), str(keys[posmod(hot_i, keys.size())][1]), Controls.label("hot_go")]
 
 
 # ---- ConnectWhy Knowledge (service manager campaign, C6: the runbooks; the app itself is scripts/knowledge.gd) --------
@@ -2020,28 +2056,8 @@ func _paint_knowledge() -> void:
 
 
 func _knowledge_key(event: InputEventKey) -> bool:
-	var names := {
-		KEY_TAB: "tab",
-		KEY_LEFT: "left",
-		KEY_RIGHT: "right",
-		KEY_UP: "up",
-		KEY_DOWN: "down",
-		KEY_ENTER: "enter",
-		KEY_KP_ENTER: "enter",
-		KEY_W: "w",
-		KEY_H: "h",
-		KEY_T: "t",
-		KEY_R: "r",
-		KEY_D: "d",
-		KEY_C: "c",
-		KEY_PAGEUP: "pgup",
-		KEY_PAGEDOWN: "pgdn",
-		KEY_BRACKETLEFT: "pgup",
-		KEY_BRACKETRIGHT: "pgdn",
-	}
-	if not names.has(event.keycode):
-		return false
-	return Service.kb.key(str(names[event.keycode]))
+	var key_name := Controls.word(event)
+	return Service.kb.key(str({"[": "pgup", "]": "pgdn"}.get(key_name, key_name)))
 
 
 func _paint_lync() -> void:
@@ -2369,10 +2385,8 @@ func _nerds_pad(event: InputEvent, dir: String) -> bool:
 	var key_name := dir
 	if key_name == "" and Controls.confirm(event, false, false):
 		key_name = "enter"
-	if key_name == "" and event is InputEventKey:
-		key_name = str(
-			{KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_TAB: "tab"}.get(event.keycode, "")
-		)
+	if key_name == "" and event is InputEventKey and Controls.word(event) in ["pgup", "pgdn", "tab"]:
+		key_name = Controls.word(event)
 	if key_name == "":
 		return false
 	return nerds_key(key_name)

@@ -3052,6 +3052,26 @@ A heat wave. The air conditioning cannot keep up, the server closets run hot and
 [Mutators.MUTATORS.cold_snap.text]
 A cold snap. The roads are icy, fewer people call and the office heater clicks all day. Everything takes a little longer.
 
+# Mutators > MUTATORS > good_quarter > text
+[Mutators.MUTATORS.good_quarter.text]
+Half the client list just closed a good quarter. Nobody argues about an invoice, a few of them round up, and the extras they kept putting off get approved over lunch.
+
+# Mutators > MUTATORS > price_war > text
+[Mutators.MUTATORS.price_war.text]
+ByteBrothers mailed every office in town a flyer with a number on it, and the number is low. Clients read it out loud on the phone. Keeping them costs a discount here and a free hour there.
+
+# Mutators > MUTATORS > price_war > texts > 0 > from
+[Mutators.MUTATORS.price_war.texts.0.from]
+Boss
+
+# Mutators > MUTATORS > price_war > texts > 0 > body
+[Mutators.MUTATORS.price_war.texts.0.body]
+Seen the ByteBrothers flyer? Do not match the price. Call the ones who are wavering before they call us.
+
+# Mutators > MUTATORS > summer_lull > text
+[Mutators.MUTATORS.summer_lull.text]
+Everybody who signs anything is at the lake. The phone is quiet, new leads dry up, and the invoices sit in inboxes until somebody gets back to pay them.
+
 
 # ======================= Mutators > STARTS =======================
 # Mutators > STARTS > standard > text

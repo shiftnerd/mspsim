@@ -59,8 +59,9 @@ var table_i := 0
 var model_i := 0
 var mutator := ""
 var sel := 0
-var seed_buf := ""
-var seed_focus := 0  # 0 text field, 1 RANDOM, 2 TODAY
+var seed_buf := ""  # the six hex digits on the wheels of the seed page
+var seed_focus := 0  # 0 the wheels, 1 RANDOM, 2 TODAY, 3 OK
+var seed_col := 0  # the wheel in focus (0..5; 6 = just past the last one, after typing all six)
 var last_launch := {}  # what the last launch() started (tests): {game, options}
 
 var _on_close := Callable()
@@ -78,7 +79,7 @@ var _under_tools := false  # the seed page was opened from the toolbox page
 
 # the seed field has the focus: letters type
 func is_typing() -> bool:
-	return is_open and mode == "seed" and seed_focus == 0
+	return false  # the seed page is six digit wheels now (R14 6): nothing is typed as free text
 
 
 func _ready() -> void:
@@ -292,8 +293,9 @@ func _outfit_cancelled() -> void:
 func open_seed(on_close := Callable()) -> void:
 	if is_open:
 		return
-	seed_buf = ""
+	seed_buf = Difficulty.seed_text()
 	seed_focus = 0
+	seed_col = 0
 	_show("seed", on_close)
 
 
@@ -324,24 +326,72 @@ func close(go := false) -> void:
 		cb.call(go)
 
 
+# ---- the Free Play menu (R9, R14): the functions the keyboard has on ` (the next mutator), Shift+F10 (the toolbox), O (a team
+# outing) and 1-7 (another person), as a card: a pad, a mouse or a finger picks from it. The pause menu's FREE PLAY MENU row opens it.
+func free_menu_rows() -> Array:
+	var rows := []
+	if not Difficulty.fixed_take:
+		rows.append({"label": "MUTATOR: %s" % (Mutators.tag() if Mutators.forced != "" else "NONE"), "id": "mutator"})
+	rows.append({"label": "TOOLBOX", "id": "tools"})
+	rows.append({"label": "TEAM OUTING", "id": "outing"})
+	rows.append({"label": "NEXT PERSON", "id": "person"})
+	rows.append({"label": "CLOSE", "id": "close"})
+	return rows
+
+
+func open_free_menu() -> bool:
+	if Campaign.active or Campaign.mode != Campaign.FREE or Game.title_mode or Game.busy or is_open:
+		return false
+	Cards.ask("Free Play", "Mutator, toolbox, an outing, or somebody else for a while.", free_menu_rows(), free_menu_pick)
+	return true
+
+
+func free_menu_pick(id: String) -> void:
+	match id:
+		"mutator":  # the next one, and the card comes back so you can keep stepping
+			Mutators.cycle_forced(1)
+			open_free_menu.call_deferred()
+		"tools":
+			open_tools.call_deferred()
+		"outing":
+			Controls.tap.call_deferred("outing")
+		"person":
+			var who: Node = Players.player0(get_tree().current_scene)
+			if who != null and who.can_swap():
+				who.swap_character(1)
+
+
 # ---- seed page ---------------------------------------------------------------------------------------
 func type_char(ch: String) -> void:
-	if seed_buf.length() < MAX_TEXT:
-		seed_buf += ch.to_upper()
-		_canvas.queue_redraw()
+	var c := ch.to_upper()
+	if c.length() != 1 or not ((c >= "0" and c <= "9") or (c >= "A" and c <= "F")):
+		return
+	var at := mini(seed_col, 5)
+	seed_buf = seed_buf.substr(0, at) + c + seed_buf.substr(at + 1)
+	seed_col = mini(seed_col + 1, 6)
+	_canvas.queue_redraw()
+
+
+# turn the wheel in focus one step up or down (0..F, round and round)
+func seed_turn(step: int) -> void:
+	var at := mini(seed_col, 5)
+	seed_col = at
+	var v := posmod(seed_buf.substr(at, 1).hex_to_int() + step, 16)
+	seed_buf = seed_buf.substr(0, at) + ("%X" % v) + seed_buf.substr(at + 1)
+	_canvas.queue_redraw()
 
 
 func backspace() -> void:
-	seed_buf = seed_buf.substr(0, maxi(0, seed_buf.length() - 1))
+	seed_col = maxi(0, seed_col - 1)
 	_canvas.queue_redraw()
 
 
 func paste() -> void:
-	var clip := DisplayServer.clipboard_get().strip_edges().to_upper()
-	for i in clip.length():
-		var c := clip[i]
-		if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
-			type_char(c)
+	var v := Difficulty.parse_seed(DisplayServer.clipboard_get())
+	if v > 0:
+		seed_buf = "%06X" % v
+		seed_col = 0
+		_canvas.queue_redraw()
 
 
 # apply the typed text; an empty field keeps the current seed. Returns the seed now in force.
@@ -365,12 +415,12 @@ func seed_today() -> int:
 
 func _seed_act(which: int) -> void:
 	match which:
-		0:
-			seed_commit()
 		1:
 			seed_random()
-		_:
+		2:
 			seed_today()
+		_:
+			seed_commit()
 	close(false)
 
 
@@ -473,7 +523,7 @@ func activate() -> void:
 
 # ---- input -----------------------------------------------------------------------------------------
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and event.shift_pressed:
+	if event is InputEventKey and event.pressed and not event.echo and Controls.word(event) == "f10" and event.shift_pressed:
 		if can_open() and Campaign.mode == Campaign.FREE:
 			open_tools()
 			get_viewport().set_input_as_handled()
@@ -503,14 +553,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _key(event: InputEvent) -> void:
-	if event is InputEventKey and event.keycode == KEY_F9:
+	if Controls.word(event) == "f9":
 		Game.cycle_format()
 		return
 	if mode == "seed":
-		if event is InputEventKey:
-			_seed_key(event)
-		else:
-			_seed_pad(event)
+		_seed_input(event)
 		return
 	var dir := Controls.nav(event)
 	if dir == "up":
@@ -528,56 +575,49 @@ func _key(event: InputEvent) -> void:
 
 
 # the seed entry from a pad: Up / Down move the focus, A presses the focused button, B closes (typing is keyboard only)
-func _seed_pad(event: InputEvent) -> void:
-	var dir := Controls.nav(event)
-	if dir == "down":
-		seed_focus = (seed_focus + 1) % 3
-	elif dir == "up":
-		seed_focus = (seed_focus + 2) % 3
-	elif dir == "left" and seed_focus > 0:
-		seed_focus = 1
-	elif dir == "right" and seed_focus > 0:
-		seed_focus = 2
-	elif Controls.confirm(event):
-		_seed_act(seed_focus)
-	elif Controls.back(event):
+func _seed_input(event: InputEvent) -> void:
+	var dir := Controls.nav(event, false)
+	var key_name := Controls.word(event)
+	if Controls.back(event, false):
 		close(false)
 		return
+	if Controls.confirm(event, false, false):
+		_seed_act(seed_focus)
+		return
+	if Controls.matches(event, "pick_next"):
+		seed_focus = (seed_focus + 1) % 4
+	elif Controls.matches(event, "pick_prev"):
+		seed_focus = (seed_focus + 3) % 4
+	elif seed_focus == 0:
+		if dir == "up" or dir == "down":
+			seed_turn(1 if dir == "up" else -1)
+		elif dir == "left":
+			seed_col = maxi(0, mini(seed_col, 5) - 1)
+		elif dir == "right":
+			if seed_col >= 5:
+				seed_focus = 1
+			else:
+				seed_col += 1
+		elif key_name == "backspace":
+			backspace()
+		elif key_name == "v" and Controls.ctrl(event):
+			paste()
+		elif not Controls.ctrl(event):
+			type_char(key_name)
+	elif dir == "left":
+		seed_focus -= 1
+		seed_col = 5
+	elif dir == "right":
+		seed_focus = mini(seed_focus + 1, 3)
+	elif dir == "up" or dir == "down":
+		seed_focus = 0
 	_canvas.queue_redraw()
 
 
-func _seed_key(event: InputEventKey) -> void:
-	match event.keycode:
-		KEY_ESCAPE:
-			close(false)
-		KEY_ENTER, KEY_KP_ENTER:
-			_seed_act(seed_focus)
-		KEY_TAB, KEY_DOWN:
-			seed_focus = (seed_focus + 1) % 3
-			_canvas.queue_redraw()
-		KEY_UP:
-			seed_focus = (seed_focus + 2) % 3
-			_canvas.queue_redraw()
-		KEY_LEFT:
-			if seed_focus > 0:
-				seed_focus = 1
-				_canvas.queue_redraw()
-		KEY_RIGHT:
-			if seed_focus > 0:
-				seed_focus = 2
-				_canvas.queue_redraw()
-		KEY_BACKSPACE:
-			backspace()
-		KEY_V:
-			if event.ctrl_pressed:
-				paste()
-			elif seed_focus == 0:
-				type_char("V")
-		_:
-			if seed_focus == 0 and event.unicode > 32 and event.unicode < 127 and not event.ctrl_pressed:
-				var c := char(event.unicode).to_upper()
-				if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
-					type_char(c)
+func _seed_wheel(i: int, step: int) -> void:
+	seed_focus = 0
+	seed_col = i
+	seed_turn(step)
 
 
 func _hit(at: Vector2) -> Array:
@@ -614,10 +654,11 @@ func _click(at: Vector2) -> void:
 				change(1 if at.x >= rect.position.x + rect.size.x * 0.5 else -1)
 		"focus":
 			seed_focus = int(r[2])
-			if seed_focus > 0:
-				_seed_act(seed_focus)
-			else:
-				_canvas.queue_redraw()
+			_seed_act(seed_focus)
+		"wheel_up":
+			_seed_wheel(int(r[2]), 1)
+		"wheel_dn":
+			_seed_wheel(int(r[2]), -1)
 
 
 # ---- drawing ---------------------------------------------------------------------------------------
@@ -667,25 +708,31 @@ func _paint_tools(size: Vector2) -> void:
 	var hint := "UP DOWN ROW  LEFT RIGHT CHANGE  ENTER  ESC CLOSE"
 	if r.size.x < 250.0:
 		hint = "ARROWS  ENTER  ESC"
-	UiStyle.footer(_canvas, r, hint)
+	UiStyle.footer(_canvas, r, Controls.hint(hint))
 
 
 func _paint_seed(size: Vector2) -> void:
 	var r := UiStyle.panel_rect(size, 220.0, 70.0)
 	var body := UiStyle.panel(_canvas, r, "RUN SEED", "NOW " + Difficulty.seed_text())
-	var field := Rect2(body.position.x, body.position.y + 1.0, body.size.x, 11.0)
-	_canvas.draw_rect(field, UiStyle.WHITE)
-	_canvas.draw_rect(field, UiStyle.HEAD if seed_focus == 0 else UiStyle.SOFT, false, 1.0)
-	var shown := seed_buf
-	if shown == "" and seed_focus != 0:
-		shown = "HEX OR ANY WORD"
-	var caret := "_" if (seed_focus == 0 and int(Time.get_ticks_msec() / 400) % 2 == 0) else ""
-	UiStyle.text(_canvas, shown + caret, field.position.x + 3.0, field.position.y + 2.0, UiStyle.INK if seed_buf != "" else UiStyle.MUTED)
-	_rects.append([field, "focus", 0])
-	var labels := ["RANDOM", "TODAY " + Difficulty.date_label()]
+	# six digit wheels: Up / Down (or a click on the top / bottom half) turn the one in focus
+	var cell_w := 18.0
+	var x0 := body.position.x + floorf((body.size.x - (cell_w * 6.0 + 10.0)) * 0.5)
+	for i in 6:
+		var cell := Rect2(x0 + float(i) * (cell_w + 2.0), body.position.y, cell_w, 21.0)
+		var on := seed_focus == 0 and mini(seed_col, 5) == i
+		_canvas.draw_rect(cell, UiStyle.WHITE)
+		_canvas.draw_rect(cell, UiStyle.HEAD if on else UiStyle.SOFT, false, 1.0)
+		var mid := cell.position.x + floorf(cell_w * 0.5)
+		for k in 3:  # the little arrows above and below the digit
+			_canvas.draw_rect(Rect2(mid - float(k), cell.position.y + 2.0 + float(k), 1.0 + 2.0 * float(k), 1.0), UiStyle.HEAD if on else UiStyle.MUTED)
+			_canvas.draw_rect(Rect2(mid - float(k), cell.end.y - 3.0 - float(k), 1.0 + 2.0 * float(k), 1.0), UiStyle.HEAD if on else UiStyle.MUTED)
+		UiStyle.text(_canvas, seed_buf.substr(i, 1), mid - 1.0, cell.position.y + 8.0, UiStyle.INK)
+		_rects.append([Rect2(cell.position, Vector2(cell_w, 10.0)), "wheel_up", i])
+		_rects.append([Rect2(cell.position + Vector2(0.0, 11.0), Vector2(cell_w, 10.0)), "wheel_dn", i])
+	var labels := ["RANDOM", "TODAY " + Difficulty.date_label(), "OK"]
 	var x := body.position.x
-	var by := body.position.y + 16.0
-	for k in 2:
+	var by := body.position.y + 24.0
+	for k in 3:
 		var w := float(PixelFont.width(labels[k])) + 10.0
 		var br := Rect2(x, by, w, 11.0)
 		_canvas.draw_rect(br, UiStyle.HEAD if seed_focus == k + 1 else UiStyle.MUTED)
@@ -693,10 +740,8 @@ func _paint_seed(size: Vector2) -> void:
 		_rects.append([br, "focus", k + 1])
 		x += w + 4.0
 	if Difficulty.daily != "":
-		UiStyle.text(_canvas, "DAILY SEED RUN", body.position.x, by + 15.0, UiStyle.GREEN)
-	var hint := "TYPE OR PASTE  TAB  ENTER OK  ESC"
+		UiStyle.text(_canvas, "DAILY SEED RUN", body.position.x, by + 14.0, UiStyle.GREEN)
+	var hint := "ARROWS TURN  TAB  ENTER OK  ESC"
 	if r.size.x < 200.0:
-		hint = "TYPE  TAB  ENTER  ESC"
-	UiStyle.footer(_canvas, r, hint)
-	if seed_focus == 0:  # keep the caret blinking
-		_canvas.queue_redraw()
+		hint = "ARROWS  TAB  ENTER  ESC"
+	UiStyle.footer(_canvas, r, Controls.hint(hint))

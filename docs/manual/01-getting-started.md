@@ -105,8 +105,10 @@ phone you carry and how to spend a handful of skill points on your starting buil
 
 ## DIFFICULTY
 
-There are three levels, shown by the **LEVEL** chip at the top of the character select screen. Press `Up` or `Down` there to
-change it. The game remembers your choice for next time.
+There are three levels. A campaign asks **HOW HARD?** on a page of its own, after you pick your person (and your phone): `Up` /
+`Down` choose EASY, NORMAL or HARD, the line underneath says what that level feels like in this campaign, and `Enter` goes on. The
+**LEVEL** row of the next page (SET UP THE RUN) shows the choice and can still change it; Free Play has only that row. The game
+remembers your choice for next time.
 
 | LEVEL | THE IDEA |
 |---|---|
@@ -143,11 +145,14 @@ On the character select screen, press `X` (or click the **SEED** chip) to open t
 
 | ROW | WHAT IT DOES |
 |---|---|
-| **The text box** | Type or paste a code (hex such as `4F2A9C`), or any word at all. A word is turned into a seed. |
+| **The six wheels** | One wheel for each character of the code. `Left` / `Right` pick a wheel, `Up` / `Down` turn it (0 to 9, then A to F). Click the top or bottom half of a wheel to turn it with the mouse. A keyboard can also type the digits, and `Ctrl+V` pastes a code or a word (a word is turned into a seed). |
 | **RANDOM** | Roll a fresh code. |
+| **OK** | Use the code on the wheels. |
 | **TODAY** | Use today's seed (shown with the date, like `03 NOV`). It comes from the date on your computer's clock, so everyone who picks TODAY on the same day plays the same dice. |
 
-`Up` and `Down` (or `Tab`) move between the three rows, `Enter` does whatever row you are on, and `Esc` closes the page.
+`Tab` (or `RB` on a gamepad) steps from the wheels to the buttons, and so does `Right` past the last wheel. `Enter` (`A`) on the
+wheels uses the code, on a button it presses it, and `Esc` (`B`) closes the page. The whole page works with a gamepad or the
+mouse alone.
 
 ---
 

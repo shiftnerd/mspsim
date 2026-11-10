@@ -409,12 +409,14 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 	y += 2.0
 	var label := _button_label()
 	var bw := _tw(label) + 12.0
-	var hint := "ENTER OR CLICK"
+	var hint := Controls.hint("ENTER OR CLICK")
 	if _tw(hint) + bw + 12.0 > pw:
-		hint = "ENTER"
+		hint = Controls.hint("ENTER")
 	if draw:
 		_t(hint, 4.0, y + 2.5, LABEL)
 		_button = Rect2(_o + Vector2(pw - bw - 4.0, y) * float(sc), Vector2(bw, 10.0) * float(sc))
+		if _button.size.y < 19.0:  # R14 (5): the hit rect is thumb-sized, the drawn button stays
+			_button = _button.grow_individual(0.0, floorf((19.0 - _button.size.y) * 0.5) + 1.0, 0.0, floorf((19.0 - _button.size.y) * 0.5) + 1.0)
 		var hot := _button.has_point(_mouse)
 		_r(pw - bw - 4.0, y, bw, 10.0, Color("5aa0e8") if hot else Color("3a7bd5"))
 		_t(label, pw - bw + 2.0, y + 2.5, WHITE)
