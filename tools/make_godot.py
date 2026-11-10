@@ -56290,6 +56290,8 @@ const GAME_LABELS := {
 }
 const TABLES := [[], ["Alan", "Garrison"], ["Alan", "Dan"], ["Garrison", "Dan"]]
 const TABLE_LABELS := ["ALL THREE", "ALAN GARRISON", "ALAN DAN", "GARRISON DAN"]
+const CHAIR_LABELS := ["PICK ON CARD", "THE STRAIGHT", "THE GAUNTLET", "CHAIR FIGHT"]  # 0, then Outings.CHAIR_EVENTS in order
+const NIGHT_LABELS := ["CARD'S DRAW", "DAY", "NIGHT"]
 const CHARTS := 4
 const SETS := 9
 const MAX_TEXT := 12
@@ -56306,6 +56308,8 @@ var digits := 0  # 0 = the tier's, else 3 or 4
 var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
+var chair_i := 0  # the chair card's event: 0 = picked on the card, else index + 1 into Outings.CHAIR_EVENTS (straight, gauntlet, fight)
+var night_i := 0  # paintball: 0 = the card's draw, 1 = a day match, 2 = the night match
 var model_i := 0
 var mutator := ""
 var sel := 0
@@ -56373,6 +56377,12 @@ func outing_options() -> Dictionary:
         "dinner":
             if table_i > 0:
                 out["table"] = TABLES[table_i].duplicate()
+        "chair":
+            if chair_i > 0:
+                out["event"] = str(Outings.CHAIR_EVENTS[chair_i - 1])
+        "paintball":
+            if night_i > 0:
+                out["night"] = night_i == 2
     return out
 
 
@@ -56689,6 +56699,10 @@ func rows() -> Array:
                 out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
         "dinner":
             out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
+        "chair":
+            out.append({"id": "event", "label": "EVENT", "value": str(CHAIR_LABELS[chair_i])})
+        "paintball":
+            out.append({"id": "night", "label": "MATCH", "value": str(NIGHT_LABELS[night_i])})
         "printer":
             out.append({"id": "model", "label": "MODEL", "value": str(PrinterGame.MODELS[model_id()].label)})
     var tag := "DAILY " + Difficulty.seed_text() if Difficulty.daily != "" else Difficulty.seed_text()
@@ -56729,6 +56743,10 @@ func change(step: int) -> void:
             digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":
             table_i = (table_i + step + TABLES.size()) % TABLES.size()
+        "event":
+            chair_i = (chair_i + step + CHAIR_LABELS.size()) % CHAIR_LABELS.size()
+        "night":
+            night_i = (night_i + step + NIGHT_LABELS.size()) % NIGHT_LABELS.size()
         "model":
             model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
         "take":
