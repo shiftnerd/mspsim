@@ -25,13 +25,15 @@ func _init() -> void:
 	for id in ["adam_friday_good", "adam_friday_ok", "adam_friday_bad"]:
 		scheduled[id] = 5  # Adam's Friday review picks one of these by the numbers (event kind metrics, days 5, 10, 15)
 	_check(scheduled.size() == 15, "fifteen vignettes are on the calendar (eight, Dan and Adam)")
-	_check(story.VIGNETTES.size() == 32, "the vignette deck has 32 cards")
+	_check(story.VIGNETTES.size() == 33, "the vignette deck has 33 cards")
 	var drawn := 0
 	for id in story.VIGNETTES:
 		if story.VIGNETTES[id].has("min_day"):
 			drawn += 1
 			_check(not scheduled.has(id), "%s is drawn from the deck, not on the calendar" % id)
 			_check(int(story.VIGNETTES[id].min_day) >= 3, "%s is tagged with an earliest day" % id)
+		elif id == "hello":
+			_check(not scheduled.has(id), "hello follows Dan's intro card, it has no calendar slot of its own")
 		else:
 			_check(scheduled.has(id), "%s is scheduled" % id)
 	_check(drawn == 17, "17 vignettes are drawn from the deck")
