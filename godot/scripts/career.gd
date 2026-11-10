@@ -74,6 +74,12 @@ const DEFAULT_MEDALS := [
 	{"id": "svc_ops", "title": "OPS MANAGER", "desc": "BECOME OPS MANAGER", "rules": [["svc_end.ops", ">=", 1]]},
 	{"id": "svc_hand", "title": "RIGHT HAND", "desc": "BACK ALAN OR GARRISON", "rules": [["svc_end_lead", ">=", 1]]},
 	{"id": "svc_summit", "title": "SUMMIT DIRECTOR", "desc": "TAKE SUMMIT'S ROLL-UP", "rules": [["svc_end.rollup_yes", ">=", 1]]},
+	{"id": "clean_lap", "title": "CLEAN LAP", "desc": "A CHAIR RACE, NOTHING HIT", "rules": [["chair_clean", ">=", 1]]},
+	{"id": "speed_demon", "title": "SPEED DEMON", "desc": "WIN 3 CHAIR RACES", "rules": [["chair_wins", ">=", 3]]},
+	{"id": "track_rat", "title": "TRACK RAT", "desc": "FINISH BOTH CHAIR COURSES", "rules": [["chair_courses", ">=", 2]]},
+	{"id": "bumper_king", "title": "BUMPER KING", "desc": "WIN 3 CHAIR FIGHTS", "rules": [["chairfight_wins", ">=", 3]]},
+	{"id": "pushy", "title": "PUSHY", "desc": "PUSH 10 COWORKER CHAIRS", "rules": [["chair_shoves", ">=", 10]]},
+	{"id": "flag_runner", "title": "FLAG RUNNER", "desc": "CARRY 5 FLAGS HOME", "rules": [["flag_caps", ">=", 5]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -152,7 +158,12 @@ const COUNTERS := [
 	["", "BAGS IN THE HOLE", "bags_in_hole", "n"],
 	["", "COOKOUT BEST", "stars.grill", "stars"],
 	["", "CHAIR RACE BEST", "stars.chair", "stars"],
+	["", "CHAIR RACES WON", "chair_wins", "n"],
+	["", "CHAIR FIGHT BEST", "stars.chairfight", "stars"],
+	["", "CHAIR FIGHTS WON", "chairfight_wins", "n"],
+	["", "CHAIRS PUSHED", "chair_shoves", "n"],
 	["", "PAINTBALL BEST", "stars.paintball", "stars"],
+	["", "FLAGS CARRIED HOME", "flag_caps", "n"],
 	["", "DARTS BEST", "stars.darts", "stars"],
 	["", "BULLSEYES", "bulls", "n"],
 	["", "BURGERS SERVED", "burgers_served", "n"],
@@ -361,11 +372,31 @@ func note_outing(game: String, result: int, info := {}) -> void:
 		"darts":
 			add("bulls", int(info.get("bulls", 0)))
 			best("darts_best", int(info.get("score", 0)))
+		"chair":  # a race (info.chair: course, won, clean): CLEAN LAP, SPEED DEMON, TRACK RAT
+			var c: Dictionary = info.get("chair", {})
+			if result >= 1 and c.has("course"):
+				note_first("course", str(c.course), "chair_courses")
+			if bool(c.get("won", false)):
+				add("chair_wins")
+			if bool(c.get("clean", false)):
+				best("chair_clean", 1)
+		"chairfight":  # the chair fight (info.chair: won, bumps): BUMPER KING
+			var c: Dictionary = info.get("chair", {})
+			add("chair_bumps", int(c.get("bumps", 0)))
+			if bool(c.get("won", false)):
+				add("chairfight_wins")
+		"paintball":  # flags you carried home yourself (player 2's count too): FLAG RUNNER
+			add("flag_caps", int(info.get("caps", 0)))
 		"grill":
 			add("burgers_served", int(info.get("served", 0)))
 			add("dogs_served", int(info.get("dogs", 0)))
 			if bool(info.get("clean", false)):
 				best("grill_clean", 1)
+
+
+# a coworker's rolling chair pushed with them in it (chair_shove.gd): PUSHY
+func note_shove() -> void:
+	add("chair_shoves")
 
 
 # the first time an id of a kind is seen (an alley, an arena, a session, a site type) it counts once toward total

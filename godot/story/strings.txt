@@ -15274,6 +15274,54 @@ SUMMIT DIRECTOR
 [Career.MEDALS.52.desc]
 TAKE SUMMIT'S ROLL-UP
 
+# Career > MEDALS > 53 > title
+[Career.MEDALS.53.title]
+CLEAN LAP
+
+# Career > MEDALS > 53 > desc
+[Career.MEDALS.53.desc]
+A CHAIR RACE, NOTHING HIT
+
+# Career > MEDALS > 54 > title
+[Career.MEDALS.54.title]
+SPEED DEMON
+
+# Career > MEDALS > 54 > desc
+[Career.MEDALS.54.desc]
+WIN 3 CHAIR RACES
+
+# Career > MEDALS > 55 > title
+[Career.MEDALS.55.title]
+TRACK RAT
+
+# Career > MEDALS > 55 > desc
+[Career.MEDALS.55.desc]
+FINISH BOTH CHAIR COURSES
+
+# Career > MEDALS > 56 > title
+[Career.MEDALS.56.title]
+BUMPER KING
+
+# Career > MEDALS > 56 > desc
+[Career.MEDALS.56.desc]
+WIN 3 CHAIR FIGHTS
+
+# Career > MEDALS > 57 > title
+[Career.MEDALS.57.title]
+PUSHY
+
+# Career > MEDALS > 57 > desc
+[Career.MEDALS.57.desc]
+PUSH 10 COWORKER CHAIRS
+
+# Career > MEDALS > 58 > title
+[Career.MEDALS.58.title]
+FLAG RUNNER
+
+# Career > MEDALS > 58 > desc
+[Career.MEDALS.58.desc]
+CARRY 5 FLAGS HOME
+
 
 # ======================= Career > UNLOCKS =======================
 # Career > UNLOCKS > 0 > title

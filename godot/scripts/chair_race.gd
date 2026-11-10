@@ -56,6 +56,17 @@ const SLICK_DIP := 0.18  # share of the speed a puddle takes (x chair.slick)
 # PAR (Difficulty "chair.par" scales both): total seconds for 3 and 2 stars
 const PAR3 := 22.0
 const PAR2 := 31.0
+# the courses (R12): THE STRAIGHT is the long room above. THE GAUNTLET is shorter (its line is drawn on the floor at THE BENCH)
+# and tighter: a zone every 56 px, two props in every one and the empty lane is always the one next to the last, so you weave.
+# `par` scales the star times (the length, plus a little for the weaving).
+const COURSE_ORDER := ["straight", "gauntlet"]
+const COURSES := {
+	"straight": {"label": "THE STRAIGHT", "len": LEN, "checks": CHECK_FRAC, "names": CHECK_NAMES, "par": 1.0, "blurb": "THE LONG ROOM, START TO FINISH."},
+	"gauntlet": {"label": "THE GAUNTLET", "len": 684.0, "checks": [0.34, 0.67], "names": ["THE RACKS", "THE PARTS CAGE"], "par": 0.76, "blurb": "SHORTER AND TIGHTER: EVERY GAP IS IN ANOTHER LANE."},
+}
+const G_ZONES := 11
+const G_FIRST := 96.0
+const G_GAP := 56.0
 # the five who race, with a personality (skill 0..1 is rolled around `skill` by the seed and the tier)
 const RACERS := {
 	"Alan":
@@ -134,6 +145,10 @@ var slick := false  # in a puddle right now
 var oil_seen := false
 var obstacles: Array = []  # {x, lane, kind, down, hit}
 var rivals: Array = []  # {n, s, v, cur, fade, stalls, stall_t, hold, lane, pref, done, color, style, skill, flag}
+var course := "straight"  # a COURSES id
+var length := LEN  # pos of this course's FINISH line
+var checks: Array = CHECK_FRAC
+var check_names: Array = CHECK_NAMES
 var events: Array = []  # what just happened, for sounds (go, crash, cone, oil, check, finish, false); the owner clears it
 var params := {"crash": 1.0, "stamina": 1.0, "slick": 1.0, "par": 1.0}
 var pushes := 0
@@ -173,15 +188,26 @@ static func prop_ahead(kind: String) -> float:
 	return prop_width(kind) * 0.5 + REACH
 
 
+# the pos of checkpoint i on this race's course
+func cp(i: int) -> float:
+	return length * float(checks[i])
+
+
 # ---- setup ---------------------------------------------------------------------------------------
 # params: crash (seconds a crash costs), stamina (x cost), slick (x puddle), par (x star times), skill (added to the rivals).
 # racers: the names that race (any of ORDER). rng: a seeded generator (the props, rival skill and mistakes).
 func setup(p: Dictionary, racers: Array, rng: RandomNumberGenerator) -> void:
 	for k in p:
 		params[k] = p[k]
+	course = str(p.get("course", "straight"))
+	if not COURSES.has(course):
+		course = "straight"
+	length = float(COURSES[course].len)
+	checks = COURSES[course].checks
+	check_names = COURSES[course].names
 	_cp_pos = []
-	for i in CHECK_FRAC.size():
-		_cp_pos.append(check_pos(i))
+	for i in checks.size():
+		_cp_pos.append(cp(i))
 	_lay_course(rng)
 	pos = 0.0
 	speed = 0.0
@@ -250,6 +276,9 @@ func _stall_at(index: int, secs: float) -> Dictionary:
 # (the early zones are cones and puddles, later ones add the signs, cans, boxes and pallets)
 func _lay_course(rng: RandomNumberGenerator) -> void:
 	obstacles = []
+	if course == "gauntlet":
+		_lay_gauntlet(rng)
+		return
 	for z in ZONES:
 		var lanes := [0, 1, 2]
 		for i: int in [2, 1]:  # shuffle
@@ -271,13 +300,26 @@ func _lay_course(rng: RandomNumberGenerator) -> void:
 			)
 
 
+# THE GAUNTLET: two props in every zone, and the empty lane moves one lane over every time
+func _lay_gauntlet(rng: RandomNumberGenerator) -> void:
+	var free := 1
+	for z in G_ZONES:
+		var roll := rng.randi() % 2  # the gap moves one lane over (from the middle: either way)
+		free = (roll * 2) if free == 1 else 1
+		var pool: Array = SOFT_POOL if z < 2 else (MID_POOL if z < 6 else HARD_POOL)
+		var at := G_FIRST + G_GAP * float(z) + rng.randf_range(-4.0, 4.0)
+		for l in LANES:
+			if l != free:
+				obstacles.append({"x": at, "lane": l, "kind": str(pool[rng.randi() % pool.size()]), "down": false, "hit": false})
+
+
 # ---- the clock ------------------------------------------------------------------------------------
 func step(dt: float) -> void:
 	if phase == "done":
 		end_t += dt
 		clock += dt
 		speed *= exp(-1.6 * dt)  # coast over the line
-		pos = minf(pos + speed * dt, LEN + 70.0)
+		pos = minf(pos + speed * dt, length + 70.0)
 		wobble = maxf(0.0, wobble - dt)
 		_lane_move(dt)
 		_advance(rivals, dt, clock)
@@ -436,7 +478,7 @@ func _drive(dt: float) -> void:
 		cp_next += 1
 		_say("CHECKPOINT %d OF %d" % [cp_next, _cp_pos.size()], 1.2)
 		events.append("check")
-	if pos >= LEN:
+	if pos >= length:
 		_say("FINISH!", 2.0)
 		events.append("finish")
 		_finish()
@@ -481,7 +523,7 @@ func _advance(list: Array, dt: float, at: float) -> void:
 				r.hold = -1
 			continue
 		r.flag = ""
-		var frac := float(r.s) / LEN
+		var frac := float(r.s) / length
 		var target := float(r.v) * (1.0 + float(r.fade) * (0.5 - frac))
 		r.cur = move_toward(float(r.cur), target, 34.0 * dt)
 		r.s = float(r.s) + float(r.cur) * dt
@@ -491,7 +533,7 @@ func _advance(list: Array, dt: float, at: float) -> void:
 			r.hold = int(obstacles[int(st.o)].lane) if int(st.o) >= 0 else -1
 			r.flag = "spin" if int(st.o) < 0 else "!"
 			r.stalls.remove_at(0)
-		if float(r.s) >= LEN:
+		if float(r.s) >= length:
 			r.done = maxf(0.0, at)
 
 
@@ -561,7 +603,7 @@ func stars() -> int:
 	if dnf or finish_t < 0.0:
 		return 0
 	var t := total()
-	var par := float(params.par)
+	var par := float(params.par) * float(COURSES[course].par)
 	if t <= PAR3 * par:
 		return 3
 	if t <= PAR2 * par:

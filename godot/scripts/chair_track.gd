@@ -125,10 +125,14 @@ func _sync() -> void:
 		var l: float
 		var flag := ""
 		var shake := 0.0
+		var facing := 1.0
 		if key == "You" or key == "You2":
 			s = race.pos
 			l = race.lane
 			shake = race.wobble
+			if _fight():  # the chair fight: you can face either way, and a bumped chair spins
+				facing = float(race.face)
+				flag = str(race.chairs[0].flag)
 		else:
 			var r := _rival(key)
 			if r.is_empty():
@@ -137,21 +141,27 @@ func _sync() -> void:
 			l = float(r.lane)
 			flag = str(r.flag)
 			shake = 0.5 if flag == "!" else 0.0
+			facing = float(r.get("face", 1))
 		node.position = Vector2(x0 + ChairRace.world_x(s), ChairRace.lane_y(l))
 		var spin: bool = flag == "spin"
-		node.scale.x = (1.0 if int(_t * 8.0) % 2 == 0 else -1.0) if spin else 1.0
+		node.scale.x = ((1.0 if int(_t * 8.0) % 2 == 0 else -1.0) if spin else 1.0) * facing
 		node.rotation = sin(_t * 44.0) * 0.09 * minf(1.0, shake) if shake > 0.0 else 0.0
 	for pr in props:
 		_mark(pr)
 	var f: Dictionary = Game.FORMATS[Game.format]
 	var view := get_viewport_rect().size / float(f.zoom)
 	if _player != null:
-		_player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + view.x * 0.1, 118.0)
+		_player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + (0.0 if _fight() else view.x * 0.1), 118.0)
 	if _cam != null:  # a short screen (368x128, 320x180) looks lower down, so the floor is not under the HUD
 		var centre: float = float(f.cam_y) if f.follow else 64.0
 		_cam.offset.y = maxf(0.0, LIFT_BOTTOM - (centre + view.y * 0.5))
 	queue_redraw()
 	_tags.queue_redraw()
+
+
+# the chair fight (chair_fight.gd) is drawn with the race's puppets: it has a strip of floor instead of a course
+func _fight() -> bool:
+	return race != null and race.get("fight") == true
 
 
 func _rival(key: String) -> Dictionary:
@@ -186,8 +196,8 @@ func _mark(pr: Dictionary) -> void:
 func _draw() -> void:
 	if race == null:
 		return
-	var a := x0 + ChairRace.world_x(0.0)
-	var b := x0 + ChairRace.world_x(ChairRace.LEN)
+	var a := x0 + ChairRace.world_x(float(race.arena[0]) - 14.0 if _fight() else 0.0)
+	var b := x0 + ChairRace.world_x(float(race.arena[1]) + 14.0 if _fight() else float(race.length))
 	# lane marks: dashed lines between the three lanes
 	for k in 2:
 		var y := (float(ChairRace.LANE_Y[k]) + float(ChairRace.LANE_Y[k + 1])) * 0.5 + 0.5
@@ -196,8 +206,19 @@ func _draw() -> void:
 			draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
 			x += 12.0
 	# the checkpoints: a stripe across the floor, a post at each end and its number
-	for i in ChairRace.CHECK_FRAC.size():
-		var cx := x0 + ChairRace.world_x(ChairRace.check_pos(i))
+	if _fight():  # the two ends of the strip: a red and white post line
+		for end_x: float in race.arena:
+			var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
+			for k in 6:
+				draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
+	elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
+		var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
+		for row in 12:
+			for col in 3:
+				draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
+		PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)
+	for i in race.checks.size():
+		var cx := x0 + ChairRace.world_x(race.cp(i))
 		var col := GREEN if i < race.cp_next else GOLD
 		draw_rect(Rect2(cx - 1.0, 107.0, 3.0, 24.0), Color(col, 0.85))
 		for py in [104.0, 131.0]:
@@ -238,11 +259,19 @@ func clear() -> void:
 	if _cam != null and is_instance_valid(_cam):
 		_cam.offset = Vector2.ZERO
 	for key in puppets:
-		if is_instance_valid(puppets[key].node):
-			puppets[key].node.queue_free()
+		_drop(puppets[key].node)
 	for pr in props:
-		if is_instance_valid(pr.node):
-			pr.node.queue_free()
+		_drop(pr.node)
 	puppets = {}
 	props = []
-	queue_free()
+	_drop(self)
+
+
+# out of the tree at once (another event picked on the card puts a new track and new puppets in the room in the same frame, under
+# the same names), freed at the end of the frame
+func _drop(n: Node) -> void:
+	if not is_instance_valid(n):
+		return
+	if n.get_parent() != null:
+		n.get_parent().remove_child(n)
+	n.queue_free()

@@ -548,6 +548,57 @@ func _floor_phase() -> void:
 	_begin()
 	await _end("paintball result")
 	out.close()
+	# ---- R12 / R41: the chair card's other events (THE GAUNTLET, the chair fight) and the night match, as overlay pages and as
+	# the in-room HUD strip (the strip is drawn when Outings thinks it is in the room: _traveled, set only while the frame is taken)
+	for event in ["gauntlet", "fight"]:
+		out.chair_event = "straight"
+		_begin()
+		out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
+		out.press(KEY_RIGHT)
+		if event == "fight":
+			out.press(KEY_RIGHT)
+		await _end("chair %s intro" % event)
+		out.press(KEY_ENTER)
+		out.tick(3.4)
+		if event == "fight":
+			out.g.race.chairs[0].bumps = 2
+			out.g.race.chairs[1].bumps = 1
+			out.g.race._say("GARRISON GOT YOU! 2 TO 1", 5.0)
+		else:
+			out.g.race.pos = 300.0
+			out.g.race.cp_next = 1
+			out.g.race._say("CHECKPOINT 1 OF 2", 5.0)
+		out.tick(0.1)
+		_begin()
+		await _end("chair %s playing" % event)
+		out._traveled = true
+		_begin()
+		await _end("chair %s hud strip" % event)
+		out._traveled = false
+		if event == "fight":
+			out.g.race.chairs[0].bumps = 3
+		else:
+			out.g.race.finish_t = 14.5
+			out.g.race.phase = "done"
+			out.g.race.end_t = 2.0
+		out.tick(0.1)
+		out.tick(1.4)
+		_begin()
+		await _end("chair %s result" % event)
+		out.close()
+	out.chair_event = "straight"
+	_begin()
+	out.start("paintball", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"], "night": true})
+	await _end("paintball night intro")
+	out.press(KEY_ENTER)
+	out.tick(3.2)
+	out.g.rules.units[0].flag = true
+	out.tick(0.1)
+	out._traveled = true
+	_begin()
+	await _end("paintball hud strip")
+	out._traveled = false
+	out.close()
 	# ---- R21: cornhole and the cookout (the overlay versions: intro, play, result)
 	for id in ["cornhole", "grill", "darts"]:
 		_begin()
