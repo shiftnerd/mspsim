@@ -78650,6 +78650,8 @@ func _paint() -> void:
         var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
         PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
         PixelFont.draw(_canvas, text, at, Color.WHITE)
+''')
+
 write("scripts/seasons.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length
 # R8 / R16: the campaign's calendar and its seasons. A static helper (no state of its own: what was already shown is in
