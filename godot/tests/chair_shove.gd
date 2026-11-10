@@ -161,7 +161,9 @@ func _run() -> void:
 	ok(is_equal_approx(seat.position.x, home) and seat.get_node_or_null("ChairShove") == null, "they stood up: the chair snapped home and the helper is gone")
 	var stand_x: float = npc.global_position.x
 	await _wait(20)
-	ok(is_equal_approx(npc.global_position.x, stand_x) or npc.state == "walk", "and they are not dragged about any more")
+	# (the freed coworker may wander off under their own routine in any state, so check the chair, not where they stand)
+	var still: bool = is_equal_approx(npc.global_position.x, stand_x) or not npc.state.begins_with("sit")
+	ok(still and is_equal_approx(seat.position.x, home) and seat.get_node_or_null("ChairShove") == null, "and they are not dragged about any more")
 
 	# nothing to push: an empty chair, and somebody in the middle of a conversation
 	p.global_position = Vector2(seat.global_position.x + 14.0, 118.0)
