@@ -6188,7 +6188,7 @@ var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
 var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
 var handoffs_today := 0  # tickets Michael took off you today (see PhoneCalls HANDOFF_MAX)
 # X10 tech pacing. Every client ticket of the day counts toward the day's cap (created_today), so a story or event ticket takes
-# the place of a random one instead of landing on top of them. A story / event ticket that can wait (the Adobe job, a workaround
+# the place of a random one instead of landing on top of them (easy and normal; see shared_cap). A story / event ticket that can wait (the Adobe job, a workaround
 # that came back, a recall batch, a missed onsite finding) is held while the open queue is at its cap and let in at the next free
 # slot, in order; one that waited overnight comes in the next morning whatever the queue looks like, so nothing is lost.
 # The pause menu's TICKET PACE row (tech campaign) scales the day cap, the gap between timed tickets and the open cap.
@@ -6757,7 +6757,7 @@ func favour_answer(pick: String, client: int, k: int) -> void:
             if talk == "fav_log":
                 Campaign.adjust_rep(1)  # you kept the promise
             var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 4, "body": str(f.body)}
-            var made := problem_or_hold(client, prob, "phone call")
+            var made := problem_or_hold(client, prob, "phone call", true)  # forced: it must not vanish when all their PCs are broken
             if not made.is_empty():
                 made.notes.append(str(FAVOUR_TEXT.desk_note))
         _:
@@ -6807,8 +6807,14 @@ func favour_talk_answer(pick: String) -> void:
     send_text(Roles.who("manager"), str(FAVOUR_TEXT.get(pick.trim_prefix("fav_") + "_reply", "")))
 
 
+# easy and normal: every ticket of the day shares the cap. Hard keeps the story and event tickets on top of the random ones
+# (its reputation curve was tuned on those busier days; sharing the cap there cost the careful bot about 30 points)
+func shared_cap() -> bool:
+    return tech_paced() and Difficulty.tier_index() < 2
+
+
 func _random_ticket(source: String) -> Dictionary:
-    if maxi(spawned_today, created_today) >= day_cap():
+    if maxi(spawned_today, created_today if shared_cap() else 0) >= day_cap():
         return {}
     for tries in 6:
         var pick: Dictionary = Mutators.pick_problem()

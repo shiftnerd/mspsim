@@ -107,6 +107,16 @@ func _init() -> void:
 	_check(msp._random_ticket("email").is_empty(), "twelve tickets today: no random one on top")
 	msp.new_day(12)
 	_check(not msp._random_ticket("email").is_empty(), "a new day: random tickets again")
+	diff.set_tier("hard")
+	msp.reset()
+	msp.new_day(12)
+	for i in 12:
+		var ht: Dictionary = msp.create_problem(i % msp.CLIENTS.size(), msp.PROBLEMS[i % 5], "story", true)
+		ht.fix_done = true
+		msp.close_ticket(int(ht.id))
+	_check(not msp.shared_cap() and not msp._random_ticket("email").is_empty(), "hard keeps the story tickets on top of the random ones")
+	diff.set_tier("normal")
+	_check(msp.shared_cap(), "normal shares the cap")
 
 	# ---- a full queue holds a story ticket; order kept; let in at the next free slot
 	msp.reset()
