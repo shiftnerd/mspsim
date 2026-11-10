@@ -21016,6 +21016,58 @@ WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was sus
 [SalesCampaign.BEAT_TEXT.audit.info.ok]
 SHOW ME THE LEADS
 
+# SalesCampaign > BEAT_TEXT > intro > lynk > from
+[SalesCampaign.BEAT_TEXT.intro.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > intro > lynk > text
+[SalesCampaign.BEAT_TEXT.intro.lynk.text]
+A prospect wants a reason to sign this month. An intro rate is fine. An intro rate nobody can find the end of is not.
+
+# SalesCampaign > BEAT_TEXT > intro > card > speaker
+[SalesCampaign.BEAT_TEXT.intro.card.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > intro > card > text
+[SalesCampaign.BEAT_TEXT.intro.card.text]
+%s likes the quote and not the number. They would sign today for half price on the first three months. The list price after that can go on page one, or in the paragraph nobody reads. Or you hold the price.
+
+# SalesCampaign > BEAT_TEXT > intro > card > options > 0 > label
+[SalesCampaign.BEAT_TEXT.intro.card.options.0.label]
+INTRO RATE, THE STEP ON PAGE ONE
+
+# SalesCampaign > BEAT_TEXT > intro > card > options > 1 > label
+[SalesCampaign.BEAT_TEXT.intro.card.options.1.label]
+INTRO RATE, PRICE IN THE SMALL PRINT
+
+# SalesCampaign > BEAT_TEXT > intro > card > options > 2 > label
+[SalesCampaign.BEAT_TEXT.intro.card.options.2.label]
+HOLD THE LIST PRICE (1 HOUR)
+
+# SalesCampaign > BEAT_TEXT > intro > res_pageone > speaker
+[SalesCampaign.BEAT_TEXT.intro.res_pageone.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > intro > res_pageone > text
+[SalesCampaign.BEAT_TEXT.intro.res_pageone.text]
+Three months at half, then the list price, in the first paragraph. They read it twice and said they would think about it. People who think about it and still sign tend to stay.
+
+# SalesCampaign > BEAT_TEXT > intro > res_smallprint > speaker
+[SalesCampaign.BEAT_TEXT.intro.res_smallprint.speaker]
+{tech_owner}
+
+# SalesCampaign > BEAT_TEXT > intro > res_smallprint > text
+[SalesCampaign.BEAT_TEXT.intro.res_smallprint.text]
+They signed. Month four is on page six, in grey. A vendor did this to me once. I remember exactly how I felt about that vendor in month four.
+
+# SalesCampaign > BEAT_TEXT > intro > res_hold > speaker
+[SalesCampaign.BEAT_TEXT.intro.res_hold.speaker]
+{sales_owner}
+
+# SalesCampaign > BEAT_TEXT > intro > res_hold > text
+[SalesCampaign.BEAT_TEXT.intro.res_hold.text]
+You held the price and spent the hour on what it buys. No discount now and no surprise in month four. They are still talking to you.
+
 # SalesCampaign > BEAT_TEXT > scorecard > lynk > from
 [SalesCampaign.BEAT_TEXT.scorecard.lynk.from]
 Garrison
@@ -22559,6 +22611,30 @@ SAY IT WAS HIS CHOICE
 # RivalCards > CARDS > bill_temp_2fa > options > 1 > text
 [RivalCards.CARDS.bill_temp_2fa.options.1.text]
 It was, but you cannot prove it. He tells his lawyer, who tells him to be calm.
+
+# RivalCards > CARDS > temp_restore_after > speaker
+[RivalCards.CARDS.temp_restore_after.speaker]
+{tech}
+
+# RivalCards > CARDS > temp_restore_after > text
+[RivalCards.CARDS.temp_restore_after.text]
+About {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. The restore test we skipped would have found it in three hours. I am not saying it to be right.
+
+# RivalCards > CARDS > temp_restore_after > options > 0 > label
+[RivalCards.CARDS.temp_restore_after.options.0.label]
+RUN A RESTORE TEST ON EVERY CLIENT NOW
+
+# RivalCards > CARDS > temp_restore_after > options > 0 > text
+[RivalCards.CARDS.temp_restore_after.options.0.text]
+It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday.
+
+# RivalCards > CARDS > temp_restore_after > options > 1 > label
+[RivalCards.CARDS.temp_restore_after.options.1.label]
+CALL IT BAD LUCK
+
+# RivalCards > CARDS > temp_restore_after > options > 1 > text
+[RivalCards.CARDS.temp_restore_after.options.1.text]
+It was not luck. Alan does not say so. Alan just looks at the green light for a long time.
 
 # RivalCards > CARDS > bill_temp_restore > speaker
 [RivalCards.CARDS.bill_temp_restore.speaker]

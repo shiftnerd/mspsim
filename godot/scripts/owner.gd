@@ -1459,6 +1459,8 @@ var _winback_queue: Array = []  # lost clients asking to come back
 var _poach_cool := 0
 var _poach_wave := 0  # weeks the competitor is running a campaign (double the risk)
 var _ransom_ticket := 0
+var _ransom_client := 3  # the client of the ransom card that is open (Story.RANSOM_CLIENT, or the victim of a skipped restore test)
+var _ransom_forced := false  # the backup looked fine and still did not restore (H1 never tested, a skipped test, an inherited mess)
 
 
 func _ready() -> void:
@@ -1512,6 +1514,8 @@ func reset() -> void:
 	_poach_cool = 0
 	_poach_wave = 0
 	_ransom_ticket = 0
+	_ransom_client = Story.RANSOM_CLIENT
+	_ransom_forced = false
 	_handover = []
 	_burn_warned = false
 	discount = {}
@@ -1917,7 +1921,7 @@ func show_card(id: String) -> void:
 		if need > 0 and cash < need:
 			entry["enabled"] = false
 			entry["hint"] = "NEED $%d" % need
-		if opt.get("policy", false) and not Msp.cyber_insured(Story.RANSOM_CLIENT):
+		if opt.get("policy", false) and not Msp.cyber_insured(_ransom_client):
 			entry["enabled"] = false
 			entry["hint"] = "NO POLICY"
 		if opt.has("unless") and flags.get(str(opt.unless), false):
@@ -3602,22 +3606,87 @@ func drop_random_client() -> void:
 	Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
 
 
-func _ransom() -> void:
-	var t := Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+# the ransom cards name Hoot and Holler (the story client). A ransom at another client, or one whose backup looked fine and did not restore,
+# shows a copy with the name, the mood target and the reason put right.
+func _ransom_card(id: String) -> void:
+	if _ransom_client == Story.RANSOM_CLIENT and not _ransom_forced:
+		show_card(id)
+		return
+	var card: Dictionary = CARDS[id].duplicate(true)
+	var who := str(Msp.CLIENTS[_ransom_client].name)
+	var body := str(card.text).replace("Hoot and Holler's", poss(who)).replace("Hoot and Holler", who)
+	if _ransom_forced:
+		body = body.replace("The backup was not working.", "The backup light was green, and the restore failed halfway: nobody had tested it.")
+		body = body.replace("because our backup was not working", "because our backup would not restore")
+	card["text"] = body
+	for opt in card.options:
+		if opt.has("fx"):
+			_ransom_retarget(opt.fx)
+		for entry in opt.get("roll", []):
+			_ransom_retarget(entry[1])
+	_dynamic[id + "_v"] = card
+	show_card(id + "_v")
+
+
+func _ransom_retarget(fx: Dictionary) -> void:
+	var key := str(Story.RANSOM_CLIENT)
+	if _ransom_client != Story.RANSOM_CLIENT and fx.get("mood", {}) is Dictionary and (fx.get("mood", {}) as Dictionary).has(key):
+		var mood: Dictionary = fx.mood
+		mood[str(_ransom_client)] = mood[key]
+		mood.erase(key)
+
+
+# R38: the skipped restore test coming due is a real infection at one client (Temptation.ransom_bill). False when no ticket could be opened.
+func ransom_at(client: int) -> bool:
+	return _ransom(client)
+
+
+func _ransom(client := Story.RANSOM_CLIENT) -> bool:
+	var t := Msp.create_problem(client, Msp.RANSOM, "monitoring")
 	if t.is_empty():
 		for ep in Msp.endpoints:
-			if ep.client == Story.RANSOM_CLIENT and ep.name.contains("SRV"):
+			if ep.client == client and ep.name.contains("SRV"):
 				ep.problem = ""
-		t = Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+		t = Msp.create_problem(client, Msp.RANSOM, "monitoring")
 	if t.is_empty():
-		return
+		return false
 	_ransom_ticket = int(t.id)
+	_ransom_client = client
+	_ransom_forced = false
+	if client != Story.RANSOM_CLIENT or Habits.skipped_test():
+		return _ransom_untested(client)
+	_ransom_story(t)
+	return true
+
+
+# a ransom whose restore may fail although the backup light is green. The skipped test (temp_restore still in the folder) fails for sure and
+# the ransom is its bill; elsewhere the odds are H1's and the takeover's.
+func _ransom_untested(client: int) -> bool:
+	var t := Msp.ticket(_ransom_ticket)
+	var odds := maxf(Habits.restore_fail(), Takeover.restore_fail(client))
+	var failed := not bool(Msp.backups[client].ok) or odds >= 1.0 or (odds > 0.0 and Difficulty.rng("owner").randf() < odds)
+	if failed:
+		_ransom_forced = bool(Msp.backups[client].ok)
+		if _ransom_forced:
+			Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
+		if Habits.skipped_test():
+			Temptation.ransom_hit(self, client)
+		_ransom_card("ransom_options")
+		return true
+	Msp.rmm_action(str(t.endpoint), "restore")
+	Msp.close_ticket(int(t.id))
+	Msp.send_text("Alan", "%s got hit by CryptoLocker. We restored from backup. No data lost!" % str(Msp.CLIENTS[client].name))
+	return true
+
+
+func _ransom_story(t: Dictionary) -> void:
 	var restore_fail := maxf(Habits.restore_fail(), Takeover.restore_fail(Story.RANSOM_CLIENT))  # R38 P4: an unfixed freezer bag. R38: H1, a backup nobody ever test restored may not restore
 	var untested_fail := restore_fail > 0.0 and Difficulty.rng("owner").randf() < restore_fail
 	if untested_fail:
 		Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
 	if untested_fail or not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
-		show_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
+		_ransom_forced = untested_fail and bool(Msp.backups[Story.RANSOM_CLIENT].ok)
+		_ransom_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
 		return
 	Msp.rmm_action(str(t.endpoint), "restore")
 	Msp.close_ticket(int(t.id))
@@ -3641,18 +3710,24 @@ func _ransom_finish(kind: String) -> void:
 	var t := Msp.ticket(_ransom_ticket)
 	if t.is_empty():
 		return
+	var who := str(Msp.CLIENTS[_ransom_client].name)
 	if kind == "lost":
-		Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
+		var hit := Msp.endpoint(str(t.endpoint))
+		if _ransom_forced and not hit.is_empty():
+			hit["restore_failed"] = true  # the backup looked fine and would not restore: closing the ticket is the loss
+		else:
+			Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
 		Msp.close_ticket(int(t.id))
-		show_card("ransom_lost")
+		_ransom_card("ransom_lost")
 		return
 	t.fix_done = true
 	var ep := Msp.endpoint(str(t.endpoint))
 	if not ep.is_empty():
 		ep.problem = ""
 	Msp.close_ticket(int(t.id))
-	Story.flags["ransom"] = kind
-	Msp.send_text("Alan", "Hoot and Holler: %s." % str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial)))
+	if _ransom_client == Story.RANSOM_CLIENT:
+		Story.flags["ransom"] = kind
+	Msp.send_text("Alan", "%s: %s." % [who, str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial))])
 
 
 # ---- RDP open to the internet: a stolen login ----------------------------------------------------------------

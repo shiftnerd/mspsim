@@ -172,8 +172,9 @@ static func owner_fx(kind: String) -> void:
 				Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
 				Owner.show_card("bec_claim_no")
 		"blame":
-			Owner.apply({"rep": -3, "mood": {key: -18}})
-			if Sales.active.has(client) and randf() < 0.4:
+			var paper: float = Habits.blame_mult()  # R38: H13, written authorisation halves the blame
+			Owner.apply({"rep": -int(round(3.0 * paper)), "mood": {key: -int(round(18.0 * paper))}})
+			if Sales.active.has(client) and randf() < 0.4 * paper:
 				Owner.drop_client(client, "")
 				Owner.show_card("bec_blame_left")
 			else:

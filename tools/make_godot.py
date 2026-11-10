@@ -20656,6 +20656,8 @@ var _winback_queue: Array = []  # lost clients asking to come back
 var _poach_cool := 0
 var _poach_wave := 0  # weeks the competitor is running a campaign (double the risk)
 var _ransom_ticket := 0
+var _ransom_client := 3  # the client of the ransom card that is open (Story.RANSOM_CLIENT, or the victim of a skipped restore test)
+var _ransom_forced := false  # the backup looked fine and still did not restore (H1 never tested, a skipped test, an inherited mess)
 
 
 func _ready() -> void:
@@ -20709,6 +20711,8 @@ func reset() -> void:
     _poach_cool = 0
     _poach_wave = 0
     _ransom_ticket = 0
+    _ransom_client = Story.RANSOM_CLIENT
+    _ransom_forced = false
     _handover = []
     _burn_warned = false
     discount = {}
@@ -21088,7 +21092,7 @@ func show_card(id: String) -> void:
         if need > 0 and cash < need:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % need
-        if opt.get("policy", false) and not Msp.cyber_insured(Story.RANSOM_CLIENT):
+        if opt.get("policy", false) and not Msp.cyber_insured(_ransom_client):
             entry["enabled"] = false
             entry["hint"] = "NO POLICY"
         if opt.has("unless") and flags.get(str(opt.unless), false):
@@ -22283,22 +22287,87 @@ func drop_random_client() -> void:
     Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
 
 
-func _ransom() -> void:
-    var t := Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+# the ransom cards name Hoot and Holler (the story client). A ransom at another client, or one whose backup looked fine and did not restore,
+# shows a copy with the name, the mood target and the reason put right.
+func _ransom_card(id: String) -> void:
+    if _ransom_client == Story.RANSOM_CLIENT and not _ransom_forced:
+        show_card(id)
+        return
+    var card: Dictionary = CARDS[id].duplicate(true)
+    var who := str(Msp.CLIENTS[_ransom_client].name)
+    var body := str(card.text).replace("Hoot and Holler's", poss(who)).replace("Hoot and Holler", who)
+    if _ransom_forced:
+        body = body.replace("The backup was not working.", "The backup light was green, and the restore failed halfway: nobody had tested it.")
+        body = body.replace("because our backup was not working", "because our backup would not restore")
+    card["text"] = body
+    for opt in card.options:
+        if opt.has("fx"):
+            _ransom_retarget(opt.fx)
+        for entry in opt.get("roll", []):
+            _ransom_retarget(entry[1])
+    _dynamic[id + "_v"] = card
+    show_card(id + "_v")
+
+
+func _ransom_retarget(fx: Dictionary) -> void:
+    var key := str(Story.RANSOM_CLIENT)
+    if _ransom_client != Story.RANSOM_CLIENT and fx.get("mood", {}) is Dictionary and (fx.get("mood", {}) as Dictionary).has(key):
+        var mood: Dictionary = fx.mood
+        mood[str(_ransom_client)] = mood[key]
+        mood.erase(key)
+
+
+# R38: the skipped restore test coming due is a real infection at one client (Temptation.ransom_bill). False when no ticket could be opened.
+func ransom_at(client: int) -> bool:
+    return _ransom(client)
+
+
+func _ransom(client := Story.RANSOM_CLIENT) -> bool:
+    var t := Msp.create_problem(client, Msp.RANSOM, "monitoring")
     if t.is_empty():
         for ep in Msp.endpoints:
-            if ep.client == Story.RANSOM_CLIENT and ep.name.contains("SRV"):
+            if ep.client == client and ep.name.contains("SRV"):
                 ep.problem = ""
-        t = Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+        t = Msp.create_problem(client, Msp.RANSOM, "monitoring")
     if t.is_empty():
-        return
+        return false
     _ransom_ticket = int(t.id)
+    _ransom_client = client
+    _ransom_forced = false
+    if client != Story.RANSOM_CLIENT or Habits.skipped_test():
+        return _ransom_untested(client)
+    _ransom_story(t)
+    return true
+
+
+# a ransom whose restore may fail although the backup light is green. The skipped test (temp_restore still in the folder) fails for sure and
+# the ransom is its bill; elsewhere the odds are H1's and the takeover's.
+func _ransom_untested(client: int) -> bool:
+    var t := Msp.ticket(_ransom_ticket)
+    var odds := maxf(Habits.restore_fail(), Takeover.restore_fail(client))
+    var failed := not bool(Msp.backups[client].ok) or odds >= 1.0 or (odds > 0.0 and Difficulty.rng("owner").randf() < odds)
+    if failed:
+        _ransom_forced = bool(Msp.backups[client].ok)
+        if _ransom_forced:
+            Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
+        if Habits.skipped_test():
+            Temptation.ransom_hit(self, client)
+        _ransom_card("ransom_options")
+        return true
+    Msp.rmm_action(str(t.endpoint), "restore")
+    Msp.close_ticket(int(t.id))
+    Msp.send_text("Alan", "%s got hit by CryptoLocker. We restored from backup. No data lost!" % str(Msp.CLIENTS[client].name))
+    return true
+
+
+func _ransom_story(t: Dictionary) -> void:
     var restore_fail := maxf(Habits.restore_fail(), Takeover.restore_fail(Story.RANSOM_CLIENT))  # R38 P4: an unfixed freezer bag. R38: H1, a backup nobody ever test restored may not restore
     var untested_fail := restore_fail > 0.0 and Difficulty.rng("owner").randf() < restore_fail
     if untested_fail:
         Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
     if untested_fail or not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
-        show_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
+        _ransom_forced = untested_fail and bool(Msp.backups[Story.RANSOM_CLIENT].ok)
+        _ransom_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
         return
     Msp.rmm_action(str(t.endpoint), "restore")
     Msp.close_ticket(int(t.id))
@@ -22316,18 +22385,24 @@ func _ransom_finish(kind: String) -> void:
     var t := Msp.ticket(_ransom_ticket)
     if t.is_empty():
         return
+    var who := str(Msp.CLIENTS[_ransom_client].name)
     if kind == "lost":
-        Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
+        var hit := Msp.endpoint(str(t.endpoint))
+        if _ransom_forced and not hit.is_empty():
+            hit["restore_failed"] = true  # the backup looked fine and would not restore: closing the ticket is the loss
+        else:
+            Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
         Msp.close_ticket(int(t.id))
-        show_card("ransom_lost")
+        _ransom_card("ransom_lost")
         return
     t.fix_done = true
     var ep := Msp.endpoint(str(t.endpoint))
     if not ep.is_empty():
         ep.problem = ""
     Msp.close_ticket(int(t.id))
-    Story.flags["ransom"] = kind
-    Msp.send_text("Alan", "Hoot and Holler: %s." % str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial)))
+    if _ransom_client == Story.RANSOM_CLIENT:
+        Story.flags["ransom"] = kind
+    Msp.send_text("Alan", "%s: %s." % [who, str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial))])
 
 
 # ---- RDP open to the internet: a stolen login ----------------------------------------------------------------
@@ -61642,6 +61717,21 @@ const BEAT_TEXT := {
         "lynk": {"from": "Morgan", "text": "Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry."},
         "info": {"speaker": "{sales_owner}", "text": "WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.", "ok": "SHOW ME THE LEADS"},
     },
+    "intro": {
+        "lynk": {"from": "Garrison", "text": "A prospect wants a reason to sign this month. An intro rate is fine. An intro rate nobody can find the end of is not."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "%s likes the quote and not the number. They would sign today for half price on the first three months. The list price after that can go on page one, or in the paragraph nobody reads. Or you hold the price.",
+            "options": [
+                {"id": "pageone", "label": "INTRO RATE, THE STEP ON PAGE ONE"},
+                {"id": "smallprint", "label": "INTRO RATE, PRICE IN THE SMALL PRINT"},
+                {"id": "hold", "label": "HOLD THE LIST PRICE (1 HOUR)"},
+            ],
+        },
+        "res_pageone": {"speaker": "{sales_owner}", "text": "Three months at half, then the list price, in the first paragraph. They read it twice and said they would think about it. People who think about it and still sign tend to stay."},
+        "res_smallprint": {"speaker": "{tech_owner}", "text": "They signed. Month four is on page six, in grey. A vendor did this to me once. I remember exactly how I felt about that vendor in month four."},
+        "res_hold": {"speaker": "{sales_owner}", "text": "You held the price and spent the hour on what it buys. No discount now and no surprise in month four. They are still talking to you."},
+    },
     "scorecard": {
         "lynk": {"from": "Garrison", "text": "Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January."},
         "card": {
@@ -63923,6 +64013,7 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
@@ -64178,6 +64269,9 @@ static func assess_pick(l: Dictionary, pick: String) -> void:
 		l["assessed"] = "honest"
 		Habits.apply_touch("H10")
 		Temptation.change_consc(1)
+		if Rival.RIVALS.has(incumbent(l)):
+			for h in findings(l):
+				Rival.set_rap(incumbent(l), str(h), Rival.SEEN)  # an honest list is evidence: it goes on the rival's rap sheet
 		SalesCampaign.Deals.note(l, "HONEST LIST: %d FIXES" % findings(l).size())
 	SalesCampaign.changed.emit()
 
@@ -64201,9 +64295,13 @@ const BILLS := {
 	"cheap": {"lo": 4, "hi": 6, "mood": 10, "churn": 10, "rep": 1, "claw": 2.5, "leave": false, "text": "THE FIXES YOU TOLD THEM WERE NOT NEEDED TURNED INTO OUTAGES."},
 	"flat": {"lo": 3, "hi": 5, "mood": 8, "churn": 6, "rep": 1, "claw": 2.0, "leave": false, "text": "THEY ASKED FOR THE SETUP THEY ASSUMED WAS INCLUDED. NOTHING WAS IN WRITING."},
 	"launder": {"lo": 5, "hi": 7, "mood": 0, "churn": 0, "rep": 3, "leave": true, "text": "THE CONTACT ASKED HOW YOU KNEW ABOUT THEIR MAILBOX."},
+	"intro": {"lo": 3, "hi": 5, "mood": 10, "churn": 10, "rep": 1, "claw": 2.0, "leave": false, "text": "THE INTRO RATE ENDED AND THE REAL INVOICE CAME. THE LIST PRICE WAS IN THE SMALL PRINT."},
 	"undercut": {"lo": 4, "hi": 6, "mood": 6, "churn": 8, "rep": 1, "claw": 2.0, "leave": false, "text": "THE UNDERCUT PRICE CAME WITH UNDERCUT SERVICE. THEY NOTICED."}
 }
 const BILL_PATIENCE := 8
+const INTRO_PTS := 0.03  # an intro rate with the step on page one: a small, honest edge
+const HOLD_PTS := 0.02
+const INTRO_FAST := 0.08  # the small print version on a lead that is not quoted yet
 const CLEAN_FLOOR := 50
 
 
@@ -64441,6 +64539,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"intro":
+			beat_intro()
 		"rumour":
 			beat_rumour()
 		"audit":
@@ -64783,6 +64883,49 @@ static func beat_audit() -> void:
 static func _audit_cards(fresh: Array) -> void:
 	for l in fresh:
 		SalesCampaign._lead_card(l)
+
+
+# week 12: the intro rate temptation (the sales twin of the owner's vendor switch, from the other side of the table). A prospect would
+# sign today for a cheap first quarter. PAGE ONE shows the step to list price (honest, a small edge), SMALL PRINT hides it (the deal closes
+# now at the full fee, a lie, and the bill comes when the intro rate ends: BILLS.intro), HOLD keeps the list price for an hour of selling.
+static func beat_intro() -> void:
+	var sb := SalesCampaign.SalesBeats
+	var l: Dictionary = sb.quoted_lead()
+	if l.is_empty():
+		l = _best_open()
+	if l.is_empty():
+		sb.set_flag("intro", "none")
+		return
+	sb.lynk("intro")
+	sb.ask(
+		"intro",
+		"card",
+		func(id: String) -> void: _intro_pick(l, id),
+		[str(l.name)],
+		{"hold": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+	)
+
+
+static func _intro_pick(l: Dictionary, id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("intro", id)
+	match id:
+		"smallprint":
+			mark_lie(l, "INTRO RATE, LIST PRICE IN THE SMALL PRINT", "intro")
+			if str(l.stage) == "QUOTED":
+				var method := str(l.get("quote", {}).get("method", "fixed"))
+				sb.say("intro", "res_smallprint", [], func() -> void: sb.close_at(l, method, 1.0))
+				return
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_FAST
+		"hold":
+			SalesCampaign.spend(1)
+			l["pts"] = float(l.get("pts", 0.0)) + HOLD_PTS
+			SalesCampaign.Deals.note(l, "HELD THE LIST PRICE")
+		_:
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_PTS
+			Temptation.change_consc(1)
+			SalesCampaign.Deals.note(l, "INTRO RATE, THE STEP ON PAGE ONE")
+	sb.say("intro", "res_" + id)
 
 
 # week 17: scorecards at renewal (+0.06 renew chance for a client who saw one)
@@ -70498,8 +70641,9 @@ static func owner_fx(kind: String) -> void:
                 Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
                 Owner.show_card("bec_claim_no")
         "blame":
-            Owner.apply({"rep": -3, "mood": {key: -18}})
-            if Sales.active.has(client) and randf() < 0.4:
+            var paper: float = Habits.blame_mult()  # R38: H13, written authorisation halves the blame
+            Owner.apply({"rep": -int(round(3.0 * paper)), "mood": {key: -int(round(18.0 * paper))}})
+            if Sales.active.has(client) and randf() < 0.4 * paper:
                 Owner.drop_client(client, "")
                 Owner.show_card("bec_blame_left")
             else:
@@ -71132,6 +71276,8 @@ static func show(owner: Node, id: String, arg: String) -> void:
 	card = _fill(card, names)
 	if id == Temptation.CLEAN_CARD:
 		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
+	if id == Temptation.LESSON_CARD:
+		card = Temptation.dress_lesson(owner, card)  # the morning after the restore that failed
 	if id == "temp_seats":
 		card = Temptation.dress_seats(owner, card)  # Christy warns after the first vendor switch
 	var options: Array = card.options
@@ -71530,6 +71676,8 @@ const H9_WEEK := 18  # the card comes in the week 19 morning (the clocks change 
 const DRIFT_DROP := 3  # a mood fall this big in a week shows as a chip once the front desk is listened to
 const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
+const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
+const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -71747,7 +71895,27 @@ static func touch(id: String) -> bool:
 	e["last"] = Campaign.day
 	e["uses"] = int(e.get("uses", 0)) + 1
 	Owner.habits[id] = e
+	if id == "H1":
+		late_test()
 	return true
+
+
+# the skipped restore test (the temp_restore temptation) is still in Christy's folder
+static func skipped_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			return true
+	return false
+
+
+# a real restore test after the skipped one finds the broken job while it is cheap: the entry leaves the folder with no bill
+static func late_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			Owner.skel.erase(sk)
+			Hints.toast("THE LATE RESTORE TEST FOUND A JOB THAT WAS SKIPPING FOLDERS. FIXED WHILE IT WAS CHEAP.", 5.0)
+			return true
+	return false
 
 
 # the real thing happened in the game (a review, a project, a loss): it counts only while the habit still works (ADOPTED or STALE)
@@ -72172,6 +72340,11 @@ static func bec_mult() -> float:
 	return 1.0 - 0.15 * factor("H7") - 0.05 * factor("H13") - 0.05 * factor("H4")
 
 
+# H13: with the client's written go-ahead on file, telling them it was their own process costs half (Incident, bec "blame")
+static func blame_mult() -> float:
+	return 1.0 - 0.5 * factor("H13")
+
+
 # _rdp_week: a unique admin login makes a guessed password rarer (4 percent -> 1 percent when weak)
 static func rdp_mult(weak: bool) -> float:
 	return 1.0 - 0.75 * factor("H7") if weak else 1.0
@@ -72179,6 +72352,8 @@ static func rdp_mult(weak: bool) -> float:
 
 # ransom restore: the share of ransoms that fail to restore when the client HAS the backup service (untested 15 percent)
 static func restore_fail() -> float:
+	if skipped_test():
+		return SKIP_FAIL  # the test was skipped on purpose: the freezer bag moment is yours
 	if not Owner.habits.has("H1") or fresh("H1"):
 		return 0.0
 	return 0.15
@@ -72242,6 +72417,8 @@ const SWITCH_MOOD := -3  # the agents go back on every PC
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
+const RESTORE := "temp_restore"  # the skipped restore test: its bill is a real ransom (ransom_bill)
+const LESSON_CARD := "temp_restore_after"
 const BANDS := [
 	[0, "CLEAN BOOKS"], [-3, "A FEW LOOSE ENDS"], [-6, "SKELETONS"], [-999, "A CLOSET FULL"]
 ]
@@ -72433,8 +72610,10 @@ static func come_clean(id: String) -> bool:
 
 # the bill arrives: cash, reputation, the class extras (see _extras) and the card bill_<id> of RivalCards (a toast if it has none)
 static func bill(owner: Node, sk: Dictionary) -> void:
-	Career.add("skeletons_paid")  # R38 P6
 	var id := str(sk.get("id", ""))
+	if id == RESTORE and not Difficulty.cozy_on() and ransom_bill(owner, sk):
+		return  # the skipped restore test: a real infection is the bill
+	Career.add("skeletons_paid")  # R38 P6
 	var b: Dictionary = BILLS.get(id, {})
 	var cost := bill_size(sk)
 	if cost > 0:
@@ -72451,6 +72630,47 @@ static func bill(owner: Node, sk: Dictionary) -> void:
 		return
 	owner._dynamic["tb_" + id] = _dress_bill(owner, owner.card_data(card), victim, cost, id)
 	owner.show_card("tb_" + id)
+
+
+# The skipped restore test comes due as a real ransom: an infection at one served client whose restore fails (Habits.restore_fail() is
+# SKIP_FAIL while the entry is in the folder), so the player gets the ransom card instead of a flat bill. False (and the flat bill) when
+# there is no client or no server to hit. Cozy keeps the flat, halved bill.
+static func ransom_bill(owner: Node, sk: Dictionary) -> bool:
+	var victim := _victim(owner, "backup")
+	if victim < 0:
+		return false
+	owner.skel.append(sk)  # still open while the infection runs: the restore reads it, ransom_hit takes it out
+	if owner.ransom_at(victim) and find(RESTORE) < 0:
+		return true
+	owner.skel.erase(sk)
+	return false
+
+
+# a restore failed because of the skipped test (the scheduled ransom, or ransom_bill): the entry leaves the folder, the ransom card is
+# the bill, the client is hurt and Alan's lesson card comes the next morning
+static func ransom_hit(owner: Node, client: int) -> void:
+	var i := find(RESTORE)
+	if i < 0:
+		return
+	owner.skel.remove_at(i)
+	Career.add("skeletons_paid")
+	owner.flags["skip_ransom"] = Campaign.day
+	owner.flags["skip_client"] = client
+	Sales.adjust(client, -int(BILLS[RESTORE].get("mood", 0)))
+	if owner.card_data(LESSON_CARD).is_empty():
+		return
+	var q: Array = owner.flags.get("arc_queue", [])
+	q.append(LESSON_CARD)
+	owner.flags["arc_queue"] = q
+
+
+# Alan's card the morning after (Rival.show calls this): {vname} is the client that was hit
+static func dress_lesson(owner: Node, card: Dictionary) -> Dictionary:
+	var victim := int(owner.flags.get("skip_client", -1))
+	var who := "the client"
+	if victim >= 0 and victim < Msp.CLIENTS.size():
+		who = str(Msp.CLIENTS[victim].name)
+	return _fill(card, {"{vname}": who})
 
 
 # the client a bill falls on: the margin bill the one on the deepest discount, the backup bill the ransom client, the others the
@@ -74353,6 +74573,27 @@ const DEFAULT_CARDS := {
 				"label": "SAY IT WAS HIS CHOICE",
 				"fx": {"rep": -1, "consc": -1},
 				"text": "It was, but you cannot prove it. He tells his lawyer, who tells him to be calm."
+			},
+		],
+	},
+	"temp_restore_after":
+	{
+		"speaker": "{tech}",
+		"text":
+		"About {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. The restore test we skipped would have found it in three hours. I am not saying it to be right.",
+		"options":
+		[
+			{
+				"label": "RUN A RESTORE TEST ON EVERY CLIENT NOW",
+				"fx": {"habit": "H1", "owner_hours": 3, "consc": 1},
+				"text":
+				"It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday."
+			},
+			{
+				"label": "CALL IT BAD LUCK",
+				"fx": {"consc": -1},
+				"text":
+				"It was not luck. Alan does not say so. Alan just looks at the green light for a long time."
 			},
 		],
 	},

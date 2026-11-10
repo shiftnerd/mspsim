@@ -52,6 +52,7 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
@@ -307,6 +308,9 @@ static func assess_pick(l: Dictionary, pick: String) -> void:
 		l["assessed"] = "honest"
 		Habits.apply_touch("H10")
 		Temptation.change_consc(1)
+		if Rival.RIVALS.has(incumbent(l)):
+			for h in findings(l):
+				Rival.set_rap(incumbent(l), str(h), Rival.SEEN)  # an honest list is evidence: it goes on the rival's rap sheet
 		SalesCampaign.Deals.note(l, "HONEST LIST: %d FIXES" % findings(l).size())
 	SalesCampaign.changed.emit()
 
@@ -330,9 +334,13 @@ const BILLS := {
 	"cheap": {"lo": 4, "hi": 6, "mood": 10, "churn": 10, "rep": 1, "claw": 2.5, "leave": false, "text": "THE FIXES YOU TOLD THEM WERE NOT NEEDED TURNED INTO OUTAGES."},
 	"flat": {"lo": 3, "hi": 5, "mood": 8, "churn": 6, "rep": 1, "claw": 2.0, "leave": false, "text": "THEY ASKED FOR THE SETUP THEY ASSUMED WAS INCLUDED. NOTHING WAS IN WRITING."},
 	"launder": {"lo": 5, "hi": 7, "mood": 0, "churn": 0, "rep": 3, "leave": true, "text": "THE CONTACT ASKED HOW YOU KNEW ABOUT THEIR MAILBOX."},
+	"intro": {"lo": 3, "hi": 5, "mood": 10, "churn": 10, "rep": 1, "claw": 2.0, "leave": false, "text": "THE INTRO RATE ENDED AND THE REAL INVOICE CAME. THE LIST PRICE WAS IN THE SMALL PRINT."},
 	"undercut": {"lo": 4, "hi": 6, "mood": 6, "churn": 8, "rep": 1, "claw": 2.0, "leave": false, "text": "THE UNDERCUT PRICE CAME WITH UNDERCUT SERVICE. THEY NOTICED."}
 }
 const BILL_PATIENCE := 8
+const INTRO_PTS := 0.03  # an intro rate with the step on page one: a small, honest edge
+const HOLD_PTS := 0.02
+const INTRO_FAST := 0.08  # the small print version on a lead that is not quoted yet
 const CLEAN_FLOOR := 50
 
 
@@ -570,6 +578,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"intro":
+			beat_intro()
 		"rumour":
 			beat_rumour()
 		"audit":
@@ -912,6 +922,49 @@ static func beat_audit() -> void:
 static func _audit_cards(fresh: Array) -> void:
 	for l in fresh:
 		SalesCampaign._lead_card(l)
+
+
+# week 12: the intro rate temptation (the sales twin of the owner's vendor switch, from the other side of the table). A prospect would
+# sign today for a cheap first quarter. PAGE ONE shows the step to list price (honest, a small edge), SMALL PRINT hides it (the deal closes
+# now at the full fee, a lie, and the bill comes when the intro rate ends: BILLS.intro), HOLD keeps the list price for an hour of selling.
+static func beat_intro() -> void:
+	var sb := SalesCampaign.SalesBeats
+	var l: Dictionary = sb.quoted_lead()
+	if l.is_empty():
+		l = _best_open()
+	if l.is_empty():
+		sb.set_flag("intro", "none")
+		return
+	sb.lynk("intro")
+	sb.ask(
+		"intro",
+		"card",
+		func(id: String) -> void: _intro_pick(l, id),
+		[str(l.name)],
+		{"hold": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+	)
+
+
+static func _intro_pick(l: Dictionary, id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("intro", id)
+	match id:
+		"smallprint":
+			mark_lie(l, "INTRO RATE, LIST PRICE IN THE SMALL PRINT", "intro")
+			if str(l.stage) == "QUOTED":
+				var method := str(l.get("quote", {}).get("method", "fixed"))
+				sb.say("intro", "res_smallprint", [], func() -> void: sb.close_at(l, method, 1.0))
+				return
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_FAST
+		"hold":
+			SalesCampaign.spend(1)
+			l["pts"] = float(l.get("pts", 0.0)) + HOLD_PTS
+			SalesCampaign.Deals.note(l, "HELD THE LIST PRICE")
+		_:
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_PTS
+			Temptation.change_consc(1)
+			SalesCampaign.Deals.note(l, "INTRO RATE, THE STEP ON PAGE ONE")
+	sb.say("intro", "res_" + id)
 
 
 # week 17: scorecards at renewal (+0.06 renew chance for a client who saw one)

@@ -481,6 +481,21 @@ const DEFAULT_BEAT_TEXT := {
 		"lynk": {"from": "Morgan", "text": "Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry."},
 		"info": {"speaker": "{sales_owner}", "text": "WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.", "ok": "SHOW ME THE LEADS"},
 	},
+	"intro": {
+		"lynk": {"from": "Garrison", "text": "A prospect wants a reason to sign this month. An intro rate is fine. An intro rate nobody can find the end of is not."},
+		"card": {
+			"speaker": "{sales_owner}",
+			"text": "%s likes the quote and not the number. They would sign today for half price on the first three months. The list price after that can go on page one, or in the paragraph nobody reads. Or you hold the price.",
+			"options": [
+				{"id": "pageone", "label": "INTRO RATE, THE STEP ON PAGE ONE"},
+				{"id": "smallprint", "label": "INTRO RATE, PRICE IN THE SMALL PRINT"},
+				{"id": "hold", "label": "HOLD THE LIST PRICE (1 HOUR)"},
+			],
+		},
+		"res_pageone": {"speaker": "{sales_owner}", "text": "Three months at half, then the list price, in the first paragraph. They read it twice and said they would think about it. People who think about it and still sign tend to stay."},
+		"res_smallprint": {"speaker": "{tech_owner}", "text": "They signed. Month four is on page six, in grey. A vendor did this to me once. I remember exactly how I felt about that vendor in month four."},
+		"res_hold": {"speaker": "{sales_owner}", "text": "You held the price and spent the hour on what it buys. No discount now and no surprise in month four. They are still talking to you."},
+	},
 	"scorecard": {
 		"lynk": {"from": "Garrison", "text": "Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January."},
 		"card": {
