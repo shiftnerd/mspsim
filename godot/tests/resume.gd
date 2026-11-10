@@ -200,7 +200,7 @@ func _init() -> void:
 	_check(c.continue_game("tech", true) and c.day == 4 and msp.tickets.is_empty(), "wrong day: Continue falls back")
 	c.day = 3
 	c.save()
-	_write(c.resume_path("tech"), good.replace("version\": 1", "version\": 99"))
+	_write(c.resume_path("tech"), good.replace("version\": %d" % resume.VERSION, "version\": 99"))
 	_check(c.resume_info("tech").is_empty(), "a wrong-version file is refused")
 	_write(c.resume_path("tech"), "not a config file at all [[[")
 	_check(c.resume_info("tech").is_empty(), "garbage is refused")

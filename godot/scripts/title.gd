@@ -687,6 +687,8 @@ func _start(id: String, summary := "") -> void:
 			Campaign.continue_game("tech", true)
 		"owner_new":
 			Campaign.new_game("owner")
+		"owner_resume", "service_resume", "sales_resume":
+			Campaign.continue_game(run_mode, true)  # R16 step 5: every campaign has a mid-day / mid-week point
 		"owner_continue":
 			Campaign.continue_game("owner")
 		"service_new":

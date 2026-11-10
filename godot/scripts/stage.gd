@@ -113,6 +113,9 @@ func _seat_player() -> void:
 		var chair := get_node_or_null("Interactables/%s" % resume_seat) if resume_seat != "" else null
 		if chair != null and _player.has_method("sit_now"):
 			_player.sit_now(chair)
+		elif Game.vars.has("resume_x"):
+			_player.position.x = float(Game.vars["resume_x"])  # step 5: standing where you stood
+		Game.vars.erase("resume_x")
 		return
 	if not Game.vars.get("start_seated", false):
 		return
