@@ -174,6 +174,22 @@ down at Seat1.
   visit change what an owner bot can run into.
 - Art wanted: none drawn. A cup-reach pose of its own (the hand closing on the cup) would read better than the mouse slide.
 
+## Owner bot check (`tests/bot_run.gd -- owner normal <strategy> seeds=2 ts=4`, one process at a time)
+
+Run because section 9 changes when a takeover visit can start. No campaign balance number was changed.
+
+| Code | careful seed 1 | careful seed 2 | shortcut seed 1 | shortcut seed 2 |
+|---|---|---|---|---|
+| main before this batch (`db68104`) | not run | not run | FIRED week 16, $49k | $352k, rep 90 |
+| this branch | $1,003k, rep 91 | $579k, rep 68 | FIRED week 15, $29k | $0, rep 65; a second run of the same seed: $65k, rep 84 |
+
+- Every run ended, nobody hung on a visit, and `bot_run`'s CHECK line passed (shortcut far below careful, not fired every time).
+- `takeovers 0` in every row, before and after: the bots' answers in weeks 7 and 11 never lead to the takeover card's first
+  answer, so the bot seeds still do not exercise the visit. `tests/takeover_trigger.gd` is the proof that it starts.
+- The shortcut owner of seed 1 is already fired on main (the owner notes measured 0 of 3 fired before the six branches were
+  merged). Seed 2 moved a lot between two runs of the same code ($0 and $65k), so two seeds say little: the balance run with
+  more seeds should look at the shortcut cell again.
+
 ## Tests
 
 | Test | What it proves |
