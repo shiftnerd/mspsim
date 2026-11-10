@@ -17,6 +17,8 @@ extends Node
 #   event_boost {card id: x}             Events draw weight
 #   cast_out {count}                     that many coworkers are out (World.apply_roster)
 #   price_pressure n, lead_mult x, pay_delay n   owner: poach risk, inbound leads, weeks an invoice is late
+#   cash_mult x                          cash income (Mutators.cash): the owner's collected fees, the sales week's revenue, the tech's pay
+#   year2 true                           only drawn into a Year 2 plan (plan_ids); the Year 2 pick / ban chooser lists it
 #   batch {count, problem}, backup_break n, mails [], texts [], offer {}   one-off things on the first morning
 # Never a penalty for family or health: flu season only changes who is in the building.
 #
@@ -48,6 +50,7 @@ const SCHEMA := {
 	"lead_mult": ["f", 0.3, 1.0],
 	"extra_chance": ["f", 0.0, 0.5],
 	"pay_delay": ["i", 0, 2],
+	"cash_mult": ["f", 0.7, 1.3],
 	"xp_pri": ["i", 1, 3],
 	"backup_break": ["i", 0, 2],
 	"ticket_weight": ["w", 0.5, 4.0],
@@ -65,7 +68,8 @@ const MUTATOR_KEYS := [
 	"texts",
 	"offer",
 	"cast_out",
-	"flavor"
+	"flavor",
+	"year2"
 ]
 const START_KEYS := [
 	"name",
@@ -328,6 +332,40 @@ const DEFAULT_MUTATORS := {
 		"sla_mult": 1.1,
 		"energy_drain": 1.1,
 		"event_boost": {"cold_snap": 5.0},
+	},
+	# owner-only, and only drawn in Year 2 (`year2`: a first year plays exactly as before; see plan_ids)
+	"good_quarter":
+	{
+		"name": "GOOD QUARTER",
+		"text":
+		"Half the client list just closed a good quarter. Nobody argues about an invoice, a few of them round up, and the extras they kept putting off get approved over lunch.",
+		"kinds": ["owner"],
+		"year2": true,
+		"duration": [1, 2],
+		"cash_mult": 1.15,
+	},
+	"price_war":
+	{
+		"name": "PRICE WAR",
+		"text":
+		"ByteBrothers mailed every office in town a flyer with a number on it, and the number is low. Clients read it out loud on the phone. Keeping them costs a discount here and a free hour there.",
+		"kinds": ["owner"],
+		"year2": true,
+		"duration": [1, 2],
+		"cash_mult": 0.9,
+		"price_pressure": 0.06,
+		"texts": [{"from": "Boss", "body": "Seen the ByteBrothers flyer? Do not match the price. Call the ones who are wavering before they call us."}],
+	},
+	"summer_lull":
+	{
+		"name": "SUMMER LULL",
+		"text":
+		"Everybody who signs anything is at the lake. The phone is quiet, new leads dry up, and the invoices sit in inboxes until somebody gets back to pay them.",
+		"kinds": ["owner"],
+		"year2": true,
+		"duration": [1, 2],
+		"lead_mult": 0.4,
+		"pay_delay": 1,
 	},
 }
 var MUTATORS: Dictionary = DEFAULT_MUTATORS.duplicate(true)
@@ -635,6 +673,22 @@ func ids_for(mode: String) -> Array:
 	return out
 
 
+# the mutators a plan may draw: a `year2` row only joins once Year 2 is on, so a first year is dealt exactly as before
+func plan_ids(mode: String) -> Array:
+	var out := []
+	for id in ids_for(mode):
+		if not bool(MUTATORS[id].get("year2", false)) or Yeartwo.active():
+			out.append(id)
+	return out
+
+
+# income under the active mutator's cash_mult (R9): only money coming in is scaled, costs and losses are not
+func cash(amount: int) -> int:
+	if amount <= 0:
+		return amount
+	return int(round(float(amount) * float(hook("cash_mult", 1.0))))
+
+
 func duration_of(id: String, mode: String) -> int:
 	var d: Array = MUTATORS.get(id, {}).get("duration", [1, 1])
 	return maxi(1, int(d[1] if mode == "owner" else d[0]))
@@ -656,7 +710,7 @@ func make_plan(mode: String, tier: String) -> Array:
 		slots[j] = tmp
 	var starts: Array = slots.slice(0, n)
 	starts.sort()
-	var pool := Yeartwo.without_banned(ids_for(mode))
+	var pool := Yeartwo.without_banned(plan_ids(mode))
 	var deck := pool.duplicate()
 	for day in starts:
 		if deck.is_empty():

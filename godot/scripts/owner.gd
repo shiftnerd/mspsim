@@ -3834,7 +3834,7 @@ func settle() -> Dictionary:
 			_late.append(who)
 			_asked[who] = Campaign.day
 	# the commission was already paid when the deals closed
-	cash += collected - (int(est.payroll) - _commission_week) - int(est.fixed) - int(est.marketing)
+	cash += Mutators.cash(collected) - (int(est.payroll) - _commission_week) - int(est.fixed) - int(est.marketing)
 	# the owners' draw (X4): cash out of the bank, never part of EBITDA
 	var draw := draw_due()
 	cash -= draw

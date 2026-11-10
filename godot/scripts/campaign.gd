@@ -745,7 +745,7 @@ func _end_day() -> void:
 		cash = Owner.cash
 		r["bankrupt"] = books.bankrupt
 	else:
-		cash += int(r.pay)
+		cash += Mutators.cash(int(r.pay))
 	if bool(prop("scars", false)):
 		if int(r.reopened) >= 3:
 			add_scar(2)  # a reopen storm: the clients stop trusting your closes

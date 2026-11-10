@@ -1474,6 +1474,18 @@ or the owner (owner campaign, 20 weeks).
   - **TEACH HIM THE SEARCH BOX** `[Expo.FORUM.2.options.1.label]`: You show him the search box and how to say which version he has. His next post is in lower case. The admin pins it out of pure shock. (+3 forum karma) `[Expo.FORUM.2.options.1.text]`
   - **ASK ABOUT THE CAPS** `[Expo.FORUM.2.options.2.label]`: 'IT IS ON SINCE 2011!!!' You press the key. He stares at the keyboard for a long time. 'MY WHOLE LIFE.' (+3 customer XP) `[Expo.FORUM.2.options.2.text]`
   - **GIVE HIM YOUR TOTE BAG** `[Expo.FORUM.2.options.3.label]`: He puts it on his head and tells everyone near the booth about you in capital letters. By Monday your coworkers have heard. (coworkers like you a little more) `[Expo.FORUM.2.options.3.text]`
+- **RTFM_Ray (forum regular)** `[Expo.FORUM.3.speaker]`
+  - Ray. Everyone on the board knows me as the guy who replies with a link. Nine times out of ten the answer is on page 12 of the manual. The tenth time the manual is wrong, and that one is a good day. `[Expo.FORUM.3.text]`
+  - **ASK WHICH PAGE** `[Expo.FORUM.3.options.0.label]`: 'The one about DHCP scopes. People skip it, then wonder why two printers have the same address.' He is right. You write the page number on your hand. (+4 networking XP) `[Expo.FORUM.3.options.0.text]`
+  - **ASK ABOUT THE WRONG MANUALS** `[Expo.FORUM.3.options.1.label]`: 'Vendor guides copy the default password into the example, and people copy the example.' You promise to change every default on day one. (+3 security XP) `[Expo.FORUM.3.options.1.text]`
+  - **ASK HIM FOR THE LINK** `[Expo.FORUM.3.options.2.label]`: He sends you the link before you finish the sentence, with the paragraph highlighted. You thank him on the forum, which he calls 'the correct use of the thread.' (+3 forum karma) `[Expo.FORUM.3.options.2.text]`
+  - **COMPLIMENT THE MUG** `[Expo.FORUM.3.options.3.label]`: It says 'I READ THE FAQ SO YOU DON'T HAVE TO'. He lets you take a photo of it. It is in the team chat by Monday. (coworkers like you a little more) `[Expo.FORUM.3.options.3.text]`
+- **RegexRita (forum regular)** `[Expo.FORUM.4.speaker]`
+  - Rita. I answer the 'how do I rename 4,000 files' threads, mostly with one line nobody can read. I am told this is a problem. I disagree. What can I do for you? `[Expo.FORUM.4.text]`
+  - **ASK ABOUT RENAMING THE FILES** `[Expo.FORUM.4.options.0.label]`: She types it on a napkin: one line, three brackets, a dollar sign. 'Try it on a copy first.' You do. It works, and you do not know why. (+4 servers XP) `[Expo.FORUM.4.options.0.text]`
+  - **ASK HER TO EXPLAIN IT** `[Expo.FORUM.4.options.1.label]`: She takes it apart one piece at a time, in plain words, with a drawing. 'Nobody explains it, that is the whole problem.' You see why the forum loves her. (+3 customer XP) `[Expo.FORUM.4.options.1.text]`
+  - **THANK HER ON THE FORUM** `[Expo.FORUM.4.options.2.label]`: You post a thank-you under her answer. She replies with a link to a page about how to say thank you in fewer characters. (+3 forum karma) `[Expo.FORUM.4.options.2.text]`
+  - **ASK ABOUT THE HAIR** `[Expo.FORUM.4.options.3.label]`: 'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more) `[Expo.FORUM.4.options.3.text]`
 
 ### Instant messages from coworkers (Lync)
 

@@ -1583,7 +1583,7 @@ func settle() -> Dictionary:
 	var serve := 0
 	for d in book:
 		serve += int(round(float(d.mrr) * (1.0 - float(d.margin))))
-	var revenue := int(est.revenue) + book_mrr() - lost_base + expansion_base
+	var revenue := Mutators.cash(int(est.revenue) + book_mrr() - lost_base + expansion_base)
 	var profit := revenue - int(est.payroll) - int(est.fixed) - serve - week_commission - week_cost + week_clawback - raise_wage
 	Owner.cash += profit
 	week_distrib = 0
