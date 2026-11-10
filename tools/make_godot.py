@@ -20662,6 +20662,7 @@ var _poach_wave := 0  # weeks the competitor is running a campaign (double the r
 var _ransom_ticket := 0
 var _ransom_client := 3  # the client of the ransom card that is open (Story.RANSOM_CLIENT, or the victim of a skipped restore test)
 var _ransom_forced := false  # the backup looked fine and still did not restore (H1 never tested, a skipped test, an inherited mess)
+var _ransom_skip := false  # this ransom is the bill of the skipped restore test: no lawsuit on top
 
 
 func _ready() -> void:
@@ -20719,6 +20720,7 @@ func reset() -> void:
     _ransom_ticket = 0
     _ransom_client = Story.RANSOM_CLIENT
     _ransom_forced = false
+    _ransom_skip = false
     _handover = []
     _burn_warned = false
     discount = {}
@@ -22304,7 +22306,9 @@ func _ransom_card(id: String) -> void:
         return
     var card: Dictionary = CARDS[id].duplicate(true)
     var who := str(Msp.CLIENTS[_ransom_client].name)
-    var body := str(card.text).replace("Hoot and Holler's", poss(who)).replace("Hoot and Holler", who)
+    var body := str(card.text)
+    if _ransom_client != Story.RANSOM_CLIENT:
+        body = body.replace("Hoot and Holler's", "{rvp}").replace("Hoot and Holler", who).replace("{rvp}", poss(who))
     if _ransom_forced:
         body = body.replace("The backup was not working.", "The backup light was green, and the restore failed halfway: nobody had tested it.")
         body = body.replace("because our backup was not working", "because our backup would not restore")
@@ -22343,6 +22347,7 @@ func _ransom(client := Story.RANSOM_CLIENT) -> bool:
     _ransom_ticket = int(t.id)
     _ransom_client = client
     _ransom_forced = false
+    _ransom_skip = false
     if client != Story.RANSOM_CLIENT or Habits.skipped_test():
         return _ransom_untested(client)
     _ransom_story(t)
@@ -22360,6 +22365,7 @@ func _ransom_untested(client: int) -> bool:
         if _ransom_forced:
             Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
         if Habits.skipped_test():
+            _ransom_skip = true
             Temptation.ransom_hit(self, client)
         _ransom_card("ransom_options")
         return true
@@ -22402,7 +22408,10 @@ func _ransom_finish(kind: String) -> void:
         else:
             Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
         Msp.close_ticket(int(t.id))
-        _ransom_card("ransom_lost")
+        if _ransom_skip:
+            Msp.send_text("Alan", "%s lost the files. No lawyers this time, but they know whose backup it was." % who)  # R38: the skipped test: the lost files and the name are the bill, no lawsuit on top
+        else:
+            _ransom_card("ransom_lost")
         return
     t.fix_done = true
     var ep := Msp.endpoint(str(t.endpoint))
@@ -75085,12 +75094,14 @@ static func lopsided_pick(owner: Node, who: String, id: String) -> void:
             text = "The clients grumble for a week about the new voice on the phone. The board evens out."
         "pair":
             st["let"] = false
+            st["card"] = 9999  # settled: Morgan does not raise it again
             for c in list:
                 st.shared[str(c)] = true
             owner.apply({"cash": -PAIR_COST, "mood_all": 1})
             text = "Two techs on every visit for a month. The clients learn a second name, and the second tech learns where the server closet key is."
         _:
             st["let"] = true
+            st["card"] = 9999  # your call: Morgan does not raise it again
             for c in list:
                 owner.apply({"mood": {str(c): LET_MOOD}})
             owner.apply({"burnout": LET_BURN, "speed": LET_SPEED})

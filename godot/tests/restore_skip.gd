@@ -68,6 +68,7 @@ func _init() -> void:
 	c.day = 14
 	t.week(o)
 	_check(cards.is_open and str(cards.text).contains("encrypted") and str(cards.text).contains("restore failed halfway"), "week 14: the ransom card, and the restore failed: %s" % str(cards.text).substr(0, 60))
+	_check(str(cards.text).begins_with("Hoot and Holler's server"), "the law firm's name is written once")
 	_check(cards.options.size() == 6, "the six ransom options")
 	_check(t.folder_count() == 0 and o.cash == cash0, "the entry left the folder and no flat bill was charged")
 	_check(int(sales.satisfaction[rc]) == mood0 - int(t.BILLS.temp_restore.mood), "the client is hurt")
@@ -95,7 +96,7 @@ func _init() -> void:
 	c.day = 13
 	t.week(o)
 	_check(cards.is_open and _pick_label(cards, "ACCEPT THE LOSS"), "accept the loss")
-	_check(cards.is_open and str(cards.text).contains("would not restore"), "the lawsuit card says why: %s" % str(cards.text).substr(0, 70))
+	_check(not cards.is_open or not str(cards.text).contains("lawyers are talking"), "the skipped test brings no lawsuit on top")
 	_clear(cards)
 	_check(c.rep < rep0, "reputation falls (%d -> %d)" % [rep0, c.rep])
 

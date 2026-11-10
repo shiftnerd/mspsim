@@ -956,11 +956,11 @@ const OW_POLICIES := {
 		"temp_price": 1,
 		"temp_2fa": 1,
 		"temp_quest": 1,
-		"jen_phones": 1,  # X11: a second voice on the phones, Jen books the visits, a cap on Michael's catches, the Friday hour
-		"jen_intake": 1,
+		"jen_phones": 0,  # X11: the free answers (overflow rings the techs, three questions, a cap on hand-offs, write it down)
+		"jen_intake": 0,
 		"jen_wall": 0,
 		"michael_catch": 1,
-		"michael_teach": 0,
+		"michael_teach": 1,
 		"michael_offer": 0,
 	},
 	"cheap":
@@ -1033,13 +1033,13 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			for id in ids:
 				if cards.text.contains(str(ids[id])) and str(ids[id]).length() > 8:
 					pick = mini(int(policy.get(id, 0)), cards.options.size() - 1)
-					if id == "rn_invite" and strategy == "careful" and root.get_node("Owner").cash < OW_TRIP_CASH:
+					if id == "rn_invite" and strategy in ["careful", "shortcut"] and root.get_node("Owner").cash < OW_TRIP_CASH:
 						pick = 2  # Q6d: STAY HOME: a trip is not worth it out of a thin bank
-		if strategy == "careful" and cards.text.begins_with("We drew $") and cards.options.size() > 1:
+		if strategy in ["careful", "shortcut"] and cards.text.begins_with("We drew $") and cards.options.size() > 1:
 			pick = 1  # Q6d: the bank is thin and the draw is a choice: a careful owner skips the draw (the bot only cut it to SMALL)
-		if strategy == "careful" and cards.options.size() == 3 and cards.text.contains("will only talk to"):
+		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("will only talk to"):
 			pick = 2  # R36: the lopsided crew: pair the techs (falls back to an open option without the cash)
-		if strategy == "careful" and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
+		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
 			pick = 1  # R36: a client wants to follow a tech out: go and see them
 		if not bool(cards.options[pick].get("enabled", true)):  # greyed out (cash, or the partner vetoes): take an open option
 			for i in cards.options.size():

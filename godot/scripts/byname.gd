@@ -411,12 +411,14 @@ static func lopsided_pick(owner: Node, who: String, id: String) -> void:
 			text = "The clients grumble for a week about the new voice on the phone. The board evens out."
 		"pair":
 			st["let"] = false
+			st["card"] = 9999  # settled: Morgan does not raise it again
 			for c in list:
 				st.shared[str(c)] = true
 			owner.apply({"cash": -PAIR_COST, "mood_all": 1})
 			text = "Two techs on every visit for a month. The clients learn a second name, and the second tech learns where the server closet key is."
 		_:
 			st["let"] = true
+			st["card"] = 9999  # your call: Morgan does not raise it again
 			for c in list:
 				owner.apply({"mood": {str(c): LET_MOOD}})
 			owner.apply({"burnout": LET_BURN, "speed": LET_SPEED})
