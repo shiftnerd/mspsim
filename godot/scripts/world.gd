@@ -529,6 +529,7 @@ func begin_next_day(number: int) -> void:
 		var st: Dictionary = chars[n]
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
+			st.node.queue_free()  # the body of yesterday must not sit in a chair or finish a routine in today's office
 		st.node = null
 		st.scene = OUTSIDE
 		st.held = ""

@@ -3831,7 +3831,7 @@ func _finish_routine() -> void:
     state = "wait"
     _timer = 1.0e9
     _play(_rest_anim())
-    if cast_name != "":
+    if cast_name != "" and not _leaving:  # a body the World has let go of (a new day, a new game) no longer speaks for its person
         World.leg_done.call_deferred(cast_name)
 
 
@@ -3924,7 +3924,7 @@ func _start(parts: PackedStringArray) -> bool:
             if started:
                 _answer_phone()
         "exit":
-            started = cast_name != ""
+            started = cast_name != "" and not _leaving
             if started:
                 state = "wait"
                 _timer = 1.0e9
@@ -5064,6 +5064,7 @@ func begin_next_day(number: int) -> void:
         var st: Dictionary = chars[n]
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
+            st.node.queue_free()  # the body of yesterday must not sit in a chair or finish a routine in today's office
         st.node = null
         st.scene = OUTSIDE
         st.held = ""
@@ -12558,7 +12559,7 @@ const START_REP := 50
 const CLEAN_REP := 58  # T2: from here on a day's reputation gain needs a clean day
 const CLEAN_PER := 6  # one loose end is forgiven for every six tickets closed
 const SLOPPY_REP := 62  # from here on a sloppy day costs SLOPPY_PER for every loose end over the allowance
-const SLOPPY_PER := 3
+const SLOPPY_PER := 4
 const SLOPPY_MAX := 10
 const SLOPPY_NOTE := "LOOSE ENDS TODAY: NO REPUTATION GAIN."
 const SLOPPY_NOTE_LOSS := "TOO MANY LOOSE ENDS TODAY. THE CLIENTS NOTICED."

@@ -126,8 +126,7 @@ func play_year2(mode: String, tier: String, strat: String, seed_n: int) -> Dicti
 	keep_meta = false
 	row["year1"] = first
 	row["seed"] = seed_n
-	var carried: Dictionary = root.get_node("Yeartwo").carried
-	row["info"] = "Y2 (year 1: rep %d %s; start rep %d) %s" % [int(first.rep), str(first.cls), int(carried.get("rep", -1)), str(row.get("info", ""))]
+	row["info"] = "Y2 (year 1: rep %d %s) %s" % [int(first.rep), str(first.cls), str(row.get("info", ""))]
 	return row
 
 
@@ -155,6 +154,11 @@ func _clean_slate() -> void:
 		pb.reset()
 	root.get_node("Game").ui_open = false
 	root.get_node("World").time_scale = 1.0
+	if not year2:
+		# the career (medals, counters, the mastery ramp of every minigame) and what the crew has learned about each other outlive
+		# a campaign on purpose. For a bot cell they are a leak: the fifth seed of a cell played with the career of the four before
+		root.get_node("Career").reset_all()
+		root.get_node("Outings").known = {}
 
 
 # R10: the meta record a decent finished run of the year before leaves (reputation 70, skills at level 3, a company worth
@@ -1233,6 +1237,7 @@ const OW_SHORTCUTS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "te
 # takeover assessment and walks the site (so a bot run exercises the takeover visit); week 19 he assesses before he signs
 const OW_TAKEOVER := {"rival_defect": 2, "rival_takeover": 0, "rival_badday": 1}
 const OW_CAREFUL := ["careful", "shortcut", "takeover"]
+const OW_CREDIT_CASH := 5000  # Q6: the careful owner credits a scammed client 40% only with at least this much in the bank
 const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
 
 
@@ -1252,6 +1257,10 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			pick = 2  # R36: the lopsided crew: pair the techs (falls back to an open option without the cash)
 		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
 			pick = 1  # R36: a client wants to follow a tech out: go and see them
+		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.contains("to a scammer") and root.get_node("Owner").cash < OW_CREDIT_CASH:
+			# Q6: a client lost money to a fake invoice. Crediting 40% of it ($2,000 and more, the card names no price) out of a thin
+			# bank is how the careful owner went bankrupt in week 15: he lets the lawyer answer ($600), or asks the insurer
+			pick = 1 if root.get_node("Owner").cash >= 600 else 2
 		# R38: the takeover visit's own cards (the owner meeting, a finding): ask about the backups; take the job, else sell the
 		# project, else patch it (the lazy owner makes a note)
 		var opt_ids := []
@@ -1400,6 +1409,8 @@ func ow_run(seed_n: int) -> Dictionary:
 		while not report.is_open and frames < 40000:
 			await tree.process_frame
 			frames += 1
+			if frame_hook.is_valid():
+				frame_hook.call(frames_total + frames)
 			world.time_scale = ts
 			ow_answer(cards, ids)
 			if root.get_node("Onsite").active:

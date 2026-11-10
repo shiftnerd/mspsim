@@ -54,12 +54,17 @@ func _init() -> void:
 		for tier in tiers:
 			for strat in strats:
 				var rows: Array = []
+				var no_year2 := 0
 				for k in seeds:
 					var r: Dictionary
 					if year2:
 						r = await bots.play_year2(str(mode), str(tier), str(strat), first + k)
 						if r.has("year1"):
 							print("Y1 " + bots.line(r.year1))
+						else:  # year 1 ended fired: there is no Year 2 to play, and the row is not a Year 2 row
+							print("Y1 " + bots.line(r))
+							no_year2 += 1
+							continue
 					else:
 						r = await bots.play(str(mode), str(tier), str(strat), first + k)
 					rows.append(r)
@@ -77,6 +82,10 @@ func _init() -> void:
 					rep += float(r.rep)
 					score += float(r.score)
 					fired += 1 if bool(r.fired) else 0
+				if no_year2 > 0:
+					print("NOTE %s %s %s: %d of %d year 1 runs ended fired and have no Year 2" % [mode, tier, strat, no_year2, seeds])
+				if rows.is_empty():
+					continue
 				var n := float(rows.size())
 				print("CELL %s %s %s: n=%d good %d mid %d bad %d  rep %.1f score %.1f  fired %d" % [mode, tier, strat, rows.size(), good, mid, bad, rep / n, score / n, fired])
 				cells["%s %s %s" % [mode, tier, strat]] = {"score": score / n, "fired": fired, "n": rows.size()}

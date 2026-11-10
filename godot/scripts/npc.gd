@@ -652,7 +652,7 @@ func _finish_routine() -> void:
 	state = "wait"
 	_timer = 1.0e9
 	_play(_rest_anim())
-	if cast_name != "":
+	if cast_name != "" and not _leaving:  # a body the World has let go of (a new day, a new game) no longer speaks for its person
 		World.leg_done.call_deferred(cast_name)
 
 
@@ -745,7 +745,7 @@ func _start(parts: PackedStringArray) -> bool:
 			if started:
 				_answer_phone()
 		"exit":
-			started = cast_name != ""
+			started = cast_name != "" and not _leaving
 			if started:
 				state = "wait"
 				_timer = 1.0e9

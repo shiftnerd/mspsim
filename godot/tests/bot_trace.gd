@@ -29,6 +29,14 @@ func _key(text: String) -> String:
 	return rx.sub(text, "#", true).substr(0, 34)
 
 
+# cards that come every morning or every week by design (the huddle, the Friday numbers) are not repeats
+func _daily(key: String) -> bool:
+	for start in ["Morning. #", "Friday numbers", "Last night"]:
+		if key.begins_with(start):
+			return true
+	return false
+
+
 func _init() -> void:
 	var mode := "owner"
 	var tier := "normal"
@@ -71,6 +79,8 @@ func _init() -> void:
 	var flags := 0
 	var notices := 0
 	var busiest := 0
+	var quietest := 999
+	var by_hour := {}  # the hour of the game clock -> decisions (all runs)
 	for k in seeds:
 		var r: Dictionary
 		if year2:
@@ -95,6 +105,8 @@ func _init() -> void:
 				by_day[d] = []
 			by_day[d].append("%s: %s -> %s" % [str(c.who), str(c.text).substr(0, 30), str(c.pick)])
 			var key := _key(str(c.text))
+			var hour := clampi(int(float(c.clock)), 0, 23)
+			by_hour[hour] = int(by_hour.get(hour, 0)) + 1
 			counts[key] = int(counts.get(key, 0)) + 1
 			var t := float(d - 1) * hours + clampf(float(c.clock) - float(world.DAY_START), 0.0, hours)
 			if t - prev_t > gap:
@@ -114,9 +126,11 @@ func _init() -> void:
 					var w: Dictionary = weeks[d - 1]
 					money = " cash %d rep %d trust %d value %d clients %d |" % [int(w.cash), int(w.rep), int(w.trust), int(w.value), int(w.clients)]
 				print("DAY %2d:%s %d cards | %s" % [d, money, list.size(), " ; ".join(list)])
-		for d in by_day:
-			total_cards += by_day[d].size()
-			busiest = maxi(busiest, by_day[d].size())
+		for d in range(1, last_day + 1):
+			var n_day: int = by_day.get(d, []).size()
+			total_cards += n_day
+			busiest = maxi(busiest, n_day)
+			quietest = mini(quietest, n_day)
 		total_days += last_day
 		total_dead += dead.size()
 		worst_gap = maxf(worst_gap, gap)
@@ -132,7 +146,7 @@ func _init() -> void:
 			if int(counts[key]) > worst_repeat:
 				worst_repeat = int(counts[key])
 				worst_repeat_text = str(key)
-			if int(counts[key]) > int(REPEAT_OK[mode]):
+			if int(counts[key]) > int(REPEAT_OK[mode]) and not _daily(str(key)):
 				print("FLAG repeat: seed %d, %d x \"%s\"" % [first + k, int(counts[key]), str(key)])
 				flags += 1
 		for i in range(1, weeks.size()):
@@ -142,5 +156,12 @@ func _init() -> void:
 				print("FLAG runaway: seed %d week %d: cash %d -> %d, value %d -> %d" % [first + k, int(b.week), int(a.cash), int(b.cash), int(a.value), int(b.value)])
 				flags += 1
 				failed = true
+	var hours: Array = by_hour.keys()
+	hours.sort()
+	var spread := []
+	for h in hours:
+		spread.append("%02d:00 %d" % [int(h), int(by_hour[h])])
+	print("HOURS %s %s %s: decisions by the hour of the game clock: %s" % [mode, tier, strat, ", ".join(spread)])
+	print("QUIETEST %s %s %s: the day with the fewest decisions had %d" % [mode, tier, strat, quietest])
 	print("SUMMARY %s %s %s%s: runs %d, decisions per day %.2f (busiest day %d), notices per day %.2f, days without a decision %d of %d, longest gap %.1f h, most repeated decision %d x \"%s\", flags %d" % [mode, tier, strat, " year2" if year2 else "", seeds, float(total_cards) / float(maxi(1, total_days)), busiest, float(notices) / float(maxi(1, total_days)), total_dead, total_days, worst_gap, worst_repeat, worst_repeat_text, flags])
 	quit(1 if failed else 0)
