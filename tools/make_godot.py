@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
@@ -5792,6 +5792,107 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
                 if row[c] == "X":
                     canvas.draw_rect(Rect2(x + c * scale, pos.y + r * scale, scale, scale), color)
         x += 4.0 * scale
+''')
+
+write("scripts/pad_glyphs.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# Pad button glyphs (roadmap R14): a hint line says "(A) PICK  (B) BACK  STICK = MOVE" on a pad (Controls.hint / label).
+# draw() prints such a line with the pixel font and puts a small sprite where a pad token stands, width() measures it.
+# The atlas is assets/ui/pad_glyphs.png (tools/make_icons.lua, source office/pieces/ui_pad_glyphs.aseprite): 12 cells of
+# 11 x 7, the font's five rows plus one above and one below. Without a pad in use (or without the atlas) both functions
+# are the plain PixelFont ones, so a caller can use them for every line.
+# Used by: the HUD hint (hud.gd), every panel footer (UiStyle.footer) and the pause menu's key lists.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const ATLAS := "res://assets/ui/pad_glyphs.png"
+const CELL := Vector2(11.0, 7.0)
+const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
+const TOKENS := {
+    "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
+    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+}
+
+static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var _tex: Texture2D
+static var _looked := false
+
+
+static func atlas() -> Texture2D:
+    if not _looked:
+        _looked = true
+        _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
+    return _tex
+
+
+static func active() -> bool:
+    if atlas() == null:
+        return false
+    if force >= 0:
+        return force == 1
+    # the autoload by path: this script is preloaded by UiStyle, which test scripts compile before the autoloads exist
+    var tree := Engine.get_main_loop() as SceneTree
+    var controls: Node = tree.root.get_node_or_null("Controls") if tree != null else null
+    return controls != null and bool(controls.pad_active)
+
+
+# the line cut into pieces: a String is text, an int is a glyph index
+static func parts(text: String) -> Array:
+    var out := []
+    var rest := text.to_upper()
+    while rest != "":
+        var at := -1
+        var hit := ""
+        for token in TOKENS:
+            var i := rest.find(token)
+            # STICK only as a whole word
+            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+                i = -1
+            if i >= 0 and (at < 0 or i < at):
+                at = i
+                hit = token
+        if at < 0:
+            out.append(rest)
+            break
+        if at > 0:
+            out.append(rest.substr(0, at))
+        out.append(NAMES.find(str(TOKENS[hit])))
+        rest = rest.substr(at + hit.length())
+    return out
+
+
+static func width(text: String, scale := 1) -> int:
+    if not active():
+        return PixelFont.width(text, scale)
+    var w := 0
+    for part in parts(text):
+        w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
+    return maxi(0, w - scale)
+
+
+# one glyph by name at its top-left corner (a 7 px cell: one row above the text line's top)
+static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> void:
+    var i := NAMES.find(id)
+    if i < 0 or atlas() == null:
+        return
+    var w := float(WIDTHS[i])
+    canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
+
+
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    if not active():
+        PixelFont.draw(canvas, text, pos, color, scale)
+        return
+    var x := pos.x
+    for part in parts(text):
+        if part is int:
+            glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
+            x += float((int(WIDTHS[part]) + 1) * scale)
+        else:
+            PixelFont.draw(canvas, str(part), Vector2(x, pos.y), color, scale)
+            x += float(str(part).length() * 4 * scale)
 ''')
 
 write("scripts/msp.gd", '''extends Node
@@ -11591,6 +11692,8 @@ func _icon(kind: String, r: Rect2) -> void:
             _fill(Rect2(c.x - 4 * u, c.y - 2 * u, 8 * u, 5 * u), WHITE)
             _fill(Rect2(c.x - 2 * u, c.y - 3 * u, 3 * u, u), WHITE)
             _disc(Vector2(c.x, c.y + 0.5 * u), int(1.5 * u), Color("5a5f6b"))
+            _fill(Rect2(c.x - 0.5 * u, c.y - 0.5 * u, maxf(1.0, 0.5 * u), maxf(1.0, 0.5 * u)), Color("a8e0f5"))  # the lens glint
+            _fill(Rect2(c.x + 2.5 * u, c.y - 1.5 * u, u, maxf(1.0, 0.5 * u)), Color("f0a030"))  # the flash
         "phone":
             # a handset: ear piece top left, mouth piece bottom right, a curved arm between them
             var rows := ["XXX......", "XXXX.....", ".XXX.....", ".XX......", ".XXX.....", "..XXX....", "...XXXXX.", ".....XXXX", "......XXX"]
@@ -24286,7 +24389,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25225,6 +25328,7 @@ const THREADS := [
                 "Stop the services, back up, detach, move, attach. In that order. Then test it before you tell anyone."
             },
             {"by": "GrizzleAdmin", "text": "Back up TWICE. Then back up."},
+            {"by": "TapeTony", "text": "And one copy on tape, off site. Nothing has ever encrypted a tape on a shelf."},
         ],
         "answer":
         "Stop the services, take a backup, detach the database, move the files, attach it again, and test before you restart the agents.",
@@ -25292,6 +25396,7 @@ const THREADS := [
                 "Check the routes. A new subnet on the cloud side that the office router does not know about, probably."
             },
             {"by": "tcp_tim", "text": "And the firewall rule. They often reset after an upgrade."},
+            {"by": "DNS_Dot", "text": "Check the name first. It is DNS. It is always DNS."},
         ],
         "answer":
         "Look at the routes first, then the firewall rules. An upgrade often resets one of them.",
@@ -31041,6 +31146,7 @@ write("scripts/ui_style.gd", '''extends RefCounted
 # in screen pixels. Use UiStyle.panel() for pages, UiStyle.strip() / hint_bar() / caption_bar() in rooms.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -31120,7 +31226,7 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-    text(c, hint, r.position.x + 3.0, r.end.y - 7.0, MUTED)
+    PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
@@ -33909,6 +34015,7 @@ var puppets := {}  # "You" or a rival's name -> {node, body, chair, color, label
 var props: Array = []  # {o, node, kind, marked}
 
 var _tex := {}  # kind -> {tex, off}
+var _paint := {}  # floor paint sprites (assets/props/chair_<id>.png, tools/make_game_art.lua); null = missing, the old rectangles are drawn
 var _actors: Node = null
 var _player: Node2D = null
 var _player2: Node2D = null  # co-op: player 2's body, hidden while they ride the tandem
@@ -34070,6 +34177,31 @@ func _mark(pr: Dictionary) -> void:
             s.position.x += 3.0
 
 
+func floor_paint(id: String) -> Texture2D:
+    if not _paint.has(id):
+        var path := "res://assets/props/chair_%s.png" % id
+        _paint[id] = load(path) if ResourceLoader.exists(path) else null
+    return _paint[id]
+
+
+# the fight's ring painted on the floor: a hazard bracket at each end, a dashed line along both edges, a spot in the middle
+func _ring() -> bool:
+    if floor_paint("ring_end") == null or floor_paint("ring_line") == null:
+        return false
+    var lx := x0 + ChairRace.world_x(float(race.arena[0])) - 13.0
+    var rx := x0 + ChairRace.world_x(float(race.arena[1])) + 13.0
+    var x := lx + 12.0
+    while x + 12.0 <= rx - 12.0:
+        draw_texture(floor_paint("ring_line"), Vector2(x, 105.0))
+        draw_texture(floor_paint("ring_line"), Vector2(x, 131.0))
+        x += 12.0
+    draw_texture(floor_paint("ring_end"), Vector2(lx, 105.0))
+    draw_texture_rect(floor_paint("ring_end"), Rect2(rx - 12.0, 105.0, -12.0, 28.0), false)  # the right end is the mirror
+    if floor_paint("ring_spot") != null:
+        draw_texture(floor_paint("ring_spot"), Vector2(roundf((lx + rx) * 0.5) - 15.0, 113.0))
+    return true
+
+
 func _draw() -> void:
     if race == null:
         return
@@ -34083,14 +34215,18 @@ func _draw() -> void:
             draw_rect(Rect2(x, y, 6.0, 1.0), Color(1, 1, 1, 0.2))
             x += 12.0
     # the checkpoints: a stripe across the floor, a post at each end and its number
-    if _fight():  # the two ends of the strip: a red and white post line
+    if _fight() and _ring():
+        pass
+    elif _fight():  # the two ends of the strip: a red and white post line
         for end_x: float in race.arena:
             var ex := x0 + ChairRace.world_x(end_x) + (9.0 if end_x > float(race.arena[0]) else -11.0)
             for k in 6:
                 draw_rect(Rect2(ex, 107.0 + 4.0 * float(k), 2.0, 4.0), Color("d8483a") if k % 2 == 0 else Color.WHITE)
     elif float(race.length) != ChairRace.LEN:  # a course that ends before the painted line: its own checkered line on the floor
         var fx := x0 + ChairRace.world_x(float(race.length)) + 8.0
-        for row in 12:
+        if floor_paint("finish") != null:
+            draw_texture(floor_paint("finish"), Vector2(fx - 2.0, 107.0))
+        for row in (12 if floor_paint("finish") == null else 0):
             for col in 3:
                 draw_rect(Rect2(fx + 2.0 * float(col), 107.0 + 2.0 * float(row), 2.0, 2.0), INK if (row + col) % 2 == 0 else Color.WHITE)
         PixelFont.draw(self, "FINISH", Vector2(fx - 9.0, 98.0), Color.WHITE, 1)
@@ -48816,6 +48952,7 @@ var msg_at := -99999
 
 var c: Node = null
 var _chips: Array = []
+var _star: Array = []  # [Texture2D or null]: the asked-for star (assets/ui/star_asked.png), looked up once
 var _lanes: Array = []
 var _drag := {}
 
@@ -49408,6 +49545,18 @@ func _board_narrow(a: Rect2) -> void:
     _footer(Rect2(a.position, a.size), 2)
 
 
+# a client asked for somebody by name on this ticket (Service.ByName marks it)
+func asked_for(t: Dictionary) -> bool:
+    return str(t.get("asked_tech", "")) != "" and str(t.get("status", "")) != "Closed"
+
+
+func star() -> Texture2D:
+    if _star.is_empty():
+        var path := "res://assets/ui/star_asked.png"
+        _star.append(load(path) if ResourceLoader.exists(path) else null)
+    return _star[0]
+
+
 func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
     var carried := int(t.id) == held and not ghost
     c._fill(r, Color("d4d9e2") if carried else (Color("fff7e0") if ghost else c.WHITE))
@@ -49428,13 +49577,19 @@ func _chip(t: Dictionary, r: Rect2, sel: bool, tall: bool, ghost: bool) -> void:
         var st := sla_text(t)
         c._text(st, Vector2(r.end.x - 3 - c._tw(st), r.position.y + 13), c.RED if late else INK)
     else:
-        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0)), Vector2(x, r.position.y + 1), INK)
+        c._text(c._clip("%d %s" % [int(t.id), tag], chars - (2 if stuck else 0) - (2 if asked_for(t) else 0)), Vector2(x, r.position.y + 1), INK)
         var st2 := sla_text(t)
         var left: String = c._clip(cl, maxi(1, chars - st2.length() - 1))
         c._text(left, Vector2(x, r.position.y + 7), MUTED)
         c._text(st2, Vector2(r.end.x - 2 - c._tw(st2), r.position.y + 7), c.RED if late else INK)
     if stuck:
         c._text("?", Vector2(r.end.x - 5, r.position.y + 1), c.RED)
+    if asked_for(t):  # R36: a client asked for a tech by name: a star in the chip's corner
+        var at := Vector2(r.end.x - (11.0 if stuck else 7.0), r.position.y + 1)
+        if star() != null:
+            c._canvas.draw_texture(star(), at)
+        else:
+            c._text("*", at + Vector2(1, 0), ASKED)
     # the SLA bar
     var f := sla_frac(t)
     var by := r.end.y - 2.0
@@ -51760,6 +51915,26 @@ const FORUM := [
             {"id": "hair", "label": "ASK ABOUT THE HAIR", "skill": "", "xp": 0, "social": 1, "text": "'It matches my terminal theme.' She shows you the terminal. It does. Your coworkers hear about it before you are back at the booth. (coworkers like you a little more)", "text_free": "'It matches my terminal theme.' It does."},
         ],
     },
+    {
+        "id": "tony", "speaker": "TapeTony (forum regular)",
+        "text": "Tony. I answer the backup threads. Yes, I still run tape. A tape has never once asked me for a password reset. Sit down, I have opinions about your Friday rotation.",
+        "options": [
+            {"id": "rotate", "label": "ASK ABOUT THE ROTATION", "skill": "servers", "xp": 4, "text": "'Five dailies, four weeklies, twelve monthlies. Friday's tape leaves the building in somebody's bag.' He draws the calendar on your badge. You will not forget it now. (+4 servers XP)"},
+            {"id": "restore", "label": "ASK WHEN HE LAST RESTORED", "skill": "security", "xp": 3, "text": "'Tuesday. One file every week, to a different machine, and the date goes on the label.' A backup nobody has restored is a rumour. (+3 security XP)"},
+            {"id": "thread", "label": "QUOTE HIM IN THE BACKUP THREAD", "skill": "", "xp": 0, "karma": 3, "text": "You quote his rotation in the backup thread and give him the credit. He replies with a photo of a tape with your nick on the label. (+3 forum karma)", "text_free": "You quote his rotation in the backup thread. He replies with a photo of a tape."},
+            {"id": "pocket", "label": "ASK WHAT IS IN HIS POCKET", "skill": "", "xp": 0, "social": 1, "text": "It is a tape. 'Last Friday's. It goes where I go.' He lets you hold it. Your coworkers do not believe you until they see the photo. (coworkers like you a little more)", "text_free": "It is a tape. 'Last Friday's. It goes where I go.'"},
+        ],
+    },
+    {
+        "id": "dot", "speaker": "DNS_Dot (forum regular)",
+        "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
+        "options": [
+            {"id": "dns", "label": "ASK WHY IT IS ALWAYS DNS", "skill": "networking", "xp": 4, "text": "'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)"},
+            {"id": "labels", "label": "ASK ABOUT THE LABEL MAKER", "skill": "people", "xp": 3, "text": "'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)"},
+            {"id": "thread", "label": "MARK HER ANSWER AS SOLVED", "skill": "", "xp": 0, "karma": 3, "text": "You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)", "text_free": "You mark her answer as the one that fixed it. It was DNS."},
+            {"id": "badge", "label": "LET HER LABEL YOUR BADGE", "skill": "", "xp": 0, "social": 1, "text": "The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)", "text_free": "The label says 'ASK ME, I TESTED IT FIRST'."},
+        ],
+    },
 ]
 # who gives each session (name, company): the screen in each breakout room shows it (fx session_screen, Expo.room_info)
 const SPEAKERS := {
@@ -51793,7 +51968,7 @@ const CROWD := {
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
-        {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]},
+        {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]}, {"who": "expo_tony", "role": "forum:tony", "x": 178, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
         {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
     ],
     "ballroom": [
@@ -51827,7 +52002,7 @@ const CROWD := {
         {"who": "expo_vendo", "role": "vendor:psa", "x": 272, "facing": "right", "routine": ["wait:6", "say:2"]},
         {"who": "expo_attb", "role": "att:4", "x": 150, "facing": "right", "routine": ["walk:100", "wait:3", "walk:270", "wait:3"]},
         {"who": "expo_attc", "role": "att:5", "x": 238, "facing": "left", "routine": ["wait:5", "talk:3"]},
-        {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]},
+        {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]},
     ],
 }
 
@@ -56021,6 +56196,7 @@ const GLYPHS := {
 }
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a hint are small sprites
 const Goals := preload("res://scripts/goals.gd")  # R16: today's goal and the next-up list
 const Micro := preload("res://scripts/micro.gd")
 
@@ -56167,7 +56343,7 @@ func _draw_hint(raw: String) -> void:
     var h := float(rows.size()) * 7.0 + 5.0
     draw_rect(Rect2(4.0, size.y - h - 4.0, size.x - 8.0, h), Color(0.04, 0.03, 0.08, 0.8))
     for i in rows.size():
-        PixelFont.draw(
+        PadGlyphs.draw(
             self, str(rows[i]), Vector2(8.0, size.y - h + 0.0 + float(i) * 7.0), Color("ffe08a")
         )
 ''')
@@ -60081,6 +60257,7 @@ const SETS := [
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SetDressing := preload("res://scripts/set_dressing.gd")
 const OfficeDecor := preload("res://scripts/office_decor.gd")  # R16: office growth and the seasonal dressing
 
 var barriers := {}  # npc sync points: key -> {arrived, gen}
@@ -60133,6 +60310,7 @@ func _ready() -> void:
     SalesBeats.recruiter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
+    SetDressing.dress(self)  # plates on the dinner table, Jen's headset
     _room = scene_file_path.get_file().get_basename()
     _set_dark(0.0 if World.lights_on(_room) else 1.0)
     World.lights_changed.connect(_on_lights)
@@ -73691,6 +73869,7 @@ write("scripts/pause_menu.gd", '''extends CanvasLayer
 # The Pause key works over those too, except on the title and character select screens.
 
 const UiStyle := preload("res://scripts/ui_style.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
@@ -73966,9 +74145,17 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
             var action := str(Controls.REMAPPABLE[i])
             UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
             var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
+            var end_x := rr.position.x + rr.size.x - 4.0
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
-                key_name += "  " + Controls.button_name(Controls.button_of(action))
-            UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
+                var pad_name := Controls.button_name(Controls.button_of(action))
+                var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
+                if gi >= 0:  # the pad button as its glyph, right of the key
+                    end_x -= float(PadGlyphs.WIDTHS[gi])
+                    PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
+                    end_x -= 6.0
+                else:
+                    key_name += "  " + pad_name
+            UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
     UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
@@ -74090,7 +74277,11 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
     var y := body.position.y + 2.0
     for row in page[1]:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-        UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
+        var value := Controls.help_value(str(row[0]), str(row[1]))
+        if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
+            var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
+            value = shown if shown != "" else value
+        PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
         y += 9.0
     UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
 ''')
@@ -79408,6 +79599,10 @@ const BTN := Vector2(26.0, 24.0)  # a thumb needs 19 to 24 px
 const INK := Color(0.06, 0.05, 0.1, 0.55)
 const FACE := Color(1.0, 1.0, 1.0, 0.28)
 const LIT := Color(1.0, 0.88, 0.54, 0.6)
+# the sprites (assets/ui/touch_*.png, tools/make_icons.lua): opaque white-and-ink pieces, drawn see-through
+const ART := "res://assets/ui/touch_%s.png"
+const SOFT := Color(1.0, 1.0, 1.0, 0.5)
+const PRESSED := Color(1.0, 0.88, 0.54, 0.8)
 
 var stick_touch := -1  # the finger on the stick (-1 = none)
 var stick_vec := Vector2.ZERO  # -1..1 on each axis, what the game sees
@@ -79416,6 +79611,7 @@ var held := {}  # finger index -> the id of the button under it
 var _canvas: Node2D
 var _sent := Vector2.ZERO  # the axis values last sent
 var _ctx := ""
+var _art := {}  # id -> Texture2D, or null when the file is missing (then the old circles and rectangles are drawn)
 
 
 func _ready() -> void:
@@ -79583,17 +79779,33 @@ func _process(_delta: float) -> void:
         _canvas.queue_redraw()
 
 
+func art(id: String) -> Texture2D:
+    if not _art.has(id):
+        var path := ART % id
+        _art[id] = load(path) if ResourceLoader.exists(path) else null
+    return _art[id]
+
+
 func _paint() -> void:
     var c := stick_center()
-    _canvas.draw_circle(c, STICK_R + 1.0, INK)
-    _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
-    _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
+    if art("stick") != null and art("knob") != null:
+        _canvas.draw_texture(art("stick"), c - Vector2(23.0, 23.0), Color(1.0, 1.0, 1.0, 0.35))
+        var knob_at := (c + stick_vec * (STICK_R - 8.0) - Vector2(9.5, 9.5)).round()
+        _canvas.draw_texture(art("knob"), knob_at, PRESSED if stick_touch >= 0 else SOFT)
+    else:
+        _canvas.draw_circle(c, STICK_R + 1.0, INK)
+        _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
+        _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
     var list := buttons()
     for id in list:
         var r: Rect2 = list[id]
         var down: bool = held.values().has(id)
-        _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
-        _canvas.draw_rect(r, LIT if down else FACE)
+        var face := art("round" if str(id) in ["a", "b"] else "pill")  # A and B / X are round, the small ones are pills
+        if face != null:
+            _canvas.draw_texture(face, (r.position + (r.size - face.get_size()) * 0.5).floor(), PRESSED if down else SOFT)
+        else:
+            _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
+            _canvas.draw_rect(r, LIT if down else FACE)
         var text := label_of(str(id))
         var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
         PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
@@ -80239,7 +80451,9 @@ static func tick() -> void:
 write("scripts/office_decor.gd", '''extends Node2D
 # gdlint:disable=max-line-length
 # R16 (cozy design review): OFFICE GROWTH and the seasonal dressing of the main floor.
-# Growth: decor unlocked by reputation, cash and career medals, drawn in code on the main floor (no art files). What a
+# Growth: decor unlocked by reputation, cash and career medals, drawn on the main floor from small sprites
+# (assets/props/decor_*.png and season_*.png, sources office/pieces/, built by tools/make_decor.lua; the rectangles
+# below each one are the fallback when a texture is missing). What a
 # run has unlocked is Story.flags["decor"] (ids, saved with the campaign), so it stays when the reputation dips. check()
 # unlocks what the numbers allow and toasts it; the stage calls dress() when the main floor loads (the morning after a
 # good report is when you see it) and the node checks again every few seconds. Free Play shows no decor.
@@ -80261,6 +80475,17 @@ const ITEMS := [
 ]
 const RULE_NAMES := {"rep": "REPUTATION", "cash": "CASH", "medals": "MEDALS"}
 const CHECK_SECS := 2.0
+const ART := "res://assets/props/%s.png"
+# every sprite the node draws: name -> size (tests/office_growth.gd checks the files)
+const SPRITES := {
+    "decor_plant": Vector2i(17, 39), "decor_rug": Vector2i(40, 9), "decor_certificate": Vector2i(15, 12),
+    "decor_shelf": Vector2i(34, 6), "decor_trophy_a": Vector2i(9, 11), "decor_trophy_b": Vector2i(8, 11),
+    "decor_trophy_c": Vector2i(9, 11), "decor_fish_tank": Vector2i(20, 15), "decor_fish": Vector2i(4, 3),
+    "decor_neon_on": Vector2i(37, 11), "decor_neon_off": Vector2i(37, 11), "season_lights": Vector2i(96, 21),
+    "season_tax_boxes": Vector2i(14, 22), "season_xp_poster": Vector2i(19, 17), "season_drive_box": Vector2i(13, 14),
+}
+
+static var _art := {}  # name -> Texture2D, or null when the file is missing
 
 var _t := 0.0
 var _check_t := 0.0
@@ -80323,6 +80548,14 @@ static func check(toast := true) -> Array:
     return fresh
 
 
+# a decor sprite, or null when the art is missing (the node then draws the old rectangles)
+static func art(id: String) -> Texture2D:
+    if not _art.has(id):
+        var path := ART % id
+        _art[id] = load(path) if ResourceLoader.exists(path) else null
+    return _art[id]
+
+
 # called by the stage for every room: only the main floor gets the node
 static func dress(stage: Node) -> Node:
     if stage.scene_file_path.get_file().get_basename() != "main_floor" or Game.title_mode:
@@ -80360,10 +80593,20 @@ func _box(r: Rect2, fill: Color) -> void:
     draw_rect(r, fill)
 
 
+# draws a sprite at its top-left corner; false when the art is missing
+func _put(id: String, at: Vector2) -> bool:
+    var tex := art(id)
+    if tex == null:
+        return false
+    draw_texture(tex, at)
+    return true
+
+
 func _draw() -> void:
     var have := unlocked()
     var blink := int(_t * 2.0)
-    for season in Seasons.dressing():
+    _decor(have, blink)
+    for season in Seasons.dressing():  # after the decor: the tax boxes stand in front of the plant
         match str(season):
             "lights":
                 _lights(blink)
@@ -80373,35 +80616,49 @@ func _draw() -> void:
                 _countdown()
             "drive":
                 _drive_box()
-    if have.has("rug"):
+
+
+func _decor(have: Array, blink: int) -> void:
+    if have.has("rug") and not _put("decor_rug", Vector2(12.0, 100.0)):
         _box(Rect2(14.0, 101.0, 36.0, 7.0), Color("8c2b40"))
         draw_rect(Rect2(16.0, 103.0, 32.0, 3.0), Color("c8a05a"))
         draw_rect(Rect2(18.0, 104.0, 28.0, 1.0), Color("8c2b40"))
-    if have.has("plant"):
+    if have.has("plant") and not _put("decor_plant", Vector2(147.0, 53.0)):
         _box(Rect2(142.0, 84.0, 5.0, 6.0), Color("a8643c"))
         draw_rect(Rect2(144.0, 72.0, 1.0, 12.0), Color("3f7a34"))
         for leaf in [[140, 70, 4, 3], [145, 67, 3, 3], [141, 63, 3, 4], [145, 73, 3, 3], [140, 76, 3, 2]]:
             _box(Rect2(float(leaf[0]), float(leaf[1]), float(leaf[2]), float(leaf[3])), Color("5fb04a"))
-    if have.has("certificate"):
+    if have.has("certificate") and not _put("decor_certificate", Vector2(97.0, 20.0)):
         _box(Rect2(99.0, 22.0, 11.0, 9.0), Color("c8a05a"))
         draw_rect(Rect2(100.0, 23.0, 9.0, 7.0), Color("f4f2ea"))
         draw_rect(Rect2(101.0, 24.0, 7.0, 1.0), Color("3a3f66"))
         draw_rect(Rect2(101.0, 26.0, 5.0, 1.0), Color("9aa0a8"))
         draw_rect(Rect2(106.0, 27.0, 2.0, 2.0), Color("f5d442"))
-    if have.has("fish"):
+    if have.has("fish") and _put("decor_fish_tank", Vector2(131.0, 31.0)):
+        var swim := blink % 20  # ten steps across the tank and back, the fish faces where it swims
+        var flip := swim >= 10
+        var at := Vector2(134.0 + float(absi(swim - 10)), 36.0 + float((blink >> 2) & 1))
+        if art("decor_fish") != null:
+            draw_texture_rect(art("decor_fish"), Rect2(at, Vector2(4.0 if flip else -4.0, 3.0)), false)
+    elif have.has("fish"):
         _box(Rect2(134.0, 44.0, 14.0, 1.0), Color("a8643c"))
         _box(Rect2(135.0, 35.0, 12.0, 8.0), Color("6fc3e8"))
         draw_rect(Rect2(135.0, 42.0, 12.0, 1.0), Color("d8c690"))
         draw_rect(Rect2(144.0, 39.0, 1.0, 3.0), Color("3f7a34"))
         var fx := 136.0 + float(absi((blink % 14) - 7))
         draw_rect(Rect2(fx, 38.0, 2.0, 1.0), Color("ff8a3c"))
-    if have.has("trophy") or have.has("trophies"):
+    if (have.has("trophy") or have.has("trophies")) and _put("decor_shelf", Vector2(304.0, 46.0)):
+        _put("decor_trophy_a", Vector2(308.0, 36.0))
+        if have.has("trophies"):
+            _put("decor_trophy_b", Vector2(318.0, 36.0))
+            _put("decor_trophy_c", Vector2(326.0, 36.0))
+    elif have.has("trophy") or have.has("trophies"):
         _box(Rect2(306.0, 47.0, 30.0, 1.0), Color("a8643c"))
         _trophy(310.0)
         if have.has("trophies"):
             _trophy(319.0)
             _trophy(328.0)
-    if have.has("neon"):
+    if have.has("neon") and not _put("decor_neon_on" if blink % 9 != 0 else "decor_neon_off", Vector2(164.0, 9.0)):
         var glow := Color("ff6fb5") if blink % 9 != 0 else Color("b84a80")
         _box(Rect2(165.0, 7.0, 35.0, 7.0), Color("241a2e"))  # over the first office door
         PixelFont.draw(self, "PIXEL IT", Vector2(167.0, 8.0), glow)
@@ -80414,6 +80671,14 @@ func _trophy(x: float) -> void:
 
 
 func _lights(blink: int) -> void:
+    var tex := art("season_lights")
+    if tex != null:  # a 96 px tile, three blink phases stacked
+        var tx := 82.0
+        while tx < 360.0:
+            var w := minf(96.0, 360.0 - tx)
+            draw_texture_rect_region(tex, Rect2(tx, 2.0, w, 7.0), Rect2(0.0, 7.0 * float(blink % 3), w, 7.0))
+            tx += 96.0
+        return
     var colors := [Color("e0463c"), Color("5fd068"), Color("f5d442"), Color("5aa0e8")]
     var i := 0
     var x := 82.0
@@ -80427,22 +80692,108 @@ func _lights(blink: int) -> void:
 
 
 func _tax_boxes() -> void:
+    if _put("season_tax_boxes", Vector2(150.0, 87.0)):
+        return
     for k in 3:
         _box(Rect2(151.0 + float(k % 2), 84.0 - float(k) * 7.0, 11.0, 6.0), Color("c8a878"))
         draw_rect(Rect2(155.0 + float(k % 2), 86.0 - float(k) * 7.0, 4.0, 2.0), Color("f4f2ea"))
 
 
 func _countdown() -> void:
+    if _put("season_xp_poster", Vector2(131.0, 13.0)):
+        return
     _box(Rect2(132.0, 14.0, 17.0, 15.0), Color("f4f2ea"))
     PixelFont.draw(self, "XP", Vector2(137.0, 16.0), Color("3a62a8"))
     PixelFont.draw(self, "APR8", Vector2(133.0, 23.0), Color("e0463c"))
 
 
 func _drive_box() -> void:
+    if _put("season_drive_box", Vector2(44.0, 74.0)):
+        return
     _box(Rect2(45.0, 80.0, 11.0, 7.0), Color("c8a878"))  # inside the entrance, by the door
     draw_rect(Rect2(47.0, 76.0, 1.0, 4.0), Color("f5d442"))
     draw_rect(Rect2(50.0, 75.0, 1.0, 5.0), Color("e0463c"))
     draw_rect(Rect2(53.0, 77.0, 1.0, 3.0), Color("5aa0e8"))
+''')
+
+write("scripts/set_dressing.gd", '''extends Node
+# gdlint:disable=max-line-length
+# Small props a room gets on top of its set, by what is going on (art: tools/make_game_art.lua, assets/props/):
+#   restaurant    plates on the two booth tables while a dinner is on and the table has ordered (Outings.game == "dinner")
+#   cubicle_two   a headset on its stand on Jen's desk (the front desk), where the second cast has a Jen
+# The stage calls dress() for every room. The sprites are children of the table / desk sprite, so they are drawn right
+# above it in the room's y-sort (in front of the people sitting behind it). No game logic, nothing is saved.
+
+const ART := "res://assets/props/%s.png"
+# room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
+const PLATES := {
+    "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+}
+const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
+const CHECK_SECS := 0.5
+
+var plates: Array = []  # the plate sprites (shown and hidden together)
+var _t := 0.0
+
+
+static func art(id: String) -> Texture2D:
+    var path := ART % id
+    return load(path) if ResourceLoader.exists(path) else null
+
+
+static func _put(host: Node, id: String, at: Vector2) -> Sprite2D:
+    var tex := art(id)
+    if host == null or tex == null:
+        return null
+    var s := Sprite2D.new()
+    s.name = "Dressing_" + id
+    s.texture = tex
+    s.centered = false
+    s.position = at
+    host.add_child(s)
+    return s
+
+
+# called by the stage for every room; returns the node it added (the restaurant) or null
+static func dress(stage: Node) -> Node:
+    var room := stage.scene_file_path.get_file().get_basename()
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null or Game.title_mode:
+        return null
+    if room == "cubicle_two" and World.chars.has("Jen"):
+        _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
+        return null
+    if room != "restaurant":
+        return null
+    var node: Node = load("res://scripts/set_dressing.gd").new()
+    node.name = "SetDressing"
+    stage.add_child(node)
+    for host in PLATES:
+        for row in PLATES[host]:
+            var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
+            if s != null:
+                node.plates.append(s)
+    node.refresh()
+    return node
+
+
+# the food is on the table once the dinner is past the ordering round
+static func plates_on() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_ordering()
+
+
+func refresh() -> void:
+    var on := plates_on()
+    for s in plates:
+        s.visible = on
+
+
+func _process(delta: float) -> void:
+    _t += delta
+    if _t >= CHECK_SECS:
+        _t = 0.0
+        refresh()
 ''')
 
 write("scripts/collection.gd", '''extends RefCounted

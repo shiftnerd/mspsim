@@ -89,6 +89,16 @@ func _init() -> void:
 		career.earned[str(m.id)] = true
 	_check(OfficeDecor.check() == ["trophies"] and OfficeDecor.unlocked().size() == OfficeDecor.ITEMS.size(), "eight medals fill it: everything is unlocked")
 
+	# ---- the sprites (tools/make_decor.lua): every one the node draws is there, at the size the placements assume
+	var art_ok := true
+	for id in OfficeDecor.SPRITES:
+		var tex: Texture2D = OfficeDecor.art(id)
+		if tex == null or Vector2i(tex.get_size()) != OfficeDecor.SPRITES[id]:
+			art_ok = false
+			print("     missing or wrong size: %s" % id)
+	_check(art_ok and OfficeDecor.SPRITES.size() == 15, "the %d decor and season sprites load at their sizes" % OfficeDecor.SPRITES.size())
+	_check(OfficeDecor.art("decor_nothing") == null, "a missing sprite is null (the node falls back to rectangles)")
+
 	# ---- saved with the campaign, and with the mid-day resume point
 	var want: Array = OfficeDecor.unlocked().duplicate()
 	c.save()

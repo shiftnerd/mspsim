@@ -24,6 +24,10 @@ const BTN := Vector2(26.0, 24.0)  # a thumb needs 19 to 24 px
 const INK := Color(0.06, 0.05, 0.1, 0.55)
 const FACE := Color(1.0, 1.0, 1.0, 0.28)
 const LIT := Color(1.0, 0.88, 0.54, 0.6)
+# the sprites (assets/ui/touch_*.png, tools/make_icons.lua): opaque white-and-ink pieces, drawn see-through
+const ART := "res://assets/ui/touch_%s.png"
+const SOFT := Color(1.0, 1.0, 1.0, 0.5)
+const PRESSED := Color(1.0, 0.88, 0.54, 0.8)
 
 var stick_touch := -1  # the finger on the stick (-1 = none)
 var stick_vec := Vector2.ZERO  # -1..1 on each axis, what the game sees
@@ -32,6 +36,7 @@ var held := {}  # finger index -> the id of the button under it
 var _canvas: Node2D
 var _sent := Vector2.ZERO  # the axis values last sent
 var _ctx := ""
+var _art := {}  # id -> Texture2D, or null when the file is missing (then the old circles and rectangles are drawn)
 
 
 func _ready() -> void:
@@ -199,17 +204,33 @@ func _process(_delta: float) -> void:
 		_canvas.queue_redraw()
 
 
+func art(id: String) -> Texture2D:
+	if not _art.has(id):
+		var path := ART % id
+		_art[id] = load(path) if ResourceLoader.exists(path) else null
+	return _art[id]
+
+
 func _paint() -> void:
 	var c := stick_center()
-	_canvas.draw_circle(c, STICK_R + 1.0, INK)
-	_canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
-	_canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
+	if art("stick") != null and art("knob") != null:
+		_canvas.draw_texture(art("stick"), c - Vector2(23.0, 23.0), Color(1.0, 1.0, 1.0, 0.35))
+		var knob_at := (c + stick_vec * (STICK_R - 8.0) - Vector2(9.5, 9.5)).round()
+		_canvas.draw_texture(art("knob"), knob_at, PRESSED if stick_touch >= 0 else SOFT)
+	else:
+		_canvas.draw_circle(c, STICK_R + 1.0, INK)
+		_canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
+		_canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
 	var list := buttons()
 	for id in list:
 		var r: Rect2 = list[id]
 		var down: bool = held.values().has(id)
-		_canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
-		_canvas.draw_rect(r, LIT if down else FACE)
+		var face := art("round" if str(id) in ["a", "b"] else "pill")  # A and B / X are round, the small ones are pills
+		if face != null:
+			_canvas.draw_texture(face, (r.position + (r.size - face.get_size()) * 0.5).floor(), PRESSED if down else SOFT)
+		else:
+			_canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
+			_canvas.draw_rect(r, LIT if down else FACE)
 		var text := label_of(str(id))
 		var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
 		PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)

@@ -58,6 +58,11 @@ local CHARS = {
     shirt = {"#E0802A", "#B26018"}, pants = {"#8A7A5A", "#6E6044", "#544934"}, shoes = {"#3A3A44", "#2A2A33"},
     belt = "#3A2A1A", stubble = "#D69A72", lips = "#8A4A2E", glasses = true, patch = true,
   },
+  expo_tony = {   -- TapeTony (LabRat Nerds forum, the backup old-hand who still rotates tapes by hand): a navy ball cap, a grey goatee, a tan work shirt, dark jeans, brown boots
+    skin = {"#D9A27A", "#B87E58", "#96603E"}, hair = {"#8A8A94", "#A8A8B2", "#5E5E68"},
+    shirt = {"#B89A62", "#927848"}, pants = {"#2B3550", "#1F2840", "#171E32"}, shoes = {"#5A3A22", "#42291A"},
+    belt = "#2A2A33", stubble = "#C48E68", lips = "#8A4A2E", goatee = "#8A8A94", cap = {"#2E3A58", "#222C44"},
+  },
   office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
     shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},

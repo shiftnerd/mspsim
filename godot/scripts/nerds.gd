@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -988,6 +988,7 @@ const DEFAULT_THREADS := [
 				"Stop the services, back up, detach, move, attach. In that order. Then test it before you tell anyone."
 			},
 			{"by": "GrizzleAdmin", "text": "Back up TWICE. Then back up."},
+			{"by": "TapeTony", "text": "And one copy on tape, off site. Nothing has ever encrypted a tape on a shelf."},
 		],
 		"answer":
 		"Stop the services, take a backup, detach the database, move the files, attach it again, and test before you restart the agents.",
@@ -1055,6 +1056,7 @@ const DEFAULT_THREADS := [
 				"Check the routes. A new subnet on the cloud side that the office router does not know about, probably."
 			},
 			{"by": "tcp_tim", "text": "And the firewall rule. They often reset after an upgrade."},
+			{"by": "DNS_Dot", "text": "Check the name first. It is DNS. It is always DNS."},
 		],
 		"answer":
 		"Look at the routes first, then the firewall rules. An upgrade often resets one of them.",

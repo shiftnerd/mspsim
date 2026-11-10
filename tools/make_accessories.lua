@@ -132,18 +132,24 @@ local HATS = {
     end,
   },
   hat_santa = {
-    sil = {[0] = {11, 13}, {10, 22}, {10, 27}, {11, 28}, {10, 29}, {9, 30}, {9, 30}, {9, 30}, {8, 31}, {8, 31}, {8, 31}},
+    -- R15 art pass: the pom is a ball of its own (5 x 5 with its outline) hanging off the folded tip, not three white pixels
+    -- (it stays inside the old silhouette's left edge, x 10: further out it touches the hat cell's border in the tilted poses)
+    sil = {[0] = {11, 17}, {10, 22}, {10, 27}, {10, 28}, {10, 29}, {9, 30}, {9, 30}, {9, 30}, {8, 31}, {8, 31}, {8, 31}},
     paint = function(x, y)
       if y >= 8 then return y == 9 and "F" or "W" end
+      if x <= 15 and y <= 4 and (x == 15 or y == 4) then return "K" end
       if x <= 14 and y <= 3 then return (x >= 13 and y >= 2) and "F" or "W" end
       if x >= 26 or y == 7 then return "r" end
       return "R"
     end,
   },
   hat_bucket = {
+    -- R15 art pass: the brim is lit on top and stitched and shaded below instead of one flat band (the silhouette is the old one:
+    -- a wider brim leaves the 40 px hat cell in the tilted poses of the left-facing sheet)
     sil = {[1] = {15, 24}, {12, 27}, {10, 29}, {9, 30}, {9, 30}, {9, 30}, {9, 30}, {7, 32}, {7, 32}, {8, 31}},
     paint = function(x, y)
-      if y >= 8 then return y == 9 and "q" or "Q" end
+      if y == 8 then return "Q" end
+      if y == 9 then return (x % 2 == 0 or x >= 27) and "q" or "Q" end
       if y == 6 or y == 7 then return "q" end
       if y == 3 and x % 2 == 0 then return "q" end
       return "Q"
@@ -191,9 +197,10 @@ local GEAR = {
     [34] = "..KKKKKKK..",
   }},
   badge_name = {x0 = 23, rows = {[29] = "RRRRR", [30] = "WWWWW", [31] = "WKKKW", [32] = "WWWWW"}},
-  watch_silver = {x0 = 10, rows = {[37] = "SSSS", [38] = "SWWS", [39] = "SSSS"}},
-  watch_gold = {x0 = 10, rows = {[37] = "yyyy", [38] = "YHHY", [39] = "yyyy"}},
-  watch_sport = {x0 = 10, rows = {[37] = "RRRR", [38] = "RWWR", [39] = "rrrr"}},
+  -- R15 art pass: a strap, a case and a dial instead of a flat band (the dark dial with one lit pixel is what reads at 4 x 3)
+  watch_silver = {x0 = 10, rows = {[37] = "FSSF", [38] = "SKWS", [39] = "FSSF"}},
+  watch_gold = {x0 = 10, rows = {[37] = "yYYy", [38] = "YKHY", [39] = "yYYy"}},
+  watch_sport = {x0 = 10, rows = {[37] = "rRRr", [38] = "RKCR", [39] = "rRRr"}},
 }
 local ORDER2 = {"hat_beanie", "hat_cap", "hat_hardhat", "hat_santa", "hat_bucket", "hat_party", "lanyard_conference", "badge_name",
   "watch_silver", "watch_gold", "watch_sport"}

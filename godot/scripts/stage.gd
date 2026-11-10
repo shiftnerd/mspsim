@@ -16,6 +16,7 @@ const SETS := [
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const SetDressing := preload("res://scripts/set_dressing.gd")
 const OfficeDecor := preload("res://scripts/office_decor.gd")  # R16: office growth and the seasonal dressing
 
 var barriers := {}  # npc sync points: key -> {arrived, gen}
@@ -68,6 +69,7 @@ func _ready() -> void:
 	SalesBeats.recruiter(self)
 	Shop.dress(self)
 	OfficeDecor.dress(self)
+	SetDressing.dress(self)  # plates on the dinner table, Jen's headset
 	_room = scene_file_path.get_file().get_basename()
 	_set_dark(0.0 if World.lights_on(_room) else 1.0)
 	World.lights_changed.connect(_on_lights)

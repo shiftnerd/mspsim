@@ -11120,6 +11120,10 @@ Stop the services, back up, detach, move, attach. In that order. Then test it be
 [Nerds.THREADS.27.posts.2.text]
 Back up TWICE. Then back up.
 
+# Nerds > THREADS > 27 > posts > 3 > text
+[Nerds.THREADS.27.posts.3.text]
+And one copy on tape, off site. Nothing has ever encrypted a tape on a shelf.
+
 # Nerds > THREADS > 27 > answer
 [Nerds.THREADS.27.answer]
 Stop the services, take a backup, detach the database, move the files, attach it again, and test before you restart the agents.
@@ -11179,6 +11183,10 @@ Check the routes. A new subnet on the cloud side that the office router does not
 # Nerds > THREADS > 30 > posts > 2 > text
 [Nerds.THREADS.30.posts.2.text]
 And the firewall rule. They often reset after an upgrade.
+
+# Nerds > THREADS > 30 > posts > 3 > text
+[Nerds.THREADS.30.posts.3.text]
+Check the name first. It is DNS. It is always DNS.
 
 # Nerds > THREADS > 30 > answer
 [Nerds.THREADS.30.answer]
@@ -16607,6 +16615,102 @@ ASK ABOUT THE HAIR
 # Expo > FORUM > 4 > options > 3 > text_free
 [Expo.FORUM.4.options.3.text_free]
 'It matches my terminal theme.' It does.
+
+# Expo > FORUM > 5 > speaker
+[Expo.FORUM.5.speaker]
+TapeTony (forum regular)
+
+# Expo > FORUM > 5 > text
+[Expo.FORUM.5.text]
+Tony. I answer the backup threads. Yes, I still run tape. A tape has never once asked me for a password reset. Sit down, I have opinions about your Friday rotation.
+
+# Expo > FORUM > 5 > options > 0 > label
+[Expo.FORUM.5.options.0.label]
+ASK ABOUT THE ROTATION
+
+# Expo > FORUM > 5 > options > 0 > text
+[Expo.FORUM.5.options.0.text]
+'Five dailies, four weeklies, twelve monthlies. Friday's tape leaves the building in somebody's bag.' He draws the calendar on your badge. You will not forget it now. (+4 servers XP)
+
+# Expo > FORUM > 5 > options > 1 > label
+[Expo.FORUM.5.options.1.label]
+ASK WHEN HE LAST RESTORED
+
+# Expo > FORUM > 5 > options > 1 > text
+[Expo.FORUM.5.options.1.text]
+'Tuesday. One file every week, to a different machine, and the date goes on the label.' A backup nobody has restored is a rumour. (+3 security XP)
+
+# Expo > FORUM > 5 > options > 2 > label
+[Expo.FORUM.5.options.2.label]
+QUOTE HIM IN THE BACKUP THREAD
+
+# Expo > FORUM > 5 > options > 2 > text
+[Expo.FORUM.5.options.2.text]
+You quote his rotation in the backup thread and give him the credit. He replies with a photo of a tape with your nick on the label. (+3 forum karma)
+
+# Expo > FORUM > 5 > options > 2 > text_free
+[Expo.FORUM.5.options.2.text_free]
+You quote his rotation in the backup thread. He replies with a photo of a tape.
+
+# Expo > FORUM > 5 > options > 3 > label
+[Expo.FORUM.5.options.3.label]
+ASK WHAT IS IN HIS POCKET
+
+# Expo > FORUM > 5 > options > 3 > text
+[Expo.FORUM.5.options.3.text]
+It is a tape. 'Last Friday's. It goes where I go.' He lets you hold it. Your coworkers do not believe you until they see the photo. (coworkers like you a little more)
+
+# Expo > FORUM > 5 > options > 3 > text_free
+[Expo.FORUM.5.options.3.text_free]
+It is a tape. 'Last Friday's. It goes where I go.'
+
+# Expo > FORUM > 6 > speaker
+[Expo.FORUM.6.speaker]
+DNS_Dot (forum regular)
+
+# Expo > FORUM > 6 > text
+[Expo.FORUM.6.text]
+Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.
+
+# Expo > FORUM > 6 > options > 0 > label
+[Expo.FORUM.6.options.0.label]
+ASK WHY IT IS ALWAYS DNS
+
+# Expo > FORUM > 6 > options > 0 > text
+[Expo.FORUM.6.options.0.text]
+'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)
+
+# Expo > FORUM > 6 > options > 1 > label
+[Expo.FORUM.6.options.1.label]
+ASK ABOUT THE LABEL MAKER
+
+# Expo > FORUM > 6 > options > 1 > text
+[Expo.FORUM.6.options.1.text]
+'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)
+
+# Expo > FORUM > 6 > options > 2 > label
+[Expo.FORUM.6.options.2.label]
+MARK HER ANSWER AS SOLVED
+
+# Expo > FORUM > 6 > options > 2 > text
+[Expo.FORUM.6.options.2.text]
+You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)
+
+# Expo > FORUM > 6 > options > 2 > text_free
+[Expo.FORUM.6.options.2.text_free]
+You mark her answer as the one that fixed it. It was DNS.
+
+# Expo > FORUM > 6 > options > 3 > label
+[Expo.FORUM.6.options.3.label]
+LET HER LABEL YOUR BADGE
+
+# Expo > FORUM > 6 > options > 3 > text
+[Expo.FORUM.6.options.3.text]
+The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)
+
+# Expo > FORUM > 6 > options > 3 > text_free
+[Expo.FORUM.6.options.3.text_free]
+The label says 'ASK ME, I TESTED IT FIRST'.
 
 
 # ======================= PrinterGame > TEXT =======================
