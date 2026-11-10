@@ -627,6 +627,8 @@ func _floor_phase() -> void:
 					longest = str(line)
 	expo.seated = {"index": 0, "id": "patch", "title": "PATCH MANAGEMENT BEST PRACTICES", "door": 3, "lines": [longest, "X"], "at": 0, "t": 0.0, "clock": 10.0, "hours": 0.0}
 	expo._canvas.visible = true
+	root.get_node("Phone")._bq.clear()  # the mail banners that waited behind the outing pages slide in from above the screen:
+	root.get_node("Phone").banner = {}  # they are not part of this screen
 	_begin()
 	await _end("session talk")
 	expo.seated = {}
