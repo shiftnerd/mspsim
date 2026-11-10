@@ -9273,12 +9273,24 @@ func _paint_backups(body: Rect2) -> void:
             var ago := maxi(1, Campaign.day - int(b.good_day))
             status = "FAILED! LAST GOOD: %d DAY%s AGO" % [ago, "" if ago == 1 else "S"]
             color = RED
+        status = backup_status(status, b, compact)
         var at := rr.position + (Vector2(100, 2) if compact else Vector2(3, 8))
         _text(_clip(status, int((body.end.x - at.x - 34) / 4.0)), at, color)
         if not checked:
             _button("bkcheck:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "CHECK")
         elif not b.ok:
             _button("bkrerun:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "RERUN", true, Color("f0b27a"))
+
+
+# R38: H1, the status of a backup row with the date of the last restore test (the short form drops LAST GOOD)
+static func backup_status(status: String, b: Dictionary, compact: bool) -> String:
+    var tested := int(b.get("tested", -1))
+    if tested < 0:
+        return status
+    var head := status
+    if compact:
+        head = "OK" if status.begins_with("OK") else ("FAILED!" if status.begins_with("FAILED") else "NOT CHECKED")
+    return "%s - TESTED %s %d" % [head, "WK" if Campaign.books_active() else "DAY", tested]
 
 
 func _paint_playbook(body: Rect2) -> void:
@@ -20685,8 +20697,8 @@ const CARDS := {
         "speaker": "John Marlowe",
         "text": "Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?",
         "options": [
-            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}}, "The job overran. You ate $1,200."]],
-             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400}, "A small overrun, nothing serious."]]},
+            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}, "overrun": 1200}, "The job overran. You ate $1,200."]],
+             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400, "overrun": 600}, "A small overrun, nothing serious."]]},
             {"label": "TIME AND MATERIALS (~$2,200)", "fx": {"cash": 2200}, "text": "Brightside grumbles about the open-ended bill but pays."},
         ],
     },
@@ -21860,6 +21872,8 @@ func _picked(id: String, index: int) -> void:
 
 func apply(fx: Dictionary) -> void:
     cash += int(fx.get("cash", 0))
+    if fx.has("overrun"):
+        cash += Habits.overrun_back(int(fx.overrun))  # R38: H3, a failed cutover costs half with a change request
     if fx.has("rep"):
         Campaign.adjust_rep(int(fx.rep))
     if fx.has("mood_all"):
@@ -54059,6 +54073,9 @@ func inspect(obj: String) -> void:
     if visit_kind == Takeover.KIND:
         Takeover.on_inspect(_site_client(), obj)  # R38 P4: what the last shop left behind
         return
+    if obj == "printer" and Habits.default_pw(_site_client()):
+        _found(Habits.pw_finding(_site_client()))  # R38: H14, until the passwords at this site are changed
+        return
     var pool: Array = FINDINGS.get(obj, [])
     var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
     if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
@@ -65020,6 +65037,11 @@ const BEAT_TEXT := {
         "res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
         "res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
     },
+    "favour": {
+        "lynk": {"from": "Garrison", "text": "Hollis Grady rang the front desk and asked for you by name. He was polite about it. He is always polite about it."},
+        "res_lead": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I answered it, and she signed. Tidewater Title rang me this week: nine people, too small for the way I work. I gave Mr. Whitlow your number and told him why.", "ok": "THANK HIM"},
+        "res_full": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I had a small office to pass on to you, but I hear your pipeline is full. I will keep you in mind. I do not forget.", "ok": "THANK HIM"},
+    },
     "rumour": {
         "lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
         "card": {
@@ -67336,12 +67358,14 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	14: "favour",
 	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
 }
 const COUNTER_AFTER := 2  # weeks until Rex answers a badmouthing
+const FAVOUR_QUALITY := 72  # the lead Hollis passes on in week 14 (a referral from a careful man is a warm one)
 
 
 # ---- the incumbent -------------------------------------------------------------------------------------
@@ -67862,6 +67886,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"favour":
+			beat_favour()
 		"intro":
 			beat_intro()
 		"rumour":
@@ -68123,6 +68149,36 @@ static func _plumb_pick(id: String) -> void:
 	if _room():
 		SalesCampaign.accept_lead(l)
 	sb.say("plumb", "res_" + id, [], Callable(), "Ms. Cedar")
+
+
+# week 14: Hollis Grady does not forget. If you sent Ms. Cedar back to him in week 11 he passes on a prospect that is too small for
+# Plumb Line: a warm lead with no incumbent (flag `favour` = "lead" / "full" / "none").
+static func beat_favour() -> void:
+	var sb := SalesCampaign.SalesBeats
+	if not bool(sb.flag("hollis_favour", false)):
+		sb.set_flag("favour", "none")
+		return
+	sb.set_flag("hollis_favour", false)
+	sb.lynk("favour")
+	if not _room():
+		sb.set_flag("favour", "full")
+		Temptation.change_consc(1)
+		sb.say("favour", "res_full")
+		return
+	var l := _story(
+		"Tidewater Title",
+		"law",
+		"Mr. Whitlow",
+		9,
+		"nine people and nobody to call",
+		FAVOUR_QUALITY,
+		"favour",
+		"none"
+	)
+	SalesCampaign.Deals.note(l, "SENT BY HOLLIS GRADY")
+	SalesCampaign.accept_lead(l)
+	sb.set_flag("favour", "lead")
+	sb.say("favour", "res_lead")
 
 
 # week 13: Big Cheese badmouths us (bonded? HIPAA safe?); the rumour lasts four weeks
@@ -74470,7 +74526,7 @@ static func pm_has(eff: String) -> bool:
 
 # read by Msp.new_day: the chance a backup quietly fails overnight
 static func backup_fail_chance() -> float:
-    return 0.04 if pm_has("backups") else 0.08
+    return (0.04 if pm_has("backups") else 0.08) * Habits.night_mult()  # R38: H9, 8 percent -> 6 percent
 
 
 # read by Growth.fail_adjust: a runbook makes fixes a little safer
@@ -75306,6 +75362,8 @@ const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
 const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
 const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
+const NIGHT_CUT := 0.25  # H9: a quarter fewer failed overnight jobs (8 percent -> 6 percent)
+const OVERRUN_CUT := 0.5  # H3: the share of a failed cutover's overrun that a change request saves
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -75341,7 +75399,12 @@ const DEFAULT_TEXT := {
 	"The one page scorecard went to %s: tickets closed, backups tested, what we fixed. Mood up.",
 	"review":
 	"Lost account review done. The real cause is written down, and the same mistake will cost less for eight weeks.",
-	"offboard": "%s's logins and keys are closed. The checklist is signed."
+	"offboard": "%s's logins and keys are closed. The checklist is signed.",
+	"overrun": "THE CHANGE REQUEST HAD A ROLLBACK STEP. THE OVERRUN COST $%d LESS.",
+	"pw_text":
+	"The printer's admin page still answers to admin and admin. So does the ceiling camera. Nobody has changed either since the day they were unboxed.",
+	"pw_summary": "Default passwords on the printer and the camera",
+	"pw_body": "%s here: you said our printer and camera still have the factory passwords. Can you change them?"
 }
 static var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 
@@ -75659,6 +75722,7 @@ static func _perform(id: String) -> String:
 		"H1":
 			var c := _backup_client()
 			Msp.backup_check(c)
+			Msp.backups[c]["tested"] = Campaign.day  # the TESTED date on the RMM BACKUPS tab
 			e["tested"] = Campaign.day
 			Owner.habits[id] = e
 			return str(TEXT.h1) % _client_short(c)
@@ -76015,6 +76079,44 @@ static func site_share() -> float:
 # fixed-price creep (H3: 30 percent -> 18 percent)
 static func creep(base: float) -> float:
 	return base - (base - 0.18) * factor("H3") if base > 0.18 else base
+
+
+# H9: the share of the overnight job failures left once the windows follow the calendar (8 percent -> 6 percent fresh)
+static func night_mult() -> float:
+	return 1.0 - NIGHT_CUT * factor("H9")
+
+
+# H3: a failed cutover costs half with a change request on file. `eaten` is what the overrun cost; the part that comes back
+static func overrun_back(eaten: int) -> int:
+	var back := int(float(eaten) * OVERRUN_CUT * factor("H3"))
+	if back > 0:
+		touch("H3")
+		Hints.toast(str(TEXT.overrun) % back, 4.0)
+	return back
+
+
+# H14: the default password finding of the walk-around. Once per client, and never at a site whose passwords were changed
+static func default_pw(client: int) -> bool:
+	if Campaign.mode != "owner" or client < 0:
+		return false
+	if _listed(entry("H14").get("sites", []), client):
+		return false
+	return not _listed(Owner.flags.get("pw_seen", []), client)
+
+
+# the finding itself (the shape of an Onsite.FINDINGS entry); showing it marks the client as seen
+static func pw_finding(client: int) -> Dictionary:
+	var seen: Array = Owner.flags.get("pw_seen", [])
+	seen.append(client)
+	Owner.flags["pw_seen"] = seen
+	return {
+		"text": str(TEXT.pw_text),
+		"summary": str(TEXT.pw_summary),
+		"fix": "password",
+		"pri": 3,
+		"body": str(TEXT.pw_body),
+		"project": "security"
+	}
 ''')
 
 write("scripts/temptation.gd", '''extends RefCounted

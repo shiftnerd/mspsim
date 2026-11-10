@@ -52,12 +52,14 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	14: "favour",
 	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
 }
 const COUNTER_AFTER := 2  # weeks until Rex answers a badmouthing
+const FAVOUR_QUALITY := 72  # the lead Hollis passes on in week 14 (a referral from a careful man is a warm one)
 
 
 # ---- the incumbent -------------------------------------------------------------------------------------
@@ -578,6 +580,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"favour":
+			beat_favour()
 		"intro":
 			beat_intro()
 		"rumour":
@@ -839,6 +843,36 @@ static func _plumb_pick(id: String) -> void:
 	if _room():
 		SalesCampaign.accept_lead(l)
 	sb.say("plumb", "res_" + id, [], Callable(), "Ms. Cedar")
+
+
+# week 14: Hollis Grady does not forget. If you sent Ms. Cedar back to him in week 11 he passes on a prospect that is too small for
+# Plumb Line: a warm lead with no incumbent (flag `favour` = "lead" / "full" / "none").
+static func beat_favour() -> void:
+	var sb := SalesCampaign.SalesBeats
+	if not bool(sb.flag("hollis_favour", false)):
+		sb.set_flag("favour", "none")
+		return
+	sb.set_flag("hollis_favour", false)
+	sb.lynk("favour")
+	if not _room():
+		sb.set_flag("favour", "full")
+		Temptation.change_consc(1)
+		sb.say("favour", "res_full")
+		return
+	var l := _story(
+		"Tidewater Title",
+		"law",
+		"Mr. Whitlow",
+		9,
+		"nine people and nobody to call",
+		FAVOUR_QUALITY,
+		"favour",
+		"none"
+	)
+	SalesCampaign.Deals.note(l, "SENT BY HOLLIS GRADY")
+	SalesCampaign.accept_lead(l)
+	sb.set_flag("favour", "lead")
+	sb.say("favour", "res_lead")
 
 
 # week 13: Big Cheese badmouths us (bonded? HIPAA safe?); the rumour lasts four weeks
