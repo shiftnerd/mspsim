@@ -1722,7 +1722,7 @@ func epilogue(ending: String) -> String:
 		return str(t.leave_followed if (client_mood() >= 65.0 and clawbacks == 0) else (t.leave_alone if client_mood() < 50.0 else t.leave))
 	if ending == "rollup":
 		return str(t.rollup) % SalesBeats.earn_out()
-	return str(t.get(ending, ""))
+	return str(t.get(ending, Yeartwo.ending_text(ending)))  # R10: a Year 3 ending's epilogue is Yeartwo's
 const DEFAULT_QUOTE := "DOES THE JOB. HARD TO READ."
 
 

@@ -17,6 +17,7 @@ extends RefCounted
 
 const MONTHS := ["NOV", "DEC", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT"]
 const FIRST_YEAR := 2013
+const LAST_SHIFT := 1  # how many years the calendar may move on from 2013-14 (Year 2 does; Year 3 stays where Year 2 was)
 # id -> name, first and last unit, year (0 = every year, 1 = the first year only), dressing (what OfficeDecor draws)
 const SEASONS := {
 	"holidays": {"name": "THE HOLIDAYS", "from": 3, "to": 4, "year": 0, "dressing": "lights"},
@@ -300,15 +301,16 @@ static func month(unit: int) -> String:
 	return str(MONTHS[month_index(unit)])
 
 
-# "DEC 2013" (Year 2 runs a year later)
+# "DEC 2013" (Year 2 runs a year later). R10: Year 3 does not: the calendar stops at Year 2's (LAST_SHIFT), so the
+# date line never leaves the era the game is written in, and a third year is "another year at Pixel IT"
 static func date_text(unit := -1, year := -1) -> String:
 	var u := Campaign.day if unit < 0 else unit
 	var y := Campaign.year if year < 0 else year
 	var m := month_index(u)
-	return "%s %d" % [MONTHS[m], FIRST_YEAR + (0 if m < 2 else 1) + maxi(0, y - 1)]
+	return "%s %d" % [MONTHS[m], FIRST_YEAR + (0 if m < 2 else 1) + clampi(y - 1, 0, LAST_SHIFT)]
 
 
-# the season tags of a unit (in SEASONS order); year 1 or 2
+# the season tags of a unit (in SEASONS order); year 1, 2 or 3 (a "first year only" season is in neither later year)
 static func tags(unit: int, year := 1) -> Array:
 	var out := []
 	for id in SEASONS:

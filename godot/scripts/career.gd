@@ -80,6 +80,19 @@ const DEFAULT_MEDALS := [
 	{"id": "bumper_king", "title": "BUMPER KING", "desc": "WIN 3 CHAIR FIGHTS", "rules": [["chairfight_wins", ">=", 3]]},
 	{"id": "pushy", "title": "PUSHY", "desc": "PUSH 10 COWORKER CHAIRS", "rules": [["chair_shoves", ">=", 10]]},
 	{"id": "flag_runner", "title": "FLAG RUNNER", "desc": "CARRY 5 FLAGS HOME", "rules": [["flag_caps", ">=", 5]]},
+	{"id": "year_three", "title": "THIRD YEAR", "desc": "FINISH A YEAR 3 RUN", "rules": [["year3_done", ">=", 1]]},
+	{"id": "y3_chair", "title": "DAN'S CHAIR", "desc": "YEAR 3: TAKE DAN'S CHAIR", "rules": [["end.y3_chair", ">=", 1]]},
+	{"id": "y3_senior", "title": "SENIOR ENGINEER", "desc": "YEAR 3: STAY TECHNICAL", "rules": [["end.y3_senior", ">=", 1]]},
+	{"id": "y3_farewell", "title": "GOOD TERMS", "desc": "YEAR 3: LEAVE IT TIDY", "rules": [["end.y3_farewell", ">=", 1]]},
+	{"id": "y3_summit", "title": "SOLD TO SUMMIT", "desc": "YEAR 3: SELL TO SUMMIT", "rules": [["end.y3_summit", ">=", 1]]},
+	{"id": "y3_staff", "title": "STAFF OWNED", "desc": "YEAR 3: SELL TO THE STAFF", "rules": [["end.y3_staff", ">=", 1]]},
+	{"id": "y3_morgan", "title": "TUESDAYS OFF", "desc": "YEAR 3: GIVE MORGAN THE KEYS", "rules": [["end.y3_morgan", ">=", 1]]},
+	{"id": "y3_coo", "title": "BACK OF HOUSE", "desc": "YEAR 3: RUN OPERATIONS", "rules": [["end.y3_coo", ">=", 1]]},
+	{"id": "y3_partner", "title": "THIRD SIGNATURE", "desc": "YEAR 3: BECOME A PARTNER", "rules": [["end.y3_partner", ">=", 1]]},
+	{"id": "y3_across", "title": "ACROSS TOWN", "desc": "YEAR 3: TAKE TERRY'S OFFER", "rules": [["end.y3_across", ">=", 1]]},
+	{"id": "y3_director", "title": "THE BIG CHAIR", "desc": "YEAR 3: TAKE GARRISON'S CHAIR", "rules": [["end.y3_director", ">=", 1]]},
+	{"id": "y3_wes", "title": "CALL ME BOSS", "desc": "YEAR 3: GIVE WES THE CHAIR", "rules": [["end.y3_wes", ">=", 1]]},
+	{"id": "y3_stake", "title": "A PERCENTAGE", "desc": "YEAR 3: TAKE THE SHARE", "rules": [["end.y3_stake", ">=", 1]]},
 ]
 # cosmetic unlocks: data the rest of the game reads with unlocked(id). kind: wallpaper (value = desktop colour),
 # ringtone (the phone Settings picks the name), duck and desk_toy (data only for now, no art yet), and the character creator's
@@ -453,6 +466,8 @@ func note_ending(ending := "") -> void:
 		add("svc_end." + ending)
 		if ending in ["alan", "garrison"]:
 			add("svc_end_lead")
+	if Yeartwo.is_year3_ending(ending) and not Difficulty.cozy_on():
+		add("end." + ending)  # R10: one medal per Year 3 ending
 
 
 func _on_day(_d: int) -> void:

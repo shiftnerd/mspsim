@@ -162,7 +162,7 @@ func _title_phase() -> void:
 	t._show_quick()
 	await _end("title quick play")
 	t._show_home(0)
-	# the tech submenu at its fullest: a save plus a finished year (CONTINUE, START YEAR 2, NEW CAMPAIGN)
+	# the tech submenu at its fullest: a save plus a finished Year 2 (SLOT 1, START YEAR 2, START YEAR 3, NEW CAMPAIGN, DELETE A SLOT)
 	var camp := root.get_node("Campaign")
 	var yt := root.get_node("Yeartwo")
 	var old_prefix: String = camp.save_prefix
@@ -173,6 +173,7 @@ func _title_phase() -> void:
 	save.save(camp.save_path("tech"))
 	var meta := ConfigFile.new()
 	yt.record(meta, "tech", "lead")
+	meta.set_value("tech", "top_year", 2)  # R10: and a finished Year 2, so the START YEAR 3 row is there too
 	meta.save(yt.meta_path())
 	_begin()
 	t._choose(0)

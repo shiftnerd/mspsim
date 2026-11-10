@@ -83,7 +83,7 @@ func _draw() -> void:
 					)
 				lines.append(day_line)
 		if Yeartwo.active():
-			lines.append("YEAR 2")
+			lines.append(Yeartwo.label())  # YEAR 2 / YEAR 3
 		if Mutators.tag() != "":
 			lines.append("* " + Mutators.tag())
 		if Nerf.holding():
