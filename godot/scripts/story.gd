@@ -1793,7 +1793,7 @@ func _spawn_followups() -> void:
 	var keep := []
 	for item in list:
 		if int(item.due) <= Campaign.day:
-			Msp.spawn_return(item)
+			Msp.return_or_hold(item)  # X10: waits for a free slot when the queue is full
 		else:
 			keep.append(item)
 	flags["followups"] = keep
@@ -1819,7 +1819,7 @@ func fire(ev: Dictionary) -> void:
 		"postmortem":
 			Incident.tech_start(str(ev.cls))
 		"adobe":
-			Msp.create_problem(int(ev.client), Msp.ADOBE, "email")
+			Msp.problem_or_hold(int(ev.client), Msp.ADOBE, "email")  # X10: not time-critical, waits for a free slot
 		"callback_install":
 			_callback_install()
 		"callback_ransom":

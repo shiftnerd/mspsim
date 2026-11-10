@@ -305,7 +305,7 @@ func _init() -> void:
 	# the pause menu row
 	var pause := root.get_node("PauseMenu")
 	_fresh("tech", "easy")
-	_check(pause._labels().size() == 5 and str(pause._labels()[3]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
+	_check(pause._labels().size() == 6 and str(pause._labels()[3]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
 	pause._sel = 3
 	pause._activate()
 	_check(is_equal_approx(d.day_scale_next, 1.5), "ENTER on the row cycles the length")

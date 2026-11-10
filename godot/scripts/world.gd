@@ -1036,6 +1036,40 @@ func send_owner_cover(n: String, x: float) -> bool:
 	return true
 
 
+# X6: an owner who steps in for a ticket or a client (not a ringing phone) walks to the front desk (Jen's desk), takes the call
+# there with a headset and goes back to work. False when there is no front desk or no way to it.
+func send_owner_front(n: String) -> bool:
+	if not chars.has(n) or not chars.has("Jen"):
+		return false
+	var st: Dictionary = chars[n]
+	var scene := str(row("Jen").home)
+	if not DATA.SCENES.has(scene) or str(st.scene) == OUTSIDE or not DATA.SCENES.has(str(st.scene)):
+		return false
+	var info: Dictionary = DATA.SCENES[scene]
+	var x := clampf(float(info.seats[str(row("Jen").seat)]) - 34.0, float(info.x0) + 16.0, float(info.x0 + info.W) - 16.0)
+	var from_x := _hint_x(n)
+	var legs := _travel(st.scene, scene, from_x)
+	if st.scene != scene and legs.is_empty():
+		return false
+	var arrive_x := from_x if legs.is_empty() else _spawn_x(scene, legs[legs.size() - 1].to_spawn)
+	legs.append(
+		{
+			"kind": "cover",
+			"scene": scene,
+			"target_x": x,
+			"routine": PackedStringArray(["stand", "walk:%d" % int(x), "answer"]),
+			"dur": absf(x - arrive_x) / SPEED + 10.0,
+		}
+	)
+	legs.append_array(_travel(scene, row(n).home, x))
+	legs.append(_work_leg(n, false, 30.0))
+	st.legs = legs
+	st.leg_t = legs[0].dur
+	if st.node != null and is_instance_valid(st.node):
+		st.node.set_routine(legs[0].routine)
+	return true
+
+
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:
 	var seat: String = row(n).seat
 	var x := float(DATA.SCENES[row(n).home].seats[seat])

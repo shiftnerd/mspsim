@@ -28,6 +28,17 @@ const SLA_BONUS := 45.0
 const SLA_WARN := 30.0  # a P1 / P2 under this many seconds counts as about to breach
 const COMPLAINT_WAIT := 40.0  # game seconds a complaint may wait for you before Garrison takes it
 const CHECK_GAP := 2.0
+# onsite visits (X6): `onsite` = you come back from a client site and a ticket is close to breaching (the drive aged it to under
+# ONSITE_RISK of its clock): an owner who was in the building watched the queue, +ONSITE_BONUS seconds on the worst one.
+# `visit` = a fix failed at the site: an owner rings the client (mood +VISIT_MOOD) and the job's own clock gets ONSITE_BONUS.
+# Same limits as the rest (day 3 on, uses a day, the cooldown, the tier), still free: no reputation, no opinion.
+const ONSITE_RISK := 0.45
+const ONSITE_BONUS := 60.0
+const VISIT_MOOD := 3
+const VISIT_LINES := {
+	"onsite": {"Alan": "I kept an eye on your queue while you were out.", "Garrison": "I told them you were on the road. They can wait a bit."},
+	"visit": {"Alan": "I talked them down. Try the other fix.", "Garrison": "I called them. Take your time and get it right."},
+}
 const LINES := {
 	"Alan": ["I will take this one.", "Give me that phone. Keep working.", "I have got it. Back to your queue."],
 	"Garrison": ["Hi, this is Garrison, how can I help?", "Garrison here, let me see what I can do.", "I will handle this one, you carry on."],
@@ -171,10 +182,49 @@ func ringing_phones() -> Array:
 	return out
 
 
+# ---- onsite visits (X6) ---------------------------------------------------------------------------------------
+# the same limits as allowed_now, but it also holds while you are at a site (the service desk is switched off there)
+func visit_allowed() -> bool:
+	if not Campaign.active or Campaign.mode != "tech" or Game.title_mode or Campaign.day < FIRST_DAY or per_day() <= 0:
+		return false
+	return World.clock - last_clock >= cooldown_hours() or last_clock < 0.0
+
+
+# Onsite._go_home: back at the office. {who, ticket} when an owner covered the queue, else {}
+func visit_cover() -> Dictionary:
+	if not visit_allowed():
+		return {}
+	var worst := {}
+	for t in Msp.open_tickets():  # sorted: the most urgent first
+		if t.internal or t.fix_done or t.breached or str(t.status) == "Waiting" or bool(t.get("owner_helped", false)):
+			continue
+		if float(t.sla_left) <= float(t.sla_total) * ONSITE_RISK:
+			worst = t
+			break
+	if worst.is_empty():
+		return {}
+	var who := pick_owner("onsite")
+	if who == "":
+		return {}
+	step_in(who, "onsite", {"ticket": int(worst.id)})
+	return {"who": who, "ticket": int(worst.id)}
+
+
+# Onsite._after: the fix you tried at the site did not work. The owner who rang the client, or "" when nobody could
+func visit_rescue(client: int, ticket_id: int) -> String:
+	if not visit_allowed():
+		return ""
+	var who := pick_owner("visit")
+	if who == "":
+		return ""
+	step_in(who, "visit", {"client": client, "ticket": ticket_id})
+	return who
+
+
 # who answers: Garrison takes the clients, Alan the technical trouble, either takes the phones
 func pick_owner(reason: String) -> String:
 	var prefs := ["Alan", "Garrison"]
-	if reason == "complaint":
+	if reason == "complaint" or reason == "visit":
 		prefs = ["Garrison", "Alan"]
 	elif reason == "phones" and Difficulty.rng("owners").randf() < 0.5:
 		prefs = ["Garrison", "Alan"]
@@ -208,6 +258,11 @@ func step_in(who: String, reason: String, info := {}) -> void:
 			Sales.pending = {}
 		"phones":
 			_answer_phone(who, info)
+		"onsite":
+			_help_ticket(int(info.get("ticket", 0)), who, ONSITE_BONUS, "%s watched the queue while you were onsite: +60 s on the clock." % who)
+		"visit":
+			Sales.adjust(int(info.get("client", 0)), VISIT_MOOD)
+			_help_ticket(int(info.get("ticket", 0)), who, ONSITE_BONUS, "%s rang the client while the visit was going badly." % who)
 		_:
 			_help_ticket(int(info.get("ticket", 0)), who, SLA_BONUS, "%s stepped in: +45 s on the clock." % who)
 	used[who] = int(used[who]) + 1
@@ -215,10 +270,12 @@ func step_in(who: String, reason: String, info := {}) -> void:
 	Career.add("owner_help")
 	last_clock = World.clock
 	log.append({"who": who, "reason": reason, "clock": World.clock})
-	if reason != "phones":
-		var node: Node = World.chars[who].get("node") if World.chars.has(who) else null
-		if node != null and is_instance_valid(node) and node.has_method("desk_call"):
-			node.desk_call()
+	if reason in ["sla", "backlog", "complaint"]:
+		# X6: the owner walks to the front desk and takes it there; with no route to it, a headset call at their own desk
+		if not World.send_owner_front(who):
+			var node: Node = World.chars[who].get("node") if World.chars.has(who) else null
+			if node != null and is_instance_valid(node) and node.has_method("desk_call"):
+				node.desk_call()
 	var line := _line(who, reason)
 	Hints.toast("%s: %s" % [who.to_upper(), line.to_upper()], 3.2)
 	Msp.changed.emit()
@@ -226,6 +283,8 @@ func step_in(who: String, reason: String, info := {}) -> void:
 
 
 func _line(who: String, reason: String) -> String:
+	if VISIT_LINES.has(reason):
+		return str(VISIT_LINES[reason][who])
 	var lines: Array = LINES[who]
 	if reason == "phones" or reason == "complaint":
 		return str(lines[0])

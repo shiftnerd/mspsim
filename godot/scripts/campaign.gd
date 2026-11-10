@@ -717,6 +717,7 @@ func _make_report() -> Dictionary:
 		"energy": int(Shift.energy) if Shift.active() else -1,
 		"late": Shift.late_min,
 		"oncall": Shift.oncall_pay(),
+		"favours": Msp.favours_today,
 	}
 
 

@@ -5484,6 +5484,40 @@ func send_owner_cover(n: String, x: float) -> bool:
     return true
 
 
+# X6: an owner who steps in for a ticket or a client (not a ringing phone) walks to the front desk (Jen's desk), takes the call
+# there with a headset and goes back to work. False when there is no front desk or no way to it.
+func send_owner_front(n: String) -> bool:
+    if not chars.has(n) or not chars.has("Jen"):
+        return false
+    var st: Dictionary = chars[n]
+    var scene := str(row("Jen").home)
+    if not DATA.SCENES.has(scene) or str(st.scene) == OUTSIDE or not DATA.SCENES.has(str(st.scene)):
+        return false
+    var info: Dictionary = DATA.SCENES[scene]
+    var x := clampf(float(info.seats[str(row("Jen").seat)]) - 34.0, float(info.x0) + 16.0, float(info.x0 + info.W) - 16.0)
+    var from_x := _hint_x(n)
+    var legs := _travel(st.scene, scene, from_x)
+    if st.scene != scene and legs.is_empty():
+        return false
+    var arrive_x := from_x if legs.is_empty() else _spawn_x(scene, legs[legs.size() - 1].to_spawn)
+    legs.append(
+        {
+            "kind": "cover",
+            "scene": scene,
+            "target_x": x,
+            "routine": PackedStringArray(["stand", "walk:%d" % int(x), "answer"]),
+            "dur": absf(x - arrive_x) / SPEED + 10.0,
+        }
+    )
+    legs.append_array(_travel(scene, row(n).home, x))
+    legs.append(_work_leg(n, false, 30.0))
+    st.legs = legs
+    st.leg_t = legs[0].dur
+    if st.node != null and is_instance_valid(st.node):
+        st.node.set_routine(legs[0].routine)
+    return true
+
+
 func _work_leg(n: String, start_seated: bool, secs: float) -> Dictionary:
     var seat: String = row(n).seat
     var x := float(DATA.SCENES[row(n).home].seats[seat])
@@ -6153,6 +6187,22 @@ var pace := 1.0  # campaign difficulty: ticket spawn interval multiplier
 var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
 var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
 var handoffs_today := 0  # tickets Michael took off you today (see PhoneCalls HANDOFF_MAX)
+# X10 tech pacing. Every client ticket of the day counts toward the day's cap (created_today), so a story or event ticket takes
+# the place of a random one instead of landing on top of them (easy and normal; see shared_cap). A story / event ticket that can wait (the Adobe job, a workaround
+# that came back, a recall batch, a missed onsite finding) is held while the open queue is at its cap and let in at the next free
+# slot, in order; one that waited overnight comes in the next morning whatever the queue looks like, so nothing is lost.
+# The pause menu's TICKET PACE row (tech campaign) scales the day cap, the gap between timed tickets and the open cap.
+const PACE_NAMES := ["RELAXED", "NORMAL", "BUSY"]
+const PACE_DAY := [0.75, 1.0, 1.25]  # x the day's ticket cap
+const PACE_GAP := [1.3, 1.0, 0.8]  # x the seconds between two timed tickets
+const PACE_OPEN := [-1, 0, 1]  # added to the open-queue cap
+const HOLD_GAP := 12.0  # game seconds between two held tickets being let in
+const HOLD_MORNING := 9.5  # a ticket held overnight comes in from this hour
+var pace_setting := 1  # index into PACE_NAMES; kept in the settings file ([pace] tech)
+var created_today := 0  # client tickets today from any source (tech campaign)
+var held: Array = []  # tickets waiting for a free slot: {kind: "problem" / "return", day, ...}
+var held_total := 0  # how many tickets were ever held this run (the pace probe prints it)
+var _held_t := 0.0
 
 var _next_id := 10421
 var _next_mail := 1
@@ -6165,13 +6215,22 @@ var _owner_noted := {}  # owner desk -> true while an outage there has been repo
 
 func _ready() -> void:
     randomize()
+    load_pace()
     reset()
 
 
 func reset() -> void:
     named_day = {}
     thanked_day = {}
+    favour_day = {}
+    favours_today = 0
+    desk_sends_today = 0
+    _favour_ask_day = -1
     calls.clear()
+    held.clear()
+    held_total = 0
+    created_today = 0
+    _held_t = 0.0
     tickets.clear()
     emails.clear()
     texts.clear()
@@ -6224,6 +6283,10 @@ func to_dict() -> Dictionary:
         "reopened": reopened,
         "pace": pace,
         "spawned_today": spawned_today,
+        "created_today": created_today,
+        "favours_today": favours_today,
+        "desk_sends_today": desk_sends_today,
+        "held": held.duplicate(true),
         "next_id": _next_id,
         "next_mail": _next_mail,
         "spawn_t": _spawn_t,
@@ -6249,6 +6312,10 @@ func from_dict(data: Dictionary) -> void:
     reopened = int(data.get("reopened", 0))
     pace = float(data.get("pace", 1.0))
     spawned_today = int(data.get("spawned_today", 0))
+    created_today = int(data.get("created_today", spawned_today))
+    held = _saved_array(data, "held")
+    favours_today = int(data.get("favours_today", 0))
+    desk_sends_today = int(data.get("desk_sends_today", 0))
     _next_id = int(data.get("next_id", 10421))
     _next_mail = int(data.get("next_mail", 1))
     _spawn_t = float(data.get("spawn_t", 20.0))
@@ -6373,6 +6440,8 @@ func create_problem(client: int, prob: Dictionary, source: String, force := fals
     }
     _next_id += 1
     tickets.append(t)
+    if tech_paced():
+        created_today += 1
     Dash.note_opened()
     _mail(PSA_FROM, "Ticket #%d assigned: %s" % [t.id, t.summary], assignment_mail(t), t.id)
     ticket_added.emit(t)
@@ -6393,14 +6462,98 @@ func assignment_mail(t: Dictionary, request := "") -> String:
 
 func day_cap() -> int:
     if Campaign.active and Campaign.mode == "tech":
-        return int(DAY_CAPS.get(Campaign.day, 99))
+        return maxi(1, int(round(float(DAY_CAPS.get(Campaign.day, 99)) * float(PACE_DAY[pace_setting]))))
     return 99
 
 
 func open_cap() -> int:
     if Campaign.active and Campaign.mode == "tech":
-        return int(OPEN_CAPS.get(Campaign.day, 6))
+        return maxi(2, int(OPEN_CAPS.get(Campaign.day, 6)) + int(PACE_OPEN[pace_setting]))
     return 6
+
+
+# ---- tech pacing (X10): the TICKET PACE setting and the held story / event tickets ------------------------------
+func tech_paced() -> bool:
+    return Campaign.active and Campaign.mode == "tech"
+
+
+func pace_label() -> String:
+    return str(PACE_NAMES[pace_setting])
+
+
+func set_pace(index: int) -> void:
+    pace_setting = clampi(index, 0, PACE_NAMES.size() - 1)
+
+
+# the pause menu row: the next / previous pace, saved with the settings at once
+func cycle_pace(step: int) -> int:
+    pace_setting = posmod(pace_setting + step, PACE_NAMES.size())
+    save_pace()
+    return pace_setting
+
+
+func load_pace() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(Difficulty.settings_path) == OK:
+        set_pace(int(cfg.get_value("pace", "tech", 1)))
+
+
+func save_pace() -> void:
+    var cfg := ConfigFile.new()
+    cfg.load(Difficulty.settings_path)
+    cfg.set_value("pace", "tech", pace_setting)
+    cfg.save(Difficulty.settings_path)
+
+
+# the open queue is at its cap (the timed tickets pause on the same test)
+func queue_full() -> bool:
+    return tech_paced() and open_tickets().size() >= open_cap()
+
+
+# a story / event ticket that is not time-critical: created at once when the queue has room (and nothing is waiting in front of
+# it), else held for the next free slot. Returns the ticket, or {} while it is held.
+func problem_or_hold(client: int, prob: Dictionary, source: String, force := false) -> Dictionary:
+    if not tech_paced() or (held.is_empty() and not queue_full()):
+        return create_problem(client, prob, source, force)
+    _hold({"kind": "problem", "client": client, "prob": prob.duplicate(true), "source": source, "force": force})
+    return {}
+
+
+# the same for a workaround that came back (spawn_return)
+func return_or_hold(item: Dictionary) -> void:
+    if not tech_paced() or (held.is_empty() and not queue_full()):
+        spawn_return(item)
+        return
+    _hold({"kind": "return", "item": item.duplicate(true)})
+
+
+func _hold(entry: Dictionary) -> void:
+    entry["day"] = Campaign.day
+    held.append(entry)
+    held_total += 1
+
+
+func _release(entry: Dictionary) -> void:
+    if str(entry.kind) == "return":
+        spawn_return(entry.item)
+    else:
+        create_problem(int(entry.client), entry.prob, str(entry.source), bool(entry.get("force", false)))
+
+
+# let the first held ticket in: when the queue has room, or the morning after however full the queue is
+func _tick_held(dt: float) -> void:
+    if held.is_empty():
+        return
+    _held_t -= dt
+    if _held_t > 0.0 or World.clock >= World.DAY_END:
+        return
+    var first: Dictionary = held[0]
+    var overnight: bool = int(first.day) < Campaign.day and World.clock >= HOLD_MORNING
+    if queue_full() and not overnight:
+        return
+    held.pop_front()
+    _held_t = HOLD_GAP
+    _release(first)
 
 
 # ---- clients who know your name (R36, tech campaign) ------------------------------------------------------------
@@ -6451,6 +6604,8 @@ func _note_by_name_close(t: Dictionary) -> void:
             Career.add("asked_for")
             t.notes.append("They asked for you and you delivered.")
         return
+    if _maybe_favour(t):
+        return  # one more thing, off the books: no thank-you on top
     if bool(t.breached) or Sales.mood(client) < THANKS_MOOD or int(thanked_day.get(client, -99)) > Campaign.day - THANKS_GAP_DAYS:
         return
     var r := Difficulty.rng("msp.thanks")
@@ -6459,8 +6614,207 @@ func _note_by_name_close(t: Dictionary) -> void:
         send_text(str(CLIENTS[client].contact), str(THANKS_TEXTS[r.randi() % THANKS_TEXTS.size()]))
 
 
+# ---- direct texts that ask for unbilled work (R36, tech campaign) ------------------------------------------------
+# After a clean close a happy client (mood FAVOUR_MOOD+) now and then texts your cell with one more thing, off the books: a card
+# with three answers. DO IT NOW: no ticket and no credit, the client likes it (+4 mood, +3 people XP), it costs energy and every
+# open ticket loses FAVOUR_SECS of its clock; it is counted as an unbilled favour (the day report shows them). ASK THEM TO CALL
+# THE DESK: mood -2, the job becomes a real P4 ticket and the manager likes it (+1 opinion). IGNORE IT: mood -3 and the job
+# comes in as a P3 ticket the next morning. After FAVOUR_TALK unbilled favours Morgan raises it in a 1:1 the next day
+# (favour_talk): promise to send them to the desk (+1 reputation now, +1 for each one you do send, -1 for each favour after it),
+# stand by it (-1 reputation), or ask her to talk to the clients (a policy mail: those clients -1 mood, no asks for a few days).
+# The run's count and Morgan's answer live in Story.flags (favours, favour_talk, favour_talk_day, favour_quiet), saved with the campaign.
+const FAVOUR_MOOD := 78
+const FAVOUR_CHANCE := 0.22
+const FAVOUR_GAP_DAYS := 4  # per client
+const FAVOUR_FIRST_DAY := 4
+const FAVOUR_SECS := 40.0
+const FAVOUR_ENERGY := 2.0
+const FAVOUR_TALK := 3
+const FAVOUR_TALK_HOUR := 10.0
+const FAVOUR_QUIET_DAYS := 5
+const DEFAULT_FAVOURS := [
+    {
+        "text": "Quick one: the printer is doing the thing again. Can you just hop on? No need for a whole ticket.",
+        "summary": "Printer doing the thing again",
+        "fix": "spooler",
+        "body": "The printer is doing the thing again. I texted about it and was told to call the desk, so here I am. - %s",
+    },
+    {
+        "text": "Hey, it is me. Locked out again. Can you reset it real quick? Do not tell the desk.",
+        "summary": "Locked out again",
+        "fix": "password",
+        "body": "Locked out again. I am told this needs a ticket now. Consider this a ticket. - %s",
+    },
+    {
+        "text": "While I have you: my PC is crawling. Two minutes of your time, I promise.",
+        "summary": "PC is crawling",
+        "fix": "clear_temp",
+        "body": "My PC is crawling. It was a two minute favour and now it is a ticket. Please look at it. - %s",
+    },
+    {
+        "text": "You fixed it so fast last time. The pop-ups are back. Can you do your thing? Off the books is fine.",
+        "summary": "Pop-ups are back",
+        "fix": "av",
+        "body": "The pop-ups are back. Off the books was not an option, I hear. On the books, then. - %s",
+    },
+]
+var FAVOURS: Array = DEFAULT_FAVOURS.duplicate(true)
+const DEFAULT_FAVOUR_TEXT := {
+    "now_label": "DO IT NOW",
+    "desk_label": "ASK THEM TO CALL THE DESK",
+    "ignore_label": "IGNORE IT UNTIL MORNING",
+    "now": "DONE. NO TICKET, NO CREDIT.",
+    "desk": "THEY CALL THE DESK. IT IS A TICKET NOW.",
+    "ignore": "PHONE FACE DOWN. IT WILL KEEP UNTIL MORNING.",
+    "desk_note": "They texted your cell first. You sent them to the desk.",
+    "ignored_body": "I texted yesterday and heard nothing. So I am calling the desk like everybody else. - %s",
+    "promise_broken": "Another favour by text. We talked about this.",
+    "talk": (
+        "Got a minute? John hears you fix things by text. Three favours so far, none of them in ConnectWhy. "
+        + "No ticket means no bill, and nobody knows to cover it when you are out. What do we do about it?"
+    ),
+    "log_label": "I WILL SEND THEM TO THE DESK",
+    "fine_label": "THEY ASKED. I HELPED.",
+    "shield_label": "CAN YOU TALK TO THEM?",
+    "log_reply": "Good. A ticket takes them one minute and it gets you the credit.",
+    "fine_reply": "You did, and they love you for it. The books do not. I am writing this down.",
+    "shield_reply": "I will send them a friendly note about the desk. Expect them a little cooler for a week.",
+    "policy_subject": "Support requests go through the desk",
+    "policy_body": (
+        "A friendly reminder to our clients: please send requests to the service desk, not to a technician's cell phone. "
+        + "It gets you a ticket, a clock and a second person who knows about it. - Morgan"
+    ),
+}
+var FAVOUR_TEXT: Dictionary = DEFAULT_FAVOUR_TEXT.duplicate(true)
+var favours_today := 0  # unbilled favours done today (the day report row)
+var desk_sends_today := 0  # direct asks you sent to the desk today
+var favour_day := {}  # client -> the day of their last direct ask
+var _favour_ask_day := -1  # at most one direct ask a day
+
+
+func favours_done() -> int:
+    return int(Story.flags.get("favours", 0))
+
+
+func _maybe_favour(t: Dictionary) -> bool:
+    var client := int(t.client)
+    if Campaign.day < FAVOUR_FIRST_DAY or bool(t.breached) or bool(t.get("repeat", false)) or Onsite.active or Expo.away:
+        return false
+    if _favour_ask_day == Campaign.day or Campaign.day < int(Story.flags.get("favour_quiet", 0)):
+        return false
+    if Sales.mood(client) < FAVOUR_MOOD or int(favour_day.get(client, -99)) > Campaign.day - FAVOUR_GAP_DAYS:
+        return false
+    var r := Difficulty.rng("msp.favour")
+    if r.randf() >= FAVOUR_CHANCE:
+        return false
+    ask_favour(client, r.randi() % FAVOURS.size())
+    return true
+
+
+# the text and its card (also called by tests)
+func ask_favour(client: int, k: int) -> void:
+    favour_day[client] = Campaign.day
+    _favour_ask_day = Campaign.day
+    var f: Dictionary = FAVOURS[k]
+    var contact := str(CLIENTS[client].contact)
+    send_text(contact, str(f.text))
+    Cards.ask(
+        contact + " (text)",
+        str(f.text),
+        [
+            {"label": str(FAVOUR_TEXT.now_label), "id": "fav_now"},
+            {"label": str(FAVOUR_TEXT.desk_label), "id": "fav_desk"},
+            {"label": str(FAVOUR_TEXT.ignore_label), "id": "fav_ignore"},
+        ],
+        func(pick: String) -> void: favour_answer(pick, client, k)
+    )
+
+
+func favour_answer(pick: String, client: int, k: int) -> void:
+    var f: Dictionary = FAVOURS[k]
+    var talk := str(Story.flags.get("favour_talk", ""))
+    var manager: String = Roles.who("manager")
+    match pick:
+        "fav_now":
+            favours_today += 1
+            Story.flags["favours"] = favours_done() + 1
+            Sales.adjust(client, 4)
+            Skills.add_xp("people", 3)
+            Shift.add_energy(-FAVOUR_ENERGY)
+            for o in tickets:
+                if o.status != "Closed" and o.status != "Waiting" and not o.fix_done:
+                    o.sla_left = float(o.sla_left) - FAVOUR_SECS
+            if talk == "fav_log":
+                Campaign.adjust_rep(-1)  # you promised
+                send_text(manager, str(FAVOUR_TEXT.promise_broken))
+            elif talk == "" and favours_done() >= FAVOUR_TALK:
+                Story.flags["favour_talk"] = "due"
+                Story.flags["favour_talk_day"] = Campaign.day
+        "fav_desk":
+            desk_sends_today += 1
+            Sales.adjust(client, -2)
+            Social.change(manager, 1)
+            if talk == "fav_log":
+                Campaign.adjust_rep(1)  # you kept the promise
+            var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 4, "body": str(f.body)}
+            var made := problem_or_hold(client, prob, "phone call", true)  # forced: it must not vanish when all their PCs are broken
+            if not made.is_empty():
+                made.notes.append(str(FAVOUR_TEXT.desk_note))
+        _:
+            Sales.adjust(client, -3)
+            Story.queue_followup({"client": client, "summary": str(f.summary), "pri": 3, "body": str(FAVOUR_TEXT.ignored_body), "fix": str(f.fix), "server": false, "days": 1})
+    Hints.toast(str(FAVOUR_TEXT.get(pick.trim_prefix("fav_"), "")), 4.0)
+    changed.emit()
+
+
+# Morgan's 1:1 about the favours: the morning after the third one
+func _tick_favour_talk() -> void:
+    if not tech_paced() or str(Story.flags.get("favour_talk", "")) != "due":
+        return
+    if Campaign.day <= int(Story.flags.get("favour_talk_day", 0)) or World.clock < FAVOUR_TALK_HOUR:
+        return
+    if Cards.is_open or Onsite.active or Expo.away:
+        return
+    favour_talk()
+
+
+func favour_talk() -> void:
+    Story.flags["favour_talk"] = "asked"
+    Cards.ask(
+        Roles.label(Roles.who("manager")),
+        str(FAVOUR_TEXT.talk),
+        [
+            {"label": str(FAVOUR_TEXT.log_label), "id": "fav_log"},
+            {"label": str(FAVOUR_TEXT.fine_label), "id": "fav_fine"},
+            {"label": str(FAVOUR_TEXT.shield_label), "id": "fav_shield"},
+        ],
+        func(pick: String) -> void: favour_talk_answer(pick)
+    )
+
+
+func favour_talk_answer(pick: String) -> void:
+    Story.flags["favour_talk"] = pick
+    match pick:
+        "fav_log":
+            Campaign.adjust_rep(1)
+        "fav_fine":
+            Campaign.adjust_rep(-1)
+        _:
+            Story.flags["favour_quiet"] = Campaign.day + FAVOUR_QUIET_DAYS
+            for c in favour_day:
+                Sales.adjust(int(c), -1)
+            mail(MORGAN_FROM, str(FAVOUR_TEXT.policy_subject), str(FAVOUR_TEXT.policy_body))
+    send_text(Roles.who("manager"), str(FAVOUR_TEXT.get(pick.trim_prefix("fav_") + "_reply", "")))
+
+
+# easy and normal: every ticket of the day shares the cap. Hard keeps the story and event tickets on top of the random ones
+# (its reputation curve was tuned on those busier days; sharing the cap there cost the careful bot about 30 points)
+func shared_cap() -> bool:
+    return tech_paced() and Difficulty.tier_index() < 2
+
+
 func _random_ticket(source: String) -> Dictionary:
-    if spawned_today >= day_cap():
+    if maxi(spawned_today, created_today if shared_cap() else 0) >= day_cap():
         return {}
     for tries in 6:
         var pick: Dictionary = Mutators.pick_problem()
@@ -6871,6 +7225,9 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
+    created_today = 0
+    favours_today = 0
+    desk_sends_today = 0
     handoffs_today = 0
     # a desktop sitting in its box: John reminds you where the job is, for a few days
     if Campaign.active and project_busy() and int(project.get("since", day)) < day:
@@ -7237,7 +7594,8 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
     var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
-    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace()
+    var setting := float(PACE_GAP[pace_setting]) if tech_paced() else 1.0
+    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace() * setting
 
 
 # "ready" = Jen is at her desk and free, "away" = she is in the building but busy or out of her seat, "" = there is no front desk
@@ -7300,6 +7658,8 @@ func _process(delta: float) -> void:
     if dt <= 0.0:
         return
     _tick_calls(dt)
+    _tick_held(dt)
+    _tick_favour_talk()
     _spawn_t -= dt
     if _spawn_t <= 0.0:
         _spawn_t = next_spawn_gap()
@@ -12649,6 +13009,7 @@ func _make_report() -> Dictionary:
         "energy": int(Shift.energy) if Shift.active() else -1,
         "late": Shift.late_min,
         "oncall": Shift.oncall_pay(),
+        "favours": Msp.favours_today,
     }
 
 
@@ -13737,6 +14098,8 @@ func _groups_raw() -> Array:
     var stepped := int(r.get("owners", Owners.stepped))
     if stepped > 0:
         groups[1][1].append(["OWNERS STEPPED IN", str(stepped), GOOD])
+    if int(r.get("favours", 0)) > 0:  # R36: work done by text, off the books
+        groups[1][1].append(["UNBILLED FAVOURS", str(int(r.favours)), WARN])
     var energy := []
     if int(r.get("energy", -1)) >= 0:
         var e := int(r.energy)
@@ -18148,7 +18511,7 @@ func _spawn_followups() -> void:
     var keep := []
     for item in list:
         if int(item.due) <= Campaign.day:
-            Msp.spawn_return(item)
+            Msp.return_or_hold(item)  # X10: waits for a free slot when the queue is full
         else:
             keep.append(item)
     flags["followups"] = keep
@@ -18174,7 +18537,7 @@ func fire(ev: Dictionary) -> void:
         "postmortem":
             Incident.tech_start(str(ev.cls))
         "adobe":
-            Msp.create_problem(int(ev.client), Msp.ADOBE, "email")
+            Msp.problem_or_hold(int(ev.client), Msp.ADOBE, "email")  # X10: not time-critical, waits for a free slot
         "callback_install":
             _callback_install()
         "callback_ransom":
@@ -43250,6 +43613,17 @@ const SLA_BONUS := 45.0
 const SLA_WARN := 30.0  # a P1 / P2 under this many seconds counts as about to breach
 const COMPLAINT_WAIT := 40.0  # game seconds a complaint may wait for you before Garrison takes it
 const CHECK_GAP := 2.0
+# onsite visits (X6): `onsite` = you come back from a client site and a ticket is close to breaching (the drive aged it to under
+# ONSITE_RISK of its clock): an owner who was in the building watched the queue, +ONSITE_BONUS seconds on the worst one.
+# `visit` = a fix failed at the site: an owner rings the client (mood +VISIT_MOOD) and the job's own clock gets ONSITE_BONUS.
+# Same limits as the rest (day 3 on, uses a day, the cooldown, the tier), still free: no reputation, no opinion.
+const ONSITE_RISK := 0.45
+const ONSITE_BONUS := 60.0
+const VISIT_MOOD := 3
+const VISIT_LINES := {
+    "onsite": {"Alan": "I kept an eye on your queue while you were out.", "Garrison": "I told them you were on the road. They can wait a bit."},
+    "visit": {"Alan": "I talked them down. Try the other fix.", "Garrison": "I called them. Take your time and get it right."},
+}
 const LINES := {
     "Alan": ["I will take this one.", "Give me that phone. Keep working.", "I have got it. Back to your queue."],
     "Garrison": ["Hi, this is Garrison, how can I help?", "Garrison here, let me see what I can do.", "I will handle this one, you carry on."],
@@ -43393,10 +43767,49 @@ func ringing_phones() -> Array:
     return out
 
 
+# ---- onsite visits (X6) ---------------------------------------------------------------------------------------
+# the same limits as allowed_now, but it also holds while you are at a site (the service desk is switched off there)
+func visit_allowed() -> bool:
+    if not Campaign.active or Campaign.mode != "tech" or Game.title_mode or Campaign.day < FIRST_DAY or per_day() <= 0:
+        return false
+    return World.clock - last_clock >= cooldown_hours() or last_clock < 0.0
+
+
+# Onsite._go_home: back at the office. {who, ticket} when an owner covered the queue, else {}
+func visit_cover() -> Dictionary:
+    if not visit_allowed():
+        return {}
+    var worst := {}
+    for t in Msp.open_tickets():  # sorted: the most urgent first
+        if t.internal or t.fix_done or t.breached or str(t.status) == "Waiting" or bool(t.get("owner_helped", false)):
+            continue
+        if float(t.sla_left) <= float(t.sla_total) * ONSITE_RISK:
+            worst = t
+            break
+    if worst.is_empty():
+        return {}
+    var who := pick_owner("onsite")
+    if who == "":
+        return {}
+    step_in(who, "onsite", {"ticket": int(worst.id)})
+    return {"who": who, "ticket": int(worst.id)}
+
+
+# Onsite._after: the fix you tried at the site did not work. The owner who rang the client, or "" when nobody could
+func visit_rescue(client: int, ticket_id: int) -> String:
+    if not visit_allowed():
+        return ""
+    var who := pick_owner("visit")
+    if who == "":
+        return ""
+    step_in(who, "visit", {"client": client, "ticket": ticket_id})
+    return who
+
+
 # who answers: Garrison takes the clients, Alan the technical trouble, either takes the phones
 func pick_owner(reason: String) -> String:
     var prefs := ["Alan", "Garrison"]
-    if reason == "complaint":
+    if reason == "complaint" or reason == "visit":
         prefs = ["Garrison", "Alan"]
     elif reason == "phones" and Difficulty.rng("owners").randf() < 0.5:
         prefs = ["Garrison", "Alan"]
@@ -43430,6 +43843,11 @@ func step_in(who: String, reason: String, info := {}) -> void:
             Sales.pending = {}
         "phones":
             _answer_phone(who, info)
+        "onsite":
+            _help_ticket(int(info.get("ticket", 0)), who, ONSITE_BONUS, "%s watched the queue while you were onsite: +60 s on the clock." % who)
+        "visit":
+            Sales.adjust(int(info.get("client", 0)), VISIT_MOOD)
+            _help_ticket(int(info.get("ticket", 0)), who, ONSITE_BONUS, "%s rang the client while the visit was going badly." % who)
         _:
             _help_ticket(int(info.get("ticket", 0)), who, SLA_BONUS, "%s stepped in: +45 s on the clock." % who)
     used[who] = int(used[who]) + 1
@@ -43437,10 +43855,12 @@ func step_in(who: String, reason: String, info := {}) -> void:
     Career.add("owner_help")
     last_clock = World.clock
     log.append({"who": who, "reason": reason, "clock": World.clock})
-    if reason != "phones":
-        var node: Node = World.chars[who].get("node") if World.chars.has(who) else null
-        if node != null and is_instance_valid(node) and node.has_method("desk_call"):
-            node.desk_call()
+    if reason in ["sla", "backlog", "complaint"]:
+        # X6: the owner walks to the front desk and takes it there; with no route to it, a headset call at their own desk
+        if not World.send_owner_front(who):
+            var node: Node = World.chars[who].get("node") if World.chars.has(who) else null
+            if node != null and is_instance_valid(node) and node.has_method("desk_call"):
+                node.desk_call()
     var line := _line(who, reason)
     Hints.toast("%s: %s" % [who.to_upper(), line.to_upper()], 3.2)
     Msp.changed.emit()
@@ -43448,6 +43868,8 @@ func step_in(who: String, reason: String, info := {}) -> void:
 
 
 func _line(who: String, reason: String) -> String:
+    if VISIT_LINES.has(reason):
+        return str(VISIT_LINES[reason][who])
     var lines: Array = LINES[who]
     if reason == "phones" or reason == "complaint":
         return str(lines[0])
@@ -49848,7 +50270,7 @@ const ROOTS := {
     "Owner": ["CARDS"],
     "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
-    "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
+    "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL", "FAVOURS", "FAVOUR_TEXT"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
     "Nerds": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"],
     "Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],
@@ -52898,6 +53320,8 @@ var _event_done := false
 var _roll_day := -1
 var _spawn_at := -1.0
 var calls := 0  # onsite jobs created so far (the roulette salt)
+var _carry := false  # X10: a job call that waited for a free slot all day comes on the next visit day
+var _rescued := false  # X6: an owner already rang the client on this visit
 var recent: Array = []  # the last clients who called
 var seen_jobs := {}  # job id -> how often it came up
 
@@ -52927,6 +53351,7 @@ func reset() -> void:
     _event_done = false
     _roll_day = -1
     calls = 0
+    _carry = false
     recent = []
     seen_jobs = {}
     _spawn_at = -1.0
@@ -52977,6 +53402,9 @@ func _on_day(day: int) -> void:
         Msp.mail(Story.MANAGER, "Onsite visits", str(TEXT.intro_mail))
     var guaranteed := day == 6 or day == 11 or day == 15
     var skip := [7, 9, 10, 12, 13, 16, 17, 18, 20].has(day)
+    if _carry and not skip:
+        guaranteed = true  # X10: yesterday's call never found a free slot
+        _carry = false
     for t in Msp.tickets:
         if t.status != "Closed" and is_onsite(t):
             skip = true  # one onsite problem at a time
@@ -52990,7 +53418,11 @@ func _process(_delta: float) -> void:
     if _spawn_at < 0.0 or not is_tech() or Game.title_mode or World.time_scale <= 0.0 or active:
         return
     if World.clock >= _spawn_at and World.clock < World.DAY_END - 1.0:
+        if Msp.queue_full():
+            _carry = true  # X10: the call waits for a free slot, tomorrow if today has none
+            return
         _spawn_at = -1.0
+        _carry = false
         create_job()
 
 
@@ -53325,6 +53757,7 @@ func _depart(id: int, forced := {}) -> void:
     job = forced if not forced.is_empty() else job_for(t)
     done = false
     _event_done = false
+    _rescued = false
     _begin_trip()
     Msp.set_status(id, "In Progress")
     Msp.add_note(id, "Technician dispatched onsite.")
@@ -53517,7 +53950,7 @@ func _missed_follow_up() -> void:
         if Difficulty.rng("onsite").randf() < 0.25 and Campaign.active and Msp.enabled:
             var f: Dictionary = entry.f
             var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 2, "body": str(TEXT.missed_mail) + " - %s"}
-            Msp.create_problem(int(entry.client), prob, "email")
+            Msp.problem_or_hold(int(entry.client), prob, "email")
             Sales.adjust(int(entry.client), -2)
         else:
             keep.append(entry)
@@ -53730,6 +54163,8 @@ func _after(ok: bool) -> void:
     if ok:
         _finish_job()
         return
+    if is_tech() and not _rescued and Owners.visit_rescue(client, ticket_id) != "":
+        _rescued = true  # X6: the visit is going badly, an owner rang the client (once a visit)
     if not _event_done:
         _maybe_event()
 
@@ -53929,6 +54364,8 @@ func _go_home(dropped: bool) -> void:
     World.time_scale = _prev_scale
     Game.go("main_floor", "from_outside")
     SalesCampaign.visit_end()
+    if is_tech():
+        Owners.visit_cover()  # X6: an owner watched the queue while you were out
     if Campaign.active:
         Hints.toast(str(TEXT.home) % _back_min, 4.0)
     else:  # free play has no queue to grow
@@ -61848,7 +62285,7 @@ func _batch(b: Dictionary) -> void:
         if pool.is_empty():
             break
         var c: int = pool.pop_at(r.randi_range(0, pool.size() - 1))
-        Msp.create_problem(c, b.problem, "recall notice")
+        Msp.problem_or_hold(c, b.problem, "recall notice")
 
 
 func _answer_offer(offer: Dictionary, oid: String) -> void:
@@ -73002,6 +73439,8 @@ func _labels() -> Array:
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+        if Campaign.mode == "tech":
+            rows.append("TICKET PACE: %s" % Msp.pace_label())  # X10: relaxed / normal / busy, at once
     elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
         rows.append("OUTFIT")
         rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
@@ -73017,6 +73456,8 @@ func _row_id(i: int) -> String:
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
+        if Campaign.mode == "tech":
+            ids.append("pace")
     elif Campaign.mode == Campaign.FREE:
         ids.append("outfit")
         ids.append("career")
@@ -73052,8 +73493,11 @@ func _activate() -> void:
             _sel = _labels().size() - 1
         _canvas.queue_redraw()
         return
-    if _row_id(_sel) == "day":
-        Difficulty.cycle_day_scale(1)
+    if _row_id(_sel) in ["day", "pace"]:
+        if _row_id(_sel) == "day":
+            Difficulty.cycle_day_scale(1)
+        else:
+            Msp.cycle_pace(1)  # X10
         _canvas.queue_redraw()
         return
     if _row_id(_sel) == "outfit":
@@ -73086,6 +73530,8 @@ func _activate() -> void:
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
     var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
+    if Campaign.active and Campaign.mode == "tech":
+        h += 12.0  # the TICKET PACE row
     if settings_mode:
         h = 100.0
     if _page >= 0:
@@ -73246,6 +73692,8 @@ func _key(event: InputEvent) -> void:
             Sfx.toggle_mute()
         elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
+        elif not _confirm and _row_id(_sel) == "pace":
+            Msp.cycle_pace(1 if right else -1)
     elif Controls.confirm(event):
         _activate()
         return
@@ -73278,6 +73726,8 @@ func _paint() -> void:
     var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
+    elif not _confirm and _row_id(_sel) == "pace":
+        foot = "HOW MANY TICKETS  LEFT RIGHT = CHANGE"
     UiStyle.footer(c, r, Controls.hint(foot))
 
 
