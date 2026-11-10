@@ -475,6 +475,11 @@ func key(name: String) -> bool:
 var per_page := 6
 
 
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+func hot_keys() -> Array:
+	return [["w", "WORK"], ["h", "HIRE"], ["t", "TRAINING"], ["r", "RUNBOOKS"], ["d", "DESK"], ["c", "CREW"], ["pgup", "PAGE UP"], ["pgdn", "PAGE DOWN"]]
+
+
 func _move(step: int) -> void:
 	if view == "books":
 		sel = clampi(sel + step, 0, ids().size() - 1)

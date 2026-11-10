@@ -311,15 +311,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if Game.title_mode:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F9:
+		if Controls.word(event) == "f9":
 			Game.cycle_format()
 			return
 		if not OS.is_debug_build():
 			return  # the F-key room jumps below are for development builds only
-		if event.keycode == KEY_F11 and event.alt_pressed:
+		if Controls.word(event) == "f11" and event.alt_pressed:
 			Game.go("warehouse_lot" if event.shift_pressed else "warehouse", "start")
 			return
-		if event.keycode == KEY_F11 and event.ctrl_pressed:
+		if Controls.word(event) == "f11" and event.ctrl_pressed:
 			var sites := []
 			for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:
 				for skin in ["a", "b"]:
@@ -327,20 +327,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			var at := get_tree().current_scene.scene_file_path.get_file().get_basename()
 			Game.go(sites[(sites.find(at) + 1) % sites.size()], "start")
 			return
-		if event.keycode == KEY_F11:
+		if Controls.word(event) == "f11":
 			Game.go("escape_room" if event.shift_pressed else "bowling_alley", "start")
 			return
-		if event.keycode == KEY_F12 and event.ctrl_pressed:
+		if Controls.word(event) == "f12" and event.ctrl_pressed:
 			var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_a", "breakout_b", "breakout_c", "breakout_d", "vendor_hall"]
 			var here := get_tree().current_scene.scene_file_path.get_file().get_basename()
 			Game.go(venue[(venue.find(here) + 1) % venue.size()], "start")
 			return
-		if event.keycode == KEY_F12:
+		if Controls.word(event) == "f12":
 			Game.go("restaurant" if event.shift_pressed else "karaoke_bar", "start")
 			return
-		if event.keycode == KEY_F6 and event.shift_pressed:
+		if Controls.word(event) == "f6" and event.shift_pressed:
 			Game.go("bathroom_2", "start")
 			return
-		var i: int = event.keycode - KEY_F1
+		var i: int = Controls.fkey(event) - 1
 		if i >= 0 and i < SETS.size():
 			Game.go(SETS[i], "start")

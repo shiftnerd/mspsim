@@ -16,6 +16,7 @@ var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const RED := Color("e0463c")
+const TAP_H := 19.0  # the least height of a tap target on the big phone (R14 5)
 const GREEN := Color("3cc15a")
 const NOTES := ["Texted the client back.", "On my way in.", "Looking at it from my phone."]
 
@@ -537,12 +538,10 @@ func press_key(key: String) -> void:
 func _dial_key(event: InputEvent) -> bool:
 	if not (event is InputEventKey and event.pressed and app == "phone" and ph_view == "keypad" and dialog.is_empty()):
 		return false
-	var code: int = event.keycode
-	if code >= KEY_0 and code <= KEY_9:
-		press_key(str(code - KEY_0))
-	elif code >= KEY_KP_0 and code <= KEY_KP_9:
-		press_key(str(code - KEY_KP_0))
-	elif code == KEY_BACKSPACE:
+	var d := Controls.digit(event, true)
+	if d >= 0:
+		press_key(str(d))
+	elif Controls.word(event) == "backspace":
 		activate("del")
 	else:
 		return false
@@ -663,7 +662,12 @@ func _wrap(s: String, chars: int) -> Array:
 	return lines
 
 
-func _region(id: String, r: Rect2) -> void:
+# R14 (5): on the big phone (the tall format, _sc 2) a target under TAP_H px grows to it (downwards, or upwards with `up`):
+# the hit rect only, the drawing stays
+func _region(id: String, r: Rect2, up: bool = false) -> void:
+	if _sc >= 2 and r.size.y < TAP_H:
+		var more := TAP_H - r.size.y
+		r = Rect2(r.position.x, r.position.y - (more if up else 0.0), r.size.x, TAP_H)
 	_hits.append({"r": r, "id": id})
 
 
@@ -738,7 +742,10 @@ func _skin(b: Rect2) -> Rect2:
 		var hc := Vector2(b.position.x + floorf(b.size.x * 0.5), b.end.y - 6)
 		_disc(hc, 3, Color("55595f"))
 		_disc(hc, 2, Color("1c1e23"))
-		_region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
+		if _sc >= 2:  # a thumb-sized target over the round button, down into the bezel
+			_region("home", Rect2(hc.x - 12.0, b.end.y - 12.0, 25.0, TAP_H))
+		else:
+			_region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
 		return Rect2(b.position.x + 3, b.position.y + 7, b.size.x - 6, b.size.y - 7 - 12)
 	_round(b, Color("3a3d44"))
 	_round(Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)), Color("0e0f12"))  # matte black
@@ -1023,7 +1030,7 @@ func _header(a: Rect2, title: String, can_back: bool) -> Rect2:
 			_text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), Color("2b79f0"))
 		else:
 			_text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), WHITE)
-		_region("back", Rect2(bar.position, Vector2(14 * _sc, h)))
+		_region("back", Rect2(bar.position, Vector2(14 * _sc, h)), true)
 	return Rect2(a.position.x, a.position.y + h, a.size.x, a.size.y - h)
 
 

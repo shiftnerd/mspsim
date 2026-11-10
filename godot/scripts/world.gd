@@ -101,7 +101,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and not event.shift_pressed:
+	if event is InputEventKey and event.pressed and not event.echo and Controls.word(event) == "f10" and not event.shift_pressed:
 		hud_visible = not hud_visible
 
 

@@ -844,9 +844,9 @@ func cycle_forced(step: int) -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventKey and event.pressed and not event.echo):
+	if not (Controls.pressed(event) and Controls.matches(event, "mutator")):
 		return
-	if event.keycode != KEY_QUOTELEFT or Game.title_mode or Campaign.active or Game.ui_open:
+	if Game.title_mode or Campaign.active or Game.ui_open:
 		return
 	if Campaign.mode != Campaign.FREE or Difficulty.fixed_take:
 		return

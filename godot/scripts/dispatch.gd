@@ -256,6 +256,15 @@ func tech_names() -> Array:
 	return Crew.names()
 
 
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+func hot_keys() -> Array:
+	if view == "board":
+		return [["tab", "NEXT"], ["a", "AUTO"], ["t", "TO DAN"], ["e", "ESCALATE"], ["u", "UNASSIGN"], ["c", "CAPACITY"], ["s", "SCORE"]]
+	if view == "capacity":
+		return [["tab", "NEXT"], ["f", "FOCUS"], ["o", "1:1"], ["a", "AUTO"], ["b", "BOARD"], ["s", "SCORE"]]
+	return [["b", "BOARD"], ["c", "CAPACITY"], ["a", "AUTO"]]
+
+
 # a key by name ("tab", "shift_tab", "left", "right", "up", "down", "enter", "a", "t", "e", "u", "c", "b", "s", "f"); true = used
 func key(name: String) -> bool:
 	match name:
@@ -509,7 +518,7 @@ func _footer(a: Rect2, lines: int) -> void:
 	var r := Rect2(a.position.x, a.end.y - h, a.size.x, h)
 	c._fill(r, Color("cfd9e8"))
 	var chars := int((a.size.x - 4.0) / 4.0)
-	var text := info_line()
+	var text := Controls.hint(info_line())
 	if lines == 1:
 		c._text(c._clip(text, chars), r.position + Vector2(2, 1), INK)
 	else:

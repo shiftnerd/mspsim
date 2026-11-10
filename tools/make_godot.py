@@ -4630,7 +4630,7 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and not event.shift_pressed:
+    if event is InputEventKey and event.pressed and not event.echo and Controls.word(event) == "f10" and not event.shift_pressed:
         hud_visible = not hud_visible
 
 
@@ -7467,6 +7467,7 @@ var dispatch = DISPATCH.new()  # the Dispatch app state (service campaign)
 var dash_t := 0.0  # seconds since the metrics board was opened (bars grow in, red tiles pulse)
 var dash_chart := -1  # a wide board shows one chart: -1 rotates, 0 / 1 picked by Enter or a click
 var tv_mode := false  # the metrics board opened from the wall TV: read only, no taskbar, Esc closes
+var hot_i := 0  # the pad's hotkey strip: which letter hotkey Y has stepped to (hot_keys)
 
 var board_scroll := 0.0  # the Boardroom books tab on a short pane: how far it is scrolled up (px)
 var pane_slot := -1  # co-op (Takeover host): this instance is the pane of that player, in its own half-window SubViewport; -1 = the full-window autoload
@@ -7634,7 +7635,7 @@ func _route(event: InputEvent) -> void:
     elif Controls.pressed(event):
         Sfx.play("ui_tick")
         var dir := Controls.nav(event, false)
-        if _app_key(event, dir):
+        if _hot_pad(event) or _app_key(event, dir):
             _canvas.queue_redraw()
             get_viewport().set_input_as_handled()
             return
@@ -7647,7 +7648,7 @@ func _route(event: InputEvent) -> void:
         elif Controls.confirm(event, false, false):
             enter()
         elif app == "crm" and event is InputEventKey:
-            Crm.key(self, event.keycode)
+            Crm.key(self, Controls.word(event))
     else:
         return
     get_viewport().set_input_as_handled()
@@ -8234,6 +8235,11 @@ func _paint() -> void:
             _paint_desktop()
     if not (tv_mode and app == "dash"):
         _paint_taskbar()
+    if Controls.pad_active and _toast_t <= 0.0 and hot_text() != "":
+        var hot := _clip(hot_text(), int((size.x - 8) / 4.0))
+        var hx := floorf((size.x - _tw(hot)) * 0.5)
+        _fill(Rect2(hx - 3, _area.end.y - TB - 10, _tw(hot) + 6, 9), Color("20242c"))
+        _text(hot, Vector2(hx, _area.end.y - TB - 8), WHITE)
     if _toast_t > 0.0:
         var msg := _clip(_toast, int((size.x - 8) / 4.0))
         var tx := floorf((size.x - _tw(msg)) * 0.5)
@@ -9094,16 +9100,59 @@ func _app_key(event: InputEvent, dir: String) -> bool:
 
 
 func _dispatch_key(event: InputEventKey) -> bool:
-    var names := {
-        KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
-        KEY_KP_ENTER: "enter", KEY_A: "a", KEY_T: "t", KEY_E: "e", KEY_U: "u", KEY_C: "c", KEY_B: "b", KEY_S: "s", KEY_F: "f",
-    }
-    if not names.has(event.keycode):
-        return false
-    var key_name: String = names[event.keycode]
-    if key_name == "tab" and event.shift_pressed:
+    var key_name := Controls.word(event)
+    if key_name == "tab" and Controls.shift(event):
         key_name = "shift_tab"
     return dispatch.key(key_name)
+
+
+# ---- the letter hotkeys on a pad (R14 1b): Y steps through the open app's hotkeys, X presses the chosen one ----
+# [key name, label] of every letter hotkey the open app takes now
+func hot_keys() -> Array:
+    match app:
+        "crm":
+            return Crm.hot_keys()
+        "dispatch":
+            return dispatch.hot_keys()
+        "knowledge":
+            return Service.kb.hot_keys()
+    return []
+
+
+# press a hotkey by name, exactly as its letter key does
+func hot_press(key_name: String) -> void:
+    match app:
+        "crm":
+            Crm.key(self, key_name)
+        "dispatch":
+            dispatch.key(key_name)
+        "knowledge":
+            Service.kb.key(key_name)
+    _canvas.queue_redraw()
+
+
+func _hot_pad(event: InputEvent) -> bool:
+    if event is InputEventKey:
+        return false
+    var keys := hot_keys()
+    if keys.is_empty():
+        return false
+    hot_i = posmod(hot_i, keys.size())
+    if Controls.matches(event, "hot_next"):
+        hot_i = (hot_i + 1) % keys.size()
+        return true
+    if Controls.matches(event, "hot_go"):
+        hot_press(str(keys[hot_i][0]))
+        return true
+    return false
+
+
+# the strip a pad sees above the taskbar: the hotkey Y has stepped to
+func hot_text() -> String:
+    var keys := hot_keys()
+    if keys.is_empty():
+        return ""
+    return "%s < %s >  %s GO" % [Controls.label("hot_next"), str(keys[posmod(hot_i, keys.size())][1]), Controls.label("hot_go")]
 
 
 # ---- ConnectWhy Knowledge (service manager campaign, C6: the runbooks; the app itself is scripts/knowledge.gd) --------
@@ -9115,14 +9164,8 @@ func _paint_knowledge() -> void:
 
 
 func _knowledge_key(event: InputEventKey) -> bool:
-    var names := {
-        KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter",
-        KEY_KP_ENTER: "enter", KEY_W: "w", KEY_H: "h", KEY_T: "t", KEY_R: "r", KEY_D: "d", KEY_C: "c",
-        KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_BRACKETLEFT: "pgup", KEY_BRACKETRIGHT: "pgdn",
-    }
-    if not names.has(event.keycode):
-        return false
-    return Service.kb.key(str(names[event.keycode]))
+    var key_name := Controls.word(event)
+    return Service.kb.key(str({"[": "pgup", "]": "pgdn"}.get(key_name, key_name)))
 
 
 func _paint_lync() -> void:
@@ -9404,10 +9447,8 @@ func _nerds_pad(event: InputEvent, dir: String) -> bool:
     var key_name := dir
     if key_name == "" and Controls.confirm(event, false, false):
         key_name = "enter"
-    if key_name == "" and event is InputEventKey:
-        key_name = str(
-            {KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn", KEY_TAB: "tab"}.get(event.keycode, "")
-        )
+    if key_name == "" and event is InputEventKey and Controls.word(event) in ["pgup", "pgdn", "tab"]:
+        key_name = Controls.word(event)
     if key_name == "":
         return false
     return nerds_key(key_name)
@@ -10220,6 +10261,7 @@ var save_path := "user://mspsim_phone.cfg"  # tests point this somewhere else
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const RED := Color("e0463c")
+const TAP_H := 19.0  # the least height of a tap target on the big phone (R14 5)
 const GREEN := Color("3cc15a")
 const NOTES := ["Texted the client back.", "On my way in.", "Looking at it from my phone."]
 
@@ -10741,12 +10783,10 @@ func press_key(key: String) -> void:
 func _dial_key(event: InputEvent) -> bool:
     if not (event is InputEventKey and event.pressed and app == "phone" and ph_view == "keypad" and dialog.is_empty()):
         return false
-    var code: int = event.keycode
-    if code >= KEY_0 and code <= KEY_9:
-        press_key(str(code - KEY_0))
-    elif code >= KEY_KP_0 and code <= KEY_KP_9:
-        press_key(str(code - KEY_KP_0))
-    elif code == KEY_BACKSPACE:
+    var d := Controls.digit(event, true)
+    if d >= 0:
+        press_key(str(d))
+    elif Controls.word(event) == "backspace":
         activate("del")
     else:
         return false
@@ -10867,7 +10907,12 @@ func _wrap(s: String, chars: int) -> Array:
     return lines
 
 
-func _region(id: String, r: Rect2) -> void:
+# R14 (5): on the big phone (the tall format, _sc 2) a target under TAP_H px grows to it (downwards, or upwards with `up`):
+# the hit rect only, the drawing stays
+func _region(id: String, r: Rect2, up: bool = false) -> void:
+    if _sc >= 2 and r.size.y < TAP_H:
+        var more := TAP_H - r.size.y
+        r = Rect2(r.position.x, r.position.y - (more if up else 0.0), r.size.x, TAP_H)
     _hits.append({"r": r, "id": id})
 
 
@@ -10942,7 +10987,10 @@ func _skin(b: Rect2) -> Rect2:
         var hc := Vector2(b.position.x + floorf(b.size.x * 0.5), b.end.y - 6)
         _disc(hc, 3, Color("55595f"))
         _disc(hc, 2, Color("1c1e23"))
-        _region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
+        if _sc >= 2:  # a thumb-sized target over the round button, down into the bezel
+            _region("home", Rect2(hc.x - 12.0, b.end.y - 12.0, 25.0, TAP_H))
+        else:
+            _region("home", Rect2(hc - Vector2(4, 4), Vector2(9, 9)))
         return Rect2(b.position.x + 3, b.position.y + 7, b.size.x - 6, b.size.y - 7 - 12)
     _round(b, Color("3a3d44"))
     _round(Rect2(b.position + Vector2(1, 1), b.size - Vector2(2, 2)), Color("0e0f12"))  # matte black
@@ -11227,7 +11275,7 @@ func _header(a: Rect2, title: String, can_back: bool) -> Rect2:
             _text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), Color("2b79f0"))
         else:
             _text("<", Vector2(bar.position.x + 2, bar.position.y + 2 * _sc), WHITE)
-        _region("back", Rect2(bar.position, Vector2(14 * _sc, h)))
+        _region("back", Rect2(bar.position, Vector2(14 * _sc, h)), true)
     return Rect2(a.position.x, a.position.y + h, a.size.x, a.size.y - h)
 
 
@@ -13707,12 +13755,14 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
     y += 2.0
     var label := _button_label()
     var bw := _tw(label) + 12.0
-    var hint := "ENTER OR CLICK"
+    var hint := Controls.hint("ENTER OR CLICK")
     if _tw(hint) + bw + 12.0 > pw:
-        hint = "ENTER"
+        hint = Controls.hint("ENTER")
     if draw:
         _t(hint, 4.0, y + 2.5, LABEL)
         _button = Rect2(_o + Vector2(pw - bw - 4.0, y) * float(sc), Vector2(bw, 10.0) * float(sc))
+        if _button.size.y < 19.0:  # R14 (5): the hit rect is thumb-sized, the drawn button stays
+            _button = _button.grow_individual(0.0, floorf((19.0 - _button.size.y) * 0.5) + 1.0, 0.0, floorf((19.0 - _button.size.y) * 0.5) + 1.0)
         var hot := _button.has_point(_mouse)
         _r(pw - bw - 4.0, y, bw, 10.0, Color("5aa0e8") if hot else Color("3a7bd5"))
         _t(label, pw - bw + 2.0, y + 2.5, WHITE)
@@ -19419,8 +19469,8 @@ func _input(event: InputEvent) -> void:
             pass  # too soon: the card just appeared
         elif Controls.confirm_any(event, false, false):
             pick(sel)
-        elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
-            pick(event.keycode - KEY_1)
+        elif Controls.digit(event) >= 1 and Controls.digit(event) <= 4:
+            pick(Controls.digit(event) - 1)
     else:
         return
     get_viewport().set_input_as_handled()
@@ -19451,6 +19501,7 @@ func _paint() -> void:
     # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
     var opt_lines := []
     var opts_h := 0.0
+    var tap_h := 19.0 if size.y > size.x else 0.0  # R14 (5): the tall format gets thumb-sized answers
     for opt in options:
         var chip_w := (str(opt.get("chip", "")).length() + 1 if str(opt.get("chip", "")) != "" else 0)
         chip_w += (str(opt.get("trust_chip", "")).length() + 1 if str(opt.get("trust_chip", "")) != "" else 0)
@@ -19459,7 +19510,7 @@ func _paint() -> void:
             full += " [%s]" % str(opt.hint)
         var rows: Array = _wrap(full, chars - 1 - chip_w)
         opt_lines.append(rows)
-        opts_h += 3.0 + 7.0 * float(rows.size()) + 1.0
+        opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
     var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
     var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
@@ -19476,14 +19527,15 @@ func _paint() -> void:
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
         var rows: Array = opt_lines[i]
-        var r := Rect2(panel.position.x + 4, y, pw - 8, 3.0 + 7.0 * float(rows.size()))
+        var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(3.0 + 7.0 * float(rows.size()), tap_h))
+        var ty := floorf((r.size.y - 7.0 * float(rows.size()) + 2.0) * 0.5)
         var col := Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
         _canvas.draw_rect(r, col)
         var chip := str(opt.get("chip", ""))  # the partner's stance (owner campaign)
         var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
         var right_edge := r.end.x
         for k in rows.size():
-            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, 2 + 7 * k), INK if on else Color("8b93a1"))
+            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
         if chip != "":
             var tint := Color("2f7d46")
             if str(opt.get("stance", "")) == "warn":
@@ -28045,7 +28097,7 @@ func paint(computer: Node, body: Rect2) -> void:
     bx -= 16.0
     c._button("nerds:up", Rect2(bx, foot.position.y + 1, 14, 8), "UP")
     var hint_chars := int((bx - foot.position.x - 6.0) / 4.0)
-    c._text(c._clip(_hint(narrow), hint_chars), foot.position + Vector2(3, 3), MUTED)
+    c._text(c._clip(Controls.hint(_hint(narrow)), hint_chars), foot.position + Vector2(3, 3), MUTED)
 
 
 func _crumb() -> String:
@@ -33907,7 +33959,7 @@ func pick_game(from_invite: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
     if not enabled or is_open or Campaign.active or Game.title_mode or Game.ui_open:
         return
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
+    if Controls.pressed(event) and Controls.matches(event, "outing"):
         party_set = false
         draw_party()
         Cards.ask(
@@ -34121,6 +34173,8 @@ func _event_key(event: InputEvent) -> int:
         key = KEY_Z  # A or X on a pad: fire
     elif (grilling or paintballing) and Controls.matches(event, "run"):
         key = KEY_SHIFT  # B on a pad: the cool side
+    elif game == "escape" and Controls.matches(event, "nudge"):
+        key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
     elif dir != "":
         key = PAD_ARROWS[dir]
     elif Controls.back(event):
@@ -35716,7 +35770,7 @@ func _room_wants(key: int) -> bool:
         "escape":
             if g.get("entry", false):
                 return key in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_ENTER, KEY_KP_ENTER]
-            return key == KEY_N
+            return key == Controls.key_of("nudge")
         _:
             return (
                 str(g.get("stage", "")) == "talk"
@@ -35725,7 +35779,7 @@ func _room_wants(key: int) -> bool:
 
 
 func _room_press(key: int) -> bool:
-    if game == "escape" and key == KEY_N and not g.get("entry", false):
+    if game == "escape" and key == Controls.key_of("nudge") and not g.get("entry", false):
         escape_nudge()
         return true
     return false
@@ -36088,7 +36142,7 @@ func _dinner_react() -> void:
 
 # ---- the in-room display (replaces the panel while you play)
 func _paint_hud(size: Vector2) -> void:
-    UiStyle.hint_bar(_canvas, size, hint())
+    UiStyle.hint_bar(_canvas, size, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
     var top := UiStyle.caption_bar(_canvas, size, _caption if _caption_t > 0.0 else "")
     var strip_w := 176.0 if game == "dinner" else (232.0 if game == "chair" and size.x > 300.0 else 164.0)  # five faces need the room
     var strip := Rect2(0.0, top - UiStyle.STRIP_H, minf(size.x, strip_w), UiStyle.STRIP_H)
@@ -37463,7 +37517,7 @@ func _paint() -> void:
     if Cards.is_open:
         return  # the song / budget card has the screen (the page comes back after it)
     if _traveled and _peek:
-        UiStyle.hint_bar(_canvas, size, "TAB = BACK TO THE GAME")
+        UiStyle.hint_bar(_canvas, size, Controls.hint("TAB = BACK TO THE GAME"))
         return
     _canvas.draw_rect(
         Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.0 if _traveled else 0.86)
@@ -37496,7 +37550,7 @@ func _paint() -> void:
                     _paint_darts(body)
                 _:
                     _paint_dinner(body)
-    UiStyle.footer(_canvas, panel, hint())
+    UiStyle.footer(_canvas, panel, Controls.hint(hint(), {"N": "nudge", "E": "interact"}))
 
 
 # R5: who is in the room for a karaoke night or an escape room, in words ("" for the other games, which name their own crew)
@@ -46282,6 +46336,15 @@ func tech_names() -> Array:
     return Crew.names()
 
 
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+func hot_keys() -> Array:
+    if view == "board":
+        return [["tab", "NEXT"], ["a", "AUTO"], ["t", "TO DAN"], ["e", "ESCALATE"], ["u", "UNASSIGN"], ["c", "CAPACITY"], ["s", "SCORE"]]
+    if view == "capacity":
+        return [["tab", "NEXT"], ["f", "FOCUS"], ["o", "1:1"], ["a", "AUTO"], ["b", "BOARD"], ["s", "SCORE"]]
+    return [["b", "BOARD"], ["c", "CAPACITY"], ["a", "AUTO"]]
+
+
 # a key by name ("tab", "shift_tab", "left", "right", "up", "down", "enter", "a", "t", "e", "u", "c", "b", "s", "f"); true = used
 func key(name: String) -> bool:
     match name:
@@ -46535,7 +46598,7 @@ func _footer(a: Rect2, lines: int) -> void:
     var r := Rect2(a.position.x, a.end.y - h, a.size.x, h)
     c._fill(r, Color("cfd9e8"))
     var chars := int((a.size.x - 4.0) / 4.0)
-    var text := info_line()
+    var text := Controls.hint(info_line())
     if lines == 1:
         c._text(c._clip(text, chars), r.position + Vector2(2, 1), INK)
     else:
@@ -47346,6 +47409,11 @@ func key(name: String) -> bool:
 
 
 var per_page := 6
+
+
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+func hot_keys() -> Array:
+    return [["w", "WORK"], ["h", "HIRE"], ["t", "TRAINING"], ["r", "RUNBOOKS"], ["d", "DESK"], ["c", "CREW"], ["pgup", "PAGE UP"], ["pgdn", "PAGE DOWN"]]
 
 
 func _move(step: int) -> void:
@@ -52104,6 +52172,7 @@ var _dir := 1.0
 var _shake_t := 0.0
 var _last_shake := ""
 var _answered := false
+var ans_sel := -1  # the test page: the answer Up / Down marked (-1 = none; the 1 2 3 keys answer at once)
 var _result_t := 0.0
 
 
@@ -52407,18 +52476,14 @@ func _input(event: InputEvent) -> void:
         press("confirm")
     elif Controls.back_any(event, false):
         press("escape")
-    elif event is InputEventKey:
-        match event.keycode:
-            KEY_A:
-                press("a")
-            KEY_D:
-                press("d")
-            KEY_1, KEY_2, KEY_3:
-                press(str(event.keycode - KEY_0))
-            KEY_P:
-                press("pray")
-            _:
-                return
+    elif Controls.matches(event, "shake_left"):
+        press("a")
+    elif Controls.matches(event, "shake_right"):
+        press("d")
+    elif Controls.digit(event) >= 1 and Controls.digit(event) <= 3:
+        press(str(Controls.digit(event)))
+    elif Controls.matches(event, "pray"):
+        press("pray")
     else:
         return
     get_viewport().set_input_as_handled()
@@ -52490,6 +52555,10 @@ func press(key: String) -> void:
         "test":
             if not _answered and key in ["1", "2", "3"]:
                 _answer(int(key) - 1)
+            elif not _answered and key in ["up", "down"]:  # a pad (R14): Up / Down mark an answer, confirm gives it
+                ans_sel = (0 if key == "down" else 2) if ans_sel < 0 else posmod(ans_sel + (1 if key == "down" else -1), 3)
+            elif not _answered and key == "confirm" and ans_sel >= 0:
+                _answer(ans_sel)
             elif _answered and key == "confirm":
                 _next_question()
         "result":
@@ -52551,6 +52620,7 @@ func _install() -> void:
 func _answer(choice: int) -> void:
     var q: Dictionary = _qs()[int(asked[qi])]
     _answered = true
+    ans_sel = -1
     if choice == int(q.correct):
         msg = _tx("right") + " " + str(q.why)
     elif choice == int(q.hit) and _rng().randf() < 0.05:
@@ -52659,7 +52729,7 @@ func _paint() -> void:
                 panel.size.y - 9.0 - float(mini(lines.size(), 3) - i) * 7.0,
                 UiStyle.MUTED
             )
-    UiStyle.footer(_canvas, panel, _hint())
+    UiStyle.footer(_canvas, panel, Controls.hint(_hint(), {"P": "pray", "A": "shake_left", "D": "shake_right"}))
 
 
 # the same KEY = ACTION hint line the outing pages use
@@ -52843,7 +52913,7 @@ func _paint_test() -> void:
     _r(12, 16, 152, 18, Color("3a6a42"))
     _txt(str(q.error), 16, 22, Color("d8f8d8"), 1)
     for i in 3:
-        _txt("%d  %s" % [i + 1, str(q.options[i])], 10, 42.0 + float(i) * 8.0)
+        _txt("%d  %s" % [i + 1, str(q.options[i])], 10, 42.0 + float(i) * 8.0, UiStyle.HEAD if i == ans_sel and not _answered else INK)
 
 
 func _paint_result() -> void:
@@ -52999,7 +53069,8 @@ func _draw_banner() -> void:
     PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
 
 
-func _draw_hint(text: String) -> void:
+func _draw_hint(raw: String) -> void:
+    var text := Controls.world_hint(raw)  # R34: a remapped key (or a pad) shows what works now
     var size := get_viewport_rect().size
     var chars := int((size.x - 16.0) / 4.0)
     var words := text.split(" ")
@@ -53080,8 +53151,9 @@ var table_i := 0
 var model_i := 0
 var mutator := ""
 var sel := 0
-var seed_buf := ""
-var seed_focus := 0  # 0 text field, 1 RANDOM, 2 TODAY
+var seed_buf := ""  # the six hex digits on the wheels of the seed page
+var seed_focus := 0  # 0 the wheels, 1 RANDOM, 2 TODAY, 3 OK
+var seed_col := 0  # the wheel in focus (0..5; 6 = just past the last one, after typing all six)
 var last_launch := {}  # what the last launch() started (tests): {game, options}
 
 var _on_close := Callable()
@@ -53099,7 +53171,7 @@ var _under_tools := false  # the seed page was opened from the toolbox page
 
 # the seed field has the focus: letters type
 func is_typing() -> bool:
-    return is_open and mode == "seed" and seed_focus == 0
+    return false  # the seed page is six digit wheels now (R14 6): nothing is typed as free text
 
 
 func _ready() -> void:
@@ -53311,8 +53383,9 @@ func _outfit_cancelled() -> void:
 func open_seed(on_close := Callable()) -> void:
     if is_open:
         return
-    seed_buf = ""
+    seed_buf = Difficulty.seed_text()
     seed_focus = 0
+    seed_col = 0
     _show("seed", on_close)
 
 
@@ -53343,24 +53416,72 @@ func close(go := false) -> void:
         cb.call(go)
 
 
+# ---- the Free Play menu (R9, R14): the functions the keyboard has on ` (the next mutator), Shift+F10 (the toolbox), O (a team
+# outing) and 1-7 (another person), as a card: a pad, a mouse or a finger picks from it. The pause menu's FREE PLAY MENU row opens it.
+func free_menu_rows() -> Array:
+    var rows := []
+    if not Difficulty.fixed_take:
+        rows.append({"label": "MUTATOR: %s" % (Mutators.tag() if Mutators.forced != "" else "NONE"), "id": "mutator"})
+    rows.append({"label": "TOOLBOX", "id": "tools"})
+    rows.append({"label": "TEAM OUTING", "id": "outing"})
+    rows.append({"label": "NEXT PERSON", "id": "person"})
+    rows.append({"label": "CLOSE", "id": "close"})
+    return rows
+
+
+func open_free_menu() -> bool:
+    if Campaign.active or Campaign.mode != Campaign.FREE or Game.title_mode or Game.busy or is_open:
+        return false
+    Cards.ask("Free Play", "Mutator, toolbox, an outing, or somebody else for a while.", free_menu_rows(), free_menu_pick)
+    return true
+
+
+func free_menu_pick(id: String) -> void:
+    match id:
+        "mutator":  # the next one, and the card comes back so you can keep stepping
+            Mutators.cycle_forced(1)
+            open_free_menu.call_deferred()
+        "tools":
+            open_tools.call_deferred()
+        "outing":
+            Controls.tap.call_deferred("outing")
+        "person":
+            var who: Node = Players.player0(get_tree().current_scene)
+            if who != null and who.can_swap():
+                who.swap_character(1)
+
+
 # ---- seed page ---------------------------------------------------------------------------------------
 func type_char(ch: String) -> void:
-    if seed_buf.length() < MAX_TEXT:
-        seed_buf += ch.to_upper()
-        _canvas.queue_redraw()
+    var c := ch.to_upper()
+    if c.length() != 1 or not ((c >= "0" and c <= "9") or (c >= "A" and c <= "F")):
+        return
+    var at := mini(seed_col, 5)
+    seed_buf = seed_buf.substr(0, at) + c + seed_buf.substr(at + 1)
+    seed_col = mini(seed_col + 1, 6)
+    _canvas.queue_redraw()
+
+
+# turn the wheel in focus one step up or down (0..F, round and round)
+func seed_turn(step: int) -> void:
+    var at := mini(seed_col, 5)
+    seed_col = at
+    var v := posmod(seed_buf.substr(at, 1).hex_to_int() + step, 16)
+    seed_buf = seed_buf.substr(0, at) + ("%X" % v) + seed_buf.substr(at + 1)
+    _canvas.queue_redraw()
 
 
 func backspace() -> void:
-    seed_buf = seed_buf.substr(0, maxi(0, seed_buf.length() - 1))
+    seed_col = maxi(0, seed_col - 1)
     _canvas.queue_redraw()
 
 
 func paste() -> void:
-    var clip := DisplayServer.clipboard_get().strip_edges().to_upper()
-    for i in clip.length():
-        var c := clip[i]
-        if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
-            type_char(c)
+    var v := Difficulty.parse_seed(DisplayServer.clipboard_get())
+    if v > 0:
+        seed_buf = "%06X" % v
+        seed_col = 0
+        _canvas.queue_redraw()
 
 
 # apply the typed text; an empty field keeps the current seed. Returns the seed now in force.
@@ -53384,12 +53505,12 @@ func seed_today() -> int:
 
 func _seed_act(which: int) -> void:
     match which:
-        0:
-            seed_commit()
         1:
             seed_random()
-        _:
+        2:
             seed_today()
+        _:
+            seed_commit()
     close(false)
 
 
@@ -53489,7 +53610,7 @@ func activate() -> void:
 
 # ---- input -----------------------------------------------------------------------------------------
 func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10 and event.shift_pressed:
+    if event is InputEventKey and event.pressed and not event.echo and Controls.word(event) == "f10" and event.shift_pressed:
         if can_open() and Campaign.mode == Campaign.FREE:
             open_tools()
             get_viewport().set_input_as_handled()
@@ -53519,14 +53640,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _key(event: InputEvent) -> void:
-    if event is InputEventKey and event.keycode == KEY_F9:
+    if Controls.word(event) == "f9":
         Game.cycle_format()
         return
     if mode == "seed":
-        if event is InputEventKey:
-            _seed_key(event)
-        else:
-            _seed_pad(event)
+        _seed_input(event)
         return
     var dir := Controls.nav(event)
     if dir == "up":
@@ -53544,56 +53662,49 @@ func _key(event: InputEvent) -> void:
 
 
 # the seed entry from a pad: Up / Down move the focus, A presses the focused button, B closes (typing is keyboard only)
-func _seed_pad(event: InputEvent) -> void:
-    var dir := Controls.nav(event)
-    if dir == "down":
-        seed_focus = (seed_focus + 1) % 3
-    elif dir == "up":
-        seed_focus = (seed_focus + 2) % 3
-    elif dir == "left" and seed_focus > 0:
-        seed_focus = 1
-    elif dir == "right" and seed_focus > 0:
-        seed_focus = 2
-    elif Controls.confirm(event):
-        _seed_act(seed_focus)
-    elif Controls.back(event):
+func _seed_input(event: InputEvent) -> void:
+    var dir := Controls.nav(event, false)
+    var key_name := Controls.word(event)
+    if Controls.back(event, false):
         close(false)
         return
+    if Controls.confirm(event, false, false):
+        _seed_act(seed_focus)
+        return
+    if Controls.matches(event, "pick_next"):
+        seed_focus = (seed_focus + 1) % 4
+    elif Controls.matches(event, "pick_prev"):
+        seed_focus = (seed_focus + 3) % 4
+    elif seed_focus == 0:
+        if dir == "up" or dir == "down":
+            seed_turn(1 if dir == "up" else -1)
+        elif dir == "left":
+            seed_col = maxi(0, mini(seed_col, 5) - 1)
+        elif dir == "right":
+            if seed_col >= 5:
+                seed_focus = 1
+            else:
+                seed_col += 1
+        elif key_name == "backspace":
+            backspace()
+        elif key_name == "v" and Controls.ctrl(event):
+            paste()
+        elif not Controls.ctrl(event):
+            type_char(key_name)
+    elif dir == "left":
+        seed_focus -= 1
+        seed_col = 5
+    elif dir == "right":
+        seed_focus = mini(seed_focus + 1, 3)
+    elif dir == "up" or dir == "down":
+        seed_focus = 0
     _canvas.queue_redraw()
 
 
-func _seed_key(event: InputEventKey) -> void:
-    match event.keycode:
-        KEY_ESCAPE:
-            close(false)
-        KEY_ENTER, KEY_KP_ENTER:
-            _seed_act(seed_focus)
-        KEY_TAB, KEY_DOWN:
-            seed_focus = (seed_focus + 1) % 3
-            _canvas.queue_redraw()
-        KEY_UP:
-            seed_focus = (seed_focus + 2) % 3
-            _canvas.queue_redraw()
-        KEY_LEFT:
-            if seed_focus > 0:
-                seed_focus = 1
-                _canvas.queue_redraw()
-        KEY_RIGHT:
-            if seed_focus > 0:
-                seed_focus = 2
-                _canvas.queue_redraw()
-        KEY_BACKSPACE:
-            backspace()
-        KEY_V:
-            if event.ctrl_pressed:
-                paste()
-            elif seed_focus == 0:
-                type_char("V")
-        _:
-            if seed_focus == 0 and event.unicode > 32 and event.unicode < 127 and not event.ctrl_pressed:
-                var c := char(event.unicode).to_upper()
-                if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or c in ["#", "-", "_"]:
-                    type_char(c)
+func _seed_wheel(i: int, step: int) -> void:
+    seed_focus = 0
+    seed_col = i
+    seed_turn(step)
 
 
 func _hit(at: Vector2) -> Array:
@@ -53630,10 +53741,11 @@ func _click(at: Vector2) -> void:
                 change(1 if at.x >= rect.position.x + rect.size.x * 0.5 else -1)
         "focus":
             seed_focus = int(r[2])
-            if seed_focus > 0:
-                _seed_act(seed_focus)
-            else:
-                _canvas.queue_redraw()
+            _seed_act(seed_focus)
+        "wheel_up":
+            _seed_wheel(int(r[2]), 1)
+        "wheel_dn":
+            _seed_wheel(int(r[2]), -1)
 
 
 # ---- drawing ---------------------------------------------------------------------------------------
@@ -53683,25 +53795,31 @@ func _paint_tools(size: Vector2) -> void:
     var hint := "UP DOWN ROW  LEFT RIGHT CHANGE  ENTER  ESC CLOSE"
     if r.size.x < 250.0:
         hint = "ARROWS  ENTER  ESC"
-    UiStyle.footer(_canvas, r, hint)
+    UiStyle.footer(_canvas, r, Controls.hint(hint))
 
 
 func _paint_seed(size: Vector2) -> void:
     var r := UiStyle.panel_rect(size, 220.0, 70.0)
     var body := UiStyle.panel(_canvas, r, "RUN SEED", "NOW " + Difficulty.seed_text())
-    var field := Rect2(body.position.x, body.position.y + 1.0, body.size.x, 11.0)
-    _canvas.draw_rect(field, UiStyle.WHITE)
-    _canvas.draw_rect(field, UiStyle.HEAD if seed_focus == 0 else UiStyle.SOFT, false, 1.0)
-    var shown := seed_buf
-    if shown == "" and seed_focus != 0:
-        shown = "HEX OR ANY WORD"
-    var caret := "_" if (seed_focus == 0 and int(Time.get_ticks_msec() / 400) % 2 == 0) else ""
-    UiStyle.text(_canvas, shown + caret, field.position.x + 3.0, field.position.y + 2.0, UiStyle.INK if seed_buf != "" else UiStyle.MUTED)
-    _rects.append([field, "focus", 0])
-    var labels := ["RANDOM", "TODAY " + Difficulty.date_label()]
+    # six digit wheels: Up / Down (or a click on the top / bottom half) turn the one in focus
+    var cell_w := 18.0
+    var x0 := body.position.x + floorf((body.size.x - (cell_w * 6.0 + 10.0)) * 0.5)
+    for i in 6:
+        var cell := Rect2(x0 + float(i) * (cell_w + 2.0), body.position.y, cell_w, 21.0)
+        var on := seed_focus == 0 and mini(seed_col, 5) == i
+        _canvas.draw_rect(cell, UiStyle.WHITE)
+        _canvas.draw_rect(cell, UiStyle.HEAD if on else UiStyle.SOFT, false, 1.0)
+        var mid := cell.position.x + floorf(cell_w * 0.5)
+        for k in 3:  # the little arrows above and below the digit
+            _canvas.draw_rect(Rect2(mid - float(k), cell.position.y + 2.0 + float(k), 1.0 + 2.0 * float(k), 1.0), UiStyle.HEAD if on else UiStyle.MUTED)
+            _canvas.draw_rect(Rect2(mid - float(k), cell.end.y - 3.0 - float(k), 1.0 + 2.0 * float(k), 1.0), UiStyle.HEAD if on else UiStyle.MUTED)
+        UiStyle.text(_canvas, seed_buf.substr(i, 1), mid - 1.0, cell.position.y + 8.0, UiStyle.INK)
+        _rects.append([Rect2(cell.position, Vector2(cell_w, 10.0)), "wheel_up", i])
+        _rects.append([Rect2(cell.position + Vector2(0.0, 11.0), Vector2(cell_w, 10.0)), "wheel_dn", i])
+    var labels := ["RANDOM", "TODAY " + Difficulty.date_label(), "OK"]
     var x := body.position.x
-    var by := body.position.y + 16.0
-    for k in 2:
+    var by := body.position.y + 24.0
+    for k in 3:
         var w := float(PixelFont.width(labels[k])) + 10.0
         var br := Rect2(x, by, w, 11.0)
         _canvas.draw_rect(br, UiStyle.HEAD if seed_focus == k + 1 else UiStyle.MUTED)
@@ -53709,13 +53827,11 @@ func _paint_seed(size: Vector2) -> void:
         _rects.append([br, "focus", k + 1])
         x += w + 4.0
     if Difficulty.daily != "":
-        UiStyle.text(_canvas, "DAILY SEED RUN", body.position.x, by + 15.0, UiStyle.GREEN)
-    var hint := "TYPE OR PASTE  TAB  ENTER OK  ESC"
+        UiStyle.text(_canvas, "DAILY SEED RUN", body.position.x, by + 14.0, UiStyle.GREEN)
+    var hint := "ARROWS TURN  TAB  ENTER OK  ESC"
     if r.size.x < 200.0:
-        hint = "TYPE  TAB  ENTER  ESC"
-    UiStyle.footer(_canvas, r, hint)
-    if seed_focus == 0:  # keep the caret blinking
-        _canvas.queue_redraw()
+        hint = "ARROWS  TAB  ENTER  ESC"
+    UiStyle.footer(_canvas, r, Controls.hint(hint))
 ''')
 
 
@@ -54471,7 +54587,7 @@ func _unhandled_input(event: InputEvent) -> void:
             confirm()
         elif Controls.back(event):
             back()
-        elif event is InputEventKey and event.keycode == KEY_F9:
+        elif Controls.word(event) == "f9":
             Game.cycle_format()
         else:
             return
@@ -54542,15 +54658,15 @@ func _options_key(event: InputEvent, dir: String) -> bool:
         change_start(-1)
     elif Controls.matches(event, "pick_next"):
         change_start(1)
-    elif event is InputEventKey and event.keycode in [KEY_X, KEY_T, KEY_M, KEY_B]:
-        match event.keycode:
-            KEY_X:
+    elif Controls.word(event) in ["x", "t", "m", "b"]:
+        match Controls.word(event):
+            "x":
                 open_seed()
-            KEY_T:
+            "t":
                 open_tools()
-            KEY_M:
-                change_mut(-1 if event.shift_pressed else 1)
-            KEY_B:
+            "m":
+                change_mut(-1 if Controls.shift(event) else 1)
+            "b":
                 toggle_mut_mode()
     else:
         return false
@@ -54568,7 +54684,7 @@ func _build_key(event: InputEvent, dir: String) -> bool:
         _panel.change(-1)
     elif dir == "right":
         _panel.change(1)
-    elif event is InputEventKey and event.keycode == KEY_P:
+    elif Controls.matches(event, "preset"):
         _panel.cycle_preset(1)
     else:
         return false
@@ -54591,7 +54707,7 @@ func _create_input(event: InputEvent) -> bool:
         queue_redraw()
         return true
     if Controls.matches(event, "page_prev") or Controls.matches(event, "page_next"):
-        var letter: bool = event is InputEventKey and event.keycode in [KEY_Q, KEY_E]
+        var letter: bool = Controls.word(event) in ["q", "e"]
         if not (letter and on_name):  # Q and E are letters on the NAME row (a pad's shoulder buttons always turn the page)
             _turn_page(-1 if Controls.matches(event, "page_prev") else 1)
             return true
@@ -54685,21 +54801,17 @@ func set_page(index: int) -> void:
 func _type_key(event: InputEvent) -> bool:
     if not event is InputEventKey:
         return false
-    var code: int = event.keycode
+    var key_name := Controls.word(event)
     var buf := str(Look.look.get("name", ""))
-    if code == KEY_BACKSPACE:
+    if key_name == "backspace":
         if buf == "":
             return false
         Look.look["name"] = buf.left(buf.length() - 1)
         _refresh_look()
         return true
-    if code in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE, KEY_TAB]:
+    if key_name in ["enter", "esc", "tab"]:
         return false
-    var ch := ""
-    if event.unicode > 0:
-        ch = char(event.unicode)
-    elif code >= KEY_A and code <= KEY_Z:
-        ch = char(code)
+    var ch := Controls.typed(event)
     if not Look.name_char_ok(ch):
         return false
     if buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
@@ -55005,6 +55117,11 @@ func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
     PixelFont.draw(self, s, p, c)
 
 
+# a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
+func _keys_line(s: String, y: float) -> void:
+    _ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
+
+
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
     _txt(s, Vector2(floorf((_size().x - float(PixelFont.width(s))) * 0.5), y), c)
 
@@ -55055,7 +55172,7 @@ func _draw() -> void:
     _ctxt(heading, 22.0 if narrow else 6.0, GOLD)
     var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
     draw_rect(back_r, PANEL)
-    _txt("< ESC", back_r.position + Vector2(2, 2), DIM)
+    _txt(Controls.hint("< ESC"), back_r.position + Vector2(2, 2), DIM)
     _rects.append([back_r, "back", 0])
     if step == "char":
         _draw_chars(size, narrow)
@@ -55075,31 +55192,31 @@ func _draw() -> void:
         _draw_summary(size, narrow)
     if step == "create":
         if create_modal != "":
-            _ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+            _keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
         elif narrow:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+            _keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
         else:
             var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
             if float(PixelFont.width(keys)) > size.x - 4.0:
                 keys = "Q E PAGE  ARROWS  TAB HOLD POSE  ENTER GO  ESC BACK"
-            _ctxt(keys, size.y - 9.0, DIM)
+            _keys_line(keys, size.y - 9.0)
         return
     if step == "build":
         if narrow:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("P PRESET  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+            _keys_line("P PRESET  ENTER GO  ESC BACK", size.y - 12.0)
         else:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0)
         return
     if step == "options":
         if narrow:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-            _ctxt("ENTER GO  ESC BACK", size.y - 12.0, DIM)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+            _keys_line("ENTER GO  ESC BACK", size.y - 12.0)
         else:
-            _ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0)
         return
-    _ctxt("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+    _keys_line("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
@@ -55770,7 +55887,7 @@ func _unhandled_input(event: InputEvent) -> void:
         return
     var go := false
     if Controls.pressed(event):
-        if event is InputEventKey and event.keycode == KEY_F9:
+        if Controls.word(event) == "f9":
             Game.cycle_format()
             _menu.queue_redraw()
         go = Controls.confirm(event)
@@ -56214,12 +56331,14 @@ func _draw_menu() -> void:
         shown = CONTINUE_ROWS
         _scroll = scroll_for(_sel, _items.size())
     var rows := shown + (1 if _heading != "" else 0)
-    var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 10.0)
+    # R14 (5): the tall format has the room for thumb-sized rows (19 px); the others keep the 8 to 10 px rows
+    var pitch := clampf(floorf(avail / float(maxi(1, rows))), 8.0, 20.0 if size.y > size.x else 10.0)
+    var ty := floorf((pitch - 1.0 - 5.0) * 0.5)
     if _heading != "":
         var hw := float(PixelFont.width(_heading)) + 12.0
         var hr := Rect2(floorf((size.x - hw) * 0.5), y, hw, pitch - 1.0)
         _menu.draw_rect(hr, Color(0.05, 0.07, 0.12, 0.95))
-        PixelFont.draw(_menu, _heading, hr.position + Vector2(6, 2), Color("f5d442"))
+        PixelFont.draw(_menu, _heading, hr.position + Vector2(6, ty), Color("f5d442"))
         y += pitch
     for i in _items.size():
         var item: Dictionary = _items[i]
@@ -56234,7 +56353,7 @@ func _draw_menu() -> void:
         var back := Color("f5d442") if chosen else Color(0.05, 0.07, 0.12, 0.8)
         var ink := Color("17121f") if chosen else (Color.WHITE if item.enabled else Color("7d8595"))
         _menu.draw_rect(r, back)
-        PixelFont.draw(_menu, label, r.position + Vector2(6, 2), ink)
+        PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
     var sound := Sfx.status_text() + "  M"
     PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))
 ''')
@@ -57095,15 +57214,15 @@ func _unhandled_input(event: InputEvent) -> void:
     if Game.title_mode:
         return
     if event is InputEventKey and event.pressed and not event.echo:
-        if event.keycode == KEY_F9:
+        if Controls.word(event) == "f9":
             Game.cycle_format()
             return
         if not OS.is_debug_build():
             return  # the F-key room jumps below are for development builds only
-        if event.keycode == KEY_F11 and event.alt_pressed:
+        if Controls.word(event) == "f11" and event.alt_pressed:
             Game.go("warehouse_lot" if event.shift_pressed else "warehouse", "start")
             return
-        if event.keycode == KEY_F11 and event.ctrl_pressed:
+        if Controls.word(event) == "f11" and event.ctrl_pressed:
             var sites := []
             for t in ["dental", "law", "vet", "arch", "realty", "trailer"]:
                 for skin in ["a", "b"]:
@@ -57111,21 +57230,21 @@ func _unhandled_input(event: InputEvent) -> void:
             var at := get_tree().current_scene.scene_file_path.get_file().get_basename()
             Game.go(sites[(sites.find(at) + 1) % sites.size()], "start")
             return
-        if event.keycode == KEY_F11:
+        if Controls.word(event) == "f11":
             Game.go("escape_room" if event.shift_pressed else "bowling_alley", "start")
             return
-        if event.keycode == KEY_F12 and event.ctrl_pressed:
+        if Controls.word(event) == "f12" and event.ctrl_pressed:
             var venue := ["resort_lobby", "resort_hall", "ballroom", "breakout_a", "breakout_b", "breakout_c", "breakout_d", "vendor_hall"]
             var here := get_tree().current_scene.scene_file_path.get_file().get_basename()
             Game.go(venue[(venue.find(here) + 1) % venue.size()], "start")
             return
-        if event.keycode == KEY_F12:
+        if Controls.word(event) == "f12":
             Game.go("restaurant" if event.shift_pressed else "karaoke_bar", "start")
             return
-        if event.keycode == KEY_F6 and event.shift_pressed:
+        if Controls.word(event) == "f6" and event.shift_pressed:
             Game.go("bathroom_2", "start")
             return
-        var i: int = event.keycode - KEY_F1
+        var i: int = Controls.fkey(event) - 1
         if i >= 0 and i < SETS.size():
             Game.go(SETS[i], "start")
 ''')
@@ -57310,7 +57429,7 @@ func _reload_sheet(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if Players.coop and event.is_action_pressed(_a("character_next")):
+    if event.is_action_pressed(_a("character_next")):  # a pad's R3: the next stock person (the keyboard has 1-7)
         if can_swap():
             swap_character(1)
     if slot != 0:
@@ -57335,7 +57454,7 @@ func _unhandled_input(event: InputEvent) -> void:
         if Controls.matches(event, "give_item") and held == "nerf":
             give("")
             return
-        var i: int = event.keycode - KEY_1
+        var i: int = Controls.digit(event) - 1
         if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
             _switch_character(CHARACTERS[i])
             Campaign.refresh_free()
@@ -57647,7 +57766,8 @@ func _physics_process(delta: float) -> void:
     _roll.update(self, delta)
     var locked: bool = Game.busy
     var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
-    var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Input.is_key_pressed(KEY_SHIFT))  # the second test is for macOS
+    var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Controls.shift_held())  # the second test is for macOS
+    var roll_held := Input.is_action_pressed(_a("roll"))  # R14 (3): a pad's Roll button (LT), the touch overlay's ROLL
     var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
     var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 
@@ -57672,7 +57792,7 @@ func _physics_process(delta: float) -> void:
         velocity = Vector2.ZERO
         if state == "sitting":
             _gesture_tick(delta, locked)
-        if state == "sitting" and running and dir != 0.0 and _roll.drive(self, dir, delta):
+        if state == "sitting" and (running or roll_held) and dir != 0.0 and _roll.drive(self, dir, delta):
             pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
         elif state == "sitting" and interact and _ringing_phone() != null:
             _ringing_phone().use(self)
@@ -59184,9 +59304,9 @@ func cycle_forced(step: int) -> String:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-    if not (event is InputEventKey and event.pressed and not event.echo):
+    if not (Controls.pressed(event) and Controls.matches(event, "mutator")):
         return
-    if event.keycode != KEY_QUOTELEFT or Game.title_mode or Campaign.active or Game.ui_open:
+    if Game.title_mode or Campaign.active or Game.ui_open:
         return
     if Campaign.mode != Campaign.FREE or Difficulty.fixed_take:
         return
@@ -60934,7 +61054,7 @@ func _input(event: InputEvent) -> void:
         return
     if Controls.pressed(event):
         var dir := Controls.nav(event)
-        if event is InputEventKey and event.keycode == KEY_F9:
+        if Controls.word(event) == "f9":
             Game.cycle_format()
         elif dir == "left":
             go(-1)
@@ -61067,7 +61187,7 @@ func _draw() -> void:
         _draw_medals(pg.medals, body, cols, colw, gap)
         if detail and sel < pg.medals.size():
             _draw_detail(size, pg.medals[sel])
-    UiStyle.footer(self, r, "ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK")
+    UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS PAGE  ESC BACK"))
     _button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
     _button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
     _button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))
@@ -61131,7 +61251,7 @@ func _draw_detail(size: Vector2, m: Dictionary) -> void:
         for line in UiStyle.wrap_text("UNLOCKS: " + ", ".join(gives), chars):
             UiStyle.text(self, str(line), body.position.x, y + 2.0, UiStyle.GOLD.darkened(0.35))
             y += 7.0
-    UiStyle.footer(self, r, "ENTER OR ESC = CLOSE")
+    UiStyle.footer(self, r, Controls.hint("ENTER OR ESC = CLOSE"))
 
 
 func _draw_medals(list: Array, body: Rect2, _cols: int, colw: float, gap: float) -> void:
@@ -66078,17 +66198,17 @@ static func enter(cp) -> void:
     send(cp)
 
 
-static func key(cp, code: int) -> void:
-    match code:
-        KEY_LEFT:
+static func key(cp, name: String) -> void:
+    match name:
+        "left":
             change(ROWS[int(SalesCampaign.qb.get("row", 0))], -1)
-        KEY_RIGHT:
+        "right":
             change(ROWS[int(SalesCampaign.qb.get("row", 0))], 1)
-        KEY_TAB:
+        "tab":
             SalesCampaign.qb["page"] = 1 - int(SalesCampaign.qb.get("page", 0))
-        KEY_S:
+        "s":
             send(cp)
-        KEY_B:
+        "b":
             close()
     cp._canvas.queue_redraw()
 
@@ -66869,7 +66989,7 @@ static func paint_app(cp) -> void:
     if cp.tv_mode:
         var area: Rect2 = cp._area
         paint(cp._canvas, area, mode, cp.dash_t, opts)
-        var hint := "ESC CLOSES"
+        var hint: String = Controls.hint("ESC CLOSES")
         var tr := Rect2(area.position.x + floorf((area.size.x - _tw(hint)) * 0.5) - 2.0, area.position.y, _tw(hint) + 4.0, 7.0)
         if area.size.x >= 170.0:
             cp._fill(tr, BG)
@@ -67712,34 +67832,42 @@ static func enter(cp) -> void:
         action(cp, ["crm", "quote"])
 
 
-static func key(cp, code: int) -> void:
+# a key by name ("c", "v", "q", "d", "a", "f", "u", "i", "left", "right": Controls.word)
+static func key(cp, name: String) -> void:
     if SalesCampaign.crm_view == "build":
-        SalesCampaign.QuoteBuilder.key(cp, code)
+        SalesCampaign.QuoteBuilder.key(cp, name)
         return
-    match code:
-        KEY_C:
+    match name:
+        "c":
             action(cp, ["crm", "call"])
-        KEY_V:
+        "v":
             action(cp, ["crm", "visit"])
-        KEY_Q:
+        "q":
             action(cp, ["crm", "quote"])
-        KEY_D:
+        "d":
             action(cp, ["crm", "drop"])
-        KEY_A:
+        "a":
             action(cp, ["crm", "assess"])
-        KEY_F:
+        "f":
             action(cp, ["crm", "follow"])
-        KEY_U:
+        "u":
             action(cp, ["crm", "upsell"])
-        KEY_I:
+        "i":
             action(cp, ["crm", "more"])
-        KEY_LEFT, KEY_RIGHT:
+        "left", "right":
             var at := 0
             for i in TABS.size():
                 if TABS[i][0] == SalesCampaign.crm_tab:
                     at = i
-            SalesCampaign.crm_tab = str(TABS[clampi(at + (1 if code == KEY_RIGHT else -1), 0, TABS.size() - 1)][0])
+            SalesCampaign.crm_tab = str(TABS[clampi(at + (1 if name == "right" else -1), 0, TABS.size() - 1)][0])
     cp._canvas.queue_redraw()
+
+
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+static func hot_keys() -> Array:
+    if SalesCampaign.crm_view == "build":
+        return [["s", "SEND"], ["b", "BACK"], ["tab", "PAGE"]]
+    return [["c", "CALL"], ["v", "VISIT"], ["q", "QUOTE"], ["a", "ASSESS"], ["f", "CHASE"], ["d", "DROP"], ["u", "UPSELL"], ["i", "INFO"]]
 
 
 static func action(cp, parts: PackedStringArray) -> void:
@@ -69181,6 +69309,8 @@ write("scripts/controls.gd", '''extends Node
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
+const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
     "move_left": [[KEY_A, KEY_LEFT], [JOY_BUTTON_DPAD_LEFT], [[JOY_AXIS_LEFT_X, -1.0]]],
@@ -69214,7 +69344,32 @@ const ACTIONS := {
     "character_next": [[], [JOY_BUTTON_RIGHT_STICK], []],  # co-op: the next stock person for this player (slot 0 has the 1-7 keys)
     "mute": [[KEY_M], [], []],
     "pause": [[KEY_PAUSE], [JOY_BUTTON_START], []],
+    # R14 (1b): the last raw keys, as actions. A pad reaches each one by its button, or by a row on screen where noted
+    "nudge": [[KEY_N], [JOY_BUTTON_Y], []],  # the escape room: ask for a nudge
+    "outing": [[KEY_O], [], []],  # Free Play: take the team out (a pad: the pause menu's FREE PLAY row)
+    "mutator": [[KEY_QUOTELEFT], [], []],  # Free Play: the next mutator (a pad: the pause menu's FREE PLAY row)
+    "preset": [[KEY_P], [JOY_BUTTON_Y], []],  # character select, the build step: the next preset
+    "pray": [[KEY_P], [JOY_BUTTON_Y], []],  # the printer game
+    "shake_left": [[KEY_A], [JOY_BUTTON_LEFT_SHOULDER], []],  # the printer game: shake the toner
+    "shake_right": [[KEY_D], [JOY_BUTTON_RIGHT_SHOULDER], []],
+    "hot_next": [[], [JOY_BUTTON_Y], []],  # the computer's letter hotkeys on a pad: Y steps through them ...
+    "hot_go": [[], [JOY_BUTTON_X], []],  # ... and X presses the chosen one (Computer.hot_keys)
+    "roll": [[], [], [[JOY_AXIS_TRIGGER_LEFT, 1.0]]],  # seated: hold to roll the chair with the stick (the keyboard holds Shift = run)
 }
+
+# the name of a key, for the screens that take keys by name (Controls.word): every other key is its letter, digit or F number
+const WORDS := {
+    KEY_TAB: "tab", KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "up", KEY_DOWN: "down", KEY_ENTER: "enter", KEY_KP_ENTER: "enter",
+    KEY_ESCAPE: "esc", KEY_BACKSPACE: "backspace", KEY_SPACE: "space", KEY_PAGEUP: "pgup", KEY_PAGEDOWN: "pgdn",
+    KEY_BRACKETLEFT: "[", KEY_BRACKETRIGHT: "]", KEY_QUOTELEFT: "`", KEY_SHIFT: "shift",
+}
+
+# the words a hint line uses for the menu keys -> the menu role (MENU_ROLES) that key belongs to
+const HINT_ROLES := {"ENTER": "menu_confirm", "ESC": "menu_back", "UP": "menu_up", "DOWN": "menu_down", "LEFT": "menu_left", "RIGHT": "menu_right", "Z": "game_a", "X": "game_b", "SHIFT": "game_cool"}
+# what a pad shows for those words (the arrows stay: the D-pad has them)
+const HINT_PAD := {"ENTER": "(A)", "SPACE": "(A)", "ESC": "(B)", "ARROWS": "STICK", "TAB": "(RB)", "Z": "(A)", "X": "(B)", "SHIFT": "(B)", "E": "(A)"}
+# the words of a walking-around prompt (the HUD hint, the room hints) -> the action
+const HINT_WORLD := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "SPACE": "jump", "SHIFT": "run", "TAB": "pick_next", "Z": "aim"}
 
 # menu directions by key: the arrows always, the letters when a screen asks for them
 const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right"}
@@ -69288,6 +69443,9 @@ const HELP := [
 var rumble_on := true  # pad rumble for hits, strikes and crashes (co-op phase 8)
 var binds_path := "user://controls.cfg"
 var capturing := false  # the remap page is waiting for a key: nothing is translated
+var pad_active := false  # the last press came from a pad (the hint lines then show pad buttons)
+var touch_override := -1  # -1 = ask the display server, 0 = never, 1 = always (tests): the touch overlay
+var touch: CanvasLayer = null  # the touch overlay (scripts/touch_overlay.gd); only exists on a touch screen
 var _overrides := {}  # action -> the physical key code it was remapped to
 var _pad_overrides := {}  # action -> the joypad button it was remapped to
 var _alias := {}  # physical key -> the key a menu or mini-game screen looks for (MENU_ROLES)
@@ -69301,6 +69459,28 @@ var _stick_result := false
 func _ready() -> void:
     ensure()
     load_binds()
+    touch_refresh.call_deferred()
+
+
+# make (or remove) the touch overlay to match touch_on(). It is the last child of the root so it sees a touch before any
+# screen does (input goes to the last nodes first) and stays last when a scene is swapped in.
+func touch_refresh() -> void:
+    var want := touch_on()
+    var root := get_tree().root
+    if want and touch == null:
+        touch = TOUCH_OVERLAY.new()
+        touch.name = "TouchOverlay"
+        root.add_child(touch)
+        root.child_entered_tree.connect(_keep_touch_last)
+    elif not want and touch != null:
+        root.child_entered_tree.disconnect(_keep_touch_last)
+        touch.queue_free()
+        touch = null
+
+
+func _keep_touch_last(node: Node) -> void:
+    if touch != null and node != touch:
+        get_tree().root.move_child.call_deferred(touch, -1)
 
 
 # register every action that is missing (the player and the tests may also call this; it is safe to repeat)
@@ -69361,6 +69541,7 @@ func rumble(slot: int, strength := 0.5, secs := 0.2) -> void:
 # a pressed alias key reaches the screens as the key they look for. Controls is the first autoload, so this runs before any
 # screen; the typing screens (the name row, the seed field) are left alone so letters still type.
 func _input(event: InputEvent) -> void:
+    _note_device(event)
     if _alias.is_empty() or capturing or not event is InputEventKey:
         return
     var canon: int = _alias.get(int(event.physical_keycode), 0)
@@ -69728,6 +69909,168 @@ func _stick_push(event: InputEventJoypadMotion) -> bool:
     _stick[key] = now
     _stick_result = now != 0 and now != was
     return _stick_result
+
+
+# ---- keys by name (R14 1b): no script outside this file reads a raw key code (tests/raw_keys.gd) ----
+# the name of a key event or key code: "a".."z", "0".."9" ("kp0".."kp9" on the keypad), "f1".."f12", or a WORDS entry; "" else
+func word(what: Variant) -> String:
+    var code := 0
+    if what is InputEventKey:
+        code = what.keycode
+    elif typeof(what) == TYPE_INT:
+        code = what
+    if code >= KEY_A and code <= KEY_Z:
+        return char(code).to_lower()
+    if code >= KEY_0 and code <= KEY_9:
+        return str(code - KEY_0)
+    if code >= KEY_KP_0 and code <= KEY_KP_9:
+        return "kp%d" % (code - KEY_KP_0)
+    if code >= KEY_F1 and code <= KEY_F12:
+        return "f%d" % (code - KEY_F1 + 1)
+    return str(WORDS.get(code, ""))
+
+
+# 0..9 for a digit key (the keypad too when asked), -1 for anything else
+func digit(event: InputEvent, keypad: bool = false) -> int:
+    var w := word(event)
+    if w.length() == 1 and w >= "0" and w <= "9":
+        return int(w)
+    if keypad and w.begins_with("kp"):
+        return int(w.substr(2))
+    return -1
+
+
+# 1..12 for an F key, 0 for anything else
+func fkey(event: InputEvent) -> int:
+    var w := word(event)
+    return int(w.substr(1)) if w.length() >= 2 and w.begins_with("f") and w.substr(1).is_valid_int() else 0
+
+
+# the physical key of a key event (what a remap stores), 0 for anything else
+func physical(event: InputEvent) -> int:
+    return int(event.physical_keycode) if event is InputEventKey else 0
+
+
+# press an action from code (a menu row or the touch overlay standing in for its key): the screens that ask
+# Controls.pressed(event) and Controls.matches(event, action) take it like the key
+func tap(action: String) -> void:
+    var ev := InputEventAction.new()
+    ev.action = action
+    ev.pressed = true
+    Input.parse_input_event(ev)
+    var up := InputEventAction.new()
+    up.action = action
+    up.pressed = false
+    Input.parse_input_event(up)
+
+
+# the modifiers of a key event
+func shift(event: InputEvent) -> bool:
+    return event is InputEventKey and event.shift_pressed
+
+
+func ctrl(event: InputEvent) -> bool:
+    return event is InputEventKey and event.ctrl_pressed
+
+
+func alt(event: InputEvent) -> bool:
+    return event is InputEventKey and event.alt_pressed
+
+
+# either Shift is down right now (macOS reports the modifiers by their logical key, so the run action alone can miss it)
+func shift_held() -> bool:
+    return Input.is_key_pressed(KEY_SHIFT)
+
+
+# the character a key event types ("" for none): text entry (a name, a number)
+func typed(event: InputEvent) -> String:
+    if not event is InputEventKey:
+        return ""
+    if event.unicode > 0:
+        return char(event.unicode)
+    if event.keycode >= KEY_A and event.keycode <= KEY_Z:
+        return char(event.keycode)
+    return ""
+
+
+# ---- what the hint lines print (R34: a hint shows the key or pad button that works NOW, not the default letter) ----
+func _note_device(event: InputEvent) -> void:
+    var pad := pad_active
+    if event is InputEventJoypadButton:
+        pad = pad or event.pressed
+    elif event is InputEventJoypadMotion:
+        pad = pad or absf(event.axis_value) >= 0.5
+    elif (event is InputEventKey or event is InputEventMouseButton) and event.pressed:
+        pad = false
+    pad_active = pad
+
+
+# the touch overlay is wanted: a touch screen (or the test override)
+func touch_on() -> bool:
+    if touch_override >= 0:
+        return touch_override == 1
+    return DisplayServer.is_touchscreen_available()
+
+
+# the current binding of an action or a menu role, as a hint prints it: the key's name, or "(A)" style for a pad button
+func label(action: String) -> String:
+    if pad_active:
+        for role in HINT_ROLES:
+            if HINT_ROLES[role] == action and HINT_PAD.has(role):
+                return str(HINT_PAD[role])
+        if ACTIONS.has(action):
+            var button := button_of(action)
+            if button >= 0:
+                return "(%s)" % button_name(button)
+            for ax in ACTIONS[action][2]:
+                if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
+                    return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+                return "STICK"
+    for r in MENU_ROLES:
+        if r[0] == action:
+            var extra := menu_key_of(action)
+            return key_name(extra) if extra > 0 else str(HINT_ROLES.find_key(action))
+    var code := key_of(action)
+    return key_name(code) if code > 0 else ""
+
+
+# a hint line with its key words swapped for what works now: a remapped menu key shows its new key, a pad shows its buttons.
+# `map` adds this screen's own letters ({"P": "pray"}: word -> action). With the default keys on a keyboard the text is unchanged.
+func hint(text: String, map: Dictionary = {}) -> String:
+    if not pad_active and _overrides.is_empty() and _alias.is_empty():
+        return text
+    var out := ""
+    var token := ""
+    for i in text.length() + 1:
+        var ch := text[i] if i < text.length() else ""
+        if ch != "" and ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
+            token += ch
+            continue
+        out += _hint_word(token, map) + ch
+        token = ""
+    return out.replace("((", "(").replace("))", ")")
+
+
+# the same for a walking-around prompt ("E: SIT", "P: PHONE"): the walking actions follow their remap
+func world_hint(text: String) -> String:
+    return hint(text, HINT_WORLD)
+
+
+func _hint_word(token: String, map: Dictionary) -> String:
+    if token == "":
+        return ""
+    if map.has(token):
+        var action := str(map[token])
+        if pad_active or _overrides.has(action):
+            var shown := label(action)
+            return shown if shown != "" else token
+        return token
+    if pad_active:
+        return str(HINT_PAD.get(token, token))
+    if HINT_ROLES.has(token):
+        var extra := menu_key_of(str(HINT_ROLES[token]))
+        return key_name(extra) if extra > 0 else token
+    return token
 ''')
 
 write("scripts/resume.gd", '''extends Node
@@ -70044,6 +70387,7 @@ func _labels() -> Array:
     elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
         rows.append("OUTFIT")
         rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
+        rows.append("FREE PLAY MENU")  # R9 / R14: the mutator, the toolbox, a team outing, the next person (Toolbox.open_free_menu)
     rows.append("QUIT TO TITLE")
     return rows
 
@@ -70058,6 +70402,7 @@ func _row_id(i: int) -> String:
     elif Campaign.mode == Campaign.FREE:
         ids.append("outfit")
         ids.append("career")
+        ids.append("free")
     ids.append("quit")
     return ids[clampi(i, 0, ids.size() - 1)]
 
@@ -70101,6 +70446,10 @@ func _activate() -> void:
         close()
         Career.open_screen.call_deferred()
         return
+    if _row_id(_sel) == "free":
+        close()
+        Toolbox.open_free_menu.call_deferred()
+        return
     if _sel == _labels().size() - 1:
         _confirm = true
         _sel = 0
@@ -70118,7 +70467,7 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
+    var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
     if settings_mode:
         h = 100.0
     if _page >= 0:
@@ -70147,12 +70496,12 @@ func _remap_key(event: InputEvent) -> void:
     Controls.capturing = _capture
     if _capture:
         if event is InputEventKey:
-            if event.keycode != KEY_ESCAPE:
+            if Controls.word(event) != "esc":
                 var done: bool
                 if _rsel < walk:
-                    done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode))
+                    done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), Controls.physical(event))
                 else:
-                    done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), int(event.physical_keycode))
+                    done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), Controls.physical(event))
                 if done:
                     Controls.save_binds()
             _capture = false
@@ -70162,8 +70511,8 @@ func _remap_key(event: InputEvent) -> void:
             _capture = false
         Controls.capturing = _capture
         return
-    var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
-    var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+    var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
+    var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
     if Controls.back(event) or Controls.matches(event, "pause"):
         _page = 0
     elif up:
@@ -70204,13 +70553,13 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
             if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
                 key_name += "  " + Controls.button_name(Controls.button_of(action))
             UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
-    UiStyle.footer(c, r, "ENTER, THEN KEY / BUTTON  ESC = BACK")
+    UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
 func _input(event: InputEvent) -> void:
     if not is_open:
         if event is InputEventKey and event.pressed and not event.echo:
-            var esc: bool = event.keycode == KEY_ESCAPE and can_open(true)
+            var esc: bool = Controls.word(event) == "esc" and can_open(true)
             var brk: bool = Controls.matches(event, "pause") and can_open(false)
             if esc or brk:
                 open()
@@ -70244,10 +70593,10 @@ func _key(event: InputEvent) -> void:
         _remap_key(event)
         _canvas.queue_redraw()
         return
-    var left: bool = event.is_action("ui_left") or (event is InputEventKey and event.keycode in [KEY_LEFT, KEY_A])
-    var right: bool = event.is_action("ui_right") or (event is InputEventKey and event.keycode in [KEY_RIGHT, KEY_D])
-    var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
-    var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+    var left: bool = event.is_action("ui_left") or Controls.word(event) in ["left", "a"]
+    var right: bool = event.is_action("ui_right") or Controls.word(event) in ["right", "d"]
+    var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
+    var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
     if Controls.matches(event, "pause") or Controls.back(event):
         if _page >= 0:
             _page = -1
@@ -70257,7 +70606,7 @@ func _key(event: InputEvent) -> void:
             _sel = _labels().size() - 1
         else:
             close()
-    elif _page >= 0 and event is InputEventKey and event.keycode == KEY_R:
+    elif _page >= 0 and Controls.word(event) == "r":
         _page = REMAP_PAGE
         _rsel = 0
         _capture = false
@@ -70309,7 +70658,7 @@ func _paint() -> void:
     var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
-    UiStyle.footer(c, r, foot)
+    UiStyle.footer(c, r, Controls.hint(foot))
 
 
 # one page of the key list: what you do on the left, the key on the right
@@ -70321,7 +70670,7 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
         UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
         UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
         y += 9.0
-    UiStyle.footer(c, r, "ARROWS = PAGE  R = REMAP  ESC = BACK")
+    UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
 ''')
 
 write("scripts/incident.gd", '''extends RefCounted
@@ -74844,6 +75193,224 @@ static func _rivals(c: Node, a: Rect2) -> void:
 		if i == room - 1 and out.size() > room:
 			text = "+%d MORE" % (out.size() - room + 1)
 		c._text(c._clip(text, chars), Vector2(x, y + float(i) * LH), out[i][1])
+''')
+
+write("scripts/touch_overlay.gd", '''extends CanvasLayer
+# gdlint:disable=max-line-length
+# The first touch overlay (roadmap R14, item 4). Only made on a touch screen (Controls.touch_on(): the display server
+# says so, or Controls.touch_override = 1 in a test): a virtual stick at the bottom left, two action buttons at the
+# bottom right, a MENU button at the top right, and two small buttons that come and go: NEXT (the next target in
+# reach) and ROLL (seated: hold it and push the stick to roll the chair).
+# It owns no game logic. Every control sends the event a pad would send (device 0), so it feeds the very same
+# Controls actions and everything a pad reaches, a finger reaches:
+#   stick   left stick axes              move, duck, the menus' up / down / left / right
+#   A       pad A                        jump, confirm
+#   USE     pad X  (walking around)      use, sit, doors, talk
+#   BACK    pad B  (a screen is open)    back, cancel
+#   MENU    pad Start                    the pause menu
+#   NEXT    pad RB                       pick the next target
+#   ROLL    the left trigger             the roll action
+# A touch that lands on a control is kept from the screens below (the mouse events the engine makes up from a touch
+# are swallowed there), so a tap on the stick never clicks a menu row under it. Touches anywhere else go through as
+# the mouse clicks every screen already takes.
+
+const PixelFont := preload("res://scripts/pixelfont.gd")
+const STICK_R := 22.0  # the stick's base radius; the knob travels this far
+const DEAD := 0.35  # of the radius: inside it the stick is centred
+const BTN := Vector2(26.0, 24.0)  # a thumb needs 19 to 24 px
+const INK := Color(0.06, 0.05, 0.1, 0.55)
+const FACE := Color(1.0, 1.0, 1.0, 0.28)
+const LIT := Color(1.0, 0.88, 0.54, 0.6)
+
+var stick_touch := -1  # the finger on the stick (-1 = none)
+var stick_vec := Vector2.ZERO  # -1..1 on each axis, what the game sees
+var held := {}  # finger index -> the id of the button under it
+
+var _canvas: Node2D
+var _sent := Vector2.ZERO  # the axis values last sent
+var _ctx := ""
+
+
+func _ready() -> void:
+    layer = 120
+    process_mode = Node.PROCESS_MODE_ALWAYS  # the pause menu is driven by it too
+    _canvas = Node2D.new()
+    add_child(_canvas)
+    _canvas.draw.connect(_paint)
+
+
+func _size() -> Vector2:
+    return get_viewport().get_visible_rect().size
+
+
+# a screen has the keys: the second button is BACK, and NEXT / ROLL are away
+func in_menu() -> bool:
+    return Game.ui_open or Game.title_mode or get_tree().paused or Cards.is_open or DayReport.is_open
+
+
+func seated() -> bool:
+    var scene := get_tree().current_scene
+    var p: Node = Players.player0(scene) if scene != null else null
+    return p != null and str(p.get("state")) == "sitting"
+
+
+func stick_center() -> Vector2:
+    return Vector2(10.0 + STICK_R, _size().y - 14.0 - STICK_R)
+
+
+# id -> Rect2 of every button shown now (the stick is a circle: stick_center, STICK_R)
+func buttons() -> Dictionary:
+    var s := _size()
+    var out := {
+        "a": Rect2(s.x - BTN.x - 4.0, s.y - BTN.y - 22.0, BTN.x, BTN.y),
+        "b": Rect2(s.x - 2.0 * BTN.x - 8.0, s.y - BTN.y - 12.0, BTN.x, BTN.y),
+        "menu": Rect2(s.x - BTN.x - 2.0, 14.0, BTN.x, 19.0),
+    }
+    if not in_menu():
+        out["next"] = Rect2(s.x - BTN.x - 4.0, s.y - 2.0 * BTN.y - 26.0, BTN.x, 20.0)
+        if seated():
+            out["roll"] = Rect2(s.x - 2.0 * BTN.x - 8.0, s.y - 2.0 * BTN.y - 16.0, BTN.x, 20.0)
+    return out
+
+
+func label_of(id: String) -> String:
+    if id == "b":  # the pad letters, so they match the hint lines ("(A) PICK  (B) BACK")
+        return "B" if in_menu() else "X"
+    return id.to_upper()
+
+
+# the control under a point: "stick", a button id, or ""
+func control_at(at: Vector2) -> String:
+    if at.distance_to(stick_center()) <= STICK_R + 8.0:
+        return "stick"
+    var list := buttons()
+    for id in list:
+        if (list[id] as Rect2).has_point(at):
+            return str(id)
+    return ""
+
+
+func _input(event: InputEvent) -> void:
+    if event is InputEventScreenTouch:
+        if event.pressed:
+            _touch_down(event.index, event.position)
+        else:
+            _touch_up(event.index)
+    elif event is InputEventScreenDrag:
+        if event.index == stick_touch:
+            _stick_to(event.position)
+            get_viewport().set_input_as_handled()
+    elif event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION:
+        # the mouse event the engine makes from a touch: not for the screens below when it is on a control
+        if stick_touch >= 0 or not held.is_empty() or control_at(event.position) != "":
+            get_viewport().set_input_as_handled()
+
+
+func _touch_down(index: int, at: Vector2) -> void:
+    var what := control_at(at)
+    if what == "":
+        return
+    get_viewport().set_input_as_handled()
+    if what == "stick":
+        stick_touch = index
+        _stick_to(at)
+    else:
+        held[index] = what
+        _send_button(what, true)
+    _canvas.queue_redraw()
+
+
+func _touch_up(index: int) -> void:
+    if index == stick_touch:
+        stick_touch = -1
+        _set_stick(Vector2.ZERO)
+        get_viewport().set_input_as_handled()
+    elif held.has(index):
+        _send_button(str(held[index]), false)
+        held.erase(index)
+        get_viewport().set_input_as_handled()
+    _canvas.queue_redraw()
+
+
+func _stick_to(at: Vector2) -> void:
+    var v := (at - stick_center()) / STICK_R
+    if v.length() > 1.0:
+        v = v.normalized()
+    _set_stick(v if v.length() >= DEAD else Vector2.ZERO)
+    _canvas.queue_redraw()
+
+
+# the stick as a pad's left stick: each axis is sent when it changes side (-1, 0, 1), which is what the menus and the
+# walking actions read
+func _set_stick(v: Vector2) -> void:
+    stick_vec = v
+    var want := Vector2(signf(v.x) if absf(v.x) >= 0.5 else 0.0, signf(v.y) if absf(v.y) >= 0.5 else 0.0)
+    if want.x != _sent.x:
+        _send_axis(JOY_AXIS_LEFT_X, want.x)
+    if want.y != _sent.y:
+        _send_axis(JOY_AXIS_LEFT_Y, want.y)
+    _sent = want
+
+
+func _send_axis(axis: JoyAxis, value: float) -> void:
+    var ev := InputEventJoypadMotion.new()
+    ev.device = 0
+    ev.axis = axis
+    ev.axis_value = value
+    Input.parse_input_event(ev)
+
+
+func _send_button(id: String, down: bool) -> void:
+    if id == "roll":
+        _send_axis(JOY_AXIS_TRIGGER_LEFT, 1.0 if down else 0.0)
+        return
+    var button := JOY_BUTTON_A
+    match id:
+        "b":
+            button = JOY_BUTTON_B if in_menu() else JOY_BUTTON_X
+        "menu":
+            button = JOY_BUTTON_START
+        "next":
+            button = JOY_BUTTON_RIGHT_SHOULDER
+    if not down and id == "b":
+        # the screen may have closed (or opened) while the finger was down: let go of both
+        for both in [JOY_BUTTON_B, JOY_BUTTON_X]:
+            _send_pad(both, false)
+        return
+    _send_pad(button, down)
+
+
+func _send_pad(button: JoyButton, down: bool) -> void:
+    var ev := InputEventJoypadButton.new()
+    ev.device = 0
+    ev.button_index = button
+    ev.pressed = down
+    ev.pressure = 1.0 if down else 0.0
+    Input.parse_input_event(ev)
+
+
+func _process(_delta: float) -> void:
+    var ctx := "%s %s %s" % [in_menu(), seated(), _size()]
+    if ctx != _ctx:
+        _ctx = ctx
+        _canvas.queue_redraw()
+
+
+func _paint() -> void:
+    var c := stick_center()
+    _canvas.draw_circle(c, STICK_R + 1.0, INK)
+    _canvas.draw_circle(c, STICK_R, Color(1.0, 1.0, 1.0, 0.12))
+    _canvas.draw_circle(c + stick_vec * (STICK_R - 8.0), 9.0, LIT if stick_touch >= 0 else FACE)
+    var list := buttons()
+    for id in list:
+        var r: Rect2 = list[id]
+        var down: bool = held.values().has(id)
+        _canvas.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2.0, 2.0)), INK)
+        _canvas.draw_rect(r, LIT if down else FACE)
+        var text := label_of(str(id))
+        var at := r.position + Vector2(floorf((r.size.x - float(PixelFont.width(text))) * 0.5), floorf((r.size.y - 5.0) * 0.5))
+        PixelFont.draw(_canvas, text, at + Vector2.ONE, INK)
+        PixelFont.draw(_canvas, text, at, Color.WHITE)
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

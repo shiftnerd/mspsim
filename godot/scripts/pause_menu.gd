@@ -110,6 +110,7 @@ func _labels() -> Array:
 	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
 		rows.append("OUTFIT")
 		rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
+		rows.append("FREE PLAY MENU")  # R9 / R14: the mutator, the toolbox, a team outing, the next person (Toolbox.open_free_menu)
 	rows.append("QUIT TO TITLE")
 	return rows
 
@@ -124,6 +125,7 @@ func _row_id(i: int) -> String:
 	elif Campaign.mode == Campaign.FREE:
 		ids.append("outfit")
 		ids.append("career")
+		ids.append("free")
 	ids.append("quit")
 	return ids[clampi(i, 0, ids.size() - 1)]
 
@@ -167,6 +169,10 @@ func _activate() -> void:
 		close()
 		Career.open_screen.call_deferred()
 		return
+	if _row_id(_sel) == "free":
+		close()
+		Toolbox.open_free_menu.call_deferred()
+		return
 	if _sel == _labels().size() - 1:
 		_confirm = true
 		_sel = 0
@@ -184,7 +190,7 @@ func _activate() -> void:
 
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
-	var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
+	var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
 	if settings_mode:
 		h = 100.0
 	if _page >= 0:
@@ -213,12 +219,12 @@ func _remap_key(event: InputEvent) -> void:
 	Controls.capturing = _capture
 	if _capture:
 		if event is InputEventKey:
-			if event.keycode != KEY_ESCAPE:
+			if Controls.word(event) != "esc":
 				var done: bool
 				if _rsel < walk:
-					done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), int(event.physical_keycode))
+					done = Controls.rebind(str(Controls.REMAPPABLE[_rsel]), Controls.physical(event))
 				else:
-					done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), int(event.physical_keycode))
+					done = Controls.rebind_menu(str(Controls.MENU_ROLES[_rsel - walk][0]), Controls.physical(event))
 				if done:
 					Controls.save_binds()
 			_capture = false
@@ -228,8 +234,8 @@ func _remap_key(event: InputEvent) -> void:
 			_capture = false
 		Controls.capturing = _capture
 		return
-	var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
-	var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+	var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
+	var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
 	if Controls.back(event) or Controls.matches(event, "pause"):
 		_page = 0
 	elif up:
@@ -270,13 +276,13 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 			if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
 				key_name += "  " + Controls.button_name(Controls.button_of(action))
 			UiStyle.text(c, key_name, rr.position.x + rr.size.x - 4.0 - float(key_name.length() * 4), rr.position.y + 3.0, col)
-	UiStyle.footer(c, r, "ENTER, THEN KEY / BUTTON  ESC = BACK")
+	UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
 
 
 func _input(event: InputEvent) -> void:
 	if not is_open:
 		if event is InputEventKey and event.pressed and not event.echo:
-			var esc: bool = event.keycode == KEY_ESCAPE and can_open(true)
+			var esc: bool = Controls.word(event) == "esc" and can_open(true)
 			var brk: bool = Controls.matches(event, "pause") and can_open(false)
 			if esc or brk:
 				open()
@@ -310,10 +316,10 @@ func _key(event: InputEvent) -> void:
 		_remap_key(event)
 		_canvas.queue_redraw()
 		return
-	var left: bool = event.is_action("ui_left") or (event is InputEventKey and event.keycode in [KEY_LEFT, KEY_A])
-	var right: bool = event.is_action("ui_right") or (event is InputEventKey and event.keycode in [KEY_RIGHT, KEY_D])
-	var up: bool = event.is_action("ui_up") or (event is InputEventKey and event.keycode in [KEY_UP, KEY_W])
-	var down: bool = event.is_action("ui_down") or (event is InputEventKey and event.keycode in [KEY_DOWN, KEY_S])
+	var left: bool = event.is_action("ui_left") or Controls.word(event) in ["left", "a"]
+	var right: bool = event.is_action("ui_right") or Controls.word(event) in ["right", "d"]
+	var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
+	var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
 	if Controls.matches(event, "pause") or Controls.back(event):
 		if _page >= 0:
 			_page = -1
@@ -323,7 +329,7 @@ func _key(event: InputEvent) -> void:
 			_sel = _labels().size() - 1
 		else:
 			close()
-	elif _page >= 0 and event is InputEventKey and event.keycode == KEY_R:
+	elif _page >= 0 and Controls.word(event) == "r":
 		_page = REMAP_PAGE
 		_rsel = 0
 		_capture = false
@@ -375,7 +381,7 @@ func _paint() -> void:
 	var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
 	if not _confirm and _row_id(_sel) == "day":
 		foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
-	UiStyle.footer(c, r, foot)
+	UiStyle.footer(c, r, Controls.hint(foot))
 
 
 # one page of the key list: what you do on the left, the key on the right
@@ -387,4 +393,4 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
 		UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
 		UiStyle.right(c, Controls.help_value(str(row[0]), str(row[1])), body.end.x, y, UiStyle.HEAD)
 		y += 9.0
-	UiStyle.footer(c, r, "ARROWS = PAGE  R = REMAP  ESC = BACK")
+	UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))

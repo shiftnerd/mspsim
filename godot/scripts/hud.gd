@@ -140,7 +140,8 @@ func _draw_banner() -> void:
 	PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
 
 
-func _draw_hint(text: String) -> void:
+func _draw_hint(raw: String) -> void:
+	var text := Controls.world_hint(raw)  # R34: a remapped key (or a pad) shows what works now
 	var size := get_viewport_rect().size
 	var chars := int((size.x - 16.0) / 4.0)
 	var words := text.split(" ")

@@ -280,34 +280,42 @@ static func enter(cp) -> void:
 		action(cp, ["crm", "quote"])
 
 
-static func key(cp, code: int) -> void:
+# a key by name ("c", "v", "q", "d", "a", "f", "u", "i", "left", "right": Controls.word)
+static func key(cp, name: String) -> void:
 	if SalesCampaign.crm_view == "build":
-		SalesCampaign.QuoteBuilder.key(cp, code)
+		SalesCampaign.QuoteBuilder.key(cp, name)
 		return
-	match code:
-		KEY_C:
+	match name:
+		"c":
 			action(cp, ["crm", "call"])
-		KEY_V:
+		"v":
 			action(cp, ["crm", "visit"])
-		KEY_Q:
+		"q":
 			action(cp, ["crm", "quote"])
-		KEY_D:
+		"d":
 			action(cp, ["crm", "drop"])
-		KEY_A:
+		"a":
 			action(cp, ["crm", "assess"])
-		KEY_F:
+		"f":
 			action(cp, ["crm", "follow"])
-		KEY_U:
+		"u":
 			action(cp, ["crm", "upsell"])
-		KEY_I:
+		"i":
 			action(cp, ["crm", "more"])
-		KEY_LEFT, KEY_RIGHT:
+		"left", "right":
 			var at := 0
 			for i in TABS.size():
 				if TABS[i][0] == SalesCampaign.crm_tab:
 					at = i
-			SalesCampaign.crm_tab = str(TABS[clampi(at + (1 if code == KEY_RIGHT else -1), 0, TABS.size() - 1)][0])
+			SalesCampaign.crm_tab = str(TABS[clampi(at + (1 if name == "right" else -1), 0, TABS.size() - 1)][0])
 	cp._canvas.queue_redraw()
+
+
+# the letter hotkeys as [key name, label]: a pad steps through them (Computer.hot_keys)
+static func hot_keys() -> Array:
+	if SalesCampaign.crm_view == "build":
+		return [["s", "SEND"], ["b", "BACK"], ["tab", "PAGE"]]
+	return [["c", "CALL"], ["v", "VISIT"], ["q", "QUOTE"], ["a", "ASSESS"], ["f", "CHASE"], ["d", "DROP"], ["u", "UPSELL"], ["i", "INFO"]]
 
 
 static func action(cp, parts: PackedStringArray) -> void:

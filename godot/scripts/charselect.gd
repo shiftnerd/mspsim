@@ -750,7 +750,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			confirm()
 		elif Controls.back(event):
 			back()
-		elif event is InputEventKey and event.keycode == KEY_F9:
+		elif Controls.word(event) == "f9":
 			Game.cycle_format()
 		else:
 			return
@@ -821,15 +821,15 @@ func _options_key(event: InputEvent, dir: String) -> bool:
 		change_start(-1)
 	elif Controls.matches(event, "pick_next"):
 		change_start(1)
-	elif event is InputEventKey and event.keycode in [KEY_X, KEY_T, KEY_M, KEY_B]:
-		match event.keycode:
-			KEY_X:
+	elif Controls.word(event) in ["x", "t", "m", "b"]:
+		match Controls.word(event):
+			"x":
 				open_seed()
-			KEY_T:
+			"t":
 				open_tools()
-			KEY_M:
-				change_mut(-1 if event.shift_pressed else 1)
-			KEY_B:
+			"m":
+				change_mut(-1 if Controls.shift(event) else 1)
+			"b":
 				toggle_mut_mode()
 	else:
 		return false
@@ -847,7 +847,7 @@ func _build_key(event: InputEvent, dir: String) -> bool:
 		_panel.change(-1)
 	elif dir == "right":
 		_panel.change(1)
-	elif event is InputEventKey and event.keycode == KEY_P:
+	elif Controls.matches(event, "preset"):
 		_panel.cycle_preset(1)
 	else:
 		return false
@@ -870,7 +870,7 @@ func _create_input(event: InputEvent) -> bool:
 		queue_redraw()
 		return true
 	if Controls.matches(event, "page_prev") or Controls.matches(event, "page_next"):
-		var letter: bool = event is InputEventKey and event.keycode in [KEY_Q, KEY_E]
+		var letter: bool = Controls.word(event) in ["q", "e"]
 		if not (letter and on_name):  # Q and E are letters on the NAME row (a pad's shoulder buttons always turn the page)
 			_turn_page(-1 if Controls.matches(event, "page_prev") else 1)
 			return true
@@ -964,21 +964,17 @@ func set_page(index: int) -> void:
 func _type_key(event: InputEvent) -> bool:
 	if not event is InputEventKey:
 		return false
-	var code: int = event.keycode
+	var key_name := Controls.word(event)
 	var buf := str(Look.look.get("name", ""))
-	if code == KEY_BACKSPACE:
+	if key_name == "backspace":
 		if buf == "":
 			return false
 		Look.look["name"] = buf.left(buf.length() - 1)
 		_refresh_look()
 		return true
-	if code in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE, KEY_TAB]:
+	if key_name in ["enter", "esc", "tab"]:
 		return false
-	var ch := ""
-	if event.unicode > 0:
-		ch = char(event.unicode)
-	elif code >= KEY_A and code <= KEY_Z:
-		ch = char(code)
+	var ch := Controls.typed(event)
 	if not Look.name_char_ok(ch):
 		return false
 	if buf.length() < Look.MAX_NAME and not (ch == " " and buf == ""):
@@ -1284,6 +1280,11 @@ func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
 	PixelFont.draw(self, s, p, c)
 
 
+# a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
+func _keys_line(s: String, y: float) -> void:
+	_ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
+
+
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
 	_txt(s, Vector2(floorf((_size().x - float(PixelFont.width(s))) * 0.5), y), c)
 
@@ -1334,7 +1335,7 @@ func _draw() -> void:
 	_ctxt(heading, 22.0 if narrow else 6.0, GOLD)
 	var back_r := Rect2(3.0, 3.0, 28.0, 9.0)
 	draw_rect(back_r, PANEL)
-	_txt("< ESC", back_r.position + Vector2(2, 2), DIM)
+	_txt(Controls.hint("< ESC"), back_r.position + Vector2(2, 2), DIM)
 	_rects.append([back_r, "back", 0])
 	if step == "char":
 		_draw_chars(size, narrow)
@@ -1354,31 +1355,31 @@ func _draw() -> void:
 		_draw_summary(size, narrow)
 	if step == "create":
 		if create_modal != "":
-			_ctxt("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+			_keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 		elif narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
 			var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
 			if float(PixelFont.width(keys)) > size.x - 4.0:
 				keys = "Q E PAGE  ARROWS  TAB HOLD POSE  ENTER GO  ESC BACK"
-			_ctxt(keys, size.y - 9.0, DIM)
+			_keys_line(keys, size.y - 9.0)
 		return
 	if step == "build":
 		if narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("P PRESET  ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("P PRESET  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0)
 		return
 	if step == "options":
 		if narrow:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0, DIM)
-			_ctxt("ENTER GO  ESC BACK", size.y - 12.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("ENTER GO  ESC BACK", size.y - 12.0)
 		else:
-			_ctxt("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0, DIM)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  ENTER GO  ESC BACK", size.y - 9.0)
 		return
-	_ctxt("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0), DIM)
+	_keys_line("LEFT RIGHT CHOOSE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen

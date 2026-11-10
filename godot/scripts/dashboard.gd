@@ -659,7 +659,7 @@ static func paint_app(cp) -> void:
 	if cp.tv_mode:
 		var area: Rect2 = cp._area
 		paint(cp._canvas, area, mode, cp.dash_t, opts)
-		var hint := "ESC CLOSES"
+		var hint: String = Controls.hint("ESC CLOSES")
 		var tr := Rect2(area.position.x + floorf((area.size.x - _tw(hint)) * 0.5) - 2.0, area.position.y, _tw(hint) + 4.0, 7.0)
 		if area.size.x >= 170.0:
 			cp._fill(tr, BG)

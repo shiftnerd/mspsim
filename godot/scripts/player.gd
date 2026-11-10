@@ -184,7 +184,7 @@ func _reload_sheet(name: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if Players.coop and event.is_action_pressed(_a("character_next")):
+	if event.is_action_pressed(_a("character_next")):  # a pad's R3: the next stock person (the keyboard has 1-7)
 		if can_swap():
 			swap_character(1)
 	if slot != 0:
@@ -209,7 +209,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if Controls.matches(event, "give_item") and held == "nerf":
 			give("")
 			return
-		var i: int = event.keycode - KEY_1
+		var i: int = Controls.digit(event) - 1
 		if i >= 0 and i < CHARACTERS.size() and not Campaign.active and not Game.ui_open:
 			_switch_character(CHARACTERS[i])
 			Campaign.refresh_free()
@@ -526,7 +526,8 @@ func _physics_process(delta: float) -> void:
 	_roll.update(self, delta)
 	var locked: bool = Game.busy
 	var dir := 0.0 if locked else Input.get_axis(_a("move_left"), _a("move_right"))
-	var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Input.is_key_pressed(KEY_SHIFT))  # the second test is for macOS
+	var running := Input.is_action_pressed(_a("run")) or (slot == 0 and Controls.shift_held())  # the second test is for macOS
+	var roll_held := Input.is_action_pressed(_a("roll"))  # R14 (3): a pad's Roll button (LT), the touch overlay's ROLL
 	var interact := (not locked) and Input.is_action_just_pressed(_a("interact")) and not Outings.blocks_interact()
 	var jump := (not locked) and Input.is_action_just_pressed(_a("jump"))
 
@@ -551,7 +552,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		if state == "sitting":
 			_gesture_tick(delta, locked)
-		if state == "sitting" and running and dir != 0.0 and _roll.drive(self, dir, delta):
+		if state == "sitting" and (running or roll_held) and dir != 0.0 and _roll.drive(self, dir, delta):
 			pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
 		elif state == "sitting" and interact and _ringing_phone() != null:
 			_ringing_phone().use(self)

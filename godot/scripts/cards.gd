@@ -200,8 +200,8 @@ func _input(event: InputEvent) -> void:
 			pass  # too soon: the card just appeared
 		elif Controls.confirm_any(event, false, false):
 			pick(sel)
-		elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_4:
-			pick(event.keycode - KEY_1)
+		elif Controls.digit(event) >= 1 and Controls.digit(event) <= 4:
+			pick(Controls.digit(event) - 1)
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -232,6 +232,7 @@ func _paint() -> void:
 	# option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
 	var opt_lines := []
 	var opts_h := 0.0
+	var tap_h := 19.0 if size.y > size.x else 0.0  # R14 (5): the tall format gets thumb-sized answers
 	for opt in options:
 		var chip_w := (str(opt.get("chip", "")).length() + 1 if str(opt.get("chip", "")) != "" else 0)
 		chip_w += (str(opt.get("trust_chip", "")).length() + 1 if str(opt.get("trust_chip", "")) != "" else 0)
@@ -240,7 +241,7 @@ func _paint() -> void:
 			full += " [%s]" % str(opt.hint)
 		var rows: Array = _wrap(full, chars - 1 - chip_w)
 		opt_lines.append(rows)
-		opts_h += 3.0 + 7.0 * float(rows.size()) + 1.0
+		opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
 	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
 	# short screens (16:9, wide) keep the people visible by putting the card at the top
 	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
@@ -257,7 +258,8 @@ func _paint() -> void:
 		var opt: Dictionary = options[i]
 		var on: bool = bool(opt.get("enabled", true))
 		var rows: Array = opt_lines[i]
-		var r := Rect2(panel.position.x + 4, y, pw - 8, 3.0 + 7.0 * float(rows.size()))
+		var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(3.0 + 7.0 * float(rows.size()), tap_h))
+		var ty := floorf((r.size.y - 7.0 * float(rows.size()) + 2.0) * 0.5)
 		var col := (
 			Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
 		)
@@ -266,7 +268,7 @@ func _paint() -> void:
 		var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
 		var right_edge := r.end.x
 		for k in rows.size():
-			PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, 2 + 7 * k), INK if on else Color("8b93a1"))
+			PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
 		if chip != "":
 			var tint := Color("2f7d46")
 			if str(opt.get("stance", "")) == "warn":

@@ -568,7 +568,7 @@ func paint(computer: Node, body: Rect2) -> void:
 	bx -= 16.0
 	c._button("nerds:up", Rect2(bx, foot.position.y + 1, 14, 8), "UP")
 	var hint_chars := int((bx - foot.position.x - 6.0) / 4.0)
-	c._text(c._clip(_hint(narrow), hint_chars), foot.position + Vector2(3, 3), MUTED)
+	c._text(c._clip(Controls.hint(_hint(narrow)), hint_chars), foot.position + Vector2(3, 3), MUTED)
 
 
 func _crumb() -> String:
