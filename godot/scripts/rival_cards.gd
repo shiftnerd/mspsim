@@ -921,6 +921,27 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"temp_restore_after":
+	{
+		"speaker": "{tech}",
+		"text":
+		"About {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. The restore test we skipped would have found it in three hours. I am not saying it to be right.",
+		"options":
+		[
+			{
+				"label": "RUN A RESTORE TEST ON EVERY CLIENT NOW",
+				"fx": {"habit": "H1", "owner_hours": 3, "consc": 1},
+				"text":
+				"It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday."
+			},
+			{
+				"label": "CALL IT BAD LUCK",
+				"fx": {"consc": -1},
+				"text":
+				"It was not luck. Alan does not say so. Alan just looks at the green light for a long time."
+			},
+		],
+	},
 	"bill_temp_restore":
 	{
 		"speaker": "{tech}",

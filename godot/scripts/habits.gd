@@ -178,6 +178,8 @@ const H9_WEEK := 18  # the card comes in the week 19 morning (the clocks change 
 const DRIFT_DROP := 3  # a mood fall this big in a week shows as a chip once the front desk is listened to
 const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
+const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
+const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -395,7 +397,27 @@ static func touch(id: String) -> bool:
 	e["last"] = Campaign.day
 	e["uses"] = int(e.get("uses", 0)) + 1
 	Owner.habits[id] = e
+	if id == "H1":
+		late_test()
 	return true
+
+
+# the skipped restore test (the temp_restore temptation) is still in Christy's folder
+static func skipped_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			return true
+	return false
+
+
+# a real restore test after the skipped one finds the broken job while it is cheap: the entry leaves the folder with no bill
+static func late_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			Owner.skel.erase(sk)
+			Hints.toast("THE LATE RESTORE TEST FOUND A JOB THAT WAS SKIPPING FOLDERS. FIXED WHILE IT WAS CHEAP.", 5.0)
+			return true
+	return false
 
 
 # the real thing happened in the game (a review, a project, a loss): it counts only while the habit still works (ADOPTED or STALE)
@@ -820,6 +842,11 @@ static func bec_mult() -> float:
 	return 1.0 - 0.15 * factor("H7") - 0.05 * factor("H13") - 0.05 * factor("H4")
 
 
+# H13: with the client's written go-ahead on file, telling them it was their own process costs half (Incident, bec "blame")
+static func blame_mult() -> float:
+	return 1.0 - 0.5 * factor("H13")
+
+
 # _rdp_week: a unique admin login makes a guessed password rarer (4 percent -> 1 percent when weak)
 static func rdp_mult(weak: bool) -> float:
 	return 1.0 - 0.75 * factor("H7") if weak else 1.0
@@ -827,6 +854,8 @@ static func rdp_mult(weak: bool) -> float:
 
 # ransom restore: the share of ransoms that fail to restore when the client HAS the backup service (untested 15 percent)
 static func restore_fail() -> float:
+	if skipped_test():
+		return SKIP_FAIL  # the test was skipped on purpose: the freezer bag moment is yours
 	if not Owner.habits.has("H1") or fresh("H1"):
 		return 0.0
 	return 0.15

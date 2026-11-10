@@ -26,6 +26,8 @@ const SWITCH_MOOD := -3  # the agents go back on every PC
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
+const RESTORE := "temp_restore"  # the skipped restore test: its bill is a real ransom (ransom_bill)
+const LESSON_CARD := "temp_restore_after"
 const BANDS := [
 	[0, "CLEAN BOOKS"], [-3, "A FEW LOOSE ENDS"], [-6, "SKELETONS"], [-999, "A CLOSET FULL"]
 ]
@@ -217,8 +219,10 @@ static func come_clean(id: String) -> bool:
 
 # the bill arrives: cash, reputation, the class extras (see _extras) and the card bill_<id> of RivalCards (a toast if it has none)
 static func bill(owner: Node, sk: Dictionary) -> void:
-	Career.add("skeletons_paid")  # R38 P6
 	var id := str(sk.get("id", ""))
+	if id == RESTORE and not Difficulty.cozy_on() and ransom_bill(owner, sk):
+		return  # the skipped restore test: a real infection is the bill
+	Career.add("skeletons_paid")  # R38 P6
 	var b: Dictionary = BILLS.get(id, {})
 	var cost := bill_size(sk)
 	if cost > 0:
@@ -235,6 +239,47 @@ static func bill(owner: Node, sk: Dictionary) -> void:
 		return
 	owner._dynamic["tb_" + id] = _dress_bill(owner, owner.card_data(card), victim, cost, id)
 	owner.show_card("tb_" + id)
+
+
+# The skipped restore test comes due as a real ransom: an infection at one served client whose restore fails (Habits.restore_fail() is
+# SKIP_FAIL while the entry is in the folder), so the player gets the ransom card instead of a flat bill. False (and the flat bill) when
+# there is no client or no server to hit. Cozy keeps the flat, halved bill.
+static func ransom_bill(owner: Node, sk: Dictionary) -> bool:
+	var victim := _victim(owner, "backup")
+	if victim < 0:
+		return false
+	owner.skel.append(sk)  # still open while the infection runs: the restore reads it, ransom_hit takes it out
+	if owner.ransom_at(victim) and find(RESTORE) < 0:
+		return true
+	owner.skel.erase(sk)
+	return false
+
+
+# a restore failed because of the skipped test (the scheduled ransom, or ransom_bill): the entry leaves the folder, the ransom card is
+# the bill, the client is hurt and Alan's lesson card comes the next morning
+static func ransom_hit(owner: Node, client: int) -> void:
+	var i := find(RESTORE)
+	if i < 0:
+		return
+	owner.skel.remove_at(i)
+	Career.add("skeletons_paid")
+	owner.flags["skip_ransom"] = Campaign.day
+	owner.flags["skip_client"] = client
+	Sales.adjust(client, -int(BILLS[RESTORE].get("mood", 0)))
+	if owner.card_data(LESSON_CARD).is_empty():
+		return
+	var q: Array = owner.flags.get("arc_queue", [])
+	q.append(LESSON_CARD)
+	owner.flags["arc_queue"] = q
+
+
+# Alan's card the morning after (Rival.show calls this): {vname} is the client that was hit
+static func dress_lesson(owner: Node, card: Dictionary) -> Dictionary:
+	var victim := int(owner.flags.get("skip_client", -1))
+	var who := "the client"
+	if victim >= 0 and victim < Msp.CLIENTS.size():
+		who = str(Msp.CLIENTS[victim].name)
+	return _fill(card, {"{vname}": who})
 
 
 # the client a bill falls on: the margin bill the one on the deepest discount, the backup bill the ransom client, the others the

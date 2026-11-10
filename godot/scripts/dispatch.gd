@@ -18,6 +18,7 @@ const LANE_B := Color("eaeef5")
 const DROP := Color("fff0c2")
 const INK := Color("20242c")
 const MUTED := Color("5a6372")
+const ASKED := Color("8a4b00")  # R36: the by-name tag on the Capacity tab
 const CHIP_H := 14.0
 const SHORT := {"": "OPEN", "Dan": "DAN", "ESC": "OWN"}
 
@@ -714,6 +715,7 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 		c._text(who.to_upper(), Vector2(a.position.x + 3, ry + 3), INK)
 		if narrow:
 			c._text(st, Vector2(a.position.x + 28, ry + 3), st_col)
+			c._text(Service.ByName.tag(who), Vector2(a.position.x + 64, ry + 3), ASKED)  # R36: who is being asked for
 			c._text(util_text(u), Vector2(a.end.x - 22, ry + 3), _util_color(u))
 			_pips(Vector2(a.end.x - 48, ry + 4), Crew.morale(who))
 			ty = ry + 12.0
@@ -733,6 +735,9 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 			x += 36.0
 			var foc := Crew.focus_of(who)
 			c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, ry + 3), Color("1f4e8c"))
+			var asked: String = Service.ByName.tag(who)  # R36: who is being asked for
+			if asked != "" and x + 16.0 + c._tw(asked) <= a.end.x - 11.0:
+				c._text(asked, Vector2(x + 16.0, ry + 3), ASKED)
 			if st == "OVERLOAD" or st == "STUCK":
 				c._fill(Rect2(a.end.x - 9, ry + 2, 7, 8), c.RED)
 				c._text("!", Vector2(a.end.x - 6, ry + 3), c.WHITE)
@@ -761,6 +766,9 @@ func _capacity(a: Rect2, narrow: bool) -> void:
 	var note := "SET A FOCUS: THAT AREA FITS HIM BETTER AND HE TRAINS IT"
 	if narrow:
 		note = "FOCUS TRAINS AN AREA"
+	var fans: String = Service.ByName.note(str(names[cap_sel]), narrow) if not names.is_empty() else ""
+	if fans != "":
+		note = fans  # R36: the clients that ask for the selected tech
 	if Time.get_ticks_msec() - msg_at < 3000 and msg != "":
 		note = msg
 	c._text(c._clip(note, int((a.size.x - 98.0) / 4.0)), Vector2(bottom.position.x + 96, bottom.position.y + 3), INK)

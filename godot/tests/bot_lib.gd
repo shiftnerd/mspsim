@@ -948,6 +948,20 @@ const OW_POLICIES := {
 		"stack_hw": 0,
 		"vic_plan": 1,
 		"draw": 0,
+		"temp_seats": 1,  # R38: the honest answer of every temptation (the shortcut is option 0), as in owner_balance.gd
+		"temp_reboot": 1,
+		"temp_launder": 1,
+		"temp_review": 1,
+		"temp_restore": 1,
+		"temp_price": 1,
+		"temp_2fa": 1,
+		"temp_quest": 1,
+		"jen_phones": 0,  # X11: the free answers (overflow rings the techs, three questions, a cap on hand-offs, write it down)
+		"jen_intake": 0,
+		"jen_wall": 0,
+		"michael_catch": 1,
+		"michael_teach": 1,
+		"michael_offer": 0,
 	},
 	"cheap":
 	{
@@ -1006,6 +1020,8 @@ const OW_POLICIES := {
 }
 
 
+# R38 / P5: the shortcut owner is the smart one who takes every temptation (option 0) and matches the flat price
+const OW_SHORTCUTS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "temp_review": 0, "temp_restore": 0, "temp_price": 0, "temp_2fa": 0, "temp_quest": 0, "rival_flat": 2}
 const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
 
 
@@ -1017,10 +1033,14 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			for id in ids:
 				if cards.text.contains(str(ids[id])) and str(ids[id]).length() > 8:
 					pick = mini(int(policy.get(id, 0)), cards.options.size() - 1)
-					if id == "rn_invite" and strategy == "careful" and root.get_node("Owner").cash < OW_TRIP_CASH:
+					if id == "rn_invite" and strategy in ["careful", "shortcut"] and root.get_node("Owner").cash < OW_TRIP_CASH:
 						pick = 2  # Q6d: STAY HOME: a trip is not worth it out of a thin bank
-		if strategy == "careful" and cards.text.begins_with("We drew $") and cards.options.size() > 1:
+		if strategy in ["careful", "shortcut"] and cards.text.begins_with("We drew $") and cards.options.size() > 1:
 			pick = 1  # Q6d: the bank is thin and the draw is a choice: a careful owner skips the draw (the bot only cut it to SMALL)
+		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("will only talk to"):
+			pick = 2  # R36: the lopsided crew: pair the techs (falls back to an open option without the cash)
+		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
+			pick = 1  # R36: a client wants to follow a tech out: go and see them
 		if not bool(cards.options[pick].get("enabled", true)):  # greyed out (cash, or the partner vetoes): take an open option
 			for i in cards.options.size():
 				if bool(cards.options[i].get("enabled", true)):
@@ -1090,8 +1110,12 @@ func ow_run(seed_n: int) -> Dictionary:
 			cut = brace
 		ids[key] = card_text.substr(0, 40 if cut < 0 else mini(40, cut))
 	load("res://scripts/player.gd").current_character = "office_alan"
-	var policy_name: String = {"careful": "smart", "lazy": "cheap", "chaotic": "greedy"}[strategy]
+	var policy_name: String = {"careful": "smart", "lazy": "cheap", "chaotic": "greedy", "shortcut": "smart"}[strategy]
 	policy = OW_POLICIES[policy_name]
+	if strategy == "shortcut":  # R38 / P5: smart's answers with every temptation taken
+		policy = policy.duplicate()
+		for key in OW_SHORTCUTS:
+			policy[key] = OW_SHORTCUTS[key]
 	c.new_game("owner")
 	if coop:
 		root.get_node("Players").enable_coop(true)
@@ -1128,6 +1152,23 @@ func ow_run(seed_n: int) -> Dictionary:
 	row["ending"] = "FIRED" if fired else ("sell" if offers_ids.has("sell") else "stay")
 	row["cls"] = "bad" if (fired or rep < 45) else ("good" if rep >= 60 and o.goal_met() else "mid")
 	row["info"] = "week %d cash $%d clients %d mood %d trust %d draw $%d goal %s value $%d (%.1fx)" % [last, o.cash, sales.active.size(), int(sales.average()), root.get_node("Partner").trust, o.draw_paid, str(o.goal_met()), o.valuation(), o.multiple()]
+	# P5: the newer owner content (temptations, takeover, the second cast's cards, by-name requests)
+	var bn: Dictionary = o.flags.get("bn", {})
+	var cast_seen := 0
+	var takeovers := 0
+	for key in o.flags:
+		if str(key).begins_with("card_jen_") or str(key).begins_with("card_michael_"):
+			cast_seen += 1
+		if str(key).begins_with("tk_"):
+			takeovers += 1
+	var inherit_open := 0
+	for key in o.inherit:
+		inherit_open += 1 if int(o.inherit[key]) > 0 else 0
+	row["folder"] = o.skel.size()
+	row["consc"] = int(o.consc)
+	row["cast_cards"] = cast_seen
+	row["takeovers"] = takeovers
+	row["info"] += " | folder %d consc %d habits %d takeovers %d (still risky %d) cast cards %d fans %d followed %d incidents %d" % [o.skel.size(), int(o.consc), o.habits.size(), takeovers, inherit_open, cast_seen, (bn.get("fav", {}) as Dictionary).size(), int(bn.get("followed", 0)), int(o.incidents)]
 	if not fired:
 		_cleanup_review(review, game, 0)
 	return row

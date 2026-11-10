@@ -565,6 +565,14 @@ func _floor_phase() -> void:
 	comp.open(1)
 	comp.app = "dispatch"
 	comp.dispatch.fuzz = 0
+	# R36: every tech is asked for by name by two clients, so the Capacity tab draws its by-name tag and note
+	var bn_fav := {}
+	for bn_i in mini(2, root.get_node("Sales").active.size()):
+		var bn_row := {}
+		for bn_who in crew.names():
+			bn_row[str(bn_who)] = 9
+		bn_fav[str(root.get_node("Sales").active[bn_i])] = bn_row
+	sv.flags["bn"] = {"fav": bn_fav, "day": {}, "asks": 0, "kept": 0, "other": 0, "followed": 0}
 	for view in ["board", "capacity", "score"]:
 		_begin()
 		comp.dispatch.view = view

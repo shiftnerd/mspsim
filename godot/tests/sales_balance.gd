@@ -9,7 +9,7 @@ extends SceneTree
 const PREFS := {
 	"careful": ["standard", "balanced", "work", "go", "honest", "take", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
 	"pushy": ["stretch", "commission", "loose", "work", "go", "moon", "take", "yes", "match", "blame", "report", "renew", "bluff", "all", "garrison", "refuse", "both", "shade", "raise", "project", "numbers", "ok"],
-	"shady": ["match", "cheap", "take", "undercut", "back", "standard", "balanced", "work", "go", "honest", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
+	"shady": ["smallprint", "match", "cheap", "take", "undercut", "back", "standard", "balanced", "work", "go", "honest", "no", "value", "own", "qbr", "phone", "listen", "numbers", "comfort", "discount", "happy", "sell", "broker", "credit", "decline", "disclose", "ticket", "same", "ok"],
 	"lazy": ["safe", "salary", "standard", "work", "skip", "no", "same", "report", "wait", "none", "refuse", "decline", "pass", "ok"],
 }
 var strategy := "careful"

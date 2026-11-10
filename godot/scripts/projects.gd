@@ -1,5 +1,5 @@
 extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
 # Owner campaign: client profitability, projects and services. MSPs live on recurring revenue (the monthly fee, plus
 # services like managed backup), and projects (a desktop refresh, a network or server upgrade, a security cleanup) add
 # one-time money on top. Both compete for the same technicians' hours, and both can quietly lose money:
@@ -14,7 +14,7 @@ const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
 # extra hours when a fixed-price job creeps
 const SCOPE_CREEP := 0.25
-const TYPES := {
+const DEFAULT_TYPES := {
 	"desktops":
 	{
 		"label": "DESKTOP REFRESH (XP REPLACEMENT)",
@@ -80,6 +80,8 @@ const TYPES := {
 		"blurb": "remote access, passwords and the firewall all need attention"
 	},
 }
+# P5: patchable from story/strings.txt (Projects.TYPES: label, blurb)
+var TYPES: Dictionary = DEFAULT_TYPES.duplicate(true)
 const SERVICES := {
 	"backup":
 	{

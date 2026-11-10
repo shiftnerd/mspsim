@@ -12300,6 +12300,7 @@ write("scripts/campaign.gd", '''extends Node
 signal day_started(day_number: int)
 
 const PLAYER := preload("res://scripts/player.gd")
+const SaveMigrate := preload("res://scripts/save_migrate.gd")  # X11: old cast names in old saves
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20), saved in its own "dash" section
 const TOTAL_DAYS := 20
 const FREE := "free"
@@ -12660,6 +12661,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
             resumed = true
     if not resumed and cfg.load(save_path(for_mode)) != OK:
         return false
+    SaveMigrate.names(cfg)  # X11: a save from before John and Christy took over the account manager's and the bookkeeper's names
     _resume_scene = ""
     mode = for_mode
     active = true
@@ -20508,6 +20510,8 @@ write("scripts/owner.gd", '''extends Node
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
+const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
+const OwnerCast := preload("res://scripts/owner_cast.gd")  # X11: Jen's and Michael's decision cards
 const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
 const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
 const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
@@ -21319,11 +21323,16 @@ var _winback_queue: Array = []  # lost clients asking to come back
 var _poach_cool := 0
 var _poach_wave := 0  # weeks the competitor is running a campaign (double the risk)
 var _ransom_ticket := 0
+var _ransom_client := 3  # the client of the ransom card that is open (Story.RANSOM_CLIENT, or the victim of a skipped restore test)
+var _ransom_forced := false  # the backup looked fine and still did not restore (H1 never tested, a skipped test, an inherited mess)
+var _ransom_skip := false  # this ransom is the bill of the skipped restore test: no lawsuit on top
 
 
 func _ready() -> void:
     for id in RivalCards.CARDS:  # R38: the rival arc and temptation cards are data in rival_cards.gd (shared with story/strings.txt)
         CARDS[id] = RivalCards.CARDS[id]
+    for id in OwnerCast.CARDS:  # X11: the second cast's cards (owner_cast.gd)
+        CARDS[id] = OwnerCast.CARDS[id]
 
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
@@ -21372,6 +21381,9 @@ func reset() -> void:
     _poach_cool = 0
     _poach_wave = 0
     _ransom_ticket = 0
+    _ransom_client = Story.RANSOM_CLIENT
+    _ransom_forced = false
+    _ransom_skip = false
     _handover = []
     _burn_warned = false
     discount = {}
@@ -21588,7 +21600,7 @@ func _process(delta: float) -> void:
 
 # the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
-    return Yeartwo.events_on("owner", day, RivalCards.merged_days(DAYS))
+    return Yeartwo.events_on("owner", day, OwnerCast.merged_days(RivalCards.merged_days(DAYS)))
 
 
 func _work_queue(seconds: float) -> void:
@@ -21751,7 +21763,7 @@ func show_card(id: String) -> void:
         if need > 0 and cash < need:
             entry["enabled"] = false
             entry["hint"] = "NEED $%d" % need
-        if opt.get("policy", false) and not Msp.cyber_insured(Story.RANSOM_CLIENT):
+        if opt.get("policy", false) and not Msp.cyber_insured(_ransom_client):
             entry["enabled"] = false
             entry["hint"] = "NO POLICY"
         if opt.has("unless") and flags.get(str(opt.unless), false):
@@ -22566,6 +22578,9 @@ func _key_poach() -> void:
             },
         ],
     }
+    if Campaign.mode == "owner":  # R36: what losing this tech would put at risk
+        ByName.note_leaver(who)
+        _dynamic["key_poach"]["text"] = str(_dynamic["key_poach"].text) + ByName.risk_line(who)
     show_card("key_poach")
 
 
@@ -22946,22 +22961,91 @@ func drop_random_client() -> void:
     Msp.send_text("John", "We lost %s. Ouch." % Msp.CLIENTS[pick].name)
 
 
-func _ransom() -> void:
-    var t := Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+# the ransom cards name Hoot and Holler (the story client). A ransom at another client, or one whose backup looked fine and did not restore,
+# shows a copy with the name, the mood target and the reason put right.
+func _ransom_card(id: String) -> void:
+    if _ransom_client == Story.RANSOM_CLIENT and not _ransom_forced:
+        show_card(id)
+        return
+    var card: Dictionary = CARDS[id].duplicate(true)
+    var who := str(Msp.CLIENTS[_ransom_client].name)
+    var body := str(card.text)
+    if _ransom_client != Story.RANSOM_CLIENT:
+        body = body.replace("Hoot and Holler's", "{rvp}").replace("Hoot and Holler", who).replace("{rvp}", poss(who))
+    if _ransom_forced:
+        body = body.replace("The backup was not working.", "The backup light was green, and the restore failed halfway: nobody had tested it.")
+        body = body.replace("because our backup was not working", "because our backup would not restore")
+    card["text"] = body
+    for opt in card.options:
+        if opt.has("fx"):
+            _ransom_retarget(opt.fx)
+        for entry in opt.get("roll", []):
+            _ransom_retarget(entry[1])
+    _dynamic[id + "_v"] = card
+    show_card(id + "_v")
+
+
+func _ransom_retarget(fx: Dictionary) -> void:
+    var key := str(Story.RANSOM_CLIENT)
+    if _ransom_client != Story.RANSOM_CLIENT and fx.get("mood", {}) is Dictionary and (fx.get("mood", {}) as Dictionary).has(key):
+        var mood: Dictionary = fx.mood
+        mood[str(_ransom_client)] = mood[key]
+        mood.erase(key)
+
+
+# R38: the skipped restore test coming due is a real infection at one client (Temptation.ransom_bill). False when no ticket could be opened.
+func ransom_at(client: int) -> bool:
+    return _ransom(client)
+
+
+func _ransom(client := Story.RANSOM_CLIENT) -> bool:
+    var t := Msp.create_problem(client, Msp.RANSOM, "monitoring")
     if t.is_empty():
         for ep in Msp.endpoints:
-            if ep.client == Story.RANSOM_CLIENT and ep.name.contains("SRV"):
+            if ep.client == client and ep.name.contains("SRV"):
                 ep.problem = ""
-        t = Msp.create_problem(Story.RANSOM_CLIENT, Msp.RANSOM, "monitoring")
+        t = Msp.create_problem(client, Msp.RANSOM, "monitoring")
     if t.is_empty():
-        return
+        return false
     _ransom_ticket = int(t.id)
+    _ransom_client = client
+    _ransom_forced = false
+    _ransom_skip = false
+    if client != Story.RANSOM_CLIENT or Habits.skipped_test():
+        return _ransom_untested(client)
+    _ransom_story(t)
+    return true
+
+
+# a ransom whose restore may fail although the backup light is green. The skipped test (temp_restore still in the folder) fails for sure and
+# the ransom is its bill; elsewhere the odds are H1's and the takeover's.
+func _ransom_untested(client: int) -> bool:
+    var t := Msp.ticket(_ransom_ticket)
+    var odds := maxf(Habits.restore_fail(), Takeover.restore_fail(client))
+    var failed := not bool(Msp.backups[client].ok) or odds >= 1.0 or (odds > 0.0 and Difficulty.rng("owner").randf() < odds)
+    if failed:
+        _ransom_forced = bool(Msp.backups[client].ok)
+        if _ransom_forced:
+            Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
+        if Habits.skipped_test():
+            _ransom_skip = true
+            Temptation.ransom_hit(self, client)
+        _ransom_card("ransom_options")
+        return true
+    Msp.rmm_action(str(t.endpoint), "restore")
+    Msp.close_ticket(int(t.id))
+    Msp.send_text("Alan", "%s got hit by CryptoLocker. We restored from backup. No data lost!" % str(Msp.CLIENTS[client].name))
+    return true
+
+
+func _ransom_story(t: Dictionary) -> void:
     var restore_fail := maxf(Habits.restore_fail(), Takeover.restore_fail(Story.RANSOM_CLIENT))  # R38 P4: an unfixed freezer bag. R38: H1, a backup nobody ever test restored may not restore
     var untested_fail := restore_fail > 0.0 and Difficulty.rng("owner").randf() < restore_fail
     if untested_fail:
         Msp.send_text("Alan", "The restore from backup failed halfway. Nobody ever tested it.")
     if untested_fail or not bool(Msp.backups[Story.RANSOM_CLIENT].ok):
-        show_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
+        _ransom_forced = untested_fail and bool(Msp.backups[Story.RANSOM_CLIENT].ok)
+        _ransom_card("ransom_options")  # no backup: pay, shadow copies, or accept the loss
         return
     Msp.rmm_action(str(t.endpoint), "restore")
     Msp.close_ticket(int(t.id))
@@ -22979,18 +23063,27 @@ func _ransom_finish(kind: String) -> void:
     var t := Msp.ticket(_ransom_ticket)
     if t.is_empty():
         return
+    var who := str(Msp.CLIENTS[_ransom_client].name)
     if kind == "lost":
-        Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
+        var hit := Msp.endpoint(str(t.endpoint))
+        if _ransom_forced and not hit.is_empty():
+            hit["restore_failed"] = true  # the backup looked fine and would not restore: closing the ticket is the loss
+        else:
+            Msp.rmm_action(str(t.endpoint), "restore")  # no backup: records the loss
         Msp.close_ticket(int(t.id))
-        show_card("ransom_lost")
+        if _ransom_skip:
+            Msp.send_text("Alan", "%s lost the files. No lawyers this time, but they know whose backup it was." % who)  # R38: the skipped test: the lost files and the name are the bill, no lawsuit on top
+        else:
+            _ransom_card("ransom_lost")
         return
     t.fix_done = true
     var ep := Msp.endpoint(str(t.endpoint))
     if not ep.is_empty():
         ep.problem = ""
     Msp.close_ticket(int(t.id))
-    Story.flags["ransom"] = kind
-    Msp.send_text("Alan", "Hoot and Holler: %s." % str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial)))
+    if _ransom_client == Story.RANSOM_CLIENT:
+        Story.flags["ransom"] = kind
+    Msp.send_text("Alan", "%s: %s." % [who, str(Msp.RANSOM_LINES.get(kind, Msp.RANSOM_LINES.partial))])
 
 
 # ---- RDP open to the internet: a stolen login ----------------------------------------------------------------
@@ -23180,6 +23273,7 @@ func settle() -> Dictionary:
         Rival.arc_week(self, Campaign.day)
         Habits.week(self)
         Temptation.week(self)
+        ByName.owner_week(self)  # R36: favourites, the lopsided crew, a client that follows a tech who left
     _poach_week()
     _staff_week()
     _owner_week(profit)
@@ -23235,6 +23329,8 @@ func settle() -> Dictionary:
             rows.append(["SWITCHING COSTS", Temptation.switching_text(self), Color("ffd27a")])
         for rap_line in Rival.lines():
             rows.append(["RAP SHEET", rap_line, Color("ffd27a")])
+        if ByName.report_text() != "":
+            rows.append(["ASKED FOR BY NAME", ByName.report_text(), Color("8fe3a0")])  # R36
     rows.append(partner_row())
     rows.append(goal_row())
     if Campaign.day >= Campaign.TOTAL_DAYS and flags.get("peer_group", false) and not goal.is_empty():
@@ -44130,6 +44226,7 @@ write("scripts/service.gd", '''extends Node
 # V1 uses Cards and the PSA ticket list; the Dispatch board, Capacity view, runbooks and hiring are C5 / C6.
 
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): hours worked per tech per day
+const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
 const START_CONFIDENCE := 55
 const OWNERS := ["Alan", "Garrison"]
 const TRUST_START := 50
@@ -44783,6 +44880,7 @@ var interviewed := {}
 
 func _ready() -> void:
     reset()
+    Msp.ticket_added.connect(ByName.on_ticket)  # R36: a client that knows a tech asks for him
 
 
 func active() -> bool:
@@ -45228,6 +45326,7 @@ func lane_name(who: String) -> String:
 
 # a tech quit: his tickets go back on the board
 func release_all(who: String) -> void:
+	ByName.on_quit(who)  # R36: the clients that asked for him
     for t in Msp.tickets:
         if str(t.status) != "Closed" and Crew.assignee_of(t) == who:
             t["assignee"] = ""
@@ -45340,6 +45439,7 @@ func _finish(who: String, t: Dictionary) -> void:
             Crew.note_reopen(who)
         Msp.close_ticket(id)  # closed too early: it comes back to the same desk
         return
+    ByName.on_done(who, t)  # R36: a real close counts for his name at that client (a ticket that bounces does not)
     if Crew.has(who):
         kb.note_closed(who, t)
     Growth.owner_escalation(t)
@@ -46023,6 +46123,9 @@ func _best_in(t: Dictionary, lane_filter: String, max_load: int) -> String:
 
 # who the autopilot gives a ticket to under the chosen design ("" = nobody can take it now)
 func route_for(t: Dictionary) -> String:
+	var asked: String = ByName.route(t)  # R36: the tech they asked for takes it, even with a full desk
+	if asked != "":
+		return asked
     match design:
         "tiered":
             var want := "L1" if Crew.need_of(t) <= 1 else "L2"
@@ -48697,6 +48800,7 @@ const LANE_B := Color("eaeef5")
 const DROP := Color("fff0c2")
 const INK := Color("20242c")
 const MUTED := Color("5a6372")
+const ASKED := Color("8a4b00")  # R36: the by-name tag on the Capacity tab
 const CHIP_H := 14.0
 const SHORT := {"": "OPEN", "Dan": "DAN", "ESC": "OWN"}
 
@@ -49393,6 +49497,7 @@ func _capacity(a: Rect2, narrow: bool) -> void:
         c._text(who.to_upper(), Vector2(a.position.x + 3, ry + 3), INK)
         if narrow:
             c._text(st, Vector2(a.position.x + 28, ry + 3), st_col)
+            c._text(Service.ByName.tag(who), Vector2(a.position.x + 64, ry + 3), ASKED)  # R36: who is being asked for
             c._text(util_text(u), Vector2(a.end.x - 22, ry + 3), _util_color(u))
             _pips(Vector2(a.end.x - 48, ry + 4), Crew.morale(who))
             ty = ry + 12.0
@@ -49412,6 +49517,9 @@ func _capacity(a: Rect2, narrow: bool) -> void:
             x += 36.0
             var foc := Crew.focus_of(who)
             c._text(str(Crew.AREA_TAG[foc]) if foc != "" else "-", Vector2(x, ry + 3), Color("1f4e8c"))
+            var asked: String = Service.ByName.tag(who)  # R36: who is being asked for
+            if asked != "" and x + 16.0 + c._tw(asked) <= a.end.x - 11.0:
+                c._text(asked, Vector2(x + 16.0, ry + 3), ASKED)
             if st == "OVERLOAD" or st == "STUCK":
                 c._fill(Rect2(a.end.x - 9, ry + 2, 7, 8), c.RED)
                 c._text("!", Vector2(a.end.x - 6, ry + 3), c.WHITE)
@@ -49440,6 +49548,9 @@ func _capacity(a: Rect2, narrow: bool) -> void:
     var note := "SET A FOCUS: THAT AREA FITS HIM BETTER AND HE TRAINS IT"
     if narrow:
         note = "FOCUS TRAINS AN AREA"
+    var fans: String = Service.ByName.note(str(names[cap_sel]), narrow) if not names.is_empty() else ""
+    if fans != "":
+        note = fans  # R36: the clients that ask for the selected tech
     if Time.get_ticks_msec() - msg_at < 3000 and msg != "":
         note = msg
     c._text(c._clip(note, int((a.size.x - 98.0) / 4.0)), Vector2(bottom.position.x + 96, bottom.position.y + 3), INK)
@@ -50338,12 +50449,14 @@ const ROOTS := {
     "Rival": ["HABITS", "RIVALS"],
     "Habits": ["HABITS", "TEXT", "CARDS"],
     "RivalCards": ["CARDS"],
+    "OwnerCast": ["CARDS"],
+    "Projects": ["TYPES"],
     "RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
     "Seasons": ["CARDS", "EVENTS"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
 const SCRIPTS := {
-    "Seasons": "res://scripts/seasons.gd","Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd"}
+    "Seasons": "res://scripts/seasons.gd","Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -50583,7 +50696,7 @@ func build(existing: Dictionary) -> String:
 ''')
 
 write("scripts/projects.gd", '''extends Node
-# gdlint:disable=max-line-length
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
 # Owner campaign: client profitability, projects and services. MSPs live on recurring revenue (the monthly fee, plus
 # services like managed backup), and projects (a desktop refresh, a network or server upgrade, a security cleanup) add
 # one-time money on top. Both compete for the same technicians' hours, and both can quietly lose money:
@@ -50598,7 +50711,7 @@ const BILL_RATE := 95  # what an extra hour costs a client
 const DISCOVERY_FEE := 300
 # extra hours when a fixed-price job creeps
 const SCOPE_CREEP := 0.25
-const TYPES := {
+const DEFAULT_TYPES := {
     "desktops": {"label": "DESKTOP REFRESH (XP REPLACEMENT)", "price": [1800, 3600], "hw": 0.62, "hours": 18, "weeks": 2, "blurb": "five or six Windows XP desktops need replacing before April 8"},
     "network": {"label": "NETWORK UPGRADE (SWITCHES AND WI-FI)", "price": [2800, 3800], "hw": 0.45, "hours": 26, "weeks": 3, "blurb": "their wireless is a guessing game and the switches are ten years old"},
     "server": {"label": "SERVER REPLACEMENT", "price": [6500, 8500], "hw": 0.5, "hours": 44, "weeks": 4, "blurb": "the file server is out of warranty and out of disk"},
@@ -50607,6 +50720,8 @@ const TYPES := {
     "backup_dr": {"label": "BACKUP AND RECOVERY SETUP", "price": [1200, 1600], "hw": 0.25, "hours": 12, "weeks": 2, "blurb": "they want to know they can recover when it all goes wrong"},
     "security": {"label": "SECURITY CLEANUP", "price": [900, 1300], "hw": 0.2, "hours": 14, "weeks": 2, "blurb": "remote access, passwords and the firewall all need attention"},
 }
+# P5: patchable from story/strings.txt (Projects.TYPES: label, blurb)
+var TYPES: Dictionary = DEFAULT_TYPES.duplicate(true)
 const SERVICES := {
     "backup": {"label": "MANAGED BACKUP", "price": 110, "cost": 35, "blurb": "we watch their backups every night and fix failures before they matter"},
     "patching": {"label": "MANAGED UPDATES AND AV", "price": 80, "cost": 25, "blurb": "we keep every machine patched and protected"},
@@ -64925,6 +65040,21 @@ const BEAT_TEXT := {
         "lynk": {"from": "Morgan", "text": "Dan says five tickets are open and three more prospects will phone by Monday. Please quote only what we can carry."},
         "info": {"speaker": "{sales_owner}", "text": "WebWoot audited Big Cheese: 212 seats nobody reported, and its antivirus was suspended over the weekend. Three of Rex's clients phoned us by Monday, one asking for you by name. Quote only what Dan and Morgan can carry.", "ok": "SHOW ME THE LEADS"},
     },
+    "intro": {
+        "lynk": {"from": "Garrison", "text": "A prospect wants a reason to sign this month. An intro rate is fine. An intro rate nobody can find the end of is not."},
+        "card": {
+            "speaker": "{sales_owner}",
+            "text": "%s likes the quote and not the number. They would sign today for half price on the first three months. The list price after that can go on page one, or in the paragraph nobody reads. Or you hold the price.",
+            "options": [
+                {"id": "pageone", "label": "INTRO RATE, THE STEP ON PAGE ONE"},
+                {"id": "smallprint", "label": "INTRO RATE, PRICE IN THE SMALL PRINT"},
+                {"id": "hold", "label": "HOLD THE LIST PRICE (1 HOUR)"},
+            ],
+        },
+        "res_pageone": {"speaker": "{sales_owner}", "text": "Three months at half, then the list price, in the first paragraph. They read it twice and said they would think about it. People who think about it and still sign tend to stay."},
+        "res_smallprint": {"speaker": "{tech_owner}", "text": "They signed. Month four is on page six, in grey. A vendor did this to me once. I remember exactly how I felt about that vendor in month four."},
+        "res_hold": {"speaker": "{sales_owner}", "text": "You held the price and spent the hour on what it buys. No discount now and no surprise in month four. They are still talking to you."},
+    },
     "scorecard": {
         "lynk": {"from": "Garrison", "text": "Renewals are coming. The clients who see a one page scorecard stay. The others get a polite email in January."},
         "card": {
@@ -67206,6 +67336,7 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
@@ -67461,6 +67592,9 @@ static func assess_pick(l: Dictionary, pick: String) -> void:
 		l["assessed"] = "honest"
 		Habits.apply_touch("H10")
 		Temptation.change_consc(1)
+		if Rival.RIVALS.has(incumbent(l)):
+			for h in findings(l):
+				Rival.set_rap(incumbent(l), str(h), Rival.SEEN)  # an honest list is evidence: it goes on the rival's rap sheet
 		SalesCampaign.Deals.note(l, "HONEST LIST: %d FIXES" % findings(l).size())
 	SalesCampaign.changed.emit()
 
@@ -67484,9 +67618,13 @@ const BILLS := {
 	"cheap": {"lo": 4, "hi": 6, "mood": 10, "churn": 10, "rep": 1, "claw": 2.5, "leave": false, "text": "THE FIXES YOU TOLD THEM WERE NOT NEEDED TURNED INTO OUTAGES."},
 	"flat": {"lo": 3, "hi": 5, "mood": 8, "churn": 6, "rep": 1, "claw": 2.0, "leave": false, "text": "THEY ASKED FOR THE SETUP THEY ASSUMED WAS INCLUDED. NOTHING WAS IN WRITING."},
 	"launder": {"lo": 5, "hi": 7, "mood": 0, "churn": 0, "rep": 3, "leave": true, "text": "THE CONTACT ASKED HOW YOU KNEW ABOUT THEIR MAILBOX."},
+	"intro": {"lo": 3, "hi": 5, "mood": 10, "churn": 10, "rep": 1, "claw": 2.0, "leave": false, "text": "THE INTRO RATE ENDED AND THE REAL INVOICE CAME. THE LIST PRICE WAS IN THE SMALL PRINT."},
 	"undercut": {"lo": 4, "hi": 6, "mood": 6, "churn": 8, "rep": 1, "claw": 2.0, "leave": false, "text": "THE UNDERCUT PRICE CAME WITH UNDERCUT SERVICE. THEY NOTICED."}
 }
 const BILL_PATIENCE := 8
+const INTRO_PTS := 0.03  # an intro rate with the step on page one: a small, honest edge
+const HOLD_PTS := 0.02
+const INTRO_FAST := 0.08  # the small print version on a lead that is not quoted yet
 const CLEAN_FLOOR := 50
 
 
@@ -67724,6 +67862,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"intro":
+			beat_intro()
 		"rumour":
 			beat_rumour()
 		"audit":
@@ -68066,6 +68206,49 @@ static func beat_audit() -> void:
 static func _audit_cards(fresh: Array) -> void:
 	for l in fresh:
 		SalesCampaign._lead_card(l)
+
+
+# week 12: the intro rate temptation (the sales twin of the owner's vendor switch, from the other side of the table). A prospect would
+# sign today for a cheap first quarter. PAGE ONE shows the step to list price (honest, a small edge), SMALL PRINT hides it (the deal closes
+# now at the full fee, a lie, and the bill comes when the intro rate ends: BILLS.intro), HOLD keeps the list price for an hour of selling.
+static func beat_intro() -> void:
+	var sb := SalesCampaign.SalesBeats
+	var l: Dictionary = sb.quoted_lead()
+	if l.is_empty():
+		l = _best_open()
+	if l.is_empty():
+		sb.set_flag("intro", "none")
+		return
+	sb.lynk("intro")
+	sb.ask(
+		"intro",
+		"card",
+		func(id: String) -> void: _intro_pick(l, id),
+		[str(l.name)],
+		{"hold": {"enabled": SalesCampaign.slots_left() >= 1, "hint": "NO SELLING HOURS LEFT"}}
+	)
+
+
+static func _intro_pick(l: Dictionary, id: String) -> void:
+	var sb := SalesCampaign.SalesBeats
+	sb.set_flag("intro", id)
+	match id:
+		"smallprint":
+			mark_lie(l, "INTRO RATE, LIST PRICE IN THE SMALL PRINT", "intro")
+			if str(l.stage) == "QUOTED":
+				var method := str(l.get("quote", {}).get("method", "fixed"))
+				sb.say("intro", "res_smallprint", [], func() -> void: sb.close_at(l, method, 1.0))
+				return
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_FAST
+		"hold":
+			SalesCampaign.spend(1)
+			l["pts"] = float(l.get("pts", 0.0)) + HOLD_PTS
+			SalesCampaign.Deals.note(l, "HELD THE LIST PRICE")
+		_:
+			l["pts"] = float(l.get("pts", 0.0)) + INTRO_PTS
+			Temptation.change_consc(1)
+			SalesCampaign.Deals.note(l, "INTRO RATE, THE STEP ON PAGE ONE")
+	sb.say("intro", "res_" + id)
 
 
 # week 17: scorecards at renewal (+0.06 renew chance for a client who saw one)
@@ -74086,8 +74269,9 @@ static func owner_fx(kind: String) -> void:
                 Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
                 Owner.show_card("bec_claim_no")
         "blame":
-            Owner.apply({"rep": -3, "mood": {key: -18}})
-            if Sales.active.has(client) and randf() < 0.4:
+            var paper: float = Habits.blame_mult()  # R38: H13, written authorisation halves the blame
+            Owner.apply({"rep": -int(round(3.0 * paper)), "mood": {key: -int(round(18.0 * paper))}})
+            if Sales.active.has(client) and randf() < 0.4 * paper:
                 Owner.drop_client(client, "")
                 Owner.show_card("bec_blame_left")
             else:
@@ -74720,6 +74904,8 @@ static func show(owner: Node, id: String, arg: String) -> void:
 	card = _fill(card, names)
 	if id == Temptation.CLEAN_CARD:
 		card = Temptation.dress(card)  # R38: the COME CLEAN card gets its costs
+	if id == Temptation.LESSON_CARD:
+		card = Temptation.dress_lesson(owner, card)  # the morning after the restore that failed
 	if id == "temp_seats":
 		card = Temptation.dress_seats(owner, card)  # Christy warns after the first vendor switch
 	var options: Array = card.options
@@ -75118,6 +75304,8 @@ const H9_WEEK := 18  # the card comes in the week 19 morning (the clocks change 
 const DRIFT_DROP := 3  # a mood fall this big in a week shows as a chip once the front desk is listened to
 const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
+const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
+const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -75335,7 +75523,27 @@ static func touch(id: String) -> bool:
 	e["last"] = Campaign.day
 	e["uses"] = int(e.get("uses", 0)) + 1
 	Owner.habits[id] = e
+	if id == "H1":
+		late_test()
 	return true
+
+
+# the skipped restore test (the temp_restore temptation) is still in Christy's folder
+static func skipped_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			return true
+	return false
+
+
+# a real restore test after the skipped one finds the broken job while it is cheap: the entry leaves the folder with no bill
+static func late_test() -> bool:
+	for sk in Owner.skel:
+		if str(sk.get("id", "")) == SKIPPED:
+			Owner.skel.erase(sk)
+			Hints.toast("THE LATE RESTORE TEST FOUND A JOB THAT WAS SKIPPING FOLDERS. FIXED WHILE IT WAS CHEAP.", 5.0)
+			return true
+	return false
 
 
 # the real thing happened in the game (a review, a project, a loss): it counts only while the habit still works (ADOPTED or STALE)
@@ -75760,6 +75968,11 @@ static func bec_mult() -> float:
 	return 1.0 - 0.15 * factor("H7") - 0.05 * factor("H13") - 0.05 * factor("H4")
 
 
+# H13: with the client's written go-ahead on file, telling them it was their own process costs half (Incident, bec "blame")
+static func blame_mult() -> float:
+	return 1.0 - 0.5 * factor("H13")
+
+
 # _rdp_week: a unique admin login makes a guessed password rarer (4 percent -> 1 percent when weak)
 static func rdp_mult(weak: bool) -> float:
 	return 1.0 - 0.75 * factor("H7") if weak else 1.0
@@ -75767,6 +75980,8 @@ static func rdp_mult(weak: bool) -> float:
 
 # ransom restore: the share of ransoms that fail to restore when the client HAS the backup service (untested 15 percent)
 static func restore_fail() -> float:
+	if skipped_test():
+		return SKIP_FAIL  # the test was skipped on purpose: the freezer bag moment is yours
 	if not Owner.habits.has("H1") or fresh("H1"):
 		return 0.0
 	return 0.15
@@ -75830,6 +76045,8 @@ const SWITCH_MOOD := -3  # the agents go back on every PC
 const FRIEND_LOSS := 30  # forum friendship lost by the two best regulars when fake reviews are traced
 const CLEAN_EVERY := 4  # the COME CLEAN card comes at most this often (weeks), from the second open skeleton
 const CLEAN_CARD := "temp_come_clean"
+const RESTORE := "temp_restore"  # the skipped restore test: its bill is a real ransom (ransom_bill)
+const LESSON_CARD := "temp_restore_after"
 const BANDS := [
 	[0, "CLEAN BOOKS"], [-3, "A FEW LOOSE ENDS"], [-6, "SKELETONS"], [-999, "A CLOSET FULL"]
 ]
@@ -76021,8 +76238,10 @@ static func come_clean(id: String) -> bool:
 
 # the bill arrives: cash, reputation, the class extras (see _extras) and the card bill_<id> of RivalCards (a toast if it has none)
 static func bill(owner: Node, sk: Dictionary) -> void:
-	Career.add("skeletons_paid")  # R38 P6
 	var id := str(sk.get("id", ""))
+	if id == RESTORE and not Difficulty.cozy_on() and ransom_bill(owner, sk):
+		return  # the skipped restore test: a real infection is the bill
+	Career.add("skeletons_paid")  # R38 P6
 	var b: Dictionary = BILLS.get(id, {})
 	var cost := bill_size(sk)
 	if cost > 0:
@@ -76039,6 +76258,47 @@ static func bill(owner: Node, sk: Dictionary) -> void:
 		return
 	owner._dynamic["tb_" + id] = _dress_bill(owner, owner.card_data(card), victim, cost, id)
 	owner.show_card("tb_" + id)
+
+
+# The skipped restore test comes due as a real ransom: an infection at one served client whose restore fails (Habits.restore_fail() is
+# SKIP_FAIL while the entry is in the folder), so the player gets the ransom card instead of a flat bill. False (and the flat bill) when
+# there is no client or no server to hit. Cozy keeps the flat, halved bill.
+static func ransom_bill(owner: Node, sk: Dictionary) -> bool:
+	var victim := _victim(owner, "backup")
+	if victim < 0:
+		return false
+	owner.skel.append(sk)  # still open while the infection runs: the restore reads it, ransom_hit takes it out
+	if owner.ransom_at(victim) and find(RESTORE) < 0:
+		return true
+	owner.skel.erase(sk)
+	return false
+
+
+# a restore failed because of the skipped test (the scheduled ransom, or ransom_bill): the entry leaves the folder, the ransom card is
+# the bill, the client is hurt and Alan's lesson card comes the next morning
+static func ransom_hit(owner: Node, client: int) -> void:
+	var i := find(RESTORE)
+	if i < 0:
+		return
+	owner.skel.remove_at(i)
+	Career.add("skeletons_paid")
+	owner.flags["skip_ransom"] = Campaign.day
+	owner.flags["skip_client"] = client
+	Sales.adjust(client, -int(BILLS[RESTORE].get("mood", 0)))
+	if owner.card_data(LESSON_CARD).is_empty():
+		return
+	var q: Array = owner.flags.get("arc_queue", [])
+	q.append(LESSON_CARD)
+	owner.flags["arc_queue"] = q
+
+
+# Alan's card the morning after (Rival.show calls this): {vname} is the client that was hit
+static func dress_lesson(owner: Node, card: Dictionary) -> Dictionary:
+	var victim := int(owner.flags.get("skip_client", -1))
+	var who := "the client"
+	if victim >= 0 and victim < Msp.CLIENTS.size():
+		who = str(Msp.CLIENTS[victim].name)
+	return _fill(card, {"{vname}": who})
 
 
 # the client a bill falls on: the margin bill the one on the deepest discount, the backup bill the ransom client, the others the
@@ -77944,6 +78204,27 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"temp_restore_after":
+	{
+		"speaker": "{tech}",
+		"text":
+		"About {vname}. The backup light was green all quarter, but the job had been skipping the folders that matter since a firewall change. The restore test we skipped would have found it in three hours. I am not saying it to be right.",
+		"options":
+		[
+			{
+				"label": "RUN A RESTORE TEST ON EVERY CLIENT NOW",
+				"fx": {"habit": "H1", "owner_hours": 3, "consc": 1},
+				"text":
+				"It takes a long weekend. Two more jobs turn out to be missing folders. All three get fixed before Monday."
+			},
+			{
+				"label": "CALL IT BAD LUCK",
+				"fx": {"consc": -1},
+				"text":
+				"It was not luck. Alan does not say so. Alan just looks at the green light for a long time."
+			},
+		],
+	},
 	"bill_temp_restore":
 	{
 		"speaker": "{tech}",
@@ -77986,6 +78267,673 @@ static func merged_days(base: Dictionary) -> Dictionary:
 	for day in DAYS:
 		out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
 	return out
+''')
+
+write("scripts/byname.gd", '''extends RefCounted
+# gdlint:disable=max-line-length
+# R36, the owner and service part: clients who ask for one tech by name. A static helper (no state of its own).
+#
+# SERVICE campaign (state in Service.flags.bn): every ticket a tech closes at a client counts for him there. Once one tech has closed
+# ASK_MIN tickets at a happy client, that client now and then asks for him by name: the ticket is marked (asked_tech), the autopilot
+# routes it to him even when his desk is full (so the crew gets lopsided: he overloads while the others idle), and the Capacity tab
+# shows who is being asked for. He closes it: mood +KEPT_MOOD, morale +KEPT_MORALE. Somebody else closes it: mood OTHER_MOOD. When a
+# tech quits, the clients who asked for him are unhappy (FOLLOW_MOOD each) and Jen tells you who called.
+#
+# OWNER campaign (state in Owner.flags.bn): the crew is abstract there, so a client simply picks a favourite among the two employees
+# (one new favourite in some weeks, mostly the tech who already has the most: the load gets lopsided). At LOPSIDED favourites Morgan
+# raises it (let them, rotate, or pair the techs so the knowledge is shared). When a tech leaves, each client that asked for him and
+# was never shared may follow him out: the non-solicit card (lawyer letter, a visit, or let them go).
+
+const ASK_MIN := 3  # tickets closed at one client before they know a tech's name
+const ASK_MOOD := 60
+const ASK_CHANCE := 0.3
+const ASK_GAP := 2  # days between two requests from one client
+const ASK_LOAD := 4  # the asked tech takes it up to this many tickets on his desk
+const KEPT_MOOD := 2
+const KEPT_MORALE := 1
+const OTHER_MOOD := -2
+const FOLLOW_MIN := 4  # tickets at a client that make a tech "theirs"
+const FOLLOW_MOOD := 8
+const OWNER_MOOD := 65
+const OWNER_CHANCE := 0.4  # a week brings one new favourite this often
+const LEADER_SHARE := 0.7  # ... and this often it is the tech who already has the most
+const OWNER_FROM := 3  # first week
+const LOPSIDED := 3  # favourites on one tech that make Morgan raise it
+const CARD_GAP := 6  # weeks between two lopsided cards
+const LET_MOOD := 3
+const LET_BURN := 5.0
+const LET_SPEED := -0.03
+const ROTATE_MOOD := -3
+const ROTATE_SPEED := 0.02
+const ROTATE_HOURS := 2
+const PAIR_COST := 300
+const FOLLOW_CHANCE := 0.6  # a client that asked for the tech who left wants to follow him
+const LETTER_COST := 400
+const LETTER_STAY := 0.6
+const LETTER_MOOD := -8
+const VISIT_HOURS := 3
+const VISIT_STAY := 0.6
+const VISIT_MOOD := 3
+const QUIET_MOOD := -6  # a second follower in the same week only sulks
+
+
+# ---- service campaign --------------------------------------------------------------------------------------------
+static func state() -> Dictionary:
+    if not Service.flags.has("bn"):
+        Service.flags["bn"] = {"fav": {}, "day": {}, "asks": 0, "kept": 0, "other": 0, "followed": 0}
+    return Service.flags["bn"]
+
+
+# tickets `who` has closed at this client
+static func count(client: int, who: String) -> int:
+    return int((state().fav.get(str(client), {}) as Dictionary).get(who, 0))
+
+
+# the tech this client knows by name ("" = nobody yet): the most tickets there, at least ASK_MIN, still on the crew
+static func favourite(client: int) -> String:
+    var best := ""
+    var most := ASK_MIN - 1
+    for who in Crew.names():
+        var n := count(client, str(who))
+        if n > most:
+            most = n
+            best = str(who)
+    return best
+
+
+# a new ticket (Msp.ticket_added): a happy client that knows a tech asks for him
+static func on_ticket(t: Dictionary) -> void:
+    if not Service.active() or not Service._crew_ticket(t):
+        return
+    var client := int(t.client)
+    var st := state()
+    var who := favourite(client)
+    if who == "" or Sales.mood(client) < ASK_MOOD or int(st.day.get(str(client), -99)) > Campaign.day - ASK_GAP:
+        return
+    if Difficulty.rng("service.byname").randf() >= ASK_CHANCE:
+        return
+    st.day[str(client)] = Campaign.day
+    st["asks"] = int(st.asks) + 1
+    t["asked_tech"] = who
+    t.notes.append("%s asked for %s by name." % [str(Msp.CLIENTS[client].contact), who])
+    Hints.toast("%s ASKED FOR %s BY NAME." % [str(Msp.CLIENTS[client].short).to_upper(), who.to_upper()], 3.0)
+
+
+# the autopilot's route for an asked ticket: the tech they asked for, even with a full desk ("" = route it as usual)
+static func route(t: Dictionary) -> String:
+    var who := str(t.get("asked_tech", ""))
+    if who == "" or not Crew.has(who) or Crew.is_gone(who) or Crew.is_shadowing(who) or Crew.stuck.has(who):
+        return ""
+    return who if Crew.load_of(who) < ASK_LOAD else ""
+
+
+# a tech closed a ticket (Service._finish)
+static func on_done(who: String, t: Dictionary) -> void:
+    if not Service.active() or not Crew.has(who) or bool(t.get("internal", false)):
+        return
+    var client := int(t.client)
+    var st := state()
+    var row: Dictionary = st.fav.get(str(client), {})
+    row[who] = int(row.get(who, 0)) + 1
+    st.fav[str(client)] = row
+    var asked := str(t.get("asked_tech", ""))
+    if asked == "" or bool(t.get("bn_done", false)):
+        return
+    t["bn_done"] = true
+    if asked == who:
+        st["kept"] = int(st.kept) + 1
+        Sales.adjust(client, KEPT_MOOD)
+        Crew.add_morale(who, KEPT_MORALE)
+        t.notes.append("They asked for %s and got %s." % [who, who])
+    else:
+        st["other"] = int(st.other) + 1
+        Sales.adjust(client, OTHER_MOOD)
+        t.notes.append("They asked for %s and got %s." % [asked, who])
+
+
+# open tickets that ask for this tech
+static func asks_for(who: String) -> int:
+    var n := 0
+    for t in Msp.tickets:
+        if str(t.status) != "Closed" and str(t.get("asked_tech", "")) == who:
+            n += 1
+    return n
+
+
+# the clients (indices) that know this tech by name
+static func fans(who: String) -> Array:
+    var out := []
+    for c in Sales.active:
+        if favourite(int(c)) == who:
+            out.append(int(c))
+    return out
+
+
+# the Capacity tab's tag for a tech row: "" or "ASK 2" (open requests), else "FANS 3" (clients that know him)
+static func tag(who: String) -> String:
+    var open := asks_for(who)
+    if open > 0:
+        return "ASK %d" % open
+    var n := fans(who).size()
+    return "FAN %d" % n if n > 0 else ""
+
+
+# the Capacity tab's note for the selected tech ("" = nothing to say)
+static func note(who: String, short := false) -> String:
+    var names := []
+    for c in fans(who):
+        names.append(str(Msp.CLIENTS[int(c)].short).to_upper())
+    if names.is_empty():
+        return ""
+    if short:
+        return "FANS: " + " ".join(names)
+    return "%s ASK%s FOR %s BY NAME" % [" AND ".join(names) if names.size() <= 2 else "%d CLIENTS" % names.size(), "S" if names.size() == 1 else "", who.to_upper()]
+
+
+# a tech quit (Service.release_all): the clients that were his are unhappy, and Jen tells you who called. Returns those clients.
+static func on_quit(who: String) -> Array:
+    if not Service.active():
+        return []
+    var st := state()
+    var lost := []
+    for c in Sales.active:
+        if count(int(c), who) >= FOLLOW_MIN and _was_theirs(int(c), who):
+            lost.append(int(c))
+    for key in st.fav:
+        (st.fav[key] as Dictionary).erase(who)
+    for t in Msp.tickets:
+        if str(t.get("asked_tech", "")) == who:
+            t.erase("asked_tech")
+    if lost.is_empty():
+        return lost
+    var names := []
+    for c in lost:
+        Sales.adjust(int(c), -(FOLLOW_MOOD / 2 if Difficulty.cozy_on() else FOLLOW_MOOD))
+        names.append(str(Msp.CLIENTS[int(c)].name))
+    st["followed"] = int(st.followed) + lost.size()
+    Cards.ask(
+        "Jen",
+        "%s called the front desk and asked for %s. I told them %s does not work here any more. It went very quiet on the line. They only ever wanted %s." % [" and ".join(names), who, who, who],
+        [{"label": "OK", "id": "ok"}],
+        func(_id: String) -> void: pass
+    )
+    return lost
+
+
+# nobody else has closed more tickets there
+static func _was_theirs(client: int, who: String) -> bool:
+    var row: Dictionary = state().fav.get(str(client), {})
+    for other in row:
+        if str(other) != who and int(row[other]) > int(row.get(who, 0)):
+            return false
+    return true
+
+
+# ---- owner campaign --------------------------------------------------------------------------------------------
+static func ostate() -> Dictionary:
+    if not Owner.flags.has("bn"):
+        Owner.flags["bn"] = {"fav": {}, "shared": {}, "gone": [], "lost": 0, "card": -99, "followed": 0, "let": false}
+    return Owner.flags["bn"]
+
+
+# the employees a client can still ask for
+static func techs() -> Array:
+    var out := []
+    var gone: Array = ostate().gone
+    for row in Owner.CREW:
+        if not gone.has(str(row.name)):
+            out.append(str(row.name))
+    return out
+
+
+static func owner_fav(client: int) -> String:
+    return str(ostate().fav.get(str(client), ""))
+
+
+static func owner_fans(who: String) -> Array:
+    var out := []
+    for c in Sales.active:
+        if owner_fav(int(c)) == who:
+            out.append(int(c))
+    return out
+
+
+# fans that would follow him out (the ones that were never shared)
+static func at_risk(who: String) -> Array:
+    var out := []
+    for c in owner_fans(who):
+        if not bool(ostate().shared.get(str(c), false)):
+            out.append(c)
+    return out
+
+
+# the tech with the most favourites ("" = none)
+static func leader() -> String:
+    var best := ""
+    var most := 0
+    for who in techs():
+        var n := owner_fans(str(who)).size()
+        if n > most:
+            most = n
+            best = str(who)
+    return best
+
+
+# the sentence a poaching card gets: what losing this tech would put at risk
+static func risk_line(who: String) -> String:
+    var n := at_risk(who).size()
+    if n <= 0:
+        return ""
+    return " %d client%s ask%s for %s by name." % [n, "" if n == 1 else "s", "s" if n == 1 else "", who]
+
+
+# the weekly report row ("" = nothing yet)
+static func report_text() -> String:
+    var parts := []
+    for who in techs():
+        var n := owner_fans(str(who)).size()
+        if n > 0:
+            parts.append("%s %d" % [str(who).to_upper(), n])
+    return ", ".join(parts)
+
+
+# remember who a poaching card is about, so the right name leaves (Owner._key_poach)
+static func note_leaver(who: String) -> void:
+    ostate()["leaver"] = who
+
+
+# Owner.settle(), owner campaign only: departures first, then one new favourite, then the lopsided card
+static func owner_week(owner: Node) -> void:
+    var st := ostate()
+    for key in st.fav.keys():
+        if not Sales.active.has(int(key)):
+            st.fav.erase(key)
+            st.shared.erase(key)
+    _departures(owner)
+    if Campaign.day < OWNER_FROM or techs().is_empty():
+        return
+    var r := Difficulty.rng("owner.byname")
+    var roll := r.randf()  # always three draws a week: the stream stays in step
+    var pick := r.randf()
+    var lead := r.randf()
+    var open := []
+    for c in Sales.active:
+        if owner_fav(int(c)) == "" and Sales.mood(int(c)) >= OWNER_MOOD:
+            open.append(int(c))
+    if roll < OWNER_CHANCE and not open.is_empty():
+        var client: int = open[mini(open.size() - 1, int(pick * open.size()))]
+        var who := leader()
+        var names := techs()
+        if who == "" or lead >= LEADER_SHARE:
+            who = str(names[mini(names.size() - 1, int(lead * names.size()))])
+        st.fav[str(client)] = who
+        Hints.toast("%s NOW ASKS FOR %s BY NAME." % [str(Msp.CLIENTS[client].name).to_upper(), who.to_upper()], 4.0)
+    if bool(st.get("let", false)) and leader() != "" and owner_fans(leader()).size() >= LOPSIDED:
+        owner.burnout = clampf(owner.burnout + 1.0, 0.0, 100.0)  # one desk carries the clients
+    var top := leader()
+    if top != "" and owner_fans(top).size() >= LOPSIDED and techs().size() >= 2 and Campaign.day - int(st.card) >= CARD_GAP:
+        st["card"] = Campaign.day
+        lopsided_card(owner, top)
+
+
+# a tech left since last week: who it was, and which of his clients want to follow
+static func _departures(owner: Node) -> void:
+    var st := ostate()
+    var lost := int(owner.lost_techs)
+    while int(st.lost) < lost:
+        st["lost"] = int(st.lost) + 1
+        var names := techs()
+        if names.is_empty():
+            break
+        var who := str(st.get("leaver", ""))
+        if not names.has(who):
+            who = str(names[names.size() - 1])
+        st.erase("leaver")
+        st.gone.append(who)
+        left(owner, who)
+    st.erase("leaver")
+
+
+# the clients that asked for the tech who left: the shared ones stay, the first of the others brings the non-solicit card
+static func left(owner: Node, who: String) -> void:
+    var st := ostate()
+    var carded := false
+    var r := Difficulty.rng("owner.byname")
+    for key in st.fav.keys():
+        if str(st.fav[key]) != who:
+            continue
+        var client := int(key)
+        st.fav.erase(key)
+        var wants := r.randf() < FOLLOW_CHANCE
+        if bool(st.shared.get(key, false)) or not Sales.active.has(client):
+            st.shared.erase(key)
+            continue
+        if Difficulty.cozy_on() or not wants:
+            Sales.adjust(client, QUIET_MOOD / 2)
+            continue
+        st["followed"] = int(st.followed) + 1
+        if carded:
+            Sales.adjust(client, QUIET_MOOD)
+            continue
+        carded = true
+        follow_card(owner, client, who)
+
+
+static func follow_card(owner: Node, client: int, who: String) -> void:
+    var cname := str(Msp.CLIENTS[client].name)
+    owner._dynamic["bn_follow"] = {
+        "speaker": "Christy (Controller)",
+        "text": "%s is gone, and %s asked for %s by name on every ticket. Their office manager wants to know where %s works now. Our contract has a non-solicit line. Their lawyer has read it too." % [who, cname, who, who],
+        "options":
+        [
+            {
+                "label": "SEND THE NON-SOLICIT LETTER ($%d)" % LETTER_COST,
+                "need": LETTER_COST,
+                "roll":
+                [
+                    [LETTER_STAY, {"cash": -LETTER_COST, "mood": {str(client): LETTER_MOOD}}, "They stay. Nobody sends a fruit basket."],
+                    [1.0 - LETTER_STAY, {"cash": -LETTER_COST, "drop_client": client, "rep": -1}, "They leave anyway, and they show people the letter."]
+                ]
+            },
+            {
+                "label": "GO THERE AND INTRODUCE THE CREW (%d HOURS)" % VISIT_HOURS,
+                "roll":
+                [
+                    [VISIT_STAY, {"owner_hours": VISIT_HOURS, "mood": {str(client): VISIT_MOOD}}, "You bring the crew and a box of donuts. By the end they are asking for somebody new by name."],
+                    [1.0 - VISIT_STAY, {"owner_hours": VISIT_HOURS, "drop_client": client}, "They are polite about it. They had already decided. They go where %s went." % who]
+                ]
+            },
+            {"label": "LET THEM GO", "fx": {"drop_client": client}, "text": "They follow %s. It was never our logo they were calling." % who},
+        ],
+    }
+    owner.show_card("bn_follow")
+
+
+static func lopsided_card(owner: Node, who: String) -> void:
+    var list: Array = owner_fans(who)
+    var others := techs()
+    others.erase(who)
+    var other := str(others[0]) if not others.is_empty() else "the rest of the crew"
+    Cards.ask(
+        "Morgan (Operations Manager)",
+        "%d clients will only talk to %s now. %s has a full board and %s is reading the manual. If %s ever leaves, those clients know the way out." % [list.size(), who, who, other, who],
+        [
+            {"label": "LET THEM HAVE WHO THEY ASK FOR", "id": "let"},
+            {"label": "ROTATE: EVERY CLIENT MEETS THE CREW (%d H)" % ROTATE_HOURS, "id": "rotate"},
+            {"label": "PAIR THE TECHS FOR A MONTH ($%d)" % PAIR_COST, "id": "pair", "enabled": owner.cash >= PAIR_COST, "hint": "NEED $%d" % PAIR_COST},
+        ],
+        func(id: String) -> void: lopsided_pick(owner, who, id)
+    )
+
+
+static func lopsided_pick(owner: Node, who: String, id: String) -> void:
+    var st := ostate()
+    var list: Array = owner_fans(who)
+    var text := ""
+    match id:
+        "rotate":
+            st["let"] = false
+            for i in list.size():
+                owner.apply({"mood": {str(list[i]): ROTATE_MOOD}})
+                if i > 0:
+                    st.fav.erase(str(list[i]))  # one keeps its favourite, the others get used to the whole crew
+                    st.shared.erase(str(list[i]))
+            owner.apply({"owner_hours": ROTATE_HOURS, "speed": ROTATE_SPEED})
+            text = "The clients grumble for a week about the new voice on the phone. The board evens out."
+        "pair":
+            st["let"] = false
+            st["card"] = 9999  # settled: Morgan does not raise it again
+            for c in list:
+                st.shared[str(c)] = true
+            owner.apply({"cash": -PAIR_COST, "mood_all": 1})
+            text = "Two techs on every visit for a month. The clients learn a second name, and the second tech learns where the server closet key is."
+        _:
+            st["let"] = true
+            st["card"] = 9999  # your call: Morgan does not raise it again
+            for c in list:
+                owner.apply({"mood": {str(c): LET_MOOD}})
+            owner.apply({"burnout": LET_BURN, "speed": LET_SPEED})
+            text = "The clients are happy. %s eats lunch at the desk now." % who
+    Cards.ask("Morgan (Operations Manager)", text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+''')
+
+write("scripts/owner_cast.gd", '''extends RefCounted
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
+# X11: the second cast in the owner campaign. Jen (the front desk: phones, intake, the wall between clients and your cell phone) and
+# Michael (the senior tech who takes tickets off people) each bring three decision cards. Data only, in the shape of Owner.CARDS:
+# Owner._ready() merges CARDS into Owner.CARDS by reference and Owner.events_on() merges DAYS into Owner.DAYS (the same way as
+# RivalCards). Patchable from story/strings.txt as OwnerCast.CARDS. The effects are ordinary fx keys: mood, speed (the crew's capacity),
+# weekly and payroll (cash every week), burnout, trust (the other owner's opinion) and owner hours.
+
+const DEFAULT_CARDS := {
+    "jen_phones":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "{me}, about four calls in ten come through my desk now. When I am on one, the next one rings the tech desks, and when nobody picks up it goes to voicemail. Clients hear a beep and assume the worst. I have three ideas and one of them is free.",
+        "options":
+        [
+            {
+                "label": "RING THE TECHS WHEN YOU ARE BUSY (FREE)",
+                "fx": {"mood_all": 2, "speed": -0.03, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "Every call gets a person. Dan answers with his full name and a sigh. The queue moves a little slower."
+            },
+            {
+                "label": "A PART-TIME SECOND VOICE ($110/WK)",
+                "fx": {"weekly": 110, "mood_all": 3, "rep": 1, "trust": {"Alan": 0, "Garrison": 1}},
+                "text": "A student answers the second line three afternoons a week. She says the company name like she owns it."
+            },
+            {
+                "label": "VOICEMAIL IS FINE",
+                "fx": {"mood_all": -2},
+                "text": "The beep stays. So does the worst assumption."
+            },
+        ],
+    },
+    "jen_intake":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "Can I ask three things before a call becomes a ticket? Who is it, what is down, and how many people are waiting. Right now I write COMPUTER BROKEN and Dan has to phone them back to find out which computer. He told me that. Twice.",
+        "options":
+        [
+            {
+                "label": "YES. THREE QUESTIONS ON EVERY CALL",
+                "fx": {"speed": 0.05, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Tickets arrive with a name, a machine and a headcount. A few callers grumble about the questions. Dan stops phoning people back."
+            },
+            {
+                "label": "AND SHE BOOKS THE ONSITE VISITS ($200)",
+                "need": 200,
+                "fx": {"cash": -200, "speed": 0.08, "owner_hours": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "A whiteboard goes up by her desk with the whole week on it. She runs it in four colours of marker. Nobody else is allowed the red one."
+            },
+            {
+                "label": "NO, PUT EVERY CALL STRAIGHT THROUGH",
+                "fx": {"mood_all": 1, "speed": -0.03},
+                "text": "Callers reach a tech at once. The tech was in the middle of something. Now he is in the middle of two things."
+            },
+        ],
+    },
+    "jen_wall":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "A client's owner has your cell number and he uses it. Three times this week, twice during dinner by the sound of it. I can be the wall, if you want a wall. I am polite about it. People thank me afterwards.",
+        "options":
+        [
+            {
+                "label": "BE THE WALL",
+                "fx": {"burnout": -6, "mood_all": -1, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "Calls go to the desk first. One client sulks for a week. You eat a whole dinner."
+            },
+            {
+                "label": "I WILL KEEP TAKING THE CALLS",
+                "fx": {"burnout": 5, "mood_all": 2, "owner_hours": 2, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "The clients love it. Your phone lives face up on the table now."
+            },
+            {
+                "label": "A DIRECT LINE TO JEN, NOT TO ME ($60)",
+                "need": 60,
+                "fx": {"cash": -60, "burnout": -3, "mood_all": 1},
+                "text": "She gets a second handset and a little card with her name on it. The owner calls her instead. He calls her a lot."
+            },
+        ],
+    },
+    "michael_catch":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "I took eleven tickets off Dan and Maya this week. I do not mind, it is faster than watching. I am telling you because mine are late now, and nobody will tell you that but me.",
+        "options":
+        [
+            {
+                "label": "KEEP CATCHING THEM",
+                "fx": {"speed": 0.05, "burnout": 5, "trust": {"Alan": 0, "Garrison": -1}},
+                "text": "The queue is quick. Michael's own list grows a second page. He says it is fine, in the voice people use for that."
+            },
+            {
+                "label": "CAP IT: TWO HAND-OFFS A DAY EACH",
+                "fx": {"speed": -0.02, "burnout": -3, "social_all": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "Dan and Maya finish more of their own. It is slower this month. Michael goes home on time and is suspicious about it."
+            },
+            {
+                "label": "MAKE IT HIS JOB: ESCALATIONS (+$100/WK)",
+                "fx": {"payroll": 100, "speed": 0.07, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "He gets the title and the raise. The hard ones go to him on purpose now, with a note attached."
+            },
+        ],
+    },
+    "michael_teach":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "Half of what I take off people is the same five problems. Give me an hour on Fridays with Dan and Maya and I will stop being the only one who knows. Or I write it down, which nobody will read.",
+        "options":
+        [
+            {
+                "label": "FRIDAY HOUR, PIZZA ON THE COMPANY ($150)",
+                "need": 150,
+                "fx": {"cash": -150, "speed": 0.06, "mood_all": -1, "social_all": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "The queue waits an hour on Fridays. By the third week Maya fixes a print server alone and tells everyone twice."
+            },
+            {
+                "label": "WRITE IT DOWN (2 HOURS OF MINE TO REVIEW)",
+                "fx": {"owner_hours": 2, "habit": "H11", "speed": 0.02, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Five pages in a binder with tabs. Dan reads them. Dan also corrects the spelling."
+            },
+            {
+                "label": "NO TIME FOR THAT NOW",
+                "fx": {"social_all": -1},
+                "text": "Michael nods and takes the next one off Maya's list."
+            },
+        ],
+    },
+    "michael_offer":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "One of our clients offered me a job. In-house IT, my own office, a door. I have not said no. I am telling you first because that is how I would want it done to me.",
+        "options":
+        [
+            {
+                "label": "MATCH IT (+$150/WK)",
+                "fx": {"payroll": 150, "burnout": -2, "social_all": 1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "He stays. He asks if the door was ever on the table. It was not."
+            },
+            {
+                "label": "REMIND THE CLIENT OF THE NO-HIRE CLAUSE",
+                "fx": {"mood_all": -2, "rep": -1, "social_all": -1, "trust": {"Alan": 0, "Garrison": -1}},
+                "text": "The client backs off, coolly. Michael stays, and knows exactly why."
+            },
+            {
+                "label": "LEND HIM TO THEM ONE DAY A WEEK ($180/WK)",
+                "fx": {"weekly": -180, "speed": -0.04, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "Thursdays he works from their office, billed by the day. They get a door with his name on it. We get an invoice with ours."
+            },
+        ],
+    },
+}
+static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
+
+# the week and time of day each card comes (kept clear of the other cards of that week)
+const DEFAULT_DAYS := {
+    4: [{"at": 15.5, "card": "jen_phones"}],
+    6: [{"at": 14.2, "card": "michael_catch"}],
+    9: [{"at": 12.0, "card": "jen_intake"}],
+    12: [{"at": 14.8, "card": "michael_teach"}],
+    14: [{"at": 13.5, "card": "jen_wall"}],
+    17: [{"at": 13.0, "card": "michael_offer"}],
+}
+static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
+
+
+# a DAYS table plus the placements of this file (the owner's events_on reads it)
+static func merged_days(base: Dictionary) -> Dictionary:
+    if DAYS.is_empty():
+        return base
+    var out := base.duplicate()
+    for day in DAYS:
+        out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
+    return out
+''')
+
+write("scripts/save_migrate.gd", '''extends RefCounted
+# X11: a save from before the second cast. The account manager and the bookkeeper had other names then; John and Christy took over
+# their roles, so every saved key and value that is exactly one of the old names is mapped to the new one when a save is loaded
+# (Campaign.continue_game calls names(cfg) right after reading the file). Text inside sentences (old messages) is left as it was.
+# The old names are split so a rename script cannot touch them.
+
+const OLD_SALES := "Vi" + "c"
+const OLD_BOOKS := "Mar" + "ge"
+const MAP := {
+    OLD_SALES: "John",
+    OLD_BOOKS: "Christy",
+    OLD_SALES + " Marlowe": "John Marlowe",
+    OLD_SALES + " (Account Manager)": "John (Account Manager)",
+    OLD_BOOKS + " (Bookkeeper)": "Christy (Controller)",
+    "office_" + "vi" + "c": "office_john",
+    "office_" + "mar" + "ge": "office_christy",
+}
+
+
+# rewrites the loaded file in memory; returns how many keys and values were renamed
+static func names(cfg: ConfigFile) -> int:
+    var count := [0]
+    for section in cfg.get_sections():
+        for key in cfg.get_section_keys(section):
+            var before: Variant = cfg.get_value(section, key)
+            var n := int(count[0])
+            var after: Variant = fix(before, count)
+            if int(count[0]) != n:
+                cfg.set_value(section, key, after)
+    return int(count[0])
+
+
+# the value with every exact old name (a string, a dictionary key, an array entry) replaced. Containers are changed in place, so a
+# typed array keeps its type.
+static func fix(v: Variant, count: Array) -> Variant:
+    if v is String:
+        if MAP.has(v):
+            count[0] = int(count[0]) + 1
+            return MAP[v]
+        return v
+    if v is Array:
+        for i in v.size():
+            if v[i] is String or v[i] is Array or v[i] is Dictionary:
+                v[i] = fix(v[i], count)
+        return v
+    if v is Dictionary:
+        for k in v.keys():
+            if v[k] is String or v[k] is Array or v[k] is Dictionary:
+                v[k] = fix(v[k], count)
+            if k is String and MAP.has(k):
+                count[0] = int(count[0]) + 1
+                if not v.has(MAP[k]):  # a save that somehow has both keeps the new name's value
+                    v[MAP[k]] = v[k]
+                v.erase(k)
+        return v
+    return v
 ''')
 
 write("scripts/rival_touches.gd", '''extends RefCounted
