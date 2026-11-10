@@ -1220,6 +1220,11 @@ func _event_key(event: InputEvent) -> int:
 
 
 func _event_key_p2(event: InputEvent) -> int:
+	if game == "chair" and phase == "play" and g.has("race") and g.race.get("duel") == true:
+		if event.is_action(Controls.action_for(1, "push_a")):
+			return KEY_Z  # the duel: player 2 has both legs, A and B
+		if event.is_action(Controls.action_for(1, "push_b")):
+			return KEY_X
 	if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
 		return KEY_X  # the second pilot's push
 	if game == "paintball" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "interact"))):
@@ -4268,14 +4273,20 @@ func _chair_best_key(course: String) -> String:
 func _chair_career(result: int) -> Dictionary:
 	var race: RefCounted = g.race
 	if str(g.get("event", "")) == "fight":
-		return {"fight": true, "won": race.winner == 0, "bumps": int(race.score()[0])}
+		return {"fight": true, "duel": race.duel, "won": race.winner == 0 and not race.duel, "bumps": int(race.score()[0])}
 	return {"course": str(race.course), "won": not race.dnf and int(g.place) == 1 and not race.rivals.is_empty(), "clean": result >= 1 and race.crashes + race.cones == 0 and not race.false_started}
+
+
+# co-op: the chair fight is a duel, player 1's chair against player 2's (the races stay a tandem)
+func _chair_duel() -> bool:
+	return _chair_event_now() == "fight" and Players.coop and Players.slots[1].joined
 
 
 func _chair_params() -> Dictionary:
 	return {
 		"course": _chair_event_now(),
 		"opponent": str(opts.get("opponent", "")),
+		"duel": _chair_duel(),
 		"crash": Difficulty.f("chair.crash"),
 		"stamina": Difficulty.f("chair.stamina"),
 		"slick": Difficulty.f("chair.slick"),
@@ -4306,10 +4317,14 @@ func _chair_setup() -> void:
 				"label": "YOU",
 			}
 		]
-		if Players.coop and Players.slots[1].joined:  # the tandem's second pilot rides behind
+		if Players.coop and Players.slots[1].joined and not _chair_duel():  # the tandem's second pilot rides behind
 			var p2: Dictionary = Players.slot(1).look
 			specs.append({"key": "You2", "character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "color": Color.WHITE, "label": "P2", "rider": true, "look": p2})
 		for r in race.rivals:
+			if str(r.n) == "P2":  # the duel: player 2 in their own chair, with their own look
+				var d2: Dictionary = Players.slot(1).look
+				specs.append({"key": "P2", "character": Look.BASE if not d2.is_empty() else str(Players.slot(1).character), "custom": not d2.is_empty(), "color": r.color, "label": "P2", "look": d2})
+				continue
 			specs.append({"key": r.n, "character": str(World.row(r.n).character), "custom": false, "color": r.color, "label": str(r.n).substr(0, 1)})
 		var track := ChairTrack.new()
 		track.setup(scene, race, _x0(), specs)
@@ -4386,7 +4401,7 @@ func _chair_cues(race: RefCounted) -> void:
 	elif race.feel_t > 0.0:
 		line = race.feel
 	elif str(g.get("event", "")) == "fight":
-		line = "YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
+		line = ("P1 %d  %s %d  FIRST TO %d" if race.duel else "YOU %d  %s %d  FIRST TO %d") % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
 	elif race.cp_next < race.checks.size():
 		line = "NEXT: %s" % race.check_names[race.cp_next]
 	else:
@@ -4396,6 +4411,22 @@ func _chair_cues(race: RefCounted) -> void:
 
 func _chair_press(key: int) -> void:
 	var race: RefCounted = g.race
+	if race.get("duel") == true:  # co-op duel: each player has a whole chair (both legs, the turn, the lanes)
+		var me := 1 if _press_slot == 1 else 0
+		match key:
+			KEY_Z:
+				race.push_of(me, 0)
+			KEY_X:
+				race.push_of(me, 1)
+			KEY_UP, KEY_W:
+				race.lane_of(me, -1)
+			KEY_DOWN, KEY_S:
+				race.lane_of(me, 1)
+			KEY_LEFT, KEY_A:
+				race.spin_of(me, -1)
+			KEY_RIGHT, KEY_D:
+				race.spin_of(me, 1)
+		return
 	var duo: bool = Players.coop and Players.slots[1].joined  # co-op: one chair, two pilots: player 1 pushes Z, player 2 pushes X
 	match key:
 		KEY_Z:
@@ -4420,6 +4451,8 @@ func _chair_hint() -> String:
 	if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
 		return "GET READY  ESC = LEAVE"
 	if str(g.get("event", "")) == "fight":
+		if g.has("race") and g.race.get("duel") == true:
+			return "P1 = Z X  P2 = A B  L R = TURN  UP DN = LANE"
 		return "Z X = PUSH  L R = TURN  UP DN = LANE"
 	if Players.coop and Players.slots[1].joined:
 		return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
@@ -4448,6 +4481,8 @@ func _chair_lines() -> Array:
 	var race: RefCounted = g.race
 	var out := []
 	if str(g.get("event", "")) == "fight":
+		if race.duel:
+			return [race.comment(), "BUMPS: PLAYER 1 %d, PLAYER 2 %d." % [int(race.score()[0]), int(race.score()[1])]]
 		return [race.comment(), "BUMPS: YOU %d, %s %d." % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1])]]
 	if race.dnf:
 		out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
@@ -4527,9 +4562,14 @@ func _hud_fight(s: Rect2, o: Vector2) -> void:
 		px += 5.0
 	var bw := 30.0
 	var bx := s.end.x - bw - 5.0
-	var stam_col := GREEN if fight.stam > 40.0 else (AMBER if fight.stam > 15.0 else RED)
-	_canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
-	_canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(fight.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+	var bars := 2 if fight.duel else 1  # the duel: a stamina bar each, player 1's first
+	for k in bars:
+		var cw := bw if bars == 1 else 14.0
+		var cx := bx + 16.0 * float(k)
+		var st: float = float(fight.chairs[k].stam)
+		var stam_col := GREEN if st > 40.0 else (AMBER if st > 15.0 else RED)
+		_canvas.draw_rect(Rect2(cx - 1.0, s.position.y + 2.0, cw + 2.0, 7.0), INK)
+		_canvas.draw_rect(Rect2(cx, s.position.y + 3.0, cw * clampf(st / 100.0, 0.0, 1.0), 5.0), stam_col)
 	var rx := px + 4.0
 	var rw := bx - rx - 6.0
 	if rw < 12.0:
