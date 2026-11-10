@@ -140,6 +140,16 @@ Race the crew down the length of the warehouse on rolling office chairs.
 
 Cones, signs and boxes cost time. The gamepad's `A` and `B` stand for `Z` and `X`.
 
+The card that opens the race offers three events. Press **`Left`** / **`Right`** on it before you start:
+
+| EVENT | WHAT IT IS |
+|---|---|
+| **THE STRAIGHT** | The long room, start line to finish line. Three checkpoints. |
+| **THE GAUNTLET** | Shorter and tighter. Every gap is one lane over from the last, so you weave the whole way. It keeps its own best time. |
+| **CHAIR FIGHT** | A duel with one of the crew on a strip of floor, first to three bumps. The rest watch. |
+
+**The chair fight.** `Z` and `X` push you the way you face, exactly as in the race. **`Left`** / **`Right`** spin the chair around (it takes a moment, and you cannot push while it turns). `Up` / `Down` change lane. When the chairs meet in one lane, the one rolling clearly faster lands a **bump**: the other chair is knocked back and spins, dizzy, for a second. About the same speed is a clash and nobody scores. In another lane the chairs roll past each other, and a chair with its back to you is bumped as soon as you are fast enough. After 75 seconds the most bumps win.
+
 > **TIP:** Watch the rhythm, not the chair.
 
 ---
@@ -157,6 +167,10 @@ Capture the flag on a western main street, three a side: you and two of the crew
 | `Esc` | Leave. |
 
 A tag puts a player out for four seconds and drops the flag they carried. Touch the other team's flag to pick it up, carry it back to your own end to score. Touch your own flag, if it was dropped, to send it home. First to three captures wins; at 2:30 the higher score wins. It costs $200 in the owner campaign.
+
+About one evening in three is a **night match**: the street is dark, the saloon windows are lit, every shot flashes, and a paintball only flies about four fifths as far, for both teams. Press **`Left`** / **`Right`** on the card before you start to pick day or night yourself.
+
+With **two players**, player 2 takes the place of your first team mate and plays with their own gamepad: the stick runs, D-pad `Up` / `Down` change lane, `A` or `X` fires, hold `B` to duck. The other team shoots a little straighter to make up for it.
 
 > **TIP:** A runner is harder to hit than somebody standing still, and a ducking player behind a barricade cannot be hit at all. Duck, wait for the shot, pop up. Changing lane is a dodge: whoever was shooting at you has to notice and follow you over, and that takes them a moment.
 

@@ -82,6 +82,9 @@ Walk to a chair and press **`E`** to sit. Most of the keys change meaning while 
 > **NOTE:** At a desk with a computer, `E` opens the computer. Press a move key to stand up. You will not be trapped in the chair: a
 > plain move key always works.
 
+> **TIP:** Somebody else's chair rolls too. Stand next to a seated coworker, hold **`Shift`** and press **`E`**: the chair rolls away
+> from you with them in it, and they scoot back after a moment. A friend laughs. Alan does not. Plain `E` still talks to them.
+
 > **TIP:** While you are seated, you will stretch, scratch, yawn and look about on your own. This is called "authentic."
 
 ---
@@ -112,6 +115,7 @@ Plug it in and go. A gamepad covers walking, using things and the menus. For any
 | **Cell phone** | `Back` / `Select` | |
 | **Pause** | `Start` | |
 | **Roll your chair** (seated) | Hold `B` and push the stick or D-pad sideways | The same as `Shift` + `A` / `D`. |
+| **Push a coworker's chair** | Hold `B` and press `X` next to their chair | The same as `Shift` + `E`. |
 | **Stand up** (seated) | Move, or press `A` | |
 
 ### In menus, cards and screens
