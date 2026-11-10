@@ -100,12 +100,13 @@ const ROOTS := {
 	"Rival": ["HABITS", "RIVALS"],
 	"Habits": ["HABITS", "TEXT", "CARDS"],
 	"RivalCards": ["CARDS"],
+	"OwnerCast": ["CARDS"],
 	"RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
 const SCRIPTS := {
 	"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd",
-	"RivalTouches": "res://scripts/rival_touches.gd"
+	"RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd"
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [

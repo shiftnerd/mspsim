@@ -11,6 +11,7 @@ extends Node
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
 const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
+const OwnerCast := preload("res://scripts/owner_cast.gd")  # X11: Jen's and Michael's decision cards
 const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
 const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
 const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
@@ -1467,6 +1468,8 @@ var _ransom_forced := false  # the backup looked fine and still did not restore 
 func _ready() -> void:
 	for id in RivalCards.CARDS:  # R38: the rival arc and temptation cards are data in rival_cards.gd (shared with story/strings.txt)
 		CARDS[id] = RivalCards.CARDS[id]
+	for id in OwnerCast.CARDS:  # X11: the second cast's cards (owner_cast.gd)
+		CARDS[id] = OwnerCast.CARDS[id]
 
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
@@ -1759,7 +1762,7 @@ func _process(delta: float) -> void:
 
 # the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
-	return Yeartwo.events_on("owner", day, RivalCards.merged_days(DAYS))
+	return Yeartwo.events_on("owner", day, OwnerCast.merged_days(RivalCards.merged_days(DAYS)))
 
 
 func _work_queue(seconds: float) -> void:

@@ -11677,6 +11677,7 @@ write("scripts/campaign.gd", '''extends Node
 signal day_started(day_number: int)
 
 const PLAYER := preload("res://scripts/player.gd")
+const SaveMigrate := preload("res://scripts/save_migrate.gd")  # X11: old cast names in old saves
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20), saved in its own "dash" section
 const TOTAL_DAYS := 20
 const FREE := "free"
@@ -12037,6 +12038,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
             resumed = true
     if not resumed and cfg.load(save_path(for_mode)) != OK:
         return false
+    SaveMigrate.names(cfg)  # X11: a save from before John and Christy took over the account manager's and the bookkeeper's names
     _resume_scene = ""
     mode = for_mode
     active = true
@@ -19846,6 +19848,7 @@ write("scripts/owner.gd", '''extends Node
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20): the crew's hours per day
 const Incident := preload("res://scripts/incident.gd")  # R37: wire fraud and the post-incident review
 const ByName := preload("res://scripts/byname.gd")  # R36: clients who ask for one tech by name
+const OwnerCast := preload("res://scripts/owner_cast.gd")  # X11: Jen's and Michael's decision cards
 const Rival := preload("res://scripts/rival.gd")  # R38: the rap sheet of the rival MSPs
 const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and the Standard
 const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
@@ -20664,6 +20667,8 @@ var _ransom_forced := false  # the backup looked fine and still did not restore 
 func _ready() -> void:
     for id in RivalCards.CARDS:  # R38: the rival arc and temptation cards are data in rival_cards.gd (shared with story/strings.txt)
         CARDS[id] = RivalCards.CARDS[id]
+    for id in OwnerCast.CARDS:  # X11: the second cast's cards (owner_cast.gd)
+        CARDS[id] = OwnerCast.CARDS[id]
 
 
 # X8: the old active() gate is split into Campaign.crew_active() / books_active() / cards_active() (the mode registry)
@@ -20930,7 +20935,7 @@ func _process(delta: float) -> void:
 
 # the scripted events of a week; Year 2 moves some of them by a week or two (Yeartwo.story_shuffle)
 func events_on(day: int) -> Array:
-    return Yeartwo.events_on("owner", day, RivalCards.merged_days(DAYS))
+    return Yeartwo.events_on("owner", day, OwnerCast.merged_days(RivalCards.merged_days(DAYS)))
 
 
 func _work_queue(seconds: float) -> void:
@@ -47768,10 +47773,11 @@ const ROOTS := {
     "Rival": ["HABITS", "RIVALS"],
     "Habits": ["HABITS", "TEXT", "CARDS"],
     "RivalCards": ["CARDS"],
+    "OwnerCast": ["CARDS"],
     "RivalTouches": ["TALK", "LYNK", "TIPS", "NOTES"],
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
-const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd"}
+const SCRIPTS := {"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -75089,7 +75095,244 @@ static func lopsided_pick(owner: Node, who: String, id: String) -> void:
     Cards.ask("Morgan (Operations Manager)", text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
 ''')
 
+write("scripts/owner_cast.gd", '''extends RefCounted
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
+# X11: the second cast in the owner campaign. Jen (the front desk: phones, intake, the wall between clients and your cell phone) and
+# Michael (the senior tech who takes tickets off people) each bring three decision cards. Data only, in the shape of Owner.CARDS:
+# Owner._ready() merges CARDS into Owner.CARDS by reference and Owner.events_on() merges DAYS into Owner.DAYS (the same way as
+# RivalCards). Patchable from story/strings.txt as OwnerCast.CARDS. The effects are ordinary fx keys: mood, speed (the crew's capacity),
+# weekly and payroll (cash every week), burnout, trust (the other owner's opinion) and owner hours.
 
+const DEFAULT_CARDS := {
+    "jen_phones":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "{me}, about four calls in ten come through my desk now. When I am on one, the next one rings the tech desks, and when nobody picks up it goes to voicemail. Clients hear a beep and assume the worst. I have three ideas and one of them is free.",
+        "options":
+        [
+            {
+                "label": "RING THE TECHS WHEN YOU ARE BUSY (FREE)",
+                "fx": {"mood_all": 2, "speed": -0.03, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "Every call gets a person. Dan answers with his full name and a sigh. The queue moves a little slower."
+            },
+            {
+                "label": "A PART-TIME SECOND VOICE ($110/WK)",
+                "fx": {"weekly": 110, "mood_all": 3, "rep": 1, "trust": {"Alan": 0, "Garrison": 1}},
+                "text": "A student answers the second line three afternoons a week. She says the company name like she owns it."
+            },
+            {
+                "label": "VOICEMAIL IS FINE",
+                "fx": {"mood_all": -2},
+                "text": "The beep stays. So does the worst assumption."
+            },
+        ],
+    },
+    "jen_intake":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "Can I ask three things before a call becomes a ticket? Who is it, what is down, and how many people are waiting. Right now I write COMPUTER BROKEN and Dan has to phone them back to find out which computer. He told me that. Twice.",
+        "options":
+        [
+            {
+                "label": "YES. THREE QUESTIONS ON EVERY CALL",
+                "fx": {"speed": 0.05, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Tickets arrive with a name, a machine and a headcount. A few callers grumble about the questions. Dan stops phoning people back."
+            },
+            {
+                "label": "AND SHE BOOKS THE ONSITE VISITS ($200)",
+                "need": 200,
+                "fx": {"cash": -200, "speed": 0.08, "owner_hours": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "A whiteboard goes up by her desk with the whole week on it. She runs it in four colours of marker. Nobody else is allowed the red one."
+            },
+            {
+                "label": "NO, PUT EVERY CALL STRAIGHT THROUGH",
+                "fx": {"mood_all": 1, "speed": -0.03},
+                "text": "Callers reach a tech at once. The tech was in the middle of something. Now he is in the middle of two things."
+            },
+        ],
+    },
+    "jen_wall":
+    {
+        "speaker": "Jen (Front Desk)",
+        "text":
+        "A client's owner has your cell number and he uses it. Three times this week, twice during dinner by the sound of it. I can be the wall, if you want a wall. I am polite about it. People thank me afterwards.",
+        "options":
+        [
+            {
+                "label": "BE THE WALL",
+                "fx": {"burnout": -6, "mood_all": -1, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "Calls go to the desk first. One client sulks for a week. You eat a whole dinner."
+            },
+            {
+                "label": "I WILL KEEP TAKING THE CALLS",
+                "fx": {"burnout": 5, "mood_all": 2, "owner_hours": 2, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "The clients love it. Your phone lives face up on the table now."
+            },
+            {
+                "label": "A DIRECT LINE TO JEN, NOT TO ME ($60)",
+                "need": 60,
+                "fx": {"cash": -60, "burnout": -3, "mood_all": 1},
+                "text": "She gets a second handset and a little card with her name on it. The owner calls her instead. He calls her a lot."
+            },
+        ],
+    },
+    "michael_catch":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "I took eleven tickets off Dan and Maya this week. I do not mind, it is faster than watching. I am telling you because mine are late now, and nobody will tell you that but me.",
+        "options":
+        [
+            {
+                "label": "KEEP CATCHING THEM",
+                "fx": {"speed": 0.05, "burnout": 5, "trust": {"Alan": 0, "Garrison": -1}},
+                "text": "The queue is quick. Michael's own list grows a second page. He says it is fine, in the voice people use for that."
+            },
+            {
+                "label": "CAP IT: TWO HAND-OFFS A DAY EACH",
+                "fx": {"speed": -0.02, "burnout": -3, "social_all": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "Dan and Maya finish more of their own. It is slower this month. Michael goes home on time and is suspicious about it."
+            },
+            {
+                "label": "MAKE IT HIS JOB: ESCALATIONS (+$100/WK)",
+                "fx": {"payroll": 100, "speed": 0.07, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "He gets the title and the raise. The hard ones go to him on purpose now, with a note attached."
+            },
+        ],
+    },
+    "michael_teach":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "Half of what I take off people is the same five problems. Give me an hour on Fridays with Dan and Maya and I will stop being the only one who knows. Or I write it down, which nobody will read.",
+        "options":
+        [
+            {
+                "label": "FRIDAY HOUR, PIZZA ON THE COMPANY ($150)",
+                "need": 150,
+                "fx": {"cash": -150, "speed": 0.06, "mood_all": -1, "social_all": 1, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "The queue waits an hour on Fridays. By the third week Maya fixes a print server alone and tells everyone twice."
+            },
+            {
+                "label": "WRITE IT DOWN (2 HOURS OF MINE TO REVIEW)",
+                "fx": {"owner_hours": 2, "habit": "H11", "speed": 0.02, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Five pages in a binder with tabs. Dan reads them. Dan also corrects the spelling."
+            },
+            {
+                "label": "NO TIME FOR THAT NOW",
+                "fx": {"social_all": -1},
+                "text": "Michael nods and takes the next one off Maya's list."
+            },
+        ],
+    },
+    "michael_offer":
+    {
+        "speaker": "Michael (Senior Tech)",
+        "text":
+        "One of our clients offered me a job. In-house IT, my own office, a door. I have not said no. I am telling you first because that is how I would want it done to me.",
+        "options":
+        [
+            {
+                "label": "MATCH IT (+$150/WK)",
+                "fx": {"payroll": 150, "burnout": -2, "social_all": 1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "He stays. He asks if the door was ever on the table. It was not."
+            },
+            {
+                "label": "REMIND THE CLIENT OF THE NO-HIRE CLAUSE",
+                "fx": {"mood_all": -2, "rep": -1, "social_all": -1, "trust": {"Alan": 0, "Garrison": -1}},
+                "text": "The client backs off, coolly. Michael stays, and knows exactly why."
+            },
+            {
+                "label": "LEND HIM TO THEM ONE DAY A WEEK ($180/WK)",
+                "fx": {"weekly": -180, "speed": -0.04, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "Thursdays he works from their office, billed by the day. They get a door with his name on it. We get an invoice with ours."
+            },
+        ],
+    },
+}
+static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
+
+# the week and time of day each card comes (kept clear of the other cards of that week)
+const DEFAULT_DAYS := {
+    4: [{"at": 15.5, "card": "jen_phones"}],
+    6: [{"at": 14.2, "card": "michael_catch"}],
+    9: [{"at": 12.0, "card": "jen_intake"}],
+    12: [{"at": 14.8, "card": "michael_teach"}],
+    14: [{"at": 13.5, "card": "jen_wall"}],
+    17: [{"at": 13.0, "card": "michael_offer"}],
+}
+static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
+
+
+# a DAYS table plus the placements of this file (the owner's events_on reads it)
+static func merged_days(base: Dictionary) -> Dictionary:
+    if DAYS.is_empty():
+        return base
+    var out := base.duplicate()
+    for day in DAYS:
+        out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
+    return out
+''')
+
+write("scripts/save_migrate.gd", '''extends RefCounted
+# X11: a save from before the second cast. The account manager and the bookkeeper had other names then; John and Christy took over
+# their roles, so every saved key and value that is exactly one of the old names is mapped to the new one when a save is loaded
+# (Campaign.continue_game calls names(cfg) right after reading the file). Text inside sentences (old messages) is left as it was.
+# The old names are split so a rename script cannot touch them.
+
+const OLD_SALES := "Vi" + "c"
+const OLD_BOOKS := "Mar" + "ge"
+const MAP := {
+    OLD_SALES: "John",
+    OLD_BOOKS: "Christy",
+    OLD_SALES + " Marlowe": "John Marlowe",
+    OLD_SALES + " (Account Manager)": "John (Account Manager)",
+    OLD_BOOKS + " (Bookkeeper)": "Christy (Controller)",
+    "office_" + "vi" + "c": "office_john",
+    "office_" + "mar" + "ge": "office_christy",
+}
+
+
+# rewrites the loaded file in memory; returns how many keys and values were renamed
+static func names(cfg: ConfigFile) -> int:
+    var count := [0]
+    for section in cfg.get_sections():
+        for key in cfg.get_section_keys(section):
+            var before: Variant = cfg.get_value(section, key)
+            var n := int(count[0])
+            var after: Variant = fix(before, count)
+            if int(count[0]) != n:
+                cfg.set_value(section, key, after)
+    return int(count[0])
+
+
+# the value with every exact old name (a string, a dictionary key, an array entry) replaced. Containers are changed in place, so a
+# typed array keeps its type.
+static func fix(v: Variant, count: Array) -> Variant:
+    if v is String:
+        if MAP.has(v):
+            count[0] = int(count[0]) + 1
+            return MAP[v]
+        return v
+    if v is Array:
+        for i in v.size():
+            if v[i] is String or v[i] is Array or v[i] is Dictionary:
+                v[i] = fix(v[i], count)
+        return v
+    if v is Dictionary:
+        for k in v.keys():
+            if v[k] is String or v[k] is Array or v[k] is Dictionary:
+                v[k] = fix(v[k], count)
+            if k is String and MAP.has(k):
+                count[0] = int(count[0]) + 1
+                if not v.has(MAP[k]):  # a save that somehow has both keeps the new name's value
+                    v[MAP[k]] = v[k]
+                v.erase(k)
+        return v
+    return v
+''')
 
 write("scripts/rival_touches.gd", '''extends RefCounted
 # gdlint:disable=class-definitions-order,class-variable-name,max-line-length

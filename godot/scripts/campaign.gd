@@ -8,6 +8,7 @@ extends Node
 signal day_started(day_number: int)
 
 const PLAYER := preload("res://scripts/player.gd")
+const SaveMigrate := preload("res://scripts/save_migrate.gd")  # X11: old cast names in old saves
 const Dash := preload("res://scripts/dash.gd")  # the metrics record (R20), saved in its own "dash" section
 const TOTAL_DAYS := 20
 const FREE := "free"
@@ -368,6 +369,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 			resumed = true
 	if not resumed and cfg.load(save_path(for_mode)) != OK:
 		return false
+	SaveMigrate.names(cfg)  # X11: a save from before John and Christy took over the account manager's and the bookkeeper's names
 	_resume_scene = ""
 	mode = for_mode
 	active = true
