@@ -28,6 +28,7 @@ var _talk_i := 0
 var _sa_bell: Node = null
 var log_days := false
 var policy: Dictionary = {}
+var year := 1  # R10: 2 or 3 starts every run as START YEAR 2 / 3, from the record of a decent finished year before (_seed_year)
 
 
 func _init(t: SceneTree) -> void:
@@ -54,6 +55,8 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	d.seed_run(seed_n)
 	seed(seed_n * 31 + 7)  # the owner campaign and the Shift cards still draw from the global generator
 	rng.seed = seed_n * 7919
+	if year >= 2:
+		_seed_year(mode)
 	var row: Dictionary = {}
 	if coop and mode in ["sales", "service"]:
 		root.get_node("Players").enable_coop(true)
@@ -76,6 +79,25 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	row["seed"] = seed_n
 	d.set_tier("normal")
 	return row
+
+
+# R10: the meta record a decent finished run of the year before leaves (reputation 70, skills at level 3, a company worth
+# $150,000), and the START YEAR 2 / 3 choice of the title row: the run's own new_game picks it up
+func _seed_year(mode: String) -> void:
+	var y := root.get_node("Yeartwo")
+	var skills := {}
+	for key in root.get_node("Skills").NAMES:
+		skills[key] = 3
+	var rec := {"ending": "stay", "rep": 70, "tier": "normal", "cozy": false, "seed": 1, "clients": 8, "skills": skills, "value": 150000, "cash": 15000, "trust": 60, "shop": [], "standard": 0}
+	var meta := ConfigFile.new()
+	for key in rec:
+		meta.set_value(mode, key, rec[key])
+	for key in ["finished", "year", "top_year"]:
+		meta.set_value(mode, key, year - 1)
+	if year >= 3:
+		meta.set_value(mode, "y2", rec)
+	meta.save(y.meta_path())
+	y.begin_select(mode, true, year)
 
 
 # process ids are reused: a bot must not inherit the career or campaign files an earlier run left under its pid
@@ -614,6 +636,8 @@ func sv_run(seed_n: int) -> Dictionary:
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
 	c.save_prefix = "user://bal_%d_" % OS.get_process_id()
+	if year >= 2:
+		_seed_year("service")  # R10: the record has to sit under this run's own prefix
 	rng.seed = seed_n * 7919
 	root.get_node("Difficulty").seed_run(seed_n)
 	c.new_game("service")

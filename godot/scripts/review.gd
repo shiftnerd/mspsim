@@ -154,9 +154,9 @@ func make_offers() -> Array:
 	if Campaign.prop("review", "") == "board":
 		return Yeartwo.extra_offers(Owner.offers())
 	if Campaign.prop("review", "") == "sales":
-		return SalesCampaign.offers()
+		return Yeartwo.extra_offers(SalesCampaign.offers())  # R10: the Year 3 endings
 	if Campaign.prop("review", "") == "service":
-		return Service.review_offers()
+		return Yeartwo.extra_offers(Service.review_offers())
 	var out := []
 	if Campaign.rep >= (55 if Growth.graduated else 60) and Social.average() >= 0.0:
 		(

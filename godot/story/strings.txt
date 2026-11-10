@@ -3433,6 +3433,562 @@ THE PAPERS ARE SIGNED. TRI-COUNTY TECH GROUP AND PIXEL IT PARTNERS BECOME ONE SH
 TWO SHOPS IN OTHER TOWNS HANG A PIXEL IT SIGN AND RUN YOUR BINDERS. THE PHONE STILL RINGS IN YOUR OFFICE FIRST. CHRISTY ORDERS MORE FRAMES.
 
 
+# ======================= Yeartwo > YEAR3 =======================
+# Yeartwo > YEAR3 > sla > text
+[Yeartwo.YEAR3.sla.text]
+SLA CLOCKS RUN ANOTHER NOTCH TIGHTER: A QUARTER SHORTER THAN IN YOUR FIRST YEAR.
+
+
+# ======================= Yeartwo > TEXT3 =======================
+# Yeartwo > TEXT3 > intro > speaker
+[Yeartwo.TEXT3.intro.speaker]
+YEAR 3
+
+# Yeartwo > TEXT3 > intro > text
+[Yeartwo.TEXT3.intro.text]
+YOUR THIRD YEAR AT PIXEL IT PARTNERS, AND THE ONE WHERE YOU DECIDE HOW THIS ENDS. YOU KEEP WHAT YOU LEARNED. THE CLIENTS HAVE STOPPED BEING IMPRESSED.
+
+# Yeartwo > TEXT3 > intro > back
+[Yeartwo.TEXT3.intro.back]
+WHATEVER YOU SIGNED LAST YEAR DID NOT TAKE. PIXEL KEPT YOUR MUG.
+
+# Yeartwo > TEXT3 > beats > tech > newhire > lynk > from
+[Yeartwo.TEXT3.beats.tech.newhire.lynk.from]
+Morgan
+
+# Yeartwo > TEXT3 > beats > tech > newhire > lynk > text
+[Yeartwo.TEXT3.beats.tech.newhire.lynk.text]
+The new hire starts today. Quinn. First IT job, good attitude, has never seen a print spooler. I put the desk next to yours on purpose.
+
+# Yeartwo > TEXT3 > beats > tech > newhire > speaker
+[Yeartwo.TEXT3.beats.tech.newhire.speaker]
+Morgan (Manager)
+
+# Yeartwo > TEXT3 > beats > tech > newhire > text
+[Yeartwo.TEXT3.beats.tech.newhire.text]
+You are the senior tech on this desk now, whether or not anybody printed it on a card. Quinn needs somebody to learn from. I would like that to be you and not the forum.
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 0 > label
+[Yeartwo.TEXT3.beats.tech.newhire.options.0.label]
+SIT WITH QUINN EVERY MORNING
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 0 > reply
+[Yeartwo.TEXT3.beats.tech.newhire.options.0.reply]
+Quinn brings a notebook and writes down everything, including the jokes. Morgan pretends not to be pleased.
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 1 > label
+[Yeartwo.TEXT3.beats.tech.newhire.options.1.label]
+HAND OVER YOUR NOTES
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 1 > reply
+[Yeartwo.TEXT3.beats.tech.newhire.options.1.reply]
+Three years of notes in one text file. Quinn reads all of it and asks what 'DO NOT TRUST THE BLUE SWITCH' means.
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 2 > label
+[Yeartwo.TEXT3.beats.tech.newhire.options.2.label]
+I HAVE A QUEUE
+
+# Yeartwo > TEXT3 > beats > tech > newhire > options > 2 > reply
+[Yeartwo.TEXT3.beats.tech.newhire.options.2.reply]
+Morgan sends Quinn to Dan. Dan hands over a label maker and says nothing for an hour.
+
+# Yeartwo > TEXT3 > beats > tech > mentor > speaker
+[Yeartwo.TEXT3.beats.tech.mentor.speaker]
+Quinn (New hire)
+
+# Yeartwo > TEXT3 > beats > tech > mentor > text
+[Yeartwo.TEXT3.beats.tech.mentor.text]
+I closed a ticket yesterday and it came back this morning, angry. I rebooted her PC and I did not ask her to save first. She lost a morning of invoices. Do I tell Morgan, or do you?
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 0 > label
+[Yeartwo.TEXT3.beats.tech.mentor.options.0.label]
+WE CALL THE CLIENT TOGETHER
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 0 > reply
+[Yeartwo.TEXT3.beats.tech.mentor.options.0.reply]
+Quinn apologises, badly and honestly. The client softens. Nobody will ever have to tell Quinn to ask first again.
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 1 > label
+[Yeartwo.TEXT3.beats.tech.mentor.options.1.label]
+I WILL FIX IT, GO TO LUNCH
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 1 > reply
+[Yeartwo.TEXT3.beats.tech.mentor.options.1.reply]
+You recover most of the invoices from a temp folder. Quinn learns that you are good at this, which was not the lesson.
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 2 > label
+[Yeartwo.TEXT3.beats.tech.mentor.options.2.label]
+TELL MORGAN YOURSELF
+
+# Yeartwo > TEXT3 > beats > tech > mentor > options > 2 > reply
+[Yeartwo.TEXT3.beats.tech.mentor.options.2.reply]
+Quinn walks to Morgan's desk like it is a long hallway. Morgan is fair about it. Quinn is quiet all week.
+
+# Yeartwo > TEXT3 > beats > tech > fork > lynk > from
+[Yeartwo.TEXT3.beats.tech.fork.lynk.from]
+Dan
+
+# Yeartwo > TEXT3 > beats > tech > fork > lynk > text
+[Yeartwo.TEXT3.beats.tech.fork.lynk.text]
+Alan wants me on projects full time from next year. Racks and cabling, no phones. Morgan will ask you something today. I labelled the drawer for whoever sits here next.
+
+# Yeartwo > TEXT3 > beats > tech > fork > speaker
+[Yeartwo.TEXT3.beats.tech.fork.speaker]
+Morgan (Manager)
+
+# Yeartwo > TEXT3 > beats > tech > fork > text
+[Yeartwo.TEXT3.beats.tech.fork.text]
+Dan is moving to projects. His chair comes with the schedule, the escalations and the label maker. The owners asked me who should sit in it and I said your name. Before the review: what do you want me to tell them?
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 0 > label
+[Yeartwo.TEXT3.beats.tech.fork.options.0.label]
+I WANT THE CHAIR
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 0 > reply
+[Yeartwo.TEXT3.beats.tech.fork.options.0.reply]
+Morgan writes it down and underlines it once. Dan nods at you across the room, which from Dan is a speech.
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 1 > label
+[Yeartwo.TEXT3.beats.tech.fork.options.1.label]
+KEEP ME ON THE HARD TICKETS
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 1 > reply
+[Yeartwo.TEXT3.beats.tech.fork.options.1.reply]
+Morgan is not surprised. There is a job for that, she says, and it does not come with a schedule to fill.
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 2 > label
+[Yeartwo.TEXT3.beats.tech.fork.options.2.label]
+I HAVE BEEN THINKING ABOUT MOVING ON
+
+# Yeartwo > TEXT3 > beats > tech > fork > options > 2 > reply
+[Yeartwo.TEXT3.beats.tech.fork.options.2.reply]
+Morgan puts the pen down. Then tell me early and leave it tidy, she says. That is all I ever ask of anyone.
+
+# Yeartwo > TEXT3 > beats > owner > summit > speaker
+[Yeartwo.TEXT3.beats.owner.summit.speaker]
+Ross Calder (Summit Managed Holdings)
+
+# Yeartwo > TEXT3 > beats > owner > summit > text
+[Yeartwo.TEXT3.beats.owner.summit.text]
+Summit buys well-run shops and leaves the sign up for a year. Yours is on a short list. I would like to see three years of numbers. Looking costs you nothing.
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 0 > label
+[Yeartwo.TEXT3.beats.owner.summit.options.0.label]
+SHOW HIM THE BOOKS
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 0 > reply
+[Yeartwo.TEXT3.beats.owner.summit.options.0.reply]
+Christy prints the reports and stays in the room while he reads them. He reads them twice.
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 1 > label
+[Yeartwo.TEXT3.beats.owner.summit.options.1.label]
+LISTEN, SHOW NOTHING
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 1 > reply
+[Yeartwo.TEXT3.beats.owner.summit.options.1.reply]
+He talks for an hour about multiples. You learn what the place is worth to a stranger. He leaves a card.
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 2 > label
+[Yeartwo.TEXT3.beats.owner.summit.options.2.label]
+NOT FOR SALE
+
+# Yeartwo > TEXT3 > beats > owner > summit > options > 2 > reply
+[Yeartwo.TEXT3.beats.owner.summit.options.2.reply]
+He shakes your hand and says that everybody is for sale in October. The card stays on the front desk.
+
+# Yeartwo > TEXT3 > beats > owner > staff > speaker
+[Yeartwo.TEXT3.beats.owner.staff.speaker]
+Christy (Controller)
+
+# Yeartwo > TEXT3 > beats > owner > staff > text
+[Yeartwo.TEXT3.beats.owner.staff.text]
+Morgan and I saw the Summit man. If the company is ever for sale, we would like to be asked first. I ran it: the staff could buy it over five years out of the profit, if the owners carried the note.
+
+# Yeartwo > TEXT3 > beats > owner > staff > options > 0 > label
+[Yeartwo.TEXT3.beats.owner.staff.options.0.label]
+PUT IT ON PAPER
+
+# Yeartwo > TEXT3 > beats > owner > staff > options > 0 > reply
+[Yeartwo.TEXT3.beats.owner.staff.options.0.reply]
+Christy already has it on paper. Morgan tells the team nothing and somehow they all know by Friday.
+
+# Yeartwo > TEXT3 > beats > owner > staff > options > 1 > label
+[Yeartwo.TEXT3.beats.owner.staff.options.1.label]
+NOT WHILE I AM STILL HERE
+
+# Yeartwo > TEXT3 > beats > owner > staff > options > 1 > reply
+[Yeartwo.TEXT3.beats.owner.staff.options.1.reply]
+Christy closes the folder without an argument. She keeps the folder.
+
+# Yeartwo > TEXT3 > beats > owner > handover > speaker
+[Yeartwo.TEXT3.beats.owner.handover.speaker]
+Morgan (Manager)
+
+# Yeartwo > TEXT3 > beats > owner > handover > text
+[Yeartwo.TEXT3.beats.owner.handover.text]
+You have not taken a week off in three years and it shows in your emails. Give me the day-to-day for a month. Approvals, hiring, the Monday numbers. You keep the cheque book. If it goes badly you will know by the smell.
+
+# Yeartwo > TEXT3 > beats > owner > handover > options > 0 > label
+[Yeartwo.TEXT3.beats.owner.handover.options.0.label]
+HAND MORGAN THE KEYS
+
+# Yeartwo > TEXT3 > beats > owner > handover > options > 0 > reply
+[Yeartwo.TEXT3.beats.owner.handover.options.0.reply]
+You go fishing on a Tuesday. Nothing burns down. Morgan moves the stand-up fifteen minutes later and nobody tells you.
+
+# Yeartwo > TEXT3 > beats > owner > handover > options > 1 > label
+[Yeartwo.TEXT3.beats.owner.handover.options.1.label]
+NOT YET
+
+# Yeartwo > TEXT3 > beats > owner > handover > options > 1 > reply
+[Yeartwo.TEXT3.beats.owner.handover.options.1.reply]
+Morgan shrugs. The offer has no date on it, she says, but you do.
+
+# Yeartwo > TEXT3 > beats > service > deputy > speaker
+[Yeartwo.TEXT3.beats.service.deputy.speaker]
+Morgan Reyes - Manager
+
+# Yeartwo > TEXT3 > beats > service > deputy > text
+[Yeartwo.TEXT3.beats.service.deputy.text]
+Dan, the desk runs because you are standing at it. That is a compliment and a problem. Pick somebody on the crew to learn the board, so that it survives you taking a week off.
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 0 > label
+[Yeartwo.TEXT3.beats.service.deputy.options.0.label]
+TRAIN A DEPUTY
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 0 > reply
+[Yeartwo.TEXT3.beats.service.deputy.options.0.reply]
+You pick the one who reads the runbooks without being asked. By Friday the board has a second set of initials on it.
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 1 > label
+[Yeartwo.TEXT3.beats.service.deputy.options.1.label]
+WRITE IT ALL DOWN INSTEAD
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 1 > reply
+[Yeartwo.TEXT3.beats.service.deputy.options.1.reply]
+Forty pages, tabbed and labelled. Nobody opens it, but everybody knows where it is.
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 2 > label
+[Yeartwo.TEXT3.beats.service.deputy.options.2.label]
+I AM NOT GOING ANYWHERE
+
+# Yeartwo > TEXT3 > beats > service > deputy > options > 2 > reply
+[Yeartwo.TEXT3.beats.service.deputy.options.2.reply]
+Morgan says that is what the last three managers said. She does not say where they went.
+
+# Yeartwo > TEXT3 > beats > service > terry > speaker
+[Yeartwo.TEXT3.beats.service.terry.speaker]
+Terry Vance (Recruiter)
+
+# Yeartwo > TEXT3 > beats > service > terry > text
+[Yeartwo.TEXT3.beats.service.terry.text]
+Last year I asked you for names. This year I am calling about yours. Service director across town: forty techs, a real budget, and a patch panel nobody has ever labelled. One coffee.
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 0 > label
+[Yeartwo.TEXT3.beats.service.terry.options.0.label]
+ONE COFFEE
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 0 > reply
+[Yeartwo.TEXT3.beats.service.terry.options.0.reply]
+Terry brings an offer letter to a coffee. You fold it once and put it with the spare labels.
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 1 > label
+[Yeartwo.TEXT3.beats.service.terry.options.1.label]
+TELL MORGAN ABOUT THE CALL
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 1 > reply
+[Yeartwo.TEXT3.beats.service.terry.options.1.reply]
+Morgan thanks you and goes straight to the owners' offices. Both doors close. That has not happened before.
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 2 > label
+[Yeartwo.TEXT3.beats.service.terry.options.2.label]
+NO, THANK YOU
+
+# Yeartwo > TEXT3 > beats > service > terry > options > 2 > reply
+[Yeartwo.TEXT3.beats.service.terry.options.2.reply]
+Terry says he will call again next year. He has said that before, and he did.
+
+# Yeartwo > TEXT3 > beats > service > table > speaker
+[Yeartwo.TEXT3.beats.service.table.speaker]
+Alan and Garrison - Owners
+
+# Yeartwo > TEXT3 > beats > service > table > text
+[Yeartwo.TEXT3.beats.service.table.text]
+We agree on one thing this year, and it is you. Two ways to do it. Operations: Morgan's job and the back of the house, with a budget. Or a stake: five percent, your name on the paperwork, and you sign the line of credit with us. Which conversation are we having at the review?
+
+# Yeartwo > TEXT3 > beats > service > table > options > 0 > label
+[Yeartwo.TEXT3.beats.service.table.options.0.label]
+OPERATIONS
+
+# Yeartwo > TEXT3 > beats > service > table > options > 0 > reply
+[Yeartwo.TEXT3.beats.service.table.options.0.reply]
+Alan nods. Garrison is already drawing a new org chart on a napkin. Your box is in the middle of it.
+
+# Yeartwo > TEXT3 > beats > service > table > options > 1 > label
+[Yeartwo.TEXT3.beats.service.table.options.1.label]
+THE STAKE
+
+# Yeartwo > TEXT3 > beats > service > table > options > 1 > reply
+[Yeartwo.TEXT3.beats.service.table.options.1.reply]
+Garrison shakes your hand with both of his. Alan slides a very thick folder across the desk and says read all of it.
+
+# Yeartwo > TEXT3 > beats > service > table > options > 2 > label
+[Yeartwo.TEXT3.beats.service.table.options.2.label]
+LET ME THINK
+
+# Yeartwo > TEXT3 > beats > service > table > options > 2 > reply
+[Yeartwo.TEXT3.beats.service.table.options.2.reply]
+They let you think. Alan gives it until the review. Garrison gives it until lunch.
+
+# Yeartwo > TEXT3 > beats > sales > wes > lynk > from
+[Yeartwo.TEXT3.beats.sales.wes.lynk.from]
+Wes
+
+# Yeartwo > TEXT3 > beats > sales > wes > lynk > text
+[Yeartwo.TEXT3.beats.sales.wes.lynk.text]
+Boss. I lost the dentist. Second quote in a row. Can you come along on my next call? I will not say anything stupid. I will try not to.
+
+# Yeartwo > TEXT3 > beats > sales > wes > speaker
+[Yeartwo.TEXT3.beats.sales.wes.speaker]
+Wes Okafor
+
+# Yeartwo > TEXT3 > beats > sales > wes > text
+[Yeartwo.TEXT3.beats.sales.wes.text]
+They said my quote was fine and then they signed with somebody else. I do not know what I am doing wrong and Garrison only tells me to smile more. Will you ride along on Thursday?
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 0 > label
+[Yeartwo.TEXT3.beats.sales.wes.options.0.label]
+RIDE ALONG, LET HIM TALK
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 0 > reply
+[Yeartwo.TEXT3.beats.sales.wes.options.0.reply]
+You say nothing for forty minutes, which is a personal record. In the car you tell him the two things. He writes them on his hand.
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 1 > label
+[Yeartwo.TEXT3.beats.sales.wes.options.1.label]
+TAKE THE CALL YOURSELF
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 1 > reply
+[Yeartwo.TEXT3.beats.sales.wes.options.1.reply]
+You close it in twenty minutes. Wes watches the way people watch a card trick. The deal goes on your board.
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 2 > label
+[Yeartwo.TEXT3.beats.sales.wes.options.2.label]
+SEND HIM YOUR SCRIPT
+
+# Yeartwo > TEXT3 > beats > sales > wes > options > 2 > reply
+[Yeartwo.TEXT3.beats.sales.wes.options.2.reply]
+He reads your script word for word, including the part that says PAUSE HERE.
+
+# Yeartwo > TEXT3 > beats > sales > split > speaker
+[Yeartwo.TEXT3.beats.sales.split.speaker]
+Garrison (Owner)
+
+# Yeartwo > TEXT3 > beats > sales > split > text
+[Yeartwo.TEXT3.beats.sales.split.text]
+The territory is too big for one book. Split it with Wes. You draw the line, and I will know what kind of boss you would be by where you draw it.
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 0 > label
+[Yeartwo.TEXT3.beats.sales.split.options.0.label]
+GIVE HIM HALF THE WARM LEADS
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 0 > reply
+[Yeartwo.TEXT3.beats.sales.split.options.0.reply]
+Wes gets the north side and three leads that actually answer the phone. He buys you a coffee he cannot afford.
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 1 > label
+[Yeartwo.TEXT3.beats.sales.split.options.1.label]
+GIVE HIM THE COLD SIDE
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 1 > reply
+[Yeartwo.TEXT3.beats.sales.split.options.1.reply]
+Wes gets the industrial park and a list of numbers that ring forever. He thanks you anyway. Garrison says nothing.
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 2 > label
+[Yeartwo.TEXT3.beats.sales.split.options.2.label]
+KEEP THE BOOK WHOLE
+
+# Yeartwo > TEXT3 > beats > sales > split > options > 2 > reply
+[Yeartwo.TEXT3.beats.sales.split.options.2.reply]
+Garrison lets it go. Somebody has to keep selling, he says, the same way he said it last year.
+
+# Yeartwo > TEXT3 > beats > sales > chair > speaker
+[Yeartwo.TEXT3.beats.sales.chair.speaker]
+Garrison (Owner)
+
+# Yeartwo > TEXT3 > beats > sales > chair > text
+[Yeartwo.TEXT3.beats.sales.chair.text]
+I am done carrying a bag. Somebody takes my chair at the review: the forecast, my client list and Wes. It can be you. It can be Wes, with you as the closer he calls when it matters. Or you tell me what you want instead.
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 0 > label
+[Yeartwo.TEXT3.beats.sales.chair.options.0.label]
+I WANT THE CHAIR
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 0 > reply
+[Yeartwo.TEXT3.beats.sales.chair.options.0.reply]
+Garrison takes his name plate off the desk and puts it in his pocket. Not yet, he says. But start reading the forecast.
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 1 > label
+[Yeartwo.TEXT3.beats.sales.chair.options.1.label]
+GIVE IT TO WES
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 1 > reply
+[Yeartwo.TEXT3.beats.sales.chair.options.1.reply]
+Garrison looks at you for a long moment. You trained him that well, he says. It is not a question.
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 2 > label
+[Yeartwo.TEXT3.beats.sales.chair.options.2.label]
+A SHARE, NOT A TITLE
+
+# Yeartwo > TEXT3 > beats > sales > chair > options > 2 > reply
+[Yeartwo.TEXT3.beats.sales.chair.options.2.reply]
+Alan hears it through the wall and comes in with a calculator. That is a good sign. He only brings the calculator to things he takes seriously.
+
+# Yeartwo > TEXT3 > offers > y3_chair > label
+[Yeartwo.TEXT3.offers.y3_chair.label]
+TAKE DAN'S CHAIR
+
+# Yeartwo > TEXT3 > offers > y3_chair > desc
+[Yeartwo.TEXT3.offers.y3_chair.desc]
+THE SCHEDULE, THE ESCALATIONS AND THE LABEL MAKER. QUINN TAKES YOUR OLD DESK.
+
+# Yeartwo > TEXT3 > offers > y3_senior > label
+[Yeartwo.TEXT3.offers.y3_senior.label]
+STAY TECHNICAL: SENIOR ENGINEER
+
+# Yeartwo > TEXT3 > offers > y3_senior > desc
+[Yeartwo.TEXT3.offers.y3_senior.desc]
+NO SCHEDULE TO FILL. THE HARD TICKETS, THE BIG JOBS AND THE LAST WORD ON THE STACK.
+
+# Yeartwo > TEXT3 > offers > y3_farewell > label
+[Yeartwo.TEXT3.offers.y3_farewell.label]
+LEAVE ON GOOD TERMS
+
+# Yeartwo > TEXT3 > offers > y3_farewell > desc
+[Yeartwo.TEXT3.offers.y3_farewell.desc]
+A MONTH OF NOTICE, A TIDY HANDOVER AND A DESK THAT RUNS WITHOUT YOU.
+
+# Yeartwo > TEXT3 > offers > y3_summit > label
+[Yeartwo.TEXT3.offers.y3_summit.label]
+SELL TO SUMMIT
+
+# Yeartwo > TEXT3 > offers > y3_summit > desc
+[Yeartwo.TEXT3.offers.y3_summit.desc]
+SUMMIT MANAGED HOLDINGS BUYS THE COMPANY FOR ABOUT ${value}. THE SIGN STAYS UP FOR A YEAR.
+
+# Yeartwo > TEXT3 > offers > y3_staff > label
+[Yeartwo.TEXT3.offers.y3_staff.label]
+SELL TO THE STAFF
+
+# Yeartwo > TEXT3 > offers > y3_staff > desc
+[Yeartwo.TEXT3.offers.y3_staff.desc]
+MORGAN, CHRISTY AND THE TEAM BUY IT OVER FIVE YEARS OUT OF THE PROFIT. YOU CARRY THE NOTE.
+
+# Yeartwo > TEXT3 > offers > y3_morgan > label
+[Yeartwo.TEXT3.offers.y3_morgan.label]
+KEEP IT, MORGAN RUNS IT
+
+# Yeartwo > TEXT3 > offers > y3_morgan > desc
+[Yeartwo.TEXT3.offers.y3_morgan.desc]
+YOUR NAME STAYS ON THE DOOR. MORGAN TAKES THE DAY-TO-DAY, YOU TAKE TUESDAYS OFF.
+
+# Yeartwo > TEXT3 > offers > y3_coo > label
+[Yeartwo.TEXT3.offers.y3_coo.label]
+RUN OPERATIONS
+
+# Yeartwo > TEXT3 > offers > y3_coo > desc
+[Yeartwo.TEXT3.offers.y3_coo.desc]
+MORGAN'S JOB AND THE BACK OF THE HOUSE, WITH A BUDGET. YOUR DEPUTY TAKES THE BOARD.
+
+# Yeartwo > TEXT3 > offers > y3_partner > label
+[Yeartwo.TEXT3.offers.y3_partner.label]
+BECOME A PARTNER
+
+# Yeartwo > TEXT3 > offers > y3_partner > desc
+[Yeartwo.TEXT3.offers.y3_partner.desc]
+FIVE PERCENT, YOUR NAME ON THE PAPERWORK AND YOUR SIGNATURE ON THE LINE OF CREDIT.
+
+# Yeartwo > TEXT3 > offers > y3_across > label
+[Yeartwo.TEXT3.offers.y3_across.label]
+TAKE THE JOB ACROSS TOWN
+
+# Yeartwo > TEXT3 > offers > y3_across > desc
+[Yeartwo.TEXT3.offers.y3_across.desc]
+TERRY VANCE'S OFFER: FORTY TECHS, A REAL BUDGET AND AN UNLABELLED PATCH PANEL.
+
+# Yeartwo > TEXT3 > offers > y3_director > label
+[Yeartwo.TEXT3.offers.y3_director.label]
+TAKE GARRISON'S CHAIR
+
+# Yeartwo > TEXT3 > offers > y3_director > desc
+[Yeartwo.TEXT3.offers.y3_director.desc]
+THE FORECAST, HIS CLIENT LIST AND WES. YOU STILL CLOSE, AND YOU ANSWER FOR HIS NUMBER TOO.
+
+# Yeartwo > TEXT3 > offers > y3_wes > label
+[Yeartwo.TEXT3.offers.y3_wes.label]
+LET WES TAKE THE CHAIR
+
+# Yeartwo > TEXT3 > offers > y3_wes > desc
+[Yeartwo.TEXT3.offers.y3_wes.desc]
+WES RUNS THE TEAM. YOU KEEP THE BIG ACCOUNTS AND SKIP THE FORECAST MEETING.
+
+# Yeartwo > TEXT3 > offers > y3_stake > label
+[Yeartwo.TEXT3.offers.y3_stake.label]
+TAKE A SHARE OF THE SALES SIDE
+
+# Yeartwo > TEXT3 > offers > y3_stake > desc
+[Yeartwo.TEXT3.offers.y3_stake.desc]
+NO TITLE. A PERCENTAGE OF EVERYTHING YOU SIGNED, FOR AS LONG AS IT STAYS SIGNED.
+
+# Yeartwo > TEXT3 > endings > y3_chair
+[Yeartwo.TEXT3.endings.y3_chair]
+YOU TAKE DAN'S CHAIR. THE SCHEDULE IS YOURS, THE ESCALATIONS ARE YOURS, AND QUINN ANSWERS YOUR OLD PHONE ON THE SECOND RING. DAN LEFT A LABEL ON THE DRAWER. IT SAYS YOURS NOW.
+
+# Yeartwo > TEXT3 > endings > y3_senior
+[Yeartwo.TEXT3.endings.y3_senior]
+SENIOR ENGINEER. NO SCHEDULE, NO BUDGET MEETING. THE TICKETS NOBODY ELSE CAN CLOSE COME TO YOU, AND SO DOES QUINN, ABOUT ONCE A DAY, WITH A NOTEBOOK. YOU FOUND THE JOB YOU WERE ALREADY DOING.
+
+# Yeartwo > TEXT3 > endings > y3_farewell
+[Yeartwo.TEXT3.endings.y3_farewell]
+YOU GIVE A MONTH OF NOTICE AND USE ALL OF IT. THE NOTES ARE WRITTEN, QUINN KNOWS ABOUT THE BLUE SWITCH, AND MORGAN SAYS THE DOOR OPENS BOTH WAYS. THE TEAM SIGNS A KEYBOARD. YOU TAKE THE MUG.
+
+# Yeartwo > TEXT3 > endings > y3_summit
+[Yeartwo.TEXT3.endings.y3_summit]
+SUMMIT MANAGED HOLDINGS BUYS PIXEL IT PARTNERS FOR ABOUT ${value}. THE SIGN STAYS UP FOR A YEAR AND THE TEAM KEEPS THEIR DESKS. YOU SIGN FOR AN HOUR. THEN, FOR THE FIRST TIME IN THREE YEARS, YOUR PHONE IS SOMEBODY ELSE'S PROBLEM.
+
+# Yeartwo > TEXT3 > endings > y3_staff
+[Yeartwo.TEXT3.endings.y3_staff]
+THE STAFF BUY THE COMPANY, A LITTLE EVERY MONTH FOR FIVE YEARS. CHRISTY RUNS THE NOTE TO THE PENNY. MORGAN GETS THE OFFICE WITH THE WINDOW. YOUR NAME COMES OFF THE DOOR SLOWLY, AND NOBODY HURRIES IT.
+
+# Yeartwo > TEXT3 > endings > y3_morgan
+[Yeartwo.TEXT3.endings.y3_morgan]
+YOU KEEP THE COMPANY AND GIVE MORGAN THE KEYS. SHE RUNS THE DAYS. YOU COME IN FOR THE NUMBERS, THE BIG CLIENTS AND THE COOKOUT. THE PHONES STILL RING. THEY JUST RING FOR HER FIRST.
+
+# Yeartwo > TEXT3 > endings > y3_coo
+[Yeartwo.TEXT3.endings.y3_coo]
+YOU RUN OPERATIONS. THE DESK, THE WAREHOUSE AND THE BUDGET ALL REPORT TO ONE PERSON, AND THAT PERSON OWNS A LABEL MAKER. YOUR DEPUTY TAKES THE BOARD AND KEEPS YOUR COLOUR CODES.
+
+# Yeartwo > TEXT3 > endings > y3_partner
+[Yeartwo.TEXT3.endings.y3_partner]
+YOU SIGN. FIVE PERCENT OF PIXEL IT PARTNERS, A THIRD SIGNATURE AT THE BANK AND A SEAT WHERE ALAN AND GARRISON ARGUE. YOU ARE THE TIE-BREAKER NOW. YOU LABEL YOUR SIDE OF THE TABLE.
+
+# Yeartwo > TEXT3 > endings > y3_across
+[Yeartwo.TEXT3.endings.y3_across]
+YOU TAKE THE JOB ACROSS TOWN AND LEAVE THE DESK BETTER THAN YOU FOUND IT. FORTY TECHS, ONE BUDGET, AND ON YOUR FIRST MORNING A PATCH PANEL WITH NOTHING WRITTEN ON IT. YOU BROUGHT YOUR OWN TAPE.
+
+# Yeartwo > TEXT3 > endings > y3_director
+[Yeartwo.TEXT3.endings.y3_director]
+GARRISON HANDS YOU THE CHAIR AND THE NAME PLATE HOLDER, EMPTY. THE FORECAST IS YOURS AND SO IS WES, WHO CLOSES HIS FIRST BIG ONE IN MARCH AND RINGS THE BELL TWICE. YOU LET HIM.
+
+# Yeartwo > TEXT3 > endings > y3_wes
+[Yeartwo.TEXT3.endings.y3_wes]
+WES TAKES THE CHAIR. YOU TAUGHT HIM TO ASK WHAT HURTS FIRST, AND NOW HE ASKS YOU. YOU KEEP THE ACCOUNTS THAT MATTER AND NEVER SIT THROUGH A FORECAST MEETING AGAIN. HE STILL CALLS YOU BOSS.
+
+# Yeartwo > TEXT3 > endings > y3_stake
+[Yeartwo.TEXT3.endings.y3_stake]
+NO TITLE, NO TEAM, AND A PERCENTAGE OF EVERY CONTRACT YOU SIGNED FOR AS LONG AS THE CLIENT STAYS. ALAN WROTE THE FORMULA. IT PAYS YOU TO KEEP YOUR PROMISES, WHICH WAS HIS WHOLE POINT.
+
+
 # ======================= Playbook > BOOKS =======================
 # job: RACK RECOVERY
 [Playbook.BOOKS.rack.title]
@@ -15473,6 +16029,110 @@ FLAG RUNNER
 # Career > MEDALS > 58 > desc
 [Career.MEDALS.58.desc]
 CARRY 5 FLAGS HOME
+
+# Career > MEDALS > 59 > title
+[Career.MEDALS.59.title]
+THIRD YEAR
+
+# Career > MEDALS > 59 > desc
+[Career.MEDALS.59.desc]
+FINISH A YEAR 3 RUN
+
+# Career > MEDALS > 60 > title
+[Career.MEDALS.60.title]
+DAN'S CHAIR
+
+# Career > MEDALS > 60 > desc
+[Career.MEDALS.60.desc]
+YEAR 3: TAKE DAN'S CHAIR
+
+# Career > MEDALS > 61 > title
+[Career.MEDALS.61.title]
+SENIOR ENGINEER
+
+# Career > MEDALS > 61 > desc
+[Career.MEDALS.61.desc]
+YEAR 3: STAY TECHNICAL
+
+# Career > MEDALS > 62 > title
+[Career.MEDALS.62.title]
+GOOD TERMS
+
+# Career > MEDALS > 62 > desc
+[Career.MEDALS.62.desc]
+YEAR 3: LEAVE IT TIDY
+
+# Career > MEDALS > 63 > title
+[Career.MEDALS.63.title]
+SOLD TO SUMMIT
+
+# Career > MEDALS > 63 > desc
+[Career.MEDALS.63.desc]
+YEAR 3: SELL TO SUMMIT
+
+# Career > MEDALS > 64 > title
+[Career.MEDALS.64.title]
+STAFF OWNED
+
+# Career > MEDALS > 64 > desc
+[Career.MEDALS.64.desc]
+YEAR 3: SELL TO THE STAFF
+
+# Career > MEDALS > 65 > title
+[Career.MEDALS.65.title]
+TUESDAYS OFF
+
+# Career > MEDALS > 65 > desc
+[Career.MEDALS.65.desc]
+YEAR 3: GIVE MORGAN THE KEYS
+
+# Career > MEDALS > 66 > title
+[Career.MEDALS.66.title]
+BACK OF HOUSE
+
+# Career > MEDALS > 66 > desc
+[Career.MEDALS.66.desc]
+YEAR 3: RUN OPERATIONS
+
+# Career > MEDALS > 67 > title
+[Career.MEDALS.67.title]
+THIRD SIGNATURE
+
+# Career > MEDALS > 67 > desc
+[Career.MEDALS.67.desc]
+YEAR 3: BECOME A PARTNER
+
+# Career > MEDALS > 68 > title
+[Career.MEDALS.68.title]
+ACROSS TOWN
+
+# Career > MEDALS > 68 > desc
+[Career.MEDALS.68.desc]
+YEAR 3: TAKE TERRY'S OFFER
+
+# Career > MEDALS > 69 > title
+[Career.MEDALS.69.title]
+THE BIG CHAIR
+
+# Career > MEDALS > 69 > desc
+[Career.MEDALS.69.desc]
+YEAR 3: TAKE GARRISON'S CHAIR
+
+# Career > MEDALS > 70 > title
+[Career.MEDALS.70.title]
+CALL ME BOSS
+
+# Career > MEDALS > 70 > desc
+[Career.MEDALS.70.desc]
+YEAR 3: GIVE WES THE CHAIR
+
+# Career > MEDALS > 71 > title
+[Career.MEDALS.71.title]
+A PERCENTAGE
+
+# Career > MEDALS > 71 > desc
+[Career.MEDALS.71.desc]
+YEAR 3: TAKE THE SHARE
 
 
 # ======================= Career > UNLOCKS =======================

@@ -420,7 +420,7 @@ func _pending_build() -> Dictionary:
 	return _panel.build_out() if _confirmed else {}
 
 
-func setup(for_mode: String, year2 := false) -> void:
+func setup(for_mode: String, year2 := false, year := 2) -> void:
 	_free_max = false
 	mode = for_mode
 	direct = offers_custom(mode)
@@ -447,7 +447,7 @@ func setup(for_mode: String, year2 := false) -> void:
 	_panel = null
 	_confirmed = false
 	Mutators.pending_start = Mutators.STANDARD
-	Yeartwo.begin_select(for_mode, year2)  # New Game Plus: the MUT chip and +2 build points
+	Yeartwo.begin_select(for_mode, year2, year)  # New Game Plus (Year 2 or 3): the MUT chip and +2 build points
 	Difficulty.roll_seed()  # the run seed is chosen here: shown on the SEED chip, X changes it
 	facing = "right"
 	for spr in _sprites:
@@ -571,7 +571,7 @@ func summary(with_tier := true) -> String:
 	if _panel != null and (step == "build" or _confirmed):
 		s += " - " + str(_panel.name_text())
 	if Yeartwo.pending:
-		s += " - YEAR 2"
+		s += " - " + Yeartwo.label(Yeartwo.pending_year)
 	if mode == FREE_MODE and _free_max:
 		s += " - MAX BUILD"
 	if with_tier:
