@@ -522,6 +522,7 @@ var format := "wide"
 var title_mode := false  # the title screen shows real rooms without the player or the cast
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
+var fullscreen := true  # the DISPLAY setting: the game starts full screen, SETTINGS can make it a window
 var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
 var focus_force := false  # tests: act on focus notifications in a script run too
 var focus_lost := false  # the window is in the background (or the app is suspended) right now
@@ -559,10 +560,14 @@ func on_deck(screen: Vector2i) -> bool:
 
 
 # the format a screen starts in: a 16:10 screen gets "deck" (it fills it), anything else the classic "wide"
-func pick_format(screen: Vector2i) -> String:
+func pick_format(screen: Vector2i, full: bool = false) -> String:
 	if screen.x <= 0 or screen.y <= 0:
 		return "wide"
-	return "deck" if absf(float(screen.x) / float(screen.y) - 1.6) < 0.02 else "wide"
+	var ratio := float(screen.x) / float(screen.y)
+	if absf(ratio - 1.6) < 0.02:
+		return "deck"
+	# full screen on a 16:9 screen (a ROG Ally's 1080p, a TV, most monitors): "h" fills it at a whole scale, "wide" leaves bars
+	return "h" if full and absf(ratio - 16.0 / 9.0) < 0.02 else "wide"
 
 
 # the saved choices (the pause menu's SHAPE row or F9, the UNFOCUSED row), kept in the settings file
@@ -571,6 +576,7 @@ func load_display() -> String:
 	if cfg.load(Difficulty.settings_path) != OK:
 		return ""
 	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	fullscreen = bool(cfg.get_value("display", "fullscreen", true))
 	return str(cfg.get_value("display", "format", ""))
 
 
@@ -580,7 +586,21 @@ func save_display(with_format: bool = true) -> void:
 	if with_format:
 		cfg.set_value("display", "format", format)
 	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.save(Difficulty.settings_path)
+
+
+# the DISPLAY row of SETTINGS: full screen (the default on every machine) or a window
+func set_fullscreen(on: bool) -> void:
+	fullscreen = on
+	save_display(false)
+	if dev_run() and not focus_force:
+		return  # a test or a tool-driven run keeps its window
+	var win := get_window()
+	win.mode = Window.MODE_FULLSCREEN if on else Window.MODE_WINDOWED
+	if not on:
+		win.size = Vector2i(FORMATS[format].size) * int(FORMATS[format].scale)
+		win.move_to_center()
 
 
 func set_focus_pause(on: bool) -> void:
@@ -592,15 +612,15 @@ func set_focus_pause(on: bool) -> void:
 # A --format argument or PIXEL_FORMAT wins over both.
 func start_display(screen: Vector2i, forced: bool) -> void:
 	var saved := load_display()
-	auto_format = pick_format(screen)
+	auto_format = pick_format(screen, fullscreen)
 	if forced:
 		return
 	if FORMATS.has(saved):
 		set_format(saved)
 	elif auto_format != format:
 		set_format(auto_format)
-	if on_deck(screen) and DisplayServer.get_name() != "headless":
-		get_window().mode = Window.MODE_FULLSCREEN
+	if (fullscreen or on_deck(screen)) and DisplayServer.get_name() != "headless":
+		get_window().mode = Window.MODE_FULLSCREEN  # the game starts full screen; SETTINGS has DISPLAY: WINDOW
 
 
 func _notification(what: int) -> void:
@@ -74930,7 +74950,8 @@ func _labels() -> Array:
     if settings_mode:
         var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
         var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
-        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
+        var display := "DISPLAY: %s" % ("FULL SCREEN" if Game.fullscreen else "WINDOW")
+        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
@@ -74949,7 +74970,7 @@ func _labels() -> Array:
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
     if settings_mode:
-        return ["resume", "controls", "shape", "sound", "day", "focus", "career"][clampi(i, 0, 6)]
+        return ["resume", "controls", "shape", "display", "sound", "day", "focus", "career"][clampi(i, 0, 7)]
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
@@ -74972,6 +74993,8 @@ func _activate() -> void:
                 _page = 0
             "shape":
                 Game.cycle_format()
+            "display":
+                Game.set_fullscreen(not Game.fullscreen)
             "sound":
                 Sfx.toggle_mute()
             "day":
@@ -75033,7 +75056,7 @@ func _panel() -> Rect2:
     if Campaign.active and Campaign.mode == "tech":
         h += 12.0  # the TICKET PACE row
     if settings_mode:
-        h = 112.0
+        h = 124.0  # eight rows with DISPLAY
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -75196,6 +75219,8 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
+        elif settings_mode and _row_id(_sel) == "display":
+            Game.set_fullscreen(not Game.fullscreen)
         elif settings_mode and _row_id(_sel) == "sound":
             Sfx.toggle_mute()
         elif settings_mode and _row_id(_sel) == "focus":

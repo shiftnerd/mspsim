@@ -163,7 +163,7 @@ Answering a card or closing a screen with `A` never makes you jump or stand up: 
 
 On a 16:10 screen (a Steam Deck is 1280 x 800) the game starts in the **DECK** shape, which fills the screen with no black
 bars. The **SHAPE** row of the pause menu (or `F9`) still changes it, and your choice is remembered. When the game loses
-focus or the machine goes to sleep, it pauses by itself; **SETTINGS** on the title screen has an **UNFOCUSED** row
+focus or the machine goes to sleep, it pauses by itself; **SETTINGS** on the title screen has a **DISPLAY** row (the game starts full screen; pick WINDOW there to play in a window) and an **UNFOCUSED** row
 (`PAUSE` / `RUN`) if you would rather keep it running in the background.
 
 ---

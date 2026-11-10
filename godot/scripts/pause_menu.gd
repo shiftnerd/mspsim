@@ -104,7 +104,8 @@ func _labels() -> Array:
 	if settings_mode:
 		var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
 		var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
-		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
+		var display := "DISPLAY: %s" % ("FULL SCREEN" if Game.fullscreen else "WINDOW")
+		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
 	if _confirm:
 		return ["NO, KEEP PLAYING", "YES, QUIT"]
 	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
@@ -123,7 +124,7 @@ func _labels() -> Array:
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
 	if settings_mode:
-		return ["resume", "controls", "shape", "sound", "day", "focus", "career"][clampi(i, 0, 6)]
+		return ["resume", "controls", "shape", "display", "sound", "day", "focus", "career"][clampi(i, 0, 7)]
 	var ids := ["resume", "controls", "shape"]
 	if Campaign.active:
 		ids.append("day")
@@ -146,6 +147,8 @@ func _activate() -> void:
 				_page = 0
 			"shape":
 				Game.cycle_format()
+			"display":
+				Game.set_fullscreen(not Game.fullscreen)
 			"sound":
 				Sfx.toggle_mute()
 			"day":
@@ -207,7 +210,7 @@ func _panel() -> Rect2:
 	if Campaign.active and Campaign.mode == "tech":
 		h += 12.0  # the TICKET PACE row
 	if settings_mode:
-		h = 112.0
+		h = 124.0  # eight rows with DISPLAY
 	if _page >= 0:
 		h = 108.0
 	elif _confirm:
@@ -370,6 +373,8 @@ func _key(event: InputEvent) -> void:
 	elif left or right:
 		if not _confirm and _sel == 2:
 			Game.cycle_format()
+		elif settings_mode and _row_id(_sel) == "display":
+			Game.set_fullscreen(not Game.fullscreen)
 		elif settings_mode and _row_id(_sel) == "sound":
 			Sfx.toggle_mute()
 		elif settings_mode and _row_id(_sel) == "focus":

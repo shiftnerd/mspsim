@@ -65,6 +65,13 @@ func _run() -> void:
 	# ---- which format a screen starts in -----------------------------------------------------------------------------
 	_check(game.pick_format(deck) == "deck" and game.pick_format(Vector2i(1920, 1200)) == "deck" and game.pick_format(Vector2i(2560, 1600)) == "deck", "16:10 screens start in deck")
 	_check(game.pick_format(Vector2i(1920, 1080)) == "wide" and game.pick_format(Vector2i(3440, 1440)) == "wide" and game.pick_format(Vector2i(0, 0)) == "wide", "16:9, ultrawide and an unknown screen keep wide")
+	# full screen (the default): a 16:9 screen starts in h, which fills it at a whole scale (a ROG Ally's 1080p at x6)
+	var all_h := true
+	for screen in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(2560, 1440), Vector2i(3840, 2160)]:
+		all_h = all_h and game.pick_format(screen, true) == "h" and game.fit(screen, "h").bars == Vector2i.ZERO
+	_check(all_h, "full screen on a 16:9 screen starts in h with no bars")
+	_check(game.pick_format(deck, true) == "deck" and game.pick_format(Vector2i(3440, 1440), true) == "wide", "full screen: 16:10 is still deck, an ultrawide keeps wide")
+	_check(game.fit(Vector2i(1920, 1080), "h").scale == 6, "1080p: h at x6, a 5 px glyph is 30 px tall (the handheld guides ask for 14)")
 	_check(game.on_deck(deck) and not game.on_deck(Vector2i(1920, 1200)), "1280 x 800 is taken for a Deck (full screen), a 16:10 monitor is not")
 	_check(game.dev_run() and game.format == "wide" and game.auto_format == "", "a test run asks no screen: wide, as before")
 	game.start_display(deck, false)
@@ -83,7 +90,8 @@ func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(d.settings_path))
 	game.set_format("wide")
 	game.start_display(Vector2i(1920, 1080), false)
-	_check(game.format == "wide", "no saved choice on a 16:9 screen: wide")
+	_check(game.format == "h", "no saved choice on a 16:9 screen: full screen, so h (it fills it)")
+	game.set_format("wide")
 
 	# ---- readable at 7 inches ------------------------------------------------------------------------------------------
 	var rows := 99
@@ -162,6 +170,20 @@ func _run() -> void:
 	pm._activate()
 	pm.close()
 	_check(game.focus_pause, "and back to PAUSE")
+	# ---- DISPLAY: full screen by default, a window on request ----------------------------------------------------
+	_check(game.fullscreen, "the game starts full screen by default")
+	pm.open_settings()
+	row = pm._labels().find("DISPLAY: FULL SCREEN")
+	_check(row >= 0 and pm._row_id(row) == "display", "the settings page has the DISPLAY row (%s)" % str(pm._labels()))
+	pm._sel = row
+	pm._activate()
+	_check(not game.fullscreen and pm._labels().has("DISPLAY: WINDOW"), "confirm on it switches to WINDOW")
+	game.fullscreen = true
+	game.load_display()
+	_check(not game.fullscreen, "the choice is saved in the settings file")
+	pm._activate()
+	pm.close()
+	_check(game.fullscreen, "and back to FULL SCREEN")
 
 	# ---- a suspend nobody announced: a frame that took seconds -------------------------------------------------------
 	var t0 := Time.get_ticks_msec()

@@ -233,9 +233,36 @@ that reads real time (`Cards` ignore input for 0.45 s of real time after they op
 Generally the same as the Deck, and simpler in one way:
 
 - **Build**: the ordinary Windows build runs natively. No Linux export, no Proton.
-- **Input**: the built-in controls are a standard XInput pad, which is what `Controls` already speaks. Everything in the pad-only tests (`tests/pad_only.gd`, `pad_only_games.gd`, `pad_reach.gd`) applies unchanged. The extra back paddles and the Armoury Crate / Command Center buttons are handled by the system, not the game.
-- **Screen**: 1920x1080, 16:9, 7 inch. The `deck` format (320x200) is for 16:10 and is not picked here. The `h` format (320x180) fills 1080p exactly at x6 (and 720p at x4), with glyphs 30 px tall; the default `wide` (368x128) gets x5 = 1840x640 with large bars. Today a 16:9 screen starts in `wide`, so on an Ally the player picks `h` once with SHAPE in SETTINGS (the choice is saved).
+- **Input**: the built-in controls are a standard XInput pad, which is what `Controls` already speaks. Everything in the pad-only tests (`tests/pad_only.gd`, `pad_only_games.gd`, `pad_reach.gd`) applies unchanged. Microsoft's guaranteed inputs (A / B / X / Y, both bumpers, triggers and sticks, D-pad, Menu, View) are all the game uses.
+- **Screen**: 1920x1080, 16:9, 7 inch. The game starts full screen (below), and full screen on a 16:9 screen starts in the `h` format (320x180), which fills 1080p exactly at x6 and 720p at x4. No bars.
 - **Suspend and focus**: the same pause on focus loss, app pause and the 3 s frame-gap rule cover sleep and the overlay.
-- **Performance**: the Ally's Z1 Extreme is faster than the Deck's CPU, so the frame-time table above is the worse case.
+- **Performance**: the frame-time table above applies; nothing was measured on an Ally.
 
-Open: start in `h` and full screen on a handheld 16:9 screen. Windows gives no reliable handheld flag; the practical signal is a pad connected at first launch with no saved format. Not built: it would also change what a desktop player with a pad plugged in sees first. Nothing here was run on an Ally.
+Nothing here was run on an Ally.
+
+## Full screen by default (all machines)
+
+The game starts full screen (owner decision, 2026-11-10). SETTINGS on the title has **DISPLAY: FULL SCREEN / WINDOW**; the choice is saved in the settings file (`display/fullscreen`), next to SHAPE and UNFOCUSED. Code: `Game.fullscreen`, `Game.set_fullscreen`, `Game.pick_format(screen, full)`; test `tests/deck_display.gd`.
+
+What a screen starts in when no SHAPE was saved: 16:10 gets `deck`; 16:9 in full screen gets `h`; anything else (ultrawide, 4:3) and a 16:9 window get `wide`. A saved SHAPE always wins. Test runs, `-s` scripts, `--resolution`, `--write-movie` and `MSPSIM_TEST=1` keep their window and `wide`.
+
+## The two published checklists, against the game (read 2026-11-10)
+
+Sources: Valve, "Steam Hardware Compatibility Review" (partner.steamgames.com/doc/steamhardware/compat); Microsoft, handheld development guidance (the five guidelines and the considerations page on learn.microsoft.com). Microsoft's badge criteria, fps targets and test cases are in separate guides (aka.ms/hhcompatguide, aka.ms/hhperfguide) that were not read.
+
+| Requirement | Source | State |
+|---|---|---|
+| The default controller configuration reaches all content, with no setting to turn on | Valve, Microsoft | Met by test: `pad_only`, `pad_only_games`, `pad_reach` (68 Computer and phone screens). Not tried on hardware |
+| Glyphs match the active input; no keyboard or mouse glyphs while a pad is in use | Valve, Microsoft | **Partly met.** HUD hint, footers, the pause menu's lists show pad glyphs. Still keyboard names: screens that draw their own hint lines, key names inside tutorial sentences, card labels like "LEAVE (ESC)", some mini-game captions. This is the open blocker for Verified |
+| Text entry works with a controller alone (own entry or the system keyboard) | Valve, Microsoft | Met: the seed is six wheels; no other typed input is required |
+| Smallest text at least 9 px tall at 1280x800 (12 recommended) | Valve | Met: glyphs are 5 logical px, 20 px at x4 in `deck` |
+| Text at least 9 px at 1280x720 and 14 px at 1080p (12 and 18 recommended); bitmap fonts need a larger option | Microsoft | Met: 20 px at 720p and 30 px at 1080p in `h`. No separate text-size option exists |
+| Runs at 1280x800 (preferred) or 1280x720 | Valve | Met: `deck` fills 1280x800 |
+| A playable framerate by default: 30 fps at 800p | Valve | Expected with a wide margin (section 7), not measured on a Deck |
+| No warnings about unsupported hardware or software; no launcher | Valve | Met: there are none |
+| Avoid substantial letterboxing; 16:9 or 16:10 | Microsoft | Met in full screen (`h` and `deck` fill). `wide` and the portrait formats letterbox by design when chosen |
+| Good defaults on a handheld without settings changes | Microsoft | Met by full screen plus the aspect pick. The Windows handheld flag (`RtlGetDeviceFamilyInfoEnum`, form `DEVICEFAMILYDEVICEFORM_GAMING_HANDHELD`) is not read: it needs a native extension and the defaults no longer depend on it |
+| Runs natively on Linux or through Proton | Valve | Not verified: export templates are not installed (section 6) |
+| Power: stop world rendering in menus, pause when idle | Microsoft (recommendation) | Partly: the game pauses on focus loss and suspend; rendering continues under menus |
+
+Valve reviews a native Linux build first and falls back to the Windows build under Proton, publishing the better result. A review is requested from Steamworks (Technical Tools, "Steam Hardware Compatibility Review") after the standard build review. A game Verified on Deck is also Verified on Steam Machine.
