@@ -5823,8 +5823,10 @@ func _paint_intro(b: Rect2) -> void:
 	if game == "dinner":
 		y = _paint_dinner_notes(b, y)
 	if game == "paintball":
-		_t("< %s >%s" % ["A NIGHT MATCH: YOU SEE LESS FAR" if paint_night else "A DAY MATCH", "" if opts.has("night") else "  (LEFT / RIGHT)"], b.position.x, y, BLUE)
-		y += 7.0
+		var match_line := "< %s >%s" % ["A NIGHT MATCH: YOU SEE LESS FAR" if paint_night else "A DAY MATCH", "" if opts.has("night") else "  (LEFT / RIGHT)"]
+		for part in _wrap(match_line, int(b.size.x / 4.0)):  # (203 px in one line: too wide for the 180 px format)
+			_t(part, b.position.x, y, BLUE)
+			y += 7.0
 	if best.has(_career_game()):
 		_t("YOUR BEST: %d OF 3 STARS" % int(best[_career_game()]), b.position.x, y, GREEN)
 
