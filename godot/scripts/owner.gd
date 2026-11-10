@@ -2192,12 +2192,14 @@ func apply(fx: Dictionary) -> void:
 		Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
 	if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
 		Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
-	if fx.has("visit"):
-		Takeover.visit(self, str(fx.visit))
 	if fx.has("lead"):
 		_leads += int(fx.lead)
 	if fx.has("rival"):
 		Rival.apply_fx(self, fx.rival)
+	if fx.has("visit"):
+		# after the rival ops: the week 11 card brings the client back (`return`) in the same fx, and the visit needs them back
+		# (X12: before this order the real trigger never started a visit, Takeover.target() found nobody)
+		Takeover.visit(self, str(fx.visit))
 	Msp.changed.emit()
 
 
