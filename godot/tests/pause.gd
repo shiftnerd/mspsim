@@ -75,10 +75,8 @@ func _init() -> void:
 
 	# quit asks first
 	await _key(KEY_ESCAPE)
-	await _key(KEY_DOWN)
-	await _key(KEY_DOWN)
-	await _key(KEY_DOWN)
-	await _key(KEY_DOWN)  # a campaign has the DAY LENGTH row (R16) before QUIT TO TITLE
+	for i in pm._labels().size() - 1:  # QUIT TO TITLE is the last row (a campaign has DAY LENGTH, the tech campaign TICKET PACE too)
+		await _key(KEY_DOWN)
 	await _key(KEY_ENTER)
 	_check(pm.is_open, "QUIT TO TITLE asks first")
 	await _key(KEY_ESCAPE)

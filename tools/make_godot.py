@@ -6153,6 +6153,22 @@ var pace := 1.0  # campaign difficulty: ticket spawn interval multiplier
 var spawned_today := 0  # random tickets so far today (see DAY_CAPS)
 var calls: Array = []  # the front desk's pending calls: {t: seconds left, voicemail: bool}
 var handoffs_today := 0  # tickets Michael took off you today (see PhoneCalls HANDOFF_MAX)
+# X10 tech pacing. Every client ticket of the day counts toward the day's cap (created_today), so a story or event ticket takes
+# the place of a random one instead of landing on top of them. A story / event ticket that can wait (the Adobe job, a workaround
+# that came back, a recall batch, a missed onsite finding) is held while the open queue is at its cap and let in at the next free
+# slot, in order; one that waited overnight comes in the next morning whatever the queue looks like, so nothing is lost.
+# The pause menu's TICKET PACE row (tech campaign) scales the day cap, the gap between timed tickets and the open cap.
+const PACE_NAMES := ["RELAXED", "NORMAL", "BUSY"]
+const PACE_DAY := [0.75, 1.0, 1.25]  # x the day's ticket cap
+const PACE_GAP := [1.3, 1.0, 0.8]  # x the seconds between two timed tickets
+const PACE_OPEN := [-1, 0, 1]  # added to the open-queue cap
+const HOLD_GAP := 12.0  # game seconds between two held tickets being let in
+const HOLD_MORNING := 9.5  # a ticket held overnight comes in from this hour
+var pace_setting := 1  # index into PACE_NAMES; kept in the settings file ([pace] tech)
+var created_today := 0  # client tickets today from any source (tech campaign)
+var held: Array = []  # tickets waiting for a free slot: {kind: "problem" / "return", day, ...}
+var held_total := 0  # how many tickets were ever held this run (the pace probe prints it)
+var _held_t := 0.0
 
 var _next_id := 10421
 var _next_mail := 1
@@ -6165,6 +6181,7 @@ var _owner_noted := {}  # owner desk -> true while an outage there has been repo
 
 func _ready() -> void:
     randomize()
+    load_pace()
     reset()
 
 
@@ -6172,6 +6189,10 @@ func reset() -> void:
     named_day = {}
     thanked_day = {}
     calls.clear()
+    held.clear()
+    held_total = 0
+    created_today = 0
+    _held_t = 0.0
     tickets.clear()
     emails.clear()
     texts.clear()
@@ -6224,6 +6245,8 @@ func to_dict() -> Dictionary:
         "reopened": reopened,
         "pace": pace,
         "spawned_today": spawned_today,
+        "created_today": created_today,
+        "held": held.duplicate(true),
         "next_id": _next_id,
         "next_mail": _next_mail,
         "spawn_t": _spawn_t,
@@ -6249,6 +6272,8 @@ func from_dict(data: Dictionary) -> void:
     reopened = int(data.get("reopened", 0))
     pace = float(data.get("pace", 1.0))
     spawned_today = int(data.get("spawned_today", 0))
+    created_today = int(data.get("created_today", spawned_today))
+    held = _saved_array(data, "held")
     _next_id = int(data.get("next_id", 10421))
     _next_mail = int(data.get("next_mail", 1))
     _spawn_t = float(data.get("spawn_t", 20.0))
@@ -6373,6 +6398,8 @@ func create_problem(client: int, prob: Dictionary, source: String, force := fals
     }
     _next_id += 1
     tickets.append(t)
+    if tech_paced():
+        created_today += 1
     Dash.note_opened()
     _mail(PSA_FROM, "Ticket #%d assigned: %s" % [t.id, t.summary], assignment_mail(t), t.id)
     ticket_added.emit(t)
@@ -6393,14 +6420,98 @@ func assignment_mail(t: Dictionary, request := "") -> String:
 
 func day_cap() -> int:
     if Campaign.active and Campaign.mode == "tech":
-        return int(DAY_CAPS.get(Campaign.day, 99))
+        return maxi(1, int(round(float(DAY_CAPS.get(Campaign.day, 99)) * float(PACE_DAY[pace_setting]))))
     return 99
 
 
 func open_cap() -> int:
     if Campaign.active and Campaign.mode == "tech":
-        return int(OPEN_CAPS.get(Campaign.day, 6))
+        return maxi(2, int(OPEN_CAPS.get(Campaign.day, 6)) + int(PACE_OPEN[pace_setting]))
     return 6
+
+
+# ---- tech pacing (X10): the TICKET PACE setting and the held story / event tickets ------------------------------
+func tech_paced() -> bool:
+    return Campaign.active and Campaign.mode == "tech"
+
+
+func pace_label() -> String:
+    return str(PACE_NAMES[pace_setting])
+
+
+func set_pace(index: int) -> void:
+    pace_setting = clampi(index, 0, PACE_NAMES.size() - 1)
+
+
+# the pause menu row: the next / previous pace, saved with the settings at once
+func cycle_pace(step: int) -> int:
+    pace_setting = posmod(pace_setting + step, PACE_NAMES.size())
+    save_pace()
+    return pace_setting
+
+
+func load_pace() -> void:
+    var cfg := ConfigFile.new()
+    if cfg.load(Difficulty.settings_path) == OK:
+        set_pace(int(cfg.get_value("pace", "tech", 1)))
+
+
+func save_pace() -> void:
+    var cfg := ConfigFile.new()
+    cfg.load(Difficulty.settings_path)
+    cfg.set_value("pace", "tech", pace_setting)
+    cfg.save(Difficulty.settings_path)
+
+
+# the open queue is at its cap (the timed tickets pause on the same test)
+func queue_full() -> bool:
+    return tech_paced() and open_tickets().size() >= open_cap()
+
+
+# a story / event ticket that is not time-critical: created at once when the queue has room (and nothing is waiting in front of
+# it), else held for the next free slot. Returns the ticket, or {} while it is held.
+func problem_or_hold(client: int, prob: Dictionary, source: String, force := false) -> Dictionary:
+    if not tech_paced() or (held.is_empty() and not queue_full()):
+        return create_problem(client, prob, source, force)
+    _hold({"kind": "problem", "client": client, "prob": prob.duplicate(true), "source": source, "force": force})
+    return {}
+
+
+# the same for a workaround that came back (spawn_return)
+func return_or_hold(item: Dictionary) -> void:
+    if not tech_paced() or (held.is_empty() and not queue_full()):
+        spawn_return(item)
+        return
+    _hold({"kind": "return", "item": item.duplicate(true)})
+
+
+func _hold(entry: Dictionary) -> void:
+    entry["day"] = Campaign.day
+    held.append(entry)
+    held_total += 1
+
+
+func _release(entry: Dictionary) -> void:
+    if str(entry.kind) == "return":
+        spawn_return(entry.item)
+    else:
+        create_problem(int(entry.client), entry.prob, str(entry.source), bool(entry.get("force", false)))
+
+
+# let the first held ticket in: when the queue has room, or the morning after however full the queue is
+func _tick_held(dt: float) -> void:
+    if held.is_empty():
+        return
+    _held_t -= dt
+    if _held_t > 0.0 or World.clock >= World.DAY_END:
+        return
+    var first: Dictionary = held[0]
+    var overnight: bool = int(first.day) < Campaign.day and World.clock >= HOLD_MORNING
+    if queue_full() and not overnight:
+        return
+    held.pop_front()
+    _held_t = HOLD_GAP
+    _release(first)
 
 
 # ---- clients who know your name (R36, tech campaign) ------------------------------------------------------------
@@ -6460,7 +6571,7 @@ func _note_by_name_close(t: Dictionary) -> void:
 
 
 func _random_ticket(source: String) -> Dictionary:
-    if spawned_today >= day_cap():
+    if maxi(spawned_today, created_today) >= day_cap():
         return {}
     for tries in 6:
         var pick: Dictionary = Mutators.pick_problem()
@@ -6871,6 +6982,7 @@ func break_backup(client: int) -> void:
 # start of a campaign day: working jobs refresh, a few quietly fail overnight
 func new_day(day: int) -> void:
     spawned_today = 0
+    created_today = 0
     handoffs_today = 0
     # a desktop sitting in its box: John reminds you where the job is, for a few days
     if Campaign.active and project_busy() and int(project.get("since", day)) < day:
@@ -7237,7 +7349,8 @@ func heavy_slow(ep: Dictionary, action: String) -> float:
 # seconds until the next random ticket. The DAY LENGTH option scales it, so a longer day brings the same tickets per game hour.
 func next_spawn_gap() -> float:
     var gap := Difficulty.rng("msp.tickets").randf_range(45.0, 90.0) * pace / maxf(0.5, Sales.workload()) * Incident.ticket_gap()
-    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace()
+    var setting := float(PACE_GAP[pace_setting]) if tech_paced() else 1.0
+    return gap / Owner.issue_mult() * Mutators.ticket_rate() * Difficulty.cm("pace") * Difficulty.day_factor() / Players.pace() * setting
 
 
 # "ready" = Jen is at her desk and free, "away" = she is in the building but busy or out of her seat, "" = there is no front desk
@@ -7300,6 +7413,7 @@ func _process(delta: float) -> void:
     if dt <= 0.0:
         return
     _tick_calls(dt)
+    _tick_held(dt)
     _spawn_t -= dt
     if _spawn_t <= 0.0:
         _spawn_t = next_spawn_gap()
@@ -17883,7 +17997,7 @@ func _spawn_followups() -> void:
     var keep := []
     for item in list:
         if int(item.due) <= Campaign.day:
-            Msp.spawn_return(item)
+            Msp.return_or_hold(item)  # X10: waits for a free slot when the queue is full
         else:
             keep.append(item)
     flags["followups"] = keep
@@ -17909,7 +18023,7 @@ func fire(ev: Dictionary) -> void:
         "postmortem":
             Incident.tech_start(str(ev.cls))
         "adobe":
-            Msp.create_problem(int(ev.client), Msp.ADOBE, "email")
+            Msp.problem_or_hold(int(ev.client), Msp.ADOBE, "email")  # X10: not time-critical, waits for a free slot
         "callback_install":
             _callback_install()
         "callback_ransom":
@@ -50356,6 +50470,7 @@ var _event_done := false
 var _roll_day := -1
 var _spawn_at := -1.0
 var calls := 0  # onsite jobs created so far (the roulette salt)
+var _carry := false  # X10: a job call that waited for a free slot all day comes on the next visit day
 var recent: Array = []  # the last clients who called
 var seen_jobs := {}  # job id -> how often it came up
 
@@ -50385,6 +50500,7 @@ func reset() -> void:
     _event_done = false
     _roll_day = -1
     calls = 0
+    _carry = false
     recent = []
     seen_jobs = {}
     _spawn_at = -1.0
@@ -50435,6 +50551,9 @@ func _on_day(day: int) -> void:
         Msp.mail(Story.MANAGER, "Onsite visits", str(TEXT.intro_mail))
     var guaranteed := day == 6 or day == 11 or day == 15
     var skip := [7, 9, 10, 12, 13, 16, 17, 18, 20].has(day)
+    if _carry and not skip:
+        guaranteed = true  # X10: yesterday's call never found a free slot
+        _carry = false
     for t in Msp.tickets:
         if t.status != "Closed" and is_onsite(t):
             skip = true  # one onsite problem at a time
@@ -50448,7 +50567,11 @@ func _process(_delta: float) -> void:
     if _spawn_at < 0.0 or not is_tech() or Game.title_mode or World.time_scale <= 0.0 or active:
         return
     if World.clock >= _spawn_at and World.clock < World.DAY_END - 1.0:
+        if Msp.queue_full():
+            _carry = true  # X10: the call waits for a free slot, tomorrow if today has none
+            return
         _spawn_at = -1.0
+        _carry = false
         create_job()
 
 
@@ -50975,7 +51098,7 @@ func _missed_follow_up() -> void:
         if Difficulty.rng("onsite").randf() < 0.25 and Campaign.active and Msp.enabled:
             var f: Dictionary = entry.f
             var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 2, "body": str(TEXT.missed_mail) + " - %s"}
-            Msp.create_problem(int(entry.client), prob, "email")
+            Msp.problem_or_hold(int(entry.client), prob, "email")
             Sales.adjust(int(entry.client), -2)
         else:
             keep.append(entry)
@@ -59143,7 +59266,7 @@ func _batch(b: Dictionary) -> void:
         if pool.is_empty():
             break
         var c: int = pool.pop_at(r.randi_range(0, pool.size() - 1))
-        Msp.create_problem(c, b.problem, "recall notice")
+        Msp.problem_or_hold(c, b.problem, "recall notice")
 
 
 func _answer_offer(offer: Dictionary, oid: String) -> void:
@@ -70041,6 +70164,8 @@ func _labels() -> Array:
     var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+        if Campaign.mode == "tech":
+            rows.append("TICKET PACE: %s" % Msp.pace_label())  # X10: relaxed / normal / busy, at once
     elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
         rows.append("OUTFIT")
         rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
@@ -70055,6 +70180,8 @@ func _row_id(i: int) -> String:
     var ids := ["resume", "controls", "shape"]
     if Campaign.active:
         ids.append("day")
+        if Campaign.mode == "tech":
+            ids.append("pace")
     elif Campaign.mode == Campaign.FREE:
         ids.append("outfit")
         ids.append("career")
@@ -70089,8 +70216,11 @@ func _activate() -> void:
             _sel = _labels().size() - 1
         _canvas.queue_redraw()
         return
-    if _row_id(_sel) == "day":
-        Difficulty.cycle_day_scale(1)
+    if _row_id(_sel) in ["day", "pace"]:
+        if _row_id(_sel) == "day":
+            Difficulty.cycle_day_scale(1)
+        else:
+            Msp.cycle_pace(1)  # X10
         _canvas.queue_redraw()
         return
     if _row_id(_sel) == "outfit":
@@ -70119,6 +70249,8 @@ func _activate() -> void:
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
     var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
+    if Campaign.active and Campaign.mode == "tech":
+        h += 12.0  # the TICKET PACE row
     if settings_mode:
         h = 100.0
     if _page >= 0:
@@ -70277,6 +70409,8 @@ func _key(event: InputEvent) -> void:
             Sfx.toggle_mute()
         elif not _confirm and _row_id(_sel) == "day":
             Difficulty.cycle_day_scale(1 if right else -1)
+        elif not _confirm and _row_id(_sel) == "pace":
+            Msp.cycle_pace(1 if right else -1)
     elif Controls.confirm(event):
         _activate()
         return
@@ -70309,6 +70443,8 @@ func _paint() -> void:
     var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
+    elif not _confirm and _row_id(_sel) == "pace":
+        foot = "HOW MANY TICKETS  LEFT RIGHT = CHANGE"
     UiStyle.footer(c, r, foot)
 
 

@@ -107,6 +107,8 @@ func _labels() -> Array:
 	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
 	if Campaign.active:
 		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
+		if Campaign.mode == "tech":
+			rows.append("TICKET PACE: %s" % Msp.pace_label())  # X10: relaxed / normal / busy, at once
 	elif Campaign.mode == Campaign.FREE:  # Free Play (R15 level 3 step e): change your look
 		rows.append("OUTFIT")
 		rows.append("CAREER")  # a pad has no free button for the J key, so the career screen is reachable from here too
@@ -121,6 +123,8 @@ func _row_id(i: int) -> String:
 	var ids := ["resume", "controls", "shape"]
 	if Campaign.active:
 		ids.append("day")
+		if Campaign.mode == "tech":
+			ids.append("pace")
 	elif Campaign.mode == Campaign.FREE:
 		ids.append("outfit")
 		ids.append("career")
@@ -155,8 +159,11 @@ func _activate() -> void:
 			_sel = _labels().size() - 1
 		_canvas.queue_redraw()
 		return
-	if _row_id(_sel) == "day":
-		Difficulty.cycle_day_scale(1)
+	if _row_id(_sel) in ["day", "pace"]:
+		if _row_id(_sel) == "day":
+			Difficulty.cycle_day_scale(1)
+		else:
+			Msp.cycle_pace(1)  # X10
 		_canvas.queue_redraw()
 		return
 	if _row_id(_sel) == "outfit":
@@ -185,6 +192,8 @@ func _activate() -> void:
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
 	var h := 76.0 + (12.0 if Campaign.active else (24.0 if Campaign.mode == Campaign.FREE else 0.0))
+	if Campaign.active and Campaign.mode == "tech":
+		h += 12.0  # the TICKET PACE row
 	if settings_mode:
 		h = 100.0
 	if _page >= 0:
@@ -343,6 +352,8 @@ func _key(event: InputEvent) -> void:
 			Sfx.toggle_mute()
 		elif not _confirm and _row_id(_sel) == "day":
 			Difficulty.cycle_day_scale(1 if right else -1)
+		elif not _confirm and _row_id(_sel) == "pace":
+			Msp.cycle_pace(1 if right else -1)
 	elif Controls.confirm(event):
 		_activate()
 		return
@@ -375,6 +386,8 @@ func _paint() -> void:
 	var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
 	if not _confirm and _row_id(_sel) == "day":
 		foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
+	elif not _confirm and _row_id(_sel) == "pace":
+		foot = "HOW MANY TICKETS  LEFT RIGHT = CHANGE"
 	UiStyle.footer(c, r, foot)
 
 

@@ -1127,6 +1127,7 @@ var _event_done := false
 var _roll_day := -1
 var _spawn_at := -1.0
 var calls := 0  # onsite jobs created so far (the roulette salt)
+var _carry := false  # X10: a job call that waited for a free slot all day comes on the next visit day
 var recent: Array = []  # the last clients who called
 var seen_jobs := {}  # job id -> how often it came up
 
@@ -1156,6 +1157,7 @@ func reset() -> void:
 	_event_done = false
 	_roll_day = -1
 	calls = 0
+	_carry = false
 	recent = []
 	seen_jobs = {}
 	_spawn_at = -1.0
@@ -1206,6 +1208,9 @@ func _on_day(day: int) -> void:
 		Msp.mail(Story.MANAGER, "Onsite visits", str(TEXT.intro_mail))
 	var guaranteed := day == 6 or day == 11 or day == 15
 	var skip := [7, 9, 10, 12, 13, 16, 17, 18, 20].has(day)
+	if _carry and not skip:
+		guaranteed = true  # X10: yesterday's call never found a free slot
+		_carry = false
 	for t in Msp.tickets:
 		if t.status != "Closed" and is_onsite(t):
 			skip = true  # one onsite problem at a time
@@ -1219,7 +1224,11 @@ func _process(_delta: float) -> void:
 	if _spawn_at < 0.0 or not is_tech() or Game.title_mode or World.time_scale <= 0.0 or active:
 		return
 	if World.clock >= _spawn_at and World.clock < World.DAY_END - 1.0:
+		if Msp.queue_full():
+			_carry = true  # X10: the call waits for a free slot, tomorrow if today has none
+			return
 		_spawn_at = -1.0
+		_carry = false
 		create_job()
 
 
@@ -1814,7 +1823,7 @@ func _missed_follow_up() -> void:
 				"pri": 2,
 				"body": str(TEXT.missed_mail) + " - %s"
 			}
-			Msp.create_problem(int(entry.client), prob, "email")
+			Msp.problem_or_hold(int(entry.client), prob, "email")
 			Sales.adjust(int(entry.client), -2)
 		else:
 			keep.append(entry)

@@ -803,7 +803,7 @@ func _batch(b: Dictionary) -> void:
 		if pool.is_empty():
 			break
 		var c: int = pool.pop_at(r.randi_range(0, pool.size() - 1))
-		Msp.create_problem(c, b.problem, "recall notice")
+		Msp.problem_or_hold(c, b.problem, "recall notice")
 
 
 func _answer_offer(offer: Dictionary, oid: String) -> void:
