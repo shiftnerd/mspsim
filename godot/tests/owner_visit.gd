@@ -69,7 +69,8 @@ func _init() -> void:
 	for leg in legs:
 		if str(leg.kind) == "cover":
 			cover = leg
-	_check(PackedStringArray(cover.routine).has("answer") and absf(float(cover.target_x) - float(world.DATA.SCENES[front].seats[str(world.row("Jen").seat)])) < 40.0, "the owner stands by Jen's desk and takes the call there")
+	var jen_x := float(world.DATA.SCENES[front].seats[str(world.row("Jen").seat)])
+	_check(PackedStringArray(cover.routine).has("answer") and absf(float(cover.target_x) - jen_x) < 40.0, "the owner stands by Jen's desk and takes the call there")
 	_check(not o.is_free("Alan"), "an owner on the way to the front desk is busy")
 	_seat(world, "Alan")
 	var p1: Dictionary = msp.create_ticket(1, 0, "test")

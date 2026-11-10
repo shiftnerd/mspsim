@@ -120,9 +120,9 @@ func tech_pick(cards: Node) -> int:
 		return int(en[rng.randi() % en.size()])
 	var pref: Array
 	if strategy == "lazy":
-		pref = ["late", "ignore", "home", "skip", "squeeze"]
+		pref = ["late", "ignore", "home", "skip", "squeeze", "fav_ignore"]
 	else:  # careful and shortcut
-		pref = ["take", "early" if shift.energy >= 45.0 else "ontime", "triage" if shift.energy < 55.0 else "fix", "1" if root.get_node("Msp").open_tickets().size() > 2 else "home"]
+		pref = ["take", "early" if shift.energy >= 45.0 else "ontime", "triage" if shift.energy < 55.0 else "fix", "1" if root.get_node("Msp").open_tickets().size() > 2 else "home", "fav_desk"]
 	var i := _first_of(cards, pref)
 	return i if i >= 0 else int(en[0])
 

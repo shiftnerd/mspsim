@@ -9575,6 +9575,126 @@ Windows XP is ending: new desktop for Dr. Patel
 Microsoft is dropping support for Windows XP on April 8 and my old computer is on it. The new one arrived! Please set it up and move everything over. I am with patients all day. - %s
 
 
+# ======================= Msp > FAVOURS =======================
+# Msp > FAVOURS > 0 > text
+[Msp.FAVOURS.0.text]
+Quick one: the printer is doing the thing again. Can you just hop on? No need for a whole ticket.
+
+# Msp > FAVOURS > 0 > summary
+[Msp.FAVOURS.0.summary]
+Printer doing the thing again
+
+# Msp > FAVOURS > 0 > body
+[Msp.FAVOURS.0.body]
+The printer is doing the thing again. I texted about it and was told to call the desk, so here I am. - %s
+
+# Msp > FAVOURS > 1 > text
+[Msp.FAVOURS.1.text]
+Hey, it is me. Locked out again. Can you reset it real quick? Do not tell the desk.
+
+# Msp > FAVOURS > 1 > summary
+[Msp.FAVOURS.1.summary]
+Locked out again
+
+# Msp > FAVOURS > 1 > body
+[Msp.FAVOURS.1.body]
+Locked out again. I am told this needs a ticket now. Consider this a ticket. - %s
+
+# Msp > FAVOURS > 2 > text
+[Msp.FAVOURS.2.text]
+While I have you: my PC is crawling. Two minutes of your time, I promise.
+
+# Msp > FAVOURS > 2 > summary
+[Msp.FAVOURS.2.summary]
+PC is crawling
+
+# Msp > FAVOURS > 2 > body
+[Msp.FAVOURS.2.body]
+My PC is crawling. It was a two minute favour and now it is a ticket. Please look at it. - %s
+
+# Msp > FAVOURS > 3 > text
+[Msp.FAVOURS.3.text]
+You fixed it so fast last time. The pop-ups are back. Can you do your thing? Off the books is fine.
+
+# Msp > FAVOURS > 3 > summary
+[Msp.FAVOURS.3.summary]
+Pop-ups are back
+
+# Msp > FAVOURS > 3 > body
+[Msp.FAVOURS.3.body]
+The pop-ups are back. Off the books was not an option, I hear. On the books, then. - %s
+
+
+# ======================= Msp > FAVOUR_TEXT =======================
+# Msp > FAVOUR_TEXT > desk_label
+[Msp.FAVOUR_TEXT.desk_label]
+ASK THEM TO CALL THE DESK
+
+# Msp > FAVOUR_TEXT > ignore_label
+[Msp.FAVOUR_TEXT.ignore_label]
+IGNORE IT UNTIL MORNING
+
+# Msp > FAVOUR_TEXT > now
+[Msp.FAVOUR_TEXT.now]
+DONE. NO TICKET, NO CREDIT.
+
+# Msp > FAVOUR_TEXT > desk
+[Msp.FAVOUR_TEXT.desk]
+THEY CALL THE DESK. IT IS A TICKET NOW.
+
+# Msp > FAVOUR_TEXT > ignore
+[Msp.FAVOUR_TEXT.ignore]
+PHONE FACE DOWN. IT WILL KEEP UNTIL MORNING.
+
+# Msp > FAVOUR_TEXT > desk_note
+[Msp.FAVOUR_TEXT.desk_note]
+They texted your cell first. You sent them to the desk.
+
+# Msp > FAVOUR_TEXT > ignored_body
+[Msp.FAVOUR_TEXT.ignored_body]
+I texted yesterday and heard nothing. So I am calling the desk like everybody else. - %s
+
+# Msp > FAVOUR_TEXT > promise_broken
+[Msp.FAVOUR_TEXT.promise_broken]
+Another favour by text. We talked about this.
+
+# Msp > FAVOUR_TEXT > talk
+[Msp.FAVOUR_TEXT.talk]
+Got a minute? John hears you fix things by text. Three favours so far, none of them in ConnectWhy. No ticket means no bill, and nobody knows to cover it when you are out. What do we do about it?
+
+# Msp > FAVOUR_TEXT > log_label
+[Msp.FAVOUR_TEXT.log_label]
+I WILL SEND THEM TO THE DESK
+
+# Msp > FAVOUR_TEXT > fine_label
+[Msp.FAVOUR_TEXT.fine_label]
+THEY ASKED. I HELPED.
+
+# Msp > FAVOUR_TEXT > shield_label
+[Msp.FAVOUR_TEXT.shield_label]
+CAN YOU TALK TO THEM?
+
+# Msp > FAVOUR_TEXT > log_reply
+[Msp.FAVOUR_TEXT.log_reply]
+Good. A ticket takes them one minute and it gets you the credit.
+
+# Msp > FAVOUR_TEXT > fine_reply
+[Msp.FAVOUR_TEXT.fine_reply]
+You did, and they love you for it. The books do not. I am writing this down.
+
+# Msp > FAVOUR_TEXT > shield_reply
+[Msp.FAVOUR_TEXT.shield_reply]
+I will send them a friendly note about the desk. Expect them a little cooler for a week.
+
+# Msp > FAVOUR_TEXT > policy_subject
+[Msp.FAVOUR_TEXT.policy_subject]
+Support requests go through the desk
+
+# Msp > FAVOUR_TEXT > policy_body
+[Msp.FAVOUR_TEXT.policy_body]
+A friendly reminder to our clients: please send requests to the service desk, not to a technician's cell phone. It gets you a ticket, a clock and a second person who knows about it. - Morgan
+
+
 # ======================= Talk > GREETINGS =======================
 # Talk > GREETINGS > Alan > friend
 [Talk.GREETINGS.Alan.friend]

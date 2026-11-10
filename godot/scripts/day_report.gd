@@ -176,6 +176,8 @@ func _groups_raw() -> Array:
 	var stepped := int(r.get("owners", Owners.stepped))
 	if stepped > 0:
 		groups[1][1].append(["OWNERS STEPPED IN", str(stepped), GOOD])
+	if int(r.get("favours", 0)) > 0:  # R36: work done by text, off the books
+		groups[1][1].append(["UNBILLED FAVOURS", str(int(r.favours)), WARN])
 	var energy := []
 	if int(r.get("energy", -1)) >= 0:
 		var e := int(r.energy)

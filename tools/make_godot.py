@@ -6222,6 +6222,10 @@ func _ready() -> void:
 func reset() -> void:
     named_day = {}
     thanked_day = {}
+    favour_day = {}
+    favours_today = 0
+    desk_sends_today = 0
+    _favour_ask_day = -1
     calls.clear()
     held.clear()
     held_total = 0
@@ -6280,6 +6284,8 @@ func to_dict() -> Dictionary:
         "pace": pace,
         "spawned_today": spawned_today,
         "created_today": created_today,
+        "favours_today": favours_today,
+        "desk_sends_today": desk_sends_today,
         "held": held.duplicate(true),
         "next_id": _next_id,
         "next_mail": _next_mail,
@@ -6308,6 +6314,8 @@ func from_dict(data: Dictionary) -> void:
     spawned_today = int(data.get("spawned_today", 0))
     created_today = int(data.get("created_today", spawned_today))
     held = _saved_array(data, "held")
+    favours_today = int(data.get("favours_today", 0))
+    desk_sends_today = int(data.get("desk_sends_today", 0))
     _next_id = int(data.get("next_id", 10421))
     _next_mail = int(data.get("next_mail", 1))
     _spawn_t = float(data.get("spawn_t", 20.0))
@@ -6596,12 +6604,207 @@ func _note_by_name_close(t: Dictionary) -> void:
             Career.add("asked_for")
             t.notes.append("They asked for you and you delivered.")
         return
+    if _maybe_favour(t):
+        return  # one more thing, off the books: no thank-you on top
     if bool(t.breached) or Sales.mood(client) < THANKS_MOOD or int(thanked_day.get(client, -99)) > Campaign.day - THANKS_GAP_DAYS:
         return
     var r := Difficulty.rng("msp.thanks")
     if r.randf() < THANKS_CHANCE:
         thanked_day[client] = Campaign.day
         send_text(str(CLIENTS[client].contact), str(THANKS_TEXTS[r.randi() % THANKS_TEXTS.size()]))
+
+
+# ---- direct texts that ask for unbilled work (R36, tech campaign) ------------------------------------------------
+# After a clean close a happy client (mood FAVOUR_MOOD+) now and then texts your cell with one more thing, off the books: a card
+# with three answers. DO IT NOW: no ticket and no credit, the client likes it (+4 mood, +3 people XP), it costs energy and every
+# open ticket loses FAVOUR_SECS of its clock; it is counted as an unbilled favour (the day report shows them). ASK THEM TO CALL
+# THE DESK: mood -2, the job becomes a real P4 ticket and the manager likes it (+1 opinion). IGNORE IT: mood -3 and the job
+# comes in as a P3 ticket the next morning. After FAVOUR_TALK unbilled favours Morgan raises it in a 1:1 the next day
+# (favour_talk): promise to send them to the desk (+1 reputation now, +1 for each one you do send, -1 for each favour after it),
+# stand by it (-1 reputation), or ask her to talk to the clients (a policy mail: those clients -1 mood, no asks for a few days).
+# The run's count and Morgan's answer live in Story.flags (favours, favour_talk, favour_talk_day, favour_quiet), saved with the campaign.
+const FAVOUR_MOOD := 78
+const FAVOUR_CHANCE := 0.22
+const FAVOUR_GAP_DAYS := 4  # per client
+const FAVOUR_FIRST_DAY := 4
+const FAVOUR_SECS := 40.0
+const FAVOUR_ENERGY := 2.0
+const FAVOUR_TALK := 3
+const FAVOUR_TALK_HOUR := 10.0
+const FAVOUR_QUIET_DAYS := 5
+const DEFAULT_FAVOURS := [
+    {
+        "text": "Quick one: the printer is doing the thing again. Can you just hop on? No need for a whole ticket.",
+        "summary": "Printer doing the thing again",
+        "fix": "spooler",
+        "body": "The printer is doing the thing again. I texted about it and was told to call the desk, so here I am. - %s",
+    },
+    {
+        "text": "Hey, it is me. Locked out again. Can you reset it real quick? Do not tell the desk.",
+        "summary": "Locked out again",
+        "fix": "password",
+        "body": "Locked out again. I am told this needs a ticket now. Consider this a ticket. - %s",
+    },
+    {
+        "text": "While I have you: my PC is crawling. Two minutes of your time, I promise.",
+        "summary": "PC is crawling",
+        "fix": "clear_temp",
+        "body": "My PC is crawling. It was a two minute favour and now it is a ticket. Please look at it. - %s",
+    },
+    {
+        "text": "You fixed it so fast last time. The pop-ups are back. Can you do your thing? Off the books is fine.",
+        "summary": "Pop-ups are back",
+        "fix": "av",
+        "body": "The pop-ups are back. Off the books was not an option, I hear. On the books, then. - %s",
+    },
+]
+var FAVOURS: Array = DEFAULT_FAVOURS.duplicate(true)
+const DEFAULT_FAVOUR_TEXT := {
+    "now_label": "DO IT NOW",
+    "desk_label": "ASK THEM TO CALL THE DESK",
+    "ignore_label": "IGNORE IT UNTIL MORNING",
+    "now": "DONE. NO TICKET, NO CREDIT.",
+    "desk": "THEY CALL THE DESK. IT IS A TICKET NOW.",
+    "ignore": "PHONE FACE DOWN. IT WILL KEEP UNTIL MORNING.",
+    "desk_note": "They texted your cell first. You sent them to the desk.",
+    "ignored_body": "I texted yesterday and heard nothing. So I am calling the desk like everybody else. - %s",
+    "promise_broken": "Another favour by text. We talked about this.",
+    "talk": (
+        "Got a minute? John hears you fix things by text. Three favours so far, none of them in ConnectWhy. "
+        + "No ticket means no bill, and nobody knows to cover it when you are out. What do we do about it?"
+    ),
+    "log_label": "I WILL SEND THEM TO THE DESK",
+    "fine_label": "THEY ASKED. I HELPED.",
+    "shield_label": "CAN YOU TALK TO THEM?",
+    "log_reply": "Good. A ticket takes them one minute and it gets you the credit.",
+    "fine_reply": "You did, and they love you for it. The books do not. I am writing this down.",
+    "shield_reply": "I will send them a friendly note about the desk. Expect them a little cooler for a week.",
+    "policy_subject": "Support requests go through the desk",
+    "policy_body": (
+        "A friendly reminder to our clients: please send requests to the service desk, not to a technician's cell phone. "
+        + "It gets you a ticket, a clock and a second person who knows about it. - Morgan"
+    ),
+}
+var FAVOUR_TEXT: Dictionary = DEFAULT_FAVOUR_TEXT.duplicate(true)
+var favours_today := 0  # unbilled favours done today (the day report row)
+var desk_sends_today := 0  # direct asks you sent to the desk today
+var favour_day := {}  # client -> the day of their last direct ask
+var _favour_ask_day := -1  # at most one direct ask a day
+
+
+func favours_done() -> int:
+    return int(Story.flags.get("favours", 0))
+
+
+func _maybe_favour(t: Dictionary) -> bool:
+    var client := int(t.client)
+    if Campaign.day < FAVOUR_FIRST_DAY or bool(t.breached) or bool(t.get("repeat", false)) or Onsite.active or Expo.away:
+        return false
+    if _favour_ask_day == Campaign.day or Campaign.day < int(Story.flags.get("favour_quiet", 0)):
+        return false
+    if Sales.mood(client) < FAVOUR_MOOD or int(favour_day.get(client, -99)) > Campaign.day - FAVOUR_GAP_DAYS:
+        return false
+    var r := Difficulty.rng("msp.favour")
+    if r.randf() >= FAVOUR_CHANCE:
+        return false
+    ask_favour(client, r.randi() % FAVOURS.size())
+    return true
+
+
+# the text and its card (also called by tests)
+func ask_favour(client: int, k: int) -> void:
+    favour_day[client] = Campaign.day
+    _favour_ask_day = Campaign.day
+    var f: Dictionary = FAVOURS[k]
+    var contact := str(CLIENTS[client].contact)
+    send_text(contact, str(f.text))
+    Cards.ask(
+        contact + " (text)",
+        str(f.text),
+        [
+            {"label": str(FAVOUR_TEXT.now_label), "id": "fav_now"},
+            {"label": str(FAVOUR_TEXT.desk_label), "id": "fav_desk"},
+            {"label": str(FAVOUR_TEXT.ignore_label), "id": "fav_ignore"},
+        ],
+        func(pick: String) -> void: favour_answer(pick, client, k)
+    )
+
+
+func favour_answer(pick: String, client: int, k: int) -> void:
+    var f: Dictionary = FAVOURS[k]
+    var talk := str(Story.flags.get("favour_talk", ""))
+    var manager: String = Roles.who("manager")
+    match pick:
+        "fav_now":
+            favours_today += 1
+            Story.flags["favours"] = favours_done() + 1
+            Sales.adjust(client, 4)
+            Skills.add_xp("people", 3)
+            Shift.add_energy(-FAVOUR_ENERGY)
+            for o in tickets:
+                if o.status != "Closed" and o.status != "Waiting" and not o.fix_done:
+                    o.sla_left = float(o.sla_left) - FAVOUR_SECS
+            if talk == "fav_log":
+                Campaign.adjust_rep(-1)  # you promised
+                send_text(manager, str(FAVOUR_TEXT.promise_broken))
+            elif talk == "" and favours_done() >= FAVOUR_TALK:
+                Story.flags["favour_talk"] = "due"
+                Story.flags["favour_talk_day"] = Campaign.day
+        "fav_desk":
+            desk_sends_today += 1
+            Sales.adjust(client, -2)
+            Social.change(manager, 1)
+            if talk == "fav_log":
+                Campaign.adjust_rep(1)  # you kept the promise
+            var prob := {"summary": str(f.summary), "fix": str(f.fix), "pri": 4, "body": str(f.body)}
+            var made := problem_or_hold(client, prob, "phone call")
+            if not made.is_empty():
+                made.notes.append(str(FAVOUR_TEXT.desk_note))
+        _:
+            Sales.adjust(client, -3)
+            Story.queue_followup({"client": client, "summary": str(f.summary), "pri": 3, "body": str(FAVOUR_TEXT.ignored_body), "fix": str(f.fix), "server": false, "days": 1})
+    Hints.toast(str(FAVOUR_TEXT.get(pick.trim_prefix("fav_"), "")), 4.0)
+    changed.emit()
+
+
+# Morgan's 1:1 about the favours: the morning after the third one
+func _tick_favour_talk() -> void:
+    if not tech_paced() or str(Story.flags.get("favour_talk", "")) != "due":
+        return
+    if Campaign.day <= int(Story.flags.get("favour_talk_day", 0)) or World.clock < FAVOUR_TALK_HOUR:
+        return
+    if Cards.is_open or Onsite.active or Expo.away:
+        return
+    favour_talk()
+
+
+func favour_talk() -> void:
+    Story.flags["favour_talk"] = "asked"
+    Cards.ask(
+        Roles.label(Roles.who("manager")),
+        str(FAVOUR_TEXT.talk),
+        [
+            {"label": str(FAVOUR_TEXT.log_label), "id": "fav_log"},
+            {"label": str(FAVOUR_TEXT.fine_label), "id": "fav_fine"},
+            {"label": str(FAVOUR_TEXT.shield_label), "id": "fav_shield"},
+        ],
+        func(pick: String) -> void: favour_talk_answer(pick)
+    )
+
+
+func favour_talk_answer(pick: String) -> void:
+    Story.flags["favour_talk"] = pick
+    match pick:
+        "fav_log":
+            Campaign.adjust_rep(1)
+        "fav_fine":
+            Campaign.adjust_rep(-1)
+        _:
+            Story.flags["favour_quiet"] = Campaign.day + FAVOUR_QUIET_DAYS
+            for c in favour_day:
+                Sales.adjust(int(c), -1)
+            mail(MORGAN_FROM, str(FAVOUR_TEXT.policy_subject), str(FAVOUR_TEXT.policy_body))
+    send_text(Roles.who("manager"), str(FAVOUR_TEXT.get(pick.trim_prefix("fav_") + "_reply", "")))
 
 
 func _random_ticket(source: String) -> Dictionary:
@@ -7017,6 +7220,8 @@ func break_backup(client: int) -> void:
 func new_day(day: int) -> void:
     spawned_today = 0
     created_today = 0
+    favours_today = 0
+    desk_sends_today = 0
     handoffs_today = 0
     # a desktop sitting in its box: John reminds you where the job is, for a few days
     if Campaign.active and project_busy() and int(project.get("since", day)) < day:
@@ -7448,6 +7653,7 @@ func _process(delta: float) -> void:
         return
     _tick_calls(dt)
     _tick_held(dt)
+    _tick_favour_talk()
     _spawn_t -= dt
     if _spawn_t <= 0.0:
         _spawn_t = next_spawn_gap()
@@ -12534,6 +12740,7 @@ func _make_report() -> Dictionary:
         "energy": int(Shift.energy) if Shift.active() else -1,
         "late": Shift.late_min,
         "oncall": Shift.oncall_pay(),
+        "favours": Msp.favours_today,
     }
 
 
@@ -13622,6 +13829,8 @@ func _groups_raw() -> Array:
     var stepped := int(r.get("owners", Owners.stepped))
     if stepped > 0:
         groups[1][1].append(["OWNERS STEPPED IN", str(stepped), GOOD])
+    if int(r.get("favours", 0)) > 0:  # R36: work done by text, off the books
+        groups[1][1].append(["UNBILLED FAVOURS", str(int(r.favours)), WARN])
     var energy := []
     if int(r.get("energy", -1)) >= 0:
         var e := int(r.energy)
@@ -47858,7 +48067,7 @@ const ROOTS := {
     "Owner": ["CARDS"],
     "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
-    "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
+    "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL", "FAVOURS", "FAVOUR_TEXT"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
     "Nerds": ["JOKES", "THREADS", "BLESSINGS", "GRUMBLES", "CORRECTIONS", "TEXT", "BOARDS", "TOPICS", "CHAT", "REPLIES", "YOU_SAY", "GREETINGS", "AMBIENT"],
     "Lync": ["MESSAGES", "VIC_MESSAGES", "VIC_PRESENCE"],

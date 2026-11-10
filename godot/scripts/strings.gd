@@ -50,7 +50,7 @@ const ROOTS := {
 		"VOICES",
 		"TEXT"
 	],
-	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL"],
+	"Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL", "FAVOURS", "FAVOUR_TEXT"],
 	"Talk":
 	[
 		"GREETINGS",
