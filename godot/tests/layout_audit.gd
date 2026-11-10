@@ -456,6 +456,30 @@ func _floor_phase() -> void:
 		await _end("phone " + app)
 		ph.close()
 		await _wait(2)
+	# R16: the contacts with relationship levels (four pips on a cast member's row, the level's name on the selected row)
+	var soc := root.get_node("Social")
+	var cast_at := 0
+	var contact_list: Array = load("res://scripts/phone_calls.gd").contacts()
+	for i in contact_list.size():
+		if str(contact_list[i].kind) == "coworker":
+			cast_at = i
+			break
+	for who in soc.people():
+		soc.rel[who] = 75
+	for skin in ["android", "ios"]:
+		_begin()
+		ph.os = skin
+		ph.open()
+		ph.app = "phone"
+		ph.ph_view = "contacts"
+		ph.ph_sel = cast_at
+		ph._canvas.queue_redraw()
+		await _end("phone contacts levels " + skin)
+		ph.close()
+		await _wait(2)
+	for who in soc.people():
+		soc.rel[who] = 0
+	ph.os = "android"
 	# R37: the camera app (viewfinder, the roll, a photo), on both phones
 	for skin in ["android", "ios"]:
 		ph.os = skin

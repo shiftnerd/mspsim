@@ -1561,8 +1561,14 @@ func _paint_contacts(body: Rect2) -> void:
 		var chars := _chars(rr.size.x - 12)
 		_text(_clip(str(c.name), chars), rr.position + Vector2(5, 2 * _sc), INK)
 		var wait: float = Calls.wait_left(c)
-		var sub := str(c.sub) if wait <= 0.0 else "LATER"
-		_text(_clip(sub, chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+		var lv: int = Calls.level(c)  # R16: the relationship level (-1 = none): four pips, and the name of it on the selected row
+		var sub: String = Calls.row_sub(c, i == ph_sel)
+		var sub_chars := chars if lv < 0 else _chars(rr.size.x - 12 - Calls.LEVEL_PIPS * 3 * _sc)
+		_text(_clip(sub, sub_chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+		if lv >= 0:
+			for p in Calls.LEVEL_PIPS:
+				var pr := Rect2(rr.end.x - 3 - (Calls.LEVEL_PIPS - p) * 3 * _sc, rr.position.y + 10 * _sc, 2 * _sc, 3 * _sc)
+				_fill(pr, _accent() if p < lv else Color("c8ccd4"))
 		if c.kind == "client" and Campaign.active:
 			var m := Sales.mood(int(c.client))
 			_disc(
