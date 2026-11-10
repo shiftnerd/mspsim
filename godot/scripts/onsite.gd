@@ -1760,6 +1760,9 @@ func inspect(obj: String) -> void:
 	if visit_kind == Takeover.KIND:
 		Takeover.on_inspect(_site_client(), obj)  # R38 P4: what the last shop left behind
 		return
+	if obj == "printer" and Habits.default_pw(_site_client()):
+		_found(Habits.pw_finding(_site_client()))  # R38: H14, until the passwords at this site are changed
+		return
 	var pool: Array = FINDINGS.get(obj, [])
 	var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
 	if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:

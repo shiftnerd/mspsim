@@ -18,6 +18,8 @@ or the owner (owner campaign, 20 weeks).
 
 ### Day 2
 
+**9:03 HELLO ECHO**. A scripted event (hello_echo).
+
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Daily chore: verify backups* `[Story.DAYS.2.0.subject]`
 > Every morning open LabRat RMM, click BACKUPS and check each client. Backup jobs can fail silently and nobody notices until the day it really matters. It takes thirty seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan `[Story.DAYS.2.0.body]`
 

@@ -69,7 +69,7 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
 			_add_prop(o)
 	if _player != null:
 		_player.visible = false
-	if _player2 != null and puppets.has("You2"):
+	if _player2 != null and (puppets.has("You2") or puppets.has("P2")):
 		_player2.visible = false
 	_sync()
 

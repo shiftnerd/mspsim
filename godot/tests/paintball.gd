@@ -179,7 +179,53 @@ func _run() -> void:
 	_play(g)
 	g.clock = PB.LIMIT
 	g.step(0.1)
-	ok(g.phase == "over" and g.winner == 2 and g.stars() == 1, "time up level is a draw, 1 star")
+	ok(g.phase == "play" and g.overtime and g.time_left() == ceili(PB.OVERTIME - 0.1), "time up level is overtime (R41: sudden death), not a draw yet")
+	# overtime: a tag is for good, the next flag home wins
+	var foe := 3
+	g.units[0].x = 300.0
+	g.units[foe].x = 320.0
+	g.units[foe].lane = g.units[0].lane
+	g._tag(foe, 0)
+	g.step(0.1)
+	ok(g.is_out(foe) and g.standing(1) == 2 and g.phase == "play", "a unit tagged in overtime does not come back")
+	for k in 200:
+		g.units[foe].x = 320.0
+		g.step(0.1)
+		if g.phase == "over":
+			break
+	ok(g.is_out(foe), "not even after the usual wait")
+	g = _game()
+	_play(g)
+	g.clock = PB.LIMIT
+	g.step(0.1)
+	g.score[1] += 1
+	g.step(0.1)
+	ok(g.phase == "over" and g.winner == 1 and g.stars() == 0, "the next flag home wins the overtime")
+	g = _game()
+	_play(g)
+	g.clock = PB.LIMIT
+	g.step(0.1)
+	for i in [3, 4, 5]:
+		g._tag(i, 0)
+	g.step(0.1)
+	ok(g.phase == "over" and g.winner == 0 and g.stars() == 2, "the last team standing wins it: a plain win, 2 stars")
+	g = _game()
+	_play(g)
+	g.clock = PB.LIMIT
+	g.step(0.1)
+	for u in g.units:
+		u.x = float(PB.BASE_X[int(u.team)])
+		u.down = 3.0  # everybody sits it out: nothing happens for 45 seconds
+	g.clock = PB.LIMIT + PB.OVERTIME
+	g.step(0.1)
+	ok(g.phase == "over" and g.winner == 2 and g.stars() == 1, "level after 45 seconds of overtime is a draw, 1 star")
+	g = PB.new()
+	var r0 := RandomNumberGenerator.new()
+	g.setup({"skill": 1.0, "acc": 1.0, "overtime": 0.0}, ["Alan", "Garrison"], r0)
+	_play(g)
+	g.clock = PB.LIMIT
+	g.step(0.1)
+	ok(g.phase == "over" and g.winner == 2, "with the overtime switched off (params.overtime 0) time up level is a draw at once")
 	g = _game()
 	_play(g)
 	g.score[1] = 2

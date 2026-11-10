@@ -4,6 +4,7 @@ extends SceneTree
 # human reaction times, the keys' own calls) plays unit 0 against the crew, SEEDS seeded matches per tier, by day and by night.
 # It prints the table (win / draw / loss, match length, captures, your own captures and tags) and fails when a tier is lopsided:
 # normal 45 to 65 % wins, easy easier than normal, hard harder, every match ends, and a flag gets carried home in most of them.
+# Since the overtime rule (level at time up: 45 s of sudden death) draws must stay under 12 % on every row.
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/paintball_tuning.gd [-- --seeds=200]
 
 const PB := preload("res://scripts/paintball_game.gd")
@@ -11,7 +12,7 @@ const BotPaint := preload("res://tests/bot_paint.gd")
 const STEP := 1.0 / 30.0  # the rules at 30 steps a second (the game runs them at 60; the timers in them are 0.3 s and up)
 const TIERS := ["easy", "normal", "hard"]
 # -- --sweep rows: [your aim x, crew aim, rival edge, captures to win, seconds, carrier dodge beat, respawn, carry speed x]
-const SWEEP := [[1.0, 0.18, 2.0, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 2.6, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 3.2, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 1.0, 3, 150.0, 99.0, 4.0, 0.85]]
+const SWEEP := [[1.0, 0.18, 2.6, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 2.9, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 3.2, 3, 150.0, 0.8, 4.0, 1.0], [1.0, 0.18, 3.6, 3, 150.0, 0.8, 4.0, 1.0]]
 
 var fails := 0
 var seeds := 30
@@ -112,7 +113,7 @@ func _run() -> void:
 		var row: Dictionary = rows[key]
 		ok(float(row.with_cap) >= 0.75, "%s: a flag is carried home in most matches (%d %%)" % [key, roundi(row.with_cap * 100.0)])
 		ok(float(row.secs) >= 60.0, "%s: a match is not over in a blink (%d s)" % [key, roundi(row.secs)])
-		ok(float(row.draw) <= 0.45, "%s: most matches have a winner (%d %% draws)" % [key, roundi(row.draw * 100.0)])
+		ok(float(row.draw) <= 0.12, "%s: the overtime settles nearly every match (%d %% draws, under 12)" % [key, roundi(row.draw * 100.0)])
 	var n: Dictionary = rows["normal night"]
 	ok(float(n.win) >= 0.4 and float(n.win) <= 0.7, "normal at night stays near the day's odds (%d %%)" % roundi(n.win * 100.0))
 	ok(float(m.mine) >= 0.5 and float(m.mine) <= 2.0, "normal: you carry a flag home about once a match (%.2f): FLAG RUNNER at 5 is a few good evenings" % m.mine)

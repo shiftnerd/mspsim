@@ -461,6 +461,11 @@ const DEFAULT_BEAT_TEXT := {
 		"res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
 		"res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
 	},
+	"favour": {
+		"lynk": {"from": "Garrison", "text": "Hollis Grady rang the front desk and asked for you by name. He was polite about it. He is always polite about it."},
+		"res_lead": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I answered it, and she signed. Tidewater Title rang me this week: nine people, too small for the way I work. I gave Mr. Whitlow your number and told him why.", "ok": "THANK HIM"},
+		"res_full": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I had a small office to pass on to you, but I hear your pipeline is full. I will keep you in mind. I do not forget.", "ok": "THANK HIM"},
+	},
 	"rumour": {
 		"lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
 		"card": {

@@ -15,6 +15,7 @@ const ALL := [
 	"sitnod",
 	"sip",
 	"sitcouch",
+	"sitcup",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -32,11 +33,12 @@ const BASE := {
 	"sitnod": 3.0,
 	"sip": 1.5,
 	"sitcouch": 3.0,
+	"sitcup": 1.5,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
-	"Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
+	"Alan": {"sip": 5.0, "sitcup": 3.0, "sitscratch": 0.5, "sitstretch": 0.5},
 	"Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
 	"Dan": {"sitscratch": 4.0, "sitlook": 1.0},
 	"John": {"sitphone": 5.0, "sitstretch": 1.5},
@@ -81,8 +83,10 @@ func tick(delta: float, ready: bool) -> bool:
 
 
 func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
-	if g == "sip":
-		return float(_mine.get(g, BASE[g])) if cup_in_reach else 0.0
+	if g == "sip" or g == "sitcup":
+		# the cup gestures need a cup in reach; the coffee-cup reach (sitcup, R26) only while typing, with the cup standing on
+		# the desk (it has no frames of its own: the owner plays sitmouse)
+		return float(_mine.get(g, BASE[g])) if cup_in_reach and (typing or g == "sip") else 0.0
 	if held and not HEAD_ONLY.has(g):
 		return 0.0
 	if g == "sitmouse" and not typing:

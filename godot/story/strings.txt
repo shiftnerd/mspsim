@@ -238,6 +238,62 @@ SOME OF THEM WERE OVER MY HEAD
 [Story.VIGNETTES.adam_friday_bad.options.2.text]
 Then ask me before they go red. That is what I am here for. (+2 servers XP)
 
+# Story > VIGNETTES > hello > speaker
+[Story.VIGNETTES.hello.speaker]
+Garrison (Co-owner)
+
+# Story > VIGNETTES > hello > text
+[Story.VIGNETTES.hello.text]
+Everybody, this is the new tech. New tech, this is everybody. Go on, say something to the room. Keep it short, Alan has a thing at ten.
+
+# Story > VIGNETTES > hello > options > 0 > label
+[Story.VIGNETTES.hello.options.0.label]
+I FIX THINGS. SOMETIMES ON PURPOSE.
+
+# Story > VIGNETTES > hello > options > 0 > text
+[Story.VIGNETTES.hello.options.0.text]
+Garrison laughs loud enough for two. Alan writes something down. It might be about you.
+
+# Story > VIGNETTES > hello > options > 0 > echo > from
+[Story.VIGNETTES.hello.options.0.echo.from]
+Garrison
+
+# Story > VIGNETTES > hello > options > 0 > echo > body
+[Story.VIGNETTES.hello.options.0.echo.body]
+Still laughing about 'sometimes on purpose'. Alan asked me if it was a joke. I said mostly.
+
+# Story > VIGNETTES > hello > options > 1 > label
+[Story.VIGNETTES.hello.options.1.label]
+I READ THE RUNBOOKS LAST NIGHT.
+
+# Story > VIGNETTES > hello > options > 1 > text
+[Story.VIGNETTES.hello.options.1.text]
+Alan nods once, which from Alan is a parade. Garrison mouths the word 'runbooks' at Dan.
+
+# Story > VIGNETTES > hello > options > 1 > echo > from
+[Story.VIGNETTES.hello.options.1.echo.from]
+Alan
+
+# Story > VIGNETTES > hello > options > 1 > echo > body
+[Story.VIGNETTES.hello.options.1.echo.body]
+You said you read the runbooks. Page 14 is out of date. Tell me what else is.
+
+# Story > VIGNETTES > hello > options > 2 > label
+[Story.VIGNETTES.hello.options.2.label]
+HI. WHERE IS THE QUEUE?
+
+# Story > VIGNETTES > hello > options > 2 > text
+[Story.VIGNETTES.hello.options.2.text]
+Dan points at your desk. Maya gives you a small nod. One of us.
+
+# Story > VIGNETTES > hello > options > 2 > echo > from
+[Story.VIGNETTES.hello.options.2.echo.from]
+Maya
+
+# Story > VIGNETTES > hello > options > 2 > echo > body
+[Story.VIGNETTES.hello.options.2.echo.body]
+Short intro. Good. The last new tech talked for six minutes. There is a granola bar in your top drawer.
+
 # Story > VIGNETTES > mentor_intro > speaker
 [Story.VIGNETTES.mentor_intro.speaker]
 Dan (Service Manager)
@@ -20840,6 +20896,14 @@ A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.
 [Outings.ESCAPE_THEMES.server.herring.herring_globe]
 THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.
 
+# Outings > ESCAPE_THEMES > server > tips > spine
+[Outings.ESCAPE_THEMES.server.tips.spine]
+THE VOLUME NUMBER ON THE BINDER IS THE DIGIT.
+
+# Outings > ESCAPE_THEMES > server > tips > ribbons
+[Outings.ESCAPE_THEMES.server.tips.ribbons]
+COUNT THE CABLE TIES.
+
 # Outings > ESCAPE_THEMES > detective > title
 [Outings.ESCAPE_THEMES.detective.title]
 THE DETECTIVE'S OFFICE
@@ -20920,6 +20984,26 @@ A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.
 [Outings.ESCAPE_THEMES.detective.herring.herring_globe]
 THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.
 
+# Outings > ESCAPE_THEMES > detective > words > BOOKSHELF
+[Outings.ESCAPE_THEMES.detective.words.BOOKSHELF]
+SHELF OF CASE FILES
+
+# Outings > ESCAPE_THEMES > detective > words > ONE BOOK ON
+[Outings.ESCAPE_THEMES.detective.words.ONE BOOK ON]
+ONE CASE FILE ON
+
+# Outings > ESCAPE_THEMES > detective > words > NOT A BOOK
+[Outings.ESCAPE_THEMES.detective.words.NOT A BOOK]
+NOT A CASE FILE
+
+# Outings > ESCAPE_THEMES > detective > tips > spine
+[Outings.ESCAPE_THEMES.detective.tips.spine]
+THE VOLUME NUMBER ON THE CASE FILE IS THE DIGIT.
+
+# Outings > ESCAPE_THEMES > detective > tips > ribbons
+[Outings.ESCAPE_THEMES.detective.tips.ribbons]
+COUNT THE RED STRINGS.
+
 # Outings > ESCAPE_THEMES > lab > title
 [Outings.ESCAPE_THEMES.lab.title]
 THE 1990S COMPUTER LAB
@@ -20999,6 +21083,26 @@ A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.
 # Outings > ESCAPE_THEMES > lab > herring > herring_globe
 [Outings.ESCAPE_THEMES.lab.herring.herring_globe]
 THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.
+
+# Outings > ESCAPE_THEMES > lab > words > CHALKBOARD
+[Outings.ESCAPE_THEMES.lab.words.CHALKBOARD]
+TEACHER'S BOARD
+
+# Outings > ESCAPE_THEMES > lab > words > OLD WALL CLOCK
+[Outings.ESCAPE_THEMES.lab.words.OLD WALL CLOCK]
+CLASSROOM CLOCK
+
+# Outings > ESCAPE_THEMES > lab > words > WALL CLOCK
+[Outings.ESCAPE_THEMES.lab.words.WALL CLOCK]
+CLASSROOM CLOCK
+
+# Outings > ESCAPE_THEMES > lab > tips > spine
+[Outings.ESCAPE_THEMES.lab.tips.spine]
+THE VOLUME NUMBER ON THE MANUAL IS THE DIGIT.
+
+# Outings > ESCAPE_THEMES > lab > tips > ribbons
+[Outings.ESCAPE_THEMES.lab.tips.ribbons]
+COUNT THE MOUSE CORDS.
 
 
 # ======================= Build > QUIRKS =======================
@@ -22472,6 +22576,30 @@ Ms. Cedar
 [SalesCampaign.BEAT_TEXT.plumb.res_honest.text]
 She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.
 
+# SalesCampaign > BEAT_TEXT > favour > lynk > from
+[SalesCampaign.BEAT_TEXT.favour.lynk.from]
+Garrison
+
+# SalesCampaign > BEAT_TEXT > favour > lynk > text
+[SalesCampaign.BEAT_TEXT.favour.lynk.text]
+Hollis Grady rang the front desk and asked for you by name. He was polite about it. He is always polite about it.
+
+# SalesCampaign > BEAT_TEXT > favour > res_lead > speaker
+[SalesCampaign.BEAT_TEXT.favour.res_lead.speaker]
+Hollis Grady
+
+# SalesCampaign > BEAT_TEXT > favour > res_lead > text
+[SalesCampaign.BEAT_TEXT.favour.res_lead.text]
+You sent Ms. Cedar back to me with the right question. I answered it, and she signed. Tidewater Title rang me this week: nine people, too small for the way I work. I gave Mr. Whitlow your number and told him why.
+
+# SalesCampaign > BEAT_TEXT > favour > res_full > speaker
+[SalesCampaign.BEAT_TEXT.favour.res_full.speaker]
+Hollis Grady
+
+# SalesCampaign > BEAT_TEXT > favour > res_full > text
+[SalesCampaign.BEAT_TEXT.favour.res_full.text]
+You sent Ms. Cedar back to me with the right question. I had a small office to pass on to you, but I hear your pipeline is full. I will keep you in mind. I do not forget.
+
 # SalesCampaign > BEAT_TEXT > rumour > lynk > from
 [SalesCampaign.BEAT_TEXT.rumour.lynk.from]
 Garrison
@@ -23071,6 +23199,22 @@ Lost account review done. The real cause is written down, and the same mistake w
 # Habits > TEXT > offboard
 [Habits.TEXT.offboard]
 %s's logins and keys are closed. The checklist is signed.
+
+# Habits > TEXT > overrun
+[Habits.TEXT.overrun]
+THE CHANGE REQUEST HAD A ROLLBACK STEP. THE OVERRUN COST $%d LESS.
+
+# Habits > TEXT > pw_text
+[Habits.TEXT.pw_text]
+The printer's admin page still answers to admin and admin. So does the ceiling camera. Nobody has changed either since the day they were unboxed.
+
+# Habits > TEXT > pw_summary
+[Habits.TEXT.pw_summary]
+Default passwords on the printer and the camera
+
+# Habits > TEXT > pw_body
+[Habits.TEXT.pw_body]
+%s here: you said our printer and camera still have the factory passwords. Can you change them?
 
 
 # ======================= Habits > CARDS =======================

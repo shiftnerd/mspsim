@@ -127,6 +127,42 @@ func _run() -> void:
 	_check(not pg.is_open, "printer closes")
 	_check(_go(tb, "nerf") and nerf.war_t > 0.0, "NERF WAR starts the war")
 	nerf._end_war()
+	# R12 / R41 leftovers: the chair card's event and paintball's day or night are toolbox rows
+	for i in [1, 2, 3]:
+		tb.chair_i = i
+		tb.game_i = tb.GAMES.find("chair")
+		_check(str(tb.rows()[1].id) == "event" and str(tb.rows()[1].value) == str(tb.CHAIR_LABELS[i]), "CHAIR RACE has an EVENT row: %s" % str(tb.CHAIR_LABELS[i]))
+		_check(_go(tb, "chair") and o.game == "chair" and str(o.opts.get("event", "")) == str(o.CHAIR_EVENTS[i - 1]), "and passes the event %s" % str(o.CHAIR_EVENTS[i - 1]))
+		_check(str(o.g.get("event", "")) == str(o.CHAIR_EVENTS[i - 1]) and (o.g.race.get("fight") == true) == (i == 3), "the card is set up for it")
+		o._page_pick(1)
+		_check(str(o.g.get("event", "")) == str(o.CHAIR_EVENTS[i - 1]), "LEFT / RIGHT on the card cannot change a toolbox pick")
+		o.close()
+	tb.chair_i = 0
+	_check(_go(tb, "chair") and not o.opts.has("event"), "PICK ON CARD passes no event")
+	o.close()
+	tb.sel = 1
+	tb.game_i = tb.GAMES.find("chair")
+	tb.change(1)
+	_check(tb.chair_i == 1, "RIGHT on the EVENT row steps it")
+	tb.change(-1)
+	tb.change(-1)
+	_check(tb.chair_i == 3, "LEFT wraps to the chair fight")
+	tb.chair_i = 0
+	tb.game_i = tb.GAMES.find("paintball")
+	_check(str(tb.rows()[1].id) == "night" and str(tb.rows()[1].value) == "CARD'S DRAW", "PAINTBALL has a MATCH row")
+	tb.night_i = 2
+	_check(_go(tb, "paintball") and o.game == "paintball" and o.opts.get("night", false) == true and o.paint_night, "NIGHT starts the night match")
+	o._page_pick(1)
+	_check(o.paint_night, "and the card cannot switch it back")
+	o.begin_play()
+	_check(o.g.rules.night, "the rules play it at night (the shorter range)")
+	o.close()
+	tb.night_i = 1
+	_check(_go(tb, "paintball") and o.opts.get("night", true) == false and not o.paint_night, "DAY fixes a day match")
+	o.close()
+	tb.night_i = 0
+	_check(_go(tb, "paintball") and not o.opts.has("night"), "CARD'S DRAW leaves it to the seeded draw")
+	o.close()
 	# R21: the two warehouse games have no extra rows (GAME, SEED, FIXED TAKE, MUTATOR, GO), and launch their outing
 	for id in ["cornhole", "grill"]:
 		tb.game_i = tb.GAMES.find(id)

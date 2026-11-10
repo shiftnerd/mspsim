@@ -15,6 +15,9 @@ const REFERRAL_ODDS := 0.35
 const REFERRAL_MOOD := 80
 const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
 const CHAT_COST := 0.05
+const Collection := preload("res://scripts/collection.gd")  # R16: relationship levels on the contacts
+const LEVEL_WHO := {"senior": "Adam", "tech": "Michael"}  # the contacts with their own numbers are cast members too
+const LEVEL_PIPS := 4  # one pip per level above NEW FACE
 const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
 const HANG := {"id": "hang", "label": "HANG UP"}
 const SENIOR := {"id": "adam", "name": "ADAM", "sub": "SENIOR TECH", "kind": "senior", "num": "5550333"}
@@ -99,6 +102,32 @@ static func contacts() -> Array:
 			out.append(TECH.duplicate())  # Michael: hand him an ordinary ticket
 	out.append(PIZZA.duplicate())
 	return out
+
+
+# R16: the relationship level of a contact (Collection.LEVELS, 0-4); -1 for somebody who has none (clients, the pizza place,
+# a coworker outside the cast, no campaign running)
+static func level(contact: Dictionary) -> int:
+	var who := str(contact.get("who", ""))
+	if who == "":
+		who = str(LEVEL_WHO.get(str(contact.get("kind", "")), ""))
+	if who == "" or not Campaign.active or not Social.people().has(who):
+		return -1
+	return Collection.level(who)
+
+
+# "LV 2 LUNCH BUDDY" ("" without a level): the second line of the selected contact
+static func level_text(contact: Dictionary) -> String:
+	var lv := level(contact)
+	return "" if lv < 0 else "LV %d %s" % [lv, Collection.level_name(lv)]
+
+
+# the second line of a contact row: the role, LATER while they do not take calls, the level on the selected row
+static func row_sub(contact: Dictionary, selected: bool) -> String:
+	if wait_left(contact) > 0.0:
+		return "LATER"
+	if selected and level(contact) >= 0:
+		return level_text(contact)
+	return str(contact.get("sub", ""))
 
 
 static func find(id: String) -> Dictionary:

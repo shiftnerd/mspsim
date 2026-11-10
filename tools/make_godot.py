@@ -3073,6 +3073,7 @@ const ALL := [
     "sitnod",
     "sip",
     "sitcouch",
+    "sitcup",
 ]
 # gestures that only turn the head: fine while a drink is in the hand (the others move the near arm)
 const HEAD_ONLY := ["sitlook", "sitnod"]
@@ -3090,11 +3091,12 @@ const BASE := {
     "sitnod": 3.0,
     "sip": 1.5,
     "sitcouch": 3.0,
+    "sitcup": 1.5,
 }
 # personality: Alan sips, Garrison stretches and leans back, Dan fixes his glasses / scratches, John checks his phone,
 # Maya drums and looks around; everyone else (clients' staff included) uses BASE
 const PERSONALITY := {
-    "Alan": {"sip": 5.0, "sitscratch": 0.5, "sitstretch": 0.5},
+    "Alan": {"sip": 5.0, "sitcup": 3.0, "sitscratch": 0.5, "sitstretch": 0.5},
     "Garrison": {"sitstretch": 4.0, "sitslump": 3.0, "sitscratch": 0.5},
     "Dan": {"sitscratch": 4.0, "sitlook": 1.0},
     "John": {"sitphone": 5.0, "sitstretch": 1.5},
@@ -3139,8 +3141,10 @@ func tick(delta: float, ready: bool) -> bool:
 
 
 func weight(g: String, typing: bool, held: bool, cup_in_reach: bool) -> float:
-    if g == "sip":
-        return float(_mine.get(g, BASE[g])) if cup_in_reach else 0.0
+    if g == "sip" or g == "sitcup":
+        # the cup gestures need a cup in reach; the coffee-cup reach (sitcup, R26) only while typing, with the cup standing on
+        # the desk (it has no frames of its own: the owner plays sitmouse)
+        return float(_mine.get(g, BASE[g])) if cup_in_reach and (typing or g == "sip") else 0.0
     if held and not HEAD_ONLY.has(g):
         return 0.0
     if g == "sitmouse" and not typing:
@@ -3242,6 +3246,7 @@ var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+const CUP_REACH_FRAME := 1  # sitcup: the frame of the sitmouse slide on which the hand is at the cup
 var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -3988,6 +3993,8 @@ func _start_use() -> void:
 # grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
 func _update_gesture(delta: float) -> void:
     if _gesture != "":
+        if _gesture == "sitcup" and sprite.frame >= CUP_REACH_FRAME and _item.item == "" and held != "":
+            _unstash()  # the hand has reached the cup: it comes along for the rest of the slide (HeldItem follows the hand)
         return
     var idle := (
         seat != null
@@ -4031,6 +4038,9 @@ func _start_gesture() -> void:
             _desk.item = ""
         sprite.play("sitsip_%s" % facing)
         return
+    if g == "sitcup":  # R26: the coffee-cup reach while typing. The near hand slides over to the cup on the desk, pulls it
+        sprite.play("sitmouse_%s" % facing)  # closer and puts it back: no sip. The frames are sitmouse's, the cup is the held item.
+        return
     if g == "sitphone":
         _item.item = "phone"
     sprite.play("%s_%s" % [g, facing])
@@ -4051,7 +4061,7 @@ func gesturing() -> bool:
 func _cancel_gesture() -> void:
     var g := _gesture
     _gesture = ""
-    if g == "sip":
+    if g == "sip" or g == "sitcup":
         _stash()
     elif g == "sitphone":
         _item.item = ""
@@ -4067,6 +4077,8 @@ func _end_gesture() -> void:
             _item.item = ""
         else:
             _stash()
+    elif g == "sitcup":
+        _stash()  # the cup is back on the desk, nothing was drunk
     elif g == "sitphone":
         _item.item = ""
     _play(_rest_anim())
@@ -6813,7 +6825,11 @@ func _maybe_favour(t: Dictionary) -> bool:
 
 
 # the text and its card (also called by tests)
-func ask_favour(client: int, k: int) -> void:
+# R34 (co-op): the ask is personal. It goes to the player who closed the ticket (`slot`, default the player acting now): the
+# card opens in that player's pane and the answer is applied as that player (their people XP, their energy).
+func ask_favour(client: int, k: int, slot := -1) -> void:
+    if slot < 0:
+        slot = Players.active_slot
     favour_day[client] = Campaign.day
     _favour_ask_day = Campaign.day
     var f: Dictionary = FAVOURS[k]
@@ -6827,7 +6843,9 @@ func ask_favour(client: int, k: int) -> void:
             {"label": str(FAVOUR_TEXT.desk_label), "id": "fav_desk"},
             {"label": str(FAVOUR_TEXT.ignore_label), "id": "fav_ignore"},
         ],
-        func(pick: String) -> void: favour_answer(pick, client, k)
+        func(pick: String) -> void: Players.run_as(slot, favour_answer.bind(pick, client, k)),
+        Callable(),
+        slot
     )
 
 
@@ -9374,12 +9392,24 @@ func _paint_backups(body: Rect2) -> void:
             var ago := maxi(1, Campaign.day - int(b.good_day))
             status = "FAILED! LAST GOOD: %d DAY%s AGO" % [ago, "" if ago == 1 else "S"]
             color = RED
+        status = backup_status(status, b, compact)
         var at := rr.position + (Vector2(100, 2) if compact else Vector2(3, 8))
         _text(_clip(status, int((body.end.x - at.x - 34) / 4.0)), at, color)
         if not checked:
             _button("bkcheck:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "CHECK")
         elif not b.ok:
             _button("bkrerun:%d" % c, Rect2(rr.end.x - 31, rr.position.y + 1, 29, 9), "RERUN", true, Color("f0b27a"))
+
+
+# R38: H1, the status of a backup row with the date of the last restore test (the short form drops LAST GOOD)
+static func backup_status(status: String, b: Dictionary, compact: bool) -> String:
+    var tested := int(b.get("tested", -1))
+    if tested < 0:
+        return status
+    var head := status
+    if compact:
+        head = "OK" if status.begins_with("OK") else ("FAILED!" if status.begins_with("FAILED") else "NOT CHECKED")
+    return "%s - TESTED %s %d" % [head, "WK" if Campaign.books_active() else "DAY", tested]
 
 
 func _paint_playbook(body: Rect2) -> void:
@@ -10357,6 +10387,9 @@ const REFERRAL_ODDS := 0.35
 const REFERRAL_MOOD := 80
 const CHECK_COST := 0.1  # game hours a client call takes (about six minutes)
 const CHAT_COST := 0.05
+const Collection := preload("res://scripts/collection.gd")  # R16: relationship levels on the contacts
+const LEVEL_WHO := {"senior": "Adam", "tech": "Michael"}  # the contacts with their own numbers are cast members too
+const LEVEL_PIPS := 4  # one pip per level above NEW FACE
 const PIZZA := {"id": "pizza", "name": "TONY'S PIZZA", "sub": "LUNCH ORDERS", "kind": "pizza", "num": "5550199"}
 const HANG := {"id": "hang", "label": "HANG UP"}
 const SENIOR := {"id": "adam", "name": "ADAM", "sub": "SENIOR TECH", "kind": "senior", "num": "5550333"}
@@ -10441,6 +10474,32 @@ static func contacts() -> Array:
             out.append(TECH.duplicate())  # Michael: hand him an ordinary ticket
     out.append(PIZZA.duplicate())
     return out
+
+
+# R16: the relationship level of a contact (Collection.LEVELS, 0-4); -1 for somebody who has none (clients, the pizza place,
+# a coworker outside the cast, no campaign running)
+static func level(contact: Dictionary) -> int:
+    var who := str(contact.get("who", ""))
+    if who == "":
+        who = str(LEVEL_WHO.get(str(contact.get("kind", "")), ""))
+    if who == "" or not Campaign.active or not Social.people().has(who):
+        return -1
+    return Collection.level(who)
+
+
+# "LV 2 LUNCH BUDDY" ("" without a level): the second line of the selected contact
+static func level_text(contact: Dictionary) -> String:
+    var lv := level(contact)
+    return "" if lv < 0 else "LV %d %s" % [lv, Collection.level_name(lv)]
+
+
+# the second line of a contact row: the role, LATER while they do not take calls, the level on the selected row
+static func row_sub(contact: Dictionary, selected: bool) -> String:
+    if wait_left(contact) > 0.0:
+        return "LATER"
+    if selected and level(contact) >= 0:
+        return level_text(contact)
+    return str(contact.get("sub", ""))
 
 
 static func find(id: String) -> Dictionary:
@@ -12269,8 +12328,14 @@ func _paint_contacts(body: Rect2) -> void:
         var chars := _chars(rr.size.x - 12)
         _text(_clip(str(c.name), chars), rr.position + Vector2(5, 2 * _sc), INK)
         var wait: float = Calls.wait_left(c)
-        var sub := str(c.sub) if wait <= 0.0 else "LATER"
-        _text(_clip(sub, chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+        var lv: int = Calls.level(c)  # R16: the relationship level (-1 = none): four pips, and the name of it on the selected row
+        var sub: String = Calls.row_sub(c, i == ph_sel)
+        var sub_chars := chars if lv < 0 else _chars(rr.size.x - 12 - Calls.LEVEL_PIPS * 3 * _sc)
+        _text(_clip(sub, sub_chars), rr.position + Vector2(5, 9 * _sc), RED if wait > 0.0 else Color("7d8595"))
+        if lv >= 0:
+            for p in Calls.LEVEL_PIPS:
+                var pr := Rect2(rr.end.x - 3 - (Calls.LEVEL_PIPS - p) * 3 * _sc, rr.position.y + 10 * _sc, 2 * _sc, 3 * _sc)
+                _fill(pr, _accent() if p < lv else Color("c8ccd4"))
         if c.kind == "client" and Campaign.active:
             var m := Sales.mood(int(c.client))
             _disc(
@@ -17825,6 +17890,18 @@ const VIGNETTES := {
             {"id": "help", "label": "SOME OF THEM WERE OVER MY HEAD", "text": "Then ask me before they go red. That is what I am here for. (+2 servers XP)", "fx": {"xp": ["servers", 2]}},
         ],
     },
+    # X10: the first-day choice, right after Dan's intro (`_vignette_after`). How you say hello to the room: a small, lasting
+    # flavour (flag `hello`), two opinions move a little, and whoever liked it texts you the next morning (`echo`, sent by the
+    # day 2 event `hello_echo`).
+    "hello": {
+        "speaker": "Garrison (Co-owner)",
+        "text": "Everybody, this is the new tech. New tech, this is everybody. Go on, say something to the room. Keep it short, Alan has a thing at ten.",
+        "options": [
+            {"id": "joke", "label": "I FIX THINGS. SOMETIMES ON PURPOSE.", "text": "Garrison laughs loud enough for two. Alan writes something down. It might be about you.", "fx": {"flag": ["hello", "joke"], "social": {"Garrison": 2, "Alan": -1}}, "echo": {"from": "Garrison", "body": "Still laughing about 'sometimes on purpose'. Alan asked me if it was a joke. I said mostly."}},
+            {"id": "keen", "label": "I READ THE RUNBOOKS LAST NIGHT.", "text": "Alan nods once, which from Alan is a parade. Garrison mouths the word 'runbooks' at Dan.", "fx": {"flag": ["hello", "keen"], "social": {"Alan": 2, "Garrison": -1}}, "echo": {"from": "Alan", "body": "You said you read the runbooks. Page 14 is out of date. Tell me what else is."}},
+            {"id": "quiet", "label": "HI. WHERE IS THE QUEUE?", "text": "Dan points at your desk. Maya gives you a small nod. One of us.", "fx": {"flag": ["hello", "quiet"], "social": {"Dan": 1, "Maya": 1}}, "echo": {"from": "Maya", "body": "Short intro. Good. The last new tech talked for six minutes. There is a granola bar in your top drawer."}},
+        ],
+    },
     "mentor_intro": {
         "speaker": "Dan (Service Manager)",
         "text": "Morning. I'm Dan, I run the service desk, so you're mine this week. I can walk you through the first few days, or leave you to it. No judgment either way. Which do you want?",
@@ -18769,6 +18846,7 @@ const DAYS := {
          + "seconds, until your security skills are good enough for the backup watch to do it for you. - Morgan"},
         {"at": 9.6, "kind": "mentor", "id": "mentor_triage"},
         {"at": 10.5, "kind": "vignette", "id": "iphone"},
+        {"at": 9.05, "kind": "hello_echo"},
     ],
     3: [
         {"at": 9.1, "kind": "mail", "from": MANAGER, "subject": "Get good at PowerShell",
@@ -18976,6 +19054,8 @@ func fire(ev: Dictionary) -> void:
             Msp.send_text("Boss", str(ev.get("text", "A big job just came in.")))
         "vignette", "mentor":
             _vignette(str(ev.id))  # "mentor" is Dan's days 1-3, kept apart from the vignettes the Year 2 shuffle moves
+        "hello_echo":
+            _hello_echo()
         "metrics":
             _friday()
         "postmortem":
@@ -19003,6 +19083,14 @@ func fire(ev: Dictionary) -> void:
             if flags.get("install", "") == "lost":
                 Msp.mail("Dr. Patel <patel@acmedental.example>", "XRAY STILL MISSING", "I spent the evening reloading the xray software from CDs. Never again. - Patel")
                 Msp.send_text("Boss", "Acme lost their xray software in the migration. Always survey and back up first.")
+
+
+# X10: the morning after the first-day hello, whoever liked it sends a text (nothing when the card was never answered)
+func _hello_echo() -> void:
+    var pick := str(flags.get("hello", ""))
+    for o in VIGNETTES.get("hello", {}).get("options", []):
+        if str(o.id) == pick and o.has("echo"):
+            Msp.send_text(str(o.echo.from), str(o.echo.body))
 
 
 # ---- small quiet-day moments: a short card with a few choices and small effects
@@ -19079,7 +19167,14 @@ func _vignette_answer(id: String, pick: String) -> void:
         if str(o.id) == pick:
             text = str(o.text)
             _vignette_fx(o.get("fx", {}))
-    Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+    Cards.ask(str(v.speaker), text, [{"label": "OK", "id": "ok"}], func(_id: String) -> void: _vignette_after(id))
+
+
+# X10: Dan's intro is followed by the first-day hello. It is asked when his answer is closed, so the two cards never
+# interleave (on cozy Easy every day 1 event is due in the same second). Once a run, and not in a second year.
+func _vignette_after(id: String) -> void:
+    if id == "mentor_intro" and Campaign.day == 1 and not flags.has("hello") and not Yeartwo.active():
+        _vignette("hello")
 
 
 func _vignette_fx(fx: Dictionary) -> void:
@@ -21097,8 +21192,8 @@ const CARDS := {
         "speaker": "John Marlowe",
         "text": "Brightside Realty wants their old server replaced. Do we quote a fixed price or bill time and materials?",
         "options": [
-            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}}, "The job overran. You ate $1,200."]],
-             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400}, "A small overrun, nothing serious."]]},
+            {"label": "FIXED PRICE $3,000", "roll": [[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."], [0.4, {"cash": 1800, "mood": {"1": -3}, "overrun": 1200}, "The job overran. You ate $1,200."]],
+             "roll_scoped": [[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."], [0.1, {"cash": 2400, "overrun": 600}, "A small overrun, nothing serious."]]},
             {"label": "TIME AND MATERIALS (~$2,200)", "fx": {"cash": 2200}, "text": "Brightside grumbles about the open-ended bill but pays."},
         ],
     },
@@ -22272,6 +22367,8 @@ func _picked(id: String, index: int) -> void:
 
 func apply(fx: Dictionary) -> void:
     cash += int(fx.get("cash", 0))
+    if fx.has("overrun"):
+        cash += Habits.overrun_back(int(fx.overrun))  # R38: H3, a failed cutover costs half with a change request
     if fx.has("rep"):
         Campaign.adjust_rep(int(fx.rep))
     if fx.has("mood_all"):
@@ -22433,12 +22530,14 @@ func apply(fx: Dictionary) -> void:
         Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
     if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
         Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
-    if fx.has("visit"):
-        Takeover.visit(self, str(fx.visit))
     if fx.has("lead"):
         _leads += int(fx.lead)
     if fx.has("rival"):
         Rival.apply_fx(self, fx.rival)
+    if fx.has("visit"):
+        # after the rival ops: the week 11 card brings the client back (`return`) in the same fx, and the visit needs them back
+        # (X12: before this order the real trigger never started a visit, Takeover.target() found nobody)
+        Takeover.visit(self, str(fx.visit))
     Msp.changed.emit()
 
 
@@ -33894,6 +33993,7 @@ const SAFE := 2.4  # seconds a bumped chair cannot be bumped again
 const TURN := 0.3  # seconds a spin-around takes
 const HIT_GAP := 0.45  # seconds before the two chairs can touch again
 const WALL_BOUNCE := 0.25
+const P2_COLOR := Color("5fa8e8")  # player 2's chair in a co-op duel
 const TIER_SKILL := 2.5  # x the tier's chair.skill (-0.08 / 0 / +0.08): in a duel the other chair's legs are all there is
 # the crew as fighters: how they push and what they say
 const STYLES := {
@@ -33922,6 +34022,7 @@ var feel_t := 0.0
 var events: Array = []  # go, bump, ouch, clash, clunk, finish (for sounds; the owner clears it)
 var clashes := 0
 var you_auto := false  # tests and demos: the crew's driver has your chair too
+var duel := false  # co-op (params.duel): chairs[1] is player 2's chair, nobody drives it; the crew all watch
 var cp_next := 0  # (the track asks: no checkpoints)
 var checks: Array = []
 var length := HI
@@ -33957,8 +34058,11 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator) -> void:
     var who := str(params.get("opponent", ""))
     if not STYLES.has(who):
         who = str(pool[rng.randi() % pool.size()]) if not pool.is_empty() else "Garrison"
-    var st: Dictionary = STYLES[who]
-    chairs = [_chair("You", LO + 40.0, 1, Color.WHITE, 0.5), _chair(who, HI - 40.0, -1, ChairRace.RACERS[who].color, clampf(float(st.skill) + TIER_SKILL * float(params.get("skill", 0.0)) + (rng.randf() - 0.5) * 0.06, 0.1, 0.9))]
+    duel = bool(params.get("duel", false))
+    if duel:
+        who = "P2"
+    var st: Dictionary = STYLES.get(who, {"skill": 0.5})
+    chairs = [_chair("You", LO + 40.0, 1, Color.WHITE, 0.5), _chair(who, HI - 40.0, -1, P2_COLOR if duel else ChairRace.RACERS[who].color, 0.5 if duel else clampf(float(st.skill) + TIER_SKILL * float(params.get("skill", 0.0)) + (rng.randf() - 0.5) * 0.06, 0.1, 0.9))]
     rivals = [chairs[1]]
     var n := 0
     for other in pool:
@@ -34098,7 +34202,7 @@ func push_of(i: int, key: int) -> bool:
     if float(c.stam) < 15.0:
         how = "TIRED"
     c.v = float(c.v) + float(c.face) * ChairRace.IMPULSE * q * f
-    c.stam = maxf(0.0, float(c.stam) - cost * (float(params.stamina) if i == 0 else 1.0))
+    c.stam = maxf(0.0, float(c.stam) - cost * (float(params.stamina) if i == 0 or duel else 1.0))
     c.pushes = int(c.pushes) + 1
     c.key = key
     c.last = clock
@@ -34126,7 +34230,7 @@ func step(dt: float) -> void:
         events.append("go")
     _hit_cd = maxf(0.0, _hit_cd - dt)
     for i in 2:
-        if phase == "go" and (i == 1 or you_auto):
+        if phase == "go" and ((i == 1 and not duel) or you_auto):
             _drive(i, dt)
         _roll(chairs[i], dt)
     if phase != "go":
@@ -34276,6 +34380,8 @@ func _drive(i: int, dt: float) -> void:
 # ---- the result ----------------------------------------------------------------------------------------
 func stars() -> int:
     var s := score()
+    if duel:
+        return 1  # a friendly between the two of you: played, not a win over the crew (the Career keeps its chair fight stars)
     if winner == 0:
         return 3 if s[1] <= 1 else 2
     if winner == 2 or s[0] >= 2:
@@ -34286,6 +34392,8 @@ func stars() -> int:
 func comment() -> String:
     if winner == 2:
         return "A DRAW. BOTH CHAIRS NEED A NEW WHEEL."
+    if duel:
+        return "PLAYER %d WINS THE DUEL. THE CREW WANTS A REMATCH." % (winner + 1)
     var st: Dictionary = STYLES.get(opponent(), {})
     return str(st.get("lose" if winner == 0 else "win", ""))
 ''')
@@ -34361,7 +34469,7 @@ func setup(scene: Node, the_race: RefCounted, set_x0: float, racers: Array) -> v
             _add_prop(o)
     if _player != null:
         _player.visible = false
-    if _player2 != null and puppets.has("You2"):
+    if _player2 != null and (puppets.has("You2") or puppets.has("P2")):
         _player2.visible = false
     _sync()
 
@@ -36031,6 +36139,11 @@ func _event_key(event: InputEvent) -> int:
 
 
 func _event_key_p2(event: InputEvent) -> int:
+    if game == "chair" and phase == "play" and g.has("race") and g.race.get("duel") == true:
+        if event.is_action(Controls.action_for(1, "push_a")):
+            return KEY_Z  # the duel: player 2 has both legs, A and B
+        if event.is_action(Controls.action_for(1, "push_b")):
+            return KEY_X
     if game == "chair" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "push_b"))):
         return KEY_X  # the second pilot's push
     if game == "paintball" and phase == "play" and (event.is_action(Controls.action_for(1, "push_a")) or event.is_action(Controls.action_for(1, "interact"))):
@@ -37570,6 +37683,17 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A CRATE OF DEAD HARD DRIVES AND ONE FLOPPY. NO NUMBERS, ONLY CLICKING.",
             "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: OFFSITE BACKUP. NOT HERE.",
         },
+        "words": {
+            "A PLAQUE": "AN ASSET TAG",
+            "PLAQUE": "ASSET TAG",
+            "CHALKBOARD": "RACK BOARD",
+            "PAINTING": "NETWORK MAP",
+            "BOOKSHELF": "MANUAL SHELF",
+            "ONE BOOK ON": "ONE BINDER ON",
+            "NOT A BOOK": "NOT A BINDER",
+            "VAULT": "TAPE VAULT",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE BINDER IS THE DIGIT.", "ribbons": "COUNT THE CABLE TIES."},
     },
     "detective": {
         "title": "THE DETECTIVE'S OFFICE",
@@ -37601,6 +37725,16 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A TRUNK OF DISGUISES AND ONE FALSE MOUSTACHE. NO NUMBERS, ONLY MOTHS.",
             "herring_globe": "THE GLOBE HAS A PIN IN IT AND A TAG: LAST SEEN HERE. NOT THE CODE.",
         },
+        "words": {
+            "PLAQUE": "BRASS PLATE",
+            "CHALKBOARD": "CASE BOARD",
+            "PAINTING": "PORTRAIT",
+            "BOOKSHELF": "SHELF OF CASE FILES",
+            "ONE BOOK ON": "ONE CASE FILE ON",
+            "NOT A BOOK": "NOT A CASE FILE",
+            "VAULT": "EVIDENCE VAULT",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE CASE FILE IS THE DIGIT.", "ribbons": "COUNT THE RED STRINGS."},
     },
     "lab": {
         "title": "THE 1990S COMPUTER LAB",
@@ -37632,6 +37766,17 @@ const DEFAULT_ESCAPE_THEMES := {
             "herring_trunk": "A TRUNK OF BALL MICE AND ONE PARALLEL CABLE. NO NUMBERS, ONLY LINT.",
             "herring_globe": "THE CLASSROOM GLOBE STILL SHOWS COUNTRIES THAT ARE GONE. NOT THE CODE.",
         },
+        "words": {
+            "PLAQUE": "PLATE",
+            "CHALKBOARD": "TEACHER'S BOARD",
+            "PAINTING": "CLASS PHOTO",
+            "BOOKSHELF": "MANUAL SHELF",
+            "ONE BOOK ON": "ONE MANUAL ON",
+            "NOT A BOOK": "NOT A MANUAL",
+            "OLD WALL CLOCK": "CLASSROOM CLOCK",
+            "WALL CLOCK": "CLASSROOM CLOCK",
+        },
+        "tips": {"spine": "THE VOLUME NUMBER ON THE MANUAL IS THE DIGIT.", "ribbons": "COUNT THE MOUSE CORDS."},
     },
 }
 var ESCAPE_THEMES: Dictionary = DEFAULT_ESCAPE_THEMES.duplicate(true)
@@ -37690,6 +37835,20 @@ func clue_say(clue: Dictionary) -> String:
     }
     var lines: Dictionary = escape_theme().get("say", {})
     return str(lines.get(str(clue.recipe), DEFAULT_ESCAPE_THEMES.study.say.get(str(clue.recipe), ""))).format(fill)
+
+
+# a friend's hint in the room's own words (R4): the study's line with the theme's nouns put in (theme.words, in order)
+func friend_say(text: String) -> String:
+    var words: Dictionary = escape_theme().get("words", {})
+    for from in words:
+        text = text.replace(str(from), str(words[from]))
+    return text
+
+
+# the recipe tip of a friend's specialty, in the theme's words where the thing has another name (theme.tips)
+func recipe_tip(key: String) -> String:
+    var own: Dictionary = escape_theme().get("tips", {})
+    return str(own.get(key, RECIPE_TIPS.get(key, "")))
 
 
 func herring_text(kind: String) -> String:
@@ -38845,12 +39004,12 @@ func escape_nudge() -> String:
             recipe = str(g.clues[i].recipe)
             break
     var table: Dictionary = FRIEND_HINTS.get(friend, FRIEND_HINTS["Alan"])
-    var text := str(table.get(zone, ""))
+    var text := friend_say(str(table.get(zone, "")))  # R4: in the words of tonight's room
     if str(SPECIALTY.get(friend, "")) == zone:
         if zone == "keypad":
             text += " " + str(RECIPE_TIPS["dial" if g.get("dial", false) else "nodial"])
         else:
-            text += " " + str(RECIPE_TIPS.get(recipe, ""))
+            text += " " + recipe_tip(recipe)
     g.hints = int(g.hints) - 1
     g.hints_used = int(g.hints_used) + 1
     text = "%s: %s" % [friend.to_upper(), text]
@@ -39079,14 +39238,20 @@ func _chair_best_key(course: String) -> String:
 func _chair_career(result: int) -> Dictionary:
     var race: RefCounted = g.race
     if str(g.get("event", "")) == "fight":
-        return {"fight": true, "won": race.winner == 0, "bumps": int(race.score()[0])}
+        return {"fight": true, "duel": race.duel, "won": race.winner == 0 and not race.duel, "bumps": int(race.score()[0])}
     return {"course": str(race.course), "won": not race.dnf and int(g.place) == 1 and not race.rivals.is_empty(), "clean": result >= 1 and race.crashes + race.cones == 0 and not race.false_started}
+
+
+# co-op: the chair fight is a duel, player 1's chair against player 2's (the races stay a tandem)
+func _chair_duel() -> bool:
+    return _chair_event_now() == "fight" and Players.coop and Players.slots[1].joined
 
 
 func _chair_params() -> Dictionary:
     return {
         "course": _chair_event_now(),
         "opponent": str(opts.get("opponent", "")),
+        "duel": _chair_duel(),
         "crash": Difficulty.f("chair.crash"),
         "stamina": Difficulty.f("chair.stamina"),
         "slick": Difficulty.f("chair.slick"),
@@ -39117,10 +39282,14 @@ func _chair_setup() -> void:
                 "label": "YOU",
             }
         ]
-        if Players.coop and Players.slots[1].joined:  # the tandem's second pilot rides behind
+        if Players.coop and Players.slots[1].joined and not _chair_duel():  # the tandem's second pilot rides behind
             var p2: Dictionary = Players.slot(1).look
             specs.append({"key": "You2", "character": Look.BASE if not p2.is_empty() else str(Players.slot(1).character), "custom": not p2.is_empty(), "color": Color.WHITE, "label": "P2", "rider": true, "look": p2})
         for r in race.rivals:
+            if str(r.n) == "P2":  # the duel: player 2 in their own chair, with their own look
+                var d2: Dictionary = Players.slot(1).look
+                specs.append({"key": "P2", "character": Look.BASE if not d2.is_empty() else str(Players.slot(1).character), "custom": not d2.is_empty(), "color": r.color, "label": "P2", "look": d2})
+                continue
             specs.append({"key": r.n, "character": str(World.row(r.n).character), "custom": false, "color": r.color, "label": str(r.n).substr(0, 1)})
         var track := ChairTrack.new()
         track.setup(scene, race, _x0(), specs)
@@ -39197,7 +39366,7 @@ func _chair_cues(race: RefCounted) -> void:
     elif race.feel_t > 0.0:
         line = race.feel
     elif str(g.get("event", "")) == "fight":
-        line = "YOU %d  %s %d  FIRST TO %d" % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
+        line = ("P1 %d  %s %d  FIRST TO %d" if race.duel else "YOU %d  %s %d  FIRST TO %d") % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1]), ChairFight.TARGET]
     elif race.cp_next < race.checks.size():
         line = "NEXT: %s" % race.check_names[race.cp_next]
     else:
@@ -39207,6 +39376,22 @@ func _chair_cues(race: RefCounted) -> void:
 
 func _chair_press(key: int) -> void:
     var race: RefCounted = g.race
+    if race.get("duel") == true:  # co-op duel: each player has a whole chair (both legs, the turn, the lanes)
+        var me := 1 if _press_slot == 1 else 0
+        match key:
+            KEY_Z:
+                race.push_of(me, 0)
+            KEY_X:
+                race.push_of(me, 1)
+            KEY_UP, KEY_W:
+                race.lane_of(me, -1)
+            KEY_DOWN, KEY_S:
+                race.lane_of(me, 1)
+            KEY_LEFT, KEY_A:
+                race.spin_of(me, -1)
+            KEY_RIGHT, KEY_D:
+                race.spin_of(me, 1)
+        return
     var duo: bool = Players.coop and Players.slots[1].joined  # co-op: one chair, two pilots: player 1 pushes Z, player 2 pushes X
     match key:
         KEY_Z:
@@ -39231,6 +39416,8 @@ func _chair_hint() -> String:
     if phase == "play" and g.has("race") and float(g.race.clock) < 0.0:
         return "GET READY  ESC = LEAVE"
     if str(g.get("event", "")) == "fight":
+        if g.has("race") and g.race.get("duel") == true:
+            return "P1 = Z X  P2 = A B  L R = TURN  UP DN = LANE"
         return "Z X = PUSH  L R = TURN  UP DN = LANE"
     if Players.coop and Players.slots[1].joined:
         return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
@@ -39259,6 +39446,8 @@ func _chair_lines() -> Array:
     var race: RefCounted = g.race
     var out := []
     if str(g.get("event", "")) == "fight":
+        if race.duel:
+            return [race.comment(), "BUMPS: PLAYER 1 %d, PLAYER 2 %d." % [int(race.score()[0]), int(race.score()[1])]]
         return [race.comment(), "BUMPS: YOU %d, %s %d." % [int(race.score()[0]), race.opponent().to_upper(), int(race.score()[1])]]
     if race.dnf:
         out.append("THE CHAIR NEVER MADE IT PAST THE LAST CHECKPOINT. (80 SECOND LIMIT.)")
@@ -39338,9 +39527,14 @@ func _hud_fight(s: Rect2, o: Vector2) -> void:
         px += 5.0
     var bw := 30.0
     var bx := s.end.x - bw - 5.0
-    var stam_col := GREEN if fight.stam > 40.0 else (AMBER if fight.stam > 15.0 else RED)
-    _canvas.draw_rect(Rect2(bx - 1.0, s.position.y + 2.0, bw + 2.0, 7.0), INK)
-    _canvas.draw_rect(Rect2(bx, s.position.y + 3.0, bw * clampf(fight.stam / 100.0, 0.0, 1.0), 5.0), stam_col)
+    var bars := 2 if fight.duel else 1  # the duel: a stamina bar each, player 1's first
+    for k in bars:
+        var cw := bw if bars == 1 else 14.0
+        var cx := bx + 16.0 * float(k)
+        var st: float = float(fight.chairs[k].stam)
+        var stam_col := GREEN if st > 40.0 else (AMBER if st > 15.0 else RED)
+        _canvas.draw_rect(Rect2(cx - 1.0, s.position.y + 2.0, cw + 2.0, 7.0), INK)
+        _canvas.draw_rect(Rect2(cx, s.position.y + 3.0, cw * clampf(st / 100.0, 0.0, 1.0), 5.0), stam_col)
     var rx := px + 4.0
     var rw := bx - rx - 6.0
     if rw < 12.0:
@@ -39423,11 +39617,15 @@ func _paint_cues(rules: RefCounted) -> void:
             g.count = ceili(rules.count)
             Sfx.play("ui_tick")
     elif rules.phase == "over":
-        line = "TIME!" if rules.clock >= float(rules.limit) else "THAT IS THE MATCH!"
+        line = "TIME!" if rules.clock >= float(rules.limit) and rules.winner == 2 else "THAT IS THE MATCH!"
     elif rules.line_t > 0.0:
         line = rules.line
+    elif rules.is_out(0):
+        line = "YOU ARE OUT. IT IS UP TO THE OTHERS."
     elif rules.units[0].down > 0.0:
         line = "YOU ARE OUT FOR %d..." % ceili(rules.units[0].down)
+    elif rules.overtime and not rules.units[0].flag:
+        line = "OVERTIME: NEXT FLAG WINS. STAY ON YOUR FEET."
     elif rules.units[0].flag:
         line = "YOU HAVE THE FLAG! RUN HOME!"
     else:
@@ -39457,7 +39655,7 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  TIME %d" % [rules.score[0], rules.score[1], maxi(0, ceili(float(rules.limit) - rules.clock))], b.position.x, b.position.y)
+    _t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
     _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
 
 
@@ -39469,9 +39667,13 @@ func _hud_paint(s: Rect2) -> void:
     _t(str(rules.score[0]), o.x + 3.0, s.position.y + 4.0, WHITE)
     _canvas.draw_rect(Rect2(o.x + 11.0, s.position.y + 2.0, 9.0, 8.0), BLUE)
     _t(str(rules.score[1]), o.x + 14.0, s.position.y + 4.0, WHITE)
-    _t("%d" % maxi(0, ceili(float(rules.limit) - rules.clock)), o.x + 26.0, o.y, WHITE)
+    _t("%d" % rules.time_left(), o.x + 26.0, o.y, AMBER if rules.overtime else WHITE)
     var you: Dictionary = rules.units[0]
     var state := "OUT %d" % ceili(you.down) if you.down > 0.0 else ("FLAG!" if you.flag else ("DUCK" if you.duck else ""))
+    if rules.is_out(0):
+        state = "OUT"
+    elif rules.overtime and state == "":
+        state = "OT"
     _t(state, o.x + 48.0, o.y, AMBER)
     _t("TAGS %d" % rules.you_tags, s.end.x - 40.0, o.y, UiStyle.SOFT)
 
@@ -41916,6 +42118,8 @@ const OPEN_DUCK := 0.55  # a ducking player with no barricade is a smaller targe
 const RESPAWN := 4.0
 const TARGET := 3
 const LIMIT := 150.0  # seconds of play
+const OVERTIME := 45.0  # level when the time is up: sudden death for this long (nobody comes back; next flag or last team standing wins), then a draw
+const OUT := 9999.0  # the `down` of a unit tagged in overtime: out for the rest of the match
 const COUNT := 3.0
 const PICK := 7.0  # px to touch a flag
 const CAP := 10.0  # px of your own end that count as home
@@ -41925,7 +42129,7 @@ const YOU_ACC := 0.8
 const AI_ACC := 0.18  # the crew's aim is this much of their skill
 # the tuning run (tests/paintball_tuning.gd: a scripted average player, 30+ seeded matches a tier) found the first version lopsided:
 # the player won 97 % and nobody else ever carried a flag home. Three numbers fix that:
-const RIVAL_EDGE := 2.3  # x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
+const RIVAL_EDGE := 2.75  # (2.3 before the overtime rule, which turned most draws into your wins) x the other team's aim (times the tier's paint.skill): they shoot straighter than your own team mates
 const COOP_EDGE := 1.4  # x that again with two pilots on your side
 const CARRY_DODGE := 0.8  # seconds (less for the quick ones) before a crew member with the flag steps out of a rival's lane
 const NAMES := ["Alan", "Garrison", "Dan", "Maya", "John"]
@@ -41964,6 +42168,8 @@ var p2_caps := 0
 var crew_acc := AI_ACC
 var target := TARGET
 var limit := LIMIT
+var ot_len := OVERTIME  # params.overtime (0 = no overtime: time up level is a draw)
+var overtime := false  # sudden death is on
 var rival_edge := RIVAL_EDGE
 var carry_dodge := CARRY_DODGE
 var respawn := RESPAWN
@@ -41980,6 +42186,8 @@ func setup(p: Dictionary, names: Array, r: RandomNumberGenerator, humans := 1) -
     crew_acc = float(p.get("crew_acc", AI_ACC))
     target = int(p.get("target", TARGET))
     limit = float(p.get("limit", LIMIT))
+    ot_len = float(p.get("overtime", OVERTIME))
+    overtime = false
     rival_edge = float(p.get("rival_edge", RIVAL_EDGE)) * (COOP_EDGE if pilots == 2 else 1.0)
     carry_dodge = float(p.get("carry_dodge", CARRY_DODGE))
     respawn = float(p.get("respawn", RESPAWN))
@@ -42132,8 +42340,48 @@ func step(dt: float) -> void:
         _tick_unit(i, dt)
     for i in order:
         _flags_for(i)
-    if score[0] >= target or score[1] >= target or clock >= limit:
+    if score[0] >= target or score[1] >= target:
         _end()
+    elif overtime:
+        _overtime_step()
+    elif clock >= limit:
+        if score[0] == score[1] and ot_len > 0.0:
+            overtime = true
+            events.append({"kind": "overtime"})
+            say("OVERTIME! NOBODY COMES BACK. NEXT FLAG WINS.", 2.6)
+        else:
+            _end()
+
+
+# sudden death: the next flag home wins, a team with nobody left standing loses, and after ot_len seconds it is a draw after all
+func _overtime_step() -> void:
+    if score[0] != score[1]:
+        _end()
+        return
+    for t in 2:
+        if standing(t) == 0:
+            _end(other(t))
+            return
+    if clock >= limit + ot_len:
+        _end()
+
+
+# how many of a team are still in the match (a unit waiting to come back counts; one tagged in overtime does not)
+func standing(team: int) -> int:
+    var n := 0
+    for u in units:
+        if int(u.team) == team and float(u.down) < OUT * 0.5:
+            n += 1
+    return n
+
+
+func is_out(i: int) -> bool:
+    return float(units[i].down) >= OUT * 0.5
+
+
+# the seconds left of the match, or of the overtime
+func time_left() -> int:
+    return maxi(0, ceili(limit + (ot_len if overtime else 0.0) - clock))
 
 
 func _tick_unit(i: int, dt: float) -> void:
@@ -42141,6 +42389,9 @@ func _tick_unit(i: int, dt: float) -> void:
     u.cool = maxf(0.0, float(u.cool) - dt)
     u.lane_cool = maxf(0.0, float(u.lane_cool) - dt)
     if float(u.down) > 0.0:
+        if is_out(i):
+            u.vx = 0.0
+            return
         u.down = float(u.down) - dt
         u.vx = 0.0
         u.duck = false
@@ -42192,9 +42443,11 @@ func _flags_for(i: int) -> void:
         say("%s SCORES! %d TO %d" % [str(u.name), score[0], score[1]], 1.8)
 
 
-func _end() -> void:
+func _end(by_wipe := -1) -> void:
     phase = "over"
-    if score[0] > score[1]:
+    if by_wipe >= 0:
+        winner = by_wipe  # overtime: the last team standing
+    elif score[0] > score[1]:
         winner = 0
     elif score[1] > score[0]:
         winner = 1
@@ -42270,7 +42523,7 @@ func fire(i: int) -> bool:
 
 func _tag(j: int, by: int) -> void:
     var v: Dictionary = units[j]
-    v.down = respawn
+    v.down = OUT if overtime else respawn
     v.duck = false
     v.vx = 0.0
     units[by].tags = int(units[by].tags) + 1
@@ -42760,7 +43013,7 @@ func _draw_top() -> void:
         PixelFont.draw(_top, text, at, INK if mine else Color.WHITE, 1)
         if _debug:  # the blackboard of every unit, with PAINT_DEBUG=1 in the environment
             PixelFont.draw(_top, game.debug_line(i), at + Vector2(-14.0, 9.0 + 56.0), Color(1, 1, 1, 0.8), 1)
-        if float(u.down) > 0.0:  # the seconds until they are back in the game
+        if float(u.down) > 0.0 and not game.is_out(i):  # the seconds until they are back in the game
             PixelFont.draw(_top, str(ceili(float(u.down))), at + Vector2(w * 0.5 - 1.0, -8.0), Color.WHITE, 1)
 
 
@@ -54543,6 +54796,9 @@ func inspect(obj: String) -> void:
     if visit_kind == Takeover.KIND:
         Takeover.on_inspect(_site_client(), obj)  # R38 P4: what the last shop left behind
         return
+    if obj == "printer" and Habits.default_pw(_site_client()):
+        _found(Habits.pw_finding(_site_client()))  # R38: H14, until the passwords at this site are changed
+        return
     var pool: Array = FINDINGS.get(obj, [])
     var chance := (0.7 if visit_kind != "" else 0.3) * Habits.walk_mult()  # R38: H12
     if pool.is_empty() or Difficulty.rng("onsite").randf() > chance:
@@ -56699,6 +56955,8 @@ const GAME_LABELS := {
 }
 const TABLES := [[], ["Alan", "Garrison"], ["Alan", "Dan"], ["Garrison", "Dan"]]
 const TABLE_LABELS := ["ALL THREE", "ALAN GARRISON", "ALAN DAN", "GARRISON DAN"]
+const CHAIR_LABELS := ["PICK ON CARD", "THE STRAIGHT", "THE GAUNTLET", "CHAIR FIGHT"]  # 0, then Outings.CHAIR_EVENTS in order
+const NIGHT_LABELS := ["CARD'S DRAW", "DAY", "NIGHT"]
 const CHARTS := 4
 const SETS := 9
 const MAX_TEXT := 12
@@ -56715,6 +56973,8 @@ var digits := 0  # 0 = the tier's, else 3 or 4
 var theme_i := 0  # the escape room's theme: an index into Outings.THEME_ORDER (0 = the old study); a fixed pick, never drawn
 var recipe_i := {"board": 0, "clock": 0, "plaque": 0, "shelf": 0}  # 0 = any, else index + 1 into Outings.RECIPES[zone]
 var table_i := 0
+var chair_i := 0  # the chair card's event: 0 = picked on the card, else index + 1 into Outings.CHAIR_EVENTS (straight, gauntlet, fight)
+var night_i := 0  # paintball: 0 = the card's draw, 1 = a day match, 2 = the night match
 var model_i := 0
 var mutator := ""
 var sel := 0
@@ -56782,6 +57042,12 @@ func outing_options() -> Dictionary:
         "dinner":
             if table_i > 0:
                 out["table"] = TABLES[table_i].duplicate()
+        "chair":
+            if chair_i > 0:
+                out["event"] = str(Outings.CHAIR_EVENTS[chair_i - 1])
+        "paintball":
+            if night_i > 0:
+                out["night"] = night_i == 2
     return out
 
 
@@ -57098,6 +57364,10 @@ func rows() -> Array:
                 out.append({"id": "rec_" + str(zone), "label": str(zone).to_upper(), "value": "ANY" if at == 0 else str(Outings.RECIPES[zone][at - 1]).to_upper()})
         "dinner":
             out.append({"id": "table", "label": "TABLE", "value": str(TABLE_LABELS[table_i])})
+        "chair":
+            out.append({"id": "event", "label": "EVENT", "value": str(CHAIR_LABELS[chair_i])})
+        "paintball":
+            out.append({"id": "night", "label": "MATCH", "value": str(NIGHT_LABELS[night_i])})
         "printer":
             out.append({"id": "model", "label": "MODEL", "value": str(PrinterGame.MODELS[model_id()].label)})
     var tag := "DAILY " + Difficulty.seed_text() if Difficulty.daily != "" else Difficulty.seed_text()
@@ -57138,6 +57408,10 @@ func change(step: int) -> void:
             digits = [0, 3, 4][([0, 3, 4].find(digits) + step + 3) % 3]
         "table":
             table_i = (table_i + step + TABLES.size()) % TABLES.size()
+        "event":
+            chair_i = (chair_i + step + CHAIR_LABELS.size()) % CHAIR_LABELS.size()
+        "night":
+            night_i = (night_i + step + NIGHT_LABELS.size()) % NIGHT_LABELS.size()
         "model":
             model_i = (model_i + step + PrinterGame.MODEL_ORDER.size()) % PrinterGame.MODEL_ORDER.size()
         "take":
@@ -65526,6 +65800,11 @@ const BEAT_TEXT := {
         "res_undercut": {"speaker": "Ms. Cedar", "text": "Easy. Hollis had no answer to a lower number. Alan raises an eyebrow about the margin, and you feel slightly unclean.", "ok": "OK"},
         "res_honest": {"speaker": "Ms. Cedar", "text": "She is surprised. You tell her to ask Hollis which three of the thirty-one she needs, and to call you if he cannot say. Hollis hears about it, and he does not forget.", "ok": "OK"},
     },
+    "favour": {
+        "lynk": {"from": "Garrison", "text": "Hollis Grady rang the front desk and asked for you by name. He was polite about it. He is always polite about it."},
+        "res_lead": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I answered it, and she signed. Tidewater Title rang me this week: nine people, too small for the way I work. I gave Mr. Whitlow your number and told him why.", "ok": "THANK HIM"},
+        "res_full": {"speaker": "Hollis Grady", "text": "You sent Ms. Cedar back to me with the right question. I had a small office to pass on to you, but I hear your pipeline is full. I will keep you in mind. I do not forget.", "ok": "THANK HIM"},
+    },
     "rumour": {
         "lynk": {"from": "Garrison", "text": "Somebody is telling prospects we are not bonded and not HIPAA safe. Guess who sits at the next table at the Chamber lunch."},
         "card": {
@@ -67842,12 +68121,14 @@ const WEEKS := {
 	7: "assess",
 	9: "laundered",
 	11: "plumb",
+	14: "favour",
 	12: "intro",
 	13: "rumour",
 	15: "audit",
 	17: "scorecard"
 }
 const COUNTER_AFTER := 2  # weeks until Rex answers a badmouthing
+const FAVOUR_QUALITY := 72  # the lead Hollis passes on in week 14 (a referral from a careful man is a warm one)
 
 
 # ---- the incumbent -------------------------------------------------------------------------------------
@@ -68368,6 +68649,8 @@ static func week(day: int) -> void:
 			beat_laundered()
 		"plumb":
 			beat_plumb()
+		"favour":
+			beat_favour()
 		"intro":
 			beat_intro()
 		"rumour":
@@ -68629,6 +68912,36 @@ static func _plumb_pick(id: String) -> void:
 	if _room():
 		SalesCampaign.accept_lead(l)
 	sb.say("plumb", "res_" + id, [], Callable(), "Ms. Cedar")
+
+
+# week 14: Hollis Grady does not forget. If you sent Ms. Cedar back to him in week 11 he passes on a prospect that is too small for
+# Plumb Line: a warm lead with no incumbent (flag `favour` = "lead" / "full" / "none").
+static func beat_favour() -> void:
+	var sb := SalesCampaign.SalesBeats
+	if not bool(sb.flag("hollis_favour", false)):
+		sb.set_flag("favour", "none")
+		return
+	sb.set_flag("hollis_favour", false)
+	sb.lynk("favour")
+	if not _room():
+		sb.set_flag("favour", "full")
+		Temptation.change_consc(1)
+		sb.say("favour", "res_full")
+		return
+	var l := _story(
+		"Tidewater Title",
+		"law",
+		"Mr. Whitlow",
+		9,
+		"nine people and nobody to call",
+		FAVOUR_QUALITY,
+		"favour",
+		"none"
+	)
+	SalesCampaign.Deals.note(l, "SENT BY HOLLIS GRADY")
+	SalesCampaign.accept_lead(l)
+	sb.set_flag("favour", "lead")
+	sb.say("favour", "res_lead")
 
 
 # week 13: Big Cheese badmouths us (bonded? HIPAA safe?); the rumour lasts four weeks
@@ -74989,7 +75302,7 @@ static func pm_has(eff: String) -> bool:
 
 # read by Msp.new_day: the chance a backup quietly fails overnight
 static func backup_fail_chance() -> float:
-    return 0.04 if pm_has("backups") else 0.08
+    return (0.04 if pm_has("backups") else 0.08) * Habits.night_mult()  # R38: H9, 8 percent -> 6 percent
 
 
 # read by Growth.fail_adjust: a runbook makes fixes a little safer
@@ -75825,6 +76138,8 @@ const REVENGE_CHANCE := 0.20
 const PORTS_CHANCE := 0.03  # per client and week, once the firewall review is stale
 const SKIPPED := "temp_restore"  # the skeleton id of the skipped restore test
 const SKIP_FAIL := 1.0  # while it is in the folder a restore fails for sure (a real ransom, not a flat bill)
+const NIGHT_CUT := 0.25  # H9: a quarter fewer failed overnight jobs (8 percent -> 6 percent)
+const OVERRUN_CUT := 0.5  # H3: the share of a failed cutover's overrun that a change request saves
 
 const DEFAULT_TEXT := {
 	"short_H1": "RANSOM RESTORES 100%, BILL HALVED, LESS POACH RISK",
@@ -75860,7 +76175,12 @@ const DEFAULT_TEXT := {
 	"The one page scorecard went to %s: tickets closed, backups tested, what we fixed. Mood up.",
 	"review":
 	"Lost account review done. The real cause is written down, and the same mistake will cost less for eight weeks.",
-	"offboard": "%s's logins and keys are closed. The checklist is signed."
+	"offboard": "%s's logins and keys are closed. The checklist is signed.",
+	"overrun": "THE CHANGE REQUEST HAD A ROLLBACK STEP. THE OVERRUN COST $%d LESS.",
+	"pw_text":
+	"The printer's admin page still answers to admin and admin. So does the ceiling camera. Nobody has changed either since the day they were unboxed.",
+	"pw_summary": "Default passwords on the printer and the camera",
+	"pw_body": "%s here: you said our printer and camera still have the factory passwords. Can you change them?"
 }
 static var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 
@@ -76178,6 +76498,7 @@ static func _perform(id: String) -> String:
 		"H1":
 			var c := _backup_client()
 			Msp.backup_check(c)
+			Msp.backups[c]["tested"] = Campaign.day  # the TESTED date on the RMM BACKUPS tab
 			e["tested"] = Campaign.day
 			Owner.habits[id] = e
 			return str(TEXT.h1) % _client_short(c)
@@ -76534,6 +76855,44 @@ static func site_share() -> float:
 # fixed-price creep (H3: 30 percent -> 18 percent)
 static func creep(base: float) -> float:
 	return base - (base - 0.18) * factor("H3") if base > 0.18 else base
+
+
+# H9: the share of the overnight job failures left once the windows follow the calendar (8 percent -> 6 percent fresh)
+static func night_mult() -> float:
+	return 1.0 - NIGHT_CUT * factor("H9")
+
+
+# H3: a failed cutover costs half with a change request on file. `eaten` is what the overrun cost; the part that comes back
+static func overrun_back(eaten: int) -> int:
+	var back := int(float(eaten) * OVERRUN_CUT * factor("H3"))
+	if back > 0:
+		touch("H3")
+		Hints.toast(str(TEXT.overrun) % back, 4.0)
+	return back
+
+
+# H14: the default password finding of the walk-around. Once per client, and never at a site whose passwords were changed
+static func default_pw(client: int) -> bool:
+	if Campaign.mode != "owner" or client < 0:
+		return false
+	if _listed(entry("H14").get("sites", []), client):
+		return false
+	return not _listed(Owner.flags.get("pw_seen", []), client)
+
+
+# the finding itself (the shape of an Onsite.FINDINGS entry); showing it marks the client as seen
+static func pw_finding(client: int) -> Dictionary:
+	var seen: Array = Owner.flags.get("pw_seen", [])
+	seen.append(client)
+	Owner.flags["pw_seen"] = seen
+	return {
+		"text": str(TEXT.pw_text),
+		"summary": str(TEXT.pw_summary),
+		"fix": "password",
+		"pri": 3,
+		"body": str(TEXT.pw_body),
+		"project": "security"
+	}
 ''')
 
 write("scripts/temptation.gd", '''extends RefCounted
@@ -77654,6 +78013,8 @@ static func visit(_owner: Node, kind: String) -> void:
 	var client := target()
 	if client < 0:
 		return
+	if not Onsite.has_site(client):
+		return  # X12: no office to walk around, so no visit and no inherited mess to carry (the findings only show on a visit)
 	Owner.flags.erase("takeover_pending_%d" % client)
 	Owner.flags["tk_%d" % client] = {"found": [], "acted": [], "done": []}
 	begin(client, JOBS.size())

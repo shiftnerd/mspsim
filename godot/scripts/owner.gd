@@ -426,12 +426,12 @@ const DEFAULT_CARDS := {
 				"roll":
 				[
 					[0.6, {"cash": 3000, "rep": 1}, "Smooth job, nice margin."],
-					[0.4, {"cash": 1800, "mood": {"1": -3}}, "The job overran. You ate $1,200."]
+					[0.4, {"cash": 1800, "mood": {"1": -3}, "overrun": 1200}, "The job overran. You ate $1,200."]
 				],
 				"roll_scoped":
 				[
 					[0.9, {"cash": 3000, "rep": 2}, "The scoping day paid off: a smooth job."],
-					[0.1, {"cash": 2400}, "A small overrun, nothing serious."]
+					[0.1, {"cash": 2400, "overrun": 600}, "A small overrun, nothing serious."]
 				]
 			},
 			{
@@ -2029,6 +2029,8 @@ func _picked(id: String, index: int) -> void:
 
 func apply(fx: Dictionary) -> void:
 	cash += int(fx.get("cash", 0))
+	if fx.has("overrun"):
+		cash += Habits.overrun_back(int(fx.overrun))  # R38: H3, a failed cutover costs half with a change request
 	if fx.has("rep"):
 		Campaign.adjust_rep(int(fx.rep))
 	if fx.has("mood_all"):
@@ -2190,12 +2192,14 @@ func apply(fx: Dictionary) -> void:
 		Temptation.switch_vendor(self)  # the intro rate, and the costs the card does not show
 	if fx.get("ransom_end", "") == "insured" or fx.get("bec", "") == "claim":
 		Temptation.claim(self)  # R38: an insurance claim reads the renewal answers (the dateless temp_quest bill)
-	if fx.has("visit"):
-		Takeover.visit(self, str(fx.visit))
 	if fx.has("lead"):
 		_leads += int(fx.lead)
 	if fx.has("rival"):
 		Rival.apply_fx(self, fx.rival)
+	if fx.has("visit"):
+		# after the rival ops: the week 11 card brings the client back (`return`) in the same fx, and the visit needs them back
+		# (X12: before this order the real trigger never started a visit, Takeover.target() found nobody)
+		Takeover.visit(self, str(fx.visit))
 	Msp.changed.emit()
 
 

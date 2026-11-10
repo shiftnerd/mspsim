@@ -67,6 +67,7 @@ var _call_t := 0.0
 var _call_len := 9.0  # seconds of the call (the owners' last-resort answers are shorter)
 var _t := 0.0
 var _life: RefCounted = null  # the seated gesture picker (seat_life.gd), made when the person first sits idle
+const CUP_REACH_FRAME := 1  # sitcup: the frame of the sitmouse slide on which the hand is at the cup
 var _gesture := ""  # the seated gesture playing now ("sitstretch" ... "sitnod", or "sip")
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -813,6 +814,8 @@ func _start_use() -> void:
 # grumble, a speech bubble, Game.busy, lights out; with a drink only head gestures and the sip.
 func _update_gesture(delta: float) -> void:
 	if _gesture != "":
+		if _gesture == "sitcup" and sprite.frame >= CUP_REACH_FRAME and _item.item == "" and held != "":
+			_unstash()  # the hand has reached the cup: it comes along for the rest of the slide (HeldItem follows the hand)
 		return
 	var idle := (
 		seat != null
@@ -856,6 +859,9 @@ func _start_gesture() -> void:
 			_desk.item = ""
 		sprite.play("sitsip_%s" % facing)
 		return
+	if g == "sitcup":  # R26: the coffee-cup reach while typing. The near hand slides over to the cup on the desk, pulls it
+		sprite.play("sitmouse_%s" % facing)  # closer and puts it back: no sip. The frames are sitmouse's, the cup is the held item.
+		return
 	if g == "sitphone":
 		_item.item = "phone"
 	sprite.play("%s_%s" % [g, facing])
@@ -876,7 +882,7 @@ func gesturing() -> bool:
 func _cancel_gesture() -> void:
 	var g := _gesture
 	_gesture = ""
-	if g == "sip":
+	if g == "sip" or g == "sitcup":
 		_stash()
 	elif g == "sitphone":
 		_item.item = ""
@@ -892,6 +898,8 @@ func _end_gesture() -> void:
 			_item.item = ""
 		else:
 			_stash()
+	elif g == "sitcup":
+		_stash()  # the cup is back on the desk, nothing was drunk
 	elif g == "sitphone":
 		_item.item = ""
 	_play(_rest_anim())

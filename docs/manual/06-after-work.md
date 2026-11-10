@@ -167,6 +167,8 @@ The card that opens the race offers three events. Press **`Left`** / **`Right`**
 
 **The chair fight.** `Z` and `X` push you the way you face, exactly as in the race. **`Left`** / **`Right`** spin the chair around (it takes a moment, and you cannot push while it turns). `Up` / `Down` change lane. When the chairs meet in one lane, the one rolling clearly faster lands a **bump**: the other chair is knocked back and spins, dizzy, for a second. About the same speed is a clash and nobody scores. In another lane the chairs roll past each other, and a chair with its back to you is bumped as soon as you are fast enough. After 75 seconds the most bumps win.
 
+With **two players** the chair fight is a duel between the two of you: a chair each, and the crew all watch. Player 1 keeps `Z` / `X`, the arrows to turn and change lane. Player 2 pushes with `A` and `B` on their gamepad and turns and changes lane with the stick or the D-pad. It is a friendly: one star for playing, whoever wins. (The two races stay a tandem: one chair, a leg each.)
+
 > **TIP:** Watch the rhythm, not the chair.
 
 ---
@@ -183,7 +185,7 @@ Capture the flag on a western main street, three a side: you and two of the crew
 | Hold `Shift` (the pad's `B`) | Duck. Right behind a barricade, a ducking player cannot be hit from that side; in the open it only makes you a smaller target. You cannot fire while ducking. |
 | `Esc` | Leave. |
 
-A tag puts a player out for four seconds and drops the flag they carried. Touch the other team's flag to pick it up, carry it back to your own end to score. Touch your own flag, if it was dropped, to send it home. First to three captures wins; at 2:30 the higher score wins. It costs $200 in the owner campaign.
+A tag puts a player out for four seconds and drops the flag they carried. Touch the other team's flag to pick it up, carry it back to your own end to score. Touch your own flag, if it was dropped, to send it home. First to three captures wins; at 2:30 the higher score wins. Level at 2:30 is **overtime**: 45 seconds of sudden death in which a tagged player does not come back. The next flag carried home wins, and so does the last team with anybody standing. Still level after that is a draw. It costs $200 in the owner campaign.
 
 About one evening in three is a **night match**: the street is dark, the saloon windows are lit, every shot flashes, and a paintball only flies about four fifths as far, for both teams. Press **`Left`** / **`Right`** on the card before you start to pick day or night yourself.
 
