@@ -1128,6 +1128,7 @@ var _roll_day := -1
 var _spawn_at := -1.0
 var calls := 0  # onsite jobs created so far (the roulette salt)
 var _carry := false  # X10: a job call that waited for a free slot all day comes on the next visit day
+var _rescued := false  # X6: an owner already rang the client on this visit
 var recent: Array = []  # the last clients who called
 var seen_jobs := {}  # job id -> how often it came up
 
@@ -1601,6 +1602,7 @@ func _depart(id: int, forced := {}) -> void:
 	job = forced if not forced.is_empty() else job_for(t)
 	done = false
 	_event_done = false
+	_rescued = false
 	_begin_trip()
 	Msp.set_status(id, "In Progress")
 	Msp.add_note(id, "Technician dispatched onsite.")
@@ -2069,6 +2071,8 @@ func _after(ok: bool) -> void:
 	if ok:
 		_finish_job()
 		return
+	if is_tech() and not _rescued and Owners.visit_rescue(client, ticket_id) != "":
+		_rescued = true  # X6: the visit is going badly, an owner rang the client (once a visit)
 	if not _event_done:
 		_maybe_event()
 
@@ -2283,6 +2287,8 @@ func _go_home(dropped: bool) -> void:
 	World.time_scale = _prev_scale
 	Game.go("main_floor", "from_outside")
 	SalesCampaign.visit_end()
+	if is_tech():
+		Owners.visit_cover()  # X6: an owner watched the queue while you were out
 	if Campaign.active:
 		Hints.toast(str(TEXT.home) % _back_min, 4.0)
 	else:  # free play has no queue to grow
