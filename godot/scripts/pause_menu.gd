@@ -165,13 +165,13 @@ func _activate() -> void:
 		close()
 		Toolbox.open_outfit.call_deferred()
 		return
-	if _row_id(_sel) == "career":
+	if _row_id(_sel) in ["career", "free"]:
+		var free_menu := _row_id(_sel) == "free"
 		close()
-		Career.open_screen.call_deferred()
-		return
-	if _row_id(_sel) == "free":
-		close()
-		Toolbox.open_free_menu.call_deferred()
+		if free_menu:
+			Toolbox.open_free_menu.call_deferred()
+		else:
+			Career.open_screen.call_deferred()
 		return
 	if _sel == _labels().size() - 1:
 		_confirm = true

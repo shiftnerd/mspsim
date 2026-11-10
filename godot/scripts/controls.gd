@@ -742,7 +742,7 @@ func label(action: String) -> String:
 
 # a hint line with its key words swapped for what works now: a remapped menu key shows its new key, a pad shows its buttons.
 # `map` adds this screen's own letters ({"P": "pray"}: word -> action). With the default keys on a keyboard the text is unchanged.
-func hint(text: String, map: Dictionary = {}) -> String:
+func hint(text: String, map: Dictionary = {}, roles: bool = true) -> String:
 	if not pad_active and _overrides.is_empty() and _alias.is_empty():
 		return text
 	var out := ""
@@ -752,17 +752,17 @@ func hint(text: String, map: Dictionary = {}) -> String:
 		if ch != "" and ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
 			token += ch
 			continue
-		out += _hint_word(token, map) + ch
+		out += _hint_word(token, map, roles) + ch
 		token = ""
 	return out.replace("((", "(").replace("))", ")")
 
 
 # the same for a walking-around prompt ("E: SIT", "P: PHONE"): the walking actions follow their remap
 func world_hint(text: String) -> String:
-	return hint(text, HINT_WORLD)
+	return hint(text, HINT_WORLD, false)  # a sentence may say LEFT or UP as a plain word: the menu roles stay out of it
 
 
-func _hint_word(token: String, map: Dictionary) -> String:
+func _hint_word(token: String, map: Dictionary, roles: bool) -> String:
 	if token == "":
 		return ""
 	if map.has(token):
@@ -772,8 +772,8 @@ func _hint_word(token: String, map: Dictionary) -> String:
 			return shown if shown != "" else token
 		return token
 	if pad_active:
-		return str(HINT_PAD.get(token, token))
-	if HINT_ROLES.has(token):
+		return str(HINT_PAD.get(token, token)) if roles or not token in ["Z", "X", "E", "SHIFT"] else token
+	if roles and HINT_ROLES.has(token):
 		var extra := menu_key_of(str(HINT_ROLES[token]))
 		return key_name(extra) if extra > 0 else token
 	return token

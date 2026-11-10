@@ -111,7 +111,10 @@ Plug it in and go. A gamepad covers walking, using things and the menus. For any
 | **Sip your drink** | `LB` | |
 | **Cell phone** | `Back` / `Select` | |
 | **Pause** | `Start` | |
-| **Roll your chair** (seated) | Hold `B` and push the stick or D-pad sideways | The same as `Shift` + `A` / `D`. |
+| **Roll your chair** (seated) | Hold `LT` (or `B`) and push the stick or D-pad sideways | The same as `Shift` + `A` / `D`. |
+| **Pick the next target** | `RB` | The same as `Tab`. |
+| **Next person** (Free Play) | Click the right stick (`R3`) | The same as the `1` to `7` keys. |
+| **Free Play menu** | `Start`, then **FREE PLAY MENU** | The mutator, the toolbox, a team outing, the next person: what the keyboard has on the backtick key, `Shift+F10`, `O` and `1` to `7`. |
 | **Stand up** (seated) | Move, or press `A` | |
 
 ### In menus, cards and screens
@@ -121,6 +124,18 @@ Plug it in and go. A gamepad covers walking, using things and the menus. For any
 | **Move the highlight** | D-pad or left stick |
 | **OK** | `A` |
 | **Back** | `B` |
+| **A computer app's letter keys** (CRM, Dispatch, Knowledge) | `Y` steps through them (the strip above the taskbar names the one you are on), `X` presses it |
+| **Printer: shake, pray, answer** | `LB` / `RB` shake, `Y` prays, `Up` / `Down` mark an answer and `A` gives it |
+| **Escape room: a nudge** | `Y` |
+
+Hint lines follow your controls: with a gamepad in your hands they show `(A)`, `(B)` and so on instead of key names, and a key
+you remapped shows as the key it is now.
+
+### Touch screens
+
+On a touch screen the game draws a stick (bottom left), `A` and `X` buttons (bottom right; `X` turns into `B` while a screen is
+open), a **MENU** button (top right), **NEXT** (the next target) and, while you sit, **ROLL** (hold it and push the stick).
+They do exactly what the gamepad buttons of the same name do. Anything else on screen can be tapped like a mouse click.
 
 ### Not on the pad (yet)
 

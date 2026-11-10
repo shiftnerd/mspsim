@@ -76,6 +76,8 @@ func _run() -> void:
 	_check(c.hint(line) == "UP DOWN ROW  %s GO  ESC BACK" % c.key_name(KEY_I), "the hint shows the remapped menu key (%s)" % c.hint(line))
 	_check(c.rebind("interact", KEY_G), "interact goes to G")
 	_check(c.world_hint("E: SIT  P: PHONE") == "%s: SIT  P: PHONE" % c.key_name(KEY_G), "a walking prompt shows the remapped key (%s)" % c.world_hint("E: SIT  P: PHONE"))
+	_check(c.rebind_menu("menu_left", KEY_U), "an extra key on MENU LEFT")
+	_check(c.hint("LEFT RIGHT CHOOSE") == "U RIGHT CHOOSE" and c.world_hint("2 TICKETS LEFT") == "2 TICKETS LEFT", "a menu hint follows it, a sentence that says LEFT does not")
 	c.reset_binds()
 	_check(c.hint(line) == line, "reset: the default text again")
 	c.pad_active = true
