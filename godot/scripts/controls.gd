@@ -321,6 +321,8 @@ func rebind(action: String, code: int) -> bool:
 
 # the name of a physical key
 func key_name(code: int) -> String:
+	if DisplayServer.get_name() == "headless":  # no keyboard layout to ask (tests): the key as it is
+		return OS.get_keycode_string(code).to_upper()
 	return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(code)).to_upper()
 
 

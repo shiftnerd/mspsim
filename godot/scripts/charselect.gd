@@ -618,6 +618,15 @@ func change_tier(delta_tier: int) -> void:
 	queue_redraw()
 
 
+# the tier step (R1): choose EASY / NORMAL / HARD by index; remembered in the settings file like the LEVEL row
+func pick_tier(index: int) -> void:
+	Difficulty.set_tier(str(Difficulty.TIERS[clampi(index, 0, Difficulty.TIERS.size() - 1)]))
+	Difficulty.save_settings()
+	if _panel != null:
+		_panel.refit()
+	queue_redraw()
+
+
 # X (or a click on the SEED chip): type, paste, roll or pick today's seed
 func open_seed() -> void:
 	if overlay:
@@ -656,6 +665,8 @@ func flow() -> Array:
 	var out: Array = ["create" if direct else "char"]
 	if needs_phone():
 		out.append("phone")
+	if is_campaign():
+		out.append("tier")  # R1: the difficulty is a step of its own in a campaign (Free Play keeps the LEVEL row of the options)
 	out.append("options")
 	if needs_build():
 		out.append("build")
@@ -738,6 +749,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if step == "options" and _options_key(event, dir):
+			get_viewport().set_input_as_handled()
+			return
+		if step == "tier" and dir != "":  # the tier step: any direction steps through EASY / NORMAL / HARD
+			pick_tier(clampi(Difficulty.tier_index() + (-1 if dir in ["up", "left"] else 1), 0, Difficulty.TIERS.size() - 1))
 			get_viewport().set_input_as_handled()
 			return
 		if dir == "left":
@@ -1248,6 +1263,10 @@ func _click(at: Vector2) -> void:
 			move(-1)
 		"next":
 			move(1)
+		"tier_pick":
+			pick_tier(int(r[2]))
+		"tier_go":
+			confirm()
 		"tier_down":
 			change_tier(-1)
 		"tier_up":
@@ -1328,7 +1347,7 @@ func _draw() -> void:
 	var narrow := size.x < 250.0
 	_rects.clear()
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.04, 0.08, 0.78 if overlay else 0.9))  # the outfit overlay lets the room show through
-	var titles := {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE", "options": "SET UP THE RUN"}
+	var titles := {"char": "CHOOSE YOUR CHARACTER", "create": "MAKE YOUR OWN PERSON", "phone": "PICK YOUR PHONE", "options": "SET UP THE RUN", "tier": "HOW HARD?"}
 	if overlay:
 		titles["create"] = "CHANGE YOUR LOOK"
 	var heading: String = titles.get(step, "BUILD YOUR CHARACTER")
@@ -1345,6 +1364,9 @@ func _draw() -> void:
 	elif step == "options":
 		_place_sprites(size, narrow)
 		_draw_options(size, narrow)
+	elif step == "tier":
+		_place_sprites(size, narrow)
+		_draw_tier(size, narrow)
 	elif step == "build":
 		_place_sprites(size, narrow)
 		_panel.draw(self, size, narrow, _rects)
@@ -1371,6 +1393,9 @@ func _draw() -> void:
 			_keys_line("P PRESET  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
 			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE  P PRESET  ENTER GO  ESC BACK", size.y - 9.0)
+		return
+	if step == "tier":
+		_keys_line("UP DOWN CHOOSE  ENTER GO  ESC BACK", size.y - (12.0 if narrow else 9.0))
 		return
 	if step == "options":
 		if narrow:
@@ -1466,8 +1491,31 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
 			ny += 8.0
 
 
+# the tier step (R1): EASY / NORMAL / HARD as three rows, NEXT, and under them the campaign's own line about the chosen
+# tier (Difficulty.TIER_NOTES). The options page still shows the choice in its LEVEL row.
+func _draw_tier(size: Vector2, narrow: bool) -> void:
+	var lay := _create_layout(size, narrow)
+	var x0: float = lay.x0
+	var pitch: float = lay.pitch
+	var who := Look.final_name() if is_custom() else str(info(current_id()).name)
+	_txt(who, Vector2(floorf(float(lay.cx) - float(PixelFont.width(who)) * 0.5), float(lay.feet) + 3.0), GOLD)
+	for i in Difficulty.TIERS.size():
+		var id := str(Difficulty.TIERS[i])
+		var hot := id == Difficulty.tier
+		var box := Rect2(x0, float(lay.y0) + float(i) * pitch + 1.0, 84.0, pitch - 3.0)
+		_chip(box, str(Difficulty.LABELS[id]), hot, "tier_pick", i, PANEL if hot else INK)
+		if hot:
+			_txt("<", Vector2(box.end.x + 4.0, box.position.y + floorf((box.size.y - 5.0) * 0.5)), GOLD)
+	var go_y := float(lay.y0) + float(Difficulty.TIERS.size()) * pitch
+	_chip(Rect2(x0, go_y + 1.0, 56.0, pitch - 3.0), "NEXT", false, "tier_go")
+	var ny := go_y + pitch + 3.0
+	for line in _wrap(Difficulty.tier_note(mode), int((size.x - x0 - 6.0) / 4.0), 4):
+		_txt(str(line), Vector2(x0, ny), DIM)
+		ny += 8.0
+
+
 func _place_sprites(size: Vector2, narrow: bool) -> void:
-	if step == "create" or step == "options":  # the one person, big enough to see the colours, beside the rows
+	if step == "create" or step == "options" or step == "tier":  # the one person, big enough to see the colours, beside the rows
 		var lay := _create_layout(size, narrow)
 		var shown := _preview()
 		for spr in _sprites:

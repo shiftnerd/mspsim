@@ -29,6 +29,7 @@ func _process(_delta: float) -> bool:
 		80:
 			current_scene._select.setup("tech")
 			current_scene._select.confirm()  # phone
+			current_scene._select.confirm()  # the tier step (R1)
 			current_scene._select.confirm()  # options
 			current_scene._select.confirm()  # build
 		100:
@@ -48,6 +49,7 @@ func _process(_delta: float) -> bool:
 		120:
 			_shot("note")
 			cs.setup("owner")
+			cs.confirm()  # the tier step (R1)
 			cs.confirm()  # options
 			cs.confirm()  # build
 			cs._panel.row = 2
@@ -57,7 +59,9 @@ func _process(_delta: float) -> bool:
 			_shot("owner_capped")
 			cs.back()
 			cs.back()
+			cs.back()
 			cs.move(1)
+			cs.confirm()
 			cs.confirm()
 			cs.confirm()
 			cs._panel.cycle_preset(1)
@@ -66,6 +70,7 @@ func _process(_delta: float) -> bool:
 		160:
 			_shot("garrison")
 			cs.setup("sales")
+			cs.confirm()  # the tier step (R1)
 			cs.confirm()  # options
 			cs.confirm()  # build (the sales campaign's stat set, C3)
 			cs._panel.row = 1

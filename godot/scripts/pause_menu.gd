@@ -234,8 +234,8 @@ func _remap_key(event: InputEvent) -> void:
 			_capture = false
 		Controls.capturing = _capture
 		return
-	var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
-	var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
+	var up: bool = Controls.nav(event) == "up"  # arrows, W A S D, the D-pad or the stick
+	var down: bool = Controls.nav(event) == "down"
 	if Controls.back(event) or Controls.matches(event, "pause"):
 		_page = 0
 	elif up:
@@ -294,6 +294,8 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed and not event.echo or event is InputEventJoypadButton and event.pressed:
 		_key(event)
+	elif event is InputEventJoypadMotion and Controls.nav(event) != "":  # the stick moves the cursor too (R14: pad-only play)
+		_key(event)
 	elif event is InputEventMouseMotion and _page < 0:
 		for i in _labels().size():
 			if _row_rect(i).has_point(event.position) and _sel != i:
@@ -316,10 +318,10 @@ func _key(event: InputEvent) -> void:
 		_remap_key(event)
 		_canvas.queue_redraw()
 		return
-	var left: bool = event.is_action("ui_left") or Controls.word(event) in ["left", "a"]
-	var right: bool = event.is_action("ui_right") or Controls.word(event) in ["right", "d"]
-	var up: bool = event.is_action("ui_up") or Controls.word(event) in ["up", "w"]
-	var down: bool = event.is_action("ui_down") or Controls.word(event) in ["down", "s"]
+	var left: bool = Controls.nav(event) == "left"
+	var right: bool = Controls.nav(event) == "right"
+	var up: bool = Controls.nav(event) == "up"  # arrows, W A S D, the D-pad or the stick
+	var down: bool = Controls.nav(event) == "down"
 	if Controls.matches(event, "pause") or Controls.back(event):
 		if _page >= 0:
 			_page = -1

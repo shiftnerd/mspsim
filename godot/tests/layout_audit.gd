@@ -162,10 +162,14 @@ func _title_phase() -> void:
 		cs.setup(mode)
 		await _wait(3)
 		var guard := 0
-		while cs.step != "options" and guard < 4:
+		while cs.step != "options" and guard < 5:
 			if cs.step == "phone":
 				_begin()
 				await _end("phone " + mode)
+			if cs.step == "tier":  # R1: the difficulty step of a campaign
+				_begin()
+				cs.queue_redraw()
+				await _end("tier " + mode)
 			cs.confirm()
 			guard += 1
 		_begin()

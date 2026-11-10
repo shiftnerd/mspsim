@@ -524,8 +524,10 @@ func _init() -> void:
 	cs._unhandled_input(_key(KEY_ENTER))
 	cs._unhandled_input(_key(KEY_ENTER))
 	cs.confirm()  # the build step is on: Enter on the phone opens it, then confirm starts
-	if result.is_empty():
+	var more := 0
+	while result.is_empty() and more < 4:  # the tier step (R1), the options and the build come before the start
 		cs.confirm()
+		more += 1
 	_check(
 		not result.is_empty() and result.character == "office_intern" and result.look.name == "ZOE",
 		"confirming returns the intern sheet and the look"
