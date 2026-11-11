@@ -676,7 +676,7 @@ static func _week_memory() -> void:
 static func _week_ports(owner: Node) -> void:
 	var s := state("H8")
 	if (s == STALE or s == LAPSED) and owner.flags.get("rdp_safe", false):
-		if randf() < minf(0.3, PORTS_CHANCE * float(Sales.active.size())):
+		if Difficulty.rng("owner.luck").randf() < minf(0.3, PORTS_CHANCE * float(Sales.active.size())):
 			owner.flags["rdp_safe"] = false
 			_card("habit_ports", "H8", [])
 
@@ -791,7 +791,7 @@ static func departure(who: String) -> void:
 		Msp.send_text("Christy", str(TEXT.offboard) % who)
 		return
 	var s := state("H6")
-	if (s == STALE or s == LAPSED) and randf() < REVENGE_CHANCE:
+	if (s == STALE or s == LAPSED) and Difficulty.rng("owner.luck").randf() < REVENGE_CHANCE:
 		_card("habit_revenge", "H6", [who])
 
 

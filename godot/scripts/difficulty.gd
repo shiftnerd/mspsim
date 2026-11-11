@@ -204,6 +204,9 @@ const TABLE := {
 	"owner.cost": [0.95, 1.0, 1.03],
 	"sales.lead": [5, 0, -5],
 	"sales.flow": [0.65, 0.5, 0.3],  # chance of a third new lead in a week
+	# X13: two missed quarters end the sales job (0), unless the year as a whole reached this share of both quotas (hard only:
+	# its quota is a fifth higher, and a careful year that came close was let go on 1 seed in 5, in Year 2 on 3 in 5)
+	"sales.keep": [0.0, 0.0, 0.65],
 	"service.trust": [0.7, 1.0, 1.6],
 }
 

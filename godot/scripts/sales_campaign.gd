@@ -290,7 +290,7 @@ const DEFAULT_BEAT_TEXT := {
 			"options": [
 				{"id": "garrison", "label": "GARRISON: TAKE THE LOGO AT 30% OFF"},
 				{"id": "alan", "label": "ALAN: 10% OFF, LET THEM WALK"},
-				{"id": "broker", "label": "BROKER A SCOPED 15% (2 HOURS)"},
+				{"id": "broker", "label": "BROKER A SCOPED 15% (2 H, $300)"},
 			],
 		},
 		"res_garrison": {"speaker": "{tech_owner}", "text": "Thirty percent off. Fine. I said what I said, I will remember who wanted the logo when payroll is short."},
@@ -306,7 +306,7 @@ const DEFAULT_BEAT_TEXT := {
 			"text": "%s: your handover promised us a one hour response and we have waited two days. We want a refund of the last month, $%d, or we walk. I am not angry. I am done.",
 			"options": [
 				{"id": "refund", "label": "REFUND THE MONTH (-$%d)"},
-				{"id": "credit", "label": "OFFER HALF A MONTH AND A RESET"},
+				{"id": "credit", "label": "HALF A MONTH BACK (-$%d), A RESET"},
 				{"id": "refuse", "label": "REFUSE: THE CONTRACT SAYS SO"},
 			],
 		},
@@ -985,7 +985,7 @@ func _crunch_card(second := false) -> void:
 func _warning_card() -> void:
 	Cards.ask(
 		"{sales_owner}",
-		"You missed the quarter: %d%% of quota. This is a performance warning. Miss the next one and we part ways. What do you need?" % quota_pct(0),
+		"You missed the quarter: %d%% of quota. This is a performance warning. Miss the next one and we part ways.%s What do you need?" % [quota_pct(0), (" Unless the two quarters together reach %d%% of the year: it is a big number, I know." % int(100.0 * Difficulty.cf("sales.keep"))) if Difficulty.cf("sales.keep") > 0.0 else ""],
 		[
 			{"label": "UNDERSTOOD. I WILL CLOSE MORE.", "id": "ok"},
 			{"label": "THE LEADS WERE THIN", "id": "excuse"},
@@ -1634,7 +1634,7 @@ func settle() -> Dictionary:
 			warned = true
 			verdict += Difficulty.ct("coach_first") if Difficulty.cozy_on() else ": WARNING"
 		elif q_result[qi] == "MISS":
-			verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else ": SECOND MISS"
+			verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else (": SECOND MISS, THE YEAR HELD AT %d%%" % int(100.0 * year_share()) if year_saves() else ": SECOND MISS")
 		_lynk("Garrison", "Quarter closed at %d%%. %s" % [pct, "Good work." if pct >= 100 else "We need to talk."])
 	var mood := client_mood()
 	var grade_rep: Dictionary = {"S": 2, "A": 1, "B": 0, "C": -1, "D": -2}
@@ -1657,7 +1657,8 @@ func settle() -> Dictionary:
 		if Difficulty.cozy_on():
 			rows.append([Difficulty.ct("coach_row"), Difficulty.ct("coach_text"), warn])
 		else:
-			rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
+			var keep := Difficulty.cf("sales.keep")  # X13: on hard the whole year can still save the job
+			rows.append(["PERFORMANCE WARNING", ("MISS AGAIN UNDER %d%% OF THE YEAR AND YOU ARE OUT" % int(100.0 * keep)) if keep > 0.0 else "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
 	last_report = verdict
 	return {
 		"rows": rows,
@@ -1686,7 +1687,19 @@ func _money(n: int) -> String:
 
 # ---- the verdict (week 20) -----------------------------------------------------------------------------
 func pip_failed() -> bool:
-	return q_result[0] == "MISS" and q_result[1] == "MISS"
+	return q_result[0] == "MISS" and q_result[1] == "MISS" and not year_saves()
+
+
+# X13: how much of the year's two quotas together was signed (1.0 = both targets)
+func year_share() -> float:
+	return float(int(q_signed[0]) + int(q_signed[1])) / float(maxi(1, quota_target(0) + quota_target(1)))
+
+
+# X13 (Difficulty `sales.keep`, hard only): the hard quota is a fifth higher than the plan needs, so two missed quarters only end
+# the job there when the year as a whole came in under this share of it. 0 = off: two misses are the end (easy, normal).
+func year_saves() -> bool:
+	var keep := Difficulty.cf("sales.keep")
+	return keep > 0.0 and year_share() >= keep - 0.0001
 
 
 func director_ok() -> bool:
@@ -1749,6 +1762,8 @@ func review_lines(page: int, ending: String) -> Array:
 						good if res == "HIT" else (bad if res == "MISS" else ink),
 					]
 				)
+			if q_result[0] == "MISS" and q_result[1] == "MISS" and year_saves():
+				lines.append(["THE YEAR: %d%% OF BOTH QUOTAS TOGETHER. ENOUGH TO STAY." % int(100.0 * year_share()), ink])  # X13
 			lines.append(["DEALS WON %d  QUOTES LOST %d  COMMISSION $%d" % [wins, losses, commission_total], ink])
 			lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
 			lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])

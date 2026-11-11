@@ -104,7 +104,7 @@ func _init() -> void:
 	_check(absf(o.security_risk() - 1.5 * o.edge("stack_risk")) < 0.001, "the cheap RMM is riskier")
 	o.fire({"event": "vendor_breach"})
 	_check(
-		cards.is_open and cards.options.size() == 3 and cards.text.contains("SnoutTech"),
+		cards.is_open and cards.options.size() == 4 and cards.text.contains("SnoutTech"),
 		"the vendor breach card names your RMM"
 	)
 	var cash0: int = o.cash
