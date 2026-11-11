@@ -312,3 +312,189 @@ PR.build{name = "game_dinner_plate_d", ase = ASE, layers = {
   {name = "Food", x = 1, y = 0, pal = {f = "#6A9A4A", d = "#4A7A34", c = "#E8C860"}, rows = {".ffff.c", "ffdfffc"}},
 }}
 export("dinner_plate_d", "godot/assets/props/")
+
+-- ====================================================================================================================
+-- R8: event card spot illustrations, 32 x 24 content (34 x 26 with the outline), one per season and one per common card theme.
+-- Sources office/pieces/ui_card_<id>.aseprite, PNGs godot/assets/ui/card_<id>.png (cards.gd draws one at the top right of a card
+-- when it has the width and height for it). Seasons: holidays, tax, xp, school. Themes (the six most common kinds of deck card:
+-- printer 5, phone 5, food 5, power / climate 4, security 5, backup / storage 3): printer, phone, food, power, security, backup.
+-- ====================================================================================================================
+local CARDPAL = {k = "#17121F", w = "#F4F2EA", W = "#C8CCD8", g = "#8A8F9A", G = "#5A606C", r = "#D8483A", R = "#A8322A",
+  y = "#E8C45A", o = "#E89A3C", b = "#4F7FD0", B = "#3A62A8", n = "#2E4A6B", t = "#3E9A4E", T = "#2A7A3A", u = "#8A5A36",
+  U = "#B07A4A", s = "#BFE0F0", c = "#D9D4B8", N = "#20233A", e = "#CFD8E3", m = "#E3D3C0", f = "#F0E0B8", x = "#3A4A66",
+  d = "#D6E0D0", S = "#6FA8D0", C = "#D8CDB0", P = "#5FE08A", h = "#1E3A2A"}
+local function card(id, body)
+  local g = G(32, 24)
+  body(g)
+  PR.build{name = "ui_card_" .. id, ase = ASE, layers = {{name = "Art", pal = CARDPAL, rows = ROWS(g)}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "ui_card_" .. id .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/ui/card_" .. id .. ".png")
+  s:close()
+end
+-- poke a small ASCII sprite (palette keys, '.' is skipped) at x, y
+local function S_(g, x, y, rows)
+  for r, row in ipairs(rows) do
+    for c = 1, #row do
+      local ch = row:sub(c, c)
+      if ch ~= "." then F(g, x + c - 1, y + r - 1, 1, 1, ch) end
+    end
+  end
+end
+
+card("holidays", function(g)           -- a lit tree, a gift, snow
+  F(g, 0, 0, 32, 24, "n")
+  for _, p in ipairs({{3, 3}, {9, 6}, {27, 4}, {22, 9}, {17, 2}, {29, 12}, {5, 12}, {24, 14}}) do F(g, p[1], p[2], 1, 1, "w") end
+  F(g, 0, 20, 32, 4, "w")
+  local tiers = {{3, 13, 13}, {4, 12, 14}, {5, 11, 15}, {6, 10, 16}, {7, 11, 15}, {8, 10, 16}, {9, 9, 17}, {10, 8, 18}, {11, 7, 19},
+    {12, 9, 17}, {13, 8, 18}, {14, 7, 19}, {15, 6, 20}, {16, 5, 21}, {17, 4, 22}}
+  for _, t in ipairs(tiers) do F(g, t[2], t[1], t[3] - t[2] + 1, 1, "t"); F(g, t[3] - 1, t[1], 2, 1, "T") end
+  F(g, 12, 18, 3, 3, "u")
+  F(g, 13, 1, 1, 2, "y"); F(g, 12, 2, 3, 1, "y")
+  for i, p in ipairs({{12, 7}, {14, 9}, {10, 11}, {16, 13}, {9, 15}, {13, 16}, {19, 14}, {7, 17}, {18, 17}}) do F(g, p[1], p[2], 1, 1, (i % 2 == 0) and "y" or "r") end
+  F(g, 24, 16, 6, 5, "r"); F(g, 26, 16, 2, 5, "w"); F(g, 24, 18, 6, 1, "w"); F(g, 25, 15, 4, 1, "w")
+end)
+
+card("tax", function(g)                -- a tax form with a stamp, a calculator
+  F(g, 0, 0, 32, 24, "c")
+  F(g, 3, 3, 13, 18, "w"); F(g, 3, 3, 13, 1, "W"); F(g, 5, 4, 5, 1, "b")
+  for _, y in ipairs({6, 9, 12, 15}) do F(g, 5, y, 9, 1, "g") end
+  F(g, 9, 17, 5, 3, "r")
+  F(g, 19, 5, 10, 16, "G"); F(g, 20, 6, 8, 3, "P")
+  for _, y in ipairs({11, 14, 17}) do for _, x in ipairs({20, 23, 26}) do F(g, x, y, 2, 2, "W") end end
+  F(g, 26, 17, 2, 2, "r")
+end)
+
+card("xp", function(g)                 -- an old monitor with a warning, and a calendar page with a red cross
+  F(g, 0, 0, 32, 24, "n")
+  F(g, 2, 4, 16, 14, "C"); F(g, 4, 6, 12, 10, "b")
+  S_(g, 8, 8, {"..y..", ".yky.", ".yky.", "yyyyy", "yykyy"})
+  F(g, 7, 19, 6, 1, "C"); F(g, 5, 20, 10, 2, "C")
+  F(g, 20, 4, 10, 16, "w"); F(g, 20, 4, 10, 4, "r"); F(g, 22, 3, 1, 2, "k"); F(g, 27, 3, 1, 2, "k")
+  local eight = PR.text("8", "k")
+  for r = 1, 5 do for c = 1, 3 do if eight[r]:sub(c, c) == "k" then F(g, 23 + c, 10 + r, 1, 1, "k") end end end
+  F(g, 21, 17, 8, 1, "r")
+end)
+
+card("school", function(g)             -- a school bus on a green verge under a sun
+  F(g, 0, 0, 32, 24, "S"); F(g, 0, 18, 32, 6, "t")
+  DISC(g, 27, 5, 3, "y")
+  F(g, 3, 8, 26, 9, "y"); F(g, 3, 8, 26, 1, "o"); F(g, 3, 15, 26, 1, "k")
+  for _, x in ipairs({5, 10, 15, 20}) do F(g, x, 10, 4, 3, "s") end
+  F(g, 25, 10, 3, 4, "s")
+  DISC(g, 9, 17.5, 2.6, "k"); DISC(g, 23, 17.5, 2.6, "k"); F(g, 9, 17, 1, 1, "W"); F(g, 23, 17, 1, 1, "W")
+end)
+
+card("printer", function(g)            -- a printer with a jam
+  F(g, 0, 0, 32, 24, "e")
+  F(g, 8, 2, 12, 5, "w"); F(g, 10, 3, 8, 1, "g"); F(g, 10, 5, 8, 1, "g")
+  F(g, 3, 9, 22, 10, "W"); F(g, 3, 18, 22, 1, "g"); F(g, 5, 6, 18, 3, "g")
+  F(g, 5, 12, 4, 2, "G"); F(g, 21, 12, 2, 1, "t")
+  F(g, 7, 16, 14, 7, "w"); F(g, 9, 18, 10, 1, "g"); F(g, 9, 20, 7, 1, "g"); F(g, 7, 22, 14, 1, "r")
+  F(g, 26, 8, 3, 3, "r"); F(g, 27, 11, 1, 2, "r"); F(g, 27, 14, 1, 1, "r")
+end)
+
+card("phone", function(g)              -- a handset off the cradle, ringing
+  F(g, 0, 0, 32, 24, "m")
+  F(g, 3, 15, 26, 7, "G"); F(g, 3, 15, 26, 1, "g")
+  for _, x in ipairs({11, 15, 19}) do F(g, x, 17, 2, 1, "W"); F(g, x, 19, 2, 1, "W") end
+  F(g, 6, 10, 20, 3, "k"); F(g, 4, 9, 4, 6, "k"); F(g, 24, 9, 4, 6, "k"); F(g, 9, 10, 14, 1, "G")
+  F(g, 8, 4, 2, 1, "y"); F(g, 13, 3, 3, 1, "y"); F(g, 19, 3, 3, 1, "y"); F(g, 23, 4, 2, 1, "y")
+  F(g, 10, 5, 1, 1, "y"); F(g, 21, 5, 1, 1, "y")
+end)
+
+card("food", function(g)               -- a pizza on its box
+  F(g, 0, 0, 32, 24, "f")
+  F(g, 3, 17, 26, 5, "U"); F(g, 3, 17, 26, 1, "u")
+  DISC(g, 16, 11, 9, "U"); DISC(g, 16, 11, 7.4, "y")
+  for _, p in ipairs({{13, 8}, {18, 9}, {15, 13}, {19, 14}, {11, 12}, {21, 11}}) do F(g, p[1], p[2], 2, 2, "r") end
+  F(g, 12, 6, 1, 1, "t")
+end)
+
+card("power", function(g)              -- a plug, an outlet, a spark between them
+  F(g, 0, 0, 32, 24, "N")
+  F(g, 0, 12, 2, 2, "G"); F(g, 2, 9, 8, 8, "W"); F(g, 2, 16, 8, 1, "g")
+  F(g, 10, 10, 4, 2, "g"); F(g, 10, 14, 4, 2, "g")
+  F(g, 22, 5, 9, 14, "e"); F(g, 24, 9, 1, 3, "k"); F(g, 27, 9, 1, 3, "k"); F(g, 25, 14, 3, 2, "k")
+  S_(g, 15, 4, {"..yyy", ".yyy.", "yyyyy", "..yy.", ".yy..", "yy..."})
+end)
+
+card("security", function(g)           -- an envelope on a hook
+  F(g, 0, 0, 32, 24, "x")
+  F(g, 4, 8, 16, 11, "w")
+  for i = 0, 7 do F(g, 4 + i, 8 + i, 1, 1, "W"); F(g, 19 - i, 8 + i, 1, 1, "W") end
+  DISC(g, 12, 15, 2.2, "r")
+  F(g, 25, 2, 1, 12, "g"); F(g, 24, 14, 1, 1, "g"); F(g, 23, 14, 1, 1, "g"); F(g, 22, 13, 1, 1, "g"); F(g, 22, 12, 1, 1, "g"); F(g, 23, 12, 1, 1, "g")
+  F(g, 24, 2, 3, 1, "g")
+end)
+
+card("backup", function(g)             -- an external drive, a cable and a USB stick
+  F(g, 0, 0, 32, 24, "d")
+  F(g, 3, 9, 16, 11, "G"); F(g, 3, 9, 16, 2, "g"); F(g, 15, 16, 2, 1, "P"); F(g, 5, 14, 8, 3, "W")
+  F(g, 19, 15, 3, 1, "k")
+  F(g, 22, 13, 3, 3, "W"); F(g, 25, 12, 5, 5, "B"); F(g, 27, 13, 1, 1, "W")
+end)
+
+-- ====================================================================================================================
+-- R9: mutator icons, 12 x 12 (10 x 10 content and the outline), one per mutator of Mutators.MUTATORS. Sources
+-- office/pieces/ui_mut_<id>.aseprite, PNGs godot/assets/ui/mut_<id>.png (the mutator chooser and the Free Play toolbox draw them).
+-- ====================================================================================================================
+local function mut(id, body)
+  local g = G(10, 10)
+  body(g)
+  PR.build{name = "ui_mut_" .. id, ase = ASE, layers = {{name = "Icon", pal = CARDPAL, rows = ROWS(g)}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "ui_mut_" .. id .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/ui/mut_" .. id .. ".png")
+  s:close()
+end
+
+mut("heartbleed", function(g)        -- a bleeding heart
+  S_(g, 0, 0, {".rrr..rrr.", "rrrrrrrrrr", "rrrrrrrrrr", ".rrrrrrrr.", "..rrrrrr..", "...rrrr...", "....rr...."})
+  F(g, 2, 1, 1, 1, "w")
+  F(g, 4, 8, 2, 2, "R")
+end)
+mut("xp_eol", function(g)            -- a calendar page with a cross
+  F(g, 1, 0, 8, 10, "w"); F(g, 1, 0, 8, 2, "r")
+  for _, p in ipairs({{3, 4}, {6, 4}, {4, 5}, {5, 5}, {4, 6}, {5, 6}, {3, 7}, {6, 7}}) do F(g, p[1], p[2], 1, 1, "k") end
+end)
+mut("flu_season", function(g)        -- a thermometer
+  F(g, 4, 0, 2, 7, "w"); F(g, 4, 3, 2, 4, "r"); DISC(g, 5, 7.5, 2.5, "r"); F(g, 7, 1, 2, 1, "g"); F(g, 7, 3, 2, 1, "g")
+end)
+mut("printer_apocalypse", function(g)  -- a jammed printer
+  F(g, 2, 0, 6, 3, "w"); F(g, 0, 3, 10, 4, "W"); F(g, 0, 6, 10, 1, "g"); F(g, 2, 7, 6, 3, "w"); F(g, 2, 9, 6, 1, "r"); F(g, 8, 4, 1, 1, "r")
+end)
+mut("tax_season", function(g)        -- a coin with a percent sign
+  DISC(g, 5, 5, 4.8, "y")
+  S_(g, 3, 3, {"kk..k", "kk.k.", "..k..", ".k.kk", "k..kk"})
+end)
+mut("slow_payers", function(g)       -- an hourglass
+  S_(g, 1, 0, {"WWWWWWWW", ".yyyyyy.", "..yyyy..", "...yy...", "...yy...", "..s..s..", ".s.yy.s.", ".syyyys.", "WWWWWWWW"})
+end)
+mut("hardware_recall", function(g)   -- a box with a red recall badge
+  F(g, 0, 3, 9, 7, "U"); F(g, 0, 3, 9, 1, "u"); F(g, 3, 3, 2, 7, "y"); F(g, 7, 0, 3, 3, "r"); F(g, 8, 1, 1, 1, "w")
+end)
+mut("hurricane_drill", function(g)   -- a storm swirl
+  DISC(g, 5, 5, 4.8, "g"); DISC(g, 5, 5, 3.2, "G"); DISC(g, 5, 5, 1.4, "w")
+  F(g, 5, 0, 3, 1, "w"); F(g, 0, 5, 1, 3, "w"); F(g, 2, 9, 3, 1, "w"); F(g, 9, 2, 1, 3, "w")
+end)
+mut("new_psa", function(g)           -- a monitor with a new-window star
+  F(g, 0, 1, 10, 7, "W"); F(g, 1, 2, 8, 5, "b"); F(g, 4, 8, 2, 1, "W"); F(g, 2, 9, 6, 1, "W")
+  F(g, 6, 3, 2, 2, "y"); F(g, 3, 5, 2, 1, "w")
+end)
+mut("heat_wave", function(g)         -- a sun with rays
+  DISC(g, 5, 5, 3.2, "y")
+  for _, p in ipairs({{4, 0}, {5, 0}, {4, 9}, {5, 9}, {0, 4}, {0, 5}, {9, 4}, {9, 5}, {1, 1}, {8, 1}, {1, 8}, {8, 8}}) do F(g, p[1], p[2], 1, 1, "o") end
+end)
+mut("cold_snap", function(g)         -- a snowflake
+  F(g, 4, 0, 2, 10, "s"); F(g, 0, 4, 10, 2, "s")
+  for _, p in ipairs({{1, 1}, {2, 2}, {7, 2}, {8, 1}, {1, 8}, {2, 7}, {7, 7}, {8, 8}}) do F(g, p[1], p[2], 1, 1, "w") end
+end)
+mut("good_quarter", function(g)      -- bars going up
+  F(g, 1, 6, 2, 3, "t"); F(g, 4, 4, 2, 5, "t"); F(g, 7, 1, 2, 8, "t"); F(g, 0, 9, 10, 1, "G")
+end)
+mut("price_war", function(g)         -- a price tag with an arrow down
+  F(g, 1, 1, 8, 8, "r"); F(g, 2, 2, 1, 1, "w"); F(g, 5, 3, 1, 3, "w"); F(g, 4, 6, 3, 1, "w"); F(g, 5, 7, 1, 1, "w")
+end)
+mut("summer_lull", function(g)       -- a beach umbrella
+  for y = 0, 4 do for x = 0, 9 do if (x + 0.5 - 5) ^ 2 + (y + 0.5 - 5) ^ 2 <= 25 then g[y + 1][x + 1] = ((x // 2) % 2 == 0) and "r" or "w" end end end
+  F(g, 5, 5, 1, 4, "u"); F(g, 0, 9, 10, 1, "y")
+end)

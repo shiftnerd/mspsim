@@ -75,6 +75,22 @@ func _init() -> void:
 	cards.pick(0)
 	cards.art = ""
 
+	# ---- R9: a 12 x 12 icon for every mutator, and the chooser finds the chosen one's
+	var mut_ok := true
+	for mid in root.get_node("Mutators").MUTATORS:
+		var mt: Texture2D = load("res://assets/ui/mut_%s.png" % mid) if ResourceLoader.exists("res://assets/ui/mut_%s.png" % mid) else null
+		if mt == null or Vector2i(mt.get_size()) != Vector2i(12, 12):
+			mut_ok = false
+			print("     no 12 x 12 icon for mutator %s" % mid)
+	_check(mut_ok, "every mutator has a 12 x 12 icon")
+	var y2 := root.get_node("Yeartwo")
+	y2.pick = ""
+	y2.ban = ""
+	_check(y2.mut_icon() == null, "AUTO has no icon")
+	y2.pick = "heat_wave"
+	_check(y2.mut_icon() != null, "a picked mutator shows its icon")
+	y2.pick = ""
+
 	# ---- the chair track finds its paint, and a missing one is null (the rectangles are the fallback)
 	var track: Node2D = load("res://scripts/chair_track.gd").new()
 	_check(track.floor_paint("finish") != null and track.floor_paint("ring_end") != null and track.floor_paint("ring_line") != null and track.floor_paint("ring_spot") != null, "the chair track loads the finish line and the ring")

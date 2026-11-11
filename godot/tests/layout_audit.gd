@@ -267,10 +267,12 @@ func _title_phase() -> void:
 		await _end("options " + mode)
 		if mode == "tech" or mode == "owner":
 			root.get_node("Yeartwo").begin_select(mode, true)  # the MUT row too
+			root.get_node("Yeartwo").pick = "heartbleed"  # R9: the chosen mutator's icon beside the MUT row
 			cs.opt_row = 2
 			_begin()
 			cs.queue_redraw()
 			await _end("options year2 " + mode)
+			root.get_node("Yeartwo").pick = ""
 			root.get_node("Yeartwo").pending = false
 		if mode == "free":
 			continue
