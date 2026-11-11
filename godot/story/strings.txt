@@ -5496,14 +5496,22 @@ Cables were plugged into the wrong ports. Bob is furious.
 
 # owner card: rack
 [Owner.CARDS.rack.options.2.label]
+GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)
+
+# owner card: rack
+[Owner.CARDS.rack.options.2.text]
+You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time.
+
+# owner card: rack
+[Owner.CARDS.rack.options.3.label]
 TELL THEM IT IS THEIR WALL
 
 # owner card: rack
-[Owner.CARDS.rack.options.2.roll.0.2]
+[Owner.CARDS.rack.options.3.roll.0.2]
 They fix it themselves. They are not happy.
 
 # owner card: rack
-[Owner.CARDS.rack.options.2.roll.1.2]
+[Owner.CARDS.rack.options.3.roll.1.2]
 Gnarly Gnomes cancels the contract.
 
 # owner card: migration

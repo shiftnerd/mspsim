@@ -407,6 +407,11 @@ const DEFAULT_CARDS := {
 				]
 			},
 			{
+				"label": "GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)",
+				"fx": {"mood": {"2": 6}, "owner_hours": 6, "burnout": 2},
+				"text": "You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time."
+			},
+			{
 				"label": "TELL THEM IT IS THEIR WALL",
 				"roll":
 				[
@@ -2495,6 +2500,13 @@ func _grumble() -> void:
 			},
 		],
 	}
+	# X13: an answer no bank balance greys out, and nobody quits over it today (a broke owner was left with the last one)
+	var promise := {
+		"label": "PROMISE THE SWITCH FOR NEXT QUARTER (NO CASH)",
+		"fx": {"burnout": 4, "social_all": -1},
+		"text": "They take your word for it. Your word has a date on it now."
+	}
+	_dynamic["grumble"].options.insert(2, promise)
 	show_card("grumble")
 
 

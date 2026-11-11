@@ -21536,6 +21536,7 @@ const CARDS := {
         "options": [
             {"label": "SEND {tech} NOW ($300)", "need": 300, "roll": [[0.85, {"cash": -300, "mood": {"2": 10}, "rep": 2}, "{tech} rebuilds it properly. Bob buys them lunch."], [0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]]},
             {"label": "SEND MAYA OR A NEW HIRE ($100)", "need": 100, "roll": [[0.5, {"cash": -100, "mood": {"2": 5}}, "Back up by evening."], [0.5, {"cash": -100, "mood": {"2": -12}, "rep": -2}, "Cables were plugged into the wrong ports. Bob is furious."]]},
+            {"label": "GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)", "fx": {"mood": {"2": 6}, "owner_hours": 6, "burnout": 2}, "text": "You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time."},
             {"label": "TELL THEM IT IS THEIR WALL", "roll": [[0.7, {"mood": {"2": -20}}, "They fix it themselves. They are not happy."], [0.3, {"mood": {"2": -20}, "drop": true}, "Gnarly Gnomes cancels the contract."]]},
         ],
     },
@@ -23109,6 +23110,13 @@ func _grumble() -> void:
             {"label": "TELL THEM TO DEAL WITH IT", "roll": [[0.6, {}, "They grumble and carry on."], [0.4, {"lose_tech": true, "rep": -1}, "One of the crew resigns over the tooling."]]},
         ],
     }
+    # X13: an answer no bank balance greys out, and nobody quits over it today (a broke owner was left with the last one)
+    var promise := {
+        "label": "PROMISE THE SWITCH FOR NEXT QUARTER (NO CASH)",
+        "fx": {"burnout": 4, "social_all": -1},
+        "text": "They take your word for it. Your word has a date on it now."
+    }
+    _dynamic["grumble"].options.insert(2, promise)
     show_card("grumble")
 
 

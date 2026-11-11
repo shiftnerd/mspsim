@@ -16,6 +16,7 @@ extends SceneTree
 #   Godot --headless --path godot -s res://tests/card_costs.gd [-- list]     (list prints every option that can take money)
 
 const SAFE_CASH := 0  # the most an always-open answer may take out of the bank
+const HURT_REP := -3  # a reputation loss this large (or a lost client or tech) is lasting damage
 const BIG := 60000
 
 var failures := 0
@@ -55,6 +56,8 @@ func _scan(id: String, card: Dictionary) -> Array:
 	var options: Array = card.get("options", [])
 	var open_ok := 0  # options no bank balance can grey out
 	var open_safe := 0  # ... that cannot take more than SAFE_CASH
+	var open_fine := 0  # ... and that do no lasting damage either (no client or tech lost, no heavy reputation loss)
+	var money_gated := 0  # harmless answers the bank can grey out (a card where EVERY answer can hurt is not a trap: a poach)
 	var priced := 0
 	for i in options.size():
 		var opt: Dictionary = options[i]
@@ -83,11 +86,28 @@ func _scan(id: String, card: Dictionary) -> Array:
 			# a `later` option is a dated bill when the bank is short: it never takes the sum at once
 			if hi <= SAFE_CASH or later:
 				open_safe += 1
+				open_fine += 0 if _hurts(opt) else 1
+		elif need > 0 and not _hurts(opt):
+			money_gated += 1  # a harmless answer that only money buys
 	# when every option can be greyed the card adds NOT NOW by itself (Cards.ask); the trap is a card whose only answers
 	# left open are gambles for money
 	if options.size() >= 2 and priced > 0 and open_ok > 0 and open_safe == 0:
 		out.append("%s: with an empty bank every answer left is a gamble for money" % id)
+	elif options.size() >= 2 and money_gated > 0 and open_ok > 0 and open_fine == 0:
+		out.append("%s: with an empty bank every answer left can lose a client, a tech or %d reputation" % [id, -HURT_REP])
 	return out
+
+
+# an answer that can do lasting damage: a client or a tech lost, or a heavy reputation loss (any outcome of a roll counts)
+func _hurts(opt: Dictionary) -> bool:
+	var outcomes := [opt.get("fx", {})]
+	for table in [opt.get("roll", []), opt.get("roll_scoped", [])]:
+		for entry in table:
+			outcomes.append(entry[1])
+	for fx in outcomes:
+		if fx.has("drop_client") or fx.has("drop") or fx.has("lose_tech") or fx.has("fire") or int(fx.get("rep", 0)) <= HURT_REP:
+			return true
+	return false
 
 
 func _scan_dynamic(what: String, build: Callable, problems: Array) -> void:
