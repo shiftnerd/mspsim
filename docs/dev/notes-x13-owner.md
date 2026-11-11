@@ -56,8 +56,12 @@ Option keys new in owner cards: `pay` (need = the price), `later` (a dated bill 
 
 ### Bots and tools (`godot/tests/`)
 - `bot_lib.gd`: the careful owner credits the scammed client (the option is never greyed now; the thin-bank rule of the last pass
-  is gone). On Morgan's desk card he reads the books first: a hire with at least $1,500 in the bank (`OW_HIRE_CASH`) and a week
-  not worse than -$600 EBITDA (`OW_HIRE_EBITDA`), else the training course, else he stops taking clients. He picks the best
+  is gone). On Morgan's desk card he reads the books first: a hire with at least $1,500 in the bank (`OW_HIRE_CASH`), a week
+  not worse than -$600 EBITDA (`OW_HIRE_EBITDA`) and payroll at no more than 75% of revenue (`OW_HIRE_W2`, the W-2 RATIO row),
+  else the training course, else he stops taking clients. Under water he also looks at the bank before he commits it: no
+  net-60 terms for the two biggest invoices under $2,000 (`OW_SQUEEZE_CASH`: 2% off for paying on time instead), LIGHT
+  marketing while the bank is below zero. (Without these the first version of the capacity rule hired a second tech for five
+  clients on seed 4 and went bankrupt in week 15: capacity and cash have to be read together.) He picks the best
   candidate (`_ow_best_hire`: most skill, a wizard a little ahead, a flight risk well behind) where the bot took the first in
   line. `stop_day` works for owner runs; `row.weeks` also has `mult`, `ebitda`, `open`, `staff`, `book`; the BOT line says
   whether the final value is on contracts, how many weeks read $0, open bills and hires. The greedy policy's rack answer moved

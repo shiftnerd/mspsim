@@ -1299,6 +1299,8 @@ const OW_SHORTCUTS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "te
 const OW_TAKEOVER := {"rival_defect": 2, "rival_takeover": 0, "rival_badday": 1}
 const OW_CAREFUL := ["careful", "shortcut", "takeover"]
 const OW_HIRE_CASH := 1500  # X13: the careful bot answers Morgan's desk card with a hire only with at least this much in the bank
+const OW_HIRE_W2 := 0.75  # ... and with payroll at no more than this share of revenue (the W-2 RATIO row of the report; the target is 55%)
+const OW_SQUEEZE_CASH := 2000  # X13: under this the careful bot does not accept slower payment terms from its biggest clients
 const OW_HIRE_EBITDA := -600  # ... and with the week's EBITDA at this or better (a company losing more does not add a wage)
 const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
 
@@ -1329,7 +1331,7 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			# course ($400, once); else he stops taking clients until the desk has caught up
 			var books: Dictionary = root.get_node("Owner").weekly_estimate()
 			pick = 0
-			if root.get_node("Owner").cash < OW_HIRE_CASH or int(books.ebitda) < OW_HIRE_EBITDA:
+			if root.get_node("Owner").cash < OW_HIRE_CASH or int(books.ebitda) < OW_HIRE_EBITDA or float(books.w2) > OW_HIRE_W2:
 				for i in cards.options.size():
 					var desk_label := str(cards.options[i].label)
 					if desk_label.begins_with("TRAIN THE CREW") and bool(cards.options[i].get("enabled", true)):
@@ -1337,6 +1339,12 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 						break
 					if desk_label.begins_with("STOP TAKING NEW CLIENTS"):
 						pick = i
+		# X13: the careful owner under water looks at the bank before he commits it (the bot gave the same answers at -$1,500 as
+		# at +$15,000: seed 4 accepted net-60 terms on its two biggest invoices with the bank below zero and was bankrupt at the close)
+		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("net-60") and root.get_node("Owner").cash < OW_SQUEEZE_CASH:
+			pick = 2  # 2% off for paying on time: the money keeps coming in
+		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.begins_with("John wants a marketing budget") and root.get_node("Owner").cash < 0:
+			pick = 1  # LIGHT ($150/WEEK) until the bank is above water again
 		if strategy in OW_CAREFUL and cards.text.begins_with("Three candidates came through"):
 			pick = _ow_best_hire(cards)  # X13: and reads them (the bot took whoever stood first in the line)
 		# R38: the takeover visit's own cards (the owner meeting, a finding): ask about the backups; take the job, else sell the
