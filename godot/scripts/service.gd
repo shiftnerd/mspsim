@@ -432,6 +432,132 @@ const DEFAULT_ONE_ON_ONES := {
 				{"label": "SAY FIVE TIMES IS SILLY", "reply": "Five times. Really.", "fx": {"morale": -4}},
 			],
 		},
+		{
+			"text": "{name} says: I told a user it would take ten minutes. It took two hours. Now she asks how long everything takes.",
+			"options":
+			[
+				{"label": "TEACH A RULE FOR ESTIMATES", "reply": "Say what you will check, not when you will finish. Then double the number in your head. I put it on the checklist.", "fx": {"morale": 4, "skill": 0.02}},
+				{"label": "CALL HER BACK TOGETHER", "reply": "We call her together. I say sorry for the ten minutes, you say what was fixed.", "fx": {"morale": 5, "mood": 1}},
+				{"label": "SAY DO NOT PROMISE TIMES", "reply": "Do not promise times.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I have had the on-call phone three weekends out of five. I counted.",
+			"options":
+			[
+				{"label": "REDO THE ROTA TODAY", "reply": "You counted right. I redid the rota. It is on the wall and my name is on it too.", "fx": {"morale": 6, "retain": 2}},
+				{"label": "TAKE THE NEXT WEEKEND YOURSELF", "reply": "I take the next weekend. After that it goes back to the list.", "fx": {"morale": 4, "stress": -3}},
+				{"label": "SAY SOMEBODY HAS TO HOLD IT", "reply": "Somebody has to hold it.", "fx": {"morale": -5, "retain": -1}},
+			],
+		},
+		{
+			"text": "{name} says: I read a password out loud on the phone at Hoot and Holler Law. The whole office heard it.",
+			"options":
+			[
+				{"label": "RESET IT AND WRITE THE RULE", "reply": "Reset it now, I will tell them why. Passwords go on paper or in person. I am adding a line to the checklist.", "fx": {"morale": 4, "skill": 0.03}},
+				{"label": "SAY YOU DID THE SAME ONCE", "reply": "I did that once, at a bank. Reset it and move on.", "fx": {"morale": 4, "stress": -3}},
+				{"label": "ASK WHAT THE THINKING WAS", "reply": "What were you thinking?", "fx": {"morale": -5, "stress": 4}},
+			],
+		},
+		{
+			"text": "{name} says: A user at Acme Dental asked me to make her an admin so she could install a toolbar. I said maybe.",
+			"options":
+			[
+				{"label": "TEACH THE WORDS FOR NO", "reply": "Maybe means yes to a user. Say: I cannot, and here is what I can do. Practise it on me.", "fx": {"morale": 5, "skill": 0.02}},
+				{"label": "TAKE THE CALL BACK YOURSELF", "reply": "I will call her. You listen in, and the next one is yours.", "fx": {"morale": 3, "skill": 0.01}},
+				{"label": "SAY NEVER SAY MAYBE", "reply": "Never say maybe.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I do not know what to write in the ticket notes. I write: fixed.",
+			"options":
+			[
+				{"label": "SHOW THE THREE LINES", "reply": "Three lines: what they said, what you found, what you did. Here is one of mine. Copy the shape.", "fx": {"morale": 4, "skill": 0.03}},
+				{"label": "READ A GOOD ONE TOGETHER", "reply": "Pull up one of Maya's. We read it and you tell me what is in it.", "fx": {"morale": 3, "skill": 0.02}},
+				{"label": "SAY FIXED IS NOT A NOTE", "reply": "Fixed is not a note.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I ate lunch at my desk all week. Nobody told me to. The queue just looks at me.",
+			"options":
+			[
+				{"label": "SEND THEM OUT AT NOON", "reply": "The queue has no eyes. Noon to half past you are out of the building. I watch your board.", "fx": {"morale": 5, "stress": -6}},
+				{"label": "LUNCH WITH THE CREW TOMORROW", "reply": "Tomorrow we all eat in the break room. The phones roll to me.", "fx": {"morale": 4, "stress": -3, "retain": 1}},
+				{"label": "SAY THE QUEUE IS LONG", "reply": "The queue is long.", "fx": {"morale": -3, "stress": 4}},
+			],
+		},
+		{
+			"text": "{name} says: Garrison walked past and asked me what we are for. I said computers. Was that wrong?",
+			"options":
+			[
+				{"label": "GIVE THE ONE-LINE ANSWER", "reply": "Not wrong. Short. Say: we keep the client working so they never think about us. He was testing the pitch, not you.", "fx": {"morale": 4, "retain": 1}},
+				{"label": "SAY HE ASKS EVERYBODY", "reply": "He asks everybody. Computers is a fine answer.", "fx": {"morale": 3}},
+				{"label": "SAY ASK GARRISON", "reply": "Ask Garrison.", "fx": {"morale": -2}},
+			],
+		},
+		{
+			"text": "{name} says: I escalated four tickets yesterday. Maya sighed at the fourth.",
+			"options":
+			[
+				{"label": "SORT THE FOUR TOGETHER", "reply": "Bring the four. We sort them: needed her, needed ten more minutes, needed one question. No blame in it.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "SAY ESCALATING IS THE JOB", "reply": "Escalating is the job. I will talk to Maya about the sigh.", "fx": {"morale": 4, "stress": -2}},
+				{"label": "SAY TRY LONGER FIRST", "reply": "Try longer before you send them up.", "fx": {"morale": -3, "stress": 3}},
+			],
+		},
+		{
+			"text": "{name} says: A man at Iron Mule Demolition calls me the kid. Every call.",
+			"options":
+			[
+				{"label": "HAVE A WORD WITH THE CLIENT", "reply": "I will mention it to their office manager, quietly. You have a name and it is on every ticket.", "fx": {"morale": 6, "retain": 1}},
+				{"label": "GIVE A LINE TO OPEN WITH", "reply": "Open every call with your name. First line. It works by the third week.", "fx": {"morale": 4, "stress": -2}},
+				{"label": "SAY HE CALLS EVERYBODY THAT", "reply": "He calls everybody that.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I want to take the certification exam. It costs money and I would need a Thursday.",
+			"options":
+			[
+				{"label": "PAY IT AND BOOK THE THURSDAY", "reply": "The shop pays the first try. Thursday is yours. The study guide is on your desk, I tabbed it.", "fx": {"morale": 6, "retain": 2, "skill": 0.03}},
+				{"label": "GIVE THE DAY, NOT THE FEE", "reply": "Take the Thursday. The fee we talk about when you pass.", "fx": {"morale": 3, "retain": 1}},
+				{"label": "SAY AFTER THE BUSY SEASON", "reply": "After the busy season.", "fx": {"morale": -3, "retain": -1}},
+			],
+		},
+		{
+			"text": "{name} says: I unplugged the wrong cable at Paws and Claws. The front desk was down for six minutes. Only I noticed.",
+			"options":
+			[
+				{"label": "LABEL THE CABLES TOGETHER", "reply": "Six minutes, and you counted them. Good. Next visit we label both ends. I have the label maker.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "SAY TRACE BEFORE YOU PULL", "reply": "Trace it with your hand before you pull. Today it is fine.", "fx": {"morale": 2, "skill": 0.01}},
+				{"label": "ASK WHY NOBODY WAS TOLD", "reply": "And you told nobody for a day?", "fx": {"morale": -5, "stress": 4}},
+			],
+		},
+		{
+			"text": "{name} says: The van smells like fries and the fuel light has been on since Tuesday. Whose job is that?",
+			"options":
+			[
+				{"label": "PUT A SHEET IN THE GLOVE BOX", "reply": "Now it is on a sheet in the glove box: who drove, fuel, fries. I filled the tank this once.", "fx": {"morale": 4, "retain": 1}},
+				{"label": "SAY WHOEVER DROVE LAST", "reply": "Whoever drove it last fills it. That was you. I will tell the others the same.", "fx": {"morale": 2}},
+				{"label": "SAY FIGURE IT OUT", "reply": "Figure it out.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I fixed the same shared printer at Brightside Realty three times this week. Each time a different person thanks me.",
+			"options":
+			[
+				{"label": "FIND THE CAUSE TOGETHER", "reply": "Three thanks is one problem. Bring the tickets, we find what breaks it and write that down once.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "PUT IT ON THE FRIDAY LIST", "reply": "It goes on the Friday list. You present it. Two minutes.", "fx": {"morale": 3, "skill": 0.01}},
+				{"label": "SAY THANKS ARE NOT A METRIC", "reply": "Thanks are not a metric.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: My headset has crackled for a month. I thought everybody's did.",
+			"options":
+			[
+				{"label": "ORDER A NEW ONE NOW", "reply": "Nobody's does. I am ordering one while you stand here. Take mine until it comes.", "fx": {"morale": 5, "stress": -3, "retain": 1}},
+				{"label": "SWAP IT WITH THE SPARE", "reply": "There is a spare in the closet, top shelf, in a bag I labelled.", "fx": {"morale": 3, "stress": -2}},
+				{"label": "SAY SPEAK UP SOONER", "reply": "A month. Speak up sooner.", "fx": {"morale": -3}},
+			],
+		},
 	],
 	"John":
 	[

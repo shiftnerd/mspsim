@@ -614,6 +614,28 @@ func _floor_phase() -> void:
 		], func(_id: String) -> void: pass)
 		await _end("card with picture " + pic)
 		_clear(cards)
+	# R9: the morning briefing with its mutator's icon on the title bar (the longest briefing text), and the toolbox's MUTATOR
+	# row with the icon after the label (tests/mut_icons.gd checks the icons' own rectangles)
+	var muts_node := root.get_node("Mutators")
+	var long_id := ""
+	for mid in muts_node.MUTATORS:
+		if long_id == "" or str(muts_node.MUTATORS[mid].text).length() > str(muts_node.MUTATORS[long_id].text).length():
+			long_id = str(mid)
+	_begin()
+	cards.art_next = "mut_" + long_id
+	cards.ask("MORNING BRIEFING", "%s. %s" % [str(muts_node.MUTATORS[long_id].name), str(muts_node.MUTATORS[long_id].text)], [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+	await _end("briefing card with icon")
+	_clear(cards)
+	var tools := root.get_node("Toolbox")
+	_begin()
+	tools.open_tools(true, Callable())  # (as from the title: a campaign is running here)
+	tools.mutator = long_id
+	tools.sel = tools.rows().size() - 2
+	tools._canvas.queue_redraw()
+	await _end("toolbox mutator row")
+	tools.mutator = ""
+	tools.close()
+	await _wait(2)
 	# R10: the speaker's face beside the text of a card with no picture (wide formats; the tall one goes without it), long text and options
 	for who in ["Quinn", "Ross Calder", "Terry Vance (Recruiter)", "Trent Dagmar", "Ms. Pell"]:
 		_begin()

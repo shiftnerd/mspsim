@@ -9,6 +9,7 @@ const SPARK_H := 15.0
 # scale drops from 2 to 1 when a narrow format cannot fit everything.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("171c2a")
@@ -249,7 +250,7 @@ func _hero() -> Array:
 
 # text in virtual pixels relative to the panel
 func _t(s: String, x: float, y: float, c: Color, mult: int = 1) -> void:
-	PixelFont.draw(_canvas, s, _o + Vector2(x, y) * float(_sc), c, _sc * mult)
+	PadGlyphs.draw(_canvas, s, _o + Vector2(x, y) * float(_sc), c, _sc * mult, true)  # R42
 
 
 func _tw(s: String, mult: int = 1) -> float:

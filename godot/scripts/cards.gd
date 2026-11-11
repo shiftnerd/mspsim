@@ -23,6 +23,7 @@ var options: Array = []
 var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
+var icon_drawn := Rect2()  # R9: where the open card's mutator icon was painted (no size = none), for tests
 var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
@@ -242,6 +243,12 @@ func _art_tex() -> Texture2D:
 	return _art_cache[art]
 
 
+# R9: an art id "mut_<id>" is a mutator's 12 x 12 icon (the morning briefing). It sits on the right end of the title bar
+# and overhangs into the padding under it, so it takes no room from the text and every format shows it.
+func icon_tex() -> Texture2D:
+	return Mutators.icon(art.substr(4)) if art.begins_with("mut_") else null
+
+
 func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_hits.clear()
@@ -286,6 +293,11 @@ func _paint() -> void:
 	_canvas.draw_rect(panel, Color("e9ecf1"))
 	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
 	PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+	icon_drawn = Rect2()
+	var icon := icon_tex()
+	if icon != null and PixelFont.width(speaker) + 3.0 < pw - 18.0:
+		icon_drawn = Rect2(panel.end.x - 15.0, panel.position.y - 1.0, 12.0, 12.0)
+		_canvas.draw_texture(icon, icon_drawn.position)
 	var y := panel.position.y + 12.0
 	for line in lines:
 		PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5 + (FACE_W if face != null else 0.0), y), INK, 1, true)

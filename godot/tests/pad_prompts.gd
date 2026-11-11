@@ -38,6 +38,7 @@ const ALLOW := [
 	["\\b(RE-)?ENTER (IT|THE CODE|WHAT YOU FOUND|THE ACCOUNT)\\b", "to enter a code, as a verb"],
 	["\\bC IS A STEADY DAY|\\bDAYS: S [0-9]", "grades: the day report's C, the service desk's count of S A B C D days"],
 	["\\b[A-Z]{3,}, [A-Z]  |\\bBANKS V\\. COUNTY", "names on a client's screen (a dentist's schedule, a case file)"],
+	["\\bCARBON F\\b", "the line printer's tray label CARBON FORMS, cut to the slot's eight characters"],
 ]
 # story text in sentence case (mail, chats, card text: any line with a small letter) talks about disk space, night shifts and
 # users who click things. There only these count as a prompt: "press P", "(P)", "the Enter key"
@@ -50,7 +51,7 @@ const SINGLE_OK := [
 	"crm record", "crm list",  # a lead's heat: H W C
 	"toolbox seed page",  # the seed's hex digits
 	"touch overlay",  # the overlay's own A and B buttons
-	"grill", "outing grill",  # how done a patty is: R M W D X
+	"grill", "outing grill", "coop grill",  # how done a patty is: R M W D X
 ]
 # what a pad prompt may say: the button tokens of Controls.label / PadGlyphs and the right stick's directions
 const PAD_TOKENS := "\\((A|B|X|Y|LB|RB|LT|RT|START|BACK|L3|R3|UP|DOWN|LEFT|RIGHT)\\)|\\bRS (UP|DOWN|LEFT|RIGHT)\\b"
@@ -74,11 +75,15 @@ var hits := {}  # pad pass: offending text -> [pattern, where first seen]
 var kb := {}  # keyboard pass: prompt line -> true
 var list := false
 var write_golden := false
+var drawn_tokens := 0  # pad pass: texts that still spell a button in brackets
+var bracket_lines := 0  # pad pass: texts with a bracket that is not a button (they stay text)
+var glyph_screens := {}  # pad pass: screens of _more_phase() whose source text names a button (drawn as a glyph)
 var _rx := []
 var _strip: RegEx
 var _allow := []
 var _lone: RegEx
 var _prose: RegEx
+var _letters: RegEx
 
 
 func _initialize() -> void:
@@ -94,6 +99,8 @@ func _initialize() -> void:
 
 
 func _compile() -> void:
+	_letters = RegEx.new()
+	_letters.compile("\\((A|B|X|Y|LB|RB|LT|RT|START|BACK|L3|R3|VIEW|MENU)\\)")
 	_strip = RegEx.create_from_string(PAD_TOKENS)
 	_prose = RegEx.create_from_string(PROSE)
 	_lone = RegEx.create_from_string("^[B-HJ-WYZ]$")  # (an X alone is the close box of a window)
@@ -116,6 +123,12 @@ func _compile() -> void:
 
 
 # "" when the text holds no keyboard or mouse prompt, else the name of the pattern that found one
+# the text a screen is about to draw names a pad button (after the key tokens are resolved): it must come out as a glyph
+func _names_button(tag: String, text: String) -> void:
+	if mode == "pad" and _letters.search(str(root.get_node("Controls").keys(text)).to_upper()) != null:
+		glyph_screens[tag] = true
+
+
 func flag(text: String, pad: bool) -> String:
 	var found := flags(text, pad)
 	return "" if found.is_empty() else str(found[0][0])
@@ -192,6 +205,15 @@ func _texts(tag: String, all: Array) -> void:
 		for hit in flags(str(text), true, single):
 			if not hits.has(hit[1]):
 				hits[hit[1]] = [hit[0], "%s %s" % [fmt, tag]]
+	# R42, the last letters: on a pad a button is its glyph in every text (PixelFont.draw hands the line to PadGlyphs), so a
+	# drawn text that still spells "(A)" or "(RB)" is a button shown as letters
+	for rec in recs:
+		if _letters.search(str(rec.text).to_upper()) != null:
+			drawn_tokens += 1
+			if not hits.has(str(rec.text)):
+				hits[str(rec.text)] = ["button as letters", "%s %s" % [fmt, tag]]
+		elif str(rec.text).find("(") >= 0:
+			bracket_lines += 1
 
 
 func _check(ok: bool, what: String) -> void:
@@ -229,6 +251,9 @@ func _go() -> void:
 	root.get_node("Controls").pad_active = false
 	# 3. the switch is live
 	await _live()
+	_check(glyph_screens.size() >= 3, "the pad pass met screens whose text names a button, and none of them drew it as letters (%d screens: %s)" % [glyph_screens.size(), str(glyph_screens.keys().slice(0, 6))])
+	_check(PixelFont.glyph_lines > 0, "the font itself turned bracketed buttons into glyphs on screens that draw with the plain font (%d draws)" % PixelFont.glyph_lines)
+	print("button_letters=%d bracket_texts_left_alone=%d glyph_screens=%d font_glyph_draws=%d" % [drawn_tokens, bracket_lines, glyph_screens.size(), PixelFont.glyph_lines])
 	print("screens=%d offending_lines=%d keyboard_prompt_lines=%d failures=%d" % [screens, lines.size(), kb.size(), failures])
 	quit(1 if failures > 0 else 0)
 
@@ -512,4 +537,173 @@ func _extra_phase() -> void:
 	root.get_node("Phone")._bq.clear()
 	root.get_node("Phone").banner = {}
 	root.get_node("Game").ui_open = false
+	out.enabled = false
+	await _more_phase()
+
+
+# R42 (1): the screens neither walker opened before. Every mail of the inbox opened, a ticket, an RMM endpoint and a remote
+# session, a lesson, the IRC lists, a chat; the client-site PCs of every site type; the printer game's other seven models step
+# by step; every card of the event deck and of the seasons, and every mutator's morning briefing; the outings again with a
+# second player joined (the co-op hint lines and captions); the day report and the review with a line that names a button.
+func _more_phase() -> void:
+	var cards := root.get_node("Cards")
+	var comp := root.get_node("Computer")
+	var msp := root.get_node("Msp")
+	var out := root.get_node("Outings")
+	var game := root.get_node("Game")
+	# ---- the Computer's nested views
+	for i in msp.emails.size():
+		_names_button("mail %d" % i, str(msp.emails[i].get("body", "")) + " " + str(msp.emails[i].get("subject", "")))
+		_begin()
+		comp.open(1)
+		comp.app = "mail"
+		comp.mail_sel = i
+		comp.mail_view = true
+		comp._canvas.queue_redraw()
+		await _end("mail %d" % i)
+		comp.close()
+	if msp.open_tickets().is_empty():
+		msp._random_ticket("email")
+	var tk: Dictionary = {} if msp.open_tickets().is_empty() else msp.open_tickets()[0]
+	if not tk.is_empty():
+		_begin()
+		comp.open(1)
+		comp.app = "psa"
+		comp.psa_sel = int(tk.id)
+		comp.psa_detail = true
+		comp._canvas.queue_redraw()
+		await _end("psa ticket")
+		comp.close()
+	if not msp.endpoints.is_empty():
+		for session in [false, true]:
+			_begin()
+			comp.open(1)
+			comp.app = "rmm"
+			comp.rmm_sel = str(tk.get("endpoint", msp.endpoints[0].name))
+			comp.rmm_detail = true
+			comp.rmm_session = session
+			comp._canvas.queue_redraw()
+			await _end("rmm %s" % ("session" if session else "endpoint"))
+			comp.close()
+	_begin()
+	comp.open(1)
+	comp.app = "learn"
+	comp._learn_action(PackedStringArray(["lesson", "0"]))
+	comp._canvas.queue_redraw()
+	await _end("learn lesson")
+	comp.close()
+	for view in ["who", "topics", "join"]:
+		_begin()
+		comp.open(1)
+		comp.app = "nerds"
+		comp.nerds_tab = "irc"
+		comp.irc_view = view
+		comp._canvas.queue_redraw()
+		await _end("irc " + view)
+		comp.close()
+	var lync := root.get_node("Lync")
+	lync.chats["Dan"] = [["Dan", "Press {E} at the printer when you get there. {ESC} gets you out of the menu."], ["me", "ok"]]
+	_names_button("lync chat", "Press {E} at the printer")
+	_begin()
+	comp.open(1)
+	comp.app = "lync"
+	comp.lync_sel = "Dan"
+	comp._canvas.queue_redraw()
+	await _end("lync chat")
+	comp.close()
+	lync.chats.erase("Dan")
+	await _wait(2)
+	# ---- the PCs at a client site, every site type
+	var on := root.get_node("Onsite")
+	for type in on.SITE_APPS:
+		var apps: Dictionary = on.SITE_APPS[type]
+		var info := {"name": str(type).to_upper(), "type": str(type), "obj": "pc", "wall": "#CFE8EE", "accent": "#2E9AB8", "pc": "PC1", "user": "PAT", "app": str(apps.get("app", "PRACTICE")), "title": str(apps.get("title", "")), "rows": apps.get("rows", []), "mails": apps.get("mails", []), "net": "CONNECTED"}
+		for view in ["desktop", "practice", "mail", "computer", "tools"]:
+			_begin()
+			comp.open_site(info)
+			comp.site_view = view
+			comp._canvas.queue_redraw()
+			await _end("site pc %s %s" % [type, view])
+			comp.close()
+	for key in on.TEXT:
+		if on.TEXT[key] is String:
+			_names_button("onsite text " + str(key), str(on.TEXT[key]))
+			root.get_node("Hints").toast(str(on.TEXT[key]), 99.0)
+			await _hud_shot("onsite text " + str(key))
+	root.get_node("Hints").toast("", 0.0)
+	root.get_node("Hints").toast_text = ""
+	# ---- the printer game: the other models
+	var pg := root.get_node("PrinterGame")
+	for model in pg.MODELS:
+		if str(model) == "laser":
+			continue
+		for phase in ["intro"] + Array(pg.MODELS[model].phases) + ["result"]:
+			pg.start(func(_s: int) -> void: pass, str(model))
+			if pg.has_method("_begin_" + phase):
+				pg.call("_begin_" + phase)
+			else:
+				pg.phase = phase
+			_begin()
+			pg._canvas.queue_redraw()
+			await _end("printer %s %s" % [model, phase])
+			pg.is_open = false
+			pg._canvas.visible = false
+	game.ui_open = false
+	# ---- every event card, every seasonal card, every mutator's briefing
+	var events := root.get_node("Events")
+	var ids: Array = events.DECK.keys() + events.Seasons.CARDS.keys()
+	for id in ids:
+		_leave(cards)
+		_names_button("event card " + str(id), str(events.card_of(str(id)).get("text", "")))
+		_begin()
+		events.show_draw({"id": str(id), "deck": "event", "who": "Alan"})
+		await _end("event card " + str(id))
+		_leave(cards)
+	var muts := root.get_node("Mutators")
+	for id in muts.MUTATORS:
+		_leave(cards)
+		_begin()
+		cards.art_next = "mut_" + str(id)
+		cards.ask("MORNING BRIEFING", "%s. %s" % [str(muts.MUTATORS[id].name), str(muts.MUTATORS[id].text)], [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+		await _end("briefing " + str(id))
+		_leave(cards)
+	# ---- a day report and a review page whose text names a button
+	var rep := root.get_node("DayReport")
+	var report: Dictionary = _report("tech")
+	report["notes"] = ["PRESS {E} AT YOUR DESK TO OPEN THE COMPUTER. {ESC} CLOSES IT."]
+	_names_button("day report note", str(report.notes[0]))
+	_begin()
+	rep.is_open = false
+	rep.show_report(report)
+	await _end("day report note")
+	rep.is_open = false
+	rep._canvas.visible = false
+	game.ui_open = false
+	# ---- co-op: the outings again with player 2 joined (their hint lines and captions)
+	var duo := root.get_node("Players")
+	duo.enable_coop(true)
+	duo.join(1, 1)
+	out.enabled = true
+	out.use_rooms = false
+	for id in out.GAMES:
+		_begin()
+		out.start(id, false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
+		await _end("coop %s intro" % id)
+		out.press(KEY_ENTER)
+		out.tick(4.0)
+		out.tick(0.1)
+		_begin()
+		await _end("coop %s play" % id)
+		out._traveled = true
+		if id == "escape":
+			out._escape_room_setup()
+		out.tick(0.1)
+		_begin()
+		await _end("coop %s room" % id)
+		out._traveled = false
+		out.close()
+	duo.enable_coop(false)
+	root.get_node("Phone")._bq.clear()
+	root.get_node("Phone").banner = {}
+	game.ui_open = false
 	out.enabled = false

@@ -190,6 +190,14 @@ var _mouse_ms := 0
 var _mouse_run := 0.0  # how far the mouse has moved since the last pad press (a nudge of the desk does not flip the hints)
 
 
+# X13: a test or headless run keeps the remapped keys under its own per-process name (like Difficulty._init and
+# Campaign._init; a test that already chose its own path keeps it)
+func _init() -> void:
+	var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+	if is_test and binds_path == "user://controls.cfg":
+		binds_path = "user://test_%d_controls.cfg" % OS.get_process_id()
+
+
 func _ready() -> void:
 	ensure()
 	load_binds()

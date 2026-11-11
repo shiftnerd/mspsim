@@ -487,6 +487,18 @@ func hook(key: String, default: Variant = null) -> Variant:
 	return m.get(key, default)
 
 
+# R9: a mutator's 12 x 12 icon (assets/ui/mut_<id>.png), null for "" or a missing file. Kept in _icons: a canvas draw
+# command does not hold its texture, and one loaded for a single paint is freed before the frame is drawn (a white square).
+var _icons := {}
+
+
+func icon(id: String) -> Texture2D:
+	if not _icons.has(id):
+		var path := "res://assets/ui/mut_%s.png" % id
+		_icons[id] = load(path) if id != "" and ResourceLoader.exists(path) else null
+	return _icons[id]
+
+
 # the name shown on the HUD and the day report ("" = none)
 func tag() -> String:
 	return str(current().get("name", ""))
@@ -826,6 +838,7 @@ func announce(id: String) -> void:
 		for o in offer.options:
 			options.append({"label": str(o.label), "id": str(o.id)})
 		pick = func(oid: String) -> void: _answer_offer(offer, oid)
+	Cards.art_next = "mut_" + id  # R9: the mutator's icon on the card's title bar (Cards.icon_tex)
 	Cards.ask("MORNING BRIEFING", body, options, pick)
 	var names := ", ".join(absent())
 	for t in m.get("texts", []):

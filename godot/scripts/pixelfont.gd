@@ -129,8 +129,32 @@ static func keys(text: String) -> String:
 	return str(controls.keys(text)) if controls != null else text
 
 
+# R42: with a pad in use a bracketed button in ANY text ("(A)", "(LB)", in a mail, a caption, a report) is drawn as its
+# glyph: the font hands such a line to PadGlyphs (sentence mode: brackets only, a bare STICK stays a word), which calls back
+# here for the plain pieces. So no screen has to remember to ask for glyphs. pad_glyphs.gd preloads this script, hence load().
+static var _glyphs: Script = null
+static var _in_glyphs := false
+static var glyph_lines := 0  # lines this route turned into glyphs (tests/pad_prompts.gd counts them)
+
+
+static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale: int) -> bool:
+	if _in_glyphs or text.find("(") < 0:
+		return false
+	if _glyphs == null:
+		_glyphs = load("res://scripts/pad_glyphs.gd")
+	if not _glyphs.active() or _glyphs.width(text, scale, true) == width(text, scale):
+		return false  # no pad, or no button in this line
+	_in_glyphs = true
+	glyph_lines += 1
+	_glyphs.draw(canvas, text, pos, color, scale, true)
+	_in_glyphs = false
+	return true
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
 	text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
+	if _pad_line(canvas, text, pos, color, scale):
+		return
 	# only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
 	if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
 		var tf := canvas.get_global_transform_with_canvas()

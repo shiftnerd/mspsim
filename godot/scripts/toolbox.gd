@@ -67,6 +67,7 @@ var seed_buf := ""  # the six hex digits on the wheels of the seed page
 var seed_focus := 0  # 0 the wheels, 1 RANDOM, 2 TODAY, 3 OK
 var seed_col := 0  # the wheel in focus (0..5; 6 = just past the last one, after typing all six)
 var last_launch := {}  # what the last launch() started (tests): {game, options}
+var icon_drawn := Rect2()  # R9: where the MUTATOR row's icon was painted (no size = none), for tests
 
 var _on_close := Callable()
 var _canvas: Node2D
@@ -700,6 +701,7 @@ func _paint_tools(size: Vector2) -> void:
 	var r := UiStyle.panel_rect(size, 300.0, h)
 	var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
 	var label_w := 52.0
+	icon_drawn = Rect2()
 	for i in list.size():
 		var row: Dictionary = list[i]
 		var y := body.position.y + 9.0 * float(i)
@@ -717,6 +719,11 @@ func _paint_tools(size: Vector2) -> void:
 			UiStyle.center(_canvas, value, gr.position.x + w * 0.5, y + 1.0, UiStyle.WHITE)
 			continue
 		UiStyle.text(_canvas, str(row.label), body.position.x, y + 1.0, UiStyle.INK)
+		if id == "mutator" and Mutators.icon(mutator) != null:
+			# R9: the chosen mutator's icon after the label. 12 px in a 9 px row: it overhangs a pixel above and two below,
+			# into the rows' padding (the label column is free there: the row below is the centred GO button)
+			icon_drawn = Rect2(body.position.x + 34.0, y - 2.0, 12.0, 12.0)
+			_canvas.draw_texture(Mutators.icon(mutator), icon_drawn.position)
 		var vx := body.position.x + label_w
 		var vw := body.size.x - label_w
 		UiStyle.center(_canvas, value, vx + vw * 0.5, y + 1.0, UiStyle.HEAD if hot else UiStyle.INK)

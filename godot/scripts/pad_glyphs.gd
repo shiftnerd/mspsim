@@ -114,6 +114,11 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
 	if not active():
 		PixelFont.draw(canvas, text, pos, color, scale)
 		return
+	# a sentence with no button in it is drawn as it was written (story text keeps its small letters for whoever reads the
+	# font's log, and a screen full of plain lines costs no token search)
+	if sentence and text.find("(") < 0 and text.findn("RS ") < 0:
+		PixelFont.draw(canvas, text, pos, color, scale)
+		return
 	var x := pos.x
 	for part in parts(text, sentence):
 		if part is int:

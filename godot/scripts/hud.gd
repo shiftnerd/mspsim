@@ -100,6 +100,11 @@ func _draw() -> void:
 						lines.append(war)
 				else:
 					lines.append(Controls.world_hint("DARTS %d  Z FIRE (HOLD = FAR)  {G} AWAY" % Nerf.ammo) + (("  " + war) if war != "" else ""))
+		var seat_line := -1  # X13: seated, the line says what the use button will do (Player.seat_target decides both)
+		var p1 := Players.player0()
+		if p1 != null and not Game.ui_open and not Game.busy and not Cards.is_open and p1.seat_hint() != "":
+			seat_line = lines.size()
+			lines.append(Controls.keys(p1.seat_hint()))
 		var p2 := Players.node(1) if Players.coop else null
 		if p2 != null and str(p2.held) == "nerf":
 			lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
@@ -108,6 +113,10 @@ func _draw() -> void:
 			widest = maxi(widest, PixelFont.width(str(line)))
 		draw_rect(Rect2(1.0, 1.0, float(widest) + 5.0, float(lines.size()) * 8.0), Goals.BACK)
 		for i in lines.size():
+			if i == seat_line:  # a pad's button is drawn as its glyph
+				PadGlyphs.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9), 1, true)
+				PadGlyphs.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95), 1, true)
+				continue
 			PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
 			PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
 		if Phone.banner.is_empty():

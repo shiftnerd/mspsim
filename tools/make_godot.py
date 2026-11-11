@@ -1087,6 +1087,7 @@ var ringing := false
 var call_secs := 9.0  # time on the headset (plus 0.7 s to put it on and take it off)
 
 var _handed := false
+var rung := 0.0  # X13: how long this desk phone has been ringing this time (0 when it is quiet)
 var _ring_until := 0.0
 var _next_ring := 0.0
 var _ring_snd := 0.0
@@ -1246,6 +1247,8 @@ func _process(delta: float) -> void:
         if kind == "desk_phone":
             _next_ring = _time + 40.0
         finished.emit()
+    if kind == "desk_phone":
+        rung = (rung + delta) if (ringing and not busy) else 0.0
     if kind == "desk_phone" and not busy:
         if Net.desk_state(desk) != "ok":
             ringing = false
@@ -6030,8 +6033,32 @@ static func keys(text: String) -> String:
     return str(controls.keys(text)) if controls != null else text
 
 
+# R42: with a pad in use a bracketed button in ANY text ("(A)", "(LB)", in a mail, a caption, a report) is drawn as its
+# glyph: the font hands such a line to PadGlyphs (sentence mode: brackets only, a bare STICK stays a word), which calls back
+# here for the plain pieces. So no screen has to remember to ask for glyphs. pad_glyphs.gd preloads this script, hence load().
+static var _glyphs: Script = null
+static var _in_glyphs := false
+static var glyph_lines := 0  # lines this route turned into glyphs (tests/pad_prompts.gd counts them)
+
+
+static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale: int) -> bool:
+    if _in_glyphs or text.find("(") < 0:
+        return false
+    if _glyphs == null:
+        _glyphs = load("res://scripts/pad_glyphs.gd")
+    if not _glyphs.active() or _glyphs.width(text, scale, true) == width(text, scale):
+        return false  # no pad, or no button in this line
+    _in_glyphs = true
+    glyph_lines += 1
+    _glyphs.draw(canvas, text, pos, color, scale, true)
+    _in_glyphs = false
+    return true
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
     text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
+    if _pad_line(canvas, text, pos, color, scale):
+        return
     # only screen-space UI (inside a CanvasLayer, or the root's own canvas): world-space fx are out of view by design
     if audit != null and text.strip_edges() != "" and color.a > 0.05 and canvas.get_canvas_layer_node() != null:
         var tf := canvas.get_global_transform_with_canvas()
@@ -6170,6 +6197,11 @@ static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> v
 
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1, sentence := false) -> void:
     if not active():
+        PixelFont.draw(canvas, text, pos, color, scale)
+        return
+    # a sentence with no button in it is drawn as it was written (story text keeps its small letters for whoever reads the
+    # font's log, and a screen full of plain lines costs no token search)
+    if sentence and text.find("(") < 0 and text.findn("RS ") < 0:
         PixelFont.draw(canvas, text, pos, color, scale)
         return
     var x := pos.x
@@ -8203,6 +8235,7 @@ write("scripts/computer.gd", '''extends CanvasLayer
 # clickable regions are collected while drawing (_hits).
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const DISPATCH := preload("res://scripts/dispatch.gd")
 const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
 const HABITS_VIEW := preload("res://scripts/habits_view.gd")  # R38: the Boardroom HABITS and RIVALS tabs (read only)
@@ -8966,11 +8999,11 @@ func _fill(r: Rect2, c: Color) -> void:
 
 
 func _text(s: String, p: Vector2, c: Color = TXT, scale := 1) -> void:
-    PixelFont.draw(_canvas, s, p, c, scale)
+    PadGlyphs.draw(_canvas, s, p, c, scale, true)  # R42: mail and chat bodies, lessons, every app: a pad button is its glyph
 
 
 func _tw(s: String, scale := 1) -> float:
-    return float(PixelFont.width(s, scale))
+    return float(PadGlyphs.width(s, scale, true))
 
 
 func _clip(s: String, chars: int) -> String:
@@ -11221,6 +11254,14 @@ var _sc := 1
 var _toast := ""
 var _toast_t := 0.0
 var _blink := 0.0
+
+
+# X13: a test or headless run keeps the phone's file under its own per-process name (like Difficulty._init and
+# Campaign._init; a test that already chose its own path keeps it)
+func _init() -> void:
+    var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+    if is_test and save_path == "user://mspsim_phone.cfg":
+        save_path = "user://test_%d_phone.cfg" % OS.get_process_id()
 
 
 func _ready() -> void:
@@ -13764,7 +13805,7 @@ func _bailout_card(amount: int) -> void:
 func _tier_rep(delta: int) -> int:
     if delta == 0:
         return 0
-    var pre := "tech." if mode == "tech" else "rep."
+    var pre := "tech." if mode == "tech" else ("owner." if mode == "owner" else "rep.")
     var m := Difficulty.f(pre + ("gain" if delta > 0 else "loss"))
     return (1 if delta > 0 else -1) * maxi(1, roundi(absf(float(delta)) * m))
 
@@ -14921,6 +14962,7 @@ const SPARK_H := 15.0
 # scale drops from 2 to 1 when a narrow format cannot fit everything.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("171c2a")
@@ -15153,7 +15195,7 @@ func _hero() -> Array:
 
 # text in virtual pixels relative to the panel
 func _t(s: String, x: float, y: float, c: Color, mult: int = 1) -> void:
-    PixelFont.draw(_canvas, s, _o + Vector2(x, y) * float(_sc), c, _sc * mult)
+    PadGlyphs.draw(_canvas, s, _o + Vector2(x, y) * float(_sc), c, _sc * mult, true)  # R42
 
 
 func _tw(s: String, mult: int = 1) -> float:
@@ -20669,6 +20711,7 @@ write("scripts/review.gd", '''extends CanvasLayer
 # an MSP tech. Offers depend on your reputation, your coworkers and how the big jobs went. Enter / Up / Down / click.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const GOOD := Color("1f7a3a")
@@ -20975,10 +21018,10 @@ func _paint() -> void:
     PixelFont.draw(_canvas, heading, panel.position + Vector2(3.0 * u, 2.0 * u), WHITE, sc)
     var y := panel.position.y + 12.0 * u
     for row in rows:
-        PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
+        PadGlyphs.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc, true)  # R42
         if row.size() > 2:
             var col_x: float = panel.position.x + (5.0 + 4.0 * 30.0) * u
-            PixelFont.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc)
+            PadGlyphs.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc, true)
         y += 7.0 * u
     if page == _opt_page():
         y += 3.0 * u
@@ -21030,6 +21073,7 @@ var options: Array = []
 var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
+var icon_drawn := Rect2()  # R9: where the open card's mutator icon was painted (no size = none), for tests
 var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
@@ -21240,6 +21284,12 @@ func _art_tex() -> Texture2D:
     return _art_cache[art]
 
 
+# R9: an art id "mut_<id>" is a mutator's 12 x 12 icon (the morning briefing). It sits on the right end of the title bar
+# and overhangs into the padding under it, so it takes no room from the text and every format shows it.
+func icon_tex() -> Texture2D:
+    return Mutators.icon(art.substr(4)) if art.begins_with("mut_") else null
+
+
 func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
@@ -21284,6 +21334,11 @@ func _paint() -> void:
     _canvas.draw_rect(panel, Color("e9ecf1"))
     _canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
     PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+    icon_drawn = Rect2()
+    var icon := icon_tex()
+    if icon != null and PixelFont.width(speaker) + 3.0 < pw - 18.0:
+        icon_drawn = Rect2(panel.end.x - 15.0, panel.position.y - 1.0, 12.0, 12.0)
+        _canvas.draw_texture(icon, icon_drawn.position)
     var y := panel.position.y + 12.0
     for line in lines:
         PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5 + (FACE_W if face != null else 0.0), y), INK, 1, true)
@@ -30289,6 +30344,10 @@ const TABLE := {
     "rep.gain": [1.2, 1.0, 0.8],
     "rep.loss": [0.75, 1.0, 1.3],
     "owner.cost": [0.95, 1.0, 1.03],
+    # Q6: the owner's weekly reputation move has its own pair, so hard can bite the owner without moving sales and service.
+    # Easy and normal are rep.gain / rep.loss to the digit (tests/owner_hard.gd); only the hard column is the owner's own.
+    "owner.gain": [1.2, 1.0, 0.5],
+    "owner.loss": [0.75, 1.0, 1.8],
     "sales.lead": [5, 0, -5],
     "sales.flow": [0.65, 0.5, 0.3],  # chance of a third new lead in a week
     # X13: two missed quarters end the sales job (0), unless the year as a whole reached this share of both quotas (hard only:
@@ -32392,7 +32451,7 @@ static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
     c.draw_rect(Rect2(0.0, top, size.x, h), DARK)
     c.draw_rect(Rect2(0.0, top, 2.0, h), GOLD)
     for i in lines.size():
-        text(c, str(lines[i]), 6.0, top + 2.0 + float(i) * 7.0, WHITE)
+        PadGlyphs.draw(c, str(lines[i]), Vector2(6.0, top + 2.0 + float(i) * 7.0), WHITE, 1, true)  # R42: the talk and outing captions
     return top
 ''')
 
@@ -35894,6 +35953,9 @@ const NARROW_KEYS := {
     "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
     "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
     "P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
+    # co-op lines the pad scanner found 3 px too wide for the tall format (the karaoke duet, the chair race for two)
+    "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE": "P1 LEFT / UP  P2 DOWN / RIGHT  ESC OUT",
+    "P1 = Z  P2 = {A / X|(A) / (X)}  ARROWS = LANE  ESC = LEAVE": "P1 Z  P2 {A / X|(A) / (X)}  ARROWS LANE  ESC OUT",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -36747,6 +36809,7 @@ func close() -> void:
     if not is_open:
         return
     is_open = false
+    _guest_sync()
     _set_pilot(0)
     _chair_clear()
     _paint_clear()
@@ -38991,6 +39054,73 @@ func dinner_guest() -> Dictionary:
     return g.get("guest", {})
 
 
+# ---- R6: the guest sits at the booth. The place setting SetDressing lays is in front of GUEST_SEAT (the second booth's
+# outer seat). Whoever of the crew had that seat takes the free stool at the bar, so nobody stays home for it and the
+# table's arithmetic is untouched. The body is an ordinary NPC with a role (like the people at a client's site): seated
+# poses and seat life, no talk zone, and World.chars never hears of it. It leaves with the dinner.
+const GUEST_SEAT := "Seat4"
+const GUEST_STOOL := "Seat8"
+const GUEST_NPC := preload("res://scenes/npc.tscn")
+# the people a guest can be when the client has no office of their own to borrow a face from (a sales prospect, a client
+# without a site): the owners and seniors among the client sheets
+const GUEST_POOL := ["client_karen", "client_mina", "client_brandt", "client_attorney_b", "client_dentdoc_b", "client_vetdoc_b", "client_agent_a", "client_designer_a"]
+var guest_node: Node = null
+
+
+# the character sheet of tonight's guest: the person in the owner's office at that client's site, else one of GUEST_POOL
+# picked by the guest's name (the same name is always the same face)
+func guest_character() -> String:
+    var guest: Dictionary = dinner_guest()
+    if guest.is_empty():
+        return ""
+    var c := int(guest.get("client", -1))
+    if Onsite.has_site(c):
+        var site: Dictionary = Onsite.SITES[c]
+        for entry in Onsite.CAST_AT.get(str(site.type), {}).get(str(site.skin), {}).get("office", []):
+            if str(entry[2]) == "owner":
+                return str(entry[0])
+    return str(GUEST_POOL[absi(hash(str(guest.get("name", "")))) % GUEST_POOL.size()])
+
+
+# called every frame of an open outing and once more when it closes
+func _guest_sync() -> void:
+    var want := is_open and room_mode() and game == "dinner" and not dinner_guest().is_empty()
+    if not want:
+        if guest_node != null and is_instance_valid(guest_node):
+            if guest_node.seat != null:
+                guest_node._release()
+            guest_node.queue_free()
+        guest_node = null
+        return
+    if guest_node != null and is_instance_valid(guest_node):
+        return
+    var scene := get_tree().current_scene
+    var booth: Node = scene.get_node_or_null("Interactables/" + GUEST_SEAT) if scene != null else null
+    if booth == null or scene.get_node_or_null("Actors") == null:
+        return
+    for n in get_tree().get_nodes_in_group("npcs"):
+        if n.seat == booth:  # they give up the booth seat for the guest and sit at the bar
+            n._release()
+            if n._occupy(GUEST_STOOL, true):
+                n._play("sit")
+            if World.chars.has(str(n.cast_name)) and not World.chars[n.cast_name].legs.is_empty():
+                World.chars[n.cast_name].legs[0]["seat"] = GUEST_STOOL
+    var at: Node = booth if not booth.occupied else scene.get_node_or_null("Interactables/" + GUEST_STOOL)
+    if at == null or at.occupied:
+        return  # no chair left tonight: the place setting stands for the guest, as before
+    var npc: Node = GUEST_NPC.instantiate()
+    npc.name = "DinnerGuest"
+    npc.character = guest_character()
+    npc.role = "guest"
+    npc.facing = str(at.facing)
+    npc.start_seat = str(at.name)
+    npc.routine = PackedStringArray(["wait:100000"])
+    npc.position = Vector2(at.global_position.x, 118.0)
+    npc.get_node("Shape").disabled = true  # nobody to walk up to: the table talk is the dinner's own
+    scene.get_node("Actors").add_child(npc)
+    guest_node = npc
+
+
 # the guest's reaction to a topic: shop talk is welcome twice, asking about the business once, a pitch never, and the team's
 # sore subjects are awkward in front of a client. The points join the table score.
 func _guest_react(topic: String) -> int:
@@ -39430,6 +39560,7 @@ func _room_begin() -> void:
 
 func _room_process(delta: float) -> void:
     _caption_t = maxf(0.0, _caption_t - delta)
+    _guest_sync()
     _room_extras(delta)
     _theme_look()
     for node in _marks.keys():
@@ -46178,6 +46309,132 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "TEACH THE STOP RULE", "reply": "Twice, then stop and read the log. If the log means nothing to you, bring it to me. I will add that line to the runbook.", "fx": {"morale": 4, "skill": 0.03}},
                 {"label": "FIX THE RUNBOOK", "reply": "Then the runbook is wrong. Show me the step, I will change it today.", "fx": {"morale": 4, "skill": 0.01}},
                 {"label": "SAY FIVE TIMES IS SILLY", "reply": "Five times. Really.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "{name} says: I told a user it would take ten minutes. It took two hours. Now she asks how long everything takes.",
+            "options":
+            [
+                {"label": "TEACH A RULE FOR ESTIMATES", "reply": "Say what you will check, not when you will finish. Then double the number in your head. I put it on the checklist.", "fx": {"morale": 4, "skill": 0.02}},
+                {"label": "CALL HER BACK TOGETHER", "reply": "We call her together. I say sorry for the ten minutes, you say what was fixed.", "fx": {"morale": 5, "mood": 1}},
+                {"label": "SAY DO NOT PROMISE TIMES", "reply": "Do not promise times.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I have had the on-call phone three weekends out of five. I counted.",
+            "options":
+            [
+                {"label": "REDO THE ROTA TODAY", "reply": "You counted right. I redid the rota. It is on the wall and my name is on it too.", "fx": {"morale": 6, "retain": 2}},
+                {"label": "TAKE THE NEXT WEEKEND YOURSELF", "reply": "I take the next weekend. After that it goes back to the list.", "fx": {"morale": 4, "stress": -3}},
+                {"label": "SAY SOMEBODY HAS TO HOLD IT", "reply": "Somebody has to hold it.", "fx": {"morale": -5, "retain": -1}},
+            ],
+        },
+        {
+            "text": "{name} says: I read a password out loud on the phone at Hoot and Holler Law. The whole office heard it.",
+            "options":
+            [
+                {"label": "RESET IT AND WRITE THE RULE", "reply": "Reset it now, I will tell them why. Passwords go on paper or in person. I am adding a line to the checklist.", "fx": {"morale": 4, "skill": 0.03}},
+                {"label": "SAY YOU DID THE SAME ONCE", "reply": "I did that once, at a bank. Reset it and move on.", "fx": {"morale": 4, "stress": -3}},
+                {"label": "ASK WHAT THE THINKING WAS", "reply": "What were you thinking?", "fx": {"morale": -5, "stress": 4}},
+            ],
+        },
+        {
+            "text": "{name} says: A user at Acme Dental asked me to make her an admin so she could install a toolbar. I said maybe.",
+            "options":
+            [
+                {"label": "TEACH THE WORDS FOR NO", "reply": "Maybe means yes to a user. Say: I cannot, and here is what I can do. Practise it on me.", "fx": {"morale": 5, "skill": 0.02}},
+                {"label": "TAKE THE CALL BACK YOURSELF", "reply": "I will call her. You listen in, and the next one is yours.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY NEVER SAY MAYBE", "reply": "Never say maybe.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I do not know what to write in the ticket notes. I write: fixed.",
+            "options":
+            [
+                {"label": "SHOW THE THREE LINES", "reply": "Three lines: what they said, what you found, what you did. Here is one of mine. Copy the shape.", "fx": {"morale": 4, "skill": 0.03}},
+                {"label": "READ A GOOD ONE TOGETHER", "reply": "Pull up one of Maya's. We read it and you tell me what is in it.", "fx": {"morale": 3, "skill": 0.02}},
+                {"label": "SAY FIXED IS NOT A NOTE", "reply": "Fixed is not a note.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I ate lunch at my desk all week. Nobody told me to. The queue just looks at me.",
+            "options":
+            [
+                {"label": "SEND THEM OUT AT NOON", "reply": "The queue has no eyes. Noon to half past you are out of the building. I watch your board.", "fx": {"morale": 5, "stress": -6}},
+                {"label": "LUNCH WITH THE CREW TOMORROW", "reply": "Tomorrow we all eat in the break room. The phones roll to me.", "fx": {"morale": 4, "stress": -3, "retain": 1}},
+                {"label": "SAY THE QUEUE IS LONG", "reply": "The queue is long.", "fx": {"morale": -3, "stress": 4}},
+            ],
+        },
+        {
+            "text": "{name} says: Garrison walked past and asked me what we are for. I said computers. Was that wrong?",
+            "options":
+            [
+                {"label": "GIVE THE ONE-LINE ANSWER", "reply": "Not wrong. Short. Say: we keep the client working so they never think about us. He was testing the pitch, not you.", "fx": {"morale": 4, "retain": 1}},
+                {"label": "SAY HE ASKS EVERYBODY", "reply": "He asks everybody. Computers is a fine answer.", "fx": {"morale": 3}},
+                {"label": "SAY ASK GARRISON", "reply": "Ask Garrison.", "fx": {"morale": -2}},
+            ],
+        },
+        {
+            "text": "{name} says: I escalated four tickets yesterday. Maya sighed at the fourth.",
+            "options":
+            [
+                {"label": "SORT THE FOUR TOGETHER", "reply": "Bring the four. We sort them: needed her, needed ten more minutes, needed one question. No blame in it.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "SAY ESCALATING IS THE JOB", "reply": "Escalating is the job. I will talk to Maya about the sigh.", "fx": {"morale": 4, "stress": -2}},
+                {"label": "SAY TRY LONGER FIRST", "reply": "Try longer before you send them up.", "fx": {"morale": -3, "stress": 3}},
+            ],
+        },
+        {
+            "text": "{name} says: A man at Iron Mule Demolition calls me the kid. Every call.",
+            "options":
+            [
+                {"label": "HAVE A WORD WITH THE CLIENT", "reply": "I will mention it to their office manager, quietly. You have a name and it is on every ticket.", "fx": {"morale": 6, "retain": 1}},
+                {"label": "GIVE A LINE TO OPEN WITH", "reply": "Open every call with your name. First line. It works by the third week.", "fx": {"morale": 4, "stress": -2}},
+                {"label": "SAY HE CALLS EVERYBODY THAT", "reply": "He calls everybody that.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I want to take the certification exam. It costs money and I would need a Thursday.",
+            "options":
+            [
+                {"label": "PAY IT AND BOOK THE THURSDAY", "reply": "The shop pays the first try. Thursday is yours. The study guide is on your desk, I tabbed it.", "fx": {"morale": 6, "retain": 2, "skill": 0.03}},
+                {"label": "GIVE THE DAY, NOT THE FEE", "reply": "Take the Thursday. The fee we talk about when you pass.", "fx": {"morale": 3, "retain": 1}},
+                {"label": "SAY AFTER THE BUSY SEASON", "reply": "After the busy season.", "fx": {"morale": -3, "retain": -1}},
+            ],
+        },
+        {
+            "text": "{name} says: I unplugged the wrong cable at Paws and Claws. The front desk was down for six minutes. Only I noticed.",
+            "options":
+            [
+                {"label": "LABEL THE CABLES TOGETHER", "reply": "Six minutes, and you counted them. Good. Next visit we label both ends. I have the label maker.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "SAY TRACE BEFORE YOU PULL", "reply": "Trace it with your hand before you pull. Today it is fine.", "fx": {"morale": 2, "skill": 0.01}},
+                {"label": "ASK WHY NOBODY WAS TOLD", "reply": "And you told nobody for a day?", "fx": {"morale": -5, "stress": 4}},
+            ],
+        },
+        {
+            "text": "{name} says: The van smells like fries and the fuel light has been on since Tuesday. Whose job is that?",
+            "options":
+            [
+                {"label": "PUT A SHEET IN THE GLOVE BOX", "reply": "Now it is on a sheet in the glove box: who drove, fuel, fries. I filled the tank this once.", "fx": {"morale": 4, "retain": 1}},
+                {"label": "SAY WHOEVER DROVE LAST", "reply": "Whoever drove it last fills it. That was you. I will tell the others the same.", "fx": {"morale": 2}},
+                {"label": "SAY FIGURE IT OUT", "reply": "Figure it out.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I fixed the same shared printer at Brightside Realty three times this week. Each time a different person thanks me.",
+            "options":
+            [
+                {"label": "FIND THE CAUSE TOGETHER", "reply": "Three thanks is one problem. Bring the tickets, we find what breaks it and write that down once.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "PUT IT ON THE FRIDAY LIST", "reply": "It goes on the Friday list. You present it. Two minutes.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY THANKS ARE NOT A METRIC", "reply": "Thanks are not a metric.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: My headset has crackled for a month. I thought everybody's did.",
+            "options":
+            [
+                {"label": "ORDER A NEW ONE NOW", "reply": "Nobody's does. I am ordering one while you stand here. Take mine until it comes.", "fx": {"morale": 5, "stress": -3, "retain": 1}},
+                {"label": "SWAP IT WITH THE SPARE", "reply": "There is a spare in the closet, top shelf, in a bag I labelled.", "fx": {"morale": 3, "stress": -2}},
+                {"label": "SAY SPEAK UP SOONER", "reply": "A month. Speak up sooner.", "fx": {"morale": -3}},
             ],
         },
     ],
@@ -57607,7 +57864,7 @@ func _r(x: float, y: float, w: float, h: float, c: Color) -> void:
 
 
 func _txt(s: String, x: float, y: float, c: Color = INK, scale := 1) -> void:
-    PixelFont.draw(_canvas, s, _o + Vector2(x, y), c, scale)
+    UiStyle.PadGlyphs.draw(_canvas, s, _o + Vector2(x, y), c, scale, true)  # R42: the help lines name pad buttons
 
 
 func _wrap(s: String, chars: int) -> Array:
@@ -57965,6 +58222,11 @@ func _draw() -> void:
                         lines.append(war)
                 else:
                     lines.append(Controls.world_hint("DARTS %d  Z FIRE (HOLD = FAR)  {G} AWAY" % Nerf.ammo) + (("  " + war) if war != "" else ""))
+        var seat_line := -1  # X13: seated, the line says what the use button will do (Player.seat_target decides both)
+        var p1 := Players.player0()
+        if p1 != null and not Game.ui_open and not Game.busy and not Cards.is_open and p1.seat_hint() != "":
+            seat_line = lines.size()
+            lines.append(Controls.keys(p1.seat_hint()))
         var p2 := Players.node(1) if Players.coop else null
         if p2 != null and str(p2.held) == "nerf":
             lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
@@ -57973,6 +58235,10 @@ func _draw() -> void:
             widest = maxi(widest, PixelFont.width(str(line)))
         draw_rect(Rect2(1.0, 1.0, float(widest) + 5.0, float(lines.size()) * 8.0), Goals.BACK)
         for i in lines.size():
+            if i == seat_line:  # a pad's button is drawn as its glyph
+                PadGlyphs.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9), 1, true)
+                PadGlyphs.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95), 1, true)
+                continue
             PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
             PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
         if Phone.banner.is_empty():
@@ -58110,6 +58376,7 @@ var seed_buf := ""  # the six hex digits on the wheels of the seed page
 var seed_focus := 0  # 0 the wheels, 1 RANDOM, 2 TODAY, 3 OK
 var seed_col := 0  # the wheel in focus (0..5; 6 = just past the last one, after typing all six)
 var last_launch := {}  # what the last launch() started (tests): {game, options}
+var icon_drawn := Rect2()  # R9: where the MUTATOR row's icon was painted (no size = none), for tests
 
 var _on_close := Callable()
 var _canvas: Node2D
@@ -58743,6 +59010,7 @@ func _paint_tools(size: Vector2) -> void:
     var r := UiStyle.panel_rect(size, 300.0, h)
     var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
     var label_w := 52.0
+    icon_drawn = Rect2()
     for i in list.size():
         var row: Dictionary = list[i]
         var y := body.position.y + 9.0 * float(i)
@@ -58760,6 +59028,11 @@ func _paint_tools(size: Vector2) -> void:
             UiStyle.center(_canvas, value, gr.position.x + w * 0.5, y + 1.0, UiStyle.WHITE)
             continue
         UiStyle.text(_canvas, str(row.label), body.position.x, y + 1.0, UiStyle.INK)
+        if id == "mutator" and Mutators.icon(mutator) != null:
+            # R9: the chosen mutator's icon after the label. 12 px in a 9 px row: it overhangs a pixel above and two below,
+            # into the rows' padding (the label column is free there: the row below is the centred GO button)
+            icon_drawn = Rect2(body.position.x + 34.0, y - 2.0, 12.0, 12.0)
+            _canvas.draw_texture(Mutators.icon(mutator), icon_drawn.position)
         var vx := body.position.x + label_w
         var vw := body.size.x - label_w
         UiStyle.center(_canvas, value, vx + vw * 0.5, y + 1.0, UiStyle.HEAD if hot else UiStyle.INK)
@@ -62329,6 +62602,8 @@ const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
 const FACE_AWAY := 12.0  # X13: px added to the distance of a thing behind your back (Player.nearest)
+const RING_GAP := 3.5  # X13: seconds between two rings of a desk phone (Fx plays the ring sound this often)
+const FRESH_RINGS := 2  # X13: a seated press answers the desk phone during this many rings (seat_target)
 const CHARACTERS := [
     "office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "office_john"
 ]
@@ -62681,6 +62956,40 @@ func _ringing_phone() -> Node:
     return null
 
 
+# X13: what the use button does while you sit, in one place, so the press and the HUD's line cannot disagree:
+#   a desk phone in its first FRESH_RINGS rings ("phone"), somebody who came over with news ("caller"), the Computer
+#   ("computer"), a phone that has rung longer than that when there is nothing else to press ("phone"), else nothing
+#   (the press stands you up). Returns {"kind": String, "node": Node}.
+func seat_target() -> Dictionary:
+    if seat == null or state != "sitting":
+        return {"kind": "", "node": null}
+    var phone := _ringing_phone()
+    if phone != null and float(phone.get_node(phone.target).rung) < RING_GAP * FRESH_RINGS:
+        return {"kind": "phone", "node": phone}
+    var who := _seat_caller()
+    if who != null:
+        return {"kind": "caller", "node": who}
+    var pc := _seat_computer()
+    if pc != null:
+        return {"kind": "computer", "node": pc}
+    if phone != null:
+        return {"kind": "phone", "node": phone}
+    return {"kind": "", "node": null}
+
+
+# the HUD's line for it ("" = nothing to press for; tokens are resolved by the font)
+func seat_hint() -> String:
+    var target := seat_target()
+    match str(target.kind):
+        "phone":
+            return "{E} ANSWER THE PHONE"
+        "caller":
+            return "{E} %s HAS NEWS" % str(target.node.get("cast_name")).to_upper()
+        "computer":
+            return "{E} COMPUTER"
+    return ""
+
+
 # the computer in front of the seat (opened with E while seated)
 func _seat_computer() -> Node:
     if seat == null:
@@ -62927,12 +63236,8 @@ func _physics_process(delta: float) -> void:
             _gesture_tick(delta, locked)
         if state == "sitting" and (running or roll_held) and dir != 0.0 and _roll.drive(self, dir, delta):
             pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
-        elif state == "sitting" and interact and _ringing_phone() != null:
-            _ringing_phone().use(self)
-        elif state == "sitting" and interact and _seat_caller() != null:
-            _seat_caller().use(self)
-        elif state == "sitting" and interact and _seat_computer() != null:
-            _seat_computer().use(self)
+        elif state == "sitting" and interact and seat_target().node != null:
+            seat_target().node.use(self)  # X13: the phone in its first rings, somebody with news, the Computer (seat_target)
         elif state == "sitting" and held != "" and held != "nerf" and Input.is_action_just_pressed(_a("drink")):
             drink()
         elif state == "sitting" and (interact or jump or dir != 0.0):
@@ -64084,6 +64389,18 @@ func hook(key: String, default: Variant = null) -> Variant:
     return m.get(key, default)
 
 
+# R9: a mutator's 12 x 12 icon (assets/ui/mut_<id>.png), null for "" or a missing file. Kept in _icons: a canvas draw
+# command does not hold its texture, and one loaded for a single paint is freed before the frame is drawn (a white square).
+var _icons := {}
+
+
+func icon(id: String) -> Texture2D:
+    if not _icons.has(id):
+        var path := "res://assets/ui/mut_%s.png" % id
+        _icons[id] = load(path) if id != "" and ResourceLoader.exists(path) else null
+    return _icons[id]
+
+
 # the name shown on the HUD and the day report ("" = none)
 func tag() -> String:
     return str(current().get("name", ""))
@@ -64423,6 +64740,7 @@ func announce(id: String) -> void:
         for o in offer.options:
             options.append({"label": str(o.label), "id": str(o.id)})
         pick = func(oid: String) -> void: _answer_offer(offer, oid)
+    Cards.art_next = "mut_" + id  # R9: the mutator's icon on the card's title bar (Cards.icon_tex)
     Cards.ask("MORNING BRIEFING", body, options, pick)
     var names := ", ".join(absent())
     for t in m.get("texts", []):
@@ -74884,6 +75202,14 @@ var _stick_result := false
 var _noted: InputEvent = null  # the last event _note_device looked at
 var _mouse_ms := 0
 var _mouse_run := 0.0  # how far the mouse has moved since the last pad press (a nudge of the desk does not flip the hints)
+
+
+# X13: a test or headless run keeps the remapped keys under its own per-process name (like Difficulty._init and
+# Campaign._init; a test that already chose its own path keeps it)
+func _init() -> void:
+    var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+    if is_test and binds_path == "user://controls.cfg":
+        binds_path = "user://test_%d_controls.cfg" % OS.get_process_id()
 
 
 func _ready() -> void:

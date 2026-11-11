@@ -890,7 +890,7 @@ func _bailout_card(amount: int) -> void:
 func _tier_rep(delta: int) -> int:
 	if delta == 0:
 		return 0
-	var pre := "tech." if mode == "tech" else "rep."
+	var pre := "tech." if mode == "tech" else ("owner." if mode == "owner" else "rep.")
 	var m := Difficulty.f(pre + ("gain" if delta > 0 else "loss"))
 	return (1 if delta > 0 else -1) * maxi(1, roundi(absf(float(delta)) * m))
 

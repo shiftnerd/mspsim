@@ -83,6 +83,7 @@ var ringing := false
 var call_secs := 9.0  # time on the headset (plus 0.7 s to put it on and take it off)
 
 var _handed := false
+var rung := 0.0  # X13: how long this desk phone has been ringing this time (0 when it is quiet)
 var _ring_until := 0.0
 var _next_ring := 0.0
 var _ring_snd := 0.0
@@ -261,6 +262,8 @@ func _process(delta: float) -> void:
 		if kind == "desk_phone":
 			_next_ring = _time + 40.0
 		finished.emit()
+	if kind == "desk_phone":
+		rung = (rung + delta) if (ringing and not busy) else 0.0
 	if kind == "desk_phone" and not busy:
 		if Net.desk_state(desk) != "ok":
 			ringing = false

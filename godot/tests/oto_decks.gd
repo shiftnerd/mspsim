@@ -76,6 +76,8 @@ func _run() -> void:
 			if deck == "Tech":
 				shape_ok = shape_ok and str(card.text).begins_with("{name} says:")
 	_check(sv.ONE_ON_ONES.Maya.size() >= 10 and sv.ONE_ON_ONES.Tech.size() >= 10 and sv.ONE_ON_ONES.John.size() >= 10, "every deck has ten cards or more (%s)" % ", ".join(sizes))
+	# C7: 28 tech cards, because a 20-day run holds 25 to 27 tech 1:1s (two techs, a 1:1 a day in turn, plus the walk-ups)
+	_check(sv.ONE_ON_ONES.Tech.size() >= 28, "the techs' shared deck has 28 cards or more (%d)" % sv.ONE_ON_ONES.Tech.size())
 	_check(shape_ok and dup == "", "every card has three options with a label, a reply and known effects; no text twice %s" % dup)
 	# the same reading of the options in every card: the first is the considered answer, the last the curt one
 	var order_ok := true
@@ -178,6 +180,14 @@ func _run() -> void:
 		shown[key] = true
 	_check(int(r.get("last_day", 0)) >= 20 and not bool(r.fired), "the bot played the 20 days (day %d, %s)" % [int(r.get("last_day", 0)), str(r.get("ending", ""))])
 	_check(log.size() >= 30, "with 1:1s on every day (%d: %s)" % [log.size(), str(per)])
+	var tech_quiet := 0
+	var tech_cards := 0
+	for entry in log:
+		if str(entry[0]) == "Tech":
+			tech_cards += 1
+			if int(entry[1]) < 0:
+				tech_quiet += 1
+	_check(tech_quiet == 0 and tech_cards >= 15, "no tech 1:1 of the run was a check-in: the deck lasts the 20 days (%d tech 1:1s, %d check-ins, %d cards left)" % [tech_cards, tech_quiet, sv.oto_left("Tech")])
 	_check(twice.is_empty(), "no 1:1 card came twice in the run (%d cards, %d check-ins after a used-up deck) %s" % [log.size() - quiet, quiet, str(twice)])
 	# the same from what was on screen: the bot's own card log
 	var texts_seen := {}

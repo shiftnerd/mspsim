@@ -11,6 +11,8 @@ const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
 const FACE_AWAY := 12.0  # X13: px added to the distance of a thing behind your back (Player.nearest)
+const RING_GAP := 3.5  # X13: seconds between two rings of a desk phone (Fx plays the ring sound this often)
+const FRESH_RINGS := 2  # X13: a seated press answers the desk phone during this many rings (seat_target)
 const CHARACTERS := [
 	"office_intern",
 	"office_adult",
@@ -369,6 +371,40 @@ func _ringing_phone() -> Node:
 	return null
 
 
+# X13: what the use button does while you sit, in one place, so the press and the HUD's line cannot disagree:
+#   a desk phone in its first FRESH_RINGS rings ("phone"), somebody who came over with news ("caller"), the Computer
+#   ("computer"), a phone that has rung longer than that when there is nothing else to press ("phone"), else nothing
+#   (the press stands you up). Returns {"kind": String, "node": Node}.
+func seat_target() -> Dictionary:
+	if seat == null or state != "sitting":
+		return {"kind": "", "node": null}
+	var phone := _ringing_phone()
+	if phone != null and float(phone.get_node(phone.target).rung) < RING_GAP * FRESH_RINGS:
+		return {"kind": "phone", "node": phone}
+	var who := _seat_caller()
+	if who != null:
+		return {"kind": "caller", "node": who}
+	var pc := _seat_computer()
+	if pc != null:
+		return {"kind": "computer", "node": pc}
+	if phone != null:
+		return {"kind": "phone", "node": phone}
+	return {"kind": "", "node": null}
+
+
+# the HUD's line for it ("" = nothing to press for; tokens are resolved by the font)
+func seat_hint() -> String:
+	var target := seat_target()
+	match str(target.kind):
+		"phone":
+			return "{E} ANSWER THE PHONE"
+		"caller":
+			return "{E} %s HAS NEWS" % str(target.node.get("cast_name")).to_upper()
+		"computer":
+			return "{E} COMPUTER"
+	return ""
+
+
 # the computer in front of the seat (opened with E while seated)
 func _seat_computer() -> Node:
 	if seat == null:
@@ -620,12 +656,8 @@ func _physics_process(delta: float) -> void:
 			_gesture_tick(delta, locked)
 		if state == "sitting" and (running or roll_held) and dir != 0.0 and _roll.drive(self, dir, delta):
 			pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
-		elif state == "sitting" and interact and _ringing_phone() != null:
-			_ringing_phone().use(self)
-		elif state == "sitting" and interact and _seat_caller() != null:
-			_seat_caller().use(self)
-		elif state == "sitting" and interact and _seat_computer() != null:
-			_seat_computer().use(self)
+		elif state == "sitting" and interact and seat_target().node != null:
+			seat_target().node.use(self)  # X13: the phone in its first rings, somebody with news, the Computer (seat_target)
 		elif (
 			state == "sitting"
 			and held != ""

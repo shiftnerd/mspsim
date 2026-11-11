@@ -28,6 +28,22 @@ func _init() -> void:
 	_check(str(msp.pace_path) == own_settings, "Msp read the ticket pace from the test's file at boot, not from the player's (%s)" % msp.pace_path)
 	_check(msp.pace_setting == 1, "so the pace is NORMAL whatever the player's own setting is (%s)" % msp.pace_label())
 	_check(str(root.get_node("Sfx").settings_path) == own_settings, "the sound settings too (%s)" % root.get_node("Sfx").settings_path)
+	# X13 hygiene: the phone's file and the remapped keys are the test's own too (each autoload's _init)
+	var ph := root.get_node("Phone")
+	var ctl := root.get_node("Controls")
+	_check(str(ph.save_path) == "user://test_%d_phone.cfg" % pid, "the phone's file is the test's own (%s)" % ph.save_path)
+	_check(str(ctl.binds_path) == "user://test_%d_controls.cfg" % pid, "the remapped keys are the test's own (%s)" % ctl.binds_path)
+	ph.os = "pear"
+	ph._save()
+	_check(FileAccess.file_exists("user://test_%d_phone.cfg" % pid), "a saved phone setting lands in the test's file")
+	ph.os = ""
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(str(ph.save_path)))
+	ctl.rebind("interact", KEY_T)
+	ctl.save_binds()
+	_check(FileAccess.file_exists("user://test_%d_controls.cfg" % pid), "a remapped key lands in the test's file")
+	ctl.reset_binds()
+	ctl.save_binds()
+	_check(not FileAccess.file_exists("user://test_%d_controls.cfg" % pid), "and putting the keys back removes it again")
 	# the autoload order is what made the old place (_ready) too late: Msp is ready before Difficulty
 	_check(msp.get_index() < d.get_index() and msp.get_index() < c.get_index(), "Msp is an earlier autoload than Difficulty and Campaign (%d < %d, %d)" % [msp.get_index(), d.get_index(), c.get_index()])
 	# the career file follows the prefix

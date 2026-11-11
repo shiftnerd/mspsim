@@ -80,6 +80,14 @@ var _toast_t := 0.0
 var _blink := 0.0
 
 
+# X13: a test or headless run keeps the phone's file under its own per-process name (like Difficulty._init and
+# Campaign._init; a test that already chose its own path keeps it)
+func _init() -> void:
+	var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
+	if is_test and save_path == "user://mspsim_phone.cfg":
+		save_path = "user://test_%d_phone.cfg" % OS.get_process_id()
+
+
 func _ready() -> void:
 	layer = 61
 	_canvas = Node2D.new()
