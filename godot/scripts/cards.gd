@@ -6,6 +6,7 @@ extends CanvasLayer
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a card is its sprite (the lines are cut as text, the glyph is narrower)
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 
@@ -252,7 +253,7 @@ func _paint() -> void:
 	PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
 	var y := panel.position.y + 12.0
 	for line in lines:
-		PixelFont.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK)
+		PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
 		y += 7.0
 	y += 4.0
 	for i in options.size():
@@ -269,7 +270,7 @@ func _paint() -> void:
 		var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
 		var right_edge := r.end.x
 		for k in rows.size():
-			PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
+			PadGlyphs.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"), 1, true)
 		if chip != "":
 			var tint := Color("2f7d46")
 			if str(opt.get("stance", "")) == "warn":

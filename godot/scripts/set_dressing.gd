@@ -10,8 +10,14 @@ const ART := "res://assets/props/%s.png"
 # room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
 const PLATES := {
 	"wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
-	"wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+	"wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_d", 32, -43]],
 }
+# a guest at the dinner (a client or a prospect): the second table's two plates make room for a place setting and a name tent at its
+# end, and a briefcase leans on the floor beside the booth. Drawn while Outings.dinner_guest() is not empty.
+const GUEST_TABLE := "wood_table_3"
+const GUEST_PLATE_X := [3.0, 16.0]
+const GUEST_SET := [["dinner_tent", 30, -43], ["dinner_setting", 37, -44]]
+const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-sort line), the sprite's offset up
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
 # the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
@@ -19,6 +25,7 @@ const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "tru
 const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
+var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
 var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
 var _t := 0.0
 
@@ -64,6 +71,14 @@ static func dress(stage: Node) -> Node:
 			var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
 			if s != null:
 				node.plates.append(s)
+	for row in GUEST_SET:
+		var g := _put(actors.get_node_or_null(GUEST_TABLE), str(row[0]), Vector2(float(row[1]), float(row[2])))
+		if g != null:
+			node.guest.append(g)
+	var bag := _put(actors, str(GUEST_CASE[0]), Vector2(float(GUEST_CASE[1]), float(GUEST_CASE[2])))
+	if bag != null:
+		bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
+		node.guest.append(bag)
 	node.refresh()
 	return node
 
@@ -99,6 +114,11 @@ static func escape_swap(stage: Node) -> int:
 
 
 # the food is on the table once the dinner is past the ordering round
+# a client or prospect is at the dinner table
+static func guest_here() -> bool:
+	return Outings.game == "dinner" and not Outings.dinner_guest().is_empty()
+
+
 static func plates_on() -> bool:
 	return Outings.game == "dinner" and not Outings.dinner_ordering()
 
@@ -110,6 +130,12 @@ func refresh() -> void:
 	var on := plates_on()
 	for s in plates:
 		s.visible = on
+	var here := guest_here()
+	for s in guest:
+		s.visible = here
+	for i in GUEST_PLATE_X.size():  # the second table's plates step aside for the guest
+		if plates.size() > 2 + i:
+			plates[2 + i].position.x = float(GUEST_PLATE_X[i]) if here else float(PLATES[GUEST_TABLE][i][1])
 
 
 func _process(delta: float) -> void:

@@ -264,3 +264,51 @@ esc("lab", "globe", 16, 26, LAB, function(b, d)
   F(d, 3, 9, 6, 1, "q"); F(d, 11, 2, 2, 1, "q")
   F(d, 11, 15, 2, 2, "g"); F(d, 3, 15, 2, 1, "D"); F(d, 6, 15, 2, 1, "D")
 end)
+
+-- ====================================================================================================================
+-- Dinner guest (a client or a prospect at the table): a place setting, a name tent and a briefcase leaning on the booth.
+-- Sources office/pieces/game_dinner_*.aseprite, PNGs godot/assets/props/dinner_*.png (set_dressing.gd draws them while Outings.dinner_guest()
+-- is not empty). Also a fourth plate (spinach dip) so the four shared plates of the ordering round have four faces.
+-- ====================================================================================================================
+-- a place setting, side on (14 x 5): fork, a plate, a knife, a glass of water
+PR.build{name = "game_dinner_setting", ase = ASE, layers = {
+  {name = "Cutlery", x = 0, y = 1, pal = {s = "#C8CCD8", d = "#8E939E"}, rows = {
+    "s", "s", "s", "d",
+  }},
+  {name = "Plate", x = 2, y = 3, pal = {w = "#F4F2EA", s = "#C8CCD8"}, rows = {"wwwwwww", ".sssss."}},
+  {name = "Knife", x = 10, y = 1, pal = {s = "#C8CCD8", d = "#8E939E"}, rows = {"s", "s", "s", "d"}},
+  {name = "Glass", x = 12, y = 0, pal = {g = "#BFE0F0", b = "#6FA8D0"}, rows = {"gg", "gg", "bb", "bb", "bb"}},
+}}
+export("dinner_setting", "godot/assets/props/")
+
+-- a name tent (5 x 4): a folded white card with a pen scribble and a blue edge
+PR.build{name = "game_dinner_tent", ase = ASE, layers = {
+  {name = "Card", x = 0, y = 0, pal = {w = "#F4F2EA", s = "#C8CCD8", n = "#4F7FD0", d = "#3A62A8"}, rows = {
+    ".www.",
+    "wnndw",
+    "wwwww",
+    "sssss",
+  }},
+}}
+export("dinner_tent", "godot/assets/props/")
+
+-- a briefcase standing on the floor (10 x 8): brown leather, a handle, a brass clasp
+PR.build{name = "game_dinner_briefcase", ase = ASE, layers = {
+  {name = "Handle", x = 3, y = 0, pal = {h = "#4A3220"}, rows = {"hhhh", "h..h"}},
+  {name = "Case", x = 0, y = 2, pal = {b = "#8A5A36", l = "#B07A4A", d = "#5A3A22", y = "#E8C45A"}, rows = {
+    "lllllllllb",
+    "bbbbbbbbbb",
+    "bbbbyybbbb",
+    "bbbbyybbbb",
+    "bbbbbbbbbb",
+    "dddddddddd",
+  }},
+}}
+export("dinner_briefcase", "godot/assets/props/")
+
+-- the fourth plate: a spinach dip with chips, the same size as the other three (11 x 6)
+PR.build{name = "game_dinner_plate_d", ase = ASE, layers = {
+  {name = "Plate", x = 0, y = 2, pal = {w = "#F4F2EA", s = "#C8CCD8"}, rows = {"wwwwwwwww", ".sssssss."}},
+  {name = "Food", x = 1, y = 0, pal = {f = "#6A9A4A", d = "#4A7A34", c = "#E8C860"}, rows = {".ffff.c", "ffdfffc"}},
+}}
+export("dinner_plate_d", "godot/assets/props/")

@@ -6000,16 +6000,25 @@ write("scripts/pad_glyphs.gd", '''extends RefCounted
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const ATLAS := "res://assets/ui/pad_glyphs.png"
 const CELL := Vector2(11.0, 7.0)
-const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
-const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# cells 13 to 24 (R42): the Deck's View and Menu, the right stick with a direction, the stick pressed in, the D-pad's single directions
+const NAMES := [
+    "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD",
+    "VIEW", "MENU", "RS_UP", "RS_DOWN", "RS_LEFT", "RS_RIGHT", "L3", "R3", "UP", "DOWN", "LEFT", "RIGHT",
+]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 11, 11, 7, 7, 7, 7]
+# on a Steam Deck the BACK and START buttons are called View and Menu
+const DECK_SWAP := {"BACK": "VIEW", "START": "MENU"}
 # what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
 const TOKENS := {
     "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
-    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
-    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "L3", "(R3)": "R3",
+    "(UP)": "UP", "(DOWN)": "DOWN", "(LEFT)": "LEFT", "(RIGHT)": "RIGHT",
+    "(VIEW)": "VIEW", "(MENU)": "MENU", "RS UP": "RS_UP", "RS DOWN": "RS_DOWN", "RS LEFT": "RS_LEFT", "RS RIGHT": "RS_RIGHT",
 }
 
 static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var deck_force := -1  # tests: 1 = a Steam Deck, 0 = not, -1 = look (the SteamDeck environment variable, or the pad's name)
+static var _deck := -1
 static var _tex: Texture2D
 static var _looked := false
 
@@ -6019,6 +6028,17 @@ static func atlas() -> Texture2D:
         _looked = true
         _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
     return _tex
+
+
+static func deck() -> bool:
+    if deck_force >= 0:
+        return deck_force == 1
+    if _deck < 0:
+        _deck = 1 if OS.get_environment("SteamDeck") == "1" else 0
+        for id in Input.get_connected_joypads():
+            if Input.get_joy_name(id).to_lower().contains("steam deck"):
+                _deck = 1
+    return _deck == 1
 
 
 static func active() -> bool:
@@ -6033,16 +6053,20 @@ static func active() -> bool:
 
 
 # the line cut into pieces: a String is text, an int is a glyph index
-static func parts(text: String) -> Array:
+# `sentence` (a card, a tutorial line): only the bracketed buttons and "RS UP" turn into glyphs; a bare STICK stays a word,
+# because prose has USB sticks in it
+static func parts(text: String, sentence := false) -> Array:
     var out := []
     var rest := text.to_upper()
     while rest != "":
         var at := -1
         var hit := ""
         for token in TOKENS:
+            if sentence and token == "STICK":
+                continue
             var i := rest.find(token)
-            # STICK only as a whole word
-            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+            # the words (STICK, RS UP) only as whole words
+            if i >= 0 and not token.begins_with("(") and ((i > 0 and rest[i - 1] != " ") or (i + token.length() < rest.length() and not rest[i + token.length()] in [" ", ",", "."])):
                 i = -1
             if i >= 0 and (at < 0 or i < at):
                 at = i
@@ -6052,16 +6076,17 @@ static func parts(text: String) -> Array:
             break
         if at > 0:
             out.append(rest.substr(0, at))
-        out.append(NAMES.find(str(TOKENS[hit])))
+        var gname := str(TOKENS[hit])
+        out.append(NAMES.find(str(DECK_SWAP.get(gname, gname)) if deck() else gname))
         rest = rest.substr(at + hit.length())
     return out
 
 
-static func width(text: String, scale := 1) -> int:
+static func width(text: String, scale := 1, sentence := false) -> int:
     if not active():
         return PixelFont.width(text, scale)
     var w := 0
-    for part in parts(text):
+    for part in parts(text, sentence):
         w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
     return maxi(0, w - scale)
 
@@ -6075,12 +6100,12 @@ static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> v
     canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
 
 
-static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1, sentence := false) -> void:
     if not active():
         PixelFont.draw(canvas, text, pos, color, scale)
         return
     var x := pos.x
-    for part in parts(text):
+    for part in parts(text, sentence):
         if part is int:
             glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
             x += float((int(WIDTHS[part]) + 1) * scale)
@@ -20732,6 +20757,7 @@ write("scripts/cards.gd", '''extends CanvasLayer
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a card is its sprite (the lines are cut as text, the glyph is narrower)
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 
@@ -20969,7 +20995,7 @@ func _paint() -> void:
     PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
     var y := panel.position.y + 12.0
     for line in lines:
-        PixelFont.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK)
+        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
         y += 7.0
     y += 4.0
     for i in options.size():
@@ -20984,7 +21010,7 @@ func _paint() -> void:
         var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
         var right_edge := r.end.x
         for k in rows.size():
-            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
+            PadGlyphs.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"), 1, true)
         if chip != "":
             var tint := Color("2f7d46")
             if str(opt.get("stance", "")) == "warn":
@@ -57268,7 +57294,7 @@ func _draw_banner() -> void:
     if body.length() > chars:
         body = body.substr(0, chars - 1) + "."
     PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
-    PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
+    PadGlyphs.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86), 1, true)
 
 
 func _draw_hint(raw: String) -> void:
@@ -73897,6 +73923,7 @@ write("scripts/controls.gd", '''extends Node
 signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
 
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: BACK and START are View and Menu on a Steam Deck
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
@@ -74260,7 +74287,10 @@ func help_value(label: String, text: String) -> String:
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
 func button_name(button: int) -> String:
     var names := ["A", "B", "X", "Y", "BACK", "GUIDE", "START", "L3", "R3", "LB", "RB", "UP", "DOWN", "LEFT", "RIGHT"]
-    return names[button] if button >= 0 and button < names.size() else "BTN %d" % button
+    if button < 0 or button >= names.size():
+        return "BTN %d" % button
+    var n: String = names[button]
+    return str(PadGlyphs.DECK_SWAP.get(n, n)) if PadGlyphs.deck() else n
 
 
 # the pad button an action answers to (its first default button until it is remapped); -1 for none
@@ -82023,8 +82053,14 @@ const ART := "res://assets/props/%s.png"
 # room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
 const PLATES := {
     "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
-    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_d", 32, -43]],
 }
+# a guest at the dinner (a client or a prospect): the second table's two plates make room for a place setting and a name tent at its
+# end, and a briefcase leans on the floor beside the booth. Drawn while Outings.dinner_guest() is not empty.
+const GUEST_TABLE := "wood_table_3"
+const GUEST_PLATE_X := [3.0, 16.0]
+const GUEST_SET := [["dinner_tent", 30, -43], ["dinner_setting", 37, -44]]
+const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-sort line), the sprite's offset up
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
 # the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
@@ -82032,6 +82068,7 @@ const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "tru
 const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
+var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
 var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
 var _t := 0.0
 
@@ -82077,6 +82114,14 @@ static func dress(stage: Node) -> Node:
             var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
             if s != null:
                 node.plates.append(s)
+    for row in GUEST_SET:
+        var g := _put(actors.get_node_or_null(GUEST_TABLE), str(row[0]), Vector2(float(row[1]), float(row[2])))
+        if g != null:
+            node.guest.append(g)
+    var bag := _put(actors, str(GUEST_CASE[0]), Vector2(float(GUEST_CASE[1]), float(GUEST_CASE[2])))
+    if bag != null:
+        bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
+        node.guest.append(bag)
     node.refresh()
     return node
 
@@ -82112,6 +82157,11 @@ static func escape_swap(stage: Node) -> int:
 
 
 # the food is on the table once the dinner is past the ordering round
+# a client or prospect is at the dinner table
+static func guest_here() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_guest().is_empty()
+
+
 static func plates_on() -> bool:
     return Outings.game == "dinner" and not Outings.dinner_ordering()
 
@@ -82123,6 +82173,12 @@ func refresh() -> void:
     var on := plates_on()
     for s in plates:
         s.visible = on
+    var here := guest_here()
+    for s in guest:
+        s.visible = here
+    for i in GUEST_PLATE_X.size():  # the second table's plates step aside for the guest
+        if plates.size() > 2 + i:
+            plates[2 + i].position.x = float(GUEST_PLATE_X[i]) if here else float(PLATES[GUEST_TABLE][i][1])
 
 
 func _process(delta: float) -> void:

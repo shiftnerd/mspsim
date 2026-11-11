@@ -32,6 +32,7 @@ func _init() -> void:
 		"props/chair_finish": Vector2i(10, 24), "props/chair_ring_end": Vector2i(12, 28), "props/chair_ring_line": Vector2i(12, 2),
 		"props/chair_ring_spot": Vector2i(30, 12), "ui/star_asked": Vector2i(5, 5), "props/dinner_plate_a": Vector2i(11, 6),
 		"props/dinner_plate_b": Vector2i(11, 6), "props/dinner_plate_c": Vector2i(11, 6), "props/desk_headset": Vector2i(9, 12),
+		"props/dinner_plate_d": Vector2i(11, 6), "props/dinner_setting": Vector2i(16, 7), "props/dinner_tent": Vector2i(7, 6), "props/dinner_briefcase": Vector2i(12, 10),
 	}
 	var files_ok := true
 	for id in sizes:
@@ -40,7 +41,7 @@ func _init() -> void:
 		if t == null or Vector2i(t.get_size()) != sizes[id]:
 			files_ok = false
 			print("     missing or wrong size: %s" % id)
-	_check(files_ok, "the nine sprites load at their sizes")
+	_check(files_ok, "the thirteen sprites load at their sizes")
 
 	# ---- the chair track finds its paint, and a missing one is null (the rectangles are the fallback)
 	var track: Node2D = load("res://scripts/chair_track.gd").new()
@@ -87,6 +88,18 @@ func _init() -> void:
 		outings.g = {}
 		dress.refresh()
 		_check(dress.plates[0].visible, "the classic dinner (no ordering round) has plates from the start")
+		# a guest at the table: the setting, the name tent and the briefcase show, the second table's plates make room
+		var x0: float = dress.plates[2].position.x
+		_check(dress.guest.size() == 3 and not dress.guest[0].visible and not dress.guest[2].visible, "a dinner without a guest has no setting, tent or briefcase")
+		outings.game = "dinner"
+		outings.g = {"order": {"done": true}, "guest": {"client": 0, "name": "Pat", "firm": "Test Co"}}
+		dress.refresh()
+		_check(dress.guest[0].visible and dress.guest[1].visible and dress.guest[2].visible, "a guest at the table: setting, tent and briefcase show")
+		_check(dress.plates[2].position.x < x0 and dress.plates[3].position.x + 11.0 < dress.guest[0].position.x + 7.0, "the plates step aside for the setting")
+		_check(dress.guest[1].get_parent() == dress.plates[2].get_parent() and dress.guest[1].position.y + 7.0 == -37.0, "the setting stands on the table top")
+		outings.g = {"order": {"done": true}}
+		dress.refresh()
+		_check(not dress.guest[0].visible and dress.plates[2].position.x == x0, "the guest goes home: the plates are back where they were")
 		outings.game = was
 		outings.g = was_g
 

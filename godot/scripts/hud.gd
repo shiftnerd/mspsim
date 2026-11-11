@@ -143,7 +143,7 @@ func _draw_banner() -> void:
 	if body.length() > chars:
 		body = body.substr(0, chars - 1) + "."
 	PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
-	PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
+	PadGlyphs.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86), 1, true)
 
 
 func _draw_hint(raw: String) -> void:

@@ -23,6 +23,28 @@ do
     {disc, "#4A4A55", play, "#FFFFFF"}, {disc, "#4A4A55", back, "#FFFFFF"},
     {ring, "#C8CCD8", nil, nil}, {plus, "#C8CCD8", nil, nil},
   }
+  -- R42: the Deck's View and Menu, the right stick with a direction, L3 / R3, and the D-pad's single directions (cells 13 to 24).
+  -- A mark is 5 rows placed at row 2; `full` marks are a whole 7 row cell. Order and widths: pad_glyphs.gd NAMES / WIDTHS.
+  PR.FONT["3"] = {"###", "..#", "###", "..#", "###"}
+  local rs = {".kkkkk.", "kcccccK", "kcccccK", "kcccccK", "kcccccK", "kcccccK", ".kkkkk."}
+  local pill = {".ccccccccc.", "ccccccccccc", "ccccccccccc", "ccccccccccc", "ccccccccccc", "ccccccccccc", ".ccccccccc."}
+  local function dpad(mark_rows) local o = {} for y = 1, 7 do o[y] = mark_rows[y] or "......." end return o end
+  local ltxt, rtxt = PR.text("L3", "#"), PR.text("R3", "#")
+  local extra = {
+    {disc, "#4A4A55", {"###..", "#.#..", "#####", "..#.#", "..###"}, "#FFFFFF", 1},       -- VIEW: two overlapping windows
+    {disc, "#4A4A55", {"#####", ".....", "#####", ".....", "#####"}, "#FFFFFF", 1},       -- MENU: three lines
+    {rs, "#C8CCD8", {"..#..", ".###.", "#.#.#", "..#..", "..#.."}, "#17121F", 1},          -- RS UP
+    {rs, "#C8CCD8", {"..#..", "..#..", "#.#.#", ".###.", "..#.."}, "#17121F", 1},          -- RS DOWN
+    {rs, "#C8CCD8", {"..#..", ".#...", "#####", ".#...", "..#.."}, "#17121F", 1},          -- RS LEFT
+    {rs, "#C8CCD8", {"..#..", "...#.", "#####", "...#.", "..#.."}, "#17121F", 1},          -- RS RIGHT
+    {pill, "#C8CCD8", ltxt, "#17121F", 2},                                                  -- L3 (the stick pressed in)
+    {pill, "#C8CCD8", rtxt, "#17121F", 2},                                                  -- R3
+    {plus, "#C8CCD8", dpad({[2] = "...a...", [3] = "...a..."}), "#D8423C", 0, true},                      -- D-pad UP: the up arm is red
+    {plus, "#C8CCD8", dpad({[5] = "...a...", [6] = "...a..."}), "#D8423C", 0, true},     -- DOWN
+    {plus, "#C8CCD8", dpad({[4] = ".aa...."}), "#D8423C", 0, true},                       -- LEFT
+    {plus, "#C8CCD8", dpad({[4] = "....aa."}), "#D8423C", 0, true},                       -- RIGHT
+  }
+  for _, e in ipairs(extra) do glyphs[#glyphs + 1] = e end
   local faces, marks, pal_f, pal_m = {}, {}, {k = "#17121F", K = "#17121F", d = "#5A606C"}, {}
   for y = 1, H do faces[y] = ""; marks[y] = "" end
   for i, g in ipairs(glyphs) do
@@ -33,7 +55,8 @@ do
       local row = g[1][y]:gsub("c", fc)
       faces[y] = faces[y] .. row .. string.rep(".", CELL - #row)
       local m = ""
-      if g[3] and y >= 2 and y <= 6 then m = ".." .. g[3][y - 1]:gsub("#", mc) end
+      if g[3] and g[6] then m = g[3][y]:gsub("a", mc)
+      elseif g[3] and y >= 2 and y <= 6 then m = string.rep(".", g[5] or 2) .. g[3][y - 1]:gsub("#", mc) end
       marks[y] = marks[y] .. m .. string.rep(".", CELL - #m)
     end
   end
