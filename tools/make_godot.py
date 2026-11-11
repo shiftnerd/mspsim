@@ -515,6 +515,9 @@ const ORDER := ["wide", "h", "deck", "v", "vclose"]
 const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
+# "full screen" is the exclusive mode: the shared one on Windows is a window 2 px taller than the screen, so the picture
+# sat 2 px low under a black line (seen in a real window, docs/dev/notes-qa-ui.md)
+const FULL_MODE := Window.MODE_EXCLUSIVE_FULLSCREEN
 
 var vars := {}  # e.g. office_return = "from_office1"
 var pending_spawn := "start"
@@ -598,11 +601,42 @@ func set_fullscreen(on: bool) -> void:
 	save_display(false)
 	if dev_run() and not focus_force:
 		return  # a test or a tool-driven run keeps its window
-	var win := get_window()
-	win.mode = Window.MODE_FULLSCREEN if on else Window.MODE_WINDOWED
+	get_window().mode = FULL_MODE if on else Window.MODE_WINDOWED
 	if not on:
-		win.size = Vector2i(FORMATS[format].size) * int(FORMATS[format].scale)
-		win.move_to_center()
+		place_window()
+
+
+# a windowed game: the largest whole scale, up to the format's own, that fits the room a screen has
+func window_scale(name: String, room: Vector2i) -> int:
+	var size: Vector2i = FORMATS[name].size
+	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(FORMATS[name].scale))
+
+
+# size the window to the format and centre it in the screen's free area (the taskbar is not part of it). Without this a
+# SHAPE change kept the old top left corner: h to v on a 1080p screen ran off the bottom
+func place_window() -> void:
+	var win := get_window()
+	if win.mode != Window.MODE_WINDOWED or DisplayServer.get_name() == "headless":
+		return
+	var area := DisplayServer.screen_get_usable_rect(win.current_screen)
+	var frame := win.get_size_with_decorations() - win.size  # the title bar and the borders
+	var inset := win.position - win.get_position_with_decorations()
+	win.size = Vector2i(FORMATS[format].size) * window_scale(format, area.size - frame)
+	win.position = area.position + (area.size - win.size - frame) / 2 + inset
+
+
+# Alt+Enter anywhere flips DISPLAY (F11 too in a release build: a debug build keeps F11 for its room jumps). The window
+# hands the event over before any screen sees it; the key is blanked, so the Enter does not also confirm a menu row.
+func _window_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo) or Controls.capturing:
+		return
+	var alt_enter: bool = event.alt_pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER]
+	var mods: bool = event.alt_pressed or event.ctrl_pressed or event.shift_pressed
+	if alt_enter or (event.keycode == KEY_F11 and not mods and not OS.is_debug_build()):
+		set_fullscreen(not fullscreen)
+		event.keycode = KEY_NONE
+		event.physical_keycode = KEY_NONE
+		event.unicode = 0
 
 
 func set_focus_pause(on: bool) -> void:
@@ -622,7 +656,9 @@ func start_display(screen: Vector2i, forced: bool) -> void:
 	elif auto_format != format:
 		set_format(auto_format)
 	if (fullscreen or on_deck(screen)) and DisplayServer.get_name() != "headless":
-		get_window().mode = Window.MODE_FULLSCREEN  # the game starts full screen; SETTINGS has DISPLAY: WINDOW
+		get_window().mode = FULL_MODE  # the game starts full screen; SETTINGS has DISPLAY: WINDOW
+	else:
+		place_window()
 
 
 func _notification(what: int) -> void:
@@ -707,6 +743,7 @@ func _ready() -> void:
 			wanted = arg.substr(9)
 	set_format(wanted if FORMATS.has(wanted) else "wide")
 	get_tree().process_frame.connect(_frame_start)
+	get_window().window_input.connect(_window_input)
 	if not dev_run():
 		start_display.call_deferred(DisplayServer.screen_get_size(), FORMATS.has(wanted))
 
@@ -718,7 +755,10 @@ func set_format(name: String) -> void:
 	var win := get_window()
 	win.content_scale_size = size
 	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless" and win.mode == Window.MODE_WINDOWED:
-		win.size = size * int(f.scale)
+		if dev_run():
+			win.size = size * int(f.scale)  # a test or a tool run: the plain size, wherever the window is
+		else:
+			place_window()
 	format_changed.emit()
 
 
