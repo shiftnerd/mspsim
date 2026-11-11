@@ -69,6 +69,11 @@ local CHARS = {
     shirt = {"#EDE3C8", "#CBBE9C", "#B8943A"}, pants = {"#5A606C", "#42474F", "#2E3238"}, bottom = "skirt",
     tights = {"#2E323C", "#22262E"}, shoes = {"#2A2A33", "#1C1C24"}, lips = "#A8404A", glasses = true,
   },
+  office_quinn = {   -- Quinn, the Year 3 new hire: twin buns, a magenta tee, khakis, red sneakers
+    skin = {"#C98E66", "#A86C46", "#8A5636"}, hair = {"#241A1C", "#463438", "#1A1214"}, style = "twin",
+    shirt = {"#D0508A", "#A83A6C", "#F6D0E2"}, pants = {"#B8A078", "#9A845E", "#7A6644"}, bottom = "trousers",
+    shoes = {"#C03A3A", "#9A2C2C"}, lips = "#B8505A",
+  },
   expo_dee = {       -- WebWoot Security: red bob, purple polo, black trousers
     skin = {"#F6C9A4", "#E0A27C", "#C47E58"}, hair = {"#B8503E", "#D8704A", "#8A3A28"}, style = "bob",
     shirt = {"#7A4AB0", "#5A3488", "#E8E0F4"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",
@@ -153,6 +158,9 @@ local STYLES = {
   ponytail = {x = 3, y = 5, rows = {
     "......BB.", ".....BBBB", "....TBBBB", "...BBBBB.", "...BBCBB.", "..BBBBB..", "..BBBB...", "..BBCB...", "..BBB....", "...BB....",
     "...BB....", "...B.....",
+  }},
+  twin = {x = 9, y = 1, rows = {
+    ".BBB..............BBB.", "BBCBB............BBCBB", "BBBBB............BBBBB", ".BBB..............BBB.",
   }},
   bun = {x = 9, y = 0, rows = {
     "..BBBB..", ".BBCBBB.", ".BBBBBB.", "..BBBB..", "...TT...",

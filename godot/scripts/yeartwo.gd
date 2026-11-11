@@ -953,6 +953,8 @@ func beat(id: String) -> void:
 	var row: Dictionary = beat_row(id)
 	if row.is_empty():
 		return
+	if Campaign.mode == "tech" and Campaign.year >= 3 and (id == "newhire" or id == "mentor") and World.chars.has("Quinn"):
+		World.force_activity("Quinn", "floor")  # Quinn is on the main floor for her two beats
 	if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
 		Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
 	var options := []

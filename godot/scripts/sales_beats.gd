@@ -716,9 +716,26 @@ static func recruiter(stage: Node) -> void:
 	_visitor(stage, RECRUIT_DAY, "office_trent", "visitor:recruiter")
 
 
-static func _visitor(stage: Node, day: int, character: String, role: String) -> void:
+# Year 3: Ross Calder of Summit (owner campaign, the day of the `summit` beat) and Terry Vance the headhunter (service campaign,
+# the day of the `terry` beat) walk the main floor the same way
+static func buyer(stage: Node) -> void:
+	_y3_visitor(stage, "owner", "summit", "office_ross", "visitor:buyer")
+
+
+static func headhunter(stage: Node) -> void:
+	_y3_visitor(stage, "service", "terry", "office_terry", "visitor:headhunter")
+
+
+static func _y3_visitor(stage: Node, mode: String, beat: String, character: String, role: String) -> void:
+	if not Campaign.active or Campaign.year < 3:
+		return
+	var beats: Dictionary = (Yeartwo.year_cfg("beats") as Dictionary).get(mode, {})
+	_visitor(stage, int(beats.get(beat, -1)), character, role, mode)
+
+
+static func _visitor(stage: Node, day: int, character: String, role: String, mode := "sales") -> void:
 	var scene := stage.scene_file_path.get_file().get_basename()
-	if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == day):
+	if scene != "main_floor" or not (Campaign.active and Campaign.mode == mode and Campaign.day == day):
 		return
 	var info: Dictionary = World.DATA.SCENES[scene]
 	var x0 := float(info.x0)

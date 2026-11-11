@@ -80,6 +80,18 @@ local CHARS = {
     shirt = {"#4A86D8", "#3566B0"}, pants = {"#24252C", "#1B1C22", "#131419"}, shoes = {"#1E1E24", "#14141A"},
     lips = "#5A2E22", buttons = "#CFE0F6", patch = true,
   },
+  office_ross = {   -- Ross Calder of Summit Managed Holdings, the buyer: silver hair, glasses, a deep green button-down, black trousers and shoes
+    donor = "office_dan",
+    skin = {"#EDC4A4", "#D2A07E", "#B07E5E"}, hair = {"#A8A8B2", "#C8C8D0", "#7E7E88"},
+    shirt = {"#2E5A4A", "#204236"}, pants = {"#26262E", "#1C1C24", "#14141A"}, shoes = {"#1E1E24", "#14141A"},
+    lips = "#8A4A2E", buttons = "#C8DCD0", glasses = true,
+  },
+  office_terry = {   -- Terry Vance, the headhunter from across town: sandy slicked hair, a lavender button-down, tan trousers, brown shoes
+    donor = "office_dan",
+    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#C8A064", "#E0BE84", "#8A6A3A"},
+    shirt = {"#8A84B8", "#6A6496"}, pants = {"#A89270", "#8A7658", "#6E5E44"}, shoes = {"#5A3A22", "#42291A"},
+    lips = "#8A4A2E", buttons = "#E4E2F2",
+  },
   office_trent = {   -- Trent Dagmar of ByteBrothers, the rival recruiter: slate button-down, slicked dark hair, grey trousers, sharp black shoes
     donor = "office_dan",
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#241C18", "#3A2E28", "#1A1410"},

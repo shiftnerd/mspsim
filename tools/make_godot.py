@@ -25,6 +25,8 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
+                    # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
+                    "office_quinn", "office_ross", "office_terry",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky", "custom_bare"]
@@ -4742,6 +4744,8 @@ const STAFF_CAST := {
     "Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
     "Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
     "Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
+    # Quinn, the Year 3 new hire (tech campaign only, see roster_gone): hot-desks at the conference table like Terry does
+    "Quinn": {"character": "office_quinn", "home": "conference", "seat": "Seat6", "role": "newhire"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
@@ -5141,6 +5145,9 @@ func roster_gone() -> Array:
             gone.append(n)
     if Campaign.active and Campaign.mode == "service":
         gone.append_array(staff_names())  # Sam has the front desk there
+    # Quinn only starts in Year 3 of the tech campaign
+    if not (Campaign.active and Campaign.mode == "tech" and Campaign.year >= 3) and not gone.has("Quinn"):
+        gone.append("Quinn")
     # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
     if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
         gone.append(Roles.partner())
@@ -14593,6 +14600,8 @@ func beat(id: String) -> void:
     var row: Dictionary = beat_row(id)
     if row.is_empty():
         return
+    if Campaign.mode == "tech" and Campaign.year >= 3 and (id == "newhire" or id == "mentor") and World.chars.has("Quinn"):
+        World.force_activity("Quinn", "floor")  # Quinn is on the main floor for her two beats
     if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
         Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
     var options := []
@@ -61276,6 +61285,8 @@ func _ready() -> void:
     Onsite.populate(self)
     SalesBeats.auditor(self)
     SalesBeats.recruiter(self)
+    SalesBeats.buyer(self)
+    SalesBeats.headhunter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
     SetDressing.dress(self)  # plates on the dinner table, Jen's headset
@@ -68343,9 +68354,26 @@ static func recruiter(stage: Node) -> void:
     _visitor(stage, RECRUIT_DAY, "office_trent", "visitor:recruiter")
 
 
-static func _visitor(stage: Node, day: int, character: String, role: String) -> void:
+# Year 3: Ross Calder of Summit (owner campaign, the day of the `summit` beat) and Terry Vance the headhunter (service campaign,
+# the day of the `terry` beat) walk the main floor the same way
+static func buyer(stage: Node) -> void:
+    _y3_visitor(stage, "owner", "summit", "office_ross", "visitor:buyer")
+
+
+static func headhunter(stage: Node) -> void:
+    _y3_visitor(stage, "service", "terry", "office_terry", "visitor:headhunter")
+
+
+static func _y3_visitor(stage: Node, mode: String, beat: String, character: String, role: String) -> void:
+    if not Campaign.active or Campaign.year < 3:
+        return
+    var beats: Dictionary = (Yeartwo.year_cfg("beats") as Dictionary).get(mode, {})
+    _visitor(stage, int(beats.get(beat, -1)), character, role, mode)
+
+
+static func _visitor(stage: Node, day: int, character: String, role: String, mode := "sales") -> void:
     var scene := stage.scene_file_path.get_file().get_basename()
-    if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == day):
+    if scene != "main_floor" or not (Campaign.active and Campaign.mode == mode and Campaign.day == day):
         return
     var info: Dictionary = World.DATA.SCENES[scene]
     var x0 := float(info.x0)
