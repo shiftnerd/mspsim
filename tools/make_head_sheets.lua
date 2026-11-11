@@ -30,8 +30,15 @@ local E = dofile(T .. "anim.lua")
 local poses = dofile(T .. "poses.lua")
 local CW, CH = 64, 80
 local KIND = {glasses = "head", beard = "head", hat = "hat", badge = "torso", lanyard = "torso", watch = "wrist"}
-local CELLSZ = {head = 32, hat = 40, torso = 32, wrist = 16}
-local HAT_UP = 3
+local CELLSZ = {head = 32, hat = 48, torso = 32, wrist = 16}
+local HAT_UP = 5
+-- R15: the hat layers of office/accessories.aseprite live on a canvas with PX extra columns on both sides and PY extra rows on top
+-- of the intern's 40x64 (tools/make_accessories.lua), so a hat can be 8+ px taller than the head. Every other layer is cropped back.
+-- TOP extra rows above the 64x80 body frame are rendered (E.setTop) so a tall hat in the jump is not clipped at row 0; origins are
+-- written in body-frame coordinates (minus TOP).
+local PX, PY = 8, 12
+local TOP = 14
+E.setTop(TOP)
 local KINDS = {"head", "hat", "torso", "wrist"}
 local function A(v) return app.pixelColor.rgbaA(v) end
 
@@ -58,6 +65,11 @@ local function loadAccessories()
       im:drawImage(l:cel(1).image, l:cel(1).position)
       local slot = l.name:match("^(%a+)_")
       assert(KIND[slot], "unknown accessory slot " .. slot)
+      if slot ~= "hat" then
+        local c = Image(spr.width - 2 * PX, spr.height - PY, ColorMode.RGB)
+        c:drawImage(im, Point(-PX, -PY))
+        im = c
+      end
       list[#list + 1] = {name = l.name, slot = slot, kind = KIND[slot], img = im}
     end
   end
@@ -103,7 +115,7 @@ for _, side in ipairs({"right", "left"}) do
   assert(faceIdx and shirtIdx and nearIdx, "no Face / Shirt / Near Arm layer")
   local accIdx = {}
   for _, a in ipairs(acc) do
-    E.addLayer(an, a.name, sideImage(a, side), true, {kind = a.kind == "hat" and "head" or a.kind, arm = arm})
+    E.addLayer(an, a.name, sideImage(a, side), true, {kind = a.kind == "hat" and "head" or a.kind, arm = arm, pad = a.kind == "hat" and {PX, PY} or nil})
     accIdx[a.name] = #an.layers
   end
   local topIdx = nBody + #acc + 1      -- E.render appends the Arm Top layer after every layer
@@ -141,7 +153,7 @@ for _, side in ipairs({"right", "left"}) do
     else
       ORI.wrist = {0, 0}
     end
-    for _, k in ipairs(KINDS) do origins[k][fi] = ORI[k] end
+    for _, k in ipairs(KINDS) do origins[k][fi] = {ORI[k][1], ORI[k][2] - TOP} end
     for _, a in ipairs(acc) do
       local C = CELLSZ[a.kind]
       local ox, oy = ORI[a.kind][1], ORI[a.kind][2]
@@ -158,7 +170,7 @@ for _, side in ipairs({"right", "left"}) do
       for y = 0, C - 1 do for x = 0, C - 1 do
         if A(cell:getPixel(x, y)) > 0 then
           local cx, cy = x + ox, y + oy
-          if cx >= 0 and cx < CW and cy >= 0 and cy < CH then
+          if cx >= 0 and cx < CW and cy >= 0 and cy < CH + TOP then
             if a.kind == "torso" then
               -- the near arm (and a hand raised on the Arm Top layer) is in front of the lanyard: cut it out
               local covered = A(top:getPixel(cx, cy)) > 0
@@ -197,18 +209,18 @@ for _, side in ipairs({"right", "left"}) do
   for _, a in ipairs(acc) do
     if refSet[a.name] then
       local ref = E.load(SP(R, "office_intern_" .. side))
-      local opts = {kind = a.kind == "hat" and "head" or a.kind, arm = arm, reftop = true}
+      local opts = {kind = a.kind == "hat" and "head" or a.kind, arm = arm, reftop = true, pad = a.kind == "hat" and {PX, PY} or nil}
       if a.kind == "torso" then opts.before = "Near Arm" end
       E.addLayer(ref, a.name, sideImage(a, side), a.kind ~= "head", opts)
       local nref = #ref.layers
       local sheet = Image(CW * #poses, CH, ColorMode.RGB)
       for fi, pose in ipairs(poses) do
         local out = E.render(ref, pose, f)
-        local frame = Image(CW, CH, ColorMode.RGB)
+        local frame = Image(CW, CH + TOP, ColorMode.RGB)
         for i = 1, nref + 1 do
           if i > nref or ref.layers[i].vis then frame:drawImage(out[i], Point(0, 0)) end
         end
-        sheet:drawImage(frame, Point((fi - 1) * CW, 0))
+        sheet:drawImage(frame, Point((fi - 1) * CW, -TOP))
       end
       local p = GOLD .. "ref_" .. a.name .. "_" .. side .. ".png"
       sheet:saveAs(p)
