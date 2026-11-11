@@ -48261,7 +48261,7 @@ func _desk_rows() -> Array:
     var solo := Crew.solo_mean_hours()
     var solo_text := str(ROWS.solo_none)
     if not Crew.hire_order.is_empty():
-        solo_text = str(ROWS.days) % (solo / 8.0) if solo >= 0.0 else str(ROWS.solo_wait)
+        solo_text = str(ROWS.days) % (floorf(solo / 8.0 * 10.0 + 0.5) / 10.0) if solo >= 0.0 else str(ROWS.solo_wait)  # half rounds up on every platform (printf rounds 2.25 to 2.2 on Linux, 2.3 on Windows)
     var ret := Crew.retention_pct()
     return [
         [str(ROWS.design), (str(DESIGNS[design].short) if DESIGNS.has(design) else str(ROWS.none)) + (" + DISP" if dispatcher else ""), DayReport.WHITE],
