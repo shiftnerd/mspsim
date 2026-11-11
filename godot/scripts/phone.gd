@@ -278,12 +278,20 @@ func banner_total() -> float:
 
 func step_banner(delta: float) -> void:
 	if banner_blocked() or is_open:
+		# a banner caught half way by a screen that opens (the Computer, a card): it froze there, on top of that screen,
+		# for as long as the screen stayed open. It goes back to the front of the queue and plays again afterwards
+		if not banner.is_empty() and not is_open:
+			banner.t = 0.0
+			banner["again"] = true
+			_bq.push_front(banner)
+			banner = {}
 		return
 	if banner.is_empty():
 		if _bq.is_empty():
 			return
 		banner = _bq.pop_front()
-		buzz()
+		if not bool(banner.get("again", false)):
+			buzz()
 	banner.t = float(banner.t) + delta
 	if float(banner.t) >= banner_total():
 		banner = {}

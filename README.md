@@ -22,7 +22,7 @@
 |  | Coffee Machine Opinions                                      |  |
 |  +--------------------------------------------------------------+  |
 |                                                                    |
-|   1 PLAYER (ONE CHAIR)      SAVES: 3 SLOTS PER CAMPAIGN            |
+|   1 OR 2 PLAYERS            SAVES: 3 SLOTS PER CAMPAIGN            |
 |   DESIGNED FOR GODOT 4.7.2     PIXELS: DRAWN BY CODE, MOSTLY       |
 +--------------------------------------------------------------------+
 ```
@@ -55,14 +55,38 @@ there is a coffee machine you will want to find.
 <td width="50%"><img src="docs/manual/img/rmm.png" alt="The remote monitoring console: endpoints, backups and projects."><br><sub>The remote monitoring console: endpoints, backups and projects.</sub></td>
 </tr>
 <tr>
+<td width="50%"><img src="docs/manual/img/boardroom.png" alt="The owner's Boardroom: the books of the company you now run."><br><sub>The owner's Boardroom: the books of the company you now run.</sub></td>
+<td width="50%"><img src="docs/manual/img/crm.png" alt="The sales CRM: leads, quotes and who to call next."><br><sub>The sales CRM: leads, quotes and who to call next.</sub></td>
+</tr>
+<tr>
 <td width="50%"><img src="docs/manual/img/conference.png" alt="The conference room, where handovers, reviews and bad news happen."><br><sub>The conference room, where handovers, reviews and bad news happen.</sub></td>
 <td width="50%"><img src="docs/manual/img/warehouse.png" alt="The warehouse: racks, a drinks machine and a very large START sign."><br><sub>The warehouse: racks, a drinks machine and a very large START sign.</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/manual/img/bowling.png" alt="After work: bowling night, one of four outings."><br><sub>After work: bowling night, one of four outings.</sub></td>
+<td width="50%"><img src="docs/manual/img/bowling.png" alt="After work: bowling night, one of nine team games."><br><sub>After work: bowling night, one of nine team games.</sub></td>
+<td width="50%"><img src="docs/manual/img/paintball.png" alt="Paintball: your team, their team, and a flag in the middle."><br><sub>Paintball: your team, their team, and a flag in the middle.</sub></td>
+</tr>
+<tr>
 <td width="50%"><img src="docs/manual/img/creator.png" alt="Make your own person: look, clothes, shoes, extras."><br><sub>Make your own person: look, clothes, shoes, extras.</sub></td>
+<td width="50%"><img src="docs/manual/img/kitchenette.png" alt="The kitchenette: two bathrooms, a fridge and the coffee machine."><br><sub>The kitchenette: two bathrooms, a fridge and the coffee machine.</sub></td>
 </tr>
 </table>
+
+---
+
+## WHAT IS IN THE BOX
+
+| | |
+|---|---|
+| **Four campaigns** | Tech, Owner, Service Manager and Sales: 20 working days (or weeks) each, with a year-end review. A finished year unlocks **Year 2**, and Year 2 unlocks **Year 3**. |
+| **Free Play and Quick Play** | A sandbox with a toolbox (rooms, events, any team game, seeds), and a few minutes of play from the title screen: one outing or one ticket shift. |
+| **An office to walk around** | Main floor, cubicles, conference room, kitchenette, network closet, warehouse and the lot behind it, plus client sites to drive to and a conference trip. |
+| **A computer and a phone** | Mail, the service board, remote monitoring, chat, the owner's Boardroom, the sales CRM, Dispatch, and a phone with texts, contacts and a camera. |
+| **Nine team games** | Bowling, karaoke, an escape room (four themes), dinner, chair races, paintball, cornhole, a cookout and darts. Foam dart wars happen on their own. |
+| **Make your own person** | Hair, clothes, shoes, hats and glasses, saved in preset slots. |
+| **A career** | 72 medals and a collection that carry over between runs. |
+| **Three levels and seeds** | Easy (cozy), Normal and Hard. A seed replays the same year; there is a seed of the day. |
+| **Keyboard, gamepad or touch** | The whole game plays on a gamepad. A second player can join on one. A 16:10 shape fits a Steam Deck. |
 
 ---
 
@@ -70,6 +94,7 @@ there is a coffee machine you will want to find.
 
 | | PAGE |
 |---|---:|
+| [WHAT IS IN THE BOX](#what-is-in-the-box) | 1 |
 | [GETTING STARTED](#getting-started) (what you need, how to switch it on) | 2 |
 | [SAVING](#saving) (three slots, like a memory card) | 3 |
 | [CONTROLS AT A GLANCE](#controls-at-a-glance) | 4 |
@@ -87,7 +112,7 @@ there is a coffee machine you will want to find.
 |---|---|
 | **Godot 4.7.2** | The standard build (not .NET). Get it at [godotengine.org/download](https://godotengine.org/download). |
 | A computer that can run a 2D game | The game renders in OpenGL Compatibility mode, so a toaster from this decade will do. |
-| A keyboard | A gamepad works for walking and menus. A mouse helps in the computer and phone screens. |
+| A keyboard or a gamepad | Everything can be played on either. A mouse helps in the computer and phone screens. |
 | Coffee | Optional. The in-game machine is a prop with feelings, not a supply. |
 
 > **NOTE:** Please do not insert a disc. There is no disc. Please do not blow on anything either.
@@ -116,18 +141,21 @@ Godot --headless --path godot --import
 
 ### Formats and the F9 key
 
-MSPSim was built to be filmed as well as played, so the picture comes in four shapes. Press **F9** at any time (title screen, menus
+MSPSim was built to be filmed as well as played, so the picture comes in five shapes. Press **F9** at any time (title screen, menus
 and rooms) to cycle through them.
 
 | SHAPE | SIZE | WHAT IT IS FOR |
 |---|---|---|
 | `wide` | 368 x 128 | The original: the whole office in one long strip. |
 | `h` | 320 x 180 | 16:9 widescreen. The comfortable default for most screens. |
+| `deck` | 320 x 200 | 16:10, the whole screen of a Steam Deck. |
 | `v` | 180 x 320 | 9:16 portrait, for phones and for video that goes vertically. |
 | `vclose` | 180 x 320 | The same portrait, zoomed in 2x on the action. |
 
-> **NOTE:** The window opens at a multiple of the chosen size. If your screen looks tiny, you probably pressed nothing yet: press
-> **F9** until it fits. The pause menu also has a **SHAPE** row that does the same thing.
+> **NOTE:** The game starts **full screen**, in the shape that fits your screen (`h` on 16:9, `deck` on 16:10), always at a whole
+> multiple of the size above so every pixel stays square. **SETTINGS** on the title screen has **DISPLAY** (full screen or a
+> window; `Alt`+`Enter` does the same anywhere), **SHAPE** (the same as F9) and **UNFOCUSED** (pause, or keep running, when
+> you look at another window). Your choices are remembered.
 
 ---
 
@@ -161,16 +189,17 @@ The full details are in [Chapter 1: Getting Started](docs/manual/01-getting-star
 | Jump | `Space`, `W` or Up | `A` |
 | Duck | `S` or Down | Down on the D-pad or stick |
 | Use / sit / talk / open | `E` | `X` |
-| Pick the next target | `Tab` (`Shift`+`Tab` goes back) | see Chapter 2 |
+| Pick the next target | `Tab` (`Shift`+`Tab` goes back) | `RB` |
 | Phone | `P` | `Back` / `Select` |
 | Wave / sip your drink | `Q` / `F` | `Y` / `LB` |
-| Dance | `X` (the key, not the pad) | none |
-| Ask a coworker to follow you | `C` next to them | none |
-| Nerf blaster | Tap `Z` to fire, hold to aim | see Chapter 2 |
+| Dance | `X` (the key, not the pad) | Right stick up |
+| Ask a coworker to follow you | `C` next to them | Right stick down |
+| Nerf blaster | Tap `Z` to fire, hold to aim | `RT` |
 | Roll your chair | Seated: hold `Shift` + `A`/`D` | none |
-| Mute the sound | `M` | none |
+| Mute the sound | `M` | Right stick right |
 | Pause and the key list | `Esc` or `Pause` | `Start` |
-| Change the picture shape | `F9` | none |
+| Change the picture shape | `F9` | SETTINGS, SHAPE |
+| Full screen or a window | `Alt`+`Enter` | SETTINGS, DISPLAY |
 | Hide the clock and counters | `F10` | none |
 
 > **TIP:** The pause menu has a **CONTROLS** page that lists these keys in-game. Press `Esc` and have a look.
@@ -230,9 +259,11 @@ cd godot && gdlint scripts tests       # lint
 
 ### Taking your own screenshots
 
-The manual's pictures were taken with ordinary Godot scripts: a `SceneTree` script that waits for a few frames and saves the
-viewport. See any `godot/tests/*_shots.gd` for the pattern, and run it with the project's Godot, **without** `--headless`,
-for example `Godot --path godot --fixed-fps 60 --script <your script>`.
+The pictures on this page come from `godot/tests/readme_shots.gd`: it walks the screens, lets each one settle and saves them
+at 2x to the game's user folder (`readme/`), from where they are copied to `docs/manual/img/`. Run it with the project's
+Godot, **without** `--headless`, and with `MSPSIM_TEST=1` in the environment so the window stays a window:
+`Godot --path godot --fixed-fps 60 --script res://tests/readme_shots.gd`. Any other `godot/tests/*_shots.gd` shows the same
+pattern for a single screen.
 
 ---
 

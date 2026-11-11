@@ -46,6 +46,8 @@ func _draw() -> void:
 	var text: String = World.clock_text()
 	var width := text.length() * 4 - 1
 	var origin := Vector2(get_viewport_rect().size.x - width - 3.0, 3.0)
+	# the same soft dark plate as the goal chip: white text over the ceiling's lamps did not read (QA in a real window)
+	draw_rect(Rect2(origin.x - 2.0, 1.0, float(width) + 5.0, 8.0), Goals.BACK)
 	for pass_index in 2:
 		var shade := pass_index == 0
 		var color := Color(0.09, 0.07, 0.12, 0.9) if shade else Color(1, 1, 1, 0.95)
@@ -101,6 +103,10 @@ func _draw() -> void:
 		var p2 := Players.node(1) if Players.coop else null
 		if p2 != null and str(p2.held) == "nerf":
 			lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
+		var widest := 0
+		for line in lines:
+			widest = maxi(widest, PixelFont.width(str(line)))
+		draw_rect(Rect2(1.0, 1.0, float(widest) + 5.0, float(lines.size()) * 8.0), Goals.BACK)
 		for i in lines.size():
 			PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
 			PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
@@ -124,6 +130,8 @@ func _draw_banner() -> void:
 	var ios: bool = Phone.os != "android"
 	var h := 15.0
 	var w := minf(size.x - 8.0, 150.0)
+	if size.x < 220.0:
+		w = size.x  # the portrait screen: the card spans it, or the ends of the status lines and the clock stuck out at its sides
 	var x := floorf((size.x - w) * 0.5)
 	var y := floorf(-h - 1.0 + (h + 3.0) * Phone.banner_slide())
 	var kind_color: Color = Phone.KIND_COLORS.get(b.kind, Color.WHITE)

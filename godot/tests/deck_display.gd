@@ -184,6 +184,26 @@ func _run() -> void:
 	pm._activate()
 	pm.close()
 	_check(game.fullscreen, "and back to FULL SCREEN")
+	# Alt+Enter flips DISPLAY from anywhere and is not an Enter for the menu under it (QA in a real window)
+	pm.open_settings()
+	pm._sel = pm._labels().find("SOUND: %s" % ("OFF" if root.get_node("Sfx").muted else "ON"))
+	var muted: bool = root.get_node("Sfx").muted
+	for down in [true, false]:
+		var ev := InputEventKey.new()
+		ev.keycode = KEY_ENTER
+		ev.physical_keycode = KEY_ENTER
+		ev.alt_pressed = true
+		ev.pressed = down
+		Input.parse_input_event(ev)
+		await process_frame
+	_check(not game.fullscreen, "Alt+Enter switches DISPLAY to WINDOW")
+	_check(pm.is_open and root.get_node("Sfx").muted == muted, "and the Enter in it does not press the menu row under the cursor")
+	game.set_fullscreen(true)
+	pm.close()
+	_check(game.FULL_MODE == Window.MODE_EXCLUSIVE_FULLSCREEN, "full screen is the exclusive mode (the shared one is 2 px taller than the screen on Windows)")
+	var laptop := Vector2i(1366, 768 - 40) - Vector2i(16, 39)  # a small laptop's free area less a window frame
+	_check(game.window_scale("h", laptop) == 4 - 1 and game.window_scale("wide", laptop) == 3, "a window gets the largest whole scale that fits the screen (h x3, wide x3 on 1366 x 768)")
+	_check(game.window_scale("h", Vector2i(2560, 1392)) == 4 and game.window_scale("v", Vector2i(200, 200)) == 1, "never more than the format's own scale, never less than 1")
 
 	# ---- a suspend nobody announced: a frame that took seconds -------------------------------------------------------
 	var t0 := Time.get_ticks_msec()

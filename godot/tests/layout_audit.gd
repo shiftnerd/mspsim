@@ -53,6 +53,13 @@ func _texts(_tag: String, _recs: Array) -> void:
 
 # Waits for a redraw, then fails on every text rect outside the viewport.
 func _end(tag: String) -> void:
+	# a phone banner on its way in or out is above the screen's edge for a quarter second: wait until it is fully in (or
+	# gone). Without this the result depended on when a text happened to arrive (--only=floor gave 40 failures)
+	var phone := root.get_node("Phone")
+	var guard := 0
+	while not phone.banner.is_empty() and phone.banner_slide() < 1.0 and not phone.banner_blocked() and guard < 60:
+		await process_frame
+		guard += 1
 	await _wait(4)
 	var seen: int = PixelFont.audit.size()
 	if shots:
@@ -98,6 +105,71 @@ func _hud_shot(tag: String) -> void:
 	_hud().queue_redraw()
 	await _end(tag)
 	world.hud_visible = was
+
+
+# QA (real window sweep): the HUD with a phone banner fully in, and its hint line with keys and with a pad's glyphs
+func _hud_extras() -> void:
+	var world := root.get_node("World")
+	var phone := root.get_node("Phone")
+	var ctl := root.get_node("Controls")
+	var hints := root.get_node("Hints")
+	world.hud_visible = true
+	phone.banner = {}
+	phone._bq.clear()
+	phone.notify("TEXT", "Morgan", "Gnarly Gnomes says their network is down again. Can you look?")
+	var waited := 0
+	while phone.banner_slide() < 1.0 and waited < 200:
+		await process_frame
+		waited += 1
+	_begin()
+	_hud().queue_redraw()
+	await _end("hud phone banner")
+	phone.banner = {}
+	phone._bq.clear()
+	var old: String = hints.objective
+	hints.objective = "WALK TO YOUR DESK. {E} SITS DOWN. {P} IS YOUR PHONE. {G} GIVES THE BLASTER AWAY."
+	for pad in [false, true]:
+		ctl.pad_active = pad
+		await _wait(2)
+		_begin()
+		_hud().queue_redraw()
+		await _end("hud hint %s" % ("pad" if pad else "keys"))
+	ctl.pad_active = false
+	hints.objective = old
+
+
+# QA: the pause menu in the tech campaign (TICKET PACE), its quit question with the SAVED AS OF line, and the Free Play rows
+func _pause_pages() -> void:
+	var pm := root.get_node("PauseMenu")
+	var c := root.get_node("Campaign")
+	var story := root.get_node("Story")
+	pm.open()
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause tech")
+	var was: bool = story.overtime
+	story.overtime = true  # no resume point can be written now: the question says how far the save goes
+	pm._sel = pm._labels().size() - 1
+	pm._activate()
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause quit saved as of")
+	story.overtime = was
+	pm.close()
+	var active: bool = c.active
+	var mode: String = c.mode
+	c.active = false
+	c.mode = c.FREE
+	pm.open()
+	pm._sel = pm._labels().size() - 2
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause free play")
+	pm.close()
+	c.active = active
+	c.mode = mode
+	c.clear_resume(mode, c.slot)  # the pause menu wrote a resume point: the next format's title must not find a run to continue
+	await _wait(2)
 
 
 # T2 / X9: every page of the year-end Review of the running campaign (the summary, the crew or partner lines, the offers, the
@@ -225,7 +297,10 @@ func _title_phase() -> void:
 	meta.set_value("tech", "top_year", 2)  # R10: and a finished Year 2, so the START YEAR 3 row is there too
 	meta.save(yt.meta_path())
 	_begin()
-	t._choose(0)
+	t._show_home(0)  # QA: with a save the home menu has its sixth row, CONTINUE
+	await _end("title home continue")
+	_begin()
+	t._show_sub("tech", 0)  # (t._choose(0) is the home menu's first row now: the submenu was not what got audited)
 	await _end("title submenu")
 	DirAccess.remove_absolute(camp.save_path("tech"))
 	DirAccess.remove_absolute(yt.meta_path())
@@ -408,14 +483,13 @@ func _title_phase() -> void:
 		var tb := root.get_node("Toolbox")
 		t._select.setup("free")
 		await _wait(3)
-		_begin()
 		t._select.open_tools()
-		for g in tb.GAMES.size():
+		for g in tb.GAMES.size():  # every game has its own rows (the escape room the most: ROOM, CODE DIGITS, a row per clue)
+			_begin()
 			tb.game_i = g
 			tb.sel = 0
 			tb._canvas.queue_redraw()
-			await _wait(2)
-		await _end("toolbox rows")
+			await _end("toolbox rows %s" % str(tb.GAMES[g]))
 		tb.close()
 		_begin()
 		t._select.open_seed()
@@ -432,6 +506,7 @@ func _report(kind: String) -> Dictionary:
 	if kind == "sloppy":  # T2: the note under a day that had too many loose ends for a reputation gain
 		r["rep_delta"] = -1
 		r["sloppy"] = true
+		r["favours"] = 3  # T2: the UNBILLED FAVOURS row
 		r["notes"] = [root.get_node("Campaign").SLOPPY_NOTE]
 	elif kind == "trip":  # T2: a trip that earned nothing (the longer of the two lines)
 		r["rep_delta"] = 0
@@ -447,7 +522,7 @@ func _report(kind: String) -> Dictionary:
 		r["final"] = true
 		r["grade"] = "A"
 		r["ending"] = "YOU KEPT YOUR JOB. MORGAN SAYS THE TEAM IS GLAD YOU STAYED AND THE CLIENTS ASK FOR YOU BY NAME."
-	elif kind == "owner":
+	elif kind in ["owner", "owner_full"]:
 		r["grade"] = "A"
 		r["title"] = "WEEK 9 OF 20 COMPLETE"
 		r["rows"] = [
@@ -463,6 +538,17 @@ func _report(kind: String) -> Dictionary:
 			["RECURRING + PROJECTS", "$6400/WK + $450 JOBS", Color("8fe3a0")],
 			["VALUE (ESTIMATE)", "$412000, A GROWTH COMPANY", Color("ffd27a")],
 		]
+		if kind == "owner_full":  # a late week with every optional row at once (QA: the list ran off the 128 px screen)
+			var more := [
+				["OWNER DRAW", "-$400 (STEADY), NOT IN EBITDA", WHITE], ["WIRE FRAUD RISK", "MEDIUM (2 CAUGHT, 1 LOST)", Color("ffd27a")],
+				["STANDARD", "72 (SOLID)", Color("8fe3a0")], ["FOLDER", "3 IN THE FOLDER, TEMPTED", Color("ffd27a")],
+				["SWITCHING COSTS", "2 CHANGES, EACH ONE $600 OF DOUBLE BILLING AND 6 HOURS OF YOUR WEEK. THE INTRO RATE ENDS IN 3 WK, THEN +$90/WK.", Color("ffd27a")],
+				["RAP SHEET", "BYTEBROTHERS: UNDERCUTS, THEN DROPS THE BALL (SEEN TWICE)", Color("ffd27a")],
+				["ASKED FOR BY NAME", "MORGAN 3, DAN 2, MAYA 1", Color("8fe3a0")],
+				["PEER GOAL", "RECURRING REVENUE UP 10%: MET", Color("8fe3a0")],
+			]
+			for i in more.size():
+				r.rows.insert(11 + i, more[i])
 	return r
 
 
@@ -488,8 +574,14 @@ func _floor_phase() -> void:
 	world.clock = 11.0
 	# R16: the HUD's goal chip and next-up list, on the busiest day (an outing day in the on-call week)
 	c.day = 10
+	await _wait(3)
+	_clear(cards)  # the dated card of that day (the XP end-of-support banner) opens over the HUD when the day is set by hand
 	await _hud_shot("hud goal chip tech")
 	c.day = 1
+	await _wait(4)
+	_clear(cards)  # a first run's day-one card opens when the day is set back
+	await _hud_extras()
+	await _pause_pages()
 	_begin()
 	cards.ask("MORGAN (MANAGER)", "TWO OWNERS, ONE ACCOUNT, AND A PROSPECT WHO WANTS AN ANSWER BY FRIDAY. WHOSE SIDE ARE YOU ON? I NEED THIS DECISION BEFORE THE END OF THE DAY.", [
 		{"label": "GARRISON: TAKE THE LOGO AT 30% OFF AND HOPE THE MARGIN HOLDS UP", "id": "a", "trust_chip": "GARRISON +4", "trust_dir": 1},
@@ -532,11 +624,15 @@ func _floor_phase() -> void:
 		], func(_id: String) -> void: pass)
 		await _end("card face " + who)
 		_clear(cards)
-	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner"]:
+	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner", "owner_full"]:
 		_begin()
 		rep.is_open = false
 		rep.show_report(_report(kind))
 		await _end("day report " + kind)
+		while rep._page < rep._pages.size() - 1:  # a list that needed pages: every page is audited
+			_begin()
+			rep.next_page()
+			await _end("day report %s page %d" % [kind, rep._page + 1])
 		rep.is_open = false
 		rep._canvas.visible = false
 	for app in ["desktop", "mail", "psa", "rmm", "learn", "lync"]:
@@ -571,6 +667,7 @@ func _floor_phase() -> void:
 		_begin()
 		ph.os = skin
 		ph.open()
+		ph.locked = false  # (the lock screen was what got audited)
 		ph.app = "phone"
 		ph.ph_view = "contacts"
 		ph.ph_sel = cast_at
@@ -603,9 +700,12 @@ func _floor_phase() -> void:
 	ph.photos = []
 	# R14 (4): the touch overlay over the room, and over the pause menu
 	var ctl := root.get_node("Controls")
+	await _wait(30)  # the phone's fade-out is over
+	root.get_node("World").hud_visible = true
 	ctl.touch_override = 1
 	ctl.touch_refresh()
 	_begin()
+	_hud().queue_redraw()
 	await _end("touch overlay")
 	var pm := root.get_node("PauseMenu")
 	pm.open()

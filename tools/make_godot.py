@@ -515,6 +515,9 @@ const ORDER := ["wide", "h", "deck", "v", "vclose"]
 const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
+# "full screen" is the exclusive mode: the shared one on Windows is a window 2 px taller than the screen, so the picture
+# sat 2 px low under a black line (seen in a real window, docs/dev/notes-qa-ui.md)
+const FULL_MODE := Window.MODE_EXCLUSIVE_FULLSCREEN
 
 var vars := {}  # e.g. office_return = "from_office1"
 var pending_spawn := "start"
@@ -598,11 +601,42 @@ func set_fullscreen(on: bool) -> void:
 	save_display(false)
 	if dev_run() and not focus_force:
 		return  # a test or a tool-driven run keeps its window
-	var win := get_window()
-	win.mode = Window.MODE_FULLSCREEN if on else Window.MODE_WINDOWED
+	get_window().mode = FULL_MODE if on else Window.MODE_WINDOWED
 	if not on:
-		win.size = Vector2i(FORMATS[format].size) * int(FORMATS[format].scale)
-		win.move_to_center()
+		place_window()
+
+
+# a windowed game: the largest whole scale, up to the format's own, that fits the room a screen has
+func window_scale(name: String, room: Vector2i) -> int:
+	var size: Vector2i = FORMATS[name].size
+	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(FORMATS[name].scale))
+
+
+# size the window to the format and centre it in the screen's free area (the taskbar is not part of it). Without this a
+# SHAPE change kept the old top left corner: h to v on a 1080p screen ran off the bottom
+func place_window() -> void:
+	var win := get_window()
+	if win.mode != Window.MODE_WINDOWED or DisplayServer.get_name() == "headless":
+		return
+	var area := DisplayServer.screen_get_usable_rect(win.current_screen)
+	var frame := win.get_size_with_decorations() - win.size  # the title bar and the borders
+	var inset := win.position - win.get_position_with_decorations()
+	win.size = Vector2i(FORMATS[format].size) * window_scale(format, area.size - frame)
+	win.position = area.position + (area.size - win.size - frame) / 2 + inset
+
+
+# Alt+Enter anywhere flips DISPLAY (F11 too in a release build: a debug build keeps F11 for its room jumps). The window
+# hands the event over before any screen sees it; the key is blanked, so the Enter does not also confirm a menu row.
+func _window_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo) or Controls.capturing:
+		return
+	var alt_enter: bool = event.alt_pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER]
+	var mods: bool = event.alt_pressed or event.ctrl_pressed or event.shift_pressed
+	if alt_enter or (event.keycode == KEY_F11 and not mods and not OS.is_debug_build()):
+		set_fullscreen(not fullscreen)
+		event.keycode = KEY_NONE
+		event.physical_keycode = KEY_NONE
+		event.unicode = 0
 
 
 func set_focus_pause(on: bool) -> void:
@@ -622,7 +656,9 @@ func start_display(screen: Vector2i, forced: bool) -> void:
 	elif auto_format != format:
 		set_format(auto_format)
 	if (fullscreen or on_deck(screen)) and DisplayServer.get_name() != "headless":
-		get_window().mode = Window.MODE_FULLSCREEN  # the game starts full screen; SETTINGS has DISPLAY: WINDOW
+		get_window().mode = FULL_MODE  # the game starts full screen; SETTINGS has DISPLAY: WINDOW
+	else:
+		place_window()
 
 
 func _notification(what: int) -> void:
@@ -707,6 +743,7 @@ func _ready() -> void:
 			wanted = arg.substr(9)
 	set_format(wanted if FORMATS.has(wanted) else "wide")
 	get_tree().process_frame.connect(_frame_start)
+	get_window().window_input.connect(_window_input)
 	if not dev_run():
 		start_display.call_deferred(DisplayServer.screen_get_size(), FORMATS.has(wanted))
 
@@ -718,7 +755,10 @@ func set_format(name: String) -> void:
 	var win := get_window()
 	win.content_scale_size = size
 	if not "--resolution" in OS.get_cmdline_args() and DisplayServer.get_name() != "headless" and win.mode == Window.MODE_WINDOWED:
-		win.size = size * int(f.scale)
+		if dev_run():
+			win.size = size * int(f.scale)  # a test or a tool run: the plain size, wherever the window is
+		else:
+			place_window()
 	format_changed.emit()
 
 
@@ -11388,12 +11428,20 @@ func banner_total() -> float:
 
 func step_banner(delta: float) -> void:
     if banner_blocked() or is_open:
+        # a banner caught half way by a screen that opens (the Computer, a card): it froze there, on top of that screen,
+        # for as long as the screen stayed open. It goes back to the front of the queue and plays again afterwards
+        if not banner.is_empty() and not is_open:
+            banner.t = 0.0
+            banner["again"] = true
+            _bq.push_front(banner)
+            banner = {}
         return
     if banner.is_empty():
         if _bq.is_empty():
             return
         banner = _bq.pop_front()
-        buzz()
+        if not bool(banner.get("again", false)):
+            buzz()
     banner.t = float(banner.t) + delta
     if float(banner.t) >= banner_total():
         banner = {}
@@ -14911,6 +14959,13 @@ var _fade := 0.0
 var _sc := 1  # text scale in use (2 on narrow screens that have room for it)
 var _o := Vector2.ZERO  # panel origin in screen pixels
 var _opened := 0  # the report ignores confirm keys for a moment so it is not dismissed unread
+# a list too long for the screen (the owner's week with every row on the 128 px high format): first its last rows go
+# under the grade box (_spill of them), then the list is cut into pages (_pages = the first row of each)
+var _spill := 0
+var _page := 0
+var _pages: Array = [0]
+var _from := 0
+var _count := -1  # rows of the one flat list shown from _from (-1 = all)
 
 
 func _ready() -> void:
@@ -14923,6 +14978,7 @@ func _ready() -> void:
 
 func show_report(data: Dictionary) -> void:
     report = data
+    _page = 0
     is_open = true
     Sfx.play_grade(str(data.get("grade", "")))
     Cards.cover()
@@ -14959,13 +15015,22 @@ func _input(event: InputEvent) -> void:
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
         _mouse = event.position
         if _button.has_point(_mouse) and Time.get_ticks_msec() - _opened >= 600:
-            finish()
+            next_page()
     elif Controls.pressed(event):
         if Controls.confirm(event, false) and Time.get_ticks_msec() - _opened >= 600:
-            finish()
+            next_page()
     else:
         return
     get_viewport().set_input_as_handled()
+
+
+# the button: the next page of a list that needed pages, else on with the game
+func next_page() -> void:
+    if _page < _pages.size() - 1:
+        _page += 1
+        _canvas.queue_redraw()
+    else:
+        finish()
 
 
 func _books() -> bool:
@@ -14973,6 +15038,13 @@ func _books() -> bool:
 
 
 func _groups() -> Array:
+    var all := _groups_all()
+    if _count >= 0 and all.size() == 1:
+        return [[all[0][0], all[0][1].slice(_from, _from + _count)]]
+    return all
+
+
+func _groups_all() -> Array:
     var all := _groups_raw()
     return _soft(all) if bool(report.get("cozy", false)) else all
 
@@ -15105,12 +15177,15 @@ func _row(x: float, y: float, w: float, row: Array, stripe: bool, draw: bool) ->
     var label := str(row[0])
     var value := str(row[1])
     var two := _tw(label) + _tw(value) + 8.0 > w
-    var h := _row_h * (2.0 if two else 1.0)
+    # a value wider than the row itself (SWITCHING COSTS is a sentence) ran out of the panel on the left: it wraps
+    var lines: Array = _wrap(value, maxi(8, int((w - 4.0) / 4.0))) if two else [value]
+    var h := _row_h * (float(lines.size()) + (1.0 if two else 0.0))
     if draw:
         if stripe:
             _r(x, y, w, h, STRIPE)
         _t(label, x + 2.0, y + _pad, LABEL)
-        _t(value, x + w - 2.0 - _tw(value), y + _pad + (_row_h if two else 0.0), row[2])
+        for i in lines.size():
+            _t(str(lines[i]), x + w - 2.0 - _tw(str(lines[i])), y + _pad + _row_h * float(i + (1 if two else 0)), row[2])
     return h
 
 
@@ -15221,6 +15296,8 @@ func _panel_w(sc: int, size: Vector2) -> float:
 
 
 func _button_label() -> String:
+    if _page < _pages.size() - 1:
+        return "MORE %d/%d" % [_page + 1, _pages.size()]
     if bool(report.final):
         return "FINISH" if bool(report.fired) or Campaign.mode == "free" else "REVIEW"
     return "NEXT DAY"
@@ -15234,6 +15311,12 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
     var pw := _panel_w(sc, size)
     var groups := _groups()
     var left: Array = report.get("left_groups", [])  # extra groups: under the grade box when wide, after the others when narrow
+    if wide and _spill > 0 and not groups.is_empty():
+        var last: Array = groups[groups.size() - 1][1]
+        var keep := maxi(1, last.size() - _spill)
+        groups = groups.duplicate()
+        groups[groups.size() - 1] = [groups[groups.size() - 1][0], last.slice(0, keep)]
+        left = left + [["", last.slice(keep)]]
     var y := 11.0
     var inner := pw - 8.0
     var hero_w := 112.0
@@ -15288,6 +15371,25 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
     return y + 10.0 + 3.0
 
 
+# the panel height with as many of the list's last rows under the grade box as it takes to fit (the wide layouts only)
+func _fit(sc: int, size: Vector2) -> float:
+    _spill = 0
+    var h := _stack(sc, size, false)
+    if h <= size.y - 2.0 or size.x / float(sc) < 200.0:
+        return h
+    var best := 0
+    for n in range(1, 16):
+        _spill = n
+        var hn := _stack(sc, size, false)
+        if hn < h:
+            h = hn
+            best = n
+        if hn <= size.y - 2.0:
+            break
+    _spill = best
+    return h
+
+
 func _paint() -> void:
     if report.is_empty():
         return
@@ -15295,6 +15397,10 @@ func _paint() -> void:
     var sc := 2 if size.x < 220.0 else 1
     _row_h = 7.0
     _pad = 1.0
+    _spill = 0
+    _from = 0
+    _count = -1
+    _pages = [0]
     var h := _stack(sc, size, false)
     if sc == 2 and h * 2.0 > size.y - 4.0:
         sc = 1
@@ -15302,7 +15408,23 @@ func _paint() -> void:
     if sc == 1 and h > size.y - 2.0:  # the short wide screen: tighter rows (the 5 pixel font still has a 1 pixel gap)
         _row_h = 6.0
         _pad = 0.0
-        h = _stack(sc, size, false)
+        h = _fit(sc, size)
+        var all := _groups_all()
+        var total: int = all[0][1].size() if all.size() == 1 else 0
+        if h > size.y - 2.0 and total > 1:  # still too long: pages, as many rows on each as fit
+            _pages = []
+            var at := 0
+            while at < total:
+                _pages.append(at)
+                _from = at
+                _count = total - at
+                while _count > 1 and _fit(sc, size) > size.y - 2.0:
+                    _count -= 1
+                at += _count
+            _page = clampi(_page, 0, _pages.size() - 1)
+            _from = int(_pages[_page])
+            _count = (int(_pages[_page + 1]) if _page + 1 < _pages.size() else total) - _from
+            h = _fit(sc, size)
     var u := float(sc)
     var pw := _panel_w(sc, size)
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.86))
@@ -57796,6 +57918,8 @@ func _draw() -> void:
     var text: String = World.clock_text()
     var width := text.length() * 4 - 1
     var origin := Vector2(get_viewport_rect().size.x - width - 3.0, 3.0)
+    # the same soft dark plate as the goal chip: white text over the ceiling's lamps did not read (QA in a real window)
+    draw_rect(Rect2(origin.x - 2.0, 1.0, float(width) + 5.0, 8.0), Goals.BACK)
     for pass_index in 2:
         var shade := pass_index == 0
         var color := Color(0.09, 0.07, 0.12, 0.9) if shade else Color(1, 1, 1, 0.95)
@@ -57851,6 +57975,10 @@ func _draw() -> void:
         var p2 := Players.node(1) if Players.coop else null
         if p2 != null and str(p2.held) == "nerf":
             lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
+        var widest := 0
+        for line in lines:
+            widest = maxi(widest, PixelFont.width(str(line)))
+        draw_rect(Rect2(1.0, 1.0, float(widest) + 5.0, float(lines.size()) * 8.0), Goals.BACK)
         for i in lines.size():
             PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
             PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
@@ -57874,6 +58002,8 @@ func _draw_banner() -> void:
     var ios: bool = Phone.os != "android"
     var h := 15.0
     var w := minf(size.x - 8.0, 150.0)
+    if size.x < 220.0:
+        w = size.x  # the portrait screen: the card spans it, or the ends of the status lines and the clock stuck out at its sides
     var x := floorf((size.x - w) * 0.5)
     var y := floorf(-h - 1.0 + (h + 3.0) * Phone.banner_slide())
     var kind_color: Color = Phone.KIND_COLORS.get(b.kind, Color.WHITE)
@@ -61288,7 +61418,9 @@ func _draw_menu() -> void:
         _menu.draw_rect(r, back)
         PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
     var sound := Sfx.status_text() + Controls.keys("  {M}")
-    PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))
+    var sound_x := size.x - float(PixelFont.width(sound)) - 4.0
+    _menu.draw_rect(Rect2(sound_x - 2.0, 1.0, float(PixelFont.width(sound)) + 5.0, 9.0), Color(0.04, 0.03, 0.08, 0.5))  # grey on the ceiling tiles did not read
+    PixelFont.draw(_menu, sound, Vector2(sound_x, 3.0), Color("c8cede"))
 ''')
 
 write("scripts/net.gd", '''extends Node
@@ -76001,8 +76133,12 @@ func _panel() -> Rect2:
 
 
 func _row_rect(i: int) -> Rect2:
-    var body := _panel().position + Vector2(4.0, 16.0 + (14.0 if _confirm else 0.0))
-    return Rect2(body.x, body.y + ROW_H * float(i), _panel().size.x - 8.0, ROW_H - 1.0)
+    var top := 16.0 + (14.0 if _confirm else 0.0)
+    var body := _panel().position + Vector2(4.0, top)
+    # the 128 px high format gives the panel 114 px: the eight SETTINGS rows get 11 px each there, or the last one
+    # (CAREER) sat under the footer line
+    var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(maxi(1, _labels().size()))))
+    return Rect2(body.x, body.y + row_h * float(i), _panel().size.x - 8.0, row_h - 1.0)
 
 
 func _turn_page(step: int) -> void:
@@ -82709,19 +82845,21 @@ static func draw(canvas: CanvasItem, left_lines: int) -> Array:
         return used
     var size := canvas.get_viewport_rect().size
     var narrow := size.x < 260.0
-    var max_chars := int((size.x - 8.0) / 4.0) if narrow else 38
+    # the touch overlay's MENU button sits at the top right (28 px wide, y 14 to 33): the chip keeps out of it
+    var keep := 29.0 if Controls.touch_on() else 0.0
+    var max_chars := int((size.x - 8.0 - keep) / 4.0) if narrow else 38
     var list := rows(max_chars, Game.ui_open, SHORT_NEXT if size.y < 150.0 else MAX_NEXT)
     var y := 4.0 + float(left_lines) * 8.0 + 2.0 if narrow else 11.0
     var widest := 0.0
     for row in list:
         widest = maxf(widest, float(PixelFont.width(str(row))))
     if not list.is_empty():  # a soft dark plate, so the chip reads over the wall, the TV and the ceiling
-        var px := 3.0 if narrow else size.x - widest - 3.0
+        var px := 3.0 if narrow else size.x - widest - 3.0 - keep
         canvas.draw_rect(Rect2(px - 2.0, y - 2.0, widest + 4.0, float(list.size()) * 7.0 + 2.0), BACK)
     for i in list.size():
         var text := str(list[i])
         var w := float(PixelFont.width(text))
-        var x := 3.0 if narrow else size.x - w - 3.0
+        var x := 3.0 if narrow else size.x - w - 3.0 - keep
         var color := GOAL_COLOR if i == 0 and text.begins_with("GOAL") else NEXT_COLOR
         PixelFont.draw(canvas, text, Vector2(x + 1.0, y + 1.0), SHADE)
         PixelFont.draw(canvas, text, Vector2(x, y), color)

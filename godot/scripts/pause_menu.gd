@@ -219,8 +219,12 @@ func _panel() -> Rect2:
 
 
 func _row_rect(i: int) -> Rect2:
-	var body := _panel().position + Vector2(4.0, 16.0 + (14.0 if _confirm else 0.0))
-	return Rect2(body.x, body.y + ROW_H * float(i), _panel().size.x - 8.0, ROW_H - 1.0)
+	var top := 16.0 + (14.0 if _confirm else 0.0)
+	var body := _panel().position + Vector2(4.0, top)
+	# the 128 px high format gives the panel 114 px: the eight SETTINGS rows get 11 px each there, or the last one
+	# (CAREER) sat under the footer line
+	var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(maxi(1, _labels().size()))))
+	return Rect2(body.x, body.y + row_h * float(i), _panel().size.x - 8.0, row_h - 1.0)
 
 
 func _turn_page(step: int) -> void:
