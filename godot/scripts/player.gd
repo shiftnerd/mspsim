@@ -10,6 +10,7 @@ const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
+const FACE_AWAY := 12.0  # X13: px added to the distance of a thing behind your back (Player.nearest)
 const CHARACTERS := [
 	"office_intern",
 	"office_adult",
@@ -102,11 +103,21 @@ func nearest() -> Node:
 		return _pick
 	var best: Node = null
 	var best_d := INF
+	var pc_faced := false  # X13: a computer in front of you beats a coworker who only happens to stand there
+	for n in _near:
+		if n.is_in_group("computers") and _faces(n):
+			pc_faced = true
 	for n in _near:
 		var d := absf(n.global_position.x - global_position.x)
 		d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
-		if n.get("low_priority") == true:
+		if not _faces(n):
+			d += FACE_AWAY  # X13: the thing you face wins over the thing behind your back
+		if n.has_method("wants_you") and n.wants_you():
+			d -= 60.0  # somebody who walked over with news for you is always one press away
+		elif n.get("low_priority") == true:
 			d += 14.0
+		elif n.is_in_group("npcs") and str(n.get("role")) == "" and pc_faced:
+			d += 30.0  # Tab still picks them
 		elif n.is_in_group("npcs") and str(n.get("role")) == "site:owner":
 			d -= 8.0  # the client owner beats the PC on their own desk (E talks to them, Tab still picks the PC)
 		elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
@@ -115,6 +126,22 @@ func nearest() -> Node:
 			best_d = d
 			best = n
 	return best
+
+
+# is `n` in front of you (or right where you stand)?
+func _faces(n: Node) -> bool:
+	var dx: float = n.global_position.x - global_position.x
+	return absf(dx) <= 6.0 or (dx > 0.0) == (facing == "right")
+
+
+# X13: seated, somebody who came over with news for you (npc.wants_you) and stands within reach of the chair
+func _seat_caller() -> Node:
+	if seat == null:
+		return null
+	for n in get_tree().get_nodes_in_group("npcs"):
+		if n.has_method("wants_you") and n.wants_you() and absf(n.global_position.x - global_position.x) < 60.0:
+			return n
+	return null
 
 
 # Tab / Shift+Tab: move the arrow to the next / previous thing within reach without walking
@@ -595,6 +622,8 @@ func _physics_process(delta: float) -> void:
 			pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
 		elif state == "sitting" and interact and _ringing_phone() != null:
 			_ringing_phone().use(self)
+		elif state == "sitting" and interact and _seat_caller() != null:
+			_seat_caller().use(self)
 		elif state == "sitting" and interact and _seat_computer() != null:
 			_seat_computer().use(self)
 		elif (

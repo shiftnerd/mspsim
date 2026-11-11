@@ -347,22 +347,18 @@ func _day() -> void:
 		held += 1
 	await _tap(JOY_BUTTON_X)
 	await _wait(20)
-	# a coworker standing at your desk is nearer than the PC: X talks to them. End the chat (B, the cards) and press again
-	var tries := 0
-	while not comp.is_open and tries < 8:
-		tries += 1
-		await _tap(JOY_BUTTON_B)
-		await _wait(20)
-		if cards.is_open:
-			await _answer_cards()
+	# X13: seated, X is the Computer whoever stands at the desk (tests/desk_use.gd). The one thing that comes first is a desk phone
+	# ringing within reach: X answers it (calls are meant to interrupt) and the next X is the Computer
+	var answered := false
+	if not comp.is_open and str(_player()._call_stage) != "":
+		answered = true
 		held = 0
 		while _player() != null and str(_player().state) in ["emote", "use"] and held < 400:
 			await process_frame
 			held += 1
-		await _wait(90)  # they walk on
 		await _tap(JOY_BUTTON_X)
 		await _wait(20)
-	_check(comp.is_open and comp.app == "desktop", "X at the desk opens the Computer (%s, %d extra tries)" % [_state(), tries])
+	_check(comp.is_open and comp.app == "desktop", "X at the desk opens the Computer (%s%s)" % [_state(), ", after answering the desk phone" if answered else ""])
 	# ---- the Computer: every button is reached with RB (the focus cycle) and pressed with A
 	_check(await _press_region(comp, "app:psa"), "RB steps to the service board's icon, A opens it")
 	_check(comp.app == "psa" and not comp.psa_detail, "the PSA board (%s)" % _state())

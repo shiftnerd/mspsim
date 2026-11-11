@@ -242,11 +242,16 @@ var _resumed := {}  # streams whose state came from a save
 var _pinned := false  # seed_run() was called: the next new_run() keeps that seed
 
 
-func _ready() -> void:
-	# tests and headless runs get their own settings file, so playing the game (tier, look) never changes a test
+# tests and headless runs get their own settings file, so playing the game (tier, look, ticket pace) never changes a test.
+# X13: chosen in _init, not _ready: every autoload is made before the first one is ready, so an autoload that loads earlier
+# than this one (Msp reads the TICKET PACE in its _ready) already sees the test's path and never the player's real file
+func _init() -> void:
 	var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
 	if is_test and settings_path == "user://mspsim_settings.cfg":  # a test that already chose its own path keeps it
 		settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
+
+
+func _ready() -> void:
 	if run_seed == 0:
 		run_seed = _random_seed()
 

@@ -1769,6 +1769,19 @@ func events_on(day: int) -> Array:
 	return Yeartwo.events_on("tech", day, DAYS)
 
 
+# X13 (X10 leftover): the number of tickets the next Playbook job of today brings, when one is due within `hours` game hours
+# (0 = none). Msp.job_squeeze asks: the job itself is never delayed, the ordinary timed ticket in front of it is
+func job_due(hours: float) -> int:
+	if not Campaign.active or Campaign.mode != "tech":
+		return 0
+	var events: Array = events_on(Campaign.day)
+	for i in events.size():
+		var ev: Dictionary = events[i]
+		if str(ev.kind) == "playbook" and not _fired.has(i) and _at(ev, i) - World.clock <= hours:
+			return (Playbook.PROBLEMS.get(str(ev.book), []) as Array).size()
+	return 0
+
+
 func begin_day(day: int) -> void:
 	_fired = {}
 	_followed = false

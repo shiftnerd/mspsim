@@ -534,9 +534,13 @@ const PACE_OPEN := [-1, 0, 1]  # added to the open-queue cap
 const HOLD_GAP := 12.0  # game seconds between two held tickets being let in
 const HOLD_MORNING := 9.5  # a ticket held overnight comes in from this hour
 var pace_setting := 1  # index into PACE_NAMES; kept in the settings file ([pace] tech)
+var pace_path := ""  # X13: the file the pace was last read from (a test run must never read the player's own)
 var created_today := 0  # client tickets today from any source (tech campaign)
 var held: Array = []  # tickets waiting for a free slot: {kind: "problem" / "return", day, ...}
 var held_total := 0  # how many tickets were ever held this run (the pace probe prints it)
+const JOB_OVER := 2  # X13: the most a Playbook job should take the open queue over its cap
+const JOB_AHEAD := 1.5  # game hours before a job in which the timed tickets make room for it
+var squeezed_total := 0  # timed tickets that waited for a job this run (the pace probe prints it)
 var _held_t := 0.0
 
 var _next_id := 10421
@@ -564,6 +568,7 @@ func reset() -> void:
 	calls.clear()
 	held.clear()
 	held_total = 0
+	squeezed_total = 0
 	created_today = 0
 	_held_t = 0.0
 	tickets.clear()
@@ -882,6 +887,7 @@ func cycle_pace(step: int) -> int:
 
 
 func load_pace() -> void:
+	pace_path = Difficulty.settings_path
 	var cfg := ConfigFile.new()
 	if cfg.load(Difficulty.settings_path) == OK:
 		set_pace(int(cfg.get_value("pace", "tech", 1)))
@@ -892,6 +898,16 @@ func save_pace() -> void:
 	cfg.load(Difficulty.settings_path)
 	cfg.set_value("pace", "tech", pace_setting)
 	cfg.save(Difficulty.settings_path)
+
+
+# X13 (X10 leftover): a Playbook job is a story beat and is never held, so it can land on a full queue. When one is due within
+# JOB_AHEAD game hours and one more ticket now would let it push the open queue more than JOB_OVER over its cap, the ordinary
+# timed ticket waits for its next turn instead (ransomware and a call that is already ringing still interrupt)
+func job_squeeze() -> bool:
+	if not tech_paced():
+		return false
+	var n: int = Story.job_due(JOB_AHEAD)
+	return n > 0 and open_tickets().size() + 1 + n > open_cap() + JOB_OVER
 
 
 # the open queue is at its cap (the timed tickets pause on the same test)
@@ -2126,7 +2142,10 @@ func _process(delta: float) -> void:
 	_spawn_t -= dt
 	if _spawn_t <= 0.0:
 		_spawn_t = next_spawn_gap()
-		if open_tickets().size() < open_cap() and World.clock < World.DAY_END:
+		var room: bool = open_tickets().size() < open_cap() and World.clock < World.DAY_END
+		if room and job_squeeze():
+			squeezed_total += 1  # X13: a Playbook job is about to land: this one waits for its next turn
+		elif room:
 			_incoming()
 			# Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
 			var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0

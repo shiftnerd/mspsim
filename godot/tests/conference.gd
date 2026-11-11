@@ -340,7 +340,8 @@ func _init() -> void:
 		"back to normal and the clock jumps to closing"
 	)
 	var r: Dictionary = c.make_report()
-	_check(r.grade == "A" and r.pay == 150 and r.rep_delta >= 2, "the trip day pays a per diem")
+	# T2: the reputation of the trip day is what you did there (here: the keynote listened to and the three sessions, one booth)
+	_check(r.grade == "A" and r.pay == 150 and cf.trip_effort() == 2 and r.rep_delta == cf.trip_rep() and r.rep_delta == (1 if c.rep < cf.TRIP_KNOWN_REP else 0), "the trip day pays a per diem, and a point for a trip with the keynote and the sessions (effort %d, %+d at rep %d)" % [cf.trip_effort(), r.rep_delta, c.rep])
 	_check(cf.went and cf.picks.size() == 3, "the picks are recorded")
 	# the day report would open at closing and queue every later card behind it: keep the day open
 	world.clock = 12.0

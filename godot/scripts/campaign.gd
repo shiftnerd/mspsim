@@ -68,6 +68,15 @@ const SLOPPY_REP := 62  # from here on a sloppy day costs SLOPPY_PER for every l
 const SLOPPY_PER := 4
 const SLOPPY_MAX := 10
 const SLOPPY_NOTE := "LOOSE ENDS TODAY: NO REPUTATION GAIN."
+# T2: the top of the tech campaign's curve. From TOP_REP every gain is banked as a fraction of a point (rep_bank) and only whole
+# points reach the reputation: a gain counts TOP_EARLY of its size (a day report's points, or any other gain after gain_scale
+# and without its floor of one point), from TOP_LATE_REP it counts TOP_LATE. A careful run reaches the high 90s in the last
+# days, not 100 on day 13.
+const TOP_REP := 90
+const TOP_LATE_REP := 95
+const TOP_EARLY := 0.5
+const TOP_LATE := 0.3
+const TOP_NOTE := "NEAR THE TOP EVERY POINT TAKES LONGER."
 const SLOPPY_NOTE_LOSS := "TOO MANY LOOSE ENDS TODAY. THE CLIENTS NOTICED."
 const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
@@ -77,6 +86,7 @@ var mode := ""
 var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
+var rep_bank := 0.0  # T2: the part of a point earned at the top of the curve (see TOP_REP); saved
 var cash := 0
 var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus, 3 = Year 3, the last chapter (Yeartwo, R10); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
@@ -99,6 +109,27 @@ func gain_scale() -> float:
 	if rep >= 72:
 		return 0.3
 	return 0.6 if rep >= 60 else 1.0
+
+
+# T2: the top of the curve applies (tech campaign, from TOP_REP; not on cozy Easy, which keeps its gentle climb)
+func top_slow() -> bool:
+	return active and mode == "tech" and rep >= TOP_REP and not Difficulty.cozy_on()
+
+
+# bank `points` earned at the top and hand out the whole points that are ready
+func top_gain(points: float) -> int:
+	rep_bank += points * (TOP_LATE if rep >= TOP_LATE_REP else TOP_EARLY)
+	var whole := floori(rep_bank + 0.0001)
+	rep_bank -= float(whole)
+	return whole
+
+
+# the day report's gain at the top goes through the bank too, with a line when it is not a whole point yet
+func top_report(r: Dictionary) -> void:
+	if top_slow() and int(r.rep_delta) > 0:
+		r["rep_delta"] = top_gain(float(int(r.rep_delta)))
+		if int(r.rep_delta) == 0:
+			r["notes"] = [TOP_NOTE]
 
 
 # T2: a day is clean enough when its loose ends (SLAs missed, reopens, plain tickets left in the queue: Msp.loose_open) are
@@ -137,7 +168,10 @@ func adjust_rep(amount: int) -> void:
 		return
 	var change := amount
 	if amount > 0:
-		change = maxi(1, roundi(float(amount) * gain_scale()))
+		if top_slow():
+			change = top_gain(float(amount) * gain_scale())  # T2: no floor of one point up here
+		else:
+			change = maxi(1, roundi(float(amount) * gain_scale()))
 		change = mini(change, maxi(0, rep_cap() - rep))
 	rep = clampi(rep + change, 0, 100)
 
@@ -196,8 +230,9 @@ func slot_part(for_slot := 0) -> String:
 	return "" if n <= 1 else "_s%d" % clampi(n, 2, SLOTS)
 
 
-func _ready() -> void:
-	# tests and headless runs write saves, the career and the meta file under their own prefix (a test that chose its own keeps it)
+# tests and headless runs write saves, the career and the meta file under their own prefix (a test that chose its own keeps
+# it). X13: in _init, so the prefix is the test's before any autoload's _ready runs (see Difficulty._init)
+func _init() -> void:
 	var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
 	if is_test and save_prefix == "user://mspsim_":
 		save_prefix = "user://test_%d_" % OS.get_process_id()
@@ -326,6 +361,7 @@ func new_game(for_mode: String) -> void:
 	day = 1
 	rep = START_REP
 	scars = 0
+	rep_bank = 0.0
 	cash = 0
 	history = []
 	_awaiting = false
@@ -395,6 +431,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
 	day = int(cfg.get_value("campaign", "day", 1))
 	rep = int(cfg.get_value("campaign", "rep", START_REP))
 	scars = int(cfg.get_value("campaign", "scars", 0))
+	rep_bank = float(cfg.get_value("campaign", "rep_bank", 0.0))
 	cash = int(cfg.get_value("campaign", "cash", 0))
 	year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
 	history = cfg.get_value("campaign", "history", [])
@@ -482,6 +519,7 @@ func _write_sections(cfg: ConfigFile) -> void:
 	cfg.set_value("campaign", "day", day)
 	cfg.set_value("campaign", "rep", rep)
 	cfg.set_value("campaign", "scars", scars)
+	cfg.set_value("campaign", "rep_bank", rep_bank)
 	cfg.set_value("campaign", "cash", cash)
 	cfg.set_value("campaign", "year", year)
 	cfg.set_value("campaign", "history", history)
@@ -786,6 +824,7 @@ func _end_day() -> void:
 			scars -= 1
 		r["rep_cap"] = rep_cap()
 	r["rep_delta"] = _tier_rep(int(r.rep_delta))
+	top_report(r)
 	if bool(r.get("sloppy", false)):
 		r["notes"] = [SLOPPY_NOTE if int(r.rep_delta) >= 0 else SLOPPY_NOTE_LOSS]
 	rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)

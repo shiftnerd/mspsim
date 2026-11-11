@@ -259,10 +259,16 @@ func complaint_text() -> String:
 	)
 
 
+# X13: John is walking over with a complaint he has not told you yet
+func waiting() -> bool:
+	return not pending.is_empty() and not pending.get("told", false) and Campaign.player_as != "John" and not Cards.is_open
+
+
 # John reached you with the news: ask what you want to do
 func deliver() -> void:
-	if pending.is_empty():
+	if pending.is_empty() or pending.get("told", false):
 		return
+	pending["told"] = true
 	var text := complaint_text()
 	if text == "":
 		pending = {}

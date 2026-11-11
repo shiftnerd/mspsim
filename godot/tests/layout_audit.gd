@@ -433,6 +433,15 @@ func _report(kind: String) -> Dictionary:
 		r["rep_delta"] = -1
 		r["sloppy"] = true
 		r["notes"] = [root.get_node("Campaign").SLOPPY_NOTE]
+	elif kind == "trip":  # T2: a trip that earned nothing (the longer of the two lines)
+		r["rep_delta"] = 0
+		r["grade"] = "A"
+		r["notes"] = [str(root.get_node("Expo").TEXT.trip_known)]
+	elif kind == "top":  # T2: a clean day near the top that is not a whole point yet
+		r["rep_delta"] = 0
+		r["rep"] = 93
+		r["grade"] = "S"
+		r["notes"] = [root.get_node("Campaign").TOP_NOTE]
 	elif kind == "ending":
 		r["day"] = 20
 		r["final"] = true
@@ -498,7 +507,7 @@ func _floor_phase() -> void:
 		], func(_id: String) -> void: pass)
 		await _end("card with picture " + pic)
 		_clear(cards)
-	for kind in ["tech", "sloppy", "ending", "owner"]:
+	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner"]:
 		_begin()
 		rep.is_open = false
 		rep.show_report(_report(kind))
