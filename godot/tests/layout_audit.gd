@@ -485,6 +485,17 @@ func _floor_phase() -> void:
 	], func(_id: String) -> void: pass)
 	await _end("card long")
 	_clear(cards)
+	# R8: event cards with their spot picture (drawn where the card is wide enough and has the height: the tall format goes without)
+	for pic in ["tax", "printer"]:
+		_begin()
+		cards.art_next = pic
+		cards.ask("THE TONER SUPPLIER", "YOUR ORDER OF TONER FOR THREE CLIENTS IS A WEEK LATE. THE DRIVER SAYS THE TRUCK IS AROUND. TWO OFFICES ARE DOWN TO THEIR LAST CARTRIDGE.", [
+			{"label": "BORROW A CARTRIDGE FROM THE WAREHOUSE", "id": "a"},
+			{"label": "CALL ANOTHER SUPPLIER AT TWICE THE PRICE", "id": "b"},
+			{"label": "WAIT ONE MORE DAY", "id": "c"},
+		], func(_id: String) -> void: pass)
+		await _end("card with picture " + pic)
+		_clear(cards)
 	for kind in ["tech", "sloppy", "ending", "owner"]:
 		_begin()
 		rep.is_open = false

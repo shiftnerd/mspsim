@@ -398,4 +398,5 @@ static func show_event(id: String) -> void:
 	var options := []
 	for o in c.options:
 		options.append({"label": str(o.label), "id": str(o.id)})
+	Cards.art_next = Events.art_for(id)
 	Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: Events._answer(c, pick))

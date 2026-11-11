@@ -9,6 +9,8 @@ const PixelFont := preload("res://scripts/pixelfont.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a card is its sprite (the lines are cut as text, the glyph is narrower)
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
+const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
+const ART_W := 36.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -16,6 +18,8 @@ var speaker := ""
 var text := ""
 var options: Array = []
 var sel := 0
+var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
+var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -39,6 +43,8 @@ func _ready() -> void:
 func ask(
 	who: String, body: String, choices: Array, on_pick: Callable, valid := Callable(), slot := -1
 ) -> void:
+	var art_id := art_next
+	art_next = ""
 	if slot >= 0 and pane_slot < 0 and Players.coop and Players.slot(slot).joined:
 		# co-op scope "player": the card appears in that player's pane and only they are held (a team card, slot -1, is the old full-window one)
 		Players.takeover_host().card_for(slot).ask(who, body, choices, on_pick, valid)
@@ -46,10 +52,11 @@ func ask(
 	# X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
 	# report covers the screen, or while older cards are still waiting joins the back of the queue.
 	if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
-		_queue.append([who, body, choices, on_pick, valid])
+		_queue.append([who, body, choices, on_pick, valid, art_id])
 		if not is_open and not DayReport.is_open:
 			_show_next()
 		return
+	art = art_id
 	speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
 	text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
 	options = []
@@ -129,6 +136,7 @@ func _show_next() -> void:
 				next[3].call("__none")
 			continue
 		_draining = true
+		art_next = str(next[5]) if next.size() > 5 else ""
 		ask(next[0], next[1], next[2], next[3], valid)
 		_draining = false
 
@@ -222,15 +230,24 @@ func _wrap(s: String, chars: int) -> Array:
 	return out
 
 
+# the open card's spot picture, or null (none asked for, the file is missing)
+func _art_tex() -> Texture2D:
+	var path := "res://assets/ui/card_%s.png" % art
+	return load(path) if art != "" and ResourceLoader.exists(path) else null
+
+
 func _paint() -> void:
 	var size := get_viewport().get_visible_rect().size
 	_hits.clear()
 	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
 	var pw := minf(size.x - 8.0, 250.0)
 	var chars := int((pw - 10.0) / 4.0)
+	var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
 	var lines := []
+	var plain_lines := []
 	for para in text.split("\n"):
-		lines.append_array(_wrap(para, chars))
+		lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+		plain_lines.append_array(_wrap(para, chars))
 	# option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
 	var opt_lines := []
 	var opts_h := 0.0
@@ -244,7 +261,13 @@ func _paint() -> void:
 		var rows: Array = _wrap(full, chars - 1 - chip_w)
 		opt_lines.append(rows)
 		opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-	var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
+	var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+	var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
+	if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
+		art_tex = null
+		lines = plain_lines
+		body_h = float(lines.size()) * 7.0
+		ph = 12.0 + body_h + 4.0 + opts_h + 4.0
 	# short screens (16:9, wide) keep the people visible by putting the card at the top
 	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
 	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
@@ -255,7 +278,9 @@ func _paint() -> void:
 	for line in lines:
 		PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
 		y += 7.0
-	y += 4.0
+	if art_tex != null:
+		_canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
+	y = panel.position.y + 12.0 + body_h + 4.0
 	for i in options.size():
 		var opt: Dictionary = options[i]
 		var on: bool = bool(opt.get("enabled", true))

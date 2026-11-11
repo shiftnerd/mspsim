@@ -242,6 +242,7 @@ const NARROW_KEYS := {
 	"L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
 	"ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
 	"YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+	"P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing

@@ -48,6 +48,33 @@ func _init() -> void:
 	var duel_art: Texture2D = outings._duel_art("frame")
 	_check(duel_art != null and outings._duel_art("tag_p2") != null and outings._duel_art("pip_p1") != null and outings._duel_art("nothing") == null, "the duel strip loads its frame, tags and pips; a missing piece is null")
 
+	# ---- R8: the event cards' spot pictures: four seasons and six kinds, each a 34 x 26 sprite; cards.gd draws one when it has room
+	var events := root.get_node("Events")
+	var cards := root.get_node("Cards")
+	var pics_ok := true
+	for pic in ["holidays", "tax", "xp", "school", "printer", "phone", "food", "power", "security", "backup"]:
+		var pt: Texture2D = load("res://assets/ui/card_%s.png" % pic) if ResourceLoader.exists("res://assets/ui/card_%s.png" % pic) else null
+		pics_ok = pics_ok and pt != null and Vector2i(pt.get_size()) == Vector2i(34, 26)
+	_check(pics_ok, "the ten card pictures load at 34 x 26")
+	_check(events.art_for("xmas_ecard") == "holidays" and events.art_for("tax_printer") == "tax" and events.art_for("xp_six") == "xp" and events.art_for("school_laptops") == "school", "the seasonal cards get their season's picture")
+	_check(events.art_for("toner_late") == "printer" and events.art_for("lost_phone") == "phone" and events.art_for("free_pizza") == "food" and events.art_for("power_blip") == "power" and events.art_for("phish_invoice") == "security" and events.art_for("tape_check") == "backup", "six kinds of deck card get a picture")
+	_check(events.art_for("birthday_cake") == "food" and events.art_for("no_such_card") == "", "a card with no kind has none")
+	var kinds_in_deck := true
+	for kind in events.ART_KINDS:
+		for card_id in events.ART_KINDS[kind]:
+			kinds_in_deck = kinds_in_deck and not events.card_of(str(card_id)).is_empty()
+	_check(kinds_in_deck, "every card named in a kind is in the deck")
+	cards.art = "printer"
+	_check(cards._art_tex() != null, "a card with art loads its picture")
+	cards.art = "nothing"
+	_check(cards._art_tex() == null, "a missing picture is null")
+	cards.art = ""
+	cards.art_next = "food"
+	cards.ask("Test", "A short card.", [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+	_check(cards.art == "food" and cards.art_next == "", "ask() takes the picture its caller set, and clears it")
+	cards.pick(0)
+	cards.art = ""
+
 	# ---- the chair track finds its paint, and a missing one is null (the rectangles are the fallback)
 	var track: Node2D = load("res://scripts/chair_track.gd").new()
 	_check(track.floor_paint("finish") != null and track.floor_paint("ring_end") != null and track.floor_paint("ring_line") != null and track.floor_paint("ring_spot") != null, "the chair track loads the finish line and the ring")
