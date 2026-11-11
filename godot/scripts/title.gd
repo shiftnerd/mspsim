@@ -777,4 +777,6 @@ func _draw_menu() -> void:
 		_menu.draw_rect(r, back)
 		PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
 	var sound := Sfx.status_text() + Controls.keys("  {M}")
-	PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))
+	var sound_x := size.x - float(PixelFont.width(sound)) - 4.0
+	_menu.draw_rect(Rect2(sound_x - 2.0, 1.0, float(PixelFont.width(sound)) + 5.0, 9.0), Color(0.04, 0.03, 0.08, 0.5))  # grey on the ceiling tiles did not read
+	PixelFont.draw(_menu, sound, Vector2(sound_x, 3.0), Color("c8cede"))

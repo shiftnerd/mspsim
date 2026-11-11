@@ -483,14 +483,13 @@ func _title_phase() -> void:
 		var tb := root.get_node("Toolbox")
 		t._select.setup("free")
 		await _wait(3)
-		_begin()
 		t._select.open_tools()
-		for g in tb.GAMES.size():
+		for g in tb.GAMES.size():  # every game has its own rows (the escape room the most: ROOM, CODE DIGITS, a row per clue)
+			_begin()
 			tb.game_i = g
 			tb.sel = 0
 			tb._canvas.queue_redraw()
-			await _wait(2)
-		await _end("toolbox rows")
+			await _end("toolbox rows %s" % str(tb.GAMES[g]))
 		tb.close()
 		_begin()
 		t._select.open_seed()
@@ -507,6 +506,7 @@ func _report(kind: String) -> Dictionary:
 	if kind == "sloppy":  # T2: the note under a day that had too many loose ends for a reputation gain
 		r["rep_delta"] = -1
 		r["sloppy"] = true
+		r["favours"] = 3  # T2: the UNBILLED FAVOURS row
 		r["notes"] = [root.get_node("Campaign").SLOPPY_NOTE]
 	elif kind == "trip":  # T2: a trip that earned nothing (the longer of the two lines)
 		r["rep_delta"] = 0

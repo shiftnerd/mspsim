@@ -57892,6 +57892,8 @@ func _draw() -> void:
     var text: String = World.clock_text()
     var width := text.length() * 4 - 1
     var origin := Vector2(get_viewport_rect().size.x - width - 3.0, 3.0)
+    # the same soft dark plate as the goal chip: white text over the ceiling's lamps did not read (QA in a real window)
+    draw_rect(Rect2(origin.x - 2.0, 1.0, float(width) + 5.0, 8.0), Goals.BACK)
     for pass_index in 2:
         var shade := pass_index == 0
         var color := Color(0.09, 0.07, 0.12, 0.9) if shade else Color(1, 1, 1, 0.95)
@@ -57947,6 +57949,10 @@ func _draw() -> void:
         var p2 := Players.node(1) if Players.coop else null
         if p2 != null and str(p2.held) == "nerf":
             lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
+        var widest := 0
+        for line in lines:
+            widest = maxi(widest, PixelFont.width(str(line)))
+        draw_rect(Rect2(1.0, 1.0, float(widest) + 5.0, float(lines.size()) * 8.0), Goals.BACK)
         for i in lines.size():
             PixelFont.draw(self, lines[i], Vector2(4, 4 + i * 8), Color(0.09, 0.07, 0.12, 0.9))
             PixelFont.draw(self, lines[i], Vector2(3, 3 + i * 8), Color(1, 1, 1, 0.95))
@@ -61386,7 +61392,9 @@ func _draw_menu() -> void:
         _menu.draw_rect(r, back)
         PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
     var sound := Sfx.status_text() + Controls.keys("  {M}")
-    PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))
+    var sound_x := size.x - float(PixelFont.width(sound)) - 4.0
+    _menu.draw_rect(Rect2(sound_x - 2.0, 1.0, float(PixelFont.width(sound)) + 5.0, 9.0), Color(0.04, 0.03, 0.08, 0.5))  # grey on the ceiling tiles did not read
+    PixelFont.draw(_menu, sound, Vector2(sound_x, 3.0), Color("c8cede"))
 ''')
 
 write("scripts/net.gd", '''extends Node
