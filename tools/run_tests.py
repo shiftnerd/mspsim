@@ -187,7 +187,8 @@ def run_one(test, godot, timeout, logdir):
     with open(os.path.join(logdir, test[:-3] + ".log"), "w", encoding="utf-8") as f:
         f.write(out)
     return {"test": test, "status": status, "code": code, "fails": fails, "errs": errs,
-            "secs": time.time() - t0, "tail": lines[-12:]}
+            "secs": time.time() - t0,
+            "tail": [l for l in lines if FAIL_RE.match(l) or FAILURES_RE.search(l) or ERR_RE.search(l)][:20] + [""] + lines[-12:]}
 
 
 def main():

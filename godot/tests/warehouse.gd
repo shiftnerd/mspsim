@@ -81,6 +81,8 @@ func _init() -> void:
 		sprites += 1
 		var base: float = c.position.y  # the node sits on its sort line
 		var bottom: float = base + c.offset.y + c.texture.get_size().y - 1.0
+		if str(c.name).begins_with("Dressing_venue_trophy"):
+			continue  # the trophy shelf hangs on the wall above the chair rack (SetDressing), it is not a floor prop
 		if base > 110.0 or base < 85.0 or absf(bottom - base) > 12.0:
 			bad.append("%s base %.0f bottom %.0f" % [c.name, base, bottom])
 		if c.is_in_group("race_prop"):

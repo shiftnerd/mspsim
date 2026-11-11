@@ -1,15 +1,44 @@
-# The headless test suite, the linter and the generator check on every push and pull request.
-# NOT YET RUN: written from the local commands (docs/dev/tools-tests.md). The first run may need a fix or two (the Godot download
-# url below, Linux paths); the suite itself is cross-platform (run_tests.py reads $GODOT and falls back to ~/.local/share for user://).
+# The headless test suite, the linter and the generator check. It runs on pull requests, every night, and by hand
+# (Actions > tests > Run workflow; the optional "tests" input is a space-separated list of test names, e.g. "hiring warehouse",
+# which takes about 4 minutes instead of the full suite's 25 to 30). It does NOT run on every push to main: the private repo's free
+# Actions minutes are limited and the suite is run locally before each merge (python tools/run_tests.py -j 2).
+# A newer run of the same branch cancels an older one still going.
 name: tests
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      tests:
+        description: "Test names to run (space separated). Empty = the whole suite."
+        required: false
+        default: ""
+  schedule:
+    - cron: "0 7 * * *"
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 env:
   GODOT_VERSION: "4.7.2-stable"
 jobs:
+  gate:
+    # the nightly run only goes ahead when main got a commit in the last 24 hours (every other trigger always runs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      run: ${{ steps.g.outputs.run }}
+    steps:
+      - id: g
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          n=$(gh api "repos/$GITHUB_REPOSITORY/commits?sha=main&since=$since&per_page=1" --jq length)
+          if [ "$n" -gt 0 ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
   suite:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -36,4 +65,6 @@ jobs:
       - name: Generator check
         run: python -I tools/check_generator.py --scratch "$RUNNER_TEMP/gen"
       - name: Tests (a failing test is retried once and reported as flaky if it then passes)
-        run: python tools/run_tests.py --godot /usr/local/bin/godot -j 4 --retry 1
+        env:
+          TESTS: ${{ inputs.tests }}
+        run: python tools/run_tests.py --godot /usr/local/bin/godot -j 4 --retry 1 $TESTS
