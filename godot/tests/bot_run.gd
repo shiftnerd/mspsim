@@ -4,6 +4,8 @@ extends SceneTree
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/bot_run.gd -- tech normal careful seeds=6 [first=1] [ts=20]
 # Words: mode (tech owner sales service; "coop" runs the tech bot as a pair), tier (easy normal hard), strategy (careful lazy chaotic shortcut); a word may be
 # a comma list ("easy,normal,hard"). Prints one BOT line per run and a CELL summary per mode x tier x strategy.
+# "mixed" (tech, service) is careful on even days and lazy on odd ones. The word "year2" plays a year 1 run and then Year 2 on what
+# it left (New Game Plus: carry-over, tighter clocks); the BOT line is the Year 2 run, a Y1 line before it is the first year.
 # Merge several processes with tools/ (see docs/balance-notes.md) or by eye.
 # P5 (the newer owner content: temptations, takeover, the second cast's cards, by-name requests):
 #   ... bot_run.gd -- owner normal careful,shortcut seeds=3 ts=4
@@ -21,6 +23,7 @@ func _init() -> void:
 	var first := 1
 	var ts := 20.0
 	var coop := false
+	var year2 := false
 	for a in OS.get_cmdline_user_args():
 		var s := str(a)
 		if s.begins_with("seeds="):
@@ -29,6 +32,8 @@ func _init() -> void:
 			first = int(s.substr(6))
 		elif s == "coop":
 			coop = true
+		elif s == "year2":
+			year2 = true
 		elif s.begins_with("ts="):
 			ts = float(s.substr(3))
 		else:
@@ -49,8 +54,19 @@ func _init() -> void:
 		for tier in tiers:
 			for strat in strats:
 				var rows: Array = []
+				var no_year2 := 0
 				for k in seeds:
-					var r: Dictionary = await bots.play(str(mode), str(tier), str(strat), first + k)
+					var r: Dictionary
+					if year2:
+						r = await bots.play_year2(str(mode), str(tier), str(strat), first + k)
+						if r.has("year1"):
+							print("Y1 " + bots.line(r.year1))
+						else:  # year 1 ended fired: there is no Year 2 to play, and the row is not a Year 2 row
+							print("Y1 " + bots.line(r))
+							no_year2 += 1
+							continue
+					else:
+						r = await bots.play(str(mode), str(tier), str(strat), first + k)
 					rows.append(r)
 					print(bots.line(r))
 				var good := 0
@@ -66,6 +82,10 @@ func _init() -> void:
 					rep += float(r.rep)
 					score += float(r.score)
 					fired += 1 if bool(r.fired) else 0
+				if no_year2 > 0:
+					print("NOTE %s %s %s: %d of %d year 1 runs ended fired and have no Year 2" % [mode, tier, strat, no_year2, seeds])
+				if rows.is_empty():
+					continue
 				var n := float(rows.size())
 				print("CELL %s %s %s: n=%d good %d mid %d bad %d  rep %.1f score %.1f  fired %d" % [mode, tier, strat, rows.size(), good, mid, bad, rep / n, score / n, fired])
 				cells["%s %s %s" % [mode, tier, strat]] = {"score": score / n, "fired": fired, "n": rows.size()}

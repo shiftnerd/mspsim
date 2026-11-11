@@ -1,6 +1,8 @@
 extends SceneTree
 # gdlint:disable=max-line-length
-# T2: tech campaign fixes. `-- curve` prints only the reputation-by-day curves.
+# T2: tech campaign fixes. `-- curve` prints only the reputation-by-day curves; `-- curve seeds=5 tier=hard` prints them for
+# five seeds on a tier (normal or hard; the asserts stay on the first seed at normal; on the cozy easy tier the careless player is
+# never fired and this driver does not finish). The run seed is pinned, so a seed is the same game every time.
 
 var failures := 0
 var seen := {}
@@ -72,6 +74,7 @@ func _run(mode: String, seed_value: int) -> Array:
 	kind = mode
 	seen = {}
 	seed(seed_value)
+	root.get_node("Difficulty").seed_run(seed_value)  # the ticket and story streams too (they used to get a fresh seed every run)
 	var c := root.get_node("Campaign")
 	var msp := root.get_node("Msp")
 	var world := root.get_node("World")
@@ -368,10 +371,30 @@ func _init() -> void:
 	if not OS.get_cmdline_user_args().has("curve"):
 		_unit()
 	var curves := {}
+	var seeds := 1
+	var tier := "normal"
+	for a in OS.get_cmdline_user_args():
+		if str(a).begins_with("seeds="):
+			seeds = int(str(a).substr(6))
+		elif str(a).begins_with("tier="):
+			tier = str(a).substr(5)
+	var diff := root.get_node("Difficulty")
+	diff.settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
 	for mode in ["good", "careless", "mixed"]:
-		var reps: Array = await _run(mode, 4242)
-		curves[mode] = reps
-		print("CURVE %s: %s" % [mode, str(reps)])
+		var ends := []
+		for k in range(seeds - 1, -1, -1):  # the first seed last, so the asserts below read it
+			diff.set_tier(tier)
+			var reps: Array = await _run(mode, 4242 + k)
+			curves[mode] = reps
+			ends.append(int(reps.back()))
+			print("CURVE %s%s: %s" % [mode, (" seed %d" % (4242 + k)) if seeds > 1 else "", str(reps)])
+		if seeds > 1:
+			print("ENDS %s %s: %s" % [tier, mode, str(ends)])
+	diff.set_tier("normal")
+	if tier != "normal":
+		root.get_node("Campaign").quit_to_title()
+		quit(0)
+		return
 	var good: Array = curves.good
 	var bad: Array = curves.careless
 	var mixed: Array = curves.mixed
@@ -385,7 +408,7 @@ func _init() -> void:
 		bad.back() < 25,
 		"careless play ends far below 40 and is fired or close to it (day %d, rep %d)" % [bad.size(), bad.back()]
 	)
-	_check(mixed[19] >= 55 and mixed[19] <= 86, "mixed play ends at 55-86 (%d)" % mixed[19])
+	_check(mixed[19] >= 55 and mixed[19] <= 75, "mixed play ends at 55-75 (%d)" % mixed[19])
 	root.get_node("Campaign").quit_to_title()
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

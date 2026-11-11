@@ -3,6 +3,9 @@
 How the numbers were checked and what they came out as. Re-run after any change to a tier table, the ticket pace, the SLA windows or the campaign
 reputation maths. Counts are small (3-5 seeds a cell, the machine was shared), so read them as "which side of the line", not as percentages.
 
+**The current numbers are in the last section, "Nov 2026: the balance pass without a human".** The sections before it are
+kept as history: they were measured before the same seed gave the same game.
+
 ## The tools
 | File | What it does |
 |---|---|
@@ -139,3 +142,282 @@ Result: hard bankrupt 1 of 24 (target at most 1 of 16), good ending 21 of 24 (88
 
 ## Co-op bot (R34 phase 5, Nov 2026)
 `bot_run.gd tech normal careful coop seeds=1 ts=40` plays the tech campaign with two careful bots (player 2 works the same queue through `Players.run_as`, ticket pace x1.5, own skills). Seed 1 alone: 139 tickets closed, 0 missed, rep 100, PowerShell 5. The pair: 159 closed (about 14% more for 1.5x the arrivals), 0 missed, rep 100, player 2 ends with 625 XP and PowerShell 5, so both people level fully. One seed on one tier says only that the pair is not starved or buried; the 1.5 dial and the 25% share still want a few more seeds and a play-test with two people before they count as tuned.
+
+## Nov 2026: the balance pass without a human (Q6, R1, P6, T2, X7, X9, C7, R10, P5 / R38)
+
+Everything below was measured on the merged code of Nov 2026 with the bots of `tests/bot_lib.gd`, one Godot process at a time.
+Seeds 1 to 5 unless a row says otherwise; tech at ts=60, service at ts=40, sales at ts=20, owner at ts=4. The older sections
+above are history: their numbers were taken with a bot whose speed depended on the time scale and on a game that did not repeat
+a seed (see "The same seed, another game"). How it was built: `docs/dev/notes-balance.md`.
+
+### The same seed, another game (Q6)
+`tech hard careful seed 11` gave 12 to 73 from run to run, and the shortcut owner of seed 2 gave $24k, $44k, $77k, $137k,
+$330k, $342k and one bankruptcy on the same code. Four causes, all fixed:
+
+| Cause | Kind | Fix |
+|---|---|---|
+| The office's first meeting timer was drawn at boot, before the run had its seed, and never again | game | `World.new_run()` draws it from the run seed at every new game |
+| A cast member's body of the day before stayed in the scene and, when its old routine ran out, replaced its person's new plan | game | a leaving body no longer calls `World.leg_done` / `leg_exit`; `begin_next_day` frees the bodies |
+| Every change of step of the tech bot cost a whole frame (1.3 game seconds at ts=20, 8 at ts=120) | bot | the frame's time is shared between the steps |
+| A run inherited the scene, the open card, the stopped clock and the career of the run before it in the same process | bot | every run starts from a clean slate on a freshly loaded floor |
+
+Same seed, same code, now: tech hard careful seed 11 is 85 / 77 / 79 at ts 20 / 60 / 120 (it was 82 / 73 / 53), the same in
+two processes; the shortcut owner of seed 2 is $300,256 in two processes; `tests/determinism.gd` plays a tech seed and a
+sales seed twice in one process and compares the rows.
+
+**Still open, owner campaign only:** a command line repeats exactly (the same `bot_run` call gives the same rows in two
+processes), but one owner seed can give two results depending on which seeds ran before it in the same process. Seed 3,
+careful, normal: $831,705 alone or after seed 2, $872,920 after seeds 1 and 2. The trace (`bot_det.gd ... before=1,2`)
+shows the runs parting on day 1 at an office worker's routine, so something in the physical office survives a new game
+(not the cards, the career, the clock or the campaign state: those are reset). Tech, sales and service cells were
+checked against their Year 2 chains and do not show it. The owner tables below are therefore "as the cell ran"; the
+year 1 column of the owner Year 2 table was played in another order and differs from the tier table for that reason.
+
+### Tiers: every campaign x tier x strategy, 5 seeds
+good / mid / bad are the ending classes of `bot_lib.gd` (good = the top ending). "let go" in sales is the quota ending, not
+a firing by reputation.
+
+| Campaign | Strategy | Easy | Normal | Hard |
+|---|---|---|---|---|
+| Tech | careful | 5 good, rep 100 | 5 good, rep 100 (100 from day 13-14) | 5 good, rep 80 (67 76 76 83 97) |
+| | mixed | 5 good, rep 100 | 5 good, rep 75 (77 68 78 75 77) | 5 fired |
+| | lazy | 5 good, rep 100 (cozy: nobody is fired, misses are free) | 5 fired (day 17-18) | 5 fired |
+| Sales | careful | 5 good, rep 100 | 3 good 2 mid, rep 93 (73-100) | 3 good 1 mid 1 let go, rep 76 (57-87) |
+| | lazy | 5 let go, rep 28, nobody fired | 5 let go, rep 20 | 4 fired, 1 let go, rep 1 |
+| Service | careful | 5 good, rep 100 | 5 good, rep 97 (92-100) | 5 good, rep 88 (81-96) |
+| | mixed | 5 good, rep 100 | 5 good, rep 93 (87-97) | 5 good, rep 79 (77-82) |
+| | lazy | 2 good 2 mid 1 bad, rep 61 | 3 mid 2 bad, rep 47 | 5 bad, rep 26, nobody fired |
+| Owner | careful | 5 good, rep 100, value $869k | 4 good 1 bad, rep 85 (97 97 100 32 100), value $728k, nobody fired | 3 good 1 mid 1 bad, rep 67 (74 27 87 49 97), value $544k, nobody fired |
+| | lazy | 3 good 2 mid, rep 93, value $305k, nobody fired | 4 mid 1 fired (week 15), rep 53, value $305k | 5 bad, 1 fired (week 9), rep 19, value $138k |
+
+Read against the targets:
+- **A careful bot finishes hard without being fired and clearly below normal** in all four campaigns: tech 80 against 100,
+  sales 76 against 93, service 88 against 97, owner 67 against 85. `Difficulty.TABLE` hard values were **not changed**.
+  Sales hard is the tightest: one seed in five misses both quotas and is let go (the quota is x1.2 there).
+- **Owner hard, the careful bot went bankrupt in week 15 on one seed in five** until its answer to the scammed-client card
+  was fixed (bot, not game): `bec_loss` option 1 credits the client 40% of the loss, $2,200 here, and the card names no
+  price. With $1,033 in the bank that was the end. A careful owner under $5,000 lets the lawyer answer ($600) or asks the
+  insurer; the seed now ends at reputation 27, alive. The card itself is worth a second look: it is the only expensive
+  option in the owner campaign without a price on its label.
+- **Owner normal, careful, seed 4 ends at reputation 32 with $387k and 11 clients**: the desk drowns (the weekly report
+  is negative from week 2 on) while the books are fine. The careful owner bot does not manage capacity; a player who
+  reads the queue card would.
+- **Lazy fails everywhere except on cozy easy**, where the tech lazy bot reaches 100: nobody is fired there and misses
+  cost nothing, by design (R16).
+
+### Tech reputation curves and mixed play (T2)
+`mixed` = careful on even days, lazy on odd ones (slow, first come first served, no study, no backups, but honest fixes).
+Before this pass it ended at **88 to 97** with the team lead offer: the day report added `2 x closed - 3 x missed - ...`
+capped at +1 to +4, so on a busy day the closes always outweighed the misses and a half-hearted day still earned the cap.
+
+Changed (tech campaign, normal tier only): from reputation 58 on a day with more loose ends (SLAs missed, reopens, plain
+tickets left in the queue) than one for every six closes adds nothing to the reputation; from 62 on it costs 4 for every
+loose end too many, at most 10. The report says why. Iterations, mixed bot, seeds 1-5:
+
+| Rule | Mixed ends | Careful |
+|---|---|---|
+| before | 95 91 89 95 96 (mean 93) | 100 |
+| a sloppy day adds nothing (58+), costs 1 (72+) | 95 91 89 95 96 | 100 |
+| costs 4 from 66 | 86 73 69 84 82 (79) | 96 (two seeds lost points to a ticket that could never be closed, see below) |
+| costs 6 from 62, loose ends without the multi-day jobs | 82 83 78 82 79 (81) | 100 |
+| costs 3 a loose end too many, at most 10 | 76 76 77 77 77 (77) | 100 |
+| **final: 4 a loose end too many, at most 10, also when the plain formula was already negative** | **77 68 78 75 77 (75)** | **100** |
+
+Mixed play now stands at 56 to 70 on day 16 (inside the band on every seed) and ends at 68 to 78 because the
+conference trip of days 17 to 20 adds 8 to 10 points to anybody who made it. Two seeds of five end inside 55-75, three end
+at 77-78. I stopped there: every further point has to come out of a single bad day's cost, and at 4 a loose end a really
+bad day already costs the full 10. `tests/t2.gd` has its own, harsher mixed player (odd days: P3s closed unfixed, P1s left
+to run out); it ends inside the band on all five seeds:
+
+| `t2.gd -- curve seeds=5` (seeds 4242-4246) | good | careless | mixed |
+|---|---|---|---|
+| normal | 99 100 100 100 100 | fired on day 6 (all five) | **74 67 68 74 74** |
+| hard | 95 97 97 98 96 | fired | 24 0 0 46 20 |
+
+(`t2.gd` now pins the run seed; before, "seed 4242" was a new ticket stream on every run. Its assert is 55-75, was 55-86.)
+The careful bot reaches 100 on day 13 or 14 on every seed; the eight by-name thank-yous of R36 (+1 each, never scaled)
+are what moved it up from the "98 on day 20" the curve was designed for.
+
+Found on the way: **a ticket that could never be closed.** When the ransomware (or a forced story job) took over a server
+that already had a ticket, that ticket's machine no longer had its problem and no fix worked on it: a P1 "server not
+responding" stayed open and breached for the last twelve days of a careful run. `Msp.supersede()` now marks such a ticket
+done; it only wants closing.
+
+### Stats and presets (X7)
+The tech bot now plays the stats: it runs the PowerShell scripts from level 2, takes the clever fixes a skill unlocks and
+skips the daily backup check once BACKUP WATCH does it. `tests/stat_effects.gd`, hard tier, seed 11, the first 8 days,
+flat build against one stat at 4:
+
+| Build | Rep | Score | Closed | SLAs missed | Client mood | Clever fixes | Fixed by script |
+|---|---|---|---|---|---|---|---|
+| flat (no points spent) | 74 | 329 | 53 | 21 | 81 | 23 | 13 |
+| POWERSHELL 4 | 75 | 448 | 55 | 12 | 98 | 24 | 17 |
+| NETWORKING 4 | 74 | 329 | 53 | 21 | 82 | 28 | 13 |
+| SERVERS 4 | 76 | 340 | 53 | 20 | 85 | 35 | 8 |
+| SECURITY 4 | 76 | 481 | 55 | 9 | 97 | 25 | 18 |
+| CUSTOMER 4 | 77 | 416 | 54 | 14 | 93 | 23 | 14 |
+| preset GENERALIST | 75 | 448 | 55 | 12 | 94 | 30 | 21 |
+| preset SCRIPTER | 75 | 448 | 55 | 12 | 97 | 26 | 16 |
+| preset NETWORK NERD | 76 | 329 | 53 | 21 | 85 | 30 | 12 |
+| preset PEOPLE PERSON | 76 | 350 | 54 | 20 | 88 | 29 | 8 |
+
+Every stat changes the outcome; POWERSHELL, SECURITY and CUSTOMER most (fewer missed clocks). SERVERS is a small step and
+NETWORKING is the weakest: five more clever fixes and one point of client mood in eight days, nothing else. The four presets give three or four different outcomes on hard. On normal they still all
+end at reputation 100: a careful bot never comes under pressure there, and the fix itself takes 1.5 to 6 seconds against
+28 seconds of handling, so a stat that speeds up fixes is worth little once the lessons are done (a lesson a day takes
+POWERSHELL to 5 by day 5 whatever the build). Presets matter in the first week and on hard.
+
+### Heavy fixes, quick fixes and the ransomware exits (P6)
+Do the bots use them? The careful and mixed bots keep the backups green, so their ransomware day is a plain restore (29 of
+29 runs). The lazy bot never checks a backup: restore fails, then shadow copies (3 of 10 recovered most), then it pays
+(7 of 10, all seven got the key). The vendor, the insurer and the rebuild are only reached by a player who lost the backup
+and does not want to pay; `tests/ransom_exits.gd` plays them on 150 seeded runs per policy with the real ticket:
+
+| Policy (after the restore failed) | Score | Reputation | Time (x one fix) | Files back | Most files | All lost |
+|---|---|---|---|---|---|---|
+| careful (vendor, insurer, shadow, rebuild) | -3.9 | -1.2 | 3.8 | 70% | 10% | 0% |
+| free first, then pay (vendor, insurer, shadow, pay) | -5.2 | -2.0 | 3.2 | 81% | 10% | 9% |
+| shadow, then pay | -10.8 | -4.8 | 2.6 | 37% | 45% | 18% |
+| shadow, then rebuild | -9.1 | -3.6 | 4.2 | 0% | 45% | 0% |
+| pay at once | -11.5 | -5.4 | 2.0 | 74% | 0% | 26% |
+| rebuild at once | -10.0 | -4.0 | 5.0 | 0% | 0% | 0% |
+| give up (close the ticket) | -30.0 | -15.0 | 1.0 | 0% | 0% | 100% |
+
+Trying the free things first is the best policy and the slowest; paying at once is the fastest and loses everything one
+time in four; the rebuild never loses the case and never returns the files; giving up is three times worse than anything
+else. No exit is both the best and the fastest, so the odds (vendor 50%, insurer 65% where there is a policy, shadow 40%,
+pay 70%) were left alone.
+
+Quick and heavy fixes on everything, tech, 3 seeds:
+
+| Strategy | Normal: score, rep | Hard: score, rep |
+|---|---|---|
+| proper (the real fix, scripts) | 1422, 100 | 1088, 72 (69-75) |
+| careful (proper + clever) | 1437, 100 | 1226, 80 |
+| shortcut (quick workaround whenever there is one) | 1132, 100: 143 quick fixes, 73 came back | not run |
+| heavy (the heavy fix whenever there is one) | 1283, 100: 122 heavy fixes, 1,100 s of fixing against 320 s | 334, rep 17, one seed fired |
+
+The quick fix costs a fifth of the score, the heavy fix a tenth on normal. On hard the heavy fix on everything is ruinous
+(3 to 7 times the fix time under clocks that are 0.4 as long), which is the point of `tech.heavy_slow`: there it is the
+exception for the machine that will not stay fixed, not a way of working. No number changed.
+
+### Year 2 and Year 3 (R10)
+Year 2 from a real year 1 (the same bot plays year 1, the campaign is finished properly, Year 2 starts on its record):
+
+| Campaign | Tier | Year 1 | Year 2 |
+|---|---|---|---|
+| Tech | normal (3 seeds) | 3 good, rep 100, score 1436 | 3 good, rep 100, score 1599 |
+| | hard | 3 good, rep 73 (67 76 76) | 3 good, rep 66 (69 61 69) |
+| Sales | normal | 3 good 2 mid, rep 93 | 2 good 3 mid, rep 88 (70-100) |
+| | hard | 3 good 1 mid 1 let go, rep 76 | 1 good 1 mid 3 let go, rep 57 (31-71), nobody fired |
+| Service | normal | 5 good, rep 97 | 5 good, rep 95 (80-100) |
+| | hard | 5 good, rep 88 | 5 good, rep 82 (75-95) |
+| Owner | normal (3 seeds) | 3 good, rep 98, value $793k | 1 good 2 mid, rep 95 (91 98 95), value $819k, start bank $5,000 richer |
+| | hard (3 seeds) | rep 62, 27 and one bankrupt in week 14 (no Year 2 for that one; in the tier table's order the same seeds gave 74, 27, 87) | 1 good 1 mid, rep 78 and 50, value $589k and $695k |
+
+Year 2 is harder than year 1 in every cell that is not already at the ceiling, and nobody is fired. Tech normal stays at
+100 in both years (the careful bot has room to spare on normal; the 15% tighter clocks do not reach it). Sales hard Year 2
+is the hardest cell of the game for a careful bot: three of five miss the quotas.
+
+Year 3 (`tests/bot_year3.gd`, START YEAR 3 from a made-up decent record, careful bot, 3 seeds; normal was measured by the
+Year 3 branch): nobody fired in any cell.
+
+| Campaign | Easy | Hard |
+|---|---|---|
+| Tech | rep 100 | rep 35 |
+| Sales | rep 96 | rep 62 |
+| Service | rep 100 | rep 50 |
+| Owner | rep 100 | rep 63 |
+
+Tech hard Year 3 ends at 35 without the lead offer: alive, but that is as far as hard should go.
+
+### The owner's 20 weeks as a trace (X9), shortcuts and takeover (P5, R38)
+`tests/bot_trace.gd -- owner normal careful seeds=3 ts=4` prints every week: the bank, reputation, partner trust, company
+value, clients and each card with the answer. Seed 1:
+
+| Week | Bank | Rep | Trust | Value | Clients | Decisions |
+|---|---|---|---|---|---|---|
+| 1 | $7,360 | 54 | 55 | $50,323 | 5 | 1 |
+| 2 | $5,945 | 58 | 56 | $40,327 | 5 | 3 |
+| 3 | $4,926 | 60 | 60 | $19,853 | 5 | 6 |
+| 4 | $4,407 | 64 | 64 | $17,592 | 5 | 6 |
+| 5 | $2,600 | 66 | 63 | $0 | 5 | 9 |
+| 6 | $3,710 | 67 | 65 | $0 | 5 | 6 |
+| 7 | $1,443 | 65 | 64 | $0 | 5 | 7 |
+| 8 | $-295 | 67 | 63 | $0 | 5 | 7 |
+| 9 | $-930 | 73 | 66 | $0 | 5 | 6 |
+| 10 | $-464 | 74 | 67 | $0 | 5 | 9 |
+| 11 | $758 | 75 | 67 | $0 | 6 | 8 |
+| 12 | $3,175 | 73 | 68 | $0 | 6 | 7 |
+| 13 | $2,240 | 77 | 64 | $41,389 | 6 | 8 |
+| 14 | $2,860 | 80 | 59 | $152,545 | 7 | 5 |
+| 15 | $1,327 | 84 | 59 | $203,766 | 7 | 10 |
+| 16 | $2,787 | 87 | 53 | $289,774 | 7 | 5 |
+| 17 | $2,967 | 91 | 49 | $330,231 | 7 | 11 |
+| 18 | $4,615 | 93 | 52 | $250,571 | 7 | 6 |
+| 19 | $6,798 | 94 | 52 | $592,398 | 11 | 4 |
+| 20 | $7,893 | 97 | 53 | $792,870 | 11 | 2 |
+
+Checked on three seeds (60 weeks):
+- **Dead weeks: none.** Every week has at least one decision (week 1 has only the welcome card, week 20 two); 6.3 decisions and 4.8 notices a week on average, 11 in the busiest week.
+- **Repeats.** The inbound lead card comes every week from week 10 on once marketing is on STANDARD (9 times in seed 1, 5
+  in seed 3): it is one decision asked nine times, and the only card of the campaign that reads as a repeat. The marketing
+  budget card comes three times (weeks 3, 9, 14), the "you now know something about Big Cheese" card once per habit learned.
+- **Runaway numbers.** Cash stays between -$930 and $14k. The **company value is $0 from week 5 to week 12** (the estimate
+  is a multiple of a profit that is negative while the owner invests) and then goes from $41k in week 13 to $793k in week
+  20; the largest single step is week 19 (from $251k to $592k, +136%), when the Big Cheese clients come over and the count
+  goes from 7 to 11 in one card. Nothing overflows and the 3x-a-week check of the tool does not trip, but the last two
+  weeks decide two thirds of the final number. Left as it is: it is the story's payoff; worth knowing when reading values.
+- Trust moves between 49 and 68 and never pins.
+
+**Shortcut against careful** (one combined run, `bot_run.gd -- owner normal careful,shortcut,lazy,takeover seeds=5 ts=4`,
+its CHECK line): `CHECK owner normal: shortcut value 196876 vs careful 727977 (27%), shortcut fired 1 of 5`. The shortcut
+owner (careful's answers with every temptation taken) ends at $29k (fired), $300k, $459k, $31k and $165k against $793k,
+$756k, $873k, $387k and $832k. The one firing (seed 1, week 15) is not the bills alone: its bank is under water from
+week 8 on (about $1,500 a week below the careful owner's), in week 14 the RMM vendor is breached, the safe answer ($600)
+is greyed out at $214, the bot waits for the vendor's statement and loses the 35% roll (-$3,500).
+
+**Takeover.** The `takeover` owner (lets the week 7 client go with an exit chat, takes them back in week 11 with the
+takeover assessment, assesses before signing in week 19) gets the visit on seeds 2 and 4 of five: one visit, six findings,
+six Playbook jobs each, ending at reputation 94 with $1,086k and $401k. On the other three seeds the client that comes back
+has no office of its own, so there is nothing to walk (only six clients have a site). The policy costs nothing against
+careful (rep 97, value $803k against 85 and $728k).
+
+### Card pacing (C7)
+`tests/bot_trace.gd`, careful bot, normal tier. A decision is a card with two or more answers; a card with one answer (the
+reply to a choice, a notice) is counted apart.
+
+| Campaign | Decisions per day | Busiest / quietest day | Notices per day | Days without a decision | Longest stretch without one (working hours) |
+|---|---|---|---|---|---|
+| Service, careful (5 seeds, 100 days) | 7.6 | 13 / 3 | 6.7 | 0 | 7.6 |
+| Service, lazy (3 seeds) | 4.8 | 8 / 2 | 4.3 | 3 (day 20 of each run) | 7.6 |
+| Tech, careful (3 seeds) | 2.9 | 9 / 0 | 1.7 | 3 of 60 | 11.5 |
+| Owner, careful (weeks, 3 seeds) | 6.3 | 11 / 1 | 4.8 | 0 | 8.0 |
+| Sales, careful (5 seeds) | 11.7 | 22 / 4 | 9.7 | 0 | 8.0 |
+
+Service (the row C7 asks about): no day without a decision, never fewer than three, about as many replies and notices as
+decisions. Two thirds of the careful manager's decisions come at 8:00 (the huddle, the cards of the night, and the 1:1s and
+runbook lessons he starts himself); from 9:00 on about two and a half a day arrive, spread evenly to 16:00, and the longest
+stretch without a card is one working day. That is thin for cards but it is when the dispatch board is the work, so no
+card was added. What a player will notice is the **1:1 deck**: MAYA, JOHN and the tier 1 crew have four cards each
+(`Service.ONE_ON_ONES`), dealt in order. The careful bot holds two 1:1s a day and sees every tier 1 card four times with
+the same person ("Sam says: I got stuck on a printer", four times in twenty days); a player who talks to somebody every
+other day sees each card twice. That is a content gap, not a number: four more cards for the tier 1 deck would halve it.
+Nothing else repeats beyond the daily huddle and the Friday numbers (by design) and the hiring round's three cards.
+Fixed on the way: the careful bot failed every runbook lesson (it took the first answer), 25 failed recordings a run,
+which had buried the real cards in notices; it answers with the safe first step now and the documentation ends at 100%
+where it stood at 83%.
+
+Sales: the busiest campaign for cards (a handover asks one card per promise, 30 to 40 of those a run, and every visit opens
+with the owner's welcome); no quiet day.
+
+Tech: a quiet day without any card happens three times in sixty days (the tickets are the decisions there), and the
+favour texts and by-name asks of R36 keep the count at about three a day. The owner campaign is covered above.
+
+### The baseline (`docs/dev/balance_baseline.json`)
+Rewritten at the end of this pass from `tests/tiers_balance.gd` (25 cells; the smoke test now also plays tech normal
+mixed and allows a tie of careful and lazy on cozy easy). Two runs of it in a row gave the same 25 lines, `failures=0`.
+Seed 11 (sales also 12), tech at ts=120: tech careful 100 / 100 / 81 on easy / normal / hard, tech lazy 100 / 0 / 0,
+tech normal mixed 77; sales careful 95-100 / 77-91 / 51-78, lazy 18-42 / 15-27 / 3-7; service careful 100 / 100 / 95,
+lazy 73 / 55 / 43. Since a seed now repeats, a drift in `tools/balance_baseline.py` is a change in the game or the bot,
+not noise; the 20-point tolerance can be tightened once that has held for a while.

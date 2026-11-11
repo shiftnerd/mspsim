@@ -3,7 +3,8 @@ extends SceneTree
 # Q6 smoke test: three campaigns (sales, tech, service) with a careful and a lazy bot at easy / normal / hard, one or two seeds,
 # time compressed (about 4 minutes in all). Asserts the ordering the tiers must keep:
 #   careful: easy >= normal >= hard (by reputation, and by the share of good endings)
-#   careful > lazy on every tier
+#   careful > lazy on every tier (on the cozy easy tier the lazy bot may tie: nobody is fired there and the misses are free)
+#   tech normal: careful > mixed (careful on even days, lazy on odd ones) > lazy  (T2)
 #   normal is unchanged by the tier machinery (Difficulty.cf is 1.0 / 0.0 outside a campaign)
 # The owner campaign is too slow for a smoke test: tests/bot_run.gd -- owner ... covers it (docs/balance-notes.md).
 # Full distributions: tests/bot_run.gd, one cell per process.
@@ -61,7 +62,14 @@ func _init() -> void:
 		if mode == "tech":  # Q6b: tech hard has its own pressure (paired incidents, faster drain), so it must now cost the careful bot
 			_check(_avg("tech", "hard", "careful", "rep") < _avg("tech", "normal", "careful", "rep"), "tech careful: hard rep < normal rep (%.0f vs %.0f)" % [_avg("tech", "hard", "careful", "rep"), _avg("tech", "normal", "careful", "rep")])
 		for tier in ["easy", "normal", "hard"]:
-			_check(_avg(mode, tier, "careful", "rep") > _avg(mode, tier, "lazy", "rep"), "%s %s: careful beats lazy (%.0f vs %.0f)" % [mode, tier, _avg(mode, tier, "careful", "rep"), _avg(mode, tier, "lazy", "rep")])
+			var gap := _avg(mode, tier, "careful", "rep") - _avg(mode, tier, "lazy", "rep")
+			_check(gap > 0.0 or (tier == "easy" and gap >= 0.0), "%s %s: careful beats lazy (%.0f vs %.0f)" % [mode, tier, _avg(mode, tier, "careful", "rep"), _avg(mode, tier, "lazy", "rep")])
+		if mode == "tech":  # T2: half-hearted play lands between the two
+			rows["tech normal mixed"] = []
+			var m: Dictionary = await bots.play("tech", "normal", "mixed", 11)
+			rows["tech normal mixed"].append(m)
+			print(bots.line(m))
+			_check(_avg("tech", "normal", "mixed", "rep") < _avg("tech", "normal", "careful", "rep") and _avg("tech", "normal", "mixed", "rep") > _avg("tech", "normal", "lazy", "rep"), "tech normal: mixed play lands between careful and lazy (%.0f)" % _avg("tech", "normal", "mixed", "rep"))
 	root.get_node("Campaign").quit_to_title()
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

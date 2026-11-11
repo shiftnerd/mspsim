@@ -100,6 +100,30 @@ func _hud_shot(tag: String) -> void:
 	world.hud_visible = was
 
 
+# T2 / X9: every page of the year-end Review of the running campaign (the summary, the crew or partner lines, the offers, the
+# epilogue of the first offer), without finishing the campaign
+func _review_pages(tag: String) -> void:
+	var rev := root.get_node("Review")
+	var cards := root.get_node("Cards")
+	_clear(cards)
+	rev.start()
+	await _wait(25)  # the fade-in
+	for pg in range(0, rev._end_page() + 1):
+		if pg == rev._end_page():
+			rev.choose(0)
+		else:
+			rev.page = pg
+		_begin()
+		rev._canvas.queue_redraw()
+		await _end("%s review page %d" % [tag, pg])
+	rev.is_open = false
+	rev._canvas.visible = false
+	rev._fade = 0.0
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	root.get_node("Game").ui_open = false
+	_clear(cards)
+
+
 func _want(tag: String) -> bool:
 	return only.is_empty() or only.has(tag)
 
@@ -403,7 +427,11 @@ func _report(kind: String) -> Dictionary:
 		"points": 14, "overtime": 1.5, "social": 3, "energy": 31, "late": 25, "oncall": 1, "pay": 340,
 		"rep_delta": 3, "rep": 53, "cash": 1280, "grade": "B", "fired": false, "final": false, "ending": "",
 	}
-	if kind == "ending":
+	if kind == "sloppy":  # T2: the note under a day that had too many loose ends for a reputation gain
+		r["rep_delta"] = -1
+		r["sloppy"] = true
+		r["notes"] = [root.get_node("Campaign").SLOPPY_NOTE]
+	elif kind == "ending":
 		r["day"] = 20
 		r["final"] = true
 		r["grade"] = "A"
@@ -457,7 +485,7 @@ func _floor_phase() -> void:
 	], func(_id: String) -> void: pass)
 	await _end("card long")
 	_clear(cards)
-	for kind in ["tech", "ending", "owner"]:
+	for kind in ["tech", "sloppy", "ending", "owner"]:
 		_begin()
 		rep.is_open = false
 		rep.show_report(_report(kind))
@@ -542,6 +570,10 @@ func _floor_phase() -> void:
 	ctl.touch_refresh()
 	ctl.pad_active = false
 	await _wait(2)
+	# T2: the tech year-end Review (a year with a scar and a burned client, so the long lines are there)
+	c.rep = 74
+	c.scars = 15
+	await _review_pages("tech")
 	# ---- owner campaign: boardroom tabs, partner trust cards
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("owner", "office_alan")
@@ -561,6 +593,8 @@ func _floor_phase() -> void:
 	o.show_card("peer4")
 	await _end("owner card peer4")
 	_clear(cards)
+	c.rep = 68
+	await _review_pages("owner")  # X9: the board review with its PARTNERSHIP page
 	# ---- sales campaign: CRM list, record, quote builder, handover
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("sales", "office_john")
@@ -603,6 +637,8 @@ func _floor_phase() -> void:
 		await _end("quote builder page %d" % page)
 	sc.QuoteBuilder.close()
 	comp.close()
+	c.rep = 66
+	await _review_pages("sales")
 	# ---- service campaign: dispatch, knowledge, desk design, hiring cards
 	await _scene("res://scenes/main_floor.tscn")
 	await _new_game("service", "office_dan")
@@ -645,6 +681,11 @@ func _floor_phase() -> void:
 	sv.hire_card()
 	await _end("hiring card")
 	_clear(cards)
+	# X9: the service review's crew lines (one per person, with the grade history) and the owners' trust page
+	c.rep = 72
+	sv.trust["Garrison"] = 66
+	sv.trust["Alan"] = 61
+	await _review_pages("service")
 	# ---- the chair race: intro page, countdown, the race under way, result page
 	var out := root.get_node("Outings")
 	out.enabled = true

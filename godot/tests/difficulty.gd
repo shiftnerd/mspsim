@@ -147,6 +147,7 @@ func _init() -> void:
 		"tech.alt_ret": 1.0,
 		"tech.drain": 1.0,
 		"tech.pair": 0.0,
+		"tech.clean": 1.0,
 		"tech.heavy_fail": 0.0,
 		"tech.heavy_slow": 1.0,
 		"tech.onsite_mood": 2.0,

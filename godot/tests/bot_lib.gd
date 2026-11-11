@@ -12,6 +12,7 @@ extends RefCounted
 
 const MODES := ["tech", "owner", "sales", "service"]
 const STRATEGIES := ["careful", "lazy", "chaotic"]
+# "mixed" (tech and service): careful on even days, lazy on odd ones (T2: an average player, part careful and part lazy)
 const TIERS := ["easy", "normal", "hard"]
 
 var tree: SceneTree
@@ -28,6 +29,13 @@ var _talk_i := 0
 var _sa_bell: Node = null
 var log_days := false
 var policy: Dictionary = {}
+var card_log: Array = []  # every card this run answered: {day, clock, who, text, pick}
+var year2 := false  # the next play() starts a New Game Plus on the meta record the run before left (see play_year2)
+var keep_meta := false  # play() ends through Campaign.finish_campaign, so the meta record of the run exists
+var stop_day := 0  # tech: stop after this day's report (0 = play to the end); tests/bot_determinism.gd
+var frame_hook := Callable()  # dev: called once per bot frame (tests/bot_det.gd traces state with it)
+
+
 var year := 1  # R10: 2 or 3 starts every run as START YEAR 2 / 3, from the record of a decent finished year before (_seed_year)
 
 
@@ -43,7 +51,9 @@ func _wait(secs: float) -> void:
 # ---- the entry point ---------------------------------------------------------------------------------------------
 func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	strategy = strat
-	_purge_own_files()
+	card_log = []
+	if not year2:
+		_purge_own_files()
 	var d := root.get_node("Difficulty")
 	d.settings_path = "user://bot_%d_settings.cfg" % OS.get_process_id()  # set_tier saves: never write the player's real settings file
 	d.set_tier(tier)
@@ -51,7 +61,18 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	c.save_prefix = "user://bot_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
 	root.get_node("Game").busy = false
+	_clean_slate()
+	# every run starts on a freshly loaded office floor, as a new game does from the title. (Without it the first run of a process
+	# played day 1 with no scene at all, so nobody in the office had a body, while a second run inherited the floor of the first.)
+	tree.change_scene_to_file("res://scenes/main_floor.tscn")
+	for i in 4:
+		await tree.process_frame
+	await tree.process_frame  # and at the same point of a frame (a caller that comes from a timer is half a frame off)
 	root.get_node("Build").pending = preset_build.duplicate(true)
+	if year2:
+		root.get_node("Yeartwo").begin_select(mode, true, 2)  # taken by Campaign.new_game (needs the finished run's meta record)
+	else:
+		root.get_node("Yeartwo").pending = false
 	d.seed_run(seed_n)
 	seed(seed_n * 31 + 7)  # the owner campaign and the Shift cards still draw from the global generator
 	rng.seed = seed_n * 7919
@@ -77,8 +98,73 @@ func play(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
 	row["tier"] = tier
 	row["strategy"] = strat
 	row["seed"] = seed_n
+	row["year"] = 2 if year2 else year
+	row["last_day"] = int(c.day)
+	row["cards"] = card_log.duplicate(true)
+	strategy = strat
+	if keep_meta and c.active:
+		c.finish_campaign(str(row.get("ending", "bot")))  # writes the meta record New Game Plus reads
+		await _wait(0.3)
+		root.get_node("Game").busy = false
 	d.set_tier("normal")
 	return row
+
+
+# R10: a year 1 run, then Year 2 (New Game Plus) on what it left behind: the carry-over (skills, reputation, cash, trust), the three
+# newer clients, tighter clocks, one tier more mutators, the story shuffle. Returns the Year 2 row with the year 1 row in `year1`.
+func play_year2(mode: String, tier: String, strat: String, seed_n: int) -> Dictionary:
+	year2 = false
+	keep_meta = true
+	var first: Dictionary = await play(mode, tier, strat, seed_n)
+	if bool(first.fired) or not root.get_node("Yeartwo").available(mode):
+		keep_meta = false
+		first["info"] = "NO YEAR 2 (year 1 %s) %s" % ["fired" if bool(first.fired) else "left no record", str(first.get("info", ""))]
+		return first
+	year2 = true
+	var row: Dictionary = await play(mode, tier, strat, seed_n + 500)
+	year2 = false
+	keep_meta = false
+	row["year1"] = first
+	row["seed"] = seed_n
+	row["info"] = "Y2 (year 1: rep %d %s) %s" % [int(first.rep), str(first.cls), str(row.get("info", ""))]
+	return row
+
+
+func _note_card(cards: Node, pick: int) -> void:
+	var o: Variant = cards.options[pick] if pick >= 0 and pick < cards.options.size() else {}
+	var id := str(o.get("id", pick)) if o is Dictionary else str(pick)
+	card_log.append({"day": int(root.get_node("Campaign").day), "clock": float(root.get_node("World").clock), "who": str(cards.speaker), "text": str(cards.text).substr(0, 56).replace("\n", " "), "pick": id, "n": _enabled_idx(cards).size()})
+
+
+# nothing of an earlier run in this process may leak into the next one: a card that was still waiting would be answered inside
+# the new game (its callback moves energy, cash or reputation), and a run that was cut short leaves the clock stopped
+func _clean_slate() -> void:
+	var cards := root.get_node("Cards")
+	var camp := root.get_node("Campaign")
+	if camp.active:
+		# a run that was not finished through the review (tech, service and owner bots stop at the final report) is still the
+		# running campaign: leave it the way a player does, or the owner campaign after it starts a little differently
+		# (seed 3 of a cell gave $873k as the third run of a process and $832k alone)
+		camp.quit_to_title()
+	var guard := 0
+	while (cards.is_open or cards.waiting() > 0) and guard < 60:
+		guard += 1
+		if cards.is_open:
+			var en := _enabled_idx(cards)
+			cards.pick(int(en[0]) if not en.is_empty() else 0)
+		else:
+			cards._queue.clear()
+	cards._queue.clear()
+	var pb := root.get_node("Playbook")
+	if pb.is_active():
+		pb.reset()
+	root.get_node("Game").ui_open = false
+	root.get_node("World").time_scale = 1.0
+	if not year2:
+		# the career (medals, counters, the mastery ramp of every minigame) and what the crew has learned about each other outlive
+		# a campaign on purpose. For a bot cell they are a leak: the fifth seed of a cell played with the career of the four before
+		root.get_node("Career").reset_all()
+		root.get_node("Outings").known = {}
 
 
 # R10: the meta record a decent finished run of the year before leaves (reputation 70, skills at level 3, a company worth
@@ -153,7 +239,9 @@ func _drain_tech(cards: Node) -> void:
 	var n := 0
 	while cards.is_open and n < 30:
 		n += 1
-		cards.pick(tech_pick(cards))
+		var tp := tech_pick(cards)
+		_note_card(cards, tp)
+		cards.pick(tp)
 
 
 func _cleanup_review(review: Node, game: Node, pick: int) -> void:
@@ -168,8 +256,19 @@ func _cleanup_review(review: Node, game: Node, pick: int) -> void:
 # ---- tech ---------------------------------------------------------------------------------------------------------
 # One bot tick is dt game seconds. A job is one remote fix: {tid, ep, act, left}. Reading the ticket, switching windows and
 # closing it add TECH_OVERHEAD seconds (the real UI takes about that long); the lazy bot also idles between tickets.
-const TECH_OVERHEAD := {"careful": 28.0, "proper": 28.0, "shortcut": 28.0, "lazy": 30.0, "chaotic": 22.0}
-const TECH_IDLE := {"careful": 0.0, "proper": 0.0, "shortcut": 0.0, "lazy": 55.0, "chaotic": 25.0}
+const TECH_OVERHEAD := {"careful": 28.0, "proper": 28.0, "shortcut": 28.0, "heavy": 28.0, "lazy": 30.0, "chaotic": 22.0}
+const TECH_IDLE := {"careful": 0.0, "proper": 0.0, "shortcut": 0.0, "heavy": 0.0, "lazy": 55.0, "chaotic": 25.0}
+const TECH_STEADY := ["careful", "proper", "shortcut", "heavy"]  # the ones who study, keep the backups green and run the projects
+# P6: what each strategy tries on a ransomed machine, in order, once the backup restore has failed (an exit that is not on
+# offer, like the insurer without a policy, is skipped). `ransom_order` (non-empty) replaces it for every strategy.
+const RANSOM_PLANS := {
+	"careful": ["restore", "vendor", "insurer", "shadow", "rebuild"],
+	"lazy": ["restore", "shadow", "pay"],
+	"chaotic": ["pay"],
+}
+var ransom_order: Array = []
+var use_scripts := true  # X7: the careful bot runs the PowerShell scripts (off = the bot of before, for comparison)
+var _ransom_i: Dictionary = {}
 
 var _tj: Dictionary = {}
 var _tbusy := 0.0
@@ -178,7 +277,8 @@ var _bot_state := [{"busy": 0.0, "tj": {}}, {"busy": 0.0, "tj": {}}]
 var _bot_k := 0
 var _other_tid := -1
 var _att: Dictionary = {}
-var tech_stats := {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0}
+var tech_stats := {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0, "work": 0.0, "fails": 0, "heavy": 0, "scripted": 0, "exits": []}
+var _base_strategy := ""
 
 
 func _tech_morning() -> void:
@@ -186,13 +286,17 @@ func _tech_morning() -> void:
 	var msp := root.get_node("Msp")
 	_tj = {}
 	_tbusy = 0.0
-	if strategy in ["careful", "proper", "shortcut"]:
+	if strategy in TECH_STEADY:
 		if sk.can_study() and sk.ps_level < sk.LESSONS.size():
 			sk.pass_lesson(sk.ps_level)
 			_tbusy += 45.0  # a lesson takes real time
+		# X7: without BACKUP WATCH (security 3) the daily check of every job is the only way to see a failed one; with it the
+		# failed jobs announce themselves and only those cost time
+		var failed := 0
 		for client in msp.backups.size():
+			failed += 0 if bool(msp.backups[client].ok) else 1
 			msp.backup_rerun(client)  # a careful tech keeps the backups green
-		_tbusy += 20.0
+		_tbusy += (5.0 * float(failed)) if sk.backup_watch() else 20.0
 
 
 func _tech_story() -> void:
@@ -220,7 +324,7 @@ func _tech_story() -> void:
 				break
 			pb.choose(best)
 		_tbusy += 30.0
-	if strategy in ["careful", "proper", "shortcut"] and not msp.project.is_empty() and not msp.project.done:
+	if strategy in TECH_STEADY and not msp.project.is_empty() and not msp.project.done:
 		msp.project_ask()
 		msp.project_scan(true)
 		msp.project_backup()
@@ -240,6 +344,24 @@ func _tech_action(t: Dictionary) -> String:
 	var act := str(t.fix)
 	if ep.is_empty():
 		return act
+	if act == "restore":  # the ransomed machine: the next exit of the plan
+		var plan: Array = ransom_order if not ransom_order.is_empty() else RANSOM_PLANS.get(strategy, RANSOM_PLANS.careful)
+		var i := int(_ransom_i.get(int(t.id), 0))
+		while i < plan.size() - 1 and str(plan[i]) == "insurer" and not msp.cyber_insured(int(ep.client)):
+			i += 1
+		_ransom_i[int(t.id)] = i + 1
+		return str(plan[mini(i, plan.size() - 1)])
+	var sk := root.get_node("Skills")
+	if use_scripts and strategy in ["careful", "proper"] and sk.can_script() and str(ep.problem) == act and not (act in ["restore", "project", "network"]):
+		# X7: POWERSHELL 2 runs one script for every PC of this client with the same problem (level 4: every client). A player who
+		# has it uses it as soon as two tickets ask for the same fix, so the bot does too
+		var everywhere: bool = sk.script_all()
+		for o in msp.open_tickets():
+			if int(o.id) == int(t.id) or str(o.fix) != act or bool(o.fix_done) or not (everywhere or int(o.client) == int(t.client)):
+				continue
+			var oep: Dictionary = msp.endpoint(str(o.endpoint))
+			if not oep.is_empty() and str(oep.problem) == act:
+				return ("scriptall:" if everywhere else "script:") + act
 	if strategy == "chaotic" and rng.randf() < 0.5:
 		var wrong: Array = ["reboot", "av", "clear_temp", "password", "spooler"]
 		var w := str(wrong[rng.randi() % wrong.size()])
@@ -247,7 +369,7 @@ func _tech_action(t: Dictionary) -> String:
 			tech_stats.wrong += 1
 			return w
 	var alts: Array = msp.alts_for(ep)
-	var want := "quick" if strategy == "shortcut" else ("clever" if strategy == "careful" else "")
+	var want := "quick" if strategy == "shortcut" else ("clever" if strategy == "careful" else ("heavy" if strategy == "heavy" else ""))
 	if want != "":
 		for id in alts:
 			if str(msp.ALT_DEFS[id].kind) == want:
@@ -255,53 +377,82 @@ func _tech_action(t: Dictionary) -> String:
 	return act
 
 
+# One frame of bot time. The steps below (busy, the fix, picking the next ticket) share the frame's dt: what one step does not
+# use goes to the next, so the bot's speed does not depend on the time scale. (Before, every change of step cost a whole frame:
+# four frames a ticket, 1.3 game seconds at ts=20 but 8 at ts=120, which made the same seed a harder game the faster it ran.)
 func _tech_tick(dt: float) -> void:
+	var left := dt
+	var guard := 0
+	while left > 0.0 and guard < 12:
+		guard += 1
+		left = _tech_step(left)
+
+
+# returns the part of dt this step did not use
+func _tech_step(dt: float) -> float:
 	var msp := root.get_node("Msp")
 	var sk := root.get_node("Skills")
 	var growth := root.get_node("Growth")
 	if _tbusy > 0.0:
-		_tbusy -= dt
-		return
+		var spent := minf(dt, _tbusy)
+		_tbusy -= spent
+		return dt - spent
 	if not _tj.is_empty():
-		_tj.left = float(_tj.left) - dt
+		var used := minf(dt, float(_tj.left))
+		_tj.left = float(_tj.left) - used
 		if float(_tj.left) > 0.0:
-			return
+			return 0.0
+		dt -= used
 		var job := _tj
 		_tj = {}
 		var t: Dictionary = msp.ticket(int(job.tid))
 		if t.is_empty() or t.status == "Closed":
-			return
-		var act := str(job.act)
-		if not (act in ["restore", "pay", "shadow", "save"]) and str(msp.ALT_DEFS.get(act, {}).get("kind", "")) != "heavy" and rng.randf() < sk.fail_chance() + growth.fail_adjust(act):
-			_tj = {"tid": job.tid, "act": act, "left": sk.fix_secs_for(act) + 2.0}  # "FIX DID NOT STICK. TRY AGAIN."
-			return
+			return dt
+		var raw := str(job.act)
+		var bulk := raw.begins_with("script")
+		var act := raw.get_slice(":", 1) if bulk else raw
+		var ep_now: Dictionary = msp.endpoint(str(t.endpoint))
+		var is_heavy := str(msp.ALT_DEFS.get(act, {}).get("kind", "")) == "heavy"
+		if is_heavy and not ep_now.is_empty() and rng.randf() < msp.heavy_fail_chance(ep_now, act):
+			_tj = {"tid": job.tid, "act": act, "left": sk.fix_secs_for(act) * msp.heavy_slow(ep_now, act)}  # hard: "THE IMAGE FAILED AT 90 PERCENT"
+			tech_stats.fails += 1
+			tech_stats.work += float(_tj.left)
+			return dt
+		if not (act in ["restore", "pay", "shadow", "save", "vendor", "insurer", "rebuild"]) and not is_heavy and rng.randf() < sk.fail_chance() + growth.fail_adjust(act):
+			_tj = {"tid": job.tid, "act": raw, "left": sk.fix_secs_for(act) + 2.0}  # "FIX DID NOT STICK. TRY AGAIN."
+			tech_stats.fails += 1
+			tech_stats.work += float(_tj.left)
+			return dt
 		var story := root.get_node("Story")
 		var before: int = story.flags.get("followups", []).size()
-		msp.rmm_action(str(t.endpoint), act)
+		if bulk:
+			tech_stats.scripted += msp.rmm_bulk(int(t.client), act, raw.begins_with("scriptall"))
+		else:
+			msp.rmm_action(str(t.endpoint), act)
 		var kind := str(msp.ALT_DEFS.get(act, {}).get("kind", "proper"))
 		tech_stats[kind if tech_stats.has(kind) else "proper"] += 1
 		tech_stats.returns += maxi(0, story.flags.get("followups", []).size() - before)
-		if not t.fix_done and act == "restore":
-			msp.rmm_action(str(t.endpoint), "shadow")
+		if str(t.fix) == "restore":
+			tech_stats.exits.append(act)
 		if t.fix_done or (strategy == "chaotic" and rng.randf() < 0.7):
 			if not t.fix_done:
 				tech_stats.unfixed_closes += 1
 			msp.close_ticket(int(t.id))
 		_tbusy = float(TECH_IDLE[strategy]) * rng.randf_range(0.5, 1.5)
-		return
+		return dt
 	if _bot_k == 0:
 		_tech_story()
 	if _tbusy > 0.0:
-		return
+		return dt
 	var open: Array = msp.open_tickets()
 	var pool := []
 	for t in open:
-		if str(t.fix) in ["project", "network"] or t.status == "Waiting" or int(_att.get(int(t.id), 0)) >= 3 or int(t.id) == _other_tid:
+		if str(t.fix) in ["project", "network"] or t.status == "Waiting" or int(_att.get(int(t.id), 0)) >= (8 if str(t.fix) == "restore" else 3) or int(t.id) == _other_tid:
 			continue
 		pool.append(t)
 	if pool.is_empty():
 		_tbusy = 4.0
-		return
+		return dt
 	var pick: Dictionary = pool[0]  # sorted by priority, then by the SLA clock
 	if strategy == "lazy":
 		pool.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return int(x.id) < int(y.id))
@@ -311,14 +462,18 @@ func _tech_tick(dt: float) -> void:
 	if bool(pick.fix_done):
 		msp.close_ticket(int(pick.id))
 		_tbusy = 3.0
-		return
+		return dt
 	_att[int(pick.id)] = int(_att.get(int(pick.id), 0)) + 1
 	var act := _tech_action(pick)
-	var secs: float = sk.fix_secs_for(act)
+	var secs: float = (sk.fix_secs_for(act.get_slice(":", 1)) + 1.0) if act.begins_with("script") else sk.fix_secs_for(act)
 	if act == "reboot":
 		secs += 4.0
+	if str(msp.ALT_DEFS.get(act, {}).get("kind", "")) == "heavy":
+		secs *= msp.heavy_slow(msp.endpoint(str(pick.endpoint)), act)
 	_tj = {"tid": pick.id, "act": act, "left": secs}
+	tech_stats.work += secs
 	_tbusy = float(TECH_OVERHEAD[strategy]) * rng.randf_range(0.7, 1.3)
+	return dt
 
 
 # one bot's turn: its own busy timer and job, and (bot 1) its own skills through Players.run_as
@@ -344,7 +499,7 @@ func _partner_morning() -> void:
 	var st: Dictionary = _bot_state[1]
 	st.tj = {}
 	st.busy = 0.0
-	if strategy in ["careful", "proper", "shortcut"] and sk.can_study() and sk.ps_level < sk.LESSONS.size():
+	if strategy in TECH_STEADY and sk.can_study() and sk.ps_level < sk.LESSONS.size():
 		sk.pass_lesson(sk.ps_level)
 		st.busy = 45.0
 
@@ -365,7 +520,11 @@ func tech_run(seed_n: int) -> Dictionary:
 		players.join(1, 1)
 	_last_day = 0
 	_att = {}
-	tech_stats = {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0}
+	tech_stats = {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 0, "unfixed_closes": 0, "work": 0.0, "fails": 0, "heavy": 0, "scripted": 0, "exits": []}
+	_base_strategy = strategy
+	_ransom_i = {}
+	if _base_strategy == "mixed":
+		strategy = "lazy"  # day 1 is an odd day
 	var frames := 0
 	var row := {}
 	var days: Array = []
@@ -373,11 +532,21 @@ func tech_run(seed_n: int) -> Dictionary:
 	while frames < 200000:
 		frames += 1
 		await tree.process_frame
+		if frame_hook.is_valid():
+			frame_hook.call(frames)
 		if report.is_open:
 			var r: Dictionary = report.report
 			days.append(int(r.get("rep", 0)))
 			if OS.has_environment("BOT_DEBUG"):
-				print("  d%d rep %d closed %d missed %d reo %d open %d frames %d" % [c.day, c.rep, r.closed, r.missed, r.reopened, r.open_left, frames])
+				print("  d%d rep %d (report %+d%s) closed %d missed %d reo %d open %d grade %s frames %d" % [c.day, c.rep, int(r.get("rep_delta", 0)), " sloppy" if bool(r.get("sloppy", false)) else "", r.closed, r.missed, r.reopened, r.open_left, str(r.get("grade", "")), frames])
+				for ot in msp.open_tickets():
+					print("     open #%d %s fix %s special %s tries %d breached %s: %s" % [int(ot.id), str(ot.status), str(ot.fix), str(ot.special), int(_att.get(int(ot.id), 0)), str(ot.breached), str(ot.summary).substr(0, 40)])
+			if stop_day > 0 and c.day >= stop_day and not bool(r.get("final", false)):
+				row = {"rep": c.rep, "score": msp.score, "fired": false, "ending": "STOPPED", "closed": msp.closed_ok, "missed": msp.breached, "reopened": msp.reopened}
+				report.finish()
+				await _wait(0.7)
+				game.busy = false
+				break
 			if bool(r.get("final", false)):
 				fired = bool(r.get("fired", false))
 				row = {"rep": c.rep, "score": msp.score, "fired": fired, "closed": msp.closed_ok, "missed": msp.breached, "reopened": msp.reopened}
@@ -408,6 +577,8 @@ func tech_run(seed_n: int) -> Dictionary:
 			continue
 		if c.day != _last_day:
 			_last_day = c.day
+			if _base_strategy == "mixed":
+				strategy = "careful" if c.day % 2 == 0 else "lazy"
 			_tech_morning()
 			_bot_state[0] = {"busy": _tbusy, "tj": {}}
 			if coop:
@@ -420,7 +591,9 @@ func tech_run(seed_n: int) -> Dictionary:
 	if row.is_empty():
 		row = {"rep": c.rep, "score": msp.score, "fired": false, "ending": "TIMEOUT", "closed": msp.closed_ok, "missed": msp.breached, "reopened": msp.reopened}
 	row["cls"] = "bad" if (fired or c.rep < 45) else ("good" if str(row.ending) == "lead" else "mid")
-	row["info"] = "closed %d missed %d reopen %d scars %d ps %d quick %d proper %d clever %d returns %d curve %s" % [int(row.closed), int(row.missed), int(row.reopened), c.scars, root.get_node("Skills").ps_level, tech_stats.quick, tech_stats.proper, tech_stats.clever, tech_stats.returns, str(days)]
+	strategy = _base_strategy
+	row["curve"] = days
+	row["info"] = "closed %d missed %d reopen %d scars %d ps %d quick %d proper %d clever %d returns %d fails %d work %ds heavy %d scripted %d ransom %s %s curve %s" % [int(row.closed), int(row.missed), int(row.reopened), c.scars, root.get_node("Skills").ps_level, tech_stats.quick, tech_stats.proper, tech_stats.clever, tech_stats.returns, int(tech_stats.fails), int(tech_stats.work), int(tech_stats.heavy), int(tech_stats.scripted), str(root.get_node("Story").flags.get("ransom", "-")), "+".join(tech_stats.exits), str(days)]
 	row["tech_stats"] = tech_stats.duplicate()
 	if coop:
 		var xp_total := 0
@@ -470,6 +643,13 @@ func sv_answer(cards: Node) -> int:
 	var sv := root.get_node("Service")
 	var crew := root.get_node("Crew")
 	var day: int = root.get_node("Campaign").day
+	if text.contains("check the lesson"):  # C7: a runbook lesson to sign off: the careful manager knows the safe first step
+		for rid in sv.RUNBOOKS:
+			var quiz: Dictionary = sv.RUNBOOKS[rid].get("quiz", {})
+			if not quiz.is_empty() and text.contains(str(quiz.q)):
+				var right := sv_idx_of(cards, str(int(quiz.answer)))
+				if right >= 0:
+					return right
 	if ids.has("p1") and ids.has("queue") and ids.has("mentor"):
 		return sv_idx_of(cards, "mentor") if (day % 4 == 2 and crew.morale_avg() >= 50) else sv_idx_of(cards, "p1")
 	if ids.has("tiered"):
@@ -574,7 +754,9 @@ func sv_drain_cards() -> void:
 	var n := 0
 	while cards.is_open and n < 60:
 		n += 1
-		cards.pick(sv_answer(cards))
+		var sp := sv_answer(cards)
+		_note_card(cards, sp)
+		cards.pick(sp)
 	if strategy == "careful" and root.get_node("Playbook").is_active():
 		sv_do_job()
 		sv_drain_cards_tail()
@@ -585,7 +767,9 @@ func sv_drain_cards_tail() -> void:
 	var n := 0
 	while cards.is_open and n < 20:
 		n += 1
-		cards.pick(sv_answer(cards))
+		var sp := sv_answer(cards)
+		_note_card(cards, sp)
+		cards.pick(sp)
 
 
 func sv_board_tick() -> void:
@@ -641,6 +825,9 @@ func sv_run(seed_n: int) -> Dictionary:
 	rng.seed = seed_n * 7919
 	root.get_node("Difficulty").seed_run(seed_n)
 	c.new_game("service")
+	var base := strategy
+	if base == "mixed":
+		strategy = "lazy"
 	_last_day = 0
 	_ticks = 0
 	_talk_i = 0
@@ -651,6 +838,8 @@ func sv_run(seed_n: int) -> Dictionary:
 	while frames < 400000 and not ended:
 		frames += 1
 		await tree.process_frame
+		if frame_hook.is_valid():
+			frame_hook.call(frames)
 		if report.is_open:
 			var r: Dictionary = report.report
 			if bool(r.get("final", false)):
@@ -682,6 +871,8 @@ func sv_run(seed_n: int) -> Dictionary:
 			continue
 		if c.day != _last_day:
 			_last_day = c.day
+			if base == "mixed":
+				strategy = "careful" if c.day % 2 == 0 else "lazy"
 			sv_morning()
 			continue
 		world.time_scale = ts
@@ -691,6 +882,7 @@ func sv_run(seed_n: int) -> Dictionary:
 		row = sv_snapshot(seed_n, false)
 		row["ending"] = "TIMEOUT"
 		row["offers"] = []
+	strategy = base
 	await tree.process_frame
 	return row
 
@@ -783,6 +975,7 @@ func sa_answer(cards: Node, handover_gap: float) -> int:
 				if bool(cards.options[i].get("enabled", true)):
 					best = i
 					break
+		_note_card(cards, maxi(best, 0))
 		cards.pick(maxi(best, 0))
 		n += 1
 	return n
@@ -1046,6 +1239,11 @@ const OW_POLICIES := {
 
 # R38 / P5: the shortcut owner is the smart one who takes every temptation (option 0) and matches the flat price
 const OW_SHORTCUTS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "temp_review": 0, "temp_restore": 0, "temp_price": 0, "temp_2fa": 0, "temp_quest": 0, "rival_flat": 2}
+# R38: the "takeover" owner is the smart one who lets the week 7 client go with an exit chat, takes them back in week 11 with a
+# takeover assessment and walks the site (so a bot run exercises the takeover visit); week 19 he assesses before he signs
+const OW_TAKEOVER := {"rival_defect": 2, "rival_takeover": 0, "rival_badday": 1}
+const OW_CAREFUL := ["careful", "shortcut", "takeover"]
+const OW_CREDIT_CASH := 5000  # Q6: the careful owner credits a scammed client 40% only with at least this much in the bank
 const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
 
 
@@ -1057,14 +1255,35 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			for id in ids:
 				if cards.text.contains(str(ids[id])) and str(ids[id]).length() > 8:
 					pick = mini(int(policy.get(id, 0)), cards.options.size() - 1)
-					if id == "rn_invite" and strategy in ["careful", "shortcut"] and root.get_node("Owner").cash < OW_TRIP_CASH:
+					if id == "rn_invite" and strategy in OW_CAREFUL and root.get_node("Owner").cash < OW_TRIP_CASH:
 						pick = 2  # Q6d: STAY HOME: a trip is not worth it out of a thin bank
-		if strategy in ["careful", "shortcut"] and cards.text.begins_with("We drew $") and cards.options.size() > 1:
+		if strategy in OW_CAREFUL and cards.text.begins_with("We drew $") and cards.options.size() > 1:
 			pick = 1  # Q6d: the bank is thin and the draw is a choice: a careful owner skips the draw (the bot only cut it to SMALL)
-		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("will only talk to"):
+		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("will only talk to"):
 			pick = 2  # R36: the lopsided crew: pair the techs (falls back to an open option without the cash)
-		if strategy in ["careful", "shortcut"] and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
+		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
 			pick = 1  # R36: a client wants to follow a tech out: go and see them
+		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.contains("to a scammer") and root.get_node("Owner").cash < OW_CREDIT_CASH:
+			# Q6: a client lost money to a fake invoice. Crediting 40% of it ($2,000 and more, the card names no price) out of a thin
+			# bank is how the careful owner went bankrupt in week 15: he lets the lawyer answer ($600), or asks the insurer
+			pick = 1 if root.get_node("Owner").cash >= 600 else 2
+		# R38: the takeover visit's own cards (the owner meeting, a finding): ask about the backups; take the job, else sell the
+		# project, else patch it (the lazy owner makes a note)
+		var opt_ids := []
+		for entry in cards.options:
+			opt_ids.append(str(entry.get("id", "")))
+		if opt_ids.has("past") and opt_ids.has("list"):
+			pick = opt_ids.find("past")
+		elif opt_ids.has("note") and opt_ids.has("quick"):
+			pick = opt_ids.find("note")
+			if strategy != "lazy":
+				for want in ["job", "project", "quick"]:
+					var at: int = opt_ids.find(want)
+					if at >= 0 and bool(cards.options[at].get("enabled", true)):
+						pick = at
+						break
+			ow_findings += 1
+			ow_jobs += 1 if opt_ids[pick] == "job" else 0
 		if not bool(cards.options[pick].get("enabled", true)):  # greyed out (cash, or the partner vetoes): take an open option
 			for i in cards.options.size():
 				if bool(cards.options[i].get("enabled", true)):
@@ -1073,8 +1292,43 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 		if OS.get_environment("BOT_TRACE") != "":  # dev: BOT_TRACE=1 prints every card, the pick and the cash before it
 			var shown: String = cards.text.substr(0, 70).replace("\n", " ")
 			print("TRACE card cash %d: %s -> %d (%s)" % [root.get_node("Owner").cash, shown, pick, str(cards.options[pick].get("text", cards.options[pick])).substr(0, 60)])
+		_note_card(cards, pick)
 		cards.pick(pick)
 		n += 1
+		var pb := root.get_node("Playbook")
+		var guard := 0
+		while pb.is_active() and guard < 12:  # a taken takeover job: the best unlocked choice of every step
+			guard += 1
+			var choices: Array = pb.current_step().choices
+			var best := -1
+			for i in choices.size():
+				if pb.lock_reason(choices[i]) == "" and (best < 0 or int(choices[i].pts) > int(choices[best].pts)):
+					best = i
+			if best < 0:
+				break
+			pb.choose(best)
+
+
+var ow_visits := 0  # takeover visits walked this run
+var ow_findings := 0  # findings answered on them
+var ow_jobs := 0  # takeover Playbook jobs finished
+
+
+# R38: the takeover visit, walked the way a careful owner would: the meeting, then every object, then home
+func ow_takeover_walk(ids: Dictionary) -> void:
+	var on := root.get_node("Onsite")
+	var cards := root.get_node("Cards")
+	if not on.active or str(on.visit_kind) != "takeover":
+		return
+	ow_visits += 1
+	ow_answer(cards, ids)
+	on.interact("owner")
+	ow_answer(cards, ids)
+	for obj in ["server", "cabinet", "pc", "vip", "printer", "exam"]:
+		on.inspect(obj)
+		ow_answer(cards, ids)
+	on._go_home(false)
+	ow_answer(cards, ids)
 
 
 
@@ -1134,12 +1388,19 @@ func ow_run(seed_n: int) -> Dictionary:
 			cut = brace
 		ids[key] = card_text.substr(0, 40 if cut < 0 else mini(40, cut))
 	load("res://scripts/player.gd").current_character = "office_alan"
-	var policy_name: String = {"careful": "smart", "lazy": "cheap", "chaotic": "greedy", "shortcut": "smart"}[strategy]
+	var policy_name: String = {"careful": "smart", "lazy": "cheap", "chaotic": "greedy", "shortcut": "smart", "takeover": "smart"}[strategy]
+	ow_visits = 0
+	ow_findings = 0
+	ow_jobs = 0
 	policy = OW_POLICIES[policy_name]
 	if strategy == "shortcut":  # R38 / P5: smart's answers with every temptation taken
 		policy = policy.duplicate()
 		for key in OW_SHORTCUTS:
 			policy[key] = OW_SHORTCUTS[key]
+	if strategy == "takeover":
+		policy = policy.duplicate()
+		for key in OW_TAKEOVER:
+			policy[key] = OW_TAKEOVER[key]
 	c.new_game("owner")
 	if coop:
 		root.get_node("Players").enable_coop(true)
@@ -1147,15 +1408,26 @@ func ow_run(seed_n: int) -> Dictionary:
 	var frames_total := 0
 	var last := 0
 	var row := {}
+	var weeks := []
+	var seen_cards := 0
 	for day in range(1, 21):
 		var frames := 0
 		while not report.is_open and frames < 40000:
 			await tree.process_frame
 			frames += 1
+			if frame_hook.is_valid():
+				frame_hook.call(frames_total + frames)
 			world.time_scale = ts
 			ow_answer(cards, ids)
+			if root.get_node("Onsite").active:
+				ow_takeover_walk(ids)
 		frames_total += frames
 		last = day
+		var wk_cards := []
+		for k in range(seen_cards, card_log.size()):
+			wk_cards.append(str(card_log[k].text).substr(0, 28))
+		seen_cards = card_log.size()
+		weeks.append({"week": day, "cash": int(o.cash), "rep": int(c.rep), "trust": int(root.get_node("Partner").trust), "value": int(o.valuation()), "clients": sales.active.size(), "cards": wk_cards})
 		if OS.get_environment("BOT_TRACE") != "":
 			var est: Dictionary = o.weekly_estimate()
 			print("TRACE week %d cash %d rep %d" % [day, o.cash, c.rep])
@@ -1167,7 +1439,7 @@ func ow_run(seed_n: int) -> Dictionary:
 		game.busy = false
 	var fired := bool(report.report.get("fired", false))
 	var rep: int = c.rep
-	row = {"rep": rep, "score": o.valuation(), "fired": fired, "cash": o.cash, "week": last}
+	row = {"rep": rep, "score": o.valuation(), "fired": fired, "cash": o.cash, "week": last, "weeks": weeks}
 	report.finish()
 	await _wait(0.4)
 	var offers_ids := []
@@ -1192,7 +1464,10 @@ func ow_run(seed_n: int) -> Dictionary:
 	row["consc"] = int(o.consc)
 	row["cast_cards"] = cast_seen
 	row["takeovers"] = takeovers
-	row["info"] += " | folder %d consc %d habits %d takeovers %d (still risky %d) cast cards %d fans %d followed %d incidents %d" % [o.skel.size(), int(o.consc), o.habits.size(), takeovers, inherit_open, cast_seen, (bn.get("fav", {}) as Dictionary).size(), int(bn.get("followed", 0)), int(o.incidents)]
+	row["tk_visits"] = ow_visits
+	row["tk_findings"] = ow_findings
+	row["tk_jobs"] = ow_jobs
+	row["info"] += " | folder %d consc %d habits %d takeovers %d (still risky %d) cast cards %d fans %d followed %d incidents %d | takeover visits %d findings %d jobs %d" % [o.skel.size(), int(o.consc), o.habits.size(), takeovers, inherit_open, cast_seen, (bn.get("fav", {}) as Dictionary).size(), int(bn.get("followed", 0)), int(o.incidents), ow_visits, ow_findings, ow_jobs]
 	if not fired:
 		_cleanup_review(review, game, 0)
 	return row
