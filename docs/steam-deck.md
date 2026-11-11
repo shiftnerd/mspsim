@@ -266,3 +266,16 @@ Sources: Valve, "Steam Hardware Compatibility Review" (partner.steamgames.com/do
 | Power: stop world rendering in menus, pause when idle | Microsoft (recommendation) | Partly: the game pauses on focus loss and suspend; rendering continues under menus |
 
 Valve reviews a native Linux build first and falls back to the Windows build under Proton, publishing the better result. A review is requested from Steamworks (Technical Tools, "Steam Hardware Compatibility Review") after the standard build review. A game Verified on Deck is also Verified on Steam Machine.
+
+## Export status (2026-11-11)
+
+The Godot 4.7.2 export templates are installed (`%APPDATA%\Godot\export_templates.7.2.stable`, from the official
+`Godot_v4.7.2-stable_export_templates.tpz`). From the repo root:
+
+    Godot.exe --headless --path godot --export-release "Linux (Steam Deck)" <dir>/mspsim.x86_64
+    Godot.exe --headless --path godot --export-release "Windows Desktop" <dir>/mspsim.exe
+
+Both build. Output of the presets is `build/` (ignored by git); write elsewhere when testing. The Windows build starts and
+runs 300 headless frames with no errors. The Linux build has NOT been run: it needs a Linux machine or a Deck. CI runs
+the test suite on Linux (green on 2026-11-11) but does not build or run the exported game. Valve tries a native Linux build
+first and falls back to the Windows build under Proton.
