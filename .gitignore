@@ -19,3 +19,6 @@ desktop.ini
 
 # Python caches
 __pycache__/
+
+# Export output
+build/
