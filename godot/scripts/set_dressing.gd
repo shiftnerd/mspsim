@@ -14,8 +14,12 @@ const PLATES := {
 }
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
+# the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
+var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
 var _t := 0.0
 
 
@@ -46,11 +50,15 @@ static func dress(stage: Node) -> Node:
 	if room == "cubicle_two" and World.chars.has("Jen"):
 		_put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
 		return null
-	if room != "restaurant":
+	if room != "restaurant" and room != "escape_room":
 		return null
 	var node: Node = load("res://scripts/set_dressing.gd").new()
 	node.name = "SetDressing"
 	stage.add_child(node)
+	if room == "escape_room":
+		node.escape_stage = stage
+		node.refresh()
+		return node
 	for host in PLATES:
 		for row in PLATES[host]:
 			var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
@@ -60,12 +68,45 @@ static func dress(stage: Node) -> Node:
 	return node
 
 
+# the texture of one of the escape room's big props: the theme's own piece, else the study's
+static func escape_art(theme: String, slot: String) -> Texture2D:
+	if theme != "study":
+		var t := art("escape_%s_%s" % [theme, slot])
+		if t != null:
+			return t
+	return art(str(ESCAPE_PLAIN.get(slot, slot)))
+
+
+# the theme the room shows: the run's while an escape game is on, else the old study
+static func escape_theme_now() -> String:
+	return Outings.theme_id() if Outings.game == "escape" else "study"
+
+
+# swap the safe, trunk and globe sprites of the escape room for the theme's; returns how many changed
+static func escape_swap(stage: Node) -> int:
+	var actors := stage.get_node_or_null("Actors")
+	if actors == null:
+		return 0
+	var theme := escape_theme_now()
+	var n := 0
+	for node_name in ESCAPE_SLOTS:
+		var s := actors.get_node_or_null(str(node_name)) as Sprite2D
+		var t := escape_art(theme, str(ESCAPE_SLOTS[node_name]))
+		if s != null and t != null and s.texture != t:
+			s.texture = t
+			n += 1
+	return n
+
+
 # the food is on the table once the dinner is past the ordering round
 static func plates_on() -> bool:
 	return Outings.game == "dinner" and not Outings.dinner_ordering()
 
 
 func refresh() -> void:
+	if escape_stage != null:
+		escape_swap(escape_stage)
+		return
 	var on := plates_on()
 	for s in plates:
 		s.visible = on

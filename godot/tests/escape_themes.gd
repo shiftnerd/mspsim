@@ -250,6 +250,15 @@ func _init() -> void:
 	_check(tb.theme_i == 1 and str(tb.outing_options().get("theme", "")) == "server" and str(tb.rows()[room_row].value) == "SERVER ROOM", "Right picks the server room, and it is passed to the outing")
 	tb.theme_i = 0
 
+	# ---- the themed big props: every theme has its three textures, at the study's sizes
+	var dress: Script = load("res://scripts/set_dressing.gd")
+	var plain := {"safe": Vector2i(28, 28), "trunk": Vector2i(32, 20), "globe": Vector2i(18, 28)}
+	for th in ["server", "detective", "lab"]:
+		for slot in plain:
+			var tex: Texture2D = dress.art("escape_%s_%s" % [th, slot])
+			_check(tex != null and Vector2i(tex.get_size()) == plain[slot] and tex != dress.escape_art("study", slot), "%s %s has its own texture at the study size" % [th, slot])
+	_check(dress.escape_art("nothing", "safe") == dress.art("safe_box"), "an unknown theme falls back to the study safe")
+
 	# ---- the look, in the real room
 	change_scene_to_file("res://scenes/main_floor.tscn")
 	await _settle("main_floor")
@@ -266,6 +275,8 @@ func _init() -> void:
 	var tint := Color(str(o.ESCAPE_THEMES.detective.tint))
 	_check(o.room_mode() and current_scene.get_node("Background").modulate.is_equal_approx(tint), "the detective's office tints the room")
 	_check(current_scene.get_node("Actors").modulate == Color.WHITE, "the people keep their colours")
+	var actors := current_scene.get_node("Actors")
+	_check(actors.get_node("safe_box_5").texture == dress.escape_art("detective", "safe") and actors.get_node("trunk_6").texture == dress.escape_art("detective", "trunk") and actors.get_node("globe_4").texture == dress.escape_art("detective", "globe"), "the room shows the detective's filing cabinet, trunk and globe")
 	_check(o.escape_ink() == str(o.ESCAPE_THEMES.detective.ink), "the board is written in the theme's ink")
 	o.press(KEY_ENTER)
 	_check(o.phase == "play" and o._caption == str(o.ESCAPE_THEMES.detective.start), "the opening caption is the theme's")
