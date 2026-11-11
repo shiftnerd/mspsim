@@ -684,6 +684,21 @@ func _stick_push(event: InputEventJoypadMotion) -> bool:
 
 # ---- keys by name (R14 1b): no script outside this file reads a raw key code (tests/raw_keys.gd) ----
 # the name of a key event or key code: "a".."z", "0".."9" ("kp0".."kp9" on the keypad), "f1".."f12", or a WORDS entry; "" else
+# Alt+Enter (and F11 in a release build: a debug build keeps F11 for its room jumps) flips full screen / window. True when this
+# event is that key; the key is blanked so the Enter does not also confirm a menu row under it.
+func take_display_key(event: InputEvent) -> bool:
+	if not (event is InputEventKey and event.pressed and not event.echo) or capturing:
+		return false
+	var alt_enter: bool = event.alt_pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER]
+	var mods: bool = event.alt_pressed or event.ctrl_pressed or event.shift_pressed
+	if not (alt_enter or (event.keycode == KEY_F11 and not mods and not OS.is_debug_build())):
+		return false
+	event.keycode = KEY_NONE
+	event.physical_keycode = KEY_NONE
+	event.unicode = 0
+	return true
+
+
 func word(what: Variant) -> String:
 	var code := 0
 	if what is InputEventKey:

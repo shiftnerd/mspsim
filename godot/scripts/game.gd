@@ -136,15 +136,8 @@ func place_window() -> void:
 # Alt+Enter anywhere flips DISPLAY (F11 too in a release build: a debug build keeps F11 for its room jumps). The window
 # hands the event over before any screen sees it; the key is blanked, so the Enter does not also confirm a menu row.
 func _window_input(event: InputEvent) -> void:
-	if not (event is InputEventKey and event.pressed and not event.echo) or Controls.capturing:
-		return
-	var alt_enter: bool = event.alt_pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER]
-	var mods: bool = event.alt_pressed or event.ctrl_pressed or event.shift_pressed
-	if alt_enter or (event.keycode == KEY_F11 and not mods and not OS.is_debug_build()):
+	if Controls.take_display_key(event):
 		set_fullscreen(not fullscreen)
-		event.keycode = KEY_NONE
-		event.physical_keycode = KEY_NONE
-		event.unicode = 0
 
 
 func set_focus_pause(on: bool) -> void:
