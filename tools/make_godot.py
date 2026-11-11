@@ -20900,6 +20900,9 @@ const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
 const ART_W := 36.0
+const CardPortrait := preload("res://scripts/card_portrait.gd")  # R10: the speaker's face beside the text of a card with no spot picture
+const FACE_W := 30.0  # the portrait column: a 1 px frame round the 26 x 22 head, and a gap
+const FACE_H := 25.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -21123,10 +21126,11 @@ func _paint() -> void:
     var pw := minf(size.x - 8.0, 250.0)
     var chars := int((pw - 10.0) / 4.0)
     var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
+    var face: Texture2D = CardPortrait.head(speaker) if art_tex == null and pw >= ART_MIN_W else null  # R10: no picture, then the speaker's face
     var lines := []
     var plain_lines := []
     for para in text.split("\\n"):
-        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else (chars - int(FACE_W / 4.0) if face != null else chars)))
         plain_lines.append_array(_wrap(para, chars))
     # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
     var opt_lines := []
@@ -21141,10 +21145,15 @@ func _paint() -> void:
         var rows: Array = _wrap(full, chars - 1 - chip_w)
         opt_lines.append(rows)
         opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else (FACE_H if face != null else 0.0))
     var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
     if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
         art_tex = null
+        lines = plain_lines
+        body_h = float(lines.size()) * 7.0
+        ph = 12.0 + body_h + 4.0 + opts_h + 4.0
+    if face != null and ph > size.y - 14.0:  # no room for the face either: the plain card
+        face = null
         lines = plain_lines
         body_h = float(lines.size()) * 7.0
         ph = 12.0 + body_h + 4.0 + opts_h + 4.0
@@ -21156,8 +21165,11 @@ func _paint() -> void:
     PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
     var y := panel.position.y + 12.0
     for line in lines:
-        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
+        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5 + (FACE_W if face != null else 0.0), y), INK, 1, true)
         y += 7.0
+    if face != null:
+        _canvas.draw_rect(Rect2(panel.position.x + 4.0, panel.position.y + 11.0, 28.0, 24.0), Color("c9d2e0"))
+        _canvas.draw_texture(face, panel.position + Vector2(5, 12))
     if art_tex != null:
         _canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
     y = panel.position.y + 12.0 + body_h + 4.0
@@ -83398,6 +83410,52 @@ static func draw(canvas: CanvasItem, rows: Array, body: Rect2, colw: float, gap:
         var on: bool = bool(it.on)
         UiStyle.text(canvas, label, cx, cy, UiStyle.INK if on else UiStyle.MUTED)
         UiStyle.right(canvas, value, cx + colw, cy, UiStyle.GOLD.darkened(0.35) if on else UiStyle.MUTED)
+''')
+
+write("scripts/card_portrait.gd", '''extends RefCounted
+# R10: a small portrait of a card's speaker. The head of the speaker's character sheet (the first idle frame of the right-facing
+# sheet, the head rows only) at 1x, drawn by cards.gd beside the text of a card that has no spot picture. No new art.
+#   CardPortrait.head("Ross Calder") -> an AtlasTexture of that head (26 x 22), or null when the speaker has no character
+const SHEET := "res://assets/characters/%s_right.png"
+const HEAD := Rect2i(16, 19, 26, 22)  # the head of frame 0 (64 x 80 cells): hair, face, ear, neck. Right-facing, so it looks at the text
+# people who are not in the office cast (the Year 3 beats and the sales visitors); the cast comes from World's tables
+const NAMED := {
+    "quinn": "office_quinn",
+    "ross calder": "office_ross",
+    "terry vance": "office_terry",
+    "trent dagmar": "office_trent",
+    "ms. pell": "office_pell",
+    "greg pell": "office_pell",
+}
+
+static var _cache := {}
+
+
+# the character a speaker line stands for ("Ross Calder (Auditor)" is Ross Calder), "" when there is none
+static func character_for(speaker: String) -> String:
+    var base := speaker.get_slice(" (", 0).strip_edges().to_lower()
+    if NAMED.has(base):
+        return str(NAMED[base])
+    for table in [World.CAST, World.CREW_CAST, World.STAFF_CAST]:
+        for who in table:
+            if str(who).to_lower() == base:
+                return str(table[who].character)
+    return ""
+
+
+static func head(speaker: String) -> Texture2D:
+    var id := character_for(speaker)
+    if id == "":
+        return null
+    if not _cache.has(id):
+        var path := SHEET % id
+        var tex: AtlasTexture = null
+        if ResourceLoader.exists(path):
+            tex = AtlasTexture.new()
+            tex.atlas = load(path)
+            tex.region = Rect2(HEAD)
+        _cache[id] = tex
+    return _cache[id]
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

@@ -522,6 +522,16 @@ func _floor_phase() -> void:
 		], func(_id: String) -> void: pass)
 		await _end("card with picture " + pic)
 		_clear(cards)
+	# R10: the speaker's face beside the text of a card with no picture (wide formats; the tall one goes without it), long text and options
+	for who in ["Quinn", "Ross Calder", "Terry Vance (Recruiter)", "Trent Dagmar", "Ms. Pell"]:
+		_begin()
+		cards.ask(who, "WE HAVE A SHORT WINDOW HERE. I WOULD LIKE AN ANSWER BEFORE FRIDAY, AND I WOULD LIKE IT TO BE A GOOD ONE, BECAUSE THE FILE IS OPEN AND THE NUMBERS ARE WHAT THEY ARE.", [
+			{"label": "TAKE THE MEETING AND BRING THE BINDERS", "id": "a"},
+			{"label": "ASK FOR A WEEK AND A SECOND OPINION", "id": "b"},
+			{"label": "SAY NO", "id": "c"},
+		], func(_id: String) -> void: pass)
+		await _end("card face " + who)
+		_clear(cards)
 	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner"]:
 		_begin()
 		rep.is_open = false
