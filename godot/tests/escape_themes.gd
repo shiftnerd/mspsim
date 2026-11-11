@@ -258,6 +258,14 @@ func _init() -> void:
 			var tex: Texture2D = dress.art("escape_%s_%s" % [th, slot])
 			_check(tex != null and Vector2i(tex.get_size()) == plain[slot] and tex != dress.escape_art("study", slot), "%s %s has its own texture at the study size" % [th, slot])
 	_check(dress.escape_art("nothing", "safe") == dress.art("safe_box"), "an unknown theme falls back to the study safe")
+	# the clock and the desk too (R4): the study's sizes, a desk item on top of each themed desk, the study's own for the study
+	var big := {"clock": Vector2i(20, 54), "desk": Vector2i(76, 27)}
+	for th in ["server", "detective", "lab"]:
+		for slot in big:
+			var tex: Texture2D = dress.art("escape_%s_%s" % [th, slot])
+			_check(tex != null and Vector2i(tex.get_size()) == big[slot] and tex != dress.escape_art("study", slot), "%s %s has its own texture at the study size" % [th, slot])
+		_check(dress.art("escape_%s_deskitem" % th) != null, "%s has its desk item" % th)
+	_check(dress.escape_art("study", "clock") == dress.art("grandfather_clock") and dress.escape_art("study", "desk") == dress.art("desk_cubicle_74"), "the study keeps the grandfather clock and its desk")
 
 	# ---- the look, in the real room
 	change_scene_to_file("res://scenes/main_floor.tscn")
@@ -289,6 +297,16 @@ func _init() -> void:
 	_check(current_scene.get_node("Actors").modulate == Color.WHITE, "the people keep their colours")
 	var actors := current_scene.get_node("Actors")
 	_check(actors.get_node("safe_box_5").texture == dress.escape_art("detective", "safe") and actors.get_node("trunk_6").texture == dress.escape_art("detective", "trunk") and actors.get_node("globe_4").texture == dress.escape_art("detective", "globe"), "the room shows the detective's filing cabinet, trunk and globe")
+	var clock := actors.get_node("grandfather_clock_1") as Sprite2D
+	var desk := actors.get_node("desk_cubicle_74_2") as Sprite2D
+	_check(clock.texture == dress.escape_art("detective", "clock") and desk.texture == dress.escape_art("detective", "desk"), "the room shows the detective's pendulum clock and pedestal desk")
+	_check(clock.position == Vector2(103, 108) and desk.position == Vector2(141, 108) and clock.offset == Vector2(0, -53) and desk.offset == Vector2(0, -26), "the clock and the desk stand where the study's did")
+	var item := desk.get_node_or_null("Dressing_deskitem") as Sprite2D
+	_check(item != null and item.visible and item.texture == dress.art("escape_detective_deskitem"), "the detective's desk carries the typewriter")
+	_check(current_scene.get_node("Fx/WallClock").position == Vector2(78, 20) and current_scene.get_node("Fx/Painting").position == Vector2(136, 10), "the clue spots did not move")
+	for node_name in ["grandfather_clock_1", "desk_cubicle_74_2"]:  # no themed piece draws past the study's box
+		var sp := actors.get_node(node_name) as Sprite2D
+		_check(Vector2i(sp.texture.get_size()) == (Vector2i(20, 54) if node_name.begins_with("grand") else Vector2i(76, 27)), "%s keeps the study's size" % node_name)
 	_check(o.escape_ink() == str(o.ESCAPE_THEMES.detective.ink), "the board is written in the theme's ink")
 	o.press(KEY_ENTER)
 	_check(o.phase == "play" and o._caption == str(o.ESCAPE_THEMES.detective.start), "the opening caption is the theme's")

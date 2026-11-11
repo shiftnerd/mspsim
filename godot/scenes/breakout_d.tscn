@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/sets/breakout_d.png" id="bg"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="player"]
@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://assets/props/chair_blue_side.png" id="prop_chair_blue_side"]
 [ext_resource type="Texture2D" path="res://assets/props/lab_table.png" id="prop_lab_table"]
 [ext_resource type="Texture2D" path="res://assets/props/plant_floor.png" id="prop_plant_floor"]
+[ext_resource type="Texture2D" path="res://assets/props/venue_podium_d.png" id="prop_venue_podium_d"]
 
 [sub_resource type="RectangleShape2D" id="shape_floor"]
 size = Vector2(768, 20)
@@ -217,6 +218,12 @@ position = Vector2(69, 101)
 centered = false
 offset = Vector2(0, -28)
 texture = ExtResource("prop_plant_floor")
+
+[node name="venue_podium_d_9" type="Sprite2D" parent="Actors"]
+position = Vector2(252, 119)
+centered = false
+offset = Vector2(0, -27)
+texture = ExtResource("prop_venue_podium_d")
 
 [node name="Player" parent="Actors" instance=ExtResource("player")]
 position = Vector2(124, 118)

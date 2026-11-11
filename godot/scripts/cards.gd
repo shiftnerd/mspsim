@@ -11,6 +11,9 @@ const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
 const ART_W := 36.0
+const CardPortrait := preload("res://scripts/card_portrait.gd")  # R10: the speaker's face beside the text of a card with no spot picture
+const FACE_W := 30.0  # the portrait column: a 1 px frame round the 26 x 22 head, and a gap
+const FACE_H := 25.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -21,7 +24,7 @@ var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
 var icon_drawn := Rect2()  # R9: where the open card's mutator icon was painted (no size = none), for tests
-var _art_kept := {}  # art id -> its texture (or null)
+var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -234,10 +237,10 @@ func _wrap(s: String, chars: int) -> Array:
 
 # the open card's spot picture, or null (none asked for, the file is missing)
 func _art_tex() -> Texture2D:
-	if not _art_kept.has(art):  # kept: a texture loaded for one paint is freed before the frame is drawn (a white box)
+	if not _art_cache.has(art):
 		var path := "res://assets/ui/card_%s.png" % art
-		_art_kept[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
-	return _art_kept[art]
+		_art_cache[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
+	return _art_cache[art]
 
 
 # R9: an art id "mut_<id>" is a mutator's 12 x 12 icon (the morning briefing). It sits on the right end of the title bar
@@ -253,10 +256,11 @@ func _paint() -> void:
 	var pw := minf(size.x - 8.0, 250.0)
 	var chars := int((pw - 10.0) / 4.0)
 	var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
+	var face: Texture2D = CardPortrait.head(speaker) if art_tex == null and pw >= ART_MIN_W else null  # R10: no picture, then the speaker's face
 	var lines := []
 	var plain_lines := []
 	for para in text.split("\n"):
-		lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+		lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else (chars - int(FACE_W / 4.0) if face != null else chars)))
 		plain_lines.append_array(_wrap(para, chars))
 	# option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
 	var opt_lines := []
@@ -271,10 +275,15 @@ func _paint() -> void:
 		var rows: Array = _wrap(full, chars - 1 - chip_w)
 		opt_lines.append(rows)
 		opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-	var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+	var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else (FACE_H if face != null else 0.0))
 	var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
 	if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
 		art_tex = null
+		lines = plain_lines
+		body_h = float(lines.size()) * 7.0
+		ph = 12.0 + body_h + 4.0 + opts_h + 4.0
+	if face != null and ph > size.y - 14.0:  # no room for the face either: the plain card
+		face = null
 		lines = plain_lines
 		body_h = float(lines.size()) * 7.0
 		ph = 12.0 + body_h + 4.0 + opts_h + 4.0
@@ -291,8 +300,11 @@ func _paint() -> void:
 		_canvas.draw_texture(icon, icon_drawn.position)
 	var y := panel.position.y + 12.0
 	for line in lines:
-		PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
+		PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5 + (FACE_W if face != null else 0.0), y), INK, 1, true)
 		y += 7.0
+	if face != null:
+		_canvas.draw_rect(Rect2(panel.position.x + 4.0, panel.position.y + 11.0, 28.0, 24.0), Color("c9d2e0"))
+		_canvas.draw_texture(face, panel.position + Vector2(5, 12))
 	if art_tex != null:
 		_canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
 	y = panel.position.y + 12.0 + body_h + 4.0

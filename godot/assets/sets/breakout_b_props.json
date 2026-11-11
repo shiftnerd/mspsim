@@ -7,5 +7,6 @@
 {"piece":"chair_wood_side","x":135,"y":54,"sort":94},
 {"piece":"coffee_station","x":21,"y":61,"sort":100},
 {"piece":"presenter_table","x":147,"y":64,"sort":100},
-{"piece":"plant_floor","x":221,"y":73,"sort":101}
+{"piece":"plant_floor","x":221,"y":73,"sort":101},
+{"piece":"venue_podium_b","x":176,"y":92,"sort":119}
 ]

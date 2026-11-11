@@ -5352,7 +5352,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
         st.node = null
-        if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+        if absent.has(n) or STAFF_CAST.has(n):  # the office staff never come to a game; not invited tonight (or has a thing): they stay out until the next morning / end_outing()
             st.scene = OUTSIDE
             st.following = false
             st.held = ""
@@ -14172,6 +14172,7 @@ const TEXT3 := {
 }
 
 var pending := false  # New Game Plus was chosen on the title menu: the next Campaign.new_game takes it
+var _mut_tex := {}  # mutator id -> its icon or null (held here: an unheld texture is freed before the frame is drawn)
 var pending_year := YEAR  # which year that is: 2, or 3 (START YEAR 3)
 var pick := ""  # a mutator the plan must contain ("" = AUTO)
 var ban := ""  # a mutator the plan must not contain
@@ -14376,7 +14377,11 @@ func toggle_mut_mode() -> void:
 
 # R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
 func mut_icon() -> Texture2D:
-    return Mutators.icon(pick if pick != "" else ban)  # (Mutators keeps the texture: one loaded per paint draws white)
+    var id := pick if pick != "" else ban
+    if not _mut_tex.has(id):
+        var path := "res://assets/ui/mut_%s.png" % id
+        _mut_tex[id] = load(path) if id != "" and ResourceLoader.exists(path) else null
+    return _mut_tex[id]
 
 
 func chip_text() -> String:
@@ -20941,6 +20946,9 @@ const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
 const ART_W := 36.0
+const CardPortrait := preload("res://scripts/card_portrait.gd")  # R10: the speaker's face beside the text of a card with no spot picture
+const FACE_W := 30.0  # the portrait column: a 1 px frame round the 26 x 22 head, and a gap
+const FACE_H := 25.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -20951,7 +20959,7 @@ var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
 var icon_drawn := Rect2()  # R9: where the open card's mutator icon was painted (no size = none), for tests
-var _art_kept := {}  # art id -> its texture (or null)
+var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -21155,10 +21163,10 @@ func _wrap(s: String, chars: int) -> Array:
 
 # the open card's spot picture, or null (none asked for, the file is missing)
 func _art_tex() -> Texture2D:
-    if not _art_kept.has(art):  # kept: a texture loaded for one paint is freed before the frame is drawn (a white box)
+    if not _art_cache.has(art):
         var path := "res://assets/ui/card_%s.png" % art
-        _art_kept[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
-    return _art_kept[art]
+        _art_cache[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
+    return _art_cache[art]
 
 
 # R9: an art id "mut_<id>" is a mutator's 12 x 12 icon (the morning briefing). It sits on the right end of the title bar
@@ -21174,10 +21182,11 @@ func _paint() -> void:
     var pw := minf(size.x - 8.0, 250.0)
     var chars := int((pw - 10.0) / 4.0)
     var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
+    var face: Texture2D = CardPortrait.head(speaker) if art_tex == null and pw >= ART_MIN_W else null  # R10: no picture, then the speaker's face
     var lines := []
     var plain_lines := []
     for para in text.split("\\n"):
-        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else (chars - int(FACE_W / 4.0) if face != null else chars)))
         plain_lines.append_array(_wrap(para, chars))
     # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
     var opt_lines := []
@@ -21192,10 +21201,15 @@ func _paint() -> void:
         var rows: Array = _wrap(full, chars - 1 - chip_w)
         opt_lines.append(rows)
         opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else (FACE_H if face != null else 0.0))
     var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
     if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
         art_tex = null
+        lines = plain_lines
+        body_h = float(lines.size()) * 7.0
+        ph = 12.0 + body_h + 4.0 + opts_h + 4.0
+    if face != null and ph > size.y - 14.0:  # no room for the face either: the plain card
+        face = null
         lines = plain_lines
         body_h = float(lines.size()) * 7.0
         ph = 12.0 + body_h + 4.0 + opts_h + 4.0
@@ -21212,8 +21226,11 @@ func _paint() -> void:
         _canvas.draw_texture(icon, icon_drawn.position)
     var y := panel.position.y + 12.0
     for line in lines:
-        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
+        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5 + (FACE_W if face != null else 0.0), y), INK, 1, true)
         y += 7.0
+    if face != null:
+        _canvas.draw_rect(Rect2(panel.position.x + 4.0, panel.position.y + 11.0, 28.0, 24.0), Color("c9d2e0"))
+        _canvas.draw_texture(face, panel.position + Vector2(5, 12))
     if art_tex != null:
         _canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
     y = panel.position.y + 12.0 + body_h + 4.0
@@ -36151,6 +36168,7 @@ var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} 
 var song_best := {}  # karaoke: best stars per song id
 var chair_best := {}  # chair race: best time in seconds per difficulty tier (THE GAUNTLET: "<tier>:gauntlet")
 var chair_event := "straight"  # the event picked on the chair race card (CHAIR_EVENTS), kept for the session
+var _duel_tex := {}  # duel HUD art id -> Texture2D or null (held here: an unheld texture is freed before the frame is drawn)
 var paint_night := false  # paintball: tonight's match is the night one (drawn on the seeded stream when the card opens, LEFT / RIGHT changes it)
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
@@ -38334,7 +38352,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE SERVER ROOM",
         "short": "SERVER ROOM",
         "tint": "9fd4e6",
-        "ink": "8ff0b0",
+        "ink": "f2fff4",
         "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
         "start": "THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT",
         "open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
@@ -38376,7 +38394,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE DETECTIVE'S OFFICE",
         "short": "DETECTIVE",
         "tint": "e6c690",
-        "ink": "f0e2b8",
+        "ink": "2a1c14",
         "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
         "start": "THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT",
         "open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
@@ -38417,7 +38435,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE 1990S COMPUTER LAB",
         "short": "COMPUTER LAB",
         "tint": "d4e6c0",
-        "ink": "b8f0a0",
+        "ink": "1e2a44",
         "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.",
         "start": "THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT",
         "open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
@@ -40293,8 +40311,10 @@ func _hud_chair(s: Rect2) -> void:
 
 # a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
 func _duel_art(id: String) -> Texture2D:
-    var path := "res://assets/ui/duel_%s.png" % id
-    return load(path) if ResourceLoader.exists(path) else null
+    if not _duel_tex.has(id):
+        var path := "res://assets/ui/duel_%s.png" % id
+        _duel_tex[id] = load(path) if ResourceLoader.exists(path) else null
+    return _duel_tex[id]
 
 
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
@@ -43497,6 +43517,8 @@ const SET_X := 30.0  # the field starts this far into the set art (paintball_set
 const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
+const PORCH_Y := 90.0  # whoever only watches stands on the boardwalk, behind every lane (the street is the field)
+const TAG_UP := 68.0  # a name tag sits above the head (the head is rows -60 to -41 above the feet: at -50 the tag covered the eyes)
 # the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
 const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
 const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
@@ -43625,6 +43647,9 @@ func _sync() -> void:
     for ev in game.events:
         _event(ev)
     game.events = []
+    for watcher in _actors.get_children():  # the crew who did not get a marker: off the street and off the red flag
+        if watcher.is_in_group("npcs") and watcher.position.y > PORCH_Y:
+            watcher.position.y = PORCH_Y
     for i in puppets.size():
         var u: Dictionary = game.units[i]
         var p: Dictionary = puppets[i]
@@ -43821,7 +43846,7 @@ func _draw_top() -> void:
         var node: Node2D = p.node
         var text := str(p.label)
         var w := float(PixelFont.width(text, 1))
-        var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -50.0 if not bool(u.duck) else -36.0)
+        var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -TAG_UP if not bool(u.duck) else -TAG_UP + 14.0)
         if float(u.down) > 0.0:
             at.y = node.position.y - 14.0
         var mine: bool = bool(u.human)  # you, and player 2 in co-op
@@ -83411,12 +83436,23 @@ const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-so
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
 # the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
-const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
-const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk", "grandfather_clock_1": "clock", "desk_cubicle_74_2": "desk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk", "clock": "grandfather_clock", "desk": "desk_cubicle_74"}
+# what stands on the themed desk (a sprite on the desk node, x from its left edge; its bottom edge sits on the desk top; the study's lamp stays put)
+const ESCAPE_DESK := "desk_cubicle_74_2"
+const ESCAPE_DESK_ITEM_X := 24
+# the restaurant: a hanging sign by the door (OPEN while a dinner is on, else CLOSED) and a chalk menu board in the gap between the booths
+const SIGN_AT := Vector2(24, 4)
+const MENU_AT := Vector2(84, 50)
+# the warehouse: a wall shelf above the chair rack with one trophy per chair-game medal earned (Career.has_medal); set x and y of the plank
+const SHELF_SET := Vector2(132, 44)
+const TROPHIES := [["clean_lap", "venue_trophy_clean"], ["speed_demon", "venue_trophy_speed"], ["track_rat", "venue_trophy_track"], ["bumper_king", "venue_trophy_bumper"]]
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
 var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
 var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
+var signs: Array = []  # the restaurant's OPEN and CLOSED sprites (one shows)
+var trophies: Array = []  # the warehouse's [medal id, sprite] rows (a trophy shows once its medal is earned)
 var _t := 0.0
 
 
@@ -83447,13 +83483,22 @@ static func dress(stage: Node) -> Node:
     if room == "cubicle_two" and World.chars.has("Jen"):
         _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
         return null
-    if room != "restaurant" and room != "escape_room":
+    if room != "restaurant" and room != "escape_room" and room != "warehouse":
         return null
     var node: Node = load("res://scripts/set_dressing.gd").new()
     node.name = "SetDressing"
     stage.add_child(node)
     if room == "escape_room":
         node.escape_stage = stage
+        node.refresh()
+        return node
+    if room == "warehouse":
+        var x0 := float(World.DATA.SCENES.warehouse.x0) + SHELF_SET.x
+        _put(actors, "venue_trophy_shelf", Vector2(x0, SHELF_SET.y))
+        for i in TROPHIES.size():
+            var t := _put(actors, str(TROPHIES[i][1]), Vector2(x0 + 1.0 + 7.0 * float(i), SHELF_SET.y - 10.0))
+            if t != null:
+                node.trophies.append([str(TROPHIES[i][0]), t])
         node.refresh()
         return node
     for host in PLATES:
@@ -83469,6 +83514,11 @@ static func dress(stage: Node) -> Node:
     if bag != null:
         bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
         node.guest.append(bag)
+    var open_sign := _put(actors, "venue_sign_open", SIGN_AT)
+    var shut_sign := _put(actors, "venue_sign_closed", SIGN_AT)
+    if open_sign != null and shut_sign != null:
+        node.signs = [open_sign, shut_sign]
+    _put(actors, "venue_menu_board", MENU_AT)
     node.refresh()
     return node
 
@@ -83500,7 +83550,28 @@ static func escape_swap(stage: Node) -> int:
         if s != null and t != null and s.texture != t:
             s.texture = t
             n += 1
+    _escape_deskitem(actors.get_node_or_null(ESCAPE_DESK), theme)
     return n
+
+
+# the typewriter, KVM monitor or CRT on the themed desk; the study's desk has none
+static func _escape_deskitem(desk: Node, theme: String) -> void:
+    if desk == null:
+        return
+    var item := desk.get_node_or_null("Dressing_deskitem") as Sprite2D
+    var tex := art("escape_%s_deskitem" % theme) if theme != "study" else null
+    if tex == null:
+        if item != null:
+            item.visible = false
+        return
+    if item == null:
+        item = Sprite2D.new()
+        item.name = "Dressing_deskitem"
+        item.centered = false
+        desk.add_child(item)
+    item.texture = tex
+    item.visible = true
+    item.position = Vector2(ESCAPE_DESK_ITEM_X, -23 - tex.get_height())
 
 
 # the food is on the table once the dinner is past the ordering round
@@ -83517,6 +83588,11 @@ func refresh() -> void:
     if escape_stage != null:
         escape_swap(escape_stage)
         return
+    if not signs.is_empty():
+        signs[0].visible = Outings.game == "dinner"
+        signs[1].visible = Outings.game != "dinner"
+    for row in trophies:
+        row[1].visible = Career.has_medal(str(row[0]))
     var on := plates_on()
     for s in plates:
         s.visible = on
@@ -83697,6 +83773,52 @@ static func draw(canvas: CanvasItem, rows: Array, body: Rect2, colw: float, gap:
         var on: bool = bool(it.on)
         UiStyle.text(canvas, label, cx, cy, UiStyle.INK if on else UiStyle.MUTED)
         UiStyle.right(canvas, value, cx + colw, cy, UiStyle.GOLD.darkened(0.35) if on else UiStyle.MUTED)
+''')
+
+write("scripts/card_portrait.gd", '''extends RefCounted
+# R10: a small portrait of a card's speaker. The head of the speaker's character sheet (the first idle frame of the right-facing
+# sheet, the head rows only) at 1x, drawn by cards.gd beside the text of a card that has no spot picture. No new art.
+#   CardPortrait.head("Ross Calder") -> an AtlasTexture of that head (26 x 22), or null when the speaker has no character
+const SHEET := "res://assets/characters/%s_right.png"
+const HEAD := Rect2i(16, 19, 26, 22)  # the head of frame 0 (64 x 80 cells): hair, face, ear, neck. Right-facing, so it looks at the text
+# people who are not in the office cast (the Year 3 beats and the sales visitors); the cast comes from World's tables
+const NAMED := {
+    "quinn": "office_quinn",
+    "ross calder": "office_ross",
+    "terry vance": "office_terry",
+    "trent dagmar": "office_trent",
+    "ms. pell": "office_pell",
+    "greg pell": "office_pell",
+}
+
+static var _cache := {}
+
+
+# the character a speaker line stands for ("Ross Calder (Auditor)" is Ross Calder), "" when there is none
+static func character_for(speaker: String) -> String:
+    var base := speaker.get_slice(" (", 0).strip_edges().to_lower()
+    if NAMED.has(base):
+        return str(NAMED[base])
+    for table in [World.CAST, World.CREW_CAST, World.STAFF_CAST]:
+        for who in table:
+            if str(who).to_lower() == base:
+                return str(table[who].character)
+    return ""
+
+
+static func head(speaker: String) -> Texture2D:
+    var id := character_for(speaker)
+    if id == "":
+        return null
+    if not _cache.has(id):
+        var path := SHEET % id
+        var tex: AtlasTexture = null
+        if ResourceLoader.exists(path):
+            tex = AtlasTexture.new()
+            tex.atlas = load(path)
+            tex.region = Rect2(HEAD)
+        _cache[id] = tex
+    return _cache[id]
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

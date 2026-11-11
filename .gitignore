@@ -16,3 +16,6 @@ desktop.ini
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Python caches
+__pycache__/

@@ -371,6 +371,7 @@ const DEFAULT_TEXT3 := {
 var TEXT3: Dictionary = DEFAULT_TEXT3.duplicate(true)
 
 var pending := false  # New Game Plus was chosen on the title menu: the next Campaign.new_game takes it
+var _mut_tex := {}  # mutator id -> its icon or null (held here: an unheld texture is freed before the frame is drawn)
 var pending_year := YEAR  # which year that is: 2, or 3 (START YEAR 3)
 var pick := ""  # a mutator the plan must contain ("" = AUTO)
 var ban := ""  # a mutator the plan must not contain
@@ -575,7 +576,11 @@ func toggle_mut_mode() -> void:
 
 # R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
 func mut_icon() -> Texture2D:
-	return Mutators.icon(pick if pick != "" else ban)  # (Mutators keeps the texture: one loaded per paint draws white)
+	var id := pick if pick != "" else ban
+	if not _mut_tex.has(id):
+		var path := "res://assets/ui/mut_%s.png" % id
+		_mut_tex[id] = load(path) if id != "" and ResourceLoader.exists(path) else null
+	return _mut_tex[id]
 
 
 func chip_text() -> String:
