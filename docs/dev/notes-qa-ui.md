@@ -103,3 +103,7 @@ column brought up to date, and four more pictures (owner Boardroom, sales CRM, p
 `docs/manual/img/` by `readme_shots.gd`: title, title-home, title-menu, cubicles, conference, warehouse, kitchenette,
 bowling, psa, rmm, creator, plus the new boardroom, crm and paintball. Left as they were: `desktop.png` and `hud.png`
 (hand-marked), charselect, creator-presets, mail, pause, pause-controls, phone.
+
+## After the merge with main
+
+Windowed whole audit: 813 screens, 0 failures (card faces from the portrait work read fine in all four formats). The required tests, gdlint and the generator check are green; no bridge autoload is left in project.godot and the real settings and save files match the backup.
