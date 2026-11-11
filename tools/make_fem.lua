@@ -166,7 +166,9 @@ local STYLES = {
     "..BBBB..", ".BBCBBB.", ".BBBBBB.", "..BBBB..", "...TT...",
   }},
   curly = {x = 7, y = 1, rows = {
-    ".B.B.B.B.B.B.B.B.B.B.B.B.B.", "B.B.B.B.B.B.B.B.B.B.B.B.B.B", "B...........................",
+    -- curls as scallops over the cap (cap columns 5..18): 2-3 px bumps with a 1 px notch the outline fills. The old rows were a
+    -- 27 px checkerboard of single pixels, which reads as noise on light hair and stuck out 6 px past the face.
+    "....BB.BCB.BBB.BCB.BB......", ".BCBB..............BBB.....", "B...........................",
     "BB..........................", "BB..........................", ".BB.........................",
   }},
 }

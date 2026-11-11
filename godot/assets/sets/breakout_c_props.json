@@ -8,5 +8,6 @@
 {"piece":"stool_panel","x":145,"y":69,"sort":100},
 {"piece":"stool_panel","x":165,"y":69,"sort":100},
 {"piece":"side_table","x":213,"y":69,"sort":100},
-{"piece":"plant_floor","x":223,"y":69,"sort":99}
+{"piece":"plant_floor","x":223,"y":69,"sort":99},
+{"piece":"venue_podium_c","x":186,"y":92,"sort":119}
 ]

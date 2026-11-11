@@ -121,10 +121,12 @@ func _check_audience() -> void:
 	for room in ["breakout_a", "breakout_b", "breakout_c", "breakout_d"]:
 		var talking := false
 		var speakers := 0
+		var speaker_x := 0.0
 		var seated := {}
 		for entry in cf.CROWD[room]:
 			if str(entry.role) == "speaker":
 				speakers += 1
+				speaker_x = float(entry.x)
 				talking = "talk:7" in entry.routine
 				_check(str(entry.facing) == "left" and float(entry.x) > 150.0, "%s: the speaker stands at the front, facing the room" % room)
 			elif str(entry.get("seat", "")) != "":
@@ -133,6 +135,20 @@ func _check_audience() -> void:
 		_check(seated.size() >= 4 and seated.size() <= 6, "%s: %d people sit in the audience" % [room, seated.size()])
 		var scene: Node = load("res://scenes/%s.tscn" % room).instantiate()
 		var ok := true
+		if room != "breakout_a":  # R23: SALON B, C and D have a narrow side-on lectern BESIDE the speaker (A has its own)
+			var pod: Sprite2D = null
+			for child in scene.get_node("Actors").get_children():
+				if str(child.name).begins_with("venue_podium_"):
+					pod = child
+			_check(pod != null and pod.position.y == 119.0 and pod.texture.get_size() == Vector2(14, 28), "%s: a podium on the front sort line (119)" % room)
+			if pod != null:
+				var px: float = pod.position.x
+				_check(px > speaker_x + 10.0 and px < speaker_x + 70.0, "%s: the podium stands beside the speaker, on his back side (%d, he is at %d)" % [room, int(px), int(speaker_x)])
+				var clear := true
+				for seat_node in scene.get_node("Interactables").get_children():
+					if str(seat_node.name).begins_with("Seat"):
+						clear = clear and absf(seat_node.position.x - (px + 7.0)) > 18.0
+				_check(clear, "%s: the podium is in front of nobody (no seat within 18 px)" % room)
 		for seat in seated:
 			ok = ok and scene.get_node_or_null("Interactables/%s" % seat) != null and data.SCENES[room].seats.has(seat)
 		_check(ok, "%s: every audience member has a real seat" % room)

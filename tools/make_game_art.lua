@@ -498,3 +498,240 @@ mut("summer_lull", function(g)       -- a beach umbrella
   for y = 0, 4 do for x = 0, 9 do if (x + 0.5 - 5) ^ 2 + (y + 0.5 - 5) ^ 2 <= 25 then g[y + 1][x + 1] = ((x // 2) % 2 == 0) and "r" or "w" end end end
   F(g, 5, 5, 1, 4, "u"); F(g, 0, 9, 10, 1, "y")
 end)
+
+-- ====================================================================================================================
+-- R4 (rest): the escape room's grandfather clock (20 x 54 png) and the desk (76 x 27 png) in each theme, at the study's size
+-- and on the same floor line, plus the things that stand on the desk (escape_<theme>_deskitem, a separate sprite SetDressing
+-- hangs on the desk so the png keeps the study's size; the study's lamp stays where it is):
+--   server    a rack-mounted NTP time display; a steel console desk with a KVM monitor and keyboard
+--   detective a pendulum clock over a filing drawer; a heavy wood pedestal desk with a typewriter and a paper stack
+--   lab       a school clock on a pole over a time-card box; a long beige lab desk with a CRT on a PC case, keyboard, mouse
+-- ====================================================================================================================
+local ES2 = {B = "#3E4350", L = "#5A6070", D = "#2A2E38", M = "#4A5060", s = "#8E939E", g = "#5FBF6A", r = "#D8483A",
+  y = "#C99A3C", Y = "#E8C45A", k = "#17121F", w = "#F4F2EA", c = "#8A8F9A", o = "#6B4A2E", p = "#8A6240", n = "#4A3220",
+  a = "#14241C", G = "#6F7A6A", H = "#8E9A88", J = "#4F5A4B", e = "#D8CFB4", E = "#EAE3CC", q = "#B0A688", Q = "#8E8668",
+  b = "#3A3F4A", u = "#3A62A8", m = "#C9955A", t = "#2A2A33", v = "#7FB0D8", V = "#4F7FD0"}
+local GLY = {["0"] = {"###", "#.#", "#.#", "#.#", "###"}, ["1"] = {".#.", "##.", ".#.", ".#.", "###"},
+  ["4"] = {"#.#", "#.#", "###", "..#", "..#"}, ["5"] = {"###", "#..", "###", "..#", "###"},
+  N = {"###", "#.#", "#.#", "#.#", "#.#"}, T = {"###", ".#.", ".#.", ".#.", ".#."}, P = {"###", "#.#", "###", "#..", "#.."}}
+local function GL(g, x, y, ch, c)
+  for r = 1, 5 do for k = 1, 3 do if GLY[ch][r]:sub(k, k) == "#" then F(g, x + k - 1, y + r - 1, 1, 1, c) end end end
+end
+local function HLINE(g, x0, y0, x1, y1, c)   -- a 1 px line (Bresenham)
+  local dx, dy = math.abs(x1 - x0), math.abs(y1 - y0)
+  local sx, sy = x0 < x1 and 1 or -1, y0 < y1 and 1 or -1
+  local err = dx - dy
+  while true do
+    F(g, x0, y0, 1, 1, c)
+    if x0 == x1 and y0 == y1 then break end
+    local e2 = 2 * err
+    if e2 > -dy then err = err - dy; x0 = x0 + sx end
+    if e2 < dx then err = err + dx; y0 = y0 + sy end
+  end
+end
+
+-- ---- clocks (content 18 x 52) ----
+-- server: a rack on short feet; a display unit (hours over minutes, green digits), an NTP label unit, a patch panel, a UPS
+esc("server", "clock", 18, 52, ES2, function(b, d)
+  BOX(b, 0, 0, 18, 50, "B", "L", "D")
+  F(b, 2, 2, 14, 46, "D")
+  BOX(b, 2, 3, 14, 18, "M", "L", "D")
+  F(d, 4, 5, 10, 14, "a")
+  GL(d, 5, 6, "1", "g"); GL(d, 9, 6, "0", "g")
+  F(d, 8, 12, 2, 1, "g")
+  GL(d, 5, 13, "4", "g"); GL(d, 9, 13, "5", "g")
+  BOX(b, 2, 22, 14, 8, "M", "L", "D")
+  GL(d, 4, 24, "N", "w"); GL(d, 8, 24, "T", "w"); GL(d, 12, 24, "P", "w")
+  BOX(b, 2, 31, 14, 7, "M", "L", "D")
+  for i = 0, 5 do F(d, 4 + i * 2, 33, 1, 2, "k") end
+  BOX(b, 2, 39, 14, 9, "M", "L", "D")
+  F(d, 4, 41, 6, 5, "D"); F(d, 12, 41, 2, 2, "g"); F(d, 12, 44, 2, 2, "r")
+  F(b, 0, 50, 4, 2, "k"); F(b, 14, 50, 4, 2, "k")
+end)
+-- detective: a brass-rimmed round clock in a wood case, a glass window with a brass pendulum, a gray filing drawer for a base
+esc("detective", "clock", 18, 52, ES2, function(b, d)
+  BOX(b, 0, 0, 18, 20, "o", "p", "n")
+  DISC(d, 9, 10, 7.4, "Y"); DISC(d, 9, 10, 6, "w")
+  F(d, 8, 4, 2, 1, "k"); F(d, 8, 15, 2, 1, "k"); F(d, 3, 9, 1, 2, "k"); F(d, 14, 9, 1, 2, "k")
+  F(d, 8, 5, 1, 5, "k"); F(d, 8, 9, 4, 1, "k")
+  BOX(b, 1, 20, 16, 16, "n", "o", "a")
+  F(d, 3, 22, 12, 12, "a")
+  F(d, 8, 22, 1, 8, "Y"); DISC(d, 8.5, 31, 2.4, "Y"); F(d, 7, 30, 1, 1, "w")
+  BOX(b, 0, 36, 18, 14, "G", "H", "J")
+  F(d, 1, 42, 16, 1, "J")
+  F(d, 6, 38, 6, 2, "w"); F(d, 6, 45, 6, 2, "w")
+  F(d, 7, 40, 4, 1, "Y"); F(d, 7, 47, 4, 1, "Y")
+  F(b, 0, 50, 4, 2, "k"); F(b, 14, 50, 4, 2, "k")
+end)
+-- lab: a school clock (grey bezel, white face, red second hand) on a pole with a time-card box and a wheeled base
+esc("lab", "clock", 18, 52, ES2, function(b, d)
+  DISC(b, 9, 9, 9, "b"); DISC(d, 9, 9, 7.2, "w")
+  F(d, 8, 3, 2, 1, "k"); F(d, 8, 15, 2, 1, "k"); F(d, 2, 8, 1, 2, "k"); F(d, 15, 8, 1, 2, "k")
+  F(d, 8, 5, 1, 4, "k"); F(d, 8, 9, 4, 1, "k"); HLINE(d, 9, 9, 6, 13, "r")
+  F(b, 8, 18, 2, 30, "c"); F(d, 8, 18, 1, 30, "s")
+  BOX(b, 4, 26, 10, 12, "e", "E", "q")
+  F(d, 6, 29, 6, 1, "k"); F(d, 6, 32, 6, 4, "w"); F(d, 7, 33, 4, 1, "u")
+  F(b, 3, 47, 12, 2, "B"); F(b, 1, 49, 4, 2, "k"); F(b, 13, 49, 4, 2, "k"); F(b, 7, 49, 4, 2, "k")
+end)
+
+-- ---- desks (content 74 x 25): a top slab (rows 0-3) over a front, legs to row 24 ----
+local function DESKBODY(b, d, top, lit, shade, front, panel, leg)
+  F(b, 0, 0, 74, 4, top); F(b, 0, 0, 74, 1, lit); F(b, 0, 3, 74, 1, shade)
+  F(b, 1, 4, 72, 19, front)
+  F(b, 3, 6, 68, 16, panel)
+  F(b, 1, 4, 3, 21, leg); F(b, 70, 4, 3, 21, leg)
+  F(d, 1, 4, 72, 1, shade)
+end
+-- server: a steel console desk with rack drawers, a status panel in the middle, caster feet and a few lights
+esc("server", "desk", 74, 25, ES2, function(b, d)
+  DESKBODY(b, d, "B", "L", "D", "M", "D", "B")
+  F(b, 3, 22, 68, 1, "L")
+  F(b, 1, 23, 3, 2, "k"); F(b, 70, 23, 3, 2, "k")
+  for i = 0, 2 do F(d, 6, 8 + i * 5, 17, 3, "M"); F(d, 6, 8 + i * 5, 17, 1, "L"); F(d, 8, 10 + i * 5, 8, 1, "D"); F(d, 20, 9 + i * 5, 2, 1, "c") end
+  F(d, 27, 8, 20, 12, "a"); F(d, 28, 9, 18, 1, "J")
+  for i = 0, 3 do F(d, 29 + i * 4, 12, 2, 1, "g"); F(d, 29 + i * 4, 15, 2, 1, (i == 1) and "r" or "g") end
+  for i = 0, 2 do F(d, 51, 8 + i * 5, 17, 3, "M"); F(d, 51, 8 + i * 5, 17, 1, "L"); F(d, 53, 10 + i * 5, 8, 1, "D"); F(d, 65, 9 + i * 5, 2, 1, (i == 2) and "r" or "g") end
+end)
+-- detective: a heavy wood pedestal desk: three drawers with brass pulls on each side, a dark kneehole, a brass edge
+esc("detective", "desk", 74, 25, ES2, function(b, d)
+  DESKBODY(b, d, "o", "p", "n", "o", "n", "o")
+  F(b, 1, 23, 3, 2, "n"); F(b, 70, 23, 3, 2, "n")
+  F(d, 1, 1, 72, 1, "m")
+  F(d, 25, 6, 24, 16, "a"); F(d, 25, 6, 24, 1, "n")
+  for i = 0, 2 do
+    F(d, 5, 7 + i * 5, 17, 4, "p"); F(d, 5, 7 + i * 5, 17, 1, "m"); F(d, 12, 9 + i * 5, 3, 1, "Y")
+    F(d, 52, 7 + i * 5, 17, 4, "p"); F(d, 52, 7 + i * 5, 17, 1, "m"); F(d, 59, 9 + i * 5, 3, 1, "Y")
+  end
+end)
+-- lab: a long beige laminate desk: a drawer unit on the left, a computer shelf with a floppy slot on the right, a grey kick rail
+esc("lab", "desk", 74, 25, ES2, function(b, d)
+  DESKBODY(b, d, "e", "E", "q", "e", "q", "c")
+  F(b, 1, 23, 3, 2, "B"); F(b, 70, 23, 3, 2, "B")
+  F(d, 3, 22, 68, 1, "Q")
+  for i = 0, 2 do F(d, 5, 7 + i * 5, 17, 4, "e"); F(d, 5, 7 + i * 5, 17, 1, "E"); F(d, 12, 9 + i * 5, 3, 1, "Q") end
+  F(d, 26, 7, 25, 14, "Q"); F(d, 27, 8, 23, 12, "q")
+  F(d, 56, 8, 14, 11, "e"); F(d, 56, 8, 14, 1, "E"); F(d, 58, 11, 8, 1, "k"); F(d, 66, 15, 2, 1, "g")
+end)
+
+-- ---- what stands on the desk (separate sprites, bottom on the desk top) ----
+-- server: a small KVM monitor with a keyboard tray and a coiled cable
+esc("server", "deskitem", 40, 15, ES2, function(b, d)
+  BOX(b, 17, 0, 18, 11, "B", "L", "D")
+  F(d, 19, 2, 14, 7, "a"); F(d, 20, 3, 6, 1, "g"); F(d, 20, 5, 9, 1, "g"); F(d, 20, 7, 4, 1, "g")
+  F(b, 24, 11, 4, 1, "D"); F(b, 20, 12, 12, 1, "D")
+  BOX(b, 12, 13, 22, 2, "c", "w", "s")
+  F(b, 1, 12, 3, 1, "k"); F(b, 3, 13, 5, 1, "k"); F(b, 7, 14, 5, 1, "k"); F(b, 36, 12, 3, 1, "g")
+end)
+-- detective: a typewriter (platen, paper in it, round keys), a paper stack with a pen
+esc("detective", "deskitem", 40, 13, ES2, function(b, d)
+  BOX(b, 2, 5, 18, 8, "t", "B", "k")
+  F(b, 1, 3, 20, 2, "t"); F(b, 5, 0, 12, 4, "w"); F(d, 7, 1, 8, 1, "c"); F(d, 7, 2, 6, 1, "c")
+  for i = 0, 5 do F(d, 4 + i * 3, 8, 2, 1, "w"); F(d, 5 + i * 3, 10, 2, 1, "w") end
+  F(b, 24, 8, 12, 5, "w"); F(d, 24, 8, 12, 1, "E"); F(d, 24, 10, 12, 1, "c"); F(d, 24, 12, 12, 1, "c")
+  F(d, 26, 6, 8, 1, "r"); F(d, 33, 7, 5, 1, "n")
+end)
+-- lab: a CRT on a beige desktop case, a keyboard and a mouse
+esc("lab", "deskitem", 40, 18, ES2, function(b, d)
+  BOX(b, 2, 0, 16, 11, "e", "E", "q")
+  F(d, 4, 2, 12, 7, "a"); F(d, 5, 3, 4, 1, "g"); F(d, 5, 5, 7, 1, "g")
+  BOX(b, 0, 11, 20, 5, "e", "E", "q")
+  F(d, 3, 13, 9, 1, "Q"); F(d, 15, 13, 1, 1, "g")
+  BOX(b, 22, 14, 14, 3, "e", "E", "q"); F(d, 24, 15, 10, 1, "Q")
+  F(b, 37, 15, 3, 2, "e")
+end)
+
+-- ====================================================================================================================
+-- R23: a narrow side-on lectern (12 x 26 content, png 14 x 28) for the breakout rooms SALON B, C and D, drawn facing the audience
+-- (left): a gooseneck mic, a reading slope that falls toward the room, a body with a name plate, a plinth. It stands BESIDE the
+-- speaker (the room's props JSON puts it on sort line 119 a few px right of him), never in front of him.
+--   b  light wood (the sunroom)   c  burgundy (the velvet lounge)   d  grey steel (the lab)
+-- Sources office/pieces/venue_podium_<room>.aseprite, PNGs godot/assets/props/.
+-- ====================================================================================================================
+for _, v in ipairs({{"b", "#B08050", "#D0A070", "#7A5030"}, {"c", "#5A2A38", "#7A3E4E", "#3A1A24"}, {"d", "#6A6F7A", "#8E939E", "#4A4F5A"}}) do
+  local pal = {o = v[2], p = v[3], n = v[4], k = "#2A2A33", s = "#8E939E", Y = "#F2C94C"}
+  local b, d = G(12, 26), G(12, 26)
+  F(d, 6, 0, 4, 1, "k"); F(d, 6, 1, 1, 3, "k"); F(d, 9, 1, 1, 5, "k")           -- the gooseneck: a hook over the slope, the head hangs at x 6
+  F(d, 5, 3, 3, 2, "s"); F(d, 6, 3, 1, 1, "k")
+  for yy = 5, 8 do                                                                   -- the reading slope, lower toward the audience
+    local x0 = 7 - 2 * (yy - 5)
+    F(b, x0, yy, 12 - x0, 1, (yy == 5) and "p" or "o")
+    F(b, 11, yy, 1, 1, "n")
+  end
+  F(b, 1, 8, 11, 1, "n"); F(b, 1, 8, 2, 1, "o")
+  F(b, 3, 9, 9, 13, "o"); F(b, 3, 9, 1, 13, "p"); F(b, 11, 9, 1, 13, "n")        -- the body: lit on the left, shaded on the right
+  F(d, 5, 12, 5, 4, "n"); F(d, 6, 13, 3, 2, "Y")                                   -- the name plate
+  F(b, 1, 22, 11, 1, "n"); F(b, 0, 23, 12, 3, "n"); F(b, 0, 23, 12, 1, "o")       -- the plinth
+  PR.build{name = "venue_podium_" .. v[1], ase = ASE, layers = {
+    {name = "Body", pal = pal, rows = ROWS(b)},
+    {name = "Detail", pal = pal, rows = ROWS(d), outline = false}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "venue_podium_" .. v[1] .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_podium_" .. v[1] .. ".png")
+  s:close()
+end
+
+-- ====================================================================================================================
+-- Venue odds and ends: the restaurant's hanging OPEN / CLOSED sign (SetDressing shows one of the two while a dinner is on or not) and
+-- a chalk menu board between its booths, and the warehouse's wall shelf of chair-game trophies (one trophy sprite per medal earned:
+-- CLEAN LAP, SPEED DEMON, TRACK RAT, BUMPER KING). Sources office/pieces/venue_*.aseprite, PNGs godot/assets/props/.
+-- ====================================================================================================================
+local function VEN(name, w, h, pal, body)
+  local b, d = G(w, h), G(w, h)
+  body(b, d)
+  PR.build{name = "venue_" .. name, ase = ASE, layers = {
+    {name = "Body", pal = pal, rows = ROWS(b)},
+    {name = "Detail", pal = pal, rows = ROWS(d), outline = false}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "venue_" .. name .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_" .. name .. ".png")
+  s:close()
+end
+GLY.O = {"###", "#.#", "#.#", "#.#", "###"}
+GLY.E = {"###", "#..", "##.", "#..", "###"}
+GLY.C = {"###", "#..", "#..", "#..", "###"}
+GLY.L = {"#..", "#..", "#..", "#..", "###"}
+GLY.S = {"###", "#..", "###", "..#", "###"}
+GLY.D = {"##.", "#.#", "#.#", "#.#", "##."}
+GLY.M = {"#.#", "###", "###", "#.#", "#.#"}
+GLY.U = {"#.#", "#.#", "#.#", "#.#", "###"}
+local function WORD(g, x, y, str, c)
+  for i = 1, #str do GL(g, x + (i - 1) * 4, y, str:sub(i, i), c) end
+end
+local VP = {k = "#17121F", w = "#F4F2EA", c = "#8A8F9A", s = "#8E939E", d = "#6B4A2E", p = "#8A6240", o = "#6B4A2E", n = "#4A3220",
+  m = "#C9955A", r = "#D8483A", R = "#B8483A", G = "#2E8A4A", g = "#5FBF6A", Y = "#E8C45A", y = "#C99A3C", a = "#1F3A2E",
+  h = "#C8CCD8", e = "#E8E0C8", q = "#8A2E26"}
+-- the sign: a chain over a board, 25 x 11 (the board 25 x 9, the text 3 x 5 letters); OPEN on green, CLOSED on red
+VEN("sign_open", 25, 11, VP, function(b, d)
+  F(b, 5, 0, 1, 2, "c"); F(b, 19, 0, 1, 2, "c")
+  BOX(b, 0, 2, 25, 9, "G", "g", "a")
+  WORD(d, 5, 4, "OPEN", "w")
+end)
+VEN("sign_closed", 25, 11, VP, function(b, d)
+  F(b, 5, 0, 1, 2, "c"); F(b, 19, 0, 1, 2, "c")
+  BOX(b, 0, 2, 25, 9, "R", "r", "q")
+  WORD(d, 1, 4, "CLOSED", "w")
+end)
+-- the menu board: a wood frame round a chalk board, MENU over four lines of dishes with a price dot each (20 x 26)
+VEN("menu_board", 20, 26, VP, function(b, d)
+  BOX(b, 0, 0, 20, 26, "p", "m", "n")
+  F(b, 2, 2, 16, 22, "a")
+  WORD(d, 3, 4, "MENU", "e")
+  F(d, 3, 10, 14, 1, "e")
+  for i = 0, 3 do
+    F(d, 3, 13 + i * 3, 9 - (i % 2) * 2, 1, "w")
+    F(d, 14, 13 + i * 3, 3, 1, "Y")
+  end
+end)
+-- the trophy shelf: a plank on two brackets (30 x 9 png); the trophies stand on it as their own sprites (7 x 11 png each)
+VEN("trophy_shelf", 28, 7, VP, function(b, d)
+  BOX(b, 0, 0, 28, 4, "p", "m", "n")
+  F(b, 3, 4, 2, 3, "d"); F(b, 23, 4, 2, 3, "d")
+end)
+local function trophy(name, rows, pal)
+  PR.build{name = "venue_trophy_" .. name, ase = ASE, layers = {{name = "Body", pal = pal, rows = rows}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "venue_trophy_" .. name .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_trophy_" .. name .. ".png")
+  s:close()
+end
+trophy("clean", {"YYYYY", "YwYYy", "YYYYy", ".YYy.", "..Y..", "..y..", ".yyy.", ".ddd.", ".ddd."}, VP)           -- CLEAN LAP: a gold cup
+trophy("speed", {"rrrrr", "rrwrr", "rwwrr", ".rwr.", "..r..", "..s..", ".sss.", ".ddd.", ".ddd."}, VP)           -- SPEED DEMON: a red cup with a bolt
+trophy("track", {"hhhhh", "hhhhs", "hhhhs", ".hhs.", "..h..", "..g..", ".ggg.", ".ddd.", ".ddd."}, VP)           -- TRACK RAT: a silver cup on a green stem
+trophy("bumper", {"Y.Y.Y", "YYYYY", "YrYgY", "YYYYy", ".yyy.", "..y..", ".yyy.", ".ddd.", ".ddd."}, VP)         -- BUMPER KING: a crown
