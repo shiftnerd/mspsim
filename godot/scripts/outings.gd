@@ -582,6 +582,7 @@ var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} 
 var song_best := {}  # karaoke: best stars per song id
 var chair_best := {}  # chair race: best time in seconds per difficulty tier (THE GAUNTLET: "<tier>:gauntlet")
 var chair_event := "straight"  # the event picked on the chair race card (CHAIR_EVENTS), kept for the session
+var _duel_tex := {}  # duel HUD art id -> Texture2D or null (held here: an unheld texture is freed before the frame is drawn)
 var paint_night := false  # paintball: tonight's match is the night one (drawn on the seeded stream when the card opens, LEFT / RIGHT changes it)
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
@@ -2764,7 +2765,7 @@ const DEFAULT_ESCAPE_THEMES := {
 		"title": "THE SERVER ROOM",
 		"short": "SERVER ROOM",
 		"tint": "9fd4e6",
-		"ink": "8ff0b0",
+		"ink": "f2fff4",
 		"intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
 		"start": "THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT",
 		"open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
@@ -2806,7 +2807,7 @@ const DEFAULT_ESCAPE_THEMES := {
 		"title": "THE DETECTIVE'S OFFICE",
 		"short": "DETECTIVE",
 		"tint": "e6c690",
-		"ink": "f0e2b8",
+		"ink": "2a1c14",
 		"intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
 		"start": "THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT",
 		"open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
@@ -2847,7 +2848,7 @@ const DEFAULT_ESCAPE_THEMES := {
 		"title": "THE 1990S COMPUTER LAB",
 		"short": "COMPUTER LAB",
 		"tint": "d4e6c0",
-		"ink": "b8f0a0",
+		"ink": "1e2a44",
 		"intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.",
 		"start": "THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT",
 		"open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
@@ -4655,8 +4656,10 @@ func _hud_chair(s: Rect2) -> void:
 
 # a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
 func _duel_art(id: String) -> Texture2D:
-	var path := "res://assets/ui/duel_%s.png" % id
-	return load(path) if ResourceLoader.exists(path) else null
+	if not _duel_tex.has(id):
+		var path := "res://assets/ui/duel_%s.png" % id
+		_duel_tex[id] = load(path) if ResourceLoader.exists(path) else null
+	return _duel_tex[id]
 
 
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
