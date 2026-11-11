@@ -21,12 +21,23 @@ const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-so
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
 # the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
-const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
-const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk", "grandfather_clock_1": "clock", "desk_cubicle_74_2": "desk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk", "clock": "grandfather_clock", "desk": "desk_cubicle_74"}
+# what stands on the themed desk (a sprite on the desk node, x from its left edge; its bottom edge sits on the desk top; the study's lamp stays put)
+const ESCAPE_DESK := "desk_cubicle_74_2"
+const ESCAPE_DESK_ITEM_X := 24
+# the restaurant: a hanging sign by the door (OPEN while a dinner is on, else CLOSED) and a chalk menu board in the gap between the booths
+const SIGN_AT := Vector2(24, 4)
+const MENU_AT := Vector2(84, 50)
+# the warehouse: a wall shelf above the chair rack with one trophy per chair-game medal earned (Career.has_medal); set x and y of the plank
+const SHELF_SET := Vector2(132, 44)
+const TROPHIES := [["clean_lap", "venue_trophy_clean"], ["speed_demon", "venue_trophy_speed"], ["track_rat", "venue_trophy_track"], ["bumper_king", "venue_trophy_bumper"]]
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
 var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
 var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
+var signs: Array = []  # the restaurant's OPEN and CLOSED sprites (one shows)
+var trophies: Array = []  # the warehouse's [medal id, sprite] rows (a trophy shows once its medal is earned)
 var _t := 0.0
 
 
@@ -57,13 +68,22 @@ static func dress(stage: Node) -> Node:
 	if room == "cubicle_two" and World.chars.has("Jen"):
 		_put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
 		return null
-	if room != "restaurant" and room != "escape_room":
+	if room != "restaurant" and room != "escape_room" and room != "warehouse":
 		return null
 	var node: Node = load("res://scripts/set_dressing.gd").new()
 	node.name = "SetDressing"
 	stage.add_child(node)
 	if room == "escape_room":
 		node.escape_stage = stage
+		node.refresh()
+		return node
+	if room == "warehouse":
+		var x0 := float(World.DATA.SCENES.warehouse.x0) + SHELF_SET.x
+		_put(actors, "venue_trophy_shelf", Vector2(x0, SHELF_SET.y))
+		for i in TROPHIES.size():
+			var t := _put(actors, str(TROPHIES[i][1]), Vector2(x0 + 1.0 + 7.0 * float(i), SHELF_SET.y - 10.0))
+			if t != null:
+				node.trophies.append([str(TROPHIES[i][0]), t])
 		node.refresh()
 		return node
 	for host in PLATES:
@@ -79,6 +99,11 @@ static func dress(stage: Node) -> Node:
 	if bag != null:
 		bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
 		node.guest.append(bag)
+	var open_sign := _put(actors, "venue_sign_open", SIGN_AT)
+	var shut_sign := _put(actors, "venue_sign_closed", SIGN_AT)
+	if open_sign != null and shut_sign != null:
+		node.signs = [open_sign, shut_sign]
+	_put(actors, "venue_menu_board", MENU_AT)
 	node.refresh()
 	return node
 
@@ -110,7 +135,28 @@ static func escape_swap(stage: Node) -> int:
 		if s != null and t != null and s.texture != t:
 			s.texture = t
 			n += 1
+	_escape_deskitem(actors.get_node_or_null(ESCAPE_DESK), theme)
 	return n
+
+
+# the typewriter, KVM monitor or CRT on the themed desk; the study's desk has none
+static func _escape_deskitem(desk: Node, theme: String) -> void:
+	if desk == null:
+		return
+	var item := desk.get_node_or_null("Dressing_deskitem") as Sprite2D
+	var tex := art("escape_%s_deskitem" % theme) if theme != "study" else null
+	if tex == null:
+		if item != null:
+			item.visible = false
+		return
+	if item == null:
+		item = Sprite2D.new()
+		item.name = "Dressing_deskitem"
+		item.centered = false
+		desk.add_child(item)
+	item.texture = tex
+	item.visible = true
+	item.position = Vector2(ESCAPE_DESK_ITEM_X, -23 - tex.get_height())
 
 
 # the food is on the table once the dinner is past the ordering round
@@ -127,6 +173,11 @@ func refresh() -> void:
 	if escape_stage != null:
 		escape_swap(escape_stage)
 		return
+	if not signs.is_empty():
+		signs[0].visible = Outings.game == "dinner"
+		signs[1].visible = Outings.game != "dinner"
+	for row in trophies:
+		row[1].visible = Career.has_medal(str(row[0]))
 	var on := plates_on()
 	for s in plates:
 		s.visible = on
