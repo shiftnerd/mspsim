@@ -477,7 +477,7 @@ func _day() -> void:
 		await _wait(80)
 	_check(camp.active and camp.mode == "tech" and _player() != null and _room() != "title", "A continues the day (%s)" % _state())
 	_check(d.day_label() != day0 and msp.pace_label() != pace0, "with the settings as they were changed")
-	_check(str(msp.ticket(int(tk.id)).status) == "Closed", "and the closed ticket still closed")
+	_check(str(msp.ticket(int(tk.id)).status) == "Closed", "and the closed ticket still closed (%s)" % str(msp.ticket(int(tk.id))))
 	await _answer_cards()
 	var x1: float = _player().global_position.x
 	_axis(JOY_AXIS_LEFT_X, 1.0)
