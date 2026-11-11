@@ -6,6 +6,7 @@ extends CanvasLayer
 # an MSP tech. Offers depend on your reputation, your coworkers and how the big jobs went. Enter / Up / Down / click.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const GOOD := Color("1f7a3a")
@@ -418,10 +419,10 @@ func _paint() -> void:
 	PixelFont.draw(_canvas, heading, panel.position + Vector2(3.0 * u, 2.0 * u), WHITE, sc)
 	var y := panel.position.y + 12.0 * u
 	for row in rows:
-		PixelFont.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc)
+		PadGlyphs.draw(_canvas, str(row[0]), Vector2(panel.position.x + 5.0 * u, y), row[1], sc, true)  # R42
 		if row.size() > 2:
 			var col_x: float = panel.position.x + (5.0 + 4.0 * 30.0) * u
-			PixelFont.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc)
+			PadGlyphs.draw(_canvas, str(row[2]), Vector2(col_x, y), row[3], sc, true)
 		y += 7.0 * u
 	if page == _opt_page():
 		y += 3.0 * u

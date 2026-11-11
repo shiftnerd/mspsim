@@ -125,7 +125,8 @@ beside a topic means somebody here likes it as far as you know, a red bar means 
 topic of its own, once a dinner: it scores like small talk, but it confirms what you know and corrects what has changed.
 
 Things happen at a table. A glass goes over, a phone rings, the check arrives early: each **table event** changes the topics of the
-next round. Sometimes **a client is at the table** (in the Owner campaign John brings one): a little shop talk is welcome, a sales
+next round. Sometimes **a client is at the table** (in the Owner campaign John brings one; they sit in the second booth, and whoever
+had that seat moves to the bar): a little shop talk is welcome, a sales
 pitch never is, and the team's sore subjects are awkward in front of a guest. A good evening lifts that client's mood.
 
 After a **three star** dinner the person who likes you least stays behind for a word. Listen, offer advice, or call it a night.

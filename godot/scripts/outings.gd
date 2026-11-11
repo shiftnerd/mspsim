@@ -243,6 +243,9 @@ const NARROW_KEYS := {
 	"ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
 	"YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
 	"P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
+	# co-op lines the pad scanner found 3 px too wide for the tall format (the karaoke duet, the chair race for two)
+	"P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE": "P1 LEFT / UP  P2 DOWN / RIGHT  ESC OUT",
+	"P1 = Z  P2 = {A / X|(A) / (X)}  ARROWS = LANE  ESC = LEAVE": "P1 Z  P2 {A / X|(A) / (X)}  ARROWS LANE  ESC OUT",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -1103,6 +1106,7 @@ func close() -> void:
 	if not is_open:
 		return
 	is_open = false
+	_guest_sync()
 	_set_pilot(0)
 	_chair_clear()
 	_paint_clear()
@@ -3347,6 +3351,73 @@ func dinner_guest() -> Dictionary:
 	return g.get("guest", {})
 
 
+# ---- R6: the guest sits at the booth. The place setting SetDressing lays is in front of GUEST_SEAT (the second booth's
+# outer seat). Whoever of the crew had that seat takes the free stool at the bar, so nobody stays home for it and the
+# table's arithmetic is untouched. The body is an ordinary NPC with a role (like the people at a client's site): seated
+# poses and seat life, no talk zone, and World.chars never hears of it. It leaves with the dinner.
+const GUEST_SEAT := "Seat4"
+const GUEST_STOOL := "Seat8"
+const GUEST_NPC := preload("res://scenes/npc.tscn")
+# the people a guest can be when the client has no office of their own to borrow a face from (a sales prospect, a client
+# without a site): the owners and seniors among the client sheets
+const GUEST_POOL := ["client_karen", "client_mina", "client_brandt", "client_attorney_b", "client_dentdoc_b", "client_vetdoc_b", "client_agent_a", "client_designer_a"]
+var guest_node: Node = null
+
+
+# the character sheet of tonight's guest: the person in the owner's office at that client's site, else one of GUEST_POOL
+# picked by the guest's name (the same name is always the same face)
+func guest_character() -> String:
+	var guest: Dictionary = dinner_guest()
+	if guest.is_empty():
+		return ""
+	var c := int(guest.get("client", -1))
+	if Onsite.has_site(c):
+		var site: Dictionary = Onsite.SITES[c]
+		for entry in Onsite.CAST_AT.get(str(site.type), {}).get(str(site.skin), {}).get("office", []):
+			if str(entry[2]) == "owner":
+				return str(entry[0])
+	return str(GUEST_POOL[absi(hash(str(guest.get("name", "")))) % GUEST_POOL.size()])
+
+
+# called every frame of an open outing and once more when it closes
+func _guest_sync() -> void:
+	var want := is_open and room_mode() and game == "dinner" and not dinner_guest().is_empty()
+	if not want:
+		if guest_node != null and is_instance_valid(guest_node):
+			if guest_node.seat != null:
+				guest_node._release()
+			guest_node.queue_free()
+		guest_node = null
+		return
+	if guest_node != null and is_instance_valid(guest_node):
+		return
+	var scene := get_tree().current_scene
+	var booth: Node = scene.get_node_or_null("Interactables/" + GUEST_SEAT) if scene != null else null
+	if booth == null or scene.get_node_or_null("Actors") == null:
+		return
+	for n in get_tree().get_nodes_in_group("npcs"):
+		if n.seat == booth:  # they give up the booth seat for the guest and sit at the bar
+			n._release()
+			if n._occupy(GUEST_STOOL, true):
+				n._play("sit")
+			if World.chars.has(str(n.cast_name)) and not World.chars[n.cast_name].legs.is_empty():
+				World.chars[n.cast_name].legs[0]["seat"] = GUEST_STOOL
+	var at: Node = booth if not booth.occupied else scene.get_node_or_null("Interactables/" + GUEST_STOOL)
+	if at == null or at.occupied:
+		return  # no chair left tonight: the place setting stands for the guest, as before
+	var npc: Node = GUEST_NPC.instantiate()
+	npc.name = "DinnerGuest"
+	npc.character = guest_character()
+	npc.role = "guest"
+	npc.facing = str(at.facing)
+	npc.start_seat = str(at.name)
+	npc.routine = PackedStringArray(["wait:100000"])
+	npc.position = Vector2(at.global_position.x, 118.0)
+	npc.get_node("Shape").disabled = true  # nobody to walk up to: the table talk is the dinner's own
+	scene.get_node("Actors").add_child(npc)
+	guest_node = npc
+
+
 # the guest's reaction to a topic: shop talk is welcome twice, asking about the business once, a pitch never, and the team's
 # sore subjects are awkward in front of a client. The points join the table score.
 func _guest_react(topic: String) -> int:
@@ -3786,6 +3857,7 @@ func _room_begin() -> void:
 
 func _room_process(delta: float) -> void:
 	_caption_t = maxf(0.0, _caption_t - delta)
+	_guest_sync()
 	_room_extras(delta)
 	_theme_look()
 	for node in _marks.keys():

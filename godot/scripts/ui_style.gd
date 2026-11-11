@@ -121,5 +121,5 @@ static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
 	c.draw_rect(Rect2(0.0, top, size.x, h), DARK)
 	c.draw_rect(Rect2(0.0, top, 2.0, h), GOLD)
 	for i in lines.size():
-		text(c, str(lines[i]), 6.0, top + 2.0 + float(i) * 7.0, WHITE)
+		PadGlyphs.draw(c, str(lines[i]), Vector2(6.0, top + 2.0 + float(i) * 7.0), WHITE, 1, true)  # R42: the talk and outing captions
 	return top

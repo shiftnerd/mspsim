@@ -575,9 +575,7 @@ func toggle_mut_mode() -> void:
 
 # R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
 func mut_icon() -> Texture2D:
-	var id := pick if pick != "" else ban
-	var path := "res://assets/ui/mut_%s.png" % id
-	return load(path) if id != "" and ResourceLoader.exists(path) else null
+	return Mutators.icon(pick if pick != "" else ban)  # (Mutators keeps the texture: one loaded per paint draws white)
 
 
 func chip_text() -> String:

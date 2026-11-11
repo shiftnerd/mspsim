@@ -1181,7 +1181,7 @@ func _r(x: float, y: float, w: float, h: float, c: Color) -> void:
 
 
 func _txt(s: String, x: float, y: float, c: Color = INK, scale := 1) -> void:
-	PixelFont.draw(_canvas, s, _o + Vector2(x, y), c, scale)
+	UiStyle.PadGlyphs.draw(_canvas, s, _o + Vector2(x, y), c, scale, true)  # R42: the help lines name pad buttons
 
 
 func _wrap(s: String, chars: int) -> Array:

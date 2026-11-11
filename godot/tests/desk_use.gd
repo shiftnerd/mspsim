@@ -7,7 +7,8 @@ extends SceneTree
 #     behind your back: the coworker
 #   somebody who walked over with news for you (John and a client's complaint, Npc.wants_you) is reached with one press,
 #     seated or standing, and tells you once
-#   a desk phone that rings within reach is still answered first (it is meant to interrupt), the next press is the Computer
+#   a desk phone within reach takes the press during its first two rings, after that the Computer does; the HUD's line
+#   says which before you press (Player.seat_target / seat_hint)
 #   Godot --headless --fixed-fps 60 --path godot -s res://tests/desk_use.gd
 
 var npc_scene: PackedScene  # loaded once the autoloads are there
@@ -17,6 +18,7 @@ var cards: Node
 var comp: Node
 var p: Node
 var seat: Node
+var _last_line := ""
 
 
 func ok(c: bool, what: String) -> void:
@@ -78,6 +80,39 @@ func _calm() -> void:
 			p._emote_t = 0.0
 		await physics_frame
 		n += 1
+
+
+func _hud() -> Node:
+	for layer in root.get_node("World").get_children():
+		for child in layer.get_children():
+			if child.get_script() != null and str(child.get_script().resource_path).ends_with("hud.gd"):
+				return child
+	return null
+
+
+# the HUD's seat line as it was drawn just now ("" when the HUD drew none)
+func _line(pad := false) -> String:
+	var font: Script = load("res://scripts/pixelfont.gd")
+	root.get_node("Controls").pad_active = pad  # (a pad press of the test made the pad the active device: its button is a sprite, not text)
+	font.audit = []
+	_hud().queue_redraw()
+	await _wait(3)
+	_last_line = ""
+	for rec in font.audit:
+		var text := str(rec.text)
+		if text.ends_with("COMPUTER") or text.ends_with("THE PHONE") or text.ends_with("HAS NEWS"):
+			_last_line = text
+	font.audit = null
+	return _last_line
+
+
+# the desk phone rings and has rung for `secs`
+func _ring(fx: Node, secs: float) -> void:
+	fx.busy = false
+	fx.ringing = true
+	fx._ring_until = 1.0e12
+	fx.rung = secs
+	await _wait(2)
 
 
 func _seat_player() -> void:
@@ -263,30 +298,97 @@ func _run() -> void:
 	await _calm()
 	_stand_npc(john, 320.0)
 
-	# ---- a ringing desk phone within reach still comes first (calls are meant to interrupt), then the Computer
-	await _seat_player()
+	# ---- the seated press and the HUD's line (X13): Player.seat_target() decides both
+	#   the desk phone in its first two rings, then somebody with news, then the Computer; a phone that has rung longer
+	#   only when there is nothing else to press. Before every press the line on the HUD is read and must name what happens.
 	var phone: Node = null
 	for zone in get_nodes_in_group("phones"):
 		var dx: float = zone.global_position.x - seat.global_position.x
 		if dx > 20.0 and dx < 70.0:
 			phone = zone
+	ok(phone != null, "the desk has a phone within reach of the chair")
 	if phone != null:
 		var fx: Node = phone.get_node(phone.target)
-		fx.ringing = true
-		fx._ring_until = 1.0e12
-		await _wait(2)
-		if p._ringing_phone() != null:
-			await _press(true)
-			ok(not comp.is_open and str(p._call_stage) != "", "a ringing desk phone is answered first (call stage %s)" % p._call_stage)
+		_stand_npc(dan, 300.0)
+		# nothing rings, nobody waits
+		await _seat_player()
+		ok(await _line() == "E COMPUTER", "seated, quiet: the HUD says the press is the Computer (%s)" % _last_line)
+		await _press(false)
+		ok(comp.is_open and str(p._call_stage) == "", "and it is")
+		# order 1: the phone starts to ring, you press during its first two rings
+		await _seat_player()
+		await _ring(fx, 0.0)
+		ok(float(fx.rung) < 1.0 and p.seat_target().kind == "phone", "a phone that just started ringing is the target (rung %.2f s)" % float(fx.rung))
+		ok(await _line() == "E ANSWER THE PHONE", "the HUD says so before the press (%s)" % _last_line)
+		await _press(true)
+		ok(not comp.is_open and str(p._call_stage) != "", "the press answers it (call stage %s)" % p._call_stage)
+		fx.ringing = false
+		await _seat_player()
+		ok(await _line() == "E COMPUTER", "after the call the line is the Computer again (%s)" % _last_line)
+		await _press(true)
+		ok(comp.is_open, "and the next press opens the Computer")
+		# order 2: it has rung more than two rings while you worked: the press is the Computer, the phone keeps ringing
+		await _seat_player()
+		await _ring(fx, p.RING_GAP * p.FRESH_RINGS + 0.5)
+		ok(p._ringing_phone() != null and p.seat_target().kind == "computer", "after two rings (%.1f s) the Computer is the target again" % float(fx.rung))
+		ok(await _line() == "E COMPUTER", "the HUD says the Computer (%s)" % _last_line)
+		await _press(false)
+		ok(comp.is_open and str(p._call_stage) == "" and fx.ringing, "the press opens the Computer and the phone goes on ringing")
+		# the edge itself: just before and just after the second ring's end
+		await _seat_player()
+		await _ring(fx, p.RING_GAP * p.FRESH_RINGS - 0.2)
+		var before: String = str(p.seat_target().kind)
+		await _wait(30)
+		ok(before == "phone" and p.seat_target().kind == "computer", "the target changes when the second ring is over (%s -> %s at %.2f s)" % [before, p.seat_target().kind, float(fx.rung)])
+		ok(await _line() == "E COMPUTER", "and the line changes with it (%s)" % _last_line)
+		# somebody with news: after a fresh ring, before the Computer and before an old ring
+		for fresh in [true, false]:
+			await _seat_player()
+			_stand_npc(john, pc_x + 6.0)
+			sales.pending = {"ticket": int(t.id), "client": int(t.client)}
+			await _ring(fx, 0.0 if fresh else 20.0)
+			var how := "a fresh ring and John with news" if fresh else "an old ring and John with news"
+			var want := "E ANSWER THE PHONE" if fresh else "E JOHN HAS NEWS"
+			var shown: String = await _line()
+			ok(john.wants_you() and shown == want, "%s: the HUD says %s (%s)" % [how, want, shown])
+			await _press(fresh)
+			if fresh:
+				ok(str(p._call_stage) != "" and not cards.is_open and not comp.is_open, "%s: the phone first" % how)
+				fx.ringing = false
+				p._call_stage = ""
+				p._head_item.item = ""
+				var n4 := 0
+				while str(p.state) == "emote" and n4 < 600:
+					p._emote_t = 0.0
+					await physics_frame
+					n4 += 1
+				await _wait(4)
+				shown = await _line()
+				ok(john.wants_you() and shown == "E JOHN HAS NEWS", "%s: then the line is John (%s)" % [how, shown])
+				await _press(false)
+			ok(cards.is_open and str(cards.speaker).begins_with("John") and not comp.is_open, "%s: John tells you (card %s)" % [how, cards.is_open])
+			sales.deliver()
+			var n3 := 0
+			while cards.is_open and n3 < 20:
+				cards.pick(0)
+				n3 += 1
+			await _wait(4)
 			fx.ringing = false
-			var n2 := 0
-			while str(p.state) == "emote" and n2 < 300:
-				await physics_frame
-				n2 += 1
-			await _press(true)
-			ok(comp.is_open, "and the next press opens the Computer")
-		else:
-			print("     (the phone is busy or offline: skipped)")
+			await _seat_player()
+			ok(await _line() == "E COMPUTER", "%s: with both done the line is the Computer (%s)" % [how, _last_line])
+			await _press(not fresh)
+			ok(comp.is_open, "%s: and the press opens it" % how)
+		_stand_npc(john, 320.0)
+		# a pad shows its own button in the line
+		await _seat_player()
+		var pad_line: String = await _line(true)
+		ok(pad_line == "COMPUTER" and str(root.get_node("Controls").keys(p.seat_hint())) == "(X) COMPUTER", "on a pad the line is the pad's button as a glyph, then the word (%s, %s)" % [pad_line, root.get_node("Controls").keys(p.seat_hint())])
+		root.get_node("Controls").pad_active = false
+		# no line while a screen is open or when you stand
+		await _press(false)
+		ok(comp.is_open and await _line() == "", "no line while the Computer is open (%s)" % _last_line)
+		await _stand_player(stand_x, "right")
+		ok(await _line() == "" and p.seat_hint() == "", "and none when you stand (%s)" % _last_line)
 
 	print("done, failures: %d" % fails)
 	quit(1 if fails > 0 else 0)

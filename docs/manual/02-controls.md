@@ -73,7 +73,7 @@ Walk to a chair and press **`E`** to sit. Most of the keys change meaning while 
 | ACTION | KEYS | NOTES |
 |---|---|---|
 | **Open the computer** | `E` | At a desk with a computer. |
-| **Answer a ringing phone** | `E` | At a desk with a ringing phone. It takes priority over the computer. |
+| **Answer a ringing phone** | `E` | At a desk with a ringing phone. Seated, the phone takes the press during its first two rings; after that `E` is the computer again. The line at the top left says which. |
 | **Roll your chair** | Hold `Shift` and press `A` / `D` (or the arrows) | The chair speeds up, coasts and slows by itself, stops at walls and desks, and may bump somebody. |
 | **Sip your drink** | `F` | Your cup stands on the desk when you sit. |
 | **Stand up** | Any move key (`A`, `D`, arrows) or `Space` | At a seat with no computer (the conference room, the couch), `E` also stands you up. |
@@ -97,8 +97,11 @@ about ten pixels and the game goes back to choosing for you.
 
 When the game chooses, **the thing you face wins** over something a little closer behind your back, and a computer in front of
 you wins over a coworker who just happens to stand at the desk (`Tab` still reaches them). Seated in your chair, `E` is always
-your Computer, with two exceptions that are meant to interrupt: a desk phone ringing within reach is answered first, and
-somebody who walked over with news for you is heard first. A gamepad's use button behaves the same.
+your Computer, with two exceptions that are meant to interrupt: a desk phone within reach is answered first while it is in
+its first two rings (let it ring longer and the press is the Computer again), and somebody who walked over with news for you
+is heard before the Computer. **A line at the top left of the screen says what the press will do** (`E ANSWER THE PHONE`,
+`E JOHN HAS NEWS`, `E COMPUTER`), so you never have to guess. A gamepad's use button behaves the same and the line shows its
+button.
 
 ---
 

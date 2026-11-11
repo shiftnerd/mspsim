@@ -8,6 +8,7 @@ extends CanvasLayer
 # clickable regions are collected while drawing (_hits).
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a text is drawn as its sprite
 const DISPATCH := preload("res://scripts/dispatch.gd")
 const FORUM_VIEW := preload("res://scripts/forum_view.gd")  # the LabRat Nerds forum screens (R27)
 const HABITS_VIEW := preload("res://scripts/habits_view.gd")  # R38: the Boardroom HABITS and RIVALS tabs (read only)
@@ -798,11 +799,11 @@ func _fill(r: Rect2, c: Color) -> void:
 
 
 func _text(s: String, p: Vector2, c: Color = TXT, scale := 1) -> void:
-	PixelFont.draw(_canvas, s, p, c, scale)
+	PadGlyphs.draw(_canvas, s, p, c, scale, true)  # R42: mail and chat bodies, lessons, every app: a pad button is its glyph
 
 
 func _tw(s: String, scale := 1) -> float:
-	return float(PixelFont.width(s, scale))
+	return float(PadGlyphs.width(s, scale, true))
 
 
 func _clip(s: String, chars: int) -> String:
