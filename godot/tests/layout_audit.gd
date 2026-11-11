@@ -107,6 +107,71 @@ func _hud_shot(tag: String) -> void:
 	world.hud_visible = was
 
 
+# QA (real window sweep): the HUD with a phone banner fully in, and its hint line with keys and with a pad's glyphs
+func _hud_extras() -> void:
+	var world := root.get_node("World")
+	var phone := root.get_node("Phone")
+	var ctl := root.get_node("Controls")
+	var hints := root.get_node("Hints")
+	world.hud_visible = true
+	phone.banner = {}
+	phone._bq.clear()
+	phone.notify("TEXT", "Morgan", "Gnarly Gnomes says their network is down again. Can you look?")
+	var waited := 0
+	while phone.banner_slide() < 1.0 and waited < 200:
+		await process_frame
+		waited += 1
+	_begin()
+	_hud().queue_redraw()
+	await _end("hud phone banner")
+	phone.banner = {}
+	phone._bq.clear()
+	var old: String = hints.objective
+	hints.objective = "WALK TO YOUR DESK. {E} SITS DOWN. {P} IS YOUR PHONE. {G} GIVES THE BLASTER AWAY."
+	for pad in [false, true]:
+		ctl.pad_active = pad
+		await _wait(2)
+		_begin()
+		_hud().queue_redraw()
+		await _end("hud hint %s" % ("pad" if pad else "keys"))
+	ctl.pad_active = false
+	hints.objective = old
+
+
+# QA: the pause menu in the tech campaign (TICKET PACE), its quit question with the SAVED AS OF line, and the Free Play rows
+func _pause_pages() -> void:
+	var pm := root.get_node("PauseMenu")
+	var c := root.get_node("Campaign")
+	var story := root.get_node("Story")
+	pm.open()
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause tech")
+	var was: bool = story.overtime
+	story.overtime = true  # no resume point can be written now: the question says how far the save goes
+	pm._sel = pm._labels().size() - 1
+	pm._activate()
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause quit saved as of")
+	story.overtime = was
+	pm.close()
+	var active: bool = c.active
+	var mode: String = c.mode
+	c.active = false
+	c.mode = c.FREE
+	pm.open()
+	pm._sel = pm._labels().size() - 2
+	_begin()
+	pm._canvas.queue_redraw()
+	await _end("pause free play")
+	pm.close()
+	c.active = active
+	c.mode = mode
+	c.clear_resume(mode, c.slot)  # the pause menu wrote a resume point: the next format's title must not find a run to continue
+	await _wait(2)
+
+
 # T2 / X9: every page of the year-end Review of the running campaign (the summary, the crew or partner lines, the offers, the
 # epilogue of the first offer), without finishing the campaign
 func _review_pages(tag: String) -> void:
@@ -232,7 +297,10 @@ func _title_phase() -> void:
 	meta.set_value("tech", "top_year", 2)  # R10: and a finished Year 2, so the START YEAR 3 row is there too
 	meta.save(yt.meta_path())
 	_begin()
-	t._choose(0)
+	t._show_home(0)  # QA: with a save the home menu has its sixth row, CONTINUE
+	await _end("title home continue")
+	_begin()
+	t._show_sub("tech", 0)  # (t._choose(0) is the home menu's first row now: the submenu was not what got audited)
 	await _end("title submenu")
 	DirAccess.remove_absolute(camp.save_path("tech"))
 	DirAccess.remove_absolute(yt.meta_path())
@@ -510,6 +578,10 @@ func _floor_phase() -> void:
 	_clear(cards)  # the dated card of that day (the XP end-of-support banner) opens over the HUD when the day is set by hand
 	await _hud_shot("hud goal chip tech")
 	c.day = 1
+	await _wait(4)
+	_clear(cards)  # a first run's day-one card opens when the day is set back
+	await _hud_extras()
+	await _pause_pages()
 	_begin()
 	cards.ask("MORGAN (MANAGER)", "TWO OWNERS, ONE ACCOUNT, AND A PROSPECT WHO WANTS AN ANSWER BY FRIDAY. WHOSE SIDE ARE YOU ON? I NEED THIS DECISION BEFORE THE END OF THE DAY.", [
 		{"label": "GARRISON: TAKE THE LOGO AT 30% OFF AND HOPE THE MARGIN HOLDS UP", "id": "a", "trust_chip": "GARRISON +4", "trust_dir": 1},
@@ -585,6 +657,7 @@ func _floor_phase() -> void:
 		_begin()
 		ph.os = skin
 		ph.open()
+		ph.locked = false  # (the lock screen was what got audited)
 		ph.app = "phone"
 		ph.ph_view = "contacts"
 		ph.ph_sel = cast_at
@@ -617,9 +690,12 @@ func _floor_phase() -> void:
 	ph.photos = []
 	# R14 (4): the touch overlay over the room, and over the pause menu
 	var ctl := root.get_node("Controls")
+	await _wait(30)  # the phone's fade-out is over
+	root.get_node("World").hud_visible = true
 	ctl.touch_override = 1
 	ctl.touch_refresh()
 	_begin()
+	_hud().queue_redraw()
 	await _end("touch overlay")
 	var pm := root.get_node("PauseMenu")
 	pm.open()

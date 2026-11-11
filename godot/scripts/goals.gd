@@ -120,19 +120,21 @@ static func draw(canvas: CanvasItem, left_lines: int) -> Array:
 		return used
 	var size := canvas.get_viewport_rect().size
 	var narrow := size.x < 260.0
-	var max_chars := int((size.x - 8.0) / 4.0) if narrow else 38
+	# the touch overlay's MENU button sits at the top right (28 px wide, y 14 to 33): the chip keeps out of it
+	var keep := 29.0 if Controls.touch_on() else 0.0
+	var max_chars := int((size.x - 8.0 - keep) / 4.0) if narrow else 38
 	var list := rows(max_chars, Game.ui_open, SHORT_NEXT if size.y < 150.0 else MAX_NEXT)
 	var y := 4.0 + float(left_lines) * 8.0 + 2.0 if narrow else 11.0
 	var widest := 0.0
 	for row in list:
 		widest = maxf(widest, float(PixelFont.width(str(row))))
 	if not list.is_empty():  # a soft dark plate, so the chip reads over the wall, the TV and the ceiling
-		var px := 3.0 if narrow else size.x - widest - 3.0
+		var px := 3.0 if narrow else size.x - widest - 3.0 - keep
 		canvas.draw_rect(Rect2(px - 2.0, y - 2.0, widest + 4.0, float(list.size()) * 7.0 + 2.0), BACK)
 	for i in list.size():
 		var text := str(list[i])
 		var w := float(PixelFont.width(text))
-		var x := 3.0 if narrow else size.x - w - 3.0
+		var x := 3.0 if narrow else size.x - w - 3.0 - keep
 		var color := GOAL_COLOR if i == 0 and text.begins_with("GOAL") else NEXT_COLOR
 		PixelFont.draw(canvas, text, Vector2(x + 1.0, y + 1.0), SHADE)
 		PixelFont.draw(canvas, text, Vector2(x, y), color)

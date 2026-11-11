@@ -124,6 +124,8 @@ func _draw_banner() -> void:
 	var ios: bool = Phone.os != "android"
 	var h := 15.0
 	var w := minf(size.x - 8.0, 150.0)
+	if size.x < 220.0:
+		w = size.x  # the portrait screen: the card spans it, or the ends of the status lines and the clock stuck out at its sides
 	var x := floorf((size.x - w) * 0.5)
 	var y := floorf(-h - 1.0 + (h + 3.0) * Phone.banner_slide())
 	var kind_color: Color = Phone.KIND_COLORS.get(b.kind, Color.WHITE)
