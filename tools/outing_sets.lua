@@ -549,6 +549,287 @@ return function(L, builders)
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
   end}
 
+  -- ================================================================ ESCAPE ROOM THEMES (roadmap R4 / R41)
+  -- The same room three more times: server room, detective's office, 1990s computer lab (builders escape_room_server / _detective /
+  -- _lab, sets painted here, props exported under the names esc_<theme>_*). Same layout as the old study so every clue spot stays
+  -- where it is: painting at (112, 10) 26x32, board at (192, 14) 50x30, wall clock at (54, 20), timer (140, 4), keypad (244, 40), red
+  -- light (226, 4), the vault door prop at x 261, the shelf prop at x 14 (30x66, swapped per theme), the clock prop at x 80, the desk at
+  -- x 118. The safe, the trunk and the globe are NOT painted in (they are props with their own themed sprites): their spots stay clear.
+  -- Outings swaps the Background texture by theme (the tint stays as the fallback) and the Bookshelf sprite by `esc_<theme>_shelf`.
+  -- ---- server room
+  function P.escServerShelf()   -- a tall rack with a door of LEDs (replaces the bookshelf)
+    return L.piece(28, 64, function(R)
+      R(0, 0, 28, 64, "#3A424E"); R(2, 2, 24, 60, "#1C2028")
+      for i = 0, 10 do
+        local y = 3 + i * 5
+        R(3, y, 22, 4, "#2A303B"); R(3, y, 22, 1, "#3E4654")
+        R(5, y + 1, 8, 2, "#12151B")
+        for k = 0, 2 do R(15 + k * 3, y + 1, 1, 1, ({"#5FE08A", "#F2B83C", "#4E9AF0"})[(i + k) % 3 + 1]) end
+        R(23, y + 1, 1, 2, (i % 4 == 0) and "#E04E4E" or "#5FE08A")
+      end
+      R(0, 62, 28, 2, "#2A303B")
+    end)
+  end
+  function P.escServerPainting()   -- a network diagram poster in a thin frame
+    return L.piece(26, 32, function(R)
+      R(0, 0, 26, 32, "#6A7280"); R(2, 2, 22, 28, "#DCE6F0")
+      R(11, 5, 4, 3, "#3A62A8"); R(4, 14, 4, 3, "#3A62A8"); R(18, 14, 4, 3, "#3A62A8"); R(4, 24, 4, 3, "#4F7FD0"); R(11, 24, 4, 3, "#4F7FD0"); R(18, 24, 4, 3, "#4F7FD0")
+      R(12, 8, 2, 6, "#17121F"); R(5, 12, 16, 1, "#17121F"); R(5, 17, 1, 7, "#17121F"); R(19, 17, 1, 7, "#17121F"); R(12, 14, 2, 10, "#17121F")
+    end)
+  end
+  function P.escServerBoard()   -- the monitoring screen where the chalkboard hung
+    return L.piece(50, 30, function(R)
+      R(0, 0, 50, 30, "#3A424E"); R(2, 2, 46, 26, "#0E1A16")
+      R(2, 21, 46, 1, "#1E3A2E"); R(2, 13, 46, 1, "#1E3A2E")
+      local ys = {20, 18, 19, 15, 16, 12, 14, 9, 11, 10, 7, 9, 8, 12, 10}
+      for i = 1, #ys do R(3 + (i - 1) * 3, ys[i], 3, 21 - ys[i] + 1, "#1E5A3A"); R(3 + (i - 1) * 3, ys[i], 3, 1, "#5FE08A") end
+      R(40, 4, 6, 3, "#E04E4E"); R(6, 4, 14, 1, "#5FE08A"); R(6, 6, 10, 1, "#3E8A5A")
+      R(2, 27, 46, 1, "#2A303B")
+    end)
+  end
+  local function serverBackground(set)
+    local wall = set.layer("Wall")
+    F(wall, 0, 0, 320, 84, "#2A3340")
+    for x = 0, 319, 20 do F(wall, x, 0, 1, 46, "#232B36"); F(wall, x + 1, 0, 1, 46, "#323D4C") end
+    -- the cable tray along the top of the racks: a ladder of rungs with bundles of coloured cable
+    F(wall, 0, 44, 320, 7, "#4A5260"); F(wall, 0, 44, 320, 1, "#6A7482"); F(wall, 0, 50, 320, 1, "#2A303B")
+    for x = 3, 319, 6 do F(wall, x, 45, 1, 5, "#363D48") end
+    for _, cb in ipairs({{"#3A7AD0", 46}, {"#D8B030", 47}, {"#E0703A", 48}, {"#5FE08A", 49}}) do
+      for x = 0, 319 do if (x // 40 + cb[2]) % 3 ~= 0 then F(wall, x, cb[2], 1, 1, cb[1]) end end
+    end
+    -- a row of racks behind everything: dark cabinets with blinking status LEDs
+    F(wall, 0, 51, 320, 33, "#171B22")
+    for i = 0, 13 do
+      local x = i * 23 - 1
+      F(wall, x, 52, 22, 32, "#2A303B"); F(wall, x + 1, 53, 20, 31, "#1C2028")
+      for k = 0, 5 do
+        local y = 54 + k * 5
+        F(wall, x + 2, y, 18, 4, "#262C37"); F(wall, x + 2, y, 18, 1, "#363D4A")
+        F(wall, x + 4, y + 1, 7, 2, "#12151B")
+        for j = 0, 2 do
+          local h = hash(i, k * 3 + j, 71)
+          F(wall, x + 13 + j * 2, y + 1, 1, 1, (h % 5 == 0) and "#F2B83C" or ((h % 7 == 0) and "#4E9AF0" or "#5FE08A"))
+        end
+        F(wall, x + 18, y + 1, 1, 2, (hash(i, k, 72) % 6 == 0) and "#E04E4E" or "#3A424E")
+      end
+    end
+    F(wall, 0, 84, 320, 6, OUT)
+    -- the wall AC unit: a cold white box with a louvre, a display and a drip tray
+    local ac = L.piece(34, 22, function(R)
+      R(0, 0, 34, 22, "#C8D0D8"); R(0, 0, 34, 2, "#E8EEF4"); R(0, 20, 34, 2, "#9AA4B0")
+      for y = 6, 16, 3 do R(3, y, 28, 1, "#8A94A0") end
+      R(3, 4, 28, 1, "#9AA4B0"); R(26, 17, 5, 2, "#17121F"); R(27, 18, 3, 1, "#5FE08A")
+      R(3, 17, 8, 2, "#AEB8C4")
+    end)
+    set.put("Frames", ac, 74, 8)
+    for i = 0, 3 do F(wall, 80 + i * 6, 31, 2, 4, "#5A8AC0") end   -- a cold draught under it
+    -- a raised floor of 2 ft tiles with perforated ones in front of the racks
+    local floor = set.layer("Floor")
+    local y0 = 90 + L.YOFF
+    L.fill(floor, 0, y0, floor.width, floor.height - y0, "#59606E")
+    for y = y0, floor.height - 1 do
+      local row = (y - y0) // 14
+      local off = 0
+      for x = 0, floor.width - 1 do
+        local c = nil
+        if (y - y0) % 14 == 0 then c = "#3E4552"
+        elseif (x - off) % 28 == 0 then c = "#3E4552"
+        elseif (y - y0) % 14 == 1 or (x - off) % 28 == 1 then c = "#6A7280"
+        elseif (x // 28 + row) % 5 == 0 and (x % 3 == 0) and ((y - y0) % 3 == 0) then c = "#3A414D" end
+        if c then L.fill(floor, x, y, 1, 1, c) end
+      end
+    end
+    L.fill(floor, 0, y0, floor.width, 2, "#2A303B")
+    for x = 0, 319, 16 do F(floor, x, 92, 8, 2, "#D8B030"); F(floor, x + 8, 92, 8, 2, "#17121F") end   -- the hazard stripe along the racks
+  end
+
+  -- ---- detective's office
+  function P.escDetShelf()   -- a stack of filing cabinets
+    return L.piece(28, 64, function(R)
+      R(0, 0, 28, 64, "#5A6058"); R(0, 0, 28, 2, "#7A8278"); R(26, 0, 2, 64, "#3E443E")
+      for i = 0, 2 do
+        local y = 2 + i * 20
+        R(2, y, 24, 19, "#4A5048"); R(3, y + 1, 22, 17, "#68705F")
+        R(9, y + 4, 10, 4, "#E8DEC0"); R(10, y + 5, 8, 1, "#8A7A5A"); R(10, y + 7, 5, 1, "#8A7A5A")
+        R(10, y + 11, 8, 3, "#2A2A33"); R(11, y + 12, 6, 1, "#8A8F9A")
+      end
+      R(0, 62, 28, 2, "#3E443E")
+    end)
+  end
+  function P.escDetPainting()   -- an old photograph in a dark frame
+    return L.piece(26, 32, function(R)
+      R(0, 0, 26, 32, "#3A281A"); R(2, 2, 22, 28, "#B8A98A")
+      R(5, 5, 16, 22, "#8A7C60"); R(10, 8, 6, 7, "#D8C8A8"); R(8, 16, 10, 10, "#3A3A3A")
+      R(11, 10, 1, 1, "#17121F"); R(14, 10, 1, 1, "#17121F"); R(11, 13, 4, 1, "#5A3A22")
+      R(8, 6, 10, 2, "#2A2A2A"); R(7, 8, 12, 1, "#2A2A2A")
+    end)
+  end
+  function P.escDetBoard()   -- the case board: cork, photos, notes and red string
+    return L.piece(50, 30, function(R)
+      R(0, 0, 50, 30, "#4A2E1C"); R(2, 2, 46, 26, "#B8844E")
+      for i = 0, 40 do R(3 + hash(i, 1, 81) % 44, 3 + hash(i, 2, 81) % 24, 1, 1, "#9A6A3A") end
+      R(5, 5, 9, 8, "#F4F2EA"); R(6, 6, 7, 5, "#6A7A8A"); R(30, 4, 8, 9, "#F4F2EA"); R(31, 5, 6, 6, "#5A5048")
+      R(20, 16, 10, 8, "#F2E8A8"); R(22, 18, 6, 1, "#8A7A5A"); R(22, 20, 5, 1, "#8A7A5A"); R(40, 17, 7, 7, "#E8B8C0")
+      R(8, 19, 7, 6, "#C8E0F0"); R(10, 20, 4, 1, "#6A7A8A")
+      R(9, 7, 1, 1, "#C0392B"); R(34, 6, 1, 1, "#C0392B")
+      for i = 0, 19 do R(10 + i, 8 + (i * 3) // 5, 1, 1, "#C0392B") end   -- the string from the first photo to the note
+      for i = 0, 14 do R(25 + i, 17 - (i * 8) // 15 - 1, 1, 1, "#C0392B") end
+      for i = 0, 12 do R(14 + (i * 3) // 4 * 1, 21 - (i % 2), 1, 1, "#C0392B") end
+      R(2, 27, 46, 1, "#8A5E32")
+    end)
+  end
+  local function detectiveBackground(set)
+    local wall = set.layer("Wall")
+    F(wall, 0, 0, 320, 84, "#4A4636")
+    for x = 0, 319, 8 do F(wall, x, 0, 1, 52, "#3E3A2C"); F(wall, x + 4, 0, 1, 52, "#524E3E") end
+    F(wall, 0, 50, 320, 3, "#8A6A32")
+    F(wall, 0, 53, 320, 31, "#4A2E1C")
+    for x = 0, 319, 26 do F(wall, x + 2, 56, 22, 24, "#3A2214"); F(wall, x + 3, 57, 20, 22, "#5A3A24") end
+    F(wall, 0, 84, 320, 6, OUT)
+    -- the window with half-drawn venetian blinds: bright city light between the slats
+    local win = L.piece(34, 40, function(R)
+      R(0, 0, 34, 40, "#2A1C12"); R(2, 2, 30, 36, "#F2D890"); R(2, 2, 30, 4, "#E8B85A")
+      for y = 3, 24, 4 do R(2, y, 30, 3, "#B8A878"); R(2, y + 2, 30, 1, "#8A7C54") end
+      R(2, 26, 30, 1, "#8A7C54"); R(16, 26, 2, 7, "#E8DEC0")
+      R(14, 33, 6, 2, "#8A7C54")
+      R(2, 20, 30, 1, "#D8C890")
+      R(0, 38, 34, 2, "#5A3A22")
+    end)
+    set.put("Frames", win, 74, 6)
+    -- a coat stand beside the shelf: a pole, three feet, a fedora and a trench coat
+    local stand = L.piece(11, 50, function(R)
+      R(5, 4, 1, 42, "#2A1C12"); R(1, 46, 9, 2, "#2A1C12"); R(3, 44, 5, 2, "#3A281A")
+      R(1, 8, 9, 2, "#2A1C12")
+      R(2, 0, 7, 3, "#5A5048"); R(0, 3, 11, 2, "#5A5048"); R(2, 2, 7, 1, "#17121F")
+      R(1, 10, 9, 26, "#8A7450"); R(1, 10, 9, 2, "#A58C62"); R(3, 14, 1, 20, "#6A5836"); R(7, 14, 1, 20, "#6A5836"); R(4, 20, 3, 1, "#6A5836")
+      R(1, 22, 9, 1, "#5A4A2C")
+    end)
+    set.put("Frames", stand, 2, 40)
+    -- the floor: dark boards, an old rug, and bars of light from the blinds across it
+    local floor = set.layer("Floor")
+    local y0 = 90 + L.YOFF
+    L.fill(floor, 0, y0, floor.width, floor.height - y0, "#42301F")
+    for y = y0 + 6, floor.height - 1, 10 do L.fill(floor, 0, y, floor.width, 1, "#33241A") end
+    for y = y0, floor.height - 1 do for x = 0, floor.width - 1 do
+      if hash(x, y, 56) % 53 == 0 then L.fill(floor, x, y, 1, 1, "#523A28") end
+    end end
+    L.fill(floor, 0, y0, floor.width, 2, "#2A1C12")
+    for y = 0, 22 do
+      local half = math.floor(70 * math.sqrt(math.max(0, 1 - ((y - 11) / 12) ^ 2)))
+      L.fill(floor, 160 - half, y0 + 12 + y, half * 2, 1, (y % 6 < 3) and "#3E3A52" or "#4A4660")
+    end
+    for k = 0, 5 do      -- light bars, slanting right as they fall
+      for y = 0, 36 do
+        local x = 70 + k * 9 + (y * 3) // 4
+        L.fill(floor, x, y0 + 6 + y, 5, 1, "#6E5838")
+      end
+    end
+  end
+
+  -- ---- 1990s computer lab
+  function P.escLabShelf()   -- a metal shelf of beige cases, floppy boxes and manuals
+    return L.piece(28, 64, function(R)
+      R(0, 0, 28, 64, "#8A8F9A"); R(1, 1, 26, 62, "#5A606E")
+      for i = 0, 2 do R(1, 20 + i * 21, 26, 2, "#C8CCD8") end
+      R(2, 2, 24, 17, "#D8CFB0"); R(2, 2, 24, 1, "#EDE6CC"); R(4, 5, 14, 2, "#B8AF90"); R(4, 9, 14, 2, "#B8AF90"); R(21, 5, 3, 3, "#5FBF6A")
+      R(2, 23, 5, 16, "#3A5AA0"); R(8, 23, 5, 16, "#C8483A"); R(14, 23, 5, 16, "#F2C94C"); R(20, 23, 6, 16, "#3A5AA0")
+      R(2, 44, 24, 17, "#4A4A56"); R(4, 46, 8, 7, "#2A2A33"); R(14, 46, 8, 7, "#2A2A33"); R(5, 47, 6, 2, "#C8CCD8"); R(15, 47, 6, 2, "#C8CCD8")
+      R(4, 55, 20, 1, "#6A6E7A")
+    end)
+  end
+  function P.escLabPainting()   -- a poster of the information superhighway
+    return L.piece(26, 32, function(R)
+      R(0, 0, 26, 32, "#F4F2EA"); R(2, 2, 22, 28, "#3A5AA0")
+      R(2, 20, 22, 10, "#2A3F78"); for i = 0, 5 do R(1 + i * 5 - (i * i) // 2, 30 - i * 2, 2 + i, 1, "#F2C94C") end
+      R(5, 5, 6, 6, "#F2C94C"); R(15, 7, 4, 4, "#E8806A")
+      drawText(R, "WEB", 7, 13, 1, "#F4F2EA")
+      R(4, 23, 18, 1, "#5FBF6A")
+    end)
+  end
+  function P.escLabBoard()   -- the whiteboard
+    return L.piece(50, 30, function(R)
+      R(0, 0, 50, 30, "#8A8F9A"); R(2, 2, 46, 26, "#F4F4F0")
+      R(6, 6, 18, 1, "#2B79F0"); R(6, 9, 12, 1, "#2B79F0"); R(6, 12, 22, 1, "#2B79F0")
+      R(32, 6, 10, 8, "#C8483A"); R(33, 7, 8, 6, "#F4F4F0"); R(6, 18, 14, 1, "#2A2A33"); R(6, 21, 9, 1, "#2A2A33")
+      R(28, 18, 14, 1, "#3A8A4A")
+      R(2, 27, 46, 1, "#C8CCD8"); R(10, 26, 6, 1, "#C8483A"); R(20, 26, 5, 1, "#2B79F0")
+    end)
+  end
+  local function labBackground(set)
+    local wall = set.layer("Wall")
+    F(wall, 0, 0, 320, 84, "#D8D0B8")
+    for y = 4, 48, 8 do F(wall, 0, y, 320, 1, "#C8C0A8") end
+    for x = 0, 319, 16 do for r = 0, 5 do F(wall, x + (r % 2) * 8, 4 + r * 8, 1, 8, "#C8C0A8") end end
+    F(wall, 0, 50, 320, 3, "#3A5AA0")
+    F(wall, 0, 53, 320, 31, "#B8B09A")
+    -- long desks along the wall with a beige PC at every seat: a CRT, a keyboard, a mouse
+    F(wall, 0, 74, 320, 4, "#A89878"); F(wall, 0, 74, 320, 1, "#C8BA98"); F(wall, 0, 78, 320, 6, "#7A6E54")
+    for x = 20, 319, 40 do F(wall, x, 78, 2, 6, "#5A5040") end
+    for i = 0, 13 do
+      local x = 3 + i * 23
+      F(wall, x, 60, 15, 13, "#D8CFB0"); F(wall, x, 60, 15, 1, "#EDE6CC"); F(wall, x + 14, 60, 1, 13, "#B8AF90")
+      F(wall, x + 2, 62, 11, 8, (i % 3 == 1) and "#2A3A3A" or "#1E2A2A")
+      F(wall, x + 3, 63, 4, 1, (i % 4 == 2) and "#5FE08A" or "#7AD0C8")
+      if i % 2 == 0 then F(wall, x + 3, 65, 7, 1, "#3A8A7A") end
+      F(wall, x + 5, 70, 5, 3, "#B8AF90")
+      F(wall, x + 1, 73, 11, 1, "#C8BFA0"); F(wall, x + 12, 73, 3, 1, "#B8AF90")
+      F(wall, x + 16, 62, 4, 11, "#CFC6A8"); F(wall, x + 17, 64, 2, 1, "#2A2A33")   -- the tower
+    end
+    F(wall, 0, 84, 320, 6, OUT)
+    -- posters
+    local poster = function(c1, c2)
+      return L.piece(18, 22, function(R)
+        R(0, 0, 18, 22, "#F4F2EA"); R(1, 1, 16, 20, c1); R(1, 12, 16, 9, c2); R(5, 4, 8, 6, "#F2C94C")
+        R(3, 15, 12, 1, "#F4F2EA"); R(3, 17, 8, 1, "#F4F2EA")
+      end)
+    end
+    set.put("Frames", poster("#2B79F0", "#2A3F78"), 4, 3)
+    set.put("Frames", poster("#C8483A", "#7A2A2E"), 28, 3)
+    set.put("Frames", poster("#3A8A4A", "#245A30"), 80, 8)
+    -- a dot-matrix printer on its stand, fanfold paper climbing out of the back
+    local pr = L.piece(18, 36, function(R)
+      R(2, 0, 14, 12, "#F4F2EA"); for y = 1, 10, 3 do R(2, y, 14, 1, "#DCE6F0") end; R(2, 0, 1, 12, "#C8D0D8"); R(15, 0, 1, 12, "#C8D0D8")
+      R(0, 12, 18, 9, "#D8CFB0"); R(0, 12, 18, 1, "#EDE6CC"); R(0, 20, 18, 1, "#B8AF90"); R(3, 15, 8, 2, "#2A2A33"); R(13, 15, 3, 2, "#5FBF6A")
+      R(2, 21, 14, 3, "#F4F2EA")
+      R(1, 24, 2, 12, "#5A606E"); R(15, 24, 2, 12, "#5A606E"); R(1, 28, 16, 1, "#5A606E")
+    end)
+    set.put("Frames", pr, 99, 54)
+    -- grey-blue commercial carpet
+    local floor = set.layer("Floor")
+    local y0 = 90 + L.YOFF
+    L.fill(floor, 0, y0, floor.width, floor.height - y0, "#5A6078")
+    for y = y0, floor.height - 1 do for x = 0, floor.width - 1 do
+      local h = hash(x, y, 57)
+      if h % 5 == 0 then L.fill(floor, x, y, 1, 1, "#646A84") elseif h % 7 == 0 then L.fill(floor, x, y, 1, 1, "#50566E") end
+      if (y - y0) % 16 == 0 or x % 32 == 0 then L.fill(floor, x, y, 1, 1, "#474C62") end
+    end end
+    L.fill(floor, 0, y0, floor.width, 2, "#3A3F52")
+  end
+
+  local function escapeTheme(theme, bg, painting, board, shelf, ceilMul, ceilTint)
+    return {W = 320, H = 128, post = function(set) darkCeiling(set, ceilMul, ceilTint) end, fn = function(s)
+      bg(s)
+      s.put("Frames", painting(), 112, 10)
+      s.put("Frames", board(), 192, 14)
+      s.put("Timer", P.ledTimer(), 140, 4)
+      s.put("Frames", P.bigClock(), 54, 20)
+      s.putS("Bookshelf", shelf(), 14, 26, 108, "esc_" .. theme .. "_shelf")
+      s.putS("Clock", P.grandfatherClock(), 80, 56, 108, "grandfather_clock")
+      s.putS("Desk", P.desk(74), 118, 83, 108, "desk_cubicle_74")
+      s.putS("DeskProps", P.deskLamp(), 124, 68, 108.2, "desk_lamp")
+      s.putS("Globe", P.globe(), 186, 78, 108, "globe")
+      s.putS("Safe", P.safeBox(), 214, 82, 108, "safe_box")
+      s.putS("Trunk", P.trunk(), 40, 90, 112, "trunk")
+      s.putS("Vault", P.vaultDoor(), 262, 20, 108, "vault_door")
+      s.put("Keypad", P.keypad(), 244, 40)
+      s.put("Lights", P.redLight(), 226, 4)
+      if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 150, 56) end
+    end}
+  end
+  builders.escape_room_server = escapeTheme("server", serverBackground, P.escServerPainting, P.escServerBoard, P.escServerShelf, 0.3, {0.8, 0.95, 1.2})
+  builders.escape_room_detective = escapeTheme("detective", detectiveBackground, P.escDetPainting, P.escDetBoard, P.escDetShelf, 0.3, {1.0, 1.0, 0.8})
+  builders.escape_room_lab = escapeTheme("lab", labBackground, P.escLabPainting, P.escLabBoard, P.escLabShelf, 0.62, {1.0, 1.0, 0.95})
+
   -- ================================================================ RESTAURANT (a 2014 neighbourhood grill)
   function P.boothBack()
     return L.piece(46, 38, function(R)

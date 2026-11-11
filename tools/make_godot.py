@@ -38229,13 +38229,31 @@ func _theme_look() -> void:
     var tint := Color(escape_text("tint"))
     if scene == null or tint == Color.WHITE:
         return
+    var painted := _theme_art(scene)
     var dark: Variant = scene.get("_dark_a")
     if dark != null and float(dark) > 0.01:
         return
     for layer in ["Background", "Fx"]:
         var node := scene.get_node_or_null(layer)
-        if node != null:
+        if node != null and not (painted and layer == "Background"):  # a painted room is not tinted again
             node.modulate = tint
+
+
+# R41: a themed room has its own painted background (escape_room_<theme>.png, the same layout as the study) and its own shelf sprite
+# in place of the bookshelf; true when the art is in use. The tint stays as the fallback when the texture is missing.
+func _theme_art(scene: Node) -> bool:
+    var id := theme_id()
+    var path := "res://assets/sets/escape_room_%s.png" % id
+    var bg := scene.get_node_or_null("Background") as Sprite2D
+    if bg == null or not ResourceLoader.exists(path):
+        return false
+    if bg.texture == null or bg.texture.resource_path != path:
+        bg.texture = load(path)
+        var shelf := "res://assets/props/esc_%s_shelf.png" % id
+        var node := scene.get_node_or_null("Actors/bookshelf_0") as Sprite2D
+        if node != null and ResourceLoader.exists(shelf):
+            node.texture = load(shelf)
+    return true
 
 
 # ---- dinner variety (R6) and the dinner ramp (R30) ---------------------------------------------------------------------------
@@ -43086,6 +43104,8 @@ const SALOON_WINDOWS := [21.0, 45.0, 109.0, 133.0]  # set x of the four saloon w
 const JAIL_WINDOW := Rect2(661.0, 47.0, 22.0, 20.0)
 const SET_W := 700.0
 const FLASH := 0.11  # seconds a muzzle flash lasts
+const NIGHT_BG := "res://assets/sets/paintball_field_night.png"  # R41: the painted night street (same geometry as the day set); missing = the code-drawn wash
+const NIGHT_PROP := "res://assets/props/pbn_%s.png"  # the night version of each pb_* piece
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -43103,6 +43123,7 @@ var _seen_down: Array = []
 var _debug := OS.get_environment("PAINT_DEBUG") == "1"
 var _flashes: Array = []  # night: {at, dir, t} muzzle flashes
 var _stars: Array = []  # night: [Vector2] in set pixels
+var _night_art := false  # night: the painted night set is in use (no code-drawn wash, moon, stars or windows)
 
 
 func field_x(gx: float) -> float:
@@ -43139,11 +43160,27 @@ func setup(scene: Node, the_game: RefCounted, set_x0: float, specs: Array) -> vo
     if night():
         _actors.modulate = NIGHT_ACTORS
         _make_stars()
+        _night_art = _swap_night_art(scene)
     _sync()
 
 
 func night() -> bool:
     return game != null and bool(game.night)
+
+
+# the night match: the background and the barricade pieces become their painted night versions. False (and nothing changes) when the
+# texture is missing: the code-drawn wash is the fallback.
+func _swap_night_art(scene: Node) -> bool:
+    var bg := scene.get_node_or_null("Background") as Sprite2D
+    if bg == null or not ResourceLoader.exists(NIGHT_BG):
+        return false
+    bg.texture = load(NIGHT_BG)
+    for n in _actors.get_children():
+        if n is Sprite2D and String(n.name).begins_with("pb_"):
+            var path: String = NIGHT_PROP % String(n.name).trim_prefix("pb_").rsplit("_", true, 1)[0]
+            if ResourceLoader.exists(path):
+                (n as Sprite2D).texture = load(path)
+    return true
 
 
 # the same sky every night: a fixed scatter of stars above the roofs (none over the saloon front, the jail sign or the water tower)
@@ -43297,7 +43334,7 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
     if game == null:
         return
-    if night():
+    if night() and not _night_art:
         _draw_night()
     for l in LANE_OFF.size():  # the lanes, as dashes on the street
         var gx := 6.0
