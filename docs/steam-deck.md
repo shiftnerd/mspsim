@@ -269,7 +269,7 @@ Valve reviews a native Linux build first and falls back to the Windows build und
 
 ## Export status (2026-11-11)
 
-The Godot 4.7.2 export templates are installed (`%APPDATA%\Godot\export_templates.7.2.stable`, from the official
+The Godot 4.7.2 export templates are installed (`%APPDATA%\Godot\export_templates\4.7.2.stable`, from the official
 `Godot_v4.7.2-stable_export_templates.tpz`). From the repo root:
 
     Godot.exe --headless --path godot --export-release "Linux (Steam Deck)" <dir>/mspsim.x86_64
