@@ -38229,13 +38229,31 @@ func _theme_look() -> void:
     var tint := Color(escape_text("tint"))
     if scene == null or tint == Color.WHITE:
         return
+    var painted := _theme_art(scene)
     var dark: Variant = scene.get("_dark_a")
     if dark != null and float(dark) > 0.01:
         return
     for layer in ["Background", "Fx"]:
         var node := scene.get_node_or_null(layer)
-        if node != null:
+        if node != null and not (painted and layer == "Background"):  # a painted room is not tinted again
             node.modulate = tint
+
+
+# R41: a themed room has its own painted background (escape_room_<theme>.png, the same layout as the study) and its own shelf sprite
+# in place of the bookshelf; true when the art is in use. The tint stays as the fallback when the texture is missing.
+func _theme_art(scene: Node) -> bool:
+    var id := theme_id()
+    var path := "res://assets/sets/escape_room_%s.png" % id
+    var bg := scene.get_node_or_null("Background") as Sprite2D
+    if bg == null or not ResourceLoader.exists(path):
+        return false
+    if bg.texture == null or bg.texture.resource_path != path:
+        bg.texture = load(path)
+        var shelf := "res://assets/props/esc_%s_shelf.png" % id
+        var node := scene.get_node_or_null("Actors/bookshelf_0") as Sprite2D
+        if node != null and ResourceLoader.exists(shelf):
+            node.texture = load(shelf)
+    return true
 
 
 # ---- dinner variety (R6) and the dinner ramp (R30) ---------------------------------------------------------------------------

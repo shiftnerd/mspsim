@@ -264,7 +264,19 @@ func _init() -> void:
 	for i in 5:
 		await process_frame
 	var tint := Color(str(o.ESCAPE_THEMES.detective.tint))
-	_check(o.room_mode() and current_scene.get_node("Background").modulate.is_equal_approx(tint), "the detective's office tints the room")
+	var art := "res://assets/sets/escape_room_detective.png"
+	var bg: Sprite2D = current_scene.get_node("Background")
+	if ResourceLoader.exists(art):  # R41: a painted room (the tint is only the fallback when the texture is missing)
+		_check(o.room_mode() and bg.texture.resource_path == art and bg.modulate == Color.WHITE, "the detective's office has its painted background")
+		_check(current_scene.get_node("Fx").modulate.is_equal_approx(tint), "and its effects keep the theme's tint")
+		var shelf := current_scene.get_node("Actors/bookshelf_0") as Sprite2D
+		_check(shelf.texture.resource_path.ends_with("esc_detective_shelf.png"), "the shelf is the filing cabinets")
+		var study: Texture2D = load("res://assets/sets/escape_room.png")
+		for id in ["server", "detective", "lab"]:
+			var t: Texture2D = load("res://assets/sets/escape_room_%s.png" % id)
+			_check(t != null and t.get_size() == study.get_size(), "%s: a painted set the size of the study's" % id)
+	else:
+		_check(o.room_mode() and bg.modulate.is_equal_approx(tint), "the detective's office tints the room")
 	_check(current_scene.get_node("Actors").modulate == Color.WHITE, "the people keep their colours")
 	_check(o.escape_ink() == str(o.ESCAPE_THEMES.detective.ink), "the board is written in the theme's ink")
 	o.press(KEY_ENTER)
