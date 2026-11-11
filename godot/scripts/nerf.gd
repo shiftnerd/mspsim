@@ -141,7 +141,7 @@ func holding() -> bool:
 
 func on_given(slot := 0) -> void:
 	_ammo[slot] = MAX_AMMO
-	Hints.toast("Z FIRES, HOLD Z TO LOB, S TO DUCK, V PICKS A WAR GAME.", 4.0)
+	Hints.toast("Z FIRES, HOLD Z TO LOB, {S:duck} TO DUCK, {V} PICKS A WAR GAME.", 4.0)
 
 
 # ---- firing ------------------------------------------------------------------------------------------

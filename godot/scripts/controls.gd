@@ -13,6 +13,8 @@ extends Node
 # Gamepad: left stick or D-pad moves, A jumps, X uses, B runs, stick down ducks, RT aims, Start pauses. Most screens
 # still read the keyboard; the player's movement actions and the pause menu already work with a pad.
 
+signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
+
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
@@ -74,9 +76,12 @@ const HINT_ROLES := {"ENTER": "menu_confirm", "ESC": "menu_back", "UP": "menu_up
 const HINT_PAD := {"ENTER": "(A)", "SPACE": "(A)", "ESC": "(B)", "ARROWS": "STICK", "TAB": "(RB)", "Z": "(A)", "X": "(B)", "SHIFT": "(B)", "E": "(A)"}
 # the words of a walking-around prompt (the HUD hint, the room hints) -> the action
 const HINT_WORLD := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "SPACE": "jump", "SHIFT": "run", "TAB": "pick_next", "Z": "aim"}
+# R42 key tokens inside a sentence (keys()): the action a bare {LETTER} stands for when the screen gives no map of its own
+const TOKEN_ACTIONS := {"E": "interact", "P": "phone", "Q": "wave", "F": "drink", "N": "nudge", "C": "follow", "M": "mute", "V": "offer_war", "G": "give_item"}
 
 # menu directions by key: the arrows always, the letters when a screen asks for them
 const NAV_ARROWS := {KEY_UP: "up", KEY_DOWN: "down", KEY_LEFT: "left", KEY_RIGHT: "right"}
+const MOUSE_FLIP := 24.0  # px of mouse travel that hand the prompts back to the keyboard and mouse
 const NAV_LETTERS := {KEY_W: "up", KEY_S: "down", KEY_A: "left", KEY_D: "right"}
 
 # the help page of the pause menu: pages of [what, keys]
@@ -89,13 +94,34 @@ const REMAPPABLE_PAD := ["jump", "run", "interact", "wave", "drink", "phone", "p
 # the key list's rows that follow a remap (row label -> action)
 const HELP_ACTIONS := {"JUMP": "jump", "RUN": "run", "DUCK": "duck", "USE, SIT, DOORS": "interact", "CELL PHONE": "phone", "WAVE": "wave", "SIP YOUR DRINK": "drink", "DANCE": "dance", "FOLLOW ME": "follow", "CAREER SCREEN": "career", "MUTE SOUND": "mute"}
 
+# R42: the rows of the key list that read differently on a pad (key tokens: a remapped button shows where it is now)
+const HELP_PAD := {
+	"MOVE": "STICK",
+	"RUN": "HOLD {S:run}",
+	"PICK A TARGET": "{T:pick_next}, {T:pick_prev}",
+	"PAUSE, HELP": "{P:pause}",
+	"ROLL YOUR CHAIR": "{L:roll} + STICK (SEATED)",
+	"STAND UP": "STICK OR {E:interact}",
+	"DANCE": "{X:dance} (FREE PLAY ENDS IT)",
+	"FOLLOW ME": "{C:follow}, BY A COWORKER",
+	"TALK": "{E:interact}, NEXT TO A COWORKER",
+	"FIRE A DART": "TAP {Z:aim}",
+	"LONG SHOT": "HOLD {Z:aim}, RELEASE",
+	"CHAIR RACE PUSH": "(A) (B) IN TURN",
+	"CHAIR RACE STEER": "STICK",
+	"BOWLING AND ESCAPE": "{E:interact}",
+	"KARAOKE LANES": "STICK",
+	"SHAPE, OUTFIT": "PAUSE MENU, {Y:outfit}",
+	"CAREER SCREEN": "PAUSE MENU",
+}
+
 # the keys the menus and mini-games read as fixed keys: a player can put an extra key on each (the plain key keeps working too).
 # [role, the key the screens look for, the label]
 const MENU_ROLES := [
 	["menu_confirm", KEY_ENTER, "MENU CONFIRM"], ["menu_back", KEY_ESCAPE, "MENU BACK"],
 	["menu_up", KEY_UP, "MENU UP"], ["menu_down", KEY_DOWN, "MENU DOWN"],
 	["menu_left", KEY_LEFT, "MENU LEFT"], ["menu_right", KEY_RIGHT, "MENU RIGHT"],
-	["game_a", KEY_Z, "GAME A (Z)"], ["game_b", KEY_X, "GAME B (X)"], ["game_cool", KEY_SHIFT, "GAME COOL SIDE"],
+	["game_a", KEY_Z, "GAME A{ (Z)|}"], ["game_b", KEY_X, "GAME B{ (X)|}"], ["game_cool", KEY_SHIFT, "GAME COOL SIDE"],
 ]
 # keys an alias may never take (the plain menu keys, pause, the debug keys)
 const MENU_RESERVED := [KEY_SPACE, KEY_E, KEY_TAB, KEY_BACKSPACE, KEY_KP_ENTER, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12]
@@ -158,11 +184,17 @@ var _slot_device := {}  # slot -> the pad device its p2_ actions are registered 
 var _stick_event: InputEvent = null
 var _stick_frame := -1
 var _stick_result := false
+var _noted: InputEvent = null  # the last event _note_device looked at
+var _mouse_ms := 0
+var _mouse_run := 0.0  # how far the mouse has moved since the last pad press (a nudge of the desk does not flip the hints)
 
 
 func _ready() -> void:
 	ensure()
 	load_binds()
+	# R42: which device is in use is read from the window, before any screen can take the event and while the tree is
+	# paused (this node's _input comes after every screen's, and not at all behind the pause menu)
+	get_tree().root.window_input.connect(_note_device)
 	touch_refresh.call_deferred()
 
 
@@ -329,6 +361,8 @@ func key_name(code: int) -> String:
 # what the key list prints for a row: the default text, or the key the action was remapped to
 func help_value(label: String, text: String) -> String:
 	if pad_active:  # R42: the key list shows the pad's button for a row that has one
+		if HELP_PAD.has(label):
+			return keys(str(HELP_PAD[label]))
 		if label == "START A WAR, GIVE":
 			return "%s, %s" % [self.label("offer_war"), self.label("give_item")]
 		var pad_action := str(HELP_ACTIONS.get(label, ""))
@@ -728,6 +762,11 @@ func typed(event: InputEvent) -> String:
 
 # ---- what the hint lines print (R34: a hint shows the key or pad button that works NOW, not the default letter) ----
 func _note_device(event: InputEvent) -> void:
+	if event == _noted:
+		return  # the window and _input both report an event
+	_noted = event
+	if touch != null and event is InputEventMouse:
+		return  # a touch screen sends its taps as mouse events too: the overlay's pad buttons decide there
 	var pad := pad_active
 	if event is InputEventJoypadButton:
 		pad = pad or event.pressed
@@ -735,7 +774,29 @@ func _note_device(event: InputEvent) -> void:
 		pad = pad or absf(event.axis_value) >= 0.5
 	elif (event is InputEventKey or event is InputEventMouseButton) and event.pressed:
 		pad = false
+	elif event is InputEventMouseMotion and pad:
+		var now := Time.get_ticks_msec()
+		if now - _mouse_ms > 400:
+			_mouse_run = 0.0  # one movement, not the bumps of ten minutes added up
+		_mouse_ms = now
+		_mouse_run += event.relative.length()
+		pad = _mouse_run < MOUSE_FLIP
+	if pad and not event is InputEventMouseMotion:
+		_mouse_run = 0.0
+	if pad != pad_active:
+		set_pad_active(pad)
+
+
+# R42: switch the prompts between the keyboard's names and the pad's glyphs, live: every canvas on screen is redrawn, so a
+# screen that only repaints on its own input shows the other set at once
+func set_pad_active(pad: bool) -> void:
+	_mouse_run = 0.0
+	if pad == pad_active:
+		return
 	pad_active = pad
+	device_changed.emit(pad)
+	if is_inside_tree():
+		get_tree().root.propagate_call("queue_redraw")
 
 
 # the touch overlay is wanted: a touch screen (or the test override)
@@ -747,22 +808,12 @@ func touch_on() -> bool:
 
 # the current binding of an action or a menu role, as a hint prints it: the key's name, or "(A)" style for a pad button
 func label(action: String) -> String:
+	if action == "move":  # walking, and a menu's directions
+		return "STICK" if pad_active else "ARROWS"
 	if pad_active:
-		for role in HINT_ROLES:
-			if HINT_ROLES[role] == action and HINT_PAD.has(role):
-				return str(HINT_PAD[role])
-		if ACTIONS.has(action):
-			var button := button_of(action)
-			if button >= 0:
-				return "(%s)" % button_name(button)
-			for ax in ACTIONS[action][2]:
-				if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
-					return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
-				if ax[0] == JOY_AXIS_RIGHT_X:
-					return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
-				if ax[0] == JOY_AXIS_RIGHT_Y:
-					return "RS DOWN" if ax[1] > 0.0 else "RS UP"
-				return "STICK"
+		var on_pad := pad_label(action)
+		if on_pad != "":
+			return on_pad
 	for r in MENU_ROLES:
 		if r[0] == action:
 			var extra := menu_key_of(action)
@@ -771,21 +822,104 @@ func label(action: String) -> String:
 	return key_name(code) if code > 0 else ""
 
 
+# what a pad has for an action or a menu role ("(A)", "(LT)", "RS UP", "STICK"); "" when the pad has nothing for it
+func pad_label(action: String) -> String:
+	for role in HINT_ROLES:
+		if HINT_ROLES[role] == action and HINT_PAD.has(role):
+			return str(HINT_PAD[role])
+	if ACTIONS.has(action):
+		var button := button_of(action)
+		if button >= 0:
+			return "(%s)" % button_name(button)
+		for ax in ACTIONS[action][2]:
+			if ax[0] == JOY_AXIS_TRIGGER_RIGHT or ax[0] == JOY_AXIS_TRIGGER_LEFT:
+				return "(RT)" if ax[0] == JOY_AXIS_TRIGGER_RIGHT else "(LT)"
+			if ax[0] == JOY_AXIS_RIGHT_X:
+				return "RS RIGHT" if ax[1] > 0.0 else "RS LEFT"
+			if ax[0] == JOY_AXIS_RIGHT_Y:
+				return "RS DOWN" if ax[1] > 0.0 else "RS UP"
+			return "STICK"
+	return ""
+
+
 # a hint line with its key words swapped for what works now: a remapped menu key shows its new key, a pad shows its buttons.
 # `map` adds this screen's own letters ({"P": "pray"}: word -> action). With the default keys on a keyboard the text is unchanged.
 func hint(text: String, map: Dictionary = {}, roles: bool = true) -> String:
 	if not pad_active and _overrides.is_empty() and _alias.is_empty():
-		return text
+		return text if text.find("{") < 0 else keys(text, map)
 	var out := ""
 	var token := ""
-	for i in text.length() + 1:
+	var i := 0
+	while i <= text.length():
 		var ch := text[i] if i < text.length() else ""
+		if ch == "{":  # a key token: resolved here, and its answer is not read again as words
+			var end := text.find("}", i)
+			var got: Variant = _token(text.substr(i + 1, end - i - 1), map) if end > i else null
+			if got != null:
+				out += _hint_word(token, map, roles) + str(got)
+				token = ""
+				i = end + 1
+				continue
+		i += 1
 		if ch != "" and ((ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")):
 			token += ch
 			continue
 		out += _hint_word(token, map, roles) + ch
 		token = ""
 	return out.replace("((", "(").replace("))", ")")
+
+
+# R42: the key tokens of a sentence (story text, tips, captions, card labels), resolved when the text is drawn, so the same
+# string names the key on a keyboard and the button on a pad, and follows a remap. Every other word is left alone.
+#   {E}              a key by its letter or name: TOKEN_ACTIONS (E P Q F N C M V G are the walking actions), a screen's `map`,
+#                    or a menu word of hint() (ENTER ESC SPACE TAB ARROWS Z X SHIFT)
+#   {ESC:pause}      "ESC" on a keyboard, the binding of the action (or menu role, or "move") on a pad or after a remap
+#   {A OR D|STICK}   the text before the bar on a keyboard, the text after it on a pad
+# A {name} that is none of these (the story's own {me}, {c}, {closed}) stays as it is.
+func keys(text: String, map: Dictionary = {}) -> String:
+	if text.find("{") < 0:
+		return text
+	var out := ""
+	var i := 0
+	var swapped := false
+	while i < text.length():
+		var ch := text[i]
+		if ch == "{":
+			var end := text.find("}", i)
+			var got: Variant = _token(text.substr(i + 1, end - i - 1), map) if end > i else null
+			if got != null:
+				out += str(got)
+				swapped = true
+				i = end + 1
+				continue
+		out += ch
+		i += 1
+	return out.replace("((", "(").replace("))", ")") if swapped else out
+
+
+# what a key token prints now; null when the braces hold something else
+func _token(body: String, map: Dictionary) -> Variant:
+	var bar := body.find("|")
+	if bar >= 0:
+		return body.substr(bar + 1) if pad_active else body.substr(0, bar)
+	var word := body
+	var action := ""
+	var colon := body.find(":")
+	if colon >= 0:
+		word = body.substr(0, colon)
+		action = body.substr(colon + 1).to_lower()  # (a card label is upper-cased as a whole)
+		if not (ACTIONS.has(action) or action == "move" or HINT_ROLES.values().has(action)):
+			return null
+	if word == "" or word != word.to_upper() or word == word.to_lower():
+		return null  # {me}, {c}, {0}: not a key
+	if action == "":
+		action = str(map.get(word, TOKEN_ACTIONS.get(word, "")))
+	if action == "":
+		return _hint_word(word, {}, true)
+	if pad_active or _overrides.has(action) or (not ACTIONS.has(action) and menu_key_of(action) > 0):
+		var shown := label(action)
+		return shown if shown != "" else word
+	return word
 
 
 # the same for a walking-around prompt ("E: SIT", "P: PHONE"): the walking actions follow their remap

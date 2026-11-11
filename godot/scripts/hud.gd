@@ -89,15 +89,15 @@ func _draw() -> void:
 			lines.append("* " + Mutators.tag())
 		if Nerf.holding():
 			if Nerf.charging:
-				lines.append("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0))
+				lines.append(Controls.world_hint("AIMING %d%%  RELEASE Z TO FIRE" % int(Nerf.charge * 100.0)))
 			else:
 				var war := ("WAR %d%s" % [int(Nerf.war_t), Nerf.hud_extra()]) if Nerf.war_t > 0.0 else ""
 				if get_viewport_rect().size.x < 260.0:  # narrow formats: the war status gets its own line
-					lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY" % Nerf.ammo)
+					lines.append(Controls.world_hint("DARTS %d  Z FIRE{ (HOLD = FAR)|}  {G} AWAY" % Nerf.ammo))
 					if war != "":
 						lines.append(war)
 				else:
-					lines.append("DARTS %d  Z FIRE (HOLD = FAR)  G AWAY%s" % [Nerf.ammo, ("  " + war) if war != "" else ""])
+					lines.append(Controls.world_hint("DARTS %d  Z FIRE (HOLD = FAR)  {G} AWAY" % Nerf.ammo) + (("  " + war) if war != "" else ""))
 		var p2 := Players.node(1) if Players.coop else null
 		if p2 != null and str(p2.held) == "nerf":
 			lines.append("P2 AIMING %d%%" % int(Nerf._charges[1] * 100.0) if Nerf.is_charging(1) else "P2 DARTS %d" % Nerf._ammo[1])
@@ -137,7 +137,7 @@ func _draw_banner() -> void:
 	draw_rect(Rect2(x + 3.0, y + 3.0, 5.0, 5.0), kind_color)
 	var chars := int((w - 14.0) / 4.0)
 	var head := "%s  %s" % [b.kind, str(b.who)]
-	var body := str(b.body)
+	var body := Controls.keys(str(b.body))  # R42: a text message may name a key ("Press {P} for your phone")
 	if head.length() > chars:
 		head = head.substr(0, chars - 1) + "."
 	if body.length() > chars:

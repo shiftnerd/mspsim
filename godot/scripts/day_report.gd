@@ -411,7 +411,7 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 	y += 2.0
 	var label := _button_label()
 	var bw := _tw(label) + 12.0
-	var hint := Controls.hint("ENTER OR CLICK")
+	var hint := Controls.hint("ENTER{ OR CLICK|}")
 	if _tw(hint) + bw + 12.0 > pw:
 		hint = Controls.hint("ENTER")
 	if draw:
@@ -465,6 +465,7 @@ func _paint() -> void:
 
 
 func _wrap(s: String, chars: int) -> Array:
+	s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var lines := []
 	var line := ""
 	for word in s.split(" "):

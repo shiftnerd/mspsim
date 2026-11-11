@@ -12,7 +12,7 @@ or the owner (owner campaign, 20 weeks).
 ### Day 1
 
 **9:05 MAIL**, from Morgan Reyes - Manager. Subject: *Your first day* `[Story.DAYS.1.0.subject]`
-> Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan `[Story.DAYS.1.0.body]`
+> Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets make me sad. Clients also call and text, so check your phone ({P}) now and then. - Morgan `[Story.DAYS.1.0.body]`
 
 **9:11 MENTOR**. A scripted event (mentor).
 
@@ -1571,13 +1571,13 @@ or the owner (owner campaign, 20 weeks).
 
 ### Day-1 control hints
 
-- ARROWS OR A/D MOVE. HOLD SHIFT TO RUN. SPACE JUMPS. `[Hints.DAY1.0.text]`
+- {ARROWS OR A/D MOVE|THE STICK MOVES YOU}. HOLD SHIFT TO RUN. SPACE JUMPS. `[Hints.DAY1.0.text]`
 - E USES WHAT IS NEAR: DOORS, THE COFFEE MACHINE, CHAIRS. TAB PICKS THE TARGET. `[Hints.DAY1.1.text]`
-- SIT AT A DESK AND PRESS E ON THE MONITOR TO OPEN THE COMPUTER. ESC CLOSES IT. `[Hints.DAY1.2.text]`
-- P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, C ASKS A COWORKER TO FOLLOW. `[Hints.DAY1.3.text]`
+- SIT AT A DESK AND PRESS {E} ON THE MONITOR TO OPEN THE COMPUTER. {ESC} CLOSES IT. `[Hints.DAY1.2.text]`
+- P OPENS YOUR PHONE: MAIL, TICKETS AND TEXTS. Q WAVES, {C} ASKS A COWORKER TO FOLLOW. `[Hints.DAY1.3.text]`
 - TICKETS APPEAR IN THE PSA. FIX THEM IN THE RMM, THEN CLOSE THEM IN THE PSA. `[Hints.DAY1.4.text]`
-- SEATED? HOLD SHIFT AND PRESS A OR D TO ROLL YOUR CHAIR. E OR ANY MOVE KEY STANDS YOU UP. `[Hints.DAY1.5.text]`
-- M MUTES OR RESTORES THE SOUND. `[Hints.DAY1.6.text]`
+- SEATED? HOLD SHIFT AND {PRESS A OR D|PUSH THE STICK} TO ROLL YOUR CHAIR. E OR {ANY MOVE KEY|THE STICK ALONE} STANDS YOU UP. `[Hints.DAY1.5.text]`
+- {M} MUTES OR RESTORES THE SOUND. `[Hints.DAY1.6.text]`
 
 ## 6. Endings and reviews
 

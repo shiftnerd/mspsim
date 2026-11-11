@@ -1309,6 +1309,7 @@ func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
 
 
 func _wrap(s: String, chars: int, max_lines := 4) -> Array:
+	s = Controls.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var lines: Array = []
 	var line := ""
 	for word in s.split(" "):

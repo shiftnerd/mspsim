@@ -376,7 +376,7 @@ func _flares() -> void:
 		return
 	var at: int = cands[rng.randi() % cands.size()]
 	slots[at].flare = FLARE_LEN
-	msg = "FLARE-UP ON %d! SHIFT MOVES IT." % (at + 1)
+	msg = "FLARE-UP ON %d! {SHIFT} MOVES IT." % (at + 1)
 	msg_t = 2.0
 	events.append({"e": "flare", "slot": at})
 

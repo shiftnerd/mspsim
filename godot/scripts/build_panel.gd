@@ -243,6 +243,7 @@ func message() -> Array:
 
 
 func _wrap(s: String, chars: int, max_lines: int) -> Array:
+	s = PixelFont.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var lines: Array = []
 	var line := ""
 	for word in s.split(" "):

@@ -213,9 +213,9 @@ func _run() -> void:
 	# ---- hints and labels ------------------------------------------------------------------------------------------------
 	ctl.pad_active = true
 	_check(ctl.label("dance") == "RS UP" and ctl.label("follow") == "RS DOWN" and ctl.label("give_item") == "RS LEFT" and ctl.label("mute") == "RS RIGHT", "labels: RS UP / DOWN / LEFT / RIGHT (%s)" % ctl.label("dance"))
-	_check(ctl.help_value("DANCE", "X (FREE PLAY ENDS IT)") == "RS UP" and ctl.help_value("MUTE SOUND", "M") == "RS RIGHT", "the key list shows them on a pad")
+	_check(ctl.help_value("DANCE", "X (FREE PLAY ENDS IT)") == "RS UP (FREE PLAY ENDS IT)" and ctl.help_value("MUTE SOUND", "M") == "RS RIGHT", "the key list shows them on a pad")
 	_check(ctl.help_value("START A WAR, GIVE", "V, G") == "(Y), RS LEFT" and ctl.help_value("WAVE", "Q") == "(Y)", "and the war / give / wave rows (%s)" % ctl.help_value("START A WAR, GIVE", "V, G"))
-	_check(ctl.help_value("CAREER SCREEN", "J (FREE PLAY)") == "J (FREE PLAY)", "a row with no pad button keeps its text")
+	_check(ctl.help_value("CAREER SCREEN", "J (FREE PLAY)") == "PAUSE MENU", "a row with no pad button says where a pad finds it (R42 glyphs: no key names on a pad)")
 	ctl.pad_active = false
 	_check(ctl.help_value("DANCE", "X (FREE PLAY ENDS IT)") == "X (FREE PLAY ENDS IT)" and ctl.label("dance") == ctl.key_name(KEY_X), "a keyboard sees the keys as before")
 	var push := InputEventJoypadMotion.new()

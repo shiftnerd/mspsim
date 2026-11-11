@@ -27,6 +27,10 @@ Microsoft ends support for Windows XP and Office 2003 on April 8. After that the
 - A line that starts with `#` is a comment. Lines under a key are joined into one paragraph, so you can wrap long text however you like.
 - Keep `%s` and `%d` markers: the game fills them in (a client's first name, a number). A change that adds or removes one is ignored and reported.
 - If a string is missing from the file the game uses its built-in text, so you can keep a short file with only your edits.
+- A key in braces is a **key token**: `PRESS {E} TO THROW` shows `E` on a keyboard and `(X)` with a gamepad, and follows a
+  remapped key. Keep the braces. The forms are `{E}` (a key by its letter or name: `{ENTER}`, `{ESC}`, `{SPACE}`, `{SHIFT}`),
+  `{ESC:pause}` (the word for the keyboard, then the game's name of the control for the gamepad) and
+  `{PRESS A OR D|PUSH THE STICK}` (the keyboard's words, then the gamepad's). Other braces (`{me}`, `{c}`) are names the game fills in.
 
 ## Rules of the world
 

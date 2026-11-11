@@ -34,7 +34,7 @@ const GAMES := {
 		"label": "BOWLING",
 		"cost": 120,
 		"blurb":
-		"FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS SPACE TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
+		"FIVE FRAMES AGAINST ALAN, GARRISON AND DAN. PRESS {SPACE} TO STOP THE AIM, THEN AGAIN TO SET THE POWER.",
 		"keys": "SPACE = STOP AIM / POWER  ESC = LEAVE"
 	},
 	"karaoke":
@@ -43,7 +43,7 @@ const GAMES := {
 		"cost": 180,
 		"blurb":
 		"HIT THE ARROWS AS THEY REACH THE LINE. NERVOUS? THE ROOM IS RIGHT THERE WITH YOU.",
-		"keys": "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+		"keys": "{ARROW KEYS:move} = HIT NOTES  ESC = LEAVE"
 	},
 	"escape":
 	{
@@ -66,7 +66,7 @@ const GAMES := {
 		"label": "CHAIR RACE",
 		"cost": 120,
 		"blurb":
-		"RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH Z AND X IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
+		"RACE THE CREW DOWN THE WAREHOUSE ON ROLLING OFFICE CHAIRS. UP AND DOWN CHANGE LANE, PUSH OFF WITH {Z} AND {X} IN TURN. A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. CONES, SIGNS AND BOXES COST TIME.",
 		"keys": "ARROWS = LANE  Z X = PUSH  ESC = LEAVE"
 	},
 	"cornhole":
@@ -83,7 +83,7 @@ const GAMES := {
 		"cost": 150,
 		"blurb":
 		"RUN THE BBQ GRILL IN THE WAREHOUSE DOCK. FLIP BURGERS AND HOT DOGS, SERVE EACH ORDER THE WAY IT WAS ASKED FOR AND DODGE THE FLARE-UPS.",
-		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL"
+		"keys": "E = FLIP  SPACE = SERVE  SHIFT = COOL  ESC = LEAVE"
 	},
 	"paintball":
 	{
@@ -91,7 +91,7 @@ const GAMES := {
 		"cost": 200,
 		"blurb":
 		"CAPTURE THE FLAG ON A WESTERN MAIN STREET: THREE A SIDE. RUN, SWITCH LANES, DUCK BEHIND THE BARRICADES AND TAG THE OTHER TEAM, THEN CARRY THEIR FLAG HOME. FIRST TO THREE WINS.",
-		"keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK"
+		"keys": "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE"
 	},
 	"darts":
 	{
@@ -99,7 +99,7 @@ const GAMES := {
 		"cost": 0,
 		"casual": true,
 		"blurb":
-		"A QUICK ROUND AT THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD: PRESS E TO THROW AT IT. THREE DARTS A TURN, THREE ROUNDS, HIGHEST TOTAL WINS.",
+		"A QUICK ROUND AT THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD: PRESS {E} TO THROW AT IT. THREE DARTS A TURN, THREE ROUNDS, HIGHEST TOTAL WINS.",
 		"keys": "E = THROW  ESC = LEAVE"
 	},
 }
@@ -217,25 +217,32 @@ const GRILL_LIFT := 182.0
 const GRILL_PAN := -30.0
 const ROOM_INTRO := {
 	"bowling":
-	"TAKE YOUR TURN ON THE LANE. PRESS E TO STEP UP, E TO STOP THE AIM, E AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
+	"TAKE YOUR TURN ON THE LANE. PRESS {E} TO STEP UP, {E} TO STOP THE AIM, {E} AGAIN FOR POWER. ALAN, GARRISON AND DAN BOWL ON THE NEXT LANE. FIVE FRAMES.",
 	"karaoke":
-	"YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE ARROW KEYS AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
+	"YOU ARE ON THE MIC. PICK A SONG, THEN HIT THE {ARROW KEYS|SAME DIRECTION} AS THE NOTES REACH THE LINE (BOTTOM LEFT). PERFECT HITS WARM UP THE CROWD, MISSES COOL IT DOWN.",
 	"escape":
-	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
+	"THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK ({E}), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. {N} ASKS A FRIEND. THE CLOCK IS RUNNING.",
 	"dinner":
-	"WALK TO THE BOOTH AND SIT DOWN (E). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
+	"WALK TO THE BOOTH AND SIT DOWN ({E}). THEN CHOOSE FIVE TOPICS FOR THE TABLE. EVERYONE HAS A MOOD TODAY, SO WATCH THEIR FACES.",
 	"chair":
-	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH Z AND X IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
+	"A RACE DOWN THE WAREHOUSE, START LINE TO FINISH LINE. UP AND DOWN CHANGE LANE TO DODGE THE CONES, SIGNS, BOXES AND OIL. PUSH OFF WITH {Z} AND {X} IN TURN: A STEADY RHYTHM IS FAST, MASHING TIRES YOU OUT. THE CREW RACES YOU.",
 	"cornhole":
-	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. E STOPS THE AIM, E AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
+	"TWO BOARDS IN THE WAREHOUSE. YOU THROW AT THE FAR ONE, THE CREW MEMBER OF THE ROUND AT THE NEAR ONE, A BAG EACH IN TURN. {E} STOPS THE AIM, {E} AGAIN THE POWER: STOP IN THE GREEN FOR THE HOLE (3). THE BOARD IS 1. YOUR BAGS CANCEL THEIRS.",
 	"paintball":
-	"THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), Z FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD SHIFT TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
+	"THE OLD WEST, THREE A SIDE. YOUR FLAG STANDS AT THE SALOON, THEIRS AT THE JAIL. RUN WITH LEFT AND RIGHT, UP AND DOWN CHANGE LANE (THE STREET HAS THREE), {Z} FIRES A PAINTBALL THE WAY YOU FACE AT WHOEVER IS IN YOUR LANE, HOLD {SHIFT} TO DUCK: BEHIND A BARRICADE YOU CANNOT BE HIT. A TAG SENDS YOU HOME FOR A FEW SECONDS AND DROPS THE FLAG. CARRY THEIR FLAG TO YOUR END. FIRST TO THREE.",
 	"darts":
-	"THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND E THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
+	"THE DART BOARD IN THE WAREHOUSE. A RETICLE DRIFTS OVER THE BOARD AND {E} THROWS AT WHEREVER IT IS. IT SETTLES FOR A MOMENT AND THEN YOUR ARM TIRES, AND EVERY DART HAS A NEW SWEET SPOT. THE BULL IS 50, A TREBLE COUNTS THREE TIMES, A DOUBLE TWICE. THREE DARTS A TURN, THREE ROUNDS.",
 	"grill":
-	"THE CREW LINES UP AT THE GRILL. ARROWS PICK A PATTY, E FLIPS IT (EARLY IT STICKS, LATE IT CHARS), SPACE SERVES IT TO THE OLDEST ORDER THAT WANTS IT, SHIFT MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
+	"THE CREW LINES UP AT THE GRILL. {ARROWS} PICK A PATTY, {E} FLIPS IT (EARLY IT STICKS, LATE IT CHARS), {SPACE} SERVES IT TO THE OLDEST ORDER THAT WANTS IT, {SHIFT} MOVES IT TO THE COOL SIDE DURING A FLARE-UP.",
 }
 const LANE_KEYS := [KEY_LEFT, KEY_UP, KEY_DOWN, KEY_RIGHT]
+# R42: the hint lines that say how to leave are too long for the narrow format: the same keys, shorter
+const NARROW_KEYS := {
+	"E = FLIP  SPACE = SERVE  SHIFT = COOL  ESC = LEAVE": "E FLIP  SPACE SERVE  SHIFT COOL  ESC OUT",
+	"L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
+	"ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+	"YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+}
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
 const PAD_ARROWS := {"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT}
@@ -521,7 +528,7 @@ const DEFAULT_CREW_LINES := {
 	},
 }
 var CREW_LINES: Dictionary = DEFAULT_CREW_LINES.duplicate(true)
-const DEFAULT_KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH KEYS AT ONCE."}
+const DEFAULT_KARAOKE_TEXT := {"doubles": "DOUBLES NEED BOTH {KEYS|DIRECTIONS} AT ONCE."}
 var KARAOKE_TEXT: Dictionary = DEFAULT_KARAOKE_TEXT.duplicate(true)
 const ROOMS := {
 	"bowling": "bowling_alley",
@@ -1222,6 +1229,8 @@ func _event_key(event: InputEvent) -> int:
 		key = Controls.key_of("nudge") as Key  # Y on a pad: ask for a nudge
 	elif (racing or grilling or paintballing) and not event is InputEventKey and Controls.matches(event, "phone"):
 		key = KEY_ESCAPE  # R42: B is a game button in these three (push, the cool side, duck), so the pad's BACK button leaves
+	elif _traveled and (phase == "intro" or _peek) and Controls.matches(event, "pick_next"):
+		key = KEY_TAB  # R42: RB on a pad looks at the room from the intro page and comes back, as the hint line says
 	elif dir != "":
 		key = PAD_ARROWS[dir]
 	elif Controls.back(event):
@@ -1464,7 +1473,7 @@ func _bowl_setup() -> void:
 	_bowl_zone_roll()
 	if room_mode():
 		g.stage = "ready"
-		caption("YOUR TURN. PRESS E TO STEP UP.", 99.0)
+		caption("YOUR TURN. PRESS {E} TO STEP UP.", 99.0)
 
 
 func _bowl_tick(dt: float) -> void:
@@ -1524,7 +1533,7 @@ func _bowl_press(key: int) -> void:
 	if key not in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E]:
 		return
 	if room_mode() and g.stage not in ["ready", "aim", "power"]:
-		caption("WAIT. E DOES NOTHING UNTIL IT IS YOUR TURN.", 1.5)
+		caption("WAIT. {E} DOES NOTHING UNTIL IT IS YOUR TURN.", 1.5)
 		return
 	if g.stage == "ready":
 		_place_player(_x0() + float(LANE_NEAR[0]))
@@ -1533,12 +1542,12 @@ func _bowl_press(key: int) -> void:
 		g.marker = 0.0
 		g.dir = 1.0
 		_bowl_zone_roll()
-		caption("PRESS E TO STOP THE AIM IN THE GREEN. ARROWS = HOOK.", 99.0)
+		caption("PRESS {E} TO STOP THE AIM IN THE GREEN. {ARROWS} = HOOK.", 99.0)
 	elif g.stage == "aim":
 		g.stage = "power"
 		g.power = 0.0
 		g.dir = 1.0
-		caption("PRESS E TO STOP THE POWER (STOP IN THE GREEN).", 99.0)
+		caption("PRESS {E} TO STOP THE POWER (STOP IN THE GREEN).", 99.0)
 	elif g.stage == "power":
 		g.stage = "roll"
 		g.ball = 0.0
@@ -1655,7 +1664,7 @@ func _bowl_next() -> void:
 		g.dir = 1.0
 		_bowl_zone_roll()
 		if room_mode():
-			caption("SECOND ROLL. PRESS E TO STOP THE AIM.", 99.0)
+			caption("SECOND ROLL. PRESS {E} TO STOP THE AIM.", 99.0)
 		return
 	if int(g.get("players", 1)) > 1 and int(g.turn) == 0:  # co-op: player 2 bowls the same frame, then the crew
 		g.turn = 1
@@ -1668,7 +1677,7 @@ func _bowl_next() -> void:
 		g.msg = ""
 		g.up = [_all_up(), _all_up()]
 		_set_pilot(1)
-		caption("P2: PRESS E TO STEP UP.", 99.0)
+		caption("P2: PRESS {E} TO STEP UP.", 99.0)
 		return
 	var frame := int(g.frame)
 	var turn := bowlers().filter(func(n: String) -> bool: return bowls_in_frame(n, frame))
@@ -1699,7 +1708,7 @@ func _bowl_advance() -> void:
 	g.msg = ""
 	g.up = [_all_up(), _all_up()]
 	if room_mode():
-		caption("FRAME %d. YOUR TURN: PRESS E TO STEP UP." % int(g.frame), 99.0)
+		caption("FRAME %d. YOUR TURN: PRESS {E} TO STEP UP." % int(g.frame), 99.0)
 
 
 # the crew takes its turn on the next lane, one at a time
@@ -2734,8 +2743,8 @@ const DEFAULT_ESCAPE_THEMES := {
 		"short": "OLD STUDY",
 		"tint": "ffffff",
 		"ink": "e8e8e0",
-		"intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK (E), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. N ASKS A FRIEND. THE CLOCK IS RUNNING.",
-		"start": "LOOK AROUND. E ON THE CHALKBOARD, THE CLOCK, THE PAINTING. N = HINT",
+		"intro": "THE CODE IS HIDDEN IN THE ROOM. LOOK AT THE CHALKBOARD, THE CLOCK, THE PAINTING AND THE TRUNK ({E}), THEN ENTER THE CODE AT THE KEYPAD BY THE VAULT. {N} ASKS A FRIEND. THE CLOCK IS RUNNING.",
+		"start": "LOOK AROUND. {E} ON THE CHALKBOARD, THE CLOCK, THE PAINTING. {N} = HINT",
 		"open": "THE VAULT OPENS!",
 		"say": {
 			"sum": "THE CHALKBOARD: {a} + {b} = ?",
@@ -2755,8 +2764,8 @@ const DEFAULT_ESCAPE_THEMES := {
 		"short": "SERVER ROOM",
 		"tint": "9fd4e6",
 		"ink": "8ff0b0",
-		"intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
-		"start": "THE SERVER ROOM. E ON THE BOARD, THE CLOCK, THE NETWORK MAP. N = HINT",
+		"intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
+		"start": "THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT",
 		"open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
 		"say": {
 			"sum": "THE BOARD BY THE RACK: PORT {a} + PORT {b} = ?",
@@ -2797,8 +2806,8 @@ const DEFAULT_ESCAPE_THEMES := {
 		"short": "DETECTIVE",
 		"tint": "e6c690",
 		"ink": "f0e2b8",
-		"intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
-		"start": "THE DETECTIVE'S OFFICE. E ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. N = HINT",
+		"intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
+		"start": "THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT",
 		"open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
 		"say": {
 			"sum": "THE CASE BOARD: {a} SUSPECTS + {b} WITNESSES = ?",
@@ -2838,8 +2847,8 @@ const DEFAULT_ESCAPE_THEMES := {
 		"short": "COMPUTER LAB",
 		"tint": "d4e6c0",
 		"ink": "b8f0a0",
-		"intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF (E), THEN ENTER IT AT THE KEYPAD. N ASKS A FRIEND. THE BELL IS COMING.",
-		"start": "THE COMPUTER LAB. E ON THE BOARD, THE CLOCK, THE CLASS PHOTO. N = HINT",
+		"intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.",
+		"start": "THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT",
 		"open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
 		"say": {
 			"sum": "THE TEACHER'S BOARD: {a} FLOPPIES + {b} FLOPPIES = ?",
@@ -3016,7 +3025,7 @@ const DISHES := [
 	{"id": "spinach", "label": "SPINACH DIP", "has": []},
 ]
 const DEFAULT_DINNER_TEXT := {
-	"order": "FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, ENTER).",
+	"order": "FIRST A PLATE FOR THE TABLE TO SHARE. PICK ONE EVERYBODY CAN EAT (UP / DOWN, {ENTER}).",
 	"order_strip": "ORDER FOR THE TABLE",
 	"order_head": "A PLATE TO SHARE: WHAT DO YOU ORDER?",
 	"order_fit": "%s FOR THE TABLE. EVERYBODY DIGS IN. (TABLE +%d)",
@@ -3503,7 +3512,7 @@ func _dinner_mark(i: int, r: Rect2) -> void:
 
 func _dinner_open_line() -> String:
 	if not g.get("variety", false):
-		return "%s. PICK A TOPIC (UP / DOWN, ENTER)." % dinner_mood_text()
+		return "%s. PICK A TOPIC (UP / DOWN, {ENTER})." % dinner_mood_text()
 	var text := dinner_mood_text() + "."
 	var guest: Dictionary = g.get("guest", {})
 	if not guest.is_empty() and str(guest.firm) != "":
@@ -3742,7 +3751,7 @@ func _room_begin() -> void:
 			var mic := _x0() + MIC_X
 			_place_player(mic)
 			_hold_player("talk", mic + 60.0)
-			caption("%s. ARROW KEYS AT THE LINE. SING!" % str(g.song.title), 4.0)
+			caption("%s. {ARROW KEYS|STICK} AT THE LINE. SING!" % str(g.song.title), 4.0)
 		"cornhole":
 			_corn_begin()
 		"grill":
@@ -3753,7 +3762,7 @@ func _room_begin() -> void:
 			caption(escape_text("start"), 6.0)
 		"dinner":
 			g.stage = "sit"
-			caption("SIT AT THE BOOTH WITH THE TEAM (PRESS E ON THE SEAT)", 99.0)
+			caption("SIT AT THE BOOTH WITH THE TEAM (PRESS {E} ON THE SEAT)", 99.0)
 
 
 func _room_process(delta: float) -> void:
@@ -3823,6 +3832,8 @@ func hint() -> String:
 		text = _chair_hint() if game == "chair" else str(GAMES[game].keys)
 	else:
 		text = _room_hint()
+	if get_viewport().get_visible_rect().size.x < 260.0:
+		text = str(NARROW_KEYS.get(text, text))
 	return text
 
 
@@ -3843,7 +3854,7 @@ func _room_hint() -> String:
 		"bowling":
 			text = _bowl_hint(str(g.get("stage", "")))
 		"karaoke":
-			text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "ARROW KEYS = HIT NOTES  ESC = LEAVE"
+			text = "P1 = LEFT / UP  P2 = DOWN / RIGHT  ESC = LEAVE" if g.get("human_duet", false) else "{ARROW KEYS:move} = HIT NOTES  ESC = LEAVE"
 		"paintball":
 			text = "GET READY  ESC = LEAVE" if str(g.rules.phase) == "count" else str(GAMES.paintball.keys)
 		"chair":
@@ -3858,7 +3869,7 @@ func _room_hint() -> String:
 			if g.get("entry", false):
 				text = "ARROWS  ENTER = TRY  ESC = BACK"
 			else:
-				text = "E = LOOK / USE  N = HINT  ESC = LEAVE"
+				text = "E = LOOK / USE  {N} = HINT  ESC = LEAVE"
 	return text
 
 
@@ -4087,7 +4098,7 @@ func interact(kind: String) -> void:
 		g.entry = true
 		Game.ui_open = true
 		caption(
-			"ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, ENTER TRIES IT, ESC BACKS OFF",
+			"ENTER THE CODE: UP / DOWN CHANGE, LEFT / RIGHT MOVE, {ENTER} TRIES IT, {ESC} BACKS OFF",
 			6.0
 		)
 
@@ -4523,10 +4534,10 @@ func _chair_hint() -> String:
 		return "GET READY  ESC = LEAVE"
 	if str(g.get("event", "")) == "fight":
 		if g.has("race") and g.race.get("duel") == true:
-			return "P1 = Z X  P2 = A B  L R = TURN  UP DN = LANE"
+			return "P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE"
 		return "Z X = PUSH  L R = TURN  UP DN = LANE"
 	if Players.coop and Players.slots[1].joined:
-		return "P1 = Z  P2 = A / X  ARROWS = LANE  ESC = LEAVE"
+		return "P1 = Z  P2 = {A / X|(A) / (X)}  ARROWS = LANE  ESC = LEAVE"
 	return str(GAMES.chair.keys)
 
 
@@ -4592,6 +4603,11 @@ func _hud_chair(s: Rect2) -> void:
 		var lit: bool = race.lit(k)
 		var kx := o.x + 9.0 * float(k)
 		_canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 8.0), AMBER if lit else UiStyle.MUTED)
+		if UiStyle.PadGlyphs.active():  # R42: on a pad the two pushes are the A and B buttons (the glyphs; the one to press is the bright one)
+			UiStyle.PadGlyphs.glyph(_canvas, "A" if k == 0 else "B", Vector2(kx, s.position.y + 2.0))
+			if not lit:
+				_canvas.draw_rect(Rect2(kx, s.position.y + 2.0, 7.0, 7.0), Color(0.02, 0.02, 0.05, 0.5))
+			continue
 		_t(keys[k], kx + 2.0, s.position.y + 4.0, INK if lit else WHITE)
 	if str(g.get("event", "")) == "fight":
 		_hud_fight(s, o)
@@ -4747,7 +4763,7 @@ func _paint_press(key: int) -> void:
 		g.rules.change_lane(me, 1)
 	elif key in [KEY_Z, KEY_X, KEY_E, KEY_SPACE, KEY_ENTER, KEY_KP_ENTER]:
 		if not (g.rules.phase == "play" and g.rules.fire(me)) and bool(g.rules.units[me].duck) and g.rules.phase == "play":
-			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF SHIFT.", 0.8)
+			caption("YOU CAN'T SHOOT WHILE DUCKING. LET GO OF {SHIFT}.", 0.8)
 
 
 func _paint_lines() -> Array:
@@ -4854,9 +4870,9 @@ func _corn_cues(cg: RefCounted) -> void:
 	var line := ""
 	match str(cg.phase):
 		"aim":
-			line = "AIM: PRESS E WHEN THE MARKER IS IN THE GREEN."
+			line = "AIM: PRESS {E} WHEN THE MARKER IS IN THE GREEN."
 		"power":
-			line = "POWER: PRESS E WHEN THE BAR IS IN THE GREEN."
+			line = "POWER: PRESS {E} WHEN THE BAR IS IN THE GREEN."
 		"opp":
 			line = "%s STEPS UP." % str(cg.opp).to_upper()
 		_:
@@ -5090,7 +5106,7 @@ func _darts_setup() -> void:
 func _darts_begin() -> void:
 	g["snap"] = 3
 	_darts_seat(g.game)
-	caption("DARTS. THREE DARTS A TURN, THREE ROUNDS. E THROWS AT THE RETICLE.", 4.0)
+	caption("DARTS. THREE DARTS A TURN, THREE ROUNDS. {E} THROWS AT THE RETICLE.", 4.0)
 
 
 # the thrower of the turn stands at the line, everybody else waits to the left of it, facing the board
@@ -5154,7 +5170,7 @@ func _darts_cues(dg: RefCounted) -> void:
 	var line := ""
 	match str(dg.phase):
 		"aim":
-			line = "AIM: PRESS E TO THROW AT THE RETICLE. THE WOBBLE SETTLES FOR A MOMENT."
+			line = "AIM: PRESS {E} TO THROW AT THE RETICLE. THE WOBBLE SETTLES FOR A MOMENT."
 		"opp", "ready":
 			line = str(dg.msg)
 		_:
@@ -5393,7 +5409,7 @@ func _grill_begin() -> void:
 	g["snap"] = 3
 	_place_player(_x0() + GRILL_X)
 	_hold_player("idle", _x0() + GRILL_X + 60.0)
-	caption("ARROWS PICK A PATTY. E FLIPS, SPACE SERVES, SHIFT = COOL SIDE.", 5.0)
+	caption("{ARROWS} PICK A PATTY. {E} FLIPS, {SPACE} SERVES, {SHIFT} = COOL SIDE.", 5.0)
 
 
 func _grill_tick(dt: float) -> void:
@@ -5438,7 +5454,7 @@ func _grill_cues(gg: RefCounted) -> void:
 		Sfx.play("grill_sizzle", 0.4)
 	if room_mode() and p != null and p.state != "emote" and phase == "play" and not gg.done:
 		_hold_player("idle", _x0() + GRILL_X + 60.0)
-	var line := str(gg.msg) if float(gg.msg_t) > 0.0 else "ARROWS PICK A PATTY. E FLIPS IT, SPACE SERVES IT, SHIFT PARKS IT ON THE COOL SIDE."
+	var line := str(gg.msg) if float(gg.msg_t) > 0.0 else "{ARROWS} PICK A PATTY. {E} FLIPS IT, {SPACE} SERVES IT, {SHIFT} PARKS IT ON THE COOL SIDE."
 	if float(g.remark_t) > 0.0:
 		line = str(g.remark)
 	caption(line, 0.3)
@@ -5495,8 +5511,8 @@ func _grill_press(key: int) -> void:
 
 func _grill_hint() -> String:
 	if Players.coop and Players.slots[1].joined:
-		return "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE"
-	return "ARROWS = PICK  E = FLIP  SPACE = SERVE"
+		return "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE"
+	return "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE"
 
 
 func _grill_end() -> void:
@@ -5806,7 +5822,7 @@ func _paint_intro(b: Rect2) -> void:
 		var what := ""
 		if event == "fight":
 			who = "AGAINST %s. THE REST WATCH." % g.race.opponent().to_upper() if g.has("race") else ""
-			what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. Z X PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
+			what = "< CHAIR FIGHT >  BUMP THE OTHER CHAIR, FIRST TO %d. {Z} {X} PUSH, LEFT RIGHT TURN, UP DOWN LANE." % ChairFight.TARGET
 		else:
 			what = "< %s >  %s" % [str(ChairRace.COURSES[event].label), str(ChairRace.COURSES[event].blurb)]
 		if not opts.has("event"):

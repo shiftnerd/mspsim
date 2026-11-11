@@ -271,7 +271,7 @@ func _remap_key(event: InputEvent) -> void:
 func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 	var walk: int = Controls.REMAPPABLE.size()
 	var rows: int = walk + Controls.MENU_ROLES.size() + 1
-	var body := UiStyle.panel(c, r, "REMAP KEYS", "PRESS A KEY" if _capture else "")
+	var body := UiStyle.panel(c, r, Controls.keys("REMAP {KEYS|BUTTONS}"), Controls.keys("PRESS A {KEY|BUTTON}") if _capture else "")
 	var first := clampi(_rsel - 2, 0, maxi(0, rows - 6))
 	for k in mini(6, rows - first):
 		var i := first + k
@@ -280,18 +280,23 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 			c.draw_rect(rr, UiStyle.HEAD)
 		var col: Color = UiStyle.WHITE if i == _rsel else UiStyle.INK
 		if i == rows - 1:
-			UiStyle.text(c, "PUT ALL KEYS BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
+			UiStyle.text(c, "PUT ALL {KEYS|BUTTONS} BACK", rr.position.x + 3.0, rr.position.y + 3.0, col)
 		elif i >= walk:
 			var role: Array = Controls.MENU_ROLES[i - walk]
 			UiStyle.text(c, str(role[2]), rr.position.x + 3.0, rr.position.y + 3.0, col)
 			var extra := Controls.menu_key_of(str(role[0]))
-			var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 else "-")
+			var shown := "..." if (_capture and i == _rsel) else (Controls.key_name(extra) if extra > 0 and not Controls.pad_active else "-")
 			UiStyle.text(c, shown, rr.position.x + rr.size.x - 4.0 - float(shown.length() * 4), rr.position.y + 3.0, col)
 		else:
 			var action := str(Controls.REMAPPABLE[i])
 			UiStyle.text(c, action.replace("_", " ").to_upper(), rr.position.x + 3.0, rr.position.y + 3.0, col)
 			var key_name := "..." if (_capture and i == _rsel) else Controls.key_name(Controls.key_of(action))
 			var end_x := rr.position.x + rr.size.x - 4.0
+			if Controls.pad_active and not (_capture and i == _rsel):  # R42: on a pad the row shows what the pad has for it, no key
+				key_name = ""
+				if not Controls.REMAPPABLE_PAD.has(action):
+					var shown_pad: String = Controls.pad_label(action) if Controls.pad_label(action) != "" else "-"
+					PadGlyphs.draw(c, shown_pad, Vector2(end_x - float(PadGlyphs.width(shown_pad)), rr.position.y + 3.0), col)
 			if Controls.REMAPPABLE_PAD.has(action) and not (_capture and i == _rsel):
 				var pad_name := Controls.button_name(Controls.button_of(action))
 				var gi := PadGlyphs.NAMES.find(pad_name) if PadGlyphs.atlas() != null else -1
@@ -300,9 +305,9 @@ func _paint_remap(c: CanvasItem, r: Rect2) -> void:
 					PadGlyphs.glyph(c, pad_name, Vector2(end_x, rr.position.y + 2.0))
 					end_x -= 6.0
 				else:
-					key_name += "  " + pad_name
+					key_name = (key_name + "  " + pad_name).strip_edges()
 			UiStyle.text(c, key_name, end_x - float(key_name.length() * 4), rr.position.y + 3.0, col)
-	UiStyle.footer(c, r, Controls.hint("ENTER, THEN KEY / BUTTON  ESC = BACK"))
+	UiStyle.footer(c, r, Controls.hint("ENTER, THEN {KEY / BUTTON|A BUTTON}  ESC = BACK"))
 
 
 func _input(event: InputEvent) -> void:
@@ -357,7 +362,7 @@ func _key(event: InputEvent) -> void:
 			_sel = _labels().size() - 1
 		else:
 			close()
-	elif _page >= 0 and Controls.word(event) == "r":
+	elif _page >= 0 and (Controls.word(event) == "r" or (event is InputEventJoypadButton and Controls.matches(event, "hold_pose"))):
 		_page = REMAP_PAGE
 		_rsel = 0
 		_capture = false
@@ -427,10 +432,7 @@ func _paint_help(c: CanvasItem, r: Rect2) -> void:
 	var y := body.position.y + 2.0
 	for row in page[1]:
 		UiStyle.text(c, str(row[0]), body.position.x, y, UiStyle.INK)
-		var value := Controls.help_value(str(row[0]), str(row[1]))
-		if Controls.pad_active and Controls.HELP_ACTIONS.has(str(row[0])):  # on a pad: the button that does it, as a glyph
-			var shown := Controls.label(str(Controls.HELP_ACTIONS[str(row[0])]))
-			value = shown if shown != "" else value
+		var value := Controls.help_value(str(row[0]), str(row[1]))  # on a pad: the button that does it (drawn as a glyph)
 		PadGlyphs.draw(c, value, Vector2(body.end.x - float(PadGlyphs.width(value)), y), UiStyle.HEAD)
 		y += 9.0
-	UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK"))
+	UiStyle.footer(c, r, Controls.hint("ARROWS = PAGE  R = REMAP  ESC = BACK", {"R": "hold_pose"}))

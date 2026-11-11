@@ -776,5 +776,5 @@ func _draw_menu() -> void:
 		var ink := Color("17121f") if chosen else (Color.WHITE if item.enabled else Color("7d8595"))
 		_menu.draw_rect(r, back)
 		PixelFont.draw(_menu, label, r.position + Vector2(6, ty), ink)
-	var sound := Sfx.status_text() + "  M"
+	var sound := Sfx.status_text() + Controls.keys("  {M}")
 	PixelFont.draw(_menu, sound, Vector2(size.x - float(PixelFont.width(sound)) - 4.0, 3.0), Color("7d8595"))

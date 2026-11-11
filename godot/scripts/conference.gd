@@ -1439,6 +1439,7 @@ func room_info(door: int, chars := 22) -> Dictionary:
 
 
 func _wrap(text: String, limit: int) -> Array:
+	text = Controls.keys(text)  # R42: key tokens become the key or the pad button before the lines are cut
 	var lines := []
 	var cur := ""
 	for w in text.split(" "):
@@ -1771,7 +1772,7 @@ func _paint_talk() -> void:
 	if seated.is_empty():
 		return
 	var size := get_viewport().get_visible_rect().size
-	UiStyle.hint_bar(_canvas, size, "E = NEXT LINE")
+	UiStyle.hint_bar(_canvas, size, Controls.hint("E = NEXT LINE", {"E": "interact"}))
 	var top := UiStyle.caption_bar(_canvas, size, talk_line())
 	var head := "SALON %s  %d/%d  %s" % ["ABCD"[clampi(int(seated.door), 0, 3)], mini(int(seated.at) + 1, seated.lines.size()), seated.lines.size(), str(seated.title)]
 	var wide := int((size.x - 12.0) / 4.0)

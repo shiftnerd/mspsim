@@ -142,7 +142,7 @@ func _run() -> void:
 	o._chair_press(KEY_RIGHT)
 	ok(int(f.chairs[1].face) == 1 and int(f.chairs[0].face) == 1, "and turns their own chair")
 	ok(o._event_key_p2(_pad(JOY_BUTTON_A)) == KEY_Z and o._event_key_p2(_pad(JOY_BUTTON_B)) == KEY_X, "on player 2's pad A and B are the two legs")
-	ok(o._chair_hint().begins_with("P1 = Z X  P2 = A B"), "the hint says who has which keys")
+	ok(str(root.get_node("Controls").keys(o._chair_hint())).begins_with("P1 = Z X  P2 = A B"), "the hint says who has which keys")
 	f.chairs[0].bumps = 3
 	f._finish()
 	var info: Dictionary = o._chair_career(1)

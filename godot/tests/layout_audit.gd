@@ -15,6 +15,7 @@ var screens := 0
 var fmt := "wide"
 var only: PackedStringArray = PackedStringArray()
 var shots := false  # -- --shots also saves user://audit_FORMAT_TAG.png for every screen
+var force_pad := -1  # tests/pad_prompts.gd walks the same screens: 1 = a pad is the active input on every screen, 0 = never, -1 = as the walker says
 
 
 func _initialize() -> void:
@@ -40,7 +41,14 @@ func _scene(path: String) -> void:
 
 
 func _begin() -> void:
+	if force_pad >= 0:
+		root.get_node("Controls").pad_active = force_pad == 1
 	PixelFont.audit = []
+
+
+# a hook for the tests that walk the same screens (tests/pad_prompts.gd): the texts one screen drew
+func _texts(_tag: String, _recs: Array) -> void:
+	pass
 
 
 # Waits for a redraw, then fails on every text rect outside the viewport.
@@ -56,6 +64,7 @@ func _end(tag: String) -> void:
 		failures += 1
 		print("FAIL %s %s: nothing was drawn (the screen did not open?)" % [fmt, tag])
 		return
+	_texts(tag, PixelFont.audit)
 	for line in PixelFont.audit_report("%s %s" % [fmt, tag], true):
 		if line.begins_with("OFFSCREEN"):
 			failures += 1
@@ -127,9 +136,16 @@ func _selftest() -> void:
 
 
 func _run() -> void:
-	var game := root.get_node("Game")
 	await _selftest()
-	for f in FORMATS:
+	await _walk(FORMATS)
+	print("screens=%d failures=%d overlap_warnings=%d" % [screens, failures, warns])
+	quit(1 if failures > 0 else 0)
+
+
+# every screen, in each of the formats
+func _walk(formats: Array) -> void:
+	var game := root.get_node("Game")
+	for f in formats:
 		fmt = f
 		game.set_format(f)
 		root.get_node("Campaign").save_prefix = "user://test_audit_%d_" % OS.get_process_id()
@@ -139,8 +155,6 @@ func _run() -> void:
 		if _want("floor"):
 			await _floor_phase()
 		print("format %s: viewport %s" % [f, root.get_visible_rect().size])
-	print("screens=%d failures=%d overlap_warnings=%d" % [screens, failures, warns])
-	quit(1 if failures > 0 else 0)
 
 
 func _title_phase() -> void:

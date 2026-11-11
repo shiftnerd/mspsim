@@ -490,7 +490,7 @@ func _build_thread() -> void:
 	elif k < 0:
 		foot = str(Nerds.TEXT.solved)
 	elif not bool(Nerds.threads[k].answered):
-		foot = "PRESS ENTER OR CLICK REPLY TO ANSWER."
+		foot = "PRESS {ENTER OR CLICK REPLY|(A)} TO ANSWER."
 	if foot != "":
 		for part in c._wrap(foot, _chars):
 			_rows.append(_line(str(part), MUTED))

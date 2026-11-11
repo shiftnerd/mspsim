@@ -1486,7 +1486,7 @@ const DEFAULT_DAYS := {
 			(
 				"Welcome to Pixel IT Partners. Alan and Garrison own the place and I run the floor for them. Tickets come in on ConnectWhy PSA, you fix things "
 				+ "with LabRat RMM, and you only close a ticket once it is really fixed. Reopened tickets "
-				+ "make me sad. Clients also call and text, so check your phone (P) now and then. - Morgan"
+				+ "make me sad. Clients also call and text, so check your phone ({P}) now and then. - Morgan"
 			)
 		},
 		{"at": 9.2, "kind": "mentor", "id": "mentor_intro"},

@@ -645,7 +645,7 @@ func _books(a: Rect2, narrow: bool) -> void:
 	var chars := int((a.size.x - 4.0) / 4.0)
 	var foot := _footer(a, foot_h, info_for(sel_id()), chars)
 	var cost := cost_of(sel_id())
-	var go_label := "%s (ENTER)" % str(cost.verb)
+	var go_label := Controls.keys("%s ({ENTER})" % str(cost.verb))
 	if narrow:
 		go_label = str(cost.verb)
 	var can := str(cost.act) in ["draft", "publish", "refresh", "train"]
@@ -752,7 +752,7 @@ func _crew(a: Rect2, narrow: bool) -> void:
 		c._text(("$%d A TICKET" % Service.cost_per_ticket()) if Service.cost_per_ticket() >= 0 else "NO TICKETS CLOSED", Vector2(a.position.x + a.size.x * 0.62, y + 2), INK)
 	var bottom := Rect2(a.position.x, a.end.y - 12, a.size.x, 12)
 	c._fill(bottom, Color("cfe0d8"))
-	var hire_label := "HIRE (H)" if Crew.can_hire() else "FULL"
+	var hire_label := Controls.keys("HIRE{ (H)|}") if Crew.can_hire() else "FULL"
 	c._button("kb:hire", Rect2(bottom.position.x + 2, bottom.position.y + 1, 40, 10), hire_label, Crew.can_hire(), Color("b8e0c8") if Crew.can_hire() else c.BTN)
 	var tl := "TRAINING: " + str(Service.TRAINING[Service.training].label)
 	if narrow:

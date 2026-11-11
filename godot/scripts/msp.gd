@@ -601,7 +601,7 @@ func reset() -> void:
 		),
 		0
 	)
-	send_text("Dispatch", "Welcome! Press P for your phone. New tickets arrive as ConnectWhy PSA email; texts are for your boss and your coworkers.")
+	send_text("Dispatch", "Welcome! Press {P} for your phone. New tickets arrive as ConnectWhy PSA email; texts are for your boss and your coworkers.")
 
 
 # the resume point (Campaign.snapshot, R16): the whole service desk, so a mid-day continue puts every ticket,

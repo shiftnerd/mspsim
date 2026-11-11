@@ -143,8 +143,12 @@ mini-games. Nothing needs the keyboard or the mouse (that is how it is played on
 | **Any button of the Computer or the phone** | `RB` / `LB` step the cursor from button to button, `A` presses the one it is on. On the Computer the right stick also moves the cursor freely. Moving with the D-pad hands `A` back to the list. |
 | **Leave the chair race, the cookout or paintball** | `Back` / `Select` (`B` is a game button there). Everywhere else `B` leaves. |
 
-Hint lines follow your controls: with a gamepad in your hands they show `(A)`, `(B)` and so on instead of key names, and a key
-you remapped shows as the key it is now.
+Every prompt follows your controls: with a gamepad in your hands the hint lines, the tips of the first day, the captions of
+the mini-games and the answers on a card show the pad's buttons (`(A)`, `(B)`, `(BACK)` and so on) instead of key names, and a
+key or button you remapped shows as what it is now. The switch is immediate: press a pad button and the screen in front of you
+changes to the pad's buttons, press a key or move the mouse and it changes back.
+
+The cookout and paintball say how to leave in their hint line: `Esc` on a keyboard, the `Back` / `Select` button on a pad.
 
 ### Touch screens
 

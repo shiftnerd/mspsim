@@ -36,6 +36,7 @@ static func right(c: CanvasItem, s: String, rx: float, y: float, color := INK) -
 
 
 static func wrap_text(s: String, chars: int) -> Array:
+	s = PixelFont.keys(s)  # R42: key tokens become the key or the pad button before the lines are cut
 	var out := []
 	var line := ""
 	for word in s.split(" "):
@@ -106,7 +107,7 @@ static func box(c: CanvasItem, r: Rect2) -> void:
 static func hint_bar(c: CanvasItem, size: Vector2, hint: String) -> void:
 	var r := Rect2(0.0, size.y - HINT_H, size.x, HINT_H)
 	c.draw_rect(r, Color(0.02, 0.02, 0.05, 0.92))
-	text(c, hint, 4.0, r.position.y + 2.0, SOFT)
+	PadGlyphs.draw(c, hint, Vector2(4.0, r.position.y + 2.0), SOFT)
 
 
 # the caption bar sits above the hint line; returns its top edge (the HUD strip goes above it)

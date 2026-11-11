@@ -60,7 +60,7 @@ func _input(event: InputEvent) -> void:
 		var dir := Controls.nav(event)
 		if Controls.word(event) == "f9":
 			Game.cycle_format()
-		elif Controls.word(event) == "c":
+		elif Controls.word(event) == "c" or (event is InputEventJoypadButton and Controls.matches(event, "hold_pose")):
 			go_collection()
 		elif dir == "left":
 			go(-1)
@@ -209,7 +209,7 @@ func _draw() -> void:
 		_draw_medals(pg.medals, body, cols, colw, gap)
 		if detail and sel < pg.medals.size():
 			_draw_detail(size, pg.medals[sel])
-	UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC"))
+	UiStyle.footer(self, r, Controls.hint("ARROWS  ENTER = DETAILS  ESC BACK" if pg.has("medals") else "ARROWS  C = COLLECTION  ESC", {"C": "hold_pose"}))
 	_button("prev", "<", Rect2(r.end.x - 34.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("next", ">", Rect2(r.end.x - 23.0, r.end.y - 9.0, 9.0, 8.0))
 	_button("back", "X", Rect2(r.end.x - 12.0, r.end.y - 9.0, 9.0, 8.0))

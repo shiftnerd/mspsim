@@ -83,9 +83,9 @@ static func tick() -> void:
 		var secs := maxi(1, (Time.get_ticks_msec() - started_ms) / 1000)
 		Career.add("micro_shifts")
 		Career.fastest("micro_best", secs)
-		Hints.toast("SHIFT DONE: %d TICKETS IN %d:%02d. ESC FOR THE MENU, OR STAY A WHILE" % [TARGET, secs / 60, secs % 60], 7.0)
+		Hints.toast("SHIFT DONE: %d TICKETS IN %d:%02d. {ESC:pause} FOR THE MENU, OR STAY A WHILE" % [TARGET, secs / 60, secs % 60], 7.0)
 		clear()
 	elif kind == "outing" and Toolbox.last_launch.get("game", "") == game and not Toolbox.queued and not Outings.is_open and not Outings.busy():
 		if Time.get_ticks_msec() - started_ms > 4000:
-			Hints.toast("THAT WAS ONE OUTING. ESC FOR THE MENU, OR STAY A WHILE", 6.0)
+			Hints.toast("THAT WAS ONE OUTING. {ESC:pause} FOR THE MENU, OR STAY A WHILE", 6.0)
 			clear()
