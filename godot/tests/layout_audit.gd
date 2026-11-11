@@ -53,6 +53,13 @@ func _texts(_tag: String, _recs: Array) -> void:
 
 # Waits for a redraw, then fails on every text rect outside the viewport.
 func _end(tag: String) -> void:
+	# a phone banner on its way in or out is above the screen's edge for a quarter second: wait until it is fully in (or
+	# gone). Without this the result depended on when a text happened to arrive (--only=floor gave 40 failures)
+	var phone := root.get_node("Phone")
+	var guard := 0
+	while not phone.banner.is_empty() and phone.banner_slide() < 1.0 and not phone.banner_blocked() and guard < 60:
+		await process_frame
+		guard += 1
 	await _wait(4)
 	var seen: int = PixelFont.audit.size()
 	if shots:
@@ -447,7 +454,7 @@ func _report(kind: String) -> Dictionary:
 		r["final"] = true
 		r["grade"] = "A"
 		r["ending"] = "YOU KEPT YOUR JOB. MORGAN SAYS THE TEAM IS GLAD YOU STAYED AND THE CLIENTS ASK FOR YOU BY NAME."
-	elif kind == "owner":
+	elif kind in ["owner", "owner_full"]:
 		r["grade"] = "A"
 		r["title"] = "WEEK 9 OF 20 COMPLETE"
 		r["rows"] = [
@@ -463,6 +470,17 @@ func _report(kind: String) -> Dictionary:
 			["RECURRING + PROJECTS", "$6400/WK + $450 JOBS", Color("8fe3a0")],
 			["VALUE (ESTIMATE)", "$412000, A GROWTH COMPANY", Color("ffd27a")],
 		]
+		if kind == "owner_full":  # a late week with every optional row at once (QA: the list ran off the 128 px screen)
+			var more := [
+				["OWNER DRAW", "-$400 (STEADY), NOT IN EBITDA", WHITE], ["WIRE FRAUD RISK", "MEDIUM (2 CAUGHT, 1 LOST)", Color("ffd27a")],
+				["STANDARD", "72 (SOLID)", Color("8fe3a0")], ["FOLDER", "3 IN THE FOLDER, TEMPTED", Color("ffd27a")],
+				["SWITCHING COSTS", "2 CHANGES, EACH ONE $600 OF DOUBLE BILLING AND 6 HOURS OF YOUR WEEK. THE INTRO RATE ENDS IN 3 WK, THEN +$90/WK.", Color("ffd27a")],
+				["RAP SHEET", "BYTEBROTHERS: UNDERCUTS, THEN DROPS THE BALL (SEEN TWICE)", Color("ffd27a")],
+				["ASKED FOR BY NAME", "MORGAN 3, DAN 2, MAYA 1", Color("8fe3a0")],
+				["PEER GOAL", "RECURRING REVENUE UP 10%: MET", Color("8fe3a0")],
+			]
+			for i in more.size():
+				r.rows.insert(11 + i, more[i])
 	return r
 
 
@@ -488,6 +506,8 @@ func _floor_phase() -> void:
 	world.clock = 11.0
 	# R16: the HUD's goal chip and next-up list, on the busiest day (an outing day in the on-call week)
 	c.day = 10
+	await _wait(3)
+	_clear(cards)  # the dated card of that day (the XP end-of-support banner) opens over the HUD when the day is set by hand
 	await _hud_shot("hud goal chip tech")
 	c.day = 1
 	_begin()
@@ -522,11 +542,15 @@ func _floor_phase() -> void:
 		], func(_id: String) -> void: pass)
 		await _end("card with picture " + pic)
 		_clear(cards)
-	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner"]:
+	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner", "owner_full"]:
 		_begin()
 		rep.is_open = false
 		rep.show_report(_report(kind))
 		await _end("day report " + kind)
+		while rep._page < rep._pages.size() - 1:  # a list that needed pages: every page is audited
+			_begin()
+			rep.next_page()
+			await _end("day report %s page %d" % [kind, rep._page + 1])
 		rep.is_open = false
 		rep._canvas.visible = false
 	for app in ["desktop", "mail", "psa", "rmm", "learn", "lync"]:
