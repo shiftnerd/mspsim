@@ -113,6 +113,37 @@ func _check_rooms_distinct() -> void:
 		scene.free()
 
 
+# R23: in every breakout room the speaker stands at the front and talks (the talk frames), four people sit in chairs (their own seats,
+# in the scene and in the cast map), and at least one chair stays free for you
+func _check_audience() -> void:
+	var cf := root.get_node("Expo")
+	var data = load("res://scripts/world_data.gd")
+	for room in ["breakout_a", "breakout_b", "breakout_c", "breakout_d"]:
+		var talking := false
+		var speakers := 0
+		var seated := {}
+		for entry in cf.CROWD[room]:
+			if str(entry.role) == "speaker":
+				speakers += 1
+				talking = "talk:7" in entry.routine
+				_check(str(entry.facing) == "left" and float(entry.x) > 150.0, "%s: the speaker stands at the front, facing the room" % room)
+			elif str(entry.get("seat", "")) != "":
+				seated[str(entry.seat)] = str(entry.who)
+		_check(speakers == 1 and talking, "%s: one speaker, who talks" % room)
+		_check(seated.size() >= 4 and seated.size() <= 6, "%s: %d people sit in the audience" % [room, seated.size()])
+		var scene: Node = load("res://scenes/%s.tscn" % room).instantiate()
+		var ok := true
+		for seat in seated:
+			ok = ok and scene.get_node_or_null("Interactables/%s" % seat) != null and data.SCENES[room].seats.has(seat)
+		_check(ok, "%s: every audience member has a real seat" % room)
+		_check(data.SCENES[room].seats.size() > seated.size(), "%s: a chair is left for you" % room)
+		scene.free()
+		var kinds := {}
+		for who in seated.values():
+			kinds[who] = true
+		_check(kinds.size() == seated.size(), "%s: nobody sits twice" % room)
+
+
 # nobody from a client site works the conference: no client_* sprite in the crowd, the vendors or their looks
 func _check_crowd_clean() -> void:
 	var cf := root.get_node("Expo")
@@ -287,6 +318,7 @@ func _init() -> void:
 	_check(cf.picks.size() == 3, "three sessions sat through")
 	_check(cf.room_info(3).id == "stay" or cf.room_info(3).id == cf.picks[2], "room D's screen shows the session you picked")
 	await _check_rooms_distinct()
+	_check_audience()
 	_check_crowd_clean()
 	_check(cf._stage == "raffle", "then it is time for the raffle")
 	game.go("vendor_hall", "from_hall")

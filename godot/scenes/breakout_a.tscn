@@ -120,6 +120,42 @@ cup_y = 80.0
 position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
+[node name="Seat4" type="Area2D" parent="Interactables"]
+position = Vector2(122, 103)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat4"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat5" type="Area2D" parent="Interactables"]
+position = Vector2(152, 103)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat5"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
+[node name="Seat6" type="Area2D" parent="Interactables"]
+position = Vector2(182, 103)
+script = ExtResource("seat")
+facing = "right"
+typing = false
+cup_dx = 14.0
+cup_y = 80.0
+
+[node name="Shape" type="CollisionShape2D" parent="Interactables/Seat6"]
+position = Vector2(0, -14)
+shape = SubResource("shape_seat")
+
 [node name="Fx" type="Node2D" parent="."]
 
 [node name="Screen" type="Node2D" parent="Fx"]
