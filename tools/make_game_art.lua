@@ -668,3 +668,70 @@ for _, v in ipairs({{"b", "#B08050", "#D0A070", "#7A5030"}, {"c", "#5A2A38", "#7
   s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_podium_" .. v[1] .. ".png")
   s:close()
 end
+
+-- ====================================================================================================================
+-- Venue odds and ends: the restaurant's hanging OPEN / CLOSED sign (SetDressing shows one of the two while a dinner is on or not) and
+-- a chalk menu board between its booths, and the warehouse's wall shelf of chair-game trophies (one trophy sprite per medal earned:
+-- CLEAN LAP, SPEED DEMON, TRACK RAT, BUMPER KING). Sources office/pieces/venue_*.aseprite, PNGs godot/assets/props/.
+-- ====================================================================================================================
+local function VEN(name, w, h, pal, body)
+  local b, d = G(w, h), G(w, h)
+  body(b, d)
+  PR.build{name = "venue_" .. name, ase = ASE, layers = {
+    {name = "Body", pal = pal, rows = ROWS(b)},
+    {name = "Detail", pal = pal, rows = ROWS(d), outline = false}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "venue_" .. name .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_" .. name .. ".png")
+  s:close()
+end
+GLY.O = {"###", "#.#", "#.#", "#.#", "###"}
+GLY.E = {"###", "#..", "##.", "#..", "###"}
+GLY.C = {"###", "#..", "#..", "#..", "###"}
+GLY.L = {"#..", "#..", "#..", "#..", "###"}
+GLY.S = {"###", "#..", "###", "..#", "###"}
+GLY.D = {"##.", "#.#", "#.#", "#.#", "##."}
+GLY.M = {"#.#", "###", "###", "#.#", "#.#"}
+GLY.U = {"#.#", "#.#", "#.#", "#.#", "###"}
+local function WORD(g, x, y, str, c)
+  for i = 1, #str do GL(g, x + (i - 1) * 4, y, str:sub(i, i), c) end
+end
+local VP = {k = "#17121F", w = "#F4F2EA", c = "#8A8F9A", s = "#8E939E", d = "#6B4A2E", p = "#8A6240", o = "#6B4A2E", n = "#4A3220",
+  m = "#C9955A", r = "#D8483A", R = "#B8483A", G = "#2E8A4A", g = "#5FBF6A", Y = "#E8C45A", y = "#C99A3C", a = "#1F3A2E",
+  h = "#C8CCD8", e = "#E8E0C8", q = "#8A2E26"}
+-- the sign: a chain over a board, 25 x 11 (the board 25 x 9, the text 3 x 5 letters); OPEN on green, CLOSED on red
+VEN("sign_open", 25, 11, VP, function(b, d)
+  F(b, 5, 0, 1, 2, "c"); F(b, 19, 0, 1, 2, "c")
+  BOX(b, 0, 2, 25, 9, "G", "g", "a")
+  WORD(d, 5, 4, "OPEN", "w")
+end)
+VEN("sign_closed", 25, 11, VP, function(b, d)
+  F(b, 5, 0, 1, 2, "c"); F(b, 19, 0, 1, 2, "c")
+  BOX(b, 0, 2, 25, 9, "R", "r", "q")
+  WORD(d, 1, 4, "CLOSED", "w")
+end)
+-- the menu board: a wood frame round a chalk board, MENU over four lines of dishes with a price dot each (20 x 26)
+VEN("menu_board", 20, 26, VP, function(b, d)
+  BOX(b, 0, 0, 20, 26, "p", "m", "n")
+  F(b, 2, 2, 16, 22, "a")
+  WORD(d, 3, 4, "MENU", "e")
+  F(d, 3, 10, 14, 1, "e")
+  for i = 0, 3 do
+    F(d, 3, 13 + i * 3, 9 - (i % 2) * 2, 1, "w")
+    F(d, 14, 13 + i * 3, 3, 1, "Y")
+  end
+end)
+-- the trophy shelf: a plank on two brackets (30 x 9 png); the trophies stand on it as their own sprites (7 x 11 png each)
+VEN("trophy_shelf", 28, 7, VP, function(b, d)
+  BOX(b, 0, 0, 28, 4, "p", "m", "n")
+  F(b, 3, 4, 2, 3, "d"); F(b, 23, 4, 2, 3, "d")
+end)
+local function trophy(name, rows, pal)
+  PR.build{name = "venue_trophy_" .. name, ase = ASE, layers = {{name = "Body", pal = pal, rows = rows}}}
+  local s = Sprite{fromFile = PR.ROOT .. ASE .. "venue_trophy_" .. name .. ".aseprite"}
+  s:saveCopyAs(PR.ROOT .. "godot/assets/props/venue_trophy_" .. name .. ".png")
+  s:close()
+end
+trophy("clean", {"YYYYY", "YwYYy", "YYYYy", ".YYy.", "..Y..", "..y..", ".yyy.", ".ddd.", ".ddd."}, VP)           -- CLEAN LAP: a gold cup
+trophy("speed", {"rrrrr", "rrwrr", "rwwrr", ".rwr.", "..r..", "..s..", ".sss.", ".ddd.", ".ddd."}, VP)           -- SPEED DEMON: a red cup with a bolt
+trophy("track", {"hhhhh", "hhhhs", "hhhhs", ".hhs.", "..h..", "..g..", ".ggg.", ".ddd.", ".ddd."}, VP)           -- TRACK RAT: a silver cup on a green stem
+trophy("bumper", {"Y.Y.Y", "YYYYY", "YrYgY", "YYYYy", ".yyy.", "..y..", ".yyy.", ".ddd.", ".ddd."}, VP)         -- BUMPER KING: a crown
