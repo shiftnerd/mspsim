@@ -156,6 +156,8 @@ func _init() -> void:
 		"rep.gain": 1.0,
 		"rep.loss": 1.0,
 		"owner.cost": 1.0,
+		"owner.gain": 1.0,
+		"owner.loss": 1.0,
 		"sales.lead": 0.0,
 		"sales.flow": 0.5,
 		"sales.keep": 0.0,

@@ -13764,7 +13764,7 @@ func _bailout_card(amount: int) -> void:
 func _tier_rep(delta: int) -> int:
     if delta == 0:
         return 0
-    var pre := "tech." if mode == "tech" else "rep."
+    var pre := "tech." if mode == "tech" else ("owner." if mode == "owner" else "rep.")
     var m := Difficulty.f(pre + ("gain" if delta > 0 else "loss"))
     return (1 if delta > 0 else -1) * maxi(1, roundi(absf(float(delta)) * m))
 
@@ -30229,6 +30229,10 @@ const TABLE := {
     "rep.gain": [1.2, 1.0, 0.8],
     "rep.loss": [0.75, 1.0, 1.3],
     "owner.cost": [0.95, 1.0, 1.03],
+    # Q6: the owner's weekly reputation move has its own pair, so hard can bite the owner without moving sales and service.
+    # Easy and normal are rep.gain / rep.loss to the digit (tests/owner_hard.gd); only the hard column is the owner's own.
+    "owner.gain": [1.2, 1.0, 0.5],
+    "owner.loss": [0.75, 1.0, 1.8],
     "sales.lead": [5, 0, -5],
     "sales.flow": [0.65, 0.5, 0.3],  # chance of a third new lead in a week
     # X13: two missed quarters end the sales job (0), unless the year as a whole reached this share of both quotas (hard only:
