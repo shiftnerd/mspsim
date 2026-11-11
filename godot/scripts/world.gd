@@ -38,6 +38,8 @@ const STAFF_CAST := {
 	"Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
 	"Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
 	"Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
+	# Quinn, the Year 3 new hire (tech campaign only, see roster_gone): hot-desks at the conference table like Terry does
+	"Quinn": {"character": "office_quinn", "home": "conference", "seat": "Seat6", "role": "newhire"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
@@ -437,6 +439,9 @@ func roster_gone() -> Array:
 			gone.append(n)
 	if Campaign.active and Campaign.mode == "service":
 		gone.append_array(staff_names())  # Sam has the front desk there
+	# Quinn only starts in Year 3 of the tech campaign
+	if not (Campaign.active and Campaign.mode == "tech" and Campaign.year >= 3) and not gone.has("Quinn"):
+		gone.append("Quinn")
 	# Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
 	if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
 		gone.append(Roles.partner())

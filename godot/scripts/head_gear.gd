@@ -18,7 +18,7 @@ const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
 const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
 const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
-const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
+const CELLS := {"head": 32, "hat": 48, "torso": 32, "wrist": 16}  # the cell size per kind (px, square); the hat cell is 48 so a hat may stand 8+ px above the head
 const FRAMES := 135
 
 static var _origins := {}

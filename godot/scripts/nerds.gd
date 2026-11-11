@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -640,6 +640,7 @@ const DEFAULT_THREADS := [
 				"by": "GrizzleAdmin",
 				"text": "Patch Tuesday is not the day to find out. Wait a week."
 			},
+			{"by": "WSUS_Walt", "text": "Test group on Tuesday, everybody else on the following Tuesday. Never on a Friday. A Friday patch is how you meet your Saturday."},
 		],
 		"answer":
 		"Approve critical updates to a small test group first, wait a few days, then roll out. Never patch the whole fleet on the first day.",

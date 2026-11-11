@@ -573,6 +573,13 @@ func toggle_mut_mode() -> void:
 	ban = cur if mut_mode == "ban" else ""
 
 
+# R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
+func mut_icon() -> Texture2D:
+	var id := pick if pick != "" else ban
+	var path := "res://assets/ui/mut_%s.png" % id
+	return load(path) if id != "" and ResourceLoader.exists(path) else null
+
+
 func chip_text() -> String:
 	var id := pick if pick != "" else ban
 	if id == "":
@@ -953,6 +960,8 @@ func beat(id: String) -> void:
 	var row: Dictionary = beat_row(id)
 	if row.is_empty():
 		return
+	if Campaign.mode == "tech" and Campaign.year >= 3 and (id == "newhire" or id == "mentor") and World.chars.has("Quinn"):
+		World.force_activity("Quinn", "floor")  # Quinn is on the main floor for her two beats
 	if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
 		Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
 	var options := []

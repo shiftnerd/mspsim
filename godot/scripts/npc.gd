@@ -112,6 +112,10 @@ func use(body: Node) -> void:
 			_face(body.global_position.x)
 		Expo.npc_use(self, body)
 		return
+	if wants_you():
+		_face(body.global_position.x)
+		Sales.deliver()  # X13: you asked first, he tells you now (the walk's own notify finds nothing left to say)
+		return
 	if _hold > 0.0 or Social.is_hostile(cast_name) or _hidden:
 		_arrow.shake()
 		return
@@ -232,6 +236,12 @@ func _on_body_exited(body: Node) -> void:
 		body.remove_near(self)
 		_inside.erase(body)
 	_arrow.visible = false
+
+
+# X13: this person is on the way to you with news (John and a client's complaint): the use button reaches them first,
+# seated or standing, whatever else is in reach (Player.nearest, Player._seat_caller)
+func wants_you() -> bool:
+	return cast_name == "John" and not _hidden and Sales.waiting()
 
 
 # does any player in the talk zone have this person as the thing to use?

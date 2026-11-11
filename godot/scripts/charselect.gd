@@ -1475,6 +1475,8 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
 				_txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
 				_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
 				_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
+		if row_id == "mut" and pitch >= 13.0 and Yeartwo.mut_icon() != null:  # the chosen mutator's icon (the compact 11 px rows have no room)
+			draw_texture(Yeartwo.mut_icon(), Vector2(x0 + 134.0 + 4.0, y + floorf((pitch - 12.0) * 0.5)), Color(1, 1, 1, 0.5 if Yeartwo.ban != "" else 1.0))
 		_rects.append([whole, "opt", i])
 	if str(rows[opt_row].id) == "level" and is_campaign() and Difficulty.tier_note(mode) != "":  # what the tier feels like here
 		var tnote := Difficulty.tier_note(mode)

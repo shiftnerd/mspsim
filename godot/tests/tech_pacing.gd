@@ -199,7 +199,10 @@ func _init() -> void:
 	_check(str(r.ending) != "TIMEOUT" and not bool(r.fired), "the careful bot finishes the campaign (rep %s, %s)" % [str(r.rep), str(r.ending)])
 	_check(top <= DAY_LIMIT, "no day above %d tickets (busiest %d)" % [DAY_LIMIT, top])
 	var missing := []
+	var expo := root.get_node("Expo")
 	for d in range(1, 21):
+		if d == int(expo.TRIP_DAY) and bool(expo.went):
+			continue  # the bot walks the trip now (as a player has to): the office's events of that day do not reach the venue
 		if int(per_day_fired.get(d, -1)) != int(per_day_events.get(d, 0)):
 			missing.append("d%d %d/%d" % [d, int(per_day_fired.get(d, -1)), int(per_day_events.get(d, 0))])
 	_check(missing.is_empty(), "every scripted story event of every day fired %s" % str(missing))

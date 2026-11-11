@@ -17,7 +17,7 @@ const FW := 64
 const FH := 80
 const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # HeadGear.SLOTS: the drawing order
 const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
-const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}
+const CELLS := {"head": 32, "hat": 48, "torso": 32, "wrist": 16}
 const GOLDEN := [["glasses", "aviator"], ["beard", "full"], ["hat", "cap"], ["hat", "santa"], ["lanyard", "conference"], ["watch", "sport"]]
 
 var failures := 0
@@ -205,6 +205,19 @@ func _init() -> void:
 			for facing in ["right", "left"]:
 				fit = fit and _ring_clear(slot, id, facing)
 	_check(fit, "every accessory pixel is inside its cell with a free border, in all 135 frames (death included)")
+	# R15: the 48 px hat cell lets a hat stand above the head. The hair's top outline is on body row 19 in the idle frame; the tall
+	# hats (a party cone with a pom, a Santa hat, a beanie with a pom, a hard hat, a cap) reach at least 4 rows above it, the cone 8
+	var rise := {"party": 8, "santa": 8, "beanie": 8, "hardhat": 5, "cap": 4, "bucket": 3}
+	for id in rise:
+		for facing in ["right", "left"]:
+			var cells := _raw("res://assets/accessories/hat_%s_%s.png" % [id, facing])
+			var oy := int(_origins(facing, "hat")[0][1])
+			var top_row := -1
+			for y in 48:
+				for x in 48:
+					if top_row < 0 and cells.get_pixel(x, y).a > 0:
+						top_row = y
+			_check(top_row >= 0 and 19 - (oy + top_row) >= int(rise[id]), "hat_%s %s: its top is %d rows above the hair (want %d)" % [id, facing, 19 - (oy + top_row), int(rise[id])])
 
 	# ---- the frames sit on the face: eyes and brows stay (sunglasses cover the eyes on purpose)
 	for facing in ["right", "left"]:

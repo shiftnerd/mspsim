@@ -42,6 +42,15 @@ const MAX_OPTIONS := 3
 const MAX_LABEL := 58
 const MAX_TEXT := 320
 const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
+# R8: a card's spot picture (assets/ui/card_<name>.png): the four seasons (Seasons.CARD_SEASON), else the six most common kinds of deck card
+const ART_KINDS := {
+	"printer": ["toner_late", "toner_mixup", "home_printer", "copier_lease", "projector_cart"],
+	"phone": ["lost_phone", "pw_reset_call", "scam_call", "conference_call", "client_text_night"],
+	"food": ["free_pizza", "lunch_run", "birthday_cake", "coffee_machine", "chamber_lunch"],
+	"power": ["heat_wave", "cold_snap", "power_blip", "leaky_ceiling"],
+	"security": ["phish_invoice", "sticky_password", "guest_wifi", "found_usb", "licence_audit"],
+	"backup": ["dropbox_it", "tape_check", "old_pc_donation"],
+}
 
 const DEFAULT_DECK := {
 	"toner_late": {
@@ -2433,6 +2442,17 @@ func _process(_delta: float) -> void:
 
 
 # ---- showing a card ---------------------------------------------------------------------------------------
+# the picture name of a deck or seasonal card ("" for none): its season, else its kind
+static func art_for(id: String) -> String:
+	var season := str(Seasons.CARD_SEASON.get(id, Seasons.TAGS.get(id, "")))
+	if season != "":
+		return season
+	for kind in ART_KINDS:
+		if (ART_KINDS[kind] as Array).has(id):
+			return str(kind)
+	return ""
+
+
 func show_draw(draw: Dictionary) -> void:
 	last_shown = str(draw.id)
 	shown += 1
@@ -2447,6 +2467,7 @@ func show_draw(draw: Dictionary) -> void:
 	var options := []
 	for o in c.options:
 		options.append({"label": str(o.label), "id": str(o.id)})
+	Cards.art_next = art_for(str(draw.id))
 	Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
 
 

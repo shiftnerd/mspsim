@@ -249,6 +249,60 @@ const DEFAULT_ONE_ON_ONES := {
 				{"label": "WISH HER LUCK", "reply": "Okay. Good luck either way.", "fx": {"morale": -3, "retain": -2}},
 			],
 		},
+		{
+			"text": "The front desk at Acme asked for me by name today. Is that allowed?",
+			"options":
+			[
+				{"label": "PUT HER NAME ON THE ACCOUNT", "reply": "It is allowed. I put your name on the Acme page as first contact. In ink.", "fx": {"morale": 5, "retain": 1, "mood": 1}},
+				{"label": "SAY IT IS A GOOD SIGN", "reply": "It is a good sign. Keep doing what you did.", "fx": {"morale": 3}},
+				{"label": "REMIND HER THE QUEUE DECIDES", "reply": "The queue decides who gets what. Not the client.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "I stayed until seven twice this week. Nobody asked me to. I just did not want to leave them open.",
+			"options":
+			[
+				{"label": "SEND HER HOME ON TIME", "reply": "At five you write a handover note and you go. I read it. The ticket will still be there, and so will you.", "fx": {"morale": 4, "retain": 1, "stress": -5}},
+				{"label": "THANK HER AND LOG THE HOURS", "reply": "Thank you. I logged both evenings. Take Friday afternoon.", "fx": {"morale": 3, "stress": -2}},
+				{"label": "SAY THAT IS THE JOB", "reply": "Some weeks are like that.", "fx": {"morale": -3, "stress": 4}},
+			],
+		},
+		{
+			"text": "I wrote down how I fix the scanner at Brightside. Three steps. Do you want it, or is that silly?",
+			"options":
+			[
+				{"label": "MAKE IT A RUNBOOK WITH HER NAME ON IT", "reply": "Not silly. It goes in the binder with your name on the top line. I will print a label.", "fx": {"morale": 6, "retain": 1, "skill": 0.02}},
+				{"label": "ASK HER TO SHOW SAM", "reply": "Show Sam on the next one. If he can follow it, it is good.", "fx": {"morale": 3, "skill": 0.01}},
+				{"label": "SAY THE BINDER IS FULL", "reply": "We have enough paper.", "fx": {"morale": -4}},
+			],
+		},
+		{
+			"text": "John told a client I would call back in ten minutes. I was on another call. Then the client was angry at me.",
+			"options":
+			[
+				{"label": "TALK TO JOHN TODAY", "reply": "That is mine to fix, not yours. I will talk to John before lunch. Promises go through the board.", "fx": {"morale": 5, "retain": 1, "social": {"John": -1}}},
+				{"label": "GIVE HER A LINE TO USE", "reply": "Say: I have your ticket open right now. It is true and it buys a minute.", "fx": {"morale": 3, "skill": 0.01}},
+				{"label": "TELL HER TO CALL BACK FASTER", "reply": "Then call back faster.", "fx": {"morale": -5}},
+			],
+		},
+		{
+			"text": "Honest question. Am I the phone person because I am good at it, or because I am the only girl?",
+			"options":
+			[
+				{"label": "COUNT THE CALLS, FIX THE ROTA", "reply": "Fair question. I counted. You took six calls in ten last month. That is wrong. New rota on the wall by Monday.", "fx": {"morale": 6, "retain": 2}},
+				{"label": "SAY BECAUSE SHE IS GOOD AT IT", "reply": "Because you are the best at it. But I hear you.", "fx": {"morale": 2}},
+				{"label": "SAY SOMEBODY HAS TO", "reply": "Somebody has to answer.", "fx": {"morale": -5, "retain": -1}},
+			],
+		},
+		{
+			"text": "The granola bars in my drawer keep vanishing. I am not mad. I am keeping a tally.",
+			"options":
+			[
+				{"label": "BUY A BOX FOR THE ROOM", "reply": "I put a box by the printer, labelled CREW. Yours stay yours. I labelled the drawer too.", "fx": {"morale": 4, "retain": 1}},
+				{"label": "PROMISE TO ASK AROUND", "reply": "I will ask. Quietly.", "fx": {"morale": 2}},
+				{"label": "SAY IT IS ONLY GRANOLA", "reply": "It is a granola bar, Maya.", "fx": {"morale": -2}},
+			],
+		},
 	],
 	"Tech":
 	[
@@ -286,6 +340,96 @@ const DEFAULT_ONE_ON_ONES := {
 				{"label": "TAKE THE CLIENT YOURSELF", "reply": "I will call them back. You did nothing wrong. Write down what they said, I will use it.", "fx": {"morale": 6, "retain": 1, "mood": 1}},
 				{"label": "ASK WHAT HAPPENED", "reply": "Tell me what happened, in order. We will make a script for next time.", "fx": {"morale": 4, "stress": -3}},
 				{"label": "SAY CLIENTS ARE LIKE THAT", "reply": "That happens.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I closed a ticket and it came back the next day. Same printer. I feel stupid.",
+			"options":
+			[
+				{"label": "READ THE TICKET TOGETHER", "reply": "Not stupid. A reopen tells us what the note was missing. Bring it up, we read it together.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "SAY IT HAPPENS TO EVERYONE", "reply": "Mine come back too. Check the cable first next time.", "fx": {"morale": 3, "skill": 0.01}},
+				{"label": "COUNT THE REOPENS OUT LOUD", "reply": "That is the third one this month.", "fx": {"morale": -4, "stress": 3}},
+			],
+		},
+		{
+			"text": "{name} says: Maya is faster than me at everything. I do not think I will catch up.",
+			"options":
+			[
+				{"label": "SHOW THE TREND, NOT THE RANK", "reply": "Do not compare with Maya. Compare with you in the first week. Here is the table. You are twice as fast.", "fx": {"morale": 6, "retain": 1}},
+				{"label": "PAIR THEM FOR A DAY", "reply": "Sit next to her on Tuesday. Watch what she skips.", "fx": {"morale": 3, "skill": 0.02}},
+				{"label": "SAY SOMEBODY IS ALWAYS FASTER", "reply": "Somebody is always faster.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I do not understand half of what Alan says about the servers. I nod anyway.",
+			"options":
+			[
+				{"label": "DRAW IT ON THE WHITEBOARD", "reply": "Stop nodding. Come to the whiteboard, I will draw the rack. Boxes and arrows, nothing else.", "fx": {"morale": 5, "skill": 0.03}},
+				{"label": "ASK ALAN TO SLOW DOWN", "reply": "I will ask Alan to use fewer letters. He will grumble. He will do it.", "fx": {"morale": 4, "trust": {"Alan": -1}}},
+				{"label": "SAY NODDING IS FINE", "reply": "Keep nodding. It comes with time.", "fx": {"morale": -2}},
+			],
+		},
+		{
+			"text": "{name} says: Can I take Friday afternoon? My sister is moving. I know the queue is long.",
+			"options":
+			[
+				{"label": "YES, AND COVER THE QUEUE", "reply": "Go. I take your tickets from one. Leave me notes I can read.", "fx": {"morale": 6, "retain": 2}},
+				{"label": "YES, IF THE TICKETS HAVE NOTES", "reply": "Yes, if every open ticket has a note by noon.", "fx": {"morale": 3, "retain": 1}},
+				{"label": "SAY NOT THIS WEEK", "reply": "Not this week.", "fx": {"morale": -5, "retain": -1}},
+			],
+		},
+		{
+			"text": "{name} says: A client offered me twenty dollars to fix a home computer after hours. I said I would ask.",
+			"options":
+			[
+				{"label": "EXPLAIN THE RULE AND CALL THEM", "reply": "Good that you asked. Home machines go through the shop, with a ticket, so you are covered if it breaks. I will call them.", "fx": {"morale": 4, "retain": 1, "trust": {"Alan": 1}}},
+				{"label": "LET IT GO THIS ONCE", "reply": "This once. Tell me how it went.", "fx": {"morale": 3, "trust": {"Alan": -1}}},
+				{"label": "SAY ABSOLUTELY NOT", "reply": "No side jobs. Ever.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: I broke a mailbox rule at Soggy Bottom. I fixed it before anybody saw. Do I have to say?",
+			"options":
+			[
+				{"label": "WRITE IT UP TOGETHER", "reply": "You just did, and that is the right way round. Two lines in the ticket. Nobody gets shouted at for a note.", "fx": {"morale": 5, "retain": 1, "skill": 0.02}},
+				{"label": "SAY TELL ME FIRST NEXT TIME", "reply": "Next time tell me first, then fix. Today it is fine.", "fx": {"morale": 2, "skill": 0.01}},
+				{"label": "ASK WHAT ELSE IS BROKEN", "reply": "What else have you not told me?", "fx": {"morale": -5, "stress": 4}},
+			],
+		},
+		{
+			"text": "{name} says: I keep forgetting to write the time on tickets. Morgan sent the report back.",
+			"options":
+			[
+				{"label": "PUT A TIMER ON THE DESK", "reply": "Here. A kitchen timer. Start it when you open a ticket. I labelled it.", "fx": {"morale": 4, "skill": 0.02}},
+				{"label": "CHECK THE BOARD AT FOUR", "reply": "At four I look at your board and we fill the gaps together. For two weeks.", "fx": {"morale": 3, "stress": -2}},
+				{"label": "SAY MORGAN IS RIGHT", "reply": "Morgan is right. Write the time.", "fx": {"morale": -3}},
+			],
+		},
+		{
+			"text": "{name} says: Does Garrison pick who goes to the bowling night? Nobody asked me last time.",
+			"options":
+			[
+				{"label": "FIX THE LIST", "reply": "Nobody picks. The list was old. You are on it now. I checked twice.", "fx": {"morale": 5, "retain": 1}},
+				{"label": "SAY IT WAS AN ACCIDENT", "reply": "It was an accident. Come next time.", "fx": {"morale": 2}},
+				{"label": "SAY IT IS NOT A WORK MATTER", "reply": "That is not a work matter.", "fx": {"morale": -4, "retain": -1}},
+			],
+		},
+		{
+			"text": "{name} says: I think I am better on the phones than on the tickets. Is that a bad thing here?",
+			"options":
+			[
+				{"label": "BUILD ON IT", "reply": "It is a good thing. You take first calls for a month and I teach you one ticket type a week.", "fx": {"morale": 5, "retain": 1, "mood": 1}},
+				{"label": "SAY WE NEED BOTH", "reply": "We need both. Keep at the tickets.", "fx": {"morale": 2}},
+				{"label": "SAY THE JOB IS TICKETS", "reply": "The job is tickets.", "fx": {"morale": -4}},
+			],
+		},
+		{
+			"text": "{name} says: The runbook said restart the service. It did not work. I restarted it four more times.",
+			"options":
+			[
+				{"label": "TEACH THE STOP RULE", "reply": "Twice, then stop and read the log. If the log means nothing to you, bring it to me. I will add that line to the runbook.", "fx": {"morale": 4, "skill": 0.03}},
+				{"label": "FIX THE RUNBOOK", "reply": "Then the runbook is wrong. Show me the step, I will change it today.", "fx": {"morale": 4, "skill": 0.01}},
+				{"label": "SAY FIVE TIMES IS SILLY", "reply": "Five times. Really.", "fx": {"morale": -4}},
 			],
 		},
 	],
@@ -327,12 +471,67 @@ const DEFAULT_ONE_ON_ONES := {
 				{"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"John": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
 			],
 		},
+		{
+			"text": "I told Brightside we do weekends. We do weekends, right? Dan?",
+			"options":
+			[
+				{"label": "PRICE IT AS AN EXTRA", "reply": "We can, as a paid extra with a number on it. I will write the rate. You sell the rate.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}}},
+				{"label": "COVER THIS ONE, THEN FIX THE WORDING", "reply": "I will take this Saturday myself. Then we change the wording together.", "fx": {"social": {"John": 3}, "morale": -2, "mood": 1}},
+				{"label": "TELL HIM TO TAKE IT BACK", "reply": "Call them back and take it away.", "fx": {"social": {"John": -3}, "mood": -1}},
+			],
+		},
+		{
+			"text": "The new client wants everything live by Monday. I said probably. What is probably, in tech?",
+			"options":
+			[
+				{"label": "GIVE HIM A REAL DATE", "reply": "Probably is Thursday. Mail on Monday, the rest by Thursday. Tell them that, in writing.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+				{"label": "PULL THE CREW IN", "reply": "Fine. Monday. I move two people off the queue.", "fx": {"social": {"John": 3}, "morale": -3, "trust": {"Alan": 0, "Garrison": 1}}},
+				{"label": "SAY PROBABLY MEANS NO", "reply": "It means no.", "fx": {"social": {"John": -3}, "trust": {"Alan": 0, "Garrison": -1}}},
+			],
+		},
+		{
+			"text": "Be honest. Do your people hate it when I walk into the room?",
+			"options":
+			[
+				{"label": "TELL HIM WHAT WOULD HELP", "reply": "They do not hate you. They hate surprises. Bring the ticket number with you and they will like you fine.", "fx": {"social": {"John": 3}, "morale": 2}},
+				{"label": "SAY THEY LIKE HIM", "reply": "They like you. Mostly.", "fx": {"social": {"John": 2}}},
+				{"label": "SAY YES", "reply": "A little.", "fx": {"social": {"John": -4}}},
+			],
+		},
+		{
+			"text": "I want to bring Maya to a client lunch. She explains things better than I do. Can I borrow her?",
+			"options":
+			[
+				{"label": "YES, WITH NOTICE, AND SHE PICKS", "reply": "One lunch a month, a day of notice, and she picks the client. Ask her, not me.", "fx": {"social": {"John": 2}, "morale_who": {"Maya": 3}}},
+				{"label": "YES, THIS ONCE", "reply": "This once. I cover her phone.", "fx": {"social": {"John": 3}, "morale_who": {"Maya": 1}}},
+				{"label": "NO, SHE IS A TECH", "reply": "She is a tech, not a brochure.", "fx": {"social": {"John": -3}}},
+			],
+		},
+		{
+			"text": "A client wants ten percent off because the printer broke twice. I kind of already said yes.",
+			"options":
+			[
+				{"label": "TRADE IT FOR A FIX", "reply": "No discount. A clean printer setup, free, this week, with my name on it. That is worth more than ten percent.", "fx": {"social": {"John": 1}, "trust": {"Alan": 2, "Garrison": 0}, "mood": 1}},
+				{"label": "LET IT STAND FOR ONE MONTH", "reply": "One month. And next time you ask first.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+				{"label": "MAKE HIM TAKE IT BACK", "reply": "Then un-say it.", "fx": {"social": {"John": -4}, "trust": {"Alan": 1, "Garrison": 0}, "mood": -1}},
+			],
+		},
+		{
+			"text": "What do I say when they ask how long a fix takes? It depends makes them twitch.",
+			"options":
+			[
+				{"label": "GIVE HIM THREE NUMBERS", "reply": "Urgent: we call back within the hour. Normal: same day. Projects: a date in writing. I made you a card for your wallet.", "fx": {"social": {"John": 3}, "mood": 1}},
+				{"label": "TELL HIM TO READ THE BOARD", "reply": "Look at the board before you answer. It is on the wall for a reason.", "fx": {"social": {"John": 1}}},
+				{"label": "SAY IT DEPENDS", "reply": "It depends.", "fx": {"social": {"John": -2}}},
+			],
+		},
 	],
 }
 var ONE_ON_ONES: Dictionary = DEFAULT_ONE_ON_ONES.duplicate(true)
 const DEFAULT_ONE_TEXT := {
 	"already": "We talked this morning, Dan. I am fine. Thanks.",
 	"walkup": "%s stops by your desk.",
+	"quiet": "Nothing new since last time, Dan. I am okay. Thanks for asking.",
 }
 var ONE_TEXT: Dictionary = DEFAULT_ONE_TEXT.duplicate(true)
 
@@ -620,7 +819,9 @@ var trust := {"Alan": TRUST_START, "Garrison": TRUST_START}
 var focus := "p1"
 var buffs: Array = []  # {key, val, left}
 var flags := {}
+const OTO_QUIET_MORALE := 3  # C7: what a check-in is worth once the deck is used up (a card's middle answer)
 var oto_seen := {}  # deck -> cards used
+var oto_log := []  # C7: [deck, card index] of every 1:1 of this run in order (-1 = the check-in after the deck ran out); not saved
 var oto_day := {}  # who -> the day you last had a 1:1
 var grades: Array = []  # [{day, grade, score, util, sla}]
 var project_days := 0
@@ -676,6 +877,7 @@ func reset() -> void:
 	buffs = []
 	flags = {}
 	oto_seen = {}
+	oto_log = []
 	oto_day = {}
 	grades = []
 	project_days = 0
@@ -1512,6 +1714,21 @@ func _deck_of(who: String) -> String:
 	return who if who == "Maya" or who == "John" else "Tech"
 
 
+# C7: the order a run deals a deck in. Seeded by the run (the same run keeps its order through a save, another run gets another
+# one); `oto_seen[deck]` counts how many of it have been dealt, so no card comes twice until the deck is used up
+func oto_order(deck_id: String) -> Array:
+	var order := []
+	for i in ONE_ON_ONES[deck_id].size():
+		order.append(i)
+	Difficulty.shuffle_with(order, Difficulty.rng_for("service.oto", hash(deck_id)))
+	return order
+
+
+# cards of the deck this run has not seen yet
+func oto_left(deck_id: String) -> int:
+	return maxi(0, ONE_ON_ONES[deck_id].size() - int(oto_seen.get(deck_id, 0)))
+
+
 func one_on_one(who: String, after := Callable()) -> void:
 	var label := Roles.label(who) if who == "Maya" or who == "John" else "%s (Tier 1)" % who
 	if int(oto_day.get(who, -1)) == Campaign.day:
@@ -1523,8 +1740,17 @@ func one_on_one(who: String, after := Callable()) -> void:
 	var deck_id := _deck_of(who)
 	var deck: Array = ONE_ON_ONES[deck_id]
 	var used := int(oto_seen.get(deck_id, 0))
+	if used >= deck.size():
+		# C7: every card of the deck has been dealt in this run and none comes twice: a short check-in instead
+		oto_log.append([deck_id, -1])
+		if Crew.has(who):
+			apply_fx({"morale_who": {who: OTO_QUIET_MORALE}}, _people_scale())
+		Cards.ask(label, str(ONE_TEXT.quiet), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
+		return
 	oto_seen[deck_id] = used + 1
-	var card: Dictionary = deck[used % deck.size()]
+	var at := int(oto_order(deck_id)[used])
+	oto_log.append([deck_id, at])
+	var card: Dictionary = deck[at]
 	var options := []
 	for i in card.options.size():
 		options.append({"label": str(card.options[i].label), "id": str(i)})
@@ -1561,7 +1787,7 @@ func _walk_up() -> void:
 		if n == "Maya":
 			continue
 		var last := int(Crew.value(str(n), "last_oto"))
-		if Campaign.day - last >= 3 and (who == "" or last < int(Crew.value(who, "last_oto"))):
+		if Campaign.day - last >= 3 and (who == "" or last < int(Crew.value(who, "last_oto"))) and oto_left(_deck_of(str(n))) > 0:
 			who = str(n)
 	if who == "":
 		return

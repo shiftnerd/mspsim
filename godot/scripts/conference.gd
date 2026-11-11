@@ -14,6 +14,9 @@ const TRIP_DAY := 17
 const CLOCKS := [10.0, 13.0, 15.0]
 const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
+const TRIP_GAIN := [0, 0, 1, 2, 3]  # T2: the trip day's reputation by trip_effort() 0..4
+const TRIP_KNOWN_REP := 65  # from here the trip is worth a point less
+const TRIP_TOP_REP := 80  # from here one point at most
 const MORGAN := "Morgan Reyes - Manager"
 const Trip := preload("res://scripts/trip_variety.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
@@ -96,6 +99,8 @@ const DEFAULT_TEXT := {
 	"to_booth":
 	"The vendor hall is always open: the EXPO HALL door in the lobby. Walk into a booth to see what they have.",
 	"to_raffle": "The closing raffle is in the BALLROOM. Do not miss it.",
+	"trip_quiet": "A QUIET TRIP. NOTHING TO TELL AT HOME.",
+	"trip_known": "A GOOD TRIP. AT HOME THEY KNEW THAT ALREADY.",
 }
 var TEXT: Dictionary = DEFAULT_TEXT.duplicate(true)
 const DEFAULT_ROUNDS := [
@@ -776,6 +781,16 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "walt", "speaker": "WSUS_Walt (forum regular)",
+		"text": "Walt. I patch things. On a Tuesday, in a window, with a rollback plan and a reboot nobody is surprised by. You look like somebody who patches on a Friday. Do not tell me.",
+		"options": [
+			{"id": "window", "label": "ASK ABOUT THE PATCH WINDOW", "skill": "servers", "xp": 4, "text": "'A test group, a week, then the rest. The window goes in the calendar and in the client's head.' He writes the approval steps on the back of your badge. (+4 servers XP)"},
+			{"id": "reboot", "label": "ASK ABOUT THE REBOOT", "skill": "people", "xp": 3, "text": "'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HIS FRIDAY RULE", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma)", "text_free": "You upvote his never-on-a-Friday post. He replies with a list of dates."},
+			{"id": "friday", "label": "ADMIT TO A FRIDAY PATCH", "skill": "", "xp": 0, "social": 1, "text": "He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more)", "text_free": "He puts a hand on your shoulder like a doctor."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -847,6 +862,13 @@ const CROWD := {
 			"facing": "right",
 			"routine": ["wait:5", "talk:3", "wait:3"]
 		},
+		{
+			"who": "expo_walt",
+			"role": "forum:walt",
+			"x": 160,
+			"facing": "left",
+			"routine": ["wait:5", "say:2", "wait:4"]
+		},
 	],
 	"resort_hall":
 	[
@@ -912,7 +934,7 @@ const CROWD := {
 			"role": "speaker",
 			"x": 204,
 			"facing": "left",
-			"routine": ["wait:8", "say:2"]
+			"routine": ["talk:7", "wait:2", "talk:6", "wait:3"]
 		},
 		{
 			"who": "expo_attd",
@@ -930,6 +952,22 @@ const CROWD := {
 			"seat": "Seat3",
 			"routine": ["wait:8"]
 		},
+		{
+			"who": "expo_attf",
+			"role": "audience",
+			"x": 58,
+			"facing": "right",
+			"seat": "Seat4",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_atte",
+			"role": "audience",
+			"x": 118,
+			"facing": "right",
+			"seat": "Seat6",
+			"routine": ["wait:8"]
+		},
 	],
 	"breakout_b":
 	[
@@ -938,7 +976,7 @@ const CROWD := {
 			"role": "speaker",
 			"x": 214,
 			"facing": "left",
-			"routine": ["wait:8", "say:2"]
+			"routine": ["talk:7", "wait:2", "talk:6", "wait:3"]
 		},
 		{
 			"who": "expo_attb",
@@ -956,6 +994,22 @@ const CROWD := {
 			"seat": "Seat3",
 			"routine": ["wait:8"]
 		},
+		{
+			"who": "expo_attc",
+			"role": "audience",
+			"x": 50,
+			"facing": "right",
+			"seat": "Seat4",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_attf",
+			"role": "audience",
+			"x": 106,
+			"facing": "right",
+			"seat": "Seat6",
+			"routine": ["wait:8"]
+		},
 	],
 	"breakout_c":
 	[
@@ -964,7 +1018,7 @@ const CROWD := {
 			"role": "speaker",
 			"x": 192,
 			"facing": "left",
-			"routine": ["wait:8", "say:2"]
+			"routine": ["talk:7", "wait:2", "talk:6", "wait:3"]
 		},
 		{
 			"who": "expo_tina",
@@ -982,6 +1036,22 @@ const CROWD := {
 			"seat": "Seat3",
 			"routine": ["wait:8"]
 		},
+		{
+			"who": "expo_atta",
+			"role": "audience",
+			"x": 38,
+			"facing": "right",
+			"seat": "Seat4",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_atte",
+			"role": "audience",
+			"x": 102,
+			"facing": "right",
+			"seat": "Seat6",
+			"routine": ["wait:8"]
+		},
 	],
 	"breakout_d":
 	[
@@ -990,7 +1060,7 @@ const CROWD := {
 			"role": "speaker",
 			"x": 204,
 			"facing": "left",
-			"routine": ["wait:8", "say:2"]
+			"routine": ["talk:7", "wait:2", "talk:6", "wait:3"]
 		},
 		{
 			"who": "expo_priya",
@@ -1006,6 +1076,22 @@ const CROWD := {
 			"x": 145,
 			"facing": "right",
 			"seat": "Seat3",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_attb",
+			"role": "audience",
+			"x": 64,
+			"facing": "right",
+			"seat": "Seat4",
+			"routine": ["wait:8"]
+		},
+		{
+			"who": "expo_attf",
+			"role": "audience",
+			"x": 124,
+			"facing": "right",
+			"seat": "Seat6",
 			"routine": ["wait:8"]
 		},
 	],
@@ -1066,6 +1152,7 @@ var tot_missed := 0
 var tot_reopened := 0
 var away := false
 var peeked := false
+var listened := false  # T2: you sat through the keynote (not the queue on your phone)
 var _sent := {}
 var _stage := ""
 var _seen := ""
@@ -1108,6 +1195,7 @@ func reset() -> void:
 	tot_reopened = 0
 	away = false
 	peeked = false
+	listened = false
 	_sent = {}
 	_stage = ""
 	_seen = ""
@@ -1240,10 +1328,16 @@ func _on_day(day: int) -> void:
 	if not is_tech():
 		return
 	if day == TRIP_DAY + 1:
+		if went and _stage != "" and _stage != "done":
+			# T2: the trip day ended before the closing raffle (a bot that never walked the venue): you are home anyway, and
+			# the ticket stream that the trip switched off is on again
+			_stage = "done"
+			Msp.enabled = true
 		_home()
 	if is_trip_day(day):
 		away = true
 		peeked = false
+		listened = false
 		picks = []
 		went = true
 		Career.add("trips")
@@ -1484,6 +1578,7 @@ func _keynote_answer(id: String) -> void:
 		peeked = true
 		text = str(TEXT.keynote_peek)
 	else:
+		listened = true
 		Skills.add_xp("people", 3)
 	Cards.ask(
 		"RODENT NATION",
@@ -1900,6 +1995,28 @@ func _owner_home() -> void:
 	Game.go(str(_back.get("scene", "main_floor")), "start")
 
 
+# ---- T2: what the trip does for your name. It used to be a flat +3 for anyone who went (the three sessions cannot be skipped).
+# Now it is what you did there, one point each: the keynote listened to, the three sessions sat through, two booths or vendor
+# pitches, two people talked to (attendees, the forum regulars). Sessions alone are a passive trip.
+func trip_effort() -> int:
+	var n := 0
+	n += 1 if listened else 0
+	n += 1 if picks.size() >= ROUNDS.size() else 0
+	n += 1 if _booths.size() + _met.size() >= 2 else 0
+	n += 1 if _talked.size() >= 2 else 0
+	return n
+
+
+# ... and where you stand: from TRIP_KNOWN_REP a point less (they already know your name), from TRIP_TOP_REP one at most
+func trip_rep() -> int:
+	var gain: int = TRIP_GAIN[clampi(trip_effort(), 0, TRIP_GAIN.size() - 1)]
+	if Campaign.rep >= TRIP_KNOWN_REP:
+		gain = maxi(0, gain - 1)
+	if Campaign.rep >= TRIP_TOP_REP:
+		gain = mini(gain, 1)
+	return gain
+
+
 # ---- the day report for the trip day
 func adjust_report(r: Dictionary) -> Dictionary:
 	if is_tech() and not away:
@@ -1913,7 +2030,10 @@ func adjust_report(r: Dictionary) -> Dictionary:
 		r["open_left"] = Msp.open_tickets().size()
 		r["points"] = 20
 		r["pay"] = 150
-		r["rep_delta"] = 2 + (1 if picks.size() >= 3 else 0)
+		r["rep_delta"] = trip_rep()
+		r["sloppy"] = false  # the queue at home is not this day's loose end (and its note would hide the trip's)
+		if int(r.rep_delta) == 0:
+			r["notes"] = [str(TEXT.trip_quiet if trip_effort() < 2 else TEXT.trip_known)]
 		r["grade"] = "A"
 	return r
 

@@ -267,10 +267,12 @@ func _title_phase() -> void:
 		await _end("options " + mode)
 		if mode == "tech" or mode == "owner":
 			root.get_node("Yeartwo").begin_select(mode, true)  # the MUT row too
+			root.get_node("Yeartwo").pick = "heartbleed"  # R9: the chosen mutator's icon beside the MUT row
 			cs.opt_row = 2
 			_begin()
 			cs.queue_redraw()
 			await _end("options year2 " + mode)
+			root.get_node("Yeartwo").pick = ""
 			root.get_node("Yeartwo").pending = false
 		if mode == "free":
 			continue
@@ -431,6 +433,15 @@ func _report(kind: String) -> Dictionary:
 		r["rep_delta"] = -1
 		r["sloppy"] = true
 		r["notes"] = [root.get_node("Campaign").SLOPPY_NOTE]
+	elif kind == "trip":  # T2: a trip that earned nothing (the longer of the two lines)
+		r["rep_delta"] = 0
+		r["grade"] = "A"
+		r["notes"] = [str(root.get_node("Expo").TEXT.trip_known)]
+	elif kind == "top":  # T2: a clean day near the top that is not a whole point yet
+		r["rep_delta"] = 0
+		r["rep"] = 93
+		r["grade"] = "S"
+		r["notes"] = [root.get_node("Campaign").TOP_NOTE]
 	elif kind == "ending":
 		r["day"] = 20
 		r["final"] = true
@@ -500,7 +511,18 @@ func _floor_phase() -> void:
 	], func(_id: String) -> void: pass)
 	await _end("card scam prices")
 	_clear(cards)
-	for kind in ["tech", "sloppy", "ending", "owner"]:
+	# R8: event cards with their spot picture (drawn where the card is wide enough and has the height: the tall format goes without)
+	for pic in ["tax", "printer"]:
+		_begin()
+		cards.art_next = pic
+		cards.ask("THE TONER SUPPLIER", "YOUR ORDER OF TONER FOR THREE CLIENTS IS A WEEK LATE. THE DRIVER SAYS THE TRUCK IS AROUND. TWO OFFICES ARE DOWN TO THEIR LAST CARTRIDGE.", [
+			{"label": "BORROW A CARTRIDGE FROM THE WAREHOUSE", "id": "a"},
+			{"label": "CALL ANOTHER SUPPLIER AT TWICE THE PRICE", "id": "b"},
+			{"label": "WAIT ONE MORE DAY", "id": "c"},
+		], func(_id: String) -> void: pass)
+		await _end("card with picture " + pic)
+		_clear(cards)
+	for kind in ["tech", "sloppy", "trip", "top", "ending", "owner"]:
 		_begin()
 		rep.is_open = false
 		rep.show_report(_report(kind))
@@ -785,6 +807,29 @@ func _floor_phase() -> void:
 		_begin()
 		await _end("chair %s result" % event)
 		out.close()
+	# co-op: the chair duel (player 1 against player 2): its intro page and the HUD strip with the clock's frame, the P1 / P2 tags and the pips
+	var duo := root.get_node("Players")
+	duo.enable_coop(true)
+	duo.join(1, 1)
+	out.chair_event = "straight"
+	_begin()
+	out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
+	out.press(KEY_RIGHT)
+	out.press(KEY_RIGHT)
+	await _end("chair duel intro")
+	out.press(KEY_ENTER)
+	out.tick(3.4)
+	if out.g.has("race") and out.g.race.duel:
+		out.g.race.chairs[0].bumps = 2
+		out.g.race.chairs[1].bumps = 1
+		out.g.race._say("PLAYER 1 GOT YOU! 2 TO 1", 5.0)
+	out.tick(0.1)
+	out._traveled = true
+	_begin()
+	await _end("chair duel hud strip")
+	out._traveled = false
+	out.close()
+	duo.enable_coop(false)
 	out.chair_event = "straight"
 	_begin()
 	out.start("paintball", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"], "night": true})

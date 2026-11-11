@@ -27,6 +27,8 @@ const SALOON_WINDOWS := [21.0, 45.0, 109.0, 133.0]  # set x of the four saloon w
 const JAIL_WINDOW := Rect2(661.0, 47.0, 22.0, 20.0)
 const SET_W := 700.0
 const FLASH := 0.11  # seconds a muzzle flash lasts
+const NIGHT_BG := "res://assets/sets/paintball_field_night.png"  # R41: the painted night street (same geometry as the day set); missing = the code-drawn wash
+const NIGHT_PROP := "res://assets/props/pbn_%s.png"  # the night version of each pb_* piece
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -44,6 +46,7 @@ var _seen_down: Array = []
 var _debug := OS.get_environment("PAINT_DEBUG") == "1"
 var _flashes: Array = []  # night: {at, dir, t} muzzle flashes
 var _stars: Array = []  # night: [Vector2] in set pixels
+var _night_art := false  # night: the painted night set is in use (no code-drawn wash, moon, stars or windows)
 
 
 func field_x(gx: float) -> float:
@@ -80,11 +83,27 @@ func setup(scene: Node, the_game: RefCounted, set_x0: float, specs: Array) -> vo
 	if night():
 		_actors.modulate = NIGHT_ACTORS
 		_make_stars()
+		_night_art = _swap_night_art(scene)
 	_sync()
 
 
 func night() -> bool:
 	return game != null and bool(game.night)
+
+
+# the night match: the background and the barricade pieces become their painted night versions. False (and nothing changes) when the
+# texture is missing: the code-drawn wash is the fallback.
+func _swap_night_art(scene: Node) -> bool:
+	var bg := scene.get_node_or_null("Background") as Sprite2D
+	if bg == null or not ResourceLoader.exists(NIGHT_BG):
+		return false
+	bg.texture = load(NIGHT_BG)
+	for n in _actors.get_children():
+		if n is Sprite2D and String(n.name).begins_with("pb_"):
+			var path: String = NIGHT_PROP % String(n.name).trim_prefix("pb_").rsplit("_", true, 1)[0]
+			if ResourceLoader.exists(path):
+				(n as Sprite2D).texture = load(path)
+	return true
 
 
 # the same sky every night: a fixed scatter of stars above the roofs (none over the saloon front, the jail sign or the water tower)
@@ -238,7 +257,7 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
 	if game == null:
 		return
-	if night():
+	if night() and not _night_art:
 		_draw_night()
 	for l in LANE_OFF.size():  # the lanes, as dashes on the street
 		var gx := 6.0

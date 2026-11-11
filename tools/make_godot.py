@@ -22,9 +22,11 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
+                    # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
+                    "office_quinn", "office_ross", "office_terry",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky", "custom_bare"]
@@ -166,19 +168,19 @@ SETS = {
     "breakout_a": dict(node="BreakoutA", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(79, 99, False), (109, 99, False), (139, 99, False)]),
+        exits=[], seats=[(79, 99, False), (109, 99, False), (139, 99, False), (58, 103, False), (88, 103, False), (118, 103, False)]),
     "breakout_b": dict(node="BreakoutB", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(71, 99, False), (99, 99, False), (127, 99, False)]),
+        exits=[], seats=[(71, 99, False), (99, 99, False), (127, 99, False), (50, 103, False), (78, 103, False), (106, 103, False)]),
     "breakout_c": dict(node="BreakoutC", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(59, 99, False), (91, 99, False), (123, 99, False)]),
+        exits=[], seats=[(59, 99, False), (91, 99, False), (123, 99, False), (38, 103, False), (70, 103, False), (102, 103, False)]),
     "breakout_d": dict(node="BreakoutD", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(85, 99, False), (115, 99, False), (145, 99, False)]),
+        exits=[], seats=[(85, 99, False), (115, 99, False), (145, 99, False), (64, 103, False), (94, 103, False), (124, 103, False)]),
     "vendor_hall": dict(node="VendorHall", W=320,
         spawns={"start": (150, "right"), "from_hall": (290, "left"), "from_booth": (150, "right")},
         doors=[("ToLobby", 303, "resort_lobby", "from_expo", "")],
@@ -3454,6 +3456,10 @@ func use(body: Node) -> void:
             _face(body.global_position.x)
         Expo.npc_use(self, body)
         return
+    if wants_you():
+        _face(body.global_position.x)
+        Sales.deliver()  # X13: you asked first, he tells you now (the walk's own notify finds nothing left to say)
+        return
     if _hold > 0.0 or Social.is_hostile(cast_name) or _hidden:
         _arrow.shake()
         return
@@ -3574,6 +3580,12 @@ func _on_body_exited(body: Node) -> void:
         body.remove_near(self)
         _inside.erase(body)
     _arrow.visible = false
+
+
+# X13: this person is on the way to you with news (John and a client's complaint): the use button reaches them first,
+# seated or standing, whatever else is in reach (Player.nearest, Player._seat_caller)
+func wants_you() -> bool:
+    return cast_name == "John" and not _hidden and Sales.waiting()
 
 
 # does any player in the talk zone have this person as the thing to use?
@@ -4411,7 +4423,7 @@ const HELD_ITEM := preload("res://scripts/held_item.gd")
 const DIR := "res://assets/accessories/"
 const SLOTS := ["lanyard", "badge", "beard", "hat", "glasses", "watch"]  # drawing order, lowest first (glasses stay in front of a hat's brim)
 const KIND := {"beard": "head", "glasses": "head", "hat": "hat", "badge": "torso", "lanyard": "torso", "watch": "wrist"}
-const CELLS := {"head": 32, "hat": 40, "torso": 32, "wrist": 16}  # the cell size per kind (px, square)
+const CELLS := {"head": 32, "hat": 48, "torso": 32, "wrist": 16}  # the cell size per kind (px, square); the hat cell is 48 so a hat may stand 8+ px above the head
 const FRAMES := 135
 
 static var _origins := {}
@@ -4742,6 +4754,8 @@ const STAFF_CAST := {
     "Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
     "Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
     "Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
+    # Quinn, the Year 3 new hire (tech campaign only, see roster_gone): hot-desks at the conference table like Terry does
+    "Quinn": {"character": "office_quinn", "home": "conference", "seat": "Seat6", "role": "newhire"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
@@ -5141,6 +5155,9 @@ func roster_gone() -> Array:
             gone.append(n)
     if Campaign.active and Campaign.mode == "service":
         gone.append_array(staff_names())  # Sam has the front desk there
+    # Quinn only starts in Year 3 of the tech campaign
+    if not (Campaign.active and Campaign.mode == "tech" and Campaign.year >= 3) and not gone.has("Quinn"):
+        gone.append("Quinn")
     # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
     if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
         gone.append(Roles.partner())
@@ -6018,16 +6035,25 @@ write("scripts/pad_glyphs.gd", '''extends RefCounted
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const ATLAS := "res://assets/ui/pad_glyphs.png"
 const CELL := Vector2(11.0, 7.0)
-const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
-const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# cells 13 to 24 (R42): the Deck's View and Menu, the right stick with a direction, the stick pressed in, the D-pad's single directions
+const NAMES := [
+    "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD",
+    "VIEW", "MENU", "RS_UP", "RS_DOWN", "RS_LEFT", "RS_RIGHT", "L3", "R3", "UP", "DOWN", "LEFT", "RIGHT",
+]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 11, 11, 7, 7, 7, 7]
+# on a Steam Deck the BACK and START buttons are called View and Menu
+const DECK_SWAP := {"BACK": "VIEW", "START": "MENU"}
 # what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
 const TOKENS := {
     "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
-    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
-    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "L3", "(R3)": "R3",
+    "(UP)": "UP", "(DOWN)": "DOWN", "(LEFT)": "LEFT", "(RIGHT)": "RIGHT",
+    "(VIEW)": "VIEW", "(MENU)": "MENU", "RS UP": "RS_UP", "RS DOWN": "RS_DOWN", "RS LEFT": "RS_LEFT", "RS RIGHT": "RS_RIGHT",
 }
 
 static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var deck_force := -1  # tests: 1 = a Steam Deck, 0 = not, -1 = look (the SteamDeck environment variable, or the pad's name)
+static var _deck := -1
 static var _tex: Texture2D
 static var _looked := false
 
@@ -6037,6 +6063,17 @@ static func atlas() -> Texture2D:
         _looked = true
         _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
     return _tex
+
+
+static func deck() -> bool:
+    if deck_force >= 0:
+        return deck_force == 1
+    if _deck < 0:
+        _deck = 1 if OS.get_environment("SteamDeck") == "1" else 0
+        for id in Input.get_connected_joypads():
+            if Input.get_joy_name(id).to_lower().contains("steam deck"):
+                _deck = 1
+    return _deck == 1
 
 
 static func active() -> bool:
@@ -6051,16 +6088,20 @@ static func active() -> bool:
 
 
 # the line cut into pieces: a String is text, an int is a glyph index
-static func parts(text: String) -> Array:
+# `sentence` (a card, a tutorial line): only the bracketed buttons and "RS UP" turn into glyphs; a bare STICK stays a word,
+# because prose has USB sticks in it
+static func parts(text: String, sentence := false) -> Array:
     var out := []
     var rest := text.to_upper()
     while rest != "":
         var at := -1
         var hit := ""
         for token in TOKENS:
+            if sentence and token == "STICK":
+                continue
             var i := rest.find(token)
-            # STICK only as a whole word
-            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+            # the words (STICK, RS UP) only as whole words
+            if i >= 0 and not token.begins_with("(") and ((i > 0 and rest[i - 1] != " ") or (i + token.length() < rest.length() and not rest[i + token.length()] in [" ", ",", "."])):
                 i = -1
             if i >= 0 and (at < 0 or i < at):
                 at = i
@@ -6070,16 +6111,17 @@ static func parts(text: String) -> Array:
             break
         if at > 0:
             out.append(rest.substr(0, at))
-        out.append(NAMES.find(str(TOKENS[hit])))
+        var gname := str(TOKENS[hit])
+        out.append(NAMES.find(str(DECK_SWAP.get(gname, gname)) if deck() else gname))
         rest = rest.substr(at + hit.length())
     return out
 
 
-static func width(text: String, scale := 1) -> int:
+static func width(text: String, scale := 1, sentence := false) -> int:
     if not active():
         return PixelFont.width(text, scale)
     var w := 0
-    for part in parts(text):
+    for part in parts(text, sentence):
         w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
     return maxi(0, w - scale)
 
@@ -6093,12 +6135,12 @@ static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> v
     canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
 
 
-static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1, sentence := false) -> void:
     if not active():
         PixelFont.draw(canvas, text, pos, color, scale)
         return
     var x := pos.x
-    for part in parts(text):
+    for part in parts(text, sentence):
         if part is int:
             glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
             x += float((int(WIDTHS[part]) + 1) * scale)
@@ -6512,9 +6554,13 @@ const PACE_OPEN := [-1, 0, 1]  # added to the open-queue cap
 const HOLD_GAP := 12.0  # game seconds between two held tickets being let in
 const HOLD_MORNING := 9.5  # a ticket held overnight comes in from this hour
 var pace_setting := 1  # index into PACE_NAMES; kept in the settings file ([pace] tech)
+var pace_path := ""  # X13: the file the pace was last read from (a test run must never read the player's own)
 var created_today := 0  # client tickets today from any source (tech campaign)
 var held: Array = []  # tickets waiting for a free slot: {kind: "problem" / "return", day, ...}
 var held_total := 0  # how many tickets were ever held this run (the pace probe prints it)
+const JOB_OVER := 2  # X13: the most a Playbook job should take the open queue over its cap
+const JOB_AHEAD := 1.5  # game hours before a job in which the timed tickets make room for it
+var squeezed_total := 0  # timed tickets that waited for a job this run (the pace probe prints it)
 var _held_t := 0.0
 
 var _next_id := 10421
@@ -6542,6 +6588,7 @@ func reset() -> void:
     calls.clear()
     held.clear()
     held_total = 0
+    squeezed_total = 0
     created_today = 0
     _held_t = 0.0
     tickets.clear()
@@ -6832,6 +6879,7 @@ func cycle_pace(step: int) -> int:
 
 
 func load_pace() -> void:
+    pace_path = Difficulty.settings_path
     var cfg := ConfigFile.new()
     if cfg.load(Difficulty.settings_path) == OK:
         set_pace(int(cfg.get_value("pace", "tech", 1)))
@@ -6842,6 +6890,16 @@ func save_pace() -> void:
     cfg.load(Difficulty.settings_path)
     cfg.set_value("pace", "tech", pace_setting)
     cfg.save(Difficulty.settings_path)
+
+
+# X13 (X10 leftover): a Playbook job is a story beat and is never held, so it can land on a full queue. When one is due within
+# JOB_AHEAD game hours and one more ticket now would let it push the open queue more than JOB_OVER over its cap, the ordinary
+# timed ticket waits for its next turn instead (ransomware and a call that is already ringing still interrupt)
+func job_squeeze() -> bool:
+    if not tech_paced():
+        return false
+    var n: int = Story.job_due(JOB_AHEAD)
+    return n > 0 and open_tickets().size() + 1 + n > open_cap() + JOB_OVER
 
 
 # the open queue is at its cap (the timed tickets pause on the same test)
@@ -8008,7 +8066,10 @@ func _process(delta: float) -> void:
     _spawn_t -= dt
     if _spawn_t <= 0.0:
         _spawn_t = next_spawn_gap()
-        if open_tickets().size() < open_cap() and World.clock < World.DAY_END:
+        var room: bool = open_tickets().size() < open_cap() and World.clock < World.DAY_END
+        if room and job_squeeze():
+            squeezed_total += 1  # X13: a Playbook job is about to land: this one waits for its next turn
+        elif room:
             _incoming()
             # Q6 hard (tech only): a second ticket lands while a P1 / P2 is already open
             var pair := Difficulty.cf("tech.pair") if Campaign.mode == "tech" else 0.0
@@ -12840,6 +12901,15 @@ const SLOPPY_REP := 62  # from here on a sloppy day costs SLOPPY_PER for every l
 const SLOPPY_PER := 4
 const SLOPPY_MAX := 10
 const SLOPPY_NOTE := "LOOSE ENDS TODAY: NO REPUTATION GAIN."
+# T2: the top of the tech campaign's curve. From TOP_REP every gain is banked as a fraction of a point (rep_bank) and only whole
+# points reach the reputation: a gain counts TOP_EARLY of its size (a day report's points, or any other gain after gain_scale
+# and without its floor of one point), from TOP_LATE_REP it counts TOP_LATE. A careful run reaches the high 90s in the last
+# days, not 100 on day 13.
+const TOP_REP := 90
+const TOP_LATE_REP := 95
+const TOP_EARLY := 0.5
+const TOP_LATE := 0.3
+const TOP_NOTE := "NEAR THE TOP EVERY POINT TAKES LONGER."
 const SLOPPY_NOTE_LOSS := "TOO MANY LOOSE ENDS TODAY. THE CLIENTS NOTICED."
 const SLOTS := 3  # save slots per mode (R19): slot 1 is the original file name, 2 and 3 add _s2 / _s3
 
@@ -12849,6 +12919,7 @@ var mode := ""
 var day := 1
 var rep := START_REP
 var scars := 0  # lasting damage (lost data, breached P1s, reopen storms): lowers the reputation ceiling, heals slowly
+var rep_bank := 0.0  # T2: the part of a point earned at the top of the curve (see TOP_REP); saved
 var cash := 0
 var year := 1  # 1 = the normal game, 2 = Year 2 / New Game Plus, 3 = Year 3, the last chapter (Yeartwo, R10); saved, an old save loads as 1
 var build: Dictionary = {}  # the point-buy character build (X7, Build): {} = the flat default, saved with the campaign
@@ -12871,6 +12942,27 @@ func gain_scale() -> float:
     if rep >= 72:
         return 0.3
     return 0.6 if rep >= 60 else 1.0
+
+
+# T2: the top of the curve applies (tech campaign, from TOP_REP; not on cozy Easy, which keeps its gentle climb)
+func top_slow() -> bool:
+    return active and mode == "tech" and rep >= TOP_REP and not Difficulty.cozy_on()
+
+
+# bank `points` earned at the top and hand out the whole points that are ready
+func top_gain(points: float) -> int:
+    rep_bank += points * (TOP_LATE if rep >= TOP_LATE_REP else TOP_EARLY)
+    var whole := floori(rep_bank + 0.0001)
+    rep_bank -= float(whole)
+    return whole
+
+
+# the day report's gain at the top goes through the bank too, with a line when it is not a whole point yet
+func top_report(r: Dictionary) -> void:
+    if top_slow() and int(r.rep_delta) > 0:
+        r["rep_delta"] = top_gain(float(int(r.rep_delta)))
+        if int(r.rep_delta) == 0:
+            r["notes"] = [TOP_NOTE]
 
 
 # T2: a day is clean enough when its loose ends (SLAs missed, reopens, plain tickets left in the queue: Msp.loose_open) are
@@ -12909,7 +13001,10 @@ func adjust_rep(amount: int) -> void:
         return
     var change := amount
     if amount > 0:
-        change = maxi(1, roundi(float(amount) * gain_scale()))
+        if top_slow():
+            change = top_gain(float(amount) * gain_scale())  # T2: no floor of one point up here
+        else:
+            change = maxi(1, roundi(float(amount) * gain_scale()))
         change = mini(change, maxi(0, rep_cap() - rep))
     rep = clampi(rep + change, 0, 100)
 
@@ -12968,8 +13063,9 @@ func slot_part(for_slot := 0) -> String:
     return "" if n <= 1 else "_s%d" % clampi(n, 2, SLOTS)
 
 
-func _ready() -> void:
-    # tests and headless runs write saves, the career and the meta file under their own prefix (a test that chose its own keeps it)
+# tests and headless runs write saves, the career and the meta file under their own prefix (a test that chose its own keeps
+# it). X13: in _init, so the prefix is the test's before any autoload's _ready runs (see Difficulty._init)
+func _init() -> void:
     var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
     if is_test and save_prefix == "user://mspsim_":
         save_prefix = "user://test_%d_" % OS.get_process_id()
@@ -13098,6 +13194,7 @@ func new_game(for_mode: String) -> void:
     day = 1
     rep = START_REP
     scars = 0
+    rep_bank = 0.0
     cash = 0
     history = []
     _awaiting = false
@@ -13167,6 +13264,7 @@ func continue_game(for_mode: String, from_resume := false) -> bool:
     day = int(cfg.get_value("campaign", "day", 1))
     rep = int(cfg.get_value("campaign", "rep", START_REP))
     scars = int(cfg.get_value("campaign", "scars", 0))
+    rep_bank = float(cfg.get_value("campaign", "rep_bank", 0.0))
     cash = int(cfg.get_value("campaign", "cash", 0))
     year = int(cfg.get_value("campaign", "year", 1))  # an old save is Year 1
     history = cfg.get_value("campaign", "history", [])
@@ -13254,6 +13352,7 @@ func _write_sections(cfg: ConfigFile) -> void:
     cfg.set_value("campaign", "day", day)
     cfg.set_value("campaign", "rep", rep)
     cfg.set_value("campaign", "scars", scars)
+    cfg.set_value("campaign", "rep_bank", rep_bank)
     cfg.set_value("campaign", "cash", cash)
     cfg.set_value("campaign", "year", year)
     cfg.set_value("campaign", "history", history)
@@ -13560,6 +13659,7 @@ func _end_day() -> void:
             scars -= 1
         r["rep_cap"] = rep_cap()
     r["rep_delta"] = _tier_rep(int(r.rep_delta))
+    top_report(r)
     if bool(r.get("sloppy", false)):
         r["notes"] = [SLOPPY_NOTE if int(r.rep_delta) >= 0 else SLOPPY_NOTE_LOSS]
     rep = clampi(rep + int(r.rep_delta), 0, rep_cap() if bool(prop("scars", false)) else 100)
@@ -14233,6 +14333,13 @@ func toggle_mut_mode() -> void:
     ban = cur if mut_mode == "ban" else ""
 
 
+# R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
+func mut_icon() -> Texture2D:
+    var id := pick if pick != "" else ban
+    var path := "res://assets/ui/mut_%s.png" % id
+    return load(path) if id != "" and ResourceLoader.exists(path) else null
+
+
 func chip_text() -> String:
     var id := pick if pick != "" else ban
     if id == "":
@@ -14613,6 +14720,8 @@ func beat(id: String) -> void:
     var row: Dictionary = beat_row(id)
     if row.is_empty():
         return
+    if Campaign.mode == "tech" and Campaign.year >= 3 and (id == "newhire" or id == "mentor") and World.chars.has("Quinn"):
+        World.force_activity("Quinn", "floor")  # Quinn is on the main floor for her two beats
     if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
         Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
     var options := []
@@ -15486,6 +15595,15 @@ const MAX_OPTIONS := 3
 const MAX_LABEL := 58
 const MAX_TEXT := 320
 const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
+# R8: a card's spot picture (assets/ui/card_<name>.png): the four seasons (Seasons.CARD_SEASON), else the six most common kinds of deck card
+const ART_KINDS := {
+    "printer": ["toner_late", "toner_mixup", "home_printer", "copier_lease", "projector_cart"],
+    "phone": ["lost_phone", "pw_reset_call", "scam_call", "conference_call", "client_text_night"],
+    "food": ["free_pizza", "lunch_run", "birthday_cake", "coffee_machine", "chamber_lunch"],
+    "power": ["heat_wave", "cold_snap", "power_blip", "leaky_ceiling"],
+    "security": ["phish_invoice", "sticky_password", "guest_wifi", "found_usb", "licence_audit"],
+    "backup": ["dropbox_it", "tape_check", "old_pc_donation"],
+}
 
 const DEFAULT_DECK := {
     "toner_late": {
@@ -17877,6 +17995,17 @@ func _process(_delta: float) -> void:
 
 
 # ---- showing a card ---------------------------------------------------------------------------------------
+# the picture name of a deck or seasonal card ("" for none): its season, else its kind
+static func art_for(id: String) -> String:
+    var season := str(Seasons.CARD_SEASON.get(id, Seasons.TAGS.get(id, "")))
+    if season != "":
+        return season
+    for kind in ART_KINDS:
+        if (ART_KINDS[kind] as Array).has(id):
+            return str(kind)
+    return ""
+
+
 func show_draw(draw: Dictionary) -> void:
     last_shown = str(draw.id)
     shown += 1
@@ -17891,6 +18020,7 @@ func show_draw(draw: Dictionary) -> void:
     var options := []
     for o in c.options:
         options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.art_next = art_for(str(draw.id))
     Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
 
 
@@ -19335,6 +19465,19 @@ func events_on(day: int) -> Array:
     return Yeartwo.events_on("tech", day, DAYS)
 
 
+# X13 (X10 leftover): the number of tickets the next Playbook job of today brings, when one is due within `hours` game hours
+# (0 = none). Msp.job_squeeze asks: the job itself is never delayed, the ordinary timed ticket in front of it is
+func job_due(hours: float) -> int:
+    if not Campaign.active or Campaign.mode != "tech":
+        return 0
+    var events: Array = events_on(Campaign.day)
+    for i in events.size():
+        var ev: Dictionary = events[i]
+        if str(ev.kind) == "playbook" and not _fired.has(i) and _at(ev, i) - World.clock <= hours:
+            return (Playbook.PROBLEMS.get(str(ev.book), []) as Array).size()
+    return 0
+
+
 func begin_day(day: int) -> void:
     _fired = {}
     _followed = false
@@ -20752,8 +20895,11 @@ write("scripts/cards.gd", '''extends CanvasLayer
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a card is its sprite (the lines are cut as text, the glyph is narrower)
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
+const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
+const ART_W := 36.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -20761,6 +20907,8 @@ var speaker := ""
 var text := ""
 var options: Array = []
 var sel := 0
+var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
+var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -20782,6 +20930,8 @@ func _ready() -> void:
 # `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
 # and on_pick gets "__none" so the asker can clean up
 func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable(), slot := -1) -> void:
+    var art_id := art_next
+    art_next = ""
     if slot >= 0 and pane_slot < 0 and Players.coop and Players.slot(slot).joined:
         # co-op scope "player": the card appears in that player's pane and only they are held (a team card, slot -1, is the old full-window one)
         Players.takeover_host().card_for(slot).ask(who, body, choices, on_pick, valid)
@@ -20789,10 +20939,11 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
     # X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
     # report covers the screen, or while older cards are still waiting joins the back of the queue.
     if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
-        _queue.append([who, body, choices, on_pick, valid])
+        _queue.append([who, body, choices, on_pick, valid, art_id])
         if not is_open and not DayReport.is_open:
             _show_next()
         return
+    art = art_id
     speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
     text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
     options = []
@@ -20867,6 +21018,7 @@ func _show_next() -> void:
                 next[3].call("__none")
             continue
         _draining = true
+        art_next = str(next[5]) if next.size() > 5 else ""
         ask(next[0], next[1], next[2], next[3], valid)
         _draining = false
 
@@ -20958,15 +21110,24 @@ func _wrap(s: String, chars: int) -> Array:
     return out
 
 
+# the open card's spot picture, or null (none asked for, the file is missing)
+func _art_tex() -> Texture2D:
+    var path := "res://assets/ui/card_%s.png" % art
+    return load(path) if art != "" and ResourceLoader.exists(path) else null
+
+
 func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
     var pw := minf(size.x - 8.0, 250.0)
     var chars := int((pw - 10.0) / 4.0)
+    var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
     var lines := []
+    var plain_lines := []
     for para in text.split("\\n"):
-        lines.append_array(_wrap(para, chars))
+        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+        plain_lines.append_array(_wrap(para, chars))
     # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
     var opt_lines := []
     var opts_h := 0.0
@@ -20980,7 +21141,13 @@ func _paint() -> void:
         var rows: Array = _wrap(full, chars - 1 - chip_w)
         opt_lines.append(rows)
         opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-    var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
+    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+    var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
+    if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
+        art_tex = null
+        lines = plain_lines
+        body_h = float(lines.size()) * 7.0
+        ph = 12.0 + body_h + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
     var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
@@ -20989,9 +21156,11 @@ func _paint() -> void:
     PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
     var y := panel.position.y + 12.0
     for line in lines:
-        PixelFont.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK)
+        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
         y += 7.0
-    y += 4.0
+    if art_tex != null:
+        _canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
+    y = panel.position.y + 12.0 + body_h + 4.0
     for i in options.size():
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
@@ -21004,7 +21173,7 @@ func _paint() -> void:
         var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
         var right_edge := r.end.x
         for k in rows.size():
-            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
+            PadGlyphs.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"), 1, true)
         if chip != "":
             var tint := Color("2f7d46")
             if str(opt.get("stance", "")) == "warn":
@@ -21282,10 +21451,16 @@ func complaint_text() -> String:
     return "%s from %s called me directly. Ticket #%d (%s) %s and they are not happy." % [contact, Msp.CLIENTS[int(t.client)].name, int(t.id), t.summary, late]
 
 
+# X13: John is walking over with a complaint he has not told you yet
+func waiting() -> bool:
+    return not pending.is_empty() and not pending.get("told", false) and Campaign.player_as != "John" and not Cards.is_open
+
+
 # John reached you with the news: ask what you want to do
 func deliver() -> void:
-    if pending.is_empty():
+    if pending.is_empty() or pending.get("told", false):
         return
+    pending["told"] = true
     var text := complaint_text()
     if text == "":
         pending = {}
@@ -25198,7 +25373,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25789,6 +25964,7 @@ const THREADS := [
                 "by": "GrizzleAdmin",
                 "text": "Patch Tuesday is not the day to find out. Wait a week."
             },
+            {"by": "WSUS_Walt", "text": "Test group on Tuesday, everybody else on the following Tuesday. Never on a Friday. A Friday patch is how you meet your Saturday."},
         ],
         "answer":
         "Approve critical updates to a small test group first, wait a few days, then roll out. Never patch the whole fleet on the first day.",
@@ -30023,11 +30199,16 @@ var _resumed := {}  # streams whose state came from a save
 var _pinned := false  # seed_run() was called: the next new_run() keeps that seed
 
 
-func _ready() -> void:
-    # tests and headless runs get their own settings file, so playing the game (tier, look) never changes a test
+# tests and headless runs get their own settings file, so playing the game (tier, look, ticket pace) never changes a test.
+# X13: chosen in _init, not _ready: every autoload is made before the first one is ready, so an autoload that loads earlier
+# than this one (Msp reads the TICKET PACE in its _ready) already sees the test's path and never the player's real file
+func _init() -> void:
     var is_test := DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
     if is_test and settings_path == "user://mspsim_settings.cfg":  # a test that already chose its own path keeps it
         settings_path = "user://test_%d_settings.cfg" % OS.get_process_id()
+
+
+func _ready() -> void:
     if run_seed == 0:
         run_seed = _random_seed()
 
@@ -35579,6 +35760,7 @@ const NARROW_KEYS := {
     "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
     "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
     "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+    "P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -38304,13 +38486,31 @@ func _theme_look() -> void:
     var tint := Color(escape_text("tint"))
     if scene == null or tint == Color.WHITE:
         return
+    var painted := _theme_art(scene)
     var dark: Variant = scene.get("_dark_a")
     if dark != null and float(dark) > 0.01:
         return
     for layer in ["Background", "Fx"]:
         var node := scene.get_node_or_null(layer)
-        if node != null:
+        if node != null and not (painted and layer == "Background"):  # a painted room is not tinted again
             node.modulate = tint
+
+
+# R41: a themed room has its own painted background (escape_room_<theme>.png, the same layout as the study) and its own shelf sprite
+# in place of the bookshelf; true when the art is in use. The tint stays as the fallback when the texture is missing.
+func _theme_art(scene: Node) -> bool:
+    var id := theme_id()
+    var path := "res://assets/sets/escape_room_%s.png" % id
+    var bg := scene.get_node_or_null("Background") as Sprite2D
+    if bg == null or not ResourceLoader.exists(path):
+        return false
+    if bg.texture == null or bg.texture.resource_path != path:
+        bg.texture = load(path)
+        var shelf := "res://assets/props/esc_%s_shelf.png" % id
+        var node := scene.get_node_or_null("Actors/bookshelf_0") as Sprite2D
+        if node != null and ResourceLoader.exists(shelf):
+            node.texture = load(shelf)
+    return true
 
 
 # ---- dinner variety (R6) and the dinner ramp (R30) ---------------------------------------------------------------------------
@@ -39963,15 +40163,35 @@ func _hud_chair(s: Rect2) -> void:
     _canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
 
 
+# a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
+func _duel_art(id: String) -> Texture2D:
+    var path := "res://assets/ui/duel_%s.png" % id
+    return load(path) if ResourceLoader.exists(path) else null
+
+
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
 # floor with both chairs on it, your stamina
 func _hud_fight(s: Rect2, o: Vector2) -> void:
     var fight: RefCounted = g.race
-    _t("READY" if fight.clock < 0.0 else "%d" % fight.time_left(), o.x + 21.0, o.y, WHITE)
+    var clock_text := "READY" if fight.clock < 0.0 else "%d" % fight.time_left()
+    # the co-op duel: the clock in a frame, a P1 / P2 tag and sprite pips for each side (assets/ui/duel_*.png; the solo fight keeps its rectangles)
+    var duel: bool = fight.duel and _duel_art("frame") != null and _duel_art("tag_p1") != null and _duel_art("tag_p2") != null and _duel_art("pip_off") != null
+    if duel:
+        _canvas.draw_texture(_duel_art("frame"), Vector2(o.x + 19.0, s.position.y + 1.0))
+        _t(clock_text, o.x + 19.0 + floorf((23.0 - float(clock_text.length() * 4 - 1)) * 0.5), o.y, WHITE)
+    else:
+        _t(clock_text, o.x + 21.0, o.y, WHITE)
     var px := o.x + 44.0
     for side in 2:
+        if duel:
+            _canvas.draw_texture(_duel_art("tag_p%d" % (side + 1)), Vector2(px, s.position.y + 2.0))
+            px += 11.0
         for k in ChairFight.TARGET:
             var on: bool = k < int(fight.score()[side])
+            if duel:
+                _canvas.draw_texture(_duel_art(("pip_p%d" % (side + 1)) if on else "pip_off"), Vector2(px, s.position.y + 3.0))
+                px += 4.0
+                continue
             var col: Color = (AMBER if side == 0 else fight.chairs[1].color) if on else UiStyle.MUTED
             _canvas.draw_rect(Rect2(px, s.position.y + 4.0, 4.0, 5.0), col)
             px += 5.0
@@ -43161,6 +43381,8 @@ const SALOON_WINDOWS := [21.0, 45.0, 109.0, 133.0]  # set x of the four saloon w
 const JAIL_WINDOW := Rect2(661.0, 47.0, 22.0, 20.0)
 const SET_W := 700.0
 const FLASH := 0.11  # seconds a muzzle flash lasts
+const NIGHT_BG := "res://assets/sets/paintball_field_night.png"  # R41: the painted night street (same geometry as the day set); missing = the code-drawn wash
+const NIGHT_PROP := "res://assets/props/pbn_%s.png"  # the night version of each pb_* piece
 
 var game: RefCounted
 var x0 := 0.0  # scene x of set x 0
@@ -43178,6 +43400,7 @@ var _seen_down: Array = []
 var _debug := OS.get_environment("PAINT_DEBUG") == "1"
 var _flashes: Array = []  # night: {at, dir, t} muzzle flashes
 var _stars: Array = []  # night: [Vector2] in set pixels
+var _night_art := false  # night: the painted night set is in use (no code-drawn wash, moon, stars or windows)
 
 
 func field_x(gx: float) -> float:
@@ -43214,11 +43437,27 @@ func setup(scene: Node, the_game: RefCounted, set_x0: float, specs: Array) -> vo
     if night():
         _actors.modulate = NIGHT_ACTORS
         _make_stars()
+        _night_art = _swap_night_art(scene)
     _sync()
 
 
 func night() -> bool:
     return game != null and bool(game.night)
+
+
+# the night match: the background and the barricade pieces become their painted night versions. False (and nothing changes) when the
+# texture is missing: the code-drawn wash is the fallback.
+func _swap_night_art(scene: Node) -> bool:
+    var bg := scene.get_node_or_null("Background") as Sprite2D
+    if bg == null or not ResourceLoader.exists(NIGHT_BG):
+        return false
+    bg.texture = load(NIGHT_BG)
+    for n in _actors.get_children():
+        if n is Sprite2D and String(n.name).begins_with("pb_"):
+            var path: String = NIGHT_PROP % String(n.name).trim_prefix("pb_").rsplit("_", true, 1)[0]
+            if ResourceLoader.exists(path):
+                (n as Sprite2D).texture = load(path)
+    return true
 
 
 # the same sky every night: a fixed scatter of stars above the roofs (none over the saloon front, the jail sign or the water tower)
@@ -43372,7 +43611,7 @@ func _splat(b: Dictionary) -> void:
 func _draw() -> void:
     if game == null:
         return
-    if night():
+    if night() and not _night_art:
         _draw_night()
     for l in LANE_OFF.size():  # the lanes, as dashes on the street
         var gx := 6.0
@@ -45617,6 +45856,60 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "WISH HER LUCK", "reply": "Okay. Good luck either way.", "fx": {"morale": -3, "retain": -2}},
             ],
         },
+        {
+            "text": "The front desk at Acme asked for me by name today. Is that allowed?",
+            "options":
+            [
+                {"label": "PUT HER NAME ON THE ACCOUNT", "reply": "It is allowed. I put your name on the Acme page as first contact. In ink.", "fx": {"morale": 5, "retain": 1, "mood": 1}},
+                {"label": "SAY IT IS A GOOD SIGN", "reply": "It is a good sign. Keep doing what you did.", "fx": {"morale": 3}},
+                {"label": "REMIND HER THE QUEUE DECIDES", "reply": "The queue decides who gets what. Not the client.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "I stayed until seven twice this week. Nobody asked me to. I just did not want to leave them open.",
+            "options":
+            [
+                {"label": "SEND HER HOME ON TIME", "reply": "At five you write a handover note and you go. I read it. The ticket will still be there, and so will you.", "fx": {"morale": 4, "retain": 1, "stress": -5}},
+                {"label": "THANK HER AND LOG THE HOURS", "reply": "Thank you. I logged both evenings. Take Friday afternoon.", "fx": {"morale": 3, "stress": -2}},
+                {"label": "SAY THAT IS THE JOB", "reply": "Some weeks are like that.", "fx": {"morale": -3, "stress": 4}},
+            ],
+        },
+        {
+            "text": "I wrote down how I fix the scanner at Brightside. Three steps. Do you want it, or is that silly?",
+            "options":
+            [
+                {"label": "MAKE IT A RUNBOOK WITH HER NAME ON IT", "reply": "Not silly. It goes in the binder with your name on the top line. I will print a label.", "fx": {"morale": 6, "retain": 1, "skill": 0.02}},
+                {"label": "ASK HER TO SHOW SAM", "reply": "Show Sam on the next one. If he can follow it, it is good.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY THE BINDER IS FULL", "reply": "We have enough paper.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "John told a client I would call back in ten minutes. I was on another call. Then the client was angry at me.",
+            "options":
+            [
+                {"label": "TALK TO JOHN TODAY", "reply": "That is mine to fix, not yours. I will talk to John before lunch. Promises go through the board.", "fx": {"morale": 5, "retain": 1, "social": {"John": -1}}},
+                {"label": "GIVE HER A LINE TO USE", "reply": "Say: I have your ticket open right now. It is true and it buys a minute.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "TELL HER TO CALL BACK FASTER", "reply": "Then call back faster.", "fx": {"morale": -5}},
+            ],
+        },
+        {
+            "text": "Honest question. Am I the phone person because I am good at it, or because I am the only girl?",
+            "options":
+            [
+                {"label": "COUNT THE CALLS, FIX THE ROTA", "reply": "Fair question. I counted. You took six calls in ten last month. That is wrong. New rota on the wall by Monday.", "fx": {"morale": 6, "retain": 2}},
+                {"label": "SAY BECAUSE SHE IS GOOD AT IT", "reply": "Because you are the best at it. But I hear you.", "fx": {"morale": 2}},
+                {"label": "SAY SOMEBODY HAS TO", "reply": "Somebody has to answer.", "fx": {"morale": -5, "retain": -1}},
+            ],
+        },
+        {
+            "text": "The granola bars in my drawer keep vanishing. I am not mad. I am keeping a tally.",
+            "options":
+            [
+                {"label": "BUY A BOX FOR THE ROOM", "reply": "I put a box by the printer, labelled CREW. Yours stay yours. I labelled the drawer too.", "fx": {"morale": 4, "retain": 1}},
+                {"label": "PROMISE TO ASK AROUND", "reply": "I will ask. Quietly.", "fx": {"morale": 2}},
+                {"label": "SAY IT IS ONLY GRANOLA", "reply": "It is a granola bar, Maya.", "fx": {"morale": -2}},
+            ],
+        },
     ],
     "Tech":
     [
@@ -45654,6 +45947,96 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "TAKE THE CLIENT YOURSELF", "reply": "I will call them back. You did nothing wrong. Write down what they said, I will use it.", "fx": {"morale": 6, "retain": 1, "mood": 1}},
                 {"label": "ASK WHAT HAPPENED", "reply": "Tell me what happened, in order. We will make a script for next time.", "fx": {"morale": 4, "stress": -3}},
                 {"label": "SAY CLIENTS ARE LIKE THAT", "reply": "That happens.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I closed a ticket and it came back the next day. Same printer. I feel stupid.",
+            "options":
+            [
+                {"label": "READ THE TICKET TOGETHER", "reply": "Not stupid. A reopen tells us what the note was missing. Bring it up, we read it together.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "SAY IT HAPPENS TO EVERYONE", "reply": "Mine come back too. Check the cable first next time.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "COUNT THE REOPENS OUT LOUD", "reply": "That is the third one this month.", "fx": {"morale": -4, "stress": 3}},
+            ],
+        },
+        {
+            "text": "{name} says: Maya is faster than me at everything. I do not think I will catch up.",
+            "options":
+            [
+                {"label": "SHOW THE TREND, NOT THE RANK", "reply": "Do not compare with Maya. Compare with you in the first week. Here is the table. You are twice as fast.", "fx": {"morale": 6, "retain": 1}},
+                {"label": "PAIR THEM FOR A DAY", "reply": "Sit next to her on Tuesday. Watch what she skips.", "fx": {"morale": 3, "skill": 0.02}},
+                {"label": "SAY SOMEBODY IS ALWAYS FASTER", "reply": "Somebody is always faster.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I do not understand half of what Alan says about the servers. I nod anyway.",
+            "options":
+            [
+                {"label": "DRAW IT ON THE WHITEBOARD", "reply": "Stop nodding. Come to the whiteboard, I will draw the rack. Boxes and arrows, nothing else.", "fx": {"morale": 5, "skill": 0.03}},
+                {"label": "ASK ALAN TO SLOW DOWN", "reply": "I will ask Alan to use fewer letters. He will grumble. He will do it.", "fx": {"morale": 4, "trust": {"Alan": -1}}},
+                {"label": "SAY NODDING IS FINE", "reply": "Keep nodding. It comes with time.", "fx": {"morale": -2}},
+            ],
+        },
+        {
+            "text": "{name} says: Can I take Friday afternoon? My sister is moving. I know the queue is long.",
+            "options":
+            [
+                {"label": "YES, AND COVER THE QUEUE", "reply": "Go. I take your tickets from one. Leave me notes I can read.", "fx": {"morale": 6, "retain": 2}},
+                {"label": "YES, IF THE TICKETS HAVE NOTES", "reply": "Yes, if every open ticket has a note by noon.", "fx": {"morale": 3, "retain": 1}},
+                {"label": "SAY NOT THIS WEEK", "reply": "Not this week.", "fx": {"morale": -5, "retain": -1}},
+            ],
+        },
+        {
+            "text": "{name} says: A client offered me twenty dollars to fix a home computer after hours. I said I would ask.",
+            "options":
+            [
+                {"label": "EXPLAIN THE RULE AND CALL THEM", "reply": "Good that you asked. Home machines go through the shop, with a ticket, so you are covered if it breaks. I will call them.", "fx": {"morale": 4, "retain": 1, "trust": {"Alan": 1}}},
+                {"label": "LET IT GO THIS ONCE", "reply": "This once. Tell me how it went.", "fx": {"morale": 3, "trust": {"Alan": -1}}},
+                {"label": "SAY ABSOLUTELY NOT", "reply": "No side jobs. Ever.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: I broke a mailbox rule at Soggy Bottom. I fixed it before anybody saw. Do I have to say?",
+            "options":
+            [
+                {"label": "WRITE IT UP TOGETHER", "reply": "You just did, and that is the right way round. Two lines in the ticket. Nobody gets shouted at for a note.", "fx": {"morale": 5, "retain": 1, "skill": 0.02}},
+                {"label": "SAY TELL ME FIRST NEXT TIME", "reply": "Next time tell me first, then fix. Today it is fine.", "fx": {"morale": 2, "skill": 0.01}},
+                {"label": "ASK WHAT ELSE IS BROKEN", "reply": "What else have you not told me?", "fx": {"morale": -5, "stress": 4}},
+            ],
+        },
+        {
+            "text": "{name} says: I keep forgetting to write the time on tickets. Morgan sent the report back.",
+            "options":
+            [
+                {"label": "PUT A TIMER ON THE DESK", "reply": "Here. A kitchen timer. Start it when you open a ticket. I labelled it.", "fx": {"morale": 4, "skill": 0.02}},
+                {"label": "CHECK THE BOARD AT FOUR", "reply": "At four I look at your board and we fill the gaps together. For two weeks.", "fx": {"morale": 3, "stress": -2}},
+                {"label": "SAY MORGAN IS RIGHT", "reply": "Morgan is right. Write the time.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "{name} says: Does Garrison pick who goes to the bowling night? Nobody asked me last time.",
+            "options":
+            [
+                {"label": "FIX THE LIST", "reply": "Nobody picks. The list was old. You are on it now. I checked twice.", "fx": {"morale": 5, "retain": 1}},
+                {"label": "SAY IT WAS AN ACCIDENT", "reply": "It was an accident. Come next time.", "fx": {"morale": 2}},
+                {"label": "SAY IT IS NOT A WORK MATTER", "reply": "That is not a work matter.", "fx": {"morale": -4, "retain": -1}},
+            ],
+        },
+        {
+            "text": "{name} says: I think I am better on the phones than on the tickets. Is that a bad thing here?",
+            "options":
+            [
+                {"label": "BUILD ON IT", "reply": "It is a good thing. You take first calls for a month and I teach you one ticket type a week.", "fx": {"morale": 5, "retain": 1, "mood": 1}},
+                {"label": "SAY WE NEED BOTH", "reply": "We need both. Keep at the tickets.", "fx": {"morale": 2}},
+                {"label": "SAY THE JOB IS TICKETS", "reply": "The job is tickets.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "{name} says: The runbook said restart the service. It did not work. I restarted it four more times.",
+            "options":
+            [
+                {"label": "TEACH THE STOP RULE", "reply": "Twice, then stop and read the log. If the log means nothing to you, bring it to me. I will add that line to the runbook.", "fx": {"morale": 4, "skill": 0.03}},
+                {"label": "FIX THE RUNBOOK", "reply": "Then the runbook is wrong. Show me the step, I will change it today.", "fx": {"morale": 4, "skill": 0.01}},
+                {"label": "SAY FIVE TIMES IS SILLY", "reply": "Five times. Really.", "fx": {"morale": -4}},
             ],
         },
     ],
@@ -45695,12 +46078,67 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "TELL HIM HE IS WRONG", "reply": "You are the one the clients blame.", "fx": {"social": {"John": -4}, "trust": {"Alan": 2, "Garrison": -2}}},
             ],
         },
+        {
+            "text": "I told Brightside we do weekends. We do weekends, right? Dan?",
+            "options":
+            [
+                {"label": "PRICE IT AS AN EXTRA", "reply": "We can, as a paid extra with a number on it. I will write the rate. You sell the rate.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}}},
+                {"label": "COVER THIS ONE, THEN FIX THE WORDING", "reply": "I will take this Saturday myself. Then we change the wording together.", "fx": {"social": {"John": 3}, "morale": -2, "mood": 1}},
+                {"label": "TELL HIM TO TAKE IT BACK", "reply": "Call them back and take it away.", "fx": {"social": {"John": -3}, "mood": -1}},
+            ],
+        },
+        {
+            "text": "The new client wants everything live by Monday. I said probably. What is probably, in tech?",
+            "options":
+            [
+                {"label": "GIVE HIM A REAL DATE", "reply": "Probably is Thursday. Mail on Monday, the rest by Thursday. Tell them that, in writing.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "PULL THE CREW IN", "reply": "Fine. Monday. I move two people off the queue.", "fx": {"social": {"John": 3}, "morale": -3, "trust": {"Alan": 0, "Garrison": 1}}},
+                {"label": "SAY PROBABLY MEANS NO", "reply": "It means no.", "fx": {"social": {"John": -3}, "trust": {"Alan": 0, "Garrison": -1}}},
+            ],
+        },
+        {
+            "text": "Be honest. Do your people hate it when I walk into the room?",
+            "options":
+            [
+                {"label": "TELL HIM WHAT WOULD HELP", "reply": "They do not hate you. They hate surprises. Bring the ticket number with you and they will like you fine.", "fx": {"social": {"John": 3}, "morale": 2}},
+                {"label": "SAY THEY LIKE HIM", "reply": "They like you. Mostly.", "fx": {"social": {"John": 2}}},
+                {"label": "SAY YES", "reply": "A little.", "fx": {"social": {"John": -4}}},
+            ],
+        },
+        {
+            "text": "I want to bring Maya to a client lunch. She explains things better than I do. Can I borrow her?",
+            "options":
+            [
+                {"label": "YES, WITH NOTICE, AND SHE PICKS", "reply": "One lunch a month, a day of notice, and she picks the client. Ask her, not me.", "fx": {"social": {"John": 2}, "morale_who": {"Maya": 3}}},
+                {"label": "YES, THIS ONCE", "reply": "This once. I cover her phone.", "fx": {"social": {"John": 3}, "morale_who": {"Maya": 1}}},
+                {"label": "NO, SHE IS A TECH", "reply": "She is a tech, not a brochure.", "fx": {"social": {"John": -3}}},
+            ],
+        },
+        {
+            "text": "A client wants ten percent off because the printer broke twice. I kind of already said yes.",
+            "options":
+            [
+                {"label": "TRADE IT FOR A FIX", "reply": "No discount. A clean printer setup, free, this week, with my name on it. That is worth more than ten percent.", "fx": {"social": {"John": 1}, "trust": {"Alan": 2, "Garrison": 0}, "mood": 1}},
+                {"label": "LET IT STAND FOR ONE MONTH", "reply": "One month. And next time you ask first.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "MAKE HIM TAKE IT BACK", "reply": "Then un-say it.", "fx": {"social": {"John": -4}, "trust": {"Alan": 1, "Garrison": 0}, "mood": -1}},
+            ],
+        },
+        {
+            "text": "What do I say when they ask how long a fix takes? It depends makes them twitch.",
+            "options":
+            [
+                {"label": "GIVE HIM THREE NUMBERS", "reply": "Urgent: we call back within the hour. Normal: same day. Projects: a date in writing. I made you a card for your wallet.", "fx": {"social": {"John": 3}, "mood": 1}},
+                {"label": "TELL HIM TO READ THE BOARD", "reply": "Look at the board before you answer. It is on the wall for a reason.", "fx": {"social": {"John": 1}}},
+                {"label": "SAY IT DEPENDS", "reply": "It depends.", "fx": {"social": {"John": -2}}},
+            ],
+        },
     ],
 }
 var ONE_ON_ONES: Dictionary = DEFAULT_ONE_ON_ONES.duplicate(true)
 const DEFAULT_ONE_TEXT := {
     "already": "We talked this morning, Dan. I am fine. Thanks.",
     "walkup": "%s stops by your desk.",
+    "quiet": "Nothing new since last time, Dan. I am okay. Thanks for asking.",
 }
 var ONE_TEXT: Dictionary = DEFAULT_ONE_TEXT.duplicate(true)
 
@@ -45988,7 +46426,9 @@ var trust := {"Alan": TRUST_START, "Garrison": TRUST_START}
 var focus := "p1"
 var buffs: Array = []  # {key, val, left}
 var flags := {}
+const OTO_QUIET_MORALE := 3  # C7: what a check-in is worth once the deck is used up (a card's middle answer)
 var oto_seen := {}  # deck -> cards used
+var oto_log := []  # C7: [deck, card index] of every 1:1 of this run in order (-1 = the check-in after the deck ran out); not saved
 var oto_day := {}  # who -> the day you last had a 1:1
 var grades: Array = []  # [{day, grade, score, util, sla}]
 var project_days := 0
@@ -46044,6 +46484,7 @@ func reset() -> void:
     buffs = []
     flags = {}
     oto_seen = {}
+    oto_log = []
     oto_day = {}
     grades = []
     project_days = 0
@@ -46880,6 +47321,21 @@ func _deck_of(who: String) -> String:
     return who if who == "Maya" or who == "John" else "Tech"
 
 
+# C7: the order a run deals a deck in. Seeded by the run (the same run keeps its order through a save, another run gets another
+# one); `oto_seen[deck]` counts how many of it have been dealt, so no card comes twice until the deck is used up
+func oto_order(deck_id: String) -> Array:
+    var order := []
+    for i in ONE_ON_ONES[deck_id].size():
+        order.append(i)
+    Difficulty.shuffle_with(order, Difficulty.rng_for("service.oto", hash(deck_id)))
+    return order
+
+
+# cards of the deck this run has not seen yet
+func oto_left(deck_id: String) -> int:
+    return maxi(0, ONE_ON_ONES[deck_id].size() - int(oto_seen.get(deck_id, 0)))
+
+
 func one_on_one(who: String, after := Callable()) -> void:
     var label := Roles.label(who) if who == "Maya" or who == "John" else "%s (Tier 1)" % who
     if int(oto_day.get(who, -1)) == Campaign.day:
@@ -46891,8 +47347,17 @@ func one_on_one(who: String, after := Callable()) -> void:
     var deck_id := _deck_of(who)
     var deck: Array = ONE_ON_ONES[deck_id]
     var used := int(oto_seen.get(deck_id, 0))
+    if used >= deck.size():
+        # C7: every card of the deck has been dealt in this run and none comes twice: a short check-in instead
+        oto_log.append([deck_id, -1])
+        if Crew.has(who):
+            apply_fx({"morale_who": {who: OTO_QUIET_MORALE}}, _people_scale())
+        Cards.ask(label, str(ONE_TEXT.quiet), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
+        return
     oto_seen[deck_id] = used + 1
-    var card: Dictionary = deck[used % deck.size()]
+    var at := int(oto_order(deck_id)[used])
+    oto_log.append([deck_id, at])
+    var card: Dictionary = deck[at]
     var options := []
     for i in card.options.size():
         options.append({"label": str(card.options[i].label), "id": str(i)})
@@ -46929,7 +47394,7 @@ func _walk_up() -> void:
         if n == "Maya":
             continue
         var last := int(Crew.value(str(n), "last_oto"))
-        if Campaign.day - last >= 3 and (who == "" or last < int(Crew.value(who, "last_oto"))):
+        if Campaign.day - last >= 3 and (who == "" or last < int(Crew.value(who, "last_oto"))) and oto_left(_deck_of(str(n))) > 0:
             who = str(n)
     if who == "":
         return
@@ -52691,6 +53156,9 @@ const TRIP_DAY := 17
 const CLOCKS := [10.0, 13.0, 15.0]
 const DOORS := ["from_a", "from_b", "from_c", "from_d"]
 const NEED := 3  # how many of the four KPIs must be met
+const TRIP_GAIN := [0, 0, 1, 2, 3]  # T2: the trip day's reputation by trip_effort() 0..4
+const TRIP_KNOWN_REP := 65  # from here the trip is worth a point less
+const TRIP_TOP_REP := 80  # from here one point at most
 const MORGAN := "Morgan Reyes - Manager"
 const Trip := preload("res://scripts/trip_variety.gd")
 const UiStyle := preload("res://scripts/ui_style.gd")
@@ -52752,6 +53220,8 @@ const TEXT := {
     "to_hall": "Breakout sessions are down the HALL (right door). Each door is a different session, check the easels. The EXPO HALL is always open too.",
     "to_booth": "The vendor hall is always open: the EXPO HALL door in the lobby. Walk into a booth to see what they have.",
     "to_raffle": "The closing raffle is in the BALLROOM. Do not miss it.",
+    "trip_quiet": "A QUIET TRIP. NOTHING TO TELL AT HOME.",
+    "trip_known": "A GOOD TRIP. AT HOME THEY KNEW THAT ALREADY.",
 }
 const ROUNDS := [
     {
@@ -52942,6 +53412,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "walt", "speaker": "WSUS_Walt (forum regular)",
+        "text": "Walt. I patch things. On a Tuesday, in a window, with a rollback plan and a reboot nobody is surprised by. You look like somebody who patches on a Friday. Do not tell me.",
+        "options": [
+            {"id": "window", "label": "ASK ABOUT THE PATCH WINDOW", "skill": "servers", "xp": 4, "text": "'A test group, a week, then the rest. The window goes in the calendar and in the client's head.' He writes the approval steps on the back of your badge. (+4 servers XP)"},
+            {"id": "reboot", "label": "ASK ABOUT THE REBOOT", "skill": "people", "xp": 3, "text": "'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HIS FRIDAY RULE", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma)", "text_free": "You upvote his never-on-a-Friday post. He replies with a list of dates."},
+            {"id": "friday", "label": "ADMIT TO A FRIDAY PATCH", "skill": "", "xp": 0, "social": 1, "text": "He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more)", "text_free": "He puts a hand on your shoulder like a doctor."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -52980,6 +53460,7 @@ const CROWD := {
         {"who": "expo_priya", "role": "att:1", "x": 243, "facing": "right", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
         {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
+        {"who": "expo_walt", "role": "forum:walt", "x": 160, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
@@ -52993,24 +53474,32 @@ const CROWD := {
         {"who": "expo_tina", "role": "att:3", "x": 230, "facing": "left", "routine": ["wait:6", "say:2"]},
     ],
     "breakout_a": [
-        {"who": "expo_vendj", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendj", "role": "speaker", "x": 204, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_attd", "role": "att:2", "x": 79, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_priya", "role": "att:1", "x": 139, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 58, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_atte", "role": "audience", "x": 118, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_b": [
-        {"who": "expo_dee", "role": "speaker", "x": 214, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_dee", "role": "speaker", "x": 214, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_attb", "role": "att:4", "x": 71, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_atta", "role": "att:0", "x": 127, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attc", "role": "audience", "x": 50, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 106, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_c": [
-        {"who": "expo_vendp", "role": "speaker", "x": 192, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendp", "role": "speaker", "x": 192, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_tina", "role": "att:3", "x": 91, "facing": "right", "seat": "Seat2", "routine": ["wait:8"]},
         {"who": "expo_attc", "role": "att:5", "x": 123, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_atta", "role": "audience", "x": 38, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_atte", "role": "audience", "x": 102, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_d": [
-        {"who": "expo_vendg", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendg", "role": "speaker", "x": 204, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_priya", "role": "att:1", "x": 85, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_atta", "role": "att:0", "x": 145, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attb", "role": "audience", "x": 64, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 124, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "vendor_hall": [
         {"who": "expo_vendg", "role": "vendor:backup", "x": 159, "facing": "right", "routine": ["wait:5", "say:2"]},
@@ -53032,6 +53521,7 @@ var tot_missed := 0
 var tot_reopened := 0
 var away := false
 var peeked := false
+var listened := false  # T2: you sat through the keynote (not the queue on your phone)
 var _sent := {}
 var _stage := ""
 var _seen := ""
@@ -53074,6 +53564,7 @@ func reset() -> void:
     tot_reopened = 0
     away = false
     peeked = false
+    listened = false
     _sent = {}
     _stage = ""
     _seen = ""
@@ -53185,10 +53676,16 @@ func _on_day(day: int) -> void:
     if not is_tech():
         return
     if day == TRIP_DAY + 1:
+        if went and _stage != "" and _stage != "done":
+            # T2: the trip day ended before the closing raffle (a bot that never walked the venue): you are home anyway, and
+            # the ticket stream that the trip switched off is on again
+            _stage = "done"
+            Msp.enabled = true
         _home()
     if is_trip_day(day):
         away = true
         peeked = false
+        listened = false
         picks = []
         went = true
         Career.add("trips")
@@ -53407,6 +53904,7 @@ func _keynote_answer(id: String) -> void:
         peeked = true
         text = str(TEXT.keynote_peek)
     else:
+        listened = true
         Skills.add_xp("people", 3)
     Cards.ask("RODENT NATION", text, [{"label": "ON TO THE SESSIONS", "id": "ok"}], func(_id: String) -> void: Hints.toast(str(TEXT.to_hall), 5.0))
 
@@ -53790,6 +54288,28 @@ func _owner_home() -> void:
     Game.go(str(_back.get("scene", "main_floor")), "start")
 
 
+# ---- T2: what the trip does for your name. It used to be a flat +3 for anyone who went (the three sessions cannot be skipped).
+# Now it is what you did there, one point each: the keynote listened to, the three sessions sat through, two booths or vendor
+# pitches, two people talked to (attendees, the forum regulars). Sessions alone are a passive trip.
+func trip_effort() -> int:
+    var n := 0
+    n += 1 if listened else 0
+    n += 1 if picks.size() >= ROUNDS.size() else 0
+    n += 1 if _booths.size() + _met.size() >= 2 else 0
+    n += 1 if _talked.size() >= 2 else 0
+    return n
+
+
+# ... and where you stand: from TRIP_KNOWN_REP a point less (they already know your name), from TRIP_TOP_REP one at most
+func trip_rep() -> int:
+    var gain: int = TRIP_GAIN[clampi(trip_effort(), 0, TRIP_GAIN.size() - 1)]
+    if Campaign.rep >= TRIP_KNOWN_REP:
+        gain = maxi(0, gain - 1)
+    if Campaign.rep >= TRIP_TOP_REP:
+        gain = mini(gain, 1)
+    return gain
+
+
 # ---- the day report for the trip day
 func adjust_report(r: Dictionary) -> Dictionary:
     if is_tech() and not away:
@@ -53803,7 +54323,10 @@ func adjust_report(r: Dictionary) -> Dictionary:
         r["open_left"] = Msp.open_tickets().size()
         r["points"] = 20
         r["pay"] = 150
-        r["rep_delta"] = 2 + (1 if picks.size() >= 3 else 0)
+        r["rep_delta"] = trip_rep()
+        r["sloppy"] = false  # the queue at home is not this day's loose end (and its note would hide the trip's)
+        if int(r.rep_delta) == 0:
+            r["notes"] = [str(TEXT.trip_quiet if trip_effort() < 2 else TEXT.trip_known)]
         r["grade"] = "A"
     return r
 
@@ -57344,7 +57867,7 @@ func _draw_banner() -> void:
     if body.length() > chars:
         body = body.substr(0, chars - 1) + "."
     PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
-    PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
+    PadGlyphs.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86), 1, true)
 
 
 func _draw_hint(raw: String) -> void:
@@ -59614,6 +60137,8 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
                 _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
                 _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
                 _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
+        if row_id == "mut" and pitch >= 13.0 and Yeartwo.mut_icon() != null:  # the chosen mutator's icon (the compact 11 px rows have no room)
+            draw_texture(Yeartwo.mut_icon(), Vector2(x0 + 134.0 + 4.0, y + floorf((pitch - 12.0) * 0.5)), Color(1, 1, 1, 0.5 if Yeartwo.ban != "" else 1.0))
         _rects.append([whole, "opt", i])
     if str(rows[opt_row].id) == "level" and is_campaign() and Difficulty.tier_note(mode) != "":  # what the tier feels like here
         var tnote := Difficulty.tier_note(mode)
@@ -61352,6 +61877,8 @@ func _ready() -> void:
     Onsite.populate(self)
     SalesBeats.auditor(self)
     SalesBeats.recruiter(self)
+    SalesBeats.buyer(self)
+    SalesBeats.headhunter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
     SetDressing.dress(self)  # plates on the dinner table, Jen's headset
@@ -61650,6 +62177,7 @@ const WALK_SPEED := 40.0
 const RUN_SPEED := 90.0
 const GRAVITY := 900.0
 const JUMP_SPEED := 230.0
+const FACE_AWAY := 12.0  # X13: px added to the distance of a thing behind your back (Player.nearest)
 const CHARACTERS := [
     "office_intern", "office_adult", "office_dan", "office_alan", "site_alan", "casual_garrison", "office_john"
 ]
@@ -61736,11 +62264,21 @@ func nearest() -> Node:
         return _pick
     var best: Node = null
     var best_d := INF
+    var pc_faced := false  # X13: a computer in front of you beats a coworker who only happens to stand there
+    for n in _near:
+        if n.is_in_group("computers") and _faces(n):
+            pc_faced = true
     for n in _near:
         var d := absf(n.global_position.x - global_position.x)
         d += 0.02 * absf(n.global_position.y - (global_position.y - 40.0))
-        if n.get("low_priority") == true:
+        if not _faces(n):
+            d += FACE_AWAY  # X13: the thing you face wins over the thing behind your back
+        if n.has_method("wants_you") and n.wants_you():
+            d -= 60.0  # somebody who walked over with news for you is always one press away
+        elif n.get("low_priority") == true:
             d += 14.0
+        elif n.is_in_group("npcs") and str(n.get("role")) == "" and pc_faced:
+            d += 30.0  # Tab still picks them
         elif n.is_in_group("npcs") and str(n.get("role")) == "site:owner":
             d -= 8.0  # the client owner beats the PC on their own desk (E talks to them, Tab still picks the PC)
         elif n.is_in_group("npcs") and str(n.get("role")).begins_with("site:"):
@@ -61749,6 +62287,22 @@ func nearest() -> Node:
             best_d = d
             best = n
     return best
+
+
+# is `n` in front of you (or right where you stand)?
+func _faces(n: Node) -> bool:
+    var dx: float = n.global_position.x - global_position.x
+    return absf(dx) <= 6.0 or (dx > 0.0) == (facing == "right")
+
+
+# X13: seated, somebody who came over with news for you (npc.wants_you) and stands within reach of the chair
+func _seat_caller() -> Node:
+    if seat == null:
+        return null
+    for n in get_tree().get_nodes_in_group("npcs"):
+        if n.has_method("wants_you") and n.wants_you() and absf(n.global_position.x - global_position.x) < 60.0:
+            return n
+    return null
 
 
 # Tab / Shift+Tab: move the arrow to the next / previous thing within reach without walking
@@ -62224,6 +62778,8 @@ func _physics_process(delta: float) -> void:
             pass  # Shift + A / D: roll the chair (a plain move key or E still stands you up)
         elif state == "sitting" and interact and _ringing_phone() != null:
             _ringing_phone().use(self)
+        elif state == "sitting" and interact and _seat_caller() != null:
+            _seat_caller().use(self)
         elif state == "sitting" and interact and _seat_computer() != null:
             _seat_computer().use(self)
         elif state == "sitting" and held != "" and held != "nerf" and Input.is_action_just_pressed(_a("drink")):
@@ -68434,9 +68990,26 @@ static func recruiter(stage: Node) -> void:
     _visitor(stage, RECRUIT_DAY, "office_trent", "visitor:recruiter")
 
 
-static func _visitor(stage: Node, day: int, character: String, role: String) -> void:
+# Year 3: Ross Calder of Summit (owner campaign, the day of the `summit` beat) and Terry Vance the headhunter (service campaign,
+# the day of the `terry` beat) walk the main floor the same way
+static func buyer(stage: Node) -> void:
+    _y3_visitor(stage, "owner", "summit", "office_ross", "visitor:buyer")
+
+
+static func headhunter(stage: Node) -> void:
+    _y3_visitor(stage, "service", "terry", "office_terry", "visitor:headhunter")
+
+
+static func _y3_visitor(stage: Node, mode: String, beat: String, character: String, role: String) -> void:
+    if not Campaign.active or Campaign.year < 3:
+        return
+    var beats: Dictionary = (Yeartwo.year_cfg("beats") as Dictionary).get(mode, {})
+    _visitor(stage, int(beats.get(beat, -1)), character, role, mode)
+
+
+static func _visitor(stage: Node, day: int, character: String, role: String, mode := "sales") -> void:
     var scene := stage.scene_file_path.get_file().get_basename()
-    if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == day):
+    if scene != "main_floor" or not (Campaign.active and Campaign.mode == mode and Campaign.day == day):
         return
     var info: Dictionary = World.DATA.SCENES[scene]
     var x0 := float(info.x0)
@@ -73988,6 +74561,7 @@ write("scripts/controls.gd", '''extends Node
 signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
 
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: BACK and START are View and Menu on a Steam Deck
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
@@ -74351,7 +74925,10 @@ func help_value(label: String, text: String) -> String:
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
 func button_name(button: int) -> String:
     var names := ["A", "B", "X", "Y", "BACK", "GUIDE", "START", "L3", "R3", "LB", "RB", "UP", "DOWN", "LEFT", "RIGHT"]
-    return names[button] if button >= 0 and button < names.size() else "BTN %d" % button
+    if button < 0 or button >= names.size():
+        return "BTN %d" % button
+    var n: String = names[button]
+    return str(PadGlyphs.DECK_SWAP.get(n, n)) if PadGlyphs.deck() else n
 
 
 # the pad button an action answers to (its first default button until it is remapped); -1 for none
@@ -81980,6 +82557,7 @@ static func show_event(id: String) -> void:
     var options := []
     for o in c.options:
         options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.art_next = Events.art_for(id)
     Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: Events._answer(c, pick))
 ''')
 
@@ -82499,12 +83077,23 @@ const ART := "res://assets/props/%s.png"
 # room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
 const PLATES := {
     "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
-    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_d", 32, -43]],
 }
+# a guest at the dinner (a client or a prospect): the second table's two plates make room for a place setting and a name tent at its
+# end, and a briefcase leans on the floor beside the booth. Drawn while Outings.dinner_guest() is not empty.
+const GUEST_TABLE := "wood_table_3"
+const GUEST_PLATE_X := [3.0, 16.0]
+const GUEST_SET := [["dinner_tent", 30, -43], ["dinner_setting", 37, -44]]
+const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-sort line), the sprite's offset up
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
+# the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
+var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
+var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
 var _t := 0.0
 
 
@@ -82535,29 +83124,85 @@ static func dress(stage: Node) -> Node:
     if room == "cubicle_two" and World.chars.has("Jen"):
         _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
         return null
-    if room != "restaurant":
+    if room != "restaurant" and room != "escape_room":
         return null
     var node: Node = load("res://scripts/set_dressing.gd").new()
     node.name = "SetDressing"
     stage.add_child(node)
+    if room == "escape_room":
+        node.escape_stage = stage
+        node.refresh()
+        return node
     for host in PLATES:
         for row in PLATES[host]:
             var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
             if s != null:
                 node.plates.append(s)
+    for row in GUEST_SET:
+        var g := _put(actors.get_node_or_null(GUEST_TABLE), str(row[0]), Vector2(float(row[1]), float(row[2])))
+        if g != null:
+            node.guest.append(g)
+    var bag := _put(actors, str(GUEST_CASE[0]), Vector2(float(GUEST_CASE[1]), float(GUEST_CASE[2])))
+    if bag != null:
+        bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
+        node.guest.append(bag)
     node.refresh()
     return node
 
 
+# the texture of one of the escape room's big props: the theme's own piece, else the study's
+static func escape_art(theme: String, slot: String) -> Texture2D:
+    if theme != "study":
+        var t := art("escape_%s_%s" % [theme, slot])
+        if t != null:
+            return t
+    return art(str(ESCAPE_PLAIN.get(slot, slot)))
+
+
+# the theme the room shows: the run's while an escape game is on, else the old study
+static func escape_theme_now() -> String:
+    return Outings.theme_id() if Outings.game == "escape" else "study"
+
+
+# swap the safe, trunk and globe sprites of the escape room for the theme's; returns how many changed
+static func escape_swap(stage: Node) -> int:
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null:
+        return 0
+    var theme := escape_theme_now()
+    var n := 0
+    for node_name in ESCAPE_SLOTS:
+        var s := actors.get_node_or_null(str(node_name)) as Sprite2D
+        var t := escape_art(theme, str(ESCAPE_SLOTS[node_name]))
+        if s != null and t != null and s.texture != t:
+            s.texture = t
+            n += 1
+    return n
+
+
 # the food is on the table once the dinner is past the ordering round
+# a client or prospect is at the dinner table
+static func guest_here() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_guest().is_empty()
+
+
 static func plates_on() -> bool:
     return Outings.game == "dinner" and not Outings.dinner_ordering()
 
 
 func refresh() -> void:
+    if escape_stage != null:
+        escape_swap(escape_stage)
+        return
     var on := plates_on()
     for s in plates:
         s.visible = on
+    var here := guest_here()
+    for s in guest:
+        s.visible = here
+    for i in GUEST_PLATE_X.size():  # the second table's plates step aside for the guest
+        if plates.size() > 2 + i:
+            plates[2 + i].position.x = float(GUEST_PLATE_X[i]) if here else float(PLATES[GUEST_TABLE][i][1])
 
 
 func _process(delta: float) -> void:
