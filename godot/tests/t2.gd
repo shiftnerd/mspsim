@@ -34,6 +34,14 @@ func _best(pb: Node) -> int:
 	return best
 
 
+func _first_open(pb: Node) -> int:
+	var step: Dictionary = pb.current_step()
+	for i in step.choices.size():
+		if pb.lock_reason(step.choices[i]) == "":
+			return i
+	return 0
+
+
 func _work(msp: Node, pb: Node, day: int) -> void:
 	var careful: bool = kind == "good" or (kind == "mixed" and day % 2 == 0)
 	if msp.spawned_today < msp.day_cap() and not seen.has("ticket"):
@@ -54,8 +62,12 @@ func _work(msp: Node, pb: Node, day: int) -> void:
 			msp.project_migrate()
 			msp.project_handover()
 	elif pb.is_active() and kind == "careless":
-		while pb.is_active():
-			pb.choose(0)
+		var guard := 0
+		while pb.is_active() and guard < 40:  # the first thing on the list that is not locked (a locked choice is refused: choose(0) alone never ended)
+			guard += 1
+			pb.choose(_first_open(pb))
+		if pb.is_active():
+			print("  (job %s did not end: step %s)" % [str(pb.active.get("id", "")), str(pb.active.get("step", ""))])
 	for t in msp.open_tickets():
 		seen[str(t.special) if t.special != "" else "ticket"] = true
 		if careful:
@@ -135,9 +147,17 @@ func _unit() -> void:
 	c.rep = 50
 	c.adjust_rep(5)
 	_check(c.rep == 55, "below 60 a gain counts in full")
-	c.rep = 90
+	c.rep = 86
 	c.adjust_rep(5)
-	_check(c.rep > 90 and c.rep <= 92, "above 85 a +5 is worth about 1 (%d)" % c.rep)
+	_check(c.rep == 87, "above 85 a +5 is worth about 1 (%d)" % c.rep)
+	# T2: from 90 a gain is banked as a fraction (tests/top_curve.gd): one +5 is not a point yet, two are
+	c.rep = 90
+	c.rep_bank = 0.0
+	c.adjust_rep(5)
+	var after_one: int = c.rep
+	c.adjust_rep(5)
+	_check(after_one == 90 and c.rep == 91, "from 90 it takes two of them (%d, then %d)" % [after_one, c.rep])
+	c.rep_bank = 0.0
 	c.rep = 70
 	c.add_scar(15)
 	_check(c.rep_cap() == 85 and c.rep == 70, "a scar lowers the ceiling to 85")

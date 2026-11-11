@@ -10,6 +10,15 @@ func _check(ok: bool, what: String) -> void:
 	print(("ok   " if ok else "FAIL ") + what)
 
 
+# The waiting for a call below spends the day's cap on email tickets (about six in ten timed spawns are mail). Both counters
+# of the cap go back to zero: `spawned_today` and, since the shared cap of X10, `created_today`. The test used to reset only the
+# first, so on a run whose draws brought eleven mails before the second call the voicemail found the day full and was dropped
+# (X13: that was the "fails now and then" of this test, about 1 run in 50; it had nothing to do with tests running side by side).
+func _room(msp: Node) -> void:
+	msp.spawned_today = 0
+	msp.created_today = 0
+
+
 # call _incoming until a call is waiting (it picks the phone about 40% of the time)
 func _until_call(msp: Node, want: int) -> bool:
 	for i in 80:
@@ -19,6 +28,13 @@ func _until_call(msp: Node, want: int) -> bool:
 	return false
 
 
+func _arg(key: String, fallback: String) -> String:
+	for a in OS.get_cmdline_user_args():
+		if str(a).begins_with(key + "="):
+			return str(a).substr(key.length() + 1)
+	return fallback
+
+
 func _init() -> void:
 	await process_frame
 	var c := root.get_node("Campaign")
@@ -26,6 +42,7 @@ func _init() -> void:
 	var world := root.get_node("World")
 	c.save_prefix = "user://test_%d_" % OS.get_process_id()
 	root.get_node("Game").title_mode = false
+	root.get_node("Difficulty").seed_run(int(_arg("seed", "4242")))  # the draws of the test are the run's own (`-- seed=N` plays another run)
 	c.new_game("tech")
 	c.day = 10
 	msp.new_day(10)
@@ -38,13 +55,13 @@ func _init() -> void:
 	_check(_until_call(msp, 1) and not bool(msp.calls[0].voicemail), "a call comes in and she takes it")
 	_check(msp.front_desk() == "away", "on a call she cannot take another")
 	_check(_until_call(msp, 2) and bool(msp.calls[1].voicemail), "the second call goes to voicemail")
-	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
+	_room(msp)
 	var before: int = msp.tickets.size()
 	msp._tick_calls(msp.CALL_SECS + 0.5)
 	_check(msp.calls.size() == 1 and msp.tickets.size() == before + 1, "her call becomes a ticket after a few seconds")
 	var taken: Dictionary = msp.tickets[msp.tickets.size() - 1]
 	_check(str(taken.source) == "phone call" and str(taken.notes).find("Taken by Jen") >= 0, "the ticket says Jen took it")
-	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
+	_room(msp)
 	var texts_before: int = msp.texts.size()
 	msp._tick_calls(msp.VOICEMAIL_SECS)
 	_check(msp.calls.is_empty() and msp.tickets.size() == before + 2, "the voicemail is logged later")
@@ -54,7 +71,7 @@ func _init() -> void:
 	# a call that rolled over is answered by picking up: no voicemail, a ticket with a note, and the phones ring
 	msp.calls.clear()
 	msp.calls.append({"t": msp.VOICEMAIL_SECS, "voicemail": true})
-	msp.spawned_today = 0  # the waiting for a call above can spend the day cap on email tickets
+	_room(msp)
 	var n0: int = msp.tickets.size()
 	msp._ring_rollover()  # no phones in this headless scene: it must not fail
 	msp.phone_call(0)

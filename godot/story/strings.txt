@@ -7374,6 +7374,174 @@ WISH HER LUCK
 [Service.ONE_ON_ONES.Maya.3.options.2.reply]
 Okay. Good luck either way.
 
+# Service > ONE_ON_ONES > Maya > 4 > text
+[Service.ONE_ON_ONES.Maya.4.text]
+The front desk at Acme asked for me by name today. Is that allowed?
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.4.options.0.label]
+PUT HER NAME ON THE ACCOUNT
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.4.options.0.reply]
+It is allowed. I put your name on the Acme page as first contact. In ink.
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.4.options.1.label]
+SAY IT IS A GOOD SIGN
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.4.options.1.reply]
+It is a good sign. Keep doing what you did.
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.4.options.2.label]
+REMIND HER THE QUEUE DECIDES
+
+# Service > ONE_ON_ONES > Maya > 4 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.4.options.2.reply]
+The queue decides who gets what. Not the client.
+
+# Service > ONE_ON_ONES > Maya > 5 > text
+[Service.ONE_ON_ONES.Maya.5.text]
+I stayed until seven twice this week. Nobody asked me to. I just did not want to leave them open.
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.5.options.0.label]
+SEND HER HOME ON TIME
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.5.options.0.reply]
+At five you write a handover note and you go. I read it. The ticket will still be there, and so will you.
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.5.options.1.label]
+THANK HER AND LOG THE HOURS
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.5.options.1.reply]
+Thank you. I logged both evenings. Take Friday afternoon.
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.5.options.2.label]
+SAY THAT IS THE JOB
+
+# Service > ONE_ON_ONES > Maya > 5 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.5.options.2.reply]
+Some weeks are like that.
+
+# Service > ONE_ON_ONES > Maya > 6 > text
+[Service.ONE_ON_ONES.Maya.6.text]
+I wrote down how I fix the scanner at Brightside. Three steps. Do you want it, or is that silly?
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.6.options.0.label]
+MAKE IT A RUNBOOK WITH HER NAME ON IT
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.6.options.0.reply]
+Not silly. It goes in the binder with your name on the top line. I will print a label.
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.6.options.1.label]
+ASK HER TO SHOW SAM
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.6.options.1.reply]
+Show Sam on the next one. If he can follow it, it is good.
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.6.options.2.label]
+SAY THE BINDER IS FULL
+
+# Service > ONE_ON_ONES > Maya > 6 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.6.options.2.reply]
+We have enough paper.
+
+# Service > ONE_ON_ONES > Maya > 7 > text
+[Service.ONE_ON_ONES.Maya.7.text]
+John told a client I would call back in ten minutes. I was on another call. Then the client was angry at me.
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.7.options.0.label]
+TALK TO JOHN TODAY
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.7.options.0.reply]
+That is mine to fix, not yours. I will talk to John before lunch. Promises go through the board.
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.7.options.1.label]
+GIVE HER A LINE TO USE
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.7.options.1.reply]
+Say: I have your ticket open right now. It is true and it buys a minute.
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.7.options.2.label]
+TELL HER TO CALL BACK FASTER
+
+# Service > ONE_ON_ONES > Maya > 7 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.7.options.2.reply]
+Then call back faster.
+
+# Service > ONE_ON_ONES > Maya > 8 > text
+[Service.ONE_ON_ONES.Maya.8.text]
+Honest question. Am I the phone person because I am good at it, or because I am the only girl?
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.8.options.0.label]
+COUNT THE CALLS, FIX THE ROTA
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.8.options.0.reply]
+Fair question. I counted. You took six calls in ten last month. That is wrong. New rota on the wall by Monday.
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.8.options.1.label]
+SAY BECAUSE SHE IS GOOD AT IT
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.8.options.1.reply]
+Because you are the best at it. But I hear you.
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.8.options.2.label]
+SAY SOMEBODY HAS TO
+
+# Service > ONE_ON_ONES > Maya > 8 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.8.options.2.reply]
+Somebody has to answer.
+
+# Service > ONE_ON_ONES > Maya > 9 > text
+[Service.ONE_ON_ONES.Maya.9.text]
+The granola bars in my drawer keep vanishing. I am not mad. I am keeping a tally.
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.9.options.0.label]
+BUY A BOX FOR THE ROOM
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.9.options.0.reply]
+I put a box by the printer, labelled CREW. Yours stay yours. I labelled the drawer too.
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.9.options.1.label]
+PROMISE TO ASK AROUND
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.9.options.1.reply]
+I will ask. Quietly.
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.9.options.2.label]
+SAY IT IS ONLY GRANOLA
+
+# Service > ONE_ON_ONES > Maya > 9 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.9.options.2.reply]
+It is a granola bar, Maya.
+
 # Service > ONE_ON_ONES > Tech > 0 > text
 [Service.ONE_ON_ONES.Tech.0.text]
 {name} says: I got stuck on a printer yesterday and did not ask. I did not want to bother you.
@@ -7485,6 +7653,286 @@ SAY CLIENTS ARE LIKE THAT
 # Service > ONE_ON_ONES > Tech > 3 > options > 2 > reply
 [Service.ONE_ON_ONES.Tech.3.options.2.reply]
 That happens.
+
+# Service > ONE_ON_ONES > Tech > 4 > text
+[Service.ONE_ON_ONES.Tech.4.text]
+{name} says: I closed a ticket and it came back the next day. Same printer. I feel stupid.
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.4.options.0.label]
+READ THE TICKET TOGETHER
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.4.options.0.reply]
+Not stupid. A reopen tells us what the note was missing. Bring it up, we read it together.
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.4.options.1.label]
+SAY IT HAPPENS TO EVERYONE
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.4.options.1.reply]
+Mine come back too. Check the cable first next time.
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.4.options.2.label]
+COUNT THE REOPENS OUT LOUD
+
+# Service > ONE_ON_ONES > Tech > 4 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.4.options.2.reply]
+That is the third one this month.
+
+# Service > ONE_ON_ONES > Tech > 5 > text
+[Service.ONE_ON_ONES.Tech.5.text]
+{name} says: Maya is faster than me at everything. I do not think I will catch up.
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.5.options.0.label]
+SHOW THE TREND, NOT THE RANK
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.5.options.0.reply]
+Do not compare with Maya. Compare with you in the first week. Here is the table. You are twice as fast.
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.5.options.1.label]
+PAIR THEM FOR A DAY
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.5.options.1.reply]
+Sit next to her on Tuesday. Watch what she skips.
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.5.options.2.label]
+SAY SOMEBODY IS ALWAYS FASTER
+
+# Service > ONE_ON_ONES > Tech > 5 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.5.options.2.reply]
+Somebody is always faster.
+
+# Service > ONE_ON_ONES > Tech > 6 > text
+[Service.ONE_ON_ONES.Tech.6.text]
+{name} says: I do not understand half of what Alan says about the servers. I nod anyway.
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.6.options.0.label]
+DRAW IT ON THE WHITEBOARD
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.6.options.0.reply]
+Stop nodding. Come to the whiteboard, I will draw the rack. Boxes and arrows, nothing else.
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.6.options.1.label]
+ASK ALAN TO SLOW DOWN
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.6.options.1.reply]
+I will ask Alan to use fewer letters. He will grumble. He will do it.
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.6.options.2.label]
+SAY NODDING IS FINE
+
+# Service > ONE_ON_ONES > Tech > 6 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.6.options.2.reply]
+Keep nodding. It comes with time.
+
+# Service > ONE_ON_ONES > Tech > 7 > text
+[Service.ONE_ON_ONES.Tech.7.text]
+{name} says: Can I take Friday afternoon? My sister is moving. I know the queue is long.
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.7.options.0.label]
+YES, AND COVER THE QUEUE
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.7.options.0.reply]
+Go. I take your tickets from one. Leave me notes I can read.
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.7.options.1.label]
+YES, IF THE TICKETS HAVE NOTES
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.7.options.1.reply]
+Yes, if every open ticket has a note by noon.
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.7.options.2.label]
+SAY NOT THIS WEEK
+
+# Service > ONE_ON_ONES > Tech > 7 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.7.options.2.reply]
+Not this week.
+
+# Service > ONE_ON_ONES > Tech > 8 > text
+[Service.ONE_ON_ONES.Tech.8.text]
+{name} says: A client offered me twenty dollars to fix a home computer after hours. I said I would ask.
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.8.options.0.label]
+EXPLAIN THE RULE AND CALL THEM
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.8.options.0.reply]
+Good that you asked. Home machines go through the shop, with a ticket, so you are covered if it breaks. I will call them.
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.8.options.1.label]
+LET IT GO THIS ONCE
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.8.options.1.reply]
+This once. Tell me how it went.
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.8.options.2.label]
+SAY ABSOLUTELY NOT
+
+# Service > ONE_ON_ONES > Tech > 8 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.8.options.2.reply]
+No side jobs. Ever.
+
+# Service > ONE_ON_ONES > Tech > 9 > text
+[Service.ONE_ON_ONES.Tech.9.text]
+{name} says: I broke a mailbox rule at Soggy Bottom. I fixed it before anybody saw. Do I have to say?
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.9.options.0.label]
+WRITE IT UP TOGETHER
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.9.options.0.reply]
+You just did, and that is the right way round. Two lines in the ticket. Nobody gets shouted at for a note.
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.9.options.1.label]
+SAY TELL ME FIRST NEXT TIME
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.9.options.1.reply]
+Next time tell me first, then fix. Today it is fine.
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.9.options.2.label]
+ASK WHAT ELSE IS BROKEN
+
+# Service > ONE_ON_ONES > Tech > 9 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.9.options.2.reply]
+What else have you not told me?
+
+# Service > ONE_ON_ONES > Tech > 10 > text
+[Service.ONE_ON_ONES.Tech.10.text]
+{name} says: I keep forgetting to write the time on tickets. Morgan sent the report back.
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.10.options.0.label]
+PUT A TIMER ON THE DESK
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.10.options.0.reply]
+Here. A kitchen timer. Start it when you open a ticket. I labelled it.
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.10.options.1.label]
+CHECK THE BOARD AT FOUR
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.10.options.1.reply]
+At four I look at your board and we fill the gaps together. For two weeks.
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.10.options.2.label]
+SAY MORGAN IS RIGHT
+
+# Service > ONE_ON_ONES > Tech > 10 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.10.options.2.reply]
+Morgan is right. Write the time.
+
+# Service > ONE_ON_ONES > Tech > 11 > text
+[Service.ONE_ON_ONES.Tech.11.text]
+{name} says: Does Garrison pick who goes to the bowling night? Nobody asked me last time.
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.11.options.0.label]
+FIX THE LIST
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.11.options.0.reply]
+Nobody picks. The list was old. You are on it now. I checked twice.
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.11.options.1.label]
+SAY IT WAS AN ACCIDENT
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.11.options.1.reply]
+It was an accident. Come next time.
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.11.options.2.label]
+SAY IT IS NOT A WORK MATTER
+
+# Service > ONE_ON_ONES > Tech > 11 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.11.options.2.reply]
+That is not a work matter.
+
+# Service > ONE_ON_ONES > Tech > 12 > text
+[Service.ONE_ON_ONES.Tech.12.text]
+{name} says: I think I am better on the phones than on the tickets. Is that a bad thing here?
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.12.options.0.label]
+BUILD ON IT
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.12.options.0.reply]
+It is a good thing. You take first calls for a month and I teach you one ticket type a week.
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.12.options.1.label]
+SAY WE NEED BOTH
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.12.options.1.reply]
+We need both. Keep at the tickets.
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.12.options.2.label]
+SAY THE JOB IS TICKETS
+
+# Service > ONE_ON_ONES > Tech > 12 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.12.options.2.reply]
+The job is tickets.
+
+# Service > ONE_ON_ONES > Tech > 13 > text
+[Service.ONE_ON_ONES.Tech.13.text]
+{name} says: The runbook said restart the service. It did not work. I restarted it four more times.
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 0 > label
+[Service.ONE_ON_ONES.Tech.13.options.0.label]
+TEACH THE STOP RULE
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 0 > reply
+[Service.ONE_ON_ONES.Tech.13.options.0.reply]
+Twice, then stop and read the log. If the log means nothing to you, bring it to me. I will add that line to the runbook.
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 1 > label
+[Service.ONE_ON_ONES.Tech.13.options.1.label]
+FIX THE RUNBOOK
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 1 > reply
+[Service.ONE_ON_ONES.Tech.13.options.1.reply]
+Then the runbook is wrong. Show me the step, I will change it today.
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 2 > label
+[Service.ONE_ON_ONES.Tech.13.options.2.label]
+SAY FIVE TIMES IS SILLY
+
+# Service > ONE_ON_ONES > Tech > 13 > options > 2 > reply
+[Service.ONE_ON_ONES.Tech.13.options.2.reply]
+Five times. Really.
 
 # Service > ONE_ON_ONES > John > 0 > text
 [Service.ONE_ON_ONES.John.0.text]
@@ -7598,6 +8046,174 @@ TELL HIM HE IS WRONG
 [Service.ONE_ON_ONES.John.3.options.2.reply]
 You are the one the clients blame.
 
+# Service > ONE_ON_ONES > John > 4 > text
+[Service.ONE_ON_ONES.John.4.text]
+I told Brightside we do weekends. We do weekends, right? Dan?
+
+# Service > ONE_ON_ONES > John > 4 > options > 0 > label
+[Service.ONE_ON_ONES.John.4.options.0.label]
+PRICE IT AS AN EXTRA
+
+# Service > ONE_ON_ONES > John > 4 > options > 0 > reply
+[Service.ONE_ON_ONES.John.4.options.0.reply]
+We can, as a paid extra with a number on it. I will write the rate. You sell the rate.
+
+# Service > ONE_ON_ONES > John > 4 > options > 1 > label
+[Service.ONE_ON_ONES.John.4.options.1.label]
+COVER THIS ONE, THEN FIX THE WORDING
+
+# Service > ONE_ON_ONES > John > 4 > options > 1 > reply
+[Service.ONE_ON_ONES.John.4.options.1.reply]
+I will take this Saturday myself. Then we change the wording together.
+
+# Service > ONE_ON_ONES > John > 4 > options > 2 > label
+[Service.ONE_ON_ONES.John.4.options.2.label]
+TELL HIM TO TAKE IT BACK
+
+# Service > ONE_ON_ONES > John > 4 > options > 2 > reply
+[Service.ONE_ON_ONES.John.4.options.2.reply]
+Call them back and take it away.
+
+# Service > ONE_ON_ONES > John > 5 > text
+[Service.ONE_ON_ONES.John.5.text]
+The new client wants everything live by Monday. I said probably. What is probably, in tech?
+
+# Service > ONE_ON_ONES > John > 5 > options > 0 > label
+[Service.ONE_ON_ONES.John.5.options.0.label]
+GIVE HIM A REAL DATE
+
+# Service > ONE_ON_ONES > John > 5 > options > 0 > reply
+[Service.ONE_ON_ONES.John.5.options.0.reply]
+Probably is Thursday. Mail on Monday, the rest by Thursday. Tell them that, in writing.
+
+# Service > ONE_ON_ONES > John > 5 > options > 1 > label
+[Service.ONE_ON_ONES.John.5.options.1.label]
+PULL THE CREW IN
+
+# Service > ONE_ON_ONES > John > 5 > options > 1 > reply
+[Service.ONE_ON_ONES.John.5.options.1.reply]
+Fine. Monday. I move two people off the queue.
+
+# Service > ONE_ON_ONES > John > 5 > options > 2 > label
+[Service.ONE_ON_ONES.John.5.options.2.label]
+SAY PROBABLY MEANS NO
+
+# Service > ONE_ON_ONES > John > 5 > options > 2 > reply
+[Service.ONE_ON_ONES.John.5.options.2.reply]
+It means no.
+
+# Service > ONE_ON_ONES > John > 6 > text
+[Service.ONE_ON_ONES.John.6.text]
+Be honest. Do your people hate it when I walk into the room?
+
+# Service > ONE_ON_ONES > John > 6 > options > 0 > label
+[Service.ONE_ON_ONES.John.6.options.0.label]
+TELL HIM WHAT WOULD HELP
+
+# Service > ONE_ON_ONES > John > 6 > options > 0 > reply
+[Service.ONE_ON_ONES.John.6.options.0.reply]
+They do not hate you. They hate surprises. Bring the ticket number with you and they will like you fine.
+
+# Service > ONE_ON_ONES > John > 6 > options > 1 > label
+[Service.ONE_ON_ONES.John.6.options.1.label]
+SAY THEY LIKE HIM
+
+# Service > ONE_ON_ONES > John > 6 > options > 1 > reply
+[Service.ONE_ON_ONES.John.6.options.1.reply]
+They like you. Mostly.
+
+# Service > ONE_ON_ONES > John > 6 > options > 2 > label
+[Service.ONE_ON_ONES.John.6.options.2.label]
+SAY YES
+
+# Service > ONE_ON_ONES > John > 6 > options > 2 > reply
+[Service.ONE_ON_ONES.John.6.options.2.reply]
+A little.
+
+# Service > ONE_ON_ONES > John > 7 > text
+[Service.ONE_ON_ONES.John.7.text]
+I want to bring Maya to a client lunch. She explains things better than I do. Can I borrow her?
+
+# Service > ONE_ON_ONES > John > 7 > options > 0 > label
+[Service.ONE_ON_ONES.John.7.options.0.label]
+YES, WITH NOTICE, AND SHE PICKS
+
+# Service > ONE_ON_ONES > John > 7 > options > 0 > reply
+[Service.ONE_ON_ONES.John.7.options.0.reply]
+One lunch a month, a day of notice, and she picks the client. Ask her, not me.
+
+# Service > ONE_ON_ONES > John > 7 > options > 1 > label
+[Service.ONE_ON_ONES.John.7.options.1.label]
+YES, THIS ONCE
+
+# Service > ONE_ON_ONES > John > 7 > options > 1 > reply
+[Service.ONE_ON_ONES.John.7.options.1.reply]
+This once. I cover her phone.
+
+# Service > ONE_ON_ONES > John > 7 > options > 2 > label
+[Service.ONE_ON_ONES.John.7.options.2.label]
+NO, SHE IS A TECH
+
+# Service > ONE_ON_ONES > John > 7 > options > 2 > reply
+[Service.ONE_ON_ONES.John.7.options.2.reply]
+She is a tech, not a brochure.
+
+# Service > ONE_ON_ONES > John > 8 > text
+[Service.ONE_ON_ONES.John.8.text]
+A client wants ten percent off because the printer broke twice. I kind of already said yes.
+
+# Service > ONE_ON_ONES > John > 8 > options > 0 > label
+[Service.ONE_ON_ONES.John.8.options.0.label]
+TRADE IT FOR A FIX
+
+# Service > ONE_ON_ONES > John > 8 > options > 0 > reply
+[Service.ONE_ON_ONES.John.8.options.0.reply]
+No discount. A clean printer setup, free, this week, with my name on it. That is worth more than ten percent.
+
+# Service > ONE_ON_ONES > John > 8 > options > 1 > label
+[Service.ONE_ON_ONES.John.8.options.1.label]
+LET IT STAND FOR ONE MONTH
+
+# Service > ONE_ON_ONES > John > 8 > options > 1 > reply
+[Service.ONE_ON_ONES.John.8.options.1.reply]
+One month. And next time you ask first.
+
+# Service > ONE_ON_ONES > John > 8 > options > 2 > label
+[Service.ONE_ON_ONES.John.8.options.2.label]
+MAKE HIM TAKE IT BACK
+
+# Service > ONE_ON_ONES > John > 8 > options > 2 > reply
+[Service.ONE_ON_ONES.John.8.options.2.reply]
+Then un-say it.
+
+# Service > ONE_ON_ONES > John > 9 > text
+[Service.ONE_ON_ONES.John.9.text]
+What do I say when they ask how long a fix takes? It depends makes them twitch.
+
+# Service > ONE_ON_ONES > John > 9 > options > 0 > label
+[Service.ONE_ON_ONES.John.9.options.0.label]
+GIVE HIM THREE NUMBERS
+
+# Service > ONE_ON_ONES > John > 9 > options > 0 > reply
+[Service.ONE_ON_ONES.John.9.options.0.reply]
+Urgent: we call back within the hour. Normal: same day. Projects: a date in writing. I made you a card for your wallet.
+
+# Service > ONE_ON_ONES > John > 9 > options > 1 > label
+[Service.ONE_ON_ONES.John.9.options.1.label]
+TELL HIM TO READ THE BOARD
+
+# Service > ONE_ON_ONES > John > 9 > options > 1 > reply
+[Service.ONE_ON_ONES.John.9.options.1.reply]
+Look at the board before you answer. It is on the wall for a reason.
+
+# Service > ONE_ON_ONES > John > 9 > options > 2 > label
+[Service.ONE_ON_ONES.John.9.options.2.label]
+SAY IT DEPENDS
+
+# Service > ONE_ON_ONES > John > 9 > options > 2 > reply
+[Service.ONE_ON_ONES.John.9.options.2.reply]
+It depends.
+
 
 # ======================= Service > ONE_TEXT =======================
 # Service > ONE_TEXT > already
@@ -7607,6 +8223,10 @@ We talked this morning, Dan. I am fine. Thanks.
 # Service > ONE_TEXT > walkup
 [Service.ONE_TEXT.walkup]
 %s stops by your desk.
+
+# Service > ONE_TEXT > quiet
+[Service.ONE_TEXT.quiet]
+Nothing new since last time, Dan. I am okay. Thanks for asking.
 
 
 # ======================= Service > CREW_TEXT =======================
@@ -16575,6 +17195,14 @@ The vendor hall is always open: the EXPO HALL door in the lobby. Walk into a boo
 # Expo > TEXT > to_raffle
 [Expo.TEXT.to_raffle]
 The closing raffle is in the BALLROOM. Do not miss it.
+
+# Expo > TEXT > trip_quiet
+[Expo.TEXT.trip_quiet]
+A QUIET TRIP. NOTHING TO TELL AT HOME.
+
+# Expo > TEXT > trip_known
+[Expo.TEXT.trip_known]
+A GOOD TRIP. AT HOME THEY KNEW THAT ALREADY.
 
 
 # ======================= Expo > ROUNDS =======================

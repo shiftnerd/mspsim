@@ -281,6 +281,57 @@ var tech_stats := {"quick": 0, "proper": 0, "clever": 0, "returns": 0, "wrong": 
 var _base_strategy := ""
 
 
+# T2: the conference trip (day 17), played the way a player has to play it: the badge, the keynote, a session in every round,
+# the closing raffle, FLY HOME (which ends the day and switches the ticket stream back on). Until this the bot let the clock run
+# out at the venue: the trip never reached its end, so no ticket came in on days 18 to 20 and every bot coasted through three
+# clean days (that, and not the trip itself, was the "8 to 10 points the trip adds"). `play_trip = false` gives that bot back.
+# The steady strategies listen to the keynote, hear two vendors out and talk to two people; the lazy one reads the queue on the
+# phone during the keynote and sits through the sessions; the chaotic one does some of it at random.
+var play_trip := true
+var trip_log: Dictionary = {}
+
+
+func _trip_card(cards: Node, want: String) -> void:
+	var n := 0
+	while cards.is_open and n < 12:
+		n += 1
+		var pick := _first_of(cards, [want]) if want != "" else -1
+		if pick < 0:
+			var en := _enabled_idx(cards)
+			pick = int(en[0]) if not en.is_empty() else 0
+		_note_card(cards, pick)
+		cards.pick(pick)
+		want = ""
+
+
+func _tech_trip(expo: Node, cards: Node) -> void:
+	var keen: bool = strategy in TECH_STEADY or (strategy == "chaotic" and rng.randf() < 0.5)
+	_trip_card(cards, "")
+	expo.badge = true
+	expo._keynote()
+	_trip_card(cards, "listen" if keen else "peek")
+	var guard := 0
+	while str(expo._stage) == "round" and guard < 6:
+		guard += 1
+		var sessions: Array = expo.menu(int(expo.rnd))
+		var at: int = 0 if strategy != "chaotic" else rng.randi() % sessions.size()
+		expo._session(int(expo.rnd), str(sessions[at].id))
+		_trip_card(cards, "")
+	if keen:
+		var heard := 0
+		for v in expo.VENDORS:
+			if heard < 2 and not expo._vendor(str(v.id)).is_empty():
+				expo._pitch(str(v.id))
+				_trip_card(cards, "demo")
+				heard += 1
+		for k in 2:
+			expo._chat(k)
+			_trip_card(cards, "")
+	trip_log = {"effort": int(expo.trip_effort()), "rep": int(expo.trip_rep()), "keen": keen}
+	expo._raffle()
+	_trip_card(cards, "")
+
+
 func _tech_morning() -> void:
 	var sk := root.get_node("Skills")
 	var msp := root.get_node("Msp")
@@ -583,6 +634,10 @@ func tech_run(seed_n: int) -> Dictionary:
 			_bot_state[0] = {"busy": _tbusy, "tj": {}}
 			if coop:
 				players.run_as(1, _partner_morning)
+			continue
+		var expo := root.get_node("Expo")
+		if play_trip and bool(expo.away) and not bool(expo.owner_walk) and str(expo._stage) != "done":
+			_tech_trip(expo, cards)
 			continue
 		world.time_scale = ts
 		_tick_bot(0, ts / 60.0)

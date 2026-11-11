@@ -1,4 +1,5 @@
 extends SceneTree
+# gdlint:disable=max-line-length
 # Dev tool (not a test): the per-day ticket count probe for the tech campaign (roadmap X10). Plays the 20 days with a bot
 # and prints, per day: tickets opened (and how many of them by each source), the highest open count, SLAs missed, and
 # how many story / event tickets were held back by the queue (Msp.held_total).
@@ -52,7 +53,12 @@ func _init() -> void:
 		total += int(e.n)
 		missed += int(e.missed)
 		print("PACE  d%-2d tickets %2d  max open %2d  missed %d  %s" % [d, int(e.n), int(e.max_open), int(e.missed), str(e.src)])
-	print("PACE total %d, busiest day %d, missed %d, held %s" % [total, top, missed, str(msp.get("held_total"))])
+	var top_open := 0
+	var over := []
+	for d in range(1, 21):
+		top_open = maxi(top_open, int(_row(d).max_open))
+		over.append(int(_row(d).get("over", 0)))
+	print("PACE total %d, busiest day %d, missed %d, held %s, squeezed %s, most open %d, most over the open cap %d (by day %s)" % [total, top, missed, str(msp.get("held_total")), str(msp.get("squeezed_total")), top_open, over.max(), str(over)])
 	quit()
 
 
@@ -71,6 +77,7 @@ func _on_ticket(tk: Dictionary) -> void:
 	e.src[s] = int(e.src.get(s, 0)) + 1
 	var msp: Node = root.get_node("Msp")
 	if msp.open_tickets().size() > msp.open_cap():  # this one came in over the cap: who sent it?
+		e["over"] = maxi(int(e.get("over", 0)), msp.open_tickets().size() - msp.open_cap())
 		print("PACE over the cap d%d %.1fh: %s / %s (%d open)" % [int(root.get_node("Campaign").day), float(root.get_node("World").clock), s, str(tk.summary), msp.open_tickets().size()])
 
 
